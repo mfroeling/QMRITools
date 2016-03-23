@@ -1,0 +1,271 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9038,        261]
+NotebookOptionsPosition[      6485,        192]
+NotebookOutlinePosition[      8551,        243]
+CellTagsIndexPosition[      8508,        240]
+WindowTitle->DriftCorrect - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"ManipulationTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/ManipulationTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/ref/DriftCorrect\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/DriftCorrect"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+DriftCorrect.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/ref/DriftCorrect", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell["DriftCorrect", "ObjectName",
+ CellID->1224892054],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"DriftCorrect", "[", 
+       RowBox[{
+        StyleBox["data", "TI"], ",", " ", 
+        StyleBox["bval", "TI"]}], "]"}]], "InlineFormula"],
+     "\[LineSeparator]dirft corrects the data using the signals of the lowest \
+bvalue that has 6 or more unique volumes. For the function to work optimal it \
+is best to have these volumes evenly spread througout thet data and for the \
+first and last volume to have this low bvalue."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[
+  FrameBox[
+   StyleBox[
+    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
+   StripOnInput->False],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->500406602],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["NormalizeSignal",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/NormalizeSignal"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["NormalizeSignal",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/NormalizeSignal"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["DriftCorrect"], "InlineFormula"],
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UseMask",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/UseMask"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["UseMask",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/UseMask"]], "InlineFormula"],
+     " is a function for ",
+     Cell[BoxData[
+      ButtonBox["MeanSignal",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/MeanSignal"]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["DriftCorrect"], "InlineFormula"]
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}]
+}, Closed]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["MORE ABOUT",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell[TextData[ButtonBox["ManipulationTools",
+ BaseStyle->"Link",
+ ButtonData->"paclet:DTITools/guide/ManipulationTools"]], "MoreAbout",
+ CellID->415393078]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"DriftCorrect - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 13, 41, 23.4140450}", 
+    "history" -> {"XX", "", "", ""}, "context" -> 
+    "DTITools`ManipulationTools`", "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "DriftCorrect[data, bval] dirft corrects the data using the signals of \
+the lowest bvalue that has 6 or more unique volumes. For the function to work \
+optimal it is best to have these volumes evenly spread througout thet data \
+and for the first and last volume to have this low bvalue.", "synonyms" -> {},
+     "title" -> "DriftCorrect", "titlemodifier" -> "", "windowtitle" -> 
+    "DriftCorrect", "type" -> "Symbol", "uri" -> "DTITools/ref/DriftCorrect"},
+   "SearchTextTranslated" -> ""},
+CellContext->"Global`",
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> 
+  "10.4 for Microsoft Windows (64-bit) (February 25, 2016)", StyleDefinitions -> 
+  "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[606, 21, 2333, 53, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[2942, 76, 55, 1, 70, "ObjectName",
+ CellID->1224892054],
+Cell[CellGroupData[{
+Cell[3022, 81, 668, 16, 70, "Usage"],
+Cell[CellGroupData[{
+Cell[3715, 101, 609, 18, 70, "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->500406602],
+Cell[4327, 121, 53, 0, 70, "Notes"],
+Cell[4383, 123, 1405, 40, 70, "3ColumnTableMod"]
+}, Closed]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5837, 169, 448, 13, 70, "MoreAboutSection",
+ CellID->38303248],
+Cell[6288, 184, 155, 3, 70, "MoreAbout",
+ CellID->415393078]
+}, Open  ]],
+Cell[6458, 190, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

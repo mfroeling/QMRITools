@@ -1,0 +1,327 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     11059,        317]
+NotebookOptionsPosition[      8511,        248]
+NotebookOutlinePosition[     10572,        299]
+CellTagsIndexPosition[     10529,        296]
+WindowTitle->PCADeNoise - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DenoiseTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/DenoiseTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/ref/PCADeNoise\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/PCADeNoise"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+PCADeNoise.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/ref/PCADeNoise", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell["PCADeNoise", "ObjectName",
+ CellID->1224892054],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+PCADeNoise[data]\[LineSeparator]removes rician noise from the data with PCA. \
+\>"]},
+   {"", Cell["\<\
+PCADeNoise[data, mask]\[LineSeparator]removes rician noise from the data with \
+PCA only withing the mask. \
+\>"]},
+   {"", Cell["\<\
+PCADeNoise[data, mask, sig]\[LineSeparator]removes rician noise from the data \
+with PCA only withing the mask using sig as prior knowledge or fixed value.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[
+  FrameBox[
+   StyleBox[
+    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
+   StripOnInput->False],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->130239247],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCAKernel",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PCAKernel"], "5", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["PCAKernel",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/PCAKernel"]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData["PCADeNoise"], "InlineFormula"],
+     ". It sets the kernel size."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["BinSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/BinSize"], "5", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["BinSize",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/BinSize"]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData["PCADeNoise"], "InlineFormula"],
+     ". Sets the binsize."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["InitializationP",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/InitializationP"], "10", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["InitializationP",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/InitializationP"]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData["PCADeNoise"], "InlineFormula"],
+     ". How many signal PCA components are initialized."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MaxIterationsFit",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MaxIterationsFit"], "10", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["MaxIterationsFit",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/MaxIterationsFit"]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData["PCADeNoise"], "InlineFormula"],
+     ". How many itterations can be used."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["FitSigma",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/FitSigma"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["FitSigma",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/FitSigma"]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData[
+      ButtonBox["PCAFit",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/PCAFit"]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["PCADeNoise"], "InlineFormula"],
+     ", if set ",
+     "True",
+     " sig is fitted if set ",
+     "False",
+     " sigma is fixed to input value"
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCAOutput",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PCAOutput"], 
+    ButtonBox["Full",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Full"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["PCAOutput",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/PCAOutput"]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData["PCADeNoise"], "InlineFormula"],
+     ". ",
+     "If",
+     " output is full the output is {datao, {output[[1]], sigmat}, \
+{output[[2]], output[[3]], j}, timetot}.\nElse the output is {datao, sigmat}."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True, True, True}}}}]
+}, Closed]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["MORE ABOUT",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell[TextData[ButtonBox["DenoiseTools",
+ BaseStyle->"Link",
+ ButtonData->"paclet:DTITools/guide/DenoiseTools"]], "MoreAbout",
+ CellID->672302018]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"PCADeNoise - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 13, 45, 53.0950104}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`DenoiseTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "PCADeNoise[data] removes rician noise from the data with PCA. \
+PCADeNoise[data, mask] removes rician noise from the data with PCA only \
+withing the mask. PCADeNoise[data, mask, sig] removes rician noise from the \
+data with PCA only withing the mask using sig as prior knowledge or fixed \
+value.", "synonyms" -> {}, "title" -> "PCADeNoise", "titlemodifier" -> "", 
+    "windowtitle" -> "PCADeNoise", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/PCADeNoise"}, "SearchTextTranslated" -> ""},
+CellContext->"Global`",
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> 
+  "10.4 for Microsoft Windows (64-bit) (February 25, 2016)", StyleDefinitions -> 
+  "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[604, 21, 2315, 53, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[2922, 76, 53, 1, 70, "ObjectName",
+ CellID->1224892054],
+Cell[CellGroupData[{
+Cell[3000, 81, 606, 16, 70, "Usage"],
+Cell[CellGroupData[{
+Cell[3631, 101, 609, 18, 70, "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->130239247],
+Cell[4243, 121, 53, 0, 70, "Notes"],
+Cell[4299, 123, 3525, 96, 70, "3ColumnTableMod"]
+}, Closed]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7873, 225, 448, 13, 70, "MoreAboutSection",
+ CellID->38303248],
+Cell[8324, 240, 145, 3, 70, "MoreAbout",
+ CellID->672302018]
+}, Open  ]],
+Cell[8484, 246, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

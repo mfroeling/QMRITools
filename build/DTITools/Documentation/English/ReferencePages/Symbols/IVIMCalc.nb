@@ -1,0 +1,479 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     14070,        469]
+NotebookOptionsPosition[     11441,        399]
+NotebookOutlinePosition[     13577,        451]
+CellTagsIndexPosition[     13534,        448]
+WindowTitle->IVIMCalc - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"IVIMTools\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/guide/IVIMTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/ref/IVIMCalc\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/IVIMCalc"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+IVIMCalc.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, 
+            Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/ref/IVIMCalc", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell["IVIMCalc", "ObjectName",
+ CellID->1224892054],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     "IVIMCalc[data, binp, init]",
+     "\[LineSeparator]calculates the IVIM fit. data should be 1D ,2D, 3D or \
+4D. binp should be full bmatrix which can be calculated from the bvecs en \
+bvals using ",
+     Cell[BoxData[
+      ButtonBox["Bmatrix",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/Bmatrix"]], "InlineFormula"],
+     ".",
+     " ",
+     "init",
+     " ",
+     "should",
+     " ",
+     "are",
+     " ",
+     "the",
+     " ",
+     "initialization",
+     " ",
+     "parameters",
+     " ",
+     "for",
+     " ",
+     "2",
+     " ",
+     "components",
+     " ",
+     "this",
+     " ",
+     "is",
+     " ",
+     "{S0",
+     ",",
+     " ",
+     "f",
+     ",",
+     " ",
+     "D",
+     ",",
+     " ",
+     "Dp}",
+     " ",
+     "for",
+     " ",
+     "3",
+     " ",
+     "componentes",
+     " ",
+     "this",
+     " ",
+     "is",
+     " ",
+     "{S0",
+     ",",
+     " ",
+     "f1",
+     ",",
+     " ",
+     "f2",
+     ",",
+     " ",
+     "D",
+     ",",
+     " ",
+     "Dp1",
+     ",",
+     " ",
+     "Dp2}",
+     ".",
+     " ",
+     "output",
+     " ",
+     "is",
+     " ",
+     "{S0",
+     ",",
+     " ",
+     "f1",
+     ",",
+     " ",
+     "D",
+     ",",
+     " ",
+     "pD1}",
+     " ",
+     "or",
+     " ",
+     "{S0",
+     ",",
+     " ",
+     "f1",
+     ",",
+     " ",
+     "f2",
+     ",",
+     " ",
+     "D",
+     ",",
+     " ",
+     "pD1",
+     ",",
+     " ",
+     "pD2}",
+     "."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[
+  FrameBox[
+   StyleBox[
+    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
+   StripOnInput->False],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->585551023],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Method",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Method"], 
+    ButtonBox["Automatic",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Automatic"], Cell["\<\
+Method is an option for various algorithm-intensive functions that specifies \
+what internal methods they should use.\
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Parallelize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Parallelize"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"Parallelize", "[", 
+       StyleBox["expr", "TI"], "]"}]], "InlineFormula"],
+     " ",
+     "evaluates ",
+     Cell[BoxData[
+      StyleBox["expr", "TI"]], "InlineFormula"],
+     " ",
+     "using automatic parallelization."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MonitorIVIMCalc",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MonitorIVIMCalc"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["MonitorIVIMCalc",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/MonitorIVIMCalc"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["IVIMCalc"], "InlineFormula"],
+     ". When true the proceses of the calculation is shown."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["IVIMFixed",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/IVIMFixed"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["IVIMFixed",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/IVIMFixed"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["IVIMCalc"], "InlineFormula"],
+     " and the default value is ",
+     "False",
+     ". When set ",
+     "True",
+     " the pseudo diffusion wil be fixed to the parameter given as init.\n\
+When set to \"One\" only the fast component of a 3 compartment fit is fixed."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["IVIMConstrained",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/IVIMConstrained"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["IVIMConstrained",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/IVIMConstrained"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["IVIMCalc"], "InlineFormula"],
+     ". When set ",
+     "True",
+     " the fit wil be constrained to the values given in ",
+     Cell[BoxData[
+      ButtonBox["IVIMConstrains",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/IVIMConstrains"]], "InlineFormula"],
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["IVIMTensFit",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/IVIMTensFit"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["IVIMTensFit",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/IVIMTensFit"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["IVIMCalc"], "InlineFormula"],
+     ". When set ",
+     "True",
+     " the tissue diffusion component wil be calculated as a tensor."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["IVIMComponents",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/IVIMComponents"], "2", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["IVIMComponents",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/IVIMComponents"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["IVIMCalc"], "InlineFormula"],
+     ". ",
+     "Default",
+     " value is 2, the tissue and the blood component. can also be set to 3."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["IVIMConstrains",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/IVIMConstrains"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"0.8", ",", " ", "1.2"}], "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"0", ",", " ", "1"}], "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"0.0005", ",", " ", "0.0035"}], "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"0.001", ",", " ", "0.5"}], "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"0.001", ",", " ", "0.5"}], "}"}]}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["IVIMConstrains",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/IVIMConstrains"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["IVIMCalc"], "InlineFormula"],
+     ". ",
+     "Default",
+     " values are: {{0.8, 1.2}, {0, 1}, {0.0005, 0.0035}, {0.005, 0.5}, \
+{0.002, 0.015}}. Where {{S0 in percentage},{fractions},{tissue \
+diffusion},{blood compartment Dp},{third compartment}}."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, None, None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{
+  "Rows" -> {{True, True, True, True, True, True, True, True, True}}}}]
+}, Closed]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["MORE ABOUT",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell[TextData[ButtonBox["IVIMTools",
+ BaseStyle->"Link",
+ ButtonData->"paclet:DTITools/guide/IVIMTools"]], "MoreAbout",
+ CellID->629099955]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"IVIMCalc - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 13, 44, 17.5534572}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`IVIMTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "IVIMCalc[data, binp, init] calculates the IVIM fit. data should be 1D \
+,2D, 3D or 4D. binp should be full bmatrix which can be calculated from the \
+bvecs en bvals using Bmatrix. init should are the initialization parameters \
+for 2 components this is {S0, f, D, Dp} for 3 componentes this is {S0, f1, \
+f2, D, Dp1, Dp2}. output is {S0, f1, D, pD1} or {S0, f1, f2, D, pD1, pD2}.", 
+    "synonyms" -> {}, "title" -> "IVIMCalc", "titlemodifier" -> "", 
+    "windowtitle" -> "IVIMCalc", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/IVIMCalc"}, "SearchTextTranslated" -> ""},
+CellContext->"Global`",
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> 
+  "10.4 for Microsoft Windows (64-bit) (February 25, 2016)", StyleDefinitions -> 
+  "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[602, 21, 2299, 53, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[2904, 76, 51, 1, 70, "ObjectName",
+ CellID->1224892054],
+Cell[CellGroupData[{
+Cell[2980, 81, 1623, 112, 70, "Usage"],
+Cell[CellGroupData[{
+Cell[4628, 197, 609, 18, 70, "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->585551023],
+Cell[5240, 217, 53, 0, 70, "Notes"],
+Cell[5296, 219, 5464, 151, 70, "3ColumnTableMod"]
+}, Closed]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[10809, 376, 448, 13, 70, "MoreAboutSection",
+ CellID->38303248],
+Cell[11260, 391, 139, 3, 70, "MoreAbout",
+ CellID->629099955]
+}, Open  ]],
+Cell[11414, 397, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

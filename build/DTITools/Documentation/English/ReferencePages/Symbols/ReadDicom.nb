@@ -1,0 +1,285 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9605,        275]
+NotebookOptionsPosition[      6757,        202]
+NotebookOutlinePosition[      9118,        257]
+CellTagsIndexPosition[      9075,        254]
+WindowTitle->ReadDicom - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"ImportTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/ImportTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/ref/ReadDicom\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/ReadDicom"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+ReadDicom.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
+             Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/ref/ReadDicom", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell["ReadDicom", "ObjectName",
+ CellID->1224892054],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+ReadDicom[folder]\[LineSeparator]imports all dicom files from the given \
+folder. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[{file$1, file$2, $$}]\[LineSeparator]imports all the given \
+filenames. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[folder, {file$1, file$2, $$}]\[LineSeparator]imports all the given \
+filenames from the given folder. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[folder, partsize]\[LineSeparator]imports all dicom files from the \
+given folder and partions them in given partsize. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[{file$1, file$2,  $$}, partsize]\[LineSeparator]imports all the \
+given filenames and partions them in given partsize. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[folder, {file$1, file$2,  $$}, partsize]\[LineSeparator]imports all \
+the given filenames from the given folder and partions them in given partsize.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[
+  FrameBox[
+   StyleBox[
+    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
+   StripOnInput->False],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->28775881],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ScaleCorrect",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/ScaleCorrect"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["ScaleCorrect",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/ScaleCorrect"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["ReadDicom"], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      ButtonBox["ReadDicomDiff",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/ReadDicomDiff"]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      ButtonBox["ReadDicomDir",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/ReadDicomDir"]], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      ButtonBox["ReadDicomDirDiff",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/ReadDicomDirDiff"]], "InlineFormula"],
+     ". The dicom image values are corrected for rescale slope, scale slope \
+and rescale intercept."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}]
+}, Closed]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["MORE ABOUT",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell[TextData[ButtonBox["ImportTools",
+ BaseStyle->"Link",
+ ButtonData->"paclet:DTITools/guide/ImportTools"]], "MoreAbout",
+ CellID->382993939]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"ReadDicom - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 13, 46, 56.5033506}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ImportTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "ReadDicom[folder] imports all dicom files from the given folder. \
+ReadDicom[{file$1, file$2, $$}] imports all the given filenames. \
+ReadDicom[folder, {file$1, file$2, $$}] imports all the given filenames from \
+the given folder. ReadDicom[folder, partsize] imports all dicom files from \
+the given folder and partions them in given partsize. ReadDicom[{file$1, \
+file$2, $$}, partsize] imports all the given filenames and partions them in \
+given partsize. ReadDicom[folder, {file$1, file$2, $$}, partsize] imports all \
+the given filenames from the given folder and partions them in given \
+partsize.", "synonyms" -> {}, "title" -> "ReadDicom", "titlemodifier" -> "", 
+    "windowtitle" -> "ReadDicom", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/ReadDicom"}, "SearchTextTranslated" -> ""},
+CellContext->"Global`",
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> 
+  "10.4 for Microsoft Windows (64-bit) (February 25, 2016)", StyleDefinitions -> 
+  "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[603, 21, 2307, 53, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[2913, 76, 52, 1, 70, "ObjectName",
+ CellID->1224892054],
+Cell[CellGroupData[{
+Cell[2990, 81, 1057, 29, 70, "Usage"],
+Cell[CellGroupData[{
+Cell[4072, 114, 608, 18, 70, "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->28775881],
+Cell[4683, 134, 53, 0, 70, "Notes"],
+Cell[4739, 136, 1333, 37, 70, "3ColumnTableMod"]
+}, Closed]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6121, 179, 448, 13, 70, "MoreAboutSection",
+ CellID->38303248],
+Cell[6572, 194, 143, 3, 70, "MoreAbout",
+ CellID->382993939]
+}, Open  ]],
+Cell[6730, 200, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

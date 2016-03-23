@@ -4,7 +4,7 @@
 
 Paclet[
     Name -> "DTITools",
-    Version -> "1.0.0",
+    Version -> "1.3.0",
     MathematicaVersion -> "9+",
     Extensions -> 
         {

@@ -1,0 +1,225 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      8497,        215]
+NotebookOptionsPosition[      5300,        143]
+NotebookOutlinePosition[      8274,        206]
+CellTagsIndexPosition[      8231,        203]
+WindowTitle->DTItoolExp - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"ExportTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/ExportTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/ref/DTItoolExp\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/DTItoolExp"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+DTItoolExp.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/ref/DTItoolExp", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell["DTItoolExp", "ObjectName",
+ CellID->1224892054],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+DTItoolExp[tensor, voxsize]\[LineSeparator]exports tensor to {XX.dat, YY.dat, \
+ZZ.dat, XY.dat, XZ.dat, YZ.dat} and uses XX.dat as background and generates \
+corresponding *dti files. \
+\>"]},
+   {"", Cell["\<\
+DTItoolExp[tensor, voxsize, folder]\[LineSeparator]exports tensor to {XX.dat, \
+YY.dat, ZZ.dat, XY.dat, XZ.dat, YZ.dat} to the given folder and uses XX.dat \
+as background and generates corresponding *dti files. \
+\>"]},
+   {"", Cell["\<\
+DTItoolExp[tensor, voxsize, folder, add]\[LineSeparator]exports tensor to \
+{XX.dat, YY.dat, ZZ.dat, XY.dat, XZ.dat, YZ.dat} to the given folder and uses \
+XX.dat as background and generates corresponding *dti files adds - add to the \
+filenames. \
+\>"]},
+   {"", Cell["\<\
+DTItoolExp[back, tensor, voxsize]\[LineSeparator]exports background to \
+back.dat and tensor to {XX.dat, YY.dat, ZZ.dat, XY.dat, XZ.dat, YZ.dat} and \
+generates corresponding *dti files. \
+\>"]},
+   {"", Cell["\<\
+DTItoolExp[back, tensor, voxsize, folder]\[LineSeparator]exports background \
+to back.dat and tensor to {XX.dat, YY.dat, ZZ.dat, XY.dat, XZ.dat, YZ.dat} to \
+the given folder and generates corresponding *dti files. \
+\>"]},
+   {"", Cell["\<\
+DTItoolExp[back, tensor, voxsize, folder, add]\[LineSeparator]exports \
+background to back.dat and tensor to {XX.dat, YY.dat, ZZ.dat, XY.dat, XZ.dat, \
+YZ.dat} to the given folder and generates corresponding *dti files and adds - \
+add to the filenames.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["MORE ABOUT",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell[TextData[ButtonBox["ExportTools",
+ BaseStyle->"Link",
+ ButtonData->"paclet:DTITools/guide/ExportTools"]], "MoreAbout",
+ CellID->80364739]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"DTItoolExp - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 13, 41, 30.4227458}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ExportTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "DTItoolExp[tensor, voxsize] exports tensor to {XX.dat, YY.dat, ZZ.dat, \
+XY.dat, XZ.dat, YZ.dat} and uses XX.dat as background and generates \
+corresponding *dti files. DTItoolExp[tensor, voxsize, folder] exports tensor \
+to {XX.dat, YY.dat, ZZ.dat, XY.dat, XZ.dat, YZ.dat} to the given folder and \
+uses XX.dat as background and generates corresponding *dti files. \
+DTItoolExp[tensor, voxsize, folder, add] exports tensor to {XX.dat, YY.dat, \
+ZZ.dat, XY.dat, XZ.dat, YZ.dat} to the given folder and uses XX.dat as \
+background and generates corresponding *dti files adds - add to the \
+filenames. DTItoolExp[back, tensor, voxsize] exports background to back.dat \
+and tensor to {XX.dat, YY.dat, ZZ.dat, XY.dat, XZ.dat, YZ.dat} and generates \
+corresponding *dti files. DTItoolExp[back, tensor, voxsize, folder] exports \
+background to back.dat and tensor to {XX.dat, YY.dat, ZZ.dat, XY.dat, XZ.dat, \
+YZ.dat} to the given folder and generates corresponding *dti files. \
+DTItoolExp[back, tensor, voxsize, folder, add] exports background to back.dat \
+and tensor to {XX.dat, YY.dat, ZZ.dat, XY.dat, XZ.dat, YZ.dat} to the given \
+folder and generates corresponding *dti files and adds - add to the \
+filenames.", "synonyms" -> {}, "title" -> "DTItoolExp", "titlemodifier" -> "",
+     "windowtitle" -> "DTItoolExp", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/DTItoolExp"}, "SearchTextTranslated" -> ""},
+CellContext->"Global`",
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> 
+  "10.4 for Microsoft Windows (64-bit) (February 25, 2016)", StyleDefinitions -> 
+  "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[604, 21, 2313, 53, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[2920, 76, 53, 1, 70, "ObjectName",
+ CellID->1224892054],
+Cell[2976, 79, 1664, 37, 70, "Usage"],
+Cell[CellGroupData[{
+Cell[4665, 120, 448, 13, 70, "MoreAboutSection",
+ CellID->38303248],
+Cell[5116, 135, 142, 3, 70, "MoreAbout",
+ CellID->80364739]
+}, Open  ]],
+Cell[5273, 141, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

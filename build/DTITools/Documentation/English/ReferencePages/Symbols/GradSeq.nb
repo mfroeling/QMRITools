@@ -1,0 +1,340 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     11311,        330]
+NotebookOptionsPosition[      8981,        264]
+NotebookOutlinePosition[     10826,        312]
+CellTagsIndexPosition[     10783,        309]
+WindowTitle->GradSeq - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"GradientTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/GradientTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/ref/GradSeq\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/GradSeq"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+GradSeq.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, 
+            Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/ref/GradSeq", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell["GradSeq", "ObjectName",
+ CellID->1224892054],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     "GradSeq[pars, t, grad]",
+     "\[LineSeparator]Creates a sequence from the gradient pars imported by ",
+     Cell[BoxData[
+      ButtonBox["ImportGradObj",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/ImportGradObj"]], "InlineFormula"],
+     "."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[
+  FrameBox[
+   StyleBox[
+    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
+   StripOnInput->False],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->199031945],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UseGrad",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/UseGrad"], 
+    RowBox[{"{", 
+     RowBox[{"0", ",", " ", "1", ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "0"}], "}"}], ",", " ", "1"}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["UseGrad",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/UseGrad"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GradSeq"], "InlineFormula"],
+     ". The default value is {0, 1, {1, 0}, 1} where {grex, gr180, {grepi1, \
+grepi2}, grdiff, grflow}."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["FlipGrad",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/FlipGrad"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["FlipGrad",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/FlipGrad"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GradSeq"], "InlineFormula"],
+     ". When ",
+     Cell[BoxData[
+      ButtonBox["FlipGrad",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/FlipGrad"]], "InlineFormula"],
+     " is true the gr180 is fliped."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UnitMulti",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/UnitMulti"], "1", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["UnitMulti",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/UnitMulti"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GradSeq"], "InlineFormula"],
+     ". Defaul value is 10^-3. Defines the scaling of the gradient strength."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PhaseEncoding",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PhaseEncoding"], "A", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["PhaseEncoding",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/PhaseEncoding"]], "InlineFormula"],
+     " is an options of ",
+     Cell[BoxData["GradSeq"], "InlineFormula"],
+     ". ",
+     "Values",
+     " can be \"A\", \"P\", \"R\" and \"L\"."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["FlipAxes",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/FlipAxes"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}]}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["FlipAxes",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/FlipAxes"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GradSeq"], "InlineFormula"],
+     ". Defaul value is {{1,1,1},{1,1,1}}. ",
+     "First",
+     " three values are for diffusion gradients last three are for the \
+acquisition gradients."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["SwitchAxes",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/SwitchAxes"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "2", ",", " ", "3"}], "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "2", ",", " ", "3"}], "}"}]}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["SwitchAxes",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/SwitchAxes"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GradSeq"], "InlineFormula"],
+     ". Defaul value is {{1,2,3},{1,2,3}}. ",
+     "First",
+     " three values are for diffusion gradients last three are for the \
+acquisition gradients."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True, True, True}}}}]
+}, Closed]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[ButtonBox["MORE ABOUT",
+ BaseStyle->None,
+ Appearance->{Automatic, None},
+ Evaluator->None,
+ Method->"Preemptive",
+ ButtonFunction:>(FrontEndExecute[{
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], All, ButtonCell], 
+    FrontEndToken["OpenCloseGroup"], 
+    FrontEnd`SelectionMove[
+     FrontEnd`SelectedNotebook[], After, 
+     CellContents]}]& )]], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell[TextData[ButtonBox["GradientTools",
+ BaseStyle->"Link",
+ ButtonData->"paclet:DTITools/guide/GradientTools"]], "MoreAbout",
+ CellID->5568245]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"GradSeq - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 13, 43, 15.0772102}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`GradientTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "GradSeq[pars, t, grad] Creates a sequence from the gradient pars \
+imported by ImportGradObj.", "synonyms" -> {}, "title" -> "GradSeq", 
+    "titlemodifier" -> "", "windowtitle" -> "GradSeq", "type" -> "Symbol", 
+    "uri" -> "DTITools/ref/GradSeq"}, "SearchTextTranslated" -> ""},
+CellContext->"Global`",
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> 
+  "10.4 for Microsoft Windows (64-bit) (February 25, 2016)", StyleDefinitions -> 
+  "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[601, 21, 2303, 53, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[2907, 76, 50, 1, 70, "ObjectName",
+ CellID->1224892054],
+Cell[CellGroupData[{
+Cell[2982, 81, 481, 14, 70, "Usage"],
+Cell[CellGroupData[{
+Cell[3488, 99, 609, 18, 70, "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->199031945],
+Cell[4100, 119, 53, 0, 70, "Notes"],
+Cell[4156, 121, 4138, 114, 70, "3ColumnTableMod"]
+}, Closed]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8343, 241, 448, 13, 70, "MoreAboutSection",
+ CellID->38303248],
+Cell[8794, 256, 145, 3, 70, "MoreAbout",
+ CellID->5568245]
+}, Open  ]],
+Cell[8954, 262, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+
