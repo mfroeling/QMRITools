@@ -1,0 +1,229 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      7766,        219]
+NotebookOptionsPosition[      5822,        165]
+NotebookOutlinePosition[      7315,        203]
+CellTagsIndexPosition[      7272,        200]
+WindowTitle->ElastixTools - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"Functions \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"CorrectBmatrix\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/CorrectBmatrix"], "\<\"CorrectGradients\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/CorrectGradients"], \
+"\<\"ReadTransformParameters\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadTransformParameters"], \
+"\<\"RegisterCardiacData\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/ref/RegisterCardiacData"], "\<\"RegisterData\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/RegisterData"], "\<\"RegisterDataSplit\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/RegisterDataSplit"], "\<\"RegisterDiffusionData\"\
+\>":>Documentation`HelpLookup["paclet:DTITools/ref/RegisterDiffusionData"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/guide/ElastixTools\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/guide/ElastixTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/guide/\
+ElastixTools.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/guide/ElastixTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["ElastixTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["DTITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/DTITools"],
+ " package: data registration using the Elastix software"
+}], "GuideAbstract",
+ CellID->2001916300],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["RegisterData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/RegisterData"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " registers data to a given target"
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["RegisterCardiacData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/RegisterCardiacData"]], 
+  "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " multislice 2D registration made for cardiac DWI data"
+}], "GuideText",
+ CellID->1463276848],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["RegisterDiffusionData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/RegisterDiffusionData"]], 
+  "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " registration of DWI data with or without a anatomical target"
+}], "GuideText",
+ CellID->550559158],
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["RegisterDataSplit",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/RegisterDataSplit"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ReadTransformParameters",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadTransformParameters"]], 
+  "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["CorrectGradients",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/CorrectGradients"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["CorrectBmatrix",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/CorrectBmatrix"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"ElastixTools - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 11, 13, 29.7147262}", 
+    "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
+    "None", "summary" -> 
+    "DTITools package: data registration using the Elastix software", 
+    "synonyms" -> {}, "title" -> "ElastixTools", "titlemodifier" -> "", 
+    "windowtitle" -> "ElastixTools", "type" -> "Guide", "uri" -> 
+    "DTITools/guide/ElastixTools"}, "SearchTextTranslated" -> ""},
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[606, 21, 2989, 65, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[3620, 90, 54, 1, 70, "GuideTitle",
+ CellID->942062912],
+Cell[3677, 93, 208, 6, 70, "GuideAbstract",
+ CellID->2001916300],
+Cell[3888, 101, 273, 8, 70, "GuideText",
+ CellID->203374175],
+Cell[4164, 111, 311, 9, 70, "GuideText",
+ CellID->1463276848],
+Cell[4478, 122, 322, 9, 70, "GuideText",
+ CellID->550559158],
+Cell[4803, 133, 48, 1, 70, "GuideDelimiter",
+ CellID->311258892],
+Cell[4854, 136, 926, 24, 70, "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+Cell[5795, 163, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

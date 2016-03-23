@@ -1,0 +1,343 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     11681,        333]
+NotebookOptionsPosition[      9356,        269]
+NotebookOutlinePosition[     10872,        307]
+CellTagsIndexPosition[     10829,        304]
+WindowTitle->ImportTools - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"Functions \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"BvalRead\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/ref/BvalRead"], "\<\"DatRead\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/DatRead"], "\<\"GradRead\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GradRead"], "\<\"ImportDTI\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ImportDTI"], "\<\"ImportExploreDTItens\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ImportExploreDTItens"], "\<\"ImportMhdRaw\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ImportMhdRaw"], "\<\"ImportVol\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ImportVol"], "\<\"LoadFiberTracts\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/LoadFiberTracts"], "\<\"ReadBrukerDiff\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadBrukerDiff"], "\<\"ReadBvalue\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadBvalue"], "\<\"ReadDicom\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadDicom"], "\<\"ReadDicomDiff\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadDicomDiff"], "\<\"ReadDicomDir\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadDicomDir"], "\<\"ReadDicomDirDiff\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadDicomDirDiff"], "\<\"ReadGradients\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadGradients"], "\<\"ReadVoxSize\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadVoxSize"], "\<\"ShiftPar\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/ref/ShiftPar"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/guide/ImportTools\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/guide/ImportTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/guide/\
+ImportTools.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/guide/ImportTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["ImportTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["DTITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/DTITools"],
+ " package: Importing of dicom files and folders and import of .dat files \
+from DTItool"
+}], "GuideAbstract",
+ CellID->2001916300],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ReadDicom",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadDicom"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " ",
+ "Imports Dicom files."
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ReadDicomDir",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadDicomDir"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " ",
+ "Imports Dicom folder."
+}], "GuideText",
+ CellID->1463276848],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ReadDicomDiff",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadDicomDiff"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " ",
+ "Imports Dicom diffusion files and important header data."
+}], "GuideText",
+ CellID->479612760],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ReadDicomDirDiff",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadDicomDirDiff"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " ",
+ "Imports Dicom diffusion folde and important header data."
+}], "GuideText",
+ CellID->719340142],
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ReadVoxSize",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadVoxSize"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ReadGradients",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadGradients"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["GradRead",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GradRead"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ReadBvalue",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadBvalue"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["BvalRead",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BvalRead"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ShiftPar",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ShiftPar"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752],
+
+Cell["\t", "GuideDelimiter",
+ CellID->406467118],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ImportDTI",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ImportDTI"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["DatRead",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/DatRead"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ImportExploreDTItens",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ImportExploreDTItens"]], 
+  "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ImportVol",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ImportVol"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ImportMhdRaw",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ImportMhdRaw"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->342783451],
+
+Cell["\t", "GuideDelimiter",
+ CellID->519258810],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ReadBrukerDiff",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadBrukerDiff"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["LoadFiberTracts",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/LoadFiberTracts"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->468379184]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"ImportTools - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 11, 13, 34.7922339}", 
+    "history" -> {"1.0", "", "", ""}, "context" -> "DTITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
+    "None", "summary" -> 
+    "DTITools package: Importing of dicom files and folders and import of \
+.dat files from DTItool", "synonyms" -> {}, "title" -> "ImportTools", 
+    "titlemodifier" -> "", "windowtitle" -> "ImportTools", "type" -> "Guide", 
+    "uri" -> "DTITools/guide/ImportTools"}, "SearchTextTranslated" -> ""},
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[605, 21, 3919, 84, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4549, 109, 53, 1, 70, "GuideTitle",
+ CellID->942062912],
+Cell[4605, 112, 240, 7, 70, "GuideAbstract",
+ CellID->2001916300],
+Cell[4848, 121, 260, 9, 70, "GuideText",
+ CellID->203374175],
+Cell[5111, 132, 268, 9, 70, "GuideText",
+ CellID->1463276848],
+Cell[5382, 143, 304, 9, 70, "GuideText",
+ CellID->479612760],
+Cell[5689, 154, 310, 9, 70, "GuideText",
+ CellID->719340142],
+Cell[6002, 165, 48, 1, 70, "GuideDelimiter",
+ CellID->311258892],
+Cell[6053, 168, 1456, 40, 70, "InlineGuideFunctionListing",
+ CellID->58033752],
+Cell[7512, 210, 48, 1, 70, "GuideDelimiter",
+ CellID->406467118],
+Cell[7563, 213, 1226, 34, 70, "InlineGuideFunctionListing",
+ CellID->342783451],
+Cell[8792, 249, 48, 1, 70, "GuideDelimiter",
+ CellID->519258810],
+Cell[8843, 252, 471, 12, 70, "InlineGuideFunctionListing",
+ CellID->468379184]
+}, Open  ]],
+Cell[9329, 267, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

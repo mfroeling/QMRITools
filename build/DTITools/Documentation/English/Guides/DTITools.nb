@@ -1,0 +1,379 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     12529,        369]
+NotebookOptionsPosition[      9792,        291]
+NotebookOutlinePosition[     11422,        331]
+CellTagsIndexPosition[     11379,        328]
+WindowTitle->DTITools - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"Functions \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"CardiacTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/CardiacTools"], "\<\"DenoiseTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/DenoiseTools"], "\<\"ElastixTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/ElastixTools"], "\<\"ExportTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/ExportTools"], "\<\"GeneralTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/GeneralTools"], "\<\"GradientTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/GradientTools"], "\<\"ImportTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/ImportTools"], "\<\"IVIMTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/IVIMTools"], "\<\"ManipulationTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/ManipulationTools"], "\<\"MaskingTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/MaskingTools"], "\<\"NiftiTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/NiftiTools"], "\<\"PhysiologyTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/PhysiologyTools"], "\<\"PlottingTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/PlottingTools"], "\<\"ProcessingTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/ProcessingTools"], "\<\"RegistrationTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/RegistrationTools"], "\<\"SimulationTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/SimulationTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/guide/DTITools\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/guide/DTITools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/guide/\
+DTITools.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, 
+            Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/guide/DTITools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["DTITools", "GuideTitle",
+ CellID->942062912],
+
+Cell["\<\
+DTItools package written by Martijn Froeling. 
+Contains various subpackages with functions for processing, evaluating, \
+importion, exporting and simulating of DWI and DTI data.\
+\>", "GuideAbstract",
+ CellID->2001916300],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["CardiacTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/CardiacTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Set of functions specific for cardiac DWI data."
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["DenoiseTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/DenoiseTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Function for noise supression in data."
+}], "GuideText",
+ CellID->84822095],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ElastixTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/ElastixTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Various registration functions that use the ",
+ ButtonBox["Elastix",
+  BaseStyle->"Hyperlink",
+  ButtonData->{
+    URL["http://elastix.isi.uu.nl/"], None}],
+ " software."
+}], "GuideText",
+ CellID->1463276848],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ExportTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/ExportTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Functions for exporting data."
+}], "GuideText",
+ CellID->780477387],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["GeneralTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/GeneralTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " General toolbox functions ."
+}], "GuideText",
+ CellID->121734127],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["GradientTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/GradientTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Set of functions for generating, converting and manipulating diffusion \
+gradients."
+}], "GuideText",
+ CellID->597497],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ImportTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/ImportTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Functions for importing data."
+}], "GuideText",
+ CellID->77234574],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["IVIMTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/IVIMTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " IVIM fitting functions such as Bayesian fitting."
+}], "GuideText",
+ CellID->36533971],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ManipulationTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/ManipulationTools"]], 
+  "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Set of fucntions for manipulating data, like rescaling, unwrapping, noise \
+supression etc."
+}], "GuideText",
+ CellID->29879692],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["MaskingTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/MaskingTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Generating masks from data and related functions."
+}], "GuideText",
+ CellID->338102893],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["NiftiTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/NiftiTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Functions for importing and exporting Nifti (*.nii) data."
+}], "GuideText",
+ CellID->360732873],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["PhysiologyTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/PhysiologyTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Importing physlogging from MRI and Respiract."
+}], "GuideText",
+ CellID->9171446],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["PlottingTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/PlottingTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Set of fucntion for displaying, visualizing and plotting data."
+}], "GuideText",
+ CellID->306333588],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ProcessingTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/ProcessingTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Set of fucntions for processing data, like tensor calculation, diffuision \
+parameters etc."
+}], "GuideText",
+ CellID->213895237],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["RegistrationTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/RegistrationTools"]], 
+  "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Legacy functions for registration will become obsolete in near future."
+}], "GuideText",
+ CellID->658218843],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["SimulationTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/SimulationTools"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Simulation toolbox for simulating DWI and DTI data."
+}], "GuideText",
+ CellID->574695207]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"DTITools - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        StyleBox[
+         ButtonBox[
+         "Mathematica", ButtonData -> "paclet:guide/Mathematica", 
+          BaseStyle -> {"Link", "DockedLinkTrail"}], FontSlant -> "Italic"], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 11, 13, 28.4355983}", 
+    "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
+    "None", "summary" -> 
+    "DTItools package written by Martijn Froeling. Contains various \
+subpackages with functions for processing, evaluating, importion, exporting \
+and simulating of DWI and DTI data.", "synonyms" -> {}, "title" -> "DTITools",
+     "titlemodifier" -> "", "windowtitle" -> "DTITools", "type" -> "Guide", 
+    "uri" -> "DTITools/guide/DTITools"}, "SearchTextTranslated" -> ""},
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[602, 21, 3891, 83, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4518, 108, 50, 1, 70, "GuideTitle",
+ CellID->942062912],
+Cell[4571, 111, 231, 5, 70, "GuideAbstract",
+ CellID->2001916300],
+Cell[4805, 118, 290, 8, 70, "GuideText",
+ CellID->203374175],
+Cell[5098, 128, 280, 8, 70, "GuideText",
+ CellID->84822095],
+Cell[5381, 138, 413, 13, 70, "GuideText",
+ CellID->1463276848],
+Cell[5797, 153, 270, 8, 70, "GuideText",
+ CellID->780477387],
+Cell[6070, 163, 270, 8, 70, "GuideText",
+ CellID->121734127],
+Cell[6343, 173, 325, 9, 70, "GuideText",
+ CellID->597497],
+Cell[6671, 184, 269, 8, 70, "GuideText",
+ CellID->77234574],
+Cell[6943, 194, 284, 8, 70, "GuideText",
+ CellID->36533971],
+Cell[7230, 204, 346, 10, 70, "GuideText",
+ CellID->29879692],
+Cell[7579, 216, 292, 8, 70, "GuideText",
+ CellID->338102893],
+Cell[7874, 226, 296, 8, 70, "GuideText",
+ CellID->360732873],
+Cell[8173, 236, 292, 8, 70, "GuideText",
+ CellID->9171446],
+Cell[8468, 246, 307, 8, 70, "GuideText",
+ CellID->306333588],
+Cell[8778, 256, 340, 9, 70, "GuideText",
+ CellID->213895237],
+Cell[9121, 267, 326, 9, 70, "GuideText",
+ CellID->658218843],
+Cell[9450, 278, 300, 8, 70, "GuideText",
+ CellID->574695207]
+}, Open  ]],
+Cell[9765, 289, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

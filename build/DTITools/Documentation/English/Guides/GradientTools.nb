@@ -1,0 +1,392 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     13836,        382]
+NotebookOptionsPosition[     11501,        318]
+NotebookOutlinePosition[     13005,        356]
+CellTagsIndexPosition[     12962,        353]
+WindowTitle->GradientTools - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"Functions \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"Bmatrix\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/ref/Bmatrix"], "\<\"BmatrixCalc\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/BmatrixCalc"], "\<\"BmatrixConv\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/BmatrixConv"], "\<\"BmatrixInv\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/BmatrixInv"], "\<\"BmatrixRot\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/BmatrixRot"], "\<\"BmatrixToggle\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/BmatrixToggle"], "\<\"BvecCreate\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/BvecCreate"], "\<\"CalculateMoments\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/CalculateMoments"], "\<\"ConditionNumberCalc\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ConditionNumberCalc"], "\<\"EnergyCalc\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/EnergyCalc"], "\<\"GenerateGradients\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GenerateGradients"], \
+"\<\"GenerateGradientsGUI\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/ref/GenerateGradientsGUI"], "\<\"GetGradientScanOrder\
+\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/ref/GetGradientScanOrder"], "\<\"GetSliceNormal\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GetSliceNormal"], "\<\"GetSliceNormalDir\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GetSliceNormalDir"], "\<\"GradBmatrix\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GradBmatrix"], "\<\"GradDirs\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GradDirs"], "\<\"GradRot\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GradRot"], "\<\"GradRotMat\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GradRotMat"], "\<\"GradSeq\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GradSeq"], "\<\"ImportGradObj\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ImportGradObj"], "\<\"OverPlusCalc\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/OverPlusCalc"], "\<\"UniqueBvalPosition\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/ref/UniqueBvalPosition"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/guide/GradientTools\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/guide/GradientTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/guide/\
+GradientTools.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/guide/GradientTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["GradientTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["DTITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/DTITools"],
+ " package: Optimize gradient sets for diffusion tensor imaging"
+}], "GuideAbstract",
+ CellID->2001916300],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["GenerateGradients",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GenerateGradients"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Optimizes a gradient set."
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["GenerateGradientsGUI",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GenerateGradientsGUI"]], 
+  "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Optimizes a gradient set using a GUI."
+}], "GuideText",
+ CellID->85707686],
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["GradDirs",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GradDirs"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["Bmatrix",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/Bmatrix"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["BmatrixCalc",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BmatrixCalc"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["BmatrixConv",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BmatrixConv"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["BmatrixInv",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BmatrixInv"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["BmatrixRot",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BmatrixRot"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["BmatrixToggle",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BmatrixToggle"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["BvecCreate",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BvecCreate"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->658214510],
+
+Cell["\t", "GuideDelimiter",
+ CellID->57383872],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["CalculateMoments",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/CalculateMoments"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ConditionNumberCalc",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ConditionNumberCalc"]], 
+  "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["EnergyCalc",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/EnergyCalc"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["OverPlusCalc",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/OverPlusCalc"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->112352187],
+
+Cell["\t", "GuideDelimiter",
+ CellID->317386020],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["GetGradientScanOrder",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GetGradientScanOrder"]], 
+  "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["UniqueBvalPosition",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/UniqueBvalPosition"]], 
+  "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["GradRot",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GradRot"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["GradRotMat",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GradRotMat"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->692455794],
+
+Cell["\t", "GuideDelimiter",
+ CellID->32662372],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["GradSeq",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GradSeq"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ImportGradObj",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ImportGradObj"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["GradBmatrix",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GradBmatrix"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["GetSliceNormalDir",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GetSliceNormalDir"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["GetSliceNormal",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GetSliceNormal"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->756312595]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"GradientTools - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 11, 13, 33.3390886}", 
+    "history" -> {"1.0", "", "", ""}, "context" -> "DTITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
+    "None", "summary" -> 
+    "DTITools package: Optimize gradient sets for diffusion tensor imaging", 
+    "synonyms" -> {}, "title" -> "GradientTools", "titlemodifier" -> "", 
+    "windowtitle" -> "GradientTools", "type" -> "Guide", "uri" -> 
+    "DTITools/guide/GradientTools"}, "SearchTextTranslated" -> ""},
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[607, 21, 4577, 96, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[5209, 121, 55, 1, 70, "GuideTitle",
+ CellID->942062912],
+Cell[5267, 124, 215, 6, 70, "GuideAbstract",
+ CellID->2001916300],
+Cell[5485, 132, 276, 8, 70, "GuideText",
+ CellID->203374175],
+Cell[5764, 142, 296, 9, 70, "GuideText",
+ CellID->85707686],
+Cell[6063, 153, 48, 1, 70, "GuideDelimiter",
+ CellID->311258892],
+Cell[6114, 156, 1965, 54, 70, "InlineGuideFunctionListing",
+ CellID->658214510],
+Cell[8082, 212, 47, 1, 70, "GuideDelimiter",
+ CellID->57383872],
+Cell[8132, 215, 994, 27, 70, "InlineGuideFunctionListing",
+ CellID->112352187],
+Cell[9129, 244, 48, 1, 70, "GuideDelimiter",
+ CellID->317386020],
+Cell[9180, 247, 993, 28, 70, "InlineGuideFunctionListing",
+ CellID->692455794],
+Cell[10176, 277, 47, 1, 70, "GuideDelimiter",
+ CellID->32662372],
+Cell[10226, 280, 1233, 33, 70, "InlineGuideFunctionListing",
+ CellID->756312595]
+}, Open  ]],
+Cell[11474, 316, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

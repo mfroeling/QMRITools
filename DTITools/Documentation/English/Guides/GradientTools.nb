@@ -1,0 +1,468 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 8.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[     13008,        459]
+NotebookOptionsPosition[      9882,        349]
+NotebookOutlinePosition[     10306,        365]
+CellTagsIndexPosition[     10263,        362]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[{
+ "New in: ",
+ Cell["1.0", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"],
+ " | Excised in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Excised"]
+}], "History",
+ CellID->1247902091],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->1122911449],
+
+Cell["Guide", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->686433507],
+
+Cell["DTITools", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->605800465],
+
+Cell["DTITools`", "Categorization",
+ CellLabel->"Context",
+ CellID->468444828],
+
+Cell["DTITools/guide/GradientTools", "Categorization",
+ CellLabel->"URI"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->1427428552],
+
+Cell["XXXX", "Keywords",
+ CellID->1251852827]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Details", "DetailsSection",
+ CellID->307771771],
+
+Cell["XXXX", "Details",
+ CellLabel->"Lead",
+ CellID->795394057],
+
+Cell["XXXX", "Details",
+ CellLabel->"Developers",
+ CellID->350963985],
+
+Cell["XXXX", "Details",
+ CellLabel->"Authors",
+ CellID->802101],
+
+Cell["XXXX", "Details",
+ CellLabel->"Feature Name",
+ CellID->509823116],
+
+Cell["XXXX", "Details",
+ CellLabel->"QA",
+ CellID->199884516],
+
+Cell["XXXX", "Details",
+ CellLabel->"DA",
+ CellID->463951815],
+
+Cell["XXXX", "Details",
+ CellLabel->"Docs",
+ CellID->8237523],
+
+Cell["XXXX", "Details",
+ CellLabel->"Features Page Notes",
+ CellID->813936640],
+
+Cell["XXXX", "Details",
+ CellLabel->"Comments",
+ CellID->240026365]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["GradientTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["DTITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/DTITools"],
+ " package: Optimize gradient sets for diffusion tensor imaging"
+}], "GuideAbstract",
+ CellChangeTimes->{{3.530351465671875*^9, 3.530351477625*^9}, {
+  3.5382133495570965`*^9, 3.5382133533384438`*^9}},
+ CellID->2001916300]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["", "GuideFunctionsSection",
+ CellID->1866139230],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["GenerateGradients",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GenerateGradients"]], 
+  "InlineGuideFunction"],
+ " \[LongDash] Optimizes a gradient set."
+}], "GuideText",
+ CellChangeTimes->{{3.53035148134375*^9, 3.53035149621875*^9}, {
+  3.5377079278125*^9, 3.53770794484375*^9}, {3.53771262771875*^9, 
+  3.537712627859375*^9}, {3.5381317408598027`*^9, 3.538131754047134*^9}, {
+  3.657510328863989*^9, 3.657510336283413*^9}},
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["GenerateGradientsGUI",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GenerateGradientsGUI"]], 
+  "InlineGuideFunction"],
+ " \[LongDash] Optimizes a gradient set using a GUI."
+}], "GuideText",
+ CellChangeTimes->{{3.657510405382365*^9, 3.6575104430425196`*^9}},
+ CellID->85707686],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["GradDirs",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GradDirs"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["Bmatrix",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/Bmatrix"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["BmatrixCalc",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/BmatrixCalc"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["BmatrixConv",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/BmatrixConv"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["BmatrixInv",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/BmatrixInv"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["BmatrixRot",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/BmatrixRot"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["BmatrixToggle",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/BmatrixToggle"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["BvecCreate",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/BvecCreate"]], "InlineFormula"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{{3.657510450322936*^9, 3.657510478566551*^9}, {
+  3.6575105969493227`*^9, 3.6575106712865744`*^9}, {3.657518643988371*^9, 
+  3.6575186460065727`*^9}, {3.6575186767886505`*^9, 3.6575186891278844`*^9}, {
+  3.6575252620538163`*^9, 3.6575252673478165`*^9}, {3.6575322713891897`*^9, 
+  3.657532275275464*^9}},
+ CellID->658214510]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->57383872],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["CalculateMoments",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/CalculateMoments"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["ConditionNumberCalc",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/ConditionNumberCalc"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["EnergyCalc",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/EnergyCalc"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["OverPlusCalc",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/OverPlusCalc"]], "InlineFormula"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{{3.657510450322936*^9, 3.657510478566551*^9}, {
+  3.6575105969493227`*^9, 3.657510600428521*^9}, {3.6575106823262053`*^9, 
+  3.6575107265017323`*^9}, {3.6575126955783553`*^9, 3.6575127078770437`*^9}, {
+  3.657518135910568*^9, 3.6575181474767246`*^9}, {3.657518344278403*^9, 
+  3.6575183455315285`*^9}, {3.657518412728247*^9, 3.6575184135123253`*^9}, {
+  3.6575184578797617`*^9, 3.6575184583838124`*^9}, {3.657518691872159*^9, 
+  3.657518714563428*^9}, {3.6575339422871485`*^9, 3.6575339550074205`*^9}},
+ CellID->112352187]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->317386020],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["GetGradientScanOrder",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GetGradientScanOrder"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["UniqueBvalPosition",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/UniqueBvalPosition"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["GradRot",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GradRot"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["GradRotMat",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GradRotMat"]], "InlineFormula"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{{3.657510450322936*^9, 3.657510478566551*^9}, {
+  3.6575105969493227`*^9, 3.657510600428521*^9}, {3.6575106823262053`*^9, 
+  3.6575107265017323`*^9}, {3.6575126955783553`*^9, 3.6575127078770437`*^9}, {
+  3.657518135910568*^9, 3.6575181474767246`*^9}, {3.6575181839473715`*^9, 
+  3.65751821143312*^9}, {3.6575182876467404`*^9, 3.657518320667042*^9}, {
+  3.6575185328662596`*^9, 3.6575185347124443`*^9}, {3.657518717145686*^9, 
+  3.657518733733344*^9}, {3.657533968562776*^9, 3.657533985112431*^9}},
+ CellID->692455794]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->32662372],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["GradSeq",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GradSeq"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["ImportGradObj",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/ImportGradObj"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["GradBmatrix",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GradBmatrix"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["GetSliceNormalDir",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GetSliceNormalDir"]], "InlineFormula"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["GetSliceNormal",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/GetSliceNormal"]], "InlineFormula"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{{3.657510450322936*^9, 3.657510478566551*^9}, {
+  3.6575105969493227`*^9, 3.657510600428521*^9}, {3.6575106823262053`*^9, 
+  3.6575107265017323`*^9}, {3.6575126955783553`*^9, 3.6575127078770437`*^9}, {
+  3.657518135910568*^9, 3.6575181474767246`*^9}, {3.6575181839473715`*^9, 
+  3.65751821143312*^9}, {3.6575182644654226`*^9, 3.65751829073905*^9}, {
+  3.6575186310540776`*^9, 3.6575186328462567`*^9}, {3.65751873568854*^9, 
+  3.657518850376398*^9}, {3.6575339936972895`*^9, 3.6575340161295323`*^9}},
+ CellID->756312595]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tutorials", "GuideTutorialsSection",
+ CellID->415694126],
+
+Cell["XXXX", "GuideTutorial",
+ CellID->806871991],
+
+Cell["XXXX", "GuideTutorial",
+ CellID->1885805579]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["More About", "GuideMoreAboutSection",
+ CellID->23220180],
+
+Cell["XXXX", "GuideMoreAbout",
+ CellID->1567025153],
+
+Cell["XXXX", "GuideMoreAbout",
+ CellID->252299663]
+}, Open  ]],
+
+Cell["Related Links", "GuideRelatedLinksSection",
+ CellID->415694148]
+},
+WindowSize->{700, 770},
+WindowMargins->{{Automatic, 283}, {Automatic, 76}},
+FrontEndVersion->"10.3 for Microsoft Windows (64-bit) (October 9, 2015)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "GuidePageStyles.nb", 
+  CharacterEncoding -> "WindowsANSI"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[557, 20, 325, 14, 22, "History",
+ CellID->1247902091],
+Cell[CellGroupData[{
+Cell[907, 38, 68, 1, 27, "CategorizationSection",
+ CellID->1122911449],
+Cell[978, 41, 78, 2, 70, "Categorization",
+ CellID->686433507],
+Cell[1059, 45, 81, 2, 70, "Categorization",
+ CellID->605800465],
+Cell[1143, 49, 78, 2, 70, "Categorization",
+ CellID->468444828],
+Cell[1224, 53, 73, 1, 70, "Categorization"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[1334, 59, 56, 1, 17, "KeywordsSection",
+ CellID->1427428552],
+Cell[1393, 62, 45, 1, 70, "Keywords",
+ CellID->1251852827]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[1475, 68, 53, 1, 17, "DetailsSection",
+ CellID->307771771],
+Cell[1531, 71, 63, 2, 70, "Details",
+ CellID->795394057],
+Cell[1597, 75, 69, 2, 70, "Details",
+ CellID->350963985],
+Cell[1669, 79, 63, 2, 70, "Details",
+ CellID->802101],
+Cell[1735, 83, 71, 2, 70, "Details",
+ CellID->509823116],
+Cell[1809, 87, 61, 2, 70, "Details",
+ CellID->199884516],
+Cell[1873, 91, 61, 2, 70, "Details",
+ CellID->463951815],
+Cell[1937, 95, 61, 2, 70, "Details",
+ CellID->8237523],
+Cell[2001, 99, 78, 2, 70, "Details",
+ CellID->813936640],
+Cell[2082, 103, 67, 2, 70, "Details",
+ CellID->240026365]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2186, 110, 55, 1, 76, "GuideTitle",
+ CellID->942062912],
+Cell[2244, 113, 331, 8, 25, "GuideAbstract",
+ CellID->2001916300]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2612, 126, 54, 1, 68, "GuideFunctionsSection",
+ CellID->1866139230],
+Cell[2669, 129, 504, 12, 23, "GuideText",
+ CellID->203374175],
+Cell[3176, 143, 334, 9, 23, "GuideText",
+ CellID->85707686],
+Cell[CellGroupData[{
+Cell[3535, 156, 48, 1, 26, "GuideDelimiter",
+ CellID->311258892],
+Cell[3586, 159, 1658, 46, 40, "InlineGuideFunctionListing",
+ CellID->658214510]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5281, 210, 47, 1, 26, "GuideDelimiter",
+ CellID->57383872],
+Cell[5331, 213, 1242, 28, 23, "InlineGuideFunctionListing",
+ CellID->112352187]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6610, 246, 48, 1, 26, "GuideDelimiter",
+ CellID->317386020],
+Cell[6661, 249, 1233, 28, 23, "InlineGuideFunctionListing",
+ CellID->692455794]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7931, 282, 47, 1, 26, "GuideDelimiter",
+ CellID->32662372],
+Cell[7981, 285, 1391, 33, 23, "InlineGuideFunctionListing",
+ CellID->756312595]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9421, 324, 62, 1, 70, "GuideTutorialsSection",
+ CellID->415694126],
+Cell[9486, 327, 49, 1, 20, "GuideTutorial",
+ CellID->806871991],
+Cell[9538, 330, 50, 1, 20, "GuideTutorial",
+ CellID->1885805579]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9625, 336, 62, 1, 70, "GuideMoreAboutSection",
+ CellID->23220180],
+Cell[9690, 339, 51, 1, 20, "GuideMoreAbout",
+ CellID->1567025153],
+Cell[9744, 342, 50, 1, 20, "GuideMoreAbout",
+ CellID->252299663]
+}, Open  ]],
+Cell[9809, 346, 69, 1, 70, "GuideRelatedLinksSection",
+ CellID->415694148]
+}
+]
+*)
+
+(* End of internal cache information *)

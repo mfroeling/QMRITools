@@ -1,0 +1,292 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9880,        282]
+NotebookOptionsPosition[      7709,        222]
+NotebookOutlinePosition[      9197,        260]
+CellTagsIndexPosition[      9154,        257]
+WindowTitle->MaskingTools - Wolfram Mathematica
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"Functions \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"GetMaskData\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/GetMaskData"], "\<\"HomoginizeData\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/HomoginizeData"], "\<\"Mask\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/Mask"], "\<\"MaskBin\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MaskBin"], "\<\"MaskDTIdata\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MaskDTIdata"], "\<\"MaskTensData\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MaskTensData"], "\<\"NormalizeData\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/NormalizeData"], "\<\"ReadGof\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadGof"], "\<\"ReadROI\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ReadROI"], "\<\"ROIMask\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ROIMask"], "\<\"SmartMask\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/SmartMask"], "\<\"SmartMask2\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/SmartMask2"], "\<\"SmoothMask\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/ref/SmoothMask"]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+        StripOnInput->False], {"\<\"DTITools/guide/MaskingTools\"\>":>
+       None, "\<\"Copy Mathematica url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/guide/MaskingTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web url\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/mathematica/DTITools/guide/\
+MaskingTools.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+            "http://reference.wolfram.com/mathematica/", 
+             "DTITools/guide/MaskingTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["MaskingTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["DTITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/DTITools"],
+ " package: Fucntions that are used to create masks"
+}], "GuideAbstract",
+ CellID->2001916300],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["SmartMask",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/SmartMask"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " ",
+ "Creates a mask from diffuion tensor"
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["SmartMask2",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/SmartMask2"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " ",
+ "Creates a mask from diffuion tensor"
+}], "GuideText",
+ CellID->1463276848],
+
+Cell["\t", "GuideDelimiter",
+ CellID->327615311],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["Mask",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/Mask"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["MaskBin",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MaskBin"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["GetMaskData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/GetMaskData"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["MaskDTIdata",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MaskDTIdata"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["MaskTensData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MaskTensData"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["SmoothMask",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/SmoothMask"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->171597090],
+
+Cell["\t", "GuideDelimiter",
+ CellID->84809333],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["HomoginizeData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/HomoginizeData"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["NormalizeData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/NormalizeData"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["MaskTensData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MaskTensData"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->102002011],
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ReadROI",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadROI"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ReadGof",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ReadGof"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ROIMask",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ROIMask"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"MaskingTools - Wolfram Mathematica",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}], 
+        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+  "Metadata" -> {
+   "built" -> "{2016, 3, 23, 11, 13, 39.8047351}", 
+    "history" -> {"1.0", "", "", ""}, "context" -> "DTITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
+    "None", "summary" -> 
+    "DTITools package: Fucntions that are used to create masks", 
+    "synonyms" -> {}, "title" -> "MaskingTools", "titlemodifier" -> "", 
+    "windowtitle" -> "MaskingTools", "type" -> "Guide", "uri" -> 
+    "DTITools/guide/MaskingTools"}, "SearchTextTranslated" -> ""},
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[606, 21, 3475, 77, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4106, 102, 54, 1, 70, "GuideTitle",
+ CellID->942062912],
+Cell[4163, 105, 203, 6, 70, "GuideAbstract",
+ CellID->2001916300],
+Cell[4369, 113, 275, 9, 70, "GuideText",
+ CellID->203374175],
+Cell[4647, 124, 278, 9, 70, "GuideText",
+ CellID->1463276848],
+Cell[4928, 135, 48, 1, 70, "GuideDelimiter",
+ CellID->327615311],
+Cell[4979, 138, 1296, 35, 70, "InlineGuideFunctionListing",
+ CellID->171597090],
+Cell[6278, 175, 47, 1, 70, "GuideDelimiter",
+ CellID->84809333],
+Cell[6328, 178, 661, 17, 70, "InlineGuideFunctionListing",
+ CellID->102002011],
+Cell[6992, 197, 48, 1, 70, "GuideDelimiter",
+ CellID->311258892],
+Cell[7043, 200, 624, 17, 70, "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+Cell[7682, 220, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

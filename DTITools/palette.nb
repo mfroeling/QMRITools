@@ -1,0 +1,2087 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 9.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[    101817,       2078]
+NotebookOptionsPosition[    101469,       2063]
+NotebookOutlinePosition[    101913,       2080]
+CellTagsIndexPosition[    101870,       2077]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", "\[IndentingNewLine]", 
+     RowBox[{
+     "nobo", ",", "pannels", ",", "expToolsPan", ",", "impToolsPan", ",", 
+      "plotToolsPan", ",", "gradToolsPan", ",", "\[IndentingNewLine]", 
+      "manToolsPan", ",", "regToolsPan", ",", "proToolsPan", ",", 
+      "maskToolsPan", ",", "simToolsPan", "\[IndentingNewLine]", ",", 
+      RowBox[{"blocksizeT", "=", "24"}], ",", 
+      RowBox[{"blocksize", "=", "23.5"}], ",", 
+      RowBox[{"palsize", "=", "28.5"}]}], "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"With", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"PanelOpener", "=", 
+         RowBox[{"Function", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"name", ",", "input", ",", "open"}], "}"}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"OpenerView", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"Style", "[", 
+                RowBox[{"name", ",", "Bold", ",", "Medium", ",", 
+                 RowBox[{"FontFamily", "\[Rule]", "\"\<Helvetica\>\""}]}], 
+                "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"Column", "[", 
+                RowBox[{"{", "\[IndentingNewLine]", 
+                 RowBox[{
+                  RowBox[{"Hyperlink", "[", 
+                   RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{
+                    RowBox[{"\"\<Documentation \>\"", "<>", "name"}], ",", 
+                    RowBox[{"FontFamily", "\[Rule]", "\"\<Helvetica\>\""}], 
+                    ",", "11", ",", "Bold", ",", 
+                    RowBox[{"Darker", "[", "Blue", "]"}]}], "]"}], ",", 
+                    RowBox[{"\"\<paclet:DTITools/guide/\>\"", "<>", "name"}], 
+                    ",", 
+                    RowBox[{"Appearance", "\[Rule]", "\"\<Palette\>\""}]}], 
+                   "]"}], ",", "\[IndentingNewLine]", "input"}], 
+                 "\[IndentingNewLine]", "}"}], "]"}]}], "\[IndentingNewLine]",
+               "}"}], ",", "open"}], "]"}]}], "\[IndentingNewLine]", "]"}]}], 
+        ",", "\[IndentingNewLine]", 
+        RowBox[{"PasteButton2", "=", 
+         RowBox[{"Function", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"name", ",", "function"}], "}"}], ",", 
+           RowBox[{"PasteButton", "[", 
+            RowBox[{"name", ",", "function", ",", 
+             RowBox[{"Appearance", "->", "\"\<FramedPalette\>\""}]}], "]"}]}],
+           "]"}]}], ",", "\[IndentingNewLine]", 
+        RowBox[{"ButtonBlock", "=", 
+         RowBox[{"Function", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"name", ",", "grid", ",", "size"}], "}"}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"Column", "[", 
+            RowBox[{"{", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"Style", "[", 
+               RowBox[{"name", ",", "Bold", ",", "10", ",", 
+                RowBox[{"FontFamily", "\[Rule]", "\"\<Helvetica\>\""}]}], 
+               "]"}], ",", "\[IndentingNewLine]", 
+              RowBox[{"Grid", "[", 
+               RowBox[{"grid", ",", 
+                RowBox[{"Spacings", "\[Rule]", 
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "0"}], "}"}]}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"ItemSize", "\[Rule]", 
+                 RowBox[{"(", 
+                  RowBox[{"size", "/", 
+                   RowBox[{
+                    RowBox[{"Dimensions", "[", "grid", "]"}], "[", 
+                    RowBox[{"[", "2", "]"}], "]"}]}], ")"}]}]}], "]"}]}], 
+             "\[IndentingNewLine]", "}"}], "]"}]}], "\[IndentingNewLine]", 
+          "]"}]}], ",", "\[IndentingNewLine]", 
+        RowBox[{"InitTools", "=", 
+         RowBox[{"Function", "[", 
+          RowBox[{
+           RowBox[{"{", "}"}], ",", 
+           RowBox[{"Quiet", "[", "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{"nobo", "=", 
+              RowBox[{"InputNotebook", "[", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"SelectionMove", "[", 
+              RowBox[{"nobo", ",", "Before", ",", "Notebook"}], "]"}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"NotebookFind", "[", 
+              RowBox[{
+              "nobo", ",", "\"\<<<DTITools`\>\"", ",", "Next", ",", "Cell", 
+               ",", 
+               RowBox[{"AutoScroll", "\[Rule]", "False"}]}], "]"}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"!", 
+                RowBox[{
+                 RowBox[{"NotebookRead", "[", "nobo", "]"}], "=!=", 
+                 RowBox[{"{", "}"}]}]}], ",", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"SelectionMove", "[", 
+                 RowBox[{"nobo", ",", "Before", ",", "Notebook"}], "]"}], ";",
+                 "\[IndentingNewLine]", 
+                RowBox[{"NotebookFind", "[", 
+                 RowBox[{
+                 "nobo", ",", "\"\<Needs[\\\"DTITools`\\\"]\>\"", ",", "Next",
+                   ",", "Cell", ",", 
+                  RowBox[{"AutoScroll", "\[Rule]", "False"}]}], "]"}], ";", 
+                "\[IndentingNewLine]", 
+                RowBox[{"NotebookWrite", "[", 
+                 RowBox[{"nobo", ",", "\"\<Needs[\\\"DTITools`\\\"]\>\""}], 
+                 "]"}], ";"}], "\[IndentingNewLine]", ",", 
+               "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"NotebookWrite", "[", 
+                 RowBox[{"nobo", ",", "\"\<<<DTITools`\>\""}], "]"}], ";"}]}],
+               "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"SelectionMove", "[", 
+              RowBox[{"nobo", ",", "All", ",", "Cell"}], "]"}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"SelectionEvaluate", "[", "nobo", "]"}]}], 
+            "\[IndentingNewLine]", "]"}]}], "]"}]}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"QuitKernel", "=", 
+         RowBox[{"Function", "[", 
+          RowBox[{
+           RowBox[{"{", "}"}], ",", 
+           RowBox[{"FrontEndExecute", "[", 
+            RowBox[{"FrontEndToken", "[", 
+             RowBox[{
+              RowBox[{"SelectedNotebook", "[", "]"}], ",", 
+              "\"\<EvaluatorQuit\>\"", ",", "Automatic"}], "]"}], "]"}]}], 
+          "]"}]}]}], "\[IndentingNewLine]", "}"}], "\[IndentingNewLine]", ",",
+       "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"expToolsPan", "=", 
+        RowBox[{"TabView", "[", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"\"\<DTItool\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<DTI export functions\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<DTItoolExp\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"DTItoolExp", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tensor\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<voxsize\>\"", "]"}], ",",
+                     " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"folder\\\"\>\"", "]"}]}], 
+                    "]"}], "]"}]}], "]"}], ",", "SpanFromLeft"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ExportVol\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"ExportVol", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"filename\\\"\>\"", "]"}], 
+                    ",", 
+                    RowBox[{"Placeholder", "[", "\"\< data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<voxsize\>\"", "]"}]}], 
+                    "]"}], "]"}]}], "]"}], ",", "SpanFromLeft"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<DatWrite\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"DatWrite", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"filename\\\"\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}]}], 
+                    "]"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<DTItoolExpFile\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"DTItoolExpFile", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<\\\"file\\\"\>\"", "]"}],
+                     ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<background\>\"", "]"}], 
+                    ",", 
+                    RowBox[{"Placeholder", "[", "\"\<\\\" add\\\"\>\"", "]"}],
+                     ",", 
+                    RowBox[{"Placeholder", "[", "\"\< voxsize\>\"", "]"}]}], 
+                    "]"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<DTItoolExpInd\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"DTItoolExpInd", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\" file\\\"\>\"", "]"}], " ", 
+                    ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"folder\\\"\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"add\\\"\>\"", "]"}]}], "]"}],
+                     "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<DTItoolExpTens\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"DTItoolExpTens", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tensor\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<\\\"add\\\"\>\"", "]"}], 
+                    ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\" folder\\\"\>\"", "]"}]}], 
+                    "]"}], "]"}]}], "]"}]}], "}"}]}], "\[IndentingNewLine]", 
+               "}"}], ",", "blocksizeT"}], "]"}]}], "\[IndentingNewLine]", 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<Graph\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Graph export functions\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<FileSave\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"FileSave", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<graph\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\< \\\"fileType\\\"\>\"", "]"}], 
+                    ",", 
+                    RowBox[{"Placeholder", "[", "\"\<size\>\"", "]"}]}], 
+                    "]"}], "]"}]}], "]"}], ",", "SpanFromLeft"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ExpHistAll\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"ExpHistAll", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\" filename\\\"\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"add\\\"\>\"", "]"}]}], "]"}],
+                     "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ExpHistInd\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"ExpHistInd", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"filename\\\"\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"add\\\"\>\"", "]"}]}], "]"}],
+                     "]"}]}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ExpPlotsAll\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"ExpPlotsAll", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\" filename\\\"\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<\\\"add\\\"\>\"", "]"}], 
+                    ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\" label\\\"\>\"", "]"}]}], 
+                    "]"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ExpPlotsInd\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{"ExpPlotsInd", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"filename\\\"\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<\\\"add\\\"\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}]}], 
+                    "]"}], "]"}]}], "]"}]}], "}"}]}], "\[IndentingNewLine]", 
+               "}"}], ",", "blocksizeT"}], "]"}]}]}], "\[IndentingNewLine]", 
+          "}"}], "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"gradToolsPan", "=", 
+        RowBox[{"Panel", "[", "\[IndentingNewLine]", 
+         RowBox[{"ButtonBlock", "[", 
+          RowBox[{
+          "\"\<Gradient optimization functions\>\"", ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"{", "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<GradOptimize\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], "=", 
+                    RowBox[{"GradOptimize", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<ndir\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", "SpanFromLeft"}], 
+              "}"}], ",", "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<Force\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<force\>\"", "]"}], "=", 
+                    RowBox[{"Force", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<grads\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+               "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<OverPlus\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<opFactor\>\"", "]"}], 
+                    "=", 
+                    RowBox[{"OverPlus", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<grads\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<Grad\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], "=", 
+                    RowBox[{"Grad", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<name\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+               "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<Init\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<init\>\"", "]"}], "=", 
+                    RowBox[{"Init", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<n\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"mode\\\"\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<GradRotMat\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<rotmat\>\"", "]"}], "=", 
+                    RowBox[{"GradRotMat", "[", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"file.dcm\\\"\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+               "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<GradRot\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<gradRot\>\"", "]"}], "=", 
+                    RowBox[{"GradRot", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"file.dcm\\\"\>\"", "]"}], 
+                    ",", 
+                    RowBox[{"Placeholder", "[", "\"\<grads\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}]}], 
+            "\[IndentingNewLine]", "}"}], ",", "blocksize"}], "]"}], 
+         "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"impToolsPan", "=", 
+        RowBox[{"TabView", "[", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"\"\<Dicom images\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{"\"\<Import image data\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<ReadDicom\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], "=", 
+                    RowBox[{"ReadDicom", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"folder\\\"\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<n\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}], "}"}], ",", "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<ReadDicomDiff\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<bvec\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}]}], "}"}],
+                     "=", 
+                    RowBox[{"ReadDicomDiff", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<\\\"file\\\"\>\"", "]"}],
+                     ",", 
+                    RowBox[{"Placeholder", "[", "\"\<n\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}], "}"}], ",", "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<ReadDicomDir\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}]}], "}"}],
+                     "=", 
+                    RowBox[{"ReadDicomDir", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<\\\"file\\\"\>\"", "]"}],
+                     ",", 
+                    RowBox[{"Placeholder", "[", "\"\<n\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}], "}"}], ",", "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<ReadDicomDirDiff\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<bvec\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}]}], "}"}],
+                     "=", 
+                    RowBox[{"ReadDicomDirDiff", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<\\\"file\\\"\>\"", "]"}],
+                     ",", 
+                    RowBox[{"Placeholder", "[", "\"\<n\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}], "}"}]}], "\[IndentingNewLine]", 
+               "}"}], ",", "blocksizeT"}], "]"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"\"\<Dicom headers\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Import Header parameters\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ReadGradients\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], "=", 
+                    RowBox[{"ReadGradients", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"folder\\\"\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<n\>\"", "]"}]}], "]"}]}],
+                     "]"}]}], "]"}], ",", "SpanFromLeft"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ReadBvalue\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<bval\>\"", "]"}], "=", 
+                    RowBox[{"ReadBvalue", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"folder\\\"\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<n\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<Bvec\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<bvec\>\"", "]"}], "=", 
+                    RowBox[{"Bvec", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<bvalue\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<gradients\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ReadVoxSize\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}], "=", 
+                    RowBox[{"ReadVoxSize", "[", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"file.dcm\\\"\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ShiftPar\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<shif\>\"", "]"}], "=", 
+                    RowBox[{"ShiftPar", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"B0file.dcm\\\"\>\"", "]"}], 
+                    ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"DTIfile.dcm\\\"\>\"", 
+                    "]"}]}], "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<BvalRead\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<bval\>\"", "]"}], "=", 
+                    RowBox[{"BvalRead", "[", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"file.dcm\\\"\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<GradRead\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], "=", 
+                    RowBox[{"GradRead", "[", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"file.dcm\\\"\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}]}], 
+               "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], "]"}]}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<DTItool\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Import DTItool data\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<ImportDTI\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tensor\>\"", "]"}], "=", 
+                    RowBox[{"ImportDTI", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"folder\\\"\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"add\\\"\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<DatRead\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], "=", 
+                    RowBox[{"DatRead", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<\\\"file\\\"\>\"", "]"}],
+                     "]"}]}], ";"}], "]"}]}], "]"}], "}"}]}], 
+               "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], "]"}]}]}], 
+          "\[IndentingNewLine]", "}"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"manToolsPan", "=", 
+        RowBox[{"TabView", "[", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"\"\<Enhance\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Denoise, Unwarp and correction functions\>\"", ",", 
+              "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<DeNoise\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataN\>\"", "]"}], "=", 
+                    RowBox[{"DeNoise", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<sigma\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<filtersize\>\"", "]"}]}],
+                     "]"}]}], ";"}], "]"}]}], "]"}], ",", "SpanFromLeft"}], 
+                 "}"}], ",", "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<Correct\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataC\>\"", "]"}], "=", 
+                    RowBox[{"Correct", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<phase\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<shiftpar\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<TensorCorrect\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tensC\>\"", "]"}], "=", 
+                    RowBox[{"TensorCorrect", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tens\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<phase\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<shiftpars\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<Unwrap\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataU\>\"", "]"}], "=", 
+                    RowBox[{"Unwrap", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<Deriv\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<deriv\>\"", "]"}], "=", 
+                    RowBox[{"Deriv", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<disp field\>\"", "]"}], 
+                    ",", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}]}], 
+               "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], "]"}]}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<Form\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Chaning tensor and joining sets\>\"", ",", 
+              "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<JoinSets\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataJ\>\"", "]"}], "=", 
+                    RowBox[{"JoinSets", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dat1\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<dat2\>\"", "]"}]}], 
+                    "}"}], ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<over\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<TensMat\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tensM\>\"", "]"}], "=", 
+                    RowBox[{"TensMat", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<tensV\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<TensVec\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tensV\>\"", "]"}], "=", 
+                    RowBox[{"TensVec", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<tensM\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}]}], 
+               "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], "]"}]}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<Resize\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Resize data function\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<RescaleData\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataR\>\"", "]"}], "=", 
+                    RowBox[{"RescaleData", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<slices\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<dimx\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<dimy\>\"", "]"}]}], 
+                    "}"}]}], "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<RescaleDataInt\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataR\>\"", "]"}], "=", 
+                    RowBox[{"RescaleDataInt", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<slices\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<dimx\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<dimy\>\"", "]"}]}], 
+                    "}"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<int\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<RescaleImg\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataR\>\"", "]"}], "=", 
+                    RowBox[{"RescaleImg", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<image\>\"", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dimx\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<dimy\>\"", "]"}]}], 
+                    "}"}]}], "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<RescaleImgInt\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataR\>\"", "]"}], "=", 
+                    RowBox[{"RescaleImgInt", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<image\>\"", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dimx\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<dimy\>\"", "]"}]}], 
+                    "}"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<int\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}]}], 
+               "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], "]"}]}]}], 
+          "\[IndentingNewLine]", "}"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"regToolsPan", "=", 
+        RowBox[{"TabView", "[", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"\"\<Registration\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Registration Functions\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<DiffuisonRegistration\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataR\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<gradR\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}]}], "}"}], 
+                    "=", 
+                    RowBox[{"DiffusionRegistration", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<Registration2D\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}], "=", 
+                    RowBox[{"Registration2D", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<image\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<defImage\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0"}], 
+                    "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    "1", ",", "1", ",", "1", ",", "1", ",", "1", ",", "1"}], 
+                    "}"}]}], "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<Registration3D\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}], "=", 
+                    RowBox[{"Registration3D", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<defData\>\"", "]"}], ",",
+                     " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+                    ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", 
+                    "0"}], "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    "1", ",", "1", ",", "1", ",", "1", ",", "1", ",", "1", 
+                    ",", "1", ",", "1", ",", "1", ",", "1", ",", "1", ",", 
+                    "1"}], "}"}]}], "]"}]}], ";"}], "]"}]}], "]"}], "}"}], 
+                ",", "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<DiffusionCorrect\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataR\>\"", "]"}], "=", 
+                    RowBox[{"DiffusionCorrect", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}], "}"}], ",", "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<GradientCorrect\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<gradR\>\"", "]"}], "=", 
+                    RowBox[{"GradientCorrect", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}], "}"}]}], "\[IndentingNewLine]", 
+               "}"}], ",", "blocksizeT"}], "]"}]}], "\[IndentingNewLine]", 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<Internal\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Internal functions for registration\>\"", ",", 
+              "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<GridData\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<grid\>\"", "]"}], "=", 
+                    RowBox[{"GridData", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<sp\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<RemovePeaks\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataP\>\"", "]"}], "=", 
+                    RowBox[{"RemovePeaks", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<NormalizedDerivative2D\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<nDer\>\"", "]"}], "=", 
+                    RowBox[{"NormalizedDerivative2D", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<image\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\< n\>\"", "]"}], ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<t\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<NormalizedDerivative3D\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<nDer\>\"", "]"}], "=", 
+                    RowBox[{"NormalizedDerivative3D", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<n\>\"", "]"}], ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<t\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<GridInterpolation2D\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<imageG\>\"", "]"}], "=", 
+                    RowBox[{"GridInterpolation2D", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<image\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<grid\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<GridInterpolation3D\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataG\>\"", "]"}], "=", 
+                    RowBox[{"GridInterpolation3D", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<grid\>\"", "]"}]}], 
+                    "]"}]}], " ", ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<TransformGrid2D\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<gridT\>\"", "]"}], "=", 
+                    RowBox[{"TransformGrid2D", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<grid\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\< w\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<TransformGrid3D\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<gridT\>\"", "]"}], "=", 
+                    RowBox[{"TransformGrid3D", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<grid\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<DefImage\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<imageR\>\"", "]"}], "=", 
+                    RowBox[{"DefImage", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<image\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}]}], "]"}]}],
+                     " ", ";"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<DefData\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], "=", 
+                    RowBox[{"DefData", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}]}], "]"}]}],
+                     ";"}], "]"}]}], "]"}]}], "}"}]}], "\[IndentingNewLine]", 
+               "}"}], ",", "blocksizeT"}], "]"}]}]}], "\[IndentingNewLine]", 
+          "}"}], "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"proToolsPan", "=", 
+        RowBox[{"TabView", "[", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"\"\<Calc\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Calculation Functions\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<TensorCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tens\>\"", "]"}], "=", 
+                    RowBox[{"TensorCalc", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<bvec\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<EigensysCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<eigVal\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<eigVec\>\"", "]"}]}], 
+                    "}"}], "=", 
+                    RowBox[{"EigensysCalc", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<tensor\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<EigenvalCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<eigVal\>\"", "]"}], "=", 
+                    RowBox[{"EigenvalCalc", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<tensor\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<EigenvecCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<eigVec\>\"", "]"}], "=", 
+                    RowBox[{"EigenvecCalc", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<tensor\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ResidualCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<res\>\"", "]"}], "=", 
+                    RowBox[{"ResidualCalc", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<tensor\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<bvec\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<PhaseCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<phase=\>\"", "]"}], 
+                    RowBox[{"PhaseCalc", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<B0data\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ParameterCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<l1\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<l2\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<l3\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<fa\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<md\>\"", "]"}]}], "}"}], 
+                    "=", 
+                    RowBox[{"ParameterCalc", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<tensor\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ADCCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<md\>\"", "]"}], "=", 
+                    RowBox[{"ADCCalc", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<eigVal\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<FACalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<fa\>\"", "]"}], "=", 
+                    RowBox[{"FACalc", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<eigVal\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ECalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<e\>\"", "]"}], "=", 
+                    RowBox[{"ECalc", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<eigVal\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<AngleCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<ang\>\"", "]"}], "=", 
+                    RowBox[{"AngleCalc", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<vec\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<AngleMap\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<zen\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<azi\>\"", "]"}]}], "}"}],
+                     "=", 
+                    RowBox[{"AngleMap", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<vec\>\"", "]"}], "]"}]}],
+                     ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<SigmaCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<sig\>\"", "]"}], "=", 
+                    RowBox[{"SigmaCalc", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<bvec\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<SNRCalc\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<snr\>\"", "]"}], "=", 
+                    RowBox[{"SNRCalc", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<masksig\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<masknoise\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}]}], 
+               "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], "]"}]}], 
+           "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<Pars\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Parameters Functions\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<SliceData\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataS\>\"", "]"}], "=", 
+                    RowBox[{"SliceData", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<FitData\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<fit\>\"", "]"}], "=", 
+                    RowBox[{"FitData", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<range\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<ParameterFit\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<pars\>\"", "]"}], "=", 
+                    RowBox[{"ParameterFit", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<ParameterFit2\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<pars\>\"", "]"}], "=", 
+                    RowBox[{"ParameterFit2", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<DatTot\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<datTable\>\"", "]"}], 
+                    "=", 
+                    RowBox[{"DatTot", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data1\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<data2\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<..\>\"", "]"}]}], "}"}], 
+                    ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<name\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{"PasteButton2", "[", 
+                  RowBox[{"\"\<DatTotXLS\>\"", ",", 
+                   RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<datTable\>\"", "]"}], 
+                    "=", 
+                    RowBox[{"DatTotXLS", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data1\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<data2\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<..\>\"", "]"}]}], "}"}], 
+                    ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<name\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\< vox\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], "}"}]}], 
+               "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], "]"}]}]}], 
+          "\[IndentingNewLine]", "}"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"maskToolsPan", "=", 
+        RowBox[{"TabView", "[", 
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"\"\<Masks\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{"\"\<Masking Functions\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<Mask\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<mask\>\"", "]"}], "=", 
+                    RowBox[{"Mask", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tresh min\>\"", "]"}], 
+                    ",", 
+                    RowBox[{"Placeholder", "[", "\"\<tresh max\>\"", "]"}]}], 
+                    "}"}]}], "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<MaskBin\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<maskBin\>\"", "]"}], "=", 
+                    RowBox[{"MaskBin", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<SmartMask\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<smask\>\"", "]"}], "=", 
+                    RowBox[{"SmartMask", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<mask\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<SmartMask2\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<smask\>\"", "]"}], "=", 
+                    RowBox[{"SmartMask2", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<GetMaskData\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataM\>\"", "]"}], "=", 
+                    RowBox[{"GetMaskData", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<mask\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", "SpanFromLeft"}], 
+                 "}"}]}], "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], 
+             "]"}]}], "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
+           RowBox[{"\"\<VolumeTool\>\"", "->", "\[IndentingNewLine]", 
+            RowBox[{"ButtonBlock", "[", 
+             RowBox[{
+             "\"\<Volume Tool Functions\>\"", ",", "\[IndentingNewLine]", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ReadGof\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<roi\>\"", "]"}], "=", 
+                    RowBox[{"ReadGof", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"file.gof\\\"\>\"", "]"}], 
+                    ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\" T1.dcm\\\"\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<GofImport\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<gofData\>\"", "]"}], "=", 
+                    RowBox[{"GofImport", "[", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"file.gof\\\"\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ReadROI\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<roi\>\"", "]"}], "=", 
+                    RowBox[{"ReadROI", "[", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"file.gof\\\"\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<voxel\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<zdim\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<xdim\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<ydim\>\"", "]"}]}], 
+                    "}"}]}], "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"PasteButton2", "[", 
+                   RowBox[{"\"\<ROIMask\>\"", ",", 
+                    RowBox[{"Defer", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<mask\>\"", "]"}], "=", 
+                    RowBox[{"ROIMask", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<zdim\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<xdim\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<ydim\>\"", "]"}]}], 
+                    "}"}], " ", ",", 
+                    RowBox[{"Placeholder", "[", "\"\<roi\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}]}], 
+               "\[IndentingNewLine]", "}"}], ",", "blocksizeT"}], "]"}]}]}], 
+          "\[IndentingNewLine]", "}"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"simToolsPan", "=", 
+        RowBox[{"Panel", "[", "\[IndentingNewLine]", 
+         RowBox[{"ButtonBlock", "[", 
+          RowBox[{
+          "\"\<Tensor Simulation Functions\>\"", ",", "\[IndentingNewLine]", 
+           RowBox[{"{", "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<Signal\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<sig\>\"", "]"}], "=", 
+                    RowBox[{"Signal", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<pd\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<T1\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<T2\>\"", "]"}]}], "}"}], 
+                    ",", 
+                    RowBox[{"Placeholder", "[", "\"\<TR\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<TE\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+               "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<Tensor\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tens\>\"", "]"}], "=", 
+                    RowBox[{"Tensor", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<l1\>\"", "]"}], ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<l2\>\"", "]"}], ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<l3\>\"", "]"}]}], "}"}], 
+                    ",", " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<e1\>\"", "]"}], ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<e2\>\"", "]"}], ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<e3\>\"", "]"}]}], 
+                    "}"}]}], "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<CreateData\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], "=", 
+                    RowBox[{"CreateData", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<sig\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<eig\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<bvec\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<grad\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dimx\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<dimy\>\"", "]"}]}], 
+                    "}"}]}], "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+               "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<AddNoise\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<dataN\>\"", "]"}], "=", 
+                    RowBox[{"AddNoise", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\< noise\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<SimParameters\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<pars\>\"", "]"}], "=", 
+                    RowBox[{"SimParameters", "[", 
+                    RowBox[{"Placeholder", "[", "\"\<tens\>\"", "]"}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}], ",", 
+               "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<SimAngleParameters\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<parsA\>\"", "]"}], "=", 
+                    RowBox[{"SimAngleParameters", "[", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tens\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<vec\>\"", "]"}]}], 
+                    "]"}]}], ";"}], "]"}]}], "]"}]}], "}"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotSimulation\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotSimulation", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<pars\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xval\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<true\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<color\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotSimulationHist\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotSimulationHist", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<pars\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xdata\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<true\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotSimulationAngle\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotSimulationAngle", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<par\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xdata\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<color\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotSimulationAngleHist\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotSimulationAngleHist", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<pars\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xdata\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotSimulationVec\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotSimulationVec", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<tens\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xdata\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}], ",", "SpanFromLeft"}], "}"}]}], 
+            "\[IndentingNewLine]", "}"}], ",", "blocksize"}], "]"}], 
+         "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"plotToolsPan", "=", 
+        RowBox[{"Panel", "[", "\[IndentingNewLine]", 
+         RowBox[{"ButtonBlock", "[", 
+          RowBox[{"\"\<Plotting Functions\>\"", ",", "\[IndentingNewLine]", 
+           RowBox[{"{", "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotData\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotData", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\< vox\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotData2\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotData", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\< data\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotData3D\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotData3D", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<vox\>\"", "]"}]}], "]"}],
+                   "]"}]}], "]"}], ",", "SpanFromLeft"}], "}"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotDefGrid\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotDefGrid", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<phasemap\>\"", "]"}], 
+                    ",", " ", 
+                    RowBox[{"Placeholder", "[", "\"\<shiftpar\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotGrad\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotGrad", "[", 
+                   RowBox[{"Placeholder", "[", "\"\<set\>\"", "]"}], "]"}], 
+                  "]"}]}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<PlotCorrection\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"PlotCorrection", "[", 
+                   RowBox[{"Placeholder", "[", "\"\<w\>\"", "]"}], "]"}], 
+                  "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<ErrorPlot\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"ErrorPlot", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], " ", 
+                    ",", " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<xmin\>\"", "]"}], ",", 
+                    RowBox[{"Placeholder", "[", "\"\<xmax\>\"", "]"}]}], 
+                    "}"}], ",", " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"title\\\"\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<Hist\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"Hist", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<xmin\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xmax\>\"", "]"}]}], 
+                    "}"}], ",", " ", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"title\\\"\>\"", "]"}]}], 
+                   "]"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"PasteButton2", "[", 
+                RowBox[{"\"\<Hist2\>\"", ",", 
+                 RowBox[{"Defer", "[", 
+                  RowBox[{"Hist2", "[", 
+                   RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<data\>\"", "]"}], ",", 
+                    "\[IndentingNewLine]", " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<xmin\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xmax\>\"", "]"}]}], 
+                    "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<xmin\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xmax\>\"", "]"}]}], 
+                    "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<xmin\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xmax\>\"", "]"}]}], 
+                    "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<xmin\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xmax\>\"", "]"}]}], 
+                    "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Placeholder", "[", "\"\<xmin\>\"", "]"}], ",", 
+                    " ", 
+                    RowBox[{"Placeholder", "[", "\"\<xmax\>\"", "]"}]}], 
+                    "}"}]}], "}"}], ",", 
+                    RowBox[{"{", " ", 
+                    RowBox[{
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}], ",", 
+                    RowBox[{
+                    "Placeholder", "[", "\"\<\\\"label\\\"\>\"", "]"}]}], 
+                    "}"}]}], "]"}], "]"}]}], "]"}]}], "}"}]}], 
+            "\[IndentingNewLine]", "}"}], ",", "blocksize"}], "]"}], 
+         "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"pannels", "=", 
+        RowBox[{"{", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"Button", "[", 
+           RowBox[{
+            RowBox[{"Style", "[", 
+             RowBox[{"\"\<Initialize DTITools\>\"", ",", "Bold", ",", 
+              RowBox[{"Darker", "[", "Green", "]"}], ",", 
+              RowBox[{"FontFamily", "\[Rule]", "\"\<Helvetica\>\""}]}], "]"}],
+             ",", "InitTools", ",", 
+            RowBox[{"Appearance", "\[Rule]", "\"\<Palette\>\""}]}], "]"}], 
+          ",", "\[IndentingNewLine]", 
+          RowBox[{"Button", "[", 
+           RowBox[{
+            RowBox[{"Style", "[", 
+             RowBox[{"\"\<Quit notebook kernel\>\"", ",", "Bold", ",", 
+              RowBox[{"Darker", "[", "Red", "]"}], ",", 
+              RowBox[{"FontFamily", "\[Rule]", "\"\<Helvetica\>\""}]}], "]"}],
+             ",", "QuitKernel", ",", 
+            RowBox[{"Appearance", "\[Rule]", "\"\<Palette\>\""}]}], "]"}], 
+          ",", "\[IndentingNewLine]", 
+          RowBox[{"Hyperlink", "[", 
+           RowBox[{
+            RowBox[{"Style", "[", 
+             RowBox[{
+             "\"\<Documentation DTITools\>\"", ",", "Bold", ",", "11", ",", 
+              RowBox[{"Darker", "[", "Blue", "]"}], ",", 
+              RowBox[{"FontFamily", "\[Rule]", "\"\<Helvetica\>\""}]}], "]"}],
+             ",", "\"\<paclet:DTITools/guide/DTITools\>\"", ",", 
+            RowBox[{"Appearance", "\[Rule]", "\"\<Palette\>\""}]}], "]"}], 
+          ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{"\"\<ImportTools\>\"", ",", "impToolsPan", ",", "True"}], 
+           "]"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{
+           "\"\<PlottingTools\>\"", ",", "plotToolsPan", ",", "False"}], 
+           "]"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{"\"\<ExportTools\>\"", ",", "expToolsPan", ",", "False"}], 
+           "]"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{
+           "\"\<GradientTools\>\"", ",", "gradToolsPan", ",", "False"}], 
+           "]"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{
+           "\"\<ManipulationTools\>\"", ",", "manToolsPan", ",", "False"}], 
+           "]"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{
+           "\"\<RegistrationTools\>\"", ",", "regToolsPan", ",", "False"}], 
+           "]"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{
+           "\"\<ProcessingTools\>\"", ",", "proToolsPan", ",", "False"}], 
+           "]"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{
+           "\"\<MaskingTools\>\"", ",", "maskToolsPan", ",", "False"}], "]"}],
+           ",", "\[IndentingNewLine]", 
+          RowBox[{"PanelOpener", "[", 
+           RowBox[{
+           "\"\<SimulationTools\>\"", ",", "simToolsPan", ",", "False"}], 
+           "]"}]}], "\[IndentingNewLine]", "}"}]}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", "PaletteNotebook", "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"CreatePalette", "[", "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"{", "\[IndentingNewLine]", 
+          RowBox[{"Column", "[", "\[IndentingNewLine]", 
+           RowBox[{"pannels", ",", 
+            RowBox[{"Dividers", "\[Rule]", 
+             RowBox[{"{", 
+              RowBox[{"None", ",", 
+               RowBox[{"Thread", "[", 
+                RowBox[{
+                 RowBox[{"Drop", "[", 
+                  RowBox[{
+                   RowBox[{"Range", "[", 
+                    RowBox[{"Length", "[", "pannels", "]"}], "]"}], ",", 
+                   "1"}], "]"}], "\[Rule]", "Gray"}], "]"}]}], "}"}]}], ",", 
+            "\[IndentingNewLine]", 
+            RowBox[{"ItemSize", "\[Rule]", "palsize"}], ",", 
+            RowBox[{"Spacings", "\[Rule]", ".5"}]}], "]"}], 
+          "\[IndentingNewLine]", "}"}], ",", 
+         RowBox[{"WindowSize", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{"Fit", ",", "750"}], "}"}]}], ",", 
+         RowBox[{"WindowElements", "\[Rule]", 
+          RowBox[{"{", "\"\<VerticalScrollBar\>\"", "}"}]}]}], 
+        "\[IndentingNewLine]", "]"}]}]}], "\[IndentingNewLine]", "]"}]}], 
+   "\[IndentingNewLine]", "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.5389905924487696`*^9, 3.5389906880694857`*^9}, {
+   3.538990931439332*^9, 3.5389910488282404`*^9}, {3.538991082281152*^9, 
+   3.538991374401023*^9}, {3.538996564199408*^9, 3.538996622993649*^9}, {
+   3.538997320675625*^9, 3.5389974645792*^9}, {3.538997500641238*^9, 
+   3.5389976564048696`*^9}, {3.5389977467162137`*^9, 3.5389977776376925`*^9}, 
+   3.538997809168539*^9, {3.5389985247849417`*^9, 3.538998531096957*^9}, {
+   3.5389986445122366`*^9, 3.538998653980623*^9}, {3.5389987883817115`*^9, 
+   3.5389989336738567`*^9}, {3.539000049046648*^9, 3.5390000574215407`*^9}, {
+   3.539000100202243*^9, 3.539000253903401*^9}, {3.5390002891217003`*^9, 
+   3.5390002894810705`*^9}, {3.5390003941485806`*^9, 
+   3.5390004125534167`*^9}, {3.539000459440441*^9, 3.53900046153403*^9}, {
+   3.5390005882274237`*^9, 3.5390007132516212`*^9}, {3.5390007881862435`*^9, 
+   3.5390007924360805`*^9}, {3.5390008988538685`*^9, 3.539000921587371*^9}, {
+   3.539000954242509*^9, 3.539000980101387*^9}, {3.539001036037813*^9, 
+   3.5390011308016186`*^9}, {3.539001164160353*^9, 3.539001164941588*^9}, {
+   3.53900119998779*^9, 3.5390012222217383`*^9}, {3.5390025733118324`*^9, 
+   3.5390026829419317`*^9}, {3.5390027245026255`*^9, 
+   3.5390028807778745`*^9}, {3.5390029147453203`*^9, 
+   3.5390029444316797`*^9}, {3.5390029806959124`*^9, 3.5390031097706575`*^9}, 
+   3.5390031410198574`*^9, {3.5390032254708204`*^9, 3.5390032423141394`*^9}, {
+   3.539003532667656*^9, 3.539003644384631*^9}, {3.5390037028682575`*^9, 
+   3.5390037334928656`*^9}, {3.539003827741659*^9, 3.539003846803915*^9}, {
+   3.5390038893346205`*^9, 3.539003915318663*^9}, {3.539003958677483*^9, 
+   3.539003979942836*^9}, {3.5390041413001456`*^9, 3.539004150784399*^9}, {
+   3.5390043515474544`*^9, 3.5390043559692726`*^9}, {3.539004425234011*^9, 
+   3.5390046057629504`*^9}, {3.539004702574211*^9, 3.539004853759776*^9}, {
+   3.5390049809925222`*^9, 3.539004993804858*^9}, {3.539005044710457*^9, 
+   3.53900506594456*^9}, 3.5390051297406187`*^9, {3.5390052102864623`*^9, 
+   3.539005330956793*^9}, {3.5390053687844334`*^9, 3.5390053783936853`*^9}, {
+   3.5390608369375*^9, 3.5390608554375*^9}, {3.539060898359375*^9, 
+   3.539060923890625*^9}, {3.5390610420625*^9, 3.5390610425625*^9}, 
+   3.53906107340625*^9, {3.53906110703125*^9, 3.539061158171875*^9}, 
+   3.539061469125*^9, {3.53906175678125*^9, 3.539061763578125*^9}, {
+   3.539061844578125*^9, 3.53906191865625*^9}, {3.539061954234375*^9, 
+   3.53906195584375*^9}, {3.53906200234375*^9, 3.5390621176875*^9}, {
+   3.53906225165625*^9, 3.53906225440625*^9}, {3.53906331634375*^9, 
+   3.539063369578125*^9}, {3.53906341115625*^9, 3.5390634169375*^9}, 
+   3.539063461921875*^9, {3.539063494359375*^9, 3.5390634944375*^9}, {
+   3.539063545578125*^9, 3.539063648125*^9}, {3.539063749359375*^9, 
+   3.5390637616875*^9}, 3.539064218421875*^9, {3.539064251765625*^9, 
+   3.53906454396875*^9}, {3.539065833453125*^9, 3.53906586678125*^9}, {
+   3.539065922921875*^9, 3.5390659673125*^9}, {3.539066044953125*^9, 
+   3.53906604728125*^9}, {3.539066670953125*^9, 3.539066728109375*^9}, {
+   3.53906745546875*^9, 3.5390675151875*^9}, {3.539068085359375*^9, 
+   3.5390681051875*^9}, {3.539068156640625*^9, 3.539068158078125*^9}, {
+   3.539068454296875*^9, 3.53906846640625*^9}, {3.539069044984375*^9, 
+   3.5390690625*^9}, {3.539069100296875*^9, 3.53906911890625*^9}, {
+   3.5390693540625*^9, 3.53906935596875*^9}, {3.539069388296875*^9, 
+   3.5390693885625*^9}, {3.539069573484375*^9, 3.539069722296875*^9}, {
+   3.539069857640625*^9, 3.53906990828125*^9}, {3.539069954046875*^9, 
+   3.539069957125*^9}, {3.539070972171875*^9, 3.539071026828125*^9}, {
+   3.539071564109375*^9, 3.53907161725*^9}, {3.539071663265625*^9, 
+   3.539071692078125*^9}, {3.53907172803125*^9, 3.539071729765625*^9}, {
+   3.53907179084375*^9, 3.539071807140625*^9}, {3.53907183846875*^9, 
+   3.53907191*^9}, {3.539072038390625*^9, 3.53907204075*^9}, {
+   3.539072095875*^9, 3.539072159625*^9}, {3.53907406003125*^9, 
+   3.539074114171875*^9}, {3.53907417721875*^9, 3.539074227640625*^9}, 
+   3.539081498328125*^9, 3.539081730453125*^9, 3.539082225421875*^9, {
+   3.5390822854375*^9, 3.539082341671875*^9}, {3.5390823725625*^9, 
+   3.53908238559375*^9}, {3.539082460484375*^9, 3.53908246059375*^9}, {
+   3.539082528125*^9, 3.539082529375*^9}, {3.539082615046875*^9, 
+   3.539082629265625*^9}, {3.53908268721875*^9, 3.539082966375*^9}, 
+   3.539085576203125*^9, {3.53908565065625*^9, 3.5390856550625*^9}, {
+   3.53908569046875*^9, 3.539085736546875*^9}, 3.539087130515625*^9, {
+   3.539087720578125*^9, 3.53908772928125*^9}, 3.539088152875*^9, {
+   3.53908874703125*^9, 3.53908875071875*^9}, 3.539089404546875*^9, {
+   3.539089467625*^9, 3.539089482828125*^9}, {3.539089600140625*^9, 
+   3.539089618140625*^9}, {3.539089980875*^9, 3.539089983453125*^9}, {
+   3.539091897890625*^9, 3.5390919183125*^9}, {3.539092222578125*^9, 
+   3.539092410015625*^9}, {3.539425093193124*^9, 3.539425156534051*^9}, {
+   3.539425272286273*^9, 3.5394252771613665`*^9}, 3.5396736078935747`*^9, {
+   3.5401256686718636`*^9, 3.5401256853784094`*^9}, {3.5713723016658993`*^9, 
+   3.571372387731022*^9}, {3.5713724282820787`*^9, 3.5713724650031304`*^9}, {
+   3.571372605738329*^9, 3.571372634408369*^9}, {3.571372714400482*^9, 
+   3.5713727168764853`*^9}, {3.5713727788615727`*^9, 3.571372825333638*^9}, 
+   3.571372917695769*^9, {3.5713729934838753`*^9, 3.5713730251989202`*^9}, {
+   3.5713730669959793`*^9, 3.5713734016894526`*^9}, {3.5713734330754967`*^9, 
+   3.571373433885498*^9}, {3.5713734788675613`*^9, 3.571373481843566*^9}, {
+   3.571373585175711*^9, 3.5713737633409634`*^9}, {3.571373806243024*^9, 
+   3.5713738125240326`*^9}, {3.571488911983675*^9, 3.571488913923786*^9}, {
+   3.5714889834427624`*^9, 3.571488997637574*^9}, {3.571489029103374*^9, 
+   3.571489030911477*^9}, {3.5714890658614764`*^9, 3.571489067917594*^9}, 
+   3.571489134625409*^9, {3.571489168416342*^9, 3.5714891731926155`*^9}, {
+   3.5714892445016937`*^9, 3.5714893675737333`*^9}}]
+},
+WindowSize->{1231, 945},
+WindowMargins->{{58, Automatic}, {29, Automatic}},
+PrivateNotebookOptions->{"VersionedStylesheet"->{"Default.nb"[8.] -> False}},
+ShowSelection->True,
+FrontEndVersion->"9.0 for Microsoft Windows (64-bit) (January 25, 2013)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[557, 20, 100908, 2041, 6632, "Input"]
+}
+]
+*)
+
+(* End of internal cache information *)

@@ -1,0 +1,853 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     26386,        843]
+NotebookOptionsPosition[     21431,        686]
+NotebookOutlinePosition[     22051,        710]
+CellTagsIndexPosition[     21972,        705]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"],
+ " | Excised in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Excised"]
+}], "History",
+ CellID->1247902091],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->1122911449],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->686433507],
+
+Cell["DTITools Package", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->324138522],
+
+Cell["DTITools`ElastixTools`", "Categorization",
+ CellLabel->"Context",
+ CellID->188078821],
+
+Cell["DTITools/ref/RegisterDiffusionData", "Categorization",
+ CellLabel->"URI",
+ CellID->286017879]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->477174294],
+
+Cell["XXXX", "Keywords",
+ CellID->1164421360]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection",
+ CellID->1872225408],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template",
+ CellID->1562036412],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern",
+ CellID->158391909],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables",
+ CellID->1360575930],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs",
+ CellID->793782254]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Details", "DetailsSection",
+ CellID->307771771],
+
+Cell["XXXX", "Details",
+ CellLabel->"Lead",
+ CellID->670882175],
+
+Cell["XXXX", "Details",
+ CellLabel->"Developers",
+ CellID->350963985],
+
+Cell["XXXX", "Details",
+ CellLabel->"Authors",
+ CellID->8391405],
+
+Cell["XXXX", "Details",
+ CellLabel->"Feature Name",
+ CellID->3610269],
+
+Cell["XXXX", "Details",
+ CellLabel->"QA",
+ CellID->401364205],
+
+Cell["XXXX", "Details",
+ CellLabel->"DA",
+ CellID->350204745],
+
+Cell["XXXX", "Details",
+ CellLabel->"Docs",
+ CellID->732958810],
+
+Cell["XXXX", "Details",
+ CellLabel->"Features Page Notes",
+ CellID->222905350],
+
+Cell["XXXX", "Details",
+ CellLabel->"Comments",
+ CellID->240026365]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["RegisterDiffusionData", "ObjectName",
+ CellID->1224892054],
+
+Cell[TextData[{
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"RegisterDiffusionData", "[", 
+   RowBox[{"{", 
+    RowBox[{
+     StyleBox["dtidata", "TI"], ",", " ", 
+     StyleBox["vox", "TI"]}], "}"}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]registers a diffusion dataset. dtidata should be 4D {slice, \
+diff, x, y}. vox is the voxelsize of the data. \n",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"RegisterDiffusionData", "[", 
+   RowBox[{"{", 
+    RowBox[{
+     StyleBox["dtidata", "TI"], ",", " ", 
+     StyleBox["dtimask", "TI"], ",", " ", 
+     StyleBox["vox", "TI"]}], "}"}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]registers the data series using the given voxel size only \
+using data within the mask. \n",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"RegisterDiffusionData", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      StyleBox["dtidata", "TI"], " ", ",", 
+      StyleBox["vox", "TI"]}], "}"}], ",", " ", 
+    RowBox[{"{", 
+     RowBox[{
+      StyleBox["anatdata", "TI"], ",", " ", 
+      StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]registers a diffusion dataset. The diffusion data is also \
+registered to the anatdata. \n",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"RegisterDiffusionData", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      StyleBox["dtidata", "TI"], ",", " ", 
+      StyleBox["dtimask", "TI"], ",", " ", 
+      StyleBox["vox", "TI"]}], "}"}], ",", " ", 
+    RowBox[{"{", 
+     RowBox[{
+      StyleBox["anatdata", "TI"], ",", " ", 
+      StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]registers the data series using the given voxel size only \
+using data within the mask. \n",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"RegisterDiffusionData", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      StyleBox["dtidata", "TI"], ",", 
+      StyleBox["vox", "TI"]}], "}"}], ",", " ", 
+    RowBox[{"{", 
+     RowBox[{
+      StyleBox["anatdata", "TI"], ",", " ", 
+      StyleBox["anatmask", "TI"], ",", " ", 
+      StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]registers the data series using the given voxel size only \
+using data within the mask. \n",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"RegisterDiffusionData", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      StyleBox["dtidata", "TI"], ",", " ", 
+      StyleBox["dtimask", "TI"], ",", " ", 
+      StyleBox["vox", "TI"]}], "}"}], ",", " ", 
+    RowBox[{"{", 
+     RowBox[{
+      StyleBox["anatdata", "TI"], ",", " ", 
+      StyleBox["anatmask", "TI"], ",", " ", 
+      StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]registers the data series using the given voxel size only \
+using data within the mask. output is the registered dtidata and, if anatdata \
+is given, the registered dtidata in anatomical space. If ",
+ Cell[BoxData[
+  ButtonBox["OutputTransformation",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/OutputTransformation"]], "InlineFormula"],
+ " is True it also outputs the translation, rotation scale and skew of all \
+images or volumes."
+}], "Usage",
+ CellChangeTimes->{{3.6676708543339615`*^9, 3.6676708736310654`*^9}}],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["Iterations",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/Iterations"], "1000", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["Iterations",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/Iterations"]], "InlineFormula"],
+     " gives the number of iterations used by the registration functions."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["Resolutions",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/Resolutions"], "1", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["Resolutions",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/Resolutions"]], "InlineFormula"],
+     " gives the number of scale space resolutions used by the registration \
+functions."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["HistogramBins",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/HistogramBins"], "32", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["HistogramBins",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/HistogramBins"]], "InlineFormula"],
+     " gives the number of bins of the joined histogram used by the \
+registration functions."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["NumberSamples",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/NumberSamples"], "2000", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["NumberSamples",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/NumberSamples"]], "InlineFormula"],
+     " gives the number of random samples that are taken each iteration used \
+by the registration functions."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["InterpolationOrderReg",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/InterpolationOrderReg"], "1", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["InterpolationOrderReg",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/InterpolationOrderReg"]], 
+      "InlineFormula"],
+     " specifies the interpolation order used in the registration functions."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["BsplineSpacing",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/BsplineSpacing"], "30", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["BsplineSpacing",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/BsplineSpacing"]], "InlineFormula"],
+     " is the spacing of the bsplines if the method is \"bspline\"."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["BsplineDirections",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/BsplineDirections"], 
+    RowBox[{"{", 
+     RowBox[{"0", ",", " ", "1", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["BsplineDirections",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/BsplineDirections"]], "InlineFormula"],
+     " gives the direction in which the bsplines are allowed to move when \
+registering diffusion data to anatomical space."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["AffineDirections",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/AffineDirections"], 
+    RowBox[{"{", 
+     RowBox[{"0", ",", " ", "1", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["AffineDirections",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/AffineDirections"]], "InlineFormula"],
+     " gives the directions in which data can be moved when registering \
+diffusion data to anatomical space."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["MethodReg",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MethodReg"], "affineDTI", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["MethodReg",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/MethodReg"]], "InlineFormula"],
+     " spefifies which registration method to use. Mehtods can be be \
+\"rigid\",\"affine\", \"bspline\" or \"cyclyc\"."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["OutputImage",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/OutputImage"], 
+    ButtonBox["True",
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["OutputImage",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/OutputImage"]], "InlineFormula"],
+     " specifies if the result image should be writen in the ",
+     Cell[BoxData[
+      ButtonBox["TempDirectory",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/TempDirectory"]], "InlineFormula"],
+     " as nii file."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["TempDirectory",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/TempDirectory"], 
+    ButtonBox["Default",
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["TempDirectory",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/TempDirectory"]], "InlineFormula"],
+     " is the temprary directory used to perform and output the registration."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["DeleteTempDirectory",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DeleteTempDirectory"], 
+    ButtonBox["True",
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DeleteTempDirectory",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/DeleteTempDirectory"]], 
+      "InlineFormula"],
+     " specifies if the temp directory should be deleted after the \
+registration is finisched."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["PrintTempDirectory",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PrintTempDirectory"], 
+    ButtonBox["True",
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["PrintTempDirectory",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/PrintTempDirectory"]], 
+      "InlineFormula"],
+     " spefifies if the location of the temp directory should be deplayed."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["OutputTransformation",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/OutputTransformation"], 
+    ButtonBox["False",
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["OutputTransformation",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/OutputTransformation"]], 
+      "InlineFormula"],
+     " specifies if the tranformation paramters (translation, rotation, scale \
+and skew) should be given as output in the registration functions."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["IterationsA",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/IterationsA"], "1000", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["IterationsA",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/IterationsA"]], "InlineFormula"],
+     " gives the number of iterations used when registering diffusion data to \
+anatomical space."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["ResolutionsA",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/ResolutionsA"], "1", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["ResolutionsA",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/ResolutionsA"]], "InlineFormula"],
+     " gives the number of scale space resolutions used when registering \
+diffusion data to anatomical space."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["HistogramBinsA",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/HistogramBinsA"], "32", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["HistogramBinsA",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/HistogramBinsA"]], "InlineFormula"],
+     " gives the number of bins of the joined histogram used when registering \
+diffusion data to anatomical space."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["NumberSamplesA",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/NumberSamplesA"], "2000", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["NumberSamplesA",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/NumberSamplesA"]], "InlineFormula"],
+     " gives the number of random samples that are taken each iteration when \
+registering diffusion data to anatomical space."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["InterpolationOrderRegA",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/InterpolationOrderRegA"], "1", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["InterpolationOrderRegA",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/InterpolationOrderRegA"]], 
+      "InlineFormula"],
+     " specifies the interpolation order used in the registration functions \
+when registering diffusion data to anatomical space."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["MethodRegA",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MethodRegA"], 
+    RowBox[{"{", 
+     RowBox[{"rigidDTI", ",", " ", "bspline"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["MethodRegA",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/MethodRegA"]], "InlineFormula"],
+     " spefifies which registration method to use when registering diffusion \
+data to anatomical space. Mehtods can be be \"rigid\",\"affine\" or \"bspline\
+\"."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["RegistrationTarget",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/RegistrationTarget"], "Fist", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["RegistrationTarget",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/RegistrationTarget"]], 
+      "InlineFormula"],
+     " specifies which target to uses for registration in the functions ",
+     Cell[BoxData["RegisterDiffusionData"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      ButtonBox["RegisterCardiacData",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/RegisterCardiacData"]], 
+      "InlineFormula"],
+     ". \nValues can be \"First\", \"Mean\" or \"Median\"."
+    }], "TableText"]}
+  }]], "3ColumnTableMod"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tutorials", "TutorialsSection",
+ CellID->250839057],
+
+Cell["XXXX", "Tutorials",
+ CellID->341631938]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Demonstrations", "RelatedDemonstrationsSection",
+ CellID->1268215905],
+
+Cell["XXXX", "RelatedDemonstrations",
+ CellID->1129518860]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Links", "RelatedLinksSection",
+ CellID->1584193535],
+
+Cell["XXXX", "RelatedLinks",
+ CellID->1038487239]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["See Also", "SeeAlsoSection",
+ CellID->1255426704],
+
+Cell["XXXX", "SeeAlso",
+ CellID->929782353]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["More About", "MoreAboutSection",
+ CellID->38303248],
+
+Cell["XXXX", "MoreAbout",
+ CellID->1665078683]
+}, Open  ]],
+
+Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox["Examples", "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection",
+ CellID->880084151],
+
+Cell[CellGroupData[{
+
+Cell["More Examples", "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples",
+ CellID->1854448968],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Scope", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1293636265],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Generalizations & Extensions", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1020263627],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell["Options", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Iterations", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Resolutions", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["HistogramBins", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["NumberSamples", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["InterpolationOrderReg", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["BsplineSpacing", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["BsplineDirections", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["AffineDirections", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["MethodReg", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["OutputImage", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["TempDirectory", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["DeleteTempDirectory", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["PrintTempDirectory", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["OutputTransformation", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["IterationsA", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["ResolutionsA", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["HistogramBinsA", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["NumberSamplesA", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["InterpolationOrderRegA", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["MethodRegA", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["RegistrationTarget", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"]
+}, Closed]],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Applications", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->258228157],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Properties & Relations", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->2123667759],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Possible Issues", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1305812373],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Interactive Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1653164318],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Neat Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->589267740]
+}, Open  ]]
+},
+WindowSize->{700, 770},
+WindowMargins->{{4, Automatic}, {Automatic, 0}},
+CellContext->"Global`",
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "ExtendedExamples"->{
+  Cell[17624, 555, 100, 2, 53, "ExtendedExamplesSection",
+   CellTags->"ExtendedExamples",
+   CellID->1854448968]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"ExtendedExamples", 21833, 698}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 324, 14, 22, "History",
+ CellID->1247902091],
+Cell[CellGroupData[{
+Cell[907, 38, 68, 1, 27, "CategorizationSection",
+ CellID->1122911449],
+Cell[978, 41, 79, 2, 31, "Categorization",
+ CellID->686433507],
+Cell[1060, 45, 89, 2, 31, "Categorization",
+ CellID->324138522],
+Cell[1152, 49, 91, 2, 31, "Categorization",
+ CellID->188078821],
+Cell[1246, 53, 99, 2, 31, "Categorization",
+ CellID->286017879]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[1382, 60, 55, 1, 17, "KeywordsSection",
+ CellID->477174294],
+Cell[1440, 63, 45, 1, 70, "Keywords",
+ CellID->1164421360]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[1522, 69, 65, 1, 17, "TemplatesSection",
+ CellID->1872225408],
+Cell[1590, 72, 94, 2, 70, "Template",
+ CellID->1562036412],
+Cell[1687, 76, 82, 2, 70, "Template",
+ CellID->158391909],
+Cell[1772, 80, 81, 2, 70, "Template",
+ CellID->1360575930],
+Cell[1856, 84, 82, 2, 70, "Template",
+ CellID->793782254]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[1975, 91, 53, 1, 17, "DetailsSection",
+ CellID->307771771],
+Cell[2031, 94, 63, 2, 70, "Details",
+ CellID->670882175],
+Cell[2097, 98, 69, 2, 70, "Details",
+ CellID->350963985],
+Cell[2169, 102, 64, 2, 70, "Details",
+ CellID->8391405],
+Cell[2236, 106, 69, 2, 70, "Details",
+ CellID->3610269],
+Cell[2308, 110, 61, 2, 70, "Details",
+ CellID->401364205],
+Cell[2372, 114, 61, 2, 70, "Details",
+ CellID->350204745],
+Cell[2436, 118, 63, 2, 70, "Details",
+ CellID->732958810],
+Cell[2502, 122, 78, 2, 70, "Details",
+ CellID->222905350],
+Cell[2583, 126, 67, 2, 70, "Details",
+ CellID->240026365]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2687, 133, 64, 1, 62, "ObjectName",
+ CellID->1224892054],
+Cell[2754, 136, 3239, 88, 297, "Usage"],
+Cell[5996, 226, 53, 0, 23, "Notes"],
+Cell[6052, 228, 10418, 264, 1117, "3ColumnTableMod"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16507, 497, 57, 1, 43, "TutorialsSection",
+ CellID->250839057],
+Cell[16567, 500, 45, 1, 16, "Tutorials",
+ CellID->341631938]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16649, 506, 83, 1, 30, "RelatedDemonstrationsSection",
+ CellID->1268215905],
+Cell[16735, 509, 58, 1, 16, "RelatedDemonstrations",
+ CellID->1129518860]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16830, 515, 65, 1, 30, "RelatedLinksSection",
+ CellID->1584193535],
+Cell[16898, 518, 49, 1, 16, "RelatedLinks",
+ CellID->1038487239]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16984, 524, 55, 1, 30, "SeeAlsoSection",
+ CellID->1255426704],
+Cell[17042, 527, 43, 1, 16, "SeeAlso",
+ CellID->929782353]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[17122, 533, 57, 1, 30, "MoreAboutSection",
+ CellID->38303248],
+Cell[17182, 536, 46, 1, 16, "MoreAbout",
+ CellID->1665078683]
+}, Open  ]],
+Cell[17243, 540, 356, 11, 68, "PrimaryExamplesSection",
+ CellID->880084151],
+Cell[CellGroupData[{
+Cell[17624, 555, 100, 2, 53, "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples",
+ CellID->1854448968],
+Cell[17727, 559, 125, 3, 30, "ExampleSection",
+ CellID->1293636265],
+Cell[17855, 564, 148, 3, 18, "ExampleSection",
+ CellID->1020263627],
+Cell[CellGroupData[{
+Cell[18028, 571, 106, 2, 18, "ExampleSection"],
+Cell[18137, 575, 115, 2, 70, "ExampleSubsection"],
+Cell[18255, 579, 116, 2, 70, "ExampleSubsection"],
+Cell[18374, 583, 118, 2, 70, "ExampleSubsection"],
+Cell[18495, 587, 118, 2, 70, "ExampleSubsection"],
+Cell[18616, 591, 126, 2, 70, "ExampleSubsection"],
+Cell[18745, 595, 119, 2, 70, "ExampleSubsection"],
+Cell[18867, 599, 122, 2, 70, "ExampleSubsection"],
+Cell[18992, 603, 121, 2, 70, "ExampleSubsection"],
+Cell[19116, 607, 114, 2, 70, "ExampleSubsection"],
+Cell[19233, 611, 116, 2, 70, "ExampleSubsection"],
+Cell[19352, 615, 118, 2, 70, "ExampleSubsection"],
+Cell[19473, 619, 124, 2, 70, "ExampleSubsection"],
+Cell[19600, 623, 123, 2, 70, "ExampleSubsection"],
+Cell[19726, 627, 125, 2, 70, "ExampleSubsection"],
+Cell[19854, 631, 116, 2, 70, "ExampleSubsection"],
+Cell[19973, 635, 117, 2, 70, "ExampleSubsection"],
+Cell[20093, 639, 119, 2, 70, "ExampleSubsection"],
+Cell[20215, 643, 119, 2, 70, "ExampleSubsection"],
+Cell[20337, 647, 127, 2, 70, "ExampleSubsection"],
+Cell[20467, 651, 115, 2, 70, "ExampleSubsection"],
+Cell[20585, 655, 123, 2, 70, "ExampleSubsection"]
+}, Closed]],
+Cell[20723, 660, 131, 3, 18, "ExampleSection",
+ CellID->258228157],
+Cell[20857, 665, 142, 3, 18, "ExampleSection",
+ CellID->2123667759],
+Cell[21002, 670, 135, 3, 18, "ExampleSection",
+ CellID->1305812373],
+Cell[21140, 675, 140, 3, 18, "ExampleSection",
+ CellID->1653164318],
+Cell[21283, 680, 132, 3, 18, "ExampleSection",
+ CellID->589267740]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+
