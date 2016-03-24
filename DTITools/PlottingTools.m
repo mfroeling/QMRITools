@@ -2943,7 +2943,7 @@ SyntaxInformation[PlotIVIM] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}
 
 PlotIVIM[val_, data_, bvals_, OptionsPattern[]] := 
  Module[{pdat, pdatL, rule, stdash, stsol, lstyle, pl, vals = val, 
-   func, cols, S0, f1, dc, pdc1, f2, pdc2, bm},
+   func, cols, S0, f1, dc, pdc1, f2,f3, pdc2, bm},
   DynamicModule[{plot},
    cols = OptionValue[PlotColor];
    cols = If[Length[cols] != 4, {Red,Darker@ Green, Blue, Black}, cols];
@@ -2958,12 +2958,14 @@ PlotIVIM[val_, data_, bvals_, OptionsPattern[]] :=
    vals[[1]] = vals[[1]]/data[[1]];
    ];
    
-   
    stdash = Directive[{Thick, #, Dashed}] &;
    stsol = Directive[{Thick, #}] &;
    lstyle = Directive[Black, Bold, Medium, FontFamily -> "Helvetica"];
    
    Switch[Length[vals],
+   	2,
+    func = S0(f3*Exp[-bm*dc]);
+ 	rule = Flatten@Append[Thread[{S0, dc} -> vals], {f2 -> 0,f1->0}];,
     4,
     func = S0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1]);
  	rule = Append[Thread[{S0, f1, dc, pdc1} -> vals], f2 -> 0];,

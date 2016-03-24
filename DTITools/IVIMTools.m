@@ -224,7 +224,7 @@ Options[IVIMCalc] = {Method -> Automatic, Parallelize->False, MonitorIVIMCalc ->
 SyntaxInformation[IVIMCalc] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
 IVIMCalc[data_, binp_, init_, OptionsPattern[]] := 
- Module[{tensFit, components, fixed, constrained, method, bmdc, bin,
+ Module[{tensFit, components, fixed, constrained, method, bmdc, bin,fcon,
    s0min, s0max, fmin, fmax, dcmin, dcmax, pdc1min, pdc1max, pdc2min, pdc2max,
    depthD,dirD,dirB,func,dat,dat0,datn,rl,rr,ivim, mdat, sol, fitd, start, funcf,
    S0s, frin1, frin2, dcin, pdcin1, pdcin2, funcin, fixrule,cons,dccon,pdccon, fpars, mapfun, out
@@ -244,7 +244,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   
   (*perform tensor fit*)
   tensFit = OptionValue[IVIMTensFit];
-  components = Clip[OptionValue[IVIMComponents], {2, 3}];
+  components = Clip[OptionValue[IVIMComponents], {1, 3}];
   fixed = OptionValue[IVIMFixed];
   constrained = OptionValue[IVIMConstrained];
   method = OptionValue[Method];
@@ -268,28 +268,34 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   (*contruct bvals for fit*)
   bin = If[!tensFit, If[VectorQ[binp], binp, Abs[Total[#[[1 ;; 3]]]] & /@ binp], binp];
   
-  (*initial values for fit*)
+ (*initial values for fit*)
   Switch[components,
+   1, f1 = f2 = 0; {S0s,dcin} = init;,
    2, f2 = 0; {S0s, frin1, dcin, pdcin1} = init;,
    3, Clear[f2]; {S0s, frin1, frin2, dcin, pdcin1, pdcin2} = init;
   ];
   
   (*initial fit values*)
-  funcin = Join[{{f1, frin1}, {f2, frin2}}[[1 ;; components-1]],
-     If[tensFit, Thread[{{xx, yy, zz, xy, xz, yz}, dcin}], {{dc, dcin}}],
-     (*if not fied give fit start parameters for pdc values*)
-     Switch[fixed,
+  funcin = Join[
+  	If[components==1,{},{{f1, frin1}, {f2, frin2}}[[1 ;; components-1]]],
+    If[tensFit, Thread[{{xx, yy, zz, xy, xz, yz}, dcin}], {{dc, dcin}}],
+     (*if not fixed give fit start parameters for pdc values*)
+     If[components==1,
+     	{},
+     	Switch[fixed,
      	False, {{pdc1, pdcin1}, {pdc2, pdcin2}}[[1 ;; components - 1]],
      	"One", {{pdc1, pdcin1}},
      	_, {}
-     	] 
+     	]] 
   ];
  
   (*fix fixed parameters*)
-  fixrule = Switch[fixed, 
+  fixrule = If[components==1,
+  	{},
+  	Switch[fixed, 
   		True,{pdc1 -> pdcin1, pdc2 -> pdcin2}[[1 ;; components - 1]],
   		"One", {pdc2 -> pdcin2},
-  		_, {}];
+  		_, {}]];
   
   (*generate fix fuctions*)
   func =Chop[Simplify[(S0*((((1 - f1 - f2)*Exp[-bmdc]) + (f1* Exp[-bm pdc1]) + (f2* Exp[-bm pdc2]))))]] /. fixrule;
@@ -299,16 +305,20 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
 	  (*constrains dc and tens*)
 	  dccon = If[tensFit, {dcmin < xx < dcmax, dcmin < yy < dcmax, dcmin < zz < dcmax, dcmin < (xx + yy + zz)/3 < dcmax}, {dcmin < dc < dcmax}];
 	  (*if not fixed dc and pdc need to be constrained*)
-	  pdccon = Switch[fixed,
+	  pdccon = If[components==1,
+	  	{},
+	  	Switch[fixed,
 	  	False,{dc < pdc1, pdc1min < pdc1 < pdc1max, pdc2min < pdc2 < pdc2max}[[1 ;; components]],
 	  	"One",{dc < pdc1, pdc1min < pdc1 < pdc1max},
 	  	_,{}
-	  ];
+	  ]];
 	  (*if 3 components pdc1 and/or pdc2 also need to be constrained dc < pdc1 < pdc(in)2*)
 	  If[components == 3 && (fixed === False), AppendTo[pdccon, pdc1 < pdc2]];
 	  If[components == 3 && (fixed === "One"), AppendTo[pdccon, pdc1 < pdcin2]];
+	  
+	  fcon=If[components==1,{},{fmin < f1 < fmax, fmin < f2 < fmax}[[1 ;; components - 1]]];
 	  (*all constrains together*)
-	  Join[{(f1 + f2) < 1}, {fmin < f1 < fmax, fmin < f2 < fmax}[[1 ;; components - 1]], dccon, pdccon],
+	  Join[{(f1 + f2) < 1}, fcon, dccon, pdccon],
 	  (*no constrains*)
 	  {}
 	];
@@ -320,7 +330,11 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
    funcf = If[constrained,{func,cons},func];
    
    (*define output*)
-   out=Join[{S0, f1, f2}[[1 ;; components]],If[tensFit, {{xx, yy, zz, xy, xz, yz}}, {dc}], {pdc1, pdc2}[[1 ;; components - 1]]] /. fixrule;
+   out=Join[
+   	{S0, f1, f2}[[1 ;; components]],
+   	If[tensFit, {{xx, yy, zz, xy, xz, yz}}, {dc}], 
+   	If[components==1,{},{pdc1, pdc2}[[1 ;; components - 1]]]
+   	] /. fixrule;
   
   (*perform fit*)
   mapfun=If[OptionValue[Parallelize],
@@ -336,7 +350,6 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
 		   (*data voxel*)
 		   fitd = Flatten /@ ({bin, #} // Transpose);
 		   start=Prepend[funcin,{S0,S0s}];
-		   (*s0min S0s < S0 < s0max S0s;*)
 		   sol = Quiet[FindFit[fitd, funcf, start , fpars, Method -> method, MaxIterations -> 150]];
 		   out /. sol		    
   		]
