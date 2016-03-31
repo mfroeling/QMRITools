@@ -1579,7 +1579,7 @@ PlotData3D[data_, vox : {_, _, _} : {1, 1, 1}] := Module[{
     Prepend[dimd, 1],
     dimd[[{2, 1, 3, 4}]]
     ];
-  
+    
   pan = Manipulate[
     
     t1 = (
@@ -2937,13 +2937,13 @@ PlotMoments[fmom_, te_, t_] := Module[{
 (* ::Subsection::Closed:: *)
 (*PlotIVIM*)
 
-Options[PlotIVIM] = {Method -> "", PlotColor -> {Red, Green, Blue, Black},NormalizeIVIM->"Fit"}
+Options[PlotIVIM] = {Method -> "", PlotColor -> {Red, Green, Blue, Black},NormalizeIVIM->"Fit",PlotRange->"Auto"}
 
 SyntaxInformation[PlotIVIM] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 PlotIVIM[val_, data_, bvals_, OptionsPattern[]] := 
  Module[{pdat, pdatL, rule, stdash, stsol, lstyle, pl, vals = val, 
-   func, cols, S0, f1, dc, pdc1, f2,f3, pdc2, bm},
+   func, cols, S0, f1, dc, pdc1, f2,f3, pdc2, bm,plr},
   DynamicModule[{plot},
    cols = OptionValue[PlotColor];
    cols = If[Length[cols] != 4, {Red,Darker@ Green, Blue, Black}, cols];
@@ -2975,33 +2975,30 @@ PlotIVIM[val_, data_, bvals_, OptionsPattern[]] :=
     _,
     Return[Message[PlotIVIM::vals]]];
    
+   plr=If[OptionValue[PlotRange]==="Auto",{1.2 Min[pdatL[[All,2]]], 0.1},OptionValue[PlotRange]];
+   
    pl = Plot[#6 /. {f1 -> #1, f2 -> #2, f3->#3} /. rule, {bm, -0.1, #5}, 
       PlotStyle -> ({stdash[#4[[1]]], stsol[#4[[1]]]}[[#4[[2]]]]), 
-      PlotRange -> ({{0, 1.1}, {1.2 Min[pdatL[[All,2]]], 0.1}}[[#7]]), 
+      PlotRange -> ({{0, 1.1}, plr }[[#7]]), 
       LabelStyle -> lstyle, Frame -> {{True, False}, {True, False}}, 
-      FrameStyle -> Thick, 
+      FrameStyle -> Thick, ImageSize -> 400, 
       FrameLabel -> {"b-value [\!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s]", {"Signal", "Log[Signal]"}[[#7]]}] &;
-   
+      
    plot = GraphicsRow[{
        Show[
         pl[f1, f2, 1-f1-f2, {cols[[4]], 2}, #, func, 1],
         pl[1-f2, 0, 0, {cols[[1]], 1}, #, func, 1],
         pl[0, 1, 0, {cols[[2]], 1}, #, func, 1],
         pl[0, 0,  1-f1-f2, {cols[[3]], 1}, #, func, 1],
-        ListPlot[pdat, 
-         PlotStyle -> {cols[[4]], PointSize[0.02], 
-           PlotRange -> {0, 1.1}},
-         LabelStyle -> lstyle, Frame -> {{True, False}, {True, False}}]
-        , ImageSize -> 400],
+        ListPlot[pdat, PlotStyle -> {cols[[4]], PointSize[0.02]}]
+       ],
        Show[
         pl[f1, f2, 1-f1-f2, {cols[[4]], 2}, #, Log[func], 2],
         pl[1-f2, 0, 0, {cols[[1]], 1}, #, Log[func], 2],
         pl[0, 1, 0, {cols[[2]], 1}, #, Log[func], 2],
         pl[0, 0, 1-f1-f2, {cols[[3]], 1}, #, Log[func], 2],
-        ListPlot[pdatL, PlotStyle -> {cols[[4]], PointSize[0.02]}, 
-         PlotRange -> {-1.2, 0},
-         LabelStyle -> lstyle]
-        , ImageSize -> 400]
+        ListPlot[pdatL, PlotStyle -> {cols[[4]], PointSize[0.02]}]
+        ]
        }] &;
    
    If[OptionValue[Method] === "Dynamic",

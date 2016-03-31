@@ -1193,7 +1193,7 @@ Joini[sets_, setover_, step_] :=
  	noZero=Transpose[noZero,{3,1,2}];
  	dat=Transpose[setover, {3,4,1,2}];
  	datU=Transpose[unit,{3,4,1,2}];
- 	over = Transpose3C[JoinFuncC[dat, datU, noZero, tot, step], {2, 3, 1}];
+ 	over = Transpose[JoinFuncC[dat, datU, noZero, tot, step], {2, 3, 1}];
  	
   (*over = Transpose[
     MapThread[
@@ -1349,12 +1349,7 @@ Switch[dir,
 TransData[data_,dir_]:=Block[{ran,dep,fun},
 ran=Range[dep=ArrayDepth[data]];
 fun=Switch[dir,"r",RotateLeft[ran],"l",RotateRight[ran]];
-Switch[dep,
-2,Transpose2C[data,fun],
-3,Transpose3C[data,fun],
-4,Transpose4C[data,fun],
-5,Transpose5C[data,fun]
-]
+Transpose[data,fun]
 ]
 
 (* ::Subsection::Closed:: *)

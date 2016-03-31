@@ -55,11 +55,6 @@ NumberTableForm[data, n] makes a right aligned table of the numbers with n decim
 CompilebleFunctions::usage = 
 "CompilebleFunctions[] generates a list of all compilable functions."
 
-Transpose2C::usage = "Transpose2C[data,trans] transposes a 2D array"
-Transpose3C::usage = "Transpose3C[data,trans] transposes a 3D array"
-Transpose4C::usage = "Transpose4C[data,trans] transposes a 4D array"
-Transpose5C::usage = "Transpose5C[data,trans] transposes a 5D array"
-
 
 (* ::Subsection:: *)
 (*General Options*)
@@ -149,7 +144,7 @@ DTItoolFunctions[toolb_String,p_Integer]:=Partition[DTItoolFunctions[toolb], p, 
 SyntaxInformation[DTItoolFuncPrint] = {"ArgumentsPattern" -> {}};
 
 DTItoolFuncPrint[]:=Module[{functions,packs},
-	packs = Flatten[StringCases[$ContextPath, "DTITools`" ~~ x__ -> x]];
+	packs = Sort[Flatten[StringCases[$ContextPath, "DTITools`" ~~ x__ -> x]]];
 	functions = "DTITools`" <> # -> Names["DTITools`" <> # <> "*"] & /@ packs;
  (
      Print[Style[#[[1]], Bold, Large, Black]];
@@ -246,16 +241,6 @@ NumberTableForm[dat_, depth_, opts : OptionsPattern[]] :=
 SyntaxInformation[CompilebleFunctions] = {"ArgumentsPattern" -> {}};
 
 CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1, 1] // Transpose) /. 1 -> {} // TableForm
-
-
-(* ::Subsection::Closed:: *)
-(*TransposeC*)
-
-
-Transpose2C = Compile[{{dat, _Real, 2}, {trans, _Integer, 1}}, Transpose[dat, trans]];
-Transpose3C = Compile[{{dat, _Real, 3}, {trans, _Integer, 1}}, Transpose[dat, trans]];
-Transpose4C = Compile[{{dat, _Real, 4}, {trans, _Integer, 1}}, Transpose[dat, trans]];
-Transpose5C = Compile[{{dat, _Real, 5}, {trans, _Integer, 1}}, Transpose[dat, trans]];
 
 
 (* ::Section:: *)
