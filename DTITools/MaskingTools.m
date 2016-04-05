@@ -555,7 +555,7 @@ SmoothMask[mask_, f_: 2] := Block[{n, n1},
 (*NormalizeData functions*)
 
 
-SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_.}};
 
 NormalizeData[data_] := NormalizeDatai[data]
  
@@ -564,7 +564,7 @@ NormalizeDatai=Compile[{{data, _Real, 2}},
      DeleteCases[Flatten[Clip[data, {20, 10000}, {0, 10000}]], 0.]], 
    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
-NormalizeData[data_,minmax_] := NormalizeDatai[data,minmax]
+NormalizeData[data_,minmax_] := ScaleData[data,minmax]
 
 ScaleData = 
   Compile[{{data, _Real, 0}, {range, _Real, 1}}, 
