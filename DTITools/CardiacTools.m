@@ -99,6 +99,9 @@ TransmuralPlot::usage = "TransmuralPlot[data] plots transmural profiles of the d
 data can be a single profile or a list of profiles. In the second case the mean and standardeviations are plotted."
 
 
+CreateHeart::usage="CreateHeart[]"
+
+
 (* ::Subsection:: *)
 (*Options*)
 
@@ -390,8 +393,8 @@ WallAngleMap[mask_, vox_, inout_] :=
     
   (*fit the wall profile with Quadratic function*)
   {in, out} = (FitWall[#, "Quartic"]) & /@ {inout[[1, 2]], inout[[2, 2]]};
-  fout = First@First@Position[out[[2]], _Real?(# != 0. &)];
-  fin = First@First@Position[in[[2]], _Real?(# != 0. &)];
+  fout = First@First@Position[out[[1]], _Real?(# != 0. &)];
+  fin = First@First@Position[in[[1]], _Real?(# != 0. &)];
   
   walldir = {in, out};
 wallang = Transpose[Map[(
@@ -1510,6 +1513,104 @@ TransmuralPlot[data_, OptionsPattern[]] :=
    PlotRange -> {{0, 1}, {min, max}},ImageSize->OptionValue[ImageSize],PlotLabel->OptionValue[PlotLabel],
    GridLines -> {{{.5, Directive[Thick, Black, Dashed]}}, Join[System`FindDivisions[{min, max},Round[(max-min)/ OptionValue[GridLineSpacing]]], {{0, Directive[{Thick, Black}]}}]}, 
    FrameTicks -> {{{0, "Endo"}, {.5, "Mid"}, {1, "Epi"}}, Automatic}]
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*CreateHeart*)
+
+
+CreateHeart[] := 
+ Module[{set, col, pan, contin, contout, shape, seto, shapeplot, 
+   topline, shapeout, con},
+  set = {{73, 2.85, 2.8, 0.018}, {67, 3.42, 5.76, 0.078}, 110};
+  col = Gray;
+  pan = Manipulate[
+    contin = ContourPlot[With[{
+        zi = 0.06 (zp - higi), xi = 0.06 (xp - 59), yi = 0},
+       (xi^2/widthi*(1 - cupi zi) + yi^2/widthi*(1 - cupi zi) + 
+         zi^2/lengthi^2)
+       ], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, 
+      ContourStyle -> {Thick, Red}, ContourShading -> None];
+    contout = ContourPlot[With[{
+        zo = 0.06 (zp - higo), xo = 0.06 (xp - 59), yo = 0},
+       (xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) + 
+         zo^2/lengtho^2)
+       ], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, 
+      ContourStyle -> {Thick, Blue}, ContourShading -> None];
+    
+    shape = Table[
+      With[{
+        zi = 0.06 (zp - higi), xi = 0.06 (xp - 59.5), yi = 0,
+        zo = 0.06 (zp - higo), xo = 0.06 (xp - 59.5), yo = 0},
+       If[((xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) + 
+             zo^2/lengtho^2) > 1), 0, 1] -
+        If[((xi^2/widthi*(1 - cupi zi) + yi^2/widthi*(1 - cupi zi) + 
+             zi^2/lengthi^2) > 1), 0, 1]
+       ], {zp, 120, 1, -1}, {xp, 1, 120}];
+    (*shapef=shape;
+    con=ConstantArray[0,Dimensions[shape]];
+    shapef[[;;Length[shapef]-top+1]]=con[[;;Length[shapef]-
+    top+1]];*)
+    
+    seto = {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, 
+       cupo}, top};
+    
+    shapeplot = ArrayPlot[shape];
+    topline = 
+     Graphics[{{Green, Thick, Line[{{0, top}, {120, top}}]}, {White, 
+        Polygon[{{0, top}, {120, top}, {120, Length[shape] + 1}, {0, 
+           Length[shape] + 1}}]}}];
+    Show[shapeplot, topline, contin, contout]
+    
+    , Delimiter
+    , {{higi, set[[1, 1]], "inner hight"}, 60, 90}
+    , {{lengthi, set[[1, 2]], "inner length"}, 2, 4}
+    , {{widthi, set[[1, 3]], "inner width"}, 1, 10}
+    , {{cupi, set[[1, 4]], "inner cup"}, 0, 0.25}
+    , Delimiter
+    , {{higo, set[[2, 1]], "outer hight"}, 60, 90}
+    , {{lengtho, set[[2, 2]], "outer length"}, 2, 4}
+    , {{widtho, set[[2, 3]], "outer width"}, 1, 10}
+    , {{cupo, set[[2, 4]], "outer cup"}, 0, 0.25}
+    , Delimiter
+    , {{top, set[[3]]}, 90, 120, 1}
+    , Button["set 1",
+     {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, cupo}, 
+       top} = {{73, 2.85, 2.8, 0.018}, {67, 3.42, 5.76, 0.078}, 110}]
+    , Button[
+     "set 2", {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, 
+        cupo}, top} = {{69, 3.1, 2.8, 0.16}, {67.5, 3.6, 7.3, 0.12}, 
+       105}]
+    
+    ];
+  
+  NotebookClose[cardiacWindow];
+  cardiacWindow = CreateWindow[DialogNotebook[{
+      CancelButton["Generate",
+       DialogReturn[out = seto]
+       ], Dynamic[Row[seto]], pan}, WindowSize -> All, 
+     WindowTitle -> "Plot data window"]];
+  
+  shapeoutC = Compile[{{seti, _Real, 1}, {seto, _Real, 1}}, Table[
+     With[{
+       zi = 0.06 (zp - seti[[1]]), xi = 0.06 (xp - 59.5),(*yi=0*)
+       yi = 0.06 (yp - 59.5),
+       zo = 0.06 (zp - seto[[1]]), xo = 0.06 (xp - 59.5),(*yo=0*)
+       yo = 0.06 (yp - 59.5)},
+      If[((xo^2/seto[[3]]*(1 - seto[[4]] zo) + 
+            yo^2/seto[[3]]*(1 - seto[[4]] zo) + zo^2/seto[[2]]^2) > 
+          1), 0, 1] -
+       If[((xi^2/seti[[3]]*(1 - seti[[4]] zi) + 
+            yi^2/seti[[3]]*(1 - seti[[4]] zi) + zi^2/seti[[2]]^2) > 
+          1), 0, 1]
+      ], {zp, 1, 120, 1}, {xp, 1, 120, 1}, {yp, 1, 120, 1}]
+    ];
+  Print[seto];
+  shapeout = shapeoutC[out[[1]], out[[2]]];
+  con = ConstantArray[0, Dimensions[shapeout]];
+  shapeout[[out[[3]] ;;]] = con[[out[[3]] ;;]];
+  Return[{ArrayPad[shapeout, 15], {1, 1, 1}}];
   ]
 
 

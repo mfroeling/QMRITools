@@ -96,6 +96,9 @@ mask is the region in which the bayesian fit is performed.
 
 output is {f1, f2, dc, pdc1, pdc2}";
 
+IVIMResiduals::usage = 
+"IVIMResiduals[data, binp, pars] calculates the root mean square residuals of an IVIM fit ussing IVIMCalc, BayesianIVIMFit2 or BayesianIVIMFit3."
+
 HistogramPar::usage = 
 "HistogramPar[data, {constraints, Nbins}, style, color, range] plots histograms of IVIM solution.
 HistogramPar[data, {constraints, Nbins, mu, conv}, components, color, range] plots histograms of IVIM solution.
@@ -1229,6 +1232,49 @@ IVIMCorrectData[data_, {S0_, f_, pdc_}, bval_, OptionsPattern[]] := Module[{ff, 
 
 SynDatai = Compile[{{s0, _Real, 3}, {f, _Real, 3}, {pdc, _Real, 3}, {bval, _Real, 1}}, Transpose[Map[(f s0 Exp[-# pdc]) &, bval]]];
 
+
+(* ::Subsubsection::Closed:: *)
+(*IVIMResiduals*)
+
+
+IVIMResiduals[data_, binp_, pars_] := 
+ Module[{depthD,depthP,dat,par,res},
+  
+  (*data checks*)
+  depthD = ArrayDepth[data];
+  depthP = ArrayDepth[pars];
+  
+  dat = N[If[depthD == 4, Transpose[data], data]];
+  dat = If[depthD > 1, TransData[dat, "l"], dat];
+  par = If[depthP > 1, TransData[pars, "l"], pars];
+  
+  res = IVIMResCalcC[dat, binp, par];
+  
+  res = If[depthD > 1, TransData[res, "r"], res];
+  
+  Sqrt[Mean[Drop[res, 1]^2]] // N
+  
+  ];
+  
+  IVIMResCalcC = 
+  Block[{S0, f1, f2, dc, pdc1, pdc2, out}, 
+   Compile[{{dat, _Real, 1}, {binp, _Real, 1}, {pars, _Real, 1}},
+    out = Switch[Length[pars],
+      2,
+      {S0, dc} = pars;
+      (S0*(((Exp[-binp dc])))),
+      4,
+      {S0, f1, dc, pdc1} = pars;
+      (S0*((((1 - f1)*Exp[-binp dc]) + (f1*Exp[-binp pdc1])))),
+      6,
+      {S0, f1, f2, dc, pdc1, pdc2} = pars;
+      (S0*((((1 - f1 - f2)*Exp[-binp dc]) + (f1*
+             Exp[-binp pdc1]) + (f2*Exp[-binp pdc2]))))
+      ];
+    dat - out
+    , {{out, _Real, 1}}, RuntimeAttributes -> {Listable}, 
+    RuntimeOptions -> "Speed"
+    ]];
 
 (* ::Section:: *)
 (*End Package*)

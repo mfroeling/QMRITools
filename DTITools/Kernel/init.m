@@ -41,8 +41,8 @@ package= "DTITools`";
 subPackages = {"CardiacTools`", "DenoiseTools`", "ElastixTools`", "ExportTools`", 
    "GeneralTools`", "GradientTools`", "ImportTools`", "IVIMTools`", 
    "ManipulationTools`", "MaskingTools`", "NiftiTools`", 
-   "PhysiologyTools`", "PlottingTools`", "ProcessingTools`", 
-   "RegistrationTools`", "SimulationTools`"};
+   "PhysiologyTools`", "PlottingTools`", "ProcessingTools`", "SimulationTools`", 
+   "TransformationTools`"};
 
 (*define all the toolbox contexts*)
 System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffusion packages"

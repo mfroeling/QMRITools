@@ -1218,18 +1218,14 @@ SyntaxInformation[CorrectBmatrix] = {"ArgumentsPattern" -> {_, _, OptionsPattern
 (*CorrectGradients*)
 
 
-Options[CorrectGradients] = {MethodReg -> "Full"}
+Options[CorrectGradients] = {MethodReg -> "Rotation"}
 
 SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
  
  CorrectGradients[grad_, w_,OptionsPattern[]] := 
   Block[{gr,grnew,trans,rot},
    MapThread[(
-      trans = #1;
-      gr = #2;
-      rot = ParametersToTransform[trans, OptionValue[MethodReg]];
-      grnew = rot.gr
-      (*Print[MatrixForm/@Round[{bm,bmnew,rot},.00001]];*)
+      ParametersToTransform[#1, OptionValue[MethodReg]].#2
       ) &, {w, grad}]
    ]
 

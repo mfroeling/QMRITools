@@ -76,7 +76,9 @@ HomoginizeData::usage =
 "HomoginizeData[data, mask] tries to homoginize the data within the mask by removing intensity gradients."
 
 NormalizeData::usage = 
-"NormalizeData[data] normalizes the data to the mean signal of the data."
+"NormalizeData[data] normalizes the data to the mean signal of the data.
+NormalizeData[data,{min,max}] normalizes the data between min and max.
+"
 
 
 (* ::Subsection::Closed:: *)
@@ -562,7 +564,12 @@ NormalizeDatai=Compile[{{data, _Real, 2}},
      DeleteCases[Flatten[Clip[data, {20, 10000}, {0, 10000}]], 0.]], 
    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
+NormalizeData[data_,minmax_] := NormalizeDatai[data,minmax]
 
+ScaleData = 
+  Compile[{{data, _Real, 0}, {range, _Real, 1}}, 
+   (data - range[[1]])/(range[[2]] - range[[1]]), 
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 (* ::Subsection::Closed:: *)
 (*NormalizeData functions*)
 
