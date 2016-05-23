@@ -27,6 +27,8 @@ ClearAll @@ Names["DTITools`CardiacTools`*"];
 (* ::Subsection:: *)
 (*Functions*)
 
+CalculateWallMap::usage = 
+"CalculateWallMap[mask,vox] Calculates the wall distance map and the wall derivative, output is {wallmap, der}."
 
 HelixAngleCalc::usage = 
 "HelixAngleCalc[eigenvectors, mask, centerpoint, vec, inout, vox]  calculates the helix angle matrix of cardiac data using only a left ventricle mask.
@@ -98,9 +100,9 @@ output is a plot window."
 TransmuralPlot::usage = "TransmuralPlot[data] plots transmural profiles of the data.
 data can be a single profile or a list of profiles. In the second case the mean and standardeviations are plotted."
 
-
+(*
 CreateHeart::usage="CreateHeart[]"
-
+*)
 
 (* ::Subsection:: *)
 (*Options*)
@@ -169,6 +171,161 @@ GridLineSpacing::usage = "GridLineSpacing is an option of TransmuralPlot. It def
 Begin["`Private`"]
 
 
+Options[CalculateWallMap] = {ShowFit -> True};
+
+SyntaxInformation[
+   CalculateWallMap] = {"ArgumentsPattern" -> {_, _, 
+     OptionsPattern[]}};
+
+CalculateWallMap[mask_, vox_, OptionsPattern[]] := Module[{
+   seg, min, mout, mtot, pts, ptsi, pos, ptso, x, y, z, plane, maxd, 
+   dis,
+   surfpl, pointspl, planepl, planefit, i, fit,
+   planem, d1, d2, d3, zc, mask2, in, out, min2, mout2, clip,
+   surfin, surfout, ptsin, ptsout, ptspl,
+   inpnt, outpnt, wall, pt, t1, pt1, pt2, dist1, dist12, dist22, dist2,
+   ptsm, dist, der
+   },
+  
+  (*create the inner and outer volume*)
+  seg = MorphologicalComponents[#] & /@ (1 - mask);
+  seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
+  min = Unitize[Clip[seg, {1.5, 2}, {0, 0}]];
+  mout = Unitize[1 - Clip[seg, {0, 1}, {0, 0}]];
+  mtot = (mout + 1) - 2 min;
+  
+  (*get the top points to fit top plane*)
+  pts = ptsi = Flatten[MapIndexed[(
+        pos = Position[#1, 1.] - 1;
+        If[pos != {}, Join[Last[pos], #2], Nothing]
+        ) &, N@TransData[mask, "l"], {2}], 1];
+  ptso = {{0, 0, 0}};
+  
+  (*fit the top plane*)
+  Clear[x, y, z];
+  plane = Fit[Reverse /@ pts, {1, x, y}, {x, y}];
+  maxd = Max[{(1./(0.5 Norm[vox])), 0.25}];
+  While[ptsi != ptso,
+   ptsi = ptso;
+   ptso = Select[pts, (
+       dis = (((plane - z) /. Thread[{x, y, z} -> Reverse[#]]));
+       dis < 1.5 maxd || Abs[dis] < maxd
+       ) &];
+   plane = Fit[Reverse /@ ptso, {1, x, y}, {x, y}];
+   ];
+  
+  (*plane fit visualisation*)
+  surfpl = 
+   ListContourPlot3D[GaussianFilter[mask, 1], Contours -> {0.6}, 
+    Mesh -> False, 
+    PlotRange -> Transpose[{{0, 0, 0}, Reverse@(Dimensions[mask])}], 
+    BoxRatios -> Reverse@(vox Dimensions[mask]), 
+    ContourStyle -> Directive[Gray, Opacity[0.5]], 
+    Lighting -> "Neutral", Axes -> False];
+  pointspl = 
+   ListPointPlot3D[Reverse[# - {0, 1, 1}] & /@ ptsi, 
+    PlotRange -> Transpose[{{0, 0, 0}, Reverse@Dimensions[mask]}], 
+    BoxRatios -> 1, PlotStyle -> Red];
+  planepl = 
+   Plot3D[plane,  {x, 0, Dimensions[mask][[3]]}, {y, 0, 
+     Dimensions[mask][[2]]}, Mesh -> False, 
+    PlotStyle -> Directive[Red, Opacity[.2]], 
+    BoundaryStyle -> Darker[Red]];
+  planefit = 
+   Show[surfpl, planepl, pointspl, PerformanceGoal -> "Speed"];
+  
+  (*make mask from plan*)
+  planem = 0 mout;
+  {d1, d2, d3} = Dimensions[planem];
+  Table[
+   zc = (Round[plane] + o) /. {x -> xc, y -> yc};
+   If[zc <= d1 && mout[[zc, yc, xc]] != 1, 
+    planem[[zc, yc, xc]] = 1], {xc, 1, d3}, {yc, 1, d2}, {o, 2, 5}];
+  
+  (*close gap between mask and top plane*)
+  mask2 = mask;
+  in = mask2; out = 0 mask2;
+  i = 0;
+  While[in != out && i < 20,
+   i++;
+   in = mask2;
+   out = (1 - 
+       min) (ArrayPad[
+        Closing[ArrayPad[mask2 + planem, 20], 0.5], -20] - planem);
+   mask2 = out;
+   ];
+  
+  (*fill inner mask up to plane*)
+  min2 = min;
+  in = min2; out = 0 min2;
+  clip = Clip[(1 - mask2 - planem), {0, 1}];
+  i = 0;
+  While[in != out && i < 20,
+   i++;
+   in = min2;
+   out = clip ArrayPad[Dilation[ArrayPad[min2, 20], 0.5], -20];
+   min2 = out;
+   ];
+  mout2 = ArrayPad[Closing[ArrayPad[mask + min2, 5], 1], -5];
+  {min2, mout2};
+  
+  (*Create Inner and outer surfaces*)
+  {surfout, surfin} = 
+   ListContourPlot3D[GaussianFilter[min2 + mout2, 1], 
+      Contours -> {0.3, 1.5}[[#]], Mesh -> False,
+      PlotRange -> Transpose[{{0, 0, 0}, Reverse@(Dimensions[mask])}],
+      Lighting -> "Neutral", 
+      BoxRatios -> Reverse@(vox Dimensions[mask]),
+      ContourStyle -> Directive[{Red, Blue}[[#]], Opacity[0.4]], 
+      MaxPlotPoints -> {50, 100}] & /@ {1, 2};
+  
+  Print[surfout,surfin];
+  
+  (*get the coordinates from the inner and outer surface*)
+  ptsin = 
+   Reverse /@ Cases[surfin, GraphicsComplex[x_, ___] :> x][[1]] + 1;
+  ptsout = 
+   Reverse /@ Cases[surfout, GraphicsComplex[x_, ___] :> x][[1]] + 1;
+  
+  ptspl = 
+   Show[surfin, surfout, 
+    ListPointPlot3D[{Reverse /@ ptsin - 1, Reverse /@ ptsout - 1}, 
+     PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed"];
+  
+  inpnt = N[vox # & /@ ptsin]; outpnt = N[vox # & /@ ptsout];
+  (*generate the wall distance function*)
+  wall = 0 mask + 1;
+  ptsm = N@Position[mask, 1];
+  DistributeDefinitions[inpnt,outpnt];
+  dist = ParallelMap[(
+      pt = vox #;
+      t1 = AbsoluteTiming[
+        pt1 = Mean[Nearest[inpnt, pt, 3]];
+        pt2 = Mean[Nearest[outpnt, pt, 3]];
+        ];
+      dist1 = Chop[Norm[pt1 - pt2]];
+      dist12 = Chop[Norm[pt1 - pt]];
+      dist22 = Chop[Norm[pt2 - pt]];
+      dist2 = 
+       If[dist1 == 0., 0., Mean[{dist12/dist1, 1 - (dist22/dist1)}]];
+      (*{pt1,pt,pt2,dist1,*)dist2
+      ) &, ptsm];
+  (*create the wall distance map*)
+  MapThread[(wall[[#1[[1]], #1[[2]], #1[[3]]]] = #2) &, {ptsm, dist}];
+  wall = MedianFilter[wall*(1 - min2), 1];
+  der = GaussianFilter[
+      wall, {1.5 (1/vox)/(1/vox[[1]])}, #] & /@ (IdentityMatrix[3]); 
+  
+  wall = mask wall;
+  wall = NormalizeData[wall, MinMax[wall]];
+  der = mask # & /@ der;
+  
+  If[OptionValue[ShowFit], 
+   fit = Print[GraphicsRow[{planefit, ptspl}, ImageSize -> 800]]];
+  If[OptionValue[ShowFit], {wall, der, fit}, {wall, der}]
+  ]
+
+
 (* ::Subsection:: *)
 (*HelixAngleCalc*)
 
@@ -199,6 +356,7 @@ Switch[OptionValue[HelixMethod]
 	,
 	"Fast"
 	,
+	Print["start"];
 	(*calculate the wall angle map*)
 	wallangmap=N[WallAngleMap[mask,vox,inout]Degree];
 	(*define te rad vector using center points*)
@@ -211,6 +369,7 @@ Switch[OptionValue[HelixMethod]
 	norvecc=NorVecR[wallangmap,cirvec,norvec];
 	(*make radvec purpendicular to corrected norvec*)
 	radvecn=MakePerpendicular[radvec,norvecc];
+	Print["end"]
 	,
 	"Slow"
 	,
@@ -227,6 +386,14 @@ Switch[OptionValue[HelixMethod]
 	wall = Table[func2[{z, y, x}], {z, 1,dim[[1]]}, {y, 1, dim[[2]]}, {x, 1,dim[[3]]}];
 	
 	der = GaussianFilter[wall, {1.5 (1/vox)/(1/vox[[1]])}, #] & /@ (IdentityMatrix[3]);
+	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
+	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
+	norvecc = MakePerpendicular[norvec, radvecn];
+	cirvec = NormalizeC[CrossC[radvecn,norvecc]];
+	,
+	"Slow2"
+	,
+	{wall,der}=CalculateWallMap[mask,vox,ShowFit->False];
 	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
 	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
 	norvecc = MakePerpendicular[norvec, radvecn];
@@ -521,11 +688,11 @@ vv = Unitize[points];
 first = (First@Position[vv, 1])[[1]];
 last = (Last@Position[vv, 1])[[1]];
 offo = Join[
-  {off[[first, 1]], off[[first, 2]],#} & /@ Range[1, first-1],
-  off[[Range[first, last]]],
-  {off[[last, 1]], off[[last, 2]],#} & /@ Range[last + 1, Length[vv]]
+	{off[[first, 1]] + (first - #) (off[[first, 1]] - off[[first + 1, 1]]), off[[first, 2]] + (first - #) (off[[first, 2]] - off[[first + 1, 2]]), #} & /@ Range[1, first - 1],
+	off[[Range[first, last]]],
+  	{off[[last, 1]] + (# - last) (off[[last, 1]] - off[[last - 1, 1]]), off[[last, 2]] + (# - last) (off[[last, 2]] - off[[last - 1, 2]]), #} & /@ Range[last + 1, Length[vv]]
   ];
-veco=Join[ConstantArray[{0,0,1},first-1],vec[[first;;last]],ConstantArray[{0,0,1},Length[vv]-last]];
+veco=Join[ConstantArray[vec[[first]],first-1],vec[[first;;last]],ConstantArray[vec[[last]],Length[vv]-last]];
 {offo,veco}
 ]
 
@@ -552,8 +719,9 @@ half
 
 (*function to get inner and outer radius of the segmentation*)
 GetRadius[mask_, {minr_, maxr_}, half_] := 
- Module[{msin, tmp, comps, seg, min, mout, inner, outer}, 
+ Module[{msin, tmp, comps, seg, min, mout, inner, outer,seli,selo,spos}, 
   seg = MorphologicalComponents[#] & /@ (1 - mask);
+  seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
   min = Unitize[Clip[seg, {1.5, 2}, {0, 0}]];
   mout = Unitize[1 - Clip[seg, {0, 1}, {0, 0}]];
   (*get the inner radius*)inner =
@@ -581,8 +749,14 @@ GetRadius[mask_, {minr_, maxr_}, half_] :=
        If[
         comps != {}, {Join[comps[[1]], (#2)], 
          comps[[2]]}, {{}, {}}]) &, mout];
+    (*only define outer if inner is known*)
+    seli = Unitize[inner[[2]]] /. {} -> 0;
+    selo = Unitize[outer[[2]]] /. {} -> 0;
+    spos = Flatten@SequencePosition[seli + selo, {2, 1}];
+    If[spos =!= {},spos = spos[[2]];outer[[All, spos ;;]] = outer[[All, spos ;;]] /. {{_, _, _} -> {}, _Real -> {}}];
   (*give inner and outer radius (centerpoint,radius)*)
-  {inner, outer}]
+  {inner, outer}
+  ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -658,9 +832,9 @@ PlotSegmentation[mask_, inner_, outer_, {off_, offi_, offo_}, vox_] :=
    Graphics3D[{Thick, Red, Line[Delete[offip, Position[inner[[2]], {}]]]}],
    
    (*Plot the segmented outlines*)
-   If[outer[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{outer[[2, #]] Sin[u], outer[[2, #]] Cos[u],0} + offop[[#]], {u, 0, 2 Pi}, 
+   If[outer[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{outer[[2, #]] Sin[u], outer[[2, #]] voxl[[1]]/voxl[[2]] Cos[u],0} + offop[[#]], {u, 0, 2 Pi}, 
        PlotStyle -> Directive[{Thick, Blue, Opacity[.5]}]]] & /@ Range[Length[mask]], 
-   If[inner[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{inner[[2, #]] Sin[u], inner[[2, #]] Cos[u], 0} + offip[[#]], {u, 0, 2 Pi}, 
+   If[inner[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{inner[[2, #]] Sin[u], inner[[2, #]] voxl[[1]]/voxl[[2]] Cos[u], 0} + offip[[#]], {u, 0, 2 Pi}, 
        PlotStyle -> Directive[{Thick, Red, Opacity[.5]}]]] & /@ Range[Length[mask]],ImageSize->400
        
    ]
@@ -676,11 +850,11 @@ Options[PlotMaskVolume]={Filter->True}
 PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Module[{pmask,dim},
 	pmask = ArrayPad[Map[Reverse, 
 		If[OptionValue[Filter],
-		GaussianFilter[Clip[mask], 2],
+		GaussianFilter[Clip[mask], 1],
 		Clip[mask]
 		], {1}], 1];
 	dim=Dimensions[pmask];
-	ListContourPlot3D[pmask, Contours -> {.5}, ContourStyle -> {color, Opacity[.5]}, Mesh -> False, 
+	ListContourPlot3D[pmask, Contours -> {.4}, ContourStyle -> {color, Opacity[.5]}, Mesh -> False, 
     Lighting -> "Neutral", BoundaryStyle -> None, PlotRange -> (Thread[{{0, 0, 0}, Reverse@dim - 1}]), 
     BoxRatios -> Reverse[(vox (dim + 2))], Axes -> True, ImageSize -> 400, SphericalRegion -> True]
   ]
@@ -1520,98 +1694,6 @@ TransmuralPlot[data_, OptionsPattern[]] :=
 (*CreateHeart*)
 
 
-CreateHeart[] := 
- Module[{set, col, pan, contin, contout, shape, seto, shapeplot, 
-   topline, shapeout, con},
-  set = {{73, 2.85, 2.8, 0.018}, {67, 3.42, 5.76, 0.078}, 110};
-  col = Gray;
-  pan = Manipulate[
-    contin = ContourPlot[With[{
-        zi = 0.06 (zp - higi), xi = 0.06 (xp - 59), yi = 0},
-       (xi^2/widthi*(1 - cupi zi) + yi^2/widthi*(1 - cupi zi) + 
-         zi^2/lengthi^2)
-       ], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, 
-      ContourStyle -> {Thick, Red}, ContourShading -> None];
-    contout = ContourPlot[With[{
-        zo = 0.06 (zp - higo), xo = 0.06 (xp - 59), yo = 0},
-       (xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) + 
-         zo^2/lengtho^2)
-       ], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, 
-      ContourStyle -> {Thick, Blue}, ContourShading -> None];
-    
-    shape = Table[
-      With[{
-        zi = 0.06 (zp - higi), xi = 0.06 (xp - 59.5), yi = 0,
-        zo = 0.06 (zp - higo), xo = 0.06 (xp - 59.5), yo = 0},
-       If[((xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) + 
-             zo^2/lengtho^2) > 1), 0, 1] -
-        If[((xi^2/widthi*(1 - cupi zi) + yi^2/widthi*(1 - cupi zi) + 
-             zi^2/lengthi^2) > 1), 0, 1]
-       ], {zp, 120, 1, -1}, {xp, 1, 120}];
-    (*shapef=shape;
-    con=ConstantArray[0,Dimensions[shape]];
-    shapef[[;;Length[shapef]-top+1]]=con[[;;Length[shapef]-
-    top+1]];*)
-    
-    seto = {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, 
-       cupo}, top};
-    
-    shapeplot = ArrayPlot[shape];
-    topline = 
-     Graphics[{{Green, Thick, Line[{{0, top}, {120, top}}]}, {White, 
-        Polygon[{{0, top}, {120, top}, {120, Length[shape] + 1}, {0, 
-           Length[shape] + 1}}]}}];
-    Show[shapeplot, topline, contin, contout]
-    
-    , Delimiter
-    , {{higi, set[[1, 1]], "inner hight"}, 60, 90}
-    , {{lengthi, set[[1, 2]], "inner length"}, 2, 4}
-    , {{widthi, set[[1, 3]], "inner width"}, 1, 10}
-    , {{cupi, set[[1, 4]], "inner cup"}, 0, 0.25}
-    , Delimiter
-    , {{higo, set[[2, 1]], "outer hight"}, 60, 90}
-    , {{lengtho, set[[2, 2]], "outer length"}, 2, 4}
-    , {{widtho, set[[2, 3]], "outer width"}, 1, 10}
-    , {{cupo, set[[2, 4]], "outer cup"}, 0, 0.25}
-    , Delimiter
-    , {{top, set[[3]]}, 90, 120, 1}
-    , Button["set 1",
-     {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, cupo}, 
-       top} = {{73, 2.85, 2.8, 0.018}, {67, 3.42, 5.76, 0.078}, 110}]
-    , Button[
-     "set 2", {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, 
-        cupo}, top} = {{69, 3.1, 2.8, 0.16}, {67.5, 3.6, 7.3, 0.12}, 
-       105}]
-    
-    ];
-  
-  NotebookClose[cardiacWindow];
-  cardiacWindow = CreateWindow[DialogNotebook[{
-      CancelButton["Generate",
-       DialogReturn[out = seto]
-       ], Dynamic[Row[seto]], pan}, WindowSize -> All, 
-     WindowTitle -> "Plot data window"]];
-  
-  shapeoutC = Compile[{{seti, _Real, 1}, {seto, _Real, 1}}, Table[
-     With[{
-       zi = 0.06 (zp - seti[[1]]), xi = 0.06 (xp - 59.5),(*yi=0*)
-       yi = 0.06 (yp - 59.5),
-       zo = 0.06 (zp - seto[[1]]), xo = 0.06 (xp - 59.5),(*yo=0*)
-       yo = 0.06 (yp - 59.5)},
-      If[((xo^2/seto[[3]]*(1 - seto[[4]] zo) + 
-            yo^2/seto[[3]]*(1 - seto[[4]] zo) + zo^2/seto[[2]]^2) > 
-          1), 0, 1] -
-       If[((xi^2/seti[[3]]*(1 - seti[[4]] zi) + 
-            yi^2/seti[[3]]*(1 - seti[[4]] zi) + zi^2/seti[[2]]^2) > 
-          1), 0, 1]
-      ], {zp, 1, 120, 1}, {xp, 1, 120, 1}, {yp, 1, 120, 1}]
-    ];
-  Print[seto];
-  shapeout = shapeoutC[out[[1]], out[[2]]];
-  con = ConstantArray[0, Dimensions[shapeout]];
-  shapeout[[out[[3]] ;;]] = con[[out[[3]] ;;]];
-  Return[{ArrayPad[shapeout, 15], {1, 1, 1}}];
-  ]
 
 
 (* ::Section:: *)

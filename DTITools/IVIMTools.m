@@ -434,7 +434,7 @@ MeanNoZero[data_, cor_.] :=
 (*ThetaConv*)
 
 
-SyntaxInformation[ThetaConv] = {"ArgumentsPattern" -> {_, _, _, _., _.}};
+SyntaxInformation[ThetaConv] = {"ArgumentsPattern" -> {_}};
 
 ThetaConv[{f1_, dc_, pdc_}] := {Exp[f1]/(1 + Exp[f1]), Exp[dc], Exp[pdc]};
 ThetaConv[{f1_, f2_, dc_, pdc1_}] := {Exp[f1]/(1 + Exp[f1]), Exp[f2]/(1 + Exp[f2]), Exp[dc], Exp[pdc1]};
@@ -445,7 +445,7 @@ ThetaConv[{f1_, f2_, dc_, pdc1_, pdc2_}] := {Exp[f1]/(1 + Exp[f1]), Exp[f2]/(1 +
 (*ThetaConvi*)
 
 
-SyntaxInformation[ThetaConvi] = {"ArgumentsPattern" -> {_, _, _, _., _.}};
+SyntaxInformation[ThetaConvi] = {"ArgumentsPattern" -> {_}};
 
 ThetaConvi[{F_, Dc_, pDc_}] := N[{Log[F] - Log[1 - F], Log[Dc], Log[pDc]}] /. {-Infinity -> 0., Indeterminate -> 0.};
 ThetaConvi[{F1_, F2_, Dc_, pDc1_}] := N[{Log[F1] - Log[1 - F1], Log[F2] - Log[1 - F2], Log[Dc], Log[pDc1]}] /. {-Infinity -> 0., Indeterminate -> 0.};
@@ -508,7 +508,7 @@ Options[BayesianIVIMFit2] = {ChainSteps -> {20000, 1000, 10}, UpdateStep -> {0.5
 SyntaxInformation[BayesianIVIMFit2] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
 BayesianIVIMFit2[data_, bval_, fitpari_, mask_, opts : OptionsPattern[]] := Module[{
-	useDat, thetai, fix, ynf, fixSD, out1, out2, h1, solution, 
+	useDat, thetai, fix, ynf, fixSD, out1, out2, h1, solution,
 	fitpar, deviation, con2, con2e, mui, covi, mmu, mcov,post
    },
   
@@ -519,6 +519,8 @@ BayesianIVIMFit2[data_, bval_, fitpari_, mask_, opts : OptionsPattern[]] := Modu
 
   fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con2}]];
   fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con2e, mask], fitpar];
+  
+
   	
   useDat = MaskDTIdata[data, mask];
   {thetai,post} = Data3DToVector[fitpar,mask];

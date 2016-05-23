@@ -1432,7 +1432,7 @@ DixonToPercent[water_, fat_, maskt_:1] :=
   fmask = Mask[fat, 50];
   fatMap = maskt (fmask fatMap + (1 - fmask) (1 - waterMap));
   waterMap = maskt (1 - fatMap);
-  {waterMap, fatMap}/. 1->0;
+  {waterMap, fatMap}/. 1->0
   ]
 
 

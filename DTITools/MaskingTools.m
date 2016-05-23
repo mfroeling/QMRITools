@@ -559,9 +559,8 @@ SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_.}};
 
 NormalizeData[data_] := NormalizeDatai[data]
  
-NormalizeDatai=Compile[{{data, _Real, 2}}, 
-   data/Mean[
-     DeleteCases[Flatten[Clip[data, {20, 10000}, {0, 10000}]], 0.]], 
+NormalizeDatai=Compile[{{data, _Real, 3}}, 
+   data/Mean[DeleteCases[Flatten[data], 0.]], 
    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 NormalizeData[data_,minmax_] := ScaleData[data,minmax]

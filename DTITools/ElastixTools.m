@@ -1074,15 +1074,17 @@ RegisterDiffusionData[
   tempDir = (If[StringQ[tempDir], tempDir, "Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
   tempDira = tempDir <> "\\anat";
   
+
   (*perform DTI registration*)
   dtidatar = RegisterData[{dtidata, dtimask, vox},
     TempDirectory -> tempDir, 
     DeleteTempDirectory -> False, 
-    (*OutputTransformation->True,*) 
+    OutputTransformation->OptionValue[OutputTransformation], 
     MethodReg-> (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}),
     (*AffineDirections -> {1, 1, 1},*)
     FilterRules[{opts} , Options[RegisterData]]];
-  If[OptionValue[OutputTransformation],{dtidatar,w}=dtidata];
+
+  If[OptionValue[OutputTransformation],{dtidatar,w}=dtidatar];
   
   target = OptionValue[RegistrationTarget];
   movingdata=If[ListQ[target] && AllTrue[target, IntegerQ] && Min[target] > 0 && Max[target] <= Length[dtidatar[[1]]],

@@ -379,7 +379,7 @@ RescaleImgi[dat_, {sc_, met_}, n_] := Block[{type, im, dim},
   dim = If[met == "v", Round[sc Dimensions[dat]], sc];
   (*convert to 2D or 3D image*)
   im = Switch[ArrayDepth[dat], 2, Image[dat, type], 3, Image3D[dat, type]];
-  ImageData[ImageResize[im, Reverse[dim], Resampling -> {"Spline", n}], type]
+  ImageData[ImageResize[im, Reverse[dim], Resampling ->{"Spline", n},Padding->0], type]
   ]
 
 

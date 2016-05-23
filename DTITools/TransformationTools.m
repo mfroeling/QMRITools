@@ -54,7 +54,12 @@ Begin["`Private`"]
 (* ::Subsubsection:: *)
 (*TransformData*)
 
-TransformData[data_, vox_, w_] := 
+
+Options[TransformData]={InterpolationOrder->1}
+
+SyntaxInformation[TransformData]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+
+TransformData[data_, vox_, w_,OptionsPattern[]] := 
  Block[{coor, rot, coorR, interFunc, interFuncC},
   coor = GetCoordinates[data, vox];
   rot = ParametersToTransformFull[w, "Inverse"];
@@ -62,7 +67,7 @@ TransformData[data_, vox_, w_] :=
   interFunc = 
    Interpolation[
     Transpose[{Flatten[coor, ArrayDepth[coor] - 2], Flatten[data]}], 
-    InterpolationOrder -> 1, 
+    InterpolationOrder -> OptionValue[InterpolationOrder], 
     "ExtrapolationHandler" -> {0. &, "WarningMessage" -> False}];
   interFuncC = 
    Compile[{{coor, _Real, 1}}, 
