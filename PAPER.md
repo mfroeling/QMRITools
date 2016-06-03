@@ -1,8 +1,10 @@
 ---
-title: 'DTITools: a collection of tools for processing diffusion MRI data.'
+title: 'DTITools: a collection of tools for processing and visualization of diffusion MRI data.'
 tags:
-  - Diffusion
+  - Diffusion Tensor Imaging
+  - Data processing
   - Mathematica
+  - Simulation
 authors:
   - name: Martijn Froeling
     orcid: 0000-0003-3841-0497
@@ -12,7 +14,7 @@ bibliography: paper.bib
 ---
 
 # Summary
-DTITools is written Mathematica and contains a collection of tools and functions primaraly designed for processing diffusion MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast development and prototyping of new functions and batch data processing. The library of functions grows along with the research it is used for (see Froeling et al. 2009-2016). The toobox works along side other software packages (e.g. [vIST/e](http://bmia.bmt.tue.nl/software/viste/) and [ExploreDTI](http://www.exploredti.com/)) and for some functionality it calls external executables (e.g. [MRIcron](https://www.nitrc.org/projects/mricron/), [dcm2nii](https://www.nitrc.org/projects/dcm2nii/) and [Elastix](http://elastix.isi.uu.nl/)). The toobox has been used is various studies (e.g. Froeling et al. 2012, Hooijmans et al., 2015, Froeling et al. 2015)
+DTITools is written Mathematica and contains a collection of tools and functions primaraly designed for processing diffusion MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast development and prototyping of new functions and batch data processing. The library of functions grows along with the research it is used for. The toobox works along side other software packages (e.g. [vIST/e](http://bmia.bmt.tue.nl/software/viste/) and [ExploreDTI](http://www.exploredti.com/)) and for some functionality it calls external executables (e.g. [MRIcron](https://www.nitrc.org/projects/mricron/), [dcm2nii](https://www.nitrc.org/projects/dcm2nii/) and [Elastix](http://elastix.isi.uu.nl/)). The toobox has been used is various studies (e.g. Froeling et al. 2012, Hooijmans et al., 2015, Froeling et al. 2015).
 
 The toobox contains, amongst others, DICOM and Nifti import, 2D,3D and 4D data visualization, data registration (S. Klein et al. 2010, Shamonin et al. 2014), Noise supression (Aja-Fernandez et al. 2008, Veraart et al.2015), Diffusion drift correction (Vos et al. 2016), gradient direction optimization (Froeling et al. 2016), simulation framework (Froeling et al. 2013), Bayesian IVIM fitting (Orton et al. 2014) and more.
 
