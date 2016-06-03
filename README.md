@@ -26,6 +26,8 @@ It contains the following toolboxes:
 - SimulationTools
 - TransformationTools
 
+All code and documentation is maintained and uploaded to github using [Workbench 2.0](https://www.wolfram.com/products/workbench/).
+
 ## Install toolbox
 
 Install the toolbox in the Mathematica UserBaseDirectory > Applications.
@@ -35,7 +37,7 @@ Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 
 Some functions of DTITools call on external executables and software.
 These executables need to be placed in "DTITools\Applications".
-For the latest version of these tools and there user licences please visit their website.
+For the latest version of these tools and their user licences please visit their website.
 
 * [MRIcron](https://www.nitrc.org/projects/mricron/)
 	* mricron.exe
