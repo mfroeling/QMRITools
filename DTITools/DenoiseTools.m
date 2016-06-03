@@ -27,13 +27,14 @@ ClearAll @@ Names["DTIToos'DenoiseTools`*"];
 (* ::Subsection:: *)
 (*Fuctions*)
 
-PCAFit::usage = 
-"PCAFit[data, pars] fits the marchencopasteur distribution to the PCA of the data using hist fit. pars is {bins, start comps, max itterations}.
-PCAFit[data, pars, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using hist fit."
 
-PCAFit2::usage = 
-"PCAFit[data] fits the marchencopasteur distribution to the PCA of the data using grid search.
-PCAFit[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using grid search."
+PCAFitHist::usage = 
+"PCAFitHist[data] fits the marchencopasteur distribution to the PCA of the data using hist fit.
+PCAFitHist[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using hist fit."
+
+PCAFitEq::usage = 
+"PCAFitEq[data] fits the marchencopasteur distribution to the PCA of the data using grid search.
+PCAFitEq[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using grid search."
 
 DeNoise::usage =
 "DeNoise[data,sigma,filtersize] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" a gaussian kernel.
@@ -51,13 +52,13 @@ PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only wit
 
 
 PlotSolution::usage = 
-"PlotSolution is an option for PCAFit, if set true it dispays the fitting itterations"
+"PlotSolution is an option for PCAFitHist, if set true it dispays the fitting itterations"
 
 FitSigma::usage = 
-"FitSigma is an option of PCAFit and PCADeNoise, if set True sig is fitted if set False sigma is fixed to input value"
+"FitSigma is an option of PCAFitHist, PCAFitEq and PCADeNoise, if set True sig is fitted if set False sigma is fixed to input value"
 
 PCAFitParameters::usage = 
-"PCAFitParameters is an option of PCAFit. {nb, pi, maxit} = bins, initial signal components, maximum number of itterations."
+"PCAFitParameters is an option of PCAFitHist. {nb, pi, maxit} = bins, initial signal components, maximum number of itterations."
 
 PCAKernel::usage = 
 "PCAKernel is an option of PCADeNoise. It sets the kernel size."
@@ -112,7 +113,7 @@ Begin["`Private`"]
 (*PCADenoise*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PCADeNoise*)
 
 
@@ -191,10 +192,10 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
      (*perform the fit and reconstruct the noise free data*)
      Switch[OptionValue[Method],
      	"Equation",
-     	{sigo, Nes, datn} = PCAFit2[fitdata, sigi, FitSigma -> OptionValue[FitSigma]];
+     	{sigo, Nes, datn} = PCAFitEq[fitdata, sigi, FitSigma -> OptionValue[FitSigma]];
      	it=1;,
      	_,
-     	{sigo, Nes, datn, it} = PCAFit[fitdata, sigi, FitSigma -> OptionValue[FitSigma], PCAFitParameters->{nb, pi, maxit}];
+     	{sigo, Nes, datn, it} = PCAFitHist[fitdata, sigi, FitSigma -> OptionValue[FitSigma], PCAFitParameters->{nb, pi, maxit}];
      	(*check if max limit is hit*)
      	If[it == maxit, j++];
      ];
@@ -224,7 +225,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
   ]
 
 
-(* ::Subsubsection:: *)
+
+(* ::Subsubsection::Closed:: *)
 (*MarchenkoPasturC*)
 
 
@@ -327,18 +329,18 @@ ErrorFunc[data_, Q_, sig_] := Block[{xdata, ydata, vals, tvals},
    ];
 
 
-(* ::Subsubsection:: *)
-(*PCAFit*)
+(* ::Subsubsection::Closed:: *)
+(*PCAFitHist*)
 
 
-Options[PCAFit] = {PlotSolution -> False, FitSigma -> True, PCAFitParameters -> {10, 6, 10}};
+Options[PCAFitHist] = {PlotSolution -> False, FitSigma -> True, PCAFitParameters -> {10, 6, 10}};
 
-SyntaxInformation[PCAFit] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+SyntaxInformation[PCAFitHist] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
 (*no initial sigma given*)
-PCAFit[data_, opts : OptionsPattern[]] :=  PCAFit[data, pars, 0., opts]
+PCAFitHist[data_, opts : OptionsPattern[]] :=  PCAFitHist[data, 0., opts]
 (*initial sigma is given*)
-PCAFit[data_, sigii_, OptionsPattern[]] := Block[
+PCAFitHist[data_, sigii_, OptionsPattern[]] := Block[
   {nb,pi,maxit,u,w,v,eig,m,n,i,pi1,pi0,Nes,Q,Qs,sigi,sig,hlist,eigp},
   
   (*get options, number of bins, initial p and max itterations*)
@@ -382,17 +384,17 @@ PCAFit[data_, sigii_, OptionsPattern[]] := Block[
   ]
 
 
-(* ::Subsubsection:: *)
-(*PCAFit2*)
+(* ::Subsubsection::Closed:: *)
+(*PCAFitEq*)
 
 
 (*PCAfit using set of equations*)
-SyntaxInformation[PCAFit2]={"ArgumentsPattern"->{_,_.}};
+SyntaxInformation[PCAFitEq]={"ArgumentsPattern"->{_,_.}};
 
 (*no initial sigma given*)
-PCAFit2[data_]:=PCAFit2[data,0.]
+PCAFitEq[data_]:=PCAFitEq[data,0.]
 (*initial sigma is given*)
-PCAFit2[data_,sigi_]:=Block[
+PCAFitEq[data_,sigi_]:=Block[
    {u,w,v,eig,m,n,pi,sig},
    (*perform svd*)
    {u,w,v,eig,m,n}=SVD[data];
@@ -408,6 +410,10 @@ PCAFit2[data_,sigi_]:=Block[
    (*give output, simga, number of noise comp, and denoised matrix*)
    {sig,m-pi,u.w.v}
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GridSearch*)
 
 
 (*gird search to find p at which sig is almost equal*)
@@ -427,8 +433,8 @@ GridSearch=Compile[{{eig,_Real,1},{m,_Integer,0},{n,_Integer,0}},
 ];
 
 
-(* ::Subsubsection:: *)
-(*GridSearch*)
+(* ::Subsubsection::Closed:: *)
+(*GridSearchSig*)
 
 
 (*gird search to find p with a given sig, get mean p of both equations*)

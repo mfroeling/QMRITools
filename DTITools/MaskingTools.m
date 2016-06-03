@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`MaskingTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -81,7 +81,7 @@ NormalizeData[data,{min,max}] normalizes the data between min and max.
 "
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -107,27 +107,21 @@ MaskRange::usage =
 "MaskRange is an option for SmartMask"
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
-Mask::tresh = 
-"Given treshhold `1` value is not a vallid input, must be a number for min treshhold only or a vector {min tresh, max tresh}.";
+Mask::tresh = "Given treshhold `1` value is not a vallid input, must be a number for min treshhold only or a vector {min tresh, max tresh}."
 
-GetMaskData::tresh = 
-"The dimensions of the data and the mask must be the same, dataset: `1`, mask: `2`.";
+GetMaskData::tresh = "The dimensions of the data and the mask must be the same, dataset: `1`, mask: `2`."
 
-ReadGof::dat = 
-"The given DataType is not valid: `1`. Can be \"Arm\" or \"Mara\".";
+ReadGof::dat = "The given DataType is not valid: `1`. Can be \"Arm\" or \"Mara\"."
 
-ReadGof::file= 
-"The given file does not exist: `1`.";
+ReadGof::file= "The given file does not exist: `1`."
 
-GofImport::file= 
-"The given file does not exist: `1`.";
+GofImport::file= "The given file does not exist: `1`."
 
-ROIMask::war = 
-"there are more slices in the roi set than in the given dimensions"
+ROIMask::war = "there are more slices in the roi set than in the given dimensions"
 
 
 (* ::Section:: *)
@@ -569,6 +563,8 @@ ScaleData =
   Compile[{{data, _Real, 0}, {range, _Real, 1}}, 
    (data - range[[1]])/(range[[2]] - range[[1]]), 
    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
 (* ::Subsection::Closed:: *)
 (*NormalizeData functions*)
 

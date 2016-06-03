@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`NiftiTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -70,39 +70,40 @@ OpenMRIcron::usage =
 ImOpenMRIcron[\"file\"] opens the nii file in MRIcron."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
 NumberType::usage = "NumberType of Nii file can be \"Integer\" of \"Real\"."
 
-ImportResult::usage = "ImportResult is an option for OpenMRIcron and can be True or False";
+ImportResult::usage = "ImportResult is an option for OpenMRIcron and can be True or False"
 
-NumberOfResults::usage = "NumberOfResults is an option for OpenMRIcron and should be an integer";
+NumberOfResults::usage = "NumberOfResults is an option for OpenMRIcron and should be an integer"
 
 FlipBvec::usage = "FlipBvec is an option for ImportBvalvec"
 
 RotateGradients::usage="RotateGradients is an option for ImportNiiDiff"
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
-DcmToNii::notfount = "dcm2nii.exe not found in $UserBaseDirectory or $BaseDirectory please install DTItools in correct directory.";
+DcmToNii::notfount = "dcm2nii.exe not found in $UserBaseDirectory or $BaseDirectory please install DTItools in correct directory."
 
-DcmToNii::type = "Input should be \"file\" or \"folder\".";
+DcmToNii::type = "Input should be \"file\" or \"folder\"."
 
-ImportNii::wht = "should be \"data\", \"header\" or \"all\".";
+ImportNii::wht = "should be \"data\", \"header\" or \"all\"."
 
-ExportNii::type = "NumberType should be \"Integer\" of \"Real\".";
+ExportNii::type = "NumberType should be \"Integer\" of \"Real\"."
 
-OpenMRIcron::notfount = 
-"mricron.exe not found in $UserBaseDirectory or $BaseDirectory please install DTItools in correct directory.";
+OpenMRIcron::notfount = "mricron.exe not found in $UserBaseDirectory or $BaseDirectory please install DTItools in correct directory."
 
-OpenMRIcron::fil = "the file `1` does not exist.";
+OpenMRIcron::fil = "the file `1` does not exist."
 
-ImportNii::notfount = "the file `1` does not exist.";
+ImportNii::notfount = "the file `1` does not exist."
+
+
 
 (* ::Section:: *)
 (*Functions*)
@@ -112,7 +113,7 @@ Begin["`Private`"]
 
 
 (* ::Subsection::Closed:: *)
-(* DcmToNii*)
+(*DcmToNii*)
 
 
 dcm2nii = $UserBaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2nii.exe";
@@ -294,6 +295,7 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
 (* ::Subsection::Closed:: *)
 (*ImportBvalvec*)
 
+
 Options[ImportBvalvec]={FlipBvec->False};
 
 SyntaxInformation[ImportBvalvec] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
@@ -350,6 +352,7 @@ ImportBmat[fil_String] := Module[{bmati},
 (* ::Subsection::Closed:: *)
 (*ImportNiiDiff*)
 
+
 Options[ImportNiiDiff]={RotateGradients->True,FlipBvec->True}
 
 SyntaxInformation[ImportNiiDiff]= {"ArgumentsPattern" -> {_.,_.,_.,OptionsPattern[]}};
@@ -375,6 +378,7 @@ ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{dat
 
 (* ::Subsection::Closed:: *)
 (*ExportNii*)
+
 
 ArrangeData[data_]:=ArrangeData[data,ArrayDepth[data]]
 
@@ -508,6 +512,8 @@ ExportNii[dato_, vox_, fil_,OptionsPattern[]] := Block[{datao, type, dim, depth,
   Close[strm];
   fileo
 ]
+
+
 
 (* ::Subsection::Closed:: *)
 (*ExportBval*)

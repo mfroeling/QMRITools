@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`ExportTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -81,7 +81,7 @@ SaveImage::usage =
 SaveImage[image, \"filename\"] exports graph to image with \"filname\", ImageSize, FileType and ImageResolution can be given as options."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -93,18 +93,15 @@ ExportFile::usage =
 Default value is jpg. Can be any image file type extention."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
-DTItoolExpInd::dim =
-"data is a `1` dimensional array and must be 3 dimensional {slices, x, y}."
+DTItoolExpInd::dim = "data is a `1` dimensional array and must be 3 dimensional {slices, x, y}."
 
-DTItoolExpTens::dim =
-"data is a `1` dimensional array and must be 4 dimensional {6 tensor elements, slices, x, y}."
+DTItoolExpTens::dim = "data is a `1` dimensional array and must be 4 dimensional {6 tensor elements, slices, x, y}."
 
-DatWrite::dim =
-"Dat write is used for exporting data. The data is a `1` dimensional array and must be 3 dimensional {slices, x, y}."
+DatWrite::dim = "Dat write is used for exporting data. The data is a `1` dimensional array and must be 3 dimensional {slices, x, y}."
 
 
 (* ::Section:: *)

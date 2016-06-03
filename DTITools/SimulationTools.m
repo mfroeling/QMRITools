@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`SimulationTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Fuctions*)
 
 
@@ -70,7 +70,7 @@ PlotSimulationVec::usage =
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -83,13 +83,15 @@ TensOutput::usage =
 SortVecs::usage = 
 "SortVecs is an option for PlotSimulationVec."
 
-(* ::Subsection::Closed:: *)
+
+
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
-Tensor::vec = "Eigenvectors must be a 3x3 matrix of \"Random\", not: `1`";
+Tensor::vec = "Eigenvectors must be a 3x3 matrix of \"Random\", not: `1`"
 
-Tensor::val = "Eigenvalues mus be a vector of size 3 or a number, not:`1`";
+Tensor::val = "Eigenvalues mus be a vector of size 3 or a number, not:`1`"
 
 CreateData::eig = "eigen system must be 3 eigenvalues {l1,l2,l2} in which cases fixed vectors wil be used 
 	or eigenvalues with geven vectors {{l1,l2,l3},{e1,e2,e3}} 
@@ -98,7 +100,7 @@ CreateData::eig = "eigen system must be 3 eigenvalues {l1,l2,l2} in which cases 
 		{{l1,l2,l3},OrtRandom}
 	not : `1`"
 
-AddNoise::opt = "AddNoise";
+AddNoise::opt = "AddNoise"
 
 
 (* ::Section:: *)

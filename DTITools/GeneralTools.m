@@ -76,7 +76,7 @@ Begin["`Private`"]
 
 
 (* ::Subsection::Closed:: *)
-(* File Select*)
+(*File Select*)
 
 
 Options[FileSelect]={WindowTitle -> Automatic};
@@ -101,6 +101,8 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
   		]
   	]
 ]
+
+
 
 (* ::Subsection::Closed:: *)
 (*DTItoolPackages*)
@@ -237,6 +239,7 @@ NumberTableForm[dat_, depth_, opts : OptionsPattern[]] :=
 
 (* ::Subsection::Closed:: *)
 (*Compilble functions*)
+
 
 SyntaxInformation[CompilebleFunctions] = {"ArgumentsPattern" -> {}};
 

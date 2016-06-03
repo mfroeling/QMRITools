@@ -24,21 +24,19 @@ ClearAll @@ Names["DTITools`TransformationTools"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Fuctions*)
 
 
-TransformData::usage = "TransformData[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w";
+TransformData::usage = "TransformData[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
-
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
-
 
 
 (* ::Section:: *)
@@ -51,7 +49,8 @@ Begin["`Private`"]
 (* ::Subsection:: *)
 (*TransformData*)
 
-(* ::Subsubsection:: *)
+
+(* ::Subsubsection::Closed:: *)
 (*TransformData*)
 
 
@@ -77,7 +76,7 @@ TransformData[data_, vox_, w_,OptionsPattern[]] :=
   ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetCoordinates*)
 
 
@@ -88,8 +87,9 @@ GetCoordinates[data_, vox_] := Block[{dim, off, coor},
    ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*CoordC*)
+
 
    
 CoordC = Compile[{{coor, _Real, 1}, {off, _Real, 1}, {vox, _Real, 1}},
@@ -97,7 +97,7 @@ CoordC = Compile[{{coor, _Real, 1}, {off, _Real, 1}, {vox, _Real, 1}},
    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ApplyRotC*)
 
 
@@ -106,7 +106,7 @@ ApplyRotC = Compile[{{coor, _Real, 1}, {rot, _Real, 2}},
    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ParametersToTransformFull*)
 
 

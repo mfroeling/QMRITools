@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`PlottingTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -84,7 +84,7 @@ PlotDuty::usage =
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -101,7 +101,7 @@ PlotColor::usage =
 "PlotColor is an option for GradientPlot can be any color or gradient color name."
 
 NormalizeIVIM::usage = 
-"NormalizeIVIM is an option for IVIMplot. If True the signal at b=0 is 1.";
+"NormalizeIVIM is an option for IVIMplot. If True the signal at b=0 is 1."
 
 SphereSize::usage = 
 "SphereSize is an option for GradientPlot. Sets the size of the spheres thar represent the gradients."
@@ -109,14 +109,15 @@ SphereSize::usage =
 PositiveZ::usage = 
 "PositiveZ is an options for GradientPlot. If True all Gradients are displayed with a positive z direction."
 
-(* ::Subsection::Closed:: *)
+
+
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
-PlotData::data =
-"Error: Data must be a 2D, 3D or 4D numeric array.";
+PlotData::data = "Error: Data must be a 2D, 3D or 4D numeric array."
 
-PlotData::size = "Datasets must have the same number of slices. dataset1: `1` slices, dataset2: `2` slices. (Image dimensions may vary).";
+PlotData::size = "Datasets must have the same number of slices. dataset1: `1` slices, dataset2: `2` slices. (Image dimensions may vary)."
 
 PlotData::set = 
 "Error: Not two valied datasest, posibilities:
@@ -125,21 +126,17 @@ PlotData::set =
 - 4D and 4D
 - 2D and 4D
 - 2D and 4D
-- 3D and 4D";
+- 3D and 4D"
 
-PlotData3D::data=""
+PlotData3D::data = "Data should be a 3D or 4D dataset."
 
-PlotDefGrid::dir =
-"direction must be \"COL\" or \"ROW\", unknown direction: `1`.";
+PlotDefGrid::dir = "direction must be \"COL\" or \"ROW\", unknown direction: `1`."
 
-Hist::size=
-"Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`).";
+Hist::size = "Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`)."
 
-ErrorPlot::size=
-"Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`).";
+ErrorPlot::size = "Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`)."
 
-Hist2::size=
-"Length of data (`1`), labels (`2`) and range (`3`) must be 5.";
+Hist2::size = "Length of data (`1`), labels (`2`) and range (`3`) must be 5."
 
 
 (* ::Section:: *)
@@ -229,6 +226,8 @@ LookUpTable2[{lstyle_, color_}, {minclip_, maxclip_}, {pmin_, pmax_}] := Module[
   fun[x_] := collist[[ColorRound2[x, pmin, pmax]]];
   fun
   ]
+
+
 
 (* ::Subsubsection::Closed:: *)
 (*ManPannel*)
@@ -2937,6 +2936,7 @@ PlotMoments[fmom_, te_, t_] := Module[{
 (* ::Subsection::Closed:: *)
 (*PlotIVIM*)
 
+
 Options[PlotIVIM] = {Method -> "", PlotColor -> {Red, Green, Blue, Black},NormalizeIVIM->"Fit",PlotRange->"Auto"}
 
 SyntaxInformation[PlotIVIM] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
@@ -3103,6 +3103,8 @@ GradientPlot[veci_, val_, OptionsPattern[]] :=
   Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
   
   
+
+
 (* ::Subsection::Closed:: *)
 (*PlotDuty*)
 
@@ -3134,6 +3136,8 @@ PlotDuty[{grad_, bval_, ord_}, mode_] :=
   
   
   
+
+
 (* ::Section:: *)
 (*End Package*)
 

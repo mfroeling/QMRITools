@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     22785,        595]
-NotebookOptionsPosition[     19349,        514]
-NotebookOutlinePosition[     22292,        577]
-CellTagsIndexPosition[     22249,        574]
+NotebookDataLength[     21157,        571]
+NotebookOptionsPosition[     17735,        491]
+NotebookOutlinePosition[     20665,        553]
+CellTagsIndexPosition[     20622,        550]
 WindowTitle->RegisterDiffusionData - Wolfram Mathematica
 WindowFrame->Normal*)
 
@@ -80,88 +80,33 @@ Cell["RegisterDiffusionData", "ObjectName",
 Cell[CellGroupData[{
 
 Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+RegisterDiffusionData[{dtidata, vox}]\[LineSeparator]registers a diffusion \
+dataset. dtidata should be 4D {slice, diff, x, y}. vox is the voxelsize of \
+the data. \
+\>"]},
+   {"", Cell["\<\
+RegisterDiffusionData[{dtidata, dtimask, vox}]\[LineSeparator]registers the \
+data series using the given voxel size only using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterDiffusionData[{dtidata ,vox}, {anatdata, \
+voxa}]\[LineSeparator]registers a diffusion dataset. The diffusion data is \
+also registered to the anatdata. \
+\>"]},
+   {"", Cell["\<\
+RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, voxa}]\
+\[LineSeparator]registers the data series using the given voxel size only \
+using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterDiffusionData[{dtidata,vox}, {anatdata, anatmask, voxa}]\
+\[LineSeparator]registers the data series using the given voxel size only \
+using data within the mask. \
+\>"]},
    {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionData", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         StyleBox["dtidata", "TI"], ",", " ", 
-         StyleBox["vox", "TI"]}], "}"}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers a diffusion dataset. dtidata should be 4D \
-{slice, diff, x, y}. vox is the voxelsize of the data. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionData", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         StyleBox["dtidata", "TI"], ",", " ", 
-         StyleBox["dtimask", "TI"], ",", " ", 
-         StyleBox["vox", "TI"]}], "}"}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["dtidata", "TI"], " ", ",", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["anatdata", "TI"], ",", " ", 
-          StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers a diffusion dataset. The diffusion data is \
-also registered to the anatdata. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["dtidata", "TI"], ",", " ", 
-          StyleBox["dtimask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["anatdata", "TI"], ",", " ", 
-          StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["dtidata", "TI"], ",", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["anatdata", "TI"], ",", " ", 
-          StyleBox["anatmask", "TI"], ",", " ", 
-          StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["dtidata", "TI"], ",", " ", 
-          StyleBox["dtimask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["anatdata", "TI"], ",", " ", 
-          StyleBox["anatmask", "TI"], ",", " ", 
-          StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
+     "RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, anatmask, \
+voxa}]",
      "\[LineSeparator]registers the data series using the given voxel size \
 only using data within the mask. output is the registered dtidata and, if \
 anatdata is given, the registered dtidata in anatomical space. If ",
@@ -170,8 +115,40 @@ anatdata is given, the registered dtidata in anatomical space. If ",
        BaseStyle->"Link",
        ButtonData->"paclet:DTITools/ref/OutputTransformation"]], 
       "InlineFormula"],
-     " is True it also outputs the translation, rotation scale and skew of \
-all images or volumes."
+     " ",
+     "is",
+     " ",
+     "True",
+     " ",
+     "it",
+     " ",
+     "also",
+     " ",
+     "outputs",
+     " ",
+     "the",
+     " ",
+     "translation",
+     ",",
+     " ",
+     "rotation",
+     " ",
+     "scale",
+     " ",
+     "and",
+     " ",
+     "skew",
+     " ",
+     "of",
+     " ",
+     "all",
+     " ",
+     "images",
+     " ",
+     "or",
+     " ",
+     "volumes",
+     "."
     }]]}
   }]], "Usage",
  GridBoxOptions->{
@@ -199,7 +176,7 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->260159810],
+ CellID->845510011],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -507,7 +484,7 @@ Cell[TextData[ButtonBox["MORE ABOUT",
 Cell[TextData[ButtonBox["ElastixTools",
  BaseStyle->"Link",
  ButtonData->"paclet:DTITools/guide/ElastixTools"]], "MoreAbout",
- CellID->375658846]
+ CellID->68838628]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -526,7 +503,7 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}], 
         Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
   "Metadata" -> {
-   "built" -> "{2016, 3, 23, 14, 49, 33.7910606}", 
+   "built" -> "{2016, 6, 3, 11, 54, 0.8341040}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ElastixTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -536,11 +513,11 @@ TaggingRules->{
 dtidata should be 4D {slice, diff, x, y}. vox is the voxelsize of the data. \
 RegisterDiffusionData[{dtidata, dtimask, vox}] registers the data series \
 using the given voxel size only using data within the mask. \
-RegisterDiffusionData[{dtidata , vox}, {anatdata, voxa}] registers a \
-diffusion dataset. The diffusion data is also registered to the anatdata. \
+RegisterDiffusionData[{dtidata ,vox}, {anatdata, voxa}] registers a diffusion \
+dataset. The diffusion data is also registered to the anatdata. \
 RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, voxa}] registers \
 the data series using the given voxel size only using data within the mask. \
-RegisterDiffusionData[{dtidata, vox}, {anatdata, anatmask, voxa}] registers \
+RegisterDiffusionData[{dtidata,vox}, {anatdata, anatmask, voxa}] registers \
 the data series using the given voxel size only using data within the mask. \
 RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] \
 registers the data series using the given voxel size only using data within \
@@ -552,7 +529,7 @@ volumes.", "synonyms" -> {}, "title" -> "RegisterDiffusionData",
     "Symbol", "uri" -> "DTITools/ref/RegisterDiffusionData"}, 
   "SearchTextTranslated" -> ""},
 CellContext->"Global`",
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
 StyleDefinitions->Notebook[{
    Cell[
     StyleData[
@@ -561,9 +538,8 @@ StyleDefinitions->Notebook[{
     StyleData["Input"], CellContext -> "Global`"], 
    Cell[
     StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
-  FrontEndVersion -> 
-  "10.4 for Microsoft Windows (64-bit) (February 25, 2016)", StyleDefinitions -> 
-  "Default.nb"]
+  FrontEndVersion -> "10.4 for Microsoft Windows (64-bit) (April 11, 2016)", 
+  StyleDefinitions -> "Default.nb"]
 ]
 (* End of Notebook Content *)
 
@@ -581,22 +557,22 @@ Cell[615, 21, 2359, 53, 70, "AnchorBarGrid",
 Cell[2977, 76, 64, 1, 70, "ObjectName",
  CellID->1224892054],
 Cell[CellGroupData[{
-Cell[3066, 81, 3679, 98, 70, "Usage"],
+Cell[3066, 81, 2066, 75, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[6770, 183, 609, 18, 70, "NotesSection",
+Cell[5157, 160, 609, 18, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->260159810],
-Cell[7382, 203, 53, 0, 70, "Notes"],
-Cell[7438, 205, 11224, 280, 70, "3ColumnTableMod"]
+ CellID->845510011],
+Cell[5769, 180, 53, 0, 70, "Notes"],
+Cell[5825, 182, 11224, 280, 70, "3ColumnTableMod"]
 }, Closed]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[18711, 491, 448, 13, 70, "MoreAboutSection",
+Cell[17098, 468, 448, 13, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[19162, 506, 145, 3, 70, "MoreAbout",
- CellID->375658846]
+Cell[17549, 483, 144, 3, 70, "MoreAbout",
+ CellID->68838628]
 }, Open  ]],
-Cell[19322, 512, 23, 0, 70, "FooterCell"]
+Cell[17708, 489, 23, 0, 70, "FooterCell"]
 }
 ]
 *)

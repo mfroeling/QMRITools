@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`IVIMTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -35,7 +35,7 @@ data should be 1D ,2D, 3D or 4D.
 binp should be full bmatrix which can be calculated from the bvecs en bvals using Bmatrix. 
 init should are the initialization parameters for 2 components this is {S0, f, D, Dp} for 3 componentes this is {S0, f1, f2, D, Dp1, Dp2}.
 
-output is {S0, f1, D, pD1} or {S0, f1, f2, D, pD1, pD2}.";
+output is {S0, f1, D, pD1} or {S0, f1, f2, D, pD1, pD2}."
 
 IVIMFunction::usage =
 "IVIMFunction[] gives the IVIM function with 2 comps.
@@ -45,7 +45,7 @@ IVIMFunction[components, type] gives the IVIM function.
 type can be \"Normal\" or \"Exp\".
 componenets can be 2 or 3.
 
-output is the function with b, S0, f1, f2, D, pD1, pD2 as parameters";
+output is the function with b, S0, f1, f2, D, pD1, pD2 as parameters"
 
 FracCorrect::usage = 
 "FracCorrect[fraction, time] corrects the signal fraction calculated with the IVIM model for tissue relaxation and acquisition parameters.
@@ -58,23 +58,23 @@ where t2t and t1t are \"tissue\" relaxation times and t11 t12, t21 and t22 the \
 output is the corrected fraction maps";
 
 MeanNoZero::usage = 
-"MeanNoZero[data] calculates the mean of the data ignoring the zeros.";
+"MeanNoZero[data] calculates the mean of the data ignoring the zeros."
 
 ThetaConv::usage = 
 "ThetaConv[{F1, Fc, pDc}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
 ThetaConv[{F1, F2, Dc, pDc1}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
-ThetaConv[{F1, F2, Dc, pDc1, pDc2}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.";
+ThetaConv[{F1, F2, Dc, pDc1, pDc2}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3."
 
 ThetaConvi::usage = 
 "ThetaConvi[{f, dc, pdc}] converts the parameters from Normal space to Log space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
 ThetaConvi[{f1, f2, dc, pdc1}] converts the parameters from Normal space to Log space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
-ThetaConvi[{f1, f2, dc, pdc1, pdc2}] converts the parameters from Normal space to Log space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.";
+ThetaConvi[{f1, f2, dc, pdc1, pdc2}] converts the parameters from Normal space to Log space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3."
 
 FConvert::usage = 
-"FConvert[F] convers the fraction F from log space.";
+"FConvert[F] convers the fraction F from log space."
 
 FConverti::usage = 
-"FConverti[f] converts the fraction f to log space.";
+"FConverti[f] converts the fraction f to log space."
 
 BayesianIVIMFit2::usage = 
 "BayesianIVIMFit2[data, bval, init, mask] performs bayesian IVIM fit of data.
@@ -84,7 +84,7 @@ bval is the bvector whould be length Ndiff.
 init is the initalization of the bayesian fit which comes from IVIMCals, (without S0 using 2 compartments).
 mask is the region in which the bayesian fit is performed.
 
-output is {f1, dc, pdc1}";
+output is {f1, dc, pdc1}."
 
 BayesianIVIMFit3::usage = 
 "BayesianIVIMFit3[data, bval, init, mask] performs bayesian IVIM fit of data.
@@ -94,7 +94,7 @@ bval is the bvector whould be length Ndiff.
 init is the initalization of the bayesian fit which comes from IVIMCals, (without S0 using 3 compartments).
 mask is the region in which the bayesian fit is performed.
 
-output is {f1, f2, dc, pdc1, pdc2}";
+output is {f1, f2, dc, pdc1, pdc2}."
 
 IVIMResiduals::usage = 
 "IVIMResiduals[data, binp, pars] calculates the root mean square residuals of an IVIM fit ussing IVIMCalc, BayesianIVIMFit2 or BayesianIVIMFit3."
@@ -110,7 +110,7 @@ style is the plot type, can be 1, 2, or 3.
 color is the color of the histogram.
 range are the ranges of the y-axes.  
 
-output is a row of histograms";
+output is a row of histograms."
 
 CorrectParMap::usage = 
 "CorrectParMap[par, constraints, mask] removes the IVIM parameters outside the constraints within the mask.
@@ -125,7 +125,7 @@ NNLeastSquares::usage =
 "NNLeastSquares[A, y] performs a Non Negative Linear Least Squares fit.
 finds an x that solves the linear least-squares problem for the matrix equation A.x==y.
 
-output is the solution x"
+output is the solution x."
 
 IVIMCorrectData::usage = 
 "IVIMCorrectData[data, {S0, f, pdc}, bval] removes the ivim signal from the data.
@@ -139,6 +139,7 @@ output is the corrected data."
 
 (* ::Subsection:: *)
 (*General Options*)
+
 
 IVIMConstrained::usage = 
 "IVIMConstrained is an option for IVIMCalc. When set True the fit wil be constrained to the values given in IVIMConstrains."
@@ -164,48 +165,48 @@ MonitorIVIMCalc::usage =
 
 ChainSteps::usage = 
 "ChainSteps is an option for BayesianIVIMFit2 and BayesianIVIMFit3. It determines how long the algorithm runs.
-three values must be given {itterations, burn steps, sample density}.";
+three values must be given {itterations, burn steps, sample density}."
 
 UpdateStep::usage = 
 "UpdateStep is an option for BayesianIVIMFit2 and BayesianIVIMFit3. It determines how often the parameters are updated. Is optimized during the first 500 burn steps.";
 
 FixPseudoDiff::usage = 
-"FixPseudoDiff is an option for BayesianIVIMFit2 and BayesianIVIMFit3. If the pDc1 and pD2 were fixed in IVIMCalc this value should be True.";
+"FixPseudoDiff is an option for BayesianIVIMFit2 and BayesianIVIMFit3. If the pDc1 and pD2 were fixed in IVIMCalc this value should be True."
 
 FixPseudoDiffSD::usage = 
-"FixPseudoDiffSD is an option for BayesianIVIMFit2 and BayesianIVIMFit3. Gives the standard deviation of pDc1 and pD2 if FixPseudoDiff is True";
+"FixPseudoDiffSD is an option for BayesianIVIMFit2 and BayesianIVIMFit3. Gives the standard deviation of pDc1 and pD2 if FixPseudoDiff is True"
 
 CorrectPar::usage = 
-"CorrectPar is an option for BayesianIVIMFit2 and BayesianIVIMFit3. If True it removes the values outside the contraints using CorrectParMap";
+"CorrectPar is an option for BayesianIVIMFit2 and BayesianIVIMFit3. If True it removes the values outside the contraints using CorrectParMap"
 
 FitConstrains::usage = 
 "FitConstrains is an option for BayesianIVIMFit2 and BayesianIVIMFit3. Gives the contraints of the parameters. 
-The values are used for displaying the histograms and for the initialization if CorrectPar is True";
+The values are used for displaying the histograms and for the initialization if CorrectPar is True"
 
 OutputSamples::usage = 
-"OutputSamples is an option for BayesianIVIMFit2 and BayesianIVIMFit3. If set True the full marcov chain is given as an additionaln output.";
+"OutputSamples is an option for BayesianIVIMFit2 and BayesianIVIMFit3. If set True the full marcov chain is given as an additionaln output."
 
 FilterMaps::usage = 
-"FilterMaps is an option for IVIMCorrectData. If True the IVIM parameter maps are filtered before signal correction";
+"FilterMaps is an option for IVIMCorrectData. If True the IVIM parameter maps are filtered before signal correction"
 
 FilterType::usage = 
-"FilterType is an option for IVIMCorrectData. If FilterMaps is True it tells which filter to use. can be \"Median\" of \"Gausian\"";
+"FilterType is an option for IVIMCorrectData. If FilterMaps is True it tells which filter to use. can be \"Median\" of \"Gausian\""
 
 FilterSize::usage = 
-"FilterSize is an option for IVIMCorrectData. If FilterMaps is True it gives the kernel size.";
+"FilterSize is an option for IVIMCorrectData. If FilterMaps is True it gives the kernel size."
 
 
 (* ::Subsection:: *)
 (*Error Messages*)
 
 
-IVIMCalc::init = "Number of initialization values is `1` and should be `2`";
+IVIMCalc::init = "Number of initialization values is `1` and should be `2`"
 
-IVIMCalc::time = "Number of components is `1` but the number of relaxations times is `2`";
+IVIMCalc::time = "Number of components is `1` but the number of relaxations times is `2`"
 
-IVIMCalc::comp = "Number of components should be 2 or 3 not `1`";
+IVIMCalc::comp = "Number of components should be 2 or 3 not `1`"
 
-IVIMCalc::bvec = "The length of the data (`1`) should be the same as the length of the bmatrix (`2`)";
+IVIMCalc::bvec = "The length of the data (`1`) should be the same as the length of the bmatrix (`2`)"
 
 
 (* ::Section:: *)
@@ -465,6 +466,7 @@ FConvf = Compile[{{f1, _Real, 1}}, Exp[f1]/(1 + Exp[f1]), Parallelization -> Tru
 
 (* ::Subsection::Closed:: *)
 (*FConverti*)
+
 
 SyntaxInformation[FConverti] = {"ArgumentsPattern" -> {_}};
 
@@ -1277,6 +1279,8 @@ IVIMResiduals[data_, binp_, pars_] :=
     , {{out, _Real, 1}}, RuntimeAttributes -> {Listable}, 
     RuntimeOptions -> "Speed"
     ]];
+
+
 
 (* ::Section:: *)
 (*End Package*)

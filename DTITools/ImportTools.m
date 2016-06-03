@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`ImportTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -99,7 +99,7 @@ LoadFiberTracts::usage =
 LoadFiberTracts[\"file\"] imports the file."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -113,39 +113,31 @@ The dicom image values are corrected for rescale slope, scale slope and rescale 
 BmatrixOut::usage = 
 "BmatrixOut is a option for ImportBrukerData if True the bmatrix is given, if false the gradients and bvec are given."
 
-ConvertDcm::usage = "ConvertDcm is an option for GradRead."
+ConvertDcm::usage = 
+"ConvertDcm is an option for GradRead."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
-ReadDicom::unknown = 
-"Unknown filename: `1` ."
+ReadDicom::unknown = "Unknown filename: `1` ."
 
-ReadDicom::imp = 
-"Warning: Some files were not imported!"
+ReadDicom::imp = "Warning: Some files were not imported!"
 
-ReadDicom::part = 
-"Warning: Total number of unpartitioned slices is not a multiple of the partition size."
+ReadDicom::part = "Warning: Total number of unpartitioned slices is not a multiple of the partition size."
 
-ReadDicom::fls=
-"No files to import"
+ReadDicom::fls = "No files to import"
 
-ShiftPar::file = 
-"`1` does not exist."
+ShiftPar::file = "`1` does not exist."
 
-ReadVoxSize::file = 
-"`1` does not exist."
+ReadVoxSize::file = "`1` does not exist."
 
-ReadBrukerDiff::seq = 
-"File 2dseq not found at: `1`";
+ReadBrukerDiff::seq = "File 2dseq not found at: `1`"
 
-ReadBrukerDiff::proc = 
-"File d3proc not found at: `1`";
+ReadBrukerDiff::proc = "File d3proc not found at: `1`"
 
-ReadBrukerDiff::meth = 
-"File meth not found at: `1`";
+ReadBrukerDiff::meth = "File meth not found at: `1`"
 
 
 (* ::Section:: *)

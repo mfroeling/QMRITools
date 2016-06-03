@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`GradientTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -121,7 +121,7 @@ BvecCreate::usage =
 "BvecCreate[bval, grad] creates a bvector."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -177,7 +177,7 @@ OrderSpan::usage =
 "OrderSpan is an options for FindOrder."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
@@ -188,11 +188,9 @@ GradDirs::grad =
 	Patch normal mode: \"opt6\",\"opt10\",\"opt15\",\"opt24\",\"opt32\",\"opt48\" or \"opt60\".
 	Patch over plus mode: \"opt6op\",\"opt10op\",\"opt15op\",\"opt24op\",\"opt32op\",\"opt48op\" or \"opt60op\"."
 
-BmatrixToggle::axes = 
-  "input: `1` should contain permuations of {\"x\",\"y\",\"z\"}.";
+BmatrixToggle::axes = "input: `1` should contain permuations of {\"x\",\"y\",\"z\"}.";
 
-BmatrixToggle::flip = 
-  "input:`1` should be be {1,1,1},{1,1,-1},{1,-1,1} or {-1,1,1}.";
+BmatrixToggle::flip = "input:`1` should be be {1,1,1},{1,1,-1},{1,-1,1} or {-1,1,1}.";
 
 
 
@@ -207,7 +205,7 @@ Begin["`Private`"]
 (*GenerateGradients*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GenerateGradients*)
 
 
@@ -251,7 +249,7 @@ GenerateGradients[grds : {{_, _, _} ..}, opts : OptionsPattern[]] :=
    Method -> "NonRandom"]]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GenerateGradientsi*)
 
 
@@ -472,7 +470,7 @@ ListSpherePlot[pts_, col_, size_] := Graphics3D[{col, Sphere[#, size] & /@ pts}]
 ListStickPlot[pts_, size_] := Graphics3D[{Gray, Tube[0.98 {#, -#}, size] & /@ pts}]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Prepare*)
 
 
@@ -642,7 +640,7 @@ GradOptimize4C =
    ];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GenerateGradientsGUI*)
 
 
@@ -1399,8 +1397,8 @@ GenerateGradientsGUI[] := Block[{pan},
     ];
   NotebookClose[gradwindow];
   gradwindow=CreateWindow[DialogNotebook[{CancelButton["Close",
-  DialogReturn[]],pan},WindowSize\[Rule]All,
-  WindowTitle\[Rule]"Generate gradients"]];
+  DialogReturn[]],pan},WindowSize->All,
+  WindowTitle->"Generate gradients"]];
   ]
 
 
@@ -1531,6 +1529,7 @@ FinalGrads[{listi_, list0_, nb_}, {inter_, int_}, {random_, ordr_}] :=
 
 (* ::Subsubsection:: *)
 (*FindOrder*)
+
 
 Options[FindOrder]={OrderSpan->"Auto"};
 

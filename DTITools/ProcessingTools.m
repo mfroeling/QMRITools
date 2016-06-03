@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`ProcessingTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -135,7 +135,7 @@ DixonToPercent::usage =
 DixonToPercent[water, fat,mask] converts the dixon water and fat data within the mask to percent maps."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -187,46 +187,34 @@ OutputSNR::usage = "OutputSNR is an option for SNRMapCalc."
 
 SeedDensity::usage = "SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
 
-(*
-BackgroundFilter::usage = "nog schrijven"
-*)
 
-
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
-TensorCalc::grad =
-"The `2` gradient directions defined do not match the `1` gradients directions in the data set.";
+TensorCalc::grad = "The `2` gradient directions defined do not match the `1` gradients directions in the data set."
 
 TensorCalc::data =
 "Data set dimensions (`1`D) unknown, posibilities:
 - Multiple slices (4D)-> {slices, directions, x,y}
 - Single slice (3D)-> {directions, x, y}
 - Multiple voxels (2D)-> {directions, voxels}
-- Single voxel (1D)-> {directions}";
+- Single voxel (1D)-> {directions}"
 
-TensorCalc::bvec =
-"the `1` gradient directions do not match the `2` b values in the b vector.";
+TensorCalc::bvec = "the `1` gradient directions do not match the `2` b values in the b vector."
 
-TensorCalc::met =
-"The method specified (`1`) is not a valid method, please use: \"LLS\",\"WLLS\",\"NLS\" "
+TensorCalc::met = "The method specified (`1`) is not a valid method, please use: \"LLS\",\"WLLS\",\"NLS\"."
 
-PhaseCalc::inp = 
-"The given data is nog a 4D array, or the mask is not a 3D array or the dimensions of the data and the mask are not the same
-Dimensions data: `1`; Dimensions mask: `2`";
+PhaseCalc::inp =  "The given data is nog a 4D array, or the mask is not a 3D array or the dimensions of the data and the mask are not the same \
+Dimensions data: `1`; Dimensions mask: `2`."
 
-ParameterFit::func=
-"Unknow fit function: `1`. options are SkewNormal or Normal"
+ParameterFit::func = "Unknow fit function: `1`. options are SkewNormal or Normal."
 
-ParameterFit::outp=
-"Unknow output format: `1`. options are Parameters or Function";
+ParameterFit::outp = "Unknow output format: `1`. options are Parameters or Function."
 
-ResidualCalc::datdim=
-"DTIdata (`1`) and tensor data (`2`) are not the same dimensions"
+ResidualCalc::datdim = "DTIdata (`1`) and tensor data (`2`) are not the same dimensions."
 
-AngleCalc::dist = 
-"Unknown option (`1`), options can be. \"0-180\", \"0-90\" or \"-90-90\" "
+AngleCalc::dist = "Unknown option (`1`), options can be. \"0-180\", \"0-90\" or \"-90-90\"."
 
 
 (* ::Section:: *)
@@ -408,6 +396,7 @@ TensMinDKI = Compile[{{S, _Real, 1}, {bmatI, _Real, 2}},
 
 (* ::Subsubsection:: *)
 (*WLLS*)
+
 
 (*
 TensMinWLLS[S_,bmat_,I_]:=
@@ -1344,6 +1333,7 @@ SNRMapCalc[data : {_?ArrayQ ...}, k_: 2, OptionsPattern[]] :=
 
 (* ::Subsection::Closed:: *)
 (*MeanSignal*)
+
 
 Options[MeanSignal]={UseMask->True}
 

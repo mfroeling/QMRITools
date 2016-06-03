@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`PhysiologyTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -52,11 +52,10 @@ PlotRespiract[data, dataP, scantimes, steps]."
 (* ::Subsection:: *)
 (*Options*)
 
-OutputMethod::usage = 
-"OutputMethod can be \"val\" or \"plot\"";
 
-SampleStep::usage=
-"SampleStep is an option for AlignRespiract";
+OutputMethod::usage = "OutputMethod can be \"val\" or \"plot\""
+
+SampleStep::usage= "SampleStep is an option for AlignRespiract"
 
 
 (* ::Subsection:: *)

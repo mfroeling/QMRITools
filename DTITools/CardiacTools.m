@@ -3,7 +3,7 @@
 (* ::Title:: *)
 (*DTITools CardiacTools*)
 
-(*test*)
+
 (* ::Subtitle:: *)
 (*Written by: Martijn Froeling, PhD*)
 (*m.froeling@gmail.com*)
@@ -26,6 +26,7 @@ ClearAll @@ Names["DTITools`CardiacTools`*"];
 
 (* ::Subsection:: *)
 (*Functions*)
+
 
 CalculateWallMap::usage = 
 "CalculateWallMap[mask,vox] Calculates the wall distance map and the wall derivative, output is {wallmap, der}."
@@ -97,12 +98,10 @@ vox is the voxels size, {slice, x, y}.
 
 output is a plot window."
 
-TransmuralPlot::usage = "TransmuralPlot[data] plots transmural profiles of the data.
+TransmuralPlot::usage = 
+"TransmuralPlot[data] plots transmural profiles of the data.
 data can be a single profile or a list of profiles. In the second case the mean and standardeviations are plotted."
 
-(*
-CreateHeart::usage="CreateHeart[]"
-*)
 
 (* ::Subsection:: *)
 (*Options*)
@@ -169,6 +168,10 @@ GridLineSpacing::usage = "GridLineSpacing is an option of TransmuralPlot. It def
 
 
 Begin["`Private`"]
+
+
+(* ::Subsection::Closed:: *)
+(*CalculateWallMap*)
 
 
 Options[CalculateWallMap] = {ShowFit -> True};
@@ -1690,10 +1693,8 @@ TransmuralPlot[data_, OptionsPattern[]] :=
   ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*CreateHeart*)
-
-
 
 
 (* ::Section:: *)
