@@ -316,7 +316,7 @@ ImportBvalvec[valf_,vecf_,OptionsPattern[]] := Module[{grads},
 	}
 ]
 
-ImportBvalvec[__,opts:OptionsPattern[]] := Module[{valf, vecf},
+ImportBvalvec[___,opts:OptionsPattern[]] := Module[{valf, vecf},
   valf = FileSelect["FileOpen", {"*.bval"}, WindowTitle -> "Select *.bval"];
   vecf = FileSelect["FileOpen", {"*.bvec"}, WindowTitle -> "Select *.bvec"];
   ImportBvalvec[valf,vecf,opts]
