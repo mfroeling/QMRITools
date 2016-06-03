@@ -2,7 +2,6 @@
 
 [![DOI](https://zenodo.org/badge/22486/mfroeling/DTITools.svg)](https://zenodo.org/badge/latestdoi/22486/mfroeling/DTITools)
 
-
 * [Information](#information)
 * [Install toolbox](#install-toolbox)
 * [Using the toolbox](#using-the-toolbox)
@@ -28,6 +27,8 @@ It contains the following toolboxes:
 - ProcessingTools
 - SimulationTools
 - TransformationTools
+
+A list off all functions and their help can be found int All-Functions.nb. Documentation of all functions and their options is fully integrated in the Mathematica documentation.
 
 All code and documentation is maintained and uploaded to github using [Workbench 2.0](https://www.wolfram.com/products/workbench/).
 
@@ -66,3 +67,5 @@ To print the documentation of all functions use
 	DTItoolFuncPrint[]
 	DTItoolFunctions["toolboxname"]
 	
+## License
+https://opensource.org/licenses/BSD-3-Clause
