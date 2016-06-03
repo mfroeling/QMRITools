@@ -143,10 +143,15 @@ DTItoolFunctions[toolb_String,p_Integer]:=Partition[DTItoolFunctions[toolb], p, 
 (*DTItoolFuncPrint*)
 
 
-SyntaxInformation[DTItoolFuncPrint] = {"ArgumentsPattern" -> {}};
+SyntaxInformation[DTItoolFuncPrint] = {"ArgumentsPattern" -> {_.}};
 
-DTItoolFuncPrint[]:=Module[{functions,packs},
-	packs = Sort[Flatten[StringCases[$ContextPath, "DTITools`" ~~ x__ -> x]]];
+DTItoolFuncPrint[]:=DTItoolFuncPrint[""]
+
+DTItoolFuncPrint[toolb_String]:=Module[{functions,packs},
+	packs = If[toolb==="",
+		Sort[Flatten[StringCases[$ContextPath, "DTITools`" ~~ x__ -> x]]],
+		{toolb}		
+	];
 	functions = "DTITools`" <> # -> Names["DTITools`" <> # <> "*"] & /@ packs;
  (
      Print[Style[#[[1]], Bold, Large, Black]];
