@@ -13,7 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`IVIMTools`", {"MultivariateStatistics`"}];
+BeginPackage["DTITools`IVIMTools`"];
 $ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 Unprotect @@ Names["DTITools`IVIMTools`*"];
@@ -509,8 +509,8 @@ Options[BayesianIVIMFit2] = {ChainSteps -> {20000, 1000, 10}, UpdateStep -> {0.5
 
 SyntaxInformation[BayesianIVIMFit2] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-BayesianIVIMFit2[data_, bval_, fitpari_, mask_, opts : OptionsPattern[]] := Module[{
-	useDat, thetai, fix, ynf, fixSD, out1, out2, h1, solution,
+BayesianIVIMFit2[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Module[{
+	useDat, thetai, fix, ynf, fixSD, out1, out2, h1, solution,mask,
 	fitpar, deviation, con2, con2e, mui, covi, mmu, mcov,post
    },
   
@@ -518,12 +518,12 @@ BayesianIVIMFit2[data_, bval_, fitpari_, mask_, opts : OptionsPattern[]] := Modu
   con2e = ThetaConvi[con2];
   fix = OptionValue[FixPseudoDiff];
   fixSD = OptionValue[FixPseudoDiffSD];
+  
+  mask = Mask[data[[All, 1]], 0.000001]maski;
 
   fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con2}]];
   fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con2e, mask], fitpar];
-  
-
-  	
+    	
   useDat = MaskDTIdata[data, mask];
   {thetai,post} = Data3DToVector[fitpar,mask];
   thetai=Transpose@thetai;
@@ -577,7 +577,6 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
       (*define yn*)
       yty = Dotc1[yn];
       (*rU := RandomReal[1, nvox];*)
-      
       (*step 2 - initialize mu(j) and cov(j) for j=1 - thetaj={fj,dj,pdj}*)
       {fj, dj, pdj} = thetai;
       {muj, covj} = MeanCov[thetai];
@@ -685,8 +684,8 @@ Options[BayesianIVIMFit3] = {ChainSteps -> {20000, 1000, 10},
 
 SyntaxInformation[BayesianIVIMFit3] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-BayesianIVIMFit3[data_, bval_, fitpari_, mask_, opts : OptionsPattern[]] := 
- Module[{fitpar,con3,
+BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := 
+ Module[{fitpar,con3,mask,
    useDat, thetai, ynf, fix, fixSD, out1, out2, h1,
    solution, deviation, con3e, mui, covi, mmu, mcov,post},
   
@@ -694,6 +693,8 @@ BayesianIVIMFit3[data_, bval_, fitpari_, mask_, opts : OptionsPattern[]] :=
   con3e = ThetaConvi[con3];
   fix = OptionValue[FixPseudoDiff];
   fixSD = OptionValue[FixPseudoDiffSD];
+  
+  mask = Mask[data[[All, 1]], 0.000001]maski;
 
   fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con3}]];
   fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con3e, mask], fitpar];
@@ -787,6 +788,7 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                bool1 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1jt, f2j, dj,  pd1j, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool1, gj, gjt];
                f1j = BoolAdd[bool1, f1j, f1jt];
+               
                (*comp 2*)
                f2jt = RandomNormalCf[f2j, w2];
                gjt = FunceC3[f1j, f2jt, dj, pd1j, pd2j, bval];
@@ -931,11 +933,13 @@ RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov,mat},
    ];
 *)
 
-RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov, mat},
-   munew = N[RandomVariate[System`MultinormalDistribution[Mean /@ N[theta],N[PosSym[cov/m]]]]];
+RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov, mat,tmt,mi},
+	mi=m-3;
+   munew = N[RandomVariate[MultinormalDistribution[Mean /@ N[theta],N[PosSym[cov/m]]]]];
    munew = N[(1 + munew) - 1];
    tm = N[(ClipC[theta, 1] - munew)];
-   icov = N[RandomVariate[InverseWishartMatrixDistribution[m - 3, tm.Transpose[tm]]]];
+   tmt=Chop[N[tm.Transpose[tm]]];
+   icov = N[RandomVariate[InverseWishartMatrixDistribution[mi, tmt]]];
    {munew, icov, N@PseudoInverse[icov]}
 ];
 
@@ -977,13 +981,18 @@ AlphaC = Compile[{
 	{theta, _Real, 2}, {thetat, _Real, 2}, {mu, _Real, 1},
 	{icov, _Real, 2}, {y, _Real, 2}, {yty, _Real, 1}, {g, _Real, 2}, 
 	{gt, _Real, 2}, {nb, _Real, 0}, {nvox, _Real, 0}}, 
-   Block[{gttgt, gtg, ytg, ytgt, pt, pd, alpha},
+   Block[{gttgt, gtg, ytg, ytgt, pt, pd, alpha,pdpt,rand,bool,top,bot},
     (*probability 1*)
     pt = Exp[0.5 (MatDot2[Transpose[theta - mu], Transpose[thetat - mu], icov])];
     (*probability 2*)
-    pd = Chop[((yty - DotC[y, gt])/(yty - DotC[y, g]))^(-nb/2)];
+    top=yty - DotC[y, gt];
+    bot=yty - DotC[y, g];
+    pd = Chop[(top/bot)^(-nb/2)];
     (*bool=alpha-RU*)
-    UnitStep[(pd*pt) - RandomReal[1,nvox]]
+    rand = RandomReal[1, nvox];
+    pdpt=(pd*pt);
+    bool = pdpt - rand;
+    UnitStep[bool]
     ],
    Parallelization -> True, RuntimeOptions -> "Speed"];
 
