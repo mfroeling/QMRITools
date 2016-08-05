@@ -128,7 +128,7 @@ PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := 
  Module[{data, mask, sigm, ker, off, datao, weights, sigmat, dim, 
    zdim, ydim, xdim, ddim, g, i, j, nb, pi, maxit, output,
-   time1, time, timetot, sigi, zm, zp, xm, xp, ym, yp, fitdata, filt,
+   time1, time, timetot, sigi, sigf, zm, zp, xm, xp, ym, yp, fitdata, filt,
    sigo, Nes, datn, it},
   
   (*make everything numerical to speed up*)
@@ -163,12 +163,13 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
   g = off + 1; 
   i = j = 0;
   PrintTemporary[Row[{
-     ProgressIndicator[Dynamic[g], {off + 1, zdim - off+1}], 
+     ProgressIndicator[Dynamic[g], {off + 1, zdim - off}], 
      Row[{Dynamic[i], Dynamic[j], Dynamic[Round[100. j/(i + 1), .1]]},
        " / "]
      }, "     "]];
   
   output = Table[
+  	g = z;
     (*Check if masked voxel*)
     If[mask[[z, y, x]] == 0.,
      {0., 0., 0.}
@@ -176,7 +177,6 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
      (*monitor time progress every 500 itterations*)
      i++;
      If[Mod[i, 500] == 0, 
-     	g = z;
      	time1 = AbsoluteTime[];
      	AppendTo[timetot, time1 - time];
      	time = time1;
@@ -186,13 +186,13 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
      (*get pixel range*)
      {{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
      (*get the data*)
-     fitdata = 
-      Flatten[data[[zm ;; zp, All, ym ;; yp, xm ;; xp]], {1, 3, 4}];
+     fitdata = Flatten[data[[zm ;; zp, All, ym ;; yp, xm ;; xp]], {1, 3, 4}];
      
      (*perform the fit and reconstruct the noise free data*)
      Switch[OptionValue[Method],
      	"Equation",
-     	{sigo, Nes, datn} = PCAFitEq[fitdata, sigi, FitSigma -> OptionValue[FitSigma]];
+     	sigf=If[OptionValue[FitSigma],0.,sigi];
+     	{sigo, Nes, datn} = PCAFitEq[fitdata, sigf];
      	it=1;,
      	_,
      	{sigo, Nes, datn, it} = PCAFitHist[fitdata, sigi, FitSigma -> OptionValue[FitSigma], PCAFitParameters->{nb, pi, maxit}];
@@ -335,7 +335,7 @@ ErrorFunc[data_, Q_, sig_] := Block[{xdata, ydata, vals, tvals},
 
 Options[PCAFitHist] = {PlotSolution -> False, FitSigma -> True, PCAFitParameters -> {10, 6, 10}};
 
-SyntaxInformation[PCAFitHist] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+SyntaxInformation[PCAFitHist] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 (*no initial sigma given*)
 PCAFitHist[data_, opts : OptionsPattern[]] :=  PCAFitHist[data, 0., opts]
@@ -347,25 +347,24 @@ PCAFitHist[data_, sigii_, OptionsPattern[]] := Block[
   {nb,pi,maxit}=OptionValue[PCAFitParameters];
   (*perform svd*)
   {u,w,v,eig,m,n}=SVD[data];
-  
   (*perform heuristic ittarative fitting*)
   i = pi1 = pi0 = 0;
   Do[
    (*count fit and how often max fit*)
    i++;
    (*number of nois comp, Q and Qs*)
-   Nes = (Nd - pi);
-   Q = N[Nes/M];
+   Nes = (m - pi);
+   Q = N[Nes/n];
    Qs = Sqrt[Q];
 
    (*calcualte initial sig from data or use input for i=1*)
-   sigi = If[i == 1, If[sigii == 0, Sqrt[Last[labs]]/Sqrt[(1 - Qs)^2], sigii], sig];
+   sigi = If[i == 1, If[sigii == 0, Sqrt[Last[eig]]/Sqrt[(1 - Qs)^2], sigii], sig];
    
    (*perform the fit, data from histogramlist*)
    (*custom histogram list function for speed*)
    hlist=HistListC[eig[[pi+1;;]],nb];
    (*fit MP function to data, returns sig if fitsimgam is true, if sigma is fixed no fit*)
-   sig=If[OptionValue[FitSigm],CalcSigFunc[hlist,Q,sigi],sigi];
+   sig=If[OptionValue[FitSigma],CalcSigFunc[hlist,Q,sigi],sigi];
    (*determine number of noise components with given sig*)
    eigp=sig^2 (1+Qs)^2;
    pi1=Clip[Length[Select[eig,#>eigp&]],{0,m}];

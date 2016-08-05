@@ -86,6 +86,9 @@ CorrectGradients::usage =
 CorrectBmatrix::usage = 
 "CorrectBmatrix[bmat, transformation] corrects the bmatrix bmat with the tranformation parameters from RegisterData or RegisterDiffusionData."
 
+TransformData::usage = 
+"TransformData[{data,vox}]"
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -154,6 +157,9 @@ InterpolationOrderRegA::usage =
  
 MethodRegA::usage =
 "MethodRegA spefifies which registration method to use when registering diffusion data to anatomical space. Mehtods can be be \"rigid\",\"affine\" or \"bspline\"."
+
+FindTransform::usage = 
+"FindTransform is an option for TransformData."
 
 
 (* ::Subsection::Closed:: *)
@@ -450,20 +456,6 @@ ConcatenateTransformFiles[files_, outDir_] := Module[{},
       outDir <> "\\FinalTransform." <> ToString[# - 1] <> ".txt", 
       filesi[[#]]];
      ) & /@ len;
-  ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*FindTransformix*)
-
-
-FindTransformix[] := 
- Module[{fil1, fil2}, 
-  fil1 = $UserBaseDirectory <> 
-    "\\Applications\\DTITools\\Applications\\transformix.exe";
-  fil2 = $BaseDirectory <> 
-    "\\Applications\\DTITools\\Applications\\transformix.exe";
-  If[FileExistsQ[fil1], fil1, If[FileExistsQ[fil2], fil2, "error"]]
   ]
 
 
@@ -1230,6 +1222,51 @@ SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPatte
       ParametersToTransform[#1, OptionValue[MethodReg]].#2
       ) &, {w, grad}]
    ]
+
+
+(* ::Subsection::Closed:: *)
+(*TransformixCommandInd*)
+
+
+Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All"}
+
+TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output},
+  tdir = OptionValue[TempDirectory];
+  tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}) <>"\\DTItoolsReg\\transform";
+  If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
+  CreateDirectory[tdir];
+  ExportNii[data, vox, tdir <> "\\trans.nii"];
+  command = TransformixCommandInd[tdir];
+  RunProcess[$SystemShell, "StandardOutput", command];
+  output = ImportNii[tdir <> "\\result.nii"][[1]];
+  
+  Switch[OptionValue[DeleteTempDirectory],
+   "All",
+   DeleteDirectory[FileNameTake[tdir, {1, -2}], 
+    DeleteContents -> True],
+   "Trans",
+   DeleteDirectory[tdir, DeleteContents -> True]
+   ];
+  output
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*TransformixCommandInd*)
+
+
+TransformixCommandInd[tempDir_] := Block[{transformix, transfile},
+  transformix = FindTransformix[];
+  transfile = 
+   Last[SortBy[
+     FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]], 
+     FileDate[#, "Creation"] &]];
+  "@ \"" <> transformix <>
+   "\" -in \"" <> First[FileNames["trans*", tempDir]] <>
+   "\" -out \"" <> tempDir <>
+   "\" -tp \"" <> transfile <>
+   "\"" <> " > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
+  ]
 
 
 (* ::Subsection::Closed:: *)

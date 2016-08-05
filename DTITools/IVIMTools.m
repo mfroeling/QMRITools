@@ -602,21 +602,21 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                (*step 3c-ii - ramom sample frtmp*)
                fjt = RandomNormalCf[fj, w1];
                gjt = FunceC2[fjt, dj, pdj, bval];
-               bool1 = AlphaC[{fj, dj, pdj}, {fjt, dj, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
+               bool1 = Quiet@AlphaC[{fj, dj, pdj}, {fjt, dj, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool1, gj, gjt];
                fj = BoolAdd[bool1, fj, fjt];
                
                (*step 3c-iii - ramom sample dctmp*)
                djt = RandomNormalCd[dj, w2];
                gjt = FunceC2[fj, djt, pdj, bval];
-               bool2 = AlphaC[{fj, dj, pdj}, {fj, djt, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
+               bool2 = Quiet@AlphaC[{fj, dj, pdj}, {fj, djt, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool2, gj, gjt];
                dj = BoolAdd[bool2, dj, djt];
                
                (*step 3c-iv - ramom sample pdctmp *)
                pdjt = RandomNormalCd[pdj, w3];
                gjt = FunceC2[fj, dj, pdjt, bval];
-               bool3 = AlphaC[{fj, dj, pdj}, {fj, dj, pdjt}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
+               bool3 = Quiet@AlphaC[{fj, dj, pdj}, {fj, dj, pdjt}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool3, gj, gjt];
                pdj = BoolAdd[bool3, pdj, pdjt];
                
@@ -934,11 +934,11 @@ RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov,mat},
 *)
 
 RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov, mat,tmt,mi},
-	mi=m-3;
    munew = N[RandomVariate[MultinormalDistribution[Mean /@ N[theta],N[PosSym[cov/m]]]]];
    munew = N[(1 + munew) - 1];
    tm = N[(ClipC[theta, 1] - munew)];
    tmt=Chop[N[tm.Transpose[tm]]];
+   mi=m-3;
    icov = N[RandomVariate[InverseWishartMatrixDistribution[mi, tmt]]];
    {munew, icov, N@PseudoInverse[icov]}
 ];
@@ -985,9 +985,7 @@ AlphaC = Compile[{
     (*probability 1*)
     pt = Exp[0.5 (MatDot2[Transpose[theta - mu], Transpose[thetat - mu], icov])];
     (*probability 2*)
-    top=yty - DotC[y, gt];
-    bot=yty - DotC[y, g];
-    pd = Chop[(top/bot)^(-nb/2)];
+    pd = Chop[((yty - DotC[y, gt])/(yty - DotC[y, g]))^(-nb/2)];
     (*bool=alpha-RU*)
     rand = RandomReal[1, nvox];
     pdpt=(pd*pt);

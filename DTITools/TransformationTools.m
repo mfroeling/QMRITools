@@ -28,7 +28,7 @@ ClearAll @@ Names["DTITools`TransformationTools"];
 (*Fuctions*)
 
 
-TransformData::usage = "TransformData[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
+DataTranformation::usage = "TransformData[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
 
 
 (* ::Subsection:: *)
@@ -54,11 +54,11 @@ Begin["`Private`"]
 (*TransformData*)
 
 
-Options[TransformData]={InterpolationOrder->1}
+Options[DataTranformation]={InterpolationOrder->1}
 
-SyntaxInformation[TransformData]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+SyntaxInformation[DataTranformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-TransformData[data_, vox_, w_,OptionsPattern[]] := 
+DataTranformation[data_, vox_, w_,OptionsPattern[]] := 
  Block[{coor, rot, coorR, interFunc, interFuncC},
   coor = GetCoordinates[data, vox];
   rot = ParametersToTransformFull[w, "Inverse"];
