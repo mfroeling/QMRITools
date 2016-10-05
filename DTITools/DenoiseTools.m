@@ -152,7 +152,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
   off = Round[(ker - 1)/2];
   datao = ConstantArray[0., dim];
   weights = sigmat = datao[[All, 1]];
-  
+ 
   (*if mask is a number make it 1 for all voxels*)
   mask = If[NumberQ[mask], weights + 1, mask];
   
@@ -294,6 +294,7 @@ HistListC = Compile[{{dat, _Real, 1}, {nbins, _Integer, 0}}, Block[
      ,
      (*range is greate then zero, thus calculate the bin width *)
      maxmin = max - min;
+     If[maxmin<=0.,Print[{"error",{min,max}}];Print[dat]];
      binw = maxmin/nbins;
      (*count in number of bins*)
      tall = Tally[Floor[nbins (dat - min)/(1.001 maxmin)]];
@@ -362,17 +363,22 @@ PCAFitHist[data_, sigii_, OptionsPattern[]] := Block[
    
    (*perform the fit, data from histogramlist*)
    (*custom histogram list function for speed*)
-   hlist=HistListC[eig[[pi+1;;]],nb];
+    hlist=HistListC[eig[[pi+1;;]],nb];
    (*fit MP function to data, returns sig if fitsimgam is true, if sigma is fixed no fit*)
    sig=If[OptionValue[FitSigma],CalcSigFunc[hlist,Q,sigi],sigi];
+   
+   If[sig < 0,
+   	nb += 2; i = pi1 = pi0 = 0;
+   	,
    (*determine number of noise components with given sig*)
    eigp=sig^2 (1+Qs)^2;
-   pi1=Clip[Length[Select[eig,#>eigp&]],{0,m}];
+   pi1=Clip[Length[Select[eig,#>eigp&]],{0,m-1}];
      
    (*this ends if the same solution or the same solution as the previous itteration is found*)
    If[pi==pi1||pi1==pi0,Break[]];
    (*updata pi values*)
    {pi0,pi}={pi,pi1};
+   ];
    (*close do loop after max itterations is reached*)
    ,{maxit}];
   

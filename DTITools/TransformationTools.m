@@ -58,8 +58,10 @@ Options[DataTranformation]={InterpolationOrder->1}
 
 SyntaxInformation[DataTranformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-DataTranformation[data_, vox_, w_,OptionsPattern[]] := 
+DataTranformation[data_, vox_, wi_,OptionsPattern[]] := 
  Block[{coor, rot, coorR, interFunc, interFuncC},
+  w=If[Length[wi]==3,Join[wi,{0,0,0,1,1,1,0,0,0}]];
+  
   coor = GetCoordinates[data, vox];
   rot = ParametersToTransformFull[w, "Inverse"];
   coorR = ApplyRotC[coor, rot];

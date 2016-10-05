@@ -116,15 +116,15 @@ Begin["`Private`"]
 (*DcmToNii*)
 
 
-dcm2nii = $UserBaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2nii.exe";
-dcm2nii = If[!FileExistsQ[dcm2nii],$BaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2nii.exe",dcm2nii];
+dcm2nii = $UserBaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2niix.exe";
+dcm2nii = If[!FileExistsQ[dcm2nii],$BaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2niix.exe",dcm2nii];
 dcm2nii = If[!FileExistsQ[dcm2nii], Message[DcmToNii::notfount],dcm2nii];
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_,_.}};
 
 DcmToNii[action_] := DcmToNii[action,""]; 
 
-DcmToNii[action_,fstr_] := Module[{act,filfolin,folout,add,title},
+DcmToNii[action_,fstr_] := Module[{act,filfolin,folout,add,title,log,command},
 	
 	Print["Using Chris Rorden's dcm2nii.exe
 http://www.mccauslandcenter.sc.edu/mricro/mricron/dcm2nii.html"];
@@ -145,11 +145,17 @@ http://www.mccauslandcenter.sc.edu/mricro/mricron/dcm2nii.html"];
 		folout=FileSelect["Directory",WindowTitle->"Select directory to put nii files in"];
 		];
 	If[filfolin==Null||folout==Null,Return[]];
+	log=" > \"" <> filfolin <> "\\output.txt";
 	
 	add=If[action == "file", "-v N "," "];
 	
+	command="!"<>dcm2nii <> " -f %f_%i_%m_%n_%p_%q_%s_%t \"" <> filfolin <> "\"" <> log;
+	
 	Monitor[
-		Quiet[Get[("!"<>dcm2nii<>" -a Y -b dcm2nii.ini -c Y -d N -e Y -f Y -g N -i Y -n Y -p Y "<>add<>"-x Y -o \""<>folout<>"\" \""<>filfolin<>"\"")]];
+		Quiet[Get[(command)]];
+		files = FileNames[{"*.nii", "*.bval", "*.bvec", "output.txt"}, filfolin];
+		CopyFile[#,StringReplace[#, filfolin -> folout]] & /@ files;
+		DeleteFile /@ files;
 		,
 		ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]
 	];
