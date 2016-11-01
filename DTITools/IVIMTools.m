@@ -595,6 +595,8 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                (*step 3a - Sampel mu(j) [A2] for j=2*)
                (*step 3b - Sampel covu(j) [A3] for j=2*)
                {muj, covj, icovj} = RandomGibsSample[{fj, dj, pdj}, covj, nvox];
+               (*{muj, covj} = MeanCov[{fj, dj, pdj}];
+               icovj=N@PseudoInverse[covj];*)
                
                (*steps 3c "loop" over the voxels i, perform as vector for each of the parameters *)
                (*step 3c-i - define theta(j) - {fj,dj,pdj}=thetaj;*)
@@ -605,7 +607,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                bool1 = Quiet@AlphaC[{fj, dj, pdj}, {fjt, dj, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool1, gj, gjt];
                fj = BoolAdd[bool1, fj, fjt];
-               
+
                (*step 3c-iii - ramom sample dctmp*)
                djt = RandomNormalCd[dj, w2];
                gjt = FunceC2[fj, djt, pdj, bval];
@@ -619,7 +621,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                bool3 = Quiet@AlphaC[{fj, dj, pdj}, {fj, dj, pdjt}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool3, gj, gjt];
                pdj = BoolAdd[bool3, pdj, pdjt];
-               
+
                (*flip and clip if dc>pdc1 *)
                boolf = BooleC[dj, pdj];
                {fj, dj, pdj} = {(-2 boolf + 1) fj, BoolAdd[boolf, dj, pdj], BoolAdd[boolf, pdj, dj]};
@@ -882,7 +884,7 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 BooleC = Compile[{{val, _Real, 1}, {ru, _Real, 1}}, UnitStep[val - ru], Parallelization -> True, RuntimeOptions -> "Speed"];
 BooleC1 = Compile[{{val, _Real, 1}, {ru, _Real, 0}}, UnitStep[val - ru], Parallelization -> True, RuntimeOptions -> "Speed"];
 BooleC2 = Compile[{{val, _Real, 1}, {min, _Real, 0}, {max, _Real, 0}}, UnitStep[val - min] (1. - UnitStep[val - max]), Parallelization -> True, RuntimeOptions -> "Speed"];
-BoolAdd = #2 - #1 #2 + #1 #3 &;
+BoolAdd = N[#2 - #1 #2 + #1 #3] &;
 
 ClipC = Compile[{{theta, _Real, 2}, {trans, _Integer, 0}}, Block[{chk1, out},
     If[Length[theta] == 3,
@@ -934,12 +936,12 @@ RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov,mat},
 *)
 
 RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov, mat,tmt,mi},
-   munew = N[RandomVariate[MultinormalDistribution[Mean /@ N[theta],N[PosSym[cov/m]]]]];
-   munew = N[(1 + munew) - 1];
-   tm = N[(ClipC[theta, 1] - munew)];
-   tmt=Chop[N[tm.Transpose[tm]]];
-   mi=m-3;
-   icov = N[RandomVariate[InverseWishartMatrixDistribution[mi, tmt]]];
+   munew = N[RandomVariate[MultinormalDistribution[Mean /@ N[theta],N[(*PosSym[cov/m]*)cov/m]]]];
+   (*munew = N[(1 + munew) - 1];*)
+   tm = Chop[N[(ClipC[theta, 1] - munew)]];
+   tmt=Chop[N[tm.Transpose[tm]], 10^-5];
+   (*mi=m-3;*)
+   icov = N[RandomVariate[InverseWishartMatrixDistribution[m-3, tmt]]];
    {munew, icov, N@PseudoInverse[icov]}
 ];
 
@@ -956,8 +958,7 @@ RandomNormalCd = Compile[{{m, _Real, 1}, {s, _Real, 1}},
 
 (*calulated fitted points g(fr, dc, pdc)*)
 FunceC2 = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 1}},
-   Chop[Transpose[
-     Map[((Exp[Exp[dc] #] + Exp[Exp[pdc] # + fr])/(1 + Exp[fr])) &, -bm]]]
+   Chop[Transpose[Map[((Exp[Exp[dc] #] + Exp[Exp[pdc] # + fr])/(1 + Exp[fr])) &, -bm]]]
    , Parallelization -> True, RuntimeOptions -> "Speed"];
 
 (*calulated fitted points g(fr1, fr2, dc, pdc1, pdc2)*)
@@ -971,11 +972,14 @@ FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Rea
     ], Parallelization -> True, RuntimeOptions -> "Speed"];
 
 (*calculate probability*)
-DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, ((vec1.vec2)^2)/(vec2.vec2),
+DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
+	((vec1.vec2)^2)/(vec2.vec2),
    RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
-Dotc1 = Compile[{{vec, _Real, 1}}, vec.vec,
+Dotc1 = Compile[{{vec, _Real, 1}}, 
+	vec.vec,
    RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
-MatDot2 = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}, {mat, _Real, 2}}, (vec1.mat.vec1) - (vec2.mat.vec2),
+MatDot2 = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}, {mat, _Real, 2}}, 
+	(vec1.mat.vec1) - (vec2.mat.vec2),
    RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
 AlphaC = Compile[{
 	{theta, _Real, 2}, {thetat, _Real, 2}, {mu, _Real, 1},

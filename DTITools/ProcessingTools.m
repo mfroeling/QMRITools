@@ -988,26 +988,33 @@ Options[ResidualCalc] = {MonitorCalc -> False, MeanRes -> "All", NormResidual ->
 SyntaxInformation[ResidualCalc] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
 ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bfac_, OptionsPattern[]] := Module[
-	{DTI = N[data], err, bmat, x,mr,n,tens},
+	{DTI = N[data], err, bmat, x,mr,n,tens,slices,dat},
+	
+	slices=Length[DTI];
 	
 	bmat = If[NumberQ[bfac] || VectorQ[bfac], Bmatrix[bfac, grad], bfac];
-  
-  If[Dimensions[DTI[[All, 1]]] != Dimensions[tensor[[1]]], 
-  	Return[Message[ResidualCalc::datdim, Dimensions[DTI], Dimensions[tensor]]]];
+	bmat = If[Length[tensor] == 6,bmat[[All, ;; 6]],bmat];
+	
+	If[Dimensions[DTI[[All, 1]]] != Dimensions[tensor[[1]]],Return[Message[ResidualCalc::datdim, Dimensions[DTI], Dimensions[tensor]]]];
   
   Monitor[
-   err = Table[
-   If[Length[tensor[[All, x]]] == 6,
-    bmat = bmat[[All, ;; 6]];
-    DTI[[x]] - ((DTI[[x, 1]]*#) & /@ Exp[bmat.tensor[[All, x]]])
+   err = 
+   If[Length[tensor] == 6,
+    Table[
+    	dat=DTI[[x]];
+    	dat - ((dat[[1]]*#) & /@ Exp[bmat.tensor[[All, x]]])
+    	, {x, 1, slices, 1}]
     ,
-    tens=tensor[[All, x]];
-    tens[[7]] = Log[tens[[7]]];
-    DTI[[x]] - Exp[bmat.tens]
+    Table[
+    	tens=tensor[[All, x]];
+    	tens[[7]] = Log[tens[[7]]];
+    	DTI[[x]] - Exp[bmat.tens]
+    	, {x, 1, slices, 1}]
     
-    ], {x, 1, Length[DTI], 1}];
+    ];
    ,
-   If[OptionValue[MonitorCalc], Column[{"Calculation residual for multiple slices", ProgressIndicator[x, {0, Length[DTI]}]}], ""]];
+   If[OptionValue[MonitorCalc], Column[{"Calculation residual for multiple slices", ProgressIndicator[x, {0, Length[DTI]}]}], ""]
+   ];
   
   If[OptionValue[MonitorCalc],Print["Done calculating residual for ", Length[DTI], " slices!"]];
   

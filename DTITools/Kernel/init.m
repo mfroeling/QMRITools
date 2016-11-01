@@ -20,11 +20,11 @@ ClearFunctions[pack_,subpack_]:=Module[{packageName,packageSymbols,packageSymbol
 		]& /@ subpack;
 ];
 
-UpdateWarning[]:=If[$VersionNumber != 10.4,
+UpdateWarning[]:=If[$VersionNumber != 11.,
  CreateDialog[Column[{Style["
-      Current Mathematica version is 10.4
+      Current Mathematica version is 11.0
       You need to update!
-      Some functions wont work in 10.3 or older versions
+      Some functions wont work in 10.4 or older versions
       ", TextAlignment -> Center], DefaultButton[], ""}, 
     Alignment -> Center], WindowTitle -> "Update!"];
  ];

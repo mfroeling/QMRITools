@@ -69,6 +69,10 @@ OpenMRIcron::usage =
 "OpenMRIcron[] promts to select the nii file to open in MRIcron.
 ImOpenMRIcron[\"file\"] opens the nii file in MRIcron."
 
+ExtractNiiFiles::usage =
+"ExtractNiiFiles[] extracts all nii.gz files to .nii files in current folder.
+ExtractNiiFiles[folder] extracts all nii.gz files to .nii files in folder."
+
 
 (* ::Subsection:: *)
 (*Options*)
@@ -122,6 +126,8 @@ dcm2nii = If[!FileExistsQ[dcm2nii], Message[DcmToNii::notfount],dcm2nii];
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_,_.}};
 
+DcmToNii[]:=DcmToNii["folder",""];
+
 DcmToNii[action_] := DcmToNii[action,""]; 
 
 DcmToNii[action_,fstr_] := Module[{act,filfolin,folout,add,title,log,command},
@@ -149,7 +155,11 @@ http://www.mccauslandcenter.sc.edu/mricro/mricron/dcm2nii.html"];
 	
 	add=If[action == "file", "-v N "," "];
 	
-	command="!"<>dcm2nii <> " -f %f_%i_%m_%n_%p_%q_%s_%t \"" <> filfolin <> "\"" <> log;
+	command="!" <> dcm2nii <> " -f %f_%i_%m_%n_%p_%q_%s_%t -z n -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log;
+	 (*
+	Print[command];
+	*)
+	(*command="!"<>dcm2nii<>" -f %f_%i_%m_%n_%p_%q_%s_%t -z n \"" <> filfolin <> "\"" <> log;*)
 	
 	Monitor[
 		Quiet[Get[(command)]];
@@ -618,6 +628,21 @@ OpenMRIcron[filei_, OptionsPattern[]] :=
     Return[Message[OpenMRIcron::fil, file]];
     ]
    ]
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*ExtractNiiFiles*)
+
+
+ExtractNiiFiles[] := ExtractNiiFiles[""]
+ExtractNiiFiles[folder_] := Module[{files},
+	Quiet[
+  files = FileNames["*.nii.gz", folder];
+  DeleteFile[StringDrop[#, -3]] & /@ files;
+  ExtractArchive /@ files;
+  DeleteFile /@ files;
+  ]
   ]
 
 

@@ -174,15 +174,15 @@ Begin["`Private`"]
 (*CalculateWallMap*)
 
 
-Options[CalculateWallMap] = {ShowFit -> True};
+Options[CalculateWallMap] = {ShowFit -> True,MaskWallMap->True};
 
 SyntaxInformation[
    CalculateWallMap] = {"ArgumentsPattern" -> {_, _, 
      OptionsPattern[]}};
 
-CalculateWallMap[mask_, vox_, OptionsPattern[]] := Module[{
+CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
    seg, min, mout, mtot, pts, ptsi, pos, ptso, x, y, z, plane, maxd, 
-   dis,
+   dis,mask,
    surfpl, pointspl, planepl, planefit, i, fit,
    planem, d1, d2, d3, zc, mask2, in, out, min2, mout2, clip,
    surfin, surfout, ptsin, ptsout, ptspl,
@@ -190,6 +190,7 @@ CalculateWallMap[mask_, vox_, OptionsPattern[]] := Module[{
    ptsm, dist, der
    },
   
+  mask=Round[ImageData[SelectComponents[Image[#], "Count", -1]] & /@ maski];
   (*create the inner and outer volume*)
   seg = MorphologicalComponents[#] & /@ (1 - mask);
   seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
@@ -249,12 +250,12 @@ CalculateWallMap[mask_, vox_, OptionsPattern[]] := Module[{
   mask2 = mask;
   in = mask2; out = 0 mask2;
   i = 0;
-  While[in != out && i < 20,
+  While[in != out && i < 50,
    i++;
    in = mask2;
    out = (1 - 
        min) (ArrayPad[
-        Closing[ArrayPad[mask2 + planem, 20], 0.5], -20] - planem);
+        Closing[ArrayPad[mask2 + planem, 20], 0.1], -20] - planem);
    mask2 = out;
    ];
   
@@ -263,10 +264,10 @@ CalculateWallMap[mask_, vox_, OptionsPattern[]] := Module[{
   in = min2; out = 0 min2;
   clip = Clip[(1 - mask2 - planem), {0, 1}];
   i = 0;
-  While[in != out && i < 20,
+  While[in != out && i < 50,
    i++;
    in = min2;
-   out = clip ArrayPad[Dilation[ArrayPad[min2, 20], 0.5], -20];
+   out = clip ArrayPad[Dilation[ArrayPad[min2, 20], 0.1], -20];
    min2 = out;
    ];
   mout2 = ArrayPad[Closing[ArrayPad[mask + min2, 5], 1], -5];
@@ -315,13 +316,18 @@ CalculateWallMap[mask_, vox_, OptionsPattern[]] := Module[{
       ) &, ptsm];
   (*create the wall distance map*)
   MapThread[(wall[[#1[[1]], #1[[2]], #1[[3]]]] = #2) &, {ptsm, dist}];
-  wall = MedianFilter[wall*(1 - min2), 1];
-  der = GaussianFilter[
-      wall, {1.5 (1/vox)/(1/vox[[1]])}, #] & /@ (IdentityMatrix[3]); 
+  (*wall = MedianFilter[wall*(1 - min2), 2];*)
+  wall = GaussianFilter[wall*(1 - min2), 2];
   
+  der = GaussianFilter[
+      wall, {2 (1/vox)/(1/vox[[2]])}, #] & /@ (IdentityMatrix[3]); 
+  
+  If[OptionValue[MaskWallMap], 
   wall = mask wall;
-  wall = NormalizeData[wall, MinMax[wall]];
   der = mask # & /@ der;
+  ];
+  
+  wall = NormalizeData[wall, MinMax[wall]];
   
   If[OptionValue[ShowFit], 
    fit = Print[GraphicsRow[{planefit, ptspl}, ImageSize -> 800]]];
@@ -337,29 +343,40 @@ CalculateWallMap[mask_, vox_, OptionsPattern[]] := Module[{
 (*HelixAngleCalc*)
 
 
-Options[HelixAngleCalc]={ShowPlot->True, HelixMethod->"Slow"};
+Options[HelixAngleCalc]={ShowPlot->True, HelixMethod->"Slow",AxesMethod->"Quadratic"};
 
 SyntaxInformation[HelixAngleCalc]={"ArgumentsPattern"->{_,_,_,_.,OptionsPattern[]}};
 
-HelixAngleCalc[data_?ArrayQ,mask_?ArrayQ,off_,vec_,inout_,vox_,opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,0,off,vec,inout,vox,opts]
+HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,0,1,1,1,vox,opts]
 
-HelixAngleCalc[data_?ArrayQ,mask_?ArrayQ, maskp_?ArrayQ,off_,vec_,inout_,vox_,OptionsPattern[]]:=Module[
+HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,maskp,1,1,1,vox,opts]
+
+HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, off_, vec_, inout_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,0,off,vec,inout,vox,opts]
+
+HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, offi_, veci_, inouti_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]]:=Module[
 {norvec,radvec,radvecn,cirvec,projection,helix,sign,
-evec,inp,dim,wallangmap,norvecc,mtot,func2,
-vectorField,vectorFieldE,n,coo,plot,out,voxl,cent,offp,
-rav,nov,rov,spz,spxy,sp,
+evec,inp,dim,wallangmap,norvecc,mtot,func2,vec,off,inout,pl,
+vectorField,vectorFieldE,n,coo,plot,out,voxl,offp,
+rav,nov,rov,spz,spxy,sp,met,
 seg,min,mout,intdata,func,wall,der,
 maskCont,vec1,vec2,vec3},
-
 
 dim=Dimensions[data][[1;;3]];
 voxl=Reverse[vox];
 
-Switch[OptionValue[HelixMethod]
+met=OptionValue[HelixMethod];
+
+If[offi===1&&veci===1&&inouti===1,
+	If[OptionValue[ShowPlot],
+		{off, vec, inout, pl} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, Method -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowPlot]];,
+		{off, vec, inout} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, Method -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowPlot]];
+		];
 	,
-	"Fast"
-	,
-	Print["start"];
+	vec=veci;off=offi;inout=inouti;
+	];
+
+Switch[met
+	,"Fast",
 	(*calculate the wall angle map*)
 	wallangmap=N[WallAngleMap[mask,vox,inout]Degree];
 	(*define te rad vector using center points*)
@@ -372,10 +389,7 @@ Switch[OptionValue[HelixMethod]
 	norvecc=NorVecR[wallangmap,cirvec,norvec];
 	(*make radvec purpendicular to corrected norvec*)
 	radvecn=MakePerpendicular[radvec,norvecc];
-	Print["end"]
-	,
-	"Slow"
-	,
+	,"Slow",
 	seg = MorphologicalComponents[#] & /@ (1 - mask);
 	min = Round@GaussianFilter[Unitize[Clip[seg, {1.5, 2}, {0, 0}]], 3];
 	mout = Round@GaussianFilter[Unitize[1 - Clip[seg, {0, 1}, {0, 0}]], 3];
@@ -383,26 +397,22 @@ Switch[OptionValue[HelixMethod]
 	intdata = N@Join[Append[vox #, 0.] & /@ Position[min, 1], Append[vox #, 1.] & /@ Position[1 - Dilation[mout, 1], 1]];
 	func = Interpolation[intdata, InterpolationOrder -> 1];
 	func2 = If[(mtot[[##]] & @@ #) != 2, (mtot[[##]] & @@ #), func @@ (vox #)] &;
-	
 	(*idat = Transpose[Table[vox {z, y, x}, {z, 1, dim[[1]]}, {y, 1, dim[[2]]}, {x, 1,dim[[3]]}], {2, 3, 4, 1}];
 	wall = GaussianFilter[func[##] & @@ idat, 2];*)
 	wall = Table[func2[{z, y, x}], {z, 1,dim[[1]]}, {y, 1, dim[[2]]}, {x, 1,dim[[3]]}];
-	
 	der = GaussianFilter[wall, {1.5 (1/vox)/(1/vox[[1]])}, #] & /@ (IdentityMatrix[3]);
 	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
 	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
 	norvecc = MakePerpendicular[norvec, radvecn];
 	cirvec = NormalizeC[CrossC[radvecn,norvecc]];
-	,
-	"Slow2"
-	,
-	{wall,der}=CalculateWallMap[mask,vox,ShowFit->False];
+	,"Slow2",
+	{wall,der}=CalculateWallMap[mask, vox, ShowFit->False, MaskWallMap->False];
 	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
 	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
 	norvecc = MakePerpendicular[norvec, radvecn];
 	cirvec = NormalizeC[CrossC[radvecn,norvecc]];
-
 ];
+Print["LMCS is done"];
 
 (*create helix angle maps*)
 out = Flatten[Table[
@@ -458,10 +468,10 @@ If[OptionValue[ShowPlot],
 	     , {z, 1, dim[[1]],1}, {y, 1, dim[[2]], 3}, {x, 1, dim[[3]], 2}],3], None];
 	     
 	offp = {.5, .5+dim[[2]], 0} + {1, -1, 1} Reverse[#] & /@ DeleteCases[off, {}];
-	cent=Show[ListPointPlot3D[offp,PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],Graphics3D[{Thick, Black, Line[offp]}]];
+	(*cent=Show[ListPointPlot3D[offp,PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],Graphics3D[{Thick, Black, Line[offp]}]];*)
   	plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3](*,Graphics3D[vectorFieldE]*)];
    	Print[plot];
-  	{Re@out,plot(*,{radvec,norvec,radvecn,rotvec,norvecc}*)}
+  	{Re@out,{plot,pl}(*,{radvec,norvec,radvecn,rotvec,norvecc}*)}
 	,
   	Re@out
   	]
@@ -1333,11 +1343,11 @@ Options[MaskHelix]={BackgroundValue-> -100, SmoothHelix->False};
 SyntaxInformation[MaskHelix] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 MaskHelix[helix_, mask_,OptionsPattern[]] := Block[{fun},
-	fun=Switch[OptionValue[SmoothHelix],
-	0, N[mask #] /. 0. -> OptionValue[BackgroundValue] ,
-	_, N[mask MedianFilter[#, 1]] /. 0. -> OptionValue[BackgroundValue]
-	]&;
-	
+	fun=Switch[
+		OptionValue[SmoothHelix],
+		1, N[mask MedianFilter[#, 1]] /. 0. -> OptionValue[BackgroundValue],
+		_, N[mask #] /. 0. -> OptionValue[BackgroundValue]
+		]&;
 	If[ArrayDepth[helix]==4,fun/@helix,fun[helix]]	
 ]
 
