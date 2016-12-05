@@ -73,6 +73,9 @@ ExtractNiiFiles::usage =
 "ExtractNiiFiles[] extracts all nii.gz files to .nii files in current folder.
 ExtractNiiFiles[folder] extracts all nii.gz files to .nii files in folder."
 
+CompressNiiFiles::usage =
+"CompressNiiFiles[]compresses all nii files to .nii.gz files in current folder.
+ECompressNiiFilesfolder] compresses all nii files to .nii.gz files in folder."
 
 (* ::Subsection:: *)
 (*Options*)
@@ -124,7 +127,7 @@ dcm2nii = $UserBaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2niix
 dcm2nii = If[!FileExistsQ[dcm2nii],$BaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2niix.exe",dcm2nii];
 dcm2nii = If[!FileExistsQ[dcm2nii], Message[DcmToNii::notfount],dcm2nii];
 
-SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_,_.}};
+SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.}};
 
 DcmToNii[]:=DcmToNii["folder",""];
 
@@ -132,8 +135,7 @@ DcmToNii[action_] := DcmToNii[action,""];
 
 DcmToNii[action_,fstr_] := Module[{act,filfolin,folout,add,title,log,command},
 	
-	Print["Using Chris Rorden's dcm2nii.exe
-http://www.mccauslandcenter.sc.edu/mricro/mricron/dcm2nii.html"];
+	Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"];
 		
 	{act,title}=Switch[action,
 		"folder",{"Directory","Select direcotry containig the dcm files"},
@@ -643,6 +645,21 @@ ExtractNiiFiles[folder_] := Module[{files},
   ExtractArchive /@ files;
   DeleteFile /@ files;
   ]
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*CompressNiiFiles*)
+
+
+CompressNiiFiles[] := CompressNiiFiles[""]
+CompressNiiFiles[folder_] := Module[{files},
+  Quiet[
+   files = FileNames["*.nii", folder];
+   
+   CreateArchive[#, # <> ".gz"] & /@ files;
+   DeleteFile /@ files;
+   ]
   ]
 
 

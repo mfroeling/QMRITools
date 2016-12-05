@@ -158,6 +158,9 @@ DropSamples::usage =
 
 GridLineSpacing::usage = "GridLineSpacing is an option of TransmuralPlot. It defines the spacing of the gridlines.";
 
+MaskWallMap::usage = "MaskWallMap is an option for CalculateWallMap. if True or False."
+
+AxesMethod::usage = "AxesMethod is an option for HelixAngleCalc and CentralAxes. Can be \"Linear\", \"Quadratic\", \"Cubic\"."
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -174,7 +177,7 @@ Begin["`Private`"]
 (*CalculateWallMap*)
 
 
-Options[CalculateWallMap] = {ShowFit -> True,MaskWallMap->True};
+Options[CalculateWallMap] = {ShowFit -> True, MaskWallMap->True};
 
 SyntaxInformation[
    CalculateWallMap] = {"ArgumentsPattern" -> {_, _, 
@@ -283,7 +286,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
       ContourStyle -> Directive[{Red, Blue}[[#]], Opacity[0.4]], 
       MaxPlotPoints -> {50, 100}] & /@ {1, 2};
   
-  Print[surfout,surfin];
+  (*Print[Show[surfout,surfin,ImageSize->250]];*)
   
   (*get the coordinates from the inner and outer surface*)
   ptsin = 
@@ -294,7 +297,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
   ptspl = 
    Show[surfin, surfout, 
     ListPointPlot3D[{Reverse /@ ptsin - 1, Reverse /@ ptsout - 1}, 
-     PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed"];
+     PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed",ImageSize->250];
   
   inpnt = N[vox # & /@ ptsin]; outpnt = N[vox # & /@ ptsout];
   (*generate the wall distance function*)
@@ -343,7 +346,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 (*HelixAngleCalc*)
 
 
-Options[HelixAngleCalc]={ShowPlot->True, HelixMethod->"Slow",AxesMethod->"Quadratic"};
+Options[HelixAngleCalc]={ShowPlot->True, HelixMethod->"Slow", AxesMethod->"Quadratic"};
 
 SyntaxInformation[HelixAngleCalc]={"ArgumentsPattern"->{_,_,_,_.,OptionsPattern[]}};
 
@@ -368,8 +371,8 @@ met=OptionValue[HelixMethod];
 
 If[offi===1&&veci===1&&inouti===1,
 	If[OptionValue[ShowPlot],
-		{off, vec, inout, pl} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, Method -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowPlot]];,
-		{off, vec, inout} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, Method -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowPlot]];
+		{off, vec, inout, pl} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, AxesMethod -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowPlot]];,
+		{off, vec, inout} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, AxesMethod -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowPlot]];
 		];
 	,
 	vec=veci;off=offi;inout=inouti;
@@ -389,6 +392,7 @@ Switch[met
 	norvecc=NorVecR[wallangmap,cirvec,norvec];
 	(*make radvec purpendicular to corrected norvec*)
 	radvecn=MakePerpendicular[radvec,norvecc];
+	
 	,"Slow",
 	seg = MorphologicalComponents[#] & /@ (1 - mask);
 	min = Round@GaussianFilter[Unitize[Clip[seg, {1.5, 2}, {0, 0}]], 3];
@@ -397,16 +401,17 @@ Switch[met
 	intdata = N@Join[Append[vox #, 0.] & /@ Position[min, 1], Append[vox #, 1.] & /@ Position[1 - Dilation[mout, 1], 1]];
 	func = Interpolation[intdata, InterpolationOrder -> 1];
 	func2 = If[(mtot[[##]] & @@ #) != 2, (mtot[[##]] & @@ #), func @@ (vox #)] &;
-	(*idat = Transpose[Table[vox {z, y, x}, {z, 1, dim[[1]]}, {y, 1, dim[[2]]}, {x, 1,dim[[3]]}], {2, 3, 4, 1}];
-	wall = GaussianFilter[func[##] & @@ idat, 2];*)
 	wall = Table[func2[{z, y, x}], {z, 1,dim[[1]]}, {y, 1, dim[[2]]}, {x, 1,dim[[3]]}];
 	der = GaussianFilter[wall, {1.5 (1/vox)/(1/vox[[1]])}, #] & /@ (IdentityMatrix[3]);
+	
 	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
 	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
 	norvecc = MakePerpendicular[norvec, radvecn];
 	cirvec = NormalizeC[CrossC[radvecn,norvecc]];
+	
 	,"Slow2",
 	{wall,der}=CalculateWallMap[mask, vox, ShowFit->False, MaskWallMap->False];
+	
 	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
 	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
 	norvecc = MakePerpendicular[norvec, radvecn];
@@ -639,7 +644,7 @@ FitWall[data_, met_] :=
 (*CentralAxes*)
 
 
-Options[CentralAxes]={ShowFit->True,RowSize->"Automatic",Method->"Cubic"(*,Output->True*)};
+Options[CentralAxes]={ShowFit->True,RowSize->"Automatic",AxesMethod->"Cubic"(*,Output->True*)};
 
 SyntaxInformation[CentralAxes]={"ArgumentsPattern"->{_,_,_.,OptionsPattern[]}};
 
@@ -651,7 +656,7 @@ offouti,offouto,pl1,off,vecs,pl2,offout,vecsout,fit},
 
 (*get option values*)
 rad={0,1};
-met=OptionValue[Method];
+met=OptionValue[AxesMethod];
 row=If[OptionValue[RowSize]==="Automatic"||!IntegerQ[OptionValue[RowSize]],
 Round[Sqrt[Length[mask]]],
 OptionValue[RowSize]
@@ -661,7 +666,7 @@ OptionValue[RowSize]
 dim=Dimensions[mask];
 (*half=CenterPoint[mask];*)
 half=Drop[dim,1]/2.;
-minmaxr= rad Max[(Drop[dim,1]/2)];
+minmaxr= rad Max[(Drop[dim,1]/1)];
 
 (*get inner and outer radius*)
 {inner,outer}=GetRadius[mask,minmaxr,half];
@@ -739,11 +744,7 @@ GetRadius[mask_, {minr_, maxr_}, half_] :=
   mout = Unitize[1 - Clip[seg, {0, 1}, {0, 0}]];
   (*get the inner radius*)inner =
    Transpose@MapIndexed[(msin = Image[#1];
-       tmp = 
-        DeleteCases[(ComponentMeasurements[
-            msin, {"BoundingDiskCenter", "BoundingDiskRadius", 
-             "Circularity"}])[[All, 
-          2]], _?((#1[[2]] > maxr) || (#1[[2]] < minr) &)];
+       tmp = DeleteCases[(ComponentMeasurements[msin, {"BoundingDiskCenter", "BoundingDiskRadius","Circularity"}])[[All,2]], _?((#1[[2]] > maxr) || (#1[[2]] < minr) &)];
        comps = 
         If[tmp != {}, 
          Nearest[(#[[1]] -> #) & /@ tmp, half, 1][[1]], {}];
@@ -752,10 +753,7 @@ GetRadius[mask_, {minr_, maxr_}, half_] :=
          comps[[2]]}, {{}, {}}]) &, min];
   (*get the outer radius*)
   outer = Transpose@MapIndexed[(msin = Image[#1];
-       tmp = 
-        DeleteCases[(ComponentMeasurements[
-            msin, {"BoundingDiskCenter", "BoundingDiskRadius"}])[[All, 
-          2]], _?((#1[[2]] > maxr) || (#1[[2]] < minr) &)];
+       tmp = DeleteCases[(ComponentMeasurements[msin, {"BoundingDiskCenter", "BoundingDiskRadius"}])[[All, 2]], _?((#1[[2]] > maxr) || (#1[[2]] < minr) &)];
        comps = 
         If[tmp != {}, 
          Nearest[(#[[1]] -> #) & /@ tmp, half, 1][[1]], {}];
@@ -887,7 +885,7 @@ SyntaxInformation[CardiacSegment] = {"ArgumentsPattern" -> {_, _, _, OptionsPatt
 
 CardiacSegment[data_,mask_,off_,OptionsPattern[]]:=DialogInput[{
 DynamicModule[{
-radiusStart,centers,pointsIn,coordinates,angles,segmask, segang, points,
+radiusStart,centers,pointsIn,coordinates,angles,segmask, segang,
 lines,centerpl,slices,api,midi,basi,sti,endi,carPl,colsOver,car,lm,pos,st,en,app,seg,allpli},
 
 radiusStart=ConstantArray[Max[Dimensions[mask]]/8,Length[mask]];
@@ -904,6 +902,7 @@ Reverse@OptionValue[StartPoints]
 
 coordinates=(Reverse/@Position[#,1])&/@mask;
 angles=Table[i,{i,0,359,1}]Degree;
+PrintTemporary["Calculating sample lines"];
 lines=LinePoints[mask,off,LineThreshold->OptionValue[LineThreshold],LineStep->OptionValue[LineStep]];
 
 (*static plots*)
@@ -927,6 +926,7 @@ carPl = ArrayPlot[car = Reverse@Total[Transpose[mask]], ColorFunction -> "GrayTo
 colsOver = 0 car;lm = Dimensions[car];
 allpli=Graphics[MapThread[{#2, Thick,Line[{{0, #1}, {lm[[2]], #1}}]} &, {{sti,api,midi,basi,endi}, {Gray, Orange, Blue, Red, Purple}}]];
 
+PrintTemporary["Initializing manipulte window"];
 Manipulate[
 (*slice sements*)
 end=Clip[end,{bas,slices}];
@@ -936,7 +936,7 @@ mid=Clip[mid,{ap,bas}];
 start=Clip[start,{0,ap}];
 (*app=Clip[app,{0,mid}];*)
 n=Clip[n,{1,slices}];
-allpl=Graphics[MapThread[{#2, Thick,Line[{{0, #1}, {lm[[2]], #1}}]} &, {{start,ap,mid,bas,end}, {Gray, Orange, Blue, Red, Purple}}]];
+allpl=Graphics[MapThread[{#2, Thick,Line[{{0, #1}, {lmm, #1}}]} &, {{start,ap,mid,bas,end}, {Gray, Orange, Blue, Red, Purple}}]];
 
 (*segment ranges*)
 apex=Range[start+1,ap];
@@ -962,7 +962,7 @@ segm=n/.Flatten[Thread/@segments];
 
 (*get correct center, calcualte angles and rad*)
 cent=centers[[n]];
-rad=Clip[RadCalcC[points[[n]],cent],{5,Min[Dimensions[mask[[1]]]/3]}];
+rad=Clip[RadCalcC[points[[n]],cent],{5,Min[Dimensions[mask[[1]]]/2]}];
 angs= VecAngleC[points[[n]],cent,segm,rev];
 
 (*plots*)
@@ -973,32 +973,36 @@ ArrayPlot[(1-Ceiling[GaussianFilter[mask[[n]],2]-linetr]),ColorRules->{1->Transp
 ArrayPlot[(1-mask[[n]]),ColorRules->{1->Transparent,0->GrayLevel[1,mop]},DataReversed->True]
 ];
 
-(*disks*)
-polplot=If[MemberQ[display,4],
-dsks=RegionDisk[cent,angs,rad,rev]; 
-Graphics[Table[{Opacity[0.5],ColFun[i,segm],dsks[[i]]},{i,1,segm}]],
-Graphics[]];
-(*lines*)
-If[MemberQ[display,2]||MemberQ[display,5],
-angsp=Angpart[angs,angles[[1;;;;astep]],rev]
-];
+(*circle and arrows*)
+circplot=If[MemberQ[display,1],
+	If[segm==1,
+		Graphics[{backcol,Thick,Circle[cent,rad]}]
+		,
+		segpt=RotateRadC[rad,cent,#]&/@angs; 
+		Graphics[{{Thick,backcol,Arrow[{cent,#}]&/@segpt},{backcol,Thick,Circle[cent,rad]}}]],
+	Graphics[]];
 (*lines1 - full lines*)
 lineplot=If[MemberQ[display,2], 
-segpts=Map[RotateRadC[rad,cent,#]&,angsp,{2}];
-Graphics[Table[{ColFun[i,segm],Line[{cent,#}]&/@segpts[[i]]},{i,1,segm}]],Graphics[]];
-(*lines2 - mask lines*)
-lineplot2=If[MemberQ[display,5],
-Graphics[Table[{ColFun[i,segm],Line[lines[[n,(#/Degree+1)]]]&/@angsp[[i]]},{i,1,segm}]],Graphics[]];
+	segpts=Map[RotateRadC[rad,cent,#]&,angsp,{2}];
+	Graphics[Table[{ColFun[i,segm],Line[{cent,#}]&/@segpts[[i]]},{i,1,segm}]],
+	Graphics[]];
 (*points*)
 pointplot=If[MemberQ[display,3],
-pts=RegionPoins[cent,angs,coordinates[[n]]];
-Graphics[Table[{ColFun[i,segm],PointSize[Large],Point[#-{.5,.5}&/@pts[[i]]]},{i,1,segm}]],Graphics[]];
-(*circle and arrows*)
-circplot=If[MemberQ[display,1],If[segm==1,
-Graphics[{backcol,Thick,Circle[cent,rad]}],
-segpt=RotateRadC[rad,cent,#]&/@angs; 
-Graphics[{{Thick,backcol,Arrow[{cent,#}]&/@segpt},{backcol,Thick,Circle[cent,rad]}}]
-],Graphics[]];
+	pts=RegionPoins[cent,angs,coordinates[[n]]];
+	Graphics[Table[{ColFun[i,segm],PointSize[Large],Point[#-{.5,.5}&/@pts[[i]]]},{i,1,segm}]],
+	Graphics[]];
+(*disks*)
+polplot=If[MemberQ[display,4],
+	dsks=RegionDisk[cent,angs,rad,rev]; 
+	Graphics[Table[{Opacity[0.5],ColFun[i,segm,backcol],dsks[[i]]},{i,1,segm}]],
+	Graphics[]];
+(*lines2 - mask lines*)
+lineplot2=If[MemberQ[display,5],
+	Graphics[Table[{ColFun[i,segm],Line[lines[[n,(#/Degree+1)]]]&/@angsp[[i]]},{i,1,segm}]],
+	Graphics[]];
+(*lines*)
+If[MemberQ[display,2]||MemberQ[display,5],
+	angsp=Angpart[angs,angles[[1;;;;astep]],rev]];
 
 (*locator pane*)
 Column[{
@@ -1040,9 +1044,9 @@ Button["Rotate points 90",points=MapThread[{RotatePointC[#1[[1]],#2,.5Pi],Rotate
 
 (*display controls*)
 Delimiter,
-{{display,{1,5},"display"},{1->"arrows",4->"disks",2->"lines",5->"lines mask",3->"points mask"},ControlType->TogglerBar},
+{{display,{1,4},"display"},{1->"arrows",4->"disks",2->"lines",5->"lines mask",3->"points mask"},ControlType->TogglerBar},
 {{mesh,False,"show gridlines"},{False,True}},
-{{astep,2,"line resolution"},1,5,1},
+{{astep,3,"line resolution"},1,5,1},
 {{linetr,OptionValue[LineThreshold],"line threshold"},0.1,1,.05},
 Button["recalculate lines",lines=LinePoints[mask,off,LineThreshold->linetr,LineStep->OptionValue[LineStep]];],
 
@@ -1072,7 +1076,7 @@ CancelButton["Cancel",DialogReturn[{"Cancel","Cancel","Cancel"}]]
 }],
 
 (*hidden controls*)
-{points,ControlType->None},
+{{points,pointsIn},ControlType->None},
 {angs,ControlType->None},
 {angsp,ControlType->None},
 {angsp2,ControlType->None},
@@ -1086,6 +1090,8 @@ CancelButton["Cancel",DialogReturn[{"Cancel","Cancel","Cancel"}]]
 {pts,ControlType->None},
 {{rev,1},ControlType->None},
 {{slcgrp,False},ControlType->None},
+
+{{lmm,lm[[2]]},ControlType->None},
 
 {{ap,api},ControlType->None},
 (*{{app,api},ControlType->None},*)
@@ -1114,9 +1120,9 @@ CancelButton["Cancel",DialogReturn[{"Cancel","Cancel","Cancel"}]]
 {circplot,ControlType->None},
 
 (*initialization*)
-Initialization:>{points=pointsIn},
+(*Initialization:>{points=pointsIn},*)
 ControlPlacement->Left,
-SynchronousUpdating->True
+SynchronousUpdating->True(*, SynchronousInitialization -> False*)
 ]
 ]
 (*close dialog input*)
@@ -1126,6 +1132,7 @@ SynchronousUpdating->True
 (* ::Subsubsection::Closed:: *)
 (*ColFun*)
 
+ColFun[i_,seg_,back_]:=If[back===Gray,back,If[seg==1,ColorData["Rainbow"][0.],ColorData["Rainbow"][((i-1)/(seg-1.))]]]
 
 ColFun[i_,seg_]:=If[seg==1,ColorData["Rainbow"][0.],ColorData["Rainbow"][((i-1)/(seg-1.))]]
 
@@ -1230,7 +1237,73 @@ Select[angles ,#<=end||start<#&]
 (* ::Subsubsection::Closed:: *)
 (*LinePoints*)
 
+Options[LinePoints] = {LineThreshold -> .3, LineStep -> .75};
 
+LinePoints[mask_, off_, OptionsPattern[]] := 
+ Block[{int2D,dimy,dimx,step,angles,ii,vec,x,y,cent,points,points2,tresh,maskf,centv,first,val,vals,last},
+  step = OptionValue[LineStep];
+  {dimy, dimx} = Dimensions[First[mask]];
+  angles = Table[RotationMatrix[-i Degree].{0., 1.}, {i, 0, 359, 1.}];
+  tresh = OptionValue[LineThreshold];
+  
+  Table[
+   maskf = N[GaussianFilter[mask[[n]], 2]];
+   If[Total[Flatten[maskf]] < 2,
+    (*if no maks do nothing*)
+    ConstantArray[{}, Length[angles]]
+    ,
+    (*if mask find points*)
+    int2D = ListInterpolation[maskf, InterpolationOrder -> 1];
+    {x, y} = cent = off[[n, {3, 2}]];
+    centv = Ceiling[int2D[y + 0.5, x + 0.5] - tresh];
+    
+    If[centv == 1,
+     (*if cent is in mask*)
+     first = cent;
+     Map[(
+        ii = 0; val = centv; vec = #; {x, y} = cent;
+        (*find the first position for which point is outside the mask*)
+
+        
+        While[(1 + step <= y <= dimy - step - 1 && 
+           1 + step <= x <= dimx - step - 1 && val > 0.),
+         {x, y} = cent + (ii step) vec; 
+         val = int2D[y + 0.5, x + 0.5] - tresh; ii++;
+         ];
+        last = cent + ((ii - 2) step) vec;
+        (*if none found return {} else return cent and firt point*)
+        If[val <= 0., {first, last}, {}]
+        ) &, angles]
+     ,
+     (*if cent is in mask outside mask, firt find first edge*)
+     Map[(
+        ii = 0; val = centv; vec = #; {x, y} = cent;
+        (*find the first position for which point is inside the mask*)
+
+        
+        While[(1 + step <= y <= dimy - step - 1 && 
+           1 + step <= x <= dimx - step - 1 && val <= 0.),
+         {x, y} = cent + (ii step) vec; 
+         val = int2D[y + 0.5, x + 0.5] - tresh; ii++;
+         ];
+        first = cent + ((ii - 1) step) vec;
+        (*Then find the first position for which point is outside the mask again*)
+        While[(1 + step <= y <= dimy - step - 1 && 
+           1 + step <= x <= dimx - step - 1 && val > 0.),
+         {x, y} = cent + (ii step) vec; 
+         val = int2D[y + 0.5, x + 0.5] - tresh; ii++;
+         ];
+        last = cent + ((ii - 2) step) vec;
+        (*if none found return {} else return cent and firt point*)
+        If[val <= 0, {first, last}, {}]
+        ) &, angles]
+     ]
+    ](*close if*)
+   , {n, 1, Length[mask], 1}](*close table*)
+  
+  ]
+
+(*
 Options[LinePoints]={LineThreshold->.3,LineStep->.5};
 
 LinePoints[mask_,off_,OptionsPattern[]]:=Block[{
@@ -1258,7 +1331,7 @@ points2=If[vals2==={},{},vals2[[{1,-1},1]]]
 )&/@Table[RotationMatrix[-i Degree].{0.,1.} ,{i,0,359,1.}]
 ,{n,1,Length[mask],1}
 ]]
-
+*)
 
 (* ::Subsubsection::Closed:: *)
 (*GenerateOutput*)
@@ -1663,6 +1736,8 @@ TransmuralPlot[data_, OptionsPattern[]] :=
   Switch[OptionValue[Method],
   	"Median",
   	Transpose[Quantile[data, {.5, .35, .65}]],
+  	"MedianSD",
+  	Transpose[Quantile[data, {.5, .16, .84}]],
   	"Median95",
   	Transpose[Quantile[data, { .5, .05, .95}]],
   	"Median0",

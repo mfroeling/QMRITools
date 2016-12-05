@@ -136,7 +136,7 @@ MonitorDeNoise::usage = "MonitorDeNoise monitor the denoising progres."
 
 NormalizeSignal::usage = "NormalizeSignal is an option for DriftCorrect."
 
-
+CropOutput::usage = "CropOutput is an option for CropData, can be \"All\",\"Data\" or \"Crop\"."
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -176,7 +176,7 @@ Begin["`Private`"]
 (*CropData*)
 
 
-Options[CropData] = {Output -> "All"};
+Options[CropData] = {CropOutput -> "All"};
 
 SyntaxInformation[CropData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -277,14 +277,14 @@ SynchronousUpdating->True
       WindowFloating -> True, Modal -> True
       ];
 
-dataout =If[!(OptionValue[Output] === "Clip"),
+dataout =If[!(OptionValue[CropOutput] === "Clip"),
 {a, b, c, d, e, f} = outp;
  If[dd == 3, 
 data[[a ;; b, c ;; d, e ;; f]], 
 data[[a ;; b, All, c ;; d, e ;; f]]
 ]
 ];
-output=Switch[OptionValue[Output],
+output=Switch[OptionValue[CropOutput],
 "All",{dataout, outp},
 "Data",dataout,
 "Clip",outp];

@@ -28,7 +28,7 @@ ClearAll @@ Names["DTITools`TransformationTools"];
 (*Fuctions*)
 
 
-DataTranformation::usage = "TransformData[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
+DataTranformation::usage = "DataTranformation[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
 
 
 (* ::Subsection:: *)
