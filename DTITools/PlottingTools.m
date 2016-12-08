@@ -378,20 +378,24 @@ ReleaseHold[
 
 
 MultiFileSave[plot_,label_,range_,type_,size_]:=
-Module[{input},
-	input=SystemDialogInput["Directory"];
+Module[{input,lab},
+	input=SystemDialogInput["Directory", Directory[]];
 	If[input===$Canceled,Return[Print["Export multiple files was canceled!"]]];
 	
 	Switch[Length[range],
 		2,(* one 3D datasest *)
 		Table[
-			Export[input<>ReleaseHold[label]<>type, Rasterize[ReleaseHold[plot], RasterSize->2*size], 
-				RasterSize->2*size, ImageResolution->300];
+			lab=ReleaseHold[label]/. None->"";
+			pl=ReleaseHold[plot];
+			SaveImage[pl,input<>lab<>type,FileType->type,ImageSize -> size];
+			(*Export[input<>lab<>type, Rasterize[ReleaseHold[plot], RasterSize->2*size],RasterSize->2*size, ImageResolution->300];*)
 			,{xs,range[[1]],range[[2]]}];,
 		4,(* one 4D datasest *)
 		Table[
-			Export[input<>ReleaseHold[label]<>type, Rasterize[ReleaseHold[plot], RasterSize->2*size], 
-				RasterSize->2*size, ImageResolution->300];
+			lab=ReleaseHold[label]/. None->"";
+			pl=ReleaseHold[plot];
+			SaveImage[pl,input<>lab<>type,FileType->type,ImageSize -> size];
+			(*Export[input<>lab<>type, Rasterize[ReleaseHold[plot], RasterSize->2*size],RasterSize->2*size, ImageResolution->300];*)
 			,{xs,range[[1]],range[[2]]},{ys,range[[3]],range[[4]]}];
 		];
 		
@@ -405,7 +409,7 @@ Module[{input},
 
 MovieSave[plot_,dur_,loop_,size_,range_]:=
 Module[{input,movie},
-	input=SystemDialogInput["FileSave",".gif"];
+	input=SystemDialogInput["FileSave", Directory[] <> "\\*.gif"];
 	If[input===$Canceled,Return[Print["Export movie was canceled!"]]];
 	
 	movie=Flatten[Switch[Length[range],
@@ -624,8 +628,8 @@ Module[{normGrid,deffGrid,pos,dcor,ncor,points,lines,arrows,head,plot},
 
 MultiFileSaveDef[data_,shift_,range_,type_,size_,settings_]:=
 Module[{input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def,norm,defl,arr,pl,lab,exp,name},
-	input=ToString[SystemDialogInput["Directory"]];
-	If[input=="$Canceled",Print["Export multiple files was canceled!"],	
+	input=SystemDialogInput["Directory",Directory[]];
+	If[input===$Canceled,Print["Export multiple files was canceled!"],	
 		{dim,dir}=settings[[1]];
 		{min,max}=settings[[2]];
 		label=settings[[3]];
@@ -652,8 +656,8 @@ Module[{input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def,norm,
 
 MovieSaveDef[data_,shift_,dur_,loop_,size_,range_,settings_]:=
 Module[{movie,input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def,norm,defl,arr,pl,lab},
-	input=ToString[SystemDialogInput["FileSave",".gif"]];
-	If[input=="$Canceled",Print["Export multiple files was canceled!"],
+	input=SystemDialogInput["FileSave", Directory[] <> "\\*.gif"];
+	If[input===$Canceled,Print["Export multiple files was canceled!"],
 		{dim,dir}=settings[[1]];
 		{min,max}=settings[[2]];
 		label=settings[[3]];
@@ -777,7 +781,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		{"",
 		ManPannel["Export multiple plots as files",{
 			{"Start slice",Control@{{start1,1,""},1,Dynamic[end1],1, Appearance -> "Labeled"}},
-			{"End slice",Control@{{end1,1,""},Dynamic[start1],Dynamic[rangex],1, Appearance -> "Labeled"}},
+			{"End slice",Control@{{end1,Length[data],""},Dynamic[start1],Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Export Files",
 				Button["Save Plots",MultiFileSave[Hold[plot[xs,ys,xs]],Hold[plab[xs,ys,True]],{start1,end1},fileType,size],
 				Method->"Queued",ImageSize->150]}
@@ -839,7 +843,10 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			}[[n]];
 		
 		(*Make plot label*)
-		plab=If[#3,LabelFunc[label,{{},{#1},{#1,#2}}[[n]]],LabelFunc[label,{}]]&;
+		plab=If[#3,
+			LabelFunc[label,{{},{#1},{#1,#2}}[[n]]],
+			LabelFunc[label,{}]
+			]&;
 	
 		(*create Plot, is on hold so it can be used for exporting multiple files and movie*)
 		plot=Ploti[
