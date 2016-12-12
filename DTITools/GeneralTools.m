@@ -55,6 +55,14 @@ NumberTableForm[data, n] makes a right aligned table of the numbers with n decim
 CompilebleFunctions::usage = 
 "CompilebleFunctions[] generates a list of all compilable functions."
 
+MeanNoZero::usage = 
+"MeanNoZero[data] calculates the mean of the data ignoring the zeros."
+
+MeanStd::usage = 
+"MeanStd[data] calculates the mean and standard deviation and reports it as a string."
+
+MeanRange::usage = 
+"MeanRange[Range] calculates the medain (50%) and standard deviation (14% and 86%) range and reports it as a string."
 
 (* ::Subsection:: *)
 (*General Options*)
@@ -109,9 +117,9 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 
 
 DTItoolPackages[] := 
- Last[StringSplit[#, "`"]] & /@ 
+ TableForm[Last[StringSplit[#, "`"]] & /@ 
   DeleteDuplicates[
-   StringReplace[#, "Private`" -> ""] & /@ Contexts["DTITools`*`"]]
+   StringReplace[#, "Private`" -> ""] & /@ Contexts["DTITools`*`"]]]
 
 
 (* ::Subsection::Closed:: *)
@@ -250,6 +258,36 @@ SyntaxInformation[CompilebleFunctions] = {"ArgumentsPattern" -> {}};
 
 CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1, 1] // Transpose) /. 1 -> {} // TableForm
 
+
+(* ::Subsection::Closed:: *)
+(*MeanNoZero*)
+
+
+SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_, _.}};
+
+Default[MeanNoZero] = 0;
+MeanNoZero[data_, cor_.] := 
+ Mean[DeleteCases[Flatten[N[data], ArrayDepth[data] - (cor + 1)], 0.]]
+
+
+(* ::Subsection::Closed:: *)
+(*MeanNoZero*)
+
+
+MeanStd[inp_] := Block[{dat}, 
+	dat = inp /. {Mean[{}] -> Nothing, 0. -> Nothing};
+	Row[{NumberForm[Round[Mean[dat], .01], {3, 2}], NumberForm[Round[StandardDeviation[dat], .01], {3, 2}]}, "\[PlusMinus]"]
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*MeanNoZero*)
+
+  
+MeanRange[inp_] := Block[{q1, q2, q3},
+  {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {.14, .5, .86}];
+  Row[{NumberForm[Round[q2, .01], {3, 2}], "  (", NumberForm[Round[q1, .01], {3, 2}], " - ", NumberForm[Round[q3, .01], {3, 2}], ")"}]
+  ]
 
 (* ::Section:: *)
 (*End Package*)

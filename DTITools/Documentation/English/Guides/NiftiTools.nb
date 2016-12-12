@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8572,        347]
-NotebookOptionsPosition[      5747,        247]
-NotebookOutlinePosition[      6168,        263]
-CellTagsIndexPosition[      6125,        260]
+NotebookDataLength[      9448,        376]
+NotebookOptionsPosition[      6445,        270]
+NotebookOutlinePosition[      6866,        286]
+CellTagsIndexPosition[      6823,        283]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -115,9 +115,10 @@ Cell[TextData[{
  ButtonBox["DTITools",
   BaseStyle->"Link",
   ButtonData->"paclet:DTITools/guide/DTITools"],
- " package: Fucntions converting, importin and exporting Nifti (*.nii) files."
+ " package: Functions converting, importing and exporting Nifti (*.nii) files."
 }], "GuideAbstract",
- CellChangeTimes->{{3.657509599147251*^9, 3.657509621950556*^9}},
+ CellChangeTimes->{{3.657509599147251*^9, 3.657509621950556*^9}, {
+  3.6905366586947556`*^9, 3.690536660551756*^9}},
  CellID->2001916300]
 }, Open  ]],
 
@@ -131,12 +132,12 @@ Cell[TextData[{
   ButtonBox["DcmToNii",
    BaseStyle->"Link",
    ButtonData->"paclet:DTITools/ref/DcmToNii"]], "InlineGuideFunction"],
- " \[LongDash] Converts dicom files to nifti (*.nii) using Cris Rodens \
+ " \[LongDash] Converts DICOM files to nifti (*.nii) using Cris Rodens \
 Dcm2Nii.exe"
 }], "GuideText",
  CellChangeTimes->{{3.6575096251147366`*^9, 3.6575096281369095`*^9}, {
   3.6575097561012287`*^9, 3.657509787899047*^9}, {3.6575098953721943`*^9, 
-  3.6575098954461985`*^9}},
+  3.6575098954461985`*^9}, {3.690536693137756*^9, 3.6905366978007555`*^9}},
  CellID->203374175],
 
 Cell[TextData[{
@@ -144,9 +145,10 @@ Cell[TextData[{
   ButtonBox["ExportNii",
    BaseStyle->"Link",
    ButtonData->"paclet:DTITools/ref/ExportNii"]], "InlineGuideFunction"],
- " \[LongDash] Export data to nifti (*.nii)"
+ " \[LongDash] Export data to Nifti (*.nii)"
 }], "GuideText",
- CellChangeTimes->{{3.6575098569459963`*^9, 3.657509899182412*^9}},
+ CellChangeTimes->{{3.6575098569459963`*^9, 3.657509899182412*^9}, {
+  3.6905366833057556`*^9, 3.6905366842657557`*^9}},
  CellID->1463276848],
 
 Cell[TextData[{
@@ -154,9 +156,10 @@ Cell[TextData[{
   ButtonBox["ImportNii",
    BaseStyle->"Link",
    ButtonData->"paclet:DTITools/ref/ImportNii"]], "InlineGuideFunction"],
- " \[LongDash] Import data from nifti (*.nii)"
+ " \[LongDash] Import data from Nifti (*.nii)"
 }], "GuideText",
- CellChangeTimes->{{3.6575098819514265`*^9, 3.6575099031506395`*^9}},
+ CellChangeTimes->{{3.6575098819514265`*^9, 3.6575099031506395`*^9}, 
+   3.690536689169756*^9},
  CellID->124680289],
 
 Cell[CellGroupData[{
@@ -215,6 +218,26 @@ Cell[TextData[{
  CellChangeTimes->{{3.6575096389325266`*^9, 3.6575097505359106`*^9}, {
   3.657509978307938*^9, 3.6575100011832466`*^9}},
  CellID->226575983]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->74495931],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["ExtractNiiFiles",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/ExtractNiiFiles"]], "InlineFormula"],
+ " . ",
+ Cell[BoxData[
+  ButtonBox["CompressNiiFiles",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/CompressNiiFiles"]], "InlineFormula"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{{3.6905366384227557`*^9, 3.6905366544987555`*^9}},
+ CellID->493472029]
 }, Open  ]]
 }, Open  ]],
 
@@ -246,10 +269,10 @@ Cell["Related Links", "GuideRelatedLinksSection",
  CellID->415694148]
 },
 WindowSize->{700, 770},
-WindowMargins->{{4, Automatic}, {Automatic, 0}},
-FrontEndVersion->"10.3 for Microsoft Windows (64-bit) (October 9, 2015)",
+WindowMargins->{{251, Automatic}, {Automatic, 72}},
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "GuidePageStyles.nb", 
-  CharacterEncoding -> "WindowsANSI"]
+  CharacterEncoding -> "UTF-8"]
 ]
 (* End of Notebook Content *)
 
@@ -306,52 +329,56 @@ Cell[2080, 103, 67, 2, 70, "Details",
 Cell[CellGroupData[{
 Cell[2184, 110, 52, 1, 76, "GuideTitle",
  CellID->942062912],
-Cell[2239, 113, 295, 7, 25, "GuideAbstract",
+Cell[2239, 113, 347, 8, 25, "GuideAbstract",
  CellID->2001916300]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[2571, 125, 54, 1, 68, "GuideFunctionsSection",
+Cell[2623, 126, 54, 1, 68, "GuideFunctionsSection",
  CellID->1866139230],
-Cell[2628, 128, 446, 11, 23, "GuideText",
+Cell[2680, 129, 494, 11, 21, "GuideText",
  CellID->203374175],
-Cell[3077, 141, 302, 8, 23, "GuideText",
+Cell[3177, 142, 355, 9, 21, "GuideText",
  CellID->1463276848],
-Cell[3382, 151, 305, 8, 23, "GuideText",
+Cell[3535, 153, 331, 9, 21, "GuideText",
  CellID->124680289],
 Cell[CellGroupData[{
-Cell[3712, 163, 89, 2, 26, "GuideDelimiter",
+Cell[3891, 166, 89, 2, 26, "GuideDelimiter",
  CellID->311258892],
-Cell[3804, 167, 835, 27, 23, "InlineGuideFunctionListing",
+Cell[3983, 170, 835, 27, 23, "InlineGuideFunctionListing",
  CellID->58033752]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4676, 199, 89, 2, 26, "GuideDelimiter",
+Cell[4855, 202, 89, 2, 26, "GuideDelimiter",
  CellID->167586315],
-Cell[4768, 203, 469, 13, 23, "InlineGuideFunctionListing",
+Cell[4947, 206, 469, 13, 23, "InlineGuideFunctionListing",
  CellID->226575983]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5453, 224, 47, 1, 26, "GuideDelimiter",
+ CellID->74495931],
+Cell[5503, 227, 432, 12, 23, "InlineGuideFunctionListing",
+ CellID->493472029]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[5286, 222, 62, 1, 70, "GuideTutorialsSection",
+Cell[5984, 245, 62, 1, 70, "GuideTutorialsSection",
  CellID->415694126],
-Cell[5351, 225, 49, 1, 20, "GuideTutorial",
+Cell[6049, 248, 49, 1, 20, "GuideTutorial",
  CellID->806871991],
-Cell[5403, 228, 50, 1, 20, "GuideTutorial",
+Cell[6101, 251, 50, 1, 20, "GuideTutorial",
  CellID->1885805579]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[5490, 234, 62, 1, 70, "GuideMoreAboutSection",
+Cell[6188, 257, 62, 1, 70, "GuideMoreAboutSection",
  CellID->23220180],
-Cell[5555, 237, 51, 1, 20, "GuideMoreAbout",
+Cell[6253, 260, 51, 1, 20, "GuideMoreAbout",
  CellID->1567025153],
-Cell[5609, 240, 50, 1, 20, "GuideMoreAbout",
+Cell[6307, 263, 50, 1, 20, "GuideMoreAbout",
  CellID->252299663]
 }, Open  ]],
-Cell[5674, 244, 69, 1, 70, "GuideRelatedLinksSection",
+Cell[6372, 267, 69, 1, 70, "GuideRelatedLinksSection",
  CellID->415694148]
 }
 ]
 *)
-
-(* End of internal cache information *)
 

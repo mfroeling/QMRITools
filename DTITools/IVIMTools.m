@@ -57,9 +57,6 @@ where t2t and t1t are \"tissue\" relaxation times and t11 t12, t21 and t22 the \
 
 output is the corrected fraction maps";
 
-MeanNoZero::usage = 
-"MeanNoZero[data] calculates the mean of the data ignoring the zeros."
-
 ThetaConv::usage = 
 "ThetaConv[{F1, Fc, pDc}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
 ThetaConv[{F1, F2, Dc, pDc1}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
@@ -419,16 +416,6 @@ FracCorrect[{f1_, f2_?VectorQ}, time_] :=
 (*correct fraction for T2 relaxation*)
 Sigval[par_, TR_, TE_] := par[[1]] (1 - Exp[-TR/par[[2]]]) Exp[-TE/par[[3]]]
 
-
-(* ::Subsection::Closed:: *)
-(*MeanNoZero*)
-
-
-SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_, _.}};
-
-Default[MeanNoZero] = 0;
-MeanNoZero[data_, cor_.] := 
- Mean[DeleteCases[Flatten[N[data], ArrayDepth[data] - (cor + 1)], 0.]]
 
 
 (* ::Subsection::Closed:: *)
