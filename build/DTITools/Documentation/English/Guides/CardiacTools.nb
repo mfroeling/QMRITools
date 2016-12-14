@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8322,        234]
-NotebookOptionsPosition[      6291,        178]
-NotebookOutlinePosition[      7788,        216]
-CellTagsIndexPosition[      7745,        213]
+NotebookDataLength[      8672,        242]
+NotebookOptionsPosition[      6635,        186]
+NotebookOutlinePosition[      8138,        224]
+CellTagsIndexPosition[      8095,        221]
 WindowTitle->CardiacTools - Wolfram Mathematica
 WindowFrame->Normal*)
 
@@ -26,7 +26,9 @@ Cell[BoxData[GridBox[{
        FrameBox["\<\"Functions \[RightGuillemet]\"\>",
         StripOnInput->False], {"\<\"BullseyePlot\"\>":>
        Documentation`HelpLookup[
-       "paclet:DTITools/ref/BullseyePlot"], "\<\"CardiacSegment\"\>":>
+       "paclet:DTITools/ref/BullseyePlot"], "\<\"CalculateWallMap\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/CalculateWallMap"], "\<\"CardiacSegment\"\>":>
        Documentation`HelpLookup[
        "paclet:DTITools/ref/CardiacSegment"], "\<\"CentralAxes\"\>":>
        Documentation`HelpLookup[
@@ -99,7 +101,7 @@ Cell[TextData[{
  ButtonBox["DTITools",
   BaseStyle->"Link",
   ButtonData->"paclet:DTITools/guide/DTITools"],
- " package: Functions that are used to procces cardiac DWI data."
+ " package: Functions that are used to process cardiac DWI data."
 }], "GuideAbstract",
  CellID->2001916300],
 
@@ -119,7 +121,7 @@ Cell[TextData[{
   ButtonData->"paclet:DTITools/ref/BullseyePlot"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
- " makes a bullseyeplot"
+ " makes a bullseye-plot"
 }], "GuideText",
  CellID->1463276848],
 
@@ -141,7 +143,13 @@ Cell[TextData[{
  " ",
  Cell[TextData[ButtonBox["RadialSample",
   BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/RadialSample"]], "InlineFunctionSans"]
+  ButtonData->"paclet:DTITools/ref/RadialSample"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["CalculateWallMap",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/CalculateWallMap"]], "InlineFunctionSans"]
 }], "InlineGuideFunctionListing",
  CellID->58033752],
 
@@ -190,17 +198,17 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}], 
         Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
   "Metadata" -> {
-   "built" -> "{2016, 6, 3, 11, 46, 44.6174867}", 
+   "built" -> "{2016, 12, 12, 14, 39, 10.5239946}", 
     "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
     "None", "summary" -> 
-    "DTITools package: Functions that are used to procces cardiac DWI data.", 
+    "DTITools package: Functions that are used to process cardiac DWI data.", 
     "synonyms" -> {}, "title" -> "CardiacTools", "titlemodifier" -> "", 
     "windowtitle" -> "CardiacTools", "type" -> "Guide", "uri" -> 
     "DTITools/guide/CardiacTools"}, "SearchTextTranslated" -> ""},
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -215,27 +223,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[606, 21, 3145, 69, 70, "AnchorBarGrid",
+Cell[606, 21, 3255, 71, 70, "AnchorBarGrid",
  CellID->1],
 Cell[CellGroupData[{
-Cell[3776, 94, 54, 1, 70, "GuideTitle",
+Cell[3886, 96, 54, 1, 70, "GuideTitle",
  CellID->942062912],
-Cell[3833, 97, 216, 6, 70, "GuideAbstract",
+Cell[3943, 99, 216, 6, 70, "GuideAbstract",
  CellID->2001916300],
-Cell[4052, 105, 285, 8, 70, "GuideText",
+Cell[4162, 107, 285, 8, 70, "GuideText",
  CellID->203374175],
-Cell[4340, 115, 262, 8, 70, "GuideText",
+Cell[4450, 117, 263, 8, 70, "GuideText",
  CellID->1463276848],
-Cell[4605, 125, 48, 1, 70, "GuideDelimiter",
+Cell[4716, 127, 48, 1, 70, "GuideDelimiter",
  CellID->311258892],
-Cell[4656, 128, 656, 17, 70, "InlineGuideFunctionListing",
+Cell[4767, 130, 889, 23, 70, "InlineGuideFunctionListing",
  CellID->58033752],
-Cell[5315, 147, 47, 1, 70, "GuideDelimiter",
+Cell[5659, 155, 47, 1, 70, "GuideDelimiter",
  CellID->65071376],
-Cell[5365, 150, 884, 23, 70, "InlineGuideFunctionListing",
+Cell[5709, 158, 884, 23, 70, "InlineGuideFunctionListing",
  CellID->937844527]
 }, Open  ]],
-Cell[6264, 176, 23, 0, 70, "FooterCell"]
+Cell[6608, 184, 23, 0, 70, "FooterCell"]
 }
 ]
 *)

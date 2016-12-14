@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      7248,        204]
-NotebookOptionsPosition[      5402,        153]
-NotebookOutlinePosition[      6860,        190]
-CellTagsIndexPosition[      6817,        187]
+NotebookDataLength[      9257,        267]
+NotebookOptionsPosition[      7050,        206]
+NotebookOutlinePosition[      8514,        243]
+CellTagsIndexPosition[      8471,        240]
 WindowTitle->GeneralTools - Wolfram Mathematica
 WindowFrame->Normal*)
 
@@ -32,7 +32,17 @@ Cell[BoxData[GridBox[{
        Documentation`HelpLookup[
        "paclet:DTITools/ref/DTItoolFuncPrint"], "\<\"DTItoolFunctions\"\>":>
        Documentation`HelpLookup[
-       "paclet:DTITools/ref/DTItoolFunctions"], "\<\"MemoryUsage\"\>":>
+       "paclet:DTITools/ref/DTItoolFunctions"], "\<\"DTItoolPackages\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/DTItoolPackages"], "\<\"FileSelect\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/FileSelect"], "\<\"MeanNoZero\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MeanNoZero"], "\<\"MeanRange\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MeanRange"], "\<\"MeanStd\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MeanStd"], "\<\"MemoryUsage\"\>":>
        Documentation`HelpLookup[
        "paclet:DTITools/ref/MemoryUsage"], "\<\"NumberTableForm\"\>":>
        Documentation`HelpLookup["paclet:DTITools/ref/NumberTableForm"]},
@@ -114,9 +124,19 @@ Cell[TextData[{
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
  " a list of all DTITools functions and options with their help files and \
-atributes "
+attributes. "
 }], "GuideText",
  CellID->1463276848],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["DTItoolPackages",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/DTItoolPackages"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " a list of all DTITools packages"
+}], "GuideText",
+ CellID->644035845],
 
 Cell["\t", "GuideDelimiter",
  CellID->311258892],
@@ -138,15 +158,48 @@ Cell[TextData[{
  " ",
  Cell[TextData[ButtonBox["MemoryUsage",
   BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/MemoryUsage"]], "InlineFunctionSans"],
+  ButtonData->"paclet:DTITools/ref/MemoryUsage"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752],
+
+Cell["\t", "GuideDelimiter",
+ CellID->207936068],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["FileSelect",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/FileSelect"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
  Cell[TextData[ButtonBox["NumberTableForm",
   BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/NumberTableForm"]], "InlineFunctionSans"]
+  ButtonData->"paclet:DTITools/ref/NumberTableForm"]], "InlineFunctionSans"],
+ " "
 }], "InlineGuideFunctionListing",
- CellID->58033752]
+ CellID->364267661],
+
+Cell["\t", "GuideDelimiter",
+ CellID->96616723],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["MeanNoZero",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MeanNoZero"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ ButtonBox["MeanStd",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MeanStd"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ ButtonBox["MeanRange",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MeanRange"]
+}], "InlineGuideFunctionListing",
+ CellID->680078711]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -165,7 +218,7 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}], 
         Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
   "Metadata" -> {
-   "built" -> "{2016, 6, 3, 11, 46, 51.3321581}", 
+   "built" -> "{2016, 12, 12, 14, 39, 17.1766598}", 
     "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -174,7 +227,7 @@ TaggingRules->{
     "synonyms" -> {}, "title" -> "GeneralTools", "titlemodifier" -> "", 
     "windowtitle" -> "GeneralTools", "type" -> "Guide", "uri" -> 
     "DTITools/guide/GeneralTools"}, "SearchTextTranslated" -> ""},
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -189,23 +242,33 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[606, 21, 2879, 63, 70, "AnchorBarGrid",
+Cell[606, 21, 3371, 73, 70, "AnchorBarGrid",
  CellID->1],
 Cell[CellGroupData[{
-Cell[3510, 88, 54, 1, 70, "GuideTitle",
+Cell[4002, 98, 54, 1, 70, "GuideTitle",
  CellID->942062912],
-Cell[3567, 91, 182, 6, 70, "GuideAbstract",
+Cell[4059, 101, 182, 6, 70, "GuideAbstract",
  CellID->2001916300],
-Cell[3752, 99, 293, 8, 70, "GuideText",
+Cell[4244, 109, 293, 8, 70, "GuideText",
  CellID->203374175],
-Cell[4048, 109, 333, 9, 70, "GuideText",
+Cell[4540, 119, 335, 9, 70, "GuideText",
  CellID->1463276848],
-Cell[4384, 120, 48, 1, 70, "GuideDelimiter",
+Cell[4878, 130, 278, 8, 70, "GuideText",
+ CellID->644035845],
+Cell[5159, 140, 48, 1, 70, "GuideDelimiter",
  CellID->311258892],
-Cell[4435, 123, 925, 25, 70, "InlineGuideFunctionListing",
- CellID->58033752]
+Cell[5210, 143, 694, 19, 70, "InlineGuideFunctionListing",
+ CellID->58033752],
+Cell[5907, 164, 48, 1, 70, "GuideDelimiter",
+ CellID->207936068],
+Cell[5958, 167, 438, 12, 70, "InlineGuideFunctionListing",
+ CellID->364267661],
+Cell[6399, 181, 47, 1, 70, "GuideDelimiter",
+ CellID->96616723],
+Cell[6449, 184, 559, 17, 70, "InlineGuideFunctionListing",
+ CellID->680078711]
 }, Open  ]],
-Cell[5375, 151, 23, 0, 70, "FooterCell"]
+Cell[7023, 204, 23, 0, 70, "FooterCell"]
 }
 ]
 *)

@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      7762,        219]
-NotebookOptionsPosition[      5822,        165]
-NotebookOutlinePosition[      7311,        203]
-CellTagsIndexPosition[      7268,        200]
+NotebookDataLength[      8280,        235]
+NotebookOptionsPosition[      6188,        177]
+NotebookOutlinePosition[      7683,        215]
+CellTagsIndexPosition[      7640,        212]
 WindowTitle->ElastixTools - Wolfram Mathematica
 WindowFrame->Normal*)
 
@@ -37,7 +37,9 @@ Cell[BoxData[GridBox[{
        "paclet:DTITools/ref/RegisterData"], "\<\"RegisterDataSplit\"\>":>
        Documentation`HelpLookup[
        "paclet:DTITools/ref/RegisterDataSplit"], "\<\"RegisterDiffusionData\"\
-\>":>Documentation`HelpLookup["paclet:DTITools/ref/RegisterDiffusionData"]},
+\>":>Documentation`HelpLookup[
+       "paclet:DTITools/ref/RegisterDiffusionData"], "\<\"TransformData\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/ref/TransformData"]},
        Appearance->None,
        MenuAppearance->Automatic]],
       LineSpacing->{1.4, 0}],
@@ -116,7 +118,7 @@ Cell[TextData[{
   "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
- " multislice 2D registration made for cardiac DWI data"
+ " multi-slice 2D registration made for cardiac DWI data"
 }], "GuideText",
  CellID->1463276848],
 
@@ -141,6 +143,16 @@ Cell[TextData[{
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
+ Cell[TextData[ButtonBox["TransformData",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/TransformData"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752],
+
+Cell["\t", "GuideDelimiter",
+ CellID->292075701],
+
+Cell[TextData[{
  Cell[TextData[ButtonBox["ReadTransformParameters",
   BaseStyle->"Link",
   ButtonData->"paclet:DTITools/ref/ReadTransformParameters"]], 
@@ -158,7 +170,7 @@ Cell[TextData[{
   BaseStyle->"Link",
   ButtonData->"paclet:DTITools/ref/CorrectBmatrix"]], "InlineFunctionSans"]
 }], "InlineGuideFunctionListing",
- CellID->58033752]
+ CellID->244203917]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -177,7 +189,7 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}], 
         Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
   "Metadata" -> {
-   "built" -> "{2016, 6, 3, 11, 46, 48.7328982}", 
+   "built" -> "{2016, 12, 12, 14, 39, 14.7314153}", 
     "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -187,7 +199,7 @@ TaggingRules->{
     "synonyms" -> {}, "title" -> "ElastixTools", "titlemodifier" -> "", 
     "windowtitle" -> "ElastixTools", "type" -> "Guide", "uri" -> 
     "DTITools/guide/ElastixTools"}, "SearchTextTranslated" -> ""},
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -202,25 +214,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[606, 21, 2989, 65, 70, "AnchorBarGrid",
+Cell[606, 21, 3093, 67, 70, "AnchorBarGrid",
  CellID->1],
 Cell[CellGroupData[{
-Cell[3620, 90, 54, 1, 70, "GuideTitle",
+Cell[3724, 92, 54, 1, 70, "GuideTitle",
  CellID->942062912],
-Cell[3677, 93, 208, 6, 70, "GuideAbstract",
+Cell[3781, 95, 208, 6, 70, "GuideAbstract",
  CellID->2001916300],
-Cell[3888, 101, 273, 8, 70, "GuideText",
+Cell[3992, 103, 273, 8, 70, "GuideText",
  CellID->203374175],
-Cell[4164, 111, 311, 9, 70, "GuideText",
+Cell[4268, 113, 312, 9, 70, "GuideText",
  CellID->1463276848],
-Cell[4478, 122, 322, 9, 70, "GuideText",
+Cell[4583, 124, 322, 9, 70, "GuideText",
  CellID->550559158],
-Cell[4803, 133, 48, 1, 70, "GuideDelimiter",
+Cell[4908, 135, 48, 1, 70, "GuideDelimiter",
  CellID->311258892],
-Cell[4854, 136, 926, 24, 70, "InlineGuideFunctionListing",
- CellID->58033752]
+Cell[4959, 138, 441, 11, 70, "InlineGuideFunctionListing",
+ CellID->58033752],
+Cell[5403, 151, 48, 1, 70, "GuideDelimiter",
+ CellID->292075701],
+Cell[5454, 154, 692, 18, 70, "InlineGuideFunctionListing",
+ CellID->244203917]
 }, Open  ]],
-Cell[5795, 163, 23, 0, 70, "FooterCell"]
+Cell[6161, 175, 23, 0, 70, "FooterCell"]
 }
 ]
 *)

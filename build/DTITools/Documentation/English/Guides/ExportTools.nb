@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8962,        254]
-NotebookOptionsPosition[      6910,        197]
-NotebookOutlinePosition[      8365,        234]
-CellTagsIndexPosition[      8322,        231]
+NotebookDataLength[      9696,        276]
+NotebookOptionsPosition[      7492,        215]
+NotebookOutlinePosition[      8953,        252]
+CellTagsIndexPosition[      8910,        249]
 WindowTitle->ExportTools - Wolfram Mathematica
 WindowFrame->Normal*)
 
@@ -37,7 +37,9 @@ Cell[BoxData[GridBox[{
        Documentation`HelpLookup[
        "paclet:DTITools/ref/ExpHistAll"], "\<\"ExpHistInd\"\>":>
        Documentation`HelpLookup[
-       "paclet:DTITools/ref/ExpHistInd"], "\<\"ExportVol\"\>":>
+       "paclet:DTITools/ref/ExpHistInd"], "\<\"ExportMhdRaw\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ExportMhdRaw"], "\<\"ExportVol\"\>":>
        Documentation`HelpLookup[
        "paclet:DTITools/ref/ExportVol"], "\<\"ExpPlotsAll\"\>":>
        Documentation`HelpLookup[
@@ -102,7 +104,7 @@ Cell[TextData[{
  ButtonBox["DTITools",
   BaseStyle->"Link",
   ButtonData->"paclet:DTITools/guide/DTITools"],
- " package: exporting fucntions"
+ " package: exporting functions"
 }], "GuideAbstract",
  CellID->2001916300],
 
@@ -112,7 +114,7 @@ Cell[TextData[{
   ButtonData->"paclet:DTITools/ref/ExportVol"]], "InlineFunctionSans"],
  "  ",
  StyleBox["\[LongDash]", "GuideEmDash"],
- " export data to vIST/e software for fibertracking"
+ " export data to vIST/e software for fiber-tracking"
 }], "GuideText",
  CellID->203374175],
 
@@ -122,7 +124,7 @@ Cell[TextData[{
   ButtonData->"paclet:DTITools/ref/DTItoolExp"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
- " export tensor to vIST/e software for fibertracking"
+ " export tensor to vIST/e software for fiber-tracking"
 }], "GuideText",
  CellID->364014103],
 
@@ -135,6 +137,22 @@ Cell[TextData[{
  " export expression to image"
 }], "GuideText",
  CellID->409244761],
+
+Cell["\t", "GuideDelimiter",
+ CellID->216271604],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["ExportVol",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ExportVol"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[TextData[ButtonBox["ExportMhdRaw",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/ExportMhdRaw"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->109270133],
 
 Cell["\t", "GuideDelimiter",
  CellID->227239444],
@@ -209,16 +227,16 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}], 
         Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
   "Metadata" -> {
-   "built" -> "{2016, 6, 3, 11, 46, 50.1240373}", 
+   "built" -> "{2016, 12, 12, 14, 39, 15.9625384}", 
     "history" -> {"1.0", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
-    "None", "summary" -> "DTITools package: exporting fucntions", 
+    "None", "summary" -> "DTITools package: exporting functions", 
     "synonyms" -> {}, "title" -> "ExportTools", "titlemodifier" -> "", 
     "windowtitle" -> "ExportTools", "type" -> "Guide", "uri" -> 
     "DTITools/guide/ExportTools"}, "SearchTextTranslated" -> ""},
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -233,29 +251,33 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[605, 21, 3301, 72, 70, "AnchorBarGrid",
+Cell[605, 21, 3403, 74, 70, "AnchorBarGrid",
  CellID->1],
 Cell[CellGroupData[{
-Cell[3931, 97, 53, 1, 70, "GuideTitle",
+Cell[4033, 99, 53, 1, 70, "GuideTitle",
  CellID->942062912],
-Cell[3987, 100, 183, 6, 70, "GuideAbstract",
+Cell[4089, 102, 183, 6, 70, "GuideAbstract",
  CellID->2001916300],
-Cell[4173, 108, 284, 8, 70, "GuideText",
+Cell[4275, 110, 285, 8, 70, "GuideText",
  CellID->203374175],
-Cell[4460, 118, 287, 8, 70, "GuideText",
+Cell[4563, 120, 288, 8, 70, "GuideText",
  CellID->364014103],
-Cell[4750, 128, 261, 8, 70, "GuideText",
+Cell[4854, 130, 261, 8, 70, "GuideText",
  CellID->409244761],
-Cell[5014, 138, 48, 1, 70, "GuideDelimiter",
+Cell[5118, 140, 48, 1, 70, "GuideDelimiter",
+ CellID->216271604],
+Cell[5169, 143, 424, 11, 70, "InlineGuideFunctionListing",
+ CellID->109270133],
+Cell[5596, 156, 48, 1, 70, "GuideDelimiter",
  CellID->227239444],
-Cell[5065, 141, 882, 23, 70, "InlineGuideFunctionListing",
+Cell[5647, 159, 882, 23, 70, "InlineGuideFunctionListing",
  CellID->254037243],
-Cell[5950, 166, 48, 1, 70, "GuideDelimiter",
+Cell[6532, 184, 48, 1, 70, "GuideDelimiter",
  CellID->311258892],
-Cell[6001, 169, 867, 23, 70, "InlineGuideFunctionListing",
+Cell[6583, 187, 867, 23, 70, "InlineGuideFunctionListing",
  CellID->58033752]
 }, Open  ]],
-Cell[6883, 195, 23, 0, 70, "FooterCell"]
+Cell[7465, 213, 23, 0, 70, "FooterCell"]
 }
 ]
 *)

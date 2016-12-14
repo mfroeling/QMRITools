@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10919,        311]
-NotebookOptionsPosition[      8662,        248]
-NotebookOutlinePosition[     10112,        285]
-CellTagsIndexPosition[     10069,        282]
+NotebookDataLength[     11097,        318]
+NotebookOptionsPosition[      8772,        253]
+NotebookOutlinePosition[     10228,        290]
+CellTagsIndexPosition[     10185,        287]
 WindowTitle->IVIMTools - Wolfram Mathematica
 WindowFrame->Normal*)
 
@@ -44,9 +44,9 @@ Cell[BoxData[GridBox[{
        Documentation`HelpLookup[
        "paclet:DTITools/ref/IVIMCorrectData"], "\<\"IVIMFunction\"\>":>
        Documentation`HelpLookup[
-       "paclet:DTITools/ref/IVIMFunction"], "\<\"MeanNoZero\"\>":>
+       "paclet:DTITools/ref/IVIMFunction"], "\<\"IVIMResiduals\"\>":>
        Documentation`HelpLookup[
-       "paclet:DTITools/ref/MeanNoZero"], "\<\"NNLeastSquares\"\>":>
+       "paclet:DTITools/ref/IVIMResiduals"], "\<\"NNLeastSquares\"\>":>
        Documentation`HelpLookup[
        "paclet:DTITools/ref/NNLeastSquares"], "\<\"ThetaConv\"\>":>
        Documentation`HelpLookup[
@@ -129,7 +129,7 @@ Cell[TextData[{
   ButtonData->"paclet:DTITools/ref/BayesianIVIMFit2"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
- " 2 compartement Bayesian IVIM fit"
+ " 2 compartment Bayesian IVIM fit"
 }], "GuideText",
  CellID->1463276848],
 
@@ -149,9 +149,32 @@ Cell[TextData[{
   ButtonData->"paclet:DTITools/ref/NNLeastSquares"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
- " non negative linear least squares fitting used for discrete lapcain fitting"
+ " non negative linear least squares fitting used for discrete Laplacian \
+fitting"
 }], "GuideText",
  CellID->918796038],
+
+Cell[TextData[{
+ Cell[TextData[ButtonBox["IVIMResiduals",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/IVIMResiduals"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " calculates the root mean square residuals of an IVIM fit using ",
+ Cell[TextData[ButtonBox["IVIMCalc",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/IVIMCalc"]], "InlineFunctionSans"],
+ ", ",
+ Cell[TextData[ButtonBox["BayesianIVIMFit2",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BayesianIVIMFit2"]], "InlineFunctionSans"],
+ " or ",
+ Cell[TextData[ButtonBox["BayesianIVIMFit3",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/BayesianIVIMFit3"]], "InlineFunctionSans"],
+ "."
+}], "GuideText",
+ CellID->231163949],
 
 Cell["\t", "GuideDelimiter",
  CellID->311258892],
@@ -185,12 +208,6 @@ Cell["\t", "GuideDelimiter",
  CellID->532094761],
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["MeanNoZero",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/MeanNoZero"]], "InlineFunctionSans"],
- "\[NonBreakingSpace]",
- StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
- " ",
  Cell[TextData[ButtonBox["ThetaConv",
   BaseStyle->"Link",
   ButtonData->"paclet:DTITools/ref/ThetaConv"]], "InlineFunctionSans"],
@@ -225,21 +242,9 @@ Cell[TextData[{
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["ThetaConvi",
+ Cell[TextData[ButtonBox["NNLeastSquares",
   BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/ThetaConvi"]], "InlineFunctionSans"],
- "\[NonBreakingSpace]",
- StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
- " ",
- Cell[TextData[ButtonBox["FConvert",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/FConvert"]], "InlineFunctionSans"],
- "\[NonBreakingSpace]",
- StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
- " ",
- Cell[TextData[ButtonBox["FConverti",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/FConverti"]], "InlineFunctionSans"]
+  ButtonData->"paclet:DTITools/ref/NNLeastSquares"]], "InlineFunctionSans"]
 }], "InlineGuideFunctionListing",
  CellID->144772792]
 }, Open  ]],
@@ -260,7 +265,7 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}], 
         Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
   "Metadata" -> {
-   "built" -> "{2016, 6, 3, 11, 46, 55.1405389}", 
+   "built" -> "{2016, 12, 12, 14, 39, 20.7810202}", 
     "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -269,7 +274,7 @@ TaggingRules->{
     "synonyms" -> {}, "title" -> "IVIMTools", "titlemodifier" -> "", 
     "windowtitle" -> "IVIMTools", "type" -> "Guide", "uri" -> 
     "DTITools/guide/IVIMTools"}, "SearchTextTranslated" -> ""},
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -284,35 +289,37 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[603, 21, 3621, 79, 70, "AnchorBarGrid",
+Cell[603, 21, 3627, 79, 70, "AnchorBarGrid",
  CellID->1],
 Cell[CellGroupData[{
-Cell[4249, 104, 51, 1, 70, "GuideTitle",
+Cell[4255, 104, 51, 1, 70, "GuideTitle",
  CellID->942062912],
-Cell[4303, 107, 186, 6, 70, "GuideAbstract",
+Cell[4309, 107, 186, 6, 70, "GuideAbstract",
  CellID->2001916300],
-Cell[4492, 115, 252, 8, 70, "GuideText",
+Cell[4498, 115, 252, 8, 70, "GuideText",
  CellID->203374175],
-Cell[4747, 125, 282, 8, 70, "GuideText",
+Cell[4753, 125, 281, 8, 70, "GuideText",
  CellID->1463276848],
-Cell[5032, 135, 280, 8, 70, "GuideText",
+Cell[5037, 135, 280, 8, 70, "GuideText",
  CellID->159343603],
-Cell[5315, 145, 320, 8, 70, "GuideText",
+Cell[5320, 145, 324, 9, 70, "GuideText",
  CellID->918796038],
-Cell[5638, 155, 48, 1, 70, "GuideDelimiter",
+Cell[5647, 156, 747, 20, 70, "GuideText",
+ CellID->231163949],
+Cell[6397, 178, 48, 1, 70, "GuideDelimiter",
  CellID->311258892],
-Cell[5689, 158, 879, 23, 70, "InlineGuideFunctionListing",
+Cell[6448, 181, 879, 23, 70, "InlineGuideFunctionListing",
  CellID->58033752],
-Cell[6571, 183, 48, 1, 70, "GuideDelimiter",
+Cell[7330, 206, 48, 1, 70, "GuideDelimiter",
  CellID->532094761],
-Cell[6622, 186, 1077, 29, 70, "InlineGuideFunctionListing",
+Cell[7381, 209, 856, 23, 70, "InlineGuideFunctionListing",
  CellID->433176804],
-Cell[7702, 217, 47, 1, 70, "GuideDelimiter",
+Cell[8240, 234, 47, 1, 70, "GuideDelimiter",
  CellID->81543150],
-Cell[7752, 220, 868, 23, 70, "InlineGuideFunctionListing",
+Cell[8290, 237, 440, 11, 70, "InlineGuideFunctionListing",
  CellID->144772792]
 }, Open  ]],
-Cell[8635, 246, 23, 0, 70, "FooterCell"]
+Cell[8745, 251, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
