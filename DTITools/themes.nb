@@ -1,0 +1,928 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     36944,        918]
+NotebookOptionsPosition[     36655,        904]
+NotebookOutlinePosition[     37001,        919]
+CellTagsIndexPosition[     36958,        916]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{"=", 
+    RowBox[{
+     RowBox[{"Academic", " ", "Plot", " ", "Theme"}], "="}]}], "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"Begin", "[", "\"\<System`PlotThemeDump`\>\"", "]"}], ";"}], "\n", 
+   RowBox[{"Themes`ThemeRules", ";", 
+    RowBox[{"(*", 
+     RowBox[{"preload", " ", "Theme", " ", "system"}], "*)"}], 
+    RowBox[{"(*", 
+     RowBox[{"Define", " ", "the", " ", "base", " ", "theme"}], "*)"}], 
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<Academic\>\"", ",", 
+       RowBox[{"def", ":", "_String"}]}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"Join", "[", 
+        RowBox[{
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<AcademicFrame\>\"", ",", "def"}], "]"}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"Axes", " ", "feature"}], "*)"}], 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<Figure\>\"", ",", "def"}], "]"}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"Size", " ", "feature"}], "*)"}], 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<HeavyLines\>\"", ",", "def"}], "]"}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"Curve", " ", "thickness", " ", "feature"}], "*)"}], 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<VividColor\>\"", ",", "def"}], "]"}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"Color", " ", "feature"}], "*)"}], 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<SmallOpenMarkers\>\"", ",", "def"}], "]"}]}], "]"}], 
+       ",", 
+       RowBox[{"(*", 
+        RowBox[{"Point", " ", "marker", " ", "feature"}], "*)"}], 
+       "Themes`$DesignWeight"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{"\[Equal]", 
+     RowBox[{"Axes", " ", "feature"}], "\[Equal]"}], "*)"}], "\n", 
+   RowBox[{"(*", " ", 
+    RowBox[{"===", 
+     RowBox[{"2", "D", " ", "Plots"}], "==="}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame\>\"", ",", 
+       RowBox[{"def", ":", "_String"}]}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"Join", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"Axes", "\[Rule]", "False"}], ",", 
+           RowBox[{"Frame", "\[Rule]", "True"}]}], "}"}], ",", 
+         RowBox[{"(*", 
+          RowBox[{
+          "Academic", " ", "figures", " ", "are", " ", "framed", " ", "by", 
+           " ", "default"}], "*)"}], 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<AcademicFrame2D\>\"", ",", "def"}], "]"}]}], "]"}], 
+       ",", "$ComponentWeight"}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame\>\"", ",", 
+       RowBox[{"def", ":", 
+        RowBox[{
+        "\"\<PairedBarChart\>\"", "|", "\"\<PairedHistogram\>\""}]}]}], "]"}],
+      ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"Join", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"Axes", "\[Rule]", "True"}], ",", 
+           RowBox[{"Frame", "\[Rule]", "True"}]}], "}"}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"Cases", " ", "with", " ", "axes", " ", "also"}], "*)"}], 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<AcademicFrame2D\>\"", ",", "def"}], "]"}]}], "]"}], 
+       ",", "$ComponentWeight"}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame\>\"", ",", 
+       RowBox[{"def", ":", 
+        RowBox[{"\"\<ArrayPlot\>\"", "|", "\"\<MatrixPlot\>\""}]}]}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"Join", "[", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Frame", " ", "not", " ", "specified", " ", "but", " ", "MeshStyle", 
+          " ", "specified", " ", "to", " ", "be", " ", "thin", " ", "and", 
+          " ", "light"}], "*)"}], 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"MeshStyle", "\[Rule]", 
+           RowBox[{"Directive", "[", 
+            RowBox[{
+             RowBox[{"AbsoluteThickness", "[", "0.5", "]"}], ",", 
+             RowBox[{"Opacity", "[", "0.25", "]"}]}], "]"}]}], "}"}], ",", 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<AcademicFrame2D\>\"", ",", "def"}], "]"}]}], "]"}], 
+       ",", "$ComponentWeight"}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame\>\"", ",", 
+       RowBox[{"def", ":", 
+        RowBox[{
+        "\"\<BarChart\>\"", "|", "\"\<PieChart\>\"", "|", 
+         "\"\<RectangleChart\>\"", "|", "\"\<SectorChart\>\"", "|", 
+         "\"\<CandlestickChart\>\"", "|", "\"\<KagiChart\>\"", "|", 
+         "\"\<LineBreakChart\>\"", "|", "\"\<PointFigureChart\>\"", "|", 
+         "\"\<RenkoChart\>\"", "|", "\"\<InteractiveTradingChart\>\"", "|", 
+         "\"\<TradingChart\>\"", "|", "\"\<NumberLinePlot\>\"", "|", 
+         "\"\<TimelinePlot\>\""}]}]}], "]"}], ":=", 
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame2D\>\"", ",", "def"}], "]"}]}], ";", 
+    RowBox[{"(*", 
+     RowBox[{"Charts", " ", "not", " ", "framed"}], "*)"}], 
+    RowBox[{"(*", " ", 
+     RowBox[{"===", 
+      RowBox[{"3", "D", " ", "Plots"}], "==="}], "*)"}], 
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame\>\"", ",", 
+       RowBox[{
+        RowBox[{"def", ":", "_String"}], "/;", 
+        RowBox[{"StringMatchQ", "[", 
+         RowBox[{"def", ",", 
+          RowBox[{"___", "~~", "\"\<3D\>\""}]}], "]"}]}]}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"Join", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"Axes", "\[Rule]", "True"}], ",", 
+           RowBox[{"AxesEdge", "\[Rule]", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "1"}], ",", 
+                RowBox[{"-", "1"}]}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"1", ",", 
+                RowBox[{"-", "1"}]}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "1"}], ",", 
+                RowBox[{"-", "1"}]}], "}"}]}], "}"}]}], ",", 
+           RowBox[{"Boxed", "\[Rule]", 
+            RowBox[{"{", 
+             RowBox[{"Left", ",", "Bottom", ",", "Back"}], "}"}]}]}], "}"}], 
+         ",", 
+         RowBox[{"(*", 
+          RowBox[{"Front", " ", "axes", " ", "back", " ", "box"}], "*)"}], 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{"\"\<AcademicFrame3D\>\"", ",", "def"}], "]"}]}], "]"}], 
+       ",", "$ComponentWeight"}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame\>\"", ",", "\"\<ChromaticityPlot3D\>\""}], 
+      "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"Join", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"Axes", "\[Rule]", "True"}], ",", 
+           RowBox[{"AxesEdge", "\[Rule]", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "1"}], ",", 
+                RowBox[{"-", "1"}]}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "1"}], ",", 
+                RowBox[{"-", "1"}]}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "1"}], ",", "1"}], "}"}]}], "}"}]}], ",", 
+           RowBox[{"Boxed", "\[Rule]", 
+            RowBox[{"{", 
+             RowBox[{"Left", ",", "Top", ",", "Front"}], "}"}]}]}], "}"}], 
+         ",", 
+         RowBox[{"(*", 
+          RowBox[{"Front", " ", "box", " ", "back", " ", "axes"}], "*)"}], 
+         RowBox[{"resolvePlotTheme", "[", 
+          RowBox[{
+          "\"\<AcademicFrame3D\>\"", ",", "\"\<ChromaticityPlot3D\>\""}], 
+          "]"}]}], "]"}], ",", "$ComponentWeight"}], "]"}]}], ";"}], "\n", 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame\>\"", ",", 
+       RowBox[{"def", ":", 
+        RowBox[{
+        "\"\<BarChart3D\>\"", "|", "\"\<PieChart3D\>\"", "|", 
+         "\"\<RectangleChart3D\>\"", "|", "\"\<SectorChart3D\>\""}]}]}], 
+      "]"}], ":=", 
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame3D\>\"", ",", "def"}], "]"}]}], ";", 
+    RowBox[{"(*", 
+     RowBox[{"Chart3Ds", " ", "not", " ", "boxed"}], "*)"}], 
+    RowBox[{"(*", " ", 
+     RowBox[{"===", 
+      RowBox[{"Common", " ", "features", " ", "of", " ", 
+       RowBox[{"axes", "/", "frame"}]}], "==="}], "*)"}], 
+    RowBox[{"(*", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"Mathematica", "'"}], "s", " ", "working", " ", 
+       RowBox[{"theme", ":", 
+        RowBox[{
+        "axes", " ", "and", " ", "frames", " ", "too", " ", "thin"}]}]}], ",", 
+      RowBox[{"terribly", " ", "grayish"}], ",", 
+      RowBox[{"and", " ", 
+       RowBox[{"tick", "/", "label"}], " ", "font", " ", "too", " ", 
+       "small"}], ",", 
+      RowBox[{"but", " ", "grids", " ", "too", " ", 
+       RowBox[{"thick", ".", "The"}], " ", "new", " ", "theme", " ", "will", 
+       " ", "fix", " ", 
+       RowBox[{"these", "."}]}]}], "*)"}], 
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame2D\>\"", ",", "_"}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"AxesStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{
+            RowBox[{"AbsoluteThickness", "[", "1", "]"}], ",", "monoColor", 
+            ",", 
+            RowBox[{"FontSize", "\[Rule]", "14"}]}], "]"}]}], ",", 
+         RowBox[{"FrameStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{
+            RowBox[{"AbsoluteThickness", "[", "1", "]"}], ",", "monoColor", 
+            ",", 
+            RowBox[{"FontSize", "\[Rule]", "14"}]}], "]"}]}], ",", 
+         RowBox[{"TicksStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"monoColor", ",", 
+            RowBox[{"FontSize", "\[Rule]", "12"}]}], "]"}]}], ",", 
+         RowBox[{"FrameTicksStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"monoColor", ",", 
+            RowBox[{"FontSize", "\[Rule]", "12"}]}], "]"}]}], ",", 
+         RowBox[{"GridLinesStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{
+            RowBox[{"AbsoluteThickness", "[", "0.5", "]"}], ",", 
+            RowBox[{"Opacity", "[", "0.5", "]"}]}], "]"}]}]}], "}"}], ",", 
+       "$ComponentWeight"}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<AcademicFrame3D\>\"", ",", "_"}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"AxesStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{
+            RowBox[{"AbsoluteThickness", "[", "1", "]"}], ",", "monoColor", 
+            ",", 
+            RowBox[{"FontSize", "\[Rule]", "14"}]}], "]"}]}], ",", 
+         RowBox[{"TicksStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"monoColor", ",", 
+            RowBox[{"FontSize", "\[Rule]", "12"}]}], "]"}]}], ",", 
+         RowBox[{"BoxStyle", "\[Rule]", "monoColor"}]}], "}"}], ",", 
+       "$ComponentWeight"}], "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", " ", 
+    RowBox[{"\[Equal]", 
+     RowBox[{"Size", " ", "feature"}], "\[Equal]"}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<Figure\>\"", ",", 
+       RowBox[{"def", ":", "_String"}]}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"ImageSizeRaw", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", "180", "}"}], ",", 
+            RowBox[{"{", "180", "}"}]}], "}"}]}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"2", "D", " ", "plots", " ", "180", " ", "pts"}], "*)"}], 
+         RowBox[{"LabelStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"monoColor", ",", 
+            RowBox[{"FontSize", "\[Rule]", "12"}]}], "]"}]}]}], "}"}], ",", 
+       "Themes`$SizeWeight"}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<Figure\>\"", ",", 
+       RowBox[{"\"\<ArrayPlot\>\"", "|", "\"\<MatrixPlot\>\""}]}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"ImageSizeRaw", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", "140", "}"}], ",", 
+            RowBox[{"{", "140", "}"}]}], "}"}]}], ",", 
+         RowBox[{"(*", 
+          RowBox[{
+           RowBox[{"Array", "/", "matrix"}], " ", "140", " ", "pts"}], "*)"}], 
+         RowBox[{"LabelStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"monoColor", ",", 
+            RowBox[{"FontSize", "\[Rule]", "12"}]}], "]"}]}]}], "}"}], ",", 
+       "Themes`$SizeWeight"}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<Figure\>\"", ",", 
+       RowBox[{
+        RowBox[{"def", ":", "_String"}], "/;", 
+        RowBox[{"StringMatchQ", "[", 
+         RowBox[{"def", ",", 
+          RowBox[{"___", "~~", "\"\<3D\>\""}]}], "]"}]}]}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"ImageSizeRaw", "\[Rule]", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", "200", "}"}], ",", 
+            RowBox[{"{", "200", "}"}]}], "}"}]}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"3", "D", " ", "plots", " ", "200", " ", "pts"}], "*)"}], 
+         RowBox[{"LabelStyle", "\[Rule]", 
+          RowBox[{"Directive", "[", 
+           RowBox[{"monoColor", ",", 
+            RowBox[{"FontSize", "\[Rule]", "12"}]}], "]"}]}]}], "}"}], ",", 
+       "Themes`$SizeWeight"}], "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Size", " ", "not", " ", "specified", " ", "for", " ", "LinePlots", " ", 
+     RowBox[{"(", 
+      RowBox[{"because", " ", "they", " ", "are", " ", "wide"}], ")"}]}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<Figure\>\"", ",", 
+       RowBox[{"\"\<NumberLinePlot\>\"", "|", "\"\<TimelinePlot\>\""}]}], 
+      "]"}], ":=", 
+     RowBox[{"{", "}"}]}], ";"}], "\[IndentingNewLine]", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{"\[Equal]", 
+     RowBox[{"Color", " ", "feature"}], "\[Equal]"}], "*)"}], "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+     "Color", " ", "scheme", " ", "based", " ", "on", " ", "VibrantColor"}], 
+     ",", 
+     RowBox[{"which", " ", "is", " ", "bright", " ", "and", " ", "vivid"}]}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<VividColor\>\"", ",", 
+       RowBox[{"def", ":", "_String"}]}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", "}"}], ",", 
+       RowBox[{
+        RowBox[{"$ThemeColorIndexed", "=", "112"}], ";", 
+        RowBox[{"(*", 
+         RowBox[{
+          RowBox[{"ColorData", "[", "112", "]"}], "=", "Vibrant"}], "*)"}], 
+        RowBox[{"$ThemeColorDensity", "=", "\"\<ThermometerColors\>\""}], ";", 
+        RowBox[{"(*", 
+         RowBox[{"Thermometer", " ", "for", " ", "density"}], "*)"}], 
+        RowBox[{"$ThemeColorArrayPlot", "=", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"GrayLevel", "[", "0", "]"}], ",", 
+           RowBox[{"GrayLevel", "[", "1", "]"}]}], "}"}]}], ";", 
+        RowBox[{"(*", 
+         RowBox[{"Grayscale", " ", "for", " ", "Array"}], "*)"}], 
+        RowBox[{"$ThemeColorDensity3D", "=", "\"\<ThermometerColors\>\""}], 
+        ";", 
+        RowBox[{"(*", 
+         RowBox[{"Thermometer", " ", "for", " ", "density"}], "*)"}], 
+        RowBox[{
+        "$ThemeColorVectorDensity", "=", 
+         "\"\<VibrantColorVectorDensityGradient\>\""}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"$ThemeColorFinancial", "=", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.", ",", "0.596078", ",", "0.109804"}], "]"}], ",", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.790588", ",", "0.201176", ",", "0."}], "]"}]}], 
+          "}"}]}], ";", 
+        RowBox[{"(*", 
+         RowBox[{"Green", " ", "and", " ", "red"}], "*)"}], 
+        RowBox[{"$ThemeColorGradient", "=", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.790588", ",", "0.201176", ",", "0."}], "]"}], ",", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.567426", ",", "0.32317", ",", "0.729831"}], "]"}], ",", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.192157", ",", "0.388235", ",", "0.807843"}], "]"}], 
+           ",", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.", ",", "0.596078", ",", "0.109804"}], "]"}], ",", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"1.", ",", "0.607843", ",", "0."}], "]"}]}], "}"}]}], ";",
+         "\[IndentingNewLine]", 
+        RowBox[{"$ThemeColorMatrix", "=", 
+         RowBox[{"(*", 
+          RowBox[{"Red", "-", 
+           RowBox[{"blue", " ", "split"}]}], "*)"}], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"0", ",", 
+             RowBox[{"RGBColor", "[", 
+              RowBox[{"0.128105", ",", "0.25882", ",", "0.538562"}], "]"}]}], 
+            "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0.1", ",", 
+             RowBox[{"RGBColor", "[", 
+              RowBox[{"0.192157", ",", "0.388235", ",", "0.807843"}], "]"}]}],
+             "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0.499999", ",", 
+             RowBox[{"RGBColor", "[", 
+              RowBox[{"0.8384314", ",", "0.877647", ",", "0.9615686"}], 
+              "]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0.5", ",", 
+             RowBox[{"RGBColor", "[", 
+              RowBox[{"{", 
+               RowBox[{"1", ",", "1", ",", "1"}], "}"}], "]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0.500001", ",", 
+             RowBox[{"RGBColor", "[", 
+              RowBox[{"0.9581176", ",", "0.8402352", ",", "0.8"}], "]"}]}], 
+            "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0.9", ",", 
+             RowBox[{"RGBColor", "[", 
+              RowBox[{"0.790588", ",", "0.201176", ",", "0."}], "]"}]}], 
+            "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"RGBColor", "[", 
+              RowBox[{"0.527059", ",", "0.134117", ",", "0."}], "]"}]}], 
+            "}"}]}], "}"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{
+        "$ThemeColorFractal", "=", "\"\<VibrantColorFractalGradient\>\""}], 
+        ";", "\[IndentingNewLine]", 
+        RowBox[{"$ThemeColorWavelet", "=", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.0621178", ",", "0.273882", ",", "0.727059"}], "]"}], 
+           ",", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"0.790588", ",", "0.201176", ",", "0."}], "]"}], ",", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"1.", ",", "0.607843", ",", "0."}], "]"}], ",", 
+           RowBox[{"RGBColor", "[", 
+            RowBox[{"1.", ",", "1.", ",", "1."}], "]"}]}], "}"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"resolvePlotTheme", "[", 
+         RowBox[{"\"\<ColorStyle\>\"", ",", "def"}], "]"}]}]}], "]"}]}], 
+    ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{"\[Equal]", 
+     RowBox[{"Point", " ", "marker", " ", "feature"}], "\[Equal]"}], "*)"}], 
+   "\n", 
+   RowBox[{"(*", 
+    RowBox[{"No", " ", "markers", " ", "by", " ", "default"}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<SmallOpenMarkers\>\"", ",", 
+       RowBox[{"def", ":", "_String"}]}], "]"}], ":=", 
+     RowBox[{"{", "}"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Set", " ", "markers", " ", "for", " ", "ListPlots"}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"resolvePlotTheme", "[", 
+      RowBox[{"\"\<SmallOpenMarkers\>\"", ",", 
+       RowBox[{
+       "\"\<DateListLogPlot\>\"", "|", "\"\<DateListPlot\>\"", "|", 
+        "\"\<DiscretePlot\>\"", "|", "\"\<ListCurvePathPlot\>\"", "|", 
+        "\"\<ListLinePlot\>\"", "|", "\"\<ListLogLinearPlot\>\"", "|", 
+        "\"\<ListLogLogPlot\>\"", "|", "\"\<ListLogPlot\>\"", "|", 
+        "\"\<ListPlot\>\""}]}], "]"}], ":=", 
+     RowBox[{"Themes`SetWeight", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"PlotMarkers", "\[Rule]", 
+         RowBox[{"Module", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"s1", "=", "2."}], ",", 
+             RowBox[{"s2", "=", "1.8"}], ",", 
+             RowBox[{"s3", "=", "2.5"}], ",", 
+             RowBox[{"s4", "=", "1.3"}], ",", 
+             RowBox[{"thickness", "=", "1.5"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"Graphics", "[", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"White", ",", 
+                  RowBox[{"Disk", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0"}], "}"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"s1", ",", "s1"}], "}"}], "]"}]}], "]"}]}], "}"}],
+                 ",", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"AbsoluteThickness", "[", "thickness", "]"}], ",", 
+                  RowBox[{"Dashing", "[", 
+                   RowBox[{"{", "}"}], "]"}], ",", 
+                  RowBox[{"Circle", "[", 
+                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0"}], "}"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"s1", ",", "s1"}], "}"}], "]"}]}], "]"}]}], 
+                 "}"}]}], "}"}], "]"}], ",", 
+             RowBox[{"Graphics", "[", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"White", ",", 
+                  RowBox[{"Polygon", "[", 
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", 
+                    RowBox[{"2", "*", "s4"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"s4", "*", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", 
+                    RowBox[{"Sqrt", "[", "3", "]"}]}], ",", 
+                    RowBox[{"-", "1"}]}], "}"}]}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"s4", "*", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Sqrt", "[", "3", "]"}], ",", 
+                    RowBox[{"-", "1"}]}], "}"}]}], "]"}]}], "}"}], "]"}]}], 
+                 "}"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"AbsoluteThickness", "[", "thickness", "]"}], ",", 
+                  RowBox[{"Dashing", "[", 
+                   RowBox[{"{", "}"}], "]"}], ",", 
+                  RowBox[{"JoinedCurve", "[", 
+                   RowBox[{
+                    RowBox[{"Line", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", 
+                    RowBox[{"2", "*", "s4"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"s4", "*", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", 
+                    RowBox[{"Sqrt", "[", "3", "]"}]}], ",", 
+                    RowBox[{"-", "1"}]}], "}"}]}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"s4", "*", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Sqrt", "[", "3", "]"}], ",", 
+                    RowBox[{"-", "1"}]}], "}"}]}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", 
+                    RowBox[{"2", "*", "s4"}]}], "}"}], "]"}]}], "}"}], "]"}], 
+                    ",", 
+                    RowBox[{"CurveClosed", "\[Rule]", "True"}]}], "]"}]}], 
+                 "}"}]}], "}"}], "]"}], ",", 
+             RowBox[{"Graphics", "[", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"White", ",", 
+                  RowBox[{"Polygon", "[", 
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "s3"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"s3", ",", "0"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", 
+                    RowBox[{"-", "s3"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "s3"}], ",", "0"}], "}"}], "]"}]}], "}"}], 
+                   "]"}]}], "}"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"AbsoluteThickness", "[", "thickness", "]"}], ",", 
+                  RowBox[{"Dashing", "[", 
+                   RowBox[{"{", "}"}], "]"}], ",", 
+                  RowBox[{"Line", "[", 
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "s3"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"s3", ",", "0"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", 
+                    RowBox[{"-", "s3"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "s3"}], ",", "0"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "s3"}], "}"}], "]"}]}], "}"}], "]"}]}], 
+                 "}"}]}], "}"}], "]"}], ",", 
+             RowBox[{"Graphics", "[", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"White", ",", 
+                  RowBox[{"Polygon", "[", 
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "s2"}], ",", 
+                    RowBox[{"-", "s2"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"s2", ",", 
+                    RowBox[{"-", "s2"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"s2", ",", "s2"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "s2"}], ",", "s2"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "s2"}], ",", 
+                    RowBox[{"-", "s2"}]}], "}"}], "]"}]}], "}"}], "]"}]}], 
+                 "}"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"AbsoluteThickness", "[", "thickness", "]"}], ",", 
+                  RowBox[{"Dashing", "[", 
+                   RowBox[{"{", "}"}], "]"}], ",", 
+                  RowBox[{"Line", "[", 
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "s2"}], ",", 
+                    RowBox[{"-", "s2"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"s2", ",", 
+                    RowBox[{"-", "s2"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"s2", ",", "s2"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "s2"}], ",", "s2"}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "s2"}], ",", 
+                    RowBox[{"-", "s2"}]}], "}"}], "]"}]}], "}"}], "]"}]}], 
+                 "}"}]}], "}"}], "]"}], ",", 
+             RowBox[{"Graphics", "[", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{"White", ",", 
+                  RowBox[{"Polygon", "[", 
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", 
+                    RowBox[{
+                    RowBox[{"-", "2"}], "*", "s4"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"s4", "*", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", 
+                    RowBox[{"Sqrt", "[", "3", "]"}]}], ",", "1"}], "}"}]}], 
+                    "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"s4", "*", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Sqrt", "[", "3", "]"}], ",", "1"}], "}"}]}], 
+                    "]"}]}], "}"}], "]"}]}], "}"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"AbsoluteThickness", "[", "thickness", "]"}], ",", 
+                  RowBox[{"Dashing", "[", 
+                   RowBox[{"{", "}"}], "]"}], ",", 
+                  RowBox[{"JoinedCurve", "[", 
+                   RowBox[{
+                    RowBox[{"Line", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", 
+                    RowBox[{
+                    RowBox[{"-", "2"}], "*", "s4"}]}], "}"}], "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"s4", "*", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", 
+                    RowBox[{"Sqrt", "[", "3", "]"}]}], ",", "1"}], "}"}]}], 
+                    "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"s4", "*", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Sqrt", "[", "3", "]"}], ",", "1"}], "}"}]}], 
+                    "]"}], ",", 
+                    RowBox[{"Offset", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", 
+                    RowBox[{
+                    RowBox[{"-", "2"}], "*", "s4"}]}], "}"}], "]"}]}], "}"}], 
+                    "]"}], ",", 
+                    RowBox[{"CurveClosed", "\[Rule]", "True"}]}], "]"}]}], 
+                 "}"}]}], "}"}], "]"}]}], "}"}]}], "]"}]}], "}"}], ",", 
+       "$ComponentWeight"}], "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"End", "[", "]"}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"$PlotTheme", "=", "\"\<Academic\>\""}], ";", 
+    RowBox[{"(*", 
+     RowBox[{"Set", " ", "to", " ", "default", " ", "plot", " ", "theme"}], 
+     "*)"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.669093057658145*^9, 3.669093057659145*^9}}],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"baseThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<Business\>\"", ",", "\"\<Detailed\>\"", ",", "\"\<Marketing\>\"", 
+     ",", "\"\<Minimal\>\"", ",", "\"\<Monochrome\>\"", ",", 
+     "\"\<Scientific\>\"", ",", "\"\<Web\>\"", ",", "\"\<Classic\>\""}], 
+    "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"axesThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<NoAxes\>\"", ",", "\"\<MinimalAxes\>\"", ",", "\"\<Grid\>\"", ",", 
+     "\"\<SingleAxis\>\"", ",", "\"\<FullAxes\>\"", ",", "\"\<Frame\>\"", 
+     ",", "\"\<HeightGrid\>\"", ",", "\"\<FullAxesGrid\>\"", ",", 
+     "\"\<FrameGrid\>\""}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"linesurfThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{"\"\<BackgroundColor\>\"", ",", 
+     RowBox[{"{", 
+      RowBox[{"\"\<BackgroundColor\>\"", ",", "Red"}], "}"}], ",", 
+     "\"\<BoldColor\>\"", ",", "\"\<CoolColor\>\"", ",", "\"\<DarkColor\>\"", 
+     ",", "\"\<GrayColor\>\"", ",", "\"\<NeonColor\>\"", ",", 
+     "\"\<PastelColor\>\"", ",", "\"\<RoyalColor\>\"", ",", 
+     "\"\<VibrantColor\>\"", ",", "\"\<WarmColor\>\""}], "}"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"labelThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<BoldLabels\>\"", ",", "\"\<ItalicLabels\>\"", ",", 
+     "\"\<LargeLabels\>\"", ",", "\"\<SmallLabels\>\"", ",", 
+     "\"\<SansLabels\>\"", ",", "\"\<SerifLabels\>\""}], "}"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"shapeThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<Sparkline\>\"", ",", "\"\<Icon\>\"", ",", "\"\<Thumbnail\>\"", ",", 
+     "\"\<Square\>\"", ",", "\"\<Tall\>\"", ",", "\"\<Wide\>\"", ",", 
+     "\"\<SizeScale\>\""}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"markerThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<OpenMarkers\>\"", ",", "\"\<OpenMarkersThick\>\"", ",", 
+     "\"\<PlotMarkers\>\""}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"lineThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<ThinLines\>\"", ",", "\"\<MediumLines\>\"", ",", 
+     "\"\<ThickLines\>\""}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"meshThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{
+    "\"\<DarkMesh\>\"", ",", "\"\<GrayMesh\>\"", ",", "\"\<LightMesh\>\"", 
+     ",", "\"\<ZMesh\>\""}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"chartThemes", "=", 
+   RowBox[{"{", 
+    RowBox[{"\"\<BoldScheme\>\"", ",", "\"\<FadeScheme\>\""}], "}"}]}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]"}], "Input",
+ CellChangeTimes->{{3.669092459816888*^9, 3.669092937370092*^9}}]
+},
+WindowSize->{1904, 1118},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (February 25, 2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 33436, 814, 1572, "Input"],
+Cell[33997, 836, 2654, 66, 232, "Input"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

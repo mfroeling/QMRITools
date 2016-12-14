@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      4894,        134]
-NotebookOptionsPosition[      2949,         82]
-NotebookOutlinePosition[      4836,        131]
-CellTagsIndexPosition[      4793,        128]
-WindowTitle->MethodReg - Wolfram Mathematica
+NotebookDataLength[      5542,        156]
+NotebookOptionsPosition[      3589,        104]
+NotebookOutlinePosition[      5498,        154]
+CellTagsIndexPosition[      5455,        151]
+WindowTitle->MethodReg
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/MethodReg\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
-MethodReg.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
-            Visible -> False]]; 
-       SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+               "http://reference.wolfram.com/language/DTITools/ref/MethodReg.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+           False]]; SelectionMove[
+        DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$120446], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/MethodReg", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,8 +75,18 @@ MethodReg.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["MethodReg", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["MethodReg", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -84,27 +106,28 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"MethodReg - Wolfram Mathematica",
+WindowTitle->"MethodReg",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 44, 29.3508741}", 
+   "built" -> "{2016, 12, 14, 11, 17, 32.8552347}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ElastixTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "MethodReg spefifies which registration method to use. Mehtods can be be \
-\"rigid\",\"affine\", \"bspline\" or \"cyclyc\".", "synonyms" -> {}, "title" -> 
-    "MethodReg", "titlemodifier" -> "", "windowtitle" -> "MethodReg", "type" -> 
-    "Symbol", "uri" -> "DTITools/ref/MethodReg"}, "SearchTextTranslated" -> 
-  ""},
+\"rigid\",\"affine\", \"bspline\" or \"cyclyc\".", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "MethodReg", "titlemodifier" -> "", 
+    "windowtitle" -> "MethodReg", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/MethodReg"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -130,15 +153,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[603, 21, 1864, 42, 70, "AnchorBarGrid",
+Cell[581, 21, 2292, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2470, 65, 52, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2525, 68, 394, 10, 70, "Usage"],
-Cell[2922, 80, 23, 0, 70, "FooterCell"]
+Cell[2876, 77, 286, 11, 70, "ObjectNameGrid"],
+Cell[3165, 90, 394, 10, 70, "Usage"],
+Cell[3562, 102, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

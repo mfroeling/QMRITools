@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5274,        143]
-NotebookOptionsPosition[      3297,         91]
-NotebookOutlinePosition[      5216,        140]
-CellTagsIndexPosition[      5173,        137]
-WindowTitle->OutputSamples - Wolfram Mathematica
+NotebookDataLength[      5997,        167]
+NotebookOptionsPosition[      4014,        115]
+NotebookOutlinePosition[      5953,        165]
+CellTagsIndexPosition[      5910,        162]
+WindowTitle->OutputSamples
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/OutputSamples\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
+               "http://reference.wolfram.com/language/DTITools/ref/\
 OutputSamples.html"], StandardForm]], "Input", TextClipboardType -> 
              "PlainText"]}, Visible -> False]]; 
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$131640], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/OutputSamples", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,22 +75,34 @@ OutputSamples.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["OutputSamples", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["OutputSamples", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["OutputSamples"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["BayesianIVIMFit2",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BayesianIVIMFit2"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BayesianIVIMFit2"]],"paclet:DTITools/ref/BayesianIVIMFit2"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["BayesianIVIMFit3",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BayesianIVIMFit3"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BayesianIVIMFit3"]],"paclet:DTITools/ref/BayesianIVIMFit3"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". If set True the full marcov chain is given as an additionaln output."
     }]]}
   }]], "Usage",
@@ -93,17 +117,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"OutputSamples - Wolfram Mathematica",
+WindowTitle->"OutputSamples",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 45, 6.6496036}", 
+   "built" -> "{2016, 12, 14, 11, 18, 9.9219410}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`IVIMTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -111,9 +136,9 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "OutputSamples is an option for BayesianIVIMFit2 and BayesianIVIMFit3. If \
 set True the full marcov chain is given as an additionaln output.", 
-    "synonyms" -> {}, "title" -> "OutputSamples", "titlemodifier" -> "", 
-    "windowtitle" -> "OutputSamples", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/OutputSamples"}, "SearchTextTranslated" -> ""},
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "OutputSamples", 
+    "titlemodifier" -> "", "windowtitle" -> "OutputSamples", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/OutputSamples"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -139,15 +164,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[607, 21, 1882, 42, 70, "AnchorBarGrid",
+Cell[585, 21, 2309, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2492, 65, 56, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2551, 68, 716, 19, 70, "Usage"],
-Cell[3270, 89, 23, 0, 70, "FooterCell"]
+Cell[2897, 77, 290, 11, 70, "ObjectNameGrid"],
+Cell[3190, 90, 794, 21, 70, "Usage"],
+Cell[3987, 113, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

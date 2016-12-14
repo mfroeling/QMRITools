@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      9222,        267]
-NotebookOptionsPosition[      6572,        197]
-NotebookOutlinePosition[      8735,        249]
-CellTagsIndexPosition[      8692,        246]
-WindowTitle->JoinSets - Wolfram Mathematica
+NotebookDataLength[     10396,        312]
+NotebookOptionsPosition[      7636,        241]
+NotebookOutlinePosition[      9819,        294]
+CellTagsIndexPosition[      9776,        291]
+WindowTitle->JoinSets
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ManipulationTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ManipulationTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/JoinSets\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
-JoinSets.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, 
-            Visible -> False]]; 
-        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+                "http://reference.wolfram.com/language/DTITools/ref/JoinSets.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$109713], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/JoinSets", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ JoinSets.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["JoinSets", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["JoinSets", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["\<\
@@ -103,11 +132,17 @@ from drop 2.\
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -120,7 +155,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->715022997],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -133,9 +170,10 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["ReverseSets",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ReverseSets"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ReverseSets"]],"paclet:DTITools/ref/ReverseSets"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["JoinSets"], "InlineFormula"],
      ". Reverses the order of the datsets, ",
@@ -150,9 +188,10 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["ReverseData",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ReverseData"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ReverseData"]],"paclet:DTITools/ref/ReverseData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["JoinSets"], "InlineFormula"],
      ". Reverses each individual datset given as input for the ",
@@ -166,31 +205,36 @@ Cell[BoxData[GridBox[{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
    "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ManipulationTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ManipulationTools"]], "MoreAbout",
- CellID->318339928]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ManipulationTools"]],"paclet:DTITools/guide/ManipulationTools"},
+  
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -199,17 +243,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"JoinSets - Wolfram Mathematica",
+WindowTitle->"JoinSets",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 43, 54.7164110}", 
+   "built" -> "{2016, 12, 14, 11, 16, 53.6437834}", 
     "history" -> {"XX", "", "", ""}, "context" -> 
     "DTITools`ManipulationTools`", "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -220,9 +265,9 @@ overlap. JoinSets[{dat$1,dat$2,dat$3 $$},{over$1,over$2, $$}] joins dat1 and \
 dat2 with over1 slices overlap, Joins dat2 and dat3 with over2 slices overlap \
 and so on. JoinSets[{dat$1,dat$2, $$},{{over,drop$1,drop$2}, $$}] joins dat1, \
 dat2 with over slices overlap and drops drop1 slices for dat1 and drop2 from \
-drop 2.", "synonyms" -> {}, "title" -> "JoinSets", "titlemodifier" -> "", 
-    "windowtitle" -> "JoinSets", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/JoinSets"}, "SearchTextTranslated" -> ""},
+drop 2.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "JoinSets", 
+    "titlemodifier" -> "", "windowtitle" -> "JoinSets", "type" -> "Symbol", 
+    "uri" -> "DTITools/ref/JoinSets"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -248,30 +293,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[602, 21, 2315, 53, 70, "AnchorBarGrid",
+Cell[580, 21, 3046, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2920, 76, 51, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3629, 97, 285, 11, 70, "ObjectNameGrid"],
+Cell[3917, 110, 712, 19, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[2996, 81, 712, 19, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3733, 104, 609, 18, 70, "NotesSection",
+Cell[4654, 133, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->715022997],
-Cell[4345, 124, 53, 0, 70, "Notes"],
-Cell[4401, 126, 1474, 42, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5387, 159, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5421, 161, 53, 0, 70, "Notes"],
+Cell[5477, 163, 1552, 44, 70, "3ColumnTableMod"],
+Cell[7032, 209, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[5924, 174, 448, 13, 70, "MoreAboutSection",
+Cell[7100, 214, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[6375, 189, 155, 3, 70, "MoreAbout",
- CellID->318339928]
+Cell[7379, 228, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[7413, 230, 181, 6, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[6545, 195, 23, 0, 70, "FooterCell"]
+Cell[7609, 239, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

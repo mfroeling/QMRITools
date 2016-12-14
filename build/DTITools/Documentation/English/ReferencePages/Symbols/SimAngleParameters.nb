@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      6686,        189]
-NotebookOptionsPosition[      4472,        130]
-NotebookOutlinePosition[      6464,        180]
-CellTagsIndexPosition[      6421,        177]
-WindowTitle->SimAngleParameters - Wolfram Mathematica
+NotebookDataLength[      7646,        226]
+NotebookOptionsPosition[      5382,        166]
+NotebookOutlinePosition[      7394,        217]
+CellTagsIndexPosition[      7351,        214]
+WindowTitle->SimAngleParameters
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"SimulationTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/SimulationTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/SimAngleParameters\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 SimAngleParameters.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$175524], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/SimAngleParameters", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,8 +95,18 @@ SimAngleParameters.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["SimAngleParameters", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["SimAngleParameters", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -83,18 +114,20 @@ Cell[BoxData[GridBox[{
      "\[LineSeparator]caculates the diffusion eigenvectors for tens compared \
 to the true values vec. The output can be used in ",
      Cell[BoxData[
-      ButtonBox["PlotSimulationAngleHist",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PlotSimulationAngleHist"]], 
-      "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PlotSimulationAngleHist"]],
+        "paclet:DTITools/ref/PlotSimulationAngleHist"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " ",
      "and",
      " ",
      Cell[BoxData[
-      ButtonBox["PlotSimulationAngle",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PlotSimulationAngle"]], 
-      "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PlotSimulationAngle"]],
+        "paclet:DTITools/ref/PlotSimulationAngle"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      "."
     }]]}
   }]], "Usage",
@@ -105,25 +138,28 @@ to the true values vec. The output can be used in ",
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["SimulationTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/SimulationTools"]], "MoreAbout",
- CellID->52223089]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["SimulationTools"]],"paclet:DTITools/guide/SimulationTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -132,17 +168,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"SimAngleParameters - Wolfram Mathematica",
+WindowTitle->"SimAngleParameters",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 47, 26.2325605}", 
+   "built" -> "{2016, 12, 14, 11, 20, 30.6180092}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`SimulationTools`",
      "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -150,10 +187,10 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "SimAngleParameters[tens,vec] caculates the diffusion eigenvectors for \
 tens compared to the true values vec. The output can be used in \
-PlotSimulationAngleHist and PlotSimulationAngle.", "synonyms" -> {}, "title" -> 
-    "SimAngleParameters", "titlemodifier" -> "", "windowtitle" -> 
-    "SimAngleParameters", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/SimAngleParameters"}, "SearchTextTranslated" -> ""},
+PlotSimulationAngleHist and PlotSimulationAngle.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "SimAngleParameters", "titlemodifier" -> "",
+     "windowtitle" -> "SimAngleParameters", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/SimAngleParameters"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -179,21 +216,20 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[612, 21, 2353, 53, 70, "AnchorBarGrid",
+Cell[590, 21, 3083, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2968, 76, 61, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[3032, 79, 772, 24, 70, "Usage"],
+Cell[3676, 97, 295, 11, 70, "ObjectNameGrid"],
+Cell[3974, 110, 854, 26, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3829, 107, 448, 13, 70, "MoreAboutSection",
+Cell[4853, 140, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[4280, 122, 150, 3, 70, "MoreAbout",
- CellID->52223089]
+Cell[5132, 154, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5166, 156, 174, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[4445, 128, 23, 0, 70, "FooterCell"]
+Cell[5355, 164, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

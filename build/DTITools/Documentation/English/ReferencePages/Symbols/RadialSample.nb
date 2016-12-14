@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      9577,        304]
-NotebookOptionsPosition[      7033,        235]
-NotebookOutlinePosition[      9091,        286]
-CellTagsIndexPosition[      9048,        283]
-WindowTitle->RadialSample - Wolfram Mathematica
+NotebookDataLength[     10868,        351]
+NotebookOptionsPosition[      8212,        281]
+NotebookOutlinePosition[     10290,        333]
+CellTagsIndexPosition[     10247,        330]
+WindowTitle->RadialSample
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"CardiacTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/CardiacTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/RadialSample\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 RadialSample.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$152546], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/RadialSample", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ RadialSample.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["RadialSample", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["RadialSample", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -85,9 +114,10 @@ Cell[BoxData[GridBox[{
      "\[LineSeparator]radialy samples the provided data. The mask should be a \
 mask of the left ventricle that was used in the ",
      Cell[BoxData[
-      ButtonBox["CardiacSegment",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/CardiacSegment"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["CardiacSegment"]],"paclet:DTITools/ref/CardiacSegment"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ".",
      " ",
      "segang",
@@ -142,11 +172,17 @@ mask of the left ventricle that was used in the ",
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -159,7 +195,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->8336538],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -169,16 +207,18 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/RadialSamples"], "10", Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["RadialSamples",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/RadialSamples"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["RadialSamples"]],"paclet:DTITools/ref/RadialSamples"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["RadialSample"], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["PlotSegments",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PlotSegments"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PlotSegments"]],"paclet:DTITools/ref/PlotSegments"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Defines how manny transmural samples are taken."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
@@ -186,16 +226,18 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/DropSamples"], "0", Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["DropSamples",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/DropSamples"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["DropSamples"]],"paclet:DTITools/ref/DropSamples"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["RadialSample"], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["PlotSegments",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PlotSegments"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PlotSegments"]],"paclet:DTITools/ref/PlotSegments"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Defines how manny samples are droped form star and end. Can be an \
 number or set (strat, end) of numbers."
     }], "TableText"]}
@@ -204,31 +246,35 @@ number or set (strat, end) of numbers."
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
    "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["CardiacTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/CardiacTools"]], "MoreAbout",
- CellID->444687049]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["CardiacTools"]],"paclet:DTITools/guide/CardiacTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -237,17 +283,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"RadialSample - Wolfram Mathematica",
+WindowTitle->"RadialSample",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 46, 14.3303710}", 
+   "built" -> "{2016, 12, 14, 11, 19, 17.0516533}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`CardiacTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -257,9 +304,9 @@ TaggingRules->{
 mask should be a mask of the left ventricle that was used in the \
 CardiacSegment. segang is the output of the cardaic SegmentFunction. output \
 is {points, vals} which are orderd as indicated by the user.", 
-    "synonyms" -> {}, "title" -> "RadialSample", "titlemodifier" -> "", 
-    "windowtitle" -> "RadialSample", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/RadialSample"}, "SearchTextTranslated" -> ""},
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "RadialSample", 
+    "titlemodifier" -> "", "windowtitle" -> "RadialSample", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/RadialSample"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -285,30 +332,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[606, 21, 2323, 53, 70, "AnchorBarGrid",
+Cell[584, 21, 3053, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2932, 76, 55, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3640, 97, 289, 11, 70, "ObjectNameGrid"],
+Cell[3932, 110, 1092, 59, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3012, 81, 1053, 58, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[4090, 143, 607, 18, 70, "NotesSection",
+Cell[5049, 173, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->8336538],
-Cell[4700, 163, 53, 0, 70, "Notes"],
-Cell[4756, 165, 1590, 41, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5782, 199, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5816, 201, 53, 0, 70, "Notes"],
+Cell[5872, 203, 1746, 45, 70, "3ColumnTableMod"],
+Cell[7621, 250, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[6395, 212, 448, 13, 70, "MoreAboutSection",
+Cell[7689, 255, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[6846, 227, 145, 3, 70, "MoreAbout",
- CellID->444687049]
+Cell[7968, 269, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[8002, 271, 168, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[7006, 233, 23, 0, 70, "FooterCell"]
+Cell[8185, 279, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

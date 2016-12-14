@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      6579,        201]
-NotebookOptionsPosition[      4413,        143]
-NotebookOutlinePosition[      6357,        192]
-CellTagsIndexPosition[      6314,        189]
-WindowTitle->CalculateMoments - Wolfram Mathematica
+NotebookDataLength[      7495,        237]
+NotebookOptionsPosition[      5279,        178]
+NotebookOutlinePosition[      7243,        228]
+CellTagsIndexPosition[      7200,        225]
+WindowTitle->CalculateMoments
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"GradientTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/GradientTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/CalculateMoments\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 CalculateMoments.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$35544], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/CalculateMoments", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,8 +95,18 @@ CalculateMoments.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["CalculateMoments", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["CalculateMoments", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -83,9 +114,10 @@ Cell[BoxData[GridBox[{
      "\[LineSeparator]calculates the 0th to 3th order moments of the sequence \
 created by ",
      Cell[BoxData[
-      ButtonBox["GradSeq",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/GradSeq"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["GradSeq"]],"paclet:DTITools/ref/GradSeq"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ".",
      " ",
      "Output",
@@ -118,25 +150,28 @@ created by ",
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["GradientTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/GradientTools"]], "MoreAbout",
- CellID->88785387]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["GradientTools"]],"paclet:DTITools/guide/GradientTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -145,17 +180,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"CalculateMoments - Wolfram Mathematica",
+WindowTitle->"CalculateMoments",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 40, 13.1482564}", 
+   "built" -> "{2016, 12, 14, 11, 13, 15.5421718}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`GradientTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -163,9 +199,9 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "CalculateMoments[{Gt, hw, te}, t] calculates the 0th to 3th order \
 moments of the sequence created by GradSeq. Output is {{Gt, M0, M1, M2, M3}, \
-vals}.", "synonyms" -> {}, "title" -> "CalculateMoments", "titlemodifier" -> 
-    "", "windowtitle" -> "CalculateMoments", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/CalculateMoments"}, "SearchTextTranslated" -> ""},
+vals}.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "CalculateMoments", 
+    "titlemodifier" -> "", "windowtitle" -> "CalculateMoments", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/CalculateMoments"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -191,21 +227,20 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[610, 21, 2341, 53, 70, "AnchorBarGrid",
+Cell[588, 21, 3070, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2954, 76, 59, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[3016, 79, 733, 37, 70, "Usage"],
+Cell[3661, 97, 293, 11, 70, "ObjectNameGrid"],
+Cell[3957, 110, 772, 38, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3774, 120, 448, 13, 70, "MoreAboutSection",
+Cell[4754, 152, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[4225, 135, 146, 3, 70, "MoreAbout",
- CellID->88785387]
+Cell[5033, 166, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5067, 168, 170, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[4386, 141, 23, 0, 70, "FooterCell"]
+Cell[5252, 176, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      7774,        231]
-NotebookOptionsPosition[      5429,        165]
-NotebookOutlinePosition[      7291,        213]
-CellTagsIndexPosition[      7248,        210]
-WindowTitle->ExportVol - Wolfram Mathematica
+NotebookDataLength[      8908,        274]
+NotebookOptionsPosition[      6451,        207]
+NotebookOutlinePosition[      8333,        256]
+CellTagsIndexPosition[      8290,        253]
+WindowTitle->ExportVol
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ExportTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ExportTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/ExportVol\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
-ExportVol.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
-             Visible -> False]]; 
-        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+                "http://reference.wolfram.com/language/DTITools/ref/ExportVol.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$67162], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ExportVol", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ ExportVol.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ExportVol", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["ExportVol", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["\<\
@@ -93,11 +122,17 @@ file which can be loaded in DTItool 3.0.\
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -110,7 +145,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->656027927],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -121,9 +158,10 @@ Cell[BoxData[GridBox[{
      ButtonData->"paclet:DTITools/ref/BinaryType"], "Integer16", Cell[
     TextData[{
      Cell[BoxData[
-      ButtonBox["BinaryType",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BinaryType"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BinaryType"]],"paclet:DTITools/ref/BinaryType"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["ExportVol"], "InlineFormula"],
      " and must be \"Integer16\" for an integer array and \"Real32\" for a \
@@ -134,31 +172,35 @@ Double array."
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
    "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ExportTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ExportTools"]], "MoreAbout",
- CellID->80217218]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ExportTools"]],"paclet:DTITools/guide/ExportTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -167,26 +209,27 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ExportVol - Wolfram Mathematica",
+WindowTitle->"ExportVol",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 41, 44.4973904}", 
+   "built" -> "{2016, 12, 14, 11, 14, 44.3029204}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ExportTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "ExportVol[filename, data, voxsize] exports a .vol and .raw file which \
-can be loaded in DTItool 3.0.", "synonyms" -> {}, "title" -> "ExportVol", 
-    "titlemodifier" -> "", "windowtitle" -> "ExportVol", "type" -> "Symbol", 
-    "uri" -> "DTITools/ref/ExportVol"}, "SearchTextTranslated" -> ""},
+can be loaded in DTItool 3.0.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "ExportVol", "titlemodifier" -> "", "windowtitle" -> "ExportVol", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/ExportVol"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -212,30 +255,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[603, 21, 2307, 53, 70, "AnchorBarGrid",
+Cell[581, 21, 3037, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2913, 76, 52, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3621, 97, 286, 11, 70, "ObjectNameGrid"],
+Cell[3910, 110, 317, 9, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[2990, 81, 317, 9, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3332, 94, 609, 18, 70, "NotesSection",
+Cell[4252, 123, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->656027927],
-Cell[3944, 114, 53, 0, 70, "Notes"],
-Cell[4000, 116, 745, 20, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[4985, 149, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5019, 151, 53, 0, 70, "Notes"],
+Cell[5075, 153, 784, 21, 70, "3ColumnTableMod"],
+Cell[5862, 176, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[4794, 142, 448, 13, 70, "MoreAboutSection",
+Cell[5930, 181, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[5245, 157, 142, 3, 70, "MoreAbout",
- CellID->80217218]
+Cell[6209, 195, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[6243, 197, 166, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[5402, 163, 23, 0, 70, "FooterCell"]
+Cell[6424, 205, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

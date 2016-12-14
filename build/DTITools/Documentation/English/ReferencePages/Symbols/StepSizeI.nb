@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5098,        141]
-NotebookOptionsPosition[      3162,         89]
-NotebookOutlinePosition[      5040,        138]
-CellTagsIndexPosition[      4997,        135]
-WindowTitle->StepSizeI - Wolfram Mathematica
+NotebookDataLength[      5785,        164]
+NotebookOptionsPosition[      3841,        112]
+NotebookOutlinePosition[      5741,        162]
+CellTagsIndexPosition[      5698,        159]
+WindowTitle->StepSizeI
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/StepSizeI\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
-StepSizeI.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
-            Visible -> False]]; 
-       SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+               "http://reference.wolfram.com/language/DTITools/ref/StepSizeI.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+           False]]; SelectionMove[
+        DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$183854], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/StepSizeI", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,17 +75,28 @@ StepSizeI.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["StepSizeI", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["StepSizeI", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["StepSizeI"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["GradBmatrix",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/GradBmatrix"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["GradBmatrix"]],"paclet:DTITools/ref/GradBmatrix"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Specifies the integration stepsize is ",
      Cell[BoxData[
       RowBox[{"Method", "->", "\"\<Numerical\>\""}]], "InlineFormula"],
@@ -91,27 +114,28 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"StepSizeI - Wolfram Mathematica",
+WindowTitle->"StepSizeI",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 47, 50.8992889}", 
+   "built" -> "{2016, 12, 14, 11, 20, 59.0108482}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`GradientTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "StepSizeI is an option for GradBmatrix. Specifies the integration \
-stepsize is Method -> \"Numerical\" is used.", "synonyms" -> {}, "title" -> 
-    "StepSizeI", "titlemodifier" -> "", "windowtitle" -> "StepSizeI", "type" -> 
-    "Symbol", "uri" -> "DTITools/ref/StepSizeI"}, "SearchTextTranslated" -> 
-  ""},
+stepsize is Method -> \"Numerical\" is used.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "StepSizeI", "titlemodifier" -> "", 
+    "windowtitle" -> "StepSizeI", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/StepSizeI"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -137,15 +161,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[603, 21, 1864, 42, 70, "AnchorBarGrid",
+Cell[581, 21, 2292, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2470, 65, 52, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2525, 68, 607, 17, 70, "Usage"],
-Cell[3135, 87, 23, 0, 70, "FooterCell"]
+Cell[2876, 77, 286, 11, 70, "ObjectNameGrid"],
+Cell[3165, 90, 646, 18, 70, "Usage"],
+Cell[3814, 110, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

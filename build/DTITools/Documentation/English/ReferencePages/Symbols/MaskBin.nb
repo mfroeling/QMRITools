@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      7988,        239]
-NotebookOptionsPosition[      5695,        173]
-NotebookOutlinePosition[      7504,        221]
-CellTagsIndexPosition[      7461,        218]
-WindowTitle->MaskBin - Wolfram Mathematica
+NotebookDataLength[      9203,        284]
+NotebookOptionsPosition[      6796,        217]
+NotebookOutlinePosition[      8627,        266]
+CellTagsIndexPosition[      8584,        263]
+WindowTitle->MaskBin
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"MaskingTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/MaskingTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/MaskBin\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
-MaskBin.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, 
-            Visible -> False]]; 
-        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+                "http://reference.wolfram.com/language/DTITools/ref/MaskBin.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$112762], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/MaskBin", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ MaskBin.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["MaskBin", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["MaskBin", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[
@@ -91,11 +120,17 @@ Cell[BoxData[GridBox[{
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -108,7 +143,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->65805422],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -121,19 +158,22 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["Smoothing",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Smoothing"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Smoothing"]],"paclet:DTITools/ref/Smoothing"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an options for ",
      Cell[BoxData[
-      ButtonBox["Mask",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Mask"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Mask"]],"paclet:DTITools/ref/Mask"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ", Maskbin and ",
      Cell[BoxData[
-      ButtonBox["SmartMask",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/SmartMask"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["SmartMask"]],"paclet:DTITools/ref/SmartMask"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " functions, if set to true (default) it smooths (removes holes and \
 smooth edges) the mask"
     }], "TableText"]}
@@ -142,31 +182,35 @@ smooth edges) the mask"
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
    "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["MaskingTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/MaskingTools"]], "MoreAbout",
- CellID->258596838]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["MaskingTools"]],"paclet:DTITools/guide/MaskingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -175,26 +219,27 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"MaskBin - Wolfram Mathematica",
+WindowTitle->"MaskBin",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 44, 4.6704063}", 
+   "built" -> "{2016, 12, 14, 11, 17, 4.4799502}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`MaskingTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "MaskBin[data] creates a datamask from the given data.", "synonyms" -> {},
-     "title" -> "MaskBin", "titlemodifier" -> "", "windowtitle" -> "MaskBin", 
-    "type" -> "Symbol", "uri" -> "DTITools/ref/MaskBin"}, 
-  "SearchTextTranslated" -> ""},
+     "tabletags" -> {}, "title" -> "MaskBin", "titlemodifier" -> "", 
+    "windowtitle" -> "MaskBin", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/MaskBin"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -220,30 +265,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[601, 21, 2301, 53, 70, "AnchorBarGrid",
+Cell[579, 21, 3032, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2905, 76, 50, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3614, 97, 284, 11, 70, "ObjectNameGrid"],
+Cell[3901, 110, 266, 7, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[2980, 81, 266, 7, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3271, 92, 608, 18, 70, "NotesSection",
+Cell[4192, 121, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->65805422],
-Cell[3882, 112, 53, 0, 70, "Notes"],
-Cell[3938, 114, 1070, 30, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[4925, 147, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[4959, 149, 53, 0, 70, "Notes"],
+Cell[5015, 151, 1187, 33, 70, "3ColumnTableMod"],
+Cell[6205, 186, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[5057, 150, 448, 13, 70, "MoreAboutSection",
+Cell[6273, 191, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[5508, 165, 145, 3, 70, "MoreAbout",
- CellID->258596838]
+Cell[6552, 205, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[6586, 207, 168, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[5668, 171, 23, 0, 70, "FooterCell"]
+Cell[6769, 215, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

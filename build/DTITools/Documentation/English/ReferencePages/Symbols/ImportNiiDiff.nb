@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8623,        254]
-NotebookOptionsPosition[      6175,        186]
-NotebookOutlinePosition[      8138,        236]
-CellTagsIndexPosition[      8095,        233]
-WindowTitle->ImportNiiDiff - Wolfram Mathematica
+NotebookDataLength[      9836,        299]
+NotebookOptionsPosition[      7274,        230]
+NotebookOutlinePosition[      9259,        281]
+CellTagsIndexPosition[      9216,        278]
+WindowTitle->ImportNiiDiff
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"NiftiTools\"\>":>Documentation`HelpLookup[
        "paclet:DTITools/guide/NiftiTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/ImportNiiDiff\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 ImportNiiDiff.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$99315], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ImportNiiDiff", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ ImportNiiDiff.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ImportNiiDiff", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["ImportNiiDiff", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["\<\
@@ -97,11 +126,17 @@ files. The output will be {data,grad,bvec,vox}.\
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -114,7 +149,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->89680794],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -127,9 +164,10 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["RotateGradients",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/RotateGradients"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["RotateGradients"]],"paclet:DTITools/ref/RotateGradients"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["ImportNiiDiff"], "InlineFormula"]
     }], "TableText"]},
@@ -141,45 +179,51 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["FlipBvec",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/FlipBvec"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["FlipBvec"]],"paclet:DTITools/ref/FlipBvec"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData[
-      ButtonBox["ImportBvalvec",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ImportBvalvec"]], "InlineFormula"]
+      TemplateBox[{Cell[
+         TextData["ImportBvalvec"]],"paclet:DTITools/ref/ImportBvalvec"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"]
     }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
    "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["NiftiTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/NiftiTools"]], "MoreAbout",
- CellID->165319527]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["NiftiTools"]],"paclet:DTITools/guide/NiftiTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -188,17 +232,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ImportNiiDiff - Wolfram Mathematica",
+WindowTitle->"ImportNiiDiff",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 43, 20.1889586}", 
+   "built" -> "{2016, 12, 14, 11, 16, 19.5829726}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`NiftiTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -206,10 +251,10 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "ImportNiiDiff[] will promt for the *.nii, *.bvec and *.bval file to \
 import. ImportNiiDiff[*.nii,*.bvec,*.bval] will import the given files. The \
-output will be {data,grad,bvec,vox}.", "synonyms" -> {}, "title" -> 
-    "ImportNiiDiff", "titlemodifier" -> "", "windowtitle" -> "ImportNiiDiff", 
-    "type" -> "Symbol", "uri" -> "DTITools/ref/ImportNiiDiff"}, 
-  "SearchTextTranslated" -> ""},
+output will be {data,grad,bvec,vox}.", "synonyms" -> {}, "tabletags" -> {}, 
+    "title" -> "ImportNiiDiff", "titlemodifier" -> "", "windowtitle" -> 
+    "ImportNiiDiff", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/ImportNiiDiff"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -235,30 +280,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[607, 21, 2323, 53, 70, "AnchorBarGrid",
+Cell[585, 21, 3052, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2933, 76, 56, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3640, 97, 290, 11, 70, "ObjectNameGrid"],
+Cell[3933, 110, 448, 13, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3014, 81, 448, 13, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3487, 98, 608, 18, 70, "NotesSection",
+Cell[4406, 127, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->89680794],
-Cell[4098, 118, 53, 0, 70, "Notes"],
-Cell[4154, 120, 1338, 37, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5139, 153, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5173, 155, 53, 0, 70, "Notes"],
+Cell[5229, 157, 1455, 40, 70, "3ColumnTableMod"],
+Cell[6687, 199, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[5541, 163, 448, 13, 70, "MoreAboutSection",
+Cell[6755, 204, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[5992, 178, 141, 3, 70, "MoreAbout",
- CellID->165319527]
+Cell[7034, 218, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[7068, 220, 164, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[6148, 184, 23, 0, 70, "FooterCell"]
+Cell[7247, 228, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

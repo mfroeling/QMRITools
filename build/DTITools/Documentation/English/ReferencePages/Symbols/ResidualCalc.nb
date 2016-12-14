@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10351,        285]
-NotebookOptionsPosition[      7336,        210]
-NotebookOutlinePosition[      9864,        267]
-CellTagsIndexPosition[      9821,        264]
-WindowTitle->ResidualCalc - Wolfram Mathematica
+NotebookDataLength[     11562,        330]
+NotebookOptionsPosition[      8436,        254]
+NotebookOutlinePosition[     10984,        312]
+CellTagsIndexPosition[     10941,        309]
+WindowTitle->ResidualCalc
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ProcessingTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ProcessingTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/ResidualCalc\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 ResidualCalc.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$164841], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ResidualCalc", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ ResidualCalc.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ResidualCalc", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["ResidualCalc", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["\<\
@@ -104,11 +133,17 @@ each gradient direction. b value for unweighted images is 0.\
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -121,7 +156,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->580653719],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -134,9 +171,10 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/False"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["MonitorCalc",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/MonitorCalc"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["MonitorCalc"]],"paclet:DTITools/ref/MonitorCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for all Calc fucntions. When true the proceses of the \
 calculation is shown."
     }], "TableText"]},
@@ -148,9 +186,10 @@ calculation is shown."
      BaseStyle->"Link",
      ButtonData->"paclet:ref/All"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["MeanRes",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/MeanRes"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["MeanRes"]],"paclet:DTITools/ref/MeanRes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["ResidualCalc"], "InlineFormula"],
      ". When ",
@@ -165,9 +204,10 @@ calculation is shown."
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["NormResidual",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/NormResidual"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["NormResidual"]],"paclet:DTITools/ref/NormResidual"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["ResidualCalc"], "InlineFormula"],
      ". When ",
@@ -179,31 +219,35 @@ calculation is shown."
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ProcessingTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ProcessingTools"]], "MoreAbout",
- CellID->93681444]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ProcessingTools"]],"paclet:DTITools/guide/ProcessingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -212,17 +256,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ResidualCalc - Wolfram Mathematica",
+WindowTitle->"ResidualCalc",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 46, 52.1071483}", 
+   "built" -> "{2016, 12, 14, 11, 19, 55.4024880}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ProcessingTools`",
      "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -238,9 +283,9 @@ unweighted images and multiple bvalues. allows for differnt tensor fitting \
 methods. gradient directions must be in the form {{x1,y1,z1}, ..., \
 {xn,yn,zn}} with the unweighted direction as {0,0,0}. bvec the bvector, with \
 a bvalue defined for each gradient direction. b value for unweighted images \
-is 0.", "synonyms" -> {}, "title" -> "ResidualCalc", "titlemodifier" -> "", 
-    "windowtitle" -> "ResidualCalc", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/ResidualCalc"}, "SearchTextTranslated" -> ""},
+is 0.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "ResidualCalc", 
+    "titlemodifier" -> "", "windowtitle" -> "ResidualCalc", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/ResidualCalc"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -266,30 +311,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[606, 21, 2329, 53, 70, "AnchorBarGrid",
+Cell[584, 21, 3059, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2938, 76, 55, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3646, 97, 289, 11, 70, "ObjectNameGrid"],
+Cell[3938, 110, 1013, 20, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3018, 81, 1013, 20, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[4056, 105, 609, 18, 70, "NotesSection",
+Cell[4976, 134, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->580653719],
-Cell[4668, 125, 53, 0, 70, "Notes"],
-Cell[4724, 127, 1920, 54, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5709, 160, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5743, 162, 53, 0, 70, "Notes"],
+Cell[5799, 164, 2037, 57, 70, "3ColumnTableMod"],
+Cell[7839, 223, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[6693, 187, 448, 13, 70, "MoreAboutSection",
+Cell[7907, 228, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[7144, 202, 150, 3, 70, "MoreAbout",
- CellID->93681444]
+Cell[8186, 242, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[8220, 244, 174, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[7309, 208, 23, 0, 70, "FooterCell"]
+Cell[8409, 252, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

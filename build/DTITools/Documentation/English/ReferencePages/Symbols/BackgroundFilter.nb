@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5432,        146]
-NotebookOptionsPosition[      3367,         93]
-NotebookOutlinePosition[      5374,        143]
-CellTagsIndexPosition[      5331,        140]
-WindowTitle->BackgroundFilter - Wolfram Mathematica
+NotebookDataLength[      6154,        170]
+NotebookOptionsPosition[      4083,        117]
+NotebookOutlinePosition[      6110,        168]
+CellTagsIndexPosition[      6067,        165]
+WindowTitle->BackgroundFilter
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/BackgroundFilter\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
+               "http://reference.wolfram.com/language/DTITools/ref/\
 BackgroundFilter.html"], StandardForm]], "Input", TextClipboardType -> 
              "PlainText"]}, Visible -> False]]; 
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$25410], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/BackgroundFilter", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,22 +75,34 @@ BackgroundFilter.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["BackgroundFilter", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["BackgroundFilter", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["BackgroundFilter"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["Unwrap",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Unwrap"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Unwrap"]],"paclet:DTITools/ref/Unwrap"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["PhaseCalc",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PhaseCalc"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PhaseCalc"]],"paclet:DTITools/ref/PhaseCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Has value 6 as default. If the voxels has this many neighbours with \
 value 0 it is ignored in the unwrapping. For 3D a value above 14 is \
 recomended."
@@ -95,17 +119,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"BackgroundFilter - Wolfram Mathematica",
+WindowTitle->"BackgroundFilter",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 39, 43.4052824}", 
+   "built" -> "{2016, 12, 14, 11, 12, 46.2603166}", 
     "history" -> {"XX", "", "", ""}, "context" -> 
     "DTITools`ManipulationTools`", "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -114,9 +139,9 @@ TaggingRules->{
     "BackgroundFilter is an option for Unwrap and PhaseCalc. Has value 6 as \
 default. If the voxels has this many neighbours with value 0 it is ignored in \
 the unwrapping. For 3D a value above 14 is recomended.", "synonyms" -> {}, 
-    "title" -> "BackgroundFilter", "titlemodifier" -> "", "windowtitle" -> 
-    "BackgroundFilter", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/BackgroundFilter"}, "SearchTextTranslated" -> ""},
+    "tabletags" -> {}, "title" -> "BackgroundFilter", "titlemodifier" -> "", 
+    "windowtitle" -> "BackgroundFilter", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/BackgroundFilter"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -142,15 +167,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[610, 21, 1894, 42, 70, "AnchorBarGrid",
+Cell[588, 21, 2320, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2507, 65, 59, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2569, 68, 768, 21, 70, "Usage"],
-Cell[3340, 91, 23, 0, 70, "FooterCell"]
+Cell[2911, 77, 293, 11, 70, "ObjectNameGrid"],
+Cell[3207, 90, 846, 23, 70, "Usage"],
+Cell[4056, 115, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

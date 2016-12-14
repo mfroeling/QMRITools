@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     11318,        330]
-NotebookOptionsPosition[      8983,        264]
-NotebookOutlinePosition[     10831,        312]
-CellTagsIndexPosition[     10788,        309]
-WindowTitle->GradSeq - Wolfram Mathematica
+NotebookDataLength[     12732,        381]
+NotebookOptionsPosition[     10283,        314]
+NotebookOutlinePosition[     12151,        363]
+CellTagsIndexPosition[     12108,        360]
+WindowTitle->GradSeq
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"GradientTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/GradientTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/GradSeq\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
-GradSeq.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, 
-            Visible -> False]]; 
-        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+                "http://reference.wolfram.com/language/DTITools/ref/GradSeq.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$89939], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/GradSeq", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,19 +95,29 @@ GradSeq.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["GradSeq", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["GradSeq", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      "GradSeq[pars, t, grad]",
      "\[LineSeparator]Creates a sequence from the gradient pars imported by ",
+     
      Cell[BoxData[
-      ButtonBox["ImportGradObj",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ImportGradObj"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ImportGradObj"]],"paclet:DTITools/ref/ImportGradObj"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      "."
     }]]}
   }]], "Usage",
@@ -98,11 +129,17 @@ Cell[BoxData[GridBox[{
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -115,7 +152,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->119007905],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -130,9 +169,10 @@ Cell[BoxData[GridBox[{
        RowBox[{"1", ",", " ", "0"}], "}"}], ",", " ", "1"}], "}"}], Cell[
     TextData[{
      Cell[BoxData[
-      ButtonBox["UseGrad",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/UseGrad"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["UseGrad"]],"paclet:DTITools/ref/UseGrad"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["GradSeq"], "InlineFormula"],
      ". The default value is {0, 1, {1, 0}, 1} where {grex, gr180, {grepi1, \
@@ -146,16 +186,18 @@ grepi2}, grdiff, grflow}."
      BaseStyle->"Link",
      ButtonData->"paclet:ref/False"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["FlipGrad",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/FlipGrad"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["FlipGrad"]],"paclet:DTITools/ref/FlipGrad"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["GradSeq"], "InlineFormula"],
      ". When ",
      Cell[BoxData[
-      ButtonBox["FlipGrad",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/FlipGrad"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["FlipGrad"]],"paclet:DTITools/ref/FlipGrad"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is true the gr180 is fliped."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
@@ -163,9 +205,10 @@ grepi2}, grdiff, grflow}."
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/UnitMulti"], "1", Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["UnitMulti",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/UnitMulti"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["UnitMulti"]],"paclet:DTITools/ref/UnitMulti"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["GradSeq"], "InlineFormula"],
      ". Defaul value is 10^-3. Defines the scaling of the gradient strength."
@@ -175,9 +218,10 @@ grepi2}, grdiff, grflow}."
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/PhaseEncoding"], "A", Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["PhaseEncoding",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PhaseEncoding"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PhaseEncoding"]],"paclet:DTITools/ref/PhaseEncoding"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an options of ",
      Cell[BoxData["GradSeq"], "InlineFormula"],
      ". ",
@@ -196,9 +240,10 @@ grepi2}, grdiff, grflow}."
        RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}]}], "}"}], Cell[
     TextData[{
      Cell[BoxData[
-      ButtonBox["FlipAxes",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/FlipAxes"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["FlipAxes"]],"paclet:DTITools/ref/FlipAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["GradSeq"], "InlineFormula"],
      ". Defaul value is {{1,1,1},{1,1,1}}. ",
@@ -218,9 +263,10 @@ acquisition gradients."
        RowBox[{"1", ",", " ", "2", ",", " ", "3"}], "}"}]}], "}"}], Cell[
     TextData[{
      Cell[BoxData[
-      ButtonBox["SwitchAxes",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/SwitchAxes"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["SwitchAxes"]],"paclet:DTITools/ref/SwitchAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["GradSeq"], "InlineFormula"],
      ". Defaul value is {{1,2,3},{1,2,3}}. ",
@@ -233,31 +279,35 @@ acquisition gradients."
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {None, None, None, None, None, {None}}, "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True, True, True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["GradientTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/GradientTools"]], "MoreAbout",
- CellID->296227361]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["GradientTools"]],"paclet:DTITools/guide/GradientTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -266,26 +316,27 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"GradSeq - Wolfram Mathematica",
+WindowTitle->"GradSeq",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 42, 52.5821982}", 
+   "built" -> "{2016, 12, 14, 11, 15, 48.8868346}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`GradientTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "GradSeq[pars, t, grad] Creates a sequence from the gradient pars \
-imported by ImportGradObj.", "synonyms" -> {}, "title" -> "GradSeq", 
-    "titlemodifier" -> "", "windowtitle" -> "GradSeq", "type" -> "Symbol", 
-    "uri" -> "DTITools/ref/GradSeq"}, "SearchTextTranslated" -> ""},
+imported by ImportGradObj.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "GradSeq", "titlemodifier" -> "", "windowtitle" -> "GradSeq", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/GradSeq"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -311,30 +362,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[601, 21, 2303, 53, 70, "AnchorBarGrid",
+Cell[579, 21, 3033, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2907, 76, 50, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3615, 97, 284, 11, 70, "ObjectNameGrid"],
+Cell[3902, 110, 526, 16, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[2982, 81, 481, 14, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3488, 99, 609, 18, 70, "NotesSection",
+Cell[4453, 130, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->119007905],
-Cell[4100, 119, 53, 0, 70, "Notes"],
-Cell[4156, 121, 4138, 114, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5186, 156, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5220, 158, 53, 0, 70, "Notes"],
+Cell[5276, 160, 4411, 121, 70, "3ColumnTableMod"],
+Cell[9690, 283, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[8343, 241, 448, 13, 70, "MoreAboutSection",
+Cell[9758, 288, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[8794, 256, 147, 3, 70, "MoreAbout",
- CellID->296227361]
+Cell[10037, 302, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[10071, 304, 170, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[8956, 262, 23, 0, 70, "FooterCell"]
+Cell[10256, 312, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

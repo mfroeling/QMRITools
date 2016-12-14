@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      6248,        183]
-NotebookOptionsPosition[      4174,        126]
-NotebookOutlinePosition[      6025,        174]
-CellTagsIndexPosition[      5982,        171]
-WindowTitle->ApplyCrop - Wolfram Mathematica
+NotebookDataLength[      7166,        220]
+NotebookOptionsPosition[      5043,        162]
+NotebookOutlinePosition[      6914,        211]
+CellTagsIndexPosition[      6871,        208]
+WindowTitle->ApplyCrop
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ManipulationTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ManipulationTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/ApplyCrop\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
-ApplyCrop.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
-             Visible -> False]]; 
-        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+                "http://reference.wolfram.com/language/DTITools/ref/ApplyCrop.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$24400], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ApplyCrop", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,17 +95,28 @@ ApplyCrop.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ApplyCrop", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["ApplyCrop", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      "ApplyCrop[data,crop]",
      "\[LineSeparator]aplies the corpped region obtained form ",
      Cell[BoxData[
-      ButtonBox["CropData",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/CropData"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["CropData"]],"paclet:DTITools/ref/CropData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " ",
      "to",
      " ",
@@ -101,25 +133,29 @@ Cell[BoxData[GridBox[{
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ManipulationTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ManipulationTools"]], "MoreAbout",
- CellID->229983214]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ManipulationTools"]],"paclet:DTITools/guide/ManipulationTools"},
+  
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -128,26 +164,27 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ApplyCrop - Wolfram Mathematica",
+WindowTitle->"ApplyCrop",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 39, 40.0899509}", 
+   "built" -> "{2016, 12, 14, 11, 12, 42.5095666}", 
     "history" -> {"XX", "", "", ""}, "context" -> 
     "DTITools`ManipulationTools`", "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "ApplyCrop[data,crop] aplies the corpped region obtained form CropData to \
-the data.", "synonyms" -> {}, "title" -> "ApplyCrop", "titlemodifier" -> "", 
-    "windowtitle" -> "ApplyCrop", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/ApplyCrop"}, "SearchTextTranslated" -> ""},
+the data.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "ApplyCrop", 
+    "titlemodifier" -> "", "windowtitle" -> "ApplyCrop", "type" -> "Symbol", 
+    "uri" -> "DTITools/ref/ApplyCrop"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -173,21 +210,20 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[603, 21, 2319, 53, 70, "AnchorBarGrid",
+Cell[581, 21, 3049, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2925, 76, 52, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2980, 79, 521, 20, 70, "Usage"],
+Cell[3633, 97, 286, 11, 70, "ObjectNameGrid"],
+Cell[3922, 110, 560, 21, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3526, 103, 448, 13, 70, "MoreAboutSection",
+Cell[4507, 135, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[3977, 118, 155, 3, 70, "MoreAbout",
- CellID->229983214]
+Cell[4786, 149, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[4820, 151, 181, 6, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[4147, 124, 23, 0, 70, "FooterCell"]
+Cell[5016, 160, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

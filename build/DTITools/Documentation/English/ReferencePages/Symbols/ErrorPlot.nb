@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8911,        257]
-NotebookOptionsPosition[      6187,        186]
-NotebookOutlinePosition[      8425,        239]
-CellTagsIndexPosition[      8382,        236]
-WindowTitle->ErrorPlot - Wolfram Mathematica
+NotebookDataLength[     10083,        301]
+NotebookOptionsPosition[      7248,        229]
+NotebookOutlinePosition[      9506,        283]
+CellTagsIndexPosition[      9463,        280]
+WindowTitle->ErrorPlot
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"PlottingTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/PlottingTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/ErrorPlot\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
-ErrorPlot.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
-             Visible -> False]]; 
-        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+                "http://reference.wolfram.com/language/DTITools/ref/ErrorPlot.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$62463], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ErrorPlot", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ ErrorPlot.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ErrorPlot", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["ErrorPlot", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["\<\
@@ -103,11 +132,17 @@ with title as plot title and label as x-axis label\
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -120,7 +155,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->63585408],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -136,14 +173,16 @@ Cell[BoxData[GridBox[{
        RowBox[{"1", ",", " ", "0", ",", " ", "0"}], "]"}]}], "}"}], Cell[
     TextData[{
      Cell[BoxData[
-      ButtonBox["ColorValue",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ColorValue"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ColorValue"]],"paclet:DTITools/ref/ColorValue"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData[
-      ButtonBox["Hist",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Hist"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Hist"]],"paclet:DTITools/ref/Hist"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData["ErrorPlot"], "InlineFormula"],
      ". ",
@@ -155,31 +194,35 @@ Cell[BoxData[GridBox[{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
    "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["PlottingTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/PlottingTools"]], "MoreAbout",
- CellID->378425363]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["PlottingTools"]],"paclet:DTITools/guide/PlottingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -188,17 +231,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ErrorPlot - Wolfram Mathematica",
+WindowTitle->"ErrorPlot",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 41, 30.6450053}", 
+   "built" -> "{2016, 12, 14, 11, 14, 31.2343072}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`PlottingTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -210,9 +254,9 @@ xmax}, title] plots a errorbar plot of the data from ymin to ymax as a \
 function multiple slice/datasets, with title as plot title. ErrorPlot[data , \
 {xmin, xmax}, title, label] plots a errorbar plot of the data from ymin to \
 ymax as a function multiple slice/datasets, with title as plot title and \
-label as x-axis label", "synonyms" -> {}, "title" -> "ErrorPlot", 
-    "titlemodifier" -> "", "windowtitle" -> "ErrorPlot", "type" -> "Symbol", 
-    "uri" -> "DTITools/ref/ErrorPlot"}, "SearchTextTranslated" -> ""},
+label as x-axis label", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "ErrorPlot", "titlemodifier" -> "", "windowtitle" -> "ErrorPlot", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/ErrorPlot"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -238,30 +282,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[603, 21, 2311, 53, 70, "AnchorBarGrid",
+Cell[581, 21, 3041, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2917, 76, 52, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3625, 97, 286, 11, 70, "ObjectNameGrid"],
+Cell[3914, 110, 785, 19, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[2994, 81, 785, 19, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3804, 104, 608, 18, 70, "NotesSection",
+Cell[4724, 133, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->63585408],
-Cell[4415, 124, 53, 0, 70, "Notes"],
-Cell[4471, 126, 1027, 31, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5457, 159, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5491, 161, 53, 0, 70, "Notes"],
+Cell[5547, 163, 1105, 33, 70, "3ColumnTableMod"],
+Cell[6655, 198, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[5547, 163, 448, 13, 70, "MoreAboutSection",
+Cell[6723, 203, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[5998, 178, 147, 3, 70, "MoreAbout",
- CellID->378425363]
+Cell[7002, 217, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[7036, 219, 170, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[6160, 184, 23, 0, 70, "FooterCell"]
+Cell[7221, 227, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

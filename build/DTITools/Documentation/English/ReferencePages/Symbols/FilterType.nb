@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5219,        143]
-NotebookOptionsPosition[      3263,         91]
-NotebookOutlinePosition[      5161,        140]
-CellTagsIndexPosition[      5118,        137]
-WindowTitle->FilterType - Wolfram Mathematica
+NotebookDataLength[      5942,        168]
+NotebookOptionsPosition[      3980,        116]
+NotebookOutlinePosition[      5898,        166]
+CellTagsIndexPosition[      5855,        163]
+WindowTitle->FilterType
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/FilterType\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
-FilterType.html"], StandardForm]], "Input", TextClipboardType -> 
-             "PlainText"]}, Visible -> False]]; 
-       SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+               "http://reference.wolfram.com/language/DTITools/ref/FilterType.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+           False]]; SelectionMove[
+        DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$73873], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/FilterType", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,23 +75,36 @@ FilterType.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["FilterType", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["FilterType", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["FilterType"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["IVIMCorrectData",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/IVIMCorrectData"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["IVIMCorrectData"]],"paclet:DTITools/ref/IVIMCorrectData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". If ",
      Cell[BoxData[
-      ButtonBox["FilterMaps",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/FilterMaps"]], "InlineFormula"],
-     " is True it tells which filter to use. can be \"Median\" of \"Gausian\""
+      TemplateBox[{Cell[
+         TextData["FilterMaps"]],"paclet:DTITools/ref/FilterMaps"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is True it tells which filter to use. can be \"Median\" of \
+\"Gausian\""
     }]]}
   }]], "Usage",
  GridBoxOptions->{
@@ -93,17 +118,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"FilterType - Wolfram Mathematica",
+WindowTitle->"FilterType",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 42, 4.8894294}", 
+   "built" -> "{2016, 12, 14, 11, 15, 2.9266444}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`IVIMTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -111,9 +137,9 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "FilterType is an option for IVIMCorrectData. If FilterMaps is True it \
 tells which filter to use. can be \"Median\" of \"Gausian\"", 
-    "synonyms" -> {}, "title" -> "FilterType", "titlemodifier" -> "", 
-    "windowtitle" -> "FilterType", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/FilterType"}, "SearchTextTranslated" -> ""},
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "FilterType", 
+    "titlemodifier" -> "", "windowtitle" -> "FilterType", "type" -> "Symbol", 
+    "uri" -> "DTITools/ref/FilterType"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -139,15 +165,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[604, 21, 1870, 42, 70, "AnchorBarGrid",
+Cell[582, 21, 2295, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2477, 65, 53, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2533, 68, 700, 19, 70, "Usage"],
-Cell[3236, 89, 23, 0, 70, "FooterCell"]
+Cell[2880, 77, 287, 11, 70, "ObjectNameGrid"],
+Cell[3170, 90, 780, 22, 70, "Usage"],
+Cell[3953, 114, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

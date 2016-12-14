@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5085,        136]
-NotebookOptionsPosition[      3057,         83]
-NotebookOutlinePosition[      5027,        133]
-CellTagsIndexPosition[      4984,        130]
-WindowTitle->OutputTransformation - Wolfram Mathematica
+NotebookDataLength[      5733,        158]
+NotebookOptionsPosition[      3696,        105]
+NotebookOutlinePosition[      5689,        156]
+CellTagsIndexPosition[      5646,        153]
+WindowTitle->OutputTransformation
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/OutputTransformation\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
+               "http://reference.wolfram.com/language/DTITools/ref/\
 OutputTransformation.html"], StandardForm]], "Input", TextClipboardType -> 
              "PlainText"]}, Visible -> False]]; 
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$132642], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/OutputTransformation", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,8 +75,18 @@ OutputTransformation.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["OutputTransformation", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["OutputTransformation", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -85,17 +107,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"OutputTransformation - Wolfram Mathematica",
+WindowTitle->"OutputTransformation",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 45, 9.8169203}", 
+   "built" -> "{2016, 12, 14, 11, 18, 13.6033091}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ElastixTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -103,10 +126,10 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "OutputTransformation specifies if the tranformation paramters \
 (translation, rotation, scale and skew) should be given as output in the \
-registration functions.", "synonyms" -> {}, "title" -> "OutputTransformation",
-     "titlemodifier" -> "", "windowtitle" -> "OutputTransformation", "type" -> 
-    "Symbol", "uri" -> "DTITools/ref/OutputTransformation"}, 
-  "SearchTextTranslated" -> ""},
+registration functions.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "OutputTransformation", "titlemodifier" -> "", "windowtitle" -> 
+    "OutputTransformation", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/OutputTransformation"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -132,15 +155,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[614, 21, 1910, 42, 70, "AnchorBarGrid",
+Cell[592, 21, 2337, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2527, 65, 63, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2593, 68, 434, 11, 70, "Usage"],
-Cell[3030, 81, 23, 0, 70, "FooterCell"]
+Cell[2932, 77, 297, 11, 70, "ObjectNameGrid"],
+Cell[3232, 90, 434, 11, 70, "Usage"],
+Cell[3669, 103, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

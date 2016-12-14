@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5329,        145]
-NotebookOptionsPosition[      3322,         92]
-NotebookOutlinePosition[      5271,        142]
-CellTagsIndexPosition[      5228,        139]
-WindowTitle->ChainSteps - Wolfram Mathematica
+NotebookDataLength[      6052,        169]
+NotebookOptionsPosition[      4037,        116]
+NotebookOutlinePosition[      6008,        167]
+CellTagsIndexPosition[      5965,        164]
+WindowTitle->ChainSteps
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/ChainSteps\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
-ChainSteps.html"], StandardForm]], "Input", TextClipboardType -> 
-             "PlainText"]}, Visible -> False]]; 
-       SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+               "http://reference.wolfram.com/language/DTITools/ref/ChainSteps.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+           False]]; SelectionMove[
+        DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$37736], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/ChainSteps", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,22 +75,34 @@ ChainSteps.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ChainSteps", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["ChainSteps", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["ChainSteps"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["BayesianIVIMFit2",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BayesianIVIMFit2"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BayesianIVIMFit2"]],"paclet:DTITools/ref/BayesianIVIMFit2"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["BayesianIVIMFit3",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BayesianIVIMFit3"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BayesianIVIMFit3"]],"paclet:DTITools/ref/BayesianIVIMFit3"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". It determines how long the algorithm runs. three values must be given \
 {itterations, burn steps, sample density}."
     }]]}
@@ -94,17 +118,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ChainSteps - Wolfram Mathematica",
+WindowTitle->"ChainSteps",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 40, 19.0608476}", 
+   "built" -> "{2016, 12, 14, 11, 13, 21.5203672}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`IVIMTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -112,10 +137,10 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "ChainSteps is an option for BayesianIVIMFit2 and BayesianIVIMFit3. It \
 determines how long the algorithm runs. three values must be given \
-{itterations, burn steps, sample density}.", "synonyms" -> {}, "title" -> 
-    "ChainSteps", "titlemodifier" -> "", "windowtitle" -> "ChainSteps", 
-    "type" -> "Symbol", "uri" -> "DTITools/ref/ChainSteps"}, 
-  "SearchTextTranslated" -> ""},
+{itterations, burn steps, sample density}.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "ChainSteps", "titlemodifier" -> "", 
+    "windowtitle" -> "ChainSteps", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/ChainSteps"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -141,15 +166,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[604, 21, 1870, 42, 70, "AnchorBarGrid",
+Cell[582, 21, 2295, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2477, 65, 53, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2533, 68, 759, 20, 70, "Usage"],
-Cell[3295, 90, 23, 0, 70, "FooterCell"]
+Cell[2880, 77, 287, 11, 70, "ObjectNameGrid"],
+Cell[3170, 90, 837, 22, 70, "Usage"],
+Cell[4010, 114, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10325,        297]
-NotebookOptionsPosition[      7941,        230]
-NotebookOutlinePosition[      9841,        279]
-CellTagsIndexPosition[      9798,        276]
-WindowTitle->PhaseCalc - Wolfram Mathematica
+NotebookDataLength[     11704,        348]
+NotebookOptionsPosition[      9208,        280]
+NotebookOutlinePosition[     11128,        330]
+CellTagsIndexPosition[     11085,        327]
+WindowTitle->PhaseCalc
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ProcessingTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ProcessingTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/PhaseCalc\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
-PhaseCalc.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
-             Visible -> False]]; 
-        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+                "http://reference.wolfram.com/language/DTITools/ref/PhaseCalc.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$139085], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/PhaseCalc", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ PhaseCalc.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["PhaseCalc", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["PhaseCalc", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["\<\
@@ -93,11 +122,17 @@ calculates the phase difference between the two sets. Output is in radials.\
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -110,7 +145,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->449760339],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -118,11 +155,13 @@ Cell[BoxData[GridBox[{
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["SmoothPhase",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/SmoothPhase"], "Smooth", Cell[TextData[{
+     ButtonData->"paclet:DTITools/ref/SmoothPhase"], "Smooth", Cell[
+    TextData[{
      Cell[BoxData[
-      ButtonBox["SmoothPhase",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/SmoothPhase"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["SmoothPhase"]],"paclet:DTITools/ref/SmoothPhase"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["PhaseCalc"], "InlineFormula"],
      ". Defines how the fasemap is smoothed. ",
@@ -133,16 +172,19 @@ Possible values are \"None\", \"Mask\", \"Median\", \"Smooth\", \"Grow\""
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["BackgroundFilter",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/BackgroundFilter"], "6", Cell[TextData[{
+     ButtonData->"paclet:DTITools/ref/BackgroundFilter"], "6", Cell[
+    TextData[{
      Cell[BoxData[
-      ButtonBox["BackgroundFilter",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BackgroundFilter"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BackgroundFilter"]],"paclet:DTITools/ref/BackgroundFilter"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData[
-      ButtonBox["Unwrap",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Unwrap"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Unwrap"]],"paclet:DTITools/ref/Unwrap"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData["PhaseCalc"], "InlineFormula"],
      ". Has value 6 as default. ",
@@ -160,14 +202,16 @@ unwrapping. ",
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["MonitorUnwrap",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/MonitorUnwrap"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["MonitorUnwrap"]],"paclet:DTITools/ref/MonitorUnwrap"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData[
-      ButtonBox["Unwrap",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Unwrap"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Unwrap"]],"paclet:DTITools/ref/Unwrap"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData["PhaseCalc"], "InlineFormula"],
      ". ",
@@ -180,14 +224,16 @@ unwrapping. ",
      ButtonData->"paclet:DTITools/ref/UnwrapDimension"], 
     RowBox[{"2", "D"}], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["UnwrapDimension",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/UnwrapDimension"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["UnwrapDimension"]],"paclet:DTITools/ref/UnwrapDimension"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData[
-      ButtonBox["Unwrap",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Unwrap"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Unwrap"]],"paclet:DTITools/ref/Unwrap"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData["PhaseCalc"], "InlineFormula"],
      ". Can be \"2D\" or \"3D\". 2D is for unwarpping 2D images or unwrapping \
@@ -199,31 +245,35 @@ direction). 3D unwraps a 3D dataset in all dimensions."
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {None, None, None, {None}}, "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ProcessingTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ProcessingTools"]], "MoreAbout",
- CellID->19136055]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ProcessingTools"]],"paclet:DTITools/guide/ProcessingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -232,17 +282,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"PhaseCalc - Wolfram Mathematica",
+WindowTitle->"PhaseCalc",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 45, 31.4920876}", 
+   "built" -> "{2016, 12, 14, 11, 18, 33.6093095}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ProcessingTools`",
      "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -250,9 +301,9 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "PhaseCalc[B$0data] unwraps the two B0 phase maps and calculates the \
 phase difference between the two sets. Output is in radials.", 
-    "synonyms" -> {}, "title" -> "PhaseCalc", "titlemodifier" -> "", 
-    "windowtitle" -> "PhaseCalc", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/PhaseCalc"}, "SearchTextTranslated" -> ""},
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "PhaseCalc", 
+    "titlemodifier" -> "", "windowtitle" -> "PhaseCalc", "type" -> "Symbol", 
+    "uri" -> "DTITools/ref/PhaseCalc"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -278,30 +329,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[603, 21, 2315, 53, 70, "AnchorBarGrid",
+Cell[581, 21, 3046, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2921, 76, 52, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3630, 97, 286, 11, 70, "ObjectNameGrid"],
+Cell[3919, 110, 346, 9, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[2998, 81, 346, 9, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3369, 94, 609, 18, 70, "NotesSection",
+Cell[4290, 123, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->449760339],
-Cell[3981, 114, 53, 0, 70, "Notes"],
-Cell[4037, 116, 3212, 85, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5023, 149, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5057, 151, 53, 0, 70, "Notes"],
+Cell[5113, 153, 3495, 94, 70, "3ColumnTableMod"],
+Cell[8611, 249, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[7298, 207, 448, 13, 70, "MoreAboutSection",
+Cell[8679, 254, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[7749, 222, 150, 3, 70, "MoreAbout",
- CellID->19136055]
+Cell[8958, 268, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[8992, 270, 174, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[7914, 228, 23, 0, 70, "FooterCell"]
+Cell[9181, 278, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

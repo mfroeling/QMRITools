@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      6452,        186]
-NotebookOptionsPosition[      4561,        134]
-NotebookOutlinePosition[      6063,        172]
-CellTagsIndexPosition[      6020,        169]
-WindowTitle->DenoiseTools - Wolfram Mathematica
+NotebookDataLength[      7819,        241]
+NotebookOptionsPosition[      5699,        182]
+NotebookOutlinePosition[      7253,        221]
+CellTagsIndexPosition[      7210,        218]
+WindowTitle->DenoiseTools
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,24 +23,39 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"Functions \[RightGuillemet]\"\>",
-        StripOnInput->False], {"\<\"DeNoise\"\>":>Documentation`HelpLookup[
-       "paclet:DTITools/guide/DeNoise"], "\<\"PCADeNoise\"\>":>
-       Documentation`HelpLookup[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Functions",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Functions", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"PCADeNoise\"\>":>Documentation`HelpLookup[
        "paclet:DTITools/ref/PCADeNoise"], "\<\"PCAFitEq\"\>":>
        Documentation`HelpLookup[
        "paclet:DTITools/ref/PCAFitEq"], "\<\"PCAFitHist\"\>":>
        Documentation`HelpLookup["paclet:DTITools/ref/PCAFitHist"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"GuideFunction"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/guide/CardiacTools\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -48,7 +63,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -56,20 +71,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/guide/\
+                "http://reference.wolfram.com/language/DTITools/guide/\
 CardiacTools.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$13122], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/guide/CardiacTools", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -90,12 +109,32 @@ Cell[TextData[{
   ButtonData->"paclet:DTITools/guide/DTITools"],
  " package: Functions that are used to suppress noise in DWI data."
 }], "GuideAbstract",
- CellID->2001916300],
+ CellID->2001916300]
+}, Open  ]],
+
+Cell[CellGroupData[{
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["DeNoise",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/guide/DeNoise"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Reference"
+}], "GuideReferenceSection",
+ WholeCellGroupOpener->True],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DeNoise"]],"paclet:DTITools/guide/DeNoise"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
  " Denoise data using LMME algorithm"
@@ -103,31 +142,40 @@ Cell[TextData[{
  CellID->203374175],
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["PCADeNoise",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/PCADeNoise"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PCADeNoise"]],"paclet:DTITools/ref/PCADeNoise"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
  " Denoise data using PCA algorithm"
 }], "GuideText",
  CellID->1463276848],
 
+Cell[CellGroupData[{
+
 Cell["\t", "GuideDelimiter",
  CellID->298396543],
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["PCAFitHist",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/PCAFitHist"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PCAFitHist"]],"paclet:DTITools/ref/PCAFitHist"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["PCAFitEq",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/PCAFitEq"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PCAFitEq"]],"paclet:DTITools/ref/PCAFitEq"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  " "
 }], "InlineGuideFunctionListing",
  CellID->283767852]
+}, Open  ]]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -136,26 +184,27 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"DenoiseTools - Wolfram Mathematica",
+WindowTitle->"DenoiseTools",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
-  "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 39, 12.1171539}", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
+  "", "Metadata" -> {
+   "built" -> "{2016, 12, 14, 11, 12, 11.1238484}", 
     "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
     "None", "summary" -> 
     "DTITools package: Functions that are used to suppress noise in DWI \
-data.", "synonyms" -> {}, "title" -> "DenoiseTools", "titlemodifier" -> "", 
-    "windowtitle" -> "DenoiseTools", "type" -> "Guide", "uri" -> 
-    "DTITools/guide/CardiacTools"}, "SearchTextTranslated" -> ""},
+data.", "synonyms" -> {}, "tabletags" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$13062, "title" -> 
+    "DenoiseTools", "titlemodifier" -> "", "windowtitle" -> "DenoiseTools", 
+    "type" -> "Guide", "uri" -> "DTITools/guide/CardiacTools"}},
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
   CharacterEncoding -> "UTF-8"]
@@ -171,26 +220,31 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[606, 21, 2593, 58, 70, "AnchorBarGrid",
+Cell[584, 21, 3223, 77, 70, "AnchorBarGrid",
  CellID->1],
 Cell[CellGroupData[{
-Cell[3224, 83, 54, 1, 70, "GuideTitle",
+Cell[3832, 102, 54, 1, 70, "GuideTitle",
  CellID->942062912],
-Cell[3281, 86, 218, 6, 70, "GuideAbstract",
- CellID->2001916300],
-Cell[3502, 94, 266, 8, 70, "GuideText",
- CellID->203374175],
-Cell[3771, 104, 270, 8, 70, "GuideText",
- CellID->1463276848],
-Cell[4044, 114, 48, 1, 70, "GuideDelimiter",
- CellID->298396543],
-Cell[4095, 117, 424, 12, 70, "InlineGuideFunctionListing",
- CellID->283767852]
+Cell[3889, 105, 218, 6, 70, "GuideAbstract",
+ CellID->2001916300]
 }, Open  ]],
-Cell[4534, 132, 23, 0, 70, "FooterCell"]
+Cell[CellGroupData[{
+Cell[4144, 116, 257, 11, 70, "GuideReferenceSection"],
+Cell[4404, 129, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[4438, 131, 308, 10, 70, "GuideText",
+ CellID->203374175],
+Cell[4749, 143, 312, 10, 70, "GuideText",
+ CellID->1463276848],
+Cell[CellGroupData[{
+Cell[5086, 157, 48, 1, 70, "GuideDelimiter",
+ CellID->298396543],
+Cell[5137, 160, 508, 16, 70, "InlineGuideFunctionListing",
+ CellID->283767852]
+}, Open  ]]
+}, Open  ]],
+Cell[5672, 180, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      6230,        179]
-NotebookOptionsPosition[      4137,        121]
-NotebookOutlinePosition[      6009,        170]
-CellTagsIndexPosition[      5966,        167]
-WindowTitle->ConvertGrads - Wolfram Mathematica
+NotebookDataLength[      7144,        214]
+NotebookOptionsPosition[      5003,        156]
+NotebookOutlinePosition[      6892,        205]
+CellTagsIndexPosition[      6849,        202]
+WindowTitle->ConvertGrads
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"GradientTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/GradientTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/ConvertGrads\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 ConvertGrads.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$42272], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ConvertGrads", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,8 +95,18 @@ ConvertGrads.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ConvertGrads", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["ConvertGrads", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -83,9 +114,10 @@ Cell[BoxData[GridBox[{
      "\[LineSeparator]converts the gradients to txt format, which is needed \
 for ",
      Cell[BoxData[
-      ButtonBox["FinalGrads",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/FinalGrads"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["FinalGrads"]],"paclet:DTITools/ref/FinalGrads"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      "."
     }]]}
   }]], "Usage",
@@ -96,25 +128,28 @@ for ",
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["GradientTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/GradientTools"]], "MoreAbout",
- CellID->78957807]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["GradientTools"]],"paclet:DTITools/guide/GradientTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -123,27 +158,27 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ConvertGrads - Wolfram Mathematica",
+WindowTitle->"ConvertGrads",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 40, 31.7781192}", 
+   "built" -> "{2016, 12, 14, 11, 13, 33.9358498}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`GradientTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "ConvertGrads[grad, bv] converts the gradients to txt format, which is \
-needed for FinalGrads.", "synonyms" -> {}, "title" -> "ConvertGrads", 
-    "titlemodifier" -> "", "windowtitle" -> "ConvertGrads", "type" -> 
-    "Symbol", "uri" -> "DTITools/ref/ConvertGrads"}, "SearchTextTranslated" -> 
-  ""},
+needed for FinalGrads.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "ConvertGrads", "titlemodifier" -> "", "windowtitle" -> "ConvertGrads", 
+    "type" -> "Symbol", "uri" -> "DTITools/ref/ConvertGrads"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -169,21 +204,20 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[606, 21, 2325, 53, 70, "AnchorBarGrid",
+Cell[584, 21, 3054, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2934, 76, 55, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2992, 79, 481, 15, 70, "Usage"],
+Cell[3641, 97, 289, 11, 70, "ObjectNameGrid"],
+Cell[3933, 110, 520, 16, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3498, 98, 448, 13, 70, "MoreAboutSection",
+Cell[4478, 130, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[3949, 113, 146, 3, 70, "MoreAbout",
- CellID->78957807]
+Cell[4757, 144, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[4791, 146, 170, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[4110, 119, 23, 0, 70, "FooterCell"]
+Cell[4976, 154, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

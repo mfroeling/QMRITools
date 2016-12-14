@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      9696,        276]
-NotebookOptionsPosition[      7492,        215]
-NotebookOutlinePosition[      8953,        252]
-CellTagsIndexPosition[      8910,        249]
-WindowTitle->ExportTools - Wolfram Mathematica
+NotebookDataLength[     11670,        361]
+NotebookOptionsPosition[      9170,        289]
+NotebookOutlinePosition[     10683,        327]
+CellTagsIndexPosition[     10640,        324]
+WindowTitle->ExportTools
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,7 +23,15 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"Functions \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Functions",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Functions", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DatWrite\"\>":>Documentation`HelpLookup[
        "paclet:DTITools/ref/DatWrite"], "\<\"DTItoolExp\"\>":>
        Documentation`HelpLookup[
@@ -48,15 +56,24 @@ Cell[BoxData[GridBox[{
        "paclet:DTITools/ref/ExpPlotsInd"], "\<\"SaveImage\"\>":>
        Documentation`HelpLookup["paclet:DTITools/ref/SaveImage"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"GuideFunction"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/guide/ExportTools\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -64,7 +81,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -72,20 +89,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/guide/\
+                "http://reference.wolfram.com/language/DTITools/guide/\
 ExportTools.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$14668], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/guide/ExportTools", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -106,12 +127,32 @@ Cell[TextData[{
   ButtonData->"paclet:DTITools/guide/DTITools"],
  " package: exporting functions"
 }], "GuideAbstract",
- CellID->2001916300],
+ CellID->2001916300]
+}, Open  ]],
+
+Cell[CellGroupData[{
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["ExportVol",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/ExportVol"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Reference"
+}], "GuideReferenceSection",
+ WholeCellGroupOpener->True],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ExportVol"]],"paclet:DTITools/ref/ExportVol"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "  ",
  StyleBox["\[LongDash]", "GuideEmDash"],
  " export data to vIST/e software for fiber-tracking"
@@ -119,9 +160,11 @@ Cell[TextData[{
  CellID->203374175],
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["DTItoolExp",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/DTItoolExp"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolExp"]],"paclet:DTITools/ref/DTItoolExp"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
  " export tensor to vIST/e software for fiber-tracking"
@@ -129,86 +172,117 @@ Cell[TextData[{
  CellID->364014103],
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["SaveImage",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/SaveImage"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["SaveImage"]],"paclet:DTITools/ref/SaveImage"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
  " export expression to image"
 }], "GuideText",
  CellID->409244761],
 
+Cell[CellGroupData[{
+
 Cell["\t", "GuideDelimiter",
  CellID->216271604],
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["ExportVol",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/ExportVol"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ExportVol"]],"paclet:DTITools/ref/ExportVol"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["ExportMhdRaw",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/ExportMhdRaw"]], "InlineFunctionSans"]
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ExportMhdRaw"]],"paclet:DTITools/ref/ExportMhdRaw"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
 }], "InlineGuideFunctionListing",
- CellID->109270133],
+ CellID->109270133]
+}, Open  ]],
+
+Cell[CellGroupData[{
 
 Cell["\t", "GuideDelimiter",
  CellID->227239444],
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["DatWrite",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/DatWrite"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DatWrite"]],"paclet:DTITools/ref/DatWrite"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["DTItoolExpInd",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/DTItoolExpInd"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolExpInd"]],"paclet:DTITools/ref/DTItoolExpInd"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["DTItoolExpTens",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/DTItoolExpTens"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolExpTens"]],"paclet:DTITools/ref/DTItoolExpTens"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["DTItoolExpFile",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/DTItoolExpFile"]], "InlineFunctionSans"]
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolExpFile"]],"paclet:DTITools/ref/DTItoolExpFile"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
 }], "InlineGuideFunctionListing",
- CellID->254037243],
+ CellID->254037243]
+}, Open  ]],
+
+Cell[CellGroupData[{
 
 Cell["\t", "GuideDelimiter",
  CellID->311258892],
 
 Cell[TextData[{
- Cell[TextData[ButtonBox["ExpHistInd",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/ExpHistInd"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ExpHistInd"]],"paclet:DTITools/ref/ExpHistInd"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["ExpHistAll",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/ExpHistAll"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ExpHistAll"]],"paclet:DTITools/ref/ExpHistAll"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["ExpPlotsInd",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/ExpPlotsInd"]], "InlineFunctionSans"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ExpPlotsInd"]],"paclet:DTITools/ref/ExpPlotsInd"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  "\[NonBreakingSpace]",
  StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
  " ",
- Cell[TextData[ButtonBox["ExpPlotsAll",
-  BaseStyle->"Link",
-  ButtonData->"paclet:DTITools/ref/ExpPlotsAll"]], "InlineFunctionSans"]
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ExpPlotsAll"]],"paclet:DTITools/ref/ExpPlotsAll"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
 }], "InlineGuideFunctionListing",
  CellID->58033752]
+}, Open  ]]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -217,25 +291,26 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ExportTools - Wolfram Mathematica",
+WindowTitle->"ExportTools",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
-  "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 39, 15.9625384}", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
+  "", "Metadata" -> {
+   "built" -> "{2016, 12, 14, 11, 12, 15.2228484}", 
     "history" -> {"1.0", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
     "None", "summary" -> "DTITools package: exporting functions", 
-    "synonyms" -> {}, "title" -> "ExportTools", "titlemodifier" -> "", 
-    "windowtitle" -> "ExportTools", "type" -> "Guide", "uri" -> 
-    "DTITools/guide/ExportTools"}, "SearchTextTranslated" -> ""},
+    "synonyms" -> {}, "tabletags" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$14583, "title" -> 
+    "ExportTools", "titlemodifier" -> "", "windowtitle" -> "ExportTools", 
+    "type" -> "Guide", "uri" -> "DTITools/guide/ExportTools"}},
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
   CharacterEncoding -> "UTF-8"]
@@ -251,36 +326,45 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[605, 21, 3403, 74, 70, "AnchorBarGrid",
+Cell[583, 21, 4127, 95, 70, "AnchorBarGrid",
  CellID->1],
 Cell[CellGroupData[{
-Cell[4033, 99, 53, 1, 70, "GuideTitle",
+Cell[4735, 120, 53, 1, 70, "GuideTitle",
  CellID->942062912],
-Cell[4089, 102, 183, 6, 70, "GuideAbstract",
- CellID->2001916300],
-Cell[4275, 110, 285, 8, 70, "GuideText",
- CellID->203374175],
-Cell[4563, 120, 288, 8, 70, "GuideText",
- CellID->364014103],
-Cell[4854, 130, 261, 8, 70, "GuideText",
- CellID->409244761],
-Cell[5118, 140, 48, 1, 70, "GuideDelimiter",
- CellID->216271604],
-Cell[5169, 143, 424, 11, 70, "InlineGuideFunctionListing",
- CellID->109270133],
-Cell[5596, 156, 48, 1, 70, "GuideDelimiter",
- CellID->227239444],
-Cell[5647, 159, 882, 23, 70, "InlineGuideFunctionListing",
- CellID->254037243],
-Cell[6532, 184, 48, 1, 70, "GuideDelimiter",
- CellID->311258892],
-Cell[6583, 187, 867, 23, 70, "InlineGuideFunctionListing",
- CellID->58033752]
+Cell[4791, 123, 183, 6, 70, "GuideAbstract",
+ CellID->2001916300]
 }, Open  ]],
-Cell[7465, 213, 23, 0, 70, "FooterCell"]
+Cell[CellGroupData[{
+Cell[5011, 134, 257, 11, 70, "GuideReferenceSection"],
+Cell[5271, 147, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5305, 149, 327, 10, 70, "GuideText",
+ CellID->203374175],
+Cell[5635, 161, 330, 10, 70, "GuideText",
+ CellID->364014103],
+Cell[5968, 173, 303, 10, 70, "GuideText",
+ CellID->409244761],
+Cell[CellGroupData[{
+Cell[6296, 187, 48, 1, 70, "GuideDelimiter",
+ CellID->216271604],
+Cell[6347, 190, 508, 15, 70, "InlineGuideFunctionListing",
+ CellID->109270133]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6892, 210, 48, 1, 70, "GuideDelimiter",
+ CellID->227239444],
+Cell[6943, 213, 1050, 31, 70, "InlineGuideFunctionListing",
+ CellID->254037243]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8030, 249, 48, 1, 70, "GuideDelimiter",
+ CellID->311258892],
+Cell[8081, 252, 1035, 31, 70, "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]]
+}, Open  ]],
+Cell[9143, 287, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

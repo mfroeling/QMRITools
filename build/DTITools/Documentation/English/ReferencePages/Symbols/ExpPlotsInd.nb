@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8691,        255]
-NotebookOptionsPosition[      6205,        187]
-NotebookOutlinePosition[      8205,        237]
-CellTagsIndexPosition[      8162,        234]
-WindowTitle->ExpPlotsInd - Wolfram Mathematica
+NotebookDataLength[      9979,        302]
+NotebookOptionsPosition[      7382,        233]
+NotebookOutlinePosition[      9402,        284]
+CellTagsIndexPosition[      9359,        281]
+WindowTitle->ExpPlotsInd
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ExportTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ExportTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/ExpPlotsInd\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 ExpPlotsInd.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$68232], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ExpPlotsInd", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ ExpPlotsInd.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ExpPlotsInd", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["ExpPlotsInd", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -85,9 +114,10 @@ Cell[BoxData[GridBox[{
      "\[LineSeparator]exports 5 error plots to individual files named name \
 with the addition of text using the function ",
      Cell[BoxData[
-      ButtonBox["ErrorPlot",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ErrorPlot"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ErrorPlot"]],"paclet:DTITools/ref/ErrorPlot"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ".text2 is used to label the individual plots.dat must be {l1, l2, l3, \
 MD, FA}."
     }]]}
@@ -100,11 +130,17 @@ MD, FA}."
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -117,7 +153,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->459573777],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -127,26 +165,30 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/ExportFile"], "jpg", Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["ExportFile",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ExportFile"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ExportFile"]],"paclet:DTITools/ref/ExportFile"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData[
-      ButtonBox["ExpHistInd",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ExpHistInd"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ExpHistInd"]],"paclet:DTITools/ref/ExpHistInd"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ", ",
      Cell[BoxData[
-      ButtonBox["ExpHistAll",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ExpHistAll"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ExpHistAll"]],"paclet:DTITools/ref/ExpHistAll"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ", ",
      Cell[BoxData["ExpPlotsInd"], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["ExpPlotsAll",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ExpPlotsAll"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ExpPlotsAll"]],"paclet:DTITools/ref/ExpPlotsAll"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ".",
      "Default",
      " value is jpg. Can be any image file type extention."
@@ -156,31 +198,35 @@ Cell[BoxData[GridBox[{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
    "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ExportTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ExportTools"]], "MoreAbout",
- CellID->62383464]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ExportTools"]],"paclet:DTITools/guide/ExportTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -189,17 +235,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ExpPlotsInd - Wolfram Mathematica",
+WindowTitle->"ExpPlotsInd",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 41, 47.5066913}", 
+   "built" -> "{2016, 12, 14, 11, 14, 47.2905178}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ExportTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -208,9 +255,9 @@ TaggingRules->{
     "ExpPlotsInd[dat, name, text, text$2] exports 5 error plots to individual \
 files named name with the addition of text using the function ErrorPlot.text2 \
 is used to label the individual plots.dat must be {l1, l2, l3, MD, FA}.", 
-    "synonyms" -> {}, "title" -> "ExpPlotsInd", "titlemodifier" -> "", 
-    "windowtitle" -> "ExpPlotsInd", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/ExpPlotsInd"}, "SearchTextTranslated" -> ""},
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "ExpPlotsInd", 
+    "titlemodifier" -> "", "windowtitle" -> "ExpPlotsInd", "type" -> "Symbol",
+     "uri" -> "DTITools/ref/ExpPlotsInd"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -236,30 +283,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[605, 21, 2317, 53, 70, "AnchorBarGrid",
+Cell[583, 21, 3046, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2925, 76, 54, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3632, 97, 288, 11, 70, "ObjectNameGrid"],
+Cell[3923, 110, 651, 17, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3004, 81, 612, 16, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3641, 101, 609, 18, 70, "NotesSection",
+Cell[4599, 131, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->459573777],
-Cell[4253, 121, 53, 0, 70, "Notes"],
-Cell[4309, 123, 1212, 35, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5332, 157, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5366, 159, 53, 0, 70, "Notes"],
+Cell[5422, 161, 1368, 39, 70, "3ColumnTableMod"],
+Cell[6793, 202, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[5570, 164, 448, 13, 70, "MoreAboutSection",
+Cell[6861, 207, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[6021, 179, 142, 3, 70, "MoreAbout",
- CellID->62383464]
+Cell[7140, 221, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[7174, 223, 166, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[6178, 185, 23, 0, 70, "FooterCell"]
+Cell[7355, 231, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

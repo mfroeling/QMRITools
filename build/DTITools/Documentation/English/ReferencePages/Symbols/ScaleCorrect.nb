@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5649,        155]
-NotebookOptionsPosition[      3628,        102]
-NotebookOutlinePosition[      5589,        152]
-CellTagsIndexPosition[      5546,        149]
-WindowTitle->ScaleCorrect - Wolfram Mathematica
+NotebookDataLength[      6446,        180]
+NotebookOptionsPosition[      4423,        128]
+NotebookOutlinePosition[      6401,        178]
+CellTagsIndexPosition[      6358,        175]
+WindowTitle->ScaleCorrect
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/ScaleCorrect\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
+               "http://reference.wolfram.com/language/DTITools/ref/\
 ScaleCorrect.html"], StandardForm]], "Input", TextClipboardType -> 
              "PlainText"]}, Visible -> False]]; 
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$171445], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/ScaleCorrect", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,32 +75,46 @@ ScaleCorrect.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ScaleCorrect", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["ScaleCorrect", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["ScaleCorrect"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["ReadDicom",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ReadDicom"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ReadDicom"]],"paclet:DTITools/ref/ReadDicom"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ", ",
      Cell[BoxData[
-      ButtonBox["ReadDicomDiff",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ReadDicomDiff"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ReadDicomDiff"]],"paclet:DTITools/ref/ReadDicomDiff"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ", ",
      Cell[BoxData[
-      ButtonBox["ReadDicomDir",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ReadDicomDir"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ReadDicomDir"]],"paclet:DTITools/ref/ReadDicomDir"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["ReadDicomDirDiff",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ReadDicomDirDiff"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ReadDicomDirDiff"]],"paclet:DTITools/ref/ReadDicomDirDiff"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". The dicom image values are corrected for rescale slope, scale slope \
 and rescale intercept."
     }]]}
@@ -104,17 +130,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ScaleCorrect - Wolfram Mathematica",
+WindowTitle->"ScaleCorrect",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 47, 12.5491923}", 
+   "built" -> "{2016, 12, 14, 11, 20, 16.9046380}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ImportTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -122,10 +149,9 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "ScaleCorrect is an option for ReadDicom, ReadDicomDiff, ReadDicomDir and \
 ReadDicomDirDiff. The dicom image values are corrected for rescale slope, \
-scale slope and rescale intercept.", "synonyms" -> {}, "title" -> 
-    "ScaleCorrect", "titlemodifier" -> "", "windowtitle" -> "ScaleCorrect", 
-    "type" -> "Symbol", "uri" -> "DTITools/ref/ScaleCorrect"}, 
-  "SearchTextTranslated" -> ""},
+scale slope and rescale intercept.", "synonyms" -> {}, "tabletags" -> {}, 
+    "title" -> "ScaleCorrect", "titlemodifier" -> "", "windowtitle" -> 
+    "ScaleCorrect", "type" -> "Symbol", "uri" -> "DTITools/ref/ScaleCorrect"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -151,15 +177,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[606, 21, 1878, 42, 70, "AnchorBarGrid",
+Cell[584, 21, 2305, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2487, 65, 55, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2545, 68, 1053, 30, 70, "Usage"],
-Cell[3601, 100, 23, 0, 70, "FooterCell"]
+Cell[2892, 77, 289, 11, 70, "ObjectNameGrid"],
+Cell[3184, 90, 1209, 34, 70, "Usage"],
+Cell[4396, 126, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

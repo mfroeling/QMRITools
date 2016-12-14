@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      9228,        265]
-NotebookOptionsPosition[      6649,        196]
-NotebookOutlinePosition[      8743,        247]
-CellTagsIndexPosition[      8700,        244]
-WindowTitle->CentralAxes - Wolfram Mathematica
+NotebookDataLength[     10400,        309]
+NotebookOptionsPosition[      7709,        239]
+NotebookOutlinePosition[      9823,        291]
+CellTagsIndexPosition[      9780,        288]
+WindowTitle->CentralAxes
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"CardiacTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/CardiacTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/CentralAxes\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 CentralAxes.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$37220], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/CentralAxes", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ CentralAxes.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["CentralAxes", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["CentralAxes", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["\<\
@@ -98,11 +127,17 @@ inout} or {centerpoints, normalvecs, inout, fit}.\
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -115,7 +150,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->94556725],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -128,9 +165,10 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["ShowFit",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ShowFit"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["ShowFit"]],"paclet:DTITools/ref/ShowFit"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["CentralAxes"], "InlineFormula"],
      ". ",
@@ -145,9 +183,10 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/Automatic"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["RowSize",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/RowSize"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["RowSize"]],"paclet:DTITools/ref/RowSize"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["CentralAxes"], "InlineFormula"],
      ". defines the number or images per showing the segmentation.\nCan be \
@@ -165,31 +204,35 @@ what internal methods they should use.\
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["CardiacTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/CardiacTools"]], "MoreAbout",
- CellID->318128539]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["CardiacTools"]],"paclet:DTITools/guide/CardiacTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -198,17 +241,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"CentralAxes - Wolfram Mathematica",
+WindowTitle->"CentralAxes",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 40, 17.6417057}", 
+   "built" -> "{2016, 12, 14, 11, 13, 20.1760984}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`CardiacTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -218,9 +262,9 @@ TaggingRules->{
 the left ventricle. vox is the voxels size, {slice, x, y}. CentralAxes[mask, \
 maskp, vox] allows for fancy visualization of the other structures using \
 maskp. output is {centerpoints, normalvecs, inout} or {centerpoints, \
-normalvecs, inout, fit}.", "synonyms" -> {}, "title" -> "CentralAxes", 
-    "titlemodifier" -> "", "windowtitle" -> "CentralAxes", "type" -> "Symbol",
-     "uri" -> "DTITools/ref/CentralAxes"}, "SearchTextTranslated" -> ""},
+normalvecs, inout, fit}.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "CentralAxes", "titlemodifier" -> "", "windowtitle" -> "CentralAxes", 
+    "type" -> "Symbol", "uri" -> "DTITools/ref/CentralAxes"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -246,30 +290,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[605, 21, 2319, 53, 70, "AnchorBarGrid",
+Cell[583, 21, 3048, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2927, 76, 54, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3634, 97, 288, 11, 70, "ObjectNameGrid"],
+Cell[3925, 110, 586, 14, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3006, 81, 586, 14, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3617, 99, 608, 18, 70, "NotesSection",
+Cell[4536, 128, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->94556725],
-Cell[4228, 119, 53, 0, 70, "Notes"],
-Cell[4284, 121, 1678, 46, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5269, 154, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5303, 156, 53, 0, 70, "Notes"],
+Cell[5359, 158, 1756, 48, 70, "3ColumnTableMod"],
+Cell[7118, 208, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[6011, 173, 448, 13, 70, "MoreAboutSection",
+Cell[7186, 213, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[6462, 188, 145, 3, 70, "MoreAbout",
- CellID->318128539]
+Cell[7465, 227, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[7499, 229, 168, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[6622, 194, 23, 0, 70, "FooterCell"]
+Cell[7682, 237, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5315,        141]
-NotebookOptionsPosition[      3239,         88]
-NotebookOutlinePosition[      5257,        138]
-CellTagsIndexPosition[      5214,        135]
-WindowTitle->HelixMethod - Wolfram Mathematica
+NotebookDataLength[      5999,        164]
+NotebookOptionsPosition[      3916,        111]
+NotebookOutlinePosition[      5955,        162]
+CellTagsIndexPosition[      5912,        159]
+WindowTitle->HelixMethod
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/HelixMethod\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
+               "http://reference.wolfram.com/language/DTITools/ref/\
 HelixMethod.html"], StandardForm]], "Input", TextClipboardType -> 
              "PlainText"]}, Visible -> False]]; 
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$92532], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/HelixMethod", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,17 +75,28 @@ HelixMethod.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["HelixMethod", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["HelixMethod", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["HelixMethod"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["HelixAngleCalc",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/HelixAngleCalc"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["HelixAngleCalc"]],"paclet:DTITools/ref/HelixAngleCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Can be \"Slow\" or \"Fast\". \"Slow\" uses wall distance \
 interpolation and can take long for high res datasets. \"Fast\" uses wall \
 distance calculation using circular approximation of the ventricle."
@@ -90,17 +113,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"HelixMethod - Wolfram Mathematica",
+WindowTitle->"HelixMethod",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 43, 0.0539453}", 
+   "built" -> "{2016, 12, 14, 11, 15, 57.1294828}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`CardiacTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -109,9 +133,9 @@ TaggingRules->{
     "HelixMethod is an option for HelixAngleCalc. Can be \"Slow\" or \
 \"Fast\". \"Slow\" uses wall distance interpolation and can take long for \
 high res datasets. \"Fast\" uses wall distance calculation using circular \
-approximation of the ventricle.", "synonyms" -> {}, "title" -> "HelixMethod", 
-    "titlemodifier" -> "", "windowtitle" -> "HelixMethod", "type" -> "Symbol",
-     "uri" -> "DTITools/ref/HelixMethod"}, "SearchTextTranslated" -> ""},
+approximation of the ventricle.", "synonyms" -> {}, "tabletags" -> {}, 
+    "title" -> "HelixMethod", "titlemodifier" -> "", "windowtitle" -> 
+    "HelixMethod", "type" -> "Symbol", "uri" -> "DTITools/ref/HelixMethod"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -137,15 +161,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[605, 21, 1874, 42, 70, "AnchorBarGrid",
+Cell[583, 21, 2300, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2482, 65, 54, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2539, 68, 670, 16, 70, "Usage"],
-Cell[3212, 86, 23, 0, 70, "FooterCell"]
+Cell[2886, 77, 288, 11, 70, "ObjectNameGrid"],
+Cell[3177, 90, 709, 17, 70, "Usage"],
+Cell[3889, 109, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

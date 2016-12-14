@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      9472,        277]
-NotebookOptionsPosition[      7194,        212]
-NotebookOutlinePosition[      8988,        259]
-CellTagsIndexPosition[      8945,        256]
-WindowTitle->Unwrap - Wolfram Mathematica
+NotebookDataLength[     10814,        328]
+NotebookOptionsPosition[      8419,        261]
+NotebookOutlinePosition[     10238,        310]
+CellTagsIndexPosition[     10195,        307]
+WindowTitle->Unwrap
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ManipulationTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ManipulationTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/Unwrap\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/Unwrap.\
+                "http://reference.wolfram.com/language/DTITools/ref/Unwrap.\
 html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
             False]]; SelectionMove[
          DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$196833], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/Unwrap", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["Unwrap", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["Unwrap", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["Unwrap[data]\[LineSeparator]unwraps the given dataset."]}
@@ -90,11 +119,17 @@ Cell[BoxData[GridBox[{
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -107,7 +142,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->130757587],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -115,18 +152,21 @@ Cell[BoxData[GridBox[{
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["BackgroundFilter",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/BackgroundFilter"], "6", Cell[TextData[{
+     ButtonData->"paclet:DTITools/ref/BackgroundFilter"], "6", Cell[
+    TextData[{
      Cell[BoxData[
-      ButtonBox["BackgroundFilter",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BackgroundFilter"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BackgroundFilter"]],"paclet:DTITools/ref/BackgroundFilter"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["Unwrap"], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["PhaseCalc",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PhaseCalc"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PhaseCalc"]],"paclet:DTITools/ref/PhaseCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Has value 6 as default. ",
      "If",
      " the voxels has this many neighbours with value 0 it is ignored in the \
@@ -142,16 +182,18 @@ unwrapping. ",
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["MonitorUnwrap",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/MonitorUnwrap"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["MonitorUnwrap"]],"paclet:DTITools/ref/MonitorUnwrap"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["Unwrap"], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["PhaseCalc",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PhaseCalc"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PhaseCalc"]],"paclet:DTITools/ref/PhaseCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". ",
      "Monitor",
      " the unwrapping progress."
@@ -162,16 +204,18 @@ unwrapping. ",
      ButtonData->"paclet:DTITools/ref/UnwrapDimension"], 
     RowBox[{"2", "D"}], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["UnwrapDimension",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/UnwrapDimension"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["UnwrapDimension"]],"paclet:DTITools/ref/UnwrapDimension"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["Unwrap"], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["PhaseCalc",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PhaseCalc"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PhaseCalc"]],"paclet:DTITools/ref/PhaseCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Can be \"2D\" or \"3D\". 2D is for unwarpping 2D images or unwrapping \
 the individual images from a 3D dataset (does not unwrap in the slice \
 direction). 3D unwraps a 3D dataset in all dimensions."
@@ -181,31 +225,36 @@ direction). 3D unwraps a 3D dataset in all dimensions."
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ManipulationTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ManipulationTools"]], "MoreAbout",
- CellID->31667760]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ManipulationTools"]],"paclet:DTITools/guide/ManipulationTools"},
+  
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -214,25 +263,27 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"Unwrap - Wolfram Mathematica",
+WindowTitle->"Unwrap",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 48, 30.0092889}", 
+   "built" -> "{2016, 12, 14, 11, 21, 42.6402107}", 
     "history" -> {"XX", "", "", ""}, "context" -> 
     "DTITools`ManipulationTools`", "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
-    "Unwrap[data] unwraps the given dataset.", "synonyms" -> {}, "title" -> 
-    "Unwrap", "titlemodifier" -> "", "windowtitle" -> "Unwrap", "type" -> 
-    "Symbol", "uri" -> "DTITools/ref/Unwrap"}, "SearchTextTranslated" -> ""},
+    "Unwrap[data] unwraps the given dataset.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "Unwrap", "titlemodifier" -> "", 
+    "windowtitle" -> "Unwrap", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/Unwrap"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -258,30 +309,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[600, 21, 2308, 53, 70, "AnchorBarGrid",
+Cell[578, 21, 3038, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2911, 76, 49, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3619, 97, 283, 11, 70, "ObjectNameGrid"],
+Cell[3905, 110, 247, 6, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[2985, 81, 247, 6, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3257, 91, 609, 18, 70, "NotesSection",
+Cell[4177, 120, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->130757587],
-Cell[3869, 111, 53, 0, 70, "Notes"],
-Cell[3925, 113, 2573, 70, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[4910, 146, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[4944, 148, 53, 0, 70, "Notes"],
+Cell[5000, 150, 2812, 77, 70, "3ColumnTableMod"],
+Cell[7815, 229, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[6547, 189, 448, 13, 70, "MoreAboutSection",
+Cell[7883, 234, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[6998, 204, 154, 3, 70, "MoreAbout",
- CellID->31667760]
+Cell[8162, 248, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[8196, 250, 181, 6, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[7167, 210, 23, 0, 70, "FooterCell"]
+Cell[8392, 259, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

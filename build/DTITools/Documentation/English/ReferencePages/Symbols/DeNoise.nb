@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8106,        227]
-NotebookOptionsPosition[      5656,        163]
-NotebookOutlinePosition[      7784,        215]
-CellTagsIndexPosition[      7741,        212]
-WindowTitle->DeNoise - Wolfram Mathematica
+NotebookDataLength[      9046,        258]
+NotebookOptionsPosition[      6580,        195]
+NotebookOutlinePosition[      8728,        248]
+CellTagsIndexPosition[      8685,        245]
+WindowTitle->DeNoise
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/DeNoise\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/DeNoise.\
+               "http://reference.wolfram.com/language/DTITools/ref/DeNoise.\
 html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
            False]]; SelectionMove[
         DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$53045], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/DeNoise", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,10 +75,18 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["DeNoise", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["DeNoise", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell["\<\
@@ -88,11 +108,17 @@ kernel with size \"filtersize\" and type \"kerneltype\".\
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -105,7 +131,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->359389699],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -115,16 +143,18 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/Kernel"], "Gaussian", Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["Kernel",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Kernel"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Kernel"]],"paclet:DTITools/ref/Kernel"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["DeNoise"], "InlineFormula"],
      ". ",
      Cell[BoxData[
-      ButtonBox["Kernel",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/Kernel"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["Kernel"]],"paclet:DTITools/ref/Kernel"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " can be \"Gaussian\", \"Disk\" or \"Box\"."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
@@ -135,9 +165,10 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:ref/False"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["MonitorDeNoise",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/MonitorDeNoise"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["MonitorDeNoise"]],"paclet:DTITools/ref/MonitorDeNoise"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " monitor the denoising progres."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
@@ -145,9 +176,11 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/DeNoiseIterations"], "1", Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["DeNoiseIterations",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/DeNoiseIterations"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["DeNoiseIterations"]],
+        "paclet:DTITools/ref/DeNoiseIterations"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " are the number of the denoising iterations."
     }], "TableText"]}
   }]], "3ColumnTableMod",
@@ -156,8 +189,7 @@ Cell[BoxData[GridBox[{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
  GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}]
-}, Closed]]
-}, Open  ]],
+}, Closed]],
 
 Cell[" ", "FooterCell"]
 },
@@ -165,17 +197,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"DeNoise - Wolfram Mathematica",
+WindowTitle->"DeNoise",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 41, 2.2641675}", 
+   "built" -> "{2016, 12, 14, 11, 14, 4.5419698}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`DenoiseTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -186,9 +219,9 @@ deviation \"sigma\" from the given dataset using a kernel with size \
 \"filtersize\" a gaussian kernel. DeNoise[data,sigma,filtersize, \
 Kernel->\"kerneltype\"] removes Rician noise with standard deviation \
 \"sigma\" from the given dataset using a kernel with size \"filtersize\" and \
-type \"kerneltype\".", "synonyms" -> {}, "title" -> "DeNoise", 
-    "titlemodifier" -> "", "windowtitle" -> "DeNoise", "type" -> "Symbol", 
-    "uri" -> "DTITools/ref/DeNoise"}, "SearchTextTranslated" -> ""},
+type \"kerneltype\".", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "DeNoise", "titlemodifier" -> "", "windowtitle" -> "DeNoise", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/DeNoise"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -214,24 +247,21 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[601, 21, 1857, 42, 70, "AnchorBarGrid",
+Cell[579, 21, 2283, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2461, 65, 50, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[2865, 77, 284, 11, 70, "ObjectNameGrid"],
+Cell[3152, 90, 637, 15, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[2536, 70, 637, 15, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3198, 89, 609, 18, 70, "NotesSection",
+Cell[3814, 109, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->359389699],
-Cell[3810, 109, 53, 0, 70, "Notes"],
-Cell[3866, 111, 1736, 46, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
-Cell[5629, 161, 23, 0, 70, "FooterCell"]
+ CellID->1],
+Cell[4547, 135, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[4581, 137, 53, 0, 70, "Notes"],
+Cell[4637, 139, 1901, 51, 70, "3ColumnTableMod"]
+}, Closed]],
+Cell[6553, 193, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

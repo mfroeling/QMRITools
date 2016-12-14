@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      6434,        181]
-NotebookOptionsPosition[      4236,        122]
-NotebookOutlinePosition[      6212,        172]
-CellTagsIndexPosition[      6169,        169]
-WindowTitle->ReadGradients - Wolfram Mathematica
+NotebookDataLength[      7352,        217]
+NotebookOptionsPosition[      5102,        157]
+NotebookOutlinePosition[      7100,        208]
+CellTagsIndexPosition[      7057,        205]
+WindowTitle->ReadGradients
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ImportTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ImportTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/ReadGradients\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 ReadGradients.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$157322], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ReadGradients", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,8 +95,18 @@ ReadGradients.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["ReadGradients", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["ReadGradients", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -84,9 +115,10 @@ Cell[BoxData[GridBox[{
 dicom header of the first nr of files in de given folder. Folder must be a \
 string, nr must be a int. Uses ",
      Cell[BoxData[
-      ButtonBox["GradRead",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/GradRead"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["GradRead"]],"paclet:DTITools/ref/GradRead"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      "."
     }]]}
   }]], "Usage",
@@ -97,25 +129,28 @@ string, nr must be a int. Uses ",
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ImportTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ImportTools"]], "MoreAbout",
- CellID->325038802]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ImportTools"]],"paclet:DTITools/guide/ImportTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -124,17 +159,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"ReadGradients - Wolfram Mathematica",
+WindowTitle->"ReadGradients",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 46, 31.7861164}", 
+   "built" -> "{2016, 12, 14, 11, 19, 33.1802660}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ImportTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -142,10 +178,10 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "ReadGradients[folder, nr] imports the diffusion gradient directions from \
 the dicom header of the first nr of files in de given folder. Folder must be \
-a string, nr must be a int. Uses GradRead.", "synonyms" -> {}, "title" -> 
-    "ReadGradients", "titlemodifier" -> "", "windowtitle" -> "ReadGradients", 
-    "type" -> "Symbol", "uri" -> "DTITools/ref/ReadGradients"}, 
-  "SearchTextTranslated" -> ""},
+a string, nr must be a int. Uses GradRead.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "ReadGradients", "titlemodifier" -> "", 
+    "windowtitle" -> "ReadGradients", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/ReadGradients"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -171,21 +207,20 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[607, 21, 2325, 53, 70, "AnchorBarGrid",
+Cell[585, 21, 3055, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2935, 76, 56, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2994, 79, 581, 16, 70, "Usage"],
+Cell[3643, 97, 290, 11, 70, "ObjectNameGrid"],
+Cell[3936, 110, 620, 17, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3600, 99, 448, 13, 70, "MoreAboutSection",
+Cell[4581, 131, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[4051, 114, 143, 3, 70, "MoreAbout",
- CellID->325038802]
+Cell[4860, 145, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[4894, 147, 166, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[4209, 120, 23, 0, 70, "FooterCell"]
+Cell[5075, 155, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

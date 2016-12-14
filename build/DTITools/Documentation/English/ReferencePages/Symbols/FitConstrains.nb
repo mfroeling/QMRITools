@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5566,        150]
-NotebookOptionsPosition[      3516,         97]
-NotebookOutlinePosition[      5508,        147]
-CellTagsIndexPosition[      5465,        144]
-WindowTitle->FitConstrains - Wolfram Mathematica
+NotebookDataLength[      6327,        175]
+NotebookOptionsPosition[      4271,        122]
+NotebookOutlinePosition[      6282,        173]
+CellTagsIndexPosition[      6239,        170]
+WindowTitle->FitConstrains
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/FitConstrains\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
+               "http://reference.wolfram.com/language/DTITools/ref/\
 FitConstrains.html"], StandardForm]], "Input", TextClipboardType -> 
              "PlainText"]}, Visible -> False]]; 
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$75919], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/FitConstrains", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,28 +75,41 @@ FitConstrains.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["FitConstrains", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["FitConstrains", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["FitConstrains"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["BayesianIVIMFit2",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BayesianIVIMFit2"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BayesianIVIMFit2"]],"paclet:DTITools/ref/BayesianIVIMFit2"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["BayesianIVIMFit3",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/BayesianIVIMFit3"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["BayesianIVIMFit3"]],"paclet:DTITools/ref/BayesianIVIMFit3"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Gives the contraints of the parameters. The values are used for \
 displaying the histograms and for the initialization if ",
      Cell[BoxData[
-      ButtonBox["CorrectPar",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/CorrectPar"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["CorrectPar"]],"paclet:DTITools/ref/CorrectPar"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is True"
     }]]}
   }]], "Usage",
@@ -99,17 +124,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"FitConstrains - Wolfram Mathematica",
+WindowTitle->"FitConstrains",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 42, 10.8010205}", 
+   "built" -> "{2016, 12, 14, 11, 15, 8.6687926}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`IVIMTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -118,9 +144,9 @@ TaggingRules->{
     "FitConstrains is an option for BayesianIVIMFit2 and BayesianIVIMFit3. \
 Gives the contraints of the parameters. The values are used for displaying \
 the histograms and for the initialization if CorrectPar is True", 
-    "synonyms" -> {}, "title" -> "FitConstrains", "titlemodifier" -> "", 
-    "windowtitle" -> "FitConstrains", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/FitConstrains"}, "SearchTextTranslated" -> ""},
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "FitConstrains", 
+    "titlemodifier" -> "", "windowtitle" -> "FitConstrains", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/FitConstrains"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -146,15 +172,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[607, 21, 1882, 42, 70, "AnchorBarGrid",
+Cell[585, 21, 2308, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2492, 65, 56, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2551, 68, 935, 25, 70, "Usage"],
-Cell[3489, 95, 23, 0, 70, "FooterCell"]
+Cell[2896, 77, 290, 11, 70, "ObjectNameGrid"],
+Cell[3189, 90, 1052, 28, 70, "Usage"],
+Cell[4244, 120, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

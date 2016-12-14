@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8268,        244]
-NotebookOptionsPosition[      5831,        176]
-NotebookOutlinePosition[      7782,        226]
-CellTagsIndexPosition[      7739,        223]
-WindowTitle->CorrectGradients - Wolfram Mathematica
+NotebookDataLength[      9485,        290]
+NotebookOptionsPosition[      6936,        221]
+NotebookOutlinePosition[      8909,        272]
+CellTagsIndexPosition[      8866,        269]
+WindowTitle->CorrectGradients
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,19 +23,36 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"More About \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"ElastixTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/ElastixTools"]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
       LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
       ActionMenuBox[
-       FrameBox["\<\"URL \[RightGuillemet]\"\>",
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
         StripOnInput->False], {"\<\"DTITools/ref/CorrectGradients\"\>":>
-       None, "\<\"Copy Mathematica url\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -43,7 +60,7 @@ Cell[BoxData[GridBox[{
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-       Delimiter, "\<\"Copy web url\"\>":>
+       Delimiter, "\<\"Copy web URL\"\>":>
        Module[{DocumentationSearch`Private`nb$}, 
         DocumentationSearch`Private`nb$ = NotebookPut[
            Notebook[{
@@ -51,20 +68,24 @@ Cell[BoxData[GridBox[{
               BoxData[
                MakeBoxes[
                 Hyperlink[
-                "http://reference.wolfram.com/mathematica/DTITools/ref/\
+                "http://reference.wolfram.com/language/DTITools/ref/\
 CorrectGradients.html"], StandardForm]], "Input", TextClipboardType -> 
               "PlainText"]}, Visible -> False]]; 
         SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
         FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
         NotebookClose[DocumentationSearch`Private`nb$]; 
-        Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
          NotebookLocate[{
            URL[
             StringJoin[
-            "http://reference.wolfram.com/mathematica/", 
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$43335], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
              "DTITools/ref/CorrectGradients", ".html"]], None}]}]},
        Appearance->None,
-       MenuAppearance->Automatic]],
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
       LineSpacing->{1.4, 0}]
     }], "AnchorBar"]}
   }]], "AnchorBarGrid",
@@ -74,10 +95,18 @@ CorrectGradients.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["CorrectGradients", "ObjectName",
- CellID->1224892054],
-
-Cell[CellGroupData[{
+Cell[TextData[{
+ Cell["CorrectGradients", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
@@ -85,17 +114,19 @@ Cell[BoxData[GridBox[{
      "\[LineSeparator]corrects the gradient directions grad with the \
 tranformation parameters from ",
      Cell[BoxData[
-      ButtonBox["RegisterData",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/RegisterData"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:DTITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " ",
      "or",
      " ",
      Cell[BoxData[
-      ButtonBox["RegisterDiffusionData",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/RegisterDiffusionData"]], 
-      "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:DTITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      "."
     }]]}
   }]], "Usage",
@@ -107,11 +138,17 @@ tranformation parameters from ",
 Cell[CellGroupData[{
 
 Cell[TextData[Cell[BoxData[
- ButtonBox[
-  FrameBox[
-   StyleBox[
-    RowBox[{"MORE", " ", "INFORMATION"}], "NotesFrameText"],
-   StripOnInput->False],
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
   Appearance->{Automatic, None},
   BaseStyle->None,
   ButtonFunction:>(FrontEndExecute[{
@@ -124,7 +161,9 @@ Cell[TextData[Cell[BoxData[
   Method->"Preemptive"]]]], "NotesSection",
  WholeCellGroupOpener->True,
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->791444219],
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -132,11 +171,13 @@ Cell[BoxData[GridBox[{
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["MethodReg",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/MethodReg"], "Rotation", Cell[TextData[{
+     ButtonData->"paclet:DTITools/ref/MethodReg"], "Rotation", Cell[
+    TextData[{
      Cell[BoxData[
-      ButtonBox["MethodReg",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/MethodReg"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["MethodReg"]],"paclet:DTITools/ref/MethodReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " spefifies which registration method to use. Mehtods can be be \
 \"rigid\",\"affine\", \"bspline\" or \"cyclyc\"."
     }], "TableText"]}
@@ -145,31 +186,35 @@ Cell[BoxData[GridBox[{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
    "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True}}}}]
-}, Closed]]
-}, Open  ]],
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
-Cell[TextData[ButtonBox["MORE ABOUT",
- BaseStyle->None,
- Appearance->{Automatic, None},
- Evaluator->None,
- Method->"Preemptive",
- ButtonFunction:>(FrontEndExecute[{
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], All, ButtonCell], 
-    FrontEndToken["OpenCloseGroup"], 
-    FrontEnd`SelectionMove[
-     FrontEnd`SelectedNotebook[], After, 
-     CellContents]}]& )]], "MoreAboutSection",
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
  WholeCellGroupOpener->True,
  CellID->38303248],
 
-Cell[TextData[ButtonBox["ElastixTools",
- BaseStyle->"Link",
- ButtonData->"paclet:DTITools/guide/ElastixTools"]], "MoreAbout",
- CellID->470851243]
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ElastixTools"]],"paclet:DTITools/guide/ElastixTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
 }, Open  ]],
 
 Cell[" ", "FooterCell"]
@@ -178,17 +223,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"CorrectGradients - Wolfram Mathematica",
+WindowTitle->"CorrectGradients",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 40, 34.7064120}", 
+   "built" -> "{2016, 12, 14, 11, 13, 36.8564338}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ElastixTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -196,10 +242,10 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "CorrectGradients[grad, transformation] corrects the gradient directions \
 grad with the tranformation parameters from RegisterData or \
-RegisterDiffusionData.", "synonyms" -> {}, "title" -> "CorrectGradients", 
-    "titlemodifier" -> "", "windowtitle" -> "CorrectGradients", "type" -> 
-    "Symbol", "uri" -> "DTITools/ref/CorrectGradients"}, 
-  "SearchTextTranslated" -> ""},
+RegisterDiffusionData.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "CorrectGradients", "titlemodifier" -> "", "windowtitle" -> 
+    "CorrectGradients", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/CorrectGradients"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -225,30 +271,29 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[610, 21, 2339, 53, 70, "AnchorBarGrid",
+Cell[588, 21, 3068, 74, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2952, 76, 59, 1, 70, "ObjectName",
- CellID->1224892054],
+Cell[3659, 97, 293, 11, 70, "ObjectNameGrid"],
+Cell[3955, 110, 808, 25, 70, "Usage"],
 Cell[CellGroupData[{
-Cell[3036, 81, 728, 23, 70, "Usage"],
-Cell[CellGroupData[{
-Cell[3789, 108, 609, 18, 70, "NotesSection",
+Cell[4788, 139, 730, 24, 70, "NotesSection",
  CellGroupingRules->{"SectionGrouping", 50},
- CellID->791444219],
-Cell[4401, 128, 53, 0, 70, "Notes"],
-Cell[4457, 130, 687, 17, 70, "3ColumnTableMod"]
-}, Closed]]
-}, Open  ]],
+ CellID->1],
+Cell[5521, 165, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5555, 167, 53, 0, 70, "Notes"],
+Cell[5611, 169, 731, 19, 70, "3ColumnTableMod"],
+Cell[6345, 190, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
 Cell[CellGroupData[{
-Cell[5193, 153, 448, 13, 70, "MoreAboutSection",
+Cell[6413, 195, 276, 12, 70, "MoreAboutSection",
  CellID->38303248],
-Cell[5644, 168, 145, 3, 70, "MoreAbout",
- CellID->470851243]
+Cell[6692, 209, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[6726, 211, 168, 5, 70, "MoreAbout",
+ CellID->1]
 }, Open  ]],
-Cell[5804, 174, 23, 0, 70, "FooterCell"]
+Cell[6909, 219, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-

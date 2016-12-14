@@ -10,11 +10,11 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5301,        144]
-NotebookOptionsPosition[      3305,         92]
-NotebookOutlinePosition[      5243,        141]
-CellTagsIndexPosition[      5200,        138]
-WindowTitle->DropSamples - Wolfram Mathematica
+NotebookDataLength[      6023,        168]
+NotebookOptionsPosition[      4021,        116]
+NotebookOutlinePosition[      5979,        166]
+CellTagsIndexPosition[      5936,        163]
+WindowTitle->DropSamples
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -23,9 +23,17 @@ Cell[BoxData[GridBox[{
    {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
     BoxData[
      ActionMenuBox[
-      FrameBox["\<\"URL \[RightGuillemet]\"\>",
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
        StripOnInput->False], {"\<\"DTITools/ref/DropSamples\"\>":>
-      None, "\<\"Copy Mathematica url\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -33,7 +41,7 @@ Cell[BoxData[GridBox[{
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
-      Delimiter, "\<\"Copy web url\"\>":>
+      Delimiter, "\<\"Copy web URL\"\>":>
       Module[{DocumentationSearch`Private`nb$}, 
        DocumentationSearch`Private`nb$ = NotebookPut[
           Notebook[{
@@ -41,20 +49,24 @@ Cell[BoxData[GridBox[{
              BoxData[
               MakeBoxes[
                Hyperlink[
-               "http://reference.wolfram.com/mathematica/DTITools/ref/\
+               "http://reference.wolfram.com/language/DTITools/ref/\
 DropSamples.html"], StandardForm]], "Input", TextClipboardType -> 
              "PlainText"]}, Visible -> False]]; 
        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
        NotebookClose[DocumentationSearch`Private`nb$]; 
-       Null], "\<\"Go to web url\"\>":>FrontEndExecute[{
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
         NotebookLocate[{
           URL[
            StringJoin[
-           "http://reference.wolfram.com/mathematica/", 
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$55637], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
             "DTITools/ref/DropSamples", ".html"]], None}]}]},
       Appearance->None,
-      MenuAppearance->Automatic]],
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
      LineSpacing->{1.4, 0}]], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
@@ -63,22 +75,34 @@ DropSamples.html"], StandardForm]], "Input", TextClipboardType ->
    "RowsIndexed" -> {}}},
  CellID->1],
 
-Cell["DropSamples", "ObjectName",
- CellID->1224892054],
+Cell[TextData[{
+ Cell["DropSamples", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData["DropSamples"], "InlineFormula"],
      "\[LineSeparator]is an option for ",
      Cell[BoxData[
-      ButtonBox["RadialSample",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/RadialSample"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["RadialSample"]],"paclet:DTITools/ref/RadialSample"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData[
-      ButtonBox["PlotSegments",
-       BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/PlotSegments"]], "InlineFormula"],
+      TemplateBox[{Cell[
+         TextData["PlotSegments"]],"paclet:DTITools/ref/PlotSegments"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". Defines how manny samples are droped form star and end. Can be an \
 number or set (strat, end) of numbers."
     }]]}
@@ -94,17 +118,18 @@ Saveable->False,
 ScreenStyleEnvironment->"Working",
 WindowSize->{725, 750},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
-WindowTitle->"DropSamples - Wolfram Mathematica",
+WindowTitle->"DropSamples",
 TaggingRules->{
  "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
   GridBox[{{
       RowBox[{
         ButtonBox[
         "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
-         BaseStyle -> {"Link", "DockedLinkTrail"}], 
-        Cell[">", "DockedLinkTrailSeparator"]}]}}, ColumnAlignments -> Left], 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2016, 12, 12, 14, 41, 10.7330143}", 
+   "built" -> "{2016, 12, 14, 11, 14, 11.6583928}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`CardiacTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -112,9 +137,9 @@ TaggingRules->{
     "DTITools Package", "status" -> "None", "summary" -> 
     "DropSamples is an option for RadialSample and PlotSegments. Defines how \
 manny samples are droped form star and end. Can be an number or set (strat, \
-end) of numbers.", "synonyms" -> {}, "title" -> "DropSamples", 
-    "titlemodifier" -> "", "windowtitle" -> "DropSamples", "type" -> "Symbol",
-     "uri" -> "DTITools/ref/DropSamples"}, "SearchTextTranslated" -> ""},
+end) of numbers.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "DropSamples", "titlemodifier" -> "", "windowtitle" -> "DropSamples", 
+    "type" -> "Symbol", "uri" -> "DTITools/ref/DropSamples"}},
 CellContext->"Global`",
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->Notebook[{
@@ -140,15 +165,13 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[605, 21, 1874, 42, 70, "AnchorBarGrid",
+Cell[583, 21, 2300, 54, 70, "AnchorBarGrid",
  CellID->1],
-Cell[2482, 65, 54, 1, 70, "ObjectName",
- CellID->1224892054],
-Cell[2539, 68, 736, 20, 70, "Usage"],
-Cell[3278, 90, 23, 0, 70, "FooterCell"]
+Cell[2886, 77, 288, 11, 70, "ObjectNameGrid"],
+Cell[3177, 90, 814, 22, 70, "Usage"],
+Cell[3994, 114, 23, 0, 70, "FooterCell"]
 }
 ]
 *)
 
 (* End of internal cache information *)
-
