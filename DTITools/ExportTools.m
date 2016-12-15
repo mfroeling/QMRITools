@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`ExportTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
-
+BeginPackage["DTITools`ExportTools`", {"Developer`"}];
 Unprotect @@ Names["DTITools`ExportTools`*"];
 ClearAll @@ Names["DTITools`ExportTools`*"];
 

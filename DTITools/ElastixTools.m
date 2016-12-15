@@ -13,7 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`ElastixTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
+BeginPackage["DTITools`ElastixTools`", {"Developer`"}];
 
 Unprotect @@ Names["DTITools`ElastixTools`*"];
 ClearAll @@ Names["DTITools`ElastixTools`*"];
@@ -1011,9 +1011,14 @@ datar
 
 Options[RegisterDiffusionData] = 
   Join[Options[RegisterData] /. {{1, 1, 1} -> {0, 1, 1}, "affine" -> "affineDTI", "rigid" -> "rigidDTI"},
-   {IterationsA -> 1000, ResolutionsA -> 1, HistogramBinsA -> 32, 
-    NumberSamplesA -> 2000, InterpolationOrderRegA -> 1, 
-    MethodRegA -> {"rigidDTI", "bspline"},RegistrationTarget->"Fist"}];
+   {IterationsA -> 1000, 
+   	ResolutionsA -> 1, 
+   	HistogramBinsA -> 32, 
+    NumberSamplesA -> 2000, 
+    InterpolationOrderRegA -> 1, 
+    MethodRegA -> {"rigidDTI", "bspline"},
+    RegistrationTarget->"Fist"
+    }];
 
 SyntaxInformation[RegisterDiffusionData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 

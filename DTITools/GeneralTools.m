@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`GeneralTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`GeneralTools`", {"Developer`"}];
 
 Unprotect @@ Names["DTITools`GeneralTools`*"];
 ClearAll @@ Names["DTITools`GeneralTools`*"];

@@ -63,3 +63,4 @@ UpdateWarning[];
 
 (*load all packages*)
 LoadPackages[package,subPackages,DTITools`verbose];
+LoadPackages[package,subPackages,DTITools`verbose];

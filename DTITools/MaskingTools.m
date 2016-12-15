@@ -13,7 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`MaskingTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
+BeginPackage["DTITools`MaskingTools`", {"Developer`"}];
 
 Unprotect @@ Names["DTITools`MaskingTools`*"];
 ClearAll @@ Names["DTITools`MaskingTools`*"];
@@ -78,7 +78,8 @@ NormalizeData::usage =
 "NormalizeData[data] normalizes the data to the mean signal of the data.
 NormalizeData[data,{min,max}] normalizes the data between min and max.
 "
-
+NormalizeDiffData::usage = 
+"NormalizeData[data] normalizes the diffusion data to the mean signal of the first volume."
 
 (* ::Subsection:: *)
 (*Options*)
@@ -355,13 +356,8 @@ SyntaxInformation[MaskBin] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 MaskBin[data_?ArrayQ,OptionsPattern[]]:=
 Module[{mask},
-	Map[(
-		mask=ImageData[Dilation[Erosion[Binarize[(Image[#,"Byte"])],1],1],"Bit"];
-		If[OptionValue[Smoothing],
-			(*Floor[MedianFilter[mask,2]]*)
-			SmoothMask[mask],
-			mask]
-		)&,((data/Max[data])*256),{ArrayDepth[data]-2}]
+	mask=ImageData[Erosion[Dilation[Binarize[Image3D[NormalizeData[data,.95]]], 1], 1]];
+	If[OptionValue[Smoothing],SmoothMask[mask],mask]
 	]
 
 
@@ -550,11 +546,15 @@ SmoothMask[mask_, f_: 2] := Block[{n, n1},
 
 SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_.}};
 
-NormalizeData[data_] := NormalizeDatai[data]
- 
-NormalizeDatai=Compile[{{data, _Real, 3}}, 
-   data/Mean[DeleteCases[Flatten[data], 0.]], 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+NormalizeData[data_] := NormalizeDatai[data, .75]
+NormalizeData[data_, quan_?NumberQ] := NormalizeDatai[data, Clip[quan, {0, 1}]]
+
+NormalizeDatai = Block[{mn},
+   Compile[{{data, _Real, 3}, {quant, _Real, 0}},
+    mn = Quantile[DeleteCases[Flatten[data], 0.], quant];
+    data/mn, {{mn, _Real, 0}}, RuntimeAttributes -> {Listable}, 
+    RuntimeOptions -> "Speed"]
+   ];
 
 NormalizeData[data_,minmax_] := ScaleData[data,minmax]
 
@@ -565,7 +565,17 @@ ScaleData =
 
 
 (* ::Subsection::Closed:: *)
-(*NormalizeData functions*)
+(*NormalizeDiffData*)
+
+
+SyntaxInformation[NormalizeDiffData] = {"ArgumentsPattern" -> {_, _.}};
+
+NormalizeDiffData[data_] := NormalizeDiffData[data, MaskBin[Mean[Transpose[data]], Smoothing -> True]]
+NormalizeDiffData[data_, mask_] := 100 data/N[MeanNoZero[mask data[[All, 1]]]]
+
+
+(* ::Subsection::Closed:: *)
+(*HomoginizeData*)
 
 
 SyntaxInformation[HomoginizeData] = {"ArgumentsPattern" -> {_, _}};
