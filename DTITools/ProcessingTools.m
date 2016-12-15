@@ -1298,7 +1298,8 @@ Options[SNRMapCalc] = {OutputSNR -> "SNR"};
 
 SyntaxInformation[SNRMapCalc] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_: 2, OptionsPattern[]] := 
+SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, opts:OptionsPattern[]] := SNRMapCalc[data, noise, 2, opts]
+SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := 
  Module[{sigma, sigmac, snr},
   sigmac = (sigma = N[GaussianFilter[noise, 5]]) /. 0. -> Infinity;
   snr = GaussianFilter[data/((1/Sqrt[Pi/2.]) sigmac), k];
@@ -1309,7 +1310,8 @@ SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_: 2, OptionsPattern[]] :=
 	 ]
   ]
 
-SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, k_: 2, OptionsPattern[]] := 
+SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, opts:OptionsPattern[]] := SNRMapCalc[{data1, data2}, 2, opts]
+SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, k_?NumberQ, OptionsPattern[]] := 
  Module[{noise, signal, sigma, snr},
   noise = (data1 - data2);
   signal = Mean[{data1, data2}];
@@ -1322,7 +1324,8 @@ SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, k_: 2, OptionsPattern[]] :=
 	 ]
  ]
 
-SNRMapCalc[data : {_?ArrayQ ...}, k_: 2, OptionsPattern[]] := 
+SNRMapCalc[data : {_?ArrayQ ...}, opts:OptionsPattern[]] := SNRMapCalc[data, 2, opts]
+SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] := 
  Module[{signal, sigma, snr,div},
   signal = Mean[data];
   sigma = Chop[StandardDeviation[data]]-10^-15;
@@ -1348,7 +1351,7 @@ SyntaxInformation[MeanSignal] = {"ArgumentsPattern" -> {_, _.,OptionsPattern[]}}
 
 MeanSignal[data_, opts : OptionsPattern[]] := MeanSignal[data, 1, opts];
 
-MeanSignal[data_, pos_: 1,OptionsPattern[]] := Block[{datat, mean, mask},
+MeanSignal[data_, pos_ ,OptionsPattern[]] := Block[{datat, mean, mask},
   datat = Transpose[data];
   
   If[ListQ[pos],

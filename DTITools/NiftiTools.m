@@ -345,7 +345,7 @@ ImportBvalvec[___,opts:OptionsPattern[]] := Module[{valf, vecf},
 LineToList[file_] := Module[{grads,tmp},
   grads = Import[file, "Lines"];
   grads = Transpose[(
-  	tmp = StringReplace[#, {" " -> ",", "\t" -> ",", "E" -> "*10^"}];
+  	tmp = StringReplace[#, {" " -> ",", "\t" -> ",", "E" -> "*10^", "e" -> "*10^"}];
 	tmp = If[StringTake[tmp, -1] == ",", StringDrop[tmp, -1], tmp];
 	tmp = ToExpression["{" <> tmp <> "}"]
   	) & /@ grads]
