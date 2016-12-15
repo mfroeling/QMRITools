@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`DenoiseTools`"];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`DenoiseTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`DenoiseTools`*"];
 ClearAll @@ Names["DTIToos'DenoiseTools`*"];
@@ -607,6 +606,7 @@ NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, 
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`DenoiseTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]& /@ Names["DTITools`DenoiseTools`*"];
 
 EndPackage[]

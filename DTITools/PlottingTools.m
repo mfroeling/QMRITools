@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`PlottingTools`",{"TetGenLink`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`PlottingTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`","TetGenLink`"}];
 
 Unprotect @@ Names["DTITools`PlottingTools`*"];
 ClearAll @@ Names["DTITools`PlottingTools`*"];
@@ -3151,6 +3150,7 @@ PlotDuty[{grad_, bval_, ord_}, mode_] :=
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`PlottingTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`PlottingTools`*"];
 
 EndPackage[]

@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`PhysiologyTools`"];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`PhysiologyTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`PhysiologyTools`*"];
 ClearAll @@ Names["DTITools`PhysiologyTools`*"];
@@ -405,6 +404,7 @@ LabFun[x_, CO2_, O2_] := Block[{st, en},
 
 End[] (* End Private Context *)
 
+If[DTITools`verbose,Print[Names["DTITools`PhysiologyTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`PhysiologyTools`*"];
 
 EndPackage[]

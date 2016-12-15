@@ -13,7 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`GeneralTools`"];
+BeginPackage["DTITools`GeneralTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 $ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 Unprotect @@ Names["DTITools`GeneralTools`*"];
@@ -295,6 +295,7 @@ MeanRange[inp_] := Block[{q1, q2, q3},
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`GeneralTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`GeneralTools`*"];
 
 EndPackage[]

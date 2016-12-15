@@ -3,13 +3,14 @@
 (* Mathematica Init File *)
 
 (*initialization functions*)
-ClearFunctions[pack_,subpack_]:=Module[{packageName,packageSymbols,packageSymbolsG},
+ClearFunctions[pack_,subpack_,print_:False]:=Module[{packageName,packageSymbols,packageSymbolsG},
 	Quiet[
+		If[print,Print["Removing all definitions of "<>#]];
 		packageName = pack <> #;
 		Get[packageName];
 		packageSymbols =Names[packageName <> "*"];
 		packageSymbolsG="Global`"<>#&/@packageSymbols;
-			
+		
 		(*remove all global and private definitions*)
 		Unprotect @@ packageSymbols;
 		ClearAll @@ packageSymbols;
@@ -17,6 +18,7 @@ ClearFunctions[pack_,subpack_]:=Module[{packageName,packageSymbols,packageSymbol
 		Unprotect @@ packageSymbolsG;
 		ClearAll @@ packageSymbolsG;
 		Remove @@ packageSymbolsG;
+		
 		]& /@ subpack;
 ];
 
@@ -29,7 +31,7 @@ UpdateWarning[]:=If[$VersionNumber != 11.,
     Alignment -> Center], WindowTitle -> "Update!"];
  ];
 
-LoadPackages[print_]:=(	If[print,Print[#]];	Get[package<>#];)&/@subPackages;
+LoadPackages[pack_,subpack_,print_:False]:=(	If[print,Print["Loading all definitions of "<>#]];	Get[package<>#];)&/@subPackages;
 
 
 (*Change Default settings*)
@@ -47,12 +49,17 @@ subPackages = {"CardiacTools`", "DenoiseTools`", "ElastixTools`", "ExportTools`"
 System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffusion packages"
 System`$DTIToolsContextPaths = (package <> # & /@ subPackages);
 
+$ContextPath = Union[$ContextPath, System`$DTIToolsContextPaths]
+
+
+(*state if verbose is true to monitor initialization*)
+DTITools`verbose = False;
+
 (*clear all definitions from the subPacakges*)
-ClearFunctions[package,subPackages];
+ClearFunctions[package,subPackages,DTITools`verbose];
 
 (*check mathematica version*)
 UpdateWarning[];
 
 (*load all packages*)
-LoadPackages[False];
-LoadPackages[False];
+LoadPackages[package,subPackages,DTITools`verbose];

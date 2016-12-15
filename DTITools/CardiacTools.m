@@ -13,12 +13,10 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`CardiacTools`",{"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`CardiacTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`CardiacTools`*"];
 ClearAll @@ Names["DTITools`CardiacTools`*"];
-
 
 (* ::Section:: *)
 (*Usage Notes*)
@@ -1788,6 +1786,7 @@ TransmuralPlot[data_, OptionsPattern[]] :=
 
 End[](* End Private Context *)
 
+If[DTITools`verbose,Print[Names["DTITools`CardiacTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`CardiacTools`*"];
 
 EndPackage[]

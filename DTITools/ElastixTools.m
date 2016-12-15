@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`ElastixTools`"];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`ElastixTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`ElastixTools`*"];
 ClearAll @@ Names["DTITools`ElastixTools`*"];
@@ -1339,6 +1338,7 @@ ParametersToTransform[w_, opt_] :=
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`ElastixTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`ElastixTools`*"];
 
 EndPackage[]

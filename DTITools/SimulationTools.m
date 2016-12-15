@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`SimulationTools`"];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`SimulationTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`SimulationTools`*"];
 ClearAll @@ Names["DTITools`SimulationTools`*"];
@@ -557,6 +556,7 @@ EigPlot[data_, vp_, vv_, va_, arrows_, val_] := Module[{sphere,line},
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`SimulationTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]& /@ Names["DTITools`SimulationTools`*"];
 
 EndPackage[]

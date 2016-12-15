@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`ProcessingTools`",{"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`ProcessingTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`ProcessingTools`*"];
 ClearAll @@ Names["DTITools`ProcessingTools`*"];
@@ -1442,6 +1441,7 @@ DixonToPercent[water_, fat_, maskt_:1] :=
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`ProcessingTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`ProcessingTools`*"];
 
 EndPackage[]

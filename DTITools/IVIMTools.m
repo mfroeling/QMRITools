@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`IVIMTools`"];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`IVIMTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`IVIMTools`*"];
 ClearAll @@ Names["DTITools`IVIMTools`*"];
@@ -1286,6 +1285,7 @@ IVIMResiduals[data_, binp_, pars_] :=
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`IVIMTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`IVIMTools`*"];
 
 EndPackage[]

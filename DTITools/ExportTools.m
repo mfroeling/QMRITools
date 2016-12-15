@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`ExportTools`"];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`ExportTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`ExportTools`*"];
 ClearAll @@ Names["DTITools`ExportTools`*"];
@@ -525,6 +524,7 @@ Module[{data,file},
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`ExportTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`ExportTools`*"];
 
 EndPackage[]

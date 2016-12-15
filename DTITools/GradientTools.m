@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`GradientTools`"];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`GradientTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`GradientTools`*"];
 ClearAll @@ Names["DTITools`GradientTools`*"];
@@ -2713,6 +2712,7 @@ BvecCreate[bvalue_, gr_] :=
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`GradientTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`GradientTools`*"];
 
 EndPackage[]

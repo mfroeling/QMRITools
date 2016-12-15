@@ -13,8 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`NiftiTools`"];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`NiftiTools`", {##}]& @@ Join[System`$DTIToolsContextPaths, {"Developer`"}];
 
 Unprotect @@ Names["DTITools`NiftiTools`*"];
 ClearAll @@ Names["DTITools`NiftiTools`*"];
@@ -669,6 +668,7 @@ CompressNiiFiles[folder_] := Module[{files},
 
 End[]
 
+If[DTITools`verbose,Print[Names["DTITools`NiftiTools`*"]]];
 SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`NiftiTools`*"];
 
 EndPackage[]
