@@ -495,8 +495,11 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix},
 SyntaxInformation[ReadTransformParameters]={"ArgumentsPattern"->{_}};
 
 ReadTransformParameters[dir_] := Block[{files,filenum,cor},
-  files = FileNames["TransformParameters*", dir, 2];
-  filenum = If[Length[files] == 1,{1},ToExpression[First[StringCases[FileNameSplit[#][[-2]],DigitCharacter ..]]] & /@ files];
+  files = FileNames["TransformParameters*", dir, 3];
+  filenum = If[Length[files] == 1,
+  	{1},
+  	ToExpression[First[StringCases[FileNameSplit[#][[-2]],DigitCharacter ..]]] & /@ files
+  	];
   files = files[[Ordering[filenum]]];
   cor =  
     Partition[
@@ -1235,6 +1238,7 @@ Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", D
 TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output},
   tdir = OptionValue[TempDirectory];
   tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}) <>"\\DTItoolsReg\\transform";
+  PrintTemporary[tdir];
   If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
   CreateDirectory[tdir];
   ExportNii[data, vox, tdir <> "\\trans.nii"];
@@ -1244,10 +1248,11 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
   
   Switch[OptionValue[DeleteTempDirectory],
    "All",
-   DeleteDirectory[FileNameTake[tdir, {1, -2}], 
-    DeleteContents -> True],
+   DeleteDirectory[FileNameTake[tdir, {1, -2}],  DeleteContents -> True],
    "Trans",
-   DeleteDirectory[tdir, DeleteContents -> True]
+   DeleteDirectory[tdir, DeleteContents -> True],
+   _,
+   Null
    ];
   output
   ]

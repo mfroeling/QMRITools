@@ -14,6 +14,7 @@
 
 
 BeginPackage["DTITools`PlottingTools`", {"Developer`","TetGenLink`"}];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 Unprotect @@ Names["DTITools`PlottingTools`*"];
 ClearAll @@ Names["DTITools`PlottingTools`*"];
