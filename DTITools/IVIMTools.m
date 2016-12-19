@@ -14,6 +14,7 @@
 
 
 BeginPackage["DTITools`IVIMTools`", {"Developer`"}];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 Unprotect @@ Names["DTITools`IVIMTools`*"];
 ClearAll @@ Names["DTITools`IVIMTools`*"];

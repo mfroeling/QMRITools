@@ -14,6 +14,7 @@
 
 
 BeginPackage["DTITools`CardiacTools`", {"Developer`"}];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 Unprotect @@ Names["DTITools`CardiacTools`*"];
 ClearAll @@ Names["DTITools`CardiacTools`*"];

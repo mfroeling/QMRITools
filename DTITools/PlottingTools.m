@@ -202,7 +202,12 @@ ColorData2[func_] := If[MemberQ[gradsets, func], ColorData[func], (func /. custC
 ColSel[func_, cfunc_] := With[{fun = {# &, 1 - # &, Abs[(2 # - 1)] &, Abs[Abs[(2*#) - 1] - 1] &}[[func]]}, ColorData2[cfunc][fun[#]]&]
 
 ColorLookup[___] = Darker[Red];
-With[{ran = Range[0, 1., 1./255.]},Table[ColorLookup[j,i] = (ColSel[j, i] /@ ran) /. (RGBColor[x_, y_, z_] -> RGBColor[x, y, z, 1]), {j, 1, 4}, {i, colors[[All, 1]]}]];
+ColorLookup = With[{ran = Range[0, 1., 1./255.]},
+	Table[
+		ColorLookup[j,i] = (ColSel[j, i] /@ ran) /. (RGBColor[x_, y_, z_] -> RGBColor[x, y, z, 1])
+		, {j, 1, 4}, {i, colors[[All, 1]]}];
+   ColorLookup];
+(*With[{ran = Range[0, 1., 1./255.]},Table[ColorLookup[j,i] = (ColSel[j, i] /@ ran) /. (RGBColor[x_, y_, z_] -> RGBColor[x, y, z, 1]), {j, 1, 4}, {i, colors[[All, 1]]}]];*)
 
 ColorRound = Compile[{{x, _Real, 0}}, If[0 <= x <= 1, Round[255 x] + 2, If[x < 0, 1, 258]], RuntimeOptions -> "Speed"];
 LookUpTable[{lstyle_, color_}, {minclip_, maxclip_}] := Module[{collist, fun}, 
@@ -1370,45 +1375,39 @@ Module[{in},
 
 SyntaxInformation[PlotCorrection] = {"ArgumentsPattern" -> {_}};
 
-PlotCorrection[w_]:=
-Switch[
-	Dimensions[w][[2]],
-	6,
-	GraphicsGrid[Partition[MapThread[
-	ListPlot[#1,PlotRange->Full,Joined->True,PlotLabel->Style[#2,Bold],AspectRatio->.5,PlotStyle->Thick]&,
-	{
-		(({1,1,1,1,1,1}*Transpose[w])+{0,0,0,0,0,0})[[#]]&/@{1,2;;3,4;;5,6},
-		{"Rotation [Degree]","Translation [mm]","Scale","Scew "},
-		{{-3,3},{-4,4},{.95,1.05},{-.05,.05}}
-		}],2],ImageSize->600]
-	,
-	12,
-	Grid[Partition[
-  MapThread[
-   ListLinePlot[#1, PlotLabel -> Style[#2, Bold], PlotLegends -> #3, 
-     PlotRange -> {{1,Length[#1[[1]]]},Full},AxesOrigin->{1,Mean[#4]}, AspectRatio -> .5, PlotStyle -> (Directive[{Thick,#}]&/@{Red,Green,Blue}), 
-    AxesStyle->Directive[{Thick,Black}],LabelStyle->Directive[{Bold,Black,FontFamily->"Helvetica"}],
-     ImageSize -> 400, AxesOrigin -> #5
-     ] &, {
-     	({1, 1, 1, 1}*Partition[Transpose[w], 3]) + {0, 0, 0, 0},
-    {"Rotation [Degree]", "Translation [mm]", "Scale", "Scew "},
-    {{"Coronal axis (roll)", "Sagital axis (pitch)","Axial axis (yaw)"},
-     {"Coronal direction", "Sagital direction", "Axial direction"},
-     {"Coronal direction", "Sagital direction", "Axial direction"},
-     {"Coronal direction", "Sagital direction", "Axial direction"}
-     },
-    {{-3, 3}, {-4, 4}, {.95, 1.05}, {-.05, .05}},
-    {{0, 0}, {0, 0}, {0, 1}, {0, 0}}}
-   ], 2]]
-	(*GraphicsGrid[
-		Partition[MapThread[ListPlot[#1,Joined->True,PlotLabel->Style[#2,Bold],PlotLegend->#3,PlotRange->Full,
-			LegendPosition->{1,-0.25}, LegendShadow->None,LegendBorder->None,LegendTextSpace->7,AspectRatio->.5,PlotStyle->Thick]&,{
-		({1,1,.1,.1}*Partition[Transpose[w],3])+{0,0,1,0},
-		{"Rotation [Degree]","Translation [mm]","Scale","Scew "},
-		{{"Coronal axis (roll)","Sagital axis (pitch)","Axial axis (yaw)"},{"Coronal direction","Sagital direction","Axial direction"},{"Coronal direction","Sagital direction","Axial direction"},{"Coronal direction","Sagital direction","Axial direction"}},
-		{{-3,3},{-4,4},{.95,1.05},{-.05,.05}}
-		}],2],ImageSize->1200]*)
-	]
+PlotCorrection[w_]:=Module[{sel},
+	Switch[
+		Dimensions[w][[2]],
+		6,
+		GraphicsGrid[Partition[MapThread[
+		ListPlot[#1,PlotRange->Full,Joined->True,PlotLabel->Style[#2,Bold],AspectRatio->.5,PlotStyle->Thick]&,
+		{
+			(({1,1,1,1,1,1}*Transpose[w])+{0,0,0,0,0,0})[[#]]&/@{1,2;;3,4;;5,6},
+			{"Rotation [Degree]","Translation [mm]","Scale","Scew "},
+			{{-3,3},{-4,4},{.95,1.05},{-.05,.05}}
+			}],2],ImageSize->600]
+		,
+		12,
+		sel=If[Mean[w][[7;;12]]==={1.,1.,1.,0.,0.,0.},2,4];
+		
+		Grid[Partition[
+			MapThread[
+				ListLinePlot[#1, PlotLabel -> Style[#2, Bold], PlotLegends -> #3,
+					PlotRange -> {{1,Length[#1[[1]]]},Full},AxesOrigin->{1,Mean[#4]}, AspectRatio -> .5, PlotStyle -> (Directive[{Thick,#}]&/@{Red,Green,Blue}),
+					AxesStyle->Directive[{Thick,Black}],LabelStyle->Directive[{Bold,Black,FontFamily->"Helvetica"}],
+					ImageSize -> 400, AxesOrigin -> #5
+					] &, {
+						({1, 1, 1, 1}*Partition[Transpose[w], 3]) + {0, 0, 0, 0},
+						{"Rotation [Degree]", "Translation [mm]", "Scale", "Scew "},
+						{{"Coronal axis (roll)", "Sagital axis (pitch)","Axial axis (yaw)"},
+						{"Coronal direction", "Sagital direction", "Axial direction"},
+						{"Coronal direction", "Sagital direction", "Axial direction"},
+						{"Coronal direction", "Sagital direction", "Axial direction"}},
+						{{-3, 3}, {-4, 4}, {.95, 1.05}, {-.05, .05}},
+						{{0, 0}, {0, 0}, {0, 1}, {0, 0}}
+					}[[All,;;sel]]], 2]]
+		]
+]
 
 
 (* ::Subsection::Closed:: *)

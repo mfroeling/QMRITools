@@ -14,6 +14,7 @@
 
 
 BeginPackage["DTITools`DenoiseTools`", {"Developer`"}];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 Unprotect @@ Names["DTITools`DenoiseTools`*"];
 ClearAll @@ Names["DTIToos'DenoiseTools`*"];

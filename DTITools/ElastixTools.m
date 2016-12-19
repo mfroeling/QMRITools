@@ -14,6 +14,7 @@
 
 
 BeginPackage["DTITools`ElastixTools`", {"Developer`"}];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 Unprotect @@ Names["DTITools`ElastixTools`*"];
 ClearAll @@ Names["DTITools`ElastixTools`*"];
@@ -495,10 +496,7 @@ SyntaxInformation[ReadTransformParameters]={"ArgumentsPattern"->{_}};
 
 ReadTransformParameters[dir_] := Block[{files,filenum,cor},
   files = FileNames["TransformParameters*", dir, 2];
-  filenum = 
-   ToExpression[
-      First[StringCases[FileNameSplit[#][[-2]], 
-        DigitCharacter ..]]] & /@ files;
+  filenum = If[Length[files] == 1,{1},ToExpression[First[StringCases[FileNameSplit[#][[-2]],DigitCharacter ..]]] & /@ files];
   files = files[[Ordering[filenum]]];
   cor =  
     Partition[

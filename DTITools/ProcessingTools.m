@@ -14,6 +14,7 @@
 
 
 BeginPackage["DTITools`ProcessingTools`", {"Developer`"}];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 Unprotect @@ Names["DTITools`ProcessingTools`*"];
 ClearAll @@ Names["DTITools`ProcessingTools`*"];
