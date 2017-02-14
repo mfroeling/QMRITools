@@ -65,7 +65,8 @@ CropData::usage=
 CropData[data,vox] creates a dialog window to crop the data."
 
 ApplyCrop::usage=
-"ApplyCrop[data,crop] aplies the corpped region obtained form CropData to the data." 
+"ApplyCrop[data,crop] aplies the corpped region obtained form CropData to the data.
+ApplyCrop[data,crop,{voxorig,voxnew}] aplies the corpped region obtained form CropData to the data." 
 
 TriggerGrid::usage=
 "TriggerGrid[data, dyns, {{xmin, xmax}, {ymin, ymax}}]."
@@ -105,6 +106,7 @@ StichData::usage =
 
 DataTranformation::usage = "DataTranformation[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
 
+InvertDataset::usage = "InvertDataset[data] inverts the data along the x y and z axes. In other words it is rotated aroud the origin such that (x,y,z)=(-x,-y,-z) and (0,0,0)=(0,0,0)"
 
 (* ::Subsection:: *)
 (*Options*)
@@ -1531,6 +1533,25 @@ ParametersToTransformFull[w_, opt_] := Block[{
 		Append[Flatten /@ Thread[{rMat, tMat}], {0, 0, 0, 1}]
 		]
 	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ParametersToTransformFull*)
+
+
+InvertDataset[data_] := Module[{dep},
+  dep = ArrayDepth[data];
+  Switch[dep,
+   4, Transpose[Inverse3Di /@ Transpose[data]],
+   _, Inverse3Di[data]
+   ]
+  ]
+
+Inverse3Di[data_] := Block[{out},
+  out = data;
+  (out = Reverse[out, #]) & /@ {1, 2};
+  out]
+
 
 
 (* ::Section:: *)

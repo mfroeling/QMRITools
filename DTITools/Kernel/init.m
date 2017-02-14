@@ -26,12 +26,15 @@ UpdateWarning[]:=If[$VersionNumber != 11.,
  CreateDialog[Column[{Style["
       Current Mathematica version is 11.0
       You need to update!
-      Some functions wont work in 10.4 or older versions
+      Some functions wont work in older versions
       ", TextAlignment -> Center], DefaultButton[], ""}, 
     Alignment -> Center], WindowTitle -> "Update!"];
  ];
 
-LoadPackages[pack_,subpack_,print_:False]:=(	If[print,Print["Loading all definitions of "<>#]];	Get[package<>#];)&/@subPackages;
+LoadPackages[pack_,subpack_,print_:False]:=(
+	If[print,Print["Loading all definitions of "<>#]];
+	Get[package<>#];
+)&/@subPackages;
 
 
 (*Change Default settings*)
@@ -43,14 +46,13 @@ package= "DTITools`";
 subPackages = {"CardiacTools`", "DenoiseTools`", "ElastixTools`", "ExportTools`", 
    "GeneralTools`", "GradientTools`", "ImportTools`", "IVIMTools`", 
    "ManipulationTools`", "MaskingTools`", "NiftiTools`", 
-   "PhysiologyTools`", "PlottingTools`", "ProcessingTools`", "SimulationTools`"};
+   "PhysiologyTools`", "PlottingTools`", "ProcessingTools`", "RelaxometryTools`", "SimulationTools`"};
 
 (*define all the toolbox contexts*)
 System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffusion packages"
 System`$DTIToolsContextPaths = (package <> # & /@ subPackages);
 
 $ContextPath = Union[$ContextPath, System`$DTIToolsContextPaths]
-
 
 (*state if verbose is true to monitor initialization*)
 DTITools`verbose = False;

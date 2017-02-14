@@ -416,7 +416,7 @@ Switch[met
 	norvecc = MakePerpendicular[norvec, radvecn];
 	cirvec = NormalizeC[CrossC[radvecn,norvecc]];
 ];
-Print["LMCS is done"];
+PrintTemporary["LMCS is done"];
 
 (*create helix angle maps*)
 out = Flatten[Table[
@@ -1069,6 +1069,9 @@ Delimiter,
 Row[{
 DefaultButton["Done",DialogReturn[
 {segmask, segang, points}=GenerateOutput[points,centers,segments[[1;;4]],rev,NumberQ[segmi],slcgrp,coordinates,Dimensions[mask],lines];
+
+segang=Map[{#[[1]], DeleteCases[#[[2]], {}]} &, segang, {2}];
+
 {segmask,segang, {points,{start,ap,mid,bas,end}}}
 ]],
 CancelButton["Cancel",DialogReturn[{"Cancel","Cancel","Cancel"}]]
@@ -1564,7 +1567,7 @@ intfunc = MapThread[(
 (*generate output by radial sampleling segments*)
 output=Map[(
 slice=#[[1]];
-pts=#[[2]];
+pts=DeleteCases[#[[2]],{}];
 int=intfunc[[slice]];
 
 If[FreeQ[pts, {}],
@@ -1585,10 +1588,9 @@ ptsr=vals={}];
 (*PlotSegmentsMask*)
 
 
-SyntaxInformation[
-   PlotSegmentsMask] = {"ArgumentsPattern" -> {_, _, _}};
+SyntaxInformation[PlotSegmentMask] = {"ArgumentsPattern" -> {_, _, _}};
 
-PlotSegmentMask[maski_, segmaski_, vox_] := DynamicModule[{heart, seg,pan},
+PlotSegmentMask[maski_, segmaski_, vox_] := Module[{heart, seg,pan},
   
   heart = PlotMaskVolume[maski, vox];
   seg = PlotMaskVolume[segmaski[[#]], vox, Red,Filter->False] & /@ 
@@ -1606,7 +1608,7 @@ PlotSegmentMask[maski_, segmaski_, vox_] := DynamicModule[{heart, seg,pan},
        Method -> {"RotationControl" -> None}]}
      }
     , ImageSize -> 600]
-   , {{n,1,"Segment"}, 1, Length[segmaski], 1}];
+   , {{n,1,"Segment"}, 1, Length[segmaski], 1},SaveDefinitions->True];
   
   NotebookClose[plotwindow];
   plotwindow = 
@@ -1627,53 +1629,48 @@ PlotSegmentMask[maski_, segmaski_, vox_] := DynamicModule[{heart, seg,pan},
 
 Options[PlotSegments] = {RadialSamples -> 10};
 
-SyntaxInformation[
-   PlotSegments] = {"ArgumentsPattern" -> {_, _, _, 
-     OptionsPattern[]}};
+SyntaxInformation[PlotSegments] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-PlotSegments[data_, mask_, angs_, OptionsPattern[]] := 
- Block[{pan,size}, pan = Manipulate[size = Length[angs[[n]]] 250;
-    Switch[m, 1, GraphicsRow[Show[
-         ArrayPlot[data[[#[[1]]]], DataReversed -> True, 
-          ColorFunction -> "GrayTones"],
-         If[NumberQ[Mean[Flatten[#[[2]]]]],
-          
-          ListPlot[{#[[2, All, 1]], #[[2, All, 2]]}, AspectRatio -> 1,
-            PlotStyle -> {Red, Orange}],
-          Graphics[]
-          ]
-         ] & /@ angs[[n]], ImageSize -> size],
-     2,
-     GraphicsRow[Show[
-         ArrayPlot[data[[#[[1]]]], DataReversed -> True, 
-          ColorFunction -> "GrayTones"],
-         If[NumberQ[Mean[Flatten[#[[2]]]]],
-          
-          ListPlot[
-           Transpose@PointRange[#[[2]], OptionValue[RadialSamples]], 
-           AspectRatio -> 1],
-          Graphics[]
-          ]
-         ] & /@ angs[[n]], ImageSize -> size],
-     3,
-     GraphicsRow[
-      If[NumberQ[Mean[Flatten[#[[2]]]]],
-         ArrayPlot[
-          Fun[mask[[#[[1]]]], Round[#[[2, All, 1]]], 
-           Round[#[[2, All, 2]]]], DataReversed -> True, 
-          ColorFunction -> "GrayTones"],
-         ArrayPlot[mask[[#[[1]]]], DataReversed -> True, 
-          ColorFunction -> "GrayTones"]
-         ] & /@ angs[[n]], ImageSize -> size]
-     ], {{n, 1, "segment"}, 1, Length[angs], 
-     1}, {{m, 1, "plot type"}, {1 -> "start stop point", 
-      2 -> "radial samples", 3 -> "mask"}}, {size, 
-     ControlType -> None}];
+PlotSegments[data_, mask_, angs_, OptionsPattern[]] := Module[{pan,size,datpl,m,n,pts,slices,nmr,maskpl}, 
+ 	pan = Manipulate[ 		
+ 		slices=angs[[n,All,1]];
+ 		pts=DeleteCases[#,{}]&/@angs[[n,All,2]];
+ 		nmr=Range[Length[slices]];
+ 		
+ 		datpl=ArrayPlot[data[[#]], DataReversed -> True, ColorFunction -> "GrayTones"]&/@slices;
+ 		maskpl=mask[[slices]];
+ 		
+ 		size = Length[angs[[n]]] 250;
+ 		(*switch between views*)
+ 		GraphicsRow[Show[
+ 		Switch[m,
+ 			(*mask with inner and outer pionts only*) 
+ 			1, {datpl[[#]],
+ 				If[NumberQ[Mean[Flatten[pts[[#]]]]],
+ 					ListPlot[{pts[[#,All,1]], pts[[#,All,2]]}, AspectRatio -> 1, PlotStyle -> {Red, Orange}],
+ 					Graphics[]
+ 				]},
+ 			(*mask with inner and outer points plus radial samples*)
+ 			2, {datpl[[#]],
+ 				If[NumberQ[Mean[Flatten[pts[[#]]]]],
+ 					ListPlot[Transpose@PointRange[pts[[#]], OptionValue[RadialSamples]], AspectRatio -> 1],
+ 					Graphics[]
+ 				]},
+ 			3, {
+ 				If[NumberQ[Mean[Flatten[pts[[#]]]]],
+ 					ArrayPlot[Fun[maskpl[[#]], Round[pts[[#,All,1]]], Round[pts[[#,All,2]]]], DataReversed -> True, ColorFunction -> "GrayTones"],
+ 					ArrayPlot[maskpl[[#]], DataReversed -> True, ColorFunction -> "GrayTones"]
+ 				]}
+     		]
+ 		] &/@ nmr,ImageSize->size], 
+	    {{n, 1, "segment"}, 1, Length[angs], 1}, 
+	    {{m, 1, "plot type"}, {1 -> "start stop point", 2 -> "radial samples", 3 -> "mask"}}, 
+	    {size, ControlType -> None},
+	    {pts, ControlType -> None},
+	    SaveDefinitions->True
+     ];
   NotebookClose[plotwindow];
-  plotwindow = 
-   CreateWindow[
-    DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, 
-     WindowSize -> All, WindowTitle -> "Plot data window"]];
+  plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
   ]
 
 

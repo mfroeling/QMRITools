@@ -858,7 +858,7 @@ depth=If[type==="cyclyc",ToString[ArrayDepth[target]-1]<>"D-t",ToString[ArrayDep
 fixedF="target-"<>depth<>".nii";
 targetFile=tempdir<>fixedF;
 
-ExportNii[target,voxt,targetFile];
+ExportNii[target,voxt,targetFile,NumberType->"Real"];
 
 (*perform registration*)
 Switch[type,
@@ -866,7 +866,7 @@ Switch[type,
 "vol",
 {inpfol,movfol,outfol}={"","",""};
 {movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii"};
-ExportNii[moving,voxm,tempdir<>movingF];
+ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real"];
 
 {fmaskF,mmaskF}={"",""};
 
@@ -888,7 +888,7 @@ RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fm
 {inpfol,movfol,outfol}={"","",""};
 {fmaskF,mmaskF}={"",""};
 {movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii"};
-ExportNii[moving,voxm,tempdir<>movingF];
+ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real"];
 If[maskm!={1},mmaskF="movemask.nii";
 ExportNii[maskm,voxm,tempdir<>mmaskF];
 ];
@@ -920,7 +920,7 @@ i=0;
 	index=StringPad[#];
 	movfol=outfol="vol"<>index;
 	CreateDirectory[tempdir<>outfol];
-	ExportNii[moving[[#]],voxm,tempdir<>movfol<>"\\"<>movingF];
+	ExportNii[moving[[#]],voxm,tempdir<>movfol<>"\\"<>movingF,NumberType->"Real"];
 	
 	(*export mask*)
 	If[maske,
@@ -991,7 +991,7 @@ OptionValue[RegistrationTarget],
 	OutputTransformation->False,
 	PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 "Median",
-(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
+(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],vox},
 	OutputTransformation->False,
 	PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 "First",
