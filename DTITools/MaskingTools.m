@@ -107,6 +107,18 @@ OptimizationRuns::usage =
 MaskRange::usage = 
 "MaskRange is an option for SmartMask"
 
+MaskComponents::usage =
+"MaskComponents is an option for SmoothMask. Determinse the amount of largest clusters used as mask." 
+
+MaskPadding::usage =
+"MaskPadding is an option for SmoothMask. Prevents the mask merging with the edge." 
+
+MaskClosing::usage =
+"MaskClosing  is an option for SmoothMask. The size of the holes in the mask that will be closed" 
+
+MaskFiltKernel::usage =
+"MaskFiltKernel is an option for SmoothMask. How mucht the contours are smoothed." 
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -527,17 +539,18 @@ MaskTensdata[tens_, mask_] := mask # & /@ tens
 (* ::Subsection::Closed:: *)
 (*SmoothMask functions*)
 
+Options[SmoothMask]={MaskComponents->1,MaskPadding->40,MaskClosing->20, MaskFiltKernel->2}
 
-SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, _.}};
+SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothMask[mask_, f_: 2] := Block[{n, n1},
-  n = 40; n1 = n + 1;
-  Round[GaussianFilter[
-    Closing[
-      ImageData@
-       SelectComponents[Image3D[ArrayPad[mask, n]], 
-        "Count", -1], n/2
-      ][[n1 ;; -n1, n1 ;; -n1, n1 ;; -n1]], f]]
+SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close,obj,filt},
+  pad = Clip[OptionValue[MaskPadding],{4,100}];(*to prevent mask joining with edges*)
+  close = Clip[OptionValue[MaskClosing],{1,pad-2}];(*close holes in mask*)
+  obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
+  filt = OptionValue[MaskFiltKernel];(*how much smooting*)
+  
+  
+  Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image3D[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]]
   ]
 
 
