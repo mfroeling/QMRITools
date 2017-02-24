@@ -80,7 +80,7 @@ NormalizeData::usage =
 NormalizeData[data,{min,max}] normalizes the data between min and max.
 "
 NormalizeDiffData::usage = 
-"NormalizeData[data] normalizes the diffusion data to the mean signal of the first volume."
+"NormalizeDiffData[data] normalizes the diffusion data to the mean signal of the first volume."
 
 (* ::Subsection:: *)
 (*Options*)

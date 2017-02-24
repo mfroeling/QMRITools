@@ -882,6 +882,7 @@ If[(dimmovm == dimmov && maskm!={1}),
 
 RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 {data,vox}=ImportNii[tempdir<>outfol<>outF];
+data=ToPackedArray[data];
 ,
 
 "cyclyc",
@@ -894,6 +895,7 @@ ExportNii[maskm,voxm,tempdir<>mmaskF];
 ];
 RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 {data,vox}=ImportNii[tempdir<>outfol<>outF];
+data=ToPackedArray[data];
 ,
 
 "series",
@@ -939,7 +941,7 @@ i=0;
 RunBatfile[tempdir,command];
 
 (*Import data*)
-data=(First@ImportNii[#])&/@outfile;
+data=ToPackedArray[(First@ImportNii[#])&/@outfile];
 
 If[OptionValue[OutputTransformation],	w=ReadTransformParameters[tempdir]];
 ];
@@ -1130,7 +1132,7 @@ RegisterDiffusionData[
   RunBatfileT[tempDir, cmd];
   
   (*import dti data in anat space*)
-  dtidatarA = Transpose[(ImportNii[#][[1]]) & /@ FileNames["resultA*", tempDir, 2]];
+  dtidatarA = Transpose[ToPackedArray[(ImportNii[#][[1]]) & /@ FileNames["resultA*", tempDir, 2]]];
   
   (*finalize by deleting temp director*)
   If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempDir,DeleteContents->True]];
@@ -1151,38 +1153,34 @@ Options[RegisterDataSplit] := Options[RegisterDiffusionData];
 SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 RegisterDataSplit[data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsPattern[]] := 
-  Block[{datal, datar},
-   {datal, datar} = CutData[data];
+  Block[{datal, datar, cut},
+   {datal, datar, cut} = CutData[data];
    datal = RegisterDiffusionData[{datal, vox}, opts];
    datar = RegisterDiffusionData[{datar, vox}, opts];
    StichData[datal, datar]
    ];
 
 RegisterDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-   opts : OptionsPattern[]] := Block[{datal, datar, dataal, dataar},
-   {datal, datar} = CutData[data];
-   {dataal, dataar} = CutData[dataa];
-   datal = 
-    RegisterDiffusionData[{datal, vox}, {dataal, voxa}, opts][[2]];
-   datar = 
-    RegisterDiffusionData[{datar, vox}, {dataar, voxa}, opts][[2]];
+   opts : OptionsPattern[]] := Block[{datal, datar, dataal, dataar, cut},
+   {datal, datar, cut} = CutData[data];
+   {dataal, dataar, cut} = CutData[dataa];
+   datal = RegisterDiffusionData[{datal, vox}, {dataal, voxa}, opts][[2]];
+   datar = RegisterDiffusionData[{datar, vox}, {dataar, voxa}, opts][[2]];
    StichData[datal, datar]
    ];
 
 RegisterDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, maska_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
    opts : OptionsPattern[]] := Block[
-   {datal, datar, dataal, dataar, maskl, maskr, maskal, maskar},
-   {datal, datar} = CutData[data];
-   {maskl, maskr} = CutData[mask];
-   {dataal, dataar} = CutData[dataa];
-   {maskal, maskar} = CutData[maska];
+   {datal, datar, dataal, dataar, maskl, maskr, maskal, maskar,cut1,cut2},
+   {datal, datar,cut1} = CutData[data];
+   {maskl, maskr,cut1} = CutData[mask,cut1];
+   {dataal, dataar,cut2} = CutData[dataa];
+   {maskal, maskar,cut2} = CutData[maska,cut2];
 
-   datal = 
-    RegisterDiffusionData[{datal, maskl, vox}, {dataal, maskal, voxa},
-       opts][[2]];
-   datar = 
-    RegisterDiffusionData[{datar, maskr, vox}, {dataar, maskar, voxa},
-       opts][[2]];
+Print[{cut1,cut2}];
+
+   datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, maskal, voxa}, opts][[2]];
+   datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, maskar, voxa}, opts][[2]];
    
    StichData[datal, datar]
    ];
@@ -1241,7 +1239,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
   PrintTemporary[tdir];
   If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
   CreateDirectory[tdir];
-  ExportNii[data, vox, tdir <> "\\trans.nii"];
+  ExportNii[data, vox, tdir <> "\\trans.nii",NumberType->"Real"];
   command = TransformixCommandInd[tdir];
   RunProcess[$SystemShell, "StandardOutput", command];
   output = ImportNii[tdir <> "\\result.nii"][[1]];

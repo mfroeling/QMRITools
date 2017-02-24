@@ -1409,21 +1409,23 @@ DriftCorrect[data_, bi_,pos_, OptionsPattern[]] :=
 (*CutData*)
 
 
-SyntaxInformation[CutData] = {"ArgumentsPattern" -> {_}}
+SyntaxInformation[CutData] = {"ArgumentsPattern" -> {_,_.}}
 
-CutData[data_] := Block[{cut, datal, datar},
-   
-   {datal, datar} = Switch[ArrayDepth[data],
-     4,
-     cut = Round[Length@data[[1, 1, 1]]/2];
-     {data[[All, All, All, ;; cut]], 
-      data[[All, All, All, (cut + 1) ;;]]},
-     3,
-     cut = Round[Length@data[[1, 1]]/2];
-     {data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]]}
-     ]
-   ];
+CutData[data_]:=CutData[data,FindMiddle[data]]
 
+CutData[data_,cut_] := Switch[
+		ArrayDepth[data],
+		4,{data[[All, All, All, ;; cut]],data[[All, All, All, (cut + 1) ;;]],cut},
+		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}
+]
+
+FindMiddle[dati_] := Module[{dat, len, r1, r2, sec1},
+  dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
+  len = Length[dat];
+  {r1, r2} = len/2 + {-20, 20};
+  sec1 = Transpose[{dat, Range[len]}][[r1 ;; r2]];
+  Last[First[Sort[sec1]]]
+  ]
 
 (* ::Subsection::Closed:: *)
 (*StichData*)

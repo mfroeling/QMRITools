@@ -279,7 +279,7 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
   
   (*(("scaleSlope" /. ("imageDimensions" /. ("header" /. hdr)))[[1]]) * *)
   
-  data = Fold[Partition, dataf, Drop[dim, {-1}]];
+  data = ToPackedArray[Fold[Partition, dataf, Drop[dim, {-1}]]];
   If[ddim == 4, data = Transpose[data,{2,1,3,4}]];
   
   data = Map[Reverse[#] &, data, {ddim - 2}];
@@ -371,26 +371,26 @@ ImportBmat[fil_String] := Module[{bmati},
 (*ImportNiiDiff*)
 
 
-Options[ImportNiiDiff]={RotateGradients->True,FlipBvec->True}
+Options[ImportNiiDiff]={RotateGradients->False,FlipBvec->True}
 
 SyntaxInformation[ImportNiiDiff]= {"ArgumentsPattern" -> {_.,_.,_.,OptionsPattern[]}};
 
 ImportNiiDiff[OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[Method -> "all"];
 	{bvec, grad}=ImportBvalvec[FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.mat, grad],.0001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
 
 ImportNiiDiff[file_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[file,Method -> "all"];
 	{bvec, grad}=ImportBvalvec[StringDrop[file,-4],FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.mat, grad],.0001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
 
 ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[fnii,Method -> "all"];
 	{bvec, grad} = ImportBvalvec[fval, fvec,FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.mat, grad],.0001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
 
 
