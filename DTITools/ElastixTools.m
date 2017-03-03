@@ -1231,12 +1231,12 @@ SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPatte
 (*TransformixCommandInd*)
 
 
-Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All"}
+Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All",PrintTempDirectory->True}
 
 TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output},
   tdir = OptionValue[TempDirectory];
   tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}) <>"\\DTItoolsReg\\transform";
-  PrintTemporary[tdir];
+  If[OptionValue[PrintTempDirectory],PrintTemporary[tdir]];
   If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
   CreateDirectory[tdir];
   ExportNii[data, vox, tdir <> "\\trans.nii",NumberType->"Real"];

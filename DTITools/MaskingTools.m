@@ -398,7 +398,7 @@ Module[{depth},
 (*SmartMask2*)
 
 
-Options[SmartMask2]={Strictness->.75,Compartment->"Muscle",Method->"Continuous",Reject->True};
+Options[SmartMask2]={Strictness->.75,Compartment->"Muscle",Method->"Continuous",Reject->True,Output->"mask"};
 
 SyntaxInformation[SmartMask2] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -423,18 +423,21 @@ Module[{sol,func,range,map,mask,pmask,Omega,Xi,Alpha,pars},
 		];
 	
 	pmask=Mask[pars[[1]],{0.00001}];
-	mask=pmask * Switch[OptionValue[Method],
+	Switch[OptionValue[Method],
 		"Catagorical",
 		range=(func=SkewNormalDistribution[#[[2]],#[[1]],#[[3]]];{Quantile[func,.02],Quantile[func,.98]})&/@sol;
-		Mask[TotalVariationFilter[Total[MapThread[Mask[#1,#2]&,{pars,range}]]/5,.15],{OptionValue[Strictness]}]
+		map = Total[MapThread[Mask[#1,#2]&,{pars,range}]]/5;
+		mask = pmask * Mask[TotalVariationFilter[map,.15],{OptionValue[Strictness]}];
 		,
 		"Continuous",
 		map = MapThread[({Omega, Xi, Alpha} = #2;Map[SkewNormC[#, Omega, Xi, Alpha] &, #1, {ArrayDepth[#1]}]) &, {pars, sol}];
 		map = Total[{1, 1, 1, 1, 2}*(#/Max[#] & /@ map)]/6;
-		Mask[TotalVariationFilter[map, .35], {OptionValue[Strictness]}]
+		mask = pmask * Mask[TotalVariationFilter[map, .35], {OptionValue[Strictness]}];
 		(*map=Total[MapThread[({Omega,Xi,Alpha}=#2;Map[SkewNormC[#,Omega,Xi,Alpha]&,#1,{ArrayDepth[#1]}])&,{pars,sol}]];
 		Mask[TotalVariationFilter[map/Max[map],.15],{OptionValue[Strictness]}]*)
-		]
+		];
+		
+		If[OptionValue[Output]==="mask",mask,{mask,map}]
 	]
 
 

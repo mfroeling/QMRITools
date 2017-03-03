@@ -184,7 +184,7 @@ SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
 
 ImportNii[opts:OptionsPattern[]]:=ImportNii["",opts];
 
-ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision, adim, ddim, dim, dataf, data, vox,what,rotmat},
+ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision, adim, ddim, dim, data, vox,what,rotmat},
 	
 	what=OptionValue[Method];
 	
@@ -274,25 +274,19 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
   ddim = adim[[1]];
   dim = adim[[2 ;; ddim + 1]];
   BinaryReadList[strm, "Real32", 1];(*???*)
-  dataf = BinaryReadList[strm, precision];
+  data = BinaryReadList[strm, precision];
   Close[strm];
   
-  (*(("scaleSlope" /. ("imageDimensions" /. ("header" /. hdr)))[[1]]) * *)
-  
-  data = ToPackedArray[Fold[Partition, dataf, Drop[dim, {-1}]]];
+  data = Fold[Partition, data, Drop[dim, {-1}]];
+
   If[ddim == 4, data = Transpose[data,{2,1,3,4}]];
   
   data = Map[Reverse[#] &, data, {ddim - 2}];
-  
-    
+      
   If[Positive[("sRowx" /. ("dataHistory" /. ("header"/. hdr)))[[1]]],
   	data = Map[Reverse[#] &, data, {ddim - 1}]
   	];
-  (*data = Map[Reverse[#] &, data, {ddim - 1}];*)
-  (*If[Negative[("sRowy" /. ("dataHistory" /. ("header"/. hdr)))[[2]]],data = Map[Reverse[#] &, data, {ddim - 3}];];  
-  If[Negative[("sRowz" /. ("dataHistory" /. ("header"/. hdr)))[[3]]],data = Reverse[data];];*)
   
-
   vox = If[ddim==2,
     	Reverse[("pixDim" /. ("imageDimensions" /. ("header" /. hdr)))[[2 ;; 3]]]
     	,
