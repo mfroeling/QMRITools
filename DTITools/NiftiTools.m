@@ -184,7 +184,7 @@ SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
 
 ImportNii[opts:OptionsPattern[]]:=ImportNii["",opts];
 
-ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision, adim, ddim, dim, data, vox,what,rotmat},
+ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision, adim, ddim, dim, data, vox,what,rotmat,slope,intercept,rule},
 	
 	what=OptionValue[Method];
 	
@@ -250,6 +250,8 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
        }
      };
   
+  rule=Flatten[hdr[[2, All, 2]]];
+  
   precision = Switch [
     ("dataType" /. ("imageDimensions" /. ("header" /. hdr)))[[1]],
     1, "Bit",
@@ -292,6 +294,10 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
     	,
     	Reverse[("pixDim" /. ("imageDimensions" /. ("header" /. hdr)))[[2 ;; 4]]]
     ];
+  
+  
+  {slope,intercept}=Flatten[{"scaleSlope", "scaleInteger"} /. rule];
+  data=If[slope!=0.,  (data slope)+intercept,data];  
   
   Switch[what,
   	"data",{data,vox},

@@ -89,6 +89,8 @@ CorrectBmatrix::usage =
 TransformData::usage = 
 "TransformData[{data,vox}]"
 
+RegisterDataTransform::usage = 
+"RegisterDataTransform[[target, moving, {moving2nd, vox}]"
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -1150,7 +1152,7 @@ RegisterDiffusionData[
 
 Options[RegisterDataSplit] := Options[RegisterDiffusionData];
 
-SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 RegisterDataSplit[data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsPattern[]] := 
   Block[{datal, datar, cut},
@@ -1158,6 +1160,14 @@ RegisterDataSplit[data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsP
    datal = RegisterDiffusionData[{datal, vox}, opts];
    datar = RegisterDiffusionData[{datar, vox}, opts];
    StichData[datal, datar]
+   ];
+
+RegisterDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, opts : OptionsPattern[]] := Block[{datal, datar, cut,maskr,maskl},
+	{datal, datar, cut} = CutData[data];
+	{maskl, maskr, cut} = CutData[mask,cut];
+	datal = RegisterDiffusionData[{datal, maskl, vox}, opts];
+	datar = RegisterDiffusionData[{datar, maskr, vox}, opts];
+	StichData[datal, datar]
    ];
 
 RegisterDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
@@ -1228,7 +1238,31 @@ SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPatte
 
 
 (* ::Subsection::Closed:: *)
-(*TransformixCommandInd*)
+(*RegisterDataTransform*)
+
+
+Options[RegisterDataTransform] = Options[RegisterData];
+
+SyntaxInformation[RegisterDataTransform] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+RegisterDataTransform[target_, moving_, {moving2_, vox_}, 
+  opts : OptionsPattern[]] := Block[{reg, mov},
+  reg = RegisterData[target, moving, DeleteTempDirectory -> False, 
+    opts];
+  mov = If[ArrayDepth[moving2] == 4,
+    Transpose[
+     TransformData[{#, vox}, DeleteTempDirectory -> "Trans", 
+        PrintTempDirectory -> False] & /@ Transpose[moving2]],
+    TransformData[{moving2, vox}, DeleteTempDirectory -> "Trans", 
+     PrintTempDirectory -> False]
+    ];
+  {reg, mov}
+  ]
+
+
+
+(* ::Subsection::Closed:: *)
+(*TransformData*)
 
 
 Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All",PrintTempDirectory->True}

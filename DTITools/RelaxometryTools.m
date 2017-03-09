@@ -62,10 +62,12 @@ LinFit[datan_, times_] :=
     4, Transpose[datal, {1, 4, 2, 3}]
     ];
   
-  result = ParallelMap[(
-      fdat = Transpose[{times, #}];
-      Quiet[LinearModelFit[fdat, t, t]["BestFitParameters"]]
-      ) &, datal, {ad - 1}];
+  result = ParallelMap[If[Total[#]==0.,
+  	{0.,0.},
+  	fdat = Transpose[{times, #}];
+  	Quiet[LinearModelFit[fdat, t, t]["BestFitParameters"]]
+  	]
+      &, datal, {ad - 1}];
   
   {offset, T1r} = Switch[ad,
     3, Transpose[result, {2, 3, 1}],
@@ -128,8 +130,8 @@ Options[T2Fit] = {Method -> "Linear"};
 SyntaxInformation[T2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
 T2Fit[datan_, times_, OptionsPattern[]] := Switch[OptionValue[Method],
-  "Linear", LinFit[datan, times],
-  _, LogFit[datan, times]
+  "Linear", LinFit[N[datan], times],
+  _, LogFit[N[datan], times]
   ]
 
 
