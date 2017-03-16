@@ -34,7 +34,7 @@ DcmToNii::usage =
 ImportNii::usage = 
 "ImportNii[] promts to select the nii file to import.
 ImportNii[\"file\"] imports the nii file. 
-The option Method ->\"type\" can be \"data\" which exports {data, vox}, \"header\" which exports {hdr} or \"all\" which exports {data, vox, hdr}."
+The option NiiMethod ->\"type\" can be \"data\" which exports {data, vox}, \"header\" which exports {hdr} or \"all\" which exports {data, vox, hdr}."
 
 ImportNiiDiff::usage = 
 "ImportNiiDiff[] will promt for the *.nii, *.bvec and *.bval file to import.
@@ -91,6 +91,9 @@ FlipBvec::usage = "FlipBvec is an option for ImportBvalvec"
 
 RotateGradients::usage="RotateGradients is an option for ImportNiiDiff"
 
+NiiMethod::usage="NiiMethod is an option for ImportNIi. valuse can be \"all\", \"header\" or \"data\"."
+
+NiiScaling::useage="NiiScaling is an option for ImportNii. It scales the nii values with scale slope and offset for quantitative data."
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -178,7 +181,7 @@ DcmToNii[action_,fstr_] := Module[{act,filfolin,folout,add,title,log,command},
 (*ImportNii*)
 
 
-Options[ImportNii]={Method->"data"};
+Options[ImportNii]={NiiMethod->"data", NiiScaling->True};
 
 SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
 
@@ -186,7 +189,7 @@ ImportNii[opts:OptionsPattern[]]:=ImportNii["",opts];
 
 ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision, adim, ddim, dim, data, vox,what,rotmat,slope,intercept,rule},
 	
-	what=OptionValue[Method];
+	what=OptionValue[NiiMethod];
 	
 	If[!MemberQ[{"data","header","all"},what],Return[Message[ImportNii::wht]]];
 	
@@ -297,7 +300,7 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
   
   
   {slope,intercept}=Flatten[{"scaleSlope", "scaleInteger"} /. rule];
-  data=If[slope!=0.,  (data slope)+intercept,data];  
+  data=If[slope!=0. && OptionValue[NiiScaling], (data slope)+intercept,data];  
   
   Switch[what,
   	"data",{data,vox},
@@ -376,19 +379,19 @@ Options[ImportNiiDiff]={RotateGradients->False,FlipBvec->True}
 SyntaxInformation[ImportNiiDiff]= {"ArgumentsPattern" -> {_.,_.,_.,OptionsPattern[]}};
 
 ImportNiiDiff[OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
-	{data,vox,hdr,mat}=ImportNii[Method -> "all"];
+	{data,vox,hdr,mat}=ImportNii[NiiMethod -> "all"];
 	{bvec, grad}=ImportBvalvec[FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
 
 ImportNiiDiff[file_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
-	{data,vox,hdr,mat}=ImportNii[file,Method -> "all"];
+	{data,vox,hdr,mat}=ImportNii[file,NiiMethod -> "all"];
 	{bvec, grad}=ImportBvalvec[StringDrop[file,-4],FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
 
 ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
-	{data,vox,hdr,mat}=ImportNii[fnii,Method -> "all"];
+	{data,vox,hdr,mat}=ImportNii[fnii,NiiMethod -> "all"];
 	{bvec, grad} = ImportBvalvec[fval, fvec,FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
