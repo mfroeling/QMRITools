@@ -110,7 +110,6 @@ PositiveZ::usage =
 "PositiveZ is an options for GradientPlot. If True all Gradients are displayed with a positive z direction."
 
 
-
 (* ::Subsection:: *)
 (*Error Messages*)
 

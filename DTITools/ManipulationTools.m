@@ -660,7 +660,7 @@ Unwrap3Di[dat_, mon_] := Module[{data, dim, ii, DD, groupnr, sorted, z1, x1, y1,
 	wrap, mask, edges, groups, pos, groupsize, g1, g2, const, max, clustnr, dati, part},
   
   (*convert data to integers for fast matrix clacluations*)
-  data = Round[100000*ArrayPad[dat , 1]/(2 Pi // N)];
+  data = ToPackedArray[Round[100000*ArrayPad[dat , 1]/(2 Pi // N)]];
   mask = Clip[Ceiling[Abs[Chop[data]]], {0, 1}] // N;
   dim = Dimensions[data];
   

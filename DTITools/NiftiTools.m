@@ -77,23 +77,25 @@ CompressNiiFiles::usage =
 "CompressNiiFiles[]compresses all nii files to .nii.gz files in current folder.
 ECompressNiiFilesfolder] compresses all nii files to .nii.gz files in folder."
 
+
 (* ::Subsection:: *)
 (*Options*)
 
 
 NumberType::usage = "NumberType of Nii file can be \"Integer\" of \"Real\"."
 
-ImportResult::usage = "ImportResult is an option for OpenMRIcron and can be True or False"
+ImportResult::usage = "ImportResult is an option for OpenMRIcron and can be True or False."
 
-NumberOfResults::usage = "NumberOfResults is an option for OpenMRIcron and should be an integer"
+NumberOfResults::usage = "NumberOfResults is an option for OpenMRIcron and should be an integer."
 
-FlipBvec::usage = "FlipBvec is an option for ImportBvalvec"
+FlipBvec::usage = "FlipBvec is an option for ImportBvalvec."
 
-RotateGradients::usage="RotateGradients is an option for ImportNiiDiff"
+RotateGradients::usage = "RotateGradients is an option for ImportNiiDiff."
 
-NiiMethod::usage="NiiMethod is an option for ImportNIi. valuse can be \"all\", \"header\" or \"data\"."
+NiiMethod::usage = "NiiMethod is an option for ImportNIi. valuse can be \"all\", \"header\" \"data\" or \"dataTR\"."
 
-NiiScaling::useage="NiiScaling is an option for ImportNii. It scales the nii values with scale slope and offset for quantitative data."
+NiiScaling::usage = "NiiScaling is an option for ImportNii. It scales the nii values with scale slope and offset for quantitative data."
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -103,7 +105,7 @@ DcmToNii::notfount = "dcm2nii.exe not found in $UserBaseDirectory or $BaseDirect
 
 DcmToNii::type = "Input should be \"file\" or \"folder\"."
 
-ImportNii::wht = "should be \"data\", \"header\" or \"all\"."
+ImportNii::wht = "should be \"data\", \"dataTR\", \"header\" or \"all\"."
 
 ExportNii::type = "NumberType should be \"Integer\" of \"Real\"."
 
@@ -112,7 +114,6 @@ OpenMRIcron::notfount = "mricron.exe not found in $UserBaseDirectory or $BaseDir
 OpenMRIcron::fil = "the file `1` does not exist."
 
 ImportNii::notfount = "the file `1` does not exist."
-
 
 
 (* ::Section:: *)
@@ -187,11 +188,12 @@ SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
 
 ImportNii[opts:OptionsPattern[]]:=ImportNii["",opts];
 
-ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision, adim, ddim, dim, data, vox,what,rotmat,slope,intercept,rule},
+ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision, adim, 
+	TR, ddim, dim, data, vox,what,rotmat,slope,intercept,rule},
 	
 	what=OptionValue[NiiMethod];
 	
-	If[!MemberQ[{"data","header","all"},what],Return[Message[ImportNii::wht]]];
+	If[!MemberQ[{"data","dataTR","header","all"},what],Return[Message[ImportNii::wht]]];
 	
 	file=If[fil=="",FileSelect["FileOpen",{"*.nii"},WindowTitle->"Select the nii file to import"],fil];	
 	If[file == Null || file === $Canceled, Return[]];
@@ -298,17 +300,25 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
     	Reverse[("pixDim" /. ("imageDimensions" /. ("header" /. hdr)))[[2 ;; 4]]]
     ];
   
+  (*what to do for 2D?*)
+  TR = ("pixDim" /. ("imageDimensions" /. ("header" /. hdr)))[[5]];
   
   {slope,intercept}=Flatten[{"scaleSlope", "scaleInteger"} /. rule];
   data=If[slope!=0. && OptionValue[NiiScaling], (data slope)+intercept,data];  
   
   Switch[what,
-  	"data",{data,vox},
-  	"header",hdr,
+  	"data",
+  		{data,vox},
+  	"header",
+  		hdr,
+  	"dataTR",
+  		{data,vox,TR},
   	"all",
-  		  rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. ("dataHistory" /. ("header" /. hdr)))[[All,1 ;; 3]]/ConstantArray[Reverse[vox], 3];
-  		  rotmat = DiagonalMatrix[{1, -1, 1}].ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
-  		  {data, vox, hdr, rotmat}
+  		rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. ("dataHistory" /. ("header" /. hdr)))[[All,1 ;; 3]]/ConstantArray[Reverse[vox], 3];
+  		rotmat = DiagonalMatrix[{1, -1, 1}].ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
+  		{data, vox, hdr, rotmat},
+  	_, 
+  		{data,vox}
   ]
 ]
 
@@ -414,10 +424,10 @@ SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}
 
 Options[ExportNii]={NumberType->"Integer"}
 
-ExportNii[dato_, vox_,opts:OptionsPattern[]] := ExportNii[dato, vox, "",opts]
+ExportNii[dato_, voxi_,opts:OptionsPattern[]] := ExportNii[dato, vox, "",opts]
 
-ExportNii[dato_, vox_, fil_,OptionsPattern[]] := Block[{datao, type, dim, depth, dimo, voxo, srowx, srowy, srowz, ftype, 
-   strm, fileo, typeo},
+ExportNii[dato_, voxi_, fil_,OptionsPattern[]] := Block[{datao, type, dim, depth, dimo, voxo, srowx, srowy, srowz, 
+	ftype, echo, strm, fileo, typeo, vox},
   
   fileo = If[fil == "", FileSelect["FileSave",{"*.nii"},"nifti",WindowTitle->"Select the destination file"], fil];
   If[fileo == Null, Return[]];
@@ -426,6 +436,11 @@ ExportNii[dato_, vox_, fil_,OptionsPattern[]] := Block[{datao, type, dim, depth,
   
   dim = Dimensions[dato];
   depth = ArrayDepth[dato];
+  
+  If[ListQ[voxi[[1]] && NumberQ[voxi[[2]]]],
+ 		vox = voxi[[1]]; echo = voxi[[2]];
+ 		,
+ 		vox = voxi;echo=0;];
   
   Switch[
   	ftype,
@@ -475,6 +490,7 @@ ExportNii[dato_, vox_, fil_,OptionsPattern[]] := Block[{datao, type, dim, depth,
  
   dimo = PadRight[Flatten[{depth, If[Length[dim] == 4, dim[[{4, 3, 1, 2}]], Reverse[dim]]}], 8, 1];
   voxo = PadRight[Flatten[{1., Reverse[vox]}], 8, 0];
+  voxo[[5]]=echo;
   
   srowx = {vox[[3]], 0., 0., -N[vox[[3]] dim[[depth]]/2]};
   srowy = {0., vox[[2]], 0., -N[vox[[2]] dim[[depth - 1]]/2]};
@@ -503,7 +519,7 @@ ExportNii[dato_, vox_, fil_,OptionsPattern[]] := Block[{datao, type, dim, depth,
   (*scaleInteger*)BinaryWrite[strm, 0., "Real32"];
   (*sliceEnd*)BinaryWrite[strm, 0, "Integer16"];
   (*sliceCode*)BinaryWrite[strm, 0, "UnsignedInteger8"];
-  (*xyztUnits*)BinaryWrite[strm, 2, "UnsignedInteger8"];(*0-unknown 1-meters 2-millimeter 3-micrometers*)
+  (*xyztUnits*)BinaryWrite[strm, If[echo!=0,10,2], "UnsignedInteger8"];(*0-unknown 1-meters 2-millimeter 3-micrometers 10-mm/sec*)
   (*calMax*)BinaryWrite[strm, 0., "Real32"];
   (*calMin*)BinaryWrite[strm, 0., "Real32"];
   (*sliecDuration*)BinaryWrite[strm, 0., "Real32"];
@@ -533,7 +549,6 @@ ExportNii[dato_, vox_, fil_,OptionsPattern[]] := Block[{datao, type, dim, depth,
   Close[strm];
   fileo
 ]
-
 
 
 (* ::Subsection::Closed:: *)
@@ -596,24 +611,18 @@ ExportBmat[bmat_, fil_String] := Module[{bmate, file},
   ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*OpenMRIcron*)
 
 
-FindMRIcron[] := Module[{mricron},
-  mricron = $UserBaseDirectory <> 
-    "\\Applications\\DTITools\\Applications\\mricron.exe";
-  mricron = 
-   If[! FileExistsQ[mricron], $BaseDirectory <> 
-     "\\Applications\\DTITools\\Applications\\mricron.exe", mricron];
-  If[! FileExistsQ[mricron], Return[Message[OpenMRIcron::notfount]], 
-   mricron]
-  ]
+(* ::Subsubsection::Closed:: *)
+(*OpenMRIcron*)
 
-Clear[OpenMRIcron]
+
 Options[OpenMRIcron] = {ImportResult -> True, NumberOfResults -> 1};
-SyntaxInformation[
-   OpenMRIcron] = {"ArgumentsPattern" -> {_., OptionsPattern[]}};
+
+SyntaxInformation[OpenMRIcron] = {"ArgumentsPattern" -> {_., OptionsPattern[]}};
+
 OpenMRIcron[opts : OptionsPattern[]] := OpenMRIcron["", opts];
 OpenMRIcron[filei_, OptionsPattern[]] := 
  Block[{file, mricron, command, num},
@@ -633,6 +642,21 @@ OpenMRIcron[filei_, OptionsPattern[]] :=
     Return[Message[OpenMRIcron::fil, file]];
     ]
    ]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindMRIcron*)
+
+
+FindMRIcron[] := Module[{mricron},
+  mricron = $UserBaseDirectory <> 
+    "\\Applications\\DTITools\\Applications\\mricron.exe";
+  mricron = 
+   If[! FileExistsQ[mricron], $BaseDirectory <> 
+     "\\Applications\\DTITools\\Applications\\mricron.exe", mricron];
+  If[! FileExistsQ[mricron], Return[Message[OpenMRIcron::notfount]], 
+   mricron]
   ]
 
 

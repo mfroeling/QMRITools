@@ -1,7 +1,7 @@
 (* ::Package:: *)
 
 (* ::Title:: *)
-(*DTITools Tools*)
+(*DTITools RelaxometryTools*)
 
 
 (* ::Subtitle:: *)
@@ -27,6 +27,7 @@ ClearAll @@ Names["DTITools`RelaxometryTools`*"];
 (* ::Subsection:: *)
 (*Functions*)
 
+
 T1rhoFit::usage = "
 T1rhoFit[data, EchoTimes]"
 
@@ -35,18 +36,35 @@ T2Fit[data, EchoTimes]"
 
 TriExponentialT2Fit::usage = "
 TriExponentialT2Fit[data, EchoTimes] fits the T2 based on Azzabou N et.al. Validation of a generic approach to muscle water 
-T2 determination at 3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015"
+T2 determination at 3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015."
+
+EPGT2Fit::usage = "
+EPGT2Fit[data, EchoTimes, angle, relax] fits the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction mapping using transverse relaxometry with stimulated echo compensation.
+angle is the refocussing angle in degree."
+
+EPGSignal::usage = "
+EPGSignal[Necho, echoSpace, T1, T2, angle, B1] generates a EPG T2 curve with stimulated echos. T1, T2 and echoSpace are in ms, angel is in degree, B1 is between 0 and 1."
+
+CreateT2Dictionary::usage = "
+CreateT2Dictionary[{T1m, T1f, T2f}, {Necho, echoSpace, angle}] Creates a EPG signal dictionary used for EPGT2fit."
+
+DictionaryMinSearch::usage = "
+DictionaryMinSearch[dictionary, y] performs dictionary minimization of data y. dictionary is generated with CreateT2Dictionary."
+
 
 (* ::Subsection:: *)
 (*General Options*)
 
 
+DictT2Range::usage = "DictT2Range is an option for CreateT2Dictionary and EPGT2Fit. is specifies the range and step of the T2 values in the dictionary {min, max, step} in ms."
+
+DictB1Range::usage = "DictB1Range is an option for CreateT2Dictionary and EPGT2Fit. It specifies the range and step of the B1 values in the dictionary {min, max, step}."
+
+EPGRelaxPars::usage = "EPGRelaxPars is and option for EPGT2Fit. Needs to be {T1muscl, T1Fat, T2Fat} in ms, defaul is {1400,365,137}."
 
 
 (* ::Subsection:: *)
 (*Error Messages*)
-
-
 
 
 (* ::Section:: *)
@@ -55,8 +73,42 @@ T2 determination at 3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015"
 
 Begin["`Private`"]
 
+
 (* ::Subsection::Closed:: *)
-(*General local definitions*)
+(*T1rhoFit*)
+
+
+Options[T1rhoFit] = {Method -> "Linear"};
+
+SyntaxInformation[T1rhoFit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+
+T1rhoFit[datan_, times_, OptionsPattern[]] := 
+ Switch[OptionValue[Method],
+  "Linear", LinFit[datan, times],
+  _, LogFit[datan, times]
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*T2Fit*)
+
+
+Options[T2Fit] = {Method -> "Linear"};
+
+SyntaxInformation[T2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+
+T2Fit[datan_, times_, OptionsPattern[]] := Switch[OptionValue[Method],
+  "Linear", LinFit[N[datan], times],
+  _, LogFit[N[datan], times]
+  ]
+
+
+(* ::Subsection:: *)
+(*linFit and LogFit*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*LinFit*)
 
 
 LinFit[datan_, times_] := 
@@ -84,6 +136,11 @@ LinFit[datan_, times_] :=
   T1r = Clip[T1r, {0, 500}, {0, 500}];
   {offset, T1r}
   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*LogFit*)
+
 
 LogFit[datan_, times_] := 
  Module[{result, fdat, offset, T1r, off, t1rho, t, ad, datal},
@@ -114,35 +171,193 @@ LogFit[datan_, times_] :=
 
 
 (* ::Subsection::Closed:: *)
-(*T1rhoFit*)
+(*EPGT2Fit*)
 
 
-Options[T1rhoFit] = {Method -> "Linear"};
+Options[EPGT2Fit]= {DictT2Range -> {20, 80, 0.3}, DictB1Range -> {0.4, 1, 0.02}, EPGRelaxPars->{1400, 365, 137}}
 
-SyntaxInformation[T1rhoFit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 
-T1rhoFit[datan_, times_, OptionsPattern[]] := 
- Switch[OptionValue[Method],
-  "Linear", LinFit[datan, times],
-  _, LogFit[datan, times]
+EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,T1m, T1f, T2f, ad, datal, dictionary, sol,
+	wat, fat, fatMap, T2map, B1Map},
+  
+  {T1m, T1f, T2f} = OptionValue[EPGRelaxPars];
+  
+  Necho = Length[times];
+  echoSpace = First[times];
+ 
+  dictionary = CreateT2Dictionary[{T1m, T1f, T2f}, {Necho, echoSpace, angle}];
+  
+  ad = ArrayDepth[datan];
+  datal = Switch[ad,
+    3, Transpose[datan, {3, 1, 2}],
+    4, Transpose[datan, {1, 4, 2, 3}]
+    ];
+    
+  sol = ParallelMap[DictionaryMinSearch[dictionary, #] &, datal, {ad - 1}];
+  
+  Switch[ad,
+  	3,
+  		{wat, fat} = Clip[{sol[[All, All, 2, 1]], sol[[All, All, 2, 2]]}, {0, Max[sol[[All, All, 2]]]}];
+  		fatMap = Clip[sol[[All, All, 2, 2]]/((sol[[All, All, 2, 2]] + sol[[All, All, 2, 1]]) /. 0. -> Infinity), {0, 1}];
+  		T2map = sol[[All, All, 1, 1]];
+  		B1Map = MedianFilter[sol[[All, All, 1, 2]], 1];
+  	4,
+		{wat, fat} = Clip[{sol[[All, All, All, 2, 1]], sol[[All, All, All, 2, 2]]}, {0, Max[sol[[All, All, All, 2]]]}];
+  		fatMap = Clip[sol[[All, All, All, 2, 2]]/((sol[[All, All, All, 2, 2]] + sol[[All, All, All, 2, 1]]) /. 0. -> Infinity), {0, 1}];
+  		T2map = sol[[All, All, All, 1, 1]];
+  		B1Map = MedianFilter[sol[[All, All, All, 1, 2]], 1];
+  ];
+  
+  {{T2map,B1Map},{wat, fat, fatMap}}
+]
+
+
+(* ::Subsection:: *)
+(*EPGSignal*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*EPGSignal*)
+
+
+SyntaxInformation[EPGSignal]= {"ArgumentsPattern" -> {_, _, _, _, _, _, OptionsPattern[]}}
+
+EPGSignal[Necho_, echoSpace_, T1_, T2_, angle_, B1_] := Block[
+  {tau, T0, R0, alpha, Smat, Tmat, Rmat, Pmat, Emat, xvec, 
+   out, t2r, t1r},
+  (*define internal paramters*)
+  alpha = N[B1 angle Degree];
+  tau = echoSpace/2.;
+  t2r = Exp[-tau/T2];
+  t1r = Exp[-tau/T1];
+  
+  (*Selection matrix to move all traverse states up one coherence level*)
+  Smat = MixMatrix[Necho];
+  (*RF mixing matrix*)
+  T0 = RotMatrixT[alpha];
+  Tmat = MakeDiagMat[T0, Necho, 1];
+  (* Relaxation matrix*)
+  R0 = DiagonalMatrix[N@{t2r, t2r, t1r}];
+  Rmat = MakeDiagMat[R0, Necho, t2r];
+  (*Precession and relaxation matrix*)
+  Pmat = Rmat.Smat;
+  (*Matrix representing the inter-echo duration*)
+  Emat = Pmat.Tmat.Pmat;
+  (*Recursively apply matrix to get echo amplitudes*)
+  xvec = ConstantArray[0, 3*Necho + 1]; xvec[[1]] = 1;
+  (*create outpu*)
+  out = Table[xvec = Emat.xvec; First[xvec], {i, Necho}];
+  out/out[[1]]
   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeDiagMat*)
+
+
+MakeDiagMat[mat_, Necho_, first_] := Block[{out},
+   out = ArrayPad[Flatten[Flatten[(DiagonalMatrix[ConstantArray[1, Necho]]*ConstantArray[mat, {Necho, Necho}]), {2, 4}], {2, 3}], {{1, 0}, {1, 0}}];
+   out[[1, 1]] = first;
+   out
+   ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MixMatrix*)
+
+
+(*if run once with Necho definition is stored*)
+MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, off1, off2},
+   len = 3*Necho + 1;
+   (*mixing matirx*)
+   Smat = ConstantArray[0, {len, len}];
+   Smat[[1, 3]] = Smat[[2, 1]] = Smat[[3, 6]] = Smat[[4, 4]] = 1;
+   Table[
+    off1 = ((o - 1) - 1)*3 + 2;
+    If[off1 <= len, Smat[[3*o - 1, off1]] = 1];
+    off2 = ((o + 1) - 1)*3 + 3;
+    If[off2 <= len, Smat[[3*o, off2]] = 1];
+    Smat[[3*o + 1, 3*o + 1]] = 1;
+    , {o, 2, Necho}];
+   (*output mixing matrix*)
+   Smat
+   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RotMatrixT*)
+
+
+(*if run once with alpha definition is stored*)
+RotMatrixT[alpha_] := RotMatrixT[alpha] = {
+    {Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
+    {Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
+    {-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
+    };
 
 
 (* ::Subsection::Closed:: *)
-(*T2Fit*)
+(*CreateT2Dictionary*)
 
-Options[T2Fit] = {Method -> "Linear"};
 
-SyntaxInformation[T2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+Options[CreateT2Dictionary] = {DictT2Range -> {20, 80, 0.3}, DictB1Range -> {0.4, 1, 0.02}};
 
-T2Fit[datan_, times_, OptionsPattern[]] := Switch[OptionValue[Method],
-  "Linear", LinFit[N[datan], times],
-  _, LogFit[N[datan], times]
-  ]
+SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+
+CreateT2Dictionary[relax_, ang_, opts : OptionsPattern[]] := CreateT2Dictionaryi[relax, ang, opts]
+
+Options[CreateT2Dictionaryi] = Options[CreateT2Dictionary]
+
+(*save each unique dictionary*)
+CreateT2Dictionaryi[relax_, ang_, opts : OptionsPattern[]] := CreateT2Dictionaryi[relax, ang, opts] = Block[
+   {dict, dictf, valsf, T1m, T1f, T2f, Necho, echoSpace, angle, t2s, 
+    t2e, t2i, b1s, b1e, b1i},
+   (*set parameters*)
+   {T1m, T1f, T2f} = relax;
+   {Necho, echoSpace, angle} = ang;
+   (*get dictionary values*)
+   {t2s, t2e, t2i} = OptionValue[DictT2Range];
+   {b1s, b1e, b1i} = OptionValue[DictB1Range];
+   Print["Creating dictionary for new values : ", {T1m, T1f, T2f}, "  ", {Necho, echoSpace, angle}];
+   (*create dictionary*)
+   dict = Table[
+     {{EPGSignal[Necho, echoSpace, T1m, T2m, angle, B1], EPGSignal[Necho, echoSpace, T1f, T2f, angle, B1]}, {T2m, B1}}, 
+     	{T2m, t2s, t2e, t2i}, {B1, b1s, b1e, b1i}];
+   (*flatten dictionary*)  	
+   valsf = Flatten[dict[[All, All, 2]], 1];
+   dictf = Transpose /@ Flatten[dict[[All, All, 1]], 1];
+   Print["The dictionary contains "<>ToString[Length[dictf]]<>" values."];
+   {dictf, valsf}
+   ]
+
+
+(* ::Subsection::Closed:: *)
+(*DictionaryMinSearch*)
+
+
+SyntaxInformation[DictionaryMinSearch]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+
+DictionaryMinSearch[{dictf_, valsf_}, yi_] := Block[{fwf, residualError, ydat},
+  ydat = N@yi;
+  If[Total[ydat] == 0.,
+  	(*skip if background*)
+  	{{0., 0.}, {0., 0.}, 0.},
+  	(*calcualte dictionary error*)
+  	fwf = LeastSquaresC[dictf, ydat];
+  	residualError = ErrorC[ydat, fwf, dictf];
+  	(*find Min value*)
+  	{valsf, fwf, residualError}[[All, First@Ordering[residualError, 1]]]
+   ]]
+
+LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, (Inverse[T.A].T).y], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
+
+ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Total[(y - A.f)^2], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
 
 
 (* ::Subsection::Closed:: *)
 (*TriExponentialT2Fit*)
+
 
 SyntaxInformation[TriExponentialT2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 

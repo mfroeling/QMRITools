@@ -217,7 +217,7 @@ Begin["`Private`"]
 (*IVIMCalc*)
 
 
-Options[IVIMCalc] = {Method -> Automatic, Parallelize->False, MonitorIVIMCalc -> True, 
+Options[IVIMCalc] = {Method -> Automatic, Parallelize->True, MonitorIVIMCalc -> True, 
 	IVIMFixed -> False, IVIMConstrained -> True, IVIMTensFit -> False, IVIMComponents -> 2,
 	IVIMConstrains -> {{0.8, 1.2}, {0, 1}, {0.0005, 0.0035}, {0.001, 0.5}, {0.001, 0.5}}
    };
@@ -338,26 +338,34 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
    	] /. fixrule;
   
   (*perform fit*)
-  mapfun=If[OptionValue[Parallelize],
-  	DistributeDefinitions[bin,funcin,funcf,fpars,method,out];
-  	ParallelMap,Map];
-  	 ivim = Transpose[mapfun[
+  j=i=0;
+  
+  mapfun=If[OptionValue[Parallelize]&&depthD>1,
+  	ParallelEvaluate[j=0];SetSharedVariable[i];
+  	DistributeDefinitions[bin,funcin,fitd,funcf,start,fpars,method,out];ParallelMap,
+  	Map];
+  
+  If[OptionValue[MonitorIVIMCalc]&&depthD>1,
+  	PrintTemporary[ProgressIndicator[Dynamic[i],{0,Total@Flatten@Unitize[dat0]}]]
+  	];
+  
+  ivim = Quiet@Transpose[mapfun[
   		(
+  		
   		S0s = #[[1]];
   		If[N[#] == #*0. || S0s == 0.,
 		   (*masked voxel*)
 		   0. out
 		   ,
+		   j++;If[j>1000,i+=j;j=1;];
 		   (*data voxel*)
 		   fitd = Flatten /@ ({bin, #} // Transpose);
 		   start=Prepend[funcin,{S0,S0s}];
 		   sol = Quiet[FindFit[fitd, funcf, start , fpars, Method -> method, MaxIterations -> 150]];
 		   out /. sol		    
   		]
-  		
-  		)&, 
-	  	Transpose[datn, rl], {depthD - 1}], rr];  	
-	  	
+  		)&,Transpose[datn, rl], {depthD - 1}], rr];
+	
   ivim[[1]]=ivim[[1]]*mdat;
   ivim
   ]
@@ -414,8 +422,7 @@ FracCorrect[{f1_, f2_?VectorQ}, time_] :=
   ]
 
 (*correct fraction for T2 relaxation*)
-Sigval[par_, TR_, TE_] := par[[1]] (1 - Exp[-TR/par[[2]]]) Exp[-TE/par[[3]]]
-
+Sigval[par_, TR_, TE_] := par[[1]] (1 - Exp[-TR/par[[2]]]) Exp[-TE/par[[3]]]=
 
 
 (* ::Subsection::Closed:: *)

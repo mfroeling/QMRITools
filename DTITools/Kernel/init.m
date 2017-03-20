@@ -52,6 +52,9 @@ subPackages = {"CardiacTools`", "DenoiseTools`", "ElastixTools`", "ExportTools`"
 System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffusion packages"
 System`$DTIToolsContextPaths = (package <> # & /@ subPackages);
 
+Needs["CCompilerDriver`"]
+System`$DTIToolsCompiler =If[Length[CCompilers[]] > 0, "C", "WVM"];
+
 $ContextPath = Union[$ContextPath, System`$DTIToolsContextPaths]
 
 (*state if verbose is true to monitor initialization*)
