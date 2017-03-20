@@ -174,27 +174,42 @@ LogFit[datan_, times_] :=
 (*EPGT2Fit*)
 
 
-Options[EPGT2Fit]= {DictT2Range -> {20, 80, 0.3}, DictB1Range -> {0.4, 1, 0.02}, EPGRelaxPars->{1400, 365, 137}}
+Options[EPGT2Fit]= {DictT2Range -> {20., 80., 0.3}, DictB1Range -> {0.4, 1., 0.02}, EPGRelaxPars->{1400., 365., 137.}}
 
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 
-EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,T1m, T1f, T2f, ad, datal, dictionary, sol,
-	wat, fat, fatMap, T2map, B1Map},
+EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,T1m, T1f, T2f, ad, datal, sol,
+	wat, fat, fatMap, T2map, B1Map,
+	dictf, valsf,ydat,fwf,residualError
+	},
   
   {T1m, T1f, T2f} = OptionValue[EPGRelaxPars];
   
   Necho = Length[times];
   echoSpace = First[times];
  
-  dictionary = CreateT2Dictionary[{T1m, T1f, T2f}, {Necho, echoSpace, angle}];
+  {dictf, valsf} = CreateT2Dictionary[{T1m, T1f, T2f}, {Necho, echoSpace, angle}, DictB1Range->OptionValue[DictB1Range], DictT2Range->OptionValue[DictT2Range]];
   
   ad = ArrayDepth[datan];
-  datal = Switch[ad,
+  datal = N[Switch[ad,
     3, Transpose[datan, {3, 1, 2}],
     4, Transpose[datan, {1, 4, 2, 3}]
-    ];
-    
-  sol = ParallelMap[DictionaryMinSearch[dictionary, #] &, datal, {ad - 1}];
+    ]];
+  
+  PrintTemporary["starting dictionary min search"];  
+  DistributeDefinitions[dictf, valsf,LeastSquaresC,ErrorC];
+  sol = ParallelMap[(
+  	ydat = N@#;
+  	If[Total[ydat] == 0.,
+  	(*skip if background*)
+  	{{0., 0.}, {0., 0.}, 0.},
+  	(*calcualte dictionary error*)
+  	fwf = LeastSquaresC[dictf, ydat];
+  	residualError = ErrorC[ydat, fwf, dictf];
+  	(*find Min value*)
+  	{valsf, fwf, residualError}[[All, First@Ordering[residualError, 1]]]
+   ]
+   ) &, datal, {ad - 1}];
   
   Switch[ad,
   	3,
@@ -202,7 +217,7 @@ EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,
   		fatMap = Clip[sol[[All, All, 2, 2]]/((sol[[All, All, 2, 2]] + sol[[All, All, 2, 1]]) /. 0. -> Infinity), {0, 1}];
   		T2map = sol[[All, All, 1, 1]];
   		B1Map = MedianFilter[sol[[All, All, 1, 2]], 1];
-  	4,
+  	,4,
 		{wat, fat} = Clip[{sol[[All, All, All, 2, 1]], sol[[All, All, All, 2, 2]]}, {0, Max[sol[[All, All, All, 2]]]}];
   		fatMap = Clip[sol[[All, All, All, 2, 2]]/((sol[[All, All, All, 2, 2]] + sol[[All, All, All, 2, 1]]) /. 0. -> Infinity), {0, 1}];
   		T2map = sol[[All, All, All, 1, 1]];
@@ -211,6 +226,34 @@ EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,
   
   {{T2map,B1Map},{wat, fat, fatMap}}
 ]
+
+LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, 
+	(Inverse[T.A].T).y], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
+
+ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, 
+	Total[(y - A.f)^2], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
+
+
+(* ::Subsection::Closed:: *)
+(*DictionaryMinSearch*)
+
+
+SyntaxInformation[DictionaryMinSearch]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+
+DictionaryMinSearch[{dictf_, valsf_}, yi_] := Block[{fwf, residualError, ydat},
+  ydat = N@yi;
+  If[Total[ydat] == 0.,
+  	(*skip if background*)
+  	{{0., 0.}, {0., 0.}, 0.},
+  	(*calcualte dictionary error*)
+  	fwf = LeastSquaresC[dictf, ydat];
+  	residualError = ErrorC[ydat, fwf, dictf];
+  	(*find Min value*)
+  	{valsf, fwf, residualError}[[All, First@Ordering[residualError, 1]]]
+   ]]
+
 
 
 (* ::Subsection:: *)
@@ -223,10 +266,11 @@ EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,
 
 SyntaxInformation[EPGSignal]= {"ArgumentsPattern" -> {_, _, _, _, _, _, OptionsPattern[]}}
 
-EPGSignal[Necho_, echoSpace_, T1_, T2_, angle_, B1_] := Block[
+EPGSignal[Nechoi_, echoSpace_, T1_, T2_, angle_, B1_] := Block[
   {tau, T0, R0, alpha, Smat, Tmat, Rmat, Pmat, Emat, xvec, 
-   out, t2r, t1r},
+   out, t2r, t1r,Necho},
   (*define internal paramters*)
+  Necho=Round[Nechoi];
   alpha = N[B1 angle Degree];
   tau = echoSpace/2.;
   t2r = Exp[-tau/T2];
@@ -238,7 +282,7 @@ EPGSignal[Necho_, echoSpace_, T1_, T2_, angle_, B1_] := Block[
   T0 = RotMatrixT[alpha];
   Tmat = MakeDiagMat[T0, Necho, 1];
   (* Relaxation matrix*)
-  R0 = DiagonalMatrix[N@{t2r, t2r, t1r}];
+  R0 = DiagonalMatrix[N[{t2r, t2r, t1r}]];
   Rmat = MakeDiagMat[R0, Necho, t2r];
   (*Precession and relaxation matrix*)
   Pmat = Rmat.Smat;
@@ -301,25 +345,22 @@ RotMatrixT[alpha_] := RotMatrixT[alpha] = {
 (*CreateT2Dictionary*)
 
 
-Options[CreateT2Dictionary] = {DictT2Range -> {20, 80, 0.3}, DictB1Range -> {0.4, 1, 0.02}};
+Options[CreateT2Dictionary] = {DictT2Range -> {20., 80., 0.3}, DictB1Range -> {0.4, 1., 0.02}};
 
 SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
-CreateT2Dictionary[relax_, ang_, opts : OptionsPattern[]] := CreateT2Dictionaryi[relax, ang, opts]
-
-Options[CreateT2Dictionaryi] = Options[CreateT2Dictionary]
+CreateT2Dictionary[relax_, ang_, opts : OptionsPattern[]] := CreateT2Dictionaryi[N[relax], N[ang], N[OptionValue[DictT2Range]],N[OptionValue[DictB1Range]]]
 
 (*save each unique dictionary*)
-CreateT2Dictionaryi[relax_, ang_, opts : OptionsPattern[]] := CreateT2Dictionaryi[relax, ang, opts] = Block[
-   {dict, dictf, valsf, T1m, T1f, T2f, Necho, echoSpace, angle, t2s, 
-    t2e, t2i, b1s, b1e, b1i},
+CreateT2Dictionaryi[relax_, ang_, T2range_, B1range_] := CreateT2Dictionaryi[relax, ang, T2range, B1range] = Block[
+   {dict, dictf, valsf, T1m, T1f, T2f, Necho, echoSpace, angle, t2s, t2e, t2i, b1s, b1e, b1i},
    (*set parameters*)
    {T1m, T1f, T2f} = relax;
    {Necho, echoSpace, angle} = ang;
    (*get dictionary values*)
-   {t2s, t2e, t2i} = OptionValue[DictT2Range];
-   {b1s, b1e, b1i} = OptionValue[DictB1Range];
-   Print["Creating dictionary for new values : ", {T1m, T1f, T2f}, "  ", {Necho, echoSpace, angle}];
+   {t2s, t2e, t2i} = T2range;
+   {b1s, b1e, b1i} = B1range;
+   Print["Creating dictionary for new values : ", {T1m, T1f, T2f}, "  ", {Necho, echoSpace, angle}, "  ", {t2s, t2e, t2i}, "  ", {b1s, b1e, b1i}];
    (*create dictionary*)
    dict = Table[
      {{EPGSignal[Necho, echoSpace, T1m, T2m, angle, B1], EPGSignal[Necho, echoSpace, T1f, T2f, angle, B1]}, {T2m, B1}}, 
@@ -330,29 +371,6 @@ CreateT2Dictionaryi[relax_, ang_, opts : OptionsPattern[]] := CreateT2Dictionary
    Print["The dictionary contains "<>ToString[Length[dictf]]<>" values."];
    {dictf, valsf}
    ]
-
-
-(* ::Subsection::Closed:: *)
-(*DictionaryMinSearch*)
-
-
-SyntaxInformation[DictionaryMinSearch]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
-
-DictionaryMinSearch[{dictf_, valsf_}, yi_] := Block[{fwf, residualError, ydat},
-  ydat = N@yi;
-  If[Total[ydat] == 0.,
-  	(*skip if background*)
-  	{{0., 0.}, {0., 0.}, 0.},
-  	(*calcualte dictionary error*)
-  	fwf = LeastSquaresC[dictf, ydat];
-  	residualError = ErrorC[ydat, fwf, dictf];
-  	(*find Min value*)
-  	{valsf, fwf, residualError}[[All, First@Ordering[residualError, 1]]]
-   ]]
-
-LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, (Inverse[T.A].T).y], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
-
-ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Total[(y - A.f)^2], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
 
 
 (* ::Subsection::Closed:: *)
