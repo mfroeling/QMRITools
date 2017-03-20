@@ -25,7 +25,7 @@ ClearAll @@ Names["DTIToos'DenoiseTools`*"];
 
 
 (* ::Subsection:: *)
-(*Fuctions*)
+(*Functions*)
 
 
 PCAFitHist::usage = 

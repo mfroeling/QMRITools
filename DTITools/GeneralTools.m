@@ -64,6 +64,8 @@ MeanStd::usage =
 MeanRange::usage = 
 "MeanRange[Range] calculates the medain (50%) and standard deviation (14% and 86%) range and reports it as a string."
 
+
+
 (* ::Subsection:: *)
 (*General Options*)
 
@@ -251,7 +253,7 @@ NumberTableForm[dat_, depth_, opts : OptionsPattern[]] :=
 
 
 (* ::Subsection::Closed:: *)
-(*Compilble functions*)
+(*Compilable functions*)
 
 
 SyntaxInformation[CompilebleFunctions] = {"ArgumentsPattern" -> {}};
@@ -283,11 +285,14 @@ MeanStd[inp_] := Block[{dat},
 (* ::Subsection::Closed:: *)
 (*MeanNoZero*)
 
+
   
 MeanRange[inp_] := Block[{q1, q2, q3},
   {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {.14, .5, .86}];
   Row[{NumberForm[Round[q2, .01], {3, 2}], "  (", NumberForm[Round[q1, .01], {3, 2}], " - ", NumberForm[Round[q3, .01], {3, 2}], ")"}]
   ]
+
+
 
 (* ::Section:: *)
 (*End Package*)

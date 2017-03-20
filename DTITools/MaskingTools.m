@@ -82,6 +82,8 @@ NormalizeData[data,{min,max}] normalizes the data between min and max.
 NormalizeDiffData::usage = 
 "NormalizeDiffData[data] normalizes the diffusion data to the mean signal of the first volume."
 
+
+
 (* ::Subsection:: *)
 (*Options*)
 
@@ -442,7 +444,7 @@ Module[{sol,func,range,map,mask,pmask,Omega,Xi,Alpha,pars},
 
 
 (* ::Subsubsection::Closed:: *)
-(*Smartmask*)
+(*SmartMask*)
 
 
 Options[SmartMask]={Smoothing->False,SmoothMaskFactor->.2,OptimizationRuns->1,MaskRange->.8,Strictness->5,Reject->True}
@@ -541,6 +543,7 @@ MaskTensdata[tens_, mask_] := mask # & /@ tens
 
 (* ::Subsection::Closed:: *)
 (*SmoothMask functions*)
+
 
 Options[SmoothMask]={MaskComponents->1,MaskPadding->40,MaskClosing->20, MaskFiltKernel->2}
 

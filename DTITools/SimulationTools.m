@@ -25,7 +25,7 @@ ClearAll @@ Names["DTITools`SimulationTools`*"];
 
 
 (* ::Subsection:: *)
-(*Fuctions*)
+(*Functions*)
 
 
 AddNoise::usage = 
@@ -110,6 +110,9 @@ AddNoise::opt = "AddNoise"
 Begin["`Private`"]
 
 
+
+
+
 (* ::Subsection::Closed:: *)
 (*Definitions*)
 
@@ -122,8 +125,20 @@ unit = " [\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \!\(\*SuperscriptBox[\(mm\), \(
 lambda[x_] :="\!\(\*SubscriptBox[\"\[Lambda]\", \"" <> ToString[x] <> "\"]\)";
 epsilon[x_] := "\!\(\*SubscriptBox[\(\[CurlyEpsilon]\), \"" <> ToString[x] <> "\"]\)"
 
+RicianDistribution=Compile[{{Mu, _Real}, {Sigma, _Real}}, Sqrt[RandomReal[NormalDistribution[Mu, Sigma]]^2 + RandomReal[NormalDistribution[0, Sigma]]^2]];
 
-(* ::Subsection::Closed:: *)
+Phi[x_]:=1/(E^(x^2/2)*Sqrt[2*Pi]);
+CapitalPhi[x_]:=.5(1+Erf[(x)/Sqrt[2]]);
+SkewNorm[x_,Omega_,Xi_,Alpha_]:=(2/Omega)Phi[(x-Xi)/Omega]CapitalPhi[Alpha (x-Xi)/Omega];
+
+HalfNorm[x_,Theta_]:=PDF[HalfNormalDistribution[Theta],x]
+
+
+(* ::Subsection:: *)
+(*Tensor*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*Tensor*)
 
 
@@ -156,6 +171,10 @@ Module[{e,tens},
 	]
 
 
+(* ::Subsubsection::Closed:: *)
+(*Tensor functions*)
+
+
 OrtRandomMat[]:=RandomSample[{{0,0,1},{0,1,0},{1,0,0}},3]
 
 
@@ -180,7 +199,11 @@ SyntaxInformation[Signal] = {"ArgumentsPattern" -> {_, _, _}};
 Signal[par_,TR_,TE_]:=par[[1]](1-Exp[-TR/par[[2]]])Exp[-TE/par[[3]]]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*CreateData*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*CreateData*)
 
 
@@ -209,6 +232,10 @@ Module[{diff},
 		3,Transpose[diff,{1,3,4,2}]
 		]
 	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SignalTensor*)
 
 
 SignalTensor[S0_, bmat_, D_] := 
@@ -252,9 +279,6 @@ Module[{sig,data=dat//N},
 	]
 
 
-RicianDistribution=Compile[{{Mu, _Real}, {Sigma, _Real}}, Sqrt[RandomReal[NormalDistribution[Mu, Sigma]]^2 + RandomReal[NormalDistribution[0, Sigma]]^2]];
-
-
 (* ::Subsection::Closed:: *)
 (*SimParameters*)
 
@@ -280,11 +304,6 @@ Module[{eig,ADC,FA,dataAll,rangy,bins,wbins,sol,fit,x,Omega,Xi,Alpha},
 		{dataAll,wbins,sol,fit}
 		)&/@tens
 	]
-
-
-Phi[x_]:=1/(E^(x^2/2)*Sqrt[2*Pi]);
-CapitalPhi[x_]:=.5(1+Erf[(x)/Sqrt[2]]);
-SkewNorm[x_,Omega_,Xi_,Alpha_]:=(2/Omega)Phi[(x-Xi)/Omega]CapitalPhi[Alpha (x-Xi)/Omega];
 
 
 (* ::Subsection::Closed:: *)
@@ -369,9 +388,6 @@ Module[{bins,surface,wbins,fit,par,vec,ang,x,Theta},
 	]
 
 
-HalfNorm[x_,Theta_]:=PDF[HalfNormalDistribution[Theta],x]
-
-
 (* ::Subsection::Closed:: *)
 (*PlotSimulationAngleHist*)
 
@@ -443,7 +459,11 @@ Module[{quant,pars=Transpose[par[[All,4]]],e,pdat,xrange,off},
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*PlotSimulationAngle*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*PlotSimulationAngle*)
 
 
@@ -506,9 +526,7 @@ PlotSimulationVec[tens_, xdata_, label_, OptionsPattern[]] := Module[
   vp3 = {3.1877, 0.899157, 0.692886}; 
   vv3 = {0.416537, 0.112532, 0.902127}; va3 = 25 Degree;
   (*{Dynamic[vp3],Dynamic[vv3],Dynamic[va3]}*)
-  
-  
-  
+
   Manipulate[
   	If[!ListQ[eigvcm],Return[],
 	   data = eigvcm[[set]] // Transpose;
@@ -531,6 +549,11 @@ PlotSimulationVec[tens_, xdata_, label_, OptionsPattern[]] := Module[
    SaveDefinitions->True
    ]
   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PlotSimulationAngle*)
+
 
 EigPlot[data_, vp_, vv_, va_, arrows_, val_] := Module[{sphere,line},
 	 sphere = SphericalPlot3D[.975, {Theta, 0, Pi}, {Phi, 0, 2 Pi}, Lighting -> "Neutral"];
