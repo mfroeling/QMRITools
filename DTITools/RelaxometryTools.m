@@ -70,6 +70,8 @@ EPGFitPoints::usage = "EPGFitPoints is a option for CalibrateEPGT2Fit and EPGT2F
 
 EPGCalibrate::usage = "EPGCalibrate is an option for EPGT2Fit."
 
+OutputCalibration::usage = "OuputCalibration is an option for EPGT2Fit and TriExponentialT2Fit. If true it outputs the calibartion values."
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -188,13 +190,13 @@ LogFit[datan_, times_] :=
 
 Options[EPGT2Fit]= {DictT2Range -> {20., 80., 0.3}, DictB1Range -> {0.4, 1., 0.02}, 
 	EPGRelaxPars->{1400., 365., 137.},Method->"dictionary",MonitorEPGFit->True, 
-	EPGCalibrate->True, EPGFitPoints -> 200}
+	EPGCalibrate->True, EPGFitPoints -> 200,OutputCalibration->False}
 
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 
 EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,T1m, T1f, T2f, ad, datal, sol,
 	wat, fat, fatMap, T2map, B1Map, clip,cons,B1i,T2i,T2s,B1s,soli,
-	dictf, valsf,ydat,fwf,residualError,T2mc,B1c
+	dictf, valsf,ydat,fwf,residualError,T2mc,B1c,cal
 	},
   
   {T1m, T1f, T2f} = OptionValue[EPGRelaxPars];
@@ -202,7 +204,7 @@ EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,
   
   If[OptionValue[EPGCalibrate],
   	Print["Callibrating EPG fat T2."];
-  	{T2mc, T2f, B1c} = CalibrateEPGT2Fit[datan, times, 180, 
+  	cal = {T2mc, T2f, B1c} = CalibrateEPGT2Fit[datan, times, 180, 
   		EPGRelaxPars -> {clip, {50, 300}, {T1m, T1f}},EPGFitPoints->OptionValue[EPGFitPoints]];
   		T2f=N@Round@T2f;
   	Print["EPG fat callibration:  ", T2f, " ms"];
@@ -300,7 +302,11 @@ EPGT2Fit[datan_, times_, angle_, opts:OptionsPattern[]]:=Block[{Necho,echoSpace,
   		B1Map = MedianFilter[sol[[All, All, All, 1, 2]], 1];
   ];
   
-  {{T2map,B1Map},{wat, fat, fatMap}}
+  If[OptionValue[OutputCalibration],
+  	{{{T2map,B1Map},{wat, fat, fatMap}},cal},
+  	{{T2map,B1Map},{wat, fat, fatMap}}
+  	]
+  
 ]
 
 
@@ -542,11 +548,11 @@ CreateT2Dictionaryi[relax_, ang_, T2range_, B1range_] := CreateT2Dictionaryi[rel
    (*get dictionary values*)
    {t2s, t2e, t2i} = T2range;
    {b1s, b1e, b1i} = B1range;
-   Print["Creating dictionary for new values :", 
+   (*Print["Creating dictionary for new values :", 
    "\n		{T1muscle, T1fat, T2fat} =",	{T1m, T1f, T2f}, 
    "\n		{Necho, echoSpace, ange} =", {Necho, echoSpace, angle}, 
    "\n		{T2min, T2max, T2step} =", {t2s, t2e, t2i},
-   "\n		{B1min, B1max, B1step} =", {b1s, b1e, b1i}];
+   "\n		{B1min, B1max, B1step} =", {b1s, b1e, b1i}];*)
    (*create dictionary*)
    dict = Table[
      {{EPGSignal[Necho, echoSpace, T1m, T2m, angle, B1], EPGSignal[Necho, echoSpace, T1f, T2f, angle, B1]}, {T2m, B1}}, 
@@ -563,12 +569,14 @@ CreateT2Dictionaryi[relax_, ang_, T2range_, B1range_] := CreateT2Dictionaryi[rel
 (*TriExponentialT2Fit*)
 
 
+Options[TriExponentialT2Fit]={OutputCalibration->False}
+
 SyntaxInformation[TriExponentialT2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
-TriExponentialT2Fit[datan_, times_] := 
+TriExponentialT2Fit[datan_, times_,OptionsPattern[]] := 
  Block[{result, fdat, offset, T1r, off, t1rho, t, ad, datal,
    model, cs, cf, T2s, T2f, Af, Am, T2m, x, Aff, Amm, T2mf, S0, ffr, 
-   mfr, T2, model2,
+   mfr, T2, model2,cal,
    maskT2, dataT2, fmask, fitData,
    Afi, Ami, csi, T2mi, T2fi, T2si, sci
    },
@@ -613,8 +621,10 @@ TriExponentialT2Fit[datan_, times_] :=
   {Afi, Ami} = {Afi, Ami}/sci;
   
   (*Print the callibration results*)
-  Print[Row[{Column[Round[{sci, 100 Afi, {100 Ami, T2mi}, {100 csi, T2si, T2fi}}, .1], Alignment -> Center],
-     Show[
+  Print[Row[{
+  	Column[{"signal", "muscle {f mus,T2}", "fat {f slow, T2s, T2f}"}, Alignment -> Center],
+  	Column[cal = Round[{sci, {100 Ami, T2mi}, {100 csi, T2si, T2fi}}, .1], Alignment -> Center],
+  	Show[
      	ListLinePlot[fitData, PlotStyle -> Directive[Thick, Red], PlotRange -> {{0, 150}, {0, sci}}, ImageSize -> 150],
      	Plot[sci model /. Thread[{Af, Am, cs, T2m, T2f, T2s} -> {Afi, Ami, csi, T2mi, T2fi, T2si}], {x, 0, 200}, PlotStyle -> Directive[{Black, Dashed}]]
       ]}]];
@@ -646,7 +656,10 @@ TriExponentialT2Fit[datan_, times_] :=
   mfr = Clip[mfr, {0, 1}, {0, 1}];
   ffr = Clip[ffr, {0, 1}, {0, 1}];
   
-  N@{S0, ffr, mfr, T2}
+  If[OptionValue[OutputCalibration],
+  	{N@{S0, ffr, mfr, T2},cal},
+  	N@{S0, ffr, mfr, T2}
+  ]
   ]
 
 

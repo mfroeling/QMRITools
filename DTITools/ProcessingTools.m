@@ -287,7 +287,7 @@ Block[{data,depthD,rl,rr,dirD,dirG,dirB},
 
 (*bmatrix*)
 TensorCalc[dat_,bmati:{_?ListQ ..},OptionsPattern[]]:=
-Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,met,bmatI,fout,bmat},
+Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,bmat,method,output},
 
 	bmat=bmati;
 	data=N[Clip[dat,{0,Infinity}]];
@@ -320,11 +320,16 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,met,bmatI,fo
 			TensorCalci[data[[x]],bmat,bmatI,depthD-1,Method->met,FullOutput->fout]
 			,{x,1,Length[data],1}];
 			*)
-		xx=0;		
+		xx=0;
+		method=OptionValue[Method];
+		output=OptionValue[FullOutput];
+		SetSharedVariable[xx];
+		DistributeDefinitions[data,bmat,bmatI,depthD,method,output,TensorCalci];	
+		
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
-		tensor = Table[
-			xx=x;
-			TensorCalci[data[[x]],bmat,bmatI,depthD-1,Method->OptionValue[Method],FullOutput->OptionValue[FullOutput]]
+		tensor = ParallelTable[
+			xx++;
+			TensorCalci[data[[x]],bmat,bmatI,depthD-1,Method->method,FullOutput->output]
 			,{x,1,Length[data],1}];
 			
 		tensor=Transpose[tensor];
@@ -590,14 +595,15 @@ EigenvalCalci[tensor_, OptionsPattern[]] := Module[{rejectmap, values},
   (*create rejectmap*)
   If[OptionValue[RejectMap],
   rejectmap = Map[RejectMapi, values, {ArrayDepth[tensor] - 1}];
-   {values, rejectmap},
+   {values, rejectmap}
+   ,
    values
    ]
   ]
 
 Eigenvalues2[{0., 0., 0., 0., 0., 0.}] := {0., 0., 0.};
 Eigenvalues2[{0, 0, 0, 0, 0, 0}] := {0., 0., 0.};
-Eigenvalues2[tens_] := Eigenvalues[TensMat[tens]];
+Eigenvalues2[tens_] := Eigenvalues[{{tens[[1]],tens[[4]],tens[[5]]},{tens[[4]],tens[[2]],tens[[6]]},{tens[[5]],tens[[6]],tens[[3]]}}];
 RejectEig = Compile[{{eig, _Real, 1}}, 
 	If[Total[1 - UnitStep[eig]] > 0, {0., 0., 0.}, eig], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
@@ -741,37 +747,6 @@ ADCCalc[eig_] := ADCCalci[eig]
 
 ADCCalci = Compile[{{eig, _Real, 1}}, Mean[eig], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
-(*
-ADCCalc[eigen_,OptionsPattern[]]:=
-Module[{output,slices,x},
-	slices=Length[eigen];
-	If[ArrayQ[eigen,4],
-		(*#D array calculate per slice*)
-		If[OptionValue[MonitorCalc],
-			Monitor[output=Table[ADCCalci[eigen[[x]]],{x,1,slices,1}];,Column[{"Calculation ADC for Multiple slices",ProgressIndicator[x,{0,slices}]}]],
-			output=Table[ADCCalci[eigen[[x]]],{x,1,slices,1}];	
-		];
-		If[OptionValue[MonitorCalc],Print["Done calculating ADC for "<>ToString[slices]<>" slices!"]];
-		,
-		output=ADCCalci[eigen];
-		If[OptionValue[MonitorCalc],
-			If[ArrayQ[eigen,3],Print["Done calculating ADC for 1 slice!"]];
-			If[VectorQ[eigen],Print["Done calculating ADC for 1 voxel!"]];
-			]
-		];
-	Return[output];
-	]
-
-
-ADCCalci[eigen_]:=
-Module[{ADCC},
-	ADCC=Compile[{l1,l2,l3},Mean[{l1,l2,l3}]];
-	Map[If[#=={0,0,0},0,
-		ADCC[#[[1]],#[[2]],#[[3]]]
-		]&,eigen,{ArrayDepth[eigen]-1}]
-	]
-*)
-
 
 (* ::Subsection::Closed:: *)
 (*FACalc*)
@@ -781,48 +756,11 @@ SyntaxInformation[FACalc] = {"ArgumentsPattern" -> {_}};
 
 FACalc[eig_] := FACalci[eig]
 
-FACalci = Block[{l1, l2, l3, teig},Compile[{{eig, _Real, 1}}, 
-   	teig = Sqrt[2.*Total[eig^2]];
-    If[teig == 0., 
-    	0.,
-    	l1 = eig[[1]];	l2 = eig[[2]];	l3 = eig[[3]];
-    	Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2]/teig
-    	]
-    	, 
-    {{l1, _Real, 0}, {l3, _Real, 0}, {l3, _Real, 0}},
-     RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"(*, Parallelization -> True*)]];
-
-(*
-FACalc[eigen_,OptionsPattern[]]:=
-Module[{output,x,slices},
-	slices=Length[eigen];
-	If[ArrayQ[eigen,4],
-		(*3D array calculate per slice*)
-		If[OptionValue[MonitorCalc],
-			Monitor[output=Table[FACalci[eigen[[x]]],{x,1,slices,1}];,Column[{"Calculation FA for Multiple slices",ProgressIndicator[x,{0,slices}]}]],
-			output=Table[FACalci[eigen[[x]]],{x,1,slices,1}];	
-		];
-		
-		If[OptionValue[MonitorCalc],Print["Done calculating FA for "<>ToString[slices]<>" slices!"]];
-		,
-		output=FACalci[eigen];
-		If[OptionValue[MonitorCalc],
-			If[ArrayQ[eigen,3],Print["Done calculating FA for 1 slice!"]];
-			If[VectorQ[eigen],Print["Done calculating FA for 1 voxel!"]]
-			];
-		];
-	Return[Clip[output,{0,1}]];
-	]
-
-
-FACalci[eigen_]:=
-Module[{FAC},
-	FAC=Compile[{l1,l2,l3},Sqrt[(l1-l2)^2+(l2-l3)^2+(l1-l3)^2]/Sqrt[2*(l1^2+l2^2+l3^2)]];
-	Map[If[#=={0,0,0},0,
-		FAC[#[[1]],#[[2]],#[[3]]]
-		]&,eigen,{ArrayDepth[eigen]-1}]
-	]
-*)
+FACalci = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3, teig},
+   l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
+   teig = Sqrt[2.*Total[eig^2]];
+   If[teig == 0., 0. ,Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2]/teig]
+   ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsection::Closed:: *)
@@ -871,16 +809,7 @@ Module[{eig,adc,fa},
 	eig=1000.*EigenvalCalc[tensor,Reject->OptionValue[Reject],MonitorCalc->OptionValue[MonitorCalc]];
 	adc=ADCCalc[eig];
 	fa=FACalc[eig];
-	Switch[ArrayDepth[tensor],
-		1,
-		{eig[[1]],eig[[2]],eig[[3]],adc,fa},
-		2,
-		{eig[[All,1]],eig[[All,2]],eig[[All,3]],adc,fa},
-		3,
-		{eig[[All,All,1]],eig[[All,All,2]],eig[[All,All,3]],adc,fa},
-		4,
-	{eig[[All,All,All,1]],eig[[All,All,All,2]],eig[[All,All,All,3]],adc,fa}
-	]
+	Join[TransData[eig,"r"],{adc,fa}]
 	]
 
 
