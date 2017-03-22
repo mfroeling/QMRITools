@@ -357,7 +357,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
 		   (*masked voxel*)
 		   0. out
 		   ,
-		   j++;If[j>1000,i+=j;j=1;];
+		   j++;If[j>1000,i+=j;j=0;];
 		   (*data voxel*)
 		   fitd = Flatten /@ ({bin, #} // Transpose);
 		   start=Prepend[funcin,{S0,S0s}];

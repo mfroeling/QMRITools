@@ -53,7 +53,7 @@ System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffu
 System`$DTIToolsContextPaths = (package <> # & /@ subPackages);
 
 Needs["CCompilerDriver`"]
-System`$DTIToolsCompiler =If[Length[CCompilers[]] > 0, "C", "WVM"];
+System`$DTIToolsCompiler =If[Length[CCompilers[]] > 0, "WVM", "WVM"];
 
 $ContextPath = Union[$ContextPath, System`$DTIToolsContextPaths]
 

@@ -2942,7 +2942,7 @@ PlotMoments[fmom_, te_, t_] := Module[{
 (*PlotIVIM*)
 
 
-Options[PlotIVIM] = {Method -> "", PlotColor -> {Red, Green, Blue, Black},NormalizeIVIM->"Fit",PlotRange->"Auto"}
+Options[PlotIVIM] = {Method -> "", PlotColor -> {Red, Green, Blue, Black},NormalizeIVIM->"Fit",PlotRange->"Auto",ImageSize->400}
 
 SyntaxInformation[PlotIVIM] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
@@ -2965,7 +2965,7 @@ PlotIVIM[val_, data_, bvals_, OptionsPattern[]] :=
    
    stdash = Directive[{Thick, #, Dashed}] &;
    stsol = Directive[{Thick, #}] &;
-   lstyle = Directive[Black, Bold, Medium, FontFamily -> "Helvetica"];
+   lstyle = Directive[Black, Bold, If[OptionValue[ImageSize]<=200,Small,Medium], FontFamily -> "Helvetica"];
    
    Switch[Length[vals],
    	2,
@@ -2986,7 +2986,7 @@ PlotIVIM[val_, data_, bvals_, OptionsPattern[]] :=
       PlotStyle -> ({stdash[#4[[1]]], stsol[#4[[1]]]}[[#4[[2]]]]), 
       PlotRange -> ({{0, 1.1}, plr }[[#7]]), 
       LabelStyle -> lstyle, Frame -> {{True, False}, {True, False}}, 
-      FrameStyle -> Thick, ImageSize -> 400, 
+      FrameStyle -> Thick, ImageSize -> OptionValue[ImageSize], 
       FrameLabel -> {"b-value [\!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s]", {"Signal", "Log[Signal]"}[[#7]]}] &;
       
    plot = GraphicsRow[{

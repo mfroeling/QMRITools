@@ -239,7 +239,7 @@ MarchenkoPasturCi=Compile[{{lab,_Real,0},{Q,_Real,0},{sig,_Real,0}},
 		labp=sig2 (1+Qs)^2;
 		(*define piecewise function*)
 		Piecewise[{{Sqrt[(labp-lab) (lab-labm)]/(2 Pi sig2 Q lab),labm<lab<labp}},0]
-],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+],RuntimeAttributes->{Listable}, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -314,7 +314,7 @@ HistListC = Compile[{{dat, _Real, 1}, {nbins, _Integer, 0}}, Block[
      (*output the data*)
      Transpose[{xdat, ydat}]
      ]], 
-	RuntimeOptions -> "Speed"];
+	RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -435,7 +435,7 @@ GridSearch=Compile[{{eig,_Real,1},{m,_Integer,0},{n,_Integer,0}},
    (*give output, number of noise comp and sigma*)
    {pi,Sqrt[(eq1+eq2)/2]}
    ]
-];
+, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -455,7 +455,7 @@ GridSearchSig=Compile[{{eig,_Real,1},{m,_Integer,0},{n,_Integer,0},{sig,_Real,0}
       pi=Round[Mean[N[{pi1,pi2}]]];
       {pi,sig}
    ]
-];
+, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
 
 
 (* ::Subsection:: *)
