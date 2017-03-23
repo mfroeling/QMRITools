@@ -424,7 +424,7 @@ SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}
 
 Options[ExportNii]={NumberType->"Integer"}
 
-ExportNii[dato_, voxi_,opts:OptionsPattern[]] := ExportNii[dato, vox, "",opts]
+ExportNii[dato_, voxi_, opts:OptionsPattern[]] := ExportNii[dato, voxi, "" ,opts]
 
 ExportNii[dato_, voxi_, fil_,OptionsPattern[]] := Block[{datao, type, dim, depth, dimo, voxo, srowx, srowy, srowz, 
 	ftype, echo, strm, fileo, typeo, vox},

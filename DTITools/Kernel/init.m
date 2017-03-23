@@ -36,36 +36,38 @@ LoadPackages[pack_,subpack_,print_:False]:=(
 	Get[package<>#];
 )&/@subPackages;
 
-
 (*Change Default settings*)
-$HistoryLength = 1;
+$HistoryLength = 1; (*prevents the excessive use of memory*)
 
 (*add all mathematica packages to the context path*)
 package= "DTITools`";
 
-subPackages = {"CardiacTools`", "DenoiseTools`", "ElastixTools`", "ExportTools`", 
-   "GeneralTools`", "GradientTools`", "ImportTools`", "IVIMTools`", 
-   "ManipulationTools`", "MaskingTools`", "NiftiTools`", 
-   "PhysiologyTools`", "PlottingTools`", "ProcessingTools`", "RelaxometryTools`", "SimulationTools`"};
+subPackages = {
+	"CardiacTools`", "DenoiseTools`", "ElastixTools`", "ExportTools`", 
+	"GeneralTools`", "GradientTools`", "ImportTools`", "IVIMTools`", 
+	"ManipulationTools`", "MaskingTools`", "NiftiTools`", 
+	"PhysiologyTools`", "PlottingTools`", "ProcessingTools`", 
+	"RelaxometryTools`", "SimulationTools`"};
 
 (*define all the toolbox contexts*)
-System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffusion packages"
+(*System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffusion packages"*)
 System`$DTIToolsContextPaths = (package <> # & /@ subPackages);
 
-Needs["CCompilerDriver`"]
-System`$DTIToolsCompiler =If[Length[CCompilers[]] > 0, "WVM", "WVM"];
-
 $ContextPath = Union[$ContextPath, System`$DTIToolsContextPaths]
+
+Needs["CCompilerDriver`"]
+System`$DTIToolsCompiler = If[Length[CCompilers[]] > 0, "WVM", "WVM"];
 
 (*state if verbose is true to monitor initialization*)
 DTITools`verbose = False;
 
-(*clear all definitions from the subPacakges*)
-ClearFunctions[package,subPackages,DTITools`verbose];
-
 (*check mathematica version*)
 UpdateWarning[];
 
+(*clear all definitions from the subPacakges*)
+ClearFunctions[package,subPackages,DTITools`verbose];
+
 (*load all packages*)
 LoadPackages[package,subPackages,DTITools`verbose];
+(*needs to be done twice else things dont work, dont understand why*)
 LoadPackages[package,subPackages,DTITools`verbose];

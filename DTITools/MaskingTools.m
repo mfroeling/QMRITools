@@ -77,8 +77,8 @@ HomoginizeData::usage =
 
 NormalizeData::usage = 
 "NormalizeData[data] normalizes the data to the mean signal of the data.
-NormalizeData[data,{min,max}] normalizes the data between min and max.
-"
+NormalizeData[data,{min,max}] normalizes the data between min and max."
+
 NormalizeDiffData::usage = 
 "NormalizeDiffData[data] normalizes the diffusion data to the mean signal of the first volume."
 

@@ -183,9 +183,11 @@ FitOutput::usage =
 UseMask::usage = 
 "UseMask is a function for MeanSignal and DriftCorrect"
 
-OutputSNR::usage = "OutputSNR is an option for SNRMapCalc."
+OutputSNR::usage = 
+"OutputSNR is an option for SNRMapCalc."
 
-SeedDensity::usage = "SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
+SeedDensity::usage = 
+"SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
 
 
 (* ::Subsection:: *)

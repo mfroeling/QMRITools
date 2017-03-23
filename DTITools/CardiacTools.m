@@ -155,11 +155,14 @@ RadialSamples::usage =
 DropSamples::usage = 
 "DropSamples is an option for RadialSample and PlotSegments. Defines how manny samples are droped form star and end. Can be an number or set (strat, end) of numbers."
 
-GridLineSpacing::usage = "GridLineSpacing is an option of TransmuralPlot. It defines the spacing of the gridlines.";
+GridLineSpacing::usage = 
+"GridLineSpacing is an option of TransmuralPlot. It defines the spacing of the gridlines.";
 
-MaskWallMap::usage = "MaskWallMap is an option for CalculateWallMap. if True or False."
+MaskWallMap::usage = 
+"MaskWallMap is an option for CalculateWallMap. if True or False."
 
-AxesMethod::usage = "AxesMethod is an option for HelixAngleCalc and CentralAxes. Can be \"Linear\", \"Quadratic\", \"Cubic\"."
+AxesMethod::usage = 
+"AxesMethod is an option for HelixAngleCalc and CentralAxes. Can be \"Linear\", \"Quadratic\", \"Cubic\"."
 
 (* ::Subsection:: *)
 (*Error Messages*)

@@ -144,13 +144,17 @@ UnwrapDimension::usage =
 RotationCorrect::usage =
 "RotationCorrect is an option for TensorCorrect. Default is False. Is a tensor is deformed setting to True also the shear is accounted for by local rotation of the tensor"
 
-DeNoiseIterations::usage = "DeNoiseIterations are the number of the denoising iterations."
+DeNoiseIterations::usage = 
+"DeNoiseIterations are the number of the denoising iterations."
 
-MonitorDeNoise::usage = "MonitorDeNoise monitor the denoising progres."
+MonitorDeNoise::usage = 
+"MonitorDeNoise monitor the denoising progres."
 
-NormalizeSignal::usage = "NormalizeSignal is an option for DriftCorrect."
+NormalizeSignal::usage = 
+"NormalizeSignal is an option for DriftCorrect."
 
-CropOutput::usage = "CropOutput is an option for CropData, can be \"All\",\"Data\" or \"Crop\"."
+CropOutput::usage = 
+"CropOutput is an option for CropData, can be \"All\",\"Data\" or \"Crop\"."
 
 
 (* ::Subsection:: *)
