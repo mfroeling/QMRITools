@@ -92,6 +92,9 @@ TransformData::usage =
 RegisterDataTransform::usage = 
 "RegisterDataTransform[[target, moving, {moving2nd, vox}]"
 
+RegisterDataTransformSplit::usage = 
+"RegisterDataTransformSplit[[target, moving, {moving2nd, vox}]"
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -879,7 +882,7 @@ If[dimtarm == dimtar && maskt!={1},
 
 (*check if moving mask is needed*)
 If[(dimmovm == dimmov && maskm!={1}),
-	mmaskF=movfol<>"\\"<>"moveMask.nii";
+	mmaskF="moveMask.nii";
 	ExportNii[maskm,voxm,tempdir<>mmaskF]];
 
 RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
@@ -892,7 +895,7 @@ data=ToPackedArray[data];
 {fmaskF,mmaskF}={"",""};
 {movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii"};
 ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real"];
-If[maskm!={1},mmaskF="movemask.nii";
+If[maskm!={1},mmaskF="moveMask.nii";
 ExportNii[maskm,voxm,tempdir<>mmaskF];
 ];
 RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
@@ -928,12 +931,12 @@ i=0;
 	
 	(*export mask*)
 	If[maske,
-	mmaskF=movfol<>"\\"<>"movemask.nii";
+	mmaskF=movfol<>"\\"<>"moveMask.nii";
 	ExportNii[maskm[[#]],voxm,tempdir<>mmaskF];
 	];
 	
 	If[maske2,
-	mmaskF=movfol<>"\\"<>"movemask.nii";
+	mmaskF=movfol<>"\\"<>"moveMask.nii";
 	ExportNii[maskm,voxm,tempdir<>mmaskF];
 	];
 	
@@ -954,8 +957,8 @@ If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempdir,DeleteContents->True
 (*If[type=="series"&&ArrayDepth[data]==4,data=Transpose[data]];*)
 
 If[OptionValue[OutputTransformation],
-	{Clip[data,{0,Infinity}],w},
-	Clip[data,{0,Infinity}]
+	{Clip[data,MinMax[moving]],w},
+	Clip[data,MinMax[moving]]
 ]
 ]
 
@@ -1180,14 +1183,13 @@ RegisterDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, voxa
    ];
 
 RegisterDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, maska_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-   opts : OptionsPattern[]] := Block[
-   {datal, datar, dataal, dataar, maskl, maskr, maskal, maskar,cut1,cut2},
+   opts : OptionsPattern[]] := Block[{datal, datar, dataal, dataar, maskl, maskr, maskal, maskar,cut1,cut2},
    {datal, datar,cut1} = CutData[data];
    {maskl, maskr,cut1} = CutData[mask,cut1];
    {dataal, dataar,cut2} = CutData[dataa];
    {maskal, maskar,cut2} = CutData[maska,cut2];
-
-Print[{cut1,cut2}];
+   
+   Print[{cut1,cut2}];
 
    datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, maskal, voxa}, opts][[2]];
    datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, maskar, voxa}, opts][[2]];
@@ -1245,21 +1247,98 @@ Options[RegisterDataTransform] = Options[RegisterData];
 
 SyntaxInformation[RegisterDataTransform] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-RegisterDataTransform[target_, moving_, {moving2_, vox_}, 
-  opts : OptionsPattern[]] := Block[{reg, mov},
-  reg = RegisterData[target, moving, DeleteTempDirectory -> False, 
-    opts];
-  mov = If[ArrayDepth[moving2] == 4,
-    Transpose[
-     TransformData[{#, vox}, DeleteTempDirectory -> "Trans", 
-        PrintTempDirectory -> False] & /@ Transpose[moving2]],
-    TransformData[{moving2, vox}, DeleteTempDirectory -> "Trans", 
-     PrintTempDirectory -> False]
-    ];
-  {reg, mov}
+RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,tdir},
+	reg = RegisterData[target, moving, DeleteTempDirectory -> False, opts];
+	mov = If[ArrayDepth[moving2] == 4,
+		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2]],
+		TransformData[{moving2, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
+		];
+		
+	tdir=OptionValue[TempDirectory];
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
+	
+	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];		
+		
+	{reg, mov}
   ]
 
 
+(* ::Subsection::Closed:: *)
+(*RegisterDataTransform*)
+
+
+Options[RegisterDataTransformSplit] = Options[RegisterData];
+
+SyntaxInformation[RegisterDataTransformSplit] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+RegisterDataTransformSplit[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,
+	targetl, targetr, masktl, masktr, cut1,
+	movingl, movingr, maskml, maskmr, cut2,
+	moving2l, moving2r, tdir,
+	regl, regr, movl, movr
+	},
+	
+	(*split the target data*)
+	{targetl, targetr}=If[ArrayQ[target],
+		(*data*)
+		{targetl, targetr,cut1} = CutData[target];
+		{targetl, targetr}
+		,
+		If[Length[target]==2 && ArrayQ[target[[1]]] && Length[target[[2]]]==3,
+			(*data and vox*)
+			{targetl, targetr,cut1} = CutData[target[[1]]];
+			{{targetl,target[[2]]},{targetr,target[[2]]}}
+			,
+			(*data, mask and vox*)
+			{targetl, targetr,cut1} = CutData[target[[1]]];
+			{masktl, masktr,cut1} = CutData[target[[2]],cut1];
+			{{targetl,masktl,target[[3]]},{targetr,masktr,target[[3]]}}
+		]
+	];
+	
+	(*split the moving data*)
+	{movingl,movingr}=If[ArrayQ[moving],
+		(*data*)
+		{movingl, movingr,cut2} = CutData[moving];
+		{movingl, movingr}
+		,
+		If[Length[moving]==2 && ArrayQ[moving[[1]]] && Length[moving[[2]]]==3,
+			(*data and vox*)
+			{movingl, movingr,cut2} = CutData[moving[[1]]];
+			{{movingl,moving[[2]]},{movingr,moving[[2]]}}
+			,
+			(*data, mask and vox*)
+			{movingl, movingr,cut2} = CutData[moving[[1]]];
+			{maskml, maskmr,cut2} = CutData[moving[[2]],cut2];
+			{{movingl,maskml,moving[[3]]},{movingr,maskmr,moving[[3]]}}
+		]
+	];
+	
+	(*split the moving2 data*)
+	{moving2l, moving2r,cut2} = CutData[moving2];
+	
+	(*register left part*)
+	regl = RegisterData[targetl, movingl, DeleteTempDirectory -> False, opts];
+	movl = If[ArrayDepth[moving2l] == 4,
+		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2l]],
+		TransformData[{moving2l, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
+		];
+		
+	(*register right part*)
+	regr = RegisterData[targetr, movingr, DeleteTempDirectory -> False, opts];
+	movr = If[ArrayDepth[moving2r] == 4,
+		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2r]],
+		TransformData[{moving2r, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
+		];
+	
+	tdir=OptionValue[TempDirectory];
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
+	
+	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];	
+	
+	{StichData[regl,regr],StichData[movl,movr]}
+	
+  ]
 
 (* ::Subsection::Closed:: *)
 (*TransformData*)
@@ -1276,7 +1355,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
   ExportNii[data, vox, tdir <> "\\trans.nii",NumberType->"Real"];
   command = TransformixCommandInd[tdir];
   RunProcess[$SystemShell, "StandardOutput", command];
-  output = ImportNii[tdir <> "\\result.nii"][[1]];
+  output = ToPackedArray[ImportNii[tdir <> "\\result.nii"][[1]]];
   
   Switch[OptionValue[DeleteTempDirectory],
    "All",
@@ -1286,7 +1365,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
    _,
    Null
    ];
-  output
+  Clip[output,MinMax[data]]
   ]
 
 

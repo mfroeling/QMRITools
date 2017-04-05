@@ -82,6 +82,8 @@ NormalizeData[data,{min,max}] normalizes the data between min and max."
 NormalizeDiffData::usage = 
 "NormalizeDiffData[data] normalizes the diffusion data to the mean signal of the first volume."
 
+SegmentMask::usage = 
+"SegmentMask[mask, n] devides a mask in n equal segments along the slice direction. n must be an integer."
 
 
 (* ::Subsection:: *)
@@ -267,6 +269,24 @@ Module[{roiData, roiPos, roiSeg, roiNames, roi},
              "}}" -> "}"] & /@ (Drop[#, 1] & /@ roiSeg)), {2}])];
    {roiNames, roi}
    ]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ROIMask*)
+
+
+SyntaxInformation[SegmentMask] = {"ArgumentsPattern" -> {_, _, _.}};
+
+SegmentMask[mask_, seg_?IntegerQ] := Block[{pos, f, l, sel, out},
+  pos = Flatten@Position[Unitize[Total[Flatten[#]]] & /@ mask, 1];
+  {f, l} = {First[pos], Last[pos]};
+  sel = Partition[Round[Range[f, l, ((l - f)/seg)]], 2, 1] + 
+    Append[ConstantArray[{0, -1}, seg - 1], {0, 0}];
+  out = ConstantArray[0*mask, seg];
+  Table[out[[i, sel[[i, 1]] ;; sel[[i, 2]]]] = 
+    mask[[sel[[i, 1]] ;; sel[[i, 2]]]], {i, 1, seg}];
+  out
   ]
 
 

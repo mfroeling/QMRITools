@@ -184,7 +184,7 @@ MemoryUsage[n__:100]:=With[{
   },
  Labeled[
   Grid[
-   Reverse@Take[Sort[listing], -n], Frame -> True, Alignment -> Left
+   Reverse@Take[Sort[listing], -n], Frame -> True, Alignment -> Center
    ],
   Column[
    {
@@ -205,11 +205,11 @@ ReadProtected in all contexts", 16, FontFamily -> "Times"]
    ToExpression[symbolName, InputForm, Hold],
    Hold[x__] :> If[MemberQ[Attributes[x], Protected | ReadProtected],
      Sequence @@ {},
-     {ByteCount[
+     {Round[ByteCount[
        Through[{OwnValues, DownValues, UpValues, SubValues, 
           DefaultValues, FormatValues, NValues}[Unevaluated@x, 
          Sort -> False]]
-       ],
+       ]/1000000.,.01],
       symbolName}
      ]
    ];

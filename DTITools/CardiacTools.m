@@ -19,6 +19,7 @@ $ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 Unprotect @@ Names["DTITools`CardiacTools`*"];
 ClearAll @@ Names["DTITools`CardiacTools`*"];
 
+
 (* ::Section:: *)
 (*Usage Notes*)
 
@@ -432,6 +433,7 @@ out = Flatten[Table[
 	(*projection = MakePerpendicular[evec, {rotvec,norvec,radvecn}[[j]]];*)
 	inp = DotC[projection,{cirvec,norvecc,radvecn}[[j]]];
 	helix=ArcCos[Abs[inp]]/Degree;
+	
 	sign=If[(j==1 && i==1),Sign2[inp],1];
 	sign helix
 	, {i, 3}, {j, 3}],1];
@@ -478,6 +480,7 @@ If[OptionValue[ShowPlot],
 	(*cent=Show[ListPointPlot3D[offp,PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],Graphics3D[{Thick, Black, Line[offp]}]];*)
   	plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3](*,Graphics3D[vectorFieldE]*)];
    	Print[plot];
+  	
   	{Re@out,{plot,pl}(*,{radvec,norvec,radvecn,rotvec,norvecc}*)}
 	,
   	Re@out
