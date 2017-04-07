@@ -267,10 +267,15 @@ CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1
 
 SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_, _.}};
 
+MeanNoZero[datai_] := Block[{data},
+  data = N@Chop@TransData[datai, "l"];
+  N@Chop@Map[Mean[DeleteCases[#, 0.] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
+  ]
+(*
 Default[MeanNoZero] = 0;
 MeanNoZero[data_, cor_.] := 
  Mean[DeleteCases[Flatten[N[data], ArrayDepth[data] - (cor + 1)], 0.]]
-
+*)
 
 (* ::Subsection::Closed:: *)
 (*MeanNoZero*)

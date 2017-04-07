@@ -33,8 +33,8 @@ UpdateWarning[]:=If[$VersionNumber != 11.,
 
 LoadPackages[pack_,subpack_,print_:False]:=(
 	If[print,Print["Loading all definitions of "<>#]];
-	Get[package<>#];
-)&/@subPackages;
+	Get[pack<>#];
+	)&/@subpack;
 
 (*Change Default settings*)
 $HistoryLength = 1; (*prevents the excessive use of memory*)

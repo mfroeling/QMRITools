@@ -1225,15 +1225,28 @@ Module[{noise,signal,Msignal,Mnoise},
 (*SNRMapCalc*)
 
 
-Options[SNRMapCalc] = {OutputSNR -> "SNR"};
+Options[SNRMapCalc] = {OutputSNR -> "SNR", SmoothSNR->2};
 
 SyntaxInformation[SNRMapCalc] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, opts:OptionsPattern[]] := SNRMapCalc[data, noise, 2, opts]
-SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := 
- Module[{sigma, sigmac, snr},
-  sigmac = (sigma = N[GaussianFilter[noise, 5]]) /. 0. -> Infinity;
-  snr = GaussianFilter[data/((1/Sqrt[Pi/2.]) sigmac), k];
+SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, opts:OptionsPattern[]] := SNRMapCalc[data, noise, 1, opts]
+SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[{sigma, sigmac, snr, depthD, depthN},
+	
+ 	sigma = N[GaussianFilter[noise, 5]];
+ 	sigmac = (sigma/Sqrt[Pi/2.]) /. 0. -> Infinity;
+ 	
+ 	depthD=ArrayDepth[data];
+ 	depthN=ArrayDepth[noise];
+ 	snr = If[depthD==depthN,
+ 		GaussianFilter[data/(sigmac/Sqrt[Pi/2.]), k],
+ 		If[depthD==depthN+1,
+ 			If[depthD==4,
+ 				Transpose[GaussianFilter[#/sigmac, k]&/@Transpose[data]],
+ 				GaussianFilter[#/sigmac, k]&/@data
+ 				]
+ 			]
+ 		];
+  
   Switch[OptionValue[OutputSNR],
 	 "Sigma", sigma,
 	 "Both", {snr, sigma},

@@ -346,7 +346,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   	Map];
   
   If[OptionValue[MonitorIVIMCalc]&&depthD>1,
-  	PrintTemporary[ProgressIndicator[Dynamic[i],{0,Total@Flatten@Unitize[dat0]}]]
+  	PrintTemporary[ProgressIndicator[Dynamic[i],{0,Total@Flatten@Unitize[dat0]-1000}]]
   	];
   
   ivim = Quiet@Transpose[mapfun[
@@ -589,9 +589,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                (*step 3a - Sampel mu(j) [A2] for j=2*)
                (*step 3b - Sampel covu(j) [A3] for j=2*)
                {muj, covj, icovj} = RandomGibsSample[{fj, dj, pdj}, covj, nvox];
-               (*{muj, covj} = MeanCov[{fj, dj, pdj}];
-               icovj=N@PseudoInverse[covj];*)
-               
+                              
                (*steps 3c "loop" over the voxels i, perform as vector for each of the parameters *)
                (*step 3c-i - define theta(j) - {fj,dj,pdj}=thetaj;*)
                
@@ -770,8 +768,7 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                
                (*step 3a - Sampel mu(j) [A2] for j=2*)
                (*step 3b - Sampel covu(j) [A3] for j=2*)
-               {muj, covj, icovj} = 
-                RandomGibsSample[{f1j, f2j, dj, pd1j, pd2j}, covj, nvox];
+               {muj, covj, icovj} = RandomGibsSample[{f1j, f2j, dj, pd1j, pd2j}, covj, nvox];
                
                (*steps 3c "loop" over the voxels i, perform as vector for each of the parameters *)
                
@@ -883,9 +880,9 @@ BoolAdd = N[#2 - #1 #2 + #1 #3] &;
 ClipC = Compile[{{theta, _Real, 2}, {trans, _Integer, 0}}, Block[{chk1, out},
     If[Length[theta] == 3,
      chk1 = BooleC2[theta[[1]], -7.0, 7.0];
-     chk1 = chk1*BooleC2[theta[[2]], -9.5, -5.5];
+     chk1 = chk1*BooleC2[theta[[2]], -9.5, -5.0];
      (*chk1=chk1*(1-BooleC1[theta[[3]],-0.001]);*)
-     chk1 = chk1*BooleC2[theta[[3]], -7.5, -0.001];
+     chk1 = chk1*BooleC2[theta[[3]], -5.25, -0.001];
      out = DeleteCases[chk1*Transpose[theta], {0., 0., 0.}];
      ,
      chk1 = BooleC2[theta[[1]], -7.0, 7.0];
@@ -917,22 +914,11 @@ PosDef[mat_, tol_: 10.^-5] := Block[{eigsys},
       ) &, N[mat], (! PositiveDefiniteMatrixQ[#] &)]
    ];
 
-(*
-RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov,mat},
-   
-   	munew = N[RandomVariate[System`MultinormalDistribution[Mean /@ N[theta], N[PosSym[cov/m]]]]]; 
-    munew = N[(1 + munew) - 1];
-    tm = N[(ClipC[theta, 1] - munew)];
-    mat=N[PosSym[PseudoInverse[tm.Transpose[tm]]]];
-    icov = N[RandomReal[WishartDistribution[mat, m - 3]]];
-    {munew, N[PseudoInverse[icov]], icov}
-   ];
-*)
-
 RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov, mat,tmt,mi},
-   munew = N[RandomVariate[MultinormalDistribution[Mean /@ N[theta],N[(*PosSym[cov/m]*)cov/m]]]];
+	(*PosSym[cov/m]*)
+   munew = N[RandomVariate[MultinormalDistribution[Mean /@ N[theta],N[cov/m]]]];
    (*munew = N[(1 + munew) - 1];*)
-   tm = Chop[N[(ClipC[theta, 1] - munew)]];
+   tm = ClipC[theta, 1] - munew;
    tmt=Chop[N[tm.Transpose[tm]], 10^-5];
    (*mi=m-3;*)
    icov = N[RandomVariate[InverseWishartMatrixDistribution[m-3, tmt]]];
@@ -947,13 +933,13 @@ RandomNormalCf = Compile[{{m, _Real, 1}, {s, _Real, 1}},
    Chop[Clip[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}],{-9.,9.}]],
    Parallelization -> True, RuntimeOptions -> "Speed"];
 RandomNormalCd = Compile[{{m, _Real, 1}, {s, _Real, 1}},
-   Chop[Clip[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}],{-15.,0.}]],
+   Chop[Clip[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}],{-15.,0.4}]],
    Parallelization -> True, RuntimeOptions -> "Speed"];
 
 (*calulated fitted points g(fr, dc, pdc)*)
-FunceC2 = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 1}},
-   Chop[Transpose[Map[((Exp[Exp[dc] #] + Exp[Exp[pdc] # + fr])/(1 + Exp[fr])) &, -bm]]]
-   , Parallelization -> True, RuntimeOptions -> "Speed"];
+FunceC2 = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 1}},Block[{fre=Exp[fr]},
+   		Chop[Transpose[Map[((Exp[Exp[dc] #] + fre Exp[Exp[pdc] #])/(1 + fre)) &, -bm]]]
+	], Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
 
 (*calulated fitted points g(fr1, fr2, dc, pdc1, pdc2)*)
 FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Real, 1}, {pdc2, _Real, 1}, {bm, _Real, 1}},
@@ -963,18 +949,18 @@ FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Rea
            (Exp[Exp[pdc2] #] fr2e)/(1 + fr2e) -
            (Exp[Exp[dc] #] (-1 + fr1e fr2e))/((1 + fr1e) (1 + fr2e))
           )) &, -bm]]]
-    ], Parallelization -> True, RuntimeOptions -> "Speed"];
+    ], Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
 
 (*calculate probability*)
 DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
 	((vec1.vec2)^2)/(vec2.vec2),
-   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
+   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
 Dotc1 = Compile[{{vec, _Real, 1}}, 
 	vec.vec,
-   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
+   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
 MatDot2 = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}, {mat, _Real, 2}}, 
 	(vec1.mat.vec1) - (vec2.mat.vec2),
-   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
+   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
 AlphaC = Compile[{
 	{theta, _Real, 2}, {thetat, _Real, 2}, {mu, _Real, 1},
 	{icov, _Real, 2}, {y, _Real, 2}, {yty, _Real, 1}, {g, _Real, 2}, 
@@ -990,7 +976,7 @@ AlphaC = Compile[{
     bool = pdpt - rand;
     UnitStep[bool]
     ],
-   Parallelization -> True, RuntimeOptions -> "Speed"];
+   Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
 
 
 (* ::Subsection:: *)

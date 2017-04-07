@@ -1255,7 +1255,7 @@ RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[
 		];
 		
 	tdir=OptionValue[TempDirectory];
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];		
 		
@@ -1332,7 +1332,7 @@ RegisterDataTransformSplit[target_, moving_, {moving2_, vox_}, opts : OptionsPat
 		];
 	
 	tdir=OptionValue[TempDirectory];
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];	
 	

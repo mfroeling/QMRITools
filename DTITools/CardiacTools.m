@@ -102,10 +102,18 @@ TransmuralPlot::usage =
 "TransmuralPlot[data] plots transmural profiles of the data.
 data can be a single profile or a list of profiles. In the second case the mean and standardeviations are plotted."
 
+ExcludeSlices::usage = 
+"ExcludeSlices[data] excludes slices that do not look like the others."
+
 
 (* ::Subsection:: *)
 (*Options*)
 
+CutOffMethod::usage =
+"CutOffMethod is an option for ExcludeSlices. Default value is \"Auto\" or it can be a fixed percentage (value between 0 and .5)"
+
+DistanceMeasure::usage = 
+"DistanceMeasure is an option for ExcludeSlices. Defaul value is 5. (1 ManhattanDistance, 2 SquaredEuclideanDistance, 3 EuclideanDistance, 4 Correlation, 5 SpearmanRho"
 
 ShowPlot::usage = 
 "ShowPlot is an option for HelixAngleCalc. If true the it also outputs a visulization of the local myocardial coordinate system."
@@ -1777,6 +1785,82 @@ TransmuralPlot[data_, OptionsPattern[]] :=
    PlotRange -> {{0, 1}, {min, max}},ImageSize->OptionValue[ImageSize],PlotLabel->OptionValue[PlotLabel],
    GridLines -> {{{.5, Directive[Thick, Black, Dashed]}}, Join[System`FindDivisions[{min, max},Round[(max-min)/ OptionValue[GridLineSpacing]]], {{0, Directive[{Thick, Black}]}}]}, 
    FrameTicks -> {{{0, "Endo"}, {.5, "Mid"}, {1, "Epi"}}, Automatic}]
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*ExcludeSlices*)
+
+
+Options[ExcludeSlices] = {CutOffMethod -> "Auto",DistanceMeasure->5};
+
+SyntaxInformation[ExcludeSlices] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
+
+ExcludeSlices[data_, OptionsPattern[]] := 
+ Block[{measure, selmask, cutoff, std, mn, bin, type},
+  type = OptionValue[DistanceMeasure];
+  cutoff = OptionValue[CutOffMethod];
+  (*get similarity measure*)
+  measure = CalculateMeasure[data, type];
+  (*calculate cutoff and selection mask*)
+  cutoff = If[NumberQ[cutoff] && cutoff < .5,
+    Quantile[Flatten@measure, cutoff],
+    1 - (1.9 StandardDeviation@Flatten@measure)
+    ];
+  selmask = Mask[measure, cutoff];
+  (*report the outliers*)
+  ShowOutlierDistribution[measure, selmask, cutoff];
+  (*output mask*)
+  selmask
+  ]
+
+ShowOutlierDistribution[measure_, selmask_, cutoff_] := 
+ Block[{mn, fmeas, minmax},
+  fmeas = Flatten@measure;
+  mn = Mean@fmeas;
+  minmax = MinMax[fmeas];
+  (*Plot Outlier distributions*)
+  Print[GraphicsRow[{
+     ListPlot[fmeas, GridLines -> {None, Flatten[{mn, cutoff}]}, 
+      GridLinesStyle -> Directive@{Thick, Red}, 
+      PlotStyle -> Directive@{PointSize[0.03], Black}, 
+      PlotRange -> {All, minmax}],
+     Histogram[fmeas, {(minmax[[2]] - minmax[[1]])/20}, 
+      ChartStyle -> Black, PerformanceGoal -> "Speed", 
+      GridLines -> {{mn, cutoff}, None}, 
+      GridLinesStyle -> Directive@{Thick, Red}, 
+      PlotRange -> {minmax, Full}]
+     }, PlotLabel -> {mn, StandardDeviation[fmeas], cutoff}]];
+  (*report outliers*)
+  Print@Row[Flatten[
+     {"% slices excluded: ", 
+      Round[100 Total[Flatten[(1 - selmask)]]/
+         Length[Flatten@selmask]], "  /  ",
+      "% directions per slice exlcuded: ", 
+      Round[100 (Total[(1 - #)]/Length[#] & /@ selmask)]}], "  "];
+  ]
+
+CalculateMeasure[data_, type_] := 
+ Block[{target, datan, fun, measure, slice, dirs},
+  target = Mean /@ data;
+  target = Flatten /@ (target/Mean[Flatten[target]]);
+  datan = Map[Flatten[#/Mean[Flatten[#]]] &, data, {2}];
+  {slice, dirs} = Dimensions[datan][[1 ;; 2]];
+  (*select distance measure*)
+  fun = Switch[type,
+    1, ManhattanDistance,
+    2, SquaredEuclideanDistance,
+    3, EuclideanDistance,
+    4, Correlation,
+    5, SpearmanRho,
+    _, SpearmanRho];
+  (*calculate measure*)
+  measure = 
+   Table[fun[target[[i]], datan[[i, j]]], {i, 1, slice, 1}, {j, 1, dirs, 1}];
+  (*normalize measure*)
+  measure = #/Median[#] & /@ measure;
+  (*make low value bad*)
+  If[type <= 3, 2 - measure, measure]
   ]
 
 
