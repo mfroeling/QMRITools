@@ -82,6 +82,8 @@ GradientPlot::usage =
 PlotDuty::usage = 
 "PlotDuty[{grad, bval, ord}, mode] plot the gradient dutycycle"
 
+ColorFAPlot::usage = 
+"ColorFAPlot[tenor] create a color coded FA map from the tensor for l1, l2 and l3."
 
 
 (* ::Subsection:: *)
@@ -261,7 +263,7 @@ Legendi[plot_, color_, min_, max_, ps_] := Legended[plot,
 (* ::Subsubsection::Closed:: *)
 (*Lengend plot*)
 
-
+Save
 Labeli[lab_,ps_,plot_]:=If[StringQ[lab],
 	Grid[{
 		{Style[lab, labStyle, TextAlignment->Center, FontSize -> Round[ps/20]],SpanFromLeft},
@@ -3107,8 +3109,6 @@ GradientPlot[veci_, val_, OptionsPattern[]] :=
   
   Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
   
-  
-
 
 (* ::Subsection::Closed:: *)
 (*PlotDuty*)
@@ -3140,7 +3140,35 @@ PlotDuty[{grad_, bval_, ord_}, mode_] :=
   ]
   
   
+(* ::Subsection::Closed:: *)
+(*ColorFAPlot*)  
   
+  
+ColorFAPlot[tens_] := Block[{FA, eigv, mid, eigFA},
+  FA = ParameterCalc[tens][[5]];
+  eigv = EigenvecCalc[tens];
+  
+  eigFA = Abs[FA eigv];
+  
+  DynamicModule[{colEigFA, colEig, im},
+   colEigFA = 
+    Table[Image[eigFA[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, 
+      Length[eigv]}, {i, 1, 3}];
+   colEig = 
+    Table[Image[(Abs[eigv])[[j, All, All, i]], 
+      ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
+   
+   Manipulate[
+    im = GraphicsRow[{colEig, colEigFA}[[i, j, sel]], 
+      ImageSize -> Length[sel]*size],
+    {{j, Round[Length[colEig]/2], "slice"}, 1, Length[colEig], 1},
+    {{i, 2, "method"}, {1 -> "raw", 2 -> "FA"}},
+    {{sel, {1, 2, 3}, "eigenvectors"}, {1 -> "first", 2 -> "second", 
+      3 -> "third"}, ControlType -> TogglerBar},
+    Button["save image", SaveImage[im], Method -> "Queued"],
+    {{size, 300, "image size"}, {200, 300, 400, 600, 1000}}]
+   ]
+  ]  
 
 
 (* ::Section:: *)

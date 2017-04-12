@@ -896,22 +896,31 @@ Options[CardiacSegment]={StartPoints->"Default",StartSlices->"Default",LineThres
 
 SyntaxInformation[CardiacSegment] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-CardiacSegment[data_,mask_,off_,OptionsPattern[]]:=DialogInput[{
+CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 DynamicModule[{
-radiusStart,centers,pointsIn,coordinates,angles,segmask, segang,
+mask,radiusStart,centers,pointsIn,coordinates,angles,segmask, segang,startPoint,
 lines,centerpl,slices,api,midi,basi,sti,endi,carPl,colsOver,car,lm,pos,st,en,app,seg,allpli},
 
+mask=Round[maski];
 radiusStart=ConstantArray[Max[Dimensions[mask]]/8,Length[mask]];
 centers=Reverse/@off[[All,2;;3]];
 
-pointsIn=If[OptionValue[StartPoints]==="Default",
-Transpose[{
-centers-Transpose@{radiusStart,radiusStart},
-centers-Transpose@{radiusStart,-radiusStart}
-},{2,1,3}]
-,
-Reverse@OptionValue[StartPoints]
-];
+startPoint=OptionValue[StartPoints];
+If[startPoint==="Default",
+	revi=1;
+	pointsIn=Transpose[{
+		centers-Transpose@{radiusStart,radiusStart},
+		centers-Transpose@{radiusStart,-radiusStart}
+		},{2,1,3}];
+	,
+	If[NumberQ[startPoint[[2]]],
+		revi=startPoint[[2]];
+		pointsIn=Reverse@startPoint[[1]];
+		,
+		revi=1;
+		pointsIn=Reverse@startPoint;
+		]
+	];
 
 coordinates=(Reverse/@Position[#,1])&/@mask;
 angles=Table[i,{i,0,359,1}]Degree;
@@ -924,7 +933,7 @@ centerpl=Graphics[{Red ,Disk[#,1]}]&/@centers;
 slices=Length[mask];
 
 {sti,api,midi,basi,endi}=
-If[OptionValue[StartSlices]==="Default",
+If[OptionValue[StartSlices]==="Default"||OptionValue[StartSlices]==={},
 	pos = Position[Max[#] & /@ mask, 1];
 	st = First@First[pos-1];
 	en = First@Last[pos];
@@ -1038,7 +1047,7 @@ Dynamic[Show[anatomypl,maskpl,polplot,lineplot,lineplot2,pointplot,circplot,cent
 (*manipulate controls*)
 {{n,Round[slices/2],"Slice"},1,slices,1},
 {{mop,.2,"Mask opacity"},0,1},
-{{masktype,False,"show lines mask"},{True->"threshold mask",False->"normal mask"}},
+{{masktype,True,"show lines mask"},{True->"threshold mask",False->"normal mask"}},
 {{segmi,"AHA","Number of segments"},{1->"1 per sliec",4->"4 per slice",6->"6 per slice","AHA"->"AHA-17"},ControlType->SetterBar},
 PaneSelector[{
 False->"",
@@ -1086,9 +1095,9 @@ DefaultButton["Done",DialogReturn[
 
 segang=Map[{#[[1]], DeleteCases[#[[2]], {}]} &, segang, {2}];
 
-{segmask,segang, {points,{start,ap,mid,bas,end}}}
+{segmask,segang, {{points,rev},{start,ap,mid,bas,end}}}
 ]],
-CancelButton["Cancel",DialogReturn[{"Cancel","Cancel","Cancel"}]]
+CancelButton["Cancel",DialogReturn[$Canceled]]
 }],
 
 (*hidden controls*)
@@ -1104,7 +1113,7 @@ CancelButton["Cancel",DialogReturn[{"Cancel","Cancel","Cancel"}]]
 {pols,ControlType->None},
 {dsks,ControlType->None},
 {pts,ControlType->None},
-{{rev,1},ControlType->None},
+{{rev,revi},ControlType->None},
 {{slcgrp,False},ControlType->None},
 
 {{lmm,lm[[2]]},ControlType->None},
@@ -1841,7 +1850,7 @@ ShowOutlierDistribution[measure_, selmask_, cutoff_] :=
   ]
 
 CalculateMeasure[data_, type_] := 
- Block[{target, datan, fun, measure, slice, dirs},
+ Block[{target, datan, fun, measure, slice, dirs, mask},
   target = Mean /@ data;
   target = Flatten /@ (target/Mean[Flatten[target]]);
   datan = Map[Flatten[#/Mean[Flatten[#]]] &, data, {2}];
@@ -1856,9 +1865,12 @@ CalculateMeasure[data_, type_] :=
     _, SpearmanRho];
   (*calculate measure*)
   measure = 
-   Table[fun[target[[i]], datan[[i, j]]], {i, 1, slice, 1}, {j, 1, dirs, 1}];
+   Table[
+   	mask=Unitize[target[[i]] datan[[i, j]]];
+   	fun[mask target[[i]], mask datan[[i, j]]],
+   	 {i, 1, slice, 1}, {j, 1, dirs, 1}];
   (*normalize measure*)
-  measure = #/Median[#] & /@ measure;
+  measure = #/Quantile[#,.6] & /@ measure;
   (*make low value bad*)
   If[type <= 3, 2 - measure, measure]
   ]

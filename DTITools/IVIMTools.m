@@ -496,8 +496,7 @@ CorrectParMap[par_, con_, mask_] :=
 
 
 Options[BayesianIVIMFit2] = {ChainSteps -> {20000, 1000, 10}, UpdateStep -> {0.5, 0.2, 0.5}, 
-	FixPseudoDiff -> False, CorrectPar->True, 
-   FixPseudoDiffSD -> 0.5, OutputSamples->False,
+	FixPseudoDiff -> False, CorrectPar->True, FixPseudoDiffSD -> 0.5, OutputSamples->False,
    FitConstrains -> ThetaConv[{{-7.6, 7.6}, {-10.0, -5.7}, {-7.0, 0.}}]
    };
 
@@ -531,7 +530,7 @@ BayesianIVIMFit2[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Mod
   
   (*show the pre fit distribution*)
   Print[Dimensions[ynf],Dimensions[thetai]];
-  PrintTemporary[h1 = HistogramPar[thetai, {con2e, 75, mui, covi}, 3, Gray, {0.1, 0.1, 0.1}]];    
+  Print[h1 = HistogramPar[thetai, {con2e, 75, mui, covi}, 3, Gray, {0.1, 0.1, 0.1}]];    
 
   out2 = BayesianIVIMFitI2[thetai, bval, ynf, FilterRules[{opts}, Options[BayesianIVIMFitI2]]];
   solution = out2[[2]];
@@ -540,7 +539,7 @@ BayesianIVIMFit2[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Mod
   
   {mmu, mcov} = MeanCov[solution];
   Print[Column[{
-     h1,
+     (*h1,*)
      HistogramPar[solution, {con2e, 75, mmu, mcov}, 3, Blue, {0.1, 0.2, 0.2}],
      UncertainPlot[solution, deviation, con2e, 5 Median[#] & /@ deviation]
      }]
@@ -575,7 +574,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
       {fj, dj, pdj} = thetai;
       {muj, covj} = MeanCov[thetai];
       (*initialize loop pars*)
-      gj = FunceC2[fj, dj, pdj, bval];
+      gj = Transpose@FunceC2l[fj, dj, pdj, bval];
       (* define Nfr(i), Ndc(i), 
       Npdc(i) needed to update w in first 500 burn steps*)
       {w1, w2, w3} = Transpose[ConstantArray[wstart, {nvox}]];
@@ -595,21 +594,21 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                
                (*step 3c-ii - ramom sample frtmp*)
                fjt = RandomNormalCf[fj, w1];
-               gjt = FunceC2[fjt, dj, pdj, bval];
+               gjt = Transpose@FunceC2l[fjt, dj, pdj, bval];
                bool1 = Quiet@AlphaC[{fj, dj, pdj}, {fjt, dj, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool1, gj, gjt];
                fj = BoolAdd[bool1, fj, fjt];
 
                (*step 3c-iii - ramom sample dctmp*)
                djt = RandomNormalCd[dj, w2];
-               gjt = FunceC2[fj, djt, pdj, bval];
+               gjt = Transpose@FunceC2l[fj, djt, pdj, bval];
                bool2 = Quiet@AlphaC[{fj, dj, pdj}, {fj, djt, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool2, gj, gjt];
                dj = BoolAdd[bool2, dj, djt];
                
                (*step 3c-iv - ramom sample pdctmp *)
                pdjt = RandomNormalCd[pdj, w3];
-               gjt = FunceC2[fj, dj, pdjt, bval];
+               gjt = Transpose@FunceC2l[fj, dj, pdjt, bval];
                bool3 = Quiet@AlphaC[{fj, dj, pdj}, {fj, dj, pdjt}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool3, gj, gjt];
                pdj = BoolAdd[bool3, pdj, pdjt];
@@ -707,7 +706,7 @@ BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] :=
   
   (*show the pre fit distribution*)
   Print[Dimensions[ynf],Dimensions[thetai]];
-  PrintTemporary[h1 = HistogramPar[thetai, {con3e, 75, mui, covi}, 3, Gray, {0.1, 0.1, 0.1, 0.1, 0.1}]];
+  Print[h1 = HistogramPar[thetai, {con3e, 75, mui, covi}, 3, Gray, {0.1, 0.1, 0.1, 0.1, 0.1}]];
     
   out2 = BayesianIVIMFitI3[thetai, bval, ynf, FilterRules[{opts}, Options[BayesianIVIMFitI3]]];
   solution = out2[[2]];
@@ -716,9 +715,8 @@ BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] :=
 
   {mmu, mcov} = MeanCov[solution];
   Print[Column[{
-     h1,
-     HistogramPar[solution, {con3e, 75, mmu, mcov}, 3, 
-      Blue, {0.1, 0.1, 0.1, 0.1, 0.1}],
+     (*h1,*)
+     HistogramPar[solution, {con3e, 75, mmu, mcov}, 3, Blue, {0.1, 0.1, 0.1, 0.1, 0.1}],
      UncertainPlot[solution, deviation, con3e, 5 Median[#] & /@ deviation]
      }]
    ];
@@ -754,7 +752,7 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
       {f1j, f2j, dj, pd1j, pd2j} = thetai;
       {muj, covj} = MeanCov[thetai];
       (*initialize loop pars*)
-      gj = FunceC3[f1j, f2j, dj, pd1j, pd2j, bval];
+      gj = Transpose@FunceC3l[f1j, f2j, dj, pd1j, pd2j, bval];
       (* define Nfr(i), Ndc(i), 
       Npdc(i) needed to update w in first 500 burn steps*)
       {w1, w2, w3, w4, w5} = Transpose[ConstantArray[wstart, {nvox}]];
@@ -777,21 +775,21 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 			   (*step 3c-ii - ramom sample frtmp*)
                (*comp 1*)
                f1jt = RandomNormalCf[f1j, w1];
-               gjt = FunceC3[f1jt, f2j, dj, pd1j, pd2j, bval];
+               gjt = Transpose@FunceC3l[f1jt, f2j, dj, pd1j, pd2j, bval];
                bool1 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1jt, f2j, dj,  pd1j, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool1, gj, gjt];
                f1j = BoolAdd[bool1, f1j, f1jt];
                
                (*comp 2*)
                f2jt = RandomNormalCf[f2j, w2];
-               gjt = FunceC3[f1j, f2jt, dj, pd1j, pd2j, bval];
+               gjt = Transpose@FunceC3l[f1j, f2jt, dj, pd1j, pd2j, bval];
                bool2 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1j, f2jt, dj, pd1j, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool2, gj, gjt];
                f2j = BoolAdd[bool2, f2j, f2jt];
                
                (*step 3c-iii - ramom sample dctmp*)
                djt = RandomNormalCd[dj, w3];
-               gjt = FunceC3[f1j, f2j, djt, pd1j, pd2j, bval];
+               gjt = Transpose@FunceC3l[f1j, f2j, djt, pd1j, pd2j, bval];
                bool3 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1j, f2j, djt, pd1j, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool3, gj, gjt];
                dj = BoolAdd[bool3, dj, djt];
@@ -799,14 +797,14 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                (*step 3c-iv - ramom sample pdctmp *)
                (*comp 1*)
                pd1jt = RandomNormalCd[pd1j, w4];
-               gjt = FunceC3[f1j, f2j, dj, pd1jt, pd2j, bval];
+               gjt = Transpose@FunceC3l[f1j, f2j, dj, pd1jt, pd2j, bval];
                bool4 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1j, f2j, dj, pd1jt, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool4, gj, gjt];
                pd1j = BoolAdd[bool4, pd1j, pd1jt];
                
                (*comp 2*)
                pd2jt = RandomNormalCd[pd2j, w5];
-               gjt = FunceC3[f1j, f2j, dj, pd1j, pd2jt, bval];
+               gjt = Transpose@FunceC3l[f1j, f2j, dj, pd1j, pd2jt, bval];
                bool5 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1j, f2j, dj, pd1j, pd2jt}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
                gj = BoolAdd[bool5, gj, gjt];
                pd2j = BoolAdd[bool5, pd2j, pd2jt];
@@ -873,6 +871,7 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 
 
 BooleC = Compile[{{val, _Real, 1}, {ru, _Real, 1}}, UnitStep[val - ru], Parallelization -> True, RuntimeOptions -> "Speed"];
+
 BooleC1 = Compile[{{val, _Real, 1}, {ru, _Real, 0}}, UnitStep[val - ru], Parallelization -> True, RuntimeOptions -> "Speed"];
 BooleC2 = Compile[{{val, _Real, 1}, {min, _Real, 0}, {max, _Real, 0}}, UnitStep[val - min] (1. - UnitStep[val - max]), Parallelization -> True, RuntimeOptions -> "Speed"];
 BoolAdd = N[#2 - #1 #2 + #1 #3] &;
@@ -930,7 +929,7 @@ RandomNormalC = Compile[{{m, _Real, 1}, {s, _Real, 1}},
    Chop[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}]],
    Parallelization -> True, RuntimeOptions -> "Speed"];
 RandomNormalCf = Compile[{{m, _Real, 1}, {s, _Real, 1}},
-   Chop[Clip[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}],{-9.,9.}]],
+   Chop[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}]],
    Parallelization -> True, RuntimeOptions -> "Speed"];
 RandomNormalCd = Compile[{{m, _Real, 1}, {s, _Real, 1}},
    Chop[Clip[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}],{-15.,0.4}]],
@@ -940,6 +939,10 @@ RandomNormalCd = Compile[{{m, _Real, 1}, {s, _Real, 1}},
 FunceC2 = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 1}},Block[{fre=Exp[fr]},
    		Chop[Transpose[Map[((Exp[Exp[dc] #] + fre Exp[Exp[pdc] #])/(1 + fre)) &, -bm]]]
 	], Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+
+FunceC2l = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 0}}, 
+    Chop[((Exp[-bm Exp[dc]] + Exp[fr] Exp[-bm Exp[pdc]])/(1 + Exp[fr]))], 
+    Parallelization -> True, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}, CompilationTarget->System`$DTIToolsCompiler];
 
 (*calulated fitted points g(fr1, fr2, dc, pdc1, pdc2)*)
 FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Real, 1}, {pdc2, _Real, 1}, {bm, _Real, 1}},
@@ -951,16 +954,23 @@ FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Rea
           )) &, -bm]]]
     ], Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
 
+FunceC3l = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Real, 1}, {pdc2, _Real, 1}, {bm, _Real, 0}},
+   Block[{fr1e = Exp[fr1], fr2e = Exp[fr2]},
+    Chop[(
+          (Exp[-bm Exp[pdc1]] fr1e)/(1 + fr1e) +
+          (Exp[-bm Exp[pdc2]] fr2e)/(1 + fr2e) -
+          (Exp[-bm Exp[dc]] (-1 + fr1e fr2e))/((1 + fr1e) (1 + fr2e))
+       )]
+    ], Parallelization -> True, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}, CompilationTarget->System`$DTIToolsCompiler];
+
 (*calculate probability*)
-DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
-	((vec1.vec2)^2)/(vec2.vec2),
+DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, ((vec1.vec2)^2)/(vec2.vec2),
    RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
-Dotc1 = Compile[{{vec, _Real, 1}}, 
-	vec.vec,
+Dotc1 = Compile[{{vec, _Real, 1}}, vec.vec,
    RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
-MatDot2 = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}, {mat, _Real, 2}}, 
-	(vec1.mat.vec1) - (vec2.mat.vec2),
+MatDot2 = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}, {mat, _Real, 2}}, (vec1.mat.vec1) - (vec2.mat.vec2),
    RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+   
 AlphaC = Compile[{
 	{theta, _Real, 2}, {thetat, _Real, 2}, {mu, _Real, 1},
 	{icov, _Real, 2}, {y, _Real, 2}, {yty, _Real, 1}, {g, _Real, 2}, 
@@ -972,9 +982,7 @@ AlphaC = Compile[{
     pd = Chop[((yty - DotC[y, gt])/(yty - DotC[y, g]))^(-nb/2)];
     (*bool=alpha-RU*)
     rand = RandomReal[1, nvox];
-    pdpt=(pd*pt);
-    bool = pdpt - rand;
-    UnitStep[bool]
+    UnitStep[(pd*pt) - rand]
     ],
    Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
 
@@ -1060,12 +1068,13 @@ PlotPerformance[{nit_, nvox_}, {t1_, t2s_}, {w_, wstart_}] := Column[{
      " s   -   full chain (21000) takes: ", 
      Round[(21000/nit) (t1/60), .1], " min"}]
    ,
-   GraphicsRow[MapThread[Show[
+   (*GraphicsRow[MapThread[Show[
        ListPlot[#1, AspectRatio -> .1 Length[wstart], 
         PlotRange -> All, PlotStyle -> {Black}],
        Plot[#2, {x, 0, nvox}, PlotStyle -> {Red, Thick}]
        ] &, {w, wstart}], ImageSize -> 1000]
-   ,
+   ,*)
+    {w, wstart,nvox};
    Show[
     ListPlot[t2s, AspectRatio -> 0.075, ImageSize -> 1000, 
      PlotStyle -> {Black, PointSize[Medium]}],

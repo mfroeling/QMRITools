@@ -126,8 +126,8 @@ PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, opts];
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := 
- Module[{data, mask, sigm, ker, off, datao, weights, sigmat, dim, 
-   zdim, ydim, xdim, ddim, g, i, j, nb, pi, maxit, output,
+ Block[{data, mask, sigm, ker, off, datao, weights, sigmat, dim, 
+   zdim, ydim, xdim, ddim, nb, pi, maxit, output,
    time1, time, timetot, sigi, sigf, zm, zp, xm, xp, ym, yp, fitdata, filt,
    sigo, Nes, datn, it},
   
@@ -160,56 +160,59 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
   time = AbsoluteTime[];
   time1 = 0;
   timetot = {};
-  g = off + 1; 
-  i = j = 0;
-  PrintTemporary[Row[{
-     ProgressIndicator[Dynamic[g], {off + 1, zdim - off}], 
-     Row[{Dynamic[i], Dynamic[j], Dynamic[Round[100. j/(i + 1), .1]]},
-       " / "]
-     }, "     "]];
   
-  output = Table[
-  	g = z;
-    (*Check if masked voxel*)
-    If[mask[[z, y, x]] == 0.,
-     {0., 0., 0.}
-     ,
-     (*monitor time progress every 500 itterations*)
-     i++;
-     If[Mod[i, 500] == 0, 
-     	time1 = AbsoluteTime[];
-     	AppendTo[timetot, time1 - time];
-     	time = time1;
-      ];
-     
-     sigi = If[sigm === 0., sigm, If[NumberQ[sigm], sigm, sigm[[z, y, x]]]];
-     (*get pixel range*)
-     {{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
-     (*get the data*)
-     fitdata = Flatten[data[[zm ;; zp, All, ym ;; yp, xm ;; xp]], {1, 3, 4}];
-     
-     (*perform the fit and reconstruct the noise free data*)
-     Switch[OptionValue[Method],
-     	"Equation",
-     	sigf=If[OptionValue[FitSigma],0.,sigi];
-     	{sigo, Nes, datn} = PCAFitEq[fitdata, sigf];
-     	it=1;,
-     	_,
-     	{sigo, Nes, datn, it} = PCAFitHist[fitdata, sigi, FitSigma -> OptionValue[FitSigma], PCAFitParameters->{nb, pi, maxit}];
-     	(*check if max limit is hit*)
-     	If[it == maxit, j++];
-     ];
-     
-     (*collect the noise free data and weighting matrix*)
-     filt = Transpose[Fold[Partition, datn, {ker, ker}], {1, 3, 4, 2}];
-     datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += filt;
-     sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += sigo;
-     weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += 1.;
-     
-     (*output sig, Nest and itterations *)
-     {sigo, Nes, i}
-     ]
-    , {z, off + 1, zdim - off}, {y, off + 1, ydim - off}, {x, off + 1, xdim - off}];
+  DynamicModule[{i,j,g},
+  	g = off + 1;
+  	i = j = 0;
+	  PrintTemporary[Row[{
+	     ProgressIndicator[Dynamic[g], {off + 1, zdim - off}], 
+	     Row[{Dynamic[i], Dynamic[j], Dynamic[Round[100. j/(i + 1), .1]]},
+	       " / "]
+	     }, "     "]];
+  
+	 output = Table[
+	  	g = z;
+	    (*Check if masked voxel*)
+	    If[mask[[z, y, x]] == 0.,
+	     {0., 0., 0.}
+	     ,
+	     (*monitor time progress every 500 itterations*)
+	     i++;
+	     If[Mod[i, 500] == 0, 
+	     	time1 = AbsoluteTime[];
+	     	AppendTo[timetot, time1 - time];
+	     	time = time1;
+	      ];
+	     
+	     sigi = If[sigm === 0., sigm, If[NumberQ[sigm], sigm, sigm[[z, y, x]]]];
+	     (*get pixel range*)
+	     {{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
+	     (*get the data*)
+	     fitdata = Flatten[data[[zm ;; zp, All, ym ;; yp, xm ;; xp]], {1, 3, 4}];
+	     
+	     (*perform the fit and reconstruct the noise free data*)
+	     Switch[OptionValue[Method],
+	     	"Equation",
+	     	sigf=If[OptionValue[FitSigma],0.,sigi];
+	     	{sigo, Nes, datn} = PCAFitEq[fitdata, sigf];
+	     	it=1;,
+	     	_,
+	     	{sigo, Nes, datn, it} = PCAFitHist[fitdata, sigi, FitSigma -> OptionValue[FitSigma], PCAFitParameters->{nb, pi, maxit}];
+	     	(*check if max limit is hit*)
+	     	If[it == maxit, j++];
+	     ];
+	     
+	     (*collect the noise free data and weighting matrix*)
+	     filt = Transpose[Fold[Partition, datn, {ker, ker}], {1, 3, 4, 2}];
+	     datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += filt;
+	     sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += sigo;
+	     weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += 1.;
+	     
+	     (*output sig, Nest and itterations *)
+	     {sigo, Nes, i}
+	     ]
+	    , {z, off + 1, zdim - off}, {y, off + 1, ydim - off}, {x, off + 1, xdim - off}];
+  ];
   
   (*correct output data for weightings*)
   datao = Transpose[Clip[#/(weights + 10^-10), {0., 10^9}, {0., 0.}] & /@ Transpose[datao]];

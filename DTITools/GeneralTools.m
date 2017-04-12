@@ -64,6 +64,8 @@ MeanStd::usage =
 MeanRange::usage = 
 "MeanRange[Range] calculates the medain (50%) and standard deviation (14% and 86%) range and reports it as a string."
 
+PadToDimensions::usage
+"PadToDimensions[data, dim] pads the data to dimensions dim." 
 
 
 (* ::Subsection:: *)
@@ -73,6 +75,8 @@ MeanRange::usage =
 TableMethod::usage = 
 "TableMethod is an option for NumberTableForm. It specifies which number form to uses. Values can be NumberForm, ScientificForm or EngineeringForm"
 
+PadValue::usage = 
+"PadValue is an option for PadToDimensions. It specifies the value of the padding."
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -83,6 +87,22 @@ TableMethod::usage =
 
 
 Begin["`Private`"]
+
+
+(* ::Subsection::Closed:: *)
+(*PadToDimensions*)
+
+
+Options[PadToDimensions]={PadValue->0.}
+
+SyntaxInformation[PadToDimensions] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+PadToDimensions[data_, dim_, OptionsPattern[]] := Block[{diffDim, padval, pad},
+  padval = OptionValue[PadValue];
+  diffDim = dim - Dimensions[data];
+  pad = Transpose@{Floor[diffDim/2], Ceiling[diffDim/2]};
+  ArrayPad[data, pad, padval]
+  ]
 
 
 (* ::Subsection::Closed:: *)
@@ -111,7 +131,6 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
   		]
   	]
 ]
-
 
 
 (* ::Subsection::Closed:: *)
@@ -290,13 +309,17 @@ MeanStd[inp_] := Block[{dat},
 (* ::Subsection::Closed:: *)
 (*MeanNoZero*)
 
-
   
 MeanRange[inp_] := Block[{q1, q2, q3},
   {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {.14, .5, .86}];
   Row[{NumberForm[Round[q2, .01], {3, 2}], "  (", NumberForm[Round[q1, .01], {3, 2}], " - ", NumberForm[Round[q3, .01], {3, 2}], ")"}]
   ]
 
+
+MeanRange[inp_,quant_] := Block[{q1, q2, q3},
+  {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {quant[[1]],.5,quant[[2]]}];
+  Row[{NumberForm[Round[q2, .01], {3, 2}], "  (", NumberForm[Round[q1, .01], {3, 2}], " - ", NumberForm[Round[q3, .01], {3, 2}], ")"}]
+  ]
 
 
 (* ::Section:: *)
