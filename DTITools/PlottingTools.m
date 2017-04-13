@@ -234,7 +234,6 @@ LookUpTable2[{lstyle_, color_}, {minclip_, maxclip_}, {pmin_, pmax_}] := Module[
   ]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*ManPannel*)
 
@@ -265,15 +264,13 @@ Legendi[plot_, color_, min_, max_, ps_] := Legended[plot,
 
 Save
 Labeli[lab_,ps_,plot_]:=If[StringQ[lab],
-	Grid[{
-		{Style[lab, labStyle, TextAlignment->Center, FontSize -> Round[ps/20]],SpanFromLeft},
-		Flatten[{plot}]
-		},Alignment->Center, Spacings -> {0, Automatic}],
-	If[ListQ[plot],
-		Grid[{Flatten[{plot}]
-			},Alignment->Center, Spacings -> {0, Automatic}],
+	Column[{
+		Row[{Style[lab, labStyle, TextAlignment->Center, FontSize -> Round[ps/20]]},ImageSize->ps,Alignment->Center],
 		plot
-		]
+	},
+	Alignment->Center]
+	,
+	plot
 	];
 
 
@@ -469,7 +466,7 @@ Plot2i[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,join_,ccolor_,aspe
 			Ploti[data[[1]],minmax[[1]],label[[1]],ps,color[[1]],autosc[[1]],legend,frame,ccolor[[1]],aspect],
 			Ploti[data[[2]],minmax[[2]],label[[2]],ps,color[[2]],autosc[[2]],legend,frame,ccolor[[2]],aspect]
 			};
-		Labeli[label[[3]],ps,plot],
+		Labeli[label[[3]],ps,Grid[{plot}]],
 		2(*CheckboardPlot*),
 		CheckPlot[data,minmax,label,ps,color,autosc,frame,join[[2]],join[[3]],ccolor,aspect],
 		3(*Opacity overlay plot*),
