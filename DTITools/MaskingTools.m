@@ -72,6 +72,12 @@ SmoothMask::usage =
 "SmoothMask[mask] generates one clean masked volume form a noisy mask.
 SmoothMask[mask, int] higher number of int increases the maks size, default value is 2."
 
+RemoveMaskOverlaps::usage = 
+"RemoveMaskOverlaps[mask] removes the overlaps between multiple masks:"
+
+SmoothSegmentation::usage =
+"SmoothSegmentation[masks] smooths segmentations and removes the overlaps between multiple masks." 
+
 HomoginizeData::usage = 
 "HomoginizeData[data, mask] tries to homoginize the data within the mask by removing intensity gradients."
 
@@ -121,8 +127,10 @@ MaskClosing::usage =
 "MaskClosing  is an option for SmoothMask. The size of the holes in the mask that will be closed" 
 
 MaskFiltKernel::usage =
-"MaskFiltKernel is an option for SmoothMask. How mucht the contours are smoothed." 
+"MaskFiltKernel is an option for SmoothMask and SmoothSegmentation. How mucht the contours are smoothed." 
 
+MeanOutput::usgae = 
+"MeanOutput is an option for NormalizeDiffData. If True it will also output the normalization factor."
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -581,6 +589,46 @@ SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close,obj,filt},
 
 
 (* ::Subsection::Closed:: *)
+(*MaskTensdata functions*)
+
+
+SyntaxInformation[RemoveMaskOverlaps] = {"ArgumentsPattern" -> {_}};
+	
+RemoveMaskOverlaps[masks_] := SmoothSegmentation[masks, False];
+
+
+(* ::Subsection::Closed:: *)
+(*MaskTensdata functions*)
+
+
+Options[SmoothSegmentation] = {MaskFiltKernel -> 2}
+
+SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+SmoothSegmentation[masks_, OptionsPattern[]] := 
+ Block[{maska, cont, maskt, cormap, input, smooth},
+  
+  smooth=OptionValue[MaskFiltKernel];
+  
+  maska = If[smooth === False,
+    Transpose[masks],
+    Round[GaussianFilter[#, smooth] + 0.15] & /@ Transpose[masks]
+    ];
+  cont = ConstantArray[1, Length[maska]];
+  
+  maskt = Mask[Total[maska], 1.5];
+  maskt = TransData[maskt # & /@ maska, "l"];
+  maskt = Map[
+    If[Total[#] == 0,
+      cont,
+      (1 - ReplacePart[cont, FirstPosition[#, _?Positive] -> 0])
+      ] &, maskt, {3}];
+  maskt = TransData[maskt, "r"];
+  Transpose[maskt maska]
+  ]
+
+
+(* ::Subsection::Closed:: *)
 (*NormalizeData functions*)
 
 
@@ -607,11 +655,16 @@ ScaleData =
 (* ::Subsection::Closed:: *)
 (*NormalizeDiffData*)
 
+Options[NormalizeDiffData] = {MeanOutput->False}
 
 SyntaxInformation[NormalizeDiffData] = {"ArgumentsPattern" -> {_, _.}};
 
-NormalizeDiffData[data_] := NormalizeDiffData[data, MaskBin[Mean[Transpose[data]], Smoothing -> True]]
-NormalizeDiffData[data_, mask_] := 100 data/N[MeanNoZero[mask data[[All, 1]]]]
+NormalizeDiffData[data_,ops:OptionsPattern[]] := NormalizeDiffData[data, MaskBin[Mean[Transpose[data]], Smoothing -> True],ops]
+NormalizeDiffData[data_, mask_,OptionsPattern[]] := Block[{mn,dataout},
+	mn = N[MeanNoZero[Flatten[mask data[[All, 1]]]]/100];
+	dataout = data/mn;
+	If[OptionValue[MeanOutput],{dataout,mn},dataout]
+]
 
 
 (* ::Subsection::Closed:: *)

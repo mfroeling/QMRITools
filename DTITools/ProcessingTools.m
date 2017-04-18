@@ -130,10 +130,6 @@ FiberLengths::usage =
 "FiberLengths[fpoints,flines] calculates the fiber lenght using the output from LoadFiberTacts.
 FiberLengths[{fpoints,flines}] calculates the fiber lenght using the output from LoadFiberTacts."
 
-DixonToPercent::usage = 
-"DixonToPercent[water, fat] converts the dixon water and fat data to percent maps.
-DixonToPercent[water, fat,mask] converts the dixon water and fat data within the mask to percent maps."
-
 
 (* ::Subsection:: *)
 (*Options*)
@@ -1300,12 +1296,12 @@ MeanSignal[data_, pos_ ,OptionsPattern[]] := Block[{datat, mean, mask},
   
   If[ListQ[pos],
    mask = If[OptionValue[UseMask],
-   	Round@GaussianFilter[Mask[datat[[First@pos]]/MeanNoZero[datat[[First@pos]]], .5], 5],
+   	Round@GaussianFilter[Mask[datat[[First@pos]]/MeanNoZero[Flatten[datat[[First@pos]]]], .5], 5],
    	ConstantArray[1,Dimensions[data[[All,1]]]]];   
    mean = MeanNoZero[Flatten[#]] & /@ Transpose[MaskDTIdata[data[[All, pos]], mask]];
    ,
    mask = If[OptionValue[UseMask],
-   	Round@GaussianFilter[Mask[datat[[pos]]/MeanNoZero[datat[[pos]]], .5], 5],
+   	Round@GaussianFilter[Mask[datat[[pos]]/MeanNoZero[Flatten[datat[[pos]]]], .5], 5],
    	ConstantArray[1,Dimensions[data[[All,1]]]]];
    mean = MeanNoZero[Flatten[#]] & /@ Transpose[MaskDTIdata[data, mask]];
    ];
@@ -1360,24 +1356,6 @@ FiberLengths[{fpoints_, flines_}] := Module[{len, mpos},
    mpos = First@First@Position[len, Max[len]];
    len Mean[EuclideanDistance @@@ Partition[fpoints[[flines[[mpos]]]], 2, 1]]
 ];
-
-
-(* ::Subsection::Closed:: *)
-(*DixonToPercent*)
-
-
-SyntaxInformation[DixonToPercent] = {"ArgumentsPattern" -> {_, _, _.}};
-
-DixonToPercent[water_, fat_, maskt_:1] := 
- Block[{tot, fatMap, waterMap, fmask},
-  tot = fat + water + 10^-10;
-  fatMap = maskt fat/tot;
-  waterMap = maskt water/tot;
-  fmask = Mask[fat, 50];
-  fatMap = maskt (fmask fatMap + (1 - fmask) (1 - waterMap));
-  waterMap = maskt (1 - fatMap);
-  {waterMap, fatMap}/. 1->0
-  ]
 
 
 (* ::Section:: *)

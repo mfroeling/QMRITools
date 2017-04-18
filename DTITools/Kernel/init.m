@@ -43,7 +43,7 @@ $HistoryLength = 1; (*prevents the excessive use of memory*)
 package= "DTITools`";
 
 subPackages = {
-	"CardiacTools`", "DenoiseTools`", "ElastixTools`", "ExportTools`", 
+	"CardiacTools`", "DenoiseTools`", "DixonTools`", "ElastixTools`", "ExportTools`", 
 	"GeneralTools`", "GradientTools`", "ImportTools`", "IVIMTools`", 
 	"ManipulationTools`", "MaskingTools`", "NiftiTools`", 
 	"PhysiologyTools`", "PlottingTools`", "ProcessingTools`", 

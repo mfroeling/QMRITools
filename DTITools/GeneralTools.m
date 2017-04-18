@@ -64,9 +64,15 @@ MeanStd::usage =
 MeanRange::usage = 
 "MeanRange[Range] calculates the medain (50%) and standard deviation (14% and 86%) range and reports it as a string."
 
-PadToDimensions::usage
+PadToDimensions::usage = 
 "PadToDimensions[data, dim] pads the data to dimensions dim." 
 
+SumOfSquares::usage = 
+"SumOfSquares[{data1, data2, .... datan}] calculates the sum of squares of the datasets.
+Output is the SoS and the weights, or just the SoS."
+
+DevideNoZero::usage = 
+"DevideNoZero[a, b] devides a/b but when b=0 the result is 0. a can be a number or vector."
 
 (* ::Subsection:: *)
 (*General Options*)
@@ -78,6 +84,10 @@ TableMethod::usage =
 PadValue::usage = 
 "PadValue is an option for PadToDimensions. It specifies the value of the padding."
 
+OutputWeights::usage = 
+"OutputWeights is an option for SumOfSqares. If True it also output the SoS weights."
+
+
 (* ::Subsection:: *)
 (*Error Messages*)
 
@@ -87,6 +97,35 @@ PadValue::usage =
 
 
 Begin["`Private`"]
+
+
+(* ::Subsection::Closed:: *)
+(*SumOfSquares*)
+
+
+Options[SumOfSquares] = {OutputWeights -> True}
+
+SumOfSquares[data_, OptionsPattern[]] := Block[{sos, weights, dataf},
+  dataf = TransData[data, "l"];
+  sos = SumOfSquaresi[dataf];
+  
+  If[OptionValue[OutputWeights],
+   weights = DevideNoZero[dataf, sos];
+   weights = Sqrt[DevideNoZero[weights, Mean[TransData[weights, "r"]]]];
+   {sos, TransData[weights,"r"]},
+   sos
+   ]
+  ]
+
+SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+
+
+(* ::Subsection::Closed:: *)
+(*DevideNoZero*)
+
+
+DevideNoZero = Compile[{{sig, _Real, 1}, {tot, _Real, 0}}, If[tot == 0., sig tot, sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DevideNoZero = Compile[{{sig, _Real, 0}, {tot, _Real, 0}}, If[tot == 0., sig tot, sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsection::Closed:: *)

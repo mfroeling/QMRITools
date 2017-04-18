@@ -193,7 +193,7 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
 	
 	what=OptionValue[NiiMethod];
 	
-	If[!MemberQ[{"data","dataTR","header","all"},what],Return[Message[ImportNii::wht]]];
+	If[!MemberQ[{"data","dataTR","header","scaling","headerMat","rotation","all"},what],Return[Message[ImportNii::wht]]];
 	
 	file=If[fil=="",FileSelect["FileOpen",{"*.nii"},WindowTitle->"Select the nii file to import"],fil];	
 	If[file == Null || file === $Canceled, Return[]];
@@ -300,25 +300,26 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
     	Reverse[("pixDim" /. ("imageDimensions" /. ("header" /. hdr)))[[2 ;; 4]]]
     ];
   
-  (*what to do for 2D?*)
+  (*get 4th dimention time (TR in fmri)*)
   TR = ("pixDim" /. ("imageDimensions" /. ("header" /. hdr)))[[5]];
   
+  (*get slope and inetercept*)
   {slope,intercept}=Flatten[{"scaleSlope", "scaleInteger"} /. rule];
   data=If[slope!=0. && OptionValue[NiiScaling], (data slope)+intercept,data];  
   
+  (*get the rotaionmatrix*)
+  rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. ("dataHistory" /. ("header" /. hdr)))[[All,1 ;; 3]]/ConstantArray[Reverse[vox], 3];
+  rotmat = DiagonalMatrix[{1, -1, 1}].ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
+  
   Switch[what,
-  	"data",
-  		{data,vox},
-  	"header",
-  		hdr,
-  	"dataTR",
-  		{data,vox,TR},
-  	"all",
-  		rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. ("dataHistory" /. ("header" /. hdr)))[[All,1 ;; 3]]/ConstantArray[Reverse[vox], 3];
-  		rotmat = DiagonalMatrix[{1, -1, 1}].ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
-  		{data, vox, hdr, rotmat},
-  	_, 
-  		{data,vox}
+  	"data",	{data, vox},
+  	"header", {data, vox, hdr},
+  	"headerMat", {data, vox, hdr, rotmat},
+  	"dataTR", {data, vox, TR},
+  	"rotation", {data, vox, rotmat},
+  	"scaling", {data, vox, {slope, intercept}},
+  	"all", {data, vox, {hdr, TR, {slope, intercept}, rotmat}},
+  	_, {data,vox}
   ]
 ]
 
@@ -389,19 +390,19 @@ Options[ImportNiiDiff]={RotateGradients->False,FlipBvec->True}
 SyntaxInformation[ImportNiiDiff]= {"ArgumentsPattern" -> {_.,_.,_.,OptionsPattern[]}};
 
 ImportNiiDiff[OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
-	{data,vox,hdr,mat}=ImportNii[NiiMethod -> "all"];
+	{data,vox,hdr,mat}=ImportNii[NiiMethod -> "headerMat"];
 	{bvec, grad}=ImportBvalvec[FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
 
 ImportNiiDiff[file_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
-	{data,vox,hdr,mat}=ImportNii[file,NiiMethod -> "all"];
+	{data,vox,hdr,mat}=ImportNii[file,NiiMethod -> "headerMat"];
 	{bvec, grad}=ImportBvalvec[StringDrop[file,-4],FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
 
 ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
-	{data,vox,hdr,mat}=ImportNii[fnii,NiiMethod -> "all"];
+	{data,vox,hdr,mat}=ImportNii[fnii,NiiMethod -> "headerMat"];
 	{bvec, grad} = ImportBvalvec[fval, fvec,FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
