@@ -308,8 +308,10 @@ ImportNii[fil_String:"",OptionsPattern[]] := Module[{strm, hdr, file, precision,
   data=If[slope!=0. && OptionValue[NiiScaling], (data slope)+intercept,data];  
   
   (*get the rotaionmatrix*)
-  rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. ("dataHistory" /. ("header" /. hdr)))[[All,1 ;; 3]]/ConstantArray[Reverse[vox], 3];
-  rotmat = DiagonalMatrix[{1, -1, 1}].ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
+  If[MemberQ[{"headerMat","rotation","all"},what],
+  	rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. ("dataHistory" /. ("header" /. hdr)))[[All,1 ;; 3]]/ConstantArray[Reverse[vox], 3];
+  	rotmat = DiagonalMatrix[{1, -1, 1}].ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
+  ];
   
   Switch[what,
   	"data",	{data, vox},

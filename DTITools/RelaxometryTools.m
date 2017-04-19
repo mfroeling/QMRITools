@@ -134,30 +134,32 @@ T2Fit[datan_, times_, OptionsPattern[]] := Switch[OptionValue[Method],
 
 
 LinFit[datan_, times_] := 
- Module[{datal, result, fdat, offset, T1r, t, ad,off,t1rho},
+ Block[{datal, result, fdat, offset, T1r, t, ad,off,t1rho},
   ad = ArrayDepth[datan];
-  datal = Log[datan] /. {Indeterminate -> 0, -Infinity -> 0} // N;
+  datal = LogNoZero[datan];
   datal = Switch[ad,
     3, Transpose[datal, {3, 1, 2}],
     4, Transpose[datal, {1, 4, 2, 3}]
     ];
+    
+  PrintTemporary["performing linear T2 fit"];
   
-  result = ParallelMap[If[Total[#]==0.,
+  result = ParallelMap[(
+  	If[Total[#]==0.,
   		{0.,0.},
-  		fdat = Transpose[{times, #}];
-  		(*Quiet[LinearModelFit[fdat, t, t]["BestFitParameters"]]*)
-  		{off, t1rho} /. Quiet[FindFit[fdat, off + t1rho t, {off, t1rho}, t]]
-  	]&, datal, {ad - 1}];
+  		{off, t1rho} /. Quiet[FindFit[Transpose[{times, #}], off + t1rho t, {off, t1rho}, t]]]
+  		)&, datal, {ad - 1}];
   
-  {offset, T1r} = Switch[ad,
-    3, Transpose[result, {2, 3, 1}],
-    4, Transpose[result, {2, 3, 4, 1}]
-    ];
+  {offset, T1r} = TransData[result,"r"];
   
-  {offset, T1r} = {Exp[offset], -1/(T1r /. 0. -> Infinity)};
+  {offset, T1r} = {Exp[offset], DevideNoZero[-1,T1r]};
   T1r = Clip[T1r, {0, 500}, {0, 500}];
   {offset, T1r}
   ]
+
+LogNoZero = 
+  Compile[{{x, _Real, 0}}, If[x == 0., 0., Log[x]], 
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -165,7 +167,7 @@ LinFit[datan_, times_] :=
 
 
 LogFit[datan_, times_] := 
- Module[{result, fdat, offset, T1r, off, t1rho, t, ad, datal},
+ Block[{result, fdat, offset, T1r, off, t1rho, t, ad, datal},
   ad = ArrayDepth[datan];
   datal = Switch[ad,
     3, Transpose[datan, {3, 1, 2}],

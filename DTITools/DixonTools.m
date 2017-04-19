@@ -63,7 +63,8 @@ DixonFilterB0::usage =
 DixonFilterB0Size::usage = 
 "DixonFilterB0Size"
 
-
+DixonIterations::usage = 
+"DixonIterations"
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -86,24 +87,27 @@ Begin["`Private`"]
 SyntaxInformation[DixonToPercent] = {"ArgumentsPattern" -> {_, _}};
 
 DixonToPercent[water_, fat_] := 
- Block[{tot, fatMap, waterMap, fmask, wmask, back, afat, awater},
- 	(*define water and fat signals*)
- 	afat=Abs[fat];
- 	awater=Abs[water];
- 	tot = Abs[fat + water];
+ Block[{atot, fatMap, waterMap, fmask, wmask, back, afat, awater},
  	
- 	(*calcualte water and fat fractions*)
- 	fatMap =  DevideNoZero[afat, tot];
- 	waterMap = (1 - DevideNoZero[awater, tot]);
+ 	afat = Abs[fat];
+ 	awater = Abs[water];
+ 	atot = Abs[fat + water];
+ 	
+ 	(*calcualte fat fractions*)
+ 	fatMap =  DevideNoZero[afat, afat + awater];
  	
  	(*see where fat > 50%*)
- 	fmask = Mask[afat, .5];
+ 	fmask = Mask[fatMap, .5];
  	wmask = 1 - fmask;
- 	back = 1 - Mask[waterMap + wmask, 1.9];
  	
+ 	(*define water and fat maps*)
+ 	fatMap =  DevideNoZero[afat, atot];
+ 	waterMap =  DevideNoZero[awater, atot];
+ 	(*define background*)
+ 	back = Mask[fatMap + waterMap,.1];
  	(*define water and fat fractions*)
- 	fatMap = Clip[(fmask fatMap + wmask waterMap),{0,1}];
- 	N[{back (1 - fatMap), back fatMap}]
+ 	fatMap = (fmask fatMap + wmask (1-waterMap));
+ 	Clip[N[{back (1 - fatMap), back fatMap}],{0.,1.}]
   ]
 
 
@@ -115,14 +119,12 @@ DixonToPercent[water_, fat_] :=
 (*DixonReconstruct*)
 
 
-Options[DixonReconstruct] = {
-	DixonPrecessions -> -1, DixonFieldStrength -> 3,
-	DixonFrequencies -> {{0}, {3.8, 3.4, 3.11, 2.67, 2.45, -0.61}},
-	DixonAmplitudes -> {{1}, {0.088, 0.635, 0.071, 0.096, 0.068, 0.042}},
-	MaxIterations -> 300, DixonTollerance -> 0.01,
-	DixonMaskThreshhold -> 0.05, DixonFilterB0 -> True,
-	DixonFilterB0Size -> 2
-	};
+Options[DixonReconstruct] = {DixonPrecessions -> -1, DixonFieldStrength -> 3, 
+  DixonFrequencies -> {{0}, {3.8, 3.4, 3.13, 2.67, 2.46, 1.92, 0.57, -0.60}}, 
+  DixonAmplitudes -> {{1}, {0.089, 0.598, 0.048, 0.077, 0.052, 0.011, 0.035, 0.066}}, 
+  DixonIterations -> 50, DixonTollerance -> 0.1, 
+  DixonMaskThreshhold -> 0.05, DixonFilterB0 -> True, 
+  DixonFilterB0Size -> 2};
 
 SyntaxInformation[DixonReconstruct] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
 
@@ -130,23 +132,31 @@ DixonReconstruct[real_, imag_, echo_, opts : OptionsPattern[]] := DixonReconstru
 
 DixonReconstruct[real_, imag_, echo_, b0_, opts : OptionsPattern[]] := DixonReconstruct[real, imag, echo, b0, 0, opts]
 
-DixonReconstruct[real_, imag_, echo_, b0_, t2_, OptionsPattern[]] := Block[{freqs, amps, gyro, precession, field,
-  sigFW, sigPhi, eta, maxItt, thresh, complex, ydat, result, b0f, b0i, inphase, outphase, freqsAmps, Amat,
-  cWater, cFat, b0fit, t2Star, fraction, signal, fit, itt, dim, mask, msk,t2i,t2f},
+DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
+freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt, 
+thresh, complex, ydat, result, input, b0f, b0i, inphase, outphase, Amat, 
+cWater, cFat, b0fit, t2Star, fraction, signal, fit, itt, dim, mask, 
+msk, t2i, t2f, echo, iop, ioAmat},
  
- (*{3.80,3.40,2.60,1.94,0.39,-0.60} or {3.8,3.4,3.11,2.67,2.45,-0.61}*)
- (*{0.087,0.693,0.128,0.004,0.039,0.048} or {0.088,0.635,0.071,0.096,0.068,0.042};*)
- 
- (*fixed setting*)
- precession = OptionValue[DixonPrecessions](*-1,1*);
- gyro = 42.58(*Hz*);
- field = OptionValue[DixonFieldStrength];
- freqsAmps = {freqs, amps} = {precession field gyro OptionValue[DixonFrequencies], OptionValue[DixonAmplitudes]};
- Amat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) # ] & /@ echo)], {2}]];
+(*{3.80,3.40,2.60,1.94,0.39,-0.60} and {0.087,0.693,0.128,0.004,0.039,0.048}*)
+(*{3.8,3.4,3.11,2.67,2.45,-0.61} and {0.088,0.635,0.071,0.096,0.068,0.042};*)
+(*{3.8,3.4,3.13,2.67,2.46,,1.92,0.57,-0.60} and {0.089,0.598,0.048,0.077,0.052,0.011,0.035,0.066};*)
+
+(*fixed setting*)
+echo = echoi;
+precession = OptionValue[DixonPrecessions](*-1,1*);
+gyro = 42.58(*Hz*);
+field = OptionValue[DixonFieldStrength];
+{freqs, amps} = {precession field gyro OptionValue[DixonFrequencies], OptionValue[DixonAmplitudes]};
+Amat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) #] & /@ echo)], {2}]];
+
+(*define in out phase*)
+iop = {1, 1.5}/Abs[freqs[[2, First@First@Position[amps[[2]], Max@amps[[2]]]]]];
+ioAmat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) #] & /@ iop)], {2}]];
  
  (*define stop criterea*)
  eta = OptionValue[DixonTollerance];
- maxItt = OptionValue[MaxIterations];
+ maxItt = OptionValue[DixonIterations];
  thresh = OptionValue[DixonMaskThreshhold];
  
  (*create complex data for fit*)
@@ -170,30 +180,29 @@ DixonReconstruct[real_, imag_, echo_, b0_, t2_, OptionsPattern[]] := Block[{freq
  	];
  
  (*monitor Calculations*)
- j = 0;
  PrintTemporary["performing dixon iDEAL reconstruction"];
- PrintTemporary[ProgressIndicator[Dynamic[j], {0, Times @@ dim}]];
+ i=j=0;
+ SetSharedVariable[i];ParallelEvaluate[j=0];
+ PrintTemporary[ProgressIndicator[Dynamic[i], {0, Times @@ dim}]];
  
  (*make parallel*)
- ParallelEvaluate[j=0];
- SetSharedVariable[j];
- DistributeDefinitions[echo, Amat, freqsAmps, eta, maxItt, DixonFiti];
- 
+ DistributeDefinitions[echo, iop, Amat, ioAmat, eta, maxItt, DixonFiti];
  (*perform the dixon reconstruction*)
- {cWater, cFat, b0fit, t2Star, inphase, outphase, itt} = TransData[Map[(
-      j++; 
-      If[#[[4]] > 0, 
-      	DixonFiti[#[[1]], #[[2]], #[[3]], echo, Amat, freqsAmps, {eta, maxItt}], 
-      	{0., 0., 0., 0., 0., 0., 0.}]
-      ) &, TransData[{complex, b0f, t2f, mask}, "l"], {ArrayDepth[complex] - 1}],"r"];
+ input = TransData[{complex, b0f, t2f, mask}, "l"];
+ result = ParallelMap[(
+      j++;If[j>1000,i+=j;j=1;];
+      DixonFiti[#, {echo, iop}, {Amat, ioAmat}, {eta, maxItt}]
+      ) &, input, {ArrayDepth[complex] - 1}];
+      
+ {cWater, cFat, b0fit, t2Star, inphase, outphase, itt} = TransData[result,"r"];
  
  (*create the output*)
+ PrintTemporary["performing water fat calculation"];
  fraction = DixonToPercent[cWater, cFat];
- signal = Abs[{cWater, cFat}];
- fit = {Clip[b0fit, {-400., 400.}, {0., 0.}], 
-   Clip[1000 t2Star, {0., 200.}, {0., 0.}]};
+ signal = Clip[Abs[{cWater, cFat}],MinMax[Abs[complex]]];
+ fit = {Clip[b0fit, {-400., 400.}, {0., 0.}], Clip[1000 t2Star, {0., 200.}, {0., 0.}]};
  
- (*five the output*)
+ (*give the output*)
  {fraction, 1000 signal, 1000 {inphase, outphase}, fit, itt}
  ]
 
@@ -201,41 +210,39 @@ DixonReconstruct[real_, imag_, echo_, b0_, t2_, OptionsPattern[]] := Block[{freq
 (* ::Subsubsection::Closed:: *)
 (*DixonFit*)
 
-
-DixonFiti[ydat_, b0_, t2_, echo_, Amat_, {freqs_, amps_}, {eta_, maxItt_}] := 
- Block[{continue, phiEst, phiMat, phivec, cFrac, Bmat, deltaPhi, i,iop, iophiMat, ioAmat, iopImag},
-  
-  (*initialize fit*)
-  continue = True;
-  phiEst = If[t2>0, b0 + I (1/t2)/(2 Pi), b0];
-  i = 0;
-  
-  (*perform itterative fit*)
-  While[continue,
-   (*find solution for complex fractions*)
-   phiMat = Quiet@Inverse[DiagonalMatrix[Exp[2 Pi I phiEst echo]]];
-   cFrac = LeastSquares[Amat, phiMat.ydat];
-   (*update the field map*)
-   phivec = (2 Pi I echo (cFrac[[1]] + cFrac[[2]] Amat[[All, 2]]));
-   Bmat = Transpose[{phivec, Amat[[All, 1]], Amat[[All, 2]]}];
-   deltaPhi = LeastSquares[Bmat, (phiMat.ydat - Amat.cFrac)][[1]];
-   phiEst = phiEst + deltaPhi;
-   (*chech for continue*)
-   i++;
-   continue = ! ((Abs[Re[deltaPhi]] < eta  && Abs[Im[deltaPhi]] < eta) || i >= maxItt);
-   ];
-  (*calculate the final values*)
-  phiMat = Inverse[DiagonalMatrix[Exp[2 Pi I phiEst echo]]];
-  cFrac = LeastSquares[Amat, phiMat.ydat];
-  
-  (*calculate in out phase images*)
-  iop = {1, 1.5}/Abs[freqs[[2, First@First@Position[amps[[2]], Max@amps[[2]]]]]];
-  iophiMat = DiagonalMatrix[Exp[2 Pi I phiEst iop]];
-  ioAmat = Transpose[Map[Total,Transpose[(amps Exp[freqs (2 Pi I) # ] & /@ iop)], {2}]];
-  iopImag = Abs[cFrac.iophiMat.ioAmat];
-  
-  (*give the output, comp_Water,comp_Fat,b0fit,t2star*)
-  Flatten[{cFrac, Re[phiEst], 1/(Abs[2 Pi Im[phiEst]]), iopImag, i}]
+DixonFiti[{ydat_, b0_, t2_, mask_}, {echo_, iop_}, {Amat_, ioAmat_}, {eta_, maxItt_}] := Block[
+	{continue, phiEst, phiMat, pAmat, phivec, cFrac, Bmat, deltaPhi, i, iophiMat, iopImag, sol},
+	If[mask>0,
+		(*initialize fit*)
+		continue = True;
+		phiEst = If[t2 > 0, b0 + I (1/t2)/(2 Pi), b0];
+		i = 0;
+		(*perform itterative fit*)
+		While[continue,
+			(*find solution for complex fractions*)
+			pAmat = DiagonalMatrix[Exp[2 Pi I phiEst echo]].Amat;
+			cFrac = LeastSquares[pAmat, ydat];
+			sol = pAmat.cFrac;
+			(*update the field map*)
+			phivec = (2 Pi I echo (sol));
+			Bmat = Transpose[{phivec, pAmat[[All, 1]], pAmat[[All, 2]]}];
+			deltaPhi = First@LeastSquares[Bmat, (ydat - sol)];
+			phiEst = phiEst + deltaPhi;
+			(*chech for continue*)
+			i++;
+			continue = ! ((Abs[Re[deltaPhi]] < eta && (Abs[Im[deltaPhi]]) < eta) || i >= maxItt);
+		];
+		
+		(*calculate the final values*)
+		(*calculate in out phase images*)
+		iophiMat = DiagonalMatrix[Exp[2 Pi I phiEst iop]];
+		iopImag = Abs[iophiMat.ioAmat.cFrac];
+		
+		(*give the output,comp_Water,comp_Fat,b0fit,t2star*)
+		Flatten[{cFrac, Re[phiEst], 1/(Abs[2 Pi Im[phiEst]]), iopImag, i}]
+		,
+		{0.,0.,0.,0.,0.,0.,0.}
+	]
   ]
 
 
