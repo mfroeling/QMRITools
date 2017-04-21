@@ -1,0 +1,472 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     16461,        463]
+NotebookOptionsPosition[     13522,        389]
+NotebookOutlinePosition[     15877,        445]
+CellTagsIndexPosition[     15834,        442]
+WindowTitle->DixonReconstruct
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DixonTools\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/guide/DixonTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DTITools/ref/DixonReconstruct\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/DixonReconstruct"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/DTITools/ref/\
+DixonReconstruct.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$65840], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "DTITools/ref/DixonReconstruct", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["DixonReconstruct", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"DixonReconstruct", "[", 
+       RowBox[{
+        StyleBox["real", "TI"], ",", " ", 
+        StyleBox["imag", "TI"], ",", " ", 
+        StyleBox["echo", "TI"]}], "]"}]], "InlineFormula"],
+     "\[LineSeparator]reconstruxt Dixon data with initital guess b0 = 0 and \
+T2star = 0. "
+    }]]},
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"DixonReconstruct", "[", 
+       RowBox[{
+        StyleBox["real", "TI"], ",", " ", 
+        StyleBox["imag", "TI"], ",", " ", 
+        StyleBox["echo", "TI"], ",", " ", 
+        SubscriptBox[
+         StyleBox["b", "TI"], 
+         StyleBox["0", "TR"]]}], "]"}]], "InlineFormula"],
+     "\[LineSeparator]reconstructs Dixon data with intitial guess T2star = 0. "
+    }]]},
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"DixonReconstruct", "[", 
+       RowBox[{
+        StyleBox["real", "TI"], ",", " ", 
+        StyleBox["imag", "TI"], ",", " ", 
+        StyleBox["echo", "TI"], ",", " ", 
+        SubscriptBox[
+         StyleBox["b", "TI"], 
+         StyleBox["0", "TR"]], ",", " ", 
+        SubscriptBox[
+         StyleBox["t", "TI"], 
+         StyleBox["2", "TR"]]}], "]"}]], "InlineFormula"],
+     "\[LineSeparator]reconstructs Dixon data. real is the real data in \
+radials. imag is the imaginary data in radians. b0 can be estimated from two \
+phase images using ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Unwrap"]],"paclet:DTITools/ref/Unwrap"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". t2 can be estimated from multiple echos using T2fit. Output is \
+{{watF,fatF},{watSig,fatSig},{inphase,outphase},{b0,t2star},itterations}."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonPrecessions",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonPrecessions"], 
+    RowBox[{"-", "1"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonPrecessions"]],"paclet:DTITools/ref/DixonPrecessions"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". Defines the rotation of the signal {-1,1} default is -1."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonFieldStrength",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonFieldStrength"], "3", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonFieldStrength"]],
+        "paclet:DTITools/ref/DixonFieldStrength"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". Defines the fieldstrengths on which the data was acquired."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonFrequencies",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonFrequencies"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", "0", "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{
+       "3.8", ",", " ", "3.4", ",", " ", "3.13", ",", " ", "2.67", ",", " ", 
+        "2.46", ",", " ", "1.92", ",", " ", "0.57", ",", " ", 
+        RowBox[{"-", "0.6"}]}], "}"}]}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonFrequencies"]],"paclet:DTITools/ref/DixonFrequencies"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". Defines the frequencies of the fat peaks being used."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonAmplitudes",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonAmplitudes"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", "1", "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{
+       "0.089", ",", " ", "0.598", ",", " ", "0.048", ",", " ", "0.077", ",", 
+        " ", "0.052", ",", " ", "0.011", ",", " ", "0.035", ",", " ", 
+        "0.066"}], "}"}]}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonAmplitudes"]],"paclet:DTITools/ref/DixonAmplitudes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". Defines the amplitudes of the fat peaks being used."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonIterations",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonIterations"], "50", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonIterations"]],"paclet:DTITools/ref/DixonIterations"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". Defines the maximum itterations the fit can use."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonTollerance",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonTollerance"], "0.1", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonTollerance"]],"paclet:DTITools/ref/DixonTollerance"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". Defines at which change per itteration of b0 and R2star the \
+ittarative methods stops. ",
+     "Default",
+     " value is 0.1."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonMaskThreshhold",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonMaskThreshhold"], "0.05", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonMaskThreshhold"]],
+        "paclet:DTITools/ref/DixonMaskThreshhold"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". Defines at which threshhold the dixon reconstruction considers a \
+voxel to be background noise. Defualt values is 0.05."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonFilterInput",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonFilterInput"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonFilterInput"]],"paclet:DTITools/ref/DixonFilterInput"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". ",
+     "If",
+     " ",
+     "True",
+     " the input b0 and T2star values are smoothed using a gaussian kernel."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonFilterInputSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonFilterInputSize"], "2", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonFilterInputSize"]],
+        "paclet:DTITools/ref/DixonFilterInputSize"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". Defines the number of voxel with which the input b0 and T2star values \
+are smoothed."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, None, None, None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{
+  "Rows" -> {{True, True, True, True, True, True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["DixonTools"]],"paclet:DTITools/guide/DixonTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"DixonReconstruct",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2017, 4, 21, 20, 30, 36.0211175}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`DixonTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "DixonReconstruct[real, imag, echo] reconstruxt Dixon data with initital \
+guess b0 = 0 and T2star = 0. DixonReconstruct[real, imag, echo, b0] \
+reconstructs Dixon data with intitial guess T2star = 0. \
+DixonReconstruct[real, imag, echo, b0, t2] reconstructs Dixon data. real is \
+the real data in radials. imag is the imaginary data in radians. b0 can be \
+estimated from two phase images using Unwrap. t2 can be estimated from \
+multiple echos using T2fit. Output is \
+{{watF,fatF},{watSig,fatSig},{inphase,outphase},{b0,t2star},itterations}.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "DixonReconstruct", 
+    "titlemodifier" -> "", "windowtitle" -> "DixonReconstruct", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/DixonReconstruct"}},
+CellContext->"Global`",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> 
+  "11.0 for Microsoft Windows (64-bit) (September 21, 2016)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[588, 21, 3064, 74, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[3655, 97, 293, 11, 70, "ObjectNameGrid"],
+Cell[3951, 110, 1910, 51, 70, "Usage"],
+Cell[CellGroupData[{
+Cell[5886, 165, 730, 24, 70, "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[6619, 191, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[6653, 193, 53, 0, 70, "Notes"],
+Cell[6709, 195, 6223, 161, 70, "3ColumnTableMod"],
+Cell[12935, 358, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[13003, 363, 276, 12, 70, "MoreAboutSection",
+ CellID->38303248],
+Cell[13282, 377, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[13316, 379, 164, 5, 70, "MoreAbout",
+ CellID->1]
+}, Open  ]],
+Cell[13495, 387, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)

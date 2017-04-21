@@ -158,7 +158,7 @@ TempDirectory::usage =
 It specifies the temprary directory used to perform and output the registration."
 
 DeleteTempDirectory::usage =
-"DeleteTempDirectoryis an options for RegisterData, RegisterDiffusionData, RegisterCardiacData and RegisterDataTransform. 
+"DeleteTempDirectory an options for RegisterData, RegisterDiffusionData, RegisterCardiacData and RegisterDataTransform. 
 It specifies if the temp directory should be deleted after the registration is finisched."
 
 PrintTempDirectory::usage = 

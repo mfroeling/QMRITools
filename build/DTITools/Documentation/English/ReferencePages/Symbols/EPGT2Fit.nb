@@ -1,0 +1,442 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     14703,        433]
+NotebookOptionsPosition[     12005,        363]
+NotebookOutlinePosition[     14120,        415]
+CellTagsIndexPosition[     14077,        412]
+WindowTitle->EPGT2Fit
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"RelaxometryTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/RelaxometryTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DTITools/ref/EPGT2Fit\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/EPGT2Fit"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/DTITools/ref/EPGT2Fit.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$76864], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "DTITools/ref/EPGT2Fit", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["EPGT2Fit", "ObjectName"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8]]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"EPGT2Fit", "[", 
+       RowBox[{
+        StyleBox["data", "TI"], ",", " ", 
+        TemplateBox[{Cell[
+           TextData["EchoTimes"]],"paclet:ref/EchoTimes"},
+         "RefLink",
+         BaseStyle->{"InlineFormula"}], ",", " ", 
+        StyleBox["angle", "TI"]}], "]"}]], "InlineFormula"],
+     "\[LineSeparator]fits the T2 based on Marty B et.al. Simultaneous muscle \
+water T2 and fat fraction mapping using transverse relaxometry with \
+stimulated echo compensation. angle is the refocussing angle in degree. \
+Output is {{{T2map,B1Map},{wat, fat, fatMap}},callibration} or \
+{{T2map,B1Map},{wat, fat, fatMap}}"
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6]]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DictT2Range",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DictT2Range"], 
+    RowBox[{"{", 
+     RowBox[{"20.", ",", " ", "80.", ",", " ", "0.3"}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DictT2Range"]],"paclet:DTITools/ref/DictT2Range"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CreateT2Dictionary"]],
+        "paclet:DTITools/ref/CreateT2Dictionary"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     ". is specifies the range and step of the T2 values in the dictionary \
+{min, max, step} in ms."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DictB1Range",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DictB1Range"], 
+    RowBox[{"{", 
+     RowBox[{"0.4", ",", " ", "1.", ",", " ", "0.02"}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DictB1Range"]],"paclet:DTITools/ref/DictB1Range"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CreateT2Dictionary"]],
+        "paclet:DTITools/ref/CreateT2Dictionary"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     ". It specifies the range and step of the B1 values in the dictionary \
+{min, max, step}."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["EPGRelaxPars",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/EPGRelaxPars"], 
+    RowBox[{"{", 
+     RowBox[{"1400.", ",", " ", "365.", ",", " ", "137."}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["EPGRelaxPars"]],"paclet:DTITools/ref/EPGRelaxPars"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is and option for ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     ". ",
+     "Needs",
+     " to be {T1muscl, T1Fat, T2Fat} in ms, defaul is {1400,365,137}."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Method",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Method"], "dictionary", Cell["\<\
+Method is an option for various algorithm-intensive functions that specifies \
+what internal methods they should use.\
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MonitorEPGFit",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MonitorEPGFit"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MonitorEPGFit"]],"paclet:DTITools/ref/MonitorEPGFit"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " show waitbar during ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["EPGCalibrate",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/EPGCalibrate"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["EPGCalibrate"]],"paclet:DTITools/ref/EPGCalibrate"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     ". ",
+     "If",
+     " set to ",
+     "True",
+     " it does autmatic callibration of the T2 fat relaxation time."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["EPGFitPoints",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/EPGFitPoints"], "200", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["EPGFitPoints"]],"paclet:DTITools/ref/EPGFitPoints"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is a option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CalibrateEPGT2Fit"]],
+        "paclet:DTITools/ref/CalibrateEPGT2Fit"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     ". ",
+     "Number",
+     " of points is 200 by default."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["OutputCalibration",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/OutputCalibration"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["OutputCalibration"]],
+        "paclet:DTITools/ref/OutputCalibration"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["TriExponentialT2Fit"]],
+        "paclet:DTITools/ref/TriExponentialT2Fit"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". ",
+     "If",
+     " true it outputs the calibartion values."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, None, None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{
+  "Rows" -> {{True, True, True, True, True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["RelaxometryTools"]],"paclet:DTITools/guide/RelaxometryTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"EPGT2Fit",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2017, 4, 21, 20, 31, 14.9823460}", 
+    "history" -> {"XX", "", "", ""}, "context" -> 
+    "DTITools`RelaxometryTools`", "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "EPGT2Fit[data, EchoTimes, angle] fits the T2 based on Marty B et.al. \
+Simultaneous muscle water T2 and fat fraction mapping using transverse \
+relaxometry with stimulated echo compensation. angle is the refocussing angle \
+in degree. Output is {{{T2map,B1Map},{wat, fat, fatMap}},callibration} or \
+{{T2map,B1Map},{wat, fat, fatMap}}", "synonyms" -> {}, "tabletags" -> {}, 
+    "title" -> "EPGT2Fit", "titlemodifier" -> "", "windowtitle" -> "EPGT2Fit",
+     "type" -> "Symbol", "uri" -> "DTITools/ref/EPGT2Fit"}},
+CellContext->"Global`",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> 
+  "11.0 for Microsoft Windows (64-bit) (September 21, 2016)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[580, 21, 3043, 74, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[3626, 97, 285, 11, 70, "ObjectNameGrid"],
+Cell[3914, 110, 861, 21, 70, "Usage"],
+Cell[CellGroupData[{
+Cell[4800, 135, 730, 24, 70, "NotesSection",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5533, 161, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5567, 163, 53, 0, 70, "Notes"],
+Cell[5623, 165, 5780, 165, 70, "3ColumnTableMod"],
+Cell[11406, 332, 31, 0, 70, "SectionFooterSpacer"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[11474, 337, 276, 12, 70, "MoreAboutSection",
+ CellID->38303248],
+Cell[11753, 351, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[11787, 353, 176, 5, 70, "MoreAbout",
+ CellID->1]
+}, Open  ]],
+Cell[11978, 361, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)

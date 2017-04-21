@@ -1,0 +1,390 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     12429,        381]
+NotebookOptionsPosition[      9926,        309]
+NotebookOutlinePosition[     11441,        347]
+CellTagsIndexPosition[     11398,        344]
+WindowTitle->GeneralTools
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Functions",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Functions", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"ClearTemporaryVariables\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ClearTemporaryVariables"], \
+"\<\"CompilebleFunctions\"\>":>Documentation`HelpLookup[
+       "paclet:DTITools/ref/CompilebleFunctions"], "\<\"DevideNoZero\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/DevideNoZero"], "\<\"DTItoolFuncPrint\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/DTItoolFuncPrint"], "\<\"DTItoolFunctions\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/DTItoolFunctions"], "\<\"DTItoolPackages\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/DTItoolPackages"], "\<\"FileSelect\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/FileSelect"], "\<\"MeanNoZero\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MeanNoZero"], "\<\"MeanRange\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MeanRange"], "\<\"MeanStd\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MeanStd"], "\<\"MemoryUsage\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/MemoryUsage"], "\<\"NumberTableForm\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/NumberTableForm"], "\<\"PadToDimensions\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/PadToDimensions"], "\<\"SumOfSquares\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/ref/SumOfSquares"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"GuideFunction"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DTITools/guide/GeneralTools\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/guide/GeneralTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/DTITools/guide/\
+GeneralTools.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$17080], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "DTITools/guide/GeneralTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["GeneralTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["DTITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/DTITools"],
+ " package: General functions."
+}], "GuideAbstract",
+ CellID->2001916300]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Reference"
+}], "GuideReferenceSection",
+ WholeCellGroupOpener->True],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolFunctions"]],"paclet:DTITools/ref/DTItoolFunctions"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " a list of all DTITools functions and options"
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolFuncPrint"]],"paclet:DTITools/ref/DTItoolFuncPrint"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " a list of all DTITools functions and options with their help files and \
+attributes. "
+}], "GuideText",
+ CellID->1463276848],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolPackages"]],"paclet:DTITools/ref/DTItoolPackages"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " a list of all DTITools packages"
+}], "GuideText",
+ CellID->644035845],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ClearTemporaryVariables"]],
+    "paclet:DTITools/ref/ClearTemporaryVariables"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["CompilebleFunctions"]],
+    "paclet:DTITools/ref/CompilebleFunctions"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["MemoryUsage"]],"paclet:DTITools/ref/MemoryUsage"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->207936068],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["FileSelect"]],"paclet:DTITools/ref/FileSelect"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PadToDimensions"]],"paclet:DTITools/ref/PadToDimensions"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["SumOfSquares"]],"paclet:DTITools/ref/SumOfSquares"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DevideNoZero"]],"paclet:DTITools/ref/DevideNoZero"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->364267661]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->96616723],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["MeanNoZero"]],"paclet:DTITools/ref/MeanNoZero"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["MeanStd"]],"paclet:DTITools/ref/MeanStd"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["MeanRange"]],"paclet:DTITools/ref/MeanRange"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ ButtonBox[". ",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MeanRange"],
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["NumberTableForm"]],"paclet:DTITools/ref/NumberTableForm"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ ButtonBox[" ",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/ref/MeanRange"]
+}], "InlineGuideFunctionListing",
+ CellID->680078711]
+}, Open  ]]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"GeneralTools",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
+  "", "Metadata" -> {
+   "built" -> "{2017, 4, 21, 20, 27, 51.4177028}", 
+    "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
+    "None", "summary" -> "DTITools package: General functions.", 
+    "synonyms" -> {}, "tabletags" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$16992, "title" -> 
+    "GeneralTools", "titlemodifier" -> "", "windowtitle" -> "GeneralTools", 
+    "type" -> "Guide", "uri" -> "DTITools/guide/GeneralTools"}},
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[584, 21, 4407, 100, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[5016, 125, 54, 1, 70, "GuideTitle",
+ CellID->942062912],
+Cell[5073, 128, 182, 6, 70, "GuideAbstract",
+ CellID->2001916300]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5292, 139, 257, 11, 70, "GuideReferenceSection"],
+Cell[5552, 152, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5586, 154, 335, 10, 70, "GuideText",
+ CellID->203374175],
+Cell[5924, 166, 377, 11, 70, "GuideText",
+ CellID->1463276848],
+Cell[6304, 179, 320, 10, 70, "GuideText",
+ CellID->644035845],
+Cell[CellGroupData[{
+Cell[6649, 193, 48, 1, 70, "GuideDelimiter",
+ CellID->311258892],
+Cell[6700, 196, 824, 25, 70, "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7561, 226, 48, 1, 70, "GuideDelimiter",
+ CellID->207936068],
+Cell[7612, 229, 1050, 31, 70, "InlineGuideFunctionListing",
+ CellID->364267661]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8699, 265, 47, 1, 70, "GuideDelimiter",
+ CellID->96616723],
+Cell[8749, 268, 1123, 35, 70, "InlineGuideFunctionListing",
+ CellID->680078711]
+}, Open  ]]
+}, Open  ]],
+Cell[9899, 307, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)

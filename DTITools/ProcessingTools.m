@@ -136,14 +136,14 @@ FiberLengths[{fpoints,flines}] calculates the fiber lenght using the output from
 
 
 SmoothPhase::usage = 
-"SmoothPhase is an option for PhaseCalc. Defines how the fasemap is smoothed. Default setting is \"Smooth\". Only works when a mask is also given as input. \
+"SmoothPhase is an option for PhaseCalc. Defines how the fasemap is smoothed. Default setting is \"Smooth\". Only works when a mask is also given as input. 
 Possible values are \"None\", \"Mask\", \"Median\", \"Smooth\", \"Grow\""
 
 Mara::usage = 
 "Mara is an option for PhaseCalc. When True it uses a different phase unwrapping and phasemap calculation approach to cope with two legs. Default value is False."
 
 PhaseCorrect::usage = 
-"PhaseCorrect is an option for PhaseCalc. Sometimes the enitre dataset is unwraped to the wrong baseline. \
+"PhaseCorrect is an option for PhaseCalc. Sometimes the enitre dataset is unwraped to the wrong baseline. 
 Shifts the entire phasemap with the given value. Default value is 0." 
 
 MonitorCalc::usage = 

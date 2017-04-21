@@ -1,0 +1,422 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     13284,        413]
+NotebookOptionsPosition[     10660,        337]
+NotebookOutlinePosition[     12167,        375]
+CellTagsIndexPosition[     12124,        372]
+WindowTitle->IVIMTools
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Functions",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Functions", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"BayesianIVIMFit2\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/BayesianIVIMFit2"], "\<\"BayesianIVIMFit3\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/BayesianIVIMFit3"], "\<\"CorrectParMap\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/CorrectParMap"], "\<\"FConvert\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/FConvert"], "\<\"FConverti\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/FConverti"], "\<\"FracCorrect\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/FracCorrect"], "\<\"HistogramPar\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/HistogramPar"], "\<\"IVIMCalc\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/IVIMCalc"], "\<\"IVIMCorrectData\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/IVIMCorrectData"], "\<\"IVIMFunction\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/IVIMFunction"], "\<\"IVIMResiduals\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/IVIMResiduals"], "\<\"NNLeastSquares\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/NNLeastSquares"], "\<\"ThetaConv\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/ref/ThetaConv"], "\<\"ThetaConvi\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/ref/ThetaConvi"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"GuideFunction"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DTITools/guide/IVIMTools\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/guide/IVIMTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/DTITools/guide/\
+IVIMTools.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
+             Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$18822], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "DTITools/guide/IVIMTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["IVIMTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["DTITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:DTITools/guide/DTITools"],
+ " package: IVIM fitting functions"
+}], "GuideAbstract",
+ CellID->2001916300]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6]]]],
+ "Reference"
+}], "GuideReferenceSection",
+ WholeCellGroupOpener->True],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["IVIMCalc"]],"paclet:DTITools/ref/IVIMCalc"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Non-linear IVIM fit"
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["BayesianIVIMFit2"]],"paclet:DTITools/ref/BayesianIVIMFit2"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " 2 compartment Bayesian IVIM fit"
+}], "GuideText",
+ CellID->1463276848],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["BayesianIVIMFit3"]],"paclet:DTITools/ref/BayesianIVIMFit3"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " 3 compartment Bayesian IVIM fit"
+}], "GuideText",
+ CellID->159343603],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["NNLeastSquares"]],"paclet:DTITools/ref/NNLeastSquares"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " non negative linear least squares fitting used for discrete Laplacian \
+fitting"
+}], "GuideText",
+ CellID->918796038],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["IVIMResiduals"]],"paclet:DTITools/ref/IVIMResiduals"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " calculates the root mean square residuals of an IVIM fit using ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["IVIMCalc"]],"paclet:DTITools/ref/IVIMCalc"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ ", ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["BayesianIVIMFit2"]],"paclet:DTITools/ref/BayesianIVIMFit2"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " or ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["BayesianIVIMFit3"]],"paclet:DTITools/ref/BayesianIVIMFit3"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "."
+}], "GuideText",
+ CellID->231163949],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["IVIMFunction"]],"paclet:DTITools/ref/IVIMFunction"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["FracCorrect"]],"paclet:DTITools/ref/FracCorrect"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["CorrectParMap"]],"paclet:DTITools/ref/CorrectParMap"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["HistogramPar"]],"paclet:DTITools/ref/HistogramPar"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->532094761],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ThetaConv"]],"paclet:DTITools/ref/ThetaConv"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ThetaConvi"]],"paclet:DTITools/ref/ThetaConvi"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["FConvert"]],"paclet:DTITools/ref/FConvert"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["FConverti"]],"paclet:DTITools/ref/FConverti"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->433176804]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->81543150],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["IVIMCorrectData"]],"paclet:DTITools/ref/IVIMCorrectData"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["NNLeastSquares"]],"paclet:DTITools/ref/NNLeastSquares"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->144772792]
+}, Open  ]]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"IVIMTools",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
+  "", "Metadata" -> {
+   "built" -> "{2017, 4, 21, 20, 27, 55.6119427}", 
+    "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Guide", "language" -> "en", "paclet" -> "DTITools", "status" -> 
+    "None", "summary" -> "DTITools package: IVIM fitting functions", 
+    "synonyms" -> {}, "tabletags" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$18732, "title" -> 
+    "IVIMTools", "titlemodifier" -> "", "windowtitle" -> "IVIMTools", "type" -> 
+    "Guide", "uri" -> "DTITools/guide/IVIMTools"}},
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[581, 21, 4351, 100, 70, "AnchorBarGrid",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4957, 125, 51, 1, 70, "GuideTitle",
+ CellID->942062912],
+Cell[5011, 128, 186, 6, 70, "GuideAbstract",
+ CellID->2001916300]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5234, 139, 257, 11, 70, "GuideReferenceSection"],
+Cell[5494, 152, 31, 0, 70, "SectionHeaderSpacer"],
+Cell[5528, 154, 294, 10, 70, "GuideText",
+ CellID->203374175],
+Cell[5825, 166, 323, 10, 70, "GuideText",
+ CellID->1463276848],
+Cell[6151, 178, 322, 10, 70, "GuideText",
+ CellID->159343603],
+Cell[6476, 190, 366, 11, 70, "GuideText",
+ CellID->918796038],
+Cell[6845, 203, 915, 28, 70, "GuideText",
+ CellID->231163949],
+Cell[CellGroupData[{
+Cell[7785, 235, 48, 1, 70, "GuideDelimiter",
+ CellID->311258892],
+Cell[7836, 238, 1047, 31, 70, "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8920, 274, 48, 1, 70, "GuideDelimiter",
+ CellID->532094761],
+Cell[8971, 277, 1024, 31, 70, "InlineGuideFunctionListing",
+ CellID->433176804]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[10032, 313, 47, 1, 70, "GuideDelimiter",
+ CellID->81543150],
+Cell[10082, 316, 524, 15, 70, "InlineGuideFunctionListing",
+ CellID->144772792]
+}, Open  ]]
+}, Open  ]],
+Cell[10633, 335, 23, 0, 70, "FooterCell"]
+}
+]
+*)
+
+(* End of internal cache information *)
