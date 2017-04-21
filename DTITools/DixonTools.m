@@ -29,10 +29,21 @@ ClearAll @@ Names["DTITools`DixonTools`*"];
 
 
 DixonToPercent::usage = 
-"DixonToPercent[water, fat] converts the dixon water and fat data to percent maps."
+"DixonToPercent[water, fat] converts the dixon water and fat data to percent maps.
+
+Output is {waterFraction, fatFraction}."
 
 DixonReconstruct::usage = 
-"DixonReconstruct[real, imag, echo, b0]."
+"DixonReconstruct[real, imag, echo] reconstruxt Dixon data with initital guess b0 = 0 and T2star = 0.
+DixonReconstruct[real, imag, echo, b0] reconstructs Dixon data with intitial guess T2star = 0.
+DixonReconstruct[real, imag, echo, b0, t2] reconstructs Dixon data.
+
+real is the real data in radials.
+imag is the imaginary data in radians.
+b0 can be estimated from two phase images using Unwrap.
+t2 can be estimated from multiple echos using T2fit.
+
+Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{b0,t2star},itterations}."
 
 
 (* ::Subsection:: *)
@@ -40,37 +51,35 @@ DixonReconstruct::usage =
 
 
 DixonPrecessions::usage = 
-"DixonPrecessions"
+"DixonPrecessions is an options for DixonReconstruct. Defines the rotation of the signal {-1,1} default is -1."
 
 DixonFieldStrength::usage = 
-"DixonFieldStrength"
+"DixonFieldStrength is an options for DixonReconstruct. Defines the fieldstrengths on which the data was acquired."
 
 DixonFrequencies::usage = 
-"DixonFrequencies"
+"DixonFrequencies is an options for DixonReconstruct. Defines the frequencies of the fat peaks being used."
 
 DixonAmplitudes::usage = 
-"DixonAmplitudes"
+"DixonAmplitudes is an options for DixonReconstruct. Defines the amplitudes of the fat peaks being used."
 
 DixonTollerance::usage = 
-"DixonTollerance"
+"DixonTollerance is an options for DixonReconstruct. Defines at which change per itteration of b0 and R2star the ittarative methods stops. Default value is 0.1."
 
 DixonMaskThreshhold::usage = 
-"DixonMaskThreshhold"
+"DixonMaskThreshhold is an options for DixonReconstruct. Defines at which threshhold the dixon reconstruction considers a voxel to be background noise. Defualt values is 0.05."
 
-DixonFilterB0::usage = 
-"DixonFilterB0"
+DixonFilterInput::usage = 
+"DixonFilterInput is an options for DixonReconstruct. If True the input b0 and T2star values are smoothed using a gaussian kernel."
 
-DixonFilterB0Size::usage = 
-"DixonFilterB0Size"
+DixonFilterInputSize::usage = 
+"DixonFilterInputSize is an options for DixonReconstruct. Defines the number of voxel with which the input b0 and T2star values are smoothed."
 
 DixonIterations::usage = 
-"DixonIterations"
+"DixonIterations is an options for DixonReconstruct. Defines the maximum itterations the fit can use."
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
-
-
-
 
 
 (* ::Section:: *)
@@ -111,7 +120,7 @@ DixonToPercent[water_, fat_] :=
   ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*DixonReconstruct*)
 
 
@@ -123,8 +132,8 @@ Options[DixonReconstruct] = {DixonPrecessions -> -1, DixonFieldStrength -> 3,
   DixonFrequencies -> {{0}, {3.8, 3.4, 3.13, 2.67, 2.46, 1.92, 0.57, -0.60}}, 
   DixonAmplitudes -> {{1}, {0.089, 0.598, 0.048, 0.077, 0.052, 0.011, 0.035, 0.066}}, 
   DixonIterations -> 50, DixonTollerance -> 0.1, 
-  DixonMaskThreshhold -> 0.05, DixonFilterB0 -> True, 
-  DixonFilterB0Size -> 2};
+  DixonMaskThreshhold -> 0.05, DixonFilterInput -> True, 
+  DixonFilterInputSize -> 2};
 
 SyntaxInformation[DixonReconstruct] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
 
@@ -141,6 +150,7 @@ msk, t2i, t2f, echo, iop, ioAmat},
 (*{3.80,3.40,2.60,1.94,0.39,-0.60} and {0.087,0.693,0.128,0.004,0.039,0.048}*)
 (*{3.8,3.4,3.11,2.67,2.45,-0.61} and {0.088,0.635,0.071,0.096,0.068,0.042};*)
 (*{3.8,3.4,3.13,2.67,2.46,,1.92,0.57,-0.60} and {0.089,0.598,0.048,0.077,0.052,0.011,0.035,0.066};*)
+(*Triplett WT et.al. MRM 2014;72:8-19 doi 10.1002/mrm.23917*)
 
 (*fixed setting*)
 echo = echoi;
@@ -171,12 +181,12 @@ ioAmat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) #] & /@ iop)], 
  (*prepare b0map*)
  b0f = If[b0 === 0, 
  	ConstantArray[0., dim],
- 	If[OptionValue[DixonFilterB0], GaussianFilter[b0, OptionValue[DixonFilterB0Size]], b0]
+ 	If[OptionValue[DixonFilterInput], GaussianFilter[b0, OptionValue[DixonFilterInputSize]], b0]
  	];
  (*prepare t2Star map*)
  t2f = If[t2 === 0, 
  	ConstantArray[0., dim],
- 	If[OptionValue[DixonFilterB0], GaussianFilter[t2, OptionValue[DixonFilterB0Size]], t2]
+ 	If[OptionValue[DixonFilterInput], GaussianFilter[t2, OptionValue[DixonFilterInputSize]], t2]
  	];
  
  (*monitor Calculations*)
@@ -209,6 +219,7 @@ ioAmat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) #] & /@ iop)], 
 
 (* ::Subsubsection::Closed:: *)
 (*DixonFit*)
+
 
 DixonFiti[{ydat_, b0_, t2_, mask_}, {echo_, iop_}, {Amat_, ioAmat_}, {eta_, maxItt_}] := Block[
 	{continue, phiEst, phiMat, pAmat, phivec, cFrac, Bmat, deltaPhi, i, iophiMat, iopImag, sol},

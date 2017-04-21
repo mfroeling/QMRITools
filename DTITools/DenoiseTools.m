@@ -30,21 +30,28 @@ ClearAll @@ Names["DTIToos'DenoiseTools`*"];
 
 PCAFitHist::usage = 
 "PCAFitHist[data] fits the marchencopasteur distribution to the PCA of the data using hist fit.
-PCAFitHist[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using hist fit."
+PCAFitHist[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using hist fit.
+
+Output is {simga, number of noise comp, and denoised matrix, itterations}."
 
 PCAFitEq::usage = 
 "PCAFitEq[data] fits the marchencopasteur distribution to the PCA of the data using grid search.
-PCAFitEq[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using grid search."
+PCAFitEq[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using grid search.
+
+Output is {simga, number of noise comp, and denoised matrix}."
 
 DeNoise::usage =
 "DeNoise[data,sigma,filtersize] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" a gaussian kernel.
-DeNoise[data,sigma,filtersize, Kernel->\"kerneltype\"] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" and type \"kerneltype\"."
+DeNoise[data,sigma,filtersize, Kernel->\"kerneltype\"] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" and type \"kerneltype\".
+
+Output is data denoised."
 
 PCADeNoise::usage = 
 "PCADeNoise[data] removes rician noise from the data with PCA.
 PCADeNoise[data, mask] removes rician noise from the data with PCA only withing the mask.
-PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only withing the mask using sig as prior knowledge or fixed value."
+PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only withing the mask using sig as prior knowledge or fixed value.
 
+Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data dnoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}."
 
 
 (* ::Subsection:: *)
@@ -52,10 +59,10 @@ PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only wit
 
 
 PlotSolution::usage = 
-"PlotSolution is an option for PCAFitHist, if set true it dispays the fitting itterations"
+"PlotSolution is an option for PCAFitHist, if set true it dispays the fitting itterations."
 
 FitSigma::usage = 
-"FitSigma is an option of PCAFitHist, PCAFitEq and PCADeNoise, if set True sig is fitted if set False sigma is fixed to input value"
+"FitSigma is an option of PCAFitHist, PCAFitEq and PCADeNoise, if set True sig is fitted if set False sigma is fixed to input value."
 
 PCAFitParameters::usage = 
 "PCAFitParameters is an option of PCAFitHist. {nb, pi, maxit} = bins, initial signal components, maximum number of itterations."
@@ -127,7 +134,7 @@ PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., 
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := 
  Block[{data, mask, sigm, ker, off, datao, weights, sigmat, dim, 
-   zdim, ydim, xdim, ddim, nb, pi, maxit, output,
+   zdim, ydim, xdim, ddim, nb, pi, maxit, output,g,i,j,
    time1, time, timetot, sigi, sigf, zm, zp, xm, xp, ym, yp, fitdata, filt,
    sigo, Nes, datn, it},
   
@@ -161,15 +168,11 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
   time1 = 0;
   timetot = {};
   
-  DynamicModule[{i,j,g},
-  	g = off + 1;
-  	i = j = 0;
-	  PrintTemporary[Row[{
-	     ProgressIndicator[Dynamic[g], {off + 1, zdim - off}], 
-	     Row[{Dynamic[i], Dynamic[j], Dynamic[Round[100. j/(i + 1), .1]]},
-	       " / "]
-	     }, "     "]];
-  
+  (*parameters for monitor*)
+  g = off + 1;
+  i = j = 0;
+
+  Monitor[
 	 output = Table[
 	  	g = z;
 	    (*Check if masked voxel*)
@@ -184,6 +187,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
 	     	time = time1;
 	      ];
 	     
+	     (*define initial sigma*)
 	     sigi = If[sigm === 0., sigm, If[NumberQ[sigm], sigm, sigm[[z, y, x]]]];
 	     (*get pixel range*)
 	     {{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
@@ -210,9 +214,12 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
 	     
 	     (*output sig, Nest and itterations *)
 	     {sigo, Nes, i}
-	     ]
-	    , {z, off + 1, zdim - off}, {y, off + 1, ydim - off}, {x, off + 1, xdim - off}];
-  ];
+	     ], {z, off + 1, zdim - off}, {y, off + 1, ydim - off}, {x, off + 1, xdim - off}];
+	    ,
+	    (*monitor*)
+	    Row[{ProgressIndicator[g, {off + 1, zdim - off}],"  ",Round[100. j/(i + 1), .1]}]
+  		];
+  Print["% of voxels with max itt:  ",Round[100. j/(i + 1), .1]];
   
   (*correct output data for weightings*)
   datao = Transpose[Clip[#/(weights + 10^-10), {0., 10^9}, {0., 0.}] & /@ Transpose[datao]];
@@ -226,7 +233,6 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] :=
    {datao, sigmat}
    ]
   ]
-
 
 
 (* ::Subsubsection::Closed:: *)

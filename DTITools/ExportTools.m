@@ -29,7 +29,7 @@ ClearAll @@ Names["DTITools`ExportTools`*"];
 
 
 DatWrite::usage = 
-"DatWrite[file, data] exports data to file as binary data using Real32 format."
+"DatWrite[file, data] exports data to *.dat file as binary data using Real32 format."
 
 DTItoolExpInd::usage = 
 "DTItoolExpInd[data, file] exports a 3D array data to the file filename DTItool format (*.dat) using DatWrite.
@@ -59,20 +59,20 @@ ExportMhdRaw::usage =
 "ExportMhdRaw[filename, data, voxsize] exports a .mhd and .raw file which can be loaded in elastix."
 
 ExpHistInd::usage = 
-"ExpHistInd[dat, name, text] exports 5 histograms to individual files named name with the addition of text using the function Hist.\
+"ExpHistInd[dat, name, text] exports 5 histograms to individual files named name with the addition of text using the function Hist.
 dat must be {l1, l2, l3, MD, FA}."
 
 ExpHistAll::usage = 
-"ExpHistAll[dat, name, text] exports 5 histograms to one file named name with the addition of text using the function Hist.\
+"ExpHistAll[dat, name, text] exports 5 histograms to one file named name with the addition of text using the function Hist.
 dat must be {l1, l2, l3, MD, FA}."
 
 ExpPlotsInd::usage = 
-"ExpPlotsInd[dat, name, text, text2] exports 5 error plots to individual files named name with the addition of text using the function ErrorPlot.\
-text2 is used to label the individual plots.\
+"ExpPlotsInd[dat, name, text, text2] exports 5 error plots to individual files named name with the addition of text using the function ErrorPlot.
+text2 is used to label the individual plots.
 dat must be {l1, l2, l3, MD, FA}."
 
 ExpPlotsAll::usage = 
-"ExpPlotsAll[dat, name, text, text2] exports 5 error plots to one file named name with the addition of text using the function ErrorPlot.\
+"ExpPlotsAll[dat, name, text, text2] exports 5 error plots to one file named name with the addition of text using the function ErrorPlot.
 text2 is used to label the individual plots.\
 dat must be {l1, l2, l3, MD, FA}."
 

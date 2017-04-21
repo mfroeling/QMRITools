@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     14289,        535]
-NotebookOptionsPosition[     10083,        392]
-NotebookOutlinePosition[     10699,        416]
-CellTagsIndexPosition[     10620,        411]
+NotebookDataLength[     15084,        555]
+NotebookOptionsPosition[     10867,        412]
+NotebookOutlinePosition[     11487,        436]
+CellTagsIndexPosition[     11408,        431]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -45,15 +45,15 @@ Cell["Symbol", "Categorization",
 
 Cell["DTITools Package", "Categorization",
  CellLabel->"Paclet Name",
- CellID->88018603],
+ CellID->213750888],
 
 Cell["DTITools`DenoiseTools`", "Categorization",
  CellLabel->"Context",
- CellID->285730784],
+ CellID->37306014],
 
 Cell["DTITools/ref/PCADeNoise", "Categorization",
  CellLabel->"URI",
- CellID->498034351]
+ CellID->510569787]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -136,17 +136,37 @@ Cell["PCADeNoise", "ObjectName",
 
 Cell[TextData[{
  Cell["   ", "ModInfo"],
- "PCADeNoise[data]",
+ Cell[BoxData[
+  RowBox[{"PCADeNoise", "[", 
+   StyleBox["data", "TI"], "]"}]], "InlineFormula"],
  "\[LineSeparator]removes rician noise from the data with PCA. \n",
  Cell["   ", "ModInfo"],
- "PCADeNoise[data, mask]",
+ Cell[BoxData[
+  RowBox[{"PCADeNoise", "[", 
+   RowBox[{
+    StyleBox["data", "TI"], ",", " ", 
+    StyleBox["mask", "TI"]}], "]"}]], "InlineFormula"],
  "\[LineSeparator]removes rician noise from the data with PCA only withing \
 the mask. \n",
  Cell["   ", "ModInfo"],
- "PCADeNoise[data, mask, sig]",
+ Cell[BoxData[
+  RowBox[{"PCADeNoise", "[", 
+   RowBox[{
+    StyleBox["data", "TI"], ",", " ", 
+    StyleBox["mask", "TI"], ",", " ", 
+    StyleBox["sig", "TI"]}], "]"}]], "InlineFormula"],
  "\[LineSeparator]removes rician noise from the data with PCA only withing \
-the mask using sig as prior knowledge or fixed value."
-}], "Usage"],
+the mask using sig as prior knowledge or fixed value. Output is de {data \
+denoise, sigma map} by default if ",
+ Cell[BoxData[
+  ButtonBox["PCAOutput",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/PCAOutput"]], "InlineFormula"],
+ " is Full then fitted {data dnoise , {sigma fit, average sigma}, {number \
+components, number of fitted voxesl, number of max fits}, total fit -time per \
+500 ittt}."
+}], "Usage",
+ CellChangeTimes->{{3.7017616534178734`*^9, 3.701761659425217*^9}}],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -225,7 +245,7 @@ Cell[BoxData[GridBox[{
      "True",
      " sig is fitted if set ",
      "False",
-     " sigma is fixed to input value"
+     " sigma is fixed to input value."
     }], "TableText"]},
    {Cell["   ", "ModInfo"], 
     ButtonBox["PCAOutput",
@@ -393,7 +413,7 @@ Cell[BoxData[
 WindowSize->{700, 770},
 WindowMargins->{{4, Automatic}, {Automatic, 0}},
 CellContext->"Global`",
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -403,14 +423,14 @@ StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb",
 (*CellTagsOutline
 CellTagsIndex->{
  "ExtendedExamples"->{
-  Cell[8024, 317, 100, 2, 53, "ExtendedExamplesSection",
+  Cell[8808, 337, 100, 2, 53, "ExtendedExamplesSection",
    CellTags->"ExtendedExamples",
    CellID->1854448968]}
  }
 *)
 (*CellTagsIndex
 CellTagsIndex->{
- {"ExtendedExamples", 10482, 404}
+ {"ExtendedExamples", 11270, 424}
  }
 *)
 (*NotebookFileOutline
@@ -422,12 +442,12 @@ Cell[907, 38, 68, 1, 27, "CategorizationSection",
  CellID->1122911449],
 Cell[978, 41, 79, 2, 31, "Categorization",
  CellID->686433507],
-Cell[1060, 45, 88, 2, 31, "Categorization",
- CellID->88018603],
-Cell[1151, 49, 91, 2, 31, "Categorization",
- CellID->285730784],
+Cell[1060, 45, 89, 2, 31, "Categorization",
+ CellID->213750888],
+Cell[1152, 49, 90, 2, 31, "Categorization",
+ CellID->37306014],
 Cell[1245, 53, 88, 2, 31, "Categorization",
- CellID->498034351]
+ CellID->510569787]
 }, Closed]],
 Cell[CellGroupData[{
 Cell[1370, 60, 55, 1, 17, "KeywordsSection",
@@ -472,69 +492,69 @@ Cell[2571, 126, 67, 2, 70, "Details",
 Cell[CellGroupData[{
 Cell[2675, 133, 53, 1, 62, "ObjectName",
  CellID->1224892054],
-Cell[2731, 136, 475, 12, 150, "Usage"],
-Cell[3209, 150, 53, 0, 23, "Notes"],
-Cell[3265, 152, 3605, 102, 368, "3ColumnTableMod"]
+Cell[2731, 136, 1258, 32, 180, "Usage"],
+Cell[3992, 170, 53, 0, 23, "Notes"],
+Cell[4048, 172, 3606, 102, 359, "3ColumnTableMod"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6907, 259, 57, 1, 43, "TutorialsSection",
+Cell[7691, 279, 57, 1, 43, "TutorialsSection",
  CellID->250839057],
-Cell[6967, 262, 45, 1, 16, "Tutorials",
+Cell[7751, 282, 45, 1, 16, "Tutorials",
  CellID->341631938]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[7049, 268, 83, 1, 30, "RelatedDemonstrationsSection",
+Cell[7833, 288, 83, 1, 30, "RelatedDemonstrationsSection",
  CellID->1268215905],
-Cell[7135, 271, 58, 1, 16, "RelatedDemonstrations",
+Cell[7919, 291, 58, 1, 16, "RelatedDemonstrations",
  CellID->1129518860]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[7230, 277, 65, 1, 30, "RelatedLinksSection",
+Cell[8014, 297, 65, 1, 30, "RelatedLinksSection",
  CellID->1584193535],
-Cell[7298, 280, 49, 1, 16, "RelatedLinks",
+Cell[8082, 300, 49, 1, 16, "RelatedLinks",
  CellID->1038487239]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[7384, 286, 55, 1, 30, "SeeAlsoSection",
+Cell[8168, 306, 55, 1, 30, "SeeAlsoSection",
  CellID->1255426704],
-Cell[7442, 289, 43, 1, 16, "SeeAlso",
+Cell[8226, 309, 43, 1, 16, "SeeAlso",
  CellID->929782353]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[7522, 295, 57, 1, 30, "MoreAboutSection",
+Cell[8306, 315, 57, 1, 30, "MoreAboutSection",
  CellID->38303248],
-Cell[7582, 298, 46, 1, 16, "MoreAbout",
+Cell[8366, 318, 46, 1, 16, "MoreAbout",
  CellID->1665078683]
 }, Open  ]],
-Cell[7643, 302, 356, 11, 68, "PrimaryExamplesSection",
+Cell[8427, 322, 356, 11, 67, "PrimaryExamplesSection",
  CellID->880084151],
 Cell[CellGroupData[{
-Cell[8024, 317, 100, 2, 53, "ExtendedExamplesSection",
+Cell[8808, 337, 100, 2, 53, "ExtendedExamplesSection",
  CellTags->"ExtendedExamples",
  CellID->1854448968],
-Cell[8127, 321, 125, 3, 30, "ExampleSection",
+Cell[8911, 341, 125, 3, 31, "ExampleSection",
  CellID->1293636265],
-Cell[8255, 326, 148, 3, 18, "ExampleSection",
+Cell[9039, 346, 148, 3, 19, "ExampleSection",
  CellID->1020263627],
 Cell[CellGroupData[{
-Cell[8428, 333, 106, 2, 18, "ExampleSection"],
-Cell[8537, 337, 114, 2, 70, "ExampleSubsection"],
-Cell[8654, 341, 112, 2, 70, "ExampleSubsection"],
-Cell[8769, 345, 120, 2, 70, "ExampleSubsection"],
-Cell[8892, 349, 121, 2, 70, "ExampleSubsection"],
-Cell[9016, 353, 113, 2, 70, "ExampleSubsection"],
-Cell[9132, 357, 114, 2, 70, "ExampleSubsection"],
-Cell[9249, 361, 111, 2, 70, "ExampleSubsection"]
+Cell[9212, 353, 106, 2, 19, "ExampleSection"],
+Cell[9321, 357, 114, 2, 70, "ExampleSubsection"],
+Cell[9438, 361, 112, 2, 70, "ExampleSubsection"],
+Cell[9553, 365, 120, 2, 70, "ExampleSubsection"],
+Cell[9676, 369, 121, 2, 70, "ExampleSubsection"],
+Cell[9800, 373, 113, 2, 70, "ExampleSubsection"],
+Cell[9916, 377, 114, 2, 70, "ExampleSubsection"],
+Cell[10033, 381, 111, 2, 70, "ExampleSubsection"]
 }, Closed]],
-Cell[9375, 366, 131, 3, 18, "ExampleSection",
+Cell[10159, 386, 131, 3, 19, "ExampleSection",
  CellID->258228157],
-Cell[9509, 371, 142, 3, 18, "ExampleSection",
+Cell[10293, 391, 142, 3, 19, "ExampleSection",
  CellID->2123667759],
-Cell[9654, 376, 135, 3, 18, "ExampleSection",
+Cell[10438, 396, 135, 3, 19, "ExampleSection",
  CellID->1305812373],
-Cell[9792, 381, 140, 3, 18, "ExampleSection",
+Cell[10576, 401, 140, 3, 19, "ExampleSection",
  CellID->1653164318],
-Cell[9935, 386, 132, 3, 18, "ExampleSection",
+Cell[10719, 406, 132, 3, 19, "ExampleSection",
  CellID->589267740]
 }, Open  ]]
 }

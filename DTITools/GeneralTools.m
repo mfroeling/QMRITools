@@ -74,6 +74,7 @@ Output is the SoS and the weights, or just the SoS."
 DevideNoZero::usage = 
 "DevideNoZero[a, b] devides a/b but when b=0 the result is 0. a can be a number or vector."
 
+
 (* ::Subsection:: *)
 (*General Options*)
 
@@ -105,6 +106,8 @@ Begin["`Private`"]
 
 Options[SumOfSquares] = {OutputWeights -> True}
 
+SyntaxInformation[SumOfSquares] = {"ArgumentsPattern" -> {_,OptionsPattern[]}};
+
 SumOfSquares[data_, OptionsPattern[]] := Block[{sos, weights, dataf},
   dataf = TransData[data, "l"];
   sos = SumOfSquaresi[dataf];
@@ -124,8 +127,12 @@ SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes
 (*DevideNoZero*)
 
 
-DevideNoZero = Compile[{{sig, _Real, 1}, {tot, _Real, 0}}, If[tot == 0., sig tot, sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
-DevideNoZero = Compile[{{sig, _Real, 0}, {tot, _Real, 0}}, If[tot == 0., sig tot, sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
+
+DevideNoZero[sig_,tot_]:=DevideNoZeroi[sig,tot]
+
+DevideNoZeroi = Compile[{{sig, _Real, 1}, {tot, _Real, 0}}, If[tot == 0., sig 0., sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DevideNoZeroi = Compile[{{sig, _Real, 0}, {tot, _Real, 0}}, If[tot == 0., 0., sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsection::Closed:: *)
@@ -175,6 +182,7 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 (* ::Subsection::Closed:: *)
 (*DTItoolPackages*)
 
+SyntaxInformation[DTItoolPackages] = {"ArgumentsPattern" -> {}};
 
 DTItoolPackages[] := 
  TableForm[Last[StringSplit[#, "`"]] & /@ 
@@ -292,12 +300,9 @@ ClearTemporaryVariables[] := Block[{names, attr},
 
 Options[NumberTableForm] = Join[{TableMethod -> NumberForm}, Options[TableForm]];
 
-SyntaxInformation[
-   NumberTableForm] = {"ArgumentsPattern" -> {_, _., 
-     OptionsPattern[]}};
+SyntaxInformation[NumberTableForm] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-NumberTableForm[dat_, opts : OptionsPattern[]] := 
-  NumberTableForm[dat, 3, opts];
+NumberTableForm[dat_, opts : OptionsPattern[]] := NumberTableForm[dat, 3, opts];
 
 NumberTableForm[dat_, depth_, opts : OptionsPattern[]] := 
   Block[{opt, met},
@@ -329,11 +334,7 @@ MeanNoZero[datai_] := Block[{data},
   data = N@Chop@TransData[datai, "l"];
   N@Chop@Map[Mean[DeleteCases[#, 0.] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
   ]
-(*
-Default[MeanNoZero] = 0;
-MeanNoZero[data_, cor_.] := 
- Mean[DeleteCases[Flatten[N[data], ArrayDepth[data] - (cor + 1)], 0.]]
-*)
+
 
 (* ::Subsection::Closed:: *)
 (*MeanNoZero*)

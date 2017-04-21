@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      9856,        409]
-NotebookOptionsPosition[      5955,        272]
-NotebookOutlinePosition[      6570,        296]
-CellTagsIndexPosition[      6492,        291]
+NotebookDataLength[     10280,        421]
+NotebookOptionsPosition[      6373,        284]
+NotebookOutlinePosition[      6992,        308]
+CellTagsIndexPosition[      6914,        303]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -45,15 +45,15 @@ Cell["Symbol", "Categorization",
 
 Cell["DTITools Package", "Categorization",
  CellLabel->"Paclet Name",
- CellID->205949630],
+ CellID->258012374],
 
 Cell["DTITools`ManipulationTools`", "Categorization",
  CellLabel->"Context",
- CellID->356929148],
+ CellID->574569867],
 
 Cell["DTITools/ref/CropData", "Categorization",
  CellLabel->"URI",
- CellID->469824049]
+ CellID->821399581]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -136,25 +136,38 @@ Cell["CropData", "ObjectName",
 
 Cell[TextData[{
  Cell["   ", "ModInfo"],
- "CropData[data]",
+ Cell[BoxData[
+  RowBox[{"CropData", "[", 
+   StyleBox["data", "TI"], "]"}]], "InlineFormula"],
  "\[LineSeparator]creates a dialog window to crop the data (assumes voxsize \
 (1,1,1)). \n",
  Cell["   ", "ModInfo"],
- "CropData[data,vox]",
+ Cell[BoxData[
+  RowBox[{"CropData", "[", 
+   RowBox[{
+    StyleBox["data", "TI"], ",", 
+    StyleBox["vox", "TI"]}], "]"}]], "InlineFormula"],
  "\[LineSeparator]creates a dialog window to crop the data."
-}], "Usage"],
+}], "Usage",
+ CellChangeTimes->{{3.7017632856382313`*^9, 3.701763288535397*^9}}],
 
 Cell["The following options can be given: ", "Notes"],
 
 Cell[BoxData[GridBox[{
    {Cell["   ", "ModInfo"], 
-    ButtonBox["DTITools`ManipulationTools`Private`Output",
+    ButtonBox["CropOutput",
      BaseStyle->"Link",
-     ButtonData->
-      "paclet:DTIToolsManipulationToolsPrivate/ref/DTITools`ManipulationTools`\
-Private`Output"], 
+     ButtonData->"paclet:DTITools/ref/CropOutput"], 
     ButtonBox["All",
-     BaseStyle->"Link"], Cell["XXXX", "TableText"]}
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["CropOutput",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/CropOutput"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["CropData"], "InlineFormula"],
+     ", can be \"All\",\"Data\" or \"Crop\"."
+    }], "TableText"]}
   }]], "3ColumnTableMod"]
 }, Open  ]],
 
@@ -239,8 +252,7 @@ Cell[BoxData[
   $Line = 0; Null]], "ExampleSection"],
 
 Cell[BoxData[
- InterpretationBox[Cell[
-  "DTITools`ManipulationTools`Private`Output", "ExampleSubsection"],
+ InterpretationBox[Cell["CropOutput", "ExampleSubsection"],
   $Line = 0; Null]], "ExampleSubsection"]
 }, Closed]],
 
@@ -273,7 +285,7 @@ Cell[BoxData[
 WindowSize->{700, 770},
 WindowMargins->{{4, Automatic}, {Automatic, 0}},
 CellContext->"Global`",
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -283,14 +295,14 @@ StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb",
 (*CellTagsOutline
 CellTagsIndex->{
  "ExtendedExamples"->{
-  Cell[4570, 220, 100, 2, 53, "ExtendedExamplesSection",
+  Cell[5022, 233, 100, 2, 53, "ExtendedExamplesSection",
    CellTags->"ExtendedExamples",
    CellID->1854448968]}
  }
 *)
 (*CellTagsIndex
 CellTagsIndex->{
- {"ExtendedExamples", 6354, 284}
+ {"ExtendedExamples", 6776, 296}
  }
 *)
 (*NotebookFileOutline
@@ -303,11 +315,11 @@ Cell[907, 38, 68, 1, 27, "CategorizationSection",
 Cell[978, 41, 79, 2, 31, "Categorization",
  CellID->686433507],
 Cell[1060, 45, 89, 2, 31, "Categorization",
- CellID->205949630],
+ CellID->258012374],
 Cell[1152, 49, 96, 2, 31, "Categorization",
- CellID->356929148],
+ CellID->574569867],
 Cell[1251, 53, 86, 2, 31, "Categorization",
- CellID->469824049]
+ CellID->821399581]
 }, Closed]],
 Cell[CellGroupData[{
 Cell[1374, 60, 55, 1, 17, "KeywordsSection",
@@ -352,63 +364,63 @@ Cell[2575, 126, 67, 2, 70, "Details",
 Cell[CellGroupData[{
 Cell[2679, 133, 51, 1, 62, "ObjectName",
  CellID->1224892054],
-Cell[2733, 136, 274, 8, 103, "Usage"],
-Cell[3010, 146, 53, 0, 23, "Notes"],
-Cell[3066, 148, 350, 9, 40, "3ColumnTableMod"]
+Cell[2733, 136, 540, 15, 104, "Usage"],
+Cell[3276, 153, 53, 0, 23, "Notes"],
+Cell[3332, 155, 536, 15, 37, "3ColumnTableMod"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[3453, 162, 57, 1, 43, "TutorialsSection",
+Cell[3905, 175, 57, 1, 43, "TutorialsSection",
  CellID->250839057],
-Cell[3513, 165, 45, 1, 16, "Tutorials",
+Cell[3965, 178, 45, 1, 16, "Tutorials",
  CellID->341631938]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[3595, 171, 83, 1, 30, "RelatedDemonstrationsSection",
+Cell[4047, 184, 83, 1, 30, "RelatedDemonstrationsSection",
  CellID->1268215905],
-Cell[3681, 174, 58, 1, 16, "RelatedDemonstrations",
+Cell[4133, 187, 58, 1, 16, "RelatedDemonstrations",
  CellID->1129518860]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[3776, 180, 65, 1, 30, "RelatedLinksSection",
+Cell[4228, 193, 65, 1, 30, "RelatedLinksSection",
  CellID->1584193535],
-Cell[3844, 183, 49, 1, 16, "RelatedLinks",
+Cell[4296, 196, 49, 1, 16, "RelatedLinks",
  CellID->1038487239]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[3930, 189, 55, 1, 30, "SeeAlsoSection",
+Cell[4382, 202, 55, 1, 30, "SeeAlsoSection",
  CellID->1255426704],
-Cell[3988, 192, 43, 1, 16, "SeeAlso",
+Cell[4440, 205, 43, 1, 16, "SeeAlso",
  CellID->929782353]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4068, 198, 57, 1, 30, "MoreAboutSection",
+Cell[4520, 211, 57, 1, 30, "MoreAboutSection",
  CellID->38303248],
-Cell[4128, 201, 46, 1, 16, "MoreAbout",
+Cell[4580, 214, 46, 1, 16, "MoreAbout",
  CellID->1665078683]
 }, Open  ]],
-Cell[4189, 205, 356, 11, 68, "PrimaryExamplesSection",
+Cell[4641, 218, 356, 11, 67, "PrimaryExamplesSection",
  CellID->880084151],
 Cell[CellGroupData[{
-Cell[4570, 220, 100, 2, 53, "ExtendedExamplesSection",
+Cell[5022, 233, 100, 2, 53, "ExtendedExamplesSection",
  CellTags->"ExtendedExamples",
  CellID->1854448968],
-Cell[4673, 224, 125, 3, 30, "ExampleSection",
+Cell[5125, 237, 125, 3, 31, "ExampleSection",
  CellID->1293636265],
-Cell[4801, 229, 148, 3, 18, "ExampleSection",
+Cell[5253, 242, 148, 3, 19, "ExampleSection",
  CellID->1020263627],
 Cell[CellGroupData[{
-Cell[4974, 236, 106, 2, 18, "ExampleSection"],
-Cell[5083, 240, 149, 3, 70, "ExampleSubsection"]
+Cell[5426, 249, 106, 2, 19, "ExampleSection"],
+Cell[5535, 253, 115, 2, 70, "ExampleSubsection"]
 }, Closed]],
-Cell[5247, 246, 131, 3, 18, "ExampleSection",
+Cell[5665, 258, 131, 3, 19, "ExampleSection",
  CellID->258228157],
-Cell[5381, 251, 142, 3, 18, "ExampleSection",
+Cell[5799, 263, 142, 3, 19, "ExampleSection",
  CellID->2123667759],
-Cell[5526, 256, 135, 3, 18, "ExampleSection",
+Cell[5944, 268, 135, 3, 19, "ExampleSection",
  CellID->1305812373],
-Cell[5664, 261, 140, 3, 18, "ExampleSection",
+Cell[6082, 273, 140, 3, 19, "ExampleSection",
  CellID->1653164318],
-Cell[5807, 266, 132, 3, 18, "ExampleSection",
+Cell[6225, 278, 132, 3, 19, "ExampleSection",
  CellID->589267740]
 }, Open  ]]
 }

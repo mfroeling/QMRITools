@@ -29,7 +29,7 @@ ClearAll @@ Names["DTITools`ImportTools`*"];
 
 
 ReadVoxSize::usage = 
-"ReadVoxSize[filename] imports the voxelsize from a .dcm file. filename must be a string. \ 
+"ReadVoxSize[filename] imports the voxelsize from a .dcm file. filename must be a string. 
 Imports the pixel and slice spacing from the dicom header. Output is a list containg the voxels size {slice thickness, x, y}."
 
 ReadDicom::usage = 
@@ -41,7 +41,8 @@ ReadDicom[{file1, file2, ...}, partsize] imports all the given filenames and par
 ReadDicom[folder, {file1, file2, ...}, partsize] imports all the given filenames from the given folder and partions them in given partsize."
 
 ReadDicomDiff::usage = 
-"ReadDicomDiff[folder, part] imports all dicom files from the given folder and the corresponding diffusion parameters. \
+"ReadDicomDiff[folder, part] imports all dicom files from the given folder and the corresponding diffusion parameters. 
+
 part is the number of diffusion images per slice including the unweighted images."
 
 ReadDicomDir::usage = 
@@ -51,15 +52,16 @@ ReadDicomDirDiff::usage =
 "ReadDicomDirDiff[file] reads the image data and relevant diffuison parameters from a dicom directory."
 
 ReadGradients::usage = 
-"ReadGradients[folder, nr] imports the diffusion gradient directions from the dicom header of the first nr of files in de given folder. \
-Folder must be a string, nr must be a int. Uses GradRead."
+"ReadGradients[folder, nr] imports the diffusion gradient directions from the dicom header of the first nr of files in de given folder.
+
+folder must be a string, nr must be a int. Uses GradRead."
 
 GradRead::usage = 
-"GradRead[filename] imports the diffusion gradient direction from a .dcm file.\
+"GradRead[filename] imports the diffusion gradient direction from a .dcm file.
 filename must be a string.";
 
 ReadBvalue::usage = 
-"ReadBvalue[folder,nr] imports the gradient directions from the dicom header of the first nr of files in de given folder.\
+"ReadBvalue[folder,nr] imports the gradient directions from the dicom header of the first nr of files in de given folder.
 folder must be a string, nr must be a int. Uses BvalRead."
 
 BvalRead::usage = 
@@ -74,7 +76,7 @@ DatRead::usage =
 "DatRead[file] imports data from file (dtitool *.dat format) as binary data using Real32 format."
 
 ShiftPar::usage = 
-"ShiftPar[B0file.dcm,DTIfile.dcm] imports the parameters from the dicom headeand and calculates the needed values to preform B0 field map correction.\
+"ShiftPar[B0file.dcm,DTIfile.dcm] imports the parameters from the dicom headeand and calculates the needed values to preform B0 field map correction.
 Needs a B0 dicom file and a diffusion dicom file."
 
 ReadBrukerDiff::usage = 

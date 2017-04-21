@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10413,        418]
-NotebookOptionsPosition[      6510,        281]
-NotebookOutlinePosition[      7125,        305]
-CellTagsIndexPosition[      7047,        300]
+NotebookDataLength[     11584,        455]
+NotebookOptionsPosition[      7628,        317]
+NotebookOutlinePosition[      8247,        341]
+CellTagsIndexPosition[      8169,        336]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -45,15 +45,15 @@ Cell["Symbol", "Categorization",
 
 Cell["DTITools Package", "Categorization",
  CellLabel->"Paclet Name",
- CellID->319100463],
+ CellID->304915888],
 
 Cell["DTITools`ProcessingTools`", "Categorization",
  CellLabel->"Context",
- CellID->299081841],
+ CellID->17092153],
 
 Cell["DTITools/ref/SNRMapCalc", "Categorization",
  CellLabel->"URI",
- CellID->879401800]
+ CellID->94107814]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -136,19 +136,44 @@ Cell["SNRMapCalc", "ObjectName",
 
 Cell[TextData[{
  Cell["   ", "ModInfo"],
- "SNRMapCalc[data$1,noisemap]\[LineSeparator]calcualtes the signal to noise \
-ratio of the data using MN[data]/(1/sqrt[pi/2] sigma), where sigma is the \
-local mean of the noise map assuming it is a rician distribution. \n",
+ Cell[BoxData[
+  RowBox[{"SNRMapCalc", "[", 
+   RowBox[{
+    SubscriptBox[
+     StyleBox["data", "TI"], 
+     StyleBox["1", "TR"]], ",", 
+    StyleBox["noisemap", "TI"]}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]calcualtes the signal to noise ratio of the data using \
+MN[data]/(1/sqrt[pi/2] sigma), where sigma is the local mean of the noise map \
+assuming it is a rician distribution. \n",
  Cell["   ", "ModInfo"],
- "SNRMapCalc[{data$1,data$2}]\[LineSeparator]calcualtes the signal to noise \
-ratio from two identical images using MN[data1,data2] / (.5 SQRT[2] \
-STDV[data2-data1]). \n",
+ Cell[BoxData[
+  RowBox[{"SNRMapCalc", "[", 
+   RowBox[{"{", 
+    RowBox[{
+     SubscriptBox[
+      StyleBox["data", "TI"], 
+      StyleBox["1", "TR"]], ",", 
+     SubscriptBox[
+      StyleBox["data", "TI"], 
+      StyleBox["2", "TR"]]}], "}"}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]calcualtes the signal to noise ratio from two identical \
+images using MN[data1,data2] / (.5 SQRT[2] STDV[data2-data1]). \n",
  Cell["   ", "ModInfo"],
- "SNRMapCalc[{data$1, .. dataN}]",
+ Cell[BoxData[
+  RowBox[{"SNRMapCalc", "[", 
+   RowBox[{"{", 
+    RowBox[{
+     SubscriptBox[
+      StyleBox["data", "TI"], 
+      StyleBox["1", "TR"]], ",", " ", 
+     RowBox[{"..", " ", 
+      StyleBox["dataN", "TI"]}]}], "}"}], "]"}]], "InlineFormula"],
  "\[LineSeparator]calcualtes the signal to noise ratio of the data using \
 MN/sigma where the mean signal MN is the average voxe value over all dynamics \
 N and the sigma is the standard deviation over all dynamics N."
-}], "Usage"],
+}], "Usage",
+ CellChangeTimes->{{3.7017600739515333`*^9, 3.7017600795508537`*^9}}],
 
 Cell["The following options can be given: ", "Notes"],
 
@@ -164,7 +189,13 @@ Cell[BoxData[GridBox[{
      " is an option for ",
      Cell[BoxData["SNRMapCalc"], "InlineFormula"],
      "."
-    }], "TableText"]}
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["DTITools`ProcessingTools`Private`SmoothSNR",
+     BaseStyle->"Link",
+     ButtonData->
+      "paclet:DTIToolsProcessingToolsPrivate/ref/DTITools`ProcessingTools`\
+Private`SmoothSNR"], "2", Cell["XXXX", "TableText"]}
   }]], "3ColumnTableMod"]
 }, Open  ]],
 
@@ -250,6 +281,11 @@ Cell[BoxData[
 
 Cell[BoxData[
  InterpretationBox[Cell["OutputSNR", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DTITools`ProcessingTools`Private`SmoothSNR", "ExampleSubsection"],
   $Line = 0; Null]], "ExampleSubsection"]
 }, Closed]],
 
@@ -282,7 +318,7 @@ Cell[BoxData[
 WindowSize->{700, 770},
 WindowMargins->{{4, Automatic}, {Automatic, 0}},
 CellContext->"Global`",
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -292,14 +328,14 @@ StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb",
 (*CellTagsOutline
 CellTagsIndex->{
  "ExtendedExamples"->{
-  Cell[5160, 230, 100, 2, 53, "ExtendedExamplesSection",
+  Cell[6125, 261, 100, 2, 53, "ExtendedExamplesSection",
    CellTags->"ExtendedExamples",
    CellID->1854448968]}
  }
 *)
 (*CellTagsIndex
 CellTagsIndex->{
- {"ExtendedExamples", 6909, 293}
+ {"ExtendedExamples", 8031, 329}
  }
 *)
 (*NotebookFileOutline
@@ -312,112 +348,113 @@ Cell[907, 38, 68, 1, 27, "CategorizationSection",
 Cell[978, 41, 79, 2, 31, "Categorization",
  CellID->686433507],
 Cell[1060, 45, 89, 2, 31, "Categorization",
- CellID->319100463],
-Cell[1152, 49, 94, 2, 31, "Categorization",
- CellID->299081841],
-Cell[1249, 53, 88, 2, 31, "Categorization",
- CellID->879401800]
+ CellID->304915888],
+Cell[1152, 49, 93, 2, 31, "Categorization",
+ CellID->17092153],
+Cell[1248, 53, 87, 2, 31, "Categorization",
+ CellID->94107814]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[1374, 60, 55, 1, 17, "KeywordsSection",
+Cell[1372, 60, 55, 1, 17, "KeywordsSection",
  CellID->477174294],
-Cell[1432, 63, 45, 1, 70, "Keywords",
+Cell[1430, 63, 45, 1, 70, "Keywords",
  CellID->1164421360]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[1514, 69, 65, 1, 17, "TemplatesSection",
+Cell[1512, 69, 65, 1, 17, "TemplatesSection",
  CellID->1872225408],
-Cell[1582, 72, 94, 2, 70, "Template",
+Cell[1580, 72, 94, 2, 70, "Template",
  CellID->1562036412],
-Cell[1679, 76, 82, 2, 70, "Template",
+Cell[1677, 76, 82, 2, 70, "Template",
  CellID->158391909],
-Cell[1764, 80, 81, 2, 70, "Template",
+Cell[1762, 80, 81, 2, 70, "Template",
  CellID->1360575930],
-Cell[1848, 84, 82, 2, 70, "Template",
+Cell[1846, 84, 82, 2, 70, "Template",
  CellID->793782254]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[1967, 91, 53, 1, 17, "DetailsSection",
+Cell[1965, 91, 53, 1, 17, "DetailsSection",
  CellID->307771771],
-Cell[2023, 94, 63, 2, 70, "Details",
+Cell[2021, 94, 63, 2, 70, "Details",
  CellID->670882175],
-Cell[2089, 98, 69, 2, 70, "Details",
+Cell[2087, 98, 69, 2, 70, "Details",
  CellID->350963985],
-Cell[2161, 102, 64, 2, 70, "Details",
+Cell[2159, 102, 64, 2, 70, "Details",
  CellID->8391405],
-Cell[2228, 106, 69, 2, 70, "Details",
+Cell[2226, 106, 69, 2, 70, "Details",
  CellID->3610269],
-Cell[2300, 110, 61, 2, 70, "Details",
+Cell[2298, 110, 61, 2, 70, "Details",
  CellID->401364205],
-Cell[2364, 114, 61, 2, 70, "Details",
+Cell[2362, 114, 61, 2, 70, "Details",
  CellID->350204745],
-Cell[2428, 118, 63, 2, 70, "Details",
+Cell[2426, 118, 63, 2, 70, "Details",
  CellID->732958810],
-Cell[2494, 122, 78, 2, 70, "Details",
+Cell[2492, 122, 78, 2, 70, "Details",
  CellID->222905350],
-Cell[2575, 126, 67, 2, 70, "Details",
+Cell[2573, 126, 67, 2, 70, "Details",
  CellID->240026365]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[2679, 133, 53, 1, 62, "ObjectName",
+Cell[2677, 133, 53, 1, 62, "ObjectName",
  CellID->1224892054],
-Cell[2735, 136, 755, 14, 192, "Usage"],
-Cell[3493, 152, 53, 0, 23, "Notes"],
-Cell[3549, 154, 457, 13, 24, "3ColumnTableMod"]
+Cell[2733, 136, 1461, 39, 193, "Usage"],
+Cell[4197, 177, 53, 0, 23, "Notes"],
+Cell[4253, 179, 718, 19, 57, "3ColumnTableMod"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4043, 172, 57, 1, 43, "TutorialsSection",
+Cell[5008, 203, 57, 1, 43, "TutorialsSection",
  CellID->250839057],
-Cell[4103, 175, 45, 1, 16, "Tutorials",
+Cell[5068, 206, 45, 1, 16, "Tutorials",
  CellID->341631938]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4185, 181, 83, 1, 30, "RelatedDemonstrationsSection",
+Cell[5150, 212, 83, 1, 30, "RelatedDemonstrationsSection",
  CellID->1268215905],
-Cell[4271, 184, 58, 1, 16, "RelatedDemonstrations",
+Cell[5236, 215, 58, 1, 16, "RelatedDemonstrations",
  CellID->1129518860]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4366, 190, 65, 1, 30, "RelatedLinksSection",
+Cell[5331, 221, 65, 1, 30, "RelatedLinksSection",
  CellID->1584193535],
-Cell[4434, 193, 49, 1, 16, "RelatedLinks",
+Cell[5399, 224, 49, 1, 16, "RelatedLinks",
  CellID->1038487239]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4520, 199, 55, 1, 30, "SeeAlsoSection",
+Cell[5485, 230, 55, 1, 30, "SeeAlsoSection",
  CellID->1255426704],
-Cell[4578, 202, 43, 1, 16, "SeeAlso",
+Cell[5543, 233, 43, 1, 16, "SeeAlso",
  CellID->929782353]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4658, 208, 57, 1, 30, "MoreAboutSection",
+Cell[5623, 239, 57, 1, 30, "MoreAboutSection",
  CellID->38303248],
-Cell[4718, 211, 46, 1, 16, "MoreAbout",
+Cell[5683, 242, 46, 1, 16, "MoreAbout",
  CellID->1665078683]
 }, Open  ]],
-Cell[4779, 215, 356, 11, 68, "PrimaryExamplesSection",
+Cell[5744, 246, 356, 11, 67, "PrimaryExamplesSection",
  CellID->880084151],
 Cell[CellGroupData[{
-Cell[5160, 230, 100, 2, 53, "ExtendedExamplesSection",
+Cell[6125, 261, 100, 2, 53, "ExtendedExamplesSection",
  CellTags->"ExtendedExamples",
  CellID->1854448968],
-Cell[5263, 234, 125, 3, 30, "ExampleSection",
+Cell[6228, 265, 125, 3, 31, "ExampleSection",
  CellID->1293636265],
-Cell[5391, 239, 148, 3, 18, "ExampleSection",
+Cell[6356, 270, 148, 3, 19, "ExampleSection",
  CellID->1020263627],
 Cell[CellGroupData[{
-Cell[5564, 246, 106, 2, 18, "ExampleSection"],
-Cell[5673, 250, 114, 2, 70, "ExampleSubsection"]
+Cell[6529, 277, 106, 2, 19, "ExampleSection"],
+Cell[6638, 281, 114, 2, 70, "ExampleSubsection"],
+Cell[6755, 285, 150, 3, 70, "ExampleSubsection"]
 }, Closed]],
-Cell[5802, 255, 131, 3, 18, "ExampleSection",
+Cell[6920, 291, 131, 3, 19, "ExampleSection",
  CellID->258228157],
-Cell[5936, 260, 142, 3, 18, "ExampleSection",
+Cell[7054, 296, 142, 3, 19, "ExampleSection",
  CellID->2123667759],
-Cell[6081, 265, 135, 3, 18, "ExampleSection",
+Cell[7199, 301, 135, 3, 19, "ExampleSection",
  CellID->1305812373],
-Cell[6219, 270, 140, 3, 18, "ExampleSection",
+Cell[7337, 306, 140, 3, 19, "ExampleSection",
  CellID->1653164318],
-Cell[6362, 275, 132, 3, 18, "ExampleSection",
+Cell[7480, 311, 132, 3, 19, "ExampleSection",
  CellID->589267740]
 }, Open  ]]
 }

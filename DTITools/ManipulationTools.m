@@ -88,7 +88,7 @@ the data can be reconstructed using VectorToData.
 output is the vecotrized data and a list contining the original data dimensions and a list with the data coordinates. {vec, {dim,pos}}."
 
 TransData::usage = 
-"TransData[data,dir], dir is \"l\" or \"r\"."
+"TransData[data,dir] Rotates the dimesions of the data to left or rigthg. For example {z,x,y} -> {x,y,z} dir is \"l\" or \"r\"."
 
 VectorToData::usage = 
 "VectorToData[vec, {dim,pos}] converts the vectroized data, using Data2DToVector or Data3DToVector, back to its original Dimensoins"

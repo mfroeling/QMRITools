@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     13833,        484]
-NotebookOptionsPosition[     10376,        364]
-NotebookOutlinePosition[     10797,        380]
-CellTagsIndexPosition[     10754,        377]
+NotebookDataLength[     14561,        501]
+NotebookOptionsPosition[     11037,        379]
+NotebookOutlinePosition[     11458,        395]
+CellTagsIndexPosition[     11415,        392]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -113,11 +113,15 @@ Cell["DTITools", "GuideTitle",
 
 Cell["\<\
 DTItools package written by Martijn Froeling. 
-Contains various subpackages with functions for processing, evaluating, \
-importion, exporting and simulating of DWI and DTI data.\
+Contains various sub-packages with functions for processing, evaluating, \
+importing, exporting and simulating of DWI and DTI data.
+Furthermore it provides a range of functions to process Dixon and T2mapping \
+data, phase unwrapping etc.
+If additional features are required please contact me on m.froeling@gmail.com\
 \>", "GuideAbstract",
  CellChangeTimes->{{3.6574513393136415`*^9, 3.65745137230594*^9}, {
-  3.6574524058712864`*^9, 3.657452407166416*^9}},
+  3.6574524058712864`*^9, 3.657452407166416*^9}, {3.70168489450506*^9, 
+  3.7016849004774017`*^9}, {3.701684954980519*^9, 3.701685044253625*^9}},
  CellID->2001916300]
 }, Open  ]],
 
@@ -134,9 +138,20 @@ Cell[TextData[{
  " \[LongDash] Set of functions specific for cardiac DWI data."
 }], "GuideText",
  CellChangeTimes->{{3.65745142881359*^9, 3.6574514856862774`*^9}, {
-  3.6574515389986076`*^9, 3.657451539085616*^9}, {3.667644892404619*^9, 
-  3.6676449770310807`*^9}, {3.6676450102414017`*^9, 3.667645047818159*^9}},
+   3.6574515389986076`*^9, 3.657451539085616*^9}, {3.667644892404619*^9, 
+   3.6676449770310807`*^9}, {3.6676450102414017`*^9, 3.667645047818159*^9}, 
+   3.701684862593235*^9, 3.7016850607345676`*^9},
  CellID->203374175],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["DixonTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/guide/DixonTools"]], "InlineGuideFunction"],
+ " \[LongDash] Functions for Dixon reconstruction and analysis."
+}], "GuideText",
+ CellChangeTimes->{{3.7016850813617477`*^9, 3.7016851153356905`*^9}},
+ CellID->5739245],
 
 Cell[TextData[{
  Cell[BoxData[
@@ -423,68 +438,70 @@ Cell[2078, 103, 67, 2, 70, "Details",
 Cell[CellGroupData[{
 Cell[2182, 110, 50, 1, 76, "GuideTitle",
  CellID->942062912],
-Cell[2235, 113, 349, 7, 63, "GuideAbstract",
+Cell[2235, 113, 630, 11, 123, "GuideAbstract",
  CellID->2001916300]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[2621, 125, 54, 1, 68, "GuideFunctionsSection",
+Cell[2902, 129, 54, 1, 68, "GuideFunctionsSection",
  CellID->1866139230],
-Cell[2678, 128, 477, 10, 21, "GuideText",
+Cell[2959, 132, 529, 11, 21, "GuideText",
  CellID->203374175],
-Cell[3158, 140, 345, 9, 21, "GuideText",
+Cell[3491, 145, 325, 8, 21, "GuideText",
+ CellID->5739245],
+Cell[3819, 155, 345, 9, 21, "GuideText",
  CellID->84822095],
-Cell[3506, 151, 476, 14, 21, "GuideText",
+Cell[4167, 166, 476, 14, 21, "GuideText",
  CellID->1463276848],
-Cell[3985, 167, 436, 10, 21, "GuideText",
+Cell[4646, 182, 436, 10, 21, "GuideText",
  CellID->780477387],
-Cell[4424, 179, 384, 9, 21, "GuideText",
+Cell[5085, 194, 384, 9, 21, "GuideText",
  CellID->121734127],
-Cell[4811, 190, 436, 10, 35, "GuideText",
+Cell[5472, 205, 436, 10, 35, "GuideText",
  CellID->597497],
-Cell[5250, 202, 385, 9, 21, "GuideText",
+Cell[5911, 217, 385, 9, 21, "GuideText",
  CellID->77234574],
-Cell[5638, 213, 428, 10, 21, "GuideText",
+Cell[6299, 228, 428, 10, 21, "GuideText",
  CellID->36533971],
-Cell[6069, 225, 489, 12, 35, "GuideText",
+Cell[6730, 240, 489, 12, 35, "GuideText",
  CellID->29879692],
-Cell[6561, 239, 403, 9, 21, "GuideText",
+Cell[7222, 254, 403, 9, 21, "GuideText",
  CellID->338102893],
-Cell[6967, 250, 466, 10, 21, "GuideText",
+Cell[7628, 265, 466, 10, 21, "GuideText",
  CellID->360732873],
-Cell[7436, 262, 462, 11, 21, "GuideText",
+Cell[8097, 277, 462, 11, 21, "GuideText",
  CellID->9171446],
-Cell[7901, 275, 521, 11, 21, "GuideText",
+Cell[8562, 290, 521, 11, 21, "GuideText",
  CellID->306333588],
-Cell[8425, 288, 482, 12, 35, "GuideText",
+Cell[9086, 303, 482, 12, 35, "GuideText",
  CellID->213895237],
-Cell[8910, 302, 440, 11, 35, "GuideText",
+Cell[9571, 317, 440, 11, 35, "GuideText",
  CellID->658218843],
-Cell[9353, 315, 366, 10, 21, "GuideText",
+Cell[10014, 330, 366, 10, 21, "GuideText",
  CellID->574695207],
 Cell[CellGroupData[{
-Cell[9744, 329, 48, 1, 26, "GuideDelimiter",
+Cell[10405, 344, 48, 1, 26, "GuideDelimiter",
  CellID->311258892],
-Cell[9795, 332, 71, 1, 23, "InlineGuideFunctionListing",
+Cell[10456, 347, 71, 1, 23, "InlineGuideFunctionListing",
  CellID->58033752]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[9915, 339, 62, 1, 70, "GuideTutorialsSection",
+Cell[10576, 354, 62, 1, 70, "GuideTutorialsSection",
  CellID->415694126],
-Cell[9980, 342, 49, 1, 20, "GuideTutorial",
+Cell[10641, 357, 49, 1, 20, "GuideTutorial",
  CellID->806871991],
-Cell[10032, 345, 50, 1, 20, "GuideTutorial",
+Cell[10693, 360, 50, 1, 20, "GuideTutorial",
  CellID->1885805579]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[10119, 351, 62, 1, 70, "GuideMoreAboutSection",
+Cell[10780, 366, 62, 1, 70, "GuideMoreAboutSection",
  CellID->23220180],
-Cell[10184, 354, 51, 1, 20, "GuideMoreAbout",
+Cell[10845, 369, 51, 1, 20, "GuideMoreAbout",
  CellID->1567025153],
-Cell[10238, 357, 50, 1, 20, "GuideMoreAbout",
+Cell[10899, 372, 50, 1, 20, "GuideMoreAbout",
  CellID->252299663]
 }, Open  ]],
-Cell[10303, 361, 69, 1, 70, "GuideRelatedLinksSection",
+Cell[10964, 376, 69, 1, 70, "GuideRelatedLinksSection",
  CellID->415694148]
 }
 ]

@@ -3,17 +3,17 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 10.4' *)
+(* CreatedBy='Mathematica 11.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     12823,        611]
-NotebookOptionsPosition[      8867,        473]
-NotebookOutlinePosition[      9482,        497]
-CellTagsIndexPosition[      9404,        492]
+NotebookDataLength[     14468,        526]
+NotebookOptionsPosition[     10454,        387]
+NotebookOutlinePosition[     11074,        411]
+CellTagsIndexPosition[     10995,        406]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -45,15 +45,15 @@ Cell["Symbol", "Categorization",
 
 Cell["DTITools Package", "Categorization",
  CellLabel->"Paclet Name",
- CellID->282973639],
+ CellID->129950808],
 
 Cell["DTITools`CardiacTools`", "Categorization",
  CellLabel->"Context",
- CellID->33102057],
+ CellID->158997573],
 
 Cell["DTITools/ref/HelixAngleCalc", "Categorization",
  CellLabel->"URI",
- CellID->199606334]
+ CellID->295895928]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -136,202 +136,94 @@ Cell["HelixAngleCalc", "ObjectName",
 
 Cell[TextData[{
  Cell["   ", "ModInfo"],
- "HelixAngleCalc[eigenvectors, mask, centerpoint, vec, inout, vox]",
+ Cell[BoxData[
+  RowBox[{"HelixAngleCalc", "[", 
+   RowBox[{
+    StyleBox["eigenvectors", "TI"], ",", " ", 
+    StyleBox["mask", "TI"], ",", " ", 
+    StyleBox["vox", "TI"]}], "]"}]], "InlineFormula"],
  "\[LineSeparator]calculates the helix angle matrix of cardiac data using \
 only a left ventricle mask. \n",
  Cell["   ", "ModInfo"],
- "HelixAngleCalc[eigenvectors, mask, maskp, centerpoint, vec, inout, vox]",
+ Cell[BoxData[
+  RowBox[{"HelixAngleCalc", "[", 
+   RowBox[{
+    StyleBox["eigenvectors", "TI"], ",", " ", 
+    StyleBox["mask", "TI"], ",", " ", 
+    StyleBox["vox", "TI"]}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]calculates the helix angle matrix of cardiac data using \
+only a left ventricle mask, and a maskp for visualization. \n",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"HelixAngleCalc", "[", 
+   RowBox[{
+    StyleBox["eigenvectors", "TI"], ",", " ", 
+    StyleBox["mask", "TI"], ",", " ", 
+    StyleBox["centerpoint", "TI"], ",", " ", 
+    StyleBox["vec", "TI"], ",", " ", 
+    StyleBox["inout", "TI"], ",", " ", 
+    StyleBox["vox", "TI"]}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]calculates the helix angle matrix of cardiac data using \
+only a left ventricle mask. \n",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"HelixAngleCalc", "[", 
+   RowBox[{
+    StyleBox["eigenvectors", "TI"], ",", " ", 
+    StyleBox["mask", "TI"], ",", " ", 
+    StyleBox["maskp", "TI"], ",", " ", 
+    StyleBox["centerpoint", "TI"], ",", " ", 
+    StyleBox["vec", "TI"], ",", " ", 
+    StyleBox["inout", "TI"], ",", " ", 
+    StyleBox["vox", "TI"]}], "]"}]], "InlineFormula"],
  "\[LineSeparator]calculates the helix angle matrix of cardiac data using a \
-left vantricle mask and a mas for visualization. eigenvectors are the tensor \
-eigenvectors calculated with ",
+left vantricle mask and a maskp for visualization. eigenvectors are the \
+tensor eigenvectors calculated with ",
  Cell[BoxData[
   ButtonBox["EigenvecCalc",
    BaseStyle->"Link",
    ButtonData->"paclet:DTITools/ref/EigenvecCalc"]], "InlineFormula"],
- ".",
- " ",
- "mask",
- " ",
- "is",
- " ",
- "a",
- " ",
- "mask",
- " ",
- "of",
- " ",
- "the",
- " ",
- "left",
- " ",
- "ventricle",
- ".",
- " ",
- "maskp",
- " ",
- "is",
- " ",
- "a",
- " ",
- "mask",
- " ",
- "used",
- " ",
- "for",
- " ",
- "visualization",
- ".",
- " ",
- "off",
- " ",
- "is",
- " ",
- "the",
- " ",
- "center",
- " ",
- "of",
- " ",
- "each",
- " ",
- "slice",
- " ",
- "calculated",
- " ",
- "with",
- " ",
+ ". mask is a mask of the left ventricle. maskp is a mask used for \
+visualization. vox is the voxels size, {slice, x, y}. The folowing values are \
+calculated automaticlay Using ",
  Cell[BoxData[
   ButtonBox["CentralAxes",
    BaseStyle->"Link",
    ButtonData->"paclet:DTITools/ref/CentralAxes"]], "InlineFormula"],
- ".",
- " ",
- "inout",
- " ",
- "is",
- " ",
- "the",
- " ",
- "inner",
- " ",
- "and",
- " ",
- "outer",
- " ",
- "radius",
- " ",
- "calcualted",
- " ",
- "with",
- " ",
+ " but can also be provided as an input. centerpoint is the center of each \
+slice calculated with ",
  Cell[BoxData[
   ButtonBox["CentralAxes",
    BaseStyle->"Link",
    ButtonData->"paclet:DTITools/ref/CentralAxes"]], "InlineFormula"],
- ".",
- " ",
- "vec",
- " ",
- "is",
- " ",
- "the",
- " ",
- "vector",
- " ",
- "describin",
- " ",
- "the",
- " ",
- "central",
- " ",
- "axes",
- " ",
- "of",
- " ",
- "the",
- " ",
- "heart",
- ",",
- " ",
- "calculated",
- " ",
- "with",
- " ",
+ ". inout is the inner and outer radius calcualted with ",
  Cell[BoxData[
   ButtonBox["CentralAxes",
    BaseStyle->"Link",
    ButtonData->"paclet:DTITools/ref/CentralAxes"]], "InlineFormula"],
- ".",
- " ",
- "vox",
- " ",
- "is",
- " ",
- "the",
- " ",
- "voxels",
- " ",
- "size",
- ",",
- " ",
- "{slice",
- ",",
- " ",
- "x",
- ",",
- " ",
- "y}",
- ".",
- " ",
- "output",
- " ",
- "is",
- " ",
- "het",
- " ",
- "fiber",
- " ",
- "angle",
- " ",
- "matrix",
- " ",
- "FAM",
- " ",
- "=",
- " ",
- "{9",
- ",",
- " ",
- "slice",
- ",",
- " ",
- "x",
- ",",
- " ",
- "y}",
- " ",
- "or",
- " ",
- "{FAM",
- ",",
- " ",
- "plot}",
- "."
-}], "Usage"],
+ ". vec is the vector describin the central axes of the heart, calculated \
+with ",
+ Cell[BoxData[
+  ButtonBox["CentralAxes",
+   BaseStyle->"Link",
+   ButtonData->"paclet:DTITools/ref/CentralAxes"]], "InlineFormula"],
+ ". Output is het fiber angle matrix FAM = {9, slice, x, y} or {FAM, plot}."
+}], "Usage",
+ CellChangeTimes->{{3.7017607493221626`*^9, 3.7017607578836517`*^9}}],
 
 Cell["The following options can be given: ", "Notes"],
 
 Cell[BoxData[GridBox[{
    {Cell["   ", "ModInfo"], 
-    ButtonBox["ShowPlot",
+    ButtonBox["ShowHelixPlot",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/ShowPlot"], 
+     ButtonData->"paclet:DTITools/ref/ShowHelixPlot"], 
     ButtonBox["True",
      BaseStyle->"Link"], Cell[TextData[{
      Cell[BoxData[
-      ButtonBox["ShowPlot",
+      ButtonBox["ShowHelixPlot",
        BaseStyle->"Link",
-       ButtonData->"paclet:DTITools/ref/ShowPlot"]], "InlineFormula"],
+       ButtonData->"paclet:DTITools/ref/ShowHelixPlot"]], "InlineFormula"],
      " is an option for ",
      Cell[BoxData["HelixAngleCalc"], "InlineFormula"],
      ". ",
@@ -352,6 +244,24 @@ coordinate system."
      ". Can be \"Slow\" or \"Fast\". \n\"Slow\" uses wall distance \
 interpolation and can take long for high res datasets.\n\"Fast\" uses wall \
 distance calculation using circular approximation of the ventricle."
+    }], "TableText"]},
+   {Cell["   ", "ModInfo"], 
+    ButtonBox["AxesMethod",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/AxesMethod"], "Quadratic", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["AxesMethod",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/AxesMethod"]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["HelixAngleCalc"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      ButtonBox["CentralAxes",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/CentralAxes"]], "InlineFormula"],
+     ". Can be \"Linear\", \"Quadratic\", \"Cubic\"."
     }], "TableText"]}
   }]], "3ColumnTableMod"]
 }, Open  ]],
@@ -437,11 +347,15 @@ Cell[BoxData[
   $Line = 0; Null]], "ExampleSection"],
 
 Cell[BoxData[
- InterpretationBox[Cell["ShowPlot", "ExampleSubsection"],
+ InterpretationBox[Cell["ShowHelixPlot", "ExampleSubsection"],
   $Line = 0; Null]], "ExampleSubsection"],
 
 Cell[BoxData[
  InterpretationBox[Cell["HelixMethod", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell["AxesMethod", "ExampleSubsection"],
   $Line = 0; Null]], "ExampleSubsection"]
 }, Closed]],
 
@@ -474,7 +388,7 @@ Cell[BoxData[
 WindowSize->{700, 770},
 WindowMargins->{{4, Automatic}, {Automatic, 0}},
 CellContext->"Global`",
-FrontEndVersion->"10.4 for Microsoft Windows (64-bit) (April 11, 2016)",
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
@@ -484,14 +398,14 @@ StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb",
 (*CellTagsOutline
 CellTagsIndex->{
  "ExtendedExamples"->{
-  Cell[7399, 418, 100, 2, 53, "ExtendedExamplesSection",
+  Cell[8863, 328, 100, 2, 53, "ExtendedExamplesSection",
    CellTags->"ExtendedExamples",
    CellID->1854448968]}
  }
 *)
 (*CellTagsIndex
 CellTagsIndex->{
- {"ExtendedExamples", 9266, 485}
+ {"ExtendedExamples", 10857, 399}
  }
 *)
 (*NotebookFileOutline
@@ -504,113 +418,114 @@ Cell[907, 38, 68, 1, 27, "CategorizationSection",
 Cell[978, 41, 79, 2, 31, "Categorization",
  CellID->686433507],
 Cell[1060, 45, 89, 2, 31, "Categorization",
- CellID->282973639],
-Cell[1152, 49, 90, 2, 31, "Categorization",
- CellID->33102057],
-Cell[1245, 53, 92, 2, 31, "Categorization",
- CellID->199606334]
+ CellID->129950808],
+Cell[1152, 49, 91, 2, 31, "Categorization",
+ CellID->158997573],
+Cell[1246, 53, 92, 2, 31, "Categorization",
+ CellID->295895928]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[1374, 60, 55, 1, 17, "KeywordsSection",
+Cell[1375, 60, 55, 1, 17, "KeywordsSection",
  CellID->477174294],
-Cell[1432, 63, 45, 1, 70, "Keywords",
+Cell[1433, 63, 45, 1, 70, "Keywords",
  CellID->1164421360]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[1514, 69, 65, 1, 17, "TemplatesSection",
+Cell[1515, 69, 65, 1, 17, "TemplatesSection",
  CellID->1872225408],
-Cell[1582, 72, 94, 2, 70, "Template",
+Cell[1583, 72, 94, 2, 70, "Template",
  CellID->1562036412],
-Cell[1679, 76, 82, 2, 70, "Template",
+Cell[1680, 76, 82, 2, 70, "Template",
  CellID->158391909],
-Cell[1764, 80, 81, 2, 70, "Template",
+Cell[1765, 80, 81, 2, 70, "Template",
  CellID->1360575930],
-Cell[1848, 84, 82, 2, 70, "Template",
+Cell[1849, 84, 82, 2, 70, "Template",
  CellID->793782254]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[1967, 91, 53, 1, 17, "DetailsSection",
+Cell[1968, 91, 53, 1, 17, "DetailsSection",
  CellID->307771771],
-Cell[2023, 94, 63, 2, 70, "Details",
+Cell[2024, 94, 63, 2, 70, "Details",
  CellID->670882175],
-Cell[2089, 98, 69, 2, 70, "Details",
+Cell[2090, 98, 69, 2, 70, "Details",
  CellID->350963985],
-Cell[2161, 102, 64, 2, 70, "Details",
+Cell[2162, 102, 64, 2, 70, "Details",
  CellID->8391405],
-Cell[2228, 106, 69, 2, 70, "Details",
+Cell[2229, 106, 69, 2, 70, "Details",
  CellID->3610269],
-Cell[2300, 110, 61, 2, 70, "Details",
+Cell[2301, 110, 61, 2, 70, "Details",
  CellID->401364205],
-Cell[2364, 114, 61, 2, 70, "Details",
+Cell[2365, 114, 61, 2, 70, "Details",
  CellID->350204745],
-Cell[2428, 118, 63, 2, 70, "Details",
+Cell[2429, 118, 63, 2, 70, "Details",
  CellID->732958810],
-Cell[2494, 122, 78, 2, 70, "Details",
+Cell[2495, 122, 78, 2, 70, "Details",
  CellID->222905350],
-Cell[2575, 126, 67, 2, 70, "Details",
+Cell[2576, 126, 67, 2, 70, "Details",
  CellID->240026365]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[2679, 133, 57, 1, 62, "ObjectName",
+Cell[2680, 133, 57, 1, 62, "ObjectName",
  CellID->1224892054],
-Cell[2739, 136, 2214, 183, 193, "Usage"],
-Cell[4956, 321, 53, 0, 23, "Notes"],
-Cell[5012, 323, 1233, 32, 150, "3ColumnTableMod"]
+Cell[2740, 136, 3019, 75, 288, "Usage"],
+Cell[5762, 213, 53, 0, 23, "Notes"],
+Cell[5818, 215, 1891, 50, 214, "3ColumnTableMod"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6282, 360, 57, 1, 43, "TutorialsSection",
+Cell[7746, 270, 57, 1, 43, "TutorialsSection",
  CellID->250839057],
-Cell[6342, 363, 45, 1, 16, "Tutorials",
+Cell[7806, 273, 45, 1, 16, "Tutorials",
  CellID->341631938]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6424, 369, 83, 1, 30, "RelatedDemonstrationsSection",
+Cell[7888, 279, 83, 1, 30, "RelatedDemonstrationsSection",
  CellID->1268215905],
-Cell[6510, 372, 58, 1, 16, "RelatedDemonstrations",
+Cell[7974, 282, 58, 1, 16, "RelatedDemonstrations",
  CellID->1129518860]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6605, 378, 65, 1, 30, "RelatedLinksSection",
+Cell[8069, 288, 65, 1, 30, "RelatedLinksSection",
  CellID->1584193535],
-Cell[6673, 381, 49, 1, 16, "RelatedLinks",
+Cell[8137, 291, 49, 1, 16, "RelatedLinks",
  CellID->1038487239]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6759, 387, 55, 1, 30, "SeeAlsoSection",
+Cell[8223, 297, 55, 1, 30, "SeeAlsoSection",
  CellID->1255426704],
-Cell[6817, 390, 43, 1, 16, "SeeAlso",
+Cell[8281, 300, 43, 1, 16, "SeeAlso",
  CellID->929782353]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6897, 396, 57, 1, 30, "MoreAboutSection",
+Cell[8361, 306, 57, 1, 30, "MoreAboutSection",
  CellID->38303248],
-Cell[6957, 399, 46, 1, 16, "MoreAbout",
+Cell[8421, 309, 46, 1, 16, "MoreAbout",
  CellID->1665078683]
 }, Open  ]],
-Cell[7018, 403, 356, 11, 68, "PrimaryExamplesSection",
+Cell[8482, 313, 356, 11, 67, "PrimaryExamplesSection",
  CellID->880084151],
 Cell[CellGroupData[{
-Cell[7399, 418, 100, 2, 53, "ExtendedExamplesSection",
+Cell[8863, 328, 100, 2, 53, "ExtendedExamplesSection",
  CellTags->"ExtendedExamples",
  CellID->1854448968],
-Cell[7502, 422, 125, 3, 30, "ExampleSection",
+Cell[8966, 332, 125, 3, 31, "ExampleSection",
  CellID->1293636265],
-Cell[7630, 427, 148, 3, 18, "ExampleSection",
+Cell[9094, 337, 148, 3, 19, "ExampleSection",
  CellID->1020263627],
 Cell[CellGroupData[{
-Cell[7803, 434, 106, 2, 18, "ExampleSection"],
-Cell[7912, 438, 113, 2, 70, "ExampleSubsection"],
-Cell[8028, 442, 116, 2, 70, "ExampleSubsection"]
+Cell[9267, 344, 106, 2, 19, "ExampleSection"],
+Cell[9376, 348, 118, 2, 70, "ExampleSubsection"],
+Cell[9497, 352, 116, 2, 70, "ExampleSubsection"],
+Cell[9616, 356, 115, 2, 70, "ExampleSubsection"]
 }, Closed]],
-Cell[8159, 447, 131, 3, 18, "ExampleSection",
+Cell[9746, 361, 131, 3, 19, "ExampleSection",
  CellID->258228157],
-Cell[8293, 452, 142, 3, 18, "ExampleSection",
+Cell[9880, 366, 142, 3, 19, "ExampleSection",
  CellID->2123667759],
-Cell[8438, 457, 135, 3, 18, "ExampleSection",
+Cell[10025, 371, 135, 3, 19, "ExampleSection",
  CellID->1305812373],
-Cell[8576, 462, 140, 3, 18, "ExampleSection",
+Cell[10163, 376, 140, 3, 19, "ExampleSection",
  CellID->1653164318],
-Cell[8719, 467, 132, 3, 18, "ExampleSection",
+Cell[10306, 381, 132, 3, 19, "ExampleSection",
  CellID->589267740]
 }, Open  ]]
 }

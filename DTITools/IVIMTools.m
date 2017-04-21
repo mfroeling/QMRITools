@@ -1137,17 +1137,10 @@ SyntaxInformation[NNLeastSquares] = {"ArgumentsPattern" -> {_, _}};
 (*Main function*)
 NNLeastSquares[A_, f_] := With[{
     toIndicesZ = Compile[{{v, _Real, 1}}, Flatten[Position[v, 1.]]],
-    toIndicesP = 
-     Compile[{{v, _Real, 1}}, Flatten[Position[1 - v, 1.]]],
-    wCalc = 
-     Compile[{{AA, _Real, 2}, {ff, _Real, 1}, {x, _Real, 1}}, 
-      Transpose[AA].(ff - AA.x)],
-    zCalc = 
-     Compile[{{R, _Real, 2}, {Q, _Real, 2}, {ff, _Real, 1}}, 
-      Inverse[R].Q.ff],
-    xCalc = 
-     Compile[{{x, _Real, 1}, {z, _Real, 1}, {posSet, _Integer, 1}},
-      Block[{negz, alpha},
+    toIndicesP = Compile[{{v, _Real, 1}}, Flatten[Position[1 - v, 1.]]],
+    wCalc = Compile[{{AA, _Real, 2}, {ff, _Real, 1}, {x, _Real, 1}}, Transpose[AA].(ff - AA.x)],
+    zCalc = Compile[{{R, _Real, 2}, {Q, _Real, 2}, {ff, _Real, 1}}, Inverse[R].Q.ff],
+    xCalc = Compile[{{x, _Real, 1}, {z, _Real, 1}, {posSet, _Integer, 1}}, Block[{negz, alpha},
        negz = Select[posSet, z[[#]] < 0. &];
        alpha = Min[x[[negz]]/(x[[negz]] - z[[negz]])];
        N@Chop[x + alpha (z - x), 10.^-10]]]

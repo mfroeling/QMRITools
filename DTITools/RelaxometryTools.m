@@ -29,34 +29,57 @@ ClearAll @@ Names["DTITools`RelaxometryTools`*"];
 
 
 T1rhoFit::usage = 
-"T1rhoFit[data, EchoTimes]"
+"T1rhoFit[data, EchoTimes] fits the T1rho value to the data using linear or nonlinear methdos.
+
+Output is {S(0), T1rhomap}."
 
 T2Fit::usage = 
-"T2Fit[data, EchoTimes]"
+"T2Fit[data, EchoTimes] fits the T1rho value to the data using linear or nonlinear methdos.
+
+Output is {S(0), T2}."
 
 TriExponentialT2Fit::usage = 
-"TriExponentialT2Fit[data, EchoTimes] fits the T2 based on Azzabou N et.al. Validation of a generic approach to muscle water 
-T2 determination at 3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015."
+"TriExponentialT2Fit[data, EchoTimes] fits the T2 based on Azzabou N et.al. Validation of a generic approach to muscle water T2 determination at 3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015.
+
+The fat T2 parameters are automatically estimated from the high signal voxels from the last echo.
+
+Output is {{S(0), fatFraction, muscleFraction, T2map},callibration} or {S(0), fatFraction, muscleFranction, T2map}."
 
 EPGSignal::usage = 
-"EPGSignal[Necho, echoSpace, T1, T2, angle, B1] generates a EPG T2 curve with stimulated echos. T1, T2 and echoSpace are in ms, angel is in degree, B1 is between 0 and 1."
+"EPGSignal[Necho, echoSpace, T1, T2, angle, B1] generates a EPG T2 curve with stimulated echos. 
+T1, T2 and echoSpace are in ms, angel is in degree, B1 is between 0 and 1.
+
+Output is the EPG Signal vector."
 
 EPGT2Fit::usage = 
-"EPGT2Fit[data, EchoTimes, angle, relax] fits the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction mapping using transverse relaxometry with stimulated echo compensation.
-angle is the refocussing angle in degree."
+"EPGT2Fit[data, EchoTimes, angle] fits the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction mapping using transverse relaxometry with stimulated echo compensation.
+
+angle is the refocussing angle in degree.
+
+Output is {{{T2map,B1Map},{wat, fat, fatMap}},callibration} or {{T2map,B1Map},{wat, fat, fatMap}}"
 
 CreateT2Dictionary::usage = 
-"CreateT2Dictionary[{T1m, T1f, T2f}, {Necho, echoSpace, angle}] Creates a EPG signal dictionary used for EPGT2fit."
+"CreateT2Dictionary[{T1m, T1f, T2f}, {Necho, echoSpace, angle}] Creates a EPG signal dictionary used for EPGT2fit.
+Every dictionary that is defined is cached.
+
+Output is {dictionary, vals}"
 
 DictionaryMinSearch::usage = 
-"DictionaryMinSearch[dictionary, y] performs dictionary minimization of data y. dictionary is generated with CreateT2Dictionary."
+"DictionaryMinSearch[dictionary, y] performs dictionary minimization of data y. dictionary is generated with CreateT2Dictionary.
+
+Output is {{T2, B1}, fwfraction, residualError}."
 
 NonLinearEPGFit::usage = 
-"NonLinearEPGFit[{vals, T2cons}, y] performs dictionary minimization of data y. vals = {{T1muscle, T1fat, T2fat}, {Necho, echoSpace, angle}}."
+"NonLinearEPGFit[{vals, T2cons}, y] performs dictionary minimization of data y. 
+
+vals = {{T1muscle, T1fat, T2fat}, {Necho, echoSpace, angle}}.
+
+Output is {{T2, B1}, fwfraction, residualError}."
 
 CalibrateEPGT2Fit::usage = 
-"CalibrateEPGT2Fit[datan, times, angle] calculates the Fat T2 ralaxation that will be used in the EPGT2fit."
+"CalibrateEPGT2Fit[datan, times, angle] calculates the Fat T2 ralaxation that will be used in the EPGT2fit.
 
+Outputs the fat T2 value."
 
 
 (* ::Subsection:: *)
@@ -82,7 +105,7 @@ EPGCalibrate::usage =
 "EPGCalibrate is an option for EPGT2Fit. If set to True it does autmatic callibration of the T2 fat relaxation time."
 
 OutputCalibration::usage = 
-"OuputCalibration is an option for EPGT2Fit and TriExponentialT2Fit. If true it outputs the calibartion values."
+"OutputCalibration is an option for EPGT2Fit and TriExponentialT2Fit. If true it outputs the calibartion values."
 
 
 (* ::Subsection:: *)
