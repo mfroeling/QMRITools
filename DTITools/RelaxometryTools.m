@@ -560,7 +560,7 @@ CalibrateEPGT2Fit[datan_, times_, angle_, OptionsPattern[]] :=
 (*CreateT2Dictionary*)
 
 
-Options[CreateT2Dictionary] = {DictT2Range -> {20., 80., 0.3}, DictB1Range -> {0.4, 1., 0.02}};
+Options[CreateT2Dictionary] = {DictT2Range -> {20., 80., 0.3}, DictB1Range -> {0.4, 1.1, 0.02}};
 
 SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 

@@ -13,6 +13,7 @@ It contains the following toolboxes:
 
 - CardiacTools
 - DenoiseTools
+- DixonTools
 - ElastixTools
 - ExportTools
 - GeneralTools
@@ -26,11 +27,12 @@ It contains the following toolboxes:
 - PlottingTools
 - ProcessingTools
 - SimulationTools
+- RelaxometryTools
 - TransformationTools
 
 A list off all functions and their help can be found int All-Functions.nb. Documentation of all functions and their options is fully integrated in the Mathematica documentation.
 
-All code and documentation is maintained and uploaded to github using [Workbench 2.0](https://www.wolfram.com/products/workbench/).
+All code and documentation is maintained and uploaded to github using [Workbench](https://www.wolfram.com/workbench/).
 
 ## Install toolbox
 
@@ -45,8 +47,8 @@ For the latest version of these tools and their user licences please visit their
 
 * [MRIcron](https://www.nitrc.org/projects/mricron/)
 	* mricron.exe
-* [dcm2nii](https://www.nitrc.org/projects/dcm2nii/)
-	* dcm2nii.exe
+* [dcm2niix](https://github.com/rordenlab/dcm2niix/)
+	* dcm2niix.exe
 	* dcm2nii.ini (included in DTITools)
 * [Elastix](http://elastix.isi.uu.nl/)
 	* elastix.exe

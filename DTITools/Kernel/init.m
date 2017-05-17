@@ -22,9 +22,9 @@ ClearFunctions[pack_,subpack_,print_:False]:=Module[{packageName,packageSymbols,
 		]& /@ subpack;
 ];
 
-UpdateWarning[]:=If[$VersionNumber != 11.,
+UpdateWarning[]:=If[$VersionNumber != 11.1,
  CreateDialog[Column[{Style["
-      Current Mathematica version is 11.0
+      Current Mathematica version is 11.1
       You need to update!
       Some functions wont work in older versions
       ", TextAlignment -> Center], DefaultButton[], ""}, 

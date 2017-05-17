@@ -78,6 +78,16 @@ RemoveMaskOverlaps::usage =
 SmoothSegmentation::usage =
 "SmoothSegmentation[masks] smooths segmentations and removes the overlaps between multiple masks." 
 
+SplitSegmentations::usage = 
+"SplitSegmentations[segmentation] splits a lable mask from ITKsnap or slicer3D in seperate masks and label numbers.
+
+Output is masks and label numbers."
+
+MergeSegmentations::usage = 
+"MergeSegmentations[masks,labels] generates an ITKsnap or slices3D compatible segmentation from individual masks and label numbers.
+
+Output is a labled segmentation."
+
 HomoginizeData::usage = 
 "HomoginizeData[data, mask] tries to homoginize the data within the mask by removing intensity gradients."
 
@@ -629,6 +639,28 @@ SmoothSegmentation[masks_, OptionsPattern[]] :=
 
 
 (* ::Subsection::Closed:: *)
+(*SplitSegmentations*)
+
+
+SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
+
+SplitSegmentations[masksI_] := Block[{vals, masks},
+  vals = Sort@DeleteDuplicates[Flatten[masksI]][[2 ;;]];
+  masks = Transpose[Mask[masksI, {# - .5, # + .5}] & /@ vals];
+  {masks, vals}
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*MergeSegmentations*)
+
+
+SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
+
+MergeSegmentations[masks_, vals_] := Total[vals Transpose@masks];
+
+
+(* ::Subsection::Closed:: *)
 (*NormalizeData functions*)
 
 
@@ -637,20 +669,22 @@ SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_.}};
 NormalizeData[data_] := NormalizeDatai[data, .75]
 NormalizeData[data_, quan_?NumberQ] := NormalizeDatai[data, Clip[quan, {0, 1}]]
 
-NormalizeDatai = Block[{mn},
-   Compile[{{data, _Real, 3}, {quant, _Real, 0}},
-    mn = Quantile[DeleteCases[Flatten[data], 0.], quant];
-    data/mn, {{mn, _Real, 0}}, RuntimeAttributes -> {Listable}, 
-    RuntimeOptions -> "Speed"]
-   ];
-
 NormalizeData[data_,minmax_] := ScaleData[data,minmax]
+
 
 ScaleData = 
   Compile[{{data, _Real, 0}, {range, _Real, 1}}, 
    (data - range[[1]])/(range[[2]] - range[[1]]), 
    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
+
+NormalizeDatai = Block[{mn},
+   Compile[{{data, _Real, 3}, {quant, _Real, 0}},
+    mn = Quantile[DeleteCases[Flatten[data], 0.], quant];
+    data/mn, {{mn, _Real, 0}}, RuntimeAttributes -> {Listable}, 
+    RuntimeOptions -> "Speed"]
+   ];
+   
 
 (* ::Subsection::Closed:: *)
 (*NormalizeDiffData*)

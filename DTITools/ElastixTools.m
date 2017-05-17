@@ -1324,41 +1324,41 @@ RegisterDataTransformSplit[target_, moving_, {moving2_, vox_}, opts : OptionsPat
 	(*split the target data*)
 	{targetl, targetr}=If[ArrayQ[target],
 		(*data*)
-		{targetl, targetr,cut1} = CutData[target];
+		{targetl, targetr, cut1} = CutData[target];
 		{targetl, targetr}
 		,
 		If[Length[target]==2 && ArrayQ[target[[1]]] && Length[target[[2]]]==3,
 			(*data and vox*)
-			{targetl, targetr,cut1} = CutData[target[[1]]];
-			{{targetl,target[[2]]},{targetr,target[[2]]}}
+			{targetl, targetr, cut1} = CutData[target[[1]]];
+			{{targetl, target[[2]]}, {targetr, target[[2]]}}
 			,
 			(*data, mask and vox*)
-			{targetl, targetr,cut1} = CutData[target[[1]]];
-			{masktl, masktr,cut1} = CutData[target[[2]],cut1];
-			{{targetl,masktl,target[[3]]},{targetr,masktr,target[[3]]}}
+			{targetl, targetr, cut1} = CutData[target[[1]]];
+			{masktl, masktr, cut1} = CutData[target[[2]],cut1];
+			{{targetl, masktl, target[[3]]}, {targetr, masktr, target[[3]]}}
 		]
 	];
 	
 	(*split the moving data*)
 	{movingl,movingr}=If[ArrayQ[moving],
 		(*data*)
-		{movingl, movingr,cut2} = CutData[moving];
+		{movingl, movingr, cut2} = CutData[moving];
 		{movingl, movingr}
 		,
 		If[Length[moving]==2 && ArrayQ[moving[[1]]] && Length[moving[[2]]]==3,
 			(*data and vox*)
-			{movingl, movingr,cut2} = CutData[moving[[1]]];
-			{{movingl,moving[[2]]},{movingr,moving[[2]]}}
+			{movingl, movingr, cut2} = CutData[moving[[1]]];
+			{{movingl, moving[[2]]}, {movingr, moving[[2]]}}
 			,
 			(*data, mask and vox*)
-			{movingl, movingr,cut2} = CutData[moving[[1]]];
-			{maskml, maskmr,cut2} = CutData[moving[[2]],cut2];
-			{{movingl,maskml,moving[[3]]},{movingr,maskmr,moving[[3]]}}
+			{movingl, movingr, cut2} = CutData[moving[[1]]];
+			{maskml, maskmr, cut2} = CutData[moving[[2]], cut2];
+			{{movingl, maskml, moving[[3]]}, {movingr, maskmr, moving[[3]]}}
 		]
 	];
 	
 	(*split the moving2 data*)
-	{moving2l, moving2r,cut2} = CutData[moving2];
+	{moving2l, moving2r, cut2} = CutData[moving2, cut2];
 	
 	(*register left part*)
 	regl = RegisterData[targetl, movingl, DeleteTempDirectory -> False, opts];

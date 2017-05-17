@@ -65,19 +65,10 @@ FitSigma::usage =
 "FitSigma is an option of PCAFitHist, PCAFitEq and PCADeNoise, if set True sig is fitted if set False sigma is fixed to input value."
 
 PCAFitParameters::usage = 
-"PCAFitParameters is an option of PCAFitHist. {nb, pi, maxit} = bins, initial signal components, maximum number of itterations."
+"PCAFitParameters is an option of PCADeNoise and PCAFitHist. {nb, pi, maxit} = bins, initial signal components, maximum number of itterations."
 
 PCAKernel::usage = 
 "PCAKernel is an option of PCADeNoise. It sets the kernel size."
-
-BinSize::usage = 
-"BinSize is an option of PCADeNoise. Sets the binsize."
-
-InitializationP::usage = 
-"InitializationP is an option of PCADeNoise. How many signal PCA components are initialized."
-
-MaxIterationsFit::usage = 
-"MaxIterationsFit is an option of PCADeNoise. How many itterations can be used."
 
 PCAOutput::usage = 
 "PCAOutput is an option of PCADeNoise. If output is full the output is {datao, {output[[1]], sigmat}, {output[[2]], output[[3]], j}, timetot}.
@@ -124,7 +115,7 @@ Begin["`Private`"]
 (*PCADeNoise*)
 
 
-Options[PCADeNoise] = {PCAKernel -> 5, BinSize -> 5, InitializationP -> 10, MaxIterationsFit -> 10, FitSigma -> True, PCAOutput -> Full, Method->"Histogram"};
+Options[PCADeNoise] = {PCAKernel -> 5, PCAFitParameters -> {10, 6, 10}, FitSigma -> False, PCAOutput -> Full, Method->"Equation"};
 
 SyntaxInformation[PCADeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -132,107 +123,91 @@ PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, opts];
 
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
-PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := 
- Block[{data, mask, sigm, ker, off, datao, weights, sigmat, dim, 
-   zdim, ydim, xdim, ddim, nb, pi, maxit, output,g,i,j,
-   time1, time, timetot, sigi, sigf, zm, zp, xm, xp, ym, yp, fitdata, filt,
-   sigo, Nes, datn, it},
+PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
+  {data, mask, sigm, ker, off, datao, weights, sigmat, dim, zdim, 
+   ydim, xdim, ddim, nb, pi, maxit, output, time1, time,
+   timetot, sigi, sigf, zm, zp, xm, xp, ym, yp, fitdata, filt, sigo, 
+   Nes, datn, it, m, n, fitsig, step,
+   start, sliceNr, maxIttN},
   
   (*make everything numerical to speed up*)
-  data = N@datai;
-  mask = N@maski;
-  sigm = N@sigmai;
+  data = ToPackedArray[N@datai];
+  mask = ToPackedArray[N@maski];
+  sigm = ToPackedArray[N@sigmai];
   
   (*get data dimensions*)
   dim = {zdim, ddim, ydim, xdim} = Dimensions[data];
   
   (*get options for fit*)
-  nb = OptionValue[BinSize];
+  {nb,pi,maxit} = OptionValue[PCAFitParameters];
   nb = If[NumberQ[nb], nb, 5];
-  pi = OptionValue[InitializationP];
   pi = If[NumberQ[pi], pi, 10];
-  maxit = OptionValue[MaxIterationsFit];
   maxit = If[NumberQ[maxit], maxit, 10];
   ker = OptionValue[PCAKernel];
+  ker = If[EvenQ[ker], ker - 1, ker];
+  fitsig = OptionValue[FitSigma];
   
   (*define runtime parameters*)
+  {m, n} = MinMax[{ddim, ker^3}];
   off = Round[(ker - 1)/2];
   datao = ConstantArray[0., dim];
   weights = sigmat = datao[[All, 1]];
- 
+  sigm = If[NumberQ[sigm], ConstantArray[sigm, {zdim, ydim, xdim}], sigm];
+  
   (*if mask is a number make it 1 for all voxels*)
   mask = If[NumberQ[mask], weights + 1, mask];
   
-  (*allow for progess and timing monitoring*)
-  time = AbsoluteTime[];
-  time1 = 0;
-  timetot = {};
-  
   (*parameters for monitor*)
-  g = off + 1;
-  i = j = 0;
-
-  Monitor[
-	 output = Table[
-	  	g = z;
-	    (*Check if masked voxel*)
-	    If[mask[[z, y, x]] == 0.,
-	     {0., 0., 0.}
-	     ,
-	     (*monitor time progress every 500 itterations*)
-	     i++;
-	     If[Mod[i, 500] == 0, 
-	     	time1 = AbsoluteTime[];
-	     	AppendTo[timetot, time1 - time];
-	     	time = time1;
-	      ];
-	     
-	     (*define initial sigma*)
-	     sigi = If[sigm === 0., sigm, If[NumberQ[sigm], sigm, sigm[[z, y, x]]]];
-	     (*get pixel range*)
-	     {{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
-	     (*get the data*)
-	     fitdata = Flatten[data[[zm ;; zp, All, ym ;; yp, xm ;; xp]], {1, 3, 4}];
-	     
-	     (*perform the fit and reconstruct the noise free data*)
-	     Switch[OptionValue[Method],
-	     	"Equation",
-	     	sigf=If[OptionValue[FitSigma],0.,sigi];
-	     	{sigo, Nes, datn} = PCAFitEq[fitdata, sigf];
-	     	it=1;,
-	     	_,
-	     	{sigo, Nes, datn, it} = PCAFitHist[fitdata, sigi, FitSigma -> OptionValue[FitSigma], PCAFitParameters->{nb, pi, maxit}];
-	     	(*check if max limit is hit*)
-	     	If[it == maxit, j++];
-	     ];
-	     
-	     (*collect the noise free data and weighting matrix*)
-	     filt = Transpose[Fold[Partition, datn, {ker, ker}], {1, 3, 4, 2}];
-	     datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += filt;
-	     sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += sigo;
-	     weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += 1.;
-	     
-	     (*output sig, Nest and itterations *)
-	     {sigo, Nes, i}
-	     ], {z, off + 1, zdim - off}, {y, off + 1, ydim - off}, {x, off + 1, xdim - off}];
-	    ,
-	    (*monitor*)
-	    Row[{ProgressIndicator[g, {off + 1, zdim - off}],"  ",Round[100. j/(i + 1), .1]}]
-  		];
-  Print["% of voxels with max itt:  ",Round[100. j/(i + 1), .1]];
+  sliceNr = start = off + 1;
+  Monitor[output = Table[
+      sliceNr = z;
+      (*Check if masked voxel*)
+      If[mask[[z, y, x]] == 0.,
+       {0., 0., 0.}
+       ,
+       (*define initial sigma*)
+       sigi = sigm[[z, y, x]];
+       (*get pixel range and data*)
+       {{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
+       fitdata = Flatten[data[[zm ;; zp, All, ym ;; yp, xm ;; xp]], {1, 3, 4}];
+       
+       (*perform the fit and reconstruct the noise free data*)
+       Switch[OptionValue[Method],
+        "Equation",
+        {sigo, Nes, datn} = PCAFitEq[fitdata, {m, n}, If[fitsig, 0., sigi]];
+        it = 1;
+        , _,
+        {sigo, Nes, datn, it} = PCAFitHist[fitdata, {m, n}, sigi, FitSigma -> fitsig, PCAFitParameters -> {nb, pi, maxit}];
+        ];
+       datn = 
+        Transpose[Fold[Partition, datn, {ker, ker}], {1, 3, 4, 2}];
+       
+       (*collect the noise free data and weighting matrix*)
+       datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += datn;
+       sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += sigo;
+       weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += 1.;
+       
+       (*output sig,Nest and itterations*)
+       {sigo, Nes, it}
+       ], {z, start, zdim - off}, {y, start, ydim - off}, {x, start, 
+       xdim - off}];
+   ,
+   (*monitor*)
+   ProgressIndicator[sliceNr, {start, zdim - off}]
+   ];
   
   (*correct output data for weightings*)
-  datao = Transpose[Clip[#/(weights + 10^-10), {0., 10^9}, {0., 0.}] & /@ Transpose[datao]];
-  sigmat = Clip[sigmat/(weights[[All]] + 10^-10), {0., 10^9}, {0., 0.}];
+  datao = Clip[Transpose[DevideNoZero[#, weights] & /@ Transpose[datao]],{0,1.1 Max[data]}];
+  sigmat = DevideNoZero[sigmat, weights];
   output = ArrayPad[#, off] & /@ TransData[output, "r"];
   
   (*define output*)
   If[OptionValue[PCAOutput] === Full,
-   (*fitted dta , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit time per 500 ittt*)
-   {datao, {output[[1]], sigmat}, {output[[2]], output[[3]], j}, timetot},
+   (*fitted dta,average sigma,{sigma fit,number components,
+   number of fitted voxesl,number of max fits}*)
+   {datao, sigmat, output},
    {datao, sigmat}
-   ]
-  ]
+   ]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -256,16 +231,17 @@ MarchenkoPasturCi=Compile[{{lab,_Real,0},{Q,_Real,0},{sig,_Real,0}},
 
 
 (*singular ValueDecomposition of matrix and eigenval normalisation*)
-SVD[mat_]:=Module[{m,n,u,w,v,eig},
-	(*no need for transpose, eig of mat and mat` are equal*)
-	(*determine dimension, make sure that m<n*)
-	{m,n}=MinMax[Dimensions[mat]];
-	(*perform singular value decomposition*)
-	{u,w,v}=SingularValueDecomposition[mat];
-	(*normalize eigenvalues from SVD*)
-	eig=Diagonal[w]^2/n;
-	{u,w,Transpose[v],eig,m,n}
-]
+(*determine dimension,make sure that m<n*)
+SVD[mat_] := SVD[mat, MinMax[Dimensions[mat]]];
+(*if m and n are known*)
+SVD[mat_, {m_, n_}] := Block[{u, w, v, eig},
+  (*no need for transpose,eig of mat and mat` are equal*)
+  (*perform singular value decomposition*)
+  {u, w, v} = SingularValueDecomposition[mat];
+  (*normalize eigenvalues from SVD*)
+  eig = Diagonal[w]^2/n;
+  {u, w, Transpose[v], eig, m, n}
+  ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -274,11 +250,9 @@ SVD[mat_]:=Module[{m,n,u,w,v,eig},
 
 (*Fit sig on MarchenkoPatur distribution*)
 CalcSigFunc[dat_, Q_, sigi_] := Block[{sig, lab},
-   (Quiet@
-      FindFit[dat, MarchenkoPasturC[lab, Q, sig], {{sig, sigi}}, lab,
-       AccuracyGoal -> 5, PrecisionGoal -> 5,
-       Method -> "LevenbergMarquardt", MaxIterations -> 50])[[1, 2]]
-   ];
+   (Quiet@FindFit[dat, MarchenkoPasturC[lab, Q, sig], {{sig, sigi}}, lab,
+       AccuracyGoal -> 5, PrecisionGoal -> 5,Method -> "LevenbergMarquardt", MaxIterations -> 50]
+       )[[1, 2]]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -348,53 +322,51 @@ Options[PCAFitHist] = {PlotSolution -> False, FitSigma -> True, PCAFitParameters
 SyntaxInformation[PCAFitHist] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 (*no initial sigma given*)
-PCAFitHist[data_, opts : OptionsPattern[]] :=  PCAFitHist[data, 0., opts]
+PCAFitHist[data_, {m_, n_}, opts : OptionsPattern[]] := PCAFitHist[data, {m, n}, 0., opts]
 (*initial sigma is given*)
-PCAFitHist[data_, sigii_, OptionsPattern[]] := Block[
-  {nb,pi,maxit,u,w,v,eig,m,n,i,pi1,pi0,Nes,Q,Qs,sigi,sig,hlist,eigp},
-  
-  (*get options, number of bins, initial p and max itterations*)
-  {nb,pi,maxit}=OptionValue[PCAFitParameters];
+PCAFitHist[data_, {mi_, ni_}, sigii_, OptionsPattern[]] := Block[
+  {nb, pi, maxit, u, w, v, eig, m, n, i, pi1, pi0, Nes, Q, Qs, sigi, 
+   sig, hlist, eigp},
+  (*get options,number of bins,initial p and max itterations*)
+  {nb, pi, maxit} = OptionValue[PCAFitParameters];
   (*perform svd*)
-  {u,w,v,eig,m,n}=SVD[data];
+  {u, w, v, eig, m, n} = SVD[data, {mi, ni}];
   (*perform heuristic ittarative fitting*)
   i = pi1 = pi0 = 0;
-  Do[
-   (*count fit and how often max fit*)
+  Do[(*count fit and how often max fit*)
    i++;
-   (*number of nois comp, Q and Qs*)
+   (*number of nois comp,Q and Qs*)
    Nes = (m - pi);
    Q = N[Nes/n];
    Qs = Sqrt[Q];
-
-   (*calcualte initial sig from data or use input for i=1*)
-   sigi = If[i == 1, If[sigii == 0, Sqrt[Last[eig]]/Sqrt[(1 - Qs)^2], sigii], sig];
-   
-   (*perform the fit, data from histogramlist*)
    (*custom histogram list function for speed*)
-    hlist=HistListC[eig[[pi+1;;]],nb];
-   (*fit MP function to data, returns sig if fitsimgam is true, if sigma is fixed no fit*)
-   sig=If[OptionValue[FitSigma],CalcSigFunc[hlist,Q,sigi],sigi];
+   hlist = HistListC[eig[[pi + 1 ;;]], nb];
+   
+   (*calcualte initial sig from data or use input for i=1*)
+   sigi = 
+    If[i == 1, 
+     If[sigii === 0., Sqrt[Last[eig]]/Sqrt[(1 - Qs)^2], sigii], sig];
+   (*perform the fit,data from histogramlist*)
+   (*fit MP function to data,returns sig if fitsimgam is true, if sigma is fixed no fit*)
+   sig = If[OptionValue[FitSigma], CalcSigFunc[hlist, Q, sigi], sigi];
    
    If[sig < 0,
-   	nb += 2; i = pi1 = pi0 = 0;
-   	,
-   (*determine number of noise components with given sig*)
-   eigp=sig^2 (1+Qs)^2;
-   pi1=Clip[Length[Select[eig,#>eigp&]],{0,m-1}];
-     
-   (*this ends if the same solution or the same solution as the previous itteration is found*)
-   If[pi==pi1||pi1==pi0,Break[]];
-   (*updata pi values*)
-   {pi0,pi}={pi,pi1};
-   ];
-   (*close do loop after max itterations is reached*)
-   ,{maxit}];
-  
-   (*set the noise components to zero*)
-   w[[pi+1;;,pi+1;;]]=0.;
-   (*give output, number of noise comp and sigma and number of itterations*)
-   {sig,Nes,u.w.v,i}
+    (*if sig becomes negative increase the number of bins reset and try again*)
+    nb += 2; i = pi1 = pi0 = 0;
+    ,
+    (*determine number of noise components with given sig*)
+    eigp = sig^2 (1 + Qs)^2;
+    pi1 = Clip[Length[Select[eig, # > eigp &]], {0, m - 1}];
+    (*this ends if the same solution or the same solution as the previous itteration is found*)
+    If[pi == pi1 || pi1 == pi0, Break[]];
+    (*updata pi values*)
+    {pi0, pi} = {pi, pi1};
+    ];
+   , {maxit}];
+  (*set the noise components to zero*)
+  w[[pi + 1 ;;, pi + 1 ;;]] = 0.;
+  (*give output, number of noise comp and sigma and number of itterations*)
+  {sig, Nes, u.w.v, i}
   ]
 
 
@@ -406,24 +378,21 @@ PCAFitHist[data_, sigii_, OptionsPattern[]] := Block[
 SyntaxInformation[PCAFitEq]={"ArgumentsPattern"->{_,_.}};
 
 (*no initial sigma given*)
-PCAFitEq[data_]:=PCAFitEq[data,0.]
+PCAFitEq[data_, {m_, n_}] := PCAFitEq[data, {m, n}, 0.]
 (*initial sigma is given*)
-PCAFitEq[data_,sigi_]:=Block[
-   {u,w,v,eig,m,n,pi,sig},
-   (*perform svd*)
-   {u,w,v,eig,m,n}=SVD[data];
-   (*if sigma is given perform with fixed sigma, else fit both*)
-   {pi,sig}=If[N[sigi]!=0.,
-      GridSearchSig[eig,m,n,sigi],
-      GridSearch[eig,m,n]
-   ];
-   
-   pi=Round[pi];
-   (*set the noise components to zero*)
-   w[[pi+1;;,pi+1;;]]=0.;
-   (*give output, simga, number of noise comp, and denoised matrix*)
-   {sig,m-pi,u.w.v}
-]
+PCAFitEq[data_, {mi_, ni_}, sigi_] := 
+ Block[{u, w, v, m, n, eig, pi, sig},
+  (*perform svd*)
+  {u, w, v, eig, m, n} = SVD[data, {mi, ni}];
+  (*if sigma is given perform with fixed sigma,else fit both*)
+  {pi, sig} = If[N[sigi] != 0.,
+    GridSearchSig[eig, m, n, sigi],
+    GridSearch[eig, m, n]];
+  pi = Round[pi];
+  (*set the noise components to zero*)
+  w[[pi ;;, pi ;;]] = 0.;
+  (*give output,simga,number of noise comp,and denoised matrix*)
+  {sig, m - pi, u.w.v}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -431,40 +400,44 @@ PCAFitEq[data_,sigi_]:=Block[
 
 
 (*gird search to find p at which sig is almost equal*)
-GridSearch=Compile[{{eig,_Real,1},{m,_Integer,0},{n,_Integer,0}},
-   Block[{Nes,llab,eq1,eq2,diff,pi},
-      (*initialize values*)
-      pi=-1;eq1=0.;eq2=10.;diff=1.;
-      (*find p for which eq1 and eq2 is equal to given sig*)
-      While[eq2>eq1&&pi<m,
-         pi++;
-         eq1=(Mean[eig[[pi+1;;m]]]);
-         eq2=((eig[[pi+1]]-eig[[m]])/(4 Sqrt[((m-pi)/n)]));
-      ];
-   (*give output, number of noise comp and sigma*)
-   {pi,Sqrt[(eq1+eq2)/2]}
-   ]
-, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
+GridSearch = Compile[{{eig, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}}, 
+   Block[{Nes, llab, eq1, eq2, pi, sig, eigl},
+    (*initialize values*)
+    pi = 0; eq1 = 0.; eq2 = 10.;
+    eigl = Last[eig];
+    (*find p for which eq1 and eq2 is equal to given sig*)
+    While[eq2 > eq1 && pi < m,
+     pi++;
+     (*/Max[sig,1.0],sig is<1 per definition*)
+     eq1 = (Mean[eig[[pi ;; m]]]);
+     eq2 = ((eig[[pi]] - eigl)/(4 Sqrt[((m - pi)/n)]));
+     ];
+    (*give output,number of noise comp and sigma*)
+    {pi, Sqrt[(eq1 + eq2)/2]}],
+   RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler, Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
 (*GridSearchSig*)
 
 
-(*gird search to find p with a given sig, get mean p of both equations*)
-GridSearchSig=Compile[{{eig,_Real,1},{m,_Integer,0},{n,_Integer,0},{sig,_Real,0}},
-   Block[{pi1,eq1,pi2,eq2,pi},
-      (*initialize values*)
-      pi1=-1;eq1=2 sig^2;
-      pi2=-1;eq2=2 sig^2;
-      (*find p for which eq1 and eq2 is equal to given sig*)
-      While[eq1-sig^2>0&&pi1<m,pi1++;eq1=(Mean[eig[[pi1+1;;m]]]);];
-      While[eq2-sig^2>0&&pi2<m,pi2++;eq2=((eig[[pi2+1]]-Last[eig])/(4 Sqrt[((m-pi2)/n)]));];
-      (*give output, number of noise comp and sigma*)
-      pi=Round[Mean[N[{pi1,pi2}]]];
-      {pi,sig}
-   ]
-, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
+(*gird search to find p with a given sig,get mean p of both equations*)
+GridSearchSig = Compile[{{eig, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig, _Real, 0}}, 
+	Block[{pi, eq1, eq2, sigm, sig2, eigl},
+    (*initialize values*)
+    sig2 = sig^2;
+    eigl = Last[eig];
+    pi = 0; eq1 = 2 sig2; eq2 = 2 sig2;
+    (*find p for which eq1 and eq2 is equal to given sig*)
+    While[(eq1 - sig2 > 0 || eq2 - sig2 > 0) && pi < m,
+     pi++;
+     (*/Max[sig,1.0],sig is<1 per definition*)
+     eq1 = (Mean[eig[[pi ;; m]]]);
+     eq2 = ((eig[[pi]] - eigl)/(4 Sqrt[((m - pi)/n)]));
+     ];
+    (*give output,number of noise comp and sigma*)
+    {pi, sig}],
+   RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler, Parallelization -> True];
 
 
 (* ::Subsection:: *)
