@@ -378,8 +378,6 @@ EPGT2Fit[datan_, times_, angle_, OptionsPattern[]]:=Block[{Necho,echoSpace,T1m, 
 	
 	(*restructure fit solution*)
 	sol = TransData[sol,"r"];
-	
-	Print[Dimensions[sol]];
 		
 	{wat, fat} = Clip[{sol[[3]], sol[[4]]}, {0, Max[sol[[3;;4]]]}];
   	fatMap = Clip[fat / ((wat + fat) /. 0. -> Infinity), {0, 1}];

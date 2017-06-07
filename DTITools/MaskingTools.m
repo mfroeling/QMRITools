@@ -378,21 +378,32 @@ Module[{output, ROIcor, ROIslice, msk},
 (*Mask treshholds*)
 
 
-Options[Mask]={Smoothing->False};
+Options[Mask]={Smoothing -> False, MaskComponents -> 1, MaskPadding -> 40, MaskClosing -> 20, MaskFiltKernel -> 2};
 
-SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-Mask[data_?ArrayQ,tr_,OptionsPattern[]]:=
-Module[{mask,tresh=If[NumberQ[tr],{tr},tr]},
-	If[Length[tresh]>2,Message[Mask::tresh,tresh],
-		mask=If[Length[tresh]==1,
-			UnitStep[data-tresh[[1]]],
-			UnitStep[data-tresh[[1]]]-UnitStep[data-tresh[[2]]]
+Mask[data_,opts:OptionsPattern[]]:=Mask[data, 0, opts]
+
+Mask[data_?ArrayQ,tr_,opts:OptionsPattern[]]:=
+Module[{mask,tresh},
+	If[Length[tresh]>2,
+		Message[Mask::tresh,tresh]
+		,
+		mask=If[tr===0,
+			(*no threshhold*)
+			ImageData[Binarize[Image3D[NormalizeData[data,.95]]]]
+			,
+			(*threshhold*)
+			tresh=If[NumberQ[tr],{tr},tr];		
+			
+			If[Length[tresh]==1,
+				UnitStep[data-tresh[[1]]],
+				UnitStep[data-tresh[[1]]]-UnitStep[data-tresh[[2]]]
+				]
 			];
-		
+				
 		If[OptionValue[Smoothing],
-			(*Map[Floor[MedianFilter[#,2]]&,mask,{ArrayDepth[data]-2}]*)
-			SmoothMask[mask],
+			SmoothMask[mask,FilterRules[{opts},Options[SmoothMask]]],
 			mask
 			]
 		]

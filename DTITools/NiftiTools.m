@@ -28,8 +28,11 @@ ClearAll @@ Names["DTITools`NiftiTools`*"];
 (*Functions*)
 
 
-DcmToNii::usage = 
-"DcmToNii[\"action\"] converts dicom to nii. \"action\" can be \"folder\" or \"file\", which converts all files in a folder to nii or just one file."
+DcmToNii::usage =
+"DcmToNii[] converts a dicom folder to nii. 
+DcmToNii[\"action\"] converts dicom to nii. \"action\" can be \"folder\" or \"file\", which converts all files in a folder to nii or just one file.
+DcmToNii[{\"input\",\"ouput\"}] converts the \"input\" dicom folder to nii files which are place in the \"output\" folder.
+"
 
 ImportNii::usage = 
 "ImportNii[] promts to select the nii file to import.
@@ -135,7 +138,9 @@ SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.}};
 
 DcmToNii[]:=DcmToNii["folder",""];
 
-DcmToNii[action_] := DcmToNii[action,""]; 
+DcmToNii[action_?StringQ] := DcmToNii[action,""]; 
+
+DcmToNii[fstr_?ListQ] := DcmToNii["folder",fstr];
 
 DcmToNii[action_,fstr_] := Module[{act,filfolin,folout,add,title,log,command},
 	

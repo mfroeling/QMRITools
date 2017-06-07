@@ -75,10 +75,16 @@ RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] regis
 
 Output is the registered dtidata and, if anatdata is given, the registered dtidata in anatomical space. If OutputTransformation is True it also outputs the translation, rotation scale and skew of all images or volumes."
 
-RegisterDataSplit::usage = 
+RegisterDiffusionDataSplit::usage = 
 "RegisterDataSplit[dtidata, vox] is identical to Register diffusion data however left and right side of the data are registered seperately.
 RegisterDataSplit[{dtidata, vox}, {anatdata, voxa}] is identical to Register diffusion data however left and right side of the data are registered seperately.
 RegisterDataSplit[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] is identical to Register diffusion data however left and right side of the data are registered seperately.
+
+Splitting the data is done using the function CutData and merged wit Stich data.
+Output is the registered data."
+
+RegisterDataSplit::usage = 
+"RegisterDataSplit[target, moving] is identical to RegisterData data however left and right side of the data are registered seperately.
 
 Splitting the data is done using the function CutData and merged wit Stich data.
 Output is the registered data."
@@ -111,7 +117,7 @@ moving2nd can have the same dimensions of moving or one dimension higher (e.g. 3
 Output is {registered moving, deformed moving2nd}."
 
 RegisterDataTransformSplit::usage = 
-"RegisterDataTransformSplit[[target, moving, {moving2nd, vox}] is idenditcal to RegisterDataTransform with the same functionality as RegisterDataSplit.
+"RegisterDataTransformSplit[target, moving, {moving2nd, vox}] is idenditcal to RegisterDataTransform with the same functionality as RegisterDataSplit.
 This means the data is split in two using the function CutData and merged wit Stich data.
 
 Output is {registered moving, deformed moving2nd}."
@@ -1196,11 +1202,12 @@ RegisterDiffusionData[
 (* ::Subsection::Closed:: *)
 (*RegisterDataSplit*)
 
-Options[RegisterDataSplit] := Options[RegisterDiffusionData];
 
-SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+Options[RegisterDiffusionDataSplit] := Options[RegisterDiffusionData];
 
-RegisterDataSplit[data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsPattern[]] := 
+SyntaxInformation[RegisterDiffusionDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
+RegisterDiffusionDataSplit[data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsPattern[]] := 
   Block[{datal, datar, cut},
    {datal, datar, cut} = CutData[data];
    datal = RegisterDiffusionData[{datal, vox}, opts];
@@ -1208,7 +1215,9 @@ RegisterDataSplit[data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsP
    StichData[datal, datar]
    ];
 
-RegisterDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, opts : OptionsPattern[]] := Block[{datal, datar, cut,maskr,maskl},
+RegisterDiffusionDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, opts : OptionsPattern[]] := Block[
+	{datal, datar, cut,maskr,maskl},
+	
 	{datal, datar, cut} = CutData[data];
 	{maskl, maskr, cut} = CutData[mask,cut];
 	datal = RegisterDiffusionData[{datal, maskl, vox}, opts];
@@ -1216,8 +1225,9 @@ RegisterDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, opts :
 	StichData[datal, datar]
    ];
 
-RegisterDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-   opts : OptionsPattern[]] := Block[{datal, datar, dataal, dataar, cut},
+RegisterDiffusionDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, opts : OptionsPattern[]] := Block[
+   	{datal, datar, dataal, dataar, cut},
+   	
    {datal, datar, cut} = CutData[data];
    {dataal, dataar, cut} = CutData[dataa];
    datal = RegisterDiffusionData[{datal, vox}, {dataal, voxa}, opts][[2]];
@@ -1225,21 +1235,79 @@ RegisterDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, voxa
    StichData[datal, datar]
    ];
 
-RegisterDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, maska_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-   opts : OptionsPattern[]] := Block[{datal, datar, dataal, dataar, maskl, maskr, maskal, maskar,cut1,cut2},
-   {datal, datar,cut1} = CutData[data];
-   {maskl, maskr,cut1} = CutData[mask,cut1];
-   {dataal, dataar,cut2} = CutData[dataa];
-   {maskal, maskar,cut2} = CutData[maska,cut2];
-   
-   Print[{cut1,cut2}];
-
+RegisterDiffusionDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, maska_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, opts : OptionsPattern[]] := Block[
+	{datal, datar, dataal, dataar, maskl, maskr, maskal, maskar,cut1,cut2},
+	
+   {datal, datar, cut1} = CutData[data];
+   {maskl, maskr, cut1} = CutData[mask,cut1];
+   {dataal, dataar, cut2} = CutData[dataa];
+   {maskal, maskar, cut2} = CutData[maska,cut2];
    datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, maskal, voxa}, opts][[2]];
    datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, maskar, voxa}, opts][[2]];
    
    StichData[datal, datar]
    ];
 
+
+(* ::Subsection::Closed:: *)
+(*RegisterDataSplit*)
+
+
+Options[RegisterDataSplit] := Options[RegisterDiffusionData];
+
+SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
+RegisterDataSplit[target_, moving_, opts : OptionsPattern[]] := Block[{reg, mov,
+	targetl, targetr, masktl, masktr, cut1,
+	movingl, movingr, maskml, maskmr, cut2,
+	regl, regr, movl, movr
+	},
+	
+	(*split the target data*)
+	{targetl, targetr}=If[ArrayQ[target],
+		(*data*)
+		{targetl, targetr, cut1} = CutData[target];
+		{targetl, targetr}
+		,
+		If[Length[target]==2 && ArrayQ[target[[1]]] && Length[target[[2]]]==3,
+			(*data and vox*)
+			{targetl, targetr, cut1} = CutData[target[[1]]];
+			{{targetl, target[[2]]}, {targetr, target[[2]]}}
+			,
+			(*data, mask and vox*)
+			{targetl, targetr, cut1} = CutData[target[[1]]];
+			{masktl, masktr, cut1} = CutData[target[[2]],cut1];
+			{{targetl, masktl, target[[3]]}, {targetr, masktr, target[[3]]}}
+		]
+	];
+	
+	(*split the moving data*)
+	{movingl,movingr}=If[ArrayQ[moving],
+		(*data*)
+		{movingl, movingr, cut2} = CutData[moving];
+		{movingl, movingr}
+		,
+		If[Length[moving]==2 && ArrayQ[moving[[1]]] && Length[moving[[2]]]==3,
+			(*data and vox*)
+			{movingl, movingr, cut2} = CutData[moving[[1]]];
+			{{movingl, moving[[2]]}, {movingr, moving[[2]]}}
+			,
+			(*data, mask and vox*)
+			{movingl, movingr, cut2} = CutData[moving[[1]]];
+			{maskml, maskmr, cut2} = CutData[moving[[2]], cut2];
+			{{movingl, maskml, moving[[3]]}, {movingr, maskmr, moving[[3]]}}
+		]
+	];
+	
+	(*register left part*)
+	regl = RegisterData[targetl, movingl,  opts];
+		
+	(*register right part*)
+	regr = RegisterData[targetr, movingr,  opts];
+	
+	StichData[regl,regr]
+	
+  ]
 
 (* ::Subsection::Closed:: *)
 (*CorrectBmatrix*)

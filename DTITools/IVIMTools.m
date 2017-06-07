@@ -278,25 +278,27 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   
   (*initial fit values*)
   funcin = Join[
+  	(*initialization for fractions*)
   	If[components==1,{},{{f1, frin1}, {f2, frin2}}[[1 ;; components-1]]],
+  	(*initialzation for tens/D*)
     If[tensFit, Thread[{{xx, yy, zz, xy, xz, yz}, dcin}], {{dc, dcin}}],
      (*if not fixed give fit start parameters for pdc values*)
      If[components==1,
      	{},
      	Switch[fixed,
-     	False, {{pdc1, pdcin1}, {pdc2, pdcin2}}[[1 ;; components - 1]],
-     	"One", {{pdc1, pdcin1}},
-     	_, {}
+     	False, {{pdc1, pdcin1}, {pdc2, pdcin2}}[[1 ;; components - 1]](*none fixed*),
+     	"One", {{pdc1, pdcin1}}(*only fix 2nd component*),
+     	_,{}
      	]] 
   ];
  
-  (*fix fixed parameters*)
+  (*fix the fixed parameters*)
   fixrule = If[components==1,
-  	{},
+  	{}(*no fixed parameters if one component*),
   	Switch[fixed, 
-  		True,{pdc1 -> pdcin1, pdc2 -> pdcin2}[[1 ;; components - 1]],
-  		"One", {pdc2 -> pdcin2},
-  		_, {}]];
+  		True,{pdc1 -> pdcin1, pdc2 -> pdcin2}[[1 ;; components - 1]](*fix all components*),
+  		"One", {pdc2 -> pdcin2}(*only fix 2nd component*),
+  		_, {}(*fix no components*)]];
   
   (*generate fix fuctions*)
   func =Chop[Simplify[(S0*((((1 - f1 - f2)*Exp[-bmdc]) + (f1* Exp[-bm pdc1]) + (f2* Exp[-bm pdc2]))))]] /. fixrule;
