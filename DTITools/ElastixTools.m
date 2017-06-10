@@ -76,9 +76,9 @@ RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] regis
 Output is the registered dtidata and, if anatdata is given, the registered dtidata in anatomical space. If OutputTransformation is True it also outputs the translation, rotation scale and skew of all images or volumes."
 
 RegisterDiffusionDataSplit::usage = 
-"RegisterDataSplit[dtidata, vox] is identical to Register diffusion data however left and right side of the data are registered seperately.
-RegisterDataSplit[{dtidata, vox}, {anatdata, voxa}] is identical to Register diffusion data however left and right side of the data are registered seperately.
-RegisterDataSplit[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] is identical to Register diffusion data however left and right side of the data are registered seperately.
+"RegisterDiffusionDataSplit[dtidata, vox] is identical to Register diffusion data however left and right side of the data are registered seperately.
+RegisterDiffusionDataSplit[{dtidata, vox}, {anatdata, voxa}] is identical to Register diffusion data however left and right side of the data are registered seperately.
+RegisterDiffusionDataSplit[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] is identical to Register diffusion data however left and right side of the data are registered seperately.
 
 Splitting the data is done using the function CutData and merged wit Stich data.
 Output is the registered data."

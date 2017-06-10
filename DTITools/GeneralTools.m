@@ -166,7 +166,7 @@ FileSelect[action_, type:{_String ..}, opts:OptionsPattern[]] := FileSelect[acti
 FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[]] := Module[{input},
   If[!Element[action, {"FileOpen", "FileSave", "Directory"}], Return[]];
   input = If[(action == "FileOpen" || action == "FileSave"),
-  	  	SystemDialogInput[action, {Directory[], {name ->{"*"<>type}}},opts],
+  	  	SystemDialogInput[action, {Directory[], {name ->type}},opts],
   	  	SystemDialogInput["Directory", Directory[],opts]
     ];
   If[input === $Canceled, 
