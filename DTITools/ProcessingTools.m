@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`ProcessingTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -131,7 +131,7 @@ FiberLengths::usage =
 FiberLengths[{fpoints,flines}] calculates the fiber lenght using the output from LoadFiberTacts."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -151,6 +151,10 @@ MonitorCalc::usage =
 
 FullOutput::usage = 
 "FullOutput is an option for TensorCalc when using bvector. When True also the S0 is given as output."
+
+RobustFit::usage = 
+"RobustFit is an option for TensorCalc. If true outliers will be rejected in the fit, only works with WLLS.
+If FullOutput is given the outlier map is given.";
 
 RejectMap::usage = 
 "RejectMap is an option for EigenvalCalc. If Reject is True and RejectMap is True both the eigenvalues aswel as a map showing je rejected values is returned."
@@ -186,7 +190,7 @@ SeedDensity::usage =
 "SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -222,20 +226,21 @@ AngleCalc::dist = "Unknown option (`1`), options can be. \"0-180\", \"0-90\" or 
 Begin["`Private`"]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*TensorCalc*)
 
 
-Options[TensorCalc]= {MonitorCalc->True,Method->"LLS",FullOutput->False};
+(* ::Subsubsection::Closed:: *)
+(*TensorCalc*)
+
+
+Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->False, RobustFit->True,Parallelize->True};
 
 SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-(*bvalue*)
-TensorCalc[dat_,gr_,bvalue:_?NumberQ,opts:OptionsPattern[]]:=
-Block[{depthD,dirD,dirG,grad,bvec,data},
-	
-	data=dat;
-	(*data=N[Clip[dat,{0,Infinity}]];*)
+(*bvalue, only one number, gr does not have b=0*)
+TensorCalc[data_,gr_,bvalue:_?NumberQ,opts:OptionsPattern[]]:=
+Block[{depthD,dirD,dirG,grad,bvec},
 	
 	depthD=ArrayDepth[data];
 	dirD=If[depthD==4,Length[data[[1]]],Length[data]];
@@ -256,15 +261,10 @@ Block[{depthD,dirD,dirG,grad,bvec,data},
 ]
 
 (*bvector*)
-TensorCalc[dat_,grad_,bvec:{_?NumberQ ..},opts:OptionsPattern[]]:=
-Block[{data,depthD,rl,rr,dirD,dirG,dirB},
+TensorCalc[data_,grad_,bvec:{_?NumberQ ..},opts:OptionsPattern[]]:=
+Block[{depthD,dirD,dirG,dirB},
 	
-	data=dat;
-	(*data=N[Clip[dat,{0,Infinity}]];*)
-
 	depthD=ArrayDepth[data];
-	rl=RotateRight[Range[depthD]];
-	rr=RotateLeft[Range[depthD]];
 	dirD=If[depthD==4,Length[data[[1]]],Length[data]];
 	dirG=Length[grad];
 	dirB=Length[bvec];
@@ -284,142 +284,274 @@ Block[{data,depthD,rl,rr,dirD,dirG,dirB},
 
 
 (*bmatrix*)
-TensorCalc[dat_,bmati:{_?ListQ ..},OptionsPattern[]]:=
-Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,bmat,method,output},
-
-	bmat=bmati;
-	data=N[Clip[dat,{0,Infinity}]];
-
-	If[!MemberQ[{"LLS","WLLS","NLS","GMM","CLLS","CWLLS","CNLS","DKI"},OptionValue[Method]],Return[Message[TensorCalc::met,OptionValue[Method]]]];
-		
+TensorCalc[dat_,bmat:{_?ListQ ..},OptionsPattern[]]:=
+Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,method,output,robust,dataL,func},
+	
+	(*get output form*)
+	output=OptionValue[FullOutput];
+	robust=OptionValue[RobustFit];
+	(*chekc method*)
+	method=OptionValue[Method];
+	If[!MemberQ[{"LLS","WLLS","iWLLS"(*,"NLS","GMM","CLLS","CWLLS","CNLS","DKI"*)},method],
+		Return[Message[TensorCalc::met,method];$Failed]
+		];
+	
+	data=N[Clip[dat,{0.,Infinity}]];
+	(*get the data dimensions*)	
 	depthD=ArrayDepth[data];
 	dirD=If[depthD==4,Length[data[[1]]],Length[data]];
 	dirB=Length[bmat];
 	
 	(*check if data is 4D, 3D, 2D or 1D*)
-	If[depthD>4,Return[Message[TensorCalc::data,ArrayDepth[data]]]];
+	If[depthD>4,Return[Message[TensorCalc::data,ArrayDepth[data]];$Failed]];
 	(*check if bmat is the same lengt as data*)
-	If[dirB!=dirD,Return[Message[TensorCalc::bvec,dirD,dirB]]];
+	If[dirB!=dirD,Return[Message[TensorCalc::bvec,dirD,dirB];$Failed]];
 	
+	(*define data*)
+	dataL=LogNoZero[data];	
+	(*calculate the inverse bmat*)
 	bmatI=PseudoInverse[bmat];
 	
 	(*if data is 4D handle as multiple 3D sets (saves memory and calculation time)*)
 	If[depthD==4,
-		(*4D data*)
-		(*Quiet[LaunchKernels[]];
-		xx={};
-		met=OptionValue[Method];
-		fout=OptionValue[FullOutput];
-		SetSharedVariable[xx,data,bmat,bmatI,depthD,met,fout];
-		DistributeDefinitions[TensorCalci];
-		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[Max[xx]], {0, Length[data]}]]];
-		tensor = ParallelTable[
-			AppendTo[xx,x];
-			TensorCalci[data[[x]],bmat,bmatI,depthD-1,Method->met,FullOutput->fout]
-			,{x,1,Length[data],1}];
-			*)
+		
 		xx=0;
-		method=OptionValue[Method];
-		output=OptionValue[FullOutput];
-		SetSharedVariable[xx];
-		DistributeDefinitions[data,bmat,bmatI,depthD,method,output,TensorCalci];	
+		
+		func=If[OptionValue[Parallelize],
+			SetSharedVariable[xx,data,dataL];
+			DistributeDefinitions[data,dataL,bmat,bmatI,method,output,TensorCalci];
+			ParallelTable,
+			Table
+		];	
 		
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
-		tensor = ParallelTable[
+		tensor = func[
 			xx++;
-			TensorCalci[data[[x]],bmat,bmatI,depthD-1,Method->method,FullOutput->output]
+			TensorCalci[data[[x]],dataL[[x]],bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust]
 			,{x,1,Length[data],1}];
-			
-		tensor=Transpose[tensor];
-		If[OptionValue[MonitorCalc],Print["Done calculating tensor for "<>ToString[Length[data]]<>" slices!"]];
-		(*Other*)
-		,
-		tensor=TensorCalci[data,bmat,bmatI,depthD,Method->OptionValue[Method],FullOutput->OptionValue[FullOutput]];
-		If[depthD==3&&OptionValue[MonitorCalc],Print["Done calculating tensor for 1 slice!"]];
+		
+		(*full output returns {tens,S0,(outliers)}*)
+		If[output,
+			tensor = Transpose[tensor];
+			tensor[[1]] = Transpose[tensor[[1]]]
+			,
+			tensor = Transpose[tensor]
+		];	
+		
+		,(*1D,2D,3D*)
+		tensor=TensorCalci[data,dataL,bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust];
 	];
+	
 	tensor
 ]
 
 
-Options[TensorCalci]= {Method->"LLS",FullOutput->False};
+(* ::Subsubsection::Closed:: *)
+(*TensorCalci*)
 
-TensorCalci[data_, bmat_, bmatI_, depthD_,OptionsPattern[]]:=Block[
-	{rl,rr,TensMin,tensor},
+
+Options[TensorCalci]= Options[TensorCalc];
+
+TensorCalci[data_,dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
+	{l,r,depthD,TensMin,tensor,w, method,outliers,S0,fitresult,robust},
 	
-	rl=RotateRight[Range[depthD]];
-	rr=RotateLeft[Range[depthD]];
+	(*transpose the data*)
+	depthD=ArrayDepth[data];
+	l=RotateRight[Range[depthD]];
+	r=RotateLeft[Range[depthD]];
+	(*define homogeneous weighting matrix*)
+	w=IdentityMatrix[Length[bmat]];
 	
-	TensMin=Quiet[Transpose[Map[Function[S,##[S,(Log[S /. (0. -> 1.)]),bmat,bmatI]],Transpose[data,rl],{depthD-1}],rr]]&;
-		
-	tensor=Chop[Switch[OptionValue[Method],
+	(*define tens min function- legacy*)
+	(*TensMin=Quiet[Transpose[Map[Function[S,##[S,(Log[S /. (0. -> 1.)]),bmat,bmatI]],Transpose[data,rl],{depthD-1}],rr]]&;*)
+	
+	method=OptionValue[Method];
+	robust=(OptionValue[RobustFit] && method=!="LLS");
+	outliers=If[robust,Transpose[FindOutliers[Transpose[dataL,l],bmat,bmatI,10^-5,6],r](*tollerance and outlier thresh*),0];
+	
+	fitresult=Switch[method,
 		(*"LLS",TensMin[TensMinLLS],
 		"WLLS",TensMin[TensMinWLLS],*)
-		"LLS", Transpose[TensMinLLS[Transpose[data, rl] /. 0. -> 1., bmatI], rr],
-		"WLLS", Transpose[TensMinWLLS[Transpose[data, rl] /. 0. -> 1., bmat, IdentityMatrix[Length[bmat]]], rr],
+		"LLS", Transpose[TensMinLLS[Transpose[dataL,l], bmatI], r],
+		"WLLS", Transpose[TensMinWLLS[Transpose[data,l],Transpose[(1-outliers)dataL,l], bmat], r],
+		"iWLLS", Transpose[TensMiniWLLS[Transpose[data,l],Transpose[(1-outliers)dataL,l], bmat], r]
+		
+		(*
 		"NLS",TensMin[TensMinNLS],
 		"GMM",TensMin[TensMinGMM],
 		"CLLS",TensMin[TensMinCLLS],
 		"CWLLS",TensMin[TensMinCWLLS],
 		"CNLS",TensMin[TensMinCNLS],
-		(*"DKI",TensMin[TensMinDKI]*)
-		"LLS", Transpose[TensMinDKI[Transpose[data, rl] /. 0. -> 1, bmatI], rr]
-		],10^-8];
+		"DKI", Transpose[TensMinDKI[Transpose[data, l], bmatI], r]*)
+		];
 	
-	If[OptionValue[FullOutput],
-		Return[Join[Clip[Drop[tensor,-1],{-0.1,0.1}],{Exp[Last[tensor]]}]],
-		Return[Clip[Drop[tensor,-1],{-0.1,0.1}]]
-	];
+	S0 = Exp[Last[fitresult]];
+	tensor = Clip[Drop[fitresult,-1],{-0.1,0.1}];
+
+	If[OptionValue[FullOutput],If[robust,{tensor,S0,outliers},{tensor,S0}],tensor]
 ]
 
 
-
 (* ::Subsubsection:: *)
+(*FindOutliers*)
+
+
+FindOutliers=Block[{ittA,itt,contA,cont,sol,solA,soli,fit,res,resMAD,weigths,wmat,mat,fitE,LS2,bmat2,bmatI2},
+	With[{
+		MAD=(1.4826 Median[Abs[#-Median[#]]])&,
+		MADweigths=(1./(1+(#/(1.4826 Median[Abs[#-Median[#]]]))^2)^2)&
+		},
+		Compile[{{LS,_Real,1},{bmat,_Real,2},{bmatI,_Real,2},{con,_Real,0},{kappa,_Real,0}},
+			(*skip if background*)
+			If[Total[LS]==0.,
+				ConstantArray[0.,Length[bmat]]
+				,
+				(*Find the outliers*)
+				(*initialize*)
+				ittA=0;contA=1;
+				(*Step1: initial LLS fit*)
+				sol=bmatI.LS;
+				While[contA==1,
+					(*init itteration values*)
+					ittA++;
+					solA=sol;
+					itt=0;cont=1;
+					(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
+					While[cont==1,
+						(*init itteration values*)
+						itt++;
+						soli=sol;
+						fit=bmat.sol;
+						(*calculate residuals in linear domain*)
+						res=LS-fit;
+						If[Total[res]===0.,cont=0];
+						(* b.Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
+						weigths=MADweigths[res];
+						(*perform WLLS*)
+						wmat=DiagonalMatrix[weigths];
+						mat=PseudoInverse[Transpose[bmat].wmat.bmat];
+						sol=mat.Transpose[bmat].wmat.LS;
+						(*see if to quit loop*)
+						If[Total[Abs[sol-soli]]<con(3 10^3)(*diff const of water*)||itt>5,cont=0];
+					];(*end first while*)
+					(*Step 3:Transform variables for heteroscedasticity*)
+					fitE=-Exp[fit];
+					LS2 =LS/fitE;
+					bmat2= bmat/fitE;
+					itt=0;cont=1;
+					(*Step 4:Initial LLS fit in*domain*)
+					bmatI2=PseudoInverse[bmat2];
+					sol=bmatI2.LS2;
+					(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
+					While[cont==1,
+						(*init itteration values*)
+						itt++;
+						soli=sol;
+						fit=bmat2.sol;
+						(*calculate residuals in linear domain*)
+						res=LS2-fit;
+						If[Total[res]===0.,cont=0];
+						(* b.Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
+						Weigths=MADweigths[res];
+						(*perform WLLS*)
+						wmat=DiagonalMatrix[weigths];
+						mat=PseudoInverse[Transpose[bmat2].wmat.bmat2];
+						sol=mat.Transpose[bmat2].wmat.LS2;
+						(*see if to quit loop*)
+						If[Total[Abs[sol-soli]]<con (3 10^3)(*diff const of water*)||itt>5,cont=0];
+					];(*end second while*)
+					(*Step 6:Check convergence overall loop*)
+					If[Total[Abs[sol-solA]]<con (3 10^3)(*diff const of water*)||ittA>10,contA=0];
+				];(*end main while*)
+				(*Step 7:Identify and exclude outliers*)
+				fit=bmat2.sol;
+				UnitStep[(LS2-fit)-(kappa MAD[res])](*the outliers*)
+			](*close if background*)
+			,{{mat,_Real,2},{wmat,_Real,2},{bmat2,_Real,2},{bmatI2,_Real,2}},
+			RuntimeAttributes->{Listable},RuntimeOptions->"Speed"
+		](*close compile*)
+	](*close with*)
+];
+
+
+(* ::Subsubsection::Closed:: *)
 (*LLS*)
 
 
-(*TensMinLLS[S_,LS_,bmat_,bmatI_]:=bmatI.LS*)
-TensMinLLS = Compile[{{S, _Real, 1}, {bmatI, _Real, 2}},
-	If[Mean[S]==1.,
-    	{0.,0.,0.,0.,0.,0.,0.},	
-    	bmatI.Log[S]
-	],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+TensMinLLS = Compile[{{LS, _Real, 1}, {bmatI, _Real, 2}},
+	bmatI.LS,
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
+(*WLLS*)
+
+
+TensMinWLLS = Block[{wmat,mat,mvec},
+	Compile[{{S, _Real, 1},{LS, _Real, 1}, {bmat, _Real, 2}}, 
+    If[Total[LS]==0.,
+    	ConstantArray[0., Length@First@bmat]
+    	,
+    	mvec = Unitize[LS];(*if 0 then it is not used because w=0*)
+    	wmat=DiagonalMatrix[mvec S^2];
+    	mat=PseudoInverse[Transpose[bmat].wmat.bmat];
+    	mat.(Transpose[bmat].wmat.LS)
+    ]
+    ,{{mat,_Real,2},{wmat,_Real,2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+
+
+(* ::Subsubsection::Closed:: *)
+(*iWLLS*)
+
+
+TensMiniWLLS = Block[{wmat, mat, cont, itt, mvec, sol, w, soli, wi},
+   Compile[{{S, _Real, 1},{LS, _Real, 1}, {bmat, _Real, 2}},
+    sol = ConstantArray[0., Length@First@bmat];
+    If[Total[LS] == 0.,
+     sol
+     ,
+     (*initialize*)
+     itt = 0;
+     cont = 1;
+     mvec = Unitize[LS];(*if 0 then it is not used because w=0*)
+     w = mvec S^2;
+     
+     (*itterative reweighting*)
+     While[cont == 1,
+      (*init itteration values*)
+      itt++;
+      soli = sol;
+      wi = w;
+      (*perform WLLS *)
+      wmat = DiagonalMatrix[wi];
+      mat = PseudoInverse[Transpose[bmat].wmat.bmat];
+      sol = mat.Transpose[bmat].wmat.LS;
+      (*update weight*)
+      w = (mvec Exp[bmat.sol])^2;
+      (*see if to quit loop*)
+      If[Total[Abs[sol - soli]] < 10^-7 || itt > 10, cont = 0];
+      ];
+      sol
+     ]
+     , {{mat, _Real, 2}, {wmat, _Real, 2}}, 
+    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+        
+
+
+
+(* ::Subsubsection::Closed:: *)
 (*DKI*)
 
 
 (*TensMinDKI[S_,LS_,bmat_,bmatI_]:=bmatI.LS*)
 TensMinDKI = Compile[{{S, _Real, 1}, {bmatI, _Real, 2}},
-	If[Mean[S]==1.,
+	If[Total[S]==0.,
     	{0.,0.,0.,0.,0.,0.,0.},
-    	bmatI.Log[S]
+    	bmatI.S
 	],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"(*, Parallelization -> True*)];
 
 
-(* ::Subsubsection:: *)
-(*WLLS*)
-
-
-(*
-TensMinWLLS[S_,bmat_,I_]:=
-Module[{wmat},
-	wmat=Transpose[bmat].DiagonalMatrix[S^2];
-	PseudoInverse[wmat.bmat].wmat.Log[S]
-]
-*)
-
-TensMinWLLS = Block[{wmat,mat},Compile[{{S, _Real, 1}, {bmat, _Real, 2}, {II, _Real, 2}}, 
-    If[Mean[S]==1.,
-    	{0.,0.,0.,0.,0.,0.,0.},
-    	wmat = Transpose[bmat].(II S^2);
-    	mat = PseudoInverse[wmat.bmat];
-    	mat.wmat.Log[S]
-    ]
-    ,{{mat,_Real,2},{wmat,_Real,2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
-
-
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*NLS*)
 
 
@@ -436,8 +568,7 @@ Module[{v,xx,yy,zz,xy,xz,yz,init,tens,sol},
 ]
 
 
-
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*NLS*)
 
 
@@ -458,7 +589,7 @@ Module[{v,xx,yy,zz,xy,xz,yz,init,tens,res,w},
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*CLLS*)
 
 
@@ -474,7 +605,7 @@ Module[{v,R0,R1,R2,R3,R4,R5,init,tens},
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*CWLLS*)
 
 
@@ -491,7 +622,7 @@ Module[{v,R0,R1,R2,R3,R4,R5,init,tens,std=1,wmat},
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*CNLS*)
 
 
@@ -506,7 +637,7 @@ Module[{v,R0,R1,R2,R3,R4,R5,init,tens},
 	]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ExtendeCholeskyDecomposition*)
 
 
@@ -1116,35 +1247,9 @@ Delta[a_]:=a/Sqrt[1+a^2];
 Mn[w_,e_,a_]:=e+w Delta[a] Sqrt[2/Pi];
 Var[w_,a_]:=w^2(1-(2Delta[a]^2/Pi));
 
-
 SkewNormC=Compile[{{x, _Real},{Omega, _Real},{Xi, _Real},{Alpha, _Real}},
 Chop[(2/Omega)(1/(E^(((x-Xi)/Omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((Alpha (x-Xi)/Omega))/Sqrt[2]]))]
 ];
-
-
-(* ::Subsection::Closed:: *)
-(*DataTot and DataTotXLS*)
-
-
-SyntaxInformation[DatTot] = {"ArgumentsPattern" -> {_, _, _}};
-
-DatTot[data_,name_,vox_]:=
-Module[{fitdat},
-	fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
-	With[{Quant=Function[dat,{dat[[1]],dat[[2]],100dat[[2]]/dat[[1]]}]},
-		Flatten[{name,vox[[1]],vox[[2]],Quant[fitdat[[1]]],Quant[fitdat[[2]]],Quant[fitdat[[3]]],Quant[fitdat[[4]]],Quant[fitdat[[5]]]}]
-		]
-	]
-
-SyntaxInformation[DatTotXLS] = {"ArgumentsPattern" -> {_, _, _}};
-
-DatTotXLS[data_,name_,vox_]:=
-Module[{fitdat},
-	fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
-	With[{Quant=Function[dat,ToString[Round[dat[[1]],.01]]<>" \[PlusMinus] "<>ToString[Round[dat[[2]],.01]]]},
-		Flatten[{name,vox[[1]],vox[[2]],Quant[fitdat[[1]]],Quant[fitdat[[2]]],Quant[fitdat[[3]]],Quant[fitdat[[4]]],Quant[fitdat[[5]]]}]
-		]
-	]
 
 
 (* ::Subsection::Closed:: *)
@@ -1356,6 +1461,31 @@ FiberLengths[{fpoints_, flines_}] := Module[{len, mpos},
    mpos = First@First@Position[len, Max[len]];
    len Mean[EuclideanDistance @@@ Partition[fpoints[[flines[[mpos]]]], 2, 1]]
 ];
+
+
+(* ::Subsection::Closed:: *)
+(*DataTot and DataTotXLS*)
+
+
+SyntaxInformation[DatTot] = {"ArgumentsPattern" -> {_, _, _}};
+
+DatTot[data_,name_,vox_]:=
+Module[{fitdat},
+	fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
+	With[{Quant=Function[dat,{dat[[1]],dat[[2]],100dat[[2]]/dat[[1]]}]},
+		Flatten[{name,vox[[1]],vox[[2]],Quant[fitdat[[1]]],Quant[fitdat[[2]]],Quant[fitdat[[3]]],Quant[fitdat[[4]]],Quant[fitdat[[5]]]}]
+		]
+	]
+
+SyntaxInformation[DatTotXLS] = {"ArgumentsPattern" -> {_, _, _}};
+
+DatTotXLS[data_,name_,vox_]:=
+Module[{fitdat},
+	fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
+	With[{Quant=Function[dat,ToString[Round[dat[[1]],.01]]<>" \[PlusMinus] "<>ToString[Round[dat[[2]],.01]]]},
+		Flatten[{name,vox[[1]],vox[[2]],Quant[fitdat[[1]]],Quant[fitdat[[2]]],Quant[fitdat[[3]]],Quant[fitdat[[4]]],Quant[fitdat[[5]]]}]
+		]
+	]
 
 
 (* ::Section:: *)

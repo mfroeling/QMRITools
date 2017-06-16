@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`ManipulationTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -121,7 +121,7 @@ ConcatenateDiffusionData::usage=
 ConcatenateDiffusionData[{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}] concatenates the diffusion data sets."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -157,7 +157,7 @@ CropOutput::usage =
 "CropOutput is an option for CropData, can be \"All\",\"Data\" or \"Crop\"."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -1239,7 +1239,11 @@ TensVec[tens:{_?ArrayQ..}]:=
 Transpose[Map[{#[[1,1]],#[[2,2]],#[[3,3]],#[[1,2]],#[[1,3]],#[[2,3]]}&,tens,{3}],{2,3,4,1}];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*Reshape data*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*Data2DToVector*)
 
 
@@ -1268,7 +1272,7 @@ DeleteCases[Flatten[data],0.]
 ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*Data3DToVector*)
 
 
@@ -1297,6 +1301,27 @@ DeleteCases[Flatten[data],0.]
 ];
 
 
+(* ::Subsubsection::Closed:: *)
+(*VectorToData*)
+
+
+SyntaxInformation[VectorToData] = {"ArgumentsPattern" -> {_, {_, _}}};
+
+VectorToData[vec_,{dim_, pos_}]:=Block[{output,len},
+len=Length@First@vec;
+output=Switch[len,
+0,ConstantArray[0.,dim],
+_,ConstantArray[ConstantArray[0.,len],dim]
+];
+Switch[
+Length[dim],
+2,MapThread[(output[[#2[[1]],#2[[2]]]]=#1)&,{vec,pos}],
+3,MapThread[(output[[#2[[1]],#2[[2]],#2[[3]]]]=#1)&,{vec,pos}]
+];
+Switch[len,0,output,_,TransData[output,"r"]]
+]
+
+
 (* ::Subsection::Closed:: *)
 (*TransData*)
 
@@ -1320,27 +1345,6 @@ fun=Switch[dir,"r",RotateLeft[ran],"l",RotateRight[ran]];
 Transpose[data,fun]
 ]
 
-
-
-(* ::Subsection::Closed:: *)
-(*VectorToData*)
-
-
-SyntaxInformation[VectorToData] = {"ArgumentsPattern" -> {_, {_, _}}};
-
-VectorToData[vec_,{dim_, pos_}]:=Block[{output,len},
-len=Length@First@vec;
-output=Switch[len,
-0,ConstantArray[0.,dim],
-_,ConstantArray[ConstantArray[0.,len],dim]
-];
-Switch[
-Length[dim],
-2,MapThread[(output[[#2[[1]],#2[[2]]]]=#1)&,{vec,pos}],
-3,MapThread[(output[[#2[[1]],#2[[2]],#2[[3]]]]=#1)&,{vec,pos}]
-];
-Switch[len,0,output,_,TransData[output,"r"]]
-]
 
 
 (* ::Subsection::Closed:: *)
@@ -1377,7 +1381,11 @@ DriftCorrect[data_, bi_,pos_, OptionsPattern[]] :=
   ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*Split and merge*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*CutData*)
 
 
@@ -1399,7 +1407,9 @@ FindMiddle[dati_] := Module[{dat, len, r1, r2, sec1},
   Last[First[Sort[sec1]]]
   ]
 
-(* ::Subsection::Closed:: *)
+
+
+(* ::Subsubsection::Closed:: *)
 (*StichData*)
 
 
@@ -1453,6 +1463,7 @@ GetCoordinates[data_, vox_] := Block[{dim, off, coor},
 
 (* ::Subsubsection::Closed:: *)
 (*CoordC*)
+
 
    
 CoordC = Compile[{{coor, _Real, 1}, {off, _Real, 1}, {vox, _Real, 1}},

@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`PlottingTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -86,7 +86,7 @@ ColorFAPlot::usage =
 "ColorFAPlot[tenor] create a color coded FA map from the tensor for l1, l2 and l3."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -112,7 +112,7 @@ PositiveZ::usage =
 "PositiveZ is an options for GradientPlot. If True all Gradients are displayed with a positive z direction."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -262,6 +262,7 @@ Legendi[plot_, color_, min_, max_, ps_] := Legended[plot,
 (* ::Subsubsection::Closed:: *)
 (*Lengend plot*)
 
+
 Save
 Labeli[lab_,ps_,plot_]:=If[StringQ[lab],
 	Column[{
@@ -315,12 +316,13 @@ PlotSize[data_,ps_,aspect_]:=Block[{dimx,dimy,size,ratio,dsize},
 
 
 PlotRangeVals[scale_, data_, {min_, max_}] := Block[{mindat, maxdat},
-   {mindat, maxdat} =If[scale,
-   	(*Autoscale*)N[MinMax[data]],
-   	(*Manual Scale*){min, max}
-   	];
-   	(*only use valid scale which is max>min*)
-    If[mindat >= maxdat,maxdat = mindat + 0.001,{mindat, maxdat}]
+	{mindat, maxdat} = If[scale,
+		(*Autoscale*)N[MinMax[data]],
+		(*Manual Scale*){min, max}
+	];
+	(*only use valid scale which is max>min*)
+    If[mindat >= maxdat, maxdat = mindat + 0.001];
+   	{mindat, maxdat}
    ];
 
 
@@ -373,7 +375,7 @@ ReleaseHold[
 
 
 (* ::Subsection:: *)
-(*Export Fucntions*)
+(*Export Functions*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -573,7 +575,7 @@ Module[{p1,p2,pdat1,pdat2,a,b,lab, plot,dimx,dimy,size,ratio},
 
 
 (* ::Subsection:: *)
-(*Nog uitzoeken herschrijven*)
+(*check and rewrite*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -3107,6 +3109,8 @@ GradientPlot[veci_, val_, OptionsPattern[]] :=
   Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
   
 
+
+
 (* ::Subsection::Closed:: *)
 (*PlotDuty*)
 
@@ -3137,8 +3141,12 @@ PlotDuty[{grad_, bval_, ord_}, mode_] :=
   ]
   
   
+
+
 (* ::Subsection::Closed:: *)
-(*ColorFAPlot*)  
+(*ColorFAPlot*)
+
+
   
   
 ColorFAPlot[tens_] := Block[{FA, eigv, mid, eigFA},

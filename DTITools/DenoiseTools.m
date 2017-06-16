@@ -24,7 +24,7 @@ ClearAll @@ Names["DTIToos'DenoiseTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -54,7 +54,7 @@ PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only wit
 Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data dnoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -77,7 +77,9 @@ Else the output is {datao, sigmat}."
 PCATollerance::usage = 
 "PCATollerance is an option of PCADeNoise and shuld be an integer > 0. Default value is 0. When increased the denoise method removes less noise."
 
-(* ::Subsection:: *)
+
+
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 

@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`GradientTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -121,7 +121,7 @@ BvecCreate::usage =
 "BvecCreate[bval, grad] creates a bvector."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -177,7 +177,7 @@ OrderSpan::usage =
 "OrderSpan is an options for FindOrder."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -2191,8 +2191,12 @@ Module[{gradient},
 
 
 
-(* ::Subsection::Closed:: *)
-(*Bmatrix*)
+(* ::Subsection:: *)
+(*Bmatrix Functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*B-matrix*)
 
 
 Options[Bmatrix]={Method->"DTI"};
@@ -2235,6 +2239,137 @@ GradVecConv[grad_,type_]:=Block[{gx,gy,gz},
 	]
 ]
 
+
+
+(* ::Subsubsection::Closed:: *)
+(*BmatrixCalc*)
+
+
+Options[BmatrixCalc] = {
+   UseGrad -> {1, 1, {1, 1}, 1, 1},
+   OutputType -> "Matrix",
+   Method -> "Numerical",
+   StepSizeI -> 0.05,
+   UnitMulti -> 10^-3,
+   PhaseEncoding -> "A",
+   FlipAxes -> {{1, 1, 1}, {1, 1, 1}},
+   SwitchAxes -> {{1, 2, 3}, {1, 2, 3}}};
+
+SyntaxInformation[BmatrixCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+BmatrixCalc[folder_, grads_, opts : OptionsPattern[]] := Module[
+  {seq, Gt, hw, te, bmat, t},
+  seq = ImportGradObj[folder];
+  bmat = Map[(
+      {Gt, hw, te} = 
+       GradSeq[seq, t, #, UseGrad -> OptionValue[UseGrad], 
+        UnitMulti -> OptionValue[UnitMulti], 
+        FilterRules[{opts}, Options[GradSeq]]];
+      Chop[GradBmatrix[
+        Gt, hw, te, t, Method -> OptionValue[Method], StepSizeI -> OptionValue[StepSizeI], 
+        FilterRules[{opts}, Options[GradBmatrix]]
+        ]]
+      ) &, grads];
+  Switch[OptionValue[OutputType], "Matrix", bmat, "Gradient", 
+   BmatrixInv[#] & /@ bmat]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BmatrixInv*)
+
+
+SyntaxInformation[BmatrixInv] = {"ArgumentsPattern" -> {_, _.}};
+
+BmatrixInv[bm_, bvi___] := Module[{bv, sigb, sign, gr},
+  If[ArrayDepth[bm] == 2,
+   
+   Transpose[BmatrixInv[#,bvi]& /@ bm],
+   
+   bv = Total[bm[[1 ;; 3]]];
+   sigb=Sign[bv];
+   bv = If[bvi === Null, sigb bv, bvi];
+   (*sign = Switch[
+   	Sign[Sign[sigb bm[[4 ;; 6]]] + .00001], 
+    {-1, -1, 1}, {-1, 1, 1},
+    {-1, 1, -1}, {1, -1, 1}, 
+    {1, -1, -1}, {-1, -1, 1},
+    _, {1, 1, 1}
+    ];*)
+    
+    sign = If[Sign[bm[[3]]] == 0,If[Sign[bm[[2]]] == 0,If[Sign[bm[[1]]] == 0,
+     {1, 1, 1},Sign2[bm[[{1, 3, 4}]] sigb]],Sign2[bm[[{4, 2, 5}]] sigb]],Sign2[bm[[{5, 6, 3}]] sigb]];
+    
+   gr = sign*Sqrt[sigb bm[[1 ;; 3]]/(bv /. 0. -> Infinity)];
+   
+   {bv, gr}]
+   ]
+
+Sign2 = Sign[Sign[# + .00001]] &;
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*BmatrixConv*)
+
+
+SyntaxInformation[BmatrixConv] = {"ArgumentsPattern" -> {_}};
+
+BmatrixConv[bmat_] := Module[{},
+  If[Length[bmat[[1]]] == 6,
+   Append[-#, 1] & /@ bmat,
+   -bmat[[All, 1 ;; 6]]
+   ]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BmatrixRot*)
+
+
+SyntaxInformation[BmatrixRot] = {"ArgumentsPattern" -> {_, _}};
+
+BmatrixRot[bmat_, rotmat_] := 
+ Module[{sc1 = {1, 1, 1, 0.5, 0.5, 0.5}, sc2 = {1, 1, 1, 2, 2, 2}},
+  If[Dimensions[bmat] == {6},
+   sc2 TensVec[Transpose[rotmat].TensMat[sc1 bmat].rotmat],
+   sc2 TensVec[Transpose[rotmat].TensMat[sc1 #].rotmat] & /@ bmat
+   ]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BmatrixToggle*)
+
+
+SyntaxInformation[BmatrixToggle] = {"ArgumentsPattern" -> {_, _, _}};
+
+BmatrixToggle[bmat_, axes_, flip_] := 
+ Block[{tmpa, tmpf, bmati, bmatn, outp, rule},
+  (*error checking*)
+  If[Sort[axes] != {"x", "y", "z"},
+   Return[Message[BmatrixToggle::axes, axes]],
+   If[!MemberQ[{{1, 1, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}}, flip],
+    Return[Message[BmatrixToggle::flip, flip]],
+    
+    (*make bmat vecs of input*)
+    tmpa = axes /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
+    tmpf = flip /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
+    
+    (*check shape of bmat*)
+    bmati = If[Length[bmat[[1]]] == 7, -bmat[[All, 1 ;; 6]], bmat];
+    
+    (*Toggle bmat*)
+    bmatn = (
+        rule = 
+         Thread[{("x")^2, ("y")^2, ("z")^2, "x" "y", "x" "z", 
+            "y" "z"} -> #];
+        tmpf (tmpa /. rule)
+        ) & /@ bmati;
+    (*output bmat*)
+    outp = If[Length[bmat[[1]]] == 7, Append[-#, 1] & /@ bmatn, bmatn]
+    ]
+   ]
+  ]
 
 
 (* ::Subsection::Closed:: *)
@@ -2432,137 +2567,6 @@ GradBmatrix[Gti_, hw_, te_, t_, OptionsPattern[]] := Module[{Ft, Ft2, Ft2i, s = 
    {bmat, plot},
    bmat]
    ]
-
-
-(* ::Subsection::Closed:: *)
-(*BmatrixCalc*)
-
-
-Options[BmatrixCalc] = {
-   UseGrad -> {1, 1, {1, 1}, 1, 1},
-   OutputType -> "Matrix",
-   Method -> "Numerical",
-   StepSizeI -> 0.05,
-   UnitMulti -> 10^-3,
-   PhaseEncoding -> "A",
-   FlipAxes -> {{1, 1, 1}, {1, 1, 1}},
-   SwitchAxes -> {{1, 2, 3}, {1, 2, 3}}};
-
-SyntaxInformation[BmatrixCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
-
-BmatrixCalc[folder_, grads_, opts : OptionsPattern[]] := Module[
-  {seq, Gt, hw, te, bmat, t},
-  seq = ImportGradObj[folder];
-  bmat = Map[(
-      {Gt, hw, te} = 
-       GradSeq[seq, t, #, UseGrad -> OptionValue[UseGrad], 
-        UnitMulti -> OptionValue[UnitMulti], 
-        FilterRules[{opts}, Options[GradSeq]]];
-      Chop[GradBmatrix[
-        Gt, hw, te, t, Method -> OptionValue[Method], StepSizeI -> OptionValue[StepSizeI], 
-        FilterRules[{opts}, Options[GradBmatrix]]
-        ]]
-      ) &, grads];
-  Switch[OptionValue[OutputType], "Matrix", bmat, "Gradient", 
-   BmatrixInv[#] & /@ bmat]]
-
-
-(* ::Subsection::Closed:: *)
-(*BmatrixInv*)
-
-
-SyntaxInformation[BmatrixInv] = {"ArgumentsPattern" -> {_, _.}};
-
-BmatrixInv[bm_, bvi___] := Module[{bv, sigb, sign, gr},
-  If[ArrayDepth[bm] == 2,
-   
-   Transpose[BmatrixInv[#,bvi]& /@ bm],
-   
-   bv = Total[bm[[1 ;; 3]]];
-   sigb=Sign[bv];
-   bv = If[bvi === Null, sigb bv, bvi];
-   (*sign = Switch[
-   	Sign[Sign[sigb bm[[4 ;; 6]]] + .00001], 
-    {-1, -1, 1}, {-1, 1, 1},
-    {-1, 1, -1}, {1, -1, 1}, 
-    {1, -1, -1}, {-1, -1, 1},
-    _, {1, 1, 1}
-    ];*)
-    
-    sign = If[Sign[bm[[3]]] == 0,If[Sign[bm[[2]]] == 0,If[Sign[bm[[1]]] == 0,
-     {1, 1, 1},Sign2[bm[[{1, 3, 4}]] sigb]],Sign2[bm[[{4, 2, 5}]] sigb]],Sign2[bm[[{5, 6, 3}]] sigb]];
-    
-   gr = sign*Sqrt[sigb bm[[1 ;; 3]]/(bv /. 0. -> Infinity)];
-   
-   {bv, gr}]
-   ]
-
-Sign2 = Sign[Sign[# + .00001]] &;
-
-
-
-(* ::Subsection::Closed:: *)
-(*BmatrixConv*)
-
-
-SyntaxInformation[BmatrixConv] = {"ArgumentsPattern" -> {_}};
-
-BmatrixConv[bmat_] := Module[{},
-  If[Length[bmat[[1]]] == 6,
-   Append[-#, 1] & /@ bmat,
-   -bmat[[All, 1 ;; 6]]
-   ]
-  ]
-
-
-(* ::Subsection::Closed:: *)
-(*BmatrixRot*)
-
-
-SyntaxInformation[BmatrixRot] = {"ArgumentsPattern" -> {_, _}};
-
-BmatrixRot[bmat_, rotmat_] := 
- Module[{sc1 = {1, 1, 1, 0.5, 0.5, 0.5}, sc2 = {1, 1, 1, 2, 2, 2}},
-  If[Dimensions[bmat] == {6},
-   sc2 TensVec[Transpose[rotmat].TensMat[sc1 bmat].rotmat],
-   sc2 TensVec[Transpose[rotmat].TensMat[sc1 #].rotmat] & /@ bmat
-   ]
-  ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*BmatrixToggle*)
-
-
-SyntaxInformation[BmatrixToggle] = {"ArgumentsPattern" -> {_, _, _}};
-
-BmatrixToggle[bmat_, axes_, flip_] := 
- Block[{tmpa, tmpf, bmati, bmatn, outp, rule},
-  (*error checking*)
-  If[Sort[axes] != {"x", "y", "z"},
-   Return[Message[BmatrixToggle::axes, axes]],
-   If[!MemberQ[{{1, 1, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}}, flip],
-    Return[Message[BmatrixToggle::flip, flip]],
-    
-    (*make bmat vecs of input*)
-    tmpa = axes /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
-    tmpf = flip /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
-    
-    (*check shape of bmat*)
-    bmati = If[Length[bmat[[1]]] == 7, -bmat[[All, 1 ;; 6]], bmat];
-    
-    (*Toggle bmat*)
-    bmatn = (
-        rule = 
-         Thread[{("x")^2, ("y")^2, ("z")^2, "x" "y", "x" "z", 
-            "y" "z"} -> #];
-        tmpf (tmpa /. rule)
-        ) & /@ bmati;
-    (*output bmat*)
-    outp = If[Length[bmat[[1]]] == 7, Append[-#, 1] & /@ bmatn, bmatn]
-    ]
-   ]
-  ]
 
 
 (* ::Subsection:: *)

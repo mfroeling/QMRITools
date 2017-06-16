@@ -25,7 +25,7 @@ ClearAll @@ Names["DTITools`ElastixTools`*"];
 
 
 (* ::Subsection::Closed:: *)
-(*Fuctions*)
+(*Functions*)
 
 
 RegisterData::usage =
@@ -389,9 +389,9 @@ _,
 
 
 FindElastix[]:=Module[{fil1,fil2},
-fil1=$UserBaseDirectory<>"\\Applications\\DTITools\\Applications\\elastix.exe";
-fil2=$BaseDirectory<>"\\Applications\\DTITools\\Applications\\elastix.exe";
-If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error"]]
+	fil1=$UserBaseDirectory<>"\\Applications\\DTITools\\Applications\\elastix.exe";
+	fil2=$BaseDirectory<>"\\Applications\\DTITools\\Applications\\elastix.exe";
+	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error"]]
 ]
 
 
@@ -400,9 +400,9 @@ If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error"]]
 
 
 FindTransformix[]:=Module[{fil1,fil2},
-fil1=$UserBaseDirectory<>"\\Applications\\DTITools\\Applications\\transformix.exe";
-fil2=$BaseDirectory<>"\\Applications\\DTITools\\Applications\\transformix.exe";
-If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error"]]
+	fil1=$UserBaseDirectory<>"\\Applications\\DTITools\\Applications\\transformix.exe";
+	fil2=$BaseDirectory<>"\\Applications\\DTITools\\Applications\\transformix.exe";
+	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error"]]
 ]
 
 
@@ -541,31 +541,8 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix},
   ]
 
 
-(* ::Subsection::Closed:: *)
-(*ReadTransformParameters*)
-
-
-SyntaxInformation[ReadTransformParameters]={"ArgumentsPattern"->{_}};
-
-ReadTransformParameters[dir_] := Block[{files,filenum,cor},
-  files = FileNames["TransformParameters*", dir, 3];
-  filenum = If[Length[files] == 1,
-  	{1},
-  	ToExpression[First[StringCases[FileNameSplit[#][[-2]],DigitCharacter ..]]] & /@ files
-  	];
-  files = files[[Ordering[filenum]]];
-  cor =  
-    Partition[
-        ToExpression[
-         StringSplit[StringTake[Import[#, "Lines"][[3]], {2, -2}]][[
-          2 ;;]]], 3][[{1, 4, 3, 2}, {2, 1, 3}]] & /@ files;
-  cor[[All, 1]] = cor[[All, 1]]/Degree;
-  Flatten /@ cor
-  ]
-
-
 (* ::Subsection:: *)
-(*RegisterData*)
+(*RegisterData/Split*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -911,7 +888,7 @@ depth=If[type==="cyclyc",ToString[ArrayDepth[target]-1]<>"D-t",ToString[ArrayDep
 fixedF="target-"<>depth<>".nii";
 targetFile=tempdir<>fixedF;
 
-ExportNii[target,voxt,targetFile,NumberType->"Real"];
+ExportNii[target,voxt,targetFile,NumberType->"Real",CompressNii->False];
 
 (*perform registration*)
 Switch[type,
@@ -919,19 +896,19 @@ Switch[type,
 "vol",
 {inpfol,movfol,outfol}={"","",""};
 {movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii"};
-ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real"];
+ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real",CompressNii->False];
 
 {fmaskF,mmaskF}={"",""};
 
 (*check if target mask is needed*)
 If[dimtarm == dimtar && maskt!={1},
 	fmaskF="targetMask.nii";
-	ExportNii[maskt,voxm,tempdir<>fmaskF]];
+	ExportNii[maskt,voxm,tempdir<>fmaskF,NumberType->"Integer",CompressNii->False]];
 
 (*check if moving mask is needed*)
 If[(dimmovm == dimmov && maskm!={1}),
 	mmaskF="moveMask.nii";
-	ExportNii[maskm,voxm,tempdir<>mmaskF]];
+	ExportNii[maskm,voxm,tempdir<>mmaskF,NumberType->"Integer",CompressNii->False]];
 
 RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 {data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -942,9 +919,9 @@ data=ToPackedArray[data];
 {inpfol,movfol,outfol}={"","",""};
 {fmaskF,mmaskF}={"",""};
 {movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii"};
-ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real"];
+ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real",CompressNii->False];
 If[maskm!={1},mmaskF="moveMask.nii";
-ExportNii[maskm,voxm,tempdir<>mmaskF];
+ExportNii[maskm,voxm,tempdir<>mmaskF,NumberType->"Integer",CompressNii->False];
 ];
 RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 {data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -960,7 +937,7 @@ inpfol="";
 (*export one mask for every volume in the series*)
 If[dimtarm == dimtar && maskt!={1},
 fmaskF="targetMask.nii";
-ExportNii[maskt,voxm,tempdir<>fmaskF]];
+ExportNii[maskt,voxm,tempdir<>fmaskF,NumberType->"Integer",CompressNii->False]];
 
 (*check if mask needs to be exported for each volume*)
 maske=(dimmovm == dimmov && maskm!={1});
@@ -975,17 +952,17 @@ i=0;
 	index=StringPad[#];
 	movfol=outfol="vol"<>index;
 	CreateDirectory[tempdir<>outfol];
-	ExportNii[moving[[#]],voxm,tempdir<>movfol<>"\\"<>movingF,NumberType->"Real"];
+	ExportNii[moving[[#]],voxm,tempdir<>movfol<>"\\"<>movingF,NumberType->"Real",CompressNii->False];
 	
 	(*export mask*)
 	If[maske,
 	mmaskF=movfol<>"\\"<>"moveMask.nii";
-	ExportNii[maskm[[#]],voxm,tempdir<>mmaskF];
+	ExportNii[maskm[[#]],voxm,tempdir<>mmaskF,NumberType->"Integer",CompressNii->False];
 	];
 	
 	If[maske2,
 	mmaskF=movfol<>"\\"<>"moveMask.nii";
-	ExportNii[maskm,voxm,tempdir<>mmaskF];
+	ExportNii[maskm,voxm,tempdir<>mmaskF,NumberType->"Integer",CompressNii->False];
 	];
 	
 	ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}]
@@ -1011,58 +988,190 @@ If[OptionValue[OutputTransformation],
 ]
 
 
-(* ::Subsection::Closed:: *)
-(*RegisterCardiacData*)
+(* ::Subsubsection::Closed:: *)
+(*RegisterDataSplit*)
 
 
-Options[RegisterCardiacData]=Join[{RegistrationTarget->"Mean"},Options[RegisterData]];
+Options[RegisterDataSplit] := Options[RegisterDiffusionData];
 
-SyntaxInformation[RegisterCardiacData]={"ArgumentsPattern"->{_,OptionsPattern[]}};
+SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-(*data only*)
-RegisterCardiacData[data_?ArrayQ,opts:OptionsPattern[]]:=RegisterCardiacData[{data,{1},{1,1,1}},opts]
-(*data with voxel*)
-RegisterCardiacData[{data_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=RegisterCardiacData[{data,{1},vox},opts]
-(*data with mask*)
-RegisterCardiacData[{data_?ArrayQ,mask_?ArrayQ},opts:OptionsPattern[]]:=RegisterCardiacData[{data,mask,{1,1,1}},opts]
-(*data with mask and voxel*)
-RegisterCardiacData[{data_?ArrayQ,mask_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Block[
-{tdir, datar, slices, maskr,i},
+RegisterDataSplit[target_, moving_, opts : OptionsPattern[]] := Block[{reg, mov,
+	targetl, targetr, masktl, masktr, cut1,
+	movingl, movingr, maskml, maskmr, cut2,
+	regl, regr, movl, movr
+	},
+	
+	(*split the target data*)
+	{targetl, targetr}=If[ArrayQ[target],
+		(*data*)
+		{targetl, targetr, cut1} = CutData[target];
+		{targetl, targetr}
+		,
+		If[Length[target]==2 && ArrayQ[target[[1]]] && Length[target[[2]]]==3,
+			(*data and vox*)
+			{targetl, targetr, cut1} = CutData[target[[1]]];
+			{{targetl, target[[2]]}, {targetr, target[[2]]}}
+			,
+			(*data, mask and vox*)
+			{targetl, targetr, cut1} = CutData[target[[1]]];
+			{masktl, masktr, cut1} = CutData[target[[2]],cut1];
+			{{targetl, masktl, target[[3]]}, {targetr, masktr, target[[3]]}}
+		]
+	];
+	
+	(*split the moving data*)
+	{movingl,movingr}=If[ArrayQ[moving],
+		(*data*)
+		{movingl, movingr, cut2} = CutData[moving];
+		{movingl, movingr}
+		,
+		If[Length[moving]==2 && ArrayQ[moving[[1]]] && Length[moving[[2]]]==3,
+			(*data and vox*)
+			{movingl, movingr, cut2} = CutData[moving[[1]]];
+			{{movingl, moving[[2]]}, {movingr, moving[[2]]}}
+			,
+			(*data, mask and vox*)
+			{movingl, movingr, cut2} = CutData[moving[[1]]];
+			{maskml, maskmr, cut2} = CutData[moving[[2]], cut2];
+			{{movingl, maskml, moving[[3]]}, {movingr, maskmr, moving[[3]]}}
+		]
+	];
+	
+	(*register left part*)
+	regl = RegisterData[targetl, movingl,  opts];
+		
+	(*register right part*)
+	regr = RegisterData[targetr, movingr,  opts];
+	
+	StichData[regl,regr]
+	
+  ]
 
-tdir=OptionValue[TempDirectory];
-tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
-If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
-
-slices=Range[Length[data]];
-maskr=If[mask=={1},ConstantArray[1,Dimensions[data[[All,1]]]],mask];
-
-(*monitro over slices*)
-Monitor[
-	i=0;
-	datar=Switch[
-	OptionValue[RegistrationTarget],
-	"Mean",
-	(i++;RegisterData[{N[Mean@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
-		OutputTransformation->False,
-		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-	"Median",
-	(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],vox},
-		OutputTransformation->False,
-		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-	"First",
-	(i++;RegisterData[{data[[#]],maskr[[#]],vox},
-		OutputTransformation->False,
-		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-	"Cyclyc",
-	Print["ToDo"]
-	]
-	,ProgressIndicator[i,{0,Length[data]}]
-];
-datar
-]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*TransformData*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*TransformData*)
+
+
+Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All",PrintTempDirectory->True}
+
+TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output},
+  tdir = OptionValue[TempDirectory];
+  tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}) <>"\\DTItoolsReg\\transform";
+  If[OptionValue[PrintTempDirectory],PrintTemporary[tdir]];
+  If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
+  CreateDirectory[tdir];
+  ExportNii[data, vox, tdir <> "\\trans.nii",NumberType->"Real",CompressNii->False];
+  command = TransformixCommandInd[tdir];
+  RunProcess[$SystemShell, "StandardOutput", command];
+  output = ToPackedArray[ImportNii[tdir <> "\\result.nii"][[1]]];
+  
+  Switch[OptionValue[DeleteTempDirectory],
+   "All",
+   DeleteDirectory[FileNameTake[tdir, {1, -2}],  DeleteContents -> True],
+   "Trans",
+   DeleteDirectory[tdir, DeleteContents -> True],
+   _,
+   Null
+   ];
+  Clip[output,MinMax[data]]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TransformixCommandInd*)
+
+
+TransformixCommandInd[tempDir_] := Block[{transformix, transfile},
+  transformix = FindTransformix[];
+  transfile = 
+   Last[SortBy[
+     FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]], 
+     FileDate[#, "Creation"] &]];
+  "@ \"" <> transformix <>
+   "\" -in \"" <> First[FileNames["trans*", tempDir]] <>
+   "\" -out \"" <> tempDir <>
+   "\" -tp \"" <> transfile <>
+   "\"" <> " > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ParametersToTransform*)
+
+
+ParametersToTransform[w_, opt_] := 
+ Block[{tx, ty, tz, rx, ry, rz, sx, sy, sz, gx, gy, gz, T, R, G, S, 
+   Rx, Ry, Rz, Gx, Gy, Gz, mat, mats, matL},
+  {rx, ry, rz, tx, ty, tz, sx, sy, sz, gx, gy, gz} = w;
+  {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+  rx = rx Degree; ry = ry Degree; rz = rz Degree;
+  T = {
+    {1, 0, 0, tx},
+    {0, 1, 0, ty},
+    {0, 0, 1, tz},
+    {0, 0, 0, 1}};
+  Rx = {
+    {1, 0, 0, 0},
+    {0, Cos[rx], Sin[rx], 0},
+    {0, -Sin[rx], Cos[rx], 0},
+    {0, 0, 0, 1}};
+  Ry = {
+    {Cos[ry], 0, -Sin[ry], 0},
+    {0, 1, 0, 0},
+    {Sin[ry], 0, Cos[ry], 0},
+    {0, 0, 0, 1}};
+  Rz = {
+    {Cos[rz], Sin[rz], 0, 0},
+    {-Sin[rz], Cos[rz], 0, 0},
+    {0, 0, 1, 0},
+    {0, 0, 0, 1}};
+  R = Rx.Ry.Rz;
+  Gx = {
+    {1, 0, gx, 0},
+    {0, 1, 0, 0},
+    {0, 0, 1, 0},
+    {0, 0, 0, 1}};
+  Gy = {
+    {1, 0, 0, 0},
+    {gy, 1, 0, 0},
+    {0, 0, 1, 0},
+    {0, 0, 0, 1}};
+  Gz = {
+    {1, 0, 0, 0},
+    {0, 1, 0, 0},
+    {0, gz, 1, 0},
+    {0, 0, 0, 1}};
+  G = Gx.Gy.Gz;
+  S = {
+    {sx, 0, 0, 0},
+    {0, sy, 0, 0},
+    {0, 0, sz, 0},
+    {0, 0, 0, 1}};
+  
+  mat = Switch[opt,
+    "Full", T.R.G.S,
+    "Rotation", R,
+    _, R
+    ];
+  
+  mats = mat[[1 ;; 3, 1 ;; 3]];
+  
+  (MatrixPower[mats.Transpose[mats], -(1/2)].mats)
+  ]
+
+
+
+(* ::Subsection:: *)
+(*RegisterDiffusionData/Split*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*RegisterDiffusionData*)
 
 
@@ -1168,7 +1277,7 @@ RegisterDiffusionData[
   
   (*export diffusion reg target*)
   CreateDirectory[tempDir<>"\\vol0000"];
-  ExportNii[dtidatar[[All,1]],vox,tempDir<>"\\vol0000\\moving-3D.nii"];
+  ExportNii[dtidatar[[All,1]],vox,tempDir<>"\\vol0000\\moving-3D.nii",NumberType->"Real",CompressNii->False];
   
   (*get vol folders and anat transform files*)
   volDirs = FileNames["vol*", tempDir, 1];
@@ -1199,8 +1308,8 @@ RegisterDiffusionData[
 ]
 
 
-(* ::Subsection::Closed:: *)
-(*RegisterDataSplit*)
+(* ::Subsubsection::Closed:: *)
+(*RegisterDiffusionDataSplit*)
 
 
 Options[RegisterDiffusionDataSplit] := Options[RegisterDiffusionData];
@@ -1249,108 +1358,11 @@ RegisterDiffusionDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}
    ];
 
 
-(* ::Subsection::Closed:: *)
-(*RegisterDataSplit*)
+(* ::Subsection:: *)
+(*RegisterDataTransform/Split*)
 
 
-Options[RegisterDataSplit] := Options[RegisterDiffusionData];
-
-SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
-
-RegisterDataSplit[target_, moving_, opts : OptionsPattern[]] := Block[{reg, mov,
-	targetl, targetr, masktl, masktr, cut1,
-	movingl, movingr, maskml, maskmr, cut2,
-	regl, regr, movl, movr
-	},
-	
-	(*split the target data*)
-	{targetl, targetr}=If[ArrayQ[target],
-		(*data*)
-		{targetl, targetr, cut1} = CutData[target];
-		{targetl, targetr}
-		,
-		If[Length[target]==2 && ArrayQ[target[[1]]] && Length[target[[2]]]==3,
-			(*data and vox*)
-			{targetl, targetr, cut1} = CutData[target[[1]]];
-			{{targetl, target[[2]]}, {targetr, target[[2]]}}
-			,
-			(*data, mask and vox*)
-			{targetl, targetr, cut1} = CutData[target[[1]]];
-			{masktl, masktr, cut1} = CutData[target[[2]],cut1];
-			{{targetl, masktl, target[[3]]}, {targetr, masktr, target[[3]]}}
-		]
-	];
-	
-	(*split the moving data*)
-	{movingl,movingr}=If[ArrayQ[moving],
-		(*data*)
-		{movingl, movingr, cut2} = CutData[moving];
-		{movingl, movingr}
-		,
-		If[Length[moving]==2 && ArrayQ[moving[[1]]] && Length[moving[[2]]]==3,
-			(*data and vox*)
-			{movingl, movingr, cut2} = CutData[moving[[1]]];
-			{{movingl, moving[[2]]}, {movingr, moving[[2]]}}
-			,
-			(*data, mask and vox*)
-			{movingl, movingr, cut2} = CutData[moving[[1]]];
-			{maskml, maskmr, cut2} = CutData[moving[[2]], cut2];
-			{{movingl, maskml, moving[[3]]}, {movingr, maskmr, moving[[3]]}}
-		]
-	];
-	
-	(*register left part*)
-	regl = RegisterData[targetl, movingl,  opts];
-		
-	(*register right part*)
-	regr = RegisterData[targetr, movingr,  opts];
-	
-	StichData[regl,regr]
-	
-  ]
-
-(* ::Subsection::Closed:: *)
-(*CorrectBmatrix*)
-
-
-Options[CorrectBmatrix] = {MethodReg -> "Full"}
-
-SyntaxInformation[CorrectBmatrix] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
- 
- CorrectBmatrix[bmati_, w_,OptionsPattern[]] := 
-  Block[{bmat, trans, bmi, rot, bm, bmnew, bminew},
-   bmat = If[Length[First[bmati]] == 7, BmatrixConv[bmati], bmati];
-   MapThread[(
-      trans = #1;
-      bmi = #2;
-      rot = ParametersToTransform[trans, OptionValue[MethodReg]];
-      bm = TensMat[(bmi/{1, 1, 1, 2, 2, 2})[[{2, 1, 3, 4, 6, 5}]]];
-      bmnew = rot.bm.Transpose[rot];
-      
-      (*Print[MatrixForm/@Round[{bm,bmnew,rot},.00001]];*)
-      bminew = ({1, 1, 1, 2, 2, 2} TensVec[bmnew]
-      )[[{2, 1, 3, 4, 6, 5}]]
-      ) &, {w, bmat}]
-   ]
-
-
-(* ::Subsection::Closed:: *)
-(*CorrectGradients*)
-
-
-Options[CorrectGradients] = {MethodReg -> "Rotation"}
-
-SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
- 
- CorrectGradients[grad_, w_,OptionsPattern[]] := 
-  Block[{gr,grnew,trans,rot},
-   MapThread[(
-      ParametersToTransform[#1, OptionValue[MethodReg]].#2
-      ) &, {w, grad}]
-   ]
-
-
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*RegisterDataTransform*)
 
 
@@ -1374,8 +1386,8 @@ RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[
   ]
 
 
-(* ::Subsection::Closed:: *)
-(*RegisterDataTransform*)
+(* ::Subsubsection::Closed:: *)
+(*RegisterDataTransformSplit*)
 
 
 Options[RegisterDataTransformSplit] = Options[RegisterData];
@@ -1451,116 +1463,126 @@ RegisterDataTransformSplit[target_, moving_, {moving2_, vox_}, opts : OptionsPat
 	
   ]
 
-(* ::Subsection::Closed:: *)
-(*TransformData*)
-
-
-Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All",PrintTempDirectory->True}
-
-TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output},
-  tdir = OptionValue[TempDirectory];
-  tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}) <>"\\DTItoolsReg\\transform";
-  If[OptionValue[PrintTempDirectory],PrintTemporary[tdir]];
-  If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
-  CreateDirectory[tdir];
-  ExportNii[data, vox, tdir <> "\\trans.nii",NumberType->"Real"];
-  command = TransformixCommandInd[tdir];
-  RunProcess[$SystemShell, "StandardOutput", command];
-  output = ToPackedArray[ImportNii[tdir <> "\\result.nii"][[1]]];
-  
-  Switch[OptionValue[DeleteTempDirectory],
-   "All",
-   DeleteDirectory[FileNameTake[tdir, {1, -2}],  DeleteContents -> True],
-   "Trans",
-   DeleteDirectory[tdir, DeleteContents -> True],
-   _,
-   Null
-   ];
-  Clip[output,MinMax[data]]
-  ]
 
 
 (* ::Subsection::Closed:: *)
-(*TransformixCommandInd*)
+(*RegisterCardiacData*)
 
 
-TransformixCommandInd[tempDir_] := Block[{transformix, transfile},
-  transformix = FindTransformix[];
-  transfile = 
-   Last[SortBy[
-     FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]], 
-     FileDate[#, "Creation"] &]];
-  "@ \"" <> transformix <>
-   "\" -in \"" <> First[FileNames["trans*", tempDir]] <>
-   "\" -out \"" <> tempDir <>
-   "\" -tp \"" <> transfile <>
-   "\"" <> " > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
+Options[RegisterCardiacData]=Join[{RegistrationTarget->"Mean"},Options[RegisterData]];
+
+SyntaxInformation[RegisterCardiacData]={"ArgumentsPattern"->{_,OptionsPattern[]}};
+
+(*data only*)
+RegisterCardiacData[data_?ArrayQ,opts:OptionsPattern[]]:=RegisterCardiacData[{data,{1},{1,1,1}},opts]
+(*data with voxel*)
+RegisterCardiacData[{data_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=RegisterCardiacData[{data,{1},vox},opts]
+(*data with mask*)
+RegisterCardiacData[{data_?ArrayQ,mask_?ArrayQ},opts:OptionsPattern[]]:=RegisterCardiacData[{data,mask,{1,1,1}},opts]
+(*data with mask and voxel*)
+RegisterCardiacData[{data_?ArrayQ,mask_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Block[
+{tdir, datar, slices, maskr,i},
+
+tdir=OptionValue[TempDirectory];
+tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
+If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
+
+slices=Range[Length[data]];
+maskr=If[mask=={1},ConstantArray[1,Dimensions[data[[All,1]]]],mask];
+
+(*monitro over slices*)
+Monitor[
+	i=0;
+	datar=Switch[
+	OptionValue[RegistrationTarget],
+	"Mean",
+	(i++;RegisterData[{N[Mean@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
+		OutputTransformation->False,
+		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+	"Median",
+	(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],vox},
+		OutputTransformation->False,
+		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+	"First",
+	(i++;RegisterData[{data[[#]],maskr[[#]],vox},
+		OutputTransformation->False,
+		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+	"Cyclyc",
+	Print["ToDo"]
+	]
+	,ProgressIndicator[i,{0,Length[data]}]
+];
+datar
+]
+
+
+(* ::Subsection:: *)
+(*Correct Gradients*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*ReadTransformParameters*)
+
+
+SyntaxInformation[ReadTransformParameters]={"ArgumentsPattern"->{_}};
+
+ReadTransformParameters[dir_] := Block[{files,filenum,cor},
+  files = FileNames["TransformParameters*", dir, 3];
+  filenum = If[Length[files] == 1,
+  	{1},
+  	ToExpression[First[StringCases[FileNameSplit[#][[-2]],DigitCharacter ..]]] & /@ files
+  	];
+  files = files[[Ordering[filenum]]];
+  cor =  
+    Partition[
+        ToExpression[
+         StringSplit[StringTake[Import[#, "Lines"][[3]], {2, -2}]][[
+          2 ;;]]], 3][[{1, 4, 3, 2}, {2, 1, 3}]] & /@ files;
+  cor[[All, 1]] = cor[[All, 1]]/Degree;
+  Flatten /@ cor
   ]
 
 
-(* ::Subsection::Closed:: *)
-(*ParametersToTransform*)
+(* ::Subsubsection::Closed:: *)
+(*CorrectBmatrix*)
 
 
-ParametersToTransform[w_, opt_] := 
- Block[{tx, ty, tz, rx, ry, rz, sx, sy, sz, gx, gy, gz, T, R, G, S, 
-   Rx, Ry, Rz, Gx, Gy, Gz, mat, mats, matL},
-  {rx, ry, rz, tx, ty, tz, sx, sy, sz, gx, gy, gz} = w;
-  {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-  rx = rx Degree; ry = ry Degree; rz = rz Degree;
-  T = {
-    {1, 0, 0, tx},
-    {0, 1, 0, ty},
-    {0, 0, 1, tz},
-    {0, 0, 0, 1}};
-  Rx = {
-    {1, 0, 0, 0},
-    {0, Cos[rx], Sin[rx], 0},
-    {0, -Sin[rx], Cos[rx], 0},
-    {0, 0, 0, 1}};
-  Ry = {
-    {Cos[ry], 0, -Sin[ry], 0},
-    {0, 1, 0, 0},
-    {Sin[ry], 0, Cos[ry], 0},
-    {0, 0, 0, 1}};
-  Rz = {
-    {Cos[rz], Sin[rz], 0, 0},
-    {-Sin[rz], Cos[rz], 0, 0},
-    {0, 0, 1, 0},
-    {0, 0, 0, 1}};
-  R = Rx.Ry.Rz;
-  Gx = {
-    {1, 0, gx, 0},
-    {0, 1, 0, 0},
-    {0, 0, 1, 0},
-    {0, 0, 0, 1}};
-  Gy = {
-    {1, 0, 0, 0},
-    {gy, 1, 0, 0},
-    {0, 0, 1, 0},
-    {0, 0, 0, 1}};
-  Gz = {
-    {1, 0, 0, 0},
-    {0, 1, 0, 0},
-    {0, gz, 1, 0},
-    {0, 0, 0, 1}};
-  G = Gx.Gy.Gz;
-  S = {
-    {sx, 0, 0, 0},
-    {0, sy, 0, 0},
-    {0, 0, sz, 0},
-    {0, 0, 0, 1}};
-  
-  mat = Switch[opt,
-    "Full", T.R.G.S,
-    "Rotation", R,
-    _, R
-    ];
-  
-  mats = mat[[1 ;; 3, 1 ;; 3]];
-  
-  (MatrixPower[mats.Transpose[mats], -(1/2)].mats)
-  ]
+Options[CorrectBmatrix] = {MethodReg -> "Full"}
+
+SyntaxInformation[CorrectBmatrix] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+ 
+ CorrectBmatrix[bmati_, w_,OptionsPattern[]] := 
+  Block[{bmat, trans, bmi, rot, bm, bmnew, bminew},
+   bmat = If[Length[First[bmati]] == 7, BmatrixConv[bmati], bmati];
+   MapThread[(
+      trans = #1;
+      bmi = #2;
+      rot = ParametersToTransform[trans, OptionValue[MethodReg]];
+      bm = TensMat[(bmi/{1, 1, 1, 2, 2, 2})[[{2, 1, 3, 4, 6, 5}]]];
+      bmnew = rot.bm.Transpose[rot];
+      
+      (*Print[MatrixForm/@Round[{bm,bmnew,rot},.00001]];*)
+      bminew = ({1, 1, 1, 2, 2, 2} TensVec[bmnew]
+      )[[{2, 1, 3, 4, 6, 5}]]
+      ) &, {w, bmat}]
+   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CorrectGradients*)
+
+
+Options[CorrectGradients] = {MethodReg -> "Rotation"}
+
+SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+ 
+ CorrectGradients[grad_, w_,OptionsPattern[]] := 
+  Block[{gr,grnew,trans,rot},
+   MapThread[(
+      ParametersToTransform[#1, OptionValue[MethodReg]].#2
+      ) &, {w, grad}]
+   ]
+
 
 (* ::Section:: *)
 (*End Package*)

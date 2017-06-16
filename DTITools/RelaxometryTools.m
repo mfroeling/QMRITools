@@ -180,10 +180,6 @@ LinFit[datan_, times_] :=
   {offset, T1r}
   ]
 
-LogNoZero = 
-  Compile[{{x, _Real, 0}}, If[x == 0., 0., Log[x]], 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
 
 (* ::Subsubsection::Closed:: *)
 (*LogFit*)

@@ -24,16 +24,13 @@ ClearAll @@ Names["DTITools`MaskingTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
 Mask::usage =
 "Mask[data,tresh min]creates a mask which selects only data above the treshlow value.
 Mask[data,{tresh min,tresh max}] creates a mask which selects data between the tresh min and tresh max value."
-
-MaskBin::usage = 
-"MaskBin[data] creates a datamask from the given data."
 
 SmartMask::usage = 
 "SmartMask[input, mask] crates a smart mask of input based on mask."
@@ -102,7 +99,7 @@ SegmentMask::usage =
 "SegmentMask[mask, n] devides a mask in n equal segments along the slice direction. n must be an integer."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -142,7 +139,9 @@ MaskFiltKernel::usage =
 MeanOutput::usgae = 
 "MeanOutput is an option for NormalizeDiffData. If True it will also output the normalization factor."
 
-(* ::Subsection:: *)
+
+
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -375,7 +374,7 @@ Module[{output, ROIcor, ROIslice, msk},
 
 
 (* ::Subsection::Closed:: *)
-(*Mask treshholds*)
+(*Mask*)
 
 
 Options[Mask]={Smoothing -> False, MaskComponents -> 1, MaskPadding -> 40, MaskClosing -> 20, MaskFiltKernel -> 2};
@@ -407,21 +406,6 @@ Module[{mask,tresh},
 			mask
 			]
 		]
-	]
-
-
-(* ::Subsection::Closed:: *)
-(*Mask binarize*)
-
-
-Options[MaskBin]={Smoothing->True};
-
-SyntaxInformation[MaskBin] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
-
-MaskBin[data_?ArrayQ,OptionsPattern[]]:=
-Module[{mask},
-	mask=ImageData[Erosion[Dilation[Binarize[Image3D[NormalizeData[data,.95]]], 1], 1]];
-	If[OptionValue[Smoothing],SmoothMask[mask],mask]
 	]
 
 
@@ -573,7 +557,7 @@ Chop[(2/Omega)(1/(E^(((x-Xi)/Omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((Alpha (x-Xi)/Om
 
 
 (* ::Subsection::Closed:: *)
-(*MaskDTIdata functions*)
+(*MaskDTIdata*)
 
 
 SyntaxInformation[MaskDTIdata] = {"ArgumentsPattern" -> {_, _}};
@@ -582,7 +566,7 @@ MaskDTIdata[data_, mask_] := Transpose[mask # & /@ Transpose[data]]
 
 
 (* ::Subsection::Closed:: *)
-(*MaskTensdata functions*)
+(*MaskTensdata*)
 
 
 SyntaxInformation[MaskTensdata] = {"ArgumentsPattern" -> {_, _}};
@@ -591,7 +575,7 @@ MaskTensdata[tens_, mask_] := mask # & /@ tens
 
 
 (* ::Subsection::Closed:: *)
-(*SmoothMask functions*)
+(*SmoothMask*)
 
 
 Options[SmoothMask]={MaskComponents->1,MaskPadding->40,MaskClosing->20, MaskFiltKernel->2}
@@ -603,14 +587,17 @@ SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close,obj,filt},
   close = Clip[OptionValue[MaskClosing],{1,pad-2}];(*close holes in mask*)
   obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
   filt = OptionValue[MaskFiltKernel];(*how much smooting*)
-  
-  
+
   Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image3D[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]]
   ]
 
 
-(* ::Subsection::Closed:: *)
-(*MaskTensdata functions*)
+(* ::Subsection:: *)
+(*Segmentation functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*RemoveMaskOverlaps*)
 
 
 SyntaxInformation[RemoveMaskOverlaps] = {"ArgumentsPattern" -> {_}};
@@ -618,8 +605,8 @@ SyntaxInformation[RemoveMaskOverlaps] = {"ArgumentsPattern" -> {_}};
 RemoveMaskOverlaps[masks_] := SmoothSegmentation[masks, False];
 
 
-(* ::Subsection::Closed:: *)
-(*MaskTensdata functions*)
+(* ::Subsubsection::Closed:: *)
+(*SmoothSegmentation*)
 
 
 Options[SmoothSegmentation] = {MaskFiltKernel -> 2}
@@ -649,7 +636,7 @@ SmoothSegmentation[masks_, OptionsPattern[]] :=
   ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*SplitSegmentations*)
 
 
@@ -662,7 +649,7 @@ SplitSegmentations[masksI_] := Block[{vals, masks},
   ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*MergeSegmentations*)
 
 
@@ -672,7 +659,7 @@ MergeSegmentations[masks_, vals_] := Total[vals Transpose@masks];
 
 
 (* ::Subsection::Closed:: *)
-(*NormalizeData functions*)
+(*NormalizeData*)
 
 
 SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_.}};
@@ -695,10 +682,11 @@ NormalizeDatai = Block[{mn},
     data/mn, {{mn, _Real, 0}}, RuntimeAttributes -> {Listable}, 
     RuntimeOptions -> "Speed"]
    ];
-   
+
 
 (* ::Subsection::Closed:: *)
 (*NormalizeDiffData*)
+
 
 Options[NormalizeDiffData] = {MeanOutput->False}
 

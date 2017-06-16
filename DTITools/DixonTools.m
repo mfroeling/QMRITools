@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`DixonTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -46,8 +46,8 @@ t2 can be estimated from multiple echos using T2fit.
 Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{b0,t2star},itterations}."
 
 
-(* ::Subsection:: *)
-(*General Options*)
+(* ::Subsection::Closed:: *)
+(*Options*)
 
 
 DixonPrecessions::usage = 

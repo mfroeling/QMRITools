@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`SimulationTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -70,7 +70,7 @@ PlotSimulationVec::usage =
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -84,8 +84,7 @@ SortVecs::usage =
 "SortVecs is an option for PlotSimulationVec."
 
 
-
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -108,9 +107,6 @@ AddNoise::opt = "AddNoise"
 
 
 Begin["`Private`"]
-
-
-
 
 
 (* ::Subsection::Closed:: *)
@@ -306,7 +302,11 @@ Module[{eig,ADC,FA,dataAll,rangy,bins,wbins,sol,fit,x,Omega,Xi,Alpha},
 	]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*Plot Simulation val*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*PlotSimulationHist*)
 
 
@@ -336,7 +336,7 @@ DynamicModule[{rangy,xlabel,exp},
 	]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*PlotSimulation*)
 
 
@@ -388,7 +388,11 @@ Module[{bins,surface,wbins,fit,par,vec,ang,x,Theta},
 	]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*Plot Simulation vec*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*PlotSimulationAngleHist*)
 
 
@@ -418,7 +422,7 @@ Module[{exp},
 	]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*PlotSimulationAngle*)
 
 
@@ -459,12 +463,8 @@ Module[{quant,pars=Transpose[par[[All,4]]],e,pdat,xrange,off},
 ]
 
 
-(* ::Subsection:: *)
-(*PlotSimulationAngle*)
-
-
 (* ::Subsubsection::Closed:: *)
-(*PlotSimulationAngle*)
+(*PlotSimulationVec*)
 
 
 Options[PlotSimulationVec]={SortVecs->True}
@@ -552,7 +552,7 @@ PlotSimulationVec[tens_, xdata_, label_, OptionsPattern[]] := Module[
 
 
 (* ::Subsubsection::Closed:: *)
-(*PlotSimulationAngle*)
+(*EigPlot*)
 
 
 EigPlot[data_, vp_, vv_, va_, arrows_, val_] := Module[{sphere,line},

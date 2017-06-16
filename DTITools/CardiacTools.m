@@ -25,7 +25,7 @@ ClearAll @@ Names["DTITools`CardiacTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -120,8 +120,9 @@ ExcludeSlices::usage =
 Output is an array with 1 or 0 with the dimensiosn {slices, diff dirs}"
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
+
 
 CutOffMethod::usage =
 "CutOffMethod is an option for ExcludeSlices. Default value is \"Auto\" or it can be a fixed percentage (value between 0 and .5)"
@@ -1277,6 +1278,7 @@ Select[angles ,#<=end||start<#&]
 
 (* ::Subsubsection::Closed:: *)
 (*LinePoints*)
+
 
 Options[LinePoints] = {LineThreshold -> .3, LineStep -> .75};
 

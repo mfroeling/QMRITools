@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`GeneralTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -74,8 +74,11 @@ Output is the SoS and the weights, or just the SoS."
 DevideNoZero::usage = 
 "DevideNoZero[a, b] devides a/b but when b=0 the result is 0. a can be a number or vector."
 
+LogNoZero::usage = 
+"LogNoZero[val] return the log of the val which can be anny dimonsion array. if val=0 the output is 0."
 
-(* ::Subsection:: *)
+
+(* ::Subsection::Closed:: *)
 (*General Options*)
 
 
@@ -100,6 +103,45 @@ OutputWeights::usage =
 Begin["`Private`"]
 
 
+(* ::Subsection:: *)
+(*NoZeroFunctions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*DevideNoZero*)
+
+
+SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
+
+DevideNoZero[sig_,tot_]:=DevideNoZeroi[sig,tot]
+
+DevideNoZeroi = Compile[{{sig, _Real, 1}, {tot, _Real, 0}}, If[tot == 0., sig 0., sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DevideNoZeroi = Compile[{{sig, _Real, 0}, {tot, _Real, 0}}, If[tot == 0., 0., sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+
+
+(* ::Subsubsection::Closed:: *)
+(*LogNoZero*)
+
+
+SyntaxInformation[LogNoZero] = {"ArgumentsPattern" -> {_}};
+
+LogNoZero[val_] := LogNoZeroi[val]
+
+LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MeanNoZero*)
+
+
+SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_, _.}};
+
+MeanNoZero[datai_] := Block[{data},
+  data = N@Chop@TransData[datai, "l"];
+  N@Chop@Map[Mean[DeleteCases[#, 0.] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
+  ]
+
+
 (* ::Subsection::Closed:: *)
 (*SumOfSquares*)
 
@@ -121,18 +163,6 @@ SumOfSquares[data_, OptionsPattern[]] := Block[{sos, weights, dataf},
   ]
 
 SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
-
-
-(* ::Subsection::Closed:: *)
-(*DevideNoZero*)
-
-
-SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
-
-DevideNoZero[sig_,tot_]:=DevideNoZeroi[sig,tot]
-
-DevideNoZeroi = Compile[{{sig, _Real, 1}, {tot, _Real, 0}}, If[tot == 0., sig 0., sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
-DevideNoZeroi = Compile[{{sig, _Real, 0}, {tot, _Real, 0}}, If[tot == 0., 0., sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsection::Closed:: *)
@@ -179,8 +209,13 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*Package Functions*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*DTItoolPackages*)
+
 
 SyntaxInformation[DTItoolPackages] = {"ArgumentsPattern" -> {}};
 
@@ -190,7 +225,7 @@ DTItoolPackages[] :=
    StringReplace[#, "Private`" -> ""] & /@ Contexts["DTITools`*`"]]]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*DTItoolFunctions*)
 
 
@@ -215,7 +250,7 @@ DTItoolFunctions[p_Integer]:=Partition[DTItoolFunctions[], p, p, 1, ""] // Trans
 DTItoolFunctions[toolb_String,p_Integer]:=Partition[DTItoolFunctions[toolb], p, p, 1, ""] // Transpose // TableForm
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*DTItoolFuncPrint*)
 
 
@@ -239,7 +274,20 @@ DTItoolFuncPrint[toolb_String]:=Module[{functions,packs},
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
+(*Compilable functions*)
+
+
+SyntaxInformation[CompilebleFunctions] = {"ArgumentsPattern" -> {}};
+
+CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1, 1] // Transpose) /. 1 -> {} // TableForm
+
+
+(* ::Subsection:: *)
+(*Memory functions*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*MemoryUsage*)
 
 
@@ -281,7 +329,7 @@ ReadProtected in all contexts", 16, FontFamily -> "Times"]
    ];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*MemoryUsage*)
 
 
@@ -294,7 +342,11 @@ ClearTemporaryVariables[] := Block[{names, attr},
   ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*Number Functions*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*NumberTableForm*)
 
 
@@ -315,29 +367,8 @@ NumberTableForm[dat_, depth_, opts : OptionsPattern[]] :=
    ];
 
 
-(* ::Subsection::Closed:: *)
-(*Compilable functions*)
-
-
-SyntaxInformation[CompilebleFunctions] = {"ArgumentsPattern" -> {}};
-
-CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1, 1] // Transpose) /. 1 -> {} // TableForm
-
-
-(* ::Subsection::Closed:: *)
-(*MeanNoZero*)
-
-
-SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_, _.}};
-
-MeanNoZero[datai_] := Block[{data},
-  data = N@Chop@TransData[datai, "l"];
-  N@Chop@Map[Mean[DeleteCases[#, 0.] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
-  ]
-
-
-(* ::Subsection::Closed:: *)
-(*MeanNoZero*)
+(* ::Subsubsection::Closed:: *)
+(*MeanStd*)
 
 
 MeanStd[inp_] := Block[{dat}, 
@@ -346,16 +377,15 @@ MeanStd[inp_] := Block[{dat},
   ]
 
 
-(* ::Subsection::Closed:: *)
-(*MeanNoZero*)
+(* ::Subsubsection::Closed:: *)
+(*MeanRange*)
 
-  
+
 MeanRange[inp_] := Block[{q1, q2, q3},
   {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {.14, .5, .86}];
   Row[{NumberForm[Round[q2, .01], {3, 2}], "  (", NumberForm[Round[q1, .01], {3, 2}], " - ", NumberForm[Round[q3, .01], {3, 2}], ")"}]
   ]
-
-
+  
 MeanRange[inp_,quant_] := Block[{q1, q2, q3},
   {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {quant[[1]],.5,quant[[2]]}];
   Row[{NumberForm[Round[q2, .01], {3, 2}], "  (", NumberForm[Round[q1, .01], {3, 2}], " - ", NumberForm[Round[q3, .01], {3, 2}], ")"}]

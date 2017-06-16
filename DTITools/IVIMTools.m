@@ -24,7 +24,7 @@ ClearAll @@ Names["DTITools`IVIMTools`*"];
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -134,7 +134,7 @@ bval are the bvalues.
 output is the corrected data."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*General Options*)
 
 
@@ -193,7 +193,7 @@ FilterSize::usage =
 "FilterSize is an option for IVIMCorrectData. If FilterMaps is True it gives the kernel size."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -400,100 +400,11 @@ IVIMFunction[pars_, fun_] :=
     ]]
 
 
-(* ::Subsection::Closed:: *)
-(*FracCorrect*)
+(* ::Subsection:: *)
+(*Bayesian Functions*)
 
 
-SyntaxInformation[FracCorrect] = {"ArgumentsPattern" -> {_, _, _.}};
-
-FracCorrect[f1_, time_] := Module[{te, tr, t2t, t21, t1t, t11, st, s1},
-  {{te, tr}, {t2t, t21}, {t1t, t11}} = time;
-  st = Sigval[{1, t1t, t2t}, tr, te] // N;
-  s1 = Sigval[{1, t11, t21}, tr, te] // N;
-  ((f1*st)/(s1 - f1*s1 + f1*st))
-  ]
-  
-FracCorrect[{f1_, f2_?VectorQ}, time_] := 
- Module[{te, tr, t2t, t21, t22, t1t, t11, t12, st, s1, s2},
-  {{te, tr}, {t2t, t21, t22}, {t1t, t11, t12}} = time;
-  st = Sigval[{1, t1t, t2t}, tr, te] // N;
-  s1 = Sigval[{1, t11, t21}, tr, te] // N;
-  s2 = Sigval[{1, t12, t22}, tr, te] // N;
-  {(f1*s2*st)/(s1*s2 - f1*s1*s2 - f2*s1*s2 + f2*s1*st + f1*s2*st),
-   (f2*s1*st)/(s1*s2 - f1*s1*s2 - f2*s1*s2 + f2*s1*st + f1*s2*st)}
-  ]
-
-(*correct fraction for T2 relaxation*)
-Sigval[par_, TR_, TE_] := par[[1]] (1 - Exp[-TR/par[[2]]]) Exp[-TE/par[[3]]]=
-
-
-(* ::Subsection::Closed:: *)
-(*ThetaConv*)
-
-
-SyntaxInformation[ThetaConv] = {"ArgumentsPattern" -> {_}};
-
-ThetaConv[{f1_, dc_, pdc_}] := {Exp[f1]/(1 + Exp[f1]), Exp[dc], Exp[pdc]};
-ThetaConv[{f1_, f2_, dc_, pdc1_}] := {Exp[f1]/(1 + Exp[f1]), Exp[f2]/(1 + Exp[f2]), Exp[dc], Exp[pdc1]};
-ThetaConv[{f1_, f2_, dc_, pdc1_, pdc2_}] := {Exp[f1]/(1 + Exp[f1]), Exp[f2]/(1 + Exp[f2]), Exp[dc], Exp[pdc1], Exp[pdc2]};
-
-
-(* ::Subsection::Closed:: *)
-(*ThetaConvi*)
-
-
-SyntaxInformation[ThetaConvi] = {"ArgumentsPattern" -> {_}};
-
-ThetaConvi[{F_, Dc_, pDc_}] := N[{Log[F] - Log[1 - F], Log[Dc], Log[pDc]}] /. {-Infinity -> 0., Indeterminate -> 0.};
-ThetaConvi[{F1_, F2_, Dc_, pDc1_}] := N[{Log[F1] - Log[1 - F1], Log[F2] - Log[1 - F2], Log[Dc], Log[pDc1]}] /. {-Infinity -> 0., Indeterminate -> 0.};
-ThetaConvi[{F1_, F2_, Dc_, pDc1_, pDc2_}] := N[{Log[F1] - Log[1 - F1], Log[F2] - Log[1 - F2], Log[Dc], Log[pDc1], Log[pDc2]}] /. {-Infinity -> 0., Indeterminate -> 0.};
-
-
-(* ::Subsection::Closed:: *)
-(*FConvert*)
-
-
-SyntaxInformation[FConvert] = {"ArgumentsPattern" -> {_}};
-
-FConvert[f_] := If[VectorQ[f], FConvf[f], FConv[f]]
-FConv = Compile[{{f1, _Real, 3}}, Exp[f1]/(1 + Exp[f1]), Parallelization -> True];
-FConvf = Compile[{{f1, _Real, 1}}, Exp[f1]/(1 + Exp[f1]), Parallelization -> True];
-
-
-(* ::Subsection::Closed:: *)
-(*FConverti*)
-
-
-SyntaxInformation[FConverti] = {"ArgumentsPattern" -> {_}};
-
-FConverti[F_] := If[VectorQ[F], FConvif[F], FConvi[F]];
-FConvi = Compile[{{F, _Real, 3}}, Log[F] - Log[1 - F], Parallelization -> True];
-FConvif = Compile[{{F, _Real, 1}}, Log[F] - Log[1 - F], Parallelization -> True];
-
-
-(* ::Subsection::Closed:: *)
-(*CorrectParMap*)
-
-
-SyntaxInformation[CorrectParMap] = {"ArgumentsPattern" -> {_, _, _}};
-
-CorrectParMap[par_, con_, mask_] := 
- Module[{dim, mean, cov, sig, clipmap, rand, clippar, parnew},
-
-  {mean, cov} = MeanCov[Transpose@Data3DToVector[par,mask][[1]]];
-  sig = Diagonal[cov];
-  dim = Dimensions[First@par];
-  
-  MapThread[(
-     clipmap = mask ((1 - Mask[#1, #2[[1]] + .001]) + Mask[#1, #2[[2]] - .001]);
-     rand = clipmap RandomVariate[NormalDistribution[#3, #4], dim];
-     clippar = (1 - clipmap) #1;
-     parnew = rand + clippar
-     ) &, {par, con, mean, sig}]
-  ]
-
-
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*BayesianIVIMFit2*)
 
 
@@ -668,7 +579,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*BayesianIVIMFit3*)
 
 
@@ -868,8 +779,8 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 
 
 
-(* ::Subsection::Closed:: *)
-(*IVIM Core Functions*)
+(* ::Subsubsection::Closed:: *)
+(*Bayesian Core Functions*)
 
 
 BooleC = Compile[{{val, _Real, 1}, {ru, _Real, 1}}, UnitStep[val - ru], Parallelization -> True, RuntimeOptions -> "Speed"];
@@ -987,6 +898,103 @@ AlphaC = Compile[{
     UnitStep[(pd*pt) - rand]
     ],
    Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+
+
+(* ::Subsection:: *)
+(*Bayesian Support Functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*FracCorrect*)
+
+
+SyntaxInformation[FracCorrect] = {"ArgumentsPattern" -> {_, _, _.}};
+
+FracCorrect[f1_, time_] := Module[{te, tr, t2t, t21, t1t, t11, st, s1},
+  {{te, tr}, {t2t, t21}, {t1t, t11}} = time;
+  st = Sigval[{1, t1t, t2t}, tr, te] // N;
+  s1 = Sigval[{1, t11, t21}, tr, te] // N;
+  ((f1*st)/(s1 - f1*s1 + f1*st))
+  ]
+  
+FracCorrect[{f1_, f2_?VectorQ}, time_] := 
+ Module[{te, tr, t2t, t21, t22, t1t, t11, t12, st, s1, s2},
+  {{te, tr}, {t2t, t21, t22}, {t1t, t11, t12}} = time;
+  st = Sigval[{1, t1t, t2t}, tr, te] // N;
+  s1 = Sigval[{1, t11, t21}, tr, te] // N;
+  s2 = Sigval[{1, t12, t22}, tr, te] // N;
+  {(f1*s2*st)/(s1*s2 - f1*s1*s2 - f2*s1*s2 + f2*s1*st + f1*s2*st),
+   (f2*s1*st)/(s1*s2 - f1*s1*s2 - f2*s1*s2 + f2*s1*st + f1*s2*st)}
+  ]
+
+(*correct fraction for T2 relaxation*)
+Sigval[par_, TR_, TE_] := par[[1]] (1 - Exp[-TR/par[[2]]]) Exp[-TE/par[[3]]]=
+
+
+(* ::Subsubsection::Closed:: *)
+(*ThetaConv*)
+
+
+SyntaxInformation[ThetaConv] = {"ArgumentsPattern" -> {_}};
+
+ThetaConv[{f1_, dc_, pdc_}] := {Exp[f1]/(1 + Exp[f1]), Exp[dc], Exp[pdc]};
+ThetaConv[{f1_, f2_, dc_, pdc1_}] := {Exp[f1]/(1 + Exp[f1]), Exp[f2]/(1 + Exp[f2]), Exp[dc], Exp[pdc1]};
+ThetaConv[{f1_, f2_, dc_, pdc1_, pdc2_}] := {Exp[f1]/(1 + Exp[f1]), Exp[f2]/(1 + Exp[f2]), Exp[dc], Exp[pdc1], Exp[pdc2]};
+
+
+(* ::Subsubsection::Closed:: *)
+(*ThetaConvi*)
+
+
+SyntaxInformation[ThetaConvi] = {"ArgumentsPattern" -> {_}};
+
+ThetaConvi[{F_, Dc_, pDc_}] := N[{Log[F] - Log[1 - F], Log[Dc], Log[pDc]}] /. {-Infinity -> 0., Indeterminate -> 0.};
+ThetaConvi[{F1_, F2_, Dc_, pDc1_}] := N[{Log[F1] - Log[1 - F1], Log[F2] - Log[1 - F2], Log[Dc], Log[pDc1]}] /. {-Infinity -> 0., Indeterminate -> 0.};
+ThetaConvi[{F1_, F2_, Dc_, pDc1_, pDc2_}] := N[{Log[F1] - Log[1 - F1], Log[F2] - Log[1 - F2], Log[Dc], Log[pDc1], Log[pDc2]}] /. {-Infinity -> 0., Indeterminate -> 0.};
+
+
+(* ::Subsubsection::Closed:: *)
+(*FConvert*)
+
+
+SyntaxInformation[FConvert] = {"ArgumentsPattern" -> {_}};
+
+FConvert[f_] := If[VectorQ[f], FConvf[f], FConv[f]]
+FConv = Compile[{{f1, _Real, 3}}, Exp[f1]/(1 + Exp[f1]), Parallelization -> True];
+FConvf = Compile[{{f1, _Real, 1}}, Exp[f1]/(1 + Exp[f1]), Parallelization -> True];
+
+
+(* ::Subsubsection::Closed:: *)
+(*FConverti*)
+
+
+SyntaxInformation[FConverti] = {"ArgumentsPattern" -> {_}};
+
+FConverti[F_] := If[VectorQ[F], FConvif[F], FConvi[F]];
+FConvi = Compile[{{F, _Real, 3}}, Log[F] - Log[1 - F], Parallelization -> True];
+FConvif = Compile[{{F, _Real, 1}}, Log[F] - Log[1 - F], Parallelization -> True];
+
+
+(* ::Subsubsection::Closed:: *)
+(*CorrectParMap*)
+
+
+SyntaxInformation[CorrectParMap] = {"ArgumentsPattern" -> {_, _, _}};
+
+CorrectParMap[par_, con_, mask_] := 
+ Module[{dim, mean, cov, sig, clipmap, rand, clippar, parnew},
+
+  {mean, cov} = MeanCov[Transpose@Data3DToVector[par,mask][[1]]];
+  sig = Diagonal[cov];
+  dim = Dimensions[First@par];
+  
+  MapThread[(
+     clipmap = mask ((1 - Mask[#1, #2[[1]] + .001]) + Mask[#1, #2[[2]] - .001]);
+     rand = clipmap RandomVariate[NormalDistribution[#3, #4], dim];
+     clippar = (1 - clipmap) #1;
+     parnew = rand + clippar
+     ) &, {par, con, mean, sig}]
+  ]
 
 
 (* ::Subsection:: *)
