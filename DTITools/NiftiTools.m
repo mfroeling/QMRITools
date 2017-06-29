@@ -152,7 +152,7 @@ Begin["`Private`"]
 (*DcmToNii*)
 
 
-Options[DcmToNii]={CompressNii->True}
+Options[DcmToNii]={CompressNii->True,Method->Automatic}
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
@@ -175,7 +175,7 @@ DcmToNii[action_,fstr_,OptionsPattern[]] := Module[{act,filfolin,folout,add,titl
 		"file",{"FileOpen","Select the dcm file to convert"},
 		_,Return[Message[DcmToNii::type]]
 		];
-	
+		
 	(*generate a popup to select the file or folder*)
 	If[
 		Length[fstr]==2,
@@ -192,17 +192,21 @@ DcmToNii[action_,fstr_,OptionsPattern[]] := Module[{act,filfolin,folout,add,titl
 	(*create the cmd window command to run dcm2niix.exe*)
 	log=" > \"" <> folout <> "\\output.txt";
 	add=If[action == "file", "-v N "," "];
-	compress=If[OptionValue[CompressNii],"y","n"];
-	command=First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\n dcm2niix.exe  -f %f_%i_%m_%n_%p_%q_%s_%t -z "<>compress<>" -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log<>"\"\nexit\n";
+	compress=If[OptionValue[CompressNii],"i","n"];
+	command=First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log<>"\"\nexit\n";
+	
+	If[OptionValue[Method]=!=Automatic,Print[command]];
 	
 	(*perform teh conversion*)
-	Monitor[RunProcess[$SystemShell,"StandardOutput",command],ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]];
+	Monitor[
+		RunProcess[$SystemShell,"StandardOutput",command],
+		ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]];
 ]
 
 FindDcm2Nii[]:=Module[{fil1,fil2},
 	fil1=$UserBaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2niix.exe";
 	fil2=$BaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2niix.exe";
-	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2, Message[DcmToNii::notfount];$Failed]]
+	If[FileExistsQ[fil1],DirectoryName[fil1],If[FileExistsQ[fil2],DirectoryName[fil2], Message[DcmToNii::notfount];$Failed]]
 ]
 
 
@@ -503,7 +507,7 @@ SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_., OptionsPattern[]}};
 
 ImportNii [opts : OptionsPattern[]] := ImportNii["", opts];
 
-ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out},
+ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output},
 	
 	what = OptionValue[NiiMethod];
 	
@@ -525,7 +529,7 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out},
 	(*stop if ther is no file*)
 	If[file == Null || file === $Canceled || file === $Failed, Message[Import::nffil,fil];Return[$Failed,Module]];
 	
-	Switch[what,
+	output=Switch[what,
 		"data", Import[file, {"nii", "Data"}],
 		"header", Import[file, {"nii", {"Data", "VoxelSize", "Header"}}],
 		"headerMat", Import[file, {"nii", {"Data", "VoxelSize", "Header", "RotationMatrix"}}],
@@ -535,7 +539,13 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out},
 		"all", out = Import[file, {"nii", {"Data", "VoxelSize", "Header", "TR", "Scaling", "RotationMatrix", "Units"}}];
 		{out[[1]], out[[2]], out[[3 ;;]]},
 		_, Import[file, "nii"]
-	]
+	];
+	
+	
+	(*remove temp files for gz format*)
+	Quiet[DeleteFile[FileNames["*" <> FileBaseName[Last[FileNameSplit[file]]], $TemporaryDirectory]]];
+	
+	output
 ]
 
 

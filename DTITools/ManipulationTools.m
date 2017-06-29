@@ -1399,12 +1399,19 @@ CutData[data_,cut_] := Switch[
 		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}
 ]
 
-FindMiddle[dati_] := Module[{dat, len, r1, r2, sec1},
-  dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
+FindMiddle[dati_] := Module[{dat, len, datf,peaks},
+  (*dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
   len = Length[dat];
   {r1, r2} = len/2 + {-20, 20};
   sec1 = Transpose[{dat, Range[len]}][[r1 ;; r2]];
-  Last[First[Sort[sec1]]]
+  Last[First[Sort[sec1]]]*)
+  
+  dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
+  len = Length[dat];
+  
+  datf = Max[dat] - GaussianFilter[dat, len/20];
+  peaks = FindPeaks[datf];
+  First@First@Nearest[peaks, {len/2, Max[dat]}]
   ]
 
 

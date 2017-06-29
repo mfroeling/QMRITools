@@ -123,7 +123,7 @@ Options[PCADeNoise] = {PCAKernel -> 5, PCAFitParameters -> {10, 6, 10}, FitSigma
 
 SyntaxInformation[PCADeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, opts];
+PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, 0., opts];
 
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
@@ -162,7 +162,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   
   (*if mask is a number make it 1 for all voxels*)
   mask = If[NumberQ[mask], weights + 1, mask];
-  
+    
   (*parameters for monitor*)
   sliceNr = start = off + 1;
   Monitor[output = Table[
@@ -387,11 +387,11 @@ PCAFitHist[data_, {mi_, ni_}, sigii_, toli_, OptionsPattern[]] := Block[
 SyntaxInformation[PCAFitEq]={"ArgumentsPattern"->{_,_.}};
 
 (*no initial sigma given*)
-PCAFitEq[data_, {m_, n_}] := PCAFitEq[data, {m, n}, 0.,0]
+PCAFitEq[data_, {m_, n_}] := PCAFitEq[data, {m, n}, 0., 0]
 (*no initial normal tolarance*)
-PCAFitEq[data_, {m_, n_},sigi_] := PCAFitEq[data, {m, n},sigi,0]
+PCAFitEq[data_, {m_, n_}, sigi_] := PCAFitEq[data, {m, n}, sigi, 0]
 (*initial sigma is given*)
-PCAFitEq[data_, {mi_, ni_}, sigi_,toli_] := 
+PCAFitEq[data_, {mi_, ni_}, sigi_, toli_] := 
  Block[{u, w, v, m, n, eig, pi, sig,tol},
   (*perform svd*)
   {u, w, v, eig, m, n} = SVD[data, {mi, ni}];
@@ -415,14 +415,14 @@ PCAFitEq[data_, {mi_, ni_}, sigi_,toli_] :=
 GridSearch = Compile[{{eig, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}}, 
    Block[{Nes, llab, eq1, eq2, pi, sig, eigl},
     (*initialize values*)
-    pi = 0; eq1 = 0.; eq2 = 10.;
+    pi = 1; eq1 = 0.; eq2 = 10.;
     eigl = Last[eig];
     (*find p for which eq1 and eq2 is equal to given sig*)
     While[eq2 > eq1 && pi < m,
-     pi++;
      (*/Max[sig,1.0],sig is<1 per definition*)
      eq1 = (Mean[eig[[pi ;; m]]]);
      eq2 = ((eig[[pi]] - eigl)/(4 Sqrt[((m - pi)/n)]));
+     pi++;
      ];
     (*give output,number of noise comp and sigma*)
     {pi, Sqrt[(eq1 + eq2)/2]}], 
@@ -440,13 +440,13 @@ GridSearchSig = Compile[{{eig, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {s
     (*initialize values*)
     sig2 = sig^2;
     eigl = Last[eig];
-    pi = 0; eq1 = 2 sig2; eq2 = 2 sig2;
+    pi = 1; eq1 = 2 sig2; eq2 = 2 sig2;
     (*find p for which eq1 and eq2 is equal to given sig*)
     While[(eq1 - sig2 > 0 || eq2 - sig2 > 0) && pi < m,
-     pi++;
      (*/Max[sig,1.0],sig is<1 per definition*)
      eq1 = (Mean[eig[[pi ;; m]]]);
      eq2 = ((eig[[pi]] - eigl)/(4 Sqrt[((m - pi)/n)]));
+     pi++;
      ];
     (*give output,number of noise comp and sigma*)
     {pi, sig}],

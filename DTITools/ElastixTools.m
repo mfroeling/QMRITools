@@ -214,6 +214,9 @@ It spefifies which registration method to use when registering diffusion data to
 FindTransform::usage = 
 "FindTransform is an option for TransformData and RegisterTransformData. It specifies where to find the transformfile."
 
+SplitMethod::usage = 
+"SplitMethod is an option for RegisterDataSplit and RegisterDataTransformSplit. values can be \"mean\", \"moving\", \"target\""
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -287,7 +290,7 @@ ParString[{itterations_,resolutions_,bins_,samples_,intOrder_},{type_,output_},g
 (Metric \"VarianceOverLastDimensionMetric\")",
 _,
 "(Interpolator \"BSplineInterpolator\")
-(Metric \"AdvancedMattesMutualInformation\")"
+(Metric \"NormalizedMutualInformation\")"
 ]<>"
 (BSplineInterpolationOrder 3)
 (Resampler \"DefaultResampler\")
@@ -992,62 +995,75 @@ If[OptionValue[OutputTransformation],
 (*RegisterDataSplit*)
 
 
-Options[RegisterDataSplit] := Options[RegisterDiffusionData];
+Options[RegisterDataSplit] = Join[Options[RegisterData],{SplitMethod->"Mean"}];
 
 SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-RegisterDataSplit[target_, moving_, opts : OptionsPattern[]] := Block[{reg, mov,
-	targetl, targetr, masktl, masktr, cut1,
-	movingl, movingr, maskml, maskmr, cut2,
+RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
+	reg, mov,
+	target ,maskT, voxT,
+	moving, maskM, voxM,
+	targetl, targetr, maskTl, maskTr, cut1,
+	movingl, movingr, maskMl, maskMr, cut2,
 	regl, regr, movl, movr
 	},
 	
-	(*split the target data*)
-	{targetl, targetr}=If[ArrayQ[target],
-		(*data*)
-		{targetl, targetr, cut1} = CutData[target];
-		{targetl, targetr}
-		,
-		If[Length[target]==2 && ArrayQ[target[[1]]] && Length[target[[2]]]==3,
-			(*data and vox*)
-			{targetl, targetr, cut1} = CutData[target[[1]]];
-			{{targetl, target[[2]]}, {targetr, target[[2]]}}
-			,
-			(*data, mask and vox*)
-			{targetl, targetr, cut1} = CutData[target[[1]]];
-			{masktl, masktr, cut1} = CutData[target[[2]],cut1];
-			{{targetl, masktl, target[[3]]}, {targetr, masktr, target[[3]]}}
-		]
+	(*prepare the input*)
+	{target ,maskT, voxT}=SplitInput[targeti];
+	{moving, maskM, voxM}=SplitInput[movingi];
+	
+	(*find the common split*)	
+	{targetl, targetr, cut1}=CutData[target];
+	{movingl, movingr, cut2}=CutData[moving];
+	
+	{cut1,cut2}=Switch[
+		OptionValue[SplitMethod],
+		"target",
+		{cut1,Round[(cut1 voxT[[2]])/voxM[[2]]]},
+		"moving",
+		{Round[(cut2 voxM[[2]])/voxT[[2]]],cut2},
+		_,
+		Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]],voxM[[2]]}]
 	];
 	
-	(*split the moving data*)
-	{movingl,movingr}=If[ArrayQ[moving],
-		(*data*)
-		{movingl, movingr, cut2} = CutData[moving];
-		{movingl, movingr}
-		,
-		If[Length[moving]==2 && ArrayQ[moving[[1]]] && Length[moving[[2]]]==3,
-			(*data and vox*)
-			{movingl, movingr, cut2} = CutData[moving[[1]]];
-			{{movingl, moving[[2]]}, {movingr, moving[[2]]}}
-			,
-			(*data, mask and vox*)
-			{movingl, movingr, cut2} = CutData[moving[[1]]];
-			{maskml, maskmr, cut2} = CutData[moving[[2]], cut2];
-			{{movingl, maskml, moving[[3]]}, {movingr, maskmr, moving[[3]]}}
-		]
-	];
+	(*cut data*)
+	{targetl, targetr, cut1}=CutData[target,cut1];
+	{movingl, movingr, cut2}=CutData[moving,cut2];
+	(*cut masks*)
+	{maskTl, maskTr}=If[maskT==={1},{{1},{1}},CutData[maskT,cut1][[;;-2]]];
+	{maskMl, maskMr}=If[maskM==={1},{{1},{1}},CutData[maskM,cut2][[;;-2]]];
 	
 	(*register left part*)
-	regl = RegisterData[targetl, movingl,  opts];
+	regl = RegisterData[{targetl, maskTl, voxT}, {movingl, maskMl, voxM},  Sequence@@FilterRules[{opts}, Options[RegisterData]]];
 		
 	(*register right part*)
-	regr = RegisterData[targetr, movingr,  opts];
+	regr = RegisterData[{targetr, maskTr, voxT}, {movingr, maskMr, voxM},  Sequence@@FilterRules[{opts}, Options[RegisterData]]];
 	
 	StichData[regl,regr]
 	
   ]
 
+
+(* ::Subsubsection::Closed:: *)
+(*SplitInput*)
+
+
+SplitInput[input_]:=Module[{data,mask,vox},
+	(*split the target data*)
+	If[ArrayQ[input],
+		(*data*)
+		data=input;mask={1};vox={1,1,1};
+		,
+		If[Length[input]==2 && ArrayQ[input[[1]]] && Length[input[[2]]]==3,
+			(*data and vox*)
+			data=input[[1]];mask={1};vox=input[[2]];
+			,
+			(*data, mask and vox*)
+			data=input[[1]];mask=input[[2]];vox=input[[3]];
+		]
+	];
+	{data,mask,vox}
+]
 
 
 (* ::Subsection:: *)
@@ -1335,10 +1351,18 @@ RegisterDiffusionDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}
    ];
 
 RegisterDiffusionDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, opts : OptionsPattern[]] := Block[
-   	{datal, datar, dataal, dataar, cut},
+   	{datal, datar, dataal, dataar, cut1, cut2},
    	
-   {datal, datar, cut} = CutData[data];
-   {dataal, dataar, cut} = CutData[dataa];
+   (*find cuts*)
+   {datal, datar, cut1} = CutData[data];
+   {dataal, dataar, cut2} = CutData[dataa];
+   (*align cuts*)
+   {cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];
+   
+   (*cut with the aligned cuts*)
+   {datal, datar, cut1} = CutData[data, cut1];
+   {dataal, dataar, cut2} = CutData[dataa, cut2];
+   
    datal = RegisterDiffusionData[{datal, vox}, {dataal, voxa}, opts][[2]];
    datar = RegisterDiffusionData[{datar, vox}, {dataar, voxa}, opts][[2]];
    StichData[datal, datar]
@@ -1347,10 +1371,20 @@ RegisterDiffusionDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dat
 RegisterDiffusionDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dataa_, maska_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, opts : OptionsPattern[]] := Block[
 	{datal, datar, dataal, dataar, maskl, maskr, maskal, maskar,cut1,cut2},
 	
+	(*find cuts*)
    {datal, datar, cut1} = CutData[data];
-   {maskl, maskr, cut1} = CutData[mask,cut1];
    {dataal, dataar, cut2} = CutData[dataa];
+   
+   (*align cuts*)
+   {cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];
+   
+   (*cut with the aligned cuts*)   
+   {datal, datar, cut1} = CutData[data,cut1];
+   {maskl, maskr, cut1} = CutData[mask,cut1];
+   {dataal, dataar, cut2} = CutData[dataa,cut2];
    {maskal, maskar, cut2} = CutData[maska,cut2];
+  
+   
    datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, maskal, voxa}, opts][[2]];
    datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, maskar, voxa}, opts][[2]];
    
@@ -1390,65 +1424,58 @@ RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[
 (*RegisterDataTransformSplit*)
 
 
-Options[RegisterDataTransformSplit] = Options[RegisterData];
+Options[RegisterDataTransformSplit] = Join[Options[RegisterData],{SplitMethod->"Mean"}];
 
 SyntaxInformation[RegisterDataTransformSplit] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-RegisterDataTransformSplit[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,
-	targetl, targetr, masktl, masktr, cut1,
-	movingl, movingr, maskml, maskmr, cut2,
+RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,
+	target ,maskT, voxT,
+	moving, maskM, voxM,
+	targetl, targetr, maskTl, maskTr, cut1,
+	movingl, movingr, maskMl, maskMr, cut2,
 	moving2l, moving2r, tdir,
 	regl, regr, movl, movr
 	},
 	
-	(*split the target data*)
-	{targetl, targetr}=If[ArrayQ[target],
-		(*data*)
-		{targetl, targetr, cut1} = CutData[target];
-		{targetl, targetr}
-		,
-		If[Length[target]==2 && ArrayQ[target[[1]]] && Length[target[[2]]]==3,
-			(*data and vox*)
-			{targetl, targetr, cut1} = CutData[target[[1]]];
-			{{targetl, target[[2]]}, {targetr, target[[2]]}}
-			,
-			(*data, mask and vox*)
-			{targetl, targetr, cut1} = CutData[target[[1]]];
-			{masktl, masktr, cut1} = CutData[target[[2]],cut1];
-			{{targetl, masktl, target[[3]]}, {targetr, masktr, target[[3]]}}
-		]
+	(*prepare the input*)
+	{target ,maskT, voxT}=SplitInput[targeti];
+	{moving, maskM, voxM}=SplitInput[movingi];
+	
+	(*find the common split*)	
+	{targetl, targetr, cut1}=CutData[target];
+	{movingl, movingr, cut2}=CutData[moving];
+	
+	{cut1,cut2} = Switch[
+		OptionValue[SplitMethod],
+		"target",
+		{cut1,Round[(cut1 voxT[[2]])/voxM[[2]]]},
+		"moving",
+		{Round[(cut2 voxM[[2]])/voxT[[2]]],cut2},
+		_,
+		Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]],voxM[[2]]}]
 	];
 	
-	(*split the moving data*)
-	{movingl,movingr}=If[ArrayQ[moving],
-		(*data*)
-		{movingl, movingr, cut2} = CutData[moving];
-		{movingl, movingr}
-		,
-		If[Length[moving]==2 && ArrayQ[moving[[1]]] && Length[moving[[2]]]==3,
-			(*data and vox*)
-			{movingl, movingr, cut2} = CutData[moving[[1]]];
-			{{movingl, moving[[2]]}, {movingr, moving[[2]]}}
-			,
-			(*data, mask and vox*)
-			{movingl, movingr, cut2} = CutData[moving[[1]]];
-			{maskml, maskmr, cut2} = CutData[moving[[2]], cut2];
-			{{movingl, maskml, moving[[3]]}, {movingr, maskmr, moving[[3]]}}
-		]
-	];
+	(*cut data*)
+	{targetl, targetr, cut1}=CutData[target,cut1];
+	{movingl, movingr, cut2}=CutData[moving,cut2];
+	(*cut masks*)
+	{maskTl, maskTr}If[maskM=!={1},CutData[maskT,cut1],{{1},{1}}];
+	{maskMl, maskMr}If[maskM=!={1},CutData[maskM,cut2],{{1},{1}}];
 	
 	(*split the moving2 data*)
 	{moving2l, moving2r, cut2} = CutData[moving2, cut2];
 	
 	(*register left part*)
-	regl = RegisterData[targetl, movingl, DeleteTempDirectory -> False, opts];
+	regl = RegisterData[{targetl, maskTl, voxT}, {movingl, maskMl, voxM}, DeleteTempDirectory -> False, Sequence@@FilterRules[{opts}, Options[RegisterData]]];
+	(*transform the left part*)
 	movl = If[ArrayDepth[moving2l] == 4,
 		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2l]],
 		TransformData[{moving2l, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
 		];
 		
 	(*register right part*)
-	regr = RegisterData[targetr, movingr, DeleteTempDirectory -> False, opts];
+	regr = RegisterData[{targetr, maskTr, voxT}, {movingr, maskMr, voxM}, DeleteTempDirectory -> False, Sequence@@FilterRules[{opts}, Options[RegisterData]]];
+	(*transform the right part*)
 	movr = If[ArrayDepth[moving2r] == 4,
 		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2r]],
 		TransformData[{moving2r, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]

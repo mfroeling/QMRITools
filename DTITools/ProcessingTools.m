@@ -367,14 +367,16 @@ TensorCalci[data_,dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 	
 	method=OptionValue[Method];
 	robust=(OptionValue[RobustFit] && method=!="LLS");
-	outliers=If[robust,Transpose[FindOutliers[Transpose[dataL,l],bmat,bmatI,10^-5,6],r](*tollerance and outlier thresh*),0];
+	outliers=If[robust,
+		Transpose[FindOutliers[Transpose[dataL,l],bmat,bmatI,10^-5,6],r](*tollerance and outlier thresh*)
+		,0];
 	
 	fitresult=Switch[method,
 		(*"LLS",TensMin[TensMinLLS],
 		"WLLS",TensMin[TensMinWLLS],*)
 		"LLS", Transpose[TensMinLLS[Transpose[dataL,l], bmatI], r],
-		"WLLS", Transpose[TensMinWLLS[Transpose[data,l],Transpose[(1-outliers)dataL,l], bmat], r],
-		"iWLLS", Transpose[TensMiniWLLS[Transpose[data,l],Transpose[(1-outliers)dataL,l], bmat], r]
+		"WLLS", Transpose[TensMinWLLS[Transpose[data,l],Transpose[(1-outliers) dataL,l], bmat], r],
+		"iWLLS", Transpose[TensMiniWLLS[Transpose[data,l],Transpose[(1-outliers) dataL,l], bmat], r]
 		
 		(*
 		"NLS",TensMin[TensMinNLS],

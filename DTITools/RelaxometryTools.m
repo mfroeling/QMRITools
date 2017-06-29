@@ -575,9 +575,11 @@ CreateT2Dictionaryi[relax_, ang_, T2range_, B1range_] := CreateT2Dictionaryi[rel
    "\n		{T2min, T2max, T2step} =", {t2s, t2e, t2i},
    "\n		{B1min, B1max, B1step} =", {b1s, b1e, b1i}];*)
    (*create dictionary*)
-   dict = Table[
-     {{EPGSignal[Necho, echoSpace, T1m, T2m, angle, B1], EPGSignal[Necho, echoSpace, T1f, T2f, angle, B1]}, {T2m, B1}}, 
-     	{T2m, t2s, t2e, t2i}, {B1, b1s, b1e, b1i}];
+   dict = Table[{{
+     	EPGSignal[Necho, echoSpace, T1m, T2m, angle, B1], 
+     	EPGSignal[Necho, echoSpace, T1f, T2f, angle, B1]}, 
+     	{T2m, B1}
+     	},	{T2m, t2s, t2e, t2i}, {B1, b1s, b1e, b1i}];
    (*flatten dictionary*)  	
    valsf = Flatten[dict[[All, All, 2]], 1];
    dictf = Transpose /@ Flatten[dict[[All, All, 1]], 1];

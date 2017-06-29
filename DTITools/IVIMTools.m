@@ -483,6 +483,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
       (*define yn*)
       yty = Dotc1[yn];
       (*rU := RandomReal[1, nvox];*)
+      
       (*step 2 - initialize mu(j) and cov(j) for j=1 - thetaj={fj,dj,pdj}*)
       {fj, dj, pdj} = thetai;
       {muj, covj} = MeanCov[thetai];
@@ -492,6 +493,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
       Npdc(i) needed to update w in first 500 burn steps*)
       {w1, w2, w3} = Transpose[ConstantArray[wstart, {nvox}]];
       wup1 = wup2 = wup3 = ConstantArray[0, {nvox}];
+      
       (*step 3 - further steps of the MCMC j= 2, 3, ... *)
       Monitor[
        {mu, cov, theta, t2s} = Last[Reap[
@@ -503,9 +505,11 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
                {muj, covj, icovj} = RandomGibsSample[{fj, dj, pdj}, covj, nvox];
                               
                (*steps 3c "loop" over the voxels i, perform as vector for each of the parameters *)
+               
                (*step 3c-i - define theta(j) - {fj,dj,pdj}=thetaj;*)
                
                (*step 3c-ii - ramom sample frtmp*)
+               (*comp 1*)
                fjt = RandomNormalCf[fj, w1];
                gjt = Transpose@FunceC2l[fjt, dj, pdj, bval];
                bool1 = Quiet@AlphaC[{fj, dj, pdj}, {fjt, dj, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
