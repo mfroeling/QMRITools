@@ -1035,7 +1035,6 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 	
 	(*register left part*)
 	regl = RegisterData[{targetl, maskTl, voxT}, {movingl, maskMl, voxM},  Sequence@@FilterRules[{opts}, Options[RegisterData]]];
-		
 	(*register right part*)
 	regr = RegisterData[{targetr, maskTr, voxT}, {movingr, maskMr, voxM},  Sequence@@FilterRules[{opts}, Options[RegisterData]]];
 	
@@ -1459,8 +1458,8 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 	{targetl, targetr, cut1}=CutData[target,cut1];
 	{movingl, movingr, cut2}=CutData[moving,cut2];
 	(*cut masks*)
-	{maskTl, maskTr}If[maskM=!={1},CutData[maskT,cut1],{{1},{1}}];
-	{maskMl, maskMr}If[maskM=!={1},CutData[maskM,cut2],{{1},{1}}];
+	{maskTl, maskTr}=If[maskT==={1},{{1},{1}},CutData[maskT,cut1][[;;-2]]];
+	{maskMl, maskMr}=If[maskM==={1},{{1},{1}},CutData[maskM,cut2][[;;-2]]];
 	
 	(*split the moving2 data*)
 	{moving2l, moving2r, cut2} = CutData[moving2, cut2];
