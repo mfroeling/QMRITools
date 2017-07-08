@@ -1,6 +1,6 @@
 # DTITools
 
-[![DOI](https://zenodo.org/badge/22486/mfroeling/DTITools.svg)](https://zenodo.org/badge/latestdoi/22486/mfroeling/DTITools)
+[![DOI](https://zenodo.org/badge/54553256.svg)](https://zenodo.org/badge/latestdoi/54553256)
 
 * [Information](#information)
 * [Install toolbox](#install-toolbox)
