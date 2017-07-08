@@ -1,0 +1,574 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     20175,        564]
+NotebookOptionsPosition[     12955,        373]
+NotebookOutlinePosition[     13639,        399]
+CellTagsIndexPosition[     13560,        394]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New",ExpressionUUID->"06816634-7a46-43ce-84b3-fe84c944b156"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified",ExpressionUUID->"f41a05e5-2efd-456d-ad15-2008af61c6c7"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete",ExpressionUUID->"2a0cc690-80f9-4b96-849b-5f66938f9bb5"],
+ " | Excised in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Excised",ExpressionUUID->"6d9a7299-d55f-4204-ba77-61250a260820"]
+}], "History",
+ CellID->1247902091,ExpressionUUID->"cd27d21b-b9a4-4cef-9be3-85d825253b35"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->1122911449,ExpressionUUID->"23aed30e-fee2-48d9-aa5c-97378459e60a"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->686433507,ExpressionUUID->"40c998f1-adc8-49c2-be9b-0066cafeef83"],
+
+Cell["DTITools Package", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->52927278,ExpressionUUID->"724b1953-92fe-48ba-86fc-4e97a2615c6f"],
+
+Cell["DTITools`SimulationTools`", "Categorization",
+ CellLabel->"Context",
+ CellID->80022137,ExpressionUUID->"ff313c3f-e8b6-4b8a-9f6f-805ed3c3904c"],
+
+Cell["DTITools/ref/GetPulseProfile", "Categorization",
+ CellLabel->"URI",
+ CellID->546788857,ExpressionUUID->"db8cc4a0-b14e-4509-8e25-17f0150bb2ed"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->477174294,ExpressionUUID->"dd63aba3-661f-4f16-ac6f-ab65866b646e"],
+
+Cell["XXXX", "Keywords",
+ CellID->1164421360,ExpressionUUID->"e8e8cbf5-ea87-4780-bb96-29034a46ae44"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection",
+ CellID->1872225408,ExpressionUUID->"cb6cae32-8c7a-4d9c-abf1-2972291c2ca4"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template",
+ CellID->1562036412,ExpressionUUID->"82eab063-774b-4319-8282-b2afe197a2b2"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern",
+ CellID->158391909,ExpressionUUID->"a73c3471-30b3-4566-821b-2bbe48d086e0"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables",
+ CellID->1360575930,ExpressionUUID->"ff051220-f57d-4aad-b630-ea9bf43b4d16"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs",
+ CellID->793782254,ExpressionUUID->"ca72f16b-0055-4bcd-a846-6a71a2603f2d"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Details", "DetailsSection",
+ CellID->307771771,ExpressionUUID->"a36392f5-bb5d-447c-a45f-f81a4563a693"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Lead",
+ CellID->670882175,ExpressionUUID->"8d6394ce-107a-4d28-ae6a-485758c505ce"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Developers",
+ CellID->350963985,ExpressionUUID->"1cda839d-f406-4d55-917a-c7cd49c7f12e"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Authors",
+ CellID->8391405,ExpressionUUID->"2f309634-9b60-426b-b524-acf4c1719738"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Feature Name",
+ CellID->3610269,ExpressionUUID->"027de4e7-9636-4c24-ac16-33ef7ed576be"],
+
+Cell["XXXX", "Details",
+ CellLabel->"QA",
+ CellID->401364205,ExpressionUUID->"a31b2033-dab3-4c97-be95-8fda92e1605a"],
+
+Cell["XXXX", "Details",
+ CellLabel->"DA",
+ CellID->350204745,ExpressionUUID->"ab1cc061-84ef-4567-8baa-5ef302aa9ae4"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Docs",
+ CellID->732958810,ExpressionUUID->"ed427ab6-4f8f-47a6-8a79-809ecafa8590"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Features Page Notes",
+ CellID->222905350,ExpressionUUID->"8a86a60b-cfff-4d84-a29b-34dddf526553"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Comments",
+ CellID->240026365,ExpressionUUID->"f522ebc0-40c6-4a1d-9aa3-12765a2fbb43"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["GetPulseProfile", "ObjectName",
+ CellID->1224892054,ExpressionUUID->"2c5d14bf-18cb-4da3-9cfc-0eabd249afca"],
+
+Cell[TextData[{
+ Cell["   ", "ModInfo",ExpressionUUID->"d5f74d9f-3ff5-4ac9-92f9-8cd9c2bceaaa"],
+ Cell[BoxData[
+  RowBox[{"GetPulseProfile", "[", 
+   RowBox[{
+    StyleBox["excitation", "TI"], ",", " ", 
+    StyleBox["refocus", "TI"]}], "]"}]], "InlineFormula",ExpressionUUID->
+  "c09acc61-b9c8-4a9f-88ec-1bf2766c9584"],
+ "\[LineSeparator]gives the pusl angle profiles for the exitation and \
+refocussing pulses. a pulse is defined as {\"name\", flipangle, {G_strnth, \
+Dur, BW}}. \n",
+ Cell["   ", "ModInfo",ExpressionUUID->"49cfd10c-4169-490b-aedb-eb279cfc8a9d"],
+ Cell[BoxData[
+  RowBox[{"GetPulseProfile", "[", 
+   RowBox[{"{", 
+    RowBox[{"\"\<\!\(\*
+StyleBox[\"name\", \"TI\"]\)\>\"", ",", " ", 
+     StyleBox["flipangle", "TI"], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"G_strnth", ",", " ", 
+       ButtonBox["Dur",
+        BaseStyle->"Link"], ",", " ", 
+       ButtonBox["BW",
+        BaseStyle->"Link"]}], "}"}]}], "}"}], "]"}]], "InlineFormula",
+  ExpressionUUID->"df63170d-2b52-45b9-bf2c-bce656e40b4c"],
+ "\[LineSeparator]gives detaile slice profile information of one pulse. \
+output is {ex_angle_profiel, ref_angel_profile, {plots}}. output for single \
+pulse is {{distance, Mt, Mz, Mx, My, ang, phase}, plots}"
+}], "Usage",
+ CellChangeTimes->{{3.7084864829132104`*^9, 
+  3.708486497384038*^9}},ExpressionUUID->"85b0947a-fbc4-4ef5-9047-\
+a26b7622c732"],
+
+Cell["The following options can be given: ", "Notes",ExpressionUUID->"6bb457a3-7fac-47cd-92b9-40fc19f01cc3"],
+
+Cell[BoxData[GridBox[{
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "5e524462-f8a9-4bf7-a9e9-a4aeb3f6fcf0"], 
+    ButtonBox["MagnetizationVector",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MagnetizationVector"], 
+    RowBox[{"{", 
+     RowBox[{"0", ",", " ", "0", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["MagnetizationVector",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/MagnetizationVector"]], 
+      "InlineFormula",ExpressionUUID->"34412a16-9bf3-4ca0-8016-1ce3367cc531"],
+     " is an option for ",
+     Cell[BoxData[
+     "GetPulseProfile"], "InlineFormula",ExpressionUUID->
+      "6e0eb4ad-73dd-42ab-890e-42e58ea92044"],
+     ". It defines the start magnetization vector for the bloch simulation."
+    }], "TableText",ExpressionUUID->"a1adf287-b6b3-42b7-991f-be4231230e52"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "a4f37885-5d9f-4ac9-9413-0607cad89413"], 
+    ButtonBox["SliceRange",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/SliceRange"], "12", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["SliceRange",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/SliceRange"]], "InlineFormula",
+      ExpressionUUID->"8dfcd1bc-3e5f-4ee9-a5da-d68dd3cca6f3"],
+     " is an option for ",
+     Cell[BoxData[
+     "GetPulseProfile"], "InlineFormula",ExpressionUUID->
+      "62126a43-2556-4386-90fb-7f2267ab037d"],
+     ". It specifies over which range the slice profile is generated (in mm). \
+the total profile is 2xSliceRange."
+    }], "TableText",ExpressionUUID->"f1d7fb79-753b-4fca-b250-ba849a1ec4a6"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "873a53b8-47a9-4faf-b08b-ad24bb539ad5"], 
+    ButtonBox["SliceRangeSamples",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/SliceRangeSamples"], "25", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["SliceRangeSamples",
+       BaseStyle->"Link",
+       ButtonData->"paclet:DTITools/ref/SliceRangeSamples"]], "InlineFormula",
+      ExpressionUUID->"b9983e8a-c1e1-4861-86ca-1b4bcbf8719b"],
+     " is an option for ",
+     Cell[BoxData[
+     "GetPulseProfile"], "InlineFormula",ExpressionUUID->
+      "382024af-3046-4f0b-b701-c9ffbdd918b8"],
+     ". defines how many samples are used to generate half a puls profile."
+    }], "TableText",ExpressionUUID->"d222b98b-5903-433f-bab2-a664cd86c2d1"]}
+  }]], "3ColumnTableMod",ExpressionUUID->"506e589b-cc16-48f3-9e79-\
+5b0348fc5536"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tutorials", "TutorialsSection",
+ CellID->250839057,ExpressionUUID->"47c42117-3ae6-4e80-be58-4d71a790ff9d"],
+
+Cell["XXXX", "Tutorials",
+ CellID->341631938,ExpressionUUID->"c9f1986b-1ba8-4639-a79d-52b0e919b808"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Demonstrations", "RelatedDemonstrationsSection",
+ CellID->1268215905,ExpressionUUID->"91d72e9f-80c1-40d9-9c94-625487fee81b"],
+
+Cell["XXXX", "RelatedDemonstrations",
+ CellID->1129518860,ExpressionUUID->"011e04ac-052a-46ac-8e0d-e6f624a6c836"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Links", "RelatedLinksSection",
+ CellID->1584193535,ExpressionUUID->"b0cd5a71-7f84-4dbb-9c05-1def7f1be3e1"],
+
+Cell["XXXX", "RelatedLinks",
+ CellID->1038487239,ExpressionUUID->"151f7426-4546-4079-88a7-83a3c0886545"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["See Also", "SeeAlsoSection",
+ CellID->1255426704,ExpressionUUID->"2fc75a44-512c-49b5-8209-e5f41a53f014"],
+
+Cell["XXXX", "SeeAlso",
+ CellID->929782353,ExpressionUUID->"0bb979d0-dbe7-4b29-9bd3-05caeb5bb2ff"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["More About", "MoreAboutSection",
+ CellID->38303248,ExpressionUUID->"520afe9d-0017-4141-a432-eb429deb5408"],
+
+Cell["XXXX", "MoreAbout",
+ CellID->1665078683,ExpressionUUID->"26202016-0fa4-47f7-b590-adc3854189f3"]
+}, Open  ]],
+
+Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox["Examples", "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection",
+ CellID->880084151,ExpressionUUID->"e45fc0b1-51e8-42aa-a671-0f112c561e8e"],
+
+Cell[CellGroupData[{
+
+Cell["More Examples", "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples",
+ CellID->1854448968,ExpressionUUID->"a140917f-89c4-4909-9ece-f70686a58fc4"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Scope", "ExampleSection",ExpressionUUID->
+   "b04af83a-025a-41f5-adda-775668568787"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1293636265,ExpressionUUID->"d9411618-88e4-474e-bcdd-6fbd6b10afc0"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Generalizations & Extensions", "ExampleSection",ExpressionUUID->
+   "19b7f941-dfcc-4ab8-856e-7cce135bfc47"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1020263627,ExpressionUUID->"e54ad644-d125-418e-a363-4fd3f491f1c7"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Options", "ExampleSection",ExpressionUUID->
+   "2e3517f7-b7f6-4179-bab0-ab2baa448d6a"],
+  $Line = 0; Null]], "ExampleSection",ExpressionUUID->"5f0bd1a4-a5ee-4e22-\
+9777-9c27fe5e729d"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "MagnetizationVector", "ExampleSubsection",ExpressionUUID->
+   "b6cda5ab-415c-4245-953e-fe50d50319be"],
+  $Line = 0; Null]], "ExampleSubsection",ExpressionUUID->"6f3fbf54-1440-4f24-\
+9a1a-6ffefea94642"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "SliceRange", "ExampleSubsection",ExpressionUUID->
+   "14f14767-28be-419c-8a85-92ff7157db75"],
+  $Line = 0; Null]], "ExampleSubsection",ExpressionUUID->"2a0d32a4-3c5f-4955-\
+be93-1d47e5ec3f0b"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "SliceRangeSamples", "ExampleSubsection",ExpressionUUID->
+   "2c69dae5-0f11-4e01-8858-5fab43da6bae"],
+  $Line = 0; Null]], "ExampleSubsection",ExpressionUUID->"88239d0f-7d37-4123-\
+b385-d5d69493a9ed"]
+}, Closed]],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Applications", "ExampleSection",ExpressionUUID->
+   "5a4e8b9a-f08d-4ae9-9fa0-ab941ee27bc8"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->258228157,ExpressionUUID->"7d9135f9-2440-49d0-b1c2-42cfad29e515"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Properties & Relations", "ExampleSection",ExpressionUUID->
+   "f91a680b-d251-498e-ba95-0f70be014d67"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->2123667759,ExpressionUUID->"ccb90b01-b182-4f37-9bf2-4f38b875a5e5"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Possible Issues", "ExampleSection",ExpressionUUID->
+   "69e17577-05c3-416a-8b1e-1684ad897473"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1305812373,ExpressionUUID->"90e89886-e37b-438d-b7fe-a723413c1a65"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Interactive Examples", "ExampleSection",ExpressionUUID->
+   "3a2798f1-d53e-4897-be90-9692b9352460"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1653164318,ExpressionUUID->"69b074ff-91b2-479b-8e57-ad3d20b66776"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Neat Examples", "ExampleSection",ExpressionUUID->
+   "04a9f083-a77d-42c4-ae71-3a7a4fa2be7b"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->589267740,ExpressionUUID->"5825b605-57bb-4566-a750-2d8128605f41"]
+}, Open  ]]
+},
+WindowSize->{700, 770},
+WindowMargins->{{4, Automatic}, {Automatic, 0}},
+CellContext->"Global`",
+FrontEndVersion->"11.1 for Microsoft Windows (64-bit) (April 18, 2017)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "ExtendedExamples"->{
+  Cell[10002, 288, 155, 2, 
+  54, "ExtendedExamplesSection", "ExpressionUUID" -> "a140917f-89c4-4909-9ece-
+   f70686a58fc4",
+   CellTags->"ExtendedExamples",
+   CellID->1854448968]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"ExtendedExamples", 13354, 385}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 599, 14, 22, "History", "ExpressionUUID" -> \
+"cd27d21b-b9a4-4cef-9be3-85d825253b35",
+ CellID->1247902091],
+Cell[CellGroupData[{
+Cell[1182, 38, 123, 1, 27, "CategorizationSection", "ExpressionUUID" -> \
+"23aed30e-fee2-48d9-aa5c-97378459e60a",
+ CellID->1122911449],
+Cell[1308, 41, 134, 2, 31, "Categorization", "ExpressionUUID" -> \
+"40c998f1-adc8-49c2-be9b-0066cafeef83",
+ CellID->686433507],
+Cell[1445, 45, 143, 2, 31, "Categorization", "ExpressionUUID" -> \
+"724b1953-92fe-48ba-86fc-4e97a2615c6f",
+ CellID->52927278],
+Cell[1591, 49, 148, 2, 31, "Categorization", "ExpressionUUID" -> \
+"ff313c3f-e8b6-4b8a-9f6f-805ed3c3904c",
+ CellID->80022137],
+Cell[1742, 53, 148, 2, 31, "Categorization", "ExpressionUUID" -> \
+"db8cc4a0-b14e-4509-8e25-17f0150bb2ed",
+ CellID->546788857]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[1927, 60, 110, 1, 17, "KeywordsSection", "ExpressionUUID" -> \
+"dd63aba3-661f-4f16-ac6f-ab65866b646e",
+ CellID->477174294],
+Cell[2040, 63, 100, 1, 70, "Keywords", "ExpressionUUID" -> \
+"e8e8cbf5-ea87-4780-bb96-29034a46ae44",
+ CellID->1164421360]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2177, 69, 120, 1, 17, "TemplatesSection", "ExpressionUUID" -> \
+"cb6cae32-8c7a-4d9c-abf1-2972291c2ca4",
+ CellID->1872225408],
+Cell[2300, 72, 149, 2, 70, "Template", "ExpressionUUID" -> \
+"82eab063-774b-4319-8282-b2afe197a2b2",
+ CellID->1562036412],
+Cell[2452, 76, 137, 2, 70, "Template", "ExpressionUUID" -> \
+"a73c3471-30b3-4566-821b-2bbe48d086e0",
+ CellID->158391909],
+Cell[2592, 80, 136, 2, 70, "Template", "ExpressionUUID" -> \
+"ff051220-f57d-4aad-b630-ea9bf43b4d16",
+ CellID->1360575930],
+Cell[2731, 84, 137, 2, 70, "Template", "ExpressionUUID" -> \
+"ca72f16b-0055-4bcd-a846-6a71a2603f2d",
+ CellID->793782254]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2905, 91, 108, 1, 17, "DetailsSection", "ExpressionUUID" -> \
+"a36392f5-bb5d-447c-a45f-f81a4563a693",
+ CellID->307771771],
+Cell[3016, 94, 118, 2, 70, "Details", "ExpressionUUID" -> \
+"8d6394ce-107a-4d28-ae6a-485758c505ce",
+ CellID->670882175],
+Cell[3137, 98, 124, 2, 70, "Details", "ExpressionUUID" -> \
+"1cda839d-f406-4d55-917a-c7cd49c7f12e",
+ CellID->350963985],
+Cell[3264, 102, 119, 2, 70, "Details", "ExpressionUUID" -> \
+"2f309634-9b60-426b-b524-acf4c1719738",
+ CellID->8391405],
+Cell[3386, 106, 124, 2, 70, "Details", "ExpressionUUID" -> \
+"027de4e7-9636-4c24-ac16-33ef7ed576be",
+ CellID->3610269],
+Cell[3513, 110, 116, 2, 70, "Details", "ExpressionUUID" -> \
+"a31b2033-dab3-4c97-be95-8fda92e1605a",
+ CellID->401364205],
+Cell[3632, 114, 116, 2, 70, "Details", "ExpressionUUID" -> \
+"ab1cc061-84ef-4567-8baa-5ef302aa9ae4",
+ CellID->350204745],
+Cell[3751, 118, 118, 2, 70, "Details", "ExpressionUUID" -> \
+"ed427ab6-4f8f-47a6-8a79-809ecafa8590",
+ CellID->732958810],
+Cell[3872, 122, 133, 2, 70, "Details", "ExpressionUUID" -> \
+"8a86a60b-cfff-4d84-a29b-34dddf526553",
+ CellID->222905350],
+Cell[4008, 126, 122, 2, 70, "Details", "ExpressionUUID" -> \
+"f522ebc0-40c6-4a1d-9aa3-12765a2fbb43",
+ CellID->240026365]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[4167, 133, 113, 1, 62, "ObjectName", "ExpressionUUID" -> \
+"2c5d14bf-18cb-4da3-9cfc-0eabd249afca",
+ CellID->1224892054],
+Cell[4283, 136, 1369, 31, 148, "Usage", "ExpressionUUID" -> \
+"85b0947a-fbc4-4ef5-9047-a26b7622c732"],
+Cell[5655, 169, 108, 0, 23, "Notes", "ExpressionUUID" -> \
+"6bb457a3-7fac-47cd-92b9-40fc19f01cc3"],
+Cell[5766, 171, 2477, 54, 199, "3ColumnTableMod", "ExpressionUUID" -> \
+"506e589b-cc16-48f3-9e79-5b0348fc5536"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8280, 230, 112, 1, 44, "TutorialsSection", "ExpressionUUID" -> \
+"47c42117-3ae6-4e80-be58-4d71a790ff9d",
+ CellID->250839057],
+Cell[8395, 233, 100, 1, 16, "Tutorials", "ExpressionUUID" -> \
+"c9f1986b-1ba8-4639-a79d-52b0e919b808",
+ CellID->341631938]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8532, 239, 138, 1, 31, "RelatedDemonstrationsSection", "ExpressionUUID" \
+-> "91d72e9f-80c1-40d9-9c94-625487fee81b",
+ CellID->1268215905],
+Cell[8673, 242, 113, 1, 16, "RelatedDemonstrations", "ExpressionUUID" -> \
+"011e04ac-052a-46ac-8e0d-e6f624a6c836",
+ CellID->1129518860]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8823, 248, 120, 1, 31, "RelatedLinksSection", "ExpressionUUID" -> \
+"b0cd5a71-7f84-4dbb-9c05-1def7f1be3e1",
+ CellID->1584193535],
+Cell[8946, 251, 104, 1, 16, "RelatedLinks", "ExpressionUUID" -> \
+"151f7426-4546-4079-88a7-83a3c0886545",
+ CellID->1038487239]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9087, 257, 110, 1, 31, "SeeAlsoSection", "ExpressionUUID" -> \
+"2fc75a44-512c-49b5-8209-e5f41a53f014",
+ CellID->1255426704],
+Cell[9200, 260, 98, 1, 16, "SeeAlso", "ExpressionUUID" -> \
+"0bb979d0-dbe7-4b29-9bd3-05caeb5bb2ff",
+ CellID->929782353]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9335, 266, 112, 1, 31, "MoreAboutSection", "ExpressionUUID" -> \
+"520afe9d-0017-4141-a432-eb429deb5408",
+ CellID->38303248],
+Cell[9450, 269, 101, 1, 16, "MoreAbout", "ExpressionUUID" -> \
+"26202016-0fa4-47f7-b590-adc3854189f3",
+ CellID->1665078683]
+}, Open  ]],
+Cell[9566, 273, 411, 11, 68, "PrimaryExamplesSection", "ExpressionUUID" -> \
+"e45fc0b1-51e8-42aa-a671-0f112c561e8e",
+ CellID->880084151],
+Cell[CellGroupData[{
+Cell[10002, 288, 155, 2, 54, "ExtendedExamplesSection", "ExpressionUUID" -> \
+"a140917f-89c4-4909-9ece-f70686a58fc4",
+ CellTags->"ExtendedExamples",
+ CellID->1854448968],
+Cell[10160, 292, 242, 5, 31, "ExampleSection", "ExpressionUUID" -> \
+"d9411618-88e4-474e-bcdd-6fbd6b10afc0",
+ CellID->1293636265],
+Cell[10405, 299, 265, 5, 19, "ExampleSection", "ExpressionUUID" -> \
+"e54ad644-d125-418e-a363-4fd3f491f1c7",
+ CellID->1020263627],
+Cell[CellGroupData[{
+Cell[10695, 308, 225, 5, 19, "ExampleSection", "ExpressionUUID" -> \
+"5f0bd1a4-a5ee-4e22-9777-9c27fe5e729d"],
+Cell[10923, 315, 243, 5, 70, "ExampleSubsection", "ExpressionUUID" -> \
+"6f3fbf54-1440-4f24-9a1a-6ffefea94642"],
+Cell[11169, 322, 234, 5, 70, "ExampleSubsection", "ExpressionUUID" -> \
+"2a0d32a4-3c5f-4955-be93-1d47e5ec3f0b"],
+Cell[11406, 329, 241, 5, 70, "ExampleSubsection", "ExpressionUUID" -> \
+"88239d0f-7d37-4123-b385-d5d69493a9ed"]
+}, Closed]],
+Cell[11662, 337, 248, 5, 19, "ExampleSection", "ExpressionUUID" -> \
+"7d9135f9-2440-49d0-b1c2-42cfad29e515",
+ CellID->258228157],
+Cell[11913, 344, 259, 5, 19, "ExampleSection", "ExpressionUUID" -> \
+"ccb90b01-b182-4f37-9bf2-4f38b875a5e5",
+ CellID->2123667759],
+Cell[12175, 351, 252, 5, 19, "ExampleSection", "ExpressionUUID" -> \
+"90e89886-e37b-438d-b7fe-a723413c1a65",
+ CellID->1305812373],
+Cell[12430, 358, 257, 5, 19, "ExampleSection", "ExpressionUUID" -> \
+"69b074ff-91b2-479b-8e57-ad3d20b66776",
+ CellID->1653164318],
+Cell[12690, 365, 249, 5, 19, "ExampleSection", "ExpressionUUID" -> \
+"5825b605-57bb-4566-a750-2d8128605f41",
+ CellID->589267740]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+

@@ -1,4 +1,8 @@
- (* ::Package:: *)
+(* ::Package:: *)
+
+(* ::Package:: *)
+(**)
+
 
 (* ::Title:: *)
 (*DTITools SimulationTools*)
@@ -305,7 +309,7 @@ Module[{sig,data=dat//N},
 (*Bloch Simulation*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*BlochSeries*)
 
 
@@ -338,7 +342,7 @@ With[{gamma = N[2 Pi 42.56 10^6]},
   ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Pulses*)
 
 
@@ -390,73 +394,7 @@ Pulses[name_] := Switch[name,
   ]
 
 
-(* ::Subsubsection:: *)
-(*SimulateSliceEPG*)
-
-
-SimulateSliceEPG[exitation_, refocus_, {{T1_, T2_}, {Necho_, echoSp_}, b1_}] := Module[{
-   sig, sigTrue, sigT, sigAll, sigInd, len, max, vv, vp, va, sigo, prof,
-   info, fit, fitT2, fitT2T, epgT2, epgT2T, lines, plots, te, t2
-   },
-  
-  (*define the signals for plotting*)
-  sig = EPGSignal[{Necho, echoSp}, {T1, T2}, #, b1] & /@ Transpose[{exitation, refocus}];
-  sig = sig/Max[sig];
-  
-  sigTrue = EPGSignal[{Necho, echoSp}, {T1, T2}, {First@exitation, First@refocus}, b1];
-  sigTrue = sigTrue/Max[sigTrue];
-  sigT = Mean[sig]/Max[Mean[sig]];
-  
-  sigo = {sigTrue, sigT, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}};
-  sigAll = Join[sigo, Reverse[sig][[2 ;;]], sig];
-  
-  sigInd = MapIndexed[Flatten@{#2, #1} &, sigAll, {2}];
-  sigInd[[1, All, 1]] = sigInd[[1, All, 1]] /. 1 -> 2;
-  len = Length[sigInd];
-  max = Max@sigAll;
-  
-  (*make info tble*)
-  info = Grid[{Style[#, Bold] & /@ {"T2 [ms]", "B1 [%]", "echos" , "\[CapitalDelta]TE [ms] "},
-     Style[#, Bold] & /@ Round[{T2, 100 b1, Necho, echoSp}, .1]
-     }, Spacings -> {2, 0.5}];
-  
-  (*find fits of true and EPG signal*)
-  fitT2 = t2 /. FindFit[Transpose[{echoSp Range[Necho], sigTrue}][[3 ;;]], Exp[-te/t2], {t2}, te];
-  fitT2T = t2 /. FindFit[Transpose[{echoSp Range[Necho], sigT}][[3 ;;]], Exp[-te/t2], {t2}, te];
-  
-  epgT2 = NonLinearEPGFit[{{{Necho, echoSp}, {1400, 365, 135}, {90, 180}}, {5, 80, 0.3}}, sigTrue][[1 ;; 4]];
-  epgT2[[3 ;; 4]] = epgT2[[3 ;; 4]]/Total[epgT2[[3 ;; 4]]];
-  
-  epgT2T = NonLinearEPGFit[{{{Necho, echoSp}, {1400, 365, 135}, {exitation, refocus}}, {5, 80, 0.3}}, sigT][[1 ;; 4]];
-  epgT2T[[3 ;; 4]] = epgT2T[[3 ;; 4]]/Total[epgT2T[[3 ;; 4]]];
-  
-  (*make fit table*)
-  fit = Grid[{Style[#, Bold] & /@ {"lin T2 nor", "lin T2 slice", "{EPG T2 nor, b1, watFr}", "{EPG T2 slice, b1, watFr}"},
-     Style[#, Bold] & /@ Round[{fitT2, fitT2T, {1, 100, 100} epgT2[[1 ;; 3]], {1, 100, 100} epgT2T[[1 ;; 3]]}, .1]
-     }];
-  
-  (*make plot*)
-  lines = Graphics3D[{Lighter@Gray, Line[{{2, 1, #}, {2, Necho, #}}]} & /@ Range[0, 1.1, .1]];
-  prof = Graphics3D[{Lighter@Gray, Thick, Line[sigInd[[Length[sigo];;,1]]]}];
-  plots = Table[
-    ParametricPlot3D[sigInd[[m, Round[#]]] &[n], {n, 1, Necho}, ColorFunction -> "DarkRainbow", 
-    	ColorFunctionScaling -> False, PlotRange -> Full, PerformanceGoal -> "Speed",PlotPoints->Necho]
-    , {m, 2, len, 1}];
-  PrependTo[plots, ParametricPlot3D[sigInd[[1, Round[#]]] &[n], {n, 1, Necho}, PlotStyle -> Directive[{Dashed, Darker@Gray}, PlotRange -> Full]]];
-  
-  vv = {0.24, 0.19, 0.95};
-  vp = {2.57, 1.90, 1.08};
-  va = 30 Degree;
-  Column[{
-    "  ", info, "  ", fit,
-    Show[plots, lines, prof, BoxRatios -> 1, PlotRange -> {{0, len}, {0, Necho}, {-0., 1.1 max}}, 
-     Axes -> False, BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
-     ViewAngle -> va, ImageSize -> 600]
-    }, Alignment -> Center, Spacings -> 0]
-  ]
-
-
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetPulseProfile*)
 
 
@@ -539,6 +477,72 @@ GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, 
      
      (*give full output and plot*)
      {Transpose@output, plot}
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*SimulateSliceEPG*)
+
+
+SimulateSliceEPG[exitation_, refocus_, {{T1_, T2_}, {Necho_, echoSp_}, b1_}] := Module[{
+   sig, sigTrue, sigT, sigAll, sigInd, len, max, vv, vp, va, sigo, prof,
+   info, fit, fitT2, fitT2T, epgT2, epgT2T, lines, plots, te, t2
+   },
+  
+  (*define the signals for plotting*)
+  sig = EPGSignal[{Necho, echoSp}, {T1, T2}, #, b1] & /@ Transpose[{exitation, refocus}];
+  sig = sig/Max[sig];
+  
+  sigTrue = EPGSignal[{Necho, echoSp}, {T1, T2}, {First@exitation, First@refocus}, b1];
+  sigTrue = sigTrue/Max[sigTrue];
+  sigT = Mean[sig]/Max[Mean[sig]];
+  
+  sigo = {sigTrue, sigT, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}};
+  sigAll = Join[sigo, Reverse[sig][[2 ;;]], sig];
+  
+  sigInd = MapIndexed[Flatten@{#2, #1} &, sigAll, {2}];
+  sigInd[[1, All, 1]] = sigInd[[1, All, 1]] /. 1 -> 2;
+  len = Length[sigInd];
+  max = Max@sigAll;
+  
+  (*make info tble*)
+  info = Grid[{Style[#, Bold] & /@ {"T2 [ms]", "B1 [%]", "echos" , "\[CapitalDelta]TE [ms] "},
+     Style[#, Bold] & /@ Round[{T2, 100 b1, Necho, echoSp}, .1]
+     }, Spacings -> {2, 0.5}];
+  
+  (*find fits of true and EPG signal*)
+  fitT2 = t2 /. FindFit[Transpose[{echoSp Range[Necho], sigTrue}][[3 ;;]], Exp[-te/t2], {t2}, te];
+  fitT2T = t2 /. FindFit[Transpose[{echoSp Range[Necho], sigT}][[3 ;;]], Exp[-te/t2], {t2}, te];
+  
+  epgT2 = NonLinearEPGFit[{{{Necho, echoSp}, {1400, 365, 135}, {90, 180}}, {5, 80, 0.3}}, sigTrue][[1 ;; 4]];
+  epgT2[[3 ;; 4]] = epgT2[[3 ;; 4]]/Total[epgT2[[3 ;; 4]]];
+  
+  epgT2T = NonLinearEPGFit[{{{Necho, echoSp}, {1400, 365, 135}, {exitation, refocus}}, {5, 80, 0.3}}, sigT][[1 ;; 4]];
+  epgT2T[[3 ;; 4]] = epgT2T[[3 ;; 4]]/Total[epgT2T[[3 ;; 4]]];
+  
+  (*make fit table*)
+  fit = Grid[{Style[#, Bold] & /@ {"lin T2 nor", "lin T2 slice", "{EPG T2 nor, b1, watFr}", "{EPG T2 slice, b1, watFr}"},
+     Style[#, Bold] & /@ Round[{fitT2, fitT2T, {1, 100, 100} epgT2[[1 ;; 3]], {1, 100, 100} epgT2T[[1 ;; 3]]}, .1]
+     }];
+  
+  (*make plot*)
+  lines = Graphics3D[{Lighter@Gray, Line[{{2, 1, #}, {2, Necho, #}}]} & /@ Range[0, 1.1, .1]];
+  prof = Graphics3D[{Lighter@Gray, Thick, Line[sigInd[[Length[sigo];;,1]]]}];
+  plots = Table[
+    ParametricPlot3D[sigInd[[m, Round[#]]] &[n], {n, 1, Necho}, ColorFunction -> "DarkRainbow", 
+    	ColorFunctionScaling -> False, PlotRange -> Full, PerformanceGoal -> "Speed",PlotPoints->Necho]
+    , {m, 2, len, 1}];
+  PrependTo[plots, ParametricPlot3D[sigInd[[1, Round[#]]] &[n], {n, 1, Necho}, PlotStyle -> Directive[{Dashed, Darker@Gray}, PlotRange -> Full]]];
+  
+  vv = {0.24, 0.19, 0.95};
+  vp = {2.57, 1.90, 1.08};
+  va = 30 Degree;
+  Column[{
+    "  ", info, "  ", fit,
+    Show[plots, lines, prof, BoxRatios -> 1, PlotRange -> {{0, len}, {0, Necho}, {-0., 1.1 max}}, 
+     Axes -> False, BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
+     ViewAngle -> va, ImageSize -> 600]
+    }, Alignment -> Center, Spacings -> 0]
   ]
 
 

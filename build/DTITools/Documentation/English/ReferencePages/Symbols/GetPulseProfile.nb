@@ -1,0 +1,387 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     14916,        378]
+NotebookOptionsPosition[     11355,        295]
+NotebookOutlinePosition[     13587,        348]
+CellTagsIndexPosition[     13544,        345]
+WindowTitle->GetPulseProfile
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell",ExpressionUUID->
+     "ceca384e-8edb-46d4-9627-7723e43db1d7"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }],ExpressionUUID->"2fcb76fb-5912-4251-ae78-8bf873fcbe59"],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"SimulationTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/SimulationTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0},ExpressionUUID->
+      "4b8b5057-ea2b-44a0-a501-9ba24d706048"],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }],ExpressionUUID->"49346f2a-1a61-4aa6-baa5-21647bca5ec3"],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DTITools/ref/GetPulseProfile\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/GetPulseProfile"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/DTITools/ref/\
+GetPulseProfile.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$101324], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "DTITools/ref/GetPulseProfile", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0},ExpressionUUID->
+      "f674f7af-5f89-4c40-88d2-4ffe5c50043d"]
+    }], "AnchorBar",ExpressionUUID->"4459ed67-8512-4e45-89b2-5d8979fc213f"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"dbc4477d-30c2-493d-843b-2310f4fb2bc0"],
+
+Cell[TextData[{
+ Cell["GetPulseProfile", "ObjectName",ExpressionUUID->
+  "3c795e1b-11f4-45ce-a2f2-2172e04ae02a"],
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{8, 0}],
+    CacheGraphics->False],
+   Spacer[8],
+   Selectable->False]],ExpressionUUID->"dafa292a-6df8-47b1-8085-61cc2a279397"],
+ Cell[BoxData[
+ ""], "ObjectNameTranslation",ExpressionUUID->
+  "e821414d-9b09-4192-9597-4baab2add72d"]
+}], "ObjectNameGrid",ExpressionUUID->"44bde705-94ee-4b70-a36a-2163befaee54"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"GetPulseProfile", "[", 
+       RowBox[{
+        StyleBox["excitation", "TI"], ",", " ", 
+        StyleBox["refocus", "TI"]}], "]"}]], "InlineFormula",ExpressionUUID->
+      "c09acc61-b9c8-4a9f-88ec-1bf2766c9584"],
+     "\[LineSeparator]gives the pusl angle profiles for the exitation and \
+refocussing pulses. a pulse is defined as {\"name\", flipangle, {G_strnth, \
+Dur, BW}}. "
+    }],ExpressionUUID->"ad9448a5-888c-43a7-90f5-8cb38e25cfe7"]},
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"GetPulseProfile", "[", 
+       RowBox[{"{", 
+        RowBox[{"\"\<\!\(\*
+StyleBox[\"name\", \"TI\"]\)\>\"", ",", " ", 
+         StyleBox["flipangle", "TI"], ",", " ", 
+         RowBox[{"{", 
+          RowBox[{"G_strnth", ",", " ", 
+           TemplateBox[{Cell[
+              TextData["Dur"]],"paclet:ref/Dur"},
+            "RefLink",
+            BaseStyle->{"InlineFormula"}], ",", " ", 
+           TemplateBox[{Cell[
+              TextData["BW"]],"paclet:ref/BW"},
+            "RefLink",
+            BaseStyle->{"InlineFormula"}]}], "}"}]}], "}"}], "]"}]], 
+      "InlineFormula",ExpressionUUID->"df63170d-2b52-45b9-bf2c-bce656e40b4c"],
+     
+     "\[LineSeparator]gives detaile slice profile information of one pulse. \
+output is {ex_angle_profiel, ref_angel_profile, {plots}}. output for single \
+pulse is {{distance, Mt, Mz, Mx, My, ang, phase}, plots}"
+    }],ExpressionUUID->"3721dd30-df74-40fb-95aa-2c6585ee642d"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> \
+{}}},ExpressionUUID->"85b0947a-fbc4-4ef5-9047-a26b7622c732"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    InterpretationBox[
+     StyleBox[
+      GraphicsBox[{},
+       BaselinePosition->Baseline,
+       ImageSize->{6, 0}],
+      CacheGraphics->False],
+     Spacer[6],
+     Selectable->False]],ExpressionUUID->
+    "3833a661-0e33-4065-814e-680a2fc42414"],
+   "Details"
+  }], "NotesFrameText",ExpressionUUID->"1217b695-6636-4b21-a427-dff71327ccde"],
+  Appearance->{Automatic, None},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->
+   "Preemptive"]],ExpressionUUID->"1525b694-6958-4436-b4e6-04876b4a60fb"]], \
+"NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1,ExpressionUUID->"53b97f8c-e32c-4f0a-993c-1b8bd2e84627"],
+
+Cell["", "SectionHeaderSpacer",ExpressionUUID->"1a17c7e6-5c12-42a1-b7b9-5881cc655281"],
+
+Cell["The following options can be given: ", "Notes",ExpressionUUID->"6bb457a3-7fac-47cd-92b9-40fc19f01cc3"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon",ExpressionUUID->
+     "f12a92b9-bf65-4e4c-a45e-18a5ba0ad8b3"], 
+    ButtonBox["MagnetizationVector",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MagnetizationVector"], 
+    RowBox[{"{", 
+     RowBox[{"0", ",", " ", "0", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MagnetizationVector"]],
+        "paclet:DTITools/ref/MagnetizationVector"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula",ExpressionUUID->
+      "34412a16-9bf3-4ca0-8016-1ce3367cc531"],
+     " is an option for ",
+     Cell[BoxData[
+     "GetPulseProfile"], "InlineFormula",ExpressionUUID->
+      "6e0eb4ad-73dd-42ab-890e-42e58ea92044"],
+     ". It defines the start magnetization vector for the bloch simulation."
+    }], "TableText",ExpressionUUID->"a1adf287-b6b3-42b7-991f-be4231230e52"]},
+   {Cell["      ", "TableRowIcon",ExpressionUUID->
+     "14c71d3a-5dae-41af-b337-e2fcf29d55c9"], 
+    ButtonBox["SliceRange",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/SliceRange"], "12", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SliceRange"]],"paclet:DTITools/ref/SliceRange"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula",ExpressionUUID->
+      "8dfcd1bc-3e5f-4ee9-a5da-d68dd3cca6f3"],
+     " is an option for ",
+     Cell[BoxData[
+     "GetPulseProfile"], "InlineFormula",ExpressionUUID->
+      "62126a43-2556-4386-90fb-7f2267ab037d"],
+     ". It specifies over which range the slice profile is generated (in mm). \
+the total profile is 2xSliceRange."
+    }], "TableText",ExpressionUUID->"f1d7fb79-753b-4fca-b250-ba849a1ec4a6"]},
+   {Cell["      ", "TableRowIcon",ExpressionUUID->
+     "6c5bf451-9eef-4c56-b866-5fef54f2588b"], 
+    ButtonBox["SliceRangeSamples",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/SliceRangeSamples"], "25", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SliceRangeSamples"]],
+        "paclet:DTITools/ref/SliceRangeSamples"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula",ExpressionUUID->
+      "b9983e8a-c1e1-4861-86ca-1b4bcbf8719b"],
+     " is an option for ",
+     Cell[BoxData[
+     "GetPulseProfile"], "InlineFormula",ExpressionUUID->
+      "382024af-3046-4f0b-b701-c9ffbdd918b8"],
+     ". defines how many samples are used to generate half a puls profile."
+    }], "TableText",ExpressionUUID->"d222b98b-5903-433f-bab2-a664cd86c2d1"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{
+  "Rows" -> {{
+     True, True, True, 
+      True}}}},ExpressionUUID->"506e589b-cc16-48f3-9e79-5b0348fc5536"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"300e5411-aa59-4f1b-8148-9e952011ed32"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  InterpretationBox[
+   StyleBox[
+    GraphicsBox[{},
+     BaselinePosition->Baseline,
+     ImageSize->{6, 0}],
+    CacheGraphics->False],
+   Spacer[6],
+   Selectable->False]],ExpressionUUID->"3e441706-91ca-40bb-b1f4-385023e119a5"],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248,ExpressionUUID->"520afe9d-0017-4141-a432-eb429deb5408"],
+
+Cell["", "SectionHeaderSpacer",ExpressionUUID->"14888669-f850-47c2-8e22-630c06469f8b"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["SimulationTools"]],"paclet:DTITools/guide/SimulationTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1,ExpressionUUID->"0cc75e24-7682-4c0e-bc44-ed9c8897c90b"]
+}, Open  ]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"0dd1ade6-3d4f-4358-a34a-5f5eed5de2f8"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"GetPulseProfile",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2017, 7, 8, 9, 30, 52.2795336}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`SimulationTools`",
+     "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "GetPulseProfile[excitation, refocus] gives the pusl angle profiles for \
+the exitation and refocussing pulses. a pulse is defined as {\"name\", \
+flipangle, {G_strnth, Dur, BW}}. GetPulseProfile[{\" name\", flipangle, \
+{G_strnth, Dur, BW}}] gives detaile slice profile information of one pulse. \
+output is {ex_angle_profiel, ref_angel_profile, {plots}}. output for single \
+pulse is {{distance, Mt, Mz, Mx, My, ang, phase}, plots}", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "GetPulseProfile", "titlemodifier" -> "", 
+    "windowtitle" -> "GetPulseProfile", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/GetPulseProfile"}},
+CellContext->"Global`",
+FrontEndVersion->"11.1 for Microsoft Windows (64-bit) (April 18, 2017)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.1 for Microsoft Windows (64-bit) (April 18, 2017)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[587, 21, 3476, 77, 70, "AnchorBarGrid", "ExpressionUUID" -> \
+"dbc4477d-30c2-493d-843b-2310f4fb2bc0",
+ CellID->1],
+Cell[4066, 100, 542, 15, 70, "ObjectNameGrid", "ExpressionUUID" -> \
+"44bde705-94ee-4b70-a36a-2163befaee54"],
+Cell[4611, 117, 1722, 40, 70, "Usage", "ExpressionUUID" -> \
+"85b0947a-fbc4-4ef5-9047-a26b7622c732"],
+Cell[CellGroupData[{
+Cell[6358, 161, 985, 28, 70, "NotesSection", "ExpressionUUID" -> \
+"53b97f8c-e32c-4f0a-993c-1b8bd2e84627",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[7346, 191, 86, 0, 70, "SectionHeaderSpacer", "ExpressionUUID" -> \
+"1a17c7e6-5c12-42a1-b7b9-5881cc655281"],
+Cell[7435, 193, 108, 0, 70, "Notes", "ExpressionUUID" -> \
+"6bb457a3-7fac-47cd-92b9-40fc19f01cc3"],
+Cell[7546, 195, 2857, 66, 70, "3ColumnTableMod", "ExpressionUUID" -> \
+"506e589b-cc16-48f3-9e79-5b0348fc5536"],
+Cell[10406, 263, 86, 0, 70, "SectionFooterSpacer", "ExpressionUUID" -> \
+"300e5411-aa59-4f1b-8148-9e952011ed32"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[10529, 268, 408, 13, 70, "MoreAboutSection", "ExpressionUUID" -> \
+"520afe9d-0017-4141-a432-eb429deb5408",
+ CellID->38303248],
+Cell[10940, 283, 86, 0, 70, "SectionHeaderSpacer", "ExpressionUUID" -> \
+"14888669-f850-47c2-8e22-630c06469f8b"],
+Cell[11029, 285, 229, 5, 70, "MoreAbout", "ExpressionUUID" -> \
+"0cc75e24-7682-4c0e-bc44-ed9c8897c90b",
+ CellID->1]
+}, Open  ]],
+Cell[11273, 293, 78, 0, 70, "FooterCell", "ExpressionUUID" -> \
+"0dd1ade6-3d4f-4358-a34a-5f5eed5de2f8"]
+}
+]
+*)
+
+(* End of internal cache information *)

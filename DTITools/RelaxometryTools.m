@@ -52,9 +52,9 @@ T1, T2 and echoSpace are in ms, angel is in degree, B1 is between 0 and 1.
 Output is the EPG Signal vector."
 
 EPGT2Fit::usage = 
-"EPGT2Fit[data, EchoTimes, angle] fits the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction mapping using transverse relaxometry with stimulated echo compensation.
+"EPGT2Fit[data, {Necho, detlaTE}, {exitation, refoucs}] fits the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction mapping using transverse relaxometry with stimulated echo compensation.
 
-angle is the refocussing angle in degree.
+exitation and refocus are the RF pulse angles e.g. 90,180. They can also be a range of angeles over the slice profile as defined by GetSliceProfile.
 
 Output is {{{T2map,B1Map},{wat, fat, fatMap}},callibration} or {{T2map,B1Map},{wat, fat, fatMap}}"
 
@@ -549,7 +549,7 @@ ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}},
    , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*CalibrateEPGT2Fit*)
 
 
@@ -621,7 +621,7 @@ CalibrateEPGT2Fit[datan_, echo_, angle_, OptionsPattern[]] := Block[{
   ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*CreateT2Dictionary*)
 
 
