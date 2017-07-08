@@ -1,10 +1,10 @@
 (* Paclet Info File *)
 
-(* created 2017/06/16*)
+(* created 2017/07/08*)
 
 Paclet[
     Name -> "DTITools",
-    Version -> "1.7",
+    Version -> "1.8",
     MathematicaVersion -> "11.1",
     Creator -> "Martijn Froeling",
     Extensions -> 
