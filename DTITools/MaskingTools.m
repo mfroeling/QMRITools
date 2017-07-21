@@ -614,25 +614,30 @@ Options[SmoothSegmentation] = {MaskFiltKernel -> 2}
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 SmoothSegmentation[masks_, OptionsPattern[]] := 
- Block[{maska, cont, maskt, cormap, input, smooth},
+ Block[{maskInp, maskOver, maskOut, posOver,smooth, x, y, z, p},
   
-  smooth=OptionValue[MaskFiltKernel];
-  
-  maska = If[smooth === False,
-    Transpose[masks],
-    Round[GaussianFilter[#, smooth] + 0.15] & /@ Transpose[masks]
-    ];
-  cont = ConstantArray[1, Length[maska]];
-  
-  maskt = Mask[Total[maska], 1.5];
-  maskt = TransData[maskt # & /@ maska, "l"];
-  maskt = Map[
-    If[Total[#] == 0,
-      cont,
-      (1 - ReplacePart[cont, FirstPosition[#, _?Positive] -> 0])
-      ] &, maskt, {3}];
-  maskt = TransData[maskt, "r"];
-  Transpose[maskt maska]
+	smooth=OptionValue[MaskFiltKernel];
+	(*convert data to sparse Array and transpose*)
+	maskInp = Transpose[SparseArray[masks]];
+	(*Get smoothed or non smoothed masks*)
+	maskInp = SparseArray[If[smooth === False, maskInp, SparseArray[Round[GaussianFilter[#, smooth] + 0.15]] & /@ maskInp]];
+	(*find the overlaps*)
+	maskOver = Mask[Total[maskInp], 1.5];
+	posOver = Position[maskOver, 1, 3];
+	(*get smoothed masks without overlap*)
+	maskOut = SparseArray[(1 - maskOver) # & /@ maskInp];
+	
+	maskInp = Normal[maskInp];
+	maskOut = Normal[maskOut];
+	(
+	    (*find values to fill up the overlaps, 
+	    always pick the first value*)
+	    {z, x, y} = #;
+	    p = First[FirstPosition[maskInp[[All, z, x, y]], 1]];
+	    maskOut[[p, z, x, y]] = 1;
+	    ) & /@ posOver;
+	Clear[maskInp, maskOver];
+	Normal[Transpose[SparseArray[maskOut]]]
   ]
 
 
@@ -643,9 +648,11 @@ SmoothSegmentation[masks_, OptionsPattern[]] :=
 SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
 
 SplitSegmentations[masksI_] := Block[{vals, masks},
-  vals = Sort@DeleteDuplicates[Flatten[masksI]][[2 ;;]];
-  masks = Transpose[Mask[masksI, {# - .5, # + .5}] & /@ vals];
-  {masks, vals}
+	masks=SparseArray[masksI];
+	vals = Sort@DeleteDuplicates[Flatten[masksI]][[2 ;;]];
+	masks = Mask[masks, {# - .5, # + .5}] & /@ vals;
+	masks=Normal[Transpose[masks]];
+	{masks, vals}
   ]
 
 

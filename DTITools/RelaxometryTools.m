@@ -417,8 +417,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	
 	(*if neede also output callibaration*)
 	If[OptionValue[OutputCalibration],
-		{{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error/echo[[1]]]}, cal},
-		{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error/echo[[1]]]}
+		{{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]/echo[[1]]}, cal},
+		{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]/echo[[1]]}
 	]
 ]
 

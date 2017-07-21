@@ -296,6 +296,9 @@ _,
 (Resampler \"DefaultResampler\")
 (Optimizer \"AdaptiveStochasticGradientDescent\")
 "<>Switch[type,
+"translation",
+"(Transform \"TranslationTransform\")
+(MovingImageDerivativeScales "<>ToString[Clip[derscA[[3]]]] <> " " <>ToString[Clip[derscA[[2]]]] <> " " <> ToString[Clip[derscA[[1]]]]<>")",
 "rigid",
 "(Transform \"EulerTransform\")",
 "rigidDTI",
@@ -858,9 +861,9 @@ If[!DirectoryQ[tempdir],Message[RegisterData::dir];Return[Message[DiffusionReg::
 
 (*check registration method*)
 method=If[StringQ[method],{method},method];
-If[!MemberQ[{"rigid","affine","rigidDTI","affineDTI","bspline","cyclyc"},#],
+If[!MemberQ[{"rigid","affine","rigidDTI","affineDTI","bspline","cyclyc","translation"},#],
 	Message[RegisterData::met,#];
-	Return[Message[DiffusionReg::fatal]]
+	Return[Message[DiffusionReg::fatal],Module]
 	]&/@method; 
 lenMeth=Length[method];
 
@@ -1016,12 +1019,14 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 	{targetl, targetr, cut1}=CutData[target];
 	{movingl, movingr, cut2}=CutData[moving];
 	
-	{cut1,cut2}=Switch[
+	{cut1,cut2} = Switch[
 		OptionValue[SplitMethod],
 		"target",
 		{cut1,Round[(cut1 voxT[[2]])/voxM[[2]]]},
 		"moving",
 		{Round[(cut2 voxM[[2]])/voxT[[2]]],cut2},
+		"nearest",
+		Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, Round[Last@Dimensions[target]/2] Last@voxT] / {Last@voxT, Last@voxM}];
 		_,
 		Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]],voxM[[2]]}]
 	];
@@ -1356,7 +1361,8 @@ RegisterDiffusionDataSplit[{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, {dat
    {datal, datar, cut1} = CutData[data];
    {dataal, dataar, cut2} = CutData[dataa];
    (*align cuts*)
-   {cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];
+   {cut1,cut2}=Round[First@Nearest[{cut1 Last@vox, cut2 Last@voxa}, Round[Last@Dimensions[data]/2] Last@vox] / {Last@vox, Last@voxa}];
+   (*{cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];*)
    
    (*cut with the aligned cuts*)
    {datal, datar, cut1} = CutData[data, cut1];
@@ -1375,7 +1381,8 @@ RegisterDiffusionDataSplit[{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}
    {dataal, dataar, cut2} = CutData[dataa];
    
    (*align cuts*)
-   {cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];
+   {cut1,cut2}=Round[First@Nearest[{cut1 Last@vox, cut2 Last@voxa}, Round[Last@Dimensions[data]/2] Last@vox] / {Last@vox, Last@voxa}];
+   (*{cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];*)
    
    (*cut with the aligned cuts*)   
    {datal, datar, cut1} = CutData[data,cut1];
@@ -1450,6 +1457,8 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 		{cut1,Round[(cut1 voxT[[2]])/voxM[[2]]]},
 		"moving",
 		{Round[(cut2 voxM[[2]])/voxT[[2]]],cut2},
+		"nearest",
+		Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, Round[Last@Dimensions[target]/2] Last@voxT] / {Last@voxT, Last@voxM}];
 		_,
 		Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]],voxM[[2]]}]
 	];

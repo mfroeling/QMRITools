@@ -51,6 +51,12 @@ JoinSets::usage =
 JoinSets[{dat1,dat2,dat3...},{over1,over2,...}] joins dat1 and dat2 with over1 slices overlap, Joins dat2 and dat3 with over2 slices overlap and so on.
 JoinSets[{dat1,dat2,...},{{over,drop1,drop2},...}] joins dat1, dat2 with over slices overlap and drops drop1 slices for dat1 and drop2 from drop 2."
 
+SplitSets::usage = 
+"JoinSets[data, Nsets, Nover] splits the data in Nsets with Nover slices overlap."
+
+CorrectJoinSetMotion::usage =
+"CorrectJoinSetMotion[[{dat1,dat2,...}, vox, over] motion correts multiple sets with overlap. Over is the number of slices overlap between stes. A Translation registration is performed."
+
 TensMat::usage=
 "TensMat[tensor] transforms tensor form vector format {xx,yy,zz,xy,xz,yz} to matrix format {{xx,xy,xz},{xy,yy,yz},{xz,yz,zz}}."
 
@@ -60,15 +66,23 @@ TensVec::usage=
 GridDataPlot::usage = 
 "GridDataPlot[{data1,data2,...}, part] makes a grid of multiple datasets with part sets on each row"
 
-CropData::usage=
+CropData::usage =
 "CropData[data] creates a dialog window to crop the data (assumes voxsize (1,1,1)).
 CropData[data,vox] creates a dialog window to crop the data."
 
-ApplyCrop::usage=
+ApplyCrop::usage =
 "ApplyCrop[data,crop] aplies the corpped region obtained form CropData to the data.
 ApplyCrop[data,crop,{voxorig,voxnew}] aplies the corpped region obtained form CropData to the data." 
 
-TriggerGrid::usage=
+ReverseCrop::usage = 
+"ReverseCrop[data,dim,crop] reverses the crop on the cropped data with crop values crop to the original size dim.
+ReverseCrop[data,dim,crop,{voxorig,voxnew}] reverses the crop on the cropped data with crop values crop to the original size dim."
+
+AutoCropData::usage = 
+"AutoCropData[data] crops the data by removing all background zeros.
+AutoCropData[data,pad] crops the data by removing all background zeros with padding of pad."
+
+TriggerGrid::usage =
 "TriggerGrid[data, dyns, {{xmin, xmax}, {ymin, ymax}}]."
 
 Data2DToVector::usage = 
@@ -133,6 +147,9 @@ ReverseData::usage =
 
 ReverseSets::usage =
 "ReverseSets is an option for JoinSets. Reverses the order of the datsets, False by default."
+
+JoinSetSplit::usage = 
+"JoinSetSplit is an option ofr CorrectJoinSetMotion. If True RegisterDataTransformSplit is used else RegisterDataTransform is used."
 
 MonitorUnwrap::usage = 
 "MonitorUnwrap is an option for Unwrap and PhaseCalc. Monitor the unwrapping progress."
@@ -244,6 +261,69 @@ RemoveIsoImages[data_, grad_, val_] := Module[{sel},
     Complement[Flatten[Position[grad, {0., 0., 0.}]], 
      Flatten[Position[val, 0.]]]];
   {data[[All, sel]], grad[[sel]], val[[sel]]}
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*ReverseCrop*)
+
+
+SyntaxInformation[ReverseCrop] = {"ArgumentsPattern" -> {_, _, _, _.}};
+
+ReverseCrop[data_, dim_, crop_] := ReverseCrop[data, dim, crop, {0, 0}]
+
+ReverseCrop[data_, dim_, crop_, {v1_, v2_}] := Module[{datac, pad},
+  
+  pad = If[v1 === 0 && v2 === 0,
+    (*use original crop*)
+    Partition[Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2]
+    ,
+    (*use other voxel size*)
+    Floor[(v1/v2) Partition[
+       Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2]]
+    ];
+
+  datac = Switch[ArrayDepth[data],
+    3, ArrayPad[data, pad],
+    4, Transpose[ArrayPad[#, pad] & /@ Transpose[data]],
+    _, Return[$Failed, Module]
+    ]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*CropData*)
+
+
+SyntaxInformation[AutoCropData] = {"ArgumentsPattern" -> {_,  _.}}
+
+AutoCropData[data_, add_: 2] := Module[{datac,crp},
+  datac = Switch[ArrayDepth[data],
+    3, data,
+    4, data[[All, 1]],
+    _, Return[$Failed, Module]
+    ];
+  
+  crp=Flatten@{
+    FindCropVals[datac, add],
+    FindCropVals[TransData[datac, "l"], add],
+    FindCropVals[TransData[datac, "r"], add]
+    };
+    
+    {ApplyCrop[data,crp],crp}
+  ]
+
+FindCropVals[data_, add_] := Module[{pos, partpos, diff, postr},
+  pos = Flatten@Position[Total[Flatten[N@#]] & /@ data, 0.];
+  If[pos === {},
+   {1, Length[data]},
+	partpos = Partition[pos, 2, 1];
+	diff = Subtract @@@ partpos;
+	postr = DeleteCases[diff + 1, 0] - 1;
+	postr = Flatten@Position[diff, #] & /@ postr;
+	postr = Flatten[partpos[[#]] & /@ postr];
+	postr[[{1, -1}]] + {-add, add}
+   ]
   ]
 
 
@@ -383,7 +463,7 @@ ApplyCrop[data_, crop_ , {v1_,v2_}] := Module[{z1, z2, x1, x2, y1, y2,dim},
 	
 	{z1, z2, x1, x2, y1, y2} = If[v1===0&&v2===0,
 		crop,
-		Round[(crop - 1) Flatten[Transpose[ConstantArray[v2/v1, 2]]] + 1]
+		Round[(crop - 1) Flatten[Transpose[ConstantArray[v1/v2, 2]]] + 1]
 	];
 	
 	If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]],Return[Message[ApplyCrop::dim]]];
@@ -417,7 +497,7 @@ RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_,
   dim = Dimensions[data];
   int = OptionValue[InterpolationOrder];
   
-  Switch[ArrayDepth[data],
+  dataOut=Switch[ArrayDepth[data],
    (*rescale an image*)
    2,
    If[Length[sc] != 2,
@@ -437,7 +517,9 @@ RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_,
    Transpose[RescaleDatai[#, sc, met, opts] & /@ Transpose[data]],
    _,
    Return[Message[RescaleDataInt::data]];
-   ]
+   ];
+   
+   Chop[Clip[dataOut,MinMax[data]]]
   ]
 
 RescaleImgi[dat_, {sc_, met_}, n_] := Block[{type, im, dim},
@@ -1063,6 +1145,34 @@ Module[{coor,f,fr,df,dfr},
 
 
 (* ::Subsection:: *)
+(*SplitSets*)
+
+
+Options[SplitSets] = {ReverseSets -> False, ReverseData -> True};
+
+SyntaxInformation[SplitSets] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+SplitSets[data_, sets_, over_, OptionsPattern[]] := Module[{lengthSet, sels, start, end, dat},
+  
+  dat = If[OptionValue[ReverseData], Reverse[data], data];
+  
+  lengthSet = (Length[dat] + (sets - 1)*over)/sets;
+  sels = Table[
+    start = (i lengthSet + 1) - i over;
+    end = start + lengthSet - 1;
+    Range[start, end]
+    , {i, 0, sets - 1}];
+  
+  dat = (dat[[#]] & /@ sels);
+  
+  dat = If[OptionValue[ReverseData], Reverse[dat, 2], dat];
+  dat = If[OptionValue[ReverseSets], Reverse[dat], dat];
+  
+  dat
+  ]
+
+
+(* ::Subsection:: *)
 (*Join sets*)
 
 
@@ -1074,7 +1184,17 @@ Options[JoinSets]={ReverseSets->True,ReverseData->True};
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-JoinSets[dat_?ArrayQ,overlap_?IntegerQ,OptionsPattern[]]:=
+JoinSets[dat_?ArrayQ,overlap_?IntegerQ,opts:OptionsPattern[]]:=Switch[
+	ArrayDepth[dat],
+	4,
+	Transpose[(JoinSetsi[dat[[All, All, #]], overlap, opts]) & /@ Range[Length[dat[[1, 1]]]]],
+	3,
+	JoinSetsi[dat,overlap,opts],
+	_,
+	$Failed
+	]
+
+JoinSetsi[dat_?ArrayQ,overlap_?IntegerQ,OptionsPattern[]]:=
 Module[{data,sets,set1,set2,step,set1over,set2over,joined},
 	
 	(*reverse the order of the slices and the sets*)
@@ -1088,7 +1208,8 @@ Module[{data,sets,set1,set2,step,set1over,set2over,joined},
 	For[i=1,i<sets,i++,
 		If[i==1,
 			set1=Drop[data[[i]],{-overlap,-1}];
-			set1over=Take[data[[i]],{-overlap,-1}];,
+			set1over=Take[data[[i]],{-overlap,-1}];
+			,
 			set1=Drop[joined,{-overlap,-1}];
 			set1over=Take[joined,{-overlap,-1}];
 			];
@@ -1153,64 +1274,88 @@ Module[{data,sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,
 (*Joini*)
 
 
-Joini[sets_, setover_, step_] := 
- Module[{over,dat,unit,noZero,tot,datU},
- 	unit=Unitize[setover];
- 	noZero=Times@@unit;
- 	tot=Total[noZero];
- 	noZero=Transpose[noZero,{3,1,2}];
- 	dat=Transpose[setover, {3,4,1,2}];
- 	datU=Transpose[unit,{3,4,1,2}];
- 	over = Transpose[JoinFuncC[dat, datU, noZero, tot, step], {2, 3, 1}];
- 	
-  (*over = Transpose[
-    MapThread[
-    	(JoinFunc[#1,#2,#3,#4,step])&,{dat,datU,noZero,tot}
-     , 2], {2, 3, 1}];*)
-     Join[sets[[1]], over, sets[[2]]]
+Joini[sets_, setover_, step_] := Module[{over,dato,unit,noZero,tot},
+  (*define the overlapping voxels*)
+  unit = Unitize[setover];
+  noZero = Times @@ unit;
+  tot = Total[noZero];
+  (*prepare the data for listable compliled function*)
+  noZero = TransData[noZero, "l"];
+  dato = TransData[TransData[setover, "l"], "l"];
+  (*merge the overlapping data*)
+  over = TransData[JoinFuncC[dato, noZero, tot, step], "r"];
+  (*merge the non ovelap with the overlap*)
+  Join[sets[[1]], over, sets[[2]]]
   ]
 
-JoinFuncC = Block[{ran, posit, unit, tot1, out},
-   Compile[{
-     {dat, _Real, 2}, {datU, _Real, 2}, {noZero, _Integer, 1},
-     {tot, _Integer, 0}, {steps, _Integer, 0}
-     },
+JoinFuncC = Module[{ran, unit, tot1, out},
+	Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0}, {steps, _Integer, 0}},
     If[tot === 0,
-     out = ConstantArray[0., {steps}]
+     (*all zeros, no overlap of signals so just the sum of signals*)
+     out = Total[(0 dat + 1) dat];
      ,
+     (*overlap of signals*)
+     (*define the range needed*)
      tot1 = 1./(tot + 1.);
-     ran = Range[tot1, 1. - tot1, tot1];
+     ran = Reverse@Range[tot1, 1. - tot1, tot1];
+     
+     (*replace with gradient*)
      If[tot === steps,
-      unit = {1. - ran, ran} ;
+      (*full overlap*)
+      out = Total[{ran, 1. - ran} dat];
       ,
-      unit = datU;
-      unit[[All, Flatten[Position[noZero, 1]]]] = {(1. - ran), ran};
-      ];
-     out = Total[unit dat];
-     ];
-    out
-    , {{out, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-   ];
+      (*partial overlap*)
+      (*summ all signals*)
+      unit = (0 dat + 1);
+      (*replace the overlapping signals with a gradient*)
+      unit[[All, Flatten[Position[noZero, 1]]]] = {ran, 1 - ran};
+      (*sum the signals*)
+      out = Total[unit dat]
+      ]];
+    (*give the output*)
+    out,
+    {{out, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
 
-JoinFunc[dat_,datU_,noZero_,tot_, steps_] := 
- Module[{ran, posit, unit,tot1},
-  unit = datU;
-  Switch[tot,
-    0,
-    ConstantArray[0, {steps}],
-    steps,
-    tot1= 1./(tot+1);
-    ran = Range[tot1, 1-tot1, tot1];
-    Total[{1 - ran, ran} dat],
-    _,
-    posit = Flatten[Position[noZero, 1]];
-    tot1= 1./(tot+1);
-    ran = Range[tot1, 1-tot1, tot1];
-    (unit[[All, posit]] = {(1 - ran),ran});
-    Total[unit dat]
+
+(* ::Subsection::Closed:: *)
+(*CorrectJoinSetMotion*)
+
+
+Options[CorrectJoinSetMotion] = {JoinSetSplit -> True}
+
+SyntaxInformation[CorrectJoinSetMotion] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := 
+ Module[{sets, nmax, dim, d1, d2, maskd1, maskd2},
+  sets = input;
+  nmax = Length[sets];
+  sets[[1]] = GaussianFilter[sets[[1]], .5];
+  dim = Dimensions[First@sets];
+  
+  Table[
+   d1 = sets[[n, ;; over]];
+   maskd1 = Dilation[Mask[d1], 10];
+   d1 = PadLeft[d1, dim];
+   maskd1 = PadLeft[maskd1, dim];
+   
+   d2 = sets[[n + 1, -over ;;]];
+   maskd2 = Dilation[Mask[d2], 10];
+   d2 = PadLeft[d2, dim];
+   maskd2 = PadLeft[maskd2, dim];
+   
+   If[OptionValue[JoinSetSplit],
+    sets[[n + 1]] = 
+      Last@RegisterDataTransformSplit[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
+        MethodReg -> "translation", Iterations -> 250, NumberSamples -> 1000, PrintTempDirectory -> False];
+    ,
+    sets[[n + 1]] = 
+      Last@RegisterDataTransform[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
+        MethodReg -> "translation", Iterations -> 250, NumberSamples -> 1000, PrintTempDirectory -> False];
     ]
+   , {n, 1, nmax - 1}];
+  
+  sets
   ]
-
 
 
 (* ::Subsection::Closed:: *)
@@ -1411,7 +1556,7 @@ FindMiddle[dati_] := Module[{dat, len, datf,peaks},
   
   datf = Max[dat] - GaussianFilter[dat, len/20];
   peaks = FindPeaks[datf];
-  First@First@Nearest[peaks, {len/2, Max[dat]}]
+  First@First@Nearest[peaks, {Round[len/2], Max[dat]}]
   ]
 
 
