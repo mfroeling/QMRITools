@@ -142,71 +142,71 @@ DixonReconstruct[real_, imag_, echo_, opts : OptionsPattern[]] := DixonReconstru
 DixonReconstruct[real_, imag_, echo_, b0_, opts : OptionsPattern[]] := DixonReconstruct[real, imag, echo, b0, 0, opts]
 
 DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
-freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt, 
-thresh, complex, ydat, result, input, b0f, b0i, inphase, outphase, Amat, 
-cWater, cFat, b0fit, t2Star, fraction, signal, fit, itt, dim, mask, 
-msk, t2i, t2f, echo, iop, ioAmat, phiEst, phiInit},
- 
-(*{3.80,3.40,2.60,1.94,0.39,-0.60} and {0.087,0.693,0.128,0.004,0.039,0.048}*)
-(*{3.8,3.4,3.11,2.67,2.45,-0.61} and {0.088,0.635,0.071,0.096,0.068,0.042};*)
-(*{3.8,3.4,3.13,2.67,2.46,,1.92,0.57,-0.60} and {0.089,0.598,0.048,0.077,0.052,0.011,0.035,0.066};*)
-(*Triplett WT et.al. MRM 2014;72:8-19 doi 10.1002/mrm.23917*)
-
-(*fixed setting*)
-echo = echoi;
-precession = OptionValue[DixonPrecessions](*-1,1*);
-gyro = 42.58(*Hz*);
-field = OptionValue[DixonFieldStrength];
-{freqs, amps} = {precession field gyro OptionValue[DixonFrequencies], OptionValue[DixonAmplitudes]};
-Amat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) #] & /@ echo)], {2}]];
-
-(*define in out phase*)
-iop = {1, 1.5}/Abs[freqs[[2, First@First@Position[amps[[2]], Max@amps[[2]]]]]];
-ioAmat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) #] & /@ iop)], {2}]];
- 
- (*define stop criterea*)
- eta = OptionValue[DixonTollerance];
- maxItt = OptionValue[DixonIterations];
- thresh = OptionValue[DixonMaskThreshhold];
- 
- (*create complex data for fit*)
- complex = If[ArrayDepth[real] === 4,
-   TransData[Transpose[N[real + imag I]], "l"],
-   TransData[N[real + imag I], "l"]
-   ];
- dim = Dimensions[complex][[;; -2]];
- 
- mask = Times @@ TransData[UnitStep[Abs[complex] - thresh], "r"];
- 
- (*prepare b0map*)
- b0f = If[b0 === 0, 
- 	ConstantArray[0., dim],
- 	If[OptionValue[DixonFilterInput], GaussianFilter[b0, OptionValue[DixonFilterInputSize]], b0]
- 	];
- (*prepare t2Star map*)
- t2f = If[t2 === 0, 
- 	ConstantArray[0., dim],
- 	If[OptionValue[DixonFilterInput], GaussianFilter[t2, OptionValue[DixonFilterInputSize]], t2]
- 	];
- 
- (*define complex field map*)
- phiInit = b0f + I DevideNoZero[1, t2f]/(2 Pi);
- 
- (*monitor Calculations*)
- PrintTemporary["performing dixon iDEAL reconstruction"];
- i=j=0;
- SetSharedVariable[i];ParallelEvaluate[j=0];
- PrintTemporary[ProgressIndicator[Dynamic[i], {0, Times @@ dim}]];
- 
- (*make parallel*)
- DistributeDefinitions[echo, iop, Amat, ioAmat, eta, maxItt, DixonFiti];
- (*perform the dixon reconstruction*)
- input = TransData[{complex, phiInit, mask}, "l"];
- result = ParallelMap[(
-      j++;If[j>1000,i+=j;j=1;];
-      DixonFiti[#, {echo, iop}, {Amat, ioAmat}, {eta, maxItt}]
-      ) &, input, {ArrayDepth[complex] - 1}];
- {cWater, cFat, phiEst, inphase, outphase, itt} = TransData[result,"r"];
+	freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt,
+	thresh, complex, ydat, result, input, b0f, b0i, inphase, outphase, Amat,
+	cWater, cFat, b0fit, t2Star, fraction, signal, fit, itt, dim, mask,
+	msk, t2i, t2f, echo, iop, ioAmat, phiEst, phiInit},
+	(*{3.80,3.40,2.60,1.94,0.39,-0.60} and {0.087,0.693,0.128,0.004,0.039,0.048}*)
+	(*{3.8,3.4,3.11,2.67,2.45,-0.61} and {0.088,0.635,0.071,0.096,0.068,0.042};*)
+	(*{3.8,3.4,3.13,2.67,2.46,,1.92,0.57,-0.60} and {0.089,0.598,0.048,0.077,0.052,0.011,0.035,0.066};*)
+	(*Triplett WT et.al. MRM 2014;72:8-19 doi 10.1002/mrm.23917*)
+	
+	(*fixed setting*)
+	echo = echoi;
+	precession = OptionValue[DixonPrecessions](*-1,1*);
+	gyro = 42.58(*Hz*);
+	field = OptionValue[DixonFieldStrength];
+	{freqs, amps} = {precession field gyro OptionValue[DixonFrequencies], OptionValue[DixonAmplitudes]};
+	Amat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) #] & /@ echo)], {2}]];
+	
+	(*define in out phase*)
+	iop = {1, 1.5}/Abs[freqs[[2, First@First@Position[amps[[2]], Max@amps[[2]]]]]];
+	ioAmat = Transpose[Map[Total, Transpose[(amps Exp[freqs (2 Pi I) #] & /@ iop)], {2}]];
+	
+	(*define stop criterea*)
+	eta = OptionValue[DixonTollerance];
+	maxItt = OptionValue[DixonIterations];
+	thresh = OptionValue[DixonMaskThreshhold];
+	
+	(*create complex data for fit*)
+	complex = If[ArrayDepth[real] === 4,
+		TransData[Transpose[N[real + imag I]], "l"],
+		TransData[N[real + imag I], "l"]
+		];
+	dim = Dimensions[complex][[;; -2]];
+	mask = Times @@ TransData[UnitStep[Abs[complex] - thresh], "r"];
+	
+	(*prepare b0map*)
+	b0f = If[b0 === 0,
+		ConstantArray[0., dim],
+		If[OptionValue[DixonFilterInput], LowpassFilter[#,.75]&/@b0, b0]
+		];
+	(*prepare t2Star map*)
+	t2f = If[t2 === 0,
+		ConstantArray[0., dim],
+		If[OptionValue[DixonFilterInput], LowpassFilter[#,.75]&/@t2, t2]
+		];
+		
+	(*define complex field map*)
+	phiInit = b0f + I DevideNoZero[1, t2f]/(2 Pi);
+	
+	(*monitor Calculations*)
+	PrintTemporary["performing dixon iDEAL reconstruction"];
+	i=j=0;
+	SetSharedVariable[i];ParallelEvaluate[j=0];
+	PrintTemporary[ProgressIndicator[Dynamic[i], {0, Times @@ dim}]];
+	
+	(*make parallel*)
+	DistributeDefinitions[echo, iop, Amat, ioAmat, eta, maxItt, DixonFiti];
+	(*perform the dixon reconstruction*)
+	
+	input = TransData[{complex, phiInit, mask}, "l"];
+	result = ParallelMap[(
+		j++;If[j>1000,i+=j;j=1;];
+		DixonFiti[#, {echo, iop}, {Amat, ioAmat}, {eta, maxItt}]
+		) &, input, {ArrayDepth[complex] - 1}];
+ 	
+ 	{cWater, cFat, phiEst, inphase, outphase, itt} = TransData[result,"r"];
  
  (*create the output*)
  PrintTemporary["performing water fat calculation"];
@@ -243,12 +243,12 @@ DixonFiti[{ydat_, phiInit_, mask_}, {echo_, iop_}, {Amat_, ioAmat_}, {eta_, maxI
 			phiEst = phiEst + deltaPhi;
 			(*find solution for complex fractions*)
 			pAmat = DiagonalMatrix[Exp[2 Pi I phiEst echo]].Amat;
-			cFrac = LeastSquares[pAmat, ydat];
+			cFrac = LeastSquares[pAmat, ydat, Tolerance -> 10^-8];
 			sol = pAmat.cFrac;
 			(*calculate field map error*)
 			phivec = (2 Pi I echo (sol));
 			Bmat = Transpose[{phivec, pAmat[[All, 1]], pAmat[[All, 2]]}];
-			deltaPhi = First@LeastSquares[Bmat, (ydat - sol)];
+			deltaPhi = First@LeastSquares[Bmat, (ydat - sol), Tolerance -> 10^-8];
 			(*chech for continue*)
 			i++;
 			continue = ! ((Abs[Re[deltaPhi]] < eta && (Abs[Im[deltaPhi]]) < eta) || i >= maxItt);

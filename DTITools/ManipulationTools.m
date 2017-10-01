@@ -148,8 +148,17 @@ ReverseData::usage =
 ReverseSets::usage =
 "ReverseSets is an option for JoinSets. Reverses the order of the datsets, False by default."
 
+NormalizeSets::usage = 
+"NormalizeSets is an option for JoinSets. True normalizes the individual stacs before joining."
+
+MotionCorrectSets::usage = 
+"MotionCorrectSets is an option for JoinSets. True motion corrects the individual stacs before joining using CorrectJoinSetMotion."
+
 JoinSetSplit::usage = 
 "JoinSetSplit is an option ofr CorrectJoinSetMotion. If True RegisterDataTransformSplit is used else RegisterDataTransform is used."
+
+PaddOverlap::usage = 
+"PaddOverlap is an option of CorrectJoinSetMotion and JoinSets. it allows for extra motion in the z direction."
 
 MonitorUnwrap::usage = 
 "MonitorUnwrap is an option for Unwrap and PhaseCalc. Monitor the unwrapping progress."
@@ -313,16 +322,20 @@ AutoCropData[data_, add_: 2] := Module[{datac,crp},
     {ApplyCrop[data,crp],crp}
   ]
 
-FindCropVals[data_, add_] := Module[{pos, partpos, diff, postr},
-  pos = Flatten@Position[Total[Flatten[N@#]] & /@ data, 0.];
+FindCropVals[data_, add_] := Module[{pos(*, partpos, diff, postr*)},
+  (*pos = Flatten@Position[Total[Flatten[N@#]] & /@ data, 0.];*)
+  pos = Unitize[Total[Flatten[N@#]] & /@ data];
   If[pos === {},
    {1, Length[data]},
+   	Clip[Flatten[{FirstPosition[pos, 1], Abs[FirstPosition[Reverse@pos, 1] - Length[pos] - 1]}] + {-add, add}, {1, Length[pos]}]
+	(*
 	partpos = Partition[pos, 2, 1];
 	diff = Subtract @@@ partpos;
 	postr = DeleteCases[diff + 1, 0] - 1;
 	postr = Flatten@Position[diff, #] & /@ postr;
 	postr = Flatten[partpos[[#]] & /@ postr];
 	postr[[{1, -1}]] + {-add, add}
+	*)
    ]
   ]
 
@@ -1148,13 +1161,18 @@ Module[{coor,f,fr,df,dfr},
 (*SplitSets*)
 
 
-Options[SplitSets] = {ReverseSets -> False, ReverseData -> True};
+Options[SplitSets] = {ReverseSets -> False, ReverseData -> True, PaddOverlap->0};
 
 SyntaxInformation[SplitSets] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-SplitSets[data_, sets_, over_, OptionsPattern[]] := Module[{lengthSet, sels, start, end, dat},
+SplitSets[data_, sets_, overlap_, OptionsPattern[]] := Module[{lengthSet, sels, start, end, dat, over, pad},
   
   dat = If[OptionValue[ReverseData], Reverse[data], data];
+  
+  pad = OptionValue[PaddOverlap];  
+  dat = ArrayPad[dat,{{pad,pad},{0,0},{0,0}}];
+  
+  over=overlap+2pad;
   
   lengthSet = (Length[dat] + (sets - 1)*over)/sets;
   sels = Table[
@@ -1180,26 +1198,68 @@ SplitSets[data_, sets_, over_, OptionsPattern[]] := Module[{lengthSet, sels, sta
 (*JoinSets*)
 
 
-Options[JoinSets]={ReverseSets->True,ReverseData->True};
+Options[JoinSets]={ReverseSets->True,ReverseData->True, NormalizeSets -> True, MotionCorrectSets -> False, PaddOverlap -> 2};
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-JoinSets[dat_?ArrayQ,overlap_?IntegerQ,opts:OptionsPattern[]]:=Switch[
-	ArrayDepth[dat],
-	4,
-	Transpose[(JoinSetsi[dat[[All, All, #]], overlap, opts]) & /@ Range[Length[dat[[1, 1]]]]],
-	3,
-	JoinSetsi[dat,overlap,opts],
-	_,
-	$Failed
-	]
+JoinSets[data_?ArrayQ,over_,opts:OptionsPattern[]]:=JoinSets[data,over,{1,1,1},opts]
 
-JoinSetsi[dat_?ArrayQ,overlap_?IntegerQ,OptionsPattern[]]:=
-Module[{data,sets,set1,set2,step,set1over,set2over,joined},
+JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
+	{dat, overlap, motion, pad, normalize, depth, meth, target},
 	
-	(*reverse the order of the slices and the sets*)
-	data=If[OptionValue[ReverseData],Reverse[dat,2],dat];
-	data=If[OptionValue[ReverseSets],Reverse[data],data];
+	(*get the options*)
+	motion = OptionValue[MotionCorrectSets];
+	pad = OptionValue[PaddOverlap];
+	normalize=OptionValue[NormalizeSets];
+	depth=ArrayDepth[data];
+	overlap = If[ListQ[over],First@over,over];
+	
+	(*normalize the data*)
+	dat=If[normalize,
+		PrintTemporary["normalizing data"];
+		Switch[ArrayDepth[data],
+			5,100 NormalizeDiffData/@data,
+			4,100 NormalizeData/@data
+		],
+		data
+	];
+
+	(*reverse the order of the sets if needed*)
+	dat=If[OptionValue[ReverseSets],Reverse[dat],dat];
+	
+	If[motion,
+		Switch[depth,
+			5,
+			motion=False;
+			(*define the moving data*)
+			Print["motion correct is only for 3D volues"]
+			,
+			4,
+			PrintTemporary["motion correcting data"];
+			dat = CorrectJoinSetMotion[dat, vox, over, PaddOverlap->pad];
+			overlap = overlap + 2*pad;
+		]
+	];
+	
+	(*reverse the order of the slices if needed*)
+	dat=N@If[OptionValue[ReverseData],Reverse[dat,2],dat];
+	
+	PrintTemporary["Joining data"];	
+	dat = Switch[depth,
+		5,Transpose[(JoinSetsi[dat[[All, All, #]],overlap]) & /@ Range[Length[dat[[1, 1]]]]],
+		4,JoinSetsi[dat,overlap],
+		_,$Failed
+	];
+	
+	(*give output*)	
+	dat = If[motion, ArrayPad[dat, Prepend[ConstantArray[{0, 0}, ArrayDepth[dat] - 1], {-pad, -pad}]],dat];
+	
+	Return[If[OptionValue[ReverseData],Reverse[dat],dat]]
+]
+
+
+JoinSetsi[data_?ArrayQ,overlap_?IntegerQ]:=
+Module[{sets,set1,set2,step,set1over,set2over,joined},
 	
 	sets=Length[data];
 	step=1/(overlap+1);
@@ -1215,20 +1275,17 @@ Module[{data,sets,set1,set2,step,set1over,set2over,joined},
 			];
 		set2=Drop[data[[i+1]],{1,overlap}];
 		set2over=Take[data[[i+1]],{1,overlap}];
-		(*joined=Joini[{set1,set2},{set1over,set2over},step];*)
+
 		joined = Joini[{set1, set2}, {set1over, set2over}, overlap];
 		];
-		
-	(*give output*)	
-	Return[If[OptionValue[ReverseData],Reverse[joined],joined]]
+	
+	joined	
+
 	];
 
-JoinSets[dat_?ArrayQ,overlap_?ListQ,OptionsPattern[]]:=
+
+JoinSetsi[data_?ArrayQ,overlap_?ListQ,OptionsPattern[]]:=
 Module[{data,sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1,drop2,overl},
-	
-	(*reverse the order of the slices and the sets*)
-	data=If[OptionValue[ReverseData],Reverse[dat,2],dat];
-	data=If[OptionValue[ReverseSets],Reverse[data],data];
 	
 	sets=Length[data];
 	
@@ -1265,10 +1322,10 @@ Module[{data,sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,
 		joined=Joini[{set1,set2},{set1over,set2over},overl];
 		];
 		
-	(*give output*)
-	Return[If[OptionValue[ReverseData],Reverse[joined],joined]]
-	];
+	joined
 
+	];
+	
 
 (* ::Subsubsection::Closed:: *)
 (*Joini*)
@@ -1287,6 +1344,7 @@ Joini[sets_, setover_, step_] := Module[{over,dato,unit,noZero,tot},
   (*merge the non ovelap with the overlap*)
   Join[sets[[1]], over, sets[[2]]]
   ]
+
 
 JoinFuncC = Module[{ran, unit, tot1, out},
 	Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0}, {steps, _Integer, 0}},
@@ -1321,40 +1379,72 @@ JoinFuncC = Module[{ran, unit, tot1, out},
 (*CorrectJoinSetMotion*)
 
 
-Options[CorrectJoinSetMotion] = {JoinSetSplit -> True}
+Options[CorrectJoinSetMotion] = {JoinSetSplit -> True, PaddOverlap -> 2}
 
 SyntaxInformation[CorrectJoinSetMotion] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := 
- Module[{sets, nmax, dim, d1, d2, maskd1, maskd2},
-  sets = input;
-  nmax = Length[sets];
-  sets[[1]] = GaussianFilter[sets[[1]], .5];
-  dim = Dimensions[First@sets];
+CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
+	{sets, nmax, dim, d1, d2, maskd1, maskd2, samp, overp, pad, regFunc, depth},
+ 	
+ 	(*get the input*)
+ 	pad = OptionValue[PaddOverlap];
+ 	depth = ArrayDepth[input];
+ 	
+	(*data which will be joined, make all data sets 4D*)
+	sets = Switch[depth,
+		5,input,
+		4,Transpose[{#}]&/@input
+	];
+	
+	(*add z padding to allow more overlap*)
+	sets = ArrayPad[#, Prepend[ConstantArray[{0, 0}, ArrayDepth[#] - 1], {pad, pad}]] & /@ sets;
+	
+	(*set needed values*)
+	nmax = Length[sets];
+	overp = over + 2 pad;
+	dim = Dimensions[sets[[1,All,1]]];
+	
+	(*define the registration function*)
+	regFunc = If[OptionValue[JoinSetSplit],RegisterDataTransformSplit,RegisterDataTransform];
+	
+	i=0;
+	PrintTemporary[Dynamic[i]];
+	
+	(*perform the motion correction*)
+	Table[
+		i=n;
+		(*get the seconds overlap stac*)
+		d1 = sets[[n, ;; overp,1]];
+		maskd1 = Dilation[#, 10] & /@ Mask[d1];
+		(*pad to allow motion*)
+		d1 = PadLeft[d1, dim];
+		maskd1 = PadLeft[maskd1, dim];
+		
+		(*get the seconds overlap stac*)
+		d2 = sets[[n + 1, -overp ;;,1]];
+		maskd2 = Dilation[#, 10] & /@ Mask[d2];
+		(*pad to allow motion*)
+		d2 = PadLeft[d2, dim];
+		maskd2 = PadLeft[maskd2, dim];
+		
+		maskd1 = maskd2 = Dilation[maskd1 maskd2, 1];
+		
+		(*get the number of samples for the registration*)
+		samp = Round[((Total@Flatten@maskd1)+(Total@Flatten@maskd2))/20];
+		
+		(*perform the registration*)
+		sets[[n + 1]] = Last@regFunc[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
+				MethodReg -> "translation", Iterations -> 250, NumberSamples -> samp, PrintTempDirectory -> False,InterpolationOrderReg -> 0];
+		
+		, {n, 1, nmax - 1}
+	];
+	
+	(*output the data, make the 3D data 3D again*)
+	Switch[depth,
+		5,sets,
+		4,sets[[All,All,1]]
+		]
   
-  Table[
-   d1 = sets[[n, ;; over]];
-   maskd1 = Dilation[Mask[d1], 10];
-   d1 = PadLeft[d1, dim];
-   maskd1 = PadLeft[maskd1, dim];
-   
-   d2 = sets[[n + 1, -over ;;]];
-   maskd2 = Dilation[Mask[d2], 10];
-   d2 = PadLeft[d2, dim];
-   maskd2 = PadLeft[maskd2, dim];
-   
-   If[OptionValue[JoinSetSplit],
-    sets[[n + 1]] = 
-      Last@RegisterDataTransformSplit[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
-        MethodReg -> "translation", Iterations -> 250, NumberSamples -> 1000, PrintTempDirectory -> False];
-    ,
-    sets[[n + 1]] = 
-      Last@RegisterDataTransform[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
-        MethodReg -> "translation", Iterations -> 250, NumberSamples -> 1000, PrintTempDirectory -> False];
-    ]
-   , {n, 1, nmax - 1}];
-  
-  sets
   ]
 
 
@@ -1544,19 +1634,30 @@ CutData[data_,cut_] := Switch[
 		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}
 ]
 
-FindMiddle[dati_] := Module[{dat, len, datf,peaks},
-  (*dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
-  len = Length[dat];
-  {r1, r2} = len/2 + {-20, 20};
-  sec1 = Transpose[{dat, Range[len]}][[r1 ;; r2]];
-  Last[First[Sort[sec1]]]*)
+FindMiddle[dati_] := Module[{dat, datf,peaks,mid,peak,center},
   
-  dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
-  len = Length[dat];
-  
-  datf = Max[dat] - GaussianFilter[dat, len/20];
-  peaks = FindPeaks[datf];
-  First@First@Nearest[peaks, {Round[len/2], Max[dat]}]
+	(*flatten mean and normalize data*)
+	dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
+	dat = dat/Max[dat];
+	(*smooth the data a bit*)
+	datf = 1 - GaussianFilter[dat, 2];
+	(*find the peaks*)
+	peaks = FindPeaks[datf];
+	peaks = If[Length[peaks] >= 3, peaks[[2 ;; -2]], peaks];
+	
+	(*find the most middle peak*)
+	mid = Round[Length[dat]/2];
+	center = {mid, 1};
+	peak = Nearest[peaks, center];
+	
+	(*Print[Show[
+	ListLinePlot[{1-dat,datf},PlotStyle\[Rule]{Black,Orange}],ListPlot[{\
+	peaks,peak,{center}},PlotStyle\[Rule](Directive[{PointSize[Large],#}]&\
+	/@{Blue,Red,Green})]
+	]]*)
+	
+	(*output*)
+	Round[First@First@peak]
   ]
 
 

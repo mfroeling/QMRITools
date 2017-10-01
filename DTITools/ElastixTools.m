@@ -1019,17 +1019,12 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 	{targetl, targetr, cut1}=CutData[target];
 	{movingl, movingr, cut2}=CutData[moving];
 	
-	{cut1,cut2} = Switch[
-		OptionValue[SplitMethod],
-		"target",
-		{cut1,Round[(cut1 voxT[[2]])/voxM[[2]]]},
-		"moving",
-		{Round[(cut2 voxM[[2]])/voxT[[2]]],cut2},
-		"nearest",
-		Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, Round[Last@Dimensions[target]/2] Last@voxT] / {Last@voxT, Last@voxM}];
-		_,
-		Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]],voxM[[2]]}]
-	];
+	{cut1, cut2} = Switch[OptionValue[SplitMethod],
+		"target", Round[{cut1, (cut1 voxT[[2]])/voxM[[2]]}],
+		"moving", Round[{(cut2 voxM[[2]])/voxT[[2]], cut2}],
+		"nearest", Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, (Last@Dimensions[target]/2) Last[voxT]]/{Last@voxT, Last@voxM}],
+		_, Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]], voxM[[2]]}]
+		];
 	
 	(*cut data*)
 	{targetl, targetr, cut1}=CutData[target,cut1];
@@ -1451,17 +1446,12 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 	{targetl, targetr, cut1}=CutData[target];
 	{movingl, movingr, cut2}=CutData[moving];
 	
-	{cut1,cut2} = Switch[
-		OptionValue[SplitMethod],
-		"target",
-		{cut1,Round[(cut1 voxT[[2]])/voxM[[2]]]},
-		"moving",
-		{Round[(cut2 voxM[[2]])/voxT[[2]]],cut2},
-		"nearest",
-		Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, Round[Last@Dimensions[target]/2] Last@voxT] / {Last@voxT, Last@voxM}];
-		_,
-		Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]],voxM[[2]]}]
-	];
+	{cut1, cut2} = Switch[OptionValue[SplitMethod],
+		"target", Round[{cut1, (cut1 voxT[[2]])/voxM[[2]]}],
+		"moving", Round[{(cut2 voxM[[2]])/voxT[[2]], cut2}],
+		"nearest", Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, (Last@Dimensions[target]/2) Last[voxT]]/{Last@voxT, Last@voxM}],
+		_, Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]], voxM[[2]]}]
+		];
 	
 	(*cut data*)
 	{targetl, targetr, cut1}=CutData[target,cut1];

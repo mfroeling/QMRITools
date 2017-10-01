@@ -454,7 +454,7 @@ FindOutliers=Block[{ittA,itt,contA,cont,sol,solA,soli,fit,res,resMAD,weigths,wma
 						res=LS2-fit;
 						If[Total[res]===0.,cont=0];
 						(* b.Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-						Weigths=MADweigths[res];
+						weigths=MADweigths[res];
 						(*perform WLLS*)
 						wmat=DiagonalMatrix[weigths];
 						mat=PseudoInverse[Transpose[bmat2].wmat.bmat2];

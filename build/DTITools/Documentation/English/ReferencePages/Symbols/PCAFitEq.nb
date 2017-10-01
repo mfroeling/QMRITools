@@ -3,25 +3,24 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 11.1' *)
+(* CreatedBy='Mathematica 11.2' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      9298,        240]
-NotebookOptionsPosition[      6540,        173]
-NotebookOutlinePosition[      8610,        224]
-CellTagsIndexPosition[      8567,        221]
+NotebookDataLength[      7775,        213]
+NotebookOptionsPosition[      5057,        152]
+NotebookOutlinePosition[      7140,        204]
+CellTagsIndexPosition[      7097,        201]
 WindowTitle->PCAFitEq
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
 Cell[BoxData[GridBox[{
-   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell",ExpressionUUID->
-     "a05f5bae-4bb7-4c78-bbbd-dc54b97f459f"], Cell[TextData[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
      Cell[BoxData[
       ActionMenuBox[
        FrameBox[
@@ -29,7 +28,7 @@ Cell[BoxData[GridBox[{
           "Related Guides",
           StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
            StripOnInput->False]
-         }],ExpressionUUID->"ae325c36-7f20-48a7-ba17-44a2ee48a8f2"],
+         }]],
          TextCell[
           Row[{"Related Guides", 
             Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
@@ -38,8 +37,7 @@ Cell[BoxData[GridBox[{
        Appearance->None,
        MenuAppearance->Automatic,
        MenuStyle->"MoreAbout"]],
-      LineSpacing->{1.4, 0},ExpressionUUID->
-      "a838abdd-1153-4d13-8505-9a39a50aaa18"],
+      LineSpacing->{1.4, 0}],
      "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
 \[ThickSpace]",
      Cell[BoxData[
@@ -49,7 +47,7 @@ Cell[BoxData[GridBox[{
           "URL",
           StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
            StripOnInput->False]
-         }],ExpressionUUID->"37751bfc-1bfa-4757-a30d-974427b8edc7"],
+         }]],
          TextCell[
           Row[{"URL", 
             Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
@@ -81,95 +79,76 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$159154], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$164025], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/PCAFitEq", ".html"]], None}]}]},
        Appearance->None,
        MenuAppearance->Automatic,
        MenuStyle->"URLMenu"]],
-      LineSpacing->{1.4, 0},ExpressionUUID->
-      "ba6df67b-1ae3-4f82-81ea-07bd4ec47f00"]
-    }], "AnchorBar",ExpressionUUID->"935d654e-e656-48b1-a62d-10558be27a85"]}
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
   }]], "AnchorBarGrid",
  GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
      Scaled[0.65], {
       Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
    "RowsIndexed" -> {}}},
- CellID->1,ExpressionUUID->"6a4c4c73-f8d1-4317-b4de-0057837a23d8"],
+ CellID->1],
 
 Cell[TextData[{
- Cell["PCAFitEq", "ObjectName",ExpressionUUID->
-  "183693bd-d844-49b8-841d-9c76da0f96bb"],
+ Cell["PCAFitEq", "ObjectName"],
  Cell[BoxData[
-  InterpretationBox[
-   StyleBox[
-    GraphicsBox[{},
-     BaselinePosition->Baseline,
-     ImageSize->{8, 0}],
-    CacheGraphics->False],
-   Spacer[8],
-   Selectable->False]],ExpressionUUID->"85f47ee5-1b17-41d2-b27c-a78f7e4bf873"],
- Cell[BoxData[
- ""], "ObjectNameTranslation",ExpressionUUID->
-  "ba45e559-3c6c-40bd-9f40-18956d2f03db"]
-}], "ObjectNameGrid",ExpressionUUID->"6dcafa35-62ef-42ac-a894-c164e11358b5"],
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
      Cell[BoxData[
       RowBox[{"PCAFitEq", "[", 
-       StyleBox["data", "TI"], "]"}]], "InlineFormula",ExpressionUUID->
-      "8f2b83f2-7183-42c2-8c1c-ec738e409a17"],
+       StyleBox["data", "TI"], "]"}]], "InlineFormula"],
      "\[LineSeparator]fits the marchencopasteur distribution to the PCA of \
 the data using grid search. "
-    }],ExpressionUUID->"b2bb8a85-c638-487b-8bba-a2c481388468"]},
+    }]]},
    {"", Cell[TextData[{
      Cell[BoxData[
       RowBox[{"PCAFitEq", "[", 
        RowBox[{
         StyleBox["data", "TI"], ",", " ", 
-        StyleBox["sig", "TI"]}], "]"}]], "InlineFormula",ExpressionUUID->
-      "73b7754e-8f58-49fd-83c3-b87b03273363"],
+        StyleBox["sig", "TI"]}], "]"}]], "InlineFormula"],
      "\[LineSeparator]fits the marchencopasteur distribution to the PCA of \
 the data using sig as start value or fixed value using grid search. Output is \
 {simga, number of noise comp, and denoised matrix}."
-    }],ExpressionUUID->"8c3ae228-e0fe-4b9b-9ec0-5a2a89852206"]}
+    }]]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
-   "RowsIndexed" -> \
-{}}},ExpressionUUID->"7e7b3d51-c60e-48e8-82e7-b985c5e2ca32"],
+   "RowsIndexed" -> {}}}],
 
 Cell[CellGroupData[{
 
 Cell[TextData[{
  Cell[BoxData[
-  InterpretationBox[
-   StyleBox[
-    GraphicsBox[{},
-     BaselinePosition->Baseline,
-     ImageSize->{6, 0}],
-    CacheGraphics->False],
-   Spacer[6],
-   Selectable->False]],ExpressionUUID->"f18bca67-c63b-4977-a341-e00866d7f85a"],
+  TemplateBox[{6},
+   "Spacer1"]]],
  "Related Guides"
 }], "MoreAboutSection",
  WholeCellGroupOpener->True,
- CellID->38303248,ExpressionUUID->"39902ad4-9f9f-4592-b704-588ce9bf6947"],
+ CellID->38303248],
 
-Cell["", "SectionHeaderSpacer",ExpressionUUID->"279c6631-1b3f-456f-84c5-6196be0b363d"],
+Cell["", "SectionHeaderSpacer"],
 
 Cell[BoxData[
  TemplateBox[{Cell[
     TextData["DenoiseTools"]],"paclet:DTITools/guide/DenoiseTools"},
   "RefLink",
   BaseStyle->"MoreAbout"]], "MoreAbout",
- CellID->1,ExpressionUUID->"ea0895d6-5b64-426b-aa89-a2f7f9b7dc38"]
+ CellID->1]
 }, Open  ]],
 
-Cell[" ", "FooterCell",ExpressionUUID->"b19f935a-bd72-40a5-8cf6-e1f71f9968b3"]
+Cell[" ", "FooterCell"]
 },
 Saveable->False,
 ScreenStyleEnvironment->"Working",
@@ -186,7 +165,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2017, 7, 8, 9, 33, 58.2191687}", 
+   "built" -> "{2017, 9, 22, 16, 10, 30.3089330}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`DenoiseTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -200,7 +179,7 @@ matrix}.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "PCAFitEq",
     "titlemodifier" -> "", "windowtitle" -> "PCAFitEq", "type" -> "Symbol", 
     "uri" -> "DTITools/ref/PCAFitEq"}},
 CellContext->"Global`",
-FrontEndVersion->"11.1 for Microsoft Windows (64-bit) (April 18, 2017)",
+FrontEndVersion->"11.2 for Microsoft Windows (64-bit) (September 10, 2017)",
 StyleDefinitions->Notebook[{
    Cell[
     StyleData[
@@ -209,7 +188,8 @@ StyleDefinitions->Notebook[{
     StyleData["Input"], CellContext -> "Global`"], 
    Cell[
     StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
-  FrontEndVersion -> "11.1 for Microsoft Windows (64-bit) (April 18, 2017)", 
+  FrontEndVersion -> 
+  "11.2 for Microsoft Windows (64-bit) (September 10, 2017)", 
   StyleDefinitions -> "Default.nb"]
 ]
 (* End of Notebook Content *)
@@ -223,25 +203,18 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[580, 21, 3441, 77, 70, "AnchorBarGrid", "ExpressionUUID" -> \
-"6a4c4c73-f8d1-4317-b4de-0057837a23d8",
+Cell[580, 21, 3036, 74, 70, "AnchorBarGrid",ExpressionUUID->"dcb6e75a-8a4d-453f-bb8c-7fbc9d41a23d",
  CellID->1],
-Cell[4024, 100, 535, 15, 70, "ObjectNameGrid", "ExpressionUUID" -> \
-"6dcafa35-62ef-42ac-a894-c164e11358b5"],
-Cell[4562, 117, 1133, 25, 70, "Usage", "ExpressionUUID" -> \
-"7e7b3d51-c60e-48e8-82e7-b985c5e2ca32"],
+Cell[3619, 97, 165, 6, 70, "ObjectNameGrid",ExpressionUUID->"4b9ec492-3d76-4423-9d7c-8696ab9a06cd"],
+Cell[3787, 105, 842, 22, 70, "Usage",ExpressionUUID->"a5eda0b3-5a0b-4bfc-83d3-9bccd3c7b4d0"],
 Cell[CellGroupData[{
-Cell[5720, 146, 408, 13, 70, "MoreAboutSection", "ExpressionUUID" -> \
-"39902ad4-9f9f-4592-b704-588ce9bf6947",
+Cell[4654, 131, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"d7b4deeb-dd6b-4985-83ab-32652123c527",
  CellID->38303248],
-Cell[6131, 161, 86, 0, 70, "SectionHeaderSpacer", "ExpressionUUID" -> \
-"279c6631-1b3f-456f-84c5-6196be0b363d"],
-Cell[6220, 163, 223, 5, 70, "MoreAbout", "ExpressionUUID" -> \
-"ea0895d6-5b64-426b-aa89-a2f7f9b7dc38",
+Cell[4813, 140, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"825a2959-3b71-4b4d-b20c-596235b6c436"],
+Cell[4847, 142, 168, 5, 70, "MoreAbout",ExpressionUUID->"ac2facaa-38c3-4186-86ae-b1f6a2cc0b8b",
  CellID->1]
 }, Open  ]],
-Cell[6458, 171, 78, 0, 70, "FooterCell", "ExpressionUUID" -> \
-"b19f935a-bd72-40a5-8cf6-e1f71f9968b3"]
+Cell[5030, 150, 23, 0, 70, "FooterCell",ExpressionUUID->"1a255dc5-7a9f-4a7a-8d0a-343e0d4fa1dd"]
 }
 ]
 *)

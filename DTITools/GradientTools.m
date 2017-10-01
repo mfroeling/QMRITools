@@ -2378,17 +2378,46 @@ BmatrixToggle[bmat_, axes_, flip_] :=
 
 SyntaxInformation[ImportGradObj] = {"ArgumentsPattern" -> {_}};
 
-ImportGradObj[folder_] := Module[{files, imp, obj},
-  files = FileNames["GR*.acq", folder];
-  (
-     imp = Import[#, "Lines"];
-     obj = (
-         obj = StringSplit[StringDrop[StringTrim[#], -1], " = "];
-         obj[[1]] -> ToExpression[obj[[2]]] // N
-         ) & /@ imp[[2 ;;]];
-     StringReplace[imp[[1]], "$ modify_object " -> ""] -> obj
-     ) & /@ files
-  ]
+ImportGradObj[folder_] := 
+ Module[{files, imp, obj}, 
+ 	files = FileNames["GR*.acq", folder];
+ 	(
+ 		imp = Import[#, "Lines"];
+ 		obj = (obj = StringSplit[StringDrop[StringTrim[#], -1], " = "];
+ 		obj[[1]] -> ToExpression[obj[[2]]] // N) & /@ imp[[2 ;;]];
+ 		StringReplace[imp[[1]], "$ modify_object " -> ""] -> obj
+ 		) & /@files
+ 	]
+
+ImportGradObj[{base_, xbase_}] := 
+ Module[{objectNames, objects, name, vals, props},
+  objectNames = {"\"GR`blip\"", "\"GR`d_echo\"",
+    "\"GR`diff[0]\"", "\"GR`diff[1]\"", "\"GR`diff[2]\"",
+    "\"GR`diff_2nd[0]\"", "\"GR`diff_2nd[1]\"", "\"GR`diff_2nd[2]\"",
+    "\"GR`r_diff[0]\"", "\"GR`r_diff[1]\"", "\"GR`r_diff[2]\"",
+    "\"GR`diff_crush[0]\"", "\"GR`diff_crush[1]\"",
+    "\"GR`m[0]\"", "\"GR`mc[0]\"", "\"GR`md\"",
+    "\"GR`mf_base[0]\"", "\"GR`mf_base[1]\"", "\"GR`pf[0]\"", 
+    "\"GR`pf[1]\"", "\"GR`sf_base[0]\"", "\"GR`sf_base[1]\"",
+    "\"GR`py\"",
+    "\"GR`r_echo\"", "\"GR`s_echo\"",
+    "\"GR`r_ex\"", "\"GR`s_ex\"",
+    "\"GR`s_ex1\"", "\"GR`s_ex2\"", "\"GR`s_diff_echo\"", 
+    "\"GR`TM_crush\""
+    };
+  
+  objects = Flatten[Partition[SplitBy[Import[#, "Lines"], (StringTake[#, 1] === "$" &)],2] & /@ {base, xbase}, 1];
+  objects = Sort@DeleteCases[(
+  	name = Last[StringSplit[First@First@#]];
+  	If[MemberQ[objectNames, name],
+  		vals = #[[2]];
+  		vals = (
+  			props = StringSplit[StringDrop[StringTrim[#], -1], " = "];
+  			props[[1]] -> ToExpression[props[[2]]] // N
+  		) & /@ vals;
+  		name -> vals
+  	]) & /@ objects, Null]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -2435,6 +2464,7 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Module[{
   grdiff = {"\"GR`diff[2]\"", "\"GR`diff_2nd[2]\""};
     
   usegrad = OptionValue[UseGrad];
+  (*{grex, gr180, {grepi1, grepi2}, grdiff, grflow}*)
   If[Length[usegrad] == 4, AppendTo[usegrad, 0]];
   seqt = Transpose[DeleteCases[(
          
@@ -2473,7 +2503,6 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Module[{
           repf = "gr_rep_alt_factor" /. rule;
           repi = ("gr_interval" /. rule) unit;
           ori = "gr_ori" /. rule;
-          
           
           orVec = RotateLeft[If[MemberQ[grdiff, name], grad // N, {0, 0, 1} // N],Abs[ori - 2]];
           
@@ -2526,7 +2555,7 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Module[{
    hw = Piecewise[{{1, 0 <= t <= t901}, {-1, t902 <= t (*<= te*)}}];
    ];
   
-  {seq, hw, te}
+  {PiecewiseExpand/@seq, PiecewiseExpand@hw, te}
   ]
 
 
@@ -2626,15 +2655,17 @@ gradRotmat = {v1 = {-1, 1, -1} orientation[[{5, 4, 6}]],
 
 SyntaxInformation[CalculateMoments] = {"ArgumentsPattern" -> {_, _}};
 
-CalculateMoments[{Gt_, hw_, te_}, t_] := Module[{M0, M1, M2, M3, vals},
-	M0 = hw Integrate[ hw # , t] & /@ Gt;
-	M1 = hw Integrate[ hw t # , t] & /@ Gt;
-	M2 = hw Integrate[ hw t^2 # , t] & /@ Gt;
-	M3 = hw Integrate[ hw t^3 # , t] & /@ Gt;
+CalculateMoments[{Gt_, hw_, te_}, t_] := Module[{fun, M0, M1, M2, M3, vals},
+	fun = N@PiecewiseExpand[#*hw] & /@ Gt;
+	
+	M0 = hw Integrate[PiecewiseExpand[# ]    , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	M1 = hw Integrate[PiecewiseExpand[# t]   , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	M2 = hw Integrate[PiecewiseExpand[# t^2 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	M3 = hw Integrate[PiecewiseExpand[# t^3 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
 	
 	vals = {M0, M1, M2, M3} /. t -> te;
 	
-	{{Gt, M0, M1, M2, M3}, vals}
+	{{PiecewiseExpand/@Gt, M0, M1, M2, M3}, vals}
   ]
 
 

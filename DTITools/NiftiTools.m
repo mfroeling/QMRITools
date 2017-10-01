@@ -156,13 +156,13 @@ Options[DcmToNii]={CompressNii->True,Method->Automatic}
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
-DcmToNii[opt:OptionsPattern[]]:=DcmToNii["folder","",opt];
+DcmToNii[opt:OptionsPattern[]]:=DcmToNii["folder",{"",""},opt];
 
 DcmToNii[action_?StringQ,opt:OptionsPattern[]] := DcmToNii[action,"",opt]; 
 
 DcmToNii[fstr_?ListQ,opt:OptionsPattern[]] := DcmToNii["folder",fstr,opt];
 
-DcmToNii[action_,fstr_,OptionsPattern[]] := Module[{act,filfolin,folout,add,title,log,command,compress,dcm2nii},
+DcmToNii[action_?StringQ,fstr_?ListQ,OptionsPattern[]] := Module[{act,filfolin,folout,add,title,log,command,compress,dcm2nii},
 	
 	dcm2nii=FindDcm2Nii[];
 	If[dcm2nii==$Failed,Return[$Failed,Module]];
@@ -194,6 +194,8 @@ DcmToNii[action_,fstr_,OptionsPattern[]] := Module[{act,filfolin,folout,add,titl
 	add=If[action == "file", "-v N "," "];
 	compress=If[OptionValue[CompressNii],"i","n"];
 	command=First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log<>"\"\nexit\n";
+	
+	
 	
 	If[OptionValue[Method]=!=Automatic,Print[command]];
 	
