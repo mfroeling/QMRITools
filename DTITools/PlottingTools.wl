@@ -76,6 +76,9 @@ PlotIVIM::usage =
 PlotSequence::usage = 
 "PlotSequence[seq,var] where seq is the output from GradSeq."
 
+ListSpherePlot::usage =
+"ListSpherePlot[points] plots 3D points as spheres"
+
 GradientPlot::usage = 
 "GradientPlot[bvec, bval] plots the given bvec with position of the gradients scaled according to the bval."
 
@@ -106,7 +109,10 @@ NormalizeIVIM::usage =
 "NormalizeIVIM is an option for IVIMplot. If True the signal at b=0 is 1."
 
 SphereSize::usage = 
-"SphereSize is an option for GradientPlot. Sets the size of the spheres thar represent the gradients."
+"SphereSize is an option for GradientPlot and ListSpherePlor. Sets the size of the spheres thar represent the gradients."
+
+SphereColor::usage = 
+"SphereColor ListSpherePlor. Default value is Automatic, If a color is given this color will be used for all spheres."
 
 PositiveZ::usage = 
 "PositiveZ is an options for GradientPlot. If True all Gradients are displayed with a positive z direction."
@@ -3123,9 +3129,36 @@ GradientPlot[veci_, val_, OptionsPattern[]] :=
    PlotRange -> range]]
   
   Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
-  
 
 
+(* ::Subsection::Closed:: *)
+(*ListSpherePlot*)
+
+
+Options[ListSpherePlot] = {SphereSize->2, SphereColor->Automatic}
+
+SyntaxInformation[ListSpherePlot] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};  
+
+ListSpherePlot[ptsi_, OptionsPattern[]] := Module[{cols, graphics, pt, pc, ran, len,coli,size},
+ 	coli = OptionValue[SphereColor];
+ 	size = OptionValue[SphereSize];
+ 	
+  len = Length[ptsi];
+  ran = RandomSampleFix[len];
+  cols = If[coli === Automatic,
+    (ColorData[1] /@ N[Range[1, len]])[[ran]],
+    ConstantArray[coli, len]
+    ];
+  cols = cols;
+  graphics = MapThread[(pt = #1; pc = #2;
+      If[ArrayDepth[pt] == 1,
+       {pc, Sphere[pt, size]},
+       {pc, Sphere[#, size]} & /@ pt
+       ]) &, {ptsi, cols}];
+  Graphics3D[Flatten[graphics], Lighting -> "Neutral"]
+  ]
+
+RandomSampleFix[len_] := RandomSampleFix[len] = RandomSample[Range[len]];
 
 (* ::Subsection::Closed:: *)
 (*PlotDuty*)
@@ -3156,13 +3189,9 @@ PlotDuty[{grad_, bval_, ord_}, mode_] :=
    ]
   ]
   
-  
-
 
 (* ::Subsection::Closed:: *)
 (*ColorFAPlot*)
-
-
   
   
 ColorFAPlot[tens_] := Block[{FA, eigv, mid, eigFA},

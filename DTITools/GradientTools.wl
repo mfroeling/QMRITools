@@ -310,11 +310,11 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=
     If[! (method == "Shels"),
      (*single shell*)
      plot = Row[{
-         Show[sph, ListSpherePlot[Dynamic[points], Black, 0.05], 
-          If[half == 1, ListSpherePlot[Dynamic[-points], Red, 0.05], 
+         Show[sph, ListSpherePloti[Dynamic[points], Black, 0.05], 
+          If[half == 1, ListSpherePloti[Dynamic[-points], Red, 0.05], 
            Graphics3D[]]],
-         Show[sph, ListSpherePlot[Dynamic[tempp], Black, 0.05], 
-          If[half == 1, ListSpherePlot[Dynamic[-tempp], Red, 0.05], 
+         Show[sph, ListSpherePloti[Dynamic[tempp], Black, 0.05], 
+          If[half == 1, ListSpherePloti[Dynamic[-tempp], Red, 0.05], 
            Graphics3D[]]]
          }];
      ,
@@ -323,18 +323,18 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=
          Show[sph,
           
           MapThread[
-           ListSpherePlot[#1, #2, 0.05] &, {Dynamic[points[[#]]] & /@ 
+           ListSpherePloti[#1, #2, 0.05] &, {Dynamic[points[[#]]] & /@ 
              part, cols[[1 ;; ns]]}],
           
-          If[half == 1, ListSpherePlot[Dynamic[-points], Gray, 0.05], 
+          If[half == 1, ListSpherePloti[Dynamic[-points], Gray, 0.05], 
            Graphics3D[]]],
          Show[sph,
           
           MapThread[
-           ListSpherePlot[#1, #2, 0.05] &, {Dynamic[tempp[[#]]] & /@ 
+           ListSpherePloti[#1, #2, 0.05] &, {Dynamic[tempp[[#]]] & /@ 
              part, cols[[1 ;; ns]]}],
           
-          If[half == 1, ListSpherePlot[Dynamic[-tempp], Gray, 0.05], 
+          If[half == 1, ListSpherePloti[Dynamic[-tempp], Gray, 0.05], 
            Graphics3D[]]]
          }];
      ];
@@ -457,10 +457,10 @@ RandInit[ni_, half_] := If[half == 1,
 
 
 (* ::Subsubsection::Closed:: *)
-(*ListSpherePlot*)
+(*ListSpherePloti*)
 
 
-ListSpherePlot[pts_, col_, size_] := Graphics3D[{col, Sphere[#, size] & /@ pts}]
+ListSpherePloti[pts_, col_, size_] := Graphics3D[{col, Sphere[#, size] & /@ pts}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -696,10 +696,10 @@ GenerateGradientsGUI[] := Block[{pan},
           Show[
            SpherePlot[1, opacity],
            (*Shell positive z*)
-           ListSpherePlot[pointspl, Red, 0.05],
+           ListSpherePloti[pointspl, Red, 0.05],
            (*Shells Negative z*)
            
-           If[mirror, ListSpherePlot[-pointspl, Gray, 0.05], 
+           If[mirror, ListSpherePloti[-pointspl, Gray, 0.05], 
             Graphics3D[{}]],
            (*sticks*)
            If[sticks, ListStickPlot[pointspl, 0.01], Graphics3D[{}]],
@@ -732,7 +732,7 @@ GenerateGradientsGUI[] := Block[{pan},
             (*Multi shells positive z*)
             MapThread[{
                 SpherePlot[#3, opacity],
-                ListSpherePlot[#1 #3, #2, 0.05]} &, {Reverse@
+                ListSpherePloti[#1 #3, #2, 0.05]} &, {Reverse@
                 ppointspl, 
                Reverse@{Red, Green, Blue, Yellow, Pink, Purple}[[
                  1 ;; len]], Range[1, .5, -.5/(len - 1)]
@@ -741,7 +741,7 @@ GenerateGradientsGUI[] := Block[{pan},
             
             If[mirror, 
              MapThread[
-              ListSpherePlot[-#1 #2, Gray, 0.05] &, {ppointspl, 
+              ListSpherePloti[-#1 #2, Gray, 0.05] &, {ppointspl, 
                Range[1, .5, -.5/(len - 1)]}], Graphics3D[{}]],
             ImageSize -> size, Background -> app
             ]
@@ -752,12 +752,12 @@ GenerateGradientsGUI[] := Block[{pan},
             (*Multi shells positive z*)
             
             MapThread[
-              ListSpherePlot[#1, #2, 
+              ListSpherePloti[#1, #2, 
                 0.05] &, {ppointspl, {Red, Green, Blue, Yellow, Pink, 
                  Purple}[[1 ;; len]]}][[Clip[show, {1, len}]]],
             (*multi shells negative z*)
             
-            If[mirror, (ListSpherePlot[-#, Gray, 0.05] & /@ 
+            If[mirror, (ListSpherePloti[-#, Gray, 0.05] & /@ 
                 ppointspl)[[Clip[show, {1, len}]]], Graphics3D[{}]],
             (*sticks*)
             
@@ -773,10 +773,10 @@ GenerateGradientsGUI[] := Block[{pan},
          Show[
           SpherePlot[0, opacity],
           (*Shell positive z*)
-          ListSpherePlot[pointsc, Red, 0.05],
+          ListSpherePloti[pointsc, Red, 0.05],
           (*Shells Negative z*)
           
-          If[mirror, ListSpherePlot[-pointsc, Gray, 0.05], 
+          If[mirror, ListSpherePloti[-pointsc, Gray, 0.05], 
            Graphics3D[{}]]
           ,
           ImageSize -> size, PlotLabel -> "", Background -> app

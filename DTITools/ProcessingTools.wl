@@ -186,6 +186,9 @@ UseMask::usage =
 OutputSNR::usage = 
 "OutputSNR is an option for SNRMapCalc."
 
+SmoothSNR::usgae = 
+"SmoothSNR is an option for SNRMapCalc"
+
 SeedDensity::usage = 
 "SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
 
@@ -398,10 +401,10 @@ TensorCalci[data_,dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 (*FindOutliers*)
 
 
-FindOutliers=Block[{ittA,itt,contA,cont,sol,solA,soli,fit,res,resMAD,weigths,wmat,mat,fitE,LS2,bmat2,bmatI2},
+FindOutliers=Block[{ittA,itt,contA,cont,sol,solA,soli,fit,res,resMAD,weigths,wmat,mat,fitE,LS2,bmat2,bmatI2,mad},
 	With[{
-		MAD=(1.4826 Median[Abs[#-Median[#]]])&,
-		MADweigths=(1./(1+(#/(1.4826 Median[Abs[#-Median[#]]]))^2)^2)&
+		MAD=(1.4826 Median[Abs[#-Median[#]]])&
+		(*MADweigths=(1./(1+(#/(1.4826 Median[Abs[#-Median[#]]]))^2)^2)&*)
 		},
 		Compile[{{LS,_Real,1},{bmat,_Real,2},{bmatI,_Real,2},{con,_Real,0},{kappa,_Real,0}},
 			(*skip if background*)
@@ -426,9 +429,10 @@ FindOutliers=Block[{ittA,itt,contA,cont,sol,solA,soli,fit,res,resMAD,weigths,wma
 						fit=bmat.sol;
 						(*calculate residuals in linear domain*)
 						res=LS-fit;
-						If[Total[res]===0.,cont=0];
 						(* b.Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-						weigths=MADweigths[res];
+						mad=MAD[res];
+						If[AllTrue[res, (0. == #) &]||mad==0,Break[]];(*prevent calculation with 0*)
+						weigths=1/(1+(res/mad)^2)^2;
 						(*perform WLLS*)
 						wmat=DiagonalMatrix[weigths];
 						mat=PseudoInverse[Transpose[bmat].wmat.bmat];
@@ -437,11 +441,11 @@ FindOutliers=Block[{ittA,itt,contA,cont,sol,solA,soli,fit,res,resMAD,weigths,wma
 						If[Total[Abs[sol-soli]]<con(3 10^3)(*diff const of water*)||itt>5,cont=0];
 					];(*end first while*)
 					(*Step 3:Transform variables for heteroscedasticity*)
-					fitE=-Exp[fit];
-					LS2 =LS/fitE;
-					bmat2= bmat/fitE;
+					fitE = -Exp[fit];
+					LS2 = LS/fitE;
+					bmat2 = bmat/fitE;
 					itt=0;cont=1;
-					(*Step 4:Initial LLS fit in*domain*)
+					(*Step 4:Initial LLS fit in * domain*)
 					bmatI2=PseudoInverse[bmat2];
 					sol=bmatI2.LS2;
 					(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
@@ -452,9 +456,10 @@ FindOutliers=Block[{ittA,itt,contA,cont,sol,solA,soli,fit,res,resMAD,weigths,wma
 						fit=bmat2.sol;
 						(*calculate residuals in linear domain*)
 						res=LS2-fit;
-						If[Total[res]===0.,cont=0];
 						(* b.Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-						weigths=MADweigths[res];
+						mad=MAD[res];
+						If[AllTrue[res, (0. == #) &]||mad==0,Break[]];(*prevent calculation with 0*)
+						weigths=1/(1+(res/mad)^2)^2;
 						(*perform WLLS*)
 						wmat=DiagonalMatrix[weigths];
 						mat=PseudoInverse[Transpose[bmat2].wmat.bmat2];
@@ -1335,20 +1340,32 @@ SyntaxInformation[SNRMapCalc] = {"ArgumentsPattern" -> {_, _., _., OptionsPatter
 SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, opts:OptionsPattern[]] := SNRMapCalc[data, noise, 1, opts]
 SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[{sigma, sigmac, snr, depthD, depthN},
 	
- 	sigma = N[GaussianFilter[noise, 5]];
+ 	sigma = N[GaussianFilter[noise, 4]];
  	sigmac = (sigma/Sqrt[Pi/2.]) /. 0. -> Infinity;
  	
  	depthD=ArrayDepth[data];
  	depthN=ArrayDepth[noise];
- 	snr = If[depthD==depthN,
- 		GaussianFilter[data/(sigmac/Sqrt[Pi/2.]), k],
- 		If[depthD==depthN+1,
+ 	snr = If[k>=1,
+ 		If[depthD==depthN,
+ 		GaussianFilter[data/(sigmac), k],
+ 		If[depthD==depthN+1&&k>1,
  			If[depthD==4,
  				Transpose[GaussianFilter[#/sigmac, k]&/@Transpose[data]],
  				GaussianFilter[#/sigmac, k]&/@data
- 				]
+ 				] 				
  			]
- 		];
+ 		]
+ 		,
+ 		If[depthD==depthN,
+ 		data/(sigmac),
+ 		If[depthD==depthN+1&&k>1,
+ 			If[depthD==4,
+ 				Transpose[(#/sigmac)&/@Transpose[data]],
+ 				#/sigmac&/@data
+ 				] 				
+ 			]
+ 		]
+ 	];
   
   Switch[OptionValue[OutputSNR],
 	 "Sigma", sigma,

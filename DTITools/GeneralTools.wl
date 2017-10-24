@@ -373,7 +373,7 @@ NumberTableForm[dat_, depth_, opts : OptionsPattern[]] :=
 
 MeanStd[inp_] := Block[{dat}, 
 	dat = inp /. {Mean[{}] -> Nothing, 0. -> Nothing};
-	Row[{NumberForm[Round[Mean[dat], .01], {3, 2}], NumberForm[Round[StandardDeviation[dat], .01], {3, 2}]}, "\[PlusMinus]"]
+	Quiet@Row[{NumberForm[Round[Mean[dat], .001], {3, 2}], NumberForm[Round[StandardDeviation[dat], .001], {3, 2}]}, "\[PlusMinus]"]
   ]
 
 
@@ -383,12 +383,12 @@ MeanStd[inp_] := Block[{dat},
 
 MeanRange[inp_] := Block[{q1, q2, q3},
   {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {.14, .5, .86}];
-  Row[{NumberForm[Round[q2, .01], {3, 2}], "  (", NumberForm[Round[q1, .01], {3, 2}], " - ", NumberForm[Round[q3, .01], {3, 2}], ")"}]
+  Quiet@Row[{NumberForm[Round[q2, .001], {3, 2}], "  (", NumberForm[Round[q1, .001], {3, 2}], " - ", NumberForm[Round[q3, .001], {3, 2}], ")"}]
   ]
   
 MeanRange[inp_,quant_] := Block[{q1, q2, q3},
   {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {quant[[1]],.5,quant[[2]]}];
-  Row[{NumberForm[Round[q2, .01], {3, 2}], "  (", NumberForm[Round[q1, .01], {3, 2}], " - ", NumberForm[Round[q3, .01], {3, 2}], ")"}]
+  Quiet@Row[{NumberForm[Round[q2, .001], {3, 2}], "  (", NumberForm[Round[q1, .001], {3, 2}], " - ", NumberForm[Round[q3, .001], {3, 2}], ")"}]
   ]
 
 
