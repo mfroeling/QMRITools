@@ -275,7 +275,7 @@ Module[{Dv},
 (*AddNoise*)
 
 
-Options[AddNoise]={NoiseSize->"Sigma"};
+Options[AddNoise] = {NoiseSize->"Sigma"};
 
 SyntaxInformation[AddNoise] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -312,8 +312,9 @@ Module[{sig,data=dat//N},
 (* ::Subsubsection::Closed:: *)
 (*BlochSeries*)
 
+BlochSeries[Mi_, dt_, w_, p_] := BlochSeriesi[Mi, dt, w, p] 
 
-BlochSeries = Block[{M, Mtemp, Mt, Mz, Mx, My, ang, phase},
+BlochSeriesi = Block[{M, Mtemp, Mt, Mz, Mx, My, ang, phase},
 With[{gamma = N[2 Pi 42.56 10^6]},
    Compile[{{Mi, _Real, 1}, {dt, _Real, 0}, {w, _Real, 0}, {p, _Real, 1}},
     

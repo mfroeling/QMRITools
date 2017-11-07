@@ -416,7 +416,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	error = sol[[5]];
 	
 	(*if neede also output callibaration*)
-	If[OptionValue[OutputCalibration],
+	If[OptionValue[OutputCalibration]&&OptionValue[EPGCalibrate],
 		{{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]/echo[[1]]}, cal},
 		{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]/echo[[1]]}
 	]
@@ -568,8 +568,7 @@ CalibrateEPGT2Fit[datan_, echo_, angle_, OptionsPattern[]] := Block[{
 	(*define thet fat mask and get the fat only signals*)
 	Switch[ad, 3,
 	  (*single slice*)(*make mask an normalize data to first echo*)
-	  maskT2 = 
-	   SmoothMask[{Mask[Mean[datan], {2}]}, MaskComponents -> 2, MaskClosing -> 1][[1]];
+	  maskT2 = Mask[Mean[datan]];
 	  dataT2 = maskT2 # & /@ datan;
 	  dataT2 = dataT2/MeanNoZero[Flatten[dataT2]];
 	  (*create mask selecting fat*)
@@ -580,7 +579,7 @@ CalibrateEPGT2Fit[datan_, echo_, angle_, OptionsPattern[]] := Block[{
 	  4,
 	  (*mulit slice*)
 	  (*make mask an normalize data to first echo*)
-	  maskT2 = Mask[Mean[Transpose[datan]], {2}];
+	  maskT2 = Mask[Mean[Transpose[datan]]];
 	  dataT2 = NormalizeData[MaskDTIdata[datan, maskT2]];
 	  
 	  (*create mask selecting fat*)

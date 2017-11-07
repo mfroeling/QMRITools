@@ -566,7 +566,7 @@ GetNiiInformation[hdr_] :=
   type = "dataType" /. hdr;
   offSet = Round["voxOffset" /. hdr];
   
-  vox = Reverse[("pixDim" /. hdr)[[2 ;; Clip[ddim + 1, {3, 4}]]]];
+  vox = Reverse[("pixDim" /. hdr)[[2 ;; 4]]];
   TR = ("pixDim" /. hdr)[[5]];
   {slope, intercept} = {"scaleSlope", "scaleInteger"} /. hdr;
   
@@ -901,9 +901,9 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
   If[! ArrayQ[data, _, NumberQ], Message[Export::niidat]; 
    Return[$Failed, Module]];
   (*get data properties*)
-  dim = Dimensions[data];
   ndim = ArrayDepth[data];
-  
+  dim = Dimensions[data];
+   
   type = type /. (Automatic :> DetectDataType[data]);
   range = type /. rangeNii;
   
@@ -940,7 +940,7 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
     "regular" -> "r",
     "dimInfo" -> DimInfo[{"x", "y", "z", Undefined}],(*input*)
     
-    "dim" -> PadRight[Flatten[{ndim, If[ndim == 4, dim[[{4, 3, 1, 2}]], Reverse[dim]]}], 8, 0],(*input*)
+    "dim" -> PadRight[Flatten[{ndim, If[ndim == 4, dim[[{4, 3, 1, 2}]], Reverse[dim]]}], 8, 1],(*input*)
     "intentP1" -> 0.,
     "intentP2" -> 0.,
     "intentP3" -> 0.,
@@ -969,8 +969,8 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
     "quaternB" -> 0,
     "quaternC" -> 0,
     "quaternD" -> 0,
-    "qOffsetX" -> (xoff = -N[vox[[3]] dim[[ndim]]/2]),
-    "qOffsetY" -> (yoff = -N[vox[[2]] dim[[ndim-1]]/2]),
+    "qOffsetX" -> (xoff = -N[vox[[3]] dim[[-1]]/2]),
+    "qOffsetY" -> (yoff = -N[vox[[2]] dim[[-2]]/2]),
     "qOffsetZ" -> (zoff = -N[vox[[1]] dim[[1]]/2]),
     "sRowx" -> {vox[[3]], 0., 0., xoff},
     "sRowy" -> {0., vox[[2]], 0., yoff},

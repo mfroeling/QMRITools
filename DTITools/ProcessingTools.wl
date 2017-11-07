@@ -78,6 +78,9 @@ MN[data1,data2] / (.5 SQRT[2] STDV[data2-data1]).
 SNRMapCalc[{data1, .. dataN}] calcualtes the signal to noise ratio of the data using MN/sigma where the mean signal MN is the average voxe \
 value over all dynamics N and the sigma is the standard deviation over all dynamics N."
 
+CoilSNRCalc::usage = 
+"CoilSNRCalc[coils, noise] calculates the sensitivity weighted snr of multiple coil elements using magnitude signal and noise."
+
 PhaseCalc::usage = 
 "PhaseCalc[B0data] unwraps the two B0 phase maps and calculates the phase difference between the two sets. Output is in radials."
 
@@ -130,6 +133,7 @@ FiberLengths::usage =
 "FiberLengths[fpoints,flines] calculates the fiber lenght using the output from LoadFiberTacts.
 FiberLengths[{fpoints,flines}] calculates the fiber lenght using the output from LoadFiberTacts."
 
+(*FindOutliers::usage = "";*)
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -299,7 +303,7 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		Return[Message[TensorCalc::met,method];$Failed]
 		];
 	
-	data=N[Clip[dat,{0.,Infinity}]];
+	data=N[Clip[Chop[dat],{0.,Infinity}]];
 	(*get the data dimensions*)	
 	depthD=ArrayDepth[data];
 	dirD=If[depthD==4,Length[data[[1]]],Length[data]];
@@ -311,7 +315,7 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 	If[dirB!=dirD,Return[Message[TensorCalc::bvec,dirD,dirB];$Failed]];
 	
 	(*define data*)
-	dataL=LogNoZero[data];	
+	dataL=LogNoZero[Chop[data]];	
 	(*calculate the inverse bmat*)
 	bmatI=PseudoInverse[bmat];
 	
@@ -326,6 +330,8 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 			ParallelTable,
 			Table
 		];	
+		
+		PrintTemporary[Dynamic[xx]];
 		
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
 		tensor = func[
@@ -353,41 +359,25 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 (*TensorCalci*)
 
 
-Options[TensorCalci]= Options[TensorCalc];
+Options[TensorCalci] = Options[TensorCalc];
 
-TensorCalci[data_,dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
+TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 	{l,r,depthD,TensMin,tensor,w, method,outliers,S0,fitresult,robust},
 	
 	(*transpose the data*)
-	depthD=ArrayDepth[data];
-	l=RotateRight[Range[depthD]];
-	r=RotateLeft[Range[depthD]];
-	(*define homogeneous weighting matrix*)
-	w=IdentityMatrix[Length[bmat]];
+	depthD = ArrayDepth[data];
+	l = RotateRight[Range[depthD]];
+	r = RotateLeft[Range[depthD]];
 	
-	(*define tens min function- legacy*)
-	(*TensMin=Quiet[Transpose[Map[Function[S,##[S,(Log[S /. (0. -> 1.)]),bmat,bmatI]],Transpose[data,rl],{depthD-1}],rr]]&;*)
+	method = OptionValue[Method];
+	robust = (OptionValue[RobustFit] && method =!= "LLS");
 	
-	method=OptionValue[Method];
-	robust=(OptionValue[RobustFit] && method=!="LLS");
-	outliers=If[robust,
-		Transpose[FindOutliers[Transpose[dataL,l],bmat,bmatI,10^-5,6],r](*tollerance and outlier thresh*)
-		,0];
+	outliers = If[robust,Transpose[FindOutliers[Transpose[dataL,l], bmat ,10^-4, 6], r], 0];
 	
-	fitresult=Switch[method,
-		(*"LLS",TensMin[TensMinLLS],
-		"WLLS",TensMin[TensMinWLLS],*)
+	fitresult = Switch[method,
 		"LLS", Transpose[TensMinLLS[Transpose[dataL,l], bmatI], r],
-		"WLLS", Transpose[TensMinWLLS[Transpose[data,l],Transpose[(1-outliers) dataL,l], bmat], r],
-		"iWLLS", Transpose[TensMiniWLLS[Transpose[data,l],Transpose[(1-outliers) dataL,l], bmat], r]
-		
-		(*
-		"NLS",TensMin[TensMinNLS],
-		"GMM",TensMin[TensMinGMM],
-		"CLLS",TensMin[TensMinCLLS],
-		"CWLLS",TensMin[TensMinCWLLS],
-		"CNLS",TensMin[TensMinCNLS],
-		"DKI", Transpose[TensMinDKI[Transpose[data, l], bmatI], r]*)
+		"WLLS", Transpose[TensMinWLLS[Transpose[(1-outliers) data,l],Transpose[(1-outliers) dataL,l], bmat], r],
+		"iWLLS", Transpose[TensMiniWLLS[Transpose[(1-outliers) data,l],Transpose[(1-outliers) dataL,l], bmat], r]
 		];
 	
 	S0 = Exp[Last[fitresult]];
@@ -401,83 +391,96 @@ TensorCalci[data_,dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 (*FindOutliers*)
 
 
-FindOutliers=Block[{ittA,itt,contA,cont,sol,solA,soli,fit,res,resMAD,weigths,wmat,mat,fitE,LS2,bmat2,bmatI2,mad},
-	With[{
-		MAD=(1.4826 Median[Abs[#-Median[#]]])&
-		(*MADweigths=(1./(1+(#/(1.4826 Median[Abs[#-Median[#]]]))^2)^2)&*)
-		},
-		Compile[{{LS,_Real,1},{bmat,_Real,2},{bmatI,_Real,2},{con,_Real,0},{kappa,_Real,0}},
-			(*skip if background*)
-			If[Total[LS]==0.,
-				ConstantArray[0.,Length[bmat]]
-				,
-				(*Find the outliers*)
-				(*initialize*)
-				ittA=0;contA=1;
-				(*Step1: initial LLS fit*)
-				sol=bmatI.LS;
-				While[contA==1,
-					(*init itteration values*)
-					ittA++;
-					solA=sol;
-					itt=0;cont=1;
-					(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
-					While[cont==1,
-						(*init itteration values*)
+FindOutliers = Block[{ittA,itt,contA,cont,sol,solA,soli,res,weigths, wmat,fitE,LS2,bmat2,mad,out}, 
+  	Compile[{{LS, _Real, 1}, {bmat, _Real, 2},{con, _Real, 0}, {kappa, _Real, 0}},
+  		If[AllTrue[LS, 0. === # &]||Total[Unitize[LS]]<7,
+  			(*skip if background*)
+  			out = 0. LS;
+  			,
+  			(*Find the outliers*)
+  			(*initialize*)
+  			ittA = 0; contA = 1;
+  			(*Step1: initial LLS fit*)
+  			sol = LeastSquares[bmat,LS];
+  			
+  			(*check if LLS fit is plausable*)
+  			If[Negative[Last[sol]],
+  				out = 0. LS;
+  				,
+	  			While[contA == 1,(*init itteration values*)
+	  				ittA++;
+	  				solA = sol;
+	  				
+	  				itt = 0; cont = 1;
+	  				(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
+	  				While[cont == 1,
+	  					itt++;
+	  					soli = sol;
+	  					(*a. Calculate the residuals e* in the linear domain*)
+	  					res = LS - bmat.sol;
+	  					(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
+	  					mad = 1.4826 MedianDeviation[res];
+	  					(*prevent calculation with 0*)
+	  					If[AllTrue[res, (0. === #) &] || mad === 0.,
+	  						cont = 0,
+	  						(*c. Recompute the weights according to Eq. [13].*)
+	  						weigths = 1/(1 + (res/mad)^2)^2;
+	  						(*d. Perform WLLS fit with new weights*)
+	  						wmat = DiagonalMatrix[weigths];
+	  						sol = LeastSquares[Transpose[bmat].wmat.bmat, Transpose[bmat].wmat.LS];
+	  						(*e. Check convergence*)
+	  						If[!AnyTrue[Abs[sol - soli] - con (Max /@ Transpose[{Abs[sol], Abs[soli]}]),Positive] || itt === 5, cont = 0];
+	  					];
+	  				];(*end first while*)
+	   
+					itt = 0; cont = 1;
+	   
+					(*Step 3: Transform variables for heteroscedasticity*)
+					fitE = Exp[bmat.sol]+10^-6;
+					LS2 = LS / fitE;
+					bmat2 = bmat / fitE;
+									
+					(*Step 4: Initial LLS fit in * domain*)
+					sol = LeastSquares[bmat2,LS2];
+	   
+					(*Step 5: Compute a robust estimate for homoscedastic regression using IRLS.*)
+					While[cont == 1,
 						itt++;
-						soli=sol;
-						fit=bmat.sol;
-						(*calculate residuals in linear domain*)
-						res=LS-fit;
-						(* b.Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-						mad=MAD[res];
-						If[AllTrue[res, (0. == #) &]||mad==0,Break[]];(*prevent calculation with 0*)
-						weigths=1/(1+(res/mad)^2)^2;
-						(*perform WLLS*)
-						wmat=DiagonalMatrix[weigths];
-						mat=PseudoInverse[Transpose[bmat].wmat.bmat];
-						sol=mat.Transpose[bmat].wmat.LS;
-						(*see if to quit loop*)
-						If[Total[Abs[sol-soli]]<con(3 10^3)(*diff const of water*)||itt>5,cont=0];
-					];(*end first while*)
-					(*Step 3:Transform variables for heteroscedasticity*)
-					fitE = -Exp[fit];
-					LS2 = LS/fitE;
-					bmat2 = bmat/fitE;
-					itt=0;cont=1;
-					(*Step 4:Initial LLS fit in * domain*)
-					bmatI2=PseudoInverse[bmat2];
-					sol=bmatI2.LS2;
-					(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
-					While[cont==1,
-						(*init itteration values*)
-						itt++;
-						soli=sol;
-						fit=bmat2.sol;
-						(*calculate residuals in linear domain*)
-						res=LS2-fit;
-						(* b.Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-						mad=MAD[res];
-						If[AllTrue[res, (0. == #) &]||mad==0,Break[]];(*prevent calculation with 0*)
-						weigths=1/(1+(res/mad)^2)^2;
-						(*perform WLLS*)
-						wmat=DiagonalMatrix[weigths];
-						mat=PseudoInverse[Transpose[bmat2].wmat.bmat2];
-						sol=mat.Transpose[bmat2].wmat.LS2;
-						(*see if to quit loop*)
-						If[Total[Abs[sol-soli]]<con (3 10^3)(*diff const of water*)||itt>5,cont=0];
+						soli = sol;
+						(*a. Calculate the residuals e* in the linear domain*)
+						res = LS2 - bmat2.sol;
+						(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
+						mad = 1.4826 MedianDeviation[res];
+						(*prevent calculation with 0*)
+						If[AllTrue[res, (0. === #) &] || mad === 0.,
+							cont = 0,
+							(*c. Recompute the weights according to Eq. [13].*)
+							weigths = 1/(1 + (res/mad)^2)^2;
+							(*d. Perform WLLS fit with new weights*)
+							wmat = DiagonalMatrix[weigths];
+							sol = LeastSquares[Transpose[bmat2].wmat.bmat2, Transpose[bmat2].wmat.LS2];
+							(*e. Check convergence*)
+							If[!AnyTrue[Abs[sol - soli] - con (Max /@ Transpose[{Abs[sol], Abs[soli]}]),Positive] || itt === 5, cont = 0];
+						];
 					];(*end second while*)
-					(*Step 6:Check convergence overall loop*)
-					If[Total[Abs[sol-solA]]<con (3 10^3)(*diff const of water*)||ittA>10,contA=0];
+					
+					(*Step 6: Check convergence overall loop*)
+					If[! AnyTrue[Abs[sol - solA] - con (Max /@ Transpose[{Abs[sol], Abs[solA]}]), Positive] || ittA === 10, contA = 0];
 				];(*end main while*)
-				(*Step 7:Identify and exclude outliers*)
-				fit=bmat2.sol;
-				UnitStep[(LS2-fit)-(kappa MAD[res])](*the outliers*)
-			](*close if background*)
-			,{{mat,_Real,2},{wmat,_Real,2},{bmat2,_Real,2},{bmatI2,_Real,2}},
-			RuntimeAttributes->{Listable},RuntimeOptions->"Speed"
-		](*close compile*)
-	](*close with*)
+  			
+				
+				(*Step 7: Identify and exclude outliers*)
+				res = LS2 - bmat2.sol;
+				out = UnitStep[Abs[res] - (kappa 1.4826 MedianDeviation[res])];
+			
+			];(*close if negative S0*)
+		];(*close if background*)
+		
+		out
+		
+		,{{wmat, _Real, 2}, {bmat2, _Real, 2}, {out, _Real, 1}},
+		RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+	](*close compile*)
 ];
 
 
@@ -494,57 +497,59 @@ TensMinLLS = Compile[{{LS, _Real, 1}, {bmatI, _Real, 2}},
 (*WLLS*)
 
 
-TensMinWLLS = Block[{wmat,mat,mvec},
-	Compile[{{S, _Real, 1},{LS, _Real, 1}, {bmat, _Real, 2}}, 
-    If[Total[LS]==0.,
-    	ConstantArray[0., Length@First@bmat]
-    	,
-    	mvec = Unitize[LS];(*if 0 then it is not used because w=0*)
-    	wmat=DiagonalMatrix[mvec S^2];
-    	mat=PseudoInverse[Transpose[bmat].wmat.bmat];
-    	mat.(Transpose[bmat].wmat.LS)
-    ]
-    ,{{mat,_Real,2},{wmat,_Real,2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+TensMinWLLS = Block[{wmat,mvec,sol},
+	Compile[{{S, _Real, 1},{LS, _Real, 1},{bmat, _Real, 2}}, 
+	    If[AllTrue[LS, 0. === # &]||Total[Unitize[LS]]<7,
+	    	sol = ConstantArray[0., Length@First@bmat]
+	    	,
+	    	mvec = UnitStep[LS] Unitize[LS]; (*if 0 then it is not used because w=0*)
+	    	wmat = DiagonalMatrix[mvec S^2];
+	    	sol = LeastSquares[Transpose[bmat].wmat.bmat,Transpose[bmat].wmat.LS];
+	    ];
+	    sol
+    ,{{wmat,_Real,2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
 
 
 (* ::Subsubsection::Closed:: *)
 (*iWLLS*)
 
 
-TensMiniWLLS = Block[{wmat, mat, cont, itt, mvec, sol, w, soli, wi},
-   Compile[{{S, _Real, 1},{LS, _Real, 1}, {bmat, _Real, 2}},
-    sol = ConstantArray[0., Length@First@bmat];
-    If[Total[LS] == 0.,
-     sol
+TensMiniWLLS = Block[{wmat, mat, cont, itt, mvec, soli, max, sol, w},
+   Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
+    mvec = UnitStep[S] Unitize[S];
+    max = Max[mvec S];
+    If[AllTrue[LS, 0. === # &] || Total[mvec] <= 7,
+     (*skip background or not enough data for fit*)
+     sol = 0. First@bmat;
      ,
-     (*initialize*)
-     itt = 0;
+     (*initialize*)itt = 0;
      cont = 1;
-     mvec = Unitize[LS];(*if 0 then it is not used because w=0*)
-     w = mvec S^2;
-     
-     (*itterative reweighting*)
-     While[cont == 1,
-      (*init itteration values*)
-      itt++;
-      soli = sol;
-      wi = w;
-      (*perform WLLS *)
-      wmat = DiagonalMatrix[wi];
-      mat = PseudoInverse[Transpose[bmat].wmat.bmat];
-      sol = mat.Transpose[bmat].wmat.LS;
-      (*update weight*)
-      w = (mvec Exp[bmat.sol])^2;
-      (*see if to quit loop*)
-      If[Total[Abs[sol - soli]] < 10^-7 || itt > 10, cont = 0];
-      ];
-      sol
-     ]
-     , {{mat, _Real, 2}, {wmat, _Real, 2}}, 
+     (*initialize using LLS*)
+     sol = LeastSquares[bmat, LS];
+     (*check for implausabole solution (negative S0)*)
+     If[Last[sol] >= 3*max || Last[sol] <= 0,
+      sol = 0. First@bmat;
+      ,
+      (*itterative reweighting*)
+      While[cont == 1,
+       (*init itteration values*)
+       itt++;
+       soli = sol;
+       (*perform WLLS*)
+       w = (mvec Exp[bmat.sol])^2;
+       wmat = DiagonalMatrix[w];
+       sol = LeastSquares[Transpose[bmat].wmat.bmat, Transpose[bmat].wmat.LS];
+       (*update weight*)
+       (*see if to quit loop*)
+       If[ Last[sol] >= 3*max || Last[sol] <= 0, cont=0;  sol = 0. First@bmat];
+       If[! AnyTrue[Abs[sol - soli] - 0.0001 (Max /@ Transpose[{Abs[sol], Abs[soli]}]), Positive] || itt === 10 , cont = 0];
+       ](*close while*)
+      ];(*close if S0*)
+     ];(*close if back*)
+    sol, 
+    {{mat, _Real, 2}, {wmat, _Real, 2}, {sol, _Real, 1}},
     RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
         
-
-
 
 (* ::Subsubsection::Closed:: *)
 (*DKI*)
@@ -1348,7 +1353,7 @@ SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[
  	snr = If[k>=1,
  		If[depthD==depthN,
  		GaussianFilter[data/(sigmac), k],
- 		If[depthD==depthN+1&&k>1,
+ 		If[depthD==depthN+1&&k>=1,
  			If[depthD==4,
  				Transpose[GaussianFilter[#/sigmac, k]&/@Transpose[data]],
  				GaussianFilter[#/sigmac, k]&/@data
@@ -1358,7 +1363,7 @@ SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[
  		,
  		If[depthD==depthN,
  		data/(sigmac),
- 		If[depthD==depthN+1&&k>1,
+ 		If[depthD==depthN+1&&k>=1,
  			If[depthD==4,
  				Transpose[(#/sigmac)&/@Transpose[data]],
  				#/sigmac&/@data
@@ -1403,6 +1408,37 @@ SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] :=
 	 _, snr
 	 ]
  ]
+
+
+(* ::Subsection::Closed:: *)
+(*MeanSignal*)
+
+
+SyntaxInformation[CoilSNRCalc] = {"ArgumentsPattern" -> {_, _}};
+
+(*calculate the combineds snr form multiple coils images*)
+CoilSNRCalc[coils_, noise_] := 
+ Block[{mn, sigmap, coilsN, noiseN, sumSquares, weights, snr},
+  (*get mean noise*)
+  mn = MeanNoZero@Flatten@N@noise;
+  (*normalize all coils to constant noise level*)
+  coilsN = 10. coils/mn;
+  noiseN = 10. noise/mn;
+  (*calcualte the sum of squares signal*)
+  {sumSquares, weights} = SumOfSquares[coilsN];
+  (*calculated the weitghted noise addition*)
+  {snr, sigmap} = WeigthedSNR[coilsN, noiseN, weights];
+  
+  {coilsN, noiseN, weights, sumSquares, sigmap, snr}
+  ]
+
+WeigthedSNR[signal_, noise_, weights_] := Block[{sigmap, sigtot, snr},
+  sigtot = Total[signal weights];
+  sigmap = 
+   Sqrt[Total[weights^2 Sqrt[2./Pi] GaussianFilter[noise, 3]^2]];
+  snr = DevideNoZero[sigtot, sigmap];
+  {snr, sigmap}
+  ]
 
 
 (* ::Subsection::Closed:: *)

@@ -156,7 +156,7 @@ SumOfSquares[data_, OptionsPattern[]] := Block[{sos, weights, dataf},
   
   If[OptionValue[OutputWeights],
    weights = DevideNoZero[dataf, sos];
-   weights = Sqrt[DevideNoZero[weights, Mean[TransData[weights, "r"]]]];
+   (*weights = Sqrt[DevideNoZero[weights, Mean[TransData[weights, "r"]]]];*)
    {sos, TransData[weights,"r"]},
    sos
    ]

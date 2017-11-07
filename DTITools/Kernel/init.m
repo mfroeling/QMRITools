@@ -1,6 +1,9 @@
 (* ::DTITools:: *)
 
 (* Mathematica Init File *)
+Quiet[
+	CloseKernels[]; LaunchKernels[];
+];
 
 (*initialization functions*)
 ClearFunctions[pack_,subpack_,print_:False]:=Module[{packageName,packageSymbols,packageSymbolsG},
