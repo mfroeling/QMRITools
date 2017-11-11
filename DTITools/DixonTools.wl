@@ -71,6 +71,9 @@ DixonMaskThreshhold::usage =
 DixonFilterInput::usage = 
 "DixonFilterInput is an options for DixonReconstruct. If True the input b0 and T2star values are smoothed using a gaussian kernel."
 
+DixonFilterOutput::usage = 
+"DixonFilterOutput is an options for DixonReconstruct. If True the out b0 and T2star values are smoothed Median filter and lowpassfiltering after which the water and fat maps are recomputed."
+
 DixonFilterInputSize::usage = 
 "DixonFilterInputSize is an options for DixonReconstruct. Defines the number of voxel with which the input b0 and T2star values are smoothed."
 
@@ -113,7 +116,7 @@ DixonToPercent[water_, fat_] :=
  	fatMap =  DevideNoZero[afat, atot];
  	waterMap =  DevideNoZero[awater, atot];
  	(*define background*)
- 	back = Mask[fatMap + waterMap,.1];
+ 	back = Mask[fatMap + waterMap, .1];
  	(*define water and fat fractions*)
  	fatMap = (fmask fatMap + wmask (1-waterMap));
  	Clip[N[{back (1 - fatMap), back fatMap}],{0.,1.}]
@@ -132,7 +135,7 @@ Options[DixonReconstruct] = {DixonPrecessions -> -1, DixonFieldStrength -> 3,
   DixonFrequencies -> {{0}, {3.8, 3.4, 3.13, 2.67, 2.46, 1.92, 0.57, -0.60}}, 
   DixonAmplitudes -> {{1}, {0.089, 0.598, 0.048, 0.077, 0.052, 0.011, 0.035, 0.066}}, 
   DixonIterations -> 50, DixonTollerance -> 0.1, 
-  DixonMaskThreshhold -> 0.05, DixonFilterInput -> True, 
+  DixonMaskThreshhold -> 0.05, DixonFilterInput -> True, DixonFilterOutput -> True, 
   DixonFilterInputSize -> 2};
 
 SyntaxInformation[DixonReconstruct] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
@@ -142,7 +145,7 @@ DixonReconstruct[real_, imag_, echo_, opts : OptionsPattern[]] := DixonReconstru
 DixonReconstruct[real_, imag_, echo_, b0_, opts : OptionsPattern[]] := DixonReconstruct[real, imag, echo, b0, 0, opts]
 
 DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
-	freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt,
+	freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt,R2star,
 	thresh, complex, ydat, result, input, b0f, b0i, inphase, outphase, Amat,
 	cWater, cFat, b0fit, t2Star, fraction, signal, fit, itt, dim, mask,
 	msk, t2i, t2f, echo, iop, ioAmat, phiEst, phiInit},
@@ -197,7 +200,7 @@ DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
 	PrintTemporary[ProgressIndicator[Dynamic[i], {0, Times @@ dim}]];
 	
 	(*make parallel*)
-	DistributeDefinitions[echo, iop, Amat, ioAmat, eta, maxItt, DixonFiti];
+	DistributeDefinitions[echo, iop, Amat, ioAmat, eta, maxItt, DixonFiti, Dixoni];
 	(*perform the dixon reconstruction*)
 	
 	input = TransData[{complex, phiInit, mask}, "l"];
@@ -206,21 +209,37 @@ DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
 		DixonFiti[#, {echo, iop}, {Amat, ioAmat}, {eta, maxItt}]
 		) &, input, {ArrayDepth[complex] - 1}];
  	
- 	{cWater, cFat, phiEst, inphase, outphase, itt} = TransData[result,"r"];
- 
- (*create the output*)
- PrintTemporary["performing water fat calculation"];
- fraction = DixonToPercent[cWater, cFat];
- (*estimate b0 and t2star*)
- b0fit=Re[phiEst];
- t2Star=DevideNoZero[1,(Abs[2 Pi Im[phiEst]])];
- fit = {Clip[b0fit, {-400., 400.}, {0., 0.}], Clip[t2Star, {0., 1.}, {0., 0.}]};
- (*signal and in/out phase data *)
- signal = Clip[Abs[{cWater, cFat}],{1,1.5}MinMax[Abs[complex]]];
- {inphase, outphase}=Clip[{inphase, outphase},{1,1.5}MinMax[Abs[complex]],{0.,0.}];
- 
- (*give the output*)
- {fraction, 1000 signal, 1000 {inphase, outphase}, fit, itt}
+ 	{cWater, cFat, phiEst, inphase, outphase, itt ,res} = TransData[result,"r"];
+
+	(*filter the output*) 
+	 If[OptionValue[DixonFilterOutput],
+	 	PrintTemporary["Filtering field estimation and recalculating fractions"];
+	 	b0fit = MedianFilter[Re[phiEst],1];
+	 	b0fit = LowpassFilter[#, 0.75] & /@ b0fit;
+	 	R2star = Clip[-Re[2 Pi I result[[All, All, All, 3]]], {0., 1000.}, {0., 0.}];
+	 	R2star = MedianFilter[R2star,1];
+	 	R2star = LowpassFilter[#, 0.75] & /@ R2star;
+	 	phiEst = b0fit + I R2star/(2 Pi); 
+	 	input = TransData[{complex, phiEst, mask}, "l"];
+	 	result = ParallelMap[(Dixoni[#, {echo, iop}, {Amat, ioAmat}]) &, input, {ArrayDepth[complex] - 1}];
+		{cWater, cFat, inphase, outphase ,res} = TransData[result,"r"];
+	 ];
+	 
+	 (*create the output*)
+	 PrintTemporary["performing water fat calculation"];
+	 fraction = DixonToPercent[cWater, cFat];
+	 (*estimate b0 and t2star*)
+	 b0fit=Re[phiEst];
+	 R2Star=(-Re[2 Pi I phiEst]);
+	 t2Star=DevideNoZero[1,R2Star];
+	 fit = {Clip[b0fit, {-400., 400.}, {0., 0.}], Clip[t2Star, {0., 0.25}, {0., 0.}], Clip[R2Star, {0., 1000.}, {0., 0.}]};
+	  (*signal and in/out phase data *)
+	 signal = Clip[Abs[{cWater, cFat}],{1,1.5}MinMax[Abs[complex]]];
+	 {inphase, outphase}=Clip[{inphase, outphase},{1,1.5}MinMax[Abs[complex]],{0.,0.}];
+	 
+	 (*give the output*)
+	 {fraction, 1000 signal, 1000 {inphase, outphase}, fit, itt, 1000 Abs[res]}
+
  ]
 
 
@@ -259,14 +278,36 @@ DixonFiti[{ydat_, phiInit_, mask_}, {echo_, iop_}, {Amat_, ioAmat_}, {eta_, maxI
 		iophiMat = DiagonalMatrix[Exp[2 Pi I phiEst iop]];
 		iopImag = Abs[iophiMat.ioAmat.cFrac];
 		
+		res = Sqrt[Mean[(ydat-sol)^2]];
+		
 		(*give the output,comp_Water,comp_Fat,b0fit,t2star*)
-		Flatten[{cFrac, phiEst, iopImag, i}]
+		Flatten[{cFrac, phiEst, iopImag, i ,res}]
 		,
-		{0.,0.,0.,0.,0.,0.}
+		{0.,0.,0.,0.,0.,0.,0.}
 	]
   ]
 
-
+Dixoni[{ydat_, phiInit_, mask_}, {echo_, iop_}, {Amat_, ioAmat_}] := Block[
+	{pAmat, cFrac, iophiMat, iopImag, sol, res},
+	If[mask>0,
+		(*find solution for complex fractions*)
+		pAmat = DiagonalMatrix[Exp[2 Pi I phiInit echo]].Amat;
+		cFrac = LeastSquares[pAmat, ydat, Tolerance -> 10^-8];
+		sol = pAmat.cFrac;		
+		
+		(*calculate in out phase images*)
+		iophiMat = DiagonalMatrix[Exp[2 Pi I phiInit iop]];
+		iopImag = Abs[iophiMat.ioAmat.cFrac];
+		
+		(*calculate the residuals*)
+		res = Sqrt[Mean[(ydat-sol)^2]];
+		
+		(*give the output,comp_Water,comp_Fat,b0fit,t2star*)
+		Flatten[{cFrac, iopImag ,res}]
+		,
+		{0.,0.,0.,0.,0.}
+	]
+  ]
 
 (* ::Section:: *)
 (*End Package*)

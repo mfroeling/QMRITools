@@ -222,7 +222,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
   
   mask=Round[ImageData[SelectComponents[Image[#], "Count", -1]] & /@ maski];
   (*create the inner and outer volume*)
-  seg = MorphologicalComponents[#] & /@ (1 - mask);
+  seg = MorphologicalComponents[#] & /@ (1. - mask);
   seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
   min = Unitize[Clip[seg, {1.5, 2}, {0, 0}]];
   mout = Unitize[1 - Clip[seg, {0, 1}, {0, 0}]];
@@ -421,10 +421,12 @@ Switch[met
 	radvecn=MakePerpendicular[radvec,norvecc];
 	
 	,"Slow",
-	seg = MorphologicalComponents[#] & /@ (1 - mask);
+	
+	seg = MorphologicalComponents[#] & /@ (1. - mask);
 	min = Round@GaussianFilter[Unitize[Clip[seg, {1.5, 2}, {0, 0}]], 3];
 	mout = Round@GaussianFilter[Unitize[1 - Clip[seg, {0, 1}, {0, 0}]], 3];
 	mtot = (Dilation[mout, 1] + 1) - 2 min;
+	
 	intdata = N@Join[Append[vox #, 0.] & /@ Position[min, 1], Append[vox #, 1.] & /@ Position[1 - Dilation[mout, 1], 1]];
 	func = Interpolation[intdata, InterpolationOrder -> 1];
 	func2 = If[(mtot[[##]] & @@ #) != 2, (mtot[[##]] & @@ #), func @@ (vox #)] &;
@@ -767,10 +769,12 @@ half
 (*function to get inner and outer radius of the segmentation*)
 GetRadius[mask_, {minr_, maxr_}, half_] := 
  Module[{msin, tmp, comps, seg, min, mout, inner, outer,seli,selo,spos}, 
-  seg = MorphologicalComponents[#] & /@ (1 - mask);
+   (*create the inner and outer volume*)
+  seg = MorphologicalComponents[#] & /@ (1. - mask);
   seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
   min = Unitize[Clip[seg, {1.5, 2}, {0, 0}]];
   mout = Unitize[1 - Clip[seg, {0, 1}, {0, 0}]];
+  
   (*get the inner radius*)inner =
    Transpose@MapIndexed[(msin = Image[#1];
        tmp = DeleteCases[(ComponentMeasurements[msin, {"BoundingDiskCenter", "BoundingDiskRadius","Circularity"}])[[All,2]], _?((#1[[2]] > maxr) || (#1[[2]] < minr) &)];
