@@ -384,6 +384,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		
 		(*monitor calculation*)
 		PrintTemporary["starting dictionary min search (Nmin): ", DateString[]];
+		
 		(*perform the fit using parallel kernels*)
 		DistributeDefinitions[dict, vals, cons, start, LeastSquaresC, DictionaryMinSearchi];
 		ParallelMap[((*monitor calculation*)
@@ -398,6 +399,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		{dictf, valsf} = CreateT2Dictionary[{T1m, T1f, T2f}, echo, angle, DictB1Range -> b1ran, DictT2Range -> t2ran];
 		(*monitor calculation*)
 		PrintTemporary["starting dictionary min search (Brute): ", DateString[]];
+		
 		(*perform the fit using parallel kernels*)
 		DistributeDefinitions[dictf, valsf, LeastSquaresC, ErrorC, DictionaryMinSearchi];
 		ParallelMap[((*monitor calculation*)
@@ -484,10 +486,11 @@ DictionaryMinSearch[{dict_, vals_}, ydat_, {cons_,start_}] := DictionaryMinSearc
 DictionaryMinSearchi[_, {0. ..},_] = {0., 0., 0., 0., 0.}
 
 DictionaryMinSearchi[{dict_, vals_}, ydat_, {{maxx_,maxy_},input_}] := Block[{
-	err, coor, ErrorFuncDic
-	},
+	err, coor, ErrorFuncDic},
+	
+	(*define the cost function*)
 	ErrorFuncDic[sig_, {x_Integer, y_Integer}] := LeastSquaresErrorC[dict[[x, y]], sig];
-	(*minimize the dictionary value*)
+		(*minimize the dictionary value*)
 	{err, coor} = Quiet@NMinimize[{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
 		Method -> {"NelderMead", "InitialPoints" -> input}
 		,PrecisionGoal -> 6, AccuracyGoal -> 6, MaxIterations -> 50];

@@ -701,7 +701,7 @@ SyntaxInformation[NormalizeDiffData] = {"ArgumentsPattern" -> {_, _.}};
 
 NormalizeDiffData[data_,ops:OptionsPattern[]] := NormalizeDiffData[data, Mask[Mean[Transpose[data]], Smoothing -> True],ops]
 NormalizeDiffData[data_, mask_,OptionsPattern[]] := Block[{mn,dataout},
-	mn = N[MeanNoZero[Flatten[mask data[[All, 1]]]]/100];
+	mn = N[MeanNoZero[Flatten[mask data[[All, 1]]]]/100.];
 	dataout = data/mn;
 	If[OptionValue[MeanOutput],{dataout,mn},dataout]
 ]

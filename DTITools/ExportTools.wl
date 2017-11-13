@@ -115,13 +115,13 @@ Begin["`Private`"]
 (*SaveImage*)
 
 
-Options[SaveImage] = {ImageSize -> 6000, FileType -> ".jpg", ImageResolution -> 300};
+Options[SaveImage] = {ImageSize -> 6000, FileType -> "*.jpg", ImageResolution -> 300};
 
 SyntaxInformation[SaveImage] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 SaveImage[exp_, opts : OptionsPattern[]] := 
  Module[{input, type = OptionValue[FileType]},
-  input = FileSelect["FileSave", {type}];
+  input = FileSelect["FileSave", {"*"<>type}];
   If[input != "Canceled!",
   	  input=If[StringTake[input,-4]===OptionValue[FileType],
   	  	input,

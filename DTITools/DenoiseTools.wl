@@ -131,7 +131,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   {data, mask, sigm, ker, off, datao, weights, sigmat, dim, zdim, 
    ydim, xdim, ddim, nb, pi, maxit, output, time1, time,
    timetot, sigi, sigf, zm, zp, xm, xp, ym, yp, fitdata, filt, sigo, 
-   Nes, datn, it, m, n, fitsig, step,
+   Nes, datn, it, m, n, fitsig, step, totalItt, j,
    start, sliceNr, maxIttN, tol},
   
   (*make everything numerical to speed up*)
@@ -143,14 +143,17 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   dim = {zdim, ddim, ydim, xdim} = Dimensions[data];
   
   (*get options for fit*)
+  (*initial compoenents and itterations*)
   {nb,pi,maxit} = OptionValue[PCAFitParameters];
   nb = If[NumberQ[nb], nb, 5];
   pi = If[NumberQ[pi], pi, 10];
   maxit = If[NumberQ[maxit], maxit, 10];
+  (*kernel size*)
   ker = OptionValue[PCAKernel];
   ker = If[EvenQ[ker], ker - 1, ker];
+  (*fit sigma*)
   fitsig = OptionValue[FitSigma];
-  
+  (*tollerane if >0 more noise components are kept*)
   tol=OptionValue[PCATollerance];
   
   (*define runtime parameters*)
@@ -162,15 +165,19 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   
   (*if mask is a number make it 1 for all voxels*)
   mask = If[NumberQ[mask], weights + 1, mask];
-    
+  
   (*parameters for monitor*)
-  sliceNr = start = off + 1;
+  start = off + 1;
+  totalItt=Total[Flatten[mask[[start;;zdim-off]]]];
+  j=0;
+  
   Monitor[output = Table[
-      sliceNr = z;
+  	  sliceNr = z;
       (*Check if masked voxel*)
-      If[mask[[z, y, x]] == 0.,
-       {0., 0., 0.}
+      If[mask[[z, y, x]] == 0.||AllTrue[data[[z, All,y, x]], # === 0. &],
+       	{0., 0., 0.}
        ,
+       j++;
        (*define initial sigma*)
        sigi = sigm[[z, y, x]];
        (*get pixel range and data*)
@@ -180,11 +187,13 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
        (*perform the fit and reconstruct the noise free data*)
        Switch[OptionValue[Method],
         "Equation",
-        {sigo, Nes, datn} = PCAFitEq[fitdata, {m, n}, If[fitsig, 0., sigi],tol];
+        sigi = If[fitsig, 0., sigi];
+        {sigo, Nes, datn} = PCAFitEqi[fitdata, {m, n}, sigi , tol];
         it = 1;
         , _,
-        {sigo, Nes, datn, it} = PCAFitHist[fitdata, {m, n}, sigi, tol, FitSigma -> fitsig, PCAFitParameters -> {nb, pi, maxit}];
+        {sigo, Nes, datn, it} = PCAFitHisti[fitdata, {m, n}, sigi, tol, FitSigma -> fitsig, PCAFitParameters -> {nb, pi, maxit}];
         ];
+        
        datn = Transpose[Fold[Partition, datn, {ker, ker}], {1, 3, 4, 2}];
        
        (*collect the noise free data and weighting matrix*)
@@ -197,7 +206,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
        ], {z, start, zdim - off}, {y, start, ydim - off}, {x, start, xdim - off}];
    ,
    (*monitor*)
-   ProgressIndicator[sliceNr, {start, zdim - off}]
+   ProgressIndicator[j, {0, totalItt}]
    ];
   
   (*correct output data for weightings*)
@@ -326,11 +335,16 @@ Options[PCAFitHist] = {PlotSolution -> False, FitSigma -> True, PCAFitParameters
 SyntaxInformation[PCAFitHist] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 (*no initial sigma given*)
-PCAFitHist[data_, {m_, n_}, opts : OptionsPattern[]] := PCAFitHist[data, {m, n}, 0., 0, opts]
+PCAFitHist[data_, {m_, n_}, opts : OptionsPattern[]] := PCAFitHisti[data, {m, n}, 0., 0, opts]
 (*no initial sigma given*)
-PCAFitHist[data_, {m_, n_}, sigii_, opts : OptionsPattern[]] := PCAFitHist[data, {m, n}, sigii, 0, opts]
+PCAFitHist[data_, {m_, n_}, sigi_, opts : OptionsPattern[]] := PCAFitHisti[data, {m, n}, sigi, 0, opts]
 (*initial sigma is given*)
-PCAFitHist[data_, {mi_, ni_}, sigii_, toli_, OptionsPattern[]] := Block[
+PCAFitHist[data_, {m_, n_}, sigi_, toli_, opts :OptionsPattern[]] := PCAFitHisti[data, {m, n}, sigi, toli, opts]
+
+(*internal function*)
+Options[PCAFitHisti] = Options[PCAFitHist];
+
+PCAFitHisti[data_, {mi_, ni_}, sigii_, toli_, OptionsPattern[]] := Block[
   {nb, pi, maxit, u, w, v, eig, m, n, i, pi1, pi0, Nes, Q, Qs, sigi, 
    sig, hlist, eigp, tol},
   (*get options,number of bins,initial p and max itterations*)
@@ -384,14 +398,17 @@ PCAFitHist[data_, {mi_, ni_}, sigii_, toli_, OptionsPattern[]] := Block[
 
 
 (*PCAfit using set of equations*)
-SyntaxInformation[PCAFitEq]={"ArgumentsPattern"->{_,_.}};
+SyntaxInformation[PCAFitEq]={"ArgumentsPattern"->{_,_,_.,_.}};
 
 (*no initial sigma given*)
-PCAFitEq[data_, {m_, n_}] := PCAFitEq[data, {m, n}, 0., 0]
+PCAFitEq[data_, {m_, n_}] := PCAFitEqi[data, {m, n}, 0., 0]
 (*no initial normal tolarance*)
-PCAFitEq[data_, {m_, n_}, sigi_] := PCAFitEq[data, {m, n}, sigi, 0]
+PCAFitEq[data_, {m_, n_}, sigi_] := PCAFitEqi[data, {m, n}, sigi, 0]
 (*initial sigma is given*)
-PCAFitEq[data_, {mi_, ni_}, sigi_, toli_] := 
+PCAFitEq[data_, {m_, n_}, sigi_, toli_] :=  PCAFitEqi[data, {m, n}, sigi, toli]
+
+(*internal function*)
+PCAFitEqi[data_, {mi_, ni_}, sigi_, toli_] := 
  Block[{u, w, v, m, n, eig, pi, sig,tol},
   (*perform svd*)
   {u, w, v, eig, m, n} = SVD[data, {mi, ni}];

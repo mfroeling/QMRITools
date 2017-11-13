@@ -732,12 +732,9 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 	rangex=dim[[1]];
 	rangey=dim[[2]];
 
-	(*Rescale data between 0 and 1*)
-	{mind,maxd}=If[ListQ[OptionValue[PlotRange]] && Length[OptionValue[PlotRange]]==2,
-		OptionValue[PlotRange],
-			{Min[data],Max[data]}
-			];
-	(*If[mind==maxd,maxd=mind+0.01];*)
+	(*Define the initial plot range*)
+	{mind,maxd}=If[ListQ[OptionValue[PlotRange]] && Length[OptionValue[PlotRange]]==2, OptionValue[PlotRange], {Min[data],Max[data]}];
+	If[mind===maxd,maxd=mind+0.01];
 	
 	pcol=If[StringQ[OptionValue[ColorFunction]],OptionValue[ColorFunction],"BlackToWhite"];
 	
@@ -939,6 +936,8 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		If[Dimensions[prange]=={2},Flatten[{prange,prange}],If[Dimensions[prange]=={2,2},Flatten[prange]]],
 		{Min[data1],Max[data1],Min[data2],Max[data2]}
 		];
+	If[mind1===maxd1,maxd1=mind1+0.01];
+	If[mind2===maxd2,maxd2=mind2+0.01];
 
 	maxabs=Max[Abs[{mind1,maxd1,mind2,maxd2}]];
 	

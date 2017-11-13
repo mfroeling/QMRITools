@@ -331,8 +331,6 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 			Table
 		];	
 		
-		PrintTemporary[Dynamic[xx]];
-		
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
 		tensor = func[
 			xx++;
