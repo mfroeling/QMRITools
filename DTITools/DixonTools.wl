@@ -145,7 +145,7 @@ DixonReconstruct[real_, imag_, echo_, opts : OptionsPattern[]] := DixonReconstru
 DixonReconstruct[real_, imag_, echo_, b0_, opts : OptionsPattern[]] := DixonReconstruct[real, imag, echo, b0, 0, opts]
 
 DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
-	freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt,R2star,
+	freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt, r2Star,
 	thresh, complex, ydat, result, input, b0f, b0i, inphase, outphase, Amat,
 	cWater, cFat, b0fit, t2Star, fraction, signal, fit, itt, dim, mask,
 	msk, t2i, t2f, echo, iop, ioAmat, phiEst, phiInit, res, r2star},
@@ -218,11 +218,11 @@ DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
 	 	b0fit = MedianFilter[Re[phiEst],1];
 	 	b0fit = LowpassFilter[#, 0.75] & /@ b0fit;
 	 	(*smooth R2star map*)
-	 	R2star = Clip[-Re[2 Pi I result[[All, All, All, 3]]], {0., 1000.}, {0., 0.}];
-	 	R2star = MedianFilter[R2star,1];
-	 	R2star = LowpassFilter[#, 0.75] & /@ R2star;
+	 	r2star = Clip[-Re[2 Pi I result[[All, All, All, 3]]], {0., 1000.}, {0., 0.}];
+	 	r2star = MedianFilter[r2star,1];
+	 	r2star = LowpassFilter[#, 0.75] & /@ r2star;
 	 	(*recalculate phi and dixon estimation*)
-	 	phiEst = b0fit + I R2star/(2 Pi); 
+	 	phiEst = b0fit + I r2star/(2 Pi); 
 	 	input = TransData[{complex, phiEst, mask}, "l"];
 	 	result = ParallelMap[(Dixoni[#, {echo, iop}, {Amat, ioAmat}]) &, input, {ArrayDepth[complex] - 1}];
 	 	(*output fit*)
@@ -233,13 +233,13 @@ DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
 	 PrintTemporary["performing water fat calculation"];
 	 fraction = DixonToPercent[cWater, cFat];
 	 (*estimate b0 and t2star*)
-	 b0fit=Re[phiEst];
-	 r2Star=(-Re[2 Pi I phiEst]);
-	 t2Star=DevideNoZero[1,r2Star];
+	 b0fit = Re[phiEst];
+	 r2Star = (-Re[2 Pi I phiEst]);
+	 t2Star = DevideNoZero[1,r2Star];
 	 fit = {Clip[b0fit, {-400., 400.}, {0., 0.}], Clip[t2Star, {0., 0.25}, {0., 0.}], Clip[r2Star, {0., 1000.}, {0., 0.}]};
 	  (*signal and in/out phase data *)
 	 signal = Clip[Abs[{cWater, cFat}],{1,1.5}MinMax[Abs[complex]]];
-	 {inphase, outphase}=Clip[{inphase, outphase},{1,1.5}MinMax[Abs[complex]],{0.,0.}];
+	 {inphase, outphase} = Clip[{inphase, outphase},{1,1.5}MinMax[Abs[complex]],{0.,0.}];
 	 
 	 (*give the output*)
 	 {fraction, 1000 signal, 1000 {inphase, outphase}, fit, itt, 1000 Abs[res]}
@@ -252,7 +252,7 @@ DixonReconstruct[real_, imag_, echoi_, b0_, t2_, OptionsPattern[]] := Block[{
 
 
 DixonFiti[{ydat_, phiInit_, mask_}, {echo_, iop_}, {Amat_, ioAmat_}, {eta_, maxItt_}] := Block[
-	{continue, phiEst, phiMat, pAmat, phivec, cFrac, Bmat, deltaPhi, i, iophiMat, iopImag, sol},
+	{continue, phiEst, phiMat, pAmat, phivec, cFrac, Bmat, deltaPhi, i, iophiMat, iopImag, sol, res},
 	If[mask>0,
 		(*initialize fit*)
 		phiEst = phiInit;

@@ -34,7 +34,7 @@ T1rhoFit::usage =
 Output is {S(0), T1rhomap}."
 
 T2Fit::usage = 
-"T2Fit[data, EchoTimes] fits the T1rho value to the data using linear or nonlinear methdos.
+"T2Fit[data, EchoTimes] fits the T1rho value to the data using linear or nonlinear methods.
 
 Output is {S(0), T2}."
 
@@ -358,7 +358,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		(*perform the fit using parallel kernels*)
 		DistributeDefinitions[ErrorFunc, LeastSquaresC, EPGSignali, NonLinearEPGFiti, valsf, clip];
 		ParallelMap[((*monitor calculation*)
-		   j++; If[j > 100, i += j; j = 1;];
+		   j++; If[j > 1000, i += j; j = 1;];
 		   NonLinearEPGFiti[{valsf, clip}, #]
 		   ) &, datal, {ad - 1}]
 		   
@@ -388,7 +388,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		(*perform the fit using parallel kernels*)
 		DistributeDefinitions[dict, vals, cons, start, LeastSquaresC, DictionaryMinSearchi];
 		ParallelMap[((*monitor calculation*)
-		   j++; If[j > 100, i += j; j = 1;];
+		   j++; If[j > 1000, i += j; j = 1;];
 		   DictionaryMinSearchi[{dict, vals}, #, {cons,start}]
 		   ) &, datal, {ad - 1}]
 		
@@ -403,7 +403,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		(*perform the fit using parallel kernels*)
 		DistributeDefinitions[dictf, valsf, LeastSquaresC, ErrorC, DictionaryMinSearchi];
 		ParallelMap[((*monitor calculation*)
-		   j++; If[j > 100, i += j; j = 1;];
+		   j++; If[j > 1000, i += j; j = 1;];
 		   DictionaryMinSearchi[{dictf, valsf}, #]
 		   ) &, datal, {ad - 1}]
 	];
@@ -419,8 +419,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	
 	(*if neede also output callibaration*)
 	If[OptionValue[OutputCalibration]&&OptionValue[EPGCalibrate],
-		{{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]/echo[[1]]}, cal},
-		{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]/echo[[1]]}
+		{{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]}, cal},
+		{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]}
 	]
 ]
 
@@ -455,7 +455,7 @@ NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{
     }], ydat];
 	
 	(*export paramters*)
-	Flatten[{{T2s, B1s}, fwf, residualError/Total[fwf]^2}]
+	Flatten[{{T2s, B1s}, fwf, residualError}]
    ]
 
 

@@ -35,6 +35,9 @@ RescaleData[data,{vox1, vox2}] rescales image/data from size vox1 to size vox2."
 Unwrap::usage = 
 "Unwrap[data] unwraps the given dataset."
 
+UnwrapSplit::usage = 
+"UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData based in the data and performs the unwrapping seperately."
+
 Correct::usage =
 "Correct[data, phase, shiftpar] corrects the dataset data using the phasemap and the shiftpar and interpolation order 1.
 Correct[data, phase, shiftpar, int] corrects the dataset data using the phasemap and the shiftpar and interpolation order int."
@@ -601,10 +604,10 @@ Module[{data,step,undim,out,mon},
 		"2D",
 		data=dat//N;
 		If[MatrixQ[data],
-			If[mon,Print["Unwrapping one image using 2D algorithm."]];
+			If[mon,PrintTemporary["Unwrapping one image using 2D algorithm."]];
 			out=Unwrap2Di[data];,
 			If[ArrayQ[data,3],
-				If[mon,Print["Unwrapping ",Length[data]," images using 2D algorithm"]];
+				If[mon,PrintTemporary["Unwrapping ",Length[data]," images using 2D algorithm"]];
 					Monitor[
 						out=UnwrapZi[MapIndexed[(step=First[#2];Unwrap2Di[#1])&,data,{ArrayDepth[data]-2}]];
 					,If[mon,ProgressIndicator[step, {0, Length[data]}],""]
@@ -616,7 +619,7 @@ Module[{data,step,undim,out,mon},
 		"3D",
 		data=N[ArrayPad[dat,1]];
 		If[ArrayQ[data,3],
-			If[mon,Print["Unwrapping 3D data using 3D algorithm"]];
+			If[mon,PrintTemporary["Unwrapping 3D data using 3D algorithm"]];
 			out=ArrayPad[Unwrap3Di[data,mon],-1];
 			,
 			Message[Unwrap::data3D,ArrayDepth[data]]
@@ -626,6 +629,22 @@ Module[{data,step,undim,out,mon},
 		];
 	Return[out]
 	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Unwrap*)
+
+
+Options[UnwrapSplit] = Options[Unwrap]
+
+SyntaxInformation[Unwrap] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+UnwrapSplit[phase_, mag_,opts:OptionsPattern[]] := Module[{cutVal, phaseSplit, B0split},
+  cutVal = CutData[mag][[3]];
+  phaseSplit = CutData[phase, cutVal][[1 ;; 2]];
+  B0split = Unwrap[#, opts] & /@ phaseSplit;
+  StichData @@ B0split
+  ]
 
 
 (* ::Subsubsection::Closed:: *)

@@ -29,15 +29,14 @@ ClearAll @@ Names["DTITools`ProcessingTools`*"];
 
 
 TensorCalc::usage = 
-"TensorCalc[data, gradients, bvalue] calculates the diffusion tensor for the given dataset. \
-Allows for one unweighted image and one b value. \
-Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the unweighted gradient direction. \
+"TensorCalc[data, gradients, bvalue] calculates the diffusion tensor for the given dataset. Allows for one unweighted image and one b value. 
+Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the unweighted gradient direction. 
 bvalue is a singe number indicating the b-value used.
-TensorCalc[data, gradients, bvec] calculates the diffusion tensor for the given dataset. \
-allows for multiple unweighted images and multiple bvalues. \
-allows for differnt tensor fitting methods. \
-gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}. \
-bvec the bvector, with a bvalue defined for each gradient direction. b value for unweighted images is 0."
+TensorCalc[data, gradients, bvec] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues. 
+allows for differnt tensor fitting methods. gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}. \
+bvec the bvector, with a bvalue defined for each gradient direction. b value for unweighted images is 0.
+TensorCalc[data, bmatix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues. 
+bmat is the bmatrix which can be generated usiong Bmatrix."
 
 EigenvalCalc::usage = 
 "EigenvalCalc[tensor] caculates the eigenvalues for the given tensor."
@@ -91,15 +90,14 @@ AngleMap::usage =
 "AngleMap[data] calculates the zennith and azimuth angles of a 3D dataset (z,x,y,3) containing vectors relative to the slice direction."
 
 ResidualCalc::usage =
-"ResidualCalc[DTI,tensor,gradients,bvalue] calculates the tensor residuals for the given dataset. \
-Allows for one unweighted image and one b value. \
-Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the unweighted gradient direction. \
-bvalue is a singe number indicating the b-value used.
-ResidualCalc[DTI,tensor,gradients,bvector] calculates the tensor residuals for the given dataset. \
-allows for multiple unweighted images and multiple bvalues. \
-allows for differnt tensor fitting methods. \
-gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}. \
-bvec the bvector, with a bvalue defined for each gradient direction. b value for unweighted images is 0."
+"ResidualCalc[DTI,{tensor,S0},gradients,bvector] calculates the tensor residuals for the given dataset.
+ResidualCalc[DTI,{tensor,S0},outlier,gradients,bvector] calculates the tensor residuals for the given dataset taking in account the outliers.
+ResidualCalc[DTI,{tensor,S0},bmat] calculates the tensor residuals for the given dataset.
+ResidualCalc[DTI,{tensor,S0},outlier,bmat] calculates the tensor residuals for the given dataset taking in account the outliers.
+ResidualCalc[DTI,tensor,gradients,bvector] calculates the tensor residuals for the given dataset. Tensor must contain Log[S0].
+ResidualCalc[DTI,tensor,outlier,gradients,bvector] calculates the tensor residuals for the given dataset taking in account the outliers. Tensor must contain Log[S0].
+ResidualCalc[DTI,tensor,bmat] calculates the tensor residuals for the given dataset. Tensor must contain Log[S0].
+ResidualCalc[DTI,tensor,outlier,bmat] calculates the tensor residuals for the given dataset taking in account the outliers. Tensor must contain Log[S0]."
 
 FitData::usage = 
 "FitData[data,range] converts the data into 100 bins within the +/- range around the mean. Function is used in ParameterFit."
@@ -159,6 +157,9 @@ FullOutput::usage =
 RobustFit::usage = 
 "RobustFit is an option for TensorCalc. If true outliers will be rejected in the fit, only works with WLLS.
 If FullOutput is given the outlier map is given.";
+
+RobustFitParameters::usage =
+"RobustFitParameters is an option for TensorCalc. gives the threshold for stopping the itterations and the kappa for the outlier marging, {tr,kappa}."
 
 RejectMap::usage = 
 "RejectMap is an option for EigenvalCalc. If Reject is True and RejectMap is True both the eigenvalues aswel as a map showing je rejected values is returned."
@@ -241,7 +242,7 @@ Begin["`Private`"]
 (*TensorCalc*)
 
 
-Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->False, RobustFit->True,Parallelize->True};
+Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->False, RobustFit->True,Parallelize->True , RobustFitParameters->{10^-4,6}};
 
 SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -292,11 +293,13 @@ Block[{depthD,dirD,dirG,dirB},
 
 (*bmatrix*)
 TensorCalc[dat_,bmat:{_?ListQ ..},OptionsPattern[]]:=
-Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,method,output,robust,dataL,func},
+Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,method,output,robust,dataL,func,con,kappa},
 	
 	(*get output form*)
 	output=OptionValue[FullOutput];
 	robust=OptionValue[RobustFit];
+	{con,kappa}=OptionValue[RobustFitParameters];
+	
 	(*chekc method*)
 	method=OptionValue[Method];
 	If[!MemberQ[{"LLS","WLLS","iWLLS"(*,"NLS","GMM","CLLS","CWLLS","CNLS","DKI"*)},method],
@@ -334,10 +337,10 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
 		tensor = func[
 			xx++;
-			TensorCalci[data[[x]],dataL[[x]],bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust]
+			TensorCalci[data[[x]],dataL[[x]],bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}]
 			,{x,1,Length[data],1}];
 		
-		(*full output returns {tens,S0,(outliers)}*)
+		(*full output returns {tens,S0,(outliers),residuals}*)
 		If[output,
 			tensor = Transpose[tensor];
 			tensor[[1]] = Transpose[tensor[[1]]]
@@ -346,7 +349,7 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		];	
 		
 		,(*1D,2D,3D*)
-		tensor=TensorCalci[data,dataL,bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust];
+		tensor=TensorCalci[data,dataL,bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}];
 	];
 	
 	tensor
@@ -360,7 +363,7 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 Options[TensorCalci] = Options[TensorCalc];
 
 TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
-	{l,r,depthD,TensMin,tensor,w, method,outliers,S0,fitresult,robust},
+	{l,r,depthD,TensMin,tensor,w, method,outliers,S0,fitresult,robust,residual,con,kappa},
 	
 	(*transpose the data*)
 	depthD = ArrayDepth[data];
@@ -369,8 +372,9 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 	
 	method = OptionValue[Method];
 	robust = (OptionValue[RobustFit] && method =!= "LLS");
+	{con,kappa}=OptionValue[RobustFitParameters];
 	
-	outliers = If[robust,Transpose[FindOutliers[Transpose[dataL,l], bmat ,10^-4, 6], r], 0];
+	outliers = If[robust,Transpose[FindOutliers[Transpose[dataL,l], bmat, con, kappa], r], ConstantArray[0.,Dimensions[data]]];
 	
 	fitresult = Switch[method,
 		"LLS", Transpose[TensMinLLS[Transpose[dataL,l], bmatI], r],
@@ -378,10 +382,12 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 		"iWLLS", Transpose[TensMiniWLLS[Transpose[(1-outliers) data,l],Transpose[(1-outliers) dataL,l], bmat], r]
 		];
 	
-	S0 = Exp[Last[fitresult]];
+	If[OptionValue[FullOutput],residual = ResidualCalc[data,fitresult,outliers,bmat,MeanRes->"MAD"]];
+		
+	S0 = ExpNoZero[Last[fitresult]];
 	tensor = Clip[Drop[fitresult,-1],{-0.1,0.1}];
 
-	If[OptionValue[FullOutput],If[robust,{tensor,S0,outliers},{tensor,S0}],tensor]
+	If[OptionValue[FullOutput],If[robust,{tensor,S0,outliers,residual},{tensor,S0,residual}],tensor]
 ]
 
 
@@ -390,7 +396,7 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 
 
 FindOutliers = Block[{ittA,itt,contA,cont,sol,solA,soli,res,weigths, wmat,fitE,LS2,bmat2,mad,out}, 
-  	Compile[{{LS, _Real, 1}, {bmat, _Real, 2},{con, _Real, 0}, {kappa, _Real, 0}},
+  	Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}},
   		If[AllTrue[LS, 0. === # &]||Total[Unitize[LS]]<7,
   			(*skip if background*)
   			out = 0. LS;
@@ -505,7 +511,7 @@ TensMinWLLS = Block[{wmat,mvec,sol},
 	    	sol = LeastSquares[Transpose[bmat].wmat.bmat,Transpose[bmat].wmat.LS];
 	    ];
 	    sol
-    ,{{wmat,_Real,2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+    ,{{wmat,_Real,2}, {sol, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -988,6 +994,7 @@ Options[AngleCalc]={Distribution->"0-180"};
 
 SyntaxInformation[AngleCalc] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
+
 AngleCalc[data_?ArrayQ,vec_?VectorQ,OptionsPattern[]]:=
 Module[{angles},
 	angles=Map[If[Re[#]==#,ArcCos[#.vec],"no"]&,data,{Depth[data]-2}];
@@ -1004,6 +1011,7 @@ Module[{angles},
 		Message[AngleCalc::dist,OptionValue[Distribution]]
 		]
 	]
+
 
 AngleCalc[data_?ArrayQ,vec_?ArrayQ,OptionsPattern[]]:=
 Module[{angles},
@@ -1051,53 +1059,61 @@ Module[{az,zen},
 (*ResidualCalc*)
 
 
-Options[ResidualCalc] = {MonitorCalc -> False, MeanRes -> "All", NormResidual -> True};
+Options[ResidualCalc] = {MeanRes -> "All"};
 
 SyntaxInformation[ResidualCalc] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bfac_, OptionsPattern[]] := Module[
-	{DTI = N[data], err, bmat, x,mr,n,tens,slices,dat},
-	
-	slices=Length[DTI];
-	
-	bmat = If[NumberQ[bfac] || VectorQ[bfac], Bmatrix[bfac, grad], bfac];
-	bmat = If[Length[tensor] == 6,bmat[[All, ;; 6]],bmat];
-	
-	If[Dimensions[DTI[[All, 1]]] != Dimensions[tensor[[1]]],Return[Message[ResidualCalc::datdim, Dimensions[DTI], Dimensions[tensor]]]];
+(*b0, no outliers, bval, bvec*)
+ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] := 
+ ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], ConstantArray[0., Dimensions[data]], Bmatrix[bval, grad], opts]
+
+(*b0, no outliers bmat*)
+ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, bmat_?ArrayQ, opts : OptionsPattern[]] :=
+ ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], ConstantArray[0., Dimensions[data]], bmat, opts]
+
+(*b0, outliers, bval, bvec*)
+ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, outlier_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] :=
+ ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], outlier, Bmatrix[bval, grad], opts]
+
+(*b0, outliers, bmat*)
+ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, outlier_?ArrayQ, bmat_?ArrayQ, opts : OptionsPattern[]] :=
+ ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], outlier, bmat, opts]
+
+(*no outliers, bval, bvec*)
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] := 
+ ResidualCalc[data, tensor, ConstantArray[0., Dimensions[data]], Bmatrix[bval, grad], opts]
+
+(*no outliers bmat*)
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, bmat_?ArrayQ, opts : OptionsPattern[]] :=
+ ResidualCalc[data, tensor, ConstantArray[0., Dimensions[data]], bmat, opts]
+
+(*outliers, bval, bvec*)
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] :=
+ ResidualCalc[data, tensor, outlier, Bmatrix[bval, grad], opts]
+
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_?ArrayQ, OptionsPattern[]] := Block[{
+	fit, dat, err, dimD,dimT
+	},
+  dat = N[data];
+  (*check data and tensor dimensions*)
+  dimD=Dimensions[If[ArrayDepth[dat] == 4,dat[[All,1]],dat[[1]]]];
+  dimT=Dimensions[tensor[[1]]];
   
-  Monitor[
-   err = 
-   If[Length[tensor] == 6,
-    Table[
-    	dat=DTI[[x]];
-    	dat - ((dat[[1]]*#) & /@ Exp[bmat.tensor[[All, x]]])
-    	, {x, 1, slices, 1}]
-    ,
-    Table[
-    	tens=tensor[[All, x]];
-    	tens[[7]] = Log[tens[[7]]];
-    	DTI[[x]] - Exp[bmat.tens]
-    	, {x, 1, slices, 1}]
-    
+  If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datdim, Dimensions[data], Dimensions[tensor]]]];
+
+  (*remove ouliers*)
+  
+  fit = Clip[ExpNoZero[bmat.tensor], {-1.5, 1.5} Max[dat], {0., 0.}];
+ 
+  err = If[ArrayDepth[dat] == 4,
+    Transpose[(1 - outlier)] (Transpose[dat] - fit),
+    (1 - outlier) (dat - fit)
     ];
-   ,
-   If[OptionValue[MonitorCalc], Column[{"Calculation residual for multiple slices", ProgressIndicator[x, {0, Length[DTI]}]}], ""]
-   ];
   
-  If[OptionValue[MonitorCalc],Print["Done calculating residual for ", Length[DTI], " slices!"]];
-  
-  n=If[Length[tensor] == 6, 2,1];
-  Switch[
-   OptionValue[MeanRes],
-   "All",
-   err // N,
-   "RMSE",
-   PrintTemporary["Calculating root mean square residual"];
-   Sqrt[Mean[Drop[Transpose[err], 1]^2]] // N,
-   "MAD",
-   PrintTemporary["Calculating MAD residual estimation"];
-   mr = Median[Transpose[err][[n ;;]]];
-   Median[Abs[# - mr] & /@ Transpose[err][[n ;;]]]
+  Switch[OptionValue[MeanRes],
+   "RMSE", RMSNoZero[err],
+   "MAD", MADNoZero[err],
+   _, If[ArrayDepth[dat] == 4, Transpose[err], err] // N
    ]
   ]
 

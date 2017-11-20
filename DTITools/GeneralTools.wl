@@ -41,6 +41,9 @@ DTItoolPackages::usage =
 DTItoolFuncPrint::usage = 
 "DTItoolFuncPrint[] gives a list of all the DTItool functions with their usage infomation."
 
+SetupDataStructure::usage = 
+"SetupDataStructure[dcmFolder] makes nii folders and generates nii files for a directory of dmc data where the data is structured per subject."
+
 MemoryUsage::usage = 
 "MemoryUsage[] gives a table of which definitions use up memory.
 MemoryUsage[n] gives a table of which definitions use up memory, where n is the amout of definitions to show."
@@ -76,6 +79,15 @@ DevideNoZero::usage =
 
 LogNoZero::usage = 
 "LogNoZero[val] return the log of the val which can be anny dimonsion array. if val=0 the output is 0."
+
+ExpNoZero::usage = 
+"ExpNoZero[val] return the Exp of the val which can be anny dimonsion array. if val=0 the output is 0."
+
+RMSNoZero::usage = 
+"RMSNoZero[vec] return the RMS error of the vec which can be anny dimonsion array. if vec={0...} the output is 0. Zeros are ignored"
+
+MADNoZero::usage = 
+"MADNoZero[vec] return the MAD error of the vec which can be anny dimonsion array. if vec={0...} the output is 0. Zeros are ignored"
 
 
 (* ::Subsection::Closed:: *)
@@ -131,6 +143,39 @@ LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]],RuntimeAttrib
 
 
 (* ::Subsubsection::Closed:: *)
+(*ExpNoZero*)
+
+
+SyntaxInformation[ExpNoZero] = {"ArgumentsPattern" -> {_}};
+
+ExpNoZero[val_] := ExpNoZeroi[val]
+
+ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RMSNoZero*)
+
+
+SyntaxInformation[RMSNoZero] = {"ArgumentsPattern" -> {_}};
+
+RMSNoZero[vec_] := RMSNoZeroi[If[ArrayDepth[vec] > 1, TransData[vec, "l"], vec]]
+
+RMSNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., RootMeanSquare[DeleteCases[vec, 0.]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MADNoZero*)
+
+
+SyntaxInformation[MADNoZero] = {"ArgumentsPattern" -> {_}};
+
+MADNoZero[vec_] := MADNoZeroi[If[ArrayDepth[vec] > 1, TransData[vec, "l"], vec]]
+
+MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianDeviation[DeleteCases[vec, 0.]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
 (*MeanNoZero*)
 
 
@@ -171,7 +216,7 @@ SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes
 
 Options[PadToDimensions]={PadValue->0.}
 
-SyntaxInformation[PadToDimensions] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[PadToDimensions] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 PadToDimensions[data_, dim_, OptionsPattern[]] := Block[{diffDim, padval, pad},
   padval = OptionValue[PadValue];
@@ -211,6 +256,29 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 
 (* ::Subsection:: *)
 (*Package Functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*SetupDataStructure*)
+
+SetupDataStructure[dcmFolder_] := 
+ Module[{folderdcm, foldernii, folderout, folders,fol, niiFolder, outFolder},
+  folderdcm = Directory[] <> "\\" <> # & /@ Select[FileNames["*", "dcm"], DirectoryQ];
+  foldernii = StringReplace[#, "dcm" -> "nii"] & /@ folderdcm;
+  folderout = StringReplace[#, "dcm" -> "out"] & /@ folderdcm;
+  folders = Transpose[{folderdcm, foldernii, folderout}];
+  
+  fol = Last@FileNameSplit[dcmFolder];
+  niiFolder = StringReplace[dcmFolder, fol -> "nii"];
+  outFolder = StringReplace[dcmFolder, fol -> "out"];
+  If[! DirectoryQ[niiFolder], CreateDirectory[niiFolder]];
+  If[! DirectoryQ[outFolder], CreateDirectory[outFolder]];
+  
+  (*create nii files*)
+  If[! DirectoryQ[#[[2]]], CreateDirectory[#[[2]]]; DcmToNii[#[[1 ;; 2]]]] & /@ folders;
+  
+  folders
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -293,40 +361,72 @@ CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1
 
 SyntaxInformation[MemoryUsage] = {"ArgumentsPattern" -> {_.}}
 
-MemoryUsage[n__:100]:=With[{
-  listing = myByteCount /@ Names[]
-  },
- Labeled[
-  Grid[
-   Reverse@Take[Sort[listing], -n], Frame -> True, Alignment -> Center
-   ],
-  Column[
-   {
-    Style[
-     "ByteCount for symbols without attributes Protected and \
-ReadProtected in all contexts", 16, FontFamily -> "Times"]
-    ,
-    Style[
-     Row@{"Total: ", Total[listing[[All, 1]]], " bytes for ", 
-       Length[listing], " symbols"}, Bold]
-    }, Center, 1.5
-   ]
-  , Top]
- ]
- 
- 
- myByteCount[symbolName_String] := Replace[
-   ToExpression[symbolName, InputForm, Hold],
-   Hold[x__] :> If[MemberQ[Attributes[x], Protected | ReadProtected],
+MemoryUsage[size_: 1] := Module[{},
+  NotebookClose[memwindow];
+  memwindow = 
+   CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]],
+      Manipulate[
+       If[listing === {},
+        "Noting found",
+        TableForm[Join[#, {
+             Row[Dimensions[ToExpression["Global`" <> #[[1]]]], "x"],
+             Head[ToExpression["Global`" <> #[[1]]]],
+             ClearButton["Global`" <> #[[1]]]
+             }] & /@ listing, 
+         TableHeadings -> {None, {"Name", "Size (MB)", "Dimensions", "Head"}}]
+        ]
+       ,
+       {{msize, size, "minimum size [MB]"}, {1, 10, 100, 1000}},
+       Button["Update", listing = MakeListing[msize]],
+       {listing, ControlType -> None},
+       ContentSize -> {500, 600},
+       Paneled -> False,
+       AppearanceElements -> None,
+       Initialization :> {
+         MakeListing[mb_] := Reverse@SortBy[Select[myByteCount[Names["Global`*"]], #[[2]] > mb &], Last],
+         ClearButton[name_] := Button["Clear",       
+           Replace[ToExpression[name, InputForm, Hold], Hold[x__] :> Clear[Unevaluated[x]]];
+           listing = MakeListing[msize]
+         ],
+         listing = MakeListing[size];
+         }
+       ]}, WindowTitle -> "Plot data window", Background -> White]
+    ];
+  ]
+
+
+SetAttributes[myByteCount, Listable ]
+
+myByteCount[symbolName_String] := Replace[
+	ToExpression[symbolName, InputForm, Hold], Hold[x__] :> If[MemberQ[Attributes[x], Protected | ReadProtected],
      Sequence @@ {},
-     {Round[ByteCount[
-       Through[{OwnValues, DownValues, UpValues, SubValues, 
-          DefaultValues, FormatValues, NValues}[Unevaluated@x, 
-         Sort -> False]]
-       ]/1000000.,.01],
-      symbolName}
+     (*output size in MB and name*)
+     {StringDelete[symbolName, "Global`"], 
+      Round[ByteCount[Through[{OwnValues, DownValues, UpValues, SubValues, DefaultValues, FormatValues, NValues}[Unevaluated@x, Sort -> False]]]/1000000., .01]}
      ]
    ];
+
+(*
+MemoryUsage2[n__: 100] := 
+ With[{listing = myByteCount /@ Names[]}, 
+  Labeled[Grid[Reverse@Take[Sort[listing], -n], Frame -> True, 
+    Alignment -> Center], 
+   Column[{Style[
+      "ByteCount for symbols without attributes Protected and \
+ReadProtected in all contexts", 16, FontFamily -> "Times"], 
+     Style[Row@{"Total: ", Total[listing[[All, 1]]], " bytes for ", 
+        Length[listing], " symbols"}, Bold]}, Center, 1.5], Top]]
+
+myByteCount[symbolName_String] := 
+  Replace[ToExpression[symbolName, InputForm, Hold], 
+   Hold[x__] :> 
+    If[MemberQ[Attributes[x], Protected | ReadProtected], 
+     Sequence @@ {}, {Round[
+       ByteCount[
+         Through[{OwnValues, DownValues, UpValues, SubValues, 
+            DefaultValues, FormatValues, NValues}[Unevaluated@x, 
+           Sort -> False]]]/1000000., .01], symbolName}]];
+*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -338,7 +438,7 @@ SyntaxInformation[ClearTemporaryVariables] = {"ArgumentsPattern" -> {_.}}
 ClearTemporaryVariables[] := Block[{names, attr},
   names = Names["DTITools`*`Private`*"];
   attr = Attributes /@ names;
-  MapThread[If[#1 === {Temporary}, Clear[#2]] &, {attr, names}];
+  MapThread[If[#1 === {Temporary}, ClearAll[#2]] &, {attr, names}];
   ]
 
 
