@@ -14,10 +14,8 @@
 
 
 BeginPackage["DTITools`DixonTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`DixonTools`*"];
-ClearAll @@ Names["DTITools`DixonTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -318,8 +316,5 @@ Dixoni[{ydat_, phiInit_, mask_}, {echo_, iop_}, {Amat_, ioAmat_}] := Block[
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`DixonTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`DixonTools`*"];
 
 EndPackage[]

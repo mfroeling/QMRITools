@@ -14,10 +14,8 @@
 
 
 BeginPackage["DTITools`GradientTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`GradientTools`*"];
-ClearAll @@ Names["DTITools`GradientTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -2747,8 +2745,5 @@ BvecCreate[bvalue_, gr_] :=
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`GradientTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`GradientTools`*"];
 
 EndPackage[]

@@ -14,17 +14,15 @@
 
 
 BeginPackage["DTITools`RelaxometryTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`RelaxometryTools`*"];
-ClearAll @@ Names["DTITools`RelaxometryTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -780,8 +778,5 @@ TriExponentialT2Fit[datan_, times_,OptionsPattern[]] :=
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`RelaxometryTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`RelaxometryTools`*"];
 
 EndPackage[]

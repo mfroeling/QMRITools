@@ -14,10 +14,8 @@
 
 
 BeginPackage["DTITools`ProcessingTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`ProcessingTools`*"];
-ClearAll @@ Names["DTITools`ProcessingTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -1563,8 +1561,5 @@ Module[{fitdat},
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`ProcessingTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`ProcessingTools`*"];
 
 EndPackage[]

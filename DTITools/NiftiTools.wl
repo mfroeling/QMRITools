@@ -14,10 +14,8 @@
 
 
 BeginPackage["DTITools`NiftiTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`NiftiTools`*"];
-ClearAll @@ Names["DTITools`NiftiTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -1236,8 +1234,5 @@ CompressNiiFile[file_] := Quiet[DeleteFile[file <> ".gz"];CreateArchive[file, fi
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`NiftiTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`NiftiTools`*"];
 
 EndPackage[]

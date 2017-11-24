@@ -13,11 +13,9 @@
 (*Begin Package*)
 
 
-BeginPackage["DTITools`PlottingTools`", {"Developer`","TetGenLink`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
+BeginPackage["DTITools`PlottingTools`", {"Developer`"}];
 
-Unprotect @@ Names["DTITools`PlottingTools`*"];
-ClearAll @@ Names["DTITools`PlottingTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -87,6 +85,11 @@ PlotDuty::usage =
 
 ColorFAPlot::usage = 
 "ColorFAPlot[tenor] create a color coded FA map from the tensor for l1, l2 and l3."
+
+PlotContour::usage = 
+"PlotContour[data, vox] creates a contour of the data.
+PlotContour[data, vox, scale] creates a contour of the data with the surface colored acording to scale.
+PlotContour[data, vox, scale, range] creates a contour of the data with the surface colored acording to scale with a fixed plotrange."
 
 
 (* ::Subsection::Closed:: *)
@@ -1272,7 +1275,7 @@ PlotGrad[solpts:{{{_?NumberQ,_?NumberQ,_?NumberQ}..}..},names_?ListQ]:=PlotGradi
 
 
 PlotGradi[solpts:{{{_?NumberQ,_?NumberQ,_?NumberQ}..}..},names_?ListQ]:=
-DynamicModule[{sel,co,pts,exp,force,over,ptsp,control,lab1,lab2,fileType,size,
+DynamicModule[{sel,co,pts,exp,force,over,ptsp,control,lab1,lab2,fileType,size,hull,
 	label,fop,n,grd,gc1,gc2,stick,gc3,sph,c32,ops,r1,cut,r2,c31,pol,c4,c5,vv,vp,va},
 	
 	sel=MapIndexed[#2[[1]]->#1&,names];
@@ -1337,8 +1340,10 @@ DynamicModule[{sel,co,pts,exp,force,over,ptsp,control,lab1,lab2,fileType,size,
 				ColorFunctionScaling->False,Mesh->False,
 				BoundaryStyle->{Thick,If[c31,ColFunc[(1/r2)Sqrt[r2]],Black](*,Opacity[ope]*)}],Graphics3D[]
 				],
-			If[pol,Graphics3D[{EdgeForm[{(*Opacity[op4],*)Thick,c5}],c4(*,Opacity[op3]*),
-				GraphicsComplex[TetGenConvexHull[Join[pts,Reverse[-pts]]][[1]],Polygon[TetGenConvexHull[Join[pts,Reverse[-pts]]][[2]]]]
+			If[pol,
+				hull = ConvexHullMesh[Join[pts, Reverse[-pts]]];
+				Graphics3D[{EdgeForm[{(*Opacity[op4],*)Thick,c5}],c4(*,Opacity[op3]*),
+				GraphicsComplex[MeshCoordinates[hull], MeshCells[hull, 2]]
 				(*GraphicsComplex[Join[pts,Reverse[-pts]],Polygon[TetGenConvexHull[Join[pts,Reverse[-pts]]]]]*)}],
 				Graphics3D[]
 			]	
@@ -3159,6 +3164,7 @@ ListSpherePlot[ptsi_, OptionsPattern[]] := Module[{cols, graphics, pt, pc, ran, 
 
 RandomSampleFix[len_] := RandomSampleFix[len] = RandomSample[Range[len]];
 
+
 (* ::Subsection::Closed:: *)
 (*PlotDuty*)
 
@@ -3191,7 +3197,9 @@ PlotDuty[{grad_, bval_, ord_}, mode_] :=
 
 (* ::Subsection::Closed:: *)
 (*ColorFAPlot*)
-  
+
+
+SyntaxInformation[ColorFAPlot] = {"ArgumentsPattern" -> {_}};  
   
 ColorFAPlot[tens_] := Block[{FA, eigv, mid, eigFA},
   FA = ParameterCalc[tens][[5]];
@@ -3218,6 +3226,62 @@ ColorFAPlot[tens_] := Block[{FA, eigv, mid, eigFA},
     {{size, 300, "image size"}, {200, 300, 400, 600, 1000}}]
    ]
   ]  
+  
+  
+(* ::Subsection::Closed:: *)
+(*PlotContour*)
+
+
+Options[PlotContour] = {ContourStyle -> {Gray, 0.25}};
+
+SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern}}; 
+
+PlotContour[data_, voxi_, opts : OptionsPattern[]] := PlotContour[data, voxi, {0}, 0, opts]
+
+PlotContour[data_, voxi_, scaleI_?ArrayQ, opts : OptionsPattern[]] := PlotContour[data, voxi, scaleI, {0}, opts]
+
+PlotContour[data_, voxi_, scaleI_?ArrayQ, range_, OptionsPattern[]] :=  Block[{
+	vox, pdata, dim, color, opac, style, scale, mean, func},
+  
+  (*prepare data*)
+  vox = Reverse[voxi];
+  pdata = ArrayPad[data, 1];
+  dim = Reverse@Dimensions[pdata];
+  
+  color = OptionValue[ContourStyle];
+  {color, opac} = If[ColorQ[color], {color, 0.25}, color];
+  
+  (*create a plot scale if needed*)
+  style = If[scaleI === {0},
+    Directive[{Opacity[opac], color, Specularity[Lighter@color, 5]}],
+    GrayLevel[1]
+    ];
+  
+  (*create a colorfunction if needed*)
+  func = If[scaleI =!= {0},
+    (*get the scaling*)
+    scale = ArrayPad[scaleI, 1];
+    mean = If[range === 0,
+      Quantile[DeleteCases[Flatten[data scaleI], 0.], .95],
+      range
+      ];
+    scale = scale/(mean);
+    Function[{x, y, z}, 
+     ColorData["SunsetColors"][
+      scale[[Ceiling[z], Ceiling[y], Ceiling[x]]]]]
+    ,
+    Automatic
+    ];
+  
+  ListContourPlot3D[pdata,
+   Contours -> 1, BoxRatios -> dim vox, 
+   PlotRange -> Thread[{{0, 0, 0} - 5, dim + 2 + 5}],
+   ContourStyle -> style, ColorFunction -> func, Mesh -> False, 
+   Lighting -> "Neutral", MaxPlotPoints -> Round[Max[dim]/3],
+   ColorFunctionScaling -> False, SphericalRegion -> True, 
+   ImageSize -> 300, PerformanceGoal -> "Speed", Axes -> False
+   ]
+  ]
 
 
 (* ::Section:: *)
@@ -3225,8 +3289,5 @@ ColorFAPlot[tens_] := Block[{FA, eigv, mid, eigFA},
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`PlottingTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`PlottingTools`*"];
 
 EndPackage[]

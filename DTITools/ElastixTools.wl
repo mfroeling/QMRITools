@@ -14,10 +14,8 @@
 
 
 BeginPackage["DTITools`ElastixTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`ElastixTools`*"];
-ClearAll @@ Names["DTITools`ElastixTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -1614,8 +1612,5 @@ SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPatte
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`ElastixTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`ElastixTools`*"];
 
 EndPackage[]

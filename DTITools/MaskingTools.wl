@@ -14,10 +14,8 @@
 
 
 BeginPackage["DTITools`MaskingTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`MaskingTools`*"];
-ClearAll @@ Names["DTITools`MaskingTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -743,8 +741,5 @@ FitGradientMap[data_] := Module[{func, x, y, z, coor},
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`MaskingTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`MaskingTools`*"];
 
 EndPackage[]

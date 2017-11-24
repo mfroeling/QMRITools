@@ -14,10 +14,8 @@
 
 
 BeginPackage["DTITools`GeneralTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`GeneralTools`*"];
-ClearAll @@ Names["DTITools`GeneralTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -216,7 +214,7 @@ SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes
 
 Options[PadToDimensions]={PadValue->0.}
 
-SyntaxInformation[PadToDimensions] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+SyntaxInformation[PadToDimensions] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 PadToDimensions[data_, dim_, OptionsPattern[]] := Block[{diffDim, padval, pad},
   padval = OptionValue[PadValue];
@@ -497,8 +495,5 @@ MeanRange[inp_,quant_] := Block[{q1, q2, q3},
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`GeneralTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@Names["DTITools`GeneralTools`*"];
 
 EndPackage[]

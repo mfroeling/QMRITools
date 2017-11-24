@@ -14,10 +14,8 @@
 
 
 BeginPackage["DTITools`ManipulationTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`ManipulationTools`*"];
-ClearAll @@ Names["DTITools`ManipulationTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
@@ -1816,8 +1814,5 @@ Inverse3Di[data_] := Block[{out},
 
 
 End[]
-
-If[DTITools`verbose,Print[Names["DTITools`ManipulationTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`ManipulationTools`*"];
 
 EndPackage[]

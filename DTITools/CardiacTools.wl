@@ -17,9 +17,6 @@ BeginPackage["DTITools`CardiacTools`", {"Developer`"}];
 
 $ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`CardiacTools`*"];
-ClearAll @@ Names["DTITools`CardiacTools`*"];
-
 
 (* ::Section:: *)
 (*Usage Notes*)
@@ -1892,8 +1889,5 @@ CalculateMeasure[data_, type_] :=
 
 
 End[](* End Private Context *)
-
-If[DTITools`verbose,Print[Names["DTITools`CardiacTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`CardiacTools`*"];
 
 EndPackage[]

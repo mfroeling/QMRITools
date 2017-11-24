@@ -14,17 +14,15 @@
 
 
 BeginPackage["DTITools`ImportTools`", {"Developer`"}];
-$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
-Unprotect @@ Names["DTITools`ImportTools`*"];
-ClearAll @@ Names["DTITools`ImportTools`*"];
+$ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 (* ::Section:: *)
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -725,8 +723,5 @@ LoadFiberTracts[filename_] :=  Import[filename, {{"VertexData", "LineData"}}]
 
 
 End[] 
-
-If[DTITools`verbose,Print[Names["DTITools`ImportTools`*"]]];
-SetAttributes[#,{Protected, ReadProtected}]&/@ Names["DTITools`ImportTools`*"];
 
 EndPackage[]
