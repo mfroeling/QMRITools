@@ -3,6 +3,16 @@
 (* Mathematica Init File *)
 
 (*initialization functions*)
+
+UpdateWarning[]:=If[$VersionNumber != 11.2,
+ CreateDialog[Column[{Style["
+      Current Mathematica version is 11.2
+      You need to update!
+      Some functions wont work in older versions
+      ", TextAlignment -> Center], DefaultButton[], ""}, 
+    Alignment -> Center], WindowTitle -> "Update!"];
+ ];
+
 ClearFunctions[pack_,subpack_,print_:False]:=Module[{packageName,packageSymbols,packageSymbolsG},
 	If[print,Print["--------------------------------------"]];
 	Quiet[
@@ -22,15 +32,6 @@ ClearFunctions[pack_,subpack_,print_:False]:=Module[{packageName,packageSymbols,
 		
 		]& /@ subpack;
 ];
-
-UpdateWarning[]:=If[$VersionNumber != 11.2,
- CreateDialog[Column[{Style["
-      Current Mathematica version is 11.2
-      You need to update!
-      Some functions wont work in older versions
-      ", TextAlignment -> Center], DefaultButton[], ""}, 
-    Alignment -> Center], WindowTitle -> "Update!"];
- ];
 
 LoadPackages[pack_,subpack_,print_:False,run_:1]:=Module[{},
 	If[print,Print["--------------------------------------"]];
@@ -55,8 +56,7 @@ ProtectFunctions[pack_,subpack_,print_:False]:=Module[{},
 
 (*Change Default settings*)
 (*prevents the excessive use of memory*)
-$HistoryLength = 0; 
-ParallelEvaluate[$HistoryLength = 0];
+$HistoryLength = 0; ParallelEvaluate[$HistoryLength = 0];
 
 (*add all mathematica packages to the context path*)
 package= "DTITools`";
@@ -72,7 +72,6 @@ subPackages = {
 (*define all the toolbox contexts*)
 (*System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffusion packages"*)
 System`$DTIToolsContextPaths = (package <> # & /@ subPackages);
-
 $ContextPath = Union[$ContextPath, System`$DTIToolsContextPaths]
 
 (*
@@ -86,14 +85,11 @@ DTITools`verbose = False;
 
 (*check mathematica version*)
 UpdateWarning[];
-
 (*clear all definitions from the subPacakges*)
 ClearFunctions[package,subPackages,DTITools`verbose];
-
 (*load all packages*)
 LoadPackages[package,subPackages,DTITools`verbose,1];
 (*needs to be done twice else things dont work, don't understand why*)
 LoadPackages[package,subPackages,DTITools`verbose,2];
-
 (*Protect functions*)
 ProtectFunctions[package,subPackages,DTITools`verbose];

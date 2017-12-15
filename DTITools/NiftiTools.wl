@@ -48,6 +48,9 @@ ImportNiiDix::usage =
 ImportNiiT2::usage = 
 "ImportNiiT2[file] imports the T2 file which should contain the echos and the T2map calculated by the scanner and corrects them accordingly."
 
+ImportNiiT1::usage = 
+"ImportNiiT1[file] imports the T1 file which should contain the echos and the T1map calculated by the scanner and corrects them accordingly."
+
 ImportBvalvec::usage =
 "ImportBvalvec[] will promt to select the *.bval and *.bvec files.
 ImportBvalvec[\"file.bvec\",\"file.bval\"] imports the given *.bval and *.bvec files." 
@@ -607,6 +610,7 @@ ImportNiiDefault[file_, opts : OptionsPattern[]] :=
   data = Map[Reverse[#] &, data, {info[[8]] - 2}];
   If[Positive[("sRowx" /. hdr)[[1]]], data = Map[Reverse[#] &, data, {info[[8]] - 1}]];
   
+  
   (*scale data*)
   scaling = If[info[[1]] =!= {"Byte", "Byte", "Byte"}, info[[6]] + info[[5]] # &, Identity];
   If[OptionValue[NiiScaling], data = scaling[data]];
@@ -850,25 +854,49 @@ CorrectDixonData[data_, scale_] := Block[{data0, B0, echos},
 (*ImportNiiT2*)
 
 ImportNiiT2[]:=Module[{T2, T2vox, T2cor, fit},
-	{T2, T2vox} = ImportNii[];
-	{T2cor, fit} = CorrectT2Data[T2];
+	{T2, T2vox} = ImportNii[NiiScaling -> False];
+	{T2cor, fit} = CorrectMapData[T2,1];
 	{T2cor, fit, T2vox}
 ]
 
 ImportNiiT2[file_]:=Module[{T2, T2vox, T2cor, fit},
-	{T2, T2vox} = ImportNii[file];
-	{T2cor, fit} = CorrectT2Data[T2];
+	{T2, T2vox} = ImportNii[file,NiiScaling -> False];
+	{T2cor, fit} = CorrectMapData[T2,1];
 	{T2cor, fit, T2vox}
 ]
 
-CorrectT2Data[T2_] := Block[{slices, echos, T2o, map, mask},
-  {slices, echos} = Dimensions[T2][[1 ;; 2]] - {0, 1};
+
+(* ::Subsection::Closed:: *)
+(*ImportNiiT1*)
+
+
+ImportNiiT1[] := Module[{T1, T1vox, T1cor, fit},
+  {T1, T1vox} = ImportNii[NiiScaling -> False];
+  {T1cor, fit} = CorrectT1Data[T1];
+  {T1cor, fit, T1vox}]
+
+ImportNiiT1[file_] := Module[{T1, T1vox, T1cor, fit},
+  {T1, T1vox} = ImportNii[file,NiiScaling -> False];
+  {T1cor, fit} = CorrectMapData[T1, 2];
+  {T1cor, fit, T1vox}]
+
+
+(* ::Subsection::Closed:: *)
+(*ImportNiiT1*)
+
+
+CorrectMapData[data_, maps_: 1] := 
+ Block[{slices, echos, T2o, map, mask},
+  {slices, echos} = Dimensions[data][[1 ;; 2]] - {0, maps};
   (*Flatten the data and remove the T2map*)
-  T2o = Flatten[Transpose[T2], 1];
-  map = T2o[[-slices ;;]];
+  T2o = Flatten[Transpose[data], 1];
+  (**)
+  map = T2o[[-maps slices ;;]];
+  map = Partition[map, maps];
   (*partition to correct number of slices*)
-  T2o = Partition[Drop[T2o, -slices], echos];
+  T2o = Partition[Drop[T2o, -maps slices], echos];
   T2o = Clip[NormalizeDiffData[T2o], {0, Infinity}];
+  
   {T2o, map}
   ]
 

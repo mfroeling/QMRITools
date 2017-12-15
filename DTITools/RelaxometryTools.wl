@@ -44,7 +44,7 @@ The fat T2 parameters are automatically estimated from the high signal voxels fr
 Output is {{S(0), fatFraction, muscleFraction, T2map},callibration} or {S(0), fatFraction, muscleFranction, T2map}."
 
 EPGSignal::usage = 
-"EPGSignal[Necho, echoSpace, T1, T2, angle, B1] generates a EPG T2 curve with stimulated echos. 
+"EPGSignal[{Necho, echoSpace}, {T1, T2}, {ex_angle,ref_angle}, B1] generates a EPG T2 curve with stimulated echos. 
 T1, T2 and echoSpace are in ms, angel is in degree, B1 is between 0 and 1.
 
 Output is the EPG Signal vector."

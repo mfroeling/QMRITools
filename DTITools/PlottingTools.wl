@@ -188,7 +188,11 @@ AspectRatio -> 1/8, ContentSelectable -> False, ImageSize -> 100, PlotRange -> {
 
 custColors = {
 	"RedToWhite" -> (Blend[{RGBColor[1, 1, 1], RGBColor[.7, 0, 0]}, 1 - #]&),
-	"BlackToWhite" -> (Blend[{RGBColor[1, 1, 1], RGBColor[0, 0, 0]}, 1 - #]&)
+	"BlackToWhite" -> (Blend[{RGBColor[1, 1, 1], RGBColor[0, 0, 0]}, 1 - #]&),
+	"Flow" -> (Blend[{White, Blend[{Blue, Cyan}], Blue, Black, Red, Orange, White}, #]&),
+	"Fire" -> (Blend[{Black, Blue, Purple, Red, Orange, Yellow, White}, #] &),
+	"NIH" -> (Blend[{Black, Purple, Blue, Green, Yellow, Orange, Red, Darker@Darker@Red}, #] &),
+	"Cardiac" -> (Blend[{Darker@Green, Cyan, Blue, Purple, Red, Yellow, Darker@Green}, #] &)
 	};
 
 (*generate color list*)

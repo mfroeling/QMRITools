@@ -419,7 +419,7 @@ GetPulseProfile[ex_?ListQ, ref_?ListQ, opts : OptionsPattern[]] :=
   ]
 
 GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, OptionsPattern[]] := Block[{
-	gamma, gradStrength, duration, bandwith, sliceRange, sliceSamp, maxFreq, flipAngle,
+	gamma, gradStrength, duration, bandwith, sliceRange, sliceSamp, maxFreq, flipAngle, pos,time,maxt,
 	thickness, inM, pulse, pulseSamp, freqRange, deltat, power, output, info, out, slice, opts, plot
 	},
 	
@@ -445,6 +445,9 @@ GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, 
 	thickness = bandwith/(gamma gradStrength);(*in m*)
 	slice = 1000 thickness/2;(*in mm*)
 	deltat = duration/pulseSamp;
+	pos = Position[pulse, Max[pulse]][[1, 1]]-1;
+	time = deltat (Range[0, pulseSamp] - pos) 10^3;
+	maxt = 1.1 Max[Abs[time]];
 	
 	maxFreq = (sliceRange/thickness) bandwith;
 	freqRange = Range[-maxFreq, maxFreq, 2 maxFreq/sliceSamp];
@@ -472,7 +475,7 @@ GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, 
 	opts = {Frame -> True, AxesOrigin -> {0, 0}, FrameStyle -> Thick, Mesh -> False, PlotTheme -> "Monochrome"};
 	plot = GraphicsGrid[Transpose@{
 		{
-			ListLinePlot[Transpose@{deltat (Range[0, pulseSamp] - pulseSamp/2) 10^3, power pulse 10^6}, PlotRange -> {-0.15, 1.1} power  10^6, PlotLabel -> "RF pulse", Sequence @@ opts],
+			ListLinePlot[Transpose@{time, power pulse 10^6}, PlotRange -> {{-maxt,maxt},{-0.15, 1.1} power  10^6}, PlotLabel -> "RF pulse", Sequence @@ opts],
 			ListLinePlot[out[[All, {1, 6}]], PlotRange -> {-25, 190}, GridLines -> {{-slice, slice}, {flipAngle}}, PlotLabel -> "FlipAngle", Sequence @@ opts]
 		},{
 			ListLinePlot[out[[All, {1, 2}]], PlotRange -> {-.2, 1.1}, GridLines -> {{-slice, slice}, {-1, 1}}, PlotLabel -> "Mt", Sequence @@ opts],
@@ -891,6 +894,7 @@ GfactorSimulation[sensitivity_, W_, {dir1_, sensea_?ListQ}, {dir2_, senseb_?List
    	gfactors =ParallelTable[nn++;
       CalculateGfactori[factors[[n]], sensitivity, W, GRegularization -> reg]
       , {n, 1, Length[factors]}];
+      
     , ProgressIndicator[nn, {1, Length[factors]}]];
   
   (*output the gfactor*)

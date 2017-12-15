@@ -75,7 +75,8 @@ Else the output is {datao, sigmat}."
 PCATollerance::usage = 
 "PCATollerance is an option of PCADeNoise and shuld be an integer > 0. Default value is 0. When increased the denoise method removes less noise."
 
-
+PCAWeighting::usage = 
+"PCAWeighting is an option of PCADeNoise and can be True of False. Default value is False. When True the weights of the per voxel result are calculated based on the number of non noise components."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -117,7 +118,7 @@ Begin["`Private`"]
 (*PCADeNoise*)
 
 
-Options[PCADeNoise] = {PCAKernel -> 5, PCAFitParameters -> {10, 6, 10}, FitSigma -> False, PCAOutput -> Full, Method->"Equation",PCATollerance->0};
+Options[PCADeNoise] = {PCAKernel -> 5, PCAFitParameters -> {10, 6, 10}, FitSigma -> False, PCAOutput -> Full, Method->"Equation", PCATollerance->0, PCAWeighting->False};
 
 SyntaxInformation[PCADeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -191,13 +192,17 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
         , _,
         {sigo, Nes, datn, it} = PCAFitHisti[fitdata, {m, n}, sigi, tol, FitSigma -> fitsig, PCAFitParameters -> {nb, pi, maxit}];
         ];
-        
+       
+       
        datn = Transpose[Fold[Partition, datn, {ker, ker}], {1, 3, 4, 2}];
        
        (*collect the noise free data and weighting matrix*)
-       datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += datn;
-       sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += sigo;
-       weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += 1.;
+       (*weight the signal for number of components*)
+       weigth = If[OptionValue[PCAWeighting], 1. / (m-Nes+1), 1.];
+       	
+	   	datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += (weigth datn);
+	   	sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weigth sigo;
+	   	weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weigth;
        
        (*output sig,Nest and itterations*)
        {sigo, Nes, it}
