@@ -5,7 +5,7 @@
 Paclet[
     Name -> "DTITools",
     Version -> "1.8",
-    MathematicaVersion -> "11.1",
+    MathematicaVersion -> "11.2",
     Creator -> "Martijn Froeling",
     Extensions -> 
         {

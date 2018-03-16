@@ -118,7 +118,7 @@ Begin["`Private`"]
 (*PCADeNoise*)
 
 
-Options[PCADeNoise] = {PCAKernel -> 5, PCAFitParameters -> {10, 6, 10}, FitSigma -> False, PCAOutput -> Full, Method->"Equation", PCATollerance->0, PCAWeighting->False};
+Options[PCADeNoise] = {PCAKernel -> 5, PCAFitParameters -> {10, 6, 10}, FitSigma -> False, PCAOutput -> Full, Method->"Equation", PCATollerance->0, PCAWeighting->True};
 
 SyntaxInformation[PCADeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -128,7 +128,7 @@ PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., 
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   {data, mask, sigm, ker, off, datao, weights, sigmat, dim, zdim, 
-   ydim, xdim, ddim, nb, pi, maxit, output, time1, time,
+   ydim, xdim, ddim, nb, pi, maxit, output, time1, time, weigth,
    timetot, sigi, sigf, zm, zp, xm, xp, ym, yp, fitdata, filt, sigo, 
    Nes, datn, it, m, n, fitsig, step, totalItt, j,
    start, sliceNr, maxIttN, tol},
@@ -193,16 +193,15 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
         {sigo, Nes, datn, it} = PCAFitHisti[fitdata, {m, n}, sigi, tol, FitSigma -> fitsig, PCAFitParameters -> {nb, pi, maxit}];
         ];
        
-       
        datn = Transpose[Fold[Partition, datn, {ker, ker}], {1, 3, 4, 2}];
        
        (*collect the noise free data and weighting matrix*)
        (*weight the signal for number of components*)
        weigth = If[OptionValue[PCAWeighting], 1. / (m-Nes+1), 1.];
-       	
-	   	datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += (weigth datn);
-	   	sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weigth sigo;
-	   	weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weigth;
+       
+       datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += (weigth datn);
+	   sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weigth sigo;
+	   weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weigth;
        
        (*output sig,Nest and itterations*)
        {sigo, Nes, it}

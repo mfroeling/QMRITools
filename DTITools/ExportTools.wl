@@ -113,33 +113,36 @@ Begin["`Private`"]
 (*SaveImage*)
 
 
-Options[SaveImage] = {ImageSize -> 6000, FileType -> "*.jpg", ImageResolution -> 300};
+Options[SaveImage] = {ImageSize -> 6000, FileType -> ".jpg", ImageResolution -> 300};
 
 SyntaxInformation[SaveImage] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SaveImage[exp_, opts : OptionsPattern[]] := 
- Module[{input, type = OptionValue[FileType]},
-  input = FileSelect["FileSave", {"*"<>type}];
-  If[input != "Canceled!",
-  	  input=If[StringTake[input,-4]===OptionValue[FileType],
-  	  	input,
-  	  	input<>OptionValue[FileType]
-  	  	];
-  	  SaveImage[exp, input, opts]
-   ];
+SaveImage[exp_, opts : OptionsPattern[]] := Module[{input, type},
+ 	type = OptionValue[FileType];
+ 	type = If[StringTake[type, 2] === "*.", StringDrop[type,1], If[StringTake[type, 1] === ".",type, "."<>type]];
+ 	
+ 	input = FileSelect["FileSave", {"*"<>type}];
+ 	
+ 	If[input != "Canceled!",
+ 		input=If[StringTake[input,-4]===type,input,input<>type];
+ 		SaveImage[exp, input, opts]
+  	];
   ]
 
-SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res},
-	file=If[StringTake[filei,-4]===OptionValue[FileType]||StringTake[filei,-5]===OptionValue[FileType],
-		filei,
-		filei<>OptionValue[FileType]
-		];
+SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type},
+	type = OptionValue[FileType];
+ 	type = If[StringTake[type, 2] === "*.", StringDrop[type,1], If[StringTake[type, 1] === ".",type, "."<>type]];
+	
+	file=If[StringTake[filei,-4]===type||StringTake[filei,-5]===type,filei,filei<>type];
+	
 	imsize=OptionValue[ImageSize];
 	res=OptionValue[ImageResolution];
+	
 	If[OptionValue[FileType]===".tiff"||OptionValue[FileType]===".tif",
   	  Export[file, Rasterize[exp, ImageResolution -> 2*res],(*RasterSize -> imsize,*) ImageResolution -> res,"ImageEncoding"->"LZW"],
   	  Export[file, Rasterize[exp, ImageResolution -> 2*res],(*RasterSize -> imsize,*) ImageResolution -> res]
 	];
+	
 	Print["File was saved to: " <> file];
   ]
 

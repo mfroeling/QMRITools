@@ -1428,53 +1428,67 @@ PlotCorrection[w_]:=Module[{sel},
 (* ::Subsection::Closed:: *)
 (*Hist*)
 
+Options[Hist] = {ColorValue -> {{Black,White}, Red, Green, Blue}, Method -> "SkewNormal", PlotLabel -> "", AxesLabel -> "", ImageSize -> 300}
 
-Options[Hist]={ColorValue->{Black,Red,Green,White},Method->"SkewNormal"}
+SyntaxInformation[Hist] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SyntaxInformation[Hist] = {"ArgumentsPattern" -> {_, _, _, _. , OptionsPattern[]}};
+Hist[dat_, ops : OptionsPattern[]] := Hist[dat, 2, ops]
 
-Hist[dat_?ArrayQ,range:{_,_},label_String:"",ops:OptionsPattern[]]:=Hist[{dat},{range},{label},"",ops]
+Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, coledge, color2, color3, color4, data, r1, r2, sdr, m, s, title, label,mn,std},
+  
+  {{colbar,coledge}, color2, color3, color4} = OptionValue[ColorValue];
+  
+  title = OptionValue[PlotLabel];
+  title = If[title === "", None, title];
+  label = OptionValue[AxesLabel];
+  label = If[label === "", None, label];
+  
+  data = DeleteCases[Flatten[dat]// N, 0.];
+  {r1, r2} = If[IntegerQ[range],
+    sdr = range;
+    {m, s} = {Mean[data], StandardDeviation[data]};
+    {(m - sdr s), (m + sdr s)},
+    range
+    ];
 
-Hist[dat_?ArrayQ,range:{_,_},label_String:"",title_String:"",ops:OptionsPattern[]]:=Hist[{dat},{range},{label},{title},ops]
-
-Hist[dat_?ArrayQ,range:{{_,_}..},label:{_String ..},ops:OptionsPattern[]]:=Hist[dat,range,label,"",ops]
-
-Hist[dat_?ArrayQ,range:{{_,_}..},label:{_String ..},title_:"",OptionsPattern[]]:=
-Module[{sol,line,hist,x,color1,color2,color3,color4,data,r1,r2},
-	
-	If[Length[range]!=Length[dat]!=Length[label],Return[Message[Hist::size,Length[dat],Length[range],Length[label]]]];
-	{color1,color2,color3,color4}=OptionValue[ColorValue];
-	
-	Map[(
-	data=DeleteCases[Flatten[dat[[#]]]//N,0.];
-	{r1,r2}=range[[#]];
-	Switch[
-		OptionValue[Method],
-		"None",
-		line=Graphics[{}],
-		"Normal",
-		sol=ParameterFit[data,FitOutput->"Function",FitFunction->"Normal"];
-		line=Plot[sol[x],{x,r1,r2},PlotStyle->{Thick,color2},PlotRange->Full],
-		"SkewNormal",
-		sol=ParameterFit[data,FitOutput->"Function",FitFunction->"SkewNormal"];
-		line=Plot[sol[x],{x,r1,r2},PlotStyle->{Thick,color2},PlotRange->Full],
-		"Both",
-		sol={ParameterFit[data,FitOutput->"Function",FitFunction->"Normal"],
-		ParameterFit[data,FitOutput->"Function",FitFunction->"SkewNormal"]};
-		line=Plot[{sol[[1]][x],sol[[2]][x]},{x,r1,r2},
-			PlotStyle->{Directive[Thick,color2],Directive[Thick,color3]},PlotRange->Full]
-		];
-	
-	hist=Histogram[Select[data,(r1<#<r2)&],{Min[data],Max[data],(r2-r1)/50},"ProbabilityDensity",
-		PerformanceGoal->"Speed",PlotRange->{{r1,r2},All},PlotLabel->If[title==={""}||title==="","",title[[#]]],
-		LabelStyle->labStyle,Axes->False,FrameStyle->Thick,
-		FrameLabel->{label[[#]],"Probability Density"},Frame->{True,True,False,False},
-		ChartBaseStyle->EdgeForm[color4],ChartStyle->color1
-		];
-		
-	Show[hist,line])&,Range[Length[range]]
-	]
-	]
+  Switch[OptionValue[Method],
+   "None",
+   line = Graphics[{}],
+   "Normal",
+   sol = ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal"];
+   line = Plot[sol[x], {x, r1, r2}, PlotStyle -> {Thick, color2}, PlotRange -> Full],
+   "SkewNormal",
+   sol = ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal"];
+   line = Plot[sol[x], {x, r1, r2}, PlotStyle -> {Thick, color2}, PlotRange -> Full],
+   "Both",
+   sol = {
+     ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal"], 
+     ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal"]
+     };
+   line = Plot[{sol[[1]][x], sol[[2]][x]}, {x, r1, r2}, PlotStyle -> {Directive[Thick, color2], Directive[Thick, color3]}, PlotRange -> Full],
+   "All",
+   sol = {
+     ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal"], 
+     ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal"]
+     };
+     mn=Mean[data];
+     std=StandardDeviation[data];
+     line = Plot[{sol[[1]][x], sol[[2]][x],PDF[NormalDistribution[mn, std], x]}, {x, r1, r2}, 
+     	PlotStyle -> {Directive[Thick, color2], Directive[Thick, color3], Directive[Thick, color4]}, PlotRange -> Full]
+   ];
+  
+  hist = Histogram[
+    Select[data, (r1 < # < r2) &], {r1, r2, (r2 - r1)/50}, 
+    "ProbabilityDensity",
+    PerformanceGoal -> "Speed", PlotRange -> {{r1, r2}, All},
+    PlotLabel -> title, LabelStyle -> labStyle, Axes -> False, 
+    FrameStyle -> Thick,
+    FrameLabel -> {label, "Probability Density"}, 
+    Frame -> {True, True, False, False}, 
+    ChartBaseStyle -> EdgeForm[coledge], ChartStyle -> colbar];
+  
+  Show[hist, line, ImageSize -> OptionValue[ImageSize]]
+  ]
 
 
 (* ::Subsection::Closed:: *)

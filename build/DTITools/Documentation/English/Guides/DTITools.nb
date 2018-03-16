@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     16329,        459]
-NotebookOptionsPosition[     11902,        372]
-NotebookOutlinePosition[     13737,        415]
-CellTagsIndexPosition[     13694,        412]
+NotebookDataLength[     16923,        475]
+NotebookOptionsPosition[     12378,        386]
+NotebookOutlinePosition[     14212,        429]
+CellTagsIndexPosition[     14169,        426]
 WindowTitle->DTITools
 WindowFrame->Normal*)
 
@@ -62,7 +62,9 @@ Cell[BoxData[GridBox[{
        Documentation`HelpLookup[
        "paclet:DTITools/guide/PlottingTools"], "\<\"ProcessingTools\"\>":>
        Documentation`HelpLookup[
-       "paclet:DTITools/guide/ProcessingTools"], "\<\"SimulationTools\"\>":>
+       "paclet:DTITools/guide/ProcessingTools"], "\<\"RelaxometryTools\"\>":>
+       Documentation`HelpLookup[
+       "paclet:DTITools/guide/RelaxometryTools"], "\<\"SimulationTools\"\>":>
        Documentation`HelpLookup["paclet:DTITools/guide/SimulationTools"]},
        Appearance->None,
        MenuAppearance->Automatic,
@@ -109,7 +111,7 @@ DTITools.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$20785], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$20798], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/guide/DTITools", ".html"]], None}]}]},
@@ -346,6 +348,18 @@ parameters etc."
 Cell[TextData[{
  Cell[BoxData[
   TemplateBox[{Cell[
+     TextData["RelaxometryTools"]],"paclet:DTITools/guide/RelaxometryTools"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Set of function for fitting relaxometry data (e.g. T2, T1 and T1rho)"
+}], "GuideText",
+ CellID->246542621],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
      TextData["RegistrationTools"]],"paclet:DTITools/guide/RegistrationTools"},
    "RefLink",
    BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
@@ -384,7 +398,7 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
     Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
   "", "Metadata" -> {
-   "built" -> "{2017, 11, 20, 10, 1, 37.7704571}", 
+   "built" -> "{2018, 3, 16, 13, 23, 4.3163967}", 
     "history" -> {"1.2", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -396,7 +410,7 @@ and simulating of DWI and DTI data. Furthermore it provides a range of \
 functions to process Dixon and T2mapping data, phase unwrapping etc. If \
 additional features are required please contact me on m.froeling@gmail.com", 
     "synonyms" -> {}, "tabletags" -> 
-    DocumentationBuild`Make`Private`tabletaggingrules$20702, "title" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$20714, "title" -> 
     "DTITools", "titlemodifier" -> "", "windowtitle" -> "DTITools", "type" -> 
     "Guide", "uri" -> "DTITools/guide/DTITools"}},
 FrontEndVersion->"11.2 for Microsoft Windows (64-bit) (September 10, 2017)",
@@ -414,53 +428,55 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[580, 21, 4601, 104, 70, "AnchorBarGrid",ExpressionUUID->"db953909-2362-4411-b9ca-c67c69d72063",
+Cell[580, 21, 4713, 106, 70, "AnchorBarGrid",ExpressionUUID->"7aabf85b-8cf0-48b9-9c22-de5011eea8a3",
  CellID->1],
 Cell[CellGroupData[{
-Cell[5206, 129, 50, 1, 70, "GuideTitle",ExpressionUUID->"de178834-4afd-479c-83ec-ebdd0fce8311",
+Cell[5318, 131, 50, 1, 70, "GuideTitle",ExpressionUUID->"ccbeb01d-5631-43ac-a512-816555f13950",
  CellID->942062912],
-Cell[5259, 132, 418, 9, 70, "GuideAbstract",ExpressionUUID->"e6cec7ad-c284-4064-97c3-d76088776afe",
+Cell[5371, 134, 418, 9, 70, "GuideAbstract",ExpressionUUID->"19975a76-f132-4522-aab6-50523637f388",
  CellID->2001916300]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[5714, 146, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"5dcf599c-0b97-4485-bfee-bd9c53086c9b"],
-Cell[5854, 154, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"62d90021-575f-4a19-9574-d0f4c54c58e5"],
-Cell[5888, 156, 332, 10, 70, "GuideText",ExpressionUUID->"88c3c056-c428-4076-97fd-b9bd66910b16",
+Cell[5826, 148, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"369ec0a1-b467-4b26-8d7f-e362ea3eb651"],
+Cell[5966, 156, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"0611c414-fdc6-4fda-9db2-5f0c88d95982"],
+Cell[6000, 158, 332, 10, 70, "GuideText",ExpressionUUID->"06c1edda-7452-48de-a873-186adcadcb0a",
  CellID->203374175],
-Cell[6223, 168, 327, 10, 70, "GuideText",ExpressionUUID->"acfd17e3-37bb-49f6-97e6-b24623771145",
+Cell[6335, 170, 327, 10, 70, "GuideText",ExpressionUUID->"1f5d783f-55db-4de9-9523-8476aaf1fa0b",
  CellID->5739245],
-Cell[6553, 180, 323, 10, 70, "GuideText",ExpressionUUID->"d3d2df87-461b-44ae-9575-517ce7063d84",
+Cell[6665, 182, 323, 10, 70, "GuideText",ExpressionUUID->"571b022f-879e-4b1a-a194-351111607096",
  CellID->84822095],
-Cell[6879, 192, 483, 16, 70, "GuideText",ExpressionUUID->"a98aba27-2e94-45e0-bca5-7da7569540d6",
+Cell[6991, 194, 483, 16, 70, "GuideText",ExpressionUUID->"9fdd5d45-3cb6-4fde-9f9e-56db4c8c765b",
  CellID->1463276848],
-Cell[7365, 210, 312, 10, 70, "GuideText",ExpressionUUID->"054ce531-402e-449a-b1d6-fe7af8ad5e68",
+Cell[7477, 212, 312, 10, 70, "GuideText",ExpressionUUID->"538eabbb-1ac0-485e-a1cc-deccc1811d99",
  CellID->780477387],
-Cell[7680, 222, 312, 10, 70, "GuideText",ExpressionUUID->"41a6bf38-42f0-491d-b68c-d022ca499013",
+Cell[7792, 224, 312, 10, 70, "GuideText",ExpressionUUID->"f1107542-fea0-4dd6-ae9c-ba56472d818c",
  CellID->121734127],
-Cell[7995, 234, 367, 11, 70, "GuideText",ExpressionUUID->"35280e50-2afa-4c67-94f2-c4f93d37a4fa",
+Cell[8107, 236, 367, 11, 70, "GuideText",ExpressionUUID->"d2099301-7a8e-4221-b067-8431d6741aee",
  CellID->597497],
-Cell[8365, 247, 311, 10, 70, "GuideText",ExpressionUUID->"e0997e43-244d-4f35-8f54-412507ff9826",
+Cell[8477, 249, 311, 10, 70, "GuideText",ExpressionUUID->"a5bdc783-f0ea-4b2c-8dec-15a3888a172c",
  CellID->77234574],
-Cell[8679, 259, 326, 10, 70, "GuideText",ExpressionUUID->"d63d1bbe-938c-4620-9b43-01677159348c",
+Cell[8791, 261, 326, 10, 70, "GuideText",ExpressionUUID->"2ab8cb66-0133-404f-9b8f-cec44a6aebda",
  CellID->36533971],
-Cell[9008, 271, 386, 11, 70, "GuideText",ExpressionUUID->"7d216bc1-0e9b-4de3-bb98-1e5eec2ac6d5",
+Cell[9120, 273, 386, 11, 70, "GuideText",ExpressionUUID->"03d8ef88-f1ed-4c83-aab8-0d2891dfa35c",
  CellID->29879692],
-Cell[9397, 284, 334, 10, 70, "GuideText",ExpressionUUID->"34f7442c-6fff-4064-baf3-b3821e05bc94",
+Cell[9509, 286, 334, 10, 70, "GuideText",ExpressionUUID->"01870c56-378e-4080-b45b-851b0f72a54b",
  CellID->338102893],
-Cell[9734, 296, 338, 10, 70, "GuideText",ExpressionUUID->"92bc2752-9365-49c4-bfe6-2f21f7757e03",
+Cell[9846, 298, 338, 10, 70, "GuideText",ExpressionUUID->"42ccd111-0aa9-4635-89af-11ff24d48eab",
  CellID->360732873],
-Cell[10075, 308, 335, 10, 70, "GuideText",ExpressionUUID->"b9d9ff93-4b8e-47d5-a965-323622670389",
+Cell[10187, 310, 335, 10, 70, "GuideText",ExpressionUUID->"523f1326-f925-49fe-bc9d-c7d5735dcb5a",
  CellID->9171446],
-Cell[10413, 320, 350, 10, 70, "GuideText",ExpressionUUID->"31698330-c20d-4130-bdf4-7dce503af9be",
+Cell[10525, 322, 350, 10, 70, "GuideText",ExpressionUUID->"b28265d0-1825-434c-b3a8-cb050df90664",
  CellID->306333588],
-Cell[10766, 332, 381, 11, 70, "GuideText",ExpressionUUID->"6aa5e2b0-83bc-4a30-a5da-720580e096a6",
+Cell[10878, 334, 381, 11, 70, "GuideText",ExpressionUUID->"21f1880a-ef35-4bc8-900a-5031cc567a1d",
  CellID->213895237],
-Cell[11150, 345, 365, 10, 70, "GuideText",ExpressionUUID->"0ff334b2-5d56-45c2-80ae-ad76a5db5370",
+Cell[11262, 347, 361, 10, 70, "GuideText",ExpressionUUID->"53f87c59-bc2a-48cc-9e36-6dab993f2ecd",
+ CellID->246542621],
+Cell[11626, 359, 365, 10, 70, "GuideText",ExpressionUUID->"0d2468b9-894a-43d9-9ecc-bdd852f263cc",
  CellID->658218843],
-Cell[11518, 357, 342, 10, 70, "GuideText",ExpressionUUID->"5e8ace03-965c-451c-8251-ec2be06e9f51",
+Cell[11994, 371, 342, 10, 70, "GuideText",ExpressionUUID->"badc8e53-f120-4e39-a6e1-38531fb4acfa",
  CellID->574695207]
 }, Open  ]],
-Cell[11875, 370, 23, 0, 70, "FooterCell",ExpressionUUID->"b8e27dce-f5f7-40ef-a2d2-8ea473efbef8"]
+Cell[12351, 384, 23, 0, 70, "FooterCell",ExpressionUUID->"2613d963-53e6-4d43-bb12-9638b7b02600"]
 }
 ]
 *)

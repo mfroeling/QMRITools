@@ -498,9 +498,7 @@ ImportExport`RegisterImport[
   "AvailableElements" -> {"Data", "Header", "VoxelSize", "TR", 
     "RotationMatrix", "Units", "Scaling"},
   "OriginalChannel" -> True,
-  "Options" -> {
-    NiiScaling
-    }
+  "Options" -> {NiiScaling}
   ];
   
 
@@ -510,13 +508,13 @@ ImportExport`RegisterImport[
 (*ImportNii*)
 
 
-Options[ImportNii] = {NiiMethod -> "default", NiiScaling -> True};
+Options[ImportNii] = {NiiMethod -> "default", NiiScaling -> False};
 
 SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_., OptionsPattern[]}};
 
 ImportNii [opts : OptionsPattern[]] := ImportNii["", opts];
 
-ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output},
+ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt},
 	
 	what = OptionValue[NiiMethod];
 	
@@ -538,16 +536,18 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output},
 	(*stop if ther is no file*)
 	If[file == Null || file === $Canceled || file === $Failed, Message[Import::nffil,fil];Return[$Failed,Module]];
 	
+	opt= NiiScaling->OptionValue[NiiScaling];
+	
 	output=Switch[what,
-		"data", Import[file, {"nii", "Data"}],
-		"header", Import[file, {"nii", {"Data", "VoxelSize", "Header"}}],
-		"headerMat", Import[file, {"nii", {"Data", "VoxelSize", "Header", "RotationMatrix"}}],
-		"dataTR", Import[file, {"nii", {"Data", "VoxelSize", "TR"}}], 
-		"rotation", Import[file, {"nii", {"Data", "VoxelSize", "RotationMatrix"}}],
-		"scaling", Import[file, {"nii", {"Data", "VoxelSize", "Scaling"}}],
-		"all", out = Import[file, {"nii", {"Data", "VoxelSize", "Header", "TR", "Scaling", "RotationMatrix", "Units"}}];
+		"data", Import[file, {"nii", "Data"}, opt],
+		"header", Import[file, {"nii", {"Data", "VoxelSize", "Header"}}, opt],
+		"headerMat", Import[file, {"nii", {"Data", "VoxelSize", "Header", "RotationMatrix"}}, opt],
+		"dataTR", Import[file, {"nii", {"Data", "VoxelSize", "TR"}}, opt], 
+		"rotation", Import[file, {"nii", {"Data", "VoxelSize", "RotationMatrix"}}, opt],
+		"scaling", Import[file, {"nii", {"Data", "VoxelSize", "Scaling"}}, opt],
+		"all", out = Import[file, {"nii", {"Data", "VoxelSize", "Header", "TR", "Scaling", "RotationMatrix", "Units"}}, opt];
 		{out[[1]], out[[2]], out[[3 ;;]]},
-		_, Import[file, "nii"]
+		_, Import[file, "nii", opt]
 	];
 	
 	
@@ -872,7 +872,7 @@ ImportNiiT2[file_]:=Module[{T2, T2vox, T2cor, fit},
 
 ImportNiiT1[] := Module[{T1, T1vox, T1cor, fit},
   {T1, T1vox} = ImportNii[NiiScaling -> False];
-  {T1cor, fit} = CorrectT1Data[T1];
+  {T1cor, fit} = CorrectMapData[T1];
   {T1cor, fit, T1vox}]
 
 ImportNiiT1[file_] := Module[{T1, T1vox, T1cor, fit},
@@ -885,19 +885,19 @@ ImportNiiT1[file_] := Module[{T1, T1vox, T1cor, fit},
 (*ImportNiiT1*)
 
 
-CorrectMapData[data_, maps_: 1] := 
- Block[{slices, echos, T2o, map, mask},
-  {slices, echos} = Dimensions[data][[1 ;; 2]] - {0, maps};
+CorrectMapData[datai_, maps_: 1] := 
+ Block[{slices, echos, data, map, mask},
+  {slices, echos} = Dimensions[datai][[1 ;; 2]] - {0, maps};
   (*Flatten the data and remove the T2map*)
-  T2o = Flatten[Transpose[data], 1];
+  data = Flatten[Transpose[datai], 1];
   (**)
-  map = T2o[[-maps slices ;;]];
+  map = data[[-maps slices ;;]];
   map = Partition[map, maps];
   (*partition to correct number of slices*)
-  T2o = Partition[Drop[T2o, -maps slices], echos];
-  T2o = Clip[NormalizeDiffData[T2o], {0, Infinity}];
+  data = Partition[Drop[data, -maps slices], echos];
+  data = Clip[NormalizeDiffData[data], {0, Infinity}];
   
-  {T2o, map}
+  {data, map}
   ]
 
 

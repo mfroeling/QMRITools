@@ -121,6 +121,10 @@ MeanSignal::usage =
 "MeanSignal[diffdata] calculates the mean signal per volume of the diff data.
 MeanSignal[diffdata, pos] calculates the mean signal per volume of the diff data cor the given positions."
 
+GetMaskMeans::usage = 
+"GetMaskMeans[dat, mask, name] calculates the mean, std, 5,50 and 95% CI form the given data for each of the given masks. 
+Mask can be genereated by SplitSegmentations. name is a string that is added to the header."
+
 FiberDensityMap::usage =
 "FiberDensityMap[fiberPoins, dim, vox] generates a fiber density map for the fiberPoins which are imported by LoadFiberTracts. \
 The dimensions dim should be the dimensions of the tracked datasets van vox its volxel size."
@@ -195,6 +199,8 @@ SmoothSNR::usgae =
 SeedDensity::usage = 
 "SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
 
+MeanMethod::usage = 
+"MeanMethod is an option for GetMaskMeans. The option can be  \NormalDist\", \"SkewNormalDist\", or \"Mean\"."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -1124,52 +1130,63 @@ ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_?ArrayQ, Option
 (*ParameterFit*)
 
 
-Options[ParameterFit]={FitFunction->"SkewNormal",FitOutput->"Parameters"}
+Options[ParameterFit] = {FitFunction -> "SkewNormal", FitOutput -> "Parameters", Method -> Automatic}
 
 SyntaxInformation[ParameterFit] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-ParameterFit[dat:{_?ListQ..},OptionsPattern[]]:=
-Module[{mod,out},
-	mod=OptionValue[FitFunction];
-	out=OptionValue[FitOutput];
-	ParameterFit[Flatten[#],FitFunction->mod,FitOutput->out]&/@dat
-	]
+ParameterFit[dat : {_?ListQ ..}, opts : OptionsPattern[]] := ParameterFit[Flatten[#], opts] & /@ dat
 
-
-ParameterFit[dat_List,OptionsPattern[]]:=
-Module[{sol,par,data,mod,out,Omega,Xi,Alpha,Mu,Sigma,x},
-	Off[NonlinearModelFit::"cvmit"];Off[NonlinearModelFit::"sszero"];
-	mod=OptionValue[FitFunction];
-	out=OptionValue[FitOutput];
-	
-	data=DeleteCases[Flatten[dat//N],0.];
-	If[data=={}||Length[data]<=5,
-		par={Null,Null},
-		Switch[mod,
-			"SkewNormal",
-			sol=NonlinearModelFit[FitData[data],SkewNorm[x,Omega,Xi,Alpha],{Omega,Xi,Alpha},x];
-			par={Mn[Omega,Xi,Alpha],Sqrt[Var[Omega,Alpha]]}/.sol["BestFitParameters"];,
-			"Normal",
-			sol=NonlinearModelFit[FitData[data],RegNorm[x,Mu,Sigma],{Mu,Sigma},x];
-			par={Mu,Sigma}/.sol["BestFitParameters"];,
-			_,
-			Message[ParameterFit::func,mod]
-			]
-	];
-	On[NonlinearModelFit::"cvmit"];On[NonlinearModelFit::"sszero"];
-	Switch[
-		out,
-		"Parameters",
-		par,
-		"Function",
-		sol,
-		"BestFitParameters",
-		{Omega,Xi,Alpha}/.sol["BestFitParameters"]
-		,
-		_,
-		Message[ParameterFit::outp,out]
-		]
-	]
+ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, sdat, fdat},
+  
+  (*get option values*)
+  mod = OptionValue[FitFunction];
+  out = OptionValue[FitOutput];
+  met = OptionValue[Method];
+  
+  (*prepare data*)
+  data = DeleteCases[Flatten[dat] // N, 0.];
+  (*initialization for mean and std*)
+  mdat = Mean[data];
+  sdat = StandardDeviation[data];
+  (*fit data*)
+  fdat = FitData[data];
+  
+  Off[NonlinearModelFit::"cvmit"]; Off[NonlinearModelFit::"sszero"];
+  (*perform the fit*)
+  If[Length[data] <= 10,
+   Print["Not Enough data in the ROI"];
+   ,
+   Switch[mod,
+    (*SkewNormal dist parameter fit*)
+    "SkewNormal",
+    sol = NonlinearModelFit[fdat,  PDF[SkewNormalDistribution[Mu, Sigma, Alpha], x], {{Mu, mdat}, {Sigma, sdat}, {Alpha, 0}}, x, Method -> met];
+    par = {Mu, Sigma, Alpha} /. sol["BestFitParameters"];
+    fun = SkewNormalDistribution[Mu, Sigma, Alpha] /. sol["BestFitParameters"];
+    ,
+    (*Normal dist parameter fit*)
+    "Normal",
+    sol = NonlinearModelFit[fdat, PDF[NormalDistribution[Mu, Sigma], x], {{Mu, mdat}, {Sigma, mdat/2}}, x];
+    par = {Mu, Sigma} /. sol["BestFitParameters"];
+    fun = NormalDistribution[Mu, Sigma] /. sol["BestFitParameters"];
+    ,
+    _,
+    Message[ParameterFit::func, mod]]
+   ];
+  On[NonlinearModelFit::"cvmit"]; On[NonlinearModelFit::"sszero"];
+  
+  (*generate Output*)
+  Switch[out,
+   "Parameters",
+   par,
+   "ParametersExtra",
+   Flatten[{Mean[fun], StandardDeviation[fun], Quantile[fun, {.5, .05, .95}]}],
+   "Function",
+   sol,
+   "BestFitParameters",
+   sol["BestFitParameters"],
+   _, Message[ParameterFit::outp, out]
+   ]
+  ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1240,17 +1257,49 @@ SyntaxInformation[FitData] = {"ArgumentsPattern" -> {_, _.}};
 
 FitData[dat_,sdr_:2]:=
 Module[{m, s, min, max, range, step, xdat, data, out}, 
-  If[dat == {} || Length[dat] == 1, {}, m = Mean[dat];
-   s = StandardDeviation[dat];
-   min = (m - sdr s); max = (m + sdr s);
-   range = max - min;
-   step = range/100;
-   data = BinCounts[dat, {min, max, step}];
-   xdat = Range[min + 0.5 step, max - 0.5 step, step];
-   out = Transpose[{xdat, data/Length[dat]/step}];
-   DeleteCases[out, {_, 0.}]
+  If[dat == {} || Length[dat] == 1, {}, 
+  	m = Mean[dat];
+  	s = StandardDeviation[dat];
+  	min = (m - sdr s); max = (m + sdr s);
+  	range = max - min;
+  	step = range/100;
+  	data = BinCounts[dat, {min, max, step}];
+  	xdat = Range[min + 0.5 step, max - 0.5 step, step];
+  	out = Transpose[{xdat, data/Length[dat]/step}];
+  	DeleteCases[out, {_, 0.}]
    ]
   ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetMaskMeans*)
+
+
+Options[GetMaskMeans] = {MeanMethod -> "SkewNormalDist"}
+
+SyntaxInformation[GetMaskMeans] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+GetMaskMeans[dat_, mask_, opts:OptionsPattern[]] := GetMaskMeans[dat, mask, "", opts]
+
+GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] := 
+ Block[{labels, out, fl},
+  labels = If[name==="",
+  	{"mean", "std", "Median", "5%", "95%"},
+  	name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
+  ];
+  out = (
+      fl = Flatten[GetMaskData[dat, #]];
+      Switch[OptionValue[MeanMethod],
+       "NormalDist",
+       ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "Normal"],
+       "SkewNormalDist",
+       ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "SkewNormal"],
+       _,
+       Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
+       ]
+      ) & /@ Transpose[mask];
+  Prepend[out, labels]
+  ]
 
 
 (* ::Subsubsection::Closed:: *)

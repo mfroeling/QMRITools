@@ -1445,9 +1445,9 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 	{movingl, movingr, cut2}=CutData[moving];
 	
 	{cut1, cut2} = Switch[OptionValue[SplitMethod],
-		"target", Round[{cut1, (cut1 voxT[[2]])/voxM[[2]]}],
-		"moving", Round[{(cut2 voxM[[2]])/voxT[[2]], cut2}],
-		"nearest", Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, (Last@Dimensions[target]/2) Last[voxT]]/{Last@voxT, Last@voxM}],
+		"Target", Round[{cut1, (cut1 voxT[[2]])/voxM[[2]]}],
+		"Moving", Round[{(cut2 voxM[[2]])/voxT[[2]], cut2}],
+		"Nearest", Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, (Last@Dimensions[target]/2) Last[voxT]]/{Last@voxT, Last@voxM}],
 		_, Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]], voxM[[2]]}]
 		];
 	
@@ -1527,7 +1527,7 @@ Monitor[
 		OutputTransformation->False,
 		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 	"First",
-	(i++;RegisterData[{data[[#]],maskr[[#]],vox},
+	(i++;RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],vox},
 		OutputTransformation->False,
 		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 	"Cyclyc",

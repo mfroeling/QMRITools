@@ -576,8 +576,8 @@ CalibrateEPGT2Fit[datan_, echo_, angle_, OptionsPattern[]] := Block[{
 	  fmask = Mask[dataT2[[-1]], {0.5}];
 	  fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
 	  (*data for calibration fit*)
-	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ dataT2],
-	  4,
+	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ dataT2];
+	  ,4,
 	  (*mulit slice*)
 	  (*make mask an normalize data to first echo*)
 	  maskT2 = Mask[Mean[Transpose[datan]]];
@@ -588,8 +588,8 @@ CalibrateEPGT2Fit[datan_, echo_, angle_, OptionsPattern[]] := Block[{
 	  fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
 	  
 	  (*data for calibration fit*)
-	  fitData = 
-	   Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose@dataT2]
+	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose[dataT2+10.^-10]]-10.^-10;
+
 	  ];
   
 	(*select random fit points to calibrate fat signal and get the boundries*)

@@ -53,7 +53,7 @@ JoinSets[{dat1,dat2,dat3...},{over1,over2,...}] joins dat1 and dat2 with over1 s
 JoinSets[{dat1,dat2,...},{{over,drop1,drop2},...}] joins dat1, dat2 with over slices overlap and drops drop1 slices for dat1 and drop2 from drop 2."
 
 SplitSets::usage = 
-"JoinSets[data, Nsets, Nover] splits the data in Nsets with Nover slices overlap."
+"SplitSets[data, Nsets, Nover] splits the data in Nsets with Nover slices overlap."
 
 CorrectJoinSetMotion::usage =
 "CorrectJoinSetMotion[[{dat1,dat2,...}, vox, over] motion correts multiple sets with overlap. Over is the number of slices overlap between stes. A Translation registration is performed."
@@ -1651,24 +1651,26 @@ CutData[data_,cut_] := Switch[
 		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}
 ]
 
-FindMiddle[dati_] := Module[{dat, datf,peaks,mid,peak,center},
+FindMiddle[dati_] := Module[{dat, len, datf,peaks,mid,peak,center},
   
 	(*flatten mean and normalize data*)
 	dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
-	dat = dat/Max[dat];
+	len = Length[dat];
+	dat = len dat/Max[dat];
+	
 	(*smooth the data a bit*)
-	datf = 1 - GaussianFilter[dat, 2];
+	datf = len - GaussianFilter[dat, len/20];
 	(*find the peaks*)
 	peaks = FindPeaks[datf];
 	peaks = If[Length[peaks] >= 3, peaks[[2 ;; -2]], peaks];
 	
 	(*find the most middle peak*)
 	mid = Round[Length[dat]/2];
-	center = {mid, 1};
+	center = {mid, len};
 	peak = Nearest[peaks, center];
 	
 	(*Print[Show[
-	ListLinePlot[{1-dat,datf},PlotStyle\[Rule]{Black,Orange}],ListPlot[{\
+	ListLinePlot[{len-dat,datf},PlotStyle\[Rule]{Black,Orange}],ListPlot[{\
 	peaks,peak,{center}},PlotStyle\[Rule](Directive[{PointSize[Large],#}]&\
 	/@{Blue,Red,Green})]
 	]]*)

@@ -59,6 +59,9 @@ CompilebleFunctions::usage =
 MeanNoZero::usage = 
 "MeanNoZero[data] calculates the mean of the data ignoring the zeros."
 
+MedianNoZero::usage = 
+"MedianNoZero[data] calculates the Median of the data ignoring the zeros."
+
 MeanStd::usage = 
 "MeanStd[data] calculates the mean and standard deviation and reports it as a string."
 
@@ -184,6 +187,17 @@ MeanNoZero[datai_] := Block[{data},
   N@Chop@Map[Mean[DeleteCases[#, 0.] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
   ]
 
+
+(* ::Subsubsection::Closed:: *)
+(*MedianNoZero*)
+
+
+SyntaxInformation[MedianNoZero] = {"ArgumentsPattern" -> {_, _.}};
+
+MedianNoZero[datai_] := Block[{data},
+  data = N@Chop@TransData[datai, "l"];
+  N@Chop@Map[Median[DeleteCases[#, 0.] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
+  ]
 
 (* ::Subsection::Closed:: *)
 (*SumOfSquares*)
