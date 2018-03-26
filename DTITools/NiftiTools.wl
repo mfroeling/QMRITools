@@ -93,7 +93,7 @@ ExtractNiiFiles[folder] extracts all nii.gz files to .nii files in folder."
 
 CompressNiiFiles::usage =
 "CompressNiiFiles[] compresses all nii files to .nii.gz files in the selected folder.
-ECompressNiiFilesfolder] compresses all nii files to .nii.gz files in folder."
+ECompressNiiFiles[folder] compresses all nii files to .nii.gz files in folder."
 
 
 (* ::Subsection::Closed:: *)
@@ -1249,7 +1249,7 @@ SyntaxInformation[CompressNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
 
 CompressNiiFiles[lim_:Infinity] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
 
-CompressNiiFiles[folder_,lim_:Infinity] := Module[{files},
+CompressNiiFiles[folder_?StringQ,lim_:Infinity] := Module[{files},
    files = FileNames["*.nii", folder,lim];
    CompressNiiFile/@files;
    ]

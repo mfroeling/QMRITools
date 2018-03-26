@@ -1105,7 +1105,8 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile},
   transfile = 
    Last[SortBy[
      FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]], 
-     FileDate[#, "Creation"] &]];
+     FileDate[#, "Creation"] &]
+     ];
   "@ \"" <> transformix <>
    "\" -in \"" <> First[FileNames["trans*", tempDir]] <>
    "\" -out \"" <> tempDir <>
