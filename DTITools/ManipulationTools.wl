@@ -506,8 +506,7 @@ RescaleData[data_?ArrayQ, dim_?VectorQ, opts : OptionsPattern[]] := RescaleDatai
 
 Options[RescaleDatai] = {InterpolationOrder -> 3};
 
-RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, 
-  opts : OptionsPattern[]] := Block[{type, dim, int},
+RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[{type, dim, int},
   dim = Dimensions[data];
   int = OptionValue[InterpolationOrder];
   
@@ -521,13 +520,14 @@ RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_,
    3(*rescale a 3D dataset*),
    Switch[Length[sc],
     2(*rescale a stac of 2D images*),
-    RescaleImgi[#, {sc, met}, int] & /@ data,
+    RescaleImgi[#, {sc, met}, int] & /@ data
+    ,
     3(*rescale 3D data*),
     RescaleImgi[data, {sc, met}, int],
     _,
     Return[Message[RescaleDataInt::dim, sc, Dimensions[data]]];
     ],
-   4(*rescale a 4D dataset, treat data as multiple 4D sets*),
+   4(*rescale a 4D dataset, treat data as multiple 3D sets*),
    Transpose[RescaleDatai[#, sc, met, opts] & /@ Transpose[data]],
    _,
    Return[Message[RescaleDataInt::data]];
@@ -1451,7 +1451,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 		
 		(*perform the registration*)
 		sets[[n + 1]] = Last@regFunc[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
-				MethodReg -> "translation", Iterations -> 250, NumberSamples -> samp, PrintTempDirectory -> False,InterpolationOrderReg -> 0];
+				MethodReg -> "translation", Iterations -> 500, NumberSamples -> samp, PrintTempDirectory -> False,InterpolationOrderReg -> 0];
 		
 		, {n, 1, nmax - 1}
 	];
