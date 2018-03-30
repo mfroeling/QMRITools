@@ -170,7 +170,8 @@ PrintTempDirectory::usage =
 It spefifies if the location of the temp directory should be deplayed."
 
 RegistrationTarget::usage = 
-"RegistrationTarget is an option for RegisterDiffusionData and RegisterCardiacData. specifies which target to uses for registration. 
+"RegistrationTarget is an option for RegisterDiffusionData and RegisterCardiacData. Specifies which target to uses for registration if using \"rigid\", \"affine\" or \"bspline\" as MethodReg.
+If the MethodReg is \"cyclyc\" or \"PCA\" it does not need a target and this options does nothing. 
 Values can be \"First\", \"Mean\" or \"Median\"."
 
 BsplineDirections::usage = 
@@ -208,6 +209,12 @@ It specifies the interpolation order used in the registration functions when reg
 MethodRegA::usage =
 "MethodRegA is an option for RegisterDiffusionData.
 It spefifies which registration method to use when registering diffusion data to anatomical space. Mehtods can be be \"rigid\",\"affine\" or \"bspline\"."
+
+UseGPU::usage = 
+"UseGPU is an option for RegisterData. The value is {bool, gpu} where bool is True or False, and gpu is the gpu ID which is an integer or Automatic."
+
+PCAComponents::usage = 
+"PCAComponents is an option for RegisterData. It speciefies how many PCA components are used if method is set to \"PCA\""
 
 FindTransform::usage = 
 "FindTransform is an option for TransformData and RegisterTransformData. It specifies where to find the transformfile."
@@ -264,7 +271,7 @@ SchedulePar[res_,x_]:=ListToString[ToString[2^#1]<>" "<>ToString[2^#]<>" 0" &/@ 
 
 ListToString[list_]:=StringJoin[Riffle[ToString/@list," "]]
 
-ParString[{itterations_,resolutions_,bins_,samples_,intOrder_},{type_,output_},grid_:{30, 30, 30}, derscB_:{1,1,1}, derscA_:{1,1,1}]:="// *********************
+ParString[{itterations_,resolutions_,bins_,samples_,intOrder_},{type_,output_},{grid_, derscB_, derscA_,pca_},{openCL_,gpu_}]:="// *********************
 // * "<>type<>"
 // *********************
 
@@ -289,14 +296,21 @@ ParString[{itterations_,resolutions_,bins_,samples_,intOrder_},{type_,output_},g
 "PCA",
 "(Interpolator \"ReducedDimensionBSplineInterpolator\")
 (ResampleInterpolator \"FinalReducedDimensionBSplineInterpolator\")
-(Metric \"PCAMetric2\")",
+(Metric \"PCAMetric2\")
+(NumEigenValues "<>ToString[pca]<>")",
 _,
 "(Interpolator \"BSplineInterpolator\")
 (ResampleInterpolator \"FinalBSplineInterpolator\")
 (Metric \"AdvancedMattesMutualInformation\")"
 ]<>"
 (BSplineInterpolationOrder 1)
-(Resampler \"DefaultResampler\")
+"<>If[openCL,
+"(OpenCLResamplerUseOpenCL \"true\")
+(OpenCLDeviceID \""<>ToString[gpu]<>"\")
+(Resampler \"OpenCLResampler\")"
+,
+"(Resampler \"DefaultResampler\")"
+]<>"
 (Optimizer \"AdaptiveStochasticGradientDescent\")
 "<>Switch[type,
 "translation",
@@ -581,7 +595,9 @@ OutputImage->True,
 TempDirectory->"Default",
 DeleteTempDirectory->True,
 PrintTempDirectory->True,
-OutputTransformation->False
+OutputTransformation->False,
+UseGPU->{False,Automatic},
+PCAComponents->3
 };
 
 SyntaxInformation[RegisterData]={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
@@ -822,7 +838,8 @@ outputImg,iterations,resolutions,histogramBins,numberSamples,derivativeScaleA,de
 interpolationOrder,method,bsplineSpacing,data,vox,
 dimmov,dimtar,dimmovm,dimtarm,
 inpfol,movfol,outfol,fixedF,movingF,outF,parF,depth,index,
-error,regpars,lenMeth,command,outfile,fmaskF,mmaskF,maske,maske2,w},
+error,regpars,lenMeth,command,outfile,fmaskF,mmaskF,maske,maske2,w,
+openCL,gpu},
 
 w={{0,0,0,0,0,0,1,1,1,0,0,0}};
 
@@ -841,6 +858,10 @@ bsplineSpacing=OptionValue[BsplineSpacing];
 bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
 derivativeScaleB=OptionValue[BsplineDirections];
 derivativeScaleA=OptionValue[AffineDirections];
+
+{openCL,gpu}=OptionValue[UseGPU];
+gpu=If[gpu===Automatic,0,gpu];
+pca=OptionValue[PCAComponents];
 
 (*Print[{derivativeScaleA,derivativeScaleB}];*)
 
@@ -895,7 +916,7 @@ If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>t
 
 (*create parameter files*)
 parF=MapThread[(
-parstring=ParString[#2,{#1,outputImg},bsplineSpacing,derivativeScaleB,derivativeScaleA];
+parstring=ParString[#2,{#1,outputImg},{bsplineSpacing,derivativeScaleB,derivativeScaleA,pca},{openCL,gpu}];
 parF="parameters-"<>#1<>".txt";
 Export[tempdir<>parF,parstring];
 parF
@@ -1531,7 +1552,7 @@ RegisterCardiacData[{data_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:Opti
 RegisterCardiacData[{data_?ArrayQ,mask_?ArrayQ},opts:OptionsPattern[]]:=RegisterCardiacData[{data,mask,{1,1,1}},opts]
 (*data with mask and voxel*)
 RegisterCardiacData[{data_?ArrayQ,mask_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Block[
-{tdir, datar, slices, maskr,i},
+{tdir, datar, slices, maskr, i, size, target},
 
 tdir=OptionValue[TempDirectory];
 tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
@@ -1540,25 +1561,28 @@ If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>t
 slices=Range[Length[data]];
 maskr=If[mask=={1},ConstantArray[1,Dimensions[data[[All,1]]]],mask];
 
+size=Length[data[[1]]];
+
+target=If[OptionValue[MethodReg]==="PCA"||OptionValue[MethodReg]==="cyclyc","stack",OptionValue[RegistrationTarget]];
+
 (*monitro over slices*)
 Monitor[
 	i=0;
 	datar=Switch[
-	OptionValue[RegistrationTarget],
+	target,
 	"Mean",
 	(i++;RegisterData[{N[Mean@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
-		OutputTransformation->False,
-		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 	"Median",
 	(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],vox},
-		OutputTransformation->False,
-		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 	"First",
 	(i++;RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],vox},
-		OutputTransformation->False,
-		PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-	"Cyclyc",
-	Print["ToDo"]
+		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+	"stack",
+	size=Length[data[[1]]];
+	(i++;RegisterData[{data[[#]],ConstantArray[maskr[[#]],size],vox},
+		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices
 	]
 	,ProgressIndicator[i,{0,Length[data]}]
 ];

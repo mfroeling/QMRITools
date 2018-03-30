@@ -1247,11 +1247,16 @@ ExtractNiiFile[file_] := Quiet[StringDrop[file, -3];ExtractArchive[file];DeleteF
 
 SyntaxInformation[CompressNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
 
-CompressNiiFiles[lim_:Infinity] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
+CompressNiiFiles[]:=CompressNiiFiles[Infinity]
 
-CompressNiiFiles[folder_?StringQ,lim_:Infinity] := Module[{files},
+CompressNiiFiles[folder_?StringQ]:=CompressNiiFiles[folder, Infinity]
+
+CompressNiiFiles[lim_] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
+
+CompressNiiFiles[folder_?StringQ,lim_] := Module[{files,file},
    files = FileNames["*.nii", folder,lim];
-   CompressNiiFile/@files;
+   PrintTemporary[Dynamic[file]];
+   (file=#;CompressNiiFile[#])&/@files;
    ]
 
 CompressNiiFile[file_] := Quiet[DeleteFile[file <> ".gz"];CreateArchive[file, file <> ".gz"];DeleteFile[file];]
