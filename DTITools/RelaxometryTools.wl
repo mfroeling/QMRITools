@@ -313,7 +313,7 @@ RotMatrixT = Compile[{{alpha, _Real, 0}}, {
 
 
 Options[EPGT2Fit]= {
-	DictB1Range -> {0.5, 1.5, 0.025}, DictT2Range -> {10, 70, 0.3}, 
+	DictB1Range -> {0.5, 1.5, 0.02}, DictT2Range -> {10, 70, 0.2}, 
 	EPGRelaxPars -> {1400., 365., 150}, Method -> "dictionaryM", MonitorEPGFit -> True,
 	EPGCalibrate -> True, EPGFitPoints -> 50, OutputCalibration -> False}
 

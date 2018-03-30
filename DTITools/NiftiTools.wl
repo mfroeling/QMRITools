@@ -608,8 +608,8 @@ ImportNiiDefault[file_, opts : OptionsPattern[]] :=
   (*flip dimensions*)
   If[info[[8]] === 4, data = Transpose[data, {2, 1, 3, 4}]];
   data = Map[Reverse[#] &, data, {info[[8]] - 2}];
-  If[Positive[("sRowx" /. hdr)[[1]]], data = Map[Reverse[#] &, data, {info[[8]] - 1}]];
-  
+  (*If[Positive[("sRowx" /. hdr)[[1]]], data = Map[Reverse[#] &, data, {info[[8]] - 1}]];*)
+  data = Map[Reverse[#] &, data, {info[[8]] - 1}];
   
   (*scale data*)
   scaling = If[info[[1]] =!= {"Byte", "Byte", "Byte"}, info[[6]] + info[[5]] # &, Identity];

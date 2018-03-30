@@ -200,7 +200,7 @@ SeedDensity::usage =
 "SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
 
 MeanMethod::usage = 
-"MeanMethod is an option for GetMaskMeans. The option can be  \NormalDist\", \"SkewNormalDist\", or \"Mean\"."
+"MeanMethod is an option for GetMaskMeans. The option can be  \"NormalDist\", \"SkewNormalDist\", or \"Mean\"."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)

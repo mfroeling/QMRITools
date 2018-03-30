@@ -4,7 +4,7 @@
 
 (*initialization functions*)
 
-UpdateWarning[]:=If[$VersionNumber != 11.2,
+UpdateWarning[]:=If[$VersionNumber != 11.3,
  CreateDialog[Column[{Style["
       Current Mathematica version is 11.2
       You need to update!
