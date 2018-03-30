@@ -260,7 +260,7 @@ Begin["`Private`"]
 (*ParString*)
 
 
-SchedulePar[res_,x_]:=ListToString[ToString[2^#1]<>" "<>ToString[2^#]<>" "<>ToString[x]&/@Reverse[Range[res]-1]];
+SchedulePar[res_,x_]:=ListToString[ToString[2^#1]<>" "<>ToString[2^#]<>" 0" &/@ Reverse[Range[res]-1]];
 
 ListToString[list_]:=StringJoin[Riffle[ToString/@list," "]]
 
@@ -278,19 +278,24 @@ ParString[{itterations_,resolutions_,bins_,samples_,intOrder_},{type_,output_},g
 // *********************
 // * Components
 // *********************
-(ResampleInterpolator \"FinalBSplineInterpolator\")
-(FixedImagePyramid \"FixedRecursiveImagePyramid\")
-(MovingImagePyramid \"MovingRecursiveImagePyramid\")
+(FixedImagePyramid \"FixedSmoothingImagePyramid\")
+(MovingImagePyramid \"MovingSmoothingImagePyramid\")
 (Registration \"MultiResolutionRegistration\")
 "<>Switch[type,
 "cyclyc",
 "(Interpolator \"ReducedDimensionBSplineInterpolator\")
+(ResampleInterpolator \"FinalReducedDimensionBSplineInterpolator\")
 (Metric \"VarianceOverLastDimensionMetric\")",
+"PCA",
+"(Interpolator \"ReducedDimensionBSplineInterpolator\")
+(ResampleInterpolator \"FinalReducedDimensionBSplineInterpolator\")
+(Metric \"PCAMetric2\")",
 _,
 "(Interpolator \"BSplineInterpolator\")
-(Metric \"NormalizedMutualInformation\")"
+(ResampleInterpolator \"FinalBSplineInterpolator\")
+(Metric \"AdvancedMattesMutualInformation\")"
 ]<>"
-(BSplineInterpolationOrder 3)
+(BSplineInterpolationOrder 1)
 (Resampler \"DefaultResampler\")
 (Optimizer \"AdaptiveStochasticGradientDescent\")
 "<>Switch[type,
@@ -307,20 +312,26 @@ _,
 "(Transform \"AffineDTITransform\")
 (MovingImageDerivativeScales "<>ToString[Clip[derscA[[3]]]] <> " " <>ToString[Clip[derscA[[2]]]] <> " " <> ToString[Clip[derscA[[1]]]]<>")",
 "bspline",
-"(Transform \"BSplineTransform\")
+"(Transform \"RecursiveBSplineTransform\")
 (FinalGridSpacingInPhysicalUnits "<>ToString[grid[[3]]]<>" "<>ToString[grid[[2]]]<>" "<>ToString[grid[[1]]]<>")
 (MovingImageDerivativeScales "<>ToString[Clip[derscB[[3]]]] <> " " <>ToString[Clip[derscB[[2]]]] <> " " <> ToString[Clip[derscB[[1]]]]<>")",
-"cyclyc",
-"(Transform \"BSplineTransform\")
-(UseCyclicTransform \"true\")
-(FinalGridSpacingInPhysicalUnits "<>ToString[grid[[3]]]<>" "<>ToString[grid[[2]]]<>" 1)
-(MovingImageDerivativeScales 1.0 1.0 0.0)
+"PCA",
+"(Transform \"BSplineStackTransform\")
+(FinalGridSpacingInPhysicalUnits "<>ToString[grid[[3]]]<>" "<>ToString[grid[[2]]]<>" 0)
 
 // *********************
 // * Metric settings
 // *********************
-(SampleLastDimensionRandomly \"true\")
-(NumSamplesLastDimension 5)
+(MovingImageDerivativeScales 1.0 1.0 0.0)
+(SubtractMean \"true\")",
+"cyclyc",
+"(Transform \"BSplineStackTransform\")
+(FinalGridSpacingInPhysicalUnits "<>ToString[grid[[3]]]<>" "<>ToString[grid[[2]]]<>" 0)
+
+// *********************
+// * Metric settings
+// *********************
+(MovingImageDerivativeScales 1.0 1.0 0.0)
 (SubtractMean \"true\")"
 ]<>"
 
@@ -335,14 +346,16 @@ _,
 // *********************
 (NumberOfResolutions "<>ToString[resolutions]<>")
 (MaximumNumberOfIterations "<>ToString[itterations]<>")
-(AutomaticScalesEstimation \"true\")
-(AutomaticTransformInitialization \"true\")
+(ASGDParameterEstimationMethod \"Original\")
+(AutomaticParameterEstimation \"true\")
 "<>Switch[type,
+"PCA",
+"",
 "cyclyc",
-"(AutomaticParameterEstimation \"true\")
-(GridSpacingSchedule "<>SchedulePar[resolutions,1]<>")",
+"",
 _,
-""
+"(AutomaticTransformInitialization \"true\")
+(AutomaticScalesEstimation "<>ToString[If[Total[derscA]==3 && Total[derscB]==3,"\"true\"","\"false\""]]<>")"
 ]<>"
 
 // *********************
@@ -357,6 +370,8 @@ _,
 "<>Switch[type,
 "affineDTI","(Scales -1.000000e+00 -1.000000e+00 -1.000000e+00  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06 -1.000000e+00 -1.000000e+00 -1.000000e+00)",
 "rigidDTI","(Scales -1.000000e+00 -1.000000e+00 -1.000000e+00  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38 -1.000000e+00 -1.000000e+00 -1.000000e+00)",
+"PCA",
+"(ImagePyramidSchedule "<>SchedulePar[resolutions,0]<>")",
 "cyclyc",
 "(ImagePyramidSchedule "<>SchedulePar[resolutions,0]<>")",
 _,""
@@ -372,9 +387,8 @@ _,""
 _,
 "(ImageSampler \"RandomCoordinate\")"
 ]<>"
-(CheckNumberOfSamples \"false\")
+(CheckNumberOfSamples \"true\")
 (NewSamplesEveryIteration \"true\")
-(MaximumNumberOfSamplingAttempts 100)
 (FinalBSplineInterpolationOrder "<>ToString[intOrder]<>")
 
 // *********************
@@ -383,7 +397,7 @@ _,
 (DefaultPixelValue 0)
 (WriteTransformParametersEachIteration \"false\")
 (WriteResultImage  \""<>output<>"\")
-(ResultImageFormat \"nii\")
+(ResultImageFormat \"nii.gz\")
 (ResultImagePixelType \"float\")
 "
 
@@ -425,7 +439,7 @@ maskfFile=If[maskf==="",""," -fMask \""<>tempdir<>maskf<>"\""];
 maskmFile=If[maskm==="",""," -mMask \""<>tempdir<>maskm<>"\""];
 
 parfiles=StringJoin[" -p \""<>tempdir<>#<>"\""&/@parfile];
-copy=If[out=="","","copy \""<>tempdir<>outfol<>"\\result."<>ToString[Length[parfile]-1]<>".nii\" \""<>tempdir<>outfol<>"\\"<>out<>"\""];
+copy=If[out=="","","copy \""<>tempdir<>outfol<>"\\result."<>ToString[Length[parfile]-1]<>".nii.gz\" \""<>tempdir<>outfol<>"\\"<>out<>"\""];
 
 command=
 "\""<>elastix<>
@@ -459,7 +473,7 @@ maskfFile=If[maskf==="",""," -fMask \""<>tempdir<>maskf<>"\""];
 maskmFile=If[maskm==="",""," -mMask \""<>tempdir<>maskm<>"\""];
 
 parfiles=StringJoin[" -p \""<>tempdir<>#<>"\""&/@parfile];
-copy=If[out=="","","@ copy \""<>outfold<>"\\result."<>ToString[Length[parfile]-1]<>".nii\" \""<>outfile<>"\""];
+copy=If[out=="","","@ copy \""<>outfold<>"\\result."<>ToString[Length[parfile]-1]<>".nii.gz\" \""<>outfile<>"\""];
 
 command=
 "@ \""<>elastix<>
@@ -540,7 +554,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix},
       "\" -out \"" <> # <>
       "\" -tp \"" <> Last[FileNames["FinalTransform*", #]] <> "\"" <>
       " > \"" <> # <> "\\outputa.txt\" \n" <>
-      "@ rename \"" <> # <> "\\result.nii\" resultA-3D.nii \n"
+      "@ rename \"" <> # <> "\\result.nii.gz\" resultA-3D.nii.gz \n"
      ) & /@ volDirs
   ]
 
@@ -558,7 +572,7 @@ Iterations->1000,
 Resolutions->1,
 HistogramBins->32,
 NumberSamples->2000,
-InterpolationOrderReg->1,
+InterpolationOrderReg->3,
 BsplineSpacing->30,
 BsplineDirections->{1,1,1},
 AffineDirections->{1,1,1},
@@ -600,7 +614,7 @@ dimL=If[depthS==3,dim[[1]],dim[[2]]];
 dimm=Dimensions[mask];
 voxL=Length[vox];
 
-cyclyc=OptionValue[MethodReg]==="cyclyc";
+cyclyc=OptionValue[MethodReg]==="cyclyc"||OptionValue[MethodReg]==="PCA";
 
 (*check dimensions*)
 (*series must be 3 of 4D*)
@@ -629,7 +643,7 @@ If[cyclyc,
 target=moving=series;
 
 (*go to registration function*)
-output=RegisterDatai[{target,{1},vox},{moving,mask,vox},"cyclyc",opts];
+output=RegisterDatai[{target,{1},vox},{moving,mask,vox},OptionValue[MethodReg],opts];
 output
 ,
 (*normal series*)
@@ -744,8 +758,8 @@ RegisterData[
 (*set error*)
 error=False;
 
-(*Check Method, cyclyc only possible for series*)
-If[OptionValue[MethodReg]==="cyclyc",error=True;Message[RegisterData::metc];];
+(*Check Method, cyclyc and PCA only possible for series*)
+If[OptionValue[MethodReg]==="cyclyc"||OptionValue[MethodReg]==="PCA",error=True;Message[RegisterData::metc];];
 
 (*get data properties*)
 depthT=ArrayDepth[target];
@@ -859,7 +873,7 @@ If[!DirectoryQ[tempdir],Message[RegisterData::dir];Return[Message[DiffusionReg::
 
 (*check registration method*)
 method=If[StringQ[method],{method},method];
-If[!MemberQ[{"rigid","affine","rigidDTI","affineDTI","bspline","cyclyc","translation"},#],
+If[!MemberQ[{"rigid","affine","rigidDTI","affineDTI","bspline","cyclyc","translation","PCA"},#],
 	Message[RegisterData::met,#];
 	Return[Message[DiffusionReg::fatal],Module]
 	]&/@method; 
@@ -888,31 +902,31 @@ parF
 )&,{method,Transpose[regpars]}];
 
 (*create target file*)
-depth=If[type==="cyclyc",ToString[ArrayDepth[target]-1]<>"D-t",ToString[ArrayDepth[target]]<>"D"];
+depth=If[type==="cyclyc"||type==="PCA",ToString[ArrayDepth[target]-1]<>"D-t",ToString[ArrayDepth[target]]<>"D"];
 fixedF="target-"<>depth<>".nii";
 targetFile=tempdir<>fixedF;
 
-ExportNii[target,voxt,targetFile,NumberType->"Real",CompressNii->False];
+ExportNii[target,voxt,targetFile];
 
 (*perform registration*)
 Switch[type,
 
 "vol",
 {inpfol,movfol,outfol}={"","",""};
-{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii"};
-ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real",CompressNii->False];
+{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+ExportNii[moving,voxm,tempdir<>movingF];
 
 {fmaskF,mmaskF}={"",""};
 
 (*check if target mask is needed*)
 If[dimtarm == dimtar && maskt!={1},
 	fmaskF="targetMask.nii";
-	ExportNii[maskt,voxm,tempdir<>fmaskF,NumberType->"Integer",CompressNii->False]];
+	ExportNii[maskt,voxm,tempdir<>fmaskF]];
 
 (*check if moving mask is needed*)
 If[(dimmovm == dimmov && maskm!={1}),
 	mmaskF="moveMask.nii";
-	ExportNii[maskm,voxm,tempdir<>mmaskF,NumberType->"Integer",CompressNii->False]];
+	ExportNii[maskm,voxm,tempdir<>mmaskF]];
 
 RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 {data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -922,10 +936,22 @@ data=ToPackedArray[data];
 "cyclyc",
 {inpfol,movfol,outfol}={"","",""};
 {fmaskF,mmaskF}={"",""};
-{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii"};
-ExportNii[moving,voxm,tempdir<>movingF,NumberType->"Real",CompressNii->False];
+{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+ExportNii[moving,voxm,tempdir<>movingF];
 If[maskm!={1},mmaskF="moveMask.nii";
-ExportNii[maskm,voxm,tempdir<>mmaskF,NumberType->"Integer",CompressNii->False];
+ExportNii[maskm,voxm,tempdir<>mmaskF];
+];
+RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
+{data,vox}=ImportNii[tempdir<>outfol<>outF];
+data=ToPackedArray[data];
+,
+"PCA",
+{inpfol,movfol,outfol}={"","",""};
+{fmaskF,mmaskF}={"",""};
+{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+ExportNii[moving,voxm,tempdir<>movingF];
+If[maskm!={1},mmaskF="moveMask.nii";
+ExportNii[maskm,voxm,tempdir<>mmaskF];
 ];
 RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 {data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -936,12 +962,12 @@ data=ToPackedArray[data];
 DynamicModule[{i},
 inpfol="";
 {fmaskF,mmaskF}={"",""};
-{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii"};
+{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
 
 (*export one mask for every volume in the series*)
 If[dimtarm == dimtar && maskt!={1},
 fmaskF="targetMask.nii";
-ExportNii[maskt,voxm,tempdir<>fmaskF,NumberType->"Integer",CompressNii->False]];
+ExportNii[maskt,voxm,tempdir<>fmaskF]];
 
 (*check if mask needs to be exported for each volume*)
 maske=(dimmovm == dimmov && maskm!={1});
@@ -956,17 +982,17 @@ i=0;
 	index=StringPad[#];
 	movfol=outfol="vol"<>index;
 	CreateDirectory[tempdir<>outfol];
-	ExportNii[moving[[#]],voxm,tempdir<>movfol<>"\\"<>movingF,NumberType->"Real",CompressNii->False];
+	ExportNii[moving[[#]],voxm,tempdir<>movfol<>"\\"<>movingF];
 	
 	(*export mask*)
 	If[maske,
 	mmaskF=movfol<>"\\"<>"moveMask.nii";
-	ExportNii[maskm[[#]],voxm,tempdir<>mmaskF,NumberType->"Integer",CompressNii->False];
+	ExportNii[maskm[[#]],voxm,tempdir<>mmaskF];
 	];
 	
 	If[maske2,
 	mmaskF=movfol<>"\\"<>"moveMask.nii";
-	ExportNii[maskm,voxm,tempdir<>mmaskF,NumberType->"Integer",CompressNii->False];
+	ExportNii[maskm,voxm,tempdir<>mmaskF];
 	];
 	
 	ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}]
@@ -1079,7 +1105,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
   If[OptionValue[PrintTempDirectory],PrintTemporary[tdir]];
   If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
   CreateDirectory[tdir];
-  ExportNii[data, vox, tdir <> "\\trans.nii",NumberType->"Real",CompressNii->False];
+  ExportNii[data, vox, tdir <> "\\trans.nii"];
   command = TransformixCommandInd[tdir];
   RunProcess[$SystemShell, "StandardOutput", command];
   output = ToPackedArray[ImportNii[tdir <> "\\result.nii"][[1]]];
@@ -1291,7 +1317,7 @@ RegisterDiffusionData[
   
   (*export diffusion reg target*)
   CreateDirectory[tempDir<>"\\vol0000"];
-  ExportNii[dtidatar[[All,1]],vox,tempDir<>"\\vol0000\\moving-3D.nii",NumberType->"Real",CompressNii->False];
+  ExportNii[dtidatar[[All,1]],vox,tempDir<>"\\vol0000\\moving-3D.nii"];
   
   (*get vol folders and anat transform files*)
   volDirs = FileNames["vol*", tempDir, 1];
