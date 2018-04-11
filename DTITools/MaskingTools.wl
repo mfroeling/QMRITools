@@ -134,9 +134,11 @@ MaskClosing::usage =
 MaskFiltKernel::usage =
 "MaskFiltKernel is an option for SmoothMask and SmoothSegmentation. How mucht the contours are smoothed." 
 
-MeanOutput::usgae = 
+MeanOutput::usage = 
 "MeanOutput is an option for NormalizeDiffData. If True it will also output the normalization factor."
 
+GetMaskOutput::usage = 
+"GetMaskOutput is an option for GetMaskData. Defaul is \"Slices\" which gives the mask data per slices. Else the entire mask data is given as output."
 
 
 (* ::Subsection::Closed:: *)
@@ -410,17 +412,28 @@ Module[{mask,tresh},
 (* ::Subsection::Closed:: *)
 (*GetMaskData*)
 
+Options[GetMaskData] = {GetMaskOutput -> "Slice"}
 
-SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _}};
+SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-GetMaskData[data_?ArrayQ,mask_?ArrayQ]:=
-Module[{depth},
+GetMaskData[data_?ArrayQ, mask_?ArrayQ, OptionsPattern[]] := Module[{depth,fdat},
 	If[Dimensions[data]!=Dimensions[mask],
-		Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]],
-		depth=ArrayDepth[data];
-		Map[Flatten[#]&,DeleteCases[N[data*mask],0.,{depth}],{depth-2}]
+		Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]]
+		,
+		Switch[OptionValue[GetMaskOutput],
+			"Slices",
+			depth=ArrayDepth[data];
+			Map[(
+				fdat=Flatten[N@#];
+				Pick[fdat, Unitize[fdat], 1]
+				)&,	data*mask, {depth-2}],
+			_
+			,
+			fdat=N@Chop[Flatten[N[data mask]]];
+			Pick[fdat, Unitize[fdat], 1]
 		]
 	]
+]
 
 
 (* ::Subsection:: *)
@@ -683,7 +696,7 @@ ScaleData =
 
 NormalizeDatai = Block[{mn},
    Compile[{{data, _Real, 3}, {quant, _Real, 0}},
-    mn = Quantile[DeleteCases[Flatten[data], 0.], quant];
+    mn = Quantile[Cases[Flatten[data], Except[0.]], quant];
     data/mn, {{mn, _Real, 0}}, RuntimeAttributes -> {Listable}, 
     RuntimeOptions -> "Speed"]
    ];
@@ -714,7 +727,7 @@ SyntaxInformation[HomoginizeData] = {"ArgumentsPattern" -> {_, _}};
 HomoginizeData[datai_, mask_] := 
  Module[{data, mn, fit, datac, maskout},
   data = mask GaussianFilter[datai, 5];
-  mn = Mean[DeleteCases[Flatten[N[data]],0.]];
+  mn = Mean[Cases[Flatten[N[data]],Except[0.]]];
   fit = FitGradientMap[Erosion[mask, 3] data];
   
   datac = (datai/(fit + 0.001));

@@ -1032,9 +1032,9 @@ If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempdir,DeleteContents->True
 
 (*If[type=="series"&&ArrayDepth[data]==4,data=Transpose[data]];*)
 
-If[OptionValue[OutputTransformation],
+Chop[If[OptionValue[OutputTransformation],
 	{Clip[data,MinMax[moving]],w},
-	Clip[data,MinMax[moving]]
+	Clip[data,MinMax[moving]],10^-6]
 ]
 ]
 
@@ -1559,9 +1559,8 @@ tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\D
 If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
 
 slices=Range[Length[data]];
-maskr=If[mask=={1},ConstantArray[1,Dimensions[data[[All,1]]]],mask];
-
 size=Length[data[[1]]];
+maskr=If[mask=={1},ConstantArray[1,Dimensions[data[[All,1]]]],mask];
 
 target=If[OptionValue[MethodReg]==="PCA"||OptionValue[MethodReg]==="cyclyc","stack",OptionValue[RegistrationTarget]];
 
@@ -1580,7 +1579,6 @@ Monitor[
 	(i++;RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],vox},
 		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 	"stack",
-	size=Length[data[[1]]];
 	(i++;RegisterData[{data[[#]],ConstantArray[maskr[[#]],size],vox},
 		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices
 	]

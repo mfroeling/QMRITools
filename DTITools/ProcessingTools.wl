@@ -322,10 +322,12 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 	If[dirB!=dirD,Return[Message[TensorCalc::bvec,dirD,dirB];$Failed]];
 	
 	(*define data*)
-	dataL=LogNoZero[Chop[data]];	
+	dataL=Chop[LogNoZero[Chop[data]]];	
 	(*calculate the inverse bmat*)
 	bmatI=PseudoInverse[bmat];
 	
+	System`SetSystemOptions["CheckMachineUnderflow" -> False];
+	ParallelEvaluate[System`SetSystemOptions["CheckMachineUnderflow" -> False]];
 	(*if data is 4D handle as multiple 3D sets (saves memory and calculation time)*)
 	If[depthD==4,
 		
@@ -355,7 +357,8 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		,(*1D,2D,3D*)
 		tensor=TensorCalci[data,dataL,bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}];
 	];
-	
+	System`SetSystemOptions["CheckMachineUnderflow" -> True];
+	ParallelEvaluate[System`SetSystemOptions["CheckMachineUnderflow" -> True]];
 	tensor
 ]
 
@@ -399,7 +402,7 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 (*FindOutliers*)
 
 
-FindOutliers = Block[{ittA,itt,contA,cont,sol,solA,soli,res,weigths, wmat,fitE,LS2,bmat2,mad,out}, 
+FindOutliers = Quiet@Block[{ittA,itt,contA,cont,sol,solA,soli,res,weigths, wmat,fitE,LS2,bmat2,mad,out}, 
   	Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}},
   		If[AllTrue[LS, 0. === # &]||Total[Unitize[LS]]<7,
   			(*skip if background*)
@@ -432,6 +435,7 @@ FindOutliers = Block[{ittA,itt,contA,cont,sol,solA,soli,res,weigths, wmat,fitE,L
 	  					If[AllTrue[res, (0. === #) &] || mad === 0.,
 	  						cont = 0,
 	  						(*c. Recompute the weights according to Eq. [13].*)
+	  						
 	  						weigths = 1/(1 + (res/mad)^2)^2;
 	  						(*d. Perform WLLS fit with new weights*)
 	  						wmat = DiagonalMatrix[weigths];
@@ -1144,7 +1148,7 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
   met = OptionValue[Method];
   
   (*prepare data*)
-  data = DeleteCases[Flatten[dat] // N, 0.];
+  data = dat;
   (*initialization for mean and std*)
   mdat = Mean[data];
   sdat = StandardDeviation[data];
@@ -1160,14 +1164,14 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
     (*SkewNormal dist parameter fit*)
     "SkewNormal",
     sol = NonlinearModelFit[fdat,  PDF[SkewNormalDistribution[Mu, Sigma, Alpha], x], {{Mu, mdat}, {Sigma, sdat}, {Alpha, 0}}, x, Method -> met];
-    par = {Mu, Sigma, Alpha} /. sol["BestFitParameters"];
-    fun = SkewNormalDistribution[Mu, Sigma, Alpha] /. sol["BestFitParameters"];
+    par = sol["BestFitParameters"];
+    fun = SkewNormalDistribution[Mu, Sigma, Alpha] /. par;
     ,
     (*Normal dist parameter fit*)
     "Normal",
     sol = NonlinearModelFit[fdat, PDF[NormalDistribution[Mu, Sigma], x], {{Mu, mdat}, {Sigma, mdat/2}}, x];
-    par = {Mu, Sigma} /. sol["BestFitParameters"];
-    fun = NormalDistribution[Mu, Sigma] /. sol["BestFitParameters"];
+    par = sol["BestFitParameters"];
+    fun = NormalDistribution[Mu, Sigma] /. par;
     ,
     _,
     Message[ParameterFit::func, mod]]
@@ -1177,13 +1181,13 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
   (*generate Output*)
   Switch[out,
    "Parameters",
-   par,
+   {Mean[fun], StandardDeviation[fun]},
    "ParametersExtra",
    Flatten[{Mean[fun], StandardDeviation[fun], Quantile[fun, {.5, .05, .95}]}],
    "Function",
    sol,
    "BestFitParameters",
-   sol["BestFitParameters"],
+   par,
    _, Message[ParameterFit::outp, out]
    ]
   ]
@@ -1197,7 +1201,7 @@ Options[ParameterFit2]={FitOutput->"BestFitParameters"}
 
 SyntaxInformation[ParameterFit2] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-ParameterFit2[dat_List,OptionsPattern[]]:=
+ParameterFit2[dat_List, OptionsPattern[]]:=
 Module[{i,datf,init,out,sol,par,
 	Omega1i,Omega2i,Alpha1i,Alpha2i,Xi1i,Xi2i,
 	Omega1,Xi1,Alpha1,Omega2,Xi2,Alpha2},
@@ -1210,7 +1214,7 @@ Module[{i,datf,init,out,sol,par,
 		{.2,.2,0,0,.6,1.7},
 		{.2,.2,0,0,.3,.2}
 		};
-	datf=DeleteCases[DeleteCases[Flatten[#]//N,0.],1.]&/@dat;
+	datf=Cases[Cases[Flatten[#]//N,Except[0.]],Except[1.]]&/@dat;
 	out=OptionValue[FitOutput];
 	i=0;
 	sol=MapThread[
@@ -1283,12 +1287,10 @@ GetMaskMeans[dat_, mask_, opts:OptionsPattern[]] := GetMaskMeans[dat, mask, "", 
 
 GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] := 
  Block[{labels, out, fl},
-  labels = If[name==="",
-  	{"mean", "std", "Median", "5%", "95%"},
-  	name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
+  labels = If[name==="", {"mean", "std", "Median", "5%", "95%"}, name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
   ];
   out = (
-      fl = Flatten[GetMaskData[dat, #]];
+      fl = GetMaskData[dat, #, GetMaskOutput -> All];
       Switch[OptionValue[MeanMethod],
        "NormalDist",
        ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "Normal"],
@@ -1445,7 +1447,7 @@ SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, k_?NumberQ, OptionsPattern[]] :=
  Module[{noise, signal, sigma, snr},
   noise = (data1 - data2);
   signal = Mean[{data1, data2}];
-  sigma = ConstantArray[StandardDeviation[DeleteCases[Flatten[noise] // N, 0.]],Dimensions[signal]];
+  sigma = ConstantArray[StandardDeviation[Cases[Flatten[noise] // N, Except[0.]]],Dimensions[signal]];
   snr = GaussianFilter[signal/(.5 Sqrt[2] sigma), k];
   Switch[OptionValue[OutputSNR],
 	 "Sigma", sigma,
@@ -1460,7 +1462,7 @@ SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] :=
   signal = Mean[data];
   sigma = Chop[StandardDeviation[data]]-10^-15;
   div=N@Clip[signal / sigma, {0, Infinity}];
-  div=Clip[div, {0., 100 Median[DeleteCases[Flatten[div], 0.]]}];
+  div=Clip[div, {0., 100 Median[Cases[Flatten[div], Except[0.]]]}];
   snr = GaussianFilter[div, k];
   
   Switch[OptionValue[OutputSNR],
@@ -1548,7 +1550,7 @@ FiberDensityMap[fibers_, dim_, vox_, OptionsPattern[]] :=
   (*Print[{(Times @@ vox)/0.75,Median[DeleteCases[Flatten[density], 0]]}];*)
   dens = If[NumberQ[densi],
     Times @@ (vox/densi),
-    Median[DeleteCases[Flatten[density], 0]]
+    Median[Cases[Flatten[density], Except[0]]]
     ];
   Clip[NormalizeDens[density, dens], {0., 10.}]
   ]

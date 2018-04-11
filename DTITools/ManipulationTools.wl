@@ -345,100 +345,94 @@ FindCropVals[data_, add_] := Module[{pos(*, partpos, diff, postr*)},
 (*CropData*)
 
 
-Options[CropData] = {CropOutput -> "All"};
+Options[CropData] = {CropOutput -> "All", CropInit->Automatic};
 
 SyntaxInformation[CropData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-CropData[data_, vox : {_?NumberQ, _?NumberQ, _?NumberQ} : {1, 1, 1}, OptionsPattern[]] :=
-  Block[{a, b, c, d, e, f, clipall, dd, dataout,output},
-   
-   dd = ArrayDepth[data];
-   NotebookClose[cropwindow];
-   
-   DynamicModule[{outp, size, dat, zd, xd, yd, r1, r2, r3},
+CropData[data_, opts:OptionsPattern[]] := CropData[data, {1,1,1}, opts]
+
+CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Block[
+	{a, b, c, d, e, f, clipall, dd, dataout, output, init},
+	
+	NotebookClose[cropwindow];
+	dd = ArrayDepth[data];
+
+	DynamicModule[{dat, zd, xd, yd, outp, size,  r1, r2, r3},
+		
+		dat = Switch[dd, 4,  Mean@Transpose@data, 3, dat = data, _, Return[]];
+		{zd, xd, yd} = Dimensions[dat];
+		
+		clipall = Ceiling[{0.5, zd - 0.5, 0.5, xd - .5, 0.5, yd - .5}];
     
-    Switch[dd, 4, dat = data[[All, 1]], 3, dat = data, _, Return[]];
+	    r1 = (vox[[2]]*xd)/(vox[[3]]*yd);
+	    r2 = (vox[[1]]*zd)/(vox[[3]]*yd);
+	    r3 = (vox[[1]]*zd)/(vox[[2]]*xd);
     
-    {zd, xd, yd} = Dimensions[dat];
-    clipall = Ceiling[{0.5, zd - 0.5, 0.5, xd - .5, 0.5, yd - .5}];
-    
-    r1 = (vox[[2]]*xd)/(vox[[3]]*yd);
-    r2 = (vox[[1]]*zd)/(vox[[3]]*yd);
-    r3 = (vox[[1]]*zd)/(vox[[2]]*xd);
-    
-    size = Min[{r1, r2, r3}] 400;
-    
+  		size = Min[{r1, r2, r3}] 400;
+  		
+  		init = OptionValue[CropInit];
+  		init = If[ListQ[init] && Length[init]==6,
+  			{0, 0, xd+1, xd+1, 0, 0} + {1, 1, -1, -1, 1, 1} init[[{1,2,4,3,5,6}]],
+  			{1,zd,1,xd,1,yd}
+  			];
+     
     cropwindow = DialogInput[
       {
        DefaultButton[],
 
        Manipulate[
         outp = Ceiling[{zmin, zmax, xd - xmax, xd - xmin, ymin, ymax}];
+        
         Grid[
-         {{
-           LocatorPane[Dynamic[{{ymin, xmax}, {ymax, xmin}}],
-            
-            Show[ArrayPlot[dat[[z]], ColorFunction -> "GrayTones", 
-              Frame -> False, AspectRatio -> r1, 
-              ImageSize -> size/r2], 
-             Graphics[{Red, Thick, 
-               Dynamic[
-                Line[{{ymin, xmin}, {ymin, xmax}, {ymax, xmax}, {ymax,
-                    xmin}, {ymin, xmin}}]], Green, 
-               Line[{{y - 0.5, -10}, {y - 0.5, xd + 10}}], Blue, 
-               Line[{{-10, xd - x + 0.5}, {yd + 10, xd - x + 0.5}}], 
-               Red, Dynamic[
-                Circle[Mean[{{ymin, xmin}, {ymax, xmax}}], 2]]}], 
-             PlotRange -> {{0, yd}, {0, xd}}], {{0.5, 0.5}, {yd - 0.5,
-               xd - 0.5}}, 
-            Appearance -> Graphics[{Red, Disk[]}, ImageSize -> 10]]
-           }, {
-           LocatorPane[Dynamic[{{ymin, zmax}, {ymax, zmin}}],
-            
-            Show[ArrayPlot[Reverse[dat[[All, x]]], 
-              ColorFunction -> "GrayTones", Frame -> False, 
-              AspectRatio -> r2, ImageSize -> size/r2], 
-             Graphics[{Blue, Thick, 
-               Dynamic[
-                Line[{{ymin, zmin}, {ymin, zmax}, {ymax, zmax}, {ymax,
-                    zmin}, {ymin, zmin}}]], Green, 
-               Line[{{y - 0.5, -10}, {y - 0.5, zd + 10}}], Red, 
-               Line[{{-10, z - 0.5}, {yd + 10, z - 0.5}}], Blue, 
-               Dynamic[
-                Circle[Mean[{{ymin, zmin}, {ymax, zmax}}], 2]]}], 
-             PlotRange -> {{0, yd}, {0, zd}}], {{0.5, 0.5}, {yd - 0.5,
-               zd - 0.5}}, 
-            Appearance -> Graphics[{Blue, Disk[]}, ImageSize -> 10]]
-           ,
-           LocatorPane[Dynamic[{{xmin, zmax}, {xmax, zmin}}],
-            
-            Show[ArrayPlot[Reverse /@ Reverse[dat[[All, All, y]]], 
-              ColorFunction -> "GrayTones", Frame -> False, 
-              AspectRatio -> r3, ImageSize -> size/r3], 
-             Graphics[{Green, Thick, 
-               Dynamic[
-                Line[{{xmin, zmin}, {xmin, zmax}, {xmax, zmax}, {xmax,
-                    zmin}, {xmin, zmin}}]], Blue, 
-               Line[{{x - 0.5, -10}, {x - 0.5, zd + 10}}], Red, 
-               Line[{{-10, z - 0.5}, {xd + 10, z - 0.5}}], Green, 
-               Dynamic[
-                Circle[Mean[{{xmin, zmin}, {xmax, zmax}}], 2]]}], 
-             PlotRange -> {{0, xd}, {0, zd}}], {{0.5, 0.5}, {xd - 0.5,
-               zd - 0.5}}, 
-            
-            Appearance -> 
-             Graphics[{Green, Disk[]}, ImageSize -> 10]]}}, 
-         Spacings -> 0],
+         {
+         	{Dynamic[Row[{"size: ", Ceiling[{zmax-zmin,xmax-xmin,ymax-ymin}]},"   "]]},
+         	{
+     		LocatorPane[Dynamic[{{ymin, xmax}, {ymax, xmin}}],
+                Show[ArrayPlot[dat[[z]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r1, ImageSize -> size/r2],
+            	Graphics[{
+            		Red, Thick, Dynamic[Line[{{ymin, xmin}, {ymin, xmax}, {ymax, xmax}, {ymax, xmin}, {ymin, xmin}}]], 
+            		Green, Line[{{y - 0.5, -10}, {y - 0.5, xd + 10}}], 
+            		Blue, Line[{{-10, xd - x + 0.5}, {yd + 10, xd - x + 0.5}}], 
+            		Red, Dynamic[Circle[Mean[{{ymin, xmin}, {ymax, xmax}}], 2]]
+            		}], 
+        		PlotRange -> {{0, yd}, {0, xd}}
+            	], {{0.5, 0.5}, {yd - 0.5, xd - 0.5}}, Appearance -> Graphics[{Red, Disk[]}, ImageSize -> 10]
+             ]
+			}, {
+			LocatorPane[Dynamic[{{ymin, zmax}, {ymax, zmin}}],
+				Show[ArrayPlot[Reverse[dat[[All, x]]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r2, ImageSize -> size/r2], 
+				Graphics[{
+					Blue, Thick, Dynamic[Line[{{ymin, zmin}, {ymin, zmax}, {ymax, zmax}, {ymax, zmin}, {ymin, zmin}}]], 
+					Green, Line[{{y - 0.5, -10}, {y - 0.5, zd + 10}}], 
+					Red, Line[{{-10, z - 0.5}, {yd + 10, z - 0.5}}], 
+					Blue,  Dynamic[Circle[Mean[{{ymin, zmin}, {ymax, zmax}}], 2]]
+					}], 
+				PlotRange -> {{0, yd}, {0, zd}}
+				], {{0.5, 0.5}, {yd - 0.5, zd - 0.5}}, Appearance -> Graphics[{Blue, Disk[]}, ImageSize -> 10]]
+			,
+			LocatorPane[Dynamic[{{xmin, zmax}, {xmax, zmin}}],
+				Show[ArrayPlot[Reverse /@ Reverse[dat[[All, All, y]]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r3, ImageSize -> size/r3], 
+				Graphics[{
+					Green, Thick, Dynamic[ Line[{{xmin, zmin}, {xmin, zmax}, {xmax, zmax}, {xmax, zmin}, {xmin, zmin}}]],
+					Blue, Line[{{x - 0.5, -10}, {x - 0.5, zd + 10}}], 
+					Red, Line[{{-10, z - 0.5}, {xd + 10, z - 0.5}}], 
+					Green, Dynamic[Circle[Mean[{{xmin, zmin}, {xmax, zmax}}], 2]]
+					}], 
+				PlotRange -> {{0, xd}, {0, zd}}
+				], {{0.5, 0.5}, {xd - 0.5, zd - 0.5}}, Appearance -> Graphics[{Green, Disk[]}, ImageSize -> 10]]
+			}}, Spacings -> 0]
+			
+			,
         {{z, Round[zd/2], "slice"}, 1, zd, 1},
         {{x, Round[xd/2], "row"}, 1, xd, 1},
         {{y, Round[yd/2], "column"}, 1, yd, 1},
-        {{xmin, 0.5}, 1, xmax - 1, ControlType -> None},
-        {{xmax, xd - 0.5}, xmin + 1, xd, ControlType -> None},
-        {{ymin, 0.5}, 1, ymax - 1, ControlType -> None},
-        {{ymax, yd - 0.5}, ymin + 1, yd, ControlType -> None},
-        {{zmin, 0.5}, 1, zmax - 1, ControlType -> None},
-        {{zmax, zd - 0.5}, zmin + 1, zd, ControlType -> None},
-SynchronousUpdating->True
+        {{xmin, init[[3]] - 0.5}, 1, xmax - 1, ControlType -> None},
+        {{xmax, init[[4]] - 0.5}, xmin + 1, xd, ControlType -> None},
+        {{ymin, init[[5]] - 0.5}, 1, ymax - 1, ControlType -> None},
+        {{ymax, init[[6]] - 0.5}, ymin + 1, yd, ControlType -> None},
+        {{zmin, init[[1]] - 0.5}, 1, zmax - 1, ControlType -> None},
+        {{zmax, init[[2]] - 0.5}, zmin + 1, zd, ControlType -> None},
+        SynchronousUpdating->True
         
         ]
        
@@ -633,9 +627,9 @@ Module[{data,step,undim,out,mon},
 (*Unwrap*)
 
 
-Options[UnwrapSplit] = Options[Unwrap]
+Options[UnwrapSplit] = Options[UnwrapSplit]
 
-SyntaxInformation[Unwrap] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[UnwrapSplit] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 UnwrapSplit[phase_, mag_,opts:OptionsPattern[]] := Module[{cutVal, phaseSplit, B0split},
   cutVal = CutData[mag][[3]];
@@ -1302,7 +1296,7 @@ Module[{sets,set1,set2,step,set1over,set2over,joined},
 
 
 JoinSetsi[data_?ArrayQ,overlap_?ListQ,OptionsPattern[]]:=
-Module[{data,sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1,drop2,overl},
+Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1,drop2,overl},
 	
 	sets=Length[data];
 	
@@ -1359,7 +1353,7 @@ Joini[sets_, setover_, step_] := Module[{over,dato,unit,noZero,tot},
   (*merge the overlapping data*)
   over = TransData[JoinFuncC[dato, noZero, tot, step], "r"];
   (*merge the non ovelap with the overlap*)
-  Join[sets[[1]], over, sets[[2]]]
+  Chop[Join[sets[[1]], over, sets[[2]]]]
   ]
 
 
@@ -1592,9 +1586,9 @@ Switch[dir,
 *)
 
 TransData[data_,dir_]:=Block[{ran,dep,fun},
-ran=Range[dep=ArrayDepth[data]];
-fun=Switch[dir,"r",RotateLeft[ran],"l",RotateRight[ran]];
-Transpose[data,fun]
+	ran=Range[dep=ArrayDepth[data]];
+	fun=Switch[dir,"r",RotateLeft[ran],"l",RotateRight[ran]];
+	Transpose[data,fun]
 ]
 
 

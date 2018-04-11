@@ -1432,7 +1432,7 @@ Options[Hist] = {ColorValue -> {{Black,White}, Red, Green, Blue}, Method -> "Ske
 
 SyntaxInformation[Hist] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-Hist[dat_, ops : OptionsPattern[]] := Hist[dat, 2, ops]
+Hist[dat_, ops : OptionsPattern[]] := Hist[dat, 0, ops]
 
 Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, coledge, color2, color3, color4, data, r1, r2, sdr, m, s, title, label,mn,std},
   
@@ -1443,13 +1443,17 @@ Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, cole
   label = OptionValue[AxesLabel];
   label = If[label === "", None, label];
   
-  data = DeleteCases[Flatten[dat]// N, 0.];
-  {r1, r2} = If[IntegerQ[range],
-    sdr = range;
-    {m, s} = {Mean[data], StandardDeviation[data]};
-    {(m - sdr s), (m + sdr s)},
-    range
-    ];
+  fdat = N@Flatten[dat];
+  data=Pick[fdat, Unitize[fdat], 1];
+  
+  {r1, r2} = If[range===0,
+  	Quantile[data, {0.01, .99}],
+  	If[IntegerQ[range],
+  		sdr = range;
+  		{m, s} = {Mean[data], StandardDeviation[data]};
+  		{(m - sdr s), (m + sdr s)},
+  		range
+    ]];
 
   Switch[OptionValue[Method],
    "None",
@@ -1478,7 +1482,7 @@ Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, cole
    ];
   
   hist = Histogram[
-    Select[data, (r1 < # < r2) &], {r1, r2, (r2 - r1)/50}, 
+    Select[data, (r1 < # < r2) &], {r1, r2, (r2 - r1)/30}, 
     "ProbabilityDensity",
     PerformanceGoal -> "Speed", PlotRange -> {{r1, r2}, All},
     PlotLabel -> title, LabelStyle -> labStyle, Axes -> False, 

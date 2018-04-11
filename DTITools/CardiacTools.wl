@@ -460,8 +460,9 @@ out = Flatten[Table[
 	sign=If[(j==1 && i==1),Sign2[inp],1];
 	sign helix
 	, {i, 3}, {j, 3}],1];
-
-	sp = Round[Dimensions[mask]/{12, 24, 24}];
+	
+	sp = Ceiling[Dimensions[mask]/{12, 24, 24}];
+	
 	{spz,spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
 
 If[OptionValue[ShowHelixPlot],
