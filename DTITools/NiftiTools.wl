@@ -498,7 +498,7 @@ ImportExport`RegisterImport[
   "AvailableElements" -> {"Data", "Header", "VoxelSize", "TR", 
     "RotationMatrix", "Units", "Scaling"},
   "OriginalChannel" -> True,
-  "Options" -> {NiiScaling}
+  "Options" -> {NiiScaling, NiiFlip}
   ];
   
 
@@ -508,7 +508,7 @@ ImportExport`RegisterImport[
 (*ImportNii*)
 
 
-Options[ImportNii] = {NiiMethod -> "default", NiiScaling -> False};
+Options[ImportNii] = {NiiMethod -> "default", NiiScaling -> False, NiiFlip->True};
 
 SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_., OptionsPattern[]}};
 
@@ -536,7 +536,8 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 	(*stop if ther is no file*)
 	If[file == Null || file === $Canceled || file === $Failed, Message[Import::nffil,fil];Return[$Failed,Module]];
 	
-	opt= NiiScaling->OptionValue[NiiScaling];
+	opt = NiiScaling->OptionValue[NiiScaling];
+	opt2 = NiiFlip->OptionValue[NiiFlip];
 	
 	output=Switch[what,
 		"data", Import[file, {"nii", "Data"}, opt],
@@ -590,8 +591,7 @@ GetNiiInformation[hdr_] :=
 (*ImportNiiDefault*)
 
 
-Options[ImportNiiDefault] = {"Channel" -> Null, 
-   "ExtensionParsing" -> False, NiiScaling -> False, NiiInfo -> False};
+Options[ImportNiiDefault] = {"Channel" -> Null, "ExtensionParsing" -> False, NiiScaling -> False, NiiInfo -> False, NiiFlip->True};
 
 ImportNiiDefault[file_, opts : OptionsPattern[]] := 
  Module[{hdr, data, byteOrder, dataInfo, info, scaling},
@@ -608,8 +608,11 @@ ImportNiiDefault[file_, opts : OptionsPattern[]] :=
   (*flip dimensions*)
   If[info[[8]] === 4, data = Transpose[data, {2, 1, 3, 4}]];
   data = Map[Reverse[#] &, data, {info[[8]] - 2}];
-  (*If[Positive[("sRowx" /. hdr)[[1]]], data = Map[Reverse[#] &, data, {info[[8]] - 1}]];*)
-  data = Map[Reverse[#] &, data, {info[[8]] - 1}];
+  If[OptionValue[NiiFlip],
+  	If[Positive[("sRowx" /. hdr)[[1]]+10^-10], data = Map[Reverse[#] &, data, {info[[8]] - 1}]];
+  	,
+  	data = Map[Reverse[#] &, data, {info[[8]] - 1}];
+  ];
   
   (*scale data*)
   scaling = If[info[[1]] =!= {"Byte", "Byte", "Byte"}, info[[6]] + info[[5]] # &, Identity];
@@ -641,8 +644,7 @@ ImportNiiInfo[file_, opts : OptionsPattern[ImportNiiDefault]] := ImportNiiDefaul
 (*ImportNiiData*)
 
 
-ImportNiiData[file_, {type_, size_, dim_, off_}, byteorder_, 
-  OptionsPattern[ImportNiiDefault]] := Module[{datafile, strm, data},
+ImportNiiData[file_, {type_, size_, dim_, off_}, byteorder_, OptionsPattern[ImportNiiDefault]] := Module[{datafile, strm, data},
   
   datafile = ConvertNiiExtention[file, OptionValue["Channel"], "img"];
   
@@ -965,7 +967,6 @@ ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] :=
   header = MakeNiiHeader[rule, ver, opts];
   If[header === $Failed, Return[$Failed, Module]];
   {header, type} = header;
-  
   (*get the data*)
   data = "Data" /. rule;
   (*write to file*)
