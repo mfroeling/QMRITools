@@ -437,134 +437,56 @@ GetMaskData[data_?ArrayQ, mask_?ArrayQ, OptionsPattern[]] := Module[{depth,fdat}
 
 
 (* ::Subsection:: *)
-(*Smart masking*)
+(*SmartMask*)
 
 
-(* ::Subsubsection::Closed:: *)
-(*SmartMask2*)
+Options[SmartMask]={Strictness->.50, Compartment->"Muscle", Method->"Continuous", Reject->True, Output->"mask"};
 
+SyntaxInformation[SmartMask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-Options[SmartMask2]={Strictness->.75,Compartment->"Muscle",Method->"Continuous",Reject->True,Output->"mask"};
+SmartMask[input_,ops:OptionsPattern[]]:=SmartMask[input, 0, ops]
 
-SyntaxInformation[SmartMask2] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
-
-SmartMask2[input_,ops:OptionsPattern[]]:=SmartMask2[input,0,ops]
-
-SmartMask2[input_,m_,OptionsPattern[]]:=
-Module[{sol,func,range,map,mask,pmask,Omega,Xi,Alpha,pars},
-	pars=If[Length[input]==6,
+SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
+	sol,func,range,map,mask,pmask,pars
+	},
+	
+	(*get the parameter from the tensor else use input parameters*)
+	pars = If[Length[input]==6,
 		PrintTemporary["Caculating Parameters"];
 		ParameterCalc[input,Reject->OptionValue[Reject]],
 		input];
 	
-	sol=If[m===0,
+	pmask = Mask[pars[[4]] , {0.1, 4}];
+	
+	(*find the histogram solution*)
+	sol=If[maski===0,
 		Switch[
 			OptionValue[Compartment],
 			"Muscle",
 			ParameterFit2[pars][[All,{3,5,7}]],
 			"Fat",
 			ParameterFit2[pars][[All,{2,4,6}]]
-			],
-		ParameterFit[Flatten[m*#]&/@pars,FitOutput->"BestFitParameters"]
+			]
+			,
+			ParameterFit[GetMaskData[#,maski pmask]&/@pars,FitOutput->"BestFitParameters"]
 		];
 	
-	pmask=Mask[pars[[1]],{0.00001}];
+	
 	Switch[OptionValue[Method],
 		"Catagorical",
-		range=(func=SkewNormalDistribution[#[[2]],#[[1]],#[[3]]];{Quantile[func,.02],Quantile[func,.98]})&/@sol;
+		range = (func = SkewNormalDistribution[#2[[1]], #2[[2]], #2[[3]]]; Quantile[func, {.02, .98}]) & /@ sol;
+		range = Clip[range, {0, Infinity}, {10^-3, 0.}];
 		map = Total[MapThread[Mask[#1,#2]&,{pars,range}]]/5;
 		mask = pmask * Mask[TotalVariationFilter[map,.15],{OptionValue[Strictness]}];
 		,
 		"Continuous",
-		map = MapThread[({Omega, Xi, Alpha} = #2;Map[SkewNormC[#, Omega, Xi, Alpha] &, #1, {ArrayDepth[#1]}]) &, {pars, sol}];
+		map = MapThread[PDF[SkewNormalDistribution[#2[[1]], #2[[2]], #2[[3]]], #1] &, {pars, sol}];
 		map = Total[{1, 1, 1, 1, 2}*(#/Max[#] & /@ map)]/6;
-		mask = pmask * Mask[TotalVariationFilter[map, .35], {OptionValue[Strictness]}];
-		(*map=Total[MapThread[({Omega,Xi,Alpha}=#2;Map[SkewNormC[#,Omega,Xi,Alpha]&,#1,{ArrayDepth[#1]}])&,{pars,sol}]];
-		Mask[TotalVariationFilter[map/Max[map],.15],{OptionValue[Strictness]}]*)
+		mask = pmask * Mask[TotalVariationFilter[map, .25], {OptionValue[Strictness]}];
 		];
 		
 		If[OptionValue[Output]==="mask",mask,{mask,map}]
 	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*SmartMask*)
-
-
-Options[SmartMask]={Smoothing->False,SmoothMaskFactor->.2,OptimizationRuns->1,MaskRange->.8,Strictness->5,Reject->True}
-
-SyntaxInformation[SmartMask] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
-
-SmartMask[input_,mask_,OptionsPattern[]]:=
-Module[{data,smooth,sol,spread,smask=mask,tmask,x,Alpha,range,w,sel,strict,runs,smf,Mu,Sigma},
-	Off[NonlinearModelFit::"cvmit"];Off[NonlinearModelFit::"sszero"];
-	
-	(*get option values*)
-	range=0.5*Clip[OptionValue[MaskRange],{0.05,0.95}];
-	{w,sel,strict}=Stricti[Clip[OptionValue[Strictness],{0,6}]];
-	smf=OptionValue[SmoothMaskFactor];
-	runs=OptionValue[OptimizationRuns];
-	smooth=OptionValue[Smoothing];
-	
-	(*see if data is tensor, if so calculate diffusion parameters, if not asume its diffusion parameters*)
-	data=If[Length[input]==6,PrintTemporary["Caculating Parameters"];ParameterCalc[input,Reject->OptionValue[Reject]],data=input];
-	
-	PrintTemporary["Making mask"];
-	
-	(*Loop Throug optimization runs*)
-	Do[
-		(*Get the solution of the parameter fit for each of the parameters*)
-		sol=(NonlinearModelFit[FitData[Flatten[GetMaskData[#,smask]]],PDF[SkewNormalDistribution[Mu,Sigma,Alpha],x],{Mu,Sigma,Alpha},x]["BestFitParameters"])&/@data;
-		(*calculate the range of the data selection*)
-		spread={Quantile[SkewNormalDistribution[Mu,Sigma,Alpha],0.5-range],Quantile[SkewNormalDistribution[Mu,Sigma,Alpha],0.5+range]}/.sol;
-		(*calculate cluster map*)
-		tmask=Total[MapThread[Mask[#1,#2,Smoothing->False]&,{data,spread}][[sel]]];
-		
-		(*chose masking method*)
-		smask=Switch[smooth,
-			"Raw",(*returns raw cluster map*)
-			Return[tmask],
-			True,(*returns smoothed mask*)
-			Round[TotalVariationFilter[tmask,smf]/w],
-			False,(*Returns unsmoothed mask*)
-			Round[tmask/w]
-			];
-		
-		(*is strickt is 6 confine mask to input mask*)
-		smask=If[strict==6,mask*smask,smask];
-		
-		(*end loop*)
-		,{runs}
-		];
-	
-	On[NonlinearModelFit::"cvmit"];On[NonlinearModelFit::"sszero"];
-	Return[smask]
-	];
-
-
-(* ::Subsubsection::Closed:: *)
-(*Stricti*)
-
-
-(* stricktness can be number between 1 and 6 or a vector containing numbers between 1 and 6*)
-Stricti[x_?NumberQ]:={x,Range[5],x}
-Stricti[x:{_?NumberQ...}]:={Length[DeleteCases[x,6]],DeleteCases[x,6],Max[x]}
-Stricti[x:{_?NumberQ,_?ListQ}]:={Clip[x[[1]],{1,Length[DeleteCases[x[[2]],6]]}],DeleteCases[x[[2]],6],Max[x]}
-
-
-(* ::Subsubsection::Closed:: *)
-(*Probability functions*)
-
-
-Phi[x_]:=1/(E^(x^2/2)*Sqrt[2*Pi]);
-CapitalPhi[x_]:=.5(1+Erf[(x)/Sqrt[2]]);
-SkewNorm[x_,Omega_,Xi_,Alpha_]:=(2/Omega)Phi[(x-Xi)/Omega]CapitalPhi[Alpha (x-Xi)/Omega];
-Delta[a_]:=a/Sqrt[1+a^2];
-Mn[w_,e_,a_]:=e+w Delta[a] Sqrt[2/Pi];
-Var[w_,a_]:=w^2(1-(2Delta[a]^2/Pi));
-SkewNormC=Compile[{{x, _Real},{Omega, _Real},{Xi, _Real},{Alpha, _Real}},
-Chop[(2/Omega)(1/(E^(((x-Xi)/Omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((Alpha (x-Xi)/Omega))/Sqrt[2]]))]
-];
 
 
 (* ::Subsection::Closed:: *)

@@ -1152,14 +1152,17 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
   (*initialization for mean and std*)
   mdat = Mean[data];
   sdat = StandardDeviation[data];
-  (*fit data*)
-  fdat = FitData[data];
   
   Off[NonlinearModelFit::"cvmit"]; Off[NonlinearModelFit::"sszero"];
-  (*perform the fit*)
+  
+  
+  (*perform the fit for one compartment*)
   If[Length[data] <= 10,
    Print["Not Enough data in the ROI"];
    ,
+   (*fit data*)
+   fdat = FitData[data];
+   
    Switch[mod,
     (*SkewNormal dist parameter fit*)
     "SkewNormal",
@@ -1187,7 +1190,7 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
    "Function",
    sol,
    "BestFitParameters",
-   par,
+   par[[All,2]],
    _, Message[ParameterFit::outp, out]
    ]
   ]

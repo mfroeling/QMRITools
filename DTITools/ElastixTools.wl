@@ -421,8 +421,15 @@ _,
 
 
 FindElastix[]:=Module[{fil1,fil2},
-	fil1=$UserBaseDirectory<>"\\Applications\\DTITools\\Applications\\elastix.exe";
-	fil2=$BaseDirectory<>"\\Applications\\DTITools\\Applications\\elastix.exe";
+	Switch[$OperatingSystem,
+		"Windows",
+		fil1=$UserBaseDirectory<>"\\Applications\\DTITools\\Applications\\elastix.exe";
+		fil2=$BaseDirectory<>"\\Applications\\DTITools\\Applications\\elastix.exe";
+		,
+		"MacOSX",
+		fil1=$UserBaseDirectory<>"/Applications/DTITools/Applications/bin/elastix";
+		fil2=$BaseDirectory<>"/Applications/DTITools/Applications/bin/elastix";
+		];
 	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error"]]
 ]
 
@@ -432,8 +439,15 @@ FindElastix[]:=Module[{fil1,fil2},
 
 
 FindTransformix[]:=Module[{fil1,fil2},
-	fil1=$UserBaseDirectory<>"\\Applications\\DTITools\\Applications\\transformix.exe";
-	fil2=$BaseDirectory<>"\\Applications\\DTITools\\Applications\\transformix.exe";
+	Switch[$OperatingSystem,
+		"Windows",
+		fil1=$UserBaseDirectory<>"\\Applications\\DTITools\\Applications\\transformix.exe";
+		fil2=$BaseDirectory<>"\\Applications\\DTITools\\Applications\\transformix.exe";
+		,
+		"MacOSX",
+		fil1=$UserBaseDirectory<>"/Applications/DTITools/Applications/bin/transformix";
+		fil2=$BaseDirectory<>"Applications/DTITools/Applications/bin/transformix";
+	];
 	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error"]]
 ]
 
@@ -443,30 +457,63 @@ FindTransformix[]:=Module[{fil1,fil2},
 
 
 RunElastix[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixed_,moving_,out_},{maskf_,maskm_}]:=Module[
-{command,inpfold,outfold,movfold,parfiles,copy,maskfFile,maskmFile},
+	{command,inpfold,outfold,movfold,parfiles,copy,maskfFile,maskmFile,elastixFol},
+	(*make elastix command based on operating system*)
+	Switch[$OperatingSystem,
+		"Windows",
+		inpfold=If[inpfol=="",tempdir,tempdir<>inpfol<>"\\"];
+		movfold=If[movfol=="",tempdir,tempdir<>movfol<>"\\"];
+		outfold=If[outfol=="",StringDrop[tempdir,-1],tempdir<>outfol];
+		
+		maskfFile=If[maskf==="",""," -fMask \""<>tempdir<>maskf<>"\""];
+		maskmFile=If[maskm==="",""," -mMask \""<>tempdir<>maskm<>"\""];
+		
+		parfiles=StringJoin[" -p \""<>tempdir<>#<>"\""&/@parfile];
+		copy=If[out=="","","copy \""<>tempdir<>outfol<>"\\result."<>ToString[Length[parfile]-1]<>".nii.gz\" \""<>tempdir<>outfol<>"\\"<>out<>"\""];
+		
+		command=
+		"\""<>elastix<>
+		"\" -f \""<>inpfold<>fixed<>
+		"\" -m \""<>movfold<>moving<>
+		"\" -out \""<>outfold<>"\""<>
+		maskfFile<>
+		maskmFile<>
+		(*"\" -p \""<>tempdir<>parfile<>*)
+		parfiles<>" > "<>movfold<>"\"output.txt\" \n"<>
+		copy<>" \n"<>
+		"exit \n";
 
-inpfold=If[inpfol=="",tempdir,tempdir<>inpfol<>"\\"];
-movfold=If[movfol=="",tempdir,tempdir<>movfol<>"\\"];
-outfold=If[outfol=="",StringDrop[tempdir,-1],tempdir<>outfol];
-
-maskfFile=If[maskf==="",""," -fMask \""<>tempdir<>maskf<>"\""];
-maskmFile=If[maskm==="",""," -mMask \""<>tempdir<>maskm<>"\""];
-
-parfiles=StringJoin[" -p \""<>tempdir<>#<>"\""&/@parfile];
-copy=If[out=="","","copy \""<>tempdir<>outfol<>"\\result."<>ToString[Length[parfile]-1]<>".nii.gz\" \""<>tempdir<>outfol<>"\\"<>out<>"\""];
-
-command=
-"\""<>elastix<>
-"\" -f \""<>inpfold<>fixed<>
-"\" -m \""<>movfold<>moving<>
-"\" -out \""<>outfold<>"\""<>
-maskfFile<>
-maskmFile<>
-(*"\" -p \""<>tempdir<>parfile<>*)
-parfiles<>" > "<>movfold<>"\"output.txt\" \n"<>
-copy<>" \n"<>
-"exit \n";
-RunProcess[$SystemShell,"StandardOutput",command];
+		,
+		"MacOSX",	
+		inpfold=If[inpfol=="",tempdir,tempdir<>inpfol<>"/"];
+		movfold=If[movfol=="",tempdir,tempdir<>movfol<>"/"];
+		outfold=If[outfol=="",StringDrop[tempdir,-1],tempdir<>outfol];
+		
+		maskfFile=If[maskf==="",""," -fMask "<>tempdir<>maskf<>" "];
+		maskmFile=If[maskm==="",""," -mMask "<>tempdir<>maskm<>" "];
+		
+		(*parfiles=StringJoin["-p "<>tempdir<>#<>""&/@parfile];*)
+		parfiles=StringJoin[" -p "<>tempdir<>#&/@parfile];
+		copy=If[out=="",""," cp "<>tempdir<>outfol<>"result."<>ToString[Length[parfile]-1]<>".nii "<>tempdir<>outfol<>""<>out];
+		
+		elastixFol=StringDrop[DirectoryName[elastix, 2], -1];
+		
+		command=
+		"export PATH="<>elastixFol<>"/bin:$PATH 
+		export DYLD_LIBRARY_PATH="<>elastixFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+		elastix<>
+		" -f "<>inpfold<>fixed<>
+		" -m "<>movfold<>moving<>
+		" -out "<>outfold<>
+		maskfFile<>
+		maskmFile<>
+		parfiles<>" > "<>movfold<>"output.txt"<>
+		"\n"<>copy<>" \n"<>
+		"exit";
+	];
+	
+	(*perform elastix on system shell*)	
+	RunProcess[$SystemShell,"StandardOutput",command];
 ]
 
 
@@ -475,31 +522,60 @@ RunProcess[$SystemShell,"StandardOutput",command];
 
 
 ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixed_,moving_,out_},{maskf_,maskm_}]:=Block[
-{command,inpfold,outfold,movfold,maskfFile,
-maskmFile,outfile,parfiles,copy},
-
-inpfold=If[inpfol=="",tempdir,tempdir<>inpfol<>"\\"];
-movfold=If[movfol=="",tempdir,tempdir<>movfol<>"\\"];
-outfold=If[outfol=="",StringDrop[tempdir,-1],tempdir<>outfol];
-outfile=outfold<>"\\"<>out;
-
-maskfFile=If[maskf==="",""," -fMask \""<>tempdir<>maskf<>"\""];
-maskmFile=If[maskm==="",""," -mMask \""<>tempdir<>maskm<>"\""];
-
-parfiles=StringJoin[" -p \""<>tempdir<>#<>"\""&/@parfile];
-copy=If[out=="","","@ copy \""<>outfold<>"\\result."<>ToString[Length[parfile]-1]<>".nii.gz\" \""<>outfile<>"\""];
-
-command=
-"@ \""<>elastix<>
-"\" -f \""<>inpfold<>fixed<>
-"\" -m \""<>movfold<>moving<>
-"\" -out \""<>outfold<>"\""<>
-maskfFile<>
-maskmFile<>
-parfiles<>" > \""<>movfold<>"output.txt\" \n"<>
-copy<>" \n";
-
-{command,outfile}
+	{command,inpfold,outfold,movfold,maskfFile,maskmFile,outfile,parfiles,copy, elastixFol},
+	
+	(*make elastix command based on operating system*)
+	Switch[$OperatingSystem,
+		"Windows",
+		inpfold=If[inpfol=="",tempdir,tempdir<>inpfol<>"\\"];
+		movfold=If[movfol=="",tempdir,tempdir<>movfol<>"\\"];
+		outfold=If[outfol=="",StringDrop[tempdir,-1],tempdir<>outfol];
+		outfile=outfold<>"\\"<>out;
+		
+		maskfFile=If[maskf==="",""," -fMask \""<>tempdir<>maskf<>"\""];
+		maskmFile=If[maskm==="",""," -mMask \""<>tempdir<>maskm<>"\""];
+		
+		parfiles=StringJoin[" -p \""<>tempdir<>#<>"\""&/@parfile];
+		copy=If[out=="","","@ copy \""<>outfold<>"\\result."<>ToString[Length[parfile]-1]<>".nii.gz\" \""<>outfile<>"\""];
+		
+		command=
+		"@ \""<>elastix<>
+		"\" -f \""<>inpfold<>fixed<>
+		"\" -m \""<>movfold<>moving<>
+		"\" -out \""<>outfold<>"\""<>
+		maskfFile<>
+		maskmFile<>
+		parfiles<>" > \""<>movfold<>"output.txt\" \n"<>
+		copy<>" \n";
+		,
+		"MacOSX",
+		inpfold=If[inpfol=="",tempdir,tempdir<>inpfol<>"/"];
+		movfold=If[movfol=="",tempdir,tempdir<>movfol<>"/"];
+		outfold=If[outfol=="",StringDrop[tempdir,-1],tempdir<>outfol];
+		outfile=outfold<>"/"<>out;
+		
+		maskfFile=If[maskf==="",""," -fMask "<>tempdir<>maskf<>" "];
+		maskmFile=If[maskm==="",""," -mMask "<>tempdir<>maskm<>" "];
+		
+		parfiles=StringJoin[" -p "<>tempdir<>#&/@parfile];
+		copy=If[out=="",""," cp "<>outfold<>"/result."<>ToString[Length[parfile]-1]<>".nii "<>outfile];
+		
+		elastixFol = StringDrop[DirectoryName[elastix, 2], -1];
+		
+		command=
+		"export PATH="<>elastixFol<>"/bin:$PATH 
+		export DYLD_LIBRARY_PATH="<>elastixFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+		elastix<>
+		" -f "<>inpfold<>fixed<>
+		" -m "<>movfold<>moving<>
+		" -out "<>outfold<>" "<>
+		maskfFile<>
+		maskmFile<>
+		parfiles<>" > "<>movfold<>"output.txt \n"<>
+		copy<>" \n";	
+	];
+	
+	{command,outfile}
 ]
 
 
@@ -507,10 +583,22 @@ copy<>" \n";
 (*RunBatfile*)
 
 
-RunBatfile[tempdir_,command_]:=Block[{batfile},
-batfile=tempdir<>"elastix-batch.bat";
-Export[batfile,StringJoin[command],"TEXT"];
-RunProcess[$SystemShell, "StandardOutput", "\"" <> batfile <> "\"\n exit \n"];
+RunBatfile[tempdir_,command_]:=Block[{batfile,com},
+	(*make elastix sh/bat based on operating system*)
+	Switch[$OperatingSystem,
+		"Windows",
+		batfile = tempdir<>"elastix-batch.bat";
+		Export[batfile,StringJoin[command],"TEXT"];
+		com = "\"" <> batfile <> "\"\n exit \n";
+		,
+		"MacOSX",
+		batfile = tempdir<>"/elastix-bash.sh";
+		Export[batfile,StringJoin[command],"TEXT"];
+		com= "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
+	];
+	
+	(*perform sh/bat on system shell*)	
+	RunProcess[$SystemShell, "StandardOutput", com];
 ]
 
 
@@ -528,19 +616,18 @@ StringPad[x_] :=
 (*ConcatenateTransformFiles*)
 
 
-ConcatenateTransformFiles[files_, outDir_] := Module[{},
+ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile,slash},
+  (*import the transform files*)
   len = Range[Length[files]];
   filesi = Import[#, "Lines"] & /@ files;
+  slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
+  
+  (*concatenate the transform files*)
   (
-     tfile = 
-      If[# == 1, "NoInitialTransform", 
-       outDir <> "\\FinalTransform." <> ToString[# - 2] <> ".txt"];
-     filesi[[#, 4]] = 
-      "(InitialTransformParametersFileName \"" <> tfile <> "\")";
-     Export[
-      outDir <> "\\FinalTransform." <> ToString[# - 1] <> ".txt", 
-      filesi[[#]]];
-     ) & /@ len;
+  	tfile = If[# == 1, "NoInitialTransform", outDir <> slash <> "FinalTransform." <> ToString[# - 2] <> ".txt"];
+  	filesi[[#, 4]] = "(InitialTransformParametersFileName \"" <> tfile <> "\")";
+  	Export[outDir <> slash <> "FinalTransform." <> ToString[# - 1] <> ".txt", filesi[[#]]];
+  ) & /@ len;
   ]
 
 
@@ -548,29 +635,57 @@ ConcatenateTransformFiles[files_, outDir_] := Module[{},
 (*RunBatfileT*)
 
 
-RunBatfileT[tempdir_, command_] := Block[{batfile},
-  batfile = tempdir <> "\\transformix-batch.bat";
-  Export[batfile, StringJoin[command], "TEXT"];
-  RunProcess[$SystemShell, "StandardOutput", batfile <> "\n exit \n"];
-  ]
+RunBatfileT[tempdir_, command_] := Block[{batfile, com},
+	Switch[$OperatingSystem,
+		"Windows",
+		batfile = tempdir <> "\\transformix-batch.bat";
+		Export[batfile, StringJoin[command], "TEXT"];
+		com = batfile <> "\n exit \n";
+		,
+		"MacOSX",
+		batfile = tempdir <> "/transformix-bash.sh";
+		Export[batfile, StringJoin[command], "TEXT"];
+		com = "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
+	];
+	
+	RunProcess[$SystemShell, "StandardOutput", com];
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*TransformixCommand*)
 
 
-TransformixCommand[tempDir_] := Block[{volDirs, transformix},
+TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol},
   transformix = FindTransformix[];
+  transFol = StringDrop[DirectoryName[transformix, 2], -1];
+  
   volDirs = FileNames["vol*", tempDir, 1];
-  (
-     "@ \"" <> transformix <>
-      "\" -in \"" <> First[FileNames["moving*", #]] <>
-      "\" -out \"" <> # <>
-      "\" -tp \"" <> Last[FileNames["FinalTransform*", #]] <> "\"" <>
-      " > \"" <> # <> "\\outputa.txt\" \n" <>
-      "@ rename \"" <> # <> "\\result.nii.gz\" resultA-3D.nii.gz \n"
-     ) & /@ volDirs
-  ]
+  
+  Switch[$OperatingSystem,
+  	"Windows",
+  	(
+  		"@ \"" <> transformix <>
+  		"\" -in \"" <> First[FileNames["moving*", #]] <>
+  		"\" -out \"" <> # <>
+  		"\" -tp \"" <> Last[FileNames["FinalTransform*", #]] <> "\"" <>
+  		" > \"" <> # <> "\\outputa.txt\" \n" <>
+  		"@ rename \"" <> # <> "\\result.nii.gz\" resultA-3D.nii.gz \n"
+  	) & /@ volDirs
+  	,
+  	"MacOSX",
+  	(
+  		"export PATH="<>transFol<>"/bin:$PATH 
+		export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+		transformix <>
+		" -in " <> First[FileNames["moving*", #]] <>
+  		" -out " <> # <>
+  		" -tp " <> Last[FileNames["FinalTransform*", #]] <> 
+	    " > " <> # <> "/outputa.txt \n" <>
+  		" mv " <> # <> "/result.nii "<> # <> "/resultA-3D.nii \n"
+  	) & /@ volDirs
+  ];
+]
 
 
 (* ::Subsection:: *)
@@ -832,210 +947,209 @@ RegisterDatai[{target,{1},voxt},{moving,maskm,voxm},type,opts]
 
 RegisterDatai[
 {target_?ArrayQ,maskt_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},{moving_?ArrayQ,maskm_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}},
-type_,OptionsPattern[]]:=Module[
-{tdir,tempdir,elastix,targetFile,parstring,
-outputImg,iterations,resolutions,histogramBins,numberSamples,derivativeScaleA,derivativeScaleB,
-interpolationOrder,method,bsplineSpacing,data,vox,
-dimmov,dimtar,dimmovm,dimtarm,
-inpfol,movfol,outfol,fixedF,movingF,outF,parF,depth,index,
-error,regpars,lenMeth,command,outfile,fmaskF,mmaskF,maske,maske2,w,
-openCL,gpu},
-
-w={{0,0,0,0,0,0,1,1,1,0,0,0}};
-
-(*set error*)
-error=False;
-maske=False;
-
-(*get option values*)
-tdir=OptionValue[TempDirectory];
-outputImg=ToLowerCase[ToString[OptionValue[OutputImage]]];
-
-method=OptionValue[MethodReg];
-(*Print[method];*)
-
-bsplineSpacing=OptionValue[BsplineSpacing];
-bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
-derivativeScaleB=OptionValue[BsplineDirections];
-derivativeScaleA=OptionValue[AffineDirections];
-
-{openCL,gpu}=OptionValue[UseGPU];
-gpu=If[gpu===Automatic,0,gpu];
-pca=OptionValue[PCAComponents];
-
-(*Print[{derivativeScaleA,derivativeScaleB}];*)
-
-iterations=OptionValue[Iterations];
-resolutions=OptionValue[Resolutions];
-histogramBins=OptionValue[HistogramBins];
-numberSamples=OptionValue[NumberSamples];
-interpolationOrder=OptionValue[InterpolationOrderReg];
-regpars={iterations,resolutions,histogramBins,numberSamples,interpolationOrder};
-
-dimmov=Dimensions[moving];
-dimtar=Dimensions[target];
-dimmovm=Dimensions[maskm];
-dimtarm=Dimensions[maskt];
-
-(*find the elastix program*)
-elastix=FindElastix[];
-If[elastix=="error",error=True;Message[RegisterData::elastix];];
-
-(*create temp directory*)
-tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
-
-tdir=If[Last[FileNameSplit[tdir]] === "DTItoolsReg" || Last[FileNameSplit[tdir]] === "anat",
-	tdir,tdir<>"\\DTItoolsReg"
-];
-
-If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
-tempdir=CreateDirectory[tdir]<>"\\";
-If[!DirectoryQ[tempdir],Message[RegisterData::dir];Return[Message[DiffusionReg::fatal]]];
-
-(*check registration method*)
-method=If[StringQ[method],{method},method];
-If[!MemberQ[{"rigid","affine","rigidDTI","affineDTI","bspline","cyclyc","translation","PCA"},#],
-	Message[RegisterData::met,#];
-	Return[Message[DiffusionReg::fatal],Module]
-	]&/@method; 
-lenMeth=Length[method];
-
-(*only cyclyc is possible*)
-If[MemberQ[method,"cyclyc"]&&lenMeth>1,error=True];
-
-(*create parameter list*)
-regpars=If[NumberQ[#],ConstantArray[#,lenMeth],
-If[Length[#]==lenMeth,#,Message[RegisterData::par,#,lenMeth];Return[Message[DiffusionReg::fatal]];
-]]&/@regpars;
-
-(*check mask dimensions*)
-
-(*if error quit*)
-If[error,Return[Message[RegisterData::fatal]]];
-If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
-
-(*create parameter files*)
-parF=MapThread[(
-parstring=ParString[#2,{#1,outputImg},{bsplineSpacing,derivativeScaleB,derivativeScaleA,pca},{openCL,gpu}];
-parF="parameters-"<>#1<>".txt";
-Export[tempdir<>parF,parstring];
-parF
-)&,{method,Transpose[regpars]}];
-
-(*create target file*)
-depth=If[type==="cyclyc"||type==="PCA",ToString[ArrayDepth[target]-1]<>"D-t",ToString[ArrayDepth[target]]<>"D"];
-fixedF="target-"<>depth<>".nii";
-targetFile=tempdir<>fixedF;
-
-ExportNii[target,voxt,targetFile];
-
-(*perform registration*)
-Switch[type,
-
-"vol",
-{inpfol,movfol,outfol}={"","",""};
-{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
-ExportNii[moving,voxm,tempdir<>movingF];
-
-{fmaskF,mmaskF}={"",""};
-
-(*check if target mask is needed*)
-If[dimtarm == dimtar && maskt!={1},
-	fmaskF="targetMask.nii";
-	ExportNii[maskt,voxm,tempdir<>fmaskF]];
-
-(*check if moving mask is needed*)
-If[(dimmovm == dimmov && maskm!={1}),
-	mmaskF="moveMask.nii";
-	ExportNii[maskm,voxm,tempdir<>mmaskF]];
-
-RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
-{data,vox}=ImportNii[tempdir<>outfol<>outF];
-data=ToPackedArray[data];
-,
-
-"cyclyc",
-{inpfol,movfol,outfol}={"","",""};
-{fmaskF,mmaskF}={"",""};
-{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
-ExportNii[moving,voxm,tempdir<>movingF];
-If[maskm!={1},mmaskF="moveMask.nii";
-ExportNii[maskm,voxm,tempdir<>mmaskF];
-];
-RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
-{data,vox}=ImportNii[tempdir<>outfol<>outF];
-data=ToPackedArray[data];
-,
-"PCA",
-{inpfol,movfol,outfol}={"","",""};
-{fmaskF,mmaskF}={"",""};
-{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
-ExportNii[moving,voxm,tempdir<>movingF];
-If[maskm!={1},mmaskF="moveMask.nii";
-ExportNii[maskm,voxm,tempdir<>mmaskF];
-];
-RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
-{data,vox}=ImportNii[tempdir<>outfol<>outF];
-data=ToPackedArray[data];
-,
-
-"series",
-DynamicModule[{i},
-inpfol="";
-{fmaskF,mmaskF}={"",""};
-{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
-
-(*export one mask for every volume in the series*)
-If[dimtarm == dimtar && maskt!={1},
-fmaskF="targetMask.nii";
-ExportNii[maskt,voxm,tempdir<>fmaskF]];
-
-(*check if mask needs to be exported for each volume*)
-maske=(dimmovm == dimmov && maskm!={1});
-(*check if same mask for all volumes*)
-maske2=(dimmovm == Drop[dimmov,1] && maskm!={1});
-
-i=0;
-
-(*export data*)
-{command,outfile}=Transpose@(
-(
-	index=StringPad[#];
-	movfol=outfol="vol"<>index;
-	CreateDirectory[tempdir<>outfol];
-	ExportNii[moving[[#]],voxm,tempdir<>movfol<>"\\"<>movingF];
+type_,OptionsPattern[]]:=Module[{
+	tdir, tempdir, elastix, targetFile, parstring, outputImg, iterations, resolutions,
+	histogramBins, numberSamples, derivativeScaleA, derivativeScaleB, interpolationOrder,
+	method, bsplineSpacing, data, vox, dimmov, dimtar, dimmovm, dimtarm, inpfol, movfol, outfol, 
+	fixedF, movingF, outF, parF, depth, index, error, regpars, lenMeth, command, outfile, 
+	fmaskF, mmaskF, maske, maske2, w, openCL, gpu, pca, slash},
 	
-	(*export mask*)
-	If[maske,
-	mmaskF=movfol<>"\\"<>"moveMask.nii";
-	ExportNii[maskm[[#]],voxm,tempdir<>mmaskF];
+	w={{0,0,0,0,0,0,1,1,1,0,0,0}};
+	slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
+	
+	(*set error*)
+	error=False;
+	maske=False;
+	
+	(*get option values*)
+	tdir=OptionValue[TempDirectory];
+	outputImg=ToLowerCase[ToString[OptionValue[OutputImage]]];
+	
+	method=OptionValue[MethodReg];
+	(*Print[method];*)
+	
+	bsplineSpacing=OptionValue[BsplineSpacing];
+	bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
+	derivativeScaleB=OptionValue[BsplineDirections];
+	derivativeScaleA=OptionValue[AffineDirections];
+	
+	{openCL,gpu}=OptionValue[UseGPU];
+	gpu=If[gpu===Automatic,0,gpu];
+	pca=OptionValue[PCAComponents];
+	
+	(*Print[{derivativeScaleA,derivativeScaleB}];*)
+	
+	iterations=OptionValue[Iterations];
+	resolutions=OptionValue[Resolutions];
+	histogramBins=OptionValue[HistogramBins];
+	numberSamples=OptionValue[NumberSamples];
+	interpolationOrder=OptionValue[InterpolationOrderReg];
+	regpars={iterations,resolutions,histogramBins,numberSamples,interpolationOrder};
+	
+	dimmov=Dimensions[moving];
+	dimtar=Dimensions[target];
+	dimmovm=Dimensions[maskm];
+	dimtarm=Dimensions[maskt];
+	
+	(*find the elastix program*)
+	elastix=FindElastix[];
+	If[elastix=="error",error=True;Message[RegisterData::elastix];];
+	
+	(*create temp directory*)
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
+	
+	tdir=If[Last[FileNameSplit[tdir]] === "DTItoolsReg" || Last[FileNameSplit[tdir]] === "anat",
+		tdir,tdir<>slash<>"DTItoolsReg"
 	];
 	
-	If[maske2,
-	mmaskF=movfol<>"\\"<>"moveMask.nii";
+	If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
+	tempdir=CreateDirectory[tdir]<>slash;
+	If[!DirectoryQ[tempdir],Message[RegisterData::dir];Return[Message[DiffusionReg::fatal]]];
+	
+	(*check registration method*)
+	method=If[StringQ[method],{method},method];
+	If[!MemberQ[{"rigid","affine","rigidDTI","affineDTI","bspline","cyclyc","translation","PCA"},#],
+		Message[RegisterData::met,#];
+		Return[Message[DiffusionReg::fatal],Module]
+		]&/@method; 
+	lenMeth=Length[method];
+	
+	(*only cyclyc is possible*)
+	If[MemberQ[method,"cyclyc"]&&lenMeth>1,error=True];
+	
+	(*create parameter list*)
+	regpars=If[NumberQ[#],ConstantArray[#,lenMeth],
+	If[Length[#]==lenMeth,#,Message[RegisterData::par,#,lenMeth];Return[Message[DiffusionReg::fatal]];
+	]]&/@regpars;
+	
+	(*check mask dimensions*)
+	
+	(*if error quit*)
+	If[error,Return[Message[RegisterData::fatal]]];
+	If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
+	
+	(*create parameter files*)
+	parF=MapThread[(
+	parstring=ParString[#2,{#1,outputImg},{bsplineSpacing,derivativeScaleB,derivativeScaleA,pca},{openCL,gpu}];
+	parF="parameters-"<>#1<>".txt";
+	Export[tempdir<>parF,parstring];
+	parF
+	)&,{method,Transpose[regpars]}];
+	
+	(*create target file*)
+	depth=If[type==="cyclyc"||type==="PCA",ToString[ArrayDepth[target]-1]<>"D-t",ToString[ArrayDepth[target]]<>"D"];
+	fixedF="target-"<>depth<>".nii";
+	targetFile=tempdir<>fixedF;
+	
+	ExportNii[target,voxt,targetFile];
+	
+	(*perform registration*)
+	Switch[type,
+	
+	"vol",
+	{inpfol,movfol,outfol}={"","",""};
+	{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+	ExportNii[moving,voxm,tempdir<>movingF];
+	
+	{fmaskF,mmaskF}={"",""};
+	
+	(*check if target mask is needed*)
+	If[dimtarm == dimtar && maskt!={1},
+		fmaskF="targetMask.nii";
+		ExportNii[maskt,voxm,tempdir<>fmaskF]];
+	
+	(*check if moving mask is needed*)
+	If[(dimmovm == dimmov && maskm!={1}),
+		mmaskF="moveMask.nii";
+		ExportNii[maskm,voxm,tempdir<>mmaskF]];
+	
+	RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
+	{data,vox}=ImportNii[tempdir<>outfol<>outF];
+	data=ToPackedArray[data];
+	,
+	
+	"cyclyc",
+	{inpfol,movfol,outfol}={"","",""};
+	{fmaskF,mmaskF}={"",""};
+	{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+	ExportNii[moving,voxm,tempdir<>movingF];
+	If[maskm!={1},mmaskF="moveMask.nii";
 	ExportNii[maskm,voxm,tempdir<>mmaskF];
 	];
+	RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
+	{data,vox}=ImportNii[tempdir<>outfol<>outF];
+	data=ToPackedArray[data];
+	,
+	"PCA",
+	{inpfol,movfol,outfol}={"","",""};
+	{fmaskF,mmaskF}={"",""};
+	{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+	ExportNii[moving,voxm,tempdir<>movingF];
+	If[maskm!={1},mmaskF="moveMask.nii";
+	ExportNii[maskm,voxm,tempdir<>mmaskF];
+	];
+	RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
+	{data,vox}=ImportNii[tempdir<>outfol<>outF];
+	data=ToPackedArray[data];
+	,
 	
-	ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}]
-)&/@Range[Length[moving]]);
-(*create and run batch*)
-RunBatfile[tempdir,command];
-
-(*Import data*)
-data=ToPackedArray[(First@ImportNii[#])&/@outfile];
-
-If[OptionValue[OutputTransformation],	w=ReadTransformParameters[tempdir]];
-];
-];
-
-If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempdir,DeleteContents->True]];
-
-(*If[type=="series"&&ArrayDepth[data]==4,data=Transpose[data]];*)
-
-Chop[If[OptionValue[OutputTransformation],
-	{Clip[data,MinMax[moving]],w},
-	Clip[data,MinMax[moving]],10^-6]
-]
+	"series",
+	DynamicModule[{i},
+	inpfol="";
+	{fmaskF,mmaskF}={"",""};
+	{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+	
+	(*export one mask for every volume in the series*)
+	If[dimtarm == dimtar && maskt!={1},
+	fmaskF="targetMask.nii";
+	ExportNii[maskt,voxm,tempdir<>fmaskF]];
+	
+	(*check if mask needs to be exported for each volume*)
+	maske=(dimmovm == dimmov && maskm!={1});
+	(*check if same mask for all volumes*)
+	maske2=(dimmovm == Drop[dimmov,1] && maskm!={1});
+	
+	i=0;
+	
+	(*export data*)
+	{command,outfile}=Transpose@(
+	(
+		index=StringPad[#];
+		movfol=outfol="vol"<>index;
+		CreateDirectory[tempdir<>outfol];
+		ExportNii[moving[[#]],voxm,tempdir<>movfol<>slash<>movingF];
+		
+		(*export mask*)
+		If[maske,
+		mmaskF=movfol<>slash<>"moveMask.nii";
+		ExportNii[maskm[[#]],voxm,tempdir<>mmaskF];
+		];
+		
+		If[maske2,
+		mmaskF=movfol<>slash<>"moveMask.nii";
+		ExportNii[maskm,voxm,tempdir<>mmaskF];
+		];
+		
+		ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}]
+	)&/@Range[Length[moving]]);
+	(*create and run batch*)
+	RunBatfile[tempdir,command];
+	
+	(*Import data*)
+	data=ToPackedArray[(First@ImportNii[#])&/@outfile];
+	
+	If[OptionValue[OutputTransformation],	w=ReadTransformParameters[tempdir]];
+	];
+	];
+	
+	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempdir,DeleteContents->True]];
+	
+	(*If[type=="series"&&ArrayDepth[data]==4,data=Transpose[data]];*)
+	
+	Chop[If[OptionValue[OutputTransformation],
+		{Clip[data,MinMax[moving]],w},
+		Clip[data,MinMax[moving]],10^-6]
+	]
 ]
 
 
@@ -1120,45 +1234,63 @@ SplitInput[input_]:=Module[{data,mask,vox},
 
 Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All",PrintTempDirectory->True}
 
-TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output},
-  tdir = OptionValue[TempDirectory];
-  tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}) <>"\\DTItoolsReg\\transform";
-  If[OptionValue[PrintTempDirectory],PrintTemporary[tdir]];
-  If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
-  CreateDirectory[tdir];
-  ExportNii[data, vox, tdir <> "\\trans.nii"];
-  command = TransformixCommandInd[tdir];
-  RunProcess[$SystemShell, "StandardOutput", command];
-  output = ToPackedArray[ImportNii[tdir <> "\\result.nii"][[1]]];
-  
-  Switch[OptionValue[DeleteTempDirectory],
-   "All",
-   DeleteDirectory[FileNameTake[tdir, {1, -2}],  DeleteContents -> True],
-   "Trans",
-   DeleteDirectory[tdir, DeleteContents -> True],
-   _,
-   Null
-   ];
-  Clip[output,MinMax[data]]
-  ]
+TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output,slash},
+	slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
+	
+	(*define the directory*)
+	tdir = OptionValue[TempDirectory];
+	tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}) <>slash<>"DTItoolsReg"<>slash<>"transform";
+	
+	(*create and print the directory*)
+	If[OptionValue[PrintTempDirectory],PrintTemporary[tdir]];
+	If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
+	CreateDirectory[tdir];
+	
+	(*Export and transform*)
+	ExportNii[data, vox, tdir <> slash <> "trans.nii"];
+	command = TransformixCommandInd[tdir];
+	RunProcess[$SystemShell, "StandardOutput", command];
+	output = ToPackedArray[ImportNii[tdir <> slash <> "result.nii"][[1]]];
+	
+	(*Delete temp directory*)
+	Switch[OptionValue[DeleteTempDirectory],
+		"All", DeleteDirectory[FileNameTake[tdir, {1, -2}],  DeleteContents -> True],
+		"Trans", DeleteDirectory[tdir, DeleteContents -> True],
+		_, Null];
+		
+	(*give the output*)
+	Chop[Clip[output,MinMax[data]],10^-6]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*TransformixCommandInd*)
 
 
-TransformixCommandInd[tempDir_] := Block[{transformix, transfile},
-  transformix = FindTransformix[];
-  transfile = 
-   Last[SortBy[
-     FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]], 
-     FileDate[#, "Creation"] &]
-     ];
-  "@ \"" <> transformix <>
-   "\" -in \"" <> First[FileNames["trans*", tempDir]] <>
-   "\" -out \"" <> tempDir <>
-   "\" -tp \"" <> transfile <>
-   "\"" <> " > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
+TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
+	transformix = FindTransformix[];
+	transFol = StringDrop[DirectoryName[transformix, 2], -1];
+	transfile = Last[SortBy[
+		FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]],
+		FileDate[#, "Creation"] &]];
+		
+	Switch[$OperatingSystem,
+		"Windows",
+		"@ \"" <> transformix <>
+		"\" -in \"" <> First[FileNames["trans*", tempDir]] <>
+		"\" -out \"" <> tempDir <>
+		"\" -tp \"" <> transfile <>
+		"\"" <> " > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
+		,
+		"MacOSX",
+		"export PATH="<>transFol<>"/bin:$PATH 
+		export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+		transformix <>
+		" -in " <> First[FileNames["trans*", tempDir]] <>
+		" -out " <> tempDir <>
+		" -tp " <> transfile <>
+		" > " <> tempDir <> "/outputT.txt \n"
+	];
   ]
 
 
@@ -1287,16 +1419,16 @@ RegisterDiffusionData[
 RegisterDiffusionData[
   {dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
   {anatdata_?ArrayQ, anatmask_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}},
-  opts : OptionsPattern[]
-  ] := Module[{dtidatar, tempDir, tempDira, volDirs, w,
-   tFilesA, tFilesD, dtidatarA, cmd, target, movingdata},
+  opts : OptionsPattern[]] := Module[{
+  	dtidatar, tempDir, tempDira, volDirs, w,tFilesA, tFilesD, dtidatarA, cmd, target, movingdata, slash
+  	},
   (*Print["RegisterDiffusionData"];*)
   
+  slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
   (*get the current temp dir and define the anat tempdir*)
   tempDir = OptionValue[TempDirectory];
-  tempDir = (If[StringQ[tempDir], tempDir, "Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
-  tempDira = tempDir <> "\\anat";
-  
+  tempDir = (If[StringQ[tempDir], tempDir, "Default"]/. {"Default"->$TemporaryDirectory})<>slash<>"DTItoolsReg";
+  tempDira = tempDir <> slash <> "anat";
 
   (*perform DTI registration*)
   dtidatar = RegisterData[{dtidata, dtimask, vox},
@@ -1337,8 +1469,8 @@ RegisterDiffusionData[
   (*transform all diffusion files to anatomy*)
   
   (*export diffusion reg target*)
-  CreateDirectory[tempDir<>"\\vol0000"];
-  ExportNii[dtidatar[[All,1]],vox,tempDir<>"\\vol0000\\moving-3D.nii"];
+  CreateDirectory[tempDir<>slash<>"vol0000"];
+  ExportNii[dtidatar[[All,1]],vox,tempDir<>slash<>"vol0000"<>slash<>"moving-3D.nii"];
   
   (*get vol folders and anat transform files*)
   volDirs = FileNames["vol*", tempDir, 1];
@@ -1451,15 +1583,17 @@ Options[RegisterDataTransform] = Options[RegisterData];
 
 SyntaxInformation[RegisterDataTransform] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,tdir},
+RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,tdir, slash},
 	reg = RegisterData[target, moving, DeleteTempDirectory -> False, opts];
 	mov = If[ArrayDepth[moving2] == 4,
 		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2]],
 		TransformData[{moving2, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
 		];
-		
+	
+	slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
+	
 	tdir=OptionValue[TempDirectory];
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>slash<>"DTItoolsReg";
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];		
 		
@@ -1481,7 +1615,7 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 	targetl, targetr, maskTl, maskTr, cut1,
 	movingl, movingr, maskMl, maskMr, cut2,
 	moving2l, moving2r, tdir,
-	regl, regr, movl, movr
+	regl, regr, movl, movr, slash
 	},
 	
 	(*prepare the input*)
@@ -1525,8 +1659,9 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 		TransformData[{moving2r, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
 		];
 	
+	slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
 	tdir=OptionValue[TempDirectory];
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>slash"DTItoolsReg";
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];	
 	
@@ -1552,10 +1687,12 @@ RegisterCardiacData[{data_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:Opti
 RegisterCardiacData[{data_?ArrayQ,mask_?ArrayQ},opts:OptionsPattern[]]:=RegisterCardiacData[{data,mask,{1,1,1}},opts]
 (*data with mask and voxel*)
 RegisterCardiacData[{data_?ArrayQ,mask_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Block[
-{tdir, datar, slices, maskr, i, size, target},
+{tdir, datar, slices, maskr, i, size, target, slash},
 
+slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
 tdir=OptionValue[TempDirectory];
-tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>"\\DTItoolsReg";
+tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>slash<>"DTItoolsReg";
+
 If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
 
 slices=Range[Length[data]];
