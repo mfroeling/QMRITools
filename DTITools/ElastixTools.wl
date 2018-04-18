@@ -682,7 +682,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol},
   		" -out " <> # <>
   		" -tp " <> Last[FileNames["FinalTransform*", #]] <> 
 	    " > " <> # <> "/outputa.txt \n" <>
-  		" mv " <> # <> "/result.nii "<> # <> "/resultA-3D.nii \n"
+  		" mv " <> # <> "/result.nii.gz "<> # <> "/resultA-3D.nii.gz \n"
   	) & /@ volDirs
   ];
 ]
