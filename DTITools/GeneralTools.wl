@@ -56,12 +56,6 @@ NumberTableForm[data, n] makes a right aligned table of the numbers with n decim
 CompilebleFunctions::usage = 
 "CompilebleFunctions[] generates a list of all compilable functions."
 
-MeanNoZero::usage = 
-"MeanNoZero[data] calculates the mean of the data ignoring the zeros."
-
-MedianNoZero::usage = 
-"MedianNoZero[data] calculates the Median of the data ignoring the zeros."
-
 MeanStd::usage = 
 "MeanStd[data] calculates the mean and standard deviation and reports it as a string."
 
@@ -74,6 +68,12 @@ PadToDimensions::usage =
 SumOfSquares::usage = 
 "SumOfSquares[{data1, data2, .... datan}] calculates the sum of squares of the datasets.
 Output is the SoS and the weights, or just the SoS."
+
+MeanNoZero::usage = 
+"MeanNoZero[data] calculates the mean of the data ignoring the zeros."
+
+MedianNoZero::usage = 
+"MedianNoZero[data] calculates the Median of the data ignoring the zeros."
 
 DevideNoZero::usage = 
 "DevideNoZero[a, b] devides a/b but when b=0 the result is 0. a can be a number or vector."
@@ -90,6 +90,12 @@ RMSNoZero::usage =
 MADNoZero::usage = 
 "MADNoZero[vec] return the MAD error of the vec which can be anny dimonsion array. if vec={0...} the output is 0. Zeros are ignored"
 
+FindOutliers::usage =
+"FindOutliers[data] finds the outliers of a list of data."
+
+MedCouple::usage = 
+"MedCouple[data] calculates the medcouple of a list of data."
+
 
 (* ::Subsection::Closed:: *)
 (*General Options*)
@@ -104,6 +110,22 @@ PadValue::usage =
 OutputWeights::usage = 
 "OutputWeights is an option for SumOfSqares. If True it also output the SoS weights."
 
+OutlierMethod::usage = 
+"OutlierMethod is an option for FindOutliers. values can be \"IQR\", \"SIQR\" of \"aIQR\"."
+
+OutlierOutput::usage = 
+"OutlierOutput is an option for FindOutliers. If value is \"Mask\" it gives a list of 1 for data and 0 for outliers. Else the output is {data, outliers}."
+
+OutlierIterations::usage = 
+"OutlierIterations is an option for FindOutliers. Specifies how many iterations are used to find the outliers. 
+Each itteration the outliers are reevaluated on the data with the previously found outliers alread rejected."
+
+OutlierRange::usage = 
+"OutlierRange is an option for FindOutliers. Specifies how many times the IQR is considred an oulier."
+
+OutlierIncludeZero::usage = 
+"OutlierIncludeZero is an option for FindOutliers. If set to True all values that are zero are ignored and considered outliers."
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -117,6 +139,83 @@ Begin["`Private`"]
 
 
 (* ::Subsection:: *)
+(*FindOutliers*)
+
+
+Options[FindOutliers] = {OutlierMethod -> "IQR", OutlierOutput -> "Mask", OutlierIterations -> 1, OutlierRange -> 2, OutlierIncludeZero -> True}
+
+FindOutliers[datai_?VectorQ, OptionsPattern[]] :=  Block[{
+	data, maxIt, diff, it, out, outI, outNew, q1, q2, q3, sc, iqr,    up, low, mc, met, incZero, output
+	},
+  (*make numeric*)
+  data = N@datai;
+  
+  (*get options*)
+  met = OptionValue[OutlierMethod];
+  output = OptionValue[OutlierOutput];
+  maxIt = OptionValue[OutlierIterations];
+  sc = OptionValue[OutlierRange];
+  incZero = OptionValue[OutlierIncludeZero];
+  
+  (*initialize*)
+  diff = it = 1;
+  outI = out = N@If[incZero, 0 data + 1, Unitize[data]];
+  
+  (*perform itterative outlier detection*)
+  While[(diff != 0.) && it <= maxIt,
+   
+   (*get the data quantiles and iqr*)
+   {q1, q2, q3} = Quantile[Pick[data, out, 1.], {.25, .50, .75}];
+   iqr = (q3 - q1);
+   
+   (*switch methods*)
+   (*IQR-inter quantile range, SIQR-skewed iql, aIQR-
+   adjusted iqr using medcouple for skewness*)
+   {low, up} = Switch[OptionValue[OutlierMethod],
+     "IQR", {q1 - sc iqr, q3 + sc iqr},
+     "SIQR", {q1 - sc 2 (q2 - q1), q3 + sc 2 (q3 - q2)},
+     "aIQR",
+     mc = MedCouple[data, q2];
+     If[mc >= 0,
+      {q1 - sc iqr Exp[-4 mc], q3 + sc iqr Exp[3 mc]},
+      {q1 - sc iqr Exp[-3 mc], q3 + sc iqr Exp[4 mc]}
+      ]
+     ];
+   (*make the oulier mask*)
+   outNew = N[outI (If[(# < low || # > up), 0, 1] & /@ N[data])];
+   (*update ouliers and itteration*)
+   diff = Total[out - outNew];
+   out = outNew;
+   it++
+   ];
+  
+  (*make the output*)
+  If[output === "Mask",
+   Round[out],
+   {Pick[datai, out, 1.], Pick[datai, out, 0.]}
+   ]
+  ]
+
+
+(* ::Subsection:: *)
+(*MedCouple*)
+
+MedCouple[data_] := MedCouple[data,Median[data]];
+
+MedCouple[data_, q2_] := Block[{xi, li, xj, lj, pi, hxixj},
+  xi = Select[data, # >= q2 &];
+  li = Range[pi = Length[xi]];
+  xj = Select[data, # <= q2 &];
+  lj = Range[Length[xj]];
+  hxixj = Flatten@Table[
+     If[xi[[i]] > xj[[j]],
+      ((xi[[i]] - q2) - (q2 - xj[[j]]))/(xi[[i]] - xj[[j]]),
+      pi - 1 - i - j
+      ], {i, li}, {j, lj}];
+  Median[hxixj]
+  ]
+
+(* ::Subsection:: *)
 (*NoZeroFunctions*)
 
 
@@ -126,10 +225,10 @@ Begin["`Private`"]
 
 SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
 
-DevideNoZero[sig_,tot_]:=DevideNoZeroi[sig,tot]
+DevideNoZero[num_,den_]:=DevideNoZeroi[Chop[num],Chop[den]]
 
-DevideNoZeroi = Compile[{{sig, _Real, 1}, {tot, _Real, 0}}, If[tot == 0., sig 0., sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
-DevideNoZeroi = Compile[{{sig, _Real, 0}, {tot, _Real, 0}}, If[tot == 0., 0., sig/tot], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DevideNoZeroi = Compile[{{num, _Real, 1}, {den, _Real, 0}}, If[den == 0., num 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DevideNoZeroi = Compile[{{num, _Real, 0}, {den, _Real, 0}}, If[den == 0., 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -138,7 +237,7 @@ DevideNoZeroi = Compile[{{sig, _Real, 0}, {tot, _Real, 0}}, If[tot == 0., 0., si
 
 SyntaxInformation[LogNoZero] = {"ArgumentsPattern" -> {_}};
 
-LogNoZero[val_] := LogNoZeroi[val]
+LogNoZero[val_] := LogNoZeroi[Chop[val]]
 
 LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
 
@@ -149,7 +248,7 @@ LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]],RuntimeAttrib
 
 SyntaxInformation[ExpNoZero] = {"ArgumentsPattern" -> {_}};
 
-ExpNoZero[val_] := ExpNoZeroi[val]
+ExpNoZero[val_] := ExpNoZeroi[Chop[val]]
 
 ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
 
@@ -162,7 +261,7 @@ SyntaxInformation[RMSNoZero] = {"ArgumentsPattern" -> {_}};
 
 RMSNoZero[vec_] := RMSNoZeroi[If[ArrayDepth[vec] > 1, TransData[vec, "l"], vec]]
 
-RMSNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., RootMeanSquare[DeleteCases[vec, 0.]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RMSNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., RootMeanSquare[Pick[vec, Unitize[vec], 1]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -173,7 +272,7 @@ SyntaxInformation[MADNoZero] = {"ArgumentsPattern" -> {_}};
 
 MADNoZero[vec_] := MADNoZeroi[If[ArrayDepth[vec] > 1, TransData[vec, "l"], vec]]
 
-MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianDeviation[DeleteCases[vec, 0.]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianDeviation[Pick[vec, Unitize[vec], 1]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -184,7 +283,7 @@ SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_, _.}};
 
 MeanNoZero[datai_] := Block[{data},
   data = N@Chop@TransData[datai, "l"];
-  N@Chop@Map[Mean[DeleteCases[#, 0.] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
+  N@Chop@Map[Mean[Pick[#, Unitize[#], 1] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
   ]
 
 
@@ -196,8 +295,9 @@ SyntaxInformation[MedianNoZero] = {"ArgumentsPattern" -> {_, _.}};
 
 MedianNoZero[datai_] := Block[{data},
   data = N@Chop@TransData[datai, "l"];
-  N@Chop@Map[Median[DeleteCases[#, 0.] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
+  N@Chop@Map[Median[Pick[#, Unitize[#], 1] /. {} -> {0.}] &, data, {ArrayDepth[data] - 1}]
   ]
+
 
 (* ::Subsection::Closed:: *)
 (*SumOfSquares*)
@@ -272,6 +372,7 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 
 (* ::Subsubsection::Closed:: *)
 (*SetupDataStructure*)
+
 
 SetupDataStructure[dcmFolder_] := 
  Module[{folderdcm, foldernii, folderout, folders,fol, niiFolder, outFolder},
@@ -417,28 +518,6 @@ myByteCount[symbolName_String] := Replace[
       Round[ByteCount[Through[{OwnValues, DownValues, UpValues, SubValues, DefaultValues, FormatValues, NValues}[Unevaluated@x, Sort -> False]]]/1000000., .01]}
      ]
    ];
-
-(*
-MemoryUsage2[n__: 100] := 
- With[{listing = myByteCount /@ Names[]}, 
-  Labeled[Grid[Reverse@Take[Sort[listing], -n], Frame -> True, 
-    Alignment -> Center], 
-   Column[{Style[
-      "ByteCount for symbols without attributes Protected and \
-ReadProtected in all contexts", 16, FontFamily -> "Times"], 
-     Style[Row@{"Total: ", Total[listing[[All, 1]]], " bytes for ", 
-        Length[listing], " symbols"}, Bold]}, Center, 1.5], Top]]
-
-myByteCount[symbolName_String] := 
-  Replace[ToExpression[symbolName, InputForm, Hold], 
-   Hold[x__] :> 
-    If[MemberQ[Attributes[x], Protected | ReadProtected], 
-     Sequence @@ {}, {Round[
-       ByteCount[
-         Through[{OwnValues, DownValues, UpValues, SubValues, 
-            DefaultValues, FormatValues, NValues}[Unevaluated@x, 
-           Sort -> False]]]/1000000., .01], symbolName}]];
-*)
 
 
 (* ::Subsubsection::Closed:: *)

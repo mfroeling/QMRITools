@@ -337,6 +337,7 @@ _,
 // * Metric settings
 // *********************
 (MovingImageDerivativeScales 1.0 1.0 0.0)
+(NumberOfSamplesForExactGradient 50000)
 (SubtractMean \"true\")",
 "cyclyc",
 "(Transform \"BSplineStackTransform\")
@@ -774,7 +775,7 @@ If[cyclyc,
 target=moving=series;
 
 (*go to registration function*)
-output=RegisterDatai[{target,{1},vox},{moving,mask,vox},OptionValue[MethodReg],opts];
+output=RegisterDatai[{target,mask,vox},{moving,mask,vox},OptionValue[MethodReg],opts];
 output
 ,
 (*normal series*)
@@ -1073,9 +1074,8 @@ type_,OptionsPattern[]]:=Module[{
 	{fmaskF,mmaskF}={"",""};
 	{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
 	ExportNii[moving,voxm,tempdir<>movingF];
-	If[maskm!={1},mmaskF="moveMask.nii";
-	ExportNii[maskm,voxm,tempdir<>mmaskF];
-	];
+	If[maskm!={1},mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
+	If[maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxm,tempdir<>fmaskF]];
 	RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 	{data,vox}=ImportNii[tempdir<>outfol<>outF];
 	data=ToPackedArray[data];
@@ -1085,14 +1085,12 @@ type_,OptionsPattern[]]:=Module[{
 	{fmaskF,mmaskF}={"",""};
 	{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
 	ExportNii[moving,voxm,tempdir<>movingF];
-	If[maskm!={1},mmaskF="moveMask.nii";
-	ExportNii[maskm,voxm,tempdir<>mmaskF];
-	];
+	If[maskm!={1},mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
+	If[maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxm,tempdir<>fmaskF]];
 	RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 	{data,vox}=ImportNii[tempdir<>outfol<>outF];
 	data=ToPackedArray[data];
 	,
-	
 	"series",
 	DynamicModule[{i},
 	inpfol="";
@@ -1249,6 +1247,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output,
 	(*Export and transform*)
 	ExportNii[data, vox, tdir <> slash <> "trans.nii"];
 	command = TransformixCommandInd[tdir];
+
 	RunProcess[$SystemShell, "StandardOutput", command];
 	output = ToPackedArray[ImportNii[tdir <> slash <> "result.nii"][[1]]];
 	
@@ -1273,14 +1272,15 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 	transfile = Last[SortBy[
 		FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]],
 		FileDate[#, "Creation"] &]];
-		
+	
 	Switch[$OperatingSystem,
 		"Windows",
 		"@ \"" <> transformix <>
 		"\" -in \"" <> First[FileNames["trans*", tempDir]] <>
 		"\" -out \"" <> tempDir <>
 		"\" -tp \"" <> transfile <>
-		"\"" <> " > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
+		"\" -def all" <>
+		" > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
 		,
 		"MacOSX",
 		"export PATH="<>transFol<>"/bin:$PATH 
@@ -1290,7 +1290,7 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 		" -out " <> tempDir <>
 		" -tp " <> transfile <>
 		" > " <> tempDir <> "/outputT.txt \n"
-	];
+	]
   ]
 
 
@@ -1585,9 +1585,14 @@ SyntaxInformation[RegisterDataTransform] = {"ArgumentsPattern" -> {_, _, _, Opti
 
 RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,tdir, slash},
 	reg = RegisterData[target, moving, DeleteTempDirectory -> False, opts];
-	mov = If[ArrayDepth[moving2] == 4,
-		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2]],
-		TransformData[{moving2, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
+	
+	mov = If[
+		ArrayDepth[moving2]==4 && ArrayDepth[reg]==3 ,
+		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2]] ,
+		If[ArrayDepth[moving2]==3 && ArrayDepth[reg]==2 ,
+			TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ moving2,
+			TransformData[{moving2, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
+			]
 		];
 	
 	slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
@@ -1710,10 +1715,10 @@ Monitor[
 	(i++;RegisterData[{N[Mean@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
 		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 	"Median",
-	(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],vox},
+	(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
 		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 	"First",
-	(i++;RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],vox},
+	(i++;RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
 		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
 	"stack",
 	(i++;RegisterData[{data[[#]],ConstantArray[maskr[[#]],size],vox},

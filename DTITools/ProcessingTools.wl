@@ -381,7 +381,12 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 	robust = (OptionValue[RobustFit] && method =!= "LLS");
 	{con,kappa}=OptionValue[RobustFitParameters];
 	
-	outliers = If[robust,Transpose[FindOutliers[Transpose[dataL,l], bmat, con, kappa], r], ConstantArray[0.,Dimensions[data]]];
+	
+	outliers = If[robust,
+		Transpose[FindOutliers[Transpose[dataL,l], bmat, con, kappa], r]
+		, 
+		ConstantArray[0.,Dimensions[data]]
+		];
 	
 	fitresult = Switch[method,
 		"LLS", Transpose[TensMinLLS[Transpose[dataL,l], bmatI], r],
