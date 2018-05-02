@@ -53,6 +53,9 @@ For the latest version of these tools and their user licences please visit their
 	* elastix.exe
 	* transformix.exe
 
+All functionality is tested under windows 10 with the latest Mathematica version. 
+Elastix compatibility has been tested for MacOSX but is not guaranteed.  
+
 ## Using the toolbox
 
 The toolbox can be loaded by using <<DTITools`

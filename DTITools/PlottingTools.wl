@@ -192,7 +192,8 @@ custColors = {
 	"Flow" -> (Blend[{White, Blend[{Blue, Cyan}], Blue, Black, Red, Orange, White}, #]&),
 	"Fire" -> (Blend[{Black, Blue, Purple, Red, Orange, Yellow, White}, #] &),
 	"NIH" -> (Blend[{Black, Purple, Blue, Green, Yellow, Orange, Red, Darker@Darker@Red}, #] &),
-	"Cardiac" -> (Blend[{Darker@Green, Cyan, Blue, Purple, Red, Yellow, Darker@Green}, #] &)
+	"Cardiac" -> (Blend[{Darker@Green, Cyan, Blue, Purple, Red, Yellow, Darker@Green}, #] &),
+	"GEcol" -> (Blend[{Black, RGBColor[0, .22, .22], RGBColor[0, .45, .45], RGBColor[.4, .0, .9], RGBColor[.75, .25, .5], Orange, RGBColor[1, .7, .35],  White}, #] &)
 	};
 
 (*generate color list*)

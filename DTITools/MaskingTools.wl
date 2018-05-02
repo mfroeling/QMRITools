@@ -33,15 +33,11 @@ Mask[data,{tresh min,tresh max}] creates a mask which selects data between the t
 SmartMask::usage = 
 "SmartMask[input, mask] crates a smart mask of input based on mask."
 
-SmartMask2::usage = 
-"SmartMask2[input] crates a smart mask of input based.
-SmartMask2[input, mask] crates a smart mask of input based on mask."
-
 GetMaskData::usage =
 "GetMaskData[data, mask] retruns the data selected by the mask as a single list for each image."
 
 ROIMask::usage = 
-"ROIMask[maskdim, {name->{{{x,y},slice}..}..}] crates mask from coordinates x and y at slice. \
+"ROIMask[maskdim, {name->{{{x,y},slice}..}..}] crates mask from coordinates x and y at slice. 
 maskdim is the dimensions of the output {zout,xout,yout}."
 
 GofImport::usage = 
@@ -50,7 +46,7 @@ GofImport::usage =
 ReadGof::usage = 
 "ReadGof[file.gof, T1.dcm] imports the gof file to a format that can be used in ROIMask.
 ReadGof[{file1.gof, file2.gof, ..}, T1.dcm] imports the gof files to a format that can be used in ROIMask.
-ReadGof[{file1.gof, file2.gof, ..}, {T1-1.dcm, T1-2.dcm, ..}] imports the gof files to a format that can be used in ROIMask,\
+ReadGof[{file1.gof, file2.gof, ..}, {T1-1.dcm, T1-2.dcm, ..}] imports the gof files to a format that can be used in ROIMask,
 where each .gof file correstponds to a different T1 file."
 
 ReadROI::usage = 
@@ -139,6 +135,9 @@ MeanOutput::usage =
 
 GetMaskOutput::usage = 
 "GetMaskOutput is an option for GetMaskData. Defaul is \"Slices\" which gives the mask data per slices. Else the entire mask data is given as output."
+
+SmartMaskOutput::usage = 
+"SmartMaskOutput is an option for Smartmask. Can be set to \"mask\" to output only the mask or \"full\" to also output the probability mask."
 
 
 (* ::Subsection::Closed:: *)
@@ -412,7 +411,7 @@ Module[{mask,tresh},
 (* ::Subsection::Closed:: *)
 (*GetMaskData*)
 
-Options[GetMaskData] = {GetMaskOutput -> "Slice"}
+Options[GetMaskData] = {GetMaskOutput -> "All"}
 
 SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -440,7 +439,7 @@ GetMaskData[data_?ArrayQ, mask_?ArrayQ, OptionsPattern[]] := Module[{depth,fdat}
 (*SmartMask*)
 
 
-Options[SmartMask]={Strictness->.50, Compartment->"Muscle", Method->"Continuous", Reject->True, Output->"mask"};
+Options[SmartMask]={Strictness->.50, Compartment->"Muscle", Method->"Continuous", Reject->True, SmartMaskOutput->"mask"};
 
 SyntaxInformation[SmartMask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -485,7 +484,7 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 		mask = pmask * Mask[TotalVariationFilter[map, .25], {OptionValue[Strictness]}];
 		];
 		
-		If[OptionValue[Output]==="mask",mask,{mask,map}]
+		If[OptionValue[SmartMaskOutput]==="mask",mask,{mask,map}]
 	]
 
 
