@@ -1,0 +1,249 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9032,        240]
+NotebookOptionsPosition[      6058,        177]
+NotebookOutlinePosition[      8275,        230]
+CellTagsIndexPosition[      8232,        227]
+WindowTitle->GfactorSimulation
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[Cell[
+    BoxData[
+     ActionMenuBox[
+      FrameBox[
+       InterpretationBox[Cell[TextData[{
+         "URL",
+         StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+          StripOnInput->False]
+        }]],
+        TextCell[
+         Row[{"URL", 
+           Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+       StripOnInput->False], {"\<\"DTITools/ref/GfactorSimulation\"\>":>
+      None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+      Module[{DocumentationSearch`Private`nb$}, 
+       DocumentationSearch`Private`nb$ = NotebookPut[
+          Notebook[{
+            Cell["DTITools/ref/GfactorSimulation"]}, Visible -> False]]; 
+       SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+       FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+       NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+      Delimiter, "\<\"Copy web URL\"\>":>
+      Module[{DocumentationSearch`Private`nb$}, 
+       DocumentationSearch`Private`nb$ = NotebookPut[
+          Notebook[{
+            Cell[
+             BoxData[
+              MakeBoxes[
+               Hyperlink[
+               "http://reference.wolfram.com/language/DTITools/ref/\
+GfactorSimulation.html"], StandardForm]], "Input", TextClipboardType -> 
+             "PlainText"]}, Visible -> False]]; 
+       SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+       FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+       NotebookClose[DocumentationSearch`Private`nb$]; 
+       Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+        NotebookLocate[{
+          URL[
+           StringJoin[
+            If[
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$109576], 
+             "http://reference.wolfram.com/system-modeler/", 
+             "http://reference.wolfram.com/language/"], 
+            "DTITools/ref/GfactorSimulation", ".html"]], None}]}]},
+      Appearance->None,
+      MenuAppearance->Automatic,
+      MenuStyle->"URLMenu"]],
+     LineSpacing->{1.4, 0}]], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["GfactorSimulation", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+GfactorSimulation[sensitivity, Wmat, {dir,sense}]\[LineSeparator]calculates \
+the gfactormaps for given sensitivity maps and noise corraltion W in one \
+direction. The sensefactors are a list of integers in a given direction: \"LR\
+\", \"FH\", or \"AP\". \
+\>"]},
+   {"", Cell["\<\
+GfactorSimulation[sensitivity, Wmat, {dir$1,sense$1}, {dir$2,sense$2}]\
+\[LineSeparator]calculates the gfactormaps for given sensitivity maps and \
+noise corraltion W in two directions.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["GRegularization",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/GRegularization"], "0.", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GRegularization"]],"paclet:DTITools/ref/GRegularization"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CalculateGfactor"]],"paclet:DTITools/ref/CalculateGfactor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["GfactorSimulation"], "InlineFormula"],
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["GOutput",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/GOutput"], 
+    ButtonBox["Grid",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Grid"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GOutput"]],"paclet:DTITools/ref/GOutput"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GfactorSimulation"], "InlineFormula"],
+     ". can be \"Grid\" or \"List\"."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}]
+}, Closed]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"GfactorSimulation",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 5, 9, 13, 33, 52.3466014}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`SimulationTools`",
+     "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "GfactorSimulation[sensitivity, Wmat, {dir,sense}] calculates the \
+gfactormaps for given sensitivity maps and noise corraltion W in one \
+direction. The sensefactors are a list of integers in a given direction: \"LR\
+\", \"FH\", or \"AP\". GfactorSimulation[sensitivity, Wmat, {dir$1,sense$1}, \
+{dir$2,sense$2}] calculates the gfactormaps for given sensitivity maps and \
+noise corraltion W in two directions.", "synonyms" -> {}, "tabletags" -> {}, 
+    "title" -> "GfactorSimulation", "titlemodifier" -> "", "windowtitle" -> 
+    "GfactorSimulation", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/GfactorSimulation"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[589, 21, 2325, 54, 70, "AnchorBarGrid",ExpressionUUID->"a2fa271c-084d-4efd-8a46-a17e18338f42",
+ CellID->1],
+Cell[2917, 77, 174, 6, 70, "ObjectNameGrid",ExpressionUUID->"ca33d4c0-aa02-457a-98f6-424973b21958"],
+Cell[3094, 85, 674, 16, 70, "Usage",ExpressionUUID->"e4b6e685-0c74-45ec-9eca-e2736c9997e8"],
+Cell[CellGroupData[{
+Cell[3793, 105, 621, 19, 70, "NotesSection",ExpressionUUID->"5ca66c96-88cc-48c4-acc6-3671f4069bca",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[4417, 126, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"0e45f3bb-99b5-443b-b4ab-304b82e6d4dc"],
+Cell[4451, 128, 53, 0, 70, "Notes",ExpressionUUID->"717621e7-d68d-4fdc-ba0c-af7d14d48ee1"],
+Cell[4507, 130, 1509, 42, 70, "3ColumnTableMod",ExpressionUUID->"939822d8-8e3b-4967-9025-9d07a90ed96d"]
+}, Closed]],
+Cell[6031, 175, 23, 0, 70, "FooterCell",ExpressionUUID->"fb6d737e-c1c3-4c7c-bea6-34dd87394928"]
+}
+]
+*)
+
+(* End of internal cache information *)
