@@ -1445,7 +1445,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 		
 		(*perform the registration*)
 		sets[[n + 1]] = Last@regFunc[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
-				MethodReg -> "translation", Iterations -> 500, NumberSamples -> samp, PrintTempDirectory -> False,InterpolationOrderReg -> 0];
+				MethodReg -> "translation", Iterations -> 500, NumberSamples -> samp, PrintTempDirectory -> False, InterpolationOrderReg -> 0];
 		
 		, {n, 1, nmax - 1}
 	];

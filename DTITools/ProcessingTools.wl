@@ -383,7 +383,7 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 	
 	
 	outliers = If[robust,
-		Transpose[FindOutliers[Transpose[dataL,l], bmat, con, kappa], r]
+		Transpose[FindTensOutliers[Transpose[dataL,l], bmat, con, kappa], r]
 		, 
 		ConstantArray[0.,Dimensions[data]]
 		];
@@ -407,7 +407,7 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 (*FindOutliers*)
 
 
-FindOutliers = Quiet@Block[{ittA,itt,contA,cont,sol,solA,soli,res,weigths, wmat,fitE,LS2,bmat2,mad,out}, 
+FindTensOutliers = Quiet@Block[{ittA,itt,contA,cont,sol,solA,soli,res,weigths, wmat,fitE,LS2,bmat2,mad,out}, 
   	Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}},
   		If[AllTrue[LS, 0. === # &]||Total[Unitize[LS]]<7,
   			(*skip if background*)
@@ -723,18 +723,6 @@ Module[{output},
 		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 voxel!"]];	
 	];
 		
-	(*If[ArrayQ[tensor,4],
-		output=EigenvalCalci[Transpose[tensor,{4,1,2,3}],RejectMap->OptionValue[RejectMap],Reject->OptionValue[Reject]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for ",Length[tensor[[1]]]," slices!"]];,
-		If[ArrayQ[tensor,3],
-			output=EigenvalCalci[Transpose[tensor,{3,1,2}],RejectMap->OptionValue[RejectMap],Reject->OptionValue[Reject]];
-			If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 slice!"]];,
-			If[VectorQ[tensor],
-				output=EigenvalCalci[tensor,RejectMap->OptionValue[RejectMap],Reject->OptionValue[Reject]];
-				If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 voxel!"]];
-				]
-			]		
-		];*)
 	Return[N[output]];
 	]
 
@@ -798,20 +786,7 @@ Module[{output},
 		output=EigenvecCalci[tensor];
 		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 voxel!"]];	
 	];
-	(*
-	If[ArrayQ[tensor,4],
-		Monitor[
-			output=EigenvecCalci[Transpose[tensor,{4,1,2,3}]];,If[OptionValue[MonitorCalc],ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate],""]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for "<>ToString[Length[tensor[[1]]]]<>" slices!"]];,
-		If[ArrayQ[tensor,3],
-			output=EigenvecCalci[Transpose[tensor,{3,1,2}]];
-			If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 slice!"]];,
-			If[VectorQ[tensor],
-				output=EigenvecCalci[tensor];
-				If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 voxel!"]];
-				]
-			]
-		];*)
+
 	Return[output]
 	]
 
@@ -862,19 +837,7 @@ Module[{output},
 		output=EigensysCalci[tensor];
 		If[OptionValue[MonitorCalc],Print["Done calculating eigensystem for 1 voxel!"]];	
 	];
-	(*
-	If[ArrayQ[tensor,4],
-		output=EigensysCalci[Transpose[tensor,{4,1,2,3}]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigensystem for "<>ToString[Length[tensor[[1]]]]<>" slices!"]];,
-		If[ArrayQ[tensor,3],
-			output=EigensysCalci[Transpose[tensor,{3,1,2}]];
-			If[OptionValue[MonitorCalc],Print["Done calculating eigensystem for 1 slice!"]];,
-			If[VectorQ[tensor],
-				output=EigensysCalci[tensor];
-				If[OptionValue[MonitorCalc],Print["Done calculating eigensystem for 1 voxel!"]];
-				]
-			]
-		];*)
+	
 	Return[output]
 	]
 

@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10264,        291]
-NotebookOptionsPosition[      7074,        223]
-NotebookOutlinePosition[      9028,        273]
-CellTagsIndexPosition[      8985,        270]
+NotebookDataLength[     12013,        335]
+NotebookOptionsPosition[      8800,        267]
+NotebookOutlinePosition[     10778,        317]
+CellTagsIndexPosition[     10735,        314]
 WindowTitle->Mask
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$136149], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$143510], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], "DTITools/ref/Mask", 
              ".html"]], None}]}]},
@@ -104,38 +104,23 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"Mask", "[", 
-       RowBox[{
-        StyleBox["data", "TI"], ",", 
-        RowBox[{
-         StyleBox["tresh", "TI"], " ", 
-         StyleBox["min", "TI"]}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]creates a mask which selects only data above the \
-treshlow value. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"Mask", "[", 
-       RowBox[{
-        StyleBox["data", "TI"], ",", 
-        RowBox[{"{", 
-         RowBox[{
-          RowBox[{
-           StyleBox["tresh", "TI"], " ", 
-           StyleBox["min", "TI"]}], ",", 
-          RowBox[{
-           StyleBox["tresh", "TI"], " ", 
-           StyleBox["max", "TI"]}]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]creates a mask which selects data between the tresh min \
-and tresh max value."
-    }]]}
+   {"", Cell["\<\
+Mask[data]\[LineSeparator]creates a mask by automatically finding a \
+threshold. \
+\>"]},
+   {"", Cell["\<\
+Mask[data, min]\[LineSeparator]creates a mask which selects only data above \
+the min value. \
+\>"]},
+   {"", Cell["\<\
+Mask[data,{min,max}]\[LineSeparator]creates a mask which selects data between \
+the min and max value.\
+\>"]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
-  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
-   "RowsIndexed" -> {}}}],
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}}}],
 
 Cell[CellGroupData[{
 
@@ -166,34 +151,93 @@ Cell["The following options can be given: ", "Notes"],
 
 Cell[BoxData[GridBox[{
    {Cell["      ", "TableRowIcon"], 
-    ButtonBox["Smoothing",
+    ButtonBox["MaskSmoothing",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/Smoothing"], 
+     ButtonData->"paclet:DTITools/ref/MaskSmoothing"], 
     ButtonBox["False",
      BaseStyle->"Link",
      ButtonData->"paclet:ref/False"], Cell[TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
-         TextData["Smoothing"]],"paclet:DTITools/ref/Smoothing"},
+         TextData["MaskSmoothing"]],"paclet:DTITools/ref/MaskSmoothing"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an options for ",
      Cell[BoxData["Mask"], "InlineFormula"],
-     ", Maskbin and ",
+     ", if set to ",
+     "True",
+     " it smooths the mask, by closing holse and smoothing the contours."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MaskComponents",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MaskComponents"], "1", Cell[TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
-         TextData["SmartMask"]],"paclet:DTITools/ref/SmartMask"},
+         TextData["MaskComponents"]],"paclet:DTITools/ref/MaskComponents"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " functions, if set to true (default) it smooths (removes holes and \
-smooth edges) the mask"
+     " is an option for ",
+     Cell[BoxData["Mask"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SmoothMask"]],"paclet:DTITools/ref/SmoothMask"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". Determinse the amount of largest clusters used as mask."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MaskClosing",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MaskClosing"], "5", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MaskClosing"]],"paclet:DTITools/ref/MaskClosing"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     "  is an option for ",
+     Cell[BoxData["Mask"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SmoothMask"]],"paclet:DTITools/ref/SmoothMask"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". The size of the holes in the mask that will be closed"
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MaskFiltKernel",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MaskFiltKernel"], "2", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MaskFiltKernel"]],"paclet:DTITools/ref/MaskFiltKernel"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["Mask"], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SmoothMask"]],"paclet:DTITools/ref/SmoothMask"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SmoothSegmentation"]],
+        "paclet:DTITools/ref/SmoothSegmentation"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". How mucht the contours are smoothed."
     }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
  GridBoxBackground->{
-  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
-   "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True}}}}],
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True}}}}],
 
 Cell["", "SectionFooterSpacer"]
 }, Closed]],
@@ -236,17 +280,17 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 46, 27.7373312}", 
+   "built" -> "{2018, 5, 9, 13, 36, 59.5822789}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`MaskingTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
-    "Mask[data, tresh min] creates a mask which selects only data above the \
-treshlow value. Mask[data, {tresh min, tresh max}] creates a mask which \
-selects data between the tresh min and tresh max value.", "synonyms" -> {}, 
-    "tabletags" -> {}, "title" -> "Mask", "titlemodifier" -> "", 
-    "windowtitle" -> "Mask", "type" -> "Symbol", "uri" -> 
+    "Mask[data] creates a mask by automatically finding a threshold. \
+Mask[data, min] creates a mask which selects only data above the min value. \
+Mask[data,{min,max}] creates a mask which selects data between the min and \
+max value.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "Mask", 
+    "titlemodifier" -> "", "windowtitle" -> "Mask", "type" -> "Symbol", "uri" -> 
     "DTITools/ref/Mask"}},
 CellContext->"Global`",
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
@@ -272,27 +316,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[576, 21, 3020, 74, 70, "AnchorBarGrid",ExpressionUUID->"1fc4af74-0c24-4038-9e51-a4010833dd5b",
+Cell[576, 21, 3020, 74, 70, "AnchorBarGrid",ExpressionUUID->"1eabb74d-1f15-4804-a8cd-90b96327feb7",
  CellID->1],
-Cell[3599, 97, 161, 6, 70, "ObjectNameGrid",ExpressionUUID->"1d6a5b7f-638d-44f9-8698-0a09f39dd8cb"],
-Cell[3763, 105, 1039, 32, 70, "Usage",ExpressionUUID->"d35fc812-ee07-4359-b65d-dff6a89c26ef"],
+Cell[3599, 97, 161, 6, 70, "ObjectNameGrid",ExpressionUUID->"15d8db90-7f29-4f81-87f5-8de8c1c85cc6"],
+Cell[3763, 105, 543, 17, 70, "Usage",ExpressionUUID->"73ffdb71-6ac1-4ce2-ad26-b78ff6b723bd"],
 Cell[CellGroupData[{
-Cell[4827, 141, 621, 19, 70, "NotesSection",ExpressionUUID->"4014119d-73c5-4997-964c-2d96a691fb50",
+Cell[4331, 126, 621, 19, 70, "NotesSection",ExpressionUUID->"ad17c86d-4b8b-4c7d-95d9-fc8d03a20772",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[5451, 162, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"0b40d191-d6b0-43df-8fa1-4db0ad4814bb"],
-Cell[5485, 164, 53, 0, 70, "Notes",ExpressionUUID->"80e71096-a3d3-4fbd-b1b9-b1a1651bf38f"],
-Cell[5541, 166, 1059, 29, 70, "3ColumnTableMod",ExpressionUUID->"fff8e0e6-3e73-4911-baac-e4ee3e0a55f5"],
-Cell[6603, 197, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"b16f7b0f-a70e-4b7c-af91-5bede6591987"]
+Cell[4955, 147, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"5d3380a8-b7fd-4698-9e16-a35e97071b3e"],
+Cell[4989, 149, 53, 0, 70, "Notes",ExpressionUUID->"9121cf04-c468-468d-b0db-f635efab30f1"],
+Cell[5045, 151, 3281, 88, 70, "3ColumnTableMod",ExpressionUUID->"d85d7281-ef56-4fbc-9704-813fb6778606"],
+Cell[8329, 241, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"3eb35d13-5f8a-4841-8b29-a5447a2e5a9d"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[6671, 202, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"99a2cd7d-d9ba-4949-99d6-f7dcd3df1aa0",
+Cell[8397, 246, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"ec75a1eb-b4b0-42a3-ac72-e13c7195cb08",
  CellID->38303248],
-Cell[6830, 211, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"ad9169ab-b3bf-4e99-91e9-a5623faf1d2b"],
-Cell[6864, 213, 168, 5, 70, "MoreAbout",ExpressionUUID->"6c150c09-4c71-4ebf-a225-4dc2ca9afb38",
+Cell[8556, 255, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"28367bd5-cda3-4632-8f4f-cf319cfde3eb"],
+Cell[8590, 257, 168, 5, 70, "MoreAbout",ExpressionUUID->"05794c2c-d5ba-4ff7-906f-cb68b6e4e9f9",
  CellID->1]
 }, Open  ]],
-Cell[7047, 221, 23, 0, 70, "FooterCell",ExpressionUUID->"6fe723f0-cae5-43ce-a479-2cf13e54e446"]
+Cell[8773, 265, 23, 0, 70, "FooterCell",ExpressionUUID->"e8fe2c55-3a5e-4b48-8b5b-c4d42034f418"]
 }
 ]
 *)

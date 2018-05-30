@@ -39,7 +39,7 @@ PlotDefGrid::usage =
 "PlotDefGrid[data, phasemap, shiftpar] plots the dataset on the background with on top the non deformed and the deformed grid, or arrows or lines."
 
 PlotGrad::usage=
-"PlotGrad[set] plots the gradient directions set}.
+"PlotGrad[set] plots the gradient directions set.
 PlotGrad[{set1, set2..}] plots the list of set of gradient directions {set1, set2, etc.}.
 PlotGrad[set,\"name\"] plots the gradient derection set, using name as display.
 PlotGrad[{set, set2..},{\"name1\", \"name2\"..}] plots the list of set of gradient directions {set1, set2, etc.} using {\"name1\", \"nae2\", etc.} as display name."
@@ -3224,27 +3224,23 @@ PlotDuty[{grad_, bval_, ord_}, mode_] :=
 
 SyntaxInformation[ColorFAPlot] = {"ArgumentsPattern" -> {_}};  
   
-ColorFAPlot[tens_] := Block[{FA, eigv, mid, eigFA},
-  FA = ParameterCalc[tens][[5]];
-  eigv = EigenvecCalc[tens];
+ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask},
+  {eig, eigv} = Transpose[EigensysCalc[tens], {2, 3, 4, 1, 5}];
+  mask = Mask[tens[[1]], 10^-6];
   
-  eigFA = Abs[FA eigv];
+  eigv = mask Abs[eigv];
+  FA = FACalc[eig];
+  eigFA = mask FA eigv;
   
   DynamicModule[{colEigFA, colEig, im},
-   colEigFA = 
-    Table[Image[eigFA[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, 
-      Length[eigv]}, {i, 1, 3}];
-   colEig = 
-    Table[Image[(Abs[eigv])[[j, All, All, i]], 
-      ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
+   colEigFA = Table[Image[eigFA[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
+   colEig = Table[Image[eigv[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
    
    Manipulate[
-    im = GraphicsRow[{colEig, colEigFA}[[i, j, sel]], 
-      ImageSize -> Length[sel]*size],
+    im = GraphicsRow[{colEig, colEigFA}[[i, j, sel]], ImageSize -> Length[sel]*size],
     {{j, Round[Length[colEig]/2], "slice"}, 1, Length[colEig], 1},
     {{i, 2, "method"}, {1 -> "raw", 2 -> "FA"}},
-    {{sel, {1, 2, 3}, "eigenvectors"}, {1 -> "first", 2 -> "second", 
-      3 -> "third"}, ControlType -> TogglerBar},
+    {{sel, {1, 2, 3}, "eigenvectors"}, {1 -> "first", 2 -> "second", 3 -> "third"}, ControlType -> TogglerBar},
     Button["save image", SaveImage[im], Method -> "Queued"],
     {{size, 300, "image size"}, {200, 300, 400, 600, 1000}}]
    ]

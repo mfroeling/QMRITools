@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     12520,        333]
-NotebookOptionsPosition[      8745,        258]
-NotebookOutlinePosition[     11284,        315]
-CellTagsIndexPosition[     11241,        312]
+NotebookDataLength[     12341,        330]
+NotebookOptionsPosition[      8264,        250]
+NotebookOutlinePosition[     11106,        312]
+CellTagsIndexPosition[     11063,        309]
 WindowTitle->ResidualCalc
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ ResidualCalc.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$194725], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$206825], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ResidualCalc", ".html"]], None}]}]},
@@ -104,44 +104,69 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+ResidualCalc[DTI,{tensor,S$0},gradients,bvector]\[LineSeparator]calculates \
+the tensor residuals for the given dataset. \
+\>"]},
+   {"", Cell["\<\
+ResidualCalc[DTI,{tensor,S$0},outlier,gradients,bvector]\[LineSeparator]\
+calculates the tensor residuals for the given dataset taking in account the \
+outliers. \
+\>"]},
+   {"", Cell["\<\
+ResidualCalc[DTI,{tensor,S$0},bmat]\[LineSeparator]calculates the tensor \
+residuals for the given dataset. \
+\>"]},
+   {"", Cell["\<\
+ResidualCalc[DTI,{tensor,S$0},outlier,bmat]\[LineSeparator]calculates the \
+tensor residuals for the given dataset taking in account the outliers. \
+\>"]},
    {"", Cell[TextData[{
+     "ResidualCalc[DTI,tensor,gradients,bvector]\[LineSeparator]calculates \
+the tensor residuals for the given dataset. ",
      Cell[BoxData[
-      RowBox[{"ResidualCalc", "[", 
-       RowBox[{
-        TemplateBox[{Cell[
-           TextData["DTI"]],"paclet:ref/DTI"},
-         "RefLink",
-         BaseStyle->{"InlineFormula"}], ",", 
-        StyleBox["tensor", "TI"], ",", 
-        StyleBox["gradients", "TI"], ",", 
-        StyleBox["bvalue", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]calculates the tensor residuals for the given dataset. \
-Allows for one unweighted image and one b value. Gradient directions must be \
-in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the unweighted gradient \
-direction. bvalue is a singe number indicating the b-value used. "
+      TemplateBox[{Cell[
+         TextData["Tensor"]],"paclet:DTITools/ref/Tensor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " must contain Log[S0]. "
     }]]},
    {"", Cell[TextData[{
+     "ResidualCalc[DTI,tensor,outlier,gradients,bvector]\[LineSeparator]\
+calculates the tensor residuals for the given dataset taking in account the \
+outliers. ",
      Cell[BoxData[
-      RowBox[{"ResidualCalc", "[", 
-       RowBox[{
-        TemplateBox[{Cell[
-           TextData["DTI"]],"paclet:ref/DTI"},
-         "RefLink",
-         BaseStyle->{"InlineFormula"}], ",", 
-        StyleBox["tensor", "TI"], ",", 
-        StyleBox["gradients", "TI"], ",", 
-        StyleBox["bvector", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]calculates the tensor residuals for the given dataset. \
-allows for multiple unweighted images and multiple bvalues. allows for \
-differnt tensor fitting methods. gradient directions must be in the form \
-{{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}. bvec \
-the bvector, with a bvalue defined for each gradient direction. b value for \
-unweighted images is 0."
+      TemplateBox[{Cell[
+         TextData["Tensor"]],"paclet:DTITools/ref/Tensor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " must contain Log[S0]. "
+    }]]},
+   {"", Cell[TextData[{
+     "ResidualCalc[DTI,tensor,bmat]\[LineSeparator]calculates the tensor \
+residuals for the given dataset. ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Tensor"]],"paclet:DTITools/ref/Tensor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " must contain Log[S0]. "
+    }]]},
+   {"", Cell[TextData[{
+     "ResidualCalc[DTI,tensor,outlier,bmat]\[LineSeparator]calculates the \
+tensor residuals for the given dataset taking in account the outliers. ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Tensor"]],"paclet:DTITools/ref/Tensor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " must contain Log[S0]."
     }]]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
-  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, None, None, {None}}, 
    "RowsIndexed" -> {}}}],
 
 Cell[CellGroupData[{
@@ -173,21 +198,6 @@ Cell["The following options can be given: ", "Notes"],
 
 Cell[BoxData[GridBox[{
    {Cell["      ", "TableRowIcon"], 
-    ButtonBox["MonitorCalc",
-     BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/MonitorCalc"], 
-    ButtonBox["False",
-     BaseStyle->"Link",
-     ButtonData->"paclet:ref/False"], Cell[TextData[{
-     Cell[BoxData[
-      TemplateBox[{Cell[
-         TextData["MonitorCalc"]],"paclet:DTITools/ref/MonitorCalc"},
-       "RefLink",
-       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " is an option for all Calc fucntions. When true the proceses of the \
-calculation is shown."
-    }], "TableText"]},
-   {Cell["      ", "TableRowIcon"], 
     ButtonBox["MeanRes",
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/MeanRes"], 
@@ -204,31 +214,13 @@ calculation is shown."
      ". When ",
      "True",
      " the root mean square of the residual is calculated."
-    }], "TableText"]},
-   {Cell["      ", "TableRowIcon"], 
-    ButtonBox["NormResidual",
-     BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/NormResidual"], 
-    ButtonBox["True",
-     BaseStyle->"Link",
-     ButtonData->"paclet:ref/True"], Cell[TextData[{
-     Cell[BoxData[
-      TemplateBox[{Cell[
-         TextData["NormResidual"]],"paclet:DTITools/ref/NormResidual"},
-       "RefLink",
-       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " is an option for ",
-     Cell[BoxData["ResidualCalc"], "InlineFormula"],
-     ". When ",
-     "True",
-     " the residuals are normalize to the S0 image."
     }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
  GridBoxBackground->{
-  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
-   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
 
 Cell["", "SectionFooterSpacer"]
 }, Closed]],
@@ -271,23 +263,28 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 49, 32.7007954}", 
+   "built" -> "{2018, 5, 9, 13, 43, 57.7280178}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ProcessingTools`",
      "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
-    "ResidualCalc[DTI, tensor, gradients, bvalue] calculates the tensor \
-residuals for the given dataset. Allows for one unweighted image and one b \
-value. Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} \
-without the unweighted gradient direction. bvalue is a singe number \
-indicating the b-value used. ResidualCalc[DTI, tensor, gradients, bvector] \
-calculates the tensor residuals for the given dataset. allows for multiple \
-unweighted images and multiple bvalues. allows for differnt tensor fitting \
-methods. gradient directions must be in the form {{x1,y1,z1}, ..., \
-{xn,yn,zn}} with the unweighted direction as {0,0,0}. bvec the bvector, with \
-a bvalue defined for each gradient direction. b value for unweighted images \
-is 0.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "ResidualCalc", 
+    "ResidualCalc[DTI,{tensor,S$0},gradients,bvector] calculates the tensor \
+residuals for the given dataset. \
+ResidualCalc[DTI,{tensor,S$0},outlier,gradients,bvector] calculates the \
+tensor residuals for the given dataset taking in account the outliers. \
+ResidualCalc[DTI,{tensor,S$0},bmat] calculates the tensor residuals for the \
+given dataset. ResidualCalc[DTI,{tensor,S$0},outlier,bmat] calculates the \
+tensor residuals for the given dataset taking in account the outliers. \
+ResidualCalc[DTI,tensor,gradients,bvector] calculates the tensor residuals \
+for the given dataset. Tensor must contain Log[S0]. \
+ResidualCalc[DTI,tensor,outlier,gradients,bvector] calculates the tensor \
+residuals for the given dataset taking in account the outliers. Tensor must \
+contain Log[S0]. ResidualCalc[DTI,tensor,bmat] calculates the tensor \
+residuals for the given dataset. Tensor must contain Log[S0]. \
+ResidualCalc[DTI,tensor,outlier,bmat] calculates the tensor residuals for the \
+given dataset taking in account the outliers. Tensor must contain Log[S0].", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "ResidualCalc", 
     "titlemodifier" -> "", "windowtitle" -> "ResidualCalc", "type" -> 
     "Symbol", "uri" -> "DTITools/ref/ResidualCalc"}},
 CellContext->"Global`",
@@ -314,27 +311,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[584, 21, 3059, 74, 70, "AnchorBarGrid",ExpressionUUID->"20f9673c-bca7-40aa-9111-ef0c5e483ebb",
+Cell[584, 21, 3059, 74, 70, "AnchorBarGrid",ExpressionUUID->"2790cec9-7128-45cf-9c1e-b426432999d8",
  CellID->1],
-Cell[3646, 97, 169, 6, 70, "ObjectNameGrid",ExpressionUUID->"16d551c6-605b-4f35-b35b-e99c5e7d7a4c"],
-Cell[3818, 105, 1671, 39, 70, "Usage",ExpressionUUID->"ca1d3f3d-2e65-4461-8aef-ec37870e48d8"],
+Cell[3646, 97, 169, 6, 70, "ObjectNameGrid",ExpressionUUID->"fcb90636-d64c-48ba-b946-48b0e42bb57e"],
+Cell[3818, 105, 2391, 64, 70, "Usage",ExpressionUUID->"a65d1ee4-780b-4549-8c89-a9bf7d3091fc"],
 Cell[CellGroupData[{
-Cell[5514, 148, 621, 19, 70, "NotesSection",ExpressionUUID->"1a3b57ee-2f2f-4a6a-a1cd-28dea9a7ec4f",
+Cell[6234, 173, 621, 19, 70, "NotesSection",ExpressionUUID->"db810533-51e3-4d7f-8ffd-9627b0883649",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[6138, 169, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"2a6377a9-fe96-4ca3-a1b2-ca2bc42defb3"],
-Cell[6172, 171, 53, 0, 70, "Notes",ExpressionUUID->"0170c8d5-bcfa-42c2-a073-afd184842fed"],
-Cell[6228, 173, 2037, 57, 70, "3ColumnTableMod",ExpressionUUID->"7e9bae76-77bb-4c7d-b91b-487801d7d5c2"],
-Cell[8268, 232, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"7229e49a-47cc-4a50-a5ec-3786c01081a6"]
+Cell[6858, 194, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"5cf084ae-7706-4467-ba76-397671986cdc"],
+Cell[6892, 196, 53, 0, 70, "Notes",ExpressionUUID->"898d2ce8-373e-4ae3-8ef5-f9caf7bdb29d"],
+Cell[6948, 198, 836, 24, 70, "3ColumnTableMod",ExpressionUUID->"183dbbee-7c84-4eb1-b178-9417d125460e"],
+Cell[7787, 224, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"f17dd700-cd60-45df-813d-008ee209cdb2"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[8336, 237, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"cbcd03ff-8201-47dd-b84a-0c5a9ba3b090",
+Cell[7855, 229, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"eff73d4f-2317-4680-b10e-18ce9621d783",
  CellID->38303248],
-Cell[8495, 246, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"8cc1cdca-c680-415a-bf87-33582c6b9fe8"],
-Cell[8529, 248, 174, 5, 70, "MoreAbout",ExpressionUUID->"0270461f-813b-481c-829b-01b727ed884c",
+Cell[8014, 238, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"9329f897-b7c9-40ce-b7e2-9cc6f9d8559a"],
+Cell[8048, 240, 174, 5, 70, "MoreAbout",ExpressionUUID->"1c43b8f3-5db7-435a-9f60-71f6534af5e6",
  CellID->1]
 }, Open  ]],
-Cell[8718, 256, 23, 0, 70, "FooterCell",ExpressionUUID->"ebf944b8-b81a-473a-bd54-357df537d61f"]
+Cell[8237, 248, 23, 0, 70, "FooterCell",ExpressionUUID->"13a996b2-16bd-4527-bc66-6547fd2e29b7"]
 }
 ]
 *)

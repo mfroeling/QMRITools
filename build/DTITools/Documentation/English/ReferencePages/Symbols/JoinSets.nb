@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10689,        296]
-NotebookOptionsPosition[      7287,        226]
-NotebookOutlinePosition[      9454,        278]
-CellTagsIndexPosition[      9411,        275]
+NotebookDataLength[     12965,        360]
+NotebookOptionsPosition[      9562,        290]
+NotebookOutlinePosition[     11729,        342]
+CellTagsIndexPosition[     11686,        339]
 WindowTitle->JoinSets
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$129291], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$135172], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/JoinSets", ".html"]], None}]}]},
@@ -189,13 +189,77 @@ Cell[BoxData[GridBox[{
      " function. ",
      "True",
      " by default."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["NormalizeSets",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/NormalizeSets"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["NormalizeSets"]],"paclet:DTITools/ref/NormalizeSets"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["JoinSets"], "InlineFormula"],
+     ". ",
+     "True",
+     " normalizes the individual stacs before joining."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MotionCorrectSets",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MotionCorrectSets"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MotionCorrectSets"]],
+        "paclet:DTITools/ref/MotionCorrectSets"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["JoinSets"], "InlineFormula"],
+     ". ",
+     "True",
+     " motion corrects the individual stacs before joining using ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CorrectJoinSetMotion"]],
+        "paclet:DTITools/ref/CorrectJoinSetMotion"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PaddOverlap",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PaddOverlap"], "2", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PaddOverlap"]],"paclet:DTITools/ref/PaddOverlap"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CorrectJoinSetMotion"]],
+        "paclet:DTITools/ref/CorrectJoinSetMotion"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["JoinSets"], "InlineFormula"],
+     ". it allows for extra motion in the z direction."
     }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
  GridBoxBackground->{
-  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
-   "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True, True}}}}],
 
 Cell["", "SectionFooterSpacer"]
 }, Closed]],
@@ -239,7 +303,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 46, 4.8598185}", 
+   "built" -> "{2018, 5, 9, 13, 36, 6.0041283}", 
     "history" -> {"XX", "", "", ""}, "context" -> 
     "DTITools`ManipulationTools`", "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -277,27 +341,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[580, 21, 3046, 74, 70, "AnchorBarGrid",ExpressionUUID->"042a4824-1a74-4927-bcc2-b76235fd3b96",
+Cell[580, 21, 3046, 74, 70, "AnchorBarGrid",ExpressionUUID->"e764b0c7-ab13-4a82-aa7c-f790d1c6093c",
  CellID->1],
-Cell[3629, 97, 165, 6, 70, "ObjectNameGrid",ExpressionUUID->"4ca262a4-4c1a-40c6-91f7-1f82d5cca6a7"],
-Cell[3797, 105, 712, 19, 70, "Usage",ExpressionUUID->"1f04262f-15de-47d6-b27f-add130bd234f"],
+Cell[3629, 97, 165, 6, 70, "ObjectNameGrid",ExpressionUUID->"77e30a6a-44a4-43d4-ad9e-e0ca3a619e10"],
+Cell[3797, 105, 712, 19, 70, "Usage",ExpressionUUID->"b930df9e-958b-4eb9-bd5e-3eb7a599f1c2"],
 Cell[CellGroupData[{
-Cell[4534, 128, 621, 19, 70, "NotesSection",ExpressionUUID->"ae0ecef8-b16a-4a6b-8f95-3fee23300ea6",
+Cell[4534, 128, 621, 19, 70, "NotesSection",ExpressionUUID->"e8427434-124e-4787-b0b0-d499c89ff600",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[5158, 149, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"ad1c8d1e-85e7-4eb9-a507-eebf220f5c0d"],
-Cell[5192, 151, 53, 0, 70, "Notes",ExpressionUUID->"a858a6a0-6565-4116-988d-1bca55e6aa77"],
-Cell[5248, 153, 1552, 44, 70, "3ColumnTableMod",ExpressionUUID->"0dca50c2-bb30-4d87-b457-64ce2507fbbc"],
-Cell[6803, 199, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"0ce471a2-609a-451a-a904-aeeafd4bef5c"]
+Cell[5158, 149, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"273ad7c6-a84a-44bc-b9ff-9f1713fdd483"],
+Cell[5192, 151, 53, 0, 70, "Notes",ExpressionUUID->"e9f95775-286a-4e36-8ecd-5fcaa0e67b3e"],
+Cell[5248, 153, 3827, 108, 70, "3ColumnTableMod",ExpressionUUID->"21856e94-2f03-4a1f-958b-a4e343e9e49b"],
+Cell[9078, 263, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"f0c089d5-1189-4333-911d-84e60105e352"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[6871, 204, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"9d73a346-7f69-43f3-b959-a2255c4aabd3",
+Cell[9146, 268, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"07cc17f4-8655-4ef5-ba2b-5f50fde4508c",
  CellID->38303248],
-Cell[7030, 213, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"cd104007-be2e-4fc2-9996-e603e516f6f9"],
-Cell[7064, 215, 181, 6, 70, "MoreAbout",ExpressionUUID->"8959b1a1-98ff-4888-bc47-986eacc0f843",
+Cell[9305, 277, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"a8a0196d-a6a7-4d8c-a436-ecc1f585b4fb"],
+Cell[9339, 279, 181, 6, 70, "MoreAbout",ExpressionUUID->"e3529247-372e-4c33-81bc-8a500c8c38f1",
  CellID->1]
 }, Open  ]],
-Cell[7260, 224, 23, 0, 70, "FooterCell",ExpressionUUID->"629c7c0c-6445-4f60-8a01-1b2f1ee5ae79"]
+Cell[9535, 288, 23, 0, 70, "FooterCell",ExpressionUUID->"5c9c5810-721e-4a30-a47f-d77a7daad4d1"]
 }
 ]
 *)

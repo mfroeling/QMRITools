@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5813,        157]
-NotebookOptionsPosition[      3667,        106]
-NotebookOutlinePosition[      5550,        155]
-CellTagsIndexPosition[      5507,        152]
+NotebookDataLength[      7719,        212]
+NotebookOptionsPosition[      5094,        154]
+NotebookOutlinePosition[      6965,        202]
+CellTagsIndexPosition[      6922,        199]
 WindowTitle->ImportBvec
 WindowFrame->Normal*)
 
@@ -60,7 +60,7 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
           URL[
            StringJoin[
             If[
-             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$116317], 
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$121240], 
              "http://reference.wolfram.com/system-modeler/", 
              "http://reference.wolfram.com/language/"], 
             "DTITools/ref/ImportBvec", ".html"]], None}]}]},
@@ -84,23 +84,71 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"ImportBvec", "[", "]"}]], "InlineFormula"],
-     "\[LineSeparator]will promt to select the *.bvec file. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{
-      "ImportBvec", "[", "\"\<\!\(\*StyleBox[\"file\", \"TI\"]\).bvec\>\"", 
-       "]"}]], "InlineFormula"],
-     "\[LineSeparator]imports the given *.bvec file."
-    }]]}
+   {"", Cell[
+    "ImportBvec[]\[LineSeparator]will promt to select the *.bvec file. "]},
+   {"", Cell[
+    "ImportBvec[*.bvec]\[LineSeparator]imports the given *.bvec file."]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
    "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["FlipBvec",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/FlipBvec"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["FlipBvec"]],"paclet:DTITools/ref/FlipBvec"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ImportBvalvec"]],"paclet:DTITools/ref/ImportBvalvec"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     "."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}]
+}, Closed]],
 
 Cell[" ", "FooterCell"]
 },
@@ -119,17 +167,16 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 45, 21.2328636}", 
+   "built" -> "{2018, 5, 9, 13, 34, 49.1746516}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`NiftiTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
-    "ImportBvec[] will promt to select the *.bvec file. \
-ImportBvec[\"file.bvec\"] imports the given *.bvec file.", "synonyms" -> {}, 
-    "tabletags" -> {}, "title" -> "ImportBvec", "titlemodifier" -> "", 
-    "windowtitle" -> "ImportBvec", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/ImportBvec"}},
+    "ImportBvec[] will promt to select the *.bvec file. ImportBvec[*.bvec] \
+imports the given *.bvec file.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "ImportBvec", "titlemodifier" -> "", "windowtitle" -> "ImportBvec", 
+    "type" -> "Symbol", "uri" -> "DTITools/ref/ImportBvec"}},
 CellContext->"Global`",
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->Notebook[{
@@ -154,11 +201,19 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[582, 21, 2296, 54, 70, "AnchorBarGrid",ExpressionUUID->"6cbcacca-b638-42e1-82ae-5f37b99db972",
+Cell[582, 21, 2296, 54, 70, "AnchorBarGrid",ExpressionUUID->"72de562e-9a1d-4262-8052-dc33552550a8",
  CellID->1],
-Cell[2881, 77, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"96c0bbfe-9ef8-403d-826c-4805747d99c4"],
-Cell[3051, 85, 586, 17, 70, "Usage",ExpressionUUID->"dba207e3-1f36-4126-ba0e-edf1c2c96140"],
-Cell[3640, 104, 23, 0, 70, "FooterCell",ExpressionUUID->"90a076fd-b0e6-424c-81fa-e6a97eef7ff6"]
+Cell[2881, 77, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"34a4e644-7682-48a0-b3b9-8110caf3fcbc"],
+Cell[3051, 85, 358, 9, 70, "Usage",ExpressionUUID->"fed552e9-2e21-4fd8-b3ce-5985cdc5fd1d"],
+Cell[CellGroupData[{
+Cell[3434, 98, 621, 19, 70, "NotesSection",ExpressionUUID->"5dfd120f-7748-4996-8187-b38ae1340f54",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[4058, 119, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"05d9181d-d8a9-4bd6-9b98-f3a691524bcf"],
+Cell[4092, 121, 53, 0, 70, "Notes",ExpressionUUID->"5b8e672e-0e15-465b-b8a2-a4bc1a67a587"],
+Cell[4148, 123, 904, 26, 70, "3ColumnTableMod",ExpressionUUID->"137b0ca5-4381-4728-995a-e4a38eebc265"]
+}, Closed]],
+Cell[5067, 152, 23, 0, 70, "FooterCell",ExpressionUUID->"fe2e8be3-b7b7-4e3b-ad2f-331fa1211839"]
 }
 ]
 *)

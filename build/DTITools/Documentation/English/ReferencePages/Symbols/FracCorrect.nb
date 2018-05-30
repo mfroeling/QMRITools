@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8588,        228]
-NotebookOptionsPosition[      5596,        164]
-NotebookOutlinePosition[      7952,        219]
-CellTagsIndexPosition[      7909,        216]
+NotebookDataLength[      8060,        212]
+NotebookOptionsPosition[      5067,        148]
+NotebookOutlinePosition[      7425,        203]
+CellTagsIndexPosition[      7382,        200]
 WindowTitle->FracCorrect
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ FracCorrect.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$99620], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$103044], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/FracCorrect", ".html"]], None}]}]},
@@ -104,35 +104,19 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"FracCorrect", "[", 
-       RowBox[{
-        StyleBox["fraction", "TI"], ",", " ", 
-        StyleBox["time", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]corrects the signal fraction calculated with the IVIM \
-model for tissue relaxation and acquisition parameters. After correction the \
-signal fraction can be regarded as volume fraction. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"FracCorrect", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          SubscriptBox[
-           StyleBox["fraction", "TI"], 
-           StyleBox["1", "TR"]], ",", " ", 
-          SubscriptBox[
-           StyleBox["fraction", "TI"], 
-           StyleBox["2", "TR"]]}], "}"}], ",", " ", 
-        StyleBox["time", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]corrects the signal fraction1 and fraction2 from a 3 \
-compartement IVIM model. time is {{te, tr}, {t2t, t21}, {t1t, t11}} or {{te, \
-tr}, {t2t, t21, t22}, {t1t, t11, t12}} where t2t and t1t are \"tissue\" \
-relaxation times and t11 t12, t21 and t22 the \"fluid\" relaxation times \
-output is the corrected fraction maps"
-    }]]}
+   {"", Cell["\<\
+FracCorrect[fraction, time]\[LineSeparator]corrects the signal fraction \
+calculated with the IVIM model for tissue relaxation and acquisition \
+parameters. After correction the signal fraction can be regarded as volume \
+fraction. \
+\>"]},
+   {"", Cell["\<\
+FracCorrect[{fraction$1, fraction$2}, time]\[LineSeparator]corrects the \
+signal fraction1 and fraction2 from a 3 compartement IVIM model. time is \
+{{te, tr}, {t2t, t21}, {t1t, t11}} or {{te, tr}, {t2t, t21, t22}, {t1t, t11, \
+t12}} where t2t and t1t are \"tissue\" relaxation times and t11 t12, t21 and \
+t22 the \"fluid\" relaxation times output is the corrected fraction maps\
+\>"]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
@@ -177,7 +161,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 44, 24.3734244}", 
+   "built" -> "{2018, 5, 9, 13, 33, 18.4118330}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`IVIMTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -186,7 +170,7 @@ TaggingRules->{
     "FracCorrect[fraction, time] corrects the signal fraction calculated with \
 the IVIM model for tissue relaxation and acquisition parameters. After \
 correction the signal fraction can be regarded as volume fraction. \
-FracCorrect[{fraction1, fraction2}, time] corrects the signal fraction1 and \
+FracCorrect[{fraction$1, fraction$2}, time] corrects the signal fraction1 and \
 fraction2 from a 3 compartement IVIM model. time is {{te, tr}, {t2t, t21}, \
 {t1t, t11}} or {{te, tr}, {t2t, t21, t22}, {t1t, t11, t12}} where t2t and t1t \
 are \"tissue\" relaxation times and t11 t12, t21 and t22 the \"fluid\" \
@@ -218,18 +202,18 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[583, 21, 3042, 74, 70, "AnchorBarGrid",ExpressionUUID->"8eb69784-22ac-468c-8716-d13b01b2ba0e",
+Cell[583, 21, 3043, 74, 70, "AnchorBarGrid",ExpressionUUID->"1a03e333-d776-4d89-b377-6f665d7cff87",
  CellID->1],
-Cell[3628, 97, 168, 6, 70, "ObjectNameGrid",ExpressionUUID->"ee85d429-5abb-4443-9cc0-d9f65e6498c5"],
-Cell[3799, 105, 1375, 34, 70, "Usage",ExpressionUUID->"e85ead82-ad15-4333-8fc4-5df3099b7b0c"],
+Cell[3629, 97, 168, 6, 70, "ObjectNameGrid",ExpressionUUID->"c0f41e19-500c-4af5-821d-b9291c8e88d1"],
+Cell[3800, 105, 845, 18, 70, "Usage",ExpressionUUID->"19a44362-dec0-4b91-9293-44f51103acd5"],
 Cell[CellGroupData[{
-Cell[5199, 143, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"edf5ba2a-cc9b-4646-8173-567530f68997",
+Cell[4670, 127, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"24b8d96e-5386-43ae-8ae9-0e25057772e1",
  CellID->38303248],
-Cell[5358, 152, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"57488340-6fe3-4448-8e33-25eb6a477ae4"],
-Cell[5392, 154, 162, 5, 70, "MoreAbout",ExpressionUUID->"c8100a85-c8e6-4279-b67a-b410f29d17ca",
+Cell[4829, 136, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"32b548bf-123e-4760-9fb0-9f313987fd6f"],
+Cell[4863, 138, 162, 5, 70, "MoreAbout",ExpressionUUID->"d12dc421-dff7-4312-bc8f-8d51f0c662bb",
  CellID->1]
 }, Open  ]],
-Cell[5569, 162, 23, 0, 70, "FooterCell",ExpressionUUID->"077c0521-9a91-4102-b6ed-ab97a7cc0e41"]
+Cell[5040, 146, 23, 0, 70, "FooterCell",ExpressionUUID->"8898abf1-397a-4264-b37a-f69ede81665b"]
 }
 ]
 *)

@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     17973,        512]
-NotebookOptionsPosition[     14144,        429]
-NotebookOutlinePosition[     15694,        468]
-CellTagsIndexPosition[     15651,        465]
+NotebookDataLength[     17880,        510]
+NotebookOptionsPosition[     14050,        427]
+NotebookOutlinePosition[     15601,        466]
+CellTagsIndexPosition[     15558,        463]
 WindowTitle->GradientTools
 WindowFrame->Normal*)
 
@@ -69,9 +69,7 @@ Cell[BoxData[GridBox[{
        Documentation`HelpLookup[
        "paclet:DTITools/ref/GetSliceNormalDir"], "\<\"GradBmatrix\"\>":>
        Documentation`HelpLookup[
-       "paclet:DTITools/ref/GradBmatrix"], "\<\"GradDirs\"\>":>
-       Documentation`HelpLookup[
-       "paclet:DTITools/ref/GradDirs"], "\<\"GradRot\"\>":>
+       "paclet:DTITools/ref/GradBmatrix"], "\<\"GradRot\"\>":>
        Documentation`HelpLookup[
        "paclet:DTITools/ref/GradRot"], "\<\"GradRotMat\"\>":>
        Documentation`HelpLookup[
@@ -128,7 +126,7 @@ GradientTools.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$22991], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$23593], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/guide/GradientTools", ".html"]], None}]}]},
@@ -441,7 +439,7 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
     Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
   "", "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 40, 8.9239289}", 
+   "built" -> "{2018, 5, 9, 13, 25, 54.5392564}", 
     "history" -> {"1.0", "", "", ""}, "context" -> "DTITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -449,7 +447,7 @@ TaggingRules->{
     "None", "summary" -> 
     "DTITools package: Optimize gradient sets for diffusion tensor imaging", 
     "synonyms" -> {}, "tabletags" -> 
-    DocumentationBuild`Make`Private`tabletaggingrules$22877, "title" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$23479, "title" -> 
     "GradientTools", "titlemodifier" -> "", "windowtitle" -> "GradientTools", 
     "type" -> "Guide", "uri" -> "DTITools/guide/GradientTools"}},
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
@@ -467,53 +465,53 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[585, 21, 5597, 123, 70, "AnchorBarGrid",ExpressionUUID->"a336eac5-5327-4d25-b75f-653748516183",
+Cell[585, 21, 5503, 121, 70, "AnchorBarGrid",ExpressionUUID->"1fa6279c-e53a-439a-a0e2-bf89e6a8e390",
  CellID->1],
 Cell[CellGroupData[{
-Cell[6207, 148, 55, 1, 70, "GuideTitle",ExpressionUUID->"e2e0df6e-ce69-4568-99a4-7b3cb88022e5",
+Cell[6113, 146, 55, 1, 70, "GuideTitle",ExpressionUUID->"0e332ef9-6200-4dc9-b634-168bd490940b",
  CellID->942062912],
-Cell[6265, 151, 215, 6, 70, "GuideAbstract",ExpressionUUID->"f328abf0-e846-4e42-a59f-68d1eb341d37",
+Cell[6171, 149, 215, 6, 70, "GuideAbstract",ExpressionUUID->"c32725de-d2e8-4e2d-a9ad-abbc9f769881",
  CellID->2001916300]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6517, 162, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"a78be1cc-0f73-477a-a326-4e7049419721"],
-Cell[6657, 170, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"b406b709-3dd3-487b-a133-535c9edd3623"],
-Cell[6691, 172, 318, 10, 70, "GuideText",ExpressionUUID->"1916e785-0190-4f7f-ae49-976c748c0ddc",
+Cell[6423, 160, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"a6bedbaa-83bc-4758-a66a-6264fc2dfeb7"],
+Cell[6563, 168, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"74e56373-5304-40e9-abc1-a2d0ae50e482"],
+Cell[6597, 170, 318, 10, 70, "GuideText",ExpressionUUID->"00e77c49-96af-46ef-9f21-c44aa83368bb",
  CellID->203374175],
-Cell[7012, 184, 340, 11, 70, "GuideText",ExpressionUUID->"03f56a0b-3cfe-43ce-a429-e70dcc4b1111",
+Cell[6918, 182, 340, 11, 70, "GuideText",ExpressionUUID->"c5a1b43b-8f02-414b-8589-6443a461a391",
  CellID->85707686],
 Cell[CellGroupData[{
-Cell[7377, 199, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"0f60c88d-333f-4422-9bcb-30ddf957d36e",
+Cell[7283, 197, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"951936b0-4468-419c-ba28-1dff505b7920",
  CellID->311258892],
-Cell[7428, 202, 2084, 63, 70, "InlineGuideFunctionListing",ExpressionUUID->"0d5cc2e6-9faf-4088-a7ad-0b4ba2c2b4d5",
+Cell[7334, 200, 2084, 63, 70, "InlineGuideFunctionListing",ExpressionUUID->"5c3ea6a6-33f1-460c-a9d7-eaf329352a0f",
  CellID->658214510]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[9549, 270, 47, 1, 70, "GuideDelimiter",ExpressionUUID->"fff3db4d-851f-40dd-b72b-6ee08f41c6a1",
+Cell[9455, 268, 47, 1, 70, "GuideDelimiter",ExpressionUUID->"a7b3bff6-fbaf-4192-afcb-46a91dc93dda",
  CellID->57383872],
-Cell[9599, 273, 1071, 32, 70, "InlineGuideFunctionListing",ExpressionUUID->"fbba15e0-aa55-40cd-a5ff-1f34cf1e7eb7",
+Cell[9505, 271, 1071, 32, 70, "InlineGuideFunctionListing",ExpressionUUID->"3ac74d3f-bb02-42c5-a536-932f024cbb85",
  CellID->112352187]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[10707, 310, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"36afbb65-46b3-4b86-928c-395c5b4291d9",
+Cell[10613, 308, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"16b447e2-b016-4edc-8959-925b4d649b66",
  CellID->215005499],
-Cell[10758, 313, 771, 23, 70, "InlineGuideFunctionListing",ExpressionUUID->"2780c386-c7bf-47eb-b7f2-2d89b6306581",
+Cell[10664, 311, 771, 23, 70, "InlineGuideFunctionListing",ExpressionUUID->"cb3d2376-51f5-4df8-ab51-749716cb5d9c",
  CellID->312729440]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[11566, 341, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"f6edcfcb-2d35-4c14-8cb9-bae300f6ef57",
+Cell[11472, 339, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"83b6f979-29ae-4e23-ade9-f0c55e6e3d40",
  CellID->317386020],
-Cell[11617, 344, 1067, 32, 70, "InlineGuideFunctionListing",ExpressionUUID->"ce86bdbf-f80b-4fc3-ba10-edd7280d05f8",
+Cell[11523, 342, 1067, 32, 70, "InlineGuideFunctionListing",ExpressionUUID->"05f6ba31-14cc-4b36-adb5-ead42f3a497b",
  CellID->692455794]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[12721, 381, 47, 1, 70, "GuideDelimiter",ExpressionUUID->"1f70c2c7-b510-469d-b31e-1060cfa57c2c",
+Cell[12627, 379, 47, 1, 70, "GuideDelimiter",ExpressionUUID->"901e9aca-362c-4bd4-8a8b-096d60551930",
  CellID->32662372],
-Cell[12771, 384, 1319, 39, 70, "InlineGuideFunctionListing",ExpressionUUID->"9a63f3bf-14ec-43d4-b01c-271a20665ecb",
+Cell[12677, 382, 1319, 39, 70, "InlineGuideFunctionListing",ExpressionUUID->"592597a0-4c6c-4da1-8472-5b4942f21c4c",
  CellID->756312595]
 }, Open  ]]
 }, Open  ]],
-Cell[14117, 427, 23, 0, 70, "FooterCell",ExpressionUUID->"f2128517-32b0-474e-897a-bdaade30b501"]
+Cell[14023, 425, 23, 0, 70, "FooterCell",ExpressionUUID->"aef61072-88c8-4060-bbce-ffa433bd8809"]
 }
 ]
 *)

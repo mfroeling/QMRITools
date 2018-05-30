@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10996,        299]
-NotebookOptionsPosition[      7398,        226]
-NotebookOutlinePosition[      9761,        281]
-CellTagsIndexPosition[      9718,        278]
+NotebookDataLength[     10209,        275]
+NotebookOptionsPosition[      6610,        202]
+NotebookOutlinePosition[      8975,        257]
+CellTagsIndexPosition[      8932,        254]
 WindowTitle->SNRMapCalc
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ SNRMapCalc.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$213556], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$226851], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/SNRMapCalc", ".html"]], None}]}]},
@@ -104,46 +104,22 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"SNRMapCalc", "[", 
-       RowBox[{
-        SubscriptBox[
-         StyleBox["data", "TI"], 
-         StyleBox["1", "TR"]], ",", 
-        StyleBox["noisemap", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]calcualtes the signal to noise ratio of the data using \
-MN[data]/(1/sqrt[pi/2] sigma), where sigma is the local mean of the noise map \
-assuming it is a rician distribution. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"SNRMapCalc", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         SubscriptBox[
-          StyleBox["data", "TI"], 
-          StyleBox["1", "TR"]], ",", 
-         SubscriptBox[
-          StyleBox["data", "TI"], 
-          StyleBox["2", "TR"]]}], "}"}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]calcualtes the signal to noise ratio from two identical \
-images using MN[data1,data2] / (.5 SQRT[2] STDV[data2-data1]). "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"SNRMapCalc", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         SubscriptBox[
-          StyleBox["data", "TI"], 
-          StyleBox["1", "TR"]], ",", " ", 
-         RowBox[{"..", " ", 
-          StyleBox["dataN", "TI"]}]}], "}"}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]calcualtes the signal to noise ratio of the data using \
-MN/sigma where the mean signal MN is the average voxe value over all dynamics \
-N and the sigma is the standard deviation over all dynamics N."
-    }]]}
+   {"", Cell["\<\
+SNRMapCalc[data$1,noisemap]\[LineSeparator]calcualtes the signal to noise \
+ratio of the data using MN[data]/(1/sqrt[pi/2] sigma), where sigma is the \
+local mean of the noise map assuming it is a rician distribution. \
+\>"]},
+   {"", Cell["\<\
+SNRMapCalc[{data$1,data$2}]\[LineSeparator]calcualtes the signal to noise \
+ratio from two identical images using MN[data1,data2] / (.5 SQRT[2] \
+STDV[data2-data1]). \
+\>"]},
+   {"", Cell["\<\
+SNRMapCalc[{data$1, .. dataN}]\[LineSeparator]calcualtes the signal to noise \
+ratio of the data using MN/sigma where the mean signal MN is the average voxe \
+value over all dynamics N and the sigma is the standard deviation over all \
+dynamics N.\
+\>"]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
@@ -239,23 +215,23 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 50, 36.6227783}", 
+   "built" -> "{2018, 5, 9, 13, 46, 20.1273405}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ProcessingTools`",
      "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
-    "SNRMapCalc[data1, noisemap] calcualtes the signal to noise ratio of the \
+    "SNRMapCalc[data$1,noisemap] calcualtes the signal to noise ratio of the \
 data using MN[data]/(1/sqrt[pi/2] sigma), where sigma is the local mean of \
-the noise map assuming it is a rician distribution. SNRMapCalc[{data1, \
-data2}] calcualtes the signal to noise ratio from two identical images using \
-MN[data1,data2] / (.5 SQRT[2] STDV[data2-data1]). SNRMapCalc[{data1, .. \
-dataN}] calcualtes the signal to noise ratio of the data using MN/sigma where \
-the mean signal MN is the average voxe value over all dynamics N and the \
-sigma is the standard deviation over all dynamics N.", "synonyms" -> {}, 
-    "tabletags" -> {}, "title" -> "SNRMapCalc", "titlemodifier" -> "", 
-    "windowtitle" -> "SNRMapCalc", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/SNRMapCalc"}},
+the noise map assuming it is a rician distribution. \
+SNRMapCalc[{data$1,data$2}] calcualtes the signal to noise ratio from two \
+identical images using MN[data1,data2] / (.5 SQRT[2] STDV[data2-data1]). \
+SNRMapCalc[{data$1, .. dataN}] calcualtes the signal to noise ratio of the \
+data using MN/sigma where the mean signal MN is the average voxe value over \
+all dynamics N and the sigma is the standard deviation over all dynamics N.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "SNRMapCalc", 
+    "titlemodifier" -> "", "windowtitle" -> "SNRMapCalc", "type" -> "Symbol", 
+    "uri" -> "DTITools/ref/SNRMapCalc"}},
 CellContext->"Global`",
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->Notebook[{
@@ -280,27 +256,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[582, 21, 3051, 74, 70, "AnchorBarGrid",ExpressionUUID->"51e9240a-89ab-49c1-82bd-14da31dcc99e",
+Cell[582, 21, 3051, 74, 70, "AnchorBarGrid",ExpressionUUID->"affb7467-d7a3-4bb9-acc7-91e54dff94eb",
  CellID->1],
-Cell[3636, 97, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"e796ef40-9f1e-4f86-a86a-12b90dff4387"],
-Cell[3806, 105, 1686, 45, 70, "Usage",ExpressionUUID->"e895337c-51a4-4ed8-83db-36b969986c7b"],
+Cell[3636, 97, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"29419ce1-cab1-4e6e-93dc-7e8069c77d5f"],
+Cell[3806, 105, 898, 21, 70, "Usage",ExpressionUUID->"d443fd08-25b5-48a3-9123-d26cac4c8ec9"],
 Cell[CellGroupData[{
-Cell[5517, 154, 621, 19, 70, "NotesSection",ExpressionUUID->"3f55f80f-1d50-4c22-a76a-7d23fc72987e",
+Cell[4729, 130, 621, 19, 70, "NotesSection",ExpressionUUID->"cee5f623-76a1-47b2-a196-dedb9fe5b3fc",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[6141, 175, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"1f600bdc-9648-4114-96e8-a4729b366087"],
-Cell[6175, 177, 53, 0, 70, "Notes",ExpressionUUID->"fa40dab6-5337-4720-9be6-a34c2501a56a"],
-Cell[6231, 179, 687, 19, 70, "3ColumnTableMod",ExpressionUUID->"018408ec-b111-4932-ba8f-3868c24a26d4"],
-Cell[6921, 200, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"295101cf-b8e1-4c04-9d95-699831019183"]
+Cell[5353, 151, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"8f7a6804-2962-4e71-bddb-887325568300"],
+Cell[5387, 153, 53, 0, 70, "Notes",ExpressionUUID->"a9f23e48-cfa9-45df-a735-ddc51f17351d"],
+Cell[5443, 155, 687, 19, 70, "3ColumnTableMod",ExpressionUUID->"61a73c71-53d0-4ad8-9cc8-8b238aee83ce"],
+Cell[6133, 176, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"bb7485e2-ebc0-45fb-a2dc-cbc818f86344"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[6989, 205, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"59719e88-914e-4666-9d31-8460ff1a8c45",
+Cell[6201, 181, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"9d6d3876-db53-4b61-b742-53034b26f49a",
  CellID->38303248],
-Cell[7148, 214, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"4c0062a0-0c8f-40af-9d7e-043997562c74"],
-Cell[7182, 216, 174, 5, 70, "MoreAbout",ExpressionUUID->"f770fca6-a6c8-4bbc-91f0-e9f9acb29c87",
+Cell[6360, 190, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"060e20a9-bc2c-4732-a8fd-f2590fb5caa7"],
+Cell[6394, 192, 174, 5, 70, "MoreAbout",ExpressionUUID->"e517e6eb-926d-4ad2-99dc-15a21818ca3d",
  CellID->1]
 }, Open  ]],
-Cell[7371, 224, 23, 0, 70, "FooterCell",ExpressionUUID->"a1c96a6d-867e-4710-9596-9122c338a9b9"]
+Cell[6583, 200, 23, 0, 70, "FooterCell",ExpressionUUID->"77a6f9cd-a340-41fb-a53b-96c92bae58ae"]
 }
 ]
 *)

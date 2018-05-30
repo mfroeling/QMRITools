@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     14446,        396]
-NotebookOptionsPosition[     10903,        324]
-NotebookOutlinePosition[     13204,        378]
-CellTagsIndexPosition[     13161,        375]
+NotebookDataLength[     15152,        462]
+NotebookOptionsPosition[     11609,        390]
+NotebookOutlinePosition[     13910,        444]
+CellTagsIndexPosition[     13867,        441]
 WindowTitle->PCADeNoise
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ PCADeNoise.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$162173], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$174247], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/PCADeNoise", ".html"]], None}]}]},
@@ -104,28 +104,16 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+PCADeNoise[data]\[LineSeparator]removes rician noise from the data with PCA. \
+\
+\>"]},
+   {"", Cell["\<\
+PCADeNoise[data, mask]\[LineSeparator]removes rician noise from the data with \
+PCA only withing the mask. \
+\>"]},
    {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"PCADeNoise", "[", 
-       StyleBox["data", "TI"], "]"}]], "InlineFormula"],
-     "\[LineSeparator]removes rician noise from the data with PCA. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"PCADeNoise", "[", 
-       RowBox[{
-        StyleBox["data", "TI"], ",", " ", 
-        StyleBox["mask", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]removes rician noise from the data with PCA only \
-withing the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"PCADeNoise", "[", 
-       RowBox[{
-        StyleBox["data", "TI"], ",", " ", 
-        StyleBox["mask", "TI"], ",", " ", 
-        StyleBox["sig", "TI"]}], "]"}]], "InlineFormula"],
+     "PCADeNoise[data, mask, sig]",
      "\[LineSeparator]removes rician noise from the data with PCA only \
 withing the mask using sig as prior knowledge or fixed value. Output is de \
 {data denoise, sigma map} by default if ",
@@ -134,9 +122,66 @@ withing the mask using sig as prior knowledge or fixed value. Output is de \
          TextData["PCAOutput"]],"paclet:DTITools/ref/PCAOutput"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " is Full then fitted {data dnoise , {sigma fit, average sigma}, {number \
-components, number of fitted voxesl, number of max fits}, total fit -time per \
-500 ittt}."
+     " ",
+     "is",
+     " ",
+     "Full",
+     " ",
+     "then",
+     " ",
+     "fitted",
+     " ",
+     "{data",
+     " ",
+     "dnoise",
+     " ",
+     ",",
+     " ",
+     "{sigma",
+     " ",
+     "fit",
+     ",",
+     " ",
+     "average",
+     " ",
+     "sigma}",
+     ",",
+     " ",
+     "{number",
+     " ",
+     "components",
+     ",",
+     " ",
+     "number",
+     " ",
+     "of",
+     " ",
+     "fitted",
+     " ",
+     "voxesl",
+     ",",
+     " ",
+     "number",
+     " ",
+     "of",
+     " ",
+     "max",
+     " ",
+     "fits}",
+     ",",
+     " ",
+     "total",
+     " ",
+     "fit",
+     " ",
+     "-time",
+     " ",
+     "per",
+     " ",
+     "500",
+     " ",
+     "ittt}",
+     "."
     }]]}
   }]], "Usage",
  GridBoxOptions->{
@@ -186,52 +231,34 @@ Cell[BoxData[GridBox[{
      ". It sets the kernel size."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
-    ButtonBox["BinSize",
+    ButtonBox["PCAFitParameters",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/BinSize"], "5", Cell[TextData[{
+     ButtonData->"paclet:DTITools/ref/PCAFitParameters"], 
+    RowBox[{"{", 
+     RowBox[{"10", ",", " ", "6", ",", " ", "10"}], "}"}], Cell[TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
-         TextData["BinSize"]],"paclet:DTITools/ref/BinSize"},
+         TextData["PCAFitParameters"]],"paclet:DTITools/ref/PCAFitParameters"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an option of ",
      Cell[BoxData["PCADeNoise"], "InlineFormula"],
-     ". Sets the binsize."
-    }], "TableText"]},
-   {Cell["      ", "TableRowIcon"], 
-    ButtonBox["InitializationP",
-     BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/InitializationP"], "10", Cell[
-    TextData[{
+     " and ",
      Cell[BoxData[
       TemplateBox[{Cell[
-         TextData["InitializationP"]],"paclet:DTITools/ref/InitializationP"},
+         TextData["PCAFitHist"]],"paclet:DTITools/ref/PCAFitHist"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " is an option of ",
-     Cell[BoxData["PCADeNoise"], "InlineFormula"],
-     ". How many signal PCA components are initialized."
-    }], "TableText"]},
-   {Cell["      ", "TableRowIcon"], 
-    ButtonBox["MaxIterationsFit",
-     BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/MaxIterationsFit"], "10", Cell[TextData[{
-     Cell[BoxData[
-      TemplateBox[{Cell[
-         TextData["MaxIterationsFit"]],"paclet:DTITools/ref/MaxIterationsFit"},
-       "RefLink",
-       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " is an option of ",
-     Cell[BoxData["PCADeNoise"], "InlineFormula"],
-     ". How many itterations can be used."
+     ". {nb, pi, maxit} = bins, initial signal components, maximum number of \
+itterations."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["FitSigma",
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/FitSigma"], 
-    ButtonBox["True",
+    ButtonBox["False",
      BaseStyle->"Link",
-     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
          TextData["FitSigma"]],"paclet:DTITools/ref/FitSigma"},
@@ -280,13 +307,52 @@ sigmat}."
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["Method",
      BaseStyle->"Link",
-     ButtonData->"paclet:ref/Method"], 
-    ButtonBox["Histogram",
-     BaseStyle->"Link",
-     ButtonData->"paclet:ref/Histogram"], Cell["\<\
+     ButtonData->"paclet:ref/Method"], "Equation", Cell["\<\
 Method is an option for various algorithm-intensive functions that specifies \
 what internal methods they should use.\
-\>", "TableText"]}
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCATollerance",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PCATollerance"], "0", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCATollerance"]],"paclet:DTITools/ref/PCATollerance"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData["PCADeNoise"], "InlineFormula"],
+     " and shuld be an integer > 0. ",
+     "Default",
+     " value is 0. When increased the denoise method removes less noise."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCAWeighting",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PCAWeighting"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCAWeighting"]],"paclet:DTITools/ref/PCAWeighting"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData["PCADeNoise"], "InlineFormula"],
+     " and can be ",
+     "True",
+     " of ",
+     "False",
+     ". ",
+     "Default",
+     " value is ",
+     "False",
+     ". When ",
+     "True",
+     " the weights of the per voxel result are calculated based on the number \
+of non noise components."
+    }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
  GridBoxBackground->{
@@ -337,7 +403,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 47, 51.3826091}", 
+   "built" -> "{2018, 5, 9, 13, 40, 10.1151004}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`DenoiseTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -377,27 +443,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[582, 21, 3045, 74, 70, "AnchorBarGrid",ExpressionUUID->"8db856c2-eab0-4338-9989-244805c8f403",
+Cell[582, 21, 3045, 74, 70, "AnchorBarGrid",ExpressionUUID->"71de138c-6658-4fbe-977a-908f71e50245",
  CellID->1],
-Cell[3630, 97, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"7f3e8d3b-04a5-4116-a42b-f81a22f79b30"],
-Cell[3800, 105, 1496, 39, 70, "Usage",ExpressionUUID->"26fd9813-096b-425e-86b7-2e67dcb54d47"],
+Cell[3630, 97, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"89e348ed-c341-4361-a810-913f6b2d545e"],
+Cell[3800, 105, 1573, 84, 70, "Usage",ExpressionUUID->"30d96b9f-1559-4f33-98b1-624409098ed7"],
 Cell[CellGroupData[{
-Cell[5321, 148, 621, 19, 70, "NotesSection",ExpressionUUID->"469572c6-a7e9-4a7d-bde2-f06d8514e604",
+Cell[5398, 193, 621, 19, 70, "NotesSection",ExpressionUUID->"e48d16e5-bf1d-48df-88df-0d6c15d50cdf",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[5945, 169, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"ce64a353-0234-4890-9bcb-fed257217d96"],
-Cell[5979, 171, 53, 0, 70, "Notes",ExpressionUUID->"ffb44f3c-3b84-45e1-a506-90ed74e723f8"],
-Cell[6035, 173, 4394, 123, 70, "3ColumnTableMod",ExpressionUUID->"d6b903af-5600-45a9-8ce8-1f8fdd81f1d1"],
-Cell[10432, 298, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"975e7ef7-fd56-4212-a246-e7e0d4c7eeb8"]
+Cell[6022, 214, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"e559a276-58c2-4282-a0e7-a13ad2970e3a"],
+Cell[6056, 216, 53, 0, 70, "Notes",ExpressionUUID->"dbbc0385-c666-4b6c-98f2-a83b7b87a649"],
+Cell[6112, 218, 5023, 144, 70, "3ColumnTableMod",ExpressionUUID->"cd6596b8-947f-4166-8bc6-8997509f07e1"],
+Cell[11138, 364, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"9fe86a7b-dad3-4844-9833-32135aa6a797"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[10500, 303, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"b55af9f0-dd1b-450f-a560-6b845cb9951c",
+Cell[11206, 369, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"8f139aaa-f946-4f04-96cd-89b2f70dd0c8",
  CellID->38303248],
-Cell[10659, 312, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"7922daba-eea4-4ac9-9390-7d3dab12bb34"],
-Cell[10693, 314, 168, 5, 70, "MoreAbout",ExpressionUUID->"5fc725b9-10c8-478b-90fb-f1a51637cc76",
+Cell[11365, 378, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"e60db006-e488-49ec-943e-4087fa358892"],
+Cell[11399, 380, 168, 5, 70, "MoreAbout",ExpressionUUID->"2555c3bd-e966-4841-9188-37263f99d0a0",
  CellID->1]
 }, Open  ]],
-Cell[10876, 322, 23, 0, 70, "FooterCell",ExpressionUUID->"8af3526a-bbac-4f7f-9af8-c795eb5cef44"]
+Cell[11582, 388, 23, 0, 70, "FooterCell",ExpressionUUID->"b4bbf921-4d78-4bcf-9352-6e375e012eb1"]
 }
 ]
 *)

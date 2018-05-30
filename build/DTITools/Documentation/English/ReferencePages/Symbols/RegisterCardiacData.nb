@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     27444,        754]
-NotebookOptionsPosition[     23963,        683]
-NotebookOutlinePosition[     26202,        736]
-CellTagsIndexPosition[     26159,        733]
+NotebookDataLength[     29686,        815]
+NotebookOptionsPosition[     26205,        744]
+NotebookOutlinePosition[     28444,        797]
+CellTagsIndexPosition[     28401,        794]
 WindowTitle->RegisterCardiacData
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ RegisterCardiacData.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$185933], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$197906], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/RegisterCardiacData", ".html"]], None}]}]},
@@ -177,8 +177,21 @@ Cell[BoxData[GridBox[{
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " and ",
      Cell[BoxData["RegisterCardiacData"], "InlineFormula"],
-     ". specifies which target to uses for registration. \nValues can be \
-\"First\", \"Mean\" or \"Median\"."
+     ". Specifies which target to uses for registration if using \"rigid\", \
+\"affine\" or \"bspline\" as ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MethodReg"]],"paclet:DTITools/ref/MethodReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".\nIf the ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MethodReg"]],"paclet:DTITools/ref/MethodReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is \"cyclyc\" or \"PCA\" it does not need a target and this options \
+does nothing. \nValues can be \"First\", \"Mean\" or \"Median\"."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["Iterations",
@@ -312,7 +325,7 @@ iteration used by the registration functions."
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["InterpolationOrderReg",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/InterpolationOrderReg"], "1", Cell[
+     ButtonData->"paclet:DTITools/ref/InterpolationOrderReg"], "3", Cell[
     TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
@@ -550,7 +563,12 @@ registration."
     ButtonBox["True",
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
-     "DeleteTempDirectoryis",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DeleteTempDirectory"]],
+        "paclet:DTITools/ref/DeleteTempDirectory"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " an options for ",
      Cell[BoxData[
       TemplateBox[{Cell[
@@ -642,6 +660,49 @@ deplayed."
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ".\nIt specifies if the tranformation paramters (translation, rotation, \
 scale and skew) should be given as output in the registration functions."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UseGPU",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/UseGPU"], 
+    RowBox[{"{", 
+     RowBox[{"False", ",", " ", "Automatic"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["UseGPU"]],"paclet:DTITools/ref/UseGPU"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:DTITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". The value is {bool, gpu} where bool is ",
+     "True",
+     " or ",
+     "False",
+     ", and gpu is the gpu ID which is an integer or ",
+     "Automatic",
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCAComponents",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PCAComponents"], "3", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCAComponents"]],"paclet:DTITools/ref/PCAComponents"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:DTITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". It speciefies how many PCA components are used if method is set to \
+\"PCA\""
     }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
@@ -649,11 +710,11 @@ scale and skew) should be given as output in the registration functions."
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {
     None, None, None, None, None, None, None, None, None, None, None, None, 
-     None, None, {None}}, "RowsIndexed" -> {}},
+     None, None, None, None, {None}}, "RowsIndexed" -> {}},
  GridBoxDividers->{
   "Rows" -> {{
      True, True, True, True, True, True, True, True, True, True, True, True, 
-      True, True, True, True}}}}],
+      True, True, True, True, True, True}}}}],
 
 Cell["", "SectionFooterSpacer"]
 }, Closed]],
@@ -696,7 +757,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 49, 8.5594459}", 
+   "built" -> "{2018, 5, 9, 13, 43, 2.4265589}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ElastixTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -735,27 +796,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[591, 21, 3081, 74, 70, "AnchorBarGrid",ExpressionUUID->"586eb1ab-a254-43dc-8593-2ee7b97e2255",
+Cell[591, 21, 3081, 74, 70, "AnchorBarGrid",ExpressionUUID->"0c5b87de-910b-456b-b864-37f0065a13d7",
  CellID->1],
-Cell[3675, 97, 176, 6, 70, "ObjectNameGrid",ExpressionUUID->"c098d9a7-7253-43b0-b21d-54334758c4fe"],
-Cell[3854, 105, 791, 22, 70, "Usage",ExpressionUUID->"b9678e95-bb02-471e-91d1-0cffae975b4e"],
+Cell[3675, 97, 176, 6, 70, "ObjectNameGrid",ExpressionUUID->"00802687-db8c-4ba4-b2f9-745369fc36bc"],
+Cell[3854, 105, 791, 22, 70, "Usage",ExpressionUUID->"a96c6d2d-d53f-4ba2-84cc-946d10dfd448"],
 Cell[CellGroupData[{
-Cell[4670, 131, 621, 19, 70, "NotesSection",ExpressionUUID->"3140f5eb-80b4-4c37-a07a-ec5d1c418e61",
+Cell[4670, 131, 621, 19, 70, "NotesSection",ExpressionUUID->"e2f14778-3d49-4567-a6b5-ad8d00854431",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[5294, 152, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"2de4e049-f8c1-4e76-bed7-f9adce92476a"],
-Cell[5328, 154, 53, 0, 70, "Notes",ExpressionUUID->"1df13479-9329-4446-a899-b0c8f950a420"],
-Cell[5384, 156, 18105, 499, 70, "3ColumnTableMod",ExpressionUUID->"83eebb5c-f0c6-4e82-bc1f-51220b935ae6"],
-Cell[23492, 657, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"20bf9b38-881c-4694-9ac9-3b924345b8f5"]
+Cell[5294, 152, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"b027e081-89e2-4229-ad44-f88e1b69c49c"],
+Cell[5328, 154, 53, 0, 70, "Notes",ExpressionUUID->"64b9faae-3e24-44dc-bcf6-2b80ecfef8bc"],
+Cell[5384, 156, 20347, 560, 70, "3ColumnTableMod",ExpressionUUID->"48a5466a-f6a1-4132-9364-f80a6d6acf0a"],
+Cell[25734, 718, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"849bbad3-85b1-4808-a02a-ae6ef50a3270"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[23560, 662, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"8f42d6c2-acc1-4bee-98f1-df06d79cf144",
+Cell[25802, 723, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"52621d4a-e0a7-401d-aa7f-76ae95d8e118",
  CellID->38303248],
-Cell[23719, 671, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"956c9bc5-5bc7-44f3-8ec7-30144862ed26"],
-Cell[23753, 673, 168, 5, 70, "MoreAbout",ExpressionUUID->"7cde2e06-a9b2-4b26-8c45-be7b6ab5de44",
+Cell[25961, 732, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"13b88aff-6178-4a6c-9936-1f37e26508f2"],
+Cell[25995, 734, 168, 5, 70, "MoreAbout",ExpressionUUID->"449236a9-fd98-4915-af47-9f3a0d16fe12",
  CellID->1]
 }, Open  ]],
-Cell[23936, 681, 23, 0, 70, "FooterCell",ExpressionUUID->"51c6ecb0-dc9c-446f-8813-b6b9b961abc1"]
+Cell[26178, 742, 23, 0, 70, "FooterCell",ExpressionUUID->"eaa99467-b7f4-4448-af3a-e5b5c0fd056d"]
 }
 ]
 *)

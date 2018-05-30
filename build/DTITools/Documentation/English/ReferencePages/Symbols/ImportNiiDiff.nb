@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10577,        299]
-NotebookOptionsPosition[      7370,        231]
-NotebookOutlinePosition[      9342,        281]
-CellTagsIndexPosition[      9299,        278]
+NotebookDataLength[     10461,        291]
+NotebookOptionsPosition[      7129,        222]
+NotebookOutlinePosition[      9226,        273]
+CellTagsIndexPosition[      9183,        270]
 WindowTitle->ImportNiiDiff
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ ImportNiiDiff.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$118802], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$123732], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/ImportNiiDiff", ".html"]], None}]}]},
@@ -104,33 +104,24 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"ImportNiiDiff", "[", "]"}]], "InlineFormula"],
-     "\[LineSeparator]will promt for the *.nii, *.bvec and *.bval file to \
-import. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"ImportNiiDiff", "[", 
-       RowBox[{
-        RowBox[{"*", 
-         RowBox[{".", 
-          StyleBox["nii", "TI"]}]}], ",", 
-        RowBox[{"*", 
-         RowBox[{".", 
-          StyleBox["bvec", "TI"]}]}], ",", 
-        RowBox[{"*", 
-         RowBox[{".", 
-          StyleBox["bval", "TI"]}]}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]will import the given files. The output will be \
-{data,grad,bvec,vox}."
-    }]]}
+   {"", Cell["\<\
+ImportNiiDiff[]\[LineSeparator]will promt for the *.nii, *.bvec and *.bval \
+file to import. \
+\>"]},
+   {"", Cell["\<\
+ImportNiiDiff[*.nii]\[LineSeparator]will import the *.nii file and \
+automatically also imports the *.bvec and *.bval is they have the same name. \
+\
+\>"]},
+   {"", Cell["\<\
+ImportNiiDiff[*.nii,*.bvec,*.bval]\[LineSeparator]will import the given \
+files. The output will be {data,grad,bvec,vox}.\
+\>"]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
-  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
-   "RowsIndexed" -> {}}}],
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}}}],
 
 Cell[CellGroupData[{
 
@@ -244,18 +235,19 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 45, 30.0117419}", 
+   "built" -> "{2018, 5, 9, 13, 35, 0.5904023}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`NiftiTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "ImportNiiDiff[] will promt for the *.nii, *.bvec and *.bval file to \
-import. ImportNiiDiff[*.nii, *.bvec, *.bval] will import the given files. The \
-output will be {data,grad,bvec,vox}.", "synonyms" -> {}, "tabletags" -> {}, 
-    "title" -> "ImportNiiDiff", "titlemodifier" -> "", "windowtitle" -> 
-    "ImportNiiDiff", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/ImportNiiDiff"}},
+import. ImportNiiDiff[*.nii] will import the *.nii file and automatically \
+also imports the *.bvec and *.bval is they have the same name. \
+ImportNiiDiff[*.nii,*.bvec,*.bval] will import the given files. The output \
+will be {data,grad,bvec,vox}.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "ImportNiiDiff", "titlemodifier" -> "", "windowtitle" -> "ImportNiiDiff", 
+    "type" -> "Symbol", "uri" -> "DTITools/ref/ImportNiiDiff"}},
 CellContext->"Global`",
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->Notebook[{
@@ -280,27 +272,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[585, 21, 3053, 74, 70, "AnchorBarGrid",ExpressionUUID->"16acaeb9-6db0-45a1-8a18-4151ebfbd96d",
+Cell[585, 21, 3053, 74, 70, "AnchorBarGrid",ExpressionUUID->"355d4c03-32ad-43d8-ba0d-b131a22c99fc",
  CellID->1],
-Cell[3641, 97, 170, 6, 70, "ObjectNameGrid",ExpressionUUID->"eeb5145c-6844-469a-b608-71d5cf83cb08"],
-Cell[3814, 105, 870, 27, 70, "Usage",ExpressionUUID->"90080e1a-c1dd-4408-9630-4ea0fbed60b9"],
+Cell[3641, 97, 170, 6, 70, "ObjectNameGrid",ExpressionUUID->"1f19d4ee-87d0-4460-a0b1-99eec1372bc8"],
+Cell[3814, 105, 629, 18, 70, "Usage",ExpressionUUID->"35f4470a-22c1-4729-b52e-b0a989b8e042"],
 Cell[CellGroupData[{
-Cell[4709, 136, 621, 19, 70, "NotesSection",ExpressionUUID->"d23063ff-8539-4ad1-a0d1-524cbe1a2417",
+Cell[4468, 127, 621, 19, 70, "NotesSection",ExpressionUUID->"3cf2fced-e1d8-4d73-8960-a147bac0f802",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[5333, 157, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"4907b58d-5f06-452d-a977-2eec6cf5a20b"],
-Cell[5367, 159, 53, 0, 70, "Notes",ExpressionUUID->"1ced1014-9c1e-4638-8630-08d77bfcd220"],
-Cell[5423, 161, 1477, 42, 70, "3ColumnTableMod",ExpressionUUID->"20e56746-83db-4967-a7a8-318ab340b80e"],
-Cell[6903, 205, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"aeeea4d9-16c2-434b-803f-bec165c381b7"]
+Cell[5092, 148, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"09e8e47e-22a2-406a-b637-399b92f8ed2b"],
+Cell[5126, 150, 53, 0, 70, "Notes",ExpressionUUID->"ff64051d-037d-41ed-8fc8-7f21365929a8"],
+Cell[5182, 152, 1477, 42, 70, "3ColumnTableMod",ExpressionUUID->"ae72f777-edb3-418b-a57b-b049d29a400f"],
+Cell[6662, 196, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"57a11368-2c44-4665-824b-943e021cc6b0"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[6971, 210, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"1b0ed009-7513-4468-adb0-5007a8fe956c",
+Cell[6730, 201, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"4c6a0b95-c6f2-46d3-95cb-4b12c6f62197",
  CellID->38303248],
-Cell[7130, 219, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"4e5b72bf-fa38-4797-8283-b19e3534ea48"],
-Cell[7164, 221, 164, 5, 70, "MoreAbout",ExpressionUUID->"735ed645-14d2-42b4-8b18-7324c9c9cc62",
+Cell[6889, 210, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"6f1459ce-57ac-405f-9d46-ac0e92712959"],
+Cell[6923, 212, 164, 5, 70, "MoreAbout",ExpressionUUID->"9e4c62db-d868-44d9-8cd2-99784abb6eb2",
  CellID->1]
 }, Open  ]],
-Cell[7343, 229, 23, 0, 70, "FooterCell",ExpressionUUID->"c9a61d3c-f7b1-414c-9bdf-bc9bd99a5bc9"]
+Cell[7102, 220, 23, 0, 70, "FooterCell",ExpressionUUID->"c8a98ed3-8885-4d57-933a-051f8e490047"]
 }
 ]
 *)
