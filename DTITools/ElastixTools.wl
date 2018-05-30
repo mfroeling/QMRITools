@@ -267,7 +267,7 @@ Begin["`Private`"]
 (*ParString*)
 
 
-SchedulePar[res_,x_]:=ListToString[ToString[2^#1]<>" "<>ToString[2^#]<>" 0" &/@ Reverse[Range[res]-1]];
+SchedulePar[res_]:=ListToString[ToString[2^#1]<>" "<>ToString[2^#]<>" 0" &/@ Reverse[Range[res]-1]];
 
 ListToString[list_]:=StringJoin[Riffle[ToString/@list," "]]
 
@@ -383,12 +383,12 @@ _,
 // *********************
 (NumberOfHistogramBins "<>ToString[bins]<>")
 "<>Switch[type,
-"affineDTI","(Scales -1.000000e+00 -1.000000e+00 -1.000000e+00  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06 -1.000000e+00 -1.000000e+00 -1.000000e+00)",
+"affineDTI",""(*"(Scales -1.000000e+00 -1.000000e+00 -1.000000e+00  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06 -1.000000e+00 -1.000000e+00 -1.000000e+00)"*),
 "rigidDTI","(Scales -1.000000e+00 -1.000000e+00 -1.000000e+00  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38 -1.000000e+00 -1.000000e+00 -1.000000e+00)",
 "PCA",
-"(ImagePyramidSchedule "<>SchedulePar[resolutions,0]<>")",
+"(ImagePyramidSchedule "<>SchedulePar[resolutions]<>")",
 "cyclyc",
-"(ImagePyramidSchedule "<>SchedulePar[resolutions,0]<>")",
+"(ImagePyramidSchedule "<>SchedulePar[resolutions]<>")",
 _,""
 ]<>"
 
@@ -685,7 +685,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol},
 	    " > " <> # <> "/outputa.txt \n" <>
   		" mv " <> # <> "/result.nii.gz "<> # <> "/resultA-3D.nii.gz \n"
   	) & /@ volDirs
-  ];
+  ]
 ]
 
 
@@ -1066,7 +1066,6 @@ type_,OptionsPattern[]]:=Module[{
 	
 	RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];
 	{data,vox}=ImportNii[tempdir<>outfol<>outF];
-	data=ToPackedArray[data];
 	,
 	
 	"cyclyc",
@@ -1080,6 +1079,7 @@ type_,OptionsPattern[]]:=Module[{
 	{data,vox}=ImportNii[tempdir<>outfol<>outF];
 	data=ToPackedArray[data];
 	,
+	
 	"PCA",
 	{inpfol,movfol,outfol}={"","",""};
 	{fmaskF,mmaskF}={"",""};
@@ -1091,8 +1091,9 @@ type_,OptionsPattern[]]:=Module[{
 	{data,vox}=ImportNii[tempdir<>outfol<>outF];
 	data=ToPackedArray[data];
 	,
+	
 	"series",
-	DynamicModule[{i},
+	
 	inpfol="";
 	{fmaskF,mmaskF}={"",""};
 	{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
@@ -1106,8 +1107,6 @@ type_,OptionsPattern[]]:=Module[{
 	maske=(dimmovm == dimmov && maskm!={1});
 	(*check if same mask for all volumes*)
 	maske2=(dimmovm == Drop[dimmov,1] && maskm!={1});
-	
-	i=0;
 	
 	(*export data*)
 	{command,outfile}=Transpose@(
@@ -1134,20 +1133,17 @@ type_,OptionsPattern[]]:=Module[{
 	RunBatfile[tempdir,command];
 	
 	(*Import data*)
-	data=ToPackedArray[(First@ImportNii[#])&/@outfile];
+	data=(First@ImportNii[#])&/@outfile;
 	
-	If[OptionValue[OutputTransformation],	w=ReadTransformParameters[tempdir]];
+	If[OptionValue[OutputTransformation], w = ReadTransformParameters[tempdir]];
+
 	];
-	];
+	
+	data=ToPackedArray[Chop[Clip[data,MinMax[moving]]]];
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempdir,DeleteContents->True]];
+	If[OptionValue[OutputTransformation], {data,w},	data]
 	
-	(*If[type=="series"&&ArrayDepth[data]==4,data=Transpose[data]];*)
-	
-	Chop[If[OptionValue[OutputTransformation],
-		{Clip[data,MinMax[moving]],w},
-		Clip[data,MinMax[moving]],10^-6]
-	]
 ]
 
 
@@ -1440,7 +1436,7 @@ RegisterDiffusionData[
     FilterRules[{opts} , Options[RegisterData]]];
 
   If[OptionValue[OutputTransformation],{dtidatar,w}=dtidatar];
-  
+    
   target = OptionValue[RegistrationTarget];
   movingdata=If[ListQ[target] && AllTrue[target, IntegerQ] && Min[target] > 0 && Max[target] <= Length[dtidatar[[1]]],
   	Median /@ dtidatar[[All, DeleteDuplicates[target]]],
@@ -1488,15 +1484,15 @@ RegisterDiffusionData[
   RunBatfileT[tempDir, cmd];
   
   (*import dti data in anat space*)
-  dtidatarA = Transpose[ToPackedArray[(ImportNii[#][[1]]) & /@ FileNames["resultA*", tempDir, 2]]];
+  dtidatarA = Transpose[ImportNii[#][[1]] & /@ FileNames["resultA*", tempDir, 2]];
   
   (*finalize by deleting temp director*)
   If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempDir,DeleteContents->True]];
   
   (*output data*)
   If[OptionValue[OutputTransformation],
-  	{Clip[dtidatar,{0,Infinity}], Clip[dtidatarA,{0,Infinity}], w},
-  	Clip[{dtidatar, dtidatarA},{0,Infinity}]
+  	{dtidatar, dtidatarA, w},
+  	{dtidatar, dtidatarA}
   ]
 ]
 

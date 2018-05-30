@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     15435,        425]
-NotebookOptionsPosition[     11959,        354]
-NotebookOutlinePosition[     14193,        407]
-CellTagsIndexPosition[     14150,        404]
+NotebookDataLength[     15914,        440]
+NotebookOptionsPosition[     12439,        369]
+NotebookOutlinePosition[     14673,        422]
+CellTagsIndexPosition[     14630,        419]
 WindowTitle->EPGT2Fit
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$80807], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$83250], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/EPGT2Fit", ".html"]], None}]}]},
@@ -104,29 +104,15 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"EPGT2Fit", "[", 
-       RowBox[{
-        StyleBox["data", "TI"], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          TemplateBox[{Cell[
-             TextData["Necho"]],"paclet:ref/Necho"},
-           "RefLink",
-           BaseStyle->{"InlineFormula"}], ",", " ", 
-          StyleBox["detlaTE", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["exitation", "TI"], ",", " ", 
-          StyleBox["refoucs", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]fits the T2 based on Marty B et.al. Simultaneous muscle \
-water T2 and fat fraction mapping using transverse relaxometry with \
-stimulated echo compensation. exitation and refocus are the RF pulse angles \
-e.g. 90,180. They can also be a range of angeles over the slice profile as \
-defined by GetSliceProfile. Output is {{{T2map,B1Map},{wat, fat, \
-fatMap}},callibration} or {{T2map,B1Map},{wat, fat, fatMap}}"
-    }]]}
+   {"", Cell["\<\
+EPGT2Fit[data, {Necho, detlaTE}, {exitation, refoucs}]\[LineSeparator]fits \
+the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction \
+mapping using transverse relaxometry with stimulated echo compensation. \
+exitation and refocus are the RF pulse angles e.g. 90,180. They can also be a \
+range of angeles over the slice profile as defined by GetSliceProfile. Output \
+is {{{T2map,B1Map},{wat, fat, fatMap}},callibration} or {{T2map,B1Map},{wat, \
+fat, fatMap}}\
+\>"]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
@@ -166,8 +152,7 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/DictB1Range"], 
     RowBox[{"{", 
-     RowBox[{"0.5", ",", " ", "1.5", ",", " ", "0.025"}], "}"}], Cell[
-    TextData[{
+     RowBox[{"0.5", ",", " ", "1.5", ",", " ", "0.02"}], "}"}], Cell[TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
          TextData["DictB1Range"]],"paclet:DTITools/ref/DictB1Range"},
@@ -190,7 +175,7 @@ Cell[BoxData[GridBox[{
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/DictT2Range"], 
     RowBox[{"{", 
-     RowBox[{"10", ",", " ", "70", ",", " ", "0.3"}], "}"}], Cell[TextData[{
+     RowBox[{"10", ",", " ", "70", ",", " ", "0.2"}], "}"}], Cell[TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
          TextData["DictT2Range"]],"paclet:DTITools/ref/DictT2Range"},
@@ -225,29 +210,6 @@ Cell[BoxData[GridBox[{
      ". ",
      "Needs",
      " to be {T1muscl, T1Fat, T2Fat} in ms, defaul is {1400,365,137}."
-    }], "TableText"]},
-   {Cell["      ", "TableRowIcon"], 
-    ButtonBox["Method",
-     BaseStyle->"Link",
-     ButtonData->"paclet:ref/Method"], "dictionaryM", Cell["\<\
-Method is an option for various algorithm-intensive functions that specifies \
-what internal methods they should use.\
-\>", "TableText"]},
-   {Cell["      ", "TableRowIcon"], 
-    ButtonBox["MonitorEPGFit",
-     BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/MonitorEPGFit"], 
-    ButtonBox["True",
-     BaseStyle->"Link",
-     ButtonData->"paclet:ref/True"], Cell[TextData[{
-     Cell[BoxData[
-      TemplateBox[{Cell[
-         TextData["MonitorEPGFit"]],"paclet:DTITools/ref/MonitorEPGFit"},
-       "RefLink",
-       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " show waitbar during ",
-     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
-     "."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["EPGCalibrate",
@@ -292,6 +254,38 @@ what internal methods they should use.\
      " of points is 200 by default."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
+    ButtonBox["EPGMethod",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/EPGMethod"], "dictionaryM", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["EPGMethod"]],"paclet:DTITools/ref/EPGMethod"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an optionf for ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     ". ",
+     "Values",
+     " can be \"NLLS\", \"dictionary\" or \"dictionaryM\"."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MonitorEPGFit",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/MonitorEPGFit"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MonitorEPGFit"]],"paclet:DTITools/ref/MonitorEPGFit"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " show waitbar during ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
     ButtonBox["OutputCalibration",
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/OutputCalibration"], 
@@ -316,15 +310,36 @@ what internal methods they should use.\
      ". ",
      "If",
      " true it outputs the calibartion values."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["EPGSmoothB1",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/EPGSmoothB1"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["EPGSmoothB1"]],"paclet:DTITools/ref/EPGSmoothB1"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["EPGT2Fit"], "InlineFormula"],
+     ". ",
+     "If",
+     " set to ",
+     "True",
+     " the B1 map of the fit will be smoothed after which the minimization if \
+perfomed again but with a fixed B1."
     }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
-   "Rows" -> {None, None, None, None, None, None, None, {None}}, 
+   "Rows" -> {None, None, None, None, None, None, None, None, {None}}, 
    "RowsIndexed" -> {}},
  GridBoxDividers->{
-  "Rows" -> {{True, True, True, True, True, True, True, True, True}}}}],
+  "Rows" -> {{True, True, True, True, True, True, True, True, True, True}}}}],
 
 Cell["", "SectionFooterSpacer"]
 }, Closed]],
@@ -367,7 +382,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 43, 23.9796488}", 
+   "built" -> "{2018, 5, 9, 13, 31, 23.7956455}", 
     "history" -> {"XX", "", "", ""}, "context" -> 
     "DTITools`RelaxometryTools`", "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -406,27 +421,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[580, 21, 3043, 74, 70, "AnchorBarGrid",ExpressionUUID->"0f2af749-d8da-446c-827b-2d99800848da",
+Cell[580, 21, 3043, 74, 70, "AnchorBarGrid",ExpressionUUID->"5bb91b22-c757-424a-97d3-9aa7716e97d4",
  CellID->1],
-Cell[3626, 97, 165, 6, 70, "ObjectNameGrid",ExpressionUUID->"03f766de-cfe8-4c0e-b351-d0fd83881b2e"],
-Cell[3794, 105, 1170, 28, 70, "Usage",ExpressionUUID->"9bb89d60-29e3-41bb-b2c6-1349a15a29b0"],
+Cell[3626, 97, 165, 6, 70, "ObjectNameGrid",ExpressionUUID->"6cb028f0-5eac-47ac-b4c9-6a4919883cef"],
+Cell[3794, 105, 683, 14, 70, "Usage",ExpressionUUID->"1455e606-4e50-42b6-9436-6a91f2c93310"],
 Cell[CellGroupData[{
-Cell[4989, 137, 621, 19, 70, "NotesSection",ExpressionUUID->"bd21e9e8-8e5c-44a6-bdf8-cd1e7970bd33",
+Cell[4502, 123, 621, 19, 70, "NotesSection",ExpressionUUID->"547c0995-5fd9-43ef-b818-a5c64753a397",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[5613, 158, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"852fd66e-8396-4aca-ac2c-0f4d92bc867a"],
-Cell[5647, 160, 53, 0, 70, "Notes",ExpressionUUID->"38928dd4-7b3c-43b6-8013-02ca36dc049e"],
-Cell[5703, 162, 5774, 164, 70, "3ColumnTableMod",ExpressionUUID->"4ed2b8ab-b1ab-4ed6-bb34-7a8b7c680bd9"],
-Cell[11480, 328, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"da734f6c-5ab8-49d1-a7da-792bfc0d5bbf"]
+Cell[5126, 144, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"92e95317-3b6e-4c4a-a547-6d76fcc1898c"],
+Cell[5160, 146, 53, 0, 70, "Notes",ExpressionUUID->"60a9e609-9ed7-467f-9d14-7534c9bd8ca4"],
+Cell[5216, 148, 6741, 193, 70, "3ColumnTableMod",ExpressionUUID->"663f2551-4926-4245-8bc6-25d64e36ec5b"],
+Cell[11960, 343, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"32373d94-acb6-4218-970e-d29a4ce2d98e"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[11548, 333, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"3f480cc1-b1af-47b9-822d-d1c451738b47",
+Cell[12028, 348, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"9f2652e0-0f2c-40a1-9343-ae58be9c3c3d",
  CellID->38303248],
-Cell[11707, 342, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"23a5d3ee-e6c2-45e7-9f65-d8e7458257eb"],
-Cell[11741, 344, 176, 5, 70, "MoreAbout",ExpressionUUID->"d50dcd55-66f6-4348-8866-e434261fb997",
+Cell[12187, 357, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"3c7305b5-f622-40c1-873a-afba21c31e14"],
+Cell[12221, 359, 176, 5, 70, "MoreAbout",ExpressionUUID->"3b99d5ac-4183-410d-a1ff-1515070db621",
  CellID->1]
 }, Open  ]],
-Cell[11932, 352, 23, 0, 70, "FooterCell",ExpressionUUID->"b2d49e3f-6b7f-4580-9444-957b2a2f3ad2"]
+Cell[12412, 367, 23, 0, 70, "FooterCell",ExpressionUUID->"f3e079c9-3680-42fa-a020-50eb79d8dfa4"]
 }
 ]
 *)

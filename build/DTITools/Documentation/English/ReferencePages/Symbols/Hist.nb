@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     13469,        373]
-NotebookOptionsPosition[      9781,        299]
-NotebookOutlinePosition[     12233,        355]
-CellTagsIndexPosition[     12190,        352]
+NotebookDataLength[     12659,        340]
+NotebookOptionsPosition[      8971,        266]
+NotebookOutlinePosition[     11423,        322]
+CellTagsIndexPosition[     11380,        319]
 WindowTitle->Hist
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$112373], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$117284], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], "DTITools/ref/Hist", 
              ".html"]], None}]}]},
@@ -105,13 +105,9 @@ Cell[TextData[{
 
 Cell[BoxData[GridBox[{
    {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"Hist", "[", 
-       RowBox[{
-        StyleBox["data", "TI"], ",", " ", 
-        StyleBox["range", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]plots a probability density histogram of the data from \
-xmin to xmax with a fitted (skew)normal distribution. Uses ",
+     "Hist[data, range]\[LineSeparator]plots a probability density histogram \
+of the data from xmin to xmax with a fitted (skew)normal distribution. Uses ",
+     
      Cell[BoxData[
       TemplateBox[{Cell[
          TextData["ParameterFit"]],"paclet:DTITools/ref/ParameterFit"},
@@ -119,41 +115,15 @@ xmin to xmax with a fitted (skew)normal distribution. Uses ",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". "
     }]]},
+   {"", Cell["\<\
+Hist[data, range, label]\[LineSeparator]plots a probability density histogram \
+of the data from xmin to xmax with a fitted (skew)normal distribution and \
+label as x-axis label. \
+\>"]},
    {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"Hist", "[", 
-       RowBox[{
-        StyleBox["data", "TI"], ",", " ", 
-        StyleBox["range", "TI"], ",", " ", 
-        StyleBox["label", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]plots a probability density histogram of the data from \
-xmin to xmax with a fitted (skew)normal distribution and label as x-axis \
-label. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"Hist", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          RowBox[{
-           SubscriptBox[
-            StyleBox["data", "TI"], 
-            StyleBox["1", "TR"]], ".."}], ",", 
-          SubscriptBox[
-           StyleBox["data", "TI"], 
-           StyleBox["2", "TR"]], ",", ".."}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          SubscriptBox[
-           StyleBox["range", "TI"], 
-           StyleBox["1", "TR"]], ",", 
-          SubscriptBox[
-           StyleBox["range", "TI"], 
-           StyleBox["2", "TR"]], ",", ".."}], "}"}]}], "]"}]], 
-      "InlineFormula"],
-     "\[LineSeparator]plots a probability density histogram of the data from \
-xmin to xmax with a fitted (skew)normal distribution. Uses ",
+     "Hist[{data$1..,data$2,..}, {range$1,range$2,..}]\[LineSeparator]plots a \
+probability density histogram of the data from xmin to xmax with a fitted \
+(skew)normal distribution. Uses ",
      Cell[BoxData[
       TemplateBox[{Cell[
          TextData["ParameterFit"]],"paclet:DTITools/ref/ParameterFit"},
@@ -161,39 +131,11 @@ xmin to xmax with a fitted (skew)normal distribution. Uses ",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ". "
     }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"Hist", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          SubscriptBox[
-           StyleBox["data", "TI"], 
-           StyleBox["1", "TR"]], ",", 
-          SubscriptBox[
-           StyleBox["data", "TI"], 
-           StyleBox["2", "TR"]], ",", ".."}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          SubscriptBox[
-           StyleBox["range", "TI"], 
-           StyleBox["1", "TR"]], ",", 
-          SubscriptBox[
-           StyleBox["range", "TI"], 
-           StyleBox["2", "TR"]], ",", ".."}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          SubscriptBox[
-           StyleBox["label", "TI"], 
-           StyleBox["1", "TR"]], ",", 
-          SubscriptBox[
-           StyleBox["label", "TI"], 
-           StyleBox["2", "TR"]], ",", ".."}], "}"}]}], "]"}]], 
-      "InlineFormula"],
-     "\[LineSeparator]plots a probability density histogram of the data from \
-xmin to xmax with a fitted (skew)normal distribution and label as x-axis \
-label."
-    }]]}
+   {"", Cell["\<\
+Hist[{data$1,data$2,..}, {range$1,range$2,..}, {label$1,label$2,..}]\
+\[LineSeparator]plots a probability density histogram of the data from xmin \
+to xmax with a fitted (skew)normal distribution and label as x-axis label.\
+\>"]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
@@ -234,12 +176,17 @@ Cell[BoxData[GridBox[{
      ButtonData->"paclet:DTITools/ref/ColorValue"], 
     RowBox[{"{", 
      RowBox[{
-      RowBox[{"GrayLevel", "[", "0", "]"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"GrayLevel", "[", "0", "]"}], ",", " ", 
+        RowBox[{"GrayLevel", "[", "1", "]"}]}], "}"}], ",", " ", 
       RowBox[{"RGBColor", "[", 
        RowBox[{"1", ",", " ", "0", ",", " ", "0"}], "]"}], ",", " ", 
       RowBox[{"RGBColor", "[", 
        RowBox[{"0", ",", " ", "1", ",", " ", "0"}], "]"}], ",", " ", 
-      RowBox[{"GrayLevel", "[", "1", "]"}]}], "}"}], Cell[TextData[{
+      RowBox[{"RGBColor", "[", 
+       RowBox[{"0", ",", " ", "0", ",", " ", "1"}], "]"}]}], "}"}], Cell[
+    TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
          TextData["ColorValue"]],"paclet:DTITools/ref/ColorValue"},
@@ -263,13 +210,33 @@ Cell[BoxData[GridBox[{
      ButtonData->"paclet:ref/Method"], "SkewNormal", Cell["\<\
 Method is an option for various algorithm-intensive functions that specifies \
 what internal methods they should use.\
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PlotLabel",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/PlotLabel"], "", Cell["\<\
+PlotLabel is an option for graphics functions that specifies an overall label \
+for a plot. \
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["AxesLabel",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/AxesLabel"], "", Cell["\<\
+AxesLabel is an option for graphics functions that specifies labels for axes. \
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ImageSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/ImageSize"], "300", Cell["\<\
+ImageSize is an option that specifies the overall size of an image to display \
+for an object. \
 \>", "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
  GridBoxBackground->{
-  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
-   "RowsIndexed" -> {}},
- GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True, True}}}}],
 
 Cell["", "SectionFooterSpacer"]
 }, Closed]],
@@ -312,7 +279,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 45, 6.0432079}", 
+   "built" -> "{2018, 5, 9, 13, 34, 29.8716536}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`PlottingTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -322,14 +289,14 @@ TaggingRules->{
 xmin to xmax with a fitted (skew)normal distribution. Uses ParameterFit. \
 Hist[data, range, label] plots a probability density histogram of the data \
 from xmin to xmax with a fitted (skew)normal distribution and label as x-axis \
-label. Hist[{data1 .., data2, ..}, {range1, range2, ..}] plots a probability \
+label. Hist[{data$1..,data$2,..}, {range$1,range$2,..}] plots a probability \
 density histogram of the data from xmin to xmax with a fitted (skew)normal \
-distribution. Uses ParameterFit. Hist[{data1, data2, ..}, {range1, range2, \
-..}, {label1, label2, ..}] plots a probability density histogram of the data \
-from xmin to xmax with a fitted (skew)normal distribution and label as x-axis \
-label.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "Hist", 
-    "titlemodifier" -> "", "windowtitle" -> "Hist", "type" -> "Symbol", "uri" -> 
-    "DTITools/ref/Hist"}},
+distribution. Uses ParameterFit. Hist[{data$1,data$2,..}, \
+{range$1,range$2,..}, {label$1,label$2,..}] plots a probability density \
+histogram of the data from xmin to xmax with a fitted (skew)normal \
+distribution and label as x-axis label.", "synonyms" -> {}, "tabletags" -> {},
+     "title" -> "Hist", "titlemodifier" -> "", "windowtitle" -> "Hist", 
+    "type" -> "Symbol", "uri" -> "DTITools/ref/Hist"}},
 CellContext->"Global`",
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->Notebook[{
@@ -354,27 +321,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[576, 21, 3022, 74, 70, "AnchorBarGrid",ExpressionUUID->"f6bb3b9f-4e39-4cf9-bcaf-867669e659d5",
+Cell[576, 21, 3022, 74, 70, "AnchorBarGrid",ExpressionUUID->"101a6108-2783-46cb-9f27-d271683c3e82",
  CellID->1],
-Cell[3601, 97, 161, 6, 70, "ObjectNameGrid",ExpressionUUID->"5a137094-74fe-4d9f-9b0e-4b0d30a9d7b9"],
-Cell[3765, 105, 3240, 95, 70, "Usage",ExpressionUUID->"c54cb6d3-fc1b-41bb-a038-351b92f9b72a"],
+Cell[3601, 97, 161, 6, 70, "ObjectNameGrid",ExpressionUUID->"5269d348-9df4-48b2-b99f-a04f4a9387c3"],
+Cell[3765, 105, 1472, 37, 70, "Usage",ExpressionUUID->"4889d843-1337-457d-9c4c-a177a89f5b2d"],
 Cell[CellGroupData[{
-Cell[7030, 204, 621, 19, 70, "NotesSection",ExpressionUUID->"1b6cdfec-416a-46ce-b82f-349f5c667b19",
+Cell[5262, 146, 621, 19, 70, "NotesSection",ExpressionUUID->"753e8481-4d93-4426-8976-f5bda1c4c73b",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[7654, 225, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"08d8ac3d-5eda-4ef3-8729-257061abde06"],
-Cell[7688, 227, 53, 0, 70, "Notes",ExpressionUUID->"3821e177-be76-4d58-b1d1-bcdaa48ff854"],
-Cell[7744, 229, 1561, 42, 70, "3ColumnTableMod",ExpressionUUID->"dd6dbf6c-d189-42cd-a0d5-eb8f9534ad1a"],
-Cell[9308, 273, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"fee40d48-37be-4edc-9393-a4cb9b9fc254"]
+Cell[5886, 167, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"dff32e58-b1d3-4272-9262-7903c1c55b4e"],
+Cell[5920, 169, 53, 0, 70, "Notes",ExpressionUUID->"ce0669c7-3514-435d-8aa2-007e4783b3bb"],
+Cell[5976, 171, 2519, 67, 70, "3ColumnTableMod",ExpressionUUID->"f4a89d16-d815-46f1-af32-668d28320046"],
+Cell[8498, 240, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"0a84425b-f7cb-48b9-926c-8a510db34179"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[9376, 278, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"a9f5fddf-0353-4042-819e-a9cbad25a813",
+Cell[8566, 245, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"38edf115-ac83-43ca-b005-ad0f9307f1a2",
  CellID->38303248],
-Cell[9535, 287, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"6110a76d-df53-4125-94ec-85ac1a7571c6"],
-Cell[9569, 289, 170, 5, 70, "MoreAbout",ExpressionUUID->"fb46be5b-9245-4730-a76b-b2291d8735a3",
+Cell[8725, 254, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"2e5284ec-5db6-49cf-9eaa-e42f9f930859"],
+Cell[8759, 256, 170, 5, 70, "MoreAbout",ExpressionUUID->"37bbf5d4-8be9-4f92-8026-cb96055a8f4f",
  CellID->1]
 }, Open  ]],
-Cell[9754, 297, 23, 0, 70, "FooterCell",ExpressionUUID->"d01bab30-8336-4377-a6bb-bc2a53b7834d"]
+Cell[8944, 264, 23, 0, 70, "FooterCell",ExpressionUUID->"e9bafc80-4721-4bcd-b5d2-74014daa3671"]
 }
 ]
 *)

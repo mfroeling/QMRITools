@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      7217,        201]
-NotebookOptionsPosition[      4711,        144]
-NotebookOutlinePosition[      6582,        192]
-CellTagsIndexPosition[      6539,        189]
+NotebookDataLength[      9260,        260]
+NotebookOptionsPosition[      6185,        194]
+NotebookOutlinePosition[      8027,        242]
+CellTagsIndexPosition[      7984,        239]
 WindowTitle->GetMaskData
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ GetMaskData.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$103129], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$106559], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/GetMaskData", ".html"]], None}]}]},
@@ -104,20 +104,70 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"GetMaskData", "[", 
-       RowBox[{
-        StyleBox["data", "TI"], ",", " ", 
-        StyleBox["mask", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]retruns the data selected by the mask as a single list \
-for each image."
-    }]]}
+   {"", Cell["\<\
+GetMaskData[data, mask]\[LineSeparator]retruns the data selected by the mask.\
+\
+\>"]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
    "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["GetMaskOutput",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/GetMaskOutput"], 
+    ButtonBox["All",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/All"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GetMaskOutput"]],"paclet:DTITools/ref/GetMaskOutput"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GetMaskData"], "InlineFormula"],
+     ". Defaul is \"Slices\" which gives the mask data per slices. Else the \
+entire mask data is given as output."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
@@ -157,16 +207,16 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 44, 35.0795137}", 
+   "built" -> "{2018, 5, 9, 13, 33, 37.9179917}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`MaskingTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
-    "GetMaskData[data, mask] retruns the data selected by the mask as a \
-single list for each image.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
-    "GetMaskData", "titlemodifier" -> "", "windowtitle" -> "GetMaskData", 
-    "type" -> "Symbol", "uri" -> "DTITools/ref/GetMaskData"}},
+    "GetMaskData[data, mask] retruns the data selected by the mask.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "GetMaskData", 
+    "titlemodifier" -> "", "windowtitle" -> "GetMaskData", "type" -> "Symbol",
+     "uri" -> "DTITools/ref/GetMaskData"}},
 CellContext->"Global`",
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->Notebook[{
@@ -191,18 +241,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[583, 21, 3049, 74, 70, "AnchorBarGrid",ExpressionUUID->"a4b32377-f20f-482a-927f-0d562edfc2f2",
+Cell[583, 21, 3049, 74, 70, "AnchorBarGrid",ExpressionUUID->"080936a3-ebde-423d-b9f7-466b6ec79dd6",
  CellID->1],
-Cell[3635, 97, 168, 6, 70, "ObjectNameGrid",ExpressionUUID->"6611e7a4-20b3-4927-bb05-6e74176b2400"],
-Cell[3806, 105, 477, 14, 70, "Usage",ExpressionUUID->"331d3a15-6c5f-425c-86c2-53008ad374b4"],
+Cell[3635, 97, 168, 6, 70, "ObjectNameGrid",ExpressionUUID->"67ea7fdc-0f0a-4d95-98dc-cdc78562604e"],
+Cell[3806, 105, 280, 9, 70, "Usage",ExpressionUUID->"b678fb8f-c2ff-46ef-b358-8c438c509408"],
 Cell[CellGroupData[{
-Cell[4308, 123, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"36725e6b-969d-44c0-8168-19b9446f7526",
+Cell[4111, 118, 621, 19, 70, "NotesSection",ExpressionUUID->"d38a6be7-d47b-4488-a1f1-0c2306b456c1",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[4735, 139, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"5f46f900-c3da-4e8f-8acc-912d1c553e74"],
+Cell[4769, 141, 53, 0, 70, "Notes",ExpressionUUID->"1e1a9948-3d30-44c1-8d4f-f3b211cc106a"],
+Cell[4825, 143, 886, 23, 70, "3ColumnTableMod",ExpressionUUID->"9b79f777-d07d-4d0e-ba19-19664e54cf3e"],
+Cell[5714, 168, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"71e89ddf-e3df-456c-9286-c4f912db30c3"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[5782, 173, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"f7c19e59-96de-4318-93ec-ad83c2249d14",
  CellID->38303248],
-Cell[4467, 132, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"89a29f0a-48b5-4039-91fd-053a7be0355e"],
-Cell[4501, 134, 168, 5, 70, "MoreAbout",ExpressionUUID->"5e7e3d8a-e986-4217-bb20-861d4f215b4c",
+Cell[5941, 182, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"e16e98d2-731f-4517-a3e3-99fe09dd482e"],
+Cell[5975, 184, 168, 5, 70, "MoreAbout",ExpressionUUID->"b189f365-a6a6-4063-9d7e-5cbc72308933",
  CellID->1]
 }, Open  ]],
-Cell[4684, 142, 23, 0, 70, "FooterCell",ExpressionUUID->"a6d60c16-14c6-4520-b912-d9fcdad610d4"]
+Cell[6158, 192, 23, 0, 70, "FooterCell",ExpressionUUID->"c748796d-252c-4f50-a6bf-5bc056bbeb23"]
 }
 ]
 *)

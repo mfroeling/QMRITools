@@ -93,6 +93,9 @@ DictB1Range::usage =
 EPGRelaxPars::usage = 
 "EPGRelaxPars is and option for EPGT2Fit. Needs to be {T1muscl, T1Fat, T2Fat} in ms, defaul is {1400,365,137}."
 
+EPGMethod::usage =
+"EPGMethod is an optionf for EPGT2Fit. Values can be \"NLLS\", \"dictionary\" or \"dictionaryM\"."
+
 MonitorEPGFit::usage = 
 "MonitorEPGFit show waitbar during EPGT2Fit."
 
@@ -101,6 +104,9 @@ EPGFitPoints::usage =
 
 EPGCalibrate::usage = 
 "EPGCalibrate is an option for EPGT2Fit. If set to True it does autmatic callibration of the T2 fat relaxation time."
+
+EPGSmoothB1::usage = 
+"EPGSmoothB1 is an options for EPGT2Fit. If set to True the B1 map of the fit will be smoothed after which the minimization if perfomed again but with a fixed B1."
 
 OutputCalibration::usage = 
 "OutputCalibration is an option for EPGT2Fit and TriExponentialT2Fit. If true it outputs the calibartion values."
@@ -221,42 +227,41 @@ LogFit[datan_, times_] :=
 
 SyntaxInformation[EPGSignal] = {"ArgumentsPattern" -> {_, _, _, _}};
 
-EPGSignal[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_, angle_}, B1_] := EPGSignali[{Nechoi, echoSpace}, {T1, T2}, {ex, angle}, B1]
+EPGSignal[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_, ref_}, B1_] := EPGSignali[{Nechoi, echoSpace}, {T1, T2}, {ex, ref}, B1]
 
-EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_?ListQ, angle_?ListQ}, B1_] := Block[{sig},
-  sig = Map[EPGSignali[{Nechoi, echoSpace}, {T1, T2}, #, B1] &, Transpose[{ex, angle}]];
-  sig=Total@Join[sig,sig[[2;;]]];
-  sig/sig[[1]]
+EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_?ListQ, ref_?ListQ}, B1_] := Block[{sig},
+  sig = Map[EPGSignali[{Nechoi, echoSpace}, {T1, T2}, #, B1] &, Transpose[{ex, ref}]];
+  sig = Mean@Join[sig,sig[[2;;]]]
   ]
   
-EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_, angle_}, B1_] := Block[{
-	tau, T0, R0, alpha, Smat, Tmat, Rmat, Pmat, Emat, xvec, out, t2r, t1r, Necho, Mzex
+EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {exi_, refi_}, B1_] := Block[{
+	tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, Necho, states
   },
- (*define internal paramters*)
- Necho = Round[Nechoi];
- Mzex = Sin[B1 ex (Pi/180.)];
- alpha = B1 angle (Pi/180.);
- tau = echoSpace/2;
+	(*define internal paramters*)
+	Necho = Round[Nechoi];
+	states = If[Necho >= 16, Round[Necho/2], Necho];
+	(*convert to Rad*)
+	ex = B1 exi (Pi/180.);
+	ref = B1 refi (Pi/180.);
+	tau = echoSpace/2;
  
- (*define relaxation*)
- t2r = N@Exp[-tau/T2];
- t1r = N@Exp[-tau/T1];
-   
- (*Selection matrix to move all traverse states up one coherence level*)
- {Smat, xvec} = MixMatrix[Necho];
- (*RF mixing matrix*)
- Tmat = MakeDiagMat[RotMatrixT[alpha], Necho, 1.];
-   (* Relaxation matrix*)
- Rmat = MakeDiagMat[DiagonalMatrix[{t2r, t2r, t1r}], Necho, t2r];
-   
- (*Precession and relaxation matrix*)
- Pmat = Rmat.Smat;
- (*Matrix representing the inter-echo duration*)
- Emat = Pmat.Tmat.Pmat;
+	(*Selection matrix to move all traverse states up one coherence level*)
+	{Smat, svec} = MixMatrix[states];
  
- (*create outpu*)
- out = NestList[Dot[Emat, #] &, xvec, Necho][[2 ;;, 1]];
- Mzex out
+	(*define relaxation*)
+	t2r = N@Exp[-tau/T2];
+	t1r = N@Exp[-tau/T1];
+	(*Relaxation matrix*)
+	Rmat = MakeDiagMat[DiagonalMatrix[{t2r, t2r, t1r}], states];
+	Rvec = (1 - t1r) svec;
+	(*RF mixing matrix*)
+	Tmat = MakeDiagMat[RotMatrixT[ref], states];
+   
+	(*Create Initial state*)
+	svec[[1 ;; 3]] = RotMatrixT[ex].svec[[1 ;; 3]];
+	
+	(*combined relax and gradient and create output*)
+	MoveStates[Rmat, Rvec, Smat, Tmat, svec, Necho][[2 ;;, 1]]
  ]
 
 
@@ -264,11 +269,7 @@ EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_, angle_}, B1_] := Block[{
 (*MakeDiagMat*)
 
 
-MakeDiagMat[mat_, Necho_, first_] := Block[{out},
-  out = ArrayPad[ArrayFlatten[IdentityMatrix[Necho] ConstantArray[mat, {Necho, Necho}]], {{1, 0}, {1, 0}}];
-  out[[1, 1]] = first;
-  out
-  ];
+MakeDiagMat[mat_, Necho_] := ArrayFlatten[IdentityMatrix[Necho] ConstantArray[mat, {Necho, Necho}]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -276,32 +277,45 @@ MakeDiagMat[mat_, Necho_, first_] := Block[{out},
 
 
 (*if run once with Necho definition is stored*)
-MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, off1, off2},
-      len = 3*Necho + 1;
-      (*mixing matirx*)
-      Smat = ConstantArray[0., {len, len}];
-      Smat[[1, 3]] = Smat[[2, 1]] = Smat[[3, 6]] = Smat[[4, 4]] = 1.;
-      Table[
-        off1 = ((o - 1) - 1)*3 + 2.;
-        If[off1 <= len, Smat[[3*o - 1, off1]] = 1.];
-        off2 = ((o + 1) - 1)*3 + 3.;
-        If[off2 <= len, Smat[[3*o, off2]] = 1.];
-        Smat[[3*o + 1, 3*o + 1]] = 1.;
-        , {o, 2, Necho}];
-      (*output mixing matrix*)
-      N@{Smat, Prepend[ ConstantArray[0, 3*Necho ], 1.]}
-      ]
-
+MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, vec, off1, off2},
+   len = 3*(Necho);
+   (*mixing matirx*)
+   Smat = ConstantArray[0, {len, len}];
+   Smat[[1, 5]] = 1;(*yi-1\[Rule]xi*)
+   Smat[[len, len]] = 1;(*zn*)
+   Table[
+		Smat[[o - 1, o + 2]] = 1;(*yi\[Rule]yi-1*)
+		Smat[[o + 1, o - 2]] = 1;(*xi\[Rule]xi+1*)
+		Smat[[o, o]] = 1;(*zi\[Rule]zi*)
+    ,{o, 3, len - 3, 3}];
+   (*inital signal vector*)
+   vec = ConstantArray[0, len];
+   vec[[3]] = 1;
+   (*output mixing matrix*)
+   {Smat, vec}
+   ]
+   
 
 (* ::Subsubsection::Closed:: *)
 (*RotMatrixT*)
 
 
-RotMatrixT = Compile[{{alpha, _Real, 0}}, {
-        {Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
-        {Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
-        {-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
-        }];
+RotMatrixT = Compile[{{alpha, _Real, 0}}, Chop[{
+     {Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
+     {Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
+     {-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
+     }], RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MoveStates*)
+
+
+MoveStates = Compile[{{Rmat, _Real, 2}, {Rvec, _Real, 1}, {Smat, _Real, 2}, {Tmat, _Real, 2}, {svec, _Real, 1}, {Necho, _Integer, 0}}, 
+   Block[{Gmat}, 
+   	Gmat = Rmat.Smat;
+    Chop[NestList[(Gmat.(Tmat.((Gmat.#) + Rvec)) + Rvec) &, svec, Necho]]
+    ], RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
@@ -313,112 +327,143 @@ RotMatrixT = Compile[{{alpha, _Real, 0}}, {
 
 
 Options[EPGT2Fit]= {
-	DictB1Range -> {0.5, 1.5, 0.02}, DictT2Range -> {10, 70, 0.2}, 
-	EPGRelaxPars -> {1400., 365., 150}, Method -> "dictionaryM", MonitorEPGFit -> True,
-	EPGCalibrate -> True, EPGFitPoints -> 50, OutputCalibration -> False}
+	DictB1Range -> {0.5, 1.5, 0.01}, DictT2Range -> {10, 70, 0.2}, 
+	EPGRelaxPars -> {1400., 365., 190}, EPGCalibrate -> True, EPGFitPoints -> 50, 
+	EPGMethod -> "dictionaryM", MonitorEPGFit -> True, OutputCalibration -> False, EPGSmoothB1 -> True}
 
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 
 EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	echo, T1m, T1f, T2f, ad, datal, sol, wat, fat, fatMap, T2map, B1Map, clip, fatc,
 	B1i, T2i, T2s, B1s, soli, error, dictf, valsf, ydat, fwf, residualError, T2mc, B1c, cal,
-	ran,dict,vals,cons,start, b1ran, b1step, t2ran, t2step, points
+	ran,dict,vals,cons,start, b1ran, b1step, t2ran, t2step, points, dim, size,
+	b1rule, B1Int, dataf, int, sig, dictMat, dictfMat
 	},
 	
-	{T1m, T1f, T2f} = OptionValue[EPGRelaxPars];
-	clip = OptionValue[DictT2Range][[1 ;; 2]];
+	(*Get Input*)
 	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
+  	ad = ArrayDepth[datan];
+	datal = N@Switch[ad, 1, datan, 3, Transpose[datan, {3, 1, 2}], 4, Transpose[datan, {1, 4, 2, 3}]];
+	
+	(*Get Options*)
+	{T1m, T1f, T2f} = N@OptionValue[EPGRelaxPars];
+	t2ran=N[OptionValue[DictT2Range]];
+	b1ran=N[OptionValue[DictB1Range]];
+	clip = t2ran[[1 ;; 2]];
 	
 	(*clibrate the fat signal from the real data*)
-	If[OptionValue[EPGCalibrate],
+	If[OptionValue[EPGCalibrate]&&!VectorQ[datan],
 	  Print["Callibrating EPG fat T2."];
-	  cal = {T2mc, T2f, B1c, fatc} = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, {50, 300}, {T1m, T1f}}, EPGFitPoints -> OptionValue[EPGFitPoints]];
+	  cal = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, {50, 300}, {T1m, T1f}}, EPGFitPoints -> OptionValue[EPGFitPoints]];
+	  {T2mc, T2f, B1c, fatc} = cal[[1]];
 	  T2f = N@Round[T2f,5];(*make whole ms such that it is more likely for same values*)
 	  Print["EPG fat callibration:  ", T2f, " ms"];
 	  ];
   
-  	(*get data *)
-  	ad = ArrayDepth[datan];
-	datal = N@Switch[ad, 3, Transpose[datan, {3, 1, 2}], 4, Transpose[datan, {1, 4, 2, 3}]];
-
 	(*monitor calculation*)
 	i = j = 0;
 	SetSharedVariable[i]; ParallelEvaluate[j = 0];
-	If[OptionValue[MonitorEPGFit], PrintTemporary[ProgressIndicator[Dynamic[i], {0, Times @@ Dimensions[datan[[All, 1]]]}]]];
+	If[OptionValue[MonitorEPGFit]&&!VectorQ[datan], 
+		dim = Times@@Dimensions[datal][[;;ad-1]];
+		size=Round[dim/100];
+		PrintTemporary[ProgressIndicator[Dynamic[i], {0, dim}]]];
 	
 	(*switch between fitting algorithms*)
-	sol = Switch[OptionValue[Method],
+	sol = Switch[OptionValue[EPGMethod],
 		"NLLS",
 		(*define fit values*)
 		valsf = {echo, {T1m, T1f, T2f}, angle};
-		(*monitor calculation*)
-		PrintTemporary["starting NLLS fitting: ", DateString[]];
-		(*perform the fit using parallel kernels*)
-		DistributeDefinitions[ErrorFunc, LeastSquaresC, EPGSignali, NonLinearEPGFiti, valsf, clip];
-		ParallelMap[((*monitor calculation*)
-		   j++; If[j > 1000, i += j; j = 1;];
-		   NonLinearEPGFiti[{valsf, clip}, #]
-		   ) &, datal, {ad - 1}]
+		
+		If[VectorQ[datal],
+			(*single voxel*)
+			NonLinearEPGFiti[{valsf, clip}, datal],
+			(*monitor calculation*)
+			PrintTemporary["starting NLLS fitting: ", DateString[]];
+			(*perform the fit using parallel kernels*)
+			DistributeDefinitions[ErrorFunc, LeastSquaresC, EPGSignali, NonLinearEPGFiti, valsf, clip];
+			ParallelMap[(j++; If[j > 1000, i += j; j = 1;]; NonLinearEPGFiti[{valsf, clip}, #])&, datal, {ad - 1}]
+		]
 		   
 		,"dictionaryM",
-		b1ran=N[OptionValue[DictB1Range]];
-		t2ran=N[OptionValue[DictT2Range]];
-	  	b1step = (b1ran[[2]] - b1ran[[1]])/6;
-	  	t2step = (t2ran[[2]] - t2ran[[1]])/6;
-	  	
 	  	(*create the dictionary*)
-		{dictf, valsf} = CreateT2Dictionary[{T1m, T1f, T2f}, echo, angle, DictB1Range -> b1ran, DictT2Range -> t2ran];
-		(*get the range and make the dictionary*)
-		ran = Length[Range @@ b1ran];
-		dict = Partition[dictf, ran];
-		vals = Partition[valsf, ran];
-		
-		(*define the constraints and intial search points*)
+		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f, T2f}, echo, angle, t2ran, b1ran];
+		dictMat = PseudoInverseC[dict];
 		cons = Dimensions[vals][[;; -2]];
+		(*define the starting points for the minimization*)
+		b1step = (b1ran[[2]] - b1ran[[1]])/5;
+		t2step = (t2ran[[2]] - t2ran[[1]])/5;
 		points = Flatten[Table[{i, j},
-    		{i, t2ran[[1]] + 0.5 t2step, t2ran[[2]]-t2step, t2step},
-    		{j, b1ran[[1]] + 0.5 b1step, b1ran[[2]]-b1step, b1step}], 1];
+			{i, t2ran[[1]] + 0.5 t2step, t2ran[[2]] - 0.5 t2step, t2step},
+			{j, b1ran[[1]] + 0.5 b1step, b1ran[[2]] - 0.5 b1step, b1step}], 1];
 		start = First@Position[vals, First@Nearest[Flatten[vals, 1], #, 1]] & /@ points;
+		start = Automatic;
 		
-		(*monitor calculation*)
-		PrintTemporary["starting dictionary min search (Nmin): ", DateString[]];
-		
-		(*perform the fit using parallel kernels*)
-		DistributeDefinitions[dict, vals, cons, start, LeastSquaresC, DictionaryMinSearchi];
-		ParallelMap[((*monitor calculation*)
-		   j++; If[j > 1000, i += j; j = 1;];
-		   DictionaryMinSearchi[{dict, vals}, #, {cons,start}]
-		   ) &, datal, {ad - 1}]
+		If[VectorQ[datal],
+			(*single voxel*)
+			DictionaryMinSearchi[{dict, dictMat, vals}, datal, {cons,start}],
+			(*monitor calculation*)
+			PrintTemporary["starting dictionary min search (Nmin): ", DateString[]];
+			(*perform the fit using parallel kernels*)
+			DistributeDefinitions[dict, dictMat, vals, cons, start, size, LeastSquaresC, DictionaryMinSearchi];
+			ParallelMap[(j++; If[j > size, i += j; j = 1;]; DictionaryMinSearchi[{dict, dictMat, vals}, #, {cons,start}])&, datal, {ad - 1}]
+		]
 		
 		,_,
 	  	(*create the dictionary*)
-		b1ran=N[OptionValue[DictB1Range]];
-		t2ran=N[OptionValue[DictT2Range]];
-		{dictf, valsf} = CreateT2Dictionary[{T1m, T1f, T2f}, echo, angle, DictB1Range -> b1ran, DictT2Range -> t2ran];
-		(*monitor calculation*)
-		PrintTemporary["starting dictionary min search (Brute): ", DateString[]];
+		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f, T2f}, echo, angle, t2ran, b1ran];
+		dictMat = PseudoInverseC[dict];
+		cons = Dimensions[vals][[;; -2]];
+		dictf=Flatten[dict,1];
+		dictfMat = PseudoInverseC[dictf];
+		valsf=Flatten[vals,1];
 		
-		(*perform the fit using parallel kernels*)
-		DistributeDefinitions[dictf, valsf, LeastSquaresC, ErrorC, DictionaryMinSearchi];
-		ParallelMap[((*monitor calculation*)
-		   j++; If[j > 1000, i += j; j = 1;];
-		   DictionaryMinSearchi[{dictf, valsf}, #]
-		   ) &, datal, {ad - 1}]
+		If[VectorQ[datal],
+			(*single voxel*)
+			DictionaryMinSearchi[{dict, dictfMat, vals}, datal],
+			(*monitor calculation*)
+			PrintTemporary["starting dictionary min search (Brute): ", DateString[]];
+			(*perform the fit using parallel kernels*)
+			DistributeDefinitions[dictf, dictfMat, valsf, size, LeastSquaresC, ErrorC, DictionaryMinSearchi];
+			ParallelMap[(j++; If[j > size, i += j; j = 1;]; DictionaryMinSearchi[{dictf, dictfMat, valsf}, #])&, datal, {ad - 1}]
+		]
 	];
 
 	(*restructure fit solution*)
-	sol = TransData[sol, "r"];
-	{wat, fat} = Clip[{sol[[3]], sol[[4]]}, {0, Max[sol[[3 ;; 4]]]}];
-	fatMap = Clip[fat/((wat + fat) /. 0. -> Infinity), {0, 1}];
-	T2map = sol[[1]];
-	(*B1Map = MedianFilter[sol[[2]], 1];*)
+	sol = If[VectorQ[datal], sol, TransData[sol, "r"]];
+	
+	(*perform B1 smoothing if needed*)
 	B1Map = sol[[2]];
+	If[(OptionValue[EPGSmoothB1] && (OptionValue[EPGMethod]=!="NLLS") && !VectorQ[datal]),
+		(*smooth the B1 map*)
+		B1Map = N[(Round[MedianFilter[B1Map, 2] - b1ran[[1]], b1ran[[3]]] + b1ran[[1]])];
+		(*convert B1 values to dictionaly integers*)
+		b1rule = Thread[vals[[1, All, 2]] -> Range[1, Length[vals[[1, All, 2]]]]];
+		B1Int = Clip[Round[B1Map /. b1rule ],{1,cons[[2]]}];
+		(*definet fit data*)
+		dataf = TransData[{datal, B1Int}, "l"];
+		
+		(*monitor calculation*)
+		i = j = 0;
+		SetSharedVariable[i]; ParallelEvaluate[j = 0];
+		PrintTemporary["Starting refit with smooth B1: ", DateString[]];
+		(*perform the fit using parallel kernels*)
+		DistributeDefinitions[dict, dictMat, vals, size, LeastSquaresC, ErrorC, DictionaryMinSearchi];
+		sol = ParallelMap[(j++; If[j > size, i += j; j = 1;];sig=#[[1]];int=#[[2]];
+			DictionaryMinSearchi[{dict[[All,int]], dictMat[[All,int]], vals[[All,int]]}, sig]) &, dataf, {ad - 1}];
+		(*update the solution*)
+		sol = TransData[sol,"r"];
+	];
+	
+	(*get the outputs*)
+	T2map = sol[[1]];
+	{wat, fat} = N@Clip[{sol[[3]], sol[[4]]}, {0., Max[sol[[3 ;; 4]]]}];
+	fatMap = DevideNoZero[fat,(wat + fat)];
 	error = sol[[5]];
 	
-	(*if neede also output callibaration*)
+	(*if needed also output callibaration*)
 	If[OptionValue[OutputCalibration]&&OptionValue[EPGCalibrate],
-		{{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]}, cal},
-		{{T2map, B1Map}, {wat, fat, fatMap},Sqrt[error]}
+		{{{T2map, B1Map}, {wat, fat, fatMap}, Sqrt[error]}, cal[[1]]},
+		{{T2map, B1Map}, {wat, fat, fatMap}, Sqrt[error]}
 	]
 ]
 
@@ -433,10 +478,7 @@ NonLinearEPGFit[{valsf_,cons_}, yi_] := NonLinearEPGFiti[{valsf, cons}, N[yi]]
 
 NonLinearEPGFiti[{_,_}, {0. ..}] = {0., 0., 0., 0., 0.};
 
-NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{
-   fwf, residualError, soli, T1m, T1f, T2f, echo, angle, T2s, B1s
-   },
-  
+NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{fwf, residualError, soli, T1m, T1f, T2f, echo, angle, T2s, B1s},
 	(*perform the fit*)
 	{residualError, soli} = Quiet@FindMinimum[{
     	 ErrorFunc[ydat, T2i, B1i, valsf],
@@ -464,13 +506,12 @@ NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{
 SyntaxInformation[DictionaryMinSearch]= {"ArgumentsPattern" -> {_, _, _.}}
 
 (*brute force dictionary min search*)
+(*usging a normal dictionary*)
 DictionaryMinSearch[{dictf_, valsf_}, ydat_] := DictionaryMinSearchi[{dictf, valsf}, ydat]
 
 DictionaryMinSearchi[_, {0. ..}] = {0., 0., 0., 0., 0.}
 
-DictionaryMinSearchi[{dictf_, valsf_}, ydat_] := Block[{
-	fwf, residualError
-	},
+DictionaryMinSearchi[{dictf_, valsf_}, ydat_] := Block[{fwf, residualError},
 	(*calcualte dictionary error*)
  	fwf = LeastSquaresC[dictf, ydat];
  	residualError = ErrorC[ydat, fwf, dictf];
@@ -478,22 +519,57 @@ DictionaryMinSearchi[{dictf_, valsf_}, ydat_] := Block[{
  	Flatten[{valsf, fwf, residualError}[[All, First@Ordering[residualError, 1]]]]
   ]
 
-(*minimization dictionary min search*)  
+
+(*brute force dictionary min search*)
+(*usging a the pseudo inverse dictionary*)
+DictionaryMinSearch[{dictf_, dictfMat_, valsf_}, ydat_] := DictionaryMinSearchi[{dictf, dictfMat, valsf}, ydat]
+
+DictionaryMinSearchi[_, {0. ..}] = {0., 0., 0., 0., 0.}
+
+DictionaryMinSearchi[{dictf_, dictfMat_, valsf_}, ydat_] := Block[{fwf, residualError},
+	(*calcualte dictionary error*)
+ 	fwf = LeastSquares2C[dictfMat, ydat];
+ 	residualError = ErrorC[ydat, fwf, dictf];
+ 	(*find Min value*)
+ 	Flatten[{valsf, fwf, residualError}[[All, First@Ordering[residualError, 1]]]]
+  ]
+  
+  
+(*minimization dictionary min search*)
+(*usging a normal dictionary*)  
 DictionaryMinSearch[{dict_, vals_}, ydat_, {cons_,start_}] := DictionaryMinSearchi[{dict, vals}, ydat, {cons,start}]
 
-DictionaryMinSearchi[_, {0. ..},_] = {0., 0., 0., 0., 0.}
+DictionaryMinSearchi[_, {0. ..}, _] = {0., 0., 0., 0., 0.}
 
-DictionaryMinSearchi[{dict_, vals_}, ydat_, {{maxx_,maxy_},input_}] := Block[{
-	err, coor, ErrorFuncDic},
+DictionaryMinSearchi[{dict_, vals_}, ydat_, {{maxx_,maxy_}, start_}] := Block[{err, coor, ErrorFuncDic},
 	
 	(*define the cost function*)
 	ErrorFuncDic[sig_, {x_Integer, y_Integer}] := LeastSquaresErrorC[dict[[x, y]], sig];
-		(*minimize the dictionary value*)
-	{err, coor} = Quiet@NMinimize[{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
-		Method -> {"NelderMead", "InitialPoints" -> input}
-		,PrecisionGoal -> 6, AccuracyGoal -> 6, MaxIterations -> 50];
+	(*minimize the dictionary value*)
+	{err, coor} = Quiet@NMinimize[
+		{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
+		Method -> {"NelderMead", "InitialPoints" -> start}(*, MaxIterations->100*)];
 	(*find the min vals*)
 	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
+	]
+
+
+(*minimization dictionary min search*)
+(*usging a the pseudo inverse dictionary*)  
+DictionaryMinSearch[{dict_, dictMat_, vals_}, ydat_, {cons_,start_}] := DictionaryMinSearchi[{dict, dictMat, vals}, ydat, {cons,start}]
+
+DictionaryMinSearchi[_, {0. ..}, _] = {0., 0., 0., 0., 0.}
+
+DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {{maxx_,maxy_}, start_}] := Block[{err, coor, ErrorFuncDic},
+	
+	(*define the cost function*)
+	ErrorFuncDic[sig_, {x_Integer, y_Integer}] := LeastSquaresError2C[dict[[x, y]], dictMat[[x, y]], sig];
+	(*minimize the dictionary value*)
+	{err, coor} = Quiet@NMinimize[
+		{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
+		Method -> {"NelderMead", "InitialPoints" -> start}(*, MaxIterations->50*)];
+	(*find the min vals*)
+	Flatten[{vals[[##]], LeastSquares2C[dictMat[[##]], ydat], err}] & @@ coor[[All, 2]]
 	]
 
 
@@ -501,9 +577,7 @@ DictionaryMinSearchi[{dict_, vals_}, ydat_, {{maxx_,maxy_},input_}] := Block[{
 (*ErrorFunc*)
 
 
-ErrorFunc[y_, T2m_Real, B1_Real, vals_] := Quiet@Block[{
-    sig, T1m, T1f, T2f, echo, angle
-    },
+ErrorFunc[y_, T2m_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, T2f, echo, angle},
    {echo, {T1m, T1f, T2f}, angle} = vals;
    sig = Transpose[{
       EPGSignali[echo, {T1m, T2m}, angle, B1],
@@ -511,9 +585,8 @@ ErrorFunc[y_, T2m_Real, B1_Real, vals_] := Quiet@Block[{
       }];
    LeastSquaresErrorC[sig, y]]
 
-ErrorFunc[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{
-    sig, T1m, T1f, echo, angle
-    },
+
+ErrorFunc[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle},
    {echo, {T1m, T1f}, angle} = vals;
    sig = Transpose[{
       EPGSignali[echo, {T1m, T2m}, angle, B1],
@@ -523,31 +596,38 @@ ErrorFunc[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{
    ]
 
 
+PseudoInverseC = Compile[{{A, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.A].T)], 
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
+
+
 (* ::Subsubsection::Closed:: *)
 (*LeastSquaresC*)
 
 
-LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]},
-    (Inverse[T.A].T).y
-    ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
+LeastSquares2C = Compile[{{A, _Real, 2}, {y, _Real, 1}},  A.y, 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
 
+LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, (Inverse[T.A].T).y], 
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
 
+   
 (* ::Subsubsection::Closed:: *)
 (*LeastSquaresErrorC*)
 
 
-LeastSquaresErrorC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]},
-    Total[(y - A.(Inverse[T.A].T).y)^2]
-    ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
+LeastSquaresError2C = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Total[(y - A.Ai.y)^2], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
+
+LeastSquaresErrorC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, Total[(y - A.(Inverse[T.A].T).y)^2]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
 
 
 (* ::Subsubsection::Closed:: *)
 (*ErrorC*)
 
 
-ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, 
-   Total[((y - A.f))^2]
-   , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
+ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Total[((y - A.f))^2], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -558,16 +638,18 @@ Options[CalibrateEPGT2Fit] = {EPGRelaxPars -> {{0, 100}, {20, 300}, {1400., 365.
 
 SyntaxInformation[CalibrateEPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-CalibrateEPGT2Fit[datan_, echo_, angle_, OptionsPattern[]] := Block[{
+CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	ad, Necho, echoSpace, maskT2, dataT2, fmask, fitData, step, T2mmin, T2mmax, T2fmin, T2fmax, 
-	T1m, T1f, fatFr, watFr, cons, valsf, wcons, soli, fits, residualError
- 	},
-  
+	T1m, T1f, fat, wat, cons, valsf, wcons, soli, fits, residualError, echo},
+	
+	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
 	ad = ArrayDepth[datan];
   
 	(*Swtich between 3D and 4D data*)
 	(*define thet fat mask and get the fat only signals*)
-	Switch[ad, 3,
+	Switch[ad, 
+		
+	  3,
 	  (*single slice*)(*make mask an normalize data to first echo*)
 	  maskT2 = Mask[Mean[datan]];
 	  dataT2 = maskT2 # & /@ datan;
@@ -576,20 +658,18 @@ CalibrateEPGT2Fit[datan_, echo_, angle_, OptionsPattern[]] := Block[{
 	  fmask = Mask[dataT2[[-1]], {0.5}];
 	  fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
 	  (*data for calibration fit*)
-	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ dataT2];
+	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ (dataT2+10.^-10)]-10.^-10;
+	  
 	  ,4,
 	  (*mulit slice*)
 	  (*make mask an normalize data to first echo*)
 	  maskT2 = Mask[Mean[Transpose[datan]]];
 	  dataT2 = NormalizeData[MaskDTIdata[datan, maskT2]];
-	  
-	  (*create mask selecting fat*)
+	   (*create mask selecting fat*)
 	  fmask = Mask[dataT2[[All, -1]], {0.5}];
 	  fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
-	  
 	  (*data for calibration fit*)
 	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose[dataT2+10.^-10]]-10.^-10;
-
 	  ];
   
 	(*select random fit points to calibrate fat signal and get the boundries*)
@@ -606,18 +686,18 @@ CalibrateEPGT2Fit[datan_, echo_, angle_, OptionsPattern[]] := Block[{
 		{residualError, soli} = Quiet@FindMinimum[{
 	         ErrorFunc[#, T2mi, T2fi, B1i, valsf], 
 	         {0.5 <= B1i, B1i <= 1.5, T2mmin <= T2mi, T2mi <= T2mmax, T2fmin <= T2fi, T2fi <= T2fmax}
-	         }, {{T2mi, 10.}, {T2fi, 135.}, {B1i, 1}}, AccuracyGoal -> 5, PrecisionGoal -> 5, MaxIterations -> 25];
+	         }, {{T2mi, 30.}, {T2fi, 180.}, {B1i, 1}}];
 	     {T2mif, T2fif, B1if} = soli[[All, 2]];
 	     (*Find the fat fraction*)
-	     {watFr, fatFr} = LeastSquaresC[Transpose[{
+	     {wat, fat} = LeastSquaresC[Transpose[{
 	         EPGSignali[echo, {T1m, T2mif}, angle, B1if],
 	         EPGSignali[echo, {T1f, T2fif}, angle, B1if]
 	         }], #];
 	     (*give the output*)
-	     {T2mif, T2fif, B1if, fatFr/(watFr + fatFr)}
+	     {T2mif, T2fif, B1if, DevideNoZero[fat,(wat + fat)]}
 	     ) &, fitData[[1 ;; ;; step]]];
   
-  Mean[fits]
+  	{Median[fits],StandardDeviation[fits]}
   ]
 
 
@@ -632,37 +712,29 @@ SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, _, OptionsP
 CreateT2Dictionary[relax_, echo_, ang_, OptionsPattern[]] := CreateT2Dictionaryi[relax, echo, ang, OptionValue[DictT2Range], OptionValue[DictB1Range]]
 
 (*save each unique dictionary*)
-CreateT2Dictionaryi[relax_, echo_, ang_, T2range_, B1range_] := CreateT2Dictionaryi[relax, echo, ang, T2range, B1range] = Block[
-   {dict, dictf, valsf, T1m, T1f, T2f, Necho, echoSpace, angle, t2s, t2e, t2i, b1s, b1e, b1i},
+CreateT2Dictionaryi[relax_, echo_, ang_, T2range_, B1range_] := CreateT2Dictionaryi[relax, echo, ang, T2range, B1range] = Block[{
+	dict, vals, time, T1m, T1f, T2f, Necho, echoSpace, angle, t2s, t2e, t2i, b1s, b1e, b1i
+	},
 	(*set parameters*)
 	{T1m, T1f, T2f} = N@relax;
 	(*get dictionary values*)
 	{t2s, t2e, t2i} = N@T2range;
 	{b1s, b1e, b1i} = N@B1range;
+	
+	PrintTemporary["Creating new dictionary"];
 
-Print["Creating new dictionary"];
-(*
-Print["Creating new dictionary for new values :",
-  "\n	{T1muscle, T1fat, T2fat} = ", {T1m, T1f, T2f},
-  "\n	{Necho, echoSpace}       = ", echo,
-  "\n	{T2min, T2max, T2step}   = ", {t2s, t2e, t2i},
-  "\n	{B1min, B1max, B1step}   = ", {b1s, b1e, b1i}];
-*)
 	DistributeDefinitions[EPGSignali, echo, T1m, ang, T1f,T2f, t2s, t2e, t2i, b1s, b1e, b1i];
-	dict = ParallelTable[{{
-	      EPGSignali[echo, {T1m, T2m}, ang, B1],
-	      EPGSignali[echo, {T1f, T2f}, ang, B1]
-	      }, 
-	      {T2m, B1}
-	      }, {T2m, t2s, t2e, t2i}, {B1, b1s, b1e, b1i}];
+	time = AbsoluteTiming[
+		dict = ParallelTable[{
+		{EPGSignali[echo, {T1m, T2m}, ang, B1], EPGSignali[echo, {T1f, T2f}, ang, B1]}, {T2m, B1}
+	    }, {T2m, t2s, t2e, t2i}, {B1, b1s, b1e, b1i}];
+	    ][[1]];
 	 
-	 (*flatten dictionary*)
-	 valsf = Flatten[dict[[All, All, 2]], 1];
-	 dictf = Transpose /@ Flatten[dict[[All, All, 1]], 1];
-	 
-	 Print["The dictionary contains " <> ToString[Length[dictf]] <> 
-	    " values."];
-	 {dictf, valsf}
+	 vals = dict[[All, All, 2]];
+	 dict = Transpose[dict[[All, All, 1]], {1, 2, 4, 3}];
+	 	  
+	 Print["The dictionary contains " <> ToString[Times @@ Dimensions[dict][[1 ;; 2]]] <> " values, with T2fat = "<> ToString[Round[T2f]] <>" ms, and took "<>ToString[Round[time,.1]]<>" seconds to generate."];
+	 {dict,vals}
 	]
 
 
@@ -713,7 +785,7 @@ TriExponentialT2Fit[datan_, times_,OptionsPattern[]] :=
   model = Af *(cs*Exp[-x/T2s] + (1 - cs)*Exp[-x/T2f]) + Am * Exp[-x/T2m];
   
   (*perform callibration fit*)
- {Afi, Ami, csi, T2mi, T2fi, T2si} = {Af, Am, cs, T2m, T2f, T2s} /. 
+  {Afi, Ami, csi, T2mi, T2fi, T2si} = {Af, Am, cs, T2m, T2f, T2s} /. 
    FindFit[fitData, {model, 
    	{0.1 <= cs <= 0.9, 30 < T2m < 50, T2m < T2f, T2f < T2s, 0 <= Am, Am < Af}},
    	{{Af, 1 fitData[[1, 2]]}, {Am, 0.25 fitData[[1, 2]]},{cs, 0.33}, {T2m, 35}, {T2f, 81}, {T2s, 250}}, 

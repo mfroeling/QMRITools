@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     16756,        447]
-NotebookOptionsPosition[     13173,        374]
-NotebookOutlinePosition[     15514,        429]
-CellTagsIndexPosition[     15471,        426]
+NotebookDataLength[     16662,        445]
+NotebookOptionsPosition[     13076,        372]
+NotebookOutlinePosition[     15420,        427]
+CellTagsIndexPosition[     15377,        424]
 WindowTitle->DixonReconstruct
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ DixonReconstruct.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$70224], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$71752], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/DixonReconstruct", ".html"]], None}]}]},
@@ -104,42 +104,17 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+DixonReconstruct[real, imag, echo]\[LineSeparator]reconstruxt Dixon data with \
+initital guess b0 = 0 and T2star = 0. \
+\>"]},
+   {"", Cell["\<\
+DixonReconstruct[real, imag, echo, b$0]\[LineSeparator]reconstructs Dixon \
+data with intitial guess T2star = 0. \
+\>"]},
    {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"DixonReconstruct", "[", 
-       RowBox[{
-        StyleBox["real", "TI"], ",", " ", 
-        StyleBox["imag", "TI"], ",", " ", 
-        StyleBox["echo", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]reconstruxt Dixon data with initital guess b0 = 0 and \
-T2star = 0. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"DixonReconstruct", "[", 
-       RowBox[{
-        StyleBox["real", "TI"], ",", " ", 
-        StyleBox["imag", "TI"], ",", " ", 
-        StyleBox["echo", "TI"], ",", " ", 
-        SubscriptBox[
-         StyleBox["b", "TI"], 
-         StyleBox["0", "TR"]]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]reconstructs Dixon data with intitial guess T2star = 0. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"DixonReconstruct", "[", 
-       RowBox[{
-        StyleBox["real", "TI"], ",", " ", 
-        StyleBox["imag", "TI"], ",", " ", 
-        StyleBox["echo", "TI"], ",", " ", 
-        SubscriptBox[
-         StyleBox["b", "TI"], 
-         StyleBox["0", "TR"]], ",", " ", 
-        SubscriptBox[
-         StyleBox["t", "TI"], 
-         StyleBox["2", "TR"]]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]reconstructs Dixon data. real is the real data in \
+     "DixonReconstruct[real, imag, echo, b$0, \
+t$2]\[LineSeparator]reconstructs Dixon data. real is the real data in \
 radials. imag is the imaginary data in radians. b0 can be estimated from two \
 phase images using ",
      Cell[BoxData[
@@ -243,7 +218,7 @@ Cell[BoxData[GridBox[{
       RowBox[{"{", "1", "}"}], ",", " ", 
       RowBox[{"{", 
        RowBox[{
-       "0.089", ",", " ", "0.598", ",", " ", "0.048", ",", " ", "0.077", ",", 
+       "0.089", ",", " ", "0.598", ",", " ", "0.047", ",", " ", "0.077", ",", 
         " ", "0.052", ",", " ", "0.011", ",", " ", "0.035", ",", " ", 
         "0.066"}], "}"}]}], "}"}], Cell[TextData[{
      Cell[BoxData[
@@ -258,7 +233,7 @@ Cell[BoxData[GridBox[{
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["DixonIterations",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/DixonIterations"], "50", Cell[
+     ButtonData->"paclet:DTITools/ref/DixonIterations"], "20", Cell[
     TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
@@ -305,9 +280,9 @@ voxel to be background noise. Defualt values is 0.05."
     ButtonBox["DixonFilterInput",
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/DixonFilterInput"], 
-    ButtonBox["True",
+    ButtonBox["False",
      BaseStyle->"Link",
-     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
          TextData["DixonFilterInput"]],"paclet:DTITools/ref/DixonFilterInput"},
@@ -322,14 +297,36 @@ voxel to be background noise. Defualt values is 0.05."
      " the input b0 and T2star values are smoothed using a gaussian kernel."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
-    ButtonBox["DixonFilterInputSize",
+    ButtonBox["DixonFilterOutput",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/DixonFilterInputSize"], "2", Cell[
-    TextData[{
+     ButtonData->"paclet:DTITools/ref/DixonFilterOutput"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
-         TextData["DixonFilterInputSize"]],
-        "paclet:DTITools/ref/DixonFilterInputSize"},
+         TextData["DixonFilterOutput"]],
+        "paclet:DTITools/ref/DixonFilterOutput"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData["DixonReconstruct"], "InlineFormula"],
+     ". ",
+     "If",
+     " ",
+     "True",
+     " the out b0 and T2star values are smoothed ",
+     "Median",
+     " filter and lowpassfiltering after which the water and fat maps are \
+recomputed."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DixonFilterSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/DixonFilterSize"], "1", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DixonFilterSize"]],"paclet:DTITools/ref/DixonFilterSize"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " is an options for ",
@@ -341,10 +338,11 @@ are smoothed."
  GridBoxOptions->{
  GridBoxBackground->{
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
-   "Rows" -> {None, None, None, None, None, None, None, None, {None}}, 
+   "Rows" -> {None, None, None, None, None, None, None, None, None, {None}}, 
    "RowsIndexed" -> {}},
  GridBoxDividers->{
-  "Rows" -> {{True, True, True, True, True, True, True, True, True, True}}}}],
+  "Rows" -> {{
+     True, True, True, True, True, True, True, True, True, True, True}}}}],
 
 Cell["", "SectionFooterSpacer"]
 }, Closed]],
@@ -387,16 +385,16 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 42, 48.6510854}", 
+   "built" -> "{2018, 5, 9, 13, 30, 11.4063117}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`DixonTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
     "DixonReconstruct[real, imag, echo] reconstruxt Dixon data with initital \
-guess b0 = 0 and T2star = 0. DixonReconstruct[real, imag, echo, b0] \
+guess b0 = 0 and T2star = 0. DixonReconstruct[real, imag, echo, b$0] \
 reconstructs Dixon data with intitial guess T2star = 0. \
-DixonReconstruct[real, imag, echo, b0, t2] reconstructs Dixon data. real is \
+DixonReconstruct[real, imag, echo, b$0, t$2] reconstructs Dixon data. real is \
 the real data in radials. imag is the imaginary data in radians. b0 can be \
 estimated from two phase images using Unwrap. t2 can be estimated from \
 multiple echos using T2fit. Output is \
@@ -428,27 +426,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[588, 21, 3064, 74, 70, "AnchorBarGrid",ExpressionUUID->"dd8eefa7-2f58-4e62-b948-febc125eecb1",
+Cell[588, 21, 3064, 74, 70, "AnchorBarGrid",ExpressionUUID->"ab59f527-447c-443e-8779-1252ce0c8380",
  CellID->1],
-Cell[3655, 97, 173, 6, 70, "ObjectNameGrid",ExpressionUUID->"c8bfbfc8-0405-4eeb-acef-30c4fda43901"],
-Cell[3831, 105, 1910, 51, 70, "Usage",ExpressionUUID->"86df9064-9fb0-44b9-8377-acbebbe874dc"],
+Cell[3655, 97, 173, 6, 70, "ObjectNameGrid",ExpressionUUID->"983e1447-16e5-4cb1-8e1b-8c1e0b5eedc6"],
+Cell[3831, 105, 1053, 26, 70, "Usage",ExpressionUUID->"c0811169-facd-484b-8053-f6e2731cd6fc"],
 Cell[CellGroupData[{
-Cell[5766, 160, 621, 19, 70, "NotesSection",ExpressionUUID->"abb53dc4-cb5c-4d04-b53d-33614f3fd5fb",
+Cell[4909, 135, 621, 19, 70, "NotesSection",ExpressionUUID->"837d71e1-bf0e-4584-9139-f5c948039d41",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[6390, 181, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"f0187171-c3e2-4213-8bfa-8412ce3d2691"],
-Cell[6424, 183, 53, 0, 70, "Notes",ExpressionUUID->"94c49b55-a5d9-43c2-a169-a21526b35fe3"],
-Cell[6480, 185, 6223, 161, 70, "3ColumnTableMod",ExpressionUUID->"eb26b75c-a89c-4441-aee9-4c8f41f1e5ed"],
-Cell[12706, 348, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"5e3b3f5e-5128-4ee2-a97e-167c998f4ea4"]
+Cell[5533, 156, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"6414dd8f-72f6-4050-8807-16afeff17139"],
+Cell[5567, 158, 53, 0, 70, "Notes",ExpressionUUID->"0d8cc9df-c6c0-416e-931e-753a2660cfc3"],
+Cell[5623, 160, 6983, 184, 70, "3ColumnTableMod",ExpressionUUID->"23fe6fe1-d243-4d82-b218-61a173da8f7e"],
+Cell[12609, 346, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"9a9308d1-4ad5-4bf6-b798-13b4e6317a13"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[12774, 353, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"3a1f8c35-28d1-4944-ae89-63cc99ddb0da",
+Cell[12677, 351, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"70a78ee1-6e34-41e3-807f-1efcc8b851e2",
  CellID->38303248],
-Cell[12933, 362, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"a6e372d1-8c0e-4755-a51e-2e942c1a1816"],
-Cell[12967, 364, 164, 5, 70, "MoreAbout",ExpressionUUID->"ced0a7a8-ecfe-49eb-8219-8a02efeaebf0",
+Cell[12836, 360, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"2ba0bad2-3a02-44e4-af33-ab98341636df"],
+Cell[12870, 362, 164, 5, 70, "MoreAbout",ExpressionUUID->"abe63c2c-52e0-460b-a338-6b70d8110956",
  CellID->1]
 }, Open  ]],
-Cell[13146, 372, 23, 0, 70, "FooterCell",ExpressionUUID->"a33ae5be-3f6b-4bf6-b933-4042e922dab2"]
+Cell[13049, 370, 23, 0, 70, "FooterCell",ExpressionUUID->"ad281544-d16a-462a-bd3e-66a1a8504211"]
 }
 ]
 *)

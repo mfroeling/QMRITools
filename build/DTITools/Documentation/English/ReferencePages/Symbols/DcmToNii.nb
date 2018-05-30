@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      7254,        201]
-NotebookOptionsPosition[      4704,        143]
-NotebookOutlinePosition[      6619,        192]
-CellTagsIndexPosition[      6576,        189]
+NotebookDataLength[     10334,        288]
+NotebookOptionsPosition[      7010,        219]
+NotebookOutlinePosition[      9099,        270]
+CellTagsIndexPosition[      9056,        267]
 WindowTitle->DcmToNii
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$60869], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$61929], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/DcmToNii", ".html"]], None}]}]},
@@ -104,19 +104,95 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{
-      "DcmToNii", "[", "\"\<\!\(\*StyleBox[\"action\", \"TI\"]\)\>\"", "]"}]],
-       "InlineFormula"],
-     "\[LineSeparator]converts dicom to nii. \"action\" can be \"folder\" or \
-\"file\", which converts all files in a folder to nii or just one file."
-    }]]}
+   {"", Cell["\<\
+DcmToNii[]\[LineSeparator]converts a dicom folder to nii, you will be \
+prometed for the location of the folders. \
+\>"]},
+   {"", Cell["\<\
+DcmToNii[{\"input\",\"ouput\"}]\[LineSeparator]converts the \"input\" dicom \
+folder to nii files which are place in the \"output\" folder. For this \
+function to work the dcm2niix.exe file should be present in the DTITools \
+aplication folder.\
+\>"]}
   }]], "Usage",
  GridBoxOptions->{
  GridBoxBackground->{
-  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
    "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["CompressNii",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/CompressNii"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CompressNii"]],"paclet:DTITools/ref/CompressNii"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["DcmToNii"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ExportNii"]],"paclet:DTITools/ref/ExportNii"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". ",
+     "If",
+     " set ",
+     "True",
+     " .nii.gz files will be created."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Method",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Method"], 
+    ButtonBox["Automatic",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Automatic"], Cell["\<\
+Method is an option for various algorithm-intensive functions that specifies \
+what internal methods they should use.\
+\>", "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
 
 Cell[CellGroupData[{
 
@@ -156,17 +232,19 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 42, 17.2935432}", 
+   "built" -> "{2018, 5, 9, 13, 29, 14.9914046}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`NiftiTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
     "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
     "DTITools Package", "status" -> "None", "summary" -> 
-    "DcmToNii[\"action\"] converts dicom to nii. \"action\" can be \"folder\" \
-or \"file\", which converts all files in a folder to nii or just one file.", 
-    "synonyms" -> {}, "tabletags" -> {}, "title" -> "DcmToNii", 
-    "titlemodifier" -> "", "windowtitle" -> "DcmToNii", "type" -> "Symbol", 
-    "uri" -> "DTITools/ref/DcmToNii"}},
+    "DcmToNii[] converts a dicom folder to nii, you will be prometed for the \
+location of the folders. DcmToNii[{\"input\",\"ouput\"}] converts the \"input\
+\" dicom folder to nii files which are place in the \"output\" folder. For \
+this function to work the dcm2niix.exe file should be present in the DTITools \
+aplication folder.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "DcmToNii", "titlemodifier" -> "", "windowtitle" -> "DcmToNii", "type" -> 
+    "Symbol", "uri" -> "DTITools/ref/DcmToNii"}},
 CellContext->"Global`",
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->Notebook[{
@@ -191,18 +269,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[580, 21, 3031, 74, 70, "AnchorBarGrid",ExpressionUUID->"5f6d27b8-7fca-449f-88da-510a07c271ad",
+Cell[580, 21, 3031, 74, 70, "AnchorBarGrid",ExpressionUUID->"605af572-f6da-4252-8d64-128606abd9e2",
  CellID->1],
-Cell[3614, 97, 165, 6, 70, "ObjectNameGrid",ExpressionUUID->"00d56dc5-84fb-4e50-9274-3a4f9a44fa90"],
-Cell[3782, 105, 498, 13, 70, "Usage",ExpressionUUID->"f350e69f-e258-4ec5-85d5-cc3c280a13fc"],
+Cell[3614, 97, 165, 6, 70, "ObjectNameGrid",ExpressionUUID->"da006600-f689-4281-a229-66cb558b75db"],
+Cell[3782, 105, 592, 15, 70, "Usage",ExpressionUUID->"246ed0d7-f0e5-4425-9dce-9e2e4dbf0f05"],
 Cell[CellGroupData[{
-Cell[4305, 122, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"ea60b07f-0e7e-46b0-bf77-fe04a95fe8e9",
+Cell[4399, 124, 621, 19, 70, "NotesSection",ExpressionUUID->"1a31cde0-feab-4581-998b-3836484be218",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5023, 145, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"a5571884-cb23-4f5b-9aa1-396e292e9591"],
+Cell[5057, 147, 53, 0, 70, "Notes",ExpressionUUID->"8ff6bddd-0198-4ca6-8016-f90794ec6c87"],
+Cell[5113, 149, 1427, 42, 70, "3ColumnTableMod",ExpressionUUID->"353c8fe7-c8c7-4640-8edb-ccc7f70ea6e1"],
+Cell[6543, 193, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"24a7dae8-1039-4b47-8610-19e85b27bd40"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[6611, 198, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"429a8216-2546-4f14-b695-da3bba94282a",
  CellID->38303248],
-Cell[4464, 131, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"727b257e-e068-4f08-92fd-7c42d4d2d02b"],
-Cell[4498, 133, 164, 5, 70, "MoreAbout",ExpressionUUID->"2268d42c-ad93-49f5-950e-b73052d13b34",
+Cell[6770, 207, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"beadadfc-b191-4031-9b82-adff8355f2d1"],
+Cell[6804, 209, 164, 5, 70, "MoreAbout",ExpressionUUID->"22deb2f7-b636-40b1-9e88-89d3561515a3",
  CellID->1]
 }, Open  ]],
-Cell[4677, 141, 23, 0, 70, "FooterCell",ExpressionUUID->"9f1dea4d-e00d-4af2-a955-b4901d544167"]
+Cell[6983, 217, 23, 0, 70, "FooterCell",ExpressionUUID->"912f92e6-bd8f-486f-9eba-6dcf12e65d77"]
 }
 ]
 *)

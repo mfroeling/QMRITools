@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     36971,        995]
-NotebookOptionsPosition[     31192,        894]
-NotebookOutlinePosition[     35722,        977]
-CellTagsIndexPosition[     35679,        974]
+NotebookDataLength[     32686,        883]
+NotebookOptionsPosition[     26914,        782]
+NotebookOutlinePosition[     31442,        865]
+CellTagsIndexPosition[     31399,        862]
 WindowTitle->RegisterData
 WindowFrame->Normal*)
 
@@ -79,7 +79,7 @@ RegisterData.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$186872], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$198877], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "DTITools/ref/RegisterData", ".html"]], None}]}]},
@@ -104,275 +104,91 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+RegisterData[data]\[LineSeparator]registers the data series. If data is 3D it \
+performs multiple 2D registration, if data is 4D it performs multipe 3D \
+registration. The target is the first image orvolume in the series. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{data, vox}]\[LineSeparator]registers the data series using the \
+given voxel size. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{data, mask}]\[LineSeparator]registers the data series only \
+using data whithin the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{data, mask, vox}]\[LineSeparator]registers the data series \
+using the given voxel size only using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[target, moving]\[LineSeparator]registers the moving data to the \
+target data. target can be 2D or 3D. moving can be the same of one dimension \
+higher than the target. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask, vox},{moving, mask, \
+vox}]\[LineSeparator]registers the data using the given voxel size only using \
+data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, vox}, moving]\[LineSeparator]registers the data using \
+the given voxel size. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[target, {moving, vox}]\[LineSeparator]registers the data using \
+the given voxel size. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, vox}, {moving, vox}]\[LineSeparator]registers the data \
+using the given voxel size. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask}, moving]\[LineSeparator]registers the data series \
+only using data whithin the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[target, {moving, mask}]\[LineSeparator]registers the data series \
+only using data whithin the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask}, moving]\[LineSeparator]registers the data series \
+only using data whithin the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask}, {moving, mask}]\[LineSeparator]registers the \
+data series only using data whithin the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[target, {moving, mask, vox}]\[LineSeparator]registers the data \
+series using the given voxel size only using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask}, {moving, mask, vox}]\[LineSeparator]registers \
+the data series using the given voxel size only using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, vox}, {moving, mask, vox}]\[LineSeparator]registers the \
+data series using the given voxel size only using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask, vox}, moving]\[LineSeparator]registers the data \
+series using the given voxel size only using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask, vox}, {moving, mask}]\[LineSeparator]registers \
+the data series using the given voxel size only using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask, vox}, {moving, vox}]\[LineSeparator]registers the \
+data series using the given voxel size only using data within the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterData[{target, mask}, {moving, vox}]\[LineSeparator]registers the data \
+series using the given voxel size only using data within the mask. \
+\>"]},
    {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       StyleBox["data", "TI"], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series. If data is 3D it performs \
-multiple 2D registration, if data is 4D it performs multipe 3D registration. \
-The target is the first image orvolume in the series. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         StyleBox["data", "TI"], ",", " ", 
-         StyleBox["vox", "TI"]}], "}"}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         StyleBox["data", "TI"], ",", " ", 
-         StyleBox["mask", "TI"]}], "}"}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series only using data whithin the \
-mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         StyleBox["data", "TI"], ",", " ", 
-         StyleBox["mask", "TI"], ",", " ", 
-         StyleBox["vox", "TI"]}], "}"}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        StyleBox["target", "TI"], ",", " ", 
-        StyleBox["moving", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the moving data to the target data. target \
-can be 2D or 3D. moving can be the same of one dimension higher than the \
-target. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["mask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data using the given voxel size only \
-using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        StyleBox["moving", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data using the given voxel size. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        StyleBox["target", "TI"], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data using the given voxel size. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data using the given voxel size. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}], ",", " ", 
-        StyleBox["moving", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series only using data whithin the \
-mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        StyleBox["target", "TI"], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series only using data whithin the \
-mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}], ",", " ", 
-        StyleBox["moving", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series only using data whithin the \
-mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series only using data whithin the \
-mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        StyleBox["target", "TI"], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["mask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["mask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["mask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        StyleBox["moving", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]registers the data series using the given voxel size \
-only using data within the mask. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterData", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["target", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["moving", "TI"], ",", " ", 
-          StyleBox["mask", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
+     "RegisterData[{target, vox}, {moving, mask}]",
      "\[LineSeparator]registers the data series using the given voxel size \
 only using data within the mask. Output is the registered data with the \
 dimensions of the moving data. If ",
@@ -382,8 +198,40 @@ dimensions of the moving data. If ",
         "paclet:DTITools/ref/OutputTransformation"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " is True it also outputs the translation, rotation scale and skew of \
-all images or volumes."
+     " ",
+     "is",
+     " ",
+     "True",
+     " ",
+     "it",
+     " ",
+     "also",
+     " ",
+     "outputs",
+     " ",
+     "the",
+     " ",
+     "translation",
+     ",",
+     " ",
+     "rotation",
+     " ",
+     "scale",
+     " ",
+     "and",
+     " ",
+     "skew",
+     " ",
+     "of",
+     " ",
+     "all",
+     " ",
+     "images",
+     " ",
+     "or",
+     " ",
+     "volumes",
+     "."
     }]]}
   }]], "Usage",
  GridBoxOptions->{
@@ -538,7 +386,7 @@ iteration used by the registration functions."
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["InterpolationOrderReg",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/InterpolationOrderReg"], "1", Cell[
+     ButtonData->"paclet:DTITools/ref/InterpolationOrderReg"], "3", Cell[
     TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
@@ -763,7 +611,12 @@ registration."
     ButtonBox["True",
      BaseStyle->"Link",
      ButtonData->"paclet:ref/True"], Cell[TextData[{
-     "DeleteTempDirectoryis",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DeleteTempDirectory"]],
+        "paclet:DTITools/ref/DeleteTempDirectory"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      " an options for ",
      Cell[BoxData["RegisterData"], "InlineFormula"],
      ", ",
@@ -853,6 +706,41 @@ deplayed."
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
      ".\nIt specifies if the tranformation paramters (translation, rotation, \
 scale and skew) should be given as output in the registration functions."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UseGPU",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/UseGPU"], 
+    RowBox[{"{", 
+     RowBox[{"False", ",", " ", "Automatic"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["UseGPU"]],"paclet:DTITools/ref/UseGPU"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["RegisterData"], "InlineFormula"],
+     ". The value is {bool, gpu} where bool is ",
+     "True",
+     " or ",
+     "False",
+     ", and gpu is the gpu ID which is an integer or ",
+     "Automatic",
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCAComponents",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PCAComponents"], "3", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCAComponents"]],"paclet:DTITools/ref/PCAComponents"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["RegisterData"], "InlineFormula"],
+     ". It speciefies how many PCA components are used if method is set to \
+\"PCA\""
     }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
@@ -860,11 +748,11 @@ scale and skew) should be given as output in the registration functions."
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {
     None, None, None, None, None, None, None, None, None, None, None, None, 
-     None, {None}}, "RowsIndexed" -> {}},
+     None, None, None, {None}}, "RowsIndexed" -> {}},
  GridBoxDividers->{
   "Rows" -> {{
      True, True, True, True, True, True, True, True, True, True, True, True, 
-      True, True, True}}}}],
+      True, True, True, True, True}}}}],
 
 Cell["", "SectionFooterSpacer"]
 }, Closed]],
@@ -907,7 +795,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 49, 11.2339726}", 
+   "built" -> "{2018, 5, 9, 13, 43, 8.8150824}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ElastixTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -922,7 +810,7 @@ the mask. RegisterData[{data, mask, vox}] registers the data series using the \
 given voxel size only using data within the mask. RegisterData[target, \
 moving] registers the moving data to the target data. target can be 2D or 3D. \
 moving can be the same of one dimension higher than the target. \
-RegisterData[{target, mask, vox}, {moving, mask, vox}] registers the data \
+RegisterData[{target, mask, vox},{moving, mask, vox}] registers the data \
 using the given voxel size only using data within the mask. \
 RegisterData[{target, vox}, moving] registers the data using the given voxel \
 size. RegisterData[target, {moving, vox}] registers the data using the given \
@@ -976,27 +864,27 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[584, 21, 3053, 74, 70, "AnchorBarGrid",ExpressionUUID->"fd86135a-d60e-4d70-a5ed-88b275fac864",
+Cell[584, 21, 3053, 74, 70, "AnchorBarGrid",ExpressionUUID->"7f76ebc1-d6b3-44d5-832d-3ab0ba487234",
  CellID->1],
-Cell[3640, 97, 169, 6, 70, "ObjectNameGrid",ExpressionUUID->"81a53a08-62ac-470e-bb51-92be60d29db2"],
-Cell[3812, 105, 10158, 289, 70, "Usage",ExpressionUUID->"6dd37745-5781-44a7-9616-aeaa9a5e5426"],
+Cell[3640, 97, 169, 6, 70, "ObjectNameGrid",ExpressionUUID->"d1da3003-dbf0-4b2b-a07d-6da5ed918d45"],
+Cell[3812, 105, 4445, 137, 70, "Usage",ExpressionUUID->"4ea80f6b-8a7b-480b-83d5-bbc184e44c8e"],
 Cell[CellGroupData[{
-Cell[13995, 398, 621, 19, 70, "NotesSection",ExpressionUUID->"c12ec4b2-e373-4cc8-935d-aaeae9b02054",
+Cell[8282, 246, 621, 19, 70, "NotesSection",ExpressionUUID->"a9652f83-90cb-4694-969e-4baa1dd76800",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[14619, 419, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"58be238b-57a8-4bcb-8b29-b7863024ee0e"],
-Cell[14653, 421, 53, 0, 70, "Notes",ExpressionUUID->"27112d4e-4b8e-4f6f-beb0-e8c7430b2b37"],
-Cell[14709, 423, 16009, 443, 70, "3ColumnTableMod",ExpressionUUID->"0c013308-70d7-41a3-925e-1ed169244937"],
-Cell[30721, 868, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"d9026450-2c0a-4eee-a0a8-53a15e93ce2a"]
+Cell[8906, 267, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"dcf95cae-2fa6-4e4a-ab5c-28696ce86538"],
+Cell[8940, 269, 53, 0, 70, "Notes",ExpressionUUID->"036984cc-904a-454a-9b38-4883df99df35"],
+Cell[8996, 271, 17444, 483, 70, "3ColumnTableMod",ExpressionUUID->"d1df762d-5a53-4302-b3a5-46b18b2d07e2"],
+Cell[26443, 756, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"7870a3cc-7cce-44b8-a433-4f39125773f7"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[30789, 873, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"1fdc4628-a7b3-4115-a33c-67e710f1ce62",
+Cell[26511, 761, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"4ee4fe1a-84e9-442f-800f-5a0f0cb00181",
  CellID->38303248],
-Cell[30948, 882, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"3fa19dc8-e877-46d2-a308-49da803a5eaa"],
-Cell[30982, 884, 168, 5, 70, "MoreAbout",ExpressionUUID->"2acdbd05-b190-48d4-932d-d002f8536734",
+Cell[26670, 770, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"5b36bd5b-05a4-4758-97ed-934d5c4fa903"],
+Cell[26704, 772, 168, 5, 70, "MoreAbout",ExpressionUUID->"e44e79a2-4250-41bb-8917-bce3ad83e192",
  CellID->1]
 }, Open  ]],
-Cell[31165, 892, 23, 0, 70, "FooterCell",ExpressionUUID->"dff0132e-4e4f-44bc-9e46-4994ffd0d8ec"]
+Cell[26887, 780, 23, 0, 70, "FooterCell",ExpressionUUID->"1083bffd-a8a8-4754-807d-604f8f4b817d"]
 }
 ]
 *)

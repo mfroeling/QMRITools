@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     33127,        892]
-NotebookOptionsPosition[     29896,        826]
-NotebookOutlinePosition[     32366,        882]
-CellTagsIndexPosition[     32323,        879]
+NotebookDataLength[     34486,        945]
+NotebookOptionsPosition[     31255,        879]
+NotebookOutlinePosition[     33725,        935]
+CellTagsIndexPosition[     33682,        932]
 WindowTitle->RegisterDiffusionDataSplit
 WindowFrame->Normal*)
 
@@ -62,7 +62,7 @@ RegisterDiffusionDataSplit.html"], StandardForm]], "Input", TextClipboardType ->
           URL[
            StringJoin[
             If[
-             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$191164], 
+             TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$203242], 
              "http://reference.wolfram.com/system-modeler/", 
              "http://reference.wolfram.com/language/"], 
             "DTITools/ref/RegisterDiffusionDataSplit", ".html"]], None}]}]},
@@ -86,44 +86,19 @@ Cell[TextData[{
 }], "ObjectNameGrid"],
 
 Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+RegisterDiffusionDataSplit[dtidata, vox]\[LineSeparator]is identical to \
+Register diffusion data however left and right side of the data are \
+registered seperately. \
+\>"]},
+   {"", Cell["\<\
+RegisterDiffusionDataSplit[{dtidata, vox}, {anatdata, \
+voxa}]\[LineSeparator]is identical to Register diffusion data however left \
+and right side of the data are registered seperately. \
+\>"]},
    {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionDataSplit", "[", 
-       RowBox[{
-        StyleBox["dtidata", "TI"], ",", " ", 
-        StyleBox["vox", "TI"]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]is identical to Register diffusion data however left \
-and right side of the data are registered seperately. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionDataSplit", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["dtidata", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["anatdata", "TI"], ",", " ", 
-          StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
-     "\[LineSeparator]is identical to Register diffusion data however left \
-and right side of the data are registered seperately. "
-    }]]},
-   {"", Cell[TextData[{
-     Cell[BoxData[
-      RowBox[{"RegisterDiffusionDataSplit", "[", 
-       RowBox[{
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["dtidata", "TI"], ",", " ", 
-          StyleBox["dtimask", "TI"], ",", " ", 
-          StyleBox["vox", "TI"]}], "}"}], ",", " ", 
-        RowBox[{"{", 
-         RowBox[{
-          StyleBox["anatdata", "TI"], ",", " ", 
-          StyleBox["anatmask", "TI"], ",", " ", 
-          StyleBox["voxa", "TI"]}], "}"}]}], "]"}]], "InlineFormula"],
+     "RegisterDiffusionDataSplit[{dtidata, dtimask, vox}, {anatdata, \
+anatmask, voxa}]",
      "\[LineSeparator]is identical to Register diffusion data however left \
 and right side of the data are registered seperately. Splitting the data is \
 done using the function ",
@@ -132,7 +107,28 @@ done using the function ",
          TextData["CutData"]],"paclet:DTITools/ref/CutData"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     " and merged wit Stich data. Output is the registered data."
+     " ",
+     "and",
+     " ",
+     "merged",
+     " ",
+     "wit",
+     " ",
+     "Stich",
+     " ",
+     "data",
+     ".",
+     " ",
+     "Output",
+     " ",
+     "is",
+     " ",
+     "the",
+     " ",
+     "registered",
+     " ",
+     "data",
+     "."
     }]]}
   }]], "Usage",
  GridBoxOptions->{
@@ -300,7 +296,7 @@ iteration used by the registration functions."
    {Cell["      ", "TableRowIcon"], 
     ButtonBox["InterpolationOrderReg",
      BaseStyle->"Link",
-     ButtonData->"paclet:DTITools/ref/InterpolationOrderReg"], "1", Cell[
+     ButtonData->"paclet:DTITools/ref/InterpolationOrderReg"], "3", Cell[
     TextData[{
      Cell[BoxData[
       TemplateBox[{Cell[
@@ -662,6 +658,49 @@ deplayed."
 scale and skew) should be given as output in the registration functions."
     }], "TableText"]},
    {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UseGPU",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/UseGPU"], 
+    RowBox[{"{", 
+     RowBox[{"False", ",", " ", "Automatic"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["UseGPU"]],"paclet:DTITools/ref/UseGPU"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:DTITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". The value is {bool, gpu} where bool is ",
+     "True",
+     " or ",
+     "False",
+     ", and gpu is the gpu ID which is an integer or ",
+     "Automatic",
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCAComponents",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/PCAComponents"], "3", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCAComponents"]],"paclet:DTITools/ref/PCAComponents"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:DTITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". It speciefies how many PCA components are used if method is set to \
+\"PCA\""
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
     ButtonBox["IterationsA",
      BaseStyle->"Link",
      ButtonData->"paclet:DTITools/ref/IterationsA"], "1000", Cell[TextData[{
@@ -805,8 +844,21 @@ diffusion data to anatomical space. Mehtods can be be \"rigid\",\"affine\" or \
         "paclet:DTITools/ref/RegisterCardiacData"},
        "RefLink",
        BaseStyle->{"InlineFormula"}]], "InlineFormula"],
-     ". specifies which target to uses for registration. \nValues can be \
-\"First\", \"Mean\" or \"Median\"."
+     ". Specifies which target to uses for registration if using \"rigid\", \
+\"affine\" or \"bspline\" as ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MethodReg"]],"paclet:DTITools/ref/MethodReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".\nIf the ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MethodReg"]],"paclet:DTITools/ref/MethodReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is \"cyclyc\" or \"PCA\" it does not need a target and this options \
+does nothing. \nValues can be \"First\", \"Mean\" or \"Median\"."
     }], "TableText"]}
   }]], "3ColumnTableMod",
  GridBoxOptions->{
@@ -814,12 +866,13 @@ diffusion data to anatomical space. Mehtods can be be \"rigid\",\"affine\" or \
   "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
    "Rows" -> {
     None, None, None, None, None, None, None, None, None, None, None, None, 
-     None, None, None, None, None, None, None, None, {None}}, 
+     None, None, None, None, None, None, None, None, None, None, {None}}, 
    "RowsIndexed" -> {}},
  GridBoxDividers->{
   "Rows" -> {{
      True, True, True, True, True, True, True, True, True, True, True, True, 
-      True, True, True, True, True, True, True, True, True, True}}}}]
+      True, True, True, True, True, True, True, True, True, True, True, 
+      True}}}}]
 }, Closed]],
 
 Cell[" ", "FooterCell"]
@@ -839,7 +892,7 @@ TaggingRules->{
     Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
   None, "RootCaptions" -> "", 
   "Metadata" -> {
-   "built" -> "{2018, 5, 2, 12, 49, 20.9838895}", 
+   "built" -> "{2018, 5, 9, 13, 43, 31.1562056}", 
     "history" -> {"XX", "", "", ""}, "context" -> "DTITools`ElastixTools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -881,19 +934,19 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[598, 21, 2383, 56, 70, "AnchorBarGrid",ExpressionUUID->"c5489731-51f7-4a85-93a2-6bae1cb9ca4c",
+Cell[598, 21, 2383, 56, 70, "AnchorBarGrid",ExpressionUUID->"75c3d2e5-703b-442c-8a02-ee6dbd1bce30",
  CellID->1],
-Cell[2984, 79, 183, 6, 70, "ObjectNameGrid",ExpressionUUID->"75adf91a-8315-4d59-bcaf-375509b35e35"],
-Cell[3170, 87, 2042, 53, 70, "Usage",ExpressionUUID->"247318bc-44c8-4ed0-9b33-376848552795"],
+Cell[2984, 79, 183, 6, 70, "ObjectNameGrid",ExpressionUUID->"92e1ee47-5ddf-40b1-bb66-3cf35d5f2d30"],
+Cell[3170, 87, 1336, 49, 70, "Usage",ExpressionUUID->"f4cc46c7-9174-46d0-a9a6-427bfeda65da"],
 Cell[CellGroupData[{
-Cell[5237, 144, 621, 19, 70, "NotesSection",ExpressionUUID->"352875ad-8138-494c-96f0-5e6742b170f9",
+Cell[4531, 140, 621, 19, 70, "NotesSection",ExpressionUUID->"32d5c962-e4eb-4717-bbbd-42cedfed7373",
  CellGroupingRules->{"SectionGrouping", 50},
  CellID->1],
-Cell[5861, 165, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"c747ac27-bec2-41c1-9e93-5bd532e899e8"],
-Cell[5895, 167, 53, 0, 70, "Notes",ExpressionUUID->"7b9b4575-57bd-4f26-9e44-8789ef89bca5"],
-Cell[5951, 169, 23903, 652, 70, "3ColumnTableMod",ExpressionUUID->"a80893c5-8c6a-473d-a301-0895b89201f7"]
+Cell[5155, 161, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"231dcc45-73b9-49b2-951c-7e6192b5eef8"],
+Cell[5189, 163, 53, 0, 70, "Notes",ExpressionUUID->"637ade42-7a60-479f-9463-948b8bf2d93e"],
+Cell[5245, 165, 25968, 709, 70, "3ColumnTableMod",ExpressionUUID->"0294e324-219f-42dd-8d18-7630a5ca00a7"]
 }, Closed]],
-Cell[29869, 824, 23, 0, 70, "FooterCell",ExpressionUUID->"255d953f-425a-415f-bd17-d48c0c7d15a4"]
+Cell[31228, 877, 23, 0, 70, "FooterCell",ExpressionUUID->"23af7396-208b-43b4-86d1-f6a211d2f3b6"]
 }
 ]
 *)

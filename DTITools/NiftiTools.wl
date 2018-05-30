@@ -27,45 +27,47 @@ $ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 
 
 DcmToNii::usage =
-"DcmToNii[] converts a dicom folder to nii. 
-DcmToNii[\"action\"] converts dicom to nii. \"action\" can be \"folder\" or \"file\", which converts all files in a folder to nii or just one file.
-DcmToNii[{\"input\",\"ouput\"}] converts the \"input\" dicom folder to nii files which are place in the \"output\" folder."
+"DcmToNii[] converts a dicom folder to nii, you will be prometed for the location of the folders. 
+DcmToNii[{\"input\",\"ouput\"}] converts the \"input\" dicom folder to nii files which are place in the \"output\" folder.
+For this function to work the dcm2niix.exe file should be present in the DTITools aplication folder."
 
 ImportNii::usage = 
 "ImportNii[] promts to select the nii file to import.
 ImportNii[\"file\"] imports the nii file. 
-
-The default output is {data, vox}, however using NiiMethod various outputs can be given."
+The default output is {data, vox}, however using NiiMethod various outputs can be given.
+The Nii import is also suported using the native Import function from Mathematica."
 
 ImportNiiDiff::usage = 
 "ImportNiiDiff[] will promt for the *.nii, *.bvec and *.bval file to import.
+ImportNiiDiff[*.nii] will import the *.nii file and automatically also imports the *.bvec and *.bval is they have the same name.
 ImportNiiDiff[*.nii,*.bvec,*.bval] will import the given files.
 The output will be {data,grad,bvec,vox}."
 
 ImportNiiDix::usage = 
-"ImportNiiDix[file] imports the dixon nii file which should contain all possible outputs given by the scanner and corrects them accordingly."
+"ImportNiiDix[\"file\"] imports the dixon nii file which should contain all possible outputs given by the scanner and corrects them accordingly."
 
 ImportNiiT2::usage = 
-"ImportNiiT2[file] imports the T2 file which should contain the echos and the T2map calculated by the scanner and corrects them accordingly."
+"ImportNiiT2[\"file\"] imports the T2 file which should contain the echos and the T2map calculated by the scanner and corrects them accordingly."
 
 ImportNiiT1::usage = 
-"ImportNiiT1[file] imports the T1 file which should contain the echos and the T1map calculated by the scanner and corrects them accordingly."
+"ImportNiiT1[\"file\"] imports the T1 file which should contain the echos and the T1map calculated by the scanner and corrects them accordingly."
 
 ImportBvalvec::usage =
 "ImportBvalvec[] will promt to select the *.bval and *.bvec files.
-ImportBvalvec[\"file.bvec\",\"file.bval\"] imports the given *.bval and *.bvec files." 
+ImportBvalvec[file] if file is either a *.bval or *.bvec it will automatically import the *.bval and *.bvec files.
+ImportBvalvec[*.bvec,*.bval] imports the given *.bval and *.bvec files." 
 
 ImportBval::usage = 
 "ImportBval[] will promt to select the *.bval file.
-ImportBval[\"file.bval\"] imports the given *.bval file." 
+ImportBval[*.bval] imports the given *.bval file." 
 
 ImportBvec::usage = 
 "ImportBvec[] will promt to select the *.bvec file.
-ImportBvec[\"file.bvec\"] imports the given *.bvec file." 
+ImportBvec[*.bvec] imports the given *.bvec file." 
 
 ImportBmat::usage =
 "ImportBmat[] will promt to select the *.txt file containing the bmatrix.
-ImportBmat[\"file.txt\"] imports the given *.txt file containing the bmatrix." 
+ImportBmat[*.txt] imports the given *.txt file containing the bmatrix." 
 
 ExportNii::usage = 
 "ExportNii[data, vox] exports the nii file and will promt for a file name.
@@ -83,17 +85,18 @@ ExportBmat::usage =
 "ExportBmat[bmat] exports the diffusion bmatrix to exploreDTI format.
 ExportBmat[bmat, \"file\"] exports the diffusion bmatrix to \"file\" in the exploreDTI format."
 
-OpenMRIcron::usage = 
-"OpenMRIcron[] promts to select the nii file to open in MRIcron.
-ImOpenMRIcron[\"file\"] opens the nii file in MRIcron."
-
 ExtractNiiFiles::usage =
-"ExtractNiiFiles[] extracts all nii.gz files to .nii files in the selected folder.
+"ExtractNiiFiles[] promts for a folder. It then extracts all nii.gz files to .nii files in the selected folder.
 ExtractNiiFiles[folder] extracts all nii.gz files to .nii files in folder."
 
 CompressNiiFiles::usage =
-"CompressNiiFiles[] compresses all nii files to .nii.gz files in the selected folder.
-ECompressNiiFiles[folder] compresses all nii files to .nii.gz files in folder."
+"CompressNiiFiles[] promts for a folder. It then compresses all nii files to .nii.gz files in the selected folder.
+CompressNiiFiles[folder] compresses all nii files to .nii.gz files in folder."
+
+OpenMRIcron::usage = 
+"OpenMRIcron[] promts to select the nii file to open in MRIcron.
+OpenMRIcron[\"file\"] opens the nii file in MRIcron.
+For this function to work the MRIcron.exe file should be present in the DTITools aplication folder."
 
 
 (* ::Subsection::Closed:: *)
@@ -106,7 +109,7 @@ NiiScaling::usage = "NiiScaling is an option for ImportNii. It scales the nii va
 
 CompressNii::usage = "CompressNii is an option for DcmToNii and ExportNii. If set True .nii.gz files will be created."
 
-NumberType::usage = "NumberType is an option of Export Nii. The number type of Nii file can be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
+NiiDataType::usage = "NiiDataType is an option of Export Nii. The number type of Nii file can be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
 
 RotateGradients::usage = "RotateGradients is an option for ImportNiiDiff."
 
@@ -141,7 +144,7 @@ Export::niihdr="The given header is invalid.";
 
 Export::niidim="`1` compatible with the dimensions of the input data";
 
-ExportNii::type = "NumberType should be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
+ExportNii::type = "NiiDataType should be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
 
 OpenMRIcron::notfount = "mricron.exe not found in $UserBaseDirectory or $BaseDirectory please install DTItools in correct directory."
 
@@ -159,50 +162,29 @@ Begin["`Private`"]
 (*DcmToNii*)
 
 
-Options[DcmToNii]={CompressNii->True,Method->Automatic}
+Options[DcmToNii]={CompressNii->True, Method->Automatic}
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
-DcmToNii[opt:OptionsPattern[]]:=DcmToNii["folder",{"",""},opt];
+DcmToNii[opt:OptionsPattern[]]:=DcmToNii[{"",""},opt];
 
-DcmToNii[action_?StringQ,opt:OptionsPattern[]] := DcmToNii[action,"",opt]; 
-
-DcmToNii[fstr_?ListQ,opt:OptionsPattern[]] := DcmToNii["folder",fstr,opt];
-
-DcmToNii[action_?StringQ,fstr_?ListQ,OptionsPattern[]] := Module[{act,filfolin,folout,add,title,log,command,compress,dcm2nii},
+DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,folout, log,command,compress,dcm2nii},
 	
 	dcm2nii=FindDcm2Nii[];
 	If[dcm2nii==$Failed,Return[$Failed,Module]];
 	
 	Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"];
-	
-	(*select the correct message if no file or folder is given*)		
-	{act,title}=Switch[action,
-		"folder",{"Directory","Select direcotry containig the dcm files"},
-		"file",{"FileOpen","Select the dcm file to convert"},
-		_,Return[Message[DcmToNii::type]]
-		];
-		
+
 	(*generate a popup to select the file or folder*)
-	If[
-		Length[fstr]==2,
-		filfolin=If[fstr[[1]]=="",FileSelect[act,WindowTitle->title],fstr[[1]]];
-		If[filfolin==Null||folout==Null,Return[]];
-		folout=If[fstr[[2]]=="",FileSelect[act,WindowTitle->"Select directory to put nii files in"],fstr[[2]]];
-		,
-		filfolin=If[fstr=="",FileSelect[act,WindowTitle->title],fstr];
-		If[filfolin==Null||folout==Null,Return[]];
-		folout=FileSelect["Directory",WindowTitle->"Select directory to put nii files in"];
-		];
+	filfolin=If[infol=="",FileSelect["Directory",WindowTitle->"Select direcotry containig the dcm files"],infol];
+	If[filfolin==Null||folout==Null,Return[]];
+	folout=If[outfol=="",FileSelect["Directory",WindowTitle->"Select directory to put nii files in"],outfol];
 	If[filfolin==Null||folout==Null,Return[]];
 	
 	(*create the cmd window command to run dcm2niix.exe*)
 	log=" > \"" <> folout <> "\\output.txt";
-	add=If[action == "file", "-v N "," "];
 	compress=If[OptionValue[CompressNii],"i","n"];
 	command=First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log<>"\"\nexit\n";
-	
-	
 	
 	If[OptionValue[Method]=!=Automatic,Print[command]];
 	
@@ -211,6 +193,7 @@ DcmToNii[action_?StringQ,fstr_?ListQ,OptionsPattern[]] := Module[{act,filfolin,f
 		RunProcess[$SystemShell,"StandardOutput",command],
 		ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]];
 ]
+
 
 FindDcm2Nii[]:=Module[{fil1,fil2},
 	fil1=$UserBaseDirectory <>"\\Applications\\DTITools\\Applications\\dcm2niix.exe";
@@ -232,11 +215,14 @@ unitsNii = {0 -> "DimensionlessUnit", 1 -> "Meters",
    16 -> "Milliseconds", 24 -> "Microseconds", 32 -> "Hertz", 
    40 -> "PartsPerMillion", 48 -> "Radians/Seconds"};
 
+
 directionsNii = {0 -> Undefined, 1 -> "x", 2 -> "y", 3 -> "z"};
+
 
 coordinateNii = {0 -> "None", 1 -> "Scanner Posistion", 
    2 -> "Coregistration", 3 -> "Normalized Tal", 
    4 -> "Normalized MNI152ach" 5 -> "Normalized MNI152"};
+
 
 dataTypeNii = {
    0 -> Undefined,
@@ -257,8 +243,11 @@ dataTypeNii = {
    1792 -> "Complex128",
    2048 -> "Complex256"
    };
+
+
 typeSizeNii = {0 -> Undefined, 2->8, 4->16, 8->32, 16->32, 32->64, 64->64, 128->24, 256->8, 512->16, 768->32, 1024->32, 1280->32, 1536->128, 1792->128, 2048->256}; 
-   
+
+
 rangeNii = {
    	Undefined -> Undefined,
    	"Byte" -> {0, 255},
@@ -298,17 +287,6 @@ IntegerChop = # + Chop[#2 - #] &[Round@#, #] &;
 
 
 JoinCharacters = StringTrim@StringJoin@StringCases[Cases[#, _?StringQ], character_ /; MemberQ[CharacterRange[" ", "~"], character]]&;
-
-
-(* ::Subsubsection::Closed:: *)
-(*RemoveExtention*)
-
-
-RemoveExtention[fil_] := Module[{file},
-  file = FileNameSplit[fil];
-  file[[-1]] = FileBaseName[file[[-1]]];
-  FileNameJoin[file]
-  ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -474,6 +452,17 @@ ArrangeData[data_, depth_] :=
    Reverse[Reverse[data, depth], depth - 1]]]
 
 
+(* ::Subsubsection::Closed:: *)
+(*RemoveExtention*)
+
+
+RemoveExtention[fil_] := Module[{file},
+  file = FileNameSplit[fil];
+  file[[-1]] = FileBaseName[file[[-1]]];
+  FileNameJoin[file]
+  ]
+
+
 (* ::Subsection:: *)
 (*ImportNii*)
 
@@ -482,33 +471,29 @@ ArrangeData[data_, depth_] :=
 (*Register Import*)
 
 
-ImportExport`RegisterImport[
-  	"Nii",
-  {
-   "Header" :> ImportNiiHeader,
-   "Data" -> ImportNiiInfo,
-   "VoxelSize" -> ImportNiiInfo,
-   "TR" -> ImportNiiInfo,
-   "RotationMatrix" -> ImportNiiInfo,
-   "Units" -> ImportNiiInfo,
-   "Scaling" -> ImportNiiInfo,
-   ImportNiiDefault
-   },
-  {},
-  "AvailableElements" -> {"Data", "Header", "VoxelSize", "TR", 
-    "RotationMatrix", "Units", "Scaling"},
-  "OriginalChannel" -> True,
-  "Options" -> {NiiScaling, NiiFlip}
-  ];
-  
-
+ImportExport`RegisterImport["Nii",
+	{
+		"Header" :> ImportNiiHeader,
+		"Data" -> ImportNiiInfo,
+		"VoxelSize" -> ImportNiiInfo,
+		"TR" -> ImportNiiInfo,
+		"RotationMatrix" -> ImportNiiInfo,
+		"Units" -> ImportNiiInfo,
+		"Scaling" -> ImportNiiInfo,
+		ImportNiiDefault
+	},
+	{},
+	"AvailableElements" -> {"Data", "Header", "VoxelSize", "TR", "RotationMatrix", "Units", "Scaling"},
+	"OriginalChannel" -> True,
+	"Options" -> {NiiScaling}
+];
 
 
 (* ::Subsubsection::Closed:: *)
 (*ImportNii*)
 
 
-Options[ImportNii] = {NiiMethod -> "default", NiiScaling -> False, NiiFlip->True};
+Options[ImportNii] = {NiiMethod -> "default", NiiScaling -> False};
 
 SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_., OptionsPattern[]}};
 
@@ -537,7 +522,6 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 	If[file == Null || file === $Canceled || file === $Failed, Message[Import::nffil,fil];Return[$Failed,Module]];
 	
 	opt = NiiScaling->OptionValue[NiiScaling];
-	opt2 = NiiFlip->OptionValue[NiiFlip];
 	
 	output=Switch[what,
 		"data", Import[file, {"nii", "Data"}, opt],
@@ -655,7 +639,7 @@ ImportNiiData[file_, {type_, size_, dim_, off_}, byteorder_, OptionsPattern[Impo
   
   data = ArrayReshape[data, Reverse@dim];
   
-  data
+  ToPackedArray[data]
   ]
 
 
@@ -712,88 +696,10 @@ ImportNiiHeader[file_, OptionsPattern[ImportNiiDefault]] :=
 
 
 (* ::Subsection:: *)
-(*Importing val, vec and mat*)
+(*Various Special Nii import functions*)
 
 
 (* ::Subsubsection::Closed:: *)
-(*ImportBval*)
-
-
-SyntaxInformation[ImportBval] = {"ArgumentsPattern" -> {_.}};
-
-ImportBval[]:=ImportBval[FileSelect["FileOpen", {".bval"}, WindowTitle -> "Select *.bval"]]
-
-ImportBval[file_]:=Flatten[LineToList[file] ]//N
-
-
-(* ::Subsubsection::Closed:: *)
-(*ImportBvec*)
-
-
-Options[ImportBvec]={FlipBvec->False};
-
-SyntaxInformation[ImportBvec] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
-
-ImportBvec[file_?StringQ, OptionsPattern[]]:=Module[{grads},
-	grads=Round[LineToList[file],0.0001];
-	grads=If[OptionValue[FlipBvec],
-		{1, -1, 1}#&/@grads,
-		{1,-1,1}RotateLeft[#]&/@grads
-		];
-	If[Negative[#[[3]]],-#,#]&/@grads
-]
-
-ImportBvec[opts:OptionsPattern[]]:=ImportBvec[FileSelect["FileOpen", {".bvec"}, WindowTitle -> "Select *.bvec"], opts]
-
-
-(* ::Subsubsection::Closed:: *)
-(*ImportBvalvec*)
-
-
-Options[ImportBvalvec]={FlipBvec->False};
-
-SyntaxInformation[ImportBvalvec] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
-
-ImportBvalvec[file_?StringQ,opts:OptionsPattern[]] := Module[{valf, vecf},
-  valf = RemoveExtention[file]<>".bval";
-  vecf = RemoveExtention[file]<>".bvec";
-  ImportBvalvec[valf,vecf,opts]
-  ]
-
-ImportBvalvec[valf_,vecf_,opts:OptionsPattern[]] := {ImportBval[valf],ImportBvec[vecf,opts]}
-
-ImportBvalvec[___,opts:OptionsPattern[]] := Module[{valf, vecf},
-  valf = FileSelect["FileOpen", {"*.bval"}, WindowTitle -> "Select *.bval"];
-  vecf = FileSelect["FileOpen", {"*.bvec"}, WindowTitle -> "Select *.bvec"];
-  ImportBvalvec[valf,vecf,opts]
-  ]
-
-LineToList[file_] := Module[{grads,tmp},
-  grads = Import[file, "Lines"];
-  grads = Transpose[(
-  	tmp = StringReplace[#, {" " -> ",", "\t" -> ",", "E" -> "*10^", "e" -> "*10^"}];
-	tmp = If[StringTake[tmp, -1] == ",", StringDrop[tmp, -1], tmp];
-	tmp = ToExpression["{" <> tmp <> "}"]
-  	) & /@ grads]
-  ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*ImportBmat*)
-
-
-SyntaxInformation[ImportBmat] = {"ArgumentsPattern" -> {_.,_.}};
-
-ImportBmat[] := ImportBmat[FileSelect["FileOpen", {"*.txt"}, WindowTitle -> "Select *.txt"]]
-
-ImportBmat[fil_String] := Module[{bmati},
-  If[fil == Null, Return[]];
-  bmati = DeleteCases[#, ""] & /@ Import[fil, "Data"];
-  Append[{-1, -1, -1, -1, -1, -1} #, 1] & /@ bmati[[All, {4, 1, 6, 2, 5, 3}]]
-  ]
-
-
-(* ::Subsection::Closed:: *)
 (*ImportNiiDiff*)
 
 
@@ -809,7 +715,6 @@ ImportNiiDiff[OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 
 ImportNiiDiff[file_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[file,NiiMethod -> "headerMat"];
-	
 	{bvec, grad}=ImportBvalvec[RemoveExtention[file],FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
 ]
@@ -821,7 +726,7 @@ ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{dat
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*ImportNiiDix*)
 
 
@@ -852,8 +757,9 @@ CorrectDixonData[data_, scale_] := Block[{data0, B0, echos},
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*ImportNiiT2*)
+
 
 ImportNiiT2[]:=Module[{T2, T2vox, T2cor, fit},
 	{T2, T2vox} = ImportNii[NiiScaling -> False];
@@ -868,7 +774,7 @@ ImportNiiT2[file_]:=Module[{T2, T2vox, T2cor, fit},
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*ImportNiiT1*)
 
 
@@ -883,8 +789,8 @@ ImportNiiT1[file_] := Module[{T1, T1vox, T1cor, fit},
   {T1cor, fit, T1vox}]
 
 
-(* ::Subsection::Closed:: *)
-(*ImportNiiT1*)
+(* ::Subsubsection::Closed:: *)
+(*CorrectMapData*)
 
 
 CorrectMapData[datai_, maps_: 1] := 
@@ -904,6 +810,92 @@ CorrectMapData[datai_, maps_: 1] :=
 
 
 (* ::Subsection:: *)
+(*Importing val, vec and mat*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*LineToList*)
+
+
+LineToList[file_] := Module[{grads,tmp},
+  grads = Import[file, "Lines"];
+  grads = Transpose[(
+  	tmp = StringReplace[#, {" " -> ",", "\t" -> ",", "E" -> "*10^", "e" -> "*10^"}];
+	tmp = If[StringTake[tmp, -1] == ",", StringDrop[tmp, -1], tmp];
+	tmp = ToExpression["{" <> tmp <> "}"]
+  	) & /@ grads]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ImportBval*)
+
+
+SyntaxInformation[ImportBval] = {"ArgumentsPattern" -> {_.}};
+
+ImportBval[]:=ImportBval[FileSelect["FileOpen", {".bval"}, WindowTitle -> "Select *.bval"]]
+
+ImportBval[file_?StringQ]:=Flatten[LineToList[file] ]//N
+
+
+(* ::Subsubsection::Closed:: *)
+(*ImportBvec*)
+
+
+Options[ImportBvec]={FlipBvec->False};
+
+SyntaxInformation[ImportBvec] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
+
+ImportBvec[opts:OptionsPattern[]]:=ImportBvec[FileSelect["FileOpen", {".bvec"}, WindowTitle -> "Select *.bvec"], opts]
+
+ImportBvec[file_?StringQ, OptionsPattern[]]:=Module[{grads},
+	grads=Round[LineToList[file],0.0001];
+	grads=If[OptionValue[FlipBvec],
+		{1, -1, 1}#&/@grads,
+		{1,-1,1}RotateLeft[#]&/@grads
+		];
+	If[Negative[#[[3]]],-#,#]&/@grads
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ImportBvalvec*)
+
+
+Options[ImportBvalvec]={FlipBvec->False};
+
+SyntaxInformation[ImportBvalvec] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
+
+ImportBvalvec[file_?StringQ,opts:OptionsPattern[]] := Module[{valf, vecf},
+  valf = RemoveExtention[file]<>".bval";
+  vecf = RemoveExtention[file]<>".bvec";
+  ImportBvalvec[valf,vecf,opts]
+]
+
+ImportBvalvec[valf__?StringQ,vecf__?StringQ,opts:OptionsPattern[]] := {ImportBval[valf],ImportBvec[vecf,opts]}
+
+ImportBvalvec[___,opts:OptionsPattern[]] := Module[{valf, vecf},
+  valf = FileSelect["FileOpen", {"*.bval"}, WindowTitle -> "Select *.bval"];
+  vecf = FileSelect["FileOpen", {"*.bvec"}, WindowTitle -> "Select *.bvec"];
+  ImportBvalvec[valf,vecf,opts]
+]
+
+(* ::Subsubsection::Closed:: *)
+(*ImportBmat*)
+
+
+SyntaxInformation[ImportBmat] = {"ArgumentsPattern" -> {_.,_.}};
+
+ImportBmat[] := ImportBmat[FileSelect["FileOpen", {"*.txt"}, WindowTitle -> "Select *.txt"]]
+
+ImportBmat[fil_String] := Module[{bmati},
+  If[fil == Null, Return[]];
+  bmati = DeleteCases[#, ""] & /@ Import[fil, "Data"];
+  Append[{-1, -1, -1, -1, -1, -1} #, 1] & /@ bmati[[All, {4, 1, 6, 2, 5, 3}]]
+  ]
+
+
+(* ::Subsection:: *)
 (*ExportNii*)
 
 
@@ -911,15 +903,16 @@ CorrectMapData[datai_, maps_: 1] :=
 (*Register Export*)
 
 
-ImportExport`RegisterExport[
-  "Nii",
-  ExportNiiDefault,
-  "DefaultElement" -> "Data",
-  "AvailableElements" -> {"Data", "Header", "VoxelSize"},
-  "OriginalChannel" -> True,
-  "Options" -> {
-    NiiDataType,
-    NiiVersion
+ImportExport`RegisterExport["Nii",
+	ExportNiiDefault,
+	"DefaultElement" -> "Data",
+	"AvailableElements" -> {
+		"Data", "Header", "VoxelSize"
+		},
+	"OriginalChannel" -> True,
+	"Options" -> {
+		NiiDataType,
+		NiiVersion
     	}
   ];
 
@@ -930,7 +923,7 @@ ImportExport`RegisterExport[
 
 SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}};
 
-Options[ExportNii]={NumberType->Automatic,CompressNii->True}
+Options[ExportNii]={NiiDataType->Automatic,CompressNii->True}
 
 ExportNii[dato_, voxi_, opts:OptionsPattern[]] := ExportNii[dato, voxi, "" ,opts]
 
@@ -940,15 +933,20 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type},
 	If[fileo == Null || fileo === $Canceled || fileo === $Failed, Return[$Failed,Module]];
 	
 	(*if numbertyp is integer, Round data*)
-	type=OptionValue[NumberType];
-	data = Switch[type,"Integer",Round[dato],_,dato];
+	type=OptionValue[NiiDataType];
+	data = Switch[type,"Integer",Round[dato],_,N[dato]];
 	(*for lagecy reasons still allow Integer and Real*)
 	type = type/.{"Integer"->"Integer16","Real"->"Real32"};
 	
-	(*Export the file*)
-	Export[fileo, {data, voxi}, {"nii", {"Data", "VoxelSize"}}, NiiDataType->type];
 	(*compress the file*)
-	If[OptionValue[CompressNii],CompressNiiFile[fileo]]; 
+	If[OptionValue[CompressNii],
+		fileo=fileo<>".gz";
+		Export[fileo, {data, voxi}, {"GZIP", {"nii", {"Data", "VoxelSize"}}}, NiiDataType->type]
+		,
+		Export[fileo, {data, voxi}, {"nii", {"Data", "VoxelSize"}}, NiiDataType->type]
+		]; 
+	
+
 ]
 
 
@@ -1072,11 +1070,8 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
     };
   
   header = GetNiiHeaderValues[ver] /. headerDef;
-  (*
-  Print[headerDef,header];
-  *)
-  {header, type}
   
+  {header, type}
   ]
 
 
@@ -1084,19 +1079,27 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 (*DetectDataType*)
 
 
-DetectDataType[input_] := Module[{data},
+DetectDataType[input_] := Module[{data, min, max},
   data = Flatten[input];
   Switch[Head[Total[data]],
    Integer,
    {min, max} = MinMax[data];
    If[min >= 0 && max <= 18446744073709551615,
-    (*positive integer*)
-    Switch[Total@Boole[# >= max & /@ {255, 65535, 4294967295, 18446744073709551615}], 
-    	4, "Byte", 3, "UnsignedInteger16", 2, "UnsignedInteger32", 1, "UnsignedInteger64"],
+   (*positive integer*)
+   Switch[Total@Boole[# >= max & /@ {255, 65535, 4294967295, 18446744073709551615}], 
+    	4, "Byte", 
+    	3, "UnsignedInteger16", 
+    	2, "UnsignedInteger32", 
+    	1, "UnsignedInteger64"
+    ],
     If[max <= 9223372036854775807 && min >= -9223372036854775807,
-     (*signed integer*)
-     Switch[Total@Boole[(max <= # && min >= -#) & /@ {127, 32767, 2147483647, 9223372036854775807}], 
-     	4, "Integer8", 3, "Integer16", 2, "Integer32", 1, "Integer64"],
+    (*signed integer*)
+    Switch[Total@Boole[(max <= # && min >= -#) & /@ {127, 32767, 2147483647, 9223372036854775807}], 
+     	4, "Integer8", 
+     	3, "Integer16", 
+     	2, "Integer32", 
+     	1, "Integer64"
+     ],
      (*else real*)
      "Real32"
      ]
@@ -1174,6 +1177,47 @@ ExportBmat[bmat_, fil_String] := Module[{bmate, file},
 
 
 (* ::Subsection:: *)
+(*Compress and Extract*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*ExtractNiiFiles*)
+
+
+SyntaxInformation[ExtractNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
+
+ExtractNiiFiles[lim_:Infinity] := ExtractNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
+
+ExtractNiiFiles[folder_,lim_:Infinity] := Module[{files},
+  files = FileNames["*.nii.gz", folder,lim];
+  ExtractNiiFile/@ files;
+]
+
+ExtractNiiFile[file_] := Quiet[StringDrop[file, -3];ExtractArchive[file];DeleteFile[file];]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CompressNiiFiles*)
+
+
+SyntaxInformation[CompressNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
+
+CompressNiiFiles[]:=CompressNiiFiles[Infinity]
+
+CompressNiiFiles[folder_?StringQ]:=CompressNiiFiles[folder, Infinity]
+
+CompressNiiFiles[lim_] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
+
+CompressNiiFiles[folder_?StringQ,lim_] := Module[{files,file},
+   files = FileNames["*.nii", folder,lim];
+   PrintTemporary[Dynamic[file]];
+   (file=#;CompressNiiFile[#])&/@files;
+   ]
+
+CompressNiiFile[file_] := Quiet[DeleteFile[file <> ".gz"];CreateArchive[file, file <> ".gz"];DeleteFile[file];]
+
+
+(* ::Subsection:: *)
 (*OpenMRIcron*)
 
 
@@ -1220,47 +1264,6 @@ FindMRIcron[] := Module[{mricron},
   If[! FileExistsQ[mricron], Return[Message[OpenMRIcron::notfount]], 
    mricron]
   ]
-
-
-(* ::Subsection:: *)
-(*Compress and Extract*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*ExtractNiiFiles*)
-
-
-SyntaxInformation[ExtractNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
-
-ExtractNiiFiles[lim_:Infinity] := ExtractNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
-
-ExtractNiiFiles[folder_,lim_:Infinity] := Module[{files},
-  files = FileNames["*.nii.gz", folder,lim];
-  ExtractNiiFile/@ files;
-]
-
-ExtractNiiFile[file_] := Quiet[StringDrop[file, -3];ExtractArchive[file];DeleteFile[file];]
-
-
-(* ::Subsubsection::Closed:: *)
-(*CompressNiiFiles*)
-
-
-SyntaxInformation[CompressNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
-
-CompressNiiFiles[]:=CompressNiiFiles[Infinity]
-
-CompressNiiFiles[folder_?StringQ]:=CompressNiiFiles[folder, Infinity]
-
-CompressNiiFiles[lim_] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
-
-CompressNiiFiles[folder_?StringQ,lim_] := Module[{files,file},
-   files = FileNames["*.nii", folder,lim];
-   PrintTemporary[Dynamic[file]];
-   (file=#;CompressNiiFile[#])&/@files;
-   ]
-
-CompressNiiFile[file_] := Quiet[DeleteFile[file <> ".gz"];CreateArchive[file, file <> ".gz"];DeleteFile[file];]
 
 
 (* ::Section:: *)
