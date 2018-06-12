@@ -457,8 +457,15 @@ FindTransformix[]:=Module[{fil1,fil2},
 (*RunElastix*)
 
 
-RunElastix[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixed_,moving_,out_},{maskf_,maskm_}]:=Module[
-	{command,inpfold,outfold,movfold,parfiles,copy,maskfFile,maskmFile,elastixFol},
+RunElastix[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,movingi_,out_},{maskfi_,maskmi_}]:=Module[
+	{fixed,moving, maskf, maskm, command,inpfold,outfold,movfold,parfiles,copy,maskfFile,maskmFile,elastixFol},
+	
+	(*make files into gz where needed*)
+	fixed = If[FileExtension[fixedi] == "nii", fixedi<>".gz", fixedi];
+	moving = If[FileExtension[movingi] == "nii", movingi<>".gz", fixedi];
+	maskf = If[FileExtension[maskfi] == "nii", maskfi<>".gz", maskfi];
+	maskm = If[FileExtension[maskmi] == "nii", maskmi<>".gz", maskmi];
+	
 	(*make elastix command based on operating system*)
 	Switch[$OperatingSystem,
 		"Windows",
@@ -512,7 +519,7 @@ RunElastix[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixed_,moving_,
 		"\n"<>copy<>" \n"<>
 		"exit";
 	];
-	
+	(*Print[command];*)
 	(*perform elastix on system shell*)	
 	RunProcess[$SystemShell,"StandardOutput",command];
 ]
@@ -1662,7 +1669,7 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 	
 	slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
 	tdir=OptionValue[TempDirectory];
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>slash"DTItoolsReg";
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>slash<>"DTItoolsReg";
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];	
 	

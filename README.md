@@ -103,13 +103,13 @@ To print the documentation of all functions use
 	* Smoothing masks
 	* Smoothing muscle segmentation
 * Motion and distortion correction (Registration using elastix)
-	* rigid, affine, b-spline and cyclic registration 
+	* Rigid, affine, b-spline and cyclic registration 
 	* nD to nD registration
 	* Automated series processing 
-	* slice to slice motion correction of 3D and 4D data
+	* Slice to slice motion correction of 3D and 4D data
 * Dixon Reconstruction
 	* B0 phase unwrapping
-	* iDEAL reconstruction with T2start
+	* DIXON iDEAL reconstruction with T2start
 * Relaxometry fitting
 	* T2 fitting
 	* T1rho fitting
@@ -125,7 +125,7 @@ To print the documentation of all functions use
 	* Local myocardial coordinate system calculation
 	* helix angle and fiber architecture matrix
 	* AHA 17 parameter description
-	* transmural parameter description	
+	* Transmural parameter description	
 	
 ## License
 https://opensource.org/licenses/BSD-3-Clause

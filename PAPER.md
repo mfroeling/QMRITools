@@ -8,8 +8,11 @@ tags:
 authors:
   - name: Martijn Froeling
     orcid: 0000-0003-3841-0497
-    affiliation: Department of Radiology, University Medical Center Utrecht, Utrecht, The Netherlands
-date: 17 May 2016
+    affiliation: "1"
+affiliations:
+ - name:  affiliation: Department of Radiology, University Medical Center Utrecht, Utrecht, The Netherlands
+   index: 1
+date: 02 June 2018
 bibliography: paper.bib
 ---
 

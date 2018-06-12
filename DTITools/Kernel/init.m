@@ -1,17 +1,28 @@
-(* ::DTITools:: *)
+(* ::Package:: *)
 
-(* Mathematica Init File *)
+(* ::Title:: *)
+(*DTITools init File*)
 
-(*initialization functions*)
+
+(* ::Subtitle:: *)
+(*Written by: Martijn Froeling, PhD*)
+(*m.froeling@gmail.com*)
+
+
+(* ::Section:: *)
+(*Functions*)
+
 
 UpdateWarning[]:=If[$VersionNumber != 11.3,
- CreateDialog[Column[{Style["
-      Current Mathematica version is 11.2
-      You need to update!
-      Some functions wont work in older versions
-      ", TextAlignment -> Center], DefaultButton[], ""}, 
-    Alignment -> Center], WindowTitle -> "Update!"];
- ];
+	CreateDialog[Column[{Style["
+	Current Mathematica version is "<>ToString[$VersionNumber]<>"
+	The toolbox is tested developed in 11.3.
+	You need to update! (Or I am behind)
+	Some functions wont work in older versions
+	", TextAlignment -> Center], DefaultButton[], ""}, 
+	Alignment -> Center], WindowTitle -> "Update!"];
+];
+
 
 ClearFunctions[pack_,subpack_,print_:False]:=Module[{packageName,packageSymbols,packageSymbolsG},
 	If[print,Print["--------------------------------------"]];
@@ -33,6 +44,7 @@ ClearFunctions[pack_,subpack_,print_:False]:=Module[{packageName,packageSymbols,
 		]& /@ subpack;
 ];
 
+
 LoadPackages[pack_,subpack_,print_:False,run_:1]:=Module[{},
 	If[print,Print["--------------------------------------"]];
 	(
@@ -44,6 +56,7 @@ LoadPackages[pack_,subpack_,print_:False,run_:1]:=Module[{},
 	)&/@subpack;
 ]
 
+
 ProtectFunctions[pack_,subpack_,print_:False]:=Module[{},
 	If[print,Print["--------------------------------------"]];
 	(
@@ -54,12 +67,18 @@ ProtectFunctions[pack_,subpack_,print_:False]:=Module[{},
 	)& /@ subpack;
 ]
 
+
+(* ::Section:: *)
+(*Settings*)
+
+
 (*Change Default settings*)
-(*prevents the excessive use of memory*)
+(*prevents the excessive use of memory with large data sets*)
 $HistoryLength = 0; ParallelEvaluate[$HistoryLength = 0];
 
+
 (*add all mathematica packages to the context path*)
-package= "DTITools`";
+package = "DTITools`";
 
 subPackages = {
 	"CardiacTools`", "DenoiseTools`", "DixonTools`",
@@ -69,10 +88,12 @@ subPackages = {
 	"PhysiologyTools`", "PlottingTools`", "ProcessingTools`", 
 	"RelaxometryTools`", "SimulationTools`"};
 
+
 (*define all the toolbox contexts*)
 (*System`$DTIToolsContextPaths::usage = "$DTIToolsContextPaths lists all the diffusion packages"*)
 System`$DTIToolsContextPaths = (package <> # & /@ subPackages);
 $ContextPath = Union[$ContextPath, System`$DTIToolsContextPaths]
+
 
 (*
 Needs["CCompilerDriver`"]
@@ -80,8 +101,19 @@ System`$DTIToolsCompiler = If[Length[CCompilers[]] > 0, "WVM", "WVM"];
 *)
 System`$DTIToolsCompiler = "WVM";
 
+
 (*state if verbose is true to monitor initialization*)
 DTITools`verbose = False;
+
+
+(* ::Section:: *)
+(*Initialize all packages*)
+
+
+If[DTITools`verbose,
+Print["--------------------------------------"];
+Print[System`$DTIToolsContextPaths];
+];
 
 (*check mathematica version*)
 UpdateWarning[];
