@@ -302,7 +302,7 @@ SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
 SplitSegmentations[masksI_] := Block[{vals, masks},
 	masks=SparseArray[masksI];
 	vals = DeleteCases[Sort@Round[DeleteDuplicates[Flatten[masksI]]],0];
-	masks = Mask[masks, {# - .5, # + .5}] & /@ vals;
+	masks =(1 - Unitize[masks - #]) & /@ vals;
 	masks=Normal[Transpose[masks]];
 	{masks, vals}
   ]

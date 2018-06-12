@@ -203,9 +203,7 @@ Begin["`Private`"]
 
 Options[CalculateWallMap] = {ShowFit -> True, MaskWallMap->True};
 
-SyntaxInformation[
-   CalculateWallMap] = {"ArgumentsPattern" -> {_, _, 
-     OptionsPattern[]}};
+SyntaxInformation[CalculateWallMap] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
    seg, min, mout, mtot, pts, ptsi, pos, ptso, x, y, z, plane, maxd, 

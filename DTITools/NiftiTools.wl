@@ -941,12 +941,9 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type},
 	(*compress the file*)
 	If[OptionValue[CompressNii],
 		fileo=fileo<>".gz";
-		Export[fileo, {data, voxi}, {"GZIP", {"nii", {"Data", "VoxelSize"}}}, NiiDataType->type]
-		,
-		Export[fileo, {data, voxi}, {"nii", {"Data", "VoxelSize"}}, NiiDataType->type]
+		Export[fileo, {data, voxi}, {"GZIP", "Nii", {"Data", "VoxelSize"}}, NiiDataType->type],
+		Export[fileo, {data, voxi}, {"Nii", {"Data", "VoxelSize"}}, NiiDataType->type]
 		]; 
-	
-
 ]
 
 

@@ -76,7 +76,7 @@ BayesianIVIMFit2::usage =
 
 data is the data which should be {slice, Ndiff, x, y}.
 bval is the bvector whould be length Ndiff.
-init is the initalization of the bayesian fit which comes from IVIMCals, (without S0 using 2 compartments).
+init is the initalization of the bayesian fit which comes from IVIMCalc, (without S0 using 2 compartments).
 mask is the region in which the bayesian fit is performed.
 
 output is {f1, dc, pdc1}."
@@ -86,7 +86,7 @@ BayesianIVIMFit3::usage =
 
 data is the data which should be {slice, Ndiff, x, y}.
 bval is the bvector whould be length Ndiff.
-init is the initalization of the bayesian fit which comes from IVIMCals, (without S0 using 3 compartments).
+init is the initalization of the bayesian fit which comes from IVIMCalC, (without S0 using 3 compartments).
 mask is the region in which the bayesian fit is performed.
 
 output is {f1, f2, dc, pdc1, pdc2}."
