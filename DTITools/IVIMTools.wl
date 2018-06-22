@@ -423,7 +423,7 @@ BayesianIVIMFit2[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Mod
   fix = OptionValue[FixPseudoDiff];
   fixSD = OptionValue[FixPseudoDiffSD];
   
-  mask = Mask[data[[All, 1]], 0.000001]maski;
+  mask = Mask[Switch[ArrayDepth[data],3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
 
   fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con2}]];
   fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con2e, mask], fitpar];
@@ -602,8 +602,8 @@ BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] :=
   fix = OptionValue[FixPseudoDiff];
   fixSD = OptionValue[FixPseudoDiffSD];
   
-  mask = Mask[data[[All, 1]], 0.000001]maski;
-
+  mask = Mask[Switch[ArrayDepth[data],3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
+  
   fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con3}]];
   fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con3e, mask], fitpar];
   
