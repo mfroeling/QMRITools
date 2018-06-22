@@ -1,12 +1,12 @@
 (* Paclet Info File *)
 
-(* created 2018/05/31*)
+(* created 2018/06/22*)
 
 Paclet[
     Name -> "DTITools",
-    Version -> "1.9.1",
+    Version -> "1.9.5",
     MathematicaVersion -> "11.3",
-    Description -> "Toolbox for Qunatitative MRI analysis",
+    Description -> "Toolbox for Qunatitative MRI.",
     Creator -> "Martijn Froeling",
     Extensions -> 
         {
