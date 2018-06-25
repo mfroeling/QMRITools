@@ -415,7 +415,7 @@ SyntaxInformation[BayesianIVIMFit2] = {"ArgumentsPattern" -> {_, _, _, _, Option
 
 BayesianIVIMFit2[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Module[{
 	useDat, thetai, fix, ynf, fixSD, out1, out2, h1, solution,mask,
-	fitpar, deviation, con2, con2e, mui, covi, mmu, mcov,post
+	fitpar, deviation, con2, con2e, mui, covi, mmu, mcov,post, dep
    },
   
   con2 = OptionValue[FitConstrains];
@@ -423,15 +423,19 @@ BayesianIVIMFit2[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Mod
   fix = OptionValue[FixPseudoDiff];
   fixSD = OptionValue[FixPseudoDiffSD];
   
-  mask = Mask[Switch[ArrayDepth[data],3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
+  dep=ArrayDepth[data];
+  
+  mask = Mask[Switch[dep,3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
 
   fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con2}]];
   fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con2e, mask], fitpar];
     	
   useDat = MaskDTIdata[data, mask];
-  {thetai,post} = Data3DToVector[fitpar,mask];
+  
+  {thetai,post} = Switch[dep,3,Data2DToVector[fitpar,mask],4,Data3DToVector[fitpar,mask]];
   thetai=Transpose@thetai;
-  ynf = First@Data3DToVector[Transpose[data],mask];
+  
+  ynf = First@Switch[dep,3,Data2DToVector[data,mask],4,Data3DToVector[Transpose[data],mask]];
   
   If[fix, 
   	thetai[[3]] = RandomVariate[NormalDistribution[Mean[thetai[[3]]], fixSD], Length[thetai[[3]]]]
@@ -594,7 +598,7 @@ SyntaxInformation[BayesianIVIMFit3] = {"ArgumentsPattern" -> {_, _, _, _, Option
 
 BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := 
  Module[{fitpar,con3,mask,
-   useDat, thetai, ynf, fix, fixSD, out1, out2, h1,
+   useDat, thetai, ynf, fix, fixSD, out1, out2, h1, dep,
    solution, deviation, con3e, mui, covi, mmu, mcov,post},
   
   con3 = OptionValue[FitConstrains];
@@ -602,15 +606,19 @@ BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] :=
   fix = OptionValue[FixPseudoDiff];
   fixSD = OptionValue[FixPseudoDiffSD];
   
-  mask = Mask[Switch[ArrayDepth[data],3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
+  dep=ArrayDepth[data];
+  
+  mask = Mask[Switch[dep,3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
   
   fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con3}]];
   fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con3e, mask], fitpar];
   
   useDat = MaskDTIdata[data, mask];
-  {thetai,post} = Data3DToVector[fitpar,mask];
+  
+  {thetai,post} = Switch[dep, 3, Data2DToVector[fitpar,mask], 4, Data3DToVector[fitpar,mask]];
   thetai=Transpose@thetai;
-  ynf = Data3DToVector[Transpose[data],mask][[1]];
+  
+  ynf = First@Switch[dep, 3,Data2DToVector[data,mask], 4, Data3DToVector[Transpose[data],mask]];
   
   If[fix,
    thetai[[4]] = RandomVariate[NormalDistribution[Mean[thetai[[4]]], fixSD], Length[thetai[[4]]]];

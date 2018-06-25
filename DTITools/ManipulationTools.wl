@@ -1503,7 +1503,7 @@ If[!(depth==2||depth==3),Return@Message[Data2DToVector::dim,depth]];
 dimd=If[depth==2,Dimensions[datai],Drop[Dimensions[datai],1]];
 dimm=Dimensions[maski];
 
-If[!(mask===1)&&dimm!=dimd,Return@Message[Data3DToVector::mask,dimd,dimm]];
+If[!(mask===1)&&dimm!=dimd,Return@Message[Data2DToVector::mask,dimd,dimm]];
 
 data=N@If[depth==3,maski #&/@datai,maski datai];
 mask=Unitize@If[depth==3,Total[data],data];
