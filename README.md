@@ -1,6 +1,8 @@
 # DTITools
 
 [![DOI](https://zenodo.org/badge/54553256.svg)](https://zenodo.org/badge/latestdoi/54553256)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
+[![HitCount](http://hits.dwyl.io/mfroeling/DTITools.svg)](http://hits.dwyl.io/mfroeling/DTITools)
 
 * [Information](#information)
 * [Install toolbox](#install-toolbox)
