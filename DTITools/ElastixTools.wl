@@ -303,7 +303,7 @@ _,
 (ResampleInterpolator \"FinalBSplineInterpolator\")
 (Metric \"AdvancedMattesMutualInformation\")"
 ]<>"
-(BSplineInterpolationOrder 1)
+(BSplineInterpolationOrder "<>ToString[intOrder]<>")
 "<>If[openCL,
 "(OpenCLResamplerUseOpenCL \"true\")
 (OpenCLDeviceID \""<>ToString[gpu]<>"\")
@@ -370,7 +370,7 @@ _,
 "",
 _,
 "(AutomaticTransformInitialization \"true\")
-(AutomaticScalesEstimation "<>ToString[If[Total[derscA]==3 && Total[derscB]==3,"\"true\"","\"false\""]]<>")"
+(AutomaticScalesEstimation \"true\")"
 ]<>"
 
 // *********************
@@ -402,8 +402,9 @@ _,""
 _,
 "(ImageSampler \"RandomCoordinate\")"
 ]<>"
-(CheckNumberOfSamples \"true\")
+(CheckNumberOfSamples \"false\")
 (NewSamplesEveryIteration \"true\")
+(MaximumNumberOfSamplingAttempts 5)
 (FinalBSplineInterpolationOrder "<>ToString[intOrder]<>")
 
 // *********************
@@ -707,7 +708,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol},
 Options[RegisterData]={
 Iterations->1000,
 Resolutions->1,
-HistogramBins->32,
+HistogramBins->64,
 NumberSamples->2000,
 InterpolationOrderReg->3,
 BsplineSpacing->30,
@@ -1375,8 +1376,8 @@ Options[RegisterDiffusionData] =
   Join[Options[RegisterData] /. {{1, 1, 1} -> {0, 1, 1}, "affine" -> "affineDTI", "rigid" -> "rigidDTI"},
    {IterationsA -> 1000, 
    	ResolutionsA -> 1, 
-   	HistogramBinsA -> 32, 
-    NumberSamplesA -> 2000, 
+   	HistogramBinsA -> 64, 
+    NumberSamplesA -> 20000, 
     InterpolationOrderRegA -> 1, 
     MethodRegA -> {"rigidDTI", "bspline"},
     RegistrationTarget->"Fist"

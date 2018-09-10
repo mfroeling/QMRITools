@@ -1645,10 +1645,13 @@ CutData[data_,cut_] := Switch[
 		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}
 ]
 
-FindMiddle[dati_] := Module[{dat, len, datf,peaks,mid,peak,center},
+FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center},
   
 	(*flatten mean and normalize data*)
-	dat = N@Nest[Mean, dati, ArrayDepth[dati] - 1];
+	dat=dati;
+	fdat = Flatten[dat];
+	dat = Clip[dat, {0, Quantile[Pick[fdat, Unitize[fdat], 1], .95]}];
+	dat = N@Nest[Mean, dat, ArrayDepth[dat] - 1];
 	len = Length[dat];
 	dat = len dat/Max[dat];
 	

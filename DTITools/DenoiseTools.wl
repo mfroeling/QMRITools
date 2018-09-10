@@ -211,8 +211,10 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
    ProgressIndicator[j, {0, totalItt}]
    ];
   
+  max = 1.1 Max[Abs[data]];
+  
   (*correct output data for weightings*)
-  datao = Clip[Transpose[DevideNoZero[#, weights] & /@ Transpose[datao]],{0,1.1 Max[data]}];
+  datao = Clip[Transpose[DevideNoZero[#, weights] & /@ Transpose[datao]],{-max, max}];
   sigmat = DevideNoZero[sigmat, weights];
   output = ArrayPad[#, off] & /@ TransData[output, "r"];
   
