@@ -246,7 +246,7 @@ Begin["`Private`"]
 (*TensorCalc*)
 
 
-Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->False, RobustFit->True,Parallelize->True , RobustFitParameters->{10^-4,6}};
+Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->False, RobustFit->True, Parallelize->True , RobustFitParameters->{10^-4,6}};
 
 SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -394,9 +394,11 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 		"iWLLS", Transpose[TensMiniWLLS[Transpose[(1-outliers) data,l],Transpose[(1-outliers) dataL,l], bmat], r]
 		];
 	
-	If[OptionValue[FullOutput],residual = ResidualCalc[data,fitresult,outliers,bmat,MeanRes->"MAD"]];
+	If[OptionValue[FullOutput],
+		residual = ResidualCalc[data,fitresult,outliers,bmat,MeanRes->"MAD"]
+		];
 		
-	S0 = ExpNoZero[Last[fitresult]];
+	S0 = Clip[ExpNoZero[Chop[Last[fitresult]]],{0, 1.5 Max[data]}];
 	tensor = Clip[Drop[fitresult,-1],{-0.1,0.1}];
 
 	If[OptionValue[FullOutput],If[robust,{tensor,S0,outliers,residual},{tensor,S0,residual}],tensor]

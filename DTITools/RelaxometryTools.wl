@@ -227,42 +227,38 @@ LogFit[datan_, times_] :=
 
 SyntaxInformation[EPGSignal] = {"ArgumentsPattern" -> {_, _, _, _}};
 
-EPGSignal[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_, ref_}, B1_] := EPGSignali[{Nechoi, echoSpace}, {T1, T2}, {ex, ref}, B1]
+EPGSignal[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_, ref_}, B1_, f_: 0] := EPGSignali[{Nechoi, echoSpace}, {T1, T2}, {ex, ref}, B1, f]
 
-EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_?ListQ, ref_?ListQ}, B1_] := Block[{sig},
-  sig = Map[EPGSignali[{Nechoi, echoSpace}, {T1, T2}, #, B1] &, Transpose[{ex, ref}]];
-  sig = Mean@Join[sig,sig[[2;;]]]
+EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_?ListQ, ref_?ListQ}, B1_, f_:0] := Block[{sig},
+	sig = Map[EPGSignali[{Nechoi, echoSpace}, {T1, T2}, #, B1, f] &, Transpose[{ex, ref}]];
+	sig = Mean@Join[sig, sig[[2 ;;]]]
   ]
-  
-EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {exi_, refi_}, B1_] := Block[{
-	tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, Necho, states
-  },
+
+EPGSignali[{Necho_, echoSpace_}, {T1_, T2_}, {exi_, refi_}, B1_, f_:0] := Block[
+	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, states, w},
 	(*define internal paramters*)
-	Necho = Round[Nechoi];
-	states = If[Necho >= 16, Round[Necho/2], Necho];
+	states = Round[If[Necho >= 25, Max[{Necho/2, 25}], Necho]];
 	(*convert to Rad*)
 	ex = B1 exi (Pi/180.);
 	ref = B1 refi (Pi/180.);
-	tau = echoSpace/2;
- 
-	(*Selection matrix to move all traverse states up one coherence level*)
-	{Smat, svec} = MixMatrix[states];
- 
+	tau = echoSpace/2.;
+	w = tau 2 Pi f/1000.;
+	(*Selection matrix to move all traverse states up one coherence Level*)
+	Smat = MixMatrix[states];
+	svec = Rvec = ConstantArray[0., Length[Smat]];
 	(*define relaxation*)
-	t2r = N@Exp[-tau/T2];
-	t1r = N@Exp[-tau/T1];
+	t2r = Exp[-tau/T2 + w I];
+	t1r = Exp[-tau/T1 - w I];
 	(*Relaxation matrix*)
 	Rmat = MakeDiagMat[DiagonalMatrix[{t2r, t2r, t1r}], states];
-	Rvec = (1 - t1r) svec;
+	Rvec[[3]] = (1. - t1r);
 	(*RF mixing matrix*)
 	Tmat = MakeDiagMat[RotMatrixT[ref], states];
-   
 	(*Create Initial state*)
-	svec[[1 ;; 3]] = RotMatrixT[ex].svec[[1 ;; 3]];
-	
+	svec[[1 ;; 3]] = RotMatrixT[ex].{0., 0., 1.};
 	(*combined relax and gradient and create output*)
-	MoveStates[Rmat, Rvec, Smat, Tmat, svec, Necho][[2 ;;, 1]]
- ]
+	Abs[MoveStates[Rmat, Rvec, Smat, Tmat, svec, Round@Necho][[2 ;;, 1]]]
+  ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -278,21 +274,18 @@ MakeDiagMat[mat_, Necho_] := ArrayFlatten[IdentityMatrix[Necho] ConstantArray[ma
 
 (*if run once with Necho definition is stored*)
 MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, vec, off1, off2},
-   len = 3*(Necho);
    (*mixing matirx*)
+   len = 3*(Necho);
    Smat = ConstantArray[0, {len, len}];
+   (*define state transitions*)
    Smat[[1, 5]] = 1;(*yi-1\[Rule]xi*)
    Smat[[len, len]] = 1;(*zn*)
    Table[
-		Smat[[o - 1, o + 2]] = 1;(*yi\[Rule]yi-1*)
-		Smat[[o + 1, o - 2]] = 1;(*xi\[Rule]xi+1*)
-		Smat[[o, o]] = 1;(*zi\[Rule]zi*)
-    ,{o, 3, len - 3, 3}];
-   (*inital signal vector*)
-   vec = ConstantArray[0, len];
-   vec[[3]] = 1;
-   (*output mixing matrix*)
-   {Smat, vec}
+    Smat[[o - 1, o + 2]] = 1;(*yi\[Rule]yi-1*)
+    Smat[[o + 1, o - 2]] = 1;(*xi\[Rule]xi+1*)
+    Smat[[o, o]] = 1;(*zi\[Rule]zi*)
+    , {o, 3, len - 3, 3}];
+   Smat
    ]
    
 
@@ -300,10 +293,12 @@ MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, vec, off1, off2},
 (*RotMatrixT*)
 
 
-RotMatrixT = Compile[{{alpha, _Real, 0}}, Chop[{
-     {Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
-     {Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
-     {-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
+RotMatrixT[alpha_, phi_: 0] := RotMatrixTC[alpha, phi];
+
+RotMatrixTC = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
+     {Cos[alpha/2]^2, Exp [2 phi I] Sin[alpha/2]^2, -I Exp [phi I] Sin[alpha]},
+     {Exp [-2 phi I] Sin[alpha/2]^2, Cos[alpha/2]^2, I Exp [-phi I] Sin[alpha]},
+     {-0.5 I Exp [-phi I] Sin[alpha], 0.5 I Exp [phi I] Sin[alpha], Cos[alpha]}
      }], RuntimeOptions -> "Speed"];
 
 
@@ -311,11 +306,11 @@ RotMatrixT = Compile[{{alpha, _Real, 0}}, Chop[{
 (*MoveStates*)
 
 
-MoveStates = Compile[{{Rmat, _Real, 2}, {Rvec, _Real, 1}, {Smat, _Real, 2}, {Tmat, _Real, 2}, {svec, _Real, 1}, {Necho, _Integer, 0}}, 
-   Block[{Gmat}, 
-   	Gmat = Rmat.Smat;
-    Chop[NestList[(Gmat.(Tmat.((Gmat.#) + Rvec)) + Rvec) &, svec, Necho]]
-    ], RuntimeOptions -> "Speed"];
+MoveStates = Compile[{{Rmat, _Complex, 2}, {Rvec, _Complex, 1}, {Smat, _Integer, 2}, {Tmat, _Complex, 2}, {svec, _Complex, 1}, {Necho, _Integer, 0}},
+   (*Rmat = relaxation; Rvec = Mz recovery; Tmat = Rf pulse;*)
+   (*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
+   NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, Necho]
+   , RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsection:: *)
@@ -726,7 +721,7 @@ CreateT2Dictionaryi[relax_, echo_, ang_, T2range_, B1range_] := CreateT2Dictiona
 	DistributeDefinitions[EPGSignali, echo, T1m, ang, T1f,T2f, t2s, t2e, t2i, b1s, b1e, b1i];
 	time = AbsoluteTiming[
 		dict = ParallelTable[{
-		{EPGSignali[echo, {T1m, T2m}, ang, B1], EPGSignali[echo, {T1f, T2f}, ang, B1]}, {T2m, B1}
+			{EPGSignali[echo, {T1m, T2m}, ang, B1], EPGSignali[echo, {T1f, T2f}, ang, B1]}, {T2m, B1}
 	    }, {T2m, t2s, t2e, t2i}, {B1, b1s, b1e, b1i}];
 	    ][[1]];
 	 
