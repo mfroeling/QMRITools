@@ -593,7 +593,9 @@ ImportNiiDefault[file_, opts : OptionsPattern[]] :=
   If[info[[8]] === 4, data = Transpose[data, {2, 1, 3, 4}]];
   data = Map[Reverse[#] &, data, {info[[8]] - 2}];
   If[OptionValue[NiiFlip],
-  	If[Positive[("sRowx" /. hdr)[[1]]+10^-10], data = Map[Reverse[#] &, data, {info[[8]] - 1}]];
+  	If[Positive[("sRowx" /. hdr)[[1]]+10^-10], 
+  		data = Map[Reverse[#] &, data, {info[[8]] - 1}]
+  		];
   	,
   	data = Map[Reverse[#] &, data, {info[[8]] - 1}];
   ];

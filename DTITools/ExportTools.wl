@@ -139,8 +139,8 @@ SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type}
 	res=OptionValue[ImageResolution];
 	
 	If[OptionValue[FileType]===".tiff"||OptionValue[FileType]===".tif",
-  	  Export[file, Rasterize[exp, ImageResolution -> 2*res],(*RasterSize -> imsize,*) ImageResolution -> res,"ImageEncoding"->"LZW"],
-  	  Export[file, Rasterize[exp, ImageResolution -> 2*res],(*RasterSize -> imsize,*) ImageResolution -> res]
+  	  Export[file, exp(*Rasterize[exp, ImageResolution -> 2*res],RasterSize -> imsize,*) , ImageSize->imsize, ImageResolution -> res,"ImageEncoding"->"LZW"],
+  	  Export[file, exp(*Rasterize[exp, ImageResolution -> 2*res],RasterSize -> imsize,*) , ImageSize->imsize, ImageResolution -> res]
 	];
 	
 	Print["File was saved to: " <> file];
