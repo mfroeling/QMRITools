@@ -142,7 +142,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt, r2Star,
 	thresh, complex, ydat, result, input, b0f, b0, inphase, outphase, Amat, Amat2,
 	cWater, cFat, b0fit, t2Star, fraction, signal, fit, itt, dim, mask,
-	msk, t2i, t2f, echo, iop, ioAmat, phiEst, phiInit, res, r2star,
+	msk, t2i, t2f, echo, iop, ioAmat, phiEst, phiInit, res, r2star, fsize, 
 	r2, r2f ,dep, range, settings},
 	
 	(*{3.80,3.40,2.60,1.94,0.39,-0.60} and {0.087,0.693,0.128,0.004,0.039,0.048}*)

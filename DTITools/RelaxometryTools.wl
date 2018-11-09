@@ -225,39 +225,43 @@ LogFit[datan_, times_] :=
 (*EPGSignal*)
 
 
-SyntaxInformation[EPGSignal] = {"ArgumentsPattern" -> {_, _, _, _}};
+SyntaxInformation[EPGSignal] = {"ArgumentsPattern" -> {_, _, _, _, _.}};
 
 EPGSignal[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_, ref_}, B1_, f_: 0] := EPGSignali[{Nechoi, echoSpace}, {T1, T2}, {ex, ref}, B1, f]
 
-EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_?ListQ, ref_?ListQ}, B1_, f_:0] := Block[{sig},
+EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_?ListQ, ref_?ListQ}, B1_, f_:0.] := Block[{sig},
 	sig = Map[EPGSignali[{Nechoi, echoSpace}, {T1, T2}, #, B1, f] &, Transpose[{ex, ref}]];
 	sig = Mean@Join[sig, sig[[2 ;;]]]
   ]
 
-EPGSignali[{Necho_, echoSpace_}, {T1_, T2_}, {exi_, refi_}, B1_, f_:0] := Block[
-	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, states, w},
+EPGSignali[{Necho_, echoSpace_}, {T1_, T2_}, {exi_, refi_}, B1_, f_:0.] := Block[
+	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, states, w, funRot,funMove},
 	(*define internal paramters*)
-	states = Round[If[Necho >= 25, Max[{Necho/2, 25}], Necho]];
+	states = Round[If[Necho >= 10, Max[{Necho/2, 10}], Necho]];
 	(*convert to Rad*)
-	ex = B1 exi (Pi/180.);
-	ref = B1 refi (Pi/180.);
+	ex = N[B1 exi Degree];
+	ref = N[B1 refi Degree];
 	tau = echoSpace/2.;
-	w = tau 2 Pi f/1000.;
+	
+	(*if use off ressonance then use complex matrix*)
+	w = -tau 2. Pi f/1000.;
+	{funRot,funMove}=If[w==0.,{RotMatrixT, MoveStates}, {RotMatrixTI, MoveStatesI}];
+	
 	(*Selection matrix to move all traverse states up one coherence Level*)
 	Smat = MixMatrix[states];
 	svec = Rvec = ConstantArray[0., Length[Smat]];
 	(*define relaxation*)
-	t2r = Exp[-tau/T2 + w I];
-	t1r = Exp[-tau/T1 - w I];
+	t2r = Chop[Exp[-tau/T2 + w I]];
+	t1r = Chop[Exp[-tau/T1 - w I]];
 	(*Relaxation matrix*)
 	Rmat = MakeDiagMat[DiagonalMatrix[{t2r, t2r, t1r}], states];
 	Rvec[[3]] = (1. - t1r);
 	(*RF mixing matrix*)
-	Tmat = MakeDiagMat[RotMatrixT[ref], states];
+	Tmat = MakeDiagMat[funRot[ref, 0], states];
 	(*Create Initial state*)
-	svec[[1 ;; 3]] = RotMatrixT[ex].{0., 0., 1.};
+	svec[[1 ;; 3]] = funRot[ex, 90].{0., 0., 1.};
 	(*combined relax and gradient and create output*)
-	Abs[MoveStates[Rmat, Rvec, Smat, Tmat, svec, Round@Necho][[2 ;;, 1]]]
+	Abs[funMove[Rmat, Rvec, Smat, Tmat, svec, Round@Necho][[2 ;;, 1]]]
   ]
 
 
@@ -293,9 +297,19 @@ MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, vec, off1, off2},
 (*RotMatrixT*)
 
 
-RotMatrixT[alpha_, phi_: 0] := RotMatrixTC[alpha, phi];
+RotMatrixT[alpha_, ___] := RotMatrixTC[alpha];
 
-RotMatrixTC = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
+(*using CPMG condition*)
+RotMatrixTC = Compile[{{alpha, _Real, 0}}, Chop[{
+     {Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
+     {Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
+     {-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
+     }], RuntimeOptions -> "Speed"];
+
+RotMatrixTI[alpha_, phi_: 90] := RotMatrixTCI[alpha, phi];
+
+(*Specify angle and phase*)
+RotMatrixTCI = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
      {Cos[alpha/2]^2, Exp [2 phi I] Sin[alpha/2]^2, -I Exp [phi I] Sin[alpha]},
      {Exp [-2 phi I] Sin[alpha/2]^2, Cos[alpha/2]^2, I Exp [-phi I] Sin[alpha]},
      {-0.5 I Exp [-phi I] Sin[alpha], 0.5 I Exp [phi I] Sin[alpha], Cos[alpha]}
@@ -306,11 +320,17 @@ RotMatrixTC = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
 (*MoveStates*)
 
 
-MoveStates = Compile[{{Rmat, _Complex, 2}, {Rvec, _Complex, 1}, {Smat, _Integer, 2}, {Tmat, _Complex, 2}, {svec, _Complex, 1}, {Necho, _Integer, 0}},
+MoveStates = Compile[{{Rmat, _Real, 2}, {Rvec, _Real, 1}, {Smat, _Real, 2}, {Tmat, _Real, 2}, {svec, _Real, 1}, {Necho, _Integer, 0}}, 
+	(*Rmat = relaxation; Rvec = Mz recovery; Tmat = Rf pulse;*)
+    (*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
+    NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, Necho]
+    , RuntimeOptions -> "Speed"];
+
+MoveStatesI = Compile[{{Rmat, _Complex, 2}, {Rvec, _Complex, 1}, {Smat, _Integer, 2}, {Tmat, _Complex, 2}, {svec, _Complex, 1}, {Necho, _Integer, 0}},
    (*Rmat = relaxation; Rvec = Mz recovery; Tmat = Rf pulse;*)
    (*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
    NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, Necho]
-   , RuntimeOptions -> "Speed", Parallelization -> True];
+   , RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
@@ -350,7 +370,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	If[OptionValue[EPGCalibrate]&&!VectorQ[datan],
 	  Print["Callibrating EPG fat T2."];
 	  cal = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, {50, 300}, {T1m, T1f}}, EPGFitPoints -> OptionValue[EPGFitPoints]];
-	  {T2mc, T2f, B1c, fatc} = cal[[1]];
+	  (*{T2mc, T2f, B1c, fatc} = cal[[1]];*)
+	  {T2f,B1c,S0c}=cal[[1]];
 	  T2f = N@Round[T2f,5];(*make whole ms such that it is more likely for same values*)
 	  Print["EPG fat callibration:  ", T2f, " ms"];
 	  ];
@@ -572,11 +593,15 @@ DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {{maxx_,maxy_}, start_}] :
 (*ErrorFunc*)
 
 
+ErrorFunc1[y_, T2f_Real, B1_Real, S0_, vals_] :=  Quiet@Block[{sig, T1m, T1f, echo, angle},   
+	{echo, T1f, angle} = vals;
+	Total[(y - S0 EPGSignali[echo, {T1f, T2f}, angle, B1])^2]]
+
 ErrorFunc[y_, T2m_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, T2f, echo, angle},
    {echo, {T1m, T1f, T2f}, angle} = vals;
    sig = Transpose[{
-      EPGSignali[echo, {T1m, T2m}, angle, B1],
-      EPGSignali[echo, {T1f, T2f}, angle, B1]
+      Abs[EPGSignali[echo, {T1m, T2m}, angle, B1]],
+      Abs[EPGSignali[echo, {T1f, T2f}, angle, B1]]
       }];
    LeastSquaresErrorC[sig, y]]
 
@@ -647,10 +672,9 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	  3,
 	  (*single slice*)(*make mask an normalize data to first echo*)
 	  maskT2 = Mask[Mean[datan]];
-	  dataT2 = maskT2 # & /@ datan;
-	  dataT2 = dataT2/MeanNoZero[Flatten[dataT2]];
+	  dataT2 = NormalizeData[maskT2 # & /@ datan];
 	  (*create mask selecting fat*)
-	  fmask = Mask[dataT2[[-1]], {0.5}];
+	  fmask = Mask[dataT2[[-1]], {50}];
 	  fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
 	  (*data for calibration fit*)
 	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ (dataT2+10.^-10)]-10.^-10;
@@ -661,7 +685,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	  maskT2 = Mask[Mean[Transpose[datan]]];
 	  dataT2 = NormalizeData[MaskDTIdata[datan, maskT2]];
 	   (*create mask selecting fat*)
-	  fmask = Mask[dataT2[[All, -1]], {0.5}];
+	  fmask = Mask[dataT2[[All, -1]], {50}];
 	  fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
 	  (*data for calibration fit*)
 	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose[dataT2+10.^-10]]-10.^-10;
@@ -670,27 +694,19 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	(*select random fit points to calibrate fat signal and get the boundries*)
 	step = Ceiling[Length[fitData]/OptionValue[EPGFitPoints]];
 	{{T2mmin, T2mmax}, {T2fmin, T2fmax}, {T1m, T1f}} = OptionValue[EPGRelaxPars];
-
-	(*define fit values*)
-	valsf = {echo, {T1m, T1f}, angle};
-	  
-	(*perform the fit using parallel kernels*)
-	DistributeDefinitions[ErrorFunc, LeastSquaresC, LeastSquaresErrorC, EPGSignali, valsf, echo, T2mmin, T2mmax, T2fmin, T2fmax];
-	fits = ParallelMap[(
-		(*calcualte NLLS error*)
+	
+	valsf = {echo, T1f, angle};
+	
+	fits = Map[(
+		S0 = #[[1]];
 		{residualError, soli} = Quiet@FindMinimum[{
-	         ErrorFunc[#, T2mi, T2fi, B1i, valsf], 
-	         {0.5 <= B1i, B1i <= 1.5, T2mmin <= T2mi, T2mi <= T2mmax, T2fmin <= T2fi, T2fi <= T2fmax}
-	         }, {{T2mi, 30.}, {T2fi, 180.}, {B1i, 1}}];
-	     {T2mif, T2fif, B1if} = soli[[All, 2]];
-	     (*Find the fat fraction*)
-	     {wat, fat} = LeastSquaresC[Transpose[{
-	         EPGSignali[echo, {T1m, T2mif}, angle, B1if],
-	         EPGSignali[echo, {T1f, T2fif}, angle, B1if]
-	         }], #];
-	     (*give the output*)
-	     {T2mif, T2fif, B1if, DevideNoZero[fat,(wat + fat)]}
-	     ) &, fitData[[1 ;; ;; step]]];
+		    ErrorFunc1[#, T2fi, B1i, S0i, valsf],
+		    {0.5 <= B1i <= 1.5, 20. <= T2fi <= 300., 0 < S0i}
+		    }, {{T2fi, 50.}, {B1i, 1}, {S0i, 5 S0}},
+		   MaxIterations -> 25];
+		out = {T2fif, B1if, S0if} = soli[[All, 2]];
+		out
+		) &, fitData[[1 ;; ;; step]]];     
   
   	{Median[fits],StandardDeviation[fits]}
   ]
@@ -718,12 +734,10 @@ CreateT2Dictionaryi[relax_, echo_, ang_, T2range_, B1range_] := CreateT2Dictiona
 	
 	PrintTemporary["Creating new dictionary"];
 
-	DistributeDefinitions[EPGSignali, echo, T1m, ang, T1f,T2f, t2s, t2e, t2i, b1s, b1e, b1i];
+	DistributeDefinitions[EPGSignali, MixMatrix,MakeDiagMat,RotMatrixT,MoveStates, echo, T1m, ang, T1f,T2f, t2s, t2e, t2i, b1s, b1e, b1i];
 	time = AbsoluteTiming[
-		dict = ParallelTable[{
-			{EPGSignali[echo, {T1m, T2m}, ang, B1], EPGSignali[echo, {T1f, T2f}, ang, B1]}, {T2m, B1}
-	    }, {T2m, t2s, t2e, t2i}, {B1, b1s, b1e, b1i}];
-	    ][[1]];
+		dict = ParallelTable[{{EPGSignali[echo, {T1m, T2m}, ang, B1], EPGSignali[echo, {T1f, T2f}, ang, B1]}, {T2m, B1}}, {T2m, t2s, t2e, t2i}, {B1, b1s, b1e, b1i}];
+		][[1]];
 	 
 	 vals = dict[[All, All, 2]];
 	 dict = Transpose[dict[[All, All, 1]], {1, 2, 4, 3}];

@@ -791,7 +791,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		ManPannel["Export plot",{
 			{"File Type",Control@{{fileType,".jpg",""},files}},
 			{"Export Size",Control@{{size,400,""},sizes,ControlType->PopupMenu}},
-			{"Export",Button["Save Plot", SaveImage[Dynamic[exp],FileType->fileType,ImageSize -> size],Method->"Queued",ImageSize->150]}
+			{"Export",Button["Save Plot", SaveImage[Dynamic[exp], FileType->fileType, ImageSize -> size],Method->"Queued",ImageSize->150]}
 			}]
 		,(*Multiple image export controls, depends on data dimensions 2D-off, 3D-on 2 sliders, 4D-on 4 sliders*)
 		{"",

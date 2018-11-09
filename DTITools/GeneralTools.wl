@@ -107,6 +107,9 @@ TableMethod::usage =
 PadValue::usage = 
 "PadValue is an option for PadToDimensions. It specifies the value of the padding."
 
+PadDirection::usage = 
+"PadDirection is an option for PadToDimensions. It specifies the direction of padding, \"Center\", \"Left\" or \"Right\"."
+
 OutputWeights::usage = 
 "OutputWeights is an option for SumOfSqares. If True it also output the SoS weights."
 
@@ -526,15 +529,25 @@ SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes
 (*PadToDimensions*)
 
 
-Options[PadToDimensions]={PadValue->0.}
+Options[PadToDimensions]={PadValue->0.,PadDirection -> "Center"}
 
 SyntaxInformation[PadToDimensions] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-PadToDimensions[data_, dim_, OptionsPattern[]] := Block[{diffDim, padval, pad},
+PadToDimensions[data_, dim_, OptionsPattern[]] := Block[{diffDim, padval, pad,dir,zer},
   padval = OptionValue[PadValue];
   diffDim = dim - Dimensions[data];
-  pad = Transpose@{Floor[diffDim/2], Ceiling[diffDim/2]};
-  ArrayPad[data, pad, padval]
+  
+  dir = OptionValue[PadDirection];
+  dir = If[StringQ[dir], ConstantArray[dir, Length[dim]], dir];
+  zer = ConstantArray[0, Length[dim]];
+  
+  pad = MapThread[
+  Switch[#1, "Left", #2, "Right", #3, _, #4] &, {dir, 
+   Transpose@{zer, diffDim}, Transpose@{diffDim, zer}, 
+   Transpose@{Floor[diffDim/2], Ceiling[diffDim/2]}}];
+  
+  ArrayPad[data,pad,padval]
+	 
   ]
 
 

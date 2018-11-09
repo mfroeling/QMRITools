@@ -51,6 +51,10 @@ SplitSegmentations::usage =
 "SplitSegmentations[segmentation] splits a lable mask from ITKsnap or slicer3D in seperate masks and label numbers.
 Output is masks and label numbers, {mask, labs}."
 
+RescaleSegmentation::usage = 
+"RescaleSegmentation[data, dim] rescales segmentations to given dimensions.
+RescaleSegmentation[data, {vox1, vox2}] rescales segmentations from voxelsize vox1 to voxelsize vox2."
+
 MergeSegmentations::usage = 
 "MergeSegmentations[masks, labels] generates an ITKsnap or slices3D compatible segmentation from individual masks and label numbers.
 Output is a labled segmentation."
@@ -363,6 +367,22 @@ RemoveMaskOverlaps[masks_] := SmoothSegmentation[masks, MaskFiltKernel->False];
 
 
 (* ::Subsubsection::Closed:: *)
+(*RemoveMaskOverlaps*)
+
+
+SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_}};
+
+RescaleSegmentation[seg_, vox_] := Block[{segs, val},
+  If[ArrayDepth[seg] == 3, {segs, val} = SplitSegmentations[seg], 
+   segs = seg];
+  segs = RemoveMaskOverlaps[
+    Transpose[
+     Round[RescaleData[#, vox, InterpolationOrder -> 1]] & /@ 
+      Transpose[segs]]];
+  If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
+  ]
+
+(* ::Subsubsection::Closed:: *)
 (*SegmentMask*)
 
 
@@ -388,22 +408,18 @@ SegmentMask[mask_, seg_?IntegerQ] := Block[{pos, f, l, sel, out},
 
 SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_.}};
 
-NormalizeData[data_] := NormalizeDatai[data, .75]
-NormalizeData[data_, quan_?NumberQ] := NormalizeDatai[data, Clip[quan, {0, 1}]]
+NormalizeData[data_] := Switch[ArrayDepth[data],
+	3, NormalizeData[data, Mask[data]],
+	4, NormalizeData[data, Mask[Mean[Transpose[data]]]]
+	]
 
-NormalizeData[data_,minmax_] := ScaleData[data,minmax]
-
-
-ScaleData = Compile[{{data, _Real, 0}, {range, _Real, 1}}, 
-	(data - range[[1]])/(range[[2]] - range[[1]]), RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-NormalizeDatai = Block[{mn},
-	Compile[{{data, _Real, 3}, {quant, _Real, 0}},
-		mn = Quantile[Cases[Flatten[data], Except[0.]], quant];
-		data/mn, 
-    	{{mn, _Real, 0}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-   ];
+NormalizeData[data_, mask_] := Block[{mn},
+	mn = Switch[ArrayDepth[data],
+	3, N[MeanNoZero[Flatten[mask data]]/100.],
+	4, N[MeanNoZero[Flatten[mask data[[All, 1]]]]/100.]
+	];
+	data / mn
+]
 
 
 (* ::Subsubsection::Closed:: *)
