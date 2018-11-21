@@ -1262,7 +1262,9 @@ GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] :=
  Block[{labels, out, fl},
   labels = If[name==="", {"mean", "std", "Median", "5%", "95%"}, name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
   ];
-  out = (
+  out = If[Total[Flatten[#]]<10,
+  	Print["Less than 10 voxels, output will be 0."];{0.,0.,0.,0.,0.}
+  	,
       fl = GetMaskData[dat, #, GetMaskOutput -> All];
       Switch[OptionValue[MeanMethod],
        "NormalDist",
@@ -1272,7 +1274,8 @@ GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] :=
        _,
        Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
        ]
-      ) & /@ Transpose[mask];
+  ]&/@ Transpose[mask];
+      
   Prepend[out, labels]
   ]
 

@@ -22,7 +22,7 @@ $ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -51,8 +51,17 @@ PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only wit
 
 Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data dnoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}."
 
+AnisoFilterTensor::usage = 
+"AnisoFilterTensor[tens, diffdata] Filter the tensor tens using an anisotropic diffusion filter (Perona-Malik). 
+It uses the diffusion weighted data diffdata to find edges that are not visible in the tensor.
+Edge weights based on the diffusion data are averaged over all normalized diffusion direction.
+Output is the smoothed tensor."
 
-(* ::Subsection::Closed:: *)
+WeightMapCalc::usage = 
+"WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterData."
+
+
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -77,6 +86,20 @@ PCATollerance::usage =
 
 PCAWeighting::usage = 
 "PCAWeighting is an option of PCADeNoise and can be True of False. Default value is False. When True the weights of the per voxel result are calculated based on the number of non noise components."
+
+AnisoWeightType::usage
+"AnisoWeightType is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting, eigher 1. Exp[-g/kappa] or 2. 1/(1+g/kappa)."
+
+AnisoWeightKappa::usage
+"AnisoWeightKappa is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting strenght, all data is normalize to 100 before filetering.
+The default value is 20."
+
+AnisoStepTime::usage
+"AnisoStepTime is an option for AnisoFilterTensor and defines the diffusion time, when small more step are needed."
+
+AnisoFilterSteps::usage
+"AnisoFilterStepsis an option for AnisoFilterTensor and defines the amoutn of diffusin steps taken. Higher is more smoothing"
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -108,6 +131,122 @@ DeNoise::sig =
 
 
 Begin["`Private`"]
+
+
+(* ::Subsection:: *)
+(*AnisotropicFilterTensor*)
+
+
+(* ::Subsubsection:: *)
+(*AnisotropicFilterTensor*)
+
+
+Options[AnisoFilterTensor] = {AnisoWeightType->2, AnisoWeightKappa->5., AnisoStepTime->1, AnisoFilterSteps->5};
+
+SyntaxInformation[AnisoFilterTensor] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+AnisoFilterTensor[tens_,data_,OptionsPattern[]]:=Block[{
+weights,kernels,mn,j,datf,kers,wts,lambda,finDiff,wtsI,
+itt,time,kappa,type
+},
+(*get the options*)
+itt=OptionValue[AnisoFilterSteps];
+time=OptionValue[AnisoStepTime];
+kappa=N@OptionValue[AnisoWeightKappa];
+type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
+
+(*calculate the edges based on the diffusion images*)
+PrintTemporary["Determaning the weights based on the data."];
+weights=WeightMapCalc[data,WeightKappa->kappa,WeightType->type];
+(*get the fixed parameters*)
+mn=Mean[tens[[1;;3]]];
+{kers,wts}=KernelWeights[];
+lambda=1/Length[kers];
+
+(*filter the tensor*)
+PrintTemporary["Anisotropic filtering of the tensor."];
+j=0;PrintTemporary[ProgressIndicator[Dynamic[j],{0,itt 6}]];
+Table[
+(*Normalize the diffusion tensor*)
+datf=100DevideNoZero[tens[[tt]],mn];
+(*perform the diffusion smoothing itterations*)
+Do[
+j++;
+finDiff=FinDiffCalc[datf,kers];
+wtsI=weights WeightCalc[finDiff,wts,kappa,type];
+datf=datf+time lambda Total@(wtsI finDiff);
+,itt];
+(*revert tensor normalization*)
+datf=mn datf/100
+,{tt,1,6}](*loop over tensor*)
+]
+
+
+(* ::Subsubsection:: *)
+(*WeightMapCalc*)
+
+
+Options[WeightMapCalc]={AnisoWeightType->2, AnisoWeightKappa->10.};
+
+SyntaxInformation[WeightMapCalc] = {"ArgumentsPattern" -> {_,  OptionsPattern[]}};
+
+WeightMapCalc[data_,OptionsPattern[]]:=Block[{kers,wts,weights,finDiff,dat,dim,len},
+(*get the options*)
+kappa=N@OptionValue[AnisoWeightKappa];
+type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
+(*get the kernerl and weights*)
+{kers,wts}=KernelWeights[];
+(*prepare output *)
+dim=Dimensions[data];
+len=dim[[2]];dim=Drop[dim,{2}];
+weights=ConstantArray[0,Prepend[dim,Length[wts]]];
+(*get the weighting for all diffusion images*)
+i=0;PrintTemporary[ProgressIndicator[Dynamic[i],{0,len}]];
+(
+i++;
+(*normalize the data*)
+dat=100#/Max[Abs[#]];
+(*add to the weights*)
+weights+=WeightCalc[FinDiffCalc[dat,kers],wts,kappa,type];
+)&/@Transpose[data];
+
+(*normalize the weights between 0 and 1*)
+(*weights=Mean[weights];
+weights=weights/Max[weights];*)
+(#/Max[#])&/@weights
+]
+
+
+(* ::Subsubsection:: *)
+(*KernelWeights*)
+
+
+KernelWeights[]:=Block[{cent,ker,keri,wtsi},
+ker=ConstantArray[0,{3,3,3}];
+ker[[2,2,2]]=-1;
+cent={2,2,2};
+Transpose[Flatten[Table[
+If[{i,j,k}==cent,
+Nothing,
+keri=ker;keri[[i,j,k]]=1;
+wtsi=N@Norm[cent-{i,j,k}];
+{keri,1/wtsi^2}
+],{i,1,3},{j,1,3},{k,1,3}],2]]
+];
+
+
+(* ::Subsubsection:: *)
+(*WeightCalc*)
+
+
+WeightCalc[finDiff_,wts_,kappa_,type_]:=wts Switch[type,1,Exp[-((finDiff/kappa)^2)],2,1./(1.+(finDiff/kappa)^2)];
+
+
+(* ::Subsubsection:: *)
+(*FinDiffCalc*)
+
+
+FinDiffCalc[dat_,kers_]:=ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 
 
 (* ::Subsection:: *)
