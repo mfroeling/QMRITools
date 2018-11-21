@@ -370,7 +370,7 @@ RemoveMaskOverlaps[masks_] := SmoothSegmentation[masks, MaskFiltKernel->False];
 (*RemoveMaskOverlaps*)
 
 
-SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
 
 RescaleSegmentation[seg_, vox_] := Block[{segs, val},
   If[ArrayDepth[seg] == 3, {segs, val} = SplitSegmentations[seg], 
