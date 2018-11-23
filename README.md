@@ -74,6 +74,9 @@ To print the documentation of all functions use
 
 ## Functionality
 
+The toolbox contains over 400 Functions and options of processing and analyzing data.
+A summary of the core functionality can be found here. 
+
 * Diffusion Analysis
 	* Signal drift correction 
 	* LLS, WLLS and iWLLS methods
@@ -90,6 +93,7 @@ To print the documentation of all functions use
 * Noise suppression
 	* LMMSE noise suppression
 	* PCA noise suppression based on ramom matrix theory
+	* Anisotropic tensor smoothing using diffusion filter.
 * Importing and Exporting
 	* Dicom data (classing and enhanced file format)
 	* Nifti data (.nii and .img .hdr, supports .gz files)

@@ -179,10 +179,7 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 
 SyntaxInformation[DTItoolPackages] = {"ArgumentsPattern" -> {}};
 
-DTItoolPackages[] := 
- TableForm[Last[StringSplit[#, "`"]] & /@ 
-  DeleteDuplicates[
-   StringReplace[#, "Private`" -> ""] & /@ Contexts["DTITools`*`"]]]
+DTItoolPackages[] := DeleteDuplicates[(StringSplit[#, "`"] & /@ Contexts["DTITools`*`"])[[All, 2]]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -193,21 +190,34 @@ SyntaxInformation[DTItoolFunctions] = {"ArgumentsPattern" -> {_.,_.}};
 
 DTItoolFunctions[]:=DTItoolFunctions[""];
 
-DTItoolFunctions[toolb_String]:= Module[{packages},
-	
-  If[toolb==="",
-  packages = 
-   DeleteDuplicates[
-    StringReplace[#, "Private`" -> ""] & /@ Contexts["DTITools`*`"]];
-    ToExpression[Sort[Flatten[Names[# <> "*"] & /@ packages]]]
-    ,
-    Names["DTITools`" <> toolb <> "`*"]
-  ]
-  ]
+DTItoolFunctions[toolb_String]:= Module[{packages,names,functions,options,allNames},
+	packages = If[toolb==="",DTItoolPackages[],{toolb}];
+	allNames = Sort[Flatten[Names["DTITools`" <> # <> "`*"]]] & /@ packages;
+	{functions, options} = Transpose[(
+		names = #;
+		options = ToString /@Sort[DeleteDuplicates[Flatten[Options[ToExpression[#]][[All, 1]] & /@ names]]];
+		functions = Complement[names, options];
+		{functions, options}
+		) & /@ allNames];
+    If[toolb === "", Transpose[{packages, functions, options}], {packages, functions, options}[[All, 1]]]
+]
 
-DTItoolFunctions[p_Integer]:=Partition[DTItoolFunctions[], p, p, 1, ""] // Transpose // TableForm
+DTItoolFunctions[p_Integer]:=Block[{toolbox,functions,options},
+	{toolbox,functions,options}=Transpose[DTItoolFunctions[]];
+	Column[{
+	Style["Functions", Bold, 16],Partition[Flatten[functions], p, p, 1, ""] // Transpose // TableForm,"",
+	Style["Options", Bold, 16],Partition[Flatten[options], p, p, 1, ""] // Transpose // TableForm
+	}]
+]
 
-DTItoolFunctions[toolb_String,p_Integer]:=Partition[DTItoolFunctions[toolb], p, p, 1, ""] // Transpose // TableForm
+DTItoolFunctions[toolb_String,p_Integer]:=Block[{toolbox,functions,options},
+	{toolbox,functions,options}=DTItoolFunctions[toolb];
+	Column[{
+		Style[toolbox, Bold, 24], "",
+		Style["Functions", Bold, 16],Partition[functions, p, p, 1, ""] // Transpose // TableForm,"",
+		Style["Options", Bold, 16],Partition[options, p, p, 1, ""] // Transpose // TableForm,""
+	}]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -218,20 +228,13 @@ SyntaxInformation[DTItoolFuncPrint] = {"ArgumentsPattern" -> {_.}};
 
 DTItoolFuncPrint[]:=DTItoolFuncPrint[""]
 
-DTItoolFuncPrint[toolb_String]:=Module[{functions,packs},
-	packs = If[toolb==="",
-		Sort[Flatten[StringCases[$ContextPath, "DTITools`" ~~ x__ -> x]]],
-		{toolb}		
-	];
-	functions = "DTITools`" <> # -> Names["DTITools`" <> # <> "*"] & /@ packs;
- (
-     Print[Style[#[[1]], Bold, Large, Black]];
-     (
-        Print[Style[#, Bold, Medium, Black]];
-        Information[#]
-        ) & /@ #[[2]]
-     ) & /@ functions;
-]
+DTItoolFuncPrint[toolb_String]:=If[toolb=="",PrintAll/@DTItoolFunctions[];,PrintAll[DTItoolFunctions[toolb]]]
+
+PrintAll[{name_, functions_, options_}]:=(Print[Style[name, Bold, 24]];
+		Print[Style["Functions", Bold, 16]];
+		Information /@ functions;
+		Print[Style[Options, Bold, 16]];
+		Information /@ options;)
 
 
 (* ::Subsubsection::Closed:: *)

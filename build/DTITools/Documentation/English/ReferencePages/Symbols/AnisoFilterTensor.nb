@@ -1,0 +1,327 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     11904,        318]
+NotebookOptionsPosition[      8524,        248]
+NotebookOutlinePosition[     10669,        300]
+CellTagsIndexPosition[     10626,        297]
+WindowTitle->AnisoFilterTensor
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["D T I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DenoiseTools\"\>":>
+       Documentation`HelpLookup["paclet:DTITools/guide/DenoiseTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DTITools/ref/AnisoFilterTensor\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["DTITools/ref/AnisoFilterTensor"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/DTITools/ref/\
+AnisoFilterTensor.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$33227], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "DTITools/ref/AnisoFilterTensor", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["AnisoFilterTensor", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+AnisoFilterTensor[tens, diffdata]\[LineSeparator]Filter the tensor tens using \
+an anisotropic diffusion filter (Perona-Malik). It uses the diffusion \
+weighted data diffdata to find edges that are not visible in the tensor. Edge \
+weights based on the diffusion data are averaged over all normalized \
+diffusion direction. Output is the smoothed tensor.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["AnisoWeightType",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/AnisoWeightType"], "2", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["AnisoWeightType"]],"paclet:DTITools/ref/AnisoWeightType"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["AnisoFilterTensor"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["WeightMapCalc"]],"paclet:DTITools/ref/WeightMapCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and defines the weighting, eigher 1, the exponent of (-g/kappa) or 2, \
+1/(1+g/kappa)."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["AnisoKappa",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/AnisoKappa"], "5.", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["AnisoKappa"]],"paclet:DTITools/ref/AnisoKappa"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["AnisoFilterTensor"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["WeightMapCalc"]],"paclet:DTITools/ref/WeightMapCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and defines the weighting strenght, all data is normalize to 100 \
+before filetering."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["AnisoStepTime",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/AnisoStepTime"], "1", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["AnisoStepTime"]],"paclet:DTITools/ref/AnisoStepTime"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["AnisoFilterTensor"], "InlineFormula"],
+     " and defines the diffusion time, when small more step are needed."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["AnisoFilterSteps",
+     BaseStyle->"Link",
+     ButtonData->"paclet:DTITools/ref/AnisoFilterSteps"], "5", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["AnisoFilterSteps"]],"paclet:DTITools/ref/AnisoFilterSteps"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["AnisoFilterTensor"], "InlineFormula"],
+     " and defines the amoutn of diffusin steps taken. Higher is more \
+smoothing"
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["DenoiseTools"]],"paclet:DTITools/guide/DenoiseTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"AnisoFilterTensor",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "DTITools", ButtonData -> "paclet:DTITools/guide/DTITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 11, 23, 11, 29, 21.2840129}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "DTITools`DenoiseTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "D T I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "DTITools Package", "status" -> "None", "summary" -> 
+    "AnisoFilterTensor[tens, diffdata] Filter the tensor tens using an \
+anisotropic diffusion filter (Perona-Malik). It uses the diffusion weighted \
+data diffdata to find edges that are not visible in the tensor. Edge weights \
+based on the diffusion data are averaged over all normalized diffusion \
+direction. Output is the smoothed tensor.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "AnisoFilterTensor", "titlemodifier" -> "", 
+    "windowtitle" -> "AnisoFilterTensor", "type" -> "Symbol", "uri" -> 
+    "DTITools/ref/AnisoFilterTensor"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[589, 21, 3072, 74, 70, "AnchorBarGrid",ExpressionUUID->"97a75bda-2b6b-43d0-b760-2ba8b7eb042a",
+ CellID->1],
+Cell[3664, 97, 174, 6, 70, "ObjectNameGrid",ExpressionUUID->"0ba8d1ad-e506-41fa-a242-7c32421dd52f"],
+Cell[3841, 105, 555, 12, 70, "Usage",ExpressionUUID->"fd0487ad-31e5-46a7-b559-acd59bf2b946"],
+Cell[CellGroupData[{
+Cell[4421, 121, 621, 19, 70, "NotesSection",ExpressionUUID->"31b51e2b-5c38-445d-b913-c4c272b5673e",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5045, 142, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"a9bc2a00-a72f-4d8a-8a7e-db13e03bc2e3"],
+Cell[5079, 144, 53, 0, 70, "Notes",ExpressionUUID->"e0db2f24-6911-401c-b870-e9cf1d9c6c3c"],
+Cell[5135, 146, 2915, 74, 70, "3ColumnTableMod",ExpressionUUID->"d457923d-88c8-403c-bf6b-e2e0b1d79710"],
+Cell[8053, 222, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"862a13ff-1f30-4d2c-9ef9-07b85f4cd824"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[8121, 227, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"7857dd7a-8ff1-4542-aa64-d86e3496002b",
+ CellID->38303248],
+Cell[8280, 236, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"27b8c429-4517-4904-8187-7a447624030f"],
+Cell[8314, 238, 168, 5, 70, "MoreAbout",ExpressionUUID->"7930938c-8560-4cd5-82d4-ce9b6a1e63c2",
+ CellID->1]
+}, Open  ]],
+Cell[8497, 246, 23, 0, 70, "FooterCell",ExpressionUUID->"d8011df6-b78f-4f90-af6e-e54391a4efb5"]
+}
+]
+*)
+
+(* End of internal cache information *)

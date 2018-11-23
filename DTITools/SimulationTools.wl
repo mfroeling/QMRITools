@@ -135,7 +135,7 @@ Tensor::vec = "Eigenvectors must be a 3x3 matrix, \"Random\", \"RandomZ\", \"Ort
 
 Tensor::val = "Eigenvalues mus be a vector of size 3 or a number, not:`1`"
 
-CreateData::eig = "eigen system must be 3 eigenvalues {l1,l2,l2} in which cases fixed vectors wil be used 
+CreateDiffData::eig = "eigen system must be 3 eigenvalues {l1,l2,l2} in which cases fixed vectors wil be used 
 	or eigenvalues with geven vectors {{l1,l2,l3},{e1,e2,e3}} 
 	other possibility is 3 eigenvalues with a random, randomz or random ortogonal (fixed vectors with random sign)
 		{{l1,l2,l3},Random}
@@ -290,7 +290,7 @@ CreateDiffData[S0_,eig_,bmat_?ArrayQ,dim_]:= Block[{diff},
 			ConstantArray[SignalTensor[S0,bmat,Tensor[eig[[1]],eig[[2]]]],dim],
 			If[eig[[2]]==="Random"||eig[[2]]==="RandomZ"||eig[[2]]==="OrtRandom",
 			Array[SignalTensor[S0,bmat,Tensor[eig[[1]],eig[[2]]]]&,dim],
-			Return[Message[CreateData::eig,eig]]]
+			Return[Message[CreateDiffData::eig,eig]]]
 			]
 		];
 	

@@ -193,7 +193,7 @@ UseMask::usage =
 OutputSNR::usage = 
 "OutputSNR is an option for SNRMapCalc."
 
-SmoothSNR::usgae = 
+SmoothSNR::usage = 
 "SmoothSNR is an option for SNRMapCalc"
 
 SeedDensity::usage = 
@@ -201,6 +201,9 @@ SeedDensity::usage =
 
 MeanMethod::usage = 
 "MeanMethod is an option for GetMaskMeans. The option can be  \"NormalDist\", \"SkewNormalDist\", or \"Mean\"."
+
+BackgroundFilter::usage = 
+"BackgroundFilter is an option for PhaseCalc. It defines the amount of neighbouring voxesl that are 0 for a voxel to be considred a background voxel."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -940,7 +943,7 @@ Module[{eig,adc,fa},
 (*PhaseCalc*)
 
 
-Options[PhaseCalc]={SmoothPhase->"Smooth",BackgroundFilter->6,MonitorUnwrap->True,UnwrapDimension->"2D"};
+Options[PhaseCalc]={SmoothPhase->"Smooth", BackgroundFilter->6, MonitorUnwrap->True, UnwrapDimension->"2D"};
 
 SyntaxInformation[PhaseCalc] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -955,7 +958,7 @@ Module[{B0data, B0unw, phase, data},
    	N[(((1.53455433455433 Transpose[dat]) - 3142)/1000)]
    ];
   B0data = mask*(data[[2]] - data[[1]]);
-  B0unw = Unwrap[B0data, BackgroundFilter->OptionValue[BackgroundFilter],MonitorUnwrap->OptionValue[MonitorUnwrap],UnwrapDimension->OptionValue[UnwrapDimension]];
+  B0unw = Unwrap[B0data, BackgroundFilter->OptionValue[BackgroundFilter], MonitorUnwrap->OptionValue[MonitorUnwrap], UnwrapDimension->OptionValue[UnwrapDimension]];
   phase = 
    Switch[OptionValue[SmoothPhase], 
    	"None", Chop[B0unw], 
