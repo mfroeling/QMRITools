@@ -183,6 +183,9 @@ NormalizeSignal::usage =
 CropOutput::usage = 
 "CropOutput is an option for CropData, can be \"All\",\"Data\" or \"Crop\"."
 
+CropInit::usage = 
+"CropInit is an option for CropData. By default the crop is not initialized bu can be with {{xmin,xmax},{ymin,ymax},{zmin,zmax}}. "
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -345,7 +348,7 @@ FindCropVals[data_, add_] := Module[{pos(*, partpos, diff, postr*)},
 (*CropData*)
 
 
-Options[CropData] = {CropOutput -> "All", CropInit->Automatic};
+Options[CropData] = {CropOutput -> "All", CropInit -> Automatic};
 
 SyntaxInformation[CropData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -500,11 +503,11 @@ RescaleData[data_?ArrayQ, dim_?VectorQ, opts : OptionsPattern[]] := RescaleDatai
 
 Options[RescaleDatai] = {InterpolationOrder -> 3};
 
-RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[{type, dim, int},
+RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[{type, dim, int, dataOut},
   dim = Dimensions[data];
   int = OptionValue[InterpolationOrder];
   
-  dataOut=Switch[ArrayDepth[data],
+  dataOut = Switch[ArrayDepth[data],
    (*rescale an image*)
    2,
    If[Length[sc] != 2,
@@ -519,12 +522,12 @@ RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[
     3(*rescale 3D data*),
     RescaleImgi[data, {sc, met}, int],
     _,
-    Return[Message[RescaleDataInt::dim, sc, Dimensions[data]]];
+    Return[Message[RescaleData::dim, sc, Dimensions[data]]];
     ],
    4(*rescale a 4D dataset, treat data as multiple 3D sets*),
    Transpose[RescaleDatai[#, sc, met, opts] & /@ Transpose[data]],
    _,
-   Return[Message[RescaleDataInt::data]];
+   Return[Message[RescaleData::data]];
    ];
    
    Chop[Clip[dataOut,MinMax[data]]]
@@ -1574,23 +1577,11 @@ Switch[len,0,output,_,TransData[output,"r"]]
 
 SyntaxInformation[TransData] = {"ArgumentsPattern" -> {_, _}};
 
-(*
-TransData[data_,dir_]:=Block[{ran,dep},
-ran=Range[dep=ArrayDepth[data]];
-Switch[dir,
-"r",Transpose[data,RotateLeft[ran]],
-"l",Transpose[data,RotateRight[ran]]
-]
-]
-
-*)
-
 TransData[data_,dir_]:=Block[{ran,dep,fun},
 	ran=Range[dep=ArrayDepth[data]];
 	fun=Switch[dir,"r",RotateLeft[ran],"l",RotateRight[ran]];
 	Transpose[data,fun]
 ]
-
 
 
 (* ::Subsection::Closed:: *)
@@ -1700,8 +1691,8 @@ Options[DataTranformation]={InterpolationOrder->1}
 SyntaxInformation[DataTranformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 DataTranformation[data_, vox_, wi_,OptionsPattern[]] := 
- Block[{coor, rot, coorR, interFunc, interFuncC},
-  w=If[Length[wi]==3,Join[wi,{0,0,0,1,1,1,0,0,0}]];
+ Block[{coor, rot, coorR, interFunc, interFuncC, w},
+  w = If[Length[wi]==3,Join[wi,{0,0,0,1,1,1,0,0,0}]];
   
   coor = GetCoordinates[data, vox];
   rot = ParametersToTransformFull[w, "Inverse"];

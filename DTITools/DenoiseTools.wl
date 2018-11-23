@@ -25,20 +25,7 @@ $ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 (* ::Subsection:: *)
 (*Functions*)
 
-
-PCAFitHist::usage = 
-"PCAFitHist[data] fits the marchencopasteur distribution to the PCA of the data using hist fit.
-PCAFitHist[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using hist fit.
-
-Output is {simga, number of noise comp, and denoised matrix, itterations}."
-
-PCAFitEq::usage = 
-"PCAFitEq[data] fits the marchencopasteur distribution to the PCA of the data using grid search.
-PCAFitEq[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using grid search.
-
-Output is {simga, number of noise comp, and denoised matrix}."
-
-DeNoise::usage =
+DeNoise::usage = 
 "DeNoise[data,sigma,filtersize] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" a gaussian kernel.
 DeNoise[data,sigma,filtersize, Kernel->\"kerneltype\"] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" and type \"kerneltype\".
 
@@ -51,14 +38,29 @@ PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only wit
 
 Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data dnoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}."
 
+PCAFitHist::usage =  
+"PCAFitHist[data] fits the marchencopasteur distribution to the PCA of the data using hist fit.
+PCAFitHist[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using hist fit.
+
+Output is {simga, number of noise comp, and denoised matrix, itterations}."
+
+PCAFitEq::usage = 
+"PCAFitEq[data] fits the marchencopasteur distribution to the PCA of the data using grid search.
+PCAFitEq[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using grid search.
+
+Output is {simga, number of noise comp, and denoised matrix}."
+
 AnisoFilterTensor::usage = 
 "AnisoFilterTensor[tens, diffdata] Filter the tensor tens using an anisotropic diffusion filter (Perona-Malik). 
 It uses the diffusion weighted data diffdata to find edges that are not visible in the tensor.
 Edge weights based on the diffusion data are averaged over all normalized diffusion direction.
+
 Output is the smoothed tensor."
 
-WeightMapCalc::usage = 
-"WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterData."
+WeightMapCalc::usage =  
+"WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterTensor.
+
+Output is a weight map of the diffdata which is high in isotropic regions and low at edges."
 
 
 (* ::Subsection:: *)
@@ -87,18 +89,17 @@ PCATollerance::usage =
 PCAWeighting::usage = 
 "PCAWeighting is an option of PCADeNoise and can be True of False. Default value is False. When True the weights of the per voxel result are calculated based on the number of non noise components."
 
-AnisoWeightType::usage
-"AnisoWeightType is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting, eigher 1. Exp[-g/kappa] or 2. 1/(1+g/kappa)."
-
-AnisoWeightKappa::usage
-"AnisoWeightKappa is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting strenght, all data is normalize to 100 before filetering.
-The default value is 20."
-
-AnisoStepTime::usage
+AnisoStepTime::usage =
 "AnisoStepTime is an option for AnisoFilterTensor and defines the diffusion time, when small more step are needed."
 
-AnisoFilterSteps::usage
-"AnisoFilterStepsis an option for AnisoFilterTensor and defines the amoutn of diffusin steps taken. Higher is more smoothing"
+AnisoFilterSteps::usage =
+"AnisoFilterSteps is an option for AnisoFilterTensor and defines the amoutn of diffusin steps taken. Higher is more smoothing"
+
+AnisoWeightType::usage =
+"AnisoWeightType is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting, eigher 1, the exponent of (-g/kappa) or 2, 1/(1+g/kappa)."
+
+AnisoKappa::usage =
+"AnisoKappa is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting strenght, all data is normalize to 100 before filetering."
 
 
 (* ::Subsection::Closed:: *)
@@ -141,7 +142,7 @@ Begin["`Private`"]
 (*AnisotropicFilterTensor*)
 
 
-Options[AnisoFilterTensor] = {AnisoWeightType->2, AnisoWeightKappa->5., AnisoStepTime->1, AnisoFilterSteps->5};
+Options[AnisoFilterTensor] = {AnisoWeightType->2, AnisoKappa->5., AnisoStepTime->1, AnisoFilterSteps->5};
 
 SyntaxInformation[AnisoFilterTensor] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -152,12 +153,12 @@ itt,time,kappa,type
 (*get the options*)
 itt=OptionValue[AnisoFilterSteps];
 time=OptionValue[AnisoStepTime];
-kappa=N@OptionValue[AnisoWeightKappa];
+kappa=N@OptionValue[AnisoKappa];
 type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
 
 (*calculate the edges based on the diffusion images*)
 PrintTemporary["Determaning the weights based on the data."];
-weights=WeightMapCalc[data,WeightKappa->kappa,WeightType->type];
+weights=WeightMapCalc[data, AnisoKappa->kappa, AnisoWeightType->type];
 (*get the fixed parameters*)
 mn=Mean[tens[[1;;3]]];
 {kers,wts}=KernelWeights[];
@@ -168,7 +169,7 @@ PrintTemporary["Anisotropic filtering of the tensor."];
 j=0;PrintTemporary[ProgressIndicator[Dynamic[j],{0,itt 6}]];
 Table[
 (*Normalize the diffusion tensor*)
-datf=100DevideNoZero[tens[[tt]],mn];
+datf = 100 DevideNoZero[tens[[tt]],mn];
 (*perform the diffusion smoothing itterations*)
 Do[
 j++;
@@ -186,13 +187,13 @@ datf=mn datf/100
 (*WeightMapCalc*)
 
 
-Options[WeightMapCalc]={AnisoWeightType->2, AnisoWeightKappa->10.};
+Options[WeightMapCalc]={AnisoWeightType->2, AnisoKappa->10.};
 
 SyntaxInformation[WeightMapCalc] = {"ArgumentsPattern" -> {_,  OptionsPattern[]}};
 
-WeightMapCalc[data_,OptionsPattern[]]:=Block[{kers,wts,weights,finDiff,dat,dim,len},
+WeightMapCalc[data_,OptionsPattern[]]:=Block[{kers,wts,weights,finDiff,dat,dim,len, kappa, type },
 (*get the options*)
-kappa=N@OptionValue[AnisoWeightKappa];
+kappa=N@OptionValue[AnisoKappa];
 type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
 (*get the kernerl and weights*)
 {kers,wts}=KernelWeights[];

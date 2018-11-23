@@ -74,7 +74,7 @@ ProtectFunctions[pack_,subpack_,print_:False]:=Module[{},
 
 (*Change Default settings*)
 (*prevents the excessive use of memory with large data sets*)
-$HistoryLength = 0; ParallelEvaluate[$HistoryLength = 0];
+$HistoryLength = 0; (*ParallelEvaluate[$HistoryLength = 0];*)
 
 
 (*add all mathematica packages to the context path*)

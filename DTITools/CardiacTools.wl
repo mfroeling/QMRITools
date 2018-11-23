@@ -1443,7 +1443,7 @@ MaskHelix[helix_, mask_,OptionsPattern[]] := Block[{fun},
 (*BullseyePlot*)
 
 
-Options[BullseyePlot]={TextOffset->.5,TextSize->12,PlotRange->Automatic, ColorFunction->"TemperatureMap", Method->"Dynamic",ImageSize->200};
+Options[BullseyePlot]={TextOffset->.5,TextSize->12,PlotRange->Automatic, ColorFunction->"TemperatureMap", BullPlotMethod->"Dynamic",ImageSize->200};
 
 SyntaxInformation[BullseyePlot] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -1491,7 +1491,7 @@ Table[{col,Disk[{0,0},radius[[3]],(i-1) Pi/2+{Pi/4,3Pi/4}]},{i,1,4}],
 {{col,Disk[{0,0},radius[[4]],{0,2Pi}]}}
 },1];
 
-If[OptionValue[Method]==="Dynamic",
+If[OptionValue[BullPlotMethod]==="Dynamic",
 
 (*dynamic plot*)
 pl=Manipulate[
@@ -1542,7 +1542,7 @@ BarLegend[{colf,{min,max}},LabelStyle->Directive[{Bold,Black,FontFamily->"Helvet
 ];
 
 (*Output plot or plotwindow*)
-If[OptionValue[Method]==="Dynamic",
+If[OptionValue[BullPlotMethod]==="Dynamic",
 NotebookClose[plotwindow];
 plotwindow=CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pl}, WindowSize -> All, WindowTitle -> "Plot data window"]];
 ,
