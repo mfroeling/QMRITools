@@ -22,7 +22,7 @@ $ContextPath=Union[$ContextPath,System`$DTIToolsContextPaths];
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -91,8 +91,24 @@ PlotContour::usage =
 PlotContour[data, vox, scale] creates a contour of the data with the surface colored acording to scale.
 PlotContour[data, vox, scale, range] creates a contour of the data with the surface colored acording to scale with a fixed plotrange."
 
+GetSlicePositions::usage =
+"GetSlicePositions[data] finds the position of slices with the maximal signal in voxel index.
+GetSlicePositions[data, vox] find the position of slices with the maximal signal in mm."
 
-(* ::Subsection::Closed:: *)
+GetSliceData::usage =  
+"GetSliceData[data, offsets] gets the slices from the data defined by offsets which are obtained by GetSlicePosisions.
+GetSliceData[data, offsets, vox] gets the slices from the data defined by offsets which are obtained by GetSlicePosisions in mm.
+The offsets can also be provided manually which is {{AX,..},{COR,..},{SAG,..}}."
+
+MakeSliceImages::usage =  
+"MakeSliceImages[imgData] generates images from the imgData which is obtained form GetSliceData.
+MakeSliceImages[imgData, vox] generates images from the imgData which is obtained form GetSliceData, vox is used for the correct aspect ratio of the images.
+MakeSliceImages[imgData, {labData, labels}] generates images from the imgData which is obtained form GetSliceData with an overlay of the segmentations in labData, which can also be obtained using GetSliceData on the segmentations.
+labels should be the label numbers used in the original segmentation (to allow correct scaling between slices).
+MakeSliceImages[imgData, {labData, labels},vox] generates images from the imgData which is obtained form GetSliceData with an overlay of the segmentations in labData, which can also be obtained using GetSliceData on the segmentations, vox is used for the correct aspect ratio of the images."
+
+
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -119,6 +135,15 @@ SphereColor::usage =
 
 PositiveZ::usage = 
 "PositiveZ is an options for GradientPlot. If True all Gradients are displayed with a positive z direction."
+
+MakeCheckPlot::usage = 
+"MakeCheckPlot is an option for GetSlicePositions and if set true gives a plot of the slices locations."
+
+DropSlices::usage = 
+"DropSlices is an option for GetSlicePositions and specifies how many slices from the beginning and and should be ignored."
+
+ImageLegend::usage = 
+"ImageLegend is an option for MakeSliceImages, if set true a barlegend is added to the image."
 
 
 (* ::Subsection::Closed:: *)
@@ -1428,6 +1453,7 @@ PlotCorrection[w_]:=Module[{sel},
 
 (* ::Subsection::Closed:: *)
 (*Hist*)
+
 
 Options[Hist] = {ColorValue -> {{Black,White}, Red, Green, Blue}, Method -> "SkewNormal", PlotLabel -> "", AxesLabel -> "", ImageSize -> 300}
 
@@ -3218,6 +3244,8 @@ PlotDuty[{grad_, bval_, ord_}, mode_] :=
   ]
   
 
+
+
 (* ::Subsection::Closed:: *)
 (*ColorFAPlot*)
 
@@ -3247,6 +3275,8 @@ ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask},
   ]  
   
   
+
+
 (* ::Subsection::Closed:: *)
 (*PlotContour*)
 
@@ -3301,6 +3331,111 @@ PlotContour[data_, voxi_, scaleI_?ArrayQ, range_, OptionsPattern[]] :=  Block[{
    ImageSize -> 300, PerformanceGoal -> "Speed", Axes -> False
    ]
   ]
+
+
+(* ::Subsection:: *)
+(*MakeSliceImages*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeSliceImages*)
+
+
+Options[MakeSliceImages]={PlotRange->Automatic,ColorFunction->"GrayTones",ImageLegend->False};
+
+SyntaxInformation[MakeSliceImages]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
+
+MakeSliceImages[selData_,opts:OptionsPattern[]]:=MakeSliceImages[selData,{1,1,1},opts]
+
+MakeSliceImages[selData_,{selMask_,vals_?ListQ},opts:OptionsPattern[]]:=MakeSliceImages[selData,{selMask,vals},{1,1,1},opts]
+
+MakeSliceImages[selData_,vox:{_,_,_},opts:OptionsPattern[]]:=MakeSliceImages[selData,{0,{}},vox,opts]
+
+MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=Block[{pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2},
+rule=Thread[vals->Range[Length[vals]]];
+colF=OptionValue[ColorFunction];
+
+Table[
+
+(*get the data*)
+pdat=N@selData[[n]];
+mdat=N@If[selMask=!=0,selMask[[n]]/.rule,0 pdat];
+
+(*find the range*)
+datf=DeleteCases[Flatten[pdat][[;;;;10]],0.];
+ran=If[OptionValue[PlotRange]===Automatic,If[datf==={},{0,1},{0,Quantile[DeleteCases[Flatten[pdat][[;;;;10]],0.],.99]}],OptionValue[PlotRange]];
+size=vox[[{{2,3},{1,2},{1,3}}[[n]]]];
+bar=BarLegend[{colF,ran},LabelStyle->Directive[{Black,Bold,12}]];
+
+(*loop over the slices, 1 axial, 2 cor, 3 sag*)
+MapThread[(
+ratio=Divide@@(Dimensions[#]size);
+
+pl1=ArrayPlot[#1,AspectRatio->ratio,Frame->False,ImageSize->400,PlotRangePadding->1,
+PlotRange->ran,ColorFunction->colF,ClippingStyle->(ColorData[colF]/@{0,1})];
+
+pl2=ArrayPlot[#2,ColorFunction->(Directive[{Opacity[0.4],ColorData["Rainbow"][#]}]&),ColorRules->{0.->Transparent}];
+
+If[OptionValue[ImageLegend],Legended[Show[pl1,pl2],bar],Show[pl1,pl2]]
+
+)&,{pdat,mdat}]
+,{n,1,3}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetSliceData*)
+
+
+SyntaxInformation[GetSliceData]={"ArgumentsPattern"->{_,_,_.}};
+
+GetSliceData[data_,offsets_]:=GetSliceData[data,offsets,{1,1,1}]
+
+GetSliceData[data_,offsets_,vox_]:=Block[{off},
+off=Round[offsets/vox];
+{data[[off[[1]]]],
+Reverse/@Transpose@data[[All,off[[2]]]],
+Reverse/@Transpose[data[[All,All,off[[3]]]],{2,3,1}]
+}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetSlicePosision*)
+
+
+Options[GetSlicePositions]={MakeCheckPlot->False,DropSlices->{1,1,1}};
+
+SyntaxInformation[GetSlicePositions]={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
+
+GetSlicePositions[data_,opts:OptionsPattern[]]:=GetSlicePositions[data, {1,1,1},opts]
+
+GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,pers,min,max,minmax,result},
+(*get the max intensity slice*)
+pers={{2,3,1},{1,3,1},{1,2,1}};
+result=(
+dat=MeanNoZero@Flatten[data,pers[[#,1;;2]]];
+len=Length[dat];
+fil=Clip[len/30,{2,Infinity}];
+ran=OptionValue[DropSlices][[#]];
+{min,max}=MinMax[dat];
+minmax=(min+0.5(max-min));
+dat[[;;ran]]=min;
+dat[[-ran;;]]=min;
+dat=GaussianFilter[dat,fil];
+peaks=FindPeaks[dat,fil];
+minmax=(Min[dat]+0.5(Max[dat]-Min[dat]));
+peaks=Select[peaks,#[[2]]>minmax&];
+{dat,peaks,peaks[[All,1]]}
+)&/@{1,2,3};
+(*make chekc plot*)
+If[OptionValue[MakeCheckPlot],Print[Row[Show[
+ListLinePlot[#[[1]],PlotStyle->Black],
+ListPlot[#[[2]],PlotStyle->Directive[{PointSize[Large],Red}]]
+,Axes->True,ImageSize->200]&/@result]]
+];
+result[[All,-1]]
+]
 
 
 (* ::Section:: *)
