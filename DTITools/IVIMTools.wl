@@ -861,11 +861,11 @@ RandomNormalCd = Compile[{{m, _Real, 1}, {s, _Real, 1}},
 (*calulated fitted points g(fr, dc, pdc)*)
 FunceC2 = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 1}},Block[{fre=Exp[fr]},
    		Chop[Transpose[Map[((Exp[Exp[dc] #] + fre Exp[Exp[pdc] #])/(1 + fre)) &, -bm]]]
-	], Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+	], Parallelization -> True, RuntimeOptions -> "Speed"];
 
 FunceC2l = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 0}}, 
     Chop[((Exp[-bm Exp[dc]] + Exp[fr] Exp[-bm Exp[pdc]])/(1 + Exp[fr]))], 
-    Parallelization -> True, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}, CompilationTarget->System`$DTIToolsCompiler];
+    Parallelization -> True, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 (*calulated fitted points g(fr1, fr2, dc, pdc1, pdc2)*)
 FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Real, 1}, {pdc2, _Real, 1}, {bm, _Real, 1}},
@@ -875,7 +875,7 @@ FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Rea
            (Exp[Exp[pdc2] #] fr2e)/(1 + fr2e) -
            (Exp[Exp[dc] #] (-1 + fr1e fr2e))/((1 + fr1e) (1 + fr2e))
           )) &, -bm]]]
-    ], Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+    ], Parallelization -> True, RuntimeOptions -> "Speed"];
 
 FunceC3l = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Real, 1}, {pdc2, _Real, 1}, {bm, _Real, 0}},
    Block[{fr1e = Exp[fr1], fr2e = Exp[fr2]},
@@ -884,15 +884,15 @@ FunceC3l = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Re
           (Exp[-bm Exp[pdc2]] fr2e)/(1 + fr2e) -
           (Exp[-bm Exp[dc]] (-1 + fr1e fr2e))/((1 + fr1e) (1 + fr2e))
        )]
-    ], Parallelization -> True, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}, CompilationTarget->System`$DTIToolsCompiler];
+    ], Parallelization -> True, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 (*calculate probability*)
 DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, ((vec1.vec2)^2)/(vec2.vec2),
-   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
 Dotc1 = Compile[{{vec, _Real, 1}}, vec.vec,
-   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
 MatDot2 = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}, {mat, _Real, 2}}, (vec1.mat.vec1) - (vec2.mat.vec2),
-   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+   RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
    
 AlphaC = Compile[{
 	{theta, _Real, 2}, {thetat, _Real, 2}, {mu, _Real, 1},
@@ -907,7 +907,7 @@ AlphaC = Compile[{
     rand = RandomReal[1, nvox];
     UnitStep[(pd*pt) - rand]
     ],
-   Parallelization -> True, RuntimeOptions -> "Speed",CompilationTarget->System`$DTIToolsCompiler];
+   Parallelization -> True, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)

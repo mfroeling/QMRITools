@@ -322,9 +322,10 @@ SignalTensor[S0_, bmat_, D_] := Module[{Dv},
 
 BlochSeries[Mi_, dt_, w_, p_] := BlochSeriesi[Mi, dt, w, p] 
 
-BlochSeriesi = Block[{M, Mtemp, Mt, Mz, Mx, My, ang, phase},
+BlochSeriesi = 
 With[{gamma = N[2 Pi 42.56 10^6]},
    Compile[{{Mi, _Real, 1}, {dt, _Real, 0}, {w, _Real, 0}, {p, _Real, 1}},
+   	Block[{M, Mtemp, Mt, Mz, Mx, My, ang, phase},
     (*perform the bloch simulation*)
     M = Mi;
     (
@@ -341,10 +342,9 @@ With[{gamma = N[2 Pi 42.56 10^6]},
     phase = ArcTan[Mx,My];
     
     (*give output*)
-    {w, Mt, Mz, Mx, My, ang, phase}
+    {w, Mt, Mz, Mx, My, ang, phase}]
     , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
     ]
-   ]
   ];
 
 

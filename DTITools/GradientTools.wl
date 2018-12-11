@@ -491,8 +491,7 @@ GradOptimize1C = Compile[{{points, _Real, 2}, {half, _Integer, 0}},
    ];
 
 (*optimize singel shell with fixed gradients*)
-GradOptimize2C = 
-  Compile[{{points, _Real, 2}, {nf, _Real, 0}, {half, _Integer, 0}},
+GradOptimize2C = Compile[{{points, _Real, 2}, {nf, _Real, 0}, {half, _Integer, 0}},
    Block[{n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, 
      velocity, pointsnew, rang},
     n = Length[points];
@@ -519,8 +518,7 @@ GradOptimize2C =
    ];
 
 (*optimize singe shell Overplus*)
-GradOptimize3C = 
-  Compile[{{points, _Real, 2}, {char, _Real, 1}, {nf, _Real, 0}},
+GradOptimize3C = Compile[{{points, _Real, 2}, {char, _Real, 1}, {nf, _Real, 0}},
    Block[{n, pointsi, pointsmat, distmatxyz, diag, distmat, velocity, 
      pointsnew, chari, charmat, chars, rang},
     n = Length[points];
@@ -542,8 +540,7 @@ GradOptimize3C =
    ];
 
 (*optimize multi shell*)
-GradOptimize4C = 
-  Compile[{{points, _Real, 2}, {vel, _Real, 3}, {half, _Integer, 0}},
+GradOptimize4C = Compile[{{points, _Real, 2}, {vel, _Real, 3}, {half, _Integer, 0}},
    Block[{n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, 
      velocity, pointsnew},
     n = Length[points];

@@ -186,7 +186,10 @@ SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close,obj,filt},
   obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
   filt = OptionValue[MaskFiltKernel];(*how much smooting*)
 
-  Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image3D[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]]
+  If[ArrayDepth[mask]==2,
+  	Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]],
+  	Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image3D[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]]
+  ]
   ]
 
 

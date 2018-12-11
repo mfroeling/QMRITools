@@ -67,6 +67,9 @@ TensVec::usage=
 GridDataPlot::usage = 
 "GridDataPlot[{data1,data2,...}, part] makes a grid of multiple datasets with part sets on each row"
 
+FindCrop::usage = 
+"FindCrop[data] finds the crop values of the data by removing all zeros surrounding the data."
+
 CropData::usage =
 "CropData[data] creates a dialog window to crop the data (assumes voxsize (1,1,1)).
 CropData[data,vox] creates a dialog window to crop the data."
@@ -345,6 +348,23 @@ FindCropVals[data_, add_] := Module[{pos(*, partpos, diff, postr*)},
 
 
 (* ::Subsection::Closed:: *)
+(*FindCrop*)
+
+SyntaxInformation[FindCrop] = {"ArgumentsPattern" -> {_}};
+
+FindCrop[data_] := Block[{unit, crp, p, dim},
+  unit = Unitize[
+    Total[Total[data, {#[[1]]}], {#[[2]]}] & /@ {{2, 2}, {1, 2}, {1, 
+       1}}];
+  dim = Dimensions[data];
+  crp = (
+      p = Position[#, 1]; Flatten@{First[p] - 2, Last[p] + 2}
+      ) & /@ unit;
+  Flatten[MapThread[Clip[#1, {1, #2}] &, {crp, dim}]]
+]
+
+
+(* ::Subsection::Closed:: *)
 (*CropData*)
 
 
@@ -578,7 +598,7 @@ TriggerGrid[data_, dyns_, {{r11_, r12_}, {r21_, r22_}}] :=
 (*Phase unwrap*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Unwrap*)
 
 
@@ -596,38 +616,42 @@ Module[{data,step,undim,out,mon},
 	mon=OptionValue[MonitorUnwrap];
 	
 	Switch[undim,
+		
 		"2D",
-		data=dat//N;
-		If[MatrixQ[data],
+		data = N[dat];
+		Which[
+			MatrixQ[data],
 			If[mon,PrintTemporary["Unwrapping one image using 2D algorithm."]];
-			out=Unwrap2Di[data];,
-			If[ArrayQ[data,3],
-				If[mon,PrintTemporary["Unwrapping ",Length[data]," images using 2D algorithm"]];
-					Monitor[
-						out=UnwrapZi[MapIndexed[(step=First[#2];Unwrap2Di[#1])&,data,{ArrayDepth[data]-2}]];
-					,If[mon,ProgressIndicator[step, {0, Length[data]}],""]
-					]
-				,
-				Message[Unwrap::data2D,ArrayDepth[data]]
-				]
-			];,
+			out = Unwrapi[data];
+			,
+			ArrayQ[data,3],
+			If[mon,PrintTemporary["Unwrapping ",Length[data]," images using 2D algorithm"]];
+			Monitor[
+				out = MapIndexed[( step = First[#2]; Unwrapi[#1] )&, data, {ArrayDepth[data]-2} ];
+				out = UnwrapZi[out];
+			 ,If[mon,ProgressIndicator[step, {0, Length[data]}],""]
+			]
+		];,
+		
 		"3D",
-		data=N[ArrayPad[dat,1]];
+		data = N[ArrayPad[dat,1]];
 		If[ArrayQ[data,3],
 			If[mon,PrintTemporary["Unwrapping 3D data using 3D algorithm"]];
-			out=ArrayPad[Unwrap3Di[data,mon],-1];
+			out = ArrayPad[Unwrapi[data, mon],-1];
 			,
 			Message[Unwrap::data3D,ArrayDepth[data]]
 			];,
 		_,
 		Message[Unwrap::dim,undim]
 		];
-	Return[out]
+		
+	(*center around 0*)
+	out
 	]
 
 
-(* ::Subsubsection::Closed:: *)
-(*Unwrap*)
+(* ::Subsubsection:: *)
+(*UnwrapSplit*)
 
 
 Options[UnwrapSplit] = Options[UnwrapSplit]
@@ -642,7 +666,7 @@ UnwrapSplit[phase_, mag_,opts:OptionsPattern[]] := Module[{cutVal, phaseSplit, B
   ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*UnwrapZi*)
 
 
@@ -655,286 +679,262 @@ Module[{
 		num2=#-Floor[#];
 		If[1>num2>tresh,Ceiling[#],Floor[#]]
 		]
-		]&,mask,slice,diff,meandiff,steps,off,unwrap,dat},
+		]&,
+		mask,slice,diff,meandiff,steps,off,unwrap,dat},
+	
 	mask=Unitize[data];
 	slice=Round[0.5Length[data]];
 	diff=(#[[1]]-#[[2]]&/@ Partition[data/(2Pi),2,1]);
+	
 	meandiff=Median[#]&/@ Map[DeleteCases[Flatten[N[#]],0.]&,diff];
 	steps=FoldList[Plus,0,Map[Roundi[#]&,meandiff]];
 	off=Round[Median[DeleteCases[Flatten[N[data[[slice]]/(2Pi)]],0.]]];
+	
 	unwrap=steps-(steps[[slice]]+off);
-	dat=(2Pi unwrap+data)mask//N
+	dat=(2Pi unwrap+data)mask//N;
+	(dat - mask Round[MeanNoZero[Flatten[dat]],2Pi])
 	]
 
 
-(* ::Subsubsection::Closed:: *)
-(*Unwrapi2D*)
+(* ::Subsubsection:: *)
+(*Unwrapi*)
 
 
-Unwrap2Di[dat_] := Module[{data, dim, DD, edges, groupnr, sorted, dati, x1, y1, x2, y2, 
-	group1, group2, wrap, mask, groupsize, pos, const, g1, g2, max, groups, clustnr, part},
-  
-  (*rescale the dat to integers allows for faster matrix replacements*)
-  data = Round[100000*ArrayPad[dat , 1]/(2 Pi // N)];
-  mask = Clip[Ceiling[Abs[Chop[data]]], {0, 1}] // N;
-  dim = Dimensions[data];
-  
-  (*Calculated the second oreder difference for each voxel and the edge reliability and order*)
-  DD = SecDiff[data];
-  edges = EdgeReliability[DD] // N;
-  sorted = Sort[Flatten[MapIndexed[If[#1 != 0, {#1, #2}, Nothing] &, edges, {3}], 2]];
-  
-  (*define pre clusters for the data and asign group numbers to large clusters*)
-  part = Partition[Range[Min[data], Max[data], Total@Abs@MinMax[data]/9] // N, 2, 1];
-  dati = Mask[data /. 0 -> -150000, #] & /@ part;
-  max = 1;
-  
-  groups = Total[(
-  	clustnr = # (max + MorphologicalComponents[DeleteSmallComponents[Image[#]]]);
-  	max = Max[{max, Max[clustnr]}];
-  	clustnr
-  	) & /@ dati];
-  
-  const = ConstantArray[0, dim];
-  groupsize = SparseArray[Flatten[const]];
+Unwrapi[dat_] := Unwrapi[dat, False]
 
-  With[{CCount = Compile[{{datac, _Integer, 2}, {x, _Integer, 0}}, Count[datac, x, 2]]}, 
-  	(groupsize[[#]] = CCount[groups, #]) & /@ Range[1, Max[groups]]
-  	];
-  	
-  groupnr = Max[groups];
+Unwrapi[dat_, mon_] := Block[{data,datai,mask, crp, dimi, sorted,groups,groupsize,groupnr,task},
+	(*monitor*)
+	task="Preclustering data.";
+	If[mon,PrintTemporary[Dynamic[task]]];
+	
+	(*rescale the dat to integers allows for faster matrix replacements*)
+	datai = Round[10000. * dat / (2. Pi)];
+	dimi = Dimensions[datai];
+	
+	(*remove zeros*)
+	data = If[ArrayDepth[datai] == 3, crp = FindCrop[datai]; ApplyCrop[datai, crp], datai];
+	
+	(*make mask to pervent unwrapping in background*)
+	mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 5], 1], -5];
+	
+	(*Get the edges sotrted for reliability and precluster groups*)
+	sorted = GetEdgeList[data, mask];
+	{groups, groupsize, groupnr} = MakeGroups[data, mask];
 
-  (*unwrapping algorithm*)
-  With[{
-    Wrap = Compile[{{x, _Integer, 0}, {y, _Integer, 0}}, Round[(x - y), 100000]],
-    CPosition = Compile[{{x, _Integer, 2}, {n, _Integer, 0}}, Position[x, n]]
-    },
-   Map[
-     (
-       (*#[[1]]= direction, #2[[2]]=x, #[[3]]=y*)
-       {x1, y1} = {#[[2]], #[[3]]};
-       {x2, y2} = {#[[2]], #[[3]]} + {{0, 1}, {1, 0}}[[#[[1]]]];
-       group1 = groups[[x1, y1]];
-       group2 = groups[[x2, y2]];
-       
-       (*unwrapping logic*)
-       (*1. both already in same group (most cases 60%)*)
-       If[! group1 == group2 != 0,
-        (*If not in the same group determine the wrap of the edge and determine how to unwrap*)
-        wrap = Wrap[data[[x1, y1]], data[[x2, y2]]];
-        (*2. one of two pixels already in group (second most cases 30%)*)
-        If[(group1 == 0 && group2 != 0) || (group2 == 0 && group1 != 0),
-         group1=group1+group2;
-         groups[[x2, y2]] = group1;
-         groupsize[[group1]] += 1;
-         If[wrap != 0, data[[x2, y2]] += wrap];
-         ,
-         (*3. both belong to no group (third most cases 6%)*)
-         If[group1 == group2 == 0,
-           (*unwrap right or botom pixel and assign both to group*)
-           groupnr++;
-           groups[[x1, y1]] = groups[[x2, y2]] = groupnr;
-           groupsize[[groupnr]] = 2;
-           If[wrap != 0, data[[x2, y2]] += wrap];
+	(*make 2D data 3D and define shifts in add*)
+	If[ArrayDepth[data] == 2,
+		groups = {groups}; data = {data};
+		sorted = {#[[1]] + 1, 1, #[[2]], #[[3]]} & /@ sorted;
+		];
+	
+	(*Unwrap the data*)
+	task="Unwrapping edges.";
+	data = UnWrapC[sorted, data, groups, groupsize, groupnr];
+	
+	(*make output in rad*)	
+	If[ArrayDepth[dat] == 2, 
+		(*output the 2D in rad*)
+		2 Pi data[[1]]/10000.,
+		(*align to zero and ouput 3D in rad*)
+		data = 2 Pi (data - mask Round[MeanNoZero[Flatten[data]],10000])/10000.;
+		ReverseCrop[data, dimi, crp]
+		]
+]
+
+
+UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Integer, 3}, {groupsi, _Integer, 3}, {groupsizei, _Integer, 1}, {groupnri, _Integer, 0}},
+	Block[{data, const, dir, dim, groups, group1, group2, groupsize, groupnr, z1, z2, x1, x2, y1, y2, wrap, wrapT, pos, g1, g2, out, adds,add},
+   	
+    groups = groupsi;
+    groupsize = groupsizei;
+    data = datai;
+    groupnr = groupnri;
+
+    dim = Dimensions[data];
+    adds = {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}};
+    z1=0;x1=0;y1=0;z2=0;x2=0;y2=0;
+    group1=0;group2=0;g1=0;g2=0;
+
+    out = Map[(
+
+        (*get the voxel corrdinates and the neighbour, contrain to dimensions*)
+        add = adds[[#[[1]]]];
+        z1=#[[2]]; z2=z1+add[[1]]; If[z2>dim[[1]],z2=dim[[1]]];
+        x1=#[[3]]; x2=x1+add[[2]]; If[x2>dim[[2]],x2=dim[[2]]];
+        y1=#[[4]]; y2=y1+add[[3]]; If[y2>dim[[3]],y2=dim[[3]]];
+                
+        (*Get the group numbers*)
+        group1 = groups[[z1, x1, y1]];
+        group2 = groups[[z2, x2, y2]];
+        
+        (*unwrapping logic*)
+        (*0. check if both are not in background if one is background skip*)
+        If[! (group1 == 0 || group2 == 0),
+         (*1. both already in same group but not zero (most cases 60%) do nothing*)
+         If[(! (group1 > 1 && group1 == group2)),
+          (*If not in the same group determine the wrap of the edge and determine how to unwrap*)
+          wrap = Round[Round[data[[z1, x1, y1]] - data[[z2, x2, y2]],5000], 10000];
+          wrapT = (wrap != 0);
+          
+          (*get group sizes*)
+          g1 = groupsize[[group1]];
+          g2 = groupsize[[group2]];
+          
+          Which[
+           (*2. one of two pixels already in group othter not in group (second most cases 30%)*)
+           (*2A. group 1 existst add group 2 to group 1*)
+           group2 == 1 && group1 > 1, 
+           (*add the non group voxel to the existing group*)
+           groups[[z2, x2, y2]] = group1;
+           groupsize[[group1]] += 1;
+           If[wrapT, data[[z2, x2, y2]] += wrap];
            ,
-           (*4. both already in a group (least cases 4%) (group1 != group2 !=0)*)
-           (*Detrimine group sizes and check which group is larger*)
-           If[(g1 = groupsize[[group1]]) >= (g2 = groupsize[[group2]]),
-             (*group 1 is greather than or eaqual to group 2, add group 2 to group 1*)
-             (*unwrap group 2 with respect to group 1,only do if wrap!= 0*)
-             pos = CPosition[groups, group2];
-             If[wrap != 0, data += ReplacePart[const, pos -> wrap]];
-             groups = ReplacePart[groups, pos -> group1];
-             groupsize[[group1]] += g2;
-             groupsize[[group2]] = 0;
-             ,
-             (*group 2 is greather than or eaqual to group 1, add group 1 to group 2*)
-             (*unwrap group 1 with respect to group 2,only do if wrap!= 0*)
-             pos = CPosition[groups, group1];
-             If[wrap != 0, data -= ReplacePart[const, pos -> wrap]];
-             groups = ReplacePart[groups, pos -> group2];
-             groupsize[[group2]] += g1;
-             groupsize[[group1]] = 0;
-             ];
-           ];
-         ];
-       ];) &, sorted[[All,2]]
-     ];
-   ];
-  Return[(((2 Pi)*ArrayPad[mask*data, -1]// N)/100000.)]
-  ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*Unwrapi3D*)
-
-
-Unwrap3Di[dat_, mon_] := Module[{data, dim, ii, DD, groupnr, sorted, z1, x1, y1, z2, x2, y2, group1, group2, 
-	wrap, mask, edges, groups, pos, groupsize, g1, g2, const, max, clustnr, dati, part},
-  
-  (*convert data to integers for fast matrix clacluations*)
-  data = ToPackedArray[Round[100000*ArrayPad[dat , 1]/(2 Pi // N)]];
-  mask = Clip[Ceiling[Abs[Chop[data]]], {0, 1}] // N;
-  dim = Dimensions[data];
-  
-  (*monitor claculation*)
-  If[mon, Print["Calculating edge reliability and sorting edges: ", DateString["Time"]]];
-  (*calculate second order difference for voxels and the reliability of the edges and order*)
-  DD = SecDiff[data];
-  edges = EdgeReliability[DD];
-  sorted = Sort[Flatten[MapIndexed[If[#1 != 0, {#1, #2}, Nothing] &, edges, {4}], 3]];
-  
-  (*Monitor calculation*)
-  If[mon, Print["Preclustering data: ", DateString["Time"]]];
-  (*precluster the data and asign large clusters to groups*)
-  part = Partition[Range[Min[data], Max[data], Total@Abs@MinMax[data]/9] // N, 2, 1];
-  dati = Mask[data /. 0 -> -150000, #] & /@ part;
-  max = 1;
-  
-  groups = Total[(
-  	clustnr = # (max + MorphologicalComponents[DeleteSmallComponents[Image3D[#]]]);
-  	max = Max[{max, Max[clustnr]}];
-  	clustnr
-  	) & /@ dati];
-  groupnr = Max[groups];
-  
-  const=ConstantArray[0,dim];   
-  groupsize = SparseArray[Flatten[const]];
-  
-  With[{CCount = Compile[{{datac, _Integer, 3}, {x, _Integer, 0}}, Count[datac, x, 3]]},
-  	(groupsize[[#]] = CCount[groups, #]) & /@ Range[1, Max[groups]]];
-  
-  (*monitor calculation*)
-  If[mon,  Print["Unwrapping: ",DateString["Time"]]];
-  ii = 0;
-  Monitor[
-  
-  (*actual unwrapping algorithm*)
-  With[{
-    Wrap = Compile[{{x, _Integer, 0}, {y, _Integer, 0}}, Round[(x - y), 100000]],
-    CPosition = Compile[{{x, _Integer, 3}, {n, _Integer, 0}}, Position[x, n]]
-    },
-   Map[(
-       (*#[[1]]=direction, #[[2]]=x, #[[3]]=y*)
-       ii ++;(*for monitoring*)
-       {z1, x1, y1} = {#1[[2]], #1[[3]], #1[[4]]};
-       {z2, x2, y2} = {#1[[2]], #1[[3]], #1[[4]]} + {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}}[[#[[1]]]];
-       group1 = groups[[z1, x1, y1]];
-       group2 = groups[[z2, x2, y2]];
-       
-       (*unwrapping logic*)
-       (*1. both already in same group (most cases 60%) do nothing*)
-       If[! (group1 == group2 != 0),
-        (*If not in the same group determine the wrap of the edge and determine how to unwrap*)
-        wrap = Wrap[data[[z1, x1, y1]], data[[z2, x2, y2]]];     
-        (*2. one of two pixels already in group (second most cases 30%)*)
-        If[(group1 == 0 && group2 != 0) || (group2 == 0 && group1 != 0),
-         group1=group1+group2;
-         groups[[z2, x2, y2]] = group1;
-         groupsize[[group1]] += 1;
-         If[wrap != 0, data[[z2, x2, y2]] += wrap];
-         ,
-         (*3. both belong to no group (third most cases 6%)*)
-         If[group1 == group2 == 0,
+           (*2B. group 2 existst add group 1 to group 2*)
+           group1 == 1 && group2 > 1, 
+           (*add the non group voxel to the existing group*)
+           groups[[z1, x1, y1]] = group2;
+           groupsize[[group2]] += 1;
+           If[wrapT, data[[z1, x1, y1]] -= wrap];
+           ,
+           (*3. both belong to no group (third most cases 6%)*)
+           group1 == group2 == 1, 
            (*unwrap right or botom pixel and assign both to group*)
            groupnr++;
            groups[[z1, x1, y1]] = groups[[z2, x2, y2]] = groupnr;
            groupsize[[groupnr]] = 2;
-           If[wrap != 0, data[[z2, x2, y2]] += wrap];
+           If[wrapT, data[[z2, x2, y2]] += wrap];
            ,
-           (*4. both already in a group (least cases 4%) (group1 != group2!=0)*)
-	       (*Detrimine group sizes and check which group is larger*)
-	       If[(g1 = groupsize[[group1]]) >= (g2 = groupsize[[group2]]),
-	         (*group 1 is greather than or eaqual to group 2, add group 2 to group 1*)
-	         (*unwrap group 2 with respect to group 1,only do if wrap!= 0*)
-	         pos = CPosition[groups, group2];
-	         If[wrap != 0, data += ReplacePart[const, pos -> wrap]];
-	         groups = ReplacePart[groups, pos -> group1];
-	         groupsize[[group1]] += g2;
-	         groupsize[[group2]] = 0;
-	         ,
-	         (*group 2 is greather than or eaqual to group 1, add group 1 to group 2*)
-	         (*unwrap group 1 with respect to group 2,only do if wrap!=0*)
-	         pos = CPosition[groups, group1];
-	         If[wrap != 0, data -= ReplacePart[const, pos -> wrap]];
-	         groups = ReplacePart[groups, pos -> group2];
-	         groupsize[[group2]] += g1;
-	         groupsize[[group1]] = 0;
-	         ];
-           ];
-         ];
-	   ];) &, sorted[[All, 2]]
-     ];
+           (*4. both already in a group (least cases 4%)*)
+           (*4A. group 1 is greather than or eaqual to group 2,
+           add group 2 to group 1*)
+           g1 >= g2, 
+           (*unwrap group 2 with respect to group 1,
+           only do if wrap\[NotEqual]0*)
+           pos = 1 - Unitize[groups - group2];
+           If[wrapT, data += wrap pos];
+           groups += ((group1 - group2) pos);
+           groupsize[[group1]] += g2;
+           groupsize[[group2]] = 0;
+           ,
+           (*4B. group 2 is greather than or eaqual to group 1,
+           add group 1 to group 2*)
+           g2 > g1, 
+           (*unwrap group 1 with respect to group 2,
+           only do if wrap\[NotEqual]0*)
+           pos = 1 - Unitize[groups - group1];
+           If[wrapT, data -= wrap pos];
+           groups += ((group2 - group1) pos);
+           groupsize[[group2]] += g1;
+           groupsize[[group1]] = 0;
+           ]]];
+        1
+        ) &, sorted];
+    data],
+    {{dim, _Integer, 1},{add, _Integer, 1}, {group1, _Integer, 0}, {group2, _Integer, 0}, {g1, _Integer, 0}, {g2, _Integer, 0}, 
+    	{z1, _Integer, 0}, {x1, _Integer, 0}, {y1, _Integer, 0}, {z2, _Integer, 0}, {x2, _Integer, 0}, {y2, _Integer, 0}},
+    RuntimeOptions -> "Speed", Parallelization -> True];
+
+(* ::Subsubsection::Closed:: *)
+(*GetKernels*)
+
+
+GetKernels[dep_] := Block[{ker, i, j, k, keri, kers},
+   Switch[dep,
+    2,
+    ker = ConstantArray[0, {3, 3}];
+    ker[[2, 2]] = -1;
+    kers = ({i, j} = #; keri = ker; keri[[i, j]] = 1; keri) & /@ {
+       {2, 1}, {2, 3}, {1, 2}, {3, 2}, {1, 1}, {3, 3}, {1, 3}, {3, 1}
+       }(*H,V,D1,D2*),
+    3,
+    ker = ConstantArray[0, {3, 3, 3}];
+    ker[[2, 2, 2]] = -1;
+    kers = ({i, j, k} = #; keri = ker; keri[[i, j, k]] = 1; 
+        keri) & /@ {
+       {2, 1, 2}, {2, 3, 2}, {1, 2, 2}, {3, 2, 2}, {2, 2, 1}, {2, 2, 3},(*H,V,N*)
+       {1, 1, 2}, {3, 3, 2}, {1, 3, 2}, {3, 1, 2},(*plane 1*)
+       {1, 2, 1}, {3, 2, 3}, {1, 2, 3}, {3, 2, 1},(*plane 2*)
+       {2, 1, 1}, {2, 3, 3}, {2, 1, 3}, {2, 3, 1},(*plane 3*)
+       {1, 1, 1}, {3, 3, 3}, {1, 1, 3}, {3, 3, 1}, {1, 3, 1}, {3, 1, 3}, {3, 1, 1}, {1, 3, 3}(*diagonals*)
+       }];
+   Total /@ Partition[kers, 2]
    ];
-   ,ProgressIndicator[ii,{0,Length[sorted]}]
-  ];
-   
-  If[mon, Print["Done: ", DateString["Time"]]];
-  Return[((2 Pi)*ArrayPad[mask*data, -1]/100000) // N]
-  ]
 
 
 (* ::Subsubsection::Closed:: *)
-(*EdgeReliability*)
+(*GetEdgeList*)
 
 
-EdgeReliability[dat_] :=
- Switch[ArrayDepth[dat],
-  2(*2D data*),{
-  	ArrayPad[ArrayPad[RotateLeft[#] & /@ dat + dat, {{0, 0}, {0, -1}}], {{1, 1}, {1, 2}}], 
-    ArrayPad[ArrayPad[RotateLeft[dat] + dat, {{0, -1}, {0, 0}}], {{1, 2}, {1, 1}}]},
-  3(*3D data*),{
-   ArrayPad[ArrayPad[RotateLeft[dat] + dat, {{0, -1}, {0, 0}, {0, 0}}], {{1, 2}, {1,1}, {1, 1}}],
-   ArrayPad[ArrayPad[(RotateLeft[#] & /@ #) & /@ dat + dat, {{0, 0}, {0, 0}, {0, -1}}], {{1, 1}, {1, 1}, {1, 2}}],
-   ArrayPad[ArrayPad[RotateLeft[#] & /@ dat + dat, {{0, 0}, {0, -1}, {0, 0}}], {{1, 1}, {1, 2}, {1, 1}}]}
+GetEdgeList[data_] := GetEdgeList[data, 1]
+
+GetEdgeList[data_, maski_] := Block[{dep, diff, mask, edge, coor, fedge, ord, pos},
+	dep = ArrayDepth[data];
+	(*maske a mask if needed*)
+	mask = If[maski === 1, Closing[Mask[Ceiling[Abs@data], 1], 1], maski];
+	(*calculate the second order diff*)
+	diff = ListConvolve[#, data, ConstantArray[2, dep], 0] & /@ GetKernels[dep];
+	diff = If[dep == 2, DiffC2[diff], DiffC3[diff]];
+	
+	(*get the edge reliability*)
+	edge = Switch[dep,
+		2(*2D data*), 
+		N@{(RotateLeft[#] & /@ diff) + diff, RotateLeft[diff] + diff},
+		3(*3D data*), 
+		N@{RotateLeft[diff] + diff, ((RotateLeft[#] & /@ #) & /@ diff) + diff, (RotateLeft[#] & /@ diff) + diff}
+	];
+	edge = mask # & /@ edge;
+	 
+	(*sort the edges for reliability*)
+	coor = MapIndexed[#2 &, edge, {dep + 1}];
+	fedge = Flatten[edge, dep];
+	ord = Ordering[fedge];
+	pos = Position[Unitize[fedge[[ord]]], 1, 1, 1][[1, 1]];
+	Flatten[coor, dep][[ord]][[pos ;;]]
   ]
 
+DiffC2 = Compile[{{diff, _Real, 3}}, Total[(diff - Round[diff, 10000])^2]];
+DiffC3 = Compile[{{diff, _Real, 4}}, Total[(diff - Round[diff, 10000])^2]];
 
-(* ::Subsubsection::Closed:: *)
-(*Secdiff*)
+
+(* ::Subsubsection:: *)
+(*MakeGroups*)
 
 
-(*Calculate the second difference of a voxel.*)
-SecDiff[dat_] := 
- Module[{H, V, P, D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, datR, datL},
-  
-  With[{
-    GammaWrap2 = Compile[{{x, _Integer, 2}}, x - Round[x, 100000]],
-    GammaWrap3 = Compile[{{x, _Integer, 3}}, x - Round[x, 100000]]
-    },
-   datR = RotateRight[dat];
-   datL = RotateLeft[dat];
-   Switch[ArrayDepth[dat]
-   	,
-    2(*2D data*),
-    H = GammaWrap2[datL - dat] + GammaWrap2[datR - dat];
-    V = GammaWrap2[(RotateLeft[#] & /@ dat) - dat] + GammaWrap2[(RotateRight[#] & /@ dat) - dat];
-    
-    D1 = GammaWrap2[RotateLeft[#] & /@ datL - dat] + GammaWrap2[RotateRight[#] & /@ datR - dat];
-    D2 = GammaWrap2[RotateRight[#] & /@ datL - dat] + GammaWrap2[RotateLeft[#] & /@ datR - dat];
-    
-    ArrayPad[H^2 + V^2 + D1^2 + D2^2, -1]
-    ,
-    3(*3D data*)    ,
-    H = GammaWrap3[((RotateLeft[#] & /@ #) & /@ dat) - dat] + GammaWrap3[((RotateRight[#] & /@ #) & /@ dat) - dat];
-    V = GammaWrap3[(RotateLeft[#] & /@ dat) - dat] + GammaWrap3[(RotateRight[#] & /@ dat) - dat];
-    P = GammaWrap3[datL - dat] + GammaWrap3[datR - dat];
-    
-    D1 = GammaWrap3[((RotateLeft[#] & /@ RotateLeft[#]) & /@ dat) - dat] + GammaWrap3[((RotateRight[#] & /@ RotateRight[#]) & /@ dat) - dat];
-    D2 = GammaWrap3[((RotateLeft[#] & /@ RotateRight[#]) & /@ dat) - dat] + GammaWrap3[((RotateRight[#] & /@ RotateLeft[#]) & /@ dat) - dat];
-    D3 = GammaWrap3[(RotateLeft[#] & /@ datL) - dat] + GammaWrap3[(RotateRight[#] & /@ datR) - dat];
-    D4 = GammaWrap3[(RotateLeft[#] & /@ datR) - dat] + GammaWrap3[(RotateRight[#] & /@ datL) - dat];
-    D5 = GammaWrap3[(RotateLeft[#] & /@ #) & /@ datL - dat] + GammaWrap3[(RotateRight[#] & /@ #) & /@ datR - dat];
-    D6 = GammaWrap3[(RotateLeft[#] & /@ #) & /@ datR - dat] + GammaWrap3[(RotateRight[#] & /@ #) & /@ datL - dat];
-    D7 = GammaWrap3[((RotateLeft[#] & /@ RotateLeft[#]) & /@ datL) - dat] + GammaWrap3[((RotateRight[#] & /@ RotateRight[#]) & /@ datR) - dat];
-    D8 = GammaWrap3[((RotateRight[#] & /@ RotateLeft[#]) & /@ datL) - dat] + GammaWrap3[((RotateLeft[#] & /@ RotateRight[#]) & /@ datR) - dat];
-    D9 = GammaWrap3[((RotateLeft[#] & /@ RotateRight[#]) & /@ datL) - dat] + GammaWrap3[((RotateRight[#] & /@ RotateLeft[#]) & /@ datR) - dat];
-    D10 = GammaWrap3[((RotateLeft[#] & /@ RotateLeft[#]) & /@ datR) - dat] + GammaWrap3[((RotateRight[#] & /@ RotateRight[#]) & /@ datL) - dat];
-    
-    ArrayPad[H^2 + V^2 + P^2 + D1^2 + D2^2 + D3^2 + D4^2 + D5^2 + D6^2 + D7^2 + D8^2 + D9^2 + D10^2, -1]
-    ]
-   ]
-  ]
+MakeGroups[data_] := MakeGroups[data, 1]
+MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,mclus,clus,groupsize,groups,groupnr,mask},
+	(*get data properties*)
+	dep=ArrayDepth[data];
+	dim=Dimensions[data];
+	fun=If[dep==2,Image,Image3D];
+	
+	(*maske a mask if needed*)
+	mask=If[maski===1,Closing[Mask[Ceiling[Abs@data],1],1],maski];
+	
+	(*find mask ranges*)
+	{min,max}=MinMax[data];
+	part=Partition[Range[min,max,(max-min)/6]//N,2,1];
+	
+	(*remove background form masks, and create masks*)
+	dat=data/. 0->(-2min);
+	masks=Mask[dat,#]&/@part;
+	
+	(*make groups from masks*)
+	mclus=0;
+	groups=Total[(
+		(*make groups from masks and only keeps groups*)
+		clus=MorphologicalComponents[DeleteSmallComponents[fun[#]]];
+		clus=Clip[clus,{0,1}](mclus+clus);
+		(*find max group number and export*)
+		mclus=Max[clus];clus
+	)&/@masks];
+	groups=groups+mask;
+	
+	(*create outputs, the size vector and group nrs*)
+	groupsize=ConstantArray[0,Count[Flatten[groups],1]];
+	(groupsize[[#]]=Count[groups,#,2])&/@Range[1,Max[groups]];
+	groupnr=Max[groups];
+	{groups,groupsize,groupnr}
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -1171,7 +1171,7 @@ Module[{coor,f,fr,df,dfr},
 	];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*SplitSets*)
 
 
@@ -1341,6 +1341,8 @@ Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1
 	];
 	
 
+
+
 (* ::Subsubsection::Closed:: *)
 (*Joini*)
 
@@ -1360,8 +1362,8 @@ Joini[sets_, setover_, step_] := Module[{over,dato,unit,noZero,tot},
   ]
 
 
-JoinFuncC = Module[{ran, unit, tot1, out},
-	Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0}, {steps, _Integer, 0}},
+JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0}, {steps, _Integer, 0}},
+	Block[{ran, unit, tot1, out},
     If[tot === 0,
      (*all zeros, no overlap of signals so just the sum of signals*)
      out = Total[(0 dat + 1) dat];
@@ -1385,8 +1387,8 @@ JoinFuncC = Module[{ran, unit, tot1, out},
       out = Total[unit dat]
       ]];
     (*give the output*)
-    out,
-    {{out, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+    out],
+    {{out, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
@@ -1630,13 +1632,11 @@ SyntaxInformation[CutData] = {"ArgumentsPattern" -> {_,_.}}
 
 CutData[data_]:=CutData[data,FindMiddle[data]]
 
-CutData[data_,cut_] := Switch[
-		ArrayDepth[data],
+CutData[data_,cut_] := Switch[ArrayDepth[data],
 		4,{data[[All, All, All, ;; cut]],data[[All, All, All, (cut + 1) ;;]],cut},
-		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}
-]
+		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}]
 
-FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center},
+FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran},
   
 	(*flatten mean and normalize data*)
 	dat=dati;
@@ -1645,23 +1645,25 @@ FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center},
 	dat = N@Nest[Mean, dat, ArrayDepth[dat] - 1];
 	len = Length[dat];
 	dat = len dat/Max[dat];
+	mask = UnitStep[dat - .1 len];
+	ran = Flatten[Position[mask, 1][[{1, -1}]]];
 	
 	(*smooth the data a bit*)
-	datf = len - GaussianFilter[dat, len/20];
+	datf = len - GaussianFilter[mask dat, len/20];
 	(*find the peaks*)
 	peaks = FindPeaks[datf];
 	peaks = If[Length[peaks] >= 3, peaks[[2 ;; -2]], peaks];
+	peaks = Select[peaks, (ran[[1]] < #[[1]] < ran[[2]]) &];
 	
 	(*find the most middle peak*)
 	mid = Round[Length[dat]/2];
-	center = {mid, len};
+	center = {mid, .75 len};
 	peak = Nearest[peaks, center];
 	
-	(*Print[Show[
-	ListLinePlot[{len-dat,datf},PlotStyle\[Rule]{Black,Orange}],ListPlot[{\
-	peaks,peak,{center}},PlotStyle\[Rule](Directive[{PointSize[Large],#}]&\
-	/@{Blue,Red,Green})]
-	]]*)
+	Print[Show[
+	ListLinePlot[{len-dat,datf}, PlotStyle->{Black,Orange}],
+	ListPlot[{peaks,peak,{center}},PlotStyle->(Directive[{PointSize[Large],#}]&/@{Blue,Red,Green})]
+	,ImageSize->100]];
 	
 	(*output*)
 	Round[First@First@peak]
@@ -1702,10 +1704,7 @@ DataTranformation[data_, vox_, wi_,OptionsPattern[]] :=
     Transpose[{Flatten[coor, ArrayDepth[coor] - 2], Flatten[data]}], 
     InterpolationOrder -> OptionValue[InterpolationOrder], 
     "ExtrapolationHandler" -> {0. &, "WarningMessage" -> False}];
-  interFuncC = 
-   Compile[{{coor, _Real, 1}}, 
-    interFunc[coor[[1]], coor[[2]], coor[[3]]], 
-    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+  interFuncC = Compile[{{coor, _Real, 1}}, interFunc[coor[[1]], coor[[2]], coor[[3]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
   interFuncC[coorR]
   ]
 

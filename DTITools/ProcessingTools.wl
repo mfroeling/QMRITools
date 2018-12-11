@@ -412,98 +412,94 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 (*FindOutliers*)
 
 
-FindTensOutliers = Quiet@Block[{ittA,itt,contA,cont,sol,solA,soli,res,weigths, wmat,fitE,LS2,bmat2,mad,out}, 
-  	Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}},
-  		If[AllTrue[LS, 0. === # &]||Total[Unitize[LS]]<7,
-  			(*skip if background*)
-  			out = 0. LS;
-  			,
-  			(*Find the outliers*)
-  			(*initialize*)
-  			ittA = 0; contA = 1;
-  			(*Step1: initial LLS fit*)
-  			sol = LeastSquares[bmat,LS];
-  			
-  			(*check if LLS fit is plausable*)
-  			If[Negative[Last[sol]],
-  				out = 0. LS;
-  				,
-	  			While[contA == 1,(*init itteration values*)
-	  				ittA++;
-	  				solA = sol;
+FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}},	Block[
+		{ittA, contA, solA, itt, cont, soli, res, mad, wts, wmat, fitE, LS2, bmat2, out},
+		(*initialize some values*)
+		out = 0. LS; LS2 = LS; bmat2 = bmat;
+		
+		(*skip if background*)
+	  	If[Total[Unitize[LS]] >= 7 ,
+	  		(*If not background find the outliers*)
+	  		(*moniotr the overall while loop*)
+	  		ittA = 0; contA = 1;
+	  			
+	  		(*Step1: initial LLS fit*)
+	  		sol = LeastSquares[bmat,LS];
+	  			
+	  		(*check if LLS fit is plausable, i.e. S0 > 0*)
+	  		If[Last[sol]>0,
+	  			While[contA == 1,ittA++;
+	  			(*init the solution*)
+	  			solA = sol;
 	  				
-	  				itt = 0; cont = 1;
-	  				(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
-	  				While[cont == 1,
-	  					itt++;
-	  					soli = sol;
-	  					(*a. Calculate the residuals e* in the linear domain*)
-	  					res = LS - bmat.sol;
-	  					(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-	  					mad = 1.4826 MedianDeviation[res];
-	  					(*prevent calculation with 0*)
-	  					If[AllTrue[res, (0. === #) &] || mad === 0.,
-	  						cont = 0,
-	  						(*c. Recompute the weights according to Eq. [13].*)
-	  						
-	  						weigths = 1/(1 + (res/mad)^2)^2;
-	  						(*d. Perform WLLS fit with new weights*)
-	  						wmat = DiagonalMatrix[weigths];
-	  						sol = LeastSquares[Transpose[bmat].wmat.bmat, Transpose[bmat].wmat.LS];
-	  						(*e. Check convergence*)
-	  						If[!AnyTrue[Abs[sol - soli] - con (Max /@ Transpose[{Abs[sol], Abs[soli]}]),Positive] || itt === 5, cont = 0];
-	  					];
-	  				];(*end first while*)
-	   
-					itt = 0; cont = 1;
-	   
-					(*Step 3: Transform variables for heteroscedasticity*)
-					fitE = Exp[bmat.sol]+10^-6;
-					LS2 = LS / fitE;
-					bmat2 = bmat / fitE;
-									
-					(*Step 4: Initial LLS fit in * domain*)
-					sol = LeastSquares[bmat2,LS2];
-	   
-					(*Step 5: Compute a robust estimate for homoscedastic regression using IRLS.*)
-					While[cont == 1,
-						itt++;
-						soli = sol;
-						(*a. Calculate the residuals e* in the linear domain*)
-						res = LS2 - bmat2.sol;
-						(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-						mad = 1.4826 MedianDeviation[res];
-						(*prevent calculation with 0*)
-						If[AllTrue[res, (0. === #) &] || mad === 0.,
-							cont = 0,
-							(*c. Recompute the weights according to Eq. [13].*)
-							weigths = 1/(1 + (res/mad)^2)^2;
-							(*d. Perform WLLS fit with new weights*)
-							wmat = DiagonalMatrix[weigths];
-							sol = LeastSquares[Transpose[bmat2].wmat.bmat2, Transpose[bmat2].wmat.LS2];
-							(*e. Check convergence*)
-							If[!AnyTrue[Abs[sol - soli] - con (Max /@ Transpose[{Abs[sol], Abs[soli]}]),Positive] || itt === 5, cont = 0];
-						];
-					];(*end second while*)
-					
-					(*Step 6: Check convergence overall loop*)
-					If[! AnyTrue[Abs[sol - solA] - con (Max /@ Transpose[{Abs[sol], Abs[solA]}]), Positive] || ittA === 10, contA = 0];
-				];(*end main while*)
-  			
+	  			(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
+	  			itt = 0; cont = 1;
+	  			While[cont == 1, itt++;
+	  				soli = sol;
+	  				(*a. Calculate the residuals e* in the linear domain*)
+	  				res = LS - bmat.sol;
+	  				(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
+	  				mad = Chop[1.4826 MedianDeviation[res]];
+	  				(*prevent calculation with 0*)
+	  				If[AllTrue[res, (0. === #) &] || mad === 0.,
+	  					cont = 0,
+	  					(*c. Recompute the weights according to Eq. [13].*)
+	  					wts = 1 / (1 + (res/mad)^2)^2;
+	  					(*d. Perform WLLS fit with new weights*)
+	  					wmat = Transpose[bmat].DiagonalMatrix[wts];
+	  					sol = Chop[LeastSquares[wmat.bmat, wmat.LS]];
+	  					(*e. Check convergence*)
+	  					If[!AnyTrue[Abs[sol - soli] - con (Max /@ Transpose[{Abs[sol], Abs[soli]}]),Positive] || itt === 5, cont = 0];
+	  				];
+	  			];(*end first while*)
+	
+				(*Step 3: Transform variables for heteroscedasticity*)
+				fitE = Exp[bmat.sol] + 10^-10;
+				LS2 = LS / fitE;
+				bmat2 = bmat / fitE;
 				
-				(*Step 7: Identify and exclude outliers*)
-				res = LS2 - bmat2.sol;
-				out = UnitStep[Abs[res] - (kappa 1.4826 MedianDeviation[res])];
+				(*Step 4: Initial LLS fit in * domain*)
+				sol = LeastSquares[bmat2,LS2];
+	   
+				(*Step 5: Compute a robust estimate for homoscedastic regression using IRLS.*)
+				itt = 0; cont = 1;
+				While[cont == 1, itt++;
+					soli = sol;
+					(*a. Calculate the residuals e* in the linear domain*)
+					res = LS2 - bmat2.sol;
+					(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
+					mad = Chop[1.4826 MedianDeviation[res]];
+					(*prevent calculation with 0*)
+					If[AllTrue[res, (0. === #) &] || mad === 0.,
+						cont = 0,
+						(*c. Recompute the weights according to Eq. [13].*)
+						wts = 1 / (1 + (res/mad)^2)^2;
+						(*d. Perform WLLS fit with new weights*)
+						wmat = Transpose[bmat2].DiagonalMatrix[wts];
+						sol = Chop[LeastSquares[wmat.bmat2, wmat.LS2]];
+						(*e. Check convergence*)
+						If[!AnyTrue[Abs[sol - soli] - con (Max /@ Transpose[{Abs[sol], Abs[soli]}]),Positive] || itt === 5, cont = 0];
+					];
+				];(*end second while*)
+			
+				(*Step 6: Check convergence overall loop*)
+				If[!AnyTrue[Abs[sol - solA] - con (Max /@ Transpose[{Abs[sol], Abs[solA]}]), Positive] || ittA === 10, contA = 0];
+			];(*end main while*)
+	  			
+			(*Step 7: Identify and exclude outliers*)
+			res = LS2 - bmat2.sol;
+			out = UnitStep[Abs[res] - (kappa 1.4826 MedianDeviation[res])];
 			
 			];(*close if negative S0*)
 		];(*close if background*)
 		
 		out
-		
-		,{{wmat, _Real, 2}, {bmat2, _Real, 2}, {out, _Real, 1}},
-		RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
-	](*close compile*)
-];
+	],
+	
+	{{sol, _Real, 1}},
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationOptions -> {"ExpressionOptimization" -> False}
+]
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -519,38 +515,39 @@ TensMinLLS = Compile[{{LS, _Real, 1}, {bmatI, _Real, 2}},
 (*WLLS*)
 
 
-TensMinWLLS = Block[{wmat,mvec,sol},
-	Compile[{{S, _Real, 1},{LS, _Real, 1},{bmat, _Real, 2}}, 
-	    If[AllTrue[LS, 0. === # &]||Total[Unitize[LS]]<7,
-	    	sol = ConstantArray[0., Length@First@bmat]
-	    	,
-	    	mvec = UnitStep[LS] Unitize[LS]; (*if 0 then it is not used because w=0*)
+TensMinWLLS = Compile[{{S, _Real, 1},{LS, _Real, 1},{bmat, _Real, 2}}, 
+	Block[{wmat,mvec,sol},
+		sol = 0. First[bmat];
+		If[!(AllTrue[LS, 0. === # &] || Total[Unitize[LS]] < 7),
+	    	mvec = UnitStep[LS] Unitize[LS]; 
+	    	(*if 0 then it is not used because w=0*)
 	    	wmat = DiagonalMatrix[mvec S^2];
-	    	sol = LeastSquares[Transpose[bmat].wmat.bmat,Transpose[bmat].wmat.LS];
+	    	sol = LeastSquares[Transpose[bmat].wmat.bmat,Transpose[bmat].wmat.LS]
 	    ];
-	    sol
-    ,{{wmat,_Real,2}, {sol, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+	    sol]
+    ,{{wmat,_Real,2}, {sol, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*iWLLS*)
 
 
-TensMiniWLLS = Block[{wmat, mat, cont, itt, mvec, soli, max, sol, w},
-   Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
+TensMiniWLLS = Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
+	Block[{wmat, mat, cont, itt, mvec, soli, sol0, max, sol, w},
     mvec = UnitStep[S] Unitize[S];
     max = Max[mvec S];
-    If[AllTrue[LS, 0. === # &] || Total[mvec] <= 7,
-     (*skip background or not enough data for fit*)
-     sol = 0. First@bmat;
-     ,
-     (*initialize*)itt = 0;
+    sol = 0. First[bmat];
+    sol0 = sol;
+    (*skip background or not enough data for fit*)
+    If[!(AllTrue[LS, 0. === # &] || Total[mvec] <= 7),
+     (*initialize*)
+     itt = 0;
      cont = 1;
      (*initialize using LLS*)
      sol = LeastSquares[bmat, LS];
      (*check for implausabole solution (negative S0)*)
      If[Last[sol] >= 3*max || Last[sol] <= 0,
-      sol = 0. First@bmat;
+      sol = sol0;
       ,
       (*itterative reweighting*)
       While[cont == 1,
@@ -565,12 +562,10 @@ TensMiniWLLS = Block[{wmat, mat, cont, itt, mvec, soli, max, sol, w},
        (*see if to quit loop*)
        If[ Last[sol] >= 3*max || Last[sol] <= 0, cont=0;  sol = 0. First@bmat];
        If[! AnyTrue[Abs[sol - soli] - 0.0001 (Max /@ Transpose[{Abs[sol], Abs[soli]}]), Positive] || itt === 10 , cont = 0];
-       ](*close while*)
-      ];(*close if S0*)
-     ];(*close if back*)
-    sol, 
+       ]]];
+    sol], 
     {{mat, _Real, 2}, {wmat, _Real, 2}, {sol, _Real, 1}},
-    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
         
 
 (* ::Subsubsection::Closed:: *)
@@ -1113,7 +1108,7 @@ SyntaxInformation[ParameterFit] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 ParameterFit[dat : {_?ListQ ..}, opts : OptionsPattern[]] := ParameterFit[Flatten[#], opts] & /@ dat
 
-ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, sdat, fdat},
+ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, sdat, fdat, sol ,par, fun},
   
   (*get option values*)
   mod = OptionValue[FitFunction];
