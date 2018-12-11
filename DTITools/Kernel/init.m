@@ -40,7 +40,7 @@ ClearFunctions[pack_,subpack_,print_:False]:=Module[{packageName,packageSymbols,
 		Unprotect @@ packageSymbolsG;
 		ClearAll @@ packageSymbolsG;
 		Remove @@ packageSymbolsG;
-		
+
 		]& /@ subpack;
 ];
 
@@ -53,6 +53,7 @@ LoadPackages[pack_,subpack_,print_:False,run_:1]:=Module[{},
 			Print["Loading all definitions of "<>#<>", run 2."]
 		];];
 		Get[pack<>#];
+		(*ParallelEvaluate[Get[pack<>#]]*)
 	)&/@subpack;
 ]
 
@@ -74,7 +75,7 @@ ProtectFunctions[pack_,subpack_,print_:False]:=Module[{},
 
 (*Change Default settings*)
 (*prevents the excessive use of memory with large data sets*)
-$HistoryLength = 0; (*ParallelEvaluate[$HistoryLength = 0];*)
+$HistoryLength = 0;
 
 
 (*add all mathematica packages to the context path*)
@@ -99,7 +100,7 @@ $ContextPath = Union[$ContextPath, System`$DTIToolsContextPaths]
 Needs["CCompilerDriver`"]
 System`$DTIToolsCompiler = If[Length[CCompilers[]] > 0, "WVM", "WVM"];
 *)
-System`$DTIToolsCompiler = "WVM";
+(*System`$DTIToolsCompiler = "WVM";*)
 
 
 (*state if verbose is true to monitor initialization*)
@@ -125,3 +126,4 @@ LoadPackages[package,subPackages,DTITools`verbose,1];
 LoadPackages[package,subPackages,DTITools`verbose,2];
 (*Protect functions*)
 ProtectFunctions[package,subPackages,DTITools`verbose];
+

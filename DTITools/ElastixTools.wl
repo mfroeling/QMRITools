@@ -370,7 +370,7 @@ _,
 "",
 _,
 "(AutomaticTransformInitialization \"true\")
-(AutomaticScalesEstimation \"true\")"
+(AutomaticScalesEstimation "<>If[type=="affineDTI"||type=="rigidDTI", "\"false\"", "\"true\""]<>")"
 ]<>"
 
 // *********************
@@ -383,8 +383,8 @@ _,
 // *********************
 (NumberOfHistogramBins "<>ToString[bins]<>")
 "<>Switch[type,
-"affineDTI",""(*"(Scales -1.000000e+00 -1.000000e+00 -1.000000e+00  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06  1.000000e+06 -1.000000e+00 -1.000000e+00 -1.000000e+00)"*),
-"rigidDTI","(Scales -1.000000e+00 -1.000000e+00 -1.000000e+00  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38  3.000000e+38 -1.000000e+00 -1.000000e+00 -1.000000e+00)",
+"affineDTI","(Scales 1.0e+06 1.0e+06 1.0e+06  1.0e+06  1.0e+06  1.0e+06  1.0e+06  1.0e+06  1.0e+06 1.0e+06 1.0e+06 1.0e+06)",
+"rigidDTI","(Scales -1.0 -1.0 -1.0  3.0e+38  3.0e+38  3.0e+38  3.0e+38  3.0e+38  3.0e+38 -1.0 -1.0 -1.0)",
 "PCA",
 "(ImagePyramidSchedule "<>SchedulePar[resolutions]<>")",
 "cyclyc",
@@ -520,7 +520,7 @@ RunElastix[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,movingi
 		"\n"<>copy<>" \n"<>
 		"exit";
 	];
-	(*Print[command];*)
+	Print[command];
 	(*perform elastix on system shell*)	
 	RunProcess[$SystemShell,"StandardOutput",command];
 ]
@@ -665,13 +665,13 @@ RunBatfileT[tempdir_, command_] := Block[{batfile, com},
 (*TransformixCommand*)
 
 
-TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol},
+TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   transformix = FindTransformix[];
   transFol = StringDrop[DirectoryName[transformix, 2], -1];
   
   volDirs = FileNames["vol*", tempDir, 1];
   
-  Switch[$OperatingSystem,
+  command=Switch[$OperatingSystem,
   	"Windows",
   	(
   		"@ \"" <> transformix <>
@@ -693,7 +693,9 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol},
 	    " > " <> # <> "/outputa.txt \n" <>
   		" mv " <> # <> "/result.nii.gz "<> # <> "/resultA-3D.nii.gz \n"
   	) & /@ volDirs
-  ]
+  ];
+  Print[command];
+  command
 ]
 
 

@@ -354,7 +354,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   max = 1.1 Max[Abs[data]];
   
   (*correct output data for weightings*)
-  datao = Clip[Transpose[DevideNoZero[#, weights] & /@ Transpose[datao]],{-max, max}];
+  datao = Clip[Transpose[DevideNoZero[#, weights] & /@ Transpose[datao]],{0, max}];
   sigmat = DevideNoZero[sigmat, weights];
   output = ArrayPad[#, off] & /@ TransData[output, "r"];
   
@@ -380,7 +380,7 @@ MarchenkoPasturCi=Compile[{{lab,_Real,0},{Q,_Real,0},{sig,_Real,0}},
 		labp=sig2 (1+Qs)^2;
 		(*define piecewise function*)
 		Piecewise[{{Sqrt[(labp-lab) (lab-labm)]/(2 Pi sig2 Q lab),labm<lab<labp}},0]
-],RuntimeAttributes->{Listable}, RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
+],RuntimeAttributes->{Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -454,7 +454,7 @@ HistListC = Compile[{{dat, _Real, 1}, {nbins, _Integer, 0}}, Block[
      (*output the data*)
      Transpose[{xdat, ydat}]
      ]], 
-	RuntimeOptions -> "Speed", CompilationTarget->System`$DTIToolsCompiler];
+	RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -587,8 +587,7 @@ GridSearch = Compile[{{eig, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}},
      ];
     (*give output,number of noise comp and sigma*)
     {pi, Sqrt[(eq1 + eq2)/2]}], 
-    RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler, Parallelization -> True
-];
+    RuntimeOptions -> "Speed",  Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -611,7 +610,7 @@ GridSearchSig = Compile[{{eig, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {s
      ];
     (*give output,number of noise comp and sigma*)
     {pi, sig}],
-   RuntimeOptions -> "Speed", CompilationTarget -> System`$DTIToolsCompiler, Parallelization -> True];
+   RuntimeOptions -> "Speed",  Parallelization -> True];
 
 
 (* ::Subsection:: *)
