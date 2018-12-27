@@ -1,0 +1,268 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9212,        259]
+NotebookOptionsPosition[      6119,        193]
+NotebookOutlinePosition[      7979,        241]
+CellTagsIndexPosition[      7936,        238]
+WindowTitle->AddNoise
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"SimulationTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/SimulationTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/AddNoise\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/AddNoise"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/AddNoise.\
+html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]}, Visible -> 
+            False]]; SelectionMove[
+         DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$32317], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/AddNoise", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["AddNoise", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+AddNoise[data, noise]\[LineSeparator]ads rician noise to the data with a \
+given sigma or SNR value.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["NoiseSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/NoiseSize"], "Sigma", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["NoiseSize"]],"paclet:QMRITools/ref/NoiseSize"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["AddNoise"], "InlineFormula"],
+     ". ",
+     "Values",
+     " can be \"Sigma\", then the noise sigma is given or \"SNR\", then the \
+SNR is given."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["SimulationTools"]],"paclet:QMRITools/guide/SimulationTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"AddNoise",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 47, 52.0226746}", 
+    "history" -> {"XX", "", "", ""}, "context" -> 
+    "QMRITools`SimulationTools`", "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "AddNoise[data, noise] ads rician noise to the data with a given sigma or \
+SNR value.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "AddNoise", 
+    "titlemodifier" -> "", "windowtitle" -> "AddNoise", "type" -> "Symbol", 
+    "uri" -> "QMRITools/ref/AddNoise"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[580, 21, 3048, 74, 70, "AnchorBarGrid",ExpressionUUID->"6c7ec38a-1724-431c-82ef-1dba42ccaf5f",
+ CellID->1],
+Cell[3631, 97, 165, 6, 70, "ObjectNameGrid",ExpressionUUID->"454f0d37-6f8a-468e-a02c-1bdafbb7c5b6"],
+Cell[3799, 105, 301, 9, 70, "Usage",ExpressionUUID->"6db00582-6fca-42a2-9d65-af314db5fdac"],
+Cell[CellGroupData[{
+Cell[4125, 118, 621, 19, 70, "NotesSection",ExpressionUUID->"0738ef65-37c5-41f8-b2b8-453dd49a2249",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[4749, 139, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"955c2973-3e9a-43dc-9ed5-f614a9a25c5a"],
+Cell[4783, 141, 53, 0, 70, "Notes",ExpressionUUID->"81b0b5f6-e068-4c39-abaa-d59eb9a24636"],
+Cell[4839, 143, 799, 22, 70, "3ColumnTableMod",ExpressionUUID->"f048f7a8-0513-4791-a756-62d070e5f3ca"],
+Cell[5641, 167, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"2b5c7dc9-6ad0-4868-a078-9bb5b1fad9eb"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[5709, 172, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"8f6e0647-0ba9-45ed-8f5f-b8070d57651d",
+ CellID->38303248],
+Cell[5868, 181, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"3760cb88-7f75-474a-8947-96447d0cf276"],
+Cell[5902, 183, 175, 5, 70, "MoreAbout",ExpressionUUID->"3cd01626-e04a-405c-8606-23d5ed6a7dd3",
+ CellID->1]
+}, Open  ]],
+Cell[6092, 191, 23, 0, 70, "FooterCell",ExpressionUUID->"5d2cbf99-b62f-4db5-a24e-0e365d17c965"]
+}
+]
+*)
+
+(* End of internal cache information *)

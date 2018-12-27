@@ -1,0 +1,273 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9590,        264]
+NotebookOptionsPosition[      6269,        195]
+NotebookOutlinePosition[      8356,        246]
+CellTagsIndexPosition[      8313,        243]
+WindowTitle->PlotContour
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"PlottingTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/PlottingTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/PlotContour\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/PlotContour"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+PlotContour.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$190230], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/PlotContour", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["PlotContour", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[
+    "PlotContour[data, vox]\[LineSeparator]creates a contour of the data. \
+"]},
+   {"", Cell["\<\
+PlotContour[data, vox, scale]\[LineSeparator]creates a contour of the data \
+with the surface colored acording to scale. \
+\>"]},
+   {"", Cell["\<\
+PlotContour[data, vox, scale, range]\[LineSeparator]creates a contour of the \
+data with the surface colored acording to scale with a fixed plotrange.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ContourStyle",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/ContourStyle"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"GrayLevel", "[", "0.5", "]"}], ",", " ", "0.25"}], "}"}], 
+    Cell["\<\
+ContourStyle is an option for contour plots that specifies the style in which \
+contour lines or surfaces should be drawn. \
+\>", "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["PlottingTools"]],"paclet:QMRITools/guide/PlottingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"PlotContour",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 57, 32.9505680}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`PlottingTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "PlotContour[data, vox] creates a contour of the data. PlotContour[data, \
+vox, scale] creates a contour of the data with the surface colored acording \
+to scale. PlotContour[data, vox, scale, range] creates a contour of the data \
+with the surface colored acording to scale with a fixed plotrange.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "PlotContour", 
+    "titlemodifier" -> "", "windowtitle" -> "PlotContour", "type" -> "Symbol",
+     "uri" -> "QMRITools/ref/PlotContour"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[583, 21, 3058, 74, 70, "AnchorBarGrid",ExpressionUUID->"cf2db4aa-cdd9-464c-b7d0-b4be3d9c94f0",
+ CellID->1],
+Cell[3644, 97, 168, 6, 70, "ObjectNameGrid",ExpressionUUID->"30f896b2-6074-4a4e-b5fb-1bcee52968f4"],
+Cell[3815, 105, 606, 16, 70, "Usage",ExpressionUUID->"1e615dc7-b580-450e-a22c-36a35ab02712"],
+Cell[CellGroupData[{
+Cell[4446, 125, 621, 19, 70, "NotesSection",ExpressionUUID->"c5501728-4391-4b3f-87a7-13c82a14b5cd",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5070, 146, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"42670ef0-3b0f-490c-a9b2-7c0d52400172"],
+Cell[5104, 148, 53, 0, 70, "Notes",ExpressionUUID->"f04698df-5f3f-4bf7-b216-e1de88468e2b"],
+Cell[5160, 150, 632, 17, 70, "3ColumnTableMod",ExpressionUUID->"08df757b-29f6-446e-a699-54eee7815724"],
+Cell[5795, 169, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"ef7dcea9-e3f7-45bf-a0fc-4773231b9ba7"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[5863, 174, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"9a5cd486-7591-4fec-816a-85b04e5fdbbe",
+ CellID->38303248],
+Cell[6022, 183, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"26b63e00-9631-4a9f-903e-78425d5ead0c"],
+Cell[6056, 185, 171, 5, 70, "MoreAbout",ExpressionUUID->"d88e6310-d15c-481b-8141-04aa471ee4ef",
+ CellID->1]
+}, Open  ]],
+Cell[6242, 193, 23, 0, 70, "FooterCell",ExpressionUUID->"a811d4c9-a98f-471d-86fe-dfbbd4f25cbf"]
+}
+]
+*)
+
+(* End of internal cache information *)

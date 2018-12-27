@@ -42,9 +42,6 @@ MN[data1,data2] / (.5 SQRT[2] STDV[data2-data1]).
 SNRMapCalc[{data1, .. dataN}] calcualtes the signal to noise ratio of the data using MN/sigma where the mean signal MN is the average voxe \
 value over all dynamics N and the sigma is the standard deviation over all dynamics N."
 
-CoilSNRCalc::usage = 
-"CoilSNRCalc[coils, noise] calculates the sensitivity weighted snr of multiple coil elements using magnitude signal and noise."
-
 FitData::usage = 
 "FitData[data,range] converts the data into 100 bins within the +/- range around the mean. Function is used in ParameterFit."
 
@@ -172,6 +169,40 @@ JoinSetSplit::usage =
 
 PaddOverlap::usage = 
 "PaddOverlap is an option of CorrectJoinSetMotion and JoinSets. it allows for extra motion in the z direction."
+
+
+OutlierMethod::usage = 
+"OutlierMethod is an option for FindOutliers. values can be \"IQR\", \"SIQR\" or \"aIQR\". \"IRQ\" is used for normly distributed data, \"SIQR\" or \"aIQR\" are better for skewed distributions."
+
+OutlierOutput::usage = 
+"OutlierOutput is an option for FindOutliers. If value is \"Mask\" it gives a list of 1 for data and 0 for outliers. Else the output is {data, outliers}."
+
+OutlierIterations::usage = 
+"OutlierIterations is an option for FindOutliers. Specifies how many iterations are used to find the outliers. 
+Each itteration the outliers are reevaluated on the data with the previously found outliers alread rejected."
+
+OutlierRange::usage = 
+"OutlierRange is an option for FindOutliers. Specifies how many times the IQR is considred an oulier."
+
+OutlierIncludeZero::usage = 
+"OutlierIncludeZero is an option for FindOutliers. If set to True all values that are zero are ignored and considered outliers."
+
+
+Strictness::usage = 
+"Strictness is an option for SmartMask value between 0 and 1. Higer values removes more data."
+
+MaskCompartment::usage = 
+"MaskCompartment is an option for SmartMask. Can be \"Muscle\" or \"Fat\"."
+
+SmartMethod::usage = 
+"SmartMethod is an option for SmartMask. This specifies how the mask is generated. Can be \"Continuous\" or \"Catagorical\""
+
+SmartMaskOutput::usage = 
+"SmartMaskOutput is an option for Smartmask. Can be set to \"mask\" to output only the mask or \"full\" to also output the probability mask."
+
+
+TableMethod::usage = 
+"TableMethod is an option for NumberTableForm. It specifies which number form to uses. Values can be NumberForm, ScientificForm or EngineeringForm"
 
 
 (* ::Subsection::Closed:: *)
@@ -433,6 +464,8 @@ Chop[(2/Omega)(1/(E^(((x-Xi)/Omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((Alpha (x-Xi)/Om
 
 Options[FindOutliers] = {OutlierMethod -> "IQR", OutlierOutput -> "Mask", OutlierIterations -> 1, OutlierRange -> 2, OutlierIncludeZero -> True}
 
+SyntaxInformation[FindOutliers] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
 FindOutliers[datai_?VectorQ, opts:OptionsPattern[]]:=FindOutliers[datai,1,opts]
 
 FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
@@ -648,38 +681,6 @@ SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] :=
 	 _, snr
 	 ]
  ]
-
-
-(* ::Subsection::Closed:: *)
-(*CoilSNR*)
-
-
-SyntaxInformation[CoilSNRCalc] = {"ArgumentsPattern" -> {_, _}};
-
-(*calculate the combineds snr form multiple coils images*)
-CoilSNRCalc[coils_, noise_] := 
- Block[{mn, sigmap, coilsN, noiseN, sumSquares, weights, snr},
-  (*get mean noise*)
-  mn = MeanNoZero@Flatten@N@noise;
-  (*normalize all coils to constant noise level*)
-  coilsN = 10. coils/mn;
-  noiseN = 10. noise/mn;
-  (*calcualte the sum of squares signal*)
-  {sumSquares, weights} = SumOfSquares[coilsN];
-  (*calculated the weitghted noise addition*)
-  {snr, sigmap} = WeigthedSNR[coilsN, noiseN, weights];
-  
-  {coilsN, noiseN, weights, sumSquares, sigmap, snr}
-  ]
-
-
-WeigthedSNR[signal_, noise_, weights_] := Block[{sigmap, sigtot, snr},
-  sigtot = Total[signal weights];
-  sigmap = 
-   Sqrt[Total[weights^2 (Sqrt[2./Pi] GaussianFilter[noise, 3])^2]];
-  snr = DevideNoZero[sigtot, sigmap];
-  {snr, sigmap}
-  ]
 
 
 (* ::Subsection::Closed:: *)

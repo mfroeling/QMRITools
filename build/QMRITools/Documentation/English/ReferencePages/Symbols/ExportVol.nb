@@ -1,0 +1,267 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9215,        258]
+NotebookOptionsPosition[      6107,        192]
+NotebookOutlinePosition[      7982,        240]
+CellTagsIndexPosition[      7939,        237]
+WindowTitle->ExportVol
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"VisteTools\"\>":>Documentation`HelpLookup[
+       "paclet:QMRITools/guide/VisteTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/ExportVol\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/ExportVol"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+ExportVol.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
+             Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$95659], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/ExportVol", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["ExportVol", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+ExportVol[filename, data, voxsize]\[LineSeparator]exports a .vol and .raw \
+file which can be loaded in DTItool 3.0.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["BinaryType",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/BinaryType"], "Integer16", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["BinaryType"]],"paclet:QMRITools/ref/BinaryType"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["ExportVol"], "InlineFormula"],
+     " and must be \"Integer16\" for an integer array and \"Real32\" for a \
+Double array."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["VisteTools"]],"paclet:QMRITools/guide/VisteTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"ExportVol",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 51, 44.3819549}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`VisteTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "ExportVol[filename, data, voxsize] exports a .vol and .raw file which \
+can be loaded in DTItool 3.0.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "ExportVol", "titlemodifier" -> "", "windowtitle" -> "ExportVol", "type" -> 
+    "Symbol", "uri" -> "QMRITools/ref/ExportVol"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[581, 21, 3041, 74, 70, "AnchorBarGrid",ExpressionUUID->"71757320-c509-4aa6-8698-1a0f8a42a3be",
+ CellID->1],
+Cell[3625, 97, 166, 6, 70, "ObjectNameGrid",ExpressionUUID->"16c2f4e1-5d75-4dd7-921d-2e6d8965e52c"],
+Cell[3794, 105, 317, 9, 70, "Usage",ExpressionUUID->"530cac9c-ec5d-4b53-8f38-d42c9b81fc8f"],
+Cell[CellGroupData[{
+Cell[4136, 118, 621, 19, 70, "NotesSection",ExpressionUUID->"b52a1776-fccf-4272-aeb7-1fbdfe1a2232",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[4760, 139, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"b37d9073-56d9-44d9-be09-edc6901a7399"],
+Cell[4794, 141, 53, 0, 70, "Notes",ExpressionUUID->"b6891a6a-eb80-46cd-8174-f4f1ae473715"],
+Cell[4850, 143, 786, 21, 70, "3ColumnTableMod",ExpressionUUID->"af001ea9-69aa-4e55-915f-234f4099c0c5"],
+Cell[5639, 166, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"47aa758d-85d4-4746-8d3b-588a778f0a4c"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[5707, 171, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"7d2614db-7fdd-43cf-a003-9e5d5401d7a2",
+ CellID->38303248],
+Cell[5866, 180, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"d2ac130d-f356-44da-b6b7-233419413124"],
+Cell[5900, 182, 165, 5, 70, "MoreAbout",ExpressionUUID->"56f44f04-df32-4906-806c-b8b913d9e91e",
+ CellID->1]
+}, Open  ]],
+Cell[6080, 190, 23, 0, 70, "FooterCell",ExpressionUUID->"e5274602-eb5c-4bd1-aab8-b6bbe771d880"]
+}
+]
+*)
+
+(* End of internal cache information *)

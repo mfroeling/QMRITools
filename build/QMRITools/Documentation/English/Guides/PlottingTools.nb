@@ -1,0 +1,423 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     14406,        414]
+NotebookOptionsPosition[     10767,        335]
+NotebookOutlinePosition[     12307,        374]
+CellTagsIndexPosition[     12264,        371]
+WindowTitle->PlottingTools
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Functions",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Functions", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"ErrorPlot\"\>":>Documentation`HelpLookup[
+       "paclet:QMRITools/ref/ErrorPlot"], "\<\"GetSliceData\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/GetSliceData"], "\<\"GetSlicePositions\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/GetSlicePositions"], "\<\"GradientPlot\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/GradientPlot"], "\<\"Hist\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/ref/Hist"], "\<\"Hist2\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/Hist2"], "\<\"ListSpherePlot\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/ListSpherePlot"], "\<\"MakeSliceImages\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/MakeSliceImages"], "\<\"PlotContour\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PlotContour"], "\<\"PlotCorrection\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PlotCorrection"], "\<\"PlotData\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PlotData"], "\<\"PlotData3D\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PlotData3D"], "\<\"PlotDefGrid\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PlotDefGrid"], "\<\"PlotDuty\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PlotDuty"], "\<\"PlotIVIM\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PlotIVIM"], "\<\"PlotMoments\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PlotMoments"], "\<\"PlotSequence\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/ref/PlotSequence"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"GuideFunction"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/guide/PlottingTools\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/guide/PlottingTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/guide/\
+PlottingTools.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$28041], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/guide/PlottingTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["PlottingTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["QMRITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/QMRITools"],
+ " package: Functions for displaying data."
+}], "GuideAbstract",
+ CellID->2001916300]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Reference"
+}], "GuideReferenceSection",
+ WholeCellGroupOpener->True],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotData"]],"paclet:QMRITools/ref/PlotData"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Plots 2D 3D and 4D data. One ore two datasets, adding legends, changing \
+colors, adding labels, etc."
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotData3D"]],"paclet:QMRITools/ref/PlotData3D"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Plots 3D data in a 3D data viewer WIP"
+}], "GuideText",
+ CellID->1463276848],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["GradientPlot"]],"paclet:QMRITools/ref/GradientPlot"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Plots the diffusion gradients"
+}], "GuideText",
+ CellID->283436970],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->631098911],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["GetSlicePositions"]],"paclet:QMRITools/ref/GetSlicePositions"},
+   
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["GetSliceData"]],"paclet:QMRITools/ref/GetSliceData"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["MakeSliceImages"]],"paclet:QMRITools/ref/MakeSliceImages"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->793302734]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->845526705],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ListSpherePlot"]],"paclet:QMRITools/ref/ListSpherePlot"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotContour"]],"paclet:QMRITools/ref/PlotContour"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotIVIM"]],"paclet:QMRITools/ref/PlotIVIM"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotCorrection"]],"paclet:QMRITools/ref/PlotCorrection"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotDuty"]],"paclet:QMRITools/ref/PlotDuty"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->4348235]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->990002008],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotMoments"]],"paclet:QMRITools/ref/PlotMoments"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotSequence"]],"paclet:QMRITools/ref/PlotSequence"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " "
+}], "InlineGuideFunctionListing",
+ CellID->263032344]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->454212614],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["Hist"]],"paclet:QMRITools/ref/Hist"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["Hist2"]],"paclet:QMRITools/ref/Hist2"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PlotDefGrid"]],"paclet:QMRITools/ref/PlotDefGrid"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ErrorPlot"]],"paclet:QMRITools/ref/ErrorPlot"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->466113]
+}, Open  ]]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"PlottingTools",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
+  "", "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 47, 40.3897342}", 
+    "history" -> {"2.0", "", "", ""}, "context" -> "QMRITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Guide", "language" -> "en", "paclet" -> "QMRITools", 
+    "status" -> "None", "summary" -> 
+    "QMRITools package: Functions for displaying data.", "synonyms" -> {}, 
+    "tabletags" -> DocumentationBuild`Make`Private`tabletaggingrules$27944, 
+    "title" -> "PlottingTools", "titlemodifier" -> "", "windowtitle" -> 
+    "PlottingTools", "type" -> "Guide", "uri" -> 
+    "QMRITools/guide/PlottingTools"}},
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[585, 21, 4640, 104, 70, "AnchorBarGrid",ExpressionUUID->"76e8c96a-33b3-4960-9cc7-10f4afdc738c",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[5250, 129, 55, 1, 70, "GuideTitle",ExpressionUUID->"5043a80e-3d98-406d-baf4-bb3bb4f6f5c1",
+ CellID->942062912],
+Cell[5308, 132, 197, 6, 70, "GuideAbstract",ExpressionUUID->"c4916afb-ed6f-4c4b-9e61-a08aba339c07",
+ CellID->2001916300]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5542, 143, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"b2100d34-7966-495a-b0d7-f386909044e7"],
+Cell[5682, 151, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"8aeee13c-ccc8-4cc0-8664-f7ae7d3a87ec"],
+Cell[5716, 153, 377, 11, 70, "GuideText",ExpressionUUID->"0aeda921-c2e9-4de5-8812-f54be1bfdf22",
+ CellID->203374175],
+Cell[6096, 166, 318, 10, 70, "GuideText",ExpressionUUID->"e4e8f5cf-3554-4f3c-bca8-43954c1d39ea",
+ CellID->1463276848],
+Cell[6417, 178, 313, 10, 70, "GuideText",ExpressionUUID->"eaaee2f2-93cb-40ed-99e5-fd3d99b2c44e",
+ CellID->283436970],
+Cell[CellGroupData[{
+Cell[6755, 192, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"45062c25-dc63-4f98-956e-9369c01b97dd",
+ CellID->631098911],
+Cell[6806, 195, 804, 24, 70, "InlineGuideFunctionListing",ExpressionUUID->"aec78f6e-0b43-470e-8b9a-20394e578f06",
+ CellID->793302734]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7647, 224, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"4d0b1d5e-a990-4f8e-bf77-7e62f32ec9f5",
+ CellID->845526705],
+Cell[7698, 227, 1308, 39, 70, "InlineGuideFunctionListing",ExpressionUUID->"84599703-8a2f-4de9-8807-d3bf25a32ab6",
+ CellID->4348235]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9043, 271, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"3a2c02a1-65d2-4fc2-8fcf-4e4e2b4e8dd6",
+ CellID->990002008],
+Cell[9094, 274, 520, 16, 70, "InlineGuideFunctionListing",ExpressionUUID->"362db233-32b5-4c40-8f89-c8408c05d545",
+ CellID->263032344]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9651, 295, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"cadd0563-71e9-47d2-a31c-25d377ed6e7d",
+ CellID->454212614],
+Cell[9702, 298, 1011, 31, 70, "InlineGuideFunctionListing",ExpressionUUID->"87a102f6-ce85-453a-8046-1d7f13ced9ad",
+ CellID->466113]
+}, Open  ]]
+}, Open  ]],
+Cell[10740, 333, 23, 0, 70, "FooterCell",ExpressionUUID->"61f7ca5f-601f-40c8-8e50-9c5fb0fbf1d5"]
+}
+]
+*)
+
+(* End of internal cache information *)

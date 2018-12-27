@@ -1,0 +1,315 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     11183,        306]
+NotebookOptionsPosition[      7569,        233]
+NotebookOutlinePosition[      9947,        288]
+CellTagsIndexPosition[      9904,        285]
+WindowTitle->ReadDicom
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"ImportTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/ImportTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/ReadDicom\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/ReadDicom"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+ReadDicom.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
+             Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$207189], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/ReadDicom", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["ReadDicom", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+ReadDicom[folder]\[LineSeparator]imports all dicom files from the given \
+folder. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[{file$1, file$2, $$}]\[LineSeparator]imports all the given \
+filenames. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[folder, {file$1, file$2, $$}]\[LineSeparator]imports all the given \
+filenames from the given folder. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[folder, partsize]\[LineSeparator]imports all dicom files from the \
+given folder and partions them in given partsize. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[{file$1, file$2,  $$}, partsize]\[LineSeparator]imports all the \
+given filenames and partions them in given partsize. \
+\>"]},
+   {"", Cell["\<\
+ReadDicom[folder, {file$1, file$2,  $$}, partsize]\[LineSeparator]imports all \
+the given filenames from the given folder and partions them in given partsize.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ScaleCorrect",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/ScaleCorrect"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ScaleCorrect"]],"paclet:QMRITools/ref/ScaleCorrect"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["ReadDicom"], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ReadDicomDiff"]],"paclet:QMRITools/ref/ReadDicomDiff"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ReadDicomDir"]],"paclet:QMRITools/ref/ReadDicomDir"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ReadDicomDirDiff"]],
+        "paclet:QMRITools/ref/ReadDicomDirDiff"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". The dicom image values are corrected for rescale slope, scale slope \
+and rescale intercept."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ImportTools"]],"paclet:QMRITools/guide/ImportTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"ReadDicom",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 58, 35.6383015}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`ImportTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "ReadDicom[folder] imports all dicom files from the given folder. \
+ReadDicom[{file$1, file$2, $$}] imports all the given filenames. \
+ReadDicom[folder, {file$1, file$2, $$}] imports all the given filenames from \
+the given folder. ReadDicom[folder, partsize] imports all dicom files from \
+the given folder and partions them in given partsize. ReadDicom[{file$1, \
+file$2, $$}, partsize] imports all the given filenames and partions them in \
+given partsize. ReadDicom[folder, {file$1, file$2, $$}, partsize] imports all \
+the given filenames from the given folder and partions them in given \
+partsize.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "ReadDicom", 
+    "titlemodifier" -> "", "windowtitle" -> "ReadDicom", "type" -> "Symbol", 
+    "uri" -> "QMRITools/ref/ReadDicom"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[581, 21, 3044, 74, 70, "AnchorBarGrid",ExpressionUUID->"b66f022f-197d-488b-9320-508b850363e1",
+ CellID->1],
+Cell[3628, 97, 166, 6, 70, "ObjectNameGrid",ExpressionUUID->"9d056c24-c463-4151-a53a-ddf24adea3ec"],
+Cell[3797, 105, 1057, 29, 70, "Usage",ExpressionUUID->"46ef2a92-6128-4bf6-ba30-eaf50677c875"],
+Cell[CellGroupData[{
+Cell[4879, 138, 621, 19, 70, "NotesSection",ExpressionUUID->"38814e1b-e16a-424c-a128-96161f942dd6",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5503, 159, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"f9117861-47cc-4ccb-a20c-b9de126e85c5"],
+Cell[5537, 161, 53, 0, 70, "Notes",ExpressionUUID->"7362f77e-6ff3-4de9-a166-a3a77a7a7950"],
+Cell[5593, 163, 1503, 42, 70, "3ColumnTableMod",ExpressionUUID->"161db9a2-e82d-485a-b995-7dc877cf5067"],
+Cell[7099, 207, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"a9385d1e-d9ed-4b47-aab4-42651bcc5ec4"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[7167, 212, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"919798ad-ae20-44e5-9b9a-dbea495999b7",
+ CellID->38303248],
+Cell[7326, 221, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"d6cd81ea-50b6-45f3-92ea-12b71c2b062d"],
+Cell[7360, 223, 167, 5, 70, "MoreAbout",ExpressionUUID->"54f48f57-5ff7-45d9-89cf-8f022204ad0b",
+ CellID->1]
+}, Open  ]],
+Cell[7542, 231, 23, 0, 70, "FooterCell",ExpressionUUID->"7f01cfc1-b9ba-4a85-8a6e-5ae121effbe3"]
+}
+]
+*)
+
+(* End of internal cache information *)

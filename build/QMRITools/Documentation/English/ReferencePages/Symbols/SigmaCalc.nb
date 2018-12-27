@@ -1,0 +1,286 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10152,        277]
+NotebookOptionsPosition[      6658,        205]
+NotebookOutlinePosition[      8918,        259]
+CellTagsIndexPosition[      8875,        256]
+WindowTitle->SigmaCalc
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"TensorTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/TensorTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/SigmaCalc\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/SigmaCalc"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+SigmaCalc.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
+             Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$235332], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/SigmaCalc", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["SigmaCalc", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+SigmaCalc[DTI,grad,bvec]\[LineSeparator]calculates the noise sigma based on \
+the tensor residual, using a blur factor of 10. \
+\>"]},
+   {"", Cell["\<\
+SigmaCalc[DTI,tens,grad,bvec]\[LineSeparator]calculates the noise sigma based \
+on the tensor residual, using a blur factor of 10. \
+\>"]},
+   {"", Cell["\<\
+SigmaCalc[DTI,grad,bvec,blur]\[LineSeparator]calculates the noise sigma based \
+on the tensor residual, If blur is 1 ther is no blurring. \
+\>"]},
+   {"", Cell["\<\
+SigmaCalc[DTI,tens,grad,bvec,blur]\[LineSeparator]calculates the noise sigma \
+based on the tensor residual. If blur is 1 ther is no blurring.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["FilterShape",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/FilterShape"], 
+    ButtonBox["Median",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Median"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["FilterShape"]],"paclet:QMRITools/ref/FilterShape"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["SigmaCalc"], "InlineFormula"],
+     ". Can be \"Gaussian\" of \"Median\"."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["TensorTools"]],"paclet:QMRITools/guide/TensorTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"SigmaCalc",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 1, 0, 13.9979552}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`TensorTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "SigmaCalc[DTI,grad,bvec] calculates the noise sigma based on the tensor \
+residual, using a blur factor of 10. SigmaCalc[DTI,tens,grad,bvec] calculates \
+the noise sigma based on the tensor residual, using a blur factor of 10. \
+SigmaCalc[DTI,grad,bvec,blur] calculates the noise sigma based on the tensor \
+residual, If blur is 1 ther is no blurring. \
+SigmaCalc[DTI,tens,grad,bvec,blur] calculates the noise sigma based on the \
+tensor residual. If blur is 1 ther is no blurring.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "SigmaCalc", "titlemodifier" -> "", 
+    "windowtitle" -> "SigmaCalc", "type" -> "Symbol", "uri" -> 
+    "QMRITools/ref/SigmaCalc"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[581, 21, 3044, 74, 70, "AnchorBarGrid",ExpressionUUID->"12a4d6f9-d761-4e3e-a6f0-bba398c614ed",
+ CellID->1],
+Cell[3628, 97, 166, 6, 70, "ObjectNameGrid",ExpressionUUID->"6991d22e-fd75-438b-ac18-0ebf8a10ed77"],
+Cell[3797, 105, 837, 21, 70, "Usage",ExpressionUUID->"a34b18e2-7f50-45a6-8d27-e2374d246f8a"],
+Cell[CellGroupData[{
+Cell[4659, 130, 621, 19, 70, "NotesSection",ExpressionUUID->"ab5422a7-8ad9-4063-a268-a5ac09790127",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5283, 151, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"a2c68e77-8bd9-46d2-95c1-2b5cf6c50116"],
+Cell[5317, 153, 53, 0, 70, "Notes",ExpressionUUID->"30779c23-c323-4ca8-a83e-69831af97c9c"],
+Cell[5373, 155, 812, 22, 70, "3ColumnTableMod",ExpressionUUID->"86929c62-7596-4cdf-9b47-480ceb973c0c"],
+Cell[6188, 179, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"b34952f2-6ab6-454a-a633-2d6ddaee8a7b"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[6256, 184, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"91187c79-148f-4160-894f-412347a49677",
+ CellID->38303248],
+Cell[6415, 193, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"ede5a25b-fad7-4446-9a2e-db0adb0fc7a8"],
+Cell[6449, 195, 167, 5, 70, "MoreAbout",ExpressionUUID->"3ef5152b-52fe-4935-886e-7f08fa3a0b57",
+ CellID->1]
+}, Open  ]],
+Cell[6631, 203, 23, 0, 70, "FooterCell",ExpressionUUID->"080d5564-78e5-4984-9d8f-ab26172b8e75"]
+}
+]
+*)
+
+(* End of internal cache information *)

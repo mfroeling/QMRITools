@@ -1,0 +1,339 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     12344,        330]
+NotebookOptionsPosition[      8262,        250]
+NotebookOutlinePosition[     11109,        312]
+CellTagsIndexPosition[     11066,        309]
+WindowTitle->ResidualCalc
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"TensorTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/TensorTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/ResidualCalc\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/ResidualCalc"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+ResidualCalc.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$221252], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/ResidualCalc", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["ResidualCalc", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+ResidualCalc[DTI,{tensor,S$0},gradients,bvector]\[LineSeparator]calculates \
+the tensor residuals for the given dataset. \
+\>"]},
+   {"", Cell["\<\
+ResidualCalc[DTI,{tensor,S$0},outlier,gradients,bvector]\[LineSeparator]\
+calculates the tensor residuals for the given dataset taking in account the \
+outliers. \
+\>"]},
+   {"", Cell["\<\
+ResidualCalc[DTI,{tensor,S$0},bmat]\[LineSeparator]calculates the tensor \
+residuals for the given dataset. \
+\>"]},
+   {"", Cell["\<\
+ResidualCalc[DTI,{tensor,S$0},outlier,bmat]\[LineSeparator]calculates the \
+tensor residuals for the given dataset taking in account the outliers. \
+\>"]},
+   {"", Cell[TextData[{
+     "ResidualCalc[DTI,tensor,gradients,bvector]\[LineSeparator]calculates \
+the tensor residuals for the given dataset. ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Tensor"]],"paclet:QMRITools/ref/Tensor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " must contain Log[S0]. "
+    }]]},
+   {"", Cell[TextData[{
+     "ResidualCalc[DTI,tensor,outlier,gradients,bvector]\[LineSeparator]\
+calculates the tensor residuals for the given dataset taking in account the \
+outliers. ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Tensor"]],"paclet:QMRITools/ref/Tensor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " must contain Log[S0]. "
+    }]]},
+   {"", Cell[TextData[{
+     "ResidualCalc[DTI,tensor,bmat]\[LineSeparator]calculates the tensor \
+residuals for the given dataset. ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Tensor"]],"paclet:QMRITools/ref/Tensor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " must contain Log[S0]. "
+    }]]},
+   {"", Cell[TextData[{
+     "ResidualCalc[DTI,tensor,outlier,bmat]\[LineSeparator]calculates the \
+tensor residuals for the given dataset taking in account the outliers. ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Tensor"]],"paclet:QMRITools/ref/Tensor"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " must contain Log[S0]."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, None, None, {None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MeanRes",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/MeanRes"], 
+    ButtonBox["All",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/All"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MeanRes"]],"paclet:QMRITools/ref/MeanRes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["ResidualCalc"], "InlineFormula"],
+     ". When ",
+     "True",
+     " the root mean square of the residual is calculated."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["TensorTools"]],"paclet:QMRITools/guide/TensorTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"ResidualCalc",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 59, 20.2750257}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`TensorTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "ResidualCalc[DTI,{tensor,S$0},gradients,bvector] calculates the tensor \
+residuals for the given dataset. \
+ResidualCalc[DTI,{tensor,S$0},outlier,gradients,bvector] calculates the \
+tensor residuals for the given dataset taking in account the outliers. \
+ResidualCalc[DTI,{tensor,S$0},bmat] calculates the tensor residuals for the \
+given dataset. ResidualCalc[DTI,{tensor,S$0},outlier,bmat] calculates the \
+tensor residuals for the given dataset taking in account the outliers. \
+ResidualCalc[DTI,tensor,gradients,bvector] calculates the tensor residuals \
+for the given dataset. Tensor must contain Log[S0]. \
+ResidualCalc[DTI,tensor,outlier,gradients,bvector] calculates the tensor \
+residuals for the given dataset taking in account the outliers. Tensor must \
+contain Log[S0]. ResidualCalc[DTI,tensor,bmat] calculates the tensor \
+residuals for the given dataset. Tensor must contain Log[S0]. \
+ResidualCalc[DTI,tensor,outlier,bmat] calculates the tensor residuals for the \
+given dataset taking in account the outliers. Tensor must contain Log[S0].", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "ResidualCalc", 
+    "titlemodifier" -> "", "windowtitle" -> "ResidualCalc", "type" -> 
+    "Symbol", "uri" -> "QMRITools/ref/ResidualCalc"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[584, 21, 3058, 74, 70, "AnchorBarGrid",ExpressionUUID->"529a934a-05b7-41c8-80bf-bb47e60c5e26",
+ CellID->1],
+Cell[3645, 97, 169, 6, 70, "ObjectNameGrid",ExpressionUUID->"72e98ec3-44cc-4840-8410-7f90e76c8514"],
+Cell[3817, 105, 2395, 64, 70, "Usage",ExpressionUUID->"5d320e45-5d41-4ceb-9635-2b69e4246b75"],
+Cell[CellGroupData[{
+Cell[6237, 173, 621, 19, 70, "NotesSection",ExpressionUUID->"9bd1667b-ae22-410e-9a60-434803324c9d",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[6861, 194, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"83ccce32-ae76-4d98-854f-b453643ccf3e"],
+Cell[6895, 196, 53, 0, 70, "Notes",ExpressionUUID->"39147b28-4471-428e-8d3e-b6ba62840bce"],
+Cell[6951, 198, 838, 24, 70, "3ColumnTableMod",ExpressionUUID->"6d6db495-5417-4979-9857-b007a850dc7b"],
+Cell[7792, 224, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"4fceff82-7d41-4a89-9262-8f708b5549f9"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[7860, 229, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"052ddbeb-0457-48a2-a061-e93395a94295",
+ CellID->38303248],
+Cell[8019, 238, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"264c01a4-25f3-46c3-bb36-6e237faa08a8"],
+Cell[8053, 240, 167, 5, 70, "MoreAbout",ExpressionUUID->"f968ff56-1a35-4ef0-87f3-f418a528c114",
+ CellID->1]
+}, Open  ]],
+Cell[8235, 248, 23, 0, 70, "FooterCell",ExpressionUUID->"be44de76-77e1-4fef-a87e-99d91570d65f"]
+}
+]
+*)
+
+(* End of internal cache information *)

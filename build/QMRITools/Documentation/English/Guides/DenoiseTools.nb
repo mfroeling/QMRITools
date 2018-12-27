@@ -1,0 +1,272 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9235,        263]
+NotebookOptionsPosition[      6436,        202]
+NotebookOutlinePosition[      8003,        241]
+CellTagsIndexPosition[      7960,        238]
+WindowTitle->DenoiseTools
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Functions",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Functions", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"AnisoFilterTensor\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/AnisoFilterTensor"], "\<\"DeNoise\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/DeNoise"], "\<\"PCAFitEq\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PCAFitEq"], "\<\"PCAFitHist\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/PCAFitHist"], "\<\"WeightMapCalc\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/ref/WeightMapCalc"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"GuideFunction"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/guide/DenoiseTools\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/guide/DenoiseTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/guide/\
+DenoiseTools.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$22365], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/guide/DenoiseTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["DenoiseTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["QMRITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/QMRITools"],
+ " package: Functions that are used to suppress noise in DWI or tensor data."
+}], "GuideAbstract",
+ CellID->2001916300]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Reference"
+}], "GuideReferenceSection",
+ WholeCellGroupOpener->True],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DeNoise"]],"paclet:QMRITools/ref/DeNoise"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Denoise data using LMME algorithm."
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PCADenoise"]],"paclet:QMRITools/ref/PCADenoise"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Denoise data using PCA algorithm."
+}], "GuideText",
+ CellID->1463276848],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["AnisoFilterTensor"]],"paclet:QMRITools/ref/AnisoFilterTensor"},
+   
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Anisotropic filtering of the diffusion tensor. "
+}], "GuideText",
+ CellID->450928755],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PCAFitEq"]],"paclet:QMRITools/ref/PCAFitEq"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["PCAFitHist"]],"paclet:QMRITools/ref/PCAFitHist"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["WeightMapCalc"]],"paclet:QMRITools/ref/WeightMapCalc"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"DenoiseTools",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
+  "", "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 47, 26.6241222}", 
+    "history" -> {"2.0", "", "", ""}, "context" -> "QMRITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Guide", "language" -> "en", "paclet" -> "QMRITools", 
+    "status" -> "None", "summary" -> 
+    "QMRITools package: Functions that are used to suppress noise in DWI or \
+tensor data.", "synonyms" -> {}, "tabletags" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$22303, "title" -> 
+    "DenoiseTools", "titlemodifier" -> "", "windowtitle" -> "DenoiseTools", 
+    "type" -> "Guide", "uri" -> "QMRITools/guide/DenoiseTools"}},
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[584, 21, 3452, 82, 70, "AnchorBarGrid",ExpressionUUID->"264633cb-d45c-4f8b-a39f-837203fb6f25",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4061, 107, 54, 1, 70, "GuideTitle",ExpressionUUID->"3505338b-60e9-40a7-82f5-0c0c0a279f56",
+ CellID->942062912],
+Cell[4118, 110, 231, 6, 70, "GuideAbstract",ExpressionUUID->"379a176c-1952-496e-8abf-199d03551687",
+ CellID->2001916300]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4386, 121, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"72b4fbc3-9128-4c40-ba59-84b35e5af7d5"],
+Cell[4526, 129, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"a9940d46-7515-4abf-b17d-6bab73e7d7ec"],
+Cell[4560, 131, 308, 10, 70, "GuideText",ExpressionUUID->"db3dde3d-31d3-4ffd-9e91-c6ca3057644b",
+ CellID->203374175],
+Cell[4871, 143, 314, 10, 70, "GuideText",ExpressionUUID->"52242daf-84d0-4797-8e20-3380a9046251",
+ CellID->1463276848],
+Cell[5188, 155, 345, 11, 70, "GuideText",ExpressionUUID->"cde83824-3200-4fe1-b239-a3061050de12",
+ CellID->450928755],
+Cell[CellGroupData[{
+Cell[5558, 170, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"d16ffc21-1164-4e41-9009-6537c680a0fa",
+ CellID->311258892],
+Cell[5609, 173, 773, 23, 70, "InlineGuideFunctionListing",ExpressionUUID->"fd57a6d7-8be0-4fd1-b796-40ed1a600b90",
+ CellID->58033752]
+}, Open  ]]
+}, Open  ]],
+Cell[6409, 200, 23, 0, 70, "FooterCell",ExpressionUUID->"ed7079fe-21e2-45f3-a427-85fa30424194"]
+}
+]
+*)
+
+(* End of internal cache information *)

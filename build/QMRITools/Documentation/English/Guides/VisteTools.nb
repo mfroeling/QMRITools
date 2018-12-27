@@ -1,0 +1,319 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10918,        310]
+NotebookOptionsPosition[      7969,        245]
+NotebookOutlinePosition[      9516,        284]
+CellTagsIndexPosition[      9473,        281]
+WindowTitle->VisteTools
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS GUIDE", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Functions",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Functions", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DatRead\"\>":>Documentation`HelpLookup[
+       "paclet:QMRITools/ref/DatRead"], "\<\"DatWrite\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/DatWrite"], "\<\"DTItoolExp\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/DTItoolExp"], "\<\"DTItoolExpFile\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/DTItoolExpFile"], "\<\"DTItoolExpInd\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/DTItoolExpInd"], "\<\"DTItoolExpTens\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/DTItoolExpTens"], "\<\"ExportVol\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/ExportVol"], "\<\"ImportDTI\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/ImportDTI"], "\<\"ImportVol\"\>":>
+       Documentation`HelpLookup[
+       "paclet:QMRITools/ref/ImportVol"], "\<\"LoadFiberTracts\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/ref/LoadFiberTracts"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"GuideFunction"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/guide/VisteTools\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/guide/VisteTools"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/guide/\
+VisteTools.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$31331], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/guide/VisteTools", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[CellGroupData[{
+
+Cell["VisteTools", "GuideTitle",
+ CellID->942062912],
+
+Cell[TextData[{
+ ButtonBox["QMRITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/QMRITools"],
+ " package: Exporting and import related to the Viste toolbox"
+}], "GuideAbstract",
+ CellID->2001916300]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Reference"
+}], "GuideReferenceSection",
+ WholeCellGroupOpener->True],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolExp"]],"paclet:QMRITools/ref/DTItoolExp"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Exports a tensor to the Viste format"
+}], "GuideText",
+ CellID->203374175],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ExportVol"]],"paclet:QMRITools/ref/ExportVol"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ " ",
+ StyleBox["\[LongDash]", "GuideEmDash"],
+ " Exports a 3D volume to the Viste format."
+}], "GuideText",
+ CellID->1463276848],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->311258892],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DatRead"]],"paclet:QMRITools/ref/DatRead"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DatWrite"]],"paclet:QMRITools/ref/DatWrite"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolExpFile"]],"paclet:QMRITools/ref/DTItoolExpFile"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolExpInd"]],"paclet:QMRITools/ref/DTItoolExpInd"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["DTItoolExpTens"]],"paclet:QMRITools/ref/DTItoolExpTens"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->58033752]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->84272697],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ImportDTI"]],"paclet:QMRITools/ref/ImportDTI"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["ImportVol"]],"paclet:QMRITools/ref/ImportVol"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[FilledVerySmallSquare]", "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["LoadFiberTracts"]],"paclet:QMRITools/ref/LoadFiberTracts"},
+   "RefLink",
+   BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"]
+}], "InlineGuideFunctionListing",
+ CellID->43320848]
+}, Open  ]]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"VisteTools",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "GuideColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
+  "", "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 47, 47.9799226}", 
+    "history" -> {"2.0", "", "", ""}, "context" -> "QMRITools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Guide", "language" -> "en", "paclet" -> "QMRITools", 
+    "status" -> "None", "summary" -> 
+    "QMRITools package: Exporting and import related to the Viste toolbox", 
+    "synonyms" -> {}, "tabletags" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$31257, "title" -> 
+    "VisteTools", "titlemodifier" -> "", "windowtitle" -> "VisteTools", 
+    "type" -> "Guide", "uri" -> "QMRITools/guide/VisteTools"}},
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "Reference.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[582, 21, 3937, 91, 70, "AnchorBarGrid",ExpressionUUID->"5ecba064-42f2-432f-a268-f69e978b2abe",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4544, 116, 52, 1, 70, "GuideTitle",ExpressionUUID->"5b6ab493-a3cc-410b-b2ef-faa88f47b517",
+ CellID->942062912],
+Cell[4599, 119, 216, 6, 70, "GuideAbstract",ExpressionUUID->"7c6c5e7a-551a-4eaf-b80f-2645c8e64392",
+ CellID->2001916300]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4852, 130, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"88bdc9b7-9bbb-4e45-88e3-5c32154cd99b"],
+Cell[4992, 138, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"50544892-7784-494b-8499-05d3173ae1b3"],
+Cell[5026, 140, 316, 10, 70, "GuideText",ExpressionUUID->"f876b706-d99d-4d16-8da7-83f26cae08c7",
+ CellID->203374175],
+Cell[5345, 152, 319, 10, 70, "GuideText",ExpressionUUID->"a513679a-0028-4f7d-b883-ae8284013573",
+ CellID->1463276848],
+Cell[CellGroupData[{
+Cell[5689, 166, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"741948ce-f346-401e-8afb-f3c2c86a47ad",
+ CellID->311258892],
+Cell[5740, 169, 1311, 39, 70, "InlineGuideFunctionListing",ExpressionUUID->"a5dc7a4b-78d4-4044-bfc4-62cda9c09b16",
+ CellID->58033752]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7088, 213, 47, 1, 70, "GuideDelimiter",ExpressionUUID->"6f5f7c93-11d6-4a53-84e9-78d52b29a868",
+ CellID->84272697],
+Cell[7138, 216, 777, 23, 70, "InlineGuideFunctionListing",ExpressionUUID->"2664686e-31b4-4165-991b-c59d297e82b7",
+ CellID->43320848]
+}, Open  ]]
+}, Open  ]],
+Cell[7942, 243, 23, 0, 70, "FooterCell",ExpressionUUID->"07be8855-8760-4cbe-829b-bab1e0a2de08"]
+}
+]
+*)
+
+(* End of internal cache information *)

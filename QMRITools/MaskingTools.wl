@@ -84,10 +84,6 @@ maskdim is the dimensions of the output {zout,xout,yout}."
 (*Options*)
 
 
-MeanOutput::usage = 
-"MeanOutput is an option for NormalizeData. If True it will also output the normalization factor."
-
-
 MaskSmoothing::usage = 
 "MaskSmoothing is an options for Mask, if set to True it smooths the mask, by closing holse and smoothing the contours."
 
@@ -105,19 +101,6 @@ GetMaskOutput::usage =
 
 UseMask::usage = 
 "UseMask is a function for MeanSignal and DriftCorrect"
-
-
-Strictness::usage = 
-"Strictness is an option for SmartMask value between 0 and 1. Higer values removes more data."
-
-MaskCompartment::usage = 
-"MaskCompartment is an option for SmartMask. Can be \"Muscle\" or \"Fat\"."
-
-SmartMethod::usage = 
-"SmartMethod is an option for SmartMask. This specifies how the mask is generated. Can be \"Continuous\" or \"Catagorical\""
-
-SmartMaskOutput::usage = 
-"SmartMaskOutput is an option for Smartmask. Can be set to \"mask\" to output only the mask or \"full\" to also output the probability mask."
 
 
 (* ::Subsection::Closed:: *)
@@ -212,11 +195,15 @@ SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 Mask[data_,opts:OptionsPattern[]]:=Mask[data, 0, opts]
 
 Mask[data_?ArrayQ,tr_,opts:OptionsPattern[]]:= Block[{mask,tresh, dataD, datN},
+	
 	dataD = ArrayDepth[data];
+	
 	If[Length[tresh]>2, Message[Mask::tresh, tresh],
-		If[ArrayDepth>3, Message[Mask::dep, dataD],
+		
+		If[ArrayDepth[data]>3, Message[Mask::dep, dataD],
+			
 			mask = If[tr===0,
-				datN=data/(0.95 MeanNoZero[Flatten[data]]);
+				datN = data/(0.95 MeanNoZero[Flatten[data]]);
 				(*no threshhold*)
 				datN = If[dataD==2,Image[datN],Image3D[datN]];
 				ImageData[Binarize[datN]]
@@ -265,7 +252,7 @@ SyntaxInformation[MaskData] = {"ArgumentsPattern" -> {_, _}};
 
 MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 	dataD = ArrayDepth[data];
-	maskD = ArrayDepth[data];
+	maskD = ArrayDepth[mask];
 	dimD = Dimensions[data];
 	dimM = Dimensions[mask];
 	

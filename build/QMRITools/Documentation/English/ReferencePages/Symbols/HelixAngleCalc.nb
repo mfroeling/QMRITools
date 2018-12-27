@@ -1,0 +1,551 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     15819,        542]
+NotebookOptionsPosition[     11555,        461]
+NotebookOutlinePosition[     14577,        524]
+CellTagsIndexPosition[     14534,        521]
+WindowTitle->HelixAngleCalc
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"CardiacTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/CardiacTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/HelixAngleCalc\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/HelixAngleCalc"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+HelixAngleCalc.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$123116], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/HelixAngleCalc", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["HelixAngleCalc", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+HelixAngleCalc[eigenvectors, mask, vox]\[LineSeparator]calculates the helix \
+angle matrix of cardiac data using only a left ventricle mask. \
+\>"]},
+   {"", Cell["\<\
+HelixAngleCalc[eigenvectors, mask, vox]\[LineSeparator]calculates the helix \
+angle matrix of cardiac data using only a left ventricle mask, and a maskp \
+for visualization. \
+\>"]},
+   {"", Cell["\<\
+HelixAngleCalc[eigenvectors, mask, centerpoint, vec, inout, vox]\
+\[LineSeparator]calculates the helix angle matrix of cardiac data using only \
+a left ventricle mask. \
+\>"]},
+   {"", Cell[TextData[{
+     "HelixAngleCalc[eigenvectors, mask, maskp, centerpoint, vec, inout, vox]",
+     "\[LineSeparator]calculates the helix angle matrix of cardiac data using \
+a left vantricle mask and a maskp for visualization. eigenvectors are the \
+tensor eigenvectors calculated with ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["EigenvecCalc"]],"paclet:QMRITools/ref/EigenvecCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".",
+     " ",
+     "mask",
+     " ",
+     "is",
+     " ",
+     "a",
+     " ",
+     "mask",
+     " ",
+     "of",
+     " ",
+     "the",
+     " ",
+     "left",
+     " ",
+     "ventricle",
+     ".",
+     " ",
+     "maskp",
+     " ",
+     "is",
+     " ",
+     "a",
+     " ",
+     "mask",
+     " ",
+     "used",
+     " ",
+     "for",
+     " ",
+     "visualization",
+     ".",
+     " ",
+     "vox",
+     " ",
+     "is",
+     " ",
+     "the",
+     " ",
+     "voxels",
+     " ",
+     "size",
+     ",",
+     " ",
+     "{slice",
+     ",",
+     " ",
+     "x",
+     ",",
+     " ",
+     "y}",
+     ".",
+     " ",
+     "The",
+     " ",
+     "folowing",
+     " ",
+     "values",
+     " ",
+     "are",
+     " ",
+     "calculated",
+     " ",
+     "automaticlay",
+     " ",
+     "Using",
+     " ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CentralAxes"]],"paclet:QMRITools/ref/CentralAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ",
+     "but",
+     " ",
+     "can",
+     " ",
+     "also",
+     " ",
+     "be",
+     " ",
+     "provided",
+     " ",
+     "as",
+     " ",
+     "an",
+     " ",
+     "input",
+     ".",
+     " ",
+     "centerpoint",
+     " ",
+     "is",
+     " ",
+     "the",
+     " ",
+     "center",
+     " ",
+     "of",
+     " ",
+     "each",
+     " ",
+     "slice",
+     " ",
+     "calculated",
+     " ",
+     "with",
+     " ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CentralAxes"]],"paclet:QMRITools/ref/CentralAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".",
+     " ",
+     "inout",
+     " ",
+     "is",
+     " ",
+     "the",
+     " ",
+     "inner",
+     " ",
+     "and",
+     " ",
+     "outer",
+     " ",
+     "radius",
+     " ",
+     "calcualted",
+     " ",
+     "with",
+     " ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CentralAxes"]],"paclet:QMRITools/ref/CentralAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".",
+     " ",
+     "vec",
+     " ",
+     "is",
+     " ",
+     "the",
+     " ",
+     "vector",
+     " ",
+     "describin",
+     " ",
+     "the",
+     " ",
+     "central",
+     " ",
+     "axes",
+     " ",
+     "of",
+     " ",
+     "the",
+     " ",
+     "heart",
+     ",",
+     " ",
+     "calculated",
+     " ",
+     "with",
+     " ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CentralAxes"]],"paclet:QMRITools/ref/CentralAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".",
+     " ",
+     "Output",
+     " ",
+     "is",
+     " ",
+     "het",
+     " ",
+     "fiber",
+     " ",
+     "angle",
+     " ",
+     "matrix",
+     " ",
+     "FAM",
+     " ",
+     "=",
+     " ",
+     "{9",
+     ",",
+     " ",
+     "slice",
+     ",",
+     " ",
+     "x",
+     ",",
+     " ",
+     "y}",
+     " ",
+     "or",
+     " ",
+     "{FAM",
+     ",",
+     " ",
+     "plot}",
+     "."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ShowHelixPlot",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/ShowHelixPlot"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ShowHelixPlot"]],"paclet:QMRITools/ref/ShowHelixPlot"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["HelixAngleCalc"], "InlineFormula"],
+     ". ",
+     "If",
+     " true the it also outputs a visulization of the local myocardial \
+coordinate system."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["HelixMethod",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/HelixMethod"], "Slow", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["HelixMethod"]],"paclet:QMRITools/ref/HelixMethod"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["HelixAngleCalc"], "InlineFormula"],
+     ". Can be \"Slow\" or \"Fast\". \n\"Slow\" uses wall distance \
+interpolation and can take long for high res datasets.\n\"Fast\" uses wall \
+distance calculation using circular approximation of the ventricle."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["AxesMethod",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/AxesMethod"], "Quadratic", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["AxesMethod"]],"paclet:QMRITools/ref/AxesMethod"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["HelixAngleCalc"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CentralAxes"]],"paclet:QMRITools/ref/CentralAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". Can be \"Linear\", \"Quadratic\", \"Cubic\"."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["CardiacTools"]],"paclet:QMRITools/guide/CardiacTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"HelixAngleCalc",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 53, 25.1760387}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`CardiacTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "HelixAngleCalc[eigenvectors, mask, vox] calculates the helix angle \
+matrix of cardiac data using only a left ventricle mask. \
+HelixAngleCalc[eigenvectors, mask, vox] calculates the helix angle matrix of \
+cardiac data using only a left ventricle mask, and a maskp for visualization. \
+HelixAngleCalc[eigenvectors, mask, centerpoint, vec, inout, vox] calculates \
+the helix angle matrix of cardiac data using only a left ventricle mask. \
+HelixAngleCalc[eigenvectors, mask, maskp, centerpoint, vec, inout, vox] \
+calculates the helix angle matrix of cardiac data using a left vantricle mask \
+and a maskp for visualization. eigenvectors are the tensor eigenvectors \
+calculated with EigenvecCalc. mask is a mask of the left ventricle. maskp is \
+a mask used for visualization. vox is the voxels size, {slice, x, y}. The \
+folowing values are calculated automaticlay Using CentralAxes but can also be \
+provided as an input. centerpoint is the center of each slice calculated with \
+CentralAxes. inout is the inner and outer radius calcualted with CentralAxes. \
+vec is the vector describin the central axes of the heart, calculated with \
+CentralAxes. Output is het fiber angle matrix FAM = {9, slice, x, y} or {FAM, \
+plot}.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "HelixAngleCalc", 
+    "titlemodifier" -> "", "windowtitle" -> "HelixAngleCalc", "type" -> 
+    "Symbol", "uri" -> "QMRITools/ref/HelixAngleCalc"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[586, 21, 3068, 74, 70, "AnchorBarGrid",ExpressionUUID->"286e223b-e6a6-4a86-b9dd-5d4b1b722c8b",
+ CellID->1],
+Cell[3657, 97, 171, 6, 70, "ObjectNameGrid",ExpressionUUID->"5595dd4a-794a-4d5a-b5f7-c829cae016ed"],
+Cell[3831, 105, 4189, 239, 70, "Usage",ExpressionUUID->"8265b2ad-06b6-4ddc-bd7c-3f24f66a8f54"],
+Cell[CellGroupData[{
+Cell[8045, 348, 621, 19, 70, "NotesSection",ExpressionUUID->"99148917-b2ea-4a4f-9a63-3dbee9b5dc18",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[8669, 369, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"a39e3688-6638-4922-a6f1-cf5867db8e25"],
+Cell[8703, 371, 53, 0, 70, "Notes",ExpressionUUID->"31bba725-c3a0-4023-955a-0289e57cc8c5"],
+Cell[8759, 373, 2321, 60, 70, "3ColumnTableMod",ExpressionUUID->"f3b12cb7-bc09-49b9-8ac5-ee1010014ce4"],
+Cell[11083, 435, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"d49f7a8f-f074-42d4-bd0e-343d29170a50"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[11151, 440, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"ecdc075b-a3c4-472c-92c1-8bcbb81db61d",
+ CellID->38303248],
+Cell[11310, 449, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"2e11088e-bfb0-42a3-a22e-10b24eaae8e4"],
+Cell[11344, 451, 169, 5, 70, "MoreAbout",ExpressionUUID->"86826a82-17bf-4882-9430-1c88e8dfb713",
+ CellID->1]
+}, Open  ]],
+Cell[11528, 459, 23, 0, 70, "FooterCell",ExpressionUUID->"328336d3-0643-4d4c-932e-93cab452d6a2"]
+}
+]
+*)
+
+(* End of internal cache information *)

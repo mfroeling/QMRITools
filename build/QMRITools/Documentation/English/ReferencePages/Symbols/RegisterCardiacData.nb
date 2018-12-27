@@ -1,0 +1,825 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     29792,        816]
+NotebookOptionsPosition[     26301,        745]
+NotebookOutlinePosition[     28550,        798]
+CellTagsIndexPosition[     28507,        795]
+WindowTitle->RegisterCardiacData
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"ElastixTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/ElastixTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/RegisterCardiacData\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/RegisterCardiacData"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+RegisterCardiacData.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$211343], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/RegisterCardiacData", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["RegisterCardiacData", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+RegisterCardiacData[data]\[LineSeparator]registers the data using a 2D \
+algorithm. data can be 3D or 4D. \
+\>"]},
+   {"", Cell["\<\
+RegisterCardiacData[{data,vox}]\[LineSeparator]registers the data series \
+using the given voxel size. \
+\>"]},
+   {"", Cell["\<\
+RegisterCardiacData[{data,mask}]\[LineSeparator]registers the data series \
+only using data whithin the mask. \
+\>"]},
+   {"", Cell["\<\
+RegisterCardiacData[{data,mask,vox}]\[LineSeparator]registers the data series \
+using the given voxel size only using data within the mask. Output is the \
+registered data.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["RegistrationTarget",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/RegistrationTarget"], 
+    ButtonBox["Mean",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Mean"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegistrationTarget"]],
+        "paclet:QMRITools/ref/RegistrationTarget"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["RegisterCardiacData"], "InlineFormula"],
+     ". Specifies which target to uses for registration if using \"rigid\", \
+\"affine\" or \"bspline\" as ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MethodReg"]],"paclet:QMRITools/ref/MethodReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".\nIf the ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MethodReg"]],"paclet:QMRITools/ref/MethodReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is \"cyclyc\" or \"PCA\" it does not need a target and this options \
+does nothing. \nValues can be \"First\", \"Mean\" or \"Median\"."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Iterations",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/Iterations"], "1000", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Iterations"]],"paclet:QMRITools/ref/Iterations"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies the number of iterations used by the registration \
+functions."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Resolutions",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/Resolutions"], "1", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Resolutions"]],"paclet:QMRITools/ref/Resolutions"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies the number of scale space resolutions used by the \
+registration functions."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["HistogramBins",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/HistogramBins"], "64", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["HistogramBins"]],"paclet:QMRITools/ref/HistogramBins"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies the number of bins of the joined histogram used by the \
+registration functions."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["NumberSamples",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/NumberSamples"], "2000", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["NumberSamples"]],"paclet:QMRITools/ref/NumberSamples"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies the number of random samples that are taken each \
+iteration used by the registration functions."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["InterpolationOrderReg",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/InterpolationOrderReg"], "3", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["InterpolationOrderReg"]],
+        "paclet:QMRITools/ref/InterpolationOrderReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies the interpolation order used in the registration \
+functions."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["BsplineSpacing",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/BsplineSpacing"], "30", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["BsplineSpacing"]],"paclet:QMRITools/ref/BsplineSpacing"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData["RegisterCardiacData"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies the spacing of the bsplines if the method is \"bspline\
+\"."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["BsplineDirections",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/BsplineDirections"], 
+    RowBox[{"{", 
+     RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["BsplineDirections"]],
+        "paclet:QMRITools/ref/BsplineDirections"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ad ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt gives the direction in which the bsplines are allowed to move \
+when registering diffusion data to anatomical space."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["AffineDirections",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/AffineDirections"], 
+    RowBox[{"{", 
+     RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["AffineDirections"]],
+        "paclet:QMRITools/ref/AffineDirections"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ad ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt gives the directions in which data can be moved when registering \
+diffusion data to anatomical space."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MethodReg",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/MethodReg"], "affine", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MethodReg"]],"paclet:QMRITools/ref/MethodReg"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData["RegisterCardiacData"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt spefifies which registration method to use. Mehtods can be be \
+\"rigid\",\"affine\", \"bspline\" or \"cyclyc\"."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["OutputImage",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/OutputImage"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["OutputImage"]],"paclet:QMRITools/ref/OutputImage"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies if the result image should be writen in the ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["TempDirectory"]],"paclet:QMRITools/ref/TempDirectory"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " as nii file."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["TempDirectory",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/TempDirectory"], 
+    ButtonBox["Default",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Default"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["TempDirectory"]],"paclet:QMRITools/ref/TempDirectory"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData["RegisterCardiacData"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies the temprary directory used to perform and output the \
+registration."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DeleteTempDirectory",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DeleteTempDirectory"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DeleteTempDirectory"]],
+        "paclet:QMRITools/ref/DeleteTempDirectory"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData["RegisterCardiacData"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt specifies if the temp directory should be deleted after the \
+registration is finisched."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PrintTempDirectory",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/PrintTempDirectory"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PrintTempDirectory"]],
+        "paclet:QMRITools/ref/PrintTempDirectory"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", ",
+     Cell[BoxData["RegisterCardiacData"], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDataTransform"]],
+        "paclet:QMRITools/ref/RegisterDataTransform"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". \nIt spefifies if the location of the temp directory should be \
+deplayed."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["OutputTransformation",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/OutputTransformation"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["OutputTransformation"]],
+        "paclet:QMRITools/ref/OutputTransformation"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ad ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterDiffusionData"]],
+        "paclet:QMRITools/ref/RegisterDiffusionData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".\nIt specifies if the tranformation paramters (translation, rotation, \
+scale and skew) should be given as output in the registration functions."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UseGPU",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/UseGPU"], 
+    RowBox[{"{", 
+     RowBox[{"False", ",", " ", "Automatic"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["UseGPU"]],"paclet:QMRITools/ref/UseGPU"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". The value is {bool, gpu} where bool is ",
+     "True",
+     " or ",
+     "False",
+     ", and gpu is the gpu ID which is an integer or ",
+     "Automatic",
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCAComponents",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/PCAComponents"], "3", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCAComponents"]],"paclet:QMRITools/ref/PCAComponents"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RegisterData"]],"paclet:QMRITools/ref/RegisterData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". It speciefies how many PCA components are used if method is set to \
+\"PCA\""
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {
+    None, None, None, None, None, None, None, None, None, None, None, None, 
+     None, None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{
+  "Rows" -> {{
+     True, True, True, True, True, True, True, True, True, True, True, True, 
+      True, True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ElastixTools"]],"paclet:QMRITools/guide/ElastixTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"RegisterCardiacData",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 58, 50.3063133}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`ElastixTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "RegisterCardiacData[data] registers the data using a 2D algorithm. data \
+can be 3D or 4D. RegisterCardiacData[{data,vox}] registers the data series \
+using the given voxel size. RegisterCardiacData[{data,mask}] registers the \
+data series only using data whithin the mask. \
+RegisterCardiacData[{data,mask,vox}] registers the data series using the \
+given voxel size only using data within the mask. Output is the registered \
+data.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "RegisterCardiacData",
+     "titlemodifier" -> "", "windowtitle" -> "RegisterCardiacData", "type" -> 
+    "Symbol", "uri" -> "QMRITools/ref/RegisterCardiacData"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[591, 21, 3088, 74, 70, "AnchorBarGrid",ExpressionUUID->"0f60c91a-372e-436b-94fa-40e2624c4fc8",
+ CellID->1],
+Cell[3682, 97, 176, 6, 70, "ObjectNameGrid",ExpressionUUID->"c177ec02-e47b-4ded-bbb6-3c89c5be01d6"],
+Cell[3861, 105, 791, 22, 70, "Usage",ExpressionUUID->"574b750e-367c-453d-a425-43ab7abe3c99"],
+Cell[CellGroupData[{
+Cell[4677, 131, 621, 19, 70, "NotesSection",ExpressionUUID->"6d574da5-8b11-490b-81a3-afe22fa6006e",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5301, 152, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"e1113cf3-e816-4c05-979c-d6415c6fe4e6"],
+Cell[5335, 154, 53, 0, 70, "Notes",ExpressionUUID->"8c06d258-d903-4180-87c0-599702c14b43"],
+Cell[5391, 156, 20435, 561, 70, "3ColumnTableMod",ExpressionUUID->"1347314c-5f9a-403f-be05-17143a8fb8da"],
+Cell[25829, 719, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"0c0d8849-302b-4b91-aa90-137b623fe25b"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[25897, 724, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"e45dcb2a-65ea-4b59-90d4-7e4aabfd518f",
+ CellID->38303248],
+Cell[26056, 733, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"d2b58d4f-c23d-4019-bae0-fc094f222cdf"],
+Cell[26090, 735, 169, 5, 70, "MoreAbout",ExpressionUUID->"8da52d94-f547-4468-8aa8-2a7cff7d5483",
+ CellID->1]
+}, Open  ]],
+Cell[26274, 743, 23, 0, 70, "FooterCell",ExpressionUUID->"17c51609-5da6-49c5-aeee-267ad5692bf7"]
+}
+]
+*)
+
+(* End of internal cache information *)

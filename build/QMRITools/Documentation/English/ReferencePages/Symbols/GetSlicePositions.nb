@@ -1,0 +1,304 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10783,        295]
+NotebookOptionsPosition[      7551,        227]
+NotebookOutlinePosition[      9548,        277]
+CellTagsIndexPosition[      9505,        274]
+WindowTitle->GetSlicePositions
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"PlottingTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/PlottingTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/GetSlicePositions\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/GetSlicePositions"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+GetSlicePositions.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$116928], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/GetSlicePositions", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["GetSlicePositions", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+GetSlicePositions[data]\[LineSeparator]finds the position of slices with the \
+maximal signal in voxel index. \
+\>"]},
+   {"", Cell["\<\
+GetSlicePositions[data, vox]\[LineSeparator]find the position of slices with \
+the maximal signal in mm.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MakeCheckPlot",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/MakeCheckPlot"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MakeCheckPlot"]],"paclet:QMRITools/ref/MakeCheckPlot"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GetSlicePositions"], "InlineFormula"],
+     " and if set true gives a plot of the slices locations."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DropSlices",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DropSlices"], 
+    RowBox[{"{", 
+     RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DropSlices"]],"paclet:QMRITools/ref/DropSlices"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GetSlicePositions"], "InlineFormula"],
+     " and specifies how many slices from the beginning and and should be \
+ignored."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PeakNumber",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/PeakNumber"], 
+    RowBox[{"{", 
+     RowBox[{"1", ",", " ", "1", ",", " ", "2"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PeakNumber"]],"paclet:QMRITools/ref/PeakNumber"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option of GetSlicePostitions and specifies how many slices per \
+direction need to be found."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["PlottingTools"]],"paclet:QMRITools/guide/PlottingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"GetSlicePositions",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 53, 2.7985364}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`PlottingTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "GetSlicePositions[data] finds the position of slices with the maximal \
+signal in voxel index. GetSlicePositions[data, vox] find the position of \
+slices with the maximal signal in mm.", "synonyms" -> {}, "tabletags" -> {}, 
+    "title" -> "GetSlicePositions", "titlemodifier" -> "", "windowtitle" -> 
+    "GetSlicePositions", "type" -> "Symbol", "uri" -> 
+    "QMRITools/ref/GetSlicePositions"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[589, 21, 3082, 74, 70, "AnchorBarGrid",ExpressionUUID->"70918676-2268-481b-a87b-799328e5057b",
+ CellID->1],
+Cell[3674, 97, 174, 6, 70, "ObjectNameGrid",ExpressionUUID->"adbabeb7-ab6c-42f2-92ee-edd88318b040"],
+Cell[3851, 105, 448, 13, 70, "Usage",ExpressionUUID->"3d8a908b-73cc-4f16-93d4-603ebcb3fef1"],
+Cell[CellGroupData[{
+Cell[4324, 122, 621, 19, 70, "NotesSection",ExpressionUUID->"e1808577-e9d5-44ed-9e67-50cb3552eefe",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[4948, 143, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"0e1aeb8a-9b96-47e2-973b-7a22fe440082"],
+Cell[4982, 145, 53, 0, 70, "Notes",ExpressionUUID->"37030d6d-4fd4-4350-a59d-8046b41ad48b"],
+Cell[5038, 147, 2036, 52, 70, "3ColumnTableMod",ExpressionUUID->"b6134178-76d6-45cb-85d8-32b0471e7fdc"],
+Cell[7077, 201, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"90ff4a65-453d-4855-81a1-626009c831f1"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[7145, 206, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"3598017f-20ee-4c54-a5ec-699037f3761a",
+ CellID->38303248],
+Cell[7304, 215, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"b85911e1-2cda-4afb-91dc-94531beb969d"],
+Cell[7338, 217, 171, 5, 70, "MoreAbout",ExpressionUUID->"c32d8a67-6cf5-4f16-801d-768b820e6bc8",
+ CellID->1]
+}, Open  ]],
+Cell[7524, 225, 23, 0, 70, "FooterCell",ExpressionUUID->"3716f579-63a5-47e1-b08c-ea545fbefdfb"]
+}
+]
+*)
+
+(* End of internal cache information *)

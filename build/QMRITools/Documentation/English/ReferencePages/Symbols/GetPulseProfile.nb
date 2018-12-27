@@ -1,0 +1,309 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     11286,        300]
+NotebookOptionsPosition[      7812,        229]
+NotebookOutlinePosition[     10051,        282]
+CellTagsIndexPosition[     10008,        279]
+WindowTitle->GetPulseProfile
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"SimulationTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/SimulationTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/GetPulseProfile\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/GetPulseProfile"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+GetPulseProfile.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$114927], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/GetPulseProfile", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["GetPulseProfile", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+GetPulseProfile[excitation, refocus]\[LineSeparator]gives the pusl angle \
+profiles for the exitation and refocussing pulses. a pulse is defined as \
+{\"name\", flipangle, {G_strnth, Dur, BW}}. \
+\>"]},
+   {"", Cell["\<\
+GetPulseProfile[{\"name\", flipangle, {G_strnth, Dur, \
+BW}}]\[LineSeparator]gives detaile slice profile information of one pulse. \
+output is {ex_angle_profiel, ref_angel_profile, {plots}}. output for single \
+pulse is {{distance, Mt, Mz, Mx, My, ang, phase}, plots}\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MagnetizationVector",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/MagnetizationVector"], 
+    RowBox[{"{", 
+     RowBox[{"0", ",", " ", "0", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MagnetizationVector"]],
+        "paclet:QMRITools/ref/MagnetizationVector"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GetPulseProfile"], "InlineFormula"],
+     ". It defines the start magnetization vector for the bloch simulation."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["SliceRange",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/SliceRange"], "12", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SliceRange"]],"paclet:QMRITools/ref/SliceRange"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GetPulseProfile"], "InlineFormula"],
+     ". It specifies over which range the slice profile is generated (in mm). \
+the total profile is 2xSliceRange."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["SliceRangeSamples",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/SliceRangeSamples"], "25", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SliceRangeSamples"]],
+        "paclet:QMRITools/ref/SliceRangeSamples"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["GetPulseProfile"], "InlineFormula"],
+     ". defines how many samples are used to generate half a puls profile."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["SimulationTools"]],"paclet:QMRITools/guide/SimulationTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"GetPulseProfile",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 52, 55.4910849}", 
+    "history" -> {"XX", "", "", ""}, "context" -> 
+    "QMRITools`SimulationTools`", "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "GetPulseProfile[excitation, refocus] gives the pusl angle profiles for \
+the exitation and refocussing pulses. a pulse is defined as {\"name\", \
+flipangle, {G_strnth, Dur, BW}}. GetPulseProfile[{\"name\", flipangle, \
+{G_strnth, Dur, BW}}] gives detaile slice profile information of one pulse. \
+output is {ex_angle_profiel, ref_angel_profile, {plots}}. output for single \
+pulse is {{distance, Mt, Mz, Mx, My, ang, phase}, plots}", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "GetPulseProfile", "titlemodifier" -> "", 
+    "windowtitle" -> "GetPulseProfile", "type" -> "Symbol", "uri" -> 
+    "QMRITools/ref/GetPulseProfile"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[587, 21, 3078, 74, 70, "AnchorBarGrid",ExpressionUUID->"3249f516-8634-4849-9c80-37fd43cd90f1",
+ CellID->1],
+Cell[3668, 97, 172, 6, 70, "ObjectNameGrid",ExpressionUUID->"74f98d29-40f3-4534-84d8-e2cfe165e089"],
+Cell[3843, 105, 695, 16, 70, "Usage",ExpressionUUID->"4e86a693-ef47-42eb-900a-8b128097040e"],
+Cell[CellGroupData[{
+Cell[4563, 125, 621, 19, 70, "NotesSection",ExpressionUUID->"e0cd9954-57d4-4d6c-beed-371b005da66b",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5187, 146, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"d67e9082-048e-4012-8406-fa34200b54b5"],
+Cell[5221, 148, 53, 0, 70, "Notes",ExpressionUUID->"d3776492-1681-479f-8ffc-d102da16c8ed"],
+Cell[5277, 150, 2054, 51, 70, "3ColumnTableMod",ExpressionUUID->"713be997-3996-4771-b40d-b363133338d6"],
+Cell[7334, 203, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"d1e8f617-1718-468a-9e76-91f5e4f86303"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[7402, 208, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"e338cc13-5a3c-4825-a2bc-8854a5f3a8a0",
+ CellID->38303248],
+Cell[7561, 217, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"e3d1c1d5-092c-48cc-889a-ef3bb522d2b4"],
+Cell[7595, 219, 175, 5, 70, "MoreAbout",ExpressionUUID->"84e4a1dd-2611-4d4b-a012-0cb597e2671f",
+ CellID->1]
+}, Open  ]],
+Cell[7785, 227, 23, 0, 70, "FooterCell",ExpressionUUID->"f0d4b211-16fd-4661-9604-b9e64626158c"]
+}
+]
+*)
+
+(* End of internal cache information *)

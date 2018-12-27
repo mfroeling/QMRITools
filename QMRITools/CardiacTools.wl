@@ -121,6 +121,15 @@ ExcludeSlices::usage =
 Output is an array with 1 or 0 with the dimensiosn {slices, diff dirs}"
 
 
+MakeECVBloodMask::usage = 
+"MakeECVBloodMask[T1pre, T1post] makes a bloodpool mask based on the T1pre and T1post images. It assumes that the hart is cropped with the blood in the center."
+
+
+ECVCalc::usage = 
+"ECVCalc[T1pre, T1post, hema] calculates the ECVmap using MakeECVBloodMask.
+ECVCalc[T1pre, T1post, bloodMask, hema] calculates the ECVmap using bloodMask."
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -190,6 +199,13 @@ CutOffMethod::usage =
 
 DistanceMeasure::usage = 
 "DistanceMeasure is an option for ExcludeSlices. Defaul value is 5. (1 ManhattanDistance, 2 SquaredEuclideanDistance, 3 EuclideanDistance, 4 Correlation, 5 SpearmanRho"
+
+
+BloodMaskRange::usage = 
+"BloodMaskRange is an option for MakeECVBloodMask." 
+
+OutputCheckImage
+"OutputCheckImage is an option for MakeECVBloodMask." 	
 
 
 (* ::Subsection:: *)
@@ -947,7 +963,7 @@ If[startPoint==="Default",
 coordinates=(Reverse/@Position[#,1])&/@mask;
 angles=Table[i,{i,0,359,1}]Degree;
 PrintTemporary["Calculating sample lines"];
-lines=LinePoints[mask,off,LineThreshold->OptionValue[LineThreshold],LineStep->OptionValue[LineStep]];
+lines=LinePoints[mask, off,LineThreshold->OptionValue[LineThreshold],LineStep->OptionValue[LineStep]];
 
 (*static plots*)
 centerpl=Graphics[{Red ,Disk[#,1]}]&/@centers;
@@ -1698,103 +1714,89 @@ fdata=(Flatten@GetMaskData[data,#])&/@segMask;
 BullseyePlot[fdata,opts]
 ]
 
-BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number,radius,datat,minmax,cols,pl},
-number={6,6,4,1};
-radius={4.9,3.6,2.3,1};
-
-datat=If[#==={}||NumberQ[#],#,Round[Mean[#],.01]]&/@dati;
-
-minmax=If[OptionValue[PlotRange]===Automatic,
-{Min[datat],Max[datat]},
-OptionValue[PlotRange]
-];
-
-cols=(
-#->Show[ColorData[#,"Image"],ImageSize->100]
-)&/@{"GrayTones","Rainbow","ThermometerColors","SunsetColors","TemperatureMap","GrayYellowTones","BlueGreenYellow","AvocadoColors","SouthwestColors"};
-
-DynamicModule[{col,disks,text,pts,sdata,min,max,
-data=datat,
-colors=cols
-},
-
-min=minmax[[1]];
-max=minmax[[2]];
-
-max=If[max<=min,min+0.1,max];
-
-sdata=(data-min)/(max-min);
-
-pts=Flatten[Table[
-If[i==4,{{0,0}},
-RotationMatrix[# Degree].{0,radius[[i]]-1.3OptionValue[TextOffset]}&/@Range[0,359,360/number[[i]]]
-],{i,4}],1];
-
-disks=Flatten[{
-Table[{col,Disk[{0,0},radius[[1]],Pi/3{i,i+1}]},{i,1,6}],
-Table[{col,Disk[{0,0},radius[[2]],Pi/3{i,i+1}]},{i,1,6}],
-Table[{col,Disk[{0,0},radius[[3]],(i-1) Pi/2+{Pi/4,3Pi/4}]},{i,1,4}],
-{{col,Disk[{0,0},radius[[4]],{0,2Pi}]}}
-},1];
-
-If[OptionValue[BullPlotMethod]==="Dynamic",
-
-(*dynamic plot*)
-pl=Manipulate[
-
-blcol=If[colf=="GrayTones",Darker[Red],Gray];
-colfunc=ColorData[colf][If[cstyle,1-#,#]]&;
-
-text=Table[Text[Style[
-Switch[textVal,
-1,If[data[[i]]==={},"",i],
-2,If[data[[i]]==={},"",data[[i]]]
-],Bold,FontFamily->"Helvetica",Black,FontSize->OptionValue[TextSize]],pts[[i]]],{i,17}];
-
-Legended[Graphics[
-{
-EdgeForm[{Thick,Black}],
-MapThread[#1/.If[#2==={},col->blcol,col->colfunc[#2]]&,{disks,sdata}],
-If[pText,text]
-},ImageSize->400],
-BarLegend[{colf,{min,max}},LabelStyle->Directive[{Bold,Black,FontFamily->"Helvetica",FontSize->OptionValue[TextSize]}],LegendMarkerSize->350]]
-,
-{{pText,True,"Show labels"},{True,False}},
-{{textVal,2,"Label"},{1->"Segment",2->"Value"}},
-{{colf,OptionValue[ColorFunction],"Color function"},colors},
-{{cstyle,False,"Reverse color"},{True,False}},
-{{blcol,Gray},ControlType->None},
-{{colfunc,Gray},ControlType->None}
-]
-,
-
-(*static plot*)
-Block[{colf,blcol,colfunc},
-colf=OptionValue[ColorFunction];
-blcol=If[colf=="GrayTones",Darker[Red],Gray];
-colfunc=ColorData[colf][If[False,1-#,#]]&;
-text=Table[Text[Style[If[data[[i]]==={},"",data[[i]]],Bold,FontFamily->"Helvetica",Black,FontSize->OptionValue[TextSize]],pts[[i]]],{i,17}];
-
-pl=Legended[Graphics[
-{
-EdgeForm[{Thick,Black}],
-MapThread[#1/.If[#2==={},col->blcol,col->colfunc[#2]]&,{disks,sdata}],
-text
-},ImageSize->OptionValue[ImageSize]],
-BarLegend[{colf,{min,max}},LabelStyle->Directive[{Bold,Black,FontFamily->"Helvetica",FontSize->OptionValue[TextSize]}],LegendMarkerSize->0.8 OptionValue[ImageSize]]]
-
-]
-]
-];
-
-(*Output plot or plotwindow*)
-If[OptionValue[BullPlotMethod]==="Dynamic",
-NotebookClose[plotwindow];
-plotwindow=CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pl}, WindowSize -> All, WindowTitle -> "Plot data window"]];
-,
-pl]
-
-]
+BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, max, cols, sdata, pts, disks, 
+  textv, textn, plfun, col},
+ number = {6, 6, 4, 1};
+ radius = {4.9, 3.6, 2.3, 1};
+ datat = If[# === {} || NumberQ[#], #, Round[Mean[#], .01]] & /@ dati;
+ 
+ {min, max} = 
+  If[OptionValue[PlotRange] === Automatic, 
+   MinMax[DeleteCases[datat, 0.]], OptionValue[PlotRange]];
+ 
+ cols = (# -> 
+      Show[ColorData[#, "Image"], 
+       ImageSize -> 100]) & /@ {"GrayTones", "Rainbow", 
+    "ThermometerColors", "SunsetColors", "TemperatureMap", 
+    "GrayYellowTones", "BlueGreenYellow", "AvocadoColors", 
+    "SouthwestColors"};
+ 
+ max = If[max <= min, min + 0.1, max];
+ sdata = (datat - min)/(max - min);
+ 
+ pts = Flatten[
+   Table[If[i == 4, {{0, 0}}, 
+     RotationMatrix[# Degree].{0, 
+         radius[[i]] - 1.3 OptionValue[TextOffset]} & /@ 
+      Range[0, 359, 360/number[[i]]]], {i, 4}], 1];
+ 
+ disks = Flatten[{
+    Table[{col, Disk[{0, 0}, radius[[1]], Pi/3 {i, i + 1}]}, {i, 1, 
+      6}],
+    Table[{col, Disk[{0, 0}, radius[[2]], Pi/3 {i, i + 1}]}, {i, 1, 
+      6}],
+    Table[{col, 
+      Disk[{0, 0}, radius[[3]], (i - 1) Pi/2 + {Pi/4, 3 Pi/4}]}, {i, 
+      1, 4}],
+    {{col, Disk[{0, 0}, radius[[4]], {0, 2 Pi}]}}
+    }, 1];
+ 
+ textv = Table[
+   Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", datat[[i]]],
+      Bold, FontFamily -> "Helvetica", Black, 
+     FontSize -> OptionValue[TextSize]], pts[[i]]], {i, 17}];
+ textn = Table[
+   Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", i], Bold, 
+     FontFamily -> "Helvetica", Black, 
+     FontSize -> OptionValue[TextSize]], pts[[i]]], {i, 17}];
+ 
+ plfun[{colf_, cstyle_}, {pText_, textVal_}] := 
+  Block[{blcol, colfunc}, Legended[
+    blcol = If[colf == "GrayTones", Darker[Red], Gray];
+    colfunc = ColorData[colf][If[cstyle, 1 - #, #]] &;
+    Graphics[{
+      EdgeForm[{Thick, Black}], 
+      MapThread[#1 /. 
+         If[#2 === {} || #2 < 0, col -> blcol, 
+          col -> colfunc[#2]] &, {disks, sdata}], 
+      If[pText, Switch[textVal, 1, textn, 2, textv]]},
+     ImageSize -> OptionValue[ImageSize]
+     ], BarLegend[{colf, {min, max}}, 
+     LabelStyle -> 
+      Directive[{Bold, Black, FontFamily -> "Helvetica", 
+        FontSize -> OptionValue[TextSize]}
+       ], LegendMarkerSize -> 0.8 OptionValue[ImageSize]]]
+   ];
+ 
+ If[OptionValue[BullPlotMethod] === "Dynamic",
+  NotebookClose[plotwindow];
+  plotwindow = CreateWindow[DialogNotebook[{
+      CancelButton["Close", DialogReturn[]],
+      
+      Manipulate[
+       plfun[{colf, cstyle}, {pText, textVal}]
+       (*{{colf,cstyle},{pText,textVal}}*)
+       ,
+       {{pText, True, "Show labels"}, {True, False}},
+       {{textVal, 2, "Label"}, {1 -> "Segment", 2 -> "Value"}},
+       
+       {{colf, OptionValue[ColorFunction], "Color function"}, cols},
+       {{cstyle, False, "Reverse color"}, {True, False}}]
+      }, WindowSize -> All, WindowTitle -> "Plot data window"]];
+  ,
+  plfun[{OptionValue[ColorFunction], False}, {True, 2}]
+  ]
+ ]
 
 
 (* ::Subsection:: *)
@@ -1889,6 +1891,59 @@ CalculateMeasure[data_, type_] :=
   If[type <= 3, 2 - measure, measure]
   ]
 
+
+(* ::Subsection::Closed:: *)
+(*MakeECVBloodMask*)
+
+
+Options[MakeECVBloodMask] = {BloodMaskRange -> {1400, {0, 700}}, OutputCheckImage -> True}
+
+SyntaxInformation[MakeECVBloodMask] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+
+MakeECVBloodMask[pre_, post_, OptionsPattern[]] := 
+ Block[{mask1, mask2, bloodMask, meas, cent, preM, postM, slice, ims},
+  {preM, postM} = OptionValue[BloodMaskRange];
+  
+  mask1 = Mask[pre, preM];
+  mask2 = Mask[post, postM];
+  
+  bloodMask = 
+   Image3D[ImageData[
+       SelectComponents[Erosion[Image[#], 1], 
+        "Count", -3]] & /@ (mask1 mask2)];
+  meas = ComponentMeasurements[bloodMask, "IntensityCentroid"];
+  
+  cent = First@Nearest[meas[[All, 2]], Reverse@Dimensions[mask1]/2.];
+  bloodMask = 
+   Erosion[#, 1] & /@ 
+    ImageData[
+     SelectComponents[bloodMask, #IntensityCentroid == cent &]];
+  
+  If[OptionValue[OutputCheckImage],
+   slice = Ceiling[Length[pre]/2];
+   ims = (Image[((pre[[slice]]/Max[pre[[slice]]]) + 
+         bloodMask[[slice]])/2]);
+   {bloodMask, ims}
+   ,
+   bloodMask
+   ]
+  ]
+  
+(* ::Subsection::Closed:: *)
+(*MakeECVBloodMask*)
+
+
+ECVCalc[mappre_, mappost_, hema_?RealQ] := Block[{z, x, y, mask}, 
+	mask = MakeECVBloodMask[mappre, mappost];
+	ECVCalc[mappre, mappost, mask, hema]
+]
+
+ECVCalc[mappre_, mappost_, bloodMask_, hema_] := Block[{deltaR1, deltaR1b},
+  deltaR1 = Clip[DevideNoZero[1, mappost] - DevideNoZero[1, mappre], {0, Infinity}];
+  deltaR1b = Mean@Flatten[GetMaskData[deltaR1, bloodMask]];
+  Clip[100 (deltaR1/deltaR1b) (1 - hema), {0, 100}]
+]  
+  
 
 (* ::Section:: *)
 (*End Package*)

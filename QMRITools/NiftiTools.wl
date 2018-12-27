@@ -32,7 +32,6 @@ DcmToNii[{\"input\",\"ouput\"}] converts the \"input\" dicom folder to nii files
 For this function to work the dcm2niix.exe file should be present in the QMRITools aplication folder."
 
 
-
 ImportNii::usage = 
 "ImportNii[] promts to select the nii file to import.
 ImportNii[\"file\"] imports the nii file. 
@@ -146,10 +145,6 @@ Export::niihdr="The given header is invalid.";
 Export::niidim="`1` compatible with the dimensions of the input data";
 
 ExportNii::type = "NiiDataType should be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
-
-OpenMRIcron::notfount = "mricron.exe not found in $UserBaseDirectory or $BaseDirectory please install QMRITools in correct directory."
-
-OpenMRIcron::fil = "the file `1` does not exist."
 
 
 (* ::Section:: *)
