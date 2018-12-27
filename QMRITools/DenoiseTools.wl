@@ -306,7 +306,7 @@ PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, 0., opts];
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
-  {data, mask, sigm, ker, off, datao, weights, sigmat, dim, zdim, 
+  {data, mask, maskd, sigm, ker, off, datao, weights, sigmat, dim, zdim, 
    ydim, xdim, ddim, nb, pi, maxit, output, time1, time, weigth,
    timetot, sigi, sigf, zm, zp, xm, xp, ym, yp, fitdata, filt, sigo, 
    Nes, datn, it, m, n, fitsig, step, totalItt, j, max,
@@ -342,11 +342,12 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   sigm = If[NumberQ[sigm], ConstantArray[sigm, {zdim, ydim, xdim}], sigm];
   
   (*if mask is a number make it 1 for all voxels*)
-  mask = If[NumberQ[mask], weights + 1, mask];
+  maskd = Unitize@Total@Transpose@data;
+  mask = If[NumberQ[mask], maskd weights + 1, maskd mask];
   
   (*parameters for monitor*)
   start = off + 1;
-  totalItt=Total[Flatten[mask[[start;;zdim-off]]]];
+  totalItt = Total[Flatten[mask[[start;;zdim-off]]]];
   j=0;
   
   Monitor[output = Table[

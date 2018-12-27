@@ -32,9 +32,14 @@ T1rhoFit::usage =
 Output is {S(0), T1rhomap}."
 
 T2Fit::usage = 
-"T2Fit[data, EchoTimes] fits the T1rho value to the data using linear or nonlinear methods.
+"T2Fit[data, EchoTimes] fits the T2 value to the data using linear or nonlinear methods.
 
 Output is {S(0), T2}."
+
+T1Fit::usage = 
+"T1Fit[data, TR] fits the T1 value to the data using a nonlinear method.
+
+Output is {t1, apar, bpar}"
 
 TriExponentialT2Fit::usage = 
 "TriExponentialT2Fit[data, EchoTimes] fits the T2 based on Azzabou N et.al. Validation of a generic approach to muscle water T2 determination at 3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015.
@@ -155,6 +160,47 @@ SyntaxInformation[T2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 T2Fit[datan_, times_, OptionsPattern[]] := Switch[OptionValue[Method],
   "Linear", LinFit[N[datan], times],
   _, LogFit[N[datan], times]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*T1Fit*)
+
+
+T1Fit[datan_, timei_] := Block[{data, dat, sol, apar, bpar, t1s, tt, t1, time, result ,ad ,datal, fdat ,max ,aparo, bparo, offset, T1r, dim ,times},
+  
+  ad = ArrayDepth[datan];
+  
+  datal = Switch[ad,
+    3, {Transpose[datan, {3, 1, 2}]},
+    4, Transpose[datan, {1, 4, 2, 3}]
+    ];
+  
+  dim = Dimensions[datal];
+  
+  times = If[Length[timei]===dim[[-1]], ConstantArray[timei,dim[[1]]], timei ];
+  
+  result = MapThread[(
+  	dat = #1;
+  	time = #2;
+  	ParallelMap[(
+  		fdat = #;
+		max = Max[fdat];
+		If[Total[fdat] == 0.,
+		 {0., 0., 0.},
+		 sol = Quiet[FindFit[Transpose[{time, #}], Abs[apar - bpar Exp[-tt/t1s]], {{apar, max}, {bpar, 2 max}, {t1s, 1000}}, tt]];
+		 {t1, aparo, bparo} = {t1s (bpar/apar - 1), apar, bpar} /. sol;
+		 t1 = Clip[t1, {0, 3500}, {0, 3500}];
+		 {t1, aparo, bparo}
+		 ]
+      ) &, datal, {ad - 1}];
+     ) &,
+  {datal, times}, 1
+  ];
+  
+  {t1, apar, bpar} = TransData[result, "r"];
+
+	{t1, apar, bpar}
   ]
 
 
@@ -449,6 +495,204 @@ MoveStatesI = Compile[{{Rmat, _Complex, 2}, {Rvec, _Complex, 1}, {Smat, _Integer
 
 
 (* ::Subsubsection::Closed:: *)
+(*ErrorFunc*)
+
+
+ErrorFunc1[y_, T2f_Real, B1_Real, S0_, vals_] :=  Quiet@Block[{sig, T1m, T1f, echo, angle},   
+	{echo, T1f, angle} = vals;
+	Total[(y - S0 EPGSignali[echo, {T1f, T2f}, angle, B1])^2]]
+
+
+ErrorFunc[y_, T2m_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, T2f, echo, angle},
+   {echo, {T1m, T1f, T2f}, angle} = vals;
+   sig = Transpose[{
+      Abs[EPGSignali[echo, {T1m, T2m}, angle, B1]],
+      Abs[EPGSignali[echo, {T1f, T2f}, angle, B1]]
+      }];
+   LeastSquaresErrorC[sig, y]]
+
+
+ErrorFunc[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle},
+   {echo, {T1m, T1f}, angle} = vals;
+   sig = Transpose[{
+      EPGSignali[echo, {T1m, T2m}, angle, B1],
+      EPGSignali[echo, {T1f, T2f}, angle, B1]
+      }];
+   LeastSquaresErrorC[sig, y]
+   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*LeastSquaresC*)
+
+
+(*calculate the pseudoinverse Ai*)
+PseudoInverseC = Compile[{{A, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.A].T)], 
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+PseudoInverseWC = Compile[{{A, _Real, 2}, {W, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.W.A].T.W)], 
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+   
+LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, (Inverse[T.A].T).y], 
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+(*Ai is Inverse[T.A].T*)   
+LeastSquares2C = Compile[{{Ai, _Real, 2}, {y, _Real, 1}},  Ai.y, 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+(*f is Ai.y*)
+ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Total[((y - A.f))^2], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+LeastSquaresErrorC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, Total[(y - A.(Inverse[T.A].T).y)^2]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+(*Ai is Inverse[T.A].T*)	
+LeastSquaresError2C = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Total[(y - A.Ai.y)^2], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*NonLinearEPGFit*)
+
+
+SyntaxInformation[NonLinearEPGFit]= {"ArgumentsPattern" -> {_, _}}
+
+NonLinearEPGFit[{valsf_,cons_}, yi_] := NonLinearEPGFiti[{valsf, cons}, N[yi]]
+
+NonLinearEPGFiti[{_,_}, {0. ..}] = {0., 0., 0., 0., 0.};
+
+NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{fwf, residualError, soli, T1m, T1f, T2f, echo, angle, T2s, B1s},
+	(*perform the fit*)
+	{residualError, soli} = Quiet@FindMinimum[{
+    	 ErrorFunc[ydat, T2i, B1i, valsf],
+     	{0.4 <= B1i, B1i <= 1.6, cons[[1]] <= T2i, T2i <= cons[[2]]}
+     	}, {{T2i, 35}, {B1i, 0.9}},
+     	AccuracyGoal -> 5, PrecisionGoal -> 5, MaxIterations -> 25];
+     {T2s, B1s} = soli[[All, 2]];
+
+	(*get corresponding fat fractions*)
+	{echo, {T1m, T1f, T2f}, angle} = valsf;
+	fwf = LeastSquaresC[Transpose[{
+    	EPGSignali[echo, {T1m, T2s}, angle, B1s],
+    	EPGSignali[echo, {T1f, T2f}, angle, B1s]
+    }], ydat];
+	
+	(*export paramters*)
+	Flatten[{{T2s, B1s}, fwf, residualError}]
+   ]
+
+
+(* ::Subsubsection:: *)
+(*DictionaryMinSearch*)
+
+
+SyntaxInformation[DictionaryMinSearch]= {"ArgumentsPattern" -> {_, _, _.}}
+
+dicmet = {"NelderMead", "PostProcess" -> False, "ExpandRatio" -> 2, "ShrinkRatio" -> .75, "ReflectRatio" -> .85, "ContractRatio" -> .75};
+
+
+(*brute force dictionary min search*)
+(*usging a normal dictionary*)
+DictionaryMinSearch[{dictf_, valsf_}, ydat_] := DictionaryMinSearchi[{dictf, valsf}, ydat]
+
+DictionaryMinSearchi[{_, valsf_}, {0. ..}] := Join[0. valsf[[1]], {0., 0., 0.}]
+
+DictionaryMinSearchi[{dictf_, valsf_}, ydat_] := Block[{fwf, residualError, sol},
+	(*calcualte dictionary error*)
+ 	fwf = LeastSquaresC[dictf, ydat];
+ 	residualError = ErrorC[ydat, fwf, dictf];
+ 	sol = First@Ordering[residualError, 1];
+ 	(*find Min value*)
+ 	Flatten[{valsf, fwf, residualError}[[All, sol]]]
+  ]
+  
+(*brute force dictionary min search*)
+(*usging a the pseudo inverse dictionary*)
+DictionaryMinSearch[{dictf_, dictfMat_, valsf_}, ydat_] := DictionaryMinSearchi[{dictf, dictfMat, valsf}, ydat]
+
+DictionaryMinSearchi[{_, _, valsf_}, {0. ..}] := Join[0. valsf[[1]], {0., 0., 0.}]
+
+DictionaryMinSearchi[{dictf_, dictfMat_, valsf_}, ydat_] := Block[{fwf, residualError, sol},
+	(*calcualte dictionary error*)
+ 	fwf = LeastSquares2C[dictfMat, ydat];
+ 	residualError = ErrorC[ydat, fwf, dictf];
+ 	sol = First@Ordering[residualError, 1];
+ 	(*find Min value*)
+ 	Flatten[{valsf, fwf, residualError}[[All, sol]]]
+  ]
+
+
+(*minimization dictionary min search*)
+(*Fit without the predefined pseudo inverse*)
+DictionaryMinSearch[{dict_, vals_}, ydat_, cons_] := DictionaryMinSearchi[{dict, vals}, ydat, cons]
+
+(*if background return zeors*)
+DictionaryMinSearchi[{_, _}, {0. ..}, {_, _, _}] = {0., 0., 0., 0., 0., 0.}
+
+DictionaryMinSearchi[{_, _}, {0. ..}, {_, _}] = {0., 0., 0., 0., 0.}
+
+(*2D dictionary*)
+DictionaryMinSearchi[{dict_, vals_}, ydat_, {maxx_,maxy_}] := Block[{err, coor, ErrorFuncDic},
+	
+	(*define the cost function*)
+	ErrorFuncDic[sig_, {x_Integer, y_Integer}] := LeastSquaresErrorC[dict[[x, y]], sig];
+	(*minimize the dictionary value*)
+	{err, coor} = Quiet@NMinimize[
+		{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
+		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy}/2]]];
+	(*find the min vals*)
+	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
+	]
+
+(*3D dictionary*)
+DictionaryMinSearchi[{dict_, vals_}, ydat_, {maxx_, maxy_, maxz_}] := Block[{err, coor, ErrorFuncDic},
+	(*define the cost function*)
+	ErrorFuncDic[sig_, {x_Integer, y_Integer, z_Integer}] := LeastSquaresErrorC[dict[[x, y, z]], sig];
+	(*minimize the dictionary value*)
+	{err, coor} = Quiet@NMinimize[
+		{ErrorFuncDic[ydat, {x, y, z}], 1 <= x <= maxx && 1 <= y <= maxy && 1 <= z <= maxz}, {x, y, z}, Integers,
+		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy, maxz}/2]]];
+	(*find the min vals*)
+	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
+  ]
+
+
+(*minimization dictionary min search*)
+(*usging a the pseudo inverse dictionary*)  
+DictionaryMinSearch[{dict_, dictMat_, vals_}, ydat_, cons_] := DictionaryMinSearchi[{dict, dictMat, vals}, ydat, cons]
+
+(*if background return zeors*)
+DictionaryMinSearchi[{_, _, _}, {0. ..}, {_, _, _}] = {0., 0., 0., 0., 0., 0.}
+
+DictionaryMinSearchi[{_, _, _}, {0. ..}, {_, _}] = {0., 0., 0., 0., 0.}
+
+(*2D dictionary*)
+DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {maxx_,maxy_}] := Block[{err, coor, ErrorFuncDic},
+	(*define the cost function*)
+	ErrorFuncDic[sig_, {x_Integer, y_Integer}] := LeastSquaresError2C[dict[[x, y]], dictMat[[x, y]], sig];
+	(*minimize the dictionary value*)
+	{err, coor} = Quiet@NMinimize[
+		{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
+		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy}/2]]];
+	(*find the min vals*)
+	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
+	]
+
+(*3D dictionary*)
+DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {maxx_, maxy_, maxz_}] := Block[{err, coor, ErrorFuncDic},
+	(*define the cost function*)
+	ErrorFuncDic[sig_, {x_Integer, y_Integer, z_Integer}] := LeastSquaresError2C[dict[[x, y, z]], dictMat[[x, y, z]], sig];
+	(*minimize the dictionary value*)
+		{err, coor} = Quiet@NMinimize[
+			{ErrorFuncDic[ydat, {x, y, z}], 1 <= x <= maxx && 1 <= y <= maxy && 1 <= z <= maxz}, {x, y, z}, Integers,
+			Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy, maxz}/2]]];
+	(*find the min vals*)
+	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
 (*EPGT2Fit*)
 
 
@@ -490,7 +734,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	  (*make whole ms such that it is more likely for same values*)
 	  Print["EPG fat callibration:  ", T2f, " ms"];
 	  ,
-	  T2f = If[NumberQ[t2fran], Print["DictT2frange is not a number using 150ms"]; 150, t2fran];
+	  T2f = If[NumberQ[t2fran], t2fran, If[ListQ[t2fran]&&Length[t2fran]==3, t2fran, Print["DictT2frange is not a number or range {min,max,step} using 150ms"]; 150]];
 	  ];
   
 	(*monitor calculation*)
@@ -501,7 +745,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		PrintTemporary[ProgressIndicator[Dynamic[i], {0, dim}]]];
 	
 	(*find the correct method*)
-	met = If[OptionValue[EPGCalibrate] || NumberQ[t2fran], 
+	met = If[OptionValue[EPGCalibrate] || NumberQ[T2f], 
 		PrintTemporary["Fitting using single Fat value: ",T2f]; val = 2; OptionValue[EPGMethod], 
 		PrintTemporary["Fitting using dictionary of Fat values: ",T2f]; val = 3; "dictionaryM"
 		];
@@ -539,7 +783,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			(*monitor calculation*)
 			PrintTemporary["Starting dictionary min search (Nmin): ", DateString[]];
 			(*perform the fit using parallel kernels*)
-			DistributeDefinitions[dict, dictMat, vals, cons, size, LeastSquaresC, LeastSquaresError2C, DictionaryMinSearchi];
+			DistributeDefinitions[dict, dictMat, vals, cons, size, LeastSquaresC, LeastSquaresError2C, DictionaryMinSearchi, dicmet];
 			ParallelMap[(
 				j++; If[j > size, i += j; j = 1;]; 
 				DictionaryMinSearchi[{dict, dictMat, vals}, #, cons])&, datal, {ad - 1}]
@@ -559,7 +803,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			(*monitor calculation*)
 			PrintTemporary["Starting dictionary min search (Brute): ", DateString[]];
 			(*perform the fit using parallel kernels*)
-			DistributeDefinitions[dictf, dictfMat, valsf, size, LeastSquaresC, LeastSquaresErrorC, ErrorC, DictionaryMinSearchi];
+			DistributeDefinitions[dictf, dictfMat, valsf, size, LeastSquaresC, LeastSquaresErrorC, ErrorC, DictionaryMinSearchi, dicmet];
 			ParallelMap[(
 				j++; If[j > size, i += j; j = 1;]; 
 				DictionaryMinSearchi[{dictf, dictfMat, valsf}, #])&, datal, {ad - 1}]
@@ -579,7 +823,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		PrintTemporary["Starting B1 smoothing and refit with smooth B1: ", DateString[]];
 					
 		(*smooth the B1 map*)
-		B1Map = Clip[N[Round[LapFilt[B1Map] - b1ran[[1]], b1ran[[3]]] + b1ran[[1]]], b1ran[[1;;2]], b1ran[[1;;2]]];
+		B1Map = Clip[N[Round[LapFilter[B1Map] - b1ran[[1]], b1ran[[3]]] + b1ran[[1]]], b1ran[[1;;2]], b1ran[[1;;2]]];
 		(*convert B1 values to dictionaly integers*)
 		b1vals = N@Range @@ b1ran; b1len = Length[b1vals];
 		b1rule = Thread[b1vals -> Range[b1len]];
@@ -600,7 +844,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 				DictionaryMinSearchi[{dict[[All,b1]], dictMat[[All,b1]], vals[[All,b1]]}, sig]) &, dataf, {ad - 1}]
 			,
 			(*smooth the T2fmat*)
-			T2fmap = Clip[N@Round[LapFilt[T2fmap] - t2fran[[1]], t2fran[[3]]] + t2fran[[1]], t2fran[[1 ;; 2]], t2fran[[1 ;; 2]]];
+			T2fmap = Clip[N@Round[LapFilter[T2fmap] - t2fran[[1]], t2fran[[3]]] + t2fran[[1]], t2fran[[1 ;; 2]], t2fran[[1 ;; 2]]];
 			t2vals = N@Range @@ t2fran; t2len = Length[t2vals];
 			t2rule = Thread[t2vals -> Range[t2len]];
 			t2Int = Clip[Round[T2fmap /. t2rule], {1, cons[[2]]}];
@@ -631,8 +875,6 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	
 	If[OptionValue[OutputCalibration]&&OptionValue[EPGCalibrate], {out, cal[[1]]}, out]
 ]
-
-LapFilt[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@data, "Real"], fil, Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -755,203 +997,6 @@ CreateT2Dictionaryi[relax_, echo_, ang_, t2range_, b1range_, t2frange_] := Creat
 	(*output*)
 	{dict,vals}
 ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*NonLinearEPGFit*)
-
-
-SyntaxInformation[NonLinearEPGFit]= {"ArgumentsPattern" -> {_, _}}
-
-NonLinearEPGFit[{valsf_,cons_}, yi_] := NonLinearEPGFiti[{valsf, cons}, N[yi]]
-
-NonLinearEPGFiti[{_,_}, {0. ..}] = {0., 0., 0., 0., 0.};
-
-NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{fwf, residualError, soli, T1m, T1f, T2f, echo, angle, T2s, B1s},
-	(*perform the fit*)
-	{residualError, soli} = Quiet@FindMinimum[{
-    	 ErrorFunc[ydat, T2i, B1i, valsf],
-     	{0.4 <= B1i, B1i <= 1.6, cons[[1]] <= T2i, T2i <= cons[[2]]}
-     	}, {{T2i, 35}, {B1i, 0.9}},
-     	AccuracyGoal -> 5, PrecisionGoal -> 5, MaxIterations -> 25];
-     {T2s, B1s} = soli[[All, 2]];
-
-	(*get corresponding fat fractions*)
-	{echo, {T1m, T1f, T2f}, angle} = valsf;
-	fwf = LeastSquaresC[Transpose[{
-    	EPGSignali[echo, {T1m, T2s}, angle, B1s],
-    	EPGSignali[echo, {T1f, T2f}, angle, B1s]
-    }], ydat];
-	
-	(*export paramters*)
-	Flatten[{{T2s, B1s}, fwf, residualError}]
-   ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*DictionaryMinSearch*)
-
-
-SyntaxInformation[DictionaryMinSearch]= {"ArgumentsPattern" -> {_, _, _.}}
-
-
-(*brute force dictionary min search*)
-(*usging a normal dictionary*)
-DictionaryMinSearch[{dictf_, valsf_}, ydat_] := DictionaryMinSearchi[{dictf, valsf}, ydat]
-
-DictionaryMinSearchi[{_, valsf_}, {0. ..}] := Join[0. valsf[[1]], {0., 0., 0.}]
-
-DictionaryMinSearchi[{dictf_, valsf_}, ydat_] := Block[{fwf, residualError, sol},
-	(*calcualte dictionary error*)
- 	fwf = LeastSquaresC[dictf, ydat];
- 	residualError = ErrorC[ydat, fwf, dictf];
- 	sol = First@Ordering[residualError, 1];
- 	(*find Min value*)
- 	Flatten[{valsf, fwf, residualError}[[All, sol]]]
-  ]
-
-
-(*brute force dictionary min search*)
-(*usging a the pseudo inverse dictionary*)
-DictionaryMinSearch[{dictf_, dictfMat_, valsf_}, ydat_] := DictionaryMinSearchi[{dictf, dictfMat, valsf}, ydat]
-
-DictionaryMinSearchi[{_, _, valsf_}, {0. ..}] := Join[0. valsf[[1]], {0., 0., 0.}]
-
-DictionaryMinSearchi[{dictf_, dictfMat_, valsf_}, ydat_] := Block[{fwf, residualError, sol},
-	(*calcualte dictionary error*)
- 	fwf = LeastSquares2C[dictfMat, ydat];
- 	residualError = ErrorC[ydat, fwf, dictf];
- 	sol = First@Ordering[residualError, 1];
- 	(*find Min value*)
- 	Flatten[{valsf, fwf, residualError}[[All, sol]]]
-  ]
-  
-  
-(*minimization dictionary min search*)
-(*usging a normal dictionary*)  
-
-dicmet = {"NelderMead", "PostProcess" -> False, "ExpandRatio" -> 2, "ShrinkRatio" -> .75, "ReflectRatio" -> .85, "ContractRatio" -> .75};
-
-DictionaryMinSearch[{dict_, vals_}, ydat_, cons_] := DictionaryMinSearchi[{dict, vals}, ydat, cons]
-
-(*if background return zeors*)
-DictionaryMinSearchi[{_, _}, {0. ..}, {_, _, _}] = {0., 0., 0., 0., 0., 0.}
-
-DictionaryMinSearchi[{_, _}, {0. ..}, {_, _}] = {0., 0., 0., 0., 0.}
-
-(*Fit without the predefined pseudo inverse*)
-DictionaryMinSearchi[{dict_, vals_}, ydat_, {maxx_,maxy_}] := Block[{err, coor, ErrorFuncDic},
-	
-	(*define the cost function*)
-	ErrorFuncDic[sig_, {x_Integer, y_Integer}] := LeastSquaresErrorC[dict[[x, y]], sig];
-	(*minimize the dictionary value*)
-	{err, coor} = Quiet@NMinimize[
-		{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
-		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy}/2]]];
-	(*find the min vals*)
-	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
-	]
-
-(*Fit with the predifined pseudo inverse*)
-DictionaryMinSearchi[{dict_, vals_}, ydat_, {maxx_, maxy_, maxz_}] := Block[{err, coor, ErrorFuncDic},
-	(*define the cost function*)
-	ErrorFuncDic[sig_, {x_Integer, y_Integer, z_Integer}] := LeastSquaresErrorC[dict[[x, y, z]], sig];
-	(*minimize the dictionary value*)
-	{err, coor} = Quiet@NMinimize[
-		{ErrorFuncDic[ydat, {x, y, z}], 1 <= x <= maxx && 1 <= y <= maxy && 1 <= z <= maxz}, {x, y, z}, Integers,
-		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy, maxz}/2]]];
-	(*find the min vals*)
-	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
-  ]
-
-
-(*minimization dictionary min search*)
-(*usging a the pseudo inverse dictionary*)  
-DictionaryMinSearch[{dict_, dictMat_, vals_}, ydat_, cons_] := DictionaryMinSearchi[{dict, dictMat, vals}, ydat, cons]
-
-DictionaryMinSearchi[{_, _, _}, {0. ..}, {_, _, _}] = {0., 0., 0., 0., 0., 0.}
-
-DictionaryMinSearchi[{_, _, _}, {0. ..}, {_, _}] = {0., 0., 0., 0., 0.}
-
-DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {maxx_,maxy_}] := Block[{err, coor, ErrorFuncDic},
-	(*define the cost function*)
-	ErrorFuncDic[sig_, {x_Integer, y_Integer}] := LeastSquaresError2C[dict[[x, y]], dictMat[[x, y]], sig];
-	(*minimize the dictionary value*)
-	{err, coor} = Quiet@NMinimize[
-		{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
-		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy}/2]]];
-	(*find the min vals*)
-	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
-	]
-
-DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {maxx_, maxy_, maxz_}] := Block[{err, coor, ErrorFuncDic},
-	(*define the cost function*)
-	ErrorFuncDic[sig_, {x_Integer, y_Integer, z_Integer}] := LeastSquaresError2C[dict[[x, y, z]], dictMat[[x, y, z]], sig];
-	(*minimize the dictionary value*)
-		{err, coor} = Quiet@NMinimize[
-			{ErrorFuncDic[ydat, {x, y, z}], 1 <= x <= maxx && 1 <= y <= maxy && 1 <= z <= maxz}, {x, y, z}, Integers,
-			Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy, maxz}/2]]];
-	(*find the min vals*)
-	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
-  ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*ErrorFunc*)
-
-
-ErrorFunc1[y_, T2f_Real, B1_Real, S0_, vals_] :=  Quiet@Block[{sig, T1m, T1f, echo, angle},   
-	{echo, T1f, angle} = vals;
-	Total[(y - S0 EPGSignali[echo, {T1f, T2f}, angle, B1])^2]]
-
-
-ErrorFunc[y_, T2m_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, T2f, echo, angle},
-   {echo, {T1m, T1f, T2f}, angle} = vals;
-   sig = Transpose[{
-      Abs[EPGSignali[echo, {T1m, T2m}, angle, B1]],
-      Abs[EPGSignali[echo, {T1f, T2f}, angle, B1]]
-      }];
-   LeastSquaresErrorC[sig, y]]
-
-
-ErrorFunc[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle},
-   {echo, {T1m, T1f}, angle} = vals;
-   sig = Transpose[{
-      EPGSignali[echo, {T1m, T2m}, angle, B1],
-      EPGSignali[echo, {T1f, T2f}, angle, B1]
-      }];
-   LeastSquaresErrorC[sig, y]
-   ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*LeastSquaresC*)
-
-
-(*calculate the pseudoinverse Ai*)
-PseudoInverseC = Compile[{{A, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.A].T)], 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-PseudoInverseWC = Compile[{{A, _Real, 2}, {W, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.W.A].T.W)], 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-   
-LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, (Inverse[T.A].T).y], 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-(*Ai is Inverse[T.A].T*)   
-LeastSquares2C = Compile[{{Ai, _Real, 2}, {y, _Real, 1}},  Ai.y, 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-(*f is Ai.y*)
-ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Total[((y - A.f))^2], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-LeastSquaresErrorC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, Total[(y - A.(Inverse[T.A].T).y)^2]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-(*Ai is Inverse[T.A].T*)	
-LeastSquaresError2C = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Total[(y - A.Ai.y)^2], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Section:: *)

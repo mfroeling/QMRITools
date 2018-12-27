@@ -1,0 +1,295 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10161,        286]
+NotebookOptionsPosition[      6955,        219]
+NotebookOutlinePosition[      8926,        268]
+CellTagsIndexPosition[      8883,        265]
+WindowTitle->ExcludeSlices
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"CardiacTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/CardiacTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/ExcludeSlices\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/ExcludeSlices"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+ExcludeSlices.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$92659], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/ExcludeSlices", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["ExcludeSlices", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+ExcludeSlices[data]\[LineSeparator]excludes slices that do not look like the \
+others based on various distance measures. Output is an array with 1 or 0 \
+with the dimensiosn {slices, diff dirs}\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["CutOffMethod",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/CutOffMethod"], "Auto", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CutOffMethod"]],"paclet:QMRITools/ref/CutOffMethod"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["ExcludeSlices"], "InlineFormula"],
+     ". ",
+     "Default",
+     " value is \"Auto\" or it can be a fixed percentage (value between 0 and \
+.5)"
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["DistanceMeasure",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DistanceMeasure"], "5", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["DistanceMeasure"]],"paclet:QMRITools/ref/DistanceMeasure"},
+       
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["ExcludeSlices"], "InlineFormula"],
+     ". Defaul value is 5. (1 ",
+     "ManhattanDistance",
+     ", 2 ",
+     "SquaredEuclideanDistance",
+     ", 3 ",
+     "EuclideanDistance",
+     ", 4 ",
+     "Correlation",
+     ", 5 ",
+     "SpearmanRho"
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["CardiacTools"]],"paclet:QMRITools/guide/CardiacTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"ExcludeSlices",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 51, 32.4682627}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`CardiacTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "ExcludeSlices[data] excludes slices that do not look like the others \
+based on various distance measures. Output is an array with 1 or 0 with the \
+dimensiosn {slices, diff dirs}", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "ExcludeSlices", "titlemodifier" -> "", "windowtitle" -> "ExcludeSlices", 
+    "type" -> "Symbol", "uri" -> "QMRITools/ref/ExcludeSlices"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[585, 21, 3063, 74, 70, "AnchorBarGrid",ExpressionUUID->"60446d26-086b-49ff-9c94-df74c2fe4697",
+ CellID->1],
+Cell[3651, 97, 170, 6, 70, "ObjectNameGrid",ExpressionUUID->"4f18f1a8-df47-4b1b-8557-ed39dbacf17f"],
+Cell[3824, 105, 395, 10, 70, "Usage",ExpressionUUID->"fe529366-0ede-4b71-a6b8-eb5552031473"],
+Cell[CellGroupData[{
+Cell[4244, 119, 621, 19, 70, "NotesSection",ExpressionUUID->"a28e6210-31a6-4a35-be17-148694e6ccd6",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[4868, 140, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"a834ee42-74ff-44f6-8822-7a8591741b1f"],
+Cell[4902, 142, 53, 0, 70, "Notes",ExpressionUUID->"89627982-e1f4-404b-9ec9-b0d1da5444b4"],
+Cell[4958, 144, 1522, 47, 70, "3ColumnTableMod",ExpressionUUID->"288df134-f039-4b7e-b2ca-844acce70e3d"],
+Cell[6483, 193, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"2c15472a-4605-484a-b7ff-3aac9d419549"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[6551, 198, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"29c607fa-ca33-4a67-bf09-cbcf0ee40a49",
+ CellID->38303248],
+Cell[6710, 207, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"d7ee97d8-7850-43f1-b8d8-faa2de60f01b"],
+Cell[6744, 209, 169, 5, 70, "MoreAbout",ExpressionUUID->"7825f553-a31d-404d-8bde-bd929ac755d7",
+ CellID->1]
+}, Open  ]],
+Cell[6928, 217, 23, 0, 70, "FooterCell",ExpressionUUID->"779e3c68-c522-4fef-98b7-ca1182f43c26"]
+}
+]
+*)
+
+(* End of internal cache information *)

@@ -1,0 +1,297 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10697,        288]
+NotebookOptionsPosition[      7089,        215]
+NotebookOutlinePosition[      9462,        270]
+CellTagsIndexPosition[      9419,        267]
+WindowTitle->SNRMapCalc
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"ProcessingTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/ProcessingTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/SNRMapCalc\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/SNRMapCalc"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+SNRMapCalc.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$246362], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/SNRMapCalc", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["SNRMapCalc", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+SNRMapCalc[data$1,noisemap]\[LineSeparator]calcualtes the signal to noise \
+ratio of the data using MN[data]/(1/sqrt[pi/2] sigma), where sigma is the \
+local mean of the noise map assuming it is a rician distribution. \
+\>"]},
+   {"", Cell["\<\
+SNRMapCalc[{data$1,data$2}]\[LineSeparator]calcualtes the signal to noise \
+ratio from two identical images using MN[data1,data2] / (.5 SQRT[2] \
+STDV[data2-data1]). \
+\>"]},
+   {"", Cell["\<\
+SNRMapCalc[{data$1, .. dataN}]\[LineSeparator]calcualtes the signal to noise \
+ratio of the data using MN/sigma where the mean signal MN is the average voxe \
+value over all dynamics N and the sigma is the standard deviation over all \
+dynamics N.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["OutputSNR",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/OutputSNR"], "SNR", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["OutputSNR"]],"paclet:QMRITools/ref/OutputSNR"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["SNRMapCalc"], "InlineFormula"],
+     "."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["SmoothSNR",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/SmoothSNR"], "2", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SmoothSNR"]],"paclet:QMRITools/ref/SmoothSNR"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["SNRMapCalc"], "InlineFormula"],
+     "."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["ProcessingTools"]],"paclet:QMRITools/guide/ProcessingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"SNRMapCalc",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 1, 0, 54.6570352}", 
+    "history" -> {"XX", "", "", ""}, "context" -> 
+    "QMRITools`ProcessingTools`", "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "SNRMapCalc[data$1,noisemap] calcualtes the signal to noise ratio of the \
+data using MN[data]/(1/sqrt[pi/2] sigma), where sigma is the local mean of \
+the noise map assuming it is a rician distribution. \
+SNRMapCalc[{data$1,data$2}] calcualtes the signal to noise ratio from two \
+identical images using MN[data1,data2] / (.5 SQRT[2] STDV[data2-data1]). \
+SNRMapCalc[{data$1, .. dataN}] calcualtes the signal to noise ratio of the \
+data using MN/sigma where the mean signal MN is the average voxe value over \
+all dynamics N and the sigma is the standard deviation over all dynamics N.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "SNRMapCalc", 
+    "titlemodifier" -> "", "windowtitle" -> "SNRMapCalc", "type" -> "Symbol", 
+    "uri" -> "QMRITools/ref/SNRMapCalc"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[582, 21, 3058, 74, 70, "AnchorBarGrid",ExpressionUUID->"63c8a8df-3c99-4fef-966f-5c693f6205c1",
+ CellID->1],
+Cell[3643, 97, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"e4622564-7f2f-45da-bc1a-6d8d768ff17a"],
+Cell[3813, 105, 898, 21, 70, "Usage",ExpressionUUID->"30caab8f-ab08-46f9-8db4-b021ab21fd8a"],
+Cell[CellGroupData[{
+Cell[4736, 130, 621, 19, 70, "NotesSection",ExpressionUUID->"3e5ac6ca-f83c-49ec-8c04-99016a9dbd40",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5360, 151, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"971d2296-0ffd-4cfb-bbb0-49fc31674c28"],
+Cell[5394, 153, 53, 0, 70, "Notes",ExpressionUUID->"7e9ccc31-0739-47c1-b224-ff20e768a322"],
+Cell[5450, 155, 1158, 32, 70, "3ColumnTableMod",ExpressionUUID->"306b1d0a-328e-4fe6-bd88-e279a6ec9e21"],
+Cell[6611, 189, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"006ee8d3-a57f-4e31-acf7-f9c1c804c765"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[6679, 194, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"b2668a12-b78c-4301-a2fd-c15796177ec2",
+ CellID->38303248],
+Cell[6838, 203, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"30f29db8-511f-402e-9539-4dc0a23f9eab"],
+Cell[6872, 205, 175, 5, 70, "MoreAbout",ExpressionUUID->"229328be-c144-4aa9-88bc-7c61a5e317dc",
+ CellID->1]
+}, Open  ]],
+Cell[7062, 213, 23, 0, 70, "FooterCell",ExpressionUUID->"9c9b5a3e-3e97-4c3e-8807-945e27f4e538"]
+}
+]
+*)
+
+(* End of internal cache information *)

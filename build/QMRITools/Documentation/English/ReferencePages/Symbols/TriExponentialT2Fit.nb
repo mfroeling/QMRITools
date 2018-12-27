@@ -1,0 +1,287 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10315,        278]
+NotebookOptionsPosition[      6829,        207]
+NotebookOutlinePosition[      9080,        260]
+CellTagsIndexPosition[      9037,        257]
+WindowTitle->TriExponentialT2Fit
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"RelaxometryTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/RelaxometryTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/TriExponentialT2Fit\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/TriExponentialT2Fit"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+TriExponentialT2Fit.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$264815], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/TriExponentialT2Fit", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["TriExponentialT2Fit", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+TriExponentialT2Fit[data, EchoTimes]\[LineSeparator]fits the T2 based on \
+Azzabou N et.al. Validation of a generic approach to muscle water T2 \
+determination at 3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015. \
+The fat T2 parameters are automatically estimated from the high signal voxels \
+from the last echo. Output is {{S(0), fatFraction, muscleFraction, \
+T2map},callibration} or {S(0), fatFraction, muscleFranction, T2map}.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["OutputCalibration",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/OutputCalibration"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["OutputCalibration"]],
+        "paclet:QMRITools/ref/OutputCalibration"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["EPGT2Fit"]],"paclet:QMRITools/ref/EPGT2Fit"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["TriExponentialT2Fit"], "InlineFormula"],
+     ". ",
+     "If",
+     " true it outputs the calibartion values."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["RelaxometryTools"]],"paclet:QMRITools/guide/RelaxometryTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"TriExponentialT2Fit",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 1, 2, 3.0114329}", 
+    "history" -> {"XX", "", "", ""}, "context" -> 
+    "QMRITools`RelaxometryTools`", "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "TriExponentialT2Fit[data, EchoTimes] fits the T2 based on Azzabou N \
+et.al. Validation of a generic approach to muscle water T2 determination at \
+3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015. The fat T2 \
+parameters are automatically estimated from the high signal voxels from the \
+last echo. Output is {{S(0), fatFraction, muscleFraction, \
+T2map},callibration} or {S(0), fatFraction, muscleFranction, T2map}.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "TriExponentialT2Fit", 
+    "titlemodifier" -> "", "windowtitle" -> "TriExponentialT2Fit", "type" -> 
+    "Symbol", "uri" -> "QMRITools/ref/TriExponentialT2Fit"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[591, 21, 3113, 75, 70, "AnchorBarGrid",ExpressionUUID->"769bc014-9d89-46eb-b7bd-afbe2a6fb65d",
+ CellID->1],
+Cell[3707, 98, 176, 6, 70, "ObjectNameGrid",ExpressionUUID->"5adc21bc-aaf0-4c03-bdbd-d16138122b42"],
+Cell[3886, 106, 644, 13, 70, "Usage",ExpressionUUID->"f6c2894f-589d-434f-9e41-fa654500a363"],
+Cell[CellGroupData[{
+Cell[4555, 123, 621, 19, 70, "NotesSection",ExpressionUUID->"5c21abcb-ca15-4b2b-a0d7-8d9dbe7a2785",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5179, 144, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"1cb5b6ec-fd23-41ee-952f-90f056caf874"],
+Cell[5213, 146, 53, 0, 70, "Notes",ExpressionUUID->"8b35df6d-0caa-490c-b6b7-7caaf3a91212"],
+Cell[5269, 148, 1077, 31, 70, "3ColumnTableMod",ExpressionUUID->"e27a3c91-84ab-4193-a03b-5baf419b3c81"],
+Cell[6349, 181, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"a97bc815-378b-4627-ab1f-7f520d073108"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[6417, 186, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"272c1dd6-125b-4a9e-8ecf-125e4e676b7f",
+ CellID->38303248],
+Cell[6576, 195, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"696cca42-3ed5-47ed-a68b-b126ef983a0b"],
+Cell[6610, 197, 177, 5, 70, "MoreAbout",ExpressionUUID->"0a778c2d-ad4d-4316-9a2a-b49917eaff68",
+ CellID->1]
+}, Open  ]],
+Cell[6802, 205, 23, 0, 70, "FooterCell",ExpressionUUID->"c4b128ee-2d03-41aa-804d-bdcc603298b0"]
+}
+]
+*)
+
+(* End of internal cache information *)

@@ -1,0 +1,294 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     10396,        285]
+NotebookOptionsPosition[      6909,        214]
+NotebookOutlinePosition[      9161,        267]
+CellTagsIndexPosition[      9118,        264]
+WindowTitle->ErrorPlot
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"PlottingTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/PlottingTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/ErrorPlot\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/ErrorPlot"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+ErrorPlot.html"], StandardForm]], "Input", TextClipboardType -> "PlainText"]},
+             Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$92140], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/ErrorPlot", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["ErrorPlot", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+ErrorPlot[data , {xmin, xmax}]\[LineSeparator]plots a errorbar plot of the \
+data from ymin to ymax as a function multiple slice/datasets. \
+\>"]},
+   {"", Cell["\<\
+ErrorPlot[data , {xmin, xmax}, title]\[LineSeparator]plots a errorbar plot of \
+the data from ymin to ymax as a function multiple slice/datasets, with title \
+as plot title. \
+\>"]},
+   {"", Cell["\<\
+ErrorPlot[data , {xmin, xmax}, title, label]\[LineSeparator]plots a errorbar \
+plot of the data from ymin to ymax as a function multiple slice/datasets, \
+with title as plot title and label as x-axis label\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ColorValue",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/ColorValue"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"GrayLevel", "[", "0", "]"}], ",", " ", 
+      RowBox[{"RGBColor", "[", 
+       RowBox[{"1", ",", " ", "0", ",", " ", "0"}], "]"}]}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ColorValue"]],"paclet:QMRITools/ref/ColorValue"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Hist"]],"paclet:QMRITools/ref/Hist"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["ErrorPlot"], "InlineFormula"],
+     ". ",
+     "Default",
+     " {Black, Red}."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["PlottingTools"]],"paclet:QMRITools/guide/PlottingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"ErrorPlot",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 51, 30.4569145}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`PlottingTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "ErrorPlot[data , {xmin, xmax}] plots a errorbar plot of the data from \
+ymin to ymax as a function multiple slice/datasets. ErrorPlot[data , {xmin, \
+xmax}, title] plots a errorbar plot of the data from ymin to ymax as a \
+function multiple slice/datasets, with title as plot title. ErrorPlot[data , \
+{xmin, xmax}, title, label] plots a errorbar plot of the data from ymin to \
+ymax as a function multiple slice/datasets, with title as plot title and \
+label as x-axis label", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "ErrorPlot", "titlemodifier" -> "", "windowtitle" -> "ErrorPlot", "type" -> 
+    "Symbol", "uri" -> "QMRITools/ref/ErrorPlot"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[581, 21, 3047, 74, 70, "AnchorBarGrid",ExpressionUUID->"d8060ec4-a71d-4af1-a249-136d12de2a31",
+ CellID->1],
+Cell[3631, 97, 166, 6, 70, "ObjectNameGrid",ExpressionUUID->"177f2a84-3c5f-4702-8d46-70a840c3701f"],
+Cell[3800, 105, 785, 19, 70, "Usage",ExpressionUUID->"0cf3d8f1-aa69-4a00-adec-fea922b835c3"],
+Cell[CellGroupData[{
+Cell[4610, 128, 621, 19, 70, "NotesSection",ExpressionUUID->"804df752-8a21-4f2f-a299-77468660c7a0",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5234, 149, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"5fa02041-e563-4cc4-b124-7a054f7fd272"],
+Cell[5268, 151, 53, 0, 70, "Notes",ExpressionUUID->"f971750d-3b51-4729-a5cf-78edbfb16e69"],
+Cell[5324, 153, 1108, 33, 70, "3ColumnTableMod",ExpressionUUID->"a435df46-ee2f-4d05-ad8e-bef6db78b269"],
+Cell[6435, 188, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"af23efd6-a6d1-4123-ad4e-56e9a25f4535"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[6503, 193, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"186433a5-ddea-43c5-848a-a893db1622a7",
+ CellID->38303248],
+Cell[6662, 202, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"9fba82bc-d5b6-4877-9d3f-c8a51a7f9e19"],
+Cell[6696, 204, 171, 5, 70, "MoreAbout",ExpressionUUID->"432e39cc-d3df-4a4b-9db5-07dfa2a4ebd4",
+ CellID->1]
+}, Open  ]],
+Cell[6882, 212, 23, 0, 70, "FooterCell",ExpressionUUID->"a7140c98-d21a-4dcb-b45e-0fee5a7bc5a4"]
+}
+]
+*)
+
+(* End of internal cache information *)

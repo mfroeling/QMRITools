@@ -1,0 +1,345 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     11586,        336]
+NotebookOptionsPosition[      8211,        266]
+NotebookOutlinePosition[     10350,        318]
+CellTagsIndexPosition[     10307,        315]
+WindowTitle->FindCoilPosition
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"CoilTools\"\>":>Documentation`HelpLookup[
+       "paclet:QMRITools/guide/CoilTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/FindCoilPosition\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/FindCoilPosition"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+FindCoilPosition.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$102532], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/FindCoilPosition", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["FindCoilPosition", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     "FindCoilPosition[weights]",
+     "\[LineSeparator]finds the coil posision by locating the highest \
+intensity location in the coil weight map, which can be obtianed by ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["LoadCoilSetup"]],"paclet:QMRITools/ref/LoadCoilSetup"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ",
+     "or",
+     " ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SumOfSquares"]],"paclet:QMRITools/ref/SumOfSquares"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".",
+     " ",
+     "Internally",
+     " ",
+     "it",
+     " ",
+     "uses",
+     " ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MakeWeightMask"]],"paclet:QMRITools/ref/MakeWeightMask"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ",
+     "to",
+     " ",
+     "remove",
+     " ",
+     "the",
+     " ",
+     "noise",
+     " ",
+     "of",
+     " ",
+     "the",
+     " ",
+     "weightmasks",
+     ".",
+     " "
+    }]]},
+   {"", Cell["\<\
+FindCoilPosition[weights, mask]\[LineSeparator]limits the search region to \
+the provided mask.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["OutputCoilSurface",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/OutputCoilSurface"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["OutputCoilSurface"]],
+        "paclet:QMRITools/ref/OutputCoilSurface"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["FindCoilPosition"], "InlineFormula"],
+     ". ",
+     "If",
+     " set true it will also output a SurfacePlot of the coil location volume."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["CoilSurfaceVoxelSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/CoilSurfaceVoxelSize"], 
+    RowBox[{"{", 
+     RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CoilSurfaceVoxelSize"]],
+        "paclet:QMRITools/ref/CoilSurfaceVoxelSize"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["FindCoilPosition"], "InlineFormula"],
+     ". Specifies the voxel size used for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["OutputCoilSurface"]],
+        "paclet:QMRITools/ref/OutputCoilSurface"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     "."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["CoilTools"]],"paclet:QMRITools/guide/CoilTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"FindCoilPosition",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 52, 10.4492832}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`CoilTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "FindCoilPosition[weights] finds the coil posision by locating the \
+highest intensity location in the coil weight map, which can be obtianed by \
+LoadCoilSetup or SumOfSquares. Internally it uses MakeWeightMask to remove \
+the noise of the weightmasks. FindCoilPosition[weights, mask] limits the \
+search region to the provided mask.", "synonyms" -> {}, "tabletags" -> {}, 
+    "title" -> "FindCoilPosition", "titlemodifier" -> "", "windowtitle" -> 
+    "FindCoilPosition", "type" -> "Symbol", "uri" -> 
+    "QMRITools/ref/FindCoilPosition"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[588, 21, 3070, 74, 70, "AnchorBarGrid",ExpressionUUID->"0d75cc2d-ae50-4e8b-b580-9e43f0bae7a0",
+ CellID->1],
+Cell[3661, 97, 173, 6, 70, "ObjectNameGrid",ExpressionUUID->"c5710bea-d89f-4206-a18c-758aab5c25f6"],
+Cell[3837, 105, 1403, 56, 70, "Usage",ExpressionUUID->"b0551496-f94f-4af1-bf83-97cc8d9b280c"],
+Cell[CellGroupData[{
+Cell[5265, 165, 621, 19, 70, "NotesSection",ExpressionUUID->"960632b1-9e3c-460e-9e9e-e30c60061e1d",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5889, 186, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"ab66d806-3edc-4c71-936e-66c8b6c96e4e"],
+Cell[5923, 188, 53, 0, 70, "Notes",ExpressionUUID->"6d0f13a9-5223-4f42-bc9e-0fe3d93618d2"],
+Cell[5979, 190, 1763, 48, 70, "3ColumnTableMod",ExpressionUUID->"79bdfa97-8cd0-476f-8b0b-c25d47c38d31"],
+Cell[7745, 240, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"a9739974-aa35-489a-8629-bafca8acce20"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[7813, 245, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"391c396e-8029-49c9-9c44-403a44149732",
+ CellID->38303248],
+Cell[7972, 254, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"feeea28a-fa56-4089-bdb5-42f63cbefabc"],
+Cell[8006, 256, 163, 5, 70, "MoreAbout",ExpressionUUID->"9b40b486-bff8-42d4-b72e-20ac6785647b",
+ CellID->1]
+}, Open  ]],
+Cell[8184, 264, 23, 0, 70, "FooterCell",ExpressionUUID->"f2700e2a-1242-46d0-9852-13507cada738"]
+}
+]
+*)
+
+(* End of internal cache information *)

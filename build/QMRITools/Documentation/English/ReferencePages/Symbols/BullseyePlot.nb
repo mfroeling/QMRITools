@@ -1,0 +1,390 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     12829,        381]
+NotebookOptionsPosition[      9348,        310]
+NotebookOutlinePosition[     11593,        363]
+CellTagsIndexPosition[     11550,        360]
+WindowTitle->BullseyePlot
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"CardiacTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/CardiacTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/BullseyePlot\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/BullseyePlot"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+BullseyePlot.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$47005], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/BullseyePlot", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["BullseyePlot", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+BullseyePlot[data, segmask]\[LineSeparator]generates a AHA-17 segement \
+bullseye plot. \
+\>"]},
+   {"", Cell[TextData[{
+     "BullseyePlot[list]",
+     "\[LineSeparator]generates a AHA-17 segement bullseye plot of the lists \
+(which needs to have 17 values) provide. data is a 3D volume used for the \
+plot. segmask is the AHA-17 segmentation resulting form the ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["CardiacSegment"]],"paclet:QMRITools/ref/CardiacSegment"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ",
+     "function",
+     " ",
+     "when",
+     " ",
+     "AHA17",
+     " ",
+     "is",
+     " ",
+     "selected",
+     ".",
+     " ",
+     "Output",
+     " ",
+     "is",
+     " ",
+     "a",
+     " ",
+     "bullseye",
+     " ",
+     "plot",
+     " ",
+     "or",
+     " ",
+     "a",
+     " ",
+     "plotwindow",
+     ",",
+     " ",
+     "depending",
+     " ",
+     "on",
+     " ",
+     "the",
+     " ",
+     "Method",
+     " ",
+     "which",
+     " ",
+     "can",
+     " ",
+     "be",
+     " ",
+     "\"Dynamic\"",
+     " ",
+     "else",
+     " ",
+     "it",
+     " ",
+     "will",
+     " ",
+     "be",
+     " ",
+     "static",
+     "."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["TextOffset",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/TextOffset"], "0.5", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["TextOffset"]],"paclet:QMRITools/ref/TextOffset"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["BullseyePlot"], "InlineFormula"],
+     ". Determines where the text is placed, can be 0 to 1."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["TextSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/TextSize"], "12", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["TextSize"]],"paclet:QMRITools/ref/TextSize"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["BullseyePlot"], "InlineFormula"],
+     ". Determines the text size."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PlotRange",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/PlotRange"], 
+    ButtonBox["Automatic",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Automatic"], Cell["\<\
+PlotRange is an option for graphics functions that specifies what range of \
+coordinates to include in a plot. \
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ColorFunction",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/ColorFunction"], "TemperatureMap", Cell["\<\
+ColorFunction is an option for graphics functions that specifies a function \
+to apply to determine colors of elements. \
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["BullPlotMethod",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/BullPlotMethod"], 
+    ButtonBox["Dynamic",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Dynamic"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["BullPlotMethod"]],"paclet:QMRITools/ref/BullPlotMethod"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["BullseyePlot"], "InlineFormula"],
+     ". Can be \"Dynamic\" of \"Normal\". \n\"Dynamic\" allows to change \
+plotting parameters in Manipulation window."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ImageSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/ImageSize"], "200", Cell["\<\
+ImageSize is an option that specifies the overall size of an image to display \
+for an object. \
+\>", "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["CardiacTools"]],"paclet:QMRITools/guide/CardiacTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"BullseyePlot",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 48, 44.1142252}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`CardiacTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "BullseyePlot[data, segmask] generates a AHA-17 segement bullseye plot. \
+BullseyePlot[list] generates a AHA-17 segement bullseye plot of the lists \
+(which needs to have 17 values) provide. data is a 3D volume used for the \
+plot. segmask is the AHA-17 segmentation resulting form the CardiacSegment \
+function when AHA17 is selected. Output is a bullseye plot or a plotwindow, \
+depending on the Method which can be \"Dynamic\" else it will be static.", 
+    "synonyms" -> {}, "tabletags" -> {}, "title" -> "BullseyePlot", 
+    "titlemodifier" -> "", "windowtitle" -> "BullseyePlot", "type" -> 
+    "Symbol", "uri" -> "QMRITools/ref/BullseyePlot"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[584, 21, 3059, 74, 70, "AnchorBarGrid",ExpressionUUID->"a6d6f441-c729-4412-b94a-a8563b5e0f86",
+ CellID->1],
+Cell[3646, 97, 169, 6, 70, "ObjectNameGrid",ExpressionUUID->"9292dcb9-e6a2-4c6a-a8c2-fed630784e1d"],
+Cell[3818, 105, 1413, 75, 70, "Usage",ExpressionUUID->"c81fa64f-6729-410a-965f-9adcd1f12fec"],
+Cell[CellGroupData[{
+Cell[5256, 184, 621, 19, 70, "NotesSection",ExpressionUUID->"8ef48754-6a9d-4576-b9cc-4241aba57de8",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5880, 205, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"cb6e0ecd-2a19-49fc-beb5-14b2ec607341"],
+Cell[5914, 207, 53, 0, 70, "Notes",ExpressionUUID->"b6e64d85-e3aa-44b1-94f2-ac87d677c3c6"],
+Cell[5970, 209, 2903, 73, 70, "3ColumnTableMod",ExpressionUUID->"2135bce6-ea16-46ce-9ac5-1727b9994ffd"],
+Cell[8876, 284, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"c7ac176b-840c-4439-9614-4b4b679247fd"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[8944, 289, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"10804f35-a3d9-4c70-ad6a-3d2e24c6c1c3",
+ CellID->38303248],
+Cell[9103, 298, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"36f75f24-83d5-44de-ac05-fddb5460d631"],
+Cell[9137, 300, 169, 5, 70, "MoreAbout",ExpressionUUID->"3e255932-6b4f-405d-8e10-82b6971b4d12",
+ CellID->1]
+}, Open  ]],
+Cell[9321, 308, 23, 0, 70, "FooterCell",ExpressionUUID->"f93d4562-9f95-4580-9999-4c574adc0cfe"]
+}
+]
+*)
+
+(* End of internal cache information *)

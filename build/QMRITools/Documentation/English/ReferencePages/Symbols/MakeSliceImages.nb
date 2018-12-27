@@ -1,0 +1,503 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     14403,        494]
+NotebookOptionsPosition[     10447,        416]
+NotebookOutlinePosition[     13162,        476]
+CellTagsIndexPosition[     13119,        473]
+WindowTitle->MakeSliceImages
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"PlottingTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/PlottingTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/MakeSliceImages\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/MakeSliceImages"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+MakeSliceImages.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$151091], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/MakeSliceImages", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["MakeSliceImages", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     "MakeSliceImages[imgData]",
+     "\[LineSeparator]generates images from the imgData which is obtained \
+form ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GetSliceData"]],"paclet:QMRITools/ref/GetSliceData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ".",
+     " "
+    }]]},
+   {"", Cell[TextData[{
+     "MakeSliceImages[imgData, vox]",
+     "\[LineSeparator]generates images from the imgData which is obtained \
+form ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GetSliceData"]],"paclet:QMRITools/ref/GetSliceData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ",",
+     " ",
+     "vox",
+     " ",
+     "is",
+     " ",
+     "used",
+     " ",
+     "for",
+     " ",
+     "the",
+     " ",
+     "correct",
+     " ",
+     "aspect",
+     " ",
+     "ratio",
+     " ",
+     "of",
+     " ",
+     "the",
+     " ",
+     "images",
+     ".",
+     " "
+    }]]},
+   {"", Cell[TextData[{
+     "MakeSliceImages[imgData, {labData, labels}]",
+     "\[LineSeparator]generates images from the imgData which is obtained \
+form ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GetSliceData"]],"paclet:QMRITools/ref/GetSliceData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ",
+     "with",
+     " ",
+     "an",
+     " ",
+     "overlay",
+     " ",
+     "of",
+     " ",
+     "the",
+     " ",
+     "segmentations",
+     " ",
+     "in",
+     " ",
+     "labData",
+     ",",
+     " ",
+     "which",
+     " ",
+     "can",
+     " ",
+     "also",
+     " ",
+     "be",
+     " ",
+     "obtained",
+     " ",
+     "using",
+     " ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GetSliceData"]],"paclet:QMRITools/ref/GetSliceData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ",
+     "on",
+     " ",
+     "the",
+     " ",
+     "segmentations",
+     ".",
+     " ",
+     "labels",
+     " ",
+     "should",
+     " ",
+     "be",
+     " ",
+     "the",
+     " ",
+     "label",
+     " ",
+     "numbers",
+     " ",
+     "used",
+     " ",
+     "in",
+     " ",
+     "the",
+     " ",
+     "original",
+     " ",
+     "segmentation",
+     " ",
+     "(to",
+     " ",
+     "allow",
+     " ",
+     "correct",
+     " ",
+     "scaling",
+     " ",
+     "between",
+     " ",
+     "slices)",
+     ".",
+     " "
+    }]]},
+   {"", Cell[TextData[{
+     "MakeSliceImages[imgData, {labData, labels},vox]",
+     "\[LineSeparator]generates images from the imgData which is obtained \
+form ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GetSliceData"]],"paclet:QMRITools/ref/GetSliceData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ",
+     "with",
+     " ",
+     "an",
+     " ",
+     "overlay",
+     " ",
+     "of",
+     " ",
+     "the",
+     " ",
+     "segmentations",
+     " ",
+     "in",
+     " ",
+     "labData",
+     ",",
+     " ",
+     "which",
+     " ",
+     "can",
+     " ",
+     "also",
+     " ",
+     "be",
+     " ",
+     "obtained",
+     " ",
+     "using",
+     " ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GetSliceData"]],"paclet:QMRITools/ref/GetSliceData"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " ",
+     "on",
+     " ",
+     "the",
+     " ",
+     "segmentations",
+     ",",
+     " ",
+     "vox",
+     " ",
+     "is",
+     " ",
+     "used",
+     " ",
+     "for",
+     " ",
+     "the",
+     " ",
+     "correct",
+     " ",
+     "aspect",
+     " ",
+     "ratio",
+     " ",
+     "of",
+     " ",
+     "the",
+     " ",
+     "images",
+     "."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PlotRange",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/PlotRange"], 
+    ButtonBox["Automatic",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Automatic"], Cell["\<\
+PlotRange is an option for graphics functions that specifies what range of \
+coordinates to include in a plot. \
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ColorFunction",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/ColorFunction"], "GrayTones", Cell["\<\
+ColorFunction is an option for graphics functions that specifies a function \
+to apply to determine colors of elements. \
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["ImageLegend",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/ImageLegend"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["ImageLegend"]],"paclet:QMRITools/ref/ImageLegend"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["MakeSliceImages"], "InlineFormula"],
+     ", if set true a barlegend is added to the image."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["PlottingTools"]],"paclet:QMRITools/guide/PlottingTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"MakeSliceImages",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 55, 7.3788738}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`PlottingTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "MakeSliceImages[imgData] generates images from the imgData which is \
+obtained form GetSliceData. MakeSliceImages[imgData, vox] generates images \
+from the imgData which is obtained form GetSliceData, vox is used for the \
+correct aspect ratio of the images. MakeSliceImages[imgData, {labData, \
+labels}] generates images from the imgData which is obtained form \
+GetSliceData with an overlay of the segmentations in labData, which can also \
+be obtained using GetSliceData on the segmentations. labels should be the \
+label numbers used in the original segmentation (to allow correct scaling \
+between slices). MakeSliceImages[imgData, {labData, labels},vox] generates \
+images from the imgData which is obtained form GetSliceData with an overlay \
+of the segmentations in labData, which can also be obtained using \
+GetSliceData on the segmentations, vox is used for the correct aspect ratio \
+of the images.", "synonyms" -> {}, "tabletags" -> {}, "title" -> 
+    "MakeSliceImages", "titlemodifier" -> "", "windowtitle" -> 
+    "MakeSliceImages", "type" -> "Symbol", "uri" -> 
+    "QMRITools/ref/MakeSliceImages"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[587, 21, 3074, 74, 70, "AnchorBarGrid",ExpressionUUID->"0fffb6d1-4ad8-42d1-ab2c-31a6a3e1d0f3",
+ CellID->1],
+Cell[3664, 97, 172, 6, 70, "ObjectNameGrid",ExpressionUUID->"86f25022-d4ca-4770-89d3-2b18c7a7e9e7"],
+Cell[3839, 105, 3870, 215, 70, "Usage",ExpressionUUID->"715e70e9-fd31-447b-bf77-1ce7fba6a527"],
+Cell[CellGroupData[{
+Cell[7734, 324, 621, 19, 70, "NotesSection",ExpressionUUID->"0865394b-0484-40a9-bbba-6809eaa3fe68",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[8358, 345, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"fecc7d6f-d9e5-4709-83ca-106fd11178ec"],
+Cell[8392, 347, 53, 0, 70, "Notes",ExpressionUUID->"f8c34063-925d-4df3-8102-a82d01e1a0c0"],
+Cell[8448, 349, 1522, 39, 70, "3ColumnTableMod",ExpressionUUID->"8fdfa43e-6905-44e8-aae6-21f0657f3e7b"],
+Cell[9973, 390, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"24887045-1563-4dc7-9526-e9c35f51b8e3"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[10041, 395, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"e104a1f4-c49b-47de-934c-8901db346e1a",
+ CellID->38303248],
+Cell[10200, 404, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"58bd76dd-f09f-4a85-9621-de96ed4a74e0"],
+Cell[10234, 406, 171, 5, 70, "MoreAbout",ExpressionUUID->"d9998b08-00e0-497d-8f3e-2f26fb07fe36",
+ CellID->1]
+}, Open  ]],
+Cell[10420, 414, 23, 0, 70, "FooterCell",ExpressionUUID->"94c645dc-f3e9-42ab-86ba-a3ce7a62a001"]
+}
+]
+*)
+
+(* End of internal cache information *)

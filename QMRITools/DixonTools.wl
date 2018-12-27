@@ -202,7 +202,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	(*smooth maps if needed*)
 	{b0f, r2f} = If[OptionValue[DixonFilterInput],
 		PrintTemporary["Filtering input B0 and T2* maps "];
-		{If[b0i=!=0, LapFilt[b0], b0], If[t2=!=0, LapFilt[r2], r2]},
+		{If[b0i=!=0, LapFilter[b0], b0], If[t2=!=0, LapFilter[r2], r2]},
 		{b0 ,r2}
 	];
 	
@@ -221,7 +221,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 If[OptionValue[DixonFilterOutput],
 	 	PrintTemporary["Filtering field estimation and recalculating signal fractions"];
 	 	(*smooth b0 field and R2star maps*)
-	 	phiEst = mask(LapFilt[Im[phiEst]] I - LapFilt[Clip[-Re[phiEst],{0,500}]]);
+	 	phiEst = mask(LapFilter[Im[phiEst]] I - LapFilter[Clip[-Re[phiEst],{0,500}]]);
 	 	(*recalculate the water fat signals*)
 	 	input = TransData[{complex, phiEst, mask}, "l"];
 	 	Monitor[jj=0;result = Map[(jj++;DixonFiti[#, echo, Amat])&, input, dep];,ProgressIndicator[jj, {0, Times @@ dim}]];
@@ -247,8 +247,6 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 {fraction, signal, iopPhase, fit, itt, res}
 
  ]
-
-LapFilt[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@data, "Real"], fil, Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
 
 
 (* ::Subsubsection::Closed:: *)

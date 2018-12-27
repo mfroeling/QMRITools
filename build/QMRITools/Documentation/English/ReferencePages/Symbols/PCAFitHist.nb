@@ -1,0 +1,332 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     11672,        323]
+NotebookOptionsPosition[      8340,        254]
+NotebookOutlinePosition[     10437,        305]
+CellTagsIndexPosition[     10394,        302]
+WindowTitle->PCAFitHist
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"DenoiseTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/DenoiseTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/PCAFitHist\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/PCAFitHist"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+PCAFitHist.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$185390], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/PCAFitHist", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["PCAFitHist", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+PCAFitHist[data]\[LineSeparator]fits the marchencopasteur distribution to the \
+PCA of the data using hist fit. \
+\>"]},
+   {"", Cell["\<\
+PCAFitHist[data, sig]\[LineSeparator]fits the marchencopasteur distribution \
+to the PCA of the data using sig as start value or fixed value using hist \
+fit. Output is {simga, number of noise comp, and denoised matrix, \
+itterations}.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {None, {None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PlotSolution",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/PlotSolution"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PlotSolution"]],"paclet:QMRITools/ref/PlotSolution"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["PCAFitHist"], "InlineFormula"],
+     ", if set true it dispays the fitting itterations."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["FitSigma",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/FitSigma"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["FitSigma"]],"paclet:QMRITools/ref/FitSigma"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData["PCAFitHist"], "InlineFormula"],
+     ", ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCAFitEq"]],"paclet:QMRITools/ref/PCAFitEq"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCADeNoise"]],"paclet:QMRITools/ref/PCADeNoise"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ", if set ",
+     "True",
+     " sig is fitted if set ",
+     "False",
+     " sigma is fixed to input value."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PCAFitParameters",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/PCAFitParameters"], 
+    RowBox[{"{", 
+     RowBox[{"10", ",", " ", "6", ",", " ", "10"}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCAFitParameters"]],
+        "paclet:QMRITools/ref/PCAFitParameters"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option of ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PCADeNoise"]],"paclet:QMRITools/ref/PCADeNoise"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " and ",
+     Cell[BoxData["PCAFitHist"], "InlineFormula"],
+     ". {nb, pi, maxit} = bins, initial signal components, maximum number of \
+itterations."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["DenoiseTools"]],"paclet:QMRITools/guide/DenoiseTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"PCAFitHist",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 57, 14.6313355}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`DenoiseTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "PCAFitHist[data] fits the marchencopasteur distribution to the PCA of \
+the data using hist fit. PCAFitHist[data, sig] fits the marchencopasteur \
+distribution to the PCA of the data using sig as start value or fixed value \
+using hist fit. Output is {simga, number of noise comp, and denoised matrix, \
+itterations}.", "synonyms" -> {}, "tabletags" -> {}, "title" -> "PCAFitHist", 
+    "titlemodifier" -> "", "windowtitle" -> "PCAFitHist", "type" -> "Symbol", 
+    "uri" -> "QMRITools/ref/PCAFitHist"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[582, 21, 3052, 74, 70, "AnchorBarGrid",ExpressionUUID->"0b6467dc-1217-4039-aae2-2ee70281d045",
+ CellID->1],
+Cell[3637, 97, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"d2b30a8e-971d-42b6-a613-1cb6c9d9df06"],
+Cell[3807, 105, 581, 15, 70, "Usage",ExpressionUUID->"3cdbef75-1aba-4b8d-9c53-2dd77e862969"],
+Cell[CellGroupData[{
+Cell[4413, 124, 621, 19, 70, "NotesSection",ExpressionUUID->"11f63f56-e383-4ec3-9234-a8efcb0a5ab5",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5037, 145, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"9fdb736b-6c2f-4867-a9a4-2e56b2b5b6e9"],
+Cell[5071, 147, 53, 0, 70, "Notes",ExpressionUUID->"c4429990-3667-4c4a-95d8-2537f1ea436a"],
+Cell[5127, 149, 2738, 77, 70, "3ColumnTableMod",ExpressionUUID->"353c824e-1272-4242-89fd-20de1de5f813"],
+Cell[7868, 228, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"1a132934-32d2-46a1-9808-180fe087ffa2"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[7936, 233, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"53b127f8-d32a-4bc7-bd48-f1d72ea312c2",
+ CellID->38303248],
+Cell[8095, 242, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"5a44e92b-afdc-4178-9701-9ccce07a90fa"],
+Cell[8129, 244, 169, 5, 70, "MoreAbout",ExpressionUUID->"fa4e9df8-34cd-417d-8a84-0fa37193e3b1",
+ CellID->1]
+}, Open  ]],
+Cell[8313, 252, 23, 0, 70, "FooterCell",ExpressionUUID->"5114f1db-8c61-4640-8dcd-7b65d1bcef73"]
+}
+]
+*)
+
+(* End of internal cache information *)

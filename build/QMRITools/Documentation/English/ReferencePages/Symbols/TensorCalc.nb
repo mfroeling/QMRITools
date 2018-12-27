@@ -1,0 +1,390 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     14355,        381]
+NotebookOptionsPosition[     10398,        304]
+NotebookOutlinePosition[     13115,        363]
+CellTagsIndexPosition[     13072,        360]
+WindowTitle->TensorCalc
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"TensorTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/TensorTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/TensorCalc\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/TensorCalc"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+TensorCalc.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$258646], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/TensorCalc", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["TensorCalc", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+TensorCalc[data, gradients, bvalue]\[LineSeparator]calculates the diffusion \
+tensor for the given dataset. Allows for one unweighted image and one b \
+value. Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} \
+without the unweighted gradient direction. bvalue is a singe number \
+indicating the b-value used. \
+\>"]},
+   {"", Cell["\<\
+TensorCalc[data, gradients, bvec]\[LineSeparator]calculates the diffusion \
+tensor for the given dataset. allows for multiple unweighted images and \
+multiple bvalues. allows for differnt tensor fitting methods. gradient \
+directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the \
+unweighted direction as {0,0,0}. bvec the bvector, with a bvalue defined for \
+each gradient direction. b value for unweighted images is 0. \
+\>"]},
+   {"", Cell[TextData[{
+     "TensorCalc[data, bmatix]",
+     "\[LineSeparator]calculates the diffusion tensor for the given dataset. \
+allows for multiple unweighted images and multiple bvalues. bmat is the \
+bmatrix which can be generated usiong ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["Bmatrix"]],"paclet:QMRITools/ref/Bmatrix"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     "."
+    }]]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, {None}}, "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["MonitorCalc",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/MonitorCalc"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["MonitorCalc"]],"paclet:QMRITools/ref/MonitorCalc"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for all Calc fucntions. When true the proceses of the \
+calculation is shown."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Method",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Method"], "iWLLS", Cell["\<\
+Method is an option for various algorithm-intensive functions that specifies \
+what internal methods they should use.\
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["FullOutput",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/FullOutput"], 
+    ButtonBox["False",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/False"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["FullOutput"]],"paclet:QMRITools/ref/FullOutput"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["TensorCalc"], "InlineFormula"],
+     " when using bvector. When ",
+     "True",
+     " also the S0 is given as output."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["RobustFit",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/RobustFit"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RobustFit"]],"paclet:QMRITools/ref/RobustFit"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["TensorCalc"], "InlineFormula"],
+     ". ",
+     "If",
+     " true outliers will be rejected in the fit, only works with WLLS.\nIf ",
+     
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["FullOutput"]],"paclet:QMRITools/ref/FullOutput"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is given the outlier map is given."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Parallelize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Parallelize"], 
+    ButtonBox["True",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/True"], Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"Parallelize", "[", 
+       StyleBox["expr", "TI"], "]"}]], "InlineFormula"],
+     " ",
+     "evaluates ",
+     Cell[BoxData[
+      StyleBox["expr", "TI"]], "InlineFormula"],
+     " ",
+     "using automatic parallelization."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["RobustFitParameters",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/RobustFitParameters"], 
+    RowBox[{"   ", 
+     RowBox[{"1", "\n", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"--", 
+         RowBox[{"--", "-"}]}], ",", " ", "6"}], "}"}], "\n", " ", 
+      "10000"}]}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["RobustFitParameters"]],
+        "paclet:QMRITools/ref/RobustFitParameters"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["TensorCalc"], "InlineFormula"],
+     ". gives the threshold for stopping the itterations and the kappa for \
+the outlier marging, {tr,kappa}."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, {None}}, "RowsIndexed" -> {}},
+ GridBoxDividers->{"Rows" -> {{True, True, True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["TensorTools"]],"paclet:QMRITools/guide/TensorTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"TensorCalc",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 1, 1, 40.4103203}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`TensorTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "TensorCalc[data, gradients, bvalue] calculates the diffusion tensor for \
+the given dataset. Allows for one unweighted image and one b value. Gradient \
+directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the \
+unweighted gradient direction. bvalue is a singe number indicating the \
+b-value used. TensorCalc[data, gradients, bvec] calculates the diffusion \
+tensor for the given dataset. allows for multiple unweighted images and \
+multiple bvalues. allows for differnt tensor fitting methods. gradient \
+directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the \
+unweighted direction as {0,0,0}. bvec the bvector, with a bvalue defined for \
+each gradient direction. b value for unweighted images is 0. TensorCalc[data, \
+bmatix] calculates the diffusion tensor for the given dataset. allows for \
+multiple unweighted images and multiple bvalues. bmat is the bmatrix which \
+can be generated usiong Bmatrix.", "synonyms" -> {}, "tabletags" -> {}, 
+    "title" -> "TensorCalc", "titlemodifier" -> "", "windowtitle" -> 
+    "TensorCalc", "type" -> "Symbol", "uri" -> "QMRITools/ref/TensorCalc"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[582, 21, 3050, 74, 70, "AnchorBarGrid",ExpressionUUID->"bc671d38-2288-46ec-98e6-547f737871df",
+ CellID->1],
+Cell[3635, 97, 167, 6, 70, "ObjectNameGrid",ExpressionUUID->"536ce713-e880-4c04-8f44-2d522e7b1789"],
+Cell[3805, 105, 1457, 32, 70, "Usage",ExpressionUUID->"866cf10e-a4bf-472e-86a9-4060b60ff070"],
+Cell[CellGroupData[{
+Cell[5287, 141, 621, 19, 70, "NotesSection",ExpressionUUID->"e319e812-4b72-4840-b480-b059a3bad749",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[5911, 162, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"dfd89644-9b74-4828-aca8-a153888990d1"],
+Cell[5945, 164, 53, 0, 70, "Notes",ExpressionUUID->"b2728113-7f22-4bb8-933a-90b558f61104"],
+Cell[6001, 166, 3924, 110, 70, "3ColumnTableMod",ExpressionUUID->"5b3a78df-f45f-4a98-9ee4-15c01cd29161"],
+Cell[9928, 278, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"f5bbf902-33a5-4fde-90c9-b7ac4aa82e49"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[9996, 283, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"22f5cf34-775d-4091-aa05-68bcec79fcc8",
+ CellID->38303248],
+Cell[10155, 292, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"febb5568-9f69-4137-8a2b-6126992dceb3"],
+Cell[10189, 294, 167, 5, 70, "MoreAbout",ExpressionUUID->"30492890-2dd4-4dd3-a0ac-4d286921d4f8",
+ CellID->1]
+}, Open  ]],
+Cell[10371, 302, 23, 0, 70, "FooterCell",ExpressionUUID->"749e9cdc-2dc6-4be0-b334-67d3ec5b279a"]
+}
+]
+*)
+
+(* End of internal cache information *)

@@ -80,13 +80,15 @@ $HistoryLength = 0;
 package = "QMRITools`";
 
 subPackages = {
+	(*core packages that contain functions for other toolboxes*)
 	"GeneralTools`", "MaskingTools`", "NiftiTools`", "ElastixTools`", "PlottingTools`",
-	
+	(*toolboxes for processing specific data types*)
 	"DixonTools`", "IVIMTools`", "DenoiseTools`", "CardiacTools`", 
-	"RelaxometryTools`", "GradientTools`", "TensorTools`", "JcouplingTools`", 
-	
-	"VisteTools`", "ProcessingTools`", "SimulationTools`", "PhysiologyTools`",
-	 
+	"RelaxometryTools`", "GradientTools`", "TensorTools`", 
+	"JcouplingTools`",
+	(*general processing tools with lots of dependancys*)
+	"VisteTools`", "ProcessingTools`", "SimulationTools`", "PhysiologyTools`", "CoilTools`", 
+	 (*legacy import functions*)
 	"ImportTools`"
 };
 

@@ -13,7 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["QMRITools`ProcessingTools`", {"Developer`"}];
+BeginPackage["QMRITools`TensorTools`", {"Developer`"}];
 
 $ContextPath=Union[$ContextPath, System`$QMRIToolsContextPaths];
 
@@ -150,9 +150,6 @@ Distribution::usage =
 
 MeanRes::usage = 
 "MeanRes is an option for ResidualCalc. When True the root mean square of the residual is calculated."
-
-NormResidual::usage = 
-"NormResidual is an option for ResidualCalc. When True the residuals are normalize to the S0 image."
 
 
 RotationCorrect::usage =
@@ -381,25 +378,26 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		];	
 		
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
-		tensor = func[
+		result = func[
 			xx++;
 			TensorCalci[data[[x]],dataL[[x]],bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}]
 			,{x,1,Length[data],1}];
+		result = Transpose[result];
+		
+		Print[output];
+		Print[Dimensions[result]];
 		
 		(*full output returns {tens,S0,(outliers),residuals}*)
-		If[output,
-			tensor = Transpose[tensor];
-			tensor[[1]] = Transpose[tensor[[1]]]
-			,
-			tensor = Transpose[tensor]
-		];	
+		If[output, result[[1]] = Transpose[result[[1]]]];	
+		
+		Print[Dimensions[result[[1]]]];
 		
 		,(*1D,2D,3D*)
-		tensor=TensorCalci[data,dataL,bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}];
+		result = TensorCalci[data,dataL,bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}];
 	];
 	System`SetSystemOptions["CheckMachineUnderflow" -> True];
 	ParallelEvaluate[System`SetSystemOptions["CheckMachineUnderflow" -> True]];
-	tensor
+	result
 ]
 
 
@@ -434,12 +432,10 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 		"iWLLS", Transpose[TensMiniWLLS[Transpose[(1-outliers) data,l],Transpose[(1-outliers) dataL,l], bmat], r]
 		];
 	
-	If[OptionValue[FullOutput],
-		residual = ResidualCalc[data,fitresult,outliers,bmat,MeanRes->"MAD"]
-		];
+	If[OptionValue[FullOutput], residual = ResidualCalc[data,fitresult,outliers,bmat,MeanRes->"MAD"]];
 		
-	S0 = Clip[ExpNoZero[Chop[Last[fitresult]]],{0, 1.5 Max[data]}];
-	tensor = Clip[Drop[fitresult,-1],{-0.1,0.1}];
+	S0 = N@Clip[ExpNoZero[N@Chop[Last[fitresult]]],{0, 1.5 Max[data]}];
+	tensor = N@Clip[Drop[fitresult,-1],{-0.1,0.1}];
 
 	If[OptionValue[FullOutput],If[robust,{tensor,S0,outliers,residual},{tensor,S0,residual}],tensor]
 ]
@@ -476,9 +472,9 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	  				(*a. Calculate the residuals e* in the linear domain*)
 	  				res = LS - bmat.sol;
 	  				(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-	  				mad = Chop[1.4826 MedianDeviation[res]];
+	  				mad = N@Chop[1.4826 MedianDeviation[res]];
 	  				(*prevent calculation with 0*)
-	  				If[AllTrue[res, (0. === #) &] || mad === 0.,
+	  				If[AllTrue[res, (0. === #) &] || mad === 0. ,
 	  					cont = 0,
 	  					(*c. Recompute the weights according to Eq. [13].*)
 	  					wts = 1 / (1 + (res/mad)^2)^2;
@@ -505,7 +501,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 					(*a. Calculate the residuals e* in the linear domain*)
 					res = LS2 - bmat2.sol;
 					(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-					mad = Chop[1.4826 MedianDeviation[res]];
+					mad = N@Chop[1.4826 MedianDeviation[res]];
 					(*prevent calculation with 0*)
 					If[AllTrue[res, (0. === #) &] || mad === 0.,
 						cont = 0,
@@ -534,7 +530,8 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	],
 	
 	{{sol, _Real, 1}},
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", CompilationOptions -> {"ExpressionOptimization" -> False}
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}, 
+	CompilationOptions -> {"ExpressionOptimization" -> False}
 ]
 
 
@@ -569,21 +566,21 @@ TensMinWLLS = Compile[{{S, _Real, 1},{LS, _Real, 1},{bmat, _Real, 2}},
 (*iWLLS*)
 
 
-TensMiniWLLS = Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
+TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
 	Block[{wmat, mat, cont, itt, mvec, soli, sol0, max, sol, w},
     mvec = UnitStep[S] Unitize[S];
     max = Max[mvec S];
-    sol = 0. First[bmat];
-    sol0 = sol;
+    sol0 = 0. First[bmat];
+    sol = sol0;
     (*skip background or not enough data for fit*)
     If[!(AllTrue[LS, 0. === # &] || Total[mvec] <= 7),
      (*initialize*)
      itt = 0;
      cont = 1;
      (*initialize using LLS*)
-     sol = LeastSquares[bmat, LS];
-     (*check for implausabole solution (negative S0)*)
-     If[Last[sol] >= 3*max || Last[sol] <= 0,
+     sol = N@Chop@LeastSquares[bmat, LS];
+     (*check for implausabole solution (negative S0 or high S0)*)
+     If[Last[sol] >= 3*max || Last[sol] <= 0.,
       sol = sol0;
       ,
       (*itterative reweighting*)
@@ -593,19 +590,20 @@ TensMiniWLLS = Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
        soli = sol;
        (*perform WLLS*)
        w = (mvec Exp[bmat.sol])^2;
-       wmat = DiagonalMatrix[w];
-       sol = LeastSquares[Transpose[bmat].wmat.bmat, Transpose[bmat].wmat.LS];
+       wmat =Transpose[bmat].DiagonalMatrix[w];
+       sol = LeastSquares[wmat.bmat, wmat.LS];
        (*update weight*)
        (*see if to quit loop*)
-       If[ Last[sol] >= 3*max || Last[sol] <= 0, cont=0;  sol = 0. First@bmat];
-       If[! AnyTrue[Abs[sol - soli] - 0.0001 (Max /@ Transpose[{Abs[sol], Abs[soli]}]), Positive] || itt === 10 , cont = 0];
-       ]]];
+       If[(Last[sol] >= 3*max || Last[sol] <= 0), 
+       	cont = 0.; sol = sol0
+       	];
+       If[! AnyTrue[Abs[sol - soli] - 0.0001 (Max /@ Transpose[{Abs[sol], Abs[soli]}]), Positive] || itt === 10 , cont = 0.];
+       ]]
+       ];
     sol], 
     {{mat, _Real, 2}, {wmat, _Real, 2}, {sol, _Real, 1}},
-    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+    RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}];
         
-
-
 
 (* ::Subsubsection::Closed:: *)
 (*DKI*)

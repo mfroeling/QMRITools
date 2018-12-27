@@ -59,7 +59,7 @@ SequenceSpinEcho::usage =
 SequenceSpinEcho[din, H, te, b1] performs a spin echo experiment with echo time te of the spin system din given the hamiltonian H with a 90 and 180 Degree pulse and b1.
 The output is a new spinsystem dout."
 
-Steam::usage =
+SequenceSteam::usage =
 "SequenceSteam[din, H, {te, tm}] performs a stimulated echo experiment with echo time te and mixing time tm of the spin system din given the hamiltonian H with 3 90 Degree pulses.
 The output is a new spinsystem dout."
 

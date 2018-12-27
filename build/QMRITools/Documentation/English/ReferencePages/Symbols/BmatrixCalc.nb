@@ -1,0 +1,416 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     14665,        407]
+NotebookOptionsPosition[     11436,        339]
+NotebookOutlinePosition[     13424,        389]
+CellTagsIndexPosition[     13381,        386]
+WindowTitle->BmatrixCalc
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["Q M R I TOOLS PACKAGE SYMBOL", "PacletNameCell"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Related Guides",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"Related Guides", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"GradientTools\"\>":>
+       Documentation`HelpLookup["paclet:QMRITools/guide/GradientTools"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"MoreAbout"]],
+      LineSpacing->{1.4, 0}],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }]],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"QMRITools/ref/BmatrixCalc\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["QMRITools/ref/BmatrixCalc"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/QMRITools/ref/\
+BmatrixCalc.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$42028], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "QMRITools/ref/BmatrixCalc", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0}]
+    }], "AnchorBar"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1],
+
+Cell[TextData[{
+ Cell["BmatrixCalc", "ObjectName"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]]],
+ Cell[BoxData[""], "ObjectNameTranslation"]
+}], "ObjectNameGrid"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell["\<\
+BmatrixCalc[\"folder\", grads]\[LineSeparator]calculates the true bmatrix \
+from the exported sequence parameters from the philips scanner that are \
+stored in \"folder\" for each of the gradient directions grads.\
+\>"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, "Rows" -> {{None}}, 
+   "RowsIndexed" -> {}}}],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]]],
+   "Details"
+  }], "NotesFrameText"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->"Preemptive"]]]], "NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell["The following options can be given: ", "Notes"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UseGrad",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/UseGrad"], 
+    RowBox[{"{", 
+     RowBox[{"1", ",", " ", "1", ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "1"}], "}"}], ",", " ", "1", ",", " ", "1"}], 
+     "}"}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["UseGrad"]],"paclet:QMRITools/ref/UseGrad"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GradSeq"]],"paclet:QMRITools/ref/GradSeq"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". The default value is {0, 1, {1, 0}, 1} where {grex, gr180, {grepi1, \
+grepi2}, grdiff, grflow}."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["OutputType",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/OutputType"], "Matrix", Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["OutputType"]],"paclet:QMRITools/ref/OutputType"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData["BmatrixCalc"], "InlineFormula"],
+     ". ",
+     "Values",
+     " can be \"Matrix\" of \"Gradients\"."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["Method",
+     BaseStyle->"Link",
+     ButtonData->"paclet:ref/Method"], "Numerical", Cell["\<\
+Method is an option for various algorithm-intensive functions that specifies \
+what internal methods they should use.\
+\>", "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["StepSizeI",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/StepSizeI"], "0.05", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["StepSizeI"]],"paclet:QMRITools/ref/StepSizeI"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GradBmatrix"]],"paclet:QMRITools/ref/GradBmatrix"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". Specifies the integration stepsize is ",
+     "Method",
+     " -> \"Numerical\" is used."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["UnitMulti",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/UnitMulti"], 
+    RowBox[{" ", 
+     RowBox[{"1", "\n", 
+      RowBox[{"--", 
+       RowBox[{"--", "\n", "1000"}]}]}]}], Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["UnitMulti"]],"paclet:QMRITools/ref/UnitMulti"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GradSeq"]],"paclet:QMRITools/ref/GradSeq"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". Defaul value is 10^-3. Defines the scaling of the gradient strength."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["PhaseEncoding",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/PhaseEncoding"], "A", Cell[TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["PhaseEncoding"]],"paclet:QMRITools/ref/PhaseEncoding"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an options of ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GradSeq"]],"paclet:QMRITools/ref/GradSeq"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". ",
+     "Values",
+     " can be \"A\", \"P\", \"R\" and \"L\"."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["FlipAxes",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/FlipAxes"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "1", ",", " ", "1"}], "}"}]}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["FlipAxes"]],"paclet:QMRITools/ref/FlipAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GradSeq"]],"paclet:QMRITools/ref/GradSeq"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". Defaul value is {{1,1,1},{1,1,1}}. ",
+     "First",
+     " three values are for diffusion gradients last three are for the \
+acquisition gradients."
+    }], "TableText"]},
+   {Cell["      ", "TableRowIcon"], 
+    ButtonBox["SwitchAxes",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/SwitchAxes"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "2", ",", " ", "3"}], "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", " ", "2", ",", " ", "3"}], "}"}]}], "}"}], Cell[
+    TextData[{
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["SwitchAxes"]],"paclet:QMRITools/ref/SwitchAxes"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     " is an option for ",
+     Cell[BoxData[
+      TemplateBox[{Cell[
+         TextData["GradSeq"]],"paclet:QMRITools/ref/GradSeq"},
+       "RefLink",
+       BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+     ". Defaul value is {{1,2,3},{1,2,3}}. ",
+     "First",
+     " three values are for diffusion gradients last three are for the \
+acquisition gradients."
+    }], "TableText"]}
+  }]], "3ColumnTableMod",
+ GridBoxOptions->{
+ GridBoxBackground->{
+  "Columns" -> {{None}}, "ColumnsIndexed" -> {}, 
+   "Rows" -> {None, None, None, None, None, None, None, {None}}, 
+   "RowsIndexed" -> {}},
+ GridBoxDividers->{
+  "Rows" -> {{True, True, True, True, True, True, True, True, True}}}}],
+
+Cell["", "SectionFooterSpacer"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]]],
+ "Related Guides"
+}], "MoreAboutSection",
+ WholeCellGroupOpener->True,
+ CellID->38303248],
+
+Cell["", "SectionHeaderSpacer"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["GradientTools"]],"paclet:QMRITools/guide/GradientTools"},
+  "RefLink",
+  BaseStyle->"MoreAbout"]], "MoreAbout",
+ CellID->1]
+}, Open  ]],
+
+Cell[" ", "FooterCell"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"BmatrixCalc",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "QMRITools", ButtonData -> "paclet:QMRITools/guide/QMRITools", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2018, 12, 25, 0, 48, 26.5795873}", 
+    "history" -> {"XX", "", "", ""}, "context" -> "QMRITools`GradientTools`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Q M R I Tools Package Symbol", "language" -> "en", "paclet" -> 
+    "QMRITools Package", "status" -> "None", "summary" -> 
+    "BmatrixCalc[\"folder\", grads] calculates the true bmatrix from the \
+exported sequence parameters from the philips scanner that are stored in \
+\"folder\" for each of the gradient directions grads.", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "BmatrixCalc", "titlemodifier" -> "", 
+    "windowtitle" -> "BmatrixCalc", "type" -> "Symbol", "uri" -> 
+    "QMRITools/ref/BmatrixCalc"}},
+CellContext->"Global`",
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  FrontEndVersion -> "11.3 for Microsoft Windows (64-bit) (March 6, 2018)", 
+  StyleDefinitions -> "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[583, 21, 3057, 74, 70, "AnchorBarGrid",ExpressionUUID->"ac86fa38-ba17-49a0-928e-9c61134e185d",
+ CellID->1],
+Cell[3643, 97, 168, 6, 70, "ObjectNameGrid",ExpressionUUID->"51b4a3ac-faca-4f34-b2de-115cdb0fbf3b"],
+Cell[3814, 105, 414, 10, 70, "Usage",ExpressionUUID->"580a91cc-0d6a-443b-b306-088bc0bbcf60"],
+Cell[CellGroupData[{
+Cell[4253, 119, 621, 19, 70, "NotesSection",ExpressionUUID->"4c753ff6-2b3b-48b1-9691-8823eb50f56c",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->1],
+Cell[4877, 140, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"5b93db39-9d4e-426f-8b4d-2d320d616ec4"],
+Cell[4911, 142, 53, 0, 70, "Notes",ExpressionUUID->"3a714155-69f1-4d53-b7a3-6b79b0cab1a6"],
+Cell[4967, 144, 5992, 167, 70, "3ColumnTableMod",ExpressionUUID->"f1ce8f9c-03c6-44f0-a550-86e0bb5d986f"],
+Cell[10962, 313, 31, 0, 70, "SectionFooterSpacer",ExpressionUUID->"a5acc1f2-23e4-4e88-a773-350c32a8c3aa"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[11030, 318, 156, 7, 70, "MoreAboutSection",ExpressionUUID->"a50fb08f-4ad4-4f23-9c12-9d3e17e473e3",
+ CellID->38303248],
+Cell[11189, 327, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"7a72fea8-f45c-4165-8bd4-56807456adcd"],
+Cell[11223, 329, 171, 5, 70, "MoreAbout",ExpressionUUID->"64157644-80dd-468f-92c5-666911e5f40a",
+ CellID->1]
+}, Open  ]],
+Cell[11409, 337, 23, 0, 70, "FooterCell",ExpressionUUID->"9df3a983-dd82-4d93-87f7-81ad6c745138"]
+}
+]
+*)
+
+(* End of internal cache information *)
