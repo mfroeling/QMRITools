@@ -494,7 +494,8 @@ GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, 
 (* ::Subsection::Closed:: *)
 (*SimulateSliceEPG*)
 
-Options[SimulateSliceEPG]={ReportFits->True}
+
+Options[SimulateSliceEPG]={ReportFits->False}
 
 SyntaxInformation[SimulateSliceEPG] = {"ArgumentsPattern" -> {_, _,_, OptionsPattern[]}};
 
@@ -561,7 +562,7 @@ SimulateSliceEPG[exitation_, refocus_, {{T1_, T2_}, {Necho_, echoSp_}, b1_}, Opt
     "  ", info, fit,
     Show[plots, lines, prof, BoxRatios -> 1, PlotRange -> {{0, len}, {0, Necho}, {-0., 1.1 max}}, 
      Axes -> False, BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
-     ViewAngle -> va, ImageSize -> 600]
+     ViewAngle -> va, ImageSize -> 400]
     }, Alignment -> Center, Spacings -> 0]
   ]
 

@@ -283,7 +283,7 @@ RemoveIsoImages[data_, grad_, val_] := Module[{sel},
 (*TensorCalc*)
 
 
-Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->False, RobustFit->True, Parallelize->True , RobustFitParameters->{10^-4,6}};
+Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->True, RobustFit->True, Parallelize->True , RobustFitParameters->{10.^-4,6}};
 
 SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -384,13 +384,8 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 			,{x,1,Length[data],1}];
 		result = Transpose[result];
 		
-		Print[output];
-		Print[Dimensions[result]];
-		
 		(*full output returns {tens,S0,(outliers),residuals}*)
 		If[output, result[[1]] = Transpose[result[[1]]]];	
-		
-		Print[Dimensions[result[[1]]]];
 		
 		,(*1D,2D,3D*)
 		result = TensorCalci[data,dataL,bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}];

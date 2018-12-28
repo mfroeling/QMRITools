@@ -100,12 +100,6 @@ ImageLegend::usage =
 "ImageLegend is an option for MakeSliceImages, if set true a barlegend is added to the image."
 
 
-ColorValue::usage = 
-"ColorValue is an option for Hist and ErrorPlot. Default {Black, Red}."
-
-Scaling::usage = 
-"Scaling is an option for Hist2. Scales the individual fits of the fat and muscle compartment."
-
 PlotSpace::usage = 
 "PlotSpace is an option for GradientPlot can be \"bspace\" or \"qspace\"."
 
@@ -145,12 +139,6 @@ PlotData::set =
 PlotData3D::data = "Data should be a 3D or 4D dataset."
 
 PlotDefGrid::dir = "direction must be \"COL\" or \"ROW\", unknown direction: `1`."
-
-Hist::size = "Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`)."
-
-ErrorPlot::size = "Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`)."
-
-Hist2::size = "Length of data (`1`), labels (`2`) and range (`3`) must be 5."
 
 
 (* ::Section:: *)
@@ -2634,11 +2622,11 @@ PlotCorrection[w_]:=Module[{sel},
 
 Options[PlotContour] = {ContourStyle -> {Gray, 0.25}};
 
-SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern}}; 
+SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern[]}}; 
 
-PlotContour[data_, voxi_, opts : OptionsPattern[]] := PlotContour[data, voxi, {0}, 0, opts]
+PlotContour[data_, voxi_, opts:OptionsPattern[]] := PlotContour[data, voxi, {0}, 0, opts]
 
-PlotContour[data_, voxi_, scaleI_?ArrayQ, opts : OptionsPattern[]] := PlotContour[data, voxi, scaleI, {0}, opts]
+PlotContour[data_, voxi_, scaleI_?ArrayQ, opts:OptionsPattern[]] := PlotContour[data, voxi, scaleI, {0}, opts]
 
 PlotContour[data_, voxi_, scaleI_?ArrayQ, range_, OptionsPattern[]] :=  Block[{
 	vox, pdata, dim, color, opac, style, scale, mean, func},
