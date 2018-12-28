@@ -377,7 +377,7 @@ _,
 // *********************
 (NumberOfHistogramBins "<>ToString[bins]<>")
 "<>Switch[type,
-"affineDTI","(Scales 1.0e+06 1.0e+06 1.0e+06  1.0e+06  1.0e+06  1.0e+06  1.0e+06  1.0e+06  1.0e+06 1.0e+06 1.0e+06 1.0e+06)",
+"affineDTI","(Scales -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1)",
 "rigidDTI","(Scales -1.0 -1.0 -1.0  3.0e+38  3.0e+38  3.0e+38  3.0e+38  3.0e+38  3.0e+38 -1.0 -1.0 -1.0)",
 "PCA",
 "(ImagePyramidSchedule "<>SchedulePar[resolutions]<>")",
@@ -514,7 +514,7 @@ RunElastix[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,movingi
 		"\n"<>copy<>" \n"<>
 		"exit";
 	];
-	Print[command];
+	(*Print[command];*)
 	(*perform elastix on system shell*)	
 	RunProcess[$SystemShell,"StandardOutput",command];
 ]
@@ -688,7 +688,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   		" mv " <> # <> "/result.nii.gz "<> # <> "/resultA-3D.nii.gz \n"
   	) & /@ volDirs
   ];
-  Print[command];
+  (*Print[command];*)
   command
 ]
 
@@ -702,7 +702,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
 
 
 Options[RegisterData]={
-Iterations->1000,
+Iterations->500,
 Resolutions->1,
 HistogramBins->64,
 NumberSamples->2000,

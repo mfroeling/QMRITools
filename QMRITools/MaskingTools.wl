@@ -415,12 +415,8 @@ RemoveMaskOverlaps[masks_] := SmoothSegmentation[masks, MaskFiltKernel->False];
 SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
 
 RescaleSegmentation[seg_, vox_] := Block[{segs, val},
-  If[ArrayDepth[seg] == 3, {segs, val} = SplitSegmentations[seg], 
-   segs = seg];
-  segs = RemoveMaskOverlaps[
-    Transpose[
-     Round[RescaleData[#, vox, InterpolationOrder -> 1]] & /@ 
-      Transpose[segs]]];
+  If[ArrayDepth[seg] == 3, {segs, val} = SplitSegmentations[seg], segs = seg];
+  segs = RemoveMaskOverlaps[Transpose[Round[RescaleData[#, vox, InterpolationOrder -> 1]] & /@Transpose[segs]]];
   If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
   ]
 

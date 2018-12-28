@@ -589,8 +589,7 @@ NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{fwf, residualError, soli, T1m
 
 SyntaxInformation[DictionaryMinSearch]= {"ArgumentsPattern" -> {_, _, _.}}
 
-dicmet = {"NelderMead", "PostProcess" -> False, "ExpandRatio" -> 2, "ShrinkRatio" -> .75, "ReflectRatio" -> .85, "ContractRatio" -> .75};
-
+dicmet = {"NelderMead", "PostProcess" -> True, "ExpandRatio" -> 2, "ShrinkRatio" -> .75, "ReflectRatio" -> 0.75, "ContractRatio" -> .75, "RandomSeed" -> 5};
 
 (*brute force dictionary min search*)
 (*usging a normal dictionary*)
@@ -640,7 +639,7 @@ DictionaryMinSearchi[{dict_, vals_}, ydat_, {maxx_,maxy_}] := Block[{err, coor, 
 	(*minimize the dictionary value*)
 	{err, coor} = Quiet@NMinimize[
 		{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
-		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy}/2]]];
+		Method -> dicmet];
 	(*find the min vals*)
 	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
 	]
@@ -652,7 +651,7 @@ DictionaryMinSearchi[{dict_, vals_}, ydat_, {maxx_, maxy_, maxz_}] := Block[{err
 	(*minimize the dictionary value*)
 	{err, coor} = Quiet@NMinimize[
 		{ErrorFuncDic[ydat, {x, y, z}], 1 <= x <= maxx && 1 <= y <= maxy && 1 <= z <= maxz}, {x, y, z}, Integers,
-		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy, maxz}/2]]];
+		Method -> dicmet];
 	(*find the min vals*)
 	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
   ]
@@ -674,7 +673,7 @@ DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {maxx_,maxy_}] := Block[{e
 	(*minimize the dictionary value*)
 	{err, coor} = Quiet@NMinimize[
 		{ErrorFuncDic[ydat, {x, y}], 1 <= x <= maxx && 1 <= y <= maxy}, {x, y}, Integers, 
-		Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy}/2]]];
+		Method -> Append[dicmet, "InitialPoints" -> Round[0.5 {maxx, maxy}]]];
 	(*find the min vals*)
 	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
 	]
@@ -686,7 +685,7 @@ DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {maxx_, maxy_, maxz_}] := 
 	(*minimize the dictionary value*)
 		{err, coor} = Quiet@NMinimize[
 			{ErrorFuncDic[ydat, {x, y, z}], 1 <= x <= maxx && 1 <= y <= maxy && 1 <= z <= maxz}, {x, y, z}, Integers,
-			Method -> Append[dicmet, "InitialPoints" -> Round[{maxx, maxy, maxz}/2]]];
+			Method -> Append[dicmet, "InitialPoints" -> Round[{0.25, 0.75, 0.5} {maxx, maxy, maxz}]]];
 	(*find the min vals*)
 	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
   ]
@@ -773,7 +772,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	  	(*create the dictionary*)
 		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f}, echo, angle, t2ran, b1ran, T2f];
 		(*extra weight on first two echos to get correct b1*)
-		wMat = ConstantArray[1., echo[[1]]]; wMat[[1 ;; 2]] = 2 echo[[1]];wMat = DiagonalMatrix[wMat];
+		wMat = ConstantArray[1., echo[[1]]]; wMat[[1 ;; 2]] = 5 echo[[1]];wMat = DiagonalMatrix[wMat];
 		dictMat = PseudoInverseWC[dict, wMat];
 		cons = Dimensions[vals][[;; -2]];
 		
@@ -911,7 +910,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	  (*mulit slice*)
 	  (*make mask an normalize data to first echo*)
 	  maskT2 = Mask[Mean[Transpose[datan]]];
-	  dataT2 = NormalizeData[MaskDTIdata[datan, maskT2]];
+	  dataT2 = NormalizeData[MaskData[datan, maskT2]];
 	   (*create mask selecting fat*)
 	  fmask = Mask[dataT2[[All, -1]], {50}];
 	  fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];

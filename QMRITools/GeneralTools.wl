@@ -37,6 +37,8 @@ SaveImage::usage =
 "SaveImage[image] exports graph to image, ImageSize, FileType and ImageResolution can be given as options.
 SaveImage[image, \"filename\"] exports graph to image with \"filname\", ImageSize, FileType and ImageResolution can be given as options."
 
+FindMaxDimensions::usage = 
+"FindMaxDimensions[{data1, data2, ..}] finds the maximal dimensions of all datasets. Each dataset is 3D."
 
 PadToDimensions::usage = 
 "PadToDimensions[data, dim] pads the data to dimensions dim." 
@@ -304,6 +306,15 @@ SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type}
 
 (* ::Subsection:: *)
 (*Reshaping and Resizing*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*PadToDimensions*)
+
+
+SyntaxInformation[FindMaxDimensions] = {"ArgumentsPattern" -> {_}};
+
+FindMaxDimensions[data_] := Max /@ Transpose[(Dimensions /@ data)]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -632,6 +643,7 @@ Return[output]
 (* ::Subsubsection::Closed:: *)
 (*FindCrop*)
 
+Options[FindCrop] = {CropPadding->5}
 
 SyntaxInformation[FindCrop] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
@@ -660,11 +672,7 @@ AutoCropData[data_, opts:OptionsPattern[]] := Module[{datac,crp, add},
 		_, Return[$Failed]
     ];
   
-  crp=Flatten@{
-    FindCrop[datac, opts],
-    FindCrop[TransData[datac, "l"], opts],
-    FindCrop[TransData[datac, "r"], opts]
-    };
+    crp = FindCrop[datac, opts];
     
     {ApplyCrop[data,crp],crp}
   ]

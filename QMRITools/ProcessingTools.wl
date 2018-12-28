@@ -51,7 +51,7 @@ ParameterFit[{data1, data2,...}] fits a (skew)Normal probability density functio
 
 ParameterFit2::usage = 
 "ParameterFit2[data] fits two skewNormal probaility density fucntions to the data. Assuming two compartments, \
-one for fat and one for muscle. Is used in SmartMask2 and Hist2."
+one for fat and one for muscle."
 
 DatTot::usage = 
 "DatTot[{data1, data2, ..}, name, vox] calculates the parameter table conating the volume, mean, std and 95 CI for each of the diffusion parameters."
@@ -188,6 +188,13 @@ OutlierIncludeZero::usage =
 "OutlierIncludeZero is an option for FindOutliers. If set to True all values that are zero are ignored and considered outliers."
 
 
+ColorValue::usage = 
+"ColorValue is an option for Hist and ErrorPlot. Default {Black, Red}."
+
+Scaling::usage = 
+"Scaling is an option for Hist2. Scales the individual fits of the fat and muscle compartment."
+
+
 Strictness::usage = 
 "Strictness is an option for SmartMask value between 0 and 1. Higer values removes more data."
 
@@ -214,6 +221,12 @@ ParameterFit::func = "Unknow fit function: `1`. options are SkewNormal or Normal
 ParameterFit::outp = "Unknow output format: `1`. options are Parameters or Function."
 
 JoinSets::over = "Error: The overlap must be a number or a list which gives the overlap and how many slice must be droped. Not: `1`."
+
+Hist::size = "Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`)."
+
+ErrorPlot::size = "Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`)."
+
+Hist2::size = "Length of data (`1`), labels (`2`) and range (`3`) must be 5."
 
 
 (* ::Section:: *)
@@ -771,13 +784,12 @@ SyntaxInformation[DataTranformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[
 
 DataTranformation[data_, vox_, wi_,OptionsPattern[]] := 
  Block[{coor, rot, coorR, interFunc, interFuncC, w},
-  w = If[Length[wi]==3,Join[wi,{0,0,0,1,1,1,0,0,0}]];
+  w = If[Length[wi]==3,Join[wi,{0,0,0,1,1,1,0,0,0}],wi];
   
   coor = GetCoordinates[data, vox];
   rot = ParametersToTransformFull[w, "Inverse"];
   coorR = ApplyRotC[coor, rot];
-  interFunc = 
-   Interpolation[
+  interFunc = Interpolation[
     Transpose[{Flatten[coor, ArrayDepth[coor] - 2], Flatten[data]}], 
     InterpolationOrder -> OptionValue[InterpolationOrder], 
     "ExtrapolationHandler" -> {0. &, "WarningMessage" -> False}];
@@ -827,7 +839,7 @@ ParametersToTransformFull[w_, opt_] := Block[{
 	T, R, G, S, Rx, Ry, Rz, Gx, Gy, Gz, 
 	mat, rMat, tMat}, 
 	
-	{rx, ry, rz, tx, ty, tz, sx, sy, sz, gx, gy, gz} = w;
+	{ry, rz, rx, tx, ty, tz, sz, sx, sy, gx, gz, gy} = w;
 	rx = -rx Degree; ry = -ry Degree; rz = -rz Degree;
 	T = {{1, 0, 0, tx}, {0, 1, 0, ty}, {0, 0, 1, tz}, {0, 0, 0, 1}};
 	
@@ -1162,6 +1174,9 @@ SplitSets[data_, sets_, overlap_, OptionsPattern[]] := Module[{lengthSet, sels, 
 
 (* ::Subsection::Closed:: *)
 (*Hist*)
+
+
+labStyle=Directive[Bold,FontFamily->"Helvetica",14,Black];
 
 
 Options[Hist] = {ColorValue -> {{Black,White}, Red, Green, Blue}, Method -> "SkewNormal", PlotLabel -> "", AxesLabel -> "", ImageSize -> 300}
