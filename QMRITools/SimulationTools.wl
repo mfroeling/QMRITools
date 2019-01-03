@@ -700,7 +700,7 @@ Module[{eig,ADC,FA,dataAll,rangy,bins,wbins,sol,fit,x,Omega,Xi,Alpha},
 		FA=FACalc[eig];
 		dataAll=DeleteCases[DeleteCases[Flatten[#],0],0.]&/@{eig[[All,All,1]],eig[[All,All,2]],eig[[All,All,3]],ADC,FA};
 		rangy={{0,3},{0,3},{0,3},{0,3},{0,1}};
-		bins=MapThread[{Range[#2[[1]]+.5(#2[[2]]/100),#2[[2]],#2[[2]]/100],BinCounts[#1,{#2[[1]],#2[[2]],#2[[2]]/100}]}&,{dataAll,rangy}];
+		bins=MapThread[{Range[#2[[1]]+.5(#2[[2]]/50),#2[[2]],#2[[2]]/50],BinCounts[#1,{#2[[1]],#2[[2]],#2[[2]]/50}]}&,{dataAll,rangy}];
 		wbins=Transpose/@MapThread[{#1[[1]],(#1[[2]]/Length[#3])/(#2[[2]]/100)}&,{bins,rangy,dataAll}];
 		sol=NonlinearModelFit[FitData[#],SkewNorm[x,Omega,Xi,Alpha],{Omega,Xi,Alpha},x,Gradient->"FiniteDifference"]&/@dataAll;
 		fit=Append[ParameterFit[#]&/@dataAll,{Length[dataAll[[1]]]}];
@@ -767,7 +767,7 @@ DynamicModule[{rangy,xlabel,exp},
 		If[!ListQ[pars]||!ListQ[rangy],
 			Return[],
 			exp=GraphicsRow[(Show[
-				Histogram[Flatten[pars[[y,1,#]]],{rangy[[#,2]]/100},"ProbabilityDensity",PlotRange->{rangy[[#]],{0,1.1Max[pars[[y,2,#,All,2]]]}},
+				Histogram[Flatten[pars[[y,1,#]]],{rangy[[#,2]]/50},"ProbabilityDensity",PlotRange->{rangy[[#]],{0,1.1Max[pars[[y,2,#,All,2]]]}},
 				PerformanceGoal->"Speed",AxesOrigin->{0,0},LabelStyle->labStyle,
 				FrameLabel->{xlabel[[#]],"Probability density"},Axes->False,FrameStyle->Thick,Frame->{True,True,False,False},ChartBaseStyle->EdgeForm[{Thin,White}],ChartStyle->Gray],
 				ListPlot[pars[[y,2,#]],Joined->True,PlotStyle->{Thick,Black},PlotRange->{rangy[[#]],{0,1.1Max[pars[[y,2,#,All,2]]]}}],
@@ -775,9 +775,12 @@ DynamicModule[{rangy,xlabel,exp},
 				ListLinePlot[{{tr[[#]],0},{tr[[#]],1.1Max[pars[[y,2,#,All,2]]]}},PlotStyle->Directive[Thick,Black,Dashed]]
 				]&/@{1,2,3,4,5})[[xx]],ImageSize->Length[xx]*400,PlotLabel->Style[label<>"  -  "<>ToString[xdata[[y]]],16],LabelStyle->labStyle]
 			]
-		,{{xx,{1,2,3},"Parameter"},{{1,2,3}->"eigenvalues",{4,5}->"MD\\FA"}},{{y,1,"Simulation Value"},1,Length[pars],1},
-		Button["Export Plot To File",FileSave[Dynamic[exp],"jpg",2000],Method->"Queued"],
-		{{size, 500, "Export Size"}, sizes}, {{file, ".jpg","File Type"}, files},
+		,
+			{{xx,{1,2,3},"Parameter"},{{1,2,3}->"eigenvalues",{4,5}->"MD\\FA"}},
+			{{y,1,"Simulation Value"},1,Length[pars],1},
+			Button["Export Plot To File",FileSave[Dynamic[exp],"jpg",2000],Method->"Queued"],
+			{{size, 500, "Export Size"}, sizes}, 
+			{{file, ".jpg","File Type"}, files},
 		SaveDefinitions->True
 		]
 	]

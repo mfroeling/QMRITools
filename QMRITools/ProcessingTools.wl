@@ -101,9 +101,8 @@ Hist2::usage =
 Hist2[pars, range, label] plots a probability density histogram of the data over range with two fitted (skew)normal distribution. Uses ParameterFit2."
 
 ErrorPlot::usage = 
-"ErrorPlot[data , {xmin, xmax}] plots a errorbar plot of the data from ymin to ymax as a function multiple slice/datasets.
-ErrorPlot[data , {xmin, xmax}, title] plots a errorbar plot of the data from ymin to ymax as a function multiple slice/datasets, with title as plot title.
-ErrorPlot[data , {xmin, xmax}, title, label] plots a errorbar plot of the data from ymin to ymax as a function multiple slice/datasets, with title as plot title and label as x-axis label"
+"ErrorPlot[data, xdata] plots a errorplot of the data where the first dim of the data is the xrange which matches the xdata list. 
+ErrorPlot[data, xdata, range] similar with a given y range."
 
 
 NumberTableForm::usage = 
@@ -283,12 +282,13 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
   
   (*prepare data*)
   data = dat;
+  data=Pick[data, Unitize[data], 1];
+  
   (*initialization for mean and std*)
   mdat = Mean[data];
   sdat = StandardDeviation[data];
-  
+
   Off[NonlinearModelFit::"cvmit"]; Off[NonlinearModelFit::"sszero"];
-  
   
   (*perform the fit for one compartment*)
   If[Length[data] <= 10,
@@ -839,22 +839,28 @@ ParametersToTransformFull[w_, opt_] := Block[{
 	T, R, G, S, Rx, Ry, Rz, Gx, Gy, Gz, 
 	mat, rMat, tMat}, 
 	
-	{ry, rz, rx, tx, ty, tz, sz, sx, sy, gx, gz, gy} = w;
-	rx = -rx Degree; ry = -ry Degree; rz = -rz Degree;
-	T = {{1, 0, 0, tx}, {0, 1, 0, ty}, {0, 0, 1, tz}, {0, 0, 0, 1}};
+	{rz, rx, ry, tz, tx, ty, sz, sx, sy, gz, gx, gy} = w;
 	
-	Rx = {{1, 0, 0, 0}, {0, Cos[rx], Sin[rx], 0}, {0, -Sin[rx], Cos[rx], 0}, {0, 0, 0, 1}};
-	Ry = {{Cos[ry], 0, -Sin[ry], 0}, {0, 1, 0, 0}, {Sin[ry], 0, Cos[ry], 0}, {0, 0, 0, 1}};
-	Rz = {{Cos[rz], Sin[rz], 0, 0}, {-Sin[rz], Cos[rz], 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-	R = Rx.Ry.Rz;
+	(*translation*)
+	T = N@{{1, 0, 0, tz}, {0, 1, 0, tx}, {0, 0, 1, ty}, {0, 0, 0, 1}};
 	
-	Gx = {{1, 0, gx, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-	Gy = {{1, 0, 0, 0}, {gy, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-	Gz = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, gz, 1, 0}, {0, 0, 0, 1}};
-	G = Gx.Gy.Gz;
+	(*rotation*)
+	rx = rx Degree; ry = ry Degree; rz = rz Degree;
+	Rz = {{1, 0, 0, 0}, {0, Cos[rz], -Sin[rz], 0}, {0, Sin[rz], Cos[rz], 0}, {0, 0, 0, 1}};
+	Rx = {{Cos[rx], 0, Sin[rx], 0}, {0, 1, 0, 0}, {-Sin[rx], 0, Cos[rx], 0}, {0, 0, 0, 1}};
+	Ry = {{Cos[ry], -Sin[ry], 0, 0}, {Sin[ry], Cos[ry], 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+	R = N@Rx.Ry.Rz;
 	
-	S = {{sx, 0, 0, 0}, {0, sy, 0, 0}, {0, 0, sz, 0}, {0, 0, 0, 1}};
+	(*scaling*)
+	If[N@{sx,sy,sz}=={0.,0.,0.},{sx,sy,sz}={1.,1.,1.}];
+	S = N@{{sz, 0, 0, 0}, {0, sx, 0, 0}, {0, 0, sy, 0}, {0, 0, 0, 1}};
 	
+	(*skew*)
+	Gz = {{1, gz, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+	Gx = {{1, 0, 0, 0}, {0, 1, gx, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+	Gy = {{1, 0, gy, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+	G = N@Gx.Gy.Gz;
+
 	mat = T.R.G.S;
 	
 	Switch[opt,
@@ -1300,40 +1306,46 @@ SkewNorm[x_,Omega_,Xi_,Alpha_]:=(2/Omega)Phi[(x-Xi)/Omega]CapitalPhi[Alpha (x-Xi
 (*ErrorPlot*)
 
 
-Options[ErrorPlot]={ColorValue->{Black,Red}}
+Options[ErrorPlot] = {ColorValue -> {Black, Red}, PlotLabel -> "", AxesLabel -> "", ImageSize -> 300}
 
-SyntaxInformation[ErrorPlot] = {"ArgumentsPattern" -> {_, _, _, _. , OptionsPattern[]}};
+SyntaxInformation[ErrorPlot] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-ErrorPlot[dat_?ArrayQ,range:{_,_},label:{_String,_String}:{"",""},ops:OptionsPattern[]]:=ErrorPlot[{dat},{range},{label},"",ops]
+ErrorPlot[dat_, xdat_, ops : OptionsPattern[]] := ErrorPlot[dat, xdat, 0, ops]
 
-ErrorPlot[dat_?ArrayQ,range:{_,_},label:{_String,_String}:{"",""},title_String:"",ops:OptionsPattern[]]:=ErrorPlot[{dat},{range},{label},{title},ops]
-
-ErrorPlot[dat_?ArrayQ,range:{{_,_}..},label:{{_String,_String}..},ops:OptionsPattern[]]:=ErrorPlot[dat,range,label,"",ops]
-
-ErrorPlot[data_?ArrayQ,range:{{_,_}..},label:{{_String,_String}..},title_:"",OptionsPattern[]]:=
-Module[{gr,mn,sd,er1,er2,plr,lines,color1,color2},
-	{color1,color2}=OptionValue[ColorValue];
-	
-	If[Length[range]!=Length[data]!=Length[label],Return[Message[Hist::size,Length[data],Length[range],Length[label]]]];
-	
-	Map[(
-	gr=ParameterFit[Flatten[data[[#]]]];
-	{mn,sd}=Transpose[ParameterFit[data[[#]]]];
-	{er1,er2}={mn-sd,mn+sd}/. 0->Null;
-	plr={{0,Length[data[[#]]]+1},range[[#]]};
-	lines={{},{
-			{gr[[1]],Directive[Thick]},
-			{gr[[1]]-gr[[2]],Directive[Thick,Dashed]},
-			{gr[[1]]+gr[[2]],Directive[Thick,Dashed]}
-			}};
-	ListPlot[{mn,er1,er2},PlotRange->plr,PlotLabel->If[title==={""}||title==="","",title[[#]]],
-		Axes->False,Frame->{True,True,False,False},FrameStyle->Thick,FrameLabel->label[[#]],
-		GridLines-> lines,PlotStyle->{{color1,Thick},{Dashed,Thick,color2},{Dashed,Thick,color2}},
-		Joined->{True,True,True},Filling->{2->{3}},
-		FillingStyle->Directive[Opacity[0.2],color2],LabelStyle->labStyle
-		]
-		)&,Range[Length[range]]]
-	]
+ErrorPlot[dat_, xdat_, range_, OptionsPattern[]] := 
+ Block[{color1, color2, title, label, fdat, mn, sd, er1, er2, sdr, m, s, plr},
+  {color1, color2} = OptionValue[ColorValue];
+  
+  title = OptionValue[PlotLabel];
+  title = If[title === "", None, title];
+  label = OptionValue[AxesLabel];
+  label = If[label === "", None, label];
+  
+  fdat = DeleteCases[N@Flatten[dat], 0.];
+  
+  {mn, sd} = Transpose[ParameterFit[dat]];
+  {er1, er2} = {mn - sd, mn + sd} /. 0 -> Null;
+  
+  plr = If[range === 0,
+    Quantile[fdat, {0.01, .99}],
+    If[IntegerQ[range],
+     sdr = range;
+     {m, s} = {Mean[fdat], StandardDeviation[fdat]};
+     {(m - sdr s), (m + sdr s)},
+     range]
+    ];
+  
+  ListPlot[Transpose[{xdat, #}] & /@ {mn, er1, er2},
+   PlotRange -> {MinMax[xdat], plr},
+   PlotLabel -> title, FrameLabel -> label,
+   Axes -> False, Frame -> {True, True, False, False},
+   FrameStyle -> Thick, 
+   PlotStyle -> {{color1, Thick}, {Dashed, Thick, color2}, {Dashed, 
+      Thick, color2}},
+   Joined -> {True, True, True}, Filling -> {2 -> {3}}, 
+   FillingStyle -> Directive[Opacity[0.2], color2], LabelStyle -> labStyle, ImageSize->OptionValue[ImageSize]
+   ]
+  ]
 
 
 (* ::Subsection::Closed:: *)
