@@ -702,7 +702,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
 
 
 Options[RegisterData]={
-Iterations->500,
+Iterations->250,
 Resolutions->1,
 HistogramBins->64,
 NumberSamples->2000,
@@ -1311,8 +1311,9 @@ ReadTransformParameters[dir_] := Block[{files,filenum,cor},
     Partition[
         ToExpression[
          StringSplit[StringTake[Import[#, "Lines"][[3]], {2, -2}]][[
-          2 ;;]]], 3][[{1, 4, 3, 2}, {2, 1, 3}]] & /@ files;
+          2 ;;]]], 3][[{1, 4, 3, 2}, {3,2,1}]] & /@ files;
   cor[[All, 1]] = cor[[All, 1]]/Degree;
+
   Flatten /@ cor
   ]
 
