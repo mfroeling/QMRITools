@@ -14,7 +14,6 @@ authors:
 affiliations:
  - name: Department of Radiology, University Medical Center Utrecht, Utrecht, The Netherlands
    index: 1
-date: 02 June 2018
 bibliography: paper.bib
 ---
 
