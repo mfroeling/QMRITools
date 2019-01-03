@@ -57,7 +57,7 @@ For the latest version of these tools and their user licences please visit their
 All functionality is tested under windows 10 with the latest Mathematica version. 
 Elastix compatibility has been tested for MacOSX but is not guaranteed.  
 
-A full build and release can be found [here](https://github.com/mfroeling/QMRITools/blob/master/QMRITools.zip). 
+A full build and release can be found [here](https://github.com/mfroeling/QMRITools/releases/download/2.0/QMRITools.zip). 
 
 ## Using the toolbox
 
