@@ -1,6 +1,6 @@
 # QMRITools
 
-[![DOI](https://zenodo.org/badge/54553256.svg)](https://zenodo.org/badge/latestdoi/54553256)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2530801.svg)](https://doi.org/10.5281/zenodo.2530801)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 [![HitCount](http://hits.dwyl.io/mfroeling/DTITools.svg)](http://hits.dwyl.io/mfroeling/DTITools)
 
@@ -33,7 +33,7 @@ It contains the following toolboxes:
 - SimulationTools
 - VisteTools
 
-A list off all functions and their help can be found int All-Functions.nb. Documentation of all functions and their options is fully integrated in the Mathematica documentation.
+A list off all functions and their help can be found int ``All-Functions.nb``. Documentation of all functions and their options is fully integrated in the Mathematica documentation.
 The toolbox always works within the latest version of Mathematica and does not support any backward compatibility.
 
 All code and documentation is maintained and uploaded to github using [Workbench](https://www.wolfram.com/workbench/).
@@ -140,7 +140,7 @@ A summary of the core functionality can be found here.
 
 ## Demonstrations
 
-The toolbox contains a file demo.nb and demo data folder testdata. This wil give a global overview of the functionality of the toolbox. 
+The toolbox contains a file ``demo.nb`` and demo data folder testdata. This wil give a global overview of the functionality of the toolbox. 
 	
 ## License
 https://opensource.org/licenses/BSD-3-Clause
