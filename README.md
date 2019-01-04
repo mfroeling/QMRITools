@@ -96,7 +96,9 @@ A list off all functions and their help can be found in ``All-Functions.nb``.
 ## Functionality
 
 The toolbox contains over 250 Functions and options of processing and analyzing data.
-A summary of the core functionality can be found here. 
+A summary of the core functionality is listed below. 
+
+![Overview](https://github.com/mfroeling/QMRITools/blob/master/Images/OverView.jpg)
 
 * Diffusion Analysis
 	* Signal drift correction 
