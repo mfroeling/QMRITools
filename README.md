@@ -5,7 +5,9 @@
 [![HitCount](http://hits.dwyl.io/mfroeling/DTITools.svg)](http://hits.dwyl.io/mfroeling/DTITools)
 
 * [Information](#information)
+* [Documentation](#Documentation)
 * [Install toolbox](#install-toolbox)
+* [Demonstrations](#Demonstrations)
 * [Using the toolbox](#using-the-toolbox)
 * [Functionality](#functionality)
 
@@ -33,14 +35,20 @@ It contains the following toolboxes:
 - SimulationTools
 - VisteTools
 
-A list off all functions and their help can be found in ``All-Functions.nb``. Documentation of all functions and their options is fully integrated in the Mathematica documentation. The toolbox always works within the latest version of Mathematica and does not support any backward compatibility.
+## Documentation
+
+Documentation of all functions and their options is fully integrated in the Mathematica documentation. The toolbox always works within the latest version of Mathematica and does not support any backward compatibility.
 After the toolbox is installed correctly it should show up as a package in the Mathematica add-ons. 
 
-
+![QMRITools package](https://github.com/mfroeling/QMRITools/blob/master/Images/AddOns.PNG)
 
 All code and documentation is maintained and uploaded to github using [Workbench](https://www.wolfram.com/workbench/).
 
+![Guides QMRITools](https://github.com/mfroeling/QMRITools/blob/master/Images/Guide.PNG)
+
 ## Install toolbox
+
+A full of the latest release can be found [here](https://github.com/mfroeling/QMRITools/releases/download/2.0/QMRITools.zip). 
 
 Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 
@@ -59,7 +67,9 @@ For the latest version of these tools and their user licences please visit their
 All functionality is tested under windows 10 with the latest Mathematica version. 
 Elastix compatibility has been tested for MacOSX but is not guaranteed but we are working on making all tools both Linux and MacOSX compatible.  
 
-A full build and release can be found [here](https://github.com/mfroeling/QMRITools/releases/download/2.0/QMRITools.zip). 
+## Demonstrations
+
+The toolbox contains a file ``demo.nb`` and demo data folder ``DemoData``. This wil give a global overview of the functionality of the toolbox. 
 
 ## Using the toolbox
 
@@ -78,6 +88,8 @@ To print the documentation of all functions use
 
 	QMRIToolsFuncPrint[]
 	QMRIToolsFuncPrint["toolboxname"]
+
+A list off all functions and their help can be found in ``All-Functions.nb``.
 
 ## Functionality
 
@@ -139,10 +151,6 @@ A summary of the core functionality can be found here.
 	* helix angle and fiber architecture matrix
 	* AHA 17 parameter description
 	* Transmural parameter description	
-
-## Demonstrations
-
-The toolbox contains a file ``demo.nb`` and demo data folder ``DemoData``. This wil give a global overview of the functionality of the toolbox. 
 	
 ## License
 https://opensource.org/licenses/BSD-3-Clause
