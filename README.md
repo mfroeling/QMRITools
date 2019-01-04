@@ -100,7 +100,7 @@ A summary of the core functionality is listed below.
 
 ![Overview](https://github.com/mfroeling/QMRITools/blob/master/Images/OverView.jpg)
 
-* Diffusion Analysis
+* **Diffusion Analysis**
 	* Signal drift correction 
 	* LLS, WLLS and iWLLS methods
 	* REKINDLE outlier detection
@@ -108,47 +108,47 @@ A summary of the core functionality is listed below.
 	* Parameter fitting using histogram analysis
 	* Joining and sorting of multiple series of the same volume
 	* Joining multiple stacks with slice overlap into one stack
-* Diffusion Gradients optimization
+* **Diffusion Gradients optimization**
 	* Single and multi shell
 	* Rotating and correcting Bmatrix
 	* Actual b-value estimation by gradient sequence integration
 	* Gradient visualization
-* Noise suppression
+* **Noise suppression**
 	* LMMSE noise suppression
 	* PCA noise suppression based on ramom matrix theory
 	* Anisotropic tensor smoothing using diffusion filter.
-* Importing and Exporting
+* **Importing and Exporting**
 	* Dicom data (classing and enhanced file format)
 	* Nifti data (.nii and .img .hdr, supports .gz files)
 	* Compatible with ExplorDTI and Viste for fiber tractography
-* Data visualization
+* **Data visualization**
 	* 2D 3D and 4D viewer
 	* Multiple images: Transparent overlay, difference and, checkboard overlays
 	* Legend bars and image labels
 	* Saving to pdf, jpg, animated gif and movie
-* Masking
+* **Masking**
 	* Automate and threshold masking
 	* Extracting parameters form masks
 	* Smoothing masks
 	* Smoothing muscle segmentation
-* Motion and distortion correction (Registration using elastix)
+* **Motion and distortion correction (Registration using elastix)**
 	* Rigid, affine, b-spline and cyclic registration 
 	* nD to nD registration
 	* Automated series processing 
 	* Slice to slice motion correction of 3D and 4D data
-* Dixon Reconstruction
+* **Dixon Reconstruction**
 	* B0 phase unwrapping
 	* DIXON iDEAL reconstruction with T2start
-* Relaxometry fitting
+* **Relaxometry fitting**
 	* T2 fitting
 	* T1rho fitting
 	* Tri Exponential T2 fitting
 	* EPG based T2 fitting with slice profile
-* Simulation Framework
+* **Simulation Framework**
 	* Diffuison tensor simulation and analysis
 	* Bloch and EPG simulations
 	* Cardiac DTI models (fiber architecture)
-* Cardiac Diffusion analysis 
+* **Cardiac Diffusion analysis** 
 	* Breathing motion correction
 	* Corrupted slice rejection
 	* Local myocardial coordinate system calculation
