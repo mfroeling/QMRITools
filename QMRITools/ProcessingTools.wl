@@ -900,7 +900,7 @@ Inverse3Di[data_] := Block[{out},
 (*JoinSets*)
 
 
-Options[JoinSets]={ReverseSets->True,ReverseData->True, NormalizeSets -> True, MotionCorrectSets -> False, PaddOverlap -> 2};
+Options[JoinSets]={ReverseSets->True,ReverseData->True, NormalizeSets -> True, MotionCorrectSets -> False, PaddOverlap -> 2, JoinSetSplit -> True};
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -931,7 +931,7 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 			,
 			4,
 			PrintTemporary["motion correcting data"];
-			dat = CorrectJoinSetMotion[dat, vox, over, PaddOverlap->pad];
+			dat = CorrectJoinSetMotion[dat, vox, over, PaddOverlap->pad, JoinSetSplit->OptionValue[JoinSetSplit]];
 			overlap = overlap + 2*pad;
 		]
 	];
@@ -1013,7 +1013,7 @@ Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1
 		set1over=Take[data1,{-overl,-1}];
 		set2=Drop[data2,{1,overl}];
 		set2over=Take[data2,{1,overl}];
-		(*joined=Joini2[{set1,set2},{set1over,set2over},step];*)
+		
 		joined=Joini[{set1,set2},{set1over,set2over},overl];
 		];
 		
