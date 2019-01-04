@@ -50,7 +50,7 @@ All code and documentation is maintained and uploaded to github using [Workbench
 
 ## Install toolbox
 
-A full of the latest release can be found [here](https://github.com/mfroeling/QMRITools/releases/download/2.0/QMRITools.zip). 
+The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases/download/2.0/QMRITools.zip). 
 
 Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 
