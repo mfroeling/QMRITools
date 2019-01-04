@@ -7,9 +7,9 @@
 ## Contents
 
 * [Information](#information)
-* [Documentation](#Documentation)
+* [Documentation](#documentation)
 * [Install toolbox](#install-toolbox)
-* [Demonstrations](#Demonstrations)
+* [Demonstrations](#demonstrations)
 * [Using the toolbox](#using-the-toolbox)
 * [Functionality](#functionality)
 
