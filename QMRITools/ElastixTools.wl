@@ -325,22 +325,22 @@ _,
 (MovingImageDerivativeScales "<>ToString[Clip[derscB[[3]]]] <> " " <>ToString[Clip[derscB[[2]]]] <> " " <> ToString[Clip[derscB[[1]]]]<>")",
 "PCA",
 "(Transform \"BSplineStackTransform\")
-(FinalGridSpacingInPhysicalUnits "<>ToString[grid[[3]]]<>" "<>ToString[grid[[2]]]<>" 0)
+(FinalGridSpacingInPhysicalUnits "<>ToString[grid[[3]]]<>" "<>ToString[grid[[2]]]<>" "<>ToString[grid[[1]]]<>" 0)
 
 // *********************
 // * Metric settings
 // *********************
-(MovingImageDerivativeScales 1.0 1.0 0.0)
+(MovingImageDerivativeScales 1.0 1.0 1.0 0.0)
 (NumberOfSamplesForExactGradient 50000)
 (SubtractMean \"true\")",
 "cyclyc",
 "(Transform \"BSplineStackTransform\")
-(FinalGridSpacingInPhysicalUnits "<>ToString[grid[[3]]]<>" "<>ToString[grid[[2]]]<>" 0)
+(FinalGridSpacingInPhysicalUnits "<>ToString[grid[[3]]]<>" "<>ToString[grid[[2]]]<>" "<>ToString[grid[[1]]]<>" 0)
 
 // *********************
 // * Metric settings
 // *********************
-(MovingImageDerivativeScales 1.0 1.0 0.0)
+(MovingImageDerivativeScales 1.0 1.0 1.0 0.0)
 (SubtractMean \"true\")"
 ]<>"
 
