@@ -306,7 +306,7 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
     ,
     (*Normal dist parameter fit*)
     "Normal",
-    sol = NonlinearModelFit[fdat, PDF[NormalDistribution[Mu, Sigma], x], {{Mu, mdat}, {Sigma, mdat/2}}, x];
+    sol = NonlinearModelFit[fdat, {PDF[NormalDistribution[Mu, Sigma], x],Sigma>0}, {{Mu, mdat}, {Sigma, sdat}}, x];
     par = sol["BestFitParameters"];
     fun = NormalDistribution[Mu, Sigma] /. par;
     ,
