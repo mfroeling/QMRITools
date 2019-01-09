@@ -1,5 +1,5 @@
 ---
-title: 'DTITools: a collection of tools for processing and visualization of diffusion MRI data.'
+title: 'QMRTools: a mathematica toolbox for quantitative MRI analysis.'
 tags:
   - Diffusion Tensor Imaging
   - Dixon Imaging
