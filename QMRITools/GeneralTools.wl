@@ -50,6 +50,9 @@ RescaleData[data,{vox1, vox2}] rescales image/data from size vox1 to size vox2."
 GridData::usage = 
 "GridData[{data1,data2,...}, part] makes a grid of multiple datasets with part sets on each row"
 
+GridData3D::usage = 
+"GridData3D[{data1,data2,...}, part] same as grid data, but only works on 4D data where the data is gridded in axial, coronal and sagital."
+
 Data2DToVector::usage = 
 "Data2DToVector[data] converst the data to vector.
 Data2DToVector[data,mask] converst the data within the mask to vector.
@@ -412,6 +415,20 @@ GridData[data_, part_] := Block[{dim, temp, adepth},
 	temp = MapThread[Join, #, adepth - 2] & /@ temp;
 	temp = MapThread[Join, temp, adepth - 1]
   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GridData3D*)
+
+
+SyntaxInformation[GridData] = {"ArgumentsPattern" -> {_, _}};
+
+GridData3D[data_, part_] := Block[{AX, COR, SAG},
+	AX = GridData[data, part];
+	COR = GridData[Transpose[Reverse@#, {2, 1, 3}] & /@ data, part];
+	SAG = GridData[Transpose[Reverse@#, {2, 3, 1}] & /@ data, part];
+	Transpose[{AX, COR, SAG}]
+]
 
 
 (* ::Subsubsection::Closed:: *)

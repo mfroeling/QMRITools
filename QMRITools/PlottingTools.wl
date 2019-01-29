@@ -2519,24 +2519,19 @@ PlotContour[data_, voxi_, scaleI_?ArrayQ, range_, OptionsPattern[]] :=  Block[{
     (*get the scaling*)
     scale = ArrayPad[scaleI, 1];
     mean = If[range === 0,
-      Quantile[DeleteCases[Flatten[data scaleI], 0.], .95],
+      Quantile[DeleteCases[N@Flatten[data scaleI], 0.], .95]
+      ,
       range
       ];
     scale = scale/(mean);
-    Function[{x, y, z}, 
-     ColorData["SunsetColors"][
-      scale[[Ceiling[z], Ceiling[y], Ceiling[x]]]]]
+    Function[{x, y, z}, ColorData["SunsetColors"][scale[[Ceiling[z], Ceiling[y], Ceiling[x]]]]]
     ,
     Automatic
     ];
   
-  ListContourPlot3D[pdata,
-   Contours -> 1, BoxRatios -> dim vox, 
-   PlotRange -> Thread[{{0, 0, 0} - 5, dim + 2 + 5}],
-   ContourStyle -> style, ColorFunction -> func, Mesh -> False, 
-   Lighting -> "Neutral", MaxPlotPoints -> Round[Max[dim]/3],
-   ColorFunctionScaling -> False, SphericalRegion -> True, 
-   ImageSize -> 300, PerformanceGoal -> "Speed", Axes -> False
+  Quiet@ListContourPlot3D[pdata,
+   Contours -> 1, BoxRatios -> dim vox, PlotRange -> Thread[{{0, 0, 0} - 5, dim + 2 + 5}], ContourStyle -> style, ColorFunction -> func, Mesh -> False, 
+   Lighting -> "Neutral", MaxPlotPoints -> Round[Max[dim]/3], ColorFunctionScaling -> False, SphericalRegion -> True, ImageSize -> 300, PerformanceGoal -> "Speed", Axes -> False
    ]
   ]
 

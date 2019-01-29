@@ -103,13 +103,18 @@ Begin["`Private`"]
 SyntaxInformation[LoadCoilSetup] = {"ArgumentsPattern" -> {_}};
 
  (*load a sereis of linked coils measurements.*)
-LoadCoilSetup[fileC_?StringQ]:=Block[{dataC, vox, len, noiseC, sosC, snrC, sigmapC, weights},
+LoadCoilSetup[fileC_?StringQ]:=Block[{dataC, vox, len, noiseC, sosC, snrC, sigmapC, weights, mn},
 	(*import the data*)
 	{dataC, vox} = ImportNii[fileC];
 	(*split the noise dan data*)
 	len = Round[Length[dataC[[1]]]/2];
 	noiseC = Transpose@dataC[[All, (len + 1) ;;]];
 	dataC = Transpose@dataC[[All, 1 ;; len]];
+	
+	mn =  MeanNoZero@Flatten@N@noiseC;
+	dataC = 10. dataC/mn;
+	noiseC = 10. noiseC/mn;
+	
 	(*calculate snr*)
 	{dataC, noiseC, sosC, snrC, sigmapC, weights} = CoilSNRCalc[dataC, noiseC];
 	(*output*)
@@ -220,9 +225,9 @@ FindCoilPosition[weights_, mask_, OptionsPattern[]] := Block[{
 	
 	{pts, pl} = Monitor[Transpose@Table[
 		(*get coil signal mask*)
-		pdat = weightsM[[i]];
+		pdat = mask weightsM[[i]];
 		max = Quantile[DeleteCases[Flatten[pdat], 0.], .995];
-		comp = SelectComponents[Image3D[ArrayPad[mask (Mask[pdat, max]), 1]], "Count", -1];
+		comp = SelectComponents[Image3D[ArrayPad[Mask[pdat, max], 1]], "Count", -1];
 		pdat = ArrayPad[GaussianFilter[ImageData[comp], 2], -1];
 	
 		(*get coil coordinate*)
@@ -329,7 +334,7 @@ MakeCoilLayout[{name_?StringQ, size_?NumberQ, number_?ListQ}, val_, opts : Optio
 
 MakeCoilLayout[coils_?ListQ, val_?ListQ, opts : OptionsPattern[]] := MakeCoilLayouti[#, val, opts] & /@ coils
 
-MakeCoilLayout[coils_, opts : OptionsPattern[]] := MakeCoilLayouti[#, opts] & /@ coils
+MakeCoilLayout[coils_, opts : OptionsPattern[]] := MakeCoilLayouti[#, 0, opts] & /@ coils
 
 
 (* ::Subsubsection::Closed:: *)
@@ -343,15 +348,14 @@ MakeCoilLayouti[{name_?StringQ, size_?NumberQ, number_?ListQ}, val_, OptionsPatt
    grid = Transpose[Partition[number, size]];
    out = Column[{name, Grid[grid, Frame -> All]}, Alignment -> Center];
    ,
-   grid = Transpose[Partition[val[[number]], size]];
+   grid = Transpose[Partition[val[[number]], size]] /. _?Negative -> Green;
    If[OptionValue[CoilArrayPlot],
     out = ArrayPlot[grid, ImageSize -> OptionValue[ImageSize],
        PlotRange -> OptionValue[PlotRange], 
        PlotLabel -> Style[name, Black, Bold, 12],
        ColorFunction -> OptionValue[ColorFunction], Frame -> False];
     ,
-    out = 
-      Column[{name, Grid[grid, Frame -> All]}, Alignment -> Center];
+    out = Column[{name, Grid[grid, Frame -> All]}, Alignment -> Center];
     ]
    ];
   out
