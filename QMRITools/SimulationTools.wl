@@ -573,11 +573,15 @@ SimulateSliceEPG[exitation_, refocus_, {{T1_, T2_}, {Necho_, echoSp_}, b1_}, Opt
 
 Options[GfactorSimulation] = {GRegularization -> 0., GOutput -> "Grid"};
 
-SyntaxInformation[GfactorSimulation] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
+SyntaxInformation[GfactorSimulation] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
 
-GfactorSimulation[sensitivity_, W_, {dir1_, sensea_?ListQ}, opts : OptionsPattern[]] := GfactorSimulation[sensitivity, W, {dir1, sensea}, {"", {0}}, opts]
+GfactorSimulation[sensitivity_, W_, {dir1_, sensea_?ListQ}, opts : OptionsPattern[]] := GfactorSimulation[sensitivity, W, 0, {dir1, sensea}, {"", {0}}, opts]
 
-GfactorSimulation[sensitivity_, W_, {dir1_, sensea_?ListQ}, {dir2_, senseb_?ListQ}, OptionsPattern[]] := Block[{
+GfactorSimulation[sensitivity_, W_, {dir1_, sensea_?ListQ}, {dir2_, senseb_?ListQ}, opts:OptionsPattern[]]:= GfactorSimulation[sensitivity, W, 0, {dir1, sensea}, {dir2, senseb}, opts]
+
+GfactorSimulation[sensitivity_, W_, mask_, {dir1_, sensea_?ListQ}, opts : OptionsPattern[]] := GfactorSimulation[sensitivity, W, mask, {dir1, sensea}, {"", {0}}, opts]
+
+GfactorSimulation[sensitivity_, W_, mask_, {dir1_, sensea_?ListQ}, {dir2_, senseb_?ListQ}, OptionsPattern[]] := Block[{
    dir, dim, factors, gfactorsAX, gfactorsCOR, gfactorsSAG, lambda, sense1, sense2, sense3, nn, gfactors, reg},
   
   (*get the sense factor and directions*)
@@ -589,34 +593,18 @@ GfactorSimulation[sensitivity_, W_, {dir1_, sensea_?ListQ}, {dir2_, senseb_?List
   (*generate all the sense factor lists*)
   factors = Switch[dir,
     {"", "FH"}, Table[{i, 1, 1}, {i, sense2}],
-    {"", "LR"}, Table[{1, 1, i}, {i, sense2}],
     {"", "AP"}, Table[{1, i, 1}, {i, sense2}],
+    {"", "LR"}, Table[{1, 1, i}, {i, sense2}],
     {"FH", "LR"}, Flatten[Table[{i, 1, j}, {i, sense1}, {j, sense2}], 1],
     {"AP", "LR"}, Flatten[Table[{1, i, j}, {i, sense1}, {j, sense2}], 1],
     {"AP", "FH"}, Flatten[Table[{j, i, 1}, {j, sense1}, {i, sense2}], 1]
     ];
   
   (*perform the gfactor calculations*)
-  nn = 0;
-  SetSharedVariable[nn];
-  DistributeDefinitions[factors, sensitivity, W, reg, CalculateGfactori];
-  
-   Monitor[
-   	gfactors =ParallelTable[nn++;
-      CalculateGfactori[factors[[n]], sensitivity, W, GRegularization -> reg]
-      , {n, 1, Length[factors]}];
-      
-    , ProgressIndicator[nn, {1, Length[factors]}]];
+  gfactors = CalculateGfactori[factors, sensitivity, W, mask, GRegularization -> reg];
   
   (*output the gfactor*)
-  If[OptionValue[GOutput] === "Grid",
-   gfactorsAX = GridData[gfactors, Length[sense2]];
-   gfactorsCOR = GridData[Transpose[Reverse@#, {2, 1, 3}] & /@ gfactors, Length[sense2]];
-   gfactorsSAG = GridData[Transpose[Reverse@#, {3, 2, 1}] & /@ gfactors, Length[sense2]];
-   Transpose[{gfactorsAX, gfactorsCOR, gfactorsSAG}]
-   ,
-   {gfactors, factors}
-   ]
+  If[OptionValue[GOutput] === "Grid", GridData3D[gfactors,Length[sense2]], {gfactors, factors}]
   ]
 
 
@@ -626,52 +614,74 @@ GfactorSimulation[sensitivity_, W_, {dir1_, sensea_?ListQ}, {dir2_, senseb_?List
 
 Options[CalculateGfactor] = {GRegularization -> 0.};
 
-SyntaxInformation[CalculateGfactor] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
+SyntaxInformation[CalculateGfactor] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}}
 
-CalculateGfactor[factors_, sensitivity_, Wmat_, opts:OptionsPattern[]] := CalculateGfactori[factors, sensitivity, Wmat, opts]
+CalculateGfactor[factors_, sensitivity_, Wmat_, opts:OptionsPattern[]] := CalculateGfactori[factors, sensitivity, Wmat, 0, opts]
+
+CalculateGfactor[factors_, sensitivity_, Wmat_, mask_, opts:OptionsPattern[]] := CalculateGfactori[factors, sensitivity, Wmat, mask, opts]
 
 
 Options[CalculateGfactori] = Options[CalculateGfactor];
 
-CalculateGfactori[factors_, sensitivity_, Wmat_, OptionsPattern[]] := Block[{
-	
-	FOVux, FOVuy, FOVuz, usVal, gfactor, cor, xcor, ycor, zcor, cori, usf, FOVu, shft, FOVf, 
-	R, FOV, index, cors, Smat, Rmat, lambda, mat, gfac, dim, coils
+CalculateGfactori[factorsi_, sensitivity_, Wmat_, maski_, OptionsPattern[]] := Block[{
+	dim,lambda,listQ,factors,ii,sens,Wmati,gfactors,factor,Rmat,usVal,
+	FOVux,FOVuy,FOVuz, fcorx, fcory,fcorz, usf, FOVu,shft,FOVf,R,FOV,
+	fcors,corsG,Smat,mat,pmat,gfac,gfactor,mask,gmask
 	},
 	
-  (*get parameters*)
-  dim = Drop[Dimensions[sensitivity], 1];
-  usVal = UsFactor[dim, factors];
-  gfactor = ConstantArray[-1, dim];
-  lambda = OptionValue[GRegularization];
-  {FOVux, FOVuy, FOVuz} = usVal[[2]];
-  
-  (*loop over all coordinates of the undersampled image*)
-  Table[
-   (*loop over x, y and z to get the folded corrdinates*)
-   {xcor, ycor, zcor} = MapThread[(
-       cori = #1; {usf, FOVu, shft, FOVf, R} = #2; FOV = #3;
-       index = cori + FOVu*Range[0, R - 1] + shft;
-       DeleteCases[If[! (FOV < # <= FOVf), If[# > FOV, # - FOVf, #]] & /@ index, Null]
-       ) &, {{i, j, k}, Transpose[usVal], dim}];
-   (*get all the folded coordinates*)
-   cors = Flatten[Table[Ceiling[{x, y, z}], {x, xcor}, {y, ycor}, {z, zcor}], 2];
-   
-   (*get the sensitivity values and regularization*)
-   Smat = Transpose[sensitivity[[All, #[[1]], #[[2]], #[[3]]]] & /@ cors];
-   Rmat = lambda^2  IdentityMatrix[Length[cors]] ;
-   (*Calcualte the gfactor*)
-   mat = ConjugateTranspose[Smat].Wmat.Smat;
-   gfac = Abs[Sqrt[Diagonal[PseudoInverse[mat + Rmat]]*Diagonal[mat]]];
-   
-   (*store the gfactor in the correct location*)
-   (gfactor[[#[[1, 1]], #[[1, 2]], #[[1, 3]]]] = #[[2]]) & /@ 
-    Transpose[{cors, gfac}];
-   , {i, FOVux}, {j, FOVuy}, {k, FOVuz}
-   ];
-  (*output the gfactor*)
-  gfactor
-  ]
+	(*get parameters*)
+	dim = Drop[Dimensions[sensitivity], 1];
+	lambda = OptionValue[GRegularization];
+	listQ = VectorQ[factorsi];
+	(*DistributeDefinitions[lambda, dim, sensitivity, Wmat];*)
+	factors = If[listQ, {factorsi}, factorsi];
+	ii = 0;
+	
+	mask=If[maski=!=0,maski,Mask[Total@Abs@sensitivity, .001]];
+	
+	(*define the sensitivity and regularization mat*)
+	sens = TransData[sensitivity, "l"];
+	Wmati = Inverse[Wmat];
+	
+	DistributeDefinitions[factors, UsFactor, dim, lambda, Wmat];
+
+	(*loop over all the factors*)
+	gfactors = Monitor[
+		Table[(
+			factor = factors[[f]];
+			Rmat = lambda^2 IdentityMatrix[Times @@ factor];
+			(*get the undersample factors*)
+			usVal = Transpose[UsFactor[dim, factor]];
+			{FOVux, FOVuy, FOVuz} = usVal[[All, 2]];
+			(*get all the indexes for x y and z*)
+			{fcorx, fcory, fcorz} = Table[{usf, FOVu, shft, FOVf, R} = usVal[[c]];
+			FOV = dim[[c]];
+			(*get the folded x,y and z indexes*)
+			Table[(Ceiling[If[! (FOV < # <= FOVf), If[# > FOV, # - FOVf, #], FOV] & /@ (cor + FOVu*Range[0, R - 1] + shft)]), {cor, FOVu}], {c, 1, 3}];
+			(*map the indexes to coordinates*)
+			fcors = Flatten[Table[Flatten[Table[{i, j, k}, {i, fcorx[[x]]}, {j, fcory[[y]]}, {k, fcorz[[z]]}], 2], {x, FOVux}, {y, FOVuy}, {z, FOVuz}], 2];
+			(*Calculate the gfactors*)
+			corsG = Map[(
+		        Smat = Transpose[Extract[sens, #]];
+		        mat = ConjugateTranspose[Smat].Wmati.Smat;
+		        pmat = PseudoInverse[mat + Rmat];
+		        gfac = Abs[Sqrt[Diagonal[pmat] Diagonal[mat]]]
+		    ) &, fcors];
+		    (*map the gfactors to 3D volume*)
+		    gfactor = ConstantArray[-1, dim];
+		    MapThread[(gfactor[[#1[[1]], #1[[2]], #1[[3]]]] = #2) &, {fcors, corsG}, 2];
+		    gfactor
+		), {f,1,Length[factors]}], 
+	Row[{Dynamic[factor],ProgressIndicator[f,{0,Length[factors]}]}]];
+	
+	gfactors = Map[(
+		gfactor=#;
+		gmask = Mask[mask gfactor, {0, 1}];
+		mask ((1 - gmask) gfactor + gmask)
+	)&,gfactors];
+	
+	If[listQ, gfactors[[1]], gfactors]
+]
 
 
 UsFactor[dim_, R_] := Block[{usdim, Rus, shift},
