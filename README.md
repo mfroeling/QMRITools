@@ -71,11 +71,12 @@ Elastix compatibility has been tested for MacOSX but is not guaranteed but we ar
 
 ## Demonstrations
 
-The toolbox contains a file ``demo.nb`` and demo data folder ``DemoData``. This will give a global overview of the functionality of the toolbox.
-By default the ``demo.nb`` looks for the ``DemoData`` folder in the same folder as the notebook.
-If you want to load the demo data from an other location change the default to the directory you want in this line.
+The repository contains a folder ''Demo'' in which there is a file ``demo.nb``, a folder ``DemoData`` and a folder ``testing. 
+To have a global overview of the functionality of the toolbox you can download this folder and run the ``demo.nb``.
+By default the ``demo.nb`` looks for the folders ``DemoData`` and ``Testing`` in the same folder as the notebook.
 
-``SetDirectory[FileNameJoin[{NotebookDirectory[], "DemoData"}]];``
+In the first section of the demo notebook the toolbox is loaded and two tests are performed. The first test is to check of all files that are needed to run the toolbox are present. The second test runs after the toolbox is loaded and checks if all the functions and their options that are defined are correct.
+ 
 
 ## Using the toolbox
 
