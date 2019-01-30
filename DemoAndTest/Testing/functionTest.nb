@@ -1,0 +1,671 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     31650,        663]
+NotebookOptionsPosition[     30660,        635]
+NotebookOutlinePosition[     31387,        658]
+CellTagsIndexPosition[     31344,        655]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{"MapThread", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"If", "[", 
+     RowBox[{
+      RowBox[{"#1", "=!=", "#2"}], ",", 
+      RowBox[{"#1", "[", 
+       RowBox[{"[", "1", "]"}], "]"}], ",", "Nothing"}], "]"}], "&"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"QMRIToolsFunctions", "/@", 
+      RowBox[{"QMRIToolsPackages", "[", "]"}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"\"\<CardiacTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<BullseyePlot\>\"", ",", "\"\<CalculateWallMap\>\"", ",", 
+           "\"\<CardiacSegment\>\"", ",", "\"\<CentralAxes\>\"", ",", 
+           "\"\<ECVCalc\>\"", ",", "\"\<ExcludeSlices\>\"", ",", 
+           "\"\<HelixAngleCalc\>\"", ",", "\"\<MakeECVBloodMask\>\"", ",", 
+           "\"\<MaskHelix\>\"", ",", "\"\<PlotSegmentMask\>\"", ",", 
+           "\"\<PlotSegments\>\"", ",", "\"\<RadialSample\>\"", ",", 
+           "\"\<TransmuralPlot\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<AxesMethod\>\"", ",", "\"\<BackgroundValue\>\"", ",", 
+           "\"\<BloodMaskRange\>\"", ",", "\"\<BullPlotMethod\>\"", ",", 
+           "\"\<ColorFunction\>\"", ",", "\"\<CutOffMethod\>\"", ",", 
+           "\"\<DistanceMeasure\>\"", ",", "\"\<DropSamples\>\"", ",", 
+           "\"\<GridLineSpacing\>\"", ",", "\"\<HelixMethod\>\"", ",", 
+           "\"\<ImageSize\>\"", ",", "\"\<LineStep\>\"", ",", 
+           "\"\<LineThreshold\>\"", ",", "\"\<MaskWallMap\>\"", ",", 
+           "\"\<Method\>\"", ",", "\"\<OutputCheckImage\>\"", ",", 
+           "\"\<PlotLabel\>\"", ",", "\"\<PlotRange\>\"", ",", 
+           "\"\<PlotStyle\>\"", ",", "\"\<RadialSamples\>\"", ",", 
+           "\"\<RowSize\>\"", ",", "\"\<ShowFit\>\"", ",", 
+           "\"\<ShowHelixPlot\>\"", ",", "\"\<SmoothHelix\>\"", ",", 
+           "\"\<StartPoints\>\"", ",", "\"\<StartSlices\>\"", ",", 
+           "\"\<TextOffset\>\"", ",", "\"\<TextSize\>\""}], "}"}]}], "}"}], 
+       ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<CoilTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<CoilSNRCalc\>\"", ",", "\"\<FindCoilPosition\>\"", ",", 
+           "\"\<LoadCoilSetup\>\"", ",", "\"\<LoadCoilTarget\>\"", ",", 
+           "\"\<MakeCoilLayout\>\"", ",", "\"\<MakeNoisePlots\>\"", ",", 
+           "\"\<MakeWeightMask\>\"", ",", "\"\<NoiseCorrelation\>\"", ",", 
+           "\"\<NoiseCovariance\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<CoilArrayPlot\>\"", ",", "\"\<CoilSurfaceVoxelSize\>\"", ",", 
+           "\"\<ColorFunction\>\"", ",", "\"\<ImageSize\>\"", ",", 
+           "\"\<OutputCoilSurface\>\"", ",", "\"\<PlotRange\>\""}], "}"}]}], 
+        "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<DenoiseTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<AnisoFilterTensor\>\"", ",", "\"\<DeNoise\>\"", ",", 
+           "\"\<PCADeNoise\>\"", ",", "\"\<PCAFitEq\>\"", ",", 
+           "\"\<PCAFitHist\>\"", ",", "\"\<WeightMapCalc\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<AnisoFilterSteps\>\"", ",", "\"\<AnisoKappa\>\"", ",", 
+           "\"\<AnisoStepTime\>\"", ",", "\"\<AnisoWeightType\>\"", ",", 
+           "\"\<DeNoiseIterations\>\"", ",", "\"\<DeNoiseKernel\>\"", ",", 
+           "\"\<DeNoiseMonitor\>\"", ",", "\"\<FitSigma\>\"", ",", 
+           "\"\<Method\>\"", ",", "\"\<PCAFitParameters\>\"", ",", 
+           "\"\<PCAKernel\>\"", ",", "\"\<PCAOutput\>\"", ",", 
+           "\"\<PCATollerance\>\"", ",", "\"\<PCAWeighting\>\"", ",", 
+           "\"\<PlotSolution\>\""}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<DixonTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<DixonReconstruct\>\"", ",", "\"\<DixonToPercent\>\"", ",", 
+           "\"\<Unwrap\>\"", ",", "\"\<UnwrapSplit\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<DixonAmplitudes\>\"", ",", "\"\<DixonFieldStrength\>\"", ",", 
+           "\"\<DixonFilterInput\>\"", ",", "\"\<DixonFilterOutput\>\"", ",", 
+           "\"\<DixonFilterSize\>\"", ",", "\"\<DixonFrequencies\>\"", ",", 
+           "\"\<DixonIterations\>\"", ",", "\"\<DixonMaskThreshhold\>\"", 
+           ",", "\"\<DixonPrecessions\>\"", ",", "\"\<DixonTollerance\>\"", 
+           ",", "\"\<MonitorUnwrap\>\"", ",", "\"\<UnwrapDimension\>\""}], 
+          "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<ElastixTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<ReadTransformParameters\>\"", ",", 
+           "\"\<RegisterCardiacData\>\"", ",", "\"\<RegisterData\>\"", ",", 
+           "\"\<RegisterDataSplit\>\"", ",", "\"\<RegisterDataTransform\>\"", 
+           ",", "\"\<RegisterDataTransformSplit\>\"", ",", 
+           "\"\<RegisterDiffusionData\>\"", ",", 
+           "\"\<RegisterDiffusionDataSplit\>\"", ",", 
+           "\"\<TransformData\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<AffineDirections\>\"", ",", "\"\<BsplineDirections\>\"", ",", 
+           "\"\<BsplineSpacing\>\"", ",", "\"\<DeleteTempDirectory\>\"", ",", 
+           "\"\<FindTransform\>\"", ",", "\"\<HistogramBins\>\"", ",", 
+           "\"\<HistogramBinsA\>\"", ",", "\"\<InterpolationOrderReg\>\"", 
+           ",", "\"\<InterpolationOrderRegA\>\"", ",", "\"\<Iterations\>\"", 
+           ",", "\"\<IterationsA\>\"", ",", "\"\<MethodReg\>\"", ",", 
+           "\"\<MethodRegA\>\"", ",", "\"\<NumberSamples\>\"", ",", 
+           "\"\<NumberSamplesA\>\"", ",", "\"\<OutputImage\>\"", ",", 
+           "\"\<OutputTransformation\>\"", ",", "\"\<PCAComponents\>\"", ",", 
+           "\"\<PrintTempDirectory\>\"", ",", "\"\<RegistrationTarget\>\"", 
+           ",", "\"\<Resolutions\>\"", ",", "\"\<ResolutionsA\>\"", ",", 
+           "\"\<SplitMethod\>\"", ",", "\"\<TempDirectory\>\"", ",", 
+           "\"\<UseGPU\>\""}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<GeneralTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<ApplyCrop\>\"", ",", "\"\<AutoCropData\>\"", ",", 
+           "\"\<ClearTemporaryVariables\>\"", ",", 
+           "\"\<CompilebleFunctions\>\"", ",", "\"\<CropData\>\"", ",", 
+           "\"\<CutData\>\"", ",", "\"\<Data2DToVector\>\"", ",", 
+           "\"\<Data3DToVector\>\"", ",", "\"\<DevideNoZero\>\"", ",", 
+           "\"\<ExpNoZero\>\"", ",", "\"\<FileSelect\>\"", ",", 
+           "\"\<FindCrop\>\"", ",", "\"\<FindMaxDimensions\>\"", ",", 
+           "\"\<GridData\>\"", ",", "\"\<GridData3D\>\"", ",", 
+           "\"\<LapFilter\>\"", ",", "\"\<LogNoZero\>\"", ",", 
+           "\"\<MADNoZero\>\"", ",", "\"\<MeanNoZero\>\"", ",", 
+           "\"\<MedianNoZero\>\"", ",", "\"\<MemoryUsage\>\"", ",", 
+           "\"\<NNLeastSquares\>\"", ",", "\"\<PadToDimensions\>\"", ",", 
+           "\"\<QMRIToolsFuncPrint\>\"", ",", "\"\<QMRIToolsFunctions\>\"", 
+           ",", "\"\<QMRIToolsPackages\>\"", ",", "\"\<RescaleData\>\"", ",", 
+           "\"\<ReverseCrop\>\"", ",", "\"\<RMSNoZero\>\"", ",", 
+           "\"\<SaveImage\>\"", ",", "\"\<StdFilter\>\"", ",", 
+           "\"\<StichData\>\"", ",", "\"\<SumOfSquares\>\"", ",", 
+           "\"\<TensMat\>\"", ",", "\"\<TensVec\>\"", ",", 
+           "\"\<TransData\>\"", ",", "\"\<VectorToData\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<CropInit\>\"", ",", "\"\<CropOutput\>\"", ",", 
+           "\"\<CropPadding\>\"", ",", "\"\<FileType\>\"", ",", 
+           "\"\<ImageResolution\>\"", ",", "\"\<ImageSize\>\"", ",", 
+           "\"\<InterpolationOrder\>\"", ",", "\"\<OutputWeights\>\"", ",", 
+           "\"\<PadDirection\>\"", ",", "\"\<PadValue\>\"", ",", 
+           "\"\<WindowTitle\>\""}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<GradientTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<Bmatrix\>\"", ",", "\"\<BmatrixCalc\>\"", ",", 
+           "\"\<BmatrixConv\>\"", ",", "\"\<BmatrixInv\>\"", ",", 
+           "\"\<BmatrixRot\>\"", ",", "\"\<BmatrixToggle\>\"", ",", 
+           "\"\<CalculateMoments\>\"", ",", "\"\<ConditionNumberCalc\>\"", 
+           ",", "\"\<ConvertGrads\>\"", ",", "\"\<CorrectBmatrix\>\"", ",", 
+           "\"\<CorrectGradients\>\"", ",", "\"\<EnergyCalc\>\"", ",", 
+           "\"\<FinalGrads\>\"", ",", "\"\<FindOrder\>\"", ",", 
+           "\"\<FullGrad\>\"", ",", "\"\<GenerateGradients\>\"", ",", 
+           "\"\<GenerateGradientsGUI\>\"", ",", 
+           "\"\<GetGradientScanOrder\>\"", ",", "\"\<GetSliceNormal\>\"", 
+           ",", "\"\<GetSliceNormalDir\>\"", ",", "\"\<GradBmatrix\>\"", ",", 
+           "\"\<GradSeq\>\"", ",", "\"\<ImportGradObj\>\"", ",", 
+           "\"\<OverPlusCalc\>\"", ",", "\"\<UniqueBvalPosition\>\""}], "}"}],
+          ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<ConditionCalc\>\"", ",", "\"\<FlipAxes\>\"", ",", 
+           "\"\<FlipGrad\>\"", ",", "\"\<FullSphere\>\"", ",", 
+           "\"\<GradType\>\"", ",", "\"\<Method\>\"", ",", 
+           "\"\<MethodReg\>\"", ",", "\"\<OrderSpan\>\"", ",", 
+           "\"\<OutputPlot\>\"", ",", "\"\<OutputType\>\"", ",", 
+           "\"\<PhaseEncoding\>\"", ",", "\"\<Runs\>\"", ",", "\"\<Steps\>\"",
+            ",", "\"\<StepSizeI\>\"", ",", "\"\<SwitchAxes\>\"", ",", 
+           "\"\<UnitMulti\>\"", ",", "\"\<UseGrad\>\"", ",", 
+           "\"\<VisualOpt\>\""}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<ImportTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<BvalRead\>\"", ",", "\"\<GradRead\>\"", ",", 
+           "\"\<ReadBrukerDiff\>\"", ",", "\"\<ReadBvalue\>\"", ",", 
+           "\"\<ReadDicom\>\"", ",", "\"\<ReadDicomDiff\>\"", ",", 
+           "\"\<ReadDicomDir\>\"", ",", "\"\<ReadDicomDirDiff\>\"", ",", 
+           "\"\<ReadGradients\>\"", ",", "\"\<ReadVoxSize\>\"", ",", 
+           "\"\<ShiftPar\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<BmatrixOut\>\"", ",", "\"\<ConvertDcm\>\"", ",", 
+           "\"\<RotateGradient\>\"", ",", "\"\<ScaleCorrect\>\""}], "}"}]}], 
+        "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<IVIMTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<BayesianIVIMFit2\>\"", ",", "\"\<BayesianIVIMFit3\>\"", ",", 
+           "\"\<CorrectParMap\>\"", ",", "\"\<FConvert\>\"", ",", 
+           "\"\<FConverti\>\"", ",", "\"\<FracCorrect\>\"", ",", 
+           "\"\<HistogramPar\>\"", ",", "\"\<IVIMCalc\>\"", ",", 
+           "\"\<IVIMCorrectData\>\"", ",", "\"\<IVIMFunction\>\"", ",", 
+           "\"\<IVIMResiduals\>\"", ",", "\"\<ThetaConv\>\"", ",", 
+           "\"\<ThetaConvi\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<ChainSteps\>\"", ",", "\"\<CorrectPar\>\"", ",", 
+           "\"\<FilterMaps\>\"", ",", "\"\<FilterSize\>\"", ",", 
+           "\"\<FilterType\>\"", ",", "\"\<FitConstrains\>\"", ",", 
+           "\"\<FixPseudoDiff\>\"", ",", "\"\<FixPseudoDiffSD\>\"", ",", 
+           "\"\<IVIMComponents\>\"", ",", "\"\<IVIMConstrained\>\"", ",", 
+           "\"\<IVIMConstrains\>\"", ",", "\"\<IVIMFixed\>\"", ",", 
+           "\"\<IVIMTensFit\>\"", ",", "\"\<Method\>\"", ",", 
+           "\"\<MonitorIVIMCalc\>\"", ",", "\"\<OutputSamples\>\"", ",", 
+           "\"\<Parallelize\>\"", ",", "\"\<UpdateStep\>\""}], "}"}]}], "}"}],
+        ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<JcouplingTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<GetSpinSystem\>\"", ",", "\"\<PhaseAlign\>\"", ",", 
+           "\"\<PlotSpectrum\>\"", ",", "\"\<SequencePulseAcquire\>\"", ",", 
+           "\"\<SequenceSpinEcho\>\"", ",", "\"\<SequenceSteam\>\"", ",", 
+           "\"\<SequenceTSE\>\"", ",", "\"\<SimAddPhase\>\"", ",", 
+           "\"\<SimEvolve\>\"", ",", "\"\<SimHamiltonian\>\"", ",", 
+           "\"\<SimReadout\>\"", ",", "\"\<SimRotate\>\"", ",", 
+           "\"\<SimSignal\>\"", ",", "\"\<SimSpoil\>\"", ",", 
+           "\"\<SysTable\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<CenterFrequency\>\"", ",", "\"\<FieldStrength\>\"", ",", 
+           "\"\<Linewidth\>\"", ",", "\"\<LinewidthShape\>\"", ",", 
+           "\"\<PlotRange\>\"", ",", "\"\<ReadoutBandwith\>\"", ",", 
+           "\"\<ReadoutOutput\>\"", ",", "\"\<ReadoutPhase\>\"", ",", 
+           "\"\<ReadoutSamples\>\"", ",", "\"\<SpectrumColor\>\""}], "}"}]}], 
+        "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<MaskingTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<GetMaskData\>\"", ",", "\"\<HomoginizeData\>\"", ",", 
+           "\"\<Mask\>\"", ",", "\"\<MaskData\>\"", ",", "\"\<MeanSignal\>\"",
+            ",", "\"\<MergeSegmentations\>\"", ",", "\"\<NormalizeData\>\"", 
+           ",", "\"\<RemoveMaskOverlaps\>\"", ",", 
+           "\"\<RescaleSegmentation\>\"", ",", "\"\<ROIMask\>\"", ",", 
+           "\"\<SegmentMask\>\"", ",", "\"\<SmoothMask\>\"", ",", 
+           "\"\<SmoothSegmentation\>\"", ",", "\"\<SplitSegmentations\>\""}], 
+          "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<GetMaskOutput\>\"", ",", "\"\<MaskClosing\>\"", ",", 
+           "\"\<MaskComponents\>\"", ",", "\"\<MaskFiltKernel\>\"", ",", 
+           "\"\<MaskSmoothing\>\"", ",", "\"\<UseMask\>\""}], "}"}]}], "}"}], 
+       ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<NiftiTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<CompressNiiFiles\>\"", ",", "\"\<DcmToNii\>\"", ",", 
+           "\"\<ExportBmat\>\"", ",", "\"\<ExportBval\>\"", ",", 
+           "\"\<ExportBvec\>\"", ",", "\"\<ExportNii\>\"", ",", 
+           "\"\<ExtractNiiFiles\>\"", ",", "\"\<ImportBmat\>\"", ",", 
+           "\"\<ImportBval\>\"", ",", "\"\<ImportBvalvec\>\"", ",", 
+           "\"\<ImportBvec\>\"", ",", "\"\<ImportExploreDTItens\>\"", ",", 
+           "\"\<ImportNii\>\"", ",", "\"\<ImportNiiDiff\>\"", ",", 
+           "\"\<ImportNiiDix\>\"", ",", "\"\<ImportNiiT1\>\"", ",", 
+           "\"\<ImportNiiT2\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<CompressNii\>\"", ",", "\"\<FlipBvec\>\"", ",", 
+           "\"\<Method\>\"", ",", "\"\<NiiDataType\>\"", ",", 
+           "\"\<NiiMethod\>\"", ",", "\"\<NiiScaling\>\"", ",", 
+           "\"\<RotateGradients\>\""}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<PhysiologyTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<AlignRespLog\>\"", ",", "\"\<ImportPhyslog\>\"", ",", 
+           "\"\<ImportRespirect\>\"", ",", "\"\<PlotPhyslog\>\"", ",", 
+           "\"\<PlotRespiract\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"\"\<OutputMethod\>\"", ",", "\"\<SampleStep\>\""}], 
+          "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<PlottingTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<GetSliceData\>\"", ",", "\"\<GetSlicePositions\>\"", ",", 
+           "\"\<GradientPlot\>\"", ",", "\"\<ListSpherePlot\>\"", ",", 
+           "\"\<MakeSliceImages\>\"", ",", "\"\<PlotContour\>\"", ",", 
+           "\"\<PlotCorrection\>\"", ",", "\"\<PlotData\>\"", ",", 
+           "\"\<PlotData3D\>\"", ",", "\"\<PlotDefGrid\>\"", ",", 
+           "\"\<PlotDuty\>\"", ",", "\"\<PlotIVIM\>\"", ",", 
+           "\"\<PlotMoments\>\"", ",", "\"\<PlotSequence\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<ColorFunction\>\"", ",", "\"\<ContourStyle\>\"", ",", 
+           "\"\<DropSlices\>\"", ",", "\"\<ImageLegend\>\"", ",", 
+           "\"\<ImageSize\>\"", ",", "\"\<MakeCheckPlot\>\"", ",", 
+           "\"\<Method\>\"", ",", "\"\<NormalizeIVIM\>\"", ",", 
+           "\"\<PeakNumber\>\"", ",", "\"\<PlotColor\>\"", ",", 
+           "\"\<PlotRange\>\"", ",", "\"\<PlotSpace\>\"", ",", 
+           "\"\<PositiveZ\>\"", ",", "\"\<SphereColor\>\"", ",", 
+           "\"\<SphereSize\>\""}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<ProcessingTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<CorrectJoinSetMotion\>\"", ",", "\"\<DataTranformation\>\"", 
+           ",", "\"\<DatTot\>\"", ",", "\"\<DatTotXLS\>\"", ",", 
+           "\"\<ErrorPlot\>\"", ",", "\"\<FiberDensityMap\>\"", ",", 
+           "\"\<FiberLengths\>\"", ",", "\"\<FindOutliers\>\"", ",", 
+           "\"\<FitData\>\"", ",", "\"\<GetMaskMeans\>\"", ",", 
+           "\"\<Hist\>\"", ",", "\"\<Hist2\>\"", ",", "\"\<InvertDataset\>\"",
+            ",", "\"\<JoinSets\>\"", ",", "\"\<MeanRange\>\"", ",", 
+           "\"\<MeanStd\>\"", ",", "\"\<MedCouple\>\"", ",", 
+           "\"\<NumberTableForm\>\"", ",", "\"\<ParameterFit\>\"", ",", 
+           "\"\<ParameterFit2\>\"", ",", "\"\<SetupDataStructure\>\"", ",", 
+           "\"\<SmartMask\>\"", ",", "\"\<SNRCalc\>\"", ",", 
+           "\"\<SNRMapCalc\>\"", ",", "\"\<SplitSets\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<AxesLabel\>\"", ",", "\"\<ColorValue\>\"", ",", 
+           "\"\<FitFunction\>\"", ",", "\"\<FitOutput\>\"", ",", 
+           "\"\<ImageSize\>\"", ",", "\"\<InterpolationOrder\>\"", ",", 
+           "\"\<JoinSetSplit\>\"", ",", "\"\<MaskCompartment\>\"", ",", 
+           "\"\<MeanMethod\>\"", ",", "\"\<Method\>\"", ",", 
+           "\"\<MotionCorrectSets\>\"", ",", "\"\<NormalizeSets\>\"", ",", 
+           "\"\<OutlierIncludeZero\>\"", ",", "\"\<OutlierIterations\>\"", 
+           ",", "\"\<OutlierMethod\>\"", ",", "\"\<OutlierOutput\>\"", ",", 
+           "\"\<OutlierRange\>\"", ",", "\"\<OutputSNR\>\"", ",", 
+           "\"\<PaddOverlap\>\"", ",", "\"\<PlotLabel\>\"", ",", 
+           "\"\<ReverseData\>\"", ",", "\"\<ReverseSets\>\"", ",", 
+           "\"\<Scaling\>\"", ",", "\"\<SeedDensity\>\"", ",", 
+           "\"\<SmartMaskOutput\>\"", ",", "\"\<SmartMethod\>\"", ",", 
+           "\"\<SmoothSNR\>\"", ",", "\"\<Strictness\>\"", ",", 
+           "\"\<TableAlignments\>\"", ",", "\"\<TableDepth\>\"", ",", 
+           "\"\<TableDirections\>\"", ",", "\"\<TableHeadings\>\"", ",", 
+           "\"\<TableMethod\>\"", ",", "\"\<TableSpacing\>\""}], "}"}]}], 
+        "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<RelaxometryTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<CalibrateEPGT2Fit\>\"", ",", "\"\<CreateT2Dictionary\>\"", 
+           ",", "\"\<DictionaryMinSearch\>\"", ",", "\"\<EPGSignal\>\"", ",", 
+           "\"\<EPGT2Fit\>\"", ",", "\"\<NonLinearEPGFit\>\"", ",", 
+           "\"\<T1Fit\>\"", ",", "\"\<T1rhoFit\>\"", ",", "\"\<T2Fit\>\"", 
+           ",", "\"\<TriExponentialT2Fit\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<DictB1Range\>\"", ",", "\"\<DictT2fRange\>\"", ",", 
+           "\"\<DictT2Range\>\"", ",", "\"\<EPGCalibrate\>\"", ",", 
+           "\"\<EPGFitPoints\>\"", ",", "\"\<EPGMethod\>\"", ",", 
+           "\"\<EPGRelaxPars\>\"", ",", "\"\<EPGSmoothB1\>\"", ",", 
+           "\"\<Method\>\"", ",", "\"\<MonitorEPGFit\>\"", ",", 
+           "\"\<OutputCalibration\>\""}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<SimulationTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<AddNoise\>\"", ",", "\"\<BlochSeries\>\"", ",", 
+           "\"\<CalculateGfactor\>\"", ",", "\"\<CreateDiffData\>\"", ",", 
+           "\"\<GetPulseProfile\>\"", ",", "\"\<GfactorSimulation\>\"", ",", 
+           "\"\<PlotSimulation\>\"", ",", "\"\<PlotSimulationAngle\>\"", ",", 
+           "\"\<PlotSimulationAngleHist\>\"", ",", 
+           "\"\<PlotSimulationHist\>\"", ",", "\"\<PlotSimulationVec\>\"", 
+           ",", "\"\<Pulses\>\"", ",", "\"\<Signal\>\"", ",", 
+           "\"\<SimAngleParameters\>\"", ",", "\"\<SimParameters\>\"", ",", 
+           "\"\<SimulateSliceEPG\>\"", ",", "\"\<Tensor\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<GOutput\>\"", ",", "\"\<GRegularization\>\"", ",", 
+           "\"\<MagnetizationVector\>\"", ",", "\"\<NoiseSize\>\"", ",", 
+           "\"\<PlotRange\>\"", ",", "\"\<Reject\>\"", ",", 
+           "\"\<ReportFits\>\"", ",", "\"\<SliceRange\>\"", ",", 
+           "\"\<SliceRangeSamples\>\"", ",", "\"\<SortVecs\>\"", ",", 
+           "\"\<TensOutput\>\""}], "}"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<TensorTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<ADCCalc\>\"", ",", "\"\<AngleCalc\>\"", ",", 
+           "\"\<AngleMap\>\"", ",", "\"\<ColorFAPlot\>\"", ",", 
+           "\"\<ConcatenateDiffusionData\>\"", ",", "\"\<Correct\>\"", ",", 
+           "\"\<Deriv\>\"", ",", "\"\<DriftCorrect\>\"", ",", "\"\<ECalc\>\"",
+            ",", "\"\<EigensysCalc\>\"", ",", "\"\<EigenvalCalc\>\"", ",", 
+           "\"\<EigenvecCalc\>\"", ",", "\"\<FACalc\>\"", ",", 
+           "\"\<ParameterCalc\>\"", ",", "\"\<RemoveIsoImages\>\"", ",", 
+           "\"\<ResidualCalc\>\"", ",", "\"\<SigmaCalc\>\"", ",", 
+           "\"\<SortDiffusionData\>\"", ",", "\"\<TensorCalc\>\"", ",", 
+           "\"\<TensorCorrect\>\""}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<Distribution\>\"", ",", "\"\<FilterShape\>\"", ",", 
+           "\"\<FullOutput\>\"", ",", "\"\<MeanRes\>\"", ",", 
+           "\"\<Method\>\"", ",", "\"\<MonitorCalc\>\"", ",", 
+           "\"\<NormalizeSignal\>\"", ",", "\"\<Parallelize\>\"", ",", 
+           "\"\<Reject\>\"", ",", "\"\<RejectMap\>\"", ",", 
+           "\"\<RobustFit\>\"", ",", "\"\<RobustFitParameters\>\"", ",", 
+           "\"\<RotationCorrect\>\"", ",", "\"\<UseMask\>\""}], "}"}]}], 
+        "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"\"\<VisteTools\>\"", ",", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<DatRead\>\"", ",", "\"\<DatWrite\>\"", ",", 
+           "\"\<DTItoolExp\>\"", ",", "\"\<DTItoolExpFile\>\"", ",", 
+           "\"\<DTItoolExpInd\>\"", ",", "\"\<DTItoolExpTens\>\"", ",", 
+           "\"\<ExportVol\>\"", ",", "\"\<ImportDTI\>\"", ",", 
+           "\"\<ImportVol\>\"", ",", "\"\<LoadFiberTracts\>\""}], "}"}], ",", 
+         RowBox[{"{", "\"\<BinaryType\>\"", "}"}]}], "}"}]}], "}"}]}], 
+    "\[IndentingNewLine]", "}"}]}], "]"}]], "VerificationTest",
+ CellChangeTimes->{3.7578482077192135`*^9},
+ CellID->22176866,ExpressionUUID->"ab60e007-f4a5-499a-8239-6843b9f7c6f7"],
+
+Cell[BoxData[
+ RowBox[{"{", "}"}]], "ExpectedOutput",
+ CellChangeTimes->{{3.75784825269059*^9, 3.7578482527517467`*^9}},
+ CellID->465373710,ExpressionUUID->"0699c4fb-1341-4924-bc40-e73ae0cdab26"],
+
+Cell[BoxData[
+ PaneBox[
+  TagBox[GridBox[{
+     {
+      ButtonBox[
+       TagBox[
+        TooltipBox[
+         PaneSelectorBox[{False->
+          TagBox[GridBox[{
+             {
+              DynamicBox[FEPrivate`FrontEndResource["MUnitExpressions", "Add"],
+               ImageSizeCache->{16., {3., 9.}}], 
+              StyleBox[
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "MUnitStrings", "AddMessages-Label"],
+                ImageSizeCache->{82., {2., 8.}}], "ButtonText",
+               StripOnInput->False,
+               AdjustmentBoxOptions->{BoxBaselineShift->-50}]}
+            },
+            AutoDelete->False,
+            
+            GridBoxAlignment->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Center}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+           "Grid"], True->
+          TagBox[GridBox[{
+             {
+              DynamicBox[FEPrivate`FrontEndResource["MUnitExpressions", "Add"],
+               ImageSizeCache->{16., {3., 9.}}], 
+              StyleBox[
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "MUnitStrings", "AddMessages-Label"],
+                ImageSizeCache->{82., {2., 8.}}], "ButtonText",
+               StripOnInput->False,
+               LineColor->RGBColor[0.9059, 0.3451, 0.102],
+               FrontFaceColor->RGBColor[0.9059, 0.3451, 0.102],
+               BackFaceColor->RGBColor[0.9059, 0.3451, 0.102],
+               GraphicsColor->RGBColor[0.9059, 0.3451, 0.102],
+               FontColor->RGBColor[0.9059, 0.3451, 0.102]]}
+            },
+            AutoDelete->False,
+            
+            GridBoxAlignment->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Center}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+           "Grid"]}, Dynamic[
+           CurrentValue["MouseOver"]],
+          FrameMargins->0,
+          ImageSize->Automatic],
+         DynamicBox[
+          FEPrivate`FrontEndResource["MUnitStrings", "AddMessages-Tooltip"]],
+         TooltipDelay->0.5],
+        Annotation[#, 
+         Dynamic[
+          RawBoxes[
+           FEPrivate`FrontEndResource[
+           "MUnitStrings", "AddMessages-Tooltip"]]], "Tooltip"]& ],
+       Appearance->FEPrivate`FrontEndResource[
+        "MUnitExpressions", "ButtonAppearances"],
+       ButtonFunction:>
+        Block[{$ContextPath}, Needs["MUnit`"]; MUnit`addMessages[]],
+       Evaluator->Automatic,
+       FrameMargins->{{10, 10}, {0, 0}},
+       ImageSize->Automatic,
+       Method->"Queued"], 
+      TagBox[GridBox[{
+         {
+          ButtonBox[
+           TagBox[
+            TooltipBox[
+             PaneSelectorBox[{False->
+              TagBox[GridBox[{
+                 {
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "MUnitExpressions", "Add"],
+                   ImageSizeCache->{16., {3., 9.}}], 
+                  StyleBox[
+                   
+                   DynamicBox[FEPrivate`FrontEndResource[
+                    "MUnitStrings", "AddOptions-Label"],
+                    ImageSizeCache->{67., {2., 8.}}], "ButtonText",
+                   StripOnInput->False,
+                   AdjustmentBoxOptions->{BoxBaselineShift->-50}]}
+                },
+                AutoDelete->False,
+                
+                GridBoxAlignment->{
+                 "Columns" -> {{Automatic}}, "Rows" -> {{Center}}},
+                
+                GridBoxItemSize->{
+                 "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+               "Grid"], True->
+              TagBox[GridBox[{
+                 {
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "MUnitExpressions", "Add"]], 
+                  StyleBox[
+                   
+                   DynamicBox[FEPrivate`FrontEndResource[
+                    "MUnitStrings", "AddOptions-Label"]], "ButtonText",
+                   StripOnInput->False,
+                   LineColor->RGBColor[0.9059, 0.3451, 0.102],
+                   FrontFaceColor->RGBColor[0.9059, 0.3451, 0.102],
+                   BackFaceColor->RGBColor[0.9059, 0.3451, 0.102],
+                   GraphicsColor->RGBColor[0.9059, 0.3451, 0.102],
+                   FontColor->RGBColor[0.9059, 0.3451, 0.102]]}
+                },
+                AutoDelete->False,
+                
+                GridBoxAlignment->{
+                 "Columns" -> {{Automatic}}, "Rows" -> {{Center}}},
+                
+                GridBoxItemSize->{
+                 "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+               "Grid"]}, Dynamic[
+               CurrentValue["MouseOver"]],
+              FrameMargins->0,
+              ImageSize->Automatic],
+             DynamicBox[
+              FEPrivate`FrontEndResource[
+              "MUnitStrings", "AddOptions-Tooltip"]],
+             TooltipDelay->0.5],
+            Annotation[#, 
+             Dynamic[
+              RawBoxes[
+               FEPrivate`FrontEndResource[
+               "MUnitStrings", "AddOptions-Tooltip"]]], "Tooltip"]& ],
+           
+           Appearance->FEPrivate`FrontEndResource[
+            "MUnitExpressions", "ButtonAppearances"],
+           
+           ButtonFunction:>
+            Block[{$ContextPath}, Needs["MUnit`"]; MUnit`addOptions[]],
+           Evaluator->Automatic,
+           FrameMargins->{{10, 10}, {0, 0}},
+           ImageSize->Automatic,
+           Method->"Queued"], 
+          ActionMenuBox[
+           ButtonBox["\<\"\"\>",
+            
+            Appearance->FEPrivate`FrontEndResource[
+             "MUnitExpressions", "ButtonAppearancesNoLeftBorder"],
+            ButtonFunction:>{},
+            ContentPadding->False,
+            Evaluator->None,
+            Method->"Preemptive"], {
+           
+           DynamicBox[FEPrivate`FrontEndResource[
+            "MUnitStrings", "MemoryConstraint-Label"]]:>
+           Block[{$ContextPath}, Needs["MUnit`"]; 
+            MUnit`InsertOptionRule["MemoryConstraint"]], 
+           
+           DynamicBox[FEPrivate`FrontEndResource[
+            "MUnitStrings", "SameTest-Label"]]:>
+           Block[{$ContextPath}, Needs["MUnit`"]; 
+            MUnit`InsertOptionRule["SameTest"]], 
+           
+           DynamicBox[FEPrivate`FrontEndResource[
+            "MUnitStrings", "TestID-Label"]]:>
+           Block[{$ContextPath}, Needs["MUnit`"]; 
+            MUnit`InsertOptionRule["TestID"]], 
+           
+           DynamicBox[FEPrivate`FrontEndResource[
+            "MUnitStrings", "TimeConstraint-Label"]]:>
+           Block[{$ContextPath}, Needs["MUnit`"]; 
+            MUnit`InsertOptionRule["TimeConstraint"]]},
+           Appearance->None,
+           Method->"Queued"]}
+        },
+        AutoDelete->False,
+        GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+        GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}
+    },
+    AutoDelete->False,
+    GridBoxAlignment->{"Columns" -> {{Automatic}}, "Rows" -> {{Center}}},
+    GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{2}}},
+    GridBoxSpacings->{
+     "ColumnsIndexed" -> {2 -> 0.5, 3 -> 2, 4 -> 0.5}, 
+      "Rows" -> {{Automatic}}}],
+   "Grid"],
+  Alignment->{Left, Center},
+  ImageSize->Full]], "BottomCell",
+ CellID->10884270,ExpressionUUID->"31b0e375-824c-4ec0-9b6f-93ce315095f3"]
+}, Open  ]]
+},
+WindowSize->{775, 872},
+WindowMargins->{{564, Automatic}, {Automatic, 114}},
+TaggingRules->{
+ "DocuToolsSettings" -> {
+   "$ApplicationName" -> "QMRITools", "$LinkBase" -> "QMRITools", 
+    "$DocumentationDirectory" -> 
+    "D:\\Werk\\Workspace\\QMRITools\\QMRITools\\Documentation\\English\\", 
+    "$ApplicationDirectory" -> "D:\\Werk\\Workspace\\QMRITools\\QMRITools"}, 
+  "$testsRun" -> False},
+FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
+StyleDefinitions->FrontEnd`FileName[{"MUnit"}, "MUnit.nb", CharacterEncoding -> 
+  "UTF-8"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 22410, 412, 2385, "VerificationTest",ExpressionUUID->"ab60e007-f4a5-499a-8239-6843b9f7c6f7",
+ CellID->22176866],
+Cell[22993, 436, 195, 3, 39, "ExpectedOutput",ExpressionUUID->"0699c4fb-1341-4924-bc40-e73ae0cdab26",
+ CellID->465373710],
+Cell[23191, 441, 7453, 191, 40, "BottomCell",ExpressionUUID->"31b0e375-824c-4ec0-9b6f-93ce315095f3",
+ CellID->10884270]
+}, Open  ]]
+}
+]
+*)
+
