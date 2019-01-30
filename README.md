@@ -57,7 +57,8 @@ Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 	FileNameJoin[{$UserBaseDirectory, "Applications"}]
 
 Some functions of QMRITools call on external executables and software.
-These executables need to be placed in "QMRITools\Applications".
+These executables need to be present in "QMRITools\Applications" and are included in the release.
+If for any reason you want to use other (older/newer) versions you can replace them but functionality is not guaranteed.
 For the latest version of these tools and their user licences please visit their website.
 
 * [dcm2niix](https://github.com/rordenlab/dcm2niix/)
