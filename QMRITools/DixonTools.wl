@@ -43,6 +43,9 @@ T2 can be estimated from multiple echos using T2fit.
 
 Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{B0,T2star},itterations}."
 
+SimulateDixonSignal::usage = 
+"SimulateDixonSignal[echo, fr, B0, T2] simulates an Dixon gradient echo sequence with echotimes echo in ms, fat fraction fr, field of resonance B0 in Hz and relaxation T2 in ms."
+
 
 Unwrap::usage = 
 "Unwrap[data] unwraps the given dataset."
@@ -214,7 +217,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	complex=TransData[complex,"l"];
 	input = TransData[{complex, phiInit, mask}, "l"];
 	(*Perform the dixon fit*)
-	Monitor[ii=0;result =Map[(ii++;DixonFiti[#, echo, Amat, {eta, maxItt}])&, input, dep];,ProgressIndicator[ii, {0, Times @@ dim}]];
+	Quiet@Monitor[ii=0;result =Map[(ii++;DixonFiti[#, echo, Amat, {eta, maxItt}])&, input, dep];,ProgressIndicator[ii, {0, Times @@ dim}]];
  	{cWater, cFat, phiEst ,res, itt} = TransData[Chop[result],"r"];
 
 	(*filter the output*) 
@@ -302,6 +305,38 @@ DixonFiti[{ydat_, phiInit_, mask_}, echo_, Amat_] := Block[{pAmat, cFrac},
 InOutPhase = Compile[{{phi, _Complex, 0}, {iop, _Real, 1}, {ioAmat, _Complex, 2}, {cWat, _Complex, 0}, {cFat, _Complex, 0}},
    Abs[(Exp[phi iop] ioAmat).{cWat, cFat}], 
    RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}, Parallelization -> True];
+
+
+(* ::Subsection:: *)
+(*SimulateDixonSignal*)
+
+
+Clear[SimulateDixonSignal]
+
+Options[SimulateDixonSignal] = {
+	DixonPrecessions -> -1, 
+	DixonFieldStrength -> 3, 
+	DixonFrequencies -> {{0}, {3.8, 3.4, 3.13, 2.67, 2.46, 1.92, 0.57, -0.60}}, 
+	DixonAmplitudes -> {{1}, {0.089, 0.598, 0.047, 0.077, 0.052, 0.011, 0.035, 0.066}}
+}
+
+SyntaxInformation[SimulateDixonSignal] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
+
+SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] := 
+ Block[{precession,field,freqs,amps, Amat, phi, sig},
+  precession = OptionValue[DixonPrecessions](*-1,1*);
+  field = OptionValue[DixonFieldStrength];
+  freqs = precession field 42.58 OptionValue[DixonFrequencies];
+  amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
+  
+  Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
+  phi = N@2 Pi B0 I - 1./T2;
+  
+  sig = Exp[phi echo] Amat;
+  sig = sig.{fr, 1 - fr};
+  
+  {Re[sig], Im[sig]}
+  ]
 
 
 (* ::Subsection:: *)
