@@ -130,6 +130,13 @@ ECVCalc::usage =
 ECVCalc[T1pre, T1post, bloodMask, hema] calculates the ECVmap using bloodMask."
 
 
+CreateHeart::usage = 
+"CreateHeart[] creates a simulated left ventricle shape.
+CreateHeart[pars] creates a simulated left ventricle shape with predifined parameters pars.
+
+Output is the heart shape, the voxel size and the parameters needed to generate the heart, {mask, vox, pars}.
+"
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -536,7 +543,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
    surfpl, pointspl, planepl, planefit, i, fit,
    planem, d1, d2, d3, zc, mask2, in, out, min2, mout2, clip,
    surfin, surfout, ptsin, ptsout, ptspl,
-   inpnt, outpnt, wall, pt, t1, pt1, pt2, dist1, dist12, dist22, dist2,
+   inpnt, outpnt, wall, pt, pt1, pt2, dist1, dist12, dist22, dist2,
    ptsm, dist, der
    },
   
@@ -587,7 +594,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
     BoundaryStyle -> Darker[Red]];
   planefit = 
    Show[surfpl, planepl, pointspl, PerformanceGoal -> "Speed"];
-  
+
   (*make mask from plan*)
   planem = 0 mout;
   {d1, d2, d3} = Dimensions[planem];
@@ -626,61 +633,54 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
   (*Create Inner and outer surfaces*)
   {surfout, surfin} = 
    ListContourPlot3D[GaussianFilter[min2 + mout2, 1], 
-      Contours -> {0.3, 1.5}[[#]], Mesh -> False,
+      Contours -> {0.3, 1.5}[[#]], 
+      Mesh -> False,
       PlotRange -> Transpose[{{0, 0, 0}, Reverse@(Dimensions[mask])}],
       Lighting -> "Neutral", 
       BoxRatios -> Reverse@(vox Dimensions[mask]),
       ContourStyle -> Directive[{Red, Blue}[[#]], Opacity[0.4]], 
       MaxPlotPoints -> {50, 100}] & /@ {1, 2};
   
-  (*Print[Show[surfout,surfin,ImageSize->250]];*)
-  
   (*get the coordinates from the inner and outer surface*)
-  ptsin = 
-   Reverse /@ Cases[surfin, GraphicsComplex[x_, ___] :> x][[1]] + 1;
-  ptsout = 
-   Reverse /@ Cases[surfout, GraphicsComplex[x_, ___] :> x][[1]] + 1;
+  ptsin = Reverse /@ Cases[surfin, GraphicsComplex[x_, ___] :> x][[1]] + 1;
+  ptsout = Reverse /@ Cases[surfout, GraphicsComplex[x_, ___] :> x][[1]] + 1;
   
-  ptspl = 
-   Show[surfin, surfout, 
-    ListPointPlot3D[{Reverse /@ ptsin - 1, Reverse /@ ptsout - 1}, 
-     PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed",ImageSize->250];
+  ptspl = Show[surfin, surfout, ListPointPlot3D[{Reverse /@ ptsin - 1, Reverse /@ ptsout - 1}, PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed",ImageSize->250];
   
-  inpnt = N[vox # & /@ ptsin]; outpnt = N[vox # & /@ ptsout];
+  inpnt = N[vox # & /@ ptsin]; 
+  outpnt = N[vox # & /@ ptsout];
   (*generate the wall distance function*)
   wall = 0 mask + 1;
   ptsm = N@Position[mask, 1];
   DistributeDefinitions[inpnt,outpnt];
-  dist = ParallelMap[(
+  dist = Map[(
       pt = vox #;
-      t1 = AbsoluteTiming[
-        pt1 = Mean[Nearest[inpnt, pt, 3]];
-        pt2 = Mean[Nearest[outpnt, pt, 3]];
-        ];
+      pt1 = Mean[Nearest[inpnt, pt, 3]];
+      pt2 = Mean[Nearest[outpnt, pt, 3]];
       dist1 = Chop[Norm[pt1 - pt2]];
       dist12 = Chop[Norm[pt1 - pt]];
       dist22 = Chop[Norm[pt2 - pt]];
-      dist2 = 
-       If[dist1 == 0., 0., Mean[{dist12/dist1, 1 - (dist22/dist1)}]];
-      (*{pt1,pt,pt2,dist1,*)dist2
+      dist2 = If[dist1 == 0., 0., Mean[{dist12/dist1, 1 - (dist22/dist1)}]];
+      (*{pt1,pt,pt2,dist1,*)
+      dist2
       ) &, ptsm];
+      
   (*create the wall distance map*)
   MapThread[(wall[[#1[[1]], #1[[2]], #1[[3]]]] = #2) &, {ptsm, dist}];
   (*wall = MedianFilter[wall*(1 - min2), 2];*)
-  wall = GaussianFilter[wall*(1 - min2), 2];
+  wall = GaussianFilter[wall*(1 - min2), 2];  
+  der = GaussianFilter[wall, {2 (1/vox)/(1/vox[[2]])}, #] & /@ (IdentityMatrix[3]); 
   
-  der = GaussianFilter[
-      wall, {2 (1/vox)/(1/vox[[2]])}, #] & /@ (IdentityMatrix[3]); 
+  
   
   If[OptionValue[MaskWallMap], 
   wall = mask wall;
   der = mask # & /@ der;
+  {mn, mx}=Quantile[Flatten[GetMaskData[wall, mask]],{0.05,0.95}];
+  wall = Clip[mask ((wall - mn)/(mx-mn)),{0,1}];
   ];
   
-  wall = NormalizeData[wall, MinMax[wall]];
-  
-  If[OptionValue[ShowFit], 
-   fit = Print[GraphicsRow[{planefit, ptspl}, ImageSize -> 800]]];
+  If[OptionValue[ShowFit], fit = Print[GraphicsRow[{planefit, ptspl}, ImageSize -> 800]]];
   If[OptionValue[ShowFit], {wall, der, fit}, {wall, der}]
   ]
 
@@ -930,7 +930,7 @@ PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Module[{pmask
 (*CardiacSegment*)
 
 
-Options[CardiacSegment]={StartPoints->"Default",StartSlices->"Default",LineThreshold->.5,LineStep->.5(*,SegmentAngle->2*)};
+Options[CardiacSegment]={StartPoints->"Default",StartSlices->"Default",LineThreshold->.25,LineStep->.5(*,SegmentAngle->2*)};
 
 SyntaxInformation[CardiacSegment] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
@@ -1585,7 +1585,7 @@ PlotSegmentMask[maski_, segmaski_, vox_] := Module[{heart, seg,pan},
 (*RadialSample*)
 
 
-Options[RadialSample]={RadialSamples->10,DropSamples->0};
+Options[RadialSample]={RadialSamples->10, DropSamples->0};
 
 SyntaxInformation[RadialSample] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
@@ -1778,12 +1778,7 @@ BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, m
        ], LegendMarkerSize -> 0.8 OptionValue[ImageSize]]]
    ];
  
- If[OptionValue[BullPlotMethod] === "Dynamic",
-  NotebookClose[plotwindow];
-  plotwindow = CreateWindow[DialogNotebook[{
-      CancelButton["Close", DialogReturn[]],
-      
-      Manipulate[
+ pan = Manipulate[
        plfun[{colf, cstyle}, {pText, textVal}]
        (*{{colf,cstyle},{pText,textVal}}*)
        ,
@@ -1791,8 +1786,12 @@ BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, m
        {{textVal, 2, "Label"}, {1 -> "Segment", 2 -> "Value"}},
        
        {{colf, OptionValue[ColorFunction], "Color function"}, cols},
-       {{cstyle, False, "Reverse color"}, {True, False}}]
-      }, WindowSize -> All, WindowTitle -> "Plot data window"]];
+       {{cstyle, False, "Reverse color"}, {True, False}},
+       SaveDefinitions->True, Deployed->False, SynchronousInitialization -> False];
+ 
+ If[OptionValue[BullPlotMethod] === "Dynamic",
+  NotebookClose[plotwindow];
+  plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
   ,
   plfun[{OptionValue[ColorFunction], False}, {True, 2}]
   ]
@@ -1928,6 +1927,7 @@ MakeECVBloodMask[pre_, post_, OptionsPattern[]] :=
    bloodMask
    ]
   ]
+
   
 (* ::Subsection::Closed:: *)
 (*MakeECVBloodMask*)
@@ -1943,6 +1943,119 @@ ECVCalc[mappre_, mappost_, bloodMask_, hema_] := Block[{deltaR1, deltaR1b},
   deltaR1b = Mean@Flatten[GetMaskData[deltaR1, bloodMask]];
   Clip[100 (deltaR1/deltaR1b) (1 - hema), {0, 100}]
 ]  
+
+
+(* ::Subsection::Closed:: *)
+(*CreateHeart*)
+
+
+SyntaxInformation[CreateHeart] = {"ArgumentsPattern" -> {_.}};
+
+CreateHeart[] := CreateHeart[0.]
+
+CreateHeart[setin_] := Module[{set, col, contin, contout, shape, seto, shapeplot, 
+   topline, shapeout, con, out, shapeoutC, shout, shin},
+  set = out = If[setin === 0. || ! ListQ[setin],
+     {{73, 2.85, 2.8, 0.018, 0}, {67, 3.42, 5.76, 0.078}, 110},
+     setin
+     ];
+  col = Gray;
+  
+  NotebookClose[cardiacWindow];
+  cardiacWindow = DialogInput[{
+     CancelButton["Generate",
+      DialogReturn[out = seto]
+      ]
+     ,
+     Manipulate[
+      contin = ContourPlot[With[
+         {zi = 0.06 (zp - higi), xi = 0.06 (xp - 59), yi = 0},
+         ((xi - shifti)^2/widthi*(1 - cupi zi) + (yi)^2/
+             widthi*(1 - cupi zi) + zi^2/lengthi^2)
+         ], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, 
+        ContourStyle -> {Thick, Red}, ContourShading -> None];
+      contout = ContourPlot[With[
+         {zo = 0.06 (zp - higo), xo = 0.06 (xp - 59), yo = 0},
+         (xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) + 
+           zo^2/lengtho^2)
+         ], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, 
+        ContourStyle -> {Thick, Blue}, ContourShading -> None];
+      
+      shape = Table[
+        With[{
+          zi = 0.06 (zp - higi), xi = 0.06 (xp - 59.5), yi = 0,
+          zo = 0.06 (zp - higo), xo = 0.06 (xp - 59.5), yo = 0},
+         shout = 
+          If[((xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) +
+                zo^2/lengtho^2) > 1), 0, 1];
+         shin = 
+          If[(((xi - shifti)^2/widthi*(1 - cupi zi) + 
+               yi^2/widthi*(1 - cupi zi) + zi^2/lengthi^2) > 1), 0, 1];
+         shout - shin
+         ], {zp, 120, 1, -1}, {xp, 1, 120}];
+      (*shapef=shape;
+      con=ConstantArray[0,Dimensions[shape]];
+      shapef[[;;Length[shapef]-top+1]]=con[[;;Length[shapef]-
+      top+1]];*)
+      
+      seto = {{higi, lengthi, widthi, cupi, shifti}, {higo, lengtho, 
+         widtho, cupo}, top};
+      
+      shapeplot = ArrayPlot[shape];
+      topline = 
+       Graphics[{{Green, Thick, Line[{{0, top}, {120, top}}]}, {White,
+           Polygon[{{0, top}, {120, top}, {120, 
+             Length[shape] + 1}, {0, Length[shape] + 1}}]}}];
+      Show[shapeplot, topline, contin, contout]
+      
+      , Delimiter
+      , {{higi, set[[1, 1]], "inner hight"}, 60, 90}
+      , {{lengthi, set[[1, 2]], "inner length"}, 2, 4}
+      , {{widthi, set[[1, 3]], "inner width"}, 1, 10}
+      , {{cupi, set[[1, 4]], "inner cup"}, 0, 0.25}
+      , {{shifti, set[[1, 5]], "inner shift"}, -1, 1}
+      , Delimiter
+      , {{higo, set[[2, 1]], "outer hight"}, 60, 90}
+      , {{lengtho, set[[2, 2]], "outer length"}, 2, 4}
+      , {{widtho, set[[2, 3]], "outer width"}, 1, 10}
+      , {{cupo, set[[2, 4]], "outer cup"}, 0, 0.25}
+      , Delimiter
+      , {{top, set[[3]],"top loation"}, 90, 120, 1}
+      , Button["set 1",
+       {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, cupo}, 
+         top} = {{73, 2.85, 2.8, 0.018}, {67, 3.42, 5.76, 0.078}, 110}]
+      , Button[
+       "set 2", {{higi, lengthi, widthi, cupi}, {higo, lengtho, 
+          widtho, cupo}, 
+         top} = {{69, 3.1, 2.8, 0.16}, {67.5, 3.6, 7.3, 0.12}, 105}],
+      SynchronousUpdating -> True, Method -> "Queued"
+      ]
+     
+     }, WindowSize -> All, WindowTitle -> "Plot data window", 
+    WindowFloating -> True, Modal -> True];
+  
+  shapeoutC = Compile[{{seti, _Real, 1}, {seto, _Real, 1}}, Table[
+     With[{
+       zi = 0.06 (zp - seti[[1]]),
+       xi = 0.06 (xp - 59.5),
+       (*yi=0*)yi = 0.06 (yp - 59.5),
+       zo = 0.06 (zp - seto[[1]]),
+       xo = 0.06 (xp - 59.5),
+       (*yo=0*)yo = 0.06 (yp - 59.5)},
+      If[((xo^2/seto[[3]]*(1 - seto[[4]] zo) + 
+            yo^2/seto[[3]]*(1 - seto[[4]] zo) + zo^2/seto[[2]]^2) > 
+          1), 0, 1] -
+       If[(((xi - seti[[5]])^2/seti[[3]]*(1 - seti[[4]] zi) + 
+            yi^2/seti[[3]]*(1 - seti[[4]] zi) + zi^2/seti[[2]]^2) > 
+          1), 0, 1]
+      ], {zp, 1, 120, 1}, {xp, 1, 120, 1}, {yp, 1, 120, 1}]
+    ];
+  
+  shapeout = shapeoutC[out[[1]], out[[2]]];
+  con = ConstantArray[0, Dimensions[shapeout]];
+  shapeout[[out[[3]] ;;]] = con[[out[[3]] ;;]];
+  Return[{ArrayPad[shapeout, 10], {0.7, 0.7, 0.7}, seto}];
+  ]
   
 
 (* ::Section:: *)

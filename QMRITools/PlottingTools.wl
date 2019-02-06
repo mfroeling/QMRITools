@@ -2341,7 +2341,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 (*MakeSliceImages*)
 
 
-Options[MakeSliceImages]={PlotRange->Automatic,ColorFunction->"GrayTones",ImageLegend->False};
+Options[MakeSliceImages]={PlotRange->Automatic, ColorFunction->"GrayTones", ImageLegend->False};
 
 SyntaxInformation[MakeSliceImages]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
@@ -2352,8 +2352,15 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},opts:OptionsPattern[]]:=MakeSlic
 MakeSliceImages[selData_,vox:{_,_,_},opts:OptionsPattern[]]:=MakeSliceImages[selData,{0,{}},vox,opts]
 
 MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=Block[{pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2},
+
 rule=Thread[vals->Range[Length[vals]]];
-colF=OptionValue[ColorFunction];
+colo=OptionValue[ColorFunction];
+
+colF = If[
+	MemberQ[gradsets, colo],ColorData[colo][#]&,
+	If[MemberQ[custColors[[All,1]],colo],
+		colo/.custColors,colo]
+		];
 
 Table[
 
@@ -2364,15 +2371,15 @@ mdat=N@If[selMask=!=0,selMask[[n]]/.rule,0 pdat];
 (*find the range*)
 datf=DeleteCases[Flatten[pdat][[;;;;10]],0.];
 ran=If[OptionValue[PlotRange]===Automatic,If[datf==={},{0,1},{0,Quantile[DeleteCases[Flatten[pdat][[;;;;10]],0.],.99]}],OptionValue[PlotRange]];
+
 size=vox[[{{2,3},{1,2},{1,3}}[[n]]]];
-bar=BarLegend[{colF,ran},LabelStyle->Directive[{Black,Bold,12}]];
+bar=BarLegend[{colF/@Range[0,1,.01],ran},LabelStyle->Directive[{Black,Bold,12}]];
 
 (*loop over the slices, 1 axial, 2 cor, 3 sag*)
 MapThread[(
 ratio=Divide@@(Dimensions[#]size);
 
-pl1=ArrayPlot[#1,AspectRatio->ratio,Frame->False,ImageSize->400,PlotRangePadding->1,
-PlotRange->ran,ColorFunction->colF,ClippingStyle->(ColorData[colF]/@{0,1})];
+pl1=ArrayPlot[#1,AspectRatio->ratio,Frame->False,ImageSize->400,PlotRangePadding->1, PlotRange->ran,ColorFunction->colF,ClippingStyle->(colF/@{0,1})];
 
 pl2=ArrayPlot[#2,ColorFunction->(Directive[{Opacity[0.4],ColorData["Rainbow"][#]}]&),ColorRules->{0.->Transparent}];
 
@@ -2570,9 +2577,9 @@ RandomSampleFix[len_] := RandomSampleFix[len] = RandomSample[Range[len]];
 (*PlotDuty*)
 
 
-SyntaxInformation[PlotDuty] = {"ArgumentsPattern" -> {{_,_,_},_, OptionsPattern[]}};
+SyntaxInformation[PlotDuty] = {"ArgumentsPattern" -> {{_,_,_},_.}};
 
-PlotDuty[{grad_, bval_, ord_}, mode_] := 
+PlotDuty[{grad_, bval_, ord_}, mode_:True] := 
  Module[{grads, order, testgr, mn, ran},
   grads = Abs[grad*Sqrt[bval]];
   grads = If[NumberQ[bval], grads, Flatten[grads, 1]];

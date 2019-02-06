@@ -361,6 +361,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
        sigi = sigm[[z, y, x]];
        (*get pixel range and data*)
        {{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
+       (*kernel box to vector*)
        fitdata = Flatten[data[[zm ;; zp, All, ym ;; yp, xm ;; xp]], {1, 3, 4}];
        
        (*perform the fit and reconstruct the noise free data*)
@@ -373,14 +374,18 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
         {sigo, Nes, datn, it} = PCAFitHisti[fitdata, {m, n}, sigi, tol, FitSigma -> fitsig, PCAFitParameters -> {nb, pi, maxit}];
         ];
        
+       (*reshape the vector into kernel box*)
        datn = Transpose[Fold[Partition, datn, {ker, ker}], {1, 3, 4, 2}];
        
        (*collect the noise free data and weighting matrix*)
        (*weight the signal for number of components*)
        weigth = If[OptionValue[PCAWeighting], 1. / (m-Nes+1), 1.];
        
+       (*sum data and sigma and weight for numer of components*)
        datao[[zm ;; zp, All, ym ;; yp, xm ;; xp]] += (weigth datn);
 	   sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weigth sigo;
+	   
+	   (*count the total weighting*)
 	   weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weigth;
        
        (*output sig,Nest and itterations*)

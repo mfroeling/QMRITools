@@ -1232,6 +1232,8 @@ SplitInput[input_]:=Module[{data,mask,vox},
 
 Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All",PrintTempDirectory->True}
 
+SyntaxInformation[TransformData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
 TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output,slash},
 	slash = Switch[$OperatingSystem, "Windows", "\\", "MacOSX", "/"];
 	

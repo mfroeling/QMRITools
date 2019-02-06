@@ -95,6 +95,8 @@ PlotSimulationVec::usage =
 "PlotSimulationVec[tens, xdata, label] plots the eigenvectors from simulated tensors."
 
 
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
