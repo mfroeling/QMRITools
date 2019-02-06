@@ -83,7 +83,7 @@ SplitSets::usage =
 CorrectJoinSetMotion::usage =
 "CorrectJoinSetMotion[[{dat1,dat2,...}, vox, over] motion correts multiple sets with overlap. Over is the number of slices overlap between stes. A Translation registration is performed."
 
-DataTranformation::usage = 
+DataTransformation::usage = 
 "DataTranformation[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
 
 InvertDataset::usage = 
@@ -778,11 +778,11 @@ Module[{fitdat},
 (*TransformData*)
 
 
-Options[DataTranformation]={InterpolationOrder->1}
+Options[DataTransformation]={InterpolationOrder->1}
 
-SyntaxInformation[DataTranformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+SyntaxInformation[DataTransformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-DataTranformation[data_, vox_, wi_,OptionsPattern[]] := 
+DataTransformation[data_, vox_, wi_,OptionsPattern[]] := 
  Block[{coor, rot, coorR, interFunc, interFuncC, w},
   w = If[Length[wi]==3,Join[wi,{0,0,0,1,1,1,0,0,0}],wi];
   
@@ -1162,7 +1162,7 @@ SplitSets[data_, sets_, overlap_, OptionsPattern[]] := Module[{lengthSet, sels, 
   
   over=overlap+2pad;
   
-  lengthSet = (Length[dat] + (sets - 1)*over)/sets;
+  lengthSet = Round[(Length[dat] + (sets - 1)*over)/sets];
   sels = Table[
     start = (i lengthSet + 1) - i over;
     end = start + lengthSet - 1;

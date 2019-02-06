@@ -427,7 +427,9 @@ GridData3D[data_, part_] := Block[{AX, COR, SAG},
 	AX = GridData[data, part];
 	COR = GridData[Transpose[Reverse@#, {2, 1, 3}] & /@ data, part];
 	SAG = GridData[Transpose[Reverse@#, {2, 3, 1}] & /@ data, part];
-	Transpose[{AX, COR, SAG}]
+	If[Dimensions[AX]===Dimensions[COR]===Dimensions[SAG],
+		Transpose[{AX, COR, SAG}],
+		{AX, COR, SAG}]
 ]
 
 
@@ -1175,7 +1177,7 @@ LapFilter[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N
 
 
 (* ::Subsubsection::Closed:: *)
-(*LapFilter*)
+(*StdFilter*)
 
 
 StdFilter[data_, ker_:2] := Abs[Sqrt[GaussianFilter[data^2, ker] - GaussianFilter[data, ker]^2]]

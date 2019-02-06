@@ -58,7 +58,7 @@ EPGT2Fit::usage =
 "EPGT2Fit[data, {Necho, detlaTE}, {exitation, refoucs}] fits the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction mapping using transverse relaxometry with stimulated echo compensation.
 Exitation and refocus are the RF pulse angles e.g. 90,180. They can also be a range of angeles over the slice profile as defined by GetSliceProfile.
 
-Output is {{{T2map,B1Map},{wat, fat, fatMap}},callibration} or {{T2map,B1Map},{wat, fat, fatMap}}"
+Output is {{{T2map,B1Map},{wat, fat, fatMap}, residual},callibration} or {{T2map,B1Map},{wat, fat, fatMap}, residual}"
 
 CalibrateEPGT2Fit::usage = 
 "CalibrateEPGT2Fit[datan, times, angle] calculates the Fat T2 ralaxation that will be used in the EPGT2fit.
@@ -66,7 +66,7 @@ CalibrateEPGT2Fit::usage =
 Outputs the fat T2 value."
 
 CreateT2Dictionary::usage = 
-"CreateT2Dictionary[{T1m, T1f, T2f}, {Necho, echoSpace, angle}] Creates a EPG signal dictionary used for EPGT2fit.
+"CreateT2Dictionary[{T1m, T1f}, {Necho, echoSpace}, angle] Creates a EPG signal dictionary used for EPGT2fit.
 Every dictionary that is defined is cached.
 
 Output is {dictionary, vals}"
@@ -740,7 +740,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	i=0; SetSharedVariable[i]; ParallelEvaluate[j = 0];
 	If[OptionValue[MonitorEPGFit]&&!VectorQ[datan], 
 		dim = Times@@Dimensions[datal][[;;-2]];
-		size = Round[dim/20];
+		size = Round[dim/50];
 		PrintTemporary[ProgressIndicator[Dynamic[i], {0, dim}]]];
 	
 	(*find the correct method*)
@@ -762,10 +762,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			(*monitor calculation*)
 			PrintTemporary["Starting NLLS fitting: ", DateString[]];
 			(*perform the fit using parallel kernels*)
-			DistributeDefinitions[ErrorFunc, LeastSquaresC, NonLinearEPGFiti, EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, RotMatrixTI, MoveStates, MoveStatesI valsf, clip];
-			ParallelMap[(
-				j++; If[j > size, i += j; j = 1;]; 
-				NonLinearEPGFiti[{valsf, clip}, #])&, datal, {ad - 1}]
+			(*DistributeDefinitions[ErrorFunc, LeastSquaresC, NonLinearEPGFiti, EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, RotMatrixTI, MoveStates, MoveStatesI valsf, clip];*)
+			Map[(j++; If[j > size, i += j; j = 1;];NonLinearEPGFiti[{valsf, clip}, #])&, datal, {ad - 1}]
 		]
 		   
 		,"dictionaryM", (*NealderMead Nmnimize*)

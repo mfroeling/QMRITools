@@ -38,10 +38,10 @@ DixonReconstruct[real, imag, echo, b0, t2] reconstructs Dixon data.
 
 real is the real data in radials.
 imag is the imaginary data in radians.
-b0 can be estimated from two phase images using Unwrap.
-t2 can be estimated from multiple echos using T2fit.
+B0 can be estimated from two phase images using Unwrap.
+T2 can be estimated from multiple echos using T2fit.
 
-Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{b0,t2star},itterations}."
+Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{B0,T2star},itterations}."
 
 
 Unwrap::usage = 
