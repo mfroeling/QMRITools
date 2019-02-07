@@ -113,6 +113,6 @@ Most of the functionality is demonstrated in the `demo.nb`.
 
 ## VisteTools
 Import and export functions for tensor data which can be used in the [vIST/e](http://bmia.bmt.tue.nl/software/viste/) tractography tool.  
-Most of the functionality is demonstrated in the `demo.nb`.
+None of the functionality is demonstrated in the `demo.nb`.
 
 # References
