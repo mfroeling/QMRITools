@@ -21,11 +21,11 @@ bibliography: paper.bib
 # Summary
 ``QMRITools`` is written in Mathematica using Workbench and Eclipse and contains a collection of tools and functions for processing quantitative MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast and batch data processing, and facilitate development and prototyping of new functions. The core of the toolbox contains various functions for data manipulation and restructuring. 
 
-![Overview](OverView.png)
+![Overview](overview.png)
 
 The toolbox includes some [demo data](https://github.com/mfroeling/QMRITools/tree/master/DemoAndTest) which is used in the [demo file](https://github.com/mfroeling/QMRITools/blob/master/DemoAndTest/demo.nb) ``demo.nb``. In this notebook most of the functionality of the toolbox is demonstrated. A full list of functions and packages can be found in the [file](https://github.com/mfroeling/QMRITools/blob/master/QMRITools/All-Functions.nb) ``All-Functions.nb``. For all functions and toolboxes help files and guides are available and the documentation is build such that is incorporated in the Wolfram documentation.  
 
-![Install](AddOns.png)
+![Install](addons.png)
 	 
 The library of functions grows along with the research it is used for and started as a toolbox to analyze DWI data of mulsce (@Froeling2012). The toolbox works along side other software packages (e.g. [vIST/e](http://bmia.bmt.tue.nl/software/viste/), and [ITKSnap](http://www.itksnap.org/pmwiki/pmwiki.php)) and for some functionality it calls external executables (e.g. [dcm2nii](https://www.nitrc.org/projects/dcm2nii/) and [Elastix](http://elastix.isi.uu.nl/)). The toolbox has been used is various studies (e.g. @Froeling2012, @Hooijmans2015, @Froeling2015).
 
