@@ -312,12 +312,12 @@ Options[MeanSignal] = { UseMask->True }
 
 SyntaxInformation[MeanSignal] = {"ArgumentsPattern" -> {_, _.,OptionsPattern[]}};
 
-MeanSignal[data_, opts : OptionsPattern[]] := MeanSignal[data, 1, opts];
+MeanSignal[data_, opts:OptionsPattern[]] := MeanSignal[data, 1, opts];
 
 MeanSignal[data_, posi_ ,OptionsPattern[]] := Block[{mean, mask, pos, dat},
   
   If[ListQ[posi], 
-  pos=First@posi;
+  pos=posi;
   dat=data[[All,pos]];
   , 
   pos=posi;
@@ -325,7 +325,8 @@ MeanSignal[data_, posi_ ,OptionsPattern[]] := Block[{mean, mask, pos, dat},
   ];
   
   mask = If[OptionValue[UseMask],
-   	Round@GaussianFilter[Mask[NormalizeData[data[[All,pos]]],50], 5],
+  	mdat=Mean@Transpose@NormalizeData[data[[All,pos]]];
+   	Round@GaussianFilter[Mask[mdat,50], 5],
    	ConstantArray[1,Dimensions[data[[All,1]]]]
    	];   
   

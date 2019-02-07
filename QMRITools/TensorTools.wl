@@ -191,7 +191,7 @@ Begin["`Private`"]
 (*DriftCorrect*)
 
 
-Options[DriftCorrect]={NormalizeSignal->True,UseMask->True}
+Options[DriftCorrect]={NormalizeSignal->True, UseMask->True}
 
 SyntaxInformation[DriftCorrect] = {"ArgumentsPattern" -> {_, _,_., OptionsPattern[]}}
 
@@ -199,20 +199,20 @@ DriftCorrect[data_, bi_, opts:OptionsPattern[]] :=
  Block[{bval,pos},
 
   bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
-  
-  pos = First@UniqueBvalPosition[bval, 6][[2]];
+  pos = First@UniqueBvalPosition[bval, 5][[2]];
 
 	DriftCorrect[data, bval, pos, opts]
 
   ];
   
-DriftCorrect[data_, bi_,pos_, OptionsPattern[]] := 
+DriftCorrect[data_, bi_, pos_, OptionsPattern[]] := 
  Block[{sig, cor, bval, sol1, sol2, sol3, a, b, c, x,outp},
   bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
+  sig = MeanSignal[data, pos, UseMask->OptionValue[UseMask]];
   
-  sig = MeanSignal[data, pos,UseMask->OptionValue[UseMask]];
+  dat = Transpose[{pos, sig}];
   
-  {sol1, sol2, sol3} = {a, b, c} /. FindFit[Transpose[{pos, sig}], {c + b x + a x^2}, {a, b, c}, x];
+  {sol1, sol2, sol3} = {a, b, c} /. FindFit[dat, {c + b x + a x^2}, {a, b, c}, x];
   cor = sol3/Table[sol3 + sol2 x + sol1 x^2, {x, 1, Length[bi]}];
   
   outp = ConstantArray[cor, Length[data]] data;
