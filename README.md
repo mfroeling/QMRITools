@@ -98,7 +98,7 @@ To print the documentation of all functions use
 	QMRIToolsFuncPrint[]
 	QMRIToolsFuncPrint["toolboxname"]
 
-A list off all functions and their help can be found in ``All-Functions.nb``.
+A list off all functions and their help can be found in ``All-Functions.nb``, which is alos availible as a [pdf file](https://github.com/mfroeling/QMRITools/blob/master/All-Functions.pdf).
 
 ## Functionality
 

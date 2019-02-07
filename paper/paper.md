@@ -21,13 +21,13 @@ bibliography: paper.bib
 # Summary
 ``QMRITools`` is written in Mathematica using Workbench and Eclipse and contains a collection of tools and functions for processing quantitative MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast and batch data processing, and facilitate development and prototyping of new functions. The core of the toolbox contains various functions for data manipulation and restructuring. 
 
+The toolbox was developed mostly in context of quantitative muscle, nerve and cardiac magnetic resonance imaging. The library of functions grows along with the research it is used for and started as a toolbox to analyze DWI data of mulsce (@Froeling2012). Although there exist many different software packages and code repositories for much of the functionality in this toolbox I was in need of one that did all. Furthermore most diffusion packages are optimized for brain analysis and provide limited flexibility. QMRITools works along side other software packages (e.g. [vIST/e](http://bmia.bmt.tue.nl/software/viste/), and [ITKSnap](http://www.itksnap.org/pmwiki/pmwiki.php)) and for some functionality it calls external executables (e.g. [dcm2nii](https://www.nitrc.org/projects/dcm2nii/) and [Elastix](http://elastix.isi.uu.nl/)). The toolbox has been used is various studies (e.g. @Froeling2012, @Hooijmans2015, @Froeling2015).
+
 ![Overview](overview.png)
 
 The toolbox includes some [demo data](https://github.com/mfroeling/QMRITools/tree/master/DemoAndTest) which is used in the [demo file](https://github.com/mfroeling/QMRITools/blob/master/DemoAndTest/demo.nb) ``demo.nb``. In this notebook most of the functionality of the toolbox is demonstrated. A full list of functions and packages can be found in the [file](https://github.com/mfroeling/QMRITools/blob/master/QMRITools/All-Functions.nb) ``All-Functions.nb``. For all functions and toolboxes help files and guides are available and the documentation is build such that is incorporated in the Wolfram documentation.  
 
 ![Install](addons.png)
-	 
-The library of functions grows along with the research it is used for and started as a toolbox to analyze DWI data of mulsce (@Froeling2012). The toolbox works along side other software packages (e.g. [vIST/e](http://bmia.bmt.tue.nl/software/viste/), and [ITKSnap](http://www.itksnap.org/pmwiki/pmwiki.php)) and for some functionality it calls external executables (e.g. [dcm2nii](https://www.nitrc.org/projects/dcm2nii/) and [Elastix](http://elastix.isi.uu.nl/)). The toolbox has been used is various studies (e.g. @Froeling2012, @Hooijmans2015, @Froeling2015).
 
 The toolbox contains some basic functionality such as DICOM and Nifti import, and 2D,3D and 4D data visualization. The advanced features comprise data registration (@Klein2010, @Shamonin2013), Noise suppression (@Aja-Fernandez2008, @Veraart2015), Diffusion drift correction (@Vos2014), gradient direction optimization (@Froeling2016), simulation framework (@Froeling2013), EPG based T2 fitting (@Marty2016 @Weigel2015) and IDEAL Dixon reconstruction (@Reeder2005 @Herraez2002). The current functional toolboxes with a short description are listed below.
 
@@ -94,12 +94,14 @@ A variety of functions for visualization of various data types. The main functio
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## ProcessingTools
-The toolbox comprises a variety of functions that allow data manipulation and analysis. The main functions allow to join multiple data-sets into one continuous data-set (@froeling2015) or to split data of two legs into two separate data-sets. Furthermore, it contains a collection of functions for data evaluation and analysis.
+The toolbox comprises a variety of functions that allow data manipulation and analysis. The main functions allow to join multiple data-sets into one continuous data-set (@froeling2015a) or to split data of two legs into two separate data-sets. Furthermore, it contains a collection of functions for data evaluation and analysis.
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## RelaxometryTools
 A collection of tools to fit T2, T2*, T1rho and T1 relaxometry data. The main function of this toolbox is an extende phase graph (EPG) (@Weigel2015) method for multi-compartment T2 fitting of multi-echo spin echo data (@Marty2016). Therefore it provides function to simulate and evaluate EPG. 
 Some of the functionality is demonstrated in the `demo.nb`.
+
+![EPG-T2 mapping](epg-t2.png)
 
 ## SimulationTools
 The main purpose of this toolbox is to simulate DTI based DWI data and contains some functions to easaly perform analysis of the fit results of the simulated signals (@Froeling2013)  
