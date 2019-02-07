@@ -136,6 +136,10 @@ CreateHeart[pars] creates a simulated left ventricle shape with predifined param
 
 Output is the heart shape, the voxel size and the parameters needed to generate the heart, {mask, vox, pars}.
 "
+CardiacCoordinateSystem::usage
+"CardiacCoordinateSystem[mask, vox] creates the cardiac coordinate system within the mask. 
+output is a set of vectors {radvecn, norvecc, cirvec}, being the radial, normal and circular axes of each voxel respectivley."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -2057,6 +2061,64 @@ CreateHeart[setin_] := Module[{set, col, contin, contout, shape, seto, shapeplot
   Return[{ArrayPad[shapeout, 10], {0.7, 0.7, 0.7}, seto}];
   ]
   
+
+(* ::Subsection::Closed:: *)
+(*CardiacCoordinateSystem*)
+
+
+Options[CardiacCoordinateSystem] = {ShowFit -> False}
+
+SyntaxInformation[CardiacCoordinateSystem] = {"ArgumentsPattern" -> {_,_, OptionsPattern[]}};
+
+CardiacCoordinateSystem[mask_, vox_, OptionsPattern[]] := Block[
+	{dim, wall,axesout,off, vec, inout,pla, plw, radvecn, norvec, norvecc, cirvec, der, sp, spz, spxy, maskCont,n ,vectorField,
+	coo, rav, nov, rov, vec1, vec2, vec3, plot },
+  dim = Dimensions[mask];
+  (*Calculate the wall distance map, and the wall direction*)
+  wall = CalculateWallMap[mask, vox, ShowFit -> OptionValue[ShowFit]];
+  {wall, der} = 
+   If[OptionValue[ShowFit], plw = wall[[3]]; wall[[1 ;; 2]], wall];
+  
+   (*get the cardiac center line*)
+  axesout = 
+   CentralAxes[mask, 0, vox, AxesMethod -> "Qubic", 
+    ShowFit -> OptionValue[ShowFit]];
+  {off, vec, inout} = 
+   If[OptionValue[ShowFit], pla = axesout[[4]]; axesout[[1 ;; 3]], 
+    axesout];
+  
+  (*create the cardaic coordinate system*)
+  radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
+  norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
+  norvecc = MakePerpendicular[norvec, radvecn];
+  cirvec = NormalizeC[CrossC[radvecn, norvecc]];
+  
+  (*plot hear geo*)
+  sp = Round[Dimensions[mask]/{12, 24, 24}];
+  sp = Round[Dimensions[mask]/{15, 30, 30}];
+  {spz, spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
+  maskCont = PlotMaskVolume[mask, vox];
+  n = (spz 0.6 vox[[1]]) {1, -1, 1}/vox;
+  vectorField = Table[If[mask[[z, y, x]] == 0,
+     {None, None, None},
+     coo = {x, -y + dim[[2]] + 1, z};
+     rav = Reverse[n radvecn[[z, y, x]]];
+     nov = Reverse[n norvecc[[z, y, x]]];
+     rov = Reverse[n cirvec[[z, y, x]]];
+     {{Darker[Green], Thick, 
+       Line[{coo(*-rav*), coo + rav}]}, {Darker[Blue], Thick, 
+       Line[{coo(*-nov*), coo + nov}]}, {Darker[Red], Thick, 
+       Line[{coo(*-rov*), coo + rov}]}}], {z, 1, dim[[1]], spz}, {y, 
+     1, dim[[2]], spxy}, {x, 1, dim[[3]], spxy}];
+  {vec1, vec2, vec3} = 
+   DeleteCases[Flatten[#, 2], None] & /@ 
+    Transpose[vectorField, {2, 3, 4, 1}];
+  plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], 
+    Graphics3D[vec3]];
+  
+  Print[plot];
+  {radvecn, norvecc, cirvec}
+  ]
 
 (* ::Section:: *)
 (*End Package*)
