@@ -888,7 +888,7 @@ InvertDataset[data_] := Module[{dep},
 
 Inverse3Di[data_] := Block[{out},
   out = data;
-  (out = Reverse[out, #]) & /@ {1, 2};
+  (out = Reverse[out, #]) & /@ {1, 2, 3};
   out]
 
 

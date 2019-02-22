@@ -136,7 +136,8 @@ CreateHeart[pars] creates a simulated left ventricle shape with predifined param
 
 Output is the heart shape, the voxel size and the parameters needed to generate the heart, {mask, vox, pars}.
 "
-CardiacCoordinateSystem::usage
+
+CardiacCoordinateSystem::usage = 
 "CardiacCoordinateSystem[mask, vox] creates the cardiac coordinate system within the mask. 
 output is a set of vectors {radvecn, norvecc, cirvec}, being the radial, normal and circular axes of each voxel respectivley."
 
@@ -1016,12 +1017,13 @@ backcol=n/.backcols;
 
 (*segments*)
 segments=If[!NumberQ[segmi],
-Thread[{apex,apical,midcavity,basal,none}->{1,4,6,6,1}],
+Thread[{apex,apical,midcavity,basal,none}->{1,4,6,6,1}][[1;;4]],
 If[slcgrp,
 DeleteCases[Thread[{apex,apical,midcavity,basal}->{segmi,segmi,segmi,segmi}],{}->_],
 {Range[slices]->segmi}
 ]
 ];
+
 segm=n/.Flatten[Thread/@segments];
 
 (*get correct center, calcualte angles and rad*)
@@ -1093,7 +1095,7 @@ Dynamic[Show[anatomypl,maskpl,polplot,lineplot,lineplot2,pointplot,circplot,cent
 {{segmi,"AHA","Number of segments"},{1->"1 per sliec",4->"4 per slice",6->"6 per slice","AHA"->"AHA-17"},ControlType->SetterBar},
 PaneSelector[{
 False->"",
-True-> Control[{{slcgrp,False,"Use slice grouping:"},{True->"group by slice",False->"group by region"},ControlType->SetterBar}]
+True-> Control[{{slcgrp,True,"Use slice grouping:"},{False->"group by slice",True->"group by region"},ControlType->SetterBar}]
 },
 Dynamic[NumberQ[segmi]]],
 Delimiter,
@@ -1133,7 +1135,7 @@ Dynamic[Show[carPl,allpl]]
 Delimiter,
 Row[{
 DefaultButton["Done",DialogReturn[
-{segmask, segang, points}=GenerateOutput[points,centers,segments[[1;;4]],rev,NumberQ[segmi],slcgrp,coordinates,Dimensions[mask],lines];
+{segmask, segang, points}=GenerateOutput[points,centers,segments(*[[1;;4]]*),rev,NumberQ[segmi],slcgrp,coordinates,Dimensions[mask],lines];
 
 segang=Map[{#[[1]], DeleteCases[#[[2]], {}]} &, segang, {2}];
 
