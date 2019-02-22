@@ -326,6 +326,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   nb = If[NumberQ[nb], nb, 5];
   pi = If[NumberQ[pi], pi, 10];
   maxit = If[NumberQ[maxit], maxit, 10];
+  
   (*kernel size*)
   ker = OptionValue[PCAKernel];
   ker = If[EvenQ[ker], ker - 1, ker];

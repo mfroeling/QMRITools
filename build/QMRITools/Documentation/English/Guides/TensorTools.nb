@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     15834,        456]
-NotebookOptionsPosition[     11958,        373]
-NotebookOutlinePosition[     13499,        412]
-CellTagsIndexPosition[     13456,        409]
+NotebookDataLength[     16509,        478]
+NotebookOptionsPosition[     12632,        395]
+NotebookOutlinePosition[     14174,        434]
+CellTagsIndexPosition[     14131,        431]
 WindowTitle->TensorTools
 WindowFrame->Normal*)
 
@@ -116,7 +116,7 @@ TensorTools.html"], StandardForm]], "Input", TextClipboardType ->
            URL[
             StringJoin[
              If[
-              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$30810], 
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$30885], 
               "http://reference.wolfram.com/system-modeler/", 
               "http://reference.wolfram.com/language/"], 
              "QMRITools/guide/TensorTools", ".html"]], None}]}]},
@@ -166,7 +166,22 @@ Cell[TextData[{
    BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
- " Calculates the diffusion tensor."
+ " Calculates the diffusion tensor. The default settings use an iterative \
+WLLS (",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["https://doi.org/10.1016/j.neuroimage.2013.05.028"]],
+    "https://doi.org/10.1016/j.neuroimage.2013.05.028"},
+   "WebLink",
+   BaseStyle->{"GuideText"}]]],
+ ") estimator with REKINDLE outlier rejection (",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["https://doi.org/10.1002/mrm.25165"]],
+    "https://doi.org/10.1002/mrm.25165"},
+   "WebLink",
+   BaseStyle->{"GuideText"}]]],
+ ")."
 }], "GuideText",
  CellID->203374175],
 
@@ -215,7 +230,14 @@ Cell[TextData[{
    BaseStyle->"InlineFunctionSans"]], "InlineFunctionSans"],
  " ",
  StyleBox["\[LongDash]", "GuideEmDash"],
- " Correct diffusion data for signal drif."
+ " Correct diffusion data for signal drift. (",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["https://doi.org/10.1002/mrm.26124"]],
+    "https://doi.org/10.1002/mrm.26124"},
+   "WebLink",
+   BaseStyle->{"GuideText"}]]],
+ ")"
 }], "GuideText",
  CellID->249340201],
 
@@ -385,7 +407,7 @@ TaggingRules->{
          BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
     Left], "ExampleCounter" -> 1, "NeedPlatMsgIn" -> None, "RootCaptions" -> 
   "", "Metadata" -> {
-   "built" -> "{2019, 1, 3, 15, 2, 6.3299229}", 
+   "built" -> "{2019, 2, 8, 11, 9, 15.4977725}", 
     "history" -> {"2.0", "", "", ""}, "context" -> "QMRITools`", 
     "keywords" -> {}, "specialkeywords" -> {}, 
     "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
@@ -393,7 +415,7 @@ TaggingRules->{
     "status" -> "None", "summary" -> 
     "QMRITools package: Processing and analysing DTI and DKI data.", 
     "synonyms" -> {}, "tabletags" -> 
-    DocumentationBuild`Make`Private`tabletaggingrules$30710, "title" -> 
+    DocumentationBuild`Make`Private`tabletaggingrules$30782, "title" -> 
     "TensorTools", "titlemodifier" -> "", "windowtitle" -> "TensorTools", 
     "type" -> "Guide", "uri" -> "QMRITools/guide/TensorTools"}},
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
@@ -411,7 +433,7 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[583, 21, 4947, 111, 70, "AnchorBarGrid",ExpressionUUID->"84e3d054-8616-4b48-a6f4-a55b7b065b2d",
+Cell[583, 21, 4947, 111, 70, "AnchorBarGrid",ExpressionUUID->"7911fbcc-1cb1-46de-a6d3-80436843c718",
  CellID->1],
 Cell[CellGroupData[{
 Cell[5555, 136, 53, 1, 70, "GuideTitle",ExpressionUUID->"6b3c1904-874b-4fe1-ac8c-d851116a855a",
@@ -420,44 +442,44 @@ Cell[5611, 139, 209, 6, 70, "GuideAbstract",ExpressionUUID->"0e71e83f-b956-471b-
  CellID->2001916300]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[5857, 150, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"ace644cf-8d40-485e-a7ed-d461ea523484"],
-Cell[5997, 158, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"fecb0f0e-c174-4cc0-8acc-31651bf918c7"],
-Cell[6031, 160, 312, 10, 70, "GuideText",ExpressionUUID->"9e625892-7542-424a-8e9b-12717fc70123",
+Cell[5857, 150, 137, 6, 70, "GuideReferenceSection",ExpressionUUID->"16ce06ab-2823-41e9-aae5-df6da761c650"],
+Cell[5997, 158, 31, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"11cf2175-fe31-4352-8ee6-22a084a76d28"],
+Cell[6031, 160, 800, 25, 70, "GuideText",ExpressionUUID->"9e625892-7542-424a-8e9b-12717fc70123",
  CellID->203374175],
-Cell[6346, 172, 346, 11, 70, "GuideText",ExpressionUUID->"a9fe72d2-99ae-41d2-9dbb-76ae2f4828ca",
+Cell[6834, 187, 346, 11, 70, "GuideText",ExpressionUUID->"a9fe72d2-99ae-41d2-9dbb-76ae2f4828ca",
  CellID->1463276848],
-Cell[6695, 185, 339, 10, 70, "GuideText",ExpressionUUID->"52e52162-7962-469f-8746-a2740a9f829f",
+Cell[7183, 200, 339, 10, 70, "GuideText",ExpressionUUID->"52e52162-7962-469f-8746-a2740a9f829f",
  CellID->353690666],
-Cell[7037, 197, 314, 10, 70, "GuideText",ExpressionUUID->"effd382e-fbb3-46a5-b76e-8e69577b0f53",
+Cell[7525, 212, 314, 10, 70, "GuideText",ExpressionUUID->"effd382e-fbb3-46a5-b76e-8e69577b0f53",
  CellID->6223388],
-Cell[7354, 209, 323, 10, 70, "GuideText",ExpressionUUID->"964123f8-24bb-489b-8a4f-99ba6df874e2",
+Cell[7842, 224, 509, 17, 70, "GuideText",ExpressionUUID->"964123f8-24bb-489b-8a4f-99ba6df874e2",
  CellID->249340201],
 Cell[CellGroupData[{
-Cell[7702, 223, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"4ea7bc15-5cbe-4706-a132-33809747ae42",
+Cell[8376, 245, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"4ea7bc15-5cbe-4706-a132-33809747ae42",
  CellID->311258892],
-Cell[7753, 226, 813, 24, 70, "InlineGuideFunctionListing",ExpressionUUID->"77fe7fe6-7e43-4b9a-925c-5cbdbbab4603",
+Cell[8427, 248, 813, 24, 70, "InlineGuideFunctionListing",ExpressionUUID->"77fe7fe6-7e43-4b9a-925c-5cbdbbab4603",
  CellID->218759089]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[8603, 255, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"38ca8694-9f63-40af-ac9a-02bbce471fc3",
+Cell[9277, 277, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"38ca8694-9f63-40af-ac9a-02bbce471fc3",
  CellID->474121214],
-Cell[8654, 258, 2073, 63, 70, "InlineGuideFunctionListing",ExpressionUUID->"9c906067-6b05-4644-8051-dd1baa1c4fa4",
+Cell[9328, 280, 2073, 63, 70, "InlineGuideFunctionListing",ExpressionUUID->"9c906067-6b05-4644-8051-dd1baa1c4fa4",
  CellID->58033752]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[10764, 326, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"39da872a-de56-4e65-8f50-503dd0a9ac18",
+Cell[11438, 348, 48, 1, 70, "GuideDelimiter",ExpressionUUID->"39da872a-de56-4e65-8f50-503dd0a9ac18",
  CellID->237938107],
-Cell[10815, 329, 762, 23, 70, "InlineGuideFunctionListing",ExpressionUUID->"d97a9fc6-5e54-4eb8-ad85-15c014483a7d",
+Cell[11489, 351, 762, 23, 70, "InlineGuideFunctionListing",ExpressionUUID->"d97a9fc6-5e54-4eb8-ad85-15c014483a7d",
  CellID->483896002]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[11614, 357, 47, 1, 70, "GuideDelimiter",ExpressionUUID->"31513852-bc7d-4f10-afaa-535769438209",
+Cell[12288, 379, 47, 1, 70, "GuideDelimiter",ExpressionUUID->"31513852-bc7d-4f10-afaa-535769438209",
  CellID->35351844],
-Cell[11664, 360, 240, 7, 70, "InlineGuideFunctionListing",ExpressionUUID->"99d3081e-b4a1-4960-848f-097762707e05",
+Cell[12338, 382, 240, 7, 70, "InlineGuideFunctionListing",ExpressionUUID->"99d3081e-b4a1-4960-848f-097762707e05",
  CellID->320135]
 }, Open  ]]
 }, Open  ]],
-Cell[11931, 371, 23, 0, 70, "FooterCell",ExpressionUUID->"ac229266-8f00-4085-85af-2478ae0102f4"]
+Cell[12605, 393, 23, 0, 70, "FooterCell",ExpressionUUID->"b5d269d2-e956-40fb-b57a-09dd7029f4ec"]
 }
 ]
 *)
