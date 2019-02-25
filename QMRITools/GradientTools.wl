@@ -30,10 +30,13 @@ GenerateGradients::usage =
 "GenerateGradients[numb] optimizes a set with numb gradients, numb mus be an integer.
 GenerateGradients[{numb, fixed}] optimizes a set with numb gradients, numb must ba an integer and fixed a list of 3D coordiantes e.g. {{0,0,1},{0,1,0}}. The fixed gradients will not be moved.
 GenerateGradients[{numb1, numb2 ...}, alpha] optimizes a multi shel gradient set with numb gradients per shel. If alpha is set to 0.5 equal importance is given to\
-the optimal distribution of each shell en the enitre set. if alpha is 0 only the sub shels will be optimized, if alpha is set to 1 only the global set wil be optimized."
+the optimal distribution of each shell en the enitre set. if alpha is 0 only the sub shels will be optimized, if alpha is set to 1 only the global set wil be optimized.
+
+DOI: 10.1002/mrm.26259 and 10.1002/(SICI)1522-2594(199909)42:3<515::AID-MRM14>3.0.CO;2-Q."
 
 GenerateGradientsGUI::usage =
-"GenerateGradientsGUI[] runs the GenerateGradients function in GUI with output for the philips system."
+"GenerateGradientsGUI[] runs the GenerateGradients function in GUI with output for the philips system.
+DOI: 10.1002/mrm.26259 and 10.1002/(SICI)1522-2594(199909)42:3<515::AID-MRM14>3.0.CO;2-Q."
 
 FinalGrads::usage = 
 "FinalGrads[grtxt,{int,intn},{rand,order}] finalizes the gradient txt file. 

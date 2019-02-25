@@ -30,7 +30,9 @@ DeNoise::usage =
 "DeNoise[data,sigma,filtersize] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" a gaussian kernel.
 DeNoise[data,sigma,filtersize, Kernel->\"kerneltype\"] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" and type \"kerneltype\".
 
-Output is data denoised."
+Output is data denoised.
+
+DOI: 10.1109/TMI.2008.920609"
 
 
 PCADeNoise::usage = 
@@ -38,7 +40,9 @@ PCADeNoise::usage =
 PCADeNoise[data, mask] removes rician noise from the data with PCA only withing the mask.
 PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only withing the mask using sig as prior knowledge or fixed value.
 
-Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data dnoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}."
+Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data dnoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}.
+
+DOI: 10.1016/j.neuroimage.2016.08.016 and 10.1002/mrm.26059"
 
 PCAFitHist::usage =  
 "PCAFitHist[data] fits the marchencopasteur distribution to the PCA of the data using hist fit.
@@ -58,7 +62,9 @@ AnisoFilterTensor::usage =
 It uses the diffusion weighted data diffdata to find edges that are not visible in the tensor.
 Edge weights based on the diffusion data are averaged over all normalized diffusion direction.
 
-Output is the smoothed tensor."
+Output is the smoothed tensor.
+
+DOI: 10.1109/ISBI.2006.1624856"
 
 WeightMapCalc::usage =  
 "WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterTensor.

@@ -42,7 +42,9 @@ centerpoint is the center of each slice calculated with CentralAxes.
 inout is the inner and outer radius calcualted with CentralAxes.
 vec is the vector describin the central axes of the heart, calculated with CentralAxes.
 
-Output is het fiber angle matrix FAM = {9, slice, x, y} or {FAM, plot}."
+Output is het fiber angle matrix FAM = {9, slice, x, y} or {FAM, plot}.
+
+DOI: 10.1186/1532-429X-17-S1-P15."
 
 
 CalculateWallMap::usage = 
@@ -113,7 +115,9 @@ BullseyePlot[list] generates a AHA-17 segement bullseye plot of the lists (which
 data is a 3D volume used for the plot. 
 segmask is the AHA-17 segmentation resulting form the CardiacSegment function when AHA17 is selected.
 
-Output is a bullseye plot or a plotwindow, depending on the Method which can be \"Dynamic\" else it will be static."
+Output is a bullseye plot or a plotwindow, depending on the Method which can be \"Dynamic\" else it will be static.
+
+DOI: 10.1161/hc0402.102975."
 
 ExcludeSlices::usage = 
 "ExcludeSlices[data] excludes slices that do not look like the others based on various distance measures.
@@ -1817,7 +1821,7 @@ Options[ExcludeSlices] = {CutOffMethod -> "Auto",DistanceMeasure->5};
 SyntaxInformation[ExcludeSlices] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
 ExcludeSlices[data_, OptionsPattern[]] := 
- Block[{measure, selmask, cutoff, std, mn, bin, type},
+ Block[{measure, selmask, cutoff, std, mn, bin, type,q1,q2,q3},
   type = OptionValue[DistanceMeasure];
   cutoff = OptionValue[CutOffMethod];
   (*get similarity measure*)
@@ -1825,7 +1829,8 @@ ExcludeSlices[data_, OptionsPattern[]] :=
   (*calculate cutoff and selection mask*)
   cutoff = If[NumberQ[cutoff] && cutoff < .5,
     Quantile[Flatten@measure, cutoff],
-    1 - (1.9 StandardDeviation@Flatten@measure)
+    {q1, q2, q3} = Quantile[Flatten[measure], {0.25, 0.5, .75}];
+	q2 - 2 (q3 - q1)
     ];
   selmask = Mask[measure, cutoff];
   (*report the outliers*)
@@ -1871,10 +1876,10 @@ ShowOutlierDistribution[measure_, selmask_, cutoff_] :=
 
 
 CalculateMeasure[data_, type_] := 
- Block[{target, datan, fun, measure, slice, dirs, mask},
-  target = Mean /@ data;
-  target = Flatten /@ (target/Mean[Flatten[target]]);
-  datan = Map[Flatten[#/Mean[Flatten[#]]] &, data, {2}];
+ Block[{target, datan, fun, measure, slice, dirs, mask,mm,q1,q2,q3,iqr},
+	target = Median /@ data;
+	target = Flatten /@ (target/Median[Flatten[target]]);
+	datan = Map[Flatten[#/Median[Flatten[#]]] &, data, {2}];
   {slice, dirs} = Dimensions[datan][[1 ;; 2]];
   (*select distance measure*)
   fun = Switch[type,
@@ -1888,10 +1893,20 @@ CalculateMeasure[data_, type_] :=
   measure = 
    Table[
    	mask=Unitize[target[[i]] datan[[i, j]]];
-   	fun[mask target[[i]], mask datan[[i, j]]],
+   	fun[Pick[target[[i]], mask, 1], Pick[datan[[i, j]], mask, 1]],
    	 {i, 1, slice, 1}, {j, 1, dirs, 1}];
   (*normalize measure*)
-  measure = #/Quantile[#,.6] & /@ measure;
+  measure = (
+     mm = #;
+     {q1, q2, q3} = Quantile[#, {0.25, 0.5, .75}];
+     iqr = q3 - q1;
+     mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
+     {q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
+     iqr = q3 - q1;
+     mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
+     {q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
+     1 + (# - q2)/(10 (q3 - q1))
+     ) & /@ measure;
   (*make low value bad*)
   If[type <= 3, 2 - measure, measure]
   ]

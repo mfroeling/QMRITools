@@ -53,7 +53,9 @@ RegisterData[{target, mask}, {moving, vox}] registers the data series using the 
 RegisterData[{target, vox}, {moving, mask}] registers the data series using the given voxel size only using data within the mask.
 
 Output is the registered data with the dimensions of the moving data. 
-If OutputTransformation is True it also outputs the translation, rotation scale and skew of all images or volumes."
+If OutputTransformation is True it also outputs the translation, rotation scale and skew of all images or volumes.
+
+DOI: 10.1109/TMI.2009.2035616 and 10.3389/fninf.2013.00050."
 
 RegisterDataSplit::usage = 
 "RegisterDataSplit[target, moving] is identical to RegisterData data however left and right side of the data are registered seperately.
