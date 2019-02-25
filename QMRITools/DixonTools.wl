@@ -41,14 +41,18 @@ imag is the imaginary data in radians.
 B0 can be estimated from two phase images using Unwrap.
 T2 can be estimated from multiple echos using T2fit.
 
-Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{B0,T2star},itterations}."
+Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{B0,T2star},itterations}.
+
+DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737."
 
 SimulateDixonSignal::usage = 
 "SimulateDixonSignal[echo, fr, B0, T2] simulates an Dixon gradient echo sequence with echotimes echo in ms, fat fraction fr, field of resonance B0 in Hz and relaxation T2 in ms."
 
 
 Unwrap::usage = 
-"Unwrap[data] unwraps the given dataset."
+"Unwrap[data] unwraps the given dataset.
+
+DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 
 UnwrapSplit::usage = 
 "UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData based in the data and performs the unwrapping seperately."
