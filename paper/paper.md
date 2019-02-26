@@ -25,22 +25,22 @@ The toolbox was developed mostly in the context of quantitative muscle, nerve an
 
 ![Overview](overview.png)
 
-The toolbox includes some [demo data](https://github.com/mfroeling/QMRITools/tree/master/DemoAndTest) which is used in the [demo file](https://github.com/mfroeling/QMRITools/blob/master/DemoAndTest/demo.nb) ``demo.nb``. In this notebook most of the functionality of the toolbox is demonstrated. A full list of functions and packages can be found in the [file](https://github.com/mfroeling/QMRITools/blob/master/QMRITools/All-Functions.nb) ``All-Functions.nb``. For all functions and toolboxes, help files and guides are available and the documentation is built such that it is incorporated in the Wolfram documentation.
+The toolbox includes some [demo data](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip) which is used in the demo file ``demo.nb``. In this notebook most of the functionality of the toolbox is demonstrated. A full list of functions and packages can be found in the [file](https://github.com/mfroeling/QMRITools/blob/master/QMRITools/All-Functions.nb) ``All-Functions.nb`` (also availible as [pdf](https://github.com/mfroeling/QMRITools/releases/download/2.0/All-Functions.pdf)). For all functions and toolboxes, help files and guides are available and the documentation is build such that is incorporated in the Wolfram documentation.  
 
 ![Install](addons.png)
 
-The toolbox contains some basic functionality such as DICOM and NIfTI import, and 2D, 3D and 4D data visualization. The advanced features comprise data registration (@Klein2010, @Shamonin2013), noise suppression (@Aja-Fernandez2008, @Veraart2015), diffusion drift correction (@Vos2014), gradient direction optimization (@Froeling2016), simulation framework (@Froeling2013), EPG based T2 fitting (@Marty2016 @Weigel2015) and IDEAL Dixon reconstruction (@Reeder2005 @Herraez2002). The current functional toolboxes with a short description are listed below.
+The toolbox contains some basic functionality such as DICOM and Nifti import, and 2D, 3D and 4D data visualization. The advanced features comprise data registration (@Klein2010, @Shamonin2013), noise suppression (@Aja-Fernandez2008, @Veraart2015), diffusion drift correction (@Vos2014), gradient direction optimization (@Froeling2016), simulation framework (@Froeling2013), EPG based T2 fitting (@Marty2016 @Weigel2015) and IDEAL Dixon reconstruction (@Reeder2005 @Herraez2002). The current functional toolboxes with a short description are listed below.
 
 ## CardiacTools
-A collection of tools to analyze cardiac data. The main features are cardiac shape analysis which allows defining the hard in a local myocardial coordinate system which allows quantifying and analyzing data. When the cardiac geometry is known there are functions to analyze qMRI parameters in the AH17 model (@Cerqueira2002) or perform transmural sampling of qMRI parameters.
+A collection of tools to analyze cardiac data. The main features are cardiac shape analysis which allows defining the hard in a local myocardial coordinate system which allows quantifying and analyzing data. When the cardiac geometry is known there are functions to analyze qMRI parameters in the AH17 model (@Cerqueira2002) or perform transmural sampling of qMRI parameters. 
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## CoilTools
-A collection of tools to evaluate complex multi-coil data. The functions are specific for analysis of multi-coil magnitude and noise data which allows quantifying per channel SNR. Furthermore, if complex coil sensitivity maps are available it allows performing SENSE g-factor maps simulations.
+A collection of tools to evaluate complex multi-coil data. The functions are specific for analysis of multi-coil magnitude and noise data which allows quantifying per channel SNR. Furthermore, if complex coil sensitivity maps are available it allows performing SENSE g-factor maps simulations.   
 This toolbox is not demonstrated in the `demo.nb`.
 
 ## DenoiseTools
-The toobox provides two algorithms that allow denoising of DWI data. The first is based on and LMMSE framework (@Aja-Fernandez2008) and the second is based on a random matrix theory and Principal component analysis framework (@Veraart2015, @Veraart2016). Furthermore it provides an anisotropic filter for denoising the estimated diffusion tensor which provides more reliable fiber orientation analysis (@JeeEunLee).
+The toobox provides two algorithms that allow denoising of DWI data. The first is based on and LMMSE framework (@Aja-Fernandez2008) and the second is based on a random matrix theory and Principal component analysis framework (@Veraart2015, @Veraart2016). Furthermore, it provides an anisotropic filter for denoising the estimated diffusion tensor which provides more reliable fiber orientation analysis (@JeeEunLee).
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## DixonTools
@@ -64,17 +64,17 @@ Most of the functionality is demonstrated in the `demo.nb`.
 ![gradients](gradients.png)
 
 ## ImportTools
-Allows importing DCM data or DCM header attributes. These functions are rarely used since the toolbox mostly uses the  data format and provides tools to convert DCM to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
+Allows importing DCM data or DCM header attributes. These functions are rarely used since the toolbox mostly uses the NIfTY data format and provides tools to convert DCM to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
 This toolbox is not demonstrated in the `demo.nb`.
 
 ## IVIMTools
-The toolbox includes functions to perform IVIM fitting of DWI data. There are two main functions: nonlinear fitting and Bayesian fitting (@Orton2014).
+The toolbox includes functions to perform IVIM fitting of DWI data. There are two main functions: non linear fitting and Bayesian fitting (@Orton2014). 
 Some of the functionality is demonstrated in the `demo.nb`.
 
 ![ivim](ivim.png)
 
 ## JcouplingTools
-A toolbox that allows simulation of NMR spectra using Hamiltonians based on methods from [FID-A](https://github.com/CIC-methods/FID-A). It allows sumulating large spin systems (@Castillo2011) and was mainly implemented to investigate fat spectra in TSE (@Stokes2013).
+A toolbox that allows simulation of NMR spectra using Hamiltonians based on methods from [FID-A](https://github.com/CIC-methods/FID-A). It allows simulating large spin systems (@Castillo2011) and was mainly implemented to investigate fat spectra in TSE (@Stokes2013).
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## MaskingTools
@@ -94,17 +94,17 @@ A variety of functions for visualization of various data types. The main functio
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## ProcessingTools
-The toolbox comprises a variety of functions that allow data manipulation and analysis. The main functions allow joining multiple data sets into one continuous data set (@froeling2015a) or to split data of two legs into two separate data sets. Furthermore, it contains a collection of functions for data evaluation and analysis.
+The toolbox comprises a variety of functions that allow data manipulation and analysis. The main functions allow joining multiple data sets into one continuous data set (@froeling2015a) or to split data of two legs into two separate data-sets. Furthermore, it contains a collection of functions for data evaluation and analysis.
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## RelaxometryTools
-A collection of tools to fit T2, T2*, T1rho and T1 relaxometry data. The main function of this toolbox is an extended phase graph (EPG) (@Weigel2015) method for multi-compartment T2 fitting of multi-echo spin echo data (@Marty2016). Therefore it provides functions to simulate and evaluate EPG.
+A collection of tools to fit T2, T2*, T1rho and T1 relaxometry data. The main function of this toolbox is an extended phase graph (EPG) (@Weigel2015) method for multi-compartment T2 fitting of multi-echo spin echo data (@Marty2016). Therefore it provides functions to simulate and evaluate EPG. 
 Some of the functionality is demonstrated in the `demo.nb`.
 
 ![EPG-T2 mapping](epg-t2.png)
 
 ## SimulationTools
-The main purpose of this toolbox is to simulate DTI based DWI data and contains some functions to easily perform analysis of the fit results of the simulated signals (@Froeling2013)
+The main purpose of this toolbox is to simulate DTI based DWI data and contains some functions to easily perform analysis of the fit results of the simulated signals (@Froeling2013).
 Some of the functionality is demonstrated in the `demo.nb`.
 
 ## TensorTools

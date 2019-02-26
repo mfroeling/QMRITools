@@ -75,7 +75,9 @@ FiberLengths[{fpoints,flines}] calculates the fiber lenght using the output from
 JoinSets::usage =
 "JoinSets[{dat1,dat2,...}, over] joins dat1, dat2, ... with over slices overlap.
 JoinSets[{dat1,dat2,dat3...},{over1,over2,...}] joins dat1 and dat2 with over1 slices overlap, Joins dat2 and dat3 with over2 slices overlap and so on.
-JoinSets[{dat1,dat2,...},{{over,drop1,drop2},...}] joins dat1, dat2 with over slices overlap and drops drop1 slices for dat1 and drop2 from drop 2."
+JoinSets[{dat1,dat2,...},{{over,drop1,drop2},...}] joins dat1, dat2 with over slices overlap and drops drop1 slices for dat1 and drop2 from drop 2.
+
+DOI: 10.1148/radiol.14140702."
 
 SplitSets::usage = 
 "SplitSets[data, Nsets, Nover] splits the data in Nsets with Nover slices overlap."
@@ -888,7 +890,7 @@ InvertDataset[data_] := Module[{dep},
 
 Inverse3Di[data_] := Block[{out},
   out = data;
-  (out = Reverse[out, #]) & /@ {1, 2};
+  (out = Reverse[out, #]) & /@ {1, 2, 3};
   out]
 
 
