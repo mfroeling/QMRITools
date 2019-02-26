@@ -73,7 +73,7 @@ Elastix compatibility has been tested for MacOSX but is not guaranteed but we ar
 
 ## Demonstrations
 
-The repository contains a folder ''Demo'' in which there is a file ``demo.nb``, a folder ``DemoData`` and a folder ``testing. 
+The release contains a zip file [DemoAndTest.zip](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip) in which there is a file ``demo.nb``, a folder ``DemoData`` and a folder ``Testing``. 
 To have a global overview of the functionality of the toolbox you can download this folder and run the ``demo.nb``.
 By default the ``demo.nb`` looks for the folders ``DemoData`` and ``Testing`` in the same folder as the notebook.
 
@@ -98,7 +98,7 @@ To print the documentation of all functions use
 	QMRIToolsFuncPrint[]
 	QMRIToolsFuncPrint["toolboxname"]
 
-A list off all functions and their help can be found in ``All-Functions.nb``, which is alos availible as a [pdf file](https://github.com/mfroeling/QMRITools/blob/master/All-Functions.pdf).
+A list off all functions and their help can be found in ``All-Functions.nb``, which is alos availible as a [pdf file](https://github.com/mfroeling/QMRITools/releases/download/2.0/All-Functions.pdf).
 
 ## Functionality
 
