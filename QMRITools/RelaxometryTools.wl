@@ -54,7 +54,7 @@ T1, T2 and echoSpace are in ms, angel is in degree, B1 is between 0 and 1.
 
 Output is the EPG Signal vector.
 
-DOI: 10.1002/jmri.24619."
+EPGSignal[] is based on DOI: 10.1002/jmri.24619."
 
 EPGT2Fit::usage = 
 "EPGT2Fit[data, {Necho, detlaTE}, {exitation, refoucs}] fits the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction mapping using transverse relaxometry with stimulated echo compensation.
@@ -62,7 +62,7 @@ Exitation and refocus are the RF pulse angles e.g. 90,180. They can also be a ra
 
 Output is {{{T2map,B1Map},{wat, fat, fatMap}, residual},callibration} or {{T2map,B1Map},{wat, fat, fatMap}, residual}
 
-DOI: 10.1002/nbm.3459."
+EPGT2Fit[] is based on DOI: 10.1002/nbm.3459."
 
 CalibrateEPGT2Fit::usage = 
 "CalibrateEPGT2Fit[datan, times, angle] calculates the Fat T2 ralaxation that will be used in the EPGT2fit.

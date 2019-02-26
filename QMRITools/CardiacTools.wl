@@ -44,7 +44,7 @@ vec is the vector describin the central axes of the heart, calculated with Centr
 
 Output is het fiber angle matrix FAM = {9, slice, x, y} or {FAM, plot}.
 
-DOI: 10.1186/1532-429X-17-S1-P15."
+HelixAngleCalc[] is based on DOI: 10.1186/1532-429X-17-S1-P15."
 
 
 CalculateWallMap::usage = 
@@ -117,7 +117,7 @@ segmask is the AHA-17 segmentation resulting form the CardiacSegment function wh
 
 Output is a bullseye plot or a plotwindow, depending on the Method which can be \"Dynamic\" else it will be static.
 
-DOI: 10.1161/hc0402.102975."
+BullseyePlot[] is based on DOI: 10.1161/hc0402.102975."
 
 ExcludeSlices::usage = 
 "ExcludeSlices[data] excludes slices that do not look like the others based on various distance measures.

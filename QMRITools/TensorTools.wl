@@ -31,7 +31,7 @@ DriftCorrect::usage =
 For the function to work optimal it is best to have these volumes evenly spread througout thet data \
 and for the first and last volume to have this low bvalue.
 
-DOI: 10.1002/mrm.26124." 
+DriftCorrect[] is based on DOI: 10.1002/mrm.26124." 
 
 ConcatenateDiffusionData::usage=
 "ConcatenateDiffusionData[{{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}}] concatenates the diffusion data sets.
@@ -54,7 +54,7 @@ bvec the bvector, with a bvalue defined for each gradient direction. b value for
 TensorCalc[data, bmatix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues. 
 bmat is the bmatrix which can be generated usiong Bmatrix.
 
-DOI: 10.1016/j.neuroimage.2013.05.028 and 10.1002/mrm.25165."
+TensorCalc[] is based on DOI: 10.1016/j.neuroimage.2013.05.028 and 10.1002/mrm.25165."
 
 
 ResidualCalc::usage =
