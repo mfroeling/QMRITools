@@ -19,7 +19,7 @@ bibliography: paper.bib
 ---
 
 # Summary
-``QMRITools`` is written in Mathematica using Wolfram Workbench and Eclipse and contains a collection of tools and functions for processing quantitative MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast and batch data processing, and facilitate development and prototyping of new functions. The core of the toolbox contains various functions for data manipulation and restructuring. 
+``QMRITools`` is written in Mathematica using Wolfram Workbench and Eclipse and contains a collection of tools and functions for processing quantitative MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast and batch data processing, and facilitate development and prototyping of new functions. The core of the toolbox contains various functions for data manipulation and restructuring.
 
 The toolbox was developed mostly in the context of quantitative muscle, nerve and cardiac magnetic resonance imaging. The library of functions grows along with the research it is used for and started as a toolbox to analyze DWI data of muscle (@Froeling2012). Although there exist many different software packages and code repositories for much of the functionality in this toolbox, I was in need of one that did all. Furthermore, most diffusion packages are optimized for brain analysis and provide limited flexibility. QMRITools works alongside other software packages (e.g. [vIST/e](http://bmia.bmt.tue.nl/software/viste/), and [ITKSnap](http://www.itksnap.org/pmwiki/pmwiki.php)) and for some functionality it calls external executables (e.g. [dcm2nii](https://www.nitrc.org/projects/dcm2nii/) and [Elastix](http://elastix.isi.uu.nl/)). The toolbox has been used in various studies (e.g. @Froeling2012, @Hooijmans2015, @Froeling2015).
 
@@ -44,7 +44,7 @@ The toobox provides two algorithms that allow denoising of DWI data. The first i
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## DixonTools
-An IDEAL based Dixon reconstruction algorithm (@Reeder2005, @Yu2008). The method provides multi-peak fitting B0field and T2* correction. The toolbox also provide a function for unwrapping phase data in 2D and 3D based on a best path method (@Abdul-Rahman2007, @Herraez2002). It also contains a function that allows to simulate gradient echo dixon data.
+An IDEAL based Dixon reconstruction algorithm (@Reeder2005, @Yu2008). The method provides multi-peak fitting B0 field and T2* correction. The toolbox also provides a function for unwrapping phase data in 2D and 3D based on a best path method (@Abdul-Rahman2007, @Herraez2002). It also contains a function that allows simulating gradient echo Dixon data.
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ![dixon](dixon.png)
@@ -64,7 +64,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 ![gradients](gradients.png)
 
 ## ImportTools
-Allows importing DCM data or dCM header attributes. These functions are rarely used since the toolbox mostly uses the NIfTY data format and provides tools to convert DCM to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
+Allows importing DCM data or DCM header attributes. These functions are rarely used since the toolbox mostly uses the NIfTY data format and provides tools to convert DCM to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
 This toolbox is not demonstrated in the `demo.nb`.
 
 ## IVIMTools
