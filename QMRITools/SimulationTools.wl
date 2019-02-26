@@ -34,7 +34,9 @@ Tensor::usage =
 Tensor[{l1, l2, l3}, {e1, e2, e3}] creates a diffuison tensor with vectors {e1, e2, e3} and eigenvalues {l1, l2, l3}.
 Tensor[{l1, l2, l3}, \"Random\"] creates a diffuison tensor with random orthogonal eigenvectors {e1, e2, e2} and eigenvalues {l1, l2, l3}.
 Tensor[{l1, l2, l3}, \"RandomZ\"] creates a diffuison tensor with random orthogonal eigenvectors {{1,0,0}, e2, e3} with random eigenvectors and eigenvalues {l1, l2, l3}.
-Tensor[{l1, l2, l3}, \"OrtRandom\"] creates a diffuison tensor with random orthogonal eigenvectors {{1,0,0},{0,1,0},{0,0,1}} and eigenvalues {l1, l2, l3}."
+Tensor[{l1, l2, l3}, \"OrtRandom\"] creates a diffuison tensor with random orthogonal eigenvectors {{1,0,0},{0,1,0},{0,0,1}} and eigenvalues {l1, l2, l3}.
+
+Tensor[] is based on DOI: 10.1002/nbm.2959."
 
 Signal::usage = 
 "Signal[par,TR,TE] calculates the MRI signal at a given TR and TE. Par is defineds as {pd, T1, T2}."
@@ -42,7 +44,9 @@ Signal::usage =
 CreateDiffData::usage = 
 "CreateDiffData[sig, eig, bvec, gradients, dim] creates a DTI datasets of dimensions dim with sig as unweighted signal S0 and bvec and gradients. \
 eig can be {l1, l2, l3}, {{l1, l2, l3}, {e1, e2, e3}}, {{l1, l2, l3}, \"Random\"}, {{l1, l2, l3}, \"RandomZ\"} or {{l1, l2, l3}, \"OrtRandom\"}. 
-Uses Tensor internally."
+Uses Tensor internally.
+
+CreateDiffData[] is based on DOI: 10.1002/nbm.2959."
 
 BlochSeries::usage = 
 "BlochSeries[vectorIn, deltat, freqRange, B1] performs a Bloch simulation of an RF pulse."

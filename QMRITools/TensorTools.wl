@@ -29,7 +29,9 @@ $ContextPath=Union[$ContextPath, System`$QMRIToolsContextPaths];
 DriftCorrect::usage = 
 "DriftCorrect[data, bval] dirft corrects the data using the signals of the lowest bvalue that has 6 or more unique volumes.
 For the function to work optimal it is best to have these volumes evenly spread througout thet data \
-and for the first and last volume to have this low bvalue." 
+and for the first and last volume to have this low bvalue.
+
+DriftCorrect[] is based on DOI: 10.1002/mrm.26124." 
 
 ConcatenateDiffusionData::usage=
 "ConcatenateDiffusionData[{{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}}] concatenates the diffusion data sets.
@@ -50,7 +52,9 @@ TensorCalc[data, gradients, bvec] calculates the diffusion tensor for the given 
 allows for differnt tensor fitting methods. gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}. \
 bvec the bvector, with a bvalue defined for each gradient direction. b value for unweighted images is 0.
 TensorCalc[data, bmatix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues. 
-bmat is the bmatrix which can be generated usiong Bmatrix."
+bmat is the bmatrix which can be generated usiong Bmatrix.
+
+TensorCalc[] is based on DOI: 10.1016/j.neuroimage.2013.05.028 and 10.1002/mrm.25165."
 
 
 ResidualCalc::usage =
