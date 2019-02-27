@@ -560,15 +560,18 @@ SimulateSliceEPG[exitation_, refocus_, {{T1_, T2_}, {Necho_, echoSp_}, b1_}, Opt
   	ColorFunction -> "DarkRainbow", ColorFunctionScaling -> False, PlotRange -> Full, PerformanceGoal -> "Speed",PlotPoints->Necho]
   , {m, 2, len, 1}];
   PrependTo[plots, ParametricPlot3D[sigInd[[1, Round[#]]] &[n], {n, 1, Necho}, PlotStyle -> Directive[{Dashed, Darker@Gray}, PlotRange -> Full]]];
-  
+  text=Graphics3D[Text[Style["Mean signal (colored line)\nMid slice signal (gray line)", Bold, Black], {0, 0.5 Necho, 1.3 max}]];
   vv = {0.24, 0.19, 0.95};
   vp = {2.57, 1.90, 1.08};
-  va = 30 Degree;
+  va = 35 Degree;
   Column[Flatten@{
     "  ", info, fit,
-    Show[plots, lines, prof, BoxRatios -> 1, PlotRange -> {{0, len}, {0, Necho}, {-0., 1.1 max}}, 
-     Axes -> False, BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
-     ViewAngle -> va, ImageSize -> 400]
+    Show[plots, lines, prof, text, BoxRatios -> 1, PlotRange -> {{0, len}, {0, Necho}, {-0., 1.1 max}}, 
+     BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
+     ViewAngle -> va, ImageSize -> 400,FrameLabel->{}, 
+     Axes -> True, AxesLabel -> {"Slice Profile", "Nr. echos", "Normalized\nSignal"}, 
+     AxesEdge -> {{1, -1}, {1, -1}, {1, -1}},
+     Ticks -> False, LabelStyle -> Directive[{Bold, Black}]]
     }, Alignment -> Center, Spacings -> 0]
   ]
 

@@ -72,7 +72,7 @@ RemoveMaskOverlaps::usage =
 "RemoveMaskOverlaps[mask] removes the overlaps between multiple masks. Mask is a 4D dataset with {z, masks, x, y}"
 
 SegmentMask::usage = 
-"SegmentMask[mask, n] devides a mask in n equal segments along the slice direction. n must be an integer."
+"SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
 
 
 ROIMask::usage = 
