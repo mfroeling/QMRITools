@@ -758,10 +758,10 @@ GenerateGradientsGUI[] := Block[{pan},
     Row[{" sticks: ", Checkbox[Dynamic[sticks]],"   mirror grad.: ", Checkbox[Dynamic[mirror]], "   project grad. on half: ", Checkbox[Dynamic[proj]]}],
     Grid[{
       {
-       Button["top", vp = {0, 0, 3.38}, ImageSize -> {50, 20}, FrameMargins -> 0],
-       Button["right", vp = {3.38, 0, 0}, ImageSize -> {50, 20}, FrameMargins -> 0],
-       Button["front", vp = {0, 3.38, 0}, ImageSize -> {50, 20}, FrameMargins -> 0],
-       Button["reset view point", {vp, vv, va} = {{1.3, -2.4, 2}, {0, 0, 1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 0]}
+       Button["top", vp = {0, 0, 3.38}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
+       Button["right", vp = {3.38, 0, 0}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
+       Button["front", vp = {0, 3.38, 0}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
+       Button["reset", {vp, vv, va} = {{1.3, -2.4, 2}, {0, 0, 1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 0,FontSize->10]}
       }],
     
     Delimiter,
@@ -826,7 +826,7 @@ GenerateGradientsGUI[] := Block[{pan},
     {{steps, 1000, "quality (iterations)"}, {500 -> "poor (500)", 1000 -> "normal (1000)", 2500 -> "excellent (2500)",5000 -> "perfect (5000)", 10000 -> "extreme (10000)"}, ControlType -> PopupMenu, FieldSize -> {9, 0.7}},
     (*generate gradietns button*)
     (*mult:1-single shell; 2-multi shell; 3-cartesian;4-DWI*)
-    Row[{Button["generate gradients",
+    Row[{Button["generate",
        (*initiate gradient generation*)
        app = Lighter[Lighter[LightGray]];
        disp = 1; running = True;
@@ -976,14 +976,14 @@ GenerateGradientsGUI[] := Block[{pan},
        Pause[0.1];
        running = False;
        app = White;
-       , Method -> "Queued", ImageSize -> {120, 23}],
+       , Method -> "Queued", ImageSize -> {120, 23},FontSize->10],
       
       (*output buttens*)
-      Button["to clipboard", CopyToClipboard[out], ImageSize -> {80, 23}],
-      Button["to file",
+      Button["clipboard", CopyToClipboard[out], ImageSize -> {100, 23},FontSize->10],
+      Button["file",
        file = SystemDialogInput["FileSave", "dti_vectors_input.txt"];
        If[! (file === $Canceled), Export[file, out, "Text"]], 
-       ImageSize -> {80, 23}, Method -> "Queued"]
+       ImageSize -> {100, 23}, Method -> "Queued",FontSize->10]
        }],
     
     (*disclaimer*)
