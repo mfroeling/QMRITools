@@ -29,7 +29,8 @@ $ContextPath=Union[$ContextPath,System`$QMRIToolsContextPaths];
 DixonToPercent::usage = 
 "DixonToPercent[water, fat] converts the dixon water and fat data to percent maps.
 
-Output is {waterFraction, fatFraction}."
+Output is {waterFraction, fatFraction}.
+The values of water and fat are arbitraty units and the ouput fractions are between 0 and 1."
 
 DixonReconstruct::usage = 
 "DixonReconstruct[real, imag, echo] reconstruxt Dixon data with initital guess b0 = 0 and T2star = 0.
@@ -43,19 +44,28 @@ T2 can be estimated from multiple echos using T2fit.
 
 Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{B0,T2star},itterations}.
 
+The fractions are between 0 and 1, the B0 field map is in Hz and the T2start map is in ms.
+
 DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737."
 
 SimulateDixonSignal::usage = 
-"SimulateDixonSignal[echo, fr, B0, T2] simulates an Dixon gradient echo sequence with echotimes echo in ms, fat fraction fr, field of resonance B0 in Hz and relaxation T2 in ms."
+"SimulateDixonSignal[echo, fr, B0, T2] simulates an Dixon gradient echo sequence with echotimes.
+Echotimes echo in ms, fat fraction fr between 0 and 1, field of resonance B0 in Hz and relaxation T2 in ms."
 
 
 Unwrap::usage = 
 "Unwrap[data] unwraps the given dataset.
 
+The data should be between -Pi and Pi. 
+
 Unwrap[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 
 UnwrapSplit::usage = 
-"UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData based in the data and performs the unwrapping seperately."
+"UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData based in the data and performs the unwrapping seperately.
+
+The data should be between -Pi and Pi.
+
+UnwrapSplit[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 
 
 (* ::Subsection::Closed:: *)
@@ -66,13 +76,13 @@ DixonPrecessions::usage =
 "DixonPrecessions is an options for DixonReconstruct. Defines the rotation of the signal {-1,1} default is -1."
 
 DixonFieldStrength::usage = 
-"DixonFieldStrength is an options for DixonReconstruct. Defines the fieldstrengths on which the data was acquired."
+"DixonFieldStrength is an options for DixonReconstruct. Defines the fieldstrengths in Tesla on which the data was acquired."
 
 DixonFrequencies::usage = 
-"DixonFrequencies is an options for DixonReconstruct. Defines the frequencies of the fat peaks being used."
+"DixonFrequencies is an options for DixonReconstruct. Defines the frequencies in ppm of the fat peaks being used."
 
 DixonAmplitudes::usage = 
-"DixonAmplitudes is an options for DixonReconstruct. Defines the amplitudes of the fat peaks being used."
+"DixonAmplitudes is an options for DixonReconstruct. Defines the relative amplitudes of the fat peaks being used."
 
 DixonTollerance::usage = 
 "DixonTollerance is an options for DixonReconstruct. Defines at which change per itteration of b0 and R2star the ittarative methods stops. Default value is 0.1."

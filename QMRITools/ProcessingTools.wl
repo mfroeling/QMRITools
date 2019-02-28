@@ -243,7 +243,7 @@ Begin["`Private`"]
 
 SetupDataStructure[dcmFolder_] := 
  Module[{folderdcm, foldernii, folderout, folders,fol, niiFolder, outFolder},
-  folderdcm = Directory[] <> "\\" <> # & /@ Select[FileNames["*", "dcm"], DirectoryQ];
+  folderdcm = Directory[] <> $PathnameSeparator <> # & /@ Select[FileNames["*", "dcm"], DirectoryQ];
   foldernii = StringReplace[#, "dcm" -> "nii"] & /@ folderdcm;
   folderout = StringReplace[#, "dcm" -> "out"] & /@ folderdcm;
   folders = Transpose[{folderdcm, foldernii, folderout}];

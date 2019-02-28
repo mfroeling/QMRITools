@@ -177,10 +177,20 @@ DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,
 	folout=If[outfol=="",FileSelect["Directory",WindowTitle->"Select directory to put nii files in"],outfol];
 	If[filfolin==Null||folout==Null,Return[]];
 	
+	compress=If[OptionValue[CompressNii],"i","n"];
+	
 	(*create the cmd window command to run dcm2niix.exe*)
 	log=" > \"" <> folout <> "\\output.txt";
-	compress=If[OptionValue[CompressNii],"i","n"];
-	command=First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log<>"\"\nexit\n";
+	Switch[$OperatingSystem,
+		"Windows",
+		command=First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log<>"\"\nexit\n";
+		,
+		"Unix",
+		command=dcm2nii <>" -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log<>"\"\nexit\n";
+		,
+		"MacOSX",
+		command=dcm2nii <>" -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \"" <> filfolin <> "\"" <> log<>"\"\nexit\n";
+	];
 	
 	If[OptionValue[Method]=!=Automatic,Print[command]];
 	
@@ -192,8 +202,20 @@ DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,
 
 
 FindDcm2Nii[]:=Module[{fil1,fil2},
-	fil1=$UserBaseDirectory <>"\\Applications\\QMRITools\\Applications\\dcm2niix.exe";
-	fil2=$BaseDirectory <>"\\Applications\\QMRITools\\Applications\\dcm2niix.exe";
+	Switch[$OperatingSystem,
+		"Windows",
+		fil1=$UserBaseDirectory <>"\\Applications\\QMRITools\\Applications\\dcm2niix.exe";
+		fil2=$BaseDirectory <>"\\Applications\\QMRITools\\Applications\\dcm2niix.exe";
+		,
+		"Unix",
+		fil1=$UserBaseDirectory <>"/Applications/DTITools/Applications/Linux-x86-64/bin/dcm2niix";
+		fil2=$BaseDirectory <>"/Applications/DTITools/Applications/Linux-x86-64/bin/dcm2niix";
+		,
+		"MacOSX",
+		fil1=$UserBaseDirectory <>"/Applications/DTITools/Applications/MacOSX-x86-64/bin/dcm2niix";
+		fil2=$BaseDirectory <>"/Applications/DTITools/Applications/MacOSX-x86-64/bin/dcm2niix";
+	];
+	
 	If[FileExistsQ[fil1],DirectoryName[fil1],If[FileExistsQ[fil2],DirectoryName[fil2], Message[DcmToNii::notfount];$Failed]]
 ]
 

@@ -420,7 +420,7 @@ Module[{input,lab},
 
 MovieSave[plot_,dur_,loop_,size_,range_]:=
 Module[{input,movie},
-	input=SystemDialogInput["FileSave", Directory[] <> "\\*.gif"];
+	input=SystemDialogInput["FileSave", Directory[] <> $PathnameSeparator<>"*.gif"];
 	If[input===$Canceled,Return[Print["Export movie was canceled!"]]];
 	
 	movie=Flatten[Switch[Length[range],
@@ -667,7 +667,7 @@ Module[{input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def,norm,
 
 MovieSaveDef[data_,shift_,dur_,loop_,size_,range_,settings_]:=
 Module[{movie,input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def,norm,defl,arr,pl,lab},
-	input=SystemDialogInput["FileSave", Directory[] <> "\\*.gif"];
+	input=SystemDialogInput["FileSave", Directory[] <> $PathnameSeparator <>"*.gif"];
 	If[input===$Canceled,Print["Export multiple files was canceled!"],
 		{dim,dir}=settings[[1]];
 		{min,max}=settings[[2]];

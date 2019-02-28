@@ -132,7 +132,7 @@ Module[{folderi,addi,file},
 	If[!ArrayQ[data,3],
 		Message[DTItoolExpInd::dim,ArrayDepth[data]],
 		addi=If[add!="","-"<>add,""];
-		folderi=If[folder!="",folder<>"\\",""];
+		folderi=If[folder!="",folder<>$PathnameSeparator,""];
 		file=folder<>filename<>add<>".dat";
 		DatWrite[file,N[data]];
 		Print["Exported: ",file]]
@@ -151,7 +151,7 @@ Module[{dir,addi,folderi,file,files},
 		Message[DTItoolExpTens::dim,ArrayDepth[data]],
 		dir={"XX","YY","ZZ","XY","XZ","YZ"};
 		addi=If[add!="","-"<>add,""];
-		folderi=If[folder!="",folder<>"\\",""];
+		folderi=If[folder!="",folder<>$PathnameSeparator,""];
 		files=MapThread[(file=folder<>#1<>add<>".dat";DatWrite[file,N[#2]];file)&,{dir,data}];
 		Print["Exported: ",files];
 		]];
@@ -177,7 +177,7 @@ DTItoolExp[back:{{_?ArrayQ,_?StringQ}..},tens_?ArrayQ,vox_?ListQ,folder_String:"
 DTItoolExpi[back_,tens_,vox_,folder_,add_]:=
 Module[{addi,folderi,file,files,fileb,filesb,print},
 	addi=If[add!="","-"<>add,""];
-	folderi=If[folder!="",folder<>"\\",""];
+	folderi=If[folder!="",folder<>"$PathnameSeparator",""];
 	
 	print=Reap[
 		If[back=={},
@@ -239,7 +239,7 @@ I "<>back<>add<>".dat
 SyntaxInformation[ImportDTI] = {"ArgumentsPattern" -> {_,_.}};
 
 ImportDTI[folder_String,add_String:""]:=Module[{},
-DatRead[folder<>"\\"<>#<>If[add=="","","-"<>add]<>".dat"]&/@{"xx","yy","zz","xy","xz","yz"}];
+DatRead[folder<>"$PathnameSeparator"<>#<>If[add=="","","-"<>add]<>".dat"]&/@{"xx","yy","zz","xy","xz","yz"}];
 
 ImportDTI[files:{_?StringQ..}]:=Module[{filesc},
 filesc=If[StringLength[#]<4,#<>".dat",If[StringTake[#,-4]==".dat",#,#<>".dat"]]&/@files;
@@ -307,7 +307,7 @@ Module[{strm},
 ExportVolFile[file_,dim_,vox_,bit_]:=
 Module[{},
 	Export[file<>".vol",
-"Data.FileName     = "<>Last[StringSplit[file,"\\"]]<>".raw
+"Data.FileName     = "<>Last[StringSplit[file,$PathnameSeparator]]<>".raw
 Data.Type         = raw
 Data.Dimensions   = "<>StringReplace[StringTrim[ToString[Reverse[dim]],("{"|"}")...],","->""]<>"
 Data.PixelSpacing = "<>StringReplace[StringTrim[ToString[Reverse[vox]],("{"|"}")...],","->""]<>"

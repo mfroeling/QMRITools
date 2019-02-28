@@ -29,21 +29,30 @@ $ContextPath=Union[$ContextPath,System`$QMRIToolsContextPaths];
 T1rhoFit::usage = 
 "T1rhoFit[data, EchoTimes] fits the T1rho value to the data using linear or nonlinear methdos.
 
+The output is in units as defined by the EchoTimes, e.g. if EchoTimes is in ms the output is in ms.
+
 Output is {S(0), T1rhomap}."
 
 T2Fit::usage = 
 "T2Fit[data, EchoTimes] fits the T2 value to the data using linear or nonlinear methods.
+
+The output is in units as defined by the EchoTimes, e.g. if EchoTimes is in ms the output is in ms.
 
 Output is {S(0), T2}."
 
 T1Fit::usage = 
 "T1Fit[data, TR] fits the T1 value to the data using a nonlinear method.
 
+The output is in units as defined by the TR, e.g. if TR is in ms the TR is in ms.
+
 Output is {t1, apar, bpar}"
 
 TriExponentialT2Fit::usage = 
 "TriExponentialT2Fit[data, EchoTimes] fits the T2 based on Azzabou N et.al. Validation of a generic approach to muscle water T2 determination at 3T in fat-infiltrated skeletal muscle. J. Magn. Reson. 2015.
 The fat T2 parameters are automatically estimated from the high signal voxels from the last echo.
+
+The output is in units as defined by the EchoTimes, e.g. if EchoTimes is in ms the output is in ms.
+The output fraction is between 0 an 1.
 
 Output is {{S(0), fatFraction, muscleFraction, T2map},callibration} or {S(0), fatFraction, muscleFranction, T2map}."
 
@@ -60,6 +69,9 @@ EPGT2Fit::usage =
 "EPGT2Fit[data, {Necho, detlaTE}, {exitation, refoucs}] fits the T2 based on Marty B et.al. Simultaneous muscle water T2 and fat fraction mapping using transverse relaxometry with stimulated echo compensation.
 Exitation and refocus are the RF pulse angles e.g. 90,180. They can also be a range of angeles over the slice profile as defined by GetSliceProfile.
 
+The output is in units as defined by the detlaTE, e.g. if detlaTE is in ms the output is in ms.
+The exitation and refocus are defined in Degrees.
+
 Output is {{{T2map,B1Map},{wat, fat, fatMap}, residual},callibration} or {{T2map,B1Map},{wat, fat, fatMap}, residual}
 
 EPGT2Fit[] is based on DOI: 10.1002/nbm.3459."
@@ -70,8 +82,11 @@ CalibrateEPGT2Fit::usage =
 Outputs the fat T2 value."
 
 CreateT2Dictionary::usage = 
-"CreateT2Dictionary[{T1m, T1f}, {Necho, echoSpace}, angle] Creates a EPG signal dictionary used for EPGT2fit.
+"CreateT2Dictionary[{T1m, T1f}, {Necho, detlaTE}, angle] Creates a EPG signal dictionary used for EPGT2fit.
 Every dictionary that is defined is cached.
+
+The output is in units as defined by the detlaTE, e.g. if detlaTE is in ms the output is in ms.
+The TR and TE should be in the same units as Dela
 
 Output is {dictionary, vals}"
 
@@ -98,7 +113,7 @@ MonitorEPGFit::usage =
 
 
 EPGRelaxPars::usage = 
-"EPGRelaxPars is and option for EPGT2Fit. Needs to be {T1muscl, T1Fat, T2Fat} in ms, defaul is {1400,365,137}."
+"EPGRelaxPars is and option for EPGT2Fit. Needs to be {T1muscl, T1Fat, T2Fat} in ms, defaul is {1400,365,137} in ms."
 
 EPGCalibrate::usage = 
 "EPGCalibrate is an option for EPGT2Fit. If set to True it does autmatic callibration of the T2 fat relaxation time."

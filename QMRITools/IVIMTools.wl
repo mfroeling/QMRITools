@@ -30,8 +30,10 @@ IVIMCalc::usage=
 "IVIMCalc[data, binp, init] calculates the IVIM fit.
  
 data should be 1D ,2D, 3D or 4D. 
-binp should be full bmatrix which can be calculated from the bvecs en bvals using Bmatrix. 
+binp should be full bmatrix which can be calculated from the bvecs en bvals using Bmatrix with the bvalues in s/mm^2. 
 init should are the initialization parameters for 2 components this is {S0, f, D, Dp} for 3 componentes this is {S0, f1, f2, D, Dp1, Dp2}.
+
+The fraction is defined between 0 and 1, the D, Dp, Dp1 and Dp2 is in mm^2/s.
 
 output is {S0, f1, D, pD1} or {S0, f1, f2, D, pD1, pD2}."
 
@@ -43,7 +45,7 @@ IVIMFunction[components, type] gives the IVIM function.
 type can be \"Normal\" or \"Exp\".
 componenets can be 2 or 3.
 
-output is the function with b, S0, f1, f2, D, pD1, pD2 as parameters"
+output is the function with b, S0, f1, f2, D, pD1, pD2 as parameters. The fraction is defined between 0 and 1, the D, Dp, Dp1 and Dp2 is in mm^2/s."
 
 
 BayesianIVIMFit2::usage = 
@@ -54,7 +56,7 @@ bval is the bvector whould be length Ndiff.
 init is the initalization of the bayesian fit which comes from IVIMCalc, (without S0 using 2 compartments).
 mask is the region in which the bayesian fit is performed.
 
-output is {f1, dc, pdc1}."
+output is {f1, dc, pdc1}. The fraction is defined between 0 and 1, the dc, pdc1 is in mm^2/s."
 
 BayesianIVIMFit3::usage = 
 "BayesianIVIMFit3[data, bval, init, mask] performs bayesian IVIM fit of data.
@@ -64,7 +66,7 @@ bval is the bvector whould be length Ndiff.
 init is the initalization of the bayesian fit which comes from IVIMCalC, (without S0 using 3 compartments).
 mask is the region in which the bayesian fit is performed.
 
-output is {f1, f2, dc, pdc1, pdc2}."
+output is {f1, f2, dc, pdc1, pdc2}. The fractions f1 and f2 are defined between 0 and 1, the dc, pdc1 and pdc1 is in mm^2/s."
 
 FracCorrect::usage = 
 "FracCorrect[fraction, time] corrects the signal fraction calculated with the IVIM model for tissue relaxation and acquisition parameters.
@@ -73,6 +75,8 @@ FracCorrect[{fraction1, fraction2}, time] corrects the signal fraction1 and frac
 
 time is {{te, tr}, {t2t, t21}, {t1t, t11}} or {{te, tr}, {t2t, t21, t22}, {t1t, t11, t12}}
 where t2t and t1t are \"tissue\" relaxation times and t11 t12, t21 and t22 the \"fluid\" relaxation times 
+
+The te and tr as well as the relaxation times T2 and T1 can be defines in any time unit as long as they are consistant for all, e.g. all in ms.
 
 output is the corrected fraction maps";
 
@@ -121,6 +125,8 @@ IVIMCorrectData::usage =
 data is the original data.
 {S0, f, pdc} are the solution to a 2 compartment IVIM fit using IVIMCalc or BayesianIVIMFit2.
 bval are the bvalues.
+
+The fraction is defined between 0 and 1, the pdc is in mm^2/s.
 
 output is the corrected data."
 

@@ -43,6 +43,7 @@ inout is the inner and outer radius calcualted with CentralAxes.
 vec is the vector describin the central axes of the heart, calculated with CentralAxes.
 
 Output is het fiber angle matrix FAM = {9, slice, x, y} or {FAM, plot}.
+The angles are in degrees. 
 
 HelixAngleCalc[] is based on DOI: 10.1186/1532-429X-17-S1-P15."
 
@@ -126,12 +127,16 @@ Output is an array with 1 or 0 with the dimensiosn {slices, diff dirs}"
 
 
 MakeECVBloodMask::usage = 
-"MakeECVBloodMask[T1pre, T1post] makes a bloodpool mask based on the T1pre and T1post images. It assumes that the hart is cropped with the blood in the center."
+"MakeECVBloodMask[T1pre, T1post] makes a bloodpool mask based on the T1pre and T1post images. It assumes that the hart is cropped with the blood in the center.
+
+The T1pre and T1post maps are assuemed to be in ms."
 
 
 ECVCalc::usage = 
 "ECVCalc[T1pre, T1post, hema] calculates the ECVmap using MakeECVBloodMask.
-ECVCalc[T1pre, T1post, bloodMask, hema] calculates the ECVmap using bloodMask."
+ECVCalc[T1pre, T1post, bloodMask, hema] calculates the ECVmap using bloodMask.
+
+The T1pre and T1post maps are assuemed to be in ms."
 
 
 CreateHeart::usage = 
