@@ -54,6 +54,8 @@ bvec the bvector, with a bvalue defined for each gradient direction. b value for
 TensorCalc[data, bmatix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues. 
 bmat is the bmatrix which can be generated usiong Bmatrix.
 
+The bvalue assumed to be is in s/mm^2 and therfore the output is in mm^2/2
+
 TensorCalc[] is based on DOI: 10.1016/j.neuroimage.2013.05.028 and 10.1002/mrm.25165."
 
 
@@ -92,7 +94,7 @@ FACalc::usage =
 ECalc::usage =
 "ECalc[eigenvalues] caculates the e from the given eigenvalues."
 
-ParameterCalc::usage = "ParameterCalc[tensor] caculates the eigenvalues and MD and FA from the given tensor."
+ParameterCalc::usage = "ParameterCalc[tensor] caculates the eigenvalues and MD and FA from the given tensor. The parameters are l1, l2, l3, MD and FA. l1, l2, l3, MD are in (10^-3 mm^2/s)"
 
 
 AngleCalc::usage = 
