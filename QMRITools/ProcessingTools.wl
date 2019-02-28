@@ -86,7 +86,7 @@ CorrectJoinSetMotion::usage =
 "CorrectJoinSetMotion[[{dat1,dat2,...}, vox, over] motion correts multiple sets with overlap. Over is the number of slices overlap between stes. A Translation registration is performed."
 
 DataTransformation::usage = 
-"DataTranformation[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
+"DataTransformation[data,vox,w] transforms a 3D dataset accordint to the affine transformation vector w"
 
 InvertDataset::usage = 
 "InvertDataset[data] inverts the data along the x y and z axes. In other words it is rotated aroud the origin such that (x,y,z)=(-x,-y,-z) and (0,0,0)=(0,0,0)"
