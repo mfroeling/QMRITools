@@ -259,7 +259,7 @@ Begin["`Private`"]
 (* ::Subsection:: *)
 (*Support Functions*)
 
-operatingSystem = "Windows"(*$OperatingSystem*);
+operatingSystem = $OperatingSystem;
 
 (* ::Subsubsection::Closed:: *)
 (*ParString*)
@@ -525,65 +525,6 @@ ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,mov
 ]
 
 
-(*
-ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixed_,moving_,out_},{maskf_,maskm_}, pref_:"@ "]:=Block[
-	{command,inpfold,outfold,movfold,maskfFile,maskmFile,outfile,parfiles,copy, elastixFol},
-	
-	(*make elastix command based on operating system*)
-	Switch[$OperatingSystem,
-		"Windows",
-		inpfold=If[inpfol=="",tempdir,tempdir<>inpfol<>"\\"];
-		movfold=If[movfol=="",tempdir,tempdir<>movfol<>"\\"];
-		outfold=If[outfol=="",StringDrop[tempdir,-1],tempdir<>outfol];
-		outfile=outfold<>"\\"<>out;
-		
-		maskfFile=If[maskf==="",""," -fMask \""<>tempdir<>maskf<>"\""];
-		maskmFile=If[maskm==="",""," -mMask \""<>tempdir<>maskm<>"\""];
-		
-		parfiles=StringJoin[" -p \""<>tempdir<>#<>"\""&/@parfile];
-		copy=If[out=="","","@ copy \""<>outfold<>"\\result."<>ToString[Length[parfile]-1]<>".nii.gz\" \""<>outfile<>"\""];
-		
-		command=
-		"@ \""<>elastix<>
-		"\" -f \""<>inpfold<>fixed<>
-		"\" -m \""<>movfold<>moving<>
-		"\" -out \""<>outfold<>"\""<>
-		maskfFile<>
-		maskmFile<>
-		parfiles<>" > \""<>movfold<>"output.txt\" \n"<>
-		copy<>" \n";
-		,
-		"MacOSX",
-		inpfold=If[inpfol=="",tempdir,tempdir<>inpfol<>"/"];
-		movfold=If[movfol=="",tempdir,tempdir<>movfol<>"/"];
-		outfold=If[outfol=="",StringDrop[tempdir,-1],tempdir<>outfol];
-		outfile=outfold<>"/"<>out;
-		
-		maskfFile=If[maskf==="",""," -fMask "<>tempdir<>maskf<>" "];
-		maskmFile=If[maskm==="",""," -mMask "<>tempdir<>maskm<>" "];
-		
-		parfiles=StringJoin[" -p "<>tempdir<>#&/@parfile];
-		copy=If[out=="",""," cp "<>outfold<>"/result."<>ToString[Length[parfile]-1]<>".nii "<>outfile];
-		
-		elastixFol = StringDrop[DirectoryName[elastix, 2], -1];
-		
-		command=
-		"export PATH="<>elastixFol<>"/bin:$PATH 
-		export DYLD_LIBRARY_PATH="<>elastixFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
-		elastix<>
-		" -f "<>inpfold<>fixed<>
-		" -m "<>movfold<>moving<>
-		" -out "<>outfold<>" "<>
-		maskfFile<>
-		maskmFile<>
-		parfiles<>" > "<>movfold<>"output.txt \n"<>
-		copy<>" \n";	
-	];
-	
-	{command,outfile}
-]
-*)
-
 (* ::Subsubsection::Closed:: *)
 (*RunBatfile*)
 
@@ -693,8 +634,8 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   	(
   		"export PATH="<>transFol<>"/bin:$PATH 
 		export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
-		"'"<>transformix <>"'"<>
-		"' -in '" <> First[FileNames["moving*", #]] <>
+		transformix <>
+		" -in '" <> First[FileNames["moving*", #]] <>
 		"' -out '" <> # <>
 		"' -tp '" <> Last[FileNames["FinalTransform*", #]] <>
 		"' > '" <> # <> "/outputa.txt' \n" <>
@@ -705,7 +646,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
 	(
 		"export PATH="<>transFol<>"/bin:$PATH
 		 export LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
-		"'"<>transformix <>"'"<>
+		transformix <>
 		"' -in '" <> First[FileNames["moving*", #]] <>
 		"' -out '" <> # <>
 		"' -tp '" <> Last[FileNames["FinalTransform*", #]] <>
@@ -1279,8 +1220,8 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 		"MacOSX",
 		"export PATH="<>transFol<>"/bin:$PATH 
 		export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
-		"'"<>transformix <>
-		"' -in '" <> First[FileNames["trans*", tempDir]] <>
+		transformix <>
+		" -in '" <> First[FileNames["trans*", tempDir]] <>
 		"' -out '" <> tempDir <>
 		"' -tp '" <> transfile <>
 		" > '" <> tempDir <> "/outputT.txt' \n exit \n"
@@ -1288,8 +1229,8 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 		"UNIX",
 		"export PATH="<>transFol<>"/bin:$PATH 
 		export LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
-		"'"<>transformix <>
-		"' -in '" <> First[FileNames["trans*", tempDir]] <>
+		transformix <>
+		" -in '" <> First[FileNames["trans*", tempDir]] <>
 		"' -out '" <> tempDir <>
 		"' -tp '" <> transfile <>
 		" > '" <> tempDir <> "/outputT.txt' \n exit \n"
