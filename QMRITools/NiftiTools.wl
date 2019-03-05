@@ -204,8 +204,8 @@ DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,
 FindDcm2Nii[]:=Module[{fil1,fil2},
 	Switch[$OperatingSystem,
 		"Windows",
-		fil1=$UserBaseDirectory <>"\\Applications\\QMRITools\\Applications\\dcm2niix.exe";
-		fil2=$BaseDirectory <>"\\Applications\\QMRITools\\Applications\\dcm2niix.exe";
+		fil1=$UserBaseDirectory <>"\\Applications\\QMRITools\\Applications\\windows-x86-64\\dcm2niix.exe";
+		fil2=$BaseDirectory <>"\\Applications\\QMRITools\\Applications\\windows-x86-64\\dcm2niix.exe";
 		,
 		"Unix",
 		fil1=$UserBaseDirectory <>"/Applications/QMRITools/Applications/Linux-x86-64/bin/dcm2niix";

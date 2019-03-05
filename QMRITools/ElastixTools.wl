@@ -604,7 +604,7 @@ RunBatfileT[tempdir_, command_] := Block[{batfile, com},
 		com = "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
 	];
 	
-	Print[com];
+	(*Print[com];*)
 	RunProcess[$SystemShell, "StandardOutput", com];
 ]
 
@@ -654,7 +654,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
 		" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
 	) & /@ volDirs
   ];
-  Print[command];
+  (*Print[command];*)
   command
 ]
 
@@ -1021,7 +1021,7 @@ type_,OptionsPattern[]]:=Module[{
 		(*check if moving mask is needed*)
 		If[(dimmovm == dimmov && maskm!={1}),mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
-		Print[command];
+		(*Print[command];*)
 		RunProcess[$SystemShell,"StandardOutput",command];
 		(*RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -1069,7 +1069,7 @@ type_,OptionsPattern[]]:=Module[{
 		If[maskm!={1},mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
 		If[maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxm,tempdir<>fmaskF]];
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
-		Print[command];
+		(*Print[command];*)
 		RunProcess[$SystemShell,"StandardOutput",command];
 		(*RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
