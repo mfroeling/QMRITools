@@ -717,7 +717,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 
 	(*Check if data is numeric array, if not exit*)
 	data=dat//N;
-	If[!ArrayQ[data,_,NumericQ],Return[Message[PlotData::data]]];
+	If[!ArrayQ[data,_,RealQ],Return[Message[PlotData::data]]];
 	
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
 	depth=ArrayDepth[data];
@@ -904,7 +904,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 	(*Check if data is numeric array, if not exit*)
 	data1=dat1//N;
 	data2=dat2//N;
-	If[(! ArrayQ[data1, _, NumericQ]) || (! ArrayQ[data2, _, NumericQ]),Return[Message[PlotData::data]]];
+	If[(! ArrayQ[data1, _, RealQ]) || (! ArrayQ[data2, _, RealQ]),Return[Message[PlotData::data]]];
 
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
 	(*Determine data dimensions en make string displaying data dimensions*)

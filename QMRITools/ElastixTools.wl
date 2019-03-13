@@ -260,6 +260,7 @@ Begin["`Private`"]
 (*Support Functions*)
 
 operatingSystem = $OperatingSystem;
+debugElastix = False;
 
 (* ::Subsubsection::Closed:: *)
 (*ParString*)
@@ -452,19 +453,6 @@ FindTransformix[]:=Module[{fil1,fil2},
 	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error: transformix not found"]]
 ]
 
-(*
-(* ::Subsubsection::Closed:: *)
-(*RunElastix*)
-
-
-RunElastix[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,movingi_,out_},{maskfi_,maskmi_}]:=Block[{command},
-	command = ElastixCommand[elastix, tempdir, parfile, {inpfol, movfol, outfol}, {fixedi, movingi, out}, {maskfi, maskmi}, "@ "][[1]];
-	
-	Print[command];
-	RunProcess[$SystemShell,"StandardOutput",command];
-]
-*)
-
 
 (* ::Subsubsection::Closed:: *)
 (*ElastixCommand*)
@@ -475,19 +463,19 @@ ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,mov
 	inpfold, outfold, movfold, parfiles, copy, maskfFile, maskmFile, elastixFol
 	},
 	
-	(*operating specific quote*)
+	(*operating specific settings *)
 	quote = Switch[operatingSystem,"Windows","\"",_,"'"];
-	cp = Switch[operatingSystem,"Windows","@ "<>"copy ",_,"cp "];
+	cp = Switch[operatingSystem,"Windows","@ copy ",_,"cp "];
 	elas = Switch[operatingSystem, 
 		"Windows", 
 		"@ "<>quote<>elastix<>quote,
 		"MacOSX", 
 		elastixFol = DirectoryName[elastix, 2];
-		"export PATH="<>elastixFol<>"/bin:$PATH export DYLD_LIBRARY_PATH="<>elastixFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>elastix
+		"export PATH="<>elastixFol<>"bin:$PATH\nexport DYLD_LIBRARY_PATH="<>elastixFol<>"lib:$DYLD_LIBRARY_PATH\n"<>elastix
 		,
 		"Unix",
 		elastixFol=DirectoryName[elastix, 2];
-		"export PATH="<>elastixFol<>"/bin:$PATH export LD_LIBRARY_PATH="<>elastixFol<>"/lib:$LD_LIBRARY_PATH \n"<>elastix
+		"export PATH="<>elastixFol<>"bin:$PATH\nexport LD_LIBRARY_PATH="<>elastixFol<>"lib:$LD_LIBRARY_PATH\n"<>elastix
 	];
 	
 	(*make files into gz where needed*)
@@ -516,9 +504,9 @@ ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,mov
 		finout = quote<>FileNameJoin[{tempdir,outfol,out}]<>quote;
 		cp<>resout<>" "<>finout
 	];
-	output = quote<>movfold<>"output.txt"<>quote;
+	output = quote<>FileNameJoin[{movfold,"output.txt"}]<>quote;
 
-	command = elas<>" -f "<>quote<>inpfold<>fixed<>quote<>" -m "<>quote<>movfold<>moving<>quote<>" -out "<>quote<>outfold<>quote<>
+	command = elas<>" -f "<>quote<>FileNameJoin[{inpfold,fixed}]<>quote<>" -m "<>quote<>FileNameJoin[{movfold,moving}]<>quote<>" -out "<>quote<>outfold<>quote<>
 		maskfFile<>maskmFile<>parfiles<>" > "<>output<>" \n"<>copy<>" \n"<>"exit \n";
 
 	{command,outfile}	
@@ -534,7 +522,7 @@ RunBatfile[tempdir_,command_]:=Block[{batfile,com},
 	Switch[$OperatingSystem,
 		"Windows",
 		batfile = tempdir<>"elastix-batch.bat";
-		Export[batfile,StringJoin[command],"TEXT"];
+		Export[batfile,StringJoin[StringReplace[command,"exit \n"->""]],"TEXT"];
 		com = "\"" <> batfile <> "\"\n exit \n";
 		,
 		"MacOSX",
@@ -549,7 +537,7 @@ RunBatfile[tempdir_,command_]:=Block[{batfile,com},
 	];
 	
 	(*perform sh/bat on system shell*)
-	Print[com];	
+	If[debugElastix, Print[com]];	
 	RunProcess[$SystemShell, "StandardOutput", com];
 ]
 
@@ -604,7 +592,7 @@ RunBatfileT[tempdir_, command_] := Block[{batfile, com},
 		com = "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
 	];
 	
-	(*Print[com];*)
+	If[debugElastix, Print[com]];
 	RunProcess[$SystemShell, "StandardOutput", com];
 ]
 
@@ -619,42 +607,48 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   
   volDirs = FileNames["vol*", tempDir, 1];
   
+  Movfile[fol_] := First[FileNames["moving*", fol]];
+  
+  Transfile[fol_] := Last[SortBy[
+		FileNames["TransformParameters*", FileNameTake[fol, {1, -2}]],
+		FileDate[#, "Creation"] &]];
+  
   command=Switch[$OperatingSystem,
   	"Windows",
   	(
   		"@ \"" <> transformix <>
-  		"\" -in \"" <> First[FileNames["moving*", #]] <>
+  		"\" -in \"" <> Movfile[#] <>
   		"\" -out \"" <> # <>
-  		"\" -tp \"" <> Last[FileNames["FinalTransform*", #]] <>
+  		"\" -tp \"" <> Transfile[#] <>
   		"\" > \"" <> # <> "\\outputa.txt\" \n" <>
   		"@ rename \"" <> # <> "\\result.nii.gz\" resultA-3D.nii.gz \n"
   	) & /@ volDirs
   	,
   	"MacOSX",
   	(
-  		"export PATH="<>transFol<>"/bin:$PATH 
-		export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
-		transformix <>
-		" -in '" <> First[FileNames["moving*", #]] <>
+  		"export PATH="<>transFol<>"/bin:$PATH/nexport DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+  		transformix <>
+		" -in '" <> Movfile[#] <>
 		"' -out '" <> # <>
-		"' -tp '" <> Last[FileNames["FinalTransform*", #]] <>
+		"' -tp '" <> Transfile[#] <>
 		"' > '" <> # <> "/outputa.txt' \n" <>
 		" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
 	) & /@ volDirs
 	,
 	"Unix",
 	(
-		"export PATH="<>transFol<>"/bin:$PATH
-		 export LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
+		"export PATH="<>transFol<>"/bin:$PATH/nexport LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
 		transformix <>
-		"' -in '" <> First[FileNames["moving*", #]] <>
+		"' -in '" <> Movfile[#] <>
 		"' -out '" <> # <>
-		"' -tp '" <> Last[FileNames["FinalTransform*", #]] <>
+		"' -tp '" <> Transfile[#] <>
 		"' > '" <> # <> "/outputa.txt' \n" <>
 		" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
 	) & /@ volDirs
   ];
-  (*Print[command];*)
+  
+  If[debugElastix, Print[command]];
+  
   command
 ]
 
@@ -924,7 +918,7 @@ type_,OptionsPattern[]]:=Module[{
 	outputImg=ToLowerCase[ToString[OptionValue[OutputImage]]];
 	
 	method=OptionValue[MethodReg];
-	(*Print[method];*)
+	Print[method];
 	
 	bsplineSpacing=OptionValue[BsplineSpacing];
 	bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
@@ -1021,7 +1015,7 @@ type_,OptionsPattern[]]:=Module[{
 		(*check if moving mask is needed*)
 		If[(dimmovm == dimmov && maskm!={1}),mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
-		(*Print[command];*)
+		If[debugElastix, Print[command]];
 		RunProcess[$SystemShell,"StandardOutput",command];
 		(*RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -1050,6 +1044,7 @@ type_,OptionsPattern[]]:=Module[{
 			(*export mask*)
 			If[maske,mmaskF=movfol<>$PathnameSeparator<>"moveMask.nii";ExportNii[maskm[[#]],voxm,tempdir<>mmaskF]];
 			If[maske2,mmaskF=movfol<>$PathnameSeparator<>"moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
+			
 			ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}]
 		)&/@Range[Length[moving]]);
 		(*create and run batch*)
@@ -1069,7 +1064,7 @@ type_,OptionsPattern[]]:=Module[{
 		If[maskm!={1},mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
 		If[maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxm,tempdir<>fmaskF]];
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
-		(*Print[command];*)
+		If[debugElastix, Print[command]];
 		RunProcess[$SystemShell,"StandardOutput",command];
 		(*RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -1181,7 +1176,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 	ExportNii[data, vox, tdir <> $PathnameSeparator <> "trans.nii"];
 	command = TransformixCommandInd[tdir];
 
-	Print[command];
+	If[debugElastix, Print[command]];
 	RunProcess[$SystemShell, "StandardOutput", command];
 	
 	output = ToPackedArray[ImportNii[tdir <> $PathnameSeparator <> "result.nii"][[1]]];
@@ -1204,6 +1199,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 	transformix = FindTransformix[];
 	transFol = StringDrop[DirectoryName[transformix, 2], -1];
+	
 	transfile = Last[SortBy[
 		FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]],
 		FileDate[#, "Creation"] &]];
@@ -1218,22 +1214,20 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 		" > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
 		,
 		"MacOSX",
-		"export PATH="<>transFol<>"/bin:$PATH 
-		export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+		"export PATH="<>transFol<>"/bin:$PATH\nexport DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH\n"<>
 		transformix <>
 		" -in '" <> First[FileNames["trans*", tempDir]] <>
 		"' -out '" <> tempDir <>
 		"' -tp '" <> transfile <>
-		" > '" <> tempDir <> "/outputT.txt' \n exit \n"
+		"' > '" <> tempDir <> "/outputT.txt' \n exit \n"
 		,
 		"UNIX",
-		"export PATH="<>transFol<>"/bin:$PATH 
-		export LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
+		"export PATH="<>transFol<>"/bin:$PATH\nexport LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH\n"<>
 		transformix <>
 		" -in '" <> First[FileNames["trans*", tempDir]] <>
 		"' -out '" <> tempDir <>
 		"' -tp '" <> transfile <>
-		" > '" <> tempDir <> "/outputT.txt' \n exit \n"
+		"' > '" <> tempDir <> "/outputT.txt' \n exit \n"
 	]
   ]
 
