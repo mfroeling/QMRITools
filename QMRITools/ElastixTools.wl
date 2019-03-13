@@ -918,7 +918,7 @@ type_,OptionsPattern[]]:=Module[{
 	outputImg=ToLowerCase[ToString[OptionValue[OutputImage]]];
 	
 	method=OptionValue[MethodReg];
-	Print[method];
+	If[debugElastix,Print[method]];
 	
 	bsplineSpacing=OptionValue[BsplineSpacing];
 	bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
