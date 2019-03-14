@@ -517,24 +517,16 @@ ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,mov
 (*RunBatfile*)
 
 
-RunBatfile[tempdir_,command_]:=Block[{batfile,com},
+RunBatfile[tempdir_,command_]:=Block[{file,batfile,com},
 	(*make elastix sh/bat based on operating system*)
-	Switch[$OperatingSystem,
-		"Windows",
-		batfile = tempdir<>"elastix-batch.bat";
-		Export[batfile,StringJoin[StringReplace[command,"exit \n"->""]],"TEXT"];
-		com = "\"" <> batfile <> "\"\n exit \n";
-		,
-		"MacOSX",
-		batfile = tempdir<>"/elastix-bash.sh";
-		Export[batfile,StringJoin[command],"TEXT"];
-		com= "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
-		,
-		"Unix",
-		batfile = tempdir<>"/elastix-bash.sh";
-		Export[batfile,StringJoin[command],"TEXT"];
-		com= "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
-	];
+	file = "elastix-batch."<>Switch[$OperatingSystem,"Windows","bat",_,"sh"];
+	
+	batfile = FileNameJoin[{tempdir,file}];
+	Export[batfile,StringJoin[StringReplace[command,"exit \n"->""]],"TEXT"];
+	
+	com = Switch[$OperatingSystem,
+		"Windows","\"" <> batfile <> "\"\n exit \n",
+		_,"chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n"];
 	
 	(*perform sh/bat on system shell*)
 	If[debugElastix, Print[com]];	

@@ -60,7 +60,7 @@ Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 Some functions of QMRITools call on external executables and software.
 These executables need to be present in "QMRITools\Applications" and are included in the release.
 If for any reason you want to use other (older/newer) versions you can replace them but functionality is not guaranteed.
-For the latest version of these tools and their user licences please visit their website.
+For the latest version of these tools and their user license please visit their website.
 
 * [dcm2niix](https://github.com/rordenlab/dcm2niix/)
 	* dcm2niix.exe
@@ -68,8 +68,12 @@ For the latest version of these tools and their user licences please visit their
 	* elastix.exe
 	* transformix.exe
 
-All functionality is tested under windows 10 with the latest Mathematica version. 
-Elastix compatibility has been tested for MacOSX but is not guaranteed but we are working on making all tools both Linux and MacOSX compatible.  
+All functionality is tested under Windows 10 with the latest Mathematica version.
+The Mathematica code is cross platform compatible with the exception of the external tools which are compiled for each OS.
+The toolbox provides compiled versions for each OS but their functionality is not guaranteed.
+The Elastix version used is 4.9 with OpenCL support. Additionally Elastix needs to be compiles with the PCA metrics, all DTI related parameters and all affine related parameters.
+
+Although cross platform compatibility is provided I have only limited options for testing so if any issues arise please let me know.  
 
 ## Demonstrations
 
