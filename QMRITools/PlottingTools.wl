@@ -2399,11 +2399,11 @@ SyntaxInformation[GetSliceData]={"ArgumentsPattern"->{_,_,_.}};
 GetSliceData[data_,offsets_]:=GetSliceData[data,offsets,{1,1,1}]
 
 GetSliceData[data_,offsets_,vox_]:=Block[{off},
-off=Round[offsets/vox];
-{data[[off[[1]]]],
-Reverse/@Transpose@data[[All,off[[2]]]],
-Reverse/@Transpose[data[[All,All,off[[3]]]],{2,3,1}]
-}
+	off=Round[offsets/vox];
+	{data[[off[[1]]]],
+	Reverse/@Transpose@data[[All,off[[2]]]],
+	Reverse/@Transpose[data[[All,All,off[[3]]]],{2,3,1}]
+	}
 ]
 
 
