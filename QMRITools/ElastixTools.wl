@@ -444,11 +444,11 @@ FindTransformix[]:=Module[{fil1,fil2},
 		,
 		"MacOSX",
 		fil1=$UserBaseDirectory<>"/Applications/QMRITools/Applications/MacOSX-x86-64/bin/transformix";
-		fil2=$BaseDirectory<>"Applications/QMRITools/Applications/MacOSX-x86-64/bin/transformix";
+		fil2=$BaseDirectory<>"/Applications/QMRITools/Applications/MacOSX-x86-64/bin/transformix";
 		,
 		"Unix",
 		fil1=$UserBaseDirectory<>"/Applications/QMRITools/Applications/Linux-x86-64/bin/transformix";
-		fil2=$BaseDirectory<>"Applications/QMRITools/Applications/Linux-x86-64/bin/transformix";
+		fil2=$BaseDirectory<>"/Applications/QMRITools/Applications/Linux-x86-64/bin/transformix";
 	];
 	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error: transformix not found"]]
 ]
