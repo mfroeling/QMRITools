@@ -528,7 +528,7 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 
 	(*select a file if none was given*)
 	file = If[fil == "",
-		FileSelect["FileOpen", {"*.nii", "*.hdr", "*.nii.gz"}, "nifti files ", WindowTitle -> "Select the nii file to import"],
+		FileSelect["FileOpen", {"*.nii.gz", "*.nii"}, "nifti files ", WindowTitle -> "Select the nii file to import"],
 		(*chekc if given file exists if not check for .gz version*)
 		If[FileExistsQ[fil], 
 			fil, 
