@@ -603,7 +603,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   
   Transfile[fol_] := Last[SortBy[
 		FileNames["TransformParameters*", FileNameTake[fol, {1, -2}]],
-		FileDate[#, "Creation"] &]];
+		FileDate[#, "Motification"] &]];
   
   command=Switch[$OperatingSystem,
   	"Windows",
@@ -1194,7 +1194,7 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 	
 	transfile = Last[SortBy[
 		FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]],
-		FileDate[#, "Creation"] &]];
+		FileDate[#, "Motification"] &]];
 	
 	Switch[$OperatingSystem,
 		"Windows",
@@ -1213,7 +1213,7 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 		"' -tp '" <> transfile <>
 		"' > '" <> tempDir <> "/outputT.txt' \n exit \n"
 		,
-		"UNIX",
+		"Unix",
 		"export PATH="<>transFol<>"/bin:$PATH\nexport LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH\n"<>
 		transformix <>
 		" -in '" <> First[FileNames["trans*", tempDir]] <>

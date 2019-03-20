@@ -187,10 +187,10 @@ DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,
 		First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
 		,
 		"Unix",
-		dcm2nii<>" -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
+		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 		,
 		"MacOSX",
-		dcm2nii<>" -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
+		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 	];
 	
 	If[OptionValue[Method]=!=Automatic,Print[command]];
