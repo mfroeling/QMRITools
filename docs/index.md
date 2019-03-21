@@ -10,6 +10,7 @@ The toolbox was developed mostly in the context of quantitative muscle, nerve an
 
 * [Information](#information)
 * [Documentations](\QMRITools\documentation.html){:target="_blank"}
+* [Documentations](\QMRITools\htmldoc\documentation.html){:target="_blank"}
 * [Demonstrations](#demonstrations)
 * [Functionality](#functionality)
 
