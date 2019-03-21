@@ -49,6 +49,8 @@ All code and documentation is maintained and uploaded to github using [Workbench
 
 ![Guides QMRITools](https://github.com/mfroeling/QMRITools/blob/master/Images/Guide.PNG)
 
+An online version of the full documentation can be found [here](\QMRITools\htmldoc\guide\QMRITools.html){:target="_blank"}
+
 ## Install toolbox
 
 The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases/download/2.0/QMRITools.zip). 
