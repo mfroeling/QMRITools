@@ -4,7 +4,7 @@
 
 ---
 
-[![wolfram language](\QMRITools\images\wolfram language.png)](https://www.wolfram.com/language/) | [![wolfram workbench](\QMRITools\images\wolfram workbench.jpg)](https://www.wolfram.com/workbench/) | [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/) | [![Wolfram Mathematica](\QMRITools\images\wolfram mathematica.png)](http://www.wolfram.com/mathematica/)
+[![wolfram language](\QMRITools\images\wolfram language.png)](https://www.wolfram.com/language/)   [![wolfram workbench](\QMRITools\images\wolfram workbench.jpg)](https://www.wolfram.com/workbench/)   [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)   [![Wolfram Mathematica](\QMRITools\images\wolfram mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ---
 
@@ -21,6 +21,8 @@ The toolbox is developed for the [Wolfram language](https://www.wolfram.com/lang
 * [Documentation](\QMRITools\htmldoc\guide\QMRITools.html){:target="_blank"}
 * [Demonstrations](#demonstrations)
 * [Functionality](#functionality)
+
+***
 
 ## Latest Release
 
@@ -48,6 +50,8 @@ The Elastix version used is 4.9 with OpenCL support. Additionally Elastix needs 
 
 Although cross platform compatibility is provided I have only limited options for testing so if any issues arise please let me know.  
 
+***
+
 ## Demonstrations
 
 The release contains a zip file [DemoAndTest.zip](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip) in which there is a file ``demo.nb``, a folder ``DemoData`` and a folder ``Testing``. 
@@ -55,6 +59,8 @@ To have a global overview of the functionality of the toolbox you can download t
 By default the ``demo.nb`` looks for the folders ``DemoData`` and ``Testing`` in the same folder as the notebook.
 
 In the first section of the demo notebook the toolbox is loaded and two tests are performed. The first test is to check of all files that are needed to run the toolbox are present. The second test runs after the toolbox is loaded and checks if all the functions and their options that are defined are correct.
+
+***
 
 ## Functionality
 
