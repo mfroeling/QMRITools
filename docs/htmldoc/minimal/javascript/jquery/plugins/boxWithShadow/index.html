@@ -1,0 +1,94 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Box With Shadow</title>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.js"></script>
+<script type="text/javascript" src="boxWithShadow.js"></script>
+<script type="text/javascript">
+    $(document).ready( function() {
+ 
+        $('.styled').boxWithShadow({
+            left: '&laquo;', 
+            right: '&raquo;',
+            shadowColor: '#aaa',
+            shadowOpacity: '0.6',
+            css: {stage: {border: '2px solid black', padding:'10px'}}
+        });
+
+        $('.single').boxWithShadow({
+            shadowColor: '#eef',
+            css: {
+                stage: {border:'none', borderTop: '1px solid red'},   
+                header: {backgroundColor: '#c1c1c1', float:'none', width:'100%'},
+                exit: {display: 'none'}
+            }
+        });
+
+        $('.youtube').boxWithShadow({
+            width: 480, height:390,
+            css: {
+                stage: {border: 'none', paddingWidth: 0, marginWidth: 0},
+                header: {display:'none'}, exit: {display: 'none'}
+            }
+            
+        });
+
+        $('.gallery1').boxWithShadow({
+            left: '&larr;', right:'&rarr;', header: 'Wolfram Data Summit 2010', exit: '[close]'
+        });
+        
+        $('.iframe').boxWithShadow({width: 600, height:300, css: {exit: {display:'none'}}});
+
+        $('.plain').boxWithShadow();
+
+        $('.inline').boxWithShadow({width:300, height:100});
+    
+        $('.mixed').boxWithShadow({
+            left: '&larr;', right: '&rarr;',
+            height: 480, width:640,
+            css: {content: {textAlign:'center'}, exit: {display:'none'}}
+        });
+
+    } );
+</script>
+<link rel="stylesheet" type="text/css" href="bws.css" />
+</head>
+<body>
+<fieldset>
+    <p class="gallery1 dont-display" style="cursor:pointer;">View Gallery &raquo;</p>
+</fieldset>
+<fieldset>
+    <p><a class="youtube" href="http://www.youtube.com/embed/ilm14HYsl6M">Play Video &#8227;</a></p>
+</fieldset>
+<fieldset>
+    <p><a class="single" href="http://placekitten.com/g/450/450?.png" name="This is a header"><img src="http://placekitten.com/g/150/150"></a></p>
+</fieldset>
+<fieldset>
+    <p><a class="styled" href="http://www.wolfram.com/mathematica/images/angledScreens.png">This one has custom styles</a></p>
+</fieldset>
+<fieldset>
+    <p><a class="plain" href="http://www.wolfram.com/mathematica/images/angledScreens.png">This one has nothing custom</a></p>
+</fieldset>
+<fieldset>
+    <p><a class="iframe" href="http://www.devel2.wolfram.com/common/cgi/demonstrations-challenge/notify.cgi">Fill out a form</a></p>
+</fieldset>
+<fieldset>
+    <div class="inline"><p>See the contents of this div in a popup</p><hr><p>Hello world!</p></div>
+</fieldset>
+<fieldset>
+    <p style="font-size:11px; color:#888;">(Note: these are all in the same group, but are a mixture of different types)</p>
+    <p><a class="mixed" href="http://placekitten.com/g/450/450?.png"><img src="http://placekitten.com/g/150/150"></a></p>
+    <p><a class="mixed" href="http://www.wolfram.com/mathematica/images/angledScreens.png"><img src="http://www.wolfram.com/mathematica/images/angledScreens.png"></a></p>
+    <p><a class="mixed" href="http://placekitten.com/g/450/450?.png" name="This is a header"><img src="http://placekitten.com/g/150/150"></a></p>
+    <p><a class="mixed" href="http://www.youtube.com/embed/ilm14HYsl6M">Play Video &#8227;</a></p>
+</fieldset>
+<div style="display:none;">
+    <img class="gallery1" src="http://www.wolframdatasummit.org/2010/gallery/Summit_0066.jpg" name="This is a caption">
+    <img class="gallery1" src="http://www.wolframdatasummit.org/2010/gallery/Summit_0070.jpg">
+    <img class="gallery1" src="http://www.wolframdatasummit.org/2010/gallery/Summit_0429.jpg" name="Another caption">
+    <img class="gallery1" src="http://www.wolframdatasummit.org/2010/gallery/Summit_0315.jpg" name="This is a really really really really really long caption with a lot of words in it so that it will be really good and break to the second line.">
+</div>
+
+</body>
+</html>
