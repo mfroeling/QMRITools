@@ -4,13 +4,9 @@
 
 The toolbox was developed mostly in the context of quantitative muscle, nerve and cardiac magnetic resonance imaging. The library of functions grows along with the research it is used for and started as a toolbox to analyze DWI data of muscle.
 
-The toolbox is developed for the [Wolfram language](https://www.wolfram.com/language/) and maintained using [Wolfram workbench](https://www.wolfram.com/workbench/) for [eclipse](https://www.eclipse.org/) and runs in the latest version of [Wolfram Mathematica].
+The toolbox is developed for the [Wolfram language](https://www.wolfram.com/language/) and maintained using [Wolfram workbench](https://www.wolfram.com/workbench/) for [eclipse](https://www.eclipse.org/) and runs in the latest version of [Wolfram Mathematica](http://www.wolfram.com/mathematica/).
 
-![eclipse](\QMRITools\images\eclipse.png) ![wolfram language](\QMRITools\images\wolfram language.png) ![Wolfram Mathematica](\QMRITools\images\wolfram mathematatica.png) ![wolfram workbench](\QMRITools\images\wolfram workbench)
-
-
-
-***
+![eclipse](\QMRITools\images\eclipse.png) ![wolfram language](\QMRITools\images\wolfram language.png) ![Wolfram Mathematica](\QMRITools\images\wolfram mathematica.png) ![wolfram workbench](\QMRITools\images\wolfram workbench.png)
 
 ## Content
 * [Latest Release](#latest-release)
@@ -18,15 +14,13 @@ The toolbox is developed for the [Wolfram language](https://www.wolfram.com/lang
 * [Demonstrations](#demonstrations)
 * [Functionality](#functionality)
 
-***
-
 ## Latest Release
 
 The latesest release can be found [here](https://github.com/mfroeling/QMRITools/releases){:target="_blank"}. 
 
 Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 
-	`FileNameJoin[{$UserBaseDirectory, "Applications"}]`
+`FileNameJoin[{$UserBaseDirectory, "Applications"}]`
 
 Some functions of QMRITools call on external executables and software.
 These executables need to be present in "QMRITools\Applications" and are included in the release.
@@ -46,8 +40,6 @@ The Elastix version used is 4.9 with OpenCL support. Additionally Elastix needs 
 
 Although cross platform compatibility is provided I have only limited options for testing so if any issues arise please let me know.  
 
-***
-
 ## Demonstrations
 
 The release contains a zip file [DemoAndTest.zip](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip) in which there is a file ``demo.nb``, a folder ``DemoData`` and a folder ``Testing``. 
@@ -56,14 +48,12 @@ By default the ``demo.nb`` looks for the folders ``DemoData`` and ``Testing`` in
 
 In the first section of the demo notebook the toolbox is loaded and two tests are performed. The first test is to check of all files that are needed to run the toolbox are present. The second test runs after the toolbox is loaded and checks if all the functions and their options that are defined are correct.
 
-***
-
 ## Functionality
 
 The toolbox contains over 250 Functions and options of processing and analyzing data.
 A summary of the core functionality is listed below. 
 
-![Overview](https://github.com/mfroeling/QMRITools/blob/master/Images/OverView.jpg)
+![Overview](\QMRITools\images\wolfram language.png)
 
 * **Diffusion Analysis**
 	* Signal drift correction 
@@ -120,5 +110,3 @@ A summary of the core functionality is listed below.
 	* helix angle and fiber architecture matrix
 	* AHA 17 parameter description
 	* Transmural parameter description	
-
-***
