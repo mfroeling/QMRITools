@@ -2,16 +2,20 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2530801.svg)](https://doi.org/10.5281/zenodo.2530801) [![status](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300/status.svg)](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
 
+---
+
+[![wolfram language](\QMRITools\images\wolfram language.png)](https://www.wolfram.com/language/) | [![wolfram workbench](\QMRITools\images\wolfram workbench.jpg)](https://www.wolfram.com/workbench/) | [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/) | [![Wolfram Mathematica](\QMRITools\images\wolfram mathematica.png)](http://www.wolfram.com/mathematica/)
+
+---
+
 `QMRITools` is written in Mathematica using Wolfram Workbench and Eclipse and contains a collection of tools and functions for processing quantitative MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast and batch data processing, and facilitate development and prototyping of new functions. The core of the toolbox contains various functions for data manipulation and restructuring.
 
 The toolbox was developed mostly in the context of quantitative muscle, nerve and cardiac magnetic resonance imaging. The library of functions grows along with the research it is used for and started as a toolbox to analyze DWI data of muscle.
 
 The toolbox is developed for the [Wolfram language](https://www.wolfram.com/language/) and maintained using [Wolfram workbench](https://www.wolfram.com/workbench/) for [eclipse](https://www.eclipse.org/) and runs in the latest version of [Wolfram Mathematica](http://www.wolfram.com/mathematica/).
 
----
-[![wolfram language](\QMRITools\images\wolfram language.png)](https://www.wolfram.com/language/) | [![wolfram workbench](\QMRITools\images\wolfram workbench.jpg)](https://www.wolfram.com/workbench/) | [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/) | [![Wolfram Mathematica](\QMRITools\images\wolfram mathematica.png)](http://www.wolfram.com/mathematica/)
----
-
+***
+ 
 ## Content
 * [Latest Release](#latest-release)
 * [Documentation](\QMRITools\htmldoc\guide\QMRITools.html){:target="_blank"}
