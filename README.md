@@ -45,11 +45,11 @@ After the toolbox is installed correctly it should show up as a package in the M
 
 ![QMRITools package](https://github.com/mfroeling/QMRITools/blob/master/Images/AddOns.PNG)
 
-All code and documentation is maintained and uploaded to github using [Workbench](https://www.wolfram.com/workbench/).
+All code and documentation is maintained and uploaded to github using [Workbench](https://www.wolfram.com/workbench/). An online version of the full documentation can be found [here](\QMRITools\htmldoc\guide\QMRITools.html)
 
 ![Guides QMRITools](https://github.com/mfroeling/QMRITools/blob/master/Images/Guide.PNG)
 
-An online version of the full documentation can be found [here](\QMRITools\htmldoc\guide\QMRITools.html){:target="_blank"}
+
 
 ## Install toolbox
 

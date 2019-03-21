@@ -8,7 +8,9 @@ The toolbox was developed mostly in the context of quantitative muscle, nerve an
 
 The toolbox is developed for the [Wolfram language](https://www.wolfram.com/language/) and maintained using [Wolfram workbench](https://www.wolfram.com/workbench/) for [eclipse](https://www.eclipse.org/) and runs in the latest version of [Wolfram Mathematica](http://www.wolfram.com/mathematica/).
 
-[![wolfram language](\QMRITools\images\wolfram language.png)](https://www.wolfram.com/language/) [![wolfram workbench](\QMRITools\images\wolfram workbench.png)](https://www.wolfram.com/workbench/) [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)  [![Wolfram Mathematica](\QMRITools\images\wolfram mathematica.png)](http://www.wolfram.com/mathematica/)
+---
+[![wolfram language](\QMRITools\images\wolfram language.png)](https://www.wolfram.com/language/) | [![wolfram workbench](\QMRITools\images\wolfram workbench.jpg)](https://www.wolfram.com/workbench/) | [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/) | [![Wolfram Mathematica](\QMRITools\images\wolfram mathematica.png)](http://www.wolfram.com/mathematica/)
+---
 
 ## Content
 * [Latest Release](#latest-release)
@@ -55,7 +57,7 @@ In the first section of the demo notebook the toolbox is loaded and two tests ar
 The toolbox contains over 250 Functions and options of processing and analyzing data.
 A summary of the core functionality is listed below. 
 
-![Overview](\QMRITools\images\wolfram language.png)
+![Overview](\QMRITools\images\overview.png)
 
 * **Diffusion Analysis**
 	* Signal drift correction 
