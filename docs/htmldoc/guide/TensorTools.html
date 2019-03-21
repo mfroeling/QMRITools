@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+ <html>
+ <head>
+ <meta charset="UTF-8">
+
+<title>TensorTools&mdash;Wolfram Language Documentation</title>
+<meta name="buildnumber" content="0000000" />
+<meta name="historydata" content="{2.0, , , }" />
+<meta name="keywords" content="TensorTools" />
+
+<meta name="description" content="QMRITools package: Processing and analysing DTI and DKI data." />
+<script language="JavaScript" type="text/javascript">baselang='TensorTools';</script>
+<!--#include virtual="/common/includes/gl-head-includes.html"-->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!--[if IE]>
+<style type="text/css">
+/* doctype problem overrides */
+#menu .searchboxsub, #menu .searchboxsub-on { padding-bottom: 0; }
+#menu .headerSearchSubmit { margin-bottom: 4px; }
+
+/*
+.WRIdropMenu .WRImenuContents { margin-top: -2px; margin-left: -2px; }
+.WRIdropMenu .WRImenuContents .WRImenuContents { margin: 0; }
+*/
+</style>
+<![endif]-->
+<link rel="stylesheet" href="../css/reference.css" />
+
+
+            <link rel="stylesheet" href="../css/clipboard.css" />
+            <script src="../javascript/jquery/core/1.7.2/jquery.min.js"></script>
+            <script src="../javascript/reference.js"></script>
+        
+<script src="../javascript/documentation-search.js"></script>
+<script src="../javascript/faster-page-load.js"></script>
+<script src="../javascript/hyperlink-filter.js"></script>
+<script src="../javascript/brokenlinks.js"></script>
+<script src="../javascript/clipboard.js"></script>
+<script src="../javascript/image-swap.js"></script>
+
+<!--#include virtual="/2013/includes/carousel-head.html"--> 
+</head>
+<body id="guide">
+<a name="top"></a>
+ 
+<div class="main-wrapper">
+<div class="outer-wrapper">
+
+<div class="wrapper mainOuter">
+    <div class="mainContent">
+ <div class="topContentWrap">
+  <div class="ribbonWrap">
+   <span class="ribbonOuter"><span class="ribbonInner">Q M R I TOOLS GUIDE</span></span>
+  </div>
+  <ul class="dropdown">
+   <li>
+    <a href="#">Functions</a>
+    <ul class="sub_menu">
+     <li>
+      <a href="../ref/ADCCalc.html"><span class="dropdownPad">ADCCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/AngleCalc.html"><span class="dropdownPad">AngleCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/AngleMap.html"><span class="dropdownPad">AngleMap</span></a>
+     </li>
+     <li>
+      <a href="../ref/ColorFAPlot.html"><span class="dropdownPad">ColorFAPlot</span></a>
+     </li>
+     <li>
+      <a href="../ref/ConcatenateDiffusionData.html"><span class="dropdownPad">ConcatenateDiffusionData</span></a>
+     </li>
+     <li>
+      <a href="../ref/Correct.html"><span class="dropdownPad">Correct</span></a>
+     </li>
+     <li>
+      <a href="../ref/Deriv.html"><span class="dropdownPad">Deriv</span></a>
+     </li>
+     <li>
+      <a href="../ref/DriftCorrect.html"><span class="dropdownPad">DriftCorrect</span></a>
+     </li>
+     <li>
+      <a href="../ref/ECalc.html"><span class="dropdownPad">ECalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/EigensysCalc.html"><span class="dropdownPad">EigensysCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/EigenvalCalc.html"><span class="dropdownPad">EigenvalCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/EigenvecCalc.html"><span class="dropdownPad">EigenvecCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/FACalc.html"><span class="dropdownPad">FACalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/ParameterCalc.html"><span class="dropdownPad">ParameterCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/RemoveIsoImages.html"><span class="dropdownPad">RemoveIsoImages</span></a>
+     </li>
+     <li>
+      <a href="../ref/ResidualCalc.html"><span class="dropdownPad">ResidualCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/SigmaCalc.html"><span class="dropdownPad">SigmaCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/SortDiffusionData.html"><span class="dropdownPad">SortDiffusionData</span></a>
+     </li>
+     <li>
+      <a href="../ref/TensorCalc.html"><span class="dropdownPad">TensorCalc</span></a>
+     </li>
+     <li>
+      <a href="../ref/TensorCorrect.html"><span class="dropdownPad">TensorCorrect</span></a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+  <div class="clear"><!-- --></div>
+ </div>
+ <h1><a name="942062912"></a>TensorTools</h1>
+ <p class="intro"><a name="2001916300"></a><a href="../guide/QMRITools.html">QMRITools</a> package: Processing and analysing DTI and DKI data.</p>
+ <div class="expandWrap"
+     id="Reference">
+  <div class="expandOuter">
+   <h2 class="expandInner"><a class="expand hide" title="show" href="#">Reference</a><a class="collapse" title="hide" href="#">Reference</a></h2>
+   <div class="expanded">
+    <div class="GuideDelimiterTop"><!-- --></div>
+    <p class="singleFunction"><a name="203374175"></a><span class="IFSans"><a class="package-symbol" href="../ref/TensorCalc.html">TensorCalc</a></span> <span class="dash">&mdash;</span> Calculates the diffusion tensor. The default settings use an iterative WLLS (<a href="https://doi.org/10.1016/j.neuroimage.2013.05.028">10.1016/j.neuroimage.2013.05.028</a>) estimator with REKINDLE outlier rejection (<a href="https://doi.org/10.1002/mrm.25165">10.1002/mrm.25165</a>).</p>
+    <p class="singleFunction"><a name="1463276848"></a><span class="IFSans"><a class="package-symbol" href="../ref/SortDiffusionData.html">SortDiffusionData</a></span> <span class="dash">&mdash;</span> Sorts the diffusion data for ascending b-value.</p>
+    <p class="singleFunction"><a name="353690666"></a><span class="IFSans"><a class="package-symbol" href="../ref/ParameterCalc.html">ParameterCalc</a></span> <span class="dash">&mdash;</span> Calculates the MD, FA, and eigenvalues of the tensor.</p>
+    <p class="singleFunction"><a name="6223388"></a><span class="IFSans"><a class="package-symbol" href="../ref/ResidualCalc.html">ResidualCalc</a></span> <span class="dash">&mdash;</span> Calculates the tensor residuals.</p>
+    <p class="singleFunction"><a name="249340201"></a><span class="IFSans"><a class="package-symbol" href="../ref/DriftCorrect.html">DriftCorrect</a></span> <span class="dash">&mdash;</span> Correct diffusion data for signal drift (<a href="https://doi.org/10.1002/mrm.26124">10.1002/mrm.26124</a>).</p>
+    <div class="GuideDelimiter"><!-- --></div>
+    <p class="inlineFunctionList"><a name="218759089"></a><span class="IFSans"><a class="package-symbol" href="../ref/ConcatenateDiffusionData.html">ConcatenateDiffusionData</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/RemoveIsoImages.html">RemoveIsoImages</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/SigmaCalc.html">SigmaCalc</a></span></p>
+    <div class="GuideDelimiter"><!-- --></div>
+    <p class="inlineFunctionList"><a name="58033752"></a><span class="IFSans"><a class="package-symbol" href="../ref/EigensysCalc.html">EigensysCalc</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/EigenvalCalc.html">EigenvalCalc</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/EigenvecCalc.html">EigenvecCalc</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/ADCCalc.html">ADCCalc</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/FACalc.html">FACalc</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/ECalc.html">ECalc</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/AngleCalc.html">AngleCalc</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/AngleMap.html">AngleMap</a></span></p>
+    <div class="GuideDelimiter"><!-- --></div>
+    <p class="inlineFunctionList"><a name="483896002"></a><span class="IFSans"><a class="package-symbol" href="../ref/Correct.html">Correct</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/TensorCorrect.html">TensorCorrect</a></span><span class="special-character NonBreakingSpace">&#160;</span><span class="inlineBullet">&nbsp;&#9642;&nbsp;</span> <span class="IFSans"><a class="package-symbol" href="../ref/Deriv.html">Deriv</a></span></p>
+    <div class="GuideDelimiter"><!-- --></div>
+    <p class="inlineFunctionList">
+     <a name="320135"></a>
+     <span class="IFSans"><a class="package-symbol" href="../ref/ColorFAPlot.html">ColorFAPlot</a></span>
+    </p>
+   </div>
+  </div>
+ </div>
+</div>
+</div><!-- /wrapper -->
+
+	
+</div>
+
+
+</body></html>

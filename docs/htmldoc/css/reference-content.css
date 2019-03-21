@@ -1,0 +1,143 @@
+/* ################################################## */
+/* # CONTENT                                          */
+/* ################################################## */
+
+/* general */
+
+p.smallTitle { margin: 0!important; font-size: 11px; color: #a4a4a4 !important; text-transform: uppercase; }
+p img, li img { vertical-align: middle; padding-bottom: 1px; }
+
+ul {
+	padding:0px;
+}
+
+ul.bulletedList, ul #BulletedText, ul .BulletedText { margin: 15px 25px; color: #5c5c5c; }
+  .bulletedList li, li#BulletedText, li.BulletedText { padding-left: 10px; background: url('../images/bullet-greysq.gif') no-repeat 0 7px; }
+  .bulletedList li { margin: 7px 0; }
+
+  li.Subitem { margin-left: 7px;}
+  li.Subsubitem { margin-left: 17px;}
+  
+  ul li {
+background: url("../images/li-bullet1.gif") no-repeat 0 .18em;
+padding-left: 1.5em;
+margin: .65em 0;
+padding-bottom: 0;
+list-style: none;
+}
+
+/* ribbon and dropdowns */
+.topContentWrap { width: 706px; min-height: 25px; }
+.topContentWrap + table {width:100%;}
+.ribbonWrap { float: left; height: 25px; margin-top: 1px; } 
+ .ribbonOuter { display: inline-block; min-width: 260px; height: 25px; font: 10px/24px Verdana, Arial, sans-serif; color: #525252; }
+    .ribbonInner { padding: 0 25px; text-transform:uppercase; }
+
+ul.dropdown { float: right; position: relative;  margin: 0px 7px 0px 0px;}
+  ul.dropdown li { float: left; zoom: 1; margin: 0 8px 0 0; padding: 0; background: #fff url('../images/dropdownOff.png') no-repeat bottom right; font-size:11px; border-top: 1px solid #ffffff; border-left: 1px solid #ffffff; border-right: 1px solid #ffffff; }
+	ul.dropdown li a { display: block; padding: 0 22px 0 7px; line-height: 23px; color:#868686; }
+	  ul.dropdown li a:hover { color: #da6525!important; }
+    ul.dropdown li.hover, ul.dropdown li:hover { position: relative; background-image: url('../images/dropdown-bg_ona.png');  border-top: 1px solid #d9d9d9; border-left: 1px solid #d9d9d9; border-right: 1px solid #d9d9d9; }
+    ul.dropdown li a:hover {color: #0E3EB9!important; }
+ul.dropdown ul { min-width: 100px; display: none; visibility: hidden; position: absolute; top: 100%; left: -1px; border: solid #d9d9d9; border-width: 0 1px 1px; white-space: nowrap; background: url('../images/drop-down-gradient.png') #ffffff repeat-x; }		
+ul.dropdown ul li { float: none; margin: 0; border-top:1px solid #e6e6e6; background:none; min-width: 120px; }
+  ul.dropdown ul li.hover, ul.dropdown ul li:hover { background: #fff; }
+ul.dropdown ul li a { display: inline-block; width: 100%; padding: 0; color: #232323!important; }
+  ul.dropdown ul li a span.dropdownPad { padding: 2px 8px; }
+
+ul.dropdown .path ul { left: auto; right: -1px; }
+ul.dropdown li.path li { padding: 2px 8px; }
+  ul.dropdown li.path a { display: inline; font-size: 10px; }
+.path .breadcrumbSep { margin: 0 2px; }
+ 
+ul.sub_menu { z-index: 3; box-shadow: 0px 1px 5px rgba(0, 0, 0, .15); } 
+ul.sub_menu li{ background: none; border-width: 1px 0 1px 0 !important; }
+
+
+/* subsection opener styles */
+.expandWrap:not(.overviews) { margin-top: 35px }
+.mainContent > .functionIntroWrap + .expandWrap { margin-top: 0; }
+.mainContent > .expandWrap:not(.overviews) ~ .expandWrap:not(.overviews) { margin-top: 0; }
+.mainContent > .intro + .expandWrap { margin-top: 0; }
+
+.hide { display: none!important; }
+.expanded { padding: 0 45px 35px; }
+#FeaturedExamples .expanded { padding: 0 45px 0; }
+  .expanded .expanded { padding: 0 0 0px 25px; }
+
+.last .expandOuter { /*margin-bottom: 25px;*/ }
+.last .expanded { padding-bottom: 35px; }
+
+/* remove this later */
+.expandInner img {
+  display: none;
+}
+/* end remove this */
+
+.expandInner { background: #f1f1f1 url('../images/subsection-bg.gif') repeat-x; }
+  .expandInner a { padding-left: 45px; color: #232323; /* font, line-height are same as h2 */ }
+    .expandInner a:hover { color: #da6525; }
+    .expandInner .expand { display: block; height: 32px; background: url('../images/expand-arrow-off4.png') no-repeat 28px center; }
+	
+.expandSubInner { padding-top: 0; border: none; font-size: 12px !important; line-height: 25px !important; /* font, line-height are same as h2 */ }
+  .expandSubInner a { padding-left: 18px; }
+   .expandSubInner .collapse { display: block; height: 25px; background: url('../images/expand-arrow-on4.png') no-repeat left center; }
+   .expandSubInner .expand { display: block; height: 25px; background: url('../images/expand-arrow-off4.png') no-repeat 2px center; }
+   
+.expandSubsubInner { padding-top: 0; border: none; }
+  .expandSubsubInner a { padding-left: 17px !important; }
+    .expandInner .collapse { display: block; height: 32px; background: url('../images/expand-arrow-on4.png') no-repeat 25px center; }
+    .expandSubsubInner .expand { display: block; height: 20px; background: url('../images/expand-arrow-sub-off2.png') no-repeat 2px center !important; }
+	.expandSubsubInner .collapse { display: block; height: 20px; background: url('../images/expand-arrow-sub-on2.png') no-repeat 2px center !important; }
+  /* this is for function pages that have things like Subsection (10). put the (10) in a span so it's not bold, and smaller */
+  .expandInner a span { font-weight: normal; }
+  .expandSubInner a span, .expandSubsubInner a span, .expandSubsubsubInner a span { font-size: 10px; font-weight: normal; color: #999999; }
+  
+
+/* overrides for functions */
+#ref #Examples .expanded { padding-top: 15px; padding-bottom: 0; }
+  #ref #Examples .expanded .expanded { padding-top: 5px; padding-bottom: 1px; }
+    #ref #Examples .expanded .expanded .expanded { padding-left: 17px; padding-bottom: 10px; }
+
+#ref .expanded h5 { font-size: 11px !important; line-height: 20px !important; }
+  #ref .expanded h5 a { color: #585858; }
+    #ref .expanded h5 a:hover { color: #da6525; }
+#ref .expanded h6 { margin: 15px 0 6px; font-size: 12px !important; line-height: 15px !important; font-weight: normal !important; font-style: italic !important; color: #585858 !important; }
+  #ref .expanded h6.first { margin-top: 0; }
+
+#ref .expandSubsubInner .collapse { display: block; height: 20px; background: url('../images/expand-arrow-sub-on2.png') no-repeat 1px center !important; }
+#ref .expandSubsubInner .expand { display: block; height: 20px; background: url('../images/expand-arrow-sub-off2.png') no-repeat 2px center !important; margin-bottom:7px; }
+#ref .expandSubsubsubInner { padding-top: 0; border: none; }
+  #ref .expandSubsubsubInner a { padding-left: 17px !important; }
+    #ref .expandSubsubsubInner .collapse { display: block; height: 20px; background: url('../images/expand-arrow-sub-on2.png') no-repeat 0 center !important; }
+    #ref .expandSubsubsubInner .expand { display: block; height: 20px; background: url('../images/expand-arrow-sub-off2.png') no-repeat 2px center !important; }
+
+	#Examples .expandSubInner .expand { height: 25px !important; line-height: 25px !important; }
+	
+.twoColumnTableMod table td, .threeColumnTableMod table td { padding: 5px 0 5px 0 !important; }
+	
+/* functionlist */
+#SeeAlso p.inlineFunctionList, #RelatedFunctions p.inlineFunctionList { margin-top: 20px !important; font-size: 11px; }	
+	#SeeAlso .expanded { padding-bottom: 35px; }
+
+.main-heading { margin: 0 0 0 25px; }
+.main-heading  h1{display: inline-block; margin-left: 0; }
+	
+/* function tables and notes tables */	
+.NotesTable table td {font-weight: 600; font-family: "Source Sans Pro", "Courier New", monospace; vertical-align: top; padding: 3px 0 3px 0;}
+.NotesTable table td a { font-size: 12px; }
+  .NotesTable .TT {font-weight: 400; font-size:11px; font-family: Verdana, Geneva, sans-serif; line-height: 15px; }	
+}
+	
+.FunctionTable { width:620px; margin:-14px 10px 20px 6px; /* padding-left:0; */ padding:2px; font-weight: 600; font-family: "Source Sans Pro", "Courier New", monospace; font-size:10px; } 
+.FunctionTable td span.MR {padding: 2px; font-size:11px;}
+.FunctionTable tr.lineAboveSpanColumn td.IconColumn { vertical-align:top;border-bottom:0px; border-top:0px; } 
+.FunctionTable tr.lineAboveSpanColumn td { vertical-align:top; border-bottom:0px; border-top:1px solid #ddd; }
+.FunctionTable tr.SpanColumn td { border-bottom:0px;} 
+.FunctionTable td.IconColumn { vertical-align:top; border-bottom:0px; border-top:0px; }
+.FunctionTable tr td { vertical-align:top; border-bottom:1px solid #ddd; } 
+.FunctionTable tr.lineAbove td.IconColumn { vertical-align:top; border-bottom:0px; border-top:0px; } 
+.FunctionTable tr.lineAbove td { vertical-align:top; border-bottom:1px solid #ddd; border-top:1px solid #ddd; }
+
+/* full listing? */
+span.FullListing a:visited, span.FullListing a:link { font-size: 12px; color: #818181; }

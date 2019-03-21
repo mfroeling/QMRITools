@@ -1,0 +1,56 @@
+<div class="header">
+	<div class="header-inner">
+	<div class="header-link header-japanese">
+		<a href="http://www.wolfram.com/language" class="heading-section1">Wolfram言語 ＆ システム <span class="chevron">&raquo;</span></a><br>
+		<a href="/language" class="heading-section2">ドキュメントセンター <span class="chevron">&raquo;</span></a>
+	</div>
+	<form method="get" name="searchpageform" action="/search/" id="ref-search-form">
+	<!-- onsubmit="return searcher(document.searchpageform.query.value)" -->
+		<input id="query" name="query" type="text" value="" />
+		<label class="placeholder">search documentation</label>
+		<input type="submit" class="search-reference-input-button">
+	</form>
+	<script language="javascript" type="text/javascript">
+		setSearchTextField('q', document.searchpageform.query);
+	</script>
+
+	</div>
+	<!--#include virtual="/webMathematica/Resources/Documentation/English/includes/searchlink.en.cgi?$QUERY_STRING"-->
+</div>
+
+
+<script type="text/javascript">
+	$("#ref-search-form").submit(function() {
+		$.ajax({
+			type: "GET",
+			traditional: true,
+			url: "/search-api/search.json",
+			dataType: "json",
+			data: {
+				query: $("#query").val(),
+				limit: 3,
+				disableSpelling: true,
+				collection: ["documentation10"],
+				fields: "uri,title"
+			},
+
+			success: function(data) {
+				if(data.adResult) {
+					if(data.adResult.fields.title[0] == $("#query").val()) {
+						location.href = "/language/" + data.adResult.fields.uri[0] + ".html?q=" + encodeURIComponent($("#query").val());
+					} else {
+                            location.href = "/search/?q="+ encodeURIComponent($("#query").val());
+                    }
+				} else {
+					location.href = "/search/?q="+ encodeURIComponent($("#query").val());
+				}
+			}
+
+		});
+
+		return false;
+
+	});
+</script>
+
+<div class="outer-wrapper">

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+ <html>
+ <head>
+ <meta charset="UTF-8">
+
+<title>PCAFitHist&mdash;Wolfram Language Documentation</title>
+<meta name="buildnumber" content="0000000" />
+<meta name="historydata" content="{XX, , , }" />
+<meta name="keywords" content="PCAFitHist" />
+
+<meta name="description" content="PCAFitHist[data] fits the marchencopasteur distribution to the PCA of the data using hist fit. PCAFitHist[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using hist fit. Output is {simga, number of noise comp, and denoised matrix, itterations}." />
+<script language="JavaScript" type="text/javascript">baselang='PCAFitHist';</script>
+<!--#include virtual="/common/includes/gl-head-includes.html"-->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<!--[if IE]>
+<style type="text/css">
+/* doctype problem overrides */
+#menu .searchboxsub, #menu .searchboxsub-on { padding-bottom: 0; }
+#menu .headerSearchSubmit { margin-bottom: 4px; }
+
+/*
+.WRIdropMenu .WRImenuContents { margin-top: -2px; margin-left: -2px; }
+.WRIdropMenu .WRImenuContents .WRImenuContents { margin: 0; }
+*/
+</style>
+<![endif]-->
+<link rel="stylesheet" href="../css/reference.css" />
+
+
+            <link rel="stylesheet" href="../css/clipboard.css" />
+            <script src="../javascript/jquery/core/1.7.2/jquery.min.js"></script>
+            <script src="../javascript/reference.js"></script>
+        
+<script src="../javascript/documentation-search.js"></script>
+<script src="../javascript/faster-page-load.js"></script>
+<script src="../javascript/hyperlink-filter.js"></script>
+<script src="../javascript/brokenlinks.js"></script>
+<script src="../javascript/clipboard.js"></script>
+<script src="../javascript/image-swap.js"></script>
+
+<script language="JavaScript" type="text/javascript" src="../javascript/toggle-highlight.js"></script>
+</head>
+<body id="ref" class="function">
+<a name="top"></a>
+ 
+<div class="main-wrapper">
+<div class="outer-wrapper">
+
+<div class="wrapper mainOuter">
+    <div class="mainContent">
+ <div class="topContentWrap">
+  <div class="ribbonWrap">
+   <span class="ribbonOuter"><span class="ribbonInner">Q M R I TOOLS PACKAGE SYMBOL</span></span>
+  </div>
+  <ul class="dropdown">
+   <li>
+    <a href="#">Related Guides</a>
+    <ul class="sub_menu">
+     <li>
+      <a href="../guide/DenoiseTools.html"><span class="dropdownPad">DenoiseTools</span></a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+  <div class="clear"><!-- --></div>
+ </div>
+ <h1>PCAFitHist</h1>
+ <img src="Files/PCAFitHist/1.png"
+     height="46"
+     width="8"
+     alt="" />
+ <div class="ObjectNameTranslation"></div>
+ <div class="functionIntroWrap">
+  <div class="functionIntro">
+   <p><span class="IF">PCAFitHist[<span class="TI">data</span>]</span><br />fits the marchencopasteur distribution to the PCA of the data using hist fit. </p>
+  </div>
+  <div class="functionIntro">
+   <p><span class="IF">PCAFitHist<span class="openbracket">[</span><span class="TI">data</span><span class="comma">,</span> <span class="TI">sig</span><span class="closebracket">]</span></span><br />fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using hist fit. Output is {simga, number of noise comp, and denoised matrix, itterations}.</p>
+  </div>
+ </div>
+ <div class="expandWrap closed"
+     id="DetailsAndOptions">
+  <div class="expandOuter">
+   <h2 class="expandInner"><a class="expand hide" title="show" href="#">Details</a><a class="collapse" title="hide" href="#">Details</a></h2>
+   <div class="expanded">
+    <ul class="functionList">
+     <li>The following options can be given: </li>
+     <li class="NotesTable">
+      <table>
+       <col width="1%" />
+       <col width="28%" />
+       <col width="28%" />
+       <col width="43%" />
+       <tr class="lineAbove" style=""><td /><td><a href="../ref/PlotSolution.html">PlotSolution</a></td><td><a href="http://reference.wolfram.com/language/ref/False.html">False</a></td><td><span class="TT"><span class="IF"><a class="package-symbol" href="../ref/PlotSolution.html">PlotSolution</a></span> is an option for <span class="IF">PCAFitHist</span><span class="specialcharacters"><span class="comma">,</span> if set true it dispays the fitting itterations.</span></span></td></tr>
+       <tr class="" style=""><td /><td><a href="../ref/FitSigma.html">FitSigma</a></td><td><a href="http://reference.wolfram.com/language/ref/True.html">True</a></td><td><span class="TT"><span class="IF"><a class="package-symbol" href="../ref/FitSigma.html">FitSigma</a></span> is an option of <span class="IF">PCAFitHist</span><span class="specialcharacters"><span class="comma">,</span> </span><span class="IF"><a class="package-symbol" href="../ref/PCAFitEq.html">PCAFitEq</a></span> and <span class="IF"><a class="package-symbol" href="../ref/PCADeNoise.html">PCADeNoise</a></span><span class="specialcharacters"><span class="comma">,</span> if set </span>True sig is fitted if set False sigma is fixed to input value.</span></td></tr>
+       <tr class="" style=""><td /><td><a href="../ref/PCAFitParameters.html">PCAFitParameters</a></td><td><span class="openbrace">{</span>10<span class="comma">,</span> 6<span class="comma">,</span> 10<span class="closebrace">}</span></td><td><span class="TT"><span class="IF"><a class="package-symbol" href="../ref/PCAFitParameters.html">PCAFitParameters</a></span> is an option of <span class="IF"><a class="package-symbol" href="../ref/PCADeNoise.html">PCADeNoise</a></span> and <span class="IF">PCAFitHist</span><span class="specialcharacters">. <span class="openbrace">{</span>nb<span class="comma">,</span> pi<span class="comma">,</span> maxit<span class="closebrace">}</span> = bins<span class="comma">,</span> initial signal components<span class="comma">,</span> maximum number of itterations.</span></span></td></tr>
+      </table>
+     </li>
+    </ul>
+   </div>
+  </div>
+ </div>
+ <div class="expandWrap"
+     id="RelatedGuides">
+  <div class="expandOuter">
+   <h2 class="expandInner"><a class="expand hide" title="show" href="#">Related Guides</a><a class="collapse" title="hide" href="#">Related Guides</a></h2>
+   <div class="expanded">
+    <ul class="functionList">
+     <li>
+      <a name="150603651"></a>
+      <a class="package-symbol" href="../guide/DenoiseTools.html">DenoiseTools</a>
+     </li>
+    </ul>
+   </div>
+  </div>
+ </div>
+</div>
+</div><!-- /wrapper -->
+
+	
+</div>
+
+
+</body></html>
