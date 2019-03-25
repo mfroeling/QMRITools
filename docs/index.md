@@ -168,7 +168,7 @@ This toolbox is not demonstrated in the `demo.nb`.
 The toolbox includes functions to perform IVIM fitting of DWI data. There are two main functions: non linear fitting and Bayesian fitting [@Orton2014]. 
 Some of the functionality is demonstrated in the `demo.nb`.
 
-![Visualization of IVIM fitting.](ivim.png)
+![Visualization of IVIM fitting.](\QMRITools\images\ivim.png)
 
 ### JcouplingTools
 A toolbox that allows simulation of NMR spectra using Hamiltonians based on methods from [FID-A](https://github.com/CIC-methods/FID-A). It allows simulating large spin systems [@Castillo2011] and was mainly implemented to investigate fat spectra in TSE [@Stokes2013].
