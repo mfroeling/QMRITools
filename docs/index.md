@@ -22,6 +22,8 @@ Mathematica](\QMRITools\images\wolfram%20mathematica.png)](http://www.wolfram.co
 -   [Documentation](\QMRITools\htmldoc\guide\QMRITools.html){:target="\_blank"}
 -   [Demonstrations](#demonstrations)
 -   [Functionality](#functionality)
+-   [Toolboxes](#toolboxes)
+-   [References](#references)
 
 ------------------------------------------------------------------------
 
