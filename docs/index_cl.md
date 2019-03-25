@@ -14,6 +14,8 @@
 * [Documentation](\QMRITools\htmldoc\guide\QMRITools.html){:target="_blank"}
 * [Demonstrations](#demonstrations)
 * [Functionality](#functionality)
+* [Toolboxes](#toolboxes)
+* [References](#references)
 
 ***
 
