@@ -180,9 +180,9 @@ A collection of tools to analyze cardiac data. The main features are
 cardiac shape analysis which allows defining the hard in a local
 myocardial coordinate system which allows quantifying and analyzing
 data. When the cardiac geometry is known there are functions to analyze
-qMRI parameters in the AH17 model (Cerqueira et al. 2002) or perform
-transmural sampling of qMRI parameters. Most of the functionality is
-demonstrated in the `demo.nb`.
+qMRI parameters in the AH17 model (Cerqueira et al.
+[2002](#ref-Cerqueira2002)) or perform transmural sampling of qMRI
+parameters. Most of the functionality is demonstrated in the `demo.nb`.
 
 ### CoilTools
 
@@ -196,23 +196,26 @@ This toolbox is not demonstrated in the `demo.nb`.
 ### DenoiseTools
 
 The toobox provides two algorithms that allow denoising of DWI data. The
-first is based on and LMMSE framework (Aja-Fernandez et al. 2008) and
-the second is based on a random matrix theory and Principal component
-analysis framework (Veraart, Fieremans, and Novikov 2016; Veraart et al.
-2016). Furthermore, it provides an anisotropic filter for denoising the
-estimated diffusion tensor which provides more reliable fiber
-orientation analysis (Lee, Chung, and Alexander 2006). Most of the
-functionality is demonstrated in the `demo.nb`.
+first is based on and LMMSE framework (Aja-Fernandez et al.
+[2008](#ref-Aja-Fernandez2008)) and the second is based on a random
+matrix theory and Principal component analysis framework (Veraart,
+Fieremans, and Novikov [2016](#ref-Veraart2015); Veraart et al.
+[2016](#ref-Veraart2016)). Furthermore, it provides an anisotropic
+filter for denoising the estimated diffusion tensor which provides more
+reliable fiber orientation analysis (Lee, Chung, and Alexander
+[2006](#ref-JeeEunLee)). Most of the functionality is demonstrated in
+the `demo.nb`.
 
 ### DixonTools
 
-An IDEAL based Dixon reconstruction algorithm (Reeder et al. 2005; Yu et
-al. 2008). The method provides multi-peak fitting B0 field and T2\*
-correction. The toolbox also provides a function for unwrapping phase
-data in 2D and 3D based on a best path method (Abdul-Rahman et al. 2007;
-Herraez et al. 2002). It also contains a function that allows simulating
-gradient echo Dixon data. Most of the functionality is demonstrated in
-the `demo.nb`.
+An IDEAL based Dixon reconstruction algorithm (Reeder et al.
+[2005](#ref-Reeder2005); Yu et al. [2008](#ref-Yu2008)). The method
+provides multi-peak fitting B0 field and T2\* correction. The toolbox
+also provides a function for unwrapping phase data in 2D and 3D based on
+a best path method (Abdul-Rahman et al. [2007](#ref-Abdul-Rahman2007);
+Herraez et al. [2002](#ref-Herraez2002)). It also contains a function
+that allows simulating gradient echo Dixon data. Most of the
+functionality is demonstrated in the `demo.nb`.
 
 ![IDEAL based Dixon reconstruction: fitted fat fractions as a function
 of the imposed fat fraction, SNR and B0 field
@@ -221,12 +224,12 @@ offset.](\QMRITools\images\dixon.png)
 ### ElastixTools
 
 A wrapper that calls the Elastix registration framework (Klein et al.
-2010; Shamonin 2013). The toolbox determines what registration or
-transformations need to be performed, exports the related data to a temp
-folder and calls an automatically generated command line script that
-performs the registration. After registration is completed the data is
-again loaded into Mathematica. Most of the functionality is demonstrated
-in the `demo.nb`.
+[2010](#ref-Klein2010); Shamonin [2013](#ref-Shamonin2013)). The toolbox
+determines what registration or transformations need to be performed,
+exports the related data to a temp folder and calls an automatically
+generated command line script that performs the registration. After
+registration is completed the data is again loaded into Mathematica.
+Most of the functionality is demonstrated in the `demo.nb`.
 
 ### GeneralTools
 
@@ -239,10 +242,11 @@ demonstrated in the `demo.nb`.
 ### GradientTools
 
 The main feature is an algorithm that uses static repulsion (Jones,
-Horsfield, and Simmons 1999; Froeling et al. 2017) to generate
-homogeneously distributed gradient directions for DWI experiments. It
-also provides functions to convert bval and bvec files to bmatrix and
-vice versa. Most of the functionality is demonstrated in the `demo.nb`.
+Horsfield, and Simmons [1999](#ref-Jones1999); Froeling et al.
+[2017](#ref-Froeling2016)) to generate homogeneously distributed
+gradient directions for DWI experiments. It also provides functions to
+convert bval and bvec files to bmatrix and vice versa. Most of the
+functionality is demonstrated in the `demo.nb`.
 
 ![The graphical user interface of the gradient generation
 tool.](\QMRITools\images\gradients.png)
@@ -259,8 +263,8 @@ demonstrated in the `demo.nb`.
 
 The toolbox includes functions to perform IVIM fitting of DWI data.
 There are two main functions: non linear fitting and Bayesian fitting
-(Orton et al. 2014). Some of the functionality is demonstrated in the
-`demo.nb`.
+(Orton et al. [2014](#ref-Orton2014)). Some of the functionality is
+demonstrated in the `demo.nb`.
 
 ![Visualization of IVIM fitting.](ivim.png)
 
@@ -268,9 +272,10 @@ There are two main functions: non linear fitting and Bayesian fitting
 
 A toolbox that allows simulation of NMR spectra using Hamiltonians based
 on methods from [FID-A](https://github.com/CIC-methods/FID-A). It allows
-simulating large spin systems (Castillo, Patiny, and Wist 2011) and was
-mainly implemented to investigate fat spectra in TSE (Stokes et al.
-2013). Most of the functionality is demonstrated in the `demo.nb`.
+simulating large spin systems (Castillo, Patiny, and Wist
+[2011](#ref-Castillo2011)) and was mainly implemented to investigate fat
+spectra in TSE (Stokes et al. [2013](#ref-Stokes2013)). Most of the
+functionality is demonstrated in the `demo.nb`.
 
 ### MaskingTools
 
@@ -306,19 +311,20 @@ functions are 'PlotData' and 'PlotData3D' which allow viewing 2D, 3D and
 
 The toolbox comprises a variety of functions that allow data
 manipulation and analysis. The main functions allow joining multiple
-data sets into one continuous data set (Froeling et al. 2015) or to
-split data of two legs into two separate data-sets. Furthermore, it
-contains a collection of functions for data evaluation and analysis.
-Most of the functionality is demonstrated in the `demo.nb`.
+data sets into one continuous data set (Froeling et al.
+[2015](#ref-Froeling2015)) or to split data of two legs into two
+separate data-sets. Furthermore, it contains a collection of functions
+for data evaluation and analysis. Most of the functionality is
+demonstrated in the `demo.nb`.
 
 ### RelaxometryTools
 
 A collection of tools to fit T2, T2\*, T1rho and T1 relaxometry data.
 The main function of this toolbox is an extended phase graph (EPG)
-(Weigel 2015) method for multi-compartment T2 fitting of multi-echo spin
-echo data (Marty et al. 2016). Therefore it provides functions to
-simulate and evaluate EPG. Some of the functionality is demonstrated in
-the `demo.nb`.
+(Weigel [2015](#ref-Weigel2015)) method for multi-compartment T2 fitting
+of multi-echo spin echo data (Marty et al. [2016](#ref-Marty2016)).
+Therefore it provides functions to simulate and evaluate EPG. Some of
+the functionality is demonstrated in the `demo.nb`.
 
 ![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation
 as a function of B1, SNR and fat
@@ -328,8 +334,8 @@ fraction.](\QMRITools\images\epg-t2.png)
 
 The main purpose of this toolbox is to simulate DTI based DWI data and
 contains some functions to easily perform analysis of the fit results of
-the simulated signals (Froeling et al. 2013). Some of the functionality
-is demonstrated in the `demo.nb`.
+the simulated signals (Froeling et al. [2013](#ref-Froeling2013)). Some
+of the functionality is demonstrated in the `demo.nb`.
 
 ### TensorTools
 
@@ -337,10 +343,11 @@ The original toolbox where the project started. The main functions in
 this toolbox are to fit and evaluate the diffusion tensor model. Various
 fitting methods are implemented (e.g. LLS, NLS, WLLS, and iWLLS). The
 default method is an iterative weighted linear least squares approach
-(Veraart et al. 2013). The tensor fitting also includes outlier
-detections using REKINDLE (Tax et al. 2015) and data preparation
-includes drift correction (Vos et al. 2017). Most of the functionality
-is demonstrated in the `demo.nb`.
+(Veraart et al. [2013](#ref-Veraart2013)). The tensor fitting also
+includes outlier detections using REKINDLE (Tax et al.
+[2015](#ref-Tax2015)) and data preparation includes drift correction
+(Vos et al. [2017](#ref-Vos2014)). Most of the functionality is
+demonstrated in the `demo.nb`.
 
 ![MD and FA as a function of SNR and fat fraction. Results are from
 simulated data using an iWLLS algorithm with outlier
