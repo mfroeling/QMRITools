@@ -1,5 +1,4 @@
-Welcome to QRMITools
-====================
+# Welcome to QRMITools
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2530801.svg)](https://doi.org/10.5281/zenodo.2530801)
 [![status](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300/status.svg)](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
@@ -16,8 +15,7 @@ Mathematica](\QMRITools\images\wolfram%20mathematica.png)](http://www.wolfram.co
 
 ------------------------------------------------------------------------
 
-Content
--------
+## Content
 
 -   [Introduction](#introduction)
 -   [Latest Release](#latest-release)
@@ -27,8 +25,7 @@ Content
 
 ------------------------------------------------------------------------
 
-Introduction
-------------
+## Introduction
 
 `QMRITools` is written in Mathematica using Wolfram Workbench and
 Eclipse and contains a collection of tools and functions for processing
@@ -49,8 +46,7 @@ language](https://www.wolfram.com/language/) and maintained using
 [eclipse](https://www.eclipse.org/) and runs in the latest version of
 [Wolfram Mathematica](http://www.wolfram.com/mathematica/).
 
-Latest Release
---------------
+## Latest Release
 
 The latesest release can be found
 [here](https://github.com/mfroeling/QMRITools/releases){:target=\"\_blank\"}.
@@ -86,8 +82,7 @@ options for testing so if any issues arise please let me know.
 
 ------------------------------------------------------------------------
 
-Demonstrations
---------------
+## Demonstrations
 
 The release contains a zip file
 [DemoAndTest.zip](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip)
@@ -105,8 +100,7 @@ are defined are correct.
 
 ------------------------------------------------------------------------
 
-Functionality
--------------
+## Functionality
 
 The toolbox contains over 250 Functions and options of processing and
 analyzing data. A summary of the core functionality is listed below.
@@ -171,8 +165,7 @@ analyzing data. A summary of the core functionality is listed below.
     -   AHA 17 parameter description
     -   Transmural parameter description
 
-Toolboxes
----------
+## Toolboxes
 
 ### CardiacTools
 
@@ -359,32 +352,27 @@ Import and export functions for tensor data which can be used in the
 [vIST/e](http://bmia.bmt.tue.nl/software/viste/) tractography tool. None
 of the functionality is demonstrated in the `demo.nb`.
 
-References {#references .unnumbered}
-----------
+## References
 
-::: {#refs .references}
-::: {#ref-Abdul-Rahman2007}
+(#ref-Abdul-Rahman2007)
 Abdul-Rahman, Hussein S., Munther A. Gdeisat, David R. Burton, Michael
 J. Lalor, Francis Lilley, and Christopher J. Moore. 2007. "Fast and
 robust three-dimensional best path phase unwrapping algorithm." *Applied
 Optics* 46 (26): 6623. <https://doi.org/10.1364/AO.46.006623>.
-:::
 
-::: {#ref-Aja-Fernandez2008}
+{#ref-Aja-Fernandez2008}
 Aja-Fernandez, Santiago, Marc Niethammer, Marek Kubicki, Martha E.
 Shenton, and Carl Fredrik Westin. 2008. "Restoration of DWI data using a
 rician LMMSE estimator." *IEEE Transactions on Medical Imaging* 27 (10):
 1389--1403. <https://doi.org/10.1109/TMI.2008.920609>.
-:::
 
-::: {#ref-Castillo2011}
+{#ref-Castillo2011}
 Castillo, Andrés M., Luc Patiny, and Julien Wist. 2011. "Fast and
 accurate algorithm for the simulation of NMR spectra of large spin
 systems." *Journal of Magnetic Resonance* 209 (2): 123--30.
 <https://doi.org/10.1016/j.jmr.2010.12.008>.
-:::
 
-::: {#ref-Cerqueira2002}
+{#ref-Cerqueira2002}
 Cerqueira, Manuel D., Neil J. Weissman, Vasken Dilsizian, Alice K.
 Jacobs, Sanjiv Kaul, Warren K. Laskey, Dudley J. Pennell, John A.
 Rumberger, Thomas Ryan, and Mario S. Verani. 2002. "Standardized
@@ -532,5 +520,4 @@ Brittain, and Scott B. Reeder. 2008. "Multiecho water-fat separation and
 simultaneous R\*2 estimation with multifrequency fat spectrum modeling."
 *Magnetic Resonance in Medicine* 60 (5): 1122--34.
 <https://doi.org/10.1002/mrm.21737>.
-:::
 :::
