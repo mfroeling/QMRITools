@@ -259,7 +259,7 @@ There are two main functions: non linear fitting and Bayesian fitting
 (Orton et al. [2014](#ref-Orton2014)). Some of the functionality is
 demonstrated in the `demo.nb`.
 
-![Visualization of IVIM fitting.](ivim.png)
+![Visualization of IVIM fitting.](\QMRITools\images\ivim.png)
 
 ### JcouplingTools
 
@@ -352,27 +352,31 @@ Import and export functions for tensor data which can be used in the
 [vIST/e](http://bmia.bmt.tue.nl/software/viste/) tractography tool. None
 of the functionality is demonstrated in the `demo.nb`.
 
-## References
+## References {#references .unnumbered}
 
-(#ref-Abdul-Rahman2007)
+::: {#refs .references}
+::: {#ref-Abdul-Rahman2007}
 Abdul-Rahman, Hussein S., Munther A. Gdeisat, David R. Burton, Michael
 J. Lalor, Francis Lilley, and Christopher J. Moore. 2007. "Fast and
 robust three-dimensional best path phase unwrapping algorithm." *Applied
 Optics* 46 (26): 6623. <https://doi.org/10.1364/AO.46.006623>.
+:::
 
-{#ref-Aja-Fernandez2008}
+::: {#ref-Aja-Fernandez2008}
 Aja-Fernandez, Santiago, Marc Niethammer, Marek Kubicki, Martha E.
 Shenton, and Carl Fredrik Westin. 2008. "Restoration of DWI data using a
 rician LMMSE estimator." *IEEE Transactions on Medical Imaging* 27 (10):
 1389--1403. <https://doi.org/10.1109/TMI.2008.920609>.
+:::
 
-{#ref-Castillo2011}
+::: {#ref-Castillo2011}
 Castillo, Andrés M., Luc Patiny, and Julien Wist. 2011. "Fast and
 accurate algorithm for the simulation of NMR spectra of large spin
 systems." *Journal of Magnetic Resonance* 209 (2): 123--30.
 <https://doi.org/10.1016/j.jmr.2010.12.008>.
+:::
 
-{#ref-Cerqueira2002}
+::: {#ref-Cerqueira2002}
 Cerqueira, Manuel D., Neil J. Weissman, Vasken Dilsizian, Alice K.
 Jacobs, Sanjiv Kaul, Warren K. Laskey, Dudley J. Pennell, John A.
 Rumberger, Thomas Ryan, and Mario S. Verani. 2002. "Standardized
@@ -520,4 +524,5 @@ Brittain, and Scott B. Reeder. 2008. "Multiecho water-fat separation and
 simultaneous R\*2 estimation with multifrequency fat spectrum modeling."
 *Magnetic Resonance in Medicine* 60 (5): 1122--34.
 <https://doi.org/10.1002/mrm.21737>.
+:::
 :::
