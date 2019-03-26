@@ -59,11 +59,11 @@ Applications.
 `FileNameJoin[{$UserBaseDirectory, "Applications"}]`
 
 Some functions of QMRITools call on external executables and software.
-These executables need to be present in “QMRITools” and are included in
-the release. If for any reason you want to use other (older/newer)
-versions you can replace them but functionality is not guaranteed. For
-the latest version of these tools and their user license please visit
-their website.
+These executables need to be present in &ldquo;QMRITools&rdquo; and are
+included in the release. If for any reason you want to use other
+(older/newer) versions you can replace them but functionality is not
+guaranteed. For the latest version of these tools and their user license
+please visit their website.
 
 -   [dcm2niix](https://github.com/rordenlab/dcm2niix/)
     -   dcm2niix.exe
@@ -294,8 +294,9 @@ supported. This toolbox is not demonstrated in the `demo.nb`.
 ### PlottingTools
 
 A variety of functions for visualization of various data types. The main
-functions are ‘PlotData’ and ‘PlotData3D’ which allow viewing 2D, 3D and
-4D data. Most of the functionality is demonstrated in the `demo.nb`.
+functions are &lsquo;PlotData&rsquo; and &lsquo;PlotData3D&rsquo; which
+allow viewing 2D, 3D and 4D data. Most of the functionality is
+demonstrated in the `demo.nb`.
 
 ### ProcessingTools
 
@@ -330,9 +331,9 @@ is demonstrated in the `demo.nb`.
 
 The original toolbox where the project started. The main functions in
 this toolbox are to fit and evaluate the diffusion tensor model. Various
-fitting methods are implemented (e.g. LLS, NLS, WLLS, and iWLLS). The
-default method is an iterative weighted linear least squares approach
-(Veraart et al. 2013). The tensor fitting also includes outlier
+fitting methods are implemented (e.g.&nbsp;LLS, NLS, WLLS, and iWLLS).
+The default method is an iterative weighted linear least squares
+approach (Veraart et al. 2013). The tensor fitting also includes outlier
 detections using REKINDLE (Tax et al. 2015) and data preparation
 includes drift correction (Vos et al. 2017). Most of the functionality
 is demonstrated in the `demo.nb`.
@@ -350,126 +351,135 @@ of the functionality is demonstrated in the `demo.nb`.
 ## References
 
 Abdul-Rahman, Hussein S., Munther A. Gdeisat, David R. Burton, Michael
-J. Lalor, Francis Lilley, and Christopher J. Moore. 2007. “Fast and
-robust three-dimensional best path phase unwrapping algorithm.” *Applied
-Optics* 46 (26): 6623. <https://doi.org/10.1364/AO.46.006623>.
+J. Lalor, Francis Lilley, and Christopher J. Moore. 2007. &ldquo;Fast
+and robust three-dimensional best path phase unwrapping
+algorithm.&rdquo; *Applied Optics* 46 (26): 6623.
+<https://doi.org/10.1364/AO.46.006623>.
 
 Aja-Fernandez, Santiago, Marc Niethammer, Marek Kubicki, Martha E.
-Shenton, and Carl Fredrik Westin. 2008. “Restoration of DWI data using a
-rician LMMSE estimator.” *IEEE Transactions on Medical Imaging* 27 (10):
-1389–1403. <https://doi.org/10.1109/TMI.2008.920609>.
+Shenton, and Carl Fredrik Westin. 2008. &ldquo;Restoration of DWI data
+using a rician LMMSE estimator.&rdquo; *IEEE Transactions on Medical
+Imaging* 27 (10): 1389&ndash;1403.
+<https://doi.org/10.1109/TMI.2008.920609>.
 
-Castillo, Andrés M., Luc Patiny, and Julien Wist. 2011. “Fast and
-accurate algorithm for the simulation of NMR spectra of large spin
-systems.” *Journal of Magnetic Resonance* 209 (2): 123–30.
-<https://doi.org/10.1016/j.jmr.2010.12.008>.
+Castillo, Andr&eacute;s M., Luc Patiny, and Julien Wist. 2011.
+&ldquo;Fast and accurate algorithm for the simulation of NMR spectra of
+large spin systems.&rdquo; *Journal of Magnetic Resonance* 209 (2):
+123&ndash;30. <https://doi.org/10.1016/j.jmr.2010.12.008>.
 
 Cerqueira, Manuel D., Neil J. Weissman, Vasken Dilsizian, Alice K.
 Jacobs, Sanjiv Kaul, Warren K. Laskey, Dudley J. Pennell, John A.
-Rumberger, Thomas Ryan, and Mario S. Verani. 2002. “Standardized
+Rumberger, Thomas Ryan, and Mario S. Verani. 2002. &ldquo;Standardized
 myocardial sementation and nomenclature for tomographic imaging of the
 heart: A Statement for Healthcare Professionals from the Cardiac Imaging
 Committee of the Council on Clinical Cardiology of the American Heart
-Association.” *Circulation* 105 (4): 539–42.
+Association.&rdquo; *Circulation* 105 (4): 539&ndash;42.
 <https://doi.org/10.1161/hc0402.102975>.
 
 Froeling, Martijn, Aart J. Nederveen, Klaas Nicolay, and Gustav J.
-Strijkers. 2013. “DTI of human skeletal muscle: The effects of diffusion
-encoding parameters, signal-to-noise ratio and T2 on tensor indices and
-fiber tracts.” *NMR in Biomedicine* 26 (11): 1339–52.
-<https://doi.org/10.1002/nbm.2959>.
+Strijkers. 2013. &ldquo;DTI of human skeletal muscle: The effects of
+diffusion encoding parameters, signal-to-noise ratio and T2 on tensor
+indices and fiber tracts.&rdquo; *NMR in Biomedicine* 26 (11):
+1339&ndash;52. <https://doi.org/10.1002/nbm.2959>.
 
 Froeling, Martijn, Jos Oudeman, G. J. Gustav J. Strijkers, Mario Maas,
 M. R. Maarten R. Drost, Klaas Nicolay, and Aart J. A. J. Nederveen.
-2015. “Muscle Changes Detected with Diffusion-Tensor Imaging after
-Long-Distance Running.” *Radiology* 274 (2): 548–62.
+2015. &ldquo;Muscle Changes Detected with Diffusion-Tensor Imaging after
+Long-Distance Running.&rdquo; *Radiology* 274 (2): 548&ndash;62.
 <https://doi.org/10.1148/radiol.14140702>.
 
 Froeling, Martijn, Chantal M. W. Tax, Sjoerd B. Vos, Peter R. Luijten,
-and Alexander Leemans. 2017. “MASSIVE brain dataset: Multiple
+and Alexander Leemans. 2017. &ldquo;MASSIVE brain dataset: Multiple
 acquisitions for standardization of structural imaging validation and
-evaluation.” *Magnetic Resonance in Medicine* 77 (5): 1797–1809.
-<https://doi.org/10.1002/mrm.26259>.
+evaluation.&rdquo; *Magnetic Resonance in Medicine* 77 (5):
+1797&ndash;1809. <https://doi.org/10.1002/mrm.26259>.
 
 Herraez, Miguel Arevallilo, David R. Burton, Michael J. Lalor, and
-Munther A. Gdeisat. 2002. “Fast two-dimensional phase-unwrapping
+Munther A. Gdeisat. 2002. &ldquo;Fast two-dimensional phase-unwrapping
 algorithm based on sorting by reliability following a noncontinuous
-path.” *Applied Optics* 41 (35): 7437.
+path.&rdquo; *Applied Optics* 41 (35): 7437.
 <https://doi.org/10.1364/AO.41.007437>.
 
-Jones, D. K., M. A. Horsfield, and A. Simmons. 1999. “Optimal strategies
-for measuring diffusion in anisotropic systems by magnetic resonance
-imaging.” *Magnetic Resonance in Medicine* 42 (3): 515–25.
+Jones, D. K., M. A. Horsfield, and A. Simmons. 1999. &ldquo;Optimal
+strategies for measuring diffusion in anisotropic systems by magnetic
+resonance imaging.&rdquo; *Magnetic Resonance in Medicine* 42 (3):
+515&ndash;25.
 <https://doi.org/10.1002/(SICI)1522-2594(199909)42:3%3C515::AID-MRM14%3E3.0.CO;2-Q>.
 
 Klein, Stefan, Marius Staring, Keelin Murphy, Max A. Viergever, and
-Josien P. W. Pluim. 2010. “Elastix: A toolbox for intensity-based
-medical image registration.” *IEEE Transactions on Medical Imaging* 29
-(1): 196–205. <https://doi.org/10.1109/TMI.2009.2035616>.
+Josien P. W. Pluim. 2010. &ldquo;Elastix: A toolbox for intensity-based
+medical image registration.&rdquo; *IEEE Transactions on Medical
+Imaging* 29 (1): 196&ndash;205.
+<https://doi.org/10.1109/TMI.2009.2035616>.
 
-Lee, Jee Eun, M. K. Chung, and A. L. Alexander. 2006. “Evaluation of
-Anisotropic Filters for Diffusion Tensor Imaging.” In *3<sup>rd</sup>
-Ieee International Symposium on Biomedical Imaging*, 77–80. IEEE.
-<https://doi.org/10.1109/ISBI.2006.1624856>.
+Lee, Jee Eun, M. K. Chung, and A. L. Alexander. 2006. &ldquo;Evaluation
+of Anisotropic Filters for Diffusion Tensor Imaging.&rdquo; In
+*3<sup>rd</sup> Ieee International Symposium on Biomedical Imaging*,
+77&ndash;80. IEEE. <https://doi.org/10.1109/ISBI.2006.1624856>.
 
 Marty, Benjamin, Pierre Yves Baudin, Harmen Reyngoudt, Noura Azzabou,
 Ericky C. A. Araujo, Pierre G. Carlier, and Paulo L. de Sousa. 2016.
-“Simultaneous muscle water T2and fat fraction mapping using transverse
-relaxometry with stimulated echo compensation.” *NMR in Biomedicine* 29
-(4): 431–43. <https://doi.org/10.1002/nbm.3459>.
+&ldquo;Simultaneous muscle water T2and fat fraction mapping using
+transverse relaxometry with stimulated echo compensation.&rdquo; *NMR in
+Biomedicine* 29 (4): 431&ndash;43. <https://doi.org/10.1002/nbm.3459>.
 
 Orton, Matthew R., David J. Collins, Dow-Mu Koh, and Martin O. Leach.
-2014. “Improved intravoxel incoherent motion analysis of diffusion
-weighted imaging by data driven Bayesian modeling.” *Magnetic Resonance
-in Medicine* 71 (1): 411–20. <https://doi.org/10.1002/mrm.24649>.
+2014. &ldquo;Improved intravoxel incoherent motion analysis of diffusion
+weighted imaging by data driven Bayesian modeling.&rdquo; *Magnetic
+Resonance in Medicine* 71 (1): 411&ndash;20.
+<https://doi.org/10.1002/mrm.24649>.
 
 Reeder, Scott B., Angel R. Pineda, Zhifei Wen, Ann Shimakawa, Huanzhou
 Yu, Jean H. Brittain, Garry E. Gold, Christopher H. Beaulieu, and
-Norbert T. Pelc. 2005. “Iterative decomposition of water and fat with
-echo asymmetry and least-squares estimation (IDEAL): Application with
-fast spin-echo imaging.” *Magnetic Resonance in Medicine* 54 (3):
-636–44. <https://doi.org/10.1002/mrm.20624>.
+Norbert T. Pelc. 2005. &ldquo;Iterative decomposition of water and fat
+with echo asymmetry and least-squares estimation (IDEAL): Application
+with fast spin-echo imaging.&rdquo; *Magnetic Resonance in Medicine* 54
+(3): 636&ndash;44. <https://doi.org/10.1002/mrm.20624>.
 
-Shamonin, Denis. 2013. “Fast parallel image registration on CPU and GPU
-for diagnostic classification of Alzheimer’s disease.” *Frontiers in
-Neuroinformatics* 7 (January): 50.
+Shamonin, Denis. 2013. &ldquo;Fast parallel image registration on CPU
+and GPU for diagnostic classification of Alzheimer&rsquo;s
+disease.&rdquo; *Frontiers in Neuroinformatics* 7 (January): 50.
 <https://doi.org/10.3389/fninf.2013.00050>.
 
 Stokes, Ashley M., Yesu Feng, Tanya Mitropoulos, and Warren S. Warren.
-2013. “Enhanced refocusing of fat signals using optimized multipulse
-echo sequences.” *Magnetic Resonance in Medicine* 69 (4): 1044–55.
-<https://doi.org/10.1002/mrm.24340>.
+2013. &ldquo;Enhanced refocusing of fat signals using optimized
+multipulse echo sequences.&rdquo; *Magnetic Resonance in Medicine* 69
+(4): 1044&ndash;55. <https://doi.org/10.1002/mrm.24340>.
 
 Tax, Chantal M. W., Willem M. Otte, Max A. Viergever, Rick M.
-Dijkhuizen, and Alexander Leemans. 2015. “REKINDLE: Robust Extraction of
-Kurtosis INDices with Linear Estimation.” *Magnetic Resonance in
-Medicine* 73 (2): 794–808. <https://doi.org/10.1002/mrm.25165>.
+Dijkhuizen, and Alexander Leemans. 2015. &ldquo;REKINDLE: Robust
+Extraction of Kurtosis INDices with Linear Estimation.&rdquo; *Magnetic
+Resonance in Medicine* 73 (2): 794&ndash;808.
+<https://doi.org/10.1002/mrm.25165>.
 
-Veraart, Jelle, Els Fieremans, and Dmitry S. Novikov. 2016. “Diffusion
-MRI noise mapping using random matrix theory.” *Magnetic Resonance in
-Medicine* 76 (5): 1582–93. <https://doi.org/10.1002/mrm.26059>.
+Veraart, Jelle, Els Fieremans, and Dmitry S. Novikov. 2016.
+&ldquo;Diffusion MRI noise mapping using random matrix theory.&rdquo;
+*Magnetic Resonance in Medicine* 76 (5): 1582&ndash;93.
+<https://doi.org/10.1002/mrm.26059>.
 
 Veraart, Jelle, Dmitry S. Novikov, Daan Christiaens, Benjamin Ades-aron,
-Jan Sijbers, and Els Fieremans. 2016. “Denoising of diffusion MRI using
-random matrix theory.” *NeuroImage* 142 (November): 394–406.
-<https://doi.org/10.1016/j.neuroimage.2016.08.016>.
+Jan Sijbers, and Els Fieremans. 2016. &ldquo;Denoising of diffusion MRI
+using random matrix theory.&rdquo; *NeuroImage* 142 (November):
+394&ndash;406. <https://doi.org/10.1016/j.neuroimage.2016.08.016>.
 
 Veraart, Jelle, Jan Sijbers, Stefan Sunaert, Alexander Leemans, and Ben
-Jeurissen. 2013. “Weighted linear least squares estimation of diffusion
-MRI parameters: Strengths, limitations, and pitfalls.” *NeuroImage* 81
-(November): 335–46. <https://doi.org/10.1016/j.neuroimage.2013.05.028>.
+Jeurissen. 2013. &ldquo;Weighted linear least squares estimation of
+diffusion MRI parameters: Strengths, limitations, and pitfalls.&rdquo;
+*NeuroImage* 81 (November): 335&ndash;46.
+<https://doi.org/10.1016/j.neuroimage.2013.05.028>.
 
 Vos, Sjoerd B., Chantal M. W. Tax, Peter R. Luijten, Sebastien Ourselin,
-Alexander Leemans, and Martijn Froeling. 2017. “The importance of
-correcting for signal drift in diffusion MRI.” *Magnetic Resonance in
-Medicine* 77 (1): 285–99. <https://doi.org/10.1002/mrm.26124>.
+Alexander Leemans, and Martijn Froeling. 2017. &ldquo;The importance of
+correcting for signal drift in diffusion MRI.&rdquo; *Magnetic Resonance
+in Medicine* 77 (1): 285&ndash;99. <https://doi.org/10.1002/mrm.26124>.
 
-Weigel, Matthias. 2015. “Extended phase graphs: Dephasing, RF pulses,
-and echoes - pure and simple.” *Journal of Magnetic Resonance Imaging*
-41 (2): 266–95. <https://doi.org/10.1002/jmri.24619>.
+Weigel, Matthias. 2015. &ldquo;Extended phase graphs: Dephasing, RF
+pulses, and echoes - pure and simple.&rdquo; *Journal of Magnetic
+Resonance Imaging* 41 (2): 266&ndash;95.
+<https://doi.org/10.1002/jmri.24619>.
 
 Yu, Huanzhou, Ann Shimakawa, Charles A. McKenzie, Ethan Brodsky, Jean H.
-Brittain, and Scott B. Reeder. 2008. “Multiecho water-fat separation and
-simultaneous R\*2 estimation with multifrequency fat spectrum modeling.”
-*Magnetic Resonance in Medicine* 60 (5): 1122–34.
-<https://doi.org/10.1002/mrm.21737>.
+Brittain, and Scott B. Reeder. 2008. &ldquo;Multiecho water-fat
+separation and simultaneous R\*2 estimation with multifrequency fat
+spectrum modeling.&rdquo; *Magnetic Resonance in Medicine* 60 (5):
+1122&ndash;34. <https://doi.org/10.1002/mrm.21737>.

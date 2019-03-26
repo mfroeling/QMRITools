@@ -56,6 +56,15 @@ LoadPackages[pack_,subpack_,print_:False]:=Module[{},
 ]
 
 
+PrintPackages[context_,print_:False]:=Module[{},
+	If[print,
+		Print["--------------------------------------"];
+		Print["All defined packages are: "];
+		Print[context];
+	];
+]
+
+
 ProtectFunctions[pack_,subpack_,print_:False]:=Module[{},
 	If[print,Print["--------------------------------------"]];
 	(
@@ -106,17 +115,17 @@ QMRITools`verbose = False;
 (*Initialize all packages*)
 
 
-If[QMRITools`verbose,
-Print["--------------------------------------"];
-Print[System`$QMRIToolsContextPaths];
-];
-
+(*print all the packages*)
+PrintPackages[System`$QMRIToolsContextPaths, QMRITools`verbose];
 
 (*check mathematica version*)
 UpdateWarning[];
+
 (*clear all definitions from the subPacakges*)
 ClearFunctions[package,subPackages,QMRITools`verbose];
+
 (*load all packages*)
 LoadPackages[package,subPackages,QMRITools`verbose];
+
 (*Protect functions*)
 ProtectFunctions[package,subPackages,QMRITools`verbose];

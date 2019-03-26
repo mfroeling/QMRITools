@@ -13,7 +13,7 @@
 (*start Package*)
 
 
-BeginPackage["QMRITools`JcouplingTools`"]
+BeginPackage["QMRITools`JcouplingTools`", {"Developer`"}]
 
 $ContextPath =  Union[$ContextPath, System`$QMRIToolsContextPaths];
 
