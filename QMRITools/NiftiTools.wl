@@ -180,17 +180,20 @@ DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,
 	compress=If[OptionValue[CompressNii],"i","n"];
 	
 	(*create the cmd window command to run dcm2niix*)
-	log=FileNameJoin[{folout <> "output.txt"}];
+	log=FileNameJoin[{folout,"output.txt"}];
 	
 	command = Switch[$OperatingSystem,
 		"Windows",
-		First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
+		First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+		compress<>" -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
 		,
 		"Unix",
-		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
+		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+		compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 		,
 		"MacOSX",
-		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
+		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+		compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 	];
 	
 	If[OptionValue[Method]=!=Automatic,Print[command]];
@@ -759,16 +762,14 @@ ImportNiiDix[]:=Module[{Dix, vox, scale, B0, real, imag, mag, phase},
 
 ImportNiiDix[file_String]:=ImportNiiDix[file,False]
 
-ImportNiiDix[file_String,new_]:=Module[{Dix, vox, scale, B0, real, imag, mag, phase},  
+ImportNiiDix[file_String, new_]:=Module[{Dix, vox, scale, B0, real, imag, mag, phase},  
 	{Dix, vox, scale} = ImportNii[file, NiiScaling -> False, NiiMethod -> "scaling"];
-	If[new,
-		{Dix, B0, {real, imag, mag, phase}} = CorrectDixonDataNew[Dix, scale];,
-		{Dix, B0, {real, imag, mag, phase}} = CorrectDixonData[Dix, scale];
-	];
+	{Dix, B0, {real, imag, mag, phase}} =If[new, CorrectDixonDataNew[Dix, scale], CorrectDixonData[Dix, scale]];
 	{Dix, B0, {real, imag, mag, phase}, vox}
 ]
 
-CorrectDixonData[data_, scale_] := Block[{data0, B0, echos},
+
+CorrectDixonData[data_, scale_] := Block[{data0, B0, echos, phase, mag, real ,imag},
   (*fat,inphase,outphase,water*)
   data0 = data[[All, 1 ;; 4]];
   B0 = (scale[[1]] (data[[All, -1]] + 0.5) + scale[[2]]) /. (scale[[2]] + 0.5 scale[[1]]) -> 0.;
@@ -777,12 +778,16 @@ CorrectDixonData[data_, scale_] := Block[{data0, B0, echos},
   echos = Partition[Flatten[Transpose[echos], 1], 4*Length[data]];
   echos = Partition[#, 4] & /@ echos;
   (*convert I,P and R to radians*)
-  Table[echos[[i]] = ((2 Pi echos[[i]]/4094.) - Pi) /. N[-Pi] -> 0., {i, {1, 3, 4}}];
+  phase = N[(2 Pi echos[[3]] / 4094.) - Pi] /. N[-Pi] -> 0.;
+  mag = echos[[2]];
+  {real, imag} = (echos[[{4, 1}]] - 2047.) / 4094.;
+  (*Table[echos[[i]] = ((2 Pi echos[[i]]/4094.) - Pi) /. N[-Pi] -> 0., {i, {1, 3, 4}}];*)
   (*output*)
-  {data0, B0, echos[[{4, 1, 2, 3}]]}
+  {data0, B0, {real, imag, mag, phase}}
 ]
 
-CorrectDixonDataNew[data_, scale_] := Block[{data0, B0, echos},
+
+CorrectDixonDataNew[data_, scale_] := Block[{data0, B0, echos, phase, mag, real ,imag},
  (*fat,inphase,outphase,water*)
  data0 = data[[All, -5 ;; -2]][[All, {4, 2, 3, 1}]];
  B0 = (scale[[1]] (data[[All, -1]] + 0.5) + scale[[2]]) /. (scale[[2]] + 0.5 scale[[1]]) -> 0.;
@@ -792,9 +797,14 @@ CorrectDixonDataNew[data_, scale_] := Block[{data0, B0, echos},
  echos = Partition[Flatten[Transpose[echos], 1], 4*Length[data]];
  echos = Partition[#, 4] & /@ echos;
  (*convert I,P and R to radians*)
- Table[echos[[i]] = ((2 Pi echos[[i]]/4094.) - Pi) /. N[-Pi] -> 0., {i, {2, 3, 4}}];
+ phase = N[(2 Pi echos[[4]] / 4094.) - Pi] /. N[-Pi] -> 0.;
+ mag = echos[[1]];
+ {real, imag} = (echos[[{2, 3}]] - 2047.) / 4094.;
+ 
  (*output*)
- {data0, B0, echos[[{3, 2, 1, 4}]]}]
+ {data0, B0, {real, imag, mag, phase}}
+ ]
+
 
 (* ::Subsubsection::Closed:: *)
 (*ImportNiiT2*)

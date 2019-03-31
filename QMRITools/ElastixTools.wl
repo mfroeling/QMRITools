@@ -603,7 +603,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   
   Transfile[fol_] := Last[SortBy[
 		FileNames["TransformParameters*", FileNameTake[fol, {1, -2}]],
-		FileDate[#, "Motification"] &]];
+		FileDate[#, "Modification"] &]];
   
   command=Switch[$OperatingSystem,
   	"Windows",
@@ -1099,6 +1099,7 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 		"target", Round[{cut1, (cut1 voxT[[2]])/voxM[[2]]}],
 		"moving", Round[{(cut2 voxM[[2]])/voxT[[2]], cut2}],
 		"nearest", Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, (Last@Dimensions[target]/2) Last[voxT]]/{Last@voxT, Last@voxM}],
+		"own", Round[{cut1, cut2}],
 		_, Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]], voxM[[2]]}]
 		];
 	
@@ -1194,7 +1195,7 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 	
 	transfile = Last[SortBy[
 		FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]],
-		FileDate[#, "Motification"] &]];
+		FileDate[#, "Modification"] &]];
 	
 	Switch[$OperatingSystem,
 		"Windows",
@@ -1310,6 +1311,7 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 		"Target", Round[{cut1, (cut1 voxT[[2]])/voxM[[2]]}],
 		"Moving", Round[{(cut2 voxM[[2]])/voxT[[2]], cut2}],
 		"Nearest", Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, (Last@Dimensions[target]/2) Last[voxT]]/{Last@voxT, Last@voxM}],
+		"own", Round[{cut1, cut2}],
 		_, Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]], voxM[[2]]}]
 		];
 	
