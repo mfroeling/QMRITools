@@ -292,8 +292,9 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
 
   Off[NonlinearModelFit::"cvmit"]; Off[NonlinearModelFit::"sszero"];
   
+  nodat = Length[data] <= 10;
   (*perform the fit for one compartment*)
-  If[Length[data] <= 10,
+  If[nodat,
    Print["Not Enough data in the ROI"];
    ,
    (*fit data*)
@@ -320,13 +321,19 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, s
   (*generate Output*)
   Switch[out,
    "Parameters",
-   {Mean[fun], StandardDeviation[fun]},
+   If[nodat,
+   	{0,0},
+   	{Mean[fun], StandardDeviation[fun]}
+   ],
    "ParametersExtra",
-   Flatten[{Mean[fun], StandardDeviation[fun], Quantile[fun, {.5, .05, .95}]}],
+   If[nodat,
+   	{0.,0.,0.,0.,0.},
+   	Flatten[{Mean[fun], StandardDeviation[fun], Quantile[fun, {.5, .05, .95}]}]
+   ],
    "Function",
-   sol,
+   If[nodat,0.,sol],
    "BestFitParameters",
-   par[[All,2]],
+   If[nodat,0.,par[[All,2]]],
    _, Message[ParameterFit::outp, out]
    ]
   ]
@@ -428,7 +435,7 @@ GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] :=
  Block[{labels, out, fl},
   labels = If[name==="", {"mean", "std", "Median", "5%", "95%"}, name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
   ];
-  out = If[Total[Flatten[#]]<10,
+  out = If[Total[Flatten[#]]<=10,
   	Print["Less than 10 voxels, output will be 0."];{0.,0.,0.,0.,0.}
   	,
       fl = GetMaskData[dat, #, GetMaskOutput -> All];

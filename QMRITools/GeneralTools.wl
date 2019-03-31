@@ -770,15 +770,16 @@ CutData[data_,cut_] := Switch[ArrayDepth[data],
 		4,{data[[All, All, All, ;; cut]],data[[All, All, All, (cut + 1) ;;]],cut},
 		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}]
 
-FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran,blur,i},
+FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran,blur,i, max},
   
 	(*flatten mean and normalize data*)
 	dat=dati;
 	fdat = Flatten[dat];
-	dat = Clip[dat, {0, Quantile[Pick[fdat, Unitize[fdat], 1], .95]}];
+	dat = Clip[dat, {0, Quantile[Pick[fdat, Unitize[fdat], 1], .75]}];
 	dat = N@Nest[Mean, dat, ArrayDepth[dat] - 1];
+	max = 0.75 len;
 	len = Length[dat];
-	dat = len dat/Max[dat];
+	dat = max dat/Max[dat];
 	mask = UnitStep[dat - .1 len];
 	ran = Flatten[Position[mask, 1][[{1, -1}]]];
 	
@@ -787,7 +788,7 @@ FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran
 	i = 0;
 	While[peaks === {} && i < 5,
 	 (*smooth the data a bit*)
-	 datf = len - GaussianFilter[mask dat, len/blur];
+	 datf = max - GaussianFilter[mask dat, len/blur];
 	 (*find the peaks*)
 	 peaks = FindPeaks[datf];
 	 peaks = If[Length[peaks] >= 3, peaks[[2 ;; -2]], peaks];
@@ -801,10 +802,10 @@ FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran
 		$Failed,
 		(*find the most middle peak*)
 		mid = Round[Length[dat]/2];
-		center = {mid, .75 len};
+		center = {mid, .65 max};
 		peak = Nearest[peaks, center];
 		Print[Show[
-			ListLinePlot[{len-dat,datf}, PlotStyle->{Black,Orange}],
+			ListLinePlot[{max-dat,datf}, PlotStyle->{Black,Orange}],
 			ListPlot[{peaks,peak,{center}},PlotStyle->(Directive[{PointSize[Large],#}]&/@{Blue,Red,Green})]
 			,ImageSize->100]
 			];

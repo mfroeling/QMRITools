@@ -163,7 +163,7 @@ HomoginizeData[datai_, mask_] :=
   
   datac = (datai/(fit + 0.001));
   maskout = Mask[datac, 0.1];
-  maskout = Dilation[SmoothMask[maskout, 5], 5];
+  maskout = Dilation[SmoothMask[maskout], 5];
   maskout Clip[mn datac, {0.8, 1.5} MinMax[data], {0, 0}]
   ]
 
@@ -312,23 +312,27 @@ Options[MeanSignal] = { UseMask->True }
 
 SyntaxInformation[MeanSignal] = {"ArgumentsPattern" -> {_, _.,OptionsPattern[]}};
 
-MeanSignal[data_, opts:OptionsPattern[]] := MeanSignal[data, 1, opts];
+MeanSignal[data_, opts:OptionsPattern[]] := MeanSignal[data, "", opts];
 
-MeanSignal[data_, posi_ ,OptionsPattern[]] := Block[{mean, mask, pos, dat},
+MeanSignal[data_, posi_ ,OptionsPattern[]] := Block[{mean, mask, pos, dat,mdat},
   
-  If[ListQ[posi], 
-  pos=posi;
-  dat=data[[All,pos]];
-  , 
-  pos=posi;
-  dat=data;
+  Which[
+  	ListQ[posi],
+  	pos=posi; dat=data[[All,pos]];
+  	,
+  	IntegerQ[posi],
+  	pos={posi}; dat=data[[All,pos]];
+  	,
+  	True,
+  	pos=All; dat=data;
   ];
   
   mask = If[OptionValue[UseMask],
-  	mdat=Mean@Transpose@NormalizeData[data[[All,pos]]];
-   	Round@GaussianFilter[Mask[mdat,50], 5],
-   	ConstantArray[1,Dimensions[data[[All,1]]]]
-   	];   
+  	mdat = NormalizeData[Mean@Transpose@dat];
+   	Round@GaussianFilter[Mask[mdat], 5]
+   	,
+   	ConstantArray[1,Dimensions[dat[[All,1]]]]
+  ];   
   
   mean = MeanNoZero[Flatten[#]] & /@ Transpose[MaskData[dat, mask]];
    
