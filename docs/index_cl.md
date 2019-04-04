@@ -27,6 +27,8 @@ The toolbox was developed mostly in the context of quantitative muscle, nerve an
 
 The toolbox is developed for the [Wolfram language](https://www.wolfram.com/language/) and maintained using [Wolfram workbench](https://www.wolfram.com/workbench/) for [eclipse](https://www.eclipse.org/) and runs in the latest version of [Wolfram Mathematica](http://www.wolfram.com/mathematica/).
 
+***
+
 ## Latest Release
 
 The latesest release can be found [here](https://github.com/mfroeling/QMRITools/releases){:target="_blank"}. 
@@ -127,7 +129,9 @@ A summary of the core functionality is listed below.
 	* helix angle and fiber architecture matrix
 	* AHA 17 parameter description
 	* Transmural parameter description	
-	
+
+***
+
 ## Toolboxes
 
 ### CardiacTools
@@ -215,5 +219,11 @@ Most of the functionality is demonstrated in the `demo.nb`.
 ### VisteTools
 Import and export functions for tensor data which can be used in the [vIST/e](http://bmia.bmt.tue.nl/software/viste/) tractography tool.
 None of the functionality is demonstrated in the `demo.nb`.
+
+***
+
+![Full leg diffusion tensor fiber tractography](\QMRITools\images\animation-small.gif)
+
+***
 
 ## References
