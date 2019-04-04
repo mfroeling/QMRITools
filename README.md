@@ -88,7 +88,8 @@ To have a global overview of the functionality of the toolbox you can download t
 By default the ``demo.nb`` looks for the folders ``DemoData`` and ``Testing`` in the same folder as the notebook.
 
 In the first section of the demo notebook the toolbox is loaded and two tests are performed. The first test is to check of all files that are needed to run the toolbox are present. The second test runs after the toolbox is loaded and checks if all the functions and their options that are defined are correct.
- 
+
+![Full leg diffusion tensor fiber tractography](https://github.com/mfroeling/QMRITools/blob/master/Images/animation-small.gif)
 
 ## Using the toolbox
 

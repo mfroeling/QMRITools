@@ -747,7 +747,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	B1i, T2i, T2s, B1s, soli, error, dictf, valsf, ydat, fwf, residualError, T2mc, B1c, cal,
 	ran,dict,vals,cons,start, b1ran, b1step, t2ran, t2step, points, dim, size,
 	b1rule, B1Int, dataf, b1, b1vals, b1len, t2rule, t2Int, t2, t2vals, t2len,
-	sig, dictMat, dictfMat, t2fran, S0c, met, val, out, T2fmap, wMat, fval, t2fval
+	sig, dictMat, dictfMat, t2fran, S0c, met, val, out, T2fmap, wMat, fval, t2fval,
+	clipf, t2fdic, t2fpos, dictMatW, inp, consi, vals2, inpf, inp2, smoothing
 	},
 	
 	(*Get Input*)
@@ -804,7 +805,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		
 	(*create the dictionary*)
 	If[OptionValue[EPGMethod]=!="NLLS",
-		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f}, echo, angle, t2ran, b1ran, t2fdic];
+		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f}, echo, angle, t2ran, b1ran, t2fdic, False];
 		cons = Dimensions[vals][[;; -2]];
 		dictMat = PseudoInverseC[dict];
 		
@@ -1034,15 +1035,16 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 (*CreateT2Dictionary*)
 
 
-Options[CreateT2Dictionary] = {DictB1Range -> {0.5, 1.4, 0.01}, DictT2Range -> {10., 70., 0.2}, DictT2fRange -> {100., 200., 2.}};
+Options[CreateT2Dictionary] = {DictB1Range -> {0.5, 1.4, 0.01}, DictT2Range -> {10., 70., 0.2}, DictT2fRange -> {100., 200., 2.},DictT2IncludeWater->True};
 
 SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-CreateT2Dictionary[relax_, echo_, ang_, OptionsPattern[]] := CreateT2Dictionaryi[relax, echo, ang, OptionValue[DictT2Range], OptionValue[DictB1Range], OptionValue[DictT2fRange]]
+CreateT2Dictionary[relax_, echo_, ang_, OptionsPattern[]] := CreateT2Dictionaryi[relax, echo, ang, 
+	OptionValue[DictT2Range], OptionValue[DictB1Range], OptionValue[DictT2fRange], OptionValue[DictT2IncludeWater]]
 
 (*save each unique dictionary*)
-CreateT2Dictionaryi[relax_, echo_, ang_, t2range_, b1range_, t2frange_] := CreateT2Dictionaryi[relax, echo, ang, t2range, b1range, t2frange] = Block[{
-	T1m, T1f, t2Mvals, t2Mlen, b1vals, b1len, t2val, t2Fvals, t2Flen, time, fatSig, watSig, dict, vals
+CreateT2Dictionaryi[relax_, echo_, ang_, t2range_, b1range_, t2frange_, incW_] := CreateT2Dictionaryi[relax, echo, ang, t2range, b1range, t2frange, incW] = Block[{
+	T1m, T1f, t2Mvals, t2Mlen, b1vals, b1len, t2val, t2Fvals, t2Flen, time, fatSig, watSig, dict, vals, fatSigW
 	},
 	
 	(*set parameters*)
@@ -1067,6 +1069,12 @@ CreateT2Dictionaryi[relax_, echo_, ang_, t2range_, b1range_, t2frange_] := Creat
 		time = AbsoluteTiming[
 			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2val}, ang, B1], {B1, b1vals}];
 			watSig = ParallelTable[EPGSignali[echo, {T1m, T2m}, ang, B1], {B1, b1vals}, {T2m, t2Mvals}];
+			
+			If[incW,
+				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 15}, ang, B1], {B1, b1vals}];
+				fatSig = 0.1 fatSigW + 0.9 fatSig
+				];
+			
 			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i]]}, {t2mi, 1, t2Mlen}, {b1i, 1, b1len}];
 			vals = Table[{t2m, b1}, {t2m, t2Mvals}, {b1, b1vals}];
 		][[1]];
@@ -1078,6 +1086,13 @@ CreateT2Dictionaryi[relax_, echo_, ang_, t2range_, b1range_, t2frange_] := Creat
 		time = AbsoluteTiming[
 			fatSig = ParallelTable[EPGSignali[echo, {T1f, T2f}, ang, B1], {B1, b1vals}, {T2f, t2Fvals}];
 			watSig = ParallelTable[EPGSignali[echo, {T1m, T2m}, ang, B1], {B1, b1vals}, {T2m, t2Mvals}];
+			
+			If[incW,
+				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 15}, ang, B1], {B1, b1vals}];
+				fatSigW = Transpose@ConstantArray[fatSigW,Length[t2Fvals]];
+				fatSig = 0.1 fatSigW + 0.9 fatSig
+				];
+			
 			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i, t2fi]]}, {t2mi, 1, t2Mlen}, {t2fi, 1, t2Flen}, {b1i, 1, b1len}];
 			vals = Table[{t2m, t2f, b1}, {t2m, t2Mvals}, {t2f, t2Fvals}, {b1, b1vals}];
 		][[1]];
