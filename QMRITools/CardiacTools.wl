@@ -1656,6 +1656,8 @@ TransmuralPlot[data_, OptionsPattern[]] :=
   Switch[OptionValue[Method],
   	"Median",
   	Transpose[Quantile[data, {.5, .35, .65}]],
+  	"MedianQ",
+  	Transpose[Quantile[data, {.5, .25, .75}]],
   	"MedianSD",
   	Transpose[Quantile[data, {.5, .16, .84}]],
   	"Median95",
