@@ -13,9 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["QMRITools`TaggingTools`", {"Developer`"}];
-
-$ContextPath=Union[$ContextPath,System`$QMRIToolsContextPaths];
+BeginPackage["QMRITools`TaggingTools`", Join[{"Developer`"}, Complement[QMRITools`$Contexts, {"QMRITools`TaggingTools`"}]]];
 
 
 (* ::Section:: *)

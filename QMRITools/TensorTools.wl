@@ -13,9 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["QMRITools`TensorTools`", {"Developer`"}];
-
-$ContextPath=Union[$ContextPath, System`$QMRIToolsContextPaths];
+BeginPackage["QMRITools`TensorTools`", Join[{"Developer`"}, Complement[QMRITools`$Contexts, {"QMRITools`TensorTools`"}]]];
 
 
 (* ::Section:: *)

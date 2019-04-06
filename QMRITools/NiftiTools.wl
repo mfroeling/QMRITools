@@ -13,9 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["QMRITools`NiftiTools`", {"Developer`"}];
-
-$ContextPath=Union[$ContextPath,System`$QMRIToolsContextPaths];
+BeginPackage["QMRITools`NiftiTools`", Join[{"Developer`"}, Complement[QMRITools`$Contexts, {"QMRITools`NiftiTools`"}]]];
 
 
 (* ::Section:: *)
