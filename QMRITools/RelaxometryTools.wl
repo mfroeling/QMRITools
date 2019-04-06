@@ -13,9 +13,7 @@
 (*Begin Package*)
 
 
-BeginPackage["QMRITools`RelaxometryTools`", {"Developer`"}];
-
-$ContextPath=Union[$ContextPath,System`$QMRIToolsContextPaths];
+BeginPackage["QMRITools`RelaxometryTools`", Join[{"Developer`"}, Complement[QMRITools`$Contexts, {"QMRITools`RelaxometryTools`"}]]];
 
 
 (* ::Section:: *)
