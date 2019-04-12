@@ -1313,7 +1313,7 @@ SkewNorm[x_,Omega_,Xi_,Alpha_]:=(2/Omega)Phi[(x-Xi)/Omega]CapitalPhi[Alpha (x-Xi
 (*ErrorPlot*)
 
 
-Options[ErrorPlot] = {ColorValue -> {Black, Red}, PlotLabel -> "", AxesLabel -> "", ImageSize -> 300}
+Options[ErrorPlot] = {ColorValue -> {Black, Red}, PlotLabel -> "", AxesLabel -> "", ImageSize -> 300, Method->"median"}
 
 SyntaxInformation[ErrorPlot] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -1328,16 +1328,26 @@ ErrorPlot[dat_, xdat_, range_, OptionsPattern[]] :=
   label = OptionValue[AxesLabel];
   label = If[label === "", None, label];
   
-  fdat = DeleteCases[N@Flatten[dat], 0.];
+  fdat = DeleteCases[N@Flatten[#], 0.]&/@dat;
   
-  {mn, sd} = Transpose[ParameterFit[dat]];
-  {er1, er2} = {mn - sd, mn + sd} /. 0 -> Null;
-  
+  Switch[OptionValue[Method],
+  	"mean",
+  	{mn,sd} = Transpose[{Mean[#],StandardDeviation[#]}&/@fdat];
+  	{er1, er2} = {mn-sd,mn+sd};
+  	,"median",
+  	{er1, mn, er2} = Transpose[Quantile[#,{.25,.5,.75}]&/@fdat];
+  	,"fit",
+  	{mn, sd} = Transpose[ParameterFit[fdat]];
+  	{er1, er2} = {mn - sd, mn + sd} /. 0 -> Null;
+  	,_,
+  	{er1, mn, er2} = Transpose[Quantile[#,{.25,.5,.75}]&/@fdat];
+  ];
+    
   plr = If[range === 0,
-    Quantile[fdat, {0.01, .99}],
+    Quantile[Flatten[fdat], {0.01, .99}],
     If[IntegerQ[range],
      sdr = range;
-     {m, s} = {Mean[fdat], StandardDeviation[fdat]};
+     {m, s} = {Mean[Flatten[fdat]], StandardDeviation[Flatten[fdat]]};
      {(m - sdr s), (m + sdr s)},
      range]
     ];

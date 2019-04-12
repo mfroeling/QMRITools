@@ -410,16 +410,24 @@ Pulses[name_] := Switch[name,
 (*GetPulseProfile*)
 
 
-Options[GetPulseProfile] = {MagnetizationVector -> {0, 0, 1}, SliceRange -> 12, SliceRangeSamples -> 25};
+Options[GetPulseProfile] = {MagnetizationVector -> {0, 0, 1}, SliceRange -> 12, SliceRangeSamples -> 25, FatFieldStrength -> 0};
 
 SyntaxInformation[GetPulseProfile] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 GetPulseProfile[ex_?ListQ, ref_?ListQ, opts : OptionsPattern[]] := 
  Module[{exOut, pl1, refOut, pl2, samps},
   samps = OptionValue[SliceRangeSamples];
-  {exOut, pl1} = GetPulseProfile[ex, opts];
-  {refOut, pl2} = GetPulseProfile[ref, opts];
-  {exOut[[6, samps + 1 ;;]], refOut[[6, samps + 1 ;;]], {pl1, pl2}}
+  {exOut, pl1, sl1} = GetPulseProfile[ex, opts];
+  {refOut, pl2, sl2} = GetPulseProfile[ref, opts];
+  If[OptionValue[FatFieldStrength] > 0,
+  	(*calculate the fat slice shift in mm*)
+  	shift = 3.4 OptionValue[FatFieldStrength] 42.5775 (sl1/ex[[3,3]] - sl2/ex[[3,3]]);
+  	step = OptionValue[SliceRange]/OptionValue[SliceRangeSamples]/2.;
+  	fatShift = Abs[shift/step];
+  	{exOut[[6, samps + 1 ;;]], refOut[[6, samps + 1 ;;]], fatShift, {pl1, pl2}}
+  	,
+  	{exOut[[6, samps + 1 ;;]], refOut[[6, samps + 1 ;;]], {pl1, pl2}} 
+  ]
   ]
 
 GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, OptionsPattern[]] := Block[{
@@ -428,7 +436,7 @@ GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, 
 	},
 	
 	(*fixed parameters*)
-	gamma = 2 Pi 42.56 10^6;
+	gamma = 2 Pi 42.5775 10^6;
 	
 	(*converrt the inputs *)
 	gradStrength = gradStrengthi 10^-3;(*input in mT/m convert to T/m*)
@@ -491,7 +499,7 @@ GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, 
      }, ImageSize -> 800, PlotLabel -> info, LabelStyle -> Black];
      
      (*give full output and plot*)
-     {Transpose@output, plot}
+     {Transpose@output, plot, 2 slice}
   ]
 
 
