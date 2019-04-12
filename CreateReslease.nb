@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     31875,        733]
-NotebookOptionsPosition[     31112,        711]
-NotebookOutlinePosition[     31453,        726]
-CellTagsIndexPosition[     31410,        723]
+NotebookDataLength[     36284,        835]
+NotebookOptionsPosition[     35516,        813]
+NotebookOutlinePosition[     35862,        828]
+CellTagsIndexPosition[     35819,        825]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -26,8 +26,7 @@ Cell[BoxData[
      RowBox[{"NotebookDirectory", "[", "]"}], ",", "\"\<QMRITools\>\""}], 
     "}"}], "]"}], ";"}]], "Input",
  CellChangeTimes->{{3.762940404553821*^9, 3.762940424570122*^9}},
- CellLabel->
-  "In[140]:=",ExpressionUUID->"bebca91a-fdac-49e1-bc45-c6632291b3ac"],
+ CellLabel->"In[32]:=",ExpressionUUID->"bebca91a-fdac-49e1-bc45-c6632291b3ac"],
 
 Cell[CellGroupData[{
 
@@ -115,17 +114,25 @@ Cell[BoxData[{
    RowBox[{"Block", "[", "\[IndentingNewLine]", 
     RowBox[{
      RowBox[{"{", 
-      RowBox[{"toolDir", ",", "files", ",", "location", ",", "names"}], "}"}],
-      ",", "\[IndentingNewLine]", 
+      RowBox[{
+      "toolDir", ",", "files", ",", "location", ",", "names", ",", "docDir"}],
+       "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{"(*", 
+      RowBox[{"locations", " ", "of", " ", "files"}], "*)"}], 
+     "\[IndentingNewLine]", 
      RowBox[{
       RowBox[{"toolDir", "=", 
        RowBox[{"FileNameJoin", "[", 
         RowBox[{"{", 
          RowBox[{"dir", ",", "toolboxName"}], "}"}], "]"}]}], ";", 
       "\[IndentingNewLine]", 
-      RowBox[{"files", "=", 
-       RowBox[{"FileNames", "[", 
-        RowBox[{"\"\<*.wl\>\"", ",", "toolDir"}], "]"}]}], ";", 
+      RowBox[{"docDir", "=", " ", 
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"dir", ",", "\"\<build\>\"", ",", "toolboxName"}], "}"}], 
+        "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"deploy", " ", "to", " ", "base", " ", "Directory"}], "*)"}], 
       "\[IndentingNewLine]", 
       RowBox[{"location", "=", 
        RowBox[{"FileNameJoin", "[", 
@@ -133,12 +140,20 @@ Cell[BoxData[{
          RowBox[{
          "$BaseDirectory", ",", "\"\<Applications\>\"", ",", "toolboxName"}], 
          "}"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"copy", " ", "all", " ", "the", " ", "files", " ", 
+        RowBox[{"(", 
+         RowBox[{".", "wl"}], ")"}]}], "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"files", "=", 
+       RowBox[{"FileNames", "[", 
+        RowBox[{"\"\<*.wl\>\"", ",", "toolDir"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
       RowBox[{"names", "=", 
        RowBox[{
         RowBox[{
          RowBox[{"Last", "[", 
           RowBox[{"FileNameSplit", "[", "#", "]"}], "]"}], "&"}], "/@", 
-        "files"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+        "files"}]}], ";", "\[IndentingNewLine]", 
       RowBox[{"MapThread", "[", 
        RowBox[{
         RowBox[{
@@ -150,7 +165,90 @@ Cell[BoxData[{
            RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}], "&"}], 
         ",", 
         RowBox[{"{", 
-         RowBox[{"files", ",", "names"}], "}"}]}], "]"}]}]}], 
+         RowBox[{"files", ",", "names"}], "}"}]}], "]"}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"copy", " ", "thumbnail"}], "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"CopyFile", "[", 
+       RowBox[{
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"toolDir", ",", "\"\<zthumb.gif\>\""}], "}"}], "]"}], ",", 
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"location", ",", "\"\<zthumb.gif\>\""}], "}"}], "]"}], ",", 
+        RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+       "copy", " ", "included", " ", "aplications", " ", "and", " ", "the", 
+        " ", 
+        RowBox[{"kernel", "/", "init"}], " ", "folder"}], "*)"}], 
+      "\[IndentingNewLine]", 
+      RowBox[{"Quiet", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"(", "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"DeleteDirectory", "[", 
+             RowBox[{
+              RowBox[{"FileNameJoin", "[", 
+               RowBox[{"{", 
+                RowBox[{
+                "$BaseDirectory", ",", "\"\<Applications\>\"", ",", 
+                 "toolboxName", ",", "#"}], "}"}], "]"}], ",", 
+              RowBox[{"DeleteContents", "\[Rule]", "True"}]}], "]"}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"CopyDirectory", "[", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"FileNameJoin", "[", 
+               RowBox[{"{", 
+                RowBox[{"toolDir", ",", "#"}], "}"}], "]"}], ",", 
+              "\[IndentingNewLine]", 
+              RowBox[{"FileNameJoin", "[", 
+               RowBox[{"{", 
+                RowBox[{
+                "$BaseDirectory", ",", "\"\<Applications\>\"", ",", 
+                 "toolboxName", ",", "#"}], "}"}], "]"}]}], 
+             "\[IndentingNewLine]", "]"}], ";"}], "\[IndentingNewLine]", 
+           ")"}], "&"}], "/@", 
+         RowBox[{"{", 
+          RowBox[{"\"\<Applications\>\"", ",", "\"\<Kernel\>\""}], "}"}]}], 
+        ";"}], "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+       "Copy", " ", "the", " ", "build", " ", "pacletInfo", " ", "and", " ", 
+        "documentation"}], "*)"}], "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"DeleteDirectory", "[", 
+       RowBox[{
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"location", ",", "\"\<Documentation\>\""}], "}"}], "]"}], 
+        ",", 
+        RowBox[{"DeleteContents", "\[Rule]", "True"}]}], "]"}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"CopyDirectory", "[", 
+       RowBox[{
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"docDir", ",", "\"\<Documentation\>\""}], "}"}], "]"}], ",", 
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"location", ",", "\"\<Documentation\>\""}], "}"}], "]"}]}], 
+       "]"}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"CopyFile", "[", 
+       RowBox[{
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"docDir", ",", "\"\<PacletInfo.m\>\""}], "}"}], "]"}], ",", 
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"location", ",", "\"\<PacletInfo.m\>\""}], "}"}], "]"}], 
+        ",", 
+        RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}], ";"}]}], 
     "\[IndentingNewLine]", "]"}]}], 
   "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
  RowBox[{
@@ -705,12 +803,16 @@ url=./html/guide/QMRITools.html\\\"/>\\n\\n</head>\\n</html>\>\""}], ";",
    3.7628626460545397`*^9, {3.7628676815243077`*^9, 3.762867689339082*^9}, {
    3.7629398915067935`*^9, 3.762939964479662*^9}, {3.762940080627739*^9, 
    3.76294008578244*^9}, {3.7629403875402575`*^9, 3.7629403888577623`*^9}, {
-   3.7629404377329407`*^9, 3.762940441143038*^9}},
- CellLabel->
-  "In[125]:=",ExpressionUUID->"54b41e49-6fd9-4bdf-8ee3-26f375136bc6"]
+   3.7629404377329407`*^9, 3.762940441143038*^9}, {3.763743552942116*^9, 
+   3.763743553942277*^9}, {3.7637793239749413`*^9, 3.7637794164515924`*^9}, {
+   3.7637959002987413`*^9, 3.763796156087536*^9}, {3.763796193279814*^9, 
+   3.7637962317472*^9}, 3.7637972175541267`*^9, {3.7638678187103796`*^9, 
+   3.7638678189604073`*^9}, {3.7640450599480877`*^9, 
+   3.764045060905749*^9}},ExpressionUUID->"54b41e49-6fd9-4bdf-8ee3-\
+26f375136bc6"]
 },
-WindowSize->{958, 1060},
-WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowSize->{599, 791},
+WindowMargins->{{Automatic, -608}, {-438, Automatic}},
 FrontEndVersion->"11.3 for Microsoft Windows (64-bit) (March 6, 2018)",
 StyleDefinitions->"Default.nb"
 ]
@@ -725,15 +827,15 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[558, 20, 345, 9, 28, "Input",ExpressionUUID->"bebca91a-fdac-49e1-bc45-c6632291b3ac"],
+Cell[558, 20, 341, 8, 28, "Input",ExpressionUUID->"bebca91a-fdac-49e1-bc45-c6632291b3ac"],
 Cell[CellGroupData[{
-Cell[928, 33, 702, 17, 28, "Input",ExpressionUUID->"50fa300c-455c-44ea-b627-5770249474a6"],
+Cell[924, 32, 702, 17, 48, "Input",ExpressionUUID->"50fa300c-455c-44ea-b627-5770249474a6"],
 Cell[CellGroupData[{
-Cell[1655, 54, 1663, 24, 22, "Print",ExpressionUUID->"848479f3-63ca-4ecb-859d-30a3355f16b0"],
-Cell[3321, 80, 1665, 24, 22, "Print",ExpressionUUID->"401eeb00-6313-40be-a014-5cd405c3972c"]
+Cell[1651, 53, 1663, 24, 22, "Print",ExpressionUUID->"848479f3-63ca-4ecb-859d-30a3355f16b0"],
+Cell[3317, 79, 1665, 24, 22, "Print",ExpressionUUID->"401eeb00-6313-40be-a014-5cd405c3972c"]
 }, Open  ]]
 }, Open  ]],
-Cell[5013, 108, 26095, 601, 3408, "Input",ExpressionUUID->"54b41e49-6fd9-4bdf-8ee3-26f375136bc6",
+Cell[5009, 107, 30503, 704, 4852, "Input",ExpressionUUID->"54b41e49-6fd9-4bdf-8ee3-26f375136bc6",
  InitializationCell->True]
 }
 ]
