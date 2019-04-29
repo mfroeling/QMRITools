@@ -169,7 +169,7 @@ views = Thread[2*{{0.65, -1.2, 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0},
 
 (*default gradient color funtions*)
 gradsets = ColorData["Gradients"];
-colorNames = {"GrayTones", "Rainbow", "ThermometerColors", "SunsetColors", "TemperatureMap", 
+colorNames = {"GrayTones", "Rainbow", "ThermometerColors", "SunsetColors", "TemperatureMap", "LightTemperatureMap",
     "GrayYellowTones", "BlueGreenYellow", "AvocadoColors", "SouthwestColors"};
 
 (*custom color functions and generate image of custom color*)

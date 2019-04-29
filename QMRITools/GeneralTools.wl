@@ -260,9 +260,10 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 
 SyntaxInformation[TransData] = {"ArgumentsPattern" -> {_, _}};
 
-TransData[data_,dir_]:=Block[{ran,dep,fun},
-	ran=Range[dep=ArrayDepth[data]];
-	fun=Switch[dir,"r",RotateLeft[ran],"l",RotateRight[ran]];
+TransData[dat_,dir_]:=Block[{data,ran,dep,fun},
+	data = ToPackedArray[dat];
+	ran = Range[dep=ArrayDepth[data]];
+	fun = Switch[dir,"r",RotateLeft[ran],"l",RotateRight[ran]];
 	Transpose[data,fun]
 ]
 
@@ -339,7 +340,7 @@ PadToDimensions[data_, dim_, OptionsPattern[]] := Block[{diffDim, padval, pad,di
    Transpose@{zer, diffDim}, Transpose@{diffDim, zer}, 
    Transpose@{Floor[diffDim/2], Ceiling[diffDim/2]}}];
   
-  ArrayPad[data,pad,padval]
+  ToPackedArray[N@ArrayPad[data,pad,padval]]
 	 
   ]
 
@@ -385,7 +386,7 @@ RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[
    Return[Message[RescaleData::data]];
    ];
    
-   Chop[Clip[dataOut,MinMax[data]]]
+   ToPackedArray[N@Chop[Clip[dataOut,MinMax[data]]]]
   ]
 
 
@@ -411,7 +412,8 @@ GridData[data_, part_] := Block[{dim, temp, adepth},
 	dim[[1]] = dim[[1]] + (part - (Mod[Length[data], part] /. 0 -> part));
 	temp = Transpose[Partition[PadRight[data, dim], part]];
 	temp = MapThread[Join, #, adepth - 2] & /@ temp;
-	temp = MapThread[Join, temp, adepth - 1]
+	temp = MapThread[Join, temp, adepth - 1];
+	ToPackedArray@N@temp
   ]
 
 
@@ -641,19 +643,20 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
       WindowFloating -> True, Modal -> True
       ];
 
-dataout =If[!(OptionValue[CropOutput] === "Clip"),
-{a, b, c, d, e, f} = outp;
- If[dd == 3, 
-data[[a ;; b, c ;; d, e ;; f]], 
-data[[a ;; b, All, c ;; d, e ;; f]]
-]
-];
-output=Switch[OptionValue[CropOutput],
-"All",{dataout, outp},
-"Data",dataout,
-"Clip",outp];
-];
-Return[output]
+	dataout =If[!(OptionValue[CropOutput] === "Clip"),
+	{a, b, c, d, e, f} = outp;
+	 ToPackedArray@N@If[dd == 3, 
+		data[[a ;; b, c ;; d, e ;; f]], 
+		data[[a ;; b, All, c ;; d, e ;; f]]]
+	];
+	
+	output=Switch[OptionValue[CropOutput],
+		"All",{dataout, outp},
+		"Data",dataout,
+		"Clip",outp];
+	];
+	
+	Return[output]
 ]
 
 
@@ -718,7 +721,9 @@ ReverseCrop[data_, dim_, crop_, {v1_, v2_}] := Module[{datac, pad},
     3, ArrayPad[data, pad],
     4, Transpose[ArrayPad[#, pad] & /@ Transpose[data]],
     _, Return[$Failed, Module]
-    ]
+    ];
+    
+    ToPackedArray@N@datac
 ]
 
 
@@ -742,13 +747,18 @@ ApplyCrop[data_, crop_ , {v1_,v2_}] := Module[{z1, z2, x1, x2, y1, y2,dim},
 	
 	If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]],Return[Message[ApplyCrop::dim]]];
 		
-  If[ArrayDepth[data] === 4,
+  out = If[ArrayDepth[data] === 4,
    data[[z1 ;; z2, All, x1 ;; x2, y1 ;; y2]],
    If[ArrayDepth[data] === 3,
     data[[z1 ;; z2, x1 ;; x2, y1 ;; y2]],
     If[ArrayDepth[data] === 2,
      data[[x1 ;; x2, y1 ;; y2]]
-     ]]]]
+     ]]];
+     
+     
+     ToPackedArray@N@out
+     
+     ]
 
 
 
@@ -926,7 +936,7 @@ CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1
 
 SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
 
-DevideNoZero[num_,den_]:=DevideNoZeroi[Chop[num],Chop[den]]
+DevideNoZero[num_,den_]:=DevideNoZeroi[Chop[ToPackedArray@N@num],Chop[ToPackedArray@N@den]]
 
 DevideNoZeroi = Compile[{{num, _Real, 1}, {den, _Real, 0}}, If[den == 0., num 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 DevideNoZeroi = Compile[{{num, _Real, 0}, {den, _Real, 0}}, If[den == 0., 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
@@ -962,7 +972,7 @@ MedianNoZero[datai_] := Block[{data},
 
 SyntaxInformation[LogNoZero] = {"ArgumentsPattern" -> {_}};
 
-LogNoZero[val_] := LogNoZeroi[Chop[val]]
+LogNoZero[val_] := LogNoZeroi[Chop[ToPackedArray@N@val]]
 
 LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
 
@@ -973,7 +983,7 @@ LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]],RuntimeAttrib
 
 SyntaxInformation[ExpNoZero] = {"ArgumentsPattern" -> {_}};
 
-ExpNoZero[val_] := ExpNoZeroi[Chop[val]]
+ExpNoZero[val_] := ExpNoZeroi[Chop[ToPackedArray@N@val]]
 
 ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
 

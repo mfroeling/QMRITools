@@ -167,7 +167,7 @@ SyntaxInformation[DeNoise] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 DeNoise[dat_, sigi_, filt_, OptionsPattern[]] := 
  Module[{kern, out, type, dimsig, dimdat, data, sig},
   sig = N[sigi];
-  data = N[dat];
+  data = ToPackedArray@N@dat;
   (*Check dimensions,must be of lower order than data*)
   If[
    ArrayQ[sig] && (ArrayDepth[data] == 3 || ArrayDepth[data] == 4),
@@ -194,7 +194,7 @@ DeNoise[dat_, sigi_, filt_, OptionsPattern[]] :=
   If[OptionValue[DeNoiseMonitor], 
    PrintTemporary["Using " <> type <> " kernel."]];
   
-  out=Nest[DeNoisei[#, sig, filt, kern] &, data, OptionValue[DeNoiseIterations]];
+  out = ToPackedArray@N@Nest[DeNoisei[#, sig, filt, kern] &, data, OptionValue[DeNoiseIterations]];
   
   If[
    ArrayQ[out], Return[Clip[out, {0.9 Min[data], 1.1 Max[data]}]], 
@@ -412,8 +412,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   If[OptionValue[PCAOutput] === Full,
    (*fitted dta,average sigma,{sigma fit,number components,
    number of fitted voxesl,number of max fits}*)
-   {datao, sigmat, output},
-   {datao, sigmat}
+   {ToPackedArray@N@datao, sigmat, output},
+   {ToPackedArray@N@datao, sigmat}
    ]]
 
 
@@ -468,8 +468,7 @@ CalcSigFunc[dat_, Q_, sigi_] := Block[{sig, lab},
 
 (*Make Histogram bins, is fast then using normal mathematica function*)
 HistListC = Compile[{{dat, _Real, 1}, {nbins, _Integer, 0}}, Block[
-    {min, max, maxmin, binw, bins, cpos, binst, comp, ydat, xdat, 
-     tall, miss},
+    {min, max, maxmin, binw, bins, cpos, binst, comp, ydat, xdat, tall, miss},
     (*get histogram range*)
     min = Min[dat]; max = Max[dat];
     {min, max} = Chop[{min, max}];
@@ -675,9 +674,9 @@ Options[AnisoFilterTensor] = {AnisoWeightType->2, AnisoKappa->5., AnisoStepTime-
 
 SyntaxInformation[AnisoFilterTensor] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-AnisoFilterTensor[tens_,data_,OptionsPattern[]]:=Block[{
+AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
 weights,kernels,mn,j,datf,kers,wts,lambda,finDiff,wtsI,
-itt,time,kappa,type
+itt,time,kappa,type, data, tens
 },
 (*get the options*)
 itt=OptionValue[AnisoFilterSteps];
@@ -687,6 +686,8 @@ type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
 
 (*calculate the edges based on the diffusion images*)
 PrintTemporary["Determaning the weights based on the data."];
+data=ToPackedArray@N@dat;
+tens=ToPackedArray@N@tensi;
 weights=WeightMapCalc[data, AnisoKappa->kappa, AnisoWeightType->type];
 (*get the fixed parameters*)
 mn=Mean[tens[[1;;3]]];

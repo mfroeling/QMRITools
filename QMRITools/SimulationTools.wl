@@ -130,6 +130,11 @@ GOutput::usage =
 ReportFits::usage = 
 "ReportFits is an option for SimulateSliceEPG. If True it also reports the fit values "
 
+FatFieldStrength::usage = 
+"FatFieldStrength is an option for GetPulseProfile. If the value >0 it will calculate the shift of the fat refocussing pulse compared to the fat exitation pulse.
+The shift is in SliceRangeSamples steps."
+
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)

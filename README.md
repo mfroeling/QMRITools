@@ -2,7 +2,6 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2530801.svg)](https://doi.org/10.5281/zenodo.2530801)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
-[![HitCount](http://hits.dwyl.io/mfroeling/DTITools.svg)](http://hits.dwyl.io/mfroeling/DTITools)
 [![status](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300/status.svg)](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
  
 ***
@@ -11,12 +10,19 @@
 
 ## Contents
 
+* [Information](#summary)
 * [Information](#information)
 * [Documentation](#documentation)
 * [Install toolbox](#install-toolbox)
 * [Demonstrations](#demonstrations)
 * [Using the toolbox](#using-the-toolbox)
 * [Functionality](#functionality)
+
+## Summary
+
+``QMRITools`` is written in Mathematica using Wolfram Workbench and Eclipse and contains a collection of tools and functions for processing quantitative MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast and batch data processing, and facilitate development and prototyping of new functions. The core of the toolbox contains various functions for data manipulation and restructuring.
+
+The toolbox was developed mostly in the context of quantitative muscle, nerve and cardiac magnetic resonance imaging. The library of functions grows along with the research it is used for and started as a toolbox to analyze DWI data of muscle [@Froeling2012]. Although there exist many different software packages and code repositories for much of the functionality in this toolbox, I was in need of one that did all. Furthermore, most diffusion packages are optimized for brain analysis and provide limited flexibility.
 
 ## Information
 
@@ -55,7 +61,7 @@ All code and documentation is maintained and uploaded to github using [Workbench
 
 ## Install toolbox
 
-The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases/download/2.0/QMRITools.zip). 
+The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases/download/2.1/QMRITools.zip). 
 
 Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 
@@ -86,6 +92,8 @@ To have a global overview of the functionality of the toolbox you can download t
 By default the ``demo.nb`` looks for the folders ``DemoData`` and ``Testing`` in the same folder as the notebook.
 
 In the first section of the demo notebook the toolbox is loaded and two tests are performed. The first test is to check of all files that are needed to run the toolbox are present. The second test runs after the toolbox is loaded and checks if all the functions and their options that are defined are correct.
+
+![demo](https://github.com/mfroeling/QMRITools/blob/master/Images/demo.png)
 
 ## Using the toolbox
 
@@ -141,6 +149,9 @@ A summary of the core functionality is listed below.
 	* Multiple images: Transparent overlay, difference and, checkboard overlays
 	* Legend bars and image labels
 	* Saving to pdf, jpg, animated gif and movie
+
+![PlotData](https://github.com/mfroeling/QMRITools/blob/master/Images/visualization.PNG)
+	
 * **Masking**
 	* Automate and threshold masking
 	* Extracting parameters form masks

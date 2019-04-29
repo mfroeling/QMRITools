@@ -1060,7 +1060,7 @@ type_,OptionsPattern[]]:=Module[{
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
 	];
 	
-	data=ToPackedArray[Chop[Clip[data,MinMax[moving]]]];
+	data=ToPackedArray[N@Chop[Clip[data,MinMax[moving]]]];
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempdir,DeleteContents->True]];
 	If[OptionValue[OutputTransformation], {data,w},	data]
@@ -1179,7 +1179,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 		_, Null];
 		
 	(*give the output*)
-	Chop[Clip[output,MinMax[data]],10^-6]
+	ToPackedArray@N@Chop[Clip[output,MinMax[data]],10^-6]
 ]
 
 

@@ -661,7 +661,7 @@ ImportNiiData[file_, {type_, size_, dim_, off_}, byteorder_, OptionsPattern[Impo
   
   data = ArrayReshape[data, Reverse@dim];
   
-  ToPackedArray[data]
+  ToPackedArray[N@data]
   ]
 
 
@@ -996,7 +996,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type},
 	
 	(*if numbertyp is integer, Round data*)
 	type=OptionValue[NiiDataType];
-	data = Switch[type,"Integer",Round[dato],_,N[dato]];
+	data = ToPackedArray@Switch[type,"Integer",Round[dato],_,N[dato]];
 	(*for lagecy reasons still allow Integer and Real*)
 	type = type/.{"Integer"->"Integer16","Real"->"Real32"};
 	

@@ -165,7 +165,7 @@ DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fmask, wmask, bac
 Options[DixonReconstruct] = {DixonPrecessions -> -1, DixonFieldStrength -> 3, 
   DixonFrequencies -> {{0}, {3.8, 3.4, 3.13, 2.67, 2.46, 1.92, 0.57, -0.60}}, 
   DixonAmplitudes -> {{1}, {0.089, 0.598, 0.047, 0.077, 0.052, 0.011, 0.035, 0.066}}, 
-  DixonIterations -> 5, DixonTollerance -> 0.01, DixonMaskThreshhold -> 0.05, 
+  DixonIterations -> 5, DixonTollerance -> 0.01, DixonMaskThreshhold -> 0.01, 
   DixonFilterInput -> True, DixonFilterOutput -> True, DixonFilterSize -> 1};
 
 SyntaxInformation[DixonReconstruct] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
@@ -209,7 +209,8 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	dep = {ArrayDepth[complex]-1};
 	
 	(*find background voxels*)
-	mask = Closing[Times @@ UnitStep[Abs[complex] - thresh], 1];
+	(*mask = Closing[Times @@ UnitStep[Abs[complex] - thresh], 1];*)
+	mask = Closing[UnitStep[Abs[First@complex] - thresh], 1];
 	
 	(*prepare b0map and r2 map*)
 	b0 = If[b0i === 0, ConstantArray[0., dim], b0i];

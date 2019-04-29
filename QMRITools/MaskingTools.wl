@@ -143,7 +143,7 @@ NormalizeData[data_, mask_] := Block[{mn},
 	3, N[MeanNoZero[Flatten[mask data]]/100.],
 	4, N[MeanNoZero[Flatten[mask data[[All, 1]]]]/100.]
 	];
-	data / mn
+	ToPackedArray@N[data / mn]
 ]
 
 
@@ -192,8 +192,9 @@ SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 Mask[data_,opts:OptionsPattern[]]:=Mask[data, 0, opts]
 
-Mask[data_?ArrayQ,tr_,opts:OptionsPattern[]]:= Block[{mask,tresh, dataD, datN},
+Mask[dat_?ArrayQ, tr_,opts:OptionsPattern[]]:= Block[{mask,tresh, dataD, datN, data},
 	
+	data = ToPackedArray@N@dat;
 	dataD = ArrayDepth[data];
 	
 	If[Length[tresh]>2, Message[Mask::tresh, tresh],
@@ -215,7 +216,7 @@ Mask[data_?ArrayQ,tr_,opts:OptionsPattern[]]:= Block[{mask,tresh, dataD, datN},
 			];
 			
 			(*smooth the mask if needed*)		
-			If[OptionValue[MaskSmoothing], SmoothMask[mask,FilterRules[{opts},Options[SmoothMask]]], mask]
+			ToPackedArray@If[OptionValue[MaskSmoothing], SmoothMask[mask,FilterRules[{opts},Options[SmoothMask]]], mask]
 		]
 	]
 ]
@@ -229,7 +230,7 @@ Options[SmoothMask]={MaskComponents->1, MaskClosing->5, MaskFiltKernel->2}
 
 SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close,obj,filt},
+SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close, obj, filt},
   close = OptionValue[MaskClosing];(*close holes in mask*)
   pad = 3 close;
   obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
@@ -239,7 +240,7 @@ SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close,obj,filt},
   	Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]],
   	Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image3D[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]]
   ]
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -270,7 +271,7 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 	If[out === 1, Message[MaskData::dim, dimD, dimM]];
 	If[out === 2, Message[MaskData::dep, dataD, maskD]];
 	
-	out
+	ToPackedArray@N@out
 ]
 
 
@@ -363,7 +364,7 @@ SplitSegmentations[masksI_] := Block[{vals, masks},
 
 SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
 
-MergeSegmentations[masks_, vals_] := Total[vals Transpose@masks];
+MergeSegmentations[masks_, vals_] := Total[vals Transpose@ToPackedArray[masks]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -374,10 +375,11 @@ Options[SmoothSegmentation] = {MaskFiltKernel -> 2}
 
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothSegmentation[masks_, OptionsPattern[]] := 
- Block[{maskInp, maskOver, maskOut, smooth, posOver, x, y, z, p},
-  
-	smooth = OptionValue[MaskFiltKernel];
+SmoothSegmentation[masksi_, OptionsPattern[]] := 
+ Block[{masks,  maskInp, maskOver, maskOut, smooth, posOver, x, y, z, p},
+ 	masks = ToPackedArray@Round@masksi;
+    smooth = OptionValue[MaskFiltKernel];
+	
 	(*convert data to sparse Array and transpose*)
 	maskInp = Transpose[SparseArray[masks]];
 	(*Get smoothed or non smoothed masks*)
@@ -418,7 +420,9 @@ RemoveMaskOverlaps[masks_] := SmoothSegmentation[masks, MaskFiltKernel->False];
 SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
 
 RescaleSegmentation[seg_, vox_] := Block[{segs, val},
-  If[ArrayDepth[seg] == 3, {segs, val} = SplitSegmentations[seg], segs = seg];
+  If[ArrayDepth[seg] == 3, 
+  	{segs, val} = SplitSegmentations[seg], 
+  	segs = seg];
   segs = RemoveMaskOverlaps[Transpose[Round[RescaleData[#, vox, InterpolationOrder -> 1]] & /@Transpose[segs]]];
   If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
   ]

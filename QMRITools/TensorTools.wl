@@ -376,7 +376,9 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		
 		func=If[OptionValue[Parallelize],
 			SetSharedVariable[xx,data,dataL];
-			DistributeDefinitions[data,dataL,bmat,bmatI,method,output,TensorCalci];
+			DistributeDefinitions[data,dataL,bmat,bmatI,method,output,TensorCalci,
+			FindTensOutliers, TensMinLLS, TensMinWLLS, TensMiniWLLS, ResidualCalc,
+			ExpNoZero,RMSNoZero,MADNoZero, Bmatrix];
 			ParallelTable,
 			Table
 		];	
@@ -431,7 +433,7 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 		"iWLLS", Transpose[TensMiniWLLS[Transpose[(1-outliers) data,l],Transpose[(1-outliers) dataL,l], bmat], r]
 		];
 	
-	If[OptionValue[FullOutput], residual = ResidualCalc[data,fitresult,outliers,bmat,MeanRes->"MAD"]];
+	If[OptionValue[FullOutput], residual = ResidualCalc[data,fitresult,outliers,bmat, MeanRes->"MAD"]];
 		
 	S0 = N@Clip[ExpNoZero[N@Chop[Last[fitresult]]],{0, 1.5 Max[data]}];
 	tensor = N@Clip[Drop[fitresult,-1],{-0.1,0.1}];
