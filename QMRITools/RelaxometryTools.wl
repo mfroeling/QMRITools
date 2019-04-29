@@ -128,6 +128,20 @@ EPGCalibrate::usage =
 EPGSmoothB1::usage = 
 "EPGSmoothB1 is an options for EPGT2Fit. If set to True the B1 map of the fit will be smoothed after which the minimization if perfomed again but with a fixed B1."
 
+WaterFatShift::usage = 
+"WaterFatShift is an options for EPGT2Fit. It specifies the amount of water fat shift in voxels."
+
+WaterFatShiftDirection::usage = 
+"WaterFatShiftDirection is an options for EPGT2Fit. It specifies the water fat shift direction: \"left\", \"right\", \"up\" and \"down\""
+
+EPGFatShift::usage = 
+"EPGFatShift is an options for EPGT2Fit. Specfies the amount of shift of the fat refocussing pulse relative to the fat exitation pulse.
+Can be obtained form GetPulseProfile."
+
+DictT2IncludeWater::usage =
+"DictT2IncludeWater is an options for EPGT2Fit."
+
+
 OutputCalibration::usage = 
 "OutputCalibration is an option for EPGT2Fit and TriExponentialT2Fit. If true it outputs the calibartion values."
 
@@ -144,6 +158,8 @@ If a single value is given this fixed value is used a long as EPGCalibrate is Fa
 EPGFitPoints::usage = 
 "EPGFitPoints is a option for CalibrateEPGT2Fit and EPGT2Fit. Number of points is 200 by default."
 
+EPGMethodCal::usage = 
+"EPGMethodCal is an option for CalibrateEPGT2Fit and EPGT2Fit. The calibration can be done using \"1comp\", \"2comp\", \"2compF\"."
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -622,13 +638,23 @@ LeastSquares2C = Compile[{{Ai, _Real, 2}, {y, _Real, 1}},  Ai.y,
 ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Total[((y - A.f))^2], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
-LeastSquaresErrorC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, Total[(y - A.(Inverse[T.A].T).y)^2]], 
+ErrorCS = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Sqrt[Mean[((y - A.f))^2]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+LeastSquaresErrorC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, 
+	Total[(y - A.(Inverse[T.A].T).y)^2]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+LeastSquaresErrorCS = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, 
+	Sqrt[Mean[(y - A.(Inverse[T.A].T).y)^2]]], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 (*Ai is Inverse[T.A].T*)	
 LeastSquaresError2C = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Total[(y - A.Ai.y)^2], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
+LeastSquaresError2CS = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Sqrt[Mean[(y - A.Ai.y)^2]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 (* ::Subsubsection::Closed:: *)
 (*NonLinearEPGFit*)
@@ -831,7 +857,9 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	If[OptionValue[EPGCalibrate]&&!VectorQ[datan],
 		Print["Callibrating EPG fat T2."];
 		cal = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, clipf, {T1m, T1f}}, 
-	  	EPGFitPoints -> OptionValue[EPGFitPoints], EPGFatShift->OptionValue[EPGFatShift], EPGMethodCal -> OptionValue[EPGMethodCal]];
+	  	EPGFitPoints -> OptionValue[EPGFitPoints], EPGFatShift->OptionValue[EPGFatShift], 
+	  	EPGMethodCal -> OptionValue[EPGMethodCal]];
+	  	
 	  	Switch[OptionValue[EPGMethodCal],
 	  		"1comp", {t2fval, B1c, S0c} = cal[[1]];,
 	  		"2comp", {T2mc, t2fval, B1c} = cal[[1]];,
@@ -953,7 +981,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	];
 
 	(*restructure fit solution*)
-	sol = If[VectorQ[datal], sol, TransData[sol, "r"]];
+	sol = ToPackedArray/@If[VectorQ[datal], sol, TransData[sol, "r"]];
 	
 	(*Get the B1map*)
 	B1Map = sol[[2]];	
@@ -1011,7 +1039,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		];
 		
 		(*update the solution*)
-		sol = TransData[sol,"r"];
+		sol = ToPackedArray/@TransData[sol,"r"];
 	];
 
 	(*get the outputs*)
@@ -1035,8 +1063,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		fat = .9 fat; 
 	];
 	
-	fatMap = DevideNoZero[fat, (wat + fat)];
-	error = Sqrt[sol[[val+3]]];
+	fatMap = ToPackedArray@DevideNoZero[fat, (wat + fat)];
+	error = ToPackedArray@Sqrt[sol[[val+3]]];
 	
 	(*if needed also output callibaration*)
 	out = If[val==2,
@@ -1092,6 +1120,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	  dataT2 = NormalizeData[MaskData[datan, maskT2]];
 	   (*create mask selecting fat*)
 	  fmask = Mask[dataT2[[All, -1]], {50}];
+	  fmask = Dilation[Erosion[fmask, 1], 2] fmask;
 	  fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
 	  (*data for calibration fit*)
 	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose[dataT2 + 10.^-10]] - 10.^-10;
@@ -1169,7 +1198,7 @@ Options[CreateT2Dictionary] = {
 	DictT2Range -> {10., 70., 0.2}, 
 	DictT2fRange -> {100., 200., 2.},
 	
-	DictT2IncludeWater->True, 
+	DictT2IncludeWater->False, 
 	EPGFatShift -> 0.};
 
 SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
@@ -1201,14 +1230,16 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 	
 	(*shift the slice profile of fat*)
 	If[shift > 0,
-		{ang,angS} = ShiftPulseProfile[angle,shift],
+		{ang, angS} = ShiftPulseProfile[angle,shift]
+		,
 		ang = angS = angle
 		];
 	
 	(*distribute the needed funtions for parrallel evaluation*)
-	DistributeDefinitions[EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, RotMatrixTI, MoveStates, MoveStatesI,
+	DistributeDefinitions[EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, RotMatrixTI, 
+		MoveStates, MoveStatesI,
 		 echo, T1m, ang, angS, T1f, b1vals, t2Mvals, t2Fvals, t2val];
-		 
+	
 	(*create the dictionary signals*)
 	If[NumberQ[t2frange],
 		
@@ -1216,9 +1247,9 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 		PrintTemporary["Creating new dictionary with fixed T2 fat value"];
 		(*fixed T2 value*)
 		time = AbsoluteTiming[
-			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2val}, ang, B1], {B1, b1vals}];
-			watSig = ParallelTable[EPGSignali[echo, {T1m, T2m}, angS, B1], {B1, b1vals}, {T2m, t2Mvals}];
-			
+			watSig = ParallelTable[EPGSignali[echo, {T1m, T2m}, ang, B1], {B1, b1vals}, {T2m, t2Mvals}];
+			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2val}, angS, B1], {B1, b1vals}];
+						
 			If[incW,
 				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 15}, ang, B1], {B1, b1vals}];
 				fatSig = 0.1 fatSigW + 0.9 fatSig
@@ -1236,16 +1267,17 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 		PrintTemporary["Creating new dictionary with range of T2 fat values"];
 		(*range of T2 values*)
 		time = AbsoluteTiming[
-			fatSig = ParallelTable[EPGSignali[echo, {T1f, T2f}, ang, B1], {B1, b1vals}, {T2f, t2Fvals}];
-			watSig = ParallelTable[EPGSignali[echo, {T1m, T2m}, angS, B1], {B1, b1vals}, {T2m, t2Mvals}];
-			
+			watSig = ParallelTable[EPGSignali[echo, {T1m, T2m}, ang, B1], {B1, b1vals}, {T2m, t2Mvals}];
+			fatSig = ParallelTable[EPGSignali[echo, {T1f, T2f}, angS, B1], {B1, b1vals}, {T2f, t2Fvals}];
+						
 			If[incW,
 				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 15}, ang, B1], {B1, b1vals}];
 				fatSigW = Transpose@ConstantArray[fatSigW,Length[t2Fvals]];
 				fatSig = 0.1 fatSigW + 0.9 fatSig
 				];
 			
-			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i, t2fi]]}, {t2mi, 1, t2Mlen}, {t2fi, 1, t2Flen}, {b1i, 1, b1len}];
+			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i, t2fi]]}, 
+				{t2mi, 1, t2Mlen}, {t2fi, 1, t2Flen}, {b1i, 1, b1len}];
 			vals = Table[{t2m, t2f, b1}, {t2m, t2Mvals}, {t2f, t2Fvals}, {b1, b1vals}];
 		][[1]];
 		
@@ -1254,7 +1286,7 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 	];
 	
 	(*output*)
-	{dict, vals}
+	{ToPackedArray[dict],ToPackedArray[vals]}
 ]
 
 

@@ -82,10 +82,10 @@ If[QMRITools`$Verbose,Print["--------------------------------------"]];
 
 
 (*check mathematica version*)
-If[$VersionNumber != 11.3,
+If[$VersionNumber < 12,
 	CreateDialog[Column[{Style["
 	Current Mathematica version is "<>ToString[$VersionNumber]<>"
-	The toolbox is tested developed in 11.3.
+	The toolbox is tested developed in 12.0.
 	You need to update! (Or I am behind)
 	Some functions wont work in older versions
 	", TextAlignment -> Center], DefaultButton[], ""}, 
