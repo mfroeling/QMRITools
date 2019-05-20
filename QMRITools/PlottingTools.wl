@@ -714,7 +714,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 	ClearTemporaryVariables[];
 
 	(*Check if data is numeric array, if not exit*)
-	data=dat//N;
+	data=ToPackedArray[dat//N];
 	If[!ArrayQ[data,_,RealQ],Return[Message[PlotData::data]]];
 	
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)

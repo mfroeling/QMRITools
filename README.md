@@ -93,7 +93,7 @@ By default the ``demo.nb`` looks for the folders ``DemoData`` and ``Testing`` in
 
 In the first section of the demo notebook the toolbox is loaded and two tests are performed. The first test is to check of all files that are needed to run the toolbox are present. The second test runs after the toolbox is loaded and checks if all the functions and their options that are defined are correct.
 
-![demo](https://github.com/mfroeling/QMRITools/blob/master/Images/demo.png)
+![demo](https://github.com/mfroeling/QMRITools/blob/master/Images/demo.PNG)
 
 ## Using the toolbox
 
