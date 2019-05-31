@@ -616,7 +616,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   	,
   	"MacOSX",
   	(
-  		"export PATH="<>transFol<>"/bin:$PATH/nexport DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+  		"export PATH="<>transFol<>"/bin:$PATH\nexport DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
   		transformix <>
 		" -in '" <> Movfile[#] <>
 		"' -out '" <> # <>
@@ -627,7 +627,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
 	,
 	"Unix",
 	(
-		"export PATH="<>transFol<>"/bin:$PATH/nexport LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
+		"export PATH="<>transFol<>"/bin:$PATH\nexport LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
 		transformix <>
 		"' -in '" <> Movfile[#] <>
 		"' -out '" <> # <>

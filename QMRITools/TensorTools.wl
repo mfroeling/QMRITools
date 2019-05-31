@@ -375,10 +375,10 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		xx=0;
 		
 		func=If[OptionValue[Parallelize],
-			SetSharedVariable[xx,data,dataL];
-			DistributeDefinitions[data,dataL,bmat,bmatI,method,output,TensorCalci,
-			FindTensOutliers, TensMinLLS, TensMinWLLS, TensMiniWLLS, ResidualCalc,
-			ExpNoZero,RMSNoZero,MADNoZero, Bmatrix];
+			SetSharedVariable[xx];
+			DistributeDefinitions[data, dataL, bmat, bmatI, method, output ,robust, con ,kappa, 
+				TensorCalci, FindTensOutliers, TensMinLLS, TensMinWLLS, TensMiniWLLS, ResidualCalc,
+				ExpNoZero, RMSNoZero, MADNoZero, Bmatrix];
 			ParallelTable,
 			Table
 		];	
@@ -386,7 +386,8 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
 		result = func[
 			xx++;
-			TensorCalci[data[[x]],dataL[[x]],bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}]
+			TensorCalci[data[[x]], dataL[[x]], bmat, bmatI, 
+				Method->method,FullOutput->output, RobustFit->robust,RobustFitParameters->{con,kappa}]
 			,{x,1,Length[data],1}];
 		result = Transpose[result];
 		

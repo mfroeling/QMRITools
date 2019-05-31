@@ -175,7 +175,7 @@ DTItoolExp[back:{{_?ArrayQ,_?StringQ}..},tens_?ArrayQ,vox_?ListQ,folder_String:"
 DTItoolExpi[back_,tens_,vox_,folder_,add_]:=
 Module[{addi,folderi,file,files,fileb,filesb,print},
 	addi=If[add!="","-"<>add,""];
-	folderi=If[folder!="",folder<>"$PathnameSeparator",""];
+	folderi=If[folder!="",folder<>$PathnameSeparator,""];
 	
 	print=Reap[
 		If[back=={},
@@ -237,7 +237,7 @@ I "<>back<>add<>".dat
 SyntaxInformation[ImportDTI] = {"ArgumentsPattern" -> {_,_.}};
 
 ImportDTI[folder_String,add_String:""]:=Module[{},
-DatRead[folder<>"$PathnameSeparator"<>#<>If[add=="","","-"<>add]<>".dat"]&/@{"xx","yy","zz","xy","xz","yz"}];
+DatRead[folder<>$PathnameSeparator<>#<>If[add=="","","-"<>add]<>".dat"]&/@{"xx","yy","zz","xy","xz","yz"}];
 
 ImportDTI[files:{_?StringQ..}]:=Module[{filesc},
 filesc=If[StringLength[#]<4,#<>".dat",If[StringTake[#,-4]==".dat",#,#<>".dat"]]&/@files;

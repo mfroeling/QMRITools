@@ -912,7 +912,7 @@ ImportBvec[file_?StringQ, OptionsPattern[]]:=Module[{grads},
 	grads=Round[LineToList[file],0.0001];
 	grads=If[OptionValue[FlipBvec],
 		{1, -1, 1}#&/@grads,
-		{1,-1,1}RotateLeft[#]&/@grads
+		{1, -1, 1}RotateLeft[#]&/@grads
 		];
 	If[Negative[#[[3]]],-#,#]&/@grads
 ]
