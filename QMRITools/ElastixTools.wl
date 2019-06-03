@@ -517,12 +517,12 @@ ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,mov
 
 RunBatfile[tempdir_,command_]:=Block[{file,batfile,com},
 	(*make elastix sh/bat based on operating system*)
-	file = "elastix-batch."<>Switch[$OperatingSystem,"Windows","bat",_,"sh"];
+	file = "elastix-batch."<>Switch[operatingSystem,"Windows","bat",_,"sh"];
 	
 	batfile = FileNameJoin[{tempdir,file}];
 	Export[batfile,StringJoin[StringReplace[command,"exit \n"->""]],"TEXT"];
 	
-	com = Switch[$OperatingSystem,
+	com = Switch[operatingSystem,
 		"Windows","\"" <> batfile <> "\"\n exit \n",
 		_,"chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n"];
 	
@@ -565,7 +565,7 @@ ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile},
 
 
 RunBatfileT[tempdir_, command_] := Block[{batfile, com},
-	Switch[$OperatingSystem,
+	Switch[operatingSystem,
 		"Windows",
 		batfile = tempdir <> "\\transformix-batch.bat";
 		Export[batfile, StringJoin[command], "TEXT"];
@@ -594,16 +594,14 @@ RunBatfileT[tempdir_, command_] := Block[{batfile, com},
 TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   transformix = FindTransformix[];
   transFol = StringDrop[DirectoryName[transformix, 2], -1];
-  
+    
   volDirs = FileNames["vol*", tempDir, 1];
   
   Movfile[fol_] := First[FileNames["moving*", fol]];
   
-  Transfile[fol_] := Last[SortBy[
-		FileNames["TransformParameters*", FileNameTake[fol, {1, -2}]],
-		FileDate[#, "Modification"] &]];
+  Transfile[fol_] := Last[SortBy[FileNames["FinalTransform*", fol],FileDate[#, "Modification"] &]];
   
-  command=Switch[$OperatingSystem,
+  command=Switch[operatingSystem,
   	"Windows",
   	(
   		"@ \"" <> transformix <>
@@ -616,7 +614,8 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
   	,
   	"MacOSX",
   	(
-  		"export PATH="<>transFol<>"/bin:$PATH\nexport DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+  		"export PATH="<>transFol<>"/bin:$PATH \n"<>
+  		"export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
   		transformix <>
 		" -in '" <> Movfile[#] <>
 		"' -out '" <> # <>
@@ -627,9 +626,10 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
 	,
 	"Unix",
 	(
-		"export PATH="<>transFol<>"/bin:$PATH\nexport LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
+		"export PATH="<>transFol<>"/bin:$PATH \n"<>
+		"export LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
 		transformix <>
-		"' -in '" <> Movfile[#] <>
+		" -in '" <> Movfile[#] <>
 		"' -out '" <> # <>
 		"' -tp '" <> Transfile[#] <>
 		"' > '" <> # <> "/outputa.txt' \n" <>
