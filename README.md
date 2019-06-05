@@ -1,6 +1,6 @@
 # QMRITools
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2530801.svg)](https://doi.org/10.5281/zenodo.2530801)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3239261.svg)](https://doi.org/10.5281/zenodo.3239261)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 [![status](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300/status.svg)](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
  
@@ -93,7 +93,8 @@ By default the ``demo.nb`` looks for the folders ``DemoData`` and ``Testing`` in
 
 In the first section of the demo notebook the toolbox is loaded and two tests are performed. The first test is to check of all files that are needed to run the toolbox are present. The second test runs after the toolbox is loaded and checks if all the functions and their options that are defined are correct.
 
-![demo](https://github.com/mfroeling/QMRITools/blob/master/Images/demo.PNG)
+![demo](https://github.com/mfroeling/QMRITools/blob/master/Images/demo.PNG[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3239261.svg)](https://doi.org/10.5281/zenodo.3239261)
+)
 
 ## Using the toolbox
 
