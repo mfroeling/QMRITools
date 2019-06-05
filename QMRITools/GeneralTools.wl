@@ -908,13 +908,15 @@ SyntaxInformation[QMRIToolsFuncPrint] = {"ArgumentsPattern" -> {_.}};
 
 QMRIToolsFuncPrint[]:=QMRIToolsFuncPrint[""]
 
-QMRIToolsFuncPrint[toolb_String]:=If[toolb=="",PrintAll/@QMRIToolsFunctions[];,PrintAll[QMRIToolsFunctions[toolb]]]
+QMRIToolsFuncPrint[toolb_String]:=If[toolb=="",PrintAll/@QMRIToolsFunctions[],PrintAll[QMRIToolsFunctions[toolb]]]
 
-PrintAll[{name_, functions_, options_}]:=(Print[Style[name, Bold, 24]];
-		Print[Style["Functions", Bold, 16]];
-		Information /@ functions;
-		Print[Style[Options, Bold, 16]];
-		Information /@ options;)
+PrintAll[{name_, functions_, options_}]:=(
+   Print[Style[name, Bold, 24]];
+   Print[Style["Functions", Bold, 16];
+   Print[Information[#]]& /@ functions;
+   Print[Style[Options, Bold, 16]];
+   Print[Information[#]]& /@ options]
+)
 
 
 (* ::Subsubsection::Closed:: *)
