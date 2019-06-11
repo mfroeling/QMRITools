@@ -29,7 +29,7 @@ The toolbox was developed in the context of quantitative muscle, nerve and cardi
 
 The toolbox includes some [demo data](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip) that is used in the demo file ``demo.nb``. In this notebook, most of the functionality of the toolbox is demonstrated. A full list of functions and packages can be found in the [file](https://github.com/mfroeling/QMRITools/blob/master/QMRITools/All-Functions.nb) ``All-Functions.nb`` (also availible as [pdf](https://github.com/mfroeling/QMRITools/releases/download/2.0/All-Functions.pdf)). For all functions and toolboxes, help files and guides are available and the documentation is built using workbench making it available in the Wolfram documentation.  
 
-The toolbox contains some basic functionality such as DICOM and Nifti import, and 2D, 3D and 4D data visualization. The advanced features comprise data registration [@Klein2010; @Shamonin2013], noise suppression [@Aja-Fernandez2008; @Veraart2015], diffusion drift correction [@Vos2014], gradient direction optimization [@Froeling2016], simulation framework [@Froeling2013], EPG based T2 fitting [@Marty2016; @Weigel2015] and iterative decomposition of water and fat with echo asymmetry and least-squares estimation (IDEAL) Dixon reconstruction [@Reeder2005; @Herraez2002]. The current functional toolboxes with a short description are listed below.
+The toolbox contains some basic functionality such as DICOM and Nifti import, and 2D, 3D and 4D data visualization. The advanced features comprise data registration [@Klein2010; @Shamonin2013], noise suppression [@Aja-Fernandez2008; @Veraart2015], diffusion drift correction [@Vos2014], gradient direction optimization [@Froeling2016], simulation framework [@Froeling2013], extended phase graph (EPG) based T2 fitting [@Marty2016; @Weigel2015] and iterative decomposition of water and fat with echo asymmetry and least-squares estimation (IDEAL) Dixon reconstruction [@Reeder2005; @Herraez2002]. The current functional toolboxes with a short description are listed below.
 
 # Toolboxes
 
@@ -38,7 +38,7 @@ A collection of tools to analyze cardiac data. The main features are cardiac sha
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## CoilTools
-A collection of tools to evaluate complex multi-coil data. The functions are specific for analysis of multi-coil magnitude and noise data which allows quantifying per channel SNR. Furthermore, if complex coil sensitivity maps are available it allows performing SENSE g-factor maps simulations.   
+A collection of tools to evaluate complex multi-coil data. The functions are specific for analysis of multi-coil magnitude and noise data which allows quantifying per channel signal to noise ratio (SNR). Furthermore, if complex coil sensitivity maps are available it allows performing SENSE g-factor maps simulations.   
 This toolbox is not demonstrated in the `demo.nb`.
 
 ## DenoiseTools
@@ -47,7 +47,7 @@ imum mean square error (LMMSE) framework [@Aja-Fernandez2008], the second is bas
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ## DixonTools
-An IDEAL based Dixon reconstruction algorithm [@Reeder2005; @Yu2008]. The method provides multi-peak fitting B0 field and T2* correction. The toolbox also provides a function for unwrapping phase data in 2D and 3D based on a best path method [@Abdul-Rahman2007; @Herraez2002]. It also contains a function that allows simulating gradient echo Dixon data.
+An iterative decomposition of water and fat with echo asymmetry and least-squares estimation (IDEAL) based Dixon reconstruction algorithm [@Reeder2005; @Yu2008]. The method provides multi-peak fitting B0 field and T2* correction. The toolbox also provides a function for unwrapping phase data in 2D and 3D based on a best path method [@Abdul-Rahman2007; @Herraez2002]. It also contains a function that allows simulating gradient echo Dixon data.
 Most of the functionality is demonstrated in the `demo.nb`.
 
 ![IDEAL based Dixon reconstruction: fitted fat fractions as a function of the imposed fat fraction, SNR and B0 field offset.](dixon.png)
@@ -67,7 +67,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 ![The graphical user interface of the gradient generation tool.](gradients.png)
 
 ## ImportTools
-Allows importing Dicom data or Dicom header attributes. These functions are rarely used since the toolbox mostly uses the NIfTY data format and provides tools to convert Dicom to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
+Allows importing Dicom data or Dicom header attributes. These functions are rarely used since the toolbox mostly uses the NIfTI data format and provides tools to convert Dicom to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
 This toolbox is not demonstrated in the `demo.nb`.
 
 ## IVIMTools
