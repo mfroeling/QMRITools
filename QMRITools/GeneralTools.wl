@@ -761,7 +761,6 @@ ApplyCrop[data_, crop_ , {v1_,v2_}] := Module[{z1, z2, x1, x2, y1, y2,dim},
      ]
 
 
-
 (* ::Subsection:: *)
 (*Split and merge*)
 
@@ -778,6 +777,7 @@ CutData[data_,cut_] := Switch[ArrayDepth[data],
 		4,{data[[All, All, All, ;; cut]],data[[All, All, All, (cut + 1) ;;]],cut},
 		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}]
 
+
 FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran,blur,i, max},
   
 	(*flatten mean and normalize data*)
@@ -785,7 +785,7 @@ FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran
 	fdat = Flatten[dat];
 	dat = Clip[dat, {0, Quantile[Pick[fdat, Unitize[fdat], 1], .75]}];
 	dat = N@Nest[Mean, dat, ArrayDepth[dat] - 1];
-	max = 0.75 len;
+	max = 0.85 len;
 	len = Length[dat];
 	dat = max dat/Max[dat];
 	mask = UnitStep[dat - .1 len];
@@ -810,18 +810,17 @@ FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran
 		$Failed,
 		(*find the most middle peak*)
 		mid = Round[Length[dat]/2];
-		center = {mid, .65 max};
+		center = {mid, .75 max};
 		peak = Nearest[peaks, center];
-		Print[Show[
+		PrintTemporary[Show[
 			ListLinePlot[{max-dat,datf}, PlotStyle->{Black,Orange}],
-			ListPlot[{peaks,peak,{center}},PlotStyle->(Directive[{PointSize[Large],#}]&/@{Blue,Red,Green})]
-			,ImageSize->100]
+			ListPlot[{peaks,{center},peak},PlotStyle->(Directive[{PointSize[Large],#}]&/@{Blue,Gray,Green})]
+			,ImageSize->75, Ticks -> None]
 			];
 		(*output*)
 		Round[First@First@peak]
 	]
   ]
-
 
 
 (* ::Subsubsection::Closed:: *)
