@@ -9,7 +9,7 @@ VerificationTest[(* 1 *)
 ]
 
 VerificationTest[(* 2 *)
-	CompoundExpression[Set[pac, Sort[PacletInformation[Last[PacletFind["QMRITools"]]]]], Set[pacI, Map[Function[Sort[List[Rule["Name", "QMRITools"], Rule["Version", "2.1.4"], Rule["BuildNumber", ""], Rule["Qualifier", ""], Rule["WolframVersion", "11.0+"], Rule["SystemID", All], Rule["Description", "Toolbox for Quantitative MRI."], Rule["Category", ""], Rule["Creator", "Martijn Froeling <m.froeling@gmail.com>"], Rule["Publisher", ""], Rule["Support", ""], Rule["Internal", False], Rule["Location", FileNameJoin[List[Slot[1], "Applications", "QMRITools"]]], Rule["Context", List["QMRITools`"]], Rule["Enabled", True], Rule["Loading", Manual]]]], List[$UserBaseDirectory, $BaseDirectory]]], Set[pacT, AnyTrue[pacI, Function[SameQ[pac, Slot[1]]]]]]
+	CompoundExpression[Set[pac, Sort[PacletInformation[Last[PacletFind["QMRITools"]]]]], Set[pacI, Map[Function[Sort[List[Rule["Name", "QMRITools"], Rule["ProductName", All], Rule["Version", "2.2.0"], Rule["BuildNumber", ""], Rule["Qualifier", ""], Rule["WolframVersion", "12.0+"], Rule["SystemID", All], Rule["Description", "Toolbox for Quantitative MRI."], Rule["Category", ""], Rule["Creator", "Martijn Froeling <m.froeling@gmail.com>"], Rule["Publisher", ""], Rule["Updating", Manual], Rule["Support", ""], Rule["Internal", False], Rule["Location", FileNameJoin[List[Slot[1], "Applications", "QMRITools"]]], Rule["Context", List["QMRITools`"]], Rule["Enabled", True], Rule["Loading", Manual]]]], List[$UserBaseDirectory, $BaseDirectory]]], Set[pacT, AnyTrue[pacI, Function[SameQ[pac, Slot[1]]]]]]
 	,
 	True	
 	,

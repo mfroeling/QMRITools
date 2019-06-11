@@ -371,19 +371,31 @@ MergeSegmentations[masks_, vals_] := Total[vals Transpose@ToPackedArray[masks]];
 (*SmoothSegmentation*)
 
 
-Options[SmoothSegmentation] = {MaskFiltKernel -> 2}
+Options[SmoothSegmentation] = {MaskFiltKernel -> 2, MaskComponents->0}
 
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 SmoothSegmentation[masksi_, OptionsPattern[]] := 
- Block[{masks,  maskInp, maskOver, maskOut, smooth, posOver, x, y, z, p},
+ Block[{masks, obj, maskInp, maskOver, maskOut, smooth, posOver, x, y, z, p},
  	masks = ToPackedArray@Round@masksi;
     smooth = OptionValue[MaskFiltKernel];
+	obj = OptionValue[MaskComponents];
 	
 	(*convert data to sparse Array and transpose*)
 	maskInp = Transpose[SparseArray[masks]];
 	(*Get smoothed or non smoothed masks*)
-	maskInp = SparseArray[If[smooth === False, maskInp, SparseArray[Round[GaussianFilter[#, smooth] + 0.15]] & /@ maskInp]];
+	maskInp = If[smooth === False, 
+		maskInp, 
+		(
+			tmp = Round[GaussianFilter[Normal[#], smooth] + 0.15];
+			If[obj>0,
+				tmp = Round@ImageData[SelectComponents[Image3D[ArrayPad[tmp, 5]],"Count", -obj]];
+				SparseArray[ArrayPad[tmp,-5]],
+				SparseArray[tmp]
+			]
+		)& /@ maskInp
+		];
+		
 	(*find the overlaps*)
 	maskOver = Mask[Total[maskInp], 1.5];
 	posOver = Position[maskOver, 1, 3];
