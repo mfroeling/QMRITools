@@ -1,8 +1,9 @@
 # QMRITools
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3239261.svg)](https://doi.org/10.5281/zenodo.3239261)
+[![DOI](http://joss.theoj.org/papers/10.21105/joss.01204/status.svg)](https://doi.org/10.21105/joss.01204)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
-[![status](http://joss.theoj.org/papers/10.21105/joss.01204/status.svg)](http://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
+
  
 ***
 
