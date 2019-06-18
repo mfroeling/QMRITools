@@ -507,6 +507,20 @@ sysJ=SysToMat[sysJ,n];
 scale={1,1,1,1};
 {sysJ,sysS,scale,sysSi,names,it,name}
 ,
+"lac2",
+(*single spin system*)
+names={"A","B","C","D"};
+n=Length[names];
+it=Range[n];
+sysSi={4.2,1.32,1.32,1.32};
+sysS=sysSi-cf;
+sysJ={
+{{1,2},7.25},{{1,3},7.25},{{1,4},7.25}
+};
+sysJ=SysToMat[sysJ,n];
+scale={1,1,1,1};
+{sysJ,sysS,scale,sysSi,names,it,name}
+,
 "gaba",
 (*single spin system*)
 names={"A","B","C","D","E","F"};
