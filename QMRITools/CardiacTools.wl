@@ -1720,7 +1720,9 @@ MaskHelix[helix_, mask_,OptionsPattern[]] := Block[{fun},
 (*BullseyePlot*)
 
 
-Options[BullseyePlot]={TextOffset->.5,TextSize->12,PlotRange->Automatic, ColorFunction->"TemperatureMap", BullPlotMethod->"Dynamic",ImageSize->200};
+Options[BullseyePlot]={TextOffset->.5,TextSize->12,PlotRange->Automatic, 
+	ColorFunction->"TemperatureMap", BullPlotMethod->"Dynamic", TextNumber->{5,2},
+	ImageSize->200};
 
 SyntaxInformation[BullseyePlot] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -1767,7 +1769,7 @@ BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, m
     }, 1];
  
  textv = Table[
-   Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", datat[[i]]],
+   Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", NumberForm[datat[[i]],OptionValue[TextNumber]]],
       Bold, FontFamily -> "Helvetica", Black, 
      FontSize -> OptionValue[TextSize]], pts[[i]]], {i, 17}];
  textn = Table[

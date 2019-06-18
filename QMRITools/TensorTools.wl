@@ -363,7 +363,7 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 	If[dirB!=dirD,Return[Message[TensorCalc::bvec,dirD,dirB];$Failed]];
 	
 	(*define data*)
-	dataL=Chop[LogNoZero[Chop[data]]];	
+	(*dataL=Chop[LogNoZero[Chop[data]]];*)	
 	(*calculate the inverse bmat*)
 	bmatI=PseudoInverse[bmat];
 	
@@ -376,26 +376,26 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		
 		func=If[OptionValue[Parallelize],
 			SetSharedVariable[xx];
-			DistributeDefinitions[data, dataL, bmat, bmatI, method, output ,robust, con ,kappa, 
+			DistributeDefinitions[bmat, bmatI, method, output ,robust, con ,kappa, 
 				TensorCalci, FindTensOutliers, TensMinLLS, TensMinWLLS, TensMiniWLLS, ResidualCalc,
-				ExpNoZero, RMSNoZero, MADNoZero, Bmatrix];
-			ParallelTable,
-			Table
+				Chop, LogNoZero, ExpNoZero, RMSNoZero, MADNoZero, Bmatrix];
+			ParallelMap,
+			Map
 		];	
 		
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
-		result = func[
+		result = func[(
 			xx++;
-			TensorCalci[data[[x]], dataL[[x]], bmat, bmatI, 
-				Method->method,FullOutput->output, RobustFit->robust,RobustFitParameters->{con,kappa}]
-			,{x,1,Length[data],1}];
+			TensorCalci[#, Chop[LogNoZero[Chop[#]]], bmat, bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}]
+			)&,data];
 		result = Transpose[result];
 		
 		(*full output returns {tens,S0,(outliers),residuals}*)
 		If[output, result[[1]] = Transpose[result[[1]]]];	
 		
 		,(*1D,2D,3D*)
-		result = TensorCalci[data,dataL,bmat,bmatI,Method->method,FullOutput->output,RobustFit->robust,RobustFitParameters->{con,kappa}];
+		dataL=Chop[LogNoZero[Chop[data]]];	
+		result = TensorCalci[data,dataL,bmat,bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}];
 	];
 	System`SetSystemOptions["CheckMachineUnderflow" -> True];
 	ParallelEvaluate[System`SetSystemOptions["CheckMachineUnderflow" -> True]];
