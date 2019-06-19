@@ -973,9 +973,9 @@ MedianNoZero[datai_] := Block[{data},
 
 SyntaxInformation[LogNoZero] = {"ArgumentsPattern" -> {_}};
 
-LogNoZero[val_] := LogNoZeroi[Chop[ToPackedArray@N@val]]
+LogNoZero[val_] := Chop[LogNoZeroi[Chop[ToPackedArray@N@val]]]
 
-LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
+LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -986,7 +986,7 @@ SyntaxInformation[ExpNoZero] = {"ArgumentsPattern" -> {_}};
 
 ExpNoZero[val_] := ExpNoZeroi[Chop[ToPackedArray@N@val]]
 
-ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
+ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
 
 
 (* ::Subsubsection::Closed:: *)

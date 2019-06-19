@@ -324,17 +324,28 @@ d
 (*SequenceTSE*)
 
 
-SyntaxInformation[SequenceTSE]={"ArgumentsPattern" -> {_, _, {_, _}, {_,_}, _.}};
+SyntaxInformation[SequenceTSE]={"ArgumentsPattern" -> {_, _, {_, _, _.}, {_,_}, _.}};
 
 SequenceTSE[din_,H_,{te_,necho_},{ex_,ref_}, b1_:1]:=Block[{d,tau},
-tau=te/2;
-d=SimRotate[din,H,b1 ex,0];
-(*loop over reg pulses*)
-Table[
-d=SimEvolve[d,H,tau];
-d=SimRotate[d,H,b1 ref,90];
-d=SimEvolve[d,H,tau]
-,{i,0,necho}]
+	tau=te/2;
+	d=SimRotate[din,H,b1 ex,0];
+	(*loop over reg pulses*)
+	Table[
+		d=SimEvolve[d,H,tau];
+		d=SimRotate[d,H,b1 ref,90];
+		d=SimEvolve[d,H,tau]
+	,{i,0,necho}]
+]
+
+SequenceTSE[din_,H_,{te1_,te_,necho_},{ex_,ref_}, b1_:1]:=Block[{d,tau},
+	d=SimRotate[din,H,b1 ex,0];
+	(*loop over reg pulses*)
+	Table[
+		tau=If[i==0, te1/2, te/2];
+		d=SimEvolve[d,H,tau];
+		d=SimRotate[d,H,b1 ref,90];
+		d=SimEvolve[d,H,tau]
+	,{i,0,necho}]
 ]
 
 
