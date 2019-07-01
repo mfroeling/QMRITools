@@ -160,6 +160,9 @@ ReverseSets::usage =
 NormalizeSets::usage = 
 "NormalizeSets is an option for JoinSets. True normalizes the individual stacs before joining."
 
+NormalizeOverlap::usage = 
+"NormalizeOverlap is an option for JoinSets. True removes strong signal dropoff at the end of a stack."
+
 MotionCorrectSets::usage = 
 "MotionCorrectSets is an option for JoinSets. True motion corrects the individual stacs before joining using CorrectJoinSetMotion."
 
@@ -907,7 +910,7 @@ Inverse3Di[data_] := Block[{out},
 (*JoinSets*)
 
 
-Options[JoinSets]={ReverseSets->True,ReverseData->True, NormalizeSets -> True, MotionCorrectSets -> False, PaddOverlap -> 2, JoinSetSplit -> True};
+Options[JoinSets]={ReverseSets->True,ReverseData->True, NormalizeOverlap->False, NormalizeSets -> True, MotionCorrectSets -> False, PaddOverlap -> 2, JoinSetSplit -> True};
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -920,6 +923,7 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 	motion = OptionValue[MotionCorrectSets];
 	pad = OptionValue[PaddOverlap];
 	normalize=OptionValue[NormalizeSets];
+	normover=OptionValue[NormalizeOverlap];
 	depth=ArrayDepth[data];
 	overlap = If[ListQ[over],First@over,over];
 	
@@ -948,8 +952,8 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 	
 	PrintTemporary["Joining data"];	
 	dat = Switch[depth,
-		5,Transpose[(JoinSetsi[dat[[All, All, #]],overlap]) & /@ Range[Length[dat[[1, 1]]]]],
-		4,JoinSetsi[dat,overlap],
+		5,Transpose[(JoinSetsi[dat[[All, All, #]],overlap,normover]) & /@ Range[Length[dat[[1, 1]]]]],
+		4,JoinSetsi[dat,overlap,normover],
 		_,$Failed
 	];
 	
@@ -960,8 +964,8 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 ]
 
 
-JoinSetsi[data_?ArrayQ,overlap_?IntegerQ]:=
-Module[{sets,set1,set2,step,set1over,set2over,joined},
+JoinSetsi[data_?ArrayQ,overlap_?IntegerQ,norm_:False]:=
+Module[{sets,set1,set2,step,set1over,set2over,joined,mn1,mn2},
 	
 	sets=Length[data];
 	step=1/(overlap+1);
@@ -977,6 +981,15 @@ Module[{sets,set1,set2,step,set1over,set2over,joined},
 			];
 		set2=Drop[data[[i+1]],{1,overlap}];
 		set2over=Take[data[[i+1]],{1,overlap}];
+		
+		If[norm,
+			mn1 = MeanNoZero[Flatten[#]] & /@ set1over;
+			mn2 = MeanNoZero[Flatten[#]] & /@ set2over;
+			mn1 = mn1[[1]]/mn1;
+			mn2 = mn2[[-1]]/mn2;
+			set1over = mn1 set1over;
+			set2over = mn2 set2over;
+		];
 
 		joined = Joini[{set1, set2}, {set1over, set2over}, overlap];
 		];
