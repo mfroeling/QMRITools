@@ -148,7 +148,7 @@ Under development
 The toolbox contains over 250 Functions and options of processing and analyzing data.
 A summary of the core functionality is listed below. 
 
-![Overview](https://github.com/mfroeling/QMRITools/blob/master/docs/images/OverView.jpg)
+![Overview](https://github.com/mfroeling/QMRITools/blob/master/docs/images/overview.png)
 
 * **Diffusion Analysis**
 	* Signal drift correction 
