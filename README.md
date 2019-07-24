@@ -9,7 +9,7 @@
 [![wolfram language](https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_language.png)](https://www.wolfram.com/language/)
 [![wolfram workbench](https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
 [![eclipse](https://github.com/mfroeling/QMRITools/blob/master/Images/eclipse.png)](https://www.eclipse.org/)
-[![Wolfram Mathematica]https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
+[![Wolfram Mathematica](https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
  

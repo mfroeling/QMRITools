@@ -6,10 +6,10 @@
 
 ------------------------------------------------------------------------
 
-[![wolfram language](\QMRITools\images\wolfram%20language.png)](https://www.wolfram.com/language/)
-[![wolfram workbench](\QMRITools\images\wolfram%20workbench.jpg)](https://www.wolfram.com/workbench/)
-[![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
-[![Wolfram Mathematica](\QMRITools\images\wolfram%20mathematica.png)](http://www.wolfram.com/mathematica/)
+[![wolfram language](https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_language.png)](https://www.wolfram.com/language/)
+[![wolfram workbench](https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
+[![eclipse](https://github.com/mfroeling/QMRITools/blob/master/Images/eclipse.png)](https://www.eclipse.org/)
+[![Wolfram Mathematica](https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
  
@@ -39,12 +39,11 @@ When using the toolbox please cite one of the following references:
 2. Froeling M, et al.: Reproducibility of diffusion tensor imaging in human forearm muscles at 3.0 T in a clinical setting. Magn Reson Med 2010; 64:1182–1190. [link]https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.22477)
 3. Froeling M, et al.: Diffusion-tensor MRI reveals the complex muscle architecture of the human forearm. J Magn Reson Imaging 2012; 36:237–248. [link](https://onlinelibrary.wiley.com/doi/10.1002/jmri.23608)
 
-
 ------------------------------------------------------------------------
 
 ## Installation
 
-The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases){:target="_blank"}. 
+The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases). 
 
 Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 
@@ -87,7 +86,7 @@ After the toolbox is installed correctly it should show up as a package in the M
 
 ![QMRITools package](https://github.com/mfroeling/QMRITools/blob/master/Images/AddOns.PNG)
 
-All code and documentation is maintained and uploaded to github using [Workbench](https://www.wolfram.com/workbench/). An online version of the full documentation can be found [here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html){:target="_blank"}.
+All code and documentation is maintained and uploaded to github using [Workbench](https://www.wolfram.com/workbench/). An online version of the full documentation can be found [here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html).
 
 ![Guides QMRITools](https://github.com/mfroeling/QMRITools/blob/master/Images/Guide.PNG)
 
@@ -151,67 +150,67 @@ A summary of the core functionality is listed below.
 
 ![Overview](https://github.com/mfroeling/QMRITools/blob/master/Images/OverView.jpg)
 
-- **Diffusion Analysis**
-	- Signal drift correction 
-	- LLS, WLLS and iWLLS methods
-	- REKINDLE outlier detection
-	- IVIM fitting (fixed parameters, back-projection and Bayesian fitting)
-	- Parameter fitting using histogram analysis
-	- Joining and sorting of multiple series of the same volume
-	- Joining multiple stacks with slice overlap into one stack
-- **Diffusion Gradients optimization**
-	- Single and multi shell
-	- Rotating and correcting Bmatrix
-	- Actual b-value estimation by gradient sequence integration
-	- Gradient visualization
-- **Noise suppression**
-	- LMMSE noise suppression
-	- PCA noise suppression based on ramom matrix theory
-	- Anisotropic tensor smoothing using diffusion filter.
-- **Importing and Exporting**
-	- Dicom data (classing and enhanced file format)
-	- Nifti data (.nii and .img .hdr, supports .gz files)
-	- Compatible with ExplorDTI and Viste for fiber tractography
-- **Data visualization**
-	- 2D 3D and 4D viewer
-	- Multiple images: Transparent overlay, difference and, checkboard overlays
-	- Legend bars and image labels
-	- Saving to pdf, jpg, animated gif and movie
+* **Diffusion Analysis**
+	* Signal drift correction 
+	* LLS, WLLS and iWLLS methods
+	* REKINDLE outlier detection
+	* IVIM fitting (fixed parameters, back-projection and Bayesian fitting)
+	* Parameter fitting using histogram analysis
+	* Joining and sorting of multiple series of the same volume
+	* Joining multiple stacks with slice overlap into one stack
+* **Diffusion Gradients optimization**
+	* Single and multi shell
+	* Rotating and correcting Bmatrix
+	* Actual b-value estimation by gradient sequence integration
+	* Gradient visualization
+* **Noise suppression**
+	* LMMSE noise suppression
+	* PCA noise suppression based on ramom matrix theory
+	* Anisotropic tensor smoothing using diffusion filter.
+* **Importing and Exporting**
+	* Dicom data (classing and enhanced file format)
+	* Nifti data (.nii and .img .hdr, supports .gz files)
+	* Compatible with ExplorDTI and Viste for fiber tractography
+* **Data visualization**
+	* 2D 3D and 4D viewer
+	* Multiple images: Transparent overlay, difference and, checkboard overlays
+	* Legend bars and image labels
+	* Saving to pdf, jpg, animated gif and movie
 
-![PlotData](https://github.com/mfroeling/QMRITools/blob/master/Images/visualization.PNG)	
+![PlotData](https://github.com/mfroeling/QMRITools/blob/master/Images/visualization.PNG)
 	
-- **Masking**
-	- Automate and threshold masking
-	- Extracting parameters form masks
-	- Smoothing masks
-	- Smoothing muscle segmentation
-- **Motion and distortion correction (Registration using elastix)**
-	- Rigid, affine, b-spline and cyclic registration 
-	- nD to nD registration
-	- Automated series processing 
-	- Slice to slice motion correction of 3D and 4D data
-- **Dixon Reconstruction**
-	- B0 phase unwrapping
-	- DIXON iDEAL reconstruction with T2star
-- **Relaxometry fitting**
-	- T2 fitting
-	- T1rho fitting
-	- Tri Exponential T2 fitting
-	- EPG based T2 fitting with slice profile
-- **Simulation Framework**
-	- Diffuison tensor simulation and analysis
-	- Bloch and EPG simulations
-	- Cardiac DTI models (fiber architecture)
-- **Cardiac Diffusion analysis*- 
-	- Breathing motion correction
-	- Corrupted slice rejection
-	- Local myocardial coordinate system calculation
-	- helix angle and fiber architecture matrix
-	- AHA 17 parameter description
-	- Transmural parameter description	
+* **Masking**
+	* Automate and threshold masking
+	* Extracting parameters form masks
+	* Smoothing masks
+	* Smoothing muscle segmentation
+* **Motion and distortion correction (Registration using elastix)**
+	* Rigid, affine, b-spline and cyclic registration 
+	* nD to nD registration
+	* Automated series processing 
+	* Slice to slice motion correction of 3D and 4D data
+* **Dixon Reconstruction**
+	* B0 phase unwrapping
+	* DIXON iDEAL reconstruction with T2star
+* **Relaxometry fitting**
+	* T2 fitting
+	* T1rho fitting
+	* Tri Exponential T2 fitting
+	* EPG based T2 fitting with slice profile
+* **Simulation Framework**
+	* Diffuison tensor simulation and analysis
+	* Bloch and EPG simulations
+	* Cardiac DTI models (fiber architecture)
+* **Cardiac Diffusion analysis** 
+	* Breathing motion correction
+	* Corrupted slice rejection
+	* Local myocardial coordinate system calculation
+	* helix angle and fiber architecture matrix
+	* AHA 17 parameter description
+	* Transmural parameter description	
 
+**Under Construction**
 
-Under Construction
 * **Spectra fitting**
 	* Fitting spectra using a set of basis functions
 	* Phase correction and line-width optimization
@@ -244,7 +243,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 An IDEAL based Dixon reconstruction algorithm [@Reeder2005; @Yu2008]. The method provides multi-peak fitting B0 field and T2- correction. The toolbox also provides a function for unwrapping phase data in 2D and 3D based on a best path method [@Abdul-Rahman2007; @Herraez2002]. It also contains a function that allows simulating gradient echo Dixon data.
 Most of the functionality is demonstrated in the `demo.nb`.
 
-![IDEAL based Dixon reconstruction: fitted fat fractions as a function of the imposed fat fraction, SNR and B0 field offset.](\QMRITools\images\dixon.png)
+![IDEAL based Dixon reconstruction: fitted fat fractions as a function of the imposed fat fraction, SNR and B0 field offset.](https://github.com/mfroeling/QMRITools/blob/master/Images/dixon.png)
 
 ### ElastixTools
 A wrapper that calls the Elastix registration framework [@Klein2010; @Shamonin2013]. The toolbox determines what registration or transformations need to be performed, exports the related data to a temp folder and calls an automatically generated command line script that performs the registration. After registration is completed the data is again loaded into Mathematica.
@@ -258,7 +257,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 The main feature is an algorithm that uses static repulsion [@Jones1999; @Froeling2016] to generate homogeneously distributed gradient directions for DWI experiments. It also provides functions to convert bval and bvec files to bmatrix and vice versa.
 Most of the functionality is demonstrated in the `demo.nb`.
 
-![The graphical user interface of the gradient generation tool.](\QMRITools\images\gradients.png)
+![The graphical user interface of the gradient generation tool.](https://github.com/mfroeling/QMRITools/blob/master/Images/gradients.png)
 
 ### ImportTools
 Allows importing DCM data or DCM header attributes. These functions are rarely used since the toolbox mostly uses the NIfTY data format and provides tools to convert DCM to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
@@ -268,7 +267,7 @@ This toolbox is not demonstrated in the `demo.nb`.
 The toolbox includes functions to perform IVIM fitting of DWI data. There are two main functions: non linear fitting and Bayesian fitting [@Orton2014]. 
 Some of the functionality is demonstrated in the `demo.nb`.
 
-![Visualization of IVIM fitting.](\QMRITools\images\ivim.png)
+![Visualization of IVIM fitting.](https://github.com/mfroeling/QMRITools/blob/master/Images/ivim.png)
 
 ### JcouplingTools
 A toolbox that allows simulation of NMR spectra using Hamiltonians based on methods from [FID-A](https://github.com/CIC-methods/FID-A). It allows simulating large spin systems [@Castillo2011] and was mainly implemented to investigate fat spectra in TSE [@Stokes2013].
@@ -298,7 +297,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 A collection of tools to fit T2, T2*, T1rho and T1 relaxometry data. The main function of this toolbox is an extended phase graph (EPG) [@Weigel2015] method for multi-compartment T2 fitting of multi-echo spin echo data [@Marty2016]. Therefore it provides functions to simulate and evaluate EPG. 
 Some of the functionality is demonstrated in the `demo.nb`.
 
-![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation as a function of B1, SNR and fat fraction.](\QMRITools\images\epg-t2.png)
+![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation as a function of B1, SNR and fat fraction.](https://github.com/mfroeling/QMRITools/blob/master/Images/epg-t2.png)
 
 ### SimulationTools
 The main purpose of this toolbox is to simulate DTI based DWI data and contains some functions to easily perform analysis of the fit results of the simulated signals [@Froeling2013].
@@ -308,7 +307,7 @@ Some of the functionality is demonstrated in the `demo.nb`.
 The original toolbox where the project started. The main functions in this toolbox are to fit and evaluate the diffusion tensor model. Various fitting methods are implemented (e.g. LLS, NLS, WLLS, and iWLLS). The default method is an iterative weighted linear least squares approach [@Veraart2013]. The tensor fitting also includes outlier detections using REKINDLE [@Tax2015] and data preparation includes drift correction [@Vos2014].
 Most of the functionality is demonstrated in the `demo.nb`.
 
-![MD and FA as a function of SNR and fat fraction. Results are from simulated data using an iWLLS algorithm with outlier rejection.](\QMRITools\images\dti.png)
+![MD and FA as a function of SNR and fat fraction. Results are from simulated data using an iWLLS algorithm with outlier rejection.](https://github.com/mfroeling/QMRITools/blob/master/Images/dti.png)
 
 ### VisteTools
 Import and export functions for tensor data which can be used in the [vIST/e](http://bmia.bmt.tue.nl/software/viste/) tractography tool.
@@ -337,7 +336,5 @@ program, make sure that you have permission to do so not merely in terms
 of copyright, but also in terms of patent law.
 
 Some code in the NiiTools packages was based on https://github.com/tomdelahaije/nifti-converter
-
-------------------------------------------------------------------------
 
 ## References
