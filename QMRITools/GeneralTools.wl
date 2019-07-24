@@ -154,6 +154,10 @@ SumOfSquares::usage =
 "SumOfSquares[{data1, data2, .... datan}] calculates the sum of squares of the datasets.
 Output is the SoS and the weights, or just the SoS."
 
+LLeastSquares::usage = 
+"LLeastSquares[A, y] = performs a Linear Linear Least Squares fit.
+It uses a compiled version of the Pseudo inverse of A."
+
 NNLeastSquares::usage = 
 "NNLeastSquares[A, y] performs a Non Negative Linear Least Squares fit.
 finds an x that solves the linear least-squares problem for the matrix equation A.x==y.
@@ -167,6 +171,11 @@ LapFilter[data, ker] Laplacian filter of data with kernel ker."
 StdFilter::usage =
 "StdFilter[data] StandardDeviation filter of data using gaussian kernel 2. 
 StdFilter[data, ker] StandardDeviation filter of data using kernel with size ker."
+
+
+GyromagneticRatio::usage=
+"GyromagneticRatio[] gives the gyromagnetic ratio for \"1H\" in MHz/T.
+GyromagneticRatio[nucle] gives the gyromagnetir ratio for the nuclei, e.g. \"31P\" of \"1H\"."
 
 
 (* ::Subsection::Closed:: *)
@@ -937,11 +946,37 @@ CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1
 
 SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
 
-DevideNoZero[num_,den_]:=DevideNoZeroi[Chop[ToPackedArray@N@num],Chop[ToPackedArray@N@den]]
+DevideNoZero[numi_,deni_]:=Block[{num,den,numReal,denReal},
+	
+	den=ToPackedArray@N@deni;
+	num=ToPackedArray@N@numi;
+	
+	denReal=If[ListQ[den],RealQ[Total[Flatten[den]]],RealQ[den]];
+	numReal=If[ListQ[num],RealQ[Total[Flatten[num]]],RealQ[num]];
+	
+	If[denReal,
+		If[numReal,
+			DevideNoZeroi[Chop[num],Chop[den]],
+			DevideNoZeroiCn[Chop[num],Chop[den]]
+		],
+		If[numReal,
+			DevideNoZeroiCd[Chop[num],Chop[den]],
+			DevideNoZeroiCnCd[Chop[num],Chop[den]]
+		]
+	]
+]
 
-DevideNoZeroi = Compile[{{num, _Real, 1}, {den, _Real, 0}}, If[den == 0., num 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
-DevideNoZeroi = Compile[{{num, _Real, 0}, {den, _Real, 0}}, If[den == 0., 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DevideNoZeroi = Compile[{{num, _Real, 0}, {den, _Real, 0}}, If[den == 0., 0., num/den], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
+DevideNoZeroiCd = Compile[{{num, _Real, 0}, {den, _Complex, 0}}, If[den == 0., 0., num/den], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+
+DevideNoZeroiCn = Compile[{{num, _Complex, 0}, {den, _Real, 0}}, If[den == 0., 0., num/den], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+
+DevideNoZeroiCnCd = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[den == 0., 0., num/den], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 (* ::Subsubsection::Closed:: *)
 (*MeanNoZero*)
@@ -1103,76 +1138,91 @@ SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes
 
 
 (* ::Subsection::Closed:: *)
+(*LLeastSquares*)
+
+
+SyntaxInformation[LLeastSquares] = {"ArgumentsPattern" -> {_, _}};
+
+LLeastSquares[Ai_,y_]:=Block[{A},
+	A = If[Length[y] == Length[Ai], Ai, Transpose[Ai]];
+	If[RealQ[Total[Flatten[y]]], 
+		LLeastSquaresC[A, y], 
+		If[RealQ[Total[Flatten[A]]],
+			LLeastSquaresCC[A, y],
+			LLeastSquaresCCC[A, y]
+		]
+	]
+]	
+
+
+LLeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, 
+	Inverse[Transpose[A].A].Transpose[A].y,
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+LLeastSquaresCC = Compile[{{A, _Real, 2}, {y, _Complex, 1}}, 
+	Inverse[Transpose[A].A].Transpose[A].y,
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+LLeastSquaresCCC = Compile[{{A, _Complex, 2}, {y, _Complex, 1}}, 
+	Inverse[ConjugateTranspose[A].A].ConjugateTranspose[A].y,
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+(* ::Subsection::Closed:: *)
 (*NNLeastSquares*)
 
 
 SyntaxInformation[NNLeastSquares] = {"ArgumentsPattern" -> {_, _}};
 
 (*Main function*)
-NNLeastSquares[A_, f_] := With[{
-    toIndicesZ = Compile[{{v, _Real, 1}}, Flatten[Position[v, 1.]]],
-    toIndicesP = Compile[{{v, _Real, 1}}, Flatten[Position[1 - v, 1.]]],
-    wCalc = Compile[{{AA, _Real, 2}, {ff, _Real, 1}, {x, _Real, 1}}, Transpose[AA].(ff - AA.x)],
-    zCalc = Compile[{{R, _Real, 2}, {Q, _Real, 2}, {ff, _Real, 1}}, Inverse[R].Q.ff],
-    xCalc = Compile[{{x, _Real, 1}, {z, _Real, 1}, {posSet, _Integer, 1}}, Block[{negz, alpha},
-       negz = Select[posSet, z[[#]] < 0. &];
-       alpha = Min[x[[negz]]/(x[[negz]] - z[[negz]])];
-       N@Chop[x + alpha (z - x), 10.^-10]]]
-    },
-   Quiet[
-    Block[{zerSet, posSet, maxPos, setz, z, x, zeroed, w, zeros, i, j,
-       l},
-     i = j = 1;
-     zeros = 0 A[[1]];
-     l = Length[zeros];
-     (*fuctions to get posSet and zerSet and to calc z*)
-     zerSet := toIndicesZ[zeroed];
-     posSet := toIndicesP[zeroed];
-     maxPos := Last[Ordering[zeroed w]];
-     setz := Block[{Q, R},
-       {Q, R} = QRDecomposition[A[[All, posSet]]];
-       z = zeros; z[[posSet]] = zCalc[R, Q, f];
-       ];
-     (*initialize x, w, posSet and zerSet*)
-     x = zeros;
-     w = wCalc[A, f, x];
-     zeroed = zeros + 1.;
-     (*fist While loop*)
-     While[j < l && zerSet != {} && Max[w[[zerSet]]] > 10.^-10,
-      j++;
-      (*index of max(w) and add j to posSet*)
-      zeroed[[maxPos]] = 0.;
-      (*calc z values for posSet*)
-      setz;
-      (*second While loop*)
-      While[Min[z] < 0.,
-       i++;
-       (*calc alpha and recalculate x*)
-       x = xCalc[x, z, posSet];
-       (*move to zerSet all posSet vals were x=0*)
-       zeroed[[Select[posSet, x[[#]] == 0. &]]] = 1.;
-       (*calc z values for posSet*)
-       setz;
-       ];
-      (*recalculate x and w*)
-      w = wCalc[A, f, x = z];
-      ];
-     (*output solution*)
-     Return[x];
-     ]]];
+NNLeastSquares[A_, y_] := Block[{At, zeros, x, zeroed, w, zerow, pos, sp, xp, neg, xi, si, alpha, i, j ,l},
+	(*Initialze values*)
+	At = Transpose[A];(*already define Transpose A for speed up CalcW*)
+	zeros = 0. A[[1]];
+	l = Length[zeros];
+	
+	(*initialize x,w,posSet and zerSet*)
+	x = zeros;(*initial solution x=0*)
+	zeroed = zeros + 1.;(*zero set all are in zero set*)
+	w = CalcW[A, At, y, x];(*initial vector w*)
+	
+	(*first while loop: select highest positive solution in the zero set as long as the zero set is not empty*)
+	j = 1; 
+	While[j < l && Total[zeroed] > 0. && Max[zerow = zeroed w] > 0,
+		j++;
+		(*add the index of max(zerow) to the positive set (1-zeroed is positive zet)*)
+		zeroed[[Last[Ordering[zerow]]]] = 0.;
+		(*Calculate the LLS solution of the positive set*)
+		pos = PosInd[zeroed];
+		sp = LLSC[At[[pos]], y];
+		
+		(*recalculate the solutions of sp untill all values of sp are positive*)
+		i = 1;
+		While[i < l && Min[sp] < 0.,
+			i++;
+			(*calculated alpha, which is the minimal values of the rations xi/(xi-si) for all negative values of s*)
+			xp = x[[pos]];
+			neg = UnitStep[-sp];
+			xi = Pick[xp, neg, 1];
+			si = Pick[sp, neg, 1];
+			alpha = Min[xi/(xi - si)];
+			
+			(*removed the lowest value of sp from the posetive set*)
+			zeroed[[Pick[pos, Unitize[Chop[(xp + alpha (sp - xp))]], 0]]] = 1.;
+			(*recalculate the solution sp*)
+			pos = PosInd[zeroed];
+			sp = LLSC[At[[pos]], y];
+		];
+		
+		(*set xp to sp and recalculate w*)
+		x[[pos]] = sp;
+		w = CalcW[A, At, y, x];
+		];
+   x
+]
 
-(*support functions*)
-toIndicesZ = Compile[{{v, _Real, 1}}, Flatten[Position[v, 1.]]];
-toIndicesP = Compile[{{v, _Real, 1}}, Flatten[Position[1 - v, 1.]]];
-wCalc = Compile[{{A, _Real, 2}, {f, _Real, 1}, {x, _Real, 1}}, 
-   Transpose[A].(f - A.x)];
-zCalc = Compile[{{R, _Real, 2}, {Q, _Real, 2}, {f, _Real, 1}}, 
-   Inverse[R].Q.f];
-xCalc = Compile[{{x, _Real, 1}, {z, _Real, 1}, {posSet, _Integer, 1}},
-   Block[{negz, alpha},
-    negz = Select[posSet, z[[#]] < 0 &];
-    alpha = Min[x[[negz]]/(x[[negz]] - z[[negz]])];
-    N@Chop[x + alpha (z - x), 10.^-10]]];
+PosInd = Compile[{{v, _Real, 1}}, Block[{z = Round@Total[1 - v]}, Ordering[v][[;; z]]], RuntimeOptions -> "Speed"];
+CalcW = Compile[{{A, _Real, 2}, {At, _Real, 2}, {y, _Real, 1}, {x, _Real, 1}}, Chop[At.(y - A.x)], RuntimeOptions -> "Speed"];
+LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Chop[Inverse[A.Transpose[A]].A.y], RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
@@ -1192,6 +1242,13 @@ LapFilter[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N
 
 StdFilter[data_, ker_:2] := Abs[Sqrt[GaussianFilter[data^2, ker] - GaussianFilter[data, ker]^2]]
 
+
+(* ::Subsection::Closed:: *)
+(*GyromagneticRatio*)
+
+GyromagneticRatio[nuc_]:=(nuc/.{"1H"->42.57747892,"2H"-> 6.536,"3He"-> -32.434,"7Li"->16.546,"13C"->10.7084,"14N"->3.077,"15N"-> -4.316,"17O"-> -5.772,
+"19F"->40.052,"23Na"->11.262,"27Al"->11.103,"29Si"-> -8.465,"31P"->17.235,"57Fe"->1.382,"63Cu"->11.319,"67Zn"->2.669,"129Xe"-> 11.777})
+gyro
 
 (* ::Section:: *)
 (*End Package*)
