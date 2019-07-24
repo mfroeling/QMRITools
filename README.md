@@ -6,10 +6,10 @@
 
 ------------------------------------------------------------------------
 
-[![wolfram language](\QMRITools\images\wolfram%20language.png)](https://www.wolfram.com/language/)
-[![wolfram workbench](\QMRITools\images\wolfram%20workbench.jpg)](https://www.wolfram.com/workbench/)
-[![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
-[![Wolfram Mathematica](\QMRITools\images\wolfram%20mathematica.png)](http://www.wolfram.com/mathematica/)
+[![wolfram language](https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_language.png)](https://www.wolfram.com/language/)
+[![wolfram workbench](https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
+[![eclipse](https://github.com/mfroeling/QMRITools/blob/master/Images/eclipse.png)](https://www.eclipse.org/)
+[![Wolfram Mathematica]https://github.com/mfroeling/QMRITools/blob/master/Images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
  
@@ -43,7 +43,7 @@ When using the toolbox please cite one of the following references:
 
 ## Installation
 
-The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases){:target="_blank"}. 
+The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases). 
 
 Install the toolbox in the Mathematica UserBaseDirectory > Applications.
 
@@ -209,7 +209,8 @@ A summary of the core functionality is listed below.
 	* AHA 17 parameter description
 	* Transmural parameter description	
 
-Under Construction
+**Under Construction**
+
 * **Spectra fitting**
 	* Fitting spectra using a set of basis functions
 	* Phase correction and line-width optimization
