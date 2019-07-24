@@ -144,73 +144,109 @@ verb = False;
 (*SimHamiltonian*)
 
 
-Options[SimHamiltonian]={FieldStrength->3}
+Options[SimHamiltonian] = {FieldStrength->3, SimNucleus -> "1H"}
 
-SyntaxInformation[SimHamiltonian]={"ArgumentsPattern" -> {_, OptionsPattern[]}};
+SyntaxInformation[SimHamiltonian] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
-sys,sysJ,sysS,scale,sysSi,names,it,name,Hj,Hres,nSpins,nSpins2,iden,zero,set,HbasisA,HbasisB,
-states,statesi,st,bas,Hix,Hiy,Hiz,di,Hfx,Hfy,Hfz,wIxy,Ixy,Fxy,wFxy,
-dn,weight,weighti,Hcs,Hjs,Hjw,ham,hamJ,valD,matU,valDJ,matUJ,hstruc, bField},
-
-bField=OptionValue[FieldStrength];
-
-sys=If[StringQ[sysi],GetSpinSystem[sysi],sysi];
-
-(*define frequencys*)
-{sysJ,sysS,scale,sysSi,names,it,name}=sys;
-Hj=2Pi sysJ ;
-Hres=sysS (-2.*Pi*bField*42.576 )(*omega at ppm*);
-
-(*standard matrixes and sizes*)
-nSpins=Length[sysS];nSpins2=2^nSpins;
-iden=SparseArray[IdentityMatrix[nSpins2]];
-zero=SparseArray[ConstantArray[0,{nSpins2,nSpins2}]];
-(*make spin basis set*)
-set=Permutations[-Sort@Flatten[ConstantArray[{1,-1},nSpins]],{nSpins}];
-HbasisA=Transpose[.5ConstantArray[set,nSpins2],{2,3,1}];
-HbasisB=Transpose/@HbasisA;
-(*make states*)
-statesi=Round@Abs[HbasisB-HbasisA];(*see where both are equal \[Rule] 0 equal, 1 different*)
-states=SparseArray[1-Unitize[Total[statesi]-1]];(*find where only one is different, thus sum of states = 1*)
-statesi=states #&/@statesi; (*get the individual spin states, thus find *)
-
-(*Create All the angular momentum opperators Iix, Iiy and Iiz*)
-{Hix,Hiy,Hiz,di}=Transpose[Table[
-st=statesi[[i]];
-bas=HbasisA[[i]];
-{st Abs[bas],st bas I,iden bas,iden bas}
-,{i,1,nSpins}]];
-{Hfx,Hfy,Hfz,dn}=Total/@{Hix,Hiy,Hiz,di};
-(*create the readout angular momentum opperators*)
-Ixy=(Hix-Hiy I);Fxy=(Hfx-Hfy I);(*unweighted versions*)
-wIxy=scale Ixy;wFxy=Total[wIxy];(*weighted for spin occurence*)
-
-(*construct the hamiltonian Sum of Ii.Ij for j>i*)
-Hcs=Hjs=Hjw=zero;
-MatrixForm@Table[
-Hcs-=Hres[[j]]Hiz[[j]] ;(* izj *)
-Table[
-Hjs-=Hj[[j,k]](Hiz[[j]].Hiz[[k]]);(* izj, izk*)
-Hjw-=Hj[[j,k]](Hix[[j]].Hix[[k]]);(* ixj, ixk*)
-Hjw-=Hj[[j,k]](Hiy[[j]].Hiy[[k]]);(* ixj, ixk*)
-,{k,j+1,nSpins}]
-,{j,nSpins}];
-(*make the hamilonian with and without chemical shift*)
-ham=Hcs+Hjs+Hjw;hamJ=Hjs+Hjw;
-(*get eigensystem of the hamiltonian*)
-{valD,matU}=Eigensystem[Normal[ham]];
-matU=SparseArray[Chop[matU]];
-{valDJ,matUJ}=Eigensystem[Normal[hamJ]];
-matUJ=SparseArray[Chop[matUJ]];
-
-(*make hstructure and output*)
-hstruc={"J"->Hj,"shifts"->sysS,"shifts_rad"->Hj,"Bfield"->bField,"scale"->scale,
-"nSpins"->nSpins,"nSpins2"->nSpins2,"basisA"->HbasisA,"basisB"->HbasisB,"sates"->states,"statesi"->statesi,
-"Fx"->Hfx,"Fy"->Hfy,"Fz"->Hfz,"Fxy"->Fxy,"wFxy"->wFxy,"Ix"->Hix,"Iy"->Hiy,"Iz"->Hiz,"Ixy"->Ixy,"wIxy"->wIxy,
-"weight"->weight,"weighti"->weighti,"Hab"->ham,"HabJ"->hamJ,"Hval"->valD,"Hvec"->matU,"HvalJ"->valDJ,"HvecJ"->matUJ};
-(*output*)
-{dn,hstruc}
+	sys, sysJ, sysS, scale, sysSi, names, it, name, Hj, Hres, nSpins, nSpins2,
+	iden, zero, set, HbasisA, HbasisB, states, statesi, st, bas, Hix, Hiy, Hiz, 
+	di, Hfx, Hfy, Hfz, wIxy, Ixy, Fxy, wFxy, dn, weight, weighti, Hcs, Hjs, Hjw, 
+	ham, hamJ, valD, matU, valDJ, matUJ, hstruc, bField, gyro},
+	
+	bField = OptionValue[FieldStrength];
+	gyro = GyromagneticRatio[OptionValue[SimNucleus]];
+	
+	sys = If[StringQ[sysi],GetSpinSystem[sysi],sysi];
+	
+	(*define frequencys*)
+	{sysJ,sysS,scale,sysSi,names,it,name} = sys;
+	Hj = 2Pi sysJ;
+	Hres = sysS (-2.*Pi*bField*gyro)(*omega at ppm*);
+	
+	(*standard matrixes and sizes*)
+	nSpins = Length[sysS];nSpins2=2^nSpins;
+	iden = SparseArray[IdentityMatrix[nSpins2]];
+	zero = SparseArray[ConstantArray[0,{nSpins2,nSpins2}]];
+	
+	(*make spin basis set*)
+	set = Permutations[-Sort@Flatten[ConstantArray[{1,-1},nSpins]],{nSpins}];
+	HbasisA = Transpose[.5ConstantArray[set,nSpins2],{2,3,1}];
+	HbasisB = Transpose/@HbasisA;
+	
+	(*make states*)
+	statesi = Round@Abs[HbasisB-HbasisA];(*see where both are equal \[Rule] 0 equal, 1 different*)
+	states = SparseArray[1-Unitize[Total[statesi]-1]];(*find where only one is different, thus sum of states = 1*)
+	statesi = states #&/@statesi; (*get the individual spin states, thus find *)
+	
+	(*Create All the angular momentum opperators Iix, Iiy and Iiz*)
+	{Hix,Hiy,Hiz,di} = Transpose[Table[
+		st = statesi[[i]];
+		bas = HbasisA[[i]];
+		{st Abs[bas], st bas I, iden bas, iden bas}
+		,{i,1,nSpins}]
+	];
+	{Hfx,Hfy,Hfz,dn} = Total/@{Hix,Hiy,Hiz,di};
+	(*create the readout angular momentum opperators*)
+	Ixy = (Hix-Hiy I);
+	Fxy = (Hfx-Hfy I);(*unweighted versions*)
+	wIxy = scale Ixy;
+	wFxy = Total[wIxy];(*weighted for spin occurence*)
+	
+	(*construct the hamiltonian Sum of Ii.Ij for j>i*)
+	Hcs = Hjs = Hjw = zero;
+	MatrixForm@Table[Hcs-=Hres[[j]]Hiz[[j]] ;(* izj *)
+		Table[
+			Hjs-=Hj[[j,k]](Hiz[[j]].Hiz[[k]]);(* izj, izk*)
+			Hjw-=Hj[[j,k]](Hix[[j]].Hix[[k]]);(* ixj, ixk*)
+			Hjw-=Hj[[j,k]](Hiy[[j]].Hiy[[k]]);(* ixj, ixk*)
+		,{k,j+1,nSpins}]
+	,{j,nSpins}];
+	
+	(*make the hamilonian with and without chemical shift*)
+	ham = Hcs + Hjs + Hjw;
+	hamJ = Hjs + Hjw;
+	
+	(*get eigensystem of the hamiltonian*)
+	{valD,matU} = Eigensystem[Normal[ham]];
+	matU = SparseArray[Chop[matU]];
+	{valDJ,matUJ} = Eigensystem[Normal[hamJ]];
+	matUJ = SparseArray[Chop[matUJ]];
+	
+	(*make hstructure and output*)
+	hstruc = {
+		"J"->Hj,
+		"shifts"->sysS,
+		"shifts_rad"->Hj,
+		"Bfield"->bField,
+		"scale"->scale,
+		"nSpins"->nSpins,
+		"nSpins2"->nSpins2,
+		"basisA"->HbasisA,
+		"basisB"->HbasisB,
+		"sates"->states,
+		"statesi"->statesi,
+		"Fx"->Hfx,
+		"Fy"->Hfy,
+		"Fz"->Hfz,
+		"Fxy"->Fxy,
+		"wFxy"->wFxy,
+		"Ix"->Hix,
+		"Iy"->Hiy,
+		"Iz"->Hiz,
+		"Ixy"->Ixy,
+		"wIxy"->wIxy,
+		"weight"->weight,
+		"weighti"->weighti,
+		"Hab"->ham,
+		"HabJ"->hamJ,
+		"Hval"->valD,
+		"Hvec"->matU,
+		"HvalJ"->valDJ,
+		"HvecJ"->matUJ};
+		
+	(*output*)
+	{dn,hstruc}
 ]
 
 
@@ -225,9 +261,9 @@ hstruc={"J"->Hj,"shifts"->sysS,"shifts_rad"->Hj,"Bfield"->bField,"scale"->scale,
 SyntaxInformation[SimEvolve]={"ArgumentsPattern" -> {_, _, _}};
 
 SimEvolve[din_,H_,t_]:=Block[{d, matU,valD},
-{valD,matU}={"Hval","Hvec"}/.H;(*use eigen basis for fast computation*)
-d =SimEvolveM[matU,valD,t](*= Exp[-I ham t]*);
-Chop[d.din.ConjugateTranspose[d]]
+	{valD,matU}={"Hval","Hvec"}/.H;(*use eigen basis for fast computation*)
+	d =SimEvolveM[matU,valD,t](*= Exp[-I ham t]*);
+	Chop[d.din.ConjugateTranspose[d]]
 ]
 
 SimEvolveM[matU_,valD_,t_]:=Chop[Transpose[matU].SparseArray[DiagonalMatrix[Exp[I valD t]]].matU]
@@ -240,11 +276,11 @@ SimEvolveM[matU_,valD_,t_]:=Chop[Transpose[matU].SparseArray[DiagonalMatrix[Exp[
 SyntaxInformation[SimRotate]={"ArgumentsPattern" -> {_, _, _, _.}};
 
 SimRotate[din_,H_,angle_,phase_:90]:=Block[{alpha,ph,dinS,Fx,Fy,Fz,Rz,rotate, pMat,rMat, tMat},
-{alpha,ph}={angle, phase}Degree;(*to rad*)
-rMat=MatrixExp[I alpha ("Fx"/.H)];(*rotation around x*)
-pMat=MatrixExp[-I ph ("Fz"/.H)];(*phase - rotation around z*)
-tMat=pMat.rMat.ConjugateTranspose[pMat];(*define rot matirx*)
-Chop[tMat.din.ConjugateTranspose[tMat]](*predef matrix preven extra comp*)
+	{alpha,ph}={angle, phase}Degree;(*to rad*)
+	rMat=MatrixExp[I alpha ("Fx"/.H)];(*rotation around x*)
+	pMat=MatrixExp[-I ph ("Fz"/.H)];(*phase - rotation around z*)
+	tMat=pMat.rMat.ConjugateTranspose[pMat];(*define rot matirx*)
+	Chop[tMat.din.ConjugateTranspose[tMat]](*predef matrix preven extra comp*)
 ];
 
 
@@ -255,8 +291,8 @@ Chop[tMat.din.ConjugateTranspose[tMat]](*predef matrix preven extra comp*)
 SyntaxInformation[SimAddPhase]={"ArgumentsPattern" -> {_, _, _}};
 
 SimAddPhase[din_,H_,phase_]:=Block[{pMat},
-pMat=MatrixExp[-I ("Fz"/.H) phase Degree];(*phase - rotation around z*)
-Chop[pMat.din.ConjugateTranspose[pMat]](*add phase due to gradients, rotation around z*)
+	pMat=MatrixExp[-I ("Fz"/.H) phase Degree];(*phase - rotation around z*)
+	Chop[pMat.din.ConjugateTranspose[pMat]](*add phase due to gradients, rotation around z*)
 ]
 
 
@@ -289,11 +325,11 @@ SequencePulseAcquire[din_,H_,b1_:1]:=SimRotate[din,H,b1 90,0](*excite*)
 SyntaxInformation[SequenceSpinEcho]={"ArgumentsPattern" -> {_, _, _, _.}};
 
 SequenceSpinEcho[din_,H_,te_,b1_:1]:=Block[{d,tau},
-tau=te/2;
-d=SimRotate[din,H,b1 90,0];(*excite*)
-d=SimEvolve[d,H,tau];(*evolve by tau, no crush*)
-d=SimRotate[d,H,b1 180,90];(* refocus*)
-SimEvolve[d,H,tau](*evolve by tau, no crush*)
+	tau=te/2;
+	d=SimRotate[din,H,b1 90,0];(*excite*)
+	d=SimEvolve[d,H,tau];(*evolve by tau, no crush*)
+	d=SimRotate[d,H,b1 180,90];(* refocus*)
+	SimEvolve[d,H,tau](*evolve by tau, no crush*)
 ]
 
 
@@ -304,19 +340,19 @@ SimEvolve[d,H,tau](*evolve by tau, no crush*)
 SyntaxInformation[SequenceSteam]={"ArgumentsPattern" -> {_, _, {_, _}}};
 
 SequenceSteam[din_,H_,{te_,tm_}]:=Block[{d,tau},
-tau=te/2;
-Total@Table[
-d=SimRotate[din,H,-90,0];(*excite*)
-d=(2/Pi)SimAddPhase[d,H,j];(*dephase the transverse signal*)
-d=SimEvolve[d,H,tau]; (*evolve by tau*)
-d=SimRotate[d,H,-90,0]; (*tip up*)
-d=SimSpoil[d];(*destroy all non zero order states*)
-d=SimEvolve[d,H,tm];(*evolve by tm*)
-d=SimRotate[d,H,-90,0];(*tip down*)
-d=(Pi/4)SimAddPhase[d,H,j];(*dephase the transverse signal*)
-d=SimEvolve[d,H,tau];(*evolve by tau*)
-d
-,{j,0,270,90}]
+	tau=te/2;
+	Total@Table[
+	d=SimRotate[din,H,-90,0];(*excite*)
+	d=(2/Pi)SimAddPhase[d,H,j];(*dephase the transverse signal*)
+	d=SimEvolve[d,H,tau]; (*evolve by tau*)
+	d=SimRotate[d,H,-90,0]; (*tip up*)
+	d=SimSpoil[d];(*destroy all non zero order states*)
+	d=SimEvolve[d,H,tm];(*evolve by tm*)
+	d=SimRotate[d,H,-90,0];(*tip down*)
+	d=(Pi/4)SimAddPhase[d,H,j];(*dephase the transverse signal*)
+	d=SimEvolve[d,H,tau];(*evolve by tau*)
+	d
+	,{j,0,270,90}]
 ]
 
 
@@ -362,50 +398,53 @@ Options[SimReadout] = {ReadoutOutput->"all", ReadoutPhase->90, Linewidth->5, Lin
 SyntaxInformation[SimReadout]={"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 SimReadout[din_,H_,OptionsPattern[]]:=Block[{
-dt,hab,field,nSpins2,Fx,Fy,time,fid,t2,sigma,decay,valD,matU,ord,sig,Ixy,
-Fxy,corr,fids,d1,d,dout,ppm,spec,di,si,fun,wSpins,ran,phaseComp,val,
-n,swidth,linewidth,sel,phase,shape},
-
-n = OptionValue[ReadoutSamples];
-swidth = OptionValue[ReadoutBandwith];
-linewidth = OptionValue[Linewidth];
-sel = OptionValue[ReadoutOutput];
-phase = OptionValue[ReadoutPhase];
-shape = OptionValue[LinewidthShape];
-
-(*Get hamiltonian info*)
-{valD,matU,field,nSpins2,Fxy,Ixy,wSpins}={"Hval","Hvec","Bfield","nSpins2","wFxy","wIxy","weight"}/.H;
-(*get the time and ppms*)
-dt=1./swidth;
-time=dt(Range[0,n-1]);
-ran=swidth/2-swidth/(2 n);
-ppm=Range[-ran,ran,swidth/n]/(field 42.577 )+4.65;
-(*shape definition*)
-t2=1/(linewidth Pi);
-sigma=Sqrt[( 2 t2 Log[0.5])^2/(-2*Log[0.5])];
-decay=Switch[shape,
-"L",Exp[-time/t2],
-"G",Exp[-time/(2 sigma^2)],
-"LG",0.5 Exp[-time/t2]+0.5Exp[-time/(2 sigma^2)]];
-(*create the fids by incrementing the spinsystem by dt*)
-d=SimEvolveM[matU,valD,dt];(*spin evolve over dt*)
-di=din;(*initial signal and spin state*)
-val=(1/nSpins2)decay Exp[-I  phase Degree];
-(*evolve spin states with dt, but not for first*)
-Switch[sel,
-"all",
-fids=val Table[If[i!=1,di=Chop[d.di.ConjugateTranspose[d]]];
- Tr[(di.Fxy)],{i,1,n}];
-spec=InverseFourier[((-1)^Range[n])fids];
-,
-"each",
-fids=Transpose[val Table[If[i!=1,Chop[di=d.di.ConjugateTranspose[d]]];
-( Tr[di.#])&/@Ixy,{i,1,n}]];
-spec=InverseFourier[((-1)^Range[n])#]&/@fids;
-];
-(*create spectra*)
-
-{time,fids,ppm,spec,dout}
+	dt,hab,field,nSpins2,Fx,Fy,time,fid,t2,sigma,decay,valD,matU,ord,sig,Ixy,
+	Fxy,corr,fids,d1,d,dout,ppm,spec,di,si,fun,wSpins,ran,phaseComp,val,
+	n,swidth,linewidth,sel,phase,shape},
+	
+	n = OptionValue[ReadoutSamples];
+	swidth = OptionValue[ReadoutBandwith];
+	linewidth = OptionValue[Linewidth];
+	sel = OptionValue[ReadoutOutput];
+	phase = OptionValue[ReadoutPhase];
+	shape = OptionValue[LinewidthShape];
+	
+	(*Get hamiltonian info*)
+	{valD,matU,field,nSpins2,Fxy,Ixy,wSpins}={"Hval","Hvec","Bfield","nSpins2","wFxy","wIxy","weight"}/.H;
+	
+	(*get the time and ppms*)
+	dt=1./swidth;
+	time=dt(Range[0,n-1]);
+	ran=swidth/2-swidth/(2 n);
+	ppm=Range[-ran,ran,swidth/n]/(field 42.577 )+4.65;
+	
+	(*shape definition*)
+	t2=1/(linewidth Pi);
+	sigma = Sqrt[( 2 t2 Log[0.5])^2/(-2*Log[0.5])];
+	decay = Switch[shape,
+	"L", Exp[-time/t2],
+	"G", Exp[-time/(2 sigma^2)],
+	"LG", 0.5 Exp[-time/t2]+0.5Exp[-time/(2 sigma^2)]];
+	
+	(*create the fids by incrementing the spinsystem by dt*)
+	d=SimEvolveM[matU,valD,dt];(*spin evolve over dt*)
+	di=din;(*initial signal and spin state*)
+	val=(1/nSpins2)decay Exp[-I  phase Degree];
+	(*evolve spin states with dt, but not for first*)
+	Switch[sel,
+		"all",
+		fids=val Table[If[i!=1,di=Chop[d.di.ConjugateTranspose[d]]];
+		 Tr[(di.Fxy)],{i,1,n}];
+		spec=InverseFourier[((-1)^Range[n])fids];
+		,
+		"each",
+		fids=Transpose[val Table[If[i!=1,Chop[di=d.di.ConjugateTranspose[d]]];
+		( Tr[di.#])&/@Ixy,{i,1,n}]];
+		spec=InverseFourier[((-1)^Range[n])#]&/@fids;
+	];
+	(*create spectra*)
+	
+	{time,fids,ppm,spec,dout}
 ]
 
 
@@ -418,16 +457,16 @@ Options[SimSignal] = {ReadoutOutput->"all"}
 SyntaxInformation[SimSignal] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 SimSignal[din_,H_,OptionsPattern[]]:=Block[{Ixy,w,sel},
-w=(1/"nSpins2")/.H;
-sel=OptionValue[ReadoutOutput];
-Switch[sel,
-(*total signal*)
-"all",w Tr[din.("wFxy"/.H)],
-(*seperate signal for each peak*)
-"each",Ixy=("wIxy"/.H);w Tr[din.#]&/@Ixy,
-(*signal for peak selection either one or list*)
-_,Ixy=("wIxy"/.H);If[ListQ[sel],w Tr[din.Ixy[[#]]]&/@sel,w Tr[din.Ixy[[sel]]]]
-]
+	w=(1/"nSpins2")/.H;
+	sel=OptionValue[ReadoutOutput];
+	Switch[sel,
+		(*total signal*)
+		"all",w Tr[din.("wFxy"/.H)],
+		(*seperate signal for each peak*)
+		"each",Ixy=("wIxy"/.H);w Tr[din.#]&/@Ixy,
+		(*signal for peak selection either one or list*)
+		_,Ixy=("wIxy"/.H);If[ListQ[sel],w Tr[din.Ixy[[#]]]&/@sel,w Tr[din.Ixy[[sel]]]]
+	]
 ]
 
 
@@ -443,18 +482,18 @@ Options[PlotSpectrum] = {PlotRange->{{0,6}, Full}, SpectrumColor->Black}
 
 SyntaxInformation[PlotSpectrum] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-PlotSpectrum[ppm_,spec_,OptionsPattern[]]:=Block[{pdat,style,ran, sc, col},
-
-{ran, sc}=OptionValue[PlotRange];
-col=OptionValue[SpectrumColor];
-
-{pdat,style}=If[Head[spec[[1]]]===Complex,
-{{Transpose@{ppm,Im@spec},Transpose@{ppm,Re@spec}},(Directive[#]&/@{{Thin,Lighter[col]},{Thick,col}})},
-{Transpose@{ppm,spec},Directive[Thick,col]}];
-ListLinePlot[pdat,
-PlotRange->{ran,sc},ScalingFunctions->{"Reverse",Identity},
-AxesStyle->Directive[{Thick,Black}],LabelStyle->Directive[{Bold,Black,12}],
-PlotStyle->style,ImageSize->600,Axes->{True,False}]
+PlotSpectrum[ppm_, spec_, OptionsPattern[]]:=Block[{pdat,style,ran, sc, col},
+	
+	{ran, sc}=OptionValue[PlotRange];
+	col=OptionValue[SpectrumColor];
+	
+	{pdat,style}=If[Head[spec[[1]]]===Complex,
+	{{Transpose@{ppm,Im@spec},Transpose@{ppm,Re@spec}},(Directive[#]&/@{{Thin,Lighter[col]},{Thick,col}})},
+	{Transpose@{ppm,spec},Directive[Thick,col]}];
+	ListLinePlot[pdat,
+	PlotRange->{ran,sc},ScalingFunctions->{"Reverse",Identity},
+	AxesStyle->Directive[{Thick,Black}],LabelStyle->Directive[{Bold,Black,12}],
+	PlotStyle->style,ImageSize->600,Axes->{True,False}]
 ]
 
 
@@ -465,8 +504,8 @@ PlotStyle->style,ImageSize->600,Axes->{True,False}]
 SyntaxInformation[PhaseAlign]={"ArgumentsPattern" -> {_}};
 
 PhaseAlign[spec_]:=Block[{phi},
-phi=Sort[Table[{Total[Re[Flatten[spec] Exp[I x Degree]]],x},{x,-180,180,.5}]][[-1,2]];
-spec Exp[I phi Degree]
+	phi=Sort[Table[{Total[Re[Flatten[spec] Exp[I x Degree]]],x},{x,-180,180,.5}]][[-1,2]];
+	spec Exp[I phi Degree]
 ]
 
 
@@ -487,6 +526,21 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 cf=OptionValue[CenterFrequency];
 
 Switch[name,
+"ATP",
+(*single spin system*)
+names={"A","B","C"};
+n=Length[names];
+it=Range[n];
+sysSi={-2.38,-7.47,-15.97};
+sysS=sysSi-cf;
+sysJ={
+{{1,3},17.31},
+{{2,3},16.12}
+};
+sysJ=SysToMat[sysJ,n];
+scale={1,1,1};
+{sysJ,sysS,scale,sysSi,names,it,name}
+,
 "glu",
 (*single spin system*)
 names={"A","B","C","D","E"};
@@ -651,9 +705,9 @@ scale=3 2 10{1}(*3 chains with 6 normal met with 2 H*);
 ]
 
 SysToMat[sysJ_,n_]:=Block[{out},
-out=N@ConstantArray[0,{n,n}];
-(out[[#[[1,1]],#[[1,2]]]]=#[[2]])&/@sysJ;
-out
+	out=N@ConstantArray[0,{n,n}];
+	(out[[#[[1,1]],#[[1,2]]]]=#[[2]])&/@sysJ;
+	out
 ]
 
 
@@ -664,15 +718,15 @@ out
 SyntaxInformation[SysTable]={"ArgumentsPattern" -> {_}};
 
 SysTable[sys_]:=Module[{sysJ,sysS,sysSi,scale,names,it,
-head,lab,tables,name},
-tables=(
-{sysJ,sysS,scale,sysSi,names,it,name}=#;
-head=Thread[{(*it,*)names,sysSi,scale}];
-lab={Row[#[[{1}]],"  "]&/@head,Column/@head};
-Column[{Style[name,Bold,Large],TableForm[sysJ/. (0.->"-"),TableHeadings->lab]},Alignment->Center]
-)&/@sys;
-(*Column[tables,Alignment\[Rule]Center,Spacings\[Rule]2]*)
-tables
+	head,lab,tables,name},
+	tables=(
+	{sysJ,sysS,scale,sysSi,names,it,name}=#;
+	head=Thread[{(*it,*)names,sysSi,scale}];
+	lab={Row[#[[{1}]],"  "]&/@head,Column/@head};
+	Column[{Style[name,Bold,Large],TableForm[sysJ/. (0.->"-"),TableHeadings->lab]},Alignment->Center]
+	)&/@sys;
+	(*Column[tables,Alignment\[Rule]Center,Spacings\[Rule]2]*)
+	tables
 ]
 
 

@@ -5,13 +5,10 @@
 
 ------------------------------------------------------------------------
 
-[![wolfram
-language](\QMRITools\images\wolfram%20language.png)](https://www.wolfram.com/language/)
-[![wolfram
-workbench](\QMRITools\images\wolfram%20workbench.jpg)](https://www.wolfram.com/workbench/)
+[![wolfram language](\QMRITools\images\wolfram%20language.png)](https://www.wolfram.com/language/)
+[![wolfram workbench](\QMRITools\images\wolfram%20workbench.jpg)](https://www.wolfram.com/workbench/)
 [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
-[![Wolfram
-Mathematica](\QMRITools\images\wolfram%20mathematica.png)](http://www.wolfram.com/mathematica/)
+[![Wolfram Mathematica](\QMRITools\images\wolfram%20mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
 
@@ -22,7 +19,7 @@ Mathematica](\QMRITools\images\wolfram%20mathematica.png)](http://www.wolfram.co
 -   [Documentation](\QMRITools\htmldoc\guide\QMRITools.html){:target="\_blank"}
 -   [Demonstrations](#demonstrations)
 -   [Functionality](#functionality)
--   [Toolboxes](#toolboxes)
+-   [Toolboxes](#Toolboxes)
 -   [References](#references)
 
 ------------------------------------------------------------------------
@@ -42,28 +39,25 @@ nerve and cardiac magnetic resonance imaging. The library of functions
 grows along with the research it is used for and started as a toolbox to
 analyze DWI data of muscle.
 
-The toolbox is developed for the [Wolfram
-language](https://www.wolfram.com/language/) and maintained using
-[Wolfram workbench](https://www.wolfram.com/workbench/) for
+The toolbox is developed for the [Wolfram language](https://www.wolfram.com/language/) 
+and maintained using [Wolfram workbench](https://www.wolfram.com/workbench/) for
 [eclipse](https://www.eclipse.org/) and runs in the latest version of
 [Wolfram Mathematica](http://www.wolfram.com/mathematica/).
 
-When using the toolbox please cite one of the following references.
+When using the toolbox please cite one of the following references:
 
-1. Froeling M: QMRTools: a Mathematica toolbox for quantitative MRI analysis. J Open Source Softw 2019; 4:1204. [link](https://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
-2. Froeling M, et al.: Reproducibility of diffusion tensor imaging in human forearm muscles at 3.0 T in a clinical setting. Magn Reson Med 2010; 64:1182–1190. [link](https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.22477)
-3. Froeling M, et al.: Diffusion-tensor MRI reveals the complex muscle architecture of the human forearm. J Magn Reson Imaging 2012; 36:237–248. [link](https://onlinelibrary.wiley.com/doi/10.1002/jmri.23608)
+	1. Froeling M: QMRTools: a Mathematica toolbox for quantitative MRI analysis. J Open Source Softw 2019; 4:1204. [link](https://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
+	2. Froeling M, et al.: Reproducibility of diffusion tensor imaging in human forearm muscles at 3.0 T in a clinical setting. Magn Reson Med 2010; 64:1182–1190. [link]https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.22477)
+	3. Froeling M, et al.: Diffusion-tensor MRI reveals the complex muscle architecture of the human forearm. J Magn Reson Imaging 2012; 36:237–248. [link](https://onlinelibrary.wiley.com/doi/10.1002/jmri.23608)
 
 
 ------------------------------------------------------------------------
 
 ## Latest Release
 
-The latesest release can be found
-[here](https://github.com/mfroeling/QMRITools/releases){:target="\_blank"}.
+The latesest release can be found [here](https://github.com/mfroeling/QMRITools/releases){:target="\_blank"}.
 
-Install the toolbox in the Mathematica UserBaseDirectory &gt;
-Applications.
+Install the toolbox in the Mathematica UserBaseDirectory &gt; Applications.
 
 `FileNameJoin[{$UserBaseDirectory, "Applications"}]`
 
@@ -95,8 +89,7 @@ options for testing so if any issues arise please let me know.
 
 ## Demonstrations
 
-The release contains a zip file
-[DemoAndTest.zip](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip)
+The release contains a zip file [DemoAndTest.zip](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip)
 in which there is a file `demo.nb`, a folder `DemoData` and a folder
 `Testing`. To have a global overview of the functionality of the toolbox
 you can download this folder and run the `demo.nb`. By default the
@@ -176,7 +169,8 @@ analyzing data. A summary of the core functionality is listed below.
     -   AHA 17 parameter description
     -   Transmural parameter description
 
-------------------------------------------------------------------------
+
+-----------------------------------------------------------------------
 
 ## Toolboxes
 
@@ -220,9 +214,7 @@ Herraez et al. 2002). It also contains a function that allows simulating
 gradient echo Dixon data. Most of the functionality is demonstrated in
 the `demo.nb`.
 
-![IDEAL based Dixon reconstruction: fitted fat fractions as a function
-of the imposed fat fraction, SNR and B0 field
-offset.](\QMRITools\images\dixon.png)
+![IDEAL based Dixon reconstruction: fitted fat fractions as a function of the imposed fat fraction, SNR and B0 field offset.](\QMRITools\images\dixon.png)
 
 ### ElastixTools
 
@@ -250,8 +242,7 @@ homogeneously distributed gradient directions for DWI experiments. It
 also provides functions to convert bval and bvec files to bmatrix and
 vice versa. Most of the functionality is demonstrated in the `demo.nb`.
 
-![The graphical user interface of the gradient generation
-tool.](\QMRITools\images\gradients.png)
+![The graphical user interface of the gradient generation tool.](\QMRITools\images\gradients.png)
 
 ### ImportTools
 
@@ -275,8 +266,8 @@ There are two main functions: non linear fitting and Bayesian fitting
 A toolbox that allows simulation of NMR spectra using Hamiltonians based
 on methods from [FID-A](https://github.com/CIC-methods/FID-A). It allows
 simulating large spin systems (Castillo, Patiny, and Wist 2011) and was
-mainly implemented to investigate fat spectra in TSE (Stokes et al.
-2013). Most of the functionality is demonstrated in the `demo.nb`.
+mainly implemented to investigate fat spectra in TSE (Stokes et al. 2013). 
+Most of the functionality is demonstrated in the `demo.nb`.
 
 ### MaskingTools
 
@@ -327,9 +318,7 @@ echo data (Marty et al. 2016). Therefore it provides functions to
 simulate and evaluate EPG. Some of the functionality is demonstrated in
 the `demo.nb`.
 
-![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation
-as a function of B1, SNR and fat
-fraction.](\QMRITools\images\epg-t2.png)
+![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation as a function of B1, SNR and fat fraction.](\QMRITools\images\epg-t2.png)
 
 ### SimulationTools
 
@@ -349,9 +338,7 @@ detections using REKINDLE (Tax et al. 2015) and data preparation
 includes drift correction (Vos et al. 2017). Most of the functionality
 is demonstrated in the `demo.nb`.
 
-![MD and FA as a function of SNR and fat fraction. Results are from
-simulated data using an iWLLS algorithm with outlier
-rejection.](\QMRITools\images\dti.png)
+![MD and FA as a function of SNR and fat fraction. Results are from simulated data using an iWLLS algorithm with outlier rejection.](\QMRITools\images\dti.png)
 
 ### VisteTools
 

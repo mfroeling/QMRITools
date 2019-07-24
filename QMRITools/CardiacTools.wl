@@ -1643,7 +1643,7 @@ ptsr=vals={}];
 (*TransmuralPlot*)
 
 
-Options[TransmuralPlot] = {GridLineSpacing -> 10, PlotStyle -> Red, PlotRange -> Automatic, ImageSize->300,Method->"Median",PlotLabel->None}
+Options[TransmuralPlot] = {GridLineSpacing -> 10, PlotStyle -> Red, PlotRange -> Automatic, ImageSize->300, Method->"Median", PlotLabel->None}
 
 SyntaxInformation[TransmuralPlot] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
