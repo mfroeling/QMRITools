@@ -323,7 +323,7 @@ SimSpoil[din_]:=Chop[IdentityMatrix[Length[din]]din](*spoil all non zeroth order
 
 SyntaxInformation[SequencePulseAcquire]={"ArgumentsPattern" -> {_, _, _.}};
 
-SequencePulseAcquire[din_,H_,b1_:1]:=SimRotate[din,H,b1 90,0](*excite*)
+SequencePulseAcquire[din_,H_,te_:0,b1_:1]:=SimEvolve[SimRotate[din,H,b1 90,0],H,te](*excite*)
 
 
 (* ::Subsubsection::Closed:: *)
