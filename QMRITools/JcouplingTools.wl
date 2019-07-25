@@ -101,6 +101,9 @@ PhaseAlign::usage =
 FieldStrength::usage = 
 "FieldStrength is an option for SimHamiltonian. It defines the field strength for which the hamiltonian is calculated defined in Tesla."
 
+SimNucleus::usage = 
+"SimNucleus is an option for SimHamiltonian. It defines the nucleus for which to simulate the spectra."
+
 ReadoutOutput::usage = 
 "ReadoutOutput is an option for SimReadout and SimSignal and values can be \"all\" and \"each\". When set to \"all\" the total signal and signal is given, when set to \"each\" the signal or spectrum for each peak is given seperately."
 
@@ -149,13 +152,14 @@ Options[SimHamiltonian] = {FieldStrength->3, SimNucleus -> "1H"}
 SyntaxInformation[SimHamiltonian] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
-	sys, sysJ, sysS, scale, sysSi, names, it, name, Hj, Hres, nSpins, nSpins2,
+	sys, sysJ, sysS, scale, sysSi, names, it, name, Hj, Hres, nSpins, nSpins2, nuc,
 	iden, zero, set, HbasisA, HbasisB, states, statesi, st, bas, Hix, Hiy, Hiz, 
 	di, Hfx, Hfy, Hfz, wIxy, Ixy, Fxy, wFxy, dn, weight, weighti, Hcs, Hjs, Hjw, 
 	ham, hamJ, valD, matU, valDJ, matUJ, hstruc, bField, gyro},
 	
 	bField = OptionValue[FieldStrength];
-	gyro = GyromagneticRatio[OptionValue[SimNucleus]];
+	nuc = OptionValue[SimNucleus];
+	gyro = GyromagneticRatio[nuc];
 	
 	sys = If[StringQ[sysi],GetSpinSystem[sysi],sysi];
 	
@@ -187,6 +191,7 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 		,{i,1,nSpins}]
 	];
 	{Hfx,Hfy,Hfz,dn} = Total/@{Hix,Hiy,Hiz,di};
+	
 	(*create the readout angular momentum opperators*)
 	Ixy = (Hix-Hiy I);
 	Fxy = (Hfx-Hfy I);(*unweighted versions*)
@@ -243,7 +248,10 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 		"Hval"->valD,
 		"Hvec"->matU,
 		"HvalJ"->valDJ,
-		"HvecJ"->matUJ};
+		"HvecJ"->matUJ,
+		"nucleus"->nuc,
+		"gyro"->gyro
+		};
 		
 	(*output*)
 	{dn,hstruc}
@@ -262,7 +270,7 @@ SyntaxInformation[SimEvolve]={"ArgumentsPattern" -> {_, _, _}};
 
 SimEvolve[din_,H_,t_]:=Block[{d, matU,valD},
 	{valD,matU}={"Hval","Hvec"}/.H;(*use eigen basis for fast computation*)
-	d =SimEvolveM[matU,valD,t](*= Exp[-I ham t]*);
+	d = SimEvolveM[matU,valD,t](*= Exp[-I ham t]*);
 	Chop[d.din.ConjugateTranspose[d]]
 ]
 
@@ -393,14 +401,22 @@ SequenceTSE[din_,H_,{te1_,te_,necho_},{ex_,ref_}, b1_:1]:=Block[{d,tau},
 (*SimReadout*)
 
 
-Options[SimReadout] = {ReadoutOutput->"all", ReadoutPhase->90, Linewidth->5, LinewidthShape->"L", ReadoutSamples -> 2046, ReadoutBandwith->2000}
+Options[SimReadout] = {
+	ReadoutOutput->"all", 
+	ReadoutPhase->90, 
+	Linewidth->5, 
+	LinewidthShape->"L", 
+	ReadoutSamples -> 2046, 
+	ReadoutBandwith -> 2000,
+	ShiftPpm -> 4.65
+	}
 
 SyntaxInformation[SimReadout]={"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	dt,hab,field,nSpins2,Fx,Fy,time,fid,t2,sigma,decay,valD,matU,ord,sig,Ixy,
 	Fxy,corr,fids,d1,d,dout,ppm,spec,di,si,fun,wSpins,ran,phaseComp,val,
-	n,swidth,linewidth,sel,phase,shape},
+	n,swidth,linewidth,sel,phase,shape, shift, gyro},
 	
 	n = OptionValue[ReadoutSamples];
 	swidth = OptionValue[ReadoutBandwith];
@@ -408,18 +424,20 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	sel = OptionValue[ReadoutOutput];
 	phase = OptionValue[ReadoutPhase];
 	shape = OptionValue[LinewidthShape];
+	shift = OptionValue[ShiftPpm];
 	
 	(*Get hamiltonian info*)
-	{valD,matU,field,nSpins2,Fxy,Ixy,wSpins}={"Hval","Hvec","Bfield","nSpins2","wFxy","wIxy","weight"}/.H;
+	{valD,matU,field,nSpins2,Fxy,Ixy,wSpins,gyro}={"Hval","Hvec","Bfield","nSpins2","wFxy","wIxy","weight","gyro"}/.H;
 	
 	(*get the time and ppms*)
-	dt=1./swidth;
-	time=dt(Range[0,n-1]);
-	ran=swidth/2-swidth/(2 n);
-	ppm=Range[-ran,ran,swidth/n]/(field 42.577 )+4.65;
+	dt = 1./swidth;
+	time = dt(Range[0,n-1]);
+	ran = swidth/2-swidth/(2 n);
+	
+	ppm = Range[-ran,ran,swidth/n]/(field gyro ) + shift;
 	
 	(*shape definition*)
-	t2=1/(linewidth Pi);
+	t2 = 1/(linewidth Pi);
 	sigma = Sqrt[( 2 t2 Log[0.5])^2/(-2*Log[0.5])];
 	decay = Switch[shape,
 	"L", Exp[-time/t2],
@@ -427,14 +445,20 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	"LG", 0.5 Exp[-time/t2]+0.5Exp[-time/(2 sigma^2)]];
 	
 	(*create the fids by incrementing the spinsystem by dt*)
-	d=SimEvolveM[matU,valD,dt];(*spin evolve over dt*)
+	d = SimEvolveM[matU,valD,dt];(*spin evolve over dt*)
+	
 	di=din;(*initial signal and spin state*)
+	
 	val=(1/nSpins2)decay Exp[-I  phase Degree];
+	
 	(*evolve spin states with dt, but not for first*)
 	Switch[sel,
 		"all",
-		fids=val Table[If[i!=1,di=Chop[d.di.ConjugateTranspose[d]]];
-		 Tr[(di.Fxy)],{i,1,n}];
+		fids=val Table[
+			If[i!=1,
+				di=Chop[d.di.ConjugateTranspose[d]]];
+				
+			Tr[(di.Fxy)],{i,1,n}];
 		spec=InverseFourier[((-1)^Range[n])fids];
 		,
 		"each",
@@ -523,185 +547,300 @@ SyntaxInformation[GetSpinSystem]={"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, scale, j, j1, j2, cf},
 
-cf=OptionValue[CenterFrequency];
-
-Switch[name,
-"ATP",
-(*single spin system*)
-names={"A","B","C"};
-n=Length[names];
-it=Range[n];
-sysSi={-2.38,-7.47,-15.97};
-sysS=sysSi-cf;
-sysJ={
-{{1,3},17.31},
-{{2,3},16.12}
-};
-sysJ=SysToMat[sysJ,n];
-scale={1,1,1};
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"glu",
-(*single spin system*)
-names={"A","B","C","D","E"};
-n=Length[names];
-it=Range[n];
-sysSi={3.7433,2.0375,2.1200,2.3378,2.3520};
-sysS=sysSi-cf;
-sysJ={
-{{1,2},7.3310},{{1,3},5.84},
-{{2,3},-14.8490},{{2,4},6.4130},{{2,5},8.406},
-{{3,4},8.4780},{{3,5},6.875},
-{{4,5},-15.915}
-};
-sysJ=SysToMat[sysJ,n];
-scale={1,1,1,1,1};
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"lac",
-(*single spin system*)
-names={"A","B","C","D"};
-n=Length[names];
-it=Range[n];
-sysSi={4.0974,1.3142,1.3142,1.3142};
-sysS=sysSi-cf;
-sysJ={
-{{1,2},6.933},{{1,3},6.933},{{1,4},6.933}
-};
-sysJ=SysToMat[sysJ,n];
-scale={1,1,1,1};
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"lac2",
-(*single spin system*)
-names={"A","B","C","D"};
-n=Length[names];
-it=Range[n];
-sysSi={4.2,1.32,1.32,1.32};
-sysS=sysSi-cf;
-sysJ={
-{{1,2},7.25},{{1,3},7.25},{{1,4},7.25}
-};
-sysJ=SysToMat[sysJ,n];
-scale={1,1,1,1};
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"gaba",
-(*single spin system*)
-names={"A","B","C","D","E","F"};
-n=Length[names];
-it=Range[n];
-sysSi={2.2840, 2.2840, 1.8880, 1.8880, 3.0130, 3.0130};
-sysS=sysSi-cf;
-sysJ={
-{{1,2},-15.938},{{1,3},7.678},{{1,4},6.98},
-{{2,3},6.9800},{{2,4},7.678},
-{{3,4},-15},{{3,5},8.5100},{{3,6},6.503},
-{{4,5},6.503},{{4,6},8.51},
-{{5,6},-14.062}
-};
-sysJ=SysToMat[sysJ,n];
-scale={1,1,1,1,1,1};
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"fatGly",
-(*single spin system*)
-names={"G","H","I"};
-n=Length[names];
-it=Range[n];
-sysSi={4.2,4.45,5.15};
-sysS=sysSi-cf;
-sysJ={
-{{1,2},-12.4},{{1,3},7.0},
-{{2,3},7.0}
-};
-sysJ=SysToMat[sysJ,n];
-scale={2,2,1};
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"fatAll",
-(*single spin system*)
-names={"A","B","C","D","E","J"};
-n=Length[names];
-it=Range[n];
-sysSi={0.9,1.3,1.6,2.0,2.3,5.3};
-sysS=sysSi-cf;
-sysJ={
-{{1,2},5.0},
-{{2,3},6},{{2,4},6},
-{{3,5},6},
-{{4,6},6.2}
-};
-sysJ=SysToMat[sysJ,n];
-scale={9,66,6,12,6,6};
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"fatEnd",
-(*single spin system*)
-names={"B","A","A"(*,"A","B"*)};
-n=Length[names];
-it=Range[n];
-sysSi={1.3,0.9,0.9(*,0.9,1.3*)};
-sysS=sysSi-cf;
-j=8;(*8.0*)
-sysJ={
-{{1,2},j}(*{{1,3},j},{{1,4},j},*)
-(*{{2,5},j},
-{{3,5},j},*)
-(*{{4,5},j}*)
-};
-sysJ=SysToMat[sysJ,n];
-scale=3{2,2,1(*,1,1*)}(*3 chains with head*);
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"fatDouble",
-(*single spin system*)
-names={"B","D","J"(*,"B","D"*)};
-n=Length[names];
-it=Range[n];
-sysSi={1.3,2.03,5.3(*,1.3,2.03*)};
-sysS=sysSi-cf;
-j1=7.1;j2=6.2;
-sysJ={
-{{1,2},j1},(*{{1,5},j1},*)
-{{2,3},j2}(*{{2,4},j1},*)
-(*{{3,4},j2},*)
-(*{{4,5},j1}*)
-};
-sysJ=SysToMat[sysJ,n];
-scale=3 2{2,2,1(*,1,1*)}(*2x to complete, 3 chains with double*);
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"fatStart",
-(*single spin system*)
-names={"B","C","E"(*,"B","C","E"*)};
-n=Length[names];
-it=Range[n];
-sysSi={1.3,1.6,2.27(*,1.3,1.6,2.27*)};
-sysS=sysSi-cf;
-j1=7.1(*CE*);j2=7.1(*BC*);
-sysJ={(*7.1*)
-{{1,2},j2},(*{{1,5},j2},*)
-{{2,3},j1}(*,{{2,4},j2},{{2,6},j1},
-{{3,5},j1},
-{{4,5},j2},
-{{5,6},j1}*)
-};
-sysJ=SysToMat[sysJ,n];
-scale=3 {2,2,2(*,1,1,1*)}(*3 chains with start*);
-{sysJ,sysS,scale,sysSi,names,it,name}
-,
-"fatMet",
-names={"B"};
-n=Length[names];
-it=Range[n];
-sysSi={1.3};
-sysS=sysSi-cf;
-sysJ={};
-sysJ=SysToMat[sysJ,n];
-scale=3 2 10{1}(*3 chains with 6 normal met with 2 H*);
-{sysJ,sysS,scale,sysSi,names,it,name}
-]
+	cf=OptionValue[CenterFrequency];
+	
+	Switch[name,
+		"ATP",
+		(*single spin system*)
+		names={"A","B","C"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={-2.52,-7.56,-16.15};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,3},17.31},
+			{{2,3},16.12}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={1,1,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"PCr",
+		(*single spin system*)
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={0};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale={1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"Piin",
+		(*single spin system*)
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={4.82};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale={1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"Piex",
+		(*single spin system*)
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={5.24};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale={1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		
+		"PE",
+		(*single spin system*)
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={6.76};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale={1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"PC",
+		(*single spin system*)
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={2.95};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale={1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"GPE",
+		(*single spin system*)
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={3.5};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale={1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"GPC",
+		(*single spin system*)
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={8.21};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale={1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"NAD",
+		(*single spin system*)
+		names={"A","B"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={-8.06,-8.36};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,2},22}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={1,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"UDPG",
+		(*single spin system*)
+		names={"A","B"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={-9.57,-9.87};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,2},22}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={1,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		
+		
+		"glu",
+		(*single spin system*)
+		names={"A","B","C","D","E"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={3.7433,2.0375,2.1200,2.3378,2.3520};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,2},7.3310},{{1,3},5.84},
+			{{2,3},-14.8490},{{2,4},6.4130},{{2,5},8.406},
+			{{3,4},8.4780},{{3,5},6.875},
+			{{4,5},-15.915}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={1,1,1,1,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"lac",
+		(*single spin system*)
+		names={"A","B","C","D"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={4.0974,1.3142,1.3142,1.3142};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,2},6.933},{{1,3},6.933},{{1,4},6.933}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={1,1,1,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"lac2",
+		(*single spin system*)
+		names={"A","B","C","D"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={4.2,1.32,1.32,1.32};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,2},7.25},{{1,3},7.25},{{1,4},7.25}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={1,1,1,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"gaba",
+		(*single spin system*)
+		names={"A","B","C","D","E","F"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={2.2840, 2.2840, 1.8880, 1.8880, 3.0130, 3.0130};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,2},-15.938},{{1,3},7.678},{{1,4},6.98},
+			{{2,3},6.9800},{{2,4},7.678},
+			{{3,4},-15},{{3,5},8.5100},{{3,6},6.503},
+			{{4,5},6.503},{{4,6},8.51},
+			{{5,6},-14.062}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={1,1,1,1,1,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"fatGly",
+		(*single spin system*)
+		names={"G","H","I"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={4.2,4.45,5.15};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,2},-12.4},{{1,3},7.0},
+			{{2,3},7.0}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={2,2,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"fatAll",
+		(*single spin system*)
+		names={"A","B","C","D","E","J"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={0.9,1.3,1.6,2.0,2.3,5.3};
+		sysS=sysSi-cf;
+		sysJ={
+			{{1,2},5.0},
+			{{2,3},6},{{2,4},6},
+			{{3,5},6},
+			{{4,6},6.2}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale={9,66,6,12,6,6};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"fatEnd",
+		(*single spin system*)
+		names={"B","A","A"(*,"A","B"*)};
+		n=Length[names];
+		it=Range[n];
+		sysSi={1.3,0.9,0.9(*,0.9,1.3*)};
+		sysS=sysSi-cf;
+		j=8;(*8.0*)
+		sysJ={
+			{{1,2},j}(*{{1,3},j},{{1,4},j},*)
+			(*{{2,5},j},
+			{{3,5},j},*)
+			(*{{4,5},j}*)
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale=3{2,2,1(*,1,1*)}(*3 chains with head*);
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"fatDouble",
+		(*single spin system*)
+		names={"B","D","J"(*,"B","D"*)};
+		n=Length[names];
+		it=Range[n];
+		sysSi={1.3,2.03,5.3(*,1.3,2.03*)};
+		sysS=sysSi-cf;
+		j1=7.1;j2=6.2;
+		sysJ={
+			{{1,2},j1},(*{{1,5},j1},*)
+			{{2,3},j2}(*{{2,4},j1},*)
+			(*{{3,4},j2},*)
+			(*{{4,5},j1}*)
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale=3 2{2,2,1(*,1,1*)}(*2x to complete, 3 chains with double*);
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"fatStart",
+		(*single spin system*)
+		names={"B","C","E"(*,"B","C","E"*)};
+		n=Length[names];
+		it=Range[n];
+		sysSi={1.3,1.6,2.27(*,1.3,1.6,2.27*)};
+		sysS=sysSi-cf;
+		j1=7.1(*CE*);j2=7.1(*BC*);
+		sysJ={(*7.1*)
+			{{1,2},j2},(*{{1,5},j2},*)
+			{{2,3},j1}(*,{{2,4},j2},{{2,6},j1},
+			{{3,5},j1},
+			{{4,5},j2},
+			{{5,6},j1}*)
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale=3 {2,2,2(*,1,1,1*)}(*3 chains with start*);
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"fatMet",
+		names={"B"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={1.3};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale=3 2 10{1}(*3 chains with 6 normal met with 2 H*);
+		{sysJ,sysS,scale,sysSi,names,it,name}
+	]
 ]
 
 SysToMat[sysJ_,n_]:=Block[{out},
