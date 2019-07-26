@@ -8,12 +8,12 @@ welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?styl
 ------------------------------------------------------------------------
 
 [![wolfram
-language](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_language.png)](https://www.wolfram.com/language/)
+language](\QMRITools\images\wolfram_language.png)](https://www.wolfram.com/language/)
 [![wolfram
-workbench](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
-[![eclipse](https://github.com/mfroeling/QMRITools/blob/master/docs/images/eclipse.png)](https://www.eclipse.org/)
+workbench](\QMRITools\images\wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
+[![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
 [![Wolfram
-Mathematica](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
+Mathematica](\QMRITools\images\wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ compatibility. After the toolbox is installed correctly it should show
 up as a package in the Mathematica add-ons.
 
 ![QMRITools
-package](https://github.com/mfroeling/QMRITools/blob/master/docs/images/addons.PNG)
+package](\QMRITools\images\addons.PNG)
 
 All code and documentation is maintained and uploaded to github using
 [Workbench](https://www.wolfram.com/workbench/). An online version of
@@ -141,7 +141,7 @@ the full documentation can be found
 [here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html).
 
 ![Guides
-QMRITools](https://github.com/mfroeling/QMRITools/blob/master/docs/images/Guide.PNG)
+QMRITools](\QMRITools\images\Guide.PNG)
 
 ------------------------------------------------------------------------
 
@@ -204,7 +204,7 @@ Under development
 The toolbox contains over 250 Functions and options of processing and
 analyzing data. A summary of the core functionality is listed below.
 
-![Overview](https://github.com/mfroeling/QMRITools/blob/master/docs/images/overview.png)
+![Overview](\QMRITools\images\overview.png)
 
 -   **Diffusion Analysis**
     -   Signal drift correction
@@ -235,7 +235,7 @@ analyzing data. A summary of the core functionality is listed below.
     -   Legend bars and image labels
     -   Saving to pdf, jpg, animated gif and movie
 
-![PlotData](https://github.com/mfroeling/QMRITools/blob/master/docs/images/visualization.PNG)
+![PlotData](\QMRITools\images\visualization.PNG)
 
 -   **Masking**
     -   Automate and threshold masking
@@ -327,7 +327,7 @@ the `demo.nb`.
 
 ![IDEAL based Dixon reconstruction: fitted fat fractions as a function
 of the imposed fat fraction, SNR and B0 field
-offset.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dixon.png)
+offset.](\QMRITools\images\dixon.png)
 
 ### ElastixTools
 
@@ -356,7 +356,7 @@ also provides functions to convert bval and bvec files to bmatrix and
 vice versa. Most of the functionality is demonstrated in the `demo.nb`.
 
 ![The graphical user interface of the gradient generation
-tool.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/gradients.png)
+tool.](\QMRITools\images\gradients.png)
 
 ### ImportTools
 
@@ -374,7 +374,7 @@ There are two main functions: non linear fitting and Bayesian fitting
 `demo.nb`.
 
 ![Visualization of IVIM
-fitting.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/ivim.png)
+fitting.](\QMRITools\images\ivim.png)
 
 ### JcouplingTools
 
@@ -434,7 +434,7 @@ the `demo.nb`.
 
 ![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation
 as a function of B1, SNR and fat
-fraction.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/epg-t2.png)
+fraction.](\QMRITools\images\epg-t2.png)
 
 ### SimulationTools
 
@@ -456,7 +456,7 @@ is demonstrated in the `demo.nb`.
 
 ![MD and FA as a function of SNR and fat fraction. Results are from
 simulated data using an iWLLS algorithm with outlier
-rejection.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dti.png)
+rejection.](\QMRITools\images\dti.png)
 
 ### VisteTools
 
@@ -467,7 +467,7 @@ of the functionality is demonstrated in the `demo.nb`.
 ------------------------------------------------------------------------
 
 ![Full leg diffusion tensor fiber
-tractography](https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif)
+tractography](\QMRITools\images\animation-small.gif)
 
 ------------------------------------------------------------------------
 
