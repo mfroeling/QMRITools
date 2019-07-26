@@ -61,11 +61,11 @@ When using the toolbox please cite one of the following references:
     [link](https://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
 2.  Froeling M, et al.: Reproducibility of diffusion tensor imaging in
     human forearm muscles at 3.0 T in a clinical setting. Magn Reson Med
-    2010; 64:1182�1190.
+    2010; 64:1182-1190.
     \[link\](https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.22477)
 3.  Froeling M, et al.: Diffusion-tensor MRI reveals the complex muscle
     architecture of the human forearm. J Magn Reson Imaging 2012;
-    36:237�248.
+    36:237-248.
     [link](https://onlinelibrary.wiley.com/doi/10.1002/jmri.23608)
 
 ------------------------------------------------------------------------
