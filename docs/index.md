@@ -531,9 +531,9 @@ fiber tracts.” *NMR in Biomedicine* 26 (11): 1339–52.
 <https://doi.org/10.1002/nbm.2959>.
 
 Froeling, Martijn, Jos Oudeman, G. J. Gustav J. Strijkers, Mario Maas,
-M. R. Maarten R. Drost, Klaas Nicolay, and Aart J. A. J. Nederveen.
-2015. “Muscle Changes Detected with Diffusion-Tensor Imaging after
-Long-Distance Running.” *Radiology* 274 (2): 548–62.
+M. R. Maarten R. Drost, Klaas Nicolay, and Aart J. A. J. Nederveen. 2015. 
+“Muscle Changes Detected with Diffusion-Tensor Imaging after
+Long-Distance Running.” *Radiology* 274 (2): 548–62. 
 <https://doi.org/10.1148/radiol.14140702>.
 
 Froeling, Martijn, Chantal M. W. Tax, Sjoerd B. Vos, Peter R. Luijten,
@@ -571,8 +571,8 @@ Ericky C. A. Araujo, Pierre G. Carlier, and Paulo L. de Sousa. 2016.
 relaxometry with stimulated echo compensation.” *NMR in Biomedicine* 29
 (4): 431–43. <https://doi.org/10.1002/nbm.3459>.
 
-Orton, Matthew R., David J. Collins, Dow-Mu Koh, and Martin O. Leach.
-2014. “Improved intravoxel incoherent motion analysis of diffusion
+Orton, Matthew R., David J. Collins, Dow-Mu Koh, and Martin O. Leach. 2014. 
+“Improved intravoxel incoherent motion analysis of diffusion
 weighted imaging by data driven Bayesian modeling.” *Magnetic Resonance
 in Medicine* 71 (1): 411–20. <https://doi.org/10.1002/mrm.24649>.
 
@@ -585,11 +585,10 @@ fast spin-echo imaging.” *Magnetic Resonance in Medicine* 54 (3):
 
 Shamonin, Denis. 2013. “Fast parallel image registration on CPU and GPU
 for diagnostic classification of Alzheimer’s disease.” *Frontiers in
-Neuroinformatics* 7 (January): 50.
-<https://doi.org/10.3389/fninf.2013.00050>.
+Neuroinformatics* 7 (January): 50. <https://doi.org/10.3389/fninf.2013.00050>.
 
-Stokes, Ashley M., Yesu Feng, Tanya Mitropoulos, and Warren S. Warren.
-2013. “Enhanced refocusing of fat signals using optimized multipulse
+Stokes, Ashley M., Yesu Feng, Tanya Mitropoulos, and Warren S. Warren. 2013. 
+“Enhanced refocusing of fat signals using optimized multipulse
 echo sequences.” *Magnetic Resonance in Medicine* 69 (4).
 Wiley-Blackwell: 1044–55. <https://doi.org/10.1002/mrm.24340>.
 
