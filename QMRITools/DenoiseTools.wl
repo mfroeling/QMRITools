@@ -106,6 +106,8 @@ PCATollerance::usage =
 PCAWeighting::usage = 
 "PCAWeighting is an option of PCADeNoise and can be True of False. Default value is False. When True the weights of the per voxel result are calculated based on the number of non noise components."
 
+PCAClipping::usage = 
+"PCAClipping is an option of PCADeNoise and can be True of False. If True the output is clipped between 0 and the max absolute value of the input data."
 
 AnisoStepTime::usage =
 "AnisoStepTime is an option for AnisoFilterTensor and defines the diffusion time, when small more step are needed."
@@ -301,7 +303,7 @@ NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, 
 (*PCADeNoise*)
 
 
-Options[PCADeNoise] = {PCAKernel -> 5, PCAFitParameters -> {10, 6, 10}, FitSigma -> False, PCAOutput -> Full, Method->"Equation", PCATollerance->0, PCAWeighting->True};
+Options[PCADeNoise] = {PCAKernel -> 5, PCAFitParameters -> {10, 6, 10}, FitSigma -> False, PCAOutput -> Full, Method->"Equation", PCATollerance->0, PCAWeighting->True, PCAClipping->True};
 
 SyntaxInformation[PCADeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -404,7 +406,10 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[
   max = 1.1 Max[Abs[data]];
   
   (*correct output data for weightings*)
-  datao = Clip[Transpose[DevideNoZero[#, weights] & /@ Transpose[datao]],{0, max}];
+  datao = If[OptionValue[PCAClipping],
+  	Clip[Transpose[DevideNoZero[#, weights] & /@ Transpose[datao]],{0, max}],
+  	Transpose[DevideNoZero[#, weights] & /@ Transpose[datao]]
+  	];
   sigmat = DevideNoZero[sigmat, weights];
   output = ArrayPad[#, off] & /@ TransData[output, "r"];
   

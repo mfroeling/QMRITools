@@ -485,7 +485,7 @@ Chop[(2/Omega)(1/(E^(((x-Xi)/Omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((Alpha (x-Xi)/Om
 (*FindOutliers*)
 
 
-Options[FindOutliers] = {OutlierMethod -> "IQR", OutlierOutput -> "Mask", OutlierIterations -> 1, OutlierRange -> 2, OutlierIncludeZero -> True}
+Options[FindOutliers] = {OutlierMethod -> "IQR", OutlierOutput -> "Mask", OutlierIterations -> 1, OutlierRange -> 1.5, OutlierIncludeZero -> True}
 
 SyntaxInformation[FindOutliers] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 

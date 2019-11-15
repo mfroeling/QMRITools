@@ -213,7 +213,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	(*create complex data for fit*)
 	complex = N[real + imag I];
 	If[ArrayDepth[real] === 4, complex = Transpose[complex]];
-	range = {0., 1.5Max[Abs[complex]]};
+	range = {0., 20 Max[Abs[complex]]};
 	dim = Dimensions[complex][[2;;]];
 	dep = {ArrayDepth[complex]-1};
 	

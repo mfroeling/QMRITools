@@ -367,8 +367,6 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 	(*calculate the inverse bmat*)
 	bmatI=PseudoInverse[bmat];
 	
-	System`SetSystemOptions["CheckMachineUnderflow" -> False];
-	ParallelEvaluate[System`SetSystemOptions["CheckMachineUnderflow" -> False]];
 	(*if data is 4D handle as multiple 3D sets (saves memory and calculation time)*)
 	If[depthD==4,
 		
@@ -397,8 +395,7 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		,(*1D,2D,3D*)
 		result = TensorCalci[data,dataL,bmat,bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}];
 	];
-	System`SetSystemOptions["CheckMachineUnderflow" -> True];
-	ParallelEvaluate[System`SetSystemOptions["CheckMachineUnderflow" -> True]];
+
 	result
 ]
 

@@ -2368,7 +2368,7 @@ mdat=N@If[selMask=!=0,selMask[[n]]/.rule,0 pdat];
 
 (*find the range*)
 datf=DeleteCases[Flatten[pdat][[;;;;10]],0.];
-ran=If[OptionValue[PlotRange]===Automatic,If[datf==={},{0,1},{0,Quantile[DeleteCases[Flatten[pdat][[;;;;10]],0.],.99]}],OptionValue[PlotRange]];
+ran=If[OptionValue[PlotRange]===Automatic,If[datf==={},{0,1},{0,Quantile[DeleteCases[Flatten[pdat][[;;;;10]],0.],.9]}],OptionValue[PlotRange]];
 
 size=vox[[{{2,3},{1,2},{1,3}}[[n]]]];
 bar=BarLegend[{colF/@Range[0,1,.01],ran},LabelStyle->Directive[{Black,Bold,12}]];

@@ -575,15 +575,15 @@ SimulateSliceEPG[exitation_, refocus_, {{T1_, T2_}, {Necho_, echoSp_}, b1_}, Opt
   vv = {0.24, 0.19, 0.95};
   vp = {2.57, 1.90, 1.08};
   va = 35 Degree;
-  Column[Flatten@{
-    "  ", info, fit,
-    Show[plots, lines, prof, text, BoxRatios -> 1, PlotRange -> {{0, len}, {0, Necho}, {-0., 1.1 max}}, 
+  (*Column[Flatten@{
+    "  ", info, fit,*)
+    Show[plots, lines, prof, (*text,*) BoxRatios -> 1, PlotRange -> {{0, len}, {0, Necho}, {-0., 1.1 max}}, 
      BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
      ViewAngle -> va, ImageSize -> 400,FrameLabel->{}, 
-     Axes -> True, AxesLabel -> {"Slice Profile", "Nr. echos", "Normalized\nSignal"}, 
+     Axes -> True, (*AxesLabel -> {"Slice Profile", "Nr. echos", "Normalized\nSignal"},*) 
      AxesEdge -> {{1, -1}, {1, -1}, {1, -1}},
      Ticks -> False, LabelStyle -> Directive[{Bold, Black}]]
-    }, Alignment -> Center, Spacings -> 0]
+    (*}, Alignment -> Center, Spacings -> 0]*)
   ]
 
 
