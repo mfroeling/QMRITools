@@ -173,9 +173,24 @@ StdFilter::usage =
 StdFilter[data, ker] StandardDeviation filter of data using kernel with size ker."
 
 
-GyromagneticRatio::usage=
+GyromagneticRatio::usage =
 "GyromagneticRatio[] gives the gyromagnetic ratio for \"1H\" in MHz/T.
 GyromagneticRatio[nucle] gives the gyromagnetir ratio for the nuclei, e.g. \"31P\" of \"1H\"."
+
+
+Squeeze::usage =
+"Squeeze[data] Revomes the singelton dimensions from data."
+
+DynamicPartition::usage = 
+"DynamicPartition[data, {part}] patitions the data into parts which is a list of integers. The remainders is los. 
+DynamicPartition[data,part,last] patitions the data into parts which is a list of integers. The remainders is partitioned into equal parts defined by last.
+If last is All, the remainders is just one partition"
+
+MeanAt::usage = 
+"MeanAt[data, n] calculates the Mean of the data at the level n."
+
+TotalAt::usage = 
+"TotalAt[data, n] calculates the Total of the data at the level n."
 
 
 (* ::Subsection::Closed:: *)
@@ -1246,9 +1261,61 @@ StdFilter[data_, ker_:2] := Abs[Sqrt[GaussianFilter[data^2, ker] - GaussianFilte
 (* ::Subsection::Closed:: *)
 (*GyromagneticRatio*)
 
+
 GyromagneticRatio[nuc_]:=(nuc/.{"1H"->42.57747892,"2H"-> 6.536,"3He"-> -32.434,"7Li"->16.546,"13C"->10.7084,"14N"->3.077,"15N"-> -4.316,"17O"-> -5.772,
 "19F"->40.052,"23Na"->11.262,"27Al"->11.103,"29Si"-> -8.465,"31P"->17.235,"57Fe"->1.382,"63Cu"->11.319,"67Zn"->2.669,"129Xe"-> 11.777})
 gyro
+
+
+(* ::Subsection::Closed:: *)
+(*Squeeze*)
+
+
+SyntaxInformation[Squeeze] = {"ArgumentsPattern" -> {_}}
+
+Squeeze[data_] := Block[{single},
+  single = ((1 - Unitize[Dimensions[data] - 1]) /. 0 -> All);
+  While[single[[-1]] === All && Length[single] > 1, 
+   single = Drop[single, -1]];
+  ToPackedArray[data[[##]] & @@ single]
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*DynamicPartition*)
+
+
+SyntaxInformation[DynamicPartition] = {"ArgumentsPattern" -> {_,_,_.}}
+
+(*partition data in lists of arbitrary length*)
+DynamicPartition[L_, p : {__Integer}, x___] := dPcore[L, Accumulate@p, x] /; ! Negative@Min@p && Length@L >= Tr@p
+
+(*Partition function*)
+dPcore[L_, p : {q___, _}] := Inner[L[[# ;; #2]] &, {0, q} + 1, p, Head@L]
+dPcore[L_, p_, All] := Append[dPcore[L, p], Drop[L, Last@p]]
+dPcore[L_, p_, n__] := Join[dPcore[L, p], Partition[Drop[L, Last@p], n]]
+
+
+(* ::Subsection::Closed:: *)
+(*MeanAt*)
+
+
+SyntaxInformation[MeanAt]={"ArgumentsPattern"->{_,_}}
+
+(*calculate mean at specific level*)
+MeanAt[list_,level_]:=Total[list,{level}]/Dimensions[list][[level]]/;1<=Abs[level]<=ArrayDepth@list
+
+
+(* ::Subsection::Closed:: *)
+(*TotalAt*)
+
+
+SyntaxInformation[TotalAt]={"ArgumentsPattern"->{_,_}}
+
+(*calculate mean at specific level*)
+TotalAt[list_,level_]:=Total[list,{level}]/;1<=Abs[level]<=ArrayDepth@list
+
+
 
 (* ::Section:: *)
 (*End Package*)

@@ -246,7 +246,7 @@ Begin["`Private`"]
 (*HelixAngleCalc*)
 
 
-Options[HelixAngleCalc]={ShowHelixPlot->True, HelixMethod->"Slow", AxesMethod->"Quadratic"};
+Options[HelixAngleCalc]={ShowHelixPlot->True, HelixMethod->"Slow2", AxesMethod->"Quadratic"};
 
 SyntaxInformation[HelixAngleCalc]={"ArgumentsPattern"->{_,_,_,_.,OptionsPattern[]}};
 
@@ -277,6 +277,8 @@ If[offi===1&&veci===1&&inouti===1,
 	,
 	vec=veci;off=offi;inout=inouti;
 	];
+
+PrintTemporary["LMCS caclulation start"];
 
 Switch[met
 	,"Fast",
@@ -312,7 +314,7 @@ Switch[met
 	cirvec = NormalizeC[CrossC[radvecn,norvecc]];
 	
 	,"Slow2",
-	{wall,der}=CalculateWallMap[mask, vox, ShowFit->False, MaskWallMap->False];
+	{wall,der,p} = CalculateWallMap[mask, vox, ShowFit->True, MaskWallMap->False];
 	
 	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
 	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
@@ -716,7 +718,7 @@ rad,met,row,dim,half,minmaxr,inner,outer,inout,offi,offo,vecsi,vecso,
 offouti,offouto,pl1,off,vecs,pl2,offout,vecsout,fit},
 
 (*get option values*)
-rad={0,1};
+rad={0.01,1};
 met=OptionValue[AxesMethod];
 row=If[OptionValue[RowSize]==="Automatic"||!IntegerQ[OptionValue[RowSize]],
 Round[Sqrt[Length[mask]]],
@@ -736,9 +738,9 @@ minmaxr= rad Max[(Drop[dim,1]/1)];
 {offi, vecsi} = FitCenterLine[inner[[1]], vox, met];
 {offo, vecso} = FitCenterLine[outer[[1]], vox, met];
 
-{off, vecs} = BoundCorrect[Min /@ Transpose[{inner[[2]], outer[[2]]} /. {{} -> 0}], off, vecs];
-{offi, vecsi} = BoundCorrect[inner[[2]]/. {{} -> 0}, offi, vecsi];
-{offo, vecso} = BoundCorrect[outer[[2]]/. {{} -> 0}, offo, vecso];
+{off, vecs} = BoundCorrect[Min /@ Transpose[{inner[[3]], outer[[3]]} /. {{} -> 0}], off, vecs];
+{offi, vecsi} = BoundCorrect[inner[[3]]/. {{} -> 0}, offi, vecsi];
+{offo, vecso} = BoundCorrect[outer[[3]]/. {{} -> 0}, offo, vecso];
   
 (*generate plots*)
 pl1 = PlotRadius[Clip[2mask + maskp,{0,2}], inner, outer];
@@ -799,37 +801,34 @@ half
 (*function to get inner and outer radius of the segmentation*)
 GetRadius[mask_, {minr_, maxr_}, half_] := 
  Module[{msin, tmp, comps, seg, min, mout, inner, outer,seli,selo,spos}, 
-   (*create the inner and outer volume*)
-  seg = MorphologicalComponents[#] & /@ (1. - mask);
-  seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
-  min = Unitize[Clip[seg, {1.5, 2}, {0, 0}]];
-  mout = Unitize[1 - Clip[seg, {0, 1}, {0, 0}]];
-  
-  (*get the inner radius*)inner =
-   Transpose@MapIndexed[(msin = Image[#1];
-       tmp = DeleteCases[(ComponentMeasurements[msin, {"BoundingDiskCenter", "BoundingDiskRadius","Circularity"}])[[All,2]], _?((#1[[2]] > maxr) || (#1[[2]] < minr) &)];
-       comps = 
-        If[tmp != {}, 
-         Nearest[(#[[1]] -> #) & /@ tmp, half, 1][[1]], {}];
-       If[
-        comps != {}, {Join[comps[[1]], (#2)], 
-         comps[[2]]}, {{}, {}}]) &, min];
-  (*get the outer radius*)
-  outer = Transpose@MapIndexed[(msin = Image[#1];
-       tmp = DeleteCases[(ComponentMeasurements[msin, {"BoundingDiskCenter", "BoundingDiskRadius"}])[[All, 2]], _?((#1[[2]] > maxr) || (#1[[2]] < minr) &)];
-       comps = 
-        If[tmp != {}, 
-         Nearest[(#[[1]] -> #) & /@ tmp, half, 1][[1]], {}];
-       If[
-        comps != {}, {Join[comps[[1]], (#2)], 
-         comps[[2]]}, {{}, {}}]) &, mout];
+ 	(*create the inner and outer volume*)
+ 	seg = MorphologicalComponents[#] & /@ (1. - mask);
+ 	seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
+ 	min = Unitize[Clip[seg, {1.5, 2}, {0, 0}]];
+ 	mout = Unitize[1 - Clip[seg, {0, 1}, {0, 0}]];
+ 	
+ 	(*get the inner radius*)
+ 	inner = Transpose@MapIndexed[(msin = Image[#1];
+ 		tmp = DeleteCases[(ComponentMeasurements[msin, {"Centroid", "BoundingDiskCenter", "BoundingDiskRadius"}])[[All,2]], _?((#1[[3]] > maxr) || (#1[[3]] < minr) &)];
+ 		comps = If[tmp != {}, Nearest[(#[[1]] -> #) & /@ tmp, half, 1][[1]], {}];
+   		If[comps != {}, {Join[comps[[1]], (#2)], Join[comps[[2]], (#2)], comps[[3]]}, {{}, {}, {}}]
+       	) &, min];
+       	
+   	(*get the outer radius*)
+   	outer = Transpose@MapIndexed[(msin = Image[#1];
+   		tmp = DeleteCases[(ComponentMeasurements[msin, {"Centroid", "BoundingDiskCenter", "BoundingDiskRadius"}])[[All, 2]], _?((#1[[3]] > maxr) || (#1[[3]] < minr) &)];
+   		comps = If[tmp != {}, Nearest[(#[[1]] -> #) & /@ tmp, half, 1][[1]], {}];
+   		If[comps != {}, {Join[comps[[1]], (#2)], Join[comps[[2]], (#2)], comps[[3]]}, {{}, {}, {}}]
+   		) &, mout];
+    
     (*only define outer if inner is known*)
     seli = Unitize[inner[[2]]] /. {} -> 0;
     selo = Unitize[outer[[2]]] /. {} -> 0;
     spos = Flatten@SequencePosition[seli + selo, {2, 1}];
     If[spos =!= {},spos = spos[[2]];outer[[All, spos ;;]] = outer[[All, spos ;;]] /. {{_, _, _} -> {}, _Real -> {}}];
-  (*give inner and outer radius (centerpoint,radius)*)
-  {inner, outer}
+    
+    (*give inner and outer radius (centerpoint,radius)*)
+  	{inner, outer}
   ]
 
 
@@ -871,13 +870,13 @@ FitCenterLine[datai_, vox_, met_] :=
 
 (*Plot the radus and center points on the mask*)
 PlotRadius[mask_,inner_,outer_]:=MapThread[(
-Show[
-Image[#1/Max[mask],ImageSize->100],
-If[#2[[1]]!={},Graphics[{Red,Thick,Circle[#2[[1,1;;2]]+{-0.25,0.25},#2[[2]]]}],Graphics[]],
-If[#2[[1]]!={},Graphics[{Red,PointSize[Medium],Point[#2[[1,1;;2]]]}],Graphics[]],
-If[#3[[1]]!={},Graphics[{Blue,Thick,Circle[#3[[1,1;;2]]+{-0.25,0.25},#3[[2]]]}],Graphics[]],
-If[#3[[1]]!={},Graphics[{Blue,PointSize[Medium],Point[#3[[1,1;;2]]]}],Graphics[]]
-]
+	Show[
+	Image[#1/Max[mask],ImageSize->100],
+	If[#2[[1]]!={},Graphics[{Red,Thick,Circle[#2[[2,1;;2]]+{-0.25,0.25},#2[[3]]]}],Graphics[]],
+	If[#2[[1]]!={},Graphics[{Red,PointSize[Medium],Point[#2[[1,1;;2]]]}],Graphics[]],
+	If[#3[[1]]!={},Graphics[{Blue,Thick,Circle[#3[[2,1;;2]]+{-0.25,0.25},#3[[3]]]}],Graphics[]],
+	If[#3[[1]]!={},Graphics[{Blue,PointSize[Medium],Point[#3[[1,1;;2]]]}],Graphics[]]
+	]
 )&,{mask,Transpose@inner,Transpose@outer}]
 
 
@@ -906,9 +905,9 @@ PlotSegmentation[mask_, inner_, outer_, {off_, offi_, offo_}, vox_] :=
    Graphics3D[{Thick, Red, Line[Delete[offip, Position[inner[[2]], {}]]]}],
    
    (*Plot the segmented outlines*)
-   If[outer[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{outer[[2, #]] Sin[u], outer[[2, #]] voxl[[1]]/voxl[[2]] Cos[u],0} + offop[[#]], {u, 0, 2 Pi}, 
+   If[outer[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{outer[[3, #]] Sin[u], outer[[3, #]] voxl[[1]]/voxl[[2]] Cos[u],0} + offop[[#]], {u, 0, 2 Pi}, 
        PlotStyle -> Directive[{Thick, Blue, Opacity[.5]}]]] & /@ Range[Length[mask]], 
-   If[inner[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{inner[[2, #]] Sin[u], inner[[2, #]] voxl[[1]]/voxl[[2]] Cos[u], 0} + offip[[#]], {u, 0, 2 Pi}, 
+   If[inner[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{inner[[3, #]] Sin[u], inner[[3, #]] voxl[[1]]/voxl[[2]] Cos[u], 0} + offip[[#]], {u, 0, 2 Pi}, 
        PlotStyle -> Directive[{Thick, Red, Opacity[.5]}]]] & /@ Range[Length[mask]],ImageSize->400
        
    ]

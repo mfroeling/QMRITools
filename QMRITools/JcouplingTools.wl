@@ -87,6 +87,12 @@ PlotSpectrum::usage =
 GetSpinSystem::usage = 
 "GetSpinSystem[name] get a spinsystem that can be used in SimHamiltonian. Current implementes systems are \"glu\", \"lac\", \"gaba\", \"fatGly\", \"fatAll\", \"fatEnd\", \"fatDouble\", \"fatStart\", and \"fatMet\"."
 
+MakeSpinSystem::usage = 
+"MakeSpinSystem[name, freqs, jcoup] makes a spin system for jcoupling simulations. The with name is defined by the freqs of the nuclei and the jcoup values {{n1, nx}, j} between nuclei.
+MakeSpinSystem[{name,labs}, freqs, jcoup] same but each nuclei has a specific name, e.g.{\"ATP\", {\"\[Gamma]\",\"\[Alpha]\",\"\[Beta]\"}.
+MakeSpinSystem[name, freqs, jcoup, scales] same but each nuclei has a scale, default scales are 1.
+MakeSpinSystem[{name,labs}, freqs, jcoup, scales] same as alle before. "
+
 SysTable::usage = 
 "SysTable[sys] shows the spinsystem as a table. The spinsytem is obtained form GetSpinSystem."
 
@@ -408,7 +414,7 @@ Options[SimReadout] = {
 	LinewidthShape->"L", 
 	ReadoutSamples -> 2046, 
 	ReadoutBandwith -> 2000,
-	ShiftPpm -> 4.65
+	CenterFrequency -> 4.65
 	}
 
 SyntaxInformation[SimReadout]={"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
@@ -424,7 +430,7 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	sel = OptionValue[ReadoutOutput];
 	phase = OptionValue[ReadoutPhase];
 	shape = OptionValue[LinewidthShape];
-	shift = OptionValue[ShiftPpm];
+	shift = OptionValue[CenterFrequency];
 	
 	(*Get hamiltonian info*)
 	{valD,matU,field,nSpins2,Fxy,Ixy,wSpins,gyro}={"Hval","Hvec","Bfield","nSpins2","wFxy","wIxy","weight","gyro"}/.H;
@@ -437,12 +443,11 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	ppm = Range[-ran,ran,swidth/n]/(field gyro ) + shift;
 	
 	(*shape definition*)
-	t2 = 1/(linewidth Pi);
-	sigma = Sqrt[( 2 t2 Log[0.5])^2/(-2*Log[0.5])];
+	t2 = 1/linewidth;
 	decay = Switch[shape,
 	"L", Exp[-time/t2],
-	"G", Exp[-time/(2 sigma^2)],
-	"LG", 0.5 Exp[-time/t2]+0.5Exp[-time/(2 sigma^2)]];
+	"G", Exp[-time^2/t2^2],
+	"LG", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2]];
 	
 	(*create the fids by incrementing the spinsystem by dt*)
 	d = SimEvolveM[matU,valD,dt];(*spin evolve over dt*)
@@ -541,6 +546,31 @@ PhaseAlign[spec_]:=Block[{phi},
 (*GetSpinSystem*)
 
 
+Options[MakeSpinSystem] = {CenterFrequency -> 4.65};
+
+MakeSpinSystem[nam_, freq_, jcoup_, opts : OptionsPattern[]] := MakeSpinSystem[{nam, freq, jcoup, ConstantArray[1, Length[freq]]}, opts]
+MakeSpinSystem[nam_, freq_, jcoup_, scale_, opts : OptionsPattern[]] := MakeSpinSystem[{nam, freq, jcoup, scale}, opts]
+MakeSpinSystem[{nam_, freq_, jcoup_}, opts : OptionsPattern[]] := MakeSpinSystem[{nam, freq, jcoup, ConstantArray[1, Length[freq]]}, opts]
+MakeSpinSystem[{nam_, freq_, jcoup_, scale_}, OptionsPattern[]] := Block[
+	{cf, alf, num, it, sysS, labs, name, sysJ},
+	(*get the center frequency*)
+	cf = OptionValue[CenterFrequency];
+	(*get the alphabet*)
+	alf = Capitalize /@ Alphabet[];
+	num = Length[freq];
+	it = Range[num];
+	sysS = freq - cf;
+	If[StringQ[nam], name = nam; 
+	labs = alf[[;; num]];, {name, labs} = nam;];
+	sysJ = SysToMat[jcoup, num];
+	{sysJ, sysS, scale, freq, labs, it, name}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetSpinSystem*)
+
+
 Options[GetSpinSystem] = {CenterFrequency->4.65};
 
 SyntaxInformation[GetSpinSystem]={"ArgumentsPattern" -> {_, OptionsPattern[]}};
@@ -552,10 +582,11 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 	Switch[name,
 		"ATP",
 		(*single spin system*)
-		names={"A","B","C"};
+		names={"\[Gamma]","\[Alpha]","\[Beta]"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={-2.52,-7.56,-16.15};
+		(*sysSi={-2.52,-7.56,-16.15};*)
+		sysSi={-2.45,-7.5,-16.0};
 		sysS=sysSi-cf;
 		sysJ={
 			{{1,3},17.31},
@@ -619,7 +650,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		names={"A"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={2.95};
+		sysSi={6.24};
 		sysS=sysSi-cf;
 		sysJ={};
 		sysJ=SysToMat[sysJ,n];
@@ -631,7 +662,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		names={"A"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={3.5};
+		sysSi={3.50};
 		sysS=sysSi-cf;
 		sysJ={};
 		sysJ=SysToMat[sysJ,n];
@@ -643,7 +674,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		names={"A"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={8.21};
+		sysSi={2.95};
 		sysS=sysSi-cf;
 		sysJ={};
 		sysJ=SysToMat[sysJ,n];
@@ -655,10 +686,10 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		names={"A","B"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={-8.06,-8.36};
+		sysSi={-8.06,-8.34};(*8.2 + 0.13*)
 		sysS=sysSi-cf;
 		sysJ={
-			{{1,2},22}
+			{{1,2},21}
 		};
 		sysJ=SysToMat[sysJ,n];
 		scale={1,1};
@@ -669,10 +700,10 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		names={"A","B"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={-9.57,-9.87};
+		sysSi={-9.66,-9.94};(*9.8 + 0.13*)
 		sysS=sysSi-cf;
 		sysJ={
-			{{1,2},22}
+			{{1,2},21}
 		};
 		sysJ=SysToMat[sysJ,n];
 		scale={1,1};
