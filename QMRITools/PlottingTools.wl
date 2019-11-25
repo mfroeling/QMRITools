@@ -2351,7 +2351,7 @@ MakeSliceImages[selData_,vox:{_,_,_},opts:OptionsPattern[]]:=MakeSliceImages[sel
 
 MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=Block[{pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2},
 
-rule=Thread[vals->Range[Length[vals]]];
+rule=Thread[N[vals]->Range[Length[vals]]];
 colo=OptionValue[ColorFunction];
 
 colF = If[
@@ -2364,7 +2364,7 @@ Table[
 
 (*get the data*)
 pdat=N@selData[[n]];
-mdat=N@If[selMask=!=0,selMask[[n]]/.rule,0 pdat];
+mdat=N@If[selMask=!=0,N[selMask[[n]]]/.rule,0 pdat];
 
 (*find the range*)
 datf=DeleteCases[Flatten[pdat][[;;;;10]],0.];
