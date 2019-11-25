@@ -213,7 +213,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	(*create complex data for fit*)
 	complex = N[real + imag I];
 	If[ArrayDepth[real] === 4, complex = Transpose[complex]];
-	range = {0., 20 Max[Abs[complex]]};
+	range = {0., 2 Max[Abs[complex]]};
 	dim = Dimensions[complex][[2;;]];
 	dep = {ArrayDepth[complex]-1};
 	
@@ -258,14 +258,16 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 		{cWater, cFat, res} = TransData[Chop[result],"r"];
 	 ]; 	 
 	 
+	 
+	 
 	 (*create the output*)
 	 PrintTemporary["performing water fat calculation"];
 	 fraction = DixonToPercent[cWater, cFat];
 
 	 (*signal and in/out phase data *)
-	 signal = 1000 Clip[Abs[{cWater, cFat}],range];
-	 iopPhase = 1000 Clip[TransData[InOutPhase[phiEst, iop, ioAmat, cWater, cFat], "r"],range];
-	 res = 1000 Abs[res];
+	 signal = 1000 (Clip[Abs[{cWater, cFat}],range]/range[[2]]);
+	 iopPhase = 1000 (Clip[TransData[InOutPhase[phiEst, iop, ioAmat, cWater, cFat], "r"],range]/range[[2]]);
+	 res = 1000 Abs[res]/range[[2]];
 	 
 	 (*estimate b0 and t2star*)
 	 b0fit = Im[phiEst]/(2 Pi);
@@ -331,7 +333,7 @@ DixonFiti[{ydat_, phiInit_, phi0_, mask_}, echo_, Amat_] := Block[{pAmat, cFrac,
 		(*find solution for complex fractions with smooth phase map*)
 		pAmat = Chop[Exp[phiInit echo] Amat];
 		yfit = ydat Exp[-I phi0];
-		cFrac = DixLeastSquaresC[pAmat, ydat];
+		cFrac = DixLeastSquaresC[pAmat, yfit];
 		(*calculate the residuals*)
 		res = RootMeanSquare[yfit - Chop[pAmat.cFrac]];
 		(*ouput*)

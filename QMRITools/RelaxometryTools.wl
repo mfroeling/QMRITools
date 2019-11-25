@@ -1251,7 +1251,7 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2val}, angS, B1], {B1, b1vals}];
 						
 			If[incW,
-				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 15}, ang, B1], {B1, b1vals}];
+				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, B1], {B1, b1vals}];
 				fatSig = 0.1 fatSigW + 0.9 fatSig
 				];
 			
