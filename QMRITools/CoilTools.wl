@@ -98,18 +98,22 @@ Begin["`Private`"]
 (*LoadCoilSetup*)
 
 
-SyntaxInformation[LoadCoilSetup] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[LoadCoilSetup] = {"ArgumentsPattern" -> {_,_.}};
 
  (*load a sereis of linked coils measurements.*)
-LoadCoilSetup[fileC_?StringQ]:=Block[{dataC, vox, len, noiseC, sosC, snrC, sigmapC, weights, mn},
+LoadCoilSetup[fileC_?StringQ,n:_1]:=Block[{dataC, vox, len, noiseC, sosC, snrC, sigmapC, weights, mn},
 	(*import the data*)
 	{dataC, vox} = ImportNii[fileC];
 	(*split the noise dan data*)
+	Switch[n,1,
 	len = Round[Length[dataC[[1]]]/2];
 	noiseC = Transpose@dataC[[All, (len + 1) ;;]];
 	dataC = Transpose@dataC[[All, 1 ;; len]];
-	
-	mn =  MeanNoZero@Flatten@N@noiseC;
+	,2,
+	noiseC = Transpose@dataC[[All, 2;; ;;2]];
+	dataC = Transpose@dataC[[All, 1 ;; ;;2]];
+	];
+	mn =  Mean@Flatten@N@noiseC;
 	dataC = 10. dataC/mn;
 	noiseC = 10. noiseC/mn;
 	
@@ -136,7 +140,7 @@ LoadCoilTarget[file_?StringQ] := Block[{
 	noiseR = dataR[[All, 2]];
 	dataR = dataR[[All, 1]];
 	(*normalize the data*)
-	mn =  MeanNoZero@Flatten@N@noiseR;
+	mn =  Mean@Flatten@N@noiseR;
 	dataR = 10. dataR/mn;
 	noiseR = 10. noiseR/mn;
 	(*calculate the SNR*)
@@ -251,11 +255,7 @@ FindCoilPosition[weights_, mask_, OptionsPattern[]] := Block[{
 
 SyntaxInformation[NoiseCorrelation]={"ArgumentsPattern" -> {_}}
 
-NoiseCorrelation[noise_] := Block[{nrCoils, corr},
-  nrCoils = Length[noise];
-  corr = Table[Which[i == j, .5, i < j, 0., True, Correlation[noise[[i]], noise[[j]]]], {i, 1, nrCoils}, {j, 1, nrCoils}];
-  corr + Transpose[corr]
-  ]
+NoiseCorrelation[noise_] := Correlation[Transpose[noise]]
 
 
 (* ::Subsection::Closed:: *)
@@ -264,11 +264,7 @@ NoiseCorrelation[noise_] := Block[{nrCoils, corr},
 
 SyntaxInformation[NoiseCovariance]={"ArgumentsPattern" -> {_}}
 
-NoiseCovariance[noise_] := Block[{nrCoils, cova},
-  nrCoils = Length[noise];
-  cova = Table[Which[i == j, .5 Covariance[noise[[i]], noise[[j]]], i < j, 0., True, Covariance[noise[[i]], noise[[j]]]], {i, 1, nrCoils}, {j, 1, nrCoils}];
-  cova + Transpose[cova]
-  ]
+NoiseCovariance[noise_] := Covariance[Transpose[noise]]
 
 
 (* ::Subsection::Closed:: *)

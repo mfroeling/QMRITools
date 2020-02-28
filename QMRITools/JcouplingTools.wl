@@ -774,21 +774,8 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={1,1,1,1,1,1};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		"fatGly",
-		(*single spin system*)
-		names={"G","H","I"};
-		n=Length[names];
-		it=Range[n];
-		sysSi={4.2,4.45,5.15};
-		sysS=sysSi-cf;
-		sysJ={
-			{{1,2},-12.4},{{1,3},7.0},
-			{{2,3},7.0}
-		};
-		sysJ=SysToMat[sysJ,n];
-		scale={2,2,1};
-		{sysJ,sysS,scale,sysSi,names,it,name}
-		,
+		
+		
 		"fatAll",
 		(*single spin system*)
 		names={"A","B","C","D","E","J"};
@@ -806,59 +793,91 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={9,66,6,12,6,6};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		"fatEnd",
+		
+		
+		"fatGly",
 		(*single spin system*)
-		names={"B","A","A"(*,"A","B"*)};
+		names={"G","G","H","H","I"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={1.3,0.9,0.9(*,0.9,1.3*)};
+		sysSi={4.2,4.2,4.45,4.45,5.15};
 		sysS=sysSi-cf;
-		j=8;(*8.0*)
 		sysJ={
-			{{1,2},j}(*{{1,3},j},{{1,4},j},*)
-			(*{{2,5},j},
-			{{3,5},j},*)
-			(*{{4,5},j}*)
+			{{1, 3}, -12.4},{{2, 4}, -12.4},
+			{{1, 5}, 7},{{2, 5}, 7},
+			{{3, 5}, 7},{{4, 5}, 7}
 		};
 		sysJ=SysToMat[sysJ,n];
-		scale=3{2,2,1(*,1,1*)}(*3 chains with head*);
+		scale={1,1,1,1,1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"fatEnd",
+		(*single spin system*)
+		names={"A","A","A","B","B"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={0.9,0.9,0.9,1.3,1.3};
+		sysS=sysSi-cf;
+		j=8.0;(*8.0*)
+		sysJ={
+			{{1,4},j},{{1,5},j},
+			{{2,4},j},{{2,5},j},
+			{{3,4},j},{{3,5},j}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale=3{1,1,1,1,1}(*3 chains with head*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
 		"fatDouble",
 		(*single spin system*)
-		names={"B","D","J"(*,"B","D"*)};
+		names={"B","B","D","D","J"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={1.3,2.03,5.3(*,1.3,2.03*)};
+		sysSi={1.3,1.3,2.08,2.08,5.45};
 		sysS=sysSi-cf;
 		j1=7.1;j2=6.2;
 		sysJ={
-			{{1,2},j1},(*{{1,5},j1},*)
-			{{2,3},j2}(*{{2,4},j1},*)
-			(*{{3,4},j2},*)
-			(*{{4,5},j1}*)
+			{{1, 3}, j1},{{1, 4}, j1},
+			{{2, 3}, j1},{{2, 4}, j1},
+			{{3, 5}, j2},{{4, 5}, j2}
 		};
 		sysJ=SysToMat[sysJ,n];
-		scale=3 2{2,2,1(*,1,1*)}(*2x to complete, 3 chains with double*);
+		scale=6{1,1,1,1,1}(*2x to complete, 3 chains with double*);
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"fatDouble2",
+		(*single spin system*)
+		names={"F","F","J","J"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={2.63,2.63,5.45,5.45};
+		sysS=sysSi-cf;
+		j=1;
+		sysJ={
+			{{1,3},j},{{1,4},j},
+			{{2,3},j},{{2,4},j}
+		};
+		sysJ=SysToMat[sysJ,n];
+		scale=1{1,1,1,1}(*2x to complete, 3 chains with double*);
+		
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
 		"fatStart",
 		(*single spin system*)
-		names={"B","C","E"(*,"B","C","E"*)};
+		names={"B","B","C","C","E","E"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={1.3,1.6,2.27(*,1.3,1.6,2.27*)};
+		sysSi={1.3,1.3,1.64,1.64,2.35,2.35};
 		sysS=sysSi-cf;
 		j1=7.1(*CE*);j2=7.1(*BC*);
 		sysJ={(*7.1*)
-			{{1,2},j2},(*{{1,5},j2},*)
-			{{2,3},j1}(*,{{2,4},j2},{{2,6},j1},
-			{{3,5},j1},
-			{{4,5},j2},
-			{{5,6},j1}*)
+			{{1, 3}, j1},{{1, 4}, j1},
+			{{2, 3}, j1},{{2, 4}, j1},
+			{{3, 5}, j2},{{3, 6}, j2},
+			{{4, 5}, j2},{{4, 6}, j2}
 		};
 		sysJ=SysToMat[sysJ,n];
-		scale=3 {2,2,2(*,1,1,1*)}(*3 chains with start*);
+		scale=3 {1,1,1,1,1,1}(*3 chains with start*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
 		"fatMet",
@@ -869,7 +888,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		sysS=sysSi-cf;
 		sysJ={};
 		sysJ=SysToMat[sysJ,n];
-		scale=3 2 10{1}(*3 chains with 6 normal met with 2 H*);
+		scale=3 2 6{1}(*3 chains with 6 normal met with 2 H*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
 	]
 ]

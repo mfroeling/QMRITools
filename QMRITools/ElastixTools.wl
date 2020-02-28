@@ -291,8 +291,6 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (ErodeFixedMask \"false\")
 
 (Registration \"MultiResolutionRegistration\")
-(FixedImagePyramid \"FixedSmoothingImagePyramid\")
-(MovingImagePyramid \"MovingSmoothingImagePyramid\")
 
 (ImageSampler \"RandomCoordinate\")
 (CheckNumberOfSamples \"false\")
@@ -308,11 +306,17 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 
 "<>If[openCL,
 (*check to uses openCL needs custom compile of elastix*)
-"(OpenCLResamplerUseOpenCL \"true\")
-(OpenCLDeviceID \""<>ToString[gpu]<>"\")
-(Resampler \"OpenCLResampler\")"
+"(OpenCLDeviceID \""<>ToString[gpu]<>"\")
+(Resampler \"OpenCLResampler\")
+(OpenCLResamplerUseOpenCL \"true\")
+(FixedImagePyramid \"OpenCLFixedGenericImagePyramid\")
+(OpenCLFixedGenericImagePyramidUseOpenCL \"true\")
+(MovingImagePyramid \"OpenCLMovingGenericImagePyramid\")
+(OpenCLMovingGenericImagePyramidUseOpenCL \"true\")"
 ,
-"(Resampler \"DefaultResampler\")"
+"(Resampler \"DefaultResampler\")
+(FixedImagePyramid \"FixedGenericImagePyramid\")
+(MovingImagePyramid \"MovingGenericImagePyramid\")"
 ]<>"
 // ***************************************************************
 
@@ -371,7 +375,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 "rigid",
 "(Transform \"EulerTransform\")",
 "affine",
-"(Transform \"AffineLogTransform\")
+"(Transform \"AffineTransform\")
 (MovingImageDerivativeScales "<>DerivativePar[N@Clip[derscA], dtar]<>")",
 "bspline",
 "(Transform \"RecursiveBSplineTransform\")
@@ -403,7 +407,6 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (MovingImageDerivativeScales "<>DerivativePar[N@Clip[derscB], dtar-1, "0.0"]<>")"
 ]<>"
 // ***************************************************************
-
 
 //****************** end of file ***************
 ")
@@ -656,7 +659,7 @@ Options[RegisterData]={
 Iterations->250,
 Resolutions->1,
 HistogramBins->64,
-NumberSamples->2000,
+NumberSamples->4000,
 InterpolationOrderReg->3,
 BsplineSpacing->30,
 BsplineDirections->{1,1,1},
@@ -1202,7 +1205,8 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 		"\" -in \"" <> First[FileNames["trans*", tempDir]] <>
 		"\" -out \"" <> tempDir <>
 		"\" -tp \"" <> transfile <>
-		"\" -def all" <>
+		(*"\" -def all" <>*)
+		"\"" <>
 		" > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
 		,
 		"MacOSX",

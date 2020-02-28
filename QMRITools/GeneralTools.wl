@@ -67,6 +67,14 @@ the data can be reconstructed using VectorToData.
 
 output is the vecotrized data and a list contining the original data dimensions and a list with the data coordinates. {vec, {dim,pos}}."
 
+DataToVector::usage = "
+DataToVector[data] converst the non zero data to vector.
+DataToVector[data,mask] converst the data within the mask to vector.
+
+the data can be reconstructed using VectorToData.
+
+output is the vecotrized data and a list contining the original data dimensions and a list with the data coordinates. {vec, {dim,pos}}."
+
 VectorToData::usage = 
 "VectorToData[vec, {dim,pos}] converts the vectroized data, using Data2DToVector or Data3DToVector, back to its original Dimensoins"
 
@@ -518,24 +526,61 @@ vecdata = If[depth==4,
 
 
 (* ::Subsubsection::Closed:: *)
+(*DataToVector*)
+
+
+Clear[DataToVector]
+DataToVector::dim = "`1` should be 2D, 3D or 4D, data is `2`D.";
+DataToVector::mask = "Data and mask should have the same dimensions: data `1` and mask `2`";
+
+SyntaxInformation[DataToVector] = {"ArgumentsPattern" -> {_, _.}};
+
+DataToVector[datai_] := DataToVector[datai, 1]
+
+DataToVector[datai_, maski_] := 
+ Module[{data, mask, depthd, depthm, depth, dimm, dimd},
+  mask = If[maski === 1, Unitize[data], maski];
+  
+  data = N@datai;
+  depthd = ArrayDepth[datai];
+  depthm = ArrayDepth[mask];
+  depth = depthd - depthm;
+  
+  If[! (depthd == 2 || depthd == 3 || depthd == 4), Message[DataToVector::dim, "Data", depthd]];
+  If[! (depthm == 2 || depthm == 3), Message[DataToVector::dim, "Mask", depthm]];
+  
+  dimm = Dimensions[mask];
+  dimd = Dimensions[data];
+  
+  dimd = If[depth == 0, dimd, 
+    If[depth == 1 && depthd == 3, Drop[dimd, 1], Drop[dimd, {2}]]];
+  
+  If[ dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
+  
+  data = If[depthd == 4,
+    Flatten[TransData[Transpose[data], "l"], 2],
+    If[depthd == 3 && depth == 1,
+     Flatten[TransData[data, "l"], 1],
+     Flatten[data]
+     ]];
+  
+  {Pick[data, Flatten[mask], 1], {dimd, Position[mask, 1]}}
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
 (*VectorToData*)
 
 
 SyntaxInformation[VectorToData] = {"ArgumentsPattern" -> {_, {_, _}}};
 
-VectorToData[vec_,{dim_, pos_}]:=Block[{output,len},
-len=Length@First@vec;
-output=Switch[len,
-0,ConstantArray[0.,dim],
-_,ConstantArray[ConstantArray[0.,len],dim]
-];
-Switch[
-Length[dim],
-2,MapThread[(output[[#2[[1]],#2[[2]]]]=#1)&,{vec,pos}],
-3,MapThread[(output[[#2[[1]],#2[[2]],#2[[3]]]]=#1)&,{vec,pos}]
-];
-Switch[len,0,output,_,TransData[output,"r"]]
-]
+VectorToData[vec_, {dim_, pos_}] := If[VectorQ[vec],
+  Normal[SparseArray[pos -> vec, dim]],
+  If[Length[dim] == 2,
+   Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec],
+   Transpose[Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec]]
+   ]
+  ]
 
 
 (* ::Subsubsection::Closed:: *)
