@@ -1252,7 +1252,7 @@ ExtractNiiFiles[folder_,lim_:Infinity] := Module[{files},
   ExtractNiiFile/@ files;
 ]
 
-ExtractNiiFile[file_] := Quiet[StringDrop[file, -3];ExtractArchive[file];DeleteFile[file];]
+ExtractNiiFile[file_] := Quiet[ExtractArchive[file, StringDrop[DirectoryName[file], -1]];DeleteFile[file];]
 
 
 (* ::Subsubsection::Closed:: *)

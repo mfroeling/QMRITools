@@ -138,7 +138,9 @@ data=BinaryReadList[fl<>".data","Complex64"];
 
 (*Get the header*)
 head=StringSplit/@Select[list,StringTake[#,1]==="."&];
-head=Thread[head[[All,5]]->ToExpression[head[[All,7;;]]]];
+head = (p = Position[#, ":"][[1, 1]]; 
+     StringRiffle[#[[5 ;; (p - 1)]]] -> 
+      ToExpression[#[[(p + 1) ;;]]]) & /@ head;
 head[[All,2]]=If[Length[#]==1,#[[1]],#]&/@head[[All,2]];
 (*get the labels*)
 lab=StringSplit[list[[StringPosition[StringJoin[StringTake[#,1]&/@list],"# "][[1,1]]-2]]][[2;;-2]];
@@ -324,42 +326,51 @@ ShiftData[data_,shift_]:=RotateRight[data,Reverse[shift]];
 
 SyntaxInformation[ShiftedFourier]={"ArgumentsPattern"->{_}}
 
-ShiftedFourier[time_]:=FourierShift[Fourier[time,FourierParameters->{-1, 1}]];
+ShiftedFourier[time_]:=FourierShift[Fourier[time,FourierParameters->{1,-1}]];
 
 
 SyntaxInformation[ShiftedInverseFourier]={"ArgumentsPattern"->{_}}
 
-ShiftedInverseFourier[spec_]:=InverseFourier[InverseFourierShift[spec],FourierParameters->{-1, 1}];
+ShiftedInverseFourier[spec_]:=InverseFourier[InverseFourierShift[spec],FourierParameters->{1,-1}];
 
 
 SyntaxInformation[FourierShifted]={"ArgumentsPattern"->{_}}
 
-FourierShifted[time_]:=Fourier[FourierShift[time],FourierParameters->{-1, 1}];
+FourierShifted[time_]:=Fourier[FourierShift[time],FourierParameters->{1,-1}];
 
 
 SyntaxInformation[InverseFourierShifted]={"ArgumentsPattern"->{_}}
 
-InverseFourierShifted[spec_]:=InverseFourierShift[InverseFourier[spec,FourierParameters->{-1, 1}]];
+InverseFourierShifted[spec_]:=InverseFourierShift[InverseFourier[spec,FourierParameters->{1,-1}]];
 
 
 (* ::Subsubsection::Closed:: *)
 (*FourierKspace2D*)
 
 
-FourierKspace2D[kspace_,head_]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
-(*get the oversampling padding*)
-ksPad=Round[({"Y-resolution","X-resolution"}{"ky_oversample_factor","kx_oversample_factor"}-{"N_ky","N_samp"})/2/.head];
-(*get the final data dimentions*)
-dim={"number_of_locations","Y-resolution","X-resolution"}/.head;
-(*pad the kaspaces with zeros*)
-kspaceP=ArrayPad[#,Transpose@{ksPad,ksPad},0.+0.I]&/@kspace;
-(*get the image padding and image shift*)
-imPad=-Round[(Dimensions[kspaceP]-dim)/2];
-shift=Total[#]&/@({"Y_range","X_range"}/.head);
-(*perform the fourie transform*)
-imData=ArrayPad[ShiftData[FourierShifted[#],shift]&/@kspaceP,Transpose[{imPad,imPad}]]
-]
+FourierKspace2D[kspace_, head_] := Block[{ksPad, dim, p1, p2, shift, kspaceP, imData},
+  (*get the oversampling padding*)
+  ksPad = Round[({"Y-resolution", "X-resolution"} {"ky_oversample_factor", "kx_oversample_factor"} - {"N_ky", "N_samp"})/2 /. head];
+  (*get the final data dimentions*)
+  dim = {"Y-resolution", "X-resolution"} /. head;
+  (*get the image shift*)
+  shift = Total[#] & /@ ({"Y_range", "X_range"} /. head);
+  (*get the image padding*){p1, p2} = 
+   Round[((({"N_ky", "N_samp"} /. head) - 2 ksPad) - dim)/2];
+  ksPad = Transpose@{ksPad, ksPad};
+  (*perform the fourie transform*)
+  FourierKspace2DI[kspace, ksPad, shift, p1, p2]
+  ]
 
+
+FourierKspace2DI = Compile[{{data, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {p1, _Integer, 0}, {p2, _Integer, 0}},
+   Block[{dat},
+    dat = ArrayPad[data, ksPad];
+    dat = FourierShifted[dat];
+    dat = ShiftData[dat, shift];
+    Chop[dat[[p1 + 1 ;; -p1 - 1, p2 + 1 ;; -p2 - 1]]]
+    ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+    
 
 (* ::Subsubsection::Closed:: *)
 (*FourierKspaceCSI*)

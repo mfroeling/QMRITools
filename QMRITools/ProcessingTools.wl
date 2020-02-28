@@ -638,7 +638,7 @@ Options[SNRMapCalc] = {OutputSNR -> "SNR", SmoothSNR->2};
 
 SyntaxInformation[SNRMapCalc] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, opts:OptionsPattern[]] := SNRMapCalc[data, noise, 1, opts]
+SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, opts:OptionsPattern[]] := SNRMapCalc[data, noise, OptionValue[SmoothSNR], opts]
 SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[{sigma, sigmac, snr, depthD, depthN},
 	
  	sigma = N[GaussianFilter[noise, 4]];

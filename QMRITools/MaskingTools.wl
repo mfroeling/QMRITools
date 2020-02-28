@@ -284,7 +284,7 @@ Options[GetMaskData] = {GetMaskOutput -> "All"}
 SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 GetMaskData[data_?ArrayQ, mask_?ArrayQ, OptionsPattern[]] := Module[{depth,fdat},
-	If[Dimensions[data]!=Dimensions[mask],
+	If[!(Dimensions[data]=!=Dimensions[mask]||Drop[Dimensions[data], {2}]=!=Dimensions[mask]),
 		Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]]
 		,
 		Switch[OptionValue[GetMaskOutput],
