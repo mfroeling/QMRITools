@@ -326,22 +326,22 @@ ShiftData[data_,shift_]:=RotateRight[data,Reverse[shift]];
 
 SyntaxInformation[ShiftedFourier]={"ArgumentsPattern"->{_}}
 
-ShiftedFourier[time_]:=FourierShift[Fourier[time,FourierParameters->{1,-1}]];
+ShiftedFourier[time_]:=FourierShift[Fourier[time,FourierParameters->{-1,1}]];
 
 
 SyntaxInformation[ShiftedInverseFourier]={"ArgumentsPattern"->{_}}
 
-ShiftedInverseFourier[spec_]:=InverseFourier[InverseFourierShift[spec],FourierParameters->{1,-1}];
+ShiftedInverseFourier[spec_]:=InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}];
 
 
 SyntaxInformation[FourierShifted]={"ArgumentsPattern"->{_}}
 
-FourierShifted[time_]:=Fourier[FourierShift[time],FourierParameters->{1,-1}];
+FourierShifted[time_]:=Fourier[FourierShift[time],FourierParameters->{-1,1}];
 
 
 SyntaxInformation[InverseFourierShifted]={"ArgumentsPattern"->{_}}
 
-InverseFourierShifted[spec_]:=InverseFourierShift[InverseFourier[spec,FourierParameters->{1,-1}]];
+InverseFourierShifted[spec_]:=InverseFourierShift[InverseFourier[spec,FourierParameters->{-1,1}]];
 
 
 (* ::Subsubsection::Closed:: *)
