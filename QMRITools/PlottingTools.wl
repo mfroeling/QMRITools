@@ -80,6 +80,7 @@ PlotIVIM::usage =
 PlotSequence::usage = 
 "PlotSequence[seq,var] where seq is the output from GradSeq."
 
+Ploti::usage = "testing" 
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -169,8 +170,10 @@ views = Thread[2*{{0.65, -1.2, 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0},
 
 (*default gradient color funtions*)
 gradsets = ColorData["Gradients"];
-colorNames = {"GrayTones", "Rainbow", "ThermometerColors", "SunsetColors", "TemperatureMap", "LightTemperatureMap",
-    "GrayYellowTones", "BlueGreenYellow", "AvocadoColors", "SouthwestColors"};
+colorNames = {
+	"GrayTones", "Rainbow", "ThermometerColors", "SunsetColors", 
+	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", "BlueGreenYellow", 
+	"AvocadoColors", "SouthwestColors"};
 
 (*custom color functions and generate image of custom color*)
 CustCol[colf_] := Graphics[Raster[{Range[100]/100.}, {{0, 0}, {1, 1}}, ColorFunction -> colf], 
@@ -705,9 +708,9 @@ SyntaxInformation[PlotData] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[
 
 
 PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPattern[]]:= Module[
-	{data,dim,n,control,str,exp,transclip,reverse,start1,end1,start2,end2,dur,loop,tab1,tab2,depth,
+	{data,dim,n,control,str,exp,clip,reverse,start1,end1,start2,end2,dur,loop,tab1,tab2,depth,
 	x,xp,yp,min,max,minclip,maxclip,label,ps,color,lstyle,legend,fileType,size,pannel,aspect,or,rangex,rangey,frame,
-	mind,maxd,plab,plot,pdata,cfs,lab,pcol
+	mind,maxd,plab,plot,pdata,cfs,lab,pcol,ccol
 	},
 	
 	NotebookClose[plotwindow];
@@ -758,9 +761,9 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Auto Scaling", Control@{{cfs,False,""},{True -> "On", False -> "Off"}}},
 			{"Min value",Control@{{min,mind,""},mind,max-(maxd-mind)/250,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
+			{"Clipping",Control@{{clip,"Auto",""},{"Auto","Custom","Transparent"}}},
 			{"Min Clipping",Control@{{minclip,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
-			{"Max Clipping",Control@{{maxclip,White,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
-			{"Transparent Clipping",Control@{{transclip,False,""},{True,False}}}
+			{"Max Clipping",Control@{{maxclip,White,""},ColorSlider[#,ImageSize->{Automatic,15}]&}}			
 			}]
 		,(*Plot style controls*)
 		ManPannel["Plot Style",{
@@ -768,10 +771,10 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Plot Size",Control@{{ps,400,""},psizes,ControlType->PopupMenu}},
 			{"Color function",Control@{{color,pcol,""},colors,ControlType->PopupMenu}},
 			{"Color style",Control@{{lstyle,1,""},colfuncs}},
-			{"Layout",Row@{"  Legend:",Control@{{legend,False,""},{True,False}},
-				"   Frame:",Control@{{frame,False,""},{True,False}},
-				"   Label:",Control@{{lab,True,""},{True,False}}
-			}}
+			{"Layout",Row@{
+				"  Legend:",Control@{{legend,False,""},{True,False}},
+				"  Frame:",Control@{{frame,False,""},{True,False}},
+				"  Label:",Control@{{lab,True,""},{True,False}}}}
 			}]
 		}];
 	
@@ -836,39 +839,34 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		(*based on the data dimensions or how the data is showed determine how the data selection looks*)
 		pdata={
 			data&,
-			{
-				data[[#1]]&,
-				Reverse[data[[All,#1]]]&,
-				Reverse[data[[All,All,#1]]]&
-			}[[or]],
-			{
-				data[[#1,#2]]&,
-				Reverse[data[[All,#2,#1]]]&,
-				Reverse[data[[All,#2,All,#1]]]&
-				}[[or]]
-			}[[n]];
+			{data[[#1]]&,Reverse[data[[All,#1]]]&,Reverse[data[[All,All,#1]]]&}[[or]],
+			{data[[#1,#2]]&,Reverse[data[[All,#2,#1]]]&,Reverse[data[[All,#2,All,#1]]]&}[[or]]
+		}[[n]];
 		
 		(*Make plot label*)
 		plab=If[#3,
 			LabelFunc[label,{{},{#1},{#1,#2}}[[n]]],
 			LabelFunc[label,{}]
 			]&;
+			
+		ccol=Switch[clip,"Auto",ColorData2[color]/@{0,1},"Custom",{minclip,maxclip},"Transparent",{Transparent,Transparent}];
 	
 		(*create Plot, is on hold so it can be used for exporting multiple files and movie*)
 		plot=Ploti[
-			pdata[#1,#2],
-			{min,max},
-			plab[#3,#2,lab],
-			ps,
-			{lstyle,color},
-			cfs,
-			legend,
-			frame,
-			If[transclip,{Transparent,Transparent},{minclip,maxclip}],
-			aspect]&;
+			pdata[#1,#2],		(*the data*)
+			{min,max},			(*the plot range*)
+			plab[#3,#2,lab],	(*the plot label*)
+			ps,					(*the plot size*)
+			{lstyle,color},		(*style (1-4),colorfunction*)
+			cfs,				(*color function scaling aut*)
+			legend,				(*show plot legend*)
+			frame,				(*show the frame*)
+			ccol,				(*the plot clip color*)
+			aspect				(*the aspect ratio*)
+		]&;
 			
 		(*insert data in plot and show*)
-		(*Make sure that the x an y slice selection indices cant exceed the data dimensinos*)
+		(*Make sure that the x an y slice selection indices cant exceed the data dimensions*)
 		exp=plot[xp,yp,x]
 		
 		,##(*Insertion of control pannel*),
@@ -890,9 +888,9 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 
 
 PlotData[dat1_?ArrayQ,dat2_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPattern[]]:=
-Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1,tab2,
+Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1,tab2,ccol,
 	x,xp,yp,min1,max1,min2,max2,mind1,maxd1,mind2,maxd2,reverse,or,plabs,plab,plot,aspect,cfs1,cfs2,
-	minclip1,maxclip1,minclip2,maxclip2,transclip1,transclip2,ps,legend,color1,color2,lstyle1,lstyle2,control,
+	minclip1,maxclip1,minclip2,maxclip2,clip1,clip2,ps,legend,color1,color2,lstyle1,lstyle2,control,
 	pannel,pdata1,pdata2,flip,overlay,checksize,opac,diffr,fileType,size,leftright,lab,mpdim,
 	start1,end1,start2,end2,dur,loop,exp,dim1,dim2,prange,frame,adep1,adep2,maxabs,pcol,pcol1,pcol2},
 	
@@ -900,8 +898,8 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 	ClearTemporaryVariables[];
 	
 	(*Check if data is numeric array, if not exit*)
-	data1=dat1//N;
-	data2=dat2//N;
+	data1 = ToPackedArray[dat1//N];
+	data2 = ToPackedArray[dat2//N];
 	If[(! ArrayQ[data1, _, RealQ]) || (! ArrayQ[data2, _, RealQ]),Return[Message[PlotData::data]]];
 
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
@@ -976,9 +974,9 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			{"Max value",PaneSelector[{
 				1->Control@{{max1,maxd1,""},(maxd1-mind1)/250+ min1,maxd1,(maxd1-mind1)/250, Appearance -> "Labeled"},
 				2->Control@{{max2,maxd2,""},(maxd2-mind2)/250+ min2,maxd2,(maxd2-mind2)/250, Appearance -> "Labeled"}},Dynamic[leftright]]},
-			{"Transparent Clipping",PaneSelector[{
-				1->Control@{{transclip1,False,""},{True,False}},
-				2->Control@{{transclip2,False,""},{True,False}}},Dynamic[leftright]]},
+			{"Clippint",PaneSelector[{
+				1->Control@{{clip1,"Auto",""},{"Auto","Custom","Transparent"}},
+				2->Control@{{clip2,"Auto",""},{"Auto","Custom","Transparent"}}},Dynamic[leftright]]},
 			{"Min Clipping",PaneSelector[{
 				1->Control@{{minclip1,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&},
 				2->Control@{{minclip2,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},Dynamic[leftright]]},
@@ -989,13 +987,10 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		ManPannel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
 			{"Plot Size",Control@{{ps,400,""},psizes,ControlType->PopupMenu}},
-			(*{"Legend on/off",Control@{{legend,False,""},{True,False}}},
-			{"frame on/off",Control@{{frame,False,""},{True,False}}},
-			{"Label on/off",Control@{{lab,True,""},{True,False}}},*)
-			{"Layout",Row@{"  Legend:",Control@{{legend,False,""},{True,False}},
-				"   Frame:",Control@{{frame,False,""},{True,False}},
-				"   Label:",Control@{{lab,True,""},{True,False}}
-			}},
+			{"Layout",Row@{
+				"  Legend:",Control@{{legend,False,""},{True,False}},
+				"  Frame:",Control@{{frame,False,""},{True,False}},
+				"  Label:",Control@{{lab,True,""},{True,False}}}},
 			{"Data set",Control@{{leftright,1,""},{1->"Left",2->"Right"}}},
 			{Style[Dynamic[{"Left dataset","Right dataset"}[[leftright]]],Bold],""},
 			{"PlotTitle",PaneSelector[{
@@ -1019,9 +1014,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
  					3 -> Control@{{opac, 0.4, ""}, 0, 1},
  					4 -> Control@{{diffr, .5*maxabs, ""}, Dynamic[0.00001*maxabs], Dynamic[2*maxabs] /. 0. -> 1., Dynamic[(1.5*maxabs /. 0. -> 1.)/1000]}}
  					,Dynamic[overlay]]
- 			}
-			},False]
-			}];
+ 			}},False]}];
 	(*second tab, exporting controls*)
 	tab2=Column[{
 		ManPannel["Export plot",{
@@ -1050,8 +1043,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			ManPannel["Export multiple plots as animated gif",{
 				{"Display Duration (s)",Control@{{dur,.5,""},0.1,2,0.1, Appearance -> "Labeled"}},
 				{"Animation Repetitions",Control@{{loop,Infinity,""},{Infinity,1,2,3,4,5},ControlType->PopupMenu}},
-				{"Export Movie",Button["Save Movie",MovieSave[Hold[plot[xs,ys,xs]],dur,loop,size,{start1,end1,start2,end2}[[1;;2(n-1)]]],
-					Method->"Queued",ImageSize->150]}
+				{"Export Movie",Button["Save Movie",MovieSave[Hold[plot[xs,ys,xs]],dur,loop,size,{start1,end1,start2,end2}[[1;;2(n-1)]]], Method->"Queued",ImageSize->150]}
 				}]
 			}[[Unitize[n-1]+1]]
 		}];
@@ -1079,30 +1071,13 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		(*based on the data dimensions or how the data is showed determine how the data selection looks*)
 		pdata1={
 			data1&,
-			{
-				data1[[#1]]&,
-				Reverse[data1[[All,#1]]]&,
-				Reverse[data1[[All,All,#1]]]&
-			}[[or]],
-			{
-				data1[[#1,#2]]&,
-				Reverse[data1[[All,#2,#1]]]&,
-				Reverse[data1[[All,#2,All,#1]]]&
-				}[[or]]
+			{data1[[#1]]&,Reverse[data1[[All,#1]]]&,Reverse[data1[[All,All,#1]]]&}[[or]],
+			{data1[[#1,#2]]&,Reverse[data1[[All,#2,#1]]]&,Reverse[data1[[All,#2,All,#1]]]&}[[or]]
 			}[[ArrayDepth[data1]-1]];		
 		
-		pdata2={
-			data2&,
-			{
-				data2[[#1]]&,
-				Reverse[data2[[All,#1]]]&,
-				Reverse[data2[[All,All,#1]]]&
-			}[[or]],
-			{
-				data2[[#1,#2]]&,
-				Reverse[data2[[All,#2,#1]]]&,
-				Reverse[data2[[All,#2,All,#1]]]&
-				}[[or]]
+		pdata2={data2&,
+			{data2[[#1]]&,Reverse[data2[[All,#1]]]&,Reverse[data2[[All,All,#1]]]&}[[or]],
+			{data2[[#1,#2]]&,Reverse[data2[[All,#2,#1]]]&,Reverse[data2[[All,#2,All,#1]]]&}[[or]]
 			}[[ArrayDepth[data2]-1]];
 
 		(*Make plot label*)
@@ -1124,21 +1099,25 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			}
 			]&;
 		
-		plot=Plot2i[
-			{pdata1[#1,#2],pdata2[#1,#2]},
-			{{min1,max1},{min2,max2}},
-			plab[#3,#2,lab],
-			ps,
-			{{lstyle1,color1},{lstyle2,color2}},
-			{cfs1,cfs2},
-			legend,
-			frame,
-			{overlay,checksize,flip,opac,diffr},
-			{If[transclip1,{Transparent,Transparent},{minclip1,maxclip1}],
-				If[transclip2,{Transparent,Transparent},{minclip2,maxclip2}]},
-			aspect
-			]&;
+		ccol={
+			Switch[clip1,"Auto",ColorData2[color1]/@{0,1},"Custom",{minclip1,maxclip1},"Transparent",{Transparent,Transparent}],
+			Switch[clip2,"Auto",ColorData2[color2]/@{0,1},"Custom",{minclip2,maxclip2},"Transparent",{Transparent,Transparent}]
+			};
 		
+		plot=Plot2i[
+			{pdata1[#1,#2],pdata2[#1,#2]},			(*the data*)
+			{{min1,max1},{min2,max2}},				(*the plot range*)
+			plab[#3,#2,lab],						(*the plot label*)
+			ps,										(*the plot size*)
+			{{lstyle1,color1},{lstyle2,color2}},	(*style (1-4),colorfunction*)
+			{cfs1,cfs2},							(*color function scaling aut*)
+			legend,									(*show plot legend*)
+			frame,									(*show the frame*)
+			{overlay,checksize,flip,opac,diffr},	(*the overlay options*)
+			ccol,									(*the plot clip color*)
+			aspect									(*the aspect ratio*)
+			]&;
+			
 		(* Create and show plot*)
 		exp=plot[xp,yp,x]
 	
