@@ -761,7 +761,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Auto Scaling", Control@{{cfs,False,""},{True -> "On", False -> "Off"}}},
 			{"Min value",Control@{{min,mind,""},mind,max-(maxd-mind)/250,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
-			{"Clipping",Control@{{clip,"Auto",""},{"Auto","Custom","Transparent"}}},
+			{"Clipping",Control@{{clip,"Custom",""},{"Auto","Custom","Transparent"}}},
 			{"Min Clipping",Control@{{minclip,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
 			{"Max Clipping",Control@{{maxclip,White,""},ColorSlider[#,ImageSize->{Automatic,15}]&}}			
 			}]
@@ -975,8 +975,8 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				1->Control@{{max1,maxd1,""},(maxd1-mind1)/250+ min1,maxd1,(maxd1-mind1)/250, Appearance -> "Labeled"},
 				2->Control@{{max2,maxd2,""},(maxd2-mind2)/250+ min2,maxd2,(maxd2-mind2)/250, Appearance -> "Labeled"}},Dynamic[leftright]]},
 			{"Clippint",PaneSelector[{
-				1->Control@{{clip1,"Auto",""},{"Auto","Custom","Transparent"}},
-				2->Control@{{clip2,"Auto",""},{"Auto","Custom","Transparent"}}},Dynamic[leftright]]},
+				1->Control@{{clip1,"Custom",""},{"Auto","Custom","Transparent"}},
+				2->Control@{{clip2,"Custom",""},{"Auto","Custom","Transparent"}}},Dynamic[leftright]]},
 			{"Min Clipping",PaneSelector[{
 				1->Control@{{minclip1,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&},
 				2->Control@{{minclip2,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},Dynamic[leftright]]},
