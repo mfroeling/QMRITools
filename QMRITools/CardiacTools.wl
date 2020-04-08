@@ -256,136 +256,126 @@ HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_?ArrayQ, vox:{_?NumberQ, _?Numb
 
 HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, off_, vec_, inout_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,0,off,vec,inout,vox,opts]
 
-HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, offi_, veci_, inouti_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]]:=Module[
-{norvec,radvec,radvecn,cirvec,projection,helix,sign,
-evec,inp,dim,wallangmap,norvecc,mtot,func2,vec,off,inout,pl,
-vectorField,vectorFieldE,n,coo,plot,out,voxl,offp,
-rav,nov,rov,spz,spxy,sp,met,
-seg,min,mout,intdata,func,wall,der,
-maskCont,vec1,vec2,vec3},
+HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, offi_, veci_, inouti_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]]:=Block[{
+	norvec,radvec,radvecn,cirvec,projection,helix,sign,	evec,inp,dim,wallangmap,
+	norvecc,mtot,func2,vec,off,inout,pl, vectorField,vectorFieldE,n,coo,plot,
+	out,voxl,offp,rav,nov,rov,spz,spxy,sp,met,seg,min,mout,intdata,func,
+	wall,der, maskCont,vec1,vec2,vec3},
+	
+	dim=Dimensions[data][[1;;3]];
+	voxl=Reverse[vox];
 
-dim=Dimensions[data][[1;;3]];
-voxl=Reverse[vox];
+	met=OptionValue[HelixMethod];
 
-met=OptionValue[HelixMethod];
-
-If[offi===1&&veci===1&&inouti===1,
-	If[OptionValue[ShowHelixPlot],
-		{off, vec, inout, pl} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, AxesMethod -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowHelixPlot]];,
-		{off, vec, inout} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, AxesMethod -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowHelixPlot]];
-		];
-	,
-	vec=veci;off=offi;inout=inouti;
+	If[offi===1&&veci===1&&inouti===1,
+		If[OptionValue[ShowHelixPlot],
+			{off, vec, inout, pl} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, AxesMethod -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowHelixPlot]];,
+			{off, vec, inout} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, AxesMethod -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowHelixPlot]];
+		],
+		vec=veci;off=offi;inout=inouti;
 	];
+	
+	PrintTemporary["LMCS caclulation start"];
+	Switch[met
+		,"Fast",
+		(*calculate the wall angle map*)
+		wallangmap=N[WallAngleMap[mask,vox,inout]Degree];
+		(*define te rad vector using center points*)
+		radvec=RadVecC[dim,off];
+		(*define norvecs using centerline vectors*)
+		norvec=ConstantArray[vec[[#]],dim[[2;;]]]&/@Range[dim[[1]]];
+		(*define rotation vectors perpendicualr to radvecn and norvec*)
+		cirvec=NormalizeC[CrossC[radvec,norvec]];
+		(*correct the norvec for the wall curvature by rotation around rotvec*)
+		norvecc=NorVecR[wallangmap,cirvec,norvec];
+		(*make radvec purpendicular to corrected norvec*)
+		radvecn=MakePerpendicular[radvec,norvecc];
+		
+		,"Slow",
+		seg = MorphologicalComponents[#] & /@ (1. - mask);
+		min = Round@GaussianFilter[Unitize[Clip[seg, {1.5, 2}, {0, 0}]], 3];
+		mout = Round@GaussianFilter[Unitize[1 - Clip[seg, {0, 1}, {0, 0}]], 3];
+		mtot = (Dilation[mout, 1] + 1) - 2 min;
+		
+		intdata = N@Join[Append[vox #, 0.] & /@ Position[min, 1], Append[vox #, 1.] & /@ Position[1 - Dilation[mout, 1], 1]];
+		func = Interpolation[intdata, InterpolationOrder -> 1];
+		func2 = If[(mtot[[##]] & @@ #) != 2, (mtot[[##]] & @@ #), func @@ (vox #)] &;
+		wall = Table[func2[{z, y, x}], {z, 1,dim[[1]]}, {y, 1, dim[[2]]}, {x, 1,dim[[3]]}];
+		der = GaussianFilter[wall, {1.5 (1/vox)/(1/vox[[1]])}, #] & /@ (IdentityMatrix[3]);
+		
+		radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
+		norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
+		norvecc = MakePerpendicular[norvec, radvecn];
+		cirvec = NormalizeC[CrossC[radvecn,norvecc]];
+		
+		,"Slow2",
+		{wall,der,p} = CalculateWallMap[mask, vox, ShowFit->True, MaskWallMap->False];
+		
+		radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
+		norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
+		norvecc = MakePerpendicular[norvec, radvecn];
+		cirvec = NormalizeC[CrossC[radvecn,norvecc]];
+	];
+	PrintTemporary["LMCS is done"];
 
-PrintTemporary["LMCS caclulation start"];
-
-Switch[met
-	,"Fast",
-	(*calculate the wall angle map*)
-	wallangmap=N[WallAngleMap[mask,vox,inout]Degree];
-	(*define te rad vector using center points*)
-	radvec=RadVecC[dim,off];
-	(*define norvecs using centerline vectors*)
-	norvec=ConstantArray[vec[[#]],dim[[2;;]]]&/@Range[dim[[1]]];
-	(*define rotation vectors perpendicualr to radvecn and norvec*)
-	cirvec=NormalizeC[CrossC[radvec,norvec]];
-	(*correct the norvec for the wall curvature by rotation around rotvec*)
-	norvecc=NorVecR[wallangmap,cirvec,norvec];
-	(*make radvec purpendicular to corrected norvec*)
-	radvecn=MakePerpendicular[radvec,norvecc];
-	
-	,"Slow",
-	
-	seg = MorphologicalComponents[#] & /@ (1. - mask);
-	min = Round@GaussianFilter[Unitize[Clip[seg, {1.5, 2}, {0, 0}]], 3];
-	mout = Round@GaussianFilter[Unitize[1 - Clip[seg, {0, 1}, {0, 0}]], 3];
-	mtot = (Dilation[mout, 1] + 1) - 2 min;
-	
-	intdata = N@Join[Append[vox #, 0.] & /@ Position[min, 1], Append[vox #, 1.] & /@ Position[1 - Dilation[mout, 1], 1]];
-	func = Interpolation[intdata, InterpolationOrder -> 1];
-	func2 = If[(mtot[[##]] & @@ #) != 2, (mtot[[##]] & @@ #), func @@ (vox #)] &;
-	wall = Table[func2[{z, y, x}], {z, 1,dim[[1]]}, {y, 1, dim[[2]]}, {x, 1,dim[[3]]}];
-	der = GaussianFilter[wall, {1.5 (1/vox)/(1/vox[[1]])}, #] & /@ (IdentityMatrix[3]);
-	
-	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
-	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
-	norvecc = MakePerpendicular[norvec, radvecn];
-	cirvec = NormalizeC[CrossC[radvecn,norvecc]];
-	
-	,"Slow2",
-	{wall,der,p} = CalculateWallMap[mask, vox, ShowFit->True, MaskWallMap->False];
-	
-	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
-	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
-	norvecc = MakePerpendicular[norvec, radvecn];
-	cirvec = NormalizeC[CrossC[radvecn,norvecc]];
-];
-PrintTemporary["LMCS is done"];
-
-(*create helix angle maps*)
-out = Flatten[Table[
-	evec=Map[Reverse,data[[All,All,All,i]],{3}];
-	(*align vector with projection vector*)
-	evec=Sign2[DotC[{norvecc,radvecn,cirvec}[[j]],evec]] evec;
-	(*evec=Sign2[DotC[{norvecc,radvecn,rotvec}[[j]],evec]] evec;*)
-	(*Helix,Transverse,Sheet}*)
-	projection = MakePerpendicular[evec, {radvecn,cirvec,norvecc}[[j]]];
-	(*projection = MakePerpendicular[evec, {rotvec,norvec,radvecn}[[j]]];*)
-	inp = DotC[projection,{cirvec,norvecc,radvecn}[[j]]];
-	helix=ArcCos[Abs[inp]]/Degree;
-	
-	sign=If[(j==1 && i==1),Sign2[inp],1];
-	sign helix
+	(*create helix angle maps*)
+	out = Flatten[Table[
+		evec=Map[Reverse,data[[All,All,All,i]],{3}];
+		(*align vector with projection vector*)
+		evec=Sign2[DotC[{norvecc,radvecn,cirvec}[[j]],evec]] evec;
+		(*evec=Sign2[DotC[{norvecc,radvecn,rotvec}[[j]],evec]] evec;*)
+		(*Helix,Transverse,Sheet}*)
+		projection = MakePerpendicular[evec, {radvecn,cirvec,norvecc}[[j]]];
+		(*projection = MakePerpendicular[evec, {rotvec,norvec,radvecn}[[j]]];*)
+		inp = DotC[projection,{cirvec,norvecc,radvecn}[[j]]];
+		helix=ArcCos[Abs[inp]]/Degree;
+		
+		sign=If[(j==1 && i==1),Sign2[inp],1];
+		sign helix
 	, {i, 3}, {j, 3}],1];
-	
+		
 	sp = Ceiling[Dimensions[mask]/{12, 24, 24}];
-	
+		
 	{spz,spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
 
-If[OptionValue[ShowHelixPlot],
+	If[OptionValue[ShowHelixPlot],
 		(*creat a plot showing the local axes system*)
-	maskCont = PlotMaskVolume[mask + maskp, vox];
-	n = (spz 0.6 vox[[1]]){1, -1, 1} /vox;
-  	vectorField = Table[
-  		If[mask[[z, y, x]] == 0,
-  			{None, None, None},
-  			coo = {x, -y + dim[[2]] + 1, z};
-  			rav = Reverse[n radvecn[[z, y, x]]];
-  			nov = Reverse[n norvecc[[z, y, x]]];
-  			rov = Reverse[n cirvec[[z, y, x]]];
-  			{
-  				{Darker[Green], Thick, Line[{coo(* - rav*), coo + rav}]},
-  				{Darker[Blue], Thick, Line[{coo(* - nov*), coo + nov}]},
-  				{Darker[Red], Thick, Line[{coo(* - rov*), coo + rov}]}
-     		}
-     		], {z, 1, dim[[1]], spz}, {y, 1,dim[[2]], spxy}, {x, 1, dim[[3]], spxy}
-     	];
-	{vec1, vec2, vec3} = DeleteCases[Flatten[#, 2], None] & /@ Transpose[vectorField, {2, 3, 4, 1}];
+		maskCont = PlotMaskVolume[mask + maskp, vox];
+		n = (spz 0.6 vox[[1]]){1, -1, 1} /vox;
+	  	vectorField = Table[
+	  		If[mask[[z, y, x]] == 0, {None, None, None},
+	  			coo = {x, -y + dim[[2]] + 1, z};
+	  			rav = Reverse[n radvecn[[z, y, x]]];
+	  			nov = Reverse[n norvecc[[z, y, x]]];
+	  			rov = Reverse[n cirvec[[z, y, x]]];
+	  			{{Darker[Green], Thick, Line[{coo, coo + rav}]},
+	  			{Darker[Blue], Thick, Line[{coo, coo + nov}]},
+	  			{Darker[Red], Thick, Line[{coo, coo + rov}]}}
+	     	]
+	     	, {z, 1, dim[[1]], spz}, {y, 1,dim[[2]], spxy}, {x, 1, dim[[3]], spxy}];
+	     {vec1, vec2, vec3} = DeleteCases[Flatten[#, 2], None] & /@ Transpose[vectorField, {2, 3, 4, 1}];
 	     
-	vectorFieldE = DeleteCases[Flatten[Table[
-    	If[mask [[z, y, x]] == 0,
-       		None,
-        	coo = ({x, -y + dim[[2]], z} + {.5, .5, 0});
-        	rav = n data[[z,y,x,3]];
-        	nov = n data[[z,y,x,1]];
-        	rov = n data[[z,y,x,2]];
-	        {
-	         {Green, Thick, Line[{coo - rav, coo + rav}]}, 
-	         {Blue, Thick, Line[{coo - nov, coo + nov}]},
-	         {Red, Thick, Line[{coo - rov, coo + rov}]}
-	         }
+		vectorFieldE = DeleteCases[Flatten[Table[
+	    	If[mask [[z, y, x]] == 0, None,
+	        	coo = ({x, -y + dim[[2]], z} + {.5, .5, 0});
+	        	rav = n data[[z,y,x,3]];
+	        	nov = n data[[z,y,x,1]];
+	        	rov = n data[[z,y,x,2]];
+		        {{Green, Thick, Line[{coo - rav, coo + rav}]}, 
+		        {Blue, Thick, Line[{coo - nov, coo + nov}]},
+		        {Red, Thick, Line[{coo - rov, coo + rov}]}}
 	         ]
 	     , {z, 1, dim[[1]],1}, {y, 1, dim[[2]], 3}, {x, 1, dim[[3]], 2}],3], None];
 	     
-	offp = {.5, .5+dim[[2]], 0} + {1, -1, 1} Reverse[#] & /@ DeleteCases[off, {}];
-	(*cent=Show[ListPointPlot3D[offp,PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],Graphics3D[{Thick, Black, Line[offp]}]];*)
-  	plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3](*,Graphics3D[vectorFieldE]*)];
-   	Print[plot];
-  	
-  	{Re@out,{plot,pl}(*,{radvec,norvec,radvecn,rotvec,norvecc}*)}
-	,
-  	Re@out
+		offp = {.5, .5+dim[[2]], 0} + {1, -1, 1} Reverse[#] & /@ DeleteCases[off, {}];
+		(*cent=Show[ListPointPlot3D[offp,PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],Graphics3D[{Thick, Black, Line[offp]}]];*)
+	  	plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3](*,Graphics3D[vectorFieldE]*)];
+	   	Print[plot];
+	  	
+	  	{Re@out,{plot,pl}(*,{radvec,norvec,radvecn,rotvec,norvecc}*)}
+		,
+		(*output without plot*)
+	  	Re@out
   	]
 ]
 
@@ -401,40 +391,33 @@ Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
 (*MakePerpendicular*)
 
 
-MakePerpendicular[vec1_, vec2_] := NormalizeC[MakePerpendiculari[vec1, vec2]]
-
-
-MakePerpendiculari = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
-   vec1 - (vec1.vec2) vec2, RuntimeAttributes -> {Listable}, 
-   Parallelization -> True, RuntimeOptions -> "Speed"];
+MakePerpendicular = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, Normalize[vec1 - (vec1.vec2) vec2], 
+	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*NormalizeC*)
 
 
-NormalizeC = Compile[{{vec, _Real, 1}}, Normalize[vec], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+NormalizeC = Compile[{{vec, _Real, 1}}, Normalize[vec], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*RadVecC*)
 
 
-RadVecC = Compile[{{dim, _Real, 1}, {off, _Real, 2}}, 
-   Table[Normalize[{i, j, k}-off[[i]]], {i, dim[[1]]}, {j, 
-     dim[[2]]}, {k, dim[[3]]}], RuntimeOptions -> "Speed"];
+RadVecC = Compile[{{dim, _Real, 1}, {off, _Real, 2}}, Table[Normalize[{i, j, k}-off[[i]]], {i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}], 
+	RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*NorVecC*)
 
 
-NorVecC = Compile[{{off, _Real, 2}, {vec, _Real, 2}, {dim, _Real, 1}, {vox, _Real, 1}},
-   Block[{offv = vox # & /@ off},
-    Table[
-     vec[[First@
-        First@Position[offv, First@Nearest[offv, vox {i, j, k}, 1]]]],
-     {i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}]
+NorVecC = Compile[{{off, _Real, 2}, {vec, _Real, 2}, {dim, _Real, 1}, {vox, _Real, 1}}, Block[{offv},
+    	offv = vox # & /@ off;
+    	Table[vec[[First@First@Position[offv, First@Nearest[offv, vox {i, j, k}, 1]]]],{i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}]
     ], Parallelization -> True, RuntimeOptions -> "Speed"];
 
 
@@ -442,15 +425,12 @@ NorVecC = Compile[{{off, _Real, 2}, {vec, _Real, 2}, {dim, _Real, 1}, {vox, _Rea
 (*NorVecR*)
 
 
-NorVecR = Compile[{{angmap, _Real, 0}, {rotvec, _Real, 1}, {norvec, _Real, 1}},
-   Block[{
-     v1 = rotvec[[1]], v2 = rotvec[[2]], v3 = rotvec[[3]],
-     W, iden = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}},
-    W = -{{0, -v3, v2}, {v3, 0, -v1}, {-v2, v1, 0}};
-    (iden + 
-       Sin[angmap] W + (2 Sin[angmap/2]^2 MatrixPower[W, 2])).norvec
-    ]
-   , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+NorVecR = Compile[{{angmap, _Real, 0}, {rotvec, _Real, 1}, {norvec, _Real, 1}}, Block[{v1, v2, v3, W, iden},
+	     {v1, v2, v3} = rotvec;
+	     iden = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+	     W = -{{0, -v3, v2}, {v3, 0, -v1}, {-v2, v1, 0}};
+	     (iden + Sin[angmap] W + (2 Sin[angmap/2]^2 MatrixPower[W, 2])).norvec
+    ] , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 
@@ -458,9 +438,8 @@ NorVecR = Compile[{{angmap, _Real, 0}, {rotvec, _Real, 1}, {norvec, _Real, 1}},
 (*CrossC*)
 
 
-CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
-   Cross[vec1, vec2], RuntimeAttributes -> {Listable}, 
-   Parallelization -> True];
+CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, Cross[vec1, vec2], 
+	RuntimeAttributes -> {Listable}, Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -475,42 +454,43 @@ DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, vec1.vec2,
 (*WallAngleMap*)
 
 
-WallAngleMap[mask_, vox_, inout_] := 
- Module[{dim,cent,len,edge1,edge2,fout,fin,
-   walldir,wallang,wallvec,sign,
-   wallangfunc,dist,in,out},
-  
-  dim = Dimensions[mask];
-  len = dim[[1]];
-    
-  (*fit the wall profile with Quadratic function*)
-  {in, out} = (FitWall[#, "Quartic"]) & /@ {inout[[1, 2]], inout[[2, 2]]};
-  fout = First@First@Position[out[[1]], _Real?(# != 0. &)];
-  fin = First@First@Position[in[[1]], _Real?(# != 0. &)];
-  
-  walldir = {in, out};
-wallang = Transpose[Map[(
-      wallvec = Normalize[vox {1, #[[2]], 0}];
-      sign = Sign2[#[[2]]];
-      {#[[1]], sign VectorAngle[{1, 0, 0}, wallvec]/Degree}
-      ) &, Transpose[walldir, {2, 3, 1}], {2}], {3, 1, 2}];
-cent = {ConstantArray[0, len], wallang[[1, 2]]};
-If[fout > 1, wallang[[2, 2, Range[fout - 1]]] = 90];
-If[fin > 1, wallang[[1, 2, Range[fin - 1]]] = 90];
-cent = {ConstantArray[0, len], wallang[[1, 2]]};
-edge1 = {ConstantArray[ Max[walldir[[All, 1]]], len], wallang[[2, 2]]};
-edge2 = {ConstantArray[ Max[vox dim], len], wallang[[2, 2]]};
-wallang = 
-  Transpose[{Transpose[
-       vox[[1 ;; 2]] {Range[len], #[[1]]}], #[[2]]}] & /@ 
-   Join[{cent}, wallang, {edge1, edge2}];
+WallAngleMap[mask_, vox_, inout_] := Block[{
+	dim, cent, len, edge1, edge2, fout, fin, walldir, 
+	wallang, wallvec, sign, wallangfunc, dist, in, out
+	},
+	
+	dim = Dimensions[mask];
+	len = dim[[1]];
+	
+	(*fit the wall profile with Quadratic function*)
+	{in, out} = (FitWall[#, "Quartic"]) & /@ {inout[[1, 2]], inout[[2, 2]]};
+	fout = First@First@Position[out[[1]], _Real?(# != 0. &)];
+	fin = First@First@Position[in[[1]], _Real?(# != 0. &)];
+	
+	walldir = {in, out};
+	wallang = Transpose[Map[(
+		wallvec = Normalize[vox {1, #[[2]], 0}];
+		sign = Sign2[#[[2]]];
+		{#[[1]], sign VectorAngle[{1, 0, 0}, wallvec]/Degree}
+	) &, Transpose[walldir, {2, 3, 1}], {2}], {3, 1, 2}];
+	
+	cent = {ConstantArray[0, len], wallang[[1, 2]]};
 
-wallang = Sort[DeleteDuplicates[Flatten[wallang, 1]]];
-wallangfunc = Interpolation[wallang, InterpolationOrder -> 1];
-Table[
-   dist = EuclideanDistance[{j, k}, inout[[1, 1, z, 2 ;;]]];
-   wallangfunc[vox[[1]] z, vox[[2]] dist]
-   , {z, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}
+	If[fout > 1, wallang[[2, 2, Range[fout - 1]]] = 90];
+	If[fin > 1, wallang[[1, 2, Range[fin - 1]]] = 90];
+	cent = {ConstantArray[0, len], wallang[[1, 2]]};
+
+	edge1 = {ConstantArray[ Max[walldir[[All, 1]]], len], wallang[[2, 2]]};
+	edge2 = {ConstantArray[ Max[vox dim], len], wallang[[2, 2]]};
+	wallang = Transpose[{Transpose[vox[[1 ;; 2]] {Range[len], #[[1]]}], #[[2]]}] & /@ Join[{cent}, wallang, {edge1, edge2}];
+	
+	wallang = Sort[DeleteDuplicates[Flatten[wallang, 1]]];
+	wallangfunc = Interpolation[wallang, InterpolationOrder -> 1];
+	
+	Table[
+		dist = EuclideanDistance[{j, k}, inout[[1, 1, z, 2 ;;]]];
+		wallangfunc[vox[[1]] z, vox[[2]] dist]
+	, {z, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}
    ]
 ]
 
@@ -520,27 +500,25 @@ Table[
 
 
 (*fit the waal profile for the normalized central axes*)
-FitWall[data_, met_] := 
- Module[{fun, pf, fdata, xdat, points, pos},
-  (*define function and data*)
-  fun = Switch[met,
-   "Quadratic", {1, t, t^2},
-   "Cubic", {1, t, t^2, t^3},
-   "Quartic", {1, t, t^2, t^3, t^4},
-   _, {1, t}];
-  xdat = Range[Length[data]];
-  fdata = DeleteCases[Transpose[{xdat, data}], {_, {}}];
-  
-  (*perform the fit and gererate the fitted poins *)
-  pf = Simplify@Chop@Fit[fdata, fun, t];
-  points = Chop[pf /. t -> # & /@ xdat];
-  
-  (*set the radius to zero for slices without a mask*)
-  pos = Flatten[Position[data, {}]];
-  If[! (pos === {}), points[[pos]] = 0];
-  {points, (Unitize[points[[#]]] (D[pf, t] /. t -> #) /. 
-       0. -> 10) & /@ xdat}
-  ]
+FitWall[data_, met_] := Block[{fun, pf, fdata, xdat, points, pos},
+	(*define function and data*)
+	fun = Switch[met,
+		"Quadratic", {1, t, t^2},
+		"Cubic", {1, t, t^2, t^3},
+		"Quartic", {1, t, t^2, t^3, t^4},
+		_, {1, t}];
+	xdat = Range[Length[data]];
+	fdata = DeleteCases[Transpose[{xdat, data}], {_, {}}];
+	
+	(*perform the fit and gererate the fitted poins *)
+	pf = Simplify@Chop@Fit[fdata, fun, t];
+	points = Chop[pf /. t -> # & /@ xdat];
+	
+	(*set the radius to zero for slices without a mask*)
+	pos = Flatten[Position[data, {}]];
+	If[! (pos === {}), points[[pos]] = 0];
+	{points, (Unitize[points[[#]]] (D[pf, t] /. t -> #) /.  0. -> 10) & /@ xdat}
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -734,17 +712,17 @@ CentralAxes[mask_,maskp_,vox_,OptionsPattern[]]:=Module[{
 
 
 BoundCorrect[points_,off_,vec_]:=Block[{vv,first,last,offo,veco},
-vv = Unitize[points];
-	
-first = (First@Position[vv, 1])[[1]];
-last = (Last@Position[vv, 1])[[1]];
-offo = Join[
-	{off[[first, 1]] + (first - #) (off[[first, 1]] - off[[first + 1, 1]]), off[[first, 2]] + (first - #) (off[[first, 2]] - off[[first + 1, 2]]), #} & /@ Range[1, first - 1],
-	off[[Range[first, last]]],
-  	{off[[last, 1]] + (# - last) (off[[last, 1]] - off[[last - 1, 1]]), off[[last, 2]] + (# - last) (off[[last, 2]] - off[[last - 1, 2]]), #} & /@ Range[last + 1, Length[vv]]
-  ];
-veco=Join[ConstantArray[vec[[first]],first-1],vec[[first;;last]],ConstantArray[vec[[last]],Length[vv]-last]];
-{offo,veco}
+	vv = Unitize[points];
+		
+	first = (First@Position[vv, 1])[[1]];
+	last = (Last@Position[vv, 1])[[1]];
+	offo = Join[
+		{off[[first, 1]] + (first - #) (off[[first, 1]] - off[[first + 1, 1]]), off[[first, 2]] + (first - #) (off[[first, 2]] - off[[first + 1, 2]]), #} & /@ Range[1, first - 1],
+		off[[Range[first, last]]],
+	  	{off[[last, 1]] + (# - last) (off[[last, 1]] - off[[last - 1, 1]]), off[[last, 2]] + (# - last) (off[[last, 2]] - off[[last - 1, 2]]), #} & /@ Range[last + 1, Length[vv]]
+	  ];
+	veco=Join[ConstantArray[vec[[first]],first-1],vec[[first;;last]],ConstantArray[vec[[last]],Length[vv]-last]];
+	{offo,veco}
 ]
 
 
@@ -752,15 +730,15 @@ veco=Join[ConstantArray[vec[[first]],first-1],vec[[first;;last]],ConstantArray[v
 (*CenterPoint*)
 
 
-CenterPoint[mask_]:=Module[{half},
-DynamicModule[{halfi},
-halfi=Dimensions[mask[[1]]]/2;
-DialogInput[{
-LocatorPane[Dynamic[halfi],Image[Mean[mask],ImageSize->400],Appearance->Graphics[{Red,Disk[]},ImageSize->30]],
-DefaultButton["Done",DialogReturn[half=halfi]]
-},WindowTitle->"Select Center",WindowFloating->True,Modal->True]
-];
-half
+CenterPoint[mask_]:=Module[{half}, 
+	DynamicModule[{halfi},
+		halfi=Dimensions[mask[[1]]]/2;
+		DialogInput[{
+			LocatorPane[Dynamic[halfi],Image[Mean[mask],ImageSize->400],Appearance->Graphics[{Red,Disk[]},ImageSize->30]],
+			DefaultButton["Done",DialogReturn[half=halfi]]
+		},WindowTitle->"Select Center",WindowFloating->True,Modal->True]
+	];
+	half
 ]
 
 
@@ -769,8 +747,7 @@ half
 
 
 (*function to get inner and outer radius of the segmentation*)
-GetRadius[mask_, {minr_, maxr_}, half_] := 
- Module[{msin, tmp, comps, seg, min, mout, inner, outer,seli,selo,spos}, 
+GetRadius[mask_, {minr_, maxr_}, half_] := Block[{msin, tmp, comps, seg, min, mout, inner, outer,seli,selo,spos}, 
  	(*create the inner and outer volume*)
  	seg = MorphologicalComponents[#] & /@ (1. - mask);
  	seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
@@ -783,14 +760,14 @@ GetRadius[mask_, {minr_, maxr_}, half_] :=
  		tmp = DeleteCases[(ComponentMeasurements[msin, {"Medoid", "BoundingDiskCenter", "BoundingDiskRadius"}])[[All,2]], _?((#1[[3]] > maxr) || (#1[[3]] < minr) &)];
  		comps = If[tmp != {}, Nearest[(#[[1]] -> #) & /@ tmp, half, 1][[1]], {}];
    		If[comps != {}, {Join[comps[[1]], (#2)], Join[comps[[2]], (#2)], comps[[3]]}, {{}, {}, {}}]
-       	) &, min];
+   	) &, min];
        	
    	(*get the outer radius*)
    	outer = Transpose@MapIndexed[(msin = Image[#1];
    		tmp = DeleteCases[(ComponentMeasurements[msin, {"Medoid", "BoundingDiskCenter", "BoundingDiskRadius"}])[[All, 2]], _?((#1[[3]] > maxr) || (#1[[3]] < minr) &)];
    		comps = If[tmp != {}, Nearest[(#[[1]] -> #) & /@ tmp, half, 1][[1]], {}];
    		If[comps != {}, {Join[comps[[1]], (#2)], Join[comps[[2]], (#2)], comps[[3]]}, {{}, {}, {}}]
-   		) &, mout];
+   	) &, mout];
     
     (*only define outer if inner is known*)
     seli = Unitize[inner[[2]]] /. {} -> 0;
@@ -800,7 +777,7 @@ GetRadius[mask_, {minr_, maxr_}, half_] :=
     
     (*give inner and outer radius (centerpoint,radius)*)
   	{inner, outer}
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -808,31 +785,27 @@ GetRadius[mask_, {minr_, maxr_}, half_] :=
 
 
 (*fit the center line for the average inner and outer center points*)
-FitCenterLine[inner_, outer_, vox_, met_] := 
- Module[{data},
-  data = Mean[DeleteCases[#, {}]] & /@ Transpose[{inner, outer}];
-  FitCenterLine[data, vox, met]
-  ]
+FitCenterLine[inner_, outer_, vox_, met_] := Block[{data},
+	data = Mean[DeleteCases[#, {}]] & /@ Transpose[{inner, outer}];
+	FitCenterLine[data, vox, met]
+]
 
-FitCenterLine[datai_, vox_, met_] := 
- Module[{fun, pf, xdat, data, fdata},
-  data = datai /. {Mean[{}] -> {{}, {}, {}}, {} -> {{}, {}, {}}};
-  
-  fun = Switch[met, 
-  	"Quadratic", {1, t, t^2}, 
-    "Cubic", {1, t, t^2, t^3}, 
-    "Quartic", {1, t, t^2, t^3, t^4},
-    _, {1, t}];
-  
-  xdat = Range[Length[data]];
-  fdata = DeleteCases[Transpose[{Range[Length[#]], #}], {_, {}}] & /@ Transpose[data];
-  
-  pf = Simplify@Chop@Fit[#1, fun, t] & /@ fdata;
-  
-  {
-  	Transpose[If[NumberQ[#], ConstantArray[#, Length[xdat]], # /. t -> xdat] & /@ pf]
-  , (Normalize[D[Reverse[vox] pf, t] /. t -> #] & /@ xdat)}
-  ]
+FitCenterLine[datai_, vox_, met_] := Block[{fun, pf, xdat, data, fdata},
+	data = datai /. {Mean[{}] -> {{}, {}, {}}, {} -> {{}, {}, {}}};
+	
+	fun = Switch[met,
+		"Quadratic", {1, t, t^2},
+		"Cubic", {1, t, t^2, t^3},
+		"Quartic", {1, t, t^2, t^3, t^4},
+	_, {1, t}];
+	
+	xdat = Range[Length[data]];
+	fdata = DeleteCases[Transpose[{Range[Length[#]], #}], {_, {}}] & /@ Transpose[data];
+	pf = Simplify@Chop@Fit[#1, fun, t] & /@ fdata;
+	
+	{Transpose[If[NumberQ[#], ConstantArray[#, Length[xdat]], # /. t -> xdat] & /@ pf],
+	(Normalize[D[Reverse[vox] pf, t] /. t -> #] & /@ xdat)}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -842,11 +815,11 @@ FitCenterLine[datai_, vox_, met_] :=
 (*Plot the radus and center points on the mask*)
 PlotRadius[mask_,inner_,outer_]:=MapThread[(
 	Show[
-	Image[#1/Max[mask],ImageSize->100],
-	If[#2[[1]]!={},Graphics[{Red,Thick,Circle[#2[[2,1;;2]]+{-0.25,0.25},#2[[3]]]}],Graphics[]],
-	If[#2[[1]]!={},Graphics[{Red,PointSize[Medium],Point[#2[[1,1;;2]]]}],Graphics[]],
-	If[#3[[1]]!={},Graphics[{Blue,Thick,Circle[#3[[2,1;;2]]+{-0.25,0.25},#3[[3]]]}],Graphics[]],
-	If[#3[[1]]!={},Graphics[{Blue,PointSize[Medium],Point[#3[[1,1;;2]]]}],Graphics[]]
+		Image[#1/Max[mask],ImageSize->100],
+		If[#2[[1]]!={},Graphics[{Red,Thick,Circle[#2[[2,1;;2]]+{-0.25,0.25},#2[[3]]]}],Graphics[]],
+		If[#2[[1]]!={},Graphics[{Red,PointSize[Medium],Point[#2[[1,1;;2]]]}],Graphics[]],
+		If[#3[[1]]!={},Graphics[{Blue,Thick,Circle[#3[[2,1;;2]]+{-0.25,0.25},#3[[3]]]}],Graphics[]],
+		If[#3[[1]]!={},Graphics[{Blue,PointSize[Medium],Point[#3[[1,1;;2]]]}],Graphics[]]
 	]
 )&,{mask,Transpose@inner,Transpose@outer}]
 
@@ -855,34 +828,38 @@ PlotRadius[mask_,inner_,outer_]:=MapThread[(
 (*PlotSegmentation*)
 
 
-PlotSegmentation[mask_, inner_, outer_, {off_, offi_, offo_}, vox_] :=
-  Module[{voxl, offp, offip, offop},
-  voxl = Reverse[vox];
-  
-  offp = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[off, {}];
-  offip = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[offi, {}];
-  offop = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[offo, {}];
-  
-  Show[
-   PlotMaskVolume[mask, vox],
-   (*center points*)
-   ListPointPlot3D[offp, PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],
-   Graphics3D[{Thick, Black, Line[offp]}],
-   
-   ListPointPlot3D[Delete[outer[[1]], Position[outer[[2]], {}]], PlotStyle -> Directive[{Thick, Blue, PointSize[Large]}]],
-   Graphics3D[{Thick, Blue, Line[Delete[offop, Position[outer[[2]], {}]]]}],
-   
-   ListPointPlot3D[Delete[offip, Position[inner[[2]], {}]], PlotStyle -> Directive[{Thick, Red, PointSize[Large]}]],
-   Graphics3D[{Thick, Red, Line[Delete[offip, Position[inner[[2]], {}]]]}],
-   
-   (*Plot the segmented outlines*)
-   If[outer[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{outer[[3, #]] Sin[u], outer[[3, #]] voxl[[1]]/voxl[[2]] Cos[u],0} + offop[[#]], {u, 0, 2 Pi}, 
-       PlotStyle -> Directive[{Thick, Blue, Opacity[.5]}]]] & /@ Range[Length[mask]], 
-   If[inner[[2, #]] === {}, Graphics3D[], ParametricPlot3D[{inner[[3, #]] Sin[u], inner[[3, #]] voxl[[1]]/voxl[[2]] Cos[u], 0} + offip[[#]], {u, 0, 2 Pi}, 
-       PlotStyle -> Directive[{Thick, Red, Opacity[.5]}]]] & /@ Range[Length[mask]],ImageSize->400
-       
-   ]
-  ]
+PlotSegmentation[mask_, inner_, outer_, {off_, offi_, offo_}, vox_] := Block[{voxl, offp, offip, offop},
+	voxl = Reverse[vox];
+	
+	offp = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[off, {}];
+	offip = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[offi, {}];
+	offop = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[offo, {}];
+	
+	Show[
+		PlotMaskVolume[mask, vox],
+		(*center points*)
+		ListPointPlot3D[offp, PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],
+		Graphics3D[{Thick, Black, Line[offp]}],
+		
+		ListPointPlot3D[Delete[outer[[1]], Position[outer[[2]], {}]], PlotStyle -> Directive[{Thick, Blue, PointSize[Large]}]],
+		Graphics3D[{Thick, Blue, Line[Delete[offop, Position[outer[[2]], {}]]]}],
+		
+		ListPointPlot3D[Delete[offip, Position[inner[[2]], {}]], PlotStyle -> Directive[{Thick, Red, PointSize[Large]}]],
+		Graphics3D[{Thick, Red, Line[Delete[offip, Position[inner[[2]], {}]]]}],
+		
+		(*Plot the segmented outlines*)
+		If[outer[[2, #]] === {}, 
+			Graphics3D[], 
+			ParametricPlot3D[{outer[[3, #]] Sin[u], outer[[3, #]] voxl[[1]]/voxl[[2]] Cos[u],0} + offop[[#]], {u, 0, 2 Pi}, PlotStyle -> Directive[{Thick, Blue, Opacity[.5]}]]
+		] & /@ Range[Length[mask]],
+		
+		If[inner[[2, #]] === {}, 
+			Graphics3D[], 
+			ParametricPlot3D[{inner[[3, #]] Sin[u], inner[[3, #]] voxl[[1]]/voxl[[2]] Cos[u], 0} + offip[[#]], {u, 0, 2 Pi}, PlotStyle -> Directive[{Thick, Red, Opacity[.5]}]]
+		] & /@ Range[Length[mask]],
+		
+	ImageSize->400]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -891,13 +868,14 @@ PlotSegmentation[mask_, inner_, outer_, {off_, offi_, offo_}, vox_] :=
 
 Options[PlotMaskVolume] = {Filter->True}
 
-PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Module[{pmask,dim},
+PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Block[{pmask,dim},
 	pmask = ArrayPad[Reverse[If[OptionValue[Filter], GaussianFilter[Clip[mask], 1],	Clip[mask]], 2], 1];
 	dim=Dimensions[pmask];
-	ListContourPlot3D[pmask, Contours -> {.4}, ContourStyle -> {color, Opacity[.5]}, Mesh -> False, 
-    Lighting -> "Neutral", BoundaryStyle -> None, PlotRange -> (Thread[{{0, 0, 0}, Reverse@dim - 1}]), 
-    BoxRatios -> Reverse[(vox (dim + 2))], Axes -> True, ImageSize -> 400, SphericalRegion -> True]
-  ]
+	ListContourPlot3D[pmask, Contours -> {.4}, ContourStyle -> {color, Opacity[.5]}, Mesh -> False,
+		Lighting -> "Neutral", BoundaryStyle -> None, PlotRange -> (Thread[{{0, 0, 0}, Reverse@dim - 1}]),
+		BoxRatios -> Reverse[(vox (dim + 2))], Axes -> True, ImageSize -> 400, SphericalRegion -> True
+	]
+]
 
 
 (* ::Subsection:: *)
@@ -908,7 +886,7 @@ PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Module[{pmask
 (*CardiacSegment*)
 
 
-Options[CardiacSegment]={StartPoints->"Default",StartSlices->"Default",LineThreshold->.25,LineStep->.5,SegmentAngle->1};
+Options[CardiacSegment]={StartPoints->"Default",StartSlices->"Default",LineThreshold->.25,LineStep->.5, SegmentAngle->1};
 
 SyntaxInformation[CardiacSegment] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
@@ -942,12 +920,7 @@ CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 		coordinates=(Reverse/@Position[#,1])&/@mask;
 		angles=N@Table[i,{i,0,359,OptionValue[SegmentAngle]}]Degree;
 		PrintTemporary["Calculating sample lines"];
-		{lines, lineAng} = LinePoints[mask, off, LineThreshold->OptionValue[LineThreshold],LineStep->OptionValue[LineStep]];
-		(*Print[Dimensions[angles]];
-		Print[angles];
-		Print[Dimensions[lineAng]];
-		Print[lineAng[[22]]];
-		Print[Dimensions/@lineAng];*)
+		{lines, lineAng} = LinePoints[mask, off, LineThreshold->OptionValue[LineThreshold], LineStep->OptionValue[LineStep]];
 		
 		(*static plots*)
 		centerpl=Graphics[{Red ,Disk[#,1]}]&/@centers;
@@ -995,9 +968,12 @@ CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 			
 			(*segments*)
 			segments=If[!NumberQ[segmi],
-				Thread[{apex,apical,midcavity,basal,none}->{1,4,6,6,1}](*[[1;;4]*),
+				If[segmi=="AHA",
+					Thread[{apex,apical,midcavity,basal,none}->{1,4,6,6,0}],
+					Thread[{apex,apical,midcavity,basal,none}->{2,6,8,8,0}]
+				],
 				If[slcgrp,
-					DeleteCases[Thread[{apex,apical,midcavity,basal}->{segmi,segmi,segmi,segmi}],{}->_],
+					DeleteCases[Thread[{apex,apical,midcavity,basal,none}->{segmi,segmi,segmi,segmi,0}],{}->_],
 					{Range[slices]->segmi}
 				]
 			];
@@ -1007,60 +983,59 @@ CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 			(*get correct center, calcualte angles and rad*)
 			cent=centers[[n]];
 			rad=Clip[RadCalcC[points[[n]],cent],{5,Min[Dimensions[mask[[1]]]/2]}];
-			angs= VecAngleC[points[[n]],cent,segm,rev];
-			
+			angs=VecAngleC[points[[n]],cent,segm,rev];
+				
 			(*plots*)
-			anatomypl=ArrayPlot[data[[n]],ColorFunction->"GrayTones",FrameTicks->Automatic,DataReversed->True,ImageSize->400,Mesh->mesh,
-			LabelStyle->Directive[{Bold,Black,FontFamily->"Helvetica"}],FrameTicksStyle->Directive[{Black,Thick}],FrameStyle->Directive[{Thick,backcol}]];
+			anatomypl=ArrayPlot[data[[n]],
+				ColorFunction->"GrayTones",FrameTicks->Automatic,DataReversed->True,ImageSize->400,Mesh->mesh,
+				LabelStyle->Directive[{Bold,Black,FontFamily->"Helvetica"}],FrameTicksStyle->Directive[{Black,Thick}],FrameStyle->Directive[{Thick,backcol}]];
 			maskpl=If[masktype,
 				ArrayPlot[(1-Ceiling[GaussianFilter[mask[[n]],2]-linetr]),ColorRules->{1->Transparent,0->GrayLevel[1,mop]},DataReversed->True],
 				ArrayPlot[(1-mask[[n]]),ColorRules->{1->Transparent,0->GrayLevel[1,mop]},DataReversed->True]
 			];
-			
-			(*lines*)
-			If[MemberQ[display,2]||MemberQ[display,5], angsp=Angpart[angs,lineAng[[n,1;;;;astep]],rev]];
-			
+						
 			(*circle and arrows*)
 			circplot=If[MemberQ[display,1],
-				If[segm==1,
-					Graphics[{backcol,Thick,Circle[cent,rad]}]
-					,
-					segpt=RotateRadC[rad,cent,#]&/@angs; 
-					Graphics[{{Thick,backcol,Arrow[{cent,#}]&/@segpt},{backcol,Thick,Circle[cent,rad]}}]],
+				Switch[segm,
+					0,Graphics[{backcol, Thick, Circle[cent,rad]}],
+					1,Graphics[{backcol, Thick, Circle[cent,rad]}],
+					_,segpt=RotateRad[rad,cent,#]&/@angs; 
+					Graphics[{{Thick,backcol,Arrow[{cent,#}]&/@segpt},{backcol,Thick,Circle[cent,rad]}}]
+				],
 				Graphics[]
 			];
+			
 			(*lines1 - full lines*)
 			lineplot=If[MemberQ[display,2],
-				angsp=aa=Angpart[angs,angles[[1;;;;astep]],rev]; 
-				segpts=Map[RotateRadC[rad,cent,#]&,angsp,{2}];
+				angsp = Angpart[angs,angles[[1;;;;astep]],rev]; 
+				segpts = Map[RotateRad[rad,cent,#]&,angsp,{2}];
 				Graphics[Table[{ColFun[i,segm],Line[{cent,#}]&/@segpts[[i]]},{i,1,segm}]],
-				aa={};
 				Graphics[]
 			];
+			
 			(*points*)
 			pointplot=If[MemberQ[display,3],
-				pts=RegionPoins[cent,angs,coordinates[[n]]];
+				pts = RegionPoins[cent,angs,coordinates[[n]]];
 				Graphics[Table[{ColFun[i,segm],PointSize[Large],Point[#-{.5,.5}&/@pts[[i]]]},{i,1,segm}]],
 				Graphics[]
 			];
+			
 			(*disks*)
 			polplot=If[MemberQ[display,4],
-				dsks=RegionDisk[cent,angs,rad,rev]; 
+				dsks = RegionDisk[cent,angs,rad,rev]; 
 				Graphics[Table[{Opacity[0.5],ColFun[i,segm,backcol],dsks[[i]]},{i,1,segm}]],
 				Graphics[]
 			];
+			
 			(*lines2 - mask lines*)
-			lineplot2=If[MemberQ[display,5],
-				angsp = bb = astep(Angpart[angs,lineAng[[n,1;;;;astep]],rev,True]-1)+1;
+			lineplot2 = If[MemberQ[display,5],
+				angsp = astep(Angpart[angs,lineAng[[n,1;;;;astep]],rev,True]-1)+1;
 				Graphics[Table[{ColFun[i,segm],Line[lines[[n,#]]]&/@angsp[[i]]},{i,1,segm}]],
-				bb={};
 				Graphics[]
 			];
-			
-			
+						
 			(*locator pane*)
 			Column[{
-				(*Dynamic[Column@{Column@aa[[All,1;;10]],Column@bb[[All,1;;10]]}],*)
 				(*sclice buttons*)
 				Row[{Button["<<<",n=1],Button["<<", n=start],Button["<",n=n-1], Button[">",n=n+1],Button[">>",n=end],Button[">>>",n=slices]}]
 				,
@@ -1069,8 +1044,7 @@ CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 					(*dynamic points*)
 					Dynamic[points[[n]]],
 					(*dynamic plot*)
-					Dynamic[Show[anatomypl,maskpl,polplot,lineplot,lineplot2,pointplot,circplot,centerpl[[n]],ImageSize->600
-					(*,PlotLabel\[Rule]{segm,segments}*)]]
+					Dynamic[Show[anatomypl,maskpl,polplot,lineplot,lineplot2,pointplot,circplot,centerpl[[n]], ImageSize->600]]
 					(*locator appearance*)
 					,Appearance->{Graphics[{Green,Disk[]},ImageSize->15],Graphics[{Blue,Disk[]},ImageSize->15]}
 				]
@@ -1080,7 +1054,7 @@ CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 			{{n,Round[slices/2],"Slice"},1,slices,1},
 			{{mop,.2,"Mask opacity"},0,1},
 			{{masktype,True,"show lines mask"},{True->"threshold mask",False->"normal mask"}},
-			{{segmi,"AHA","Number of segments"},{1->"1 per sliec",4->"4 per slice",6->"6 per slice","AHA"->"AHA-17"},ControlType->SetterBar},
+			{{segmi,"AHA","Number of segments"},{1->"1 per sliec",2->"2 per sliec",4->"4 per slice",6->"6 per slice",8->"8 per slice","AHA"->"AHA-17","AHA+"->"AHA-24"}},
 			PaneSelector[{
 				False->"",
 				True-> Control[{{slcgrp,True,"Use slice grouping:"},{False->"group by slice",True->"group by region"},ControlType->SetterBar}]
@@ -1146,13 +1120,13 @@ CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 			{pols,ControlType->None},
 			{dsks,ControlType->None},
 			{pts,ControlType->None},
+			{{slcgrp,True},ControlType->None},
 			{{rev,revi},ControlType->None},
-			{{slcgrp,False},ControlType->None},
+			
 			
 			{{lmm,lm[[2]]},ControlType->None},
 			
 			{{ap,api},ControlType->None},
-			(*{{app,api},ControlType->None},*)
 			{{mid,midi},ControlType->None},
 			{{bas,basi},ControlType->None},
 			{{end,endi},ControlType->None},
@@ -1178,7 +1152,6 @@ CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 			{circplot,ControlType->None},
 			
 			(*initialization*)
-			(*Initialization:>{points=pointsIn},*)
 			ControlPlacement->Left,
 			SynchronousUpdating->True, SynchronousInitialization -> False
 		]
@@ -1202,11 +1175,12 @@ ColFun[i_,seg_]:=If[seg==1,ColorData["Rainbow"][0.],ColorData["Rainbow"][((i-1)/
 
 
 RegionDisk[cent_,ang_,ran_,rev_]:=Block[{ans},
-ans=Partition[If[Negative[#],#+2Pi,#]&/@(-ang+0.5Pi),2,1,1];
-If[rev==1,
-Disk[cent,ran,If[#[[1]]>#[[2]],#,#+{0,-2Pi}]]&/@ans,
-Disk[cent,ran,If[#[[2]]>#[[1]],Reverse@#,Reverse[#+{0,+2Pi}]]]&/@ans
-]]
+	ans=Partition[If[Negative[#],#+2Pi,#]&/@(-ang+0.5Pi),2,1,1];
+	If[rev==1,
+		Disk[cent,ran,If[#[[1]]>#[[2]],#,#+{0,-2Pi}]]&/@ans,
+		Disk[cent,ran,If[#[[2]]>#[[1]],Reverse@#,Reverse[#+{0,+2Pi}]]]&/@ans
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1214,15 +1188,15 @@ Disk[cent,ran,If[#[[2]]>#[[1]],Reverse@#,Reverse[#+{0,+2Pi}]]]&/@ans
 
 
 RegionPoins[cent_,angs_,points_]:=Block[{pts},
-If[Length[angs]==1,
-	{points},
-	If[points==={},
-		ConstantArray[{},Length[angs]]
-		,
-		pts=Partition[RotateRadC[5000,cent,#]&/@angs,2,1,1];
-		Pick[points,RegionMember[Polygon[Prepend[#,cent]+0.5],points]]&/@pts
+	If[Length[angs]==1,
+		{points},
+		If[points==={},
+			ConstantArray[{},Length[angs]]
+			,
+			pts=Partition[RotateRad[5000,cent,#]&/@angs,2,1,1];
+			Pick[points,RegionMember[Polygon[Prepend[#,cent]+0.5],points]]&/@pts
+		]
 	]
-]
 ]
 
 
@@ -1230,39 +1204,48 @@ If[Length[angs]==1,
 (*RadCalcC*)
 
 
-RadCalcC=Compile[{{pnt,_Real,2},{cent,_Real,1}},Mean[Norm[#-cent]&/@pnt]];
+RadCalcC = Compile[{{pnt,_Real,2},{cent,_Real,1}}, Mean[Norm[#-cent]&/@pnt]];
 
 
 (* ::Subsubsection::Closed:: *)
 (*VecAngleC*)
 
 
-VecAngleC=Compile[{{pnt,_Real,2},{cent,_Real,1},{num,_Real,0},{rev,_Real,0}},
-Block[{x1,x2,y1,y2,ang1,ang2,angs,angs2,angsout,diff},
-{{x1,y1},{x2,y2}}=(#-cent&/@pnt);
-ang1=ArcTan[y1,x1];
-ang2=ArcTan[y2,x2];
-diff=If[rev==1,ang2-ang1,ang1-ang2];
-diff=If[Negative[diff],2Pi+diff,diff];
-
-angs={ang1,ang2,0.5 diff,0.25(2Pi- diff),1/3.(2Pi- diff)};
-
-angs2=If[num==6,
-{
-angs[[1]]-(rev angs[[4]]),angs[[1]],
-angs[[1]]+(rev angs[[3]]),angs[[2]],
-angs[[2]]+(rev angs[[4]]),angs[[2]]+(rev 2 angs[[4]])}
-,
-If[num==4,
-{
-angs[[1]]-(rev angs[[5]]),angs[[1]],
-angs[[2]],angs[[2]]+(rev angs[[5]])}
-,
-{angs[[1]]}
-]
+VecAngleC=Compile[{{pnt,_Real,2},{cent,_Real,1},{num,_Integer,0},{rev,_Real,0}},
+	Block[{x1,x2,y1,y2,ang1,ang2,angs,angs2,angsout,diff},
+		{{x1,y1},{x2,y2}}=(#-cent&/@pnt);
+		
+		ang1=ArcTan[y1,x1];
+		ang2=ArcTan[y2,x2];
+		
+		diff=If[rev==1,ang2-ang1,ang1-ang2];
+		diff=If[Negative[diff],2Pi+diff,diff];
+		
+		angs={
+			ang1,
+			ang2,
+			1./2 diff,
+			1./4 (2Pi- diff),
+			1./3 (2Pi- diff),
+			1./3 diff,
+			1./5 (2Pi- diff)
+			};
+		
+		(*define angels based on number of segments*)
+		angs2 = Switch[num,
+			0, {0.123},
+			1, {angs[[1]]},
+			2, {angs[[1]], angs[[2]]},
+			4, {angs[[1]]-(rev angs[[5]]), angs[[1]], angs[[2]], angs[[2]]+(rev angs[[5]])},
+			6, {angs[[1]]-(rev angs[[4]]), angs[[1]], angs[[1]]+(rev angs[[3]]), angs[[2]], angs[[2]]+(rev angs[[4]]), angs[[2]]+(rev 2 angs[[4]])},
+			8, {angs[[1]]-(rev 2 angs[[7]]), angs[[1]]-(rev angs[[7]]), angs[[1]], angs[[1]]+(rev angs[[6]]), angs[[1]]+(rev 2 angs[[6]]), angs[[2]], angs[[2]]+(rev angs[[7]]), angs[[2]]+(rev 2 angs[[7]])},
+			_, {angs[[1]]}	
+		];
+		
+		(*export angles that are always between 0 and 2Pi*)
+		If[Negative[#],2Pi+#,#]&/@angs2
+	]
 ];
-If[Negative[#],2Pi+#,#]&/@angs2
-]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1273,8 +1256,14 @@ RotatePointC=Compile[{{pt,_Real,1},{cent,_Real,1},{ang,_Real,0}},({{Cos[ang], Si
 
 
 (* ::Subsubsection::Closed:: *)
-(*RotateRadC*)
+(*RotateRad*)
 
+
+RotateRad[_, _, 0.123] = {}
+
+RotateRad[_, _, {}] = {}
+
+RotateRad[rad_,cent_,ang_] := RotateRadC[rad, cent, ang]
 
 RotateRadC=Compile[{{rad,_Real,0},{cent,_Real,1},{ang,_Real,0}},(cent+{{Cos[ang], Sin[ang]}, {-Sin[ang], Cos[ang]}}.{0,rad})];
 
@@ -1282,6 +1271,8 @@ RotateRadC=Compile[{{rad,_Real,0},{cent,_Real,1},{ang,_Real,0}},(cent+{{Cos[ang]
 (* ::Subsubsection::Closed:: *)
 (*AngPart*)
 
+
+Angpart[{0.123},___] = {}
 
 Angpart[angs_,angles_,rev_,ind_:False]:=Block[{pang,end,start,sel},
 	pang = Partition[angs,2,1,1];
@@ -1452,70 +1443,59 @@ FindPoint[pmid_,step_,pts_]:=Block[{ptar,pnear,ni,nd,n,fnear,v,u},
 
 
 GenerateOutput[points_,centers_,segments_,rev_,numSeg_,slcGrp_,coordinates_,dim_,lines_,angles_]:=Block[{
-	slices,segm,angs,cent,pts,dim2,sls,sgm,tmp,mask,ind,segang,
-	blank,msk,ptstmp,segmask,output,angsp},
+	slices, dim2, segm, segs, nseg, rule, segmask, segang,cent, angs, mask, tmp, sls},
 	
+	(*get paramters*)
 	slices=dim[[1]];
 	dim2=Drop[dim,1];
 	segm=Flatten[Thread/@segments];
 	
+	(*only select the segments to use - discard the none segment*)
+	segs=Select[segments,#[[2]]=!=0&];
+	nseg=Length[segs];
+	rule = Thread[Range[nseg]->segs[[All,2]]];
+	
 	(*create mask per slice from points*)
-	{segmask,segang}=Transpose@Table[
-		cent=centers[[n]];
-		
-		angs= VecAngleC[points[[n]],cent,n/.segm,rev];
-		pts=RegionPoins[cent,angs,coordinates[[n]]];
-		angsp=lines[[n,#]]&/@Angpart[angs,angles[[n]],rev,True];
-		
-		(*Generate mask per sliec*)
-		blank=ConstantArray[ConstantArray[0,dim2],Length[pts]];
-			mask=MapThread[(
-			msk=#1;
-			ptstmp=#2;
-			(msk[[#[[2]],#[[1]]]]=1)&/@ptstmp;
-			msk
-		)&,{blank,pts}];
-		{mask,angsp}
+	{segmask,segang} = Transpose@Table[
+		If[(n/.segments)==0,
+			{ConstantArray[0,dim2],{}}
+			,
+			(*calculate the anlges for segments*)
+			cent=centers[[n]];
+			angs = VecAngleC[points[[n]],cent,n/.segm,rev];
+			(*make the masks*)
+			mask = Normal[SparseArray[Reverse/@#1 -> 1, dim2]]&/@RegionPoins[cent,angs,coordinates[[n]]];
+			(*partition the angles*)
+			angs = lines[[n,#]]&/@Angpart[angs,angles[[n]],rev,True];
+			(*outupt*)		
+			{mask,angs}
+		]
 	,{n,1,slices,1}];
-
+	
 	(*group mask slices for AHA 17 segments*)
-	segmask=If[!numSeg||slcGrp,
+	segmask = If[!numSeg||slcGrp,
 		Flatten[Table[
+			tmp=ConstantArray[0,Flatten[{segments[[i,2]],dim}]];
 			sls=segments[[i,1]];
-			sgm=segments[[i,2]];
-			tmp=ConstantArray[0,Flatten[{sgm,dim}]];
-			If[sls==={},
-			tmp,
-			tmp[[All,sls]]=Transpose[segmask[[sls]]]
-			];
+			If[sls=!={},tmp[[All,sls]]=Transpose[segmask[[sls]]]];
 			tmp
-		,{i,Length[segments],1,-1}],1]
+		,{i,nseg,1,-1}],1]
 		,
 		Transpose@segmask
 	];
 
 	(*group radial coordinates for AHA 17 segments*)
-	segang=If[!numSeg||slcGrp,
+	segang = If[!numSeg||slcGrp,
 		Flatten[Table[
 			sls=segments[[i,1]];
-			sgm=segments[[i,2]];
 			If[sls==={},
-			ConstantArray[{},i/.{1->1,2->4,3->6,4->6}],
-			Transpose@MapThread[(
-			tmp=#1;
-			ind=#2;
-			{ind,#}&/@tmp
-			)&,{segang[[sls]],sls}]
+				ConstantArray[{}, i/.rule],
+				Transpose@MapThread[(Thread[{#2,#1}])&,{segang[[sls]],sls}]
 			]
-		,{i,Length[segments],1,-1}],1]
+		,{i,nseg,1,-1}],1]
 		,
-		Transpose@MapIndexed[(
-			tmp=#1;
-			ind=First[#2];
-			{ind,#}&/@tmp
-		)&,segang,1]
+		Transpose@MapIndexed[Thread[{First[#2],#1}]&,segang,1]
 	];
-	
 	{segmask,segang,Reverse@points}
 ]
 
@@ -1585,9 +1565,9 @@ PlotSegments[data_, mask_, angs_, OptionsPattern[]] := Block[{pan},
 
 
 Fun[mask_,pts1_,pts2_]:=Block[{tmp=mask},
-(tmp[[#[[2]],#[[1]]]]=10)&/@pts1;
-(tmp[[#[[2]],#[[1]]]]=-10)&/@pts2;
-tmp]
+	(tmp[[#[[2]],#[[1]]]]=10)&/@pts1;
+	(tmp[[#[[2]],#[[1]]]]=-10)&/@pts2;
+	tmp]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1595,32 +1575,27 @@ tmp]
 
 
 PointRange[pts_,steps_]:=Block[{step=steps-1,pt1,pt2},
-(
-pt1=#[[2,{1,2}]];
-pt2=#[[1,{1,2}]];
-Table[pt2+(i (pt1-pt2)/step),{i,0,step,1}]
-)&/@pts
+	(
+	pt1=#[[2,{1,2}]];
+	pt2=#[[1,{1,2}]];
+	Table[pt2+(i (pt1-pt2)/step),{i,0,step,1}]
+	)&/@pts
 ]
 
 PointRange[pts_,steps_,drop_]:=Block[{step=steps-1,pt1,pt2},
-(
-pt1=#[[2,{1,2}]];
-pt2=#[[1,{1,2}]];
-Take[Table[pt2+(i (pt1-pt2)/step),{i,0,step,1}],{1+drop,steps-drop}]
-)&/@pts
+	(
+	pt1=#[[2,{1,2}]];
+	pt2=#[[1,{1,2}]];
+	Take[Table[pt2+(i (pt1-pt2)/step),{i,0,step,1}],{1+drop,steps-drop}]
+	)&/@pts
 ]
 
-PointRangeC = 
-  Compile[{{pts, _Real, 2}, {steps, _Integer, 0}, {drop, _Integer, 0}},
-   Block[{step = steps - 1, pt1, pt2},
-    pt1 = pts[[2]];
-    pt2 = pts[[1]];
-    Take[Table[
-      pt2 + (i (pt1 - pt2)/step), {i, 0, step, 1}], {1 + drop, 
-      steps - drop}]
-    ], RuntimeAttributes -> {Listable}, Parallelization -> True, 
-   RuntimeOptions -> "Speed"
-   ];
+PointRangeC = Compile[{{pts, _Real, 2}, {steps, _Integer, 0}, {drop, _Integer, 0}},
+		Block[{step = steps - 1, pt1, pt2},
+    		pt1 = pts[[2]];
+    		pt2 = pts[[1]];
+    	Take[Table[pt2 + (i (pt1 - pt2)/step), {i, 0, step, 1}], {1 + drop, steps - drop}]
+    ], RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
@@ -1629,33 +1604,22 @@ PointRangeC =
 
 SyntaxInformation[PlotSegmentMask] = {"ArgumentsPattern" -> {_, _, _}};
 
-PlotSegmentMask[maski_, segmaski_, vox_] := Module[{heart, seg,pan},
-  
-  heart = PlotMaskVolume[maski, vox];
-  seg = PlotMaskVolume[segmaski[[#]], vox, Red,Filter->False] & /@ 
-    Range[Length[segmaski]];
-  
-  pan=Manipulate[
-   GraphicsGrid[
-    {
-     {Show[heart, seg[[n]]],
-      Show[heart, seg[[n]], ViewPoint -> Front, 
-       Method -> {"RotationControl" -> None}]},
-     {Show[heart, seg[[n]], ViewPoint -> Top, 
-       Method -> {"RotationControl" -> None}],
-      Show[heart, seg[[n]], ViewPoint -> Left, 
-       Method -> {"RotationControl" -> None}]}
-     }
-    , ImageSize -> 600]
+PlotSegmentMask[maski_, segmaski_, vox_] := Block[{heart, seg,pan},
+	heart = PlotMaskVolume[maski, vox];
+	seg = PlotMaskVolume[segmaski[[#]], vox, Red,Filter->False] & /@ Range[Length[segmaski]];
+	pan=Manipulate[
+		GraphicsGrid[{{
+			Show[heart, seg[[n]]],
+			Show[heart, seg[[n]], ViewPoint -> Front, Method -> {"RotationControl" -> None}]
+			},{
+			Show[heart, seg[[n]], ViewPoint -> Top, Method -> {"RotationControl" -> None}],
+			Show[heart, seg[[n]], ViewPoint -> Left, Method -> {"RotationControl" -> None}]
+		}}, ImageSize -> 600]
    , {{n,1,"Segment"}, 1, Length[segmaski], 1},SaveDefinitions->True];
-  
-  NotebookClose[plotwindow];
-  plotwindow = 
-   CreateWindow[
-    DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, 
-     WindowSize -> All, WindowTitle -> "Plot data window"]];
-  
-  ]
+   
+   NotebookClose[plotwindow];
+   plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -1667,39 +1631,38 @@ Options[RadialSample]={RadialSamples->10, DropSamples->0};
 SyntaxInformation[RadialSample] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 RadialSample[mask_,data_,segang_,OptionsPattern[]]:=Block[{
-infunc,maskm,dat,pos,val,output, intfunc,slice,pts,int,ptsr,vals},
+	infunc,maskm,dat,pos,val,output, intfunc,slice,pts,int,ptsr,vals
+	},
 
-(*slice by slice interpolation function*)
-intfunc = MapThread[(
-     pos = Position[Round[#1], 1];
-     dat = #1 #2;
-     val = dat[[#[[1]], #[[2]]]] & /@ pos;
-     With[{
-       intdat = N@Thread[{pos, val}],
-       extdat = N@Thread[pos -> val]
-       },
-      If[!(pos === {}),
-       Interpolation[intdat, InterpolationOrder -> 1, "ExtrapolationHandler"->{(Mean@Nearest[extdat, {#1, #2}, 3]) &, "WarningMessage" -> False}]]
-      ]
-     ) &, {mask, data}, 1];
-
-(*generate output by radial sampleling segments*)
-output=Map[(
-slice=#[[1]];
-pts=DeleteCases[#[[2]],{}];
-int=intfunc[[slice]];
-
-If[FreeQ[pts, {}],
-(*get radial pts steps*)
-ptsr=PointRangeC[pts,OptionValue[RadialSamples],OptionValue[DropSamples]]+0.5;
-vals=int @@ Reverse[Transpose[ptsr, {2, 3, 1}]];
-,
-ptsr=vals={}];
-{ptsr,vals}
-
-)&,segang,{2}];
-
-{output[[All,All,1]],output[[All,All,2]]}
+	(*slice by slice interpolation function*)
+	intfunc = MapThread[(
+		pos = Position[Round[#1], 1];
+		dat = #1 #2;
+		val = dat[[#[[1]], #[[2]]]] & /@ pos;
+		With[{
+			intdat = N@Thread[{pos, val}],
+			extdat = N@Thread[pos -> val]
+			},
+			If[!(pos === {}), Interpolation[intdat, InterpolationOrder -> 1, "ExtrapolationHandler"->{(Mean@Nearest[extdat, {#1, #2}, 3]) &, "WarningMessage" -> False}]]
+	     ]
+	) &, {mask, data}, 1];
+	
+	(*generate output by radial sampleling segments*)
+	output=Map[(
+		slice=#[[1]];
+		pts=DeleteCases[#[[2]],{}];
+		int=intfunc[[slice]];
+		If[FreeQ[pts, {}],
+			(*get radial pts steps*)
+			ptsr=PointRangeC[pts,OptionValue[RadialSamples],OptionValue[DropSamples]]+0.5;
+			vals=int @@ Reverse[Transpose[ptsr, {2, 3, 1}]];
+			,
+			ptsr=vals={}
+		];
+		{ptsr,vals}
+	)&,segang,{2}];
+	
+	{output[[All,All,1]],output[[All,All,2]]}
 ]
 
 
@@ -1711,55 +1674,45 @@ Options[TransmuralPlot] = {GridLineSpacing -> 10, PlotStyle -> Red, PlotRange ->
 
 SyntaxInformation[TransmuralPlot] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-TransmuralPlot[data_, OptionsPattern[]] := 
- Block[{mn, std, steps, stdM, stdP, xdata, min, max, col,pdat,dat,fil,style},
-  dat=If[ArrayDepth[data]==1,
-  {data},
-  Switch[OptionValue[Method],
-  	"Median",
-  	Transpose[Quantile[data, {.5, .35, .65}]],
-  	"MedianQ",
-  	Transpose[Quantile[data, {.5, .25, .75}]],
-  	"MedianSD",
-  	Transpose[Quantile[data, {.5, .16, .84}]],
-  	"Median95",
-  	Transpose[Quantile[data, { .5, .05, .95}]],
-  	"Median0",
-  	Transpose[Quantile[data, {.5}]],
-  	_,
-	mn = Mean[data];
-	std = StandardDeviation[data];
-	{stdM, stdP} = {mn - std, mn + std};
-	{mn,stdM,stdP}
+TransmuralPlot[data_, OptionsPattern[]] := Block[{mn, std, steps, stdM, stdP, xdata, min, max, col,pdat,dat,fil,style},
+	dat=If[ArrayDepth[data]==1,
+		{data},
+		Switch[OptionValue[Method],
+			"Median", Transpose[Quantile[data, {.5, .35, .65}]],
+			"MedianQ", Transpose[Quantile[data, {.5, .25, .75}]],
+			"MedianSD", Transpose[Quantile[data, {.5, .16, .84}]],
+			"Median95", Transpose[Quantile[data, { .5, .05, .95}]],
+			"Median0", Transpose[Quantile[data, {.5}]],
+			_, 
+			mn = Mean[data];
+			std = StandardDeviation[data];
+			{stdM, stdP} = {mn - std, mn + std};
+			{mn,stdM,stdP}
+		]
+	];
+	
+	steps = Length[dat[[1]]];
+	xdata = (Range[0, steps - 1])/(steps - 1);
+	pdat=(Thread[{xdata, #}]&/@ dat);
+	
+	fil=If[OptionValue[Method]=="Median0",None,{2 -> {3}}];
+	{min, max} = If[OptionValue[PlotRange] === Automatic, MinMax[dat], OptionValue[PlotRange]];
+	
+	style=If[ArrayDepth[data]==1,
+		OptionValue[PlotStyle],
+		col = OptionValue[PlotStyle];
+		(Directive[#, col,Thick] & /@ {Dashing[None], Dashed, Dashed})
+	];
+	
+	col = OptionValue[PlotStyle];
+	ListLinePlot[pdat, PlotStyle ->style, Filling -> fil, FillingStyle -> Directive[Opacity[0.2], col],
+		Axes -> False, Frame -> {{True, False}, {True, False}}, FrameStyle -> Directive[{Thick, Black}],
+		LabelStyle -> Directive[{Bold, Black, 14, FontFamily -> "Helvetica"}], PlotRange -> {{0, 1}, {min, max}},
+		ImageSize->OptionValue[ImageSize],PlotLabel->OptionValue[PlotLabel], 
+		GridLines -> {{{.5, Directive[Thick, Black, Dashed]}}, Join[System`FindDivisions[{min, max},Round[(max-min)/ OptionValue[GridLineSpacing]]], {{0, Directive[{Thick, Black}]}}]},
+		FrameTicks -> {{{0, "Endo"}, {.5, "Mid"}, {1, "Epi"}}, Automatic}
 	]
-  ];
-  
-  steps = Length[dat[[1]]];
-  xdata = (Range[0, steps - 1])/(steps - 1);
-  pdat=(Thread[{xdata, #}]&/@ dat);
-  
-  fil=If[OptionValue[Method]=="Median0",None,{2 -> {3}}];
-  
-  {min, max} = If[OptionValue[PlotRange] === Automatic, MinMax[dat], OptionValue[PlotRange]];
- 
- style=If[ArrayDepth[data]==1,
- 	OptionValue[PlotStyle]
- 	,
- 	col = OptionValue[PlotStyle];
-    (Directive[#, col,Thick] & /@ {Dashing[None], Dashed, Dashed})
- 
- ];
-  col = OptionValue[PlotStyle];
-  ListLinePlot[pdat, PlotStyle ->style, 
-  	Filling -> fil, FillingStyle -> Directive[Opacity[0.2], col],
-   
-   Axes -> False, Frame -> {{True, False}, {True, False}}, 
-   FrameStyle -> Directive[{Thick, Black}], 
-   LabelStyle -> Directive[{Bold, Black, 14, FontFamily -> "Helvetica"}],
-   PlotRange -> {{0, 1}, {min, max}},ImageSize->OptionValue[ImageSize],PlotLabel->OptionValue[PlotLabel],
-   GridLines -> {{{.5, Directive[Thick, Black, Dashed]}}, Join[System`FindDivisions[{min, max},Round[(max-min)/ OptionValue[GridLineSpacing]]], {{0, Directive[{Thick, Black}]}}]}, 
-   FrameTicks -> {{{0, "Endo"}, {.5, "Mid"}, {1, "Epi"}}, Automatic}]
-  ]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -1784,99 +1737,72 @@ MaskHelix[helix_, mask_,OptionsPattern[]] := Block[{fun},
 (*BullseyePlot*)
 
 
-Options[BullseyePlot]={TextOffset->.5,TextSize->12,PlotRange->Automatic, 
-	ColorFunction->"TemperatureMap", BullPlotMethod->"Dynamic", TextNumber->{5,2},
-	ImageSize->200};
+Options[BullseyePlot]={
+	TextOffset->.5,
+	TextSize->12,
+	PlotRange->Automatic, 
+	ColorFunction->"TemperatureMap", 
+	BullPlotMethod->"Dynamic", 
+	TextNumber->{5,2},
+	ImageSize->200
+};
 
 SyntaxInformation[BullseyePlot] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 BullseyePlot[data_?ArrayQ,segMask_?ArrayQ,opts:OptionsPattern[]]:=Block[{fdata}, 
-fdata=(Flatten@GetMaskData[data,#])&/@segMask;
-BullseyePlot[fdata,opts]
+	fdata=(Flatten@GetMaskData[data,#])&/@segMask;
+	BullseyePlot[fdata,opts]
 ]
 
-BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, max, cols, sdata, pts, disks, 
-  textv, textn, plfun, col},
- number = {6, 6, 4, 1};
- radius = {4.9, 3.6, 2.3, 1};
- datat = If[# === {} || NumberQ[#], #, Round[Mean[#], .01]] & /@ dati;
- 
- {min, max} = 
-  If[OptionValue[PlotRange] === Automatic, 
-   MinMax[DeleteCases[datat, 0.]], OptionValue[PlotRange]];
- 
- cols = (# -> 
-      Show[ColorData[#, "Image"], 
-       ImageSize -> 100]) & /@ {"GrayTones", "Rainbow", 
-    "ThermometerColors", "SunsetColors", "TemperatureMap", 
-    "GrayYellowTones", "BlueGreenYellow", "AvocadoColors", 
-    "SouthwestColors"};
- 
- max = If[max <= min, min + 0.1, max];
- sdata = (datat - min)/(max - min);
- 
- pts = Flatten[
-   Table[If[i == 4, {{0, 0}}, 
-     RotationMatrix[# Degree].{0, 
-         radius[[i]] - 1.3 OptionValue[TextOffset]} & /@ 
-      Range[0, 359, 360/number[[i]]]], {i, 4}], 1];
- 
- disks = Flatten[{
-    Table[{col, Disk[{0, 0}, radius[[1]], Pi/3 {i, i + 1}]}, {i, 1, 
-      6}],
-    Table[{col, Disk[{0, 0}, radius[[2]], Pi/3 {i, i + 1}]}, {i, 1, 
-      6}],
-    Table[{col, 
-      Disk[{0, 0}, radius[[3]], (i - 1) Pi/2 + {Pi/4, 3 Pi/4}]}, {i, 
-      1, 4}],
-    {{col, Disk[{0, 0}, radius[[4]], {0, 2 Pi}]}}
-    }, 1];
- 
- textv = Table[
-   Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", NumberForm[datat[[i]],OptionValue[TextNumber]]],
-      Bold, FontFamily -> "Helvetica", Black, 
-     FontSize -> OptionValue[TextSize]], pts[[i]]], {i, 17}];
- textn = Table[
-   Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", i], Bold, 
-     FontFamily -> "Helvetica", Black, 
-     FontSize -> OptionValue[TextSize]], pts[[i]]], {i, 17}];
- 
- plfun[{colf_, cstyle_}, {pText_, textVal_}] := 
-  Block[{blcol, colfunc}, Legended[
-    blcol = If[colf == "GrayTones", Darker[Red], Gray];
-    colfunc = ColorData[colf][If[cstyle, 1 - #, #]] &;
-    Graphics[{
-      EdgeForm[{Thick, Black}], 
-      MapThread[#1 /. 
-         If[#2 === {} || #2 < 0, col -> blcol, 
-          col -> colfunc[#2]] &, {disks, sdata}], 
-      If[pText, Switch[textVal, 1, textn, 2, textv]]},
-     ImageSize -> OptionValue[ImageSize]
-     ], BarLegend[{colf, {min, max}}, 
-     LabelStyle -> 
-      Directive[{Bold, Black, FontFamily -> "Helvetica", 
-        FontSize -> OptionValue[TextSize]}
-       ], LegendMarkerSize -> 0.8 OptionValue[ImageSize]]]
-   ];
- 
- pan = Manipulate[
-       plfun[{colf, cstyle}, {pText, textVal}]
-       (*{{colf,cstyle},{pText,textVal}}*)
-       ,
-       {{pText, True, "Show labels"}, {True, False}},
-       {{textVal, 2, "Label"}, {1 -> "Segment", 2 -> "Value"}},
-       
-       {{colf, OptionValue[ColorFunction], "Color function"}, cols},
-       {{cstyle, False, "Reverse color"}, {True, False}},
-       SaveDefinitions->True, Deployed->False, SynchronousInitialization -> False];
- 
- If[OptionValue[BullPlotMethod] === "Dynamic",
-  NotebookClose[plotwindow];
-  plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
-  ,
-  plfun[{OptionValue[ColorFunction], False}, {True, 2}]
-  ]
- ]
+BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, max, cols, sdata, pts, disks, textv, textn, plfun, col},
+	number = {6, 6, 4, 1};
+	radius = {4.9, 3.6, 2.3, 1};
+	datat = If[# === {} || NumberQ[#], #, Round[Mean[#], .01]] & /@ dati;
+	{min, max} = If[OptionValue[PlotRange] === Automatic, MinMax[DeleteCases[datat, 0.]], OptionValue[PlotRange]];
+	
+	cols = (# -> Show[ColorData[#, "Image"], ImageSize -> 100]) & /@ {"GrayTones", "Rainbow", "ThermometerColors", "SunsetColors", "TemperatureMap", "GrayYellowTones", "BlueGreenYellow", "AvocadoColors", "SouthwestColors"};
+	
+	max = If[max <= min, min + 0.1, max];
+	sdata = (datat - min)/(max - min);
+	
+	pts = Flatten[Table[If[i == 4, {{0, 0}}, RotationMatrix[# Degree].{0,radius[[i]] - 1.3 OptionValue[TextOffset]} & /@ Range[0, 359, 360/number[[i]]]], {i, 4}], 1];
+	
+	disks = Flatten[{
+		Table[{col, Disk[{0, 0}, radius[[1]], Pi/3 {i, i + 1}]}, {i, 1, 6}],
+		Table[{col, Disk[{0, 0}, radius[[2]], Pi/3 {i, i + 1}]}, {i, 1, 6}],
+		Table[{col, Disk[{0, 0}, radius[[3]], (i - 1) Pi/2 + {Pi/4, 3 Pi/4}]}, {i, 1, 4}],
+		{{col, Disk[{0, 0}, radius[[4]], {0, 2 Pi}]}}
+	}, 1];
+	
+	textv = Table[Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", NumberForm[datat[[i]],OptionValue[TextNumber]]], Bold, FontFamily -> "Helvetica", Black, FontSize -> OptionValue[TextSize]], pts[[i]]],{i, 17}]; 
+	textn = Table[Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", i], Bold, FontFamily -> "Helvetica", Black, FontSize -> OptionValue[TextSize]], pts[[i]]], {i, 17}];
+	
+	plfun[{colf_, cstyle_}, {pText_, textVal_}] := Block[{blcol, colfunc}, 
+		Legended[
+			blcol = If[colf == "GrayTones", Darker[Red], Gray];
+			colfunc = ColorData[colf][If[cstyle, 1 - #, #]] &;
+			Graphics[{EdgeForm[{Thick, Black}], MapThread[#1 /. If[#2 === {} || #2 < 0, col -> blcol, col -> colfunc[#2]] &, {disks, sdata}], If[pText, Switch[textVal, 1, textn, 2, textv]]},
+				ImageSize -> OptionValue[ImageSize]], 
+			BarLegend[{colf, {min, max}}, LabelStyle -> Directive[{Bold, Black, FontFamily -> "Helvetica", FontSize -> OptionValue[TextSize]}], LegendMarkerSize -> 0.8 OptionValue[ImageSize]]
+		]
+	];
+	
+	pan = Manipulate[
+		plfun[{colf, cstyle}, {pText, textVal}]
+		,
+		{{pText, True, "Show labels"}, {True, False}},
+		{{textVal, 2, "Label"}, {1 -> "Segment", 2 -> "Value"}},
+		{{colf, OptionValue[ColorFunction], "Color function"}, cols},
+		{{cstyle, False, "Reverse color"}, {True, False}},
+	SaveDefinitions->True, Deployed->False, SynchronousInitialization -> False];
+	
+	If[OptionValue[BullPlotMethod] === "Dynamic",
+		NotebookClose[plotwindow];
+		plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
+		,
+		plfun[{OptionValue[ColorFunction], False}, {True, 2}]
+	]
+]
 
 
 (* ::Subsection:: *)
@@ -1891,96 +1817,89 @@ Options[ExcludeSlices] = {CutOffMethod -> "Auto",DistanceMeasure->5};
 
 SyntaxInformation[ExcludeSlices] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-ExcludeSlices[data_, OptionsPattern[]] := 
- Block[{measure, selmask, cutoff, std, mn, bin, type,q1,q2,q3},
-  type = OptionValue[DistanceMeasure];
-  cutoff = OptionValue[CutOffMethod];
-  (*get similarity measure*)
-  measure = CalculateMeasure[data, type];
-  (*calculate cutoff and selection mask*)
-  cutoff = If[NumberQ[cutoff] && cutoff < .5,
-    Quantile[Flatten@measure, cutoff],
-    {q1, q2, q3} = Quantile[Flatten[measure], {0.25, 0.5, .75}];
-	q2 - 2 (q3 - q1)
-    ];
-  selmask = Mask[measure, cutoff];
-  (*report the outliers*)
-  ShowOutlierDistribution[measure, selmask, cutoff];
-  (*output mask*)
-  selmask
-  ]
+ExcludeSlices[data_, OptionsPattern[]] := Block[{measure, selmask, cutoff, std, mn, bin, type,q1,q2,q3},
+	type = OptionValue[DistanceMeasure];
+	cutoff = OptionValue[CutOffMethod];
+	(*get similarity measure*)
+	measure = CalculateMeasure[data, type];
+	(*calculate cutoff and selection mask*)
+	cutoff = If[NumberQ[cutoff] && cutoff < .5, Quantile[Flatten@measure, cutoff],
+		{q1, q2, q3} = Quantile[Flatten[measure], {0.25, 0.5, .75}];
+		q2 - 2 (q3 - q1)
+	];
+	selmask = Mask[measure, cutoff];
+	(*report the outliers*)
+	ShowOutlierDistribution[measure, selmask, cutoff];
+	(*output mask*)
+	selmask
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ShowOutlierDistribution*)
 
 
-ShowOutlierDistribution[measure_, selmask_, cutoff_] := 
- Block[{mn, fmeas, minmax},
-  fmeas = Flatten@measure;
-  mn = Mean@fmeas;
-  minmax = MinMax[fmeas];
-  (*Plot Outlier distributions*)
-  Print[GraphicsRow[{
-     ListPlot[fmeas, GridLines -> {None, Flatten[{mn, cutoff}]}, 
-      GridLinesStyle -> Directive@{Thick, Red}, 
-      PlotStyle -> Directive@{PointSize[0.03], Black}, 
-      PlotRange -> {All, minmax}],
-     Histogram[fmeas, {(minmax[[2]] - minmax[[1]])/20}, 
-      ChartStyle -> Black, PerformanceGoal -> "Speed", 
-      GridLines -> {{mn, cutoff}, None}, 
-      GridLinesStyle -> Directive@{Thick, Red}, 
-      PlotRange -> {minmax, Full}]
-     }, PlotLabel -> {mn, StandardDeviation[fmeas], cutoff}]];
-  (*report outliers*)
-  Print@Row[Flatten[
-     {"% slices excluded: ", 
-      Round[100 Total[Flatten[(1 - selmask)]]/
-         Length[Flatten@selmask]], "  /  ",
-      "% directions per slice exlcuded: ", 
-      Round[100 (Total[(1 - #)]/Length[#] & /@ selmask)]}], "  "];
-  ]
+ShowOutlierDistribution[measure_, selmask_, cutoff_] := Block[{mn, fmeas, minmax},
+	
+	fmeas = Flatten@measure;
+	mn = Mean@fmeas;
+	minmax = MinMax[fmeas];
+	
+	(*Plot Outlier distributions*)
+	Print[GraphicsRow[{
+		ListPlot[fmeas, GridLines -> {None, Flatten[{mn, cutoff}]}, GridLinesStyle -> Directive@{Thick, Red}, PlotStyle -> Directive@{PointSize[0.03], Black}, PlotRange -> {All, minmax}],
+		Histogram[fmeas, {(minmax[[2]] - minmax[[1]])/20}, ChartStyle -> Black, PerformanceGoal -> "Speed", GridLines -> {{mn, cutoff}, None}, GridLinesStyle -> Directive@{Thick, Red}, PlotRange -> {minmax, Full}]
+	}, PlotLabel -> {mn, StandardDeviation[fmeas], cutoff}]];
+	
+	(*report outliers*)
+	Print@Row[Flatten[{"% slices excluded: ", Round[100 Total[Flatten[(1 - selmask)]]/Length[Flatten@selmask]], "  /  ", "% directions per slice exlcuded: ", Round[100 (Total[(1 - #)]/Length[#] & /@ selmask)]}], "  "];
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*CalculateMeasure*)
 
 
-CalculateMeasure[data_, type_] := 
- Block[{target, datan, fun, measure, slice, dirs, mask,mm,q1,q2,q3,iqr},
+CalculateMeasure[data_, type_] := Block[{
+	target, datan, fun, measure, slice, dirs, mask,mm,q1,q2,q3,iqr
+	},
+	
 	target = Median /@ data;
 	target = Flatten /@ (target/Median[Flatten[target]]);
 	datan = Map[Flatten[#/Median[Flatten[#]]] &, data, {2}];
-  {slice, dirs} = Dimensions[datan][[1 ;; 2]];
-  (*select distance measure*)
-  fun = Switch[type,
-    1, ManhattanDistance,
-    2, SquaredEuclideanDistance,
-    3, EuclideanDistance,
-    4, Correlation,
-    5, SpearmanRho,
-    _, SpearmanRho];
-  (*calculate measure*)
-  measure = 
-   Table[
-   	mask=Unitize[target[[i]] datan[[i, j]]];
-   	fun[Pick[target[[i]], mask, 1], Pick[datan[[i, j]], mask, 1]],
+	{slice, dirs} = Dimensions[datan][[1 ;; 2]];
+	
+	(*select distance measure*)
+	fun = Switch[type,
+		1, ManhattanDistance,
+		2, SquaredEuclideanDistance,
+		3, EuclideanDistance,
+		4, Correlation,
+		5, SpearmanRho,
+		_, SpearmanRho
+	];
+	(*calculate measure*)
+	measure = Table[
+		mask=Unitize[target[[i]] datan[[i, j]]];
+		fun[Pick[target[[i]], mask, 1], Pick[datan[[i, j]], mask, 1]],
    	 {i, 1, slice, 1}, {j, 1, dirs, 1}];
-  (*normalize measure*)
-  measure = (
-     mm = #;
-     {q1, q2, q3} = Quantile[#, {0.25, 0.5, .75}];
-     iqr = q3 - q1;
-     mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
-     {q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
-     iqr = q3 - q1;
-     mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
-     {q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
-     1 + (# - q2)/(10 (q3 - q1))
-     ) & /@ measure;
-  (*make low value bad*)
-  If[type <= 3, 2 - measure, measure]
-  ]
+   	 
+   	 (*normalize measure*)
+   	 measure = (
+   	 	mm = #;
+   	 	{q1, q2, q3} = Quantile[#, {0.25, 0.5, .75}];
+   	 	iqr = q3 - q1;
+   	 	mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
+   	 	{q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
+   	 	iqr = q3 - q1;
+   	 	mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
+   	 	{q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
+   	 	1 + (# - q2)/(10 (q3 - q1))
+   	 ) & /@ measure;
+   	 
+   	 (*make low value bad*)
+   	 If[type <= 3, 2 - measure, measure]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -1991,51 +1910,44 @@ Options[MakeECVBloodMask] = {BloodMaskRange -> {1400, {0, 700}}, OutputCheckImag
 
 SyntaxInformation[MakeECVBloodMask] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
-MakeECVBloodMask[pre_, post_, OptionsPattern[]] := 
- Block[{mask1, mask2, bloodMask, meas, cent, preM, postM, slice, ims},
-  {preM, postM} = OptionValue[BloodMaskRange];
-  
-  mask1 = Mask[pre, preM];
-  mask2 = Mask[post, postM];
-  
-  bloodMask = 
-   Image3D[ImageData[
-       SelectComponents[Erosion[Image[#], 1], 
-        "Count", -3]] & /@ (mask1 mask2)];
-  meas = ComponentMeasurements[bloodMask, "IntensityCentroid"];
-  
-  cent = First@Nearest[meas[[All, 2]], Reverse@Dimensions[mask1]/2.];
-  bloodMask = 
-   Erosion[#, 1] & /@ 
-    ImageData[
-     SelectComponents[bloodMask, #IntensityCentroid == cent &]];
-  
-  If[OptionValue[OutputCheckImage],
-   slice = Ceiling[Length[pre]/2];
-   ims = (Image[((pre[[slice]]/Max[pre[[slice]]]) + 
-         bloodMask[[slice]])/2]);
-   {bloodMask, ims}
-   ,
-   bloodMask
-   ]
-  ]
-
-  
+MakeECVBloodMask[pre_, post_, OptionsPattern[]] := Block[{
+	mask1, mask2, bloodMask, meas, cent, preM, postM, slice, ims
+	},
+	
+	{preM, postM} = OptionValue[BloodMaskRange];
+	
+	mask1 = Mask[pre, preM];
+	mask2 = Mask[post, postM];
+	
+	bloodMask = Image3D[ImageData[
+		SelectComponents[Erosion[Image[#], 1], "Count", -3]] & /@ (mask1 mask2)];
+	meas = ComponentMeasurements[bloodMask, "IntensityCentroid"];
+	
+	cent = First@Nearest[meas[[All, 2]], Reverse@Dimensions[mask1]/2.];
+	bloodMask = Erosion[#, 1] & /@ ImageData[SelectComponents[bloodMask, #IntensityCentroid == cent &]];
+	
+	If[OptionValue[OutputCheckImage],
+		slice = Ceiling[Length[pre]/2];
+		ims = (Image[((pre[[slice]]/Max[pre[[slice]]]) + bloodMask[[slice]])/2]);
+		{bloodMask, ims},
+		bloodMask
+	]
+]
 
 
 (* ::Subsection::Closed:: *)
 (*MakeECVBloodMask*)
 
 
-ECVCalc[mappre_, mappost_, hema_?RealQ] := Block[{z, x, y, mask}, 
+ECVCalc[mappre_, mappost_, hema_?RealQ] := Block[{z, x, y, mask},
 	mask = MakeECVBloodMask[mappre, mappost];
 	ECVCalc[mappre, mappost, mask, hema]
 ]
 
 ECVCalc[mappre_, mappost_, bloodMask_, hema_] := Block[{deltaR1, deltaR1b},
-  deltaR1 = Clip[DevideNoZero[1, mappost] - DevideNoZero[1, mappre], {0, Infinity}];
-  deltaR1b = Mean@Flatten[GetMaskData[deltaR1, bloodMask]];
-  Clip[100 (deltaR1/deltaR1b) (1 - hema), {0, 100}]
+	deltaR1 = Clip[DevideNoZero[1, mappost] - DevideNoZero[1, mappre], {0, Infinity}];
+	deltaR1b = Mean@Flatten[GetMaskData[deltaR1, bloodMask]];
+	Clip[100 (deltaR1/deltaR1b) (1 - hema), {0, 100}]
 ]  
 
 
@@ -2047,111 +1959,81 @@ SyntaxInformation[CreateHeart] = {"ArgumentsPattern" -> {_.}};
 
 CreateHeart[] := CreateHeart[0.]
 
-CreateHeart[setin_] := Module[{set, col, contin, contout, shape, seto, shapeplot, 
-   topline, shapeout, con, out, shapeoutC, shout, shin},
-  set = out = If[setin === 0. || ! ListQ[setin],
-     {{73, 2.85, 2.8, 0.018, 0}, {67, 3.42, 5.76, 0.078}, 110},
-     setin
-     ];
-  col = Gray;
-  
-  NotebookClose[cardiacWindow];
-  cardiacWindow = DialogInput[{
-     CancelButton["Generate",
-      DialogReturn[out = seto]
-      ]
-     ,
-     Manipulate[
-      contin = ContourPlot[With[
-         {zi = 0.06 (zp - higi), xi = 0.06 (xp - 59), yi = 0},
-         ((xi - shifti)^2/widthi*(1 - cupi zi) + (yi)^2/
-             widthi*(1 - cupi zi) + zi^2/lengthi^2)
-         ], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, 
-        ContourStyle -> {Thick, Red}, ContourShading -> None];
-      contout = ContourPlot[With[
-         {zo = 0.06 (zp - higo), xo = 0.06 (xp - 59), yo = 0},
-         (xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) + 
-           zo^2/lengtho^2)
-         ], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, 
-        ContourStyle -> {Thick, Blue}, ContourShading -> None];
-      
-      shape = Table[
-        With[{
-          zi = 0.06 (zp - higi), xi = 0.06 (xp - 59.5), yi = 0,
-          zo = 0.06 (zp - higo), xo = 0.06 (xp - 59.5), yo = 0},
-         shout = 
-          If[((xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) +
-                zo^2/lengtho^2) > 1), 0, 1];
-         shin = 
-          If[(((xi - shifti)^2/widthi*(1 - cupi zi) + 
-               yi^2/widthi*(1 - cupi zi) + zi^2/lengthi^2) > 1), 0, 1];
-         shout - shin
-         ], {zp, 120, 1, -1}, {xp, 1, 120}];
-      (*shapef=shape;
-      con=ConstantArray[0,Dimensions[shape]];
-      shapef[[;;Length[shapef]-top+1]]=con[[;;Length[shapef]-
-      top+1]];*)
-      
-      seto = {{higi, lengthi, widthi, cupi, shifti}, {higo, lengtho, 
-         widtho, cupo}, top};
-      
-      shapeplot = ArrayPlot[shape];
-      topline = 
-       Graphics[{{Green, Thick, Line[{{0, top}, {120, top}}]}, {White,
-           Polygon[{{0, top}, {120, top}, {120, 
-             Length[shape] + 1}, {0, Length[shape] + 1}}]}}];
-      Show[shapeplot, topline, contin, contout]
-      
-      , Delimiter
-      , {{higi, set[[1, 1]], "inner hight"}, 60, 90}
-      , {{lengthi, set[[1, 2]], "inner length"}, 2, 4}
-      , {{widthi, set[[1, 3]], "inner width"}, 1, 10}
-      , {{cupi, set[[1, 4]], "inner cup"}, 0, 0.25}
-      , {{shifti, set[[1, 5]], "inner shift"}, -1, 1}
-      , Delimiter
-      , {{higo, set[[2, 1]], "outer hight"}, 60, 90}
-      , {{lengtho, set[[2, 2]], "outer length"}, 2, 4}
-      , {{widtho, set[[2, 3]], "outer width"}, 1, 10}
-      , {{cupo, set[[2, 4]], "outer cup"}, 0, 0.25}
-      , Delimiter
-      , {{top, set[[3]],"top loation"}, 90, 120, 1}
-      , Button["set 1",
-       {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, cupo}, 
-         top} = {{73, 2.85, 2.8, 0.018}, {67, 3.42, 5.76, 0.078}, 110}]
-      , Button[
-       "set 2", {{higi, lengthi, widthi, cupi}, {higo, lengtho, 
-          widtho, cupo}, 
-         top} = {{69, 3.1, 2.8, 0.16}, {67.5, 3.6, 7.3, 0.12}, 105}],
-      SynchronousUpdating -> True, Method -> "Queued"
-      ]
-     
-     }, WindowSize -> All, WindowTitle -> "Plot data window", 
-    WindowFloating -> True, Modal -> True];
-  
-  shapeoutC = Compile[{{seti, _Real, 1}, {seto, _Real, 1}}, Table[
-     With[{
-       zi = 0.06 (zp - seti[[1]]),
-       xi = 0.06 (xp - 59.5),
-       (*yi=0*)yi = 0.06 (yp - 59.5),
-       zo = 0.06 (zp - seto[[1]]),
-       xo = 0.06 (xp - 59.5),
-       (*yo=0*)yo = 0.06 (yp - 59.5)},
-      If[((xo^2/seto[[3]]*(1 - seto[[4]] zo) + 
-            yo^2/seto[[3]]*(1 - seto[[4]] zo) + zo^2/seto[[2]]^2) > 
-          1), 0, 1] -
-       If[(((xi - seti[[5]])^2/seti[[3]]*(1 - seti[[4]] zi) + 
-            yi^2/seti[[3]]*(1 - seti[[4]] zi) + zi^2/seti[[2]]^2) > 
-          1), 0, 1]
-      ], {zp, 1, 120, 1}, {xp, 1, 120, 1}, {yp, 1, 120, 1}]
-    ];
-  
-  shapeout = shapeoutC[out[[1]], out[[2]]];
-  con = ConstantArray[0, Dimensions[shapeout]];
-  shapeout[[out[[3]] ;;]] = con[[out[[3]] ;;]];
-  Return[{ArrayPad[shapeout, 10], {0.7, 0.7, 0.7}, seto}];
-  ]
-  
-
+CreateHeart[setin_] := Block[{
+	set, col, contin, contout, shape, seto, shapeplot, topline, shapeout, con, out, shapeoutC, shout, shin
+	},
+	
+	set = out = If[setin === 0. || ! ListQ[setin], {{73, 2.85, 2.8, 0.018, 0}, {67, 3.42, 5.76, 0.078}, 110}, setin];
+	col = Gray;
+	
+	NotebookClose[cardiacWindow];
+	cardiacWindow = DialogInput[{
+		CancelButton["Generate", DialogReturn[out = seto]],
+		Manipulate[
+			contin = ContourPlot[With[
+				{zi = 0.06 (zp - higi), xi = 0.06 (xp - 59), yi = 0},
+				((xi - shifti)^2/widthi*(1 - cupi zi) + (yi)^2/widthi*(1 - cupi zi) + zi^2/lengthi^2)
+			], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, ContourStyle -> {Thick, Red}, ContourShading -> None];
+			
+			contout = ContourPlot[With[
+				{zo = 0.06 (zp - higo), xo = 0.06 (xp - 59), yo = 0},
+				(xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) + zo^2/lengtho^2)
+			], {xp, 0, 120}, {zp, 0, 120}, Contours -> {1}, ContourStyle -> {Thick, Blue}, ContourShading -> None];
+			
+			shape = Table[With[{
+				zi = 0.06 (zp - higi), xi = 0.06 (xp - 59.5), yi = 0,
+				zo = 0.06 (zp - higo), xo = 0.06 (xp - 59.5), yo = 0},
+				shout = If[((xo^2/widtho*(1 - cupo zo) + yo^2/widtho*(1 - cupo zo) + zo^2/lengtho^2) > 1), 0, 1];
+				shin = If[(((xi - shifti)^2/widthi*(1 - cupi zi) + yi^2/widthi*(1 - cupi zi) + zi^2/lengthi^2) > 1), 0, 1];
+				shout - shin
+			], {zp, 120, 1, -1}, {xp, 1, 120}];
+			
+			seto = {{higi, lengthi, widthi, cupi, shifti}, {higo, lengtho, widtho, cupo}, top};
+			shapeplot = ArrayPlot[shape];
+			topline = Graphics[{
+				{Green, Thick, Line[{{0, top}, {120, top}}]},
+				{White, Polygon[{{0, top}, {120, top}, {120, Length[shape] + 1}, {0, Length[shape] + 1}}]}
+			}];
+			
+			Show[shapeplot, topline, contin, contout]
+			
+			, Delimiter
+			, {{higi, set[[1, 1]], "inner hight"}, 60, 90}
+			, {{lengthi, set[[1, 2]], "inner length"}, 2, 4}
+			, {{widthi, set[[1, 3]], "inner width"}, 1, 10}
+			, {{cupi, set[[1, 4]], "inner cup"}, 0, 0.25}
+			, {{shifti, set[[1, 5]], "inner shift"}, -1, 1}
+			, Delimiter
+			, {{higo, set[[2, 1]], "outer hight"}, 60, 90}
+			, {{lengtho, set[[2, 2]], "outer length"}, 2, 4}
+			, {{widtho, set[[2, 3]], "outer width"}, 1, 10}
+			, {{cupo, set[[2, 4]], "outer cup"}, 0, 0.25}
+			, Delimiter
+			, {{top, set[[3]],"top loation"}, 90, 120, 1}
+			, Button["set 1", {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, cupo}, top} = {{73, 2.85, 2.8, 0.018}, {67, 3.42, 5.76, 0.078}, 110}]
+			, Button["set 2", {{higi, lengthi, widthi, cupi}, {higo, lengtho, widtho, cupo}, top} = {{69, 3.1, 2.8, 0.16}, {67.5, 3.6, 7.3, 0.12}, 105}],
+			
+			SynchronousUpdating -> True, Method -> "Queued"
+		]
+	}, WindowSize -> All, WindowTitle -> "Plot data window", WindowFloating -> True, Modal -> True];
+	
+	shapeoutC = Compile[{{seti, _Real, 1}, {seto, _Real, 1}}, 
+		Table[With[{
+			zi = 0.06 (zp - seti[[1]]),
+			xi = 0.06 (xp - 59.5),
+			yi = 0.06 (yp - 59.5),
+			zo = 0.06 (zp - seto[[1]]),
+			xo = 0.06 (xp - 59.5),
+			yo = 0.06 (yp - 59.5)},
+			If[((xo^2/seto[[3]]*(1 - seto[[4]] zo) + yo^2/seto[[3]]*(1 - seto[[4]] zo) + zo^2/seto[[2]]^2) > 1), 0, 1] - If[(((xi - seti[[5]])^2/seti[[3]]*(1 - seti[[4]] zi) + yi^2/seti[[3]]*(1 - seti[[4]] zi) + zi^2/seti[[2]]^2) > 1), 0, 1]
+		], {zp, 1, 120, 1}, {xp, 1, 120, 1}, {yp, 1, 120, 1}]
+	];
+	
+	shapeout = shapeoutC[out[[1]], out[[2]]];
+	con = ConstantArray[0, Dimensions[shapeout]];
+	shapeout[[out[[3]] ;;]] = con[[out[[3]] ;;]];
+	Return[{ArrayPad[shapeout, 10], {0.7, 0.7, 0.7}, seto}];
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -2162,55 +2044,53 @@ Options[CardiacCoordinateSystem] = {ShowFit -> False}
 
 SyntaxInformation[CardiacCoordinateSystem] = {"ArgumentsPattern" -> {_,_, OptionsPattern[]}};
 
-CardiacCoordinateSystem[mask_, vox_, OptionsPattern[]] := Block[
-	{dim, wall,axesout,off, vec, inout,pla, plw, radvecn, norvec, norvecc, cirvec, der, sp, spz, spxy, maskCont,n ,vectorField,
-	coo, rav, nov, rov, vec1, vec2, vec3, plot },
-  dim = Dimensions[mask];
-  (*Calculate the wall distance map, and the wall direction*)
-  wall = CalculateWallMap[mask, vox, ShowFit -> OptionValue[ShowFit]];
-  {wall, der} = 
-   If[OptionValue[ShowFit], plw = wall[[3]]; wall[[1 ;; 2]], wall];
-  
-   (*get the cardiac center line*)
-  axesout = 
-   CentralAxes[mask, 0, vox, AxesMethod -> "Qubic", 
-    ShowFit -> OptionValue[ShowFit]];
-  {off, vec, inout} = 
-   If[OptionValue[ShowFit], pla = axesout[[4]]; axesout[[1 ;; 3]], 
-    axesout];
-  
-  (*create the cardaic coordinate system*)
-  radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
-  norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
-  norvecc = MakePerpendicular[norvec, radvecn];
-  cirvec = NormalizeC[CrossC[radvecn, norvecc]];
-  
-  (*plot hear geo*)
-  sp = Round[Dimensions[mask]/{12, 24, 24}];
-  sp = Round[Dimensions[mask]/{15, 30, 30}];
-  {spz, spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
-  maskCont = PlotMaskVolume[mask, vox];
-  n = (spz 0.6 vox[[1]]) {1, -1, 1}/vox;
-  vectorField = Table[If[mask[[z, y, x]] == 0,
-     {None, None, None},
-     coo = {x, -y + dim[[2]] + 1, z};
-     rav = Reverse[n radvecn[[z, y, x]]];
-     nov = Reverse[n norvecc[[z, y, x]]];
-     rov = Reverse[n cirvec[[z, y, x]]];
-     {{Darker[Green], Thick, 
-       Line[{coo(*-rav*), coo + rav}]}, {Darker[Blue], Thick, 
-       Line[{coo(*-nov*), coo + nov}]}, {Darker[Red], Thick, 
-       Line[{coo(*-rov*), coo + rov}]}}], {z, 1, dim[[1]], spz}, {y, 
-     1, dim[[2]], spxy}, {x, 1, dim[[3]], spxy}];
-  {vec1, vec2, vec3} = 
-   DeleteCases[Flatten[#, 2], None] & /@ 
+CardiacCoordinateSystem[mask_, vox_, OptionsPattern[]] := Block[{
+	dim, wall,axesout,off, vec, inout,pla, plw, radvecn, norvec, norvecc, cirvec, der, sp, spz, 
+	spxy, maskCont,n ,vectorField, coo, rav, nov, rov, vec1, vec2, vec3, plot 
+	},
+	
+	dim = Dimensions[mask];
+	(*Calculate the wall distance map, and the wall direction*)
+	wall = CalculateWallMap[mask, vox, ShowFit -> OptionValue[ShowFit]];
+	{wall, der} = If[OptionValue[ShowFit], plw = wall[[3]]; wall[[1 ;; 2]], wall];
+	
+	(*get the cardiac center line*)
+	axesout = CentralAxes[mask, 0, vox, AxesMethod -> "Qubic", ShowFit -> OptionValue[ShowFit]];
+	{off, vec, inout} = If[OptionValue[ShowFit], pla = axesout[[4]]; axesout[[1 ;; 3]], axesout];
+	
+	(*create the cardaic coordinate system*)
+	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
+	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
+	norvecc = MakePerpendicular[norvec, radvecn];
+	cirvec = NormalizeC[CrossC[radvecn, norvecc]];
+	
+	(*plot hear geo*)
+	sp = Round[Dimensions[mask]/{12, 24, 24}];
+	sp = Round[Dimensions[mask]/{15, 30, 30}];
+	{spz, spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
+	maskCont = PlotMaskVolume[mask, vox];
+	n = (spz 0.6 vox[[1]]) {1, -1, 1}/vox;
+	vectorField = Table[If[mask[[z, y, x]] == 0,
+		{None, None, None},
+		coo = {x, -y + dim[[2]] + 1, z};
+		rav = Reverse[n radvecn[[z, y, x]]];
+		nov = Reverse[n norvecc[[z, y, x]]];
+		rov = Reverse[n cirvec[[z, y, x]]];
+		{
+			{Darker[Green], Thick, Line[{coo(*-rav*), coo + rav}]},
+			{Darker[Blue], Thick, Line[{coo(*-nov*), coo + nov}]}, 
+			{Darker[Red], Thick, Line[{coo(*-rov*), coo + rov}]}
+		}
+	], {z, 1, dim[[1]], spz}, {y, 1, dim[[2]], spxy}, {x, 1, dim[[3]], spxy}];
+	
+	{vec1, vec2, vec3} =   DeleteCases[Flatten[#, 2], None] & /@ 
+    
     Transpose[vectorField, {2, 3, 4, 1}];
-  plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], 
-    Graphics3D[vec3]];
-  
-  Print[plot];
-  {radvecn, norvecc, cirvec}
-  ]
+    plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3]];
+    
+    Print[plot];
+    {radvecn, norvecc, cirvec}
+]
 
 
 
