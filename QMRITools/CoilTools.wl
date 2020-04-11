@@ -52,11 +52,6 @@ FindCoilPosition::usage =
 Internally it uses MakeWeightMask to remove the noise of the weightmasks.
 FindCoilPosition[weights, mask] limits the search region to the provided mask."
 
-NoiseCorrelation::usage = 
-"NoiseCorrelation[noise] calculates the noise correlation matrix, noise is {nrCoils, noise Samples}."
-
-NoiseCovariance::usage = 
-"NoiseCovariance[noise] calculates the noise covariance matrix, noise is {nrCoils, noise Samples}."
 
 MakeNoisePlots::usage =
 "MakeNoisePlots[noise] returns a grid of plots of the noise per channel
@@ -247,24 +242,6 @@ FindCoilPosition[weights_, mask_, OptionsPattern[]] := Block[{
 	
 	If[OptionValue[OutputCoilSurface],{pts, pl},pts]
 ]
-
-
-(* ::Subsection::Closed:: *)
-(*NoiseCorrelation*)
-
-
-SyntaxInformation[NoiseCorrelation]={"ArgumentsPattern" -> {_}}
-
-NoiseCorrelation[noise_] := Correlation[Transpose[noise]]
-
-
-(* ::Subsection::Closed:: *)
-(*NoiseCovariance*)
-
-
-SyntaxInformation[NoiseCovariance]={"ArgumentsPattern" -> {_}}
-
-NoiseCovariance[noise_] := Covariance[Transpose[noise]]
 
 
 (* ::Subsection::Closed:: *)

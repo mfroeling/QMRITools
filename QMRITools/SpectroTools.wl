@@ -29,8 +29,6 @@ ReadjMRUI::usage =
 Output is the {time, spec, {begintime, samplingInterval}}."
 
 
-
-
 (* ::Subsection:: *)
 (*Options*)
 
@@ -57,22 +55,19 @@ Begin["`Private`"]
 SyntaxInformation[ReadjMRUI]={"ArgumentsPattern"->{_}}
 
 ReadjMRUI[file_]:=Block[{imp,data,head,series,pts,spec,time},
-imp=Import[file,"Data"];
-data=Select[imp,AllTrue[#,NumericQ]&&#=!={}&];
-head=Flatten[Select[imp,!AllTrue[#,NumericQ]&&#=!={}&]];
-head=(StringTrim/@StringSplit[#<>" ",":"])&/@Select[head,StringContainsQ[#,":"]&];
-head[[2;;,2]]=(ToExpression[StringReplace[#,"E"->" 10^" ]]&/@head[[2;;,2]])/.Null->0;
-head=Thread[head[[All,1]]->head[[All,2]]];
-series="DatasetsInFile"/.head;
-pts="PointsInDataset"/.head;
-data=Partition[data,pts];
-spec=Reverse/@(data[[All,All,3]]+data[[All,All,4]]I);
-time=(data[[All,All,1]]+data[[All,All,2]]I);
-{time,spec,N@{"BeginTime","SamplingInterval"}/1000/.head}
+	imp=Import[file,"Data"];
+	data=Select[imp,AllTrue[#,NumericQ]&&#=!={}&];
+	head=Flatten[Select[imp,!AllTrue[#,NumericQ]&&#=!={}&]];
+	head=(StringTrim/@StringSplit[#<>" ",":"])&/@Select[head,StringContainsQ[#,":"]&];
+	head[[2;;,2]]=(ToExpression[StringReplace[#,"E"->" 10^" ]]&/@head[[2;;,2]])/.Null->0;
+	head=Thread[head[[All,1]]->head[[All,2]]];
+	series="DatasetsInFile"/.head;
+	pts="PointsInDataset"/.head;
+	data=Partition[data,pts];
+	spec=Reverse/@(data[[All,All,3]]+data[[All,All,4]]I);
+	time=(data[[All,All,1]]+data[[All,All,2]]I);
+	{time,spec,N@{"BeginTime","SamplingInterval"}/1000/.head}
 ]
-
-
-
 
 
 (* ::Section:: *)
