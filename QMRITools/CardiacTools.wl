@@ -392,7 +392,7 @@ Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
 
 
 MakePerpendicular = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, Normalize[vec1 - (vec1.vec2) vec2], 
-	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -408,7 +408,7 @@ NormalizeC = Compile[{{vec, _Real, 1}}, Normalize[vec],
 
 
 RadVecC = Compile[{{dim, _Real, 1}, {off, _Real, 2}}, Table[Normalize[{i, j, k}-off[[i]]], {i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}], 
-	RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -439,7 +439,7 @@ NorVecR = Compile[{{angmap, _Real, 0}, {rotvec, _Real, 1}, {norvec, _Real, 1}}, 
 
 
 CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, Cross[vec1, vec2], 
-	RuntimeAttributes -> {Listable}, Parallelization -> True];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -447,7 +447,7 @@ CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, Cross[vec1, vec2],
 
 
 DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, vec1.vec2, 
-   RuntimeAttributes -> {Listable}, Parallelization -> True];
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)

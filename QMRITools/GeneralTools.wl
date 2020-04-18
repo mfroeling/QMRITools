@@ -194,12 +194,6 @@ DynamicPartition::usage =
 DynamicPartition[data,part,last] patitions the data into parts which is a list of integers. The remainders is partitioned into equal parts defined by last.
 If last is All, the remainders is just one partition"
 
-MeanAt::usage = 
-"MeanAt[data, n] calculates the Mean of the data at the level n."
-
-TotalAt::usage = 
-"TotalAt[data, n] calculates the Total of the data at the level n."
-
 
 (* ::Subsection::Closed:: *)
 (*General Options*)
@@ -640,7 +634,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 	    r2 = (vox[[1]]*zd)/(vox[[3]]*yd);
 	    r3 = (vox[[1]]*zd)/(vox[[2]]*xd);
     
-  		size = Min[{r1, r2, r3}] 400;
+  		size = Min[{r1, r2, r3}] 800;
   		
   		init = OptionValue[CropInit];
   		init = If[ListQ[init] && Length[init]==6,
@@ -722,7 +716,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 	output=Switch[OptionValue[CropOutput],
 		"All",{dataout, outp},
 		"Data",dataout,
-		"Clip",outp];
+		"Crop",outp];
 	];
 	
 	Return[output]
@@ -1339,27 +1333,6 @@ DynamicPartition[L_, p : {__Integer}, x___] := dPcore[L, Accumulate@p, x] /; ! N
 dPcore[L_, p : {q___, _}] := Inner[L[[# ;; #2]] &, {0, q} + 1, p, Head@L]
 dPcore[L_, p_, All] := Append[dPcore[L, p], Drop[L, Last@p]]
 dPcore[L_, p_, n__] := Join[dPcore[L, p], Partition[Drop[L, Last@p], n]]
-
-
-(* ::Subsection::Closed:: *)
-(*MeanAt*)
-
-
-SyntaxInformation[MeanAt]={"ArgumentsPattern"->{_,_}}
-
-(*calculate mean at specific level*)
-MeanAt[list_,level_]:=Total[list,{level}]/Dimensions[list][[level]]/;1<=Abs[level]<=ArrayDepth@list
-
-
-(* ::Subsection::Closed:: *)
-(*TotalAt*)
-
-
-SyntaxInformation[TotalAt]={"ArgumentsPattern"->{_,_}}
-
-(*calculate mean at specific level*)
-TotalAt[list_,level_]:=Total[list,{level}]/;1<=Abs[level]<=ArrayDepth@list
-
 
 
 (* ::Section:: *)
