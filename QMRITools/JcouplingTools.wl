@@ -530,9 +530,9 @@ PlotSpectrum[ppm_, spec_, OptionsPattern[]]:=Block[{pdat,style,ran, sc, col},
 (*PhaseAlign*)
 
 
-SyntaxInformation[PhaseAlign]={"ArgumentsPattern" -> {_}};
+SyntaxInformation[PhaseAlign] = {"ArgumentsPattern" -> {_}};
 
-PhaseAlign[spec_]:=Block[{phi},
+PhaseAlign[spec_] := Block[{phi},
 	phi=Sort[Table[{Total[Re[Flatten[spec] Exp[I x Degree]]],x},{x,-180,180,.5}]][[-1,2]];
 	spec Exp[I phi Degree]
 ]
@@ -548,9 +548,14 @@ PhaseAlign[spec_]:=Block[{phi},
 
 Options[MakeSpinSystem] = {CenterFrequency -> 4.65};
 
+SyntaxInformation[MakeSpinSystem] = {"ArgumentsPattern" -> {_, _., _., _., OptionsPattern[]}};
+
 MakeSpinSystem[nam_, freq_, jcoup_, opts : OptionsPattern[]] := MakeSpinSystem[{nam, freq, jcoup, ConstantArray[1, Length[freq]]}, opts]
+
 MakeSpinSystem[nam_, freq_, jcoup_, scale_, opts : OptionsPattern[]] := MakeSpinSystem[{nam, freq, jcoup, scale}, opts]
+
 MakeSpinSystem[{nam_, freq_, jcoup_}, opts : OptionsPattern[]] := MakeSpinSystem[{nam, freq, jcoup, ConstantArray[1, Length[freq]]}, opts]
+
 MakeSpinSystem[{nam_, freq_, jcoup_, scale_}, OptionsPattern[]] := Block[
 	{cf, alf, num, it, sysS, labs, name, sysJ},
 	(*get the center frequency*)
