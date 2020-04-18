@@ -195,6 +195,10 @@ DynamicPartition[data,part,last] patitions the data into parts which is a list o
 If last is All, the remainders is just one partition"
 
 
+BSplineCurveFit::usage = 
+"BSplineCurveFit[points] fits a bspline to the points. Output is a list of same size as points."
+
+
 (* ::Subsection::Closed:: *)
 (*General Options*)
 
@@ -218,6 +222,13 @@ CropPadding::usage =
 
 OutputWeights::usage = 
 "OutputWeights is an option for SumOfSqares. If True it also output the SoS weights."
+
+
+SplineKnotsNumber::usage =
+"SplineKnotsNumber is an option for BSplineCurveFit and defines how many knots the bspline has."
+
+SplineRegularization::usage =
+"SplineRegularization is an option for BSplineCurveFit and defines the amount of regularization for the linear fit."
 
 
 (* ::Subsection::Closed:: *)
@@ -1333,6 +1344,93 @@ DynamicPartition[L_, p : {__Integer}, x___] := dPcore[L, Accumulate@p, x] /; ! N
 dPcore[L_, p : {q___, _}] := Inner[L[[# ;; #2]] &, {0, q} + 1, p, Head@L]
 dPcore[L_, p_, All] := Append[dPcore[L, p], Drop[L, Last@p]]
 dPcore[L_, p_, n__] := Join[dPcore[L, p], Partition[Drop[L, Last@p], n]]
+
+
+(* ::Subsection::Closed:: *)
+(*BSplineCurveFit*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*BSplineCurveFit*)
+
+
+Options[BSplineCurveFit] = {SplineDegree -> 2, SplineKnotsNumber -> 50, SplineRegularization -> 0};
+
+BSplineCurveFit[pts_, opts : OptionsPattern[]] := Block[{paras, knots, coeffMat, ctrlpts, cpn, sd, reg, len, Amat, ptsP},
+	len = Length[pts];
+	cpn = Min[{len - 2, OptionValue[SplineKnotsNumber]}];
+	
+	{coeffMat, Amat} = BSplineBasisFunctions[len, opts];
+	ptsP = PadRight[pts, Length[Amat]];
+	ctrlpts = LLeastSquares[Amat, ptsP];
+	(Amat.ctrlpts)[[;; (-cpn - 1)]]
+	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BSplineBasisFunctions*)
+
+
+Options[BSplineBasisFunctions] = {SplineDegree -> 2, SplineKnotsNumber -> 50, SplineRegularization -> 0};
+
+BSplineBasisFunctions[Npts_, opts : OptionsPattern[]] := BSplineBasisFunctions[Npts, opts] = Block[{
+	cpn, sd, reg, len, paras, knots, coeffMat, coeffMatR, coeffMatDD, smooth
+	},
+	(*Get the options*)
+	cpn = OptionValue[SplineKnotsNumber];
+	sd = OptionValue[SplineDegree];
+	reg = OptionValue[SplineRegularization];
+	
+	(*define the bpline points x = [0,1]*)
+	paras = Range[0, 1, 1/(Npts - 1 + 2)] // N;
+	(*define the knots for order sd and cpn degrees of freedome*)
+	knots = Join[ConstantArray[0., sd], N@Range[0, 1, 1/(cpn - sd)], ConstantArray[1., sd]];
+	
+	(*generate the coefficient matrix*)
+	coeffMat = Basis[sd, knots, paras];
+	
+	(*maker reg coefficient matirx*)
+	coeffMatDD = ListConvolve[{1, -2, 1}, #] & /@ coeffMat;
+	coeffMat = Transpose[coeffMat[[All, 2 ;; -2]]];
+	smooth = reg (coeffMatDD.Transpose[coeffMatDD]);
+	coeffMatR = Join[coeffMat, smooth];
+	(*output*)
+	{coeffMat, coeffMatR}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Basis*)
+
+
+(*generate b-spline basis functions with order p and knots, for x points*)
+Basis[p_, knots_, x_] := Basis[p, knots, x] = Block[{kn, ui, ui1, uip, uip1, bi, bi1, d1, d2},
+	(*function cashes the basis function already calculated*)
+	If[p == 0,
+		(*first order splines*)
+		kn = knots;
+		kn[[-1]] = kn[[-1]] + 1;
+		(*get the 0th order basis function*)
+		UnitComp[#[[1]], #[[2]], x] & /@ Partition[kn, 2, 1]
+		,
+		(*higher order splines, first partition the knots*)
+		{ui, ui1, uip, uip1} = Transpose[Partition[knots, 2 + p, 1][[All, {1, 2, -2, -1}]]];
+		(*get the basis functions of order p-1 and partition*)
+		{bi, bi1} = Transpose[Partition[Basis[p - 1, knots, x], 2, 1]];
+		(*get the basis functions of order p*)
+		DivComp1[uip - ui, ui, x] bi + DivComp2[uip1 - ui1, uip1, x] bi1
+	]
+]
+
+
+(*0th order b-spline basis function*)
+UnitComp = Compile[{{min, _Real, 0}, {max, _Real, 0}, {x, _Real, 0}}, If[min <= x < max, 1, 0], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+(*b-spline division i*)
+DivComp1 = Compile[{{d, _Real, 0}, {u, _Real, 0}, {x, _Real, 1}}, If[d == 0., x, (x - u)/d], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+(*b-spline division i+1*)
+DivComp2 = Compile[{{d, _Real, 0}, {u, _Real, 0}, {x, _Real, 1}}, If[d == 0., x, (u - x)/d], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Section:: *)
