@@ -77,7 +77,7 @@ If[QMRITools`$Verbose,Print["--------------------------------------"]];
 		Print["--------------------------------------"]
 	];
 	
-	SetAttributes[#,{Protected(*, ReadProtected*)}]&/@ Names[# <> "*"];
+	SetAttributes[#,{Protected, ReadProtected}]&/@ Names[# <> "*"];
 )& /@ QMRITools`$Contexts;
 
 

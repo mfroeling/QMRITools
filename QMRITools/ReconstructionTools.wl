@@ -58,7 +58,7 @@ FourierShift::usage =
 "FourierShift[data] shift the data to the right by half the data dimensions."
 
 InverseFourierShift::usage = 
-"InvserseFourierShift[data] shift the data to the left by half the data dimensions."
+"InverseFourierShift[data] shift the data to the left by half the data dimensions."
 
 ShiftedFourier::usage = 
 "ShiftedFourier[kpace] performs a FourierTransform on the kspace and then shifts the data half the data dimensions."
@@ -793,7 +793,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 	spectra = Switch[ArrayDepth[kspace],
 		4,(*no coil combination for 3D CSI*)
 		fids = TransData[FourierKspaceCSI[kspace, head], "l"];
-		TransData[Map[FourierShift[Fourier[#, FourierParameters -> {-1, 1}]] &, TransData[fids, "l"], {-2}], "r"];
+		Map[ShiftedFourier[#] &, fids, {-2}]
 		,
 		5,(*perform spatial fourier for CSI*)
 		fids = Transpose[FourierKspaceCSI[#, head] & /@ kspace];
