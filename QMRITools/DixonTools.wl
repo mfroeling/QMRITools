@@ -111,6 +111,9 @@ UnwrapDimension::usage =
 "UnwrapDimension is an option for Unwrap. Can be \"2D\" or \"3D\". 2D is for unwarpping 2D images or unwrapping the individual images from a 3D dataset \
 (does not unwrap in the slice direction). 3D unwraps a 3D dataset in all dimensions."
 
+UnwrapThresh::usage = 
+"UnwrapThresh is an option for Unwrap. Is a value between 0.6 and 0.9, and defines when to unwrap, the higher the value the less unwrapping will be done."
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -416,34 +419,34 @@ SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] :=
 (*Unwrap*)
 
 
-Options[Unwrap]={MonitorUnwrap->True,UnwrapDimension->"2D"};
+Options[Unwrap]={MonitorUnwrap->True,UnwrapDimension->"2D", UnwrapThresh->0.75};
 
 SyntaxInformation[Unwrap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 (* Phase unwrapping algorithem based on M.A. Herraez et al 2002 and Abdul-Rahman 2007.
 unwraping algorithem. Unwraps one image, needs functions: Diff, SecDiff, EdgeReliability and PairCoor*)
 
-Unwrap[dat_,OptionsPattern[]]:=
-Module[{data,step,undim,out,mon},
-	
-	undim=OptionValue[UnwrapDimension];
-	mon=OptionValue[MonitorUnwrap];
+Unwrap[dat_,OptionsPattern[]]:= Block[{data, ind, undim, out, mon, thresh, len},
+	undim = OptionValue[UnwrapDimension];
+	mon = OptionValue[MonitorUnwrap];
+	thresh = Clip[OptionValue[UnwrapThresh],{0.6, 0.9}];
 	
 	Switch[undim,
 		
 		"2D",
 		data = N[dat];
+		len = Length[data];
 		Which[
 			MatrixQ[data],
 			If[mon,PrintTemporary["Unwrapping one image using 2D algorithm."]];
-			out = Unwrapi[data];
+			out = Unwrapi[data, thresh];
 			,
 			ArrayQ[data,3],
 			If[mon,PrintTemporary["Unwrapping ",Length[data]," images using 2D algorithm"]];
 			Monitor[
-				out = MapIndexed[( step = First[#2]; Unwrapi[#1] )&, data, {ArrayDepth[data]-2} ];
-				out = UnwrapZi[out];
-			 ,If[mon,ProgressIndicator[step, {0, Length[data]}],""]
+				out = MapIndexed[( ind = First[#2]; Unwrapi[#1, thresh] )&, data, {ArrayDepth[data]-2} ];
+				out = UnwrapZi[out, thresh];
+			 ,If[mon,ProgressIndicator[ind, {0, len}],""]
 			]
 		];,
 		
@@ -451,7 +454,7 @@ Module[{data,step,undim,out,mon},
 		data = N[ArrayPad[dat,1]];
 		If[ArrayQ[data,3],
 			If[mon,PrintTemporary["Unwrapping 3D data using 3D algorithm"]];
-			out = ArrayPad[Unwrapi[data, mon],-1];
+			out = ArrayPad[Unwrapi[data, thresh, mon],-1];
 			,
 			Message[Unwrap::data3D,ArrayDepth[data]]
 			];,
@@ -461,7 +464,7 @@ Module[{data,step,undim,out,mon},
 		
 	(*center around 0*)
 	out
-	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -472,29 +475,23 @@ Options[UnwrapSplit] = Options[UnwrapSplit]
 
 SyntaxInformation[UnwrapSplit] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-UnwrapSplit[phase_, mag_,opts:OptionsPattern[]] := Module[{cutVal, phaseSplit, B0split},
-  cutVal = CutData[mag][[3]];
-  phaseSplit = CutData[phase, cutVal][[1 ;; 2]];
-  B0split = Unwrap[#, opts] & /@ phaseSplit;
-  StichData @@ B0split
-  ]
+UnwrapSplit[phase_, mag_,opts:OptionsPattern[]] := Block[{cutVal, phaseSplit, B0split},
+	cutVal = CutData[mag][[3]];
+	phaseSplit = CutData[phase, cutVal][[1 ;; 2]];
+	B0split = Unwrap[#, opts] & /@ phaseSplit;
+	StichData @@ B0split
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*UnwrapZi*)
 
 
-UnwrapZi[data_]:=
-Module[{
-	Roundi=Module[{num2,tresh=.75},
-	If[Negative[#],
-		num2=#-Ceiling[#];
-		If[-1<num2<-tresh,Floor[#],Ceiling[#]],
-		num2=#-Floor[#];
-		If[1>num2>tresh,Ceiling[#],Floor[#]]
-		]
-		]&,
-		mask,slice,diff,meandiff,steps,off,unwrap,dat},
+UnwrapZi[data_, thresh_]:= Block[{mask,slice,diff,meandiff,steps,off,unwrap,dat,num2,Roundi},
+	
+	Roundi = If[Negative[#], 
+		num2=#-Ceiling[#]; If[-1<num2<-thresh,Floor[#],Ceiling[#]],
+		num2=#-Floor[#]; If[1>num2>thresh,Ceiling[#],Floor[#]]]&;
 	
 	mask=Unitize[data];
 	slice=Round[0.5Length[data]];
@@ -507,16 +504,16 @@ Module[{
 	unwrap=steps-(steps[[slice]]+off);
 	dat=(2Pi unwrap+data)mask//N;
 	(dat - mask Round[MeanNoZero[Flatten[dat]],2Pi])
-	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*Unwrapi*)
 
 
-Unwrapi[dat_] := Unwrapi[dat, False]
+Unwrapi[dat_, thresh_] := Unwrapi[dat, thresh, False]
 
-Unwrapi[dat_, mon_] := Block[{data,datai,mask, crp, dimi, sorted,groups,groupsize,groupnr,task},
+Unwrapi[dat_, thresh_, mon_] := Block[{data,datai,mask, crp, dimi, sorted,groups,groupsize,groupnr,task},
 	(*monitor*)
 	task="Preclustering data.";
 	If[mon,PrintTemporary[Dynamic[task]]];
@@ -543,7 +540,7 @@ Unwrapi[dat_, mon_] := Block[{data,datai,mask, crp, dimi, sorted,groups,groupsiz
 	
 	(*Unwrap the data*)
 	task="Unwrapping edges.";
-	data = UnWrapC[sorted, data, groups, groupsize, groupnr];
+	data = UnWrapC[sorted, data, groups, groupsize, groupnr, Round[thresh 10000]];
 	
 	(*make output in rad*)	
 	If[ArrayDepth[dat] == 2, 
@@ -556,8 +553,8 @@ Unwrapi[dat_, mon_] := Block[{data,datai,mask, crp, dimi, sorted,groups,groupsiz
 ]
 
 
-UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Integer, 3}, {groupsi, _Integer, 3}, {groupsizei, _Integer, 1}, {groupnri, _Integer, 0}},
-	Block[{data, const, dir, dim, groups, group1, group2, groupsize, groupnr, z1, z2, x1, x2, y1, y2, wrap, wrapT, pos, g1, g2, out, adds,add},
+UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Integer, 3}, {groupsi, _Integer, 3}, {groupsizei, _Integer, 1}, {groupnri, _Integer, 0}, {thresh,_Integer,0}},
+	Block[{data, const, dir, dim, groups, group1, group2, groupsize, groupnr, z1, z2, x1, x2, y1, y2, wrap, wrapT, pos, g1, g2, out, adds,add, diff},
    	
     groups = groupsi;
     groupsize = groupsizei;
@@ -587,7 +584,9 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Integer, 3}, {groupsi, _Integ
          (*1. both already in same group but not zero (most cases 60%) do nothing*)
          If[(! (group1 > 1 && group1 == group2)),
           (*If not in the same group determine the wrap of the edge and determine how to unwrap*)
-          wrap = Round[Round[data[[z1, x1, y1]] - data[[z2, x2, y2]],5000], 10000];
+          diff = data[[z1, x1, y1]] - data[[z2, x2, y2]];
+          (*wrap = Round[Round[diff,5000]-Sign[diff], 10000];*)
+          wrap = Sign[diff] Ceiling[Abs[diff] - thresh, 10000];
           wrapT = (wrap != 0);
           
           (*get group sizes*)
@@ -728,7 +727,7 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,mclus,clus,
 	
 	(*find mask ranges*)
 	{min,max}=MinMax[data];
-	part=Partition[Range[min,max,(max-min)/6]//N,2,1];
+	part=Partition[Range[min,max,(max-min)/12]//N,2,1];
 	
 	(*remove background form masks, and create masks*)
 	dat=data/. 0->(-2min);

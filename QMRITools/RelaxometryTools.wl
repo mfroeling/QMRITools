@@ -117,7 +117,7 @@ EPGFitFat::usage =
 "EPGFitFat is an option for EPGT2Fit."
 
 DictT2fValue::usage = 
-"DictT2fValue"
+"DictT2fValue is an option for EPGFit."
 
 EPGRelaxPars::usage = 
 "EPGRelaxPars is and option for EPGT2Fit. Needs to be {T1muscl, T1Fat, T2Fat} in ms, defaul is {1400,365,137} in ms."

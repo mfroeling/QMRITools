@@ -25,7 +25,7 @@ BeginPackage["QMRITools`SpectroTools`", Join[{"Developer`"}, Complement[QMRITool
 
 
 ReadjMRUI::usage = 
-"ReadJMRUI[file] read a jMRUI spectrum file. 
+"ReadjMRUI[file] read a jMRUI spectrum file. 
 Output is the {time, spec, {begintime, samplingInterval}}."
 
 
@@ -113,6 +113,15 @@ MakeSpectraGrid::usage =
 "MakeSpectraGrid[spectra]
 MakeSpectraGrid[spectra, ppm]" 
 
+FitSpectraResultTable::usage
+"FitSpectraResultTable[parFit, parsF, names, ref, out] function not done"
+
+CompareSpectraFitPlot::usage
+"CompareSpectraFitPlot[ppmPl, specPlot, fitPlot] function not done"
+
+MakeSpectraResultPlot::usage
+"MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, sc__ : 1, met__ : "ReIm"] function not done"
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -149,6 +158,9 @@ SpectraOutputPlots::usage =
 "SpectraOutputPlots is an option for FitSpectra."
 
 SpectraSpacing::usage = "SpectraSpacing is an option for PlotSpectra."
+
+PlotScaling::usage = 
+"PlotScaling is an option for MakeSpectraGrid"
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -288,9 +300,9 @@ ApodizeSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[ApodizeFid[Shif
 (*ApodizePadFid*)
 
 
-Options[ApodizeSpectra] = {ApodizationFunction -> "Ham", PaddingFactor -> 2}
+Options[ApodizePadSpectra] = {ApodizationFunction -> "Ham", PaddingFactor -> 2}
 
-SyntaxInformation[ApodizeSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
+SyntaxInformation[ApodizePadSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
 ApodizePadSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[ApodizePadFid[ShiftedInverseFourier[spec], opts]]
 
@@ -323,7 +335,7 @@ SyntaxInformation[GetTimePpmRange] = {"ArgumentsPattern" -> {_, _, _., _.}};
 
 GetTimePpmRange[spec_, {dt_, field_, nuc_}] := GetTimePpmRange[spec, dt, field, nuc]
 
-GetTimePpmRange[spec_, dt_, field_, nuc_] := GetTimePpmRange[spec, dt, GyromagneticRatio[nuc] field]
+GetTimePpmRange[spec_, dt_, field_, nuc_] := GetTimePpmRange[spec, dt, GetGyro[nuc, field]]
 
 GetTimePpmRange[spec_, dt_, gyro_] := {GetTimeRange[spec, dt], GetPpmRange[spec, dt, gyro]}
 
@@ -350,7 +362,7 @@ GetPpmRange[spec_, dt_, gyro_] := Block[{ppmBw},
 
 SyntaxInformation[GetTimeRange] = {"ArgumentsPattern" -> {_, _}};
 
-GetTimeRange[fid_, dt_] := N@Range[dt, Length[fid] dt, dt ]
+GetTimeRange[fid_, dt_] := N@Range[0, (Length[fid]-1) dt, dt ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -513,7 +525,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 (*Spectra Fitting Functions*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*FitSpectra*)
 
 
@@ -531,7 +543,9 @@ Options[FitSpectra]={
 
 SyntaxInformation[FitSpectra] = {"ArgumentsPattern" -> {_, _, _, _, _, OptionsPattern[]}}
 
-FitSpectra[specBasisIn_,specIn_,{st_,end_},dtime_,{lwvals_,lwamsp_},OptionsPattern[]]:=Block[{
+FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, lwvals_?VectorQ, opts : OptionsPattern[]]:=FitSpectra[specBasisIn,specIn,{st,end},dtime,{lwvals,0lwvals+1},opts]
+
+FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ,lwamsp_?VectorQ}, OptionsPattern[]]:=Block[{
 	ttotal,log,pad,spfac,field,nuc,shift,plots,init,scale,nbas,len,
 	timeBasis,specFull,timeFull,ppmFull,nsamp,gyro,indSt,indEnd,
 	gami,epsi,phi0i,phi1i,linei,phii,plLine,plShift,
@@ -764,7 +778,7 @@ MakeVars[par_,val_,1]:=If[Length[par]===0,
 CashBasisTime[specBasisIn_,pad_]:=CashBasisTime[specBasisIn,pad]=ApodizePadFid[ShiftedInverseFourier[#],PaddingFactor->pad]&/@specBasisIn
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Fit Basis spectra*)
 
 
@@ -822,7 +836,7 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*BasisSpectraApply*)
 
 
@@ -850,7 +864,7 @@ BasisSpectraApply[{ppmFull_,timeFull_,timeBasis_},{gam_,eps_,phi_,f_},gyro_,{st_
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Estimate Line width*)
 
 
@@ -918,7 +932,7 @@ EstimateLineWidth[{ppm_,spec_},{peaks_,amps_},gyro_,ran_,plot_:True]:=Block[{
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*EstimatePhaseShift*)
 
 
@@ -974,7 +988,7 @@ PhaseErrorC=Compile[{{ppm,_Real,1},{speci,_Complex,1},{spect,_Complex,1},{phi0,_
 ],RuntimeOptions->"Speed"];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*PlotSpectra*)
 
 
@@ -1074,7 +1088,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*PlotFid*)
 
 
@@ -1116,14 +1130,15 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*MakeSpectraGrid*)
 
 
 Options[MakeSpectraGrid] = {
 	Method -> "Abs", 
 	PlotScaling -> "Max",
-	PlotRange -> Full
+	PlotRange -> Full,
+	ImageSize->50
 };
 
 SyntaxInformation[MakeSpectraGrid] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}}
@@ -1148,7 +1163,8 @@ MakeSpectraGrid[spectra_, ppm_, OptionsPattern[]] := Block[{
 	
 	xdat = If[ppm === 0,
 		mid = Dimensions[spectra][[-1]]/2;
-		Range[Dimensions[spectra][[-1]]] - mid,
+		Range[Dimensions[spectra][[-1]]]-mid
+		,
 		-ppm
 	];
 	
@@ -1168,7 +1184,7 @@ MakeSpectraGrid[spectra_, ppm_, OptionsPattern[]] := Block[{
 	plots = Map[(
 		{speci, maxi} = #;
 		speci = Transpose[{xdat, speci}];
-		Graphics[{Directive[{(*Thick,*)ColorData[{"DarkRainbow", "Reverse"}][1.25 Sqrt[maxi]]}], Line[speci]}, AspectRatio -> 0.7, ImageSize -> 50,
+		Graphics[{Directive[{(*Thick,*)ColorData[{"DarkRainbow", "Reverse"}][1.25 Sqrt[maxi]]}], Line[speci]}, AspectRatio -> 0.7, ImageSize -> OptionValue[ImageSize],
 			PlotRange -> {xran, ran}, GridLines -> grid, PlotRegion -> {{0.05, 0.95}, {.1, 0.9}}
 			(*,Frame\[Rule]{{False, False},{True,False}},FrameStyle\[Rule]{Thick,Black}*)
 		]
@@ -1178,6 +1194,125 @@ MakeSpectraGrid[spectra_, ppm_, OptionsPattern[]] := Block[{
 ]
 
 
+(* ::Subsection::Closed:: *)
+(*FitSpectraResultTable*)
+
+
+SyntaxInformation[FitSpectraResultTable] = {"ArgumentsPattern" -> {_, _, _, _, _.}}
+
+FitSpectraResultTable[parFit_, parsF_, names_, ref_, out_ : "tab"] := Block[{
+	par, phi, amp, lw, ls, shift, sc, rowName, colName,tabDat, tab, dat
+	},
+	
+	par = parFit[[2 ;;]];
+	phi = {
+		{"", "", "", ""},
+		Flatten@Thread[{Style[#, Bold] & /@ {"\!\(\*SubscriptBox[\(\[Theta]\), \(0\)]\) [deg]", "\!\(\*SubscriptBox[\(\[Theta]\), \(1\)]\) [ms]"},
+			Round[{parsF[[3, 1]]/Degree, parsF[[3, 2]]}, .001]}
+		]
+	};
+	sc = If[ref === "", 1, Clip[par[[Position[names, ref][[1, 1]]]], {Max[DeleteCases[par, 0.]],Infinity}]];
+	amp = If[sc === 1, par, 100 par/sc];
+		
+	{lw, ls, shift} = parsF[[{1, 4, 2}]];
+	If[NumberQ[ls], ls = ConstantArray[ls, Length[lw]]];
+	If[Length[lw] == 0, {lw, ls, shift} = ConstantArray[#, Length[names]] & /@ {lw, ls, shift}];
+	
+	rowName = Join[names, {"", "phase"}];
+	colName = {"Amp.", "LW [Hz]", "shift [ppm]", "LS [L<>G]"};
+	tabDat = Join[Transpose[Round[{amp, lw, shift, ls}, .001]], phi];
+	
+	tab = TableForm[tabDat, TableHeadings -> {Style[#, Bold] & /@ rowName, Style[#, Bold] & /@ colName}, TableSpacing -> {2, 2}, TableAlignments -> Center];
+	dat = Transpose[Prepend[Transpose[Prepend[tabDat, colName]], Prepend[rowName, ""]]] /. {
+		Style["\!\(\*SubscriptBox[\(\[Theta]\), \(0\)]\) [deg]", Bold] -> "\[Theta]0 [deg]", Style["\!\(\*SubscriptBox[\(\[Theta]\), \(1\)]\) [ms]", Bold] -> "\[Theta]1 [ms]"};
+	
+	Switch[out,
+		"tab", tab,
+		"dat", dat,
+		"both", {tab, dat}
+	]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*FitSpectraResultTable*)
+
+
+SyntaxInformation[CompareSpectraFitPlot] = {"ArgumentsPattern" -> {_, _, _, _.}}
+
+CompareSpectraFitPlot[ppmPl_, specPlot_, fitPlot_, ranPpm_:Full] := Block[{ran, sp},
+  ran = {-1, 1} Max[Abs[specPlot], Abs[fitPlot]];
+  sp = 2;
+  Column[{FlipView[{
+      Column[{
+        PlotSpectra[ppmPl, specPlot, GridLineSpacing -> sp, PlotRange -> {ranPpm, ran}, Method -> "Abs"],
+        PlotSpectra[ppmPl, specPlot, GridLineSpacing -> sp, PlotRange -> {ranPpm, ran}, Method -> "ReIm"]
+        }],
+      Column[{
+        PlotSpectra[ppmPl, fitPlot, GridLineSpacing -> sp, PlotRange -> {ranPpm, ran}, Method -> "Abs"],
+        PlotSpectra[ppmPl, fitPlot, GridLineSpacing -> sp, PlotRange -> {ranPpm, ran}, Method -> "ReIm"]
+        }]
+      }]
+    ,
+    FlipView[{
+    	PlotSpectra[ppmPl, fitPlot - specPlot, GridLineSpacing -> sp, PlotRange -> {ranPpm, ran}, Method -> "ReIm"],
+      PlotSpectra[ppmPl, fitPlot - specPlot, GridLineSpacing -> 2, PlotRange -> {ranPpm, Full}, Method -> "ReIm"]
+      }]
+    }]
+  ]
+
+
+(* ::Subsection::Closed:: *)
+(*FitSpectraResultTable*)
+
+
+SyntaxInformation[MakeSpectraResultPlot] = {"ArgumentsPattern" -> {_, _, _, _, _.}}
+
+MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, ppmran_] := Block[{
+	sp, specFit, resTotPl, errPl, fitPl, resPl, outPl, pran, pmax,
+	lab1, lab2, resfitRI, resfit, resBasPl, met},
+	
+	sp = 2;
+	met = "ReIm";
+	specFit = fit.basisFit;
+	pmax = Max[Abs[specFit], Abs[specF]];
+	pran = {-pmax, pmax};
+	
+	resTotPl = Column[{
+		FlipView[errPl = {
+			PlotSpectra[ppmF, specF - specFit, Method -> met, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp],
+			PlotSpectra[ppmF, specF - specFit, Method -> met, PlotRange -> {ppmran, Full}, GridLineSpacing -> sp]
+		}],
+		FlipView[fitPl = {
+			Show[
+				PlotSpectra[ppmF, specF, Method -> met /. "ReIm" -> "Re", PlotColor -> Red, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp],
+				PlotSpectra[ppmF, basisFit[[1]], Method -> met /. "ReIm" -> "Re", PlotColor -> Green, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp],
+				PlotSpectra[ppmF, specFit, Method -> met /. "ReIm" -> "Re", PlotColor -> Black, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp]
+			],
+			Show[
+				PlotSpectra[ppmF, specF, Method -> met /. "ReIm" -> "Im", PlotColor -> Red, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp],
+				PlotSpectra[ppmF, basisFit[[1]], Method -> met /. "ReIm" -> "Im", PlotColor -> Green, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp],
+				PlotSpectra[ppmF, specFit, Method -> met /. "ReIm" -> "Im", PlotColor -> Black, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp]
+			]
+		}]
+		,
+		FlipView[resPl = {
+			PlotSpectra[ppmF, specF, Method -> met, PlotRange -> {Fppmranull, pran}, GridLineSpacing -> sp],
+			PlotSpectra[ppmF, specFit, Method -> met, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp]
+		}]
+	}, Alignment -> Center];
+	
+	lab1 = Style[#, Bold, Black, Large] & /@ {"Error scaled to signal", "Error scaled to Max"};
+	lab2 = Style[#, Bold, Black, Large] & /@ {"Fit and signal Re", "Fit and signal Im"};
+	outPl = Column[Flatten[{Thread[{lab1, errPl}], Thread[{lab2, fitPl}]}], Alignment -> Center];
+	
+	resBasPl = FlipView[{
+		resfitRI = PlotSpectra[ppmF, fit basisFit, Method -> "ReIm", PlotColor -> Red, SpectraSpacing -> 0.2, GridLines -> {}, GridLineSpacing -> sp, PlotLabels -> Prepend[names, "spline"],PlotRange->{ppmran,Full}],
+		resfit = PlotSpectra[ppmF, fit basisFit, Method -> "Abs", PlotColor -> Red, SpectraSpacing -> 0.2, GridLines -> {}, GridLineSpacing -> sp, PlotLabels -> Prepend[names, "spline"],PlotRange->{ppmran,Full}]
+	}];
+	
+	{resTotPl, resBasPl, {errPl, fitPl, resPl, outPl, resfitRI, resfit}}
+]
 
 (* ::Section:: *)
 (*End Package*)

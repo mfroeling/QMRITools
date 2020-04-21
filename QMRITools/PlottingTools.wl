@@ -80,7 +80,7 @@ PlotIVIM::usage =
 PlotSequence::usage = 
 "PlotSequence[seq,var] where seq is the output from GradSeq."
 
-Ploti::usage = "testing" 
+(*Ploti::usage = "testing"*) 
 
 (* ::Subsection::Closed:: *)
 (*Options*)
