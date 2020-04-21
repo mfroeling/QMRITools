@@ -247,7 +247,7 @@ PhaseCorrectErrorC2 = Compile[{{ppm, _Real, 1}, {speci, _Complex, 1}, {phi0, _Re
 
 Options[PadFid] = {PaddingFactor -> 2}
 
-SyntaxInformation[PhaseCorrectSpectra] = {"ArgumentsPattern" -> {_}}
+SyntaxInformation[PadFid] = {"ArgumentsPattern" -> {_}}
 
 PadFid[fid_, OptionsPattern[]] := PadRight[fid, Round[OptionValue[PaddingFactor] Length[fid]]]
 
@@ -258,7 +258,7 @@ PadFid[fid_, OptionsPattern[]] := PadRight[fid, Round[OptionValue[PaddingFactor]
 
 Options[ApodizeFid] = {ApodizationFunction -> "Ham"}
 
-SyntaxInformation[PhaseCorrectSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
+SyntaxInformation[ApodizeFid] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
 ApodizeFid[fid_, OptionsPattern[]] := ApodizeFun[Length[fid], OptionValue[ApodizationFunction]] fid
 
@@ -543,9 +543,9 @@ Options[FitSpectra]={
 
 SyntaxInformation[FitSpectra] = {"ArgumentsPattern" -> {_, _, _, _, _, OptionsPattern[]}}
 
-FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, lwvals_?VectorQ, opts : OptionsPattern[]]:=FitSpectra[specBasisIn,specIn,{st,end},dtime,{lwvals,0lwvals+1},opts]
+FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, lwvals_?VectorQ, opts : OptionsPattern[]]:=FitSpectra[specBasisIn,specIn,{st,end},dtime,{lwvals, 0lwvals + 1.},opts]
 
-FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ,lwamsp_?VectorQ}, OptionsPattern[]]:=Block[{
+FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?VectorQ}, OptionsPattern[]]:=Block[{
 	ttotal,log,pad,spfac,field,nuc,shift,plots,init,scale,nbas,len,
 	timeBasis,specFull,timeFull,ppmFull,nsamp,gyro,indSt,indEnd,
 	gami,epsi,phi0i,phi1i,linei,phii,plLine,plShift,
@@ -696,8 +696,8 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ,lwamsp_?V
 			
 			(*perform the minimization*)
 			{tfit2,fit2}=AbsoluteTiming[FindMinimum[
-				FitSpectraError[{ppmFull,specFull},{timeFull,timeBasis},{indSt,indEnd},{cpn,gyro},{gamf,epsf,{phi0f,phi1f},linef},init,Output->"Error"],
-				var,MaxIterations->500,Method->"QuasiNewton"][[2]]];
+				FitSpectraError[{ppmFull,specFull},{timeFull,timeBasis},{indSt,indEnd},{cpn,gyro},{gamf,epsf,{phi0f,phi1f},linef},init, Output->"Error"],
+				var, MaxIterations->500, Method->"QuasiNewton"][[2]]];
 			
 			(*get the solution and output, wrap phi between -pi and pi*)
 			sol={gami, epsi, phii, linei}={Clip[gamf,{1,500}],epsf,{2ArcTan[Tan[phi0f/2]],phi1f},linef}/.fit2;
@@ -801,7 +801,9 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		(*perform Fit of basis spectra*)
 		fit = Quiet@NNLeastSquares[Transpose[Re[specBasisF]], Re[specF]];
 		(*constrain f between 0 and 1 using power function*)
-		ferr = If[NumberQ[f], ((f - 0.5)/.6)^100, Total[((# - 0.6)/.6)^100 & /@ f]];
+		ferr = If[NumberQ[f],10( ((f - 0.5)/.6)^100), Total[10(((# - 0.6)/.6)^100) & /@ f]];
+		(*ferr = If[NumberQ[f], (2 (Ramp[f - 0.4] + Ramp[-(f - 0.6)]))^8, Total[(2 (Ramp[# - 0.4] + Ramp[-(# - 0.6)]))^8 &/@f]];*)
+		(*ferr=0;*)
 		(*constrain gam to be positive*)
 		gerr = If[NumberQ[gam], (UnitStep[-(gam - 2)] (gam - 2))^4, Total[(UnitStep[-(# - 2)] (# - 2))^4 & /@ gam]];
 		(*define errors*)
@@ -1200,7 +1202,7 @@ MakeSpectraGrid[spectra_, ppm_, OptionsPattern[]] := Block[{
 
 SyntaxInformation[FitSpectraResultTable] = {"ArgumentsPattern" -> {_, _, _, _, _.}}
 
-FitSpectraResultTable[parFit_, parsF_, names_, ref_, out_ : "tab"] := Block[{
+FitSpectraResultTable[parFit_, parsF_, names_, ref_, out_:"tab"] := Block[{
 	par, phi, amp, lw, ls, shift, sc, rowName, colName,tabDat, tab, dat
 	},
 	
@@ -1297,7 +1299,7 @@ MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, ppmran_] := Bloc
 		}]
 		,
 		FlipView[resPl = {
-			PlotSpectra[ppmF, specF, Method -> met, PlotRange -> {Fppmranull, pran}, GridLineSpacing -> sp],
+			PlotSpectra[ppmF, specF, Method -> met, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp],
 			PlotSpectra[ppmF, specFit, Method -> met, PlotRange -> {ppmran, pran}, GridLineSpacing -> sp]
 		}]
 	}, Alignment -> Center];
