@@ -459,6 +459,10 @@ The main purpose of this toolbox is to process and visualize spectra data
 and allows to fit spectra using simulated basis spectra. Some of the functionality
 is demonstrated in the `demo.nb`.
 
+![Comparison of fitted and measured 31P spectra of muscle.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/spectra_fit.jpg)
+
+![Resulting basis spectra of a fit of 31P spectra of muacle.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/spectra_fit.jpg)
+
 ### TensorTools
 
 The original toolbox where the project started. The main functions in
