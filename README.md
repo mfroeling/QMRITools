@@ -167,8 +167,7 @@ To print the documentation of all functions use
     QMRIToolsFuncPrint["toolboxname"]
 
 A list off all functions and their help can be found in
-`All-Functions.nb`, which is alos availible as a [pdf
-file](https://github.com/mfroeling/QMRITools/releases/download/2.0/All-Functions.pdf).
+`All-Functions.nb`, which is alos availible as a [pdf file](https://github.com/mfroeling/QMRITools/releases/download/2.0/All-Functions.pdf).
 
 QMRITools contains the following toolboxes:
 
@@ -187,15 +186,16 @@ QMRITools contains the following toolboxes:
 -   PhysiologyTools
 -   PlottingTools
 -   ProcessingTools
+-   ReconstructionTools
 -   RelaxometryTools
 -   SimulationTools
+-   SpectroTools
 -   VisteTools
 
 Under development
 
--   SpectroTools
 -   TaggingTools
--   ReconstructionTools
+
 
 ------------------------------------------------------------------------
 
@@ -230,8 +230,7 @@ analyzing data. A summary of the core functionality is listed below.
     -   Compatible with ExplorDTI and Viste for fiber tractography
 -   **Data visualization**
     -   2D 3D and 4D viewer
-    -   Multiple images: Transparent overlay, difference and, checkboard
-        overlays
+    -   Multiple images: Transparent overlay, difference and, checkboard overlays
     -   Legend bars and image labels
     -   Saving to pdf, jpg, animated gif and movie
 
@@ -255,10 +254,23 @@ analyzing data. A summary of the core functionality is listed below.
     -   T1rho fitting
     -   Tri Exponential T2 fitting
     -   EPG based T2 fitting with slice profile
+-   **Reconstruction Tools**
+    -   Basic algorithms for complex coil combination including RSS, Roemer, WSVD.
+    -   Simple Image reconstruction (MS-2D and 3D reconstruction) 
+    -   CSI data reconstruction
+    -   reading Philips *.list and *.data files.
+    -   Hamming filtering.
 -   **Simulation Framework**
     -   Diffuison tensor simulation and analysis
     -   Bloch and EPG simulations
     -   Cardiac DTI models (fiber architecture)
+-   **Spectra processing and fitting**
+    -   Fitting spectra using a set of basis functions. 
+    -   Phase correction and line-width optimization.
+    -   Basic plotting and visualization.
+    -   Automatic 0th and 1st order phase correction using Henkel matrix SVD. 
+    -   baseline correction
+    -   CSI data visualization. 
 -   **Cardiac Diffusion analysis**
     -   Breathing motion correction
     -   Corrupted slice rejection
@@ -269,16 +281,8 @@ analyzing data. A summary of the core functionality is listed below.
 
 **Under Construction**
 
--   **Spectra fitting**
-    -   Fitting spectra using a set of basis functions
-    -   Phase correction and line-width optimization
-    -   baseline correction
--   **Reconstruction Tools**
-    -   Basic algorithms for complex coil combination.
-    -   CSI data reconstruction
-    -   Simple Image reconstruction
 -   **Tagging analysis**
-    -   Getting displacement fields from tagging data
+    -   Getting displacement fields from tagging data (grid and line tagging)
     -   Strain, trosion and rotation from cardiac data
 
 ------------------------------------------------------------------------
@@ -414,6 +418,12 @@ A variety of functions for visualization of various data types. The main
 functions are ‘PlotData’ and ‘PlotData3D’ which allow viewing 2D, 3D and
 4D data. Most of the functionality is demonstrated in the `demo.nb`.
 
+### Reconstruction Tools
+
+A variety of function for raw MRI data reconstruction. The main goal was to 
+create a set of functions that allow for the reconstruction of multi coil 3D CSI 
+data and and low SNR 31P imaging data. For this toolbox there is no demo.  
+
 ### ProcessingTools
 
 The toolbox comprises a variety of functions that allow data
@@ -441,6 +451,12 @@ fraction.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/epg-t2
 The main purpose of this toolbox is to simulate DTI based DWI data and
 contains some functions to easily perform analysis of the fit results of
 the simulated signals (Froeling et al. 2013). Some of the functionality
+is demonstrated in the `demo.nb`.
+
+### SpectroTools
+
+The main purpose of this toolbox is to process and visualize spectra data
+and allows to fit spectra using simulated basis spectra. Some of the functionality
 is demonstrated in the `demo.nb`.
 
 ### TensorTools

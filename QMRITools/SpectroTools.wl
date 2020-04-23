@@ -110,27 +110,27 @@ FitSpectra::usage =
 
 
 PlotCSIData::usage =
-"PlotCSIData[datainp, dw, field, nuc]
-PlotCSIData[datainp, {dw, field, nuc}]
-PlotCSIData[datainp, dw, gyro]
-PlotCSIData[datainp, {dw, gyro}] "
+"PlotCSIData[spectra, {dwell, gyro}] plots the CSI spectra which has dimensions {z,y,x,nsamp}. The ppm axes is determined by dwell and gyro. Gyro can be obtained with GetGyro.
+PlotCSIData[spectra, {dwell, field, nuc}] plots the CSI spectra which has dimensions {z,y,x,nsamp}. The ppm axes is determined by dwell and field and nuc."
 
 PlotFid::usage = 
-"PlotFid[fid, dwell] 
-PlotFid[time, fid]"
+"PlotFid[fid, dwell] plots the fid assuming dwell as the sampeling time.
+PlotFid[time, fid] plot the fid where time is the timing of the fid which can be obtained with GetTimeRange."
 
 PlotSpectra::usage = 
-"PlotSpectra[spec, {dwell, field, nuc}]
-PlotSpectra[ppm, spec]" 
+"PlotSpectra[spectra, {dwell, gyro}] plots the spectra, the ppm axes is determined by dwell and gyro. Gyro can be obtained with GetGyro.
+PlotSpectra[spespectradwell, field, nuc}] plots the spectra, the ppm axes is determined by dwell field and nuc.
+PlotSpectra[ppm, spectra] plots the spectra where ppm is the pmm range of the spectra which can be obtained with GetPpmRange." 
+
 
 FitSpectraResultTable::usage
-"FitSpectraResultTable[parFit, parsF, names, ref, out] function not done"
+"FitSpectraResultTable[parFit, parsF, names, ref, out] function not done."
 
 CompareSpectraFitPlot::usage
-"CompareSpectraFitPlot[ppmPl, specPlot, fitPlot] function not done"
+"CompareSpectraFitPlot[ppmPl, specPlot, fitPlot] function not done."
 
 MakeSpectraResultPlot::usage
-"MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, sc__ : 1, met__ : "ReIm "] function not done"
+"MakeSpectraResultPlot[ppmF, specF, {fit, basisFit}, names, sc, met] function not done."
 
 
 (* ::Subsection::Closed:: *)
@@ -146,32 +146,45 @@ PaddingFactor::usage =
 BasisSequence::usage = 
 "BasisSequence is an option for GetBasisFunction and specifies which sequence to use."
 
-SpectraSamples::usage="SpectraSamples is an option for GetSpectraBasisFunctions."
-SpectraBandwith::usage="SpectraBandwith is an option for GetSpectraBasisFunctions." 
-SpectraLinewidth::usage="SpectraLinewidth is an option for GetSpectraBasisFunctions."
-SpectraLinewidthShape::usage="SpectraLinewidthShape is an option for GetSpectraBasisFunctions."
+SpectraSamples::usage =
+"SpectraSamples is an option for GetSpectraBasisFunctions and sets the number of samples in the spectra."
 
-SpectraNucleus::usage="SpectraNucleus is an option for GetSpectraBasisFunctions and FitSpectra."
-SpectraPpmShift::usage="SpectraPpmShift is an option for GetSpectraBasisFunctions and FitSpectra."
-SpectraFieldStrength::usage="SpectraFieldStrength is an option for GetSpectraBasisFunctions and FitSpectra."
+SpectraBandwith::usage =
+"SpectraBandwith is an option for GetSpectraBasisFunctions and sets the bandwith of the spectra." 
+
+SpectraLinewidth::usage =
+"SpectraLinewidth is an option for GetSpectraBasisFunctions and sets the linewidth of the spectra."
+
+SpectraLinewidthShape::usage =
+"SpectraLinewidthShape is an option for GetSpectraBasisFunctions and sets the peak shap, values can be \"Lorentzian\", \"Gaussian\" or \"Voigt\"."
+
+SpectraNucleus::usage =
+"SpectraNucleus is an option for GetSpectraBasisFunctions and FitSpectra and specifies which nucleus to Simulate or fit, see GyromagneticRatio."
+
+SpectraPpmShift::usage = 
+"SpectraPpmShift is an option for GetSpectraBasisFunctions and FitSpectra and defines how much the center frequency is shifted, default is water at 4.65 ppm."
+
+SpectraFieldStrength::usage = 
+"SpectraFieldStrength is an option for GetSpectraBasisFunctions and FitSpectra and sets the field strenght at which the simulations and fitting is perforemd"
 
 
 SplineSpacingFactor::usage = 
-"SplineSpacingFactor is an option for FitSpectra."
+"SplineSpacingFactor is an option for FitSpectra and defines the distance between the bsplien points relative the the mean linewithd of the peaks."
+
 FineTuneFit::usage = 
-"FineTuneFit is an option for FitSpectra."
+"FineTuneFit is an option for FitSpectra and when True it performs a second fitting run where for each peak is an individual linewidth, lineshape and shift are fitted."
+
 InitializeFit::usage = 
-"InitializeFit is an option for FitSpectra."
+"InitializeFit is an option for FitSpectra and is used to set initila values for the global fit {gami,epsi,{phi0i,phi1i},lineshape}."
+
 FitLineShape::usage = 
-"FitLineShape is an option for FitSpectra."
+"FitLineShape is an option for FitSpectra and when True allows to fit the lineshap. If False a voigt lineshape is used."
+
 SpectraOutputPlots::usage = 
-"SpectraOutputPlots is an option for FitSpectra."
+"SpectraOutputPlots is an option for FitSpectra. If True the automatica calibration plot for the initial fit are generated."
 
-SpectraSpacing::usage = "SpectraSpacing is an option for PlotSpectra."
-
-PlotScaling::usage = 
-"PlotScaling is an option for MakeSpectraGrid"
-
+SpectraSpacing::usage = 
+"SpectraSpacing is an option for PlotSpectra and defines the amount of spacing between spectra when multiple spectra are plotted."
 
 
 (* ::Subsection:: *)
@@ -561,7 +574,7 @@ Options[GetSpectraBasisFunctions] = {
 	SpectraBandwith -> 2000,
 	
 	SpectraLinewidth -> 5,
-	SpectraLinewidthShape -> "LG",
+	SpectraLinewidthShape -> "Voigt",
 	
 	SpectraNucleus -> "1H",
 	SpectraPpmShift -> 4.65,
@@ -584,7 +597,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 	
 	cf = OptionValue[SpectraPpmShift];
 	lw = OptionValue[SpectraLinewidth];
-	lws = OptionValue[SpectraLinewidthShape] /. {"Lorentzian"->"L", "Gaussian"->"G", "Voigt"->"LG", _->"LG"};
+	lws = OptionValue[SpectraLinewidthShape];
 	
 	field = OptionValue[SpectraFieldStrength];
 	nuc = OptionValue[SpectraNucleus];
@@ -725,7 +738,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		(*-------------------------------------------------------------------*)
 		If[init=!=Automatic,
 			(*in not automatic it is an initial fit result*)
-			{gami,epsi,{phi0i,phi1i},linei}=init;
+			{gami,epsi,{phi0i,phi1i},linei} = init;
 			phii={phi0i,phi1i};
 			,
 			(*find initial linewidth and spec shift*)
@@ -794,7 +807,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		];
 		
 		(*redifine the spline spacing *)
-		splineSpace=spfac Mean[Flatten[{gami}]]/gyro;
+		splineSpace = spfac Mean[Flatten[{gami}]]/gyro;
 		cpn = Clip[Round[Subtract@@Reverse[MinMax[ppmFull]]/splineSpace],{4,Round[nsamp/10]}];
 		
 		(*make the output*)
@@ -826,7 +839,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 			sol={gami, epsi, phii, linei}={Clip[gamf,{1,500}],epsf,{2ArcTan[Tan[phi0f/2]],phi1f},linef}/.fit2;
 			
 			(*recalculate the spline spacings*)
-			splineSpace=spfac Mean[Flatten[{gami}]]/gyro;
+			splineSpace = spfac Mean[Flatten[{gami}]]/gyro;
 			cpn = Clip[Round[Subtract@@Reverse[MinMax[ppmFull]]/splineSpace],{4,Round[nsamp/10]}];
 			
 			(*generate the output*)
@@ -1131,6 +1144,8 @@ Options[PlotSpectra] = {
 };
 
 SyntaxInformation[PlotSpectra] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
+
+PlotSpectra[spec_, {dwell_?NumberQ, gyro_?NumberQ}, opts : OptionsPattern[]] := PlotSpectra[GetPpmRange[spec, dwell, gyro], spec, opts]
 
 PlotSpectra[spec_, {dwell_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts : OptionsPattern[]] := PlotSpectra[GetPpmRange[spec, dwell, field, nuc], spec, opts]
 
