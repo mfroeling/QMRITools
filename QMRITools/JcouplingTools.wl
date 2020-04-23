@@ -20,7 +20,7 @@ BeginPackage["QMRITools`JcouplingTools`", Join[{"Developer`"}, Complement[QMRITo
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -72,6 +72,13 @@ SequenceTSE::usage =
 SequenceTSE[din ,H, {te, necho}, {ex, ref}, b1] performs a multi echo spin echo experiment with echo time te with necho echos of the spin system din given the hamiltonian H using ex Degree exitation and ref Degree refocus pulses and b1.
 The te is defined in ms, the ex and ref are defined in degree and b1 of 100% is defined as 1. 
 The output is a new spinsystem dout."
+
+SequenceSpaceEcho::usage =
+"SequenceSpaceEcho[din, H, t1, t2, necho, b1] performs a multi echo spin echo experiment with a 90 degree spin echo, with t1 the time between the 90 degree RF pulse and the first 180 degree RF pulse, 
+t2 the time betwteen a 180 degree RF pulse and the following readout (and 2xt1 the time between two consecutive 180 degree RF pulses.
+Further defines necho the number of 180 degree RF pulses, din the spin system given the hamiltonian H using b1.
+The t1 and t2 are defined in ms, and b1 of 100% is defines as 1.
+The output is a new spinsystem dout"
 
 SimReadout::usage = 
 "SimReadout[din, H] performs a readout of a spinsystem din with hamiltonian H.
@@ -396,6 +403,24 @@ SequenceTSE[din_,H_,{te1_,te_,necho_},{ex_,ref_}, b1_:1]:=Block[{d,tau},
 		d=SimRotate[d,H,b1 ref,90];
 		d=SimEvolve[d,H,tau]
 	,{i,0,necho}]
+]
+
+
+(* ::Subsubsection:: *)
+(*SequenceSpaceEcho*)
+
+
+SyntaxInformation[SequenceSpaceEcho]={"ArgumentPattern" -> {_, _, _, _, _., _.}}; 
+
+SequenceSpaceEcho[din_, H_, t1_, t2_, nEcho_:1, b1_:1]:=Block[{d,n=2},
+	d=SimRotate[din,H,b1 90,0];(*excite*)
+	d=SimEvolve[d,H,t1];(*evolve by t1*)
+	While[n<=nEcho,
+		d=SimRotate[d,H,b1 180,90];(*refocus*)
+		d=SimEvolve[d,H,2*t1];(*evolve by 2 times t1*)
+		n++];
+	d=SimRotate[d,H,b1 180,90];(*refocus*)
+	SimEvolve[d,H,t2](*evolve by t2*)
 ]
 
 

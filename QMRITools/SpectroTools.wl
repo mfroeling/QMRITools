@@ -66,7 +66,8 @@ GetGyro::usage =
 
 
 PhaseCorrectSpectra::usage =
-"PhaseCorrectSpectra[spec, dw] performs 0th order phase correction of the spectra using Henkel matrix SVD fitting.
+"PhaseCorrectSpectra[spec] performs 0th order phase correction of the spectra by minimizing the difference between the real and absolute spectra velaue.
+PhaseCorrectSpectra[spec, dw] performs 0th order phase correction of the spectra using Henkel matrix SVD fitting.
 PhaseCorrectSpectra[spec, dw, te] := performs 0th and 1st order phase correction of the spectra using Henkel matrix SVD fitting. The first order phase is corrected by padding the fid with the missing values in the time befroe the TE.
 PhaseCorrectSpectra[spec, dw, te, gyro, ppmRan] performs 0th and 1st order phase correction of the spectra using Henkel matrix SVD fitting. Only the part of the spectra in the ppmRan is used for optimization."
 
@@ -103,9 +104,16 @@ GetSpectraBasisFunctions::usage =
 GetSpectraBasisFunctions[{{props1}, ..., {propsn}}] generates a list of spectra baisis functions with properties prop1 to propn. The properties are those specified in MakeSpinSystem.
 GetSpectraBasisFunctions[inp, split] generates a list of spectra basisfunctions. Each metabolite name present in the list split wil be split in individual spectra per peak."
 
+
 FitSpectra::usage = 
 "FitSpectra[specBasis, spec, {st,end}, dt, {lwvals,lwamsp}] Fits the basis spectra from GetSpectraBasisFunctions to the spec overt the ppm range {st, end} and dt the dweltime."
 
+
+PlotCSIData::usage =
+"PlotCSIData[datainp, dw, field, nuc]
+PlotCSIData[datainp, {dw, field, nuc}]
+PlotCSIData[datainp, dw, gyro]
+PlotCSIData[datainp, {dw, gyro}] "
 
 PlotFid::usage = 
 "PlotFid[fid, dwell] 
@@ -115,10 +123,6 @@ PlotSpectra::usage =
 "PlotSpectra[spec, {dwell, field, nuc}]
 PlotSpectra[ppm, spec]" 
 
-MakeSpectraGrid::usage = 
-"MakeSpectraGrid[spectra]
-MakeSpectraGrid[spectra, ppm]" 
-
 FitSpectraResultTable::usage
 "FitSpectraResultTable[parFit, parsF, names, ref, out] function not done"
 
@@ -126,7 +130,7 @@ CompareSpectraFitPlot::usage
 "CompareSpectraFitPlot[ppmPl, specPlot, fitPlot] function not done"
 
 MakeSpectraResultPlot::usage
-"MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, sc__ : 1, met__ : "ReIm"] function not done"
+"MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, sc__ : 1, met__ : "ReIm "] function not done"
 
 
 (* ::Subsection::Closed:: *)
@@ -167,6 +171,8 @@ SpectraSpacing::usage = "SpectraSpacing is an option for PlotSpectra."
 
 PlotScaling::usage = 
 "PlotScaling is an option for MakeSpectraGrid"
+
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -212,7 +218,10 @@ ReadjMRUI[file_]:=Block[{imp,data,head,series,pts,spec,time},
 (* ::Subsubsection::Closed:: *)
 (*PhaseCorrectSpectra*)
 
+
 SyntaxInformation[PhaseCorrectSpectra]={"ArgumentsPattern"->{_,_,_.,_.,_.}}
+
+PhaseCorrectSpectra[spec_] := Exp[-I Quiet[Last[NMinimize[PhaseCorrectError[spec, phi0], {phi0}]]][[1,2]]] spec
 
 PhaseCorrectSpectra[spec_, dw_] := PhaseCorrectSpectra[spec, dw, 0, 0, Full]
 
@@ -236,7 +245,7 @@ PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_] := Block[{
 	fit = (PseudoInverse[HenkelSVDBasisC[timeOr, henk]].fid);
 	(*make the full henkel fitted spectra and select the correct range if needed*)
 	henkelSpec = ShiftedFourier[HenkelSVDBasisC[timeFull, henk].fit];
-	If[ppmRan =!= Full, henkelSpec = Pick[henkelSpec, Unitize[Clip[GetPpmRange[henkelSpec, dw, gyro], ppmRan, {0, 0}]], 1]];
+	If[ppmRan =!= Full, henkelSpec = Pick[henkelSpec, Unitize[Clip[GetPpmRange[henkelSpec, dw, gyro], Sort[ppmRan], {0, 0}]], 1]];
 	
 	(*find the first order phase*)
 	phi = Quiet[Last[FindMaximum[PhaseErrorH[henkelSpec, phi0], {phi0, 0}]]][[1,2]];
@@ -250,6 +259,14 @@ PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_] := Block[{
 PhaseErrorH[speci_, phi0_?NumericQ] := PhaseErrorHC[speci, phi0]
 
 PhaseErrorHC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}}, Total[Re[Exp[-I phi0] speci]], RuntimeOptions -> "Speed", Parallelization -> True];
+
+PhaseCorrectError[speci_, phi0_?NumericQ] := PhaseCorrectErrorC1[speci, phi0]
+
+PhaseCorrectErrorC1 = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},
+	Total[(Abs[speci] - Re[Exp[-I phi0] speci])^2],
+	RuntimeOptions -> "Speed", Parallelization -> True
+];
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -425,7 +442,7 @@ ApodizeFun[length_, apM_ : "GausLaur"] := ApodizeFun[length, apM] = Block[{app},
 
 SyntaxInformation[GetTimePpmRange] = {"ArgumentsPattern" -> {_, _, _., _.}};
 
-GetTimePpmRange[spec_, {dt_, field_, nuc_}] := GetTimePpmRange[spec, dt, field, nuc]
+GetTimePpmRange[spec_, {dt_, field_, nuc_}] := GetTimePpmRange[spec, dt, GetGyro[nuc, field]]
 
 GetTimePpmRange[spec_, dt_, field_, nuc_] := GetTimePpmRange[spec, dt, GetGyro[nuc, field]]
 
@@ -438,14 +455,18 @@ GetTimePpmRange[spec_, dt_, gyro_] := {GetTimeRange[spec, dt], GetPpmRange[spec,
 
 SyntaxInformation[GetPpmRange] = {"ArgumentsPattern" -> {_, _, _., _.}};
 
-GetPpmRange[spec_, {dt_, field_, nuc_}] := GetPpmRange[spec, dt, field, nuc]
+GetPpmRange[spec_?VectorQ, {dt_, field_, nuc_}] := GetPpmRange[Length[spec], dt, GetGyro[nuc, field]]
 
-GetPpmRange[spec_, dt_, field_, nuc_] := GetPpmRange[spec, dt, GetGyro[nuc, field]]
+GetPpmRange[spec_?VectorQ, dt_, field_, nuc_] := GetPpmRange[Length[spec], dt, GetGyro[nuc, field]]
 
-GetPpmRange[spec_, dt_, gyro_] := Block[{ppmBw},
-	ppmBw = 1./(dt gyro);
-	Reverse@Range[-ppmBw/2, ppmBw/2, ppmBw/(Length[spec] - 1)]
-]
+GetPpmRange[spec_?VectorQ, dt_, gyro_] := GetPpmRange[Length[spec], dt, gyro]
+
+
+GetPpmRange[len_?IntegerQ, {dt_, field_, nuc_}] := GetPpmRange[len, dt, GetGyro[nuc, field]]
+
+GetPpmRange[len_?IntegerQ, dt_, field_, nuc_] := GetPpmRange[len, dt, GetGyro[nuc, field]]
+
+GetPpmRange[len_?IntegerQ, dt_, gyro_] := Block[{ppmBw = 1./(dt gyro)}, Reverse@Range[-ppmBw/2, ppmBw/2, ppmBw/(len - 1)]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -454,7 +475,11 @@ GetPpmRange[spec_, dt_, gyro_] := Block[{ppmBw},
 
 SyntaxInformation[GetTimeRange] = {"ArgumentsPattern" -> {_, _}};
 
-GetTimeRange[fid_, dt_] := N@Range[0, (Length[fid]-1) dt, dt ]
+GetTimeRange[fid_?VectorQ, dt_] := GetTimeRange[Length[fid], dt]
+
+
+GetTimeRange[len_?IntegerQ, dt_] := N@Range[0, (len-1) dt, dt]
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -463,7 +488,10 @@ GetTimeRange[fid_, dt_] := N@Range[0, (Length[fid]-1) dt, dt ]
 
 SyntaxInformation[GetGyro] = {"ArgumentsPattern" -> {_, _}};
 
-GetGyro[nuc_, field_] := GyromagneticRatio[nuc] field
+GetGyro[nuc_?StringQ, field_?NumberQ] := GyromagneticRatio[nuc] field
+
+GetGyro[field_?NumberQ,nuc_?StringQ] := GyromagneticRatio[nuc] field
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -522,7 +550,7 @@ ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampT
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*GetBasisFunctions*)
 
 
@@ -545,7 +573,7 @@ SyntaxInformation[GetSpectraBasisFunctions] = {"ArgumentsPattern" -> {_, _, Opti
 GetSpectraBasisFunctions[inp_, opts:OptionsPattern[]] := GetSpectraBasisFunctions[inp, {""}, opts]
 
 GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
-	cf, bw, nsamp, lw, lws, read, sys, din, struct, dr, te, svals, seq,
+	cf, bw, nsamp, lw, lws, read, sys, din, struct, dr, te, svals, seq, t1, t2, necho,
 	sysAll, spinTab, field, nuc, nam, labs, names, times, fids, ppms, specs, douts},
 	
 	(*get the option values*)
@@ -583,7 +611,10 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 			Switch[seq,
 				"PulseAquire",
 				te = svals;
-				dr = SequencePulseAcquire[din, struct, te];
+				dr = SequencePulseAcquire[din, struct, te],
+				"spaceEcho",
+				{t1, t2, necho} = svals;
+				dr = SequenceSpaceEcho[din, struct, t1, t2, necho, 1]
 			];
 			
 			(*simulate readout*)
@@ -654,13 +685,13 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		log={};(*Print[Dynamic[Column[log]]];*)
 		
 		(*get options*)
-		pad=OptionValue[PaddingFactor];
-		spfac=OptionValue[SplineSpacingFactor];
-		field= OptionValue[SpectraFieldStrength];
-		nuc =OptionValue[SpectraNucleus];
+		pad = OptionValue[PaddingFactor];
+		spfac = OptionValue[SplineSpacingFactor];
+		field = OptionValue[SpectraFieldStrength];
+		nuc = OptionValue[SpectraNucleus];
 		shift = OptionValue[SpectraPpmShift];
-		plots=OptionValue[SpectraOutputPlots];
-		init=OptionValue[InitializeFit];
+		plots = OptionValue[SpectraOutputPlots];
+		init = OptionValue[InitializeFit];
 		
 		(*set general parameters*)
 		scale=1000/Max[Abs[specIn]];
@@ -1143,21 +1174,26 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		(*plot List of spectra*)
 		(*get the plot functions*)
 		fun = Switch[OptionValue[Method], "Abs", Abs, "Re", Re, "ReIm", Re, "Im", Im, _, Return[]];
+		
 		(*space the spectra over the y axes*)
 		space = Reverse@Range[0, Length[spec]] Max[Abs[spec]] OptionValue[SpectraSpacing];
 		
 		(*plot the spectra*)
 		plot = Transpose[{ppm, #}] & /@ (fun[Append[spec, Total[spec]]] + space);
+		
 		(*correct the plot range*)
 		If[rr[[2]] =!= Full, rr[[2, 2]] = 1.1 Max[plot[[All, All, 2]]]];
 		If[rr[[2]] =!= Full, rr[[2, 1]] = Min[plot[[All, All, 2]]] - .1 Max[plot[[All, All, 2]]]];
+		
+		If[rr[[1]]=!=Full, plot=Select[#,(Min[rr[[1]]]<=#[[1]]<=Max[rr[[1]]])&]&/@plot];
+		
 		(*get the plot colors*)
 		cols = Thread[{Append[ConstantArray[Black, Length[plot] - 1], Red], Thick}];
 		lables = OptionValue[PlotLabels];
 		
 		(*make the plot*)
 		pl1 = ListLinePlot[plot, Frame -> {{False, False}, {True, False}}, FrameStyle -> Thickness[.003], FrameTicksStyle -> Thickness[.003],
-			PlotRange -> rr, PlotStyle -> cols, ScalingFunctions -> {"Reverse", Automatic}, 
+			PlotRange -> rr, PlotRangeClipping -> True, PlotStyle -> cols, ScalingFunctions -> {"Reverse", Automatic}, 
 			PlotLabels ->If[(OptionValue[Method] === "ReIm") || (lables === None), None, (Style[#, Black, Bold, 14] & /@ Append[lables, "All"])],
 			GridLines -> {grid, None}, PlotRange -> rr, AspectRatio -> .5, ImageSize -> 1000, FrameLabel -> {"PPM", None}, LabelStyle -> {Bold, 14, Black}
 		];
@@ -1168,7 +1204,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 			cols2 = {Append[ConstantArray[Gray, Length[plot] - 1], Gray]};
 			
 			pl2 = ListLinePlot[plot2, Frame -> {{False, False}, {True, False}}, FrameStyle -> Thickness[.003], FrameTicksStyle -> Thickness[.003], 
-				PlotRange -> rr, PlotStyle -> cols2, ScalingFunctions -> {"Reverse", Automatic},
+				PlotRange -> rr, PlotRangeClipping -> True, PlotStyle -> cols2, ScalingFunctions -> {"Reverse", Automatic},
 				PlotLabels -> (Style[#, Black, Bold, 14] & /@ Append[OptionValue[PlotLabels], "All"]),
 				GridLines -> {grid, None}, PlotRange -> rr, AspectRatio -> .5,
 				ImageSize -> 1000, FrameLabel -> {"PPM", None},
@@ -1223,68 +1259,119 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 ]
 
 
-
 (* ::Subsection::Closed:: *)
 (*MakeSpectraGrid*)
 
 
-Options[MakeSpectraGrid] = {
-	Method -> "Abs", 
-	PlotScaling -> "Max",
-	PlotRange -> Full,
-	ImageSize->50
-};
+SyntaxInformation[PlotCSIData] = {"ArgumentsPattern" -> {_, _, _., _.}}
 
-SyntaxInformation[MakeSpectraGrid] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}}
+PlotCSIData[datainp_, dw_, field_, nuc_] := PlotCSIData[datainp, {dw, GetGyro[nuc, field]}]
 
-MakeSpectraGrid[spectra_, opts : OptionsPattern[]] := MakeSpectraGrid[spectra, 0, opts]
+PlotCSIData[datainp_, {dw_, field_, nuc_}] := PlotCSIData[datainp, {dw, GetGyro[nuc, field]}]
 
-MakeSpectraGrid[spectra_, ppm_, OptionsPattern[]] := Block[{
-	met, sc, max, spectraP, maxs, xdat, mid, leg, ran, grid, xran, speci, maxi, plots
-	},
+PlotCSIData[datainp_, dw_, gyro_] := PlotCSIData[datainp, {dw, gyro}]
+
+PlotCSIData[datainp_, {dw_, gyro_}] := Module[{data},
 	
-	(*get options*)
-	met = OptionValue[Method];
-	sc = OptionValue[PlotScaling];
-	xran = OptionValue[PlotRange];
+	NotebookClose[plotwindow];
+	ClearTemporaryVariables[];	
 	
-	spectraP = Switch[met, "Abs", Abs, "Im", Im, "Re", Re][spectra];
+	data = N@datainp;
 	
-	(*prepare values*)
-	max = Max[Abs[spectraP]];
-	spectraP = spectraP/max;(*scale all between 0 and 1*)
-	maxs = Map[Max, spectraP, {-2}];
-	
-	xdat = If[ppm === 0,
-		mid = Dimensions[spectra][[-1]]/2;
-		Range[Dimensions[spectra][[-1]]]-mid
+	If[! NumberQ[dw] && ! NumberQ[gyro],
+		(*error dw and gyro are not OK*)
+		$Failed
 		,
-		-ppm
-	];
 	
-	(*make legend bar*)
-	leg = BarLegend[{{"DarkRainbow", "Reverse"}, {0, 100}}, LegendLayout -> "Row", LegendMarkerSize -> 400, LabelStyle -> Directive[Large, Black, Bold]];
-	
-	ran = {If[met === "Abs", -0.1, -1], 1} If[NumberQ[sc], sc, Switch[sc, "Max", 1, "Full", 1, "Half", 0.5, "Third", 0.3]];
-	If[sc === "Max", spectraP = spectraP/maxs];
-	
-	grid = If[ppm === 0,
-		grid = {{{0, Black}}, {{0, Black}}},
-		xran = -If[xran === Full, MinMax[xdat], xran];
-		grid = {#, Lighter@Gray} & /@ Range[Round[xran[[1]], 10], Round[xran[[2]], 10], 10];
-		{Join[grid, {{0, Black}}], {{0, Black}}}
-	];
-	
-	plots = Map[(
-		{speci, maxi} = #;
-		speci = Transpose[{xdat, speci}];
-		Graphics[{Directive[{(*Thick,*)ColorData[{"DarkRainbow", "Reverse"}][1.25 Sqrt[maxi]]}], Line[speci]}, AspectRatio -> 0.7, ImageSize -> OptionValue[ImageSize],
-			PlotRange -> {xran, ran}, GridLines -> grid, PlotRegion -> {{0.05, 0.95}, {.1, 0.9}}
-			(*,Frame\[Rule]{{False, False},{True,False}},FrameStyle\[Rule]{Thick,Black}*)
-		]
-	) &, TransData[{spectraP, maxs}, "l"], {3}];
-	
-	Column[{Grid[#, Spacings -> 0], leg}, Alignment -> Center] & /@ plots
+		pan = Manipulate[
+			
+			(*prepare the data*)
+			datai = fun@data;
+			
+			(*clip the range*)
+			nmax = dim[[or]];
+			n = Round[Clip[n, {1, nmax}]];
+			
+			(*get the correct data and ranges*)
+			yran = {Min[{-0.5 Max[datai], Min[datai]}], 1.5 Max[datai]};
+			dataPlot = Switch[or, 1, datai[[n]], 2, datai[[All, n]], 3, datai[[All, All, n]]];
+			maxPlot = Switch[or, 1, maxAll[[n]], 2, maxAll[[All, n]], 3, maxAll[[All, All, n]]];
+			
+			Column[{
+				(*Plot the individual spectra and fid*)
+				Dynamic[
+					spec = If[coor === {0, 0, 0}, 0. data[[1, 1, 1]], data[[coor[[1]], coor[[2]], coor[[3]]]]];
+					FlipView[{
+						PlotSpectra[-xdat, spec, PlotRange -> {{pmin, pmax}, Full}, Method -> "ReIm"],
+						PlotFid[tdat, ShiftedInverseFourier[spec], Method -> "ReIm"]
+					}]
+				]
+				,
+				(*make the CSI plot Grid*)
+				Grid[MapIndexed[(
+					EventHandler[
+						Tooltip[
+							Graphics[{Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], Line[Thread[{xdat, #1[[1]]}]]},
+							AspectRatio -> 0.9, ImageSize -> size, Background -> GrayLevel[#[[2]]],
+							PlotRange -> {-{pmin, pmax}, If[scale === "Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, yran]}]
+							,(*the coordinate tooltip*)
+							Switch[or, 1, {n, #2[[1]], #2[[2]]}, 2, {#2[[1]], n, #2[[2]]}, 3, {#2[[1]], #2[[2]], n}],
+							TooltipStyle -> {Directive[Black, Bold, Medium], Background -> White, CellFrameColor -> None, CellFrame -> None}
+						]
+						,
+						(*create the popup window*)
+						"MouseClicked" :> (coor = Switch[or, 1, {n, #2[[1]], #2[[2]]}, 2, {#2[[1]], n, #2[[2]]}, 3, {#2[[1]], #2[[2]], n}])
+					]
+					(*loop over all voxesl*)
+					) &, TransData[{dataPlot, maxPlot}, "l"], {2}], 
+					Spacings -> {0.2, 0.15}, Alignment -> Center, Frame -> All, FrameStyle -> Thick, Background -> Black]
+				,
+				leg
+				}, Alignment -> Center
+			]
+			
+			(*active manipulate parametes*)
+			, {{or, 1, "Orientation"}, {1 -> "Transversal", 2 -> "Coronal", 3 -> "Sagital"}}
+			, {{n, Ceiling[Length[data]/2], "Slice"}, 1, Dynamic[nmax], 1}
+			, Delimiter
+			, {{fun, Abs, "Function"}, {Abs -> "Absolute", Re -> "Real", Im -> "Imaginary"}}
+			, {{size, 50, "Plot size"}, {20 -> "Small", 40 -> "Medium", 60 -> "Large", 80 -> "Extra large"}}
+			, Delimiter
+			, {{pmin, xmin, "Min pmm"}, xmin, Dynamic[pmax - 1]}
+			, {{pmax, xmax, "Min pmm"}, Dynamic[pmin + 1], xmax}
+			, {{scale, "Max", "Plot scale"}, {"Max", "Full"}}
+			
+			(* hidden manipulate paramterrs *)
+			, {{coor, {0, 0, 0}}, ControlType -> None}
+							
+			, {datai, ControlType -> None}, {dim, ControlType -> None}, {nmax, ControlType -> None}, {dataPlot, ControlType -> None} , {maxPlot, ControlType -> None}
+			, {yran, ControlType -> None}, {maxAll, ControlType -> None}, {ymax, ControlType -> None}, {xdat, ControlType -> None}, {tdat, ControlType -> None}
+			, {xmin, ControlType -> None}, {xmax, ControlType -> None}, {spec, ControlType -> None}
+			
+			, TrackedSymbols :> {or, n, fun, size, pmin, pmax, scale}
+			, Initialization :> (
+				dim = Dimensions[data];
+				or = 1;
+				nmax = dim[[1]];
+				
+				maxAll = Map[Max, Abs[data], {-2}];
+				
+				ymax = Max[maxAll];
+				maxAll = maxAll/Max[maxAll];
+				
+				xdat = -GetPpmRange[data[[1, 1, 1]], dw, gyro];
+				tdat = GetTimeRange[data[[1, 1, 1]], dw];
+				{xmin, xmax} = MinMax[xdat];
+				
+				leg = BarLegend[{{"DarkRainbow", "Reverse"}, {0, 100}}, LegendLayout -> "Row", LegendMarkerSize -> 400, LabelStyle -> Directive[Large, Black, Bold]];
+			)
+			
+			, ControlPlacement -> Right
+		];
+		
+		NotebookClose[plotwindow];
+		plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
+	]
 ]
 
 
@@ -1407,6 +1494,8 @@ MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, ppmran_] := Bloc
 	
 	{resTotPl, resBasPl, {errPl, fitPl, resPl, outPl, resfitRI, resfit}}
 ]
+
+
 
 (* ::Section:: *)
 (*End Package*)
