@@ -127,7 +127,7 @@ Linewidth::usage =
 "Linewidth is an option for SimReadout and defines the spectral linewidth in Hz."
 
 LinewidthShape::usage = 
-"LinewidthShape is an option for SimReadout and defines the linewidth shape, values can be \"L\", \"G\" or \"L\", which are Laplacian, Gaussion or a combination, respectively."
+"LinewidthShape is an option for SimReadout and defines the linewidth shape, values can be \"Lorentzian\", \"Gaussian\" or \"Voigt\"."
 
 ReadoutSamples::usage = 
 "ReadoutSamples is an option for SimReadout and defines the number of readout samples for the spectrum."
@@ -466,13 +466,17 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	ran = swidth/2-swidth/(2 n);
 	
 	ppm = Range[-ran,ran,swidth/n]/(field gyro ) + shift;
-	
+
 	(*shape definition*)
 	t2 = 1/linewidth;
 	decay = Switch[shape,
-	"L", Exp[-time/t2],
-	"G", Exp[-time^2/t2^2],
-	"LG", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2]];
+		"L", Exp[-time/t2],
+		"Lorentzian", Exp[-time/t2],
+		"G", Exp[-time^2/t2^2],
+		"Gaussian", Exp[-time^2/t2^2],
+		"LG", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2],
+		"Voigt", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2]
+	];
 	
 	(*create the fids by incrementing the spinsystem by dt*)
 	d = SimEvolveM[matU,valD,dt];(*spin evolve over dt*)
