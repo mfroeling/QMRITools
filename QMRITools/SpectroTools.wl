@@ -66,11 +66,17 @@ GetGyro::usage =
 
 
 PhaseCorrectSpectra::usage =
-"PhaseCorrectSpectra[spect] performs 0th order phase correction of the spectra.
-PhaseCorrectSpectra[spect, ppm, gyro] performs 0th and 1st order phase correction of the spectra.
-PhaseCorrectSpectra[spect, ppm, gyro, phi1] performs 0th order phase correction of the spectra with a known 1st order phase.
+"PhaseCorrectSpectra[spec, dw] performs 0th order phase correction of the spectra using Henkel matrix SVD fitting.
+PhaseCorrectSpectra[spec, dw, te] := performs 0th and 1st order phase correction of the spectra using Henkel matrix SVD fitting. The first order phase is corrected by padding the fid with the missing values in the time befroe the TE.
+PhaseCorrectSpectra[spec, dw, te, gyro, ppmRan] performs 0th and 1st order phase correction of the spectra using Henkel matrix SVD fitting. Only the part of the spectra in the ppmRan is used for optimization."
 
-0th order phase is in radians and the 1st order phase is in ms."
+CorrectTESpec::usage = 
+"CorrectTESpec[spectra, dw, te] corrects the spectra for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis.
+CorrectTESpec[spectra, dw, te, gyro, ppmRan] corrects the spectra for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis. Only the part of the spectra in the ppmRan is used for optimization."
+
+CorrectTEFid::usage = 
+"CorrectTEFid[fid, dw, te] corrects the fid for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis.
+CorrectTEFid[fid, dw, te, gyro, ppmRan] corrects the fid for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis. Only the part of the spectra in the ppmRan is used for optimization."
 
 
 PhaseShiftSpectra::usage = 
@@ -200,41 +206,127 @@ ReadjMRUI[file_]:=Block[{imp,data,head,series,pts,spec,time},
 
 
 (* ::Subsection::Closed:: *)
+(*PhaseCorrection*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*PhaseCorrectSpectra*)
+
+SyntaxInformation[PhaseCorrectSpectra]={"ArgumentsPattern"->{_,_,_.,_.,_.}}
+
+PhaseCorrectSpectra[spec_, dw_] := PhaseCorrectSpectra[spec, dw, 0, 0, Full]
+
+PhaseCorrectSpectra[spec_, dw_, te_] := PhaseCorrectSpectra[spec, dw, te, 0, Full]
+
+PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_] := Block[{
+	fid, henk, timeFull, firstTime, timeOr, henkelSpec, phi, fit, misFid, timeMis
+	},
+	(*create the fid*)
+	fid = ShiftedInverseFourier[spec];
+	
+	(*get the timing*)
+	timeFull = Reverse@Range[dw (Length[fid] - 1) + te, 0., -dw];
+	firstTime = First[timeFull];
+	timeFull = If[Abs[firstTime - dw] < firstTime, Prepend[timeFull, firstTime - dw], timeFull];
+	timeOr = Select[timeFull, # >= te &];
+	timeMis = Select[timeFull, # < te &];
+	
+	(*create the henkel basis and fit*)
+	henk = HenkelSVDFid[fid, dw, gyro, ppmRan];
+	fit = (PseudoInverse[HenkelSVDBasisC[timeOr, henk]].fid);
+	(*make the full henkel fitted spectra and select the correct range if needed*)
+	henkelSpec = ShiftedFourier[HenkelSVDBasisC[timeFull, henk].fit];
+	If[ppmRan =!= Full, henkelSpec = Pick[henkelSpec, Unitize[Clip[GetPpmRange[henkelSpec, dw, gyro], ppmRan, {0, 0}]], 1]];
+	
+	(*find the first order phase*)
+	phi = Quiet[Last[FindMaximum[PhaseErrorH[henkelSpec, phi0], {phi0, 0}]]][[1,2]];
+	
+	(*get the missing fid values and phase correct the spectra*)
+	If[timeMis =!= {}, fid = Join[HenkelSVDBasisC[timeMis, henk].fit, fid[[;; -(Length[timeMis] + 1)]]] ];
+	ShiftedFourier[fid] Exp[-I phi]
+]
+
+
+PhaseErrorH[speci_, phi0_?NumericQ] := PhaseErrorHC[speci, phi0]
+
+PhaseErrorHC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}}, Total[Re[Exp[-I phi0] speci]], RuntimeOptions -> "Speed", Parallelization -> True];
+
+
+(* ::Subsubsection::Closed:: *)
 (*PhaseCorrectSpectra*)
 
 
-SyntaxInformation[PhaseCorrectSpectra]={"ArgumentsPattern"->{_, _., _., _.}}
+SyntaxInformation[CorrectTESpec]={"ArgumentsPattern"->{_,_,_,_.,_.}}
 
-PhaseCorrectSpectra[spect_] := Block[{phi0, sol},
-	sol = Quiet[Last[FindMinimum[PhaseCorrectError[spect, phi0], {phi0, 0}]]];
-	Exp[-I phi0] spect /. sol
+CorrectTESpec[spec_, dw_, te_] := CorrectTESpec[spec, dw, te, 0, Full]
+
+CorrectTESpec[spec_, dw_, te_, gyro_, ppmRan_] := ShiftedFourier[CorrectTEFid[ShiftedInverseFourier[spec], dw, te, gyro, ppmRan]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PhaseCorrectSpectra*)
+
+
+SyntaxInformation[CorrectTEFid]={"ArgumentsPattern"->{_,_,_,_.,_.}}
+
+CorrectTEFid[fid_, dw_, te_] := CorrectTEFid[fid, dw, te, 0, Full]
+
+CorrectTEFid[fid_, dw_, te_, gyro_, ppmRan_] := Block[{henk, timeFull, timeOr, timeMis, misFid, firstTime},
+	(*get the henkel values*)
+	henk = HenkelSVDFid[fid, dw, gyro, ppmRan];
+	
+	(*get the correct timing of the fid and missing values*)
+	timeFull = Reverse@Range[dw (Length[fid] - 1) + te, 0., -dw];
+	firstTime = First[timeFull];
+	timeFull = If[Abs[firstTime - dw] < firstTime, Prepend[timeFull, firstTime - dw], timeFull];
+	timeOr = Select[timeFull, # >= te &];
+	timeMis = Select[timeFull, # < te &];
+	
+	(*create the missing values and pad to the fid*)
+	Join[HenkelSVDBasisC[timeMis,henk].(PseudoInverse[HenkelSVDBasisC[timeOr, henk]].fid), fid[[;; -(Length[timeMis] + 1)]]]
 ]
 
-PhaseCorrectSpectra[spect_, ppm_, gyro_] := Block[{phi0, phi1, sol},
-	sol = Quiet[Last[FindMinimum[PhaseCorrectError[ppm, spect, phi0, phi1, gyro], {{phi0, 0}, {phi1, 0}}]]];
-	Exp[-I (phi0 + 2 Pi (phi1/1000)  gyro ppm)] spect /. sol
+
+(* ::Subsubsection::Closed:: *)
+(*HenkelSVDFid*)
+
+
+HenkelSVDFid[fid_, dw_] := HenkelSVDFid[fid, dw, 0, Full]
+
+HenkelSVDFid[fid_, dw_, gyro_] := HenkelSVDFid[fid, dw, gyro, Full]
+
+HenkelSVDFid[fid_, dw_, gyro_, ppmRan_] := Block[{
+	lmax, mmax, H, U, Utr, Uup, Udown, q, freq, decay, ppmval, sel, ppmMax, ppmMin
+	},
+	
+	(*get the matrix size*)
+	lmax = Round[0.4 Length[fid]];
+	mmax = Length[fid] + 1 - lmax;
+	
+	(*create the henkel matrix and the singula values*)
+	H = fid[[Range[mmax] + #]] & /@ Range[0, lmax - 1];
+	U = First@SingularValueDecomposition[H];
+	q = Log[Eigenvalues[PseudoInverse[U[[;; -2, ;; 32]]].U[[2 ;;, ;; 32]]]];
+	
+	(*get the frequencies and delay times*)
+	decay = Re[q]/dw;
+	freq = Im[q]/(2 Pi dw);
+	
+	(*select the the correct frequency range and only long decay times*)
+	sel = If[ppmRan === Full, 
+		UnitStep[Abs[1000/decay] - Pi], 
+		ppmval = -(freq/gyro);
+		{ppmMin, ppmMax} = Sort[ppmRan];
+		(1 - UnitStep[ppmval + ppmMin]) UnitStep[ppmval + ppmMax] UnitStep[Abs[1000/decay] - Pi]
+	];
+	sel = If[Total[sel] === 0, sel + 1, sel];
+	
+	(*give the henkel output*)
+	{Pick[decay, sel, 1], Pick[freq, sel, 1]}
 ]
 
-(*correct zeroth phase with known first order phase*)
-PhaseCorrectSpectra[spect_, ppm_, gyro_, phi1_] := Block[{phi0, sol},
-	sol = Quiet[Last[FindMinimum[PhaseCorrectError[ppm, spect, phi0, phi1, gyro], {phi0, 0}]]];
-	Exp[-I (phi0 + 2 Pi (phi1/1000)  gyro ppm)] spect /. sol
-]
 
-
-PhaseCorrectError[speci_, phi0_?NumericQ] := PhaseCorrectErrorC1[speci, phi0]
-
-PhaseCorrectError[ppm_, speci_, phi0_?NumericQ, phi1_?NumericQ, gyro_] := PhaseCorrectErrorC2[ppm, speci, phi0, phi1, gyro]
-
-PhaseCorrectErrorC1 = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}}, Block[{spec},
-	spec = Exp[-I phi0] speci;
-	Total[(Abs[speci] - Re[spec])^2] (*+ Total[Im@spec]^2*)
-], RuntimeOptions -> "Speed", Parallelization -> True];
-
-PhaseCorrectErrorC2 = Compile[{{ppm, _Real, 1}, {speci, _Complex, 1}, {phi0, _Real, 0}, {phi1, _Real, 0}, {gyro, _Real, 0}}, Block[{spec},
-	spec = Exp[-I (phi0 + 2 Pi (phi1/1000)  gyro ppm)] speci;
-	Total[(Abs[speci] - Re[spec])^2] (*+ Total[Im@spec]^2*)
-], RuntimeOptions -> "Speed", Parallelization -> True];
+HenkelSVDBasisC = Compile[{{time, _Real, 1}, {henkel, _Real, 2}}, Transpose[Exp[# time] & /@ (henkel[[1]] + 2 Pi I henkel[[2]])], RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
