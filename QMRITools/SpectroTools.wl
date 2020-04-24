@@ -234,7 +234,7 @@ ReadjMRUI[file_]:=Block[{imp,data,head,series,pts,spec,time},
 
 SyntaxInformation[PhaseCorrectSpectra]={"ArgumentsPattern"->{_,_,_.,_.,_.}}
 
-PhaseCorrectSpectra[spec_] := Exp[-I Quiet[Last[NMinimize[PhaseCorrectError[spec, phi0], {phi0}]]][[1,2]]] spec
+PhaseCorrectSpectra[spec_] := Exp[-I Quiet[Last[FindMinimum[PhaseCorrectError[spec, phi0], {phi0}]]][[1,2]]] spec
 
 PhaseCorrectSpectra[spec_, dw_] := PhaseCorrectSpectra[spec, dw, 0, 0, Full]
 
@@ -568,7 +568,7 @@ ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampT
 
 
 Options[GetSpectraBasisFunctions] = {
-	BasisSequence -> {"PulseAquire", 0},
+	BasisSequence -> {"PulseAcquire", 0},
 
 	SpectraSamples -> 2046,
 	SpectraBandwith -> 2000,
@@ -622,10 +622,10 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 			
 			(*perform sequence*)
 			Switch[seq,
-				"PulseAquire",
+				"PulseAcquire",
 				te = svals;
 				dr = SequencePulseAcquire[din, struct, te],
-				"spaceEcho",
+				"SpaceEcho",
 				{t1, t2, necho} = svals;
 				dr = SequenceSpaceEcho[din, struct, t1, t2, necho, 1]
 			];
@@ -1311,6 +1311,11 @@ PlotCSIData[datainp_, {dw_, gyro_}] := Module[{data},
 			yran = {Min[{-0.5 Max[datai], Min[datai]}], 1.5 Max[datai]};
 			dataPlot = Switch[or, 1, datai[[n]], 2, datai[[All, n]], 3, datai[[All, All, n]]];
 			maxPlot = Switch[or, 1, maxAll[[n]], 2, maxAll[[All, n]], 3, maxAll[[All, All, n]]];
+			totPlot = Switch[or, 1, totAll[[n]], 2, totAll[[All, n]], 3, totAll[[All, All, n]]];
+			
+			yrans = {Min[{-0.5 Max[dataPlot], Min[dataPlot]}], 1.5 Max[dataPlot]};
+			
+			colp=If[back,col,White];
 			
 			Column[{
 				(*Plot the individual spectra and fid*)
@@ -1323,12 +1328,16 @@ PlotCSIData[datainp_, {dw_, gyro_}] := Module[{data},
 				]
 				,
 				(*make the CSI plot Grid*)
-				Grid[MapIndexed[(
+				outplot = Grid[MapIndexed[(
 					EventHandler[
 						Tooltip[
 							Graphics[{Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], Line[Thread[{xdat, #1[[1]]}]]},
-							AspectRatio -> 0.9, ImageSize -> size, Background -> GrayLevel[#[[2]]],
-							PlotRange -> {-{pmin, pmax}, If[scale === "Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, yran]}]
+							AspectRatio -> 1, ImageSize -> size, Background -> If[back,GrayLevel[#[[3]]],White],
+							PlotRange -> {-{pmin, pmax}, Switch[scale,
+								"Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, 
+								"Full", yran,
+								"Slice", yrans]
+							}]
 							,(*the coordinate tooltip*)
 							Switch[or, 1, {n, #2[[1]], #2[[2]]}, 2, {#2[[1]], n, #2[[2]]}, 3, {#2[[1]], #2[[2]], n}],
 							TooltipStyle -> {Directive[Black, Bold, Medium], Background -> White, CellFrameColor -> None, CellFrame -> None}
@@ -1338,8 +1347,8 @@ PlotCSIData[datainp_, {dw_, gyro_}] := Module[{data},
 						"MouseClicked" :> (coor = Switch[or, 1, {n, #2[[1]], #2[[2]]}, 2, {#2[[1]], n, #2[[2]]}, 3, {#2[[1]], #2[[2]], n}])
 					]
 					(*loop over all voxesl*)
-					) &, TransData[{dataPlot, maxPlot}, "l"], {2}], 
-					Spacings -> {0.2, 0.15}, Alignment -> Center, Frame -> All, FrameStyle -> Thick, Background -> Black]
+					) &, TransData[{dataPlot, maxPlot, totPlot}, "l"], {2}], 
+					Spacings -> {0.2, 0.15}, Alignment -> Center, Frame -> All, FrameStyle -> Directive[{Thick,colp}], Background -> colp]
 				,
 				leg
 				}, Alignment -> Center
@@ -1354,25 +1363,30 @@ PlotCSIData[datainp_, {dw_, gyro_}] := Module[{data},
 			, Delimiter
 			, {{pmin, xmin, "Min pmm"}, xmin, Dynamic[pmax - 1]}
 			, {{pmax, xmax, "Min pmm"}, Dynamic[pmin + 1], xmax}
-			, {{scale, "Max", "Plot scale"}, {"Max", "Full"}}
+			, {{scale, "Max", "Plot scale"}, {"Max", "Full","Slice"}}
+			, Delimiter
+			, {{back, True, "Magnitude background"}, {True,False}}
+			, {{col, Black, "Grid Color"}, ColorSlider}
 			
 			(* hidden manipulate paramterrs *)
 			, {{coor, {0, 0, 0}}, ControlType -> None}
 							
-			, {datai, ControlType -> None}, {dim, ControlType -> None}, {nmax, ControlType -> None}, {dataPlot, ControlType -> None} , {maxPlot, ControlType -> None}
-			, {yran, ControlType -> None}, {maxAll, ControlType -> None}, {ymax, ControlType -> None}, {xdat, ControlType -> None}, {tdat, ControlType -> None}
-			, {xmin, ControlType -> None}, {xmax, ControlType -> None}, {spec, ControlType -> None}
+			, {datai, ControlType -> None}, {dim, ControlType -> None}, {nmax, ControlType -> None}, {dataPlot, ControlType -> None} , {maxPlot, ControlType -> None}, {totPlot, ControlType -> None}
+			, {yran, ControlType -> None}, {totAll, ControlType -> None}, {maxAll, ControlType -> None}, {ymax, ControlType -> None}, {xdat, ControlType -> None}, {tdat, ControlType -> None}
+			, {xmin, ControlType -> None}, {xmax, ControlType -> None}, {spec, ControlType -> None}, {colp, ControlType -> None}
 			
-			, TrackedSymbols :> {or, n, fun, size, pmin, pmax, scale}
+			, TrackedSymbols :> {or, n, fun, size, pmin, pmax, scale, col, back}
 			, Initialization :> (
 				dim = Dimensions[data];
 				or = 1;
 				nmax = dim[[1]];
 				
 				maxAll = Map[Max, Abs[data], {-2}];
-				
 				ymax = Max[maxAll];
 				maxAll = maxAll/Max[maxAll];
+				
+				totAll = Map[Total, Abs[data], {-2}];
+				totAll = totAll/Max[totAll];
 				
 				xdat = -GetPpmRange[data[[1, 1, 1]], dw, gyro];
 				tdat = GetTimeRange[data[[1, 1, 1]], dw];
