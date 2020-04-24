@@ -468,7 +468,7 @@ Ploti[data_, minmax_, label_, ps_, color_, colscal_, legend_, frame_, ccolor_, a
 (*Plot2i*)
 
 
-Plot2i[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,join_,ccolor_,aspect_]:=Block[{plot},
+Plot2i[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,join_,ccolor_,aspect_,leg_]:=Block[{plot},
 	Switch[join[[1]],
 		1,(*Normal side by side*)
 		plot={
@@ -479,7 +479,7 @@ Plot2i[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,join_,ccolor_,aspe
 		2(*CheckboardPlot*),
 		CheckPlot[data,minmax,label,ps,color,autosc,frame,join[[2]],join[[3]],ccolor,aspect],
 		3(*Opacity overlay plot*),
-		OpacityPlot[data,minmax,label,ps,color,autosc,legend,frame,join[[3]],join[[4]],ccolor,aspect],
+		OpacityPlot[data,minmax,label,ps,color,autosc,legend,frame,join[[3]],join[[4]],ccolor,aspect, leg],
 		4(*Difference Plot*),
 		DifferencePlot[data,minmax,label,ps,color,legend,frame,join[[3]],join[[5]],ccolor,aspect]
 		]
@@ -560,8 +560,8 @@ Module[{pdat,a,b,pl,min1,max1,min2,max2},
 (*OpacityPlot*)
 
 
-OpacityPlot[data_,minmax_,label_,ps_,col_,autosc_,legend_,frame_,flip_,op_,ccolor_,aspect_]:=
-Module[{p1,p2,pdat1,pdat2,a,b,lab, plot,dimx,dimy,size,ratio},
+OpacityPlot[data_,minmax_,label_,ps_,col_,autosc_,legend_,frame_,flip_,op_,ccolor_,aspect_,leg_]:=
+Module[{p1,p2,pdat1,pdat2,a,b,c,lab, plot,dimx,dimy,size,ratio},
 	
 	{a,b}=If[flip,{2,1},{1,2}];
 	{pdat1,pdat2}=JoinResc[data[[a]],data[[b]]];
@@ -577,7 +577,8 @@ Module[{p1,p2,pdat1,pdat2,a,b,lab, plot,dimx,dimy,size,ratio},
 	plot = Labeli[lab,ps,plot];
 	
 	(*add legend*)
-	If[legend, Legendi[plot, col[[b]], minmax[[b,1]],minmax[[b,2]], size[[2]]], plot]
+	c = If[leg == 1, b, a];
+	If[legend, Legendi[plot, col[[c]], minmax[[c,1]],minmax[[c,2]], size[[2]]], plot]
 	]
 
 
@@ -891,7 +892,7 @@ PlotData[dat1_?ArrayQ,dat2_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1}
 Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1,tab2,ccol,
 	x,xp,yp,min1,max1,min2,max2,mind1,maxd1,mind2,maxd2,reverse,or,plabs,plab,plot,aspect,cfs1,cfs2,
 	minclip1,maxclip1,minclip2,maxclip2,clip1,clip2,ps,legend,color1,color2,lstyle1,lstyle2,control,
-	pannel,pdata1,pdata2,flip,overlay,checksize,opac,diffr,fileType,size,leftright,lab,mpdim,
+	pannel,pdata1,pdata2,flip,overlay,checksize,opac,diffr,fileType,size,leftright,lab,mpdim,leg,
 	start1,end1,start2,end2,dur,loop,exp,dim1,dim2,prange,frame,adep1,adep2,maxabs,pcol,pcol1,pcol2},
 	
 	NotebookClose[plotwindow];
@@ -1006,6 +1007,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		ManPannel["Overlay/Checkboard Plot Options",{
 			{"Merge Plots",Control@{{overlay,1,""},{1->"None",2->"Checkboard",3->"Overlay",4->"Difference"}}},
 			{"Flip",Control@{{flip,False,""},{True,False}}},
+			{"Legend",Control@{{leg,1,""},{1->"First","Second"}}},
 			{
 				PaneSelector[{1 -> Null, 2 -> "Check Size (pix)",3 -> "Overlay Opacity", 4 -> "Difference plot range"},Dynamic[overlay]],
  				PaneSelector[{
@@ -1115,7 +1117,8 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			frame,									(*show the frame*)
 			{overlay,checksize,flip,opac,diffr},	(*the overlay options*)
 			ccol,									(*the plot clip color*)
-			aspect									(*the aspect ratio*)
+			aspect,									(*the aspect ratio*)
+			leg										(*chose the legend bar*)
 			]&;
 			
 		(* Create and show plot*)

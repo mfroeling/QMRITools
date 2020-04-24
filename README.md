@@ -46,7 +46,8 @@ The library of functions grows along with the research it is used for
 and started as a toolbox to analyze DWI data of muscle. Since then it
 has grown to include many other features such as cardiac analysis
 (tagging and T1 mapping), dixon reconstruction, EPG modeling and
-fitting, j-coupling simulations and more.
+fitting, j-coupling simulations and more. It currently contains over 350 custom 
+functions (over 20.000 lines of code) complete with documentation and demonstrations. 
 
 The toolbox is developed for the [Wolfram
 language](https://www.wolfram.com/language/) and maintained using
