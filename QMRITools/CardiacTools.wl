@@ -187,6 +187,9 @@ LineThreshold::usage =
 LineStep::usage = 
 "LineStep is an option for CardiacSegment."
 
+SegmentAngle::usage = 
+"SegmentAngle is an option for CardiacSegment."
+
 RadialSamples::usage =
 "RadialSamples is an option for RadialSample and PlotSegments. Defines how manny transmural samples are taken."
 
@@ -208,6 +211,9 @@ TextOffset::usage =
 
 TextSize::usage = 
 "TextSize is an option for BullseyePlot. Determines the text size."
+
+TextNumberForm::usage
+"TextNumberForm is an option for BullseyePlot. specifies how many number and decimals to use like in NumberForm."
 
 BullPlotMethod::usage = 
 "BullPlotMethod is an option for BullseyePlot. Can be \"Dynamic\" of \"Normal\". 
@@ -1743,7 +1749,7 @@ Options[BullseyePlot]={
 	PlotRange->Automatic, 
 	ColorFunction->"TemperatureMap", 
 	BullPlotMethod->"Dynamic", 
-	TextNumber->{5,2},
+	TextNumberForm->{5,2},
 	ImageSize->200
 };
 
@@ -1774,7 +1780,7 @@ BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, m
 		{{col, Disk[{0, 0}, radius[[4]], {0, 2 Pi}]}}
 	}, 1];
 	
-	textv = Table[Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", NumberForm[datat[[i]],OptionValue[TextNumber]]], Bold, FontFamily -> "Helvetica", Black, FontSize -> OptionValue[TextSize]], pts[[i]]],{i, 17}]; 
+	textv = Table[Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", NumberForm[datat[[i]],OptionValue[TextNumberForm]]], Bold, FontFamily -> "Helvetica", Black, FontSize -> OptionValue[TextSize]], pts[[i]]],{i, 17}]; 
 	textn = Table[Text[Style[If[datat[[i]] === {} || sdata[[i]] < 0, "", i], Bold, FontFamily -> "Helvetica", Black, FontSize -> OptionValue[TextSize]], pts[[i]]], {i, 17}];
 	
 	plfun[{colf_, cstyle_}, {pText_, textVal_}] := Block[{blcol, colfunc}, 

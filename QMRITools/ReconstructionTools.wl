@@ -132,7 +132,8 @@ CoilWeightedReconCSI::usage=
 The coil combination Methods can be \"Roemer\" or \"WSVD\"."
 
 CoilWeightedRecon::usage=
-"CoilWeightedRecon[kspace, noise, head] performs reconstuction of raw MS2D MRI data. The input kspace, noise and head are obtained using ReadListData."
+"CoilWeightedRecon[kspace, noise, head] performs reconstuction of raw MS2D MRI data. The input kspace, noise and head are obtained using ReadListData.
+The coil combination Methods can be \"Roemer\" or \"RSS\"."
 
 
 (* ::Subsection:: *)
@@ -145,6 +146,8 @@ HammingFilter::usage=
 CoilSamples::usage = 
 "CoilSamples is an option for CoilWeightedReconCSI and specifies how many fud samples are used to calcualte the coil sensitivity for Roemer reconstruction."
 
+EchoShiftData::usage = 
+"EchoShiftData is an option for CoilWeightedRecon"
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -750,10 +753,10 @@ FourierRescaleData[data_, factor_ : 2] := Block[{dim, pad, scale},
 (*Coil weighted recon*)
 
 
-Options[CoilWeightedRecon] = {DataShift -> 0, CoilSamples -> 2, Method -> "RoemerEqualSignal"};
+Options[CoilWeightedRecon] = {EchoShiftData -> 0, CoilSamples -> 2, Method -> "RoemerEqualSignal"};
 
 CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coilData, cov, sens, recon},
-	shift = OptionValue[DataShift];
+	shift = OptionValue[EchoShiftData];
 	
 	(*make Image Data*)
 	coilData = Map[FourierKspace2D[#, head] &, kspace, {-4}];
