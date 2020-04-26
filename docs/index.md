@@ -369,7 +369,7 @@ also provides functions to convert bval and bvec files to bmatrix and
 vice versa. Most of the functionality is demonstrated in the `demo.nb`.
 
 ![The graphical user interface of the gradient generation
-tool.](\QMRITools\images\gradients.png)
+tool.](\QMRITools\images\gradients-2.png)
 
 ### ImportTools
 
