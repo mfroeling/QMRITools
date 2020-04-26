@@ -8,12 +8,12 @@ welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?styl
 ------------------------------------------------------------------------
 
 [![wolfram
-language](images/wolfram_language.png)](https://www.wolfram.com/language/)
+language](\QMRITools\images\wolfram_language.png)](https://www.wolfram.com/language/)
 [![wolfram
-workbench](images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
-[![eclipse](images/eclipse.png)](https://www.eclipse.org/)
+workbench](\QMRITools\images\wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
+[![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
 [![Wolfram
-Mathematica](images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
+Mathematica](\QMRITools\images\wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ and fitting, j-coupling simulations and more. It currently contains over
 documentation and demonstrations.
 
 ![Muscle
-processing](images/processing.PNG)
+processing](\QMRITools\images\processing.PNG)
 
 The toolbox is developed for the [Wolfram
 language](https://www.wolfram.com/language/) and maintained using
@@ -138,7 +138,7 @@ compatibility. After the toolbox is installed correctly it should show
 up as a package in the Mathematica add-ons.
 
 ![QMRITools
-package](images/addons.PNG)
+package](\QMRITools\images\addons.PNG)
 
 All code and documentation is maintained and uploaded to github using
 [Workbench](https://www.wolfram.com/workbench/). An online version of
@@ -146,7 +146,7 @@ the full documentation can be found
 [here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html).
 
 ![Guides
-QMRITools](images/Guide.PNG)
+QMRITools](\QMRITools\images\Guide.PNG)
 
 ------------------------------------------------------------------------
 
@@ -209,7 +209,7 @@ Under development
 The toolbox contains over 350 Functions and options of processing and
 analyzing data. A summary of the core functionality is listed below.
 
-![Overview](images/overview.png)
+![Overview](\QMRITools\images\overview.png)
 
 -   **Diffusion Analysis**
     -   Signal drift correction
@@ -222,7 +222,7 @@ analyzing data. A summary of the core functionality is listed below.
     -   Joining multiple stacks with slice overlap into one stack
 
 ![Joining of multiple stacks with overlap into one
-data-set](images/joining.png)
+data-set](\QMRITools\images\joining.png)
 
 -   **Diffusion Gradients optimization**
     -   Single and multi shell
@@ -235,7 +235,7 @@ data-set](images/joining.png)
     -   Anisotropic tensor smoothing using diffusion filter.
 
 ![Noise
-suppression](images/registration.gif)
+suppression](\QMRITools\images\registration.gif)
 
 -   **Importing and Exporting**
     -   Dicom data (classing and enhanced file format)
@@ -248,7 +248,7 @@ suppression](images/registration.gif)
     -   Legend bars and image labels
     -   Saving to pdf, jpg, animated gif and movie
 
-![PlotData](images/visualization.PNG)
+![PlotData](\QMRITools\images\visualization.PNG)
 
 -   **Masking**
     -   Automate and threshold masking
@@ -262,7 +262,7 @@ suppression](images/registration.gif)
     -   Slice to slice motion correction of 3D and 4D data
 
 ![PloRegister
-DatatData](images/registration.png)
+DatatData](\QMRITools\images\registration.png)
 
 -   **Dixon Reconstruction**
     -   B0 phase unwrapping
@@ -314,7 +314,7 @@ demonstrated in the `demo.nb`.
 
 ![Cardiac segmentation in the AHA-17 model and estimation of the local
 myocardial coordinate
-stystem.](images/cardiac.png)
+stystem.](\QMRITools\images\cardiac.png)
 
 ### CoilTools
 
@@ -348,7 +348,7 @@ the `demo.nb`.
 
 ![IDEAL based Dixon reconstruction: fitted fat fractions as a function
 of the imposed fat fraction, SNR and B0 field
-offset.](images/dixon.png)
+offset.](\QMRITools\images\dixon.png)
 
 ### ElastixTools
 
@@ -377,7 +377,7 @@ also provides functions to convert bval and bvec files to bmatrix and
 vice versa. Most of the functionality is demonstrated in the `demo.nb`.
 
 ![The graphical user interface of the gradient generation
-tool.](images/gradients.png)
+tool.](\QMRITools\images\gradients.png)
 
 ### ImportTools
 
@@ -395,7 +395,7 @@ There are two main functions: non linear fitting and Bayesian fitting
 `demo.nb`.
 
 ![Visualization of IVIM
-fitting.](images/ivim.png)
+fitting.](\QMRITools\images\ivim.png)
 
 ### JcouplingTools
 
@@ -456,7 +456,7 @@ the `demo.nb`.
 
 ![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation
 as a function of B1, SNR and fat
-fraction.](images/epg-t2.png)
+fraction.](\QMRITools\images\epg-t2.png)
 
 ### SimulationTools
 
@@ -478,7 +478,7 @@ is demonstrated in the `demo.nb`.
 
 ![MD and FA as a function of SNR and fat fraction. Results are from
 simulated data using an iWLLS algorithm with outlier
-rejection.](images/dti.png)
+rejection.](\QMRITools\images\dti.png)
 
 ### VisteTools
 
@@ -489,7 +489,7 @@ of the functionality is demonstrated in the `demo.nb`.
 ------------------------------------------------------------------------
 
 ![Full leg diffusion tensor fiber
-tractography](images/animation-small.gif)
+tractography](\QMRITools\images\animation-small.gif)
 
 ------------------------------------------------------------------------
 
