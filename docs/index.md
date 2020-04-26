@@ -285,17 +285,10 @@ DatatData](\QMRITools\images\registration.png)
 
 **Under Construction**
 
--   **Spectra fitting**
-    -   Fitting spectra using a set of basis functions
-    -   Phase correction and line-width optimization
-    -   baseline correction
 -   **Reconstruction Tools**
     -   Basic algorithms for complex coil combination.
     -   CSI data reconstruction
     -   Simple Image reconstruction
--   **Tagging analysis**
-    -   Getting displacement fields from tagging data
-    -   Strain, trosion and rotation from cardiac data
 
 ------------------------------------------------------------------------
 
@@ -435,6 +428,12 @@ functions are &lsquo;PlotData&rsquo; and &lsquo;PlotData3D&rsquo; which
 allow viewing 2D, 3D and 4D data. Most of the functionality is
 demonstrated in the `demo.nb`.
 
+### Reconstruction Tools
+
+A variety of function for raw MRI data reconstruction. The main goal was to 
+create a set of functions that allow for the reconstruction of multi coil 3D CSI 
+data and and low SNR 31P imaging data. For this toolbox there is no demo.  
+
 ### ProcessingTools
 
 The toolbox comprises a variety of functions that allow data
@@ -463,6 +462,16 @@ The main purpose of this toolbox is to simulate DTI based DWI data and
 contains some functions to easily perform analysis of the fit results of
 the simulated signals (Froeling et al. 2013). Some of the functionality
 is demonstrated in the `demo.nb`.
+
+### SpectroTools
+
+The main purpose of this toolbox is to process and visualize spectra data
+and allows to fit spectra using simulated basis spectra. Some of the functionality
+is demonstrated in the `demo.nb`.
+
+![Comparison of fitted and measured 31P spectra of muscle.](\QMRITools\images\spectra_fit.gif)
+
+![Resulting basis spectra of a fit of 31P spectra of muacle.](\QMRITools\images\spectra_fit.jpg)
 
 ### TensorTools
 

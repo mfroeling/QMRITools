@@ -229,17 +229,10 @@ A summary of the core functionality is listed below.
 
 **Under Construction**
 
-* **Spectra fitting**
-	* Fitting spectra using a set of basis functions
-	* Phase correction and line-width optimization
-	* baseline correction
 * **Reconstruction Tools**
 	* Basic algorithms for complex coil combination.
 	* CSI data reconstruction
 	* Simple Image reconstruction
-* **Tagging analysis**
-	* Getting displacement fields from tagging data
-	* Strain, trosion and rotation from cardiac data 
 
 ------------------------------------------------------------------------
 
@@ -309,6 +302,12 @@ This toolbox is not demonstrated in the `demo.nb`.
 A variety of functions for visualization of various data types. The main functions are 'PlotData' and 'PlotData3D' which allow viewing 2D, 3D and 4D data.
 Most of the functionality is demonstrated in the `demo.nb`.
 
+### Reconstruction Tools
+
+A variety of function for raw MRI data reconstruction. The main goal was to 
+create a set of functions that allow for the reconstruction of multi coil 3D CSI 
+data and and low SNR 31P imaging data. For this toolbox there is no demo.  
+
 ### ProcessingTools
 The toolbox comprises a variety of functions that allow data manipulation and analysis. The main functions allow joining multiple data sets into one continuous data set [@Froeling2015] or to split data of two legs into two separate data-sets. Furthermore, it contains a collection of functions for data evaluation and analysis.
 Most of the functionality is demonstrated in the `demo.nb`.
@@ -322,6 +321,16 @@ Some of the functionality is demonstrated in the `demo.nb`.
 ### SimulationTools
 The main purpose of this toolbox is to simulate DTI based DWI data and contains some functions to easily perform analysis of the fit results of the simulated signals [@Froeling2013].
 Some of the functionality is demonstrated in the `demo.nb`.
+
+### SpectroTools
+
+The main purpose of this toolbox is to process and visualize spectra data
+and allows to fit spectra using simulated basis spectra. Some of the functionality
+is demonstrated in the `demo.nb`.
+
+![Comparison of fitted and measured 31P spectra of muscle.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/spectra_fit.gif)
+
+![Resulting basis spectra of a fit of 31P spectra of muacle.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/spectra_fit.jpg)
 
 ### TensorTools
 The original toolbox where the project started. The main functions in this toolbox are to fit and evaluate the diffusion tensor model. Various fitting methods are implemented (e.g. LLS, NLS, WLLS, and iWLLS). The default method is an iterative weighted linear least squares approach [@Veraart2013]. The tensor fitting also includes outlier detections using REKINDLE [@Tax2015] and data preparation includes drift correction [@Vos2014].
