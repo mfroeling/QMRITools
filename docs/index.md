@@ -41,12 +41,17 @@ toolbox contains various functions for data manipulation and
 restructuring.
 
 The toolbox was developed mostly in the context of quantitative muscle
-(Froeling et al. 2012), nerve and cardiac magnetic resonance imaging.
-The library of functions grows along with the research it is used for
-and started as a toolbox to analyze DWI data of muscle. Since then it
-has grown to include many other features such as cardiac analysis
-(tagging and T1 mapping), dixon reconstruction, EPG modeling and
-fitting, j-coupling simulations and more.
+(Froeling et al.&nbsp;2012), nerve and cardiac magnetic resonance
+imaging. The library of functions grows along with the research it is
+used for and started as a toolbox to analyze DWI data of muscle. Since
+then it has grown to include many other features such as cardiac
+analysis (tagging and T1 mapping), dixon reconstruction, EPG modeling
+and fitting, j-coupling simulations and more. It currently contains over
+350 custom functions (over 20.000 lines of code) complete with
+documentation and demonstrations.
+
+![Muscle
+processing](https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.PNG)
 
 The toolbox is developed for the [Wolfram
 language](https://www.wolfram.com/language/) and maintained using
@@ -187,21 +192,21 @@ QMRITools contains the following toolboxes:
 -   PhysiologyTools
 -   PlottingTools
 -   ProcessingTools
+-   ReconstructionTools
 -   RelaxometryTools
 -   SimulationTools
+-   SpectroTools
 -   VisteTools
 
 Under development
 
--   SpectroTools
 -   TaggingTools
--   ReconstructionTools
 
 ------------------------------------------------------------------------
 
 ## Functionality
 
-The toolbox contains over 250 Functions and options of processing and
+The toolbox contains over 350 Functions and options of processing and
 analyzing data. A summary of the core functionality is listed below.
 
 ![Overview](https://github.com/mfroeling/QMRITools/blob/master/docs/images/overview.png)
@@ -215,6 +220,10 @@ analyzing data. A summary of the core functionality is listed below.
     -   Parameter fitting using histogram analysis
     -   Joining and sorting of multiple series of the same volume
     -   Joining multiple stacks with slice overlap into one stack
+
+![Joining of multiple stacks with overlap into one
+data-set](https://github.com/mfroeling/QMRITools/blob/master/docs/images/joining.png)
+
 -   **Diffusion Gradients optimization**
     -   Single and multi shell
     -   Rotating and correcting Bmatrix
@@ -222,8 +231,12 @@ analyzing data. A summary of the core functionality is listed below.
     -   Gradient visualization
 -   **Noise suppression**
     -   LMMSE noise suppression
-    -   PCA noise suppression based on ramom matrix theory
+    -   PCA noise suppression based on random matrix theory.
     -   Anisotropic tensor smoothing using diffusion filter.
+
+![Noise
+suppression](https://github.com/mfroeling/QMRITools/blob/master/docs/images/registration.gif)
+
 -   **Importing and Exporting**
     -   Dicom data (classing and enhanced file format)
     -   Nifti data (.nii and .img .hdr, supports .gz files)
@@ -247,6 +260,10 @@ analyzing data. A summary of the core functionality is listed below.
     -   nD to nD registration
     -   Automated series processing
     -   Slice to slice motion correction of 3D and 4D data
+
+![PloRegister
+DatatData](https://github.com/mfroeling/QMRITools/blob/master/docs/images/registration.png)
+
 -   **Dixon Reconstruction**
     -   B0 phase unwrapping
     -   DIXON iDEAL reconstruction with T2star
@@ -294,6 +311,10 @@ data. When the cardiac geometry is known there are functions to analyze
 qMRI parameters in the AH17 model (Cerqueira et al. 2002) or perform
 transmural sampling of qMRI parameters. Most of the functionality is
 demonstrated in the `demo.nb`.
+
+![Cardiac segmentation in the AHA-17 model and estimation of the local
+myocardial coordinate
+stystem.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/cardiac.png)
 
 ### CoilTools
 
@@ -519,13 +540,6 @@ heart: A Statement for Healthcare Professionals from the Cardiac Imaging
 Committee of the Council on Clinical Cardiology of the American Heart
 Association.&rdquo; *Circulation* 105 (4): 539&ndash;42.
 <https://doi.org/10.1161/hc0402.102975>.
-
-Froeling, Martijn, Aart J. Nederveen, Dennis F. R. Heijtel, Arno
-Lataster, Clemens Bos, Klaas Nicolay, Mario Maas, Maarten R. Drost, and
-Gustav J. Strijkers. 2012. &ldquo;Diffusion-tensor MRI reveals the
-complex muscle architecture of the human forearm.&rdquo; *Journal of
-Magnetic Resonance Imaging* 36 (1): 237&ndash;48.
-<https://doi.org/10.1002/jmri.23608>.
 
 Froeling, Martijn, Aart J. Nederveen, Klaas Nicolay, and Gustav J.
 Strijkers. 2013. &ldquo;DTI of human skeletal muscle: The effects of
