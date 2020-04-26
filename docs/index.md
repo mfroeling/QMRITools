@@ -544,12 +544,11 @@ Association.&rdquo; *Circulation* 105 (4): 539&ndash;42.
 Froeling, Martijn, Aart J. Nederveen, Klaas Nicolay, and Gustav J.
 Strijkers. 2013. &ldquo;DTI of human skeletal muscle: The effects of
 diffusion encoding parameters, signal-to-noise ratio and T2 on tensor
-indices and fiber tracts.&rdquo; *NMR in Biomedicine* 26 (11):
-1339&ndash;52. <https://doi.org/10.1002/nbm.2959>.
+indices and fiber tracts.&rdquo; *NMR in Biomedicine* 26 (11): 1339&ndash;52. <https://doi.org/10.1002/nbm.2959>.
 
 Froeling, Martijn, Jos Oudeman, G. J. Gustav J. Strijkers, Mario Maas,
-M. R. Maarten R. Drost, Klaas Nicolay, and Aart J. A. J. Nederveen.
-2015. &ldquo;Muscle Changes Detected with Diffusion-Tensor Imaging after
+M. R. Maarten R. Drost, Klaas Nicolay, and Aart J. A. J. Nederveen. 2015. 
+ldquo;Muscle Changes Detected with Diffusion-Tensor Imaging after
 Long-Distance Running.&rdquo; *Radiology* 274 (2): 548&ndash;62.
 <https://doi.org/10.1148/radiol.14140702>.
 
@@ -567,8 +566,7 @@ path.&rdquo; *Applied Optics* 41 (35): 7437.
 
 Jones, D. K., M. A. Horsfield, and A. Simmons. 1999. &ldquo;Optimal
 strategies for measuring diffusion in anisotropic systems by magnetic
-resonance imaging.&rdquo; *Magnetic Resonance in Medicine* 42 (3):
-515&ndash;25.
+resonance imaging.&rdquo; *Magnetic Resonance in Medicine* 42 (3): 515&ndash;25.
 <https://doi.org/10.1002/(SICI)1522-2594(199909)42:3%3C515::AID-MRM14%3E3.0.CO;2-Q>.
 
 Klein, Stefan, Marius Staring, Keelin Murphy, Max A. Viergever, and
@@ -588,8 +586,8 @@ Ericky C. A. Araujo, Pierre G. Carlier, and Paulo L. de Sousa. 2016.
 transverse relaxometry with stimulated echo compensation.&rdquo; *NMR in
 Biomedicine* 29 (4): 431&ndash;43. <https://doi.org/10.1002/nbm.3459>.
 
-Orton, Matthew R., David J. Collins, Dow-Mu Koh, and Martin O. Leach.
-2014. &ldquo;Improved intravoxel incoherent motion analysis of diffusion
+Orton, Matthew R., David J. Collins, Dow-Mu Koh, and Martin O. Leach. 2014. 
+&ldquo;Improved intravoxel incoherent motion analysis of diffusion
 weighted imaging by data driven Bayesian modeling.&rdquo; *Magnetic
 Resonance in Medicine* 71 (1): 411&ndash;20.
 <https://doi.org/10.1002/mrm.24649>.
@@ -606,8 +604,8 @@ and GPU for diagnostic classification of Alzheimer&rsquo;s
 disease.&rdquo; *Frontiers in Neuroinformatics* 7 (January): 50.
 <https://doi.org/10.3389/fninf.2013.00050>.
 
-Stokes, Ashley M., Yesu Feng, Tanya Mitropoulos, and Warren S. Warren.
-2013. &ldquo;Enhanced refocusing of fat signals using optimized
+Stokes, Ashley M., Yesu Feng, Tanya Mitropoulos, and Warren S. Warren. 2013. 
+&ldquo;Enhanced refocusing of fat signals using optimized
 multipulse echo sequences.&rdquo; *Magnetic Resonance in Medicine* 69
 (4): 1044&ndash;55. <https://doi.org/10.1002/mrm.24340>.
 
