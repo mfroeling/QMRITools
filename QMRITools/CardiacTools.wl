@@ -26,7 +26,7 @@ BeginPackage["QMRITools`CardiacTools`", Join[{"Developer`"}, Complement[QMRITool
 
 HelixAngleCalc::usage = 
 "HelixAngleCalc[eigenvectors, mask, vox] calculates the helix angle matrix of cardiac data using only a left ventricle mask.
-HelixAngleCalc[eigenvectors, mask, vox] calculates the helix angle matrix of cardiac data using only a left ventricle mask, and a maskp for visualization.
+HelixAngleCalc[eigenvectors, mask, maskp, vox] calculates the helix angle matrix of cardiac data using only a left ventricle mask, and a maskp for visualization.
 HelixAngleCalc[eigenvectors, mask, centerpoint, vec, inout, vox]  calculates the helix angle matrix of cardiac data using only a left ventricle mask.
 HelixAngleCalc[eigenvectors, mask, maskp, centerpoint, vec, inout, vox] calculates the helix angle matrix of cardiac data using a left vantricle mask and a maskp for visualization.
 

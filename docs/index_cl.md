@@ -29,7 +29,16 @@
 
 `QMRITools` is written in Mathematica using Wolfram Workbench and Eclipse and contains a collection of tools and functions for processing quantitative MRI data. The toolbox does not provide a GUI and its primary goal is to allow for fast and batch data processing, and facilitate development and prototyping of new functions. The core of the toolbox contains various functions for data manipulation and restructuring.
 
-The toolbox was developed mostly in the context of quantitative muscle [@Froeling2012], nerve and cardiac magnetic resonance imaging. The library of functions grows along with the research it is used for and started as a toolbox to analyze DWI data of muscle. Since then it has grown to include many other features such as cardiac analysis (tagging and T1 mapping), dixon reconstruction, EPG modeling and fitting, j-coupling simulations and more. 
+The toolbox was developed mostly in the context of quantitative muscle
+(Froeling et al. 2012), nerve and cardiac magnetic resonance imaging.
+The library of functions grows along with the research it is used for
+and started as a toolbox to analyze DWI data of muscle. Since then it
+has grown to include many other features such as cardiac analysis
+(tagging and T1 mapping), dixon reconstruction, EPG modeling and
+fitting, j-coupling simulations and more. It currently contains over 350 custom 
+functions (over 20.000 lines of code) complete with documentation and demonstrations. 
+
+![Muscle processing](https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.PNG)
 
 The toolbox is developed for the [Wolfram language](https://www.wolfram.com/language/) and maintained using [Wolfram workbench](https://www.wolfram.com/workbench/) for [eclipse](https://www.eclipse.org/) and runs in the latest version of [Wolfram Mathematica](http://www.wolfram.com/mathematica/).
 
@@ -116,36 +125,36 @@ A list off all functions and their help can be found in ``All-Functions.nb``, wh
 
 QMRITools contains the following toolboxes:
 
-- CardiacTools
-- CoilTools
-- DenoiseTools
-- DixonTools
-- ElastixTools
-- GeneralTools
-- GradientTools
-- ImportTools
-- IVIMTools
-- JcouplingTools
-- MaskingTools
-- NiftiTools
-- PhysiologyTools
-- PlottingTools
-- ProcessingTools
-- RelaxometryTools
-- SimulationTools
-- VisteTools
+-   CardiacTools
+-   CoilTools
+-   DenoiseTools
+-   DixonTools
+-   ElastixTools
+-   GeneralTools
+-   GradientTools
+-   ImportTools
+-   IVIMTools
+-   JcouplingTools
+-   MaskingTools
+-   NiftiTools
+-   PhysiologyTools
+-   PlottingTools
+-   ProcessingTools
+-   ReconstructionTools
+-   RelaxometryTools
+-   SimulationTools
+-   SpectroTools
+-   VisteTools
 
 Under development
 
-- SpectroTools
-- TaggingTools
-- ReconstructionTools
+-   TaggingTools
 
 ------------------------------------------------------------------------
 
 ## Functionality
 
-The toolbox contains over 250 Functions and options of processing and analyzing data.
+The toolbox contains over 350 Functions and options of processing and analyzing data.
 A summary of the core functionality is listed below. 
 
 ![Overview](https://github.com/mfroeling/QMRITools/blob/master/docs/images/overview.png)
@@ -158,6 +167,9 @@ A summary of the core functionality is listed below.
 	* Parameter fitting using histogram analysis
 	* Joining and sorting of multiple series of the same volume
 	* Joining multiple stacks with slice overlap into one stack
+
+![Joining of multiple stacks with overlap into one data-set](https://github.com/mfroeling/QMRITools/blob/master/docs/images/joining.png)
+
 * **Diffusion Gradients optimization**
 	* Single and multi shell
 	* Rotating and correcting Bmatrix
@@ -165,8 +177,11 @@ A summary of the core functionality is listed below.
 	* Gradient visualization
 * **Noise suppression**
 	* LMMSE noise suppression
-	* PCA noise suppression based on ramom matrix theory
+	* PCA noise suppression based on random matrix theory.
 	* Anisotropic tensor smoothing using diffusion filter.
+
+![Noise suppression](https://github.com/mfroeling/QMRITools/blob/master/docs/images/registration.gif)	
+	
 * **Importing and Exporting**
 	* Dicom data (classing and enhanced file format)
 	* Nifti data (.nii and .img .hdr, supports .gz files)
@@ -189,6 +204,9 @@ A summary of the core functionality is listed below.
 	* nD to nD registration
 	* Automated series processing 
 	* Slice to slice motion correction of 3D and 4D data
+
+![PloRegister DatatData](https://github.com/mfroeling/QMRITools/blob/master/docs/images/registration.png)
+	
 * **Dixon Reconstruction**
 	* B0 phase unwrapping
 	* DIXON iDEAL reconstruction with T2star
@@ -230,6 +248,8 @@ A summary of the core functionality is listed below.
 ### CardiacTools
 A collection of tools to analyze cardiac data. The main features are cardiac shape analysis which allows defining the hard in a local myocardial coordinate system which allows quantifying and analyzing data. When the cardiac geometry is known there are functions to analyze qMRI parameters in the AH17 model [@Cerqueira2002] or perform transmural sampling of qMRI parameters. 
 Most of the functionality is demonstrated in the `demo.nb`.
+
+![Cardiac segmentation in the AHA-17 model and estimation of the local myocardial coordinate stystem.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/cardiac.png)
 
 ### CoilTools
 A collection of tools to evaluate complex multi-coil data. The functions are specific for analysis of multi-coil magnitude and noise data which allows quantifying per channel SNR. Furthermore, if complex coil sensitivity maps are available it allows performing SENSE g-factor maps simulations.   
