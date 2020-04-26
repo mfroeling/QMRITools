@@ -8,12 +8,12 @@ welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?styl
 ------------------------------------------------------------------------
 
 [![wolfram
-language](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_language.png)](https://www.wolfram.com/language/)
+language](docs/images/wolfram_language.png)](https://www.wolfram.com/language/)
 [![wolfram
-workbench](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
-[![eclipse](https://github.com/mfroeling/QMRITools/blob/master/docs/images/eclipse.png)](https://www.eclipse.org/)
+workbench](docs/images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
+[![eclipse](docs/images/eclipse.png)](https://www.eclipse.org/)
 [![Wolfram
-Mathematica](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
+Mathematica](docs/images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ and fitting, j-coupling simulations and more. It currently contains over
 documentation and demonstrations.
 
 ![Muscle
-processing](https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.PNG)
+processing](docs/images/processing.PNG)
 
 The toolbox is developed for the [Wolfram
 language](https://www.wolfram.com/language/) and maintained using
@@ -138,7 +138,7 @@ compatibility. After the toolbox is installed correctly it should show
 up as a package in the Mathematica add-ons.
 
 ![QMRITools
-package](https://github.com/mfroeling/QMRITools/blob/master/docs/images/addons.PNG)
+package](docs/images/addons.PNG)
 
 All code and documentation is maintained and uploaded to github using
 [Workbench](https://www.wolfram.com/workbench/). An online version of
@@ -146,7 +146,7 @@ the full documentation can be found
 [here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html).
 
 ![Guides
-QMRITools](https://github.com/mfroeling/QMRITools/blob/master/docs/images/Guide.PNG)
+QMRITools](docs/images/Guide.PNG)
 
 ------------------------------------------------------------------------
 
@@ -209,7 +209,7 @@ Under development
 The toolbox contains over 350 Functions and options of processing and
 analyzing data. A summary of the core functionality is listed below.
 
-![Overview](https://github.com/mfroeling/QMRITools/blob/master/docs/images/overview.png)
+![Overview](docs/images/overview.png)
 
 -   **Diffusion Analysis**
     -   Signal drift correction
@@ -222,7 +222,7 @@ analyzing data. A summary of the core functionality is listed below.
     -   Joining multiple stacks with slice overlap into one stack
 
 ![Joining of multiple stacks with overlap into one
-data-set](https://github.com/mfroeling/QMRITools/blob/master/docs/images/joining.png)
+data-set](docs/images/joining.png)
 
 -   **Diffusion Gradients optimization**
     -   Single and multi shell
@@ -235,7 +235,7 @@ data-set](https://github.com/mfroeling/QMRITools/blob/master/docs/images/joining
     -   Anisotropic tensor smoothing using diffusion filter.
 
 ![Noise
-suppression](https://github.com/mfroeling/QMRITools/blob/master/docs/images/registration.gif)
+suppression](docs/images/registration.gif)
 
 -   **Importing and Exporting**
     -   Dicom data (classing and enhanced file format)
@@ -248,7 +248,7 @@ suppression](https://github.com/mfroeling/QMRITools/blob/master/docs/images/regi
     -   Legend bars and image labels
     -   Saving to pdf, jpg, animated gif and movie
 
-![PlotData](https://github.com/mfroeling/QMRITools/blob/master/docs/images/visualization.PNG)
+![PlotData](docs/images/visualization.PNG)
 
 -   **Masking**
     -   Automate and threshold masking
@@ -262,7 +262,7 @@ suppression](https://github.com/mfroeling/QMRITools/blob/master/docs/images/regi
     -   Slice to slice motion correction of 3D and 4D data
 
 ![PloRegister
-DatatData](https://github.com/mfroeling/QMRITools/blob/master/docs/images/registration.png)
+DatatData](docs/images/registration.png)
 
 -   **Dixon Reconstruction**
     -   B0 phase unwrapping
@@ -314,7 +314,7 @@ demonstrated in the `demo.nb`.
 
 ![Cardiac segmentation in the AHA-17 model and estimation of the local
 myocardial coordinate
-stystem.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/cardiac.png)
+stystem.](docs/images/cardiac.png)
 
 ### CoilTools
 
@@ -348,7 +348,7 @@ the `demo.nb`.
 
 ![IDEAL based Dixon reconstruction: fitted fat fractions as a function
 of the imposed fat fraction, SNR and B0 field
-offset.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dixon.png)
+offset.](docs/images/dixon.png)
 
 ### ElastixTools
 
@@ -377,7 +377,7 @@ also provides functions to convert bval and bvec files to bmatrix and
 vice versa. Most of the functionality is demonstrated in the `demo.nb`.
 
 ![The graphical user interface of the gradient generation
-tool.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/gradients.png)
+tool.](docs/images/gradients.png)
 
 ### ImportTools
 
@@ -395,7 +395,7 @@ There are two main functions: non linear fitting and Bayesian fitting
 `demo.nb`.
 
 ![Visualization of IVIM
-fitting.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/ivim.png)
+fitting.](docs/images/ivim.png)
 
 ### JcouplingTools
 
@@ -456,7 +456,7 @@ the `demo.nb`.
 
 ![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation
 as a function of B1, SNR and fat
-fraction.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/epg-t2.png)
+fraction.](docs/images/epg-t2.png)
 
 ### SimulationTools
 
@@ -478,7 +478,7 @@ is demonstrated in the `demo.nb`.
 
 ![MD and FA as a function of SNR and fat fraction. Results are from
 simulated data using an iWLLS algorithm with outlier
-rejection.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dti.png)
+rejection.](docs/images/dti.png)
 
 ### VisteTools
 
@@ -489,7 +489,7 @@ of the functionality is demonstrated in the `demo.nb`.
 ------------------------------------------------------------------------
 
 ![Full leg diffusion tensor fiber
-tractography](https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif)
+tractography](docs/images/animation-small.gif)
 
 ------------------------------------------------------------------------
 
