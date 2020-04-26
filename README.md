@@ -490,9 +490,9 @@ Import and export functions for tensor data which can be used in the
 of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
-<div style="text-align: center">
-<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif" alt="Full leg diffusion tensor fiber tractography" />
-</div>
+<p align="center">
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif" alt="Full leg diffusion tensor fiber tractography"  width="100%" />
+</p>
 
 ------------------------------------------------------------------------
 
