@@ -50,7 +50,9 @@ and fitting, j-coupling simulations and more. It currently contains over
 350 custom functions (over 20.000 lines of code) complete with
 documentation and demonstrations.
 
-![Muscle processing](\QMRITools\images\processing.png)
+<p align="center">
+<img src="\QMRITools\images\processing.png" alt="Quantitative muscle MRI processing"  width="70%" />
+</p>
 
 The toolbox is developed for the [Wolfram
 language](https://www.wolfram.com/language/) and maintained using
@@ -136,16 +138,18 @@ latest version of Mathematica and does not support any backward
 compatibility. After the toolbox is installed correctly it should show
 up as a package in the Mathematica add-ons.
 
-![QMRITools
-package](\QMRITools\images\addons.PNG)
+<p align="center">
+<img src="\QMRITools\images\addons.PNG" alt="QMRITools package add on"  width="70%" />
+</p>
 
 All code and documentation is maintained and uploaded to github using
 [Workbench](https://www.wolfram.com/workbench/). An online version of
 the full documentation can be found
 [here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html).
 
-![Guides
-QMRITools](\QMRITools\images\Guide.PNG)
+<p align="center">
+<img src="\QMRITools\images\Guide.PNG" alt="Guides QMRITools mathematica documentation"  width="70%" />
+</p>
 
 ------------------------------------------------------------------------
 
@@ -220,8 +224,9 @@ analyzing data. A summary of the core functionality is listed below.
     -   Joining and sorting of multiple series of the same volume
     -   Joining multiple stacks with slice overlap into one stack
 
-![Joining of multiple stacks with overlap into one
-data-set](\QMRITools\images\joining.png)
+<p align="center">
+<img src="\QMRITools\images\joining.png" alt="Joining of multiple stacks with overlap into one data-set"  width="50%" />
+</p>
 
 -   **Diffusion Gradients optimization**
     -   Single and multi shell
@@ -233,8 +238,9 @@ data-set](\QMRITools\images\joining.png)
     -   PCA noise suppression based on random matrix theory.
     -   Anisotropic tensor smoothing using diffusion filter.
 
-![Noise
-suppression](\QMRITools\images\registration.gif)
+<p align="center">
+<img src="\QMRITools\images\registration.gif" alt="Noise suppression using PCA"  width="70%" />
+</p>
 
 -   **Importing and Exporting**
     -   Dicom data (classing and enhanced file format)
@@ -386,8 +392,9 @@ There are two main functions: non linear fitting and Bayesian fitting
 (Orton et al. 2014). Some of the functionality is demonstrated in the
 `demo.nb`.
 
-![Visualization of IVIM
-fitting.](\QMRITools\images\ivim.png)
+<p align="center">
+<img src="\QMRITools\images\ivim.png" alt="Visualization of IVIM fitting."  width="70%" />
+</p>
 
 ### JcouplingTools
 
@@ -496,8 +503,9 @@ of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
 
-![Full leg diffusion tensor fiber
-tractography](\QMRITools\images\animation-small.gif)
+<p align="center">
+<img src="\QMRITools\images\animation-small.gif" alt="Full leg diffusion tensor fiber tractography"  width="30%" />
+</p>
 
 ------------------------------------------------------------------------
 

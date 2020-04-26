@@ -147,7 +147,7 @@ the full documentation can be found
 [here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html).
 
 <p align="center">
-<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/addons.PNG" alt="Guides QMRITools mathematica documentation"  width="70%" />
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/Guide.PNG" alt="Guides QMRITools mathematica documentation"  width="70%" />
 </p>
 
 ------------------------------------------------------------------------
@@ -498,6 +498,7 @@ Import and export functions for tensor data which can be used in the
 of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
+
 <p align="center">
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif" alt="Full leg diffusion tensor fiber tractography"  width="30%" />
 </p>
