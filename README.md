@@ -491,9 +491,8 @@ of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
 <p align="center">
-<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif" alt="Full leg diffusion tensor fiber tractography"  width="100%" />
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif" alt="Full leg diffusion tensor fiber tractography"  width="30%" />
 </p>
-
 ------------------------------------------------------------------------
 
 ## License
