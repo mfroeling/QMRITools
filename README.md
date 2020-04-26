@@ -50,7 +50,7 @@ fitting, j-coupling simulations and more. It currently contains over 350 custom
 functions (over 20.000 lines of code) complete with documentation and demonstrations. 
 
 
-![Muscle processing](https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.PNG)
+![Muscle processing](https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.png)
 
 
 The toolbox is developed for the [Wolfram
