@@ -342,9 +342,7 @@ Herraez et al. 2002). It also contains a function that allows simulating
 gradient echo Dixon data. Most of the functionality is demonstrated in
 the `demo.nb`.
 
-![IDEAL based Dixon reconstruction: fitted fat fractions as a function
-of the imposed fat fraction, SNR and B0 field
-offset.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dixon.png)
+![IDEAL based Dixon reconstruction: fitted fat fractions as a function of the imposed fat fraction, SNR and B0 field offset.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dixon.png)
 
 ### ElastixTools
 
@@ -372,8 +370,7 @@ homogeneously distributed gradient directions for DWI experiments. It
 also provides functions to convert bval and bvec files to bmatrix and
 vice versa. Most of the functionality is demonstrated in the `demo.nb`.
 
-![The graphical user interface of the gradient generation
-tool.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/gradients-2.png)
+![The graphical user interface of the gradient generation tool.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/gradients-2.png)
 
 ### ImportTools
 
@@ -390,8 +387,7 @@ There are two main functions: non linear fitting and Bayesian fitting
 (Orton et al. 2014). Some of the functionality is demonstrated in the
 `demo.nb`.
 
-![Visualization of IVIM
-fitting.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/ivim.png)
+![Visualization of IVIM fitting.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/ivim.png)
 
 ### JcouplingTools
 
@@ -455,9 +451,7 @@ echo data (Marty et al. 2016). Therefore it provides functions to
 simulate and evaluate EPG. Some of the functionality is demonstrated in
 the `demo.nb`.
 
-![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation
-as a function of B1, SNR and fat
-fraction.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/epg-t2.png)
+![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation as a function of B1, SNR and fat fraction.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/epg-t2.png)
 
 ### SimulationTools
 
@@ -487,9 +481,7 @@ detections using REKINDLE (Tax et al. 2015) and data preparation
 includes drift correction (Vos et al. 2017). Most of the functionality
 is demonstrated in the `demo.nb`.
 
-![MD and FA as a function of SNR and fat fraction. Results are from
-simulated data using an iWLLS algorithm with outlier
-rejection.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dti.png)
+![MD and FA as a function of SNR and fat fraction. Results are from simulated data using an iWLLS algorithm with outlier rejection.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dti.png)
 
 ### VisteTools
 
@@ -499,8 +491,7 @@ of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
 
-![Full leg diffusion tensor fiber
-tractography](https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif)
+![Full leg diffusion tensor fiber tractography](https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif)
 
 ------------------------------------------------------------------------
 

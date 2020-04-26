@@ -270,7 +270,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 The main feature is an algorithm that uses static repulsion [@Jones1999; @Froeling2016] to generate homogeneously distributed gradient directions for DWI experiments. It also provides functions to convert bval and bvec files to bmatrix and vice versa.
 Most of the functionality is demonstrated in the `demo.nb`.
 
-![The graphical user interface of the gradient generation tool.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/gradients.png)
+![The graphical user interface of the gradient generation tool.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/gradients-2.png)
 
 ### ImportTools
 Allows importing DCM data or DCM header attributes. These functions are rarely used since the toolbox mostly uses the NIfTY data format and provides tools to convert DCM to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
