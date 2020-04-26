@@ -491,7 +491,7 @@ of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
 <div style="text-align: center">
-![Full leg diffusion tensor fiber tractography](https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif)
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif" alt="Full leg diffusion tensor fiber tractography" />
 </div>
 
 ------------------------------------------------------------------------
