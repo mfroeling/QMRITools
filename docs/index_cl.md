@@ -6,10 +6,10 @@
 
 ------------------------------------------------------------------------
 
-[![wolfram language](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_language.png)](https://www.wolfram.com/language/)
-[![wolfram workbench](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
-[![eclipse](https://github.com/mfroeling/QMRITools/blob/master/docs/images/eclipse.png)](https://www.eclipse.org/)
-[![Wolfram Mathematica](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
+[![wolfram language](\QMRITools\images\wolfram_language.png)](https://www.wolfram.com/language/)
+[![wolfram workbench](\QMRITools\images\wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
+[![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
+[![Wolfram Mathematica](\QMRITools\images\wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
  
@@ -38,7 +38,9 @@ has grown to include many other features such as cardiac analysis
 fitting, j-coupling simulations and more. It currently contains over 350 custom 
 functions (over 20.000 lines of code) complete with documentation and demonstrations. 
 
-![Muscle processing](https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.PNG)
+<p align="center">
+<img src="\QMRITools\images\processing.png" alt="Quantitative muscle MRI processing"  width="70%" />
+</p>
 
 The toolbox is developed for the [Wolfram language](https://www.wolfram.com/language/) and maintained using [Wolfram workbench](https://www.wolfram.com/workbench/) for [eclipse](https://www.eclipse.org/) and runs in the latest version of [Wolfram Mathematica](http://www.wolfram.com/mathematica/).
 
@@ -93,11 +95,15 @@ In the first section of the demo notebook the toolbox is loaded and two tests ar
 Documentation of all functions and their options is fully integrated in the Mathematica documentation. The toolbox always works within the latest version of Mathematica and does not support any backward compatibility.
 After the toolbox is installed correctly it should show up as a package in the Mathematica add-ons. 
 
-![QMRITools package](https://github.com/mfroeling/QMRITools/blob/master/docs/images/addons.PNG)
+<p align="center">
+<img src="\QMRITools\images\addons.PNG" alt="QMRITools package add on"  width="70%" />
+</p>
 
 All code and documentation is maintained and uploaded to github using [Workbench](https://www.wolfram.com/workbench/). An online version of the full documentation can be found [here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html).
 
-![Guides QMRITools](https://github.com/mfroeling/QMRITools/blob/master/docs/images/Guide.PNG)
+<p align="center">
+<img src="\QMRITools\images\Guide.PNG" alt="Guides QMRITools mathematica documentation"  width="70%" />
+</p>
 
 ------------------------------------------------------------------------
 
@@ -157,7 +163,7 @@ Under development
 The toolbox contains over 350 Functions and options of processing and analyzing data.
 A summary of the core functionality is listed below. 
 
-![Overview](https://github.com/mfroeling/QMRITools/blob/master/docs/images/overview.png)
+![Overview](\QMRITools\images\overview.png)
 
 * **Diffusion Analysis**
 	* Signal drift correction 
@@ -168,7 +174,9 @@ A summary of the core functionality is listed below.
 	* Joining and sorting of multiple series of the same volume
 	* Joining multiple stacks with slice overlap into one stack
 
-![Joining of multiple stacks with overlap into one data-set](https://github.com/mfroeling/QMRITools/blob/master/docs/images/joining.png)
+<p align="center">
+<img src="\QMRITools\images\joining.png" alt="Joining of multiple stacks with overlap into one data-set"  width="50%" />
+</p>
 
 * **Diffusion Gradients optimization**
 	* Single and multi shell
@@ -180,7 +188,9 @@ A summary of the core functionality is listed below.
 	* PCA noise suppression based on random matrix theory.
 	* Anisotropic tensor smoothing using diffusion filter.
 
-![Noise suppression](https://github.com/mfroeling/QMRITools/blob/master/docs/images/registration.gif)	
+<p align="center">
+<img src="\QMRITools\images\registration.gif" alt="Noise suppression using PCA"  width="70%" />
+</p>	
 	
 * **Importing and Exporting**
 	* Dicom data (classing and enhanced file format)
@@ -192,7 +202,7 @@ A summary of the core functionality is listed below.
 	* Legend bars and image labels
 	* Saving to pdf, jpg, animated gif and movie
 
-![PlotData](https://github.com/mfroeling/QMRITools/blob/master/docs/images/visualization.PNG)
+![PlotData](\QMRITools\images\visualization.PNG)
 	
 * **Masking**
 	* Automate and threshold masking
@@ -205,7 +215,7 @@ A summary of the core functionality is listed below.
 	* Automated series processing 
 	* Slice to slice motion correction of 3D and 4D data
 
-![PloRegister DatatData](https://github.com/mfroeling/QMRITools/blob/master/docs/images/registration.png)
+![PloRegister DatatData](\QMRITools\images\registration.png)
 	
 * **Dixon Reconstruction**
 	* B0 phase unwrapping
@@ -242,7 +252,7 @@ A summary of the core functionality is listed below.
 A collection of tools to analyze cardiac data. The main features are cardiac shape analysis which allows defining the hard in a local myocardial coordinate system which allows quantifying and analyzing data. When the cardiac geometry is known there are functions to analyze qMRI parameters in the AH17 model [@Cerqueira2002] or perform transmural sampling of qMRI parameters. 
 Most of the functionality is demonstrated in the `demo.nb`.
 
-![Cardiac segmentation in the AHA-17 model and estimation of the local myocardial coordinate stystem.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/cardiac.png)
+![Cardiac segmentation in the AHA-17 model and estimation of the local myocardial coordinate stystem.](\QMRITools\images\cardiac.png)
 
 ### CoilTools
 A collection of tools to evaluate complex multi-coil data. The functions are specific for analysis of multi-coil magnitude and noise data which allows quantifying per channel SNR. Furthermore, if complex coil sensitivity maps are available it allows performing SENSE g-factor maps simulations.   
@@ -256,7 +266,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 An IDEAL based Dixon reconstruction algorithm [@Reeder2005; @Yu2008]. The method provides multi-peak fitting B0 field and T2- correction. The toolbox also provides a function for unwrapping phase data in 2D and 3D based on a best path method [@Abdul-Rahman2007; @Herraez2002]. It also contains a function that allows simulating gradient echo Dixon data.
 Most of the functionality is demonstrated in the `demo.nb`.
 
-![IDEAL based Dixon reconstruction: fitted fat fractions as a function of the imposed fat fraction, SNR and B0 field offset.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dixon.png)
+![IDEAL based Dixon reconstruction: fitted fat fractions as a function of the imposed fat fraction, SNR and B0 field offset.](\QMRITools\images\dixon.png)
 
 ### ElastixTools
 A wrapper that calls the Elastix registration framework [@Klein2010; @Shamonin2013]. The toolbox determines what registration or transformations need to be performed, exports the related data to a temp folder and calls an automatically generated command line script that performs the registration. After registration is completed the data is again loaded into Mathematica.
@@ -270,7 +280,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 The main feature is an algorithm that uses static repulsion [@Jones1999; @Froeling2016] to generate homogeneously distributed gradient directions for DWI experiments. It also provides functions to convert bval and bvec files to bmatrix and vice versa.
 Most of the functionality is demonstrated in the `demo.nb`.
 
-![The graphical user interface of the gradient generation tool.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/gradients-2.png)
+![The graphical user interface of the gradient generation tool.](\QMRITools\images\gradients-2.png)
 
 ### ImportTools
 Allows importing DCM data or DCM header attributes. These functions are rarely used since the toolbox mostly uses the NIfTY data format and provides tools to convert DCM to NIfTI via [dcm2niix](https://github.com/rordenlab/dcm2niix).
@@ -280,7 +290,9 @@ This toolbox is not demonstrated in the `demo.nb`.
 The toolbox includes functions to perform IVIM fitting of DWI data. There are two main functions: non linear fitting and Bayesian fitting [@Orton2014]. 
 Some of the functionality is demonstrated in the `demo.nb`.
 
-![Visualization of IVIM fitting.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/ivim.png)
+<p align="center">
+<img src="\QMRITools\images\ivim.png" alt="Visualization of IVIM fitting."  width="70%" />
+</p>
 
 ### JcouplingTools
 A toolbox that allows simulation of NMR spectra using Hamiltonians based on methods from [FID-A](https://github.com/CIC-methods/FID-A). It allows simulating large spin systems [@Castillo2011] and was mainly implemented to investigate fat spectra in TSE [@Stokes2013].
@@ -316,7 +328,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 A collection of tools to fit T2, T2*, T1rho and T1 relaxometry data. The main function of this toolbox is an extended phase graph (EPG) [@Weigel2015] method for multi-compartment T2 fitting of multi-echo spin echo data [@Marty2016]. Therefore it provides functions to simulate and evaluate EPG. 
 Some of the functionality is demonstrated in the `demo.nb`.
 
-![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation as a function of B1, SNR and fat fraction.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/epg-t2.png)
+![Demonstration of EPG based T2 fitting: the fitted water T2 relaxation as a function of B1, SNR and fat fraction.](\QMRITools\images\epg-t2.png)
 
 ### SimulationTools
 The main purpose of this toolbox is to simulate DTI based DWI data and contains some functions to easily perform analysis of the fit results of the simulated signals [@Froeling2013].
@@ -328,15 +340,15 @@ The main purpose of this toolbox is to process and visualize spectra data
 and allows to fit spectra using simulated basis spectra. Some of the functionality
 is demonstrated in the `demo.nb`.
 
-![Comparison of fitted and measured 31P spectra of muscle.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/spectra_fit.gif)
+![Comparison of fitted and measured 31P spectra of muscle.](\QMRITools\images\spectra_fit.gif)
 
-![Resulting basis spectra of a fit of 31P spectra of muacle.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/spectra_fit.jpg)
+![Resulting basis spectra of a fit of 31P spectra of muacle.](\QMRITools\images\spectra_fit.jpg)
 
 ### TensorTools
 The original toolbox where the project started. The main functions in this toolbox are to fit and evaluate the diffusion tensor model. Various fitting methods are implemented (e.g. LLS, NLS, WLLS, and iWLLS). The default method is an iterative weighted linear least squares approach [@Veraart2013]. The tensor fitting also includes outlier detections using REKINDLE [@Tax2015] and data preparation includes drift correction [@Vos2014].
 Most of the functionality is demonstrated in the `demo.nb`.
 
-![MD and FA as a function of SNR and fat fraction. Results are from simulated data using an iWLLS algorithm with outlier rejection.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/dti.png)
+![MD and FA as a function of SNR and fat fraction. Results are from simulated data using an iWLLS algorithm with outlier rejection.](\QMRITools\images\dti.png)
 
 ### VisteTools
 Import and export functions for tensor data which can be used in the [vIST/e](http://bmia.bmt.tue.nl/software/viste/) tractography tool.
@@ -344,7 +356,9 @@ None of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
 
-![Full leg diffusion tensor fiber tractography](https://github.com/mfroeling/QMRITools/blob/master/docs/images/animation-small.gif)
+<p align="center">
+<img src="\QMRITools\images\animation-small.gif" alt="Full leg diffusion tensor fiber tractography"  width="30%" />
+</p>
 
 ------------------------------------------------------------------------
 	
