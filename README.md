@@ -577,7 +577,7 @@ for measuring diffusion in anisotropic systems by magnetic resonance
 imaging.” *Magnetic Resonance in Medicine* 42 (3). Division of Medical
 Physics, University of Leicester, Leicester Royal Infirmary, Leicester
 LE1 5WW, United Kingdom.: 515–25.
-[https://doi.org/10.1002/(SICI)1522-2594(199909)42:3&lt;515::AID-MRM14&gt;3.0.CO;2-Q](https://doi.org/10.1002/(SICI)1522-2594(199909)42:3<515::AID-MRM14>3.0.CO;2-Q).
+[https://doi.org/10.1002/(SICI)1522-2594(199909)42:3&lt;515::AID-MRM14&gt;3.0.CO;2-Q](https://doi.org/10.1002/(SICI)1522-2594).
 
 Klein, Stefan, Marius Staring, Keelin Murphy, Max A. Viergever, and
 Josien P. W. Pluim. 2010. “Elastix: A toolbox for intensity-based
