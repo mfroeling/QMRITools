@@ -65,21 +65,6 @@ GetGyro::usage =
 "GetGyro[nuc, field] geth the gyromagnetic ratio with field the field strength in Tesla and nuc the nucleus availible in GyromagneticRatio."
 
 
-PhaseCorrectSpectra::usage =
-"PhaseCorrectSpectra[spec] performs 0th order phase correction of the spectra by minimizing the difference between the real and absolute spectra velaue.
-PhaseCorrectSpectra[spec, dw] performs 0th order phase correction of the spectra using Henkel matrix SVD fitting.
-PhaseCorrectSpectra[spec, dw, te] := performs 0th and 1st order phase correction of the spectra using Henkel matrix SVD fitting. The first order phase is corrected by padding the fid with the missing values in the time befroe the TE.
-PhaseCorrectSpectra[spec, dw, te, gyro, ppmRan] performs 0th and 1st order phase correction of the spectra using Henkel matrix SVD fitting. Only the part of the spectra in the ppmRan is used for optimization."
-
-CorrectTESpec::usage = 
-"CorrectTESpec[spectra, dw, te] corrects the spectra for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis.
-CorrectTESpec[spectra, dw, te, gyro, ppmRan] corrects the spectra for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis. Only the part of the spectra in the ppmRan is used for optimization."
-
-CorrectTEFid::usage = 
-"CorrectTEFid[fid, dw, te] corrects the fid for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis.
-CorrectTEFid[fid, dw, te, gyro, ppmRan] corrects the fid for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis. Only the part of the spectra in the ppmRan is used for optimization."
-
-
 PhaseShiftSpectra::usage = 
 "PhaseShiftSpectra[spectra, phi0] aplies the 0th order phase phi0 to the spectra. 
 PhaseShiftSpectra[spectra, ppm, gyro, phi1] aplies the 1st order phase phi1 to the spectra. The ppm can be obtained using GetPpmRange and gyro with GetGyro. 
@@ -98,15 +83,28 @@ The linewidth gam is given in ms and the spectra shift eps is given in ppm."
 ChangeDwellTimeFid::usage = 
 "ChangeDwellTimeFid[fid, dt, dtnew] changes the sampleling time of an fid from dwelltime dt to dwelltime dtnew."
 
+PhaseCorrectSpectra::usage =
+"PhaseCorrectSpectra[spec] performs 0th order phase correction of the spectra by minimizing the difference between the real and absolute spectra velaue.
+PhaseCorrectSpectra[spec, dw] performs 0th order phase correction of the spectra using Henkel matrix SVD fitting.
+PhaseCorrectSpectra[spec, dw, te] := performs 0th and 1st order phase correction of the spectra using Henkel matrix SVD fitting. The first order phase is corrected by padding the fid with the missing values in the time befroe the TE.
+PhaseCorrectSpectra[spec, dw, te, gyro, ppmRan] performs 0th and 1st order phase correction of the spectra using Henkel matrix SVD fitting. Only the part of the spectra in the ppmRan is used for optimization."
+
+CorrectTESpec::usage = 
+"CorrectTESpec[spectra, dw, te] corrects the spectra for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis.
+CorrectTESpec[spectra, dw, te, gyro, ppmRan] corrects the spectra for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis. Only the part of the spectra in the ppmRan is used for optimization."
+
+CorrectTEFid::usage = 
+"CorrectTEFid[fid, dw, te] corrects the fid for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis.
+CorrectTEFid[fid, dw, te, gyro, ppmRan] corrects the fid for 1st order phase by extrapolating the missing FID samples in the TE using Henkel matrix SVD analsis. Only the part of the spectra in the ppmRan is used for optimization."
+
+
+FitSpectra::usage = 
+"FitSpectra[specBasis, spec, {st,end}, dt, {lwvals,lwamsp}] Fits the basis spectra from GetSpectraBasisFunctions to the spec overt the ppm range {st, end} and dt the dweltime."
 
 GetSpectraBasisFunctions::usage = 
 "GetSpectraBasisFunctions[{met1, ..., metn}] generates a list of spectra baisis functions with names met1 to metn. The names are strings and are the metabolites availible in GetSpinSystem.
 GetSpectraBasisFunctions[{{props1}, ..., {propsn}}] generates a list of spectra baisis functions with properties prop1 to propn. The properties are those specified in MakeSpinSystem.
 GetSpectraBasisFunctions[inp, split] generates a list of spectra basisfunctions. Each metabolite name present in the list split wil be split in individual spectra per peak."
-
-
-FitSpectra::usage = 
-"FitSpectra[specBasis, spec, {st,end}, dt, {lwvals,lwamsp}] Fits the basis spectra from GetSpectraBasisFunctions to the spec overt the ppm range {st, end} and dt the dweltime."
 
 
 PlotCSIData::usage =
@@ -144,7 +142,7 @@ PaddingFactor::usage =
 "PaddingFactor is an option for PadFid, PadSpectra, ApodizePadFid, ApodizePadSpectra and FitSpectra. It Specifies with which factro to lengthen the fid."
 
 BasisSequence::usage = 
-"BasisSequence is an option for GetBasisFunction and specifies which sequence to use."
+"BasisSequence is an option for GetSpectraBasisFunctions and specifies which sequence to use."
 
 SpectraSamples::usage =
 "SpectraSamples is an option for GetSpectraBasisFunctions and sets the number of samples in the spectra."
@@ -166,7 +164,6 @@ SpectraPpmShift::usage =
 
 SpectraFieldStrength::usage = 
 "SpectraFieldStrength is an option for GetSpectraBasisFunctions and FitSpectra and sets the field strenght at which the simulations and fitting is perforemd"
-
 
 SplineSpacingFactor::usage = 
 "SplineSpacingFactor is an option for FitSpectra and defines the distance between the bsplien points relative the the mean linewithd of the peaks."
@@ -563,7 +560,7 @@ ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampT
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*GetBasisFunctions*)
 
 
@@ -1275,7 +1272,7 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 
 
 (* ::Subsection::Closed:: *)
-(*MakeSpectraGrid*)
+(*PlotCSIData*)
 
 
 SyntaxInformation[PlotCSIData] = {"ArgumentsPattern" -> {_, _, _., _.}}
@@ -1445,7 +1442,7 @@ FitSpectraResultTable[parFit_, parsF_, names_, ref_, out_:"tab"] := Block[{
 
 
 (* ::Subsection::Closed:: *)
-(*FitSpectraResultTable*)
+(*CompareSpectraFitPlot*)
 
 
 SyntaxInformation[CompareSpectraFitPlot] = {"ArgumentsPattern" -> {_, _, _, _.}}
@@ -1473,7 +1470,7 @@ CompareSpectraFitPlot[ppmPl_, specPlot_, fitPlot_, ranPpm_:Full] := Block[{ran, 
 
 
 (* ::Subsection::Closed:: *)
-(*FitSpectraResultTable*)
+(*MakeSpectraResultPlot*)
 
 
 SyntaxInformation[MakeSpectraResultPlot] = {"ArgumentsPattern" -> {_, _, _, _, _.}}
