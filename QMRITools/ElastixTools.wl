@@ -258,7 +258,9 @@ Begin["`Private`"]
 (*Support Functions*)
 
 operatingSystem = $OperatingSystem;
-debugElastix = False;
+
+QMRITools`ElastixTools`$debugElastix = If[QMRITools`ElastixTools`$debugElastix===True, True, False];
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -531,7 +533,7 @@ RunBatfile[tempdir_,command_]:=Block[{file,batfile,com},
 		_,"chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n"];
 	
 	(*perform sh/bat on system shell*)
-	If[debugElastix, Print[com]];	
+	If[$debugElastix, Print[com]];	
 	RunProcess[$SystemShell, "StandardOutput", com];
 ]
 
@@ -586,7 +588,7 @@ RunBatfileT[tempdir_, command_] := Block[{batfile, com},
 		com = "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
 	];
 	
-	If[debugElastix, Print[com]];
+	If[$debugElastix, Print[com]];
 	RunProcess[$SystemShell, "StandardOutput", com];
 ]
 
@@ -641,7 +643,7 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
 	) & /@ volDirs
   ];
   
-  If[debugElastix, Print[command]];
+  If[$debugElastix, Print[command]];
   
   command
 ]
@@ -912,7 +914,7 @@ type_,OptionsPattern[]]:=Module[{
 	outputImg=ToLowerCase[ToString[OptionValue[OutputImage]]];
 	
 	method=OptionValue[MethodReg];
-	If[debugElastix,Print[method]];
+	If[$debugElastix,Print[method]];
 	
 	bsplineSpacing=OptionValue[BsplineSpacing];
 	bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
@@ -1009,7 +1011,7 @@ type_,OptionsPattern[]]:=Module[{
 		(*check if moving mask is needed*)
 		If[(dimmovm == dimmov && maskm!={1}),mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
-		If[debugElastix, Print[command]];
+		If[$debugElastix, Print[command]];
 		RunProcess[$SystemShell,"StandardOutput",command];
 		(*RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -1058,7 +1060,7 @@ type_,OptionsPattern[]]:=Module[{
 		If[maskm!={1},mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
 		If[maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxm,tempdir<>fmaskF]];
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
-		If[debugElastix, Print[command]];
+		If[$debugElastix, Print[command]];
 		RunProcess[$SystemShell,"StandardOutput",command];
 		(*RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -1171,7 +1173,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 	ExportNii[data, vox, tdir <> $PathnameSeparator <> "trans.nii"];
 	command = TransformixCommandInd[tdir];
 
-	If[debugElastix, Print[command]];
+	If[$debugElastix, Print[command]];
 	RunProcess[$SystemShell, "StandardOutput", command];
 	
 	output = ToPackedArray[ImportNii[tdir <> $PathnameSeparator <> "result.nii"][[1]]];

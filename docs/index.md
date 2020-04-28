@@ -498,7 +498,7 @@ rejection.](\QMRITools\images\dti.png)
 ### VisteTools
 
 Import and export functions for tensor data which can be used in the
-[vIST/e](http://bmia.bmt.tue.nl/software/viste/) tractography tool. None
+[vIST/e](https://sourceforge.net/projects/viste/) tractography tool. None
 of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
