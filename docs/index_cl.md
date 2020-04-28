@@ -351,7 +351,7 @@ Most of the functionality is demonstrated in the `demo.nb`.
 ![MD and FA as a function of SNR and fat fraction. Results are from simulated data using an iWLLS algorithm with outlier rejection.](\QMRITools\images\dti.png)
 
 ### VisteTools
-Import and export functions for tensor data which can be used in the [vIST/e](http://bmia.bmt.tue.nl/software/viste/) tractography tool.
+Import and export functions for tensor data which can be used in the [vIST/e](https://sourceforge.net/projects/viste/) tractography tool.
 None of the functionality is demonstrated in the `demo.nb`.
 
 ------------------------------------------------------------------------
