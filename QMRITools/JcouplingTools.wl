@@ -468,14 +468,17 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	ppm = Range[-ran,ran,swidth/n]/(field gyro ) + shift;
 
 	(*shape definition*)
-	t2 = 1/linewidth;
-	decay = Switch[shape,
-		"L", Exp[-time/t2],
-		"Lorentzian", Exp[-time/t2],
-		"G", Exp[-time^2/t2^2],
-		"Gaussian", Exp[-time^2/t2^2],
-		"LG", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2],
-		"Voigt", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2]
+	decay = If[linewidth===0,
+		1,
+		t2 = 1/linewidth;
+		Switch[shape,
+			"L", Exp[-time/t2],
+			"Lorentzian", Exp[-time/t2],
+			"G", Exp[-time^2/t2^2],
+			"Gaussian", Exp[-time^2/t2^2],
+			"LG", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2],
+			"Voigt", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2]
+		]
 	];
 	
 	(*create the fids by incrementing the spinsystem by dt*)
@@ -489,15 +492,16 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	Switch[sel,
 		"all",
 		fids=val Table[
-			If[i!=1,
-				di=Chop[d.di.ConjugateTranspose[d]]];
-				
-			Tr[(di.Fxy)],{i,1,n}];
+			If[i!=1,di=Chop[d.di.ConjugateTranspose[d]]];
+			Tr[(di.Fxy)]
+		,{i,1,n}];
 		spec=InverseFourier[((-1)^Range[n])fids];
 		,
 		"each",
-		fids=Transpose[val Table[If[i!=1,Chop[di=d.di.ConjugateTranspose[d]]];
-		( Tr[di.#])&/@Ixy,{i,1,n}]];
+		fids=Transpose[val Table[
+			If[i!=1,Chop[di=d.di.ConjugateTranspose[d]]];
+			(Tr[di.#])&/@Ixy
+		,{i,1,n}]];
 		spec=InverseFourier[((-1)^Range[n])#]&/@fids;
 	];
 	(*create spectra*)

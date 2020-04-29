@@ -158,9 +158,11 @@ Begin["`Private`"]
 (*Read List Data*)
 
 
-SyntaxInformation[ReadListData]={"ArgumentsPattern"->{_}}
+SyntaxInformation[ReadListData]={"ArgumentsPattern"->{_,_.}}
 
-ReadListData[file_]:=Block[{
+ReadListData[file_]:=ReadListData[file,True]
+
+ReadListData[file_,print_]:=Block[{
 	fl,head,list,data,lab,dataIndex,dataVals,dataValsN,ruleKx,ruleKy,ruleKz,ruleCoil,
 	typ,pos,dataSplit,indexSplit, echo,
 	sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead},
@@ -244,8 +246,10 @@ ReadListData[file_]:=Block[{
 	Clear[line];
 	
 	(*print output*)
-	Print["Datatypes in data: ",("typ"/.dataVals[[1]])];
-	Print[Column[Prepend[StringJoin/@Thread[{"  - ",types,": ",ToString/@size}],"The data contains: "]]];
+	If[print,
+		Print["Datatypes in data: ",("typ"/.dataVals[[1]])];
+		Print[Column[Prepend[StringJoin/@Thread[{"  - ",types,": ",ToString/@size}],"The data contains: "]]];
+	];
 	
 	(*define output*)
 	outHead={Join[dataVals,dataValsN,head],types};(*General*)
@@ -408,24 +412,47 @@ InverseFourierShifted[spec_]:=InverseFourierShift[InverseFourier[spec,FourierPar
 (*FourierKspace2D*)
 
 
-SyntaxInformation[FourierKspace2D] = {"ArgumentsPattern" -> {_, _}};
+SyntaxInformation[FourierKspace2D] = {"ArgumentsPattern" -> {_, _, _.}};
 
-FourierKspace2D[kspace_, head_] := Block[{ksPad, dim, imPad, shift, kspaceP, imData},
+FourierKspace2D[kspace_, head_, filt_:False] := Block[{ksPad, dim, imPad, shift, kspaceP, imData,p1,p2},
 	(*get the oversampling padding*)
-	ksPad = pp2 = Round[({"Y-resolution", "X-resolution"} {"ky_oversample_factor", "kx_oversample_factor"} - {"N_ky", "N_samp"})/2 /. head];
+	ksPad = Round[({"Y-resolution", "X-resolution"} {"ky_oversample_factor", "kx_oversample_factor"} - {"N_ky", "N_samp"})/2 /. head];
 	(*get the final data dimentions*)
-	dim = {"number_of_locations", "Y-resolution", "X-resolution"} /. head;
+	dim = {"Y-resolution", "X-resolution"} /. head;
 	(*get the image shift*)
-	shift = s2 = Total[#] & /@ ({"Y_range", "X_range"} /. head);
-    (*pad the kaspaces with zeros*)
-    kspaceP = ArrayPad[#, Transpose@{ksPad, ksPad}, 0. + 0. I] & /@ kspace;
-    (*get the image padding and image shift*)
-    imPad = kp2 = -(Dimensions[kspaceP] - dim)/2;
-    (*perform the fourie transform*)
-    imData = ArrayPad[ShiftData[FourierShifted[#], shift] & /@ kspaceP, Transpose[{imPad, imPad}]]
-  ]
+	shift = Total[#] & /@ ({"Y_range", "X_range"} /. head);
+	(*get the image padding*)
+	{p1, p2} = Round[((({"N_ky", "N_samp"} /. head) - 2 ksPad) - dim)/2];
+	ksPad = Transpose@{ksPad, ksPad};
+	
+	If[filt === True,
+		ham = MakeHammingFilter[Dimensions[kspace][[-2 ;;]]];
+		(*perform the fourie transform*)
+		FourierKspace2DIF[kspace, ham, ksPad, shift, p1, p2],
+		(*perform the fourie transform*)
+		FourierKspace2DI[kspace, ksPad, shift, p1, p2]
+	]
+]
 
+FourierKspace2DI = Compile[{{data, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {p1, _Integer, 0}, {p2, _Integer, 0}},
+	Block[{dat},
+		dat = ArrayPad[data, ksPad];
+		dat = FourierShifted[dat];
+		dat = RotateRight[dat, Reverse[shift]];
+		Chop[dat[[p1 + 1 ;; -p1 - 1, p2 + 1 ;; -p2 - 1]]]
+	], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+];
 
+FourierKspace2DIF = Compile[{{data, _Complex, 2}, {ham, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {p1, _Integer, 0}, {p2, _Integer, 0}},
+	Block[{dat},
+		dat = ArrayPad[ham data, ksPad];
+		dat = FourierShifted[dat];
+		dat = RotateRight[dat, Reverse[shift]];
+		Chop[dat[[p1 + 1 ;; -p1 - 1, p2 + 1 ;; -p2 - 1]]]
+		], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+];
 
 (* ::Subsubsection::Closed:: *)
 (*FourierKspaceCSI*)
@@ -481,33 +508,55 @@ CoilCombine[sig_, opts : OptionsPattern[]] := CoilCombine[sig, 1, 1, opts]
 
 CoilCombine[sig_, cov_, opts : OptionsPattern[]] := CoilCombine[sig, cov, 1, opts]
 
-CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met,rec, sigt, sent, covi},
+CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sent, covi, rec},
+	met = OptionValue[Method];
 	
-	met=OptionValue[Method];
-	(*put ncoils as last dimensions*)
-	sigt = If[ArrayDepth[sig] > 1, 
-		If[met==="WSVD"||met==="WSVD2",
-			If[ArrayDepth[sig]==2,sig,TransData[TransData[Transpose[sig],"l"],"l"]],
-			TransData[sig, "l"]
-		],sig];
+	(*prewighten noise if snr recon*)
+	weight = If[StringTake[met, -3] === "SNR", CovToWeight[cov], IdentityMatrix[Length[sig]]];
 	
-	sent = If[ArrayDepth[sen] > 1, TransData[sen, "l"], sen];
+	(*put ncoils as last dimensions signal*)
+	sigt = If[ArrayDepth[sig] > 1,
+		If[met === "WSVD",
+			If[ArrayDepth[sig] == 2, sig, TransData[TransData[Transpose[sig], "l"], "l"]],
+			TransData[weight.sig, "l"]
+		], weight.sig
+	];
+	
 	(*inverse noise cov*)
-	If[cov=!=1, covi = Inverse[cov]];
-	(*perform ND reconstruction for (coils, ND)*)
+	covi = If[cov =!= 1, Inverse[Chop[weight.cov.ConjugateTranspose[weight]]], cov];
+
+	(*Make sensitivitymap if needed*)
+	sent = If[StringTake[met, 6] === "Roemer" && sen === 1, MakeSense[sig, cov], sen];
+	
+	(*put ncoils as last diemsnions sensitivity*)
+	If[sent =!= 1, sent = weight.sent];
+	sent = If[ArrayDepth[sent] > 1, TransData[sent, "l"], sent];
+	
+	(*perform ND reconstruction for (coils,ND)*)
 	rec = Switch[OptionValue[Method],
 		"Average", MeanCombine[sig],
 		"RootSumSquares", If[covi === 1, RSSCombine[sigt], RSSCovCombine[sigt, covi]],
-		"RoemerEqualNoise", If[covi === 1, $Failed,If[sen === 1, 
-			RoemerNCombine[sigt, MakeSense[Mean[sigt], cov], covi], 
-			RoemerNCombine[sigt, sent, covi]]
-			],
-		"RoemerEqualSignal", If[covi === 1 || sen === 1, $Failed, RoemerSCombine[sigt, sent, covi]],
+		"RootSumSquaresSNR", If[covi === 1, $Failed, Abs@RSSCovCombineSNR[sigt, covi]],
+		"RoemerEqualNoise", If[covi === 1, $Failed, RoemerNCombine[sigt, sent, covi]],
+		"RoemerEqualNoiseSNR", If[covi === 1, $Failed, Abs@RoemerNCombineSNR[sigt, sent, covi]],
+		"RoemerEqualSignal", If[covi === 1, $Failed, RoemerSCombine[sigt, sent, covi]],
+		"RoemerEqualSignalSNR", If[covi === 1, $Failed, Abs@RoemerSCombineSNR[sigt, sent, covi]],
 		"WSVD", If[covi === 1, $Failed, WSVDCombine[sigt, cov]],
-		"WSVD2", If[covi === 1, $Failed, WSVDCombine2[sigt, cov]],
 		_, Return[$Failed]
 	];
 	rec
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeSense*)
+
+
+SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _}};
+
+MakeSense[coils_, cov_] := Block[{sos},
+	sos = CoilCombine[coils, cov, Method -> "RootSumSquares"]; 
+	DevideNoZero[#1, sos]& /@ coils
 ]
 
 
@@ -517,22 +566,38 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met,rec, sigt, sent, c
 
 MeanCombine[sig_] := Mean[sig];
 
-RSSCombine = Compile[{{sig, _Complex, 1}}, Abs@Sqrt[sig.Conjugate[sig]],
-   RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+RSSCombine = Compile[{{sig, _Complex, 1}}, 
+	Abs@Sqrt[sig.Conjugate[sig]],
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
-RSSCovCombine = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}}, Abs@Sqrt[sig.cov.Conjugate[sig]],
-   RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+RSSCovCombine = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}}, 
+	Abs@Sqrt[sig.cov.Conjugate[sig]],
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
+RSSCovCombineSNR = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}}, 
+	Sqrt[2] Abs@Sqrt[Conjugate[sig].cov.sig],
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
 (* ::Subsubsection::Closed:: *)
 (*Roemer*)
 
 
-RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, (sig.cov.Conjugate[sen])/Sqrt[sen.cov.Conjugate[sen]],
-   RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
+	(sig.cov.Conjugate[sen])/Sqrt[sen.cov.Conjugate[sen]],
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
-RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, (sig.cov.Conjugate[sen])/(sen.cov.Conjugate[sen]),
-   RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+RoemerNCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
+	Sqrt[2] Abs[(Conjugate[sen].cov.sig)]/Sqrt[Conjugate[sen].cov.sen], 
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
+RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
+	(sig.cov.Conjugate[sen])/(sen.cov.Conjugate[sen]),
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
+RoemerSCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
+	Sqrt[2] Abs[(Conjugate[sen].cov.sig)]/(Conjugate[sen].cov.sen),
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -544,36 +609,13 @@ WSVDCombine[sig_, cov_] := Block[{weight},
 	Map[WSVDCombineT[#, weight] &, sig, {-3}]
 ];
 
-CovToWeight[cov_] := DiagonalMatrix[Sqrt[1./#[[1]]]].#[[2]] &[Eigensystem[cov]];
+CovToWeight[cov_] := Conjugate[DiagonalMatrix[Sqrt[1./#[[1]]]].#[[2]] &[Eigensystem[cov]]];
 
 WSVDCombineT[sig_, weight_] := Block[{u, s, v, scale},
 	{u, s, v} = SingularValueDecomposition[weight.sig];
 	scale = Norm[#] Normalize[First@#] &[weight.u[[All, 1]]];
 	Conjugate[v[[All, 1]]] s[[1, 1]] scale
 ];
-
-
-WSVDCombine2[sig_, cov_] := Block[{weight, weighti},
-	weight = CovToWeight2[cov]; weighti = Inverse[weight];
-	Map[WSVDCombineT2[#, weight, weighti] &, sig, {-3}]
-];
-
-CovToWeight2[cov_] := Reverse /@ (Transpose[#[[2]]].DiagonalMatrix[1/Sqrt[#[[1]]]] &[Eigensystem[cov]]);
-
-WSVDCombineT2[sig_, weight_, weighti_] := Block[{u, s, v, scale},
-	{u, s, v} = SingularValueDecomposition[Transpose[sig].weight];
-	scale = Norm[#] Normalize[First@#] &[Conjugate[v[[All, 1]]].weighti];
-	u[[All, 1]] s[[1, 1]] scale
-];
-
-
-(* ::Subsubsection::Closed:: *)
-(*MakeSense*)
-
-
-SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _}};
-
-MakeSense[coils_, cov_] := DevideNoZero[#, CoilCombine[coils, cov, Method -> "RootSumSquares"]] & /@ coils
 
 
 (* ::Subsubsection::Closed:: *)

@@ -487,7 +487,6 @@ SyntaxInformation[GetTimeRange] = {"ArgumentsPattern" -> {_, _}};
 
 GetTimeRange[fid_?VectorQ, dt_] := GetTimeRange[Length[fid], dt]
 
-
 GetTimeRange[len_?IntegerQ, dt_] := N@Range[0, (len-1) dt, dt]
 
 
