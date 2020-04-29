@@ -1016,8 +1016,8 @@ DevideNoZero[numi_,deni_]:=Block[{num,den,numReal,denReal},
 	den=ToPackedArray@N@deni;
 	num=ToPackedArray@N@numi;
 	
-	denReal=If[ListQ[den],RealQ[Total[Flatten[den]]],RealQ[den]];
-	numReal=If[ListQ[num],RealQ[Total[Flatten[num]]],RealQ[num]];
+	denReal=RealQ[Total[Flatten[{den}]]];
+	numReal=RealQ[Total[Flatten[{num}]]];
 	
 	If[denReal,
 		If[numReal,
@@ -1031,17 +1031,23 @@ DevideNoZero[numi_,deni_]:=Block[{num,den,numReal,denReal},
 	]
 ]
 
-DevideNoZeroi = Compile[{{num, _Real, 0}, {den, _Real, 0}}, If[den == 0., 0., num/den], 
+
+DevideNoZeroi = Compile[{{num, _Real, 0}, {den, _Real, 0}}, 
+	If[den == 0., 0., num/den], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
-DevideNoZeroiCd = Compile[{{num, _Real, 0}, {den, _Complex, 0}}, If[den == 0., 0., num/den], 
+DevideNoZeroiCd = Compile[{{num, _Real, 0}, {den, _Complex, 0}}, 
+	If[den == 0., 0., num/den], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
-DevideNoZeroiCn = Compile[{{num, _Complex, 0}, {den, _Real, 0}}, If[den == 0., 0., num/den], 
+DevideNoZeroiCn = Compile[{{num, _Complex, 0}, {den, _Real, 0}}, 
+	If[den == 0., 0., num/den], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
-DevideNoZeroiCnCd = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[den == 0., 0., num/den], 
+DevideNoZeroiCnCd = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, 
+	If[den == 0., 0., num/den], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+
 
 (* ::Subsubsection::Closed:: *)
 (*MeanNoZero*)
