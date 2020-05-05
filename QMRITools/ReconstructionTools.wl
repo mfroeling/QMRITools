@@ -115,7 +115,8 @@ DenoiseCSIdata::usage =
 "DenoiseCSIdata[spectra] perfroms PCA denoising of the complex values spectra, data has to be 3D and the spectral dimensions is last, {x,y,z,spectra}."
 
 DeconvolveCSIdata::usage = 
-"DeconvolveCSIdata[spectra] deconvolves the CSI spectra after HammingFilterCSI to revert the blurring of the hammingfiltering." 
+"DeconvolveCSIdata[spectra] deconvolves the CSI spectra after HammingFilterCSI to revert the blurring of the hammingfiltering.
+DeconvolveCSIdata[spectra, ham] deconvolves the CSI spectra with the acquired weighting ham to revert the blurring of the kspace weighting." 
 
 FourierRescaleData::usage = 
 "FourierRescaleData[data] rescales the data to double the dimensions using zeropadding in fourier space. 
@@ -140,8 +141,14 @@ HammingFilter::usage=
 CoilSamples::usage = 
 "CoilSamples is an option for CoilWeightedReconCSI and specifies how many fud samples are used to calcualte the coil sensitivity for Roemer reconstruction."
 
+NormalizeOutputSpectra::usage = 
+"NormalizeOutputSpectra is an option for CoilWeightedReconCSI."
+
 EchoShiftData::usage = 
 "EchoShiftData is an option for CoilWeightedRecon"
+
+SenseRescale::usage = 
+"SenseRescale is an option for MakeSense. If set True the data is first downscaled by a factor 2 before making the sense map."
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -164,7 +171,7 @@ ReadListData[file_]:=ReadListData[file,True]
 
 ReadListData[file_,print_]:=Block[{
 	fl,head,list,data,lab,dataIndex,dataVals,dataValsN,ruleKx,ruleKy,ruleKz,ruleCoil,
-	typ,pos,dataSplit,indexSplit, echo,
+	typ,pos,dataSplit,indexSplit, echo, scale, locs,
 	sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead},
 	
 	fl=StringReplace[file,{".list"->"",".data"->""}];
@@ -218,32 +225,36 @@ ReadListData[file_,print_]:=Block[{
 	types=Pick[sizeInd,Unitize[size-1],1];
 	
 	(*process noise data *)
-	noise="NOI"/.dataSplit;
+	noise = "NOI"/.dataSplit;
+	scale = (1000/Max[Abs[noise]]);
+	noise = scale noise;
 	
 	(*get acepterd sample data and index*)
-	data=("STD"/.dataSplit);
-	ind=sizeInd[[;;-2]]/.Thread["N_"<>#&/@lab->Range[Length[lab]]];
-	indData=("STD"/.indexSplit)[[ind]];
+	data = scale ("STD"/.dataSplit);
+	
+	ind = sizeInd[[;;-2]]/.Thread["N_"<>#&/@lab->Range[Length[lab]]];
+	indData = ("STD"/.indexSplit)[[ind]];
 	
 	(*reverse even echo*)
-	echo=1-Mod[indData[[Position[sizeInd,"N_echo"][[1,1]]]],2];
-	data=MapThread[If[#2==0,Reverse@#,#]&,{data,echo}];
+	echo = 1-Mod[indData[[Position[sizeInd,"N_echo"][[1,1]]]],2];
+	data = MapThread[If[#2==0,Reverse@#,#]&,{data,echo}];
 	
 	(*convert the index values to array values*)
-	off=If[MemberQ[lab,"kx"],1,0];
+	off = If[MemberQ[lab,"kx"],1,0];
 	If[MemberQ[lab,"kx"],indData[[1]]=indData[[1]]/.ruleKx;];
-	indData[[1+off]]=indData[[1+off]]/.ruleKy;
-	indData[[2+off]]=indData[[2+off]]/.ruleKz;
-	indData[[3+off]]=indData[[3+off]]/.ruleCoil;
+	indData[[1+off]] = indData[[1+off]]/.ruleKy;
+	indData[[2+off]] = indData[[2+off]]/.ruleKz;
+	indData[[3+off]] = indData[[3+off]]/.ruleCoil;
 	indData=Transpose[indData+1];
+	
+	(*get the locations of non zero index*)
+	locs = Flatten[Position[Unitize[size[[;; -2]] - 1], 1]];
 	
 	(*create squeezed k-space*)
 	Clear[line];
-	kspace=ReplacePart[ConstantArray[line,size[[;;-2]]],Thread[indData->data]];(*longest part*)
-	line=ConstantArray[0.+0.I,nSamp];
-	kspace=Squeeze[kspace];
-	size=Dimensions[kspace];
-	Clear[line];
+	kspace = ReplacePart[ConstantArray[line, size[[locs]]], Thread[indData[[All, locs]] -> data]];(*longest part*)
+	line = ConstantArray[0. + 0. I, nSamp];
+	size = Dimensions[kspace];
 	
 	(*print output*)
 	If[print,
@@ -251,12 +262,10 @@ ReadListData[file_,print_]:=Block[{
 		Print[Column[Prepend[StringJoin/@Thread[{"  - ",types,": ",ToString/@size}],"The data contains: "]]];
 	];
 	
-	(*define output*)
-	outHead={Join[dataVals,dataValsN,head],types};(*General*)
-	outData={kspace,noise};
+	Clear[data, indData];
 	
 	(*output*)
-	{outData,outHead}
+	{{kspace,noise},{Join[dataVals,dataValsN,head],types}}
 ]
 
 
@@ -338,12 +347,17 @@ SyntaxInformation[OrderKspace]={"ArgumentsPattern"->{_,_,_.}}
 
 (*put kspace in requested order*)
 OrderKspace[kspace_,type_,order_]:=OrderKspace[{kspace,type},order]
-OrderKspace[{kspace_,type_},order_]:=Block[{mis},
+OrderKspace[{kspace_,type_},order_]:=Block[{mis,sel,typeOut},
 mis=If[!MemberQ[type,#],#,Nothing]&/@order;
-	If[mis==={},
-		{Transpose[kspace,Flatten[(Position[order,#1]&)/@type]],order},
-	Print["the types ",mis," are missing"]
-]]
+	If[mis=!={},
+		Print["the types ",mis," are missing"]
+		,		
+		sel = If[MemberQ[order, #], 1, 0] & /@ type;
+		typeOut = Pick[type, sel, 1];
+		sel = All sel + 1 - sel;
+		{Transpose[(kspace[[##]] & @@ sel), Flatten[(Position[order, #1] &) /@ typeOut]], order}		
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -375,13 +389,6 @@ FourierShift[data_]:=RotateRight[data,Floor[Dimensions[data]/2]];
 SyntaxInformation[InverseFourierShift]={"ArgumentsPattern"->{_}}
 
 InverseFourierShift[data_]:=RotateLeft[data,Floor[Dimensions[data]/2]];
-
-
-(* ::Subsubsection::Closed:: *)
-(*Shift Data*)
-
-
-ShiftData[data_,shift_]:=RotateRight[data,Reverse[shift]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -470,7 +477,7 @@ FourierKspaceCSI[kspace_,head_]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
 	(*get the image padding and image shift*)
 	shift=Total[#]&/@({"Z_range","Y_range","X_range"}/.head);
 	(*perform the fourie transform*)
-	imData=ShiftData[FourierShift[FourierShifted[#]],shift]&/@kspaceP
+	imData=RotateRight[FourierShift[FourierShifted[#]],shift]&/@kspaceP
 ]
 
 
@@ -500,7 +507,7 @@ NoiseCovariance[noise_] := Covariance[Transpose[noise]]
 (*CoilCombine*)
 
 
-Options[CoilCombine] = {Method -> "RoemerEqualNoise"};
+Options[CoilCombine] = {Method -> "RoemerEqualNoise", SenseRescale -> False};
 
 SyntaxInformation[CoilCombine] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -523,15 +530,16 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 	];
 	
 	(*inverse noise cov*)
-	covi = If[cov =!= 1, Inverse[Chop[weight.cov.ConjugateTranspose[weight]]], cov];
+	covi = If[cov =!= 1 && met=!="WSVD", Inverse[Chop[weight.cov.ConjugateTranspose[weight]]], cov];
 
 	(*Make sensitivitymap if needed*)
-	sent = If[StringTake[met, 6] === "Roemer" && sen === 1, MakeSense[sig, cov], sen];
+	sent = If[met=!="WSVD",	If[StringTake[met, 6] === "Roemer" && sen === 1, 
+			MakeSense[sig, cov, SenseRescale -> OptionValue[SenseRescale]],sen],sen];
 	
 	(*put ncoils as last diemsnions sensitivity*)
 	If[sent =!= 1, sent = weight.sent];
 	sent = If[ArrayDepth[sent] > 1, TransData[sent, "l"], sent];
-	
+		
 	(*perform ND reconstruction for (coils,ND)*)
 	rec = Switch[OptionValue[Method],
 		"Average", MeanCombine[sig],
@@ -551,14 +559,23 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 (* ::Subsubsection::Closed:: *)
 (*MakeSense*)
 
+Options[MakeSense] = {SenseRescale -> False}
 
-SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _}};
+SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-MakeSense[coils_, cov_] := Block[{sos},
-	sos = CoilCombine[coils, cov, Method -> "RootSumSquares"]; 
-	DevideNoZero[#1, sos]& /@ coils
-]
-
+MakeSense[coils_, cov_, OptionsPattern[]] := 
+ Block[{sos, scale, dim, low, sense},
+  If[OptionValue[SenseRescale],
+   sos = CoilCombine[coils, cov, Method -> "RootSumSquares"];
+   DevideNoZero[#1, sos] & /@ coils
+   ,
+   dim = Dimensions[coils][[2 ;;]];
+   low = HammingFilterData[FourierRescaleData[coils, 0.5]];
+   sos = CoilCombine[low, cov, Method -> "RootSumSquares"];
+   sense = HammingFilterData[DevideNoZero[#1, sos] & /@ low];
+   FourierRescaleData[sense, dim]
+   ]
+  ]
 
 (* ::Subsubsection::Closed:: *)
 (*RSS*)
@@ -637,13 +654,15 @@ NormalizeSpectra[spec_] := 1000. Sign[Re@Mean[Flatten[spec]]] (spec/Max[Abs[spec
 
 SyntaxInformation[MakeHammingFilter]={"ArgumentsPattern"->{_}}
 
-MakeHammingFilter[{zi_?IntegerQ, yi_?IntegerQ, xi_?IntegerQ}] := MakeHammingFilterI[Transpose[{-Floor[{xi, yi, zi}/2], Ceiling[{xi, yi, zi}/2] - 1}]];
+MakeHammingFilter[size_] := MakeHammingFilteri[size]
 
-MakeHammingFilter[{yi_?IntegerQ, xi_?IntegerQ}] := MakeHammingFilterI[Transpose[{-Floor[{xi, yi}/2], Ceiling[{xi, yi}/2] - 1}]];
+MakeHammingFilteri[{zi_?IntegerQ, yi_?IntegerQ, xi_?IntegerQ}] := MakeHammingFilteri[{zi, yi, xi}] = MakeHammingFilterI[Transpose[{-Floor[{xi, yi, zi}/2], Ceiling[{xi, yi, zi}/2] - 1}]];
 
-MakeHammingFilter[{xi_?IntegerQ}] := MakeHammingFilter[xi];
+MakeHammingFilteri[{yi_?IntegerQ, xi_?IntegerQ}] := MakeHammingFilteri[{yi, xi}] = MakeHammingFilterI[Transpose[{-Floor[{xi, yi}/2], Ceiling[{xi, yi}/2] - 1}]];
 
-MakeHammingFilter[xi_?IntegerQ] := MakeHammingFilterI[{-Floor[xi/2], Ceiling[xi/2] - 1}];
+MakeHammingFilteri[{xi_?IntegerQ}] := MakeHammingFilteri[{xi}] = MakeHammingFilteri[xi];
+
+MakeHammingFilteri[xi_?IntegerQ] := MakeHammingFilteri[xi] = MakeHammingFilterI[{-Floor[xi/2], Ceiling[xi/2] - 1}];
 
 
 MakeHammingFilterI[{{xs_?IntegerQ, xe_?IntegerQ}, {ys_?IntegerQ, ye_?IntegerQ}, {zs_?IntegerQ, ze_?IntegerQ}}] := MakeHammingFilterI[{{xs,xe},{ys,ye},{zs,zs}}] = Block[{xm, ym, zm},
@@ -669,7 +688,14 @@ Ham[x_, xm_] := (0.54 + 0.46 Cos[(Pi x)/xm])
 
 SyntaxInformation[HammingFilterData] = {"ArgumentsPattern"->{_}}
 
-HammingFilterData[data_]:= FourierShifted[MakeHammingFilter[Dimensions[data]] InverseFourierShifted[data]]
+HammingFilterData[data_]:= Block[{ham},
+	If[ArrayDepth[data]===4,
+		ham = MakeHammingFilter[Dimensions[data[[1]]]];
+		FourierShifted[ham InverseFourierShifted[#]]&/@data
+		,
+		FourierShifted[MakeHammingFilter[Dimensions[data]] InverseFourierShifted[data]]
+	]
+]
 
 
 (* ::Subsubsection:: *)
@@ -678,7 +704,7 @@ HammingFilterData[data_]:= FourierShifted[MakeHammingFilter[Dimensions[data]] In
 
 SyntaxInformation[HammingFilterCSI]={"ArgumentsPattern"->{_,_.}}
 
-HammingFilterCSI[data_] := TransData[HammingFilterData/@TransData[data,"r"],"l"]
+HammingFilterCSI[data_] := TransData[HammingFilterData[TransData[data,"r"]],"l"]
 
 
 (* ::Subsubsection:: *)
@@ -700,12 +726,12 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{stdMap, sig, out, hist, len
 	
 	
 	(*Plot the histogram of the noise standard deviations*)
-	hist = SmoothHistogram[stdMap, PlotRange -> {Quantile[stdMap,{.05,.9}],Full}, 
+	(*hist = SmoothHistogram[stdMap, PlotRange -> {Quantile[stdMap,{.05,.9}],Full}, 
     PlotStyle -> Thick, AxesStyle -> Directive[Thick, Black], 
     Ticks -> None, LabelStyle -> Directive[Thick, Black, Bold, 12], 
     PlotLabel -> "STD " <> ToString[Round[sig, .1]], ImageSize -> 100,
     GridLines -> {{sig}, None}];
-    Print[hist];
+    Print[hist];*)
     
     (*Denoise the spectra data with a 5x5x5 kernel*)
     {spectraDen, sig, out} = PCADeNoise[Transpose[Join[Re@#, Im@#]] &[TransData[spectra, "r"]],
@@ -753,7 +779,7 @@ DeconvolveCSIdata[spectra_, hami_] := Block[{dim, filt, spectraOut, ham},
 
 SyntaxInformation[FourierRescaleData]={"ArgumentsPattern"->{_,_.}}
 
-FourierRescaleData[data_, factor_ : 2] := Block[{dim, pad, scale},
+FourierRescaleData[data_, factor_:2] := Block[{dim, pad, scale, fac, new},
 	(*get the data dimensions*)
 	dim = Switch[ArrayDepth[data],
 		2, Dimensions[data],
@@ -761,18 +787,15 @@ FourierRescaleData[data_, factor_ : 2] := Block[{dim, pad, scale},
 		4, Dimensions[data][[2 ;;]]
 	];
 	
-	If[factor >= 1,
-		(*Upscale data*)
-		pad = Transpose[{Floor[(factor - 1) (dim/2)],Ceiling[(factor - 1) (dim/2)]}];
-		scale = factor^Length[pad];
-		,
-		(*Downscale data*)
-		If[0 < factor < 1,
-			pad = Transpose[{Floor[(factor - 1) (dim/2)], Ceiling[(factor - 1) (dim/2)]}];
-			scale = factor^Length[pad];
-		]
-	];
+	fac = N@Clip[If[NumberQ[factor], (0 dim + 1) factor, factor/dim], {0.0001, Infinity}];
+	scale = Times@@fac;
+	new = Round[dim fac] /. 0 -> 1;
 	
+	pad = If[#[[1]] < 1, 
+		{Floor[#[[2]]], Ceiling[#[[2]]]}, 
+		{Ceiling[#[[2]]], Floor[#[[2]]]}
+	] & /@ Thread[{fac, N[(new - dim)/2]}];
+		
 	Switch[ArrayDepth[data],
 		2, scale FourierShifted[ArrayPad[InverseFourierShifted[data], pad]],
 		3, scale FourierShifted[ArrayPad[InverseFourierShifted[data], pad]],
@@ -825,7 +848,7 @@ CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coi
 (*Coil weighted recon CSI*)
 
 
-Options[CoilWeightedReconCSI] = {HammingFilter -> False, CoilSamples -> 5, Method -> "Roemer"};
+Options[CoilWeightedReconCSI] = {HammingFilter -> False, CoilSamples -> 5, Method -> "Roemer", NormalizeOutputSpectra->True};
 
 CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, spectra, cov, coils, sosCoils, sens},
 	
@@ -856,7 +879,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 	];
 	
 	(*Normalize spectra*)
-	spectra = NormalizeSpectra[spectra];
+	If[OptionValue[NormalizeOutputSpectra],	spectra = NormalizeSpectra[spectra]];
 	If[OptionValue[HammingFilter], spectra = HammingFilterCSI[spectra]];
 	
 	spectra

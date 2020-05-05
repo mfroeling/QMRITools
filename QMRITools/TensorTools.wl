@@ -1306,9 +1306,9 @@ Module[{angles},
 		"0-180",
 		(180/Pi)angles,
 		"0-90",
-		Map[If[#!="no",If[#>=1/2Pi,(180/Pi)(Pi-#),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
+		Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(Pi-#),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
 		"-90-90",
-		Map[If[#!="no",If[#>=1/2Pi,(180/Pi)(#-Pi),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
+		Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(#-Pi),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
 		_,
 		Message[AngleCalc::dist,OptionValue[Distribution]]
 		]
@@ -1327,9 +1327,9 @@ Module[{angles},
 			"0-180",
 			(180/Pi)angles,
 			"0-90",
-			Map[If[#!="no",If[#>=1/2Pi,(180/Pi)(-(#-Pi)),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
+			Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(-(#-Pi)),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
 			"-90-90",
-			Map[If[#!="no",If[#>=1/2Pi,(180/Pi)(#-Pi),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
+			Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(#-Pi),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
 			_,
 			Message[AngleCalc::dist,OptionValue[Distribution]]
 			]

@@ -78,6 +78,7 @@ CoilSurfaceVoxelSize::usage =
 CoilArrayPlot::usage = 
 "CoilArrayPlot is an option for MakeCoilLayout. If True and values are provided it makes an arrayplot of the coil layouts"
 
+
 (* ::Subsection:: *)
 (*Error Messages*)
 

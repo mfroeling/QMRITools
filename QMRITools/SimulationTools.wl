@@ -68,9 +68,9 @@ CalculateGfactor::usage =
 "CalculateGfactor[factors, sensitivity, Wmat] calculates a gfactor for given sensitivity maps and noise corraltion W. given the sense factors which is a list of three integers."
 
 GfactorSimulation::usage = 
-"GfactorSimulation[sensitivity, Wmat, {dir,sense}] calculates the gfactormaps for given sensitivity maps and noise corraltion W in one direction. 
+"GfactorSimulation[sensitivity, cov, {dir,sense}] calculates the gfactormaps for given sensitivity maps and noise corraltion cov in one direction. 
 The sensefactors are a list of integers in a given direction: \"LR\", \"FH\", or \"AP\".
-GfactorSimulation[sensitivity, Wmat, {dir1,sense1}, {dir2,sense2}] calculates the gfactormaps for given sensitivity maps and noise corraltion W in two directions."
+GfactorSimulation[sensitivity, cov, {dir1,sense1}, {dir2,sense2}] calculates the gfactormaps for given sensitivity maps and noise corraltion W in two directions."
 
 SimParameters::usage = 
 "SimParameters[tens] caculates the diffusion parameters for tens. The output can be used in PlotSimulationHist and PlotSimulation."
