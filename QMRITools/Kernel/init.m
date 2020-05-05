@@ -9,6 +9,8 @@
 (*m.froeling@gmail.com*)
 
 
+$HistoryLength = 0;
+
 (*package naem*)
 QMRITools`$Package = "QMRITools`";
 QMRITools`$SubPackages = {
