@@ -329,32 +329,16 @@ SignalTensor[S0_, bmat_, D_] := Module[{Dv},
 (*BlochSeries*)
 
 
-BlochSeries[Mi_, dt_, w_, p_] := BlochSeriesi[Mi, dt, w, p] 
+BlochSeries[Mi_, dt_, w_, p_, gyro_ : "1H"] := BlochSeriesi[Mi, dt, w, p N[2 Pi GyromagneticRatio[gyro] 10^6]]
 
-BlochSeriesi = 
-With[{gamma = N[2 Pi 42.56 10^6]},
-   Compile[{{Mi, _Real, 1}, {dt, _Real, 0}, {w, _Real, 0}, {p, _Real, 1}},
-   	Block[{M, Mtemp, Mt, Mz, Mx, My, ang, phase},
-    (*perform the bloch simulation*)
-    M = Mi;
-    (
-       Mtemp = MatrixExp[dt {{0,  w, 0}, {- w, 0, gamma #}, {0, -gamma #, 0}}].M;
-       M = Mtemp
-       ) & /@ p;
-    
-    (*calculate tranverse longitudinal and xy magnetization*)
-    Mz = M[[3]];
-    {Mx, My} = {M[[1]], M[[2]]};
-    Mt = Norm[{Mx, My}];
-    (*calculate flip angle and phase*)
-    ang = (180/Pi) ArcTan[Mz, Mt];
-    phase = ArcTan[Mx,My];
-    
-    (*give output*)
-    {w, Mt, Mz, Mx, My, ang, phase}]
-    , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
-    ]
-  ];
+BlochSeriesi = Compile[{{Mi, _Real, 1}, {dt, _Real, 0}, {w, _Real, 0}, {p, _Real, 1}}, Block[{M = Mi, Mt, Mz, Mx, My},
+	(M = MatrixExp[dt {{0, w, 0}, {-w, 0, #}, {0, -#, 0}}].M) & /@ p;
+	(*calculate tranverse longitudinal and xy magnetization*)
+	{Mx, My, Mz} = M;
+	Mt = Norm[{Mx, My}];
+	(*give output {w,MT,Mz,Mx,My,ang,phase}*)
+	{w, Mt, Mz, Mx, My, ArcTan[Mz, Mt]/Degree, ArcTan[Mx, My]}]
+,RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)

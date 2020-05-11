@@ -30,13 +30,13 @@ Output is the {time, spec, {begintime, samplingInterval}}."
 
 
 PadFid::usage = 
-"PadFid[fid] pads the fid with zeros to double its length."
+"PadFid[fid] pads the fid with zeros to increse its length."
 
 ApodizeFid::usage = 
 "ApodizeFid[fid] performs apodization on the fid. The apodization function is set with the option ApodizationFunction."
 
 ApodizePadFid::usage = 
-"ApodizePadFid[fid] performs apodization on the fid and pads the fid with zeros to double its length"
+"ApodizePadFid[fid] performs apodization on the fid and pads the fid with zeros to increase its length"
 
 PadSpectra::usage = 
 "PadSpectra[spec] doubles the number of spectral points while maintainig the dwell time."
@@ -73,16 +73,16 @@ PhaseShiftSpectra[spec, ppm, gyro, {phi0, phi1}] aplies the 0th and 1st order ph
 The 0th order phase phi0 is in radians and the 1st order phase phi1 is in ms."
 
 TimeShiftFid::usage = 
-"TimeShiftFid[fid, time, gam] aplies a linebroadening with linewidth gam and a Voight lineshape to the fid. The time can be obtained using GetTimeRange.
-TimeShiftFid[fid, time, {gam, f}] aplies a linebroadening with linewidth gam and a custom lineshape f to the fid (f=0, \"Gaussinan\", f=1 \"Laurentian\").
+"TimeShiftFid[fid, time, gam] aplies a linebroadening with linewidth gam and a Voigt lineshape to the fid. The time can be obtained using GetTimeRange.
+TimeShiftFid[fid, time, {gam, f}] aplies a linebroadening with linewidth gam and a custom lineshape f to the fid (f=0, \"Gaussian\", f=1 \"Lorentzian\").
 TimeShiftFid[fid, time, gyro, {gam, eps}] aplies a linebroadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro
 TimeShiftFid[fid, time, gyro, {gam, eps, f}] aplies a linebroadening with linewidth gam using a custom lineshape f to the fid and a phase eps that results in eps ppm shift of the spectra.
 
 The linewidth gam is given in ms and the spectra shift eps is given in ppm."
 
 TimeShiftEcho::usage =
-"TimeShiftEcho[fid, time, gam] aplies a linebroadening with linewidth gam and a Voight lineshape to the fid. The time can be obtained using GetTimeRange.
-TTimeShiftEcho[fid, time, {gam, f}] aplies a linebroadening with linewidth gam and a custom lineshape f to the fid (f=0, \"Gaussinan\", f=1 \"Laurentian\").
+"TimeShiftEcho[fid, time, gam] aplies a linebroadening with linewidth gam and a Voigt lineshape to the fid. The time can be obtained using GetTimeRange.
+TTimeShiftEcho[fid, time, {gam, f}] aplies a linebroadening with linewidth gam and a custom lineshape f to the fid (f=0, \"Gaussinan\", f=1 \"Lorentzian\").
 TTimeShiftEcho[fid, time, gyro, {gam, eps}] aplies a linebroadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro
 TTimeShiftEcho[fid, time, gyro, {gam, eps, f}] aplies a linebroadening with linewidth gam using a custom lineshape f to the fid and a phase eps that results in eps ppm shift of the spectra.
 
@@ -133,25 +133,42 @@ PlotSpectra[spespectradwell, field, nuc}] plots the spectra, the ppm axes is det
 PlotSpectra[ppm, spectra] plots the spectra where ppm is the pmm range of the spectra which can be obtained with GetPpmRange." 
 
 
-FitSpectraResultTable::usage
+FitSpectraResultTable::usage = 
 "FitSpectraResultTable[parFit, parsF, names, ref, out] function not done."
 
-CompareSpectraFitPlot::usage
+CompareSpectraFitPlot::usage =
 "CompareSpectraFitPlot[ppmPl, specPlot, fitPlot] function not done."
 
-MakeSpectraResultPlot::usage
+CompareFidFitPlot::usage =
+"CompareFidFitPlot[time, fidPlot, fitPlot] function not done."
+
+MakeSpectraResultPlot::usage = 
 "MakeSpectraResultPlot[ppmF, specF, {fit, basisFit}, names, sc, met] function not done."
 
 
-EstimateLineWidth::usage=
-"EstimateLineWidth"
+CSIInterface31P::usage = 
+"CSIInterface31P[]
+CSIInterface31P[te, bwi]
+CSIInterface31P[file_]
+CSIInterface31P[file_, {tei_, bwi_}]"
+
+SpectraFitResult::usage = 
+"SpectraFitResult[spec, {fit, basisFit}, te, {dw, gyro}, {pars, names, metRef, log}, plots, OptionsPattern[]]"
+
+
+ImportSparSdat::usage = 
+"ImportSparSdat[fspar , fsdat]"
+
+ExportSparSdat::usage
+"ExportSparSdat[file, specs ,{bw ,te }, {gyro ,nuc }]"
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
 
 
 ApodizationFunction::usage = 
-"ApodizationFunction is an options for ApodizeFid, ApodizeSpectra, ApodizePadFid, and ApodizePadSpectra. Values can be \"Han\", \"Ham\", \"Gaus\", \"Laur\", and \"GausLaur\"."
+"ApodizationFunction is an options for ApodizeFid, ApodizeSpectra, ApodizePadFid, and ApodizePadSpectra. Values can be \"Hanning\", \"Hamming\", \"Gaussian\", \"Lorentzian\", and \"Voigt\"."
 
 PaddingFactor::usage = 
 "PaddingFactor is an option for PadFid, PadSpectra, ApodizePadFid, ApodizePadSpectra and FitSpectra. It Specifies with which factro to lengthen the fid."
@@ -196,7 +213,7 @@ SpectraOutputPlots::usage =
 "SpectraOutputPlots is an option for FitSpectra. If True the automatica calibration plot for the initial fit are generated."
 
 ReadoutType::usage = 
-"ReadoutType is an option for FitSpectra. Value can be \"Fid\" or \"Echo\"."
+"ReadoutType is an option for FitSpectra and padding and apodization fucntions. Value can be \"Fid\" or \"Echo\"."
 
 SpectraSpacing::usage = 
 "SpectraSpacing is an option for PlotSpectra and defines the amount of spacing between spectra when multiple spectra are plotted."
@@ -276,7 +293,7 @@ PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_] := Block[{
 	If[ppmRan =!= Full, henkelSpec = Pick[henkelSpec, Unitize[Clip[GetPpmRange[henkelSpec, dw, gyro], Sort[ppmRan], {0, 0}]], 1]];
 	
 	(*find the first order phase*)
-	phi = Quiet[Last[FindMaximum[PhaseErrorH[henkelSpec, phi0], {phi0, 0}]]][[1,2]];
+	phi = Quiet[Last[FindMaximum[PhaseErrorH[henkelSpec, phi0], phi0]]][[1,2]];
 	
 	(*get the missing fid values and phase correct the spectra*)
 	If[timeMis =!= {}, fid = Join[HenkelSVDBasisC[timeMis, henk].fit, fid[[;; -(Length[timeMis] + 1)]]] ];
@@ -393,7 +410,7 @@ PadFid[fid_, OptionsPattern[]] := PadRight[fid, Round[OptionValue[PaddingFactor]
 (*ApodizeFid*)
 
 
-Options[ApodizeFid] = {ApodizationFunction -> "Ham"}
+Options[ApodizeFid] = {ApodizationFunction -> "Hanning"}
 
 SyntaxInformation[ApodizeFid] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
@@ -404,7 +421,7 @@ ApodizeFid[fid_, OptionsPattern[]] := ApodizeFun[Length[fid], OptionValue[Apodiz
 (*ApodizePadFid*)
 
 
-Options[ApodizePadFid] = {ApodizationFunction -> "Ham", PaddingFactor -> 2}
+Options[ApodizePadFid] = {ApodizationFunction -> "Hanning", PaddingFactor -> 2}
 
 SyntaxInformation[ApodizePadFid] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
@@ -423,10 +440,10 @@ PadSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[PadFid[ShiftedInver
 
 
 (* ::Subsubsection::Closed:: *)
-(*ApodizeFid*)
+(*ApodizeSpectra*)
 
 
-Options[ApodizeSpectra] = {ApodizationFunction -> "Ham"}
+Options[ApodizeSpectra] = {ApodizationFunction -> "Hanning"}
 
 SyntaxInformation[ApodizeSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
@@ -434,10 +451,10 @@ ApodizeSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[ApodizeFid[Shif
 
 
 (* ::Subsubsection::Closed:: *)
-(*ApodizePadFid*)
+(*ApodizePadSpectra*)
 
 
-Options[ApodizePadSpectra] = {ApodizationFunction -> "Ham", PaddingFactor -> 2}
+Options[ApodizePadSpectra] = {ApodizationFunction -> "Hanning", PaddingFactor -> 2}
 
 SyntaxInformation[ApodizePadSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
@@ -445,16 +462,18 @@ ApodizePadSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[ApodizePadFi
 
 
 (* ::Subsubsection::Closed:: *)
-(*ApodizeFun*)
+(*ApodizeFunSpectra*)
 
 
-ApodizeFun[length_, apM_ : "GausLaur"] := ApodizeFun[length, apM] = Block[{app},
+ApodizeFun[length_, apM_:"Hanning"] := ApodizeFun[length, apM] = Block[{app, xdat, xmax},
+	xdat = Range[0, length - 1];
+	xmax = Max[Abs[xdat]];
 	app = Switch[apM,
-		"Han", 0.5 + 0.5 Table[Cos[x Pi/length], {x, 1, length}],
-		"Ham", 0.54 + 0.46 Table[Cos[x Pi/length], {x, 1, length}],
-		"Gaus", Table[N@PDF[HalfNormalDistribution[3/length], x], {x, 1, length}],
-		"Laur", Table[Exp[-3 x/(length)], {x, 1, length}],
-		"GausLaur", Table[Exp[2 x/(length)], {x, 1, length}] Table[N@PDF[HalfNormalDistribution[4/length], x], {x, 1, length}]
+		"Hanning", 0.5 + 0.5 Cos[xdat Pi/xmax],
+		"Hamming", 0.54 + 0.46 Cos[xdat Pi/xmax],
+		"Gaussian", Exp[-(3./xmax) xdat],
+		"Lorentzian", Exp[-(2./xmax)^2 xdat^2],
+		"Voigt", 0.5 Exp[-(3./xmax) xdat] + 0.5 Exp[-(2./xmax)^2 xdat^2]
 	];
 	app = app/Max[app]
 ]
@@ -508,7 +527,6 @@ GetTimeRange[fid_?VectorQ, dt_] := GetTimeRange[Length[fid], dt]
 GetTimeRange[len_?IntegerQ, dt_] := N@Range[0, (len-1) dt, dt]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*GetGyro*)
 
@@ -518,7 +536,6 @@ SyntaxInformation[GetGyro] = {"ArgumentsPattern" -> {_, _}};
 GetGyro[nuc_?StringQ, field_?NumberQ] := GyromagneticRatio[nuc] field
 
 GetGyro[field_?NumberQ,nuc_?StringQ] := GyromagneticRatio[nuc] field
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -575,7 +592,7 @@ TimeShiftEcho[fid_, time_, gyro_, {gam_, eps_, f_}] := TimeShiftEchoC[fid, time,
 
 TimeShiftEchoC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {gam, _Real, 0}, {eps, _Real, 0}, {f, _Real, 0}},Block[{timeNew},
 	timeNew = Abs[time - (time[[-1]]/2)];
-	Re[(f Exp[-gam timeNew] + (1 - f) Exp[- gam^2 timeNew^2]) Exp[2 Pi eps gyro I time] fid]
+	(f Exp[-gam timeNew] + (1 - f) Exp[- gam^2 timeNew^2]) Exp[2 Pi eps gyro I time] fid
 	],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ]
 
@@ -586,11 +603,12 @@ TimeShiftEchoC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}
 
 SyntaxInformation[ShiftSpectra] = {"ArgumentsPattern" -> {_, _, _}}
 
-ShiftSpectra[spec_, {dw_, gyro_}, shift_] := ShiftedInverseFourier[ShiftFidC[ShiftedFourier[spec], GetTimeRange[spec, dw], gyro, shift]]
+ShiftSpectra[spec_, {dw_, gyro_}, shift_] := ShiftedFourier[ShiftFidC[ShiftedInverseFourier[spec], GetTimeRange[spec, dw], gyro, shift]]
 
 ShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {eps, _Real, 0}}, 
 	Exp[2 Pi eps gyro I time] fid,
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
 
 (* ::Subsubsection::Closed:: *)
 (*ChangeDwellTimeFid*)
@@ -651,6 +669,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 	
 	(*get or make the spin systems*)
 	sysAll = If[StringQ[#], GetSpinSystem, MakeSpinSystem][#, CenterFrequency -> cf] & /@ inp;
+	sysAll = Reverse@SortBy[sysAll,First[#[[2]]] &];
 	spinTab = SysTable[sysAll];
 	
 	(*loop over systems to perform sysmulation of basis functions*)
@@ -762,7 +781,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		
 		(*-------------------------------------------------------------------*)
 		(*create the basis functions fid and pad*)
-		timeBasis=CashBasisTime[specBasisIn,pad];
+		timeBasis = CashBasisTime[specBasisIn,pad];
 		
 		(*pad and normalize the spectra spectra*)
 		specFull=scale ShiftedFourier[ApodizePadFid[ShiftedInverseFourier[specIn],PaddingFactor->pad]];
@@ -943,7 +962,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 	
 	
 	(*-------------------------------------------------------------------*)
-	(*give the output,  scale data to original values*)
+	(*give the output,scale data to original values*)
 	{Prepend[fit,1],Prepend[basis,spline],error,sol,log,{plLine,plShift}}
 ]
 
@@ -961,7 +980,7 @@ MakeVars[par_,val_,1]:=If[Length[par]===0,
 	]
 ]
 
-CashBasisTime[specBasisIn_,pad_]:=CashBasisTime[specBasisIn,pad]=ApodizePadFid[ShiftedInverseFourier[#],PaddingFactor->pad]&/@specBasisIn
+CashBasisTime[specBasisIn_,pad_] := CashBasisTime[specBasisIn,pad] = ApodizePadFid[ShiftedInverseFourier[#], PaddingFactor->pad]&/@specBasisIn
 
 
 (* ::Subsubsection::Closed:: *)
@@ -973,7 +992,7 @@ Options[FitSpectraError] = {Output -> "Error", ReadoutType -> "Fid"};
 FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {cpn_, gyro_},
 	{gam_ /; AllTrue[gam, NumericQ], eps_ /; AllTrue[eps, NumericQ], phi_ /; AllTrue[phi, NumericQ], f_ /; AllTrue[f, NumericQ]}, 
 	init___ : 0, OptionsPattern[]] := Block[{
-	specF, fidF, specBasisF, fit, ferr, gerr, errorF, errorS, reerr, imerr, gami, epsi, sigi, phii, specBasis, fidBasisF, specFit, spline, readout
+	specF, fidF, specBasisF, fit, ferr, gerr, perr, errorF, errorS, reerr, imerr, gami, epsi, sigi, phii, specBasis, fidBasisF, specFit, spline, readout
 	},
 	
 	(*get the readout type*)
@@ -995,9 +1014,12 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		(*perform Fit of basis spectra*)
 		fit = Quiet@NNLeastSquares[Transpose[Re[specBasisF]], Re[specF]];
 		(*constrain f between 0 and 1 using power function*)
-		ferr = If[NumberQ[f],10( ((f - 0.5)/.6)^10), Total[10(((# - 0.6)/.6)^10) & /@ f]];
+		ferr = Total[ConFuncC[f, 0, 1, 4]];
 		(*constrain gam to be positive*)
-		gerr = If[NumberQ[gam], (UnitStep[-(gam - 2)] (gam - 2))^4, Total[(UnitStep[-(# - 2)] (# - 2))^4 & /@ gam]];
+		gerr = Total[ConFuncC[gam, 5, 200, 3]];
+		(*constrain phase to be small*)
+		perr = ConFuncC[phi[[2]], -0.5, 0.5, 5];
+		
 		(*define errors fid and spectra*)
 		errorS = specF - fit.specBasisF;
 		errorF = fidF - fit.fidBasisF;
@@ -1008,7 +1030,7 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		
 		If[init === 0,
 			(*no initial values only minimize RMSE*)
-			reerr + imerr + ferr + gerr,
+			reerr + imerr + ferr + gerr + perr,
 			(*get initial values to constrain finetune fit*)
 			{gami, epsi, sigi, phii} = init;
 			(*calculate error, normalize for sigma contrain gam en eps*)
@@ -1030,6 +1052,20 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		{fit, StandardDeviation[error]^2}
 	]
 ]
+
+
+ConFuncUC = Compile[{{par, _Real, 0}, {min, _Real, 0}, {sc, _Real, 0}}, Block[{off = -par + min},
+	10^sc (UnitStep[off] (off))^2
+], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+
+ConFuncLC = Compile[{{par, _Real, 0}, {max, _Real, 0}, {sc, _Real, 0}}, Block[{off = par - max},
+	10^sc (UnitStep[off] (off))^2
+], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+
+ConFuncC = 
+ Compile[{{par, _Real, 0}, {min, _Real, 0}, {max, _Real, 0}, {sc, _Real, 0}}, Block[{off1 = -par + min, off2 = par - max},
+ 	10^sc (UnitStep[off1] (off1)^2 + UnitStep[off2] (off2)^2)
+ ], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1124,7 +1160,7 @@ EstimateLineWidth[{ppm_,spec_},{peaks_,amps_},gyro_,ran_,plot_:True]:=Block[{
 
 
 (*function to estimate phase form abs fitting of baiss spectra*)
-EstimatePhaseShift[{ppm_,spec_},{time_,fids_},{gam_,eps_},gyro_,{st_,en_},readout_,plot_:True]:=Module[{
+EstimatePhaseShift[{ppm_,spec_},{time_,fids_},{gam_,eps_},gyro_,{st_,en_},readout_,plot_:True]:=Block[{
 	phi1,sol1,phi2,sol2,specsC,fit,phi0f,phi1f,phi,specc,ran,pl,lim,specf,ppmf,func
 	},
 	
@@ -1327,6 +1363,7 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 (* ::Subsection::Closed:: *)
 (*PlotCSIData*)
 
+
 Options[PlotCSIData]={PlotRange->Full}
 
 SyntaxInformation[PlotCSIData] = {"ArgumentsPattern" -> {_, _, _., _.,OptionsPattern[]}}
@@ -1338,11 +1375,10 @@ PlotCSIData[datainp_, {dw_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts:OptionsP
 PlotCSIData[datainp_, dw_?NumberQ, gyro_?NumberQ, opts:OptionsPattern[]] := PlotCSIData[datainp, {dw, gyro}, opts]
 
 PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[{
-		data,datai,fun,nmax,dim,or,n,yran,dataPlot,maxPlot,maxAll,totAll,yrans,totPlot,colp,back,
-		col,spec,coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax, specPlot, gridPlot, coi
-	},
+	data,datai,fun,nmax,dim,or,n,yran,dataPlot,maxPlot,maxAll,totAll,yrans,totPlot,colp,back,
+	col,spec,coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax},
+	
 	NotebookClose[plotwindow];
-	ClearTemporaryVariables[];	
 	
 	data = N@datainp;
 	
@@ -1373,7 +1409,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 					spec = If[coor === {0, 0, 0}, 0. data[[1, 1, 1]], data[[coor[[1]], coor[[2]], coor[[3]]]]];
 					FlipView[{
 						PlotSpectra[-xdat, spec, PlotRange -> {{pmin, pmax}, Full}, Method -> "ReIm", PlotLabel->coor, ImageSize->Length[First[dataPlot]] size],
-						PlotFid[tdat, ShiftedInverseFourier[spec], Method -> "ReIm",PlotLabel->coor, ImageSize->n size]
+						PlotFid[tdat, ShiftedInverseFourier[spec], Method -> "ReIm",PlotLabel->coor, ImageSize->Length[First[dataPlot]] size]
 					}]
 				]
 				,
@@ -1498,7 +1534,7 @@ FitSpectraResultTable[parFit_, parsF_, names_, ref_, out_:"tab"] := Block[{
 
 SyntaxInformation[CompareSpectraFitPlot] = {"ArgumentsPattern" -> {_, _, _, _.}}
 
-CompareSpectraFitPlot[ppmPl_, specPlot_, fitPlot_, ranPpm_:Full] := Block[{ran, sp},
+CompareSpectraFitPlot[ppmPl_, specPlot_, fitPlot_, ranPpm_:Full] := Block[{ran, sp, error, errorF},
 	ran = {-1, 1} Max[Abs[specPlot], Abs[fitPlot]];
 	sp = 2;
 	error = specPlot - fitPlot;
@@ -1518,6 +1554,39 @@ CompareSpectraFitPlot[ppmPl_, specPlot_, fitPlot_, ranPpm_:Full] := Block[{ran, 
 		FlipView[{
 			PlotSpectra[ppmPl, error - errorF, GridLineSpacing -> sp, PlotRange -> {ranPpm, ran}, Method -> "ReIm", PlotLabel->"Fit error full"],
 			PlotSpectra[ppmPl, error - errorF, GridLineSpacing -> sp, PlotRange -> {ranPpm, Full}, Method -> "ReIm", PlotLabel->"Fit error scaled"]
+		}]
+	}]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*CompareFidFitPlot*)
+
+
+SyntaxInformation[CompareFidFitPlot] = {"ArgumentsPattern" -> {_,_,_}}
+
+CompareFidFitPlot[time_, fidPlot_, fitPlot_] := Block[{ran, sp, error, errorF},
+	sp = 2;
+	ran = {-1, 1} Max[Abs[fidPlot], Abs[fitPlot]];
+	
+	error = fidPlot - fitPlot;
+	errorF= GaussianFilter[error,Round[Length[error]/10]];
+	
+	Column[{
+		FlipView[{
+			Column[{
+				PlotFid[time, fidPlot - errorF, GridLineSpacing -> sp, PlotRange -> {Full,ran}, Method -> "Abs", PlotLabel->"Raw signal"],
+				PlotFid[time, fidPlot - errorF, GridLineSpacing -> sp, PlotRange -> {Full,ran}, Method -> "ReIm"]
+			}],
+			Column[{
+				PlotFid[time, fitPlot, GridLineSpacing -> sp, PlotRange -> {Full,ran}, Method -> "Abs", PlotLabel->"Fitted signal"],
+				PlotFid[time, fitPlot, GridLineSpacing -> sp, PlotRange -> {Full,ran}, Method -> "ReIm"]
+			}]
+		}]
+		,
+		FlipView[{
+			PlotFid[time, error - errorF, GridLineSpacing -> sp, PlotRange -> {Full,ran}, Method -> "ReIm", PlotLabel->"Fit error full"],
+			PlotFid[time, error - errorF, GridLineSpacing -> sp, PlotRange -> {Full,Full}, Method -> "ReIm", PlotLabel->"Fit error scaled"]
 		}]
 	}]
 ]
@@ -1577,6 +1646,595 @@ MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, ppmran_] := Bloc
 	{resTotPl, resBasPl, {errPl, fitPl, resPl, outPl, resfitRI, resfit}}
 ]
 
+
+(* ::Subsection::Closed:: *)
+(*CSIInterface31P*)
+
+
+Options[CSIInterface31P] = {SpectraFieldStrength -> 7};
+
+SyntaxInformation[CSIInterface31P] = {"ArgumentsPattern" -> {_., _., OptionsPattern[]}};
+
+CSIInterface31P[opts : OptionsPattern[]] := CSIInterface31P["", {0, 0}, opts]
+
+CSIInterface31P[tei_?NumberQ, bwi_?NumberQ, opts : OptionsPattern[]] := CSIInterface31P["", {tei, bwi}, opts]
+
+CSIInterface31P[file_?StringQ, opts : OptionsPattern[]] := CSIInterface31P[file, {0, 0}, opts]
+
+CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := Module[{
+	f, te, bw, nuc, field, gyro, names, met, metSel, metRef, method, plot, kload, rec, spectraC, dec, line, fine, den, z, y, x, 
+	sphase, status, statusP, kspace, noise,	header, type, ham, spectra, spectraR, spec, proc, shift, times, fids, ppms, specs, 
+	table, fit, basisFit, errorFit, pars, log, plots, specf, fitted, xm, ym, zm, dn, dc, mr, dw, nsamp, filt, filti, teu,
+	fileSave, specSave, lab, fovz, fovy, fovx
+	},
+	
+	NotebookClose[csiwindow];
+	NotebookClose[reswindow];
+	NotebookClose[plotwindow];
+	
+	(*convert input to editable parameters*)
+	f = file; te = tei; bw = bwi;
+	
+	(*fixed parameters and default values*)
+	nuc = "31P"; field = OptionValue[SpectraFieldStrength];
+	gyro = GetGyro[nuc, field];
+	
+	(*initial manipulator values*)
+	names = met = metSel = {"PE", "PC", "Piex", "Piin", "GPE", "GPC", "PCr", "ATP", "NAD", "UDPG"};
+	metRef = "PCr"; method = "WSVD"; plot = "Cor";
+	dec = False; 
+	line = fine = den = filt = True;
+	
+	(*initial button options*)
+	kload = rec = sphase = fitted = proc = dn = dc = False;
+	mr = ""; 
+	spectraC = shift = 0;
+	
+	(*initialize fit coors*)
+	z = y = x = fovz = fovy = fovx = zm = ym = xm = 0;
+	
+	(*monitoring*)
+	status = ""; statusP = False;
+	
+	grid = {
+		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
+		
+		(*------------ STATUS -------------*)
+		{TextCell["Status "], Dynamic[Row[{TextCell[status, Bold, Black], If[statusP, ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate], TextCell[""]]}, " "]]},
+			
+		(*------------ LOADING -------------*)
+		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
+		{TextCell[""], TextCell["Import Data", Bold, 14]},
+		
+		(*select file button*)
+		{TextCell["Select CSI list data ", FontFamily -> "Helvetica"], FileNameSetter[Dynamic[f], "Open", {"List Data" -> {"*.list", "*.data"}}, ImageSize -> 175]},
+		
+		(*load button*)
+		{Button["Load data",
+			NotebookClose[reswindow];
+			NotebookClose[plotwindow];
+			status = "Loading data"; statusP = True;
+			rec = proc = dn = dc = sphase = False;
+			{{kspace, noise}, {header, type}} = ReadListData[f, False];
+			If[filt,
+				ham = Total@Unitize[Abs[OrderKspace[kspace, type, {"N_aver", "N_kz", "N_ky", "N_kx"}][[1]]]];
+				kspace = OrderKspace[TotalType[kspace, type, {"N_aver"}], {"N_chan", "N_samp", "N_kz", "N_ky", "N_kx"}][[1]];
+				,
+				kspace = OrderKspace[MeanType[kspace, type, {"N_aver"}], {"N_chan", "N_samp", "N_kz", "N_ky", "N_kx"}][[1]];
+				filti=filt;
+			];
+			kload = True;
+			status = "Done loading data!"; statusP = False;
+			,
+			Background -> Dynamic[If[kload, RGBColor[0.86, 0.97, 0.77], Automatic]], Enabled -> Dynamic[FileExistsQ[f]], Method -> "Queued", ImageSize -> 175
+		],Dynamic[f]},
+		{TextCell[" Filter data  "], SetterBar[Dynamic[filt], {True -> " k-space weighteing ", False -> " Hamming "}]},
+		
+		(*------------ ACQUISITION -------------*)
+		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
+		{TextCell[""], TextCell["Acquistion parameters", Bold, 14]},
+		
+		(*acquistion paramters*)
+		{TextCell["Echo time [ms] "], InputField[Dynamic[te], Number]},
+		{TextCell["Bandwidth [Hz] "], InputField[Dynamic[bw], Number]},
+		
+		(*------------ RECONSTRUCTION -------------*)
+		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
+		{TextCell[""], TextCell["Data reconstruction", Bold, 14]},
+		
+		(*reconstruct button*)
+		{Button["Reconstruc data",
+			NotebookClose[reswindow];
+			NotebookClose[plotwindow];
+			status = "Reconstructing using " <> method <> ""; statusP = True;
+			rec = proc = dn = dc = sphase = False; mr = "";
+			mr = method;
+			dw = 1./bw;
+			teu = te/1000;
+			spectraR = CoilWeightedReconCSI[kspace, noise, header, Method -> method];
+			If[!filti,
+				ham = MakeHammingFilter[Dimensions[spectraR][[;;-2]]];
+				spectraR = HammingFilterCSI[spectraR];
+			];
+			spectra = spectraR;
+			rec = True; 
+			If[den, spectra = DenoiseCSIdata[spectra]; proc = dn = True; ];
+			If[dec, spectra = DeconvolveCSIdata[spectra, ham]; proc = dc = True;];
+			{zm, ym, xm, nsamp} = Dimensions[spectra];
+			
+			(*find shift*)
+			spec = Mean@Flatten[spectra, 2];
+			shift = EstimateLineWidth[{GetPpmRange[spec, 1/bw, gyro], spec}, {{0, -2.52, -7.56, -16.15}, {2, 1, 1, 1}}, gyro, {-20, 10}][[2]];
+			status = "Done reconstructing!"; statusP = False;
+			,
+			Background -> Dynamic[If[rec, RGBColor[0.86, 0.97, 0.77], Automatic]], Enabled -> Dynamic[kload && bw =!= 0], Method -> "Queued", ImageSize -> 175
+		],
+		Row[{TextCell[" Denoise data  "], Checkbox[Dynamic[den]], TextCell["   Deconvolve data  "], Checkbox[Dynamic[dec]]}, ""]},
+		
+		(*select method*)
+		{TextCell[" Reconstruction method  "], SetterBar[Dynamic[method], {"Roemer" -> " Roemer ", "WSVD" -> " WSVD "}]},
+		
+		(*report*)
+		{Dynamic[TextCell[If[rec, "PCr shift is " <> ToString[Round[shift, .01]] <> " ppm ", ""]]], Dynamic[TextCell[If[rec, "Reconstructed usigng: " <> mr <> If[dn, ", denoised", ""] <> If[dc, ", deconvolved", ""], ""]]]},
+		
+		(*------------ PLOTTING -------------*)
+		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
+		{TextCell[""], TextCell["Data Plotting", Bold, 14]},
+		
+		(*plotting data button*)
+		{Button["Plot CSI data", 
+			NotebookClose[reswindow];
+			NotebookClose[plotwindow];
+			Switch[plot,
+				(*plot raw data*)
+				"Raw", 
+				status = "Plotting the CSI data"; 
+				PlotCSIData[spectraR, {dw, gyro}, PlotRange -> {10, -20}],
+				"Proc",
+				status = "Plotting the CSI data";
+				PlotCSIData[spectra, {dw, gyro}, PlotRange -> {10, -20}],
+				(*plot phase corrected data*)
+				"Cor",
+				If[!sphase,
+					status = "Correcting phase of spectra"; statusP = True;
+					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
+					status = "Done phase correcting spectra!"; statusP = False;
+					sphase = True
+				];
+				status = "Plotting the CSI data";
+				PlotCSIData[spectraC, {dw, gyro}, PlotRange -> {10, -20}]
+			]
+			,
+			Enabled -> Dynamic[rec], Method -> "Queued", ImageSize -> 175
+		],
+		
+		(*select plot method*)
+		Dynamic[SetterBar[Dynamic[plot], {"Raw" -> " Raw ", If[proc, "Proc" -> " Processed ", Nothing], "Cor" -> " Phase corrected "}]]},
+		{Button["Save CSI",
+			(*saving make better!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*)
+			fileSave = SystemDialogInput["FileSave"];
+			specSave = Switch[plot,
+				(*plot raw data*)
+				"Raw", spectraR,				
+				"Proc",spectra,
+				(*plot phase corrected data*)
+				"Cor",
+				If[!sphase,
+					status = "Correcting phase of spectra"; statusP = True;
+					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
+					status = "Done phase correcting spectra!"; statusP = False;
+					sphase = True;
+					spectraC
+				];
+			];
+			lab = mr <> If[plot==="Raw","",If[dn, ", denoised", ""] <> If[dc, ", deconvolved", ""]]<>If[plot ==="Cor"," ,phase corrected",""];
+			If[fileSave =!= $Canceled, ExportSparSdat[fileSave, specSave, {bw, te}, {gyro, nuc},{"QMRITools Data", fovy, fovz, 0, 0, lab}]];
+			(*saving make better!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*)
+			,
+			Enabled -> Dynamic[rec&&fovy>0&&fovz>0&&fovx>0], Method -> "Queued", ImageSize -> 175],
+		Row[{
+			{fovz, fovy, fovx} = Round[{fovz, fovy, fovx}];
+			TextCell["  z  "], InputField[Dynamic[fovz, (fovz = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[fovz>0, White, RGBColor[1, 0.9, 0.9]]]],
+			TextCell["  y  "], InputField[Dynamic[fovy, (fovy = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[fovy>0, White, RGBColor[1, 0.9, 0.9]]]],
+			TextCell["  x  "], InputField[Dynamic[fovx, (fovx = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[fovx>0, White, RGBColor[1, 0.9, 0.9]]]]
+		}, " "]
+		},
+		(*------------ FITTING -------------*)
+		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
+		{TextCell[""], TextCell["Spectra Fitting", Bold, 14]},
+		
+		(*fitting button*)
+		{Button["Fit selected spectra",
+			NotebookClose[reswindow];
+			NotebookClose[plotwindow];
+			(*basis spectra*)
+			status = "Generating basis spectra"; statusP = True;
+			{names, times, fids, ppms, specs, table} = GetSpectraBasisFunctions[metSel, {"ATP"}, BasisSequence -> {"PulseAcquire", teu}, SpectraLinewidth -> 0,
+				SpectraLinewidthShape -> "Voigt", SpectraSamples -> nsamp, SpectraBandwith -> bw, SpectraPpmShift -> 0,
+				SpectraFieldStrength -> field, SpectraNucleus -> nuc];
+			status = "Done generating basis spectra!"; statusP = False;
+			
+			(*fitting*)
+			status = "Start fitting spectra"; statusP = True;
+			specf = ShiftSpectra[spectra[[z, y, x]], {1/bw, gyro}, shift];
+			{fit, basisFit, errorFit, pars, log, plots} = FitSpectra[specs, specf, {10, -20}, dw, { {0, -2.52, -7.56, -16.15}, {2, 1, 1, 1}},
+				PaddingFactor -> 2, SpectraPpmShift -> 0, SplineSpacingFactor -> 1.5, SpectraOutputPlots -> True, 
+				SpectraNucleus -> nuc, SpectraFieldStrength -> field, FitLineShape -> line, FineTuneFit -> fine];
+			status = "Done fitting spectra!"; statusP = False;
+			fitted = True;
+			,
+			Background -> Dynamic[If[fitted, RGBColor[0.86, 0.97, 0.77], Automatic]], Enabled -> Dynamic[rec && 1 <= x <= xm && 1 <= y <= ym && 1 <= z <= zm], Method -> "Queued", ImageSize -> 175],
+			
+			(*size reporting*)
+			Dynamic[TextCell[If[rec, "The CSI grid size is " <> ToString[Dimensions[spectra][[;; -2]]], ""]]]
+		},
+		
+		(*input fit parameters*)
+		{TextCell["Input coordinate to fit "], Row[{
+			{z, y, x} = Round[{z, y, x}];
+			TextCell["  z  "], InputField[Dynamic[z, (z = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[1 <= z <= zm, White, RGBColor[1, 0.9, 0.9]]]],
+			TextCell["  y  "], InputField[Dynamic[y, (y = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[1 <= y <= ym, White, RGBColor[1, 0.9, 0.9]]]],
+			TextCell["  x  "], InputField[Dynamic[x, (x = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[1 <= x <= xm, White, RGBColor[1, 0.9, 0.9]]]]
+		}, " "]},
+		
+		(*fitting options*)
+		{TextCell["Fitting options "], Row[{TextCell[" Finetune fit  "], Checkbox[Dynamic[fine]], TextCell["   Fit lineshape  "], Checkbox[Dynamic[line]]}, ""]},
+		(*select metabolites*)
+		{TextCell["Select metabolites to fit "], TogglerBar[Dynamic[metSel], met]},
+		
+		(*------------ RESULTS -------------*)
+		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
+		{TextCell[""], TextCell["Fitting Results", Bold, 14]},
+		
+		(*show fit results button*)
+		{TextCell["Refference metabolite "], Dynamic[SetterBar[Dynamic[metRef], names]]},
+		{Button["Show results",
+			NotebookClose[reswindow];
+			NotebookClose[plotwindow];
+			status = "Generating fit results"; statusP = True;
+			SpectraFitResult[specf, {fit, basisFit}, teu, {dw, gyro}, {pars, names, metRef, log}, plots, PlotRange -> {10, -20}];
+			status = "Done with generating fitting results!"; statusP = False;
+			,
+			Enabled -> Dynamic[fitted], Method -> "Queued", ImageSize -> 175]
+		},
+		
+		(*------------ CLOSING -------------*)
+		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
+		{TextCell[""], CancelButton["Close GUI", DialogReturn[Clear[kspace, spectra]], ImageSize -> 175]},{TextCell[""]
+		},
+		{TextCell[""]}
+	};
+	
+	dialogGrid = Manipulate[(*Column[{{f,te,bw},{den,dec,method,plot},{fine,line,{x,y,z}},{metSel},{metRef},{Dimensions[kspace]};}],*)"",
+		Grid[grid, Alignment -> {{Right, Left}}, ItemSize -> {{18, 37}, Automatic}],
+		AppearanceElements -> None,
+		SynchronousUpdating -> False,
+		Paneled -> False,
+		ControlPlacement -> Right
+	];
+	
+	(*------------ DIALOG -------------*)
+	csiwindow = CreateDialog[dialogGrid, Background -> White, WindowSize -> All, WindowTitle -> "CSI Processing GUI"];
+];
+
+
+(* ::Subsection::Closed:: *)
+(*SpectraFitResult*)
+
+
+Options[SpectraFitResult] = {PlotRange -> Full};
+
+SyntaxInformation[SpectraFitResult] = {"ArgumentsPattern" -> {_, _, _, _, _, _, _., OptionsPattern[]}};
+
+SpectraFitResult[specf_, {fit_, basisFit_}, te_, {dw_, gyro_}, {pars_, names_, metRef_, log_}, ops : OptionsPattern[]] := SpectraFitResult[specf, {fit, basisFit}, te, {dw, gyro}, {pars, names, metRef, log}, {}, ops]
+
+SpectraFitResult[specf_, {fit_, basisFit_}, te_, {dw_, gyro_}, {pars_, names_, metRef_, log_}, plots_, OptionsPattern[]] := Block[{resTab, ppm, phase, resTotPl, resBasPl, specFit, fidf, fidFit, time, comFidPlot, specPlot, fitPlot, comSpecPlot, logging, ran},
+	NotebookClose[reswindow];
+	resTab = FitSpectraResultTable[fit, pars, names, metRef];
+	ran = OptionValue[PlotRange];
+	
+	(*make result plot*)
+	ppm = GetPpmRange[specf, dw, gyro];
+	phase = -pars[[3]];
+	{resTotPl, resBasPl} = MakeSpectraResultPlot[ppm, specf, {fit, basisFit}, names, ran][[1 ;; 2]];
+	
+	(*make fitted spectra and fids*)
+	specFit = fit.basisFit;
+	fidf = ShiftedInverseFourier[specf];
+	fidFit = ShiftedInverseFourier[specFit];
+	
+	(*make fid plot*)
+	time = GetTimeRange[fidf, dw];
+	comFidPlot = CompareFidFitPlot[time, fidf, fidFit];
+	
+	(*correct fitted spectra*)
+	specPlot = CorrectTESpec[ApodizePadSpectra[PhaseShiftSpectra[specf, ppm, gyro, phase]], dw, te, gyro, ran];
+	fitPlot = CorrectTESpec[ApodizePadSpectra[PhaseShiftSpectra[specFit, ppm, gyro, phase]], dw, te, gyro, ran];
+	
+	(*make spectra plot*)
+	ppm = GetPpmRange[specPlot, dw, gyro];
+	comSpecPlot = CompareSpectraFitPlot[ppm, specPlot, fitPlot, ran];
+	
+	(*make logging*)
+	logging = MakeLogging[log];
+	(*make result window*)
+	reswindow = CreateDialog[{
+		CancelButton["Close", DialogReturn[]],
+		TabView[{
+			"Fit result spectra" -> comSpecPlot, 
+			"Fit result fid" -> comFidPlot, 
+			"Result table" -> resTab, 
+			"Fit log" -> logging,
+			If[plots === {}, Nothing, "Fit Calibration" -> Column[plots]], 
+			"Raw fit result" -> resTotPl, 
+			"Raw fitted basis" -> resBasPl
+		}, Alignment -> Center]
+	}, Background -> White];
+]
+
+MakeLogging[log_] := Block[{tmp},
+	tmp = DeleteCases[Flatten[{If[StringQ[#], StringSplit[#, "  "], #]}], ""] & /@ log;
+	tmp = If[Length[#] == 1 && Head[#[[1]]] === String, Prepend[#, ""], #] & /@ tmp;
+	Grid[{{Grid[tmp[[1 ;; 22]], Alignment -> Left], Grid[tmp[[23 ;;]], Alignment -> Left]}}, Alignment -> Top, Spacings -> 4]
+]
+
+
+(* ::Subsection:: *)
+(*Spar-Sdat*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*ImportSparSdat*)
+
+
+SyntaxInformation[ImportSparSdat] = {"ArgumentsPattern" -> {_, _}};
+
+ImportSparSdat[fspar_,fsdat_]:=Block[{nums,head,depth,row,nsamp,x,y,z,bw,te,nuc,gyro,field,fids,specs},
+	(*read raw data and header*)
+	nums=FromVaxD[bin=BinaryReadList[fsdat,"UnsignedInteger32"]];
+	head=ParseSpar[Import[fspar,"Lines"]];
+	
+	(*get header infor*)
+	{bw,te,nuc,gyro}={"sample_frequency","spectrum_echo_time","nucleus","synthesizer_frequency" 10^-6}/.head;
+	field=Round[gyro /GyromagneticRatio[nuc],.1];
+	
+	{depth,row,nsamp,x,y,z}={"num_dimensions","spec_num_row","dim1_pnts","dim2_pnts","dim3_pnts","dim4_pnts"}/.head;
+	(*partition the data to the correct size*)
+	fids=Switch[depth,
+		2,
+		If[row==1,
+			(*single voxel*)
+			TransData[Fold[Partition,nums,{2}],"r"],
+			(*dynamic series*)
+			TransData[Fold[Partition,nums,{2,nsamp}],"r"]
+		],
+		3,
+		TransData[Fold[Partition,nums,{2,nsamp,x}],"r"],
+		4,(*3DCSI*)
+		TransData[Fold[Partition,nums,{2,nsamp,x,y}],"r"]
+	];
+	fids=fids[[1]]+fids[[2]]I;
+	
+	(*convert fid to spec*)
+	specs=If[ArrayDepth[fids]>1, Map[ShiftedFourier,fids,{-2}],	ShiftedFourier[fids]];
+	
+	(*ouput data*)
+	{specs,{bw,te},{gyro,nuc},head}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ParseSpar*)
+
+
+ParseSpar[spari_]:=Block[{textIn,values,lab,val,spar},
+	spar=Select[spari,#=!=""&];
+	textIn=Select[spar,StringTake[#,1]==="!"&];
+	values=StringSplit[#," :"]&/@Select[spar,StringTake[#,1]=!="!"&];
+	{lab,val}=Transpose[If[Length[#]===1,Join[#,{""}],StringTrim/@#]&/@values];
+	val=If[StringMatchQ[#,NumberString],ToExpression[#],#]&/@val;
+	Thread[lab->val]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FromVaxD*)
+
+
+FromVaxD=Compile[{{int,_Integer,0}},Block[{bin,sign ,fraction, exponent},
+	(*pad to 32 binary numbers*)
+	bin=PadLeft[IntegerDigits[int,2],32];
+	(*sign is bit 17*)
+	sign=(-1)^bin[[17]];
+	(*fraction is stored at the end the beginning of the binary number*)
+	fraction=(FromDigits[Join[bin[[26;;-1]],bin[[1;;16]]],2]/16777216.)+0.5;
+	(*the exponent is the center*)
+	exponent=2.^(FromDigits[bin[[18;;25]],2]-128.);
+	(*create the number*)
+	sign fraction exponent
+],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*ExportSparSdat*)
+
+
+SyntaxInformation[ExportSparSdat] = {"ArgumentsPattern" -> {_, _, {_,_}, {_,_}}};
+
+ExportSparSdat[file_,specs_,{bw_,te_},{gyro_,nuc_}]:=ExportSparSdat[file,specs,{bw,te},{gyro,nuc},{"QMRITools Data",1,1,0,0,"QMRITools Data"}]
+
+ExportSparSdat[file_,specs_,{bw_,te_},{gyro_,nuc_},pars_]:=Block[{fidsOut,numsOut,fileOut,datOut,headOut},
+	(*export data*)
+	fidsOut=Map[ShiftedInverseFourier,specs,{-2}];
+	numsOut=binO=ToVaxD[Flatten[TransData[{Re@fidsOut,Im@fidsOut},"l"]]];
+	fileOut=file<>".SDAT";
+	If[FileExistsQ[fileOut],DeleteFile[fileOut]];
+	BinaryWrite[fileOut,numsOut,"UnsignedInteger32"];
+	Close[fileOut];
+	
+	(*export header*)
+	headOut=MakeSpar[specs,{bw,te},{gyro,nuc},pars];
+	Export[file<>".SPAR",headOut,"text"];
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ToVaxD*)
+
+
+ToVaxD=Compile[{{num,_Real,0}},Block[{signBin,numA,exp,expBin,frac,fracBin},
+	If[num===0.,
+		FromDigits[ConstantArray[0,32],2],
+		(*get the sign bit ans remove sign*)
+		signBin={UnitStep[Sign[-num]]};
+		numA=Abs[num];
+		(*get the exponent*)
+		exp=Ceiling[1./Log[numA,2.]];
+		expBin=PadLeft[IntegerDigits[exp+128,2],8];
+		(*get the fracqtion*)
+		fracBin=PadLeft[IntegerDigits[Round[16777216.(numA/(2.^exp)-0.5)],2],23];
+		(*output the integer*)
+		FromDigits[Join[fracBin[[8;;-1]],signBin,expBin,fracBin[[1;;7]]],2]
+	]
+],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeSpar*)
+
+
+MakeSpar[{dimzO_,dimyO_,dimxO_,nsampO_},{bw_,te_},{gyro_,nuc_}]:=MakeSpar[{dimzO,dimyO,dimxO,nsampO},{bw,te},{gyro,nuc},{"QMRITools Data",1,1,0,0,"QMRITools Data"}];
+
+MakeSpar[specs_,{bw_,te_},{gyro_,nuc_},{name_,fov1_,fov2_,tr_,teS_,proc_}]:=Block[{
+dimzO,dimyO,dimxO,nsampO,gyroO,nucO,bwO,teO,nameO,fov1O,fov2O,trO,thickO,processingO,
+text,lab,filHeader,fixedHeader, vals, head,row,depth
+},
+(*swith between data dimensions*)
+depth=ArrayDepth[specs];
+Switch[depth,
+1,(*single voxel*)
+nsampO=Length[specs];
+row=dimzO=dimyO=dimxO=1;
+,
+2,(*dynamic data*)
+{row,nsampO}=Dimensions[specs];
+dimzO=dimyO=dimxO=1;
+,
+3,(*2D CSI*)
+{dimyO,dimxO,nsampO}=Dimensions[specs];
+row=dimxO dimyO;
+dimzO=1;
+,
+4,(*3D CSI*)
+{dimzO,dimyO,dimxO,nsampO}=Dimensions[specs];
+row=dimxO dimyO;
+];
+
+(*manditory input paramters*)
+{gyroO,nucO}={10^6 gyro,nuc};
+{bwO,teO}={bw,te};
+(*optional input parameters*)
+{nameO,fov1O,fov2O,trO}={name,fov1,fov2,tr};
+thickO=Round[fov2/dimzO];
+processingO=proc;(*prefer the processing steps*)
+
+(*all needed fixed header information orders of text and lab are important*)
+text={
+"!--------------------------------------------------------------------","!","!","!      CAUTION - Investigational device.","!      Limited by Federal Law to investigational use.","!","!","!      GYROSCAN spectro parameter file. ","!      Last revised 05-July-2007.","!--------------------------------------------------------------------","!   This file contains time domain data in the spectral dimension.","!   S15/ACS: set of *.SPAR and *.SDAT files is created, (dataformat: VAX CPX floats)","!--------------------------------------------------------------------","!---------------------------------------------","!--------------------","! Column parameters ","!--------------------","!-----------------","! Row parameters ","!-----------------","!-------------------------------------------------","! Extra parameters in order to make data transfer ","! possible between S15/ACS and SUNSPEC: ","!-------------------------------------------------","!-------------------------------------------------","!-----------------------------------------------------","!-----------------------------------------------------","!-----------------------------------------------------","!---------------------------------------------------","!   Additional parameters","!---------------------------------------------------","!-----------------------------------------------------"
+};
+
+lab={
+"examination_name","scan_id","scan_date","patient_name","patient_birth_date","patient_position","patient_orientation","samples","rows","synthesizer_frequency","offset_frequency","sample_frequency","echo_nr","mix_number","nucleus","t0_mu1_direction","echo_time","repetition_time","averages","volume_selection_enable","t1_measurement_enable","t2_measurement_enable","time_series_enable","phase_encoding_enable","nr_phase_encoding_profiles","si_ap_off_center","si_lr_off_center","si_cc_off_center","si_ap_off_angulation","si_lr_off_angulation","si_cc_off_angulation","t0_kx_direction","t0_ky_direction","nr_of_phase_encoding_profiles_ky","phase_encoding_direction","phase_encoding_fov","slice_thickness","image_plane_slice_thickness","slice_distance","nr_of_slices_for_multislice","Spec.image in plane transf","spec_data_type","spec_sample_extension","spec_num_col","spec_col_lower_val","spec_col_upper_val","spec_col_extension","spec_num_row","spec_row_lower_val","spec_row_upper_val","spec_row_extension","num_dimensions","dim1_ext","dim1_pnts","dim1_low_val","dim1_step","dim1_direction","dim1_t0_point","dim2_ext","dim2_pnts","dim2_low_val","dim2_step","dim2_direction","dim2_t0_point","dim3_ext","dim3_pnts","dim3_low_val","dim3_step","dim3_direction","dim3_t0_point","dim4_ext","dim4_pnts","dim4_low_val","dim4_step","dim4_direction","dim4_t0_point","echo_acquisition","TSI_factor","spectrum_echo_time","spectrum_inversion_time","image_chemical_shift","resp_motion_comp_technique","de_coupling","equipment_sw_verions","placeholder1","placeholder2"
+};
+
+(*from input*)
+filHeader={
+(*general acquistion names*)
+"patient_position"->"\"head_first\"",(*"\"head_first\"","\"feet_first\""*)
+"patient_orientation" ->"\"supine\"",(*"\"supine\"","\"prone\""*)
+(*get from input window*)
+"examination_name"->nameO,"patient_name"->nameO,
+"phase_encoding_fov"->fov1O,(*mm fov in freq*)
+"slice_thickness"->fov2O,(*mm fov in phase*)
+"slice_distance"->If[depth>2,thickO,0],(*mm slice thickness*)
+"repetition_time"->trO,(*ms*)
+(*save date*)
+"scan_date"->StringRiffle[ToString/@DateList[Today][[1;;3]],"."]<>" "<>StringRiffle[ToString/@Round[DateList[Now][[-3;;]]],":"],
+(*get from gui with processing settings*)
+"scan_id"->processingO,
+
+(*get from processing tool*)
+"synthesizer_frequency"->gyroO,(*MHz*)
+"sample_frequency" ->bwO,(*Hz*)
+"nucleus" ->nucO,(*string*)
+"echo_time"->teO,(*ms*)
+"spectrum_echo_time"->If[teS===0,teO,teS],(*ms, !!! should be 0 after phasing*)
+
+(*get from data dimensions*)
+"num_dimensions"->Clip[depth,{2,4}],
+(*dynamics if needed*)
+"rows"->row,"spec_row_upper_val"->row,"spec_num_row"->row,
+(*fid parameters and time*)
+"samples" ->nsampO,"spec_num_col"->nsampO,"dim1_pnts"->nsampO,
+"dim1_step"-> 1./bwO,(*s*)"spec_col_upper_val"->(nsampO-1)(1./bw),(*s*)
+(*data dimensions*)
+"dim2_pnts"->dimxO,"dim3_pnts"->dimyO,
+"nr_of_slices_for_multislice"->dimzO,
+"nr_phase_encoding_profiles"->dimxO,
+"nr_of_phase_encoding_profiles_ky"->dimyO,
+"phase_encoding_enable"-> If[depth<=2,"\"no\"","\"yes\""],"dim4_pnts" ->dimzO
+};
+
+(*fixed parameters that are default*)
+fixedHeader={
+(*possible non fixed parameters*)
+"offset_frequency" ->0,"averages"->1,"echo_nr"-> 1,"mix_number"-> 1,
+"spectrum_inversion_time"->0,"image_chemical_shift"->0,
+(*start fixed parameters*)
+"patient_birth_date"->"1980.11.25","image_plane_slice_thickness"->0,
+(*general fixed parameters*)
+"t0_mu1_direction"->0,
+"volume_selection_enable"->"\"no\"","t1_measurement_enable"->"\"no\"","t2_measurement_enable"->"\"no\"","time_series_enable"->"\"no\"",
+
+
+"si_ap_off_center"->0,"si_lr_off_center"->0,"si_cc_off_center"->0,"si_ap_off_angulation"->0,
+"si_lr_off_angulation"->0,"si_cc_off_angulation"->0,
+"t0_kx_direction"->50,"t0_ky_direction"->50,
+"phase_encoding_direction"->"\"trans\"",
+
+
+"Spec.image in plane transf"->"\"minA-minB\"",
+(*column and row fixed parameters*)
+"spec_data_type"->"cf","spec_sample_extension"->"[V]",
+"spec_col_lower_val"->0,"spec_col_extension"->"[sec]",
+"spec_row_lower_val"->1,"spec_row_extension"->"[index]",
+(*per dim fixed parameters*)
+"dim1_ext"->"[sec]","dim1_low_val"->0,"dim1_direction"->"mu1","dim1_t0_point"->0,
+"dim2_ext"->"[num]","dim2_low_val"->1.0,"dim2_step"->1.0,"dim2_direction"->"x","dim2_t0_point"->50,
+"dim3_ext"->"[num]","dim3_low_val"->1.0,"dim3_step"->1.0,"dim3_direction"->"y","dim3_t0_point"->50,
+"dim4_ext"->"[index]","dim4_low_val"->1.0,"dim4_step"->1.0,"dim4_direction"->"slice","dim4_t0_point"->"-",
+(*closing values*)
+"echo_acquisition"->"NO","TSI_factor"->0,"resp_motion_comp_technique"->"NONE","de_coupling"->"NO",
+"equipment_sw_verions"->"QMRITools CSIinterface","placeholder1"->"","placeholder2"->""
+};
+
+(*generate the header values*)
+vals=lab/.Join[filHeader,fixedHeader];
+head=Thread[lab->vals];
+head=StringReplace[#[[1]]<>" : "<>If[StringQ[#[[2]]],#[[2]],If[IntegerQ[#[[2]]],ToString[#[[2]]],ToString[DecimalForm[#[[2]],{20,15}]]]],": ["->":["]&/@head;
+
+StringRiffle[Join[text[[;;13]],head[[;;41]],text[[{14}]],head[[42;;43]],
+text[[15;;17]],head[[44;;47]],
+text[[18;;20]],head[[48;;51]],
+text[[21;;24]],head[[{52}]],
+text[[{25}]],head[[53;;58]],
+text[[{26}]],head[[59;;64]],
+text[[{27}]],head[[65;;70]],
+text[[{28}]],head[[71;;76]],
+text[[29;;31]],head[[77;;86]],
+text[[{32}]],{""}
+],"\n\n"]
+]
 
 
 (* ::Section:: *)

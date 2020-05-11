@@ -2398,32 +2398,32 @@ SyntaxInformation[GetSlicePositions]={"ArgumentsPattern"->{_,_.,OptionsPattern[]
 GetSlicePositions[data_, opts:OptionsPattern[]]:=GetSlicePositions[data, {1,1,1},opts]
 
 GetSlicePositions[data_, vox_, OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,pers,min,max,minmax,result,num},
-(*get the max intensity slice*)
-pers={{2,3,1},{1,3,1},{1,2,1}};
-result=(
-dat=MeanNoZero@Flatten[data,pers[[#,1;;2]]];
-len=Length[dat];
-fil=Clip[len/30,{2,Infinity}];
-ran=OptionValue[DropSlices][[#]];
-num=OptionValue[PeakNumber][[#]];
-{min,max}=MinMax[dat];
-minmax=(min+0.5(max-min));
-dat[[;;ran]]=min;
-dat[[-ran;;]]=min;
-dat=GaussianFilter[dat,fil];
-peaks=FindPeaks[dat,fil];
-minmax=(Min[dat]+0.5(Max[dat]-Min[dat]));
-peaks=Select[peaks,#[[2]]>minmax&];
-{dat,peaks,peaks[[;;num]],peaks[[;;num,1]]}
-)&/@{1,2,3};
-(*make chekc plot*)
-If[OptionValue[MakeCheckPlot],Print[Row[Show[
-ListLinePlot[#[[1]],PlotStyle->Black],
-ListPlot[#[[2]],PlotStyle->Directive[{PointSize[Large],Red}]],
-ListPlot[#[[3]],PlotStyle->Directive[{PointSize[Large],Green}]]
-,Axes->True,ImageSize->200]&/@result]]
-];
-vox result[[All,-1]]
+	(*get the max intensity slice*)
+	pers={{2,3,1},{1,3,1},{1,2,1}};
+	result=(
+	dat=MeanNoZero@Flatten[data,pers[[#,1;;2]]];
+	len=Length[dat];
+	fil=Clip[len/30,{2,Infinity}];
+	ran=OptionValue[DropSlices][[#]];
+	num=OptionValue[PeakNumber][[#]];
+	{min,max}=MinMax[dat];
+	minmax=(min+0.5(max-min));
+	dat[[;;ran]]=min;
+	dat[[-ran;;]]=min;
+	dat=GaussianFilter[dat,fil];
+	peaks=FindPeaks[dat,fil];
+	minmax=(Min[dat]+0.5(Max[dat]-Min[dat]));
+	peaks=Select[peaks,#[[2]]>minmax&];
+	{dat,peaks,peaks[[;;num]],peaks[[;;num,1]]}
+	)&/@{1,2,3};
+	(*make chekc plot*)
+	If[OptionValue[MakeCheckPlot],Print[Row[Show[
+	ListLinePlot[#[[1]],PlotStyle->Black],
+	ListPlot[#[[2]],PlotStyle->Directive[{PointSize[Large],Red}]],
+	ListPlot[#[[3]],PlotStyle->Directive[{PointSize[Large],Green}]]
+	,Axes->True,ImageSize->200]&/@result]]
+	];
+	vox result[[All,-1]]
 ]
 
 
