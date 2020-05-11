@@ -869,12 +869,10 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 			sens = MakeSense[HammingFilterCSI[Mean[fids[[1 ;; OptionValue[CoilSamples]]]]],cov];
 			
 			(*perform the recon*)
-			TransData[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra, "l"]
+			TransData[CoilCombine[#, cov, sens, Method -> "RoemerEqualSignal"] & /@ spectra, "l"]
 			,
 			"WSVD",
-			CoilCombine[spectra, cov, Method -> "WSVD"],
-			"WSVD2",
-			CoilCombine[spectra, cov, Method -> "WSVD2"]
+			CoilCombine[spectra, cov, Method -> "WSVD"]
 		]
 	];
 	
