@@ -1665,7 +1665,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 	f, te, bw, nuc, field, gyro, names, met, metSel, metRef, method, plot, kload, rec, spectraC, dec, line, fine, den, z, y, x, 
 	sphase, status, statusP, kspace, noise,	header, type, ham, spectra, spectraR, spec, proc, shift, times, fids, ppms, specs, 
 	table, fit, basisFit, errorFit, pars, log, plots, specf, fitted, xm, ym, zm, dn, dc, mr, dw, nsamp, filt, filti, teu,
-	fileSave, specSave, lab, fovz, fovy, fovx
+	fileSave, spectraPlot, lab, fovz, fovy, fovx
 	},
 	
 	NotebookClose[csiwindow];
@@ -1785,25 +1785,19 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 		{Button["Plot CSI data", 
 			NotebookClose[reswindow];
 			NotebookClose[plotwindow];
-			Switch[plot,
-				(*plot raw data*)
-				"Raw", 
-				status = "Plotting the CSI data"; 
-				PlotCSIData[spectraR, {dw, gyro}, PlotRange -> {10, -20}],
-				"Proc",
-				status = "Plotting the CSI data";
-				PlotCSIData[spectra, {dw, gyro}, PlotRange -> {10, -20}],
-				(*plot phase corrected data*)
+			spectraPlot = Switch[plot,
+				"Raw", spectraR,
+				"Proc", spectra,
 				"Cor",
 				If[!sphase,
 					status = "Correcting phase of spectra"; statusP = True;
 					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
-					status = "Done phase correcting spectra!"; statusP = False;
-					sphase = True
+					status = "Done phase correcting spectra!"; statusP = False; sphase = True
 				];
-				status = "Plotting the CSI data";
-				PlotCSIData[spectraC, {dw, gyro}, PlotRange -> {10, -20}]
-			]
+				spectraC
+			];
+			status = "Plotting the CSI data"; 
+			PlotCSIData[spectraPlot, {dw, gyro}, PlotRange -> {10, -20}]
 			,
 			Enabled -> Dynamic[rec], Method -> "Queued", ImageSize -> 175
 		],
@@ -1812,31 +1806,29 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 		Dynamic[SetterBar[Dynamic[plot], {"Raw" -> " Raw ", If[proc, "Proc" -> " Processed ", Nothing], "Cor" -> " Phase corrected "}]]},
 		{Button["Save CSI",
 			(*saving make better!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*)
-			fileSave = SystemDialogInput["FileSave"];
-			specSave = Switch[plot,
-				(*plot raw data*)
+			spectraPlot = Switch[plot,
 				"Raw", spectraR,				
 				"Proc",spectra,
-				(*plot phase corrected data*)
 				"Cor",
 				If[!sphase,
 					status = "Correcting phase of spectra"; statusP = True;
 					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
-					status = "Done phase correcting spectra!"; statusP = False;
-					sphase = True;
-					spectraC
+					status = "Done phase correcting spectra!"; statusP = False;	sphase = True
 				];
+				spectraC
 			];
+			status = "Saving the CSI data";
+			fileSave = SystemDialogInput["FileSave"]; 
 			lab = mr <> If[plot==="Raw","",If[dn, ", denoised", ""] <> If[dc, ", deconvolved", ""]]<>If[plot ==="Cor"," ,phase corrected",""];
-			If[fileSave =!= $Canceled, ExportSparSdat[fileSave, specSave, {bw, te}, {gyro, nuc},{"QMRITools Data", fovy, fovz, 0, 0, lab}]];
+			If[fileSave =!= $Canceled, ExportSparSdat[fileSave, spectraPlot, {bw, te}, {gyro, nuc},{"QMRITools Data", fovx, fovz, 0, 0, lab}]];
 			(*saving make better!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*)
 			,
 			Enabled -> Dynamic[rec&&fovy>0&&fovz>0&&fovx>0], Method -> "Queued", ImageSize -> 175],
 		Row[{
 			{fovz, fovy, fovx} = Round[{fovz, fovy, fovx}];
-			TextCell["  z  "], InputField[Dynamic[fovz, (fovz = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[fovz>0, White, RGBColor[1, 0.9, 0.9]]]],
-			TextCell["  y  "], InputField[Dynamic[fovy, (fovy = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[fovy>0, White, RGBColor[1, 0.9, 0.9]]]],
-			TextCell["  x  "], InputField[Dynamic[fovx, (fovx = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[fovx>0, White, RGBColor[1, 0.9, 0.9]]]]
+			TextCell["  FOV z  "], InputField[Dynamic[fovz, (fovz = Round[#]) &], Number, FieldSize -> 3, ContinuousAction -> True, Background -> Dynamic[If[fovz>0, White, RGBColor[1, 0.9, 0.9]]]],
+			TextCell["   FOV y  "], InputField[Dynamic[fovy, (fovy = Round[#]) &], Number, FieldSize -> 3, ContinuousAction -> True, Background -> Dynamic[If[fovy>0, White, RGBColor[1, 0.9, 0.9]]]],
+			TextCell["   FOV x  "], InputField[Dynamic[fovx, (fovx = Round[#]) &], Number, FieldSize -> 3, ContinuousAction -> True, Background -> Dynamic[If[fovx>0, White, RGBColor[1, 0.9, 0.9]]]]
 		}, " "]
 		},
 		(*------------ FITTING -------------*)
@@ -1873,8 +1865,8 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 		{TextCell["Input coordinate to fit "], Row[{
 			{z, y, x} = Round[{z, y, x}];
 			TextCell["  z  "], InputField[Dynamic[z, (z = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[1 <= z <= zm, White, RGBColor[1, 0.9, 0.9]]]],
-			TextCell["  y  "], InputField[Dynamic[y, (y = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[1 <= y <= ym, White, RGBColor[1, 0.9, 0.9]]]],
-			TextCell["  x  "], InputField[Dynamic[x, (x = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[1 <= x <= xm, White, RGBColor[1, 0.9, 0.9]]]]
+			TextCell["   y  "], InputField[Dynamic[y, (y = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[1 <= y <= ym, White, RGBColor[1, 0.9, 0.9]]]],
+			TextCell["   x  "], InputField[Dynamic[x, (x = Round[#]) &], Number, FieldSize -> 2, ContinuousAction -> True, Background -> Dynamic[If[1 <= x <= xm, White, RGBColor[1, 0.9, 0.9]]]]
 		}, " "]},
 		
 		(*fitting options*)
