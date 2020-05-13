@@ -24,7 +24,7 @@ BeginPackage["QMRITools`IVIMTools`", Join[{"Developer`"}, Complement[QMRITools`$
 (*Functions*)
 
 
-IVIMCalc::usage=
+IVIMCalc::usage =
 "IVIMCalc[data, binp, init] calculates the IVIM fit.
  
 data should be 1D ,2D, 3D or 4D. 

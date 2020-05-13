@@ -31,7 +31,7 @@ and for the first and last volume to have this low bvalue.
 
 DriftCorrect[] is based on DOI: 10.1002/mrm.26124." 
 
-ConcatenateDiffusionData::usage=
+ConcatenateDiffusionData::usage =
 "ConcatenateDiffusionData[{{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}}] concatenates the diffusion data sets.
 ConcatenateDiffusionData[{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}] concatenates the diffusion data sets."
 
@@ -164,7 +164,8 @@ RotationCorrect::usage =
 (*Error Messages*)
 
 
-TensorCalc::grad = "The `2` gradient directions defined do not match the `1` gradients directions in the data set."
+TensorCalc::grad = 
+"The `2` gradient directions defined do not match the `1` gradients directions in the data set."
 
 TensorCalc::data =
 "Data set dimensions (`1`D) unknown, posibilities:
@@ -181,7 +182,7 @@ ResidualCalc::datdim = "DTIdata (`1`) and tensor data (`2`) are not the same dim
 
 AngleCalc::dist = "Unknown option (`1`), options can be. \"0-180\", \"0-90\" or \"-90-90\"."
 
-ConcatenateDiffusionData::dim= "data, grad and bval should be the same length:  data `1` / grad `2` / bval `2`"
+ConcatenateDiffusionData::dim = "data, grad and bval should be the same length:  data `1` / grad `2` / bval `2`"
 
 
 (* ::Section:: *)

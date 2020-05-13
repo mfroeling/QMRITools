@@ -122,11 +122,11 @@ FourierRescaleData::usage =
 "FourierRescaleData[data] rescales the data to double the dimensions using zeropadding in fourier space. 
 FourierRescaleData[data, facotr] rescales the data to factor times the dimensions using zeropadding in fourier space."
 
-CoilWeightedReconCSI::usage=
+CoilWeightedReconCSI::usage =
 "CoilWeightedReconCSI[kspace, noise, head] performs reconstuction of raw 3DCSI data. The input kspace, noise and head are obtained using ReadListData.
 The coil combination Methods can be \"Roemer\" or \"WSVD\"."
 
-CoilWeightedRecon::usage=
+CoilWeightedRecon::usage =
 "CoilWeightedRecon[kspace, noise, head] performs reconstuction of raw MS2D MRI data. The input kspace, noise and head are obtained using ReadListData.
 The coil combination Methods can be \"Roemer\" or \"RSS\"."
 
@@ -563,19 +563,18 @@ Options[MakeSense] = {SenseRescale -> False}
 
 SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-MakeSense[coils_, cov_, OptionsPattern[]] := 
- Block[{sos, scale, dim, low, sense},
-  If[OptionValue[SenseRescale],
-   sos = CoilCombine[coils, cov, Method -> "RootSumSquares"];
-   DevideNoZero[#1, sos] & /@ coils
-   ,
-   dim = Dimensions[coils][[2 ;;]];
-   low = HammingFilterData[FourierRescaleData[coils, 0.5]];
-   sos = CoilCombine[low, cov, Method -> "RootSumSquares"];
-   sense = HammingFilterData[DevideNoZero[#1, sos] & /@ low];
-   FourierRescaleData[sense, dim]
-   ]
-  ]
+MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, scale, dim, low, sense},
+	If[OptionValue[SenseRescale],
+		sos = CoilCombine[coils, cov, Method -> "RootSumSquares"];
+		DevideNoZero[#1, sos] & /@ coils
+		,
+		dim = Dimensions[coils][[2 ;;]];
+		low = HammingFilterData[FourierRescaleData[coils, 0.5]];
+		sos = CoilCombine[low, cov, Method -> "RootSumSquares"];
+		sense = HammingFilterData[DevideNoZero[#1, sos] & /@ low];
+		FourierRescaleData[sense, dim]
+	]
+]
 
 (* ::Subsubsection::Closed:: *)
 (*RSS*)
@@ -597,7 +596,7 @@ RSSCovCombineSNR = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}},
 
 
 (* ::Subsubsection::Closed:: *)
-(*Roemer*)
+(*Roemer equal noise*)
 
 
 RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
@@ -607,6 +606,11 @@ RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex
 RoemerNCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
 	Sqrt[2] Abs[(Conjugate[sen].cov.sig)]/Sqrt[Conjugate[sen].cov.sen], 
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
+
+(* ::Subsubsection::Closed:: *)
+(*Roemer equal signal*)
+
 
 RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
 	(sig.cov.Conjugate[sen])/(sen.cov.Conjugate[sen]),
@@ -682,6 +686,7 @@ MakeHammingFilterI[{xs_?IntegerQ, xe_?IntegerQ}] := MakeHammingFilterI[{xs,xe}] 
 
 Ham[x_, xm_] := (0.54 + 0.46 Cos[(Pi x)/xm])
 
+
 (* ::Subsubsection:: *)
 (*HammingFilterData*)
 
@@ -724,16 +729,7 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{stdMap, sig, out, hist, len
 	sig = Mean[Flatten[stdMap[[{1, -1}, {1, -1}, {1, -1}]]]];
 	stdMap=Flatten[stdMap];
 	
-	
-	(*Plot the histogram of the noise standard deviations*)
-	(*hist = SmoothHistogram[stdMap, PlotRange -> {Quantile[stdMap,{.05,.9}],Full}, 
-    PlotStyle -> Thick, AxesStyle -> Directive[Thick, Black], 
-    Ticks -> None, LabelStyle -> Directive[Thick, Black, Bold, 12], 
-    PlotLabel -> "STD " <> ToString[Round[sig, .1]], ImageSize -> 100,
-    GridLines -> {{sig}, None}];
-    Print[hist];*)
-    
-    (*Denoise the spectra data with a 5x5x5 kernel*)
+    (*Denoise the spectra data*)
     {spectraDen, sig, out} = PCADeNoise[Transpose[Join[Re@#, Im@#]] &[TransData[spectra, "r"]],
     	1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];
     	
