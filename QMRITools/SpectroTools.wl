@@ -147,20 +147,20 @@ MakeSpectraResultPlot::usage =
 
 
 CSIInterface31P::usage = 
-"CSIInterface31P[]
+"CSIInterface31P[] function not done.
 CSIInterface31P[te, bwi]
 CSIInterface31P[file_]
 CSIInterface31P[file_, {tei_, bwi_}]"
 
 SpectraFitResult::usage = 
-"SpectraFitResult[spec, {fit, basisFit}, te, {dw, gyro}, {pars, names, metRef, log}, plots, OptionsPattern[]]"
+"SpectraFitResult[spec, {fit, basisFit}, te, {dw, gyro}, {pars, names, metRef, log}, plots, OptionsPattern[]] function not done."
 
 
 ImportSparSdat::usage = 
-"ImportSparSdat[fspar , fsdat]"
+"ImportSparSdat[fspar , fsdat] function not done."
 
-ExportSparSdat::usage
-"ExportSparSdat[file, specs ,{bw ,te }, {gyro ,nuc }]"
+ExportSparSdat::usage =
+"ExportSparSdat[file, specs ,{bw ,te }, {gyro ,nuc }] function not done."
 
 
 (* ::Subsection::Closed:: *)
@@ -268,6 +268,15 @@ SyntaxInformation[PhaseCorrectSpectra]={"ArgumentsPattern"->{_,_,_.,_.,_.}}
 
 PhaseCorrectSpectra[spec_] := Exp[-I Quiet[Last[FindMinimum[PhaseCorrectError[spec, phi0], {phi0}]]][[1,2]]] spec
 
+
+PhaseCorrectError[speci_, phi0_?NumericQ] := PhaseCorrectErrorC[speci, phi0]
+
+PhaseCorrectErrorC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},
+	Total[(Abs[speci] - Re[Exp[-I phi0] speci])^2],
+	RuntimeOptions -> "Speed", Parallelization -> True
+];
+
+
 PhaseCorrectSpectra[spec_, dw_] := PhaseCorrectSpectra[spec, dw, 0, 0, Full]
 
 PhaseCorrectSpectra[spec_, dw_, te_] := PhaseCorrectSpectra[spec, dw, te, 0, Full]
@@ -303,15 +312,10 @@ PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_] := Block[{
 
 PhaseErrorH[speci_, phi0_?NumericQ] := PhaseErrorHC[speci, phi0]
 
-PhaseErrorHC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}}, Total[Re[Exp[-I phi0] speci]], RuntimeOptions -> "Speed", Parallelization -> True];
-
-PhaseCorrectError[speci_, phi0_?NumericQ] := PhaseCorrectErrorC1[speci, phi0]
-
-PhaseCorrectErrorC1 = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},
-	Total[(Abs[speci] - Re[Exp[-I phi0] speci])^2],
+PhaseErrorHC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}}, 
+	Total[Re[Exp[-I phi0] speci]], 
 	RuntimeOptions -> "Speed", Parallelization -> True
 ];
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -388,7 +392,10 @@ HenkelSVDFid[fid_, dw_, gyro_, ppmRan_] := Block[{
 ]
 
 
-HenkelSVDBasisC = Compile[{{time, _Real, 1}, {henkel, _Real, 2}}, Transpose[Exp[# time] & /@ (henkel[[1]] + 2 Pi I henkel[[2]])], RuntimeOptions -> "Speed"];
+HenkelSVDBasisC = Compile[{{time, _Real, 1}, {henkel, _Real, 2}}, 
+	Transpose[Exp[# time] & /@ (henkel[[1]] + 2 Pi I henkel[[2]])], 
+	RuntimeOptions -> "Speed"
+];
 
 
 (* ::Subsection:: *)
@@ -418,6 +425,24 @@ ApodizeFid[fid_, OptionsPattern[]] := ApodizeFun[Length[fid], OptionValue[Apodiz
 
 
 (* ::Subsubsection::Closed:: *)
+(*ApodizeFunSpectra*)
+
+
+ApodizeFun[length_, apM_:"Hanning"] := ApodizeFun[length, apM] = Block[{app, xdat, xmax},
+	xdat = Range[0, length - 1];
+	xmax = Max[Abs[xdat]];
+	app = Switch[apM,
+		"Hanning", 0.5 + 0.5 Cos[xdat Pi/xmax],
+		"Hamming", 0.54 + 0.46 Cos[xdat Pi/xmax],
+		"Gaussian", Exp[-(3./xmax) xdat],
+		"Lorentzian", Exp[-(2./xmax)^2 xdat^2],
+		"Voigt", 0.5 Exp[-(3./xmax) xdat] + 0.5 Exp[-(2./xmax)^2 xdat^2]
+	];
+	app = app/Max[app]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*ApodizePadFid*)
 
 
@@ -425,7 +450,7 @@ Options[ApodizePadFid] = {ApodizationFunction -> "Hanning", PaddingFactor -> 2}
 
 SyntaxInformation[ApodizePadFid] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-ApodizePadFid[fid_, OptionsPattern[]] := PadFid[ApodizeFid[fid, ApodizationFunction->OptionValue[ApodizationFunction]],PaddingFactor->OptionValue[PaddingFactor]]
+ApodizePadFid[fid_, OptionsPattern[]] := PadFid[ApodizeFid[fid, ApodizationFunction->OptionValue[ApodizationFunction]], PaddingFactor->OptionValue[PaddingFactor]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -459,24 +484,6 @@ Options[ApodizePadSpectra] = {ApodizationFunction -> "Hanning", PaddingFactor ->
 SyntaxInformation[ApodizePadSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
 ApodizePadSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[ApodizePadFid[ShiftedInverseFourier[spec], opts]]
-
-
-(* ::Subsubsection::Closed:: *)
-(*ApodizeFunSpectra*)
-
-
-ApodizeFun[length_, apM_:"Hanning"] := ApodizeFun[length, apM] = Block[{app, xdat, xmax},
-	xdat = Range[0, length - 1];
-	xmax = Max[Abs[xdat]];
-	app = Switch[apM,
-		"Hanning", 0.5 + 0.5 Cos[xdat Pi/xmax],
-		"Hamming", 0.54 + 0.46 Cos[xdat Pi/xmax],
-		"Gaussian", Exp[-(3./xmax) xdat],
-		"Lorentzian", Exp[-(2./xmax)^2 xdat^2],
-		"Voigt", 0.5 Exp[-(3./xmax) xdat] + 0.5 Exp[-(2./xmax)^2 xdat^2]
-	];
-	app = app/Max[app]
-]
 
 
 (* ::Subsection:: *)
@@ -607,7 +614,8 @@ ShiftSpectra[spec_, {dw_, gyro_}, shift_] := ShiftedFourier[ShiftFidC[ShiftedInv
 
 ShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {eps, _Real, 0}}, 
 	Exp[2 Pi eps gyro I time] fid,
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1000,7 +1008,6 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 	
 	(*give ouput either error or fit results*)
 	Switch[OptionValue[Output],
-		
 		(*output error of fit calculated on selected ppm range*)
 		"Error",
 		
@@ -1062,10 +1069,9 @@ ConFuncLC = Compile[{{par, _Real, 0}, {max, _Real, 0}, {sc, _Real, 0}}, Block[{o
 	10^sc (UnitStep[off] (off))^2
 ], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
 
-ConFuncC = 
- Compile[{{par, _Real, 0}, {min, _Real, 0}, {max, _Real, 0}, {sc, _Real, 0}}, Block[{off1 = -par + min, off2 = par - max},
- 	10^sc (UnitStep[off1] (off1)^2 + UnitStep[off2] (off2)^2)
- ], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+ConFuncC = Compile[{{par, _Real, 0}, {min, _Real, 0}, {max, _Real, 0}, {sc, _Real, 0}}, Block[{off1 = -par + min, off2 = par - max},
+	10^sc (UnitStep[off1] (off1)^2 + UnitStep[off2] (off2)^2)
+], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1688,8 +1694,8 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 	(*initial button options*)
 	kload = rec = sphase = fitted = proc = dn = dc = False;
 	mr = ""; 
-	spectraC = shift = 0;
-	
+	spectraC = shift = coils= 0;
+		
 	(*initialize fit coors*)
 	z = y = x = fovz = fovy = fovx = zm = ym = xm = 0;
 	
@@ -1723,6 +1729,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 				kspace = OrderKspace[MeanType[kspace, type, {"N_aver"}], {"N_chan", "N_samp", "N_kz", "N_ky", "N_kx"}][[1]];
 				filti=filt;
 			];
+			coils = ncoils = Range[Length[kspace]];
 			kload = True;
 			status = "Done loading data!"; statusP = False;
 			,
@@ -1751,7 +1758,8 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			mr = method;
 			dw = 1./bw;
 			teu = te/1000;
-			spectraR = CoilWeightedReconCSI[kspace, noise, header, Method -> method];
+			coils = If[coils==={},All,coils];
+			spectraR = CoilWeightedReconCSI[kspace[[coils]], noise[[coils]], header, Method -> method];
 			If[!filti,
 				ham = MakeHammingFilter[Dimensions[spectraR][[;;-2]]];
 				spectraR = HammingFilterCSI[spectraR];
@@ -1770,6 +1778,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			Background -> Dynamic[If[rec, RGBColor[0.86, 0.97, 0.77], Automatic]], Enabled -> Dynamic[kload && bw =!= 0], Method -> "Queued", ImageSize -> 175
 		],
 		Row[{TextCell[" Denoise data  "], Checkbox[Dynamic[den]], TextCell["   Deconvolve data  "], Checkbox[Dynamic[dec]]}, ""]},
+		{TextCell[" Select coils  "], Dynamic[If[coils===0,TextCell[""], TogglerBar[Dynamic[coils], ncoils]]]},
 		
 		(*select method*)
 		{TextCell[" Reconstruction method  "], SetterBar[Dynamic[method], {"Roemer" -> " Roemer ", "WSVD" -> " WSVD "}]},
@@ -1791,7 +1800,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 				"Cor",
 				If[!sphase,
 					status = "Correcting phase of spectra"; statusP = True;
-					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
+					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, -shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
 					status = "Done phase correcting spectra!"; statusP = False; sphase = True
 				];
 				spectraC
@@ -1804,7 +1813,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 		
 		(*select plot method*)
 		Dynamic[SetterBar[Dynamic[plot], {"Raw" -> " Raw ", If[proc, "Proc" -> " Processed ", Nothing], "Cor" -> " Phase corrected "}]]},
-		{Button["Save CSI",
+		{Button["Save spar/sdat",
 			(*saving make better!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*)
 			spectraPlot = Switch[plot,
 				"Raw", spectraR,				
@@ -1812,7 +1821,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 				"Cor",
 				If[!sphase,
 					status = "Correcting phase of spectra"; statusP = True;
-					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
+					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, -shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
 					status = "Done phase correcting spectra!"; statusP = False;	sphase = True
 				];
 				spectraC
@@ -1848,9 +1857,9 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			
 			(*fitting*)
 			status = "Start fitting spectra"; statusP = True;
-			specf = ShiftSpectra[spectra[[z, y, x]], {1/bw, gyro}, shift];
+			specf = ShiftSpectra[spectra[[z, y, x]], {dw, gyro}, -shift];
 			{fit, basisFit, errorFit, pars, log, plots} = FitSpectra[specs, specf, {10, -20}, dw, { {0, -2.52, -7.56, -16.15}, {2, 1, 1, 1}},
-				PaddingFactor -> 2, SpectraPpmShift -> 0, SplineSpacingFactor -> 1.5, SpectraOutputPlots -> True, 
+				PaddingFactor -> 2, SpectraPpmShift -> 0, SplineSpacingFactor -> 2.5, SpectraOutputPlots -> True, 
 				SpectraNucleus -> nuc, SpectraFieldStrength -> field, FitLineShape -> line, FineTuneFit -> fine];
 			status = "Done fitting spectra!"; statusP = False;
 			fitted = True;
@@ -1892,7 +1901,11 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 		
 		(*------------ CLOSING -------------*)
 		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
-		{TextCell[""], CancelButton["Close GUI", DialogReturn[Clear[kspace, spectra]], ImageSize -> 175]},{TextCell[""]
+		{TextCell[""], CancelButton["Close GUI", DialogReturn[
+			NotebookClose[reswindow];
+			NotebookClose[plotwindow];
+			Clear[kspace, spectra]
+			], ImageSize -> 175]},{TextCell[""]
 		},
 		{TextCell[""]}
 	};
@@ -2098,134 +2111,148 @@ ToVaxD=Compile[{{num,_Real,0}},Block[{signBin,numA,exp,expBin,frac,fracBin},
 MakeSpar[{dimzO_,dimyO_,dimxO_,nsampO_},{bw_,te_},{gyro_,nuc_}]:=MakeSpar[{dimzO,dimyO,dimxO,nsampO},{bw,te},{gyro,nuc},{"QMRITools Data",1,1,0,0,"QMRITools Data"}];
 
 MakeSpar[specs_,{bw_,te_},{gyro_,nuc_},{name_,fov1_,fov2_,tr_,teS_,proc_}]:=Block[{
-dimzO,dimyO,dimxO,nsampO,gyroO,nucO,bwO,teO,nameO,fov1O,fov2O,trO,thickO,processingO,
-text,lab,filHeader,fixedHeader, vals, head,row,depth
-},
-(*swith between data dimensions*)
-depth=ArrayDepth[specs];
-Switch[depth,
-1,(*single voxel*)
-nsampO=Length[specs];
-row=dimzO=dimyO=dimxO=1;
-,
-2,(*dynamic data*)
-{row,nsampO}=Dimensions[specs];
-dimzO=dimyO=dimxO=1;
-,
-3,(*2D CSI*)
-{dimyO,dimxO,nsampO}=Dimensions[specs];
-row=dimxO dimyO;
-dimzO=1;
-,
-4,(*3D CSI*)
-{dimzO,dimyO,dimxO,nsampO}=Dimensions[specs];
-row=dimxO dimyO;
-];
-
-(*manditory input paramters*)
-{gyroO,nucO}={10^6 gyro,nuc};
-{bwO,teO}={bw,te};
-(*optional input parameters*)
-{nameO,fov1O,fov2O,trO}={name,fov1,fov2,tr};
-thickO=Round[fov2/dimzO];
-processingO=proc;(*prefer the processing steps*)
-
-(*all needed fixed header information orders of text and lab are important*)
-text={
-"!--------------------------------------------------------------------","!","!","!      CAUTION - Investigational device.","!      Limited by Federal Law to investigational use.","!","!","!      GYROSCAN spectro parameter file. ","!      Last revised 05-July-2007.","!--------------------------------------------------------------------","!   This file contains time domain data in the spectral dimension.","!   S15/ACS: set of *.SPAR and *.SDAT files is created, (dataformat: VAX CPX floats)","!--------------------------------------------------------------------","!---------------------------------------------","!--------------------","! Column parameters ","!--------------------","!-----------------","! Row parameters ","!-----------------","!-------------------------------------------------","! Extra parameters in order to make data transfer ","! possible between S15/ACS and SUNSPEC: ","!-------------------------------------------------","!-------------------------------------------------","!-----------------------------------------------------","!-----------------------------------------------------","!-----------------------------------------------------","!---------------------------------------------------","!   Additional parameters","!---------------------------------------------------","!-----------------------------------------------------"
-};
-
-lab={
-"examination_name","scan_id","scan_date","patient_name","patient_birth_date","patient_position","patient_orientation","samples","rows","synthesizer_frequency","offset_frequency","sample_frequency","echo_nr","mix_number","nucleus","t0_mu1_direction","echo_time","repetition_time","averages","volume_selection_enable","t1_measurement_enable","t2_measurement_enable","time_series_enable","phase_encoding_enable","nr_phase_encoding_profiles","si_ap_off_center","si_lr_off_center","si_cc_off_center","si_ap_off_angulation","si_lr_off_angulation","si_cc_off_angulation","t0_kx_direction","t0_ky_direction","nr_of_phase_encoding_profiles_ky","phase_encoding_direction","phase_encoding_fov","slice_thickness","image_plane_slice_thickness","slice_distance","nr_of_slices_for_multislice","Spec.image in plane transf","spec_data_type","spec_sample_extension","spec_num_col","spec_col_lower_val","spec_col_upper_val","spec_col_extension","spec_num_row","spec_row_lower_val","spec_row_upper_val","spec_row_extension","num_dimensions","dim1_ext","dim1_pnts","dim1_low_val","dim1_step","dim1_direction","dim1_t0_point","dim2_ext","dim2_pnts","dim2_low_val","dim2_step","dim2_direction","dim2_t0_point","dim3_ext","dim3_pnts","dim3_low_val","dim3_step","dim3_direction","dim3_t0_point","dim4_ext","dim4_pnts","dim4_low_val","dim4_step","dim4_direction","dim4_t0_point","echo_acquisition","TSI_factor","spectrum_echo_time","spectrum_inversion_time","image_chemical_shift","resp_motion_comp_technique","de_coupling","equipment_sw_verions","placeholder1","placeholder2"
-};
-
-(*from input*)
-filHeader={
-(*general acquistion names*)
-"patient_position"->"\"head_first\"",(*"\"head_first\"","\"feet_first\""*)
-"patient_orientation" ->"\"supine\"",(*"\"supine\"","\"prone\""*)
-(*get from input window*)
-"examination_name"->nameO,"patient_name"->nameO,
-"phase_encoding_fov"->fov1O,(*mm fov in freq*)
-"slice_thickness"->fov2O,(*mm fov in phase*)
-"slice_distance"->If[depth>2,thickO,0],(*mm slice thickness*)
-"repetition_time"->trO,(*ms*)
-(*save date*)
-"scan_date"->StringRiffle[ToString/@DateList[Today][[1;;3]],"."]<>" "<>StringRiffle[ToString/@Round[DateList[Now][[-3;;]]],":"],
-(*get from gui with processing settings*)
-"scan_id"->processingO,
-
-(*get from processing tool*)
-"synthesizer_frequency"->gyroO,(*MHz*)
-"sample_frequency" ->bwO,(*Hz*)
-"nucleus" ->nucO,(*string*)
-"echo_time"->teO,(*ms*)
-"spectrum_echo_time"->If[teS===0,teO,teS],(*ms, !!! should be 0 after phasing*)
-
-(*get from data dimensions*)
-"num_dimensions"->Clip[depth,{2,4}],
-(*dynamics if needed*)
-"rows"->row,"spec_row_upper_val"->row,"spec_num_row"->row,
-(*fid parameters and time*)
-"samples" ->nsampO,"spec_num_col"->nsampO,"dim1_pnts"->nsampO,
-"dim1_step"-> 1./bwO,(*s*)"spec_col_upper_val"->(nsampO-1)(1./bw),(*s*)
-(*data dimensions*)
-"dim2_pnts"->dimxO,"dim3_pnts"->dimyO,
-"nr_of_slices_for_multislice"->dimzO,
-"nr_phase_encoding_profiles"->dimxO,
-"nr_of_phase_encoding_profiles_ky"->dimyO,
-"phase_encoding_enable"-> If[depth<=2,"\"no\"","\"yes\""],"dim4_pnts" ->dimzO
-};
-
-(*fixed parameters that are default*)
-fixedHeader={
-(*possible non fixed parameters*)
-"offset_frequency" ->0,"averages"->1,"echo_nr"-> 1,"mix_number"-> 1,
-"spectrum_inversion_time"->0,"image_chemical_shift"->0,
-(*start fixed parameters*)
-"patient_birth_date"->"1980.11.25","image_plane_slice_thickness"->0,
-(*general fixed parameters*)
-"t0_mu1_direction"->0,
-"volume_selection_enable"->"\"no\"","t1_measurement_enable"->"\"no\"","t2_measurement_enable"->"\"no\"","time_series_enable"->"\"no\"",
-
-
-"si_ap_off_center"->0,"si_lr_off_center"->0,"si_cc_off_center"->0,"si_ap_off_angulation"->0,
-"si_lr_off_angulation"->0,"si_cc_off_angulation"->0,
-"t0_kx_direction"->50,"t0_ky_direction"->50,
-"phase_encoding_direction"->"\"trans\"",
-
-
-"Spec.image in plane transf"->"\"minA-minB\"",
-(*column and row fixed parameters*)
-"spec_data_type"->"cf","spec_sample_extension"->"[V]",
-"spec_col_lower_val"->0,"spec_col_extension"->"[sec]",
-"spec_row_lower_val"->1,"spec_row_extension"->"[index]",
-(*per dim fixed parameters*)
-"dim1_ext"->"[sec]","dim1_low_val"->0,"dim1_direction"->"mu1","dim1_t0_point"->0,
-"dim2_ext"->"[num]","dim2_low_val"->1.0,"dim2_step"->1.0,"dim2_direction"->"x","dim2_t0_point"->50,
-"dim3_ext"->"[num]","dim3_low_val"->1.0,"dim3_step"->1.0,"dim3_direction"->"y","dim3_t0_point"->50,
-"dim4_ext"->"[index]","dim4_low_val"->1.0,"dim4_step"->1.0,"dim4_direction"->"slice","dim4_t0_point"->"-",
-(*closing values*)
-"echo_acquisition"->"NO","TSI_factor"->0,"resp_motion_comp_technique"->"NONE","de_coupling"->"NO",
-"equipment_sw_verions"->"QMRITools CSIinterface","placeholder1"->"","placeholder2"->""
-};
-
-(*generate the header values*)
-vals=lab/.Join[filHeader,fixedHeader];
-head=Thread[lab->vals];
-head=StringReplace[#[[1]]<>" : "<>If[StringQ[#[[2]]],#[[2]],If[IntegerQ[#[[2]]],ToString[#[[2]]],ToString[DecimalForm[#[[2]],{20,15}]]]],": ["->":["]&/@head;
-
-StringRiffle[Join[text[[;;13]],head[[;;41]],text[[{14}]],head[[42;;43]],
-text[[15;;17]],head[[44;;47]],
-text[[18;;20]],head[[48;;51]],
-text[[21;;24]],head[[{52}]],
-text[[{25}]],head[[53;;58]],
-text[[{26}]],head[[59;;64]],
-text[[{27}]],head[[65;;70]],
-text[[{28}]],head[[71;;76]],
-text[[29;;31]],head[[77;;86]],
-text[[{32}]],{""}
-],"\n\n"]
+		dimzO,dimyO,dimxO,nsampO,gyroO,nucO,bwO,teO,nameO,fov1O,fov2O,trO,thickO,processingO,
+		text,lab,filHeader,fixedHeader, vals, head,row,depth
+	},
+	(*swith between data dimensions*)
+	depth=ArrayDepth[specs];
+	Switch[depth,
+		1,(*single voxel*)
+		nsampO=Length[specs];
+		row=dimzO=dimyO=dimxO=1;
+		,
+		2,(*dynamic data*)
+		{row,nsampO}=Dimensions[specs];
+		dimzO=dimyO=dimxO=1;
+		,
+		3,(*2D CSI*)
+		{dimyO,dimxO,nsampO}=Dimensions[specs];
+		row=dimxO dimyO;
+		dimzO=1;
+		,
+		4,(*3D CSI*)
+		{dimzO,dimyO,dimxO,nsampO}=Dimensions[specs];
+		row=dimxO dimyO;
+	];
+	
+	(*manditory input paramters*)
+	{gyroO,nucO}={10^6 gyro,nuc};
+	{bwO,teO}={bw,te};
+	(*optional input parameters*)
+	{nameO,fov1O,fov2O,trO}={name,fov1,fov2,tr};
+	thickO=Round[fov2/dimzO];
+	processingO=proc;(*prefer the processing steps*)
+	
+	(*all needed fixed header information orders of text and lab are important*)
+	text={
+		"!--------------------------------------------------------------------","!","!","!      CAUTION - Investigational device.","!      Limited by Federal Law to investigational use.","!","!",
+		"!      GYROSCAN spectro parameter file. ","!      Last revised 05-July-2007.","!--------------------------------------------------------------------","!   This file contains time domain data in the spectral dimension.",
+		"!   S15/ACS: set of *.SPAR and *.SDAT files is created, (dataformat: VAX CPX floats)","!--------------------------------------------------------------------","!---------------------------------------------",
+		"!--------------------","! Column parameters ","!--------------------","!-----------------","! Row parameters ","!-----------------","!-------------------------------------------------",
+		"! Extra parameters in order to make data transfer ","! possible between S15/ACS and SUNSPEC: ","!-------------------------------------------------","!-------------------------------------------------",
+		"!-----------------------------------------------------","!-----------------------------------------------------","!-----------------------------------------------------",
+		"!---------------------------------------------------","!   Additional parameters","!---------------------------------------------------","!-----------------------------------------------------"
+	};
+	
+	lab={
+		"examination_name","scan_id","scan_date","patient_name","patient_birth_date","patient_position","patient_orientation","samples","rows","synthesizer_frequency","offset_frequency",
+		"sample_frequency","echo_nr","mix_number","nucleus","t0_mu1_direction","echo_time","repetition_time","averages","volume_selection_enable","t1_measurement_enable","t2_measurement_enable",
+		"time_series_enable","phase_encoding_enable","nr_phase_encoding_profiles","si_ap_off_center","si_lr_off_center","si_cc_off_center","si_ap_off_angulation","si_lr_off_angulation",
+		"si_cc_off_angulation","t0_kx_direction","t0_ky_direction","nr_of_phase_encoding_profiles_ky","phase_encoding_direction","phase_encoding_fov","slice_thickness",
+		"image_plane_slice_thickness","slice_distance","nr_of_slices_for_multislice","Spec.image in plane transf","spec_data_type","spec_sample_extension","spec_num_col",
+		"spec_col_lower_val","spec_col_upper_val","spec_col_extension","spec_num_row","spec_row_lower_val","spec_row_upper_val","spec_row_extension","num_dimensions","dim1_ext",
+		"dim1_pnts","dim1_low_val","dim1_step","dim1_direction","dim1_t0_point","dim2_ext","dim2_pnts","dim2_low_val","dim2_step","dim2_direction","dim2_t0_point","dim3_ext",
+		"dim3_pnts","dim3_low_val","dim3_step","dim3_direction","dim3_t0_point","dim4_ext","dim4_pnts","dim4_low_val","dim4_step","dim4_direction","dim4_t0_point","echo_acquisition",
+		"TSI_factor","spectrum_echo_time","spectrum_inversion_time","image_chemical_shift","resp_motion_comp_technique","de_coupling","equipment_sw_verions","placeholder1","placeholder2"
+	};
+	
+	(*from input*)
+	filHeader={
+		(*general acquistion names*)
+		"patient_position"->"\"head_first\"",(*"\"head_first\"","\"feet_first\""*)
+		"patient_orientation" ->"\"supine\"",(*"\"supine\"","\"prone\""*)
+		(*get from input window*)
+		"examination_name"->nameO,"patient_name"->nameO,
+		"phase_encoding_fov"->fov1O,(*mm fov in freq*)
+		"slice_thickness"->fov2O,(*mm fov in phase*)
+		"slice_distance"->If[depth>2,thickO,0],(*mm slice thickness*)
+		"repetition_time"->trO,(*ms*)
+		(*save date*)
+		"scan_date"->StringRiffle[ToString/@DateList[Today][[1;;3]],"."]<>" "<>StringRiffle[ToString/@Round[DateList[Now][[-3;;]]],":"],
+		(*get from gui with processing settings*)
+		"scan_id"->processingO,
+		
+		(*get from processing tool*)
+		"synthesizer_frequency"->gyroO,(*MHz*)
+		"sample_frequency" ->bwO,(*Hz*)
+		"nucleus" ->nucO,(*string*)
+		"echo_time"->teO,(*ms*)
+		"spectrum_echo_time"->If[teS===0,teO,teS],(*ms, !!! should be 0 after phasing*)
+		
+		(*get from data dimensions*)
+		"num_dimensions"->Clip[depth,{2,4}],
+		(*dynamics if needed*)
+		"rows"->row,"spec_row_upper_val"->row,"spec_num_row"->row,
+		(*fid parameters and time*)
+		"samples" ->nsampO,"spec_num_col"->nsampO,"dim1_pnts"->nsampO,
+		"dim1_step"-> 1./bwO,(*s*)"spec_col_upper_val"->(nsampO-1)(1./bw),(*s*)
+		(*data dimensions*)
+		"dim2_pnts"->dimxO,"dim3_pnts"->dimyO,
+		"nr_of_slices_for_multislice"->dimzO,
+		"nr_phase_encoding_profiles"->dimxO,
+		"nr_of_phase_encoding_profiles_ky"->dimyO,
+		"phase_encoding_enable"-> If[depth<=2,"\"no\"","\"yes\""],"dim4_pnts" ->dimzO
+	};
+	
+	(*fixed parameters that are default*)
+	fixedHeader={
+		(*possible non fixed parameters*)
+		"offset_frequency" ->0,"averages"->1,"echo_nr"-> 1,"mix_number"-> 1,
+		"spectrum_inversion_time"->0,"image_chemical_shift"->0,
+		(*start fixed parameters*)
+		"patient_birth_date"->"1980.11.25","image_plane_slice_thickness"->0,
+		(*general fixed parameters*)
+		"t0_mu1_direction"->0,
+		"volume_selection_enable"->"\"no\"","t1_measurement_enable"->"\"no\"","t2_measurement_enable"->"\"no\"","time_series_enable"->"\"no\"",
+		
+		
+		"si_ap_off_center"->0,"si_lr_off_center"->0,"si_cc_off_center"->0,"si_ap_off_angulation"->0,
+		"si_lr_off_angulation"->0,"si_cc_off_angulation"->0,
+		"t0_kx_direction"->50,"t0_ky_direction"->50,
+		"phase_encoding_direction"->"\"trans\"",
+		
+		
+		"Spec.image in plane transf"->"\"minA-minB\"",
+		(*column and row fixed parameters*)
+		"spec_data_type"->"cf","spec_sample_extension"->"[V]",
+		"spec_col_lower_val"->0,"spec_col_extension"->"[sec]",
+		"spec_row_lower_val"->1,"spec_row_extension"->"[index]",
+		(*per dim fixed parameters*)
+		"dim1_ext"->"[sec]","dim1_low_val"->0,"dim1_direction"->"mu1","dim1_t0_point"->0,
+		"dim2_ext"->"[num]","dim2_low_val"->1.0,"dim2_step"->1.0,"dim2_direction"->"x","dim2_t0_point"->50,
+		"dim3_ext"->"[num]","dim3_low_val"->1.0,"dim3_step"->1.0,"dim3_direction"->"y","dim3_t0_point"->50,
+		"dim4_ext"->"[index]","dim4_low_val"->1.0,"dim4_step"->1.0,"dim4_direction"->"slice","dim4_t0_point"->"-",
+		(*closing values*)
+		"echo_acquisition"->"NO","TSI_factor"->0,"resp_motion_comp_technique"->"NONE","de_coupling"->"NO",
+		"equipment_sw_verions"->"QMRITools CSIinterface","placeholder1"->"","placeholder2"->""
+	};
+	
+	(*generate the header values*)
+	vals=lab/.Join[filHeader,fixedHeader];
+	head=Thread[lab->vals];
+	head=StringReplace[#[[1]]<>" : "<>If[StringQ[#[[2]]],#[[2]],If[IntegerQ[#[[2]]],ToString[#[[2]]],ToString[DecimalForm[#[[2]],{20,15}]]]],": ["->":["]&/@head;
+	
+	StringRiffle[Join[text[[;;13]],head[[;;41]],text[[{14}]],head[[42;;43]],
+		text[[15;;17]],head[[44;;47]],
+		text[[18;;20]],head[[48;;51]],
+		text[[21;;24]],head[[{52}]],
+		text[[{25}]],head[[53;;58]],
+		text[[{26}]],head[[59;;64]],
+		text[[{27}]],head[[65;;70]],
+		text[[{28}]],head[[71;;76]],
+		text[[29;;31]],head[[77;;86]],
+		text[[{32}]],{""}
+	],"\n\n"]
 ]
 
 

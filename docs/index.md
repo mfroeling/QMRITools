@@ -81,9 +81,6 @@ When using the toolbox please cite one of the following references:
 The latest release can be found
 [here](https://github.com/mfroeling/QMRITools/releases).
 
-The latest release can be found
-[here](https://github.com/mfroeling/QMRITools/releases).
-
 Manual installation:
 1.	Download the `QMRITools.zip`.
 2.	Extract the `QMRITools` folder and place it in the Mathematica UserBaseDirectory &gt; Applications.
