@@ -20,7 +20,7 @@ BeginPackage["QMRITools`SpectroTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -32,11 +32,20 @@ Output is the {time, spec, {begintime, samplingInterval}}."
 PadFid::usage = 
 "PadFid[fid] pads the fid with zeros to increse its length."
 
+PadEcho::usage =
+"PadEcho[echo] pads the echo with zeros to increse its length."
+
 ApodizeFid::usage = 
 "ApodizeFid[fid] performs apodization on the fid. The apodization function is set with the option ApodizationFunction."
 
+ApodizeEcho::usage =
+"ApodizeEcho[echo] performs apodization on the echo. The apodization function is set with the option ApodizationFunction."
+
 ApodizePadFid::usage = 
-"ApodizePadFid[fid] performs apodization on the fid and pads the fid with zeros to increase its length"
+"ApodizePadFid[fid] performs apodization on the fid and pads the fid with zeros to increase its length."
+
+ApodizePadEcho::usage =
+"ApodizePadEcho[echo] performs apodization on the echo and pads the echo with zeros to increase its length."
 
 PadSpectra::usage = 
 "PadSpectra[spec] doubles the number of spectral points while maintainig the dwell time."
@@ -132,6 +141,8 @@ PlotSpectra::usage =
 PlotSpectra[spespectradwell, field, nuc}] plots the spectra, the ppm axes is determined by dwell field and nuc.
 PlotSpectra[ppm, spectra] plots the spectra where ppm is the pmm range of the spectra which can be obtained with GetPpmRange." 
 
+EstimateLineWidth::usage = 
+"EstimateLineWidth[{ppm_,spec_},{peaks_,amps_},gyro_,ran_,plot_:True]"
 
 FitSpectraResultTable::usage = 
 "FitSpectraResultTable[parFit, parsF, names, ref, out] function not done."
@@ -277,36 +288,34 @@ PhaseCorrectErrorC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},
 ];
 
 
-PhaseCorrectSpectra[spec_, dw_] := PhaseCorrectSpectra[spec, dw, 0, 0, Full]
+PhaseCorrectSpectra[spec_, dw_,out_:True] := PhaseCorrectSpectra[spec, dw, 0, 0, Full,out]
 
-PhaseCorrectSpectra[spec_, dw_, te_] := PhaseCorrectSpectra[spec, dw, te, 0, Full]
+PhaseCorrectSpectra[spec_, dw_, te_,out_:True] := PhaseCorrectSpectra[spec, dw, te, 0, Full,out]
 
-PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_] := Block[{
-	fid, henk, timeFull, firstTime, timeOr, henkelSpec, phi, fit, misFid, timeMis
-	},
+PhaseCorrectSpectra[spec_, dw_, gyro_, ppmRan_,out_:True] := PhaseCorrectSpectra[spec, dw, 0, gyro, ppmRan,out]
+
+PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_,out_:True] := Module[{fid, specOut, missing, full, henkelSpec, phi, phi0},
 	(*create the fid*)
 	fid = ShiftedInverseFourier[spec];
 	
-	(*get the timing*)
-	timeFull = Reverse@Range[dw (Length[fid] - 1) + te, 0., -dw];
-	firstTime = First[timeFull];
-	timeFull = If[Abs[firstTime - dw] < firstTime, Prepend[timeFull, firstTime - dw], timeFull];
-	timeOr = Select[timeFull, # >= te &];
-	timeMis = Select[timeFull, # < te &];
+	(*perform the HenkelFit*)
+	{missing, full} = HenkelFit[fid ,dw, te, gyro, ppmRan];
 	
-	(*create the henkel basis and fit*)
-	henk = HenkelSVDFid[fid, dw, gyro, ppmRan];
-	fit = (PseudoInverse[HenkelSVDBasisC[timeOr, henk]].fid);
-	(*make the full henkel fitted spectra and select the correct range if needed*)
-	henkelSpec = ShiftedFourier[HenkelSVDBasisC[timeFull, henk].fit];
+	(*create the full fid*)
+	specOut = ShiftedFourier[Join[missing, fid][[;;Length[fid]]]];
+
+	(*create the Henkle spectra*)
+	henkelSpec = ShiftedFourier[full];
 	If[ppmRan =!= Full, henkelSpec = Pick[henkelSpec, Unitize[Clip[GetPpmRange[henkelSpec, dw, gyro], Sort[ppmRan], {0, 0}]], 1]];
 	
 	(*find the first order phase*)
-	phi = Quiet[Last[FindMaximum[PhaseErrorH[henkelSpec, phi0], phi0]]][[1,2]];
-	
-	(*get the missing fid values and phase correct the spectra*)
-	If[timeMis =!= {}, fid = Join[HenkelSVDBasisC[timeMis, henk].fit, fid[[;; -(Length[timeMis] + 1)]]] ];
-	ShiftedFourier[fid] Exp[-I phi]
+	Clear[phi0];
+	phi = Quiet[Last[FindMaximum[PhaseErrorH[henkelSpec, phi0], phi0]][[1,2]]];
+	phi = If[NumberQ[phi], phi, phi[[2]]];
+	If[out,
+		specOut Exp[-I phi],
+		phi
+	]
 ]
 
 
@@ -319,7 +328,7 @@ PhaseErrorHC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},
 
 
 (* ::Subsubsection::Closed:: *)
-(*PhaseCorrectSpectra*)
+(*CorrectTESpec*)
 
 
 SyntaxInformation[CorrectTESpec]={"ArgumentsPattern"->{_,_,_,_.,_.}}
@@ -330,17 +339,26 @@ CorrectTESpec[spec_, dw_, te_, gyro_, ppmRan_] := ShiftedFourier[CorrectTEFid[Sh
 
 
 (* ::Subsubsection::Closed:: *)
-(*PhaseCorrectSpectra*)
+(*CorrectTEFid*)
 
 
 SyntaxInformation[CorrectTEFid]={"ArgumentsPattern"->{_,_,_,_.,_.}}
 
 CorrectTEFid[fid_, dw_, te_] := CorrectTEFid[fid, dw, te, 0, Full]
 
-CorrectTEFid[fid_, dw_, te_, gyro_, ppmRan_] := Block[{henk, timeFull, timeOr, timeMis, misFid, firstTime},
-	(*get the henkel values*)
-	henk = HenkelSVDFid[fid, dw, gyro, ppmRan];
-	
+CorrectTEFid[fid_, dw_, te_, gyro_, ppmRan_] := Block[{missing},
+	(*get the missing time points for the fid*)
+	missing = HenkelFit[fid ,dw, te, gyro, ppmRan][[1]];
+	(*output full fid*)
+	Join[missing, fid][[;;Length[fid]]]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*HenkelFit*)
+
+
+HenkelFit[fid_ ,dw_, te_, gyro_, ppmRan_]:=Block[{timeFull, firstTime, timeOr, timeMis, henk, fit},
 	(*get the correct timing of the fid and missing values*)
 	timeFull = Reverse@Range[dw (Length[fid] - 1) + te, 0., -dw];
 	firstTime = First[timeFull];
@@ -348,8 +366,12 @@ CorrectTEFid[fid_, dw_, te_, gyro_, ppmRan_] := Block[{henk, timeFull, timeOr, t
 	timeOr = Select[timeFull, # >= te &];
 	timeMis = Select[timeFull, # < te &];
 	
-	(*create the missing values and pad to the fid*)
-	Join[HenkelSVDBasisC[timeMis,henk].(PseudoInverse[HenkelSVDBasisC[timeOr, henk]].fid), fid[[;; -(Length[timeMis] + 1)]]]
+	(*get the henkel values*)
+	henk = HenkelSVDFid[fid, dw, gyro, ppmRan];
+	fit = (PseudoInverse[HenkelSVDBasisC[timeOr, henk]].fid);
+	
+	(*missing and full henkle fid*)
+	{If[timeMis =!= {}, HenkelSVDBasisC[timeMis,henk].fit,{}],	HenkelSVDBasisC[timeFull, henk].fit}
 ]
 
 
@@ -371,8 +393,8 @@ HenkelSVDFid[fid_, dw_, gyro_, ppmRan_] := Block[{
 	
 	(*create the henkel matrix and the singula values*)
 	H = fid[[Range[mmax] + #]] & /@ Range[0, lmax - 1];
-	U = First@SingularValueDecomposition[H];
-	q = Log[Eigenvalues[PseudoInverse[U[[;; -2, ;; 32]]].U[[2 ;;, ;; 32]]]];
+	U = First@SingularValueDecomposition[H, 32];
+	q = Log[Eigenvalues[PseudoInverse[U[[;; -2]]].U[[2 ;;]]]];
 	
 	(*get the frequencies and delay times*)
 	decay = Re[q]/dw;
@@ -408,9 +430,20 @@ HenkelSVDBasisC = Compile[{{time, _Real, 1}, {henkel, _Real, 2}},
 
 Options[PadFid] = {PaddingFactor -> 2}
 
-SyntaxInformation[PadFid] = {"ArgumentsPattern" -> {_}}
+SyntaxInformation[PadFid] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
 PadFid[fid_, OptionsPattern[]] := PadRight[fid, Round[OptionValue[PaddingFactor] Length[fid]]]
+
+
+(* ::Subsubsection:: *)
+(*PadEcho*)
+
+
+Options[PadEcho] = {PaddingFactor -> 2}
+
+SyntaxInformation[PadEcho] = {"ArgumentsPattern" -> {_,OptionsPattern[]}}
+
+PadEcho[echo_, OptionsPattern[]] := ArrayPad[echo, {Floor[(OptionValue[PaddingFactor]-1) (Length[echo]/2)], Ceiling[(OptionValue[PaddingFactor] -1)(Length[echo]/2)]}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -425,11 +458,25 @@ ApodizeFid[fid_, OptionsPattern[]] := ApodizeFun[Length[fid], OptionValue[Apodiz
 
 
 (* ::Subsubsection::Closed:: *)
+(*ApodizeEcho*)
+
+
+Options[ApodizeEcho] = {ApodizationFunction -> "Hanning"}
+
+SyntaxInformation[ApodizeEcho] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
+
+ApodizeEcho[echo_, OptionsPattern[]] := ApodizeFun[Length[echo], OptionValue[ApodizationFunction],"Echo"] echo
+
+
+(* ::Subsubsection::Closed:: *)
 (*ApodizeFunSpectra*)
 
 
-ApodizeFun[length_, apM_:"Hanning"] := ApodizeFun[length, apM] = Block[{app, xdat, xmax},
-	xdat = Range[0, length - 1];
+ApodizeFun[length_, apM_:"Hanning", type_ : "Fid"] := ApodizeFun[length, apM, type] = Block[{app, xdat, xmax},
+	xdat = Switch[type,
+		"Fid", Range[0, length - 1],
+		"Echo", Abs[Round[Range[-length/2, length/2 - 1]]]
+	];
 	xmax = Max[Abs[xdat]];
 	app = Switch[apM,
 		"Hanning", 0.5 + 0.5 Cos[xdat Pi/xmax],
@@ -438,7 +485,8 @@ ApodizeFun[length_, apM_:"Hanning"] := ApodizeFun[length, apM] = Block[{app, xda
 		"Lorentzian", Exp[-(2./xmax)^2 xdat^2],
 		"Voigt", 0.5 Exp[-(3./xmax) xdat] + 0.5 Exp[-(2./xmax)^2 xdat^2]
 	];
-	app = app/Max[app]
+	app = app/Max[app];
+	(length/Total[app]) app
 ]
 
 
@@ -454,36 +502,59 @@ ApodizePadFid[fid_, OptionsPattern[]] := PadFid[ApodizeFid[fid, ApodizationFunct
 
 
 (* ::Subsubsection::Closed:: *)
-(*PadFid*)
+(*ApodizePadEcho*)
 
 
-Options[PadSpectra] = {PaddingFactor -> 2}
+Options[ApodizePadEcho] = {ApodizationFunction -> "Hanning", PaddingFactor -> 2}
 
-SyntaxInformation[PadSpectra] = {"ArgumentsPattern" -> {_}}
+SyntaxInformation[ApodizePadEcho] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-PadSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[PadFid[ShiftedInverseFourier[spec], opts]]
+ApodizePadEcho[echo_, OptionsPattern[]] := PadEcho[ApodizeEcho[echo, ApodizationFunction->OptionValue[ApodizationFunction]],PaddingFactor->OptionValue[PaddingFactor]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PadSpectra*)
+
+
+Options[PadSpectra] = {PaddingFactor -> 2, ReadoutType -> "Fid"}
+
+SyntaxInformation[PadSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
+
+PadSpectra[spec_, OptionsPattern[]] := Block[{func,readout},
+	readout = OptionValue[ReadoutType];
+	func = Switch[readout,"Fid",PadFid,"Echo",PadEcho];
+	ShiftedFourier[func[ShiftedInverseFourier[spec, readout],PaddingFactor-> OptionValue[PaddingFactor]], readout]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ApodizeSpectra*)
 
 
-Options[ApodizeSpectra] = {ApodizationFunction -> "Hanning"}
+Options[ApodizeSpectra] = {ApodizationFunction -> "Hanning", ReadoutType -> "Fid"}
 
 SyntaxInformation[ApodizeSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-ApodizeSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[ApodizeFid[ShiftedInverseFourier[spec], opts]]
+ApodizeSpectra[spec_, OptionsPattern[]] :=  Block[{func,readout},
+	readout = OptionValue[ReadoutType];
+	func = Switch[readout,"Fid",ApodizeFid,"Echo",ApodizeEcho];
+	ShiftedFourier[func[ShiftedInverseFourier[spec, readout], ApodizationFunction-> OptionValue[ApodizationFunction]], readout]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ApodizePadSpectra*)
 
 
-Options[ApodizePadSpectra] = {ApodizationFunction -> "Hanning", PaddingFactor -> 2}
+Options[ApodizePadSpectra] = {ApodizationFunction -> "Hanning", PaddingFactor -> 2, ReadoutType -> "Fid"}
 
 SyntaxInformation[ApodizePadSpectra] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-ApodizePadSpectra[spec_, opts : OptionsPattern[]] := ShiftedFourier[ApodizePadFid[ShiftedInverseFourier[spec], opts]]
+ApodizePadSpectra[spec_, OptionsPattern[]] := Block[{func,readout},
+	readout = OptionValue[ReadoutType];
+	func = Switch[readout,"Fid",ApodizePadFid,"Echo",ApodizePadEcho];
+	ShiftedFourier[func[ShiftedInverseFourier[spec, readout], ApodizationFunction->OptionValue[ApodizationFunction], PaddingFactor->OptionValue[PaddingFactor]],readout]
+]
 
 
 (* ::Subsection:: *)
@@ -551,11 +622,17 @@ GetGyro[field_?NumberQ,nuc_?StringQ] := GyromagneticRatio[nuc] field
 
 SyntaxInformation[PhaseShiftSpectra] = {"ArgumentsPattern" -> {_, _, _., _.}}
 
-PhaseShiftSpectra[spec_, phi0_] := PhaseShiftSpectraC[spec, 0., 0., phi0, 0.];
+PhaseShiftSpectra[spec_, phi0_] := PhaseShiftSpectraC0[spec, phi0];
 
 PhaseShiftSpectra[spec_, ppm_, gyro_, phi1_] := PhaseShiftSpectraC[spec, ppm, gyro, 0., phi1];
 
 PhaseShiftSpectra[spec_, ppm_, gyro_, {phi0_, phi1_}] := PhaseShiftSpectraC[spec, ppm, gyro, phi0, phi1];
+
+
+PhaseShiftSpectraC0 = Compile[{{spec, _Complex, 1}, {phi0, _Real, 0}},
+	Exp[-I phi0] spec,
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+]
 
 PhaseShiftSpectraC = Compile[{{spec, _Complex, 1}, {ppm, _Real, 1}, {gyro, _Real, 0}, {phi0, _Real, 0}, {phi1, _Real, 0}},
 	Exp[-I (phi0 + 2 Pi (phi1/1000) gyro ppm)] spec,
@@ -598,8 +675,8 @@ TimeShiftEcho[fid_, time_, gyro_, {gam_, eps_}] := TimeShiftEchoC[fid, time, gyr
 TimeShiftEcho[fid_, time_, gyro_, {gam_, eps_, f_}] := TimeShiftEchoC[fid, time, gyro, gam, eps, f];
 
 TimeShiftEchoC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {gam, _Real, 0}, {eps, _Real, 0}, {f, _Real, 0}},Block[{timeNew},
-	timeNew = Abs[time - (time[[-1]]/2)];
-	(f Exp[-gam timeNew] + (1 - f) Exp[- gam^2 timeNew^2]) Exp[2 Pi eps gyro I time] fid
+	timeNew = time - (time[[-1]]/2);
+	(f Exp[-gam Abs[timeNew]] + (1 - f) Exp[- gam^2 Abs[timeNew]^2]) Exp[2 Pi eps gyro I timeNew] fid
 	],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ]
 
@@ -659,11 +736,15 @@ SyntaxInformation[GetSpectraBasisFunctions] = {"ArgumentsPattern" -> {_, _, Opti
 GetSpectraBasisFunctions[inp_, opts:OptionsPattern[]] := GetSpectraBasisFunctions[inp, {""}, opts]
 
 GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
-	cf, bw, nsamp, lw, lws, read, sys, din, struct, dr, te, svals, seq, t1, t2, necho,
+	cf, bw, nsamp, lw, lws, read, sys, din, struct, dr, te, svals, seq, readout, t1, t2, necho,
 	sysAll, spinTab, field, nuc, nam, labs, names, times, fids, ppms, specs, douts},
 	
 	(*get the option values*)
 	{seq, svals} = OptionValue[BasisSequence];
+	readout = Switch[seq,
+		"PulseAcquire","Fid",
+		"SpaceEcho","Echo"
+	];
 	
 	nsamp = OptionValue[SpectraSamples];
 	bw = OptionValue[SpectraBandwith];
@@ -712,13 +793,13 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 			If[VectorQ[fids],
 				(*one fid*)
 				fids = (Re[fids] + Im[fids] I);
-				specs = ShiftedFourier[Re[fids] + Im[fids] I] Exp[-Pi I];
+				specs = ShiftedFourier[Re[fids] + Im[fids] I, readout] Exp[-Pi I];
 				{{nam, times, fids, Reverse[ppms], specs}}
 				,
 				(*mulitple fids*)
 				MapIndexed[(
 					fids = (Re[#1] + Im[#1] I);
-					specs = ShiftedFourier[Re[fids] + Im[fids] I] Exp[-Pi I];
+					specs = ShiftedFourier[Re[fids] + Im[fids] I, readout] Exp[-Pi I];
 					{nam <> "-" <> labs[[#2]], times, fids, Reverse[ppms], specs}
 				) &, fids]
 			]
@@ -789,10 +870,16 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		
 		(*-------------------------------------------------------------------*)
 		(*create the basis functions fid and pad*)
-		timeBasis = CashBasisTime[specBasisIn,pad];
+		timeBasis = CashBasisTime[specBasisIn, pad, readout];
 		
 		(*pad and normalize the spectra spectra*)
-		specFull=scale ShiftedFourier[ApodizePadFid[ShiftedInverseFourier[specIn],PaddingFactor->pad]];
+		specFull=scale ApodizePadSpectra[specIn, PaddingFactor->pad, ReadoutType->readout];
+		
+		(*
+		Print[ListLinePlot[{Re@FourierShift@ShiftedInverseFourier[specIn],Im@FourierShift@ShiftedInverseFourier[specIn]},PlotRange->Full]];
+		Print[ListLinePlot[{Re@FourierShift@ShiftedInverseFourier[specFull],Im@FourierShift@ShiftedInverseFourier[specFull]},PlotRange->Full]];
+		Print[ListLinePlot[{Re@Total@timeBasis,Im@Total@timeBasis},PlotRange->Full]];
+		*)
 		
 		(*get the time and ppm axes*)
 		{timeFull,ppmFull}=GetTimePpmRange[specFull,dtime,field,nuc];
@@ -857,14 +944,17 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		tfit1=0;
 		If[NumberQ[gami]&&NumberQ[epsi]&&NumberQ[linei],
 			(*define fit parameters and initialization*)
-			Clear[phi0f,phi1f,gamf,epsf,linef];
+			Clear[phi0f,phi1f,gamf,epsf,linef,var,varf];
+			
+			(*define the fit varables*)
 			var={{gamf,gami},{epsf,epsi},{linef,linei},{phi0f,phi0i},{phi1f,phi1i}};
-			init={gami,epsi,1,phi1i};
+			varf={gamf,epsf,{phi0f,phi1f}, linef};
+			(*get the std of initial fit*)
+			init={gami, epsi, phi1i};
 			
 			(*perform the fit*)
-			{tfit1,fit1}=AbsoluteTiming[FindMinimum[
-				FitSpectraError[{ppmFull,specFull},{timeFull,timeBasis},{indSt,indEnd},{cpn,gyro},{gamf,epsf,{phi0f,phi1f}, linef},init, Output->"Error", ReadoutType ->readout], 
-				var][[2]]];
+			{tfit1,fit1}=AbsoluteTiming[FindMinimum[FitSpectraError[{ppmFull,specFull},{timeFull,timeBasis},{indSt,indEnd},{cpn,gyro},varf, init, Output->"Error", ReadoutType ->readout], var][[2]]];
+			
 			(*Get the fit results and output, wrap phi between -pi and pi*)
 			sol={gami,epsi,phii,linei}={Clip[gamf,{1,500}],epsf,{2ArcTan[Tan[phi0f/2]],phi1f},linef}/.fit1;
 			
@@ -895,21 +985,20 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		tfit2=0;
 		If[OptionValue[FineTuneFit],
 			(*prepare the fit parameters*)
-			Clear[phi0f,phi1f,phi,gam,eps,line,var,init];
+			Clear[phi0f,phi1f,phi,gam,eps,line,var,varf,init];
+			
 			gamf=Table[Unique[gam],{i,1,nbas}];
 			epsf=Table[Unique[eps],{i,1,nbas}];
 			linef=If[OptionValue[FitLineShape],Table[Unique[line],{i,1,nbas}],Unique[line]];
 			
 			(*define the fit varables*)
 			var=Join[MakeVars[gamf,gami,1],MakeVars[epsf,epsi,1],MakeVars[{phi0f,phi1f},phii,0],MakeVars[linef,linei,1]];
-			
+			varf={gamf,epsf,{phi0f,phi1f}, linef};
 			(*get the std of initial fit*)
-			init={gami,epsi,sigi,phii[[2]]};
+			init={gami,epsi,phii[[2]]};
 			
 			(*perform the minimization*)
-			{tfit2,fit2}=AbsoluteTiming[FindMinimum[
-				FitSpectraError[{ppmFull,specFull},{timeFull,timeBasis},{indSt,indEnd},{cpn,gyro},{gamf,epsf,{phi0f,phi1f},linef}, init, Output->"Error", ReadoutType ->readout],
-				var, MaxIterations->250][[2]]];
+			{tfit2,fit2}=AbsoluteTiming[FindMinimum[FitSpectraError[{ppmFull,specFull},{timeFull,timeBasis},{indSt,indEnd},{cpn,gyro},varf, init, Output->"Error", ReadoutType ->readout], var][[2]]];
 			
 			(*get the solution and output, wrap phi between -pi and pi*)
 			sol={gami, epsi, phii, linei}={Clip[gamf,{1,500}],epsf,{2ArcTan[Tan[phi0f/2]],phi1f},linef}/.fit2;
@@ -945,10 +1034,10 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 	gyro=GetGyro[nuc,field];
 	nsamp=Length[specFull];
 	
-	timeBasisIn=(ShiftedInverseFourier[#]&/@specBasisIn);
-	basis=BasisSpectraApply[{ppm,time,timeBasisIn},sol,gyro, readout];
-	fit=fit/scale;
-	specFit=fit.basis;
+	timeBasisIn = ShiftedInverseFourier[#, readout]&/@specBasisIn;
+	basis = BasisSpectraApply[{ppm, time, timeBasisIn}, sol, gyro, readout];
+	fit = fit/scale;
+	specFit = fit.basis;
 	
 	(*fit a spline through the residuals*)
 	spline=BSplineCurveFit[specIn-specFit, SplineKnotsNumber-> cpn, SplineRegularization->0, SplineDegree-> 2];
@@ -988,7 +1077,10 @@ MakeVars[par_,val_,1]:=If[Length[par]===0,
 	]
 ]
 
-CashBasisTime[specBasisIn_,pad_] := CashBasisTime[specBasisIn,pad] = ApodizePadFid[ShiftedInverseFourier[#], PaddingFactor->pad]&/@specBasisIn
+CashBasisTime[specBasisIn_, pad_, readout_] := CashBasisTime[specBasisIn, pad, readout] = Block[{func},
+	func = Switch[readout,"Fid",TimeShiftFid,"Echo",TimeShiftEcho];
+	func[ShiftedInverseFourier[#, readout], PaddingFactor->pad]&/@specBasisIn;
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1000,7 +1092,8 @@ Options[FitSpectraError] = {Output -> "Error", ReadoutType -> "Fid"};
 FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {cpn_, gyro_},
 	{gam_ /; AllTrue[gam, NumericQ], eps_ /; AllTrue[eps, NumericQ], phi_ /; AllTrue[phi, NumericQ], f_ /; AllTrue[f, NumericQ]}, 
 	init___ : 0, OptionsPattern[]] := Block[{
-	specF, fidF, specBasisF, fit, ferr, gerr, perr, errorF, errorS, reerr, imerr, gami, epsi, sigi, phii, specBasis, fidBasisF, specFit, spline, readout
+		specF, fidF, specBasisF, fit, ferr, gerr, perr, errorF, errorS, reerr, imerr, gami, epsi,
+		sigi, phii, specBasis, fidBasisF, specFit, spline, readout, eerr
 	},
 	
 	(*get the readout type*)
@@ -1008,25 +1101,25 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 	
 	(*give ouput either error or fit results*)
 	Switch[OptionValue[Output],
-		(*output error of fit calculated on selected ppm range*)
+		(* ------------ Calculate Error for minimization --------------*)
 		"Error",
 		
+		(*----------- Aply parameters -----------*)
 		(*apply phase to target instead of basis functions (faster)*)
 		specF = PhaseShiftSpectra[spec, ppmFull, gyro, -phi];
-		fidF= ShiftedInverseFourier[specF];
+		(*also convert to fid for error calcualtion*)
+		fidF= ShiftedInverseFourier[specF, readout];
+		(*select spectra range*)
 		specF = specF[[indSt ;; indEnd]];
+				
 		(*generate basis spectra from time domain by applying gam, eps and lineshape*)
 		{fidBasisF,specBasisF} = BasisSpectraApply[{timeFull, timeBasis}, {gam, eps, f}, gyro, {indSt, indEnd}, readout];
 		
+		
+		(*----------- Perform Fit and calculate errro -------------*)
 		(*perform Fit of basis spectra*)
 		fit = Quiet@NNLeastSquares[Transpose[Re[specBasisF]], Re[specF]];
-		(*constrain f between 0 and 1 using power function*)
-		ferr = Total[ConFuncC[f, 0, 1, 4]];
-		(*constrain gam to be positive*)
-		gerr = Total[ConFuncC[gam, 5, 200, 3]];
-		(*constrain phase to be small*)
-		perr = ConFuncC[phi[[2]], -0.5, 0.5, 5];
-		
+			
 		(*define errors fid and spectra*)
 		errorS = specF - fit.specBasisF;
 		errorF = fidF - fit.fidBasisF;
@@ -1035,31 +1128,49 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		reerr = Total[Re[errorS]^2]/Length[errorS] + Total[Re[errorF]^2]/Length[errorF];
 		imerr = Total[Im[errorS]^2]/Length[errorS] + Total[Im[errorF]^2]/Length[errorF];
 		
+		(*constrain f between 0 and 1*)
+		ferr = Total[ConFuncC[f, 0, 1, 4]];
+		
 		If[init === 0,
-			(*no initial values only minimize RMSE*)
-			reerr + imerr + ferr + gerr + perr,
-			(*get initial values to constrain finetune fit*)
-			{gami, epsi, sigi, phii} = init;
-			(*calculate error, normalize for sigma contrain gam en eps*)
-			reerr/sigi + imerr/sigi + Total[((gam - gami)/40)^4] + Total[((eps - epsi)/1)^4] + ferr + gerr
+			(*constrain phase to be small*)
+			perr = ConFuncC[phi[[2]], -0.5, 0.5, 5];
+			(*constrain gam to be positive*)
+			gerr = Total[ConFuncC[gam, 1, 500, 3]];
+			(*no initial values, minimize RMSE with f, gam and phase contraint*)
+			reerr + imerr + ferr + gerr + perr
+			,
+			(*get initial values to constrain finetune fit, init ={gami, epsi, phii}*)
+			(*constrain lw gam to initial value*)
+			gerr = Total[ConFuncSC[gam,init[[1]], 10, 2]];
+			(*constrain shift eps to initial value*)
+			eerr = Total[ConFuncSC[eps,init[[2]], 1, 2]];
+			(*constrain phase to initial value*)
+			perr = ConFuncC[phi[[2]]-init[[3]], -0.1, 0.1, 5];
+			(*calculate error, minimize RMSE with f, gam, eps and phase contraint*)
+			reerr + imerr + ferr + gerr + eerr + perr
 		],
 		
-		(*ouput the fit results calculated on full ppm range*)
+		(* ------------ Calculate fitted spectra for output --------------*)
 		"Fit",
 		
 		(*generate basis spectra from time domain by applying gam, eps and lineshape*)
 		specBasis = BasisSpectraApply[{ppmFull, timeFull, timeBasis}, {gam, eps, phi, f}, gyro, readout];
+		
 		(*perform Fit of basis spectra*)
 		fit = Quiet@NNLeastSquares[Transpose[Re[specBasis]], Re[spec]];
 		specFit = fit.specBasis;
 		(*fit a spline through the residuals*)
 		spline = BSplineCurveFit[spec - specFit, SplineKnotsNumber -> cpn, SplineRegularization -> 0, SplineDegree -> 2];
+		
 		(*recalculate the error*)
 		error = spec - specFit - spline;
 		{fit, StandardDeviation[error]^2}
 	]
 ]
 
+ConFuncSC = Compile[{{par, _Real, 0}, {ref, _Real, 0}, {nor, _Real, 0}, {sc, _Real, 0}}, 
+	10^sc ((par-ref)/nor)^2
+, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
 
 ConFuncUC = Compile[{{par, _Real, 0}, {min, _Real, 0}, {sc, _Real, 0}}, Block[{off = -par + min},
 	10^sc (UnitStep[off] (off))^2
@@ -1089,10 +1200,10 @@ BasisSpectraApply[{ppmFull_,timeFull_,timeBasis_},{gam_,eps_,phi_,f_},gyro_,{st_
 	{gamv, epsv, fv} = ConstantArray[1, {3,Length[timeBasis]}] {gam, eps, f};
 	
 	(*get the reaout function*)
-	func=Switch[readout,"Fid",TimeShiftFid,"Echo",TimeShiftEcho];
+	func = Switch[readout,"Fid",TimeShiftFid,"Echo",TimeShiftEcho];
 	(*generate basis spectra from time domain by applying gam,eps and lineshape*)
 	fidBasis = MapThread[func[#1, timeFull, gyro, {#2, #3, #4}] &, {timeBasis, gamv, epsv, fv}];
-	specBasis = (ShiftedFourier /@ fidBasis);
+	specBasis = ShiftedFourier[#, readout]&/@fidBasis;
 	
 	(*apply phase to the basis spectra, phi is only 0 if used in fitting and there also the fid is needed in all other cases only spectra is needed*)
 	If[phi === 0, {fidBasis, specBasis[[All, st ;; end]]}, PhaseShiftSpectra[#, ppmFull, gyro, phi] & /@ specBasis]
@@ -1176,10 +1287,10 @@ EstimatePhaseShift[{ppm_,spec_},{time_,fids_},{gam_,eps_},gyro_,{st_,en_},readou
 	
 	(*convert basis fids in spectra find function based on fid or echo*)
 	func=Switch[readout,"Fid",TimeShiftFid,"Echo",TimeShiftEcho];
-	specsC=Transpose[ShiftedFourier[func[#,time,gyro,{gam,eps,.5}]][[st;;en]]&/@fids];
+	specsC=Transpose[ShiftedFourier[func[#,time,gyro,{gam,eps,.5}], readout][[st;;en]]&/@fids];
+	
 	(*Fit absolute basis spectra to absolute spectrum*)
 	fit=specsC.(NNLeastSquares[Abs[specsC],Abs[specf]]);
-	
 	(*minimize error with the target spectra*)
 	sol1=Quiet@NMinimize[{PhaseError[ppmf,fit,specf,{phi0f,0 },gyro],-Pi<phi0f<Pi},{phi0f},MaxIterations->25][[2]];
 	phi1={phi0f, 0}/.sol1;
@@ -1670,11 +1781,11 @@ CSIInterface31P[file_?StringQ, opts : OptionsPattern[]] := CSIInterface31P[file,
 CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := Module[{
 	f, te, bw, nuc, field, gyro, names, met, metSel, metRef, method, plot, kload, rec, spectraC, dec, line, fine, den, z, y, x, 
 	sphase, status, statusP, kspace, noise,	header, type, ham, spectra, spectraR, spec, proc, shift, times, fids, ppms, specs, 
-	table, fit, basisFit, errorFit, pars, log, plots, specf, fitted, xm, ym, zm, dn, dc, mr, dw, nsamp, filt, filti, teu,
-	fileSave, spectraPlot, lab, fovz, fovy, fovx
+	table, fit, basisFit, errorFit, pars, log, plots, specf, fitted, xm, ym, zm, dn, dc, mr, dw, nsamp, filt, teu,
+	fileSave, spectraPlot, lab, fovz, fovy, fovx, coils, ncoils
 	},
 	
-	NotebookClose[csiwindow];
+	NotebookClose[interfaceWindow];
 	NotebookClose[reswindow];
 	NotebookClose[plotwindow];
 	
@@ -1727,7 +1838,9 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 				kspace = OrderKspace[TotalType[kspace, type, {"N_aver"}], {"N_chan", "N_samp", "N_kz", "N_ky", "N_kx"}][[1]];
 				,
 				kspace = OrderKspace[MeanType[kspace, type, {"N_aver"}], {"N_chan", "N_samp", "N_kz", "N_ky", "N_kx"}][[1]];
-				filti=filt;
+				ham = MakeHammingFilter[Dimensions[kspace][[-3;;]]];
+				kspace = Map[ham #&,kspace,{2}];
+				
 			];
 			coils = ncoils = Range[Length[kspace]];
 			kload = True;
@@ -1759,12 +1872,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			dw = 1./bw;
 			teu = te/1000;
 			coils = If[coils==={},All,coils];
-			spectraR = CoilWeightedReconCSI[kspace[[coils]], noise[[coils]], header, Method -> method];
-			If[!filti,
-				ham = MakeHammingFilter[Dimensions[spectraR][[;;-2]]];
-				spectraR = HammingFilterCSI[spectraR];
-			];
-			spectra = spectraR;
+			spectra = spectraR = CoilWeightedReconCSI[kspace[[coils]], noise[[coils]], header, Method -> method];
 			rec = True; 
 			If[den, spectra = DenoiseCSIdata[spectra]; proc = dn = True; ];
 			If[dec, spectra = DeconvolveCSIdata[spectra, ham]; proc = dc = True;];
@@ -1919,7 +2027,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 	];
 	
 	(*------------ DIALOG -------------*)
-	csiwindow = CreateDialog[dialogGrid, Background -> White, WindowSize -> All, WindowTitle -> "CSI Processing GUI"];
+	interfaceWindow = CreateDialog[dialogGrid, Background -> White, WindowSize -> All, WindowTitle -> "CSI Processing GUI"];
 ];
 
 

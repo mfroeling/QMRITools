@@ -1,10 +1,10 @@
 (* Paclet Info File *)
 
-(* created 2020/05/11*)
+(* created 2020/05/19*)
 
 Paclet[
     Name -> "QMRITools",
-    Version -> "2.3.3",
+    Version -> "2.4.0",
     MathematicaVersion -> "12.1+",
     Description -> "Toolbox for Quantitative MRI.",
     Creator -> "Martijn Froeling <m.froeling@gmail.com>",

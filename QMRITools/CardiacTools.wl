@@ -145,31 +145,30 @@ Output is the heart shape, the voxel size and the parameters needed to generate 
 "
 
 CardiacCoordinateSystem::usage = 
-"CardiacCoordinateSystem[mask, vox] creates the cardiac coordinate system within the mask. 
-output is a set of vectors {radvecn, norvecc, cirvec}, being the radial, normal and circular axes of each voxel respectivley."
+"CardiacCoordinateSystem[mask, vox] creates the cardiac coordinate system within the mask and is used in HelixAngleCalc. 
+Output is a set of vectors {radvecn, norvecc, cirvec}, being the radial, normal and circular axes of each voxel respectivley.
+If the option showPlot is true the output is {{radvecn, norvecc, cirvec}, plots}"
 
 
 (* ::Subsection::Closed:: *)
 (*Options*)
 
 
-ShowHelixPlot::usage = 
-"ShowHelixPlot is an option for HelixAngleCalc. If true the it also outputs a visulization of the local myocardial coordinate system."
-
-HelixMethod::usage = 
-"HelixMethod is an option for HelixAngleCalc. Can be \"Slow\" or \"Fast\". 
-\"Slow\" uses wall distance interpolation and can take long for high res datasets.
-\"Fast\" uses wall distance calculation using circular approximation of the ventricle."
+LCMMethod::usage = 
+"LCMMethod is an option for HelixAngleCalc and LMCSytemCalc. Can be \"CentralAxes\" or \"WallMap\". 
+\"CentralAxes\" uses wall distance calculation using projection of the centarl axes and circular approximation of the ventricle. This method is fairly fast and uses CentralAxes internaly.
+\"WallMap\" uses wall distance interpolation and subsequential gradient calculation. Can take long for high res datasets but is most accurate. Uses CalculateWallMap internaly.
+"
 
 AxesMethod::usage = 
-"AxesMethod is an option for HelixAngleCalc and CentralAxes. Can be \"Linear\", \"Quadratic\", \"Cubic\"."
+"AxesMethod is an option for HelixAngleCalc and CentralAxes and CardiacCoordinateSystem. Can be \"Linear\", \"Quadratic\", \"Cubic\"."
 
 RowSize::usage =
 "RowSize is an option for CentralAxes. defines the number or images per showing the segmentation.
 Can be \"Automatic\" of an integer." 
 
-ShowFit::usage = 
-"ShowFit is an option for CentralAxes. True shows the fit of the central axes."
+ShowPlot::usage = 
+"ShowPlot is an option for CentralAxes, HelixAngleCalc and CardiacCoordinateSystem. True shows the fit of the central axes and outpu the plot as extra output."
 
 MaskWallMap::usage = 
 "MaskWallMap is an option for CalculateWallMap. if True or False."
@@ -248,141 +247,122 @@ Begin["`Private`"]
 (*HelixAngleCalc*)
 
 
+(* ::Subsection::Closed:: *)
+(*CardiacCoordinateSystem*)
+
+
+Options[CardiacCoordinateSystem] = {ShowPlot -> False, LCMMethod->"WallMap", AxesMethod->"Quadratic"}
+
+SyntaxInformation[CardiacCoordinateSystem] = {"ArgumentsPattern" -> {_,_, OptionsPattern[]}};
+
+CardiacCoordinateSystem[mask_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:= CardiacCoordinateSystem[mask, 0, vox, opts]
+
+CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Block[{
+		dim, axesout, off, vec, inout, pla, met, radvec, norvec, cirvec,norvecc, radvecn, wall, der,
+		sp, spz, spxy, maskCont, vectorField,n, z, y, x, coo, rav, nov, rov, vec1 ,vec2, vec3, plot, plw 
+	},
+	
+	dim = Dimensions[mask];
+	
+	(*get the cardiac center line*)
+	axesout = CentralAxes[mask, maskp, vox, AxesMethod -> OptionValue[AxesMethod], ShowPlot -> OptionValue[ShowPlot]];
+	{off, vec, inout} = If[OptionValue[ShowPlot], pla = axesout[[4]]; axesout[[1 ;; 3]], axesout];
+	
+	PrintTemporary["LMCS caclulation start"];
+	Switch[OptionValue[LCMMethod],
+		"CentralAxes",
+		(*calculate the wall angle map*)
+		wall = N[WallAngleMap[mask,vox,inout]Degree];
+		(*define te rad vector using center points*)
+		radvec = RadVecC[dim,off];
+		(*define norvecs using centerline vectors*)
+		norvec = ConstantArray[vec[[#]],dim[[2;;]]]&/@Range[dim[[1]]];
+		(*define rotation vectors perpendicualr to radvecn and norvec*)
+		cirvec = NormalizeC[CrossC[radvec,norvec]];
+		(*correct the norvec for the wall curvature by rotation around rotvec*)
+		norvecc = NorVecR[wall,cirvec,norvec];
+		(*make radvec purpendicular to corrected norvec*)
+		radvecn = MakePerpendicular[radvec,norvecc];
+		,
+		"WallMap",
+		(*Calculate the wall distance map, and the wall direction*)
+		wall = CalculateWallMap[mask, vox, ShowPlot -> OptionValue[ShowPlot]];
+		{wall, der} = If[OptionValue[ShowPlot], plw = wall[[3]]; wall[[1 ;; 2]], wall];
+		(*make all vectors perpendicual*)
+		radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
+		norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
+		norvecc = MakePerpendicular[norvec, radvecn];
+		cirvec = NormalizeC[CrossC[radvecn,norvecc]];
+	];
+	
+	PrintTemporary["LMCS is done"];
+	If[OptionValue[ShowPlot],
+		(*plot hear geo*)
+		sp = Ceiling[Dimensions[mask]/{12, 24, 24}];
+		{spz, spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
+		maskCont = PlotMaskVolume[mask + maskp, vox];
+		n = (spz 0.6 vox[[1]]) {1, -1, 1}/vox;
+		vectorField = Table[
+			If[mask[[z, y, x]] == 0,
+				{None, None, None},
+				coo = {x, -y + dim[[2]] + 1, z};
+				rav = Reverse[n radvecn[[z, y, x]]];
+				nov = Reverse[n norvecc[[z, y, x]]];
+				rov = Reverse[n cirvec[[z, y, x]]];
+				{
+					{Darker[Green], Thick, Line[{coo(*-rav*), coo + rav}]},
+					{Darker[Blue], Thick, Line[{coo(*-nov*), coo + nov}]}, 
+					{Darker[Red], Thick, Line[{coo(*-rov*), coo + rov}]}
+				}
+			], 
+		{z, 1, dim[[1]], spz}, {y, 1, dim[[2]], spxy}, {x, 1, dim[[3]], spxy}];
+		
+		{vec1, vec2, vec3} =   DeleteCases[Flatten[#, 2], None] & /@ Transpose[vectorField, {2, 3, 4, 1}];
+	    plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3]];
+	    
+	    Print[plot];
+	];
+	
+	If[OptionValue[ShowPlot],
+		{{radvecn, norvecc, cirvec}, {pla, plw, plot}},
+		{radvecn, norvecc, cirvec}
+	]
+]
+
+
+
 (* ::Subsubsection::Closed:: *)
 (*HelixAngleCalc*)
 
 
-Options[HelixAngleCalc]={ShowHelixPlot->True, HelixMethod->"Slow2", AxesMethod->"Quadratic"};
+Options[HelixAngleCalc]={ShowPlot->True, LCMMethod->"WallMap", AxesMethod->"Quadratic"};
 
 SyntaxInformation[HelixAngleCalc]={"ArgumentsPattern"->{_,_,_,_.,OptionsPattern[]}};
 
-HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,0,1,1,1,vox,opts]
+HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,0,vox,opts]
 
-HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,maskp,1,1,1,vox,opts]
+HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=Block[{
+		out, evec, projection, inp, helix, sign, norvec,radvec, cirvec, coors, plots, i, j
+	},
 
-HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, off_, vec_, inout_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,0,off,vec,inout,vox,opts]
-
-HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, offi_, veci_, inouti_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]]:=Block[{
-	norvec,radvec,radvecn,cirvec,projection,helix,sign,	evec,inp,dim,wallangmap,
-	norvecc,mtot,func2,vec,off,inout,pl, vectorField,vectorFieldE,n,coo,plot,
-	out,voxl,offp,rav,nov,rov,spz,spxy,sp,met,seg,min,mout,intdata,func,
-	wall,der, maskCont,vec1,vec2,vec3},
-	
-	dim=Dimensions[data][[1;;3]];
-	voxl=Reverse[vox];
-
-	met=OptionValue[HelixMethod];
-
-	If[offi===1&&veci===1&&inouti===1,
-		If[OptionValue[ShowHelixPlot],
-			{off, vec, inout, pl} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, AxesMethod -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowHelixPlot]];,
-			{off, vec, inout} = CentralAxes[mask, maskp, vox, RowSize -> Automatic, AxesMethod -> OptionValue[AxesMethod],ShowFit->OptionValue[ShowHelixPlot]];
-		],
-		vec=veci;off=offi;inout=inouti;
-	];
-	
-	PrintTemporary["LMCS caclulation start"];
-	Switch[met
-		,"Fast",
-		(*calculate the wall angle map*)
-		wallangmap=N[WallAngleMap[mask,vox,inout]Degree];
-		(*define te rad vector using center points*)
-		radvec=RadVecC[dim,off];
-		(*define norvecs using centerline vectors*)
-		norvec=ConstantArray[vec[[#]],dim[[2;;]]]&/@Range[dim[[1]]];
-		(*define rotation vectors perpendicualr to radvecn and norvec*)
-		cirvec=NormalizeC[CrossC[radvec,norvec]];
-		(*correct the norvec for the wall curvature by rotation around rotvec*)
-		norvecc=NorVecR[wallangmap,cirvec,norvec];
-		(*make radvec purpendicular to corrected norvec*)
-		radvecn=MakePerpendicular[radvec,norvecc];
-		
-		,"Slow",
-		seg = MorphologicalComponents[#] & /@ (1. - mask);
-		min = Round@GaussianFilter[Unitize[Clip[seg, {1.5, 2}, {0, 0}]], 3];
-		mout = Round@GaussianFilter[Unitize[1 - Clip[seg, {0, 1}, {0, 0}]], 3];
-		mtot = (Dilation[mout, 1] + 1) - 2 min;
-		
-		intdata = N@Join[Append[vox #, 0.] & /@ Position[min, 1], Append[vox #, 1.] & /@ Position[1 - Dilation[mout, 1], 1]];
-		func = Interpolation[intdata, InterpolationOrder -> 1];
-		func2 = If[(mtot[[##]] & @@ #) != 2, (mtot[[##]] & @@ #), func @@ (vox #)] &;
-		wall = Table[func2[{z, y, x}], {z, 1,dim[[1]]}, {y, 1, dim[[2]]}, {x, 1,dim[[3]]}];
-		der = GaussianFilter[wall, {1.5 (1/vox)/(1/vox[[1]])}, #] & /@ (IdentityMatrix[3]);
-		
-		radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
-		norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
-		norvecc = MakePerpendicular[norvec, radvecn];
-		cirvec = NormalizeC[CrossC[radvecn,norvecc]];
-		
-		,"Slow2",
-		{wall,der,p} = CalculateWallMap[mask, vox, ShowFit->True, MaskWallMap->False];
-		
-		radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
-		norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
-		norvecc = MakePerpendicular[norvec, radvecn];
-		cirvec = NormalizeC[CrossC[radvecn,norvecc]];
-	];
-	PrintTemporary["LMCS is done"];
+	coors = CardiacCoordinateSystem[mask, maskp, vox, opts];
+	{radvec, norvec, cirvec} = If[OptionValue[ShowPlot], plots = coors[[2]]; coors[[1]],coors];
 
 	(*create helix angle maps*)
 	out = Flatten[Table[
 		evec=Map[Reverse,data[[All,All,All,i]],{3}];
 		(*align vector with projection vector*)
-		evec=Sign2[DotC[{norvecc,radvecn,cirvec}[[j]],evec]] evec;
-		(*evec=Sign2[DotC[{norvecc,radvecn,rotvec}[[j]],evec]] evec;*)
+		evec=Sign2[DotC[{norvec,radvec,cirvec}[[j]],evec]] evec;
 		(*Helix,Transverse,Sheet}*)
-		projection = MakePerpendicular[evec, {radvecn,cirvec,norvecc}[[j]]];
-		(*projection = MakePerpendicular[evec, {rotvec,norvec,radvecn}[[j]]];*)
-		inp = DotC[projection,{cirvec,norvecc,radvecn}[[j]]];
+		projection = MakePerpendicular[evec, {radvec,cirvec,norvec}[[j]]];
+		inp = DotC[projection,{cirvec,norvec,radvec}[[j]]];
 		helix=ArcCos[Abs[inp]]/Degree;
 		
 		sign=If[(j==1 && i==1),Sign2[inp],1];
 		sign helix
 	, {i, 3}, {j, 3}],1];
-		
-	sp = Ceiling[Dimensions[mask]/{12, 24, 24}];
-		
-	{spz,spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
 
-	If[OptionValue[ShowHelixPlot],
-		(*creat a plot showing the local axes system*)
-		maskCont = PlotMaskVolume[mask + maskp, vox];
-		n = (spz 0.6 vox[[1]]){1, -1, 1} /vox;
-	  	vectorField = Table[
-	  		If[mask[[z, y, x]] == 0, {None, None, None},
-	  			coo = {x, -y + dim[[2]] + 1, z};
-	  			rav = Reverse[n radvecn[[z, y, x]]];
-	  			nov = Reverse[n norvecc[[z, y, x]]];
-	  			rov = Reverse[n cirvec[[z, y, x]]];
-	  			{{Darker[Green], Thick, Line[{coo, coo + rav}]},
-	  			{Darker[Blue], Thick, Line[{coo, coo + nov}]},
-	  			{Darker[Red], Thick, Line[{coo, coo + rov}]}}
-	     	]
-	     	, {z, 1, dim[[1]], spz}, {y, 1,dim[[2]], spxy}, {x, 1, dim[[3]], spxy}];
-	     {vec1, vec2, vec3} = DeleteCases[Flatten[#, 2], None] & /@ Transpose[vectorField, {2, 3, 4, 1}];
-	     
-		vectorFieldE = DeleteCases[Flatten[Table[
-	    	If[mask [[z, y, x]] == 0, None,
-	        	coo = ({x, -y + dim[[2]], z} + {.5, .5, 0});
-	        	rav = n data[[z,y,x,3]];
-	        	nov = n data[[z,y,x,1]];
-	        	rov = n data[[z,y,x,2]];
-		        {{Green, Thick, Line[{coo - rav, coo + rav}]}, 
-		        {Blue, Thick, Line[{coo - nov, coo + nov}]},
-		        {Red, Thick, Line[{coo - rov, coo + rov}]}}
-	         ]
-	     , {z, 1, dim[[1]],1}, {y, 1, dim[[2]], 3}, {x, 1, dim[[3]], 2}],3], None];
-	     
-		offp = {.5, .5+dim[[2]], 0} + {1, -1, 1} Reverse[#] & /@ DeleteCases[off, {}];
-		(*cent=Show[ListPointPlot3D[offp,PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],Graphics3D[{Thick, Black, Line[offp]}]];*)
-	  	plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3](*,Graphics3D[vectorFieldE]*)];
-	   	Print[plot];
-	  	
-	  	{Re@out,{plot,pl}(*,{radvec,norvec,radvecn,rotvec,norvecc}*)}
-		,
-		(*output without plot*)
-	  	Re@out
-  	]
+	If[OptionValue[ShowPlot], {Re@out,plots}, Re@out]
 ]
 
 
@@ -397,24 +377,27 @@ Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
 (*MakePerpendicular*)
 
 
-MakePerpendicular = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, Normalize[vec1 - (vec1.vec2) vec2], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MakePerpendicular = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
+	Normalize[vec1 - (vec1.vec2) vec2], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*NormalizeC*)
 
 
-NormalizeC = Compile[{{vec, _Real, 1}}, Normalize[vec], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+NormalizeC = Compile[{{vec, _Real, 1}}, 
+	Normalize[vec], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*RadVecC*)
 
 
-RadVecC = Compile[{{dim, _Real, 1}, {off, _Real, 2}}, Table[Normalize[{i, j, k}-off[[i]]], {i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RadVecC = Compile[{{dim, _Real, 1}, {off, _Real, 2}}, 
+	Table[Normalize[{i, j, k}-off[[i]]], {i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -422,9 +405,9 @@ RadVecC = Compile[{{dim, _Real, 1}, {off, _Real, 2}}, Table[Normalize[{i, j, k}-
 
 
 NorVecC = Compile[{{off, _Real, 2}, {vec, _Real, 2}, {dim, _Real, 1}, {vox, _Real, 1}}, Block[{offv},
-    	offv = vox # & /@ off;
-    	Table[vec[[First@First@Position[offv, First@Nearest[offv, vox {i, j, k}, 1]]]],{i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}]
-    ], Parallelization -> True, RuntimeOptions -> "Speed"];
+	offv = vox # & /@ off;
+	Table[vec[[First@First@Position[offv, First@Nearest[offv, vox {i, j, k}, 1]]]],{i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}]],
+Parallelization -> True, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -432,11 +415,11 @@ NorVecC = Compile[{{off, _Real, 2}, {vec, _Real, 2}, {dim, _Real, 1}, {vox, _Rea
 
 
 NorVecR = Compile[{{angmap, _Real, 0}, {rotvec, _Real, 1}, {norvec, _Real, 1}}, Block[{v1, v2, v3, W, iden},
-	     {v1, v2, v3} = rotvec;
-	     iden = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-	     W = -{{0, -v3, v2}, {v3, 0, -v1}, {-v2, v1, 0}};
-	     (iden + Sin[angmap] W + (2 Sin[angmap/2]^2 MatrixPower[W, 2])).norvec
-    ] , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	{v1, v2, v3} = rotvec;
+	iden = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+	W = -{{0, -v3, v2}, {v3, 0, -v1}, {-v2, v1, 0}};
+	(iden + Sin[angmap] W + (2 Sin[angmap/2]^2 MatrixPower[W, 2])).norvec], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 
@@ -444,27 +427,25 @@ NorVecR = Compile[{{angmap, _Real, 0}, {rotvec, _Real, 1}, {norvec, _Real, 1}}, 
 (*CrossC*)
 
 
-CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, Cross[vec1, vec2], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
+	Cross[vec1, vec2], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*DotC*)
 
 
-DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, vec1.vec2, 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
+	vec1.vec2, 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*WallAngleMap*)
 
 
-WallAngleMap[mask_, vox_, inout_] := Block[{
-	dim, cent, len, edge1, edge2, fout, fin, walldir, 
-	wallang, wallvec, sign, wallangfunc, dist, in, out
-	},
-	
+WallAngleMap[mask_, vox_, inout_] := Block[{dim, cent, len, edge1, edge2, fout, fin, walldir, wallang, wallvec, sign, wallangfunc, dist, in, out},
 	dim = Dimensions[mask];
 	len = dim[[1]];
 	
@@ -531,7 +512,7 @@ FitWall[data_, met_] := Block[{fun, pf, fdata, xdat, points, pos},
 (*CalculateWallMap*)
 
 
-Options[CalculateWallMap] = {ShowFit -> True, MaskWallMap->True};
+Options[CalculateWallMap] = {ShowPlot -> True, MaskWallMap->True};
 
 SyntaxInformation[CalculateWallMap] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -568,7 +549,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	];
 	
 	(*plane fit visualisation*)
-	If[OptionValue[ShowFit],
+	If[OptionValue[ShowPlot],
 		surfpl = ListContourPlot3D[GaussianFilter[mask, 1], Contours -> {0.6}, Mesh -> False, PlotRange -> Transpose[{{0, 0, 0}, Reverse@(Dimensions[mask])}],
 			BoxRatios -> Reverse@(vox Dimensions[mask]), ContourStyle -> Directive[Gray, Opacity[0.5]], Lighting -> "Neutral", Axes -> False];
 		pointspl = ListPointPlot3D[Reverse[# - {0, 1, 1}] & /@ ptsi, PlotRange -> Transpose[{{0, 0, 0}, Reverse@Dimensions[mask]}], BoxRatios -> 1, PlotStyle -> Red];
@@ -618,7 +599,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	ptsin = Reverse /@ Cases[surfin, GraphicsComplex[x_, ___] :> x][[1]] + 1;
 	ptsout = Reverse /@ Cases[surfout, GraphicsComplex[x_, ___] :> x][[1]] + 1;
 	
-	If[OptionValue[ShowFit], ptspl = Show[surfin, surfout, ListPointPlot3D[{Reverse /@ ptsin - 1, Reverse /@ ptsout - 1}, PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed",ImageSize->350]];
+	If[OptionValue[ShowPlot], ptspl = Show[surfin, surfout, ListPointPlot3D[{Reverse /@ ptsin - 1, Reverse /@ ptsout - 1}, PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed",ImageSize->350]];
 	
 	inpnt = N[vox # & /@ ptsin];
 	outpnt = N[vox # & /@ ptsout];
@@ -649,7 +630,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
     	wall = Clip[mask ((wall - mn)/(mx-mn)),{0,1}];
     ];
     
-    If[OptionValue[ShowFit], Print[Row[fit = {planefit, ptspl}]]; {wall, der, fit}, {wall, der}]
+    If[OptionValue[ShowPlot], Print[Row[fit = {planefit, ptspl}]]; {wall, der, fit}, {wall, der}]
 ]
 
 
@@ -661,7 +642,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 (*CentralAxes*)
 
 
-Options[CentralAxes]={ShowFit->True,RowSize->"Automatic",AxesMethod->"Cubic"(*,Output->True*)};
+Options[CentralAxes]={ShowPlot->True,RowSize->"Automatic",AxesMethod->"Cubic"(*,Output->True*)};
 
 SyntaxInformation[CentralAxes]={"ArgumentsPattern"->{_,_,_.,OptionsPattern[]}};
 
@@ -708,8 +689,8 @@ CentralAxes[mask_,maskp_,vox_,OptionsPattern[]]:=Module[{
 	vecsout=Reverse[{1,-1,1} #]&/@vecs;
 	inout = {{offouti, inner[[2]]}, {offouto, outer[[2]]}};
 	
-	If[OptionValue[ShowFit]==True,Print[fit]];
-	If[OptionValue[ShowFit],{offout,vecsout,inout,fit},{offout,vecsout,inout}]
+	If[OptionValue[ShowPlot]==True,Print[fit]];
+	If[OptionValue[ShowPlot],{offout,vecsout,inout,fit},{offout,vecsout,inout}]
 ]
 
 
@@ -2040,64 +2021,6 @@ CreateHeart[setin_] := Block[{
 	shapeout[[out[[3]] ;;]] = con[[out[[3]] ;;]];
 	Return[{ArrayPad[shapeout, 10], {0.7, 0.7, 0.7}, seto}];
 ]
-
-
-(* ::Subsection::Closed:: *)
-(*CardiacCoordinateSystem*)
-
-
-Options[CardiacCoordinateSystem] = {ShowFit -> False}
-
-SyntaxInformation[CardiacCoordinateSystem] = {"ArgumentsPattern" -> {_,_, OptionsPattern[]}};
-
-CardiacCoordinateSystem[mask_, vox_, OptionsPattern[]] := Block[{
-	dim, wall,axesout,off, vec, inout,pla, plw, radvecn, norvec, norvecc, cirvec, der, sp, spz, 
-	spxy, maskCont,n ,vectorField, coo, rav, nov, rov, vec1, vec2, vec3, plot 
-	},
-	
-	dim = Dimensions[mask];
-	(*Calculate the wall distance map, and the wall direction*)
-	wall = CalculateWallMap[mask, vox, ShowFit -> OptionValue[ShowFit]];
-	{wall, der} = If[OptionValue[ShowFit], plw = wall[[3]]; wall[[1 ;; 2]], wall];
-	
-	(*get the cardiac center line*)
-	axesout = CentralAxes[mask, 0, vox, AxesMethod -> "Qubic", ShowFit -> OptionValue[ShowFit]];
-	{off, vec, inout} = If[OptionValue[ShowFit], pla = axesout[[4]]; axesout[[1 ;; 3]], axesout];
-	
-	(*create the cardaic coordinate system*)
-	radvecn = NormalizeC[Transpose[der/vox, {4, 1, 2, 3}]];
-	norvec = ConstantArray[#, dim[[2 ;;]]] & /@ vec;
-	norvecc = MakePerpendicular[norvec, radvecn];
-	cirvec = NormalizeC[CrossC[radvecn, norvecc]];
-	
-	(*plot hear geo*)
-	sp = Round[Dimensions[mask]/{12, 24, 24}];
-	sp = Round[Dimensions[mask]/{15, 30, 30}];
-	{spz, spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
-	maskCont = PlotMaskVolume[mask, vox];
-	n = (spz 0.6 vox[[1]]) {1, -1, 1}/vox;
-	vectorField = Table[If[mask[[z, y, x]] == 0,
-		{None, None, None},
-		coo = {x, -y + dim[[2]] + 1, z};
-		rav = Reverse[n radvecn[[z, y, x]]];
-		nov = Reverse[n norvecc[[z, y, x]]];
-		rov = Reverse[n cirvec[[z, y, x]]];
-		{
-			{Darker[Green], Thick, Line[{coo(*-rav*), coo + rav}]},
-			{Darker[Blue], Thick, Line[{coo(*-nov*), coo + nov}]}, 
-			{Darker[Red], Thick, Line[{coo(*-rov*), coo + rov}]}
-		}
-	], {z, 1, dim[[1]], spz}, {y, 1, dim[[2]], spxy}, {x, 1, dim[[3]], spxy}];
-	
-	{vec1, vec2, vec3} =   DeleteCases[Flatten[#, 2], None] & /@ 
-    
-    Transpose[vectorField, {2, 3, 4, 1}];
-    plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3]];
-    
-    Print[plot];
-    {radvecn, norvecc, cirvec}
-]
-
 
 
 (* ::Section:: *)
