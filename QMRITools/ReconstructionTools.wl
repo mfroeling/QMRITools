@@ -111,9 +111,6 @@ HammingFilterCSI::usage =
 "HammingFilterCSI[kspace] apllies a Hammingfilter to the k-space data. The data can be can be 1D, 2D or 3D, the spectral dimensions is the last dimensions (x,y,z, spectra)."
 
 
-DenoiseCSIdata::usage = 
-"DenoiseCSIdata[spectra] perfroms PCA denoising of the complex values spectra, data has to be 3D and the spectral dimensions is last, {x,y,z,spectra}."
-
 DeconvolveCSIdata::usage = 
 "DeconvolveCSIdata[spectra] deconvolves the CSI spectra after HammingFilterCSI to revert the blurring of the hammingfiltering.
 DeconvolveCSIdata[spectra, ham] deconvolves the CSI spectra with the acquired weighting ham to revert the blurring of the kspace weighting." 
@@ -143,6 +140,9 @@ CoilSamples::usage =
 
 NormalizeOutputSpectra::usage = 
 "NormalizeOutputSpectra is an option for CoilWeightedReconCSI."
+
+AcquisitionMethod::usage = 
+"AcquisitionMethod is an option for CoilWeightedReconCSI. Values can be \"Fid\" or \"Echo\"."
 
 EchoShiftData::usage = 
 "EchoShiftData is an option for CoilWeightedRecon"
@@ -395,14 +395,22 @@ InverseFourierShift[data_]:=RotateLeft[data,Floor[Dimensions[data]/2]];
 (*Fourier Functions*)
 
 
-SyntaxInformation[ShiftedFourier]={"ArgumentsPattern"->{_}}
+SyntaxInformation[ShiftedFourier]={"ArgumentsPattern"->{_,_.}}
 
 ShiftedFourier[time_]:=FourierShift[Fourier[time,FourierParameters->{-1,1}]];
 
+ShiftedFourier[time_,"Fid"]:=FourierShift[Fourier[time,FourierParameters->{-1,1}]];
 
-SyntaxInformation[ShiftedInverseFourier]={"ArgumentsPattern"->{_}}
+ShiftedFourier[time_,"Echo"]:=FourierShift[Fourier[FourierShift[time],FourierParameters->{-1,1}]];
+
+
+SyntaxInformation[ShiftedInverseFourier]={"ArgumentsPattern"->{_,_.}}
 
 ShiftedInverseFourier[spec_]:=InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}];
+
+ShiftedInverseFourier[spec_,"Fid"]:=InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}];
+
+ShiftedInverseFourier[spec_,"Echo"]:= FourierShift[InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}]];
 
 
 SyntaxInformation[FourierShifted]={"ArgumentsPattern"->{_}}
@@ -696,7 +704,7 @@ SyntaxInformation[HammingFilterData] = {"ArgumentsPattern"->{_}}
 HammingFilterData[data_]:= Block[{ham},
 	If[ArrayDepth[data]===4,
 		ham = MakeHammingFilter[Dimensions[data[[1]]]];
-		FourierShifted[ham InverseFourierShifted[#]]&/@data
+		Sqrt[3]FourierShifted[ham InverseFourierShifted[#]]&/@data
 		,
 		FourierShifted[MakeHammingFilter[Dimensions[data]] InverseFourierShifted[data]]
 	]
@@ -713,31 +721,6 @@ HammingFilterCSI[data_] := TransData[HammingFilterData[TransData[data,"r"]],"l"]
 
 
 (* ::Subsubsection:: *)
-(*DenoiseCSIdata*)
-
-
-Options[DenoiseCSIdata] = {PCAKernel -> 5}
-
-SyntaxInformation[DenoiseCSIdata]={"ArgumentsPattern"->{_, OptionsPattern[]}}
-
-DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{stdMap, sig, out, hist, len, spectraDen},
-	(* assusmes data is (x,y,z,spectra)*)
-	len = Dimensions[spectra][[-1]];
-	
-	(*get the corner voxels to calcluate the noise standard deviation*)
-	stdMap = Map[StandardDeviation, spectra, {-2}];
-	sig = Mean[Flatten[stdMap[[{1, -1}, {1, -1}, {1, -1}]]]];
-	stdMap=Flatten[stdMap];
-	
-    (*Denoise the spectra data*)
-    {spectraDen, sig, out} = PCADeNoise[Transpose[Join[Re@#, Im@#]] &[TransData[spectra, "r"]],
-    	1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];
-    	
-    TransData[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I, "l"]
-]
-
-
-(* ::Subsubsection:: *)
 (*DeconvolveCSIdata*)
 
 
@@ -751,18 +734,14 @@ DeconvolveCSIdata[spectra_, hami_] := Block[{dim, filt, spectraOut, ham},
 	ham = If[hami===1,MakeHammingFilter[dim],hami];
 	
 	(*make the complex hamming filter point spread function and take the real part*)
-	filt = Re@FourierShift[ShiftedInverseFourier[ArrayPad[ham, Transpose[{Floor[dim/2], Ceiling[dim/2]}]]]];
+	filt = Abs@FourierShift[ShiftedInverseFourier[ArrayPad[ham, Transpose[{Floor[dim/2], Ceiling[dim/2]}]]]];
 	filt = DevideNoZero[filt, Total[Flatten[filt]]];
 	
 	(*zero pad the spectra by factor two*)
 	spectraOut = FourierRescaleData[TransData[spectra, "r"]];
 	
 	(*perform the deconvolution*)
-	DistributeDefinitions[filt];
-	spectraOut = ParallelMap[(
-		Exp[Arg[#] I] ListDeconvolve[filt, Abs@#,
-			Padding -> "Periodic", Method -> {"SteepestDescent", "Preconditioned" -> False}, MaxIterations -> 5]
-		) &, spectraOut];
+	spectraOut = Map[(-Exp[Arg[#] I] ListDeconvolve[filt, Abs@#, Method->{"Wiener", 0.01}]) &, spectraOut];
 	
 	(*rescale to original dimensions*)
 	TransData[(RescaleData[Re@#, dim, InterpolationOrder -> 2] + RescaleData[Im@#, dim, InterpolationOrder -> 2] I) & /@ spectraOut, "l"]
@@ -844,7 +823,7 @@ CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coi
 (*Coil weighted recon CSI*)
 
 
-Options[CoilWeightedReconCSI] = {HammingFilter -> False, CoilSamples -> 5, Method -> "Roemer", NormalizeOutputSpectra->True};
+Options[CoilWeightedReconCSI] = {HammingFilter -> False, CoilSamples -> 5, Method -> "Roemer", NormalizeOutputSpectra->True, AcquisitionMethod->"Fid"};
 
 CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, spectra, cov, coils, sosCoils, sens},
 	
@@ -855,17 +834,18 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 		,
 		5,(*perform spatial fourier for CSI*)
 		fids = Transpose[FourierKspaceCSI[#, head] & /@ kspace];
-		spectra = TransData[Map[FourierShift[Fourier[#, FourierParameters -> {-1, 1}]] &, TransData[fids, "l"], {-2}], "r"];
+		spectra = TransData[Map[ShiftedFourier[#,OptionsValue[AcquisitionMethod]] &, TransData[fids, "l"], {-2}], "r"];
 		
 		(*noise correlation, inverse and withening matrix*)
 		cov = NoiseCovariance[noise];
 		Switch[OptionValue[Method],
 			"Roemer",
 			(*make coil sensitivity using the first 5 samples of the fid*)
-			sens = MakeSense[HammingFilterCSI[Mean[fids[[1 ;; OptionValue[CoilSamples]]]]],cov];
+			(*sens = MakeSense[HammingFilterCSI[Mean[fids[[1 ;; OptionValue[CoilSamples]]]]],cov];*)
+			sens = MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]],cov];
 			
 			(*perform the recon*)
-			TransData[CoilCombine[#, cov, sens, Method -> "RoemerEqualSignal"] & /@ spectra, "l"]
+			TransData[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra, "l"]
 			,
 			"WSVD",
 			CoilCombine[spectra, cov, Method -> "WSVD"]
