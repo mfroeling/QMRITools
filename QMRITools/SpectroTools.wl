@@ -602,7 +602,7 @@ SyntaxInformation[GetTimeRange] = {"ArgumentsPattern" -> {_, _}};
 
 GetTimeRange[fid_?VectorQ, dt_] := GetTimeRange[Length[fid], dt]
 
-GetTimeRange[len_?IntegerQ, dt_] := N@Range[0, (len-1) dt, dt]
+GetTimeRange[len_?IntegerQ, dt_] := dt (Range[len]-1)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -685,13 +685,25 @@ TimeShiftEchoC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}
 (*ShiftSpectra*)
 
 
-SyntaxInformation[ShiftSpectra] = {"ArgumentsPattern" -> {_, _, _}}
+Options[ShiftSpectra] = {ReadoutType -> "Fid"}
 
-ShiftSpectra[spec_, {dw_, gyro_}, shift_] := ShiftedFourier[ShiftFidC[ShiftedInverseFourier[spec], GetTimeRange[spec, dw], gyro, shift]]
+SyntaxInformation[ShiftSpectra] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
+
+ShiftSpectra[spec_, {dw_, gyro_}, shift_, OptionsPattern[]] := Block[{readout, func},
+	readout = OptionValue[ReadoutType]; 
+	func = If[readout==="Fid",ShiftFidC,ShiftEchoC];
+	ShiftedFourier[func[ShiftedInverseFourier[spec,readout], GetTimeRange[spec, dw], gyro, shift],readout]
+]
 
 ShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {eps, _Real, 0}}, 
 	Exp[2 Pi eps gyro I time] fid,
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+]
+
+ShiftEchoC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {eps, _Real, 0}}, Block[{timeNew},
+	timeNew = time - (time[[-1]]/2);
+	Exp[2 Pi eps gyro I timeNew] fid
+	],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ]
 
 
@@ -741,10 +753,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 	
 	(*get the option values*)
 	{seq, svals} = OptionValue[BasisSequence];
-	readout = Switch[seq,
-		"PulseAcquire","Fid",
-		"SpaceEcho","Echo"
-	];
+	readout = Switch[seq, "PulseAcquire","Fid", "SpaceEcho","Echo"];
 	
 	nsamp = OptionValue[SpectraSamples];
 	bw = OptionValue[SpectraBandwith];
@@ -762,7 +771,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 	spinTab = SysTable[sysAll];
 	
 	(*loop over systems to perform sysmulation of basis functions*)
-	{names, times, fids, ppms, specs} = Transpose[Flatten[
+	{names, fids, specs} = Transpose[Flatten[
 		Map[(
 			(*get the system*)
 			sys = #;
@@ -786,21 +795,18 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 			];
 			
 			(*simulate readout*)
-			{times, fids, ppms, specs, douts} = SimReadout[dr, struct, ReadoutSamples -> nsamp, ReadoutBandwith -> bw, CenterFrequency -> cf, 
-				Linewidth -> lw, LinewidthShape -> lws, ReadoutOutput -> read];
+			fids = First@SimReadout[dr, struct, ReadoutSamples -> nsamp, ReadoutBandwith -> bw, CenterFrequency -> cf, Linewidth -> lw, LinewidthShape -> lws, ReadoutOutput -> read];
 				
 			(*check if multiple fids for metabolite and act acordingly*)
 			If[VectorQ[fids],
-				(*one fid*)
-				fids = (Re[fids] + Im[fids] I);
-				specs = ShiftedFourier[Re[fids] + Im[fids] I, readout] Exp[-Pi I];
-				{{nam, times, fids, Reverse[ppms], specs}}
+				specs = ShiftedFourier[fids, readout];
+				{{nam, fids, specs}}
 				,
 				(*mulitple fids*)
 				MapIndexed[(
 					fids = (Re[#1] + Im[#1] I);
-					specs = ShiftedFourier[Re[fids] + Im[fids] I, readout] Exp[-Pi I];
-					{nam <> "-" <> labs[[#2]], times, fids, Reverse[ppms], specs}
+					specs = ShiftedFourier[fids, readout];
+					{nam <> "-" <> labs[[#2]], fids, specs}
 				) &, fids]
 			]
 		
@@ -808,7 +814,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 		) &, sysAll]
 	, 1]];
 	
-	{names, times, fids, ppms, specs, spinTab}
+	{names, fids, specs, spinTab}
 ]
 
 
@@ -840,7 +846,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, lwvals_?VectorQ, opts : Op
 FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?VectorQ}, OptionsPattern[]]:=Block[{
 	ttotal,log,pad,spfac,field,nuc,shift,plots,init,scale,nbas,len,
 	timeBasis,specFull,timeFull,ppmFull,nsamp,gyro,indSt,indEnd,
-	gami,epsi,phi0i,phi1i,linei,phii,plLine,plShift, readout,
+	gami,epsi,phi0i,phi1i,linei,phii,plLine,plShift, readout, varf,
 	splineSpace,cpn,var,phi0f,phi1f,gamf,epsf,phif,linef,gam,eps,line,phi,sigi,
 	tfit1,fit1,sol,output,tfit2,fit2,fit,timeBasisIn,time,ppm,spline,basis,error,errors,specFit
 	},
@@ -864,8 +870,8 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		readout = OptionValue[ReadoutType];
 		
 		(*set general parameters*)
-		scale=1000/Max[Abs[specIn]];
-		nbas=Length[specBasisIn];
+		scale = 1000/Max[Abs[specIn]];
+		nbas = Length[specBasisIn];
 		
 		
 		(*-------------------------------------------------------------------*)
@@ -873,18 +879,12 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		timeBasis = CashBasisTime[specBasisIn, pad, readout];
 		
 		(*pad and normalize the spectra spectra*)
-		specFull=scale ApodizePadSpectra[specIn, PaddingFactor->pad, ReadoutType->readout];
-		
-		(*
-		Print[ListLinePlot[{Re@FourierShift@ShiftedInverseFourier[specIn],Im@FourierShift@ShiftedInverseFourier[specIn]},PlotRange->Full]];
-		Print[ListLinePlot[{Re@FourierShift@ShiftedInverseFourier[specFull],Im@FourierShift@ShiftedInverseFourier[specFull]},PlotRange->Full]];
-		Print[ListLinePlot[{Re@Total@timeBasis,Im@Total@timeBasis},PlotRange->Full]];
-		*)
+		specFull = scale ApodizePadSpectra[specIn, PaddingFactor->pad, ReadoutType->readout];
 		
 		(*get the time and ppm axes*)
 		{timeFull,ppmFull}=GetTimePpmRange[specFull,dtime,field,nuc];
-		gyro=GetGyro[nuc,field];
-		nsamp=Length[specFull];
+		gyro = GetGyro[nuc,field];
+		nsamp = Length[specFull];
 		
 		(*find the positions of the fit range*)
 		{indSt,indEnd}=Flatten[Position[ppmFull,Nearest[ppmFull,#][[1]]]&/@{st,end}];
@@ -1078,8 +1078,8 @@ MakeVars[par_,val_,1]:=If[Length[par]===0,
 ]
 
 CashBasisTime[specBasisIn_, pad_, readout_] := CashBasisTime[specBasisIn, pad, readout] = Block[{func},
-	func = Switch[readout,"Fid",TimeShiftFid,"Echo",TimeShiftEcho];
-	func[ShiftedInverseFourier[#, readout], PaddingFactor->pad]&/@specBasisIn;
+	func = Switch[readout,"Fid",ApodizePadFid,"Echo",ApodizePadEcho];
+	func[ShiftedInverseFourier[#, readout], PaddingFactor->pad]&/@specBasisIn
 ]
 
 
@@ -1284,11 +1284,11 @@ EstimatePhaseShift[{ppm_,spec_},{time_,fids_},{gam_,eps_},gyro_,{st_,en_},readou
 	specf=spec[[st;;en]];
 	ppmf=ppm[[st;;en]];
 	lim=.1;
-	
+
 	(*convert basis fids in spectra find function based on fid or echo*)
 	func=Switch[readout,"Fid",TimeShiftFid,"Echo",TimeShiftEcho];
 	specsC=Transpose[ShiftedFourier[func[#,time,gyro,{gam,eps,.5}], readout][[st;;en]]&/@fids];
-	
+
 	(*Fit absolute basis spectra to absolute spectrum*)
 	fit=specsC.(NNLeastSquares[Abs[specsC],Abs[specf]]);
 	(*minimize error with the target spectra*)
@@ -1459,7 +1459,7 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 	gridS = OptionValue[GridLineSpacing];
 	grid = DeleteDuplicates@Join[If[gridS === 0, {},Range[0, Max[time], gridS]],OptionValue[GridLines]];
 	
-	fun = Switch[OptionValue[Method], "Abs", {Abs}, "ReIm", {Im, Re}, "All", {Im, Re, Abs}];
+	fun = Switch[OptionValue[Method], "Abs", {Abs}, "Re", {Re}, "Im", {Im}, "ReIm", {Im, Re}, "All", {Im, Re, Abs}];
 	
 	plot = Transpose[{time, #}] & /@ (#@fid & /@ fun);
 	
@@ -1523,10 +1523,14 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			
 			Column[{
 				Dynamic[
-					spec = If[coor === {0, 0, 0}, 0. data[[1, 1, 1]], data[[coor[[1]], coor[[2]], coor[[3]]]]];
+					spec = If[coor === {0, 0}, 
+						0. data[[1, 1, 1]], 
+						Switch[or, 1, data[[n, coor[[1]], coor[[2]]]], 2, data[[coor[[1]], n, coor[[2]]]], 3, data[[coor[[1]], coor[[2]], n]]]
+					];
+					lab = Switch[or, 1, {n, coor[[1]], coor[[2]]}, 2, {coor[[1]], n, coor[[2]]}, 3, {coor[[1]], coor[[2]], n}];
 					FlipView[{
-						PlotSpectra[-xdat, spec, PlotRange -> {{pmin, pmax}, Full}, Method -> "ReIm", PlotLabel->coor, ImageSize->Length[First[dataPlot]] size],
-						PlotFid[tdat, ShiftedInverseFourier[spec], Method -> "ReIm",PlotLabel->coor, ImageSize->Length[First[dataPlot]] size]
+						PlotSpectra[-xdat, spec, PlotRange -> {{pmin, pmax}, Full}, Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size],
+						PlotFid[tdat, ShiftedInverseFourier[spec], Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size]
 					}]
 				]
 				,
@@ -1545,9 +1549,9 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 							Switch[or, 1, {n, #2[[1]], #2[[2]]}, 2, {#2[[1]], n, #2[[2]]}, 3, {#2[[1]], #2[[2]], n}], 
 							TooltipStyle -> {Directive[Black, Bold, Medium], Background -> White, CellFrameColor -> None, CellFrame -> None}],
 							(*create the popup window*)
-							"MouseClicked" :> (coor = Switch[or, 1, {n, #2[[1]], #2[[2]]}, 2, {#2[[1]], n, #2[[2]]}, 3, {#2[[1]], #2[[2]], n}])],
+							"MouseClicked" :> (coor = #2)],
 							(*highlight selected plot*)
-							Background -> Dynamic[If[#2 == Drop[coor, {or}], Red, col]], Frame -> True, FrameStyle -> Dynamic[If[#2 == Drop[coor, {or}], Red, col]]
+							Background -> Dynamic[If[#2 == coor, Red, col]], Frame -> True, FrameStyle -> Dynamic[If[#2 == coor, Red, col]]
 						]
 						
 					(*loop over all voxesl*)
@@ -1561,7 +1565,8 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, {{or, 1, "Orientation"}, {1 -> "Transversal", 2 -> "Coronal", 3 -> "Sagital"}}
 			, {{n, Ceiling[Length[data]/2], "Slice"}, 1, Dynamic[nmax], 1}
 			, Delimiter
-			, {{fun, Abs, "Function"}, {Abs -> "Absolute", Re -> "Real", Im -> "Imaginary"}}
+			, {{funs, "ReIm", "Function vox"}, {"Re", "Im", "ReIm", "Abs", "All"}}
+			, {{fun, Abs, "Function CSI"}, {Abs -> "Absolute", Re -> "Real", Im -> "Imaginary"}}
 			, {{size, 40, "Plot size"}, {20 -> "Small", 40 -> "Medium", 60 -> "Large", 80 -> "Extra large"}}
 			, Delimiter
 			, {{pmin, xmin, "Min pmm"}, xmin, Dynamic[pmax - 1]}
@@ -1572,7 +1577,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, {{col, Black, "Grid Color"}, ColorSlider}
 			
 			(* hidden manipulate paramterrs *)
-			, {{coor, {0, 0, 0}}, ControlType -> None}
+			, {{coor, {0, 0}}, ControlType -> None}
 							
 			, {datai, ControlType -> None}, {dim, ControlType -> None}, {nmax, ControlType -> None}, {dataPlot, ControlType -> None} , {maxPlot, ControlType -> None}, {totPlot, ControlType -> None}
 			, {yran, ControlType -> None}, {totAll, ControlType -> None}, {maxAll, ControlType -> None}, {ymax, ControlType -> None}, {xdat, ControlType -> None}, {tdat, ControlType -> None}
