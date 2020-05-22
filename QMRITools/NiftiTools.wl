@@ -20,7 +20,7 @@ BeginPackage["QMRITools`NiftiTools`", Join[{"Developer`"}, Complement[QMRITools`
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 

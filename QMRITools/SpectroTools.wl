@@ -20,7 +20,7 @@ BeginPackage["QMRITools`SpectroTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -141,8 +141,11 @@ PlotSpectra::usage =
 PlotSpectra[spespectradwell, field, nuc}] plots the spectra, the ppm axes is determined by dwell field and nuc.
 PlotSpectra[ppm, spectra] plots the spectra where ppm is the pmm range of the spectra which can be obtained with GetPpmRange." 
 
-EstimateLineWidth::usage = 
-"EstimateLineWidth[{ppm_,spec_},{peaks_,amps_},gyro_,ran_,plot_:True]"
+
+FindSpectraPpmShift::usage = 
+"FindSpectraPpmShift[spectra, {dw, gyro}, peaks] finds the ppm value that aligns the spectra with the given peak positions peaks wich is a list of ppm values. 
+FindSpectraPpmShift[spectra, {dw, gyro}, {peaks, amps}] finds the ppm value that aligns the spectra with the given peak positions peaks wich is a list of ppm values and amps are ther relative amplitudes. 
+FindSpectraPpmShift[spectra, {dw, gyro}, specTar] finds the ppm value that aligns the spectra with the given target spectra specTar." 
 
 FitSpectraResultTable::usage = 
 "FitSpectraResultTable[parFit, parsF, names, ref, out] function not done."
@@ -160,8 +163,8 @@ MakeSpectraResultPlot::usage =
 CSIInterface31P::usage = 
 "CSIInterface31P[] function not done.
 CSIInterface31P[te, bwi]
-CSIInterface31P[file_]
-CSIInterface31P[file_, {tei_, bwi_}]"
+CSIInterface31P[file]
+CSIInterface31P[file, {tei, bwi}]"
 
 SpectraFitResult::usage = 
 "SpectraFitResult[spec, {fit, basisFit}, te, {dw, gyro}, {pars, names, metRef, log}, plots, OptionsPattern[]] function not done."
@@ -192,12 +195,6 @@ SpectraSamples::usage =
 
 SpectraBandwith::usage =
 "SpectraBandwith is an option for GetSpectraBasisFunctions and sets the bandwith of the spectra." 
-
-SpectraLinewidth::usage =
-"SpectraLinewidth is an option for GetSpectraBasisFunctions and sets the linewidth of the spectra."
-
-SpectraLinewidthShape::usage =
-"SpectraLinewidthShape is an option for GetSpectraBasisFunctions and sets the peak shap, values can be \"Lorentzian\", \"Gaussian\" or \"Voigt\"."
 
 SpectraNucleus::usage =
 "SpectraNucleus is an option for GetSpectraBasisFunctions and FitSpectra and specifies which nucleus to Simulate or fit, see GyromagneticRatio."
@@ -275,24 +272,24 @@ ReadjMRUI[file_]:=Block[{imp,data,head,series,pts,spec,time},
 (*PhaseCorrectSpectra*)
 
 
-SyntaxInformation[PhaseCorrectSpectra]={"ArgumentsPattern"->{_,_,_.,_.,_.}}
+SyntaxInformation[PhaseCorrectSpectra]={"ArgumentsPattern"->{_,_.,_.,_.,_.,_.}}
 
 PhaseCorrectSpectra[spec_] := Exp[-I Quiet[Last[FindMinimum[PhaseCorrectError[spec, phi0], {phi0}]]][[1,2]]] spec
 
 
 PhaseCorrectError[speci_, phi0_?NumericQ] := PhaseCorrectErrorC[speci, phi0]
 
-PhaseCorrectErrorC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},
-	Total[(Abs[speci] - Re[Exp[-I phi0] speci])^2],
-	RuntimeOptions -> "Speed", Parallelization -> True
-];
+PhaseCorrectErrorC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},Block[{specR},
+	specR= Re[Exp[-I phi0] speci];
+	Total[(Abs[speci] - specR)^2]-Total[specR]
+],RuntimeOptions -> "Speed", Parallelization -> True];
 
 
-PhaseCorrectSpectra[spec_, dw_,out_:True] := PhaseCorrectSpectra[spec, dw, 0, 0, Full,out]
+PhaseCorrectSpectra[spec_, dw_,out_:True] := PhaseCorrectSpectra[spec, dw, 0, 0, Full, out]
 
-PhaseCorrectSpectra[spec_, dw_, te_,out_:True] := PhaseCorrectSpectra[spec, dw, te, 0, Full,out]
+PhaseCorrectSpectra[spec_, dw_, te_,out_:True] := PhaseCorrectSpectra[spec, dw, te, 0, Full, out]
 
-PhaseCorrectSpectra[spec_, dw_, gyro_, ppmRan_,out_:True] := PhaseCorrectSpectra[spec, dw, 0, gyro, ppmRan,out]
+PhaseCorrectSpectra[spec_, dw_, gyro_, ppmRan_,out_:True] := PhaseCorrectSpectra[spec, dw, 0, gyro, ppmRan, out]
 
 PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_,out_:True] := Module[{fid, specOut, missing, full, henkelSpec, phi, phi0},
 	(*create the fid*)
@@ -435,7 +432,7 @@ SyntaxInformation[PadFid] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 PadFid[fid_, OptionsPattern[]] := PadRight[fid, Round[OptionValue[PaddingFactor] Length[fid]]]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PadEcho*)
 
 
@@ -707,6 +704,33 @@ ShiftEchoC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {e
 ]
 
 
+FindSpectraPpmShift[spec_, {dw_, gyro_}, peaks_] := FindSpectraPpmShift[spec, {dw, gyro}, {peaks, 0}]
+
+FindSpectraPpmShift[spec_, {dw_, gyro_}, {peaks_, amp_}] := Block[{ppm, dppm, tar, amps, wgth, s, corrf, maxPos, sft},
+	ppm = GetPpmRange[spec, dw, gyro];
+	dppm = (ppm[[1]] - ppm[[2]]);
+	
+	tar = If[Length[spec] === Length[peaks],
+		Abs[peaks],
+		amps = If[amp === 0, 0. peaks + 1, amp];
+		tar = 0 ppm;
+		tar[[Flatten[Position[ppm, First@Nearest[ppm, #]] & /@ peaks]]] = amps/Max[amps]
+	];
+	
+	(*perfomr correlation of spectra with delta function*)
+	s = Max[ppm]/4;
+	wgth = 1/(Exp[(ppm^2/(2*s^2))]*(Sqrt[2*Pi]*s));
+	wgth = 1;
+	corrf = ListCorrelate[tar, Abs[spec], Round[Length[tar]/2], 0];
+	corrf = bb = wgth DevideNoZero[corrf, Max[corrf]];
+	maxPos = Position[corrf, Max[corrf]][[1, 1]];
+	
+	(*contrain shift to 5ppm*)
+	sft = -dppm (maxPos - (Length[ppm]/2.));
+	If[-5 < sft < 5, sft, 0]
+]
+
+
 (* ::Subsubsection::Closed:: *)
 (*ChangeDwellTimeFid*)
 
@@ -731,13 +755,8 @@ ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampT
 
 Options[GetSpectraBasisFunctions] = {
 	BasisSequence -> {"PulseAcquire", 0},
-
 	SpectraSamples -> 2046,
 	SpectraBandwith -> 2000,
-	
-	SpectraLinewidth -> 5,
-	SpectraLinewidthShape -> "Voigt",
-	
 	SpectraNucleus -> "1H",
 	SpectraPpmShift -> 4.65,
 	SpectraFieldStrength -> 3
@@ -757,11 +776,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 	
 	nsamp = OptionValue[SpectraSamples];
 	bw = OptionValue[SpectraBandwith];
-	
 	cf = OptionValue[SpectraPpmShift];
-	lw = OptionValue[SpectraLinewidth];
-	lws = OptionValue[SpectraLinewidthShape];
-	
 	field = OptionValue[SpectraFieldStrength];
 	nuc = OptionValue[SpectraNucleus];
 	
@@ -795,7 +810,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 			];
 			
 			(*simulate readout*)
-			fids = First@SimReadout[dr, struct, ReadoutSamples -> nsamp, ReadoutBandwith -> bw, CenterFrequency -> cf, Linewidth -> lw, LinewidthShape -> lws, ReadoutOutput -> read];
+			fids = First@SimReadout[dr, struct, ReadoutSamples -> nsamp, ReadoutBandwith -> bw, CenterFrequency -> cf, Linewidth -> 0, ReadoutOutput -> read];
 				
 			(*check if multiple fids for metabolite and act acordingly*)
 			If[VectorQ[fids],
@@ -1216,7 +1231,7 @@ BasisSpectraApply[{ppmFull_,timeFull_,timeBasis_},{gam_,eps_,phi_,f_},gyro_,{st_
 
 (*Function to estimate linewidth*)
 EstimateLineWidth[{ppm_,spec_},{peaks_,amps_},gyro_,ran_,plot_:True]:=Block[{
-	dppm,deltaf,corrf,wgth, max,corrf2,pts,pos,ppmC,maxf,block,line,sol,x,ppmCf,pl,lw,sft},
+	dppm,deltaf,corrf,wgth, s, max,corrf2,pts,pos,ppmC,maxf,block,line,sol,x,ppmCf,pl,lw,sft},
 	
 	(*define delta ppm and the delta function for correlation*)
 	dppm=(ppm[[1]]-ppm[[2]]);
@@ -1228,7 +1243,8 @@ EstimateLineWidth[{ppm_,spec_},{peaks_,amps_},gyro_,ran_,plot_:True]:=Block[{
 	corrf=DevideNoZero[Length[corrf]corrf,Max[corrf]];
 	
 	(*Find max correlation and position*)
-	wgth=Table[N@PDF[NormalDistribution[0,Max[ppm]/4],x],{x,ppm}];
+	s = Max[ppm]/4;
+	wgth = 1/(Exp[(ppm^2/(2*s^2))]*(Sqrt[2*Pi]*s));
 	max=Max[wgth corrf];
 	pos=Position[wgth corrf,max][[1,1]];
 	max=corrf[[pos]];
@@ -1348,9 +1364,9 @@ Options[PlotSpectra] = {
 
 SyntaxInformation[PlotSpectra] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
-PlotSpectra[spec_, {dwell_?NumberQ, gyro_?NumberQ}, opts : OptionsPattern[]] := PlotSpectra[GetPpmRange[spec, dwell, gyro], spec, opts]
+PlotSpectra[spec_, {dwell_?NumberQ, gyro_?NumberQ}, opts : OptionsPattern[]] := PlotSpectra[GetPpmRange[If[MatrixQ[spec],spec[[1]],spec], dwell, gyro], spec, opts]
 
-PlotSpectra[spec_, {dwell_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts : OptionsPattern[]] := PlotSpectra[GetPpmRange[spec, dwell, field, nuc], spec, opts]
+PlotSpectra[spec_, {dwell_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts : OptionsPattern[]] := PlotSpectra[GetPpmRange[If[MatrixQ[spec],spec[[1]],spec], dwell, field, nuc], spec, opts]
 
 PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 	fun, plot, plot2, grid, gridS, or, rr, col, space, cols, cols2, pl1, pl2, lables
@@ -1885,7 +1901,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			
 			(*find shift*)
 			spec = Mean@Flatten[spectra, 2];
-			shift = EstimateLineWidth[{GetPpmRange[spec, 1/bw, gyro], spec}, {{0, -2.52, -7.56, -16.15}, {2, 1, 1, 1}}, gyro, {-20, 10}][[2]];
+			shift = FindSpectraPpmShift[spec,{1./bw,gyro}, {{0, -2.52, -7.56, -16.15}, {2, 1, 1, 1}}]; 
 			status = "Done reconstructing!"; statusP = False;
 			,
 			Background -> Dynamic[If[rec, RGBColor[0.86, 0.97, 0.77], Automatic]], Enabled -> Dynamic[kload && bw =!= 0], Method -> "Queued", ImageSize -> 175

@@ -20,7 +20,7 @@ BeginPackage["QMRITools`ReconstructionTools`", Join[{"Developer`"}, Complement[Q
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -128,7 +128,7 @@ CoilWeightedRecon::usage =
 The coil combination Methods can be \"Roemer\" or \"RSS\"."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -149,6 +149,8 @@ EchoShiftData::usage =
 
 SenseRescale::usage = 
 "SenseRescale is an option for MakeSense. If set True the data is first downscaled by a factor 2 before making the sense map."
+
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -469,6 +471,8 @@ FourierKspace2DIF = Compile[{{data, _Complex, 2}, {ham, _Complex, 2}, {ksPad, _I
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ];
 
+
+
 (* ::Subsubsection::Closed:: *)
 (*FourierKspaceCSI*)
 
@@ -567,6 +571,7 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 (* ::Subsubsection::Closed:: *)
 (*MakeSense*)
 
+
 Options[MakeSense] = {SenseRescale -> False}
 
 SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
@@ -583,6 +588,8 @@ MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, scale, dim, low, sense}
 		FourierRescaleData[sense, dim]
 	]
 ]
+
+
 
 (* ::Subsubsection::Closed:: *)
 (*RSS*)
@@ -660,7 +667,7 @@ NormalizeSpectra[spec_] := 1000. Sign[Re@Mean[Flatten[spec]]] (spec/Max[Abs[spec
 (*HammingFilter*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MakeHammingFilter*)
 
 
@@ -695,7 +702,7 @@ MakeHammingFilterI[{xs_?IntegerQ, xe_?IntegerQ}] := MakeHammingFilterI[{xs,xe}] 
 Ham[x_, xm_] := (0.54 + 0.46 Cos[(Pi x)/xm])
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*HammingFilterData*)
 
 
@@ -711,7 +718,7 @@ HammingFilterData[data_]:= Block[{ham},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*HammingFilterCSI*)
 
 
@@ -720,7 +727,7 @@ SyntaxInformation[HammingFilterCSI]={"ArgumentsPattern"->{_,_.}}
 HammingFilterCSI[data_] := TransData[HammingFilterData[TransData[data,"r"]],"l"]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*DeconvolveCSIdata*)
 
 
@@ -748,7 +755,7 @@ DeconvolveCSIdata[spectra_, hami_] := Block[{dim, filt, spectraOut, ham},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*FourierRescaleData*)
 
 
@@ -783,7 +790,7 @@ FourierRescaleData[data_, factor_:2] := Block[{dim, pad, scale, fac, new},
 (*Recon Functions*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Coil weighted recon*)
 
 
@@ -819,7 +826,7 @@ CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coi
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Coil weighted recon CSI*)
 
 

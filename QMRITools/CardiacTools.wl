@@ -45,6 +45,11 @@ The angles are in degrees.
 
 HelixAngleCalc[] is based on DOI: 10.1186/1532-429X-17-S1-P15."
 
+MaskHelix::usage = 
+"MaskHelix[helix, mask] masks helix angle data, sets the background to -100 and allows for Median filter of the helix mask.
+helix can be a singel map or the FAM.
+
+Output is the masked helix angle data."
 
 CalculateWallMap::usage = 
 "CalculateWallMap[mask,vox] calculates the wall distance map and the wall derivative.
@@ -101,12 +106,6 @@ data can be a single profile or a list of profiles. In the second case the mean 
 Output is a plot of the transmural profile."
 
 
-MaskHelix::usage = 
-"MaskHelix[helix, mask] masks helix angle data, sets the background to -100 and allows for Median filter of the helix mask.
-helix can be a singel map or the FAM.
-
-Output is the masked helix angle data."
-
 BullseyePlot::usage = 
 "BullseyePlot[data, segmask] generates a AHA-17 segement bullseye plot. 
 BullseyePlot[list] generates a AHA-17 segement bullseye plot of the lists (which needs to have 17 values) provide.
@@ -117,6 +116,7 @@ segmask is the AHA-17 segmentation resulting form the CardiacSegment function wh
 Output is a bullseye plot or a plotwindow, depending on the Method which can be \"Dynamic\" else it will be static.
 
 BullseyePlot[] is based on DOI: 10.1161/hc0402.102975."
+
 
 ExcludeSlices::usage = 
 "ExcludeSlices[data] excludes slices that do not look like the others based on various distance measures.
@@ -157,8 +157,7 @@ If the option showPlot is true the output is {{radvecn, norvecc, cirvec}, plots}
 LCMMethod::usage = 
 "LCMMethod is an option for HelixAngleCalc and LMCSytemCalc. Can be \"CentralAxes\" or \"WallMap\". 
 \"CentralAxes\" uses wall distance calculation using projection of the centarl axes and circular approximation of the ventricle. This method is fairly fast and uses CentralAxes internaly.
-\"WallMap\" uses wall distance interpolation and subsequential gradient calculation. Can take long for high res datasets but is most accurate. Uses CalculateWallMap internaly.
-"
+\"WallMap\" uses wall distance interpolation and subsequential gradient calculation. Can take long for high res datasets but is most accurate. Uses CalculateWallMap internaly."
 
 AxesMethod::usage = 
 "AxesMethod is an option for HelixAngleCalc and CentralAxes and CardiacCoordinateSystem. Can be \"Linear\", \"Quadratic\", \"Cubic\"."
@@ -1272,7 +1271,7 @@ Angpart[angs_,angles_,rev_,ind_:False]:=Block[{pang,end,start,sel},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*LinePoints*)
 
 
@@ -1388,7 +1387,7 @@ LinePoints[mask_?MatrixQ, off_?VectorQ, OptionsPattern[]] := Block[{
 AngFun[cent_, pts_] := -(ArcTan @@ ({-1, 1} Reverse[Normalize[# - cent]])) & /@ pts
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PerimiterPoints*)
 
 
@@ -1403,7 +1402,7 @@ PerimiterPoints[im_,{x_,_},deg_:1]:=Block[{pts,ptsp,len,int},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*FindPoint*)
 
 

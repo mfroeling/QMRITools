@@ -20,7 +20,7 @@ BeginPackage["QMRITools`ElastixTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -254,13 +254,13 @@ RegisterData::fatal="Fatal error encountered."
 Begin["`Private`"]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Support Functions*)
+
 
 operatingSystem = $OperatingSystem;
 
 QMRITools`ElastixTools`$debugElastix = If[QMRITools`ElastixTools`$debugElastix===True, True, False];
-
 
 
 (* ::Subsubsection::Closed:: *)

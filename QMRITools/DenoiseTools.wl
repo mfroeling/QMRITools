@@ -460,7 +460,7 @@ SVD[mat_, n_] := Block[{u, w, v, eig},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*DenoiseCSIdata*)
 
 
@@ -484,7 +484,7 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{stdMap, sig, out, hist, len
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*DenoiseDynamicSpectraData*)
 
 

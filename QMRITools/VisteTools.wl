@@ -20,7 +20,7 @@ BeginPackage["QMRITools`VisteTools`", Join[{"Developer`"}, Complement[QMRITools`
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -72,7 +72,7 @@ LoadFiberTracts::usage =
 LoadFiberTracts[\"file\"] imports the file."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -80,7 +80,7 @@ BinaryType::usage =
 "BinaryType is an option for ExportVol and must be \"Integer16\" for an integer array and \"Real32\" for a Double array."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
