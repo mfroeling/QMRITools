@@ -161,6 +161,8 @@ EPGFitPoints::usage =
 EPGMethodCal::usage = 
 "EPGMethodCal is an option for CalibrateEPGT2Fit and EPGT2Fit. The calibration can be done using \"1comp\", \"2comp\", \"2compF\"."
 
+
+
 (* ::Subsection:: *)
 (*Error Messages*)
 
@@ -495,6 +497,8 @@ MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, vec, off1, off2},
    ]
    
 
+
+
 (* ::Subsubsection::Closed:: *)
 (*RotMatrixT*)
 
@@ -656,6 +660,8 @@ LeastSquaresError2C = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, To
 LeastSquaresError2CS = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Sqrt[Mean[(y - A.Ai.y)^2]], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
+
+
 (* ::Subsubsection::Closed:: *)
 (*NonLinearEPGFit*)
 
@@ -687,7 +693,7 @@ NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{fwf, residualError, soli, T1m
    ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*DictionaryMinSearch*)
 
 

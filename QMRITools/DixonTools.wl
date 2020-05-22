@@ -157,6 +157,8 @@ DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fmask, wmask, bac
 	 N[{back waterMap, back fatMap}]
  ]
 
+
+
 (* ::Subsection:: *)
 (*DixonReconstruct*)
 
@@ -378,7 +380,7 @@ DixPhaseEstimate = Compile[{{A, _Complex, 2}, {y, _Complex, 1}}, Block[{AT, ATA,
     RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*SimulateDixonSignal*)
 
 

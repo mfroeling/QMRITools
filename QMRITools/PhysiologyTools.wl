@@ -45,7 +45,7 @@ PlotRespiract::usage =
 PlotRespiract[data, dataP, scantimes, steps]."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 

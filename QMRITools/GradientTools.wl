@@ -1734,7 +1734,7 @@ GradBmatrix[Gti_, hw_, te_, t_, OptionsPattern[]] := Module[{Ft, Ft2, Ft2i, s = 
    ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetSliceNormal*)
 
 
@@ -1759,7 +1759,7 @@ GetSliceNormal[folder_String,part_Integer] := Module[{or,files,grads,norm,gradRo
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetSliceNormalDir*)
 
 

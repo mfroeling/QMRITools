@@ -20,7 +20,7 @@ BeginPackage["QMRITools`MaskingTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -78,7 +78,7 @@ ROIMask::usage =
 maskdim is the dimensions of the output {zout,xout,yout}."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 

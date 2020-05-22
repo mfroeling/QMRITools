@@ -20,7 +20,7 @@ BeginPackage["QMRITools`ProcessingTools`", Join[{"Developer`"}, Complement[QMRIT
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 

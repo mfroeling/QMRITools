@@ -20,7 +20,7 @@ BeginPackage["QMRITools`CoilTools`", Join[{"Developer`"}, Complement[QMRITools`$
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -65,7 +65,7 @@ MakeCoilLayout[{coils..}] same but for multile coils grids. Each coil grid is de
 MakeCoilLayout[{coils..}, val] savem but for multiple coil grids."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -90,14 +90,14 @@ CoilArrayPlot::usage =
 Begin["`Private`"]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*LoadCoilSetup*)
 
 
 SyntaxInformation[LoadCoilSetup] = {"ArgumentsPattern" -> {_,_.}};
 
  (*load a sereis of linked coils measurements.*)
-LoadCoilSetup[fileC_?StringQ,n:_1]:=Block[{dataC, vox, len, noiseC, sosC, snrC, sigmapC, weights, mn},
+LoadCoilSetup[fileC_?StringQ,n:_ 1]:=Block[{dataC, vox, len, noiseC, sosC, snrC, sigmapC, weights, mn},
 	(*import the data*)
 	{dataC, vox} = ImportNii[fileC];
 	(*split the noise dan data*)
@@ -120,7 +120,7 @@ LoadCoilSetup[fileC_?StringQ,n:_1]:=Block[{dataC, vox, len, noiseC, sosC, snrC, 
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*LoadCoilTarget*)
 
 

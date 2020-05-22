@@ -20,7 +20,7 @@ BeginPackage["QMRITools`ImportTools`", Join[{"Developer`"}, Complement[QMRITools
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -72,7 +72,7 @@ ReadBrukerDiff::usage =
 ReadBrukerDiff[\"file\"] imports the bruker diffusion data from \"file\", file must be location of 2dseq."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -90,7 +90,7 @@ ConvertDcm::usage =
 "ConvertDcm is an option for GradRead."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 

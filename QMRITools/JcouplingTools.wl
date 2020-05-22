@@ -20,7 +20,7 @@ BeginPackage["QMRITools`JcouplingTools`", Join[{"Developer`"}, Complement[QMRITo
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -404,7 +404,7 @@ SequenceTSE[din_,H_,{te1_,te_,necho_},{ex_,ref_}, b1_:1]:=Block[{d,tau},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SequenceSpaceEcho*)
 
 
@@ -489,6 +489,8 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	(*output*)
 	If[output === "each", {Transpose[fids], di}, {fids, di}]
 ]
+
+
 
 (* ::Subsubsection::Closed:: *)
 (*SimSignal*)

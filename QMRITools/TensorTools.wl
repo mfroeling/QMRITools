@@ -605,6 +605,8 @@ TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
     RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}];
         
 
+
+
 (* ::Subsubsection::Closed:: *)
 (*DKI*)
 

@@ -947,6 +947,8 @@ Sigval[par_, TR_, TE_] := par[[1]] (1 - Exp[-TR/par[[2]]]) Exp[-TE/par[[3]]]=
 
 
 
+
+
 (* ::Subsubsection::Closed:: *)
 (*ThetaConv*)
 
