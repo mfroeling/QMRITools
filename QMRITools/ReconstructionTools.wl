@@ -397,30 +397,30 @@ InverseFourierShift[data_]:=RotateLeft[data,Floor[Dimensions[data]/2]];
 
 SyntaxInformation[ShiftedFourier]={"ArgumentsPattern"->{_,_.}}
 
-ShiftedFourier[time_]:=FourierShift[Fourier[time,FourierParameters->{-1,1}]];
+ShiftedFourier[time_] := FourierShift[Fourier[time,FourierParameters->{-1,1}]];
 
-ShiftedFourier[time_,"Fid"]:=FourierShift[Fourier[time,FourierParameters->{-1,1}]];
+ShiftedFourier[time_,"Fid"] := FourierShift[Fourier[time,FourierParameters->{-1,1}]];
 
-ShiftedFourier[time_,"Echo"]:=FourierShift[Fourier[FourierShift[time],FourierParameters->{-1,1}]];
+ShiftedFourier[time_,"Echo"] := FourierShift[Fourier[FourierShift[time],FourierParameters->{-1,1}]];
 
 
 SyntaxInformation[ShiftedInverseFourier]={"ArgumentsPattern"->{_,_.}}
 
-ShiftedInverseFourier[spec_]:=InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}];
+ShiftedInverseFourier[spec_] := InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}];
 
-ShiftedInverseFourier[spec_,"Fid"]:=InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}];
+ShiftedInverseFourier[spec_,"Fid"] := InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}];
 
-ShiftedInverseFourier[spec_,"Echo"]:= FourierShift[InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}]];
+ShiftedInverseFourier[spec_,"Echo"] := FourierShift[InverseFourier[InverseFourierShift[spec],FourierParameters->{-1,1}]];
 
 
 SyntaxInformation[FourierShifted]={"ArgumentsPattern"->{_}}
 
-FourierShifted[time_]:=Fourier[FourierShift[time],FourierParameters->{-1,1}];
+FourierShifted[time_] := Fourier[FourierShift[time],FourierParameters->{-1,1}];
 
 
 SyntaxInformation[InverseFourierShifted]={"ArgumentsPattern"->{_}}
 
-InverseFourierShifted[spec_]:=InverseFourierShift[InverseFourier[spec,FourierParameters->{-1,1}]];
+InverseFourierShifted[spec_] := InverseFourierShift[InverseFourier[spec,FourierParameters->{-1,1}]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -726,7 +726,7 @@ HammingFilterCSI[data_] := TransData[HammingFilterData[TransData[data,"r"]],"l"]
 
 SyntaxInformation[DeconvolveCSIdata]={"ArgumentsPattern"->{_,_.}}
 
-DeconvolveCSIdata[spectra_]:=DeconvolveCSIdata[spectra,1]  
+DeconvolveCSIdata[spectra_] := DeconvolveCSIdata[spectra,1]  
 
 DeconvolveCSIdata[spectra_, hami_] := Block[{dim, filt, spectraOut, ham},
 	(*make tha hamming filter*)
@@ -825,16 +825,16 @@ CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coi
 
 Options[CoilWeightedReconCSI] = {HammingFilter -> False, CoilSamples -> 5, Method -> "Roemer", NormalizeOutputSpectra->True, AcquisitionMethod->"Fid"};
 
-CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, spectra, cov, coils, sosCoils, sens},
-	
+CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, spectra, cov, coils, sosCoils, sens,readout},
+	readout = OptionValue[AcquisitionMethod];
 	spectra = Switch[ArrayDepth[kspace],
 		4,(*no coil combination for 3D CSI*)
 		fids = TransData[FourierKspaceCSI[kspace, head], "l"];
-		Map[ShiftedFourier[#] &, fids, {-2}]
+		Map[ShiftedFourier[#, readout] &, fids, {-2}]
 		,
 		5,(*perform spatial fourier for CSI*)
 		fids = Transpose[FourierKspaceCSI[#, head] & /@ kspace];
-		spectra = TransData[Map[ShiftedFourier[#,OptionsValue[AcquisitionMethod]] &, TransData[fids, "l"], {-2}], "r"];
+		spectra = TransData[Map[ShiftedFourier[#, readout] &, TransData[fids, "l"], {-2}], "r"];
 		
 		(*noise correlation, inverse and withening matrix*)
 		cov = NoiseCovariance[noise];
@@ -843,7 +843,6 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 			(*make coil sensitivity using the first 5 samples of the fid*)
 			(*sens = MakeSense[HammingFilterCSI[Mean[fids[[1 ;; OptionValue[CoilSamples]]]]],cov];*)
 			sens = MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]],cov];
-			
 			(*perform the recon*)
 			TransData[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra, "l"]
 			,

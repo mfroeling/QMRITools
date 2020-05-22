@@ -88,9 +88,6 @@ SimSignal::usage =
 "SimSignal[din, H] performs a readout of a spinsystem din with hamiltonian H.
 Output is the complex signal."
 
-PlotSpectrum::usage = 
-"PlotSpectrum[ppm, spec] plots the spectrum, ppm and spec can be generated using SimReadout."
-
 GetSpinSystem::usage = 
 "GetSpinSystem[name] get a spinsystem that can be used in SimHamiltonian. Current implementes systems are \"glu\", \"lac\", \"gaba\", \"fatGly\", \"fatAll\", \"fatEnd\", \"fatDouble\", \"fatStart\", and \"fatMet\"."
 
@@ -102,9 +99,6 @@ MakeSpinSystem[{name,labs}, freqs, jcoup, scales] same as alle before. "
 
 SysTable::usage = 
 "SysTable[sys] shows the spinsystem as a table. The spinsytem is obtained form GetSpinSystem."
-
-PhaseAlign::usage = 
-"PhaseAlign[spec] automatically phase aligns the spectrum by maximizing the Real part of the spectrum."
 
 
 (* ::Subsection::Closed:: *)
@@ -122,6 +116,10 @@ ReadoutOutput::usage =
 
 ReadoutPhase::usage = 
 "ReadoutPhase is an option for SimReadout and defines the readout phase in degrees."
+
+ReadoutMethod::usage
+"ReadoutMethod is an option of SimReadout and can be \"Fid\" or \"Echo\". With \"Fid\" it is also possbile to define a delay time in ms {\"Fid\", delay}. 
+With \"Echo\" it is also possbile to define a delay time in ms {\"Echo\", delay} and it than assumes te is half the readout, or a custom te can be defined {\"Echo\", delay, te}."
 
 Linewidth::usage = 
 "Linewidth is an option for SimReadout and defines the spectral linewidth in Hz."
@@ -436,79 +434,61 @@ Options[SimReadout] = {
 	ReadoutOutput->"all", 
 	ReadoutPhase->90, 
 	Linewidth->5, 
-	LinewidthShape->"L", 
+	LinewidthShape->"Lorentzian", 
 	ReadoutSamples -> 2046, 
 	ReadoutBandwith -> 2000,
-	CenterFrequency -> 4.65
+	CenterFrequency -> 4.65,
+	ReadoutMethod -> "Fid"
 	}
 
 SyntaxInformation[SimReadout]={"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 SimReadout[din_,H_,OptionsPattern[]]:=Block[{
-	dt,hab,field,nSpins2,Fx,Fy,time,fid,t2,sigma,decay,valD,matU,ord,sig,Ixy,
-	Fxy,corr,fids,d1,d,dout,ppm,spec,di,si,fun,wSpins,ran,phaseComp,val,
-	n,swidth,linewidth,sel,phase,shape, shift, gyro},
+	nsamp, bandwidth, linewidth, output, phase, shape, shift, dt, devolve, di, time, decay, val, fids, samp, 
+	valD, matU, nSpins2, Fxy, Ixy, met, delay, te
+	},
 	
-	n = OptionValue[ReadoutSamples];
-	swidth = OptionValue[ReadoutBandwith];
+	nsamp = OptionValue[ReadoutSamples];
+	bandwidth = OptionValue[ReadoutBandwith];
 	linewidth = OptionValue[Linewidth];
-	sel = OptionValue[ReadoutOutput];
+	met = OptionValue[ReadoutMethod];
+	output = OptionValue[ReadoutOutput];
 	phase = OptionValue[ReadoutPhase];
 	shape = OptionValue[LinewidthShape];
 	shift = OptionValue[CenterFrequency];
 	
 	(*Get hamiltonian info*)
-	{valD,matU,field,nSpins2,Fxy,Ixy,wSpins,gyro}={"Hval","Hvec","Bfield","nSpins2","wFxy","wIxy","weight","gyro"}/.H;
+	{valD, matU, nSpins2, Fxy, Ixy}={"Hval","Hvec","nSpins2","wFxy","wIxy"}/.H;
+	(*evlolve matrix*)
+	dt = 1./bandwidth;
+	devolve = SimEvolveM[matU,valD,dt];
+	(*initial signal and spin state*)
+	di = din;
 	
-	(*get the time and ppms*)
-	dt = 1./swidth;
-	time = dt(Range[0,n-1]);
-	ran = swidth/2-swidth/(2 n);
+	(*get the time*)
+	time = dt (Range[nsamp]-1);	
+	{met, delay, te} = If[StringQ[met], {met, 0, Max[time]}, If[Length[met] == 2, {met[[1]], met[[2]], Max[time]}, met]];
+	time = If[met === "Echo", Abs[0.5te - (time + delay)], time + delay];
 	
-	ppm = Range[-ran,ran,swidth/n]/(field gyro ) + shift;
-
-	(*shape definition*)
-	decay = If[linewidth===0,
-		1,
-		t2 = 1/linewidth;
+	(*shape and signal definition*)
+	decay = If[linewidth===0, 1, 
 		Switch[shape,
-			"L", Exp[-time/t2],
-			"Lorentzian", Exp[-time/t2],
-			"G", Exp[-time^2/t2^2],
-			"Gaussian", Exp[-time^2/t2^2],
-			"LG", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2],
-			"Voigt", 0.5 Exp[-time/t2]+0.5Exp[-time^2/t2^2]
-		]
-	];
+		"Lorentzian", Exp[-time linewidth],
+		"Gaussian", Exp[-time^2 linewidth^2],
+		"Voigt", 0.5 Exp[-time linewidth] + 0.5 Exp[-time^2 linewidth^2]
+	]];
+	val = (1./nSpins2) decay Exp[I phase Degree];
 	
-	(*create the fids by incrementing the spinsystem by dt*)
-	d = SimEvolveM[matU,valD,dt];(*spin evolve over dt*)
+	(*perform readout and evolve spin states by dt*)
+	fids = val Table[
+		samp = If[output === "all", Tr[(di.Fxy)], (Tr[di.#])&/@Ixy];
+		di = Chop[devolve.di.ConjugateTranspose[devolve]];
+		samp
+	,{i,1,nsamp}];
 	
-	di=din;(*initial signal and spin state*)
-	
-	val=(1/nSpins2)decay Exp[-I  phase Degree];
-	
-	(*evolve spin states with dt, but not for first*)
-	Switch[sel,
-		"all",
-		fids=val Table[
-			If[i!=1,di=Chop[d.di.ConjugateTranspose[d]]];
-			Tr[(di.Fxy)]
-		,{i,1,n}];
-		spec=InverseFourier[((-1)^Range[n])fids];
-		,
-		"each",
-		fids=Transpose[val Table[
-			If[i!=1,Chop[di=d.di.ConjugateTranspose[d]]];
-			(Tr[di.#])&/@Ixy
-		,{i,1,n}]];
-		spec=InverseFourier[((-1)^Range[n])#]&/@fids;
-	];
-	(*create spectra*)
-	
-	{time,fids,ppm,spec,dout}
+	(*output*)
+	If[output === "each", {Transpose[fids], di}, {fids, di}]
 ]
-
 
 (* ::Subsubsection::Closed:: *)
 (*SimSignal*)
@@ -529,45 +509,6 @@ SimSignal[din_,H_,OptionsPattern[]]:=Block[{Ixy,w,sel},
 		(*signal for peak selection either one or list*)
 		_,Ixy=("wIxy"/.H);If[ListQ[sel],w Tr[din.Ixy[[#]]]&/@sel,w Tr[din.Ixy[[sel]]]]
 	]
-]
-
-
-(* ::Subsection:: *)
-(*PlotSpectrum*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*PlotSpectrum*)
-
-
-Options[PlotSpectrum] = {PlotRange->{{0,6}, Full}, SpectrumColor->Black}
-
-SyntaxInformation[PlotSpectrum] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
-
-PlotSpectrum[ppm_, spec_, OptionsPattern[]]:=Block[{pdat,style,ran, sc, col},
-	
-	{ran, sc}=OptionValue[PlotRange];
-	col=OptionValue[SpectrumColor];
-	
-	{pdat,style}=If[Head[spec[[1]]]===Complex,
-	{{Transpose@{ppm,Im@spec},Transpose@{ppm,Re@spec}},(Directive[#]&/@{{Thin,Lighter[col]},{Thick,col}})},
-	{Transpose@{ppm,spec},Directive[Thick,col]}];
-	ListLinePlot[pdat,
-	PlotRange->{ran,sc},ScalingFunctions->{"Reverse",Identity},
-	AxesStyle->Directive[{Thick,Black}],LabelStyle->Directive[{Bold,Black,12}],
-	PlotStyle->style,ImageSize->600,Axes->{True,False}]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*PhaseAlign*)
-
-
-SyntaxInformation[PhaseAlign] = {"ArgumentsPattern" -> {_}};
-
-PhaseAlign[spec_] := Block[{phi},
-	phi=Sort[Table[{Total[Re[Flatten[spec] Exp[I x Degree]]],x},{x,-180,180,.5}]][[-1,2]];
-	spec Exp[I phi Degree]
 ]
 
 
