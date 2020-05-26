@@ -648,9 +648,9 @@ WSVDCombine[sig_, cov_] := Block[{weight},
 CovToWeight[cov_] := Conjugate[DiagonalMatrix[Sqrt[1./#[[1]]]].#[[2]] &[Eigensystem[cov]]];
 
 WSVDCombineT[sig_, weight_] := Block[{u, s, v, scale},
-	{u, s, v} = SingularValueDecomposition[weight.sig];
-	scale = Norm[#] Normalize[First@#] &[weight.u[[All, 1]]];
-	Conjugate[v[[All, 1]]] s[[1, 1]] scale
+	{u, s, v} = SingularValueDecomposition[weight.sig,1];
+	scale = -Norm[#] Normalize[First@#] &[weight.u[[All, 1]]];
+	scale Conjugate[v[[All, 1]]] s[[1, 1]] 
 ];
 
 
@@ -711,7 +711,7 @@ SyntaxInformation[HammingFilterData] = {"ArgumentsPattern"->{_}}
 HammingFilterData[data_]:= Block[{ham},
 	If[ArrayDepth[data]===4,
 		ham = MakeHammingFilter[Dimensions[data[[1]]]];
-		Sqrt[3]FourierShifted[ham InverseFourierShifted[#]]&/@data
+		FourierShifted[ham InverseFourierShifted[#]]&/@data
 		,
 		FourierShifted[MakeHammingFilter[Dimensions[data]] InverseFourierShifted[data]]
 	]
