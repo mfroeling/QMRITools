@@ -6,6 +6,11 @@
 
 ------------------------------------------------------------------------
 
+[![MR-Hub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/MR-Hub.png)](https://ismrm.github.io/mrhub/)
+[![MR-Hub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/MRSHub.png)](https://mrshub.org/software_analysis/#QMRITools)
+
+------------------------------------------------------------------------
+
 [![wolfram
 language](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_language.png)](https://www.wolfram.com/language/)
 [![wolfram

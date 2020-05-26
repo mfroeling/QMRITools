@@ -106,6 +106,9 @@ PlotSimulationVec::usage =
 NoiseSize::usage = 
 "NoiseSize is an option for AddNoise. Values can be \"Sigma\", then the noise sigma is given or \"SNR\", then the SNR is given."
 
+NoiseType::usage = 
+"NoiseType is an option for AddNoise. Values can be \"Absolute\" or \"Complex\", and will add either Rician absolute noise or complex noise to the data."
+
 TensOutput::usage = 
 "TensOutput is an option for Tensor. Values can be \"Vector\" or \"Matrix\"."
 
@@ -166,7 +169,7 @@ Begin["`Private`"]
 (*AddNoise*)
 
 
-Options[AddNoise] = {NoiseSize->"Sigma"};
+Options[AddNoise] = {NoiseSize->"Sigma",NoiseType->"Absolute"};
 
 SyntaxInformation[AddNoise] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -196,7 +199,10 @@ AddNoise[dat_,noise_,OptionsPattern[]]:=Block[{sig,data,mdat,fdat},
 		_,
 		Message[AddNoise::opt];Return[]
 		];
-	RicianDistribution[data,sig]
+	Switch[OptionValue[NoiseType],
+		"Absolute", RicianDistribution[data,sig],
+		"Complex", CompledDistribution[data,sig]
+	]
 	]
 
 
@@ -204,6 +210,9 @@ RicianDistribution = Compile[{{Mu, _Real, 0}, {Sigma, _Real, 0}},
 	Sqrt[RandomReal[NormalDistribution[Mu, Sigma]]^2 + RandomReal[NormalDistribution[0, Sigma]]^2],
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
+CompledDistribution = Compile[{{Mu, _Complex, 0}, {Sigma, _Complex, 0}},
+	RandomReal[NormalDistribution[Re@Mu, Sigma]] + I RandomReal[NormalDistribution[Im@Mu, Sigma]],
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 (* ::Subsection:: *)
 (*Tensor*)

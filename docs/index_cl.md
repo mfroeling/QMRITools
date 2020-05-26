@@ -6,6 +6,10 @@
 
 ------------------------------------------------------------------------
 
+[![MR-Hub](\QMRITools\images\MR-Hub.png)](https://ismrm.github.io/mrhub/)
+[![MR-Hub](\QMRITools\images\MRSHub.png)](https://mrshub.org/software_analysis/#QMRITools)
+
+------------------------------------------------------------------------
 [![wolfram language](\QMRITools\images\wolfram_language.png)](https://www.wolfram.com/language/)
 [![wolfram workbench](\QMRITools\images\wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
 [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
