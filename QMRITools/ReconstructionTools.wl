@@ -748,10 +748,11 @@ DeconvolveCSIdata[spectra_, hami_] := Block[{dim, filt, spectraOut, ham},
 	spectraOut = FourierRescaleData[TransData[spectra, "r"]];
 	
 	(*perform the deconvolution*)
-	spectraOut = Map[(-Exp[Arg[#] I] ListDeconvolve[filt, Abs@#, Method->{"Wiener", 0.01}]) &, spectraOut];
+	spectraOut = Map[(-Exp[Arg[#] I] ListDeconvolve[filt, Abs@#, Method->{"Wiener", 0.025}]) &, spectraOut];
 	
 	(*rescale to original dimensions*)
-	TransData[(RescaleData[Re@#, dim, InterpolationOrder -> 2] + RescaleData[Im@#, dim, InterpolationOrder -> 2] I) & /@ spectraOut, "l"]
+	(*TransData[(RescaleData[Re@#, dim, InterpolationOrder -> 2] + RescaleData[Im@#, dim, InterpolationOrder -> 2] I) & /@ spectraOut, "l"]*)
+	TransData[FourierRescaleData[#, dim] & /@ spectraOut, "l"]
 ]
 
 
