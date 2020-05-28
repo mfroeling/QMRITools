@@ -76,6 +76,10 @@ When using the toolbox please cite one of the following references:
     architecture of the human forearm. J Magn Reson Imaging 2012;
     36:237-248.
     [link](https://onlinelibrary.wiley.com/doi/10.1002/jmri.23608)
+4.  Schlaffke et al.: Multi‐center evaluation of stability and reproducibility of 
+	quantitative MRI measures in healthy calf muscles; NMR Biomed. 2019;32:e4119
+	[link](https://onlinelibrary.wiley.com/doi/full/10.1002/nbm.4119) 
+
 
 ------------------------------------------------------------------------
 

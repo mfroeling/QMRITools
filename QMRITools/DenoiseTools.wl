@@ -100,6 +100,9 @@ PCAWeighting::usage =
 PCAClipping::usage = 
 "PCAClipping is an option of PCADeNoise and can be True of False. If True the output is clipped between 0 and the max absolute value of the input data."
 
+PCANoiseSigma::usage = 
+"PCANoiseSigma is an option of DenoiseCSIdata and can be \"Corners\" or \"Automatic\"."
+
 
 AnisoStepTime::usage =
 "AnisoStepTime is an option for AnisoFilterTensor and defines the diffusion time, when small more step are needed."
@@ -464,18 +467,21 @@ SVD[mat_, n_] := Block[{u, w, v, eig},
 (*DenoiseCSIdata*)
 
 
-Options[DenoiseCSIdata] = {PCAKernel -> 5}
+Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Corners"}
 
 SyntaxInformation[DenoiseCSIdata]={"ArgumentsPattern"->{_, OptionsPattern[]}}
 
-DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{stdMap, sig, out, hist, len, spectraDen},
+DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectraDen},
 	(* assusmes data is (x,y,z,spectra)*)
 	len = Dimensions[spectra][[-1]];
 	
-	(*get the corner voxels to calcluate the noise standard deviation*)
-	stdMap = Map[StandardDeviation, spectra, {-2}];
-	sig = Mean[Flatten[stdMap[[{1, -1}, {1, -1}, {1, -1}]]]];
-	stdMap=Flatten[stdMap];
+	(*get the corner voxels to calcluate the noise standard deviation or automatic estimation*)
+
+	sig = Switch[OptionValue[PCANoiseSigma],
+		"Corners", StandardDeviation[Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]]],
+		"Automatic", 0
+	];
+
 	
     (*Denoise the spectra data*)
     {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[TransData[spectra, "r"]],	1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];

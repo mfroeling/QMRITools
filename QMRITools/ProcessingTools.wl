@@ -799,10 +799,7 @@ DataTransformation[data_, vox_, wi_,OptionsPattern[]] :=
   coor = GetCoordinates[data, vox];
   rot = ParametersToTransformFull[w, "Inverse"];
   coorR = ApplyRotC[coor, rot];
-  interFunc = Interpolation[
-    Transpose[{Flatten[coor, ArrayDepth[coor] - 2], Flatten[data]}], 
-    InterpolationOrder -> OptionValue[InterpolationOrder], 
-    "ExtrapolationHandler" -> {0. &, "WarningMessage" -> False}];
+  interFunc = Interpolation[Transpose[{Flatten[coor, ArrayDepth[coor] - 2], Flatten[data]}], InterpolationOrder -> OptionValue[InterpolationOrder], "ExtrapolationHandler" -> {0. &, "WarningMessage" -> False}];
   interFuncC = Compile[{{coor, _Real, 1}}, interFunc[coor[[1]], coor[[2]], coor[[3]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
   interFuncC[coorR]
   ]

@@ -1509,7 +1509,7 @@ PlotCSIData[datainp_, dw_?NumberQ, gyro_?NumberQ, opts:OptionsPattern[]] := Plot
 
 PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[{
 	data,datai,fun,nmax,dim,or,n,yran,dataPlot,maxPlot,maxAll,totAll,yrans,totPlot,colp,back,
-	col,spec,coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax},
+	col,spec,coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax,backScale},
 	
 	NotebookClose[plotwindow];
 	
@@ -1558,7 +1558,8 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 							EventHandler[Tooltip[
 							(*the images*)
 							Graphics[{Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], Line[Thread[{xdat[[;; ;; 2]], #1[[1, ;; ;; 2]]}]]},
-								AspectRatio -> 1, ImageSize -> size, Background -> If[back, GrayLevel[#[[3]]], White],
+								AspectRatio -> 1, ImageSize -> size, 
+								Background -> If[back, Switch[backScale,"Max",GrayLevel[#[[2]]],"Total",GrayLevel[#[[3]]]], White],
 								PlotRange -> {-{pmin, pmax}, Switch[scale, "Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, "Full", yran, "Slice", yrans]}
 							],
 							(*the coordinate tooltip*)
@@ -1589,6 +1590,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, {{pmax, xmax, "Min pmm"}, Dynamic[pmin + 1], xmax}
 			, {{scale, "Max", "Plot scale"}, {"Max", "Full","Slice"}}
 			, Delimiter
+			, {{backScale, "Max", "Background"}, {"Max", "Total"}}
 			, {{back, True, "Magnitude background"}, {True,False}}
 			, {{col, Black, "Grid Color"}, ColorSlider}
 			
