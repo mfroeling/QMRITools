@@ -1981,9 +1981,8 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			NotebookClose[plotwindow];
 			(*basis spectra*)
 			status = "Generating basis spectra"; statusP = True;
-			{names, times, fids, ppms, specs, table} = GetSpectraBasisFunctions[metSel, {"ATP"}, BasisSequence -> {"PulseAcquire", teu}, SpectraLinewidth -> 0,
-				SpectraLinewidthShape -> "Voigt", SpectraSamples -> nsamp, SpectraBandwith -> bw, SpectraPpmShift -> 0,
-				SpectraFieldStrength -> field, SpectraNucleus -> nuc];
+			{names, times, fids, ppms, specs, table} = GetSpectraBasisFunctions[metSel, {"ATP"}, BasisSequence -> {"PulseAcquire", teu}, 
+				SpectraSamples -> nsamp, SpectraBandwith -> bw, SpectraPpmShift -> 0, SpectraFieldStrength -> field, SpectraNucleus -> nuc];
 			status = "Done generating basis spectra!"; statusP = False;
 			
 			(*fitting*)

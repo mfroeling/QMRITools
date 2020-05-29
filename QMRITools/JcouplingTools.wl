@@ -133,9 +133,6 @@ ReadoutSamples::usage =
 ReadoutBandwith::usage = 
 "ReadoutBandwith is an option for SimReadout defines the spectral bandwith in Hz."
 
-SpectrumColor::usage = 
-"SpectrumColor is an option for PlotSpectrum and defines the spectrum color."
-
 CenterFrequency::usage = 
 "CenterFrequency is an option for GetSpinSystem and defines the center frequency in ppm."
 
