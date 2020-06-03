@@ -285,13 +285,13 @@ PhaseCorrectErrorC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},Block[{spe
 ],RuntimeOptions -> "Speed", Parallelization -> True];
 
 
-PhaseCorrectSpectra[spec_, dw_,out_:True] := PhaseCorrectSpectra[spec, dw, 0, 0, Full, out]
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, out_:True] := PhaseCorrectSpectra[spec, dw, 0, 0, Full, out]
 
-PhaseCorrectSpectra[spec_, dw_, te_,out_:True] := PhaseCorrectSpectra[spec, dw, te, 0, Full, out]
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, out_:True] := PhaseCorrectSpectra[spec, dw, te, 0, Full, out]
 
-PhaseCorrectSpectra[spec_, dw_, gyro_, ppmRan_,out_:True] := PhaseCorrectSpectra[spec, dw, 0, gyro, ppmRan, out]
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, gyro_?NumberQ, ppmRan_?ListQ, out_:True] := PhaseCorrectSpectra[spec, dw, 0, gyro, ppmRan, out]
 
-PhaseCorrectSpectra[spec_, dw_, te_, gyro_, ppmRan_,out_:True] := Module[{fid, specOut, missing, full, henkelSpec, phi, phi0},
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, gyro_?NumberQ, ppmRan_?ListQ, out_:True] := Module[{fid, specOut, missing, full, henkelSpec, phi, phi0},
 	(*create the fid*)
 	fid = ShiftedInverseFourier[spec];
 	
@@ -714,7 +714,8 @@ FindSpectraPpmShift[spec_, {dw_, gyro_}, {peaks_, amp_}] := Block[{ppm, dppm, ta
 		Abs[peaks],
 		amps = If[amp === 0, 0. peaks + 1, amp];
 		tar = 0 ppm;
-		tar[[Flatten[Position[ppm, First@Nearest[ppm, #]] & /@ peaks]]] = amps/Max[amps]
+		tar[[Flatten[Position[ppm, First@Nearest[ppm, #]] & /@ peaks]]] = amps/Max[amps];
+		tar
 	];
 	
 	(*perfomr correlation of spectra with delta function*)
@@ -738,14 +739,12 @@ FindSpectraPpmShift[spec_, {dw_, gyro_}, {peaks_, amp_}] := Block[{ppm, dppm, ta
 SyntaxInformation[ChangeDwellTimeFid] = {"ArgumentsPattern" -> {_, _, _}}
 
 ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampTar, timeTar},
+	sc=dwOrig/dwTar;
 	(*get time of original signal*)
-	NsampOrig = Length@time;
-	timeOrig = dwOrig (Range[NsampOrig] - 1);
-	(*define time of new signal*)
-	NsampTar = Round[Max[timeOrig]/dwTar];
-	timeTar = dwTar (Range[NsampTar] - 1);
+	timeOrig = dwOrig(Range[Round[Length@time]]-1);
+	timeTar = dwTar(Range[Round[sc Length@time]]-1);
 	(*Interpolate the time to the new timescale*)
-	Interpolation[Transpose[{timeOrig, time}], InterpolationOrder -> 1][timeTar]
+	Interpolation[Transpose[{timeOrig, time}], InterpolationOrder -> 1,"ExtrapolationHandler"->{(0.0 &),"WarningMessage"->False}][timeTar]
 ]
 
 
@@ -1133,7 +1132,7 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		
 		(*----------- Perform Fit and calculate errro -------------*)
 		(*perform Fit of basis spectra*)
-		fit = Quiet@NNLeastSquares[Transpose[Re[specBasisF]], Re[specF]];
+		fit = Quiet@NNLeastSquares[Join[Transpose[Re[specBasisF]],Transpose[Im[specBasisF]]], Join[Re[specF],Im[specF]]];
 			
 		(*define errors fid and spectra*)
 		errorS = specF - fit.specBasisF;
@@ -1952,7 +1951,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 				"Cor",
 				If[!sphase,
 					status = "Correcting phase of spectra"; statusP = True;
-					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, -shift]], dw, teu, gyro, {10, -20}]&, spectra, {-2}];
+					spectraC = Map[PhaseCorrectSpectra[ApodizePadSpectra[ShiftSpectra[#, {dw, gyro}, -shift]], dw, teu, gyro, {10, -20}, True]&, spectra, {-2}];
 					status = "Done phase correcting spectra!"; statusP = False;	sphase = True
 				];
 				spectraC
