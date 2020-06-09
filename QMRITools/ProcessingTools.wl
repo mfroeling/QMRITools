@@ -592,10 +592,11 @@ NumberTableForm[dat_, depth_, opts : OptionsPattern[]] :=
 (* ::Subsubsection::Closed:: *)
 (*MeanStd*)
 
+MeanStd[inp_]:=MeanStd[inp, 1]
 
-MeanStd[inp_] := Block[{dat}, 
+MeanStd[inp_,n_] := Block[{dat}, 
 	dat = inp /. {Mean[{}] -> Nothing, 0. -> Nothing};
-	Quiet@Row[{NumberForm[Round[Mean[dat], .001], {3, 2}], NumberForm[Round[StandardDeviation[dat], .001], {7, 2}]}, "\[PlusMinus]"]
+	Quiet@Row[{NumberForm[Round[Mean[dat], .001], {3, n}], NumberForm[Round[StandardDeviation[dat], .001], {7, n}]}, "\[PlusMinus]"]
   ]
 
 
