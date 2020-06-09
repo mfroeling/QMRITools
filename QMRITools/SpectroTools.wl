@@ -160,11 +160,11 @@ MakeSpectraResultPlot::usage =
 "MakeSpectraResultPlot[ppmF, specF, {fit, basisFit}, names, sc, met] function not done."
 
 
-CSIInterface31P::usage = 
-"CSIInterface31P[] function not done.
-CSIInterface31P[te, bwi]
-CSIInterface31P[file]
-CSIInterface31P[file, {tei, bwi}]"
+CSIInterface::usage = 
+"CSIInterface[] function not done.
+CSIInterface[te, bwi]
+CSIInterface[file]
+CSIInterface[file, {tei, bwi}]"
 
 SpectraFitResult::usage = 
 "SpectraFitResult[spec, {fit, basisFit}, te, {dw, gyro}, {pars, names, metRef, log}, plots, OptionsPattern[]] function not done."
@@ -1106,7 +1106,7 @@ Options[FitSpectraError] = {Output -> "Error", ReadoutType -> "Fid"};
 FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {cpn_, gyro_},
 	{gam_ /; AllTrue[gam, NumericQ], eps_ /; AllTrue[eps, NumericQ], phi_ /; AllTrue[phi, NumericQ], f_ /; AllTrue[f, NumericQ]}, 
 	init___ : 0, OptionsPattern[]] := Block[{
-		specF, fidF, specBasisF, fit, ferr, gerr, perr, errorF, errorS, reerr, imerr, gami, epsi,
+		specF, fidF, specBasisF, fit, ferr, gerr, perr, errorF, errorS, err, gami, epsi,
 		sigi, phii, specBasis, fidBasisF, specFit, spline, readout, eerr
 	},
 	
@@ -1129,39 +1129,41 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		(*generate basis spectra from time domain by applying gam, eps and lineshape*)
 		{fidBasisF,specBasisF} = BasisSpectraApply[{timeFull, timeBasis}, {gam, eps, f}, gyro, {indSt, indEnd}, readout];
 		
-		
 		(*----------- Perform Fit and calculate errro -------------*)
 		(*perform Fit of basis spectra*)
-		fit = Quiet@NNLeastSquares[Join[Transpose[Re[specBasisF]],Transpose[Im[specBasisF]]], Join[Re[specF],Im[specF]]];
+		fit = Quiet@Clip[LeastSquares[Join[Transpose[Re[specBasisF]],Transpose[Im[specBasisF]]], Join[Re[specF],Im[specF]]],{0,Infinity}];
 			
 		(*define errors fid and spectra*)
 		errorS = specF - fit.specBasisF;
 		errorF = fidF - fit.fidBasisF;
 		
-		(*rel and Im error normalized for number of points*)
-		reerr = Total[Re[errorS]^2]/Length[errorS] + Total[Re[errorF]^2]/Length[errorF];
-		imerr = Total[Im[errorS]^2]/Length[errorS] + Total[Im[errorF]^2]/Length[errorF];
-		
-		(*constrain f between 0 and 1*)
-		ferr = Total[ConFuncC[f, 0, 1, 4]];
-		
+		(*Re and Im error normalized for number of points*)
+		err = Mean[Re[errorS]^2] + Mean[Re[errorF]^2] + Mean[Im[errorS]^2] + Mean[Im[errorF]^2];
+				
 		If[init === 0,
+			(*constrain f between 0 and 1*)
+			ferr = Total[ConFuncC[f, 0, 1, 4]];
 			(*constrain phase to be small*)
 			perr = ConFuncC[phi[[2]], -0.5, 0.5, 5];
 			(*constrain gam to be positive*)
 			gerr = Total[ConFuncC[gam, 1, 500, 3]];
+			
 			(*no initial values, minimize RMSE with f, gam and phase contraint*)
-			reerr + imerr + ferr + gerr + perr
+			err + ferr + gerr + perr
 			,
+			
 			(*get initial values to constrain finetune fit, init ={gami, epsi, phii}*)
+			(*constrain f between 0 and 1*)
+			ferr = Total[ConFuncC[f, 0, 1, 4]];
 			(*constrain lw gam to initial value*)
 			gerr = Total[ConFuncSC[gam,init[[1]], 10, 2]];
 			(*constrain shift eps to initial value*)
 			eerr = Total[ConFuncSC[eps,init[[2]], 1, 2]];
 			(*constrain phase to initial value*)
 			perr = ConFuncC[phi[[2]]-init[[3]], -0.1, 0.1, 5];
+			
 			(*calculate error, minimize RMSE with f, gam, eps and phase contraint*)
-			reerr + imerr + ferr + gerr + eerr + perr
+			err + ferr + gerr + eerr + perr
 		],
 		
 		(* ------------ Calculate fitted spectra for output --------------*)
@@ -1171,8 +1173,9 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		specBasis = BasisSpectraApply[{ppmFull, timeFull, timeBasis}, {gam, eps, phi, f}, gyro, readout];
 		
 		(*perform Fit of basis spectra*)
-		fit = Quiet@NNLeastSquares[Transpose[Re[specBasis]], Re[spec]];
+		fit = Quiet@Clip[LeastSquares[Join[Transpose[Re[specBasis]],Transpose[Im[specBasis]]], Join[Re[spec],Im[spec]]],{0,Infinity}];
 		specFit = fit.specBasis;
+		
 		(*fit a spline through the residuals*)
 		spline = BSplineCurveFit[spec - specFit, SplineKnotsNumber -> cpn, SplineRegularization -> 0, SplineDegree -> 2];
 		
@@ -1508,7 +1511,7 @@ PlotCSIData[datainp_, dw_?NumberQ, gyro_?NumberQ, opts:OptionsPattern[]] := Plot
 
 PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[{
 	data,datai,fun,nmax,dim,or,n,yran,dataPlot,maxPlot,maxAll,totAll,yrans,totPlot,colp,back,
-	col,spec,coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax,backScale},
+	col,spec,coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax,backScale, funs, c1, c2, lab},
 	
 	NotebookClose[plotwindow];
 	
@@ -1527,7 +1530,8 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			(*clip the range*)
 			nmax = dim[[or]];
 			n = Round[Clip[n, {1, nmax}]];
-			
+			{c1,c2} = Drop[dim[[;;-2]],{or}];
+						
 			(*get the correct data and ranges*)
 			yran = {Min[{-0.5 Max[datai], Min[datai]}], 1.5 Max[datai]};
 			dataPlot = Switch[or, 1, datai[[n]], 2, datai[[All, n]], 3, datai[[All, All, n]]];
@@ -1540,11 +1544,12 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 				Dynamic[
 					spec = If[coor === {0, 0}, 
 						0. data[[1, 1, 1]], 
+						coor = {Clip[coor[[1]],{1,c1}], Clip[coor[[2]],{1,c2}]};
 						Switch[or, 1, data[[n, coor[[1]], coor[[2]]]], 2, data[[coor[[1]], n, coor[[2]]]], 3, data[[coor[[1]], coor[[2]], n]]]
 					];
 					lab = Switch[or, 1, {n, coor[[1]], coor[[2]]}, 2, {coor[[1]], n, coor[[2]]}, 3, {coor[[1]], coor[[2]], n}];
 					FlipView[{
-						PlotSpectra[-xdat, spec, PlotRange -> {{pmin, pmax}, Full}, Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size],
+						PlotSpectra[ApodizePadSpectra[spec], {dw,gyro}, PlotRange -> {{pmin, pmax}, Full}, Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size],
 						PlotFid[tdat, ShiftedInverseFourier[spec], Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size]
 					}]
 				]
@@ -1554,16 +1559,17 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 				gridPlot = Grid[
 					MapIndexed[(
 						Item[
-							EventHandler[Tooltip[
+							EventHandler[
+								(*Tooltip[*)
 							(*the images*)
-							Graphics[{Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], Line[Thread[{xdat[[;; ;; 2]], #1[[1, ;; ;; 2]]}]]},
+							Graphics[{Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], Line[Thread[{xdat(*[[;; ;; 2]]*), #1[[1]](*[[1, ;; ;; 2]]*)}]]},
 								AspectRatio -> 1, ImageSize -> size, 
 								Background -> If[back, Switch[backScale,"Max",GrayLevel[#[[2]]],"Total",GrayLevel[#[[3]]]], White],
 								PlotRange -> {-{pmin, pmax}, Switch[scale, "Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, "Full", yran, "Slice", yrans]}
 							],
-							(*the coordinate tooltip*)
+							(*(*the coordinate tooltip*)
 							Switch[or, 1, {n, #2[[1]], #2[[2]]}, 2, {#2[[1]], n, #2[[2]]}, 3, {#2[[1]], #2[[2]], n}], 
-							TooltipStyle -> {Directive[Black, Bold, Medium], Background -> White, CellFrameColor -> None, CellFrame -> None}],
+							TooltipStyle -> {Directive[Black, Bold, Medium], Background -> White, CellFrameColor -> None, CellFrame -> None}],*)
 							(*create the popup window*)
 							"MouseClicked" :> (coor = #2)],
 							(*highlight selected plot*)
@@ -1790,21 +1796,22 @@ MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, ppmran_] := Bloc
 (*CSIInterface31P*)
 
 
-Options[CSIInterface31P] = {SpectraFieldStrength -> 7};
+Options[CSIInterface] = {SpectraFieldStrength -> 7,SpectraNucleus->"31P"};
 
-SyntaxInformation[CSIInterface31P] = {"ArgumentsPattern" -> {_., _., OptionsPattern[]}};
+SyntaxInformation[CSIInterface] = {"ArgumentsPattern" -> {_., _., OptionsPattern[]}};
 
-CSIInterface31P[opts : OptionsPattern[]] := CSIInterface31P["", {0, 0}, opts]
+CSIInterface[opts : OptionsPattern[]] := CSIInterface["", {0, 0}, opts]
 
-CSIInterface31P[tei_?NumberQ, bwi_?NumberQ, opts : OptionsPattern[]] := CSIInterface31P["", {tei, bwi}, opts]
+CSIInterface[tei_?NumberQ, bwi_?NumberQ, opts : OptionsPattern[]] := CSIInterface["", {tei, bwi}, opts]
 
-CSIInterface31P[file_?StringQ, opts : OptionsPattern[]] := CSIInterface31P[file, {0, 0}, opts]
+CSIInterface[file_?StringQ, opts : OptionsPattern[]] := CSIInterface[file, {0, 0}, opts]
 
-CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := Module[{
+CSIInterface[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := Module[{
 	f, te, bw, nuc, field, gyro, names, met, metSel, metRef, method, plot, kload, rec, spectraC, dec, line, fine, den, z, y, x, 
 	sphase, status, statusP, kspace, noise,	header, type, ham, spectra, spectraR, spec, proc, shift, times, fids, ppms, specs, 
 	table, fit, basisFit, errorFit, pars, log, plots, specf, fitted, xm, ym, zm, dn, dc, mr, dw, nsamp, filt, teu,
-	fileSave, spectraPlot, lab, fovz, fovy, fovx, coils, ncoils
+	fileSave, spectraPlot, lab, fovz, fovy, fovx, coils, ncoils,
+	statPart, loadPart, reconPart, plotpart, fitPart, closePart
 	},
 	
 	NotebookClose[interfaceWindow];
@@ -1815,12 +1822,16 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 	f = file; te = tei; bw = bwi;
 	
 	(*fixed parameters and default values*)
-	nuc = "31P"; field = OptionValue[SpectraFieldStrength];
+	nuc = OptionValue[SpectraNucleus]; 
+	field = OptionValue[SpectraFieldStrength];
 	gyro = GetGyro[nuc, field];
 	
-	(*initial manipulator values*)
+	(*nucleus specific settings*)
 	names = met = metSel = {"PE", "PC", "Piex", "Piin", "GPE", "GPC", "PCr", "ATP", "NAD", "UDPG"};
-	metRef = "PCr"; method = "WSVD"; plot = "Cor";
+	metRef = "PCr"; 
+	
+	(*initial manipulator values*)
+	method = "WSVD"; plot = "Cor";
 	dec = False; 
 	line = fine = den = filt = True;
 	
@@ -1835,13 +1846,14 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 	(*monitoring*)
 	status = ""; statusP = False;
 	
-	grid = {
+	(*------------ STATUS -------------*)
+	statPart = {
 		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
-		
-		(*------------ STATUS -------------*)
-		{TextCell["Status "], Dynamic[Row[{TextCell[status, Bold, Black], If[statusP, ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate], TextCell[""]]}, " "]]},
-			
-		(*------------ LOADING -------------*)
+		{TextCell["Status "], Dynamic[Row[{TextCell[status, Bold, Black], If[statusP, ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate], TextCell[""]]}, " "]]}
+	};
+	
+	(*------------ LOADING -------------*)
+	loadPart = {
 		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
 		{TextCell[""], TextCell["Import Data", Bold, 14]},
 		
@@ -1870,22 +1882,23 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			,
 			Background -> Dynamic[If[kload, RGBColor[0.86, 0.97, 0.77], Automatic]], Enabled -> Dynamic[FileExistsQ[f]], Method -> "Queued", ImageSize -> 175
 		],Dynamic[f]},
-		{TextCell[" Filter data  "], SetterBar[Dynamic[filt], {True -> " k-space weighteing ", False -> " Hamming "}]},
+		{TextCell[" Filter data  "], SetterBar[Dynamic[filt], {True -> " k-space weighting ", False -> " Hamming "}]}
+	};
 		
-		(*------------ ACQUISITION -------------*)
+	(*------------ ACQUISITION / RECONSTRUCTION -------------*)
+	reconPart = {
 		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
 		{TextCell[""], TextCell["Acquistion parameters", Bold, 14]},
 		
 		(*acquistion paramters*)
 		{TextCell["Echo time [ms] "], InputField[Dynamic[te], Number]},
 		{TextCell["Bandwidth [Hz] "], InputField[Dynamic[bw], Number]},
-		
-		(*------------ RECONSTRUCTION -------------*)
+
 		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
 		{TextCell[""], TextCell["Data reconstruction", Bold, 14]},
-		
+			
 		(*reconstruct button*)
-		{Button["Reconstruc data",
+		{Button["Reconstruct data",
 			NotebookClose[reswindow];
 			NotebookClose[plotwindow];
 			status = "Reconstructing using " <> method <> ""; statusP = True;
@@ -1914,9 +1927,11 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 		{TextCell[" Reconstruction method  "], SetterBar[Dynamic[method], {"Roemer" -> " Roemer ", "WSVD" -> " WSVD "}]},
 		
 		(*report*)
-		{Dynamic[TextCell[If[rec, "PCr shift is " <> ToString[Round[shift, .01]] <> " ppm ", ""]]], Dynamic[TextCell[If[rec, "Reconstructed usigng: " <> mr <> If[dn, ", denoised", ""] <> If[dc, ", deconvolved", ""], ""]]]},
+		{Dynamic[TextCell[If[rec, "PCr shift is " <> ToString[Round[shift, .01]] <> " ppm ", ""]]], Dynamic[TextCell[If[rec, "Reconstructed using: " <> mr <> If[dn, ", denoised", ""] <> If[dc, ", deconvolved", ""], ""]]]}
+		};
 		
-		(*------------ PLOTTING -------------*)
+	(*------------ PLOTTING -------------*)
+	plotpart = {
 		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
 		{TextCell[""], TextCell["Data Plotting", Bold, 14]},
 		
@@ -1968,12 +1983,13 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			TextCell["  FOV z  "], InputField[Dynamic[fovz, (fovz = Round[#]) &], Number, FieldSize -> 3, ContinuousAction -> True, Background -> Dynamic[If[fovz>0, White, RGBColor[1, 0.9, 0.9]]]],
 			TextCell["   FOV y  "], InputField[Dynamic[fovy, (fovy = Round[#]) &], Number, FieldSize -> 3, ContinuousAction -> True, Background -> Dynamic[If[fovy>0, White, RGBColor[1, 0.9, 0.9]]]],
 			TextCell["   FOV x  "], InputField[Dynamic[fovx, (fovx = Round[#]) &], Number, FieldSize -> 3, ContinuousAction -> True, Background -> Dynamic[If[fovx>0, White, RGBColor[1, 0.9, 0.9]]]]
-		}, " "]
-		},
-		(*------------ FITTING -------------*)
+		}, " "]}
+	};
+
+	(*------------ FITTING -------------*)
+	fitPart = {
 		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
 		{TextCell[""], TextCell["Spectra Fitting", Bold, 14]},
-		
 		(*fitting button*)
 		{Button["Fit selected spectra",
 			NotebookClose[reswindow];
@@ -2017,7 +2033,7 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 		{TextCell[""], TextCell["Fitting Results", Bold, 14]},
 		
 		(*show fit results button*)
-		{TextCell["Refference metabolite "], Dynamic[SetterBar[Dynamic[metRef], names]]},
+		{TextCell["Reference metabolite "], Dynamic[SetterBar[Dynamic[metRef], names]]},
 		{Button["Show results",
 			NotebookClose[reswindow];
 			NotebookClose[plotwindow];
@@ -2026,9 +2042,11 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 			status = "Done with generating fitting results!"; statusP = False;
 			,
 			Enabled -> Dynamic[fitted], Method -> "Queued", ImageSize -> 175]
-		},
+		}
+	};
 		
-		(*------------ CLOSING -------------*)
+	(*------------ CLOSING -------------*)
+	closePart ={
 		{Item[TextCell[""], Background -> Automatic], SpanFromLeft},
 		{TextCell[""], CancelButton["Close GUI", DialogReturn[
 			NotebookClose[reswindow];
@@ -2038,6 +2056,8 @@ CSIInterface31P[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] :
 		},
 		{TextCell[""]}
 	};
+	
+	grid = Join[statPart, loadPart, reconPart, plotpart, If[nuc==="31P",fitPart,{}], closePart];
 	
 	dialogGrid = Manipulate[(*Column[{{f,te,bw},{den,dec,method,plot},{fine,line,{x,y,z}},{metSel},{metRef},{Dimensions[kspace]};}],*)"",
 		Grid[grid, Alignment -> {{Right, Left}}, ItemSize -> {{18, 37}, Automatic}],
