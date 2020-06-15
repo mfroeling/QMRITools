@@ -1245,16 +1245,17 @@ LLeastSquaresCCC = Compile[{{A, _Complex, 2}, {y, _Complex, 1}},
 SyntaxInformation[NNLeastSquares] = {"ArgumentsPattern" -> {_, _}};
 
 (*Main function*)
-NNLeastSquares[A_, y_] := Block[{At, zeros, x, zeroed, w, zerow, pos, sp, xp, neg, xi, si, alpha, i, j ,l},
+NNLeastSquares[A_, y_] := Block[{At, x, zeroed, w, zerow, pos, sp, xp, neg, xi, si, alpha, i, j ,l},
 	(*Initialze values*)
 	At = Transpose[A];(*already define Transpose A for speed up CalcW*)
-	zeros = 0. A[[1]];
-	l = Length[zeros];
 	
-	(*initialize x,w,posSet and zerSet*)
-	x = zeros;(*initial solution x=0*)
-	zeroed = zeros + 1.;(*zero set all are in zero set*)
-	w = CalcW[A, At, y, x];(*initial vector w*)
+	(*initialize values*)
+	x = 0. A[[1]];
+	l = Length[x];
+	zeroed = x + 1.;
+	
+	(*initial vector w*)
+	w = CalcW[A, At, y, x];
 	
 	(*first while loop: select highest positive solution in the zero set as long as the zero set is not empty*)
 	j = 1; 
@@ -1270,7 +1271,8 @@ NNLeastSquares[A_, y_] := Block[{At, zeros, x, zeroed, w, zerow, pos, sp, xp, ne
 		i = 1;
 		While[i < l && Min[sp] < 0.,
 			i++;
-			(*calculated alpha, which is the minimal values of the rations xi/(xi-si) for all negative values of s*)
+			(*calculated alpha, which is the minimal values of the rations xi/(xi-si) for all 
+			negative values of s*)
 			xp = x[[pos]];
 			neg = UnitStep[-sp];
 			xi = Pick[xp, neg, 1];
@@ -1285,15 +1287,15 @@ NNLeastSquares[A_, y_] := Block[{At, zeros, x, zeroed, w, zerow, pos, sp, xp, ne
 		];
 		
 		(*set xp to sp and recalculate w*)
-		x[[pos]] = sp;
+		x = 0. x; x[[pos]] = sp;
 		w = CalcW[A, At, y, x];
-		];
-   x
+	];
+	x
 ]
 
 PosInd = Compile[{{v, _Real, 1}}, Block[{z = Round@Total[1 - v]}, Ordering[v][[;; z]]], RuntimeOptions -> "Speed"];
 CalcW = Compile[{{A, _Real, 2}, {At, _Real, 2}, {y, _Real, 1}, {x, _Real, 1}}, Chop[At.(y - A.x)], RuntimeOptions -> "Speed"];
-LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Chop[Inverse[A.Transpose[A]].A.y], RuntimeOptions -> "Speed"];
+LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}},Inverse[A.Transpose[A]].A.y, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
