@@ -1136,7 +1136,7 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		errorF = fidF - fit.fidBasisF;
 		
 		(*Re and Im error normalized for number of points*)
-		err = 2 Mean[Abs[errorS]^2] + Mean[Abs[errorF]^2] (*+ 2 Mean[Im[errorS]^2] + Mean[Im[errorF]^2]*);
+		err = 2 Mean[Abs[errorS]^2] + Mean[Abs[errorF]^2] + 2 Mean[Im[errorS]^2] + Mean[Im[errorF]^2];
 				
 		If[init === 0,
 			(*constrain f between 0 and 1*)
