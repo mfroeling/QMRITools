@@ -8,6 +8,7 @@
 
 [![MR-Hub](\QMRITools\images\MR-Hub.png)](https://ismrm.github.io/mrhub/)
 [![MR-Hub](\QMRITools\images\MRSHub.png)](https://mrshub.org/software_analysis/#QMRITools)
+[![MR-Hub](\QMRITools\images\open_source_images.png)](https://www.opensourceimaging.org/project/qmritools-mathematica-toolbox-for-quantitative-mri-data/)
 
 ------------------------------------------------------------------------
 [![wolfram language](\QMRITools\images\wolfram_language.png)](https://www.wolfram.com/language/)

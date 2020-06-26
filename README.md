@@ -8,6 +8,7 @@
 
 [![MR-Hub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/MR-Hub.png)](https://ismrm.github.io/mrhub/)
 [![MR-Hub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/MRSHub.png)](https://mrshub.org/software_analysis/#QMRITools)
+[![MR-Hub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/open_source_images.png)](https://www.opensourceimaging.org/project/qmritools-mathematica-toolbox-for-quantitative-mri-data/)
 
 ------------------------------------------------------------------------
 
