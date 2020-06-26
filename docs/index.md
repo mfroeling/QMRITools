@@ -7,18 +7,15 @@
 ------------------------------------------------------------------------
 
 [![MR-Hub](\QMRITools\images\MR-Hub.png)](https://ismrm.github.io/mrhub/)
-[![MR-Hub](\QMRITools\images\MRSHub.png)](https://mrshub.org/software_analysis/#QMRITools)
-[![MR-Hub](\QMRITools\images\open_source_images.png)](https://www.opensourceimaging.org/project/qmritools-mathematica-toolbox-for-quantitative-mri-data/)
+[![MRSHub](\QMRITools\images\MRSHub.png)](https://mrshub.org/software_analysis/#QMRITools)
+[![OpenSourceImaging](\QMRITools\images\open_source_images.png)](https://www.opensourceimaging.org/project/qmritools-mathematica-toolbox-for-quantitative-mri-data/)
 
 ------------------------------------------------------------------------
 
-[![wolfram
-language](\QMRITools\images\wolfram_language.png)](https://www.wolfram.com/language/)
-[![wolfram
-workbench](\QMRITools\images\wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
+[![wolfram language](\QMRITools\images\wolfram_language.png)](https://www.wolfram.com/language/)
+[![wolfram workbench](\QMRITools\images\wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
 [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
-[![Wolfram
-Mathematica](\QMRITools\images\wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
+[![Wolfram Mathematica](\QMRITools\images\wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 
 ------------------------------------------------------------------------
 
