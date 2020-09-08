@@ -16,6 +16,7 @@
 [![wolfram workbench](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
 [![eclipse](https://github.com/mfroeling/QMRITools/blob/master/docs/images/eclipse.png)](https://www.eclipse.org/)
 [![Wolfram Mathematica](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
+[![Wolfram Community](https://github.com/mfroeling/QMRITools/blob/master/docs/images/community.png)](https://community.wolfram.com/groups/-/m/t/1661539)
 
 ------------------------------------------------------------------------
 

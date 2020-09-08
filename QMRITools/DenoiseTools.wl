@@ -478,10 +478,18 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 	(*get the corner voxels to calcluate the noise standard deviation or automatic estimation*)
 
 	sig = Switch[OptionValue[PCANoiseSigma],
-		"Corners", StandardDeviation[Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]]],
+		"Corners2",
+		StandardDeviation[Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]]],
+		"Corners", 
+		nn = Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]];
+		sel = FindOutliers[Re@nn, OutlierRange -> 10] FindOutliers[Im@nn, OutlierRange -> 10];
+		nn = Pick[nn, sel, 1];
+		StandardDeviation[nn]
+		,
 		"Automatic", 0
 	];
-
+	
+	Print[sig];
 	
     (*Denoise the spectra data*)
     {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[TransData[spectra, "r"]],	1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];
