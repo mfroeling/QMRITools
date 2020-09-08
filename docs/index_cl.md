@@ -15,6 +15,7 @@
 [![wolfram workbench](\QMRITools\images\wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
 [![eclipse](\QMRITools\images\eclipse.png)](https://www.eclipse.org/)
 [![Wolfram Mathematica](\QMRITools\images\wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
+[![Wolfram Community](\QMRITools\images\community.png)](https://community.wolfram.com/groups/-/m/t/1661539)
 
 ------------------------------------------------------------------------
  
