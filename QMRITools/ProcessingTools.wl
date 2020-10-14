@@ -793,7 +793,7 @@ Options[DataTransformation]={InterpolationOrder->1}
 
 SyntaxInformation[DataTransformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-DataTransformation[data_, vox_, wi_,OptionsPattern[]] := 
+DataTransformation[data_, vox_, wi_, OptionsPattern[]] := 
  Block[{coor, rot, coorR, interFunc, interFuncC, w},
   w = If[Length[wi]==3,Join[wi,{0,0,0,1,1,1,0,0,0}],wi];
   

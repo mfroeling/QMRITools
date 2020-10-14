@@ -447,6 +447,7 @@ InverseFourierShifted[spec_] := InverseFourierShift[InverseFourier[spec,FourierP
 SyntaxInformation[FourierKspace2D] = {"ArgumentsPattern" -> {_, _, _.}};
 
 FourierKspace2D[kspace_, head_, filt_:False] := Block[{ksPad, dim, imPad, shift, kspaceP, imData,p1,p2},
+	(*
 	(*get the oversampling padding*)
 	ksPad = Round[({"Y-resolution", "X-resolution"} {"ky_oversample_factor", "kx_oversample_factor"} - {"N_ky", "N_samp"})/2 /. head];
 	(*get the final data dimentions*)
@@ -456,16 +457,53 @@ FourierKspace2D[kspace_, head_, filt_:False] := Block[{ksPad, dim, imPad, shift,
 	(*get the image padding*)
 	{p1, p2} = Round[((({"N_ky", "N_samp"} /. head) - 2 ksPad) - dim)/2];
 	ksPad = Transpose@{ksPad, ksPad};
+	*)
+	
+	(*the acquired k-space size*)
+ksize = {"N_ky", "N_samp"} /. head;
+(*get the final target data dimentions*)
+dim = {"Y-resolution", "X-resolution"} /. head;
+(*the amount of oversampling performed*)
+over = {"ky_oversample_factor", "kx_oversample_factor"} /. head;
+(*to what size to pad the immages*)
+kfull = Round[dim over];
+(*padding after zero filling and fourier*)
+ksPad = Transpose[{Floor[#], Ceiling[#]} &[(kfull - ksize)/2]];
+(*get the image padding and image shift*)
+shift = Total[#] & /@ ({"Y_range", "X_range"} /. head);
+(*the amout of data that needs to be removed to come to correct dimensions*)
+clip = Transpose[{Floor[#] + 1, -Ceiling[#] - 1} &[(kfull - dim)/2]];
 	
 	If[filt === True,
 		ham = MakeHammingFilter[Dimensions[kspace][[-2 ;;]]];
 		(*perform the fourie transform*)
-		FourierKspace2DIF[kspace, ham, ksPad, shift, p1, p2],
+		FourierKspace2DIF[kspace, ham, ksPad, shift, clip],
 		(*perform the fourie transform*)
-		FourierKspace2DI[kspace, ksPad, shift, p1, p2]
+		FourierKspace2DI[kspace, ksPad, shift, clip]
 	]
 ]
 
+FourierKspace2DI = Compile[{{data, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {clip, _Integer, 2}},
+	Block[{dat},
+		dat = ArrayPad[data, ksPad];
+		dat = FourierShifted[dat];
+		dat = RotateRight[dat, Reverse[shift]];
+		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]]]]]
+	], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+];
+
+FourierKspace2DIF = Compile[{{data, _Complex, 2}, {ham, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {clip, _Integer, 2}},
+	Block[{dat},
+		dat = ArrayPad[ham data, ksPad];
+		dat = FourierShifted[dat];
+		dat = RotateRight[dat, Reverse[shift]];
+		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]]]]]
+		], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+];
+
+(*
 FourierKspace2DI = Compile[{{data, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {p1, _Integer, 0}, {p2, _Integer, 0}},
 	Block[{dat},
 		dat = ArrayPad[data, ksPad];
@@ -485,7 +523,7 @@ FourierKspace2DIF = Compile[{{data, _Complex, 2}, {ham, _Complex, 2}, {ksPad, _I
 		], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ];
-
+*)
 
 
 (* ::Subsubsection::Closed:: *)

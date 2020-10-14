@@ -320,7 +320,8 @@ partition number,if not report error*)
        Import[filesc[[1]], "MetaInformation"]];
        
     (*Return[ToPackedArray[(output*rs + ri)/(rs*ss)]];,*)
-    Return[(output*rs + ri)/(rs*ss)];,
+    Return[(output*rs + ri)/(rs*ss)];
+    ,
     (*Return[ToPackedArray[Round[output]]];*)
     Return[Round[output]];
     ];

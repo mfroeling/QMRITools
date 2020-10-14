@@ -868,7 +868,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 		Off[FindMinimum::cvmit];Off[FindMinimum::lstol];
 		
 		(*logging*)
-		log={};(*Print[Dynamic[Column[log]]]*);
+		log={};(*Print[Dynamic[Column[log]]];*)
 		
 		(*get options*)
 		pad = OptionValue[PaddingFactor];
@@ -924,7 +924,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 			
 			(*logging of parameters*)
 			AppendTo[log,Style["Estimating linewidth",Bold]];
-			AppendTo[log,"    - spectral linewidth intit:   "<>ToString[Round[gami /gyro,.0001]]<>" ppm"];
+			AppendTo[log,"    - spectral linewidth intit:   "<>ToString[Round[gami / gyro,.0001]]<>" ppm"];
 			AppendTo[log,"                                  "<>ToString[Round[gami,.0001]]<>" Hz"];
 			AppendTo[log,"    - base spectra shift:         "<>ToString[Round[epsi,.0001]]<>" ppm"];
 			AppendTo[log,"                                  "<>ToString[Round[epsi gyro,.0001]]<>" Hz"];
@@ -965,7 +965,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 			
 			(*perform the fit*)
 			{tfit1,fit1}=AbsoluteTiming[FindMinimum[FitSpectraError[{ppmFull,specFull},{timeFull,timeBasis},{indSt,indEnd},{cpn,gyro},varf, init, Output->"Error", ReadoutType ->readout], var][[2]]];
-			
+							
 			(*Get the fit results and output, wrap phi between -pi and pi*)
 			sol={gami,epsi,phii,linei}={Clip[gamf,{1,500}],epsf,{2ArcTan[Tan[phi0f/2]],phi1f},linef}/.fit1;
 			
@@ -1128,15 +1128,14 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		
 		(*----------- Perform Fit and calculate errro -------------*)
 		(*perform Fit of basis spectra*)
-		(*fit = Quiet@Clip[LeastSquares[Join[Transpose[Re[specBasisF]],Transpose[Im[specBasisF]]], Join[Re[specF],Im[specF]]],{0,Infinity}];*)
-					
-		fit = Quiet@NNLeastSquares[Transpose[Re[specBasisF]], Re[specF]];
+		fit = Quiet@NNLeastSquares[Join[Transpose[Re[specBasisF]],Transpose[Im[specBasisF]]], Join[Re[specF],Im[specF]]];			
+		
 		(*define errors fid and spectra*)
 		errorS = specF - fit.specBasisF;
 		errorF = fidF - fit.fidBasisF;
-		
+				
 		(*Re and Im error normalized for number of points*)
-		err = 2 Mean[Abs[errorS]^2] + Mean[Abs[errorF]^2] + 2 Mean[Im[errorS]^2] + Mean[Im[errorF]^2];
+		err = Mean[Join[Re[errorS]^2, Re[errorF]^2, Im[errorS]^2, Im[errorF]^2]];
 				
 		If[init === 0,
 			(*constrain f between 0 and 1*)
@@ -1170,8 +1169,8 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		specBasis = BasisSpectraApply[{ppmFull, timeFull, timeBasis}, {gam, eps, phi, f}, gyro, readout];
 		
 		(*perform Fit of basis spectra*)
-		(*fit = Quiet@Clip[LeastSquares[Join[Transpose[Re[specBasis]],Transpose[Im[specBasis]]], Join[Re[spec],Im[spec]]],{0,Infinity}];*)
-		fit = Quiet@NNLeastSquares[Transpose[Re[specBasis]], Re[spec]];
+		fit = Quiet@Clip[NNLeastSquares[Join[Transpose[Re[specBasis]],Transpose[Im[specBasis]]], Join[Re[spec],Im[spec]]],{0,Infinity}];
+		
 		specFit = fit.specBasis;
 		
 		(*fit a spline through the residuals*)
