@@ -211,7 +211,7 @@ TextSize::usage =
 "TextSize is an option for BullseyePlot. Determines the text size."
 
 TextNumberForm::usage
-"TextNumberForm is an option for BullseyePlot. specifies how many number and decimals to use like in NumberForm."
+"TextNumberForm is an option for BullseyePlot. Specifies how many number and decimals to use like in NumberForm."
 
 BullPlotMethod::usage = 
 "BullPlotMethod is an option for BullseyePlot. Can be \"Dynamic\" of \"Normal\". 
@@ -222,7 +222,6 @@ CutOffMethod::usage =
 
 DistanceMeasure::usage = 
 "DistanceMeasure is an option for ExcludeSlices. Defaul value is 5. (1 ManhattanDistance, 2 SquaredEuclideanDistance, 3 EuclideanDistance, 4 Correlation, 5 SpearmanRho"
-
 
 BloodMaskRange::usage = 
 "BloodMaskRange is an option for MakeECVBloodMask." 
