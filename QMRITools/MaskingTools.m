@@ -97,6 +97,9 @@ MaskFiltKernel::usage =
 GetMaskOutput::usage = 
 "GetMaskOutput is an option for GetMaskData. Defaul is \"Slices\" which gives the mask data per slices. Else the entire mask data is given as output."
 
+GetMaskOnly::usage = 
+"GetMaskOnly is an option for GetMaskData. If set True all values in the mask are given, if set False only non zero values in the mask are give."
+
 UseMask::usage = 
 "UseMask is a function for MeanSignal and DriftCorrect"
 
@@ -279,25 +282,26 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 (*GetMaskData*)
 
 
-Options[GetMaskData] = {GetMaskOutput -> "All"}
+Options[GetMaskData] = {GetMaskOutput -> "All",GetMaskOnly->False}
 
 SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-GetMaskData[data_?ArrayQ, mask_?ArrayQ, OptionsPattern[]] := Module[{depth,fdat},
+GetMaskData[data_?ArrayQ, mask_?ArrayQ, OptionsPattern[]] := Block[{fdat},
 	If[!(Dimensions[data]=!=Dimensions[mask]||Drop[Dimensions[data], {2}]=!=Dimensions[mask]),
 		Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]]
 		,
-		Switch[OptionValue[GetMaskOutput],
-			"Slices",
-			depth=ArrayDepth[data];
-			Map[(
-				fdat=Flatten[N@#];
-				Pick[fdat, Unitize[fdat], 1]
-				)&,	data*mask, {depth-2}],
-			_
-			,
-			fdat=N@Chop[Flatten[N[data mask]]];
-			Pick[fdat, Unitize[fdat], 1]
+		If[OptionValue[GetMaskOnly],
+			(*get true mask values*)
+			Switch[OptionValue[GetMaskOutput],
+				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[#2]], 1]&, {data,mask}, {ArrayDepth[data]-2}],
+				_, Pick[Chop[Flatten[N[data]]], Unitize[Flatten[mask]], 1]
+			]
+			,			
+			(*get all non zero values in mask*)
+			Switch[OptionValue[GetMaskOutput],
+				"Slices", Map[(fdat=Chop[Flatten[N@#]];Pick[fdat, Unitize[fdat], 1])&, data*mask, {ArrayDepth[data]-2}],
+				_ , fdat=N@Chop[Flatten[N[data mask]]];	Pick[fdat, Unitize[fdat], 1]
+			]
 		]
 	]
 ]
