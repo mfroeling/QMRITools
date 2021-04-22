@@ -821,7 +821,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		}];
 		
 	(*Build the control pannel, allows for easy addition of more tabs*)
-	control={str,Delimiter,{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},pannel]};
+	control={str,Delimiter,{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
 
 	
 	(*Deploy plot window*)
@@ -1053,7 +1053,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		}];
 		
 	(*Build the control pannel, allows for easy addition of more tabs*)
-	control={str,Delimiter,{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},pannel]};
+	control={str,Delimiter,{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
 
 	(*Deploy plot window*)
 	pan=Manipulate[
@@ -2300,7 +2300,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 			}]
 		}];
 	
-	control={{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},pannel]};
+	control={{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
 	
 	Manipulate[
 		If[!ListQ[data],Return[]];

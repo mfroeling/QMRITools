@@ -576,555 +576,537 @@ GradOptimize4C = Compile[{{points, _Real, 2}, {vel, _Real, 3}, {half, _Integer, 
 (* ::Subsubsection::Closed:: *)
 (*GenerateGradientsGUI*)
 
+GenerateGradientsGUI[] := GenerateGradientsGUI[True]
 
-GenerateGradientsGUI[] := Block[{pan},
-  pan = Manipulate[
-    (*covert bval and names*)
-    bvall = If[NumberQ[bvall], {bvall}, bvall];
-    names = StringReplace[#, " " -> "_"] & /@ names;
-    
-    (*constrain one shel to 124 directions*)
-    dirs1 = Clip[dirs1, {3, 128}];
-    
-    (*Constrain, multi shel to 60 per shell*)
-    {dirs21, dirs22, dirs23, dirs24, dirs25, dirs26} = Clip[{dirs21, dirs22, dirs23, dirs24, dirs25, dirs26}, {3, 128}];
-    dirs2 = {dirs21, dirs22, dirs23, dirs24, dirs25, dirs26}[[1 ;; nshels]];
-    
-    (*convert gradients to readable format*)
-    out = names[[mult]] <> Switch[mult,
-       (*DWI*)4, 
-       If[gradd === "", gradd, 
-        FinalGrads[outd, {inter, int}, {random, orderd}]],
-       (*cartesian grid*)3, 
-       If[gradc === "", gradc, 
-        FinalGrads[outc, {inter, int}, {random, orderc}]],
-       (*multi shel*)2, 
-       If[gradm === "", gradm, 
-        FinalGrads[outm, {inter, int}, {random, orderm}]],
-       (*single shel*)1, 
-       If[grads === "", grads, 
-        FinalGrads[outs, {inter, int}, {random, orders}]]];
-    
-    (*The display, show the plots or show the Gradient directions txt*)
-    
-    Dynamic[
-     Switch[disp,
-      (*display as 3D plot*)
-      1,
-      Switch[mult,
-       1,(*show single shell gradient directions*)
-       If[points === {},
-        (*no gradients present only show sphere*)
-        Column[{"", Show[SpherePlot[1, opacity], ImageSize -> size, PlotLabel -> ""]}],
-        pointspl = If[proj, Map[Sign[#[[3]] + 10.^-16]*Normalize[#] &, points, {1}], points];
-        Column[{"",
-          Show[
-           SpherePlot[1, opacity],
-           (*Shell positive z*)
-           ListSpherePloti[pointspl, Red, 0.05],
-           (*Shells Negative z*)
-           If[mirror, ListSpherePloti[-pointspl, Gray, 0.05], Graphics3D[{}]],
-           (*sticks*)
-           If[sticks, ListStickPlot[pointspl, 0.01], Graphics3D[{}]],
-           ImageSize -> size, PlotLabel -> "", Background -> app
-           ]
-          }, Alignment -> Center]
-        ],
-       2,(*show multi shell gradient directions*)
-       If[ppoints === {},
-        (*no gradients present only show sphere*)
-        Column[{"", Show[SpherePlot[1, opacity], ImageSize -> size, PlotLabel -> ""]}]
-        ,
-        (*gradients are defiended *)
-        ppointspl = If[proj, Map[Sign[#[[3]] + 10.^-16]*Normalize[#] &, ppoints, {2}], ppoints];
-        len = Length[ppoints];
-        rlen = Range[len];
-        If[running, show = rlen];
-        Column[{
-          SetterBar[Dynamic[show], Join[{0 -> "multi", rlen -> "all"}, rlen]],
-          If[show === 0,
-           (*show all gradients multi shell*)
-           Show[
-            (*Multi shells positive z*)
-            MapThread[{SpherePlot[#3, opacity], ListSpherePloti[#1 #3, #2, 0.05]} &, {Reverse@ppointspl, Reverse@{Red, Green, Blue, Yellow, Pink, Purple}[[1 ;; len]], Range[1, .5, -.5/(len - 1)]}] // Flatten,
-            (*multi shells negative z*)
-            If[mirror, MapThread[ListSpherePloti[-#1 #2, Gray, 0.05] &, {ppointspl, Range[1, .5, -.5/(len - 1)]}], Graphics3D[{}]], 
-            ImageSize -> size, Background -> app
-            ]
-           ,
-           (*show all gradients single shell*)
-           Show[
-            SpherePlot[1, opacity],
-            (*Multi shells positive z*)
-            MapThread[ListSpherePloti[#1, #2, 0.05] &, {ppointspl, {Red, Green, Blue, Yellow, Pink, Purple}[[1 ;; len]]}][[Clip[show, {1, len}]]],
-            (*multi shells negative z*)
-            If[mirror, (ListSpherePloti[-#, Gray, 0.05] & /@ ppointspl)[[Clip[show, {1, len}]]], Graphics3D[{}]],
-            (*sticks*)
-            If[sticks, (ListStickPlot[#, 0.01] & /@ ppointspl)[[Clip[show, {1, len}]]], Graphics3D[{}]], 
-            ImageSize -> size, Background -> app
-            ]
-           ]
-          }, Alignment -> Center]
-        ],
-       3,(*show cartesian grid directions*)
-       Column[{"",
-         Show[
-          SpherePlot[0, opacity],
-          (*Shell positive z*)
-          ListSpherePloti[pointsc, Red, 0.05],
-          (*Shells Negative z*)
-          If[mirror, ListSpherePloti[-pointsc, Gray, 0.05], Graphics3D[{}]], 
-          ImageSize -> size, PlotLabel -> "", Background -> app
-          ]
-         }],
-       4,(*DWI*)
-       Show[
-       	ListLinePlot[{{0, #}, {1, #}} & /@ Prepend[bvald, 0],
-         PlotStyle -> Directive[{Gray, Thick}], 
-         PlotRange -> {{0, 2}, Full},
-         AxesStyle -> Thick, Axes -> {False, True}, 
-         AspectRatio -> 1.4, 
-         AxesLabel -> {None, Style["b-value", Bold, Black]}],
-        ListPlot[{1, #} & /@ Prepend[bvald, 0], PlotStyle -> Red]
-        ]
-       ],
-      
-      (*display as polar plot*)
-      2,
-      Column[{
-        (*controls*)
-        Row[{
-          Slider2D[Dynamic[viewvec], {{-1, -1}, {1, 1}}, ContinuousAction -> True],
-          SetterBar[Dynamic[ctype], {1 -> "polar", 2 -> "even grid", 3 -> "scaled grid"}]
-          }, ImageSize -> 400, Alignment -> Center],
-        If[mult == 2, 
-         SetterBar[Dynamic[showc], Join[{All -> "all"}, rlenc]], ""],
-        (*the plot*)
-        Dynamic@Show[
-          charts[[ctype]],
-          (*change between single and multi slice*)
-          Switch[mult,
-           1,
-           If[points === {}, 
-           	Graphics[],
-            pointspl = If[proj, Map[Sign[#[[3]] + 10.^-16]*Normalize[#] &, points, {1}], points];
-            PlotChartPoints[pointspl, {mirror, Red}]
-            ],
-           2,
-           If[ppoints === {},
-            Graphics[],
-            ppointspl = If[proj, Map[Sign[#[[3]] + 10.^-16]*Normalize[#] &, ppoints, {2}], ppoints];
-            len = Length[ppoints];
-            rlenc = Range[len];
-            PlotChartPoints[ppointspl[[showc]], {mirror, {Red, Green, Blue, Yellow, Pink, Purple}[[showc]]}]
-            ],
-           _,
-           Graphics[]
-           ]
-          ]
-        }, Alignment -> Center],
-      
-      (*display as text*)
-      3,
-      out,
-      
-      (*display G load*)
-      4,
-      Switch[mult,
-       1, 
-       If[orders === "", Graphics[], PlotDuty[{ConstantArray[grads, Length[bvall]], bvall, orders}, random]],
-       2, 
-       If[orderm === "", Graphics[], PlotDuty[{gradm, bvals[[;; nshels]], orderm}, random]],
-       3, 
-       If[orderc === "", Graphics[], PlotDuty[{gradc, bvalc, orderc}, random]],
-       4, 
-       If[orderd === "", Graphics[], PlotDuty[{ConstantArray[gradd, Length[bvald]], bvald, orderd}, random]]
-       ]
-      ]
-     ]
-    ,
-    
-    (*Controls*)
-    (*set Name*)
-    Row[{"      Set Name     ", InputField[Dynamic[names[[mult]]], String]}],
-    
-    Delimiter,
-    
-    (*display controls*)
-    {{disp, 1, "display gradients"}, {1 -> "graphics", 2 -> "chart", 3 -> "text", 4 -> "G load"}},
-    {{opacity, 0.5, "sphere opacity"}, 0, 1, .1, ControlType -> Slider},
-    Row[{" sticks: ", Checkbox[Dynamic[sticks]],"   mirror grad.: ", Checkbox[Dynamic[mirror]], "   project grad. on half: ", Checkbox[Dynamic[proj]]}],
-    Grid[{
-      {
-       Button["top", vp = {0, 0, 3.38}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
-       Button["right", vp = {3.38, 0, 0}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
-       Button["front", vp = {0, 3.38, 0}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
-       Button["reset", {vp, vv, va} = {{1.3, -2.4, 2}, {0, 0, 1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 0,FontSize->10]}
-      }],
-    
-    Delimiter,
-    
-    (*multi or single shell*)
-    {{half, 1, "Full or half sphere"}, {1 -> "half sphere", 0 -> "full sphere"}},
-    {{mult, 1, "shells"}, {1 -> "single shell", 2 -> "multi shell", 3 -> "cartesian", 4 -> "DWI"}, ControlType -> PopupMenu, FieldSize -> {13, 0.7}},
-    
-    (*single multi and cartesian controls*)
-    PaneSelector[{
-      (*Singel shell pannel*)
-      1 -> Column[{
-         Control[{{type, "normal", "type"}, {"normal", "normal fixed z", "normal fixed x, y and z", "over-plus", "over-plus fixed z", "over-plus fixed x, y and z"}, ControlType -> PopupMenu, FieldSize -> {13, 0.7}}],
-         Control[{{dirs1, 30, "number of gradients"}, 6, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}]
-         }]
-      ,
-      (*Multi shell pannel*)
-      2 -> Column[{Row[{
-      	Control[{{nshels, 2, "number of shells"}, {2, 3, 4, 5, 6}}],
-        Control[{{shel, 1,     "     shell"}, Dynamic[Range[nshels]], ControlType -> SetterBar}]
-        }],
-         PaneSelector[{
-           Control[{{dirs21, 15, "number of gradients shell 1"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
-           Control[{{dirs22, 15, "number of gradients shell 2"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
-           Control[{{dirs23, 15, "number of gradients shell 3"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
-           Control[{{dirs24, 15, "number of gradients shell 4"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
-           Control[{{dirs25, 15, "number of gradients shell 5"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
-           Control[{{dirs26, 15, "number of gradients shell 6"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}]
-           }, Dynamic[shel]],
-         Control[{{weight, .5, "shell weighting"}, 0, 1, .05, ControlType -> Slider, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}]
-         }]
-      ,
-      (*cartesian grid*)
-      3 -> Column[{
-         Control[{{grid, 9, "cartesian grid size"}, 5, 15, 1, Appearance -> "Labeled", ImageSize -> Tiny}],
-         Control[{{gridf, True, "full even grid"}, {False -> "no (in between odd grid)", True -> "yes"}}]
-         }],
-      (*DWI pannel*)
-      4 -> Control[{{typed, "normal", "               type"}, {"normal", "over-plus"}, ControlType -> SetterBar}]
-      }, mult],
-    
-    Delimiter,
-    
-    (*input bvals*)
-    PaneSelector[
-     {
-      1 -> Row[{"      b-value:   ", InputField[Dynamic[bvall], Expression, Background -> Dynamic[If[((AllTrue[bvall, NumberQ] && ListQ[bvall]) || NumberQ[bvall]), None, Lighter[Lighter[Red]]]]]}],
-      2 -> Dynamic[Grid[Partition[PadRight[Row[{"b-val" <> ToString[#] <> ":", InputField[Dynamic[bvals[[#]]], Number, FieldSize -> 5]}] & /@ Range[1, nshels], 6, ""], 3]]],
-      3 -> Row[{"max b (corner):   ", InputField[Dynamic[bvalc], Number]}],
-      4 -> Row[{"      b-value:   ", InputField[Dynamic[bvald], Expression, Background ->Dynamic[If[((AllTrue[bvald, NumberQ] && ListQ[bvald]) || NumberQ[bvald]), None, Lighter[Lighter[Red]]]]]}]
-      }, mult],
-    
-    Delimiter,
-    
-    (*interleave b=0 and optimize gradient load*)
-    Row[{"      interleave b=0: " Checkbox[Dynamic[inter]], "      Optimize G load: ", Checkbox[Dynamic[random]]}],
-    {{int, 10, "interleave b=0 every: "}, Range[3, 20]},
-    
-    Delimiter,
-    
-    (*quality and multi or single shell*)
-    {{steps, 1000, "quality (iterations)"}, {500 -> "poor (500)", 1000 -> "normal (1000)", 2500 -> "excellent (2500)",5000 -> "perfect (5000)", 10000 -> "extreme (10000)"}, ControlType -> PopupMenu, FieldSize -> {9, 0.7}},
-    (*generate gradietns button*)
-    (*mult:1-single shell; 2-multi shell; 3-cartesian;4-DWI*)
-    Row[{Button["generate",
-       (*initiate gradient generation*)
-       app = Lighter[Lighter[LightGray]];
-       disp = 1; running = True;
-       mirror = If[half == 0, False, True];
-       proj = False;
-       Pause[.2];
-       
-       (*switch to correct method*)
-       Switch[mult, 
-       	4,(*DWI*)
-        gradd = If[typed == "normal", {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}, {{-0.707107, -0.5, 0.5}, {0.707107, -0.5, 0.5}, {0., 0.707107, 0.707107}}];
-        
-        , 3, (*cartesian*)
-        gradc = pointsc = GradGrid[grid, gridf];
-        
-        , 2,(*multi shell*)
-        {mpoints, vel, part} = Prepare[dirs2, half, {}, weight];
-        Pause[.5];
-        Do[mpoints = GradOptimize4C[mpoints, vel, half];ppoints = Chop[mpoints[[#]]] & /@ part;, {steps}];
-        gradm = Chop[mpoints[[#]]] & /@ part;
-        
-        , 1,(*single shell, normal or overplus*)
-        grads = Switch[type
-          , "normal",
-          points = Prepare[{dirs1}, half];
-          Pause[.5];
-          Do[points = GradOptimize1C[points, half], {steps}];
-          Chop[points]
-          
-          , "normal fixed z",
-          points = Prepare[{dirs1}, half, {{0, 0, 1}}];
-          Pause[.5];
-          Do[points = GradOptimize2C[points, 1, half], {steps}];
-          Chop[points]
-          
-          , "normal fixed x, y and z",
-          points = Prepare[{dirs1}, half, {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}];
-          Pause[.5];
-          Do[points = GradOptimize2C[points, 3, half], {steps}];
-          Chop[points]
-          
-          (*all over plus options only work on half shell*)
-          , "over-plus",
-          half = 1;
-          points = Prepare[{dirs1}, half];
-          points = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, points];
-          Pause[.5];
-          (*quick distribution for init*)
-          Do[points = GradOptimize2C[points, 3, half], {Round[steps/10]}];
-          (*optimize overplys*)
-          
-          charge = Join[ConstantArray[(.5 dirs1)^(1.2), 3], ConstantArray[1, dirs1]];
-          Do[points = GradOptimize3C[points, charge, 3], {steps}];
-          points = Chop[Drop[points, 3]]
-          
-          , "over-plus fixed z",
-          half = 1;
-          points = Prepare[{dirs1 - 1}, half];
-          points = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0., 0.707107, 0.707107}}, points];
-          Pause[.5];
-          (*quick distribution for init*)
-          Do[points = GradOptimize2C[points, 4, half], {Round[steps/10]}];
-          (*optimize overplys*)
-          charge = Join[ConstantArray[(.5 dirs1)^(1.2), 3], ConstantArray[1, dirs1]];
-          Do[points = GradOptimize3C[points, charge, 4], {steps}];
-          points = Chop[Drop[points, 3]]
-          
-          , "over-plus fixed x, y and z",
-          half = 1;
-          points = Prepare[{dirs1 - 3}, half];
-          points = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {-0.707107, -0.5, 0.5}, {0.707107, -0.5, 0.5}, {0., 0.707107, 0.707107}}, points];
-          Pause[.5];
-          (*quick distribution for init*)
-          Do[points = GradOptimize2C[points, 6, half], {Round[steps/10]}];
-          (*optimize overplus*)
-          charge = Join[ConstantArray[(.5 dirs1)^(1.2), 3], ConstantArray[1, dirs1]];
-          Do[points = GradOptimize3C[points, charge, 6], {steps}];
-          points = Chop[Drop[points, 3]]
-          ];(*end single shel options*)
-        ];(*end generate grads*)
-       
-       (*covert gradients to txt and find optimal order dutycycle*)
-       (*mult:1-single shell; 2-multi shell; 3-cartesian;4-DWI*)
-       Switch[mult,
-        1,
-        outs = ConvertGrads[ConstantArray[grads, Length[bvall]], bvall];
-        orders = FindOrder[ConstantArray[grads, Length[bvall]], bvall];
-        , 2,
-        outm = ConvertGrads[gradm, bvals[[;; nshels]]];
-        orderm = FindOrder[gradm, bvals[[;; nshels]]];
-        , 3,
-        outc = ConvertGrads[gradc, {bvalc}];
-        orderc = FindOrder[gradc, bvalc];
-        , 4,
-        outd = ConvertGrads[ConstantArray[gradd, Length[bvald]], bvald];
-        outd[[2]] = Join[
-          If[typed == "normal",
-           {" 1.00000    0.00000    0.00000       1", " 0.00000    1.00000    0.00000       1", " 0.00000    0.00000    1.00000       1"},
-           {"-0.70711   -0.50000    0.50000       1", " 0.70711   -0.50000    0.50000       1", " 0.00000    0.70711    0.70711       1"}
-          ],
-          {
-           " 0.02704    0.79706    0.60330       1", 
-           "-0.09999   -0.59783    0.79536       1", 
-           " 0.23191   -0.77261    0.59101       1", 
-           " 0.52867   -0.79903    0.28646       1", 
-           "-0.18297   -0.98140    0.05818       1", 
-           "-0.86286    0.19578    0.46599       1", 
-           " 0.05126    0.20181    0.97808       1", 
-           "-0.66047    0.01890    0.75062       1", 
-           " 0.65426   -0.18818    0.73249       1", 
-           "-0.33052    0.11752    0.93646       1", 
-           "-0.95407   -0.14465    0.26236       1", 
-           "-0.14402   -0.86963    0.47224       1", 
-           "-0.78028   -0.56460    0.26904       1", 
-           "-0.75319   -0.31631    0.57675       1", 
-           "-0.41392   -0.31357    0.85460       1", 
-           " 0.56536    0.27275    0.77845       1", 
-           "-0.73743    0.58153    0.34354       1", 
-           " 0.29639   -0.44648    0.84428       1", 
-           "-0.38689    0.75986    0.52243       1", 
-           "-0.20081    0.52214    0.82888       1", 
-           " 0.79424   -0.60284    0.07593       1", 
-           " 0.98777    0.03678    0.15153       1", 
-           " 0.29973    0.90469    0.30281       1", 
-           "-0.95633    0.27860    0.08835       1", 
-           "-0.49976   -0.83556    0.22819       1", 
-           " 0.90574    0.41773    0.07170       1", 
-           " 0.77284    0.45698    0.44032       1", 
-           " 0.35339   -0.03796    0.93471       1", 
-           " 0.84918    0.07921    0.52213       1", 
-           "-0.50085    0.85590    0.12880       1", 
-           " 0.47526    0.67317    0.56654       1", 
-           " 0.87597   -0.32192    0.35923       1", 
-           " 0.64492    0.75075    0.14303       1", 
-           "-0.12687    0.96109    0.24536       1", 
-           " 0.60869   -0.54852    0.57325       1", 
-           "-0.03797   -0.21873    0.97505       1", 
-           "-0.47780   -0.64010    0.60165       1", 
-           "-0.57319    0.42677    0.69952       1", 
-           " 0.18760   -0.96394    0.18874       1", 
-           " 0.23342    0.50887    0.82859       1"}
-          ];
-        orderd = FindOrder[ConstantArray[gradd, Length[bvald]], bvald];
-        ];
-       
-       (*stop gray background*)
-       Pause[0.1];
-       running = False;
-       app = White;
-       , Method -> "Queued", ImageSize -> {120, 23},FontSize->10],
-      
-      (*output buttens*)
-      Button["clipboard", CopyToClipboard[out], ImageSize -> {100, 23},FontSize->10],
-      Button["file",
-       file = SystemDialogInput["FileSave", "dti_vectors_input.txt"];
-       If[! (file === $Canceled), Export[file, out, "Text"]], 
-       ImageSize -> {100, 23}, Method -> "Queued",FontSize->10]
-       }],
-    
-    (*disclaimer*)
-    Delimiter,
-    
-    Row[{Style["Made by Martijn Froeling, Phd \nm.froeling@umcutrecht.nl", {Small, Gray}]}],
-    
-    (*hidden dynamic local variables, using now control type*)
-    {{points, {}}, ControlType -> None},
-    {{pointspl, {}}, ControlType -> None},
-    {{pointsc, {}}, ControlType -> None},
-    {{ppoints, {}}, ControlType -> None},
-    {{ppointspl, {}}, ControlType -> None},
-    {{mpoints, {}}, ControlType -> None},
-    {{gradd, ""}, ControlType -> None},
-    {{gradm, ""}, ControlType -> None},
-    {{grads, ""}, ControlType -> None},
-    {{gradc, ""}, ControlType -> None},
-    {{outd, ""}, ControlType -> None},
-    {{outc, ""}, ControlType -> None},
-    {{outm, ""}, ControlType -> None},
-    {{outs, ""}, ControlType -> None},
-    {{orderd, ""}, ControlType -> None},
-    {{orderc, ""}, ControlType -> None},
-    {{orderm, ""}, ControlType -> None},
-    {{orders, ""}, ControlType -> None},
-    {{out, ""}, ControlType -> None},
-    {{file, ""}, ControlType -> None},
-    
-    {{show, {1, 2}}, ControlType -> None},
-    {{showc, All}, ControlType -> None},
-    {{weight, 0.5}, ControlType -> None},
-    {{grid, 9}, ControlType -> None},
-    {{gridf, False}, ControlType -> None},
-    {{running, False}, ControlType -> None},
-    {{app, White}, ControlType -> None},
-    {{size, 430}, ControlType -> None},
-    {{inter, True}, ControlType -> None},
-    {{random, True}, ControlType -> None},
-    {{sticks, False}, ControlType -> None},
-    {{mirror, True}, ControlType -> None},
-    {{proj, False}, ControlType -> None},
-    
-    {{vel, 1}, ControlType -> None},
-    {{part, 1}, ControlType -> None},
-    
-    {{dirs1, 30}, ControlType -> None},
-    {{dirs21, 15}, ControlType -> None},
-    {{dirs22, 15}, ControlType -> None},
-    {{dirs23, 15}, ControlType -> None},
-    {{dirs24, 15}, ControlType -> None},
-    {{dirs25, 15}, ControlType -> None},
-    {{dirs26, 15}, ControlType -> None},
-    
-    {{bvald, {10, 20, 30, 40, 60, 80, 100, 200, 300, 500, 700, 1000}}, ControlType -> None},
-    {{bvall, {1000}}, ControlType -> None},
-    {{bvals, Range[1000, 6000, 1000]}, ControlType -> None},
-    {{bvalc, 9000}, ControlType -> None},
-    
-    {dirs2, ControlType -> None},
-    {type, ControlType -> None},
-    {typed, ControlType -> None},
-    {sc, ControlType -> None},
-    {scc, ControlType -> None},
-    {shel, ControlType -> None},
-    {{nshels, 2}, ControlType -> None},
-    {len, ControlType -> None},
-    {rlen, ControlType -> None},
-    {{rlenc, {}}, ControlType -> None},
-    {charge, ControlType -> None},
-    
-    {{names, {"Set_Name", "Shells_Name", "Grid_Name", "DWI_Name"}}, ControlType -> None},
-    
-    {{vp, {1.3, -2.4, 2}}, ControlType -> None},
-    {{va, 30. Degree}, ControlType -> None},
-    {{vv, {0, 0, 1}}, ControlType -> None},
-    
-    {charts, ControlType -> None},
-    {{viewvec, {0, 0}}, ControlType -> None},
-    {{ctype, 1}, ControlType -> None},
-    
-    (*Manipulate settings*)
-    ContentSize -> {450, 510},
-    SaveDefinitions -> True,
-    ControlPlacement -> Left,
-    ContinuousAction -> True,
-    Initialization :> {
-      bvall = {1000},
-      MakeChart[type_] := Module[{ranX, ranY, coors, lab},
-        (*define grid*)
-        ranX = Range[-180, 180, 30];
-        ranY = Range[-90, 90, 10];
-        (*define coordinate system*)
-        coors = {
-        	N@Table[{j Cos[i Degree], 90 Sin[i Degree]}, {j, ranX}, {i,ranY}],
-            N@Table[{j, i}, {j, ranX}, {i, ranY}],
-            N@Table[{j, 90 Sin[i Degree]}, {j, ranX}, {i, ranY}]}[[type]];
-        lab = {
-        	{"\[Phi] Cos[\[Theta]] (\[Degree])", "\[Theta] Sin[\[Theta]] (\[Degree])"}, 
-        	{"\[Phi] \(\[Degree])", "\[Theta] (\[Degree])"}, 
-        	{"\[Phi] (\[Degree])", "\[Theta] Sin[\[Theta]] (\[Degree])"}
-        	}[[type]];
-        Graphics[{
-          {Lighter@Lighter@Lighter@Gray, Polygon@Join[First@coors, Reverse@Last@coors]},
-          {Lighter@Gray, Line[#]} & /@ coors,
-          {Lighter@Gray, Line[#]} & /@ Transpose[coors]
-          }, 
-         AspectRatio -> .8, ImageSize -> 400, PlotRange -> {{-185, 185}, {-95, 95}}, LabelStyle -> Directive[{Bold, Black, Medium, FontFamily -> "Helvetica"}], Frame -> True, 
-         FrameStyle -> Thick, Axes -> True, AxesStyle -> Thick, FrameTicks -> {{(Thread[{Round@coors[[1, All, 2]], ranY}][[1 ;; ;; 3]]), None}, {ranX, None}}, FrameLabel -> lab
-         ]
-        ],
-      charts = MakeChart /@ {1, 2, 3},
-      SpherePlot[size_, op_] := If[size == 0 || size == 0.,
-        Graphics3D[{},
-        Lighting -> "Neutral",  PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv],  ViewAngle -> Dynamic[va], SphericalRegion -> True]
-        ,
-        Graphics3D[{White, Opacity[op], Sphere[{0, 0, 0}, 0.95 size]},
-        Lighting -> "Neutral", PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv],  ViewAngle -> Dynamic[va], SphericalRegion -> True]
-        ],
-      PlotChartPoints[grad_, {mirr_, col_}] := Block[{style},
-        style = If[ListQ[col], (Directive[#, PointSize[Large]] & /@ col), Directive[col, PointSize[Large]]];
-        Show[
-         If[grad === {},
-          (*if no gr then only chart*)
-          Graphics[],
-          Show[
-          	(*plot the gradients*)
-          	ListPlot[If[ArrayDepth[grad] == 2, CalcPolarPts[grad, ctype, viewvec], CalcPolarPts[#, ctype, viewvec] & /@ grad], PlotStyle -> style],
-           (*plot the mirrored gradients*)
-           If[! mirr, Graphics[], ListPlot[If[ArrayDepth[grad] == 2, CalcPolarPts[-grad, ctype, viewvec], CalcPolarPts[-Flatten[grad, 1], ctype, viewvec]], PlotStyle -> {Darker@Gray, PointSize[Large]}]]
-           ]
-          ]
-         ]
-        ]
-      }
-    , AppearanceElements -> None,
-    AutorunSequencing -> {1}
-    ];
-  NotebookClose[gradwindow];
-  gradwindow=CreateWindow[DialogNotebook[{CancelButton["Close",
-  DialogReturn[]],pan},WindowSize->All,
-  WindowTitle->"Generate gradients"]];
-  ]
+GenerateGradientsGUI[popup_] := Block[{pan},
+	pan = Manipulate[
+		(*covert bval and names*)
+		bvall = If[NumberQ[bvall], {bvall}, bvall];
+		names = StringReplace[#, " " -> "_"] & /@ names;
+		
+		(*constrain one shel to 124 directions*)
+		dirs1 = Clip[dirs1, {3, 128}];
+		
+		(*Constrain, multi shel to 60 per shell*)
+		{dirs21, dirs22, dirs23, dirs24, dirs25, dirs26} = Clip[{dirs21, dirs22, dirs23, dirs24, dirs25, dirs26}, {3, 128}];
+		dirs2 = {dirs21, dirs22, dirs23, dirs24, dirs25, dirs26}[[1 ;; nshels]];
+		(*convert gradients to readable format*)
+		out = names[[mult]] <> Switch[mult,
+			(*DWI*)
+			4, If[gradd === "", gradd, FinalGrads[outd, {inter, int, bi}, {random, orderd}]],
+			(*cartesian grid*)
+			3, If[gradc === "", gradc, FinalGrads[outc, {inter, int, bi}, {random, orderc}]],
+			(*multi shel*)
+			2, If[gradm === "", gradm, FinalGrads[outm, {inter, int, bi}, {random, orderm}]],
+			(*single shel*)
+			1, If[grads === "", grads, FinalGrads[outs, {inter, int, bi}, {random, orders}]]
+		];
+			
+		(*The display, show the plots or show the Gradient directions txt*)
+		Dynamic[Switch[disp,
+			(*display as 3D plot*)
+			1, Switch[mult,
+				1,(*show single shell gradient directions*)
+				If[points === {},
+					(*no gradients present only show sphere*)
+					Column[{"", Show[SpherePlot[1, opacity], ImageSize -> size, PlotLabel -> ""]}],
+					pointspl = If[proj, Map[Sign[#[[3]] + 10.^-16]*Normalize[#] &, points, {1}], points];
+					Column[{"",
+						Show[
+							SpherePlot[1, opacity],
+							(*Shell positive z*)
+							ListSpherePloti[pointspl, Red, 0.05],
+							(*Shells Negative z*)
+							If[mirror, ListSpherePloti[-pointspl, Gray, 0.05], Graphics3D[{}]],
+							(*sticks*)
+							If[sticks, ListStickPlot[pointspl, 0.01], Graphics3D[{}]],
+						ImageSize -> size, PlotLabel -> "", Background -> app]
+					}, Alignment -> Center]
+				],
+				2,(*show multi shell gradient directions*)
+				If[ppoints === {},
+					(*no gradients present only show sphere*)
+					Column[{"", Show[SpherePlot[1, opacity], ImageSize -> size, PlotLabel -> ""]}],
+					(*gradients are defiended *)
+					ppointspl = If[proj, Map[Sign[#[[3]] + 10.^-16]*Normalize[#] &, ppoints, {2}], ppoints];
+					len = Length[ppoints];
+					rlen = Range[len];
+					If[running, show = rlen];
+					Column[{
+						SetterBar[Dynamic[show], Join[{0 -> "multi", rlen -> "all"}, rlen]],
+						If[show === 0,
+							(*show all gradients multi shell*)
+							Show[
+								(*Multi shells positive z*)
+								MapThread[{SpherePlot[#3, opacity], ListSpherePloti[#1 #3, #2, 0.05]} &, {Reverse@ppointspl, Reverse@{Red, Green, Blue, Yellow, Pink, Purple}[[1 ;; len]], Range[1, .5, -.5/(len - 1)]}] // Flatten,
+								(*multi shells negative z*)
+								If[mirror, MapThread[ListSpherePloti[-#1 #2, Gray, 0.05] &, {ppointspl, Range[1, .5, -.5/(len - 1)]}], Graphics3D[{}]],
+							ImageSize -> size, Background -> app],
+							(*show all gradients single shell*)
+							Show[
+								SpherePlot[1, opacity],
+								(*Multi shells positive z*)
+								MapThread[ListSpherePloti[#1, #2, 0.05] &, {ppointspl, {Red, Green, Blue, Yellow, Pink, Purple}[[1 ;; len]]}][[Clip[show, {1, len}]]],
+								(*multi shells negative z*)
+								If[mirror, (ListSpherePloti[-#, Gray, 0.05] & /@ ppointspl)[[Clip[show, {1, len}]]], Graphics3D[{}]],
+								(*sticks*)
+								If[sticks, (ListStickPlot[#, 0.01] & /@ ppointspl)[[Clip[show, {1, len}]]], Graphics3D[{}]],
+							ImageSize -> size, Background -> app]
+						]
+					}, Alignment -> Center]
+				],
+				3,(*show cartesian grid directions*)
+				Column[{"",
+					Show[
+						SpherePlot[0, opacity],
+						(*Shell positive z*)
+						ListSpherePloti[pointsc, Red, 0.05],
+						(*Shells Negative z*)
+						If[mirror, ListSpherePloti[-pointsc, Gray, 0.05], Graphics3D[{}]],
+					ImageSize -> size, PlotLabel -> "", Background -> app]
+				 }],
+				 4,(*DWI*)
+				 Show[
+				 	ListLinePlot[{{0, #}, {1, #}} & /@ Prepend[bvald, 0],
+						PlotStyle -> Directive[{Gray, Thick}], PlotRange -> {{0, 2}, Full},
+						AxesStyle -> Thick, Axes -> {False, True}, AspectRatio -> 1.4,
+						AxesLabel -> {None, Style["b-value", Bold, Black]}],
+					ListPlot[{1, #} & /@ Prepend[bvald, 0], PlotStyle -> Red]
+				]
+			],
+			(*display as polar plot*)
+			2, Column[{
+				(*controls*)
+				Row[{
+					Slider2D[Dynamic[viewvec], {{-1, -1}, {1, 1}}, ContinuousAction -> True],
+					SetterBar[Dynamic[ctype], {1 -> "polar", 2 -> "even grid", 3 -> "scaled grid"}]
+				}, ImageSize -> 400, Alignment -> Center],
+				If[mult == 2, SetterBar[Dynamic[showc], Join[{All -> "all"}, rlenc]], ""],
+				(*the plot*)
+				Dynamic@Show[
+					charts[[ctype]],
+					(*change between single and multi slice*)
+					Switch[mult,
+						1, If[points === {},
+							Graphics[],
+							pointspl = If[proj, Map[Sign[#[[3]] + 10.^-16]*Normalize[#] &, points, {1}], points];
+							PlotChartPoints[pointspl, {mirror, Red}]
+						],
+						2, If[ppoints === {},
+							Graphics[],
+							ppointspl = If[proj, Map[Sign[#[[3]] + 10.^-16]*Normalize[#] &, ppoints, {2}], ppoints];
+							len = Length[ppoints];
+							rlenc = Range[len];
+							PlotChartPoints[ppointspl[[showc]], {mirror, {Red, Green, Blue, Yellow, Pink, Purple}[[showc]]}]
+						],
+						_, Graphics[]
+					]
+				]
+			}, Alignment -> Center],
+			(*display as text*)
+			3, out,
+			(*display G load*)
+			4, Switch[mult,
+				1, If[orders === "", Graphics[], PlotDuty[{ConstantArray[grads, Length[bvall]], bvall, orders}, random]],
+				2, If[orderm === "", Graphics[], PlotDuty[{gradm, bvals[[;; nshels]], orderm}, random]],
+				3, If[orderc === "", Graphics[], PlotDuty[{gradc, bvalc, orderc}, random]],
+				4, If[orderd === "", Graphics[], PlotDuty[{ConstantArray[gradd, Length[bvald]], bvald, orderd}, random]]
+			]
+		]]
+		,
+		
+		
+		(*Controls*)
+		(*set Name*)
+		Row[{"  Set Name ", InputField[Dynamic[names[[mult]]], String]}],
+		Delimiter,
+	
+		(*display controls*)
+		{{disp, 1, "display gradients"}, {1 -> "graphics", 2 -> "chart", 3 -> "text", 4 -> "G load"}},
+		{{opacity, 0.5, "sphere opacity"}, 0, 1, .1, ControlType -> Slider},
+		Row[{" sticks: ", Checkbox[Dynamic[sticks]],"   mirror grad.: ", Checkbox[Dynamic[mirror]], "   project grad. on half: ", Checkbox[Dynamic[proj]]}],
+		Grid[{{
+			Button["top", vp = {0, 0, 3.38}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
+			Button["right", vp = {3.38, 0, 0}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
+			Button["front", vp = {0, 3.38, 0}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
+			Button["reset", {vp, vv, va} = {{1.3, -2.4, 2}, {0, 0, 1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 0,FontSize->10]
+		}}],
+		Delimiter,
+	
+		(*multi or single shell*)
+		{{half, 1, "Full or half sphere"}, {1 -> "half sphere", 0 -> "full sphere"}},
+		{{mult, 1, "shells"}, {1 -> "single shell", 2 -> "multi shell", 3 -> "cartesian", 4 -> "DWI"}, ControlType -> PopupMenu, FieldSize -> {13, 0.7}},
+		(*single multi and cartesian controls*)
+		PaneSelector[{
+			(*Singel shell pannel*)
+			1 -> Column[{
+				Control[{{type, "normal", "type"}, {"normal", "normal fixed z", "normal fixed x, y and z", "over-plus", "over-plus fixed z", "over-plus fixed x, y and z"}, ControlType -> PopupMenu, FieldSize -> {13, 0.7}}],
+				Control[{{dirs1, 30, "number of gradients"}, 6, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}]
+			}],
+			(*Multi shell pannel*)
+			2 -> Column[{
+				Row[{
+					Control[{{nshels, 2, "number of shells"}, {2, 3, 4, 5, 6}}],
+					Control[{{shel, 1, " shell"}, Dynamic[Range[nshels]], ControlType -> SetterBar}]
+				}],
+				PaneSelector[{
+					Control[{{dirs21, 15, "number of gradients shell 1"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
+					Control[{{dirs22, 15, "number of gradients shell 2"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
+					Control[{{dirs23, 15, "number of gradients shell 3"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
+					Control[{{dirs24, 15, "number of gradients shell 4"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
+					Control[{{dirs25, 15, "number of gradients shell 5"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}],
+					Control[{{dirs26, 15, "number of gradients shell 6"}, 3, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}]
+				}, Dynamic[shel]],
+				Control[{{weight, .5, "shell weighting"}, 0, 1, .05, ControlType -> Slider, Appearance -> "Labeled", ImageSize -> Tiny, AppearanceElements -> {"InputField"}}]
+			}]
+			,
+			(*cartesian grid*)
+			3 -> Column[{
+				Control[{{grid, 9, "cartesian grid size"}, 5, 15, 1, Appearance -> "Labeled", ImageSize -> Tiny}],
+				Control[{{gridf, True, "full even grid"}, {False -> "no (in between odd grid)", True -> "yes"}}]
+			}],
+			(*DWI pannel*)
+			4 -> Control[{{typed, "normal", "           type"}, {"normal", "over-plus"}, ControlType -> SetterBar}]
+		}, Dynamic[mult]],
+		Delimiter,
+	
+		(*input bvals*)
+		PaneSelector[{
+			1 -> Row[{"  b-value:   ", InputField[Dynamic[bvall], Expression, Background -> Dynamic[If[((AllTrue[bvall, NumberQ] && ListQ[bvall]) || NumberQ[bvall]), None, Lighter[Lighter[Red]]]]]}],
+			2 -> Dynamic[Grid[Partition[PadRight[Row[{"b-val" <> ToString[#] <> ":", InputField[Dynamic[bvals[[#]]], Number, FieldSize -> 5]}] & /@ Range[1, nshels], 6, ""], 3]]],
+			3 -> Row[{"max b (corner):   ", InputField[Dynamic[bvalc], Number]}],
+			4 -> Row[{"      b-value:   ", InputField[Dynamic[bvald], Expression, Background ->Dynamic[If[((AllTrue[bvald, NumberQ] && ListQ[bvald]) || NumberQ[bvald]), None, Lighter[Lighter[Red]]]]]}]
+		}, Dynamic[mult]],
+		Delimiter,
+	
+		(*interleave b=0 and optimize gradient load*)
+		Dynamic[Grid[{
+			{"  interleave b: ", Checkbox[Dynamic[inter]], "Optimize G load: ", Checkbox[Dynamic[random]]},
+			If[inter,
+				{"  interleave b-value: ",InputField[Dynamic[bi], Number, FieldSize->3], "interleave b every: ", PopupMenu[Dynamic[int],Range[3,20]]},
+				{}
+			]
+		}, Alignment->Left]],
+		Delimiter,
+		
+		(*quality and multi or single shell*)
+		{{steps, 1000, "quality (iterations)"}, {500 -> "poor (500)", 1000 -> "normal (1000)", 2500 -> "excellent (2500)",5000 -> "perfect (5000)", 10000 -> "extreme (10000)"}, ControlType -> PopupMenu, FieldSize -> {9, 0.7}},
+		(*generate gradietns button*)
+		(*mult:1-single shell; 2-multi shell; 3-cartesian;4-DWI*)
+		Row[{
+			Button["generate",
+				(*initiate gradient generation*)
+				app = Lighter[Lighter[LightGray]];
+				disp = 1; running = True;
+				mirror = If[half == 0, False, True];
+				proj = False;
+				Pause[.2];
+				(*switch to correct method*)
+				Switch[mult,
+					(*DWI*)
+					4, gradd = If[typed == "normal", {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}, {{-0.707107, -0.5, 0.5}, {0.707107, -0.5, 0.5}, {0., 0.707107, 0.707107}}];,
+					(*cartesian*)
+					3, gradc = pointsc = GradGrid[grid, gridf];,
+					(*multi shell*)
+					2, {mpoints, vel, part} = Prepare[dirs2, half, {}, weight];
+					Pause[.5];
+					Do[mpoints = GradOptimize4C[mpoints, vel, half];ppoints = Chop[mpoints[[#]]] & /@ part;, {steps}];
+					gradm = Chop[mpoints[[#]]] & /@ part;, 
+					(*single shell, normal or overplus*)
+					1,
+					grads = Switch[type, 
+						"normal", 
+						points = Prepare[{dirs1}, half];
+						Pause[.5];
+						Do[points = GradOptimize1C[points, half], {steps}];
+						Chop[points],
+						
+						"normal fixed z",
+						points = Prepare[{dirs1}, half, {{0, 0, 1}}];
+						Pause[.5];
+						Do[points = GradOptimize2C[points, 1, half], {steps}];
+						Chop[points],
+						
+						"normal fixed x, y and z",
+						points = Prepare[{dirs1}, half, {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}];
+						Pause[.5];
+						Do[points = GradOptimize2C[points, 3, half], {steps}];
+						Chop[points],
+						
+						(*all over plus options only work on half shell*)
+						"over-plus",
+						half = 1;
+						points = Prepare[{dirs1}, half];
+						points = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, points];
+						Pause[.5];
+						(*quick distribution for init*)
+						Do[points = GradOptimize2C[points, 3, half], {Round[steps/10]}];
+						(*optimize overplys*)
+						charge = Join[ConstantArray[(.5 dirs1)^(1.2), 3], ConstantArray[1, dirs1]];
+						Do[points = GradOptimize3C[points, charge, 3], {steps}];
+						points = Chop[Drop[points, 3]],
+						
+						"over-plus fixed z",
+						half = 1;
+						points = Prepare[{dirs1 - 1}, half];
+						points = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0., 0.707107, 0.707107}}, points];
+						Pause[.5];
+						(*quick distribution for init*)
+						Do[points = GradOptimize2C[points, 4, half], {Round[steps/10]}];
+						(*optimize overplys*)
+						charge = Join[ConstantArray[(.5 dirs1)^(1.2), 3], ConstantArray[1, dirs1]];
+						Do[points = GradOptimize3C[points, charge, 4], {steps}];
+						points = Chop[Drop[points, 3]],
+						
+						"over-plus fixed x, y and z",
+						half = 1;
+						points = Prepare[{dirs1 - 3}, half];
+						points = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {-0.707107, -0.5, 0.5}, {0.707107, -0.5, 0.5}, {0., 0.707107, 0.707107}}, points];
+						Pause[.5];
+						(*quick distribution for init*)
+						Do[points = GradOptimize2C[points, 6, half], {Round[steps/10]}];
+						(*optimize overplus*)
+						charge = Join[ConstantArray[(.5 dirs1)^(1.2), 3], ConstantArray[1, dirs1]];
+						Do[points = GradOptimize3C[points, charge, 6], {steps}];
+						points = Chop[Drop[points, 3]]
+					];(*end single shel options*)
+				];(*end generate grads*)
+				
+				(*covert gradients to txt and find optimal order dutycycle*)
+				(*mult:1-single shell; 2-multi shell; 3-cartesian;4-DWI*)
+				Switch[mult,
+					1,
+					outs = ConvertGrads[ConstantArray[grads, Length[bvall]], bvall, bi];
+					orders = FindOrder[ConstantArray[grads, Length[bvall]], bvall];,
+					2,
+					outm = ConvertGrads[gradm, bvals[[;; nshels]], bi];
+					orderm = FindOrder[gradm, bvals[[;; nshels]]];,
+					3,
+					outc = ConvertGrads[gradc, {bvalc}, bi];
+					orderc = FindOrder[gradc, bvalc];,
+					4,
+					outd = ConvertGrads[ConstantArray[gradd, Length[bvald]], bvald, bi];
+					outd[[2]] = Join[
+						If[typed == "normal",
+							{
+							" 1.00000    0.00000    0.00000       "<>ToString[Round[bi,.1]],
+							" 0.00000    1.00000    0.00000       "<>ToString[Round[bi,.1]],
+							" 0.00000    0.00000    1.00000       "<>ToString[Round[bi,.1]]
+							}
+							,
+							{
+							"-0.70711   -0.50000    0.50000       "<>ToString[Round[bi,.1]],
+							" 0.70711   -0.50000    0.50000       "<>ToString[Round[bi,.1]],
+							" 0.00000    0.70711    0.70711       "<>ToString[Round[bi,.1]]
+							}
+						],
+						{
+							" 0.02704    0.79706    0.60330       "<>ToString[Round[bi,.1]], 
+							"-0.09999   -0.59783    0.79536       "<>ToString[Round[bi,.1]], 
+							" 0.23191   -0.77261    0.59101       "<>ToString[Round[bi,.1]], 
+							" 0.52867   -0.79903    0.28646       "<>ToString[Round[bi,.1]], 
+							"-0.18297   -0.98140    0.05818       "<>ToString[Round[bi,.1]], 
+							"-0.86286    0.19578    0.46599       "<>ToString[Round[bi,.1]], 
+							" 0.05126    0.20181    0.97808       "<>ToString[Round[bi,.1]], 
+							"-0.66047    0.01890    0.75062       "<>ToString[Round[bi,.1]], 
+							" 0.65426   -0.18818    0.73249       "<>ToString[Round[bi,.1]], 
+							"-0.33052    0.11752    0.93646       "<>ToString[Round[bi,.1]], 
+							"-0.95407   -0.14465    0.26236       "<>ToString[Round[bi,.1]], 
+							"-0.14402   -0.86963    0.47224       "<>ToString[Round[bi,.1]], 
+							"-0.78028   -0.56460    0.26904       "<>ToString[Round[bi,.1]], 
+							"-0.75319   -0.31631    0.57675       "<>ToString[Round[bi,.1]], 
+							"-0.41392   -0.31357    0.85460       "<>ToString[Round[bi,.1]], 
+							" 0.56536    0.27275    0.77845       "<>ToString[Round[bi,.1]], 
+							"-0.73743    0.58153    0.34354       "<>ToString[Round[bi,.1]], 
+							" 0.29639   -0.44648    0.84428       "<>ToString[Round[bi,.1]], 
+							"-0.38689    0.75986    0.52243       "<>ToString[Round[bi,.1]], 
+							"-0.20081    0.52214    0.82888       "<>ToString[Round[bi,.1]], 
+							" 0.79424   -0.60284    0.07593       "<>ToString[Round[bi,.1]], 
+							" 0.98777    0.03678    0.15153       "<>ToString[Round[bi,.1]], 
+							" 0.29973    0.90469    0.30281       "<>ToString[Round[bi,.1]], 
+							"-0.95633    0.27860    0.08835       "<>ToString[Round[bi,.1]], 
+							"-0.49976   -0.83556    0.22819       "<>ToString[Round[bi,.1]], 
+							" 0.90574    0.41773    0.07170       "<>ToString[Round[bi,.1]], 
+							" 0.77284    0.45698    0.44032       "<>ToString[Round[bi,.1]], 
+							" 0.35339   -0.03796    0.93471       "<>ToString[Round[bi,.1]], 
+							" 0.84918    0.07921    0.52213       "<>ToString[Round[bi,.1]], 
+							"-0.50085    0.85590    0.12880       "<>ToString[Round[bi,.1]], 
+							" 0.47526    0.67317    0.56654       "<>ToString[Round[bi,.1]], 
+							" 0.87597   -0.32192    0.35923       "<>ToString[Round[bi,.1]], 
+							" 0.64492    0.75075    0.14303       "<>ToString[Round[bi,.1]], 
+							"-0.12687    0.96109    0.24536       "<>ToString[Round[bi,.1]], 
+							" 0.60869   -0.54852    0.57325       "<>ToString[Round[bi,.1]], 
+							"-0.03797   -0.21873    0.97505       "<>ToString[Round[bi,.1]], 
+							"-0.47780   -0.64010    0.60165       "<>ToString[Round[bi,.1]], 
+							"-0.57319    0.42677    0.69952       "<>ToString[Round[bi,.1]], 
+							" 0.18760   -0.96394    0.18874       "<>ToString[Round[bi,.1]], 
+							" 0.23342    0.50887    0.28591       "<>ToString[Round[bi,.1]]
+						}
+					];
+					orderd = FindOrder[ConstantArray[gradd, Length[bvald]], bvald];
+				];
+				
+				(*stop gray background*)
+				Pause[0.1];
+				running = False;
+				app = White;
+				(*close button*)
+			, Method -> "Queued", ImageSize -> {120, 23},FontSize->10],
+			
+			(*output buttens*)
+			Button["clipboard", CopyToClipboard[out], ImageSize -> {100, 23},FontSize->10],
+			Button["file",
+				file = SystemDialogInput["FileSave", "dti_vectors_input.txt"];
+				If[! (file === $Canceled), Export[file, out, "Text"]],ImageSize -> {100, 23}, Method -> "Queued",FontSize->10
+			]
+		}],
+		(*disclaimer*)
+		Delimiter,
+		
+		Row[{Style["Made by Martijn Froeling, Phd \nm.froeling@umcutrecht.nl", {Small, Gray}]}],
+		
+		(*hidden dynamic local variables, using now control type*)
+		{{points, {}}, ControlType -> None},
+		{{pointspl, {}}, ControlType -> None},
+		{{pointsc, {}}, ControlType -> None},
+		{{ppoints, {}}, ControlType -> None},
+		{{ppointspl, {}}, ControlType -> None},
+		{{mpoints, {}}, ControlType -> None},
+		{{gradd, ""}, ControlType -> None},
+		{{gradm, ""}, ControlType -> None},
+		{{grads, ""}, ControlType -> None},
+		{{gradc, ""}, ControlType -> None},
+		{{outd, ""}, ControlType -> None},
+		{{outc, ""}, ControlType -> None},
+		{{outm, ""}, ControlType -> None},
+		{{outs, ""}, ControlType -> None},
+		{{orderd, ""}, ControlType -> None},
+		{{orderc, ""}, ControlType -> None},
+		{{orderm, ""}, ControlType -> None},
+		{{orders, ""}, ControlType -> None},
+		{{out, ""}, ControlType -> None},
+		{{file, ""}, ControlType -> None},
+		
+		{{show, {1, 2}}, ControlType -> None},
+		{{showc, All}, ControlType -> None},
+		{{weight, 0.5}, ControlType -> None},
+		{{grid, 9}, ControlType -> None},
+		{{gridf, False}, ControlType -> None},
+		{{running, False}, ControlType -> None},
+		{{app, White}, ControlType -> None},
+		{{size, 430}, ControlType -> None},
+		{{inter, True}, ControlType -> None},
+		{{bi, 0}, ControlType -> None},
+		{{random, True}, ControlType -> None},
+		{{sticks, False}, ControlType -> None},
+		{{mirror, True}, ControlType -> None},
+		{{proj, False}, ControlType -> None},
+		
+		{{vel, 1}, ControlType -> None},
+		{{part, 1}, ControlType -> None},
+		
+		{{dirs1, 30}, ControlType -> None},
+		{{dirs21, 15}, ControlType -> None},
+		{{dirs22, 15}, ControlType -> None},
+		{{dirs23, 15}, ControlType -> None},
+		{{dirs24, 15}, ControlType -> None},
+		{{dirs25, 15}, ControlType -> None},
+		{{dirs26, 15}, ControlType -> None},
+		
+		{{bvald, {10, 20, 30, 40, 60, 80, 100, 200, 300, 500, 700, 1000}}, ControlType -> None},
+		{{bvall, {1000}}, ControlType -> None},
+		{{bvals, Range[1000, 6000, 1000]}, ControlType -> None},
+		{{bvalc, 9000}, ControlType -> None},
+		
+		{dirs2, ControlType -> None},
+		{type, ControlType -> None},
+		{typed, ControlType -> None},
+		{sc, ControlType -> None},
+		{scc, ControlType -> None},
+		{shel, ControlType -> None},
+		{{nshels, 2}, ControlType -> None},
+		{len, ControlType -> None},
+		{rlen, ControlType -> None},
+		{{rlenc, {}}, ControlType -> None},
+		{charge, ControlType -> None},
+		
+		{{names, {"Set_Name", "Shells_Name", "Grid_Name", "DWI_Name"}}, ControlType -> None},
+		
+		{{vp, {1.3, -2.4, 2}}, ControlType -> None},
+		{{va, 30. Degree}, ControlType -> None},
+		{{vv, {0, 0, 1}}, ControlType -> None},
+		
+		{charts, ControlType -> None},
+		{{viewvec, {0, 0}}, ControlType -> None},
+		{{ctype, 1}, ControlType -> None},
+		
+		(*Manipulate settings*)
+		ContentSize -> {450, 510},
+		SaveDefinitions -> True,
+		ControlPlacement -> Left,
+		ContinuousAction -> True,
+		Initialization :> {
+			bvall = {1000},
+			inter = True,
+			MakeChart[type_] := Module[{ranX, ranY, coors, lab},
+				(*define grid*)
+				ranX = Range[-180, 180, 30];
+				ranY = Range[-90, 90, 10];
+				(*define coordinate system*)
+				coors = {
+					N@Table[{j Cos[i Degree], 90 Sin[i Degree]}, {j, ranX}, {i,ranY}],
+					N@Table[{j, i}, {j, ranX}, {i, ranY}],
+					N@Table[{j, 90 Sin[i Degree]}, {j, ranX}, {i, ranY}]
+				}[[type]];
+				lab = {
+					{"\[Phi] Cos[\[Theta]] (\[Degree])", "\[Theta] Sin[\[Theta]] (\[Degree])"},
+					{"\[Phi] \(\[Degree])", "\[Theta] (\[Degree])"},
+					{"\[Phi] (\[Degree])", "\[Theta] Sin[\[Theta]] (\[Degree])"}
+				}[[type]];
+				Graphics[{
+					{Lighter@Lighter@Lighter@Gray, Polygon@Join[First@coors, Reverse@Last@coors]},
+					{Lighter@Gray, Line[#]} & /@ coors,
+					{Lighter@Gray, Line[#]} & /@ Transpose[coors]
+				},
+				AspectRatio -> .8, ImageSize -> 400, PlotRange -> {{-185, 185}, {-95, 95}}, LabelStyle -> Directive[{Bold, Black, Medium, FontFamily -> "Helvetica"}], Frame -> True,
+				FrameStyle -> Thick, Axes -> True, AxesStyle -> Thick, FrameTicks -> {{(Thread[{Round@coors[[1, All, 2]], ranY}][[1 ;; ;; 3]]), None}, {ranX, None}}, FrameLabel -> lab
+				]
+			],
+			
+			charts = MakeChart /@ {1, 2, 3},
+			SpherePlot[size_, op_] := If[size == 0 || size == 0.,
+				Graphics3D[{}, Lighting -> "Neutral",  PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv],  ViewAngle -> Dynamic[va], SphericalRegion -> True],
+				Graphics3D[{White, Opacity[op], Sphere[{0, 0, 0}, 0.95 size]}, Lighting -> "Neutral", PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv],  ViewAngle -> Dynamic[va], SphericalRegion -> True]
+			],
+			PlotChartPoints[grad_, {mirr_, col_}] := Block[{style},
+				style = If[ListQ[col], (Directive[#, PointSize[Large]] & /@ col), Directive[col, PointSize[Large]]];
+				Show[
+					If[grad === {},
+						(*if no gr then only chart*)
+						Graphics[],
+						Show[
+							(*plot the gradients*)
+							ListPlot[If[ArrayDepth[grad] == 2, CalcPolarPts[grad, ctype, viewvec], CalcPolarPts[#, ctype, viewvec] & /@ grad], PlotStyle -> style],
+							(*plot the mirrored gradients*)
+							If[! mirr, 
+								Graphics[], 
+								ListPlot[If[ArrayDepth[grad] == 2, CalcPolarPts[-grad, ctype, viewvec], CalcPolarPts[-Flatten[grad, 1], ctype, viewvec]], PlotStyle -> {Darker@Gray, PointSize[Large]}]
+							]
+						]
+					]
+				]
+			]
+		}, 
+		AppearanceElements -> None,
+		AutorunSequencing -> {1}
+	];
+	
+	NotebookClose[gradwindow];
+	If[popup,
+		gradwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]],pan},WindowSize->All, WindowTitle->"Generate gradients"]];,
+		pan
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1140,7 +1122,7 @@ CalcPolarPts[grad_, type_, vec_] := Block[{sig, phi, gradp, rot},
   {sig, phi} = Transpose@(Quiet[({90,0} + {-1, 1} ToSphericalCoordinates[rot.#][[2 ;;]]/Degree) & /@ grad] /. Indeterminate -> 0);
   (*transform to correct axes system*)
   {
-    Transpose[{phi Cos[sig Degree], 90 Sin[sig Degree]}],
+Transpose[{phi Cos[sig Degree], 90 Sin[sig Degree]}],
     Transpose[{phi , sig}],
     Transpose[{phi , 90 Sin[sig Degree]}]
     }[[type]]
@@ -1151,60 +1133,65 @@ CalcPolarPts[grad_, type_, vec_] := Block[{sig, phi, gradp, rot},
 (*Convert Grads*)
 
 
-SyntaxInformation[ConvertGrads] = {"ArgumentsPattern" -> {_,_}};
+SyntaxInformation[ConvertGrads] = {"ArgumentsPattern" -> {_, _ , _.}};
 
 (*convert gradient lists to txt output*)
-ConvertGrads[gradi_, bv_] := Block[
-  {depth, norm, gradu, grad, bval, bvalstr, gradstr, grad0str, list, 
-   list0, part, listout, bvs, gr, name, nb},
-  
-  depth = ArrayDepth[gradi] /. 1 -> 3;
-  norm = Map[Norm, gradi, {depth - 1}];
-  
-  gradu = DeleteDuplicates[Normalize /@ Flatten[gradi, depth - 2]];
-  grad = Map[Normalize, gradi, {depth - 1}];
-  bval = If[Length[bv] == 1, 
-    bv[[1]]*(norm/Max[norm])^2, (norm/Max[norm])^2*bv];
-  
-  bvalstr = Flatten@Map[(
-       bvs = ToString[NumberForm[Round[Clip[#, {0, 35000}], 0.1], {7, 1}]];
-       StringJoin[ConstantArray[" ", 10 - StringLength[bvs]]] <> bvs
-       ) &, bval, {depth - 1}];
-  gradstr = Flatten[Map[(
-       gr = ToString[NumberForm[Round[#, 0.00001], {6, 5}]];
-       If[StringTake[gr, 1] == "-", gr, " " <> gr]
-       ) &, grad, {depth}], depth - 2];
-  grad0str = Map[(
-      gr = ToString[NumberForm[Round[#, 0.00001], {6, 5}]];
-      If[StringTake[gr, 1] == "-", gr, " " <> gr]
-      ) &, gradu, {2}];
-  
-  list = MapThread[StringJoin[Riffle[#1, "   "]] <> #2 &, {gradstr, bvalstr}];
-  list0 = Map[StringJoin[Riffle[#1, "   "]] <> "       1" &, grad0str];
-  
-  nb = ToString[Round[Max[Flatten[bval]]]];
-  {list, list0, nb}
-  ]
+
+ConvertGrads[gradi_, bv_] := ConvertGrads[gradi, bv, 0]
+
+ConvertGrads[gradi_, bv_, bi_] := Block[{depth, norm, gradu, grad, bval, bvalstr, gradstr, grad0str, list, list0, part, listout, bvs, gr, name, nb},
+	depth = ArrayDepth[gradi] /. 1 -> 3;
+	norm = Map[Norm, gradi, {depth - 1}];
+	
+	gradu = DeleteDuplicates[Normalize /@ Flatten[gradi, depth - 2]];
+	grad = Map[Normalize, gradi, {depth - 1}];
+	bval = If[Length[bv] == 1, bv[[1]]*(norm/Max[norm])^2, (norm/Max[norm])^2*bv];
+	
+	bvalstr = Flatten@Map[(
+		bvs = ToString[NumberForm[Round[Clip[#, {0, 35000}], 0.1], {7, 1}]];
+		StringJoin[ConstantArray[" ", 10 - StringLength[bvs]]] <> bvs
+	) &, bval, {depth - 1}];
+	
+	gradstr = Flatten[Map[(
+		gr = ToString[NumberForm[Round[#, 0.00001], {6, 5}]];
+		If[StringTake[gr, 1] == "-", gr, " " <> gr]
+	) &, grad, {depth}], depth - 2];
+	
+	grad0str = Map[(
+		gr = ToString[NumberForm[Round[#, 0.00001], {6, 5}]];
+		If[StringTake[gr, 1] == "-", gr, " " <> gr]
+	) &, gradu, {2}];
+	
+	list = MapThread[StringJoin[Riffle[#1, "   "]] <> #2 &, {gradstr, bvalstr}];
+	list0 = Map[StringJoin[Riffle[#1, "   "]] <> "       "<>ToString[Round[bi,0.1]] &, grad0str];
+	
+	nb = ToString[Round[Max[Flatten[bval]]]];
+	{list, list0, nb}
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*FinalGrads*)
 
 
-SyntaxInformation[FinalGrads] = {"ArgumentsPattern" -> {_,{_,_},{_,_}}};
+SyntaxInformation[FinalGrads] = {"ArgumentsPattern" -> {_, {_, _, _.}, {_, _}}};
 
-FinalGrads[{listi_, list0_, nb_}, {inter_, int_}, {random_, ordr_}] :=
-  Block[{part, listout, name, list},
-  list = If[random, listi[[ordr]], listi];
-  listout = DeleteDuplicates@Prepend[
-     If[inter,
-      part = Partition[list, int, int, 1, {}];
-      Flatten@Riffle[part, list0[[;; Length[part]]]]
-      , list
-      ], " 0.00000    0.00000    1.00000       0.0"];
-  name = " (" <> ToString[Length[listout]] <> ", " <> nb <> ")\n";
-  name <> StringJoin[# <> "\n" & /@ listout]
-  ]
+FinalGrads[{listi_, list0_, nb_}, {inter_, int_}, {random_, ordr_}] := FinalGrads[{listi, list0, nb}, {inter, int}, {random, ordr}]
+
+FinalGrads[{listi_, list0_, nb_}, {inter_, int_, bi_}, {random_, ordr_}] := Block[{part, listout, name, list},
+	list = If[random, listi[[ordr]], listi];
+	listout = DeleteDuplicates@Prepend[
+		If[inter,
+			part = Partition[list, int, int, 1, {}];
+			Flatten@Riffle[part, list0[[;; Length[part]]]]
+			,
+			list
+		]
+		, " 0.00000    0.00000    1.00000       0.0"
+	];
+	name = " (" <> ToString[Length[listout]] <> ", " <> nb <> ")\n";
+	name <> StringJoin[# <> "\n" & /@ listout]
+]
 
 
 (* ::Subsubsection::Closed:: *)

@@ -427,18 +427,25 @@ PCADeNoiseFiti[data_, {m_, n_}, sigi_?NumberQ, toli_] := Block[{u, w, v, eig, pi
 (*GridSearch*)
 
 
-GridSearch = Compile[{{eig, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig, _Real, 0}}, Block[{pi, eq1, eq2, sigm, sig2, eigl},
+GridSearch = Compile[{{eig, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig, _Real, 0}}, 
+	Block[{pi, eq1, eq2, sigm, sig2, eigl},
 	(*initialize values*)
 	eigl = Last[eig];
 	pi = 1;
 	sig2 = 0.;
 	(*prepare the equations for minimizaiton*)
 	If[sig === 0.,
-		eq1 = 0.; eq2 = 1.;,
-		sig2 = sig^2; eq1 = 2 sig2; eq2 = 2 sig2;
+		eq1 = 0.; 
+		eq2 = 1.;,
+		sig2 = sig^2; 
+		eq1 = 2 sig2; 
+		eq2 = 2 sig2;
 	];
 	(*find p for which eq1 and eq2 is equal to given sig*)
-	While[If[sig === 0., eq2 > eq1, (eq1 - sig2 > 0 || eq2 - sig2 > 0)] && pi < m,
+	While[
+		If[sig === 0., 
+		eq2 > eq1, 
+		(eq1 - sig2 > 0 || eq2 - sig2 > 0)] && pi < m,
 		(*/Max[sig,1.0],sig is<1 per definition*)
 		eq1 = (Mean[eig[[pi ;; m]]]);
 		eq2 = ((eig[[pi]] - eigl)/(4 Sqrt[((m - pi)/n)]));
