@@ -645,7 +645,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 	    r2 = (vox[[1]]*zd)/(vox[[3]]*yd);
 	    r3 = (vox[[1]]*zd)/(vox[[2]]*xd);
     
-  		size = Min[{r1, r2, r3}] 800;
+  		size = Min[{r1, r2, r3}] 400;
   		
   		init = OptionValue[CropInit];
   		init = If[ListQ[init] && Length[init]==6,
