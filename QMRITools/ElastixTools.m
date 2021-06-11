@@ -260,7 +260,9 @@ Begin["`Private`"]
 
 operatingSystem = $OperatingSystem;
 
-QMRITools`ElastixTools`$debugElastix = If[QMRITools`ElastixTools`$debugElastix===True, True, False];
+(*QMRITools`ElastixTools`$debugElastix = If[QMRITools`ElastixTools`$debugElastix===True, True, False];*)
+
+QMRITools`ElastixTools`$debugElastix=False;
 
 
 (* ::Subsubsection::Closed:: *)

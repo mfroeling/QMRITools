@@ -457,7 +457,7 @@ Ploti[data_, minmax_, label_, ps_, color_, colscal_, legend_, frame_, ccolor_, a
 	colf = LookUpTable2[color, ccolor,{pmin,pmax}];
 	
 	(*not using array plot makes plot 2x as fast*)
-	plot=Graphics[Raster[Reverse@data, ColorFunction -> colf], Frame -> frame, FrameTicks -> tks, ImageSize -> size, AspectRatio -> ratio];
+	plot=Graphics[Raster[Reverse@data, ColorFunction -> colf, ImageResolution->96], Frame -> frame, FrameTicks -> tks, ImageSize -> size, AspectRatio -> ratio];
 	
 	(*add label*)
 	plot = Labeli[label,ps,plot];
