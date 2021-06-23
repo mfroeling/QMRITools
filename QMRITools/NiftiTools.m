@@ -156,7 +156,7 @@ Begin["`Private`"]
 (*DcmToNii*)
 
 
-Options[DcmToNii]={CompressNii->True, Method->Automatic}
+Options[DcmToNii]={CompressNii->True, Method->Automatic, UseVersion->1}
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
@@ -164,7 +164,7 @@ DcmToNii[opt:OptionsPattern[]]:=DcmToNii[{"",""},opt];
 
 DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,folout, log,command,compress,dcm2nii},
 	
-	dcm2nii=FindDcm2Nii[];
+	dcm2nii=FindDcm2Nii[OptionValue[UseVersion]];
 	If[dcm2nii==$Failed,Return[$Failed,Module]];
 	
 	Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"];
@@ -187,11 +187,11 @@ DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,
 		,
 		"Unix",
 		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
-		compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
+		compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 		,
 		"MacOSX",
 		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
-		compress<>" -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
+		compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 	];
 	
 	If[OptionValue[Method]=!=Automatic,Print[command]];
@@ -203,10 +203,18 @@ DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,
 ]
 
 
-FindDcm2Nii[]:=Module[{fil1,fil2},
+FindDcm2Nii[]:=FindDcm2Nii[1];
+
+FindDcm2Nii[ver_]:=Module[{fil1,fil2},
 	Switch[$OperatingSystem,
 		"Windows",
-		fil1=$UserBaseDirectory <>"\\Applications\\QMRITools\\Applications\\windows-x86-64\\dcm2niix.exe";
+		
+		Switch[ver,
+			1,"dcm2niix.exe",
+			2,"dcm2niix-20210317.exe"
+		];
+		
+		fil1=$UserBaseDirectory <>"\\Applications\\QMRITools\\Applications\\windows-x86-64\\";
 		fil2=$BaseDirectory <>"\\Applications\\QMRITools\\Applications\\windows-x86-64\\dcm2niix.exe";
 		,
 		"Unix",

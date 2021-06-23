@@ -64,6 +64,13 @@ Output is the smoothed tensor.
 
 AnisoFilterTensor[] is based on DOI: 10.1109/ISBI.2006.1624856"
 
+AnisoFilterData::usage = 
+"AnisoFilterData[data] Filter the diffusion tensor data using an anisotropic filter based on the strucure tensor of the data. 
+
+Output is the smoothed data.
+
+AnisoFilterData[] is based on DOI: 10.1016/j.jbiomech.2021.110540"
+
 WeightMapCalc::usage =  
 "WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterTensor.
 
@@ -115,6 +122,9 @@ AnisoWeightType::usage =
 
 AnisoKappa::usage =
 "AnisoKappa is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting strenght, all data is normalize to 100 before filetering."
+
+AnisoItterations::usage = 
+"AnisoItterations is an options for AnisoFilterData. It specifies the amount of denoising itterations."
 
 
 (* ::Subsection::Closed:: *)
@@ -540,41 +550,43 @@ Options[AnisoFilterTensor] = {AnisoWeightType->2, AnisoKappa->5., AnisoStepTime-
 SyntaxInformation[AnisoFilterTensor] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
-weights,kernels,mn,j,datf,kers,wts,lambda,finDiff,wtsI,
-itt,time,kappa,type, data, tens
-},
-(*get the options*)
-itt=OptionValue[AnisoFilterSteps];
-time=OptionValue[AnisoStepTime];
-kappa=N@OptionValue[AnisoKappa];
-type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
-
-(*calculate the edges based on the diffusion images*)
-PrintTemporary["Determaning the weights based on the data."];
-data=ToPackedArray@N@dat;
-tens=ToPackedArray@N@tensi;
-weights=WeightMapCalc[data, AnisoKappa->kappa, AnisoWeightType->type];
-(*get the fixed parameters*)
-mn=Mean[tens[[1;;3]]];
-{kers,wts}=KernelWeights[];
-lambda=1/Length[kers];
-
-(*filter the tensor*)
-PrintTemporary["Anisotropic filtering of the tensor."];
-j=0;PrintTemporary[ProgressIndicator[Dynamic[j],{0,itt 6}]];
-Table[
-(*Normalize the diffusion tensor*)
-datf = 100 DevideNoZero[tens[[tt]],mn];
-(*perform the diffusion smoothing itterations*)
-Do[
-j++;
-finDiff=FinDiffCalc[datf,kers];
-wtsI=weights WeightCalc[finDiff,wts,kappa,type];
-datf=datf+time lambda Total@(wtsI finDiff);
-,itt];
-(*revert tensor normalization*)
-datf=mn datf/100
-,{tt,1,6}](*loop over tensor*)
+	weights,kernels,mn,j,datf,kers,wts,lambda,finDiff,wtsI,
+	itt,time,kappa,type, data, tens
+	},
+	(*get the options*)
+	itt=OptionValue[AnisoFilterSteps];
+	time=OptionValue[AnisoStepTime];
+	kappa=N@OptionValue[AnisoKappa];
+	type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
+	
+	(*calculate the edges based on the diffusion images*)
+	PrintTemporary["Determaning the weights based on the data."];
+	data=ToPackedArray@N@dat;
+	tens=ToPackedArray@N@tensi;
+	weights=WeightMapCalc[data, AnisoKappa->kappa, AnisoWeightType->type];
+	(*get the fixed parameters*)
+	mn=Mean[tens[[1;;3]]];
+	{kers,wts}=KernelWeights[];
+	lambda=1/Length[kers];
+	
+	(*filter the tensor*)
+	PrintTemporary["Anisotropic filtering of the tensor."];
+	j=0;PrintTemporary[ProgressIndicator[Dynamic[j],{0,itt 6}]];
+	Table[
+		(*Normalize the diffusion tensor*)
+		datf = 100 DevideNoZero[tens[[tt]],mn];
+		(*perform the diffusion smoothing itterations*)
+		Do[
+			j++;
+			finDiff=FinDiffCalc[datf,kers];
+			wtsI=weights WeightCalc[finDiff,wts,kappa,type];
+			datf=datf+time lambda Total@(wtsI finDiff);
+			,itt
+		];
+		(*revert tensor normalization*)
+		datf=mn datf/100
+		(*loop over tensor*)
+	,{tt,1,6}]
 ]
 
 
@@ -586,30 +598,35 @@ Options[WeightMapCalc]={AnisoWeightType->2, AnisoKappa->10.};
 
 SyntaxInformation[WeightMapCalc] = {"ArgumentsPattern" -> {_,  OptionsPattern[]}};
 
-WeightMapCalc[data_,OptionsPattern[]]:=Block[{kers,wts,weights,finDiff,dat,dim,len, kappa, type },
-(*get the options*)
-kappa=N@OptionValue[AnisoKappa];
-type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
-(*get the kernerl and weights*)
-{kers,wts}=KernelWeights[];
-(*prepare output *)
-dim=Dimensions[data];
-len=dim[[2]];dim=Drop[dim,{2}];
-weights=ConstantArray[0,Prepend[dim,Length[wts]]];
-(*get the weighting for all diffusion images*)
-i=0;PrintTemporary[ProgressIndicator[Dynamic[i],{0,len}]];
-(
-i++;
-(*normalize the data*)
-dat=100#/Max[Abs[#]];
-(*add to the weights*)
-weights+=WeightCalc[FinDiffCalc[dat,kers],wts,kappa,type];
-)&/@Transpose[data];
-
-(*normalize the weights between 0 and 1*)
-(*weights=Mean[weights];
-weights=weights/Max[weights];*)
-(#/Max[#])&/@weights
+WeightMapCalc[data_,OptionsPattern[]]:=Block[{
+	kers,wts,weights,finDiff,dat,dim,len, kappa, type
+	},
+	(*get the options*)
+	kappa=N@OptionValue[AnisoKappa];
+	type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
+	
+	(*get the kernerl and weights*)
+	{kers,wts}=KernelWeights[];
+	
+	(*prepare output *)
+	dim=Dimensions[data];
+	len=dim[[2]];dim=Drop[dim,{2}];
+	weights=ConstantArray[0,Prepend[dim,Length[wts]]];
+	
+	(*get the weighting for all diffusion images*)
+	i=0;PrintTemporary[ProgressIndicator[Dynamic[i],{0,len}]];
+	(
+		i++;
+		(*normalize the data*)
+		dat=100#/Max[Abs[#]];
+		(*add to the weights*)
+		weights+=WeightCalc[FinDiffCalc[dat,kers],wts,kappa,type];
+	)&/@Transpose[data];
+	
+	(*normalize the weights between 0 and 1*)
+	(*weights=Mean[weights];
+	weights=weights/Max[weights];*)
+	(#/Max[#])&/@weights
 ]
 
 
@@ -618,16 +635,16 @@ weights=weights/Max[weights];*)
 
 
 KernelWeights[]:=Block[{cent,ker,keri,wtsi},
-ker=ConstantArray[0,{3,3,3}];
-ker[[2,2,2]]=-1;
-cent={2,2,2};
-Transpose[Flatten[Table[
-If[{i,j,k}==cent,
-Nothing,
-keri=ker;keri[[i,j,k]]=1;
-wtsi=N@Norm[cent-{i,j,k}];
-{keri,1/wtsi^2}
-],{i,1,3},{j,1,3},{k,1,3}],2]]
+	ker=ConstantArray[0,{3,3,3}];
+	ker[[2,2,2]]=-1;
+	cent={2,2,2};
+	Transpose[Flatten[Table[
+	If[{i,j,k}==cent,
+	Nothing,
+	keri=ker;keri[[i,j,k]]=1;
+	wtsi=N@Norm[cent-{i,j,k}];
+	{keri,1/wtsi^2}
+	],{i,1,3},{j,1,3},{k,1,3}],2]]
 ];
 
 
@@ -643,6 +660,45 @@ WeightCalc[finDiff_,wts_,kappa_,type_]:=wts Switch[type,1,Exp[-((finDiff/kappa)^
 
 
 FinDiffCalc[dat_,kers_]:=ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
+
+
+(* ::Subsection:: *)
+(*AnisoFilterData*)
+
+
+Options[AnisoFilterData] = {AnisoStepTime -> 0.3, AnisoItterations -> 5};
+
+SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+AnisoFilterData[data_, OptionsPattern[]] := Block[{
+	dd, grads, k, jacTot, tMat, eval, evec, div, dati
+	},
+	
+	dati = Transpose[data];
+	k = 1;
+	Do[
+		grads = (dd = #; GaussianFilter[dd, k, #] & /@ IdentityMatrix[3]) & /@ dati;
+		jacTot = GaussianFilter[Total[(Map[Outer[Times, #, #] &, TransData[#, "l"], {3}]) & /@ grads], k];
+		
+		tMat = Map[(
+			{eval, evec} = Eigensystem[#];
+			Which[
+				eval[[1]] == 0., eval = {1, 1, 1},
+				eval[[2]] == 0., eval = {0., 1.5, 1.5},
+				eval[[3]] == 0., eval = {0., 0., 3},
+				True, eval = 1/eval; eval = 3 eval/Total[eval]
+			];
+			Transpose[evec].DiagonalMatrix[eval].evec
+		) &, jacTot, {3}];
+		
+		div = MapThread[#2 . #1 &, {tMat, TransData[TransData[grads, "l"], "l"]}, 3];
+		div = TransData[TransData[div, "r"], "r"];
+		div = Total[MapThread[GaussianFilter[#1, k, #2] &, {#, IdentityMatrix[3]}]] & /@ div;
+		
+		dati = Clip[dati + OptionValue[AnisoStepTime] div, {0, Infinity}];
+	, {OptionValue[AnisoItterations]}];
+	Transpose[dati]
+]
 
 
 (* ::Section:: *)

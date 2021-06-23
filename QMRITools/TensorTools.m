@@ -94,6 +94,11 @@ ECalc::usage =
 
 ParameterCalc::usage = "ParameterCalc[tensor] caculates the eigenvalues and MD and FA from the given tensor. The parameters are l1, l2, l3, MD and FA. l1, l2, l3, MD are in (10^-3 mm^2/s)"
 
+FlipTensorOrientation::usage = 
+"FlipTensorOrientation[tens, perm] permutes the internal orientation of the tensor, perm can be any permutation of {\"x\",\"y\",\"z\"}.
+FlipTensorOrientation[tens, flip] flips the internal orientation of the tensor, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
+FlipTensorOrientation[tens, flip, perm] flips and permuter the internal orientation of the tensor.
+"
 
 AngleCalc::usage = 
 "AngleCalc[data, vector] calculates the angel between the vector and the data. Data shoud be an array of dimensions {xxx,3}."
@@ -200,30 +205,26 @@ Options[DriftCorrect]={NormalizeSignal->True, UseMask->True}
 
 SyntaxInformation[DriftCorrect] = {"ArgumentsPattern" -> {_, _,_., OptionsPattern[]}}
 
-DriftCorrect[data_, bi_, opts:OptionsPattern[]] := 
- Block[{bval,pos},
-
-  bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
-  pos = First@UniqueBvalPosition[bval, 5][[2]];
-
+DriftCorrect[data_, bi_, opts:OptionsPattern[]] := Block[{bval,pos},
+	bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
+	pos = First@UniqueBvalPosition[bval, 5][[2]];
 	DriftCorrect[data, bval, pos, opts]
-
-  ];
+];
   
-DriftCorrect[data_, bi_, pos_, OptionsPattern[]] := 
- Block[{sig, cor, bval, sol1, sol2, sol3, a, b, c, x,outp},
-  bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
-  sig = MeanSignal[data, pos, UseMask->OptionValue[UseMask]];
-  
-  dat = Transpose[{pos, sig}];
-  
-  {sol1, sol2, sol3} = {a, b, c} /. FindFit[dat, {c + b x + a x^2}, {a, b, c}, x];
-  cor = sol3/Table[sol3 + sol2 x + sol1 x^2, {x, 1, Length[bi]}];
-  
-  outp = ConstantArray[cor, Length[data]] data;
-  
-  If[OptionValue[NormalizeSignal], 100 outp / (sig[[1]] cor[[1]]) , outp ]
-  ];
+DriftCorrect[data_, bi_, pos_, OptionsPattern[]] := Block[{
+	sig, cor, bval, sol1, sol2, sol3, a, b, c, x, outp, dat
+	},
+	bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
+	sig = MeanSignal[data, pos, UseMask->OptionValue[UseMask]];
+	dat = Transpose[{pos, sig}];
+	
+	{sol1, sol2, sol3} = {a, b, c} /. FindFit[dat, {c + b x + a x^2}, {a, b, c}, x];
+	cor = sol3/Table[sol3 + sol2 x + sol1 x^2, {x, 1, Length[bi]}];
+	
+	outp = ConstantArray[cor, Length[data]] data;
+	
+	If[OptionValue[NormalizeSignal], 100 outp / (sig[[1]] cor[[1]]) , outp]
+];
 
 
 (* ::Subsection::Closed:: *)
@@ -260,10 +261,10 @@ ConcatenateDiffusionData[data_, grad_, val_, vox_] :=
 SyntaxInformation[SortDiffusionData] = {"ArgumentsPattern" -> {_, _, _}};
 
 SortDiffusionData[data_, grad_, val_] := Module[{pos, valu, sel},
-  {valu, pos} = UniqueBvalPosition[val];
-  sel = Flatten[pos];
-  {data[[All, sel]], grad[[sel]], val[[sel]]}
-  ]
+	{valu, pos} = UniqueBvalPosition[val];
+	sel = Flatten[pos];
+	{data[[All, sel]], grad[[sel]], val[[sel]]}
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -273,11 +274,11 @@ SortDiffusionData[data_, grad_, val_] := Module[{pos, valu, sel},
 SyntaxInformation[RemoveIsoImages] = {"ArgumentsPattern" -> {_, _, _}};
 
 RemoveIsoImages[data_, grad_, val_] := Module[{sel},
-  sel = Complement[Range[Length[val]], 
-    Complement[Flatten[Position[grad, {0., 0., 0.}]], 
-     Flatten[Position[val, 0.]]]];
-  {data[[All, sel]], grad[[sel]], val[[sel]]}
-  ]
+	sel = Complement[
+		Range[Length[val]],Complement[Flatten[Position[grad, {0., 0., 0.}]], Flatten[Position[val, 0.]]]
+	];
+	{data[[All, sel]], grad[[sel]], val[[sel]]}
+]
 
 
 (* ::Subsection:: *)
@@ -1065,6 +1066,35 @@ Module[{eig,adc,fa},
 	fa=FACalc[eig];
 	Join[TransData[eig,"r"],{adc,fa}]
 	]
+
+
+(* ::Subsection:: *)
+(*Correct*)
+
+
+SyntaxInformation[FlipTensorOrientation] = {"ArgumentsPattern" -> {_, _, _.}};
+
+FlipTensorOrientation[tensor_, p_] /; AllTrue[p, NumberQ] := FlipTensorOrientation[tensor, {"x", "y", "z"}, p]
+
+FlipTensorOrientation[tensor_, v_] /; AllTrue[v, StringQ] := FlipTensorOrientation[tensor, v, {1, 1, 1}]
+
+FlipTensorOrientation[tensor_, v_, p_] := Block[{times, transp},
+  If[DeleteDuplicates[Abs[p]] === {1} && Sort[v] === {"x", "y", "z"},
+   times = 
+    Join[{1, 1, 1}, 
+     Flatten[Table[p[[i]] p[[j]], {i, 1, 3}, {j, i + 1, 3}]]];
+   transp = v /. {
+      {"x", "y", "z"} -> {1, 2, 3, 4, 5, 6},
+      {"x", "z", "y"} -> {1, 3, 2, 5, 4, 6},
+      {"y", "x", "z"} -> {2, 1, 3, 4, 6, 5},
+      {"y", "z", "x"} -> {2, 3, 1, 6, 4, 5},
+      {"z", "x", "y"} -> {3, 1, 2, 5, 6, 4},
+      {"z", "y", "x"} -> {3, 2, 1, 6, 5, 4}
+      };
+   (times tensor)[[transp]]
+   ,
+   $Failed]
+  ]
 
 
 (* ::Subsection:: *)
