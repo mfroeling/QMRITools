@@ -210,7 +210,7 @@ TextOffset::usage =
 TextSize::usage = 
 "TextSize is an option for BullseyePlot. Determines the text size."
 
-TextNumberForm::usage
+TextNumberForm::usage =
 "TextNumberForm is an option for BullseyePlot. Specifies how many number and decimals to use like in NumberForm."
 
 BullPlotMethod::usage = 
@@ -226,7 +226,7 @@ DistanceMeasure::usage =
 BloodMaskRange::usage = 
 "BloodMaskRange is an option for MakeECVBloodMask." 
 
-OutputCheckImage
+OutputCheckImage::usage =
 "OutputCheckImage is an option for MakeECVBloodMask." 	
 
 

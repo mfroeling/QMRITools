@@ -117,7 +117,7 @@ ReadoutOutput::usage =
 ReadoutPhase::usage = 
 "ReadoutPhase is an option for SimReadout and defines the readout phase in degrees."
 
-ReadoutMethod::usage
+ReadoutMethod::usage = 
 "ReadoutMethod is an option of SimReadout and can be \"Fid\" or \"Echo\". With \"Fid\" it is also possbile to define a delay time in ms {\"Fid\", delay}. 
 With \"Echo\" it is also possbile to define a delay time in ms {\"Echo\", delay} and it than assumes te is half the readout, or a custom te can be defined {\"Echo\", delay, te}."
 
