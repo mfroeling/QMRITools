@@ -127,6 +127,10 @@ SmartMask::usage =
 "SmartMask[input] crates a smart mask of input, which is either the tensor or the tensor parameters calculated using ParameterCalc.
 SmartMask[input, mask] crates a smart mask of input and used the mask as a prior selection of the input."
 
+B1MapCalc::usage =
+"B1MapCalc[{mag1,mag2}, {tr1, tr2}] calculates the B1 map from a dual TR acquisition using magnitude data.
+B1MapCalc[{real1,real2},{imag1,imag2}, {tr1_, tr2_}] calculates the B1 map from a dual TR acquisition using complex data."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -1427,6 +1431,25 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 		
 		If[OptionValue[SmartMaskOutput]==="mask",mask,{mask,map}]
 	]
+
+
+(* ::Subsection::Closed:: *)
+(*B1MapCalc*)
+
+
+B1MapCalc[mag_, {tr1_, tr2_}] := Block[{c1, c2, r, n},
+	{c1, c2} = mag;
+	n = tr2/tr1;
+	r = DevideNoZero[c2, c1];
+	Abs[ArcCos[DevideNoZero[(r n - 1), (n - r)]]]
+]
+
+B1MapCalc[real_, imag_, {tr1_, tr2_}] := Block[{c1, c2, r, n},
+	{c1, c2} = real + imag I;
+	n = tr2/tr1;
+	r = DevideNoZero[c2, c1];
+	Through[{Abs, Arg}[ArcCos[DevideNoZero[(r n - 1), (n - r)]]]]
+]
 
 
 (* ::Section:: *)

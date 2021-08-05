@@ -4,7 +4,7 @@
 
 Paclet[
     Name -> "QMRITools",
-    Version -> "2.4.4",
+    Version -> "2.4.5",
     WolframVersion -> "12.3+",
     Description -> "Toolbox for Quantitative MRI.",
     Creator -> "Martijn Froeling <m.froeling@gmail.com>",
@@ -16,5 +16,3 @@ Paclet[
             {"Documentation", Language -> "English", MainPage -> "Guides/QMRITools"}
         }
 ]
-
-
