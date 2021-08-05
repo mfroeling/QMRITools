@@ -902,7 +902,7 @@ FourierRescaleData[data_, factor_:2] := Block[{dim, pad, scale, fac, new},
 (*Coil weighted recon*)
 
 
-Options[CoilWeightedRecon] = {EchoShiftData -> 0, CoilSamples -> 2, Method -> "RoemerEqualSignal"};
+Options[CoilWeightedRecon] = {EchoShiftData -> 0, CoilSamples -> 2, Method -> "RoemerEqualSignal",OutputSense->False};
 
 CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coilData, cov, sens, recon, encDim},
 	shift = OptionValue[EchoShiftData];
@@ -935,7 +935,10 @@ CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coi
 	
 	(*scale to proper values*)
 	recon = 1000. recon/Max[Abs[recon]];
-	#[recon] & /@ {Abs, Arg, Re, Im}
+	If[OptionValue[OutputSense],
+		{#[recon] & /@ {Abs, Arg, Re, Im},sens},
+		#[recon] & /@ {Abs, Arg, Re, Im}
+	]
 ]
 
 

@@ -96,7 +96,9 @@ PlotSimulationAngle::usage =
 PlotSimulationVec::usage =
 "PlotSimulationVec[tens, xdata, label] plots the eigenvectors from simulated tensors."
 
-
+GESignal::usage = 
+"GESignal[ang, {tr, t1}] calculates the gradient echo signal for flipangles ang using tr and t1. 
+GESignal[ang_?ListQ, {{tr1_, tr2_}, t1_}] calculates the dual tr gradient echo signal for flipangles ang using tr1, tr2 and t1."
 
 
 (* ::Subsection::Closed:: *)
@@ -1028,6 +1030,28 @@ EigPlot[data_, vp_, vv_, va_, arrows_, val_] := Module[{sphere,line},
 	 			]
     		];
 
+
+(* ::Subsubsection::Closed:: *)
+(*GESignal*)
+
+
+GESignal[ang_?ListQ, {tr_, t1_}] := Transpose[GESignal[#, {tr, t1}] & /@ ang]
+GESignal[ang_?NumberQ, {tr_, t1_}] := Block[{e1, a},
+	a = ang Degree;
+	e1 = Exp[-tr/t1];
+	Sin[a] (1 - e1)/(1 - Cos[a] e1)
+];
+
+
+GESignal[ang_?ListQ, {{tr1_, tr2_}, t1_}] := Transpose[GESignal[#, {{tr1, tr2}, t1}] & /@ ang]
+GESignal[ang_?NumberQ, {{tr1_, tr2_}, t1_}] := Block[{a, e1, e2, s1, s2},
+	a = N[ang Degree];
+	e1 = Exp[-tr1/t1];
+	e2 = Exp[-tr2/t1];
+	s1 = Sin[a] (1 - e2 + (1 - e1) e2 Cos[a])/(1 - e1 e2 (Cos[a])^2);
+	s2 = Sin[a] (1 - e1 + (1 - e2) e1 Cos[a])/(1 - e1 e2 (Cos[a])^2);
+	{s1, s2}
+]
 
 (* ::Section:: *)
 (*End Package*)

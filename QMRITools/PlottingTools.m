@@ -80,6 +80,7 @@ PlotIVIM::usage =
 PlotSequence::usage = 
 "PlotSequence[seq,var] where seq is the output from GradSeq."
 
+
 (*Ploti::usage = "testing"*) 
 
 
@@ -158,29 +159,25 @@ Begin["`Private`"]
 
 
 (*plot menu options*)
-sizes={200,300,400,500,750,1000,1500,2000,2500,3000};
-psizes={100,200,300,400,500,600,700,800,900,1000};
-files={".pdf",".jpg",".gif",".tif",".png"};
-colfuncs={1->"Normal",2->"Reverse",3->"Symetric",4->"Reverse Symetric"};
-labStyle=Directive[Bold,FontFamily->"Helvetica",14,Black];
+sizes    = {200,300,400,500,750,1000,1500,2000,2500,3000};
+psizes   = {100,200,300,400,500,600,700,800,900,1000};
+files    = {".pdf",".jpg",".gif",".tif",".png"};
+colfuncs = {"Normal","Reverse","Symmetric","Reverse Symmetric"};
+labStyle = Directive[Bold,FontFamily->"Helvetica",14,Black];
+ncol     = 512;
 
 
 (*3D color rules and settings*)
-colors3D = {Automatic -> "Automatic", "XRay", "HighRange", "LowRange","WhiteBlackOpacity", 
-	"SunsetColorsOpacity", "RainbowOpacity"};
+colors3D = {Automatic -> "Automatic", "XRay", "HighRange", 
+	"LowRange","WhiteBlackOpacity", "SunsetColorsOpacity", "RainbowOpacity"};
 views = Thread[2*{{0.65, -1.2, 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}} -> {"Start", "Right", "Left", "Front", "Back", "Top", "Bottom"}];
 
 (*default gradient color funtions*)
-gradsets = ColorData["Gradients"];
-colorNames = {
-	"GrayTones", "Rainbow", "ThermometerColors", "SunsetColors", 
-	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", "BlueGreenYellow", 
-	"AvocadoColors", "SouthwestColors"};
+colorNames = {"GrayTones", "Rainbow", "ThermometerColors", "SunsetColors", 
+	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", 
+	"BlueGreenYellow", "AvocadoColors", "SouthwestColors"};
 
 (*custom color functions and generate image of custom color*)
-CustCol[colf_] := Graphics[Raster[{Range[100]/100.}, {{0, 0}, {1, 1}}, ColorFunction -> colf], 
-AspectRatio -> 1/8, ContentSelectable -> False, ImageSize -> 100, PlotRange -> {{0, 1}, {0, 1}}]
-
 custColors = {
 	"RedToWhite" -> (Blend[{RGBColor[1, 1, 1], RGBColor[.7, 0, 0]}, 1 - #]&),
 	"BlackToWhite" -> (Blend[{RGBColor[1, 1, 1], RGBColor[0, 0, 0]}, 1 - #]&),
@@ -191,11 +188,16 @@ custColors = {
 	"GEcol" -> (Blend[{Black, RGBColor[0, .22, .22], RGBColor[0, .45, .45], RGBColor[.4, .0, .9], RGBColor[.75, .25, .5], Orange, RGBColor[1, .7, .35],  White}, #] &)
 	};
 
-(*generate color list*)
-colors = If[MemberQ[gradsets, #], 
-		(# -> Show[ColorData[#, "Image"], ImageSize -> 100]), 
-		(# ->  CustCol[#/. custColors])
-	] & /@ Join[colorNames,custColors[[All,1]]];
+(*generate color list and functions*)
+colorFunctions = Join[# -> ColorData[#] & /@ colorNames, custColors];
+	
+colors = Sort@Join[
+	# -> Show[ColorData[#, "Image"], ImageSize -> 100] & /@ colorNames,
+	#[[1]] -> CustCol[#[[2]]] & /@ custColors
+];
+
+CustCol[colf_] := Graphics[Raster[{Range[100]/100.}, {{0, 0}, {1, 1}}, ColorFunction -> colf], 
+	AspectRatio -> 1/8, ContentSelectable -> False, ImageSize -> 100, PlotRange -> {{0, 1}, {0, 1}}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -209,50 +211,79 @@ ToByte = Compile[{{data, _Real, 0}, {range, _Real, 1}},(data - range[[1]])/(rang
 (*Clip and lookup*)
 
 
-ColorData2[func_] := If[MemberQ[gradsets, func], ColorData[func], (func /. custColors)]
-ColSel[func_, cfunc_] := With[{fun = {# &, 1 - # &, Abs[(2 # - 1)] &, Abs[Abs[(2*#) - 1] - 1] &}[[func]]}, ColorData2[cfunc][fun[#]]&]
+ColSel[func_, cfunc_] := With[{
+	fun = Switch[func, 
+		"Normal", #1&, 
+		"Reverse", 1 - #1&,
+		"Symmetric", Abs[2 #1 - 1]&, 
+		"Reverse Symmetric", Abs[Abs[2 #1 - 1] - 1] &
+	],
+	cfun = cfunc /. colorFunctions
+	}, cfun[fun[#]]&
+]
 
-ColorLookup[___] = Darker[Red];
-ColorLookup = With[{ran = Range[0, 1., 1./255.]},
-	Table[
-		ColorLookup[j,i] = (ColSel[j, i] /@ ran) /. (RGBColor[x_, y_, z_] -> RGBColor[x, y, z, 1])
-		, {j, 1, 4}, {i, colors[[All, 1]]}];
-   ColorLookup];
-(*With[{ran = Range[0, 1., 1./255.]},Table[ColorLookup[j,i] = (ColSel[j, i] /@ ran) /. (RGBColor[x_, y_, z_] -> RGBColor[x, y, z, 1]), {j, 1, 4}, {i, colors[[All, 1]]}]];*)
 
-ColorRound = Compile[{{x, _Real, 0}}, If[0 <= x <= 1, Round[255 x] + 2, If[x < 0, 1, 258]], RuntimeOptions -> "Speed"];
-LookUpTable[{lstyle_, color_}, {minclip_, maxclip_}] := Module[{collist, fun}, 
-	With[{colfunc = ColSel[lstyle, color]},
-   collist = {minclip}~Join~(colfunc /@ Range[0, 1, 1./255])~Join~{maxclip};
-   fun[None] = Transparent;
-   fun[x_] := collist[[ColorRound[x]]];
-   fun
-   ]]
+(*generate all the color lookup tables*)
+ClearAll[ColorLookup]
+ColorLookup[___] = ConstantArray[Col2List[Darker[Red]], ncol];
+With[{ran = Range[0, 1., 1./(ncol - 1)]},
+	Table[ColorLookup[j, i] = Col2List[ColSel[j, i][#] & /@ ran], {j, colfuncs}, {i, colorFunctions[[All, 1]]}]
+];
 
-ColorRound2 = Compile[{{x, _Real, 0}, {pmin, _Real, 0}, {pmax, _Real, 0}}, 
-   If[pmin <= x <= pmax, Round[255 ((x - pmin)/(pmax - pmin))] + 2, 
-    If[x < pmin, 1, 258]], RuntimeOptions -> "Speed"];
-LookUpTable2[{lstyle_, color_}, {minclip_, maxclip_}, {pmin_, pmax_}] := Module[{collist, fun, minc, maxc},
-  (*generate color lookup table with correct clipping colors for min and max, add opacity for Image function*)
-  {minc, maxc} = {minclip, maxclip} /. (RGBColor[x_, y_, z_] -> RGBColor[x, y, z, 1]);
-  collist = ({minc}~Join~(ColorLookup[lstyle, color])~Join~{maxc});
-  (*define the color function fun*)
-  fun[None] = Transparent;
-  fun[x_] := collist[[ColorRound2[x, pmin, pmax]]];
-  fun
+(*color lookup function, presersing clipping and transparentcy. It converts integers to color values*)
+(*returs the color function*)
+LookUpTable[{lstyle_, color_}, {minclip_, maxclip_}] := With[{
+		(*generate color lookup table with correct clipping colors for min and max,add opacity for Image function*)
+		collist = Join[{Col2List[minclip]},(ColorLookup[lstyle, color]),{Col2List[maxclip]}]
+	}, 
+	Function[{x}, Which[NumberQ[x] || VectorQ[x], collist[[x]], MatrixQ[x], collist[[#]] & /@ x]]
   ]
+
+Attributes[Col2List] = {Listable};
+Col2List[RGBColor[c___]] := Round[255 PadRight[List[c], 4, 1.]]
+Col2List[c_] := Col2List[RGBColor[c]]
+
+
+(*converts numbers to integers for color lookup*)
+ColorRound = With[{n = ncol}, Compile[{{x, _Real, 0}, {r, _Real, 1}},
+	n + 2 - Ramp[n + 1 - Ramp[Round[(n - 1) ((x - r[[1]])/(r[[2]] - r[[1]]))] + 1]],
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+];
 
 
 (* ::Subsubsection::Closed:: *)
 (*ManPannel*)
 
 
-ManPannel[name_,cont_,depl_:True]:=
-Module[{controls = DeleteCases[cont, Null]}, 
- OpenerView[{Style[name, Bold, Medium], 
-   Grid[If[ArrayDepth[controls] == 1, {controls}, controls],Alignment -> {{Right, Left}, Center}, ItemSize -> {{13, 30}}]}, 
-  depl
-  ]
+ManPannel[name_,cont_,depl_:True]:= Module[{controls = DeleteCases[cont, Null]},
+	OpenerView[{Style[name, Bold, Medium],
+		Grid[If[ArrayDepth[controls] == 1, {controls}, controls],Alignment -> {{Right, Left}, Center}, ItemSize -> {{13, 30}}]
+	},depl]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Label Legend plot*)
+
+
+LabLeg[im_, {fnts_,legs_}, label_, {legend_, color_, {min_,max_}}] := Block[{lab, bar},	
+	(*generate label if needed*)
+	lab = If[StringQ[label], Style[label, labStyle, TextAlignment -> Center, FontSize -> fnts]];
+	
+	(*generate legend if needed*)
+	bar = If[legend,
+		BarLegend[{(ColSel @@ color)[(# - min)/(max - min)] &, {min, max}}, 
+			LabelStyle -> Directive[Bold, FontFamily -> "Helvetica", fnts, Black],
+			LegendMarkerSize -> legs, LegendLayout -> "Column"]
+    ];
+    
+    (*make the image grid*)
+   Grid[Which[
+    	StringQ[label] && legend, {{lab, ""}, {im, bar}},
+    	legend, {{im, bar}},
+    	StringQ[label], {{lab}, {im}},
+    	True, {{im}}
+    ],Spacings->{2,2}]
 ]
 
 
@@ -260,28 +291,15 @@ Module[{controls = DeleteCases[cont, Null]},
 (*Lengend plot*)
 
 
-Legendi[plot_, color_, min_, max_, ps_] := Legended[plot,
-	Placed[
-   	BarLegend[{ColSel[color[[1]], color[[2]]][(# - min)/(max - min)]&, {min, max}}, 
-    LabelStyle -> labStyle, LegendMarkerSize -> .92 ps, LegendLayout -> "Column"]
-    ,{After, Bottom}]
-];
-
-
-(* ::Subsubsection::Closed:: *)
-(*Lengend plot*)
-
-
-Save
-Labeli[lab_,ps_,plot_]:=If[StringQ[lab],
-	Column[{
-		Row[{Style[lab, labStyle, TextAlignment->Center, FontSize -> Round[ps/20]]},ImageSize->ps,Alignment->Center],
-		plot
-	},
-	Alignment->Center]
-	,
-	plot
-	];
+Labeli[im_,fnts_,label_]:=Block[{lab},
+	(*generate label if needed*)
+	If[StringQ[label], 
+		lab = Style[label, labStyle, TextAlignment -> Center, FontSize -> fnts];
+		Column[{lab,im}, Alignment->Center, Spacings->2],	
+		im
+	]
+]
+	
 
 
 (* ::Subsubsection::Closed:: *)
@@ -304,20 +322,26 @@ labout=If[x===Null&&y===Null,
 (*LabelJoin*)
 
 
-LabelJoin[label_]:=StringJoin[Riffle[DeleteCases[label[[{3, 1, 2}]], None], "\n"]] /. "" -> None
+LabelJoin[label_]:=StringJoin[Riffle[DeleteCases[label[[{3, 1, 2}]]/. " " -> None, None], "\n"]] /. "" -> None
 
 
 (* ::Subsubsection::Closed:: *)
 (*PlotSize*)
 
 
-PlotSize[data_,ps_,aspect_]:=Block[{dimx,dimy,size,ratio,dsize},
-	{dimy, dimx} = Dimensions[data];
-	dsize = {dimx, dimy}*aspect;
-	size = (dsize/Max[dsize]) ps;
-	ratio = 1/Divide @@ dsize;
-	{dimx,dimy,size,ratio}
+PlotSize[data_, ps_, aspect_] := Block[{dsize,ratio},
+	dsize = Dimensions[data]*aspect;
+	ratio = N[Divide @@ dsize];
+	{If[ratio>1, ps/ratio, ps], ratio}
 ]
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*PlotSize*)
+
+
+LabSize[size_,ratio_]:= { Max[12, Min[{25, Round[Max[{size, ratio size}]/15]}]], .95 ratio size }
 
 
 (* ::Subsubsection::Closed:: *)
@@ -325,14 +349,20 @@ PlotSize[data_,ps_,aspect_]:=Block[{dimx,dimy,size,ratio,dsize},
 
 
 PlotRangeVals[scale_, data_, {min_, max_}] := Block[{mindat, maxdat},
-	{mindat, maxdat} = If[scale,
-		(*Autoscale*)N[MinMax[data]],
-		(*Manual Scale*){min, max}
-	];
+	{mindat, maxdat} = If[scale, N@Quantile[Flatten[data], {0.05, 0.95}], {min, max}];
 	(*only use valid scale which is max>min*)
-    If[mindat >= maxdat, maxdat = mindat + 0.001];
-   	{mindat, maxdat}
-   ];
+	If[mindat >= maxdat, {mindat, mindat + 0.001}, {mindat, maxdat}]
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeImage*)
+
+
+MakeImage[data_, color_, ccolor_, ran_] := Image[
+	NumericArray[LookUpTable[color, ccolor][ColorRound[data, ran]], "UnsignedInteger8"], "Byte",
+	ColorSpace -> "RGB"]
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -340,10 +370,11 @@ PlotRangeVals[scale_, data_, {min_, max_}] := Block[{mindat, maxdat},
 
 
 PlotTicks[dimx_, dimy_] := Block[{tkx, tky},
-   tkx = Table[tx, {tx, 0, dimx, If[dimx > 250, 50, 25]}];
-   tky = Table[{ty, dimy - ty}, {ty, dimy, 0, If[dimy > 250, -50, -25]}];
-   {{tky, tky}, {tkx, tkx}}
-   ];
+	tkx = Table[tx, {tx, 0, dimx, Which[dimx < 10, 1, dimx < 50, 5, True, Ceiling[dimx/10, 10]]}];
+	tky = Table[{ty, dimy - ty}, {ty, dimy, 0, -Which[dimx < 10, 1, dimx < 50, 5, True, Ceiling[dimx/10, 10]]}];
+	{{tky, tky}, {tkx, tkx}}
+];
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -364,8 +395,8 @@ Module[{dim1,dim2},
 	]
 
 RescaleImg[data_, dim_] := Block[{type},
- type = If[ArrayQ[data, _, IntegerQ], "Bit16","Real32"];
- ImageData[ImageResize[Image[data, type], Reverse[dim], Resampling -> "Gaussian"], type]
+	type = If[ArrayQ[data, _, IntegerQ], "Bit16","Real32"];
+	ImageData[ImageResize[Image[data, type], Reverse[dim], Resampling -> "Gaussian"], type]
 ]
 
 
@@ -373,14 +404,11 @@ RescaleImg[data_, dim_] := Block[{type},
 (*DataString*)
 
 
-DataString[dim_]:=
-ReleaseHold[
-	{
-		Hold["one image with a dimension of "<>ToString[dim[[1]]]<>"x"<>ToString[dim[[2]]]<>" voxels"],
-		Hold[ToString[dim[[1]]]<>" slices with a dimensions of "<>ToString[dim[[2]]]<>"x"<>ToString[dim[[3]]]<>" voxels"],
-		Hold[ToString[dim[[1]]]<>"x"<>ToString[dim[[2]]]<>" slices with a dimensions of "<>ToString[dim[[3]]]<>"x"<>ToString[dim[[4]]]<>" voxels"]
-	}[[Length[dim]-1]]
-	]
+DataString[dim_]:=ReleaseHold[{
+	Hold["one image with a dimension of "<>ToString[dim[[1]]]<>"x"<>ToString[dim[[2]]]<>" voxels"],
+	Hold[ToString[dim[[1]]]<>" slices with a dimensions of "<>ToString[dim[[2]]]<>"x"<>ToString[dim[[3]]]<>" voxels"],
+	Hold[ToString[dim[[1]]]<>"x"<>ToString[dim[[2]]]<>" slices with a dimensions of "<>ToString[dim[[3]]]<>"x"<>ToString[dim[[4]]]<>" voxels"]
+}[[Length[dim]-1]]]
 
 
 (* ::Subsection:: *)
@@ -402,19 +430,17 @@ Module[{input,lab},
 			lab=ReleaseHold[label]/. None->"";
 			pl=ReleaseHold[plot];
 			SaveImage[pl,input<>lab<>type,FileType->type,ImageSize -> size];
-			(*Export[input<>lab<>type, Rasterize[ReleaseHold[plot], RasterSize->2*size],RasterSize->2*size, ImageResolution->300];*)
 			,{xs,range[[1]],range[[2]]}];,
 		4,(* one 4D datasest *)
 		Table[
 			lab=ReleaseHold[label]/. None->"";
 			pl=ReleaseHold[plot];
 			SaveImage[pl,input<>lab<>type,FileType->type,ImageSize -> size];
-			(*Export[input<>lab<>type, Rasterize[ReleaseHold[plot], RasterSize->2*size],RasterSize->2*size, ImageResolution->300];*)
 			,{xs,range[[1]],range[[2]]},{ys,range[[3]],range[[4]]}];
 		];
-		
+
 	Print["Multiple fiels were saved to: "<>input<>" as "<>type<>" files."];
-	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -446,45 +472,44 @@ Module[{input,movie},
 
 
 Ploti[data_, minmax_, label_, ps_, color_, colscal_, legend_, frame_, ccolor_, aspect_] := Block[
-	{plot, pdat, lab, ratio, tx, ty, dimx, dimy, size, dsize, colf, 
-		pmin, pmax, lmin, lmax, mindat, maxdat, tks},
+	{ran, size, ratio, tks, im},
 	
-	{dimx,dimy,size,ratio}=PlotSize[data,ps,aspect];
-	tks = PlotTicks[dimx, dimy];
-	{pmin, pmax} = PlotRangeVals[colscal, data, minmax];
-	
-	(*pdat = Reverse@ToByte[data, {pmin, pmax}];*)
-	colf = LookUpTable2[color, ccolor,{pmin,pmax}];
-	
-	(*not using array plot makes plot 2x as fast*)
-	plot=Graphics[Raster[Reverse@data, ColorFunction -> colf, ImageResolution->96], Frame -> frame, FrameTicks -> tks, ImageSize -> size, AspectRatio -> ratio];
-	
-	(*add label*)
-	plot = Labeli[label,ps,plot];
-	(*add legend*)
-	If[legend, Legendi[plot, color, pmin, pmax, size[[2]]], plot]
-  ]
+	(*get range and sizes*)
+	ran = PlotRangeVals[colscal, data, minmax];
+	{size, ratio} = PlotSize[data, ps, aspect];
+	tks = PlotTicks@@Dimensions[data];
+	(*make the image*)
+	im = MakeImage[data, color, ccolor, ran];
+	(*Apply labes and styling*)
+	LabLeg[
+		Show[im, ImageSize -> size, AspectRatio -> ratio, Frame -> frame, FrameTicks -> tks], 
+		LabSize[size,ratio], label, {legend, color, ran}]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*Plot2i*)
 
 
-Plot2i[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,join_,ccolor_,aspect_,leg_]:=Block[{plot},
+Plot2i[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,join_,ccolor_,aspect_,leg_]:=Block[
+	{plot,fnts,legs},
+	
 	Switch[join[[1]],
 		1,(*Normal side by side*)
+		{fnts,legs} = Min/@Transpose[LabSize@@PlotSize[#, ps, aspect]&/@data];
 		plot={
 			Ploti[data[[1]],minmax[[1]],label[[1]],ps,color[[1]],autosc[[1]],legend,frame,ccolor[[1]],aspect],
 			Ploti[data[[2]],minmax[[2]],label[[2]],ps,color[[2]],autosc[[2]],legend,frame,ccolor[[2]],aspect]
 			};
-		Labeli[label[[3]],ps,Grid[{plot}]],
+		Labeli[Grid[{plot},Spacings->3], fnts, label[[3]]]
+		,
 		2(*CheckboardPlot*),
 		CheckPlot[data,minmax,label,ps,color,autosc,frame,join[[2]],join[[3]],ccolor,aspect],
 		3(*Opacity overlay plot*),
 		OpacityPlot[data,minmax,label,ps,color,autosc,legend,frame,join[[3]],join[[4]],ccolor,aspect, leg],
 		4(*Difference Plot*),
 		DifferencePlot[data,minmax,label,ps,color,legend,frame,join[[3]],join[[5]],ccolor,aspect]
-		]
+	]
 ]
 
 
@@ -492,96 +517,86 @@ Plot2i[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,join_,ccolor_,aspe
 (*CheckPlot*)
 
 
-CheckPlot[data_,minmax_,label_,ps_,color_,autosc_,frame_,size_,flip_,ccolor_,aspect_]:=
-Module[{plot1,plot2,colf1,colf2,pdat1,pdat2,ratio,a,b,tks,
-	dimy,dimx,pmin1,pmax1,pmin2,pmax2,lab,psize},
+CheckPlot[data_,minmax_,label_,ps_,color_,autosc_,frame_,size_,flip_,ccolor_,aspect_]:= Block[
+	{a, b, pdata, pdatb, psize, ratio, rana, ranb, ima, imb, im, check, tks},
 	
 	{a,b}=If[flip,{2,1},{1,2}];
-	{pdat1,pdat2}=JoinResc[data[[a]],data[[b]]];
-	{dimx,dimy,psize,ratio}=PlotSize[pdat1,ps,aspect];
+	{pdata,pdatb}=JoinResc[data[[a]],data[[b]]];
+	
+	{psize,ratio}=PlotSize[pdata, ps,aspect];
+	tks = PlotTicks@@Dimensions[pdata];
 			
-	{pmin1, pmax1} = PlotRangeVals[autosc[[a]], pdat1, minmax[[a]]];
-	{pmin2, pmax2} = PlotRangeVals[autosc[[b]], pdat2, minmax[[b]]];
+	rana = PlotRangeVals[autosc[[a]], pdata, minmax[[a]]];
+	ranb = PlotRangeVals[autosc[[b]], pdatb, minmax[[b]]];
+		
+	ima = MakeImage[pdata, color[[a]], ccolor[[a]], rana];
+	imb = MakeImage[pdatb, color[[b]], ccolor[[b]], ranb];
+	check = CheckBoard[Dimensions[pdata], size];
 	
-	colf1 = LookUpTable2[color[[a]], ccolor[[a]],{pmin1,pmax1}];
-	colf2 = LookUpTable2[color[[b]], ccolor[[b]],{pmin2,pmax2}];
-
-	tks = PlotTicks[dimx, dimy];
-
-	(*make plot*)
-	plot1 = Graphics[
-		Raster[Reverse[pdat1],ColorFunction -> (colf1)],
- 		Frame->frame, FrameTicks->tks, ImageSize -> psize,AspectRatio -> ratio];
- 	plot2 = Graphics[
- 		Raster[Reverse[CheckBoard[pdat2,size]],ColorFunction -> (colf2)]];
+	(*make the image*)
+	im = ImageCompose[ima,SetAlphaChannel[imb, check AlphaChannel[imb]]];
 	
-	(*add label*)
-	lab = LabelJoin[label];
-	Labeli[lab,ps,Show[{plot1,plot2}]]
-	]
+	LabLeg[Show[im, ImageSize -> psize, AspectRatio -> ratio, Frame -> frame, FrameTicks -> tks], 
+		LabSize[psize,ratio], LabelJoin[label], {False, color[[a]], rana}]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*CheckBoard*)
 
 
-CheckBoard[img_,check_]:=
-Module[{dim},
-	dim=Dimensions[img];
-	Table[
-		If[(
-			OddQ[Ceiling[(i-0.5 dim[[1]])/check]]&&OddQ[Ceiling[(j-0.5 dim[[2]])/check]]
-			) || (
-			EvenQ[Ceiling[(i-0.5 dim[[1]])/check]]&&EvenQ[Ceiling[(j-0.5 dim[[2]])/check]]
-			),
-			img[[i,j]],None
-			],{i,1,dim[[1]],1},{j,1,dim[[2]]}
-		]
-	]
+CheckBoard[dim_, check_] := Image[Table[If[
+	(OddQ[Ceiling[(i - 0.5 dim[[1]])/check]] && OddQ[Ceiling[(j - 0.5 dim[[2]])/check]]) ||
+	(EvenQ[Ceiling[(i - 0.5 dim[[1]])/check]] && EvenQ[Ceiling[(j - 0.5 dim[[2]])/check]])
+	, 1., 0.
+], {i, 1, dim[[1]], 1}, {j, 1, dim[[2]]}]]
 
 
 (* ::Subsubsection::Closed:: *)
 (*DifferencePlot*)
 
 
-DifferencePlot[data_,minmax_,label_,ps_,color_,legend_,frame_,flip_,range_,ccolor_,aspect_]:=
-Module[{pdat,a,b,pl,min1,max1,min2,max2},
+DifferencePlot[data_,minmax_,label_,ps_,color_,legend_,frame_,flip_,range_,ccolor_,aspect_]:=Block[
+	{pdat,a,b,min1,max1,min2,max2},
 	
-	{a,b}=If[flip,{2,1},{1,2}];
-	{min1,max1}=minmax[[a,1;;2]];
-	{min2,max2}=minmax[[b,1;;2]];
+	{a,b} = If[flip,{2,1},{1,2}];
+	{min1,max1} = minmax[[a,1;;2]];
+	{min2,max2} = minmax[[b,1;;2]];
 	
 	pdat=(Subtract@@(JoinResc[data[[a]],data[[b]]]));
 	
 	(*make plot*)
-	pl=Ploti[pdat,{-range,range},LabelJoin[label],ps,color[[a]],False,legend,frame,ccolor[[a]],aspect]
-	]
+	Ploti[pdat, {-1,1}range, LabelJoin[label], ps, color[[a]], False, legend, frame, ccolor[[a]], aspect]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*OpacityPlot*)
 
 
-OpacityPlot[data_,minmax_,label_,ps_,col_,autosc_,legend_,frame_,flip_,op_,ccolor_,aspect_,leg_]:=
-Module[{p1,p2,pdat1,pdat2,a,b,c,lab, plot,dimx,dimy,size,ratio},
+OpacityPlot[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,flip_,op_,ccolor_,aspect_,leg_]:=Block[
+	{a, b, pdata, pdatb, psize, ratio, rana, ranb, ima, imb, im, lc, lr, tks},
 	
 	{a,b}=If[flip,{2,1},{1,2}];
-	{pdat1,pdat2}=JoinResc[data[[a]],data[[b]]];
-	{dimx,dimy,size,ratio}=PlotSize[pdat1,ps,aspect];
-
-	(*make plot*)	
-	p1=Ploti[pdat1,minmax[[a]],None,ps,col[[a]],autosc[[a]],False,frame,ccolor[[a]],aspect];
-	p2=Ploti[pdat2,minmax[[b]],None,ps,col[[b]],autosc[[b]],False,frame,ccolor[[b]],aspect];
-	plot = Show[{p1,Graphics[{Opacity[op],p2[[1]]}]}];
+	{pdata,pdatb}=JoinResc[data[[a]],data[[b]]];
 	
-	(*add label*)
-	lab = LabelJoin[label];
-	plot = Labeli[lab,ps,plot];
+	{psize,ratio}=PlotSize[pdata, ps,aspect];
+	tks = PlotTicks@@Dimensions[pdata];
+			
+	rana = PlotRangeVals[autosc[[a]], pdata, minmax[[a]]];
+	ranb = PlotRangeVals[autosc[[b]], pdatb, minmax[[b]]];
+		
+	ima = MakeImage[pdata, color[[a]], ccolor[[a]], rana];
+	imb = MakeImage[pdatb, color[[b]], ccolor[[b]], ranb];
+		
+	(*make the image*)
+	im = ImageCompose[ima,SetAlphaChannel[imb, op AlphaChannel[imb]]];
 	
-	(*add legend*)
-	c = If[leg == 1, b, a];
-	If[legend, Legendi[plot, col[[c]], minmax[[c,1]],minmax[[c,2]], size[[2]]], plot]
-	]
+	(*add label and legend*)
+	{lc,lr} = If[leg == 1, {color[[b]],ranb}, {color[[a]],rana}];
+	LabLeg[Show[im, ImageSize -> psize, AspectRatio -> ratio, Frame -> frame, FrameTicks -> tks], 
+		LabSize[psize, ratio], LabelJoin[label], {legend, lc, lr}]
+]
 
 
 (* ::Subsection:: *)
@@ -720,31 +735,31 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 	ClearTemporaryVariables[];
 
 	(*Check if data is numeric array, if not exit*)
-	data=ToPackedArray[dat//N];
+	data = ToPackedArray[N[dat]];
 	If[!ArrayQ[data,_,RealQ],Return[Message[PlotData::data]]];
 	
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
-	depth=ArrayDepth[data];
-	If[depth>4, Return[Message[PlotData::set]]];
-	n=depth-1;
+	If[(depth = ArrayDepth[data])>4, Return[Message[PlotData::set]], n = depth-1];
 		
 	(*Determine data dimensions en make string displaying data dimensions*)
-	dim=Dimensions[data];
-	str="Displaying "<>DataString[dim];
+	dim = Dimensions[data];
+	str = "Displaying "<>DataString[dim];
 	
 	(*Initialize slice ranges and data range*)
-	rangex=dim[[1]];
-	rangey=dim[[2]];
+	rangex = dim[[1]];
+	rangey = dim[[2]];
 
 	(*Define the initial plot range*)
-	{mind,maxd}=If[ListQ[OptionValue[PlotRange]] && Length[OptionValue[PlotRange]]==2, OptionValue[PlotRange], {Min[data],Max[data]}];
-	If[mind===maxd,maxd=mind+0.01];
+	{mind,maxd} = If[ListQ[OptionValue[PlotRange]] && Length[OptionValue[PlotRange]]==2, 
+		OptionValue[PlotRange], MinMax[data]];
+	If[mind === maxd, maxd = mind + 0.01];
 	
-	pcol=If[StringQ[OptionValue[ColorFunction]],OptionValue[ColorFunction],"BlackToWhite"];
+	pcol = If[MemberQ[colorFunctions[[All,1]],OptionValue[ColorFunction]], 
+		OptionValue[ColorFunction] , "BlackToWhite"];
 	
 	(*Define the tabs of the control pannel*)
 	(*T1: first tabs, plotting controls*)
-	tab1=Column[{
+	tab1 = Column[{
 		(*Slice selction controls, depends on data dimensions*)
 		{"",
 		ManPannel["Slice Selection",{
@@ -765,15 +780,15 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Min value",Control@{{min,mind,""},mind,max-(maxd-mind)/250,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Clipping",Control@{{clip,"Custom",""},{"Auto","Custom","Transparent"}}},
-			{"Min Clipping",Control@{{minclip,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
-			{"Max Clipping",Control@{{maxclip,White,""},ColorSlider[#,ImageSize->{Automatic,15}]&}}			
+			{"Min Clipping",Control@{{minclip,Black,""},ColorSlider[#,ImageSize->{Automatic,20}]&}},
+			{"Max Clipping",Control@{{maxclip,White,""},ColorSlider[#,ImageSize->{Automatic,20}]&}}			
 			}]
 		,(*Plot style controls*)
 		ManPannel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
 			{"Plot Size",Control@{{ps,400,""},psizes,ControlType->PopupMenu}},
 			{"Color function",Control@{{color,pcol,""},colors,ControlType->PopupMenu}},
-			{"Color style",Control@{{lstyle,1,""},colfuncs}},
+			{"Color style",Control@{{lstyle,"Normal",""},colfuncs}},
 			{"Layout",Row@{
 				"  Legend:",Control@{{legend,False,""},{True,False}},
 				"  Frame:",Control@{{frame,False,""},{True,False}},
@@ -782,7 +797,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		}];
 	
 	(*T2: second tab, exporting controls*)
-	tab2=Column[{
+	tab2 = Column[{
 		(*Export parameters controls*)
 		ManPannel["Export plot",{
 			{"File Type",Control@{{fileType,".jpg",""},files}},
@@ -821,11 +836,12 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		}];
 		
 	(*Build the control pannel, allows for easy addition of more tabs*)
-	control={str,Delimiter,{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
-
+	control = {str,Delimiter,
+		{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter
+		,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
 	
 	(*Deploy plot window*)
-	pan=Manipulate[
+	pan = Manipulate[
 		If[!ListQ[data],Return[];];
 		
 		(*updata slice range for 3D and 4D plots when switching between axial and sagital*)
@@ -837,7 +853,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		yp=If[NumericQ[yp],Clip[yp,{1,rangey}],1];
 		
 		(*determine the aspect ration based on the voxelsize and dimensions*)
-		aspect=Reverse[Drop[vox,{or}]];
+		aspect=Drop[vox,{or}];
 
 		(*based on the data dimensions or how the data is showed determine how the data selection looks*)
 		pdata={
@@ -850,9 +866,14 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		plab=If[#3,
 			LabelFunc[label,{{},{#1},{#1,#2}}[[n]]],
 			LabelFunc[label,{}]
-			]&;
-			
-		ccol=Switch[clip,"Auto",ColorData2[color]/@{0,1},"Custom",{minclip,maxclip},"Transparent",{Transparent,Transparent}];
+		]&;
+		
+		(*make the clipping colors*)	
+		ccol=Switch[clip,
+			"Auto",ColSel[lstyle,color]/@{0,1},
+			"Custom",{minclip,maxclip},
+			"Transparent",{Transparent,Transparent}
+		];
 	
 		(*create Plot, is on hold so it can be used for exporting multiple files and movie*)
 		plot=Ploti[
@@ -940,11 +961,10 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 
 	maxabs=Max[Abs[{mind1,maxd1,mind2,maxd2}]];
 	
-	pcol=OptionValue[ColorFunction];
-	If[Length[OptionValue[ColorFunction]]==2 && StringQ[pcol[[1]]] && StringQ[pcol[[2]]],
-	{pcol1,pcol2}=OptionValue[ColorFunction],
-	pcol1=pcol2=If[StringQ[OptionValue[ColorFunction]],
-		OptionValue[ColorFunction],"BlackToWhite"]
+	pcol = OptionValue[ColorFunction];
+	If[Length[OptionValue[ColorFunction]]==2 && MemberQ[colorFunctions[[All,1]],pcol[[1]]] && MemberQ[colorFunctions[[All,1]],pcol[[2]]],
+		{pcol1,pcol2} = OptionValue[ColorFunction],
+		pcol1 = pcol2 = If[MemberQ[colorFunctions[[All,1]],pcol], pcol, "BlackToWhite"]
 	];
 
 	(*Define the different tabs of the control pannel*)
@@ -981,11 +1001,11 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				1->Control@{{clip1,"Custom",""},{"Auto","Custom","Transparent"}},
 				2->Control@{{clip2,"Custom",""},{"Auto","Custom","Transparent"}}},Dynamic[leftright]]},
 			{"Min Clipping",PaneSelector[{
-				1->Control@{{minclip1,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&},
-				2->Control@{{minclip2,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},Dynamic[leftright]]},
+				1->Control@{{minclip1,Black,""},ColorSlider[#,ImageSize->{Automatic,20}]&},
+				2->Control@{{minclip2,Black,""},ColorSlider[#,ImageSize->{Automatic,20}]&}},Dynamic[leftright]]},
 			{"Max Clipping",PaneSelector[{
-				1->Control@{{maxclip1,White,""},ColorSlider[#,ImageSize->{Automatic,15}]&},
-				2->Control@{{maxclip2,White,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},Dynamic[leftright]]}
+				1->Control@{{maxclip1,White,""},ColorSlider[#,ImageSize->{Automatic,20}]&},
+				2->Control@{{maxclip2,White,""},ColorSlider[#,ImageSize->{Automatic,20}]&}},Dynamic[leftright]]}
 			},False],
 		ManPannel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
@@ -1003,8 +1023,8 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				1->Control@{{color1,pcol1,""},colors,ControlType->PopupMenu},
 				2->Control@{{color2,pcol2,""},colors,ControlType->PopupMenu}},Dynamic[leftright]]},
 			{"Color style",PaneSelector[{
-				1->Control@{{lstyle1,1,""},colfuncs},
-				2->Control@{{lstyle2,1,""},colfuncs}},Dynamic[leftright]]}
+				1->Control@{{lstyle1,"Normal",""},colfuncs},
+				2->Control@{{lstyle2,"Normal",""},colfuncs}},Dynamic[leftright]]}
 			},True],
 		ManPannel["Overlay/Checkboard Plot Options",{
 			{"Merge Plots",Control@{{overlay,1,""},{1->"None",2->"Checkboard",3->"Overlay",4->"Difference"}}},
@@ -1053,7 +1073,9 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		}];
 		
 	(*Build the control pannel, allows for easy addition of more tabs*)
-	control={str,Delimiter,{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
+	control={str,Delimiter,
+		{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,
+		PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
 
 	(*Deploy plot window*)
 	pan=Manipulate[
@@ -1070,7 +1092,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		yp=If[NumericQ[yp],Clip[yp,{1,rangey}],1];
 		
 		(*determine the aspect ration based on the voxelsize and dimensions*)
-		aspect=Reverse[Drop[vox,{or}]];
+		aspect=Drop[vox,{or}];
 		
 		(*based on the data dimensions or how the data is showed determine how the data selection looks*)
 		pdata1={
@@ -1104,8 +1126,8 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			]&;
 		
 		ccol={
-			Switch[clip1,"Auto",ColorData2[color1]/@{0,1},"Custom",{minclip1,maxclip1},"Transparent",{Transparent,Transparent}],
-			Switch[clip2,"Auto",ColorData2[color2]/@{0,1},"Custom",{minclip2,maxclip2},"Transparent",{Transparent,Transparent}]
+			Switch[clip1,"Auto",ColSel[lstyle1,color1]/@{0,1},"Custom",{minclip1,maxclip1},"Transparent",{Transparent,Transparent}],
+			Switch[clip2,"Auto",ColSel[lstyle2,color2]/@{0,1},"Custom",{minclip2,maxclip2},"Transparent",{Transparent,Transparent}]
 			};
 		
 		plot=Plot2i[
@@ -1317,8 +1339,8 @@ PlotData3D[data_, vox : {_, _, _} : {1, 1, 1}] := Module[{
         {"Auto Scaling", Control@{{cfs, False, ""}, {True -> "On", False -> "Off"}}},
         {"Min value", Control@{{min, mind, ""}, mind, Dynamic[0.9 max]}},
         {"Max value", Control@{{max, maxd, ""}, Dynamic[1.1 min], maxd}},
-        {"Min Clipping", Control@{{minclip, RGBColor[{0, 0, 0}], ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
-        {"Max Clipping", Control@{{maxclip, RGBColor[{255, 255, 255}], "" }, ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
+        {"Min Clipping", Control@{{minclip, RGBColor[{0, 0, 0}], ""}, ColorSlider[#, ImageSize -> {Automatic, 20}] &}},
+        {"Max Clipping", Control@{{maxclip, RGBColor[{255, 255, 255}], "" }, ColorSlider[#, ImageSize -> {Automatic, 20}] &}},
         {"Transparent Clipping", Control@{{transp, False, ""}, {True -> "On", False -> "Off"}}}
         }]
       }],
@@ -1329,13 +1351,13 @@ PlotData3D[data_, vox : {_, _, _} : {1, 1, 1}] := Module[{
         {"Plot Title", Control@{{label, "", ""}, InputField[#, String] &}},
         {"Plot Size", Control@{{scale, 500, "" }, psizes}},
         {"Color function", Control@{{color, "BlackToWhite", ""}, colors, ControlType -> PopupMenu}},
-        {"Color style", Control@{{lstyle, 1, ""}, colfuncs}},
+        {"Color style", Control@{{lstyle, "Normal", ""}, colfuncs}},
         {"Layout", Row[
           {"  Show box:", Control@{{box, True, ""}, {True, False}},
            "  Show axis:", Control@{{axes, True, ""}, {True, False}},
            "  Show lines:", Control@{{lines, True, ""}, {True, False}}
            }]},
-        {"BackGround", Control@{{back, Gray, ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}}
+        {"BackGround", Control@{{back, Gray, ""}, ColorSlider[#, ImageSize -> {Automatic, 20}] &}}
         }]
       }],
     (* menu for 3D plot options*)
