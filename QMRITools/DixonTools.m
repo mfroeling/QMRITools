@@ -254,7 +254,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 	PrintTemporary["Filtering field estimation and recalculating signal fractions"];
 	 	(*smooth b0 field and R2star maps*)
 	 	phiEst = mask(LapFilter[Im[phiEst]] I - LapFilter[Abs[-Re[phiEst]]]);
-	 	phiIn = MedianFilter[#, 1] & /@ phiIn;
+	 	(*phiIn = MedianFilter[#, 1] & /@ phiIn;*)
 	 	
 	 	(*recalculate the water fat signals*)
 	 	input = TransData[{complex, phiEst, phiIn, mask}, "l"];
@@ -262,8 +262,6 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 		
 		{cWater, cFat, res} = TransData[Chop[result],"r"];
 	 ]; 	 
-	 
-	 
 	 
 	 (*create the output*)
 	 PrintTemporary["performing water fat calculation"];
@@ -287,8 +285,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 
 	 (*give the output*)
 	 {fraction, signal, iopPhase, fit, itt, res}
-
- ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -312,7 +309,7 @@ DixonFiti[{ydat_, phiInit_, mask_}, echo_, Amat_, {eta_, maxItt_}] := Block[
 			(*estimate the initial phase*)
 			phi0 = DixPhaseEstimate[pAmat, ydat];
 			(*find solution for complex fractions*)
-			yfit = ydat Exp[-I phi0];
+			yfit = Chop[ydat Exp[-I phi0]];
 			cFrac = DixLeastSquaresP[pAmat, yfit];
 			(*calculate solution and residuals*)
 			sol = Chop[pAmat.cFrac];
@@ -321,8 +318,8 @@ DixonFiti[{ydat_, phiInit_, mask_}, echo_, Amat_, {eta_, maxItt_}] := Block[
 			Bmat = Join[Transpose[{echo sol}], pAmat, 2];
 			deltaPhi = First@DixLeastSquaresC[Bmat, res];
 			(*chech for continue*)
-			i++;
-			i++; continue = ! (Abs[deltaPhi] < eta || i >= maxItt);
+			i++; 
+			continue = !(Abs[deltaPhi] < eta || i >= maxItt);
 		];
 		
 		(*give output*)
@@ -337,7 +334,7 @@ DixonFiti[{ydat_, phiInit_, phi0_, mask_}, echo_, Amat_] := Block[{pAmat, cFrac,
 	If[mask > 0,
 		(*find solution for complex fractions with smooth phase map*)
 		pAmat = Chop[Exp[phiInit echo] Amat];
-		yfit = ydat Exp[-I phi0];
+		yfit = Chop[ydat Exp[-I phi0]];
 		cFrac = DixLeastSquaresC[pAmat, yfit];
 		(*calculate the residuals*)
 		res = RootMeanSquare[yfit - Chop[pAmat.cFrac]];
@@ -375,7 +372,7 @@ DixPhaseEstimate = Compile[{{A, _Complex, 2}, {y, _Complex, 1}}, Block[{AT, ATA,
 		AT = ConjugateTranspose[A];
 	    ATA = Chop[AT.A];
 	    IATA = If[Total[Flatten[Abs[Chop[ATA, 10^-6]]]] > 0., Chop[Inverse[ATA]], 0. ATA];
-	    .5 Arg[(AT.y).Re[IATA].(AT.y)]
+	    0.5 Arg[(AT.y).Re[IATA].(AT.y)]
     ], 
     RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
@@ -473,7 +470,7 @@ Unwrap[dat_,OptionsPattern[]]:= Block[{data, ind, undim, out, mon, thresh, len},
 (*UnwrapSplit*)
 
 
-Options[UnwrapSplit] = Options[UnwrapSplit]
+Options[UnwrapSplit] = Options[Unwrap]
 
 SyntaxInformation[UnwrapSplit] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -528,7 +525,7 @@ Unwrapi[dat_, thresh_, mon_] := Block[{data,datai,mask, crp, dimi, sorted,groups
 	data = If[ArrayDepth[datai] == 3, crp = FindCrop[datai]; ApplyCrop[datai, crp], datai];
 	
 	(*make mask to pervent unwrapping in background*)
-	mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 5], 1], -5];
+	mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 20], 10], -20];
 	
 	(*Get the edges sotrted for reliability and precluster groups*)
 	sorted = GetEdgeList[data, mask];
@@ -684,13 +681,14 @@ GetKernels[dep_] := Block[{ker, i, j, k, keri, kers},
 
 GetEdgeList[data_] := GetEdgeList[data, 1]
 
-GetEdgeList[data_, maski_] := Block[{dep, diff, mask, edge, coor, fedge, ord, pos},
+GetEdgeList[data_, maski_] := Block[{dep, diff, diff1, diff2, mask, edge, coor, fedge, ord, pos},
 	dep = ArrayDepth[data];
 	(*maske a mask if needed*)
 	mask = If[maski === 1, Closing[Mask[Ceiling[Abs@data], 1], 1], maski];
+	
 	(*calculate the second order diff*)
-	diff = ListConvolve[#, data, ConstantArray[2, dep], 0] & /@ GetKernels[dep];
-	diff = If[dep == 2, DiffC2[diff], DiffC3[diff]];
+	{diff1, diff2} = Transpose[Partition[ListConvolve[#, data, ConstantArray[2, dep], 0] & /@ GetKernels[dep], 2]];
+	diff = If[dep == 2, DiffC2[diff1, diff2], DiffC3[diff1, diff2]];
 	
 	(*get the edge reliability*)
 	edge = Switch[dep,
@@ -709,8 +707,11 @@ GetEdgeList[data_, maski_] := Block[{dep, diff, mask, edge, coor, fedge, ord, po
 	Flatten[coor, dep][[ord]][[pos ;;]]
   ]
 
-DiffC2 = Compile[{{diff, _Real, 3}}, Total[(diff - Round[diff, 10000])^2]];
-DiffC3 = Compile[{{diff, _Real, 4}}, Total[(diff - Round[diff, 10000])^2]];
+
+DiffC2 = Compile[{{diff1, _Real, 3}, {diff2, _Real, 3}}, 
+   Total[((diff1 - Sign[diff1] Floor[Abs[diff1], 10000]) + (diff2 - Sign[diff2] Floor[Abs[diff2], 10000]))^2]];
+DiffC3 = Compile[{{diff1, _Real, 4}, {diff2, _Real, 4}}, 
+   Total[((diff1 - Sign[diff1] Floor[Abs[diff1], 10000]) + (diff2 - Sign[diff2] Floor[Abs[diff2], 10000]))^2]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -718,33 +719,27 @@ DiffC3 = Compile[{{diff, _Real, 4}}, Total[(diff - Round[diff, 10000])^2]];
 
 
 MakeGroups[data_] := MakeGroups[data, 1]
-MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,mclus,clus,groupsize,groups,groupnr,mask},
+MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,nclus,clus,groupsize,groups,groupnr,mask},
 	(*get data properties*)
 	dep=ArrayDepth[data];
 	dim=Dimensions[data];
 	fun=If[dep==2,Image,Image3D];
 	
 	(*maske a mask if needed*)
-	mask=If[maski===1,Closing[Mask[Ceiling[Abs@data],1],1],maski];
+	mask = If[maski === 1, ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 20], 10], -20], maski];
 	
 	(*find mask ranges*)
 	{min,max}=MinMax[data];
 	part=Partition[Range[min,max,(max-min)/12]//N,2,1];
 	
 	(*remove background form masks, and create masks*)
-	dat=data/. 0->(-2min);
-	masks=Mask[dat,#]&/@part;
+	dat = (mask data) + (-2 min) (1 - mask);
+	masks = Mask[dat, #] & /@ part;
 	
 	(*make groups from masks*)
-	mclus=0;
-	groups=Total[(
-		(*make groups from masks and only keeps groups*)
-		clus=MorphologicalComponents[DeleteSmallComponents[fun[#]]];
-		clus=Clip[clus,{0,1}](mclus+clus);
-		(*find max group number and export*)
-		mclus=Max[clus];clus
-	)&/@masks];
-	groups=groups+mask;
+	clus = MorphologicalComponents[DeleteSmallComponents[fun[#], 10]] & /@ masks;
+	nclus = Prepend[Drop[Accumulate[Max /@ clus], -1], 0];
+	groups = Total[MapThread[#2 Unitize[#1] + #1 &, {clus, nclus}]] + mask;
 	
 	(*create outputs, the size vector and group nrs*)
 	groupsize=ConstantArray[0,Count[Flatten[groups],1]];

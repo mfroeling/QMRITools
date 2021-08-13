@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[    194294,       3424]
-NotebookOptionsPosition[    193001,       3398]
-NotebookOutlinePosition[    193401,       3414]
-CellTagsIndexPosition[    193358,       3411]
+NotebookDataLength[    263099,       4960]
+NotebookOptionsPosition[    256835,       4863]
+NotebookOutlinePosition[    257239,       4879]
+CellTagsIndexPosition[    257196,       4876]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -68,8 +68,9 @@ Cell[BoxData[
               Evaluator -> Automatic, Method -> "Preemptive"], 
              Alignment -> {Center, Center}, ImageSize -> 
              Dynamic[{
-               Automatic, 3.5 CurrentValue["FontCapHeight"]/
-                AbsoluteCurrentValue[Magnification]}]], 
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
             GraphicsBox[
              TagBox[
               RasterBox[CompressedData["
@@ -1471,8 +1472,9 @@ image/png"], "History[7]" ->
               Evaluator -> Automatic, Method -> "Preemptive"], 
              Alignment -> {Center, Center}, ImageSize -> 
              Dynamic[{
-               Automatic, 3.5 CurrentValue["FontCapHeight"]/
-                AbsoluteCurrentValue[Magnification]}]], 
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
             GraphicsBox[
              TagBox[
               RasterBox[CompressedData["
@@ -2956,6 +2958,15 @@ HTML\"\>"], "Output",
 
 Cell[BoxData[
  RowBox[{
+  RowBox[{
+  "htmlDir", "=", 
+   "\"\<C:\\\\Users\\\\mfroelin\\\\Desktop\\\\QMRITools-HTML\>\""}], 
+  ";"}]], "Input",
+ CellChangeTimes->{{3.837843326774942*^9, 3.8378433413004236`*^9}},
+ CellLabel->"In[52]:=",ExpressionUUID->"b0e73297-6909-43ac-98e2-d7f4b6762db8"],
+
+Cell[BoxData[
+ RowBox[{
   RowBox[{"MakeRelease", "[", "relDir", "]"}], ";"}]], "Input",
  CellLabel->"In[13]:=",ExpressionUUID->"555c23c6-8d04-4170-a667-7fb59f93fb8a"],
 
@@ -3017,7 +3028,7 @@ Cell[BoxData[{
         "relDir", "<>", "\"\<\\\\QMRITools-\>\"", "<>", "ver", "<>", 
          "\"\<.zip\>\""}], ",", 
         RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}], ";"}]}], 
-    "\[IndentingNewLine]", "]"}]}], "\n"}], "\[IndentingNewLine]", 
+    "\[IndentingNewLine]", "]"}]}], "\[IndentingNewLine]"}], "\n", 
  RowBox[{
   RowBox[{
    RowBox[{"MakeFunctionPDF", "[", 
@@ -3089,7 +3100,7 @@ Cell[BoxData[{
         "htmlDirRel", "<>", "\"\<-\>\"", "<>", "ver", "<>", "\"\<.zip\>\""}], 
         ",", 
         RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}], ";"}]}], 
-    "\[IndentingNewLine]", "]"}]}], "\[IndentingNewLine]"}], "\n", 
+    "\[IndentingNewLine]", "]"}]}], "\n"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"FixHTML", "[", 
    RowBox[{"htmlDir_", ",", "tName_"}], "]"}], ":=", 
@@ -3116,15 +3127,6 @@ Cell[BoxData[{
        "Folder"}], "*)"}], "\[IndentingNewLine]", 
      RowBox[{"Print", "[", "\"\< - copy dependencies\>\"", "]"}], ";", 
      "\[IndentingNewLine]", 
-     RowBox[{"localFiles", "=", 
-      RowBox[{"FileNameJoin", "[", 
-       RowBox[{"{", 
-        RowBox[{"htmlDirectory", ",", "\"\<standard\>\""}], "}"}], "]"}]}], 
-     ";", "\[IndentingNewLine]", 
-     RowBox[{"folders", "=", 
-      RowBox[{"FileNames", "[", 
-       RowBox[{"\"\<*\>\"", ",", "localFiles"}], "]"}]}], ";", 
-     "\[IndentingNewLine]", 
      RowBox[{
       RowBox[{
        RowBox[{"CopyDirectory", "[", 
@@ -3134,8 +3136,44 @@ Cell[BoxData[{
            RowBox[{"htmlDirectory", ",", 
             RowBox[{"Last", "[", 
              RowBox[{"FileNameSplit", "[", "#", "]"}], "]"}]}], "}"}], 
-          "]"}]}], "]"}], "&"}], "/@", "folders"}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
+          "]"}]}], "]"}], "&"}], "/@", 
+      RowBox[{"FileNames", "[", 
+       RowBox[{"\"\<*\>\"", ",", 
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"htmlDirectory", ",", "\"\<standard\>\""}], "}"}], "]"}]}], 
+       "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+     RowBox[{"(*", 
+      RowBox[{"Delete", " ", "unnneded", " ", "directories"}], "*)"}], 
+     "\[IndentingNewLine]", 
+     RowBox[{"DeleteDirectory", "[", 
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "\"\<standard\>\""}], "}"}], "]"}], 
+       ",", 
+       RowBox[{"DeleteContents", "->", "True"}]}], "]"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"DeleteDirectory", "[", 
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "\"\<includes\>\""}], "}"}], "]"}], 
+       ",", 
+       RowBox[{"DeleteContents", "->", "True"}]}], "]"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"DeleteDirectory", "[", 
+        RowBox[{
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"htmlDirectory", ",", "#", ",", "\"\<Files\>\""}], "}"}], 
+          "]"}], ",", 
+         RowBox[{"DeleteContents", "->", "True"}]}], "]"}], "&"}], "/@", 
+      RowBox[{"{", 
+       RowBox[{"\"\<ref\>\"", ",", "\"\<guide\>\"", ",", "\"\<tutorial\>\""}],
+        "}"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
      RowBox[{"(*", 
       RowBox[{
       "2", " ", "Fix", " ", "HTML", " ", "Links", " ", "and", " ", 
@@ -3145,21 +3183,17 @@ Cell[BoxData[{
      RowBox[{"htmlFiles", "=", 
       RowBox[{"FileNames", "[", 
        RowBox[{"\"\<*.html\>\"", ",", 
-        RowBox[{"{", 
+        RowBox[{
          RowBox[{
           RowBox[{"FileNameJoin", "[", 
            RowBox[{"{", 
-            RowBox[{"htmlDirectory", ",", "\"\<ref\>\""}], "}"}], "]"}], ",", 
-          RowBox[{"FileNameJoin", "[", 
-           RowBox[{"{", 
-            RowBox[{"htmlDirectory", ",", "\"\<guide\>\""}], "}"}], "]"}], 
-          ",", 
-          RowBox[{"FileNameJoin", "[", 
-           RowBox[{"{", 
-            RowBox[{"htmlDirectory", ",", "\"\<tutorial\>\""}], "}"}], 
-           "]"}]}], "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+            RowBox[{"htmlDirectory", ",", "#"}], "}"}], "]"}], "&"}], "/@", 
+         RowBox[{"{", 
+          RowBox[{
+          "\"\<ref\>\"", ",", "\"\<guide\>\"", ",", "\"\<tutorial\>\""}], 
+          "}"}]}]}], "]"}]}], ";", "\[IndentingNewLine]", 
      "\[IndentingNewLine]", 
-     RowBox[{"Do", "[", 
+     RowBox[{"Do", "[", "\[IndentingNewLine]", 
       RowBox[{
        RowBox[{"Block", "[", 
         RowBox[{
@@ -3229,6 +3263,16 @@ src=\\\"../javascript/jquery/core/1.7.2/jquery.min.js\\\"></script>\n         \
                 RowBox[{
                 "\"\<http://reference.wolfram.com/language/\>\"", "<>", 
                  "tName", "<>", "\"\</\>\""}], "\[Rule]", "\"\<../\>\""}]}], 
+              "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+          "\[IndentingNewLine]", 
+          RowBox[{"(*", 
+           RowBox[{"fix", " ", "QMRITools", " ", "name"}], "*)"}], 
+          "\[IndentingNewLine]", 
+          RowBox[{"source", " ", "=", " ", 
+           RowBox[{"StringReplace", "[", 
+            RowBox[{"source", ",", 
+             RowBox[{"{", 
+              RowBox[{"\"\<Q M R I TOOLS\>\"", "->", "\"\<QMRITools\>\""}], 
               "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
           "\[IndentingNewLine]", 
           RowBox[{"(*", "save", "*)"}], "\[IndentingNewLine]", 
@@ -3393,12 +3437,1433 @@ url=./html/guide/QMRITools.html\\\"/>\\n\\n</head>\\n</html>\>\""}], ";",
    3.7982700475237064`*^9}, {3.798270129485367*^9, 3.798270169066846*^9}, {
    3.798270210525178*^9, 3.798270211467421*^9}, {3.798871067303232*^9, 
    3.798871088515235*^9}, {3.7989611520405664`*^9, 3.7989611672047324`*^9}, {
-   3.799761448589177*^9, 3.7997614499784317`*^9}},
- CellLabel->"In[3]:=",ExpressionUUID->"904a5b9a-d0e3-430c-b41a-d5b784bdca12"]
+   3.799761448589177*^9, 3.7997614499784317`*^9}, {3.8378401153216896`*^9, 
+   3.8378401981380887`*^9}, {3.837841062993628*^9, 3.8378411189107037`*^9}, {
+   3.837841247933689*^9, 3.837841250947886*^9}, {3.837841961142286*^9, 
+   3.837841961732708*^9}, {3.837843041780479*^9, 
+   3.837843151607464*^9}},ExpressionUUID->"904a5b9a-d0e3-430c-b41a-\
+d5b784bdca12"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+  "htmlDir", "=", 
+   "\"\<C:\\\\Users\\\\mfroelin\\\\Desktop\\\\QMRITools-HTML\>\""}], 
+  ";"}]], "Input",
+ CellChangeTimes->{{3.837843326774942*^9, 3.8378433413004236`*^9}},
+ CellLabel->
+  "In[158]:=",ExpressionUUID->"afa1ece6-ea72-460c-9380-6bb97d7a9e6e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"Print", "[", "\"\<fixing html\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"htmlDirectory", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{"htmlDir", ",", "\"\<html\>\""}], "}"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{
+     "1", " ", "Copy", " ", "Dependencies", " ", "to", " ", "Main", " ", 
+      "Folder"}], "*)"}], "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - copy dependencies\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"CopyDirectory", "[", 
+       RowBox[{"#", ",", 
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"htmlDirectory", ",", 
+           RowBox[{"Last", "[", 
+            RowBox[{"FileNameSplit", "[", "#", "]"}], "]"}]}], "}"}], "]"}]}],
+        "]"}], "&"}], "/@", 
+     RowBox[{"FileNames", "[", 
+      RowBox[{"\"\<*\>\"", ",", 
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "\"\<standard\>\""}], "}"}], "]"}]}], 
+      "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{
+     "2", " ", "Fix", " ", "HTML", " ", "Links", " ", "and", " ", "Scripts"}],
+      "*)"}], "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - fix links and scripts\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"htmlFiles", "=", 
+     RowBox[{"FileNames", "[", 
+      RowBox[{"\"\<*.html\>\"", ",", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"htmlDirectory", ",", "#"}], "}"}], "]"}], "&"}], "/@", 
+        RowBox[{"{", 
+         RowBox[{
+         "\"\<ref\>\"", ",", "\"\<guide\>\"", ",", "\"\<tutorial\>\""}], 
+         "}"}]}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Table", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"source", "=", 
+        RowBox[{"Import", "[", 
+         RowBox[{"file", ",", "\"\<Source\>\""}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"source", "=", 
+        RowBox[{"StringReplace", "[", 
+         RowBox[{"source", ",", 
+          RowBox[{"{", "\[IndentingNewLine]", 
+           RowBox[{"(*", 
+            RowBox[{"Remove", " ", "comments"}], "*)"}], 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"\"\<<!--\>\"", "~~", 
+              RowBox[{"Shortest", "[", "___", "]"}], "~~", "\"\<-->\>\""}], 
+             "->", "\"\<\>\""}], ",", "\[IndentingNewLine]", 
+            RowBox[{"(*", 
+             RowBox[{"Insert", " ", "jQuery"}], "*)"}], "\[IndentingNewLine]", 
+            RowBox[{
+            "\"\<<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/reference.\
+js\\\"></script>\>\"", "\[Rule]", 
+             "\"\<<link rel=\\\"stylesheet\\\" \
+href=\\\"../css/clipboard.css\\\" />\n<script \
+src=\\\"../javascript/jquery/core/1.7.2/jquery.min.js\\\"></script>\n<script \
+src=\\\"../javascript/reference.js\\\"></script>\>\""}], ",", 
+            "\[IndentingNewLine]", 
+            RowBox[{"(*", 
+             RowBox[{"fix", " ", "relative", " ", "paths"}], "*)"}], 
+            "\[IndentingNewLine]", 
+            RowBox[{
+            "\"\</webMathematica/Resources/Documentation/English/\>\"", 
+             "\[Rule]", "\"\<../\>\""}], ",", 
+            RowBox[{
+            "\"\</2013/javascript/\>\"", "\[Rule]", 
+             "\"\<../javascript/\>\""}], ",", "\[IndentingNewLine]", 
+            RowBox[{"(*", 
+             RowBox[{"fix", " ", 
+              RowBox[{"bullet", ".", "gif"}]}], "*)"}], "\[IndentingNewLine]", 
+            RowBox[{
+            "\"\<../images/mathematicaImages/bullet.gif\>\"", "\[Rule]", 
+             "\"\<../images/bullet-greysq.gif\>\""}], ",", 
+            "\[IndentingNewLine]", 
+            RowBox[{"(*", 
+             RowBox[{"fix", " ", "relative", " ", "paths"}], "*)"}], 
+            "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{
+             "\"\<http://reference.wolfram.com/language/\>\"", "<>", "tName", 
+              "<>", "\"\</\>\""}], "\[Rule]", "\"\<../\>\""}], ",", 
+            "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{
+             "\"\</language/\>\"", "<>", "tName", "<>", "\"\</ref/\>\""}], 
+             "\[Rule]", "\"\<../ref/\>\""}], ",", "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{
+             "\"\</language/\>\"", "<>", "tName", "<>", "\"\</guide/\>\""}], 
+             "\[Rule]", "\"\<../guide/\>\""}], ",", "\[IndentingNewLine]", 
+            "\[IndentingNewLine]", 
+            RowBox[{"(*", 
+             RowBox[{"fix", " ", "QMRITools", " ", "name"}], "*)"}], 
+            "\[IndentingNewLine]", 
+            RowBox[{"\"\<Q M R I TOOLS\>\"", "->", "\"\<QMRITools\>\""}], ",",
+             "\[IndentingNewLine]", 
+            RowBox[{"(*", 
+             RowBox[{"remove", " ", "unneeded", " ", "images"}], "*)"}], 
+            "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{"\"\<<img src=\\\"Files\>\"", "~~", 
+              RowBox[{"Shortest", "[", "___", "]"}], "~~", 
+              "\"\<alt=\\\"\\\" />\>\""}], "->", "\"\<\>\""}]}], 
+           "\[IndentingNewLine]", "}"}]}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"(*", "save", "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"Export", "[", 
+        RowBox[{"file", ",", "source", ",", "\"\<Text\>\""}], "]"}], ";"}], 
+      "\[IndentingNewLine]", ",", 
+      RowBox[{"{", 
+       RowBox[{"file", ",", "htmlFiles"}], "}"}]}], "]"}], ";", 
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{"3", " ", "Adjust", " ", "the", " ", "CSS"}], "*)"}], 
+    "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - adjust CSS\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"cssFontFile", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "htmlDirectory", ",", "\"\<css\>\"", ",", "\"\<fonts.css\>\""}], "}"}],
+       "]"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{"css", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{"cssFontFile", ",", "\"\<Text\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"css", "=", 
+     RowBox[{"StringReplace", "[", 
+      RowBox[{"css", ",", 
+       RowBox[{
+       "\"\</fonts/sourcesanspro/v8/fonts/\>\"", "\[Rule]", 
+        "\"\</fonts/sourcesanspro/v8/\>\""}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"Export", "[", 
+     RowBox[{"cssFontFile", ",", "css", ",", "\"\<Text\>\""}], "]"}], ";", 
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{
+     "4", " ", "Fix", " ", "Missing", " ", "Content", " ", "in", " ", 
+      "Collapsed", " ", "Containers"}], "*)"}], "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - fixing missing content\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"fasterPageLoadFile", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "htmlDirectory", ",", "\"\<javascript\>\"", ",", 
+        "\"\<faster-page-load.js\>\""}], "}"}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"js", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{"fasterPageLoadFile", ",", "\"\<Text\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"js", "=", 
+     RowBox[{"StringReplace", "[", 
+      RowBox[{"js", ",", 
+       RowBox[{
+       "\"\<baselang.slice(0,-3)\>\"", "\[Rule]", "\"\<baselang\>\""}]}], 
+      "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"Export", "[", 
+     RowBox[{"fasterPageLoadFile", ",", "js", ",", "\"\<Text\>\""}], "]"}], 
+    ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{
+     "5", " ", "Fix", " ", "Click", " ", "to", " ", "Copy", " ", "Cells"}], 
+     "*)"}], "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - fix click to copy\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"subpagesFile", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "htmlDirectory", ",", "\"\<javascript\>\"", ",", 
+        "\"\<sub-pages.js\>\""}], "}"}], "]"}]}], ";", "\[IndentingNewLine]", 
+    "\[IndentingNewLine]", 
+    RowBox[{"DeleteFile", "[", "subpagesFile", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Export", "[", 
+     RowBox[{"subpagesFile", ",", 
+      RowBox[{
+      "Uncompress", "[", 
+       "\"\<1:eJzdVstu2zAQzLWH/\
+gNrGCCFtopdtDn0cUp7yClAc0yDghZXJlFaEkTKThH437uUrFgPylCawC1CWJBN7c5yZ4YyXy3S71c\
+vXp6cTJlIo2IFiQ3CHLj4zUhcJJFVacICcvdjNn9HcEwZDS+\
+Sc9CaqNWSBiHwSDJfpBsqZlNmpTJBqAyj14Jb/\
+tbk0Q0NOpFVNMHwjUpEugnCjRJWIuBncjabeaLdWPOcIBz5Quoy3Nqc0boODT4NpW0GklZca2zLZFp\
+ZRgkNrmc3gyByNMjcD+JaxnWG2DPcXsaM/nw/+\
+0Bd00MtVyJUJbM8zRh1fb5xNKBumeYRoERZssS5Eq38HviJ6IOVrGPqZmyCBLWUFjOkP2PbndwS0Aa\
+OpedCLR+rZg9iQMsBVfxLfhDr4xlvsX3/Y1sF4jU/PSWmWLhPPTNlkxBuM56Iq/\
+LBRZJATvhubhKEkVbRr/\
+0Wh50xXa67AJcFa3xvfIWYF9qyfbEKfrd2nmOM6RS7LCzkroZUWmAAWrd6DIK699AqXcO55gZfHlIJ\
+6OjfxmYtmCjVmmcGHgDDhegH1X3kYIs8ITFH894/\
+aBA7RGO9jn9KpLezMSxWGEfisGPQAx49tk2ftVOPb9Zn4tcGkyCIPPsYq9zYSRO0nKE9h/\
+Msg0QQJQyx6c7vBGH21icGSuIbW4D2NzxpktY+iangzidI9b+\
+mhDsdIMq324yS10QdVs9TmXagTDXbxyqPgJSHKXZcpkluWox3jNWsPyRiO/\
+YAL0NWGgEwYlfWCFuvNajX8o9UzPyNYIOa/TeiPYVuTyId3v4ABBnUIw==\>\"", "]"}], ",", 
+      "\"\<Text\>\""}], "]"}], ";", "\[IndentingNewLine]", 
+    "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{
+     "5.", " ", "Fix", " ", "Code", " ", "Copying", " ", "from", " ", "Web", 
+      " ", "Page"}], "*)"}], "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - fix code copying\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"RenameFile", "[", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+        "htmlDirectory", ",", "\"\<javascript\>\"", ",", 
+         "\"\<clipboard.en.js\>\""}], "}"}], "]"}], ",", 
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+        "htmlDirectory", ",", "\"\<javascript\>\"", ",", 
+         "\"\<clipboard.js\>\""}], "}"}], "]"}]}], "]"}], ";", 
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"clipboardCss", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "htmlDirectory", ",", "\"\<css\>\"", ",", "\"\<clipboard.css\>\""}], 
+       "}"}], "]"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{"css", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{"clipboardCss", ",", "\"\<Text\>\""}], "]"}]}], ";", 
+    RowBox[{"css", "=", 
+     RowBox[{"StringReplace", "[", 
+      RowBox[{"css", ",", 
+       RowBox[{
+       "\"\</webMathematica/Resources/Documentation/English/images/\>\"", 
+        "\[Rule]", "\"\<../images/\>\""}]}], "]"}]}], ";", 
+    RowBox[{"Export", "[", 
+     RowBox[{"clipboardCss", ",", "css", ",", "\"\<Text\>\""}], "]"}], ";", 
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{"6.", " ", "Files", " ", "Cleanup"}], "*)"}], 
+    "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{"Keep", " ", "only", " ", "needed", " ", "js", " ", "files"}], 
+     "*)"}], "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - only keep needed js files\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"scripts", "=", 
+     RowBox[{"DeleteDuplicates", "[", 
+      RowBox[{"Flatten", "@", 
+       RowBox[{"Table", "[", "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"source", "=", 
+           RowBox[{"Import", "[", 
+            RowBox[{"file", ",", "\"\<Source\>\""}], "]"}]}], ";", 
+          "\[IndentingNewLine]", 
+          RowBox[{"StringCases", "[", 
+           RowBox[{"source", ",", 
+            RowBox[{"\"\<<script src=\\\"..\>\"", "~~", 
+             RowBox[{"Shortest", "[", "___", "]"}], "~~", 
+             "\"\<</script>\>\""}]}], "]"}]}], "\[IndentingNewLine]", ",", 
+         RowBox[{"{", 
+          RowBox[{"file", ",", "htmlFiles"}], "}"}]}], "]"}]}], 
+      "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{"scriptFiles", "=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"StringDrop", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"StringSplit", "[", 
+           RowBox[{"#", ",", "\"\<\\\"\>\""}], "]"}], "[", 
+          RowBox[{"[", "2", "]"}], "]"}], ",", "3"}], "]"}], "&"}], "/@", 
+      "scripts"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"(", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"filesc", "=", 
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"htmlDirectory", ",", "#"}], "}"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"filet", "=", 
+         RowBox[{"StringReplace", "[", 
+          RowBox[{"filesc", ",", 
+           RowBox[{"\"\<javascript\>\"", "->", "\"\<temp\>\""}]}], "]"}]}], 
+        ";", "\[IndentingNewLine]", 
+        RowBox[{"Quiet", "@", 
+         RowBox[{"CreateDirectory", "[", 
+          RowBox[{"DirectoryName", "[", "filet", "]"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"CopyFile", "[", 
+         RowBox[{"filesc", ",", "filet", ",", 
+          RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}]}], 
+       "\[IndentingNewLine]", ")"}], "&"}], "/@", "scriptFiles"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Quiet", "@", 
+     RowBox[{"DeleteDirectory", "[", 
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "\"\<javascript\>\""}], "}"}], "]"}], 
+       ",", 
+       RowBox[{"DeleteContents", "->", "True"}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"RenameDirectory", "[", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{"htmlDirectory", ",", "\"\<temp\>\""}], "}"}], "]"}], ",", 
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{"htmlDirectory", ",", "\"\<javascript\>\""}], "}"}], "]"}]}], 
+     "]"}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{"Kepp", " ", "only", " ", "needed", " ", "fonts"}], "*)"}], 
+    "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - only keep needed fonts\>\"", "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"css", "=", 
+     RowBox[{"Import", "[", 
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{
+         "htmlDirectory", ",", "\"\<css\>\"", ",", "\"\<fonts.css\>\""}], 
+         "}"}], "]"}], ",", "\"\<Text\>\""}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"fonts", "=", 
+     RowBox[{"DeleteDuplicates", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"StringDrop", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"StringSplit", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"StringSplit", "[", 
+               RowBox[{"#", ",", "\"\<'\>\""}], "]"}], "[", 
+              RowBox[{"[", "2", "]"}], "]"}], ",", "\"\<?\>\""}], "]"}], "[", 
+           RowBox[{"[", "1", "]"}], "]"}], ",", "3"}], "]"}], "&"}], "/@", 
+       RowBox[{"StringCases", "[", 
+        RowBox[{"css", ",", 
+         RowBox[{"\"\<url('../fonts\>\"", "~~", 
+          RowBox[{"Shortest", "[", "___", "]"}], "~~", "\"\<')\>\""}]}], 
+        "]"}]}], "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"(", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"filesc", "=", 
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"htmlDirectory", ",", "#"}], "}"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"filet", "=", 
+         RowBox[{"StringReplace", "[", 
+          RowBox[{"filesc", ",", 
+           RowBox[{"\"\<fonts\>\"", "->", "\"\<temp\>\""}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Quiet", "@", 
+         RowBox[{"CreateDirectory", "[", 
+          RowBox[{"DirectoryName", "[", "filet", "]"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"CopyFile", "[", 
+         RowBox[{"filesc", ",", "filet", ",", 
+          RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}]}], 
+       "\[IndentingNewLine]", ")"}], "&"}], "/@", "fonts"}], ";", 
+    "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"DeleteDirectory", "[", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{"htmlDirectory", ",", "\"\<fonts\>\""}], "}"}], "]"}], ",", 
+      RowBox[{"DeleteContents", "->", "True"}]}], "]"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"RenameDirectory", "[", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{"htmlDirectory", ",", "\"\<temp\>\""}], "}"}], "]"}], ",", 
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{"htmlDirectory", ",", "\"\<fonts\>\""}], "}"}], "]"}]}], 
+     "]"}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{"Delete", " ", "unnneded", " ", "directories"}], "*)"}], 
+    "\[IndentingNewLine]", 
+    RowBox[{"Print", "[", "\"\< - Delete unneeded directories\>\"", "]"}], 
+    ";", "\[IndentingNewLine]", 
+    RowBox[{"Quiet", "@", 
+     RowBox[{"DeleteDirectory", "[", 
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "\"\<standard\>\""}], "}"}], "]"}], 
+       ",", 
+       RowBox[{"DeleteContents", "->", "True"}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Quiet", "@", 
+     RowBox[{"DeleteDirectory", "[", 
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "\"\<includes\>\""}], "}"}], "]"}], 
+       ",", 
+       RowBox[{"DeleteContents", "->", "True"}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Quiet", "@", 
+     RowBox[{"DeleteDirectory", "[", 
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "\"\<minimal\>\""}], "}"}], "]"}], ",", 
+       RowBox[{"DeleteContents", "->", "True"}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"Quiet", "@", 
+       RowBox[{"DeleteDirectory", "[", 
+        RowBox[{
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"htmlDirectory", ",", "#", ",", "\"\<Files\>\""}], "}"}], 
+          "]"}], ",", 
+         RowBox[{"DeleteContents", "->", "True"}]}], "]"}]}], "&"}], "/@", 
+     RowBox[{"{", 
+      RowBox[{"\"\<ref\>\"", ",", "\"\<guide\>\"", ",", "\"\<tutorial\>\""}], 
+      "}"}]}], ";"}], "\[IndentingNewLine]", ")"}], 
+  "\[IndentingNewLine]"}]], "Input",
+ CellChangeTimes->{{3.837843939819618*^9, 3.8378439478486023`*^9}, {
+  3.8378439853843155`*^9, 3.837843995549261*^9}, {3.8378463405210085`*^9, 
+  3.8378463411855774`*^9}, {3.837846446129498*^9, 3.8378464956520505`*^9}, {
+  3.8378465527684283`*^9, 3.83784659077149*^9}, {3.8378466527121353`*^9, 
+  3.8378467484840517`*^9}, {3.8378468930451946`*^9, 3.837846910531149*^9}, {
+  3.837846970186658*^9, 3.8378469867757907`*^9}, {3.8378475437567005`*^9, 
+  3.8378475466871796`*^9}},ExpressionUUID->"a8a5b8a7-4a6e-4fc5-9a5b-\
+6d1a65c047b9"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["\<\"fixing html\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.8378474057685337`*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"54a274ca-5280-47a4-aadc-5e5aeb718eff"],
+
+Cell[BoxData["\<\" - copy dependencies\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.83784740577551*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"cef77be3-4a1a-483d-8123-aa71711f759b"],
+
+Cell[BoxData["\<\" - fix links and scripts\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.8378474057864637`*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"d18e2be5-b89d-4714-b7fb-e743e9185428"],
+
+Cell[BoxData["\<\" - adjust CSS\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.837847433255245*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"85bea51d-0b16-4724-9e01-784ab5fc9d24"],
+
+Cell[BoxData["\<\" - fixing missing content\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.837847433368289*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"1e4c8f9d-08bc-465d-9fd5-e21b338727e1"],
+
+Cell[BoxData["\<\" - fix click to copy\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.8378474333742733`*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"3a0688cd-aeaa-4909-98a8-8058fa73d6f5"]
+}, Open  ]],
+
+Cell[BoxData[
+ TemplateBox[{
+  "DeleteFile", "fdnfnd", 
+   "\"Directory or file \
+\\!\\(\\*RowBox[{\\\"\\\\\\\"C:\\\\\\\\\\\\\\\\Users\\\\\\\\\\\\\\\\mfroelin\\\
+\\\\\\\\\\\\\\Desktop\\\\\\\\\\\\\\\\QMRITools-HTML\\\\\\\\\\\\\\\\html\\\\\\\
+\\\\\\\\\\javascript\\\\\\\\\\\\\\\\sub-pages.js\\\\\\\"\\\"}]\\) not \
+found.\"", 2, 223, 32, 19375042763631046543, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.8378474334899635`*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"3283846e-cf94-4ff8-8bef-9c60a5bd4383"],
+
+Cell[BoxData["\<\" - fix code copying\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.8378474335218782`*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"f136e7d4-9f8c-43a1-ad28-1036abcd4726"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "RenameFile", "enoent", "\"File or directory not found.\"", 2, 223, 33, 
+   19375042763631046543, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.8378474335278625`*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"d1c6627c-8134-4f7f-9c4f-3e3771c0698b"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["\<\" - only keep needed js files\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.837847433545816*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"8826688d-7079-4391-9eb3-4f306912e430"],
+
+Cell[BoxData["\<\" - only keep needed fonts\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.837847451226489*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"df124a57-c1c2-4e2a-8f7e-11d6a241ddf3"],
+
+Cell[BoxData["\<\" - Delete unneeded directories\"\>"], "Print",
+ CellChangeTimes->{3.837846592293666*^9, 3.8378467500482197`*^9, 
+  3.8378469114906626`*^9, 3.8378474514628553`*^9},
+ CellLabel->
+  "During evaluation of \
+In[223]:=",ExpressionUUID->"6d7e07c4-c347-4e60-83f1-a7bea2f9b92d"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["source"], "Input",
+ CellChangeTimes->{{3.8378474585360937`*^9, 3.8378474598318887`*^9}},
+ CellLabel->
+  "In[224]:=",ExpressionUUID->"89b471ed-0bca-4546-97a6-9e0c29e03601"],
+
+Cell[BoxData["\<\"<!DOCTYPE html>\\n <html>\\n <head>\\n <meta \
+charset=\\\"UTF-8\\\">\\n\\n<title>WienerRegularization&mdash;Wolfram \
+Language Documentation</title>\\n<meta name=\\\"buildnumber\\\" \
+content=\\\"0000000\\\" />\\n<meta name=\\\"historydata\\\" content=\\\"{XX, \
+, , }\\\" />\\n<meta name=\\\"keywords\\\" content=\\\"WienerRegularization\\\
+\" />\\n\\n<meta name=\\\"description\\\" content=\\\"WienerRegularization is \
+an option for DeconvolveCSIdata. It defines te amount of regularization used \
+in the wiener deconvoltuion.\\\" />\\n<script language=\\\"JavaScript\\\" \
+type=\\\"text/javascript\\\">baselang='WienerRegularization';</script>\\n\\n<\
+meta http-equiv=\\\"Content-Type\\\" content=\\\"text/html; charset=UTF-8\\\" \
+/>\\n\\n<link rel=\\\"stylesheet\\\" href=\\\"../css/reference.css\\\" \
+/>\\n\\n<link rel=\\\"stylesheet\\\" href=\\\"../css/clipboard.css\\\" \
+/>\\n<script \
+src=\\\"../javascript/jquery/core/1.7.2/jquery.min.js\\\"></script>\\n<script \
+src=\\\"../javascript/reference.js\\\"></script>\\n<script \
+src=\\\"../javascript/documentation-search.js\\\"></script>\\n<script \
+src=\\\"../javascript/faster-page-load.js\\\"></script>\\n<script \
+src=\\\"../javascript/hyperlink-filter.js\\\"></script>\\n<script \
+src=\\\"../javascript/brokenlinks.js\\\"></script>\\n<script \
+src=\\\"../javascript/clipboard.js\\\"></script>\\n<script \
+src=\\\"../javascript/image-swap.js\\\"></script>\\n\\n<script \
+language=\\\"JavaScript\\\" type=\\\"text/javascript\\\" \
+src=\\\"../javascript/toggle-highlight.js\\\"></script>\\n</head>\\n<body id=\
+\\\"ref\\\" class=\\\"function\\\">\\n<a name=\\\"top\\\"></a>\\n \\n<div \
+class=\\\"main-wrapper\\\">\\n<div class=\\\"outer-wrapper\\\">\\n\\n<div \
+class=\\\"wrapper mainOuter\\\">\\n    <div class=\\\"mainContent\\\">\\n \
+<div class=\\\"topContentWrap\\\">\\n  <div class=\\\"ribbonWrap\\\">\\n   \
+<span class=\\\"ribbonOuter\\\"><span class=\\\"ribbonInner\\\">QMRITools \
+PACKAGE SYMBOL</span></span>\\n  </div>\\n  \\n  <div \
+class=\\\"clear\\\"></div>\\n </div>\\n <h1>WienerRegularization</h1>\\n \\n \
+<div class=\\\"ObjectNameTranslation\\\"></div>\\n <div \
+class=\\\"functionIntroWrap\\\">\\n  <div class=\\\"functionIntro\\\">\\n   \
+<p><span class=\\\"IF\\\">WienerRegularization</span><br />is an option for \
+<span class=\\\"IF\\\"><a class=\\\"package-symbol\\\" \
+href=\\\"http://reference.wolfram.com/language/QMRITools/ref/\
+DeconvolveCSIdata.html\\\">DeconvolveCSIdata</a></span>. It defines te amount \
+of regularization used in the wiener deconvoltuion.</p>\\n  </div>\\n \
+</div>\\n</div>\\n</div>\\n\\n\\t\\n</div>\\n\\n\\n</body></html>\"\>"], \
+"Output",
+ CellChangeTimes->{3.8378474614277015`*^9},
+ CellLabel->
+  "Out[224]=",ExpressionUUID->"7112e203-d3ef-46d0-a262-7d279e207b4a"]
+}, Open  ]],
+
+Cell[BoxData["\"\<http://reference.wolfram.com/language/QMRITools/\>\""], \
+"Input",
+ CellChangeTimes->{{3.837847477688839*^9, 
+  3.8378474786819925`*^9}},ExpressionUUID->"47e43346-7691-4930-9aee-\
+935354efa5c5"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"http", ":"}], "//", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{"reference", ".", "wolfram", ".", "com"}], "/", "language"}], 
+    "/", "QMRITools"}], "/"}]}]], "Input",ExpressionUUID->"c20b332c-818e-44ed-\
+a38d-62e8d5159ccf"],
+
+Cell[BoxData[
+ RowBox[{"FileNames", "[", 
+  RowBox[{"\"\<*.css\>\"", ",", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{"htmlDirectory", ",", "\"\<css\>\""}], "}"}], "]"}]}]}]], "Input",
+ EmphasizeSyntaxErrors->True,
+ CellLabel->
+  "In[215]:=",ExpressionUUID->"db22a34d-5618-42b3-b09d-0c7f17d599cc"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"allFiles", "=", 
+   RowBox[{"Join", "[", 
+    RowBox[{
+     RowBox[{"FileNames", "[", 
+      RowBox[{"\"\<*.css\>\"", ",", 
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "\"\<css\>\""}], "}"}], "]"}]}], "]"}],
+      ",", "htmlFiles"}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.837847023465148*^9, 3.8378471199547987`*^9}, {
+  3.837847161734395*^9, 3.8378471641973877`*^9}},
+ CellLabel->
+  "In[215]:=",ExpressionUUID->"7c0c8187-b7f1-48eb-8654-5fddf664ce0b"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"allFiles", "[", 
+  RowBox[{"[", "1", "]"}], "]"}]], "Input",
+ CellChangeTimes->{{3.8378471458824744`*^9, 3.8378471483297486`*^9}},
+ CellLabel->
+  "In[216]:=",ExpressionUUID->"fb0399b6-e3d8-40f5-a4f8-575d02e8eb2d"],
+
+Cell[BoxData["\<\"C:\\\\Users\\\\mfroelin\\\\Desktop\\\\QMRITools-HTML\\\\\
+html\\\\css\\\\clipboard.css\"\>"], "Output",
+ CellChangeTimes->{{3.8378471487413917`*^9, 3.8378471663303757`*^9}},
+ CellLabel->
+  "Out[216]=",ExpressionUUID->"5a5594ee-29fb-4b8d-bef1-1cd0f1c49554"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"allFiles", "[", 
+  RowBox[{"[", 
+   RowBox[{"-", "1"}], "]"}], "]"}]], "Input",
+ CellChangeTimes->{{3.8378472237776747`*^9, 3.8378472264954576`*^9}},
+ CellLabel->
+  "In[221]:=",ExpressionUUID->"f789486f-9dcb-402c-9e04-13540e2bdef1"],
+
+Cell[BoxData["\<\"C:\\\\Users\\\\mfroelin\\\\Desktop\\\\QMRITools-HTML\\\\\
+html\\\\ref\\\\WienerRegularization.html\"\>"], "Output",
+ CellChangeTimes->{3.837847227023655*^9},
+ CellLabel->
+  "Out[221]=",ExpressionUUID->"045aa08d-5587-4139-8f40-db7bd05b5d2a"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Import", "[", 
+  RowBox[{
+   RowBox[{"allFiles", "[", 
+    RowBox[{"[", "1", "]"}], "]"}], ",", "\"\<text\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.8378471227904015`*^9, 3.8378471389795914`*^9}, {
+   3.837847185876246*^9, 3.837847199799443*^9}, 3.8378472552228785`*^9},
+ CellLabel->
+  "In[222]:=",ExpressionUUID->"327778db-0b8f-4972-8a1b-8a3cb9e3943e"],
+
+Cell[BoxData["\<\".IO {\\n    position: relative;\\n}\\n#ref td.lab {\\n    \
+padding: 7px 0 0 0 !important;\\n}\\n#tutorial .InCell tr td.lab,\\n#howto \
+.InCell tr td.lab {\\n    padding-top: 6px !important;\\n}\\n.InCell {\\n    \
+min-width: 210px;\\n}\\n.InCell:hover .Input img {\\n    filter: \
+invert(0.03);\\n    -webkit-filter: invert(0.03);\\n    -ms-filter: \
+invert(0.03);\\n}\\n#ref td.Input {\\n    padding: 5px 6px 2px \
+!important;\\n}\\n#ref td.Output {\\n    padding: 4px 6px 2px !important;\\n}\
+\\n#tutorial td.Input,\\n#howto td.Input {\\n    padding: 4px 6px 3px \
+!important;\\n}\\n#tutorial .mainContent table.InCell,\\n#tutorial \
+.mainContent table.OCell,\\n#ref table.InCell,\\n#ref table.OCell {\\n    \
+width: auto;\\n}\\n.InCell:hover {\\n    background: #f7f7f7;\\n    padding: \
+5px;\\n    border-radius: 5px;\\n    position: relative;\\n    box-shadow: 0 \
+0 4px 0 rgba(0, 0, 0, 0.1);\\n    border: 1px solid \
+#e5e5e5;\\n}\\n\\n.tooltip {\\n    display: block;\\n    background: #f5f5f5;\
+\\n    border: 1px solid #e5e5e5;\\n    border-radius: 3px;\\n    padding: \
+8px;\\n    position: absolute;\\n    top: -53px;\\n    left: 0;\\n    right: \
+0;\\n    margin: auto;\\n    width: 130px;\\n    color: #898989;\\n    \
+font-size: 12px;\\n    font-family: 'Roboto', Arial, Helvetica, \
+sans-serif;\\n    text-align: center;\\n    z-index: 10;\\n    white-space: \
+nowrap;\\n}\\n.tooltip.bottom {\\n    top: auto;\\n    bottom: \
+-53px;\\n}\\n\\n.clipboard {\\n    width: 28px;\\n    height: 28px;\\n    \
+border-radius: 28px;\\n    background-color: #fff;\\n    background-image: \
+url('../images/clipboard@2x.png');\\n    background-repeat: no-repeat;\\n    \
+background-position: center center;\\n    background-size: 50%;\\n    border: \
+1px solid #e5e5e5;\\n    position: absolute;\\n    top: 0;\\n    left: -17px;\
+\\n    bottom: 0;\\n    margin: auto;\\n}\\n.clipboard.copied {\\n    \
+background-image: url('../images/check-mark@2x.png');\\n}\\n.tooltip:before {\
+\\n    content: '';\\n    border-top: 9px solid #f5f5f5;\\n    border-bottom: \
+9px solid transparent;\\n    border-left: 10px solid transparent;\\n    \
+border-right: 10px solid transparent;\\n    display: block;\\n    width: \
+0;\\n    height: 0;\\n    position: absolute;\\n    top: 34px;\\n    left: 0;\
+\\n    right: 0;\\n    margin: auto;\\n    z-index: \
+10;\\n}\\n\\n.tooltip:after {\\n    content: '';\\n    border-top: 10px solid \
+#e5e5e5;\\n    border-bottom: 10px solid transparent;\\n    border-left: 11px \
+solid transparent;\\n    border-right: 11px solid transparent;\\n    display: \
+block;\\n    width: 0;\\n    height: 0;\\n    position: absolute;\\n    top: \
+34px;\\n    left: 0;\\n    right: 0;\\n    margin: auto;\\n    z-index: \
+9;\\n}\\n\\n.tooltip.bottom:before {\\n    border-top: 9px solid transparent;\
+\\n    border-bottom: 9px solid #f5f5f5;\\n    border-left: 10px solid \
+transparent;\\n    border-right: 10px solid transparent;\\n    top: \
+-17px;\\n}\\n.tooltip.bottom:after {\\n    border-top: 10px solid \
+transparent;\\n    border-bottom: 10px solid #e5e5e5;\\n    border-left: 11px \
+solid transparent;\\n    border-right: 11px solid transparent;\\n    top: \
+-19px;\\n}\\n\\n.InCell.hover:active {\\n    background: #f5f5f5;\\n    \
+border: 1px solid #e5e5e5;\\n}\\n.InCell.hover:active .tooltip {\\n    \
+display: none;\\n}\\n.InCell.hover:active .clipboard {\\n    \
+background-color: #f5f5f5;\\n}\\n.IFL {\\n    color: transparent;\\n    \
+font-size: 0;\\n    line-height: 0;\\n    z-index: 0;\\n}\\n.IFL.show {\\n    \
+padding: 10px;\\n    font-size: 10px;\\n    line-height: 1.5;\\n    \
+background: #f7f7f7;\\n    border-radius: 5px;\\n    border: 1px solid \
+#e5e5e5;\\n    box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.1);\\n    padding: 10px \
+20px 20px;\\n    color: #494949;\\n    height: auto;\\n    z-index: 2;\\n    \
+position: absolute;\\n    width: 450px;\\n    margin-top: \
+5px;\\n}\\n.IFL.show .text {\\n    max-height: 300px;\\n    background: #fff;\
+\\n    border: 1px solid #e5e5e5;\\n    padding: 5px;\\n    margin-top: 10px;\
+\\n    overflow-y: auto;\\n}\\n.IFL .close {\\n    box-sizing: border-box;\\n \
+   position: absolute;\\n    width: 40px;\\n    height: 40px;\\n    top: \
+0;\\n    right: 0;\\n    padding: 2px 0 0 23px;\\n    cursor: pointer;\\n    \
+display: block;\\n}\"\>"], "Output",
+ CellChangeTimes->{3.837847256566803*^9},
+ CellLabel->
+  "Out[222]=",ExpressionUUID->"af6b0c7e-55cf-463f-a607-114c92d11d1f"]
+}, Open  ]],
+
+Cell[BoxData["\"\<<!DOCTYPE html>\\\\n <html>\\\\n <head>\\\\n <meta charset=\
+\\\"UTF-8\\\">\\\\n\\\\n<title>WienerRegularization&mdash;Wolfram Language \
+Documentation</title>\\\\n<meta name=\\\"buildnumber\\\" \
+content=\\\"0000000\\\" />\\\\n<meta name=\\\"historydata\\\" \
+content=\\\"{XX, , , }\\\" />\\\\n<meta name=\\\"keywords\\\" \
+content=\\\"WienerRegularization\\\" />\\\\n\\\\n<meta name=\\\"description\\\
+\" content=\\\"WienerRegularization is an option for DeconvolveCSIdata. It \
+defines te mount of  regularization used in the wiener deconvoltuion.\\\" \
+/>\\\\n<script language=\\\"JavaScript\\\" \
+type=\\\"text/javascript\\\">baselang='WienerRegularization';</script>\\\\n<!-\
+-#include virtual=\\\"/common/includes/gl-head-includes.html\\\"-->\\\\n<meta \
+http-equiv=\\\"Content-Type\\\" content=\\\"text/html; charset=UTF-8\\\" />\\\
+\\n<!--[if IE]>\\\\n<style type=\\\"text/css\\\">\\\\n/* doctype problem \
+overrides */\\\\n#menu .searchboxsub, #menu .searchboxsub-on { \
+padding-bottom: 0; }\\\\n#menu .headerSearchSubmit { margin-bottom: 4px; \
+}\\\\n\\\\n/*\\\\n.WRIdropMenu .WRImenuContents { margin-top: -2px; \
+margin-left: -2px; }\\\\n.WRIdropMenu .WRImenuContents .WRImenuContents { \
+margin: 0; }\\\\n*/\\\\n</style>\\\\n<![endif]-->\\\\n<link \
+rel=\\\"stylesheet\\\" \
+href=\\\"/webMathematica/Resources/Documentation/English/css/reference.css\\\"\
+ />\\\\n\\\\n<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/reference.\
+js\\\"></script>\\\\n<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/\
+documentation-search.js\\\"></script>\\\\n<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/faster-\
+page-load.js\\\"></script>\\\\n<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/hyperlink-\
+filter.js\\\"></script>\\\\n<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/\
+brokenlinks.js\\\"></script>\\\\n<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/clipboard.\
+js\\\"></script>\\\\n<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/image-swap.\
+js\\\"></script>\\\\n\\\\n<script language=\\\"JavaScript\\\" \
+type=\\\"text/javascript\\\" \
+src=\\\"/2013/javascript/toggle-highlight.js\\\"></script>\\\\n</head>\\\\n<\
+body id=\\\"ref\\\" class=\\\"function\\\">\\\\n<a name=\\\"top\\\"></a>\\\\n \
+\\\\n<div class=\\\"main-wrapper\\\">\\\\n<div class=\\\"outer-wrapper\\\">\\\
+\\n\\\\n<div class=\\\"wrapper mainOuter\\\">\\\\n    <div \
+class=\\\"mainContent\\\">\\\\n <div class=\\\"topContentWrap\\\">\\\\n  <div \
+class=\\\"ribbonWrap\\\">\\\\n   <span class=\\\"ribbonOuter\\\"><span class=\
+\\\"ribbonInner\\\">Q M R I TOOLS PACKAGE SYMBOL</span></span>\\\\n  </div>\\\
+\\n  \\\\n  <div class=\\\"clear\\\"><!-- --></div>\\\\n </div>\\\\n \
+<h1>WienerRegularization</h1>\\\\n <img \
+src=\\\"Files/WienerRegularization/1.png\\\"\\\\n     height=\\\"47\\\"\\\\n  \
+   width=\\\"8\\\"\\\\n     alt=\\\"\\\" />\\\\n <div \
+class=\\\"ObjectNameTranslation\\\"></div>\\\\n <div \
+class=\\\"functionIntroWrap\\\">\\\\n  <div class=\\\"functionIntro\\\">\\\\n \
+  <p><span class=\\\"IF\\\">WienerRegularization</span><br />is an option for \
+<span class=\\\"IF\\\"><a class=\\\"package-symbol\\\" \
+href=\\\"http://reference.wolfram.com/language/QMRITools/ref/\
+DeconvolveCSIdata.html\\\">DeconvolveCSIdata</a></span>. It defines te amount \
+of regularization used in the wiener deconvoltuion.</p>\\\\n  </div>\\\\n \
+</div>\\\\n</div>\\\\n</div><!-- /wrapper \
+-->\\\\n\\\\n\\\\t\\\\n</div>\\\\n\\\\n\\\\n</body></html>\>\""], "Input",
+ CellChangeTimes->{{3.837847202499528*^9, 
+  3.837847204169365*^9}},ExpressionUUID->"f3a1900f-f722-4df6-a796-\
+f7825cc3fc58"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["filesc"], "Input",
+ CellChangeTimes->{{3.8378468113094134`*^9, 3.8378468128022203`*^9}},
+ CellLabel->
+  "In[205]:=",ExpressionUUID->"33567fad-47a0-491c-8084-99457c5abd90"],
+
+Cell[BoxData["\<\"C:\\\\Users\\\\mfroelin\\\\Desktop\\\\QMRITools-HTML\\\\\
+html\\\\javascript\\\\image-swap.js\"\>"], "Output",
+ CellChangeTimes->{3.8378468133796453`*^9},
+ CellLabel->
+  "Out[205]=",ExpressionUUID->"62a9038a-d4c8-41b3-8cd9-e3337d738420"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["css"], "Input",
+ CellChangeTimes->{{3.8378468353237257`*^9, 3.8378468356682577`*^9}},
+ CellLabel->
+  "In[207]:=",ExpressionUUID->"638e25d1-8e08-4525-9d62-25eb30cc16ee"],
+
+Cell[BoxData["\<\".IO {\\n    position: relative;\\n}\\n#ref td.lab {\\n    \
+padding: 7px 0 0 0 !important;\\n}\\n#tutorial .InCell tr td.lab,\\n#howto \
+.InCell tr td.lab {\\n    padding-top: 6px !important;\\n}\\n.InCell {\\n    \
+min-width: 210px;\\n}\\n.InCell:hover .Input img {\\n    filter: \
+invert(0.03);\\n    -webkit-filter: invert(0.03);\\n    -ms-filter: \
+invert(0.03);\\n}\\n#ref td.Input {\\n    padding: 5px 6px 2px \
+!important;\\n}\\n#ref td.Output {\\n    padding: 4px 6px 2px !important;\\n}\
+\\n#tutorial td.Input,\\n#howto td.Input {\\n    padding: 4px 6px 3px \
+!important;\\n}\\n#tutorial .mainContent table.InCell,\\n#tutorial \
+.mainContent table.OCell,\\n#ref table.InCell,\\n#ref table.OCell {\\n    \
+width: auto;\\n}\\n.InCell:hover {\\n    background: #f7f7f7;\\n    padding: \
+5px;\\n    border-radius: 5px;\\n    position: relative;\\n    box-shadow: 0 \
+0 4px 0 rgba(0, 0, 0, 0.1);\\n    border: 1px solid \
+#e5e5e5;\\n}\\n\\n.tooltip {\\n    display: block;\\n    background: #f5f5f5;\
+\\n    border: 1px solid #e5e5e5;\\n    border-radius: 3px;\\n    padding: \
+8px;\\n    position: absolute;\\n    top: -53px;\\n    left: 0;\\n    right: \
+0;\\n    margin: auto;\\n    width: 130px;\\n    color: #898989;\\n    \
+font-size: 12px;\\n    font-family: 'Roboto', Arial, Helvetica, \
+sans-serif;\\n    text-align: center;\\n    z-index: 10;\\n    white-space: \
+nowrap;\\n}\\n.tooltip.bottom {\\n    top: auto;\\n    bottom: \
+-53px;\\n}\\n\\n.clipboard {\\n    width: 28px;\\n    height: 28px;\\n    \
+border-radius: 28px;\\n    background-color: #fff;\\n    background-image: \
+url('../images/clipboard@2x.png');\\n    background-repeat: no-repeat;\\n    \
+background-position: center center;\\n    background-size: 50%;\\n    border: \
+1px solid #e5e5e5;\\n    position: absolute;\\n    top: 0;\\n    left: -17px;\
+\\n    bottom: 0;\\n    margin: auto;\\n}\\n.clipboard.copied {\\n    \
+background-image: url('../images/check-mark@2x.png');\\n}\\n.tooltip:before {\
+\\n    content: '';\\n    border-top: 9px solid #f5f5f5;\\n    border-bottom: \
+9px solid transparent;\\n    border-left: 10px solid transparent;\\n    \
+border-right: 10px solid transparent;\\n    display: block;\\n    width: \
+0;\\n    height: 0;\\n    position: absolute;\\n    top: 34px;\\n    left: 0;\
+\\n    right: 0;\\n    margin: auto;\\n    z-index: \
+10;\\n}\\n\\n.tooltip:after {\\n    content: '';\\n    border-top: 10px solid \
+#e5e5e5;\\n    border-bottom: 10px solid transparent;\\n    border-left: 11px \
+solid transparent;\\n    border-right: 11px solid transparent;\\n    display: \
+block;\\n    width: 0;\\n    height: 0;\\n    position: absolute;\\n    top: \
+34px;\\n    left: 0;\\n    right: 0;\\n    margin: auto;\\n    z-index: \
+9;\\n}\\n\\n.tooltip.bottom:before {\\n    border-top: 9px solid transparent;\
+\\n    border-bottom: 9px solid #f5f5f5;\\n    border-left: 10px solid \
+transparent;\\n    border-right: 10px solid transparent;\\n    top: \
+-17px;\\n}\\n.tooltip.bottom:after {\\n    border-top: 10px solid \
+transparent;\\n    border-bottom: 10px solid #e5e5e5;\\n    border-left: 11px \
+solid transparent;\\n    border-right: 11px solid transparent;\\n    top: \
+-19px;\\n}\\n\\n.InCell.hover:active {\\n    background: #f5f5f5;\\n    \
+border: 1px solid #e5e5e5;\\n}\\n.InCell.hover:active .tooltip {\\n    \
+display: none;\\n}\\n.InCell.hover:active .clipboard {\\n    \
+background-color: #f5f5f5;\\n}\\n.IFL {\\n    color: transparent;\\n    \
+font-size: 0;\\n    line-height: 0;\\n    z-index: 0;\\n}\\n.IFL.show {\\n    \
+padding: 10px;\\n    font-size: 10px;\\n    line-height: 1.5;\\n    \
+background: #f7f7f7;\\n    border-radius: 5px;\\n    border: 1px solid \
+#e5e5e5;\\n    box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.1);\\n    padding: 10px \
+20px 20px;\\n    color: #494949;\\n    height: auto;\\n    z-index: 2;\\n    \
+position: absolute;\\n    width: 450px;\\n    margin-top: \
+5px;\\n}\\n.IFL.show .text {\\n    max-height: 300px;\\n    background: #fff;\
+\\n    border: 1px solid #e5e5e5;\\n    padding: 5px;\\n    margin-top: 10px;\
+\\n    overflow-y: auto;\\n}\\n.IFL .close {\\n    box-sizing: border-box;\\n \
+   position: absolute;\\n    width: 40px;\\n    height: 40px;\\n    top: \
+0;\\n    right: 0;\\n    padding: 2px 0 0 23px;\\n    cursor: pointer;\\n    \
+display: block;\\n}\"\>"], "Output",
+ CellChangeTimes->{3.837846836494153*^9},
+ CellLabel->
+  "Out[207]=",ExpressionUUID->"430a2ad0-39f8-47cf-bd89-9028195ebdb9"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{"\[IndentingNewLine]", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+  "\[IndentingNewLine]"}]], "Input",
+ CellChangeTimes->{{3.837846556335766*^9, 
+  3.8378465567675776`*^9}},ExpressionUUID->"89d7681f-34a9-4c25-ad2a-\
+6d1afbf1845e"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"Do", "[", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"Block", "[", 
+      RowBox[{
+       RowBox[{"{", "source", "}"}], ",", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"source", "=", 
+         RowBox[{"Import", "[", 
+          RowBox[{"file", ",", "\"\<Source\>\""}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"Insert", " ", "jQuery"}], "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"source", "=", 
+         RowBox[{"StringReplace", "[", 
+          RowBox[{"source", ",", 
+           RowBox[{
+           "\"\<<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/reference.\
+js\\\"></script>\>\"", "\[Rule]", 
+            "\"\<\n            <link rel=\\\"stylesheet\\\" \
+href=\\\"../css/clipboard.css\\\" />\n            <script \
+src=\\\"../javascript/jquery/core/1.7.2/jquery.min.js\\\"></script>\n         \
+   <script src=\\\"../javascript/reference.js\\\"></script>\n        \
+\>\""}]}], "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"fix", " ", "relative", " ", "paths"}], "*)"}], 
+        "\[IndentingNewLine]", 
+        RowBox[{"source", "=", 
+         RowBox[{"StringReplace", "[", 
+          RowBox[{"source", ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{
+             "\"\</webMathematica/Resources/Documentation/English/\>\"", 
+              "\[Rule]", "\"\<../\>\""}], ",", 
+             RowBox[{
+             "\"\</2013/javascript/\>\"", "\[Rule]", 
+              "\"\<../javascript/\>\""}]}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"fix", " ", 
+          RowBox[{"bullet", ".", "gif"}]}], "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"source", "=", 
+         RowBox[{"StringReplace", "[", 
+          RowBox[{"source", ",", 
+           RowBox[{
+           "\"\<../images/mathematicaImages/bullet.gif\>\"", "\[Rule]", 
+            "\"\<../images/bullet-greysq.gif\>\""}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"fix", " ", "relative", " ", "paths"}], "*)"}], 
+        "\[IndentingNewLine]", 
+        RowBox[{"source", "=", 
+         RowBox[{"StringReplace", "[", 
+          RowBox[{"source", ",", 
+           RowBox[{"{", "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{
+              RowBox[{
+              "\"\</language/\>\"", "<>", "tName", "<>", "\"\</ref/\>\""}], 
+              "\[Rule]", "\"\<../ref/\>\""}], ",", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{
+              "\"\</language/\>\"", "<>", "tName", "<>", "\"\</guide/\>\""}], 
+              "\[Rule]", "\"\<../guide/\>\""}], ",", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{
+              "\"\<http://reference.wolfram.com/language/\>\"", "<>", "tName",
+                "<>", "\"\</\>\""}], "\[Rule]", "\"\<../\>\""}]}], "}"}]}], 
+          "]"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"fix", " ", "QMRITools", " ", "name"}], "*)"}], 
+        "\[IndentingNewLine]", 
+        RowBox[{"source", " ", "=", " ", 
+         RowBox[{"StringReplace", "[", 
+          RowBox[{"source", ",", 
+           RowBox[{"{", 
+            RowBox[{"\"\<Q M R I TOOLS\>\"", "->", "\"\<QMRITools\>\""}], 
+            "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", "save", "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"Export", "[", 
+         RowBox[{"file", ",", "source", ",", "\"\<Text\>\""}], "]"}], ";"}]}],
+       "\[IndentingNewLine]", "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"file", ",", "htmlFiles"}], "}"}]}], "]"}], ";"}], 
+  "\[IndentingNewLine]", "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{"3", " ", "Adjust", " ", "the", " ", "CSS"}], 
+   "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", "\"\< - adjust CSS\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"cssFontFile", "=", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{"htmlDirectory", ",", "\"\<css\>\"", ",", "\"\<fonts.css\>\""}], 
+     "}"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"css", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{"cssFontFile", ",", "\"\<Text\>\""}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"css", "=", 
+    RowBox[{"StringReplace", "[", 
+     RowBox[{"css", ",", 
+      RowBox[{
+      "\"\</fonts/sourcesanspro/v8/fonts/\>\"", "\[Rule]", 
+       "\"\</fonts/sourcesanspro/v8/\>\""}]}], "]"}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{"cssFontFile", ",", "css", ",", "\"\<Text\>\""}], "]"}], ";"}], 
+  "\[IndentingNewLine]", "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+   "4", " ", "Fix", " ", "Missing", " ", "Content", " ", "in", " ", 
+    "Collapsed", " ", "Containers"}], "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", "\"\< - fixing missing content\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"fasterPageLoadFile", "=", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{
+     "htmlDirectory", ",", "\"\<javascript\>\"", ",", 
+      "\"\<faster-page-load.js\>\""}], "}"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"js", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{"fasterPageLoadFile", ",", "\"\<Text\>\""}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"js", "=", 
+    RowBox[{"StringReplace", "[", 
+     RowBox[{"js", ",", 
+      RowBox[{
+      "\"\<baselang.slice(0,-3)\>\"", "\[Rule]", "\"\<baselang\>\""}]}], 
+     "]"}]}], ";"}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{"fasterPageLoadFile", ",", "js", ",", "\"\<Text\>\""}], "]"}], 
+   ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+   "5", " ", "Fix", " ", "Click", " ", "to", " ", "Copy", " ", "Cells"}], 
+   "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", "\"\< - fix click to copy\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"subpagesFile", "=", 
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "htmlDirectory", ",", "\"\<javascript\>\"", ",", 
+       "\"\<sub-pages.js\>\""}], "}"}], "]"}]}], ";", 
+   RowBox[{"subpagesFile", "//", "FileExistsQ"}], ";", 
+   RowBox[{"DeleteFile", "[", "subpagesFile", "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{"subpagesFile", ",", 
+     RowBox[{
+     "Uncompress", "[", 
+      "\"\<1:eJzdVstu2zAQzLWH/\
+gNrGCCFtopdtDn0cUp7yClAc0yDghZXJlFaEkTKThH437uUrFgPylCawC1CWJBN7c5yZ4YyXy3S71c\
+vXp6cTJlIo2IFiQ3CHLj4zUhcJJFVacICcvdjNn9HcEwZDS+\
+Sc9CaqNWSBiHwSDJfpBsqZlNmpTJBqAyj14Jb/\
+tbk0Q0NOpFVNMHwjUpEugnCjRJWIuBncjabeaLdWPOcIBz5Quoy3Nqc0boODT4NpW0GklZca2zLZFp\
+ZRgkNrmc3gyByNMjcD+JaxnWG2DPcXsaM/nw/+\
+0Bd00MtVyJUJbM8zRh1fb5xNKBumeYRoERZssS5Eq38HviJ6IOVrGPqZmyCBLWUFjOkP2PbndwS0Aa\
+OpedCLR+rZg9iQMsBVfxLfhDr4xlvsX3/Y1sF4jU/PSWmWLhPPTNlkxBuM56Iq/\
+LBRZJATvhubhKEkVbRr/\
+0Wh50xXa67AJcFa3xvfIWYF9qyfbEKfrd2nmOM6RS7LCzkroZUWmAAWrd6DIK699AqXcO55gZfHlIJ\
+6OjfxmYtmCjVmmcGHgDDhegH1X3kYIs8ITFH894/\
+aBA7RGO9jn9KpLezMSxWGEfisGPQAx49tk2ftVOPb9Zn4tcGkyCIPPsYq9zYSRO0nKE9h/\
+Msg0QQJQyx6c7vBGH21icGSuIbW4D2NzxpktY+iangzidI9b+\
+mhDsdIMq324yS10QdVs9TmXagTDXbxyqPgJSHKXZcpkluWox3jNWsPyRiO/\
+YAL0NWGgEwYlfWCFuvNajX8o9UzPyNYIOa/TeiPYVuTyId3v4ABBnUIw==\>\"", "]"}], ",", 
+     "\"\<Text\>\""}], "]"}], ";"}], "\[IndentingNewLine]", 
+  "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+   "5.", " ", "Fix", " ", "Code", " ", "Copying", " ", "from", " ", "Web", 
+    " ", "Page"}], "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", "\"\< - fix code copying\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"clipboardJs", "=", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{
+     "htmlDirectory", ",", "\"\<javascript\>\"", ",", 
+      "\"\<clipboard.en.js\>\""}], "}"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"clipboardJsNew", "=", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{
+     "htmlDirectory", ",", "\"\<javascript\>\"", ",", 
+      "\"\<clipboard.js\>\""}], "}"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"RenameFile", "[", 
+    RowBox[{"clipboardJs", ",", "clipboardJsNew"}], "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"clipboardCss", "=", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{
+     "htmlDirectory", ",", "\"\<css\>\"", ",", "\"\<clipboard.css\>\""}], 
+     "}"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"css", "=", 
+    RowBox[{"Import", "[", 
+     RowBox[{"clipboardCss", ",", "\"\<Text\>\""}], "]"}]}], ";", 
+   RowBox[{"css", "=", 
+    RowBox[{"StringReplace", "[", 
+     RowBox[{"css", ",", 
+      RowBox[{
+      "\"\</webMathematica/Resources/Documentation/English/images/\>\"", 
+       "\[Rule]", "\"\<../images/\>\""}]}], "]"}]}], ";", 
+   RowBox[{"Export", "[", 
+    RowBox[{"clipboardCss", ",", "css", ",", "\"\<Text\>\""}], "]"}], ";"}], 
+  "\[IndentingNewLine]", "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{"6.", " ", "Create", " ", "strat", " ", "page"}], 
+   "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", "\"\< - create start page\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+  "htmlStart", "=", 
+   "\"\<<!DOCTYPE html>\\n<html>\\n<head>\\n\\n<meta http-equiv=\\\"Refresh\\\
+\" content=\\\"0; \
+url=./html/guide/QMRITools.html\\\"/>\\n\\n</head>\\n</html>\>\""}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{"htmlDir", ",", "\"\<start_here.html\>\""}], "}"}], "]"}], ",", 
+    "htmlStart", ",", "\"\<text\>\""}], "]"}], 
+  ";"}], "\[IndentingNewLine]"}], "Input",
+ CellChangeTimes->{
+  3.8378434178151274`*^9, 3.8378434528902707`*^9, 3.8378435054350796`*^9, {
+   3.8378435594811425`*^9, 3.8378435737724247`*^9}, {3.8378438672727284`*^9, 
+   3.8378438683610787`*^9}},ExpressionUUID->"763cbbf8-1f27-4ee9-98c5-\
+ee1edc2e2db5"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"htmlDirectory", "=", 
+  "\"\<D:\\\\werk\\\\workspace\\\\QMRITools\\\\docs\\\\htmldoc\>\""}]], \
+"Input",
+ CellChangeTimes->{{3.837842210192673*^9, 3.83784222312621*^9}},
+ CellLabel->"In[33]:=",ExpressionUUID->"d980117c-d1c7-4a9b-95c1-4da2cdf271ba"],
+
+Cell[BoxData["\<\"D:\\\\werk\\\\workspace\\\\QMRITools\\\\docs\\\\htmldoc\"\>\
+"], "Output",
+ CellChangeTimes->{3.837842223622885*^9},
+ CellLabel->"Out[33]=",ExpressionUUID->"0791a128-f503-44e8-9373-8d3d0aac9730"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"htmlFiles", "=", 
+   RowBox[{"FileNames", "[", 
+    RowBox[{"\"\<*.html\>\"", ",", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "#"}], "}"}], "]"}], "&"}], "/@", 
+      RowBox[{"{", 
+       RowBox[{"\"\<ref\>\"", ",", "\"\<guide\>\"", ",", "\"\<tutorial\>\""}],
+        "}"}]}]}], "]"}]}], ";"}]], "Input",
+ CellLabel->"In[34]:=",ExpressionUUID->"f1ea5bd5-5401-4e74-a219-4e5bb2496fba"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"source", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{
+     RowBox[{"htmlFiles", "[", 
+      RowBox[{"[", "1", "]"}], "]"}], ",", "\"\<Source\>\""}], "]"}]}], 
+  ";"}]], "Input",
+ CellChangeTimes->{{3.8378422344968224`*^9, 3.8378422620967855`*^9}},
+ CellLabel->"In[36]:=",ExpressionUUID->"c1462e8a-8d6e-44b7-8776-4130a174fac8"],
+
+Cell[BoxData[
+ RowBox[{"StringReplace", "[", 
+  RowBox[{"source", ",", 
+   RowBox[{
+    RowBox[{"\"\<<!--\>\"", "~~", 
+     RowBox[{"Shortest", "[", "___", "]"}], "~~", "\"\<-->\>\""}], "->", 
+    "\"\<\>\""}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.837842480018507*^9, 3.8378425382074857`*^9}, {
+   3.8378425690925026`*^9, 3.8378425784165792`*^9}, {3.837842685633427*^9, 
+   3.837842713554474*^9}, 3.8378427782253523`*^9},
+ CellLabel->"In[44]:=",ExpressionUUID->"92fb578b-5279-4362-9137-b28a1382df15"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Do", "[", 
+  RowBox[{
+   RowBox[{"If", "[", 
+    RowBox[{
+     RowBox[{"StringContainsQ", "[", 
+      RowBox[{
+       RowBox[{"FixString", "[", 
+        RowBox[{"Import", "[", 
+         RowBox[{"file", ",", "\"\<Source\>\""}], "]"}], "]"}], ",", 
+       "\"\<minimal\>\""}], "]"}], ",", 
+     RowBox[{"Print", "[", "file", "]"}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"file", ",", "htmlFiles"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.837842263123045*^9, 3.8378422973954735`*^9}, {
+  3.837842886226287*^9, 3.8378429548582673`*^9}, {3.8378429970585356`*^9, 
+  3.837842997994032*^9}},
+ CellLabel->"In[51]:=",ExpressionUUID->"200afe18-22db-46cb-811d-700a434c392e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["\<\"D:\\\\werk\\\\workspace\\\\QMRITools\\\\docs\\\\htmldoc\\\\\
+ref\\\\GenerateGradients.html\"\>"], "Print",
+ CellChangeTimes->{3.8378430065337086`*^9},
+ CellLabel->
+  "During evaluation of \
+In[51]:=",ExpressionUUID->"3b3d8e56-7ee7-45b4-b4f7-55bd1dfccbf3"],
+
+Cell[BoxData["\<\"D:\\\\werk\\\\workspace\\\\QMRITools\\\\docs\\\\htmldoc\\\\\
+ref\\\\OverPlusCalc.html\"\>"], "Print",
+ CellChangeTimes->{3.8378430108930535`*^9},
+ CellLabel->
+  "During evaluation of \
+In[51]:=",ExpressionUUID->"8e887cb2-da6c-4ba8-8ad1-955a8569e4fb"],
+
+Cell[BoxData["\<\"D:\\\\werk\\\\workspace\\\\QMRITools\\\\docs\\\\htmldoc\\\\\
+ref\\\\Runs.html\"\>"], "Print",
+ CellChangeTimes->{3.83784301372548*^9},
+ CellLabel->
+  "During evaluation of \
+In[51]:=",ExpressionUUID->"86dfce0d-b90f-48d2-b2e2-bcb217aa6eb3"],
+
+Cell[BoxData["\<\"D:\\\\werk\\\\workspace\\\\QMRITools\\\\docs\\\\htmldoc\\\\\
+ref\\\\VisualOpt.html\"\>"], "Print",
+ CellChangeTimes->{3.837843016805247*^9},
+ CellLabel->
+  "During evaluation of \
+In[51]:=",ExpressionUUID->"63e338ee-137d-423e-9757-151e08eaf52d"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{"Delete", " ", "unnneded", " ", "images"}], "*)"}], 
+  "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{"DeleteDirectory", "[", 
+      RowBox[{
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"htmlDirectory", ",", "#", ",", "\"\<Files\>\""}], "}"}], 
+        "]"}], ",", 
+       RowBox[{"DeleteContents", "->", "True"}]}], "]"}], "&"}], "/@", 
+    RowBox[{"{", 
+     RowBox[{"\"\<ref\>\"", ",", "\"\<guide\>\"", ",", "\"\<tutorial\>\""}], 
+     "}"}]}], ";"}]}]], "Input",
+ CellChangeTimes->{{3.8378418991199923`*^9, 
+  3.837841949064563*^9}},ExpressionUUID->"b6082626-aa0d-4772-bc41-\
+3a69b084328f"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"source", "=", 
+   RowBox[{"Import", "[", 
+    RowBox[{
+    "\"\<D:\\\\werk\\\\workspace\\\\QMRITools\\\\build\\\\QMRITools-HTML\\\\\
+html\\\\ref\\\\AcquisitionMethod.html\>\"", ",", "\"\<Source\>\""}], "]"}]}], 
+  ";"}]], "Input",
+ CellChangeTimes->{{3.837841404458115*^9, 3.8378414066203656`*^9}, 
+   3.8378415465231876`*^9},
+ CellLabel->"In[23]:=",ExpressionUUID->"a2aec639-ac72-4f47-8390-2c6135a2df64"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{"Insert", " ", "jQuery"}], "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"FixString", "[", "source_", "]"}], ":=", 
+    RowBox[{"StringReplace", "[", 
+     RowBox[{"source", ",", 
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Remove", " ", "comments"}], "*)"}], "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"\"\<<!--\>\"", "~~", 
+          RowBox[{"Shortest", "[", "___", "]"}], "~~", "\"\<-->\>\""}], "->", 
+         "\"\<\>\""}], ",", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"Insert", " ", "jQuery"}], "*)"}], "\[IndentingNewLine]", 
+        RowBox[{
+        "\"\<<script \
+src=\\\"/webMathematica/Resources/Documentation/English/javascript/reference.\
+js\\\"></script>\>\"", "\[Rule]", 
+         "\"\<<link rel=\\\"stylesheet\\\" href=\\\"../css/clipboard.css\\\" \
+/>\n<script \
+src=\\\"../javascript/jquery/core/1.7.2/jquery.min.js\\\"></script>\n<script \
+src=\\\"../javascript/reference.js\\\"></script>\>\""}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"fix", " ", "relative", " ", "paths"}], "*)"}], 
+        "\[IndentingNewLine]", 
+        RowBox[{
+        "\"\</webMathematica/Resources/Documentation/English/\>\"", 
+         "\[Rule]", "\"\<../\>\""}], ",", 
+        RowBox[{
+        "\"\</2013/javascript/\>\"", "\[Rule]", "\"\<../javascript/\>\""}], 
+        ",", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"fix", " ", 
+          RowBox[{"bullet", ".", "gif"}]}], "*)"}], "\[IndentingNewLine]", 
+        RowBox[{
+        "\"\<../images/mathematicaImages/bullet.gif\>\"", "\[Rule]", 
+         "\"\<../images/bullet-greysq.gif\>\""}], ",", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"fix", " ", "relative", " ", "paths"}], "*)"}], 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"\"\</language/\>\"", "<>", "tName", "<>", "\"\</ref/\>\""}],
+          "\[Rule]", "\"\<../ref/\>\""}], ",", "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+         "\"\</language/\>\"", "<>", "tName", "<>", "\"\</guide/\>\""}], 
+         "\[Rule]", "\"\<../guide/\>\""}], ",", "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+         "\"\<http://reference.wolfram.com/language/\>\"", "<>", "tName", 
+          "<>", "\"\</\>\""}], "\[Rule]", "\"\<../\>\""}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"fix", " ", "QMRITools", " ", "name"}], "*)"}], 
+        "\[IndentingNewLine]", 
+        RowBox[{"\"\<Q M R I TOOLS\>\"", "->", "\"\<QMRITools\>\""}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"remove", " ", "unneeded", " ", "images"}], "*)"}], 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"\"\<<img src=\\\"Files\>\"", "~~", 
+          RowBox[{"Shortest", "[", "___", "]"}], "~~", 
+          "\"\<alt=\\\"\\\" />\>\""}], "->", "\"\<\>\""}]}], 
+       "\[IndentingNewLine]", "}"}]}], "]"}]}], ";"}]}]], "Input",
+ CellChangeTimes->{{3.83784129202446*^9, 3.837841382014075*^9}, {
+  3.837841413852995*^9, 3.8378414581111755`*^9}, {3.8378415253881187`*^9, 
+  3.8378415567338877`*^9}, {3.837841837070367*^9, 3.8378418466849775`*^9}, {
+  3.8378428038618298`*^9, 3.8378428728510766`*^9}},
+ CellLabel->"In[48]:=",ExpressionUUID->"2e43fc4e-d723-4a75-960b-4683b8b1acf9"]
 },
-WindowSize->{968, 833},
-WindowMargins->{{158, Automatic}, {Automatic, 94}},
-FrontEndVersion->"12.1 for Microsoft Windows (64-bit) (March 14, 2020)",
+WindowSize->{1200, 1877},
+WindowMargins->{{-1208, Automatic}, {-381, Automatic}},
+FrontEndVersion->"12.3 for Microsoft Windows (64-bit) (July 9, 2021)",
 StyleDefinitions->"Default.nb",
 ExpressionUUID->"ef04447c-0aed-4b8a-af00-7f1e74404593"
 ]
@@ -3414,18 +4879,89 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[580, 22, 1113, 29, 124, "Input",ExpressionUUID->"fa792b49-4fa3-4f82-ad0a-ee305e16ea02"],
-Cell[1696, 53, 169370, 2850, 87, "Output",ExpressionUUID->"39b498b5-0ce4-4ce8-a710-7b311fcc38f5"],
-Cell[171069, 2905, 776, 13, 32, "Output",ExpressionUUID->"39246b63-2270-4cef-bb84-32395e26af7b"],
-Cell[171848, 2920, 693, 9, 32, "Output",ExpressionUUID->"35687dde-d3ed-4752-a04f-6e329730e852"],
-Cell[172544, 2931, 704, 10, 32, "Output",ExpressionUUID->"ce1967db-70cd-4b6e-ad77-3248b9301811"],
-Cell[173251, 2943, 720, 10, 32, "Output",ExpressionUUID->"a2b890f3-19e3-4657-91f4-28d5c92d538b"]
+Cell[580, 22, 1113, 29, 130, "Input",ExpressionUUID->"fa792b49-4fa3-4f82-ad0a-ee305e16ea02"],
+Cell[1696, 53, 169410, 2852, 87, "Output",ExpressionUUID->"39b498b5-0ce4-4ce8-a710-7b311fcc38f5"],
+Cell[171109, 2907, 776, 13, 33, "Output",ExpressionUUID->"39246b63-2270-4cef-bb84-32395e26af7b"],
+Cell[171888, 2922, 693, 9, 33, "Output",ExpressionUUID->"35687dde-d3ed-4752-a04f-6e329730e852"],
+Cell[172584, 2933, 704, 10, 33, "Output",ExpressionUUID->"ce1967db-70cd-4b6e-ad77-3248b9301811"],
+Cell[173291, 2945, 720, 10, 33, "Output",ExpressionUUID->"a2b890f3-19e3-4657-91f4-28d5c92d538b"]
 }, Open  ]],
-Cell[173986, 2956, 166, 3, 28, "Input",ExpressionUUID->"555c23c6-8d04-4170-a667-7fb59f93fb8a"],
-Cell[174155, 2961, 417, 7, 28, "Input",ExpressionUUID->"dcbe0b2f-de80-4323-83cc-6483d8acebd1"],
-Cell[174575, 2970, 181, 3, 28, "Input",ExpressionUUID->"1795a665-4309-4c68-b912-747a5c45ace4"],
-Cell[174759, 2975, 18238, 421, 2439, "Input",ExpressionUUID->"904a5b9a-d0e3-430c-b41a-d5b784bdca12",
- InitializationCell->True]
+Cell[174026, 2958, 289, 7, 29, "Input",ExpressionUUID->"b0e73297-6909-43ac-98e2-d7f4b6762db8"],
+Cell[174318, 2967, 166, 3, 29, "Input",ExpressionUUID->"555c23c6-8d04-4170-a667-7fb59f93fb8a"],
+Cell[174487, 2972, 417, 7, 29, "Input",ExpressionUUID->"dcbe0b2f-de80-4323-83cc-6483d8acebd1"],
+Cell[174907, 2981, 181, 3, 29, "Input",ExpressionUUID->"1795a665-4309-4c68-b912-747a5c45ace4"],
+Cell[175091, 2986, 19797, 458, 2606, "Input",ExpressionUUID->"904a5b9a-d0e3-430c-b41a-d5b784bdca12",
+ InitializationCell->True],
+Cell[194891, 3446, 293, 8, 29, "Input",ExpressionUUID->"afa1ece6-ea72-460c-9380-6bb97d7a9e6e"],
+Cell[CellGroupData[{
+Cell[195209, 3458, 19383, 461, 2450, "Input",ExpressionUUID->"a8a5b8a7-4a6e-4fc5-9a5b-6d1a65c047b9"],
+Cell[CellGroupData[{
+Cell[214617, 3923, 268, 5, 23, "Print",ExpressionUUID->"54a274ca-5280-47a4-aadc-5e5aeb718eff"],
+Cell[214888, 3930, 274, 5, 23, "Print",ExpressionUUID->"cef77be3-4a1a-483d-8123-aa71711f759b"],
+Cell[215165, 3937, 281, 5, 23, "Print",ExpressionUUID->"d18e2be5-b89d-4714-b7fb-e743e9185428"],
+Cell[215449, 3944, 268, 5, 23, "Print",ExpressionUUID->"85bea51d-0b16-4724-9e01-784ab5fc9d24"],
+Cell[215720, 3951, 280, 5, 23, "Print",ExpressionUUID->"1e4c8f9d-08bc-465d-9fd5-e21b338727e1"],
+Cell[216003, 3958, 277, 5, 23, "Print",ExpressionUUID->"3a0688cd-aeaa-4909-98a8-8058fa73d6f5"]
+}, Open  ]],
+Cell[216295, 3966, 558, 12, 28, "Message",ExpressionUUID->"3283846e-cf94-4ff8-8bef-9c60a5bd4383"],
+Cell[216856, 3980, 276, 5, 23, "Print",ExpressionUUID->"f136e7d4-9f8c-43a1-ad28-1036abcd4726"],
+Cell[217135, 3987, 329, 8, 28, "Message",ExpressionUUID->"d1c6627c-8134-4f7f-9c4f-3e3771c0698b"],
+Cell[CellGroupData[{
+Cell[217489, 3999, 283, 5, 23, "Print",ExpressionUUID->"8826688d-7079-4391-9eb3-4f306912e430"],
+Cell[217775, 4006, 280, 5, 23, "Print",ExpressionUUID->"df124a57-c1c2-4e2a-8f7e-11d6a241ddf3"],
+Cell[218058, 4013, 287, 5, 23, "Print",ExpressionUUID->"6d7e07c4-c347-4e60-83f1-a7bea2f9b92d"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[218394, 4024, 185, 3, 29, "Input",ExpressionUUID->"89b471ed-0bca-4546-97a6-9e0c29e03601"],
+Cell[218582, 4029, 2805, 41, 1274, "Output",ExpressionUUID->"7112e203-d3ef-46d0-a262-7d279e207b4a"]
+}, Open  ]],
+Cell[221402, 4073, 212, 4, 29, "Input",ExpressionUUID->"47e43346-7691-4930-9aee-935354efa5c5"],
+Cell[221617, 4079, 267, 8, 29, "Input",ExpressionUUID->"c20b332c-818e-44ed-a38d-62e8d5159ccf"],
+Cell[221887, 4089, 318, 8, 29, "Input",ExpressionUUID->"db22a34d-5618-42b3-b09d-0c7f17d599cc"],
+Cell[222208, 4099, 550, 14, 29, "Input",ExpressionUUID->"7c0c8187-b7f1-48eb-8654-5fddf664ce0b"],
+Cell[CellGroupData[{
+Cell[222783, 4117, 237, 5, 29, "Input",ExpressionUUID->"fb0399b6-e3d8-40f5-a4f8-575d02e8eb2d"],
+Cell[223023, 4124, 274, 4, 33, "Output",ExpressionUUID->"5a5594ee-29fb-4b8d-bef1-1cd0f1c49554"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[223334, 4133, 256, 6, 29, "Input",ExpressionUUID->"f789486f-9dcb-402c-9e04-13540e2bdef1"],
+Cell[223593, 4141, 258, 4, 33, "Output",ExpressionUUID->"045aa08d-5587-4139-8f40-db7bd05b5d2a"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[223888, 4150, 381, 8, 29, "Input",ExpressionUUID->"327778db-0b8f-4972-8a1b-8a3cb9e3943e"],
+Cell[224272, 4160, 4482, 61, 3734, "Output",ExpressionUUID->"af6b0c7e-55cf-463f-a607-114c92d11d1f"]
+}, Open  ]],
+Cell[228769, 4224, 3792, 58, 550, InheritFromParent,ExpressionUUID->"f3a1900f-f722-4df6-a796-f7825cc3fc58"],
+Cell[CellGroupData[{
+Cell[232586, 4286, 185, 3, 29, "Input",ExpressionUUID->"33567fad-47a0-491c-8084-99457c5abd90"],
+Cell[232774, 4291, 255, 4, 33, "Output",ExpressionUUID->"62a9038a-d4c8-41b3-8cd9-e3337d738420"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[233066, 4300, 182, 3, 29, "Input",ExpressionUUID->"638e25d1-8e08-4525-9d62-25eb30cc16ee"],
+Cell[233251, 4305, 4482, 61, 3734, "Output",ExpressionUUID->"430a2ad0-39f8-47cf-bd89-9028195ebdb9"]
+}, Open  ]],
+Cell[237748, 4369, 257, 5, 110, "Input",ExpressionUUID->"89d7681f-34a9-4c25-ad2a-6d1afbf1845e"],
+Cell[238008, 4376, 10494, 268, 1490, "Input",ExpressionUUID->"763cbbf8-1f27-4ee9-98c5-ee1edc2e2db5"],
+Cell[CellGroupData[{
+Cell[248527, 4648, 272, 5, 29, "Input",ExpressionUUID->"d980117c-d1c7-4a9b-95c1-4da2cdf271ba"],
+Cell[248802, 4655, 213, 3, 33, "Output",ExpressionUUID->"0791a128-f503-44e8-9373-8d3d0aac9730"]
+}, Open  ]],
+Cell[249030, 4661, 503, 13, 29, "Input",ExpressionUUID->"f1ea5bd5-5401-4e74-a219-4e5bb2496fba"],
+Cell[249536, 4676, 362, 9, 29, "Input",ExpressionUUID->"c1462e8a-8d6e-44b7-8776-4130a174fac8"],
+Cell[249901, 4687, 504, 10, 29, "Input",ExpressionUUID->"92fb578b-5279-4362-9137-b28a1382df15"],
+Cell[CellGroupData[{
+Cell[250430, 4701, 700, 17, 29, "Input",ExpressionUUID->"200afe18-22db-46cb-811d-700a434c392e"],
+Cell[CellGroupData[{
+Cell[251155, 4722, 273, 5, 23, "Print",ExpressionUUID->"3b3d8e56-7ee7-45b4-b4f7-55bd1dfccbf3"],
+Cell[251431, 4729, 268, 5, 23, "Print",ExpressionUUID->"8e887cb2-da6c-4ba8-8ad1-955a8569e4fb"],
+Cell[251702, 4736, 257, 5, 23, "Print",ExpressionUUID->"86dfce0d-b90f-48d2-b2e2-bcb217aa6eb3"],
+Cell[251962, 4743, 263, 5, 23, "Print",ExpressionUUID->"63e338ee-137d-423e-9757-151e08eaf52d"]
+}, Open  ]]
+}, Open  ]],
+Cell[252252, 4752, 704, 20, 50, "Input",ExpressionUUID->"b6082626-aa0d-4772-bc41-3a69b084328f"],
+Cell[252959, 4774, 440, 10, 29, "Input",ExpressionUUID->"a2aec639-ac72-4f47-8390-2c6135a2df64"],
+Cell[253402, 4786, 3429, 75, 450, "Input",ExpressionUUID->"2e43fc4e-d723-4a75-960b-4683b8b1acf9"]
 }
 ]
 *)
