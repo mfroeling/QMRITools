@@ -36,53 +36,82 @@ QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
 (*print the contexts*)
 If[QMRITools`$Verbose,
 	Print["--------------------------------------"];
+	Print["--------------------------------------"];
 	Print["All defined packages to be loaded are: "];
-	Print[QMRITools`$Contexts];
+	Print[Column@QMRITools`$Contexts];
 ];
 
 
-(*load all the packages without error reporting such we can find the names*)
-If[QMRITools`$Verbose, Print["--------------------------------------"]];
+(*quietly load all the packages such we can get the function names*)
 Quiet[Get/@QMRITools`$Contexts];
 
 
 (*Destroy all functions defined in the subpackages*)
+If[QMRITools`$Verbose, 
+	Print["--------------------------------------"];
+	Print["--------------------------------------"];
+	Print["Removing all Local and Global definitions existing in "<>QMRITools`$Package];
+	Print["--------------------------------------"];
+	Print["--------------------------------------"];
+];
 (
+	(*function names in local an global context*)
+	local = Names[# <> "*"];
+	global = Intersection[Names["Global`*"], "Global`" <> # & /@ local];
+
 	If[QMRITools`$Verbose, 
-		Print["Removing all definitions of "<>#];
-		Print["- Package functions: \n", Names[# <> "*"]];
-		Print["- Package functions in global:\n", Intersection[Names["Global`*"], "Global`" <> # & /@ Names[# <> "*"]]];
+		Print["Removing all existing definitions in "<>#];
+		Print["- Functions defined in package: \n", local];
+		Print["- Functions defined in package existing in global:\n", global];
+		Print["--------------------------------------"]
 	];
 	
-	Unprotect @@ Names[# <> "*"];
-	ClearAll @@ Names[# <> "*"];
+	(*clear local*)
+	Unprotect @@ local;
+	ClearAll @@ local;
 	
-	Unprotect @@ Intersection[Names["Global`*"], "Global`" <> # & /@ Names[# <> "*"]];
-	ClearAll @@ Intersection[Names["Global`*"], "Global`" <> # & /@ Names[# <> "*"]];
-	Remove @@ Intersection[Names["Global`*"], "Global`" <> # & /@ Names[# <> "*"]];
+	(*clear global*)
+	Unprotect @@ global;
+	ClearAll @@ global;
+	Remove @@ global;
+	
+	ClearAll[local,global]
 ) &/@ QMRITools`$Contexts
 
 
 (*reload all the sub packages with error reporting*)
-If[QMRITools`$Verbose,Print["--------------------------------------"]];
+If[QMRITools`$Verbose, 
+	Print["--------------------------------------"];
+	Print["Loading and protecting all definitions existing in "<>QMRITools`$Package];
+	Print["--------------------------------------"];
+	Print["--------------------------------------"];
+];
 (
-	If[QMRITools`$Verbose, Print["Loading all definitions of "<>#]];
+	(*load the package*)
+	If[QMRITools`$Verbose, Print["Loading all definitions in "<>#]];
 	Get[#];
-)&/@QMRITools`$Contexts;	
-
-
-(*protect all functions*)
-If[QMRITools`$Verbose,Print["--------------------------------------"]];
-(
+	
+	(*get the package functions*)
+	local = Names[# <> "*"];
+	
 	If[QMRITools`$Verbose,
-		Print["protecting all definitions of "<>#];
-		Print[Names[# <> "*"]];
+		Print["Protecting all definitions in "<>#];
+		Print[local];
 		Print["--------------------------------------"]
 	];
 	
-	SetAttributes[#,{Protected, ReadProtected}]&/@ Names[# <> "*"];
-)& /@ QMRITools`$Contexts;
+	(*protect all definitions in package*)
+	SetAttributes[#,{Protected, ReadProtected}]&/@ local;
+	ClearAll[local]
+)&/@QMRITools`$Contexts;	
 
+(*finish*)
+If[QMRITools`$Verbose,
+	Print["--------------------------------------"];
+	Print["Done loading "<>QMRITools`$Package];
+	Print["--------------------------------------"];
+	Print["--------------------------------------"];
+];
 
 (*check mathematica version*)
 If[$VersionNumber < 12,

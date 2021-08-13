@@ -173,11 +173,13 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 	
 	(*define frequencys*)
 	{sysJ,sysS,scale,sysSi,names,it,name} = sys;
-	Hj = 2Pi sysJ;
+	Hj = 2 Pi sysJ;
 	Hres = sysS (-2.*Pi*bField*gyro)(*omega at ppm*);
 	
 	(*standard matrixes and sizes*)
-	nSpins = Length[sysS];nSpins2=2^nSpins;
+	nSpins = Length[sysS];
+	nSpins2=2^nSpins;
+	
 	iden = SparseArray[IdentityMatrix[nSpins2]];
 	zero = SparseArray[ConstantArray[0,{nSpins2,nSpins2}]];
 	
@@ -434,7 +436,7 @@ Options[SimReadout] = {
 	LinewidthShape->"Lorentzian", 
 	ReadoutSamples -> 2046, 
 	ReadoutBandwith -> 2000,
-	CenterFrequency -> 4.65,
+	CenterFrequency -> 0,
 	ReadoutMethod -> "Fid"
 	}
 
@@ -474,6 +476,7 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 		"Gaussian", Exp[-time^2 linewidth^2],
 		"Voigt", 0.5 Exp[-time linewidth] + 0.5 Exp[-time^2 linewidth^2]
 	]];
+	
 	val = (1./nSpins2) decay Exp[I phase Degree];
 	
 	(*perform readout and evolve spin states by dt*)
@@ -519,7 +522,7 @@ SimSignal[din_,H_,OptionsPattern[]]:=Block[{Ixy,w,sel},
 (*GetSpinSystem*)
 
 
-Options[MakeSpinSystem] = {CenterFrequency -> 4.65};
+Options[MakeSpinSystem] = {CenterFrequency -> 0};
 
 SyntaxInformation[MakeSpinSystem] = {"ArgumentsPattern" -> {_, _., _., _., OptionsPattern[]}};
 
@@ -549,13 +552,13 @@ MakeSpinSystem[{nam_, freq_, jcoup_, scale_}, OptionsPattern[]] := Block[
 (*GetSpinSystem*)
 
 
-Options[GetSpinSystem] = {CenterFrequency->4.65};
+Options[GetSpinSystem] = {CenterFrequency->0};
 
 SyntaxInformation[GetSpinSystem]={"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, scale, j, j1, j2, cf},
 
-	cf=OptionValue[CenterFrequency];
+	cf = OptionValue[CenterFrequency];
 	
 	Switch[name,
 		"PPA",
@@ -908,15 +911,15 @@ SysToMat[sysJ_,n_]:=Block[{out},
 
 SyntaxInformation[SysTable]={"ArgumentsPattern" -> {_}};
 
-SysTable[sys_]:=Module[{sysJ,sysS,sysSi,scale,names,it,
-	head,lab,tables,name},
+SysTable[sys:{_?MatrixQ,_,_,_,_,_,_?StringQ}]:=First@SysTable@{sys}
+
+SysTable[sys_]:=Block[{sysJ,sysS,sysSi,scale,names,it,head,lab,tables,name},
 	tables=(
-	{sysJ,sysS,scale,sysSi,names,it,name}=#;
-	head=Thread[{(*it,*)names,sysSi,scale}];
-	lab={Row[#[[{1}]],"  "]&/@head,Column/@head};
-	Column[{Style[name,Bold,Large],TableForm[sysJ/. (0.->"-"),TableHeadings->lab]},Alignment->Center]
+		{sysJ,sysS,scale,sysSi,names,it,name}=#;
+		head=Thread[{names,sysSi,scale}];
+		lab={Row[#[[{1}]],"  "]&/@head,Column/@head};
+		Column[{Style[name,Bold,Large],TableForm[sysJ/. (0.->"-"),TableHeadings->lab]},Alignment->Center]
 	)&/@sys;
-	(*Column[tables,Alignment\[Rule]Center,Spacings\[Rule]2]*)
 	tables
 ]
 
