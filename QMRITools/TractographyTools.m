@@ -3,7 +3,7 @@
 (* ::Title:: *)
 (*QMRITools VisteTools*)
 
-
+ 
 (* ::Subtitle:: *)
 (*Written by: Martijn Froeling, PhD*)
 (*m.froeling@gmail.com*)
