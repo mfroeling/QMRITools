@@ -173,7 +173,7 @@ colors3D = {Automatic -> "Automatic", "XRay", "HighRange",
 views = Thread[2*{{0.65, -1.2, 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}} -> {"Start", "Right", "Left", "Front", "Back", "Top", "Bottom"}];
 
 (*default gradient color funtions*)
-colorNames = {"GrayTones", "Rainbow", "ThermometerColors", "SunsetColors", 
+colorNames = {"GrayTones", "Rainbow", "DarkRainbow", "ThermometerColors", "SunsetColors", 
 	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", 
 	"BlueGreenYellow", "AvocadoColors", "SouthwestColors"};
 
@@ -2355,42 +2355,35 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},opts:OptionsPattern[]]:=MakeSlic
 
 MakeSliceImages[selData_,vox:{_,_,_},opts:OptionsPattern[]]:=MakeSliceImages[selData,{0,{}},vox,opts]
 
-MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=Block[{pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2},
-
-rule=Thread[N[vals]->Range[Length[vals]]];
-colo=OptionValue[ColorFunction];
-
-colF = If[
-	MemberQ[gradsets, colo],ColorData[colo][#]&,
-	If[MemberQ[custColors[[All,1]],colo],
-		colo/.custColors,colo]
-		];
-
-Table[
-
-(*get the data*)
-pdat=N@selData[[n]];
-mdat=N@If[selMask=!=0,N[selMask[[n]]]/.rule,0 pdat];
-
-(*find the range*)
-datf=DeleteCases[Flatten[pdat][[;;;;10]],0.];
-ran=If[OptionValue[PlotRange]===Automatic,If[datf==={},{0,1},{0,Quantile[DeleteCases[Flatten[pdat][[;;;;10]],0.],.9]}],OptionValue[PlotRange]];
-
-size=vox[[{{2,3},{1,2},{1,3}}[[n]]]];
-bar=BarLegend[{colF/@Range[0,1,.01],ran},LabelStyle->Directive[{Black,Bold,12}]];
-
-(*loop over the slices, 1 axial, 2 cor, 3 sag*)
-MapThread[(
-ratio=Divide@@(Dimensions[#]size);
-
-pl1=ArrayPlot[#1,AspectRatio->ratio,Frame->False,ImageSize->400,PlotRangePadding->1, PlotRange->ran,ColorFunction->colF,ClippingStyle->(colF/@{0,1})];
-
-pl2=ArrayPlot[#2,ColorFunction->(Directive[{Opacity[0.4],ColorData["Rainbow"][#]}]&),ColorRules->{0.->Transparent}];
-
-If[OptionValue[ImageLegend],Legended[Show[pl1,pl2],bar],Show[pl1,pl2]]
-
-)&,{pdat,mdat}]
-,{n,1,3}]
+MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=Block[{
+	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2
+	},
+	
+	rule=Thread[N[vals]->Range[Length[vals]]];
+	colo=OptionValue[ColorFunction];
+	
+	colF = If[MemberQ[colorFunctions[[All,1]], colo],colo,"GrayTones"]/.colorFunctions;
+	
+	Table[
+		(*get the data*)
+		pdat=N@selData[[n]];
+		mdat=N@If[selMask=!=0,N[selMask[[n]]]/.rule,0 pdat];
+		
+		(*find the range*)
+		datf=DeleteCases[Flatten[pdat][[;;;;10]],0.];
+		ran=If[OptionValue[PlotRange]===Automatic,If[datf==={},{0,1},{0,Quantile[DeleteCases[Flatten[pdat][[;;;;10]],0.],.9]}],OptionValue[PlotRange]];
+		
+		size=vox[[{{2,3},{1,2},{1,3}}[[n]]]];
+		bar=BarLegend[{colF/@Range[0,1,.01],ran},LabelStyle->Directive[{Black,Bold,12}]];
+		
+		(*loop over the slices, 1 axial, 2 cor, 3 sag*)
+		MapThread[(
+			ratio=Divide@@(Dimensions[#]size);
+			pl1=ArrayPlot[#1,AspectRatio->ratio,Frame->False,ImageSize->400,PlotRangePadding->1, PlotRange->ran,ColorFunction->colF,ClippingStyle->(colF/@{0,1})];
+			pl2=ArrayPlot[#2,ColorFunction->(Directive[{Opacity[0.4],ColorData["Rainbow"][#]}]&),ColorRules->{0.->Transparent}];
+			If[OptionValue[ImageLegend],Legended[Show[pl1,pl2],bar],Show[pl1,pl2]]
+		)&,{pdat,mdat}]
+	,{n,1,3}]
 ]
 
 

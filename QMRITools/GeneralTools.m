@@ -843,16 +843,18 @@ ApplyCrop[data_, crop_ , {v1_,v2_}] := Module[{z1, z2, x1, x2, y1, y2,dim},
 (*CutData*)
 
 
-SyntaxInformation[CutData] = {"ArgumentsPattern" -> {_,_.}}
+SyntaxInformation[CutData] = {"ArgumentsPattern" -> {_,_._.}}
 
-CutData[data_]:=CutData[data,FindMiddle[data]]
+CutData[data_] := CutData[data, FindMiddle[data, False]]
 
-CutData[data_,cut_] := Switch[ArrayDepth[data],
+CutData[data_, print_?BooleanQ] := CutData[data, FindMiddle[data, print]]
+
+CutData[data_, cut_] := Switch[ArrayDepth[data],
 		4,{data[[All, All, All, ;; cut]],data[[All, All, All, (cut + 1) ;;]],cut},
 		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}]
 
 
-FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran,blur,i, max},
+FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran,blur,i, max},
   
 	(*flatten mean and normalize data*)
 	dat=dati;
@@ -886,11 +888,12 @@ FindMiddle[dati_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran
 		mid = Round[Length[dat]/2];
 		center = {mid, .75 max};
 		peak = Nearest[peaks, center];
-		PrintTemporary[Show[
+		
+		If[print,Print[Show[
 			ListLinePlot[{max-dat,datf}, PlotStyle->{Black,Orange}],
 			ListPlot[{peaks,{center},peak},PlotStyle->(Directive[{PointSize[Large],#}]&/@{Blue,Gray,Green})]
 			,ImageSize->75, Ticks -> None]
-			];
+		]];
 		(*output*)
 		Round[First@First@peak]
 	]
