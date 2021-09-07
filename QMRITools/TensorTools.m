@@ -425,7 +425,7 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 		Transpose[FindTensOutliers[Transpose[dataL,l], bmat, con, kappa], r]
 		, 
 		ConstantArray[0.,Dimensions[data]]
-		];
+	];
 	
 	fitresult = Switch[method,
 		"LLS", Transpose[TensMinLLS[Transpose[dataL,l], bmatI], r],
@@ -446,8 +446,10 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 (*FindOutliers*)
 
 
-FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}},	Block[
-		{ittA, contA, solA, itt, cont, soli, res, mad, wts, wmat, fitE, LS2, bmat2, out},
+FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}},	
+	Block[{
+		ittA, contA, solA, itt, cont, soli, res, mad, wts, wmat, fitE, LS2, bmat2, out
+		},
 		(*initialize some values*)
 		out = 0. LS; LS2 = LS; bmat2 = bmat;
 		

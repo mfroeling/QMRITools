@@ -126,6 +126,9 @@ AnisoKappa::usage =
 AnisoItterations::usage = 
 "AnisoItterations is an options for AnisoFilterData. It specifies the amount of denoising itterations."
 
+AnisoKernel::usage = 
+"AnisoKernel is an options for AnisoFilterData. It defines the kernel size."
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -666,38 +669,50 @@ FinDiffCalc[dat_,kers_]:=ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 (*AnisoFilterData*)
 
 
-Options[AnisoFilterData] = {AnisoStepTime -> 0.3, AnisoItterations -> 5};
+Options[AnisoFilterData] = {AnisoStepTime -> 0.35, AnisoItterations -> 3, AnisoKernel -> {0.05,0.1}};
 
 SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-AnisoFilterData[data_, OptionsPattern[]] := Block[{
-	dd, grads, k, jacTot, tMat, eval, evec, div, dati
-	},
+AnisoFilterData[data_, opts:OptionsPattern[]] := AnisoFilterData[data, {1,1,1}, opts]
+
+AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{dd, grads, k, jacTot, tMat, eval, evec, div, dati,
+	sig, rho , step, itt, sc, max},
+	(*get the 4th dimensions on first place *)
+	dati = N@Transpose[data];
+	max = Max[dati];
+	(*aniso filter kernel size *)
+	{sig,rho} = OptionValue[AnisoKernel];
+	step = OptionValue[AnisoStepTime] ;
+	itt = OptionValue[AnisoItterations];
 	
-	dati = Transpose[data];
-	k = 1;
-	Do[
-		grads = (dd = #; GaussianFilter[dd, k, #] & /@ IdentityMatrix[3]) & /@ dati;
-		jacTot = GaussianFilter[Total[(Map[Outer[Times, #, #] &, TransData[#, "l"], {3}]) & /@ grads], k];
+	sc = Reverse[Min[vox]/vox];
+	
+	Do[(*loop over itterrations*)
+		(*get the data gradients*)
+		grads = (
+			dd = GaussianFilter[#, {1, sig}];
+			MapThread[#2 GaussianFilter[dd, 1, #1] &, {IdentityMatrix[3], sc}]
+		) & /@ dati;
+		(*calculate the jacobian*)
+		jacTot = GaussianFilter[Total[(Map[Outer[Times, #, #] &, RotateDimensionsLeft[#], {3}]) & /@ grads], {1, rho}];
 		
-		tMat = Map[(
-			{eval, evec} = Eigensystem[#];
-			Which[
-				eval[[1]] == 0., eval = {1, 1, 1},
-				eval[[2]] == 0., eval = {0., 1.5, 1.5},
-				eval[[3]] == 0., eval = {0., 0., 3},
-				True, eval = 1/eval; eval = 3 eval/Total[eval]
-			];
-			Transpose[evec].DiagonalMatrix[eval].evec
+		(*get the step matrix*)
+		tMat = Map[({eval, evec} = Chop[Eigensystem[#]];
+			eval = Which[eval[[1]] == 0., {1, 1, 1}, eval[[2]] == 0., {0., 1.5, 1.5}, eval[[3]] == 0., {0., 0., 3}, True, 3./(eval Total[1./eval])];
+			Transpose[evec] . DiagonalMatrix[eval] . evec
 		) &, jacTot, {3}];
 		
-		div = MapThread[#2 . #1 &, {tMat, TransData[TransData[grads, "l"], "l"]}, 3];
-		div = TransData[TransData[div, "r"], "r"];
-		div = Total[MapThread[GaussianFilter[#1, k, #2] &, {#, IdentityMatrix[3]}]] & /@ div;
+		(*get the time step*)
+		div = RotateDimensionsRight[MapThread[#2.#1 &, {tMat, RotateDimensionsLeft[grads, 2]}, 3], 2];
+		(*calculate divergence of vector field*)
+		div = Total[sc MapThread[GaussianFilter[#1, 1, #2] &, {#, IdentityMatrix[3]}]] & /@ div;
 		
-		dati = Clip[dati + OptionValue[AnisoStepTime] div, {0, Infinity}];
-	, {OptionValue[AnisoItterations]}];
-	Transpose[dati]
+		(*perform the smoothing step*)
+		dati = Clip[dati + step div, {0,2} max];
+	, {itt}];
+	
+	(*output the data*)
+	Clip[Transpose[dati], {0, 2} max]
 ]
 
 

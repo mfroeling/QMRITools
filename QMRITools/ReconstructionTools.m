@@ -181,7 +181,7 @@ ReadListData[file_]:=ReadListData[file,True]
 
 ReadListData[file_,print_]:=Block[{
 	fl,head,list,data,lab,dataIndex,dataVals,dataValsN,ruleKx,ruleKy,ruleKz,ruleCoil,
-	typ,pos,dataSplit,indexSplit, echo, scale, locs,
+	typ,pos,dataSplit,indexSplit, echo, scale, locs,cp,cn,cd,
 	sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead},
 	
 	fl=StringReplace[file,{".list"->"",".data"->""}];
@@ -202,6 +202,11 @@ ReadListData[file_,print_]:=Block[{
 	
 	(*parse text table*)
 	dataIndex=Transpose[StringSplitExp[Select[list,StringTake[#,1]===" "&]]];(*longest part*)
+	
+	(*fix non matching noise and data coil numbers*)
+	cp = Position[lab, "chan"][[1, 1]];
+	{cn, cd} = {"NOI", "STD"} /. Thread[DeleteDuplicates[dataIndex[[1]]] -> (DeleteDuplicates[#[[All, 2]]] & /@ GatherBy[Transpose[{dataIndex[[1]], dataIndex[[cp]]}], First])];
+	If[cn=!=cd,dataIndex[[cp]] = dataIndex[[cp]] /. Thread[cn -> cd]];
 	
 	(*create header values*)
 	dataVals=Thread[lab->(Sort[DeleteDuplicates[#]]&/@dataIndex)];
@@ -902,9 +907,17 @@ FourierRescaleData[data_, factor_:2] := Block[{dim, pad, scale, fac, new},
 (*Coil weighted recon*)
 
 
-Options[CoilWeightedRecon] = {EchoShiftData -> 0, CoilSamples -> 2, Method -> "RoemerEqualSignal",OutputSense->False};
+Options[CoilWeightedRecon] = {
+	EchoShiftData -> 0, 
+	CoilSamples -> 2, 
+	Method -> "RoemerEqualSignal", 
+	OutputSense->False,
+	RescaleRecon->True
+	};
 
-CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coilData, cov, sens, recon, encDim},
+CoilWeightedRecon[kspace_, noise_, head_, ops:OptionsPattern[]]:=CoilWeightedRecon[kspace, noise, head, 0,  ops]
+
+CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{shift, coilData, cov, sens, recon, encDim},
 	shift = OptionValue[EchoShiftData];
 	encDim = "number_of_encoding_dimensions"/.head;
 
@@ -924,9 +937,14 @@ CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coi
 		], {i, 1, Length[coilData]}]
 	];
 	
-	(*make coil sensitivity*)
-	sens = HammingFilterData /@ Switch[ArrayDepth[coilData], 4, coilData, 5, Mean@coilData[[{1, 2}]]];
-	sens = MakeSense[sens, cov];
+	If[sensi===0,
+		(*make coil sensitivity*)
+		sens = HammingFilterData /@ Switch[ArrayDepth[coilData], 4, coilData, 5, Mean@coilData, 6, Mean@Mean@coilData];
+		sens = MakeSense[sens, cov];
+		,
+		sens=sensi
+	];
+	
 	(*perform the recon*)
 	recon = Switch[ArrayDepth[coilData],
 		4, CoilCombine[coilData, cov, sens, Method -> OptionValue[Method]],
@@ -934,7 +952,8 @@ CoilWeightedRecon[kspace_, noise_, head_, OptionsPattern[]] := Block[{shift, coi
 	];
 	
 	(*scale to proper values*)
-	recon = 1000. recon/Max[Abs[recon]];
+	If[OptionValue[RescaleRecon],recon = 1000. recon/Max[Abs[recon]]];
+	
 	If[OptionValue[OutputSense],
 		{#[recon] & /@ {Abs, Arg, Re, Im},sens},
 		#[recon] & /@ {Abs, Arg, Re, Im}

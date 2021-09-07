@@ -349,7 +349,7 @@ LabSize[size_,ratio_]:= { Max[12, Min[{25, Round[Max[{size, ratio size}]/15]}]],
 
 
 PlotRangeVals[scale_, data_, {min_, max_}] := Block[{mindat, maxdat},
-	{mindat, maxdat} = If[scale, N@Quantile[Flatten[data], {0.05, 0.95}], {min, max}];
+	{mindat, maxdat} = If[scale, N@Quantile[Flatten[data], {0.005, 0.995}], {min, max}];
 	(*only use valid scale which is max>min*)
 	If[mindat >= maxdat, {mindat, mindat + 0.001}, {mindat, maxdat}]
 ];

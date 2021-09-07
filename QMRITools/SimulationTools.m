@@ -100,6 +100,9 @@ GESignal::usage =
 "GESignal[ang, {tr, t1}] calculates the gradient echo signal for flipangles ang using tr and t1. 
 GESignal[ang_?ListQ, {{tr1_, tr2_}, t1_}] calculates the dual tr gradient echo signal for flipangles ang using tr1, tr2 and t1."
 
+SimulateDualTR::usage =
+"SimulateDualTR[] simulates the signal of a Dual TR T1 map."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -1052,6 +1055,47 @@ GESignal[ang_?NumberQ, {{tr1_, tr2_}, t1_}] := Block[{a, e1, e2, s1, s2},
 	s2 = Sin[a] (1 - e1 + (1 - e2) e1 Cos[a])/(1 - e1 e2 (Cos[a])^2);
 	{s1, s2}
 ]
+
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*SimulateDualTR*)
+
+
+SimulateDualTR[T1_ : 6000] := Manipulate[
+	{s1, s2} = GESignal[ang, {{tr1, n tr1}, T1}]/0.35;
+	s2a = Abs[s2];
+	p1=s1[[Round[fa]]];
+	p2=s2a[[Round[fa]]];
+	Column[{
+		Row[{
+			ListLinePlot[{s1, s2a}, PlotRange -> If[! r, Full, {-0, 1}], ImageSize -> 350, PlotStyle -> (Directive[{Thick, #}] & /@ {Black, Red}),
+				AxesStyle -> Directive[{Thick, Black}], LabelStyle -> Directive[Bold, 14, Black], PlotLabel -> "Signal as function of flipangle",
+				GridLines -> {{fa}, {p1, p2}},
+				Epilog -> {PointSize[Large], Black, Point[{fa, p1}], Red, Point[{fa, p2}]}],
+			ListLinePlot[s2a/s1, PlotRange -> {0, 1.1}, ImageSize -> 350, PlotStyle -> Directive[{Black, Thick}], 
+				AxesStyle -> Directive[{Thick, Black}], LabelStyle -> Directive[Bold, 14, Black], PlotLabel -> "Signal ratio as function of flipangle",
+				GridLines -> {{fa}, {p2/p1}},
+				Epilog -> {PointSize[Large], Black, Point[{fa, p2/p1}]}]
+			}, "         "],"",
+		Style["TR1: " <> ToString[tr1] <> " ms  -  TR2: " <> ToString[n tr1] <>" ms  -  Total time: " <> ToString[tr1 + n tr1] <> " ms", Bold, 14, Black, FontFamily -> "Helvetica"], "",
+		Style["max. sig: " <> ToString[Round[Max[s1], .01]] <> "  -  sig per unit time: " <> ToString[Round[1000 Max[s1]/(tr1 + n tr1), .01]], Bold, 14, Black, FontFamily -> "Helvetica"], "",
+		Style["sig per unit time at FA  - s1: " <> ToString[Round[1000 p1/(tr1 + n tr1), .01]]<>"  -  s2: "<>ToString[Round[1000 p2/(tr1 + n tr1), .01]], Bold, 14, Black, FontFamily -> "Helvetica"]
+	}, Alignment -> Center]
+	, {{tr1, 50, "first TR"}, 10, 100, 10, ControlType -> Manipulator}
+	, {{n, 19, "TR ratio"}, 2, 20, 1, ControlType -> Manipulator}
+	, {{fa, 60, "flip angle"}, ang, ControlType -> Manipulator}
+	, {{r, True, "fix scale"}, {True, False}}
+	, {ang, ControlType -> None}
+	, {s1, ControlType -> None}
+	, {s2, ControlType -> None}
+	, {s2a, ControlType -> None}
+	, {p1, ControlType -> None}
+	, {p2, ControlType -> None}
+	, Initialization :> (ang = Range[1, 180])
+]
+
 
 (* ::Section:: *)
 (*End Package*)
