@@ -44,7 +44,7 @@ Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{B0,T2star},itteration
 
 The fractions are between 0 and 1, the B0 field map is in Hz and the T2start map is in ms.
 
-DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737."
+DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737 (10.1002/nbm.3766)."
 
 SimulateDixonSignal::usage = 
 "SimulateDixonSignal[echo, fr, B0, T2] simulates an Dixon gradient echo sequence with echotimes.
@@ -97,6 +97,9 @@ DixonFilterInput::usage =
 DixonFilterOutput::usage = 
 "DixonFilterOutput is an options for DixonReconstruct. If True the out b0 and T2star values are smoothed Median filter and lowpassfiltering after which the water and fat maps are recomputed."
 
+DixonFilterDimensions::usage = 
+"DixonFilterDimensions is an options for DixonReconstruct. Defines if the filtering is done in 2D or 3D."
+
 DixonFilterSize::usage = 
 "DixonFilterSize is an options for DixonReconstruct. Defines the number of voxel with which the input b0 and T2star values are smoothed."
 
@@ -140,23 +143,14 @@ Begin["`Private`"]
 SyntaxInformation[DixonToPercent] = {"ArgumentsPattern" -> {_, _}};
 
 DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fmask, wmask, back, afat, awater},
-	 afat = Abs[fat];
-	 awater = Abs[water];
-	 atot = Abs[fat + water];
-	 (*define water and fat maps*)
-	 fatMap = Clip[Chop[DevideNoZero[afat, atot]], {0., 1.}];
-	 waterMap = Clip[Chop[DevideNoZero[awater, atot]], {0., 1.}];
-	 (*see where fat>50%*)
-	 fmask = Mask[fatMap, .5];
-	 wmask = 1 - fmask;
-	 (*define background*)
-	 back = Mask[fatMap + waterMap, .01];
-	 fatMap = (wmask fatMap + fmask (1 - waterMap));
-	 waterMap = (fmask waterMap + wmask (1 - fatMap));
-	 (*output*)
-	 N[{back waterMap, back fatMap}]
- ]
-
+	afat = Abs[fat];
+	awater = Abs[water];
+	atot = Abs[fat + water];
+	(*define water and fat maps*)
+	fatMap = Clip[Chop[DevideNoZero[afat, atot]], {0., 1.}];
+	waterMap = Clip[Chop[DevideNoZero[awater, atot]], {0., 1.}];
+	{waterMap,fatMap}
+]
 
 
 (* ::Subsection:: *)
@@ -178,6 +172,7 @@ Options[DixonReconstruct] = {
 	DixonMaskThreshhold -> 0.01,
 	DixonFilterInput -> False, 
 	DixonFilterOutput -> True, 
+	DixonFilterDimensions -> "3D",
 	DixonFilterSize -> 1};
 
 SyntaxInformation[DixonReconstruct] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
@@ -188,10 +183,10 @@ DixonReconstruct[real_, imag_, echo_, b0i_, opts : OptionsPattern[]] := DixonRec
 
 DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	freqs, amps, gyro, precession, field, sigFW, sigPhi, eta, maxItt, r2Star,
-	thresh, complex, ydat, result, input, b0f, b0, iopPhase, Amat, Amat2,
+	thresh, complex, ydat, result, input, b0f, b0, iopPhase, Amat, Amati, Amat2,
 	cWater, cFat, b0fit, t2Star, fraction, signal, fit, itt, dim, mask,
 	msk, t2i, t2f, echo, iop, ioAmat, phiEst, phiIn, phiInit, res, r2star, fsize, 
-	r2, r2f ,dep, range, settings},
+	r2, r2f ,dep, range, settings,fDim,re, im},
 	
 	(*algorithems are base on: *)	
 	(*Triplett WT et.al. MRM 2014;72:8-19 doi 10.1002/mrm.23917 - fat peaks*)
@@ -209,9 +204,12 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	maxItt = OptionValue[DixonIterations];
 	thresh = OptionValue[DixonMaskThreshhold];
 	fsize = OptionValue[DixonFilterSize];
+	fDim = OptionValue[DixonFilterDimensions];
 	
-	(*define in out phase*)
+	(*define the water fat matrix*)
 	Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
+	Amati = Inverse[ConjugateTranspose[Amat] . Amat] . ConjugateTranspose[Amat];
+	(*define in out phase*)
 	iop = {0, 0.5}/Abs[Total[amps[[2]] freqs[[2]]]];
 	ioAmat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ iop;
 		
@@ -233,7 +231,9 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	(*smooth maps if needed*)
 	{b0f, r2f} = If[OptionValue[DixonFilterInput],
 		PrintTemporary["Filtering input B0 and T2* maps "];
-		{If[b0i=!=0, LapFilter[b0], b0], If[t2=!=0, LapFilter[r2], r2]},
+		{
+			If[b0i=!=0, Switch[fDim,"3D",LapFilter[b0],"2D",LapFilter/@b0], b0], 
+			If[t2=!=0, Switch[fDim,"3D",LapFilter[r2],"2D",LapFilter/@r2], r2]},
 		{b0 ,r2}
 	];
 	
@@ -246,19 +246,22 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	input = TransData[{complex, phiInit, mask}, "l"];
 	
 	(*Perform the dixon fit*)
-	Quiet@Monitor[ii=0;result =Map[(ii++;DixonFiti[#, echo, Amat, {eta, maxItt}])&, input, dep];,ProgressIndicator[ii, {0, Times @@ dim}]];
+	Quiet@Monitor[ii=0;result =Map[(ii++;DixonFiti[#, echo, {Amat,Amati}, {eta, maxItt}])&, input, dep];,ProgressIndicator[ii, {0, Times @@ dim}]];
  	{cWater, cFat, phiEst ,phiIn, res, itt} = TransData[Chop[result],"r"];
 
 	(*filter the output*) 
 	 If[OptionValue[DixonFilterOutput],
 	 	PrintTemporary["Filtering field estimation and recalculating signal fractions"];
 	 	(*smooth b0 field and R2star maps*)
-	 	phiEst = mask(LapFilter[Im[phiEst]] I - LapFilter[Abs[-Re[phiEst]]]);
+	 	re=Switch[fDim,"3D",LapFilter[#],"2D",LapFilter/@#]&[Abs[-Re[phiEst]]];
+	 	im=Switch[fDim,"3D",LapFilter[#],"2D",LapFilter/@#]&[Im[phiEst]];
+	 	
+	 	phiEst = mask(im I -re);
 	 	(*phiIn = MedianFilter[#, 1] & /@ phiIn;*)
 	 	
 	 	(*recalculate the water fat signals*)
 	 	input = TransData[{complex, phiEst, phiIn, mask}, "l"];
-	 	Monitor[jj=0;result = Map[(jj++;DixonFiti[#, echo, Amat])&, input, dep];,ProgressIndicator[jj, {0, Times @@ dim}]];
+	 	Monitor[jj=0;result = Map[(jj++;DixonFiti[#, echo, {Amat,Amati}])&, input, dep];,ProgressIndicator[jj, {0, Times @@ dim}]];
 		
 		{cWater, cFat, res} = TransData[Chop[result],"r"];
 	 ]; 	 
@@ -292,11 +295,11 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 (*DixonFit*)
 
 
-DixonFiti[{ydat_, phiInit_, mask_}, echo_, Amat_, {eta_, maxItt_}] := Block[
-	{continue, phiEst, phiMat, pAmat, phivec, phi0, yfit, cFrac, Bmat, deltaPhi, i, iophiMat, iopImag, sol, res},
+DixonFiti[{ydat_, phiInit_, mask_}, echo_, {Amat_,Amati_}, {eta_, maxItt_}] := Block[
+	{continue, phiEst, phiMat, pAmat, phivec, phi0, yfit, cFrac, Bmat, deltaPhi, i, iophiMat, iopImag, sol, res, exp},
 	If[mask>0,
 		(*initialize fit*)
-		deltaPhi = 0.;
+		deltaPhi = phi0 = 0.;
 		phiEst = phiInit;
 		(*perform itterative fit*)
 		i = 0;
@@ -304,19 +307,17 @@ DixonFiti[{ydat_, phiInit_, mask_}, echo_, Amat_, {eta_, maxItt_}] := Block[
 		While[continue,
 			(*update the field map*)
 			phiEst = phiEst + deltaPhi;
+			exp = Exp[-phiEst echo];
+			
 			(*find solution for complex fractions*)
-			pAmat = Chop[Exp[phiEst echo] Amat];
-			(*estimate the initial phase*)
-			phi0 = DixPhaseEstimate[pAmat, ydat];
-			(*find solution for complex fractions*)
-			yfit = Chop[ydat Exp[-I phi0]];
-			cFrac = DixLeastSquaresP[pAmat, yfit];
+			cFrac = Amati . (exp ydat);
+			
 			(*calculate solution and residuals*)
-			sol = Chop[pAmat.cFrac];
-			res = yfit - sol;
-			(*calculate field map error*)
-			Bmat = Join[Transpose[{echo sol}], pAmat, 2];
-			deltaPhi = First@DixLeastSquaresC[Bmat, res];
+			sol = Amat . cFrac;
+			res = ydat - sol/exp;
+			(*determine phase step*)
+			deltaPhi =DixLeastSquaresC[exp, echo sol, Amat, res];
+			
 			(*chech for continue*)
 			i++; 
 			continue = !(Abs[deltaPhi] < eta || i >= maxItt);
@@ -330,51 +331,34 @@ DixonFiti[{ydat_, phiInit_, mask_}, echo_, Amat_, {eta_, maxItt_}] := Block[
   ]
 
 
-DixonFiti[{ydat_, phiInit_, phi0_, mask_}, echo_, Amat_] := Block[{pAmat, cFrac, yfit, res},
+DixonFiti[{ydat_, phiInit_, phi0_, mask_}, echo_, {Amat_,Amati_}] := Block[{exp, cFrac, res},
 	If[mask > 0,
-		(*find solution for complex fractions with smooth phase map*)
-		pAmat = Chop[Exp[phiInit echo] Amat];
-		yfit = Chop[ydat Exp[-I phi0]];
-		cFrac = DixLeastSquaresC[pAmat, yfit];
+		(*get the field map*)
+		exp = Exp[-phiInit echo];
+		(*find solution for complex fractions*)
+		cFrac = Amati . (exp ydat);
 		(*calculate the residuals*)
-		res = RootMeanSquare[yfit - Chop[pAmat.cFrac]];
+		res = ydat - (Amat.cFrac)/exp;
+
 		(*ouput*)
-		{cFrac[[1]], cFrac[[2]], res},
+		{cFrac[[1]], cFrac[[2]], RootMeanSquare[res]},
 		{0., 0., 0.}
 	]
 ]
 
 
 InOutPhase = Compile[{{phi, _Complex, 0}, {iop, _Real, 1}, {ioAmat, _Complex, 2}, {cWat, _Complex, 0}, {cFat, _Complex, 0}},
-   Abs[(Exp[phi iop] ioAmat).{cWat, cFat}], 
-   RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}, Parallelization -> True];
+	Abs[(Exp[phi iop] ioAmat).{cWat, cFat}],
+	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}, Parallelization -> True];
 
 
-DixLeastSquaresP = Compile[{{A, _Complex, 2}, {y, _Complex, 1}}, Block[{AT, ATA, IATA},
-	    AT = ConjugateTranspose[A];
-	    ATA = Chop[AT.A];
-	    IATA = If[Total[Flatten[Abs[Chop[ATA, 10^-6]]]] > 0., Chop[Inverse[ATA]], 0. ATA];
-	    Re[IATA].Re[AT.y]
+DixLeastSquaresC = Compile[{{exp, _Complex, 1}, {sol, _Complex, 1}, {A, _Complex, 2}, {res, _Complex, 1}}, Block[{B, BT, Bi},
+    B = Transpose[Prepend[Transpose[A], sol]];
+    BT = ConjugateTranspose[B];
+    Bi = (Inverse[BT . B] . BT)[[1]];
+    Bi . (exp res)
     ],
-    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-DixLeastSquaresC = Compile[{{A, _Complex, 2}, {y, _Complex, 1}}, Block[{AT, ATA, IATA},
-	    AT = ConjugateTranspose[A];
-	    ATA = Chop[AT.A];
-	    IATA = If[Total[Flatten[Abs[Chop[ATA, 10^-6]]]] > 0., Chop[Inverse[ATA]], 0. ATA];
-	    IATA.(AT.y)
-    ], 
-    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-DixPhaseEstimate = Compile[{{A, _Complex, 2}, {y, _Complex, 1}}, Block[{AT, ATA, IATA},
-		AT = ConjugateTranspose[A];
-	    ATA = Chop[AT.A];
-	    IATA = If[Total[Flatten[Abs[Chop[ATA, 10^-6]]]] > 0., Chop[Inverse[ATA]], 0. ATA];
-	    0.5 Arg[(AT.y).Re[IATA].(AT.y)]
-    ], 
-    RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
@@ -418,7 +402,7 @@ SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] :=
 (*Unwrap*)
 
 
-Options[Unwrap]={MonitorUnwrap->True,UnwrapDimension->"2D", UnwrapThresh->0.75};
+Options[Unwrap]={MonitorUnwrap->True,UnwrapDimension->"2D", UnwrapThresh->0.6};
 
 SyntaxInformation[Unwrap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
@@ -512,17 +496,17 @@ UnwrapZi[data_, thresh_]:= Block[{mask,slice,diff,meandiff,steps,off,unwrap,dat,
 
 Unwrapi[dat_, thresh_] := Unwrapi[dat, thresh, False]
 
-Unwrapi[dat_, thresh_, mon_] := Block[{data,datai,mask, crp, dimi, sorted,groups,groupsize,groupnr,task},
+Unwrapi[dat_, thresh_, mon_] := Block[{data, mask, crp, dimi, sorted, groups, groupsize, groupnr, task},
 	(*monitor*)
 	task="Preclustering data.";
 	If[mon,PrintTemporary[Dynamic[task]]];
 	
-	(*rescale the dat to integers allows for faster matrix replacements*)
-	datai = Round[10000. * dat / (2. Pi)];
-	dimi = Dimensions[datai];
+	(*rescale the data to 2Pi = 1, makes it easyer to process*)
+	data = dat / (2. Pi);
+	dimi = Dimensions[data];
 	
 	(*remove zeros*)
-	data = If[ArrayDepth[datai] == 3, crp = FindCrop[datai]; ApplyCrop[datai, crp], datai];
+	data = If[ArrayDepth[data] == 3, crp = FindCrop[data]; ApplyCrop[data, crp], data];
 	
 	(*make mask to pervent unwrapping in background*)
 	mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 20], 10], -20];
@@ -534,25 +518,25 @@ Unwrapi[dat_, thresh_, mon_] := Block[{data,datai,mask, crp, dimi, sorted,groups
 	(*make 2D data 3D and define shifts in add*)
 	If[ArrayDepth[data] == 2,
 		groups = {groups}; data = {data};
-		sorted = {#[[1]] + 1, 1, #[[2]], #[[3]]} & /@ sorted;
+		sorted = Transpose[{#[[1]] + 1, 0 #[[1]] + 1, #[[2]], #[[3]]} &[Transpose[sorted]]];
 		];
 	
 	(*Unwrap the data*)
 	task="Unwrapping edges.";
-	data = UnWrapC[sorted, data, groups, groupsize, groupnr, Round[thresh 10000]];
+	data = UnWrapC[sorted, data, groups, groupsize, groupnr, thresh];
 	
 	(*make output in rad*)	
 	If[ArrayDepth[dat] == 2, 
 		(*output the 2D in rad*)
-		2 Pi data[[1]]/10000.,
+		2 Pi data[[1]],
 		(*align to zero and ouput 3D in rad*)
-		data = 2 Pi (data - mask Round[MeanNoZero[Flatten[data]],10000])/10000.;
+		data = 2 Pi (data - mask Round[MeanNoZero[Flatten[data]]]);
 		ReverseCrop[data, dimi, crp]
 		]
 ]
 
 
-UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Integer, 3}, {groupsi, _Integer, 3}, {groupsizei, _Integer, 1}, {groupnri, _Integer, 0}, {thresh,_Integer,0}},
+UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer, 3}, {groupsizei, _Integer, 1}, {groupnri, _Integer, 0}, {thresh,_Real,0}},
 	Block[{data, const, dir, dim, groups, group1, group2, groupsize, groupnr, z1, z2, x1, x2, y1, y2, wrap, wrapT, pos, g1, g2, out, adds,add, diff},
    	
     groups = groupsi;
@@ -584,8 +568,7 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Integer, 3}, {groupsi, _Integ
          If[(! (group1 > 1 && group1 == group2)),
           (*If not in the same group determine the wrap of the edge and determine how to unwrap*)
           diff = data[[z1, x1, y1]] - data[[z2, x2, y2]];
-          (*wrap = Round[Round[diff,5000]-Sign[diff], 10000];*)
-          wrap = Sign[diff] Ceiling[Abs[diff] - thresh, 10000];
+          wrap = Sign[diff] Ceiling[Abs[diff] - thresh];
           wrapT = (wrap != 0);
           
           (*get group sizes*)
@@ -671,7 +654,7 @@ GetKernels[dep_] := Block[{ker, i, j, k, keri, kers},
        {2, 1, 1}, {2, 3, 3}, {2, 1, 3}, {2, 3, 1},(*plane 3*)
        {1, 1, 1}, {3, 3, 3}, {1, 1, 3}, {3, 3, 1}, {1, 3, 1}, {3, 1, 3}, {3, 1, 1}, {1, 3, 3}(*diagonals*)
        }];
-   Total /@ Partition[kers, 2]
+   kers
    ];
 
 
@@ -687,17 +670,12 @@ GetEdgeList[data_, maski_] := Block[{dep, diff, diff1, diff2, mask, edge, coor, 
 	mask = If[maski === 1, Closing[Mask[Ceiling[Abs@data], 1], 1], maski];
 	
 	(*calculate the second order diff*)
-	{diff1, diff2} = Transpose[Partition[ListConvolve[#, data, ConstantArray[2, dep], 0] & /@ GetKernels[dep], 2]];
-	diff = If[dep == 2, DiffC2[diff1, diff2], DiffC3[diff1, diff2]];
+	{diff1, diff2} = Transpose[Partition[DiffU[ListConvolve[#, data, {2, -2}]] & /@ GetKernels[dep], 2]];
+	diff = Total[(diff1 + diff2)^2];
 	
 	(*get the edge reliability*)
-	edge = Switch[dep,
-		2(*2D data*), 
-		N@{(RotateLeft[#] & /@ diff) + diff, RotateLeft[diff] + diff},
-		3(*3D data*), 
-		N@{RotateLeft[diff] + diff, ((RotateLeft[#] & /@ #) & /@ diff) + diff, (RotateLeft[#] & /@ diff) + diff}
-	];
-	edge = mask # & /@ edge;
+	edge = (RotateLeft[diff, #] + diff) & /@ Switch[dep, 2, {{0, 1}, {1, 0}}, 3, {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}}];
+	edge = MaskData[edge,mask];
 	 
 	(*sort the edges for reliability*)
 	coor = MapIndexed[#2 &, edge, {dep + 1}];
@@ -705,13 +683,10 @@ GetEdgeList[data_, maski_] := Block[{dep, diff, diff1, diff2, mask, edge, coor, 
 	ord = Ordering[fedge];
 	pos = Position[Unitize[fedge[[ord]]], 1, 1, 1][[1, 1]];
 	Flatten[coor, dep][[ord]][[pos ;;]]
-  ]
+]
 
 
-DiffC2 = Compile[{{diff1, _Real, 3}, {diff2, _Real, 3}}, 
-   Total[((diff1 - Sign[diff1] Floor[Abs[diff1], 10000]) + (diff2 - Sign[diff2] Floor[Abs[diff2], 10000]))^2]];
-DiffC3 = Compile[{{diff1, _Real, 4}, {diff2, _Real, 4}}, 
-   Total[((diff1 - Sign[diff1] Floor[Abs[diff1], 10000]) + (diff2 - Sign[diff2] Floor[Abs[diff2], 10000]))^2]];
+DiffU = Compile[{{diff, _Real, 0}}, diff - Sign[diff] Ceiling[Abs[diff]-0.5], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -719,7 +694,7 @@ DiffC3 = Compile[{{diff1, _Real, 4}, {diff2, _Real, 4}},
 
 
 MakeGroups[data_] := MakeGroups[data, 1]
-MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,nclus,clus,groupsize,groups,groupnr,mask},
+MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus,clus,groupsize,groups,groupnr,mask},
 	(*get data properties*)
 	dep=ArrayDepth[data];
 	dim=Dimensions[data];
@@ -730,19 +705,20 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,nclus,clus,
 	
 	(*find mask ranges*)
 	{min,max}=MinMax[data];
-	part=Partition[Range[min,max,(max-min)/12]//N,2,1];
+	part=Partition[Range[min,max,(max-min)/6]//N,2,1];
 	
 	(*remove background form masks, and create masks*)
 	dat = (mask data) + (-2 min) (1 - mask);
 	masks = Mask[dat, #] & /@ part;
 	
 	(*make groups from masks*)
-	clus = MorphologicalComponents[DeleteSmallComponents[fun[#], 10]] & /@ masks;
+	small = (dep - 1) Ceiling[(Times @@ dim)/1000];
+	clus = MorphologicalComponents[DeleteSmallComponents[fun[#], small, CornerNeighbors -> False], CornerNeighbors -> False] & /@ masks;
 	nclus = Prepend[Drop[Accumulate[Max /@ clus], -1], 0];
 	groups = Total[MapThread[#2 Unitize[#1] + #1 &, {clus, nclus}]] + mask;
 	
 	(*create outputs, the size vector and group nrs*)
-	groupsize=ConstantArray[0,Count[Flatten[groups],1]];
+	groupsize=ConstantArray[0,Count[Flatten[groups],1]+Max[groups]];
 	(groupsize[[#]]=Count[groups,#,2])&/@Range[1,Max[groups]];
 	groupnr=Max[groups];
 	{groups,groupsize,groupnr}

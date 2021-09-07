@@ -128,9 +128,22 @@ SmartMask::usage =
 SmartMask[input, mask] crates a smart mask of input and used the mask as a prior selection of the input."
 
 B1MapCalc::usage =
-"B1MapCalc[{mag1,mag2}, {tr1, tr2}] calculates the B1 map from a dual TR acquisition using magnitude data.
-B1MapCalc[{real1,real2},{imag1,imag2}, {tr1_, tr2_}] calculates the B1 map from a dual TR acquisition using complex data."
+"B1MapCalc[data, TR, alpha] calculates the B1 map from a dual TR {tr1, tr2} acquisition using magnitude data with reference angle alpha.
+data has dimensions {z, {tr1,tr2}, x, y}.
+B1MapCalc[dataTr1, dataTr2, TR, alpha] where dataTr1 and and dataTr2 can have any dimensions.
+B1MapCalc[chan1, chan2, {f, phase, scale}, TR, alpha] calculates the b1map of two channels with singal fraction f for chan1 and 1-f for chan2 using 
+phase for the combination. the total b1 is scaled with scale.
+B1MapCalc[chan1, chan2, {{f1, f2}, phase, scale}, TR, aplha] calculates the b1map of two channels with singal fraction f1 for chan1 and f2 for chan2 using 
+phase for the combination. the total b1 is scaled with scale.
 
+The Output can be \"Map\", \"MagPhase\", or \"Complex\"}"
+
+B1MapError::usage = 
+"B1MapError[chan1, chan2, mask, {f, phase, scale}, TR, alpha] calculates the root mean square error of the b1 with a target of 100% within the mask.
+B1MapError[chan1, chan2, mask, target, {f, phase, scale}, TR, alpha] calculates the root mean square error of the b1 with target within the mask.
+B1MapError[chan1, chan2, mask, {{f1,f2}, phase, scale}, TR, alpha]
+B1MapError[chan1, chan2, mask, target, {{f1,f2}, phase, scale}, TR, alpha]
+"
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -1437,18 +1450,51 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 (*B1MapCalc*)
 
 
-B1MapCalc[mag_, {tr1_, tr2_}] := Block[{c1, c2, r, n},
-	{c1, c2} = mag;
-	n = tr2/tr1;
-	r = DevideNoZero[c2, c1];
-	Abs[ArcCos[DevideNoZero[(r n - 1), (n - r)]]]
+Options[B1MapCalc] = {Output -> "Map"};
+
+B1MapCalc[mag_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{c1, c2}, 
+	{s1, s2} = Transpose[mag]; 
+	B1MapCalc[s1, s2, {tr1, tr2}, a, opts]
 ]
 
-B1MapCalc[real_, imag_, {tr1_, tr2_}] := Block[{c1, c2, r, n},
-	{c1, c2} = real + imag I;
+
+B1MapCalc[s1_, s2_, {tr1_, tr2_}, a_, OptionsPattern[]] := Block[{r, n, mask, b1, b1c, b1m, b1p},
 	n = tr2/tr1;
-	r = DevideNoZero[c2, c1];
-	Through[{Abs, Arg}[ArcCos[DevideNoZero[(r n - 1), (n - r)]]]]
+	r = DevideNoZero[s2, s1];
+	mask = 1 - Mask[Abs[r], 1];
+	
+	b1c = mask ArcCos[DevideNoZero[(r n - 1), (n - r)]];
+	
+	{b1m, b1p} = Through[{Abs, Arg}[b1c]];
+	b1 = 100. (b1m/Degree)/a;
+	
+	Switch[OptionValue[Output],
+		"Map", b1,
+		"MagPhase", {b1m, b1p},
+		"Complex", b1c
+	]
+]
+
+
+B1MapCalc[c1_, c2_, {f_?NumberQ, a_?NumberQ, s_?NumberQ}, tr_, ang_] := B1MapCalc[c1, c2, {{f, 1-f}, a, s}, tr, ang]
+
+B1MapCalc[c1_, c2_, {{f1_?NumberQ, f2_?NumberQ}, a_?NumberQ, s_?NumberQ}, tr_, ang_] := s B1MapCalc[Abs[( f1 c1 + f2 Exp[-a Degree I] c2 )], tr, ang]
+
+
+(* ::Subsection::Closed:: *)
+(*B1MapError*)
+
+
+B1MapError[c1_, c2_, mask_, {f_?NumberQ, a_?NumberQ, s_?NumberQ}, tr_, ang_] := B1MapError[c1, c2, mask, 100, {{f, 1-f}, a, s}, tr, ang]
+
+B1MapError[c1_, c2_, mask_, target_, {f_?NumberQ, a_?NumberQ, s_?NumberQ}, tr_, ang_] := B1MapError[c1, c2, mask, target, {{f, 1-f}, a, s}, tr, ang]  
+
+B1MapError[c1_, c2_, mask_, {{f1_?NumberQ, f2_?NumberQ}, a_?NumberQ, s_?NumberQ}, tr_, ang_] := B1MapError[c1, c2, mask, 100, {{f1, f2}, a, s}, tr, ang]
+
+B1MapError[c1_, c2_, mask_, target_, {{f1_?NumberQ, f2_?NumberQ}, a_?NumberQ, s_?NumberQ}, tr_, ang_] := Block[{b1, diff}, 
+	b1 = B1MapCalc[c1, c2, {{f1, f2}, a, s}, tr, ang];
+	diff = GetMaskData[b1 - target, mask, GetMaskOnly -> True];
+	RootMeanSquare[{RootMeanSquare[diff],StandardDeviation[diff]}]
 ]
 
 

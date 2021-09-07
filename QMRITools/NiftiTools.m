@@ -175,6 +175,8 @@ DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,
 	folout=If[outfol=="",FileSelect["Directory",WindowTitle->"Select directory to put nii files in"],outfol];
 	If[filfolin==Null||folout==Null,Return[]];
 	
+	Print[{filfolin,folout}];
+	
 	compress=If[OptionValue[CompressNii],"i","n"];
 	
 	(*create the cmd window command to run dcm2niix*)
@@ -851,6 +853,7 @@ ImportNiiT1[file_] := Module[{T1, T1vox, T1cor, fit},
 CorrectMapData[datai_, maps_: 1] := 
  Block[{slices, echos, data, map, mask},
   {slices, echos} = Dimensions[datai][[1 ;; 2]] - {0, maps};
+  Print[slices,echos,maps];
   (*Flatten the data and remove the T2map*)
   data = Flatten[Transpose[datai], 1];
   (**)

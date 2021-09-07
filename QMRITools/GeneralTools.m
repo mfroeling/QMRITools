@@ -31,6 +31,14 @@ FileSelect[action, {type}] same but allows the definition of filetypes for \"Fil
 TransData::usage = 
 "TransData[data,dir] Rotates the dimesions of the data to left or rigthg. For example {z,x,y} to {x,y,z} dir is \"l\" or \"r\"."
 
+RotateDimensionsLeft::usage = 
+"RotateDimensionsLeft[data] rotates the dimensions of the data one to the left.
+RotateDimensionsLeft[data, i] rotates the dimensions of the data i to the left."
+
+RotateDimensionsRight::usage = 
+"RotateDimensionsRight[data] rotates the dimensions of the data one to the right.
+RotateDimensionsRight[data, i] rotates the dimensions of the data i to the right."
+
 SaveImage::usage = 
 "SaveImage[image] exports graph to image, ImageSize, FileType and ImageResolution can be given as options.
 SaveImage[image, \"filename\"] exports graph to image with \"filname\", ImageSize, FileType and ImageResolution can be given as options."
@@ -303,6 +311,32 @@ TransData[dat_,dir_]:=Block[{data,ran,dep,fun},
 	fun = Switch[dir,"r",RotateLeft[ran],"l",RotateRight[ran]];
 	Transpose[data,fun]
 ]
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*RotateDimensionsLeft*)
+
+
+SyntaxInformation[RotateDimensionsLeft] = {"ArgumentsPattern" -> {_, _.}};
+
+RotateDimensionsLeft[dat_, i_ : 1] := RotateDimensions[dat, i, RotateRight]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RotateDimensionsLeft*)
+
+
+SyntaxInformation[RotateDimensionsRight] = {"ArgumentsPattern" -> {_, _.}};
+
+RotateDimensionsRight[dat_, i_ : 1] := RotateDimensions[dat, i, RotateLeft]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RotateDimensions*)
+
+
+RotateDimensions[dat_, i_, dir_] := Transpose[ToPackedArray[dat], dir[Range[ArrayDepth[dat]], i]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -843,16 +877,15 @@ ApplyCrop[data_, crop_ , {v1_,v2_}] := Module[{z1, z2, x1, x2, y1, y2,dim},
 (*CutData*)
 
 
-SyntaxInformation[CutData] = {"ArgumentsPattern" -> {_,_._.}}
+SyntaxInformation[CutData] = {"ArgumentsPattern" -> {_,_.}}
 
 CutData[data_] := CutData[data, FindMiddle[data, False]]
 
 CutData[data_, print_?BooleanQ] := CutData[data, FindMiddle[data, print]]
 
-CutData[data_, cut_] := Switch[ArrayDepth[data],
+CutData[data_, cut_?IntegerQ] := Switch[ArrayDepth[data],
 		4,{data[[All, All, All, ;; cut]],data[[All, All, All, (cut + 1) ;;]],cut},
 		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}]
-
 
 FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran,blur,i, max},
   
@@ -1309,7 +1342,9 @@ LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}},Inverse[A.Transpose[A]].A.y, Runti
 (*LapFilter*)
 
 
-LapFilter[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@data, "Real"], fil, Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
+LapFilter[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[
+	If[ArrayDepth[data]===3,Image3D[N@data, "Real"],Image[N@data, "Real"]],
+	 fil, Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
 
 
 (* ::Subsubsection::Closed:: *)

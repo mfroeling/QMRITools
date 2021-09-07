@@ -201,50 +201,11 @@ Options[T2Fit] = {Method -> "Linear"};
 
 SyntaxInformation[T2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
-T2Fit[datan_, times_, OptionsPattern[]] := Switch[OptionValue[Method],
+T2Fit[datan_, times_?MatrixQ,opts:OptionsPattern[]]:=Transpose[MapThread[T2Fit[#1,#2,opts]&,{datan,times}]];
+
+T2Fit[datan_, times_?VectorQ, OptionsPattern[]] := Switch[OptionValue[Method],
   "Linear", LinFit[N[datan], times],
   _, LogFit[N[datan], times]
-  ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*T1Fit*)
-
-
-T1Fit[datan_, timei_] := Block[{data, dat, sol, apar, bpar, t1s, tt, t1, time, result ,ad ,datal, fdat ,max ,aparo, bparo, offset, T1r, dim ,times},
-  
-  ad = ArrayDepth[datan];
-  
-  datal = Switch[ad,
-    3, {Transpose[datan, {3, 1, 2}]},
-    4, Transpose[datan, {1, 4, 2, 3}]
-    ];
-  
-  dim = Dimensions[datal];
-  
-  times = If[Length[timei]===dim[[-1]], ConstantArray[timei,dim[[1]]], timei ];
-  
-  result = MapThread[(
-  	dat = #1;
-  	time = #2;
-  	ParallelMap[(
-  		fdat = #;
-		max = Max[fdat];
-		If[Total[fdat] == 0.,
-		 {0., 0., 0.},
-		 sol = Quiet[FindFit[Transpose[{time, #}], Abs[apar - bpar Exp[-tt/t1s]], {{apar, max}, {bpar, 2 max}, {t1s, 1000}}, tt]];
-		 {t1, aparo, bparo} = {t1s (bpar/apar - 1), apar, bpar} /. sol;
-		 t1 = Clip[t1, {0, 3500}, {0, 3500}];
-		 {t1, aparo, bparo}
-		 ]
-      ) &, datal, {ad - 1}];
-     ) &,
-  {datal, times}, 1
-  ];
-  
-  {t1, apar, bpar} = TransData[result, "r"];
-
-	{t1, apar, bpar}
   ]
 
 
@@ -252,29 +213,16 @@ T1Fit[datan_, timei_] := Block[{data, dat, sol, apar, bpar, t1s, tt, t1, time, r
 (*LinFit*)
 
 
-LinFit[datan_, times_] := 
- Block[{datal, result, fdat, offset, T1r, t, ad,off,t1rho},
-  ad = ArrayDepth[datan];
-  datal = LogNoZero[datan];
-  datal = Switch[ad,
-    3, Transpose[datal, {3, 1, 2}],
-    4, Transpose[datal, {1, 4, 2, 3}]
-    ];
-    
-  PrintTemporary["performing linear T2 fit"];
-  
-  result = ParallelMap[(
-  	If[Total[#]==0.,
-  		{0.,0.},
-  		{off, t1rho} /. Quiet[FindFit[Transpose[{times, #}], off + t1rho t, {off, t1rho}, t]]]
-  		)&, datal, {ad - 1}];
-  
-  {offset, T1r} = TransData[result,"r"];
-  
-  {offset, T1r} = {Exp[offset], DevideNoZero[-1,T1r]};
-  T1r = Clip[T1r, {0, 500}, {0, 500}];
-  {offset, T1r}
-  ]
+LinFit[datan_, times_] := Block[{datal, mat, r, s},
+	(*put time dimension in first place*)
+	datal = LogNoZero[N@Switch[ArrayDepth[datan], 3, datan, 4, Transpose[datan]]];
+	(*make solution matrix*)
+	mat = PseudoInverse[Transpose[{-times, 0 times + 1}]];
+	(*solve system for all voxels*)
+	{r, s} = mat . datal;
+	(*constrain solutions*)
+	{Clip[ExpNoZero[s], {0, 1.5 Max[datan]},{0.,0.}], Clip[DevideNoZero[1, r], {0, 20 Max[times]},{0.,0.}]}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -307,6 +255,41 @@ LogFit[datan_, times_] :=
   T1r = Clip[T1r, {0, 500}, {0, 500}];
   {offset, T1r}
   ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*T1Fit*)
+
+
+T1Fit[datan_, timei_] := Block[{data, dat, sol, apar, bpar, t1s, tt, t1, time, result ,ad ,datal, fdat ,max ,aparo, bparo, offset, T1r, dim ,times},
+	ad = ArrayDepth[datan];
+	datal = Switch[ad,
+		3, {Transpose[datan, {3, 1, 2}]},
+		4, Transpose[datan, {1, 4, 2, 3}]
+	];
+	
+	dim = Dimensions[datal];
+	
+	times = If[Length[timei]===dim[[-1]], ConstantArray[timei,dim[[1]]], timei ];
+	
+	result = MapThread[(
+		dat = #1;
+		time = #2;
+		zMap[(
+			fdat = #;
+			max = Max[fdat];
+			If[Total[fdat] == 0.,
+				{0., 0., 0.},
+				sol = Quiet[FindFit[Transpose[{time, #}], Abs[apar - bpar Exp[-tt/t1s]], {{apar, max}, {bpar, 2 max}, {t1s, 1000}}, tt]];
+				{t1, aparo, bparo} = {t1s (bpar/apar - 1), apar, bpar} /. sol;
+				t1 = Clip[t1, {0, 3500}, {0, 3500}];
+			{t1, aparo, bparo}]
+		) &, dat, {ad - 1}];
+	) &, {datal, times}, 1];
+		
+	{t1, apar, bpar} = TransData[result, "r"];
+	{t1, apar, bpar}
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -1277,7 +1260,7 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 			fatSig = ParallelTable[EPGSignali[echo, {T1f, T2f}, angS, B1], {B1, b1vals}, {T2f, t2Fvals}];
 						
 			If[incW,
-				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 15}, ang, B1], {B1, b1vals}];
+				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, B1], {B1, b1vals}];
 				fatSigW = Transpose@ConstantArray[fatSigW,Length[t2Fvals]];
 				fatSig = 0.1 fatSigW + 0.9 fatSig
 				];
