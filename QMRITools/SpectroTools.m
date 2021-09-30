@@ -1406,7 +1406,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		,
 		(*plot List of spectra*)
 		(*get the plot functions*)
-		fun = Switch[OptionValue[Method], "Abs", Abs, "Re", Re, "ReIm", Re, "Im", Im, _, Return[]];
+		fun = Switch[OptionValue[Method], "All", Abs, "Abs", Abs, "Re", Re, "ReIm", Re, "Im", Im, _, Return[]];
 		
 		(*space the spectra over the y axes*)
 		space = Reverse@Range[0, Length[spec]] Max[Abs[spec]] OptionValue[SpectraSpacing];
@@ -1443,6 +1443,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 				ImageSize -> 1000, FrameLabel -> {"PPM", None},
 				LabelStyle -> {Bold, 14, Black}
 			];
+			
 			Show[pl2, pl1]
 			,
 			pl1
