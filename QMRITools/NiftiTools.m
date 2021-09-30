@@ -111,7 +111,9 @@ NiiScaling::usage = "NiiScaling is an option for ImportNii. It scales the nii va
 
 CompressNii::usage = "CompressNii is an option for DcmToNii and ExportNii. If set True .nii.gz files will be created."
 
-NiiDataType::usage = "NiiDataType is an option of Export Nii. The number type of Nii file can be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
+NiiDataType::usage = "NiiDataType is an option of ExportNii. The number type of Nii file can be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
+
+NiiOffset::usage = "NiiOffset is an option of ExportNii. Is {xoff, yoff, zoff}."
 
 RotateGradients::usage = "RotateGradients is an option for ImportNiiDiff."
 
@@ -983,7 +985,7 @@ ImportExport`RegisterExport["Nii",
 	ExportNiiDefault,
 	"DefaultElement" -> "Data",
 	"AvailableElements" -> {
-		"Data", "Header", "VoxelSize"
+		"Data", "Header", "VoxelSize", "Offset"
 		},
 	"OriginalChannel" -> True,
 	"Options" -> {
@@ -997,13 +999,13 @@ ImportExport`RegisterExport["Nii",
 (*ExportNii*)
 
 
-SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}};
+Options[ExportNii]={NiiDataType->Automatic,CompressNii->True, NiiOffset->Automatic}
 
-Options[ExportNii]={NiiDataType->Automatic,CompressNii->True}
+SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}};
 
 ExportNii[dato_, voxi_, opts:OptionsPattern[]] := ExportNii[dato, voxi, "" ,opts]
 
-ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type},
+ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	
 	fileo = If[fil == "", FileSelect["FileSave",{"*.nii"},"nifti",WindowTitle->"Select the destination file"], fil];
 	If[fileo == Null || fileo === $Canceled || fileo === $Failed, Return[$Failed,Module]];
@@ -1013,13 +1015,22 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type},
 	data = ToPackedArray@Switch[type,"Integer",Round[dato],_,N[dato]];
 	(*for lagecy reasons still allow Integer and Real*)
 	type = type/.{"Integer"->"Integer16","Real"->"Real32"};
+	off = OptionValue[NiiOffset];
 	
 	(*compress the file*)
-	If[OptionValue[CompressNii],
-		fileo=fileo<>".gz";
-		Export[fileo, {data, voxi}, {"GZIP", "Nii", {"Data", "VoxelSize"}}, NiiDataType->type],
-		Export[fileo, {data, voxi}, {"Nii", {"Data", "VoxelSize"}}, NiiDataType->type]
-		]; 
+	If[OptionValue[NiiOffset]===Automatic,
+		If[OptionValue[CompressNii],
+			fileo=fileo<>".gz";
+			Export[fileo, {data, voxi}, {"GZIP", "Nii", {"Data", "VoxelSize"}}, NiiDataType->type],
+			Export[fileo, {data, voxi}, {"Nii", {"Data", "VoxelSize"}}, NiiDataType->type]
+		]
+		,
+		If[OptionValue[CompressNii],
+			fileo=fileo<>".gz";
+			Export[fileo, {data, voxi, off}, {"GZIP", "Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type],
+			Export[fileo, {data, voxi, off}, {"Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type]
+		]
+	]; 
 ]
 
 
@@ -1091,7 +1102,14 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
   vox = "VoxelSize" /. rule;
   voxInp = MatchQ[vox, {_?NumberQ, _?NumberQ, _?NumberQ}];
   (*if no voxel is given default*)
-  vox = vox /. "VoxelSize" -> {1., 1., 1.};
+  vox = If[voxInp, vox, {1.,1.,1}];
+  
+  (*chekc if a offset is given*)
+  off = "Offset" /. rule;
+  offInp = MatchQ[off, {_?NumberQ, _?NumberQ, _?NumberQ}];
+  {xoff,yoff,zoff} = If[offInp, off, {-N[vox[[3]] dim[[-1]]/2],-N[vox[[2]] dim[[-2]]/2],-N[vox[[1]] dim[[1]]/2]}];
+  
+  qoff=Max[{dim[[-1]],dim[[-2]]}]-1;
   
   headerDef = {
     "size" -> Switch[ver, 1, 348, 2, 540],
@@ -1126,14 +1144,14 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
     
     "descrip" -> StringPadRight["Created with QMRITools", 80, FromCharacterCode[0]],(*input*)
     "auxFile" -> StringPadRight["None", 24, FromCharacterCode[0]],
-    "qformCode" -> "Coregistration" /. Reverse[coordinateNii, 2],
+    "qformCode" -> "None" /. Reverse[coordinateNii, 2],
     "sformCode" -> "Scanner Posistion" /. Reverse[coordinateNii, 2],
-    "quaternB" -> 0,
-    "quaternC" -> 0,
-    "quaternD" -> 0,
-    "qOffsetX" -> (xoff = -N[vox[[3]] dim[[-1]]/2]),
-    "qOffsetY" -> (yoff = -N[vox[[2]] dim[[-2]]/2]),
-    "qOffsetZ" -> (zoff = -N[vox[[1]] dim[[1]]/2]),
+    "quaternB" -> 0.5,
+    "quaternC" -> -0.5,
+    "quaternD" -> 0.5,
+    "qOffsetX" -> qoff,
+    "qOffsetY" -> qoff,
+    "qOffsetZ" -> 0.,
     "sRowx" -> {vox[[3]], 0., 0., xoff},
     "sRowy" -> {0., vox[[2]], 0., yoff},
     "sRowz" -> {0., 0., vox[[1]], zoff},
