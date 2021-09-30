@@ -1436,7 +1436,7 @@ RegisterDiffusionData[
     (*AffineDirections -> {1, 1, 1},*)
     FilterRules[{opts} , Options[RegisterData]]];
 
-  If[OptionValue[OutputTransformation],{dtidatar,w}=dtidatar];
+  If[OptionValue[OutputTransformation], {dtidatar,w} = dtidatar];
     
   target = OptionValue[RegistrationTarget];
   movingdata=If[ListQ[target] && AllTrue[target, IntegerQ] && Min[target] > 0 && Max[target] <= Length[dtidatar[[1]]],
@@ -1448,7 +1448,7 @@ RegisterDiffusionData[
   		]];
   
   (*perform anat registration*)
-  RegisterData[{anatdata, anatmask, voxa}, {movingdata, dtimask, vox},
+  RegisterData[{anatdata, anatmask, voxa}, {movingdata, vox},
    TempDirectory -> tempDira, 
    DeleteTempDirectory -> False,
    Iterations -> OptionValue[IterationsA], 
@@ -1459,7 +1459,7 @@ RegisterDiffusionData[
    BsplineSpacing -> OptionValue[BsplineSpacing], 
    BsplineDirections -> OptionValue[BsplineDirections],
    AffineDirections -> OptionValue[AffineDirections],
-   MethodReg -> OptionValue[MethodRegA], 
+   MethodReg -> OptionValue[MethodRegA]/. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}, 
    FilterRules[{opts}, Options[RegisterData]]
    ];
   

@@ -742,19 +742,19 @@ SyntaxInformation[ImportNiiDiff]= {"ArgumentsPattern" -> {_.,_.,_.,OptionsPatter
 ImportNiiDiff[OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[NiiMethod -> "headerMat"];
 	{bvec, grad}=ImportBvalvec[FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
 ImportNiiDiff[file_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[file,NiiMethod -> "headerMat"];
 	{bvec, grad}=ImportBvalvec[RemoveExtention[file],FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
 ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[fnii,NiiMethod -> "headerMat"];
 	{bvec, grad} = ImportBvalvec[fval, fvec,FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],.0001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
 
@@ -913,19 +913,22 @@ ImportBval[file_?StringQ]:=Flatten[LineToList[file] ]//N
 (*ImportBvec*)
 
 
-Options[ImportBvec]={FlipBvec->False};
+Options[ImportBvec]={FlipBvec->False, PositiveZ->False};
 
 SyntaxInformation[ImportBvec] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
 
 ImportBvec[opts:OptionsPattern[]]:=ImportBvec[FileSelect["FileOpen", {".bvec"}, WindowTitle -> "Select *.bvec"], opts]
 
 ImportBvec[file_?StringQ, OptionsPattern[]]:=Module[{grads},
-	grads=Round[LineToList[file],0.0001];
+	grads=Round[LineToList[file],0.00001];
 	grads=If[OptionValue[FlipBvec],
 		{1, -1, 1}#&/@grads,
 		{1, -1, 1}RotateLeft[#]&/@grads
 		];
-	If[Negative[#[[3]]],-#,#]&/@grads
+	If[OptionValue[PositiveZ],
+		If[Negative[#[[3]]],-#,#]&/@grads,
+		grads
+	]
 ]
 
 
@@ -1219,7 +1222,8 @@ ExportBvec[grad_, fil_String] := Module[{file,grade},
   If[file === Null, Return[]];
   file = If[StringTake[file, -5] == ".bvec", file, file <> ".bvec"];
   
-  grade=StringJoin[(ToString[#] <> " " & /@ #)] & /@ Transpose[Round[{1,1,-1}RotateRight[#]&/@grad, .0001]];
+  grade=StringJoin[(ToString[#] <> " " & /@ #)] & /@ Transpose[Round[{1,1,-1}RotateRight[#]&/@grad,0.00001]];
+  (*grade=If[Negative[#[[3]]],-#,#]&/@grade;*)
   Export[file, grade, "Text"]
   ]
 

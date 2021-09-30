@@ -98,7 +98,16 @@ FlipTensorOrientation::usage =
 "FlipTensorOrientation[tens, perm] permutes the internal orientation of the tensor, perm can be any permutation of {\"x\",\"y\",\"z\"}.
 FlipTensorOrientation[tens, flip] flips the internal orientation of the tensor, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
 FlipTensorOrientation[tens, flip, perm] flips and permuter the internal orientation of the tensor.
+FlipTensorOrientation[tens, perm, flip]flips and permuter the internal orientation of the tensor.
 "
+
+FlipGradientOrientation::usage = 
+"FlipGradientOrientation[grad, perm] permutes the internal orientation of the gradients, perm can be any permutation of {\"x\",\"y\",\"z\"}.
+FlipGradientOrientation[grad, flip] flips the internal orientation of the gradients, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
+FlipGradientOrientation[grad, flip, perm] flips and permuter the internal orientation of the gradients.
+FlipGradientOrientation[grad, perm, flip]flips and permuter the internal orientation of the gradients.
+"
+
 
 AngleCalc::usage = 
 "AngleCalc[data, vector] calculates the angel between the vector and the data. Data shoud be an array of dimensions {xxx,3}."
@@ -417,7 +426,7 @@ TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
 	r = RotateLeft[Range[depthD]];
 	
 	method = OptionValue[Method];
-	robust = (OptionValue[RobustFit] && method =!= "LLS");
+	robust = (OptionValue[RobustFit] (*&& method =!= "LLS"*));
 	{con,kappa}=OptionValue[RobustFitParameters];
 	
 	
@@ -1071,7 +1080,7 @@ Module[{eig,adc,fa},
 
 
 (* ::Subsection:: *)
-(*Correct*)
+(*FlipTensorOrientation*)
 
 
 SyntaxInformation[FlipTensorOrientation] = {"ArgumentsPattern" -> {_, _, _.}};
@@ -1080,23 +1089,40 @@ FlipTensorOrientation[tensor_, p_] /; AllTrue[p, NumberQ] := FlipTensorOrientati
 
 FlipTensorOrientation[tensor_, v_] /; AllTrue[v, StringQ] := FlipTensorOrientation[tensor, v, {1, 1, 1}]
 
-FlipTensorOrientation[tensor_, v_, p_] := Block[{times, transp},
-  If[DeleteDuplicates[Abs[p]] === {1} && Sort[v] === {"x", "y", "z"},
-   times = 
-    Join[{1, 1, 1}, 
-     Flatten[Table[p[[i]] p[[j]], {i, 1, 3}, {j, i + 1, 3}]]];
-   transp = v /. {
-      {"x", "y", "z"} -> {1, 2, 3, 4, 5, 6},
-      {"x", "z", "y"} -> {1, 3, 2, 5, 4, 6},
-      {"y", "x", "z"} -> {2, 1, 3, 4, 6, 5},
-      {"y", "z", "x"} -> {2, 3, 1, 6, 4, 5},
-      {"z", "x", "y"} -> {3, 1, 2, 5, 6, 4},
-      {"z", "y", "x"} -> {3, 2, 1, 6, 5, 4}
-      };
-   (times tensor)[[transp]]
-   ,
-   $Failed]
-  ]
+FlipTensorOrientation[tensor_, p_, v_]/; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]):=FlipTensorOrientation[tensor, v, p]
+
+FlipTensorOrientation[tensor_, v_, p_]/; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]):= Block[{times, transp},
+	If[DeleteDuplicates[Abs[p]] === {1} && Sort[v] === {"x", "y", "z"},
+		times = Join[{1, 1, 1}, Flatten[Table[p[[i]] p[[j]], {i, 1, 3}, {j, i + 1, 3}]]];
+		transp = (StringJoin[Sort[Characters[#]]] & /@ (
+			StringReplace[{"xx", "yy", "zz", "xy","xz", "yz"}, Thread[{"x", "y", "z"} -> v]])
+		) /. Thread[{"xx", "yy", "zz", "xy", "xz", "yz"} -> {1, 2, 3, 4, 5, 6}];
+		(times tensor)[[transp]]
+		,
+		$Failed
+	]
+]
+
+
+(* ::Subsection:: *)
+(*FlipTensorOrientation*)
+
+
+FlipGradientOrientation[grad_, p_] /; AllTrue[p, NumberQ] := FlipGradientOrientation[grad, {"x", "y", "z"}, p]
+
+FlipGradientOrientation[grad_, v_] /; AllTrue[v, StringQ] := FlipGradientOrientation[grad, v, {1, 1, 1}]
+
+FlipGradientOrientation[grad_, p_, v_] /; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]) := FlipGradientOrientation[grad, v, p]
+
+FlipGradientOrientation[grad_, v_, p_] /; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]) := Block[{transp, times},
+	If[DeleteDuplicates[Abs[p]] === {1} && Sort[v] === {"x", "y", "z"},
+		times = ConstantArray[p, Length[grad]];
+		transp = v /. Thread[{"x", "y", "z"} -> {1, 2, 3}];
+		(times grad)[[All, transp]]
+		,
+		$Failed
+	]
+]
 
 
 (* ::Subsection:: *)

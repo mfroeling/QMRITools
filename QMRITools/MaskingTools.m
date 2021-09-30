@@ -136,17 +136,19 @@ Begin["`Private`"]
 
 SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_., OptionsPattern[]}};
 
-NormalizeData[data_] := Switch[ArrayDepth[data],
-	3, NormalizeData[data, Mask[data]],
-	4, NormalizeData[data, Mask[Mean[Transpose[data]]]]
+NormalizeData[data_] := Block[{mdat},
+	Switch[ArrayDepth[data],
+		3, NormalizeData[data, Mask[data - Min[data]]],
+		4, NormalizeData[data, mdat = Mean[Transpose[data]]; Mask[mdat - Min[mdat]]]
 	]
+]
 
-NormalizeData[data_, mask_] := Block[{mn},
-	mn = Switch[ArrayDepth[data],
-	3, N[MeanNoZero[Flatten[mask data]]/100.],
-	4, N[MeanNoZero[Flatten[mask data[[All, 1]]]]/100.]
-	];
-	ToPackedArray@N[data / mn]
+NormalizeData[data_, mask_] := Block[{dat,mn,min,dato},
+	min=Min[data];
+	dat = GetMaskData[Switch[ArrayDepth[data],3, data, 4, data[[All,1]]], mask];
+	If[min < 0, dat = dat - min; dato=data-min,dato=data];
+	mn = MeanNoZero[dat]/100.;
+	ToPackedArray[dato/mn]
 ]
 
 

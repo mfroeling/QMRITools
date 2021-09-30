@@ -37,6 +37,17 @@ FiberTractography[tensor, vox, {{par, {min, max}}, ..}] performs fibertractograp
 multiple additional stopping criteria
 "
 
+FindTensorPermutation::usage = 
+"FindTensorPermutation[tensor, vox] performs tractography for all tensor permutations and gives back the one that has the longest tracts.
+FindTensorPermutation[tensor, vox, {par, {min, max}}] same but with additional stoppin criteria par, where tracts are only generated between values of par min and max.
+FindTensorPermutation[tensor, vox, {{par, {min, max}}, ..}] same but with with multiple additional stopping criteria.
+
+Ouput = {permutations, flips, plot}
+
+FindTensorPermutation[] is based on DOI: 10.1016/j.media.2014.05.012
+"
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -44,6 +55,8 @@ multiple additional stopping criteria
 FittingOrder::usage = 
 "FittingOrder is an option for FitTract. It specifies the polinominal order of the function to fit the tract."
 
+TracMonitor::usage = 
+"TracMonitor is an option for FiberTractography. When set True it prints the progress."
 
 FiberLengthRange::usage = 
 "FiberLengthRange is an option for FiberTractography and specifies the allowed tract range."
@@ -119,15 +132,14 @@ FitTract[tract_, OptionsPattern[]] := Block[{x, y, z, xx, rule, ord, tr},
 Options[FiberTractography] = {
 	FiberLengthRange -> {10, 200},
 	FiberAngle -> 30,
-	SeedSpacing -> 2,
-	SeedRandomization -> 0.5,
 	TensorFilps -> {1, 1, 1},
 	TensorPermutations -> {"x", "y", "z"},
 	InterpolationOrder -> 1,
 	StopThreshhold -> 0.5,
 	StepSize -> 2,
 	Method -> "Euler",
-	MaxSeedPoints -> Infinity
+	MaxSeedPoints -> Infinity,
+	TracMonitor->True
 };
 
 SyntaxInformation[FiberTractography] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
@@ -137,15 +149,14 @@ FiberTractography[tensor_, vox_, opts : OptionsPattern[]] := FiberTractography[t
 FiberTractography[tensor_, vox_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FiberTractography[tensor, vox, {{par, {min, max}}}, opts]
 
 FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[]] := Block[{
-		lmin, lmax, amax, seedSp, maxSeed, seedRand, flip, per, int, stopT, step,
-		tensTr, voxTr, inpTr, treshs, coors, ran, stop, intE, intS, intF,
-		drop, sx, sy, sz, ex, ey, ez, seeds, tracts, iii, t1
+		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, intF,
+		tensTr, tensMask, dim, voxTr, inpTr, treshs, stop, range, coors, intE, intS,
+		ones, n, seeds, t1, tracts, iii, drop		 
 	},
+	
 	(*get the options*)
 	{lmin, lmax} = OptionValue[FiberLengthRange];
 	amax = OptionValue[FiberAngle];
-	seedSp = OptionValue[SeedSpacing];
-	seedRand = Clip[OptionValue[SeedRandomization], {0, 1}];
 	maxSeed = OptionValue[MaxSeedPoints];
 	
 	flip = OptionValue[TensorFilps];
@@ -158,37 +169,38 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	intF = Switch[OptionValue[Method], "RungeKutta", RK2, "RungeKutta4", RK4, _, Euler];
 	
 	(*prepare data*)
-	tensTr = FlipTensorOrientation[TransData[#, "l"] & /@ tensor, per(*{"y","x","z"}*), flip];
+	tensTr = FlipTensorOrientation[tensor, per, flip];
+	tensTr = FlipTensorOrientation[RotateDimensionsLeft[#] & /@ tensTr, {"y", "x", "z"}];
+	tensMask = Unitize[Mean@Abs@tensTr];
+	tensTr = RotateDimensionsLeft[tensTr];
+	dim = Dimensions[tensTr][[;; -2]];
 	voxTr = RotateLeft[vox, 1];
 	
 	(*convert dimensions of stoppings*)
 	{inpTr, treshs} = Transpose[inp];
-	inpTr = Transpose[{TransData[#, "l"] & /@ inpTr, treshs}];
-	
-	(*get the data coordinates on center of voxels*)
-	coors = Flatten[Array[voxTr {#1, #2, #3} - 0.5 voxTr &, Dimensions[tensTr][[2 ;;]]], 2];
+	inpTr = Transpose[{RotateDimensionsLeft[#] & /@ inpTr, treshs}];
 	
 	(*create stopping mask*)
-	stop = Unitize[Mean[Abs[tensTr[[1 ;; 3]]]]] (Times @@ (Mask[#[[1]], #[[2]]] & /@ inpTr));
+	stop = tensMask (Times @@ (Mask[#[[1]], #[[2]]] & /@ inpTr));
 	
+	(*get the data coordinates on center of voxels*)
+	range = Thread[{voxTr, voxTr dim}] - 0.5 voxTr;
+	coors = Flatten[CoordinateBoundsArray[# + {0., 0.001} & /@ range, vox], 2];
 	
 	(*make the trac and stop interpolation functions*)
-	intE = Interpolation[Thread[{coors, Flatten[TransData[tensTr, "l"], 2]}], InterpolationOrder -> int];
-	intS = Interpolation[Thread[{coors, Flatten[stop, 2]}], InterpolationOrder -> int];
+	intE = Interpolation[Thread[{coors, Flatten[tensTr, 2]}], InterpolationOrder -> int];
+	intS = ListInterpolation[stop, range, InterpolationOrder -> int];
 	
 	(*make the seed point*)
-	{sx, sy, sz} = 0.5 voxTr;
-	{ex, ey, ez} = voxTr Dimensions[tensTr][[2 ;;]] - 0.5 vox;
+	ones = voxTr # & /@ SparseArray[stop]["NonzeroPositions"];
+	n = Min[{maxSeed, Length[ones]}];
+	seeds = RandomChoice[ones, n] + Transpose[RandomReal[{-0.5, 0.5} #, n] & /@ voxTr];
 	
-	seeds = Flatten[Table[{x, y, z}, {x, sx, ex, seedSp}, {y, sy, ey, seedSp}, {z, sz, ez, seedSp}], 2];
-	seeds = seeds + RandomReal[NormalDistribution[0, seedRand], Dimensions[seeds]];
-	seeds = Quiet@Pick[seeds, UnitStep[(intS @@ Transpose[seeds]) - 0.5], 1];
-	seeds = RandomSample[seeds, Min[{maxSeed, Length[seeds]}]];
-	
-	Print["number of selected seedpoints: ", Length[seeds]];
+	If[OptionValue[TracMonitor],Print["number of selected seedpoints: ", Length[seeds]]];
 	
 	t1 = First[AbsoluteTiming[
 		(*perform tractography for each seed point*)
+		iii=1;
 		tracts = Monitor[Table[
 			TractFunc[seeds[[iii]], step, {amax, lmax, stopT}, {intE, intS, intF}]
 			, {iii, 1, Length[seeds]}]
@@ -201,8 +213,10 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	]];
 	
 	(*report timing*)
-	Print["Tractography took ", t1, " seconds"];
-	Print[Length[tracts], " tracts were generated with average length ", step Round[Mean[Length /@ tracts], .1], "mm"];
+	If[OptionValue[TracMonitor],
+		Print["Tractography took ", t1, " seconds"];
+		Print[Length[tracts], " tracts were generated with average length ", step Round[Mean[Length /@ tracts], .1], "mm"];
+	];
 
 	(*output tracts*)
 	tracts
@@ -319,6 +333,62 @@ TractFunci[{loc0_, step0_}, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Bl
 		(xmin <= locn[[1]] <= xmax && ymin <= locn[[2]] <= ymax && zmin <= locn[[3]] <= zmax && i <= max && ang < amax && stop > str) &
 	]
 ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*FiberTractography*)
+
+
+Options[FindTensorPermutation] = {
+	FiberLengthRange -> {10, 200},
+	FiberAngle -> 30,
+	InterpolationOrder -> 0,
+	StopThreshhold -> 0.5,
+	StepSize -> 2,
+	Method -> "Euler",
+	MaxSeedPoints -> 500
+};
+
+SyntaxInformation[FindTensorPermutation] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+FindTensorPermutation[tensor_, vox_, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {1, {0, 1}}, opts]
+
+FindTensorPermutation[tensor_, vox_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {{par, {min, max}}}, opts]
+
+FindTensorPermutation[tens_, vox_, stop_, OptionsPattern[]] := Block[{
+	lmin, lmax, amax, maxSeed, int, stopT, step, intF, tracts, perms, flips, lengs, i, j, pl, ind
+	},
+	
+	{lmin, lmax} = OptionValue[FiberLengthRange];
+	amax = OptionValue[FiberAngle];
+	maxSeed = OptionValue[MaxSeedPoints];
+	int = OptionValue[InterpolationOrder];
+	stopT = OptionValue[StopThreshhold];
+	step = OptionValue[StepSize];
+	intF = OptionValue[Method];
+	
+	perms = {{"x", "y", "z"}, {"x", "z", "y"}, {"y", "x", "z"}, {"y","z", "x"}, {"z", "x", "y"}, {"z", "y", "x"}};
+	flips = {{1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}};
+	ind = {1, 1};
+	PrintTemporary[Dynamic[{ind, flips[[ind[[1]]]], perms[[ind[[2]]]]}]];
+	
+	lengs = Table[
+		ind = {i, j};
+		tracts = FiberTractography[tens, vox, stop,
+			FiberLengthRange -> {lmin, lmax}, FiberAngle -> amax, StopThreshhold -> stopT,
+			InterpolationOrder -> int, StepSize -> step, Method -> intF, MaxSeedPoints -> maxSeed,
+			TensorFilps -> flips[[i]], TensorPermutations -> perms[[j]], TracMonitor -> False
+		];
+		N@Mean[Length /@ tracts] step
+	, {i, 1, 4}, {j, 1, 6}];
+	
+	pl = ArrayPlot[lengs, ColorFunction -> "Rainbow", ImageSize -> 150, Frame -> True, 
+		FrameTicks -> {{Thread[{Range[4], flips}], None},{None, Thread[{Range[6], Rotate[#, 90 Degree] & /@ perms}]}}];
+	
+	{i, j} = FirstPosition[lengs, Max[lengs]];
+	{perms[[j]], flips[[i]], pl}
+]
+
 
 
 
