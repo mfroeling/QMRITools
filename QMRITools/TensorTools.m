@@ -855,57 +855,45 @@ SigmaCalc[DTI_?ArrayQ, tens_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, O
 
 
 (* ::Subsubsection::Closed:: *)
-(*EigenvalCalc*)
+(*EigensysCalc*)
 
 
-Options[EigenvalCalc]= {MonitorCalc->True,RejectMap->False,Reject->True};
+Options[EigensysCalc] = {RejectMap -> False, Reject -> True};
 
-SyntaxInformation[EigenvalCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+SyntaxInformation[EigensysCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-EigenvalCalc[tensor_?ArrayQ,OptionsPattern[]]:=
-Module[{output},
-	Switch[ArrayDepth[tensor],
-		4,
-		output=EigenvalCalci[Transpose[tensor,{4,1,2,3}],RejectMap->OptionValue[RejectMap],Reject->OptionValue[Reject]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for ",Length[tensor[[1]]]," slices!"]];,
-		3,
-		output=EigenvalCalci[Transpose[tensor,{3,1,2}],RejectMap->OptionValue[RejectMap],Reject->OptionValue[Reject]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 slice!"]];,
-		1,
-		output=EigenvalCalci[tensor,RejectMap->OptionValue[RejectMap],Reject->OptionValue[Reject]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 voxel!"]];	
-	];
+EigensysCalc[tensor_?ArrayQ, OptionsPattern[]] := Block[{tensM, val, vec, reject},
+	tensM = N@TensMat[tensor];
+	If[MatrixQ[tensM] && Dimensions[tensM] === {3, 3},
+		{val, vec} = EigensysCalci[tensM];
+		If[OptionValue[Reject],
+			val = RejectEig[val];
+			reject = RejectMapi[val];
+			vec = reject vec + (1-reject){{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}};
+			If[OptionValue[RejectMap], {val, vec, reject}, {val, vec}], {val, vec}
+		]
+		,
+		{val, vec} = RotateDimensionsRight[Map[EigensysCalci, tensM, {-3}], 2];
+		val = RotateDimensionsLeft[val, 1];
+		vec = RotateDimensionsLeft[vec, 1];
 		
-	Return[N[output]];
+		If[OptionValue[Reject],
+			val = RejectEig[val];
+			reject = Map[RejectMapi, val, {ArrayDepth[tensor] - 1}];
+			vec = reject vec + (1 - reject) ConstantArray[{{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}, Dimensions[reject]];
+			If[OptionValue[RejectMap], {val, vec, reject}, {val, vec}], {val, vec}
+		]
 	]
+]
 
 
-(* ::Subsubsection::Closed:: *)
-(*EigenvalCalci*)
+RejectEig = Compile[{{eig, _Real, 1}}, If[Total[1 - UnitStep[eig]] > 0, {0., 0., 0.}, eig],
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True
+];
 
+EigensysCalci[{{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}] := {{0., 0., 0.}, {{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}}
+EigensysCalci[tensor_] := Eigensystem[tensor]
 
-Options[EigenvalCalci]={RejectMap->False,Reject->True}
-
-EigenvalCalci[tensor_, OptionsPattern[]] := Module[{rejectmap, values},
-  (*calculate eigenvalues*)
-  values = Map[Eigenvalues2, tensor, {ArrayDepth[tensor] - 1}];
-  (*reject negative eigenvalues*)
-  values = If[OptionValue[Reject], RejectEig[values], values];
-  (*create rejectmap*)
-  If[OptionValue[RejectMap],
-  rejectmap = Map[RejectMapi, values, {ArrayDepth[tensor] - 1}];
-   {values, rejectmap}
-   ,
-   values
-   ]
-  ]
-
-Eigenvalues2[{0., 0., 0., 0., 0., 0.}] := {0., 0., 0.};
-Eigenvalues2[{0, 0, 0, 0, 0, 0}] := {0., 0., 0.};
-Eigenvalues2[tens_] := Eigenvalues[{{tens[[1]],tens[[4]],tens[[5]]},{tens[[4]],tens[[2]],tens[[6]]},{tens[[5]],tens[[6]],tens[[3]]}}];
-RejectEig = Compile[{{eig, _Real, 1}}, 
-	If[Total[1 - UnitStep[eig]] > 0, {0., 0., 0.}, eig], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 RejectMapi[{0., 0., 0.}] := 0;
 RejectMapi[{_, _, _}] := 1;
 
@@ -914,93 +902,22 @@ RejectMapi[{_, _, _}] := 1;
 (*EigenvecCalc*)
 
 
-Options[EigenvecCalc]= {MonitorCalc->False};
+Options[EigenvecCalc] = Options[EigensysCalc];
 
 SyntaxInformation[EigenvecCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-EigenvecCalc[tensor_?ArrayQ,OptionsPattern[]]:=
-Module[{output},
-	
-	Switch[ArrayDepth[tensor],
-		4,
-		output=If[OptionValue[MonitorCalc],
-			Monitor[EigenvecCalci[Transpose[tensor,{4,1,2,3}]],ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]],
-			EigenvecCalci[Transpose[tensor,{4,1,2,3}]]
-			];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for "<>ToString[Length[tensor[[1]]]]<>" slices!"]];,
-		3,
-		output=EigenvecCalci[Transpose[tensor,{3,1,2}]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 slice!"]];,
-		1,
-		output=EigenvecCalci[tensor];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigenvalues for 1 voxel!"]];	
-	];
-
-	Return[output]
-	]
+EigenvecCalc[tens_, OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens][[{2, 3}]], EigensysCalc[tens][[2]]]
 
 
 (* ::Subsubsection::Closed:: *)
-(*EigenvecCalci*)
+(*EigenvalCaci*)
 
 
-EigenvecCalci[tensor_]:=
-Map[
-	If[#[[1]]==#[[2]]==#[[3]]==#[[4]]==#[[5]]==#[[6]],
-		{{0,0,1},{0,1,0},{1,0,0}},
-		Eigenvectors[{{#[[1]],#[[4]],#[[5]]},{#[[4]],#[[2]],#[[6]]},{#[[5]],#[[6]],#[[3]]}}]
-		]&,tensor,{ArrayDepth[tensor]-1}
-	]
+Options[EigenvalCalc] = Options[EigensysCalc];
 
+SyntaxInformation[EigenvalCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-(* ::Subsubsection::Closed:: *)
-(*EigensysCalc*)
-
-
-Options[EigensysCalc]= {MonitorCalc->False};
-
-SyntaxInformation[EigensysCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
-
-EigensysCalc[tensor_?ArrayQ,OptionsPattern[]]:=
-Module[{output},
-	
-	Switch[ArrayDepth[tensor],
-		4,
-		output=If[OptionValue[MonitorCalc],
-			Monitor[EigensysCalci[Transpose[tensor,{4,1,2,3}]],
-				ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]],
-			EigensysCalci[Transpose[tensor,{4,1,2,3}]]
-			];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigensystem for "<>ToString[Length[tensor[[1]]]]<>" slices!"]];,
-		3,
-		output=EigensysCalci[Transpose[tensor,{3,1,2}]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigensystem for 1 slice!"]];,
-		2,
-		output=EigensysCalci[Transpose[tensor]];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigensystem for Row of voxels!"]];,
-		1,
-		output=EigensysCalci[tensor];
-		If[OptionValue[MonitorCalc],Print["Done calculating eigensystem for 1 voxel!"]];	
-	];
-	
-	Return[output]
-	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*EigensysCalc*)
-
-
-EigensysCalci[tensor_]:=
-Module[{eig},
-	Map[
-		If[#[[1]]==#[[2]]==#[[3]]==#[[4]]==#[[5]]==#[[6]],
-			{{0,0,0},{{0,0,1},{0,1,0},{1,0,0}}},
-			eig=Eigensystem[TensMat[#]];
-			If[Positive[eig[[1,1]]]&&Positive[eig[[1,2]]]&&Positive[eig[[1,3]]],eig,{{0,0,0},{{0,0,1},{0,1,0},{1,0,0}}}]
-			]&,tensor,{ArrayDepth[tensor]-1}
-		]
-	]
+EigenvalCalc[tens_, OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens][[{1, 3}]], EigensysCalc[tens][[1]]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1066,16 +983,15 @@ Module[{EC},
 (*ParameterCalc*)
 
 
-Options[ParameterCalc]={Reject->True,MonitorCalc->False}
+Options[ParameterCalc]={Reject->False}
 
 SyntaxInformation[ParameterCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-ParameterCalc[tensor_,OptionsPattern[]]:=
-Module[{eig,adc,fa},
-	eig=1000.*EigenvalCalc[tensor,Reject->OptionValue[Reject],MonitorCalc->OptionValue[MonitorCalc]];
+ParameterCalc[tensor_,OptionsPattern[]]:= Block[{eig,adc,fa},
+	eig=1000.*EigenvalCalc[tensor,Reject->OptionValue[Reject]];
 	adc=ADCCalc[eig];
 	fa=FACalc[eig];
-	Join[TransData[eig,"r"],{adc,fa}]
+	Join[RotateDimensionsRight[eig],{adc,fa}]
 	]
 
 
@@ -1158,8 +1074,7 @@ Transpose[Map[MapThread[Correcti[#1,#2,shift,int]&,{#,phase}]&,Transpose[data,{2
 (*Correcti*)
 
 
-Correcti[dat_,ph_,shift_,int_]:=
-Module[{pos,acpos,shiftpx,data,phase,output},
+Correcti[dat_,ph_,shift_,int_]:= Module[{pos,acpos,shiftpx,data,phase,output},
 	If[shift[[2]]=="COL",
 		data=Transpose[dat];phase=Transpose[ph];,
 		data=dat;phase=ph;

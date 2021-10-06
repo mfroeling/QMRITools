@@ -230,6 +230,9 @@ SmartMaskOutput::usage =
 TableMethod::usage = 
 "TableMethod is an option for NumberTableForm. It specifies which number form to uses. Values can be NumberForm, ScientificForm or EngineeringForm"
 
+B1Output::usage=
+"B1Output is an option for B1MapCalc. Values can be \"Map\", \"MagPhase\", or \"Complex\"."
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -1450,7 +1453,7 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 (*B1MapCalc*)
 
 
-Options[B1MapCalc] = {Output -> "Map"};
+Options[B1MapCalc] = {B1Output -> "Map"};
 
 B1MapCalc[mag_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{c1, c2}, 
 	{s1, s2} = Transpose[mag]; 
