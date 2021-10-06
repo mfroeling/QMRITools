@@ -185,7 +185,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	
 	(*get the data coordinates on center of voxels*)
 	range = Thread[{voxTr, voxTr dim}] - 0.5 voxTr;
-	coors = Flatten[CoordinateBoundsArray[# + {0., 0.001} & /@ range, vox], 2];
+	coors = Flatten[CoordinateBoundsArray[# + {0., 0.001} & /@ range, voxTr], 2];
 	
 	(*make the trac and stop interpolation functions*)
 	intE = Interpolation[Thread[{coors, Flatten[tensTr, 2]}], InterpolationOrder -> int];

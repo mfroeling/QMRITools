@@ -79,6 +79,21 @@ ExportNii::usage =
 ExportNii[data, vox, \"file\"] exports the nii file to the location \"file\"."
 
 
+CorrectNiiOrientation::usage = 
+"CorrectNiiOrientation[data,hdr] corrects the data orientation based on the nii header."
+
+GetNiiOrientation::usage = 
+"GetNiiOrientation[hdr] get the sform and qform orientations from a nii header."
+
+MakeNiiOrentationS::usage = 
+"MakeNiiOrentationS[off, vox] maxes the srow values for nii header assuming not R and Q.
+MakeNiiOrentationS[off, vox, R] maxes the srow values for nii header using rotation R.
+MakeNiiOrentationS[off, vox, R, Q] maxes the srow values for nii header using rotation R and skew Q."
+
+MakeNiiOrentationQ::usage = 
+"MakeNiiOrentationQ[R] makes the q vector from rotation matrix R"
+
+
 ExportBval::usage = 
 "ExportBval[bvals] exports the diffusion bvalues to exploreDTI format.
 ExportBval[bvals, \"file\"] exports the diffusion bvalues to \"file\" in the exploreDTI format."
@@ -118,6 +133,8 @@ NiiOffset::usage = "NiiOffset is an option of ExportNii. Is {xoff, yoff, zoff}."
 RotateGradients::usage = "RotateGradients is an option for ImportNiiDiff."
 
 FlipBvec::usage = "FlipBvec is an option for ImportBvalvec."
+
+UseVersion::usage = "UseVersion is an option for DcmToNii. For windows it allows to switch between different versions of dcm2niix.exe."
 
 
 (* ::Subsection::Closed:: *)
@@ -242,46 +259,82 @@ FindDcm2Nii[ver_]:=Module[{fil1,fil2},
 (*General Nii Definitions*)
 
 
-unitsNii = {0 -> "DimensionlessUnit", 1 -> "Meters", 
-   2 -> "Millimeters", 3 -> "Micrometers", 8 -> "Seconds", 
-   16 -> "Milliseconds", 24 -> "Microseconds", 32 -> "Hertz", 
-   40 -> "PartsPerMillion", 48 -> "Radians/Seconds"};
+unitsNii = {
+	0 -> "DimensionlessUnit", 
+	1 -> "Meters", 
+	2 -> "Millimeters", 
+	3 -> "Micrometers", 
+	8 -> "Seconds",
+	16 -> "Milliseconds", 
+	24 -> "Microseconds", 
+	32 -> "Hertz",
+	40 -> "PartsPerMillion", 
+	48 -> "Radians/Seconds"
+};
 
 
-directionsNii = {0 -> Undefined, 1 -> "x", 2 -> "y", 3 -> "z"};
+directionsNii = {
+	0 -> Undefined, 
+	1 -> "x", 
+	2 -> "y", 
+	3 -> "z"
+};
 
 
-coordinateNii = {0 -> "None", 1 -> "Scanner Posistion", 
-   2 -> "Coregistration", 3 -> "Normalized Tal", 
-   4 -> "Normalized MNI152ach" 5 -> "Normalized MNI152"};
+coordinateNii = {
+	0 -> "None", 
+	1 -> "Scanner Posistion", 
+	2 -> "Coregistration", 
+	3 -> "Normalized Talairach-Tournoux",
+	4 -> "Normalized MNI152", 
+	5 -> "Normalized standard template"};
 
 
 dataTypeNii = {
-   0 -> Undefined,
-   1 -> "Bit",
-   2 -> "Byte",
-   4 -> "Integer16",
-   8 -> "Integer32",
-   16 -> "Real32",
-   32 -> "Complex64",
-   64 -> "Real64",
-   128 -> {"Byte", "Byte", "Byte"}(*RGBColor*),
-   256 -> "Integer8",
-   512 -> "UnsignedInteger16",
-   768 -> "Unsignedinteger32",
-   1024 -> "Integer64",
-   1280 -> "Unsignedinteger64",
-   1536 -> "Real128",
-   1792 -> "Complex128",
-   2048 -> "Complex256"
-   };
+	0 -> Undefined,
+	1 -> "Bit",
+	2 -> "Byte",
+	4 -> "Integer16",
+	8 -> "Integer32",
+	16 -> "Real32",
+	32 -> "Complex64",
+	64 -> "Real64",
+	128 -> {"Byte", "Byte", "Byte"}(*RGBColor*),
+	256 -> "Integer8",
+	512 -> "UnsignedInteger16",
+	768 -> "Unsignedinteger32",
+	1024 -> "Integer64",
+	1280 -> "Unsignedinteger64",
+	1536 -> "Real128",
+	1792 -> "Complex128",
+	2048 -> "Complex256",
+	2304 -> {"Byte", "Byte", "Byte","Byte"}(*RGBA*)
+};
 
 
-typeSizeNii = {0 -> Undefined, 2->8, 4->16, 8->32, 16->32, 32->64, 64->64, 128->24, 256->8, 512->16, 768->32, 1024->32, 1280->32, 1536->128, 1792->128, 2048->256}; 
+typeSizeNii = {
+	0 -> Undefined, 
+	2->8, 
+	4->16, 
+	8->32, 
+	16->32, 
+	32->64, 
+	64->64, 
+	128->24, 
+	256->8, 
+	512->16, 
+	768->32, 
+	1024->32, 
+	1280->32, 
+	1536->128, 
+	1792->128, 
+	2048->256,
+	2304->32
+}; 
 
 
 rangeNii = {
-   	Undefined -> Undefined,
+	Undefined -> Undefined,
    	"Byte" -> {0, 255},
    	"Integer16" -> {-32768, 32767},
    	"Integer32" -> {-2147483648, 2147483647},
@@ -296,15 +349,16 @@ rangeNii = {
    	"UnsignedInteger64" -> {0, 18446744073709551615},
    	"Real128" -> Undefined,
    	"Complex128" -> Undefined,
-   	"Complex256" -> Undefined
-   };
+   	"Complex256" -> Undefined,
+   	{"Byte", "Byte", "Byte","Byte"} -> {0,255}(*RGBA*)
+};
 
 
 typeCheckNii = Join[
-   Thread[{Undefined, "Complex64", "Complex128", "Complex256"} ->  NumberQ],
-   Thread[{"Byte" , "Integer8", "Integer16", "Integer32", "Integer64", "UnsignedInteger8", "UnsignedInteger16", "UnsignedInteger32", "UnsignedInteger64"} -> IntegerQ],
-   Thread[{"Real32", "Real64", "Real128"} -> Internal`RealValuedNumberQ]
-   ];
+	Thread[{Undefined, "Complex64", "Complex128", "Complex256"} ->  NumberQ],
+	Thread[{"Byte" , "Integer8", "Integer16", "Integer32", "Integer64", "UnsignedInteger8", "UnsignedInteger16", "UnsignedInteger32", "UnsignedInteger64"} -> IntegerQ],
+	Thread[{"Real32", "Real64", "Real128"} -> Internal`RealValuedNumberQ]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -327,99 +381,94 @@ JoinCharacters = StringTrim@StringJoin@StringCases[Cases[#, _?StringQ], characte
 
 GetNiiHeaderValues[verNii_]:=GetNiiHeaderValues[verNii,""]
 GetNiiHeaderValues[verNii_,file_] := Switch[verNii,
-	    1,
-	    {
-	     {"size", "Integer32", 1},
-	     {"data_Type", "Character8", 10},
-	     {"dbName", "Character8", 18},
-	     {"extents", "Integer32", 1},
-	     {"sessionError", "Integer16", 1},
-	     {"regular", "Character8", 1},
-	     {"dimInfo", "UnsignedInteger8", 1},
-	     {"dim", "Integer16", 8},
-	     {"intentP1", "Real32", 1},
-	     {"intentP2", "Real32", 1},
-	     {"intentP3", "Real32", 1},
-	     {"intentCode", "Integer16", 1},
-	     {"dataType", "Integer16", 1},
-	     {"bitPix", "Integer16", 1},
-	     {"sliceStart", "Integer16", 1},
-	     {"pixDim", "Real32", 8},
-	     {"voxOffset", "Real32", 1},
-	     {"scaleSlope", "Real32", 1},
-	     {"scaleInteger", "Real32", 1},
-	     {"sliceEnd", "Integer16", 1},
-	     {"sliceCode", "UnsignedInteger8", 1},
-	     {"xyztUnits", "UnsignedInteger8", 1},
-	     {"calMax", "Real32", 1},
-	     {"calMin", "Real32", 1},
-	     {"sliecDuration", "Real32", 1},
-	     {"tOffset", "Real32", 1},
-	     {"glMax", "Integer32", 1},
-	     {"glMin", "Integer32", 1},
-	     {"descrip", "Character8", 80},
-	     {"auxFile", "Character8", 24},
-	     {"qformCode", "Integer16", 1},
-	     {"sformCode", "Integer16", 1},
-	     {"quaternB", "Real32", 1},
-	     {"quaternC", "Real32", 1},
-	     {"quaternD", "Real32", 1},
-	     {"qOffsetX", "Real32", 1},
-	     {"qOffsetY", "Real32", 1},
-	     {"qOffsetZ", "Real32", 1},
-	     {"sRowx", "Real32", 4},
-	     {"sRowy", "Real32", 4},
-	     {"sRowz", "Real32", 4},
-	     {"intentName", "Character8", 16},
-	     {"magic", "Character8", 4},
-	     {"ECode", "Byte", 4}
-	     }
-	    ,
-	    2,
-	    {
-	     {"size", "Integer32", 1},
-	     {"magic", "Character8", 8},
-	     {"dataType", "Integer16", 1},
-	     {"bitPix", "Integer16", 1},
-	     {"dim", "Integer64", 8},
-	     {"intentP1", "Real64", 1},
-	     {"intentP2", "Real64", 1},
-	     {"intentP3", "Real64", 1},
-	     {"pixDim", "Real64", 8},
-	     {"voxOffset", "Integer64", 1},
-	     {"scaleSlope", "Real64", 1},
-	     {"scaleInteger", "Real64", 1},
-	     {"calMax", "Real64", 1},
-	     {"calMin", "Real64", 1},
-	     {"sliecDuration", 1},
-	     {"tOffset", "Real64", 1},
-	     {"sliceStart", "Integer64", 1},
-	     {"sliceEnd", "Integer64", 1},
-	     {"descrip", "Character8", 80},
-	     {"auxFile", "Character8", 24},
-	     {"qformCode", "Integer32", 1},
-	     {"sformCode", "Integer32", 1},
-	     {"quaternB", "Real64", 1},
-	     {"quaternC", "Real64", 1},
-	     {"quaternD", "Real64", 1},
-	     {"qOffsetX", "Real64", 1},
-	     {"qOffsetY", "Real64", 1},
-	     {"qOffsetZ", "Real64", 1},
-	     {"sRowX", "Real64", 4},
-	     {"sRowY", "Real64", 4},
-	     {"sRowZ", "Real64", 4},
-	     {"sliceCode", "Integer32", 1},
-	     {"xyztUnits", "Integer32", 1},
-	     {"intentCode", "Integer32", 1},
-	     {"intentName", "Character8", 16},
-	     {"dimInfo", "UnsignedInteger8", 1},
-	     {"unusedString", "Character8", 15},
-	     {"ECode", "Byte", 4}
-	     }
-	    ,
-	    _, 
-	    If[file==="", Message[Export::niiver], Message[Export::niihdr, file]]; $Failed
-	    ];
+	1, {
+		{"size", "Integer32", 1},
+	    {"data_Type", "Character8", 10},
+	    {"dbName", "Character8", 18},
+	    {"extents", "Integer32", 1},
+	    {"sessionError", "Integer16", 1},
+	    {"regular", "Character8", 1},
+	    {"dimInfo", "UnsignedInteger8", 1},
+	    {"dim", "Integer16", 8},
+	    {"intentP1", "Real32", 1},
+	    {"intentP2", "Real32", 1},
+	    {"intentP3", "Real32", 1},
+	    {"intentCode", "Integer16", 1},
+	    {"dataType", "Integer16", 1},
+	    {"bitPix", "Integer16", 1},
+	    {"sliceStart", "Integer16", 1},
+	    {"pixDim", "Real32", 8},
+	    {"voxOffset", "Real32", 1},
+	    {"scaleSlope", "Real32", 1},
+	    {"scaleInteger", "Real32", 1},
+	    {"sliceEnd", "Integer16", 1},
+	    {"sliceCode", "UnsignedInteger8", 1},
+	    {"xyztUnits", "UnsignedInteger8", 1},
+	    {"calMax", "Real32", 1},
+	    {"calMin", "Real32", 1},
+	    {"sliecDuration", "Real32", 1},
+	    {"tOffset", "Real32", 1},
+	    {"glMax", "Integer32", 1},
+	    {"glMin", "Integer32", 1},
+	    {"descrip", "Character8", 80},
+	    {"auxFile", "Character8", 24},
+	    {"qformCode", "Integer16", 1},
+	    {"sformCode", "Integer16", 1},
+	    {"quaternB", "Real32", 1},
+	    {"quaternC", "Real32", 1},
+	    {"quaternD", "Real32", 1},
+	    {"qOffsetX", "Real32", 1},
+	    {"qOffsetY", "Real32", 1},
+	    {"qOffsetZ", "Real32", 1},
+	    {"sRowx", "Real32", 4},
+	    {"sRowy", "Real32", 4},
+	    {"sRowz", "Real32", 4},
+	    {"intentName", "Character8", 16},
+	    {"magic", "Character8", 4},
+	    {"ECode", "Byte", 4}
+	},
+	2,{
+		{"size", "Integer32", 1},
+	    {"magic", "Character8", 8},
+	    {"dataType", "Integer16", 1},
+	    {"bitPix", "Integer16", 1},
+	    {"dim", "Integer64", 8},
+	    {"intentP1", "Real64", 1},
+	    {"intentP2", "Real64", 1},
+	    {"intentP3", "Real64", 1},
+	    {"pixDim", "Real64", 8},
+	    {"voxOffset", "Integer64", 1},
+	    {"scaleSlope", "Real64", 1},
+	    {"scaleInteger", "Real64", 1},
+	    {"calMax", "Real64", 1},
+	    {"calMin", "Real64", 1},
+	    {"sliecDuration", 1},
+	    {"tOffset", "Real64", 1},
+	    {"sliceStart", "Integer64", 1},
+	    {"sliceEnd", "Integer64", 1},
+	    {"descrip", "Character8", 80},
+	    {"auxFile", "Character8", 24},
+	    {"qformCode", "Integer32", 1},
+	    {"sformCode", "Integer32", 1},
+	    {"quaternB", "Real64", 1},
+	    {"quaternC", "Real64", 1},
+	    {"quaternD", "Real64", 1},
+	    {"qOffsetX", "Real64", 1},
+	    {"qOffsetY", "Real64", 1},
+	    {"qOffsetZ", "Real64", 1},
+	    {"sRowX", "Real64", 4},
+	    {"sRowY", "Real64", 4},
+	    {"sRowZ", "Real64", 4},
+	    {"sliceCode", "Integer32", 1},
+	    {"xyztUnits", "Integer32", 1},
+	    {"intentCode", "Integer32", 1},
+	    {"intentName", "Character8", 16},
+	    {"dimInfo", "UnsignedInteger8", 1},
+	    {"unusedString", "Character8", 15},
+	    {"ECode", "Byte", 4}
+	},
+	_, If[file==="", Message[Export::niiver], Message[Export::niihdr, file]]; $Failed
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1017,6 +1066,14 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	type = type/.{"Integer"->"Integer16","Real"->"Real32"};
 	off = OptionValue[NiiOffset];
 	
+	Print[off];
+	(*
+	If[VectorQ[off],off={"None",off,IdentityMatrix[3]}];
+	If[VectorQ[off[[1]]&&MatrixQ[off[[2]]]],off={"None", off[[1]], off[[2]]}];
+	If[!(StringQ[off[[1]]]&&VectorQ[off[[2]]&&MatrixQ[off[[3]]]]), off = Automatic];
+	*)
+	
+	
 	(*compress the file*)
 	If[OptionValue[NiiOffset]===Automatic,
 		If[OptionValue[CompressNii],
@@ -1065,7 +1122,8 @@ ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] :=
 
 MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
   {vox, dim, ndim, type, range, data, header,
-   headerInp, voxInp, headerDef, xoff, yoff, zoff},
+   headerInp, voxInp, headerDef, off, offInp, Rs, R, Rq,
+   code, scode, qcode, qb, qc, qd, sx, sy, sz, offs, xoffq, yoffq, zoffq},
   type = OptionValue[NiiDataType];
   
   (*get the data*)
@@ -1106,10 +1164,32 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
   
   (*chekc if a offset is given*)
   off = "Offset" /. rule;
-  offInp = MatchQ[off, {_?NumberQ, _?NumberQ, _?NumberQ}];
-  {xoff,yoff,zoff} = If[offInp, off, {-N[vox[[3]] dim[[-1]]/2],-N[vox[[2]] dim[[-2]]/2],-N[vox[[1]] dim[[1]]/2]}];
-  
-  qoff=Max[{dim[[-1]],dim[[-2]]}]-1;
+  offInp = ListQ[off];
+  If[offInp,
+  	(*offsets are given*)
+  	If[Length[off]===4,
+  		(*one off for s and q form*)
+  		{code, off, R} = off;
+  		scode = qcode = code /. Reverse[coordinateNii, 2];
+  		
+  		{xoffq ,yoffq, zoffq} = off;
+  		{qb, qc, qd} = MakeNiiOrentationQ[R];
+  		{sx, sy, sz} = MakeNiiOrentationS[off, vox, Rs]
+  		,
+  		(*seperate off for s and q form*)
+  		{{scode, offs, Rs} , {qcode, {xoffq ,yoffq, zoffq}, Rq}} = off;
+  		{scode, qcode} = {scode, qcode} /. Reverse[coordinateNii, 2];
+  		
+  		{qb, qc, qd} = MakeNiiOrentationQ[Rq];
+  		{sx, sy, sz} = MakeNiiOrentationS[offs, vox, Rs]
+  	]
+  	,
+  	(*no offsets are given use default values*)
+  	{xoffq ,yoffq, zoffq} = offs = {-N[vox[[3]] dim[[-1]]/2],-N[vox[[2]] dim[[-2]]/2],-N[vox[[1]] dim[[1]]/2]};
+  	{qb, qc, qd} = {0., 0., 0.};
+  	{sx, sy, sz} = MakeNiiOrentationS[offs, vox];
+  	scode = qcode = "None" /. Reverse[coordinateNii, 2];
+  ];
   
   headerDef = {
     "size" -> Switch[ver, 1, 348, 2, 540],
@@ -1135,26 +1215,26 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
     "sliceEnd" -> 0,
     "sliceCode" -> 0,
     "xyztUnits" -> XyztUnits[{"Millimeters", "Seconds"}],(*input*)
-    "calMax" -> 0.`,
-    "calMin" -> 0.`,
-    "sliecDuration" -> 0.`,
-    "tOffset" -> 0.`,
+    "calMax" -> 0.,
+    "calMin" -> 0.,
+    "sliecDuration" -> 0.,
+    "tOffset" -> 0.,
     "glMax" -> 0,
     "glMin" -> 0,
     
     "descrip" -> StringPadRight["Created with QMRITools", 80, FromCharacterCode[0]],(*input*)
     "auxFile" -> StringPadRight["None", 24, FromCharacterCode[0]],
-    "qformCode" -> "None" /. Reverse[coordinateNii, 2],
-    "sformCode" -> "Scanner Posistion" /. Reverse[coordinateNii, 2],
-    "quaternB" -> 0.5,
-    "quaternC" -> -0.5,
-    "quaternD" -> 0.5,
-    "qOffsetX" -> qoff,
-    "qOffsetY" -> qoff,
-    "qOffsetZ" -> 0.,
-    "sRowx" -> {vox[[3]], 0., 0., xoff},
-    "sRowy" -> {0., vox[[2]], 0., yoff},
-    "sRowz" -> {0., 0., vox[[1]], zoff},
+    "qformCode" -> qcode,
+    "sformCode" -> scode,
+    "quaternB" -> qb,
+    "quaternC" -> qc,
+    "quaternD" -> qd,
+    "qOffsetX" -> xoffq,
+    "qOffsetY" -> yoffq,
+    "qOffsetZ" -> zoffq,
+    "sRowx" -> sx,
+    "sRowy" -> sy,
+    "sRowz" -> sz,
     "intentName" -> StringPadRight["", 16],
     "magic" -> StringPadRight[Switch[ver, 1, "n+1", 2, "n+2"], 4, FromCharacterCode[0]],
     "ECode" -> {0, 0, 0, 0}
@@ -1201,6 +1281,63 @@ DetectDataType[input_] := Module[{data, min, max},
    _, "Real32"
    ]
   ]
+
+
+(* ::Subsection:: *)
+(*CorrectNiiOrientation*)
+
+
+SyntaxInformation[CorrectNiiOrientation] = {"ArgumentsPattern" -> {_,_}};
+
+CorrectNiiOrientation[data_, hdr_] := Block[{rev},
+	rev = Flatten[Position[Sign[Reverse[Diagonal[{"sRowx", "sRowy", "sRowz"} /. hdr]]], -1]];
+	If[ArrayDepth[data] == 4, rev = rev /. {2 -> 3, 3 -> 4}];
+	If[rev =!= {}, Fold[Reverse, data, rev], data];
+]
+
+
+(* ::Subsection:: *)
+(*GetNiiOrientation*)
+
+
+SyntaxInformation[GetNiiOrientation] = {"ArgumentsPattern" -> {_}};
+
+GetNiiOrientation[hdr_] := {GetNiiOrientationS[hdr], GetNiiOrientationQ[hdr]}
+
+GetNiiOrientationS[hdr_] := Block[{scode, mat, Ts, Rs, Ss, Qs, soff},
+	(*get sform infromation*)
+	scode = "sformCode" /. hdr;
+	mat = {"sRowx", "sRowy", "sRowz", {0., 0., 0., 1.}} /. hdr;
+	{Ts, Rs, Ss, Qs} = DecomposeAffineMatrix[mat];
+	soff = Ts[[1 ;; 3, 4]];
+	{scode, soff, Rs . Qs}
+]
+
+GetNiiOrientationQ[hdr_] := Block[{qcode, qoff, qrot},
+	(*get qform infromation*)
+	qcode = "qformCode" /. hdr;
+	qoff = {"qOffsetX", "qOffsetY", "qOffsetZ"} /. hdr;
+	qrot = {"quaternB", "quaternC", "quaternD"} /. hdr;
+	qrot = QuaternionVectorToRotationMatrix[qrot];
+	qrot = N@Append[PadRight[#, 4] & /@ qrot, {0, 0, 0, 1}];
+	{qcode, qoff, qrot}
+]
+
+
+
+
+MakeNiiOrentationS[soff_, vox_] := MakeNiiOrentationS[soff, vox, IdentityMatrix[4], IdentityMatrix[4]]
+MakeNiiOrentationS[soff_, vox_, R_, Q_] := MakeNiiOrentationS[soff, vox, R . Q]
+MakeNiiOrentationS[soff_, vox_, RQ_] := Block[{T, S},
+	T = IdentityMatrix[4];
+	T[[1 ;; 3, 4]] = soff;
+	S = DiagonalMatrix[Append[Reverse[vox], 1]];
+	N@Chop[T . S . RQ][[1;;3]]
+]
+
+MakeNiiOrentationQ
+
+MakeNiiOrentationQ[qrot_] := RotationMatrixToQuaternionVector[qrot[[1 ;; 3, 1 ;; 3]]]
 
 
 (* ::Subsection:: *)

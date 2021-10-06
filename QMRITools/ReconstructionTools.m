@@ -155,6 +155,12 @@ AcquisitionMethod::usage =
 EchoShiftData::usage = 
 "EchoShiftData is an option for CoilWeightedRecon"
 
+OutputSense::usage = 
+"OutputSense is an option for CoilWeightedRecon. If set true the function will also output the used Sense map."
+
+RescaleRecon::usage = 
+"RescaleRecon is an option for CoilWeightedRecon. If set true the data will be scaled to the range 0-1000."
+
 SenseRescale::usage = 
 "SenseRescale is an option for MakeSense. If set True the data is first downscaled by a factor 2 before making the sense map."
 

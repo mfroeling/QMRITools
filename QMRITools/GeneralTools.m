@@ -207,6 +207,25 @@ BSplineCurveFit::usage =
 "BSplineCurveFit[points] fits a bspline to the points. Output is a list of same size as points."
 
 
+DecomposeScaleMatrix::usage = 
+"DecomposeScaleMatrix[mat] decomposes the affine matirx in T, R, S and Q."
+
+DecomposeAffineMatrix::usage = 
+"DecomposeAffineMatrix[S] decomposes the scale matrix in S1, S2 and S3."
+
+QuaternionToRotationMatrix::usage =
+"QuaternionToRotationMatrix[{a, b,c,d}] converts quarternion to rotation matrix R"
+
+QuaternionVectorToRotationMatrix::usage =
+"QuaternionVectorToRotationMatrix[{b,c,d}] converts quarternion to rotation matrix R"
+
+RotationMatrixToQuaternion::usage = 
+"RotationMatrixToQuaternion[R] converts rotation matrix to quarternions {a, b,c,d}"
+
+RotationMatrixToQuaternionVector::usage =
+"RotationMatrixToQuaternionVector[R] converts rotation matrix to quarternions {b,c,d}"
+
+
 (* ::Subsection::Closed:: *)
 (*General Options*)
 
@@ -628,11 +647,12 @@ VectorToData[vec_, {dim_, pos_}] := If[VectorQ[vec],
 
 SyntaxInformation[TensMat] = {"ArgumentsPattern" -> {_}};
 
-TensMat[tens:{_?ArrayQ..}]:=
-Transpose[{{tens[[1]],tens[[4]],tens[[5]]},{tens[[4]],tens[[2]],tens[[6]]},{tens[[5]],tens[[6]],tens[[3]]}},{4,5,1,2,3}];
+TensMat[tens : {_?ArrayQ ..}] := RotateDimensionsLeft[TensMati[tens], 2];
 
-TensMat[tens_?ListQ]:=
-	{{tens[[1]],tens[[4]],tens[[5]]},{tens[[4]],tens[[2]],tens[[6]]},{tens[[5]],tens[[6]],tens[[3]]}};
+TensMat[tens_?ListQ] := TensMati[tens]
+
+
+TensMati[{xx_, yy_, zz_, xy_, xz_, yz_}] := {{xx, xy, xz}, {xy, yy, yz}, {xz, yz, zz}};
 
 
 (* ::Subsubsection::Closed:: *)
@@ -641,11 +661,12 @@ TensMat[tens_?ListQ]:=
 
 SyntaxInformation[TensVec] = {"ArgumentsPattern" -> {_}};
 
-TensVec[tens:{{_,_,_},{_,_,_},{_,_,_}}]:=
-	{tens[[1,1]],tens[[2,2]],tens[[3,3]],tens[[1,2]],tens[[1,3]],tens[[2,3]]};
+TensVec[tens : {_?ArrayQ ..}] := TensVeci[RotateDimensionsRight[tens, 2]]
 
-TensVec[tens:{_?ArrayQ..}]:=
-Transpose[Map[{#[[1,1]],#[[2,2]],#[[3,3]],#[[1,2]],#[[1,3]],#[[2,3]]}&,tens,{3}],{2,3,4,1}];
+TensVec[tens_?MatrixQ] := TensVeci[tens]
+
+
+TensVeci[{{xx_, xy_, xz_}, {_, yy_, yz_}, {_, _, zz_}}] := {xx, yy, zz, xy, xz, yz};
 
 
 (* ::Subsection:: *)
@@ -1402,6 +1423,8 @@ dPcore[L_, p_, n__] := Join[dPcore[L, p], Partition[Drop[L, Last@p], n]]
 
 Options[BSplineCurveFit] = {SplineDegree -> 2, SplineKnotsNumber -> 50, SplineRegularization -> 0};
 
+SyntaxInformation[BSplineCurveFit] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
+
 BSplineCurveFit[pts_, opts : OptionsPattern[]] := Block[{paras, knots, coeffMat, ctrlpts, cpn, sd, reg, len, Amat, ptsP},
 	len = Length[pts];
 	cpn = Min[{len - 2, OptionValue[SplineKnotsNumber]}];
@@ -1477,6 +1500,120 @@ DivComp1 = Compile[{{d, _Real, 0}, {u, _Real, 0}, {x, _Real, 1}}, If[d == 0., x,
 
 (*b-spline division i+1*)
 DivComp2 = Compile[{{d, _Real, 0}, {u, _Real, 0}, {x, _Real, 1}}, If[d == 0., x, (u - x)/d], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*DecomposeAffineMatrix*)
+
+
+SyntaxInformation[DecomposeAffineMatrix] = {"ArgumentsPattern" -> {_}}
+
+DecomposeAffineMatrix[mat_] := Block[{T, L, R, S, Q},
+	{T, L} = GetTranslation[mat];
+	{R, S} = PolarDecomposition[L];
+	{S, Q} = GetScaleSkew[S];
+	N@{T, R, S, Q}
+]
+
+
+GetTranslation[mat_] := Block[{out = IdentityMatrix[4]},
+	out[[All, 4]] = mat[[All, 4]];
+	N@{out, Inverse[out] . mat}
+]
+
+
+PolarDecomposition[mat_] := Block[{R, S},
+	{R, S} = {# . ConjugateTranspose[#3], #3 . #2 . ConjugateTranspose[#3]} & @@ SingularValueDecomposition[mat];
+	If[Det[R] < 0, R[[;; 3, ;; 3]] = -R[[;; 3, ;; 3]]; 
+	S[[;; 3, ;; 3]] = -S[[;; 3, ;; 3]]];
+	N@{R, S}
+]
+
+
+GetScaleSkew[S_] := Block[{sc},
+	sc = (Norm /@ Transpose[S]);
+	N@{DiagonalMatrix[sc], Transpose[Transpose[S]/sc]}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DecomposeScaleMatrix*)
+
+
+SyntaxInformation[DecomposeScaleMatrix] = {"ArgumentsPattern" -> {_}}
+
+DecomposeScaleMatrix[S_] := DeleteCases[N@MapThread[IdentityMatrix[4] + Transpose[{#2}] . {#2} (#1 - 1) &, Eigensystem[S]], N@IdentityMatrix[4]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*QuaternionToRotationMatrix*)
+
+
+SyntaxInformation[QuaternionToRotationMatrix] = {"ArgumentsPattern" -> {_}}
+
+QuaternionToRotationMatrix[{a_?NumericQ, b_?NumericQ, c_?NumericQ, d_?NumericQ}] := N@{
+	{a^2 + b^2 - c^2 - d^2, 2 b c - 2 a d, 2 b d + 2 a c},
+	{2 b c + 2 a d, a^2 + c^2 - b^2 - d^2, 2 c d - 2 a b},
+	{2 b d - 2 a c, 2 c d + 2 a b, a^2 + d^2 - c^2 - b^2}
+};
+
+SyntaxInformation[QuaternionToRotationMatrix] = {"ArgumentsPattern" -> {_}}
+
+QuaternionVectorToRotationMatrix[{b_?NumericQ, c_?NumericQ, d_?NumericQ}] := QuaternionToRotationMatrix[{Sqrt[1 - b^2 - c^2 - d^2], b, c, d}];
+
+
+(* ::Subsubsection::Closed:: *)
+(*RotationMatrixToQuaternion*)
+
+
+SyntaxInformation[RotationMatrixToQuaternion] = {"ArgumentsPattern" -> {_}}
+
+RotationMatrixToQuaternion[{{r11_?NumericQ, r12_?NumericQ, 
+     r13_?NumericQ}, {r21_?NumericQ, r22_?NumericQ, 
+     r23_?NumericQ}, {r31_?NumericQ, r32_?NumericQ, r33_?NumericQ}}] := 
+  Block[
+   {trace, a, b, c, d, x, y, z},
+   
+   trace = 1. + r11 + r22 + r33;
+   
+   If[trace > .5,
+    a = .5 Sqrt[trace];
+    b = .25 (r32 - r23)/a;
+    c = .25 (r13 - r31)/a;
+    d = .25 (r21 - r12)/a
+    
+    ,
+    x = 1. + r11 - (r22 + r33);
+    y = 1. + r22 - (r11 + r33);
+    z = 1. + r33 - (r11 + r22);
+    
+    Which[
+     x > 1.,
+     b = .5 Sqrt[x];
+     a = .25 (r32 - r23)/b;
+     c = .25 (r12 + r21)/b;
+     d = .25 (r13 + r31)/b,
+     
+     y > 1.,
+     c = .5 Sqrt[y];
+     a = .25 (r13 - r31)/c;
+     b = .25 (r12 + r21)/c;
+     d = .25 (r23 + r32)/c,
+     
+     True,
+     d = .5 Sqrt[z];
+     a = .25 (r21 - r12)/d;
+     b = .25 (r13 + r31)/d;
+     c = .25 (r23 + r32)/d;
+     ];
+    If[a < 0., {a, b, c, d} *= -1.]
+    ];
+   N@{a, b, c, d}	  
+   ];
+   
+SyntaxInformation[RotationMatrixToQuaternionVector] = {"ArgumentsPattern" -> {_}}
+   
+RotationMatrixToQuaternionVector[r : {{_?NumericQ, _?NumericQ, _?NumericQ}, {_?NumericQ, _?NumericQ, _?NumericQ}, {_?NumericQ, _?NumericQ, _?NumericQ}}] := Rest[RotationMatrixToQuaternion[r]];
 
 
 (* ::Section:: *)

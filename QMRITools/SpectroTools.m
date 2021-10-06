@@ -226,6 +226,15 @@ ReadoutType::usage =
 SpectraSpacing::usage = 
 "SpectraSpacing is an option for PlotSpectra and defines the amount of spacing between spectra when multiple spectra are plotted."
 
+SparName::usage = 
+"SparName is an option for ExportSparSdat"
+
+SparOrientation::usage = 
+"SparOrientation is an option for ExportSparSdat"
+
+SparID::usage = 
+"SparID is an option for ExportSparSdat"
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -2256,7 +2265,7 @@ ToVaxD=Compile[{{num,_Real,0}},Block[{signBin,numA,exp,expBin,frac,fracBin},
 (* ::Subsubsection::Closed:: *)
 (*MakeSpar*)
 
-Options[MakeSpar]=Options[ExportSparSdat];
+Options[MakeSpar] = Options[ExportSparSdat];
 
 MakeSpar[specs_, {bw_, te_}, {gyro_, nuc_}, vox_, OptionsPattern[]]:=Block[{
 		dimzO,dimyO,dimxO,nsampO,gyroO,nucO,bwO,teO,nameO, hf, ps, id,
