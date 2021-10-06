@@ -4,7 +4,7 @@
 
 Paclet[
     Name -> "QMRITools",
-    Version -> "2.5.2",
+    Version -> "2.6.0",
     WolframVersion -> "12.3+",
     Description -> "Toolbox for Quantitative MRI.",
     Creator -> "Martijn Froeling <m.froeling@gmail.com>",
