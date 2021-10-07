@@ -64,12 +64,6 @@ FiberLengthRange::usage =
 FiberAngle::usage = 
 "FiberAngle is an option for FiberTractography and specifies the allowed angle change per tract step."
 
-SeedSpacing::usage =
-"SeedSpacing is an option for FiberTractography and specifies the distance between the seedpoints in mm."
-
-SeedRandomization::usage =
-"SeedRandomization is an option for FiberTractography and specifies if there is a random translation of the seedpoints."
-
 TensorFilps::usage =
 "TensorFilps is an option for FiberTractography and speciefies if the tensor orientation is fliped, see FlipTensorOrientation."
 
