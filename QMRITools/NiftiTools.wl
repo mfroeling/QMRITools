@@ -126,6 +126,8 @@ NiiScaling::usage = "NiiScaling is an option for ImportNii. It scales the nii va
 
 CompressNii::usage = "CompressNii is an option for DcmToNii and ExportNii. If set True .nii.gz files will be created."
 
+UseSubfolders::usage = "UseSubfolders is an option for DcmToNii. If set True the nii conversion is done for each folder in the selected input folder."
+
 NiiDataType::usage = "NiiDataType is an option of ExportNii. The number type of Nii file can be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
 
 NiiOffset::usage = "NiiOffset is an option of ExportNii. Is {xoff, yoff, zoff}."
@@ -175,52 +177,79 @@ Begin["`Private`"]
 (*DcmToNii*)
 
 
-Options[DcmToNii]={CompressNii->True, Method->Automatic, UseVersion->1}
+Options[DcmToNii]={CompressNii->True, Method->Automatic, UseVersion->1, UseSubfolders -> False, DeleteOutputFolder->False}
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
 DcmToNii[opt:OptionsPattern[]]:=DcmToNii[{"",""},opt];
 
-DcmToNii[{infol_?StringQ,outfol_?StringQ},OptionsPattern[]] := Module[{filfolin,folout, log,command,compress,dcm2nii},
-	
-	dcm2nii=FindDcm2Nii[OptionValue[UseVersion]];
-	If[dcm2nii==$Failed,Return[$Failed,Module]];
-	
-	Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"];
+DcmToNii[infol_?StringQ, outfol_?StringQ, opt:OptionsPattern[]] := DcmToNii[{infol, outfol}, OptionsPattern[]]
 
+DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
+		filfolin, folout, log, command, compress, dcm2nii, delete,
+		folsin, fols, folsout
+	},
+	
 	(*generate a popup to select the file or folder*)
-	filfolin=If[infol=="",FileSelect["Directory",WindowTitle->"Select direcotry containig the dcm files"],infol];
-	If[filfolin==Null||folout==Null,Return[]];
-	folout=If[outfol=="",FileSelect["Directory",WindowTitle->"Select directory to put nii files in"],outfol];
-	If[filfolin==Null||folout==Null,Return[]];
+	filfolin = If[infol=="", FileSelect["Directory", WindowTitle->"Select direcotry containig the dcm files"], infol];
+	If[filfolin == Null || folout == Null, Return[$Failed]];
+	folout=If[outfol == "", FileSelect["Directory", WindowTitle->"Select directory to put nii files in"], outfol];
+	If[filfolin == Null || folout == Null, Return[$Failed]];
 	
-	Print[{filfolin,folout}];
-	
-	compress=If[OptionValue[CompressNii],"i","n"];
-	
-	(*create the cmd window command to run dcm2niix*)
-	log=FileNameJoin[{folout,"output.txt"}];
-	
-	command = Switch[$OperatingSystem,
-		"Windows",
-		First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
-		compress<>" -m y -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
+	If[OptionValue[UseSubfolders],
+		(*find all subfolders and loop over them for the conversion*)
+		folsin = Select[FileNames["*", filfolin], DirectoryQ];
+		fols = Last[FileNameSplit[#]] & /@ folsin;
+		folsout = FileNameJoin[{folout, #}] & /@ fols;
+		
+		DcmToNii[#, UseSubfolders -> False, opt]&/@Transpose[{folsin, folsout}]
+		
 		,
-		"Unix",
-		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
-		compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
-		,
-		"MacOSX",
-		dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
-		compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
-	];
-	
-	If[OptionValue[Method]=!=Automatic,Print[command]];
-	
-	(*perform teh conversion*)
-	Monitor[
-		RunProcess[$SystemShell,"StandardOutput",command],
-		ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]];
+		(*convert one input to one output folder*)
+			
+		(*should nii be compressed*)
+		compress = If[OptionValue[CompressNii],"i","n"];
+			
+		(*find the dcm2niix exe*)	
+		dcm2nii = FindDcm2Nii[OptionValue[UseVersion]];
+		If[dcm2nii == $Failed, Return[$Failed,Module]];
+		
+		Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"];
+			
+		If[DirectoryQ[folout],
+			delete = If[OptionValue[DeleteOutputFolder], 
+				True,
+				ChoiceDialog["Output folder exists. If you continue the content will be deleted."]
+			];
+			If[delete, DeleteDirectory[folout, DeleteContents->True], Return[$Failed]]
+		];
+		
+		Quiet[CreateDirectory[folout]];
+		
+		Print[{filfolin,folout}];
+			
+		(*create the cmd window command to run dcm2niix*)
+		log=FileNameJoin[{folout,"output.txt"}];
+		
+		command = Switch[$OperatingSystem,
+			"Windows",
+			First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+			compress<>" -m y -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
+			,
+			"Unix",
+			dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+			compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
+			,
+			"MacOSX",
+			dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+			compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
+		];
+		
+		If[OptionValue[Method]=!=Automatic,Print[command]];
+		
+		(*perform the conversion*)
+		Monitor[RunProcess[$SystemShell,"StandardOutput",command],ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]];
+	]
 ]
 
 
@@ -1066,7 +1095,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	type = type/.{"Integer"->"Integer16","Real"->"Real32"};
 	off = OptionValue[NiiOffset];
 	
-	Print[off];
+	(*Print[off];*)
 	(*
 	If[VectorQ[off],off={"None",off,IdentityMatrix[3]}];
 	If[VectorQ[off[[1]]&&MatrixQ[off[[2]]]],off={"None", off[[1]], off[[2]]}];

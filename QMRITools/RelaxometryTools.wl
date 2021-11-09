@@ -215,7 +215,7 @@ T2Fit[datan_, times_?VectorQ, OptionsPattern[]] := Switch[OptionValue[Method],
 
 LinFit[datan_, times_] := Block[{datal, mat, r, s},
 	(*put time dimension in first place*)
-	datal = LogNoZero[N@Switch[ArrayDepth[datan], 3, datan, 4, Transpose[datan]]];
+	datal = LogNoZero[N@Switch[ArrayDepth[datan], 4, Transpose[datan], _, datan]];
 	(*make solution matrix*)
 	mat = PseudoInverse[Transpose[{-times, 0 times + 1}]];
 	(*solve system for all voxels*)
