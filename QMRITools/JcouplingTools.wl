@@ -675,6 +675,18 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={1};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
+		"PtdC",
+		(*single spin system*)
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={2.3};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale={1};
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
 		"NAD",
 		(*single spin system*)
 		names={"A","B"};

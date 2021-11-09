@@ -298,7 +298,7 @@ RemoveIsoImages[data_, grad_, val_] := Module[{sel},
 (*TensorCalc*)
 
 
-Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->True, RobustFit->True, Parallelize->True , RobustFitParameters->{10.^-4,6}};
+Options[TensorCalc]= {MonitorCalc->True, Method->"iWLLS", FullOutput->True, RobustFit->True, Parallelize->False , RobustFitParameters->{10.^-4,6}};
 
 SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -320,7 +320,7 @@ Block[{depthD,dirD,dirG,grad,bvec},
 	
 	If[OptionValue[Method]!="DKI",
 		TensorCalc[data,Bmatrix[bvec,grad],opts],
-		TensorCalc[data,Bmatrix[bvec,grad,Method->"DKI"],opts]
+		TensorCalc[data,Bmatrix[bvec,grad, Method->"DKI"],opts]
 	]
 ]
 
@@ -342,14 +342,14 @@ Block[{depthD,dirD,dirG,dirB},
 	
 	If[OptionValue[Method]!="DKI",
 		TensorCalc[data,Bmatrix[bvec,grad],opts],
-		TensorCalc[data,Bmatrix[bvec,grad,Method->"DKI"],opts]
+		TensorCalc[data,Bmatrix[bvec,grad, Method->"DKI"],opts]
 	]
 ]
 
 
 (*bmatrix*)
 TensorCalc[dat_,bmat:{_?ListQ ..},OptionsPattern[]]:=
-Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,method,output,robust,dataL,func,con,kappa},
+Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,method,output,robust,func,con,kappa, result},
 	
 	(*get output form*)
 	output=OptionValue[FullOutput];
@@ -359,24 +359,22 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 	(*chekc method*)
 	method=OptionValue[Method];
 	If[!MemberQ[{"LLS","WLLS","iWLLS"(*,"NLS","GMM","CLLS","CWLLS","CNLS","DKI"*)},method],
-		Return[Message[TensorCalc::met,method];$Failed]
+		Return[Message[TensorCalc::met, method];$Failed]
 		];
 	
-	data=N[Clip[Chop[dat],{0.,Infinity}]];
 	(*get the data dimensions*)	
-	depthD=ArrayDepth[data];
-	dirD=If[depthD==4,Length[data[[1]]],Length[data]];
+	depthD=ArrayDepth[dat];
+	dirD=If[depthD==4,Length[dat[[1]]],Length[dat]];
 	dirB=Length[bmat];
 	
 	(*check if data is 4D, 3D, 2D or 1D*)
-	If[depthD>4,Return[Message[TensorCalc::data,ArrayDepth[data]];$Failed]];
+	If[depthD>4,Return[Message[TensorCalc::data, depthD];$Failed]];
 	(*check if bmat is the same lengt as data*)
-	If[dirB!=dirD,Return[Message[TensorCalc::bvec,dirD,dirB];$Failed]];
-	
-	(*define data*)
-	dataL=Chop[LogNoZero[Chop[data]]];	
+	If[dirB!=dirD,Return[Message[TensorCalc::bvec, dirD, dirB];$Failed]];
+		
 	(*calculate the inverse bmat*)
-	bmatI=PseudoInverse[bmat];
+	data = Clip[N[dat], {0., Infinity}];
+	bmatI = PseudoInverse[bmat];
 	
 	(*if data is 4D handle as multiple 3D sets (saves memory and calculation time)*)
 	If[depthD==4,
@@ -387,7 +385,8 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 			SetSharedVariable[xx];
 			DistributeDefinitions[bmat, bmatI, method, output ,robust, con ,kappa, 
 				TensorCalci, FindTensOutliers, TensMinLLS, TensMinWLLS, TensMiniWLLS, ResidualCalc,
-				ExpNoZero, RMSNoZero, MADNoZero, Bmatrix];
+				LogNoZero, ExpNoZero, RMSNoZero, MADNoZero, Bmatrix, 
+				RotateDimensionsRight, RotateDimensionsLeft];
 			ParallelMap,
 			Map
 		];	
@@ -395,16 +394,16 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
 		result = func[(
 			xx++;
-			TensorCalci[#[[1]], #[[2]], bmat, bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}]
-			)&,Transpose[{data, dataL}]];
+			TensorCalci[#, bmat, bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}]
+		)&, data];
 			
 		result = Transpose[result];
 		
 		(*full output returns {tens,S0,(outliers),residuals}*)
-		If[output, result[[1]] = Transpose[result[[1]]]];	
+		result[[1]] = Transpose[result[[1]]];	
 		
 		,(*1D,2D,3D*)
-		result = TensorCalci[data,dataL,bmat,bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}];
+		result = TensorCalci[data, bmat, bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}];
 	];
 
 	result
@@ -417,37 +416,37 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 
 Options[TensorCalci] = Options[TensorCalc];
 
-TensorCalci[data_, dataL_, bmat_, bmatI_,OptionsPattern[]]:=Block[
-	{l,r,depthD,TensMin,tensor,w, method,outliers,S0,fitresult,robust,residual,con,kappa},
+TensorCalci[dat_, bmat_, bmatI_,OptionsPattern[]]:=Block[{
+	dataL,data, 
+	TensMin,tensor,w, method,outliers,S0,fitresult,robust,residual,con,kappa},
 	
-	(*transpose the data*)
-	depthD = ArrayDepth[data];
-	l = RotateRight[Range[depthD]];
-	r = RotateLeft[Range[depthD]];
-	
+	(*get the options*)
 	method = OptionValue[Method];
 	robust = (OptionValue[RobustFit] (*&& method =!= "LLS"*));
-	{con,kappa}=OptionValue[RobustFitParameters];
+	{con,kappa} = OptionValue[RobustFitParameters];
 	
+	(*make diff direction last dimension*)
+	data = RotateDimensionsLeft[dat];
+	dataL = Chop[LogNoZero[Chop[data]]];
 	
-	outliers = If[robust,
-		Transpose[FindTensOutliers[Transpose[dataL,l], bmat, con, kappa], r]
-		, 
-		ConstantArray[0.,Dimensions[data]]
-	];
+	(*define outliers if needed*)		
+	outliers = If[robust, FindTensOutliers[dataL, bmat, con, kappa], ConstantArray[0., Dimensions[data]]];
 	
 	fitresult = Switch[method,
-		"LLS", Transpose[TensMinLLS[Transpose[dataL,l], bmatI], r],
-		"WLLS", Transpose[TensMinWLLS[Transpose[(1-outliers) data,l],Transpose[(1-outliers) dataL,l], bmat], r],
-		"iWLLS", Transpose[TensMiniWLLS[Transpose[(1-outliers) data,l],Transpose[(1-outliers) dataL,l], bmat], r]
+		"LLS", TensMinLLS[dataL, bmatI],
+		"WLLS", TensMinWLLS[(1-outliers) data, (1-outliers) dataL, bmat],
+		"iWLLS", TensMiniWLLS[(1-outliers) data, (1-outliers) dataL, bmat]
 		];
 	
-	If[OptionValue[FullOutput], residual = ResidualCalc[data,fitresult,outliers,bmat, MeanRes->"MAD"]];
+	fitresult = RotateDimensionsRight[fitresult];
+	outliers = RotateDimensionsRight[outliers];
+	
+	If[OptionValue[FullOutput], residual = ResidualCalc[dat, fitresult, outliers, bmat, MeanRes->"MAD"]];
 		
-	S0 = N@Clip[ExpNoZero[N@Chop[Last[fitresult]]],{0, 1.5 Max[data]}];
+	S0 = N@Clip[ExpNoZero[N@Chop[Last[fitresult]]],{0., 1.5 Max[data]}];
 	tensor = N@Clip[Drop[fitresult,-1],{-0.1,0.1}];
 
-	If[OptionValue[FullOutput],If[robust,{tensor,S0,outliers,residual},{tensor,S0,residual}],tensor]
+	If[OptionValue[FullOutput],If[robust,{tensor,S0,outliers,residual},{tensor,S0,residual}], {tensor, S0}]
 ]
 
 
