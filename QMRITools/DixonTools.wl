@@ -224,7 +224,6 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	
 	(*get alternating readout signs for bipolar acquisition*)
 	signs = (If[bip,-1,1])^(Range@Length@echo);
-	Print[signs];
 		
 	(*define the water fat matrix*)
 	Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
@@ -280,7 +279,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 	re = filtFunc[Ramp[Im[phiEst]]];
 	 	im = filtFunc[Re[phiEst]];
 	 	phiEst = mask (im + re I);
-	 	phiIn = mask (filtFunc[phiIn]);
+	 	phiIn = mask Exp[I filtFunc[Arg[phiIn]]];
 	 		 	
 	 	(*recalculate the water fat signals*)
 	 	input = RotateDimensionsLeft[{complex, phiEst, phiIn, mask}];
