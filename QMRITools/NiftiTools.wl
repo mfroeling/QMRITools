@@ -138,6 +138,7 @@ FlipBvec::usage = "FlipBvec is an option for ImportBvalvec."
 
 UseVersion::usage = "UseVersion is an option for DcmToNii. For windows it allows to switch between different versions of dcm2niix.exe."
 
+DeleteOutputFolder::usage = "DeleteOutputFolder is an option of DcmToNii. If the ouput folder already exists it will be deleted."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
