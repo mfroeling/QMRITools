@@ -348,24 +348,27 @@ Block[{depthD,dirD,dirG,dirB},
 
 
 (*bmatrix*)
-TensorCalc[dat_,bmat:{_?ListQ ..},OptionsPattern[]]:=
-Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,method,output,robust,func,con,kappa, result},
+TensorCalc[dat_, bmat:{_?ListQ ..}, OptionsPattern[]]:=
+Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,method,output,robust,func,con,kappa,
+	result, dataL, outliers, parallel, mon, l, dd, dim, it, fitFun, bfit, outFit, fitresult, residual, dataFit, S0},
 	
 	(*get output form*)
 	output=OptionValue[FullOutput];
 	robust=OptionValue[RobustFit];
 	{con,kappa}=OptionValue[RobustFitParameters];
+	parallel = OptionValue[Parallelize];
+	mon = OptionValue[MonitorCalc];
 	
 	(*chekc method*)
 	method=OptionValue[Method];
 	If[!MemberQ[{"LLS","WLLS","iWLLS"(*,"NLS","GMM","CLLS","CWLLS","CNLS","DKI"*)},method],
 		Return[Message[TensorCalc::met, method];$Failed]
-		];
+	];
 	
 	(*get the data dimensions*)	
-	depthD=ArrayDepth[dat];
-	dirD=If[depthD==4,Length[dat[[1]]],Length[dat]];
-	dirB=Length[bmat];
+	depthD = ArrayDepth[dat];
+	dirD = If[depthD==4,Length[dat[[1]]],Length[dat]];
+	dirB = Length[bmat];
 	
 	(*check if data is 4D, 3D, 2D or 1D*)
 	If[depthD>4,Return[Message[TensorCalc::data, depthD];$Failed]];
@@ -373,80 +376,75 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 	If[dirB!=dirD,Return[Message[TensorCalc::bvec, dirD, dirB];$Failed]];
 		
 	(*calculate the inverse bmat*)
-	data = Clip[N[dat], {0., Infinity}];
 	bmatI = PseudoInverse[bmat];
 	
-	(*if data is 4D handle as multiple 3D sets (saves memory and calculation time)*)
-	If[depthD==4,
-		
-		xx=0;
-		
-		func=If[OptionValue[Parallelize],
-			SetSharedVariable[xx];
-			DistributeDefinitions[bmat, bmatI, method, output ,robust, con ,kappa, 
-				TensorCalci, FindTensOutliers, TensMinLLS, TensMinWLLS, TensMiniWLLS, ResidualCalc,
-				LogNoZero, ExpNoZero, RMSNoZero, MADNoZero, Bmatrix, 
-				RotateDimensionsRight, RotateDimensionsLeft];
-			ParallelMap,
-			Map
-		];	
-		
-		If[OptionValue[MonitorCalc],PrintTemporary[ProgressIndicator[Dynamic[xx], {0, Length[data]}]]];
-		result = func[(
-			xx++;
-			TensorCalci[#, bmat, bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}]
-		)&, data];
-			
-		result = Transpose[result];
-		
-		(*full output returns {tens,S0,(outliers),residuals}*)
-		result[[1]] = Transpose[result[[1]]];	
-		
-		,(*1D,2D,3D*)
-		result = TensorCalci[data, bmat, bmatI, Method->method, FullOutput->output, RobustFit->robust, RobustFitParameters->{con,kappa}];
-	];
-
-	result
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*TensorCalci*)
-
-
-Options[TensorCalci] = Options[TensorCalc];
-
-TensorCalci[dat_, bmat_, bmatI_,OptionsPattern[]]:=Block[{
-	dataL,data, 
-	TensMin,tensor,w, method,outliers,S0,fitresult,robust,residual,con,kappa},
-	
-	(*get the options*)
-	method = OptionValue[Method];
-	robust = (OptionValue[RobustFit] (*&& method =!= "LLS"*));
-	{con,kappa} = OptionValue[RobustFitParameters];
-	
 	(*make diff direction last dimension*)
-	data = RotateDimensionsLeft[dat];
-	dataL = Chop[LogNoZero[Chop[data]]];
+	data = Chop[Clip[N[RotateDimensionsLeft@If[depthD==4, Transpose@dat, dat]], {0., Infinity}]];
+	dataL = Chop[LogNoZero[data]];
 	
-	(*define outliers if needed*)		
-	outliers = If[robust, FindTensOutliers[dataL, bmat, con, kappa], ConstantArray[0., Dimensions[data]]];
+	l = Length@data;
+	dd = {depthD-1};
+	dim = Times@@Dimensions[dataL][[;;-2]];
+	it = Ceiling[dim/100];
 	
-	fitresult = Switch[method,
-		"LLS", TensMinLLS[dataL, bmatI],
-		"WLLS", TensMinWLLS[(1-outliers) data, (1-outliers) dataL, bmat],
-		"iWLLS", TensMiniWLLS[(1-outliers) data, (1-outliers) dataL, bmat]
-		];
+	fitFun = Switch[method,"LLS", TensMinLLS, "WLLS", TensMinWLLS, "iWLLS", TensMiniWLLS];
+	bfit = If[method === "LLS", bmatI, bmat];
+	
+	func = If[parallel,
+		SetSharedVariable[xx];
+		ParallelEvaluate[ii=1;];
+		DistributeDefinitions[FindTensOutliers, bmat, bfit, con, kappa, xx, it, ii, fitFun];
+		ParallelMap, 
+		ii=1;
+		Map
+	];		
+	
+	(*define outliers if needed*)
+			
+	outliers = If[robust,
+		If[mon,PrintTemporary["Finding tensor outliers"]]; 
+		If[depthD == 1,
+			FindTensOutliers[dataL, bmat, con, kappa],
+			If[mon,
+				ParallelEvaluate[ii=1;];
+				xx=0;
+				Monitor[func[(If[ii>=it, xx+=ii;ii=1,ii++];FindTensOutliers[#, bmat, con, kappa])&, dataL, dd], ProgressIndicator[xx, {0, dim}]]
+				,
+				func[FindTensOutliers[#, bmat, con, kappa]&, dataL, dd]
+			]
+		]
+		, 
+		ConstantArray[0., Dimensions[data]]
+	];
+	outFit = If[method === "LLS", (0 outliers) + 1, 1-outliers];
+
+	
+	If[mon,PrintTemporary["Fitting tensor"]]; 
+	fitresult = If[depthD == 1,
+		(*single voxel fit*)
+		fitFun[outFit data, outFit dataL, bfit]
+		,
+		(*2-4D data fit*)
+		dataFit = RotateDimensionsLeft[{RotateDimensionsRight[outFit data], RotateDimensionsRight[outFit dataL]},2];
+		If[mon,
+			ParallelEvaluate[ii=1;];
+			xx=0;
+			Monitor[func[(If[ii>=it, xx+=ii;ii=1,ii++];fitFun[#[[1]], #[[2]], bfit])&, dataFit, dd], ProgressIndicator[xx, {0, dim}]]
+			,
+			func[fitFun[#[[1]], #[[2]], bfit]&, dataFit, dd]
+		]
+	];
 	
 	fitresult = RotateDimensionsRight[fitresult];
 	outliers = RotateDimensionsRight[outliers];
+	If[depthD == 4,	outliers = Transpose[outliers]];
 	
 	If[OptionValue[FullOutput], residual = ResidualCalc[dat, fitresult, outliers, bmat, MeanRes->"MAD"]];
-		
+	
 	S0 = N@Clip[ExpNoZero[N@Chop[Last[fitresult]]],{0., 1.5 Max[data]}];
 	tensor = N@Clip[Drop[fitresult,-1],{-0.1,0.1}];
-
-	If[OptionValue[FullOutput],If[robust,{tensor,S0,outliers,residual},{tensor,S0,residual}], {tensor, S0}]
+		
+	If[OptionValue[FullOutput],If[robust,{tensor, S0, outliers, residual}, {tensor, S0, residual}], {tensor, S0}]
 ]
 
 
@@ -459,7 +457,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 		ittA, contA, solA, itt, cont, soli, res, mad, wts, wmat, fitE, LS2, bmat2, out
 		},
 		(*initialize some values*)
-		out = 0. LS; LS2 = LS; bmat2 = bmat;
+		out = (0. LS); LS2 = LS; bmat2 = bmat;
 		
 		(*skip if background*)
 	  	If[Total[Unitize[LS]] >= 7 ,
@@ -551,9 +549,9 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 (*LLS*)
 
 
-TensMinLLS = Compile[{{LS, _Real, 1}, {bmatI, _Real, 2}},
+TensMinLLS = Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmatI, _Real, 2}},
 	bmatI.LS,
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -570,7 +568,7 @@ TensMinWLLS = Compile[{{S, _Real, 1},{LS, _Real, 1},{bmat, _Real, 2}},
 	    	sol = LeastSquares[Transpose[bmat].wmat.bmat,Transpose[bmat].wmat.LS]
 	    ];
 	    sol]
-    ,{{wmat,_Real,2}, {sol, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+    ,{{wmat,_Real,2}, {sol, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -579,17 +577,17 @@ TensMinWLLS = Compile[{{S, _Real, 1},{LS, _Real, 1},{bmat, _Real, 2}},
 
 TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
 	Block[{wmat, mat, cont, itt, mvec, soli, sol0, max, sol, w},
-    mvec = UnitStep[S] Unitize[S];
-    max = Max[mvec S];
-    sol0 = 0. First[bmat];
-    sol = sol0;
-    (*skip background or not enough data for fit*)
-    If[!(AllTrue[LS, 0. === # &] || Total[mvec] <= 7),
-     (*initialize*)
-     itt = 0;
-     cont = 1;
-     (*initialize using LLS*)
-     sol = N@Chop@LeastSquares[bmat, LS];
+		mvec = UnitStep[S] Unitize[S];
+		max = Max[mvec S];
+		sol0 = 0. First[bmat];
+		sol = sol0;
+		(*skip background or not enough data for fit*)
+		If[!(AllTrue[LS, 0. === # &] || Total[mvec] <= 7),
+			(*initialize*)
+			itt = 0;
+			cont = 1;
+			(*initialize using LLS*)
+			sol = N@Chop@LeastSquares[bmat, LS];
      (*check for implausabole solution (negative S0 or high S0)*)
      If[Last[sol] >= 3*max || Last[sol] <= 0.,
       sol = sol0;
@@ -613,7 +611,7 @@ TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
        ];
     sol], 
     {{mat, _Real, 2}, {wmat, _Real, 2}, {sol, _Real, 1}},
-    RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}];
+    RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}]
         
 
 

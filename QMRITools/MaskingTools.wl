@@ -28,6 +28,9 @@ NormalizeData::usage =
 "NormalizeData[data] normalizes the data to the mean signal of the data. For 4D data it normalizes to the first volume of the 4th dimension.
 NormalizeData[data,{min,max}] normalizes the data between min and max."
 
+NormalizeMeanData::usage = 
+"NormalizeMeanData[data] calculates the mean normalized data from a 4D dataset."
+
 HomoginizeData::usage = 
 "HomoginizeData[data, mask] tries to homoginize the data within the mask by removing intensity gradients."
 
@@ -89,7 +92,10 @@ MaskComponents::usage =
 "MaskComponents is an option for Mask and SmoothMask. Determinse the amount of largest clusters used as mask." 
 
 MaskClosing::usage =
-"MaskClosing  is an option for Mask and SmoothMask. The size of the holes in the mask that will be closed" 
+"MaskClosing  is an option for Mask and SmoothMask. The size of the holes in the mask that will be closed." 
+
+MaskDilation::usage = 
+"MaskDilation is an option for Mask. If the value is greater than 0 it will dilate the mask, if the value is smaller than 0 it will erode the mask."
 
 MaskFiltKernel::usage =
 "MaskFiltKernel is an option for Mask, SmoothMask and SmoothSegmentation. How mucht the contours are smoothed." 
@@ -151,6 +157,14 @@ NormalizeData[data_, mask_] := Block[{dat,mn,min,dato},
 	ToPackedArray[dato/mn]
 ]
 
+(* ::Subsubsection::Closed:: *)
+(*NormalizeMeanData*)
+
+
+NormalizeMeanData[data_] := NormalizeData@Mean@Transpose@data
+
+NormalizeMeanData[data_, mask_] := NormalizeData[Mean@Transpose@data,mask]
+
 
 (* ::Subsubsection::Closed:: *)
 (*HomoginizeData*)
@@ -191,13 +205,13 @@ FitGradientMap[data_] := Module[{func, x, y, z, coor},
 (*Mask*)
 
 
-Options[Mask]={MaskSmoothing -> False, MaskComponents -> 1, MaskClosing -> 5, MaskFiltKernel -> 2};
+Options[Mask]={MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> 5, MaskFiltKernel -> 2, MaskDilation -> 0};
 
 SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 Mask[data_,opts:OptionsPattern[]]:=Mask[data, 0, opts]
 
-Mask[dat_?ArrayQ, tr_,opts:OptionsPattern[]]:= Block[{mask,tresh, dataD, datN, data},
+Mask[dat_?ArrayQ, tr_,opts:OptionsPattern[]]:= Block[{mask,tresh, dataD, datN, data, dil},
 	
 	data = ToPackedArray@N@dat;
 	dataD = ArrayDepth[data];
@@ -221,7 +235,21 @@ Mask[dat_?ArrayQ, tr_,opts:OptionsPattern[]]:= Block[{mask,tresh, dataD, datN, d
 			];
 			
 			(*smooth the mask if needed*)		
-			ToPackedArray@If[OptionValue[MaskSmoothing], SmoothMask[mask,FilterRules[{opts},Options[SmoothMask]]], mask]
+			mask = ToPackedArray@If[OptionValue[MaskSmoothing], 
+				SmoothMask[mask, MaskComponents -> OptionValue[MaskComponents], 
+					MaskClosing -> OptionValue[MaskClosing], MaskFiltKernel -> OptionValue[MaskFiltKernel]]
+				, 
+				mask
+			];
+			
+			dil = OptionValue[MaskDilation];
+			If[dil>0,
+				Dilation[mask,Round[OptionValue[MaskDilation]]], 
+				If[dil<0,
+					Erosion[mask,Round[OptionValue[MaskDilation]]],
+					mask	
+				]
+			]
 		]
 	]
 ]
