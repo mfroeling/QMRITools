@@ -155,8 +155,8 @@ DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fMask, wMask, afa
 	fatMap = Chop[DevideNoZero[afat, atot]];
 	
 	(*noise bias correction*)
-	wMask = Mask[waterMap, .5];
-	fMask = (1 - wMask) Mask[fatMap, .5];
+	wMask = Mask[waterMap, .5, MaskSmoothing->False];
+	fMask = (1 - wMask) Mask[fatMap, .5, MaskSmoothing->False];
 	
 	waterMap = wMask waterMap + (fMask - fMask fatMap);
 	fatMap = (wMask + fMask) - waterMap;
@@ -291,7 +291,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 
 	 (*create the output*)
 	 PrintTemporary["performing water fat calculation"];
-	 maskc = Times @@ (Mask[Abs[#], 2 range] & /@ {cWater, cFat});
+	 maskc = Times @@ (Mask[Abs[#], 2 range, MaskSmoothing -> False] & /@ {cWater, cFat});
 	 {cWater,cFat} = {maskc cWater, maskc cFat};
 	 fraction = DixonToPercent[cWater, cFat];
 
@@ -545,7 +545,7 @@ Unwrapi[dat_, thresh_, mon_] := Block[{data, mask, crp, dimi, sorted, groups, gr
 		data = If[ArrayDepth[data] == 3, crp = FindCrop[data]; ApplyCrop[data, crp], data];
 		
 		(*make mask to pervent unwrapping in background*)
-		mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 20], 10], -20];
+		mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1 MaskSmoothing ->False], 20], 10], -20];
 		
 		(*Get the edges sotrted for reliability and precluster groups*)
 		sorted = GetEdgeList[data, mask];
@@ -704,7 +704,7 @@ GetEdgeList[data_] := GetEdgeList[data, 1]
 GetEdgeList[data_, maski_] := Block[{dep, diff, diff1, diff2, mask, edge, coor, fedge, ord, pos},
 	dep = ArrayDepth[data];
 	(*maske a mask if needed*)
-	mask = If[maski === 1, Closing[Mask[Ceiling[Abs@data], 1], 1], maski];
+	mask = If[maski === 1, Closing[Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False], 1], maski];
 	
 	(*calculate the second order diff*)
 	{diff1, diff2} = Transpose[Partition[DiffU[ListConvolve[#, data, {2, -2}]] & /@ GetKernels[dep], 2]];
@@ -738,15 +738,17 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus
 	fun=If[dep==2,Image,Image3D];
 	
 	(*maske a mask if needed*)
-	mask = If[maski === 1, ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 20], 10], -20], maski];
+	mask = If[maski === 1, ArrayPad[Closing[ArrayPad[
+		Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False
+	], 20], 10], -20], maski];
 	
 	(*find mask ranges*)
 	{min,max}=MinMax[data];
-	part=Partition[Range[min,max,(max-min)/6]//N,2,1];
+	part=Partition[Range[min,max,(max-min)/12]//N,2,1];
 	
 	(*remove background form masks, and create masks*)
 	dat = (mask data) + (-2 min) (1 - mask);
-	masks = Mask[dat, #] & /@ part;
+	masks = Mask[dat, #, MaskSmoothing -> False] & /@ part;
 	
 	(*make groups from masks*)
 	small = (dep - 1) Ceiling[(Times @@ dim)/1000];
@@ -756,7 +758,7 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus
 	
 	(*create outputs, the size vector and group nrs*)
 	groupsize=ConstantArray[0,Count[Flatten[groups],1]+Max[groups]];
-	(groupsize[[#]]=Count[groups,#,2])&/@Range[1,Max[groups]];
+	(groupsize[[#[[1]]]] = #[[2]]) & /@ Sort[Tally[Flatten[groups]]][[2 ;;]];
 	groupnr=Max[groups];
 	{groups,groupsize,groupnr}
 ]
