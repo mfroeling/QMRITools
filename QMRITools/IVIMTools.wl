@@ -343,8 +343,10 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   j=i=0;
   
   mapfun=If[OptionValue[Parallelize]&&depthD>1,
-  	ParallelEvaluate[j=0];SetSharedVariable[i];
-  	DistributeDefinitions[bin,funcin,fitd,funcf,start,fpars,method,out];ParallelMap,
+  	ParallelEvaluate[j=0];
+  	SetSharedVariable[i];
+  	DistributeDefinitions[bin,funcin,fitd,funcf,start,fpars,method,out];
+  	ParallelMap,
   	Map];
   
   If[OptionValue[MonitorIVIMCalc]&&depthD>1,
@@ -370,7 +372,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
 	
   ivim[[1]]=ivim[[1]]*mdat;
   ivim
-  ]
+]
 
 
 (* ::Subsection::Closed:: *)

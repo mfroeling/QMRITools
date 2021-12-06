@@ -154,12 +154,13 @@ DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fMask, wMask, afa
 	waterMap = Chop[DevideNoZero[awater, atot]];
 	fatMap = Chop[DevideNoZero[afat, atot]];
 	
+	(*noise bias correction*)
 	wMask = Mask[waterMap, .5];
 	fMask = (1 - wMask) Mask[fatMap, .5];
 	
 	waterMap = wMask waterMap + (fMask - fMask fatMap);
 	fatMap = (wMask + fMask) - waterMap;
-	
+		
 	{waterMap, fatMap}
 ]
 
@@ -270,7 +271,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	Quiet@Monitor[ii=0;result = Map[(ii++;
 		DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}])&, input, dep];
 		,ProgressIndicator[ii, {0, Times @@ dim}]];
- 	{cWater, cFat, phiEst ,phiIn, res, itt} = aa = RotateDimensionsRight[Chop[result]];
+ 	{cWater, cFat, phiEst ,phiIn, res, itt} = RotateDimensionsRight[Chop[result]];
 
 	(*filter the output*) 
 	 If[OptionValue[DixonFilterOutput],
@@ -290,6 +291,8 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 
 	 (*create the output*)
 	 PrintTemporary["performing water fat calculation"];
+	 maskc = Times @@ (Mask[Abs[#], 2 range] & /@ {cWater, cFat});
+	 {cWater,cFat} = {maskc cWater, maskc cFat};
 	 fraction = DixonToPercent[cWater, cFat];
 
 	 (*signal and in/out phase data *)
@@ -300,7 +303,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 (*estimate b0 and t2star*)
 	 b0fit = Re[phiEst];
 	 r2Star = 2 Pi Im[phiEst];
-	 t2Star = DevideNoZero[1,r2Star];
+	 t2Star = DevideNoZero[1, r2Star];
 	 fit = {
 	 	Clip[b0fit, {-400., 400.}, {-400., 400.}], 
 	 	Clip[t2Star, {0., 0.25}, {0., 0.25}], 
@@ -527,41 +530,45 @@ UnwrapZi[data_, thresh_]:= Block[{mask,slice,diff,meandiff,steps,off,unwrap,dat,
 Unwrapi[dat_, thresh_] := Unwrapi[dat, thresh, False]
 
 Unwrapi[dat_, thresh_, mon_] := Block[{data, mask, crp, dimi, sorted, groups, groupsize, groupnr, task},
-	(*monitor*)
-	task = "Preclustering data.";
-	If[mon,PrintTemporary[Dynamic[task]]];
+	If[MinMax[N[dat]]==={0.,0.},
+		dat
+		,
+		(*monitor*)
+		task = "Preclustering data.";
+		If[mon,PrintTemporary[Dynamic[task]]];
+		
+		(*rescale the data to 2Pi = 1, makes it easyer to process*)
+		data = dat / (2. Pi);
+		dimi = Dimensions[data];
+		
+		(*remove zeros*)
+		data = If[ArrayDepth[data] == 3, crp = FindCrop[data]; ApplyCrop[data, crp], data];
+		
+		(*make mask to pervent unwrapping in background*)
+		mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 20], 10], -20];
+		
+		(*Get the edges sotrted for reliability and precluster groups*)
+		sorted = GetEdgeList[data, mask];
+		{groups, groupsize, groupnr} = MakeGroups[data, mask];
 	
-	(*rescale the data to 2Pi = 1, makes it easyer to process*)
-	data = dat / (2. Pi);
-	dimi = Dimensions[data];
-	
-	(*remove zeros*)
-	data = If[ArrayDepth[data] == 3, crp = FindCrop[data]; ApplyCrop[data, crp], data];
-	
-	(*make mask to pervent unwrapping in background*)
-	mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1], 20], 10], -20];
-	
-	(*Get the edges sotrted for reliability and precluster groups*)
-	sorted = GetEdgeList[data, mask];
-	{groups, groupsize, groupnr} = MakeGroups[data, mask];
-
-	(*make 2D data 3D and define shifts in add*)
-	If[ArrayDepth[data] == 2,
-		groups = {groups}; data = {data};
-		sorted = Transpose[{#[[1]] + 1, 0 #[[1]] + 1, #[[2]], #[[3]]} &[Transpose[sorted]]];
-	];
-	
-	(*Unwrap the data*)
-	task = "Unwrapping edges.";
-	data = UnWrapC[sorted, data, groups, groupsize, groupnr, thresh];
-	
-	(*make output in rad*)	
-	If[ArrayDepth[dat] == 2, 
-		(*output the 2D in rad*)
-		2 Pi data[[1]],
-		(*align to zero and ouput 3D in rad*)
-		data = 2 Pi (data - mask Round[MeanNoZero[Flatten[data]]]);
-		ReverseCrop[data, dimi, crp]
+		(*make 2D data 3D and define shifts in add*)
+		If[ArrayDepth[data] == 2,
+			groups = {groups}; data = {data};
+			sorted = Transpose[{#[[1]] + 1, 0 #[[1]] + 1, #[[2]], #[[3]]} &[Transpose[sorted]]];
+		];
+		
+		(*Unwrap the data*)
+		task = "Unwrapping edges.";
+		data = UnWrapC[sorted, data, groups, groupsize, groupnr, thresh];
+		
+		(*make output in rad*)	
+		If[ArrayDepth[dat] == 2, 
+			(*output the 2D in rad*)
+			2 Pi data[[1]],
+			(*align to zero and ouput 3D in rad*)
+			data = 2 Pi (data - mask Round[MeanNoZero[Flatten[data]]]);
+			ReverseCrop[data, dimi, crp]
+		]
 	]
 ]
 

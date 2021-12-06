@@ -935,7 +935,7 @@ SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 JoinSets[data_?ArrayQ,over_,opts:OptionsPattern[]]:=JoinSets[data,over,{1,1,1},opts]
 
 JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
-	{dat, overlap, motion, pad, normalize, depth, meth, target},
+	{dat, overlap, motion, pad, normalize, depth, meth, target, normover},
 	
 	(*get the options*)
 	motion = OptionValue[MotionCorrectSets];
@@ -1140,7 +1140,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 	dim = Dimensions[sets[[1,All,1]]];
 	
 	(*define the registration function*)
-	regFunc = If[OptionValue[JoinSetSplit],RegisterDataTransformSplit,RegisterDataTransform];
+	regFunc = If[OptionValue[JoinSetSplit], RegisterDataTransformSplit, RegisterDataTransform];
 	
 	i=0;
 	PrintTemporary[Dynamic[i]];
@@ -1169,7 +1169,8 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 		
 		(*perform the registration*)
 		sets[[n + 1]] = Last@regFunc[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
-				MethodReg -> "translation", Iterations -> 100, NumberSamples -> samp, PrintTempDirectory -> False, InterpolationOrderReg -> 0];
+				MethodReg -> "rigid", Iterations -> 150, NumberSamples -> samp, 
+				PrintTempDirectory -> False, InterpolationOrderReg -> 0];
 		
 		, {n, 1, nmax - 1}
 	];

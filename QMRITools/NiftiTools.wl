@@ -124,6 +124,8 @@ NiiMethod::usage = "NiiMethod is an option for ImportNIi. Values can be \"data\"
 
 NiiScaling::usage = "NiiScaling is an option for ImportNii. It scales the nii values with scale slope and offset for quantitative data."
 
+NiiLegacy::usage = "NiiLegacy is an option for ExportNii, if set True default orientations are set instead of unknown."
+
 CompressNii::usage = "CompressNii is an option for DcmToNii and ExportNii. If set True .nii.gz files will be created."
 
 UseSubfolders::usage = "UseSubfolders is an option for DcmToNii. If set True the nii conversion is done for each folder in the selected input folder."
@@ -934,7 +936,6 @@ ImportNiiT1[file_] := Module[{T1, T1vox, T1cor, fit},
 CorrectMapData[datai_, maps_: 1] := 
  Block[{slices, echos, data, map, mask},
   {slices, echos} = Dimensions[datai][[1 ;; 2]] - {0, maps};
-  Print[slices,echos,maps];
   (*Flatten the data and remove the T2map*)
   data = Flatten[Transpose[datai], 1];
   (**)
@@ -1078,7 +1079,7 @@ ImportExport`RegisterExport["Nii",
 (*ExportNii*)
 
 
-Options[ExportNii]={NiiDataType->Automatic,CompressNii->True, NiiOffset->Automatic}
+Options[ExportNii]={NiiDataType->Automatic,CompressNii->True, NiiOffset->Automatic, NiiLegacy->False}
 
 SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}};
 
@@ -1095,6 +1096,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	(*for lagecy reasons still allow Integer and Real*)
 	type = type/.{"Integer"->"Integer16","Real"->"Real32"};
 	off = OptionValue[NiiOffset];
+	leg = OptionValue[NiiLegacy];
 	
 	(*Print[off];*)
 	(*
@@ -1108,14 +1110,14 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	If[OptionValue[NiiOffset]===Automatic,
 		If[OptionValue[CompressNii],
 			fileo=fileo<>".gz";
-			Export[fileo, {data, voxi}, {"GZIP", "Nii", {"Data", "VoxelSize"}}, NiiDataType->type],
-			Export[fileo, {data, voxi}, {"Nii", {"Data", "VoxelSize"}}, NiiDataType->type]
+			Export[fileo, {data, voxi}, {"GZIP", "Nii", {"Data", "VoxelSize"}}, NiiDataType->type, NiiLegacy->leg],
+			Export[fileo, {data, voxi}, {"Nii", {"Data", "VoxelSize"}}, NiiDataType->type ,NiiLegacy->leg]
 		]
 		,
 		If[OptionValue[CompressNii],
 			fileo=fileo<>".gz";
-			Export[fileo, {data, voxi, off}, {"GZIP", "Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type],
-			Export[fileo, {data, voxi, off}, {"Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type]
+			Export[fileo, {data, voxi, off}, {"GZIP", "Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type, NiiLegacy->leg],
+			Export[fileo, {data, voxi, off}, {"Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type, NiiLegacy->leg]
 		]
 	]; 
 ]
@@ -1125,7 +1127,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 (*ExportNiiDefault*)
 
 
-Options[ExportNiiDefault] = {NiiDataType -> Automatic, NiiVersion -> 1, "Channel" -> Null, "ExtensionParsing" -> False}
+Options[ExportNiiDefault] = {NiiDataType -> Automatic, NiiLegacy->False, NiiVersion -> 1, "Channel" -> Null, "ExtensionParsing" -> False}
 
 ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := 
  Module[{ver, data, header, type, strm},
@@ -1218,7 +1220,13 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
   	{xoffq ,yoffq, zoffq} = offs = {-N[vox[[3]] dim[[-1]]/2],-N[vox[[2]] dim[[-2]]/2],-N[vox[[1]] dim[[1]]/2]};
   	{qb, qc, qd} = {0., 0., 0.};
   	{sx, sy, sz} = MakeNiiOrentationS[offs, vox];
-  	scode = qcode = "None" /. Reverse[coordinateNii, 2];
+  	
+  	If[OptionValue[NiiLegacy],
+  		qcode = "Coregistration" /. Reverse[coordinateNii, 2];
+  		scode = "Scanner Posistion" /. Reverse[coordinateNii, 2];
+  		,
+  		scode = qcode = "None" /. Reverse[coordinateNii, 2];
+  	];
   ];
   
   headerDef = {
@@ -1322,7 +1330,7 @@ SyntaxInformation[CorrectNiiOrientation] = {"ArgumentsPattern" -> {_,_}};
 CorrectNiiOrientation[data_, hdr_] := Block[{rev},
 	rev = Flatten[Position[Sign[Reverse[Diagonal[{"sRowx", "sRowy", "sRowz"} /. hdr]]], -1]];
 	If[ArrayDepth[data] == 4, rev = rev /. {2 -> 3, 3 -> 4}];
-	If[rev =!= {}, Fold[Reverse, data, rev], data];
+	If[rev =!= {}, Fold[Reverse, data, rev], data]
 ]
 
 

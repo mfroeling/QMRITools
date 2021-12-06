@@ -344,7 +344,7 @@ HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?
 	},
 
 	coors = CardiacCoordinateSystem[mask, maskp, vox, opts];
-	{radvec, norvec, cirvec} = If[OptionValue[ShowPlot], plots = coors[[2]]; coors[[1]],coors];
+	{radvec, norvec, cirvec} = If[OptionValue[ShowPlot], plots = coors[[2]]; coors[[1]], coors];
 
 	(*create helix angle maps*)
 	out = Flatten[Table[

@@ -1280,8 +1280,8 @@ RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[
 			]
 		];
 	
-	tdir=OptionValue[TempDirectory];
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
+	tdir = OptionValue[TempDirectory];
+	tdir = (If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];		
 		
@@ -1332,26 +1332,9 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 	(*split the moving2 data*)
 	{moving2l, moving2r, cut2} = CutData[moving2, cut2];
 	
-	(*register left part*)
-	regl = RegisterData[{targetl, maskTl, voxT}, {movingl, maskMl, voxM}, DeleteTempDirectory -> False, Sequence@@FilterRules[{opts}, Options[RegisterData]]];
-	(*transform the left part*)
-	movl = If[ArrayDepth[moving2l] == 4,
-		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2l]],
-		TransformData[{moving2l, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
-		];
-		
-	(*register right part*)
-	regr = RegisterData[{targetr, maskTr, voxT}, {movingr, maskMr, voxM}, DeleteTempDirectory -> False, Sequence@@FilterRules[{opts}, Options[RegisterData]]];
-	(*transform the right part*)
-	movr = If[ArrayDepth[moving2r] == 4,
-		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2r]],
-		TransformData[{moving2r, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
-		];
+	{regl, movl} = RegisterDataTransform[{targetl, maskTl, voxT}, {movingl, maskMl, voxM}, {moving2l, vox}, Sequence@@FilterRules[{opts}, Options[RegisterDataTransform]]];
 	
-	tdir=OptionValue[TempDirectory];
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
-	
-	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];	
+	{regr, movr} = RegisterDataTransform[{targetr, maskTr, voxT}, {movingr, maskMr, voxM}, {moving2r, vox}, Sequence@@FilterRules[{opts}, Options[RegisterDataTransform]]];
 	
 	{StichData[regl,regr],StichData[movl,movr]}
 	
