@@ -161,7 +161,7 @@ DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fMask, wMask, afa
 	waterMap = wMask waterMap + (fMask - fMask fatMap);
 	fatMap = (wMask + fMask) - waterMap;
 		
-	{waterMap, fatMap}
+	Clip[{waterMap, fatMap},{-0.15,1.15}]
 ]
 
 
