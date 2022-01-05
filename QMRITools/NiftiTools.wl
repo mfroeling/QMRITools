@@ -211,7 +211,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		(*convert one input to one output folder*)
 			
 		(*should nii be compressed*)
-		compress = If[OptionValue[CompressNii],"i","n"];
+		compress = If[OptionValue[CompressNii],"y","n"];
 			
 		(*find the dcm2niix exe*)	
 		dcm2nii = FindDcm2Nii[OptionValue[UseVersion]];
@@ -222,9 +222,10 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		If[DirectoryQ[folout],
 			delete = If[OptionValue[DeleteOutputFolder], 
 				True,
-				ChoiceDialog["Output folder exists. If you continue the content will be deleted."]
+				False
+				(*ChoiceDialog["Output folder exists. If you continue the content will be deleted."]*)
 			];
-			If[delete, DeleteDirectory[folout, DeleteContents->True], Return[$Failed]]
+			If[delete, DeleteDirectory[folout, DeleteContents->True]]
 		];
 		
 		Quiet[CreateDirectory[folout]];
@@ -232,11 +233,11 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		Print[{filfolin,folout}];
 			
 		(*create the cmd window command to run dcm2niix*)
-		log=FileNameJoin[{folout,"output.txt"}];
+		log = FileNameJoin[{folout,"output.txt"}];
 		
 		command = Switch[$OperatingSystem,
 			"Windows",
-			First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+			First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %s_%t_%i_%m_%n_%p_%q -z "<>
 			compress<>" -m y -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
 			,
 			"Unix",

@@ -2404,7 +2404,7 @@ GetSliceData[data_,offsets_,vox_]:=Block[{off},
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*GetSlicePosision*)
 
 
@@ -2414,32 +2414,60 @@ SyntaxInformation[GetSlicePositions]={"ArgumentsPattern"->{_,_.,OptionsPattern[]
 
 GetSlicePositions[data_, opts:OptionsPattern[]]:=GetSlicePositions[data, {1,1,1},opts]
 
-GetSlicePositions[data_, vox_, OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,pers,min,max,minmax,result,num},
+GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,pers,min,max,minmax,result,num,s1,s2,s3,mid},
 	(*get the max intensity slice*)
 	pers={{2,3,1},{1,3,1},{1,2,1}};
+	{s1,s2,s3}=OptionValue[DropSlices];
+	
+	(*find slice positions*)
 	result=(
-	dat=MeanNoZero@Flatten[data,pers[[#,1;;2]]];
-	len=Length[dat];
-	fil=Clip[len/30,{2,Infinity}];
-	ran=OptionValue[DropSlices][[#]];
-	num=OptionValue[PeakNumber][[#]];
-	{min,max}=MinMax[dat];
-	minmax=(min+0.5(max-min));
-	dat[[;;ran]]=min;
-	dat[[-ran;;]]=min;
-	dat=GaussianFilter[dat,fil];
-	peaks=FindPeaks[dat,fil];
-	minmax=(Min[dat]+0.5(Max[dat]-Min[dat]));
-	peaks=Select[peaks,#[[2]]>minmax&];
-	{dat,peaks,peaks[[;;num]],peaks[[;;num,1]]}
+		(*get the range and max number of locations*)
+		ran=OptionValue[DropSlices][[#]];
+		num=OptionValue[PeakNumber][[#]];
+		
+		(*remove slices if needed*)
+		dat=Switch[#,
+			1,data[[All,s2;;-s2,s3;;-s3]],
+			2,data[[s1;;-s1,All,s3;;-s3]],
+			3,data[[s1;;-s1,s2;;-s2,All]]
+		];
+		
+		(*get the data profile*)
+		dat=MeanNoZero@Flatten[dat,pers[[#,1;;2]]];
+		
+		(*constrain and filter data*)
+		len=Length[dat];
+		fil=Clip[len/30.,{2,Infinity}];
+		{min,max}=MinMax[dat];
+		minmax=(min+0.5(max-min));
+		mid={len/2.,minmax};
+		dat[[;;ran]]=min;
+		dat[[-ran;;]]=min;
+		dat=GaussianFilter[dat,fil];
+		
+		(*find the peak locations and select the ones above treshhold*)
+		peaks=FindPeaks[dat,fil];
+		peaks=Select[peaks,#[[2]]>minmax&];
+		
+		(*select peaks closes to center*)
+		num=Min[{Length[peaks],num}];
+		Join[{dat,peaks,mid},If[num===0,
+				{{},{}},
+				peaks=Nearest[peaks,mid,num];
+				{peaks,peaks[[All,1]]}
+			]
+		]
 	)&/@{1,2,3};
-	(*make chekc plot*)
+	
+	(*make chekc plot if needed*)
 	If[OptionValue[MakeCheckPlot],Print[Row[Show[
-	ListLinePlot[#[[1]],PlotStyle->Black],
-	ListPlot[#[[2]],PlotStyle->Directive[{PointSize[Large],Red}]],
-	ListPlot[#[[3]],PlotStyle->Directive[{PointSize[Large],Green}]]
-	,Axes->True,ImageSize->200]&/@result]]
-	];
+		ListLinePlot[#[[1]],PlotStyle->Black],ListPlot[#[[2]],PlotStyle->Directive[{PointSize[Large],Red}]],
+		ListPlot[#[[4]],PlotStyle->Directive[{PointSize[Large],Green}]],
+		ListPlot[{#[[3]]},PlotStyle->Directive[{PointSize[Large],Blue}]]
+	,Axes->True,ImageSize->200
+	]&/@result]]];
+	
+	(*give te location in mm*)
 	vox result[[All,-1]]
 ]
 

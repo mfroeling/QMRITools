@@ -44,39 +44,39 @@ Begin["`Private`"]
 
 
 CalculateWaveVector[dat_]:=Block[{all,dim,cent,pts,vecs,phi,rw,vals,vs,ang,n,npts,alli},
-(*make power Spectrum*)
-alli=GaussianFilter[Log[Abs@Shift[FFT[Mean@dat[[All,1]]]]],5];
-(*If less then 5 points retry*)
-n=10;npts=1;
-(*Print[Dynamic[{n,npts}]];*)
-While[npts<5,
-n--;
-
-all=alli;
-Do[all=UnitStep[all-MeanNoZero@Flatten@all]all,{n}];
-(*find the peaks in the power spectrum, one in center and four arround*)
-dim=Dimensions[all];
-cent=N@dim/2;
-pts=ComponentMeasurements[Image[all],"Centroid"][[All,2]];
-pts=Nearest[pts,cent,5];
-npts=Length[pts];
-];
-
-(*Print[Image[all]];*)
-(*define the vectors of the points*)
-vecs=(#-pts[[1]])&/@pts[[2;;]];
-vecs=Sign[Sign[#[[2]]+0.00001]]#&/@vecs;
-(*calculate the angles and size*)
-phi=Mod[ArcTan[#[[1]],#[[2]]]+Pi/2,Pi]-Pi/2&/@vecs;
-rw=Norm/@vecs;
-(*sort for angle, first two are closest to horizontal*)
-vals=Sort@Transpose@{phi,rw};
-(*find the mean vectors*)
-vs={Mean[vals[[1;;2]]],v2=Mean[vals[[3;;]]]};
-vs=If[-Pi/4<#[[1]]<Pi/4,dim[[1]]/#[[2]],dim[[2]]/#[[2]]]{Cos[#[[1]]],Sin[#[[1]]]}&/@vs;
-(*make the vectors orthogonal*)
-ang=(VectorAngle[vs[[1]],vs[[2]]]-Pi/2);
-Chop[{RotationMatrix[ang].vs[[1]],RotationMatrix[-ang].vs[[2]]}]
+	(*make power Spectrum*)
+	alli=GaussianFilter[Log[Abs@Shift[FFT[Mean@dat[[All,1]]]]],5];
+	(*If less then 5 points retry*)
+	n=10;npts=1;
+	(*Print[Dynamic[{n,npts}]];*)
+	While[npts<5,
+	n--;
+	
+	all=alli;
+	Do[all=UnitStep[all-MeanNoZero@Flatten@all]all,{n}];
+	(*find the peaks in the power spectrum, one in center and four arround*)
+	dim=Dimensions[all];
+	cent=N@dim/2;
+	pts=ComponentMeasurements[Image[all],"Centroid"][[All,2]];
+	pts=Nearest[pts,cent,5];
+	npts=Length[pts];
+	];
+	
+	(*Print[Image[all]];*)
+	(*define the vectors of the points*)
+	vecs=(#-pts[[1]])&/@pts[[2;;]];
+	vecs=Sign[Sign[#[[2]]+0.00001]]#&/@vecs;
+	(*calculate the angles and size*)
+	phi=Mod[ArcTan[#[[1]],#[[2]]]+Pi/2,Pi]-Pi/2&/@vecs;
+	rw=Norm/@vecs;
+	(*sort for angle, first two are closest to horizontal*)
+	vals=Sort@Transpose@{phi,rw};
+	(*find the mean vectors*)
+	vs={Mean[vals[[1;;2]]],v2=Mean[vals[[3;;]]]};
+	vs=If[-Pi/4<#[[1]]<Pi/4,dim[[1]]/#[[2]],dim[[2]]/#[[2]]]{Cos[#[[1]]],Sin[#[[1]]]}&/@vs;
+	(*make the vectors orthogonal*)
+	ang=(VectorAngle[vs[[1]],vs[[2]]]-Pi/2);
+	Chop[{RotationMatrix[ang].vs[[1]],RotationMatrix[-ang].vs[[2]]}]
 ]
 
 
