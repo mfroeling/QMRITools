@@ -20,7 +20,7 @@ BeginPackage["QMRITools`CardiacTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -62,6 +62,12 @@ CentralAxes[mask, maskp, vox] allows for fancy visualization of the other struct
 
 Output is {centerpoints, normalvecs, inout} or {centerpoints, normalvecs, inout, fit}."
 
+
+GetMaskSegmentPoints::usage = 
+"GetMaskSegmentPoints[mask]"
+
+CardiacSegmentMask::usage = 
+"CardiacSegmentMask[mask, slices, points, {rev,seg,group}]"
 
 CardiacSegment::usage = 
 "CardiacSegment[data, mask, off] allows to segment the heart in 1, 4, 6 or AHA-17 segements for each slice 360 radial samples are generated.
@@ -197,6 +203,7 @@ DropSamples::usage =
 GridLineSpacing::usage = 
 "GridLineSpacing is an option of TransmuralPlot. It defines the spacing of the gridlines.";
 
+ShowOutliers::usage = "ShowOutliers is an option for ExcludeSlices."
 
 SmoothHelix::usage = 
 "SmoothHelix is an option for MaskHelix, sets the kernelsize for the MedianFilter." 
@@ -376,7 +383,7 @@ Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
 
 
 MakePerpendicular = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
-	Normalize[vec1 - (vec1.vec2) vec2], 
+	Normalize[vec1 - (vec1 . vec2) vec2], 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -416,7 +423,7 @@ NorVecR = Compile[{{angmap, _Real, 0}, {rotvec, _Real, 1}, {norvec, _Real, 1}}, 
 	{v1, v2, v3} = rotvec;
 	iden = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 	W = -{{0, -v3, v2}, {v3, 0, -v1}, {-v2, v1, 0}};
-	(iden + Sin[angmap] W + (2 Sin[angmap/2]^2 MatrixPower[W, 2])).norvec], 
+	(iden + Sin[angmap] W + (2 Sin[angmap/2]^2 MatrixPower[W, 2])) . norvec], 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -435,7 +442,7 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
-	vec1.vec2, 
+	vec1 . vec2, 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -879,6 +886,130 @@ PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Block[{pmask,
 (*CardiacSegment*)
 
 
+(* ::Subsubsection:: *)
+(*GetMaskSegmentPoints*)
+
+
+SyntaxInformation[GetMaskSegmentPoints] = {"ArgumentsPattern" -> {_}};
+
+GetMaskSegmentPoints[mask_]:=Block[{segM,m1,m2,points,maskc},
+	segM=SplitSegmentations[mask][[1]];
+	{m1,m2}=Transpose[segM][[2;;3]];
+	points=Transpose[{
+	1/.ComponentMeasurements[Round[Reverse[#]],"Centroid"]&/@m1,
+	1/.ComponentMeasurements[Round[Reverse[#]],"Centroid"]&/@m2
+	}];
+	maskc=Clip[mask,{0,1}];
+	{maskc,points}
+]
+
+
+(* ::Subsubsection:: *)
+(*CardiacSegmentMask*)
+
+
+SyntaxInformation[CardiacSegmentMask]={"ArgumentsPattern"->{_,_,_,_,_.,OptionsPattern[]}};
+
+CardiacSegmentMask[msk_,regions_,points_,{rev_,type_,slcGrp_}]:=CardiacSegmentMask[msk,regions,points,{},{rev,type,slcGrp}]
+
+CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim,slices,dim2,centers,segments,segm,segs,nseg,rule,
+	off,coordinates,segmask,cent,coor,angs,angp,cang,l,u,sel,tmp,sls},
+	
+	(*get the dimensions and positinos*)
+	dim=Dimensions[msk];
+	slices=dim[[1]];
+	dim2=Drop[dim,1];
+	
+	If[offi==={},
+		off=CentralAxes[msk,{1,1,1},ShowPlot->False][[1]];
+		centers=Reverse/@off[[All,2;;3]];
+		,
+		If[Length[offi[[1]]]==2,
+			centers=offi;
+			,
+			off=offi;
+			centers=Reverse/@off[[All,2;;3]];
+		]
+	];
+	
+	(*get the segments per slice*)
+	{segments,segm}=SlicesToSegments[regions,slices,{type,slcGrp}];
+	
+	segs=Select[segments,#[[2]]=!=0&];
+	nseg=Length[segs];
+	
+	(*convert mask too coordinates*)
+	coordinates=(Reverse/@Position[#,1])&/@Round[msk];
+	
+	(*create mask per slice from points*)
+	segmask=Table[
+		If[(n/.segm)==0,
+		{ConstantArray[0,dim2]}
+		,
+		If[coordinates==={},
+			ConstantArray[ConstantArray[0,dim2],n/.segm]
+			,
+			cent=centers[[n]];
+			coor=coordinates[[n]];
+			(*calculate the anlges for segments*)
+			angs=VecAngleC[points[[n]],cent,n/.segm,rev];
+			angp=Partition[angs,2,1,1];
+			(*convert the coordinates to angles*)
+			cang=(ToPol@@Transpose[#-cent&/@coor])[[All,2]];
+			cang=2Pi(1-UnitStep[cang])+cang;
+			
+			(*make the masks for each partition*)
+			(
+				{l,u}=#;
+				sel=If[l>u,
+					(UnitStep[cang-l]-UnitStep[cang-2Pi])+(UnitStep[cang-0]-UnitStep[cang-u]),
+					UnitStep[cang-l]-UnitStep[cang-u]
+				];
+				Normal[SparseArray[Reverse/@Pick[coor,sel,1]->1,dim2]]
+			)&/@angp
+			]
+		]
+	,{n,1,slices,1}];
+	
+	(*group mask slices for AHA 17 segments or other slice grouping*)
+	If[slcGrp||StringQ[type],
+		Transpose@Flatten[
+		Table[
+			tmp=ConstantArray[0,Flatten[{segments[[i,2]],dim}]];
+			sls=segments[[i,1]];
+			If[sls=!={},tmp[[All,sls]]=Transpose[segmask[[sls]]]];
+			tmp,
+			{i,nseg,1,-1}],1]
+		,
+		segmask
+	]
+]
+
+
+SlicesToSegments[{start_,ap_,mid_,bas_,end_},slices_,{segmi_,slcgrp_}]:=Block[{apex,apical,midcavity,basal,none,segments},
+(*segment ranges*)
+apex=Range[start+1,ap];
+apical=Range[ap+1,mid];
+midcavity=Range[mid+1,bas];
+basal=Range[bas+1,end];
+none=Complement[Range[1,slices],Flatten[{apex,apical,midcavity,basal}]];
+
+segments=Switch[segmi,
+"AHA",Thread[{apex,apical,midcavity,basal,none}->{1,4,6,6,0}],
+"AHA+",Thread[{apex,apical,midcavity,basal,none}->{2,6,8,8,0}],
+_,If[slcgrp,
+DeleteCases[Thread[{apex,apical,midcavity,basal,none}->{segmi,segmi,segmi,segmi,0}],{}->_],
+{Range[slices]->segmi}
+]];
+
+{segments,Flatten[Thread/@segments]}
+]
+
+
+ToPol=Compile[{{x,_Real,0},{y,_Real,0}},{Sqrt[x^2 + y^2],ArcTan[y,x]},RuntimeAttributes->{Listable}];
+FromPol=Compile[{{r,_Real,0},{a,_Real,0}},{r Cos[a],r Sin[a]},RuntimeAttributes->{Listable}];
+
+
 (* ::Subsubsection::Closed:: *)
 (*CardiacSegment*)
 
@@ -889,7 +1020,7 @@ SyntaxInformation[CardiacSegment] = {"ArgumentsPattern" -> {_, _, _, OptionsPatt
 
 CardiacSegment[data_,maski_,off_,OptionsPattern[]]:=DialogInput[{
 	DynamicModule[{
-		mask,radiusStart,centers,pointsIn,coordinates,angles,segmask, segang,startPoint, revi, lineAng,
+		mask,radiusStart,centers,pointsIn,coordinates,angles,segmask, segang,startPoint, revi, lineAng,none,
 		lines,centerpl,slices,api,midi,basi,sti,endi,carPl,colsOver,car,lm,pos,st,en,app,seg,allpli
 		},
 	
@@ -1249,20 +1380,20 @@ VecAngleC=Compile[{{pnt,_Real,2},{cent,_Real,1},{num,_Integer,0},{rev,_Real,0}},
 (*RotatePointC*)
 
 
-RotatePointC=Compile[{{pt,_Real,1},{cent,_Real,1},{ang,_Real,0}},({{Cos[ang], Sin[ang]}, {-Sin[ang], Cos[ang]}}.(pt-cent))+cent];
+RotatePointC=Compile[{{pt,_Real,1},{cent,_Real,1},{ang,_Real,0}},({{Cos[ang], Sin[ang]}, {-Sin[ang], Cos[ang]}} . (pt-cent))+cent];
 
 
 (* ::Subsubsection::Closed:: *)
 (*RotateRad*)
 
 
-RotateRad[_, _, 0.123] = {}
+RotateRad[_, _, 0.123] = {};
 
-RotateRad[_, _, {}] = {}
+RotateRad[_, _, {}] = {};
 
-RotateRad[rad_,cent_,ang_] := RotateRadC[rad, cent, ang]
+RotateRad[rad_,cent_,ang_] := RotateRadC[rad, cent, ang];
 
-RotateRadC=Compile[{{rad,_Real,0},{cent,_Real,1},{ang,_Real,0}},(cent+{{Cos[ang], Sin[ang]}, {-Sin[ang], Cos[ang]}}.{0,rad})];
+RotateRadC=Compile[{{rad,_Real,0},{cent,_Real,1},{ang,_Real,0}},(cent+{{Cos[ang], Sin[ang]}, {-Sin[ang], Cos[ang]}} . {0,rad})];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1307,7 +1438,7 @@ LinePoints[mask_?MatrixQ, off_?VectorQ, OptionsPattern[]] := Block[{
 	If[Total[Flatten[maskf]]<2,
 		(*if no maks do nothing*)
 		(*Print["no Mask"];*)
-		ptsm=Table[RotationMatrix[-i Degree].{0.,1.},{i,0,359,1.}];
+		ptsm=Table[RotationMatrix[-i Degree] . {0.,1.},{i,0,359,1.}];
 		angles = AngFun[cent, ptsm];
 		(*angles=(ArcTan@@Normalize[#-cent])&/@ptsm;*)
 		lines=ConstantArray[{},360];
@@ -1363,7 +1494,7 @@ LinePoints[mask_?MatrixQ, off_?VectorQ, OptionsPattern[]] := Block[{
 				,
 				(*Print["center outside the mask"];*)
 				(*the center falls outside the mask*)
-				ptsm=Table[RotationMatrix[-i Degree].{0.,1.},{i,0,359,1.}];
+				ptsm=Table[RotationMatrix[-i Degree] . {0.,1.},{i,0,359,1.}];
 				int=ListInterpolation[maskf,InterpolationOrder->1];
 				{x,y}=cent;
 				vali=int[y+0.5,x+0.5]-tresh;
@@ -1426,7 +1557,7 @@ FindPoint[pmid_,step_,pts_]:=Block[{ptar,pnear,ni,nd,n,fnear,v,u},
 	(*project point on line and find the new point closest to new line*)
 	While[nd>10^-3,
 		v=ptar-pmid;u=pnear-pmid;
-		ptar=pmid+(v.u/v.v)v;
+		ptar=pmid+(v . u/v . v)v;
 		pnear=First@Nearest[pts,ptar,1];
 		n=Sqrt[Total[(pnear-ptar)^2]];
 		nd=Abs[n-ni];ni=n;
@@ -1763,7 +1894,7 @@ BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, m
 	max = If[max <= min, min + 0.1, max];
 	sdata = (datat - min)/(max - min);
 	
-	pts = Flatten[Table[If[i == 4, {{0, 0}}, RotationMatrix[# Degree].{0,radius[[i]] - 1.3 OptionValue[TextOffset]} & /@ Range[0, 359, 360/number[[i]]]], {i, 4}], 1];
+	pts = Flatten[Table[If[i == 4, {{0, 0}}, RotationMatrix[# Degree] . {0,radius[[i]] - 1.3 OptionValue[TextOffset]} & /@ Range[0, 359, 360/number[[i]]]], {i, 4}], 1];
 	
 	disks = Flatten[{
 		Table[{col, Disk[{0, 0}, radius[[1]], Pi/3 {i, i + 1}]}, {i, 1, 6}],
@@ -1811,7 +1942,7 @@ BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, m
 (*ExcludeSlices*)
 
 
-Options[ExcludeSlices] = {CutOffMethod -> "Auto",DistanceMeasure->5};
+Options[ExcludeSlices] = {CutOffMethod -> "Auto",DistanceMeasure->5, ShowOutliers->False};
 
 SyntaxInformation[ExcludeSlices] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
@@ -1827,7 +1958,7 @@ ExcludeSlices[data_, OptionsPattern[]] := Block[{measure, selmask, cutoff, std, 
 	];
 	selmask = Mask[measure, cutoff];
 	(*report the outliers*)
-	ShowOutlierDistribution[measure, selmask, cutoff];
+	If[OptionValue[ShowOutliers],ShowOutlierDistribution[measure, selmask, cutoff]];
 	(*output mask*)
 	selmask
 ]

@@ -128,7 +128,7 @@ SmartMask::usage =
 SmartMask[input, mask] crates a smart mask of input and used the mask as a prior selection of the input."
 
 B1MapCalc::usage =
-"B1MapCalc[data, TR, alpha] calculates the B1 map from a dual TR {tr1, tr2} acquisition using magnitude data with reference angle alpha.
+"B1MapCalc[data, TR, alpha] calculates the B1 map from a dual TR {tr1, tr2} acquisition (AFI) using magnitude data with reference angle alpha.
 data has dimensions {z, {tr1,tr2}, x, y}.
 B1MapCalc[dataTr1, dataTr2, TR, alpha] where dataTr1 and and dataTr2 can have any dimensions.
 B1MapCalc[chan1, chan2, {f, phase, scale}, TR, alpha] calculates the b1map of two channels with singal fraction f for chan1 and 1-f for chan2 using 
@@ -136,7 +136,10 @@ phase for the combination. the total b1 is scaled with scale.
 B1MapCalc[chan1, chan2, {{f1, f2}, phase, scale}, TR, aplha] calculates the b1map of two channels with singal fraction f1 for chan1 and f2 for chan2 using 
 phase for the combination. the total b1 is scaled with scale.
 
-The Output can be \"Map\", \"MagPhase\", or \"Complex\"}"
+The Output can be \"Map\", \"MagPhase\", or \"Complex\"}
+
+B1MapCalc[] is based on DOI: 10.1002/mrm.21120.
+"
 
 B1MapError::usage = 
 "B1MapError[chan1, chan2, mask, {f, phase, scale}, TR, alpha] calculates the root mean square error of the b1 with a target of 100% within the mask.
@@ -232,6 +235,13 @@ TableMethod::usage =
 
 B1Output::usage=
 "B1Output is an option for B1MapCalc. Values can be \"Map\", \"MagPhase\", or \"Complex\"."
+
+
+B1Masking::usage=
+"B1Masking is an option for B1MapCalc. If True then values where S2 is larger than S1 are masked."
+
+B1FilterData::usage=
+"B1FilterData is an option for B1MapCalc. If True HammingFilterData is applied to the data before B1 calculation."
 
 
 (* ::Subsection::Closed:: *)
@@ -446,7 +456,7 @@ Module[{m, s, min, max, range, step, xdat, data, out},
 (*GetMaskMeans*)
 
 
-Options[GetMaskMeans] = {MeanMethod -> "SkewNormalDist"}
+Options[GetMaskMeans] = {MeanMethod -> "SkewNormalDist", Method->Automatic}
 
 SyntaxInformation[GetMaskMeans] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -457,7 +467,7 @@ GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] :=
   labels = If[name==="", {"mean", "std", "Median", "5%", "95%"}, name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
   ];
   out = If[Total[Flatten[#]]<=10,
-  	Print["Less than 10 voxels, output will be 0."];{0.,0.,0.,0.,0.}
+  	If[OptionValue[Method]===Automatic,Print["Less than 10 voxels, output will be 0."]];{0.,0.,0.,0.,0.}
   	,
       fl = GetMaskData[dat, #, GetMaskOutput -> All];
       Switch[OptionValue[MeanMethod],
@@ -1454,35 +1464,36 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 (*B1MapCalc*)
 
 
-Options[B1MapCalc] = {B1Output -> "Map"};
+Options[B1MapCalc] = {B1Output -> "Map", B1Masking->True, B1FilterData->True};
 
-B1MapCalc[mag_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{c1, c2}, 
-	{s1, s2} = Transpose[mag]; 
-	B1MapCalc[s1, s2, {tr1, tr2}, a, opts]
+B1MapCalc[dat_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{c1, c2}, 
+	{c1, c2} = Transpose[dat]; 
+	B1MapCalc[c1, c2, {tr1, tr2}, a, opts]
 ]
 
 
-B1MapCalc[s1_, s2_, {tr1_, tr2_}, a_, OptionsPattern[]] := Block[{r, n, mask, b1, b1c, b1m, b1p},
+B1MapCalc[c1_, c2_, {tr1_, tr2_}, a_, OptionsPattern[]] := Block[{r, n, mask, b1, b1c, b1m, b1p, sc,s1, s2},
 	n = tr2/tr1;
-	r = DevideNoZero[s2, s1];
-	mask = 1 - Mask[Abs[r], 1];
 	
-	b1c = mask ArcCos[DevideNoZero[(r n - 1), (n - r)]];
+	{s1,s2} = If[OptionValue[B1FilterData],
+		{HammingFilterData[c1],HammingFilterData[c2]},
+		{c1,c2}
+	];
 	
-	{b1m, b1p} = Through[{Abs, Arg}[b1c]];
-	b1 = 100. (b1m/Degree)/a;
+	r = DevideNoZero[Abs[s2],Abs[s1]];
+	mask = If[OptionValue[B1Masking],1 - Mask[Abs[r], 1],1];
 	
-	Switch[OptionValue[Output],
-		"Map", b1,
-		"MagPhase", {b1m, b1p},
-		"Complex", b1c
+	b1m = mask ArcCos[DevideNoZero[(r n - 1), (n - r)]];
+	sc = ((100./Degree)/a);
+	
+	b1p = Arg[Mean[{s1,s2}]];
+	
+	Switch[OptionValue[B1Output],
+		"Map", sc b1m,
+		"MagPhase", {sc b1m, b1p},
+		"Complex", sc b1m Exp[I b1p]
 	]
 ]
-
-
-B1MapCalc[c1_, c2_, {f_?NumberQ, a_?NumberQ, s_?NumberQ}, tr_, ang_] := B1MapCalc[c1, c2, {{f, 1-f}, a, s}, tr, ang]
-
-B1MapCalc[c1_, c2_, {{f1_?NumberQ, f2_?NumberQ}, a_?NumberQ, s_?NumberQ}, tr_, ang_] := s B1MapCalc[Abs[( f1 c1 + f2 Exp[-a Degree I] c2 )], tr, ang]
 
 
 (* ::Subsection::Closed:: *)
