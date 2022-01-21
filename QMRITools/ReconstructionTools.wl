@@ -26,7 +26,8 @@ BeginPackage["QMRITools`ReconstructionTools`", Join[{"Developer`"}, Complement[Q
 
 ReadListData::usage = 
 "ReadListData[file] reads a list/data raw data file from the philips MR platform. The input file can either be .list or .data file.
-Ouput is {{rawData, noise}, {head, types}}."
+Ouput is {{rawData, noise}, {head, types}}.
+ReadListData[file, print] does the same but if print is set False no reporting is done."
 
 
 MeanType::usage = 
@@ -948,7 +949,7 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 		sens = HammingFilterData /@ Switch[ArrayDepth[coilData], 4, coilData, 5, Mean@coilData, 6, Mean@Mean@coilData];
 		sens = MakeSense[sens, cov];
 		,
-		sens=sensi
+		sens = sensi
 	];
 	
 	(*perform the recon*)

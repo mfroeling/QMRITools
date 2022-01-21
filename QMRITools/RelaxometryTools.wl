@@ -261,34 +261,57 @@ LogFit[datan_, times_] :=
 (*T1Fit*)
 
 
-T1Fit[datan_, timei_] := Block[{data, dat, sol, apar, bpar, t1s, tt, t1, time, result ,ad ,datal, fdat ,max ,aparo, bparo, offset, T1r, dim ,times},
+SyntaxInformation[T1Fit]= {"ArgumentsPattern" -> {_, _}}
+
+T1Fit[fdat_?VectorQ, time_?VectorQ] := T1LinFit[fdat, time]
+
+T1Fit[datan_, timei_] := Block[{ad, datal, dim, times, dat, time, result, t1out, t1outs, aparo, bparo},
 	ad = ArrayDepth[datan];
-	datal = Switch[ad,
-		3, {Transpose[datan, {3, 1, 2}]},
-		4, Transpose[datan, {1, 4, 2, 3}]
-	];
-	
+	datal = Switch[ad, 3, {Transpose[datan, {3, 1, 2}]}, 4, Transpose[datan, {1, 4, 2, 3}]];
 	dim = Dimensions[datal];
+	times = If[Length[timei] === dim[[-1]], ConstantArray[timei, dim[[1]]], timei];
 	
-	times = If[Length[timei]===dim[[-1]], ConstantArray[timei,dim[[1]]], timei ];
+	DistributeDefinitions[T1LinFit];
 	
 	result = MapThread[(
 		dat = #1;
 		time = #2;
-		zMap[(
-			fdat = #;
-			max = Max[fdat];
-			If[Total[fdat] == 0.,
-				{0., 0., 0.},
-				sol = Quiet[FindFit[Transpose[{time, #}], Abs[apar - bpar Exp[-tt/t1s]], {{apar, max}, {bpar, 2 max}, {t1s, 1000}}, tt]];
-				{t1, aparo, bparo} = {t1s (bpar/apar - 1), apar, bpar} /. sol;
-				t1 = Clip[t1, {0, 3500}, {0, 3500}];
-			{t1, aparo, bparo}]
-		) &, dat, {ad - 1}];
+		DistributeDefinitions[time];
+		Quiet@ParallelMap[T1LinFit[#, time] &, dat, {2}]
 	) &, {datal, times}, 1];
+	
+	(*constrain the output to fixed values*)
+	{t1out, t1outs, aparo, bparo} = RotateDimensionsRight[result];
+	t1out = Clip[Round[t1out, .0001], {0, 2500}, {0, 2500}];
+	t1outs = Clip[Round[t1outs, .0001], {0, 2500}, {0, 2500}];
+	
+	(*output the data*)
+	{t1out, t1outs, aparo, bparo}
+]
+
+
+T1LinFit[fdat_?VectorQ, time_?VectorQ] := Block[{min, max, sol, aparf, bparf, tt, t1sf, t1s, apar, bpar},
+	{min, max} = MinMax[fdat];
+	
+	If[Total[fdat] == 0.,
+		{0., 0., 0., 0.},
+		(*calculate T1 star (look locker assuptions)*)
+		sol = Quiet[FindFit[Transpose[{time, fdat}], {
+			(*model*)
+			Abs[aparf - bparf Exp[-tt/t1sf]],
+			(*contraints*)
+			{-0.1 max < aparf < 4 max, 0 < bparf < 8 max, 0 < t1sf}
+			},
+			(*initial values*)
+			{{aparf, max}, {bparf, 2 max}, {t1sf, 1000}}, tt]
+		];
 		
-	{t1, apar, bpar} = TransData[result, "r"];
-	{t1, apar, bpar}
+		(*get the fit results*)
+		{t1s, apar, bpar} = {t1sf, aparf, bparf} /. sol;
+		
+		(*correct the T1 star an convert to T1*)
+		If[apar > 0, {t1s (bpar/apar - 1), t1s, apar, bpar}, {0., 0., 0., 0.}]
+	]
 ]
 
 

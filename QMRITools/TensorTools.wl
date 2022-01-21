@@ -1337,7 +1337,7 @@ Module[{az,zen},
 SyntaxInformation[ColorFAPlot] = {"ArgumentsPattern" -> {_}};  
   
 ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask},
-  {eig, eigv} = Transpose[EigensysCalc[tens], {2, 3, 4, 1, 5}];
+  {eig, eigv} = EigensysCalc[tens];
   mask = Mask[tens[[1]], 10^-6];
   
   eigv = mask Abs[eigv];

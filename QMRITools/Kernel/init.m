@@ -22,7 +22,7 @@ QMRITools`$SubPackages = {
 	"JcouplingTools`","SpectroTools`", "ReconstructionTools`",
 	(*general processing tools with lots of dependancys*)
 	"TractographyTools`", "VisteTools`", "ProcessingTools`", 
-	"SimulationTools`", "PhysiologyTools`", "CoilTools`", 
+	"SimulationTools`", "PhysiologyTools`", "CoilTools`", "TaggingTools`",
 	 (*legacy import functions*)
 	"ImportTools`"
 };
