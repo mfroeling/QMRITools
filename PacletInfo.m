@@ -13,7 +13,14 @@ Paclet[
     Extensions -> 
         {
             {"Kernel", Root -> "Kernel", Context -> "QMRITools`"}, 
-            {"Documentation", Language -> "English", MainPage -> "Guides/QMRITools"}
+            {"Documentation", Language -> "English", MainPage -> "Guides/QMRITools"},
+            
+            {"Resource", Root -> "Resources", Resources -> {{"Logo", "icon.png"}}},
+            {"Resource", Root -> "Resources", Resources -> {{"Functions", "All-Functions.nb"}}},
+            
+            {"Asset", "Root" -> "Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},
+            {"Asset", "Root" -> "MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"Elastix", "elastix"}}},
+            {"Asset", "Root" -> "Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"Elastix", "elastix"}}}
         }
 ]
 
