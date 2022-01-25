@@ -28,7 +28,7 @@ DriftCorrect::usage =
 "DriftCorrect[data, bval] dirft corrects the data using the signals of the lowest bvalue that has 6 or more unique volumes.
 For the function to work optimal it is best to have these volumes evenly spread througout thet data and for the first and last volume to have this low bvalue.
 
-DriftCorrect[] is based on DOI: 10.1002/mrm.26124." 
+DriftCorrect[] is based on DOI: 10.1002/mrm.26124."
 
 ConcatenateDiffusionData::usage =
 "ConcatenateDiffusionData[{{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}}] concatenates the diffusion data sets.
@@ -43,12 +43,12 @@ RemoveIsoImages::usage =
 
 TensorCalc::usage = 
 "TensorCalc[data, gradients, bvalue] calculates the diffusion tensor for the given dataset. Allows for one unweighted image and one b value. 
-Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the unweighted gradient direction. 
+Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the unweighted gradient direction.
 bvalue is a singe number indicating the b-value used.
-TensorCalc[data, gradients, bvec] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues. 
-allows for differnt tensor fitting methods. gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}. 
+TensorCalc[data, gradients, bvec] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues.
+allows for differnt tensor fitting methods. gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}.
 bvec the bvector, with a bvalue defined for each gradient direction. b value for unweighted images is 0.
-TensorCalc[data, bmatix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues. 
+TensorCalc[data, bmatix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues.
 bmat is the bmatrix which can be generated usiong Bmatrix.
 
 The bvalue assumed to be is in s/mm^2 and therfore the output is in mm^2/2.
@@ -97,15 +97,13 @@ FlipTensorOrientation::usage =
 "FlipTensorOrientation[tens, perm] permutes the internal orientation of the tensor, perm can be any permutation of {\"x\",\"y\",\"z\"}.
 FlipTensorOrientation[tens, flip] flips the internal orientation of the tensor, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
 FlipTensorOrientation[tens, flip, perm] flips and permuter the internal orientation of the tensor.
-FlipTensorOrientation[tens, perm, flip]flips and permuter the internal orientation of the tensor.
-"
+FlipTensorOrientation[tens, perm, flip]flips and permuter the internal orientation of the tensor."
 
 FlipGradientOrientation::usage = 
 "FlipGradientOrientation[grad, perm] permutes the internal orientation of the gradients, perm can be any permutation of {\"x\",\"y\",\"z\"}.
 FlipGradientOrientation[grad, flip] flips the internal orientation of the gradients, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
 FlipGradientOrientation[grad, flip, perm] flips and permuter the internal orientation of the gradients.
-FlipGradientOrientation[grad, perm, flip]flips and permuter the internal orientation of the gradients.
-"
+FlipGradientOrientation[grad, perm, flip]flips and permuter the internal orientation of the gradients."
 
 
 AngleCalc::usage = 

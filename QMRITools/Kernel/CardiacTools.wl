@@ -147,8 +147,7 @@ CreateHeart::usage =
 "CreateHeart[] creates a simulated left ventricle shape.
 CreateHeart[pars] creates a simulated left ventricle shape with predifined parameters pars.
 
-Output is the heart shape, the voxel size and the parameters needed to generate the heart, {mask, vox, pars}.
-"
+Output is the heart shape, the voxel size and the parameters needed to generate the heart, {mask, vox, pars}."
 
 CardiacCoordinateSystem::usage = 
 "CardiacCoordinateSystem[mask, vox] creates the cardiac coordinate system within the mask and is used in HelixAngleCalc. 

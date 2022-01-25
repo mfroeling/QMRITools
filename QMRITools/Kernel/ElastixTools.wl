@@ -115,6 +115,9 @@ RegisterCardiacData[{data,mask,vox}] registers the data series using the given v
 Output is the registered data."
 
 
+QMRITools`ElastixTools`$debugElastix::usage = "If set true Elastix commands will be printed."
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -262,7 +265,7 @@ operatingSystem = $OperatingSystem;
 
 (*QMRITools`ElastixTools`$debugElastix = If[QMRITools`ElastixTools`$debugElastix===True, True, False];*)
 
-QMRITools`ElastixTools`$debugElastix=False;
+QMRITools`ElastixTools`$debugElastix = False;
 
 
 (* ::Subsubsection::Closed:: *)

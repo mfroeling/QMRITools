@@ -85,7 +85,7 @@ BmatrixToggle::usage =
 
 UniqueBvalPosition::usage = 
 "UniqueBvalPosition[bval] generates a list of all the unique bvalues and their positions.
-UniqueBvalPosition[bval, num] generates a list of all the unique bvalues and their positions that are present in the dataset equal or more than num times"
+UniqueBvalPosition[bval, num] generates a list of all the unique bvalues and their positions that are present in the dataset equal or more than num times."
 
 GetGradientScanOrder::usage = 
 "GetGradientScanOrder[grad, bval] determines the scanorder based on the txt file provided to the scanner as input. 
