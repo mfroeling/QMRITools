@@ -217,14 +217,14 @@ MaskCompartment::usage =
 "MaskCompartment is an option for SmartMask. Can be \"Muscle\" or \"Fat\"."
 
 SmartMethod::usage = 
-"SmartMethod is an option for SmartMask. This specifies how the mask is generated. Can be \"Continuous\" or \"Catagorical\""
+"SmartMethod is an option for SmartMask. This specifies how the mask is generated. Can be \"Continuous\" or \"Catagorical\"."
 
 SmartMaskOutput::usage = 
 "SmartMaskOutput is an option for Smartmask. Can be set to \"mask\" to output only the mask or \"full\" to also output the probability mask."
 
 
 TableMethod::usage = 
-"TableMethod is an option for NumberTableForm. It specifies which number form to uses. Values can be NumberForm, ScientificForm or EngineeringForm"
+"TableMethod is an option for NumberTableForm. It specifies which number form to uses. Values can be NumberForm, ScientificForm or EngineeringForm."
 
 B1Output::usage=
 "B1Output is an option for B1MapCalc. Values can be \"Map\", \"MagPhase\", or \"Complex\"."

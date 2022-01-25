@@ -107,7 +107,7 @@ GetMaskOnly::usage =
 "GetMaskOnly is an option for GetMaskData. If set True all values in the mask are given, if set False only non zero values in the mask are give."
 
 UseMask::usage = 
-"UseMask is a function for MeanSignal and DriftCorrect"
+"UseMask is a function for MeanSignal and DriftCorrect."
 
 
 (* ::Subsection::Closed:: *)

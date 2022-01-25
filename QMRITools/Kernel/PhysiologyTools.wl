@@ -49,9 +49,9 @@ PlotRespiract[data, dataP, scantimes, steps]."
 (*Options*)
 
 
-OutputMethod::usage = "OutputMethod can be \"val\" or \"plot\""
+OutputMethod::usage = "OutputMethod can be \"val\" or \"plot\"."
 
-SampleStep::usage= "SampleStep is an option for AlignRespiract"
+SampleStep::usage= "SampleStep is an option for AlignRespiract."
 
 
 (* ::Subsection:: *)

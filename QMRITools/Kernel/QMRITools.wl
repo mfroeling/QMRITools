@@ -36,7 +36,7 @@ QMRITools`$SubPackages = {
 	(*core packages that contain functions for other toolboxes*)
 	"GeneralTools`", "MaskingTools`", "NiftiTools`", "ElastixTools`", "PlottingTools`",
 	(*toolboxes for processing specific data types*)
-	"DixonTools`", "IVIMTools`", "DenoiseTools`", "CardiacTools`", 
+	"DixonTools`", "IVIMTools`", "DenoiseTools`", "CardiacTools`",
 	"RelaxometryTools`", "GradientTools`", "TensorTools`",
 	"JcouplingTools`","SpectroTools`", "ReconstructionTools`",
 	(*general processing tools with lots of dependancys*)

@@ -50,7 +50,7 @@ Output is {simga, number of noise comp, and denoised matrix}."
 DenoiseCSIdata::usage = 
 "DenoiseCSIdata[spectra] perfroms PCA denoising of the complex values spectra, data has to be 3D and the spectral dimensions is last, {x,y,z,spectra}."
 
-DenoiseDynamicSpectraData::usage
+DenoiseDynamicSpectraData::usage = 
 "DenoiseDynamicSpectraData[spectra] perfroms PCA denoising of the complex values spectra, The data is given as a list of dynamicly acquired spectra {dynamic ,spectra}."
 
 

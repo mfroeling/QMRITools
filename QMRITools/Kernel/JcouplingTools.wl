@@ -78,7 +78,7 @@ SequenceSpaceEcho::usage =
 t2 the time betwteen a 180 degree RF pulse and the following readout (and 2xt1 the time between two consecutive 180 degree RF pulses.
 Further defines necho the number of 180 degree RF pulses, din the spin system given the hamiltonian H using b1.
 The t1 and t2 are defined in ms, and b1 of 100% is defines as 1.
-The output is a new spinsystem dout"
+The output is a new spinsystem dout."
 
 SimReadout::usage = 
 "SimReadout[din, H] performs a readout of a spinsystem din with hamiltonian H.
