@@ -126,6 +126,8 @@ NiiScaling::usage = "NiiScaling is an option for ImportNii. It scales the nii va
 
 NiiLegacy::usage = "NiiLegacy is an option for ExportNii, if set True default orientations are set instead of unknown."
 
+NiiSliceCode::usage = "NiiSliceCode is an option for Export nii. Whith this you can set the slice code of the nii file."
+
 CompressNii::usage = "CompressNii is an option for DcmToNii and ExportNii. If set True .nii.gz files will be created."
 
 UseSubfolders::usage = "UseSubfolders is an option for DcmToNii. If set True the nii conversion is done for each folder in the selected input folder."
@@ -1080,7 +1082,7 @@ ImportExport`RegisterExport["Nii",
 (*ExportNii*)
 
 
-Options[ExportNii]={NiiDataType->Automatic,CompressNii->True, NiiOffset->Automatic, NiiLegacy->False}
+Options[ExportNii]={NiiDataType->Automatic,CompressNii->True, NiiOffset->Automatic, NiiLegacy->False, NiiSliceCode->0}
 
 SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}};
 
@@ -1098,6 +1100,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	type = type/.{"Integer"->"Integer16","Real"->"Real32"};
 	off = OptionValue[NiiOffset];
 	leg = OptionValue[NiiLegacy];
+	sl = OptionValue[NiiSliceCode];
 	
 	(*Print[off];*)
 	(*
@@ -1111,14 +1114,14 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	If[OptionValue[NiiOffset]===Automatic,
 		If[OptionValue[CompressNii],
 			fileo=fileo<>".gz";
-			Export[fileo, {data, voxi}, {"GZIP", "Nii", {"Data", "VoxelSize"}}, NiiDataType->type, NiiLegacy->leg],
-			Export[fileo, {data, voxi}, {"Nii", {"Data", "VoxelSize"}}, NiiDataType->type ,NiiLegacy->leg]
+			Export[fileo, {data, voxi}, {"GZIP", "Nii", {"Data", "VoxelSize"}}, NiiDataType->type, NiiLegacy->leg, NiiSliceCode->sl],
+			Export[fileo, {data, voxi}, {"Nii", {"Data", "VoxelSize"}}, NiiDataType->type ,NiiLegacy->leg, NiiSliceCode->sl]
 		]
 		,
 		If[OptionValue[CompressNii],
 			fileo=fileo<>".gz";
-			Export[fileo, {data, voxi, off}, {"GZIP", "Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type, NiiLegacy->leg],
-			Export[fileo, {data, voxi, off}, {"Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type, NiiLegacy->leg]
+			Export[fileo, {data, voxi, off}, {"GZIP", "Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type, NiiLegacy->leg, NiiSliceCode->sl],
+			Export[fileo, {data, voxi, off}, {"Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type, NiiLegacy->leg, NiiSliceCode->sl]
 		]
 	]; 
 ]
@@ -1128,7 +1131,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 (*ExportNiiDefault*)
 
 
-Options[ExportNiiDefault] = {NiiDataType -> Automatic, NiiLegacy->False, NiiVersion -> 1, "Channel" -> Null, "ExtensionParsing" -> False}
+Options[ExportNiiDefault] = {NiiDataType -> Automatic, NiiLegacy->False, NiiSliceCode->0, NiiVersion -> 1, "Channel" -> Null, "ExtensionParsing" -> False}
 
 ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := 
  Module[{ver, data, header, type, strm},
@@ -1158,6 +1161,7 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
    headerInp, voxInp, headerDef, off, offInp, Rs, R, Rq,
    code, scode, qcode, qb, qc, qd, sx, sy, sz, offs, xoffq, yoffq, zoffq},
   type = OptionValue[NiiDataType];
+  sl = OptionValue[NiiSliceCode];
   
   (*get the data*)
   data = "Data" /. rule;
@@ -1247,12 +1251,12 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
     "dataType" -> type /. Reverse[dataTypeNii, 2],(*input*)
     "bitPix" -> type /. Reverse[dataTypeNii, 2] /. typeSizeNii,(*input*)
     "sliceStart" -> 0,
-    "pixDim" -> PadRight[Flatten[{1., Reverse[vox]}], 8, 0],(*input*)
+    "pixDim" -> PadRight[Flatten[{If[sl===2,-1.,1.], Reverse[vox]}], 8, 0],(*input*)
     "voxOffset" -> Switch[ver, 1, 352, 2, 544],
     "scaleSlope" -> 1.,
     "scaleInteger" -> 0.,
     "sliceEnd" -> 0,
-    "sliceCode" -> 0,
+    "sliceCode" -> sl,
     "xyztUnits" -> XyztUnits[{"Millimeters", "Seconds"}],(*input*)
     "calMax" -> 0.,
     "calMin" -> 0.,
@@ -1347,6 +1351,7 @@ GetNiiOrientationS[hdr_] := Block[{scode, mat, Ts, Rs, Ss, Qs, soff},
 	(*get sform infromation*)
 	scode = "sformCode" /. hdr;
 	mat = {"sRowx", "sRowy", "sRowz", {0., 0., 0., 1.}} /. hdr;
+	Table[If[Total[mat[[i]]] === 0., mat[[i, i]] = 1.], {i, 1, 4}];	
 	{Ts, Rs, Ss, Qs} = DecomposeAffineMatrix[mat];
 	soff = Ts[[1 ;; 3, 4]];
 	{scode, soff, Rs . Qs}

@@ -1531,7 +1531,7 @@ PolarDecomposition[mat_] := Block[{R, S},
 
 
 GetScaleSkew[S_] := Block[{sc},
-	sc = (Norm /@ Transpose[S]);
+	sc = (Norm /@ Transpose[S]) /. 0. -> 1.;
 	N@{DiagonalMatrix[sc], Transpose[Transpose[S]/sc]}
 ]
 
