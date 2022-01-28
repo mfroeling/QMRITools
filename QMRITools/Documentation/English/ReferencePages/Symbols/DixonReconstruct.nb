@@ -1,0 +1,753 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     30285,        743]
+NotebookOptionsPosition[     23177,        598]
+NotebookOutlinePosition[     23908,        623]
+CellTagsIndexPosition[     23829,        618]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New",ExpressionUUID->"b5d99ac9-e3b0-480e-bb0b-079fb0b7009e"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified",ExpressionUUID->"f5204162-d9e1-413b-ab5e-7997d170f405"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete",ExpressionUUID->"f6dd108b-d0ff-4ab8-8af9-c7fc27626806"],
+ " | Excised in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Excised",ExpressionUUID->"467d0a06-614d-45bf-a46b-92f77d5a865a"]
+}], "History",
+ CellID->398862419,ExpressionUUID->"e3dc9f5a-5cdd-45eb-92db-e3e495d7020e"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->42710681,ExpressionUUID->"0899dde7-35cd-4180-826a-7b4e02d14ec4"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->853579770,ExpressionUUID->"106b05da-99e8-4e22-a8ee-3a954fb01a14"],
+
+Cell["QMRITools", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->270661515,ExpressionUUID->"bd739c8b-4976-4650-bc92-8b3c1c8039a8"],
+
+Cell["QMRITools`DixonTools`", "Categorization",
+ CellLabel->"Context",
+ CellID->122051528,ExpressionUUID->"42f9fafb-cde0-436a-901e-26e32321dd78"],
+
+Cell["QMRITools/ref/DixonReconstruct", "Categorization",
+ CellLabel->"URI",
+ CellID->309670259,ExpressionUUID->"75c2188e-2442-4a19-9506-4afdc3659f6a"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->336451540,ExpressionUUID->"47350eef-68ea-4608-86a1-b97b91925bff"],
+
+Cell["XXXX", "Keywords",
+ CellID->285230595,ExpressionUUID->"b68fdd0a-4efc-427c-afbe-5a649e4c2582"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection",
+ CellID->127972254,ExpressionUUID->"7903663a-587f-47e3-9fee-170b0359f9de"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template",
+ CellID->143430887,ExpressionUUID->"7351e481-efaf-4102-9a09-2f9414f15a7a"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern",
+ CellID->424584052,ExpressionUUID->"1359d174-d2b3-4ce5-adc4-892099d57fd6"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables",
+ CellID->55660510,ExpressionUUID->"483f2850-ca13-492e-8f85-44ba9a814569"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs",
+ CellID->25370053,ExpressionUUID->"002b65eb-f6fa-4e79-954b-86019caabfea"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["DixonReconstruct", "ObjectName",
+ CellID->204166336,ExpressionUUID->"d95a04ec-f0e4-496e-ad6c-4c13576f02e1"],
+
+Cell[TextData[{
+ Cell["   ", "ModInfo",ExpressionUUID->"8ceb76ef-e1fd-49ac-9bb9-8e2b31250d3b"],
+ "DixonReconstruct[real, ",
+ Cell[BoxData[
+  StyleBox["imag", "TI"]], "InlineFormula",ExpressionUUID->
+  "770cd911-24c8-40f3-bb73-93ff56aca004"],
+ ", echo] reconstruxt Dixon data with initital guess b0 = 0 and T2star = 0.\n\
+DixonReconstruct[real, ",
+ Cell[BoxData[
+  StyleBox["imag", "TI"]], "InlineFormula",ExpressionUUID->
+  "d9312c1f-9aec-40b2-8534-eb3d51fbc26a"],
+ ", ",
+ Cell[BoxData[
+  StyleBox["echo", "TI"]], "InlineFormula",ExpressionUUID->
+  "06706816-261d-4981-b5a5-0bf3fc709d8e"],
+ ", b0] reconstructs Dixon data with intitial guess T2star = 0.\n\
+DixonReconstruct[real, ",
+ Cell[BoxData[
+  StyleBox["imag", "TI"]], "InlineFormula",ExpressionUUID->
+  "5acc5ad9-f90e-4afa-bc88-4f91ba07484d"],
+ ", ",
+ Cell[BoxData[
+  StyleBox["echo", "TI"]], "InlineFormula",ExpressionUUID->
+  "1a0c090c-39d5-494d-90c5-f3ab20c7955e"],
+ ", b0, t2] reconstructs Dixon data.\n\nreal is the ",
+ Cell[BoxData[
+  StyleBox["real", "TI"]], "InlineFormula",ExpressionUUID->
+  "a25891f0-c3da-456c-ba7d-ed6a5206a7c3"],
+ " data in radials.\nimag is the imaginary data in radians.\nB0 can be \
+estimated from two phase images using Unwrap.\nT2 can be estimated from \
+multiple echos using T2fit.\n\nOutput is \
+{{watF,fatF},{watSig,fatSig},{inphase,outphase},{B0,T2star},itterations}.\n\n\
+The fractions are between 0 and 1, the B0 field map is in Hz and the T2start \
+map is in ms.\n\nDixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and \
+10.1002/mrm.21737 (10.1002/nbm.3766)."
+}], "Usage",
+ CellChangeTimes->{{3.852137739886907*^9, 3.852137740068164*^9}},
+ CellID->330652637,ExpressionUUID->"02264979-c9ce-4fdf-8ae0-eff1a7b320cc"],
+
+Cell["The following options can be given: ", "Notes",
+ CellID->277735044,ExpressionUUID->"4a2863b8-1bf1-4e39-a0e1-0857564eb900"],
+
+Cell[BoxData[GridBox[{
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "cf553c77-2ebf-4ec5-aa0f-1c45d2198d76"], 
+    ButtonBox["DixonPrecessions",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonPrecessions"], 
+    RowBox[{"-", "1"}], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonPrecessions",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonPrecessions"]], "InlineFormula",
+      ExpressionUUID->"9b9971db-53bd-46e7-96ae-b21a725bcdb3"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "7f363d52-7e47-4964-aefc-e34df3e14c29"],
+     ". Defines the rotation of the signal {-1,1} default is -1."
+    }], "TableText",ExpressionUUID->"ea4538d3-7caa-4af5-8e82-306245b55bf7"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "0db49909-c850-42e4-98c4-e7dd5cdb4691"], 
+    ButtonBox["DixonFieldStrength",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonFieldStrength"], "3", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonFieldStrength",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonFieldStrength"]], 
+      "InlineFormula",ExpressionUUID->"2a0c81a9-cd20-46ef-b434-696abbe45d0f"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "e58e2de0-d4af-4baf-bbd4-f1ec85bf4b56"],
+     ". Defines the fieldstrengths in Tesla on which the data was acquired."
+    }], "TableText",ExpressionUUID->"b28677a2-dbaa-4e51-ad3b-5a08bea1f0b6"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "dfc99f94-f645-45b2-950b-7d7f0453f45e"], 
+    ButtonBox["DixonNucleus",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonNucleus"], "\"\<1H\>\"", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonNucleus",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonNucleus"]], "InlineFormula",
+      ExpressionUUID->"585eaced-7adf-46af-996b-1a43887953b1"],
+     " is an option for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "cdcaee93-2518-4062-9269-2f493f59aa93"],
+     ". Defines the nucleus for which the reconstruction is performed."
+    }], "TableText",ExpressionUUID->"be64ae9d-fe09-48e7-bdff-d73a52cfe2bd"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "bebddf3a-ddc4-4f50-8473-f3f22f4fe37a"], 
+    ButtonBox["DixonFrequencies",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonFrequencies"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", "0", "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{
+       "3.8", ",", " ", "3.4", ",", " ", "3.13", ",", " ", "2.67", ",", " ", 
+        "2.46", ",", " ", "1.92", ",", " ", "0.57", ",", " ", 
+        RowBox[{"-", "0.6"}]}], "}"}]}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonFrequencies",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonFrequencies"]], "InlineFormula",
+      ExpressionUUID->"5ad05520-170d-4e04-822d-95929aa6c88a"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "fd9061a3-c0d8-4c17-b56d-ed0122e6d7d4"],
+     ". Defines the frequencies in ppm of the fat peaks being used."
+    }], "TableText",ExpressionUUID->"a65fb2cb-efd2-44e3-aaf2-684b75185db6"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "b907e791-b9dc-400d-b6fa-0ca0547b73f6"], 
+    ButtonBox["DixonAmplitudes",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonAmplitudes"], 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", "1", "}"}], ",", " ", 
+      RowBox[{"{", 
+       RowBox[{
+       "0.089", ",", " ", "0.598", ",", " ", "0.047", ",", " ", "0.077", ",", 
+        " ", "0.052", ",", " ", "0.011", ",", " ", "0.035", ",", " ", 
+        "0.066"}], "}"}]}], "}"}], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonAmplitudes",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonAmplitudes"]], "InlineFormula",
+      ExpressionUUID->"d9bdf1d4-bdca-4a15-9ba5-d1e57793bfcf"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "4400af8c-ec9f-42c9-9cd4-7e6d8f439e4e"],
+     ". Defines the relative amplitudes of the fat peaks being used."
+    }], "TableText",ExpressionUUID->"e3bea43c-5037-4b01-a1f2-c7b44e3a8d9e"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "cfa248fa-7237-4ac6-aa9f-4b46d7ec79cc"], 
+    ButtonBox["DixonIterations",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonIterations"], "15", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonIterations",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonIterations"]], "InlineFormula",
+      ExpressionUUID->"5acbc359-d54b-4a29-abe2-fefec216670e"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "a904e903-b4f2-4749-bc0c-1b9876ac695a"],
+     ". Defines the maximum itterations the fit can use."
+    }], "TableText",ExpressionUUID->"c1db41f6-a085-4951-a0bd-6c832c03c216"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "c9ba864c-0a5c-43f8-98e5-5da5498c7ba1"], 
+    ButtonBox["DixonTollerance",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonTollerance"], "0.001", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonTollerance",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonTollerance"]], "InlineFormula",
+      ExpressionUUID->"d9c86d0b-2845-42c0-af8a-480b9e7cae3a"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "6213c0ba-12ca-4685-92f7-8e91dac12255"],
+     ". Defines at which change per itteration of b0 and R2star the \
+ittarative methods stops. Default value is 0.1."
+    }], "TableText",ExpressionUUID->"f136aafa-9af1-4b7a-a44b-8f36fd49b784"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "d4c87347-6368-4387-99e0-b1df7cfd61a7"], 
+    ButtonBox["DixonMaskThreshhold",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonMaskThreshhold"], "0.01", Cell[
+    TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonMaskThreshhold",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonMaskThreshhold"]], 
+      "InlineFormula",ExpressionUUID->"ef6ef24c-6931-4ae2-a6d5-59d56021bf6b"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "7cb38b65-7aab-42be-a046-d9f58881aebc"],
+     ". Defines at which threshhold the dixon reconstruction considers a \
+voxel to be background noise. Defualt values is 0.05."
+    }], "TableText",ExpressionUUID->"8d8dae1b-38ab-4f22-989f-afae8ad12252"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "fa17d8ae-8436-4a82-bd08-314576a9c7b8"], 
+    ButtonBox["DixonFilterInput",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonFilterInput"], 
+    ButtonBox["False",
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonFilterInput",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonFilterInput"]], "InlineFormula",
+      ExpressionUUID->"b907f311-0c88-4517-b26d-d0a67e162875"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "a235b663-402b-46a8-9ea0-cbf7afdd3891"],
+     ". If True the input b0 and T2star values are smoothed using a gaussian \
+kernel."
+    }], "TableText",ExpressionUUID->"1ef71d8e-cd85-4c6c-aba9-38a39636c3c7"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "23614e72-3e01-46b2-af50-14854e4e2526"], 
+    ButtonBox["DixonFilterOutput",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonFilterOutput"], 
+    ButtonBox["True",
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonFilterOutput",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonFilterOutput"]], 
+      "InlineFormula",ExpressionUUID->"dfb0670f-c0b2-45f7-979a-9c42a073a3c1"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "a1bd5e64-476d-4dda-b2ae-331f54f71d8e"],
+     ". If True the out b0 and T2star values are smoothed Median filter and \
+lowpassfiltering after which the water and fat maps are recomputed."
+    }], "TableText",ExpressionUUID->"8609285f-a23e-4347-8afe-b569f48aad4c"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "ff0b7b8e-a7a5-4560-8456-965cf56c466f"], 
+    ButtonBox["DixonFilterDimensions",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonFilterDimensions"], "\"\<3D\>\"", 
+    Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonFilterDimensions",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonFilterDimensions"]], 
+      "InlineFormula",ExpressionUUID->"14784239-fbed-4505-9c47-d920ff4815cd"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "341147d8-712a-49ea-ad19-06b1830ab148"],
+     ". Defines if the filtering is done in 2D or 3D."
+    }], "TableText",ExpressionUUID->"821533fc-4e83-4d2a-b115-c359998bc7ea"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "eb4971ca-b5a7-47d9-a791-765246db93d5"], 
+    ButtonBox["DixonFilterSize",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonFilterSize"], "1", Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonFilterSize",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonFilterSize"]], "InlineFormula",
+      ExpressionUUID->"8bdb2c96-ead3-4ca0-8a77-e113af63a5af"],
+     " is an options for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "f19dc0b7-e8b3-48d5-935c-6fb01a9bbc9d"],
+     ". Defines the number of voxel with which the input b0 and T2star values \
+are smoothed."
+    }], "TableText",ExpressionUUID->"ba179767-d969-45b8-bf7f-a26547d656d5"]},
+   {Cell["   ", "ModInfo",ExpressionUUID->
+     "28a00b4b-373f-47f8-a04e-260afd677e46"], 
+    ButtonBox["DixonBipolar",
+     BaseStyle->"Link",
+     ButtonData->"paclet:QMRITools/ref/DixonBipolar"], 
+    ButtonBox["False",
+     BaseStyle->"Link"], Cell[TextData[{
+     Cell[BoxData[
+      ButtonBox["DixonBipolar",
+       BaseStyle->"Link",
+       ButtonData->"paclet:QMRITools/ref/DixonBipolar"]], "InlineFormula",
+      ExpressionUUID->"84e37a18-7f3e-430f-bf24-fe4d20b20898"],
+     " is an option for ",
+     Cell[BoxData[
+     "DixonReconstruct"], "InlineFormula",ExpressionUUID->
+      "806553a9-b9b1-4371-b3db-38085a5cef0a"],
+     ". If set to true it assumes alternating readout directions."
+    }], "TableText",ExpressionUUID->"7e5c1a15-b625-4504-b799-f02491372322"]}
+  }]], "3ColumnTableMod",
+ CellID->220080820,ExpressionUUID->"173746d4-cf63-4165-a448-75026a5a0baa"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tech Notes", "TechNotesSection",
+ CellID->645642646,ExpressionUUID->"a9f5e411-c18d-401a-addf-7d69794b4553"],
+
+Cell["XXXX", "Tutorials",
+ CellID->236643127,ExpressionUUID->"7cbe2d23-059a-4ba3-a035-c6c1851f20bb"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Demonstrations", "RelatedDemonstrationsSection",
+ CellID->459917446,ExpressionUUID->"f86d90d9-caaa-43db-879f-6f951b0919c2"],
+
+Cell["XXXX", "RelatedDemonstrations",
+ CellID->474966661,ExpressionUUID->"42ed457c-fa1c-4bae-b2ee-59283d296fd1"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Links", "RelatedLinksSection",
+ CellID->123811506,ExpressionUUID->"7e967531-817a-4823-8f40-7b3acc187caa"],
+
+Cell["XXXX", "RelatedLinks",
+ CellID->183787170,ExpressionUUID->"12c33a7f-b72f-48cb-bbab-c44dba15d019"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["See Also", "SeeAlsoSection",
+ CellID->243908857,ExpressionUUID->"6e383e3c-2a1c-4521-b123-bfd3380259ea"],
+
+Cell["XXXX", "SeeAlso",
+ CellID->232593991,ExpressionUUID->"e6b0c011-0758-41f8-b48a-a3d8b7dd2699"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "MoreAboutSection",
+ CellChangeTimes->{{3.843042374232973*^9, 3.843042375545676*^9}},
+ CellID->317067074,ExpressionUUID->"b59e3e57-7857-4710-9e34-f8d67df5d65c"],
+
+Cell["XXXX", "MoreAbout",
+ CellID->64836939,ExpressionUUID->"981e5675-096d-48e9-81e3-0cd427ca4ecc"]
+}, Open  ]],
+
+Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox["Examples", "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection",
+ CellID->175694731,ExpressionUUID->"7bcc3a14-c1a2-4b91-98a8-b6cf1a4e8f73"],
+
+Cell[CellGroupData[{
+
+Cell["More Examples", "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples",
+ CellID->14544514,ExpressionUUID->"2034ddbd-066a-4209-a503-c3c33ad64f74"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Scope", "ExampleSection",ExpressionUUID->
+   "699134ed-bb5b-468c-a4ea-d59253bbaa3e"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1601623,ExpressionUUID->"e791de6b-6e91-48c5-9042-fc90afab9eab"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Generalizations & Extensions", "ExampleSection",ExpressionUUID->
+   "4c49fac6-18c8-4948-8646-dc588d7c9d9c"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->354219988,ExpressionUUID->"c19691e4-580e-4fc1-8f00-eb417b696681"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Options", "ExampleSection",ExpressionUUID->
+   "0602bdf3-3344-4ddc-aa85-85abb1a56297"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->216229720,ExpressionUUID->"ee7496b1-ef1f-40b5-a833-02bd73307f24"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonPrecessions", "ExampleSubsection",ExpressionUUID->
+   "01629df7-7ad7-4da9-b07e-daee2a0497a0"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->18226933,ExpressionUUID->"1a81a080-5f9f-4892-b413-08707e4b0517"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonFieldStrength", "ExampleSubsection",ExpressionUUID->
+   "9a3e81e4-7b80-49f0-be6a-d5471c3c5128"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->347704065,ExpressionUUID->"010c7145-74da-4c63-9e16-d552d6c3da79"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonNucleus", "ExampleSubsection",ExpressionUUID->
+   "e40d8bf6-b36e-437b-9d31-4968d0706555"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->93596436,ExpressionUUID->"ef2c76f5-a6bf-4172-ae58-31b37fc11713"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonFrequencies", "ExampleSubsection",ExpressionUUID->
+   "f4cfe7e2-8b58-4a51-8c72-e6fae270a4bd"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->484176962,ExpressionUUID->"88ac922b-7cce-46fb-a14c-56d98fba8cee"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonAmplitudes", "ExampleSubsection",ExpressionUUID->
+   "5486c684-fe3a-4b4f-9583-5ab4015ab442"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->63850154,ExpressionUUID->"0be84942-a193-4f0a-992d-1a1e2fd30ebc"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonIterations", "ExampleSubsection",ExpressionUUID->
+   "74879c32-562c-42c5-bbb0-0e10779a882a"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->200919850,ExpressionUUID->"d569120c-59e4-4162-950c-5c2289154b41"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonTollerance", "ExampleSubsection",ExpressionUUID->
+   "30f6c410-300f-4a4a-86e0-5496e706cc13"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->454351139,ExpressionUUID->"d85f775a-53c6-4634-a4f5-549c65154dd2"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonMaskThreshhold", "ExampleSubsection",ExpressionUUID->
+   "25a5c7d1-aee9-43f9-9467-1f1f31f2aa13"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->667975,ExpressionUUID->"77df4729-98fd-4382-9814-94161e7bf52c"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonFilterInput", "ExampleSubsection",ExpressionUUID->
+   "117332b8-b07a-4a5b-b547-b085270030e5"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->23599615,ExpressionUUID->"f25fb087-1048-45ed-848b-ce6c80debc51"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonFilterOutput", "ExampleSubsection",ExpressionUUID->
+   "c959c021-979b-4e66-8cce-8e0858b16cad"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->45002828,ExpressionUUID->"a6799598-282a-45d8-af93-ac661b5f415d"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonFilterDimensions", "ExampleSubsection",ExpressionUUID->
+   "2a08941d-9a5f-4736-8a55-cd2209252d06"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->99222181,ExpressionUUID->"3258b60c-e24b-45ac-8d5a-09da716839f6"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonFilterSize", "ExampleSubsection",ExpressionUUID->
+   "e6a5c0cc-904e-4403-9d7c-b474aebafbc6"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->380329603,ExpressionUUID->"16d8f737-9c66-45a1-8243-085d50d637bc"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "DixonBipolar", "ExampleSubsection",ExpressionUUID->
+   "17a7d6ee-8fe1-49e5-ad26-087a5fc74e43"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->463858987,ExpressionUUID->"34f816c7-0994-418f-9f6b-0ed1bc6940d0"]
+}, Open  ]],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Applications", "ExampleSection",ExpressionUUID->
+   "5ac73f0a-e43d-4b0c-b368-7a5492b23104"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->403701577,ExpressionUUID->"2eac1df6-95c7-4abe-9adf-1e6e998dc544"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Properties & Relations", "ExampleSection",ExpressionUUID->
+   "1f281d39-c997-45aa-ba9f-3526bb95d3b3"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->349949428,ExpressionUUID->"ec85b0d2-d7d9-4ddb-94b3-8a69a515824b"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Possible Issues", "ExampleSection",ExpressionUUID->
+   "e70a65ac-d747-4c8a-9e1a-d64d9a1eaf76"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->976927232,ExpressionUUID->"1b80fc23-1110-48bb-9108-3ad91ce532ca"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Interactive Examples", "ExampleSection",ExpressionUUID->
+   "e3fdf42d-4418-44e6-b0c6-f17d18990132"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->4395746,ExpressionUUID->"38071373-f247-4fbb-af19-4396a101b8dc"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Neat Examples", "ExampleSection",ExpressionUUID->
+   "a679d712-11a0-48ee-8547-41aff99aa206"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->36885442,ExpressionUUID->"77634fc2-ae1a-4494-a4e8-9bc4ded60350"]
+}, Open  ]]
+},
+WindowSize->{700, 770},
+WindowMargins->{{4, Automatic}, {Automatic, 0}},
+CellContext->"Global`",
+FrontEndVersion->"13.0 for Microsoft Windows (64-bit) (December 2, 2021)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"],
+ExpressionUUID->"1d9ad2d5-ad8a-4ed7-b483-7cef874ab60c"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "ExtendedExamples"->{
+  Cell[17562, 443, 153, 2, 56, "ExtendedExamplesSection",ExpressionUUID->"2034ddbd-066a-4209-a503-c3c33ad64f74",
+   CellTags->"ExtendedExamples",
+   CellID->14544514]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"ExtendedExamples", 23637, 611}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 598, 14, 24, "History",ExpressionUUID->"e3dc9f5a-5cdd-45eb-92db-e3e495d7020e",
+ CellID->398862419],
+Cell[CellGroupData[{
+Cell[1181, 38, 121, 1, 29, "CategorizationSection",ExpressionUUID->"0899dde7-35cd-4180-826a-7b4e02d14ec4",
+ CellID->42710681],
+Cell[1305, 41, 134, 2, 32, "Categorization",ExpressionUUID->"106b05da-99e8-4e22-a8ee-3a954fb01a14",
+ CellID->853579770],
+Cell[1442, 45, 137, 2, 32, "Categorization",ExpressionUUID->"bd739c8b-4976-4650-bc92-8b3c1c8039a8",
+ CellID->270661515],
+Cell[1582, 49, 145, 2, 32, "Categorization",ExpressionUUID->"42f9fafb-cde0-436a-901e-26e32321dd78",
+ CellID->122051528],
+Cell[1730, 53, 150, 2, 32, "Categorization",ExpressionUUID->"75c2188e-2442-4a19-9506-4afdc3659f6a",
+ CellID->309670259]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[1917, 60, 110, 1, 19, "KeywordsSection",ExpressionUUID->"47350eef-68ea-4608-86a1-b97b91925bff",
+ CellID->336451540],
+Cell[2030, 63, 99, 1, 19, "Keywords",ExpressionUUID->"b68fdd0a-4efc-427c-afbe-5a649e4c2582",
+ CellID->285230595]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2166, 69, 119, 1, 29, "TemplatesSection",ExpressionUUID->"7903663a-587f-47e3-9fee-170b0359f9de",
+ CellID->127972254],
+Cell[2288, 72, 148, 2, 29, "Template",ExpressionUUID->"7351e481-efaf-4102-9a09-2f9414f15a7a",
+ CellID->143430887],
+Cell[2439, 76, 137, 2, 29, "Template",ExpressionUUID->"1359d174-d2b3-4ce5-adc4-892099d57fd6",
+ CellID->424584052],
+Cell[2579, 80, 134, 2, 29, "Template",ExpressionUUID->"483f2850-ca13-492e-8f85-44ba9a814569",
+ CellID->55660510],
+Cell[2716, 84, 136, 2, 29, "Template",ExpressionUUID->"002b65eb-f6fa-4e79-954b-86019caabfea",
+ CellID->25370053]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2889, 91, 113, 1, 63, "ObjectName",ExpressionUUID->"d95a04ec-f0e4-496e-ad6c-4c13576f02e1",
+ CellID->204166336],
+Cell[3005, 94, 1716, 37, 360, "Usage",ExpressionUUID->"02264979-c9ce-4fdf-8ae0-eff1a7b320cc",
+ CellID->330652637],
+Cell[4724, 133, 128, 1, 25, "Notes",ExpressionUUID->"4a2863b8-1bf1-4e39-a0e1-0857564eb900",
+ CellID->277735044],
+Cell[4855, 136, 10883, 243, 883, "3ColumnTableMod",ExpressionUUID->"173746d4-cf63-4165-a448-75026a5a0baa",
+ CellID->220080820]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[15775, 384, 113, 1, 44, "TechNotesSection",ExpressionUUID->"a9f5e411-c18d-401a-addf-7d69794b4553",
+ CellID->645642646],
+Cell[15891, 387, 100, 1, 16, "Tutorials",ExpressionUUID->"7cbe2d23-059a-4ba3-a035-c6c1851f20bb",
+ CellID->236643127]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16028, 393, 137, 1, 31, "RelatedDemonstrationsSection",ExpressionUUID->"f86d90d9-caaa-43db-879f-6f951b0919c2",
+ CellID->459917446],
+Cell[16168, 396, 112, 1, 16, "RelatedDemonstrations",ExpressionUUID->"42ed457c-fa1c-4bae-b2ee-59283d296fd1",
+ CellID->474966661]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16317, 402, 119, 1, 31, "RelatedLinksSection",ExpressionUUID->"7e967531-817a-4823-8f40-7b3acc187caa",
+ CellID->123811506],
+Cell[16439, 405, 103, 1, 16, "RelatedLinks",ExpressionUUID->"12c33a7f-b72f-48cb-bbab-c44dba15d019",
+ CellID->183787170]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16579, 411, 109, 1, 31, "SeeAlsoSection",ExpressionUUID->"6e383e3c-2a1c-4521-b123-bfd3380259ea",
+ CellID->243908857],
+Cell[16691, 414, 98, 1, 16, "SeeAlso",ExpressionUUID->"e6b0c011-0758-41f8-b48a-a3d8b7dd2699",
+ CellID->232593991]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16826, 420, 183, 2, 31, "MoreAboutSection",ExpressionUUID->"b59e3e57-7857-4710-9e34-f8d67df5d65c",
+ CellID->317067074],
+Cell[17012, 424, 99, 1, 16, "MoreAbout",ExpressionUUID->"981e5675-096d-48e9-81e3-0cd427ca4ecc",
+ CellID->64836939]
+}, Open  ]],
+Cell[17126, 428, 411, 11, 70, "PrimaryExamplesSection",ExpressionUUID->"7bcc3a14-c1a2-4b91-98a8-b6cf1a4e8f73",
+ CellID->175694731],
+Cell[CellGroupData[{
+Cell[17562, 443, 153, 2, 56, "ExtendedExamplesSection",ExpressionUUID->"2034ddbd-066a-4209-a503-c3c33ad64f74",
+ CellTags->"ExtendedExamples",
+ CellID->14544514],
+Cell[17718, 447, 239, 5, 33, "ExampleSection",ExpressionUUID->"e791de6b-6e91-48c5-9042-fc90afab9eab",
+ CellID->1601623],
+Cell[17960, 454, 264, 5, 21, "ExampleSection",ExpressionUUID->"c19691e4-580e-4fc1-8f00-eb417b696681",
+ CellID->354219988],
+Cell[CellGroupData[{
+Cell[18249, 463, 243, 5, 21, "ExampleSection",ExpressionUUID->"ee7496b1-ef1f-40b5-a833-02bd73307f24",
+ CellID->216229720],
+Cell[18495, 470, 257, 5, 24, "ExampleSubsection",ExpressionUUID->"1a81a080-5f9f-4892-b413-08707e4b0517",
+ CellID->18226933],
+Cell[18755, 477, 260, 5, 20, "ExampleSubsection",ExpressionUUID->"010c7145-74da-4c63-9e16-d552d6c3da79",
+ CellID->347704065],
+Cell[19018, 484, 253, 5, 20, "ExampleSubsection",ExpressionUUID->"ef2c76f5-a6bf-4172-ae58-31b37fc11713",
+ CellID->93596436],
+Cell[19274, 491, 258, 5, 20, "ExampleSubsection",ExpressionUUID->"88ac922b-7cce-46fb-a14c-56d98fba8cee",
+ CellID->484176962],
+Cell[19535, 498, 256, 5, 20, "ExampleSubsection",ExpressionUUID->"0be84942-a193-4f0a-992d-1a1e2fd30ebc",
+ CellID->63850154],
+Cell[19794, 505, 257, 5, 20, "ExampleSubsection",ExpressionUUID->"d569120c-59e4-4162-950c-5c2289154b41",
+ CellID->200919850],
+Cell[20054, 512, 257, 5, 20, "ExampleSubsection",ExpressionUUID->"d85f775a-53c6-4634-a4f5-549c65154dd2",
+ CellID->454351139],
+Cell[20314, 519, 258, 5, 20, "ExampleSubsection",ExpressionUUID->"77df4729-98fd-4382-9814-94161e7bf52c",
+ CellID->667975],
+Cell[20575, 526, 257, 5, 20, "ExampleSubsection",ExpressionUUID->"f25fb087-1048-45ed-848b-ce6c80debc51",
+ CellID->23599615],
+Cell[20835, 533, 258, 5, 20, "ExampleSubsection",ExpressionUUID->"a6799598-282a-45d8-af93-ac661b5f415d",
+ CellID->45002828],
+Cell[21096, 540, 262, 5, 20, "ExampleSubsection",ExpressionUUID->"3258b60c-e24b-45ac-8d5a-09da716839f6",
+ CellID->99222181],
+Cell[21361, 547, 257, 5, 20, "ExampleSubsection",ExpressionUUID->"16d8f737-9c66-45a1-8243-085d50d637bc",
+ CellID->380329603],
+Cell[21621, 554, 254, 5, 20, "ExampleSubsection",ExpressionUUID->"34f816c7-0994-418f-9f6b-0ed1bc6940d0",
+ CellID->463858987]
+}, Open  ]],
+Cell[21890, 562, 248, 5, 33, "ExampleSection",ExpressionUUID->"2eac1df6-95c7-4abe-9adf-1e6e998dc544",
+ CellID->403701577],
+Cell[22141, 569, 258, 5, 21, "ExampleSection",ExpressionUUID->"ec85b0d2-d7d9-4ddb-94b3-8a69a515824b",
+ CellID->349949428],
+Cell[22402, 576, 251, 5, 21, "ExampleSection",ExpressionUUID->"1b80fc23-1110-48bb-9108-3ad91ce532ca",
+ CellID->976927232],
+Cell[22656, 583, 254, 5, 21, "ExampleSection",ExpressionUUID->"38071373-f247-4fbb-af19-4396a101b8dc",
+ CellID->4395746],
+Cell[22913, 590, 248, 5, 21, "ExampleSection",ExpressionUUID->"77634fc2-ae1a-4494-a4e8-9bc4ded60350",
+ CellID->36885442]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+

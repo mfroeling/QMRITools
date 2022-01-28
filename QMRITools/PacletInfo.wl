@@ -1,15 +1,17 @@
+(* ::Package:: *)
+
 (* Paclet Info File *)
 
 (* created 2022/01/21*)
 
 Paclet[
     Name -> "QMRITools",
-    Version -> "2.7.0",
+    Version -> "2.7.2",
     WolframVersion -> "13.0+",
     Description -> "Toolbox for Quantitative MRI.",
     Creator -> "Martijn Froeling <m.froeling@gmail.com>",
     Support -> "https://github.com/mfroeling/QMRITools",
-    Icon -> "icon.png",
+    Icon -> "Resources/icon.png",
     URL -> "https://www.qmritools.com",
     Extensions -> 
         {
