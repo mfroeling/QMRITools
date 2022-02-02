@@ -217,7 +217,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		compress = If[OptionValue[CompressNii],"y","n"];
 			
 		(*find the dcm2niix exe*)	
-		dcm2nii = GetAssetLoaction[Switch[OptionValue[UseVersion],1,"DcmToNii",2,"DcmToNii-2"]];
+		dcm2nii = GetAssetLocation[Switch[OptionValue[UseVersion],1,"DcmToNii",2,"DcmToNii-2"]];
 		If[dcm2nii == $Failed, 
 			Return[$Failed,Module],
 			dcm2nii=DirectoryName[dcm2nii]
