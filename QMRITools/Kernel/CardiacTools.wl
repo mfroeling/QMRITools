@@ -251,7 +251,7 @@ Begin["`Private`"]
 (*HelixAngleCalc*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*CardiacCoordinateSystem*)
 
 
@@ -269,12 +269,16 @@ CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?Numbe
 	dim = Dimensions[mask];
 	
 	(*get the cardiac center line*)
-	axesout = CentralAxes[mask, maskp, vox, AxesMethod -> OptionValue[AxesMethod], ShowPlot -> OptionValue[ShowPlot]];
+	axesout = CentralAxes[mask, maskp, vox, 
+		AxesMethod -> OptionValue[AxesMethod], 
+		ShowPlot -> OptionValue[ShowPlot]
+	];
 	{off, vec, inout} = If[OptionValue[ShowPlot], pla = axesout[[4]]; axesout[[1 ;; 3]], axesout];
 	
 	PrintTemporary["LMCS caclulation start"];
 	Switch[OptionValue[LCMMethod],
 		"CentralAxes",
+		plw = Nothing;
 		(*calculate the wall angle map*)
 		wall = N[WallAngleMap[mask,vox,inout]Degree];
 		(*define te rad vector using center points*)
@@ -324,7 +328,8 @@ CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?Numbe
 		{vec1, vec2, vec3} =   DeleteCases[Flatten[#, 2], None] & /@ Transpose[vectorField, {2, 3, 4, 1}];
 	    plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3]];
 	    
-	    Print[plot];
+	    PrintTemporary[plot];
+	    Pause[1];
 	];
 	
 	If[OptionValue[ShowPlot],
@@ -332,7 +337,6 @@ CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?Numbe
 		{radvecn, norvecc, cirvec}
 	]
 ]
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -349,12 +353,17 @@ HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?
 		out, evec, projection, inp, helix, sign, norvec,radvec, cirvec, coors, plots, i, j
 	},
 
-	coors = CardiacCoordinateSystem[mask, maskp, vox, opts];
+	coors = CardiacCoordinateSystem[mask, maskp, vox, 
+		ShowPlot->OptionValue[ShowPlot], 
+		LCMMethod->OptionValue[LCMMethod], 
+		AxesMethod->OptionValue[AxesMethod]
+	];
+	
 	{radvec, norvec, cirvec} = If[OptionValue[ShowPlot], plots = coors[[2]]; coors[[1]], coors];
 
 	(*create helix angle maps*)
 	out = Flatten[Table[
-		evec=Map[Reverse,data[[All,All,All,i]],{3}];
+		evec=Map[Reverse,data[[All,All,All,All,i]],{3}];
 		(*align vector with projection vector*)
 		evec=Sign2[DotC[{norvec,radvec,cirvec}[[j]],evec]] evec;
 		(*Helix,Transverse,Sheet}*)
@@ -478,7 +487,7 @@ WallAngleMap[mask_, vox_, inout_] := Block[{dim, cent, len, edge1, edge2, fout, 
 	wallang = Sort[DeleteDuplicates[Flatten[wallang, 1]]];
 	wallangfunc = Interpolation[wallang, InterpolationOrder -> 1];
 	
-	Table[
+	Quiet@Table[
 		dist = EuclideanDistance[{j, k}, inout[[1, 1, z, 2 ;;]]];
 		wallangfunc[vox[[1]] z, vox[[2]] dist]
 	, {z, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}
@@ -664,7 +673,7 @@ CentralAxes[mask_,maskp_,vox_,OptionsPattern[]]:=Module[{
 	minmaxr= rad Max[(Drop[dim,1]/1)];
 	
 	(*get inner and outer radius*)
-	{inner,outer}=GetRadius[mask(*,minmaxr,half*)];
+	{inner,outer} = GetRadius[mask(*,minmaxr,half*)];
 	(*finde the upper most closed outer*)
 	last = First@Last@Position[Unitize[inner[[3]] /. {} -> 0] + Unitize[outer[[3]] /. {} -> 0], 2];
 	outer[[All, last + 1 ;;]] = Transpose@ConstantArray[{{}, {}, {}}, Length[outer[[3]]] - last];
@@ -690,7 +699,7 @@ CentralAxes[mask_,maskp_,vox_,OptionsPattern[]]:=Module[{
 	offouti = Reverse[{1, -1, 1} (# + {0, -(dim[[2]]), 0})] & /@ offi;
 	offouto = Reverse[{1, -1, 1} (# + {0, -(dim[[2]]), 0})] & /@ offo;
 	vecsout=Reverse[{1,-1,1} #]&/@vecs;
-	inout = {{offouti, inner[[2]]}, {offouto, outer[[2]]}};
+	inout = {{offouti, inner[[3]]}, {offouto, outer[[3]]}};
 	
 	(*If[OptionValue[ShowPlot]==True,Print[fit]];*)
 	If[OptionValue[ShowPlot],{offout,vecsout,inout,fit},{offout,vecsout,inout}]
@@ -745,7 +754,7 @@ GetRadius[mask_] := Block[{comps, in, out, fout, fin},
 		_, {{}, {}}
 	] & /@ comps];
 	
-	fout = Transpose[MapIndexed[If[#1 === {}, {{}, {}, {}}, fitEllipse[#1, #2]] &,out]];
+	fout = Transpose[MapIndexed[If[#1 === {}, {{}, {}, {}}, fitEllipse[#1, #2]] &, out]];
 	fin = Transpose[MapIndexed[If[#1 === {}, {{}, {}, {}}, fitEllipse[#1, #2]] &, in]];
 	
 	{fin, fout}
@@ -933,7 +942,7 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 	
 	(*get the segments per slice*)
 	{segments,segm}=SlicesToSegments[regions,slices,{type,slcGrp}];
-	
+	Print["test"];
 	segs=Select[segments,#[[2]]=!=0&];
 	nseg=Length[segs];
 	
@@ -986,22 +995,23 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 
 
 SlicesToSegments[{start_,ap_,mid_,bas_,end_},slices_,{segmi_,slcgrp_}]:=Block[{apex,apical,midcavity,basal,none,segments},
-(*segment ranges*)
-apex=Range[start+1,ap];
-apical=Range[ap+1,mid];
-midcavity=Range[mid+1,bas];
-basal=Range[bas+1,end];
-none=Complement[Range[1,slices],Flatten[{apex,apical,midcavity,basal}]];
-
-segments=Switch[segmi,
-"AHA",Thread[{apex,apical,midcavity,basal,none}->{1,4,6,6,0}],
-"AHA+",Thread[{apex,apical,midcavity,basal,none}->{2,6,8,8,0}],
-_,If[slcgrp,
-DeleteCases[Thread[{apex,apical,midcavity,basal,none}->{segmi,segmi,segmi,segmi,0}],{}->_],
-{Range[slices]->segmi}
-]];
-
-{segments,Flatten[Thread/@segments]}
+	(*segment ranges*)
+	apex=Range[start+1,ap];
+	apical=Range[ap+1,mid];
+	midcavity=Range[mid+1,bas];
+	basal=Range[bas+1,end];
+	none=Complement[Range[1,slices],Flatten[{apex,apical,midcavity,basal}]];
+	
+	segments=Switch[segmi,
+		"AHA",Thread[{apex,apical,midcavity,basal,none}->{1,4,6,6,0}],
+		"AHA+",Thread[{apex,apical,midcavity,basal,none}->{2,6,8,8,0}],
+		_,If[slcgrp,
+			DeleteCases[Thread[{apex,apical,midcavity,basal,none}->{segmi,segmi,segmi,segmi,0}],{}->_],
+			{Range[slices]->segmi}
+		]
+	];
+	
+	{segments,Flatten[Thread/@segments]}
 ]
 
 

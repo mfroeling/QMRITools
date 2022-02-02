@@ -6,8 +6,9 @@
 
 Paclet[
     Name -> "QMRITools",
-    Version -> "2.7.2",
+    Version -> "2.7.3",
     WolframVersion -> "13.0+",
+    SystemID -> All, 
     Description -> "Toolbox for Quantitative MRI.",
     Creator -> "Martijn Froeling <m.froeling@gmail.com>",
     Support -> "https://github.com/mfroeling/QMRITools",
@@ -34,6 +35,7 @@ Paclet[
             {"Asset", "Root" -> "Applications/Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-4.9.so"}}},
             
             {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii", "dcm2niix.exe"}}},
+            {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii-2", "dcm2niix-20210317.exe"}}},
             {"Asset", "Root" -> "Applications/MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}},
             {"Asset", "Root" -> "Applications/Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}}
         }
