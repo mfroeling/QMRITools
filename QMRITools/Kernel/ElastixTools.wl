@@ -559,7 +559,7 @@ RunBatfileT[tempdir_, command_] := Block[{batfile, com},
 
 
 TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
-  transformix = GetAssetLoaction["Transformix"];
+  transformix = GetAssetLocation["Transformix"];
   transFol = StringDrop[DirectoryName[transformix, 2], -1];
     
   volDirs = FileNames["vol*", tempDir, 1];
@@ -902,7 +902,7 @@ type_,OptionsPattern[]]:=Module[{
 	dimtarm=Dimensions[maskt];
 	
 	(*find the elastix program*)
-	elastix=GetAssetLoaction["Elastix"];
+	elastix=GetAssetLocation["Elastix"];
 	If[elastix=="error",error=True;Message[RegisterData::elastix];];
 	
 	(*create temp directory*)
@@ -1155,7 +1155,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 
 
 TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
-	transformix = GetAssetLoaction["Transformix"];
+	transformix = GetAssetLocation["Transformix"];
 	transFol = StringDrop[DirectoryName[transformix, 2], -1];
 	
 	transfile = Last[SortBy[
