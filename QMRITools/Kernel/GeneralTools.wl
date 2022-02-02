@@ -24,6 +24,10 @@ BeginPackage["QMRITools`GeneralTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Functions*)
 
 
+GetAssetLocation::usage = 
+"GetAssetLocation[name] Gets the location of the executable assets of the package for the highest installed version.
+Current assests are \"Elastix\", \"Transformix\" and \"DcmToNii\"." 
+
 FileSelect::usage = 
 "FileSelect[action] creates a systemdialog wicht returs file/foldername action can be \"FileOpen\", \"FileSave\" or \"Directory\".
 FileSelect[action, {type}] same but allows the definition of filetypes for \"FileOpen\" and \"FileSave\" e.g. \"jpg\" or \"pdf\"."
@@ -288,6 +292,12 @@ Begin["`Private`"]
 
 (* ::Subsection:: *)
 (*General Functions*)
+
+
+GetAssetLocation[name_] := Block[{file},
+	file=Last[SortBy[PacletFind["QMRITools"], #["Version"]]]["AssetLocation", name];
+	If[FileExistsQ[file],file,$Failed]
+]
 
 
 (* ::Subsubsection::Closed:: *)

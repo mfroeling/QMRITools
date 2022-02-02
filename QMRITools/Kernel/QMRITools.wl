@@ -24,12 +24,14 @@ If[$VersionNumber < 13,
 	Alignment -> Center], WindowTitle -> "Update!"];
 ];
 
+
 (*usage notes*)
 QMRITools`$SubPackages::usage = "List of the subpackages.";
 QMRITools`$Contexts::usage = "The package contexts.";
 QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions.";
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
+
 
 (*subpackages names*)
 QMRITools`$SubPackages = {
@@ -52,9 +54,11 @@ QMRITools`$Contexts = (Context[] <> # & /@ QMRITools`$SubPackages);
 QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
 QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Version"];
 
+
 (*load all the packages without error reporting such we can find the names of all the functions and options*)
 Quiet[Get/@QMRITools`$Contexts];
 QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
+
 
 (*print the Toolbox content and version*)
 If[QMRITools`$Verbose,

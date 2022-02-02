@@ -420,50 +420,6 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 
 
 (* ::Subsubsection::Closed:: *)
-(*FindElastix*)
-
-
-FindElastix[]:=Module[{fil1,fil2},
-	Switch[operatingSystem,
-		"Windows",
-		fil1=$UserBaseDirectory<>"\\Applications\\QMRITools\\Applications\\Windows-x86-64\\elastix.exe";
-		fil2=$BaseDirectory<>"\\Applications\\QMRITools\\Applications\\Windows-x86-64\\elastix.exe";
-		,
-		"MacOSX",
-		fil1=$UserBaseDirectory<>"/Applications/QMRITools/Applications/MacOSX-x86-64/bin/elastix";
-		fil2=$BaseDirectory<>"/Applications/QMRITools/Applications/MacOSX-x86-64/bin/elastix";
-		,
-		"Unix",
-		fil1=$UserBaseDirectory<>"/Applications/QMRITools/Applications/Linux-x86-64/bin/elastix";
-		fil2=$BaseDirectory<>"/Applications/QMRITools/Applications/Linux-x86-64/bin/elastix";
-		];
-	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error: elastix not found"]]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*FindTransformix*)
-
-
-FindTransformix[]:=Module[{fil1,fil2},
-	Switch[operatingSystem,
-		"Windows",
-		fil1=$UserBaseDirectory<>"\\Applications\\QMRITools\\Applications\\Windows-x86-64\\transformix.exe";
-		fil2=$BaseDirectory<>"\\Applications\\QMRITools\\Applications\\Windows-x86-64\\transformix.exe";
-		,
-		"MacOSX",
-		fil1=$UserBaseDirectory<>"/Applications/QMRITools/Applications/MacOSX-x86-64/bin/transformix";
-		fil2=$BaseDirectory<>"/Applications/QMRITools/Applications/MacOSX-x86-64/bin/transformix";
-		,
-		"Unix",
-		fil1=$UserBaseDirectory<>"/Applications/QMRITools/Applications/Linux-x86-64/bin/transformix";
-		fil2=$BaseDirectory<>"/Applications/QMRITools/Applications/Linux-x86-64/bin/transformix";
-	];
-	If[FileExistsQ[fil1],fil1,If[FileExistsQ[fil2],fil2,"error: transformix not found"]]
-]
-
-
-(* ::Subsubsection::Closed:: *)
 (*ElastixCommand*)
 
 
@@ -603,7 +559,7 @@ RunBatfileT[tempdir_, command_] := Block[{batfile, com},
 
 
 TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
-  transformix = FindTransformix[];
+  transformix = GetAssetLoaction["Transformix"];
   transFol = StringDrop[DirectoryName[transformix, 2], -1];
     
   volDirs = FileNames["vol*", tempDir, 1];
@@ -946,7 +902,7 @@ type_,OptionsPattern[]]:=Module[{
 	dimtarm=Dimensions[maskt];
 	
 	(*find the elastix program*)
-	elastix=FindElastix[];
+	elastix=GetAssetLoaction["Elastix"];
 	If[elastix=="error",error=True;Message[RegisterData::elastix];];
 	
 	(*create temp directory*)
@@ -1199,7 +1155,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 
 
 TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
-	transformix = FindTransformix[];
+	transformix = GetAssetLoaction["Transformix"];
 	transFol = StringDrop[DirectoryName[transformix, 2], -1];
 	
 	transfile = Last[SortBy[

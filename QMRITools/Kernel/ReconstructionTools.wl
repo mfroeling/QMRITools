@@ -248,7 +248,7 @@ ReadListData[file_,print_]:=Block[{
 	
 	(*process noise data *)
 	noise = "NOI"/.dataSplit;
-	data = ("STD"/.dataSplit);
+	data = "STD"/.dataSplit;
 	
 	If[noise=!="NOI",
 		scale = 1000/Max[Abs[noise]];

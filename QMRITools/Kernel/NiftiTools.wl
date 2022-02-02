@@ -144,6 +144,7 @@ UseVersion::usage = "UseVersion is an option for DcmToNii. For windows it allows
 
 DeleteOutputFolder::usage = "DeleteOutputFolder is an option of DcmToNii. If the ouput folder already exists it will be deleted."
 
+
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
@@ -216,8 +217,11 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		compress = If[OptionValue[CompressNii],"y","n"];
 			
 		(*find the dcm2niix exe*)	
-		dcm2nii = FindDcm2Nii[OptionValue[UseVersion]];
-		If[dcm2nii == $Failed, Return[$Failed,Module]];
+		dcm2nii = GetAssetLoaction[Switch[OptionValue[UseVersion],1,"DcmToNii",2,"DcmToNii-2"]];
+		If[dcm2nii == $Failed, 
+			Return[$Failed,Module],
+			dcm2nii=DirectoryName[dcm2nii]
+		];
 		
 		Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"];
 			
