@@ -263,33 +263,6 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 ]
 
 
-FindDcm2Nii[]:=FindDcm2Nii[1];
-
-FindDcm2Nii[ver_]:=Module[{fil1,fil2},
-	Switch[$OperatingSystem,
-		"Windows",
-		
-		Switch[ver,
-			1,"dcm2niix.exe",
-			2,"dcm2niix-20210317.exe"
-		];
-		
-		fil1=$UserBaseDirectory <>"\\Applications\\QMRITools\\Applications\\windows-x86-64\\";
-		fil2=$BaseDirectory <>"\\Applications\\QMRITools\\Applications\\windows-x86-64\\dcm2niix.exe";
-		,
-		"Unix",
-		fil1=$UserBaseDirectory <>"/Applications/QMRITools/Applications/Linux-x86-64/bin/dcm2niix";
-		fil2=$BaseDirectory <>"/Applications/QMRITools/Applications/Linux-x86-64/bin/dcm2niix";
-		,
-		"MacOSX",
-		fil1=$UserBaseDirectory <>"/Applications/QMRITools/Applications/MacOSX-x86-64/bin/dcm2niix";
-		fil2=$BaseDirectory <>"/Applications/QMRITools/Applications/MacOSX-x86-64/bin/dcm2niix";
-	];
-	
-	If[FileExistsQ[fil1],DirectoryName[fil1],If[FileExistsQ[fil2],DirectoryName[fil2], Message[DcmToNii::notfount];$Failed]]
-]
-
-
 (* ::Subsection:: *)
 (*General Nii Functions*)
 
@@ -1086,7 +1059,7 @@ ImportExport`RegisterExport["Nii",
 (*ExportNii*)
 
 
-Options[ExportNii]={NiiDataType->Automatic,CompressNii->True, NiiOffset->Automatic, NiiLegacy->False, NiiSliceCode->0}
+Options[ExportNii]={NiiDataType->Automatic,CompressNii->True, NiiOffset->Automatic, NiiLegacy->True, NiiSliceCode->0}
 
 SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}};
 
@@ -1105,14 +1078,6 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	off = OptionValue[NiiOffset];
 	leg = OptionValue[NiiLegacy];
 	sl = OptionValue[NiiSliceCode];
-	
-	(*Print[off];*)
-	(*
-	If[VectorQ[off],off={"None",off,IdentityMatrix[3]}];
-	If[VectorQ[off[[1]]&&MatrixQ[off[[2]]]],off={"None", off[[1]], off[[2]]}];
-	If[!(StringQ[off[[1]]]&&VectorQ[off[[2]]&&MatrixQ[off[[3]]]]), off = Automatic];
-	*)
-	
 	
 	(*compress the file*)
 	If[OptionValue[NiiOffset]===Automatic,
