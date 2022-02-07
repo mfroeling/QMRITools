@@ -679,7 +679,7 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 (*MakeSense*)
 
 
-Options[MakeSense] = {SenseRescale -> False}
+Options[MakeSense] = {SenseRescale -> True}
 
 SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 

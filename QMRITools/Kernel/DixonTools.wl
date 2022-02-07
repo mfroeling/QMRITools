@@ -202,7 +202,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	(*Reeder et.al. 10.1002/mrm.20624 - iDEAL*)
 	(*Huanzhou Yu et.al. 10.1002/jmri.21090 - iDEAL algorithm and T2* correction*)
 	(*Bydder et.al. 10.1016/j.mri.2010.08.011 - initial phase*)
-	(*Peterson et.al.10.1002/mrm .24657 - bipolar*)
+	(*Peterson et.al.10.1002/mrm.24657 - bipolar*)
 	
 	(*fixed setting*)
 	echo = echoi;
@@ -271,10 +271,8 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 If[OptionValue[DixonFilterOutput],
 	 	PrintTemporary["Filtering field estimation and recalculating signal fractions"];
 	 	(*smooth b0 field and R2star maps*)
-	 	re = filtFunc[Ramp[Im[phiEst]]];
-	 	im = filtFunc[Re[phiEst]];
-	 	phiEst = mask (im + re I);
-	 	phiIn = mask Exp[I filtFunc[Arg[phiIn]]];
+	 	phiEst = mask (filtFunc[Re[phiEst]] + filtFunc[Ramp[Im[phiEst]]] I);
+	 	phiIn = mask (filtFunc[Re[phiIn]] + filtFunc[Im[phiIn]] I); 
 	 		 	
 	 	(*recalculate the water fat signals*)
 	 	input = RotateDimensionsLeft[{complex, phiEst, phiIn, mask}];
@@ -302,7 +300,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 	Clip[b0fit, {-400., 400.}, {-400., 400.}], 
 	 	Clip[t2Star, {0., 0.25}, {0., 0.25}], 
 	 	Clip[r2Star, {0., 1000.}, {0., 1000.}],
-	 	Arg[phiIn]
+	 	phiIn
 	 	};
 
 	 (*give the output*)
@@ -325,7 +323,7 @@ DixonFiti[{ydat_, phiInit_, mask_}, {echo_, signs_}, {Amat_,Amati_}, {eta_, maxI
 		(*check if bipolar fit*)
 		phi0F = Min[signs] < 1;
 		phi0Est = If[phi0F, Exp[I (1/4) (Arg[(ydat[[2]]^2)/(ydat[[1]] ydat[[3]])])], 0.];
-		
+				
 		(*initialize fit*)
 		phiEst = phiInit;
 		deltaPhi = deltaPhi0 = 0.;
@@ -336,7 +334,8 @@ DixonFiti[{ydat_, phiInit_, mask_}, {echo_, signs_}, {Amat_,Amati_}, {eta_, maxI
 		While[continue,
 			(*update the field map*)
 			phiEst += deltaPhi;
-			If[phi0F, phi0Est += deltaPhi0];
+			phi0Est += deltaPhi0;
+			(*If[phi0F, phi0Est += deltaPhi0];*)
 			
 			(*define complex field map P(-phi) or (E D)^-1 *)
 			pMat = Exp[-2 Pi I phiEst echo] Exp[-signs I phi0Est];

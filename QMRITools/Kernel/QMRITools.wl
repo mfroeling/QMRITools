@@ -8,10 +8,13 @@
 (*Written by: Martijn Froeling, PhD*)
 (*m.froeling@gmail.com*)
 
+
 (*set HistoryLength to 0 to prevent excessive memory used when working with large data*)
 $HistoryLength = 0;
 
+
 BeginPackage["QMRITools`"];
+
 
 (*check mathematica version*)
 If[$VersionNumber < 13,
@@ -86,6 +89,7 @@ If[QMRITools`$Verbose,
 	Print["Removing all local and global definitions of:"];
 ];
 
+
 With[{
 		global = Intersection[Names["Global`*"], "Global`" <> # & /@ Last[#]]
 	},
@@ -106,6 +110,7 @@ If[QMRITools`$Verbose,
 	Print["--------------------------------------"];
 	Print["Loading and protecting all definitions of:"];
 ];
+
 
 (
 	If[QMRITools`$Verbose, Print["   - ", First@#]];
