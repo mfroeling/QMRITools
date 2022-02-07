@@ -2416,7 +2416,7 @@ GetSlicePositions[data_, opts:OptionsPattern[]]:=GetSlicePositions[data, {1,1,1}
 
 GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,pers,min,max,minmax,result,num,s1,s2,s3,mid},
 	(*get the max intensity slice*)
-	pers={{2,3,1},{1,3,1},{1,2,1}};
+	pers={{2,3},{1,3},{1,2}};
 	{s1,s2,s3}=OptionValue[DropSlices];
 	
 	(*find slice positions*)
@@ -2433,11 +2433,17 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,per
 		];
 		
 		(*get the data profile*)
-		dat=MeanNoZero@Flatten[dat,pers[[#,1;;2]]];
+		(*dat=MeanNoZero@Flatten[dat,pers[[#,1;;2]]];*)
+		
+		mn = MeanNoZero@Flatten[dat, pers[[#,1;;2]]];
+		mn = mn/Max[mn];
+		tot = Total@Flatten[dat, pers[[#,1;;2]]];
+		tot = tot/Max[tot];
+		dat = mn + 0.5 tot;
 		
 		(*constrain and filter data*)
 		len=Length[dat];
-		fil=Clip[len/30.,{2,Infinity}];
+		fil=Clip[len/50.,{2,Infinity}];
 		{min,max}=MinMax[dat];
 		minmax=(min+0.5(max-min));
 		mid={len/2.,minmax};
