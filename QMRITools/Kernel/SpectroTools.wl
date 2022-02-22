@@ -1635,7 +1635,6 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, ControlPlacement -> Right
 		];
 		
-		NotebookClose[plotwindow];
 		plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
 	]
 ]

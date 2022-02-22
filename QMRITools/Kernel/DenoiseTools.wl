@@ -539,17 +539,17 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 		StandardDeviation[Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]]],
 		"Corners", 
 		nn = Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]];
-		sel = FindOutliers[Re@nn, OutlierRange -> 10] FindOutliers[Im@nn, OutlierRange -> 10];
+		sel = FindOutliers[Re@nn, OutlierRange -> 5] FindOutliers[Im@nn, OutlierRange -> 5];
 		nn = Pick[nn, sel, 1];
 		StandardDeviation[nn]/Sqrt[2]
 		,
 		"Automatic", 0
 	];
 	
-	Print[sig];
-	
     (*Denoise the spectra data*)
-    {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[TransData[spectra, "r"]],	1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];
+    {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[TransData[spectra, "r"]], 1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];
+    
+    Print[Mean@Flatten@sig];	
     	
     TransData[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I, "l"]
 ]

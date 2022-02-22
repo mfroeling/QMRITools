@@ -101,6 +101,8 @@ PeakNumber::usage =
 ImageLegend::usage = 
 "ImageLegend is an option for MakeSliceImages, if set true a barlegend is added to the image."
 
+ImageOrientation::usage = 
+"ImageOrientation is an option for MakeSliceImages. Can be Automatic, \"Vertical\" or \"Horizontal\"."
 
 PlotSpace::usage = 
 "PlotSpace is an option for GradientPlot can be \"bspace\" or \"qspace\"."
@@ -732,8 +734,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 	},
 	
 	NotebookClose[plotwindow];
-	ClearTemporaryVariables[];
-
+	
 	(*Check if data is numeric array, if not exit*)
 	data = ToPackedArray[N[dat]];
 	If[!ArrayQ[data,_,RealQ],Return[Message[PlotData::data]]];
@@ -919,8 +920,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 	start1,end1,start2,end2,dur,loop,exp,dim1,dim2,prange,frame,adep1,adep2,maxabs,pcol,pcol1,pcol2},
 	
 	NotebookClose[plotwindow];
-	ClearTemporaryVariables[];
-	
+		
 	(*Check if data is numeric array, if not exit*)
 	data1 = ToPackedArray[dat1//N];
 	data2 = ToPackedArray[dat2//N];
@@ -2345,7 +2345,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 (*MakeSliceImages*)
 
 
-Options[MakeSliceImages]={PlotRange->Automatic, ColorFunction->"GrayTones", ImageLegend->False};
+Options[MakeSliceImages]={PlotRange->Automatic, ColorFunction->"GrayTones", ImageLegend->False,ImageOrientation->Automatic};
 
 SyntaxInformation[MakeSliceImages]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
@@ -2356,7 +2356,7 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},opts:OptionsPattern[]]:=MakeSlic
 MakeSliceImages[selData_,vox:{_,_,_},opts:OptionsPattern[]]:=MakeSliceImages[selData,{0,{}},vox,opts]
 
 MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=Block[{
-	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2
+	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2, dim, dim1, dim2, pl ,ml, sz, n
 	},
 	
 	rule=Thread[N[vals]->Range[Length[vals]]];
@@ -2378,9 +2378,18 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=B
 		
 		(*loop over the slices, 1 axial, 2 cor, 3 sag*)
 		MapThread[(
-			ratio=Divide@@(Dimensions[#]size);
-			pl1=ArrayPlot[#1,AspectRatio->ratio,Frame->False,ImageSize->400,PlotRangePadding->1, PlotRange->ran,ColorFunction->colF,ClippingStyle->(colF/@{0,1})];
-			pl2=ArrayPlot[#2,ColorFunction->(Directive[{Opacity[0.4],ColorData["Rainbow"][#]}]&),ColorRules->{0.->Transparent}];
+			dim = {dim1,dim2} =  Dimensions[#1];
+			ratio = Divide@@(dim size);
+			{pl, ml, ratio, sz} = Switch[OptionValue[ImageOrientation],
+				"Horizontal", 
+				If[dim2 <= dim1, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {300, Automatic}}, {#1,#2,ratio, {300, Automatic}}], 
+				"Vertical", 
+				If[dim1 <= dim2, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {Automatic,300}}, {#1,#2,ratio, {Automatic,300}}],
+				_,
+				If[dim1 <= dim2, {#1,#2,ratio, {300, Automatic}}, {#1,#2,ratio, {Automatic, 300}}] 
+			];
+			pl1 = ArrayPlot[pl, AspectRatio->ratio,Frame->False,ImageSize->sz, PlotRangePadding->1, PlotRange->ran,ColorFunction->colF,ClippingStyle->(colF/@{0,1})];
+			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.4],ColorData["Rainbow"][#]}]&),ColorRules->{0.->Transparent}];
 			If[OptionValue[ImageLegend],Legended[Show[pl1,pl2],bar],Show[pl1,pl2]]
 		)&,{pdat,mdat}]
 	,{n,1,3}]
@@ -2444,12 +2453,13 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,per
 		(*constrain and filter data*)
 		len=Length[dat];
 		fil=Clip[len/50.,{2,Infinity}];
+		dat=GaussianFilter[dat,fil];
+		
 		{min,max}=MinMax[dat];
 		minmax=(min+0.5(max-min));
 		mid={len/2.,minmax};
 		dat[[;;ran]]=min;
 		dat[[-ran;;]]=min;
-		dat=GaussianFilter[dat,fil];
 		
 		(*find the peak locations and select the ones above treshhold*)
 		peaks=FindPeaks[dat,fil];

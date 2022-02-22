@@ -323,7 +323,7 @@ GetMaskData[data_?ArrayQ, mask_?ArrayQ, OptionsPattern[]] := Block[{fdat},
 		If[OptionValue[GetMaskOnly],
 			(*get true mask values*)
 			Switch[OptionValue[GetMaskOutput],
-				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[#2]], 1]&, {data,mask}, {ArrayDepth[data]-2}],
+				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[#2]], 1]&, {data,mask}, ArrayDepth[data]-2],
 				_, Pick[Chop[Flatten[N[data]]], Unitize[Flatten[mask]], 1]
 			]
 			,			
