@@ -458,33 +458,22 @@ InverseFourierShifted[spec_] := InverseFourierShift[InverseFourier[spec,FourierP
 
 SyntaxInformation[FourierKspace2D] = {"ArgumentsPattern" -> {_, _, _.}};
 
-FourierKspace2D[kspace_, head_, filt_:False] := Block[{ksPad, dim, imPad, shift, kspaceP, imData,p1,p2},
-	(*
-	(*get the oversampling padding*)
-	ksPad = Round[({"Y-resolution", "X-resolution"} {"ky_oversample_factor", "kx_oversample_factor"} - {"N_ky", "N_samp"})/2 /. head];
-	(*get the final data dimentions*)
-	dim = {"Y-resolution", "X-resolution"} /. head;
-	(*get the image shift*)
-	shift = Total[#] & /@ ({"Y_range", "X_range"} /. head);
-	(*get the image padding*)
-	{p1, p2} = Round[((({"N_ky", "N_samp"} /. head) - 2 ksPad) - dim)/2];
-	ksPad = Transpose@{ksPad, ksPad};
-	*)
-	
+FourierKspace2D[kspace_, head_, filt_:False] := Block[{ksize, dim, over, kfull, ksPad, shift, clip, ham},
 	(*the acquired k-space size*)
-ksize = {"N_ky", "N_samp"} /. head;
-(*get the final target data dimentions*)
-dim = {"Y-resolution", "X-resolution"} /. head;
-(*the amount of oversampling performed*)
-over = {"ky_oversample_factor", "kx_oversample_factor"} /. head;
-(*to what size to pad the immages*)
-kfull = Round[dim over];
-(*padding after zero filling and fourier*)
-ksPad = Transpose[{Floor[#], Ceiling[#]} &[(kfull - ksize)/2]];
-(*get the image padding and image shift*)
-shift = Total[#] & /@ ({"Y_range", "X_range"} /. head);
-(*the amout of data that needs to be removed to come to correct dimensions*)
-clip = Transpose[{Floor[#] + 1, -Ceiling[#] - 1} &[(kfull - dim)/2]];
+	ksize = {"N_ky", "N_samp"} /. head;
+	(*get the final target data dimentions*)
+	dim = {"Y-resolution", "X-resolution"} /. head;
+	(*the amount of oversampling performed*)
+	over = {"ky_oversample_factor", "kx_oversample_factor"} /. head;
+	(*get the image padding and image shift*)
+	shift = Total[#] & /@ ({"Y_range", "X_range"} /. head);
+	
+	(*to what size to pad the immages*)
+	kfull = Round[dim over];
+	(*padding after zero filling and fourier*)
+	ksPad = Transpose[{Floor[#], Ceiling[#]} &[(kfull - ksize)/2]];
+	(*the amout of data that needs to be removed to come to correct dimensions*)
+	clip = Transpose[{Floor[#] + 1, -Ceiling[#] - 1} &[(kfull - dim)/2]];
 	
 	If[filt === True,
 		ham = MakeHammingFilter[Dimensions[kspace][[-2 ;;]]];
@@ -515,28 +504,6 @@ FourierKspace2DIF = Compile[{{data, _Complex, 2}, {ham, _Complex, 2}, {ksPad, _I
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ];
 
-(*
-FourierKspace2DI = Compile[{{data, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {p1, _Integer, 0}, {p2, _Integer, 0}},
-	Block[{dat},
-		dat = ArrayPad[data, ksPad];
-		dat = FourierShifted[dat];
-		dat = RotateRight[dat, Reverse[shift]];
-		Chop[dat[[p1 + 1 ;; -p1 - 1, p2 + 1 ;; -p2 - 1]]]
-	], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
-];
-
-FourierKspace2DIF = Compile[{{data, _Complex, 2}, {ham, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {p1, _Integer, 0}, {p2, _Integer, 0}},
-	Block[{dat},
-		dat = ArrayPad[ham data, ksPad];
-		dat = FourierShifted[dat];
-		dat = RotateRight[dat, Reverse[shift]];
-		Chop[dat[[p1 + 1 ;; -p1 - 1, p2 + 1 ;; -p2 - 1]]]
-		], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
-];
-*)
-
 
 (* ::Subsubsection::Closed:: *)
 (*FourierKspace3D*)
@@ -551,16 +518,18 @@ FourierKspace3D[kspace_, head_, filt_ : False] := Block[{ksize, dim, over, kfull
 	dim = {"Z-resolution", "Y-resolution", "X-resolution"} /. head;
 	(*the amount of oversampling performed*)
 	over = {"kz_oversample_factor", "ky_oversample_factor", "kx_oversample_factor"} /. head;
+	(*get the image padding and image shift*)
+	shift = Total[#] & /@ ({"Z_range", "Y_range", "X_range"} /. head);
+	
 	(*to what size to pad the immages*)
 	kfull = Round[dim over];
 	(*padding after zero filling and fourier*)
 	ksPad = Transpose[{Floor[#], Ceiling[#]} &[(kfull - ksize)/2]];
-	(*get the image padding and image shift*)
-	shift = Total[#] & /@ ({"Z_range", "Y_range", "X_range"} /. head);
 	(*the amout of data that needs to be removed to come to correct dimensions*)
 	clip = Transpose[{Floor[#] + 1, -Ceiling[#] - 1} &[(kfull - dim)/2]];
+	
+	(*Reconstruct and Hammingfilter the data if needed*)
 	data = FourierKspace3DI[kspace, ksPad, shift, clip];
-	(*Hamming filter the data if needed*)
 	If[filt === True,Map[HammingFilterData, data, {-3}],data]
   ]
 
@@ -844,8 +813,8 @@ SyntaxInformation[DeconvolveCSIdata]={"ArgumentsPattern"->{_,_.,OptionsPattern[]
 
 DeconvolveCSIdata[spectra_, opts:OptionsPattern[]] := DeconvolveCSIdata[spectra,1,opts]  
 
-DeconvolveCSIdata[spectra_, hami_,OptionsPattern[]] := Block[{dim, filt, spectraOut, ham},
-	reg=OptionValue[WienerRegularization];
+DeconvolveCSIdata[spectra_, hami_,OptionsPattern[]] := Block[{dim, filt, spectraOut, ham, reg},
+	reg = OptionValue[WienerRegularization];
 	
 	(*make tha hamming filter*)
 	dim = Dimensions[spectra][[;; -2]];

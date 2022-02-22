@@ -503,17 +503,32 @@ RescaleImgi[dat_, {sc_, met_}, n_] := Block[{type, im, dim},
 (* ::Subsubsection::Closed:: *)
 (*GridData*)
 
+Options[GridData] = {Padding-> None}
 
-SyntaxInformation[GridData] = {"ArgumentsPattern" -> {_, _}};
+SyntaxInformation[GridData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-GridData[data_, part_] := Block[{dim, temp, adepth},
-	adepth = ArrayDepth[data[[1]]];
+GridData[dati_, part_, OptionsPattern[]] := Block[{dim, data, adepth, pad, val},
+	adepth = ArrayDepth[dati[[1]]];
+	
+	(*pad the images with zeros*)
+	pad = OptionValue[Padding];
+	data = If[pad =!= None,
+		{pad, val} = If[IntegerQ[pad], {pad, 0.}, pad];
+		pad = PadRight[{pad, pad}, adepth];
+		ArrayPad[#, pad, val] & /@ dati
+		,
+		dati
+	];
+	
+	(*make the first dimention such that it is devidable by part*)	
 	dim = Dimensions[data];
-	dim[[1]] = dim[[1]] + (part - (Mod[Length[data], part] /. 0 -> part));
-	temp = Transpose[Partition[PadRight[data, dim], part]];
-	temp = MapThread[Join, #, adepth - 2] & /@ temp;
-	temp = MapThread[Join, temp, adepth - 1];
-	ToPackedArray@N@temp
+	dim[[1]] = dim[[1]] + (part - (Mod[dim[[1]], part] /. 0 -> part));
+	data = Transpose[Partition[PadRight[data, dim], part]];
+	
+	(*make the grid*)
+	data = MapThread[Join, #, adepth - 2] & /@ data;
+	data = MapThread[Join, data, adepth - 1];
+	ToPackedArray@N@data
   ]
 
 
@@ -521,7 +536,7 @@ GridData[data_, part_] := Block[{dim, temp, adepth},
 (*GridData3D*)
 
 
-SyntaxInformation[GridData] = {"ArgumentsPattern" -> {_, _}};
+SyntaxInformation[GridData3D] = {"ArgumentsPattern" -> {_, _}};
 
 GridData3D[data_, part_] := Block[{AX, COR, SAG},
 	AX = GridData[data, part];
