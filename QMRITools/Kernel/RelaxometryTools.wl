@@ -213,7 +213,7 @@ LinFit[datan_, times_] := Block[{datal, mat, r, s},
 	(*solve system for all voxels*)
 	{r, s} = mat . datal;
 	(*constrain solutions*)
-	{Clip[ExpNoZero[s], {0, 1.5 Max[datan]},{0.,0.}], Clip[DevideNoZero[1, r], {0, 20 Max[times]},{0.,0.}]}
+	{Clip[ExpNoZero[s], {0, 5 Max[datan]},{0.,0.}], Clip[DevideNoZero[1, r], {0, 20 Max[times]},{0.,0.}]}
 ]
 
 

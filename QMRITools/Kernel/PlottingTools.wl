@@ -371,7 +371,7 @@ MakeImage[data_, color_, ccolor_, ran_] := Image[
 (*PlotTicks*)
 
 
-PlotTicks[dimx_, dimy_] := Block[{tkx, tky},
+PlotTicks[dimy_, dimx_] := Block[{tkx, tky},
 	tkx = Table[tx, {tx, 0, dimx, Which[dimx < 10, 1, dimx < 50, 5, True, Ceiling[dimx/10, 10]]}];
 	tky = Table[{ty, dimy - ty}, {ty, dimy, 0, -Which[dimx < 10, 1, dimx < 50, 5, True, Ceiling[dimx/10, 10]]}];
 	{{tky, tky}, {tkx, tkx}}
