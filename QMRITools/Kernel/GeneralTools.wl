@@ -620,35 +620,44 @@ SyntaxInformation[DataToVector] = {"ArgumentsPattern" -> {_, _.}};
 
 DataToVector[datai_] := DataToVector[datai, 1]
 
-DataToVector[datai_, maski_] := 
- Module[{data, mask, depthd, depthm, depth, dimm, dimd},
-  mask = If[maski === 1, Unitize[data], maski];
-  
-  data = N@datai;
-  depthd = ArrayDepth[datai];
-  depthm = ArrayDepth[mask];
-  depth = depthd - depthm;
-  
-  If[! (depthd == 2 || depthd == 3 || depthd == 4), Message[DataToVector::dim, "Data", depthd]];
-  If[! (depthm == 2 || depthm == 3), Message[DataToVector::dim, "Mask", depthm]];
-  
-  dimm = Dimensions[mask];
-  dimd = Dimensions[data];
-  
-  dimd = If[depth == 0, dimd, 
-    If[depth == 1 && depthd == 3, Drop[dimd, 1], Drop[dimd, {2}]]];
-  
-  If[ dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
-  
-  data = If[depthd == 4,
-    Flatten[TransData[Transpose[data], "l"], 2],
-    If[depthd == 3 && depth == 1,
-     Flatten[TransData[data, "l"], 1],
-     Flatten[data]
-     ]];
-  
-  {Pick[data, Flatten[mask], 1], {dimd, Position[mask, 1]}}
-  ]
+DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm, dimd},
+	depthd = ArrayDepth[datai];
+	If[! (depthd == 2 || depthd == 3 || depthd == 4), Return@Message[DataToVector::dim, "Data", depthd]];
+	
+	data = N[datai];	
+	mask = If[maski === 1, Unitize[data], maski];
+	
+	depthm = ArrayDepth[mask];
+	depth = depthd - depthm;
+	
+	(*data dimensions are not correct, mask must be 2D or 3D*)
+	If[! (depthm == 2 || depthm == 3), Message[DataToVector::dim, "Mask", depthm]];
+	
+	dimm = Dimensions[mask];
+	dimd = Dimensions[data];
+	
+	dimd = If[depth == 0, 
+		(*mask and data are same dimensions*)
+		dimd,
+		(*data is one dimensions larger than mask either 2D and 3D or 3D and 4D*)
+		If[depth == 1 && depthd == 3, Drop[dimd, 1], Drop[dimd, {2}]]
+	];
+	
+	(*Dimensions must be equal*)
+	If[ dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
+	
+	(*Flatten the data*)
+	data = If[depthd == 4,
+		Flatten[RotateDimensionsLeft[Transpose[data]], 2],
+		If[depthd == 3 && depth == 1,
+			Flatten[RotateDimensionsLeft[data], 1],
+			Flatten[data]
+		]
+	];
+
+	(*get the data and positions there mask is 1*)
+	{Pick[data, Round[Flatten[mask]], 1] , {dimd, Position[mask, 1]}}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -658,12 +667,12 @@ DataToVector[datai_, maski_] :=
 SyntaxInformation[VectorToData] = {"ArgumentsPattern" -> {_, {_, _}}};
 
 VectorToData[vec_, {dim_, pos_}] := If[VectorQ[vec],
-  Normal[SparseArray[pos -> vec, dim]],
-  If[Length[dim] == 2,
-   Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec],
-   Transpose[Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec]]
-   ]
-  ]
+	Normal[SparseArray[pos -> vec, dim]],
+	If[Length[dim] == 2,
+		Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec],
+		Transpose[Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec]]
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)

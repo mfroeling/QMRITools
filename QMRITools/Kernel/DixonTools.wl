@@ -247,13 +247,15 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	(*find background voxels*)
 	mask = Closing[UnitStep[Abs[First@complex] - thresh], 1] Unitize[Total[Abs[complex]]];
 	
-	(*prepare b0map and r2 map and smooth if needed*)
-	If[filti, PrintTemporary["Filtering input B0 and T2* maps "]];
+	(*define complex field map*)
+	PrintTemporary["Prepairing filed maps"];
 	b0 = If[b0i === 0, ConstantArray[0., dim], 
 		If[filti, b0i, filtFunc[b0i]]];
 	r2 = If[t2 === 0,  ConstantArray[0., dim], 
 		tmp = DevideNoZero[1., t2]; 
 		If[filti, tmp, filtFunc[tmp]]];
+	phiInit = mask(b0 + I r2/(2 Pi));
+	(*calculate initial phose error*)	
 	phi0 = If[Length[echo] < 3 , ConstantArray[0., dim],
 		tmp = Im@Exp[-I 0.25 Arg[DevideNoZero[complex[[2]]^2, (complex[[1]] complex[[3]])]]];
 		1. + If[filti, tmp, filtFunc[tmp]] I
@@ -261,17 +263,15 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 		
 	(*perform the dixon reconstruction*)
 	PrintTemporary["performing dixon iDEAL reconstruction"];
-	
-	(*define complex field map*)
-	phiInit = mask(b0 + I r2/(2 Pi));
+	(*input data for fit*)
 	complex = RotateDimensionsLeft[complex];
 	input = RotateDimensionsLeft[{complex, phiInit, phi0, mask}];
-	
 	(*Perform the dixon fit*)
 	DistributeDefinitions[DixonFiti, echo, signs, Amat, Amati, eta, maxItt];
-	Quiet@Monitor[ii=0;result = Map[(ii++;
+	(*Quiet@Monitor[ii=0;result = ParallelMap[((*ii++;*)
 		DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}])&, input, dep];
-		,ProgressIndicator[ii, {0, Times @@ dim}]];
+		,ProgressIndicator[ii, {0, Times @@ dim}]];*)
+	result = ParallelMap[DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}]&, input, dep];
  	{cWater, cFat, phiEst ,phiIn, res, itt} = RotateDimensionsRight[Chop[result]];
 
 	(*filter the output*) 
