@@ -47,6 +47,12 @@ PCADeNoiseFit[data, sig] fits the marchencopasteur distribution to the PCA of th
 
 Output is {simga, number of noise comp, and denoised matrix}."
 
+NNDeNoise::usage = 
+"NNDeNoise[data] removes rician noise from the data using self supravized neural net.
+NNDeNoise[data, mask] removes rician noise from the data with PCA  using self supravized neural net withing the mask.
+
+PCADeNoise[] is based on DOI:10.48550/arXiv.2011.01355 "
+
 DenoiseCSIdata::usage = 
 "DenoiseCSIdata[spectra] perfroms PCA denoising of the complex values spectra, data has to be 3D and the spectral dimensions is last, {x,y,z,spectra}."
 
@@ -108,6 +114,13 @@ PCAClipping::usage =
 
 PCANoiseSigma::usage = 
 "PCANoiseSigma is an option of DenoiseCSIdata and can be \"Corners\" or \"Automatic\"."
+
+
+NNDataFraction::usage =
+"NNDataFraction is an options for NNDeNoise and specifies the round length based on a fraction off all availible data." 
+
+NNThreshhold::usage = 
+"NNThreshhold is an options for NNDeNoise and specifies the automated back ground masking value."
 
 
 AnisoStepTime::usage =
@@ -517,6 +530,42 @@ SVD[mat_, n_] := Block[{u, w, v, eig},
 	(*normalize eigenvalues from SVD*)
 	eig = Diagonal[w]^2/n;
 	{u, w, Transpose[v], eig}
+]
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*NNDeNoise*)
+
+
+Options[NNDeNoise] = {BatchSize -> 64, NNDataFraction -> 0.5, NNThreshhold -> 5};
+
+SyntaxInformation[NNDeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
+
+NNDeNoise[data_, opts : OptionsPattern[]] := NNDeNoise[data, 1, opts];
+
+NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{back, dat, n, net, coor, sel, dati, train, trained, i},
+	(*make selection mask and vectorize data*)
+	back = mask Mask[NormalizeMeanData[data], OptionValue[NNThreshhold]];
+	{dat, coor} = DataToVector[data, back];
+	
+	(*Get dimensions, training sample and define network*)
+	n = Length[dat[[1]]];
+	sel = Round[OptionValue[NNDataFraction] Length[dat]];
+	net = NetChain[{LinearLayer[1]}, "Input" -> {n - 1}];
+	
+	(*trian network per volume and generate denoised data*)
+	dat = Monitor[Table[
+		train = Thread[(dati = Transpose@Drop[Transpose[dat], {i}]) -> dat[[All, {i}]]];
+		trained = NetTrain[net, {RandomSample[train, #BatchSize] &, "RoundLength" -> sel},
+			ValidationSet -> RandomSample[train, Round[0.2 sel]],
+			BatchSize -> OptionValue[BatchSize],
+			TrainingProgressReporting -> "ProgressIndicator",
+			TrainingStoppingCriterion -> <|"Criterion" -> "Loss", "InitialPatience" -> 5, "Patience" -> 2|>];
+		VectorToData[trained[dati][[All, 1]], coor]
+	, {i, 1, n, 1}], ProgressIndicator[Dynamic[i], {0, n}]];
+	
+	Transpose[dat]
 ]
 
 
