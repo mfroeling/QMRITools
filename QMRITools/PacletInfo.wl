@@ -6,7 +6,7 @@
 
 Paclet[
     Name -> "QMRITools",
-    Version -> "2.7.6",
+    Version -> "2.8.1",
     WolframVersion -> "13.0+",
     SystemID -> All, 
     Description -> "Toolbox for Quantitative MRI.",
