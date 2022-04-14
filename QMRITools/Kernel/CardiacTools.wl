@@ -2084,7 +2084,7 @@ ECVCalc[mappre_, mappost_, hema_?RealQ] := Block[{z, x, y, mask},
 
 ECVCalc[mappre_, mappost_, bloodMask_, hema_] := Block[{deltaR1, deltaR1b},
 	deltaR1 = Clip[DevideNoZero[1, mappost] - DevideNoZero[1, mappre], {0, Infinity}];
-	deltaR1b = Mean@Flatten[GetMaskData[deltaR1, bloodMask]];
+	deltaR1b = Median@Flatten[GetMaskData[deltaR1, bloodMask]];
 	Clip[100 (deltaR1/deltaR1b) (1 - hema), {0, 100}]
 ]  
 

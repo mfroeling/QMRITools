@@ -131,14 +131,17 @@ B1MapCalc::usage =
 "B1MapCalc[data, TR, alpha] calculates the B1 map from a dual TR {tr1, tr2} acquisition (AFI) using magnitude data with reference angle alpha.
 data has dimensions {z, {tr1,tr2}, x, y}.
 B1MapCalc[dataTr1, dataTr2, TR, alpha] where dataTr1 and and dataTr2 can have any dimensions.
-B1MapCalc[chan1, chan2, {f, phase, scale}, TR, alpha] calculates the b1map of two channels with singal fraction f for chan1 and 1-f for chan2 using 
-phase for the combination. the total b1 is scaled with scale.
-B1MapCalc[chan1, chan2, {{f1, f2}, phase, scale}, TR, aplha] calculates the b1map of two channels with singal fraction f1 for chan1 and f2 for chan2 using 
-phase for the combination. the total b1 is scaled with scale.
 
 The Output can be \"Map\", \"MagPhase\", or \"Complex\"}
 
 B1MapCalc[] is based on DOI: 10.1002/mrm.21120."
+
+CombineB1::usage = 
+"CobineB1[b10,b190,{f1,f2,ang}] combines the complex b1 maps with relative amplitudes f1 and f2 using phase angle ang."
+
+B1Shimming::usage = 
+"B1Shimming[b10, b190, mask] finds the optimal shim values to shim to 100% b1. Assumes B1Scaling \"Relative\".
+B1Shimming[b10, b190, mask, target] finds the optimal shim values to shim to target, which can be a number or a map."
 
 
 (* ::Subsection::Closed::*)
@@ -226,15 +229,31 @@ SmartMaskOutput::usage =
 TableMethod::usage = 
 "TableMethod is an option for NumberTableForm. It specifies which number form to uses. Values can be NumberForm, ScientificForm or EngineeringForm."
 
+
 B1Output::usage=
 "B1Output is an option for B1MapCalc. Values can be \"Map\", \"MagPhase\", or \"Complex\"."
-
 
 B1Masking::usage=
 "B1Masking is an option for B1MapCalc. If True then values where S2 is larger than S1 are masked."
 
 B1FilterData::usage=
 "B1FilterData is an option for B1MapCalc. If True HammingFilterData is applied to the data before B1 calculation."
+
+ReferenceB1::usage = 
+"ReferenceB1 is an option for B1MapCalc. Default value is None. Can be given a numeric value in uT."
+
+B1Scaling::usage = 
+"B1Scaling is an option for B1Shimming and CombineB1. Values can be \"Relative\" or \"Absolute\". \"Absolute\" assurmes b1 maps are
+given in uT, \"Relative\" assumes that maps are in %."
+
+B1ShimMethod::usage
+"B1ShimMethod is an option for B1Shimming. Values can be \"All\", \"Phase\" or \"Magnitude\"."
+
+B1MaxPower::usage
+"B1MaxPower is an option for B1Shimming. Specifies how much power can be used per channel."
+
+B1EqualPower::usage
+"B1EqualPower is an option for B1shimming. If true equal power for both channels is used."
 
 
 (* ::Subsection::Closed:: *)
@@ -1457,36 +1476,75 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 (*B1MapCalc*)
 
 
-Options[B1MapCalc] = {B1Output -> "Map", B1Masking->True, B1FilterData->True};
+Options[B1MapCalc] = {B1Output -> "Map", B1Masking->True, B1FilterData->True, ReferenceB1 -> None};
 
-B1MapCalc[dat_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{c1, c2}, 
-	{c1, c2} = Transpose[dat]; 
-	B1MapCalc[c1, c2, {tr1, tr2}, a, opts]
-]
+SyntaxInformation[B1MapCalc] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-
-B1MapCalc[c1_, c2_, {tr1_, tr2_}, a_, OptionsPattern[]] := Block[{r, n, mask, b1, b1c, b1m, b1p, sc,s1, s2},
+B1MapCalc[dat_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{r, n, mask, b1, b1c, b1m, b1p, sc, data, refB1},
+	refB1 = OptionValue[ReferenceB1];
+	data = If[OptionValue[B1FilterData], HammingFilterData /@ dat, dat];
+	
+	(*mask out where s2<s1*)
 	n = tr2/tr1;
+	r = DevideNoZero @@ Abs[Reverse@data];
+	mask = If[OptionValue[B1Masking], 1 - Mask[r, 1], 1];
 	
-	{s1,s2} = If[OptionValue[B1FilterData],
-		{HammingFilterData[c1],HammingFilterData[c2]},
-		{c1,c2}
-	];
+	(*calculate the B1 map*)
+	b1m = If[NumericQ[refB1], refB1, 100.] mask (Abs[ArcCos[DevideNoZero[(r n - 1), (n - r)]]]/(a Degree));
+	b1p = Arg[Mean[data]];
 	
-	r = DevideNoZero[Abs[s2],Abs[s1]];
-	mask = If[OptionValue[B1Masking],1 - Mask[Abs[r], 1],1];
-	
-	b1m = mask ArcCos[DevideNoZero[(r n - 1), (n - r)]];
-	sc = ((100./Degree)/a);
-	
-	b1p = Arg[Mean[{s1,s2}]];
-	
-	Switch[OptionValue[B1Output],
-		"Map", sc b1m,
-		"MagPhase", {sc b1m, b1p},
-		"Complex", sc b1m Exp[I b1p]
-	]
+	(*give output*)
+	Switch[OptionValue[B1Output], "Map", b1m, "MagPhase", {b1m, b1p}, "Complex", b1m Exp[I b1p]]
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*CombineB1*)
+
+
+Options[CombineB1] = {B1Scaling -> "Relative"}
+
+SyntaxInformation[CombineB1] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+CombineB1[b10_, b190_, {f1_?NumberQ, f2_?NumberQ, a_?NumberQ}, OptionsPattern[]] := Switch[OptionValue[B1Scaling],
+	"Absolute", Total,
+	"Relative", Mean
+][{ f1 b10, f2 Exp[I (a Degree)] b190}]
+
+
+(* ::Subsection::Closed:: *)
+(*CombineB1*)
+
+
+Options[CombineB1] = {B1ShimMethod -> "All", B1MaxPower -> 1.5, B1EqualPower -> False, B1Scaling -> "Relative"}
+
+SyntaxInformation[CombineB1] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
+
+CombineB1[c1_, c2_, mask_, opts : OptionsPattern[]] := CombineB1[c1, c2, mask, 100, B1Scaling -> "Relative", opts]
+
+CombineB1[c1_, c2_, mask_, target_, OptionsPattern[]] := Block[{c1f, c2f, tarf, sol, f1, f2, f, a, fmax, cons, inp, vars, con, sc},
+	(*define the constrains*)
+	sc = OptionValue[B1Scaling];
+	fmax = OptionValue[B1MaxPower];
+	
+	(*vectorize the data and target*)
+	{c1f, c2f} = GetMaskData[#, mask, GetMaskOnly -> True] & /@ {c1, c2};
+	tarf = Abs@If[NumberQ[target], target, GetMaskData[target, mask, GetMaskOnly -> True]];
+	
+	(*define minimization parameters*)
+	cons = {-180 < a < 180, 0.0 < f1 < fmax, 0.0 < f2 < fmax, 0.0 < f < fmax};
+	{inp, vars, con} = Switch[OptionValue[B1ShimMethod],
+		"Phase", {{1, 1, a}, {a}, cons[[{1}]]},
+		"Magnitude", {{ f1, f2, 0}, {f1, f2}, cons[[{2, 3}]]},
+		_, {{f1, f2, a}, {f1, f2, a}, cons[[{1, 2, 3}]]}
+	] /. If[OptionValue[B1EqualPower], {f1 -> f, f2 -> f}, {}];
+	
+	(*perform shimming*)
+	sol = Last[NMinimize[Flatten[{B1MapErrorN[c1f, c2f, tarf, inp, sc], DeleteDuplicates[con]}], DeleteDuplicates[vars]]];
+	inp /. sol /. {f -> 1, f1 -> 1., f2 -> 1., a -> 0.}
+]
+
+B1MapErrorN[c1_?VectorQ, c2_?VectorQ, target_, {f1_?NumberQ, f2_?NumberQ, a_?NumberQ}, sc_] := RootMeanSquare[Abs@CombineB1[c1, c2, {f1, f2, a}, B1Scaling -> sc] - target]
 
 
 (* ::Section:: *)

@@ -893,9 +893,12 @@ Options[CoilWeightedRecon] = {
 
 CoilWeightedRecon[kspace_, noise_, head_, ops:OptionsPattern[]]:=CoilWeightedRecon[kspace, noise, head, 0,  ops]
 
-CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{shift, coilData, cov, sens, recon, encDim},
+CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{shift, coilData, cov, sens, 
+	arrD, cDim, recon, encDim},
 	shift = OptionValue[EchoShiftData];
 	encDim = "number_of_encoding_dimensions"/.head;
+	arrD = ArrayDepth[coilData];
+	cDim = (encDim + 1);
 
 	(*make Image Data*)
 	coilData = Switch[encDim,
@@ -915,16 +918,16 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 	
 	If[sensi===0,
 		(*make coil sensitivity*)
-		sens = HammingFilterData /@ Switch[ArrayDepth[coilData], 4, coilData, 5, Mean@coilData, 6, Mean@Mean@coilData];
+		sens = Map[HammingFilterData, Nest[Mean, coilData, ArrayDepth[coilData] - (encDim + 1)], {-(encDim + 1)}];
 		sens = MakeSense[sens, cov];
 		,
 		sens = sensi
 	];
 	
 	(*perform the recon*)
-	recon = Switch[ArrayDepth[coilData],
-		4, CoilCombine[coilData, cov, sens, Method -> OptionValue[Method]],
-		5, Transpose[CoilCombine[#, cov, sens, Method -> OptionValue[Method]] & /@ coilData]
+	recon = If[cDim === arrD,
+		CoilCombine[coilData, cov, sens, Method -> OptionValue[Method]],
+		CoilCombine[#, cov, sens, Method -> OptionValue[Method]] & /@ coilData
 	];
 	
 	(*scale to proper values*)

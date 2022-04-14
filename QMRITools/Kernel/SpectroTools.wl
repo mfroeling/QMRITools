@@ -80,6 +80,8 @@ PhaseShiftSpectra[spec, ppm, gyro, {phi0, phi1}] aplies the 0th and 1st order ph
 
 The 0th order phase phi0 is in radians and the 1st order phase phi1 is in ms."
 
+TimeShiftFidV::usage = 
+
 TimeShiftFid::usage = 
 "TimeShiftFid[fid, time, gam] aplies a linebroadening with linewidth gam and a Voigt lineshape to the fid. The time can be obtained using GetTimeRange.
 TimeShiftFid[fid, time, {gam, f}] aplies a linebroadening with linewidth gam and a custom lineshape f to the fid (f=0, \"Gaussian\", f=1 \"Lorentzian\").
@@ -661,6 +663,21 @@ TimeShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0},
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ]
 
+
+SyntaxInformation[TimeShiftFidV] = {"ArgumentsPattern" -> {_, _, _., _.}}
+
+TimeShiftFidV[fid_, time_, gam_] := TimeShiftFidC2[fid, time, 0, gam, gam, 0.];
+
+TimeShiftFidV[fid_, time_, {gamL_, gamG_}_] := TimeShiftFidC2[fid, time, 0., gamL, gamG, 0.];
+
+TimeShiftFidV[fid_, time_, gyro_, {gam_, eps_}] := TimeShiftFidC2[fid, time, gyro, gam, gam, eps];
+
+TimeShiftFidV[fid_, time_, gyro_, {{gamL_, gamG_}, eps_}] := TimeShiftFidC2[fid, time, gyro, gamL, gamG, eps];
+
+TimeShiftFidC2 = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {gamL, _Real, 0}, {gamG, _Real, 0}, {eps, _Real, 0}},
+	Exp[-(gamL time + (gamG time)^2)] Exp[2 Pi eps gyro I time] fid, 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+]
 
 (* ::Subsubsection::Closed:: *)
 (*TimeShiftEcho*)
@@ -1379,19 +1396,20 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 	fun, plot, plot2, grid, gridS, or, rr, col, space, cols, cols2, pl1, pl2, lables
 	},
 	
-	(*get gridline options*)
-	gridS = OptionValue[GridLineSpacing];
-	grid = Sort@DeleteDuplicates@Join[
-		If[gridS === 0, {}, Range[0, Round[Max[ppm]], gridS]],
-		If[gridS === 0, {}, -Range[0, -Round[Min[ppm]], gridS]],
-		OptionValue[GridLines]
-	];
-	
 	(*get the plot range*)
 	rr = OptionValue[PlotRange] /. Automatic -> Full;
 	Switch[rr,
 		{_, Full}, rr[[2]] = {Min[{Re[spec], Im[spec]}], Max[Abs[spec]]},
 		Full, rr = {Full, {Min[{Re[spec], Im[spec]}], Max[Abs[spec]]}}
+	];
+	
+	(*get gridline options*)
+	gridS = OptionValue[GridLineSpacing];
+	{min,max} = If[rr[[1]]===Full,Round[MinMax[ppm]],MinMax[rr[[1]]]];
+	grid = Sort@DeleteDuplicates@Join[
+		If[gridS === 0, {}, Range[0, Round[max], gridS]],
+		If[gridS === 0, {}, -Range[0, -Round[min], gridS]],
+		OptionValue[GridLines]
 	];
 	
 	(*if only one spectra plot normal else plot expanded list of spectra*)
