@@ -907,6 +907,51 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		sysJ=SysToMat[sysJ,n];
 		scale=1(*3 chains with 6 normal met with 2 H*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
+		
+		,
+		"HDO",
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={4.7};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale=1;
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"GlucoseD",
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={3.8};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale=1;
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"GlutamateD",
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={2.25};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale=1;
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"LactateD",
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={1.3};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale=1;
+		{sysJ,sysS,scale,sysSi,names,it,name}
 	]
 ]
 

@@ -1524,8 +1524,9 @@ GetTranslation[mat_] := Block[{out = IdentityMatrix[4]},
 
 PolarDecomposition[mat_] := Block[{R, S},
 	{R, S} = {# . ConjugateTranspose[#3], #3 . #2 . ConjugateTranspose[#3]} & @@ SingularValueDecomposition[mat];
-	If[Det[R] < 0, R[[;; 3, ;; 3]] = -R[[;; 3, ;; 3]]; 
-	S[[;; 3, ;; 3]] = -S[[;; 3, ;; 3]]];
+	If[Det[R] < 0, 
+		R[[;; 3, ;; 3]] = -R[[;; 3, ;; 3]];
+		S[[;; 3, ;; 3]] = -S[[;; 3, ;; 3]]];
 	N@{R, S}
 ]
 
