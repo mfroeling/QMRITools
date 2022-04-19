@@ -246,13 +246,13 @@ B1Scaling::usage =
 "B1Scaling is an option for B1Shimming and CombineB1. Values can be \"Relative\" or \"Absolute\". \"Absolute\" assurmes b1 maps are
 given in uT, \"Relative\" assumes that maps are in %."
 
-B1ShimMethod::usage
+B1ShimMethod::usage = 
 "B1ShimMethod is an option for B1Shimming. Values can be \"All\", \"Phase\" or \"Magnitude\"."
 
-B1MaxPower::usage
+B1MaxPower::usage = 
 "B1MaxPower is an option for B1Shimming. Specifies how much power can be used per channel."
 
-B1EqualPower::usage
+B1EqualPower::usage = 
 "B1EqualPower is an option for B1shimming. If true equal power for both channels is used."
 
 
@@ -1516,13 +1516,13 @@ CombineB1[b10_, b190_, {f1_?NumberQ, f2_?NumberQ, a_?NumberQ}, OptionsPattern[]]
 (*CombineB1*)
 
 
-Options[CombineB1] = {B1ShimMethod -> "All", B1MaxPower -> 1.5, B1EqualPower -> False, B1Scaling -> "Relative"}
+Options[B1Shimming] = {B1ShimMethod -> "All", B1MaxPower -> 1.5, B1EqualPower -> False, B1Scaling -> "Relative"}
 
-SyntaxInformation[CombineB1] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
+SyntaxInformation[B1Shimming] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
-CombineB1[c1_, c2_, mask_, opts : OptionsPattern[]] := CombineB1[c1, c2, mask, 100, B1Scaling -> "Relative", opts]
+B1Shimming[c1_, c2_, mask_, opts : OptionsPattern[]] := B1Shimming[c1, c2, mask, 100, B1Scaling -> "Relative", opts]
 
-CombineB1[c1_, c2_, mask_, target_, OptionsPattern[]] := Block[{c1f, c2f, tarf, sol, f1, f2, f, a, fmax, cons, inp, vars, con, sc},
+B1Shimming[c1_, c2_, mask_, target_, OptionsPattern[]] := Block[{c1f, c2f, tarf, sol, f1, f2, f, a, fmax, cons, inp, vars, con, sc},
 	(*define the constrains*)
 	sc = OptionValue[B1Scaling];
 	fmax = OptionValue[B1MaxPower];
@@ -1530,7 +1530,7 @@ CombineB1[c1_, c2_, mask_, target_, OptionsPattern[]] := Block[{c1f, c2f, tarf, 
 	(*vectorize the data and target*)
 	{c1f, c2f} = GetMaskData[#, mask, GetMaskOnly -> True] & /@ {c1, c2};
 	tarf = Abs@If[NumberQ[target], target, GetMaskData[target, mask, GetMaskOnly -> True]];
-	
+		
 	(*define minimization parameters*)
 	cons = {-180 < a < 180, 0.0 < f1 < fmax, 0.0 < f2 < fmax, 0.0 < f < fmax};
 	{inp, vars, con} = Switch[OptionValue[B1ShimMethod],
@@ -1544,7 +1544,10 @@ CombineB1[c1_, c2_, mask_, target_, OptionsPattern[]] := Block[{c1f, c2f, tarf, 
 	inp /. sol /. {f -> 1, f1 -> 1., f2 -> 1., a -> 0.}
 ]
 
-B1MapErrorN[c1_?VectorQ, c2_?VectorQ, target_, {f1_?NumberQ, f2_?NumberQ, a_?NumberQ}, sc_] := RootMeanSquare[Abs@CombineB1[c1, c2, {f1, f2, a}, B1Scaling -> sc] - target]
+B1MapErrorN[c1_?VectorQ, c2_?VectorQ, target_, {f1_?NumberQ, f2_?NumberQ, a_?NumberQ}, sc_] := Block[{diff},
+	diff = Abs@CombineB1[c1, c2, {f1, f2, a}, B1Scaling -> sc] - target;
+	RootMeanSquare[diff] + StandardDeviation[diff]
+]
 
 
 (* ::Section:: *)

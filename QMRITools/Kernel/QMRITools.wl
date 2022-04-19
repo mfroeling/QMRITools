@@ -27,6 +27,7 @@ If[$VersionNumber < 13,
 	Alignment -> Center], WindowTitle -> "Update!"];
 ];
 
+Print["Dev"];
 
 (*usage notes*)
 QMRITools`$SubPackages::usage = "List of the subpackages.";
@@ -89,7 +90,6 @@ If[QMRITools`$Verbose,
 	Print["Removing all local and global definitions of:"];
 ];
 
-
 With[{
 		global = Intersection[Names["Global`*"], "Global`" <> # & /@ Last[#]]
 	},
@@ -111,9 +111,10 @@ If[QMRITools`$Verbose,
 	Print["Loading and protecting all definitions of:"];
 ];
 
-
+Get["Developer`"];
 (
 	If[QMRITools`$Verbose, Print["   - ", First@#]];
 	Get[First@#];
 	SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#]
 )& /@ QMRITools`$ContextsFunctions;
+

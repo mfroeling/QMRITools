@@ -1035,8 +1035,8 @@ QMRIToolsFunctions[toolb_String]:= Block[{packages,names,functions,options,allNa
 QMRIToolsFunctions[p_Integer]:=Block[{toolbox,functions,options},
 	{toolbox,functions,options}=Transpose[QMRIToolsFunctions[]];
 	
-	functions = Sort@Flatten[functions];
-	options = Sort@Flatten[options];
+	functions = Sort@DeleteDuplicates@Flatten[functions];
+	options = Sort@DeleteDuplicates@Flatten[options];
 	
 	functions = If[Length[functions]<=p,{functions},Partition[functions, p, p, 1, ""]];
 	options = If[Length[options]<=p,{options},Partition[options, p, p, 1, ""]];

@@ -51,7 +51,7 @@ NNDeNoise::usage =
 "NNDeNoise[data] removes rician noise from the data using self supravized neural net.
 NNDeNoise[data, mask] removes rician noise from the data with PCA  using self supravized neural net withing the mask.
 
-PCADeNoise[] is based on DOI:10.48550/arXiv.2011.01355 "
+PCADeNoise[] is based on DOI:10.48550/arXiv.2011.01355."
 
 DenoiseCSIdata::usage = 
 "DenoiseCSIdata[spectra] perfroms PCA denoising of the complex values spectra, data has to be 3D and the spectral dimensions is last, {x,y,z,spectra}."

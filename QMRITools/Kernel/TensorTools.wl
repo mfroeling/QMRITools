@@ -346,7 +346,7 @@ Block[{depthD,dirD,dirG,dirB},
 
 (*bmatrix*)
 TensorCalc[dat_, bmat:{_?ListQ ..}, OptionsPattern[]]:=
-Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,method,output,robust,func,con,kappa,
+Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD, bmatI,fout,method,output,robust,func,con,kappa,
 	result, dataL, outliers, parallel, mon, l, dd, dim, it, fitFun, bfit, outFit, fitresult, residual, dataFit, S0},
 	
 	(*get output form*)
@@ -388,27 +388,17 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 	bfit = If[method === "LLS", bmatI, bmat];
 	
 	func = If[parallel,
-		SetSharedVariable[xx];
-		ParallelEvaluate[ii=1;];
-		DistributeDefinitions[FindTensOutliers, bmat, bfit, con, kappa, xx, it, ii, fitFun];
+		DistributeDefinitions[FindTensOutliers, bmat, bfit, con, kappa, fitFun];
 		ParallelMap, 
-		ii=1;
 		Map
 	];		
 	
-	(*define outliers if needed*)
-			
+	(*define outliers if needed*)	
 	outliers = If[robust,
 		If[mon,PrintTemporary["Finding tensor outliers"]]; 
 		If[depthD == 1,
 			FindTensOutliers[dataL, bmat, con, kappa],
-			If[mon,
-				ParallelEvaluate[ii=1;];
-				xx=0;
-				Monitor[func[(If[ii>=it, xx+=ii;ii=1,ii++];FindTensOutliers[#, bmat, con, kappa])&, dataL, dd], ProgressIndicator[xx, {0, dim}]]
-				,
-				func[FindTensOutliers[#, bmat, con, kappa]&, dataL, dd]
-			]
+			func[FindTensOutliers[#, bmat, con, kappa]&, dataL, dd]
 		]
 		, 
 		ConstantArray[0., Dimensions[data]]
@@ -423,13 +413,7 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD,xx,bmatI,fout,m
 		,
 		(*2-4D data fit*)
 		dataFit = RotateDimensionsLeft[{RotateDimensionsRight[outFit data], RotateDimensionsRight[outFit dataL]},2];
-		If[mon,
-			ParallelEvaluate[ii=1;];
-			xx=0;
-			Monitor[func[(If[ii>=it, xx+=ii;ii=1,ii++];fitFun[#[[1]], #[[2]], bfit])&, dataFit, dd], ProgressIndicator[xx, {0, dim}]]
-			,
-			func[fitFun[#[[1]], #[[2]], bfit]&, dataFit, dd]
-		]
+		func[fitFun[#[[1]], #[[2]], bfit]&, dataFit, dd]
 	];
 	
 	fitresult = RotateDimensionsRight[fitresult];
@@ -585,33 +569,27 @@ TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
 			cont = 1;
 			(*initialize using LLS*)
 			sol = N@Chop@LeastSquares[bmat, LS];
-     (*check for implausabole solution (negative S0 or high S0)*)
-     If[Last[sol] >= 3*max || Last[sol] <= 0.,
-      sol = sol0;
-      ,
-      (*itterative reweighting*)
-      While[cont == 1,
-       (*init itteration values*)
-       itt++;
-       soli = sol;
-       (*perform WLLS*)
-       w = (mvec Exp[bmat.sol])^2;
-       wmat =Transpose[bmat].DiagonalMatrix[w];
-       sol = LeastSquares[wmat.bmat, wmat.LS];
-       (*update weight*)
-       (*see if to quit loop*)
-       If[(Last[sol] >= 3*max || Last[sol] <= 0), 
-       	cont = 0.; sol = sol0
-       	];
-       If[! AnyTrue[Abs[sol - soli] - 0.0001 (Max /@ Transpose[{Abs[sol], Abs[soli]}]), Positive] || itt === 10 , cont = 0.];
-       ]]
-       ];
-    sol], 
-    {{mat, _Real, 2}, {wmat, _Real, 2}, {sol, _Real, 1}},
-    RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}]
+			(*check for implausabole solution (negative S0 or high S0)*)
+			If[Last[sol] >= 3*max || Last[sol] <= 0.,
+				sol = sol0;
+				,
+				(*itterative reweighting*)
+				While[cont == 1,
+					(*init itteration values*)
+					itt++;
+					soli = sol;
+					(*perform WLLS*)
+					w = (mvec Exp[bmat.sol])^2;
+					wmat =Transpose[bmat].DiagonalMatrix[w];
+					sol = LeastSquares[wmat.bmat, wmat.LS];
+					(*update weight*)
+					(*see if to quit loop*)
+					If[(Last[sol] >= 3*max || Last[sol] <= 0), cont = 0.; sol = sol0];
+					If[! AnyTrue[Abs[sol - soli] - 0.0001 (Max /@ Transpose[{Abs[sol], Abs[soli]}]), Positive] || itt === 10 , cont = 0.];
+			]]];
+		sol], 
+	{{mat, _Real, 2}, {wmat, _Real, 2}, {sol, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}]
         
-
-
 
 (* ::Subsubsection::Closed:: *)
 (*DKI*)
