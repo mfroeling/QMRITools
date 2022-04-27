@@ -675,3 +675,14 @@ Brittain, and Scott B. Reeder. 2008. &ldquo;Multiecho water-fat
 separation and simultaneous R\*2 estimation with multifrequency fat
 spectrum modeling.&rdquo; *Magnetic Resonance in Medicine* 60 (5):
 1122&ndash;34. <https://doi.org/10.1002/mrm.21737>.
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-41SW7Z8WNC"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-41SW7Z8WNC');
+</script>
