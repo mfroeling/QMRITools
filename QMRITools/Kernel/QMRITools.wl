@@ -27,7 +27,6 @@ If[$VersionNumber < 13,
 	Alignment -> Center], WindowTitle -> "Update!"];
 ];
 
-Print["Dev"];
 
 (*usage notes*)
 QMRITools`$SubPackages::usage = "List of the subpackages.";
