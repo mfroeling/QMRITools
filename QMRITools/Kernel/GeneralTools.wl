@@ -514,7 +514,7 @@ GridData[dati_, part_, OptionsPattern[]] := Block[{dim, data, adepth, pad, val},
 	pad = OptionValue[Padding];
 	data = If[pad =!= None,
 		{pad, val} = If[IntegerQ[pad], {pad, 0.}, pad];
-		pad = PadRight[{pad, pad}, adepth];
+		pad = PadLeft[{pad, pad}, adepth];
 		ArrayPad[#, pad, val] & /@ dati
 		,
 		dati
