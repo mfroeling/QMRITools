@@ -209,7 +209,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	(*report timing*)
 	If[OptionValue[TracMonitor],
 		Print["Tractography took ", t1, " seconds"];
-		Print[Length[tracts], " tracts were generated with average length ", step Round[Mean[Length /@ tracts], .1], "mm"];
+		Print[Length[tracts], " tracts were generated with average length ", Round[step Mean[Length /@ tracts], 0.1],"\[PlusMinus]", Round[step StandardDeviation[Length /@ tracts], 0.1] , " mm"];
 	];
 
 	(*output tracts*)
@@ -221,27 +221,52 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 (*Euler*)
 
 
-Euler[y_, h_, func_] := h Normalize[func[y]]
+Euler[y_, v_, h_, func_] := VecAlign[v, h func[y]]
 
 
 (* ::Subsubsection::Closed:: *)
 (*RK2*)
 
 
-RK2[y_, h_, func_] := h Normalize[func[y + h func[y]/2]]
+RK2[y_, v_, h_, func_] := Block[{k1},
+	k1 = VecAlign[v, h func[y]];
+	VecAlign[v, h*func[y + k1/2]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*RK4*)
 
 
-RK4[y_, h_, func_] := Module[{k1, k2, k3, k4},
-	k1 = func[y];
-	k2 = func[y + h k1/2];
-	k3 = func[y + h k2/2];
-	k4 = func[y + h k3];
-	h Normalize[(k1/6 + k2/3 + k3/3 + k4/6)]
-]
+RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
+	k1 = VecAlign[v, h func[y]];
+	k2 = VecAlign[v, h func[y + k1/2]];
+	k3 = VecAlign[v, h func[y + k2/2]];
+	k4 = VecAlign[v, h func[y + k3]];
+	VecAlign[v, (k1/6 + k2/3 + k3/3 + k4/6)]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*VecAng*)
+
+
+VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v,n},
+	n = Norm[v1] Norm[v2];
+	If[n > 0.,
+		v = v1 . v2/n;
+		If[-1. < v < 1., 180 ArcCos[v]/Pi, 0.],
+		0.
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+  
+
+(* ::Subsubsection::Closed:: *)
+(*VecAlign*)
+  
+  
+VecAlign = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Sign[Sign[v1 . v2]+0.1] v2,
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -260,7 +285,7 @@ EigV[{xx_, yy_, zz_, xy_, xz_, yz_}] := First[Eigenvectors[{{xx, xy, xz}, {xy, y
 TractFunc[loc0_, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{step0, in1, in2},
 	
 	(*initial direction*)
-	step0 = intF[loc0, h, Quiet[EigV[trF @@ #]] &];
+	step0 = intF[loc0, {1,0,0}, h, Quiet[EigV[trF @@ #]] &];
 	
 	(*place two seed points arount initial points*)
 	in1 = {loc0 + 0.5 step0, -step0};
@@ -279,7 +304,7 @@ TractFunc[loc0_, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{step0,
 
 
 TractFunci[{loc0_, step0_}, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[
-	{i, ang, stop, loc, stepn, angt},
+	{i, ang, stop, loc, step, stepn, angt},
 
 	i = ang = 0;
 	stop = 1;
@@ -287,13 +312,12 @@ TractFunci[{loc0_, step0_}, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Bl
 	NestWhileList[(
 			i++;
 			(*location from itteration n*)
-			loc = #[[1]] + #[[2]];
+			step = #[[2]];
+			loc = #[[1]] + step;
 			(*get the step itteration n*)
-			stepn = intF[loc, h, EigV[trF @@ #] &];
+			stepn = intF[loc, step, h, EigV[trF @@ #] &];
 			(*find direction change with previous step direction*)
-			angt = VectorAngle[#[[2]], stepn]/Degree;
-			(*prevent step from going backwards*)
-			{stepn, ang} = If[angt < 90, {stepn, angt}, {-stepn, 180 - angt}];
+			ang = VecAng[step, stepn];
 			(*get location of itteration n+1 to see if outside int area*)
 			stop = stF @@ (loc + stepn);
 			(*output*)

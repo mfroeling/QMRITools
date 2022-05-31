@@ -2356,7 +2356,7 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},opts:OptionsPattern[]]:=MakeSlic
 MakeSliceImages[selData_,vox:{_,_,_},opts:OptionsPattern[]]:=MakeSliceImages[selData,{0,{}},vox,opts]
 
 MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=Block[{
-	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2, dim, dim1, dim2, pl ,ml, sz, n
+	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2, dim, dim1, dim2, d1, d2, pl ,ml, sz, n
 	},
 	
 	rule=Thread[N[vals]->Range[Length[vals]]];
@@ -2379,15 +2379,18 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=B
 		(*loop over the slices, 1 axial, 2 cor, 3 sag*)
 		MapThread[(
 			dim = {dim1,dim2} =  Dimensions[#1];
-			ratio = Divide@@(dim size);
+			{d1,d2} = (dim size);
+			ratio = N[Divide@@(dim size)];
+
 			{pl, ml, ratio, sz} = Switch[OptionValue[ImageOrientation],
 				"Horizontal", 
-				If[dim2 <= dim1, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {300, Automatic}}, {#1,#2,ratio, {300, Automatic}}], 
+				If[d2 <= d1, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {300, Automatic}}, {#1,#2,ratio, {300, Automatic}}], 
 				"Vertical", 
-				If[dim1 <= dim2, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {Automatic,300}}, {#1,#2,ratio, {Automatic,300}}],
+				If[d1 <= d2, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {Automatic,300}}, {#1,#2,ratio, {Automatic,300}}],
 				_,
-				If[dim1 <= dim2, {#1,#2,ratio, {300, Automatic}}, {#1,#2,ratio, {Automatic, 300}}] 
+				If[d1 <= d2, {#1,#2,ratio, {300, Automatic}}, {#1,#2,ratio, {Automatic, 300}}] 
 			];
+			
 			pl1 = ArrayPlot[pl, AspectRatio->ratio,Frame->False,ImageSize->sz, PlotRangePadding->1, PlotRange->ran,ColorFunction->colF,ClippingStyle->(colF/@{0,1})];
 			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.4],ColorData["Rainbow"][#]}]&),ColorRules->{0.->Transparent}];
 			If[OptionValue[ImageLegend],Legended[Show[pl1,pl2],bar],Show[pl1,pl2]]
