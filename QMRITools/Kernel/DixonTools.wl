@@ -152,9 +152,13 @@ DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fMask, wMask, afa
 	wMask = Mask[waterMap, .5, MaskSmoothing->False];
 	fMask = (1 - wMask) Mask[fatMap, .5, MaskSmoothing->False];
 	
-	waterMap = Abs[wMask waterMap + (fMask - fMask fatMap)];
+	(*waterMap = Abs[wMask waterMap + (fMask - fMask fatMap)];
 	fatMap = Abs[(wMask + fMask) - waterMap];
-	waterMap = Abs[(wMask + fMask) - fatMap];
+	waterMap = Abs[(wMask + fMask) - fatMap];*)
+
+	waterMap = wMask waterMap + (fMask - fMask fatMap);
+	fatMap = (wMask + fMask) - waterMap;
+	waterMap = (wMask + fMask) - fatMap;
 		
 	Clip[{waterMap,fatMap},{0,1}]
 ]
@@ -248,18 +252,15 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	mask = Closing[UnitStep[Abs[First@complex] - thresh], 1] Unitize[Total[Abs[complex]]];
 	
 	(*define complex field map*)
-	PrintTemporary["Prepairing filed maps"];
-	b0 = If[b0i === 0, ConstantArray[0., dim], 
-		If[filti, b0i, filtFunc[b0i]]];
-	r2 = If[t2 === 0,  ConstantArray[0., dim], 
-		tmp = DevideNoZero[1., t2]; 
-		If[filti, tmp, filtFunc[tmp]]];
+	PrintTemporary["Prepairing field maps"];
+	b0 = If[b0i === 0, ConstantArray[0., dim], If[filti, b0i, filtFunc[b0i]]];
+	r2 = If[t2 === 0,  ConstantArray[0., dim], tmp = DevideNoZero[1., t2]; If[filti, tmp, filtFunc[tmp]]];
 	phiInit = mask(b0 + I r2/(2 Pi));
-	(*calculate initial phose error*)	
+	(*calculate initial phase error*)	
 	phi0 = If[Length[echo] < 3 , ConstantArray[0., dim],
-		tmp = Im@Exp[-I 0.25 Arg[DevideNoZero[complex[[2]]^2, (complex[[1]] complex[[3]])]]];
-		1. + If[filti, tmp, filtFunc[tmp]] I
-		];
+		tmp = 0.25 Arg[DevideNoZero[complex[[2]]^2, (complex[[1]] complex[[3]])]];
+		Exp[-I If[filti, tmp, filtFunc[tmp]]]
+	];
 		
 	(*perform the dixon reconstruction*)
 	PrintTemporary["performing dixon iDEAL reconstruction"];
@@ -271,7 +272,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	(*Quiet@Monitor[ii=0;result = ParallelMap[((*ii++;*)
 		DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}])&, input, dep];
 		,ProgressIndicator[ii, {0, Times @@ dim}]];*)
-	result = ParallelMap[DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}]&, input, dep];
+	result = (*Parallel*)Map[DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}]&, input, dep];
  	{cWater, cFat, phiEst ,phiIn, res, itt} = RotateDimensionsRight[Chop[result]];
 
 	(*filter the output*) 
@@ -371,7 +372,7 @@ DixonFiti[{ydat_, phiInit_, phi0Init_, mask_}, {echo_, signs_}, {Amat_,Amati_}, 
 		,
 		{0.,0.,0.,0.,0.,0.}
 	]
-  ]
+]
 
 
 DixonFiti[{ydat_, phi_, phi0_, mask_}, {echo_, signs_}, {Amat_,Amati_}] := Block[{pMat, sigd, rho, res},

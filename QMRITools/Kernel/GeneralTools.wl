@@ -1104,7 +1104,7 @@ SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
 
 DevideNoZero[numi_, deni_] := N@Chop@DevideNoZeroi[numi, deni]
 
-DevideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[den == 0., 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DevideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[Abs[den] == 0., 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)

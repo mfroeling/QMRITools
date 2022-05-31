@@ -72,6 +72,9 @@ SmoothSegmentation::usage =
 RemoveMaskOverlaps::usage = 
 "RemoveMaskOverlaps[mask] removes the overlaps between multiple masks. Mask is a 4D dataset with {z, masks, x, y}."
 
+GrowMask::usage=
+"GrowMask[mask,size] if size > 0 the mask is dilated and if size < 0 the mask is eroded."
+
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
 
@@ -383,12 +386,14 @@ MeanSignal[data_, posi_ ,OptionsPattern[]] := Block[{mean, mask, pos, dat,mdat},
 
 SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
 
-SplitSegmentations[masksI_] := Block[{vals, masks},
+SplitSegmentations[masksI_]:=SplitSegmentations[masksI, True]
+
+SplitSegmentations[masksI_,sparse_] := Block[{vals, masks},
 	masks=SparseArray[masksI];
 	vals = DeleteCases[Sort@Round[DeleteDuplicates[Flatten[masksI]]],0];
 	masks =(1 - Unitize[masks - #]) & /@ vals;
-	masks=Normal[Transpose[masks]];
-	{masks, vals}
+	masks = Transpose[masks];
+	{If[sparse,masks,Normal@masks], vals}
   ]
 
 
@@ -398,55 +403,30 @@ SplitSegmentations[masksI_] := Block[{vals, masks},
 
 SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
 
-MergeSegmentations[masks_, vals_] := Total[vals Transpose@ToPackedArray[masks]];
+MergeSegmentations[masks_, vals_] := Normal@Total[vals Transpose@SparseArray[masks]];
 
 
 (* ::Subsubsection::Closed:: *)
 (*SmoothSegmentation*)
 
 
-Options[SmoothSegmentation] = {MaskFiltKernel -> 2, MaskComponents->0}
+Options[SmoothSegmentation] = {MaskFiltKernel -> 2, MaskComponents->1}
 
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothSegmentation[masksi_, OptionsPattern[]] := 
- Block[{masks, obj, maskInp, maskOver, maskOut, smooth, posOver, x, y, z, p},
- 	masks = ToPackedArray@Round@masksi;
-    smooth = OptionValue[MaskFiltKernel];
+SmoothSegmentation[masks_, OptionsPattern[]] := 
+ Block[{obj, maskInp, maskOver, maskOut, smooth, posOver, x, y, z, p, tmp},
+ 	smooth = OptionValue[MaskFiltKernel];
 	obj = OptionValue[MaskComponents];
 	
 	(*convert data to sparse Array and transpose*)
-	maskInp = Transpose[SparseArray[masks]];
-	(*Get smoothed or non smoothed masks*)
-	maskInp = If[smooth === False, 
-		maskInp, 
-		(
-			tmp = Round[GaussianFilter[Normal[#], smooth] + 0.15];
-			If[obj>0,
-				tmp = Round@ImageData[SelectComponents[Image3D[ArrayPad[tmp, 5]],"Count", -obj]];
-				SparseArray[ArrayPad[tmp,-5]],
-				SparseArray[tmp]
-			]
-		)& /@ maskInp
-		];
-		
-	(*find the overlaps*)
-	maskOver = Mask[Total[maskInp], 1.5];
-	posOver = Position[maskOver, 1, 3];
-	(*get smoothed masks without overlap*)
-	maskOut = SparseArray[(1 - maskOver) # & /@ maskInp];
+	maskInp = Transpose[SparseArray[Round@masks]];
 	
-	maskInp = Normal[maskInp];
-	maskOut = Normal[maskOut];
-	(
-	    (*find values to fill up the overlaps, 
-	    always pick the first value*)
-	    {z, x, y} = #;
-	    p = First[FirstPosition[maskInp[[All, z, x, y]], 1]];
-	    maskOut[[p, z, x, y]] = 1;
-	    ) & /@ posOver;
-	Clear[maskInp, maskOver];
-	Normal[Transpose[SparseArray[maskOut]]]
+	(*Get smoothed or non smoothed masks*)
+	maskInp = SparseArray@Round[ImageData[SelectComponents[Image3D[Round[GaussianFilter[Normal[#], smooth] + 0.15], "Bit"], "Count", -If[obj<1, 1, obj], CornerNeighbors -> False]]]& /@ maskInp;
+	
+	(*remove the overlaps*)
+	Transpose@RemoveMaskOverlapsI[SparseArray[maskInp]]
   ]
 
 
@@ -456,22 +436,52 @@ SmoothSegmentation[masksi_, OptionsPattern[]] :=
 
 SyntaxInformation[RemoveMaskOverlaps] = {"ArgumentsPattern" -> {_}};
 	
-RemoveMaskOverlaps[masks_] := SmoothSegmentation[masks, MaskFiltKernel->False];
+RemoveMaskOverlaps[masks_] := Transpose@RemoveMaskOverlapsI[Transpose[SparseArray[Round@masks]]];
+
+RemoveMaskOverlapsI[masks_] := Block[{maskOver, posOver, maskInp, maskOut, z, x, y, p},
+	maskOver = SparseArray[Mask[Total[masks], 1.5]];
+	posOver = maskOver["ExplicitPositions"];
+	maskOut = SparseArray[SparseArray[(1 - maskOver) #] & /@ masks];
+	
+	maskInp = maskOver Transpose[masks, {4, 1, 2, 3}];
+	p = ({z, x, y} = #; {First@First[maskInp[[z, x, y]]["ExplicitPositions"]], z, x, y}) & /@posOver;
+	maskOut + SparseArray[p -> 1, Dimensions[maskOut]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
-(*RemoveMaskOverlaps*)
+(*RescaleSegmentation*)
+
+
+GrowMask[seg_, size_] := Which[size === 0,
+	SparseArray[seg],
+	size > 0,
+	If[ArrayDepth[seg]>3,
+		Transpose[SparseArray[SparseArray[ImageData@Dilation[Image3D[#], Round[size]]] & /@ Transpose[seg]]],
+		SparseArray[Dilation[Normal[seg], Round[size]]]
+	],
+	size< 0,
+	If[ArrayDepth[seg]>3,
+		Transpose[SparseArray[SparseArray[ImageData@Erosion[Image3D[#], Round[Abs[size]]]] & /@ Transpose[seg]]],
+		SparseArray[Dilation[Normal[seg], Round[size]]]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RescaleSegmentation*)
 
 
 SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
 
 RescaleSegmentation[seg_, vox_] := Block[{segs, val},
-  If[ArrayDepth[seg] == 3, 
-  	{segs, val} = SplitSegmentations[seg], 
-  	segs = seg];
-  segs = RemoveMaskOverlaps[Transpose[Round[RescaleData[#, vox, InterpolationOrder -> 1]] & /@Transpose[segs]]];
-  If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
-  ]
+	If[ArrayDepth[seg] == 3,
+		{segs, val} = SplitSegmentations[seg],
+		segs = seg
+	];
+	segs = Transpose@RemoveMaskOverlapsI[SparseArray[SparseArray[Round[RescaleData[Normal[#], vox, InterpolationOrder -> 1]]] & /@Transpose[segs]]];
+	If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
+]
 
 
 
