@@ -525,7 +525,7 @@ FitWall[data_, met_] := Block[{fun, pf, fdata, xdat, points, pos},
 (*CalculateWallMap*)
 
 
-Options[CalculateWallMap] = {ShowPlot -> True, MaskWallMap->True};
+Options[CalculateWallMap] = {ShowPlot -> True, MaskWallMap->False};
 
 SyntaxInformation[CalculateWallMap] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -613,7 +613,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	
 	(*create the wall distance map*)
 	wall = GaussianFilter[Normal[SparseArray[Thread[ptsm -> dist], Dimensions[mask]]] + (1 - mout2), 1];
-	der = GaussianFilter[wall, {2 (1/vox)/(1/vox[[2]])}, #] & /@ (IdentityMatrix[3]);
+	der = GaussianFilter[wall, {{3,3,3}}(*{2 (1/vox)/(1/vox[[2]])}*), #] & /@ (IdentityMatrix[3]);
     
     If[OptionValue[MaskWallMap],
     	wall = mask wall;
@@ -622,7 +622,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
     	wall = Clip[mask ((wall - mn)/(mx-mn)),{0,1}];
     ];
     
-    If[OptionValue[ShowPlot], Print[Row[fit = {planefit, ptspl}]]; {wall, der, fit}, {wall, der}]
+    If[OptionValue[ShowPlot], PrintTemporary[Row[fit = {planefit, ptspl}]]; {wall, der, fit}, {wall, der}]
 ]
 
 FillFun = Compile[{{v, _Integer, 1}}, Block[{out, in, i, m},
@@ -674,6 +674,7 @@ CentralAxes[mask_,maskp_,vox_,OptionsPattern[]]:=Module[{
 	
 	(*get inner and outer radius*)
 	{inner,outer} = GetRadius[mask(*,minmaxr,half*)];
+
 	(*finde the upper most closed outer*)
 	last = First@Last@Position[Unitize[inner[[3]] /. {} -> 0] + Unitize[outer[[3]] /. {} -> 0], 2];
 	outer[[All, last + 1 ;;]] = Transpose@ConstantArray[{{}, {}, {}}, Length[outer[[3]]] - last];
@@ -689,7 +690,7 @@ CentralAxes[mask_,maskp_,vox_,OptionsPattern[]]:=Module[{
 	  
 	(*generate plots*)
 	If[OptionValue[ShowPlot],
-		pl1 = PlotRadius[Clip[2mask + maskp,{0,2}], inner, outer];
+		pl1 = PlotRadius[Clip[2 mask + maskp,{0,2}], inner, outer];
 		pl2 = PlotSegmentation[mask + maskp, inner, outer, {off, offi, offo}, vox];
 		fit = Row[{GraphicsGrid[Partition[pl1, row, row, 1, {}], ImageSize -> row*100], pl2}];
 	];
@@ -746,7 +747,7 @@ CenterPoint[mask_]:=Module[{half},
 
 
 GetRadius[mask_] := Block[{comps, in, out, fout, fin},
-	comps = MorphologicalComponents[Reverse@# - Erosion[Reverse@#, 1]] & /@ mask;
+	comps = MorphologicalComponents[Reverse@# - Erosion[Reverse@#, 1], CornerNeighbors -> False] & /@ mask;
 		
 	{in, out} = Transpose[Switch[Max[#],
 		1, {{}, Reverse /@ Position[#, 1]},
@@ -754,29 +755,38 @@ GetRadius[mask_] := Block[{comps, in, out, fout, fin},
 		_, {{}, {}}
 	] & /@ comps];
 	
-	fout = Transpose[MapIndexed[If[#1 === {}, {{}, {}, {}}, fitEllipse[#1, #2]] &, out]];
-	fin = Transpose[MapIndexed[If[#1 === {}, {{}, {}, {}}, fitEllipse[#1, #2]] &, in]];
+	fout = Transpose[MapIndexed[If[#1 === {}, {{}, {}, {}}, FitEllipse[#1, #2]] &, out]];
+	fin = Transpose[MapIndexed[If[#1 === {}, {{}, {}, {}}, FitEllipse[#1, #2]] &, in]];
 	
 	{fin, fout}
 ]
 
 
-fitEllipse[pts_, i_] := Block[{lsMat, a, b, c, d, e, A, B, r0, v, e1, e2, r1, r2, ang},
+FitEllipse[pts_, i_] := Block[{lsMat, a, b, c, d, e, f, s, val ,vec,  den, num ,fac, r0, r1,r2,ang},
+	
 	(*transform coordinates*)
-	lsMat = Function[{x, y}, {x^2, y^2, 2 x y, x, y}] @@@ pts;
+	lsMat = N[Function[{x, y}, {x^2, 2 x y, y^2, 2 x, 2 y, 1}] @@@ pts];
 	(*solve eclipse equation*)
-	{a, b, c, d, e} = Chop[LeastSquares[lsMat, ConstantArray[1., Length[pts]]]];
-	(*solve for centers*)
-	B = {{a, c}, {c, b}};
-	If[a < 0 && b < 0, 
-		r0 = LinearSolve[-2. B, {d, e}];
-		(*get the elipse cov matrix*)
-		A = Inverse[Chop[B/(1. + r0 . B . r0)]];
-		(*get the elips parameterisation*)
-		{v, {e1, e2}} = Eigensystem[A];
-		{r1, r2} = Sqrt[v];
-		ang = ArcTan[ e1[[2]]/e1[[1]]];
-		(*output center and parameters*)
+	(*{a, b, c, d, e} = Chop[LeastSquares[lsMat, ConstantArray[1., Length[pts]]]];*)
+	d = Transpose[lsMat] . lsMat;
+	c = {{0, 0, -2, 0, 0, 0}, {0, 1, 0, 0, 0, 0}, {-2, 0, 0, 0, 0, 0}, 
+		{0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0}};
+	{val, vec} = Eigensystem[{d, c}];
+	{a, b, c, d, e, f} = vec[[Position[Boole[Negative /@ val], 1][[1, 1]]]];
+		
+	den = b^2 - a c;
+	num = 2*(a e^2 + c d^2 + f b^2 - 2 b d e - a c f);
+	fac = Sqrt[((a - c)^2 + 4 b^2)];
+	
+	If[(b^2 - a c) < 0, 
+		(*solve for centers*)
+		r0 = {(c*d - b*e)/den, (a*e - b*d)/den};
+		(*get the radisu*)
+		r1 = Sqrt[num/den/(fac - a - c)];
+		r2 = Sqrt[num/den/(-fac - a - c)];
+		(*get the angle*)
+		ang = ArcTan[(2 b)/(a - c)]/2;
+		If[ a > c, ang += Pi/2];
 		{Join[r0, i], {r1, r2, ang}, Mean[{r1, r2}]},
 		{{}, {}, {}}
 	]
@@ -815,12 +825,15 @@ FitCenterLine[datai_, vox_, met_] := Block[{fun, pf, xdat, data, fdata},
 (*PlotRadius*)
 
 
-Ellipse2D[{{x0_, y0_, z0_}, {a_, b_, alpha_}}, 
-  theta_] := {x0 + a*Cos[theta]*Cos[alpha] - b*Sin[theta]*Sin[alpha], 
-  y0 + a*Cos[theta]*Sin[alpha] + b*Sin[theta]*Cos[alpha]}
-Ellipse3D[{{x0_, y0_, z0_}, {a_, b_, alpha_}}, 
-  theta_] := {x0 + a*Cos[theta]*Cos[alpha] - b*Sin[theta]*Sin[alpha], 
-  y0 + a*Cos[theta]*Sin[alpha] + b*Sin[theta]*Cos[alpha], z0}
+Ellipse2D[{{x0_, y0_, z0_}, {a_, b_, alpha_}}, theta_] := {
+	x0 + a*Cos[theta]*Cos[alpha] - b*Sin[theta]*Sin[alpha],
+	y0 + a*Cos[theta]*Sin[alpha] + b*Sin[theta]*Cos[alpha]
+}
+Ellipse3D[{{x0_, y0_, z0_}, {a_, b_, alpha_}}, theta_] := {
+	x0 + a*Cos[theta]*Cos[alpha] - b*Sin[theta]*Sin[alpha],
+	y0 + a*Cos[theta]*Sin[alpha] + b*Sin[theta]*Cos[alpha], 
+	z0
+}
 
 
 PlotRadius[mask_, inner_, outer_] := MapThread[(
@@ -901,14 +914,17 @@ PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Block[{pmask,
 SyntaxInformation[GetMaskSegmentPoints] = {"ArgumentsPattern" -> {_}};
 
 GetMaskSegmentPoints[mask_]:=Block[{segM,m1,m2,points,maskc},
-	segM=SplitSegmentations[mask][[1]];
+	segM = Normal[SplitSegmentations[mask][[1]]];
 	{m1,m2}=Transpose[segM][[2;;3]];
+	
 	points=Transpose[{
-	1/.ComponentMeasurements[Round[Reverse[#]],"Centroid"]&/@m1,
-	1/.ComponentMeasurements[Round[Reverse[#]],"Centroid"]&/@m2
+		1/.ComponentMeasurements[Reverse[#],"Centroid"]&/@m1,
+		1/.ComponentMeasurements[Reverse[#],"Centroid"]&/@m2
 	}];
+	points = Map[If[# === 1, None, Reverse@#] &, points, {2}];
+
 	maskc=Clip[mask,{0,1}];
-	{maskc,points}
+	{maskc, points}
 ]
 
 
@@ -918,7 +934,7 @@ GetMaskSegmentPoints[mask_]:=Block[{segM,m1,m2,points,maskc},
 
 SyntaxInformation[CardiacSegmentMask]={"ArgumentsPattern"->{_,_,_,_,_.,OptionsPattern[]}};
 
-CardiacSegmentMask[msk_,regions_,points_,{rev_,type_,slcGrp_}]:=CardiacSegmentMask[msk,regions,points,{},{rev,type,slcGrp}]
+CardiacSegmentMask[{msk_,vox_},regions_,points_,{rev_,type_,slcGrp_}]:=CardiacSegmentMask[msk,regions,points,CentralAxes[msk,vox,ShowPlot->False][[1]],{rev,type,slcGrp}]
 
 CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim,slices,dim2,centers,segments,segm,segs,nseg,rule,
 	off,coordinates,segmask,cent,coor,angs,angp,cang,l,u,sel,tmp,sls},
@@ -928,26 +944,23 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 	slices=dim[[1]];
 	dim2=Drop[dim,1];
 	
-	If[offi==={},
-		off=CentralAxes[msk,{1,1,1},ShowPlot->False][[1]];
-		centers=Reverse/@off[[All,2;;3]];
-		,
-		If[Length[offi[[1]]]==2,
-			centers=offi;
-			,
-			off=offi;
-			centers=Reverse/@off[[All,2;;3]];
-		]
+	If[Length[offi[[1]]]==2,
+		centers=offi;,
+		centers=Reverse/@offi[[All,2;;3]];
 	];
 	
+	Print[centers];
+	
 	(*get the segments per slice*)
-	{segments,segm}=SlicesToSegments[regions,slices,{type,slcGrp}];
+	{segments,segm}=SlicesToSegments[regions,slices,points,{type,slcGrp}];
 	Print["test"];
 	segs=Select[segments,#[[2]]=!=0&];
 	nseg=Length[segs];
 	
 	(*convert mask too coordinates*)
 	coordinates=(Reverse/@Position[#,1])&/@Round[msk];
+	
+	Print[segments,segm];
 	
 	(*create mask per slice from points*)
 	segmask=Table[
@@ -960,15 +973,20 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 			cent=centers[[n]];
 			coor=coordinates[[n]];
 			(*calculate the anlges for segments*)
-			angs=VecAngleC[points[[n]],cent,n/.segm,rev];
+			Print[{points[[n]],cent,n/.segm, 2 Boole[rev]-1}];
+			angs = VecAngleC[points[[n]], cent, n/.segm, 2 Boole[rev]-1];
+			Print[angs];
 			angp=Partition[angs,2,1,1];
 			(*convert the coordinates to angles*)
 			cang=(ToPol@@Transpose[#-cent&/@coor])[[All,2]];
 			cang=2Pi(1-UnitStep[cang])+cang;
 			
+			Print[MinMax[cang]];
+						
 			(*make the masks for each partition*)
 			(
 				{l,u}=#;
+				Print[{l,u,l>u}];
 				sel=If[l>u,
 					(UnitStep[cang-l]-UnitStep[cang-2Pi])+(UnitStep[cang-0]-UnitStep[cang-u]),
 					UnitStep[cang-l]-UnitStep[cang-u]
@@ -978,6 +996,9 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 			]
 		]
 	,{n,1,slices,1}];
+	
+	Print[Dimensions[segmask]];
+	
 	
 	(*group mask slices for AHA 17 segments or other slice grouping*)
 	If[slcGrp||StringQ[type],
@@ -994,12 +1015,14 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 ]
 
 
-SlicesToSegments[{start_,ap_,mid_,bas_,end_},slices_,{segmi_,slcgrp_}]:=Block[{apex,apical,midcavity,basal,none,segments},
+SlicesToSegments[{start_,ap_,mid_,bas_,end_},slices_,points_,{segmi_,slcgrp_}]:=Block[{apex,apical,midcavity,basal,none,segments,sel},
+	sel = If[#[[1]] === 1 || #[[2]] === 1, 0, 1] & /@ points;
 	(*segment ranges*)
 	apex=Range[start+1,ap];
 	apical=Range[ap+1,mid];
 	midcavity=Range[mid+1,bas];
 	basal=Range[bas+1,end];
+	{apex, apical, midcavity, basal} = Select[#, sel[[#]] === 1 &] & /@ {apex, apical, midcavity, basal};
 	none=Complement[Range[1,slices],Flatten[{apex,apical,midcavity,basal}]];
 	
 	segments=Switch[segmi,
@@ -1015,8 +1038,8 @@ SlicesToSegments[{start_,ap_,mid_,bas_,end_},slices_,{segmi_,slcgrp_}]:=Block[{a
 ]
 
 
-ToPol=Compile[{{x,_Real,0},{y,_Real,0}},{Sqrt[x^2 + y^2],ArcTan[y,x]},RuntimeAttributes->{Listable}];
-FromPol=Compile[{{r,_Real,0},{a,_Real,0}},{r Cos[a],r Sin[a]},RuntimeAttributes->{Listable}];
+ToPol = Compile[{{x,_Real,0},{y,_Real,0}},{Sqrt[x^2 + y^2],ArcTan[y,x]},RuntimeAttributes->{Listable}];
+FromPol = Compile[{{r,_Real,0},{a,_Real,0}},{r Cos[a],r Sin[a]},RuntimeAttributes->{Listable}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1728,13 +1751,6 @@ PointRange[pts_,steps_,drop_]:=Block[{step=steps-1,pt1,pt2},
 	)&/@pts
 ]
 
-PointRangeC = Compile[{{pts, _Real, 2}, {steps, _Integer, 0}, {drop, _Integer, 0}},
-		Block[{step = steps - 1, pt1, pt2},
-    		pt1 = pts[[2]];
-    		pt2 = pts[[1]];
-    	Take[Table[pt2 + (i (pt1 - pt2)/step), {i, 0, step, 1}], {1 + drop, steps - drop}]
-    ], RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
-
 
 (* ::Subsection::Closed:: *)
 (*PlotSegmentsMask*)
@@ -1769,39 +1785,46 @@ Options[RadialSample]={RadialSamples->10, DropSamples->0};
 SyntaxInformation[RadialSample] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 RadialSample[mask_,data_,segang_,OptionsPattern[]]:=Block[{
-	infunc,maskm,dat,pos,val,output, intfunc,slice,pts,int,ptsr,vals
+	pos,dat,val,intdat,exdat,intfunc, output,slice,pts,int,ptsr,vals
 	},
 
 	(*slice by slice interpolation function*)
 	intfunc = MapThread[(
 		pos = Position[Round[#1], 1];
-		dat = #1 #2;
+		dat = #2;
 		val = dat[[#[[1]], #[[2]]]] & /@ pos;
-		With[{
-			intdat = N@Thread[{pos, val}],
-			extdat = N@Thread[pos -> val]
-			},
-			If[!(pos === {}), Interpolation[intdat, InterpolationOrder -> 1, "ExtrapolationHandler"->{(Mean@Nearest[extdat, {#1, #2}, 3]) &, "WarningMessage" -> False}]]
-	     ]
+		If[pos =!= {},
+			intdat = N@Thread[{pos, val}];
+			exdat = N@Thread[pos -> val];
+			With[{nearF = Nearest[exdat]}, Interpolation[intdat, InterpolationOrder -> 1,
+				"ExtrapolationHandler" -> {Mean[nearF[{#1, #2}, 3]] &, "WarningMessage" -> False}]
+			],
+			0 &
+		]
 	) &, {mask, data}, 1];
 	
-	(*generate output by radial sampleling segments*)
-	output=Map[(
-		slice=#[[1]];
-		pts=DeleteCases[#[[2]],{}];
-		int=intfunc[[slice]];
-		If[FreeQ[pts, {}],
+	output = Map[(
+		slice = #[[1]];
+		pts = #[[2]];
+		int = intfunc[[slice]];
+		
+		If[pts=!=None,
 			(*get radial pts steps*)
-			ptsr=PointRangeC[pts,OptionValue[RadialSamples],OptionValue[DropSamples]]+0.5;
-			vals=int @@ Reverse[Transpose[ptsr, {2, 3, 1}]];
-			,
-			ptsr=vals={}
-		];
-		{ptsr,vals}
-	)&,segang,{2}];
+			ptsr = PointRangeC[pts, OptionValue[RadialSamples],OptionValue[DropSamples]];
+			vals = int @@ Transpose[ptsr, {2, 3, 1}];
+			{ptsr, vals},
+			{{}, {}}
+		]
+	) &, segang, {2}];
 	
 	{output[[All,All,1]],output[[All,All,2]]}
 ]
+
+PointRangeC = Compile[{{pts, _Real, 2}, {steps, _Integer, 0}, {drop, _Integer, 0}}, Block[{n, step},
+	n = steps - 1;
+	step = (pts[[2]] - pts[[1]])/n;
+	pts[[1]] + # step & /@ Range[0 + drop, n - drop]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)

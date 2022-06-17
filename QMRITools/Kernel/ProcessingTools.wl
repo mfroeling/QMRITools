@@ -144,6 +144,13 @@ B1Shimming::usage =
 B1Shimming[b10, b190, mask, target] finds the optimal shim values to shim to target, which can be a number or a map."
 
 
+RotateData::usage = 
+"RotateData[data] rotates the data 180 degree, e.g. inversion of the z direction."
+
+RotateTensor::usage = 
+"RotateTensor[tens] rotates the tensor 180 degree, e.g. inversion of the z direction with also inversing the tensor orientation."
+
+
 (* ::Subsection::Closed::*)
 (*Options*)
 
@@ -1237,6 +1244,30 @@ SplitSets[data_, sets_, overlap_, OptionsPattern[]] := Module[{lengthSet, sels, 
   
   dat
   ]
+
+
+(* ::Subsection::Closed:: *)
+(*RotateData*)
+
+
+SyntaxInformation[RotateData] = {"ArgumentsPattern" -> {_}};
+
+RotateData[data_] := Switch[ArrayDepth[data],
+  3, RotDati[data],
+  4, Transpose[RotDati /@ Transpose[data]],
+  5, RotDati[data]
+  ]
+
+RotDati[data_] := Reverse[Reverse[data, 2], 1]
+
+
+(* ::Subsection::Closed:: *)
+(*RotateTensor*)
+
+
+SyntaxInformation[RotateTensor] = {"ArgumentsPattern" -> {_}};
+
+RotateTensor[tens_] := FlipTensorOrientation[RotDati /@ tens, {1, 1, -1}, {"y", "x", "z"}]
 
 
 (* ::Subsection::Closed:: *)
