@@ -103,6 +103,9 @@ DixonIterations::usage =
 DixonBipolar::usage = 
 "DixonBipolar is an option for DixonReconstruct. If set to true it assumes alternating readout directions."
 
+DixonClipFraction::usage =
+"DixonClipFraction is an option for DixonReconstruct. If set true the fat fraction is clipped between 0 and 1."
+
 
 MonitorUnwrap::usage = 
 "MonitorUnwrap is an option for Unwrap. Monitor the unwrapping progress."
@@ -139,7 +142,9 @@ Begin["`Private`"]
 
 SyntaxInformation[DixonToPercent] = {"ArgumentsPattern" -> {_, _}};
 
-DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fMask, wMask, afat, awater},
+DixonToPercent[water_, fat_]:=DixonToPercent[water, fat, True]
+
+DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{atot, fatMap, waterMap, fMask, wMask, afat, awater},
 	afat = Abs[fat];
 	awater = Abs[water];
 	atot = Abs[fat + water];
@@ -152,15 +157,17 @@ DixonToPercent[water_, fat_] := Block[{atot, fatMap, waterMap, fMask, wMask, afa
 	wMask = Mask[waterMap, .5, MaskSmoothing->False];
 	fMask = (1 - wMask) Mask[fatMap, .5, MaskSmoothing->False];
 	
-	(*waterMap = Abs[wMask waterMap + (fMask - fMask fatMap)];
-	fatMap = Abs[(wMask + fMask) - waterMap];
-	waterMap = Abs[(wMask + fMask) - fatMap];*)
-
-	waterMap = wMask waterMap + (fMask - fMask fatMap);
-	fatMap = (wMask + fMask) - waterMap;
-	waterMap = (wMask + fMask) - fatMap;
-		
-	Clip[{waterMap,fatMap},{0,1}]
+	If[clip,
+		waterMap = Abs[wMask waterMap + (fMask - fMask fatMap)];
+		fatMap = Abs[(wMask + fMask) - waterMap];
+		waterMap = Abs[(wMask + fMask) - fatMap];
+		Clip[{waterMap,fatMap},{0,1}]
+		,
+		waterMap = wMask waterMap + (fMask - fMask fatMap);
+		fatMap = (wMask + fMask) - waterMap;
+		waterMap = (wMask + fMask) - fatMap;
+		Clip[{waterMap,fatMap},{-0.1,1.1},{-0.1,1.1}]
+	]
 ]
 
 
@@ -181,11 +188,12 @@ Options[DixonReconstruct] = {
 	DixonIterations -> 15, 
 	DixonTollerance -> 0.001, 
 	DixonMaskThreshhold -> 0.01,
-	DixonFilterInput -> False, 
+	DixonFilterInput -> True, 
 	DixonFilterOutput -> True, 
 	DixonFilterDimensions -> "3D",
-	DixonFilterSize -> 0.5,
-	DixonBipolar -> False
+	DixonFilterSize -> 1,
+	DixonBipolar -> False,
+	DixonClipFraction -> False
 	};
 
 
@@ -225,13 +233,13 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	
 	(*define filter*)
 	filti = OptionValue[DixonFilterInput];
-	fsize = OptionValue[DixonFilterSize];
+	fsize = Round@OptionValue[DixonFilterSize];
 	fDim = OptionValue[DixonFilterDimensions];
-	filtFunc = Switch[fDim,"3D",LapFilter[#,fsize],"2D",LapFilter[#,fsize]&/@#]&;
+	filtFunc = Switch[fDim,"3D",MedianFilter[#,fsize],"2D",MedianFilter[#,fsize]&/@#]&;
 		
 	(*get alternating readout signs for bipolar acquisition*)
 	bip = OptionValue[DixonBipolar];
-	signs = (If[bip,-1,1])^(Range@Length@echo);
+	signs = If[bip, -(-1)^(Range@Length@echo), ConstantArray[1, Length[echo]]];
 		
 	(*define the water fat matrix*)
 	Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
@@ -253,14 +261,11 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	
 	(*define complex field map*)
 	PrintTemporary["Prepairing field maps"];
-	b0 = If[b0i === 0, ConstantArray[0., dim], If[filti, b0i, filtFunc[b0i]]];
-	r2 = If[t2 === 0,  ConstantArray[0., dim], tmp = DevideNoZero[1., t2]; If[filti, tmp, filtFunc[tmp]]];
+	b0 = If[b0i === 0, ConstantArray[0., dim], If[filti, filtFunc[b0i], b0i]];
+	r2 = If[t2 === 0,  ConstantArray[0., dim], tmp = DevideNoZero[1., t2]; If[filti, filtFunc[tmp], tmp]];
 	phiInit = mask(b0 + I r2/(2 Pi));
 	(*calculate initial phase error*)	
-	phi0 = If[Length[echo] < 3 , ConstantArray[0., dim],
-		tmp = 0.25 Arg[DevideNoZero[complex[[2]]^2, (complex[[1]] complex[[3]])]];
-		Exp[-I If[filti, tmp, filtFunc[tmp]]]
-	];
+	phi0 = If[Length[echo] < 3 , ConstantArray[0., dim], tmp = 0.25 Arg[DevideNoZero[complex[[2]]^2, (complex[[1]] complex[[3]])]];	If[filti, filtFunc[tmp], tmp]];
 		
 	(*perform the dixon reconstruction*)
 	PrintTemporary["performing dixon iDEAL reconstruction"];
@@ -268,11 +273,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	complex = RotateDimensionsLeft[complex];
 	input = RotateDimensionsLeft[{complex, phiInit, phi0, mask}];
 	(*Perform the dixon fit*)
-	DistributeDefinitions[DixonFiti, echo, signs, Amat, Amati, eta, maxItt];
-	(*Quiet@Monitor[ii=0;result = ParallelMap[((*ii++;*)
-		DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}])&, input, dep];
-		,ProgressIndicator[ii, {0, Times @@ dim}]];*)
-	result = (*Parallel*)Map[DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}]&, input, dep];
+	Monitor[jj=0;result = Map[(jj++;DixonFiti[#, {echo, signs}, {Amat,Amati}, {eta, maxItt}])&, input, dep],ProgressIndicator[jj, {0, Times @@ dim}]];
  	{cWater, cFat, phiEst ,phiIn, res, itt} = RotateDimensionsRight[Chop[result]];
 
 	(*filter the output*) 
@@ -280,11 +281,11 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 	PrintTemporary["Filtering field estimation and recalculating signal fractions"];
 	 	(*smooth b0 field and R2star maps*)
 	 	phiEst = mask (filtFunc[Re[phiEst]] + filtFunc[Ramp[Im[phiEst]]] I);
-	 	phiIn = mask (filtFunc[Re[phiIn]] + filtFunc[Im[phiIn]] I);
+	 	phiIn = mask (filtFunc[Re[phiIn]] (*+ filtFunc[Im[phiIn]] I*));
 	 		 	
 	 	(*recalculate the water fat signals*)
 	 	input = RotateDimensionsLeft[{complex, phiEst, phiIn, mask}];
-	 	Monitor[jj=0;result = Map[(jj++;DixonFiti[#, {echo, signs}, {Amat,Amati}])&, input, dep];,ProgressIndicator[jj, {0, Times @@ dim}]];
+	 	Monitor[jj=0;result = Map[(jj++;DixonFiti[#, {echo, signs}, {Amat,Amati}])&, input, dep],ProgressIndicator[jj, {0, Times @@ dim}]];
 		
 		{cWater, cFat, res} = RotateDimensionsRight[Chop[result]];
 	 ];
@@ -293,7 +294,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 	 PrintTemporary["performing water fat calculation"];
 	 maskc = Times @@ (Mask[Abs[#], 2 range, MaskSmoothing -> False] & /@ {cWater, cFat});
 	 {cWater,cFat} = {maskc cWater, maskc cFat};
-	 fraction = DixonToPercent[cWater, cFat];
+	 fraction = DixonToPercent[cWater, cFat, OptionValue[DixonClipFraction]];
 
 	 (*signal and in/out phase data *)
 	 signal = 1000 (Clip[Abs[{cWater, cFat}],range]/range[[2]]);
@@ -339,7 +340,7 @@ DixonFiti[{ydat_, phiInit_, phi0Init_, mask_}, {echo_, signs_}, {Amat_,Amati_}, 
 		continue = True;
 		While[continue,
 			(*update the field map*)
-			phi0Est += deltaPhi0;
+			phi0Est += Re@deltaPhi0;
 			phiEst += deltaPhi;
 									
 			(*define complex field map P(-phi) or (E D)^-1 *)
@@ -364,7 +365,7 @@ DixonFiti[{ydat_, phiInit_, phi0Init_, mask_}, {echo_, signs_}, {Amat_,Amati_}, 
 			(*chech for continue*)
 			(*Re@deltaPhi = B0; 2Pi Im@deltaPhi = r2Star; Re@deltaPhi0 = phase errors;*)
 			i++; 
-			continue = ! ((Abs[Re[deltaPhi]] < eta && Abs[2 Pi Im[deltaPhi]] < eta && Abs[Re[deltaPhi0]] < eta && Abs[Im[deltaPhi0]] < eta) || i >= maxItt);
+			continue = ! ((Abs[Re[deltaPhi]] < eta && Abs[2 Pi Im[deltaPhi]] < eta && Abs[Re[deltaPhi0]] < eta (*&& Abs[Im[deltaPhi0]] < eta*)) || i >= maxItt);
 		];
 		
 		(*give output*)
@@ -433,7 +434,7 @@ SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] :=
 (*Unwrap*)
 
 
-Options[Unwrap]={MonitorUnwrap->True, UnwrapDimension->"2D", UnwrapThresh->0.6};
+Options[Unwrap]={MonitorUnwrap->True, UnwrapDimension->"2D", UnwrapThresh->0.5};
 
 SyntaxInformation[Unwrap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
@@ -599,9 +600,9 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
         
         (*unwrapping logic*)
         (*0. check if both are not in background if one is background skip*)
-        If[! (group1 == 0 || group2 == 0),
+        If[!(group1 == 0 || group2 == 0),
          (*1. both already in same group but not zero (most cases 60%) do nothing*)
-         If[(! (group1 > 1 && group1 == group2)),
+         If[(!(group1 > 1 && group1 == group2)),
           (*If not in the same group determine the wrap of the edge and determine how to unwrap*)
           diff = data[[z1, x1, y1]] - data[[z2, x2, y2]];
           wrap = Sign[diff] Ceiling[Abs[diff] - thresh];
@@ -743,14 +744,14 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus
 	
 	(*find mask ranges*)
 	{min,max}=MinMax[data];
-	part=Partition[Range[min,max,(max-min)/12]//N,2,1];
+	part = {#[[1]], #[[2]] - 0.01} & /@ Partition[Range[Floor[min], Ceiling[max], 0.1] // N, 2, 1];
 	
 	(*remove background form masks, and create masks*)
 	dat = (mask data) + (-2 min) (1 - mask);
 	masks = Mask[dat, #, MaskSmoothing -> False] & /@ part;
 	
 	(*make groups from masks*)
-	small = (dep - 1) Ceiling[(Times @@ dim)/1000];
+	small = (dep - 1) Ceiling[(Total@Flatten@mask)/1000];
 	clus = MorphologicalComponents[DeleteSmallComponents[fun[#], small, CornerNeighbors -> False], CornerNeighbors -> False] & /@ masks;
 	nclus = Prepend[Drop[Accumulate[Max /@ clus], -1], 0];
 	groups = Total[MapThread[#2 Unitize[#1] + #1 &, {clus, nclus}]] + mask;

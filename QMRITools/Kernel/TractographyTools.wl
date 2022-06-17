@@ -157,7 +157,9 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	stopT = OptionValue[StopThreshhold];
 	
 	step = N@OptionValue[StepSize];
-	intF = Switch[OptionValue[Method], "RungeKutta", RK2, "RungeKutta4", RK4, _, Euler];
+	intF = Switch[OptionValue[Method], 
+		"RungeKutta", RK2, "RK", RK2, "RK2", RK2, 
+		"RungeKutta4", RK4,"RK4", RK4, _, Euler];
 	
 	(*prepare data*)
 	tensTr = FlipTensorOrientation[tensor, per, flip];
