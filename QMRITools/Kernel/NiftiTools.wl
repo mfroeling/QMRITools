@@ -192,7 +192,7 @@ DcmToNii[opt:OptionsPattern[]]:=DcmToNii[{"",""},opt];
 DcmToNii[infol_?StringQ, outfol_?StringQ, opt:OptionsPattern[]] := DcmToNii[{infol, outfol}, OptionsPattern[]]
 
 DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
-		filfolin, folout, log, command, compress, dcm2nii, delete,
+		filfolin, folout, log, command, compress, dcm2niix, dcm2niif, delete,
 		folsin, fols, folsout
 	},
 	
@@ -217,10 +217,12 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		compress = If[OptionValue[CompressNii],"y","n"];
 			
 		(*find the dcm2niix exe*)	
-		dcm2nii = GetAssetLocation[Switch[OptionValue[UseVersion],1,"DcmToNii",2,"DcmToNii-2"]];
-		If[dcm2nii == $Failed, 
+		dcm2nii = GetAssetLocation[Switch[OptionValue[UseVersion],1,"DcmToNii",_,"DcmToNii-"<>ToString[OptionValue[UseVersion]]]];
+		
+		If[dcm2nii === $Failed, 
 			Return[$Failed,Module],
-			dcm2nii=DirectoryName[dcm2nii]
+			dcm2niix = Last@FileNameSplit@dcm2nii;
+			dcm2niif = DirectoryName[dcm2nii];
 		];
 		
 		Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"];
@@ -243,15 +245,15 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		
 		command = Switch[$OperatingSystem,
 			"Windows",
-			First@FileNameSplit[dcm2nii]<>"\ncd " <> dcm2nii <>"\ndcm2niix.exe  -f %s_%t_%i_%m_%n_%p_%q -z "<>
-			compress<>" -m y -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
+			First@FileNameSplit[dcm2niif]<>"\ncd "<>dcm2niif<>"\n"<>dcm2niix<>" -f %s_%t_%i_%m_%n_%p_%q -z "<>
+			compress<>" -m y -v y -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
 			,
 			"Unix",
-			dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+			dcm2nii<>" -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
 			compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 			,
 			"MacOSX",
-			dcm2nii<>"dcm2niix -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+			dcm2nii<>" -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
 			compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 		];
 		

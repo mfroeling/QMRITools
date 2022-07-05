@@ -736,7 +736,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 	NotebookClose[plotwindow];
 	
 	(*Check if data is numeric array, if not exit*)
-	data = ToPackedArray[N[dat]];
+	data = ToPackedArray[N[Normal[dat]]];
 	If[!ArrayQ[data,_,RealQ],Return[Message[PlotData::data]]];
 	
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
@@ -922,8 +922,8 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 	NotebookClose[plotwindow];
 		
 	(*Check if data is numeric array, if not exit*)
-	data1 = ToPackedArray[dat1//N];
-	data2 = ToPackedArray[dat2//N];
+	data1 = ToPackedArray[N@Normal@dat1];
+	data2 = ToPackedArray[N@Normal@dat2];
 	If[(! ArrayQ[data1, _, RealQ]) || (! ArrayQ[data2, _, RealQ]),Return[Message[PlotData::data]]];
 
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
@@ -2548,43 +2548,45 @@ PlotContour[data_, voxi_, opts:OptionsPattern[]] := PlotContour[data, voxi, {0},
 
 PlotContour[data_, voxi_, scaleI_?ArrayQ, opts:OptionsPattern[]] := PlotContour[data, voxi, scaleI, {0}, opts]
 
-PlotContour[data_, voxi_, scaleI_?ArrayQ, range_, OptionsPattern[]] :=  Block[{
-	vox, pdata, dim, color, opac, style, scale, mean, func},
-  
-  (*prepare data*)
-  vox = Reverse[voxi];
-  pdata = ArrayPad[data, 1];
-  dim = Reverse@Dimensions[pdata];
-  
-  color = OptionValue[ContourStyle];
-  {color, opac} = If[ColorQ[color], {color, 0.25}, color];
-  
-  (*create a plot scale if needed*)
-  style = If[scaleI === {0},
-    Directive[{Opacity[opac], color, Specularity[Lighter@color, 5]}],
-    GrayLevel[1]
-    ];
-  
-  (*create a colorfunction if needed*)
-  func = If[scaleI =!= {0},
-    (*get the scaling*)
-    scale = ArrayPad[scaleI, 1];
-    mean = If[range === 0,
-      Quantile[DeleteCases[N@Flatten[data scaleI], 0.], .95]
-      ,
-      range
-      ];
-    scale = scale/(mean);
-    Function[{x, y, z}, ColorData["SunsetColors"][scale[[Ceiling[z], Ceiling[y], Ceiling[x]]]]]
-    ,
-    Automatic
-    ];
-  
-  Quiet@ListContourPlot3D[pdata,
-   Contours -> 1, BoxRatios -> dim vox, PlotRange -> Thread[{{0, 0, 0} - 5, dim + 2 + 5}], ContourStyle -> style, ColorFunction -> func, Mesh -> False, 
-   Lighting -> "Neutral", MaxPlotPoints -> Round[Max[dim]/3], ColorFunctionScaling -> False, SphericalRegion -> True, ImageSize -> 300, PerformanceGoal -> "Speed", Axes -> False
-   ]
-  ]
+PlotContour[data_, voxi_, scaleI_?ArrayQ, range_, OptionsPattern[]] :=  Block[{vox, pdata, dim, color, opac, style, scale, mean, func},
+	(*prepare data*)
+	vox = Reverse[voxi];
+	pdata = ArrayPad[data, 1];
+	dim = Reverse@Dimensions[pdata];
+	
+	color = OptionValue[ContourStyle];
+	{color, opac} = If[ColorQ[color], {color, 0.25}, color];
+	
+	(*create a plot scale if needed*)
+	style = If[scaleI === {0},
+		Directive[{Opacity[opac], color, Specularity[Lighter@color, 5]}],
+		GrayLevel[1]
+	];
+	
+	(*create a colorfunction if needed*)
+	func = If[scaleI =!= {0},
+    
+	    (*get the scaling*)
+	    scale = ArrayPad[scaleI, 1];
+	    mean = If[range === 0,
+	    	Quantile[DeleteCases[N@Flatten[data scaleI], 0.], .95],
+	    	range
+	    ];
+	    
+	    scale = scale/(mean);
+	    Function[{x, y, z}, ColorData["SunsetColors"][scale[[Ceiling[z], Ceiling[y], Ceiling[x]]]]]
+	    ,
+	    Automatic
+	];
+	
+	Quiet@ListContourPlot3D[
+		(*fix for 13.1*)
+		RescaleData[pdata,dim],
+		BoundaryStyle -> None,
+		Contours -> 1, BoxRatios -> dim vox, PlotRange -> Thread[{{0, 0, 0} - 5, dim + 2 + 5}], ContourStyle -> style, ColorFunction -> func, Mesh -> False,
+		Lighting -> "Neutral", MaxPlotPoints -> Round[Max[dim]/2], ColorFunctionScaling -> False, SphericalRegion -> True, ImageSize -> 300, PerformanceGoal -> "Speed", Axes -> False
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)

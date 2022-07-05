@@ -6,8 +6,8 @@
 
 Paclet[
     Name -> "QMRITools",
-    Version -> "2.8.4",
-    WolframVersion -> "13.0+",
+    Version -> "2.9.0",
+    WolframVersion -> "13.1+",
     SystemID -> All, 
     Description -> "Toolbox for Quantitative MRI.",
     Creator -> "Martijn Froeling <m.froeling@gmail.com>",
@@ -35,7 +35,11 @@ Paclet[
             {"Asset", "Root" -> "Applications/Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-4.9.so"}}},
             
             {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii", "dcm2niix.exe"}}},
-            {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii-2", "dcm2niix-20210317.exe"}}},
+            {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii-21", "dcm2niix-20210317.exe"}}},
+            {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii-20", "dcm2niix-20201102.exe"}}},
+            {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii-19", "dcm2niix-20190902.exe"}}},
+            {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii-17", "dcm2niix-20171204.exe"}}},
+            
             {"Asset", "Root" -> "Applications/MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}},
             {"Asset", "Root" -> "Applications/Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}}
         }

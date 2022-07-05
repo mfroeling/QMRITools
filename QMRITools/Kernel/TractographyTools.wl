@@ -177,13 +177,13 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	stop = tensMask (Times @@ (Mask[#[[1]], #[[2]]] & /@ inpTr));
 	
 	(*get the data coordinates on center of voxels*)
-	range = Thread[{voxTr, voxTr dim}] - 0.5 voxTr;
+	range = Thread[{voxTr, voxTr dim}];
 	coors = Flatten[CoordinateBoundsArray[# + {0., 0.001} & /@ range, voxTr], 2];
 	
 	(*make the trac and stop interpolation functions*)
 	intE = Interpolation[Thread[{coors, Flatten[tensTr, 2]}], InterpolationOrder -> int,
 		"ExtrapolationHandler" -> {{0., 0., 0., 0., 0., 0.} &, "WarningMessage" -> False}, Method -> "Hermite"];
-	intS = ListInterpolation[stop, range, InterpolationOrder -> Clip[int,{1,Infinity}], 
+	intS = ListInterpolation[stop, range, InterpolationOrder -> int, 
 		"ExtrapolationHandler" -> {0. &, "WarningMessage" -> False}, Method -> "Hermite"];
 	
 	(*make the seed point*)
@@ -197,15 +197,19 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 		(*perform tractography for each seed point*)
 		iii=1;
 		smax = Ceiling[(lmax/step)];
-		tracts = Monitor[Table[
-			TractFunc[seeds[[iii]], step, {amax, smax, stopT}, {intE, intS, intF}]
-			, {iii, 1, Length[seeds]}]
-		, ProgressIndicator[iii, {0, Length[seeds]}]];
+		trFunc = TractFunc[#, step, {amax, smax, stopT}, {intE, intS, intF}]&;
+		(*
+		
+		DistributeDefinitions[trFunc];
+		tracts = ParallelMap[trFunc, seeds, Method->"CoarsestGrained"];
+		*)
+		tracts = Monitor[Table[trFunc[seeds[[iii]]], {iii, 1, Length[seeds]}], ProgressIndicator[iii, {0, Length[seeds]}]];
 	
-	(*select only tracts within correct range and clip tracts that are longer*)
-	tracts = If[step Length[#] > lmax, 
-			drop = Ceiling[(step Length[#] - lmax)/(2 step)] + 1; #[[drop ;; -drop]], #
-		] & /@ Select[tracts, lmin < step Length[#] &];
+		(*select only tracts within correct range and clip tracts that are longer*)
+		tracts = If[step Length[#] > lmax, 
+				drop = Ceiling[(step Length[#] - lmax)/(2 step)] + 1; #[[drop ;; -drop]], 
+				#
+			] & /@ Select[tracts, lmin < step Length[#] &];
 	]];
 	
 	(*report timing*)
@@ -284,19 +288,20 @@ EigV[{xx_, yy_, zz_, xy_, xz_, yz_}] := First[Eigenvectors[{{xx, xy, xz}, {xy, y
 (*TractFunc*)
 
 
-TractFunc[loc0_, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{step0, in1, in2},
-	
+TractFunc[loc0_, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{st0, dir0, step1, in1, step2, in2},
 	(*initial direction*)
-	step0 = intF[loc0, {1,0,0}, h, Quiet[EigV[trF @@ #]] &];
+	dir0 = Quiet[EigV[trF @@ loc0]];
 	
 	(*place two seed points arount initial points*)
-	in1 = {loc0 + 0.5 step0, -step0};
-	in2 = {loc0 - 0.5 step0, step0};
+	step1 = intF[loc0, dir0, h, Quiet[EigV[trF @@ #]] &];
+	in1 = {loc0 - 0.5 step1, step1};
+	step2 = intF[loc0, -dir0, h, Quiet[EigV[trF @@ #]] &];
+	in2 = {loc0 - 0.5 step2, step2};
 	
-	(*tractography in two directions and *)
+	(*tractography in the two directions*)
 	Join[
-		Reverse@TractFunci[in1, -h, {amax, smax, str}, {trF, stF, intF}][[2 ;;, 1]],
-		TractFunci[in2, h, {amax, smax, str}, {trF, stF, intF}][[2 ;;, 1]]
+		Reverse@TractFunci[in1, h, {amax, smax, str}, {trF, stF, intF}],
+		TractFunci[in2, h, {amax, smax, str}, {trF, stF, intF}]
 	]
 ]
 
@@ -305,28 +310,30 @@ TractFunc[loc0_, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{step0,
 (*TractFunci*)
 
 
-TractFunci[{loc0_, step0_}, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[
-	{i, ang, stop, loc, step, stepn, angt},
+TractFunci[{loc0_, step0_}, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{i, ang, stop, loc, step, stepn, angt,out},
 
 	i = ang = 0;
 	stop = 1;
 	
-	NestWhileList[(
+	If[stF @@ (loc0 + step0) < str || stF @@ (loc0) < str,
+		{},
+		out=NestWhileList[(
 			i++;
-			(*location from itteration n*)
+			(*get the new location*)
 			step = #[[2]];
 			loc = #[[1]] + step;
-			(*get the step itteration n*)
+			(*get the new step*)
 			stepn = intF[loc, step, h, EigV[trF @@ #] &];
+			
 			(*find direction change with previous step direction*)
 			ang = VecAng[step, stepn];
-			(*get location of itteration n+1 to see if outside int area*)
+			(*get the stop value at new location*)
 			stop = stF @@ (loc + stepn);
+			
 			(*output*)
 			{loc, stepn}
-		) &,
-		{loc0, step0},
-		(i <= smax && ang < amax && stop > str) &
+			) &,{loc0, step0}, (i <= smax && ang < amax && stop > str) &];
+		If[Length[out] > 1, out[[2 ;;, 1]]]
 	]
 ];
 

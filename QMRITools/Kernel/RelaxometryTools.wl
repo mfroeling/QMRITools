@@ -274,15 +274,15 @@ T1Fit[datan_, timei_] := Block[{ad, datal, dim, times, dat, time, result, t1out,
 	
 	(*constrain the output to fixed values*)
 	{t1out, t1outs, aparo, bparo} = RotateDimensionsRight[result];
-	t1out = Clip[Round[t1out, .0001], {0, 2500}, {0, 2500}];
-	t1outs = Clip[Round[t1outs, .0001], {0, 2500}, {0, 2500}];
+	t1out = Clip[Round[t1out, .0001], {0, 3000}, {0, 3000}];
+	t1outs = Clip[Round[t1outs, .0001], {0, 3000}, {0, 3000}];
 	
 	(*output the data*)
 	{t1out, t1outs, aparo, bparo}
 ]
 
 
-T1LinFit[fdat_?VectorQ, time_?VectorQ] := Block[{min, max, sol, aparf, bparf, tt, t1sf, t1s, apar, bpar},
+T1LinFit[fdat_?VectorQ, time_?VectorQ] := Block[{min, max, sol, aparf, bparf, tt, t1sf, t1s, apar, bpar, cor},
 	{min, max} = MinMax[fdat];
 	
 	If[Total[fdat] == 0.,
@@ -292,17 +292,21 @@ T1LinFit[fdat_?VectorQ, time_?VectorQ] := Block[{min, max, sol, aparf, bparf, tt
 			(*model*)
 			Abs[aparf - bparf Exp[-tt/t1sf]],
 			(*contraints*)
-			{-0.1 max < aparf < 4 max, 0 < bparf < 8 max, 0 < t1sf}
+			{0 < aparf < bparf < 4 max, 0 < t1sf < 3000}
 			},
 			(*initial values*)
-			{{aparf, max}, {bparf, 2 max}, {t1sf, 1000}}, tt]
+			{{aparf, 0.5 max}, {bparf, 3 max}, {t1sf, 500}}, tt]
 		];
 		
 		(*get the fit results*)
 		{t1s, apar, bpar} = {t1sf, aparf, bparf} /. sol;
 		
 		(*correct the T1 star an convert to T1*)
-		If[apar > 0, {t1s (bpar/apar - 1), t1s, apar, bpar}, {0., 0., 0., 0.}]
+		If[apar > 0, 
+			cor = Clip[(bpar/apar - 1), {0., 3.}, {0., 3.}];
+			{cor t1s, t1s, apar, bpar}, 
+			{0., 0., 0., 0.}
+		]
 	]
 ]
 

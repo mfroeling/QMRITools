@@ -538,6 +538,8 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	
 	(*prepare the mask*)
 	mask = SelectComponents[#, "Count", -1] & /@ Round[maski];
+	dim = Dimensions[mask];
+	
 	
 	(*create the inner and outer volume*)
 	seg = MorphologicalComponents[N[#]] & /@ (1. - mask);
@@ -563,10 +565,15 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	
 	(*plane fit visualisation*)
 	If[OptionValue[ShowPlot],
-		surfpl = ListContourPlot3D[GaussianFilter[mask, 1], Contours -> {0.6}, Mesh -> False, PlotRange -> Transpose[{{0, 0, 0}, Reverse@(Dimensions[mask])}],
-			BoxRatios -> Reverse@(vox Dimensions[mask]), ContourStyle -> Directive[Gray, Opacity[0.5]], Lighting -> "Neutral", Axes -> False];
-		pointspl = ListPointPlot3D[ptsi, PlotRange -> Transpose[{{0, 0, 0}, Reverse@Dimensions[mask]}], BoxRatios -> 1, PlotStyle -> Red];
-		planepl = Plot3D[plane,  {x, 0, Dimensions[mask][[3]]}, {y, 0, Dimensions[mask][[2]]}, Mesh -> False, PlotStyle -> Directive[Red, Opacity[.2]], BoundaryStyle -> Darker[Red]];
+		surfpl = ListContourPlot3D[
+			(*fix for 13.1*)
+			RescaleData[GaussianFilter[mask, 1],Reverse@dim], 
+			
+			Contours -> {0.6}, Mesh -> False, PlotRange -> Transpose[{{0, 0, 0}, Reverse@(dim)}],
+			BoxRatios -> Reverse@(vox dim), ContourStyle -> Directive[Gray, Opacity[0.5]], Lighting -> "Neutral", Axes -> False];
+		pointspl = ListPointPlot3D[
+			ptsi, PlotRange -> Transpose[{{0, 0, 0}, Reverse@dim}], BoxRatios -> 1, PlotStyle -> Red];
+		planepl = Plot3D[plane,  {x, 0, dim[[3]]}, {y, 0, dim[[2]]}, Mesh -> False, PlotStyle -> Directive[Red, Opacity[.2]], BoundaryStyle -> Darker[Red]];
 		planefit = Show[surfpl, planepl, pointspl, PerformanceGoal -> "Speed", ImageSize->350];
 	];
 	
@@ -589,9 +596,13 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	
 	If[OptionValue[ShowPlot],
 		(*Create Inner and outer surfaces*)
-		{surfout, surfin} = ListContourPlot3D[GaussianFilter[min2 + mout2, 1], Contours -> {0.3, 1.5}[[#]], Mesh -> False, 
-			PlotRange -> Transpose[{{0, 0, 0}, Reverse@(Dimensions[mask])}], Lighting -> "Neutral", 
-			BoxRatios -> Reverse@(vox Dimensions[mask]), ContourStyle -> Directive[{Red, Blue}[[#]], Opacity[0.4]], 
+		{surfout, surfin} = ListContourPlot3D[
+			(*fix for 13.1*)
+			RescaleData[GaussianFilter[min2 + mout2, 1],Reverse@dim], 
+			
+			Contours -> {0.3, 1.5}[[#]], Mesh -> False, 
+			PlotRange -> Transpose[{{0, 0, 0}, Reverse@(dim)}], Lighting -> "Neutral", 
+			BoxRatios -> Reverse@(vox dim), ContourStyle -> Directive[{Red, Blue}[[#]], Opacity[0.4]], 
 			MaxPlotPoints -> {50, 100}] & /@ {1, 2};
 		
 		ptspl = Show[surfin, surfout, ListPointPlot3D[{Reverse[#]-1&/@ptsin[[;; ;;2]], Reverse[#]-1&/@ptsout[[;; ;;2]]}, PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed",ImageSize->350]
@@ -612,7 +623,7 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	) &, ptsmv];
 	
 	(*create the wall distance map*)
-	wall = GaussianFilter[Normal[SparseArray[Thread[ptsm -> dist], Dimensions[mask]]] + (1 - mout2), 1];
+	wall = GaussianFilter[Normal[SparseArray[Thread[ptsm -> dist], dim]] + (1 - mout2), 1];
 	der = GaussianFilter[wall, {{3,3,3}}(*{2 (1/vox)/(1/vox[[2]])}*), #] & /@ (IdentityMatrix[3]);
     
     If[OptionValue[MaskWallMap],
@@ -747,7 +758,15 @@ CenterPoint[mask_]:=Module[{half},
 
 
 GetRadius[mask_] := Block[{comps, in, out, fout, fin},
-	comps = MorphologicalComponents[Reverse@# - Erosion[Reverse@#, 1], CornerNeighbors -> False] & /@ mask;
+	
+	(*create the inner and outer volume*)
+	seg = MorphologicalComponents[N[#]] & /@ (1. - mask);
+	seg = If[#[[1, 1]] == 2, # /. {2 -> 1, 1 -> 2}, #] & /@ seg;
+	min = Unitize[Clip[seg - 1, {0, 1}, {0, 0}]];
+	mout = Unitize[1 - Clip[seg, {0, 1}, {0, 0}]];
+	comps =Reverse /@ ( (mout - (Erosion[#, 1] & /@ mout)) + 2 ((Dilation[#, 1] & /@ min) - min));
+	
+	(*comps = MorphologicalComponents[Reverse@# - Erosion[Reverse@#, 1], CornerNeighbors -> False] & /@ mask;*)
 		
 	{in, out} = Transpose[Switch[Max[#],
 		1, {{}, Reverse /@ Position[#, 1]},
@@ -893,11 +912,15 @@ PlotSegmentation[mask_, inner_, outer_, {off_, offi_, offo_}, vox_] := Block[{vo
 
 Options[PlotMaskVolume] = {Filter->True}
 
-PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Block[{pmask,dim},
+PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Block[{pmask,dim ,xi,yi,zi,pmask2},
 	pmask = ArrayPad[Reverse[If[OptionValue[Filter], GaussianFilter[Clip[mask], 1],	Clip[mask]], 2], 1];
 	dim=Dimensions[pmask];
-	ListContourPlot3D[pmask, Contours -> {.4}, ContourStyle -> {color, Opacity[.5]}, Mesh -> False,
-		Lighting -> "Neutral", BoundaryStyle -> None, PlotRange -> (Thread[{{0, 0, 0}, Reverse@dim - 1}]),
+		
+	ListContourPlot3D[
+		(*fix for 13.1*)
+		RescaleData[pmask,Reverse@dim], 
+		MaxPlotPoints->Infinity, Contours -> {.4}, ContourStyle -> {color, Opacity[.5]}, Mesh -> False,
+		Lighting -> "Neutral", BoundaryStyle -> None, PlotRange -> (Thread[{{0, 0, 0}, Reverse@dim - 1}]), DataRange->(Thread[{{0, 0, 0}, dim - 1}]),
 		BoxRatios -> Reverse[(vox (dim + 2))], Axes -> True, ImageSize -> 400, SphericalRegion -> True
 	]
 ]
@@ -934,7 +957,7 @@ GetMaskSegmentPoints[mask_]:=Block[{segM,m1,m2,points,maskc},
 
 SyntaxInformation[CardiacSegmentMask]={"ArgumentsPattern"->{_,_,_,_,_.,OptionsPattern[]}};
 
-CardiacSegmentMask[{msk_,vox_},regions_,points_,{rev_,type_,slcGrp_}]:=CardiacSegmentMask[msk,regions,points,CentralAxes[msk,vox,ShowPlot->False][[1]],{rev,type,slcGrp}]
+CardiacSegmentMask[msk_,regions_,points_,{rev_,type_,slcGrp_}]:=CardiacSegmentMask[msk,regions,points,{},{rev,type,slcGrp}]
 
 CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim,slices,dim2,centers,segments,segm,segs,nseg,rule,
 	off,coordinates,segmask,cent,coor,angs,angp,cang,l,u,sel,tmp,sls},
@@ -944,23 +967,25 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 	slices=dim[[1]];
 	dim2=Drop[dim,1];
 	
-	If[Length[offi[[1]]]==2,
-		centers=offi;,
-		centers=Reverse/@offi[[All,2;;3]];
+	If[offi==={},
+		off=CentralAxes[msk,{1,1,1},ShowPlot->False][[1]];
+		centers=Reverse/@off[[All,2;;3]];
+		,
+		If[Length[offi[[1]]]==2,
+			centers=offi;
+			,
+			off=offi;
+			centers=Reverse/@off[[All,2;;3]];
+		]
 	];
 	
-	Print[centers];
-	
 	(*get the segments per slice*)
-	{segments,segm}=SlicesToSegments[regions,slices,points,{type,slcGrp}];
-	Print["test"];
+	{segments,segm}=SlicesToSegments[regions,slices,{type,slcGrp}];
 	segs=Select[segments,#[[2]]=!=0&];
 	nseg=Length[segs];
 	
 	(*convert mask too coordinates*)
 	coordinates=(Reverse/@Position[#,1])&/@Round[msk];
-	
-	Print[segments,segm];
 	
 	(*create mask per slice from points*)
 	segmask=Table[
@@ -973,20 +998,15 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 			cent=centers[[n]];
 			coor=coordinates[[n]];
 			(*calculate the anlges for segments*)
-			Print[{points[[n]],cent,n/.segm, 2 Boole[rev]-1}];
-			angs = VecAngleC[points[[n]], cent, n/.segm, 2 Boole[rev]-1];
-			Print[angs];
+			angs=VecAngleC[points[[n]],cent,n/.segm,rev];
 			angp=Partition[angs,2,1,1];
 			(*convert the coordinates to angles*)
 			cang=(ToPol@@Transpose[#-cent&/@coor])[[All,2]];
 			cang=2Pi(1-UnitStep[cang])+cang;
 			
-			Print[MinMax[cang]];
-						
 			(*make the masks for each partition*)
 			(
 				{l,u}=#;
-				Print[{l,u,l>u}];
 				sel=If[l>u,
 					(UnitStep[cang-l]-UnitStep[cang-2Pi])+(UnitStep[cang-0]-UnitStep[cang-u]),
 					UnitStep[cang-l]-UnitStep[cang-u]
@@ -996,9 +1016,6 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 			]
 		]
 	,{n,1,slices,1}];
-	
-	Print[Dimensions[segmask]];
-	
 	
 	(*group mask slices for AHA 17 segments or other slice grouping*)
 	If[slcGrp||StringQ[type],
@@ -1015,14 +1032,12 @@ CardiacSegmentMask[msk_,regions_,points_,offi_,{rev_,type_,slcGrp_}]:=Block[{dim
 ]
 
 
-SlicesToSegments[{start_,ap_,mid_,bas_,end_},slices_,points_,{segmi_,slcgrp_}]:=Block[{apex,apical,midcavity,basal,none,segments,sel},
-	sel = If[#[[1]] === 1 || #[[2]] === 1, 0, 1] & /@ points;
+SlicesToSegments[{start_,ap_,mid_,bas_,end_},slices_,{segmi_,slcgrp_}]:=Block[{apex,apical,midcavity,basal,none,segments},
 	(*segment ranges*)
 	apex=Range[start+1,ap];
 	apical=Range[ap+1,mid];
 	midcavity=Range[mid+1,bas];
 	basal=Range[bas+1,end];
-	{apex, apical, midcavity, basal} = Select[#, sel[[#]] === 1 &] & /@ {apex, apical, midcavity, basal};
 	none=Complement[Range[1,slices],Flatten[{apex,apical,midcavity,basal}]];
 	
 	segments=Switch[segmi,
@@ -1038,8 +1053,8 @@ SlicesToSegments[{start_,ap_,mid_,bas_,end_},slices_,points_,{segmi_,slcgrp_}]:=
 ]
 
 
-ToPol = Compile[{{x,_Real,0},{y,_Real,0}},{Sqrt[x^2 + y^2],ArcTan[y,x]},RuntimeAttributes->{Listable}];
-FromPol = Compile[{{r,_Real,0},{a,_Real,0}},{r Cos[a],r Sin[a]},RuntimeAttributes->{Listable}];
+ToPol=Compile[{{x,_Real,0},{y,_Real,0}},{Sqrt[x^2 + y^2],ArcTan[y,x]},RuntimeAttributes->{Listable}];
+FromPol=Compile[{{r,_Real,0},{a,_Real,0}},{r Cos[a],r Sin[a]},RuntimeAttributes->{Listable}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2081,7 +2096,7 @@ MakeECVBloodMask[pre_, post_, OptionsPattern[]] := Block[{
 	mask2 = Mask[post, postM];
 	
 	bloodMask = Image3D[ImageData[
-		SelectComponents[Erosion[Image[#], 1], "Count", -3]] & /@ (mask1 mask2)];
+		SelectComponents[Erosion[Image[#], 2], "Count", -2]] & /@ (mask1 mask2)];
 	meas = ComponentMeasurements[bloodMask, "IntensityCentroid"];
 	
 	cent = First@Nearest[meas[[All, 2]], Reverse@Dimensions[mask1]/2.];
@@ -2105,9 +2120,12 @@ ECVCalc[mappre_, mappost_, hema_?RealQ] := Block[{z, x, y, mask},
 	ECVCalc[mappre, mappost, mask, hema]
 ]
 
-ECVCalc[mappre_, mappost_, bloodMask_, hema_] := Block[{deltaR1, deltaR1b},
+ECVCalc[mappre_, mappost_, bloodMask_, hema_] := Block[{deltaR1, deltaR1b, rPre, rPost},
 	deltaR1 = Clip[DevideNoZero[1, mappost] - DevideNoZero[1, mappre], {0, Infinity}];
-	deltaR1b = Median@Flatten[GetMaskData[deltaR1, bloodMask]];
+	(*deltaR1b = Median@Flatten[GetMaskData[deltaR1, bloodMask]];*)
+	rPre = 1./ Median@Select[GetMaskData[mappre, bloodMask], 2000 > # > 1500 &];
+	rPost = 1./ Median@Select[GetMaskData[mappost, bloodMask], 500 > # > 200 &];
+	deltaR1b = rPost - rPre;
 	Clip[100 (deltaR1/deltaR1b) (1 - hema), {0, 100}]
 ]  
 
