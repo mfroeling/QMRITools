@@ -1,0 +1,258 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9479,        250]
+NotebookOptionsPosition[      5863,        172]
+NotebookOutlinePosition[      6761,        197]
+CellTagsIndexPosition[      6718,        194]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[{
+ "New in: ",
+ Cell["??", "HistoryData",
+  CellTags->"New",ExpressionUUID->"d547d50e-65a0-459d-aee9-74264d3af0b2"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified",ExpressionUUID->"1f8d9010-872d-4433-82ca-48a33d35ed35"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete",ExpressionUUID->"11f0400c-0f62-4e93-a238-7c95f085c460"],
+ " | Excised in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Excised",ExpressionUUID->"b7ea8718-db39-4fb5-b497-d574028aef8a"]
+}], "History",
+ CellID->601555374,ExpressionUUID->"0da9380d-9247-4694-9415-a74f47c02667"],
+
+Cell["Created by: mfroelin on 01-25-2022 19:07:50", "AuthorDate",
+ CellID->406660841,ExpressionUUID->"8ce1c7db-0a36-4cf6-b6e1-ce5779023c15"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->31018042,ExpressionUUID->"14618cbf-18de-438e-b764-095fc0a3ee17"],
+
+Cell["Guide", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->742182,ExpressionUUID->"1f263b43-2764-4175-8198-05699470fe0f"],
+
+Cell["QMRITools", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->40702120,ExpressionUUID->"d592f742-525d-474f-bc37-a702f927f8dd"],
+
+Cell["QMRITools`", "Categorization",
+ CellLabel->"Context",
+ CellID->802780311,ExpressionUUID->"07cf7dd5-bfeb-468a-b215-2bf710cc8b19"],
+
+Cell["QMRITools/guide/TractographyTools", "Categorization",
+ CellLabel->"URI",
+ CellID->233722262,ExpressionUUID->"e9f8ecff-aa16-4685-a01d-8bacf818e27a"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->40755772,ExpressionUUID->"e011ef2b-98d0-43eb-8d11-fb08b8ba8d8b"],
+
+Cell["XXXX", "Keywords",
+ CellID->14295039,ExpressionUUID->"7cd7d67f-8e0d-48f8-b59b-db783adada8c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["TractographyTools", "GuideTitle",
+ CellID->249534081,ExpressionUUID->"83cfe74e-e2f1-40d4-88bd-2a47a82bea5e"],
+
+Cell[TextData[{
+ ButtonBox["QMRITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/QMRITools"],
+ " package: Functions for ",
+ ButtonBox["DTI based fiber tractography",
+  BaseStyle->"Hyperlink",
+  ButtonData->{
+    URL["https://community.wolfram.com/groups/-/m/t/2283047"], None}],
+ "."
+}], "GuideAbstract",
+ CellChangeTimes->{{3.852122886336241*^9, 3.852122902537384*^9}},
+ CellID->39108380,ExpressionUUID->"cba831c6-054e-4bce-a298-00f53540c486"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["", "GuideFunctionsSection",
+ CellID->147054162,ExpressionUUID->"fdf4c966-31ba-4321-a2a0-91bbaf388a5e"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["FiberTractography",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/FiberTractography"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "3d3766a9-2a00-4eb7-917b-2ae68c58981e"],
+ " \[LongDash] Performs fiber tractography on the tensor."
+}], "GuideText",
+ CellChangeTimes->{{3.8521229316271243`*^9, 3.8521229706467366`*^9}, {
+  3.8521230052109203`*^9, 3.8521230052109203`*^9}},
+ CellID->159898452,ExpressionUUID->"98c2749d-d548-463f-84f9-8324184f8be6"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["FindTensorPermutation",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/FindTensorPermutation"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "2041fde9-e267-47da-ade6-fd23ff64ea77"],
+ " \[LongDash] performs tractography for all tensor permutations and gives \
+back the one that has the longest tracts (",
+ ButtonBox["link",
+  BaseStyle->"Hyperlink",
+  ButtonData->{
+    URL["https://www.sciencedirect.com/science/article/abs/pii/\
+S1361841514000930?via%3Dihub"], None}],
+ ")."
+}], "GuideText",
+ CellChangeTimes->{{3.8521229382470827`*^9, 3.8521229382470827`*^9}, {
+  3.8521229798560624`*^9, 3.8521230076573734`*^9}},
+ CellID->499895926,ExpressionUUID->"8397eb77-f18d-4800-8b3f-0428941b5d4f"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["FitTract",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/FitTract"]], "InlineGuideFunction",
+  ExpressionUUID->"06e790da-3d19-4e27-a490-841dacccf7c0"],
+ " \[LongDash] Fits a tract with a polynomial function. "
+}], "GuideText",
+ CellChangeTimes->{{3.852122948451388*^9, 3.852122954972205*^9}, {
+  3.8521230097527804`*^9, 3.8521230097527804`*^9}},
+ CellID->704019951,ExpressionUUID->"f9c68729-091f-4c68-8968-c7a9f63c85e7"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tech Notes", "GuideTutorialsSection",
+ CellID->590174023,ExpressionUUID->"2f55776d-7a68-4aa4-94f4-a6b59170e50e"],
+
+Cell["XXXX", "GuideTutorial",
+ CellID->151704319,ExpressionUUID->"e251c22a-d4e4-4927-b722-94d84a3becff"],
+
+Cell["XXXX", "GuideTutorial",
+ CellID->457424416,ExpressionUUID->"61b92824-0afe-43b4-8127-2c60809e93e1"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "GuideMoreAboutSection",
+ CellChangeTimes->{{3.8430423939366693`*^9, 3.843042395176153*^9}},
+ CellID->18318790,ExpressionUUID->"80e84e0c-d095-4be3-ba0a-808bdd25d4ce"],
+
+Cell[TextData[ButtonBox["QMRITools",
+ BaseStyle->"Link",
+ ButtonData->"paclet:QMRITools/guide/QMRITools"]], "GuideMoreAbout",
+ CellChangeTimes->{{3.852122904284421*^9, 3.85212291011237*^9}},
+ CellID->8137091,ExpressionUUID->"43cb34ea-d55e-46d8-8551-0c4dca269127"],
+
+Cell["XXXX", "GuideMoreAbout",
+ CellID->70663503,ExpressionUUID->"6f1a3b35-1bb8-4a11-b046-8b65d1a4c274"]
+}, Open  ]],
+
+Cell["Related Links", "GuideRelatedLinksSection",
+ CellID->82253076,ExpressionUUID->"0c1d7885-d81c-4bed-920e-ee3cc02e3146"]
+},
+WindowSize->{700, 770},
+WindowMargins->{{Automatic, 253}, {Automatic, 83}},
+TaggingRules->{
+ "DocuToolsSettings" -> {
+   "$ApplicationName" -> "QMRITools", "$LinkBase" -> "QMRITools", 
+    "$DocumentationDirectory" -> 
+    "D:\\werk\\workspace\\QMRITools\\QMRITools\\Documentation\\English\\", 
+    "$ApplicationDirectory" -> "D:\\werk\\workspace\\QMRITools\\QMRITools"}, 
+  "WelcomeScreenSettings" -> {"FEStarting" -> False}, "Author" -> "mfroelin", 
+  "CreationDate" -> "01-25-2022 19:07:50"},
+FrontEndVersion->"13.0 for Microsoft Windows (64-bit) (December 2, 2021)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "GuidePageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"],
+ExpressionUUID->"982499b0-a678-4331-945c-7ec55ee5f069"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 598, 14, 24, "History",ExpressionUUID->"0da9380d-9247-4694-9415-a74f47c02667",
+ CellID->601555374],
+Cell[1159, 36, 140, 1, 20, "AuthorDate",ExpressionUUID->"8ce1c7db-0a36-4cf6-b6e1-ce5779023c15",
+ CellID->406660841],
+Cell[CellGroupData[{
+Cell[1324, 41, 121, 1, 29, "CategorizationSection",ExpressionUUID->"14618cbf-18de-438e-b764-095fc0a3ee17",
+ CellID->31018042],
+Cell[1448, 44, 130, 2, 32, "Categorization",ExpressionUUID->"1f263b43-2764-4175-8198-05699470fe0f",
+ CellID->742182],
+Cell[1581, 48, 136, 2, 32, "Categorization",ExpressionUUID->"d592f742-525d-474f-bc37-a702f927f8dd",
+ CellID->40702120],
+Cell[1720, 52, 134, 2, 32, "Categorization",ExpressionUUID->"07cf7dd5-bfeb-468a-b215-2bf710cc8b19",
+ CellID->802780311],
+Cell[1857, 56, 153, 2, 32, "Categorization",ExpressionUUID->"e9f8ecff-aa16-4685-a01d-8bacf818e27a",
+ CellID->233722262]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2047, 63, 109, 1, 29, "KeywordsSection",ExpressionUUID->"e011ef2b-98d0-43eb-8d11-fb08b8ba8d8b",
+ CellID->40755772],
+Cell[2159, 66, 98, 1, 19, "Keywords",ExpressionUUID->"7cd7d67f-8e0d-48f8-b59b-db783adada8c",
+ CellID->14295039]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2294, 72, 114, 1, 77, "GuideTitle",ExpressionUUID->"83cfe74e-e2f1-40d4-88bd-2a47a82bea5e",
+ CellID->249534081],
+Cell[2411, 75, 462, 12, 27, "GuideAbstract",ExpressionUUID->"cba831c6-054e-4bce-a298-00f53540c486",
+ CellID->39108380]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2910, 92, 108, 1, 70, "GuideFunctionsSection",ExpressionUUID->"fdf4c966-31ba-4321-a2a0-91bbaf388a5e",
+ CellID->147054162],
+Cell[3021, 95, 503, 11, 25, "GuideText",ExpressionUUID->"98c2749d-d548-463f-84f9-8324184f8be6",
+ CellID->159898452],
+Cell[3527, 108, 746, 18, 41, "GuideText",ExpressionUUID->"8397eb77-f18d-4800-8b3f-0428941b5d4f",
+ CellID->499895926],
+Cell[4276, 128, 477, 10, 25, "GuideText",ExpressionUUID->"f9c68729-091f-4c68-8968-c7a9f63c85e7",
+ CellID->704019951]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4790, 143, 118, 1, 72, "GuideTutorialsSection",ExpressionUUID->"2f55776d-7a68-4aa4-94f4-a6b59170e50e",
+ CellID->590174023],
+Cell[4911, 146, 104, 1, 22, "GuideTutorial",ExpressionUUID->"e251c22a-d4e4-4927-b722-94d84a3becff",
+ CellID->151704319],
+Cell[5018, 149, 104, 1, 22, "GuideTutorial",ExpressionUUID->"61b92824-0afe-43b4-8127-2c60809e93e1",
+ CellID->457424416]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5159, 155, 189, 2, 72, "GuideMoreAboutSection",ExpressionUUID->"80e84e0c-d095-4be3-ba0a-808bdd25d4ce",
+ CellID->18318790],
+Cell[5351, 159, 263, 4, 22, "GuideMoreAbout",ExpressionUUID->"43cb34ea-d55e-46d8-8551-0c4dca269127",
+ CellID->8137091],
+Cell[5617, 165, 104, 1, 22, "GuideMoreAbout",ExpressionUUID->"6f1a3b35-1bb8-4a11-b046-8b65d1a4c274",
+ CellID->70663503]
+}, Open  ]],
+Cell[5736, 169, 123, 1, 72, "GuideRelatedLinksSection",ExpressionUUID->"0c1d7885-d81c-4bed-920e-ee3cc02e3146",
+ CellID->82253076]
+}
+]
+*)
+

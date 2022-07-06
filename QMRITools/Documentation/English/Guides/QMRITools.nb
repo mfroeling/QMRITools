@@ -1,0 +1,549 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     21856,        541]
+NotebookOptionsPosition[     16044,        425]
+NotebookOutlinePosition[     16941,        450]
+CellTagsIndexPosition[     16898,        447]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[{
+ "New in: ",
+ Cell["??", "HistoryData",
+  CellTags->"New",ExpressionUUID->"be77ff74-70e6-402f-8801-840b9eb5e121"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified",ExpressionUUID->"7129b93e-e248-43d1-bc93-b16be3d9b699"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete",ExpressionUUID->"52c8956a-668c-47c3-bf7b-c5faa73788f5"],
+ " | Excised in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Excised",ExpressionUUID->"f8562fc3-eb78-45a9-a654-2fbf35a048a3"]
+}], "History",
+ CellID->12593269,ExpressionUUID->"a2e588d0-5713-424a-ae27-2844ed25669d"],
+
+Cell["Created by: mfroelin on 01-25-2022 17:42:49", "AuthorDate",
+ CellID->162535513,ExpressionUUID->"1feb5608-7319-4499-a1be-a75f26df096a"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->120338726,ExpressionUUID->"64f042d1-a937-4697-a7c7-11e3b2c8ff0f"],
+
+Cell["Guide", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->34452467,ExpressionUUID->"8b907b41-8546-41b6-a307-b8d253787881"],
+
+Cell["QMRITools", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->10894268,ExpressionUUID->"273347d1-6778-42f0-ba10-56f5aa1951db"],
+
+Cell["QMRITools`", "Categorization",
+ CellLabel->"Context",
+ CellID->141371565,ExpressionUUID->"1b019604-2dc3-4028-847f-e8e33ba0ff43"],
+
+Cell["QMRITools/guide/QMRITools", "Categorization",
+ CellLabel->"URI",
+ CellID->513123227,ExpressionUUID->"b8e5854a-ac00-4933-b738-8dfc2a16d2a8"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->244567600,ExpressionUUID->"6c0fedda-05c8-498a-9d32-f6e5288182dc"],
+
+Cell["XXXX", "Keywords",
+ CellID->334141963,ExpressionUUID->"5f91d566-3f2c-4b9d-b183-7f56128d26fc"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["QMRITools", "GuideTitle",
+ CellID->601237957,ExpressionUUID->"08e25533-94c6-414d-9365-43db090eae68"],
+
+Cell["\<\
+QMRITools package written by Martijn Froeling. 
+Contains various sub-packages with functions for processing, evaluating, \
+simulating, importing, exporting and simulating of quantitative MRI data.
+It provides a range of functions to process DWI, DTI, Dixon and T2mapping \
+data, phase unwrapping etc.
+If additional features are required please contact me on m.froeling@gmail.com\
+\>", "GuideAbstract",
+ CellChangeTimes->{3.8521177802168283`*^9},
+ CellID->616745991,ExpressionUUID->"f0c9d75d-8477-4934-a408-7e6e9823f128"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["", "GuideFunctionsSection",
+ CellID->101536336,ExpressionUUID->"47798554-471d-4648-b226-fddf187b9f70"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["CardiacTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/CardiacTools"]], "InlineGuideFunction",
+  ExpressionUUID->"43aae6b6-f4bd-4e7a-a16a-ae1fb0035afe"],
+ " \[LongDash] Functions for processing cardiac MRI data."
+}], "GuideText",
+ CellChangeTimes->{{3.852117854782976*^9, 3.852117857460849*^9}, {
+  3.8521180245271077`*^9, 3.8521180245271077`*^9}, {3.852118110912848*^9, 
+  3.8521181338221927`*^9}},
+ CellID->477633887,ExpressionUUID->"7b2c26a6-a697-49ab-aafa-8201670394a3"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["DenoiseTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/DenoiseTools"]], "InlineGuideFunction",
+  ExpressionUUID->"c8e1cbca-f061-4611-aa9d-7b2a29c3c506"],
+ " \[LongDash] Functions for noise suppression of multi dimensional MRI data."
+}], "GuideText",
+ CellChangeTimes->{{3.8521178650777235`*^9, 3.8521178672020445`*^9}, {
+  3.852118029573207*^9, 3.852118029573207*^9}, {3.8521181656034365`*^9, 
+  3.8521181901528254`*^9}},
+ CellID->232714109,ExpressionUUID->"be3009b7-c23a-4182-b5b6-96c08adec359"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["DixonTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/DixonTools"]], "InlineGuideFunction",
+  ExpressionUUID->"a22f0b11-c208-4376-a6a4-491ba9d5f577"],
+ " \[LongDash] Functions for Dixon data reconstruction and analysis. "
+}], "GuideText",
+ CellChangeTimes->{{3.852117869843978*^9, 3.8521178728060565`*^9}, {
+   3.8521180339481277`*^9, 3.8521180339481277`*^9}, {3.852118193467187*^9, 
+   3.8521182056242814`*^9}, 3.852118267820235*^9},
+ CellID->66216567,ExpressionUUID->"f60e4b51-e13b-4067-9068-9c2322edbf05"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["ElastixTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/ElastixTools"]], "InlineGuideFunction",
+  ExpressionUUID->"65e8090b-134b-49fe-af99-ed4b6bcb7fbb"],
+ " \[LongDash] Functions for data registration using the ",
+ ButtonBox["Elastix",
+  BaseStyle->"Hyperlink",
+  ButtonData->{
+    URL["https://elastix.lumc.nl/"], None}],
+ " software. "
+}], "GuideText",
+ CellChangeTimes->{{3.8521178768336363`*^9, 3.8521178792742662`*^9}, {
+  3.85211803614721*^9, 3.85211803614721*^9}, {3.852118215897818*^9, 
+  3.8521182552718563`*^9}},
+ CellID->517095776,ExpressionUUID->"5419f9b1-04f2-44b6-a2ce-949c6423d2c9"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["GeneralTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/GeneralTools"]], "InlineGuideFunction",
+  ExpressionUUID->"12edffb6-bb9a-415b-8bfe-82122ebf9952"],
+ " \[LongDash] Functions that are used in other tools. "
+}], "GuideText",
+ CellChangeTimes->{{3.852117883335909*^9, 3.85211788542562*^9}, {
+  3.852118050785181*^9, 3.852118050785181*^9}, {3.852118269793939*^9, 
+  3.8521182901372075`*^9}},
+ CellID->165376383,ExpressionUUID->"92b301f1-1fbd-47ab-85cf-45f718016c41"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["GradientTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/GradientTools"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "152c3fac-1064-4301-b3c0-841f8b2ec927"],
+ " \[LongDash] Functions for diffusion gradient optimization and manipulation."
+}], "GuideText",
+ CellChangeTimes->{{3.8521957050855474`*^9, 3.8521957239161963`*^9}},
+ CellID->802208633,ExpressionUUID->"6df68b23-c62f-4776-8908-8964dd42e5fb"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["IVIMTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/IVIMTools"]], "InlineGuideFunction",
+  ExpressionUUID->"01e13442-9f2c-4a68-b4b1-358d098e1560"],
+ " \[LongDash] Functions for fitting and analysis of IVIM MRI data."
+}], "GuideText",
+ CellChangeTimes->{{3.8521179017314305`*^9, 3.8521179031825495`*^9}, {
+  3.8521180528060455`*^9, 3.8521180528060455`*^9}, {3.8521182981020975`*^9, 
+  3.8521183156938577`*^9}},
+ CellID->149941791,ExpressionUUID->"7d112481-230e-4922-882a-8e71c610007b"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["JcouplingTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/JcouplingTools"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "b9f238e3-e9c8-4fe8-a58f-3db49adb8319"],
+ " \[LongDash] Functions for simulation of j-coupled spectra."
+}], "GuideText",
+ CellChangeTimes->{{3.8521179064250836`*^9, 3.852117911576301*^9}, {
+  3.852118055326295*^9, 3.852118055326295*^9}, {3.852118318873541*^9, 
+  3.85211833569699*^9}},
+ CellID->118820786,ExpressionUUID->"181f4b6f-70c0-4a45-83d8-4ec35c32e385"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["MaskingTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/MaskingTools"]], "InlineGuideFunction",
+  ExpressionUUID->"f29d9afe-2be8-45b9-bf21-4ecf9a36679b"],
+ " \[LongDash] Functions for generating and processing of masks and \
+segmentations."
+}], "GuideText",
+ CellChangeTimes->{{3.8521179137763877`*^9, 3.852117916213231*^9}, {
+  3.852118057501511*^9, 3.852118057501511*^9}, {3.8521183458455644`*^9, 
+  3.852118363269662*^9}},
+ CellID->409057696,ExpressionUUID->"a528fd37-eb39-4134-9bd3-b6bf8fd23c2d"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["NiftiTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/NiftiTools"]], "InlineGuideFunction",
+  ExpressionUUID->"99d59e14-a8d9-4596-8baf-a7bf62eab3b9"],
+ " \[LongDash] Functions for importing and exporting ",
+ ButtonBox["Nifti",
+  BaseStyle->"Hyperlink",
+  ButtonData->{
+    URL["https://nifti.nimh.nih.gov/"], None}],
+ " (*.nii) data."
+}], "GuideText",
+ CellChangeTimes->{{3.8521179188392076`*^9, 3.8521179214437265`*^9}, {
+   3.852118059586933*^9, 3.852118059586933*^9}, {3.852118368222709*^9, 
+   3.8521183871219187`*^9}, 3.8521184493360753`*^9},
+ CellID->694971446,ExpressionUUID->"70baa991-136d-4284-8042-c8c15d02093c"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["PlottingTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/PlottingTools"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "d2b8c6a1-03ed-4c46-92d0-6502f3a21755"],
+ " \[LongDash] Functions for displaying and visualization of multi \
+dimensional data. "
+}], "GuideText",
+ CellChangeTimes->{{3.852117936011012*^9, 3.8521179386121464`*^9}, {
+  3.8521180616184998`*^9, 3.8521180616184998`*^9}, {3.8521184531792107`*^9, 
+  3.852118476571061*^9}},
+ CellID->249276998,ExpressionUUID->"b92cb8f2-8efc-49ba-af74-4879810cff54"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["ProcessingTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/ProcessingTools"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "b34eee77-bf6a-40ea-9fad-1cc105b65a4f"],
+ " \[LongDash] Functions for generals processing of data."
+}], "GuideText",
+ CellChangeTimes->{{3.8521179527882648`*^9, 3.8521179554701266`*^9}, {
+  3.8521180636092167`*^9, 3.8521180636092167`*^9}, {3.8521184848870664`*^9, 
+  3.85211849175873*^9}},
+ CellID->185210090,ExpressionUUID->"e4cad378-0aaa-476b-87a5-14a37fc7d67b"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["ReconstructionTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/ReconstructionTools"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "5f1b4a24-3758-4d36-b3e3-a761f302c2c0"],
+ " \[LongDash] Functions for basic MRI reconstruction and coil combination."
+}], "GuideText",
+ CellChangeTimes->{{3.8521179589627843`*^9, 3.8521179617397394`*^9}, {
+  3.852118066045126*^9, 3.852118066045126*^9}, {3.85211849715928*^9, 
+  3.8521185117887087`*^9}},
+ CellID->95232703,ExpressionUUID->"8df6bcba-dd13-45e1-9ab0-09d09adc60c7"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["RelaxometryTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/RelaxometryTools"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "9aaee3e3-e178-4aaf-a1be-7d34bb048513"],
+ " \[LongDash] Functions for fitting and analysis of relaxometry data (e.g. \
+T2, T1 and T1rho)."
+}], "GuideText",
+ CellChangeTimes->{{3.8521179646790056`*^9, 3.852117967898429*^9}, {
+  3.852118068329353*^9, 3.852118068329353*^9}, {3.8521185227837505`*^9, 
+  3.852118550353668*^9}},
+ CellID->472343599,ExpressionUUID->"55ebeab9-c5eb-4201-bda6-f79f995fd60e"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["SimulationTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/SimulationTools"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "75cbfae1-0972-4ffa-9e47-6f533691ce97"],
+ " \[LongDash] Functions for simulating various MRI contrasts such as DWI, \
+DTI, Dixon and EPG data. "
+}], "GuideText",
+ CellChangeTimes->{{3.8521179708507433`*^9, 3.8521179730598707`*^9}, {
+  3.852118070573722*^9, 3.852118070573722*^9}, {3.8521185547790365`*^9, 
+  3.8521186005357695`*^9}},
+ CellID->43424256,ExpressionUUID->"da2f59d2-0a9c-42e1-aa8b-2dbe93b059f9"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["SpectroTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/SpectroTools"]], "InlineGuideFunction",
+  ExpressionUUID->"f0fb6026-baa2-4818-b5dc-9b66c0a1d0fe"],
+ " \[LongDash] Functions for fitting, processing and analysis of MRS data."
+}], "GuideText",
+ CellChangeTimes->{{3.85211797598106*^9, 3.852117979550512*^9}, {
+  3.852118022381522*^9, 3.852118022381522*^9}, {3.8521186069710565`*^9, 
+  3.852118649743209*^9}},
+ CellID->479178129,ExpressionUUID->"2170e686-5355-4edb-b797-78487ca392cd"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["TaggingTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/TaggingTools"]], "InlineGuideFunction",
+  ExpressionUUID->"feab9c49-0a88-4055-890b-27d5b902b81f"],
+ " \[LongDash] Functions for the analysis of tagging MRI data."
+}], "GuideText",
+ CellChangeTimes->{{3.852117984529872*^9, 3.8521179862384205`*^9}, {
+  3.852118019370327*^9, 3.852118019370327*^9}, {3.8521186288003197`*^9, 
+  3.85211863720652*^9}},
+ CellID->511139367,ExpressionUUID->"90bda70b-a3de-4969-96d2-2063351995f0"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["TensorTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/TensorTools"]], "InlineGuideFunction",
+  ExpressionUUID->"ad3b6e5c-8257-43a6-be25-d8364bd06f05"],
+ " \[LongDash] Functions for fitting processing and analysis of DTI data."
+}], "GuideText",
+ CellChangeTimes->{{3.852117989358204*^9, 3.852117990981886*^9}, {
+  3.8521180736809683`*^9, 3.8521180736809683`*^9}, {3.8521186417216854`*^9, 
+  3.8521186637284994`*^9}},
+ CellID->212486955,ExpressionUUID->"5d2d779e-0c33-4b9d-bdcc-983ee9057565"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["TractographyTools",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/guide/TractographyTools"]], 
+  "InlineGuideFunction",ExpressionUUID->
+  "c1362c96-15e3-400a-9587-70e0870c76d6"],
+ " \[LongDash] Functions for ",
+ ButtonBox["DTI based fiber tractography",
+  BaseStyle->"Hyperlink",
+  ButtonData->{
+    URL["https://community.wolfram.com/groups/-/m/t/2283047"], None}],
+ "."
+}], "GuideText",
+ CellChangeTimes->{{3.852117999903232*^9, 3.8521180034139175`*^9}, {
+   3.852118075886704*^9, 3.852118075886704*^9}, {3.8521186742540426`*^9, 
+   3.852118682994484*^9}, 3.852118722236522*^9},
+ CellID->714579119,ExpressionUUID->"3bf882c0-cfc3-4020-b994-a8c3e202d17f"],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->153204802,ExpressionUUID->"41bf8dbb-f2fa-4d19-a8b7-871e1d6880e3"],
+
+Cell[TextData[{
+ ButtonBox["CoilTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/CoilTools"],
+ " . ",
+ ButtonBox["ImportTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/ImportTools"],
+ " . ",
+ ButtonBox["PhysiologyTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/PhysiologyTools"],
+ " . ",
+ ButtonBox["VisteTools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/VisteTools"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{
+  3.852117894911064*^9, {3.852117928132559*^9, 3.8521179316187234`*^9}, {
+   3.8521180072865496`*^9, 3.85211800928267*^9}, {3.8521181494126444`*^9, 
+   3.852118162386056*^9}},
+ CellID->175121666,ExpressionUUID->"579ee75f-3f48-490f-bcda-97038606cd7f"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tech Notes", "GuideTutorialsSection",
+ CellID->85268136,ExpressionUUID->"ed976ec4-f9fb-4379-a9d0-bb7e1dfef263"],
+
+Cell["XXXX", "GuideTutorial",
+ CellID->107776785,ExpressionUUID->"4124c8ae-8ff5-47c8-9ee1-ba017cc92dba"],
+
+Cell["XXXX", "GuideTutorial",
+ CellID->379610112,ExpressionUUID->"a7b55f46-fc3a-497f-92d2-c6615ef584b0"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "GuideMoreAboutSection",
+ CellChangeTimes->{{3.8430423939366693`*^9, 3.843042395176153*^9}},
+ CellID->68260594,ExpressionUUID->"45c0194a-4887-44b0-9d16-d89b18a18701"],
+
+Cell[TextData[ButtonBox["QMRITools",
+ BaseStyle->"Link",
+ ButtonData->"paclet:QMRITools/guide/QMRITools"]], "GuideMoreAbout",
+ CellChangeTimes->{{3.852196721119529*^9, 3.8521967262084613`*^9}},
+ CellID->72328153,ExpressionUUID->"c9a34a3b-024e-47c7-a16e-44e3232d4024"],
+
+Cell["XXXX", "GuideMoreAbout",
+ CellID->752947342,ExpressionUUID->"ef36faa6-3b70-4e71-9080-e912ff767bdf"]
+}, Open  ]],
+
+Cell["Related Links", "GuideRelatedLinksSection",
+ CellID->911536142,ExpressionUUID->"05a9f02b-9b8e-4297-87a5-ca2a098b813c"]
+},
+WindowSize->{958, 1108},
+WindowMargins->{{-7, Automatic}, {Automatic, 0}},
+TaggingRules->{
+ "DocuToolsSettings" -> {
+   "$ApplicationName" -> "QMRITools", "$LinkBase" -> "QMRITools", 
+    "$DocumentationDirectory" -> 
+    "D:\\werk\\workspace\\QMRITools\\QMRITools\\Documentation\\English\\", 
+    "$ApplicationDirectory" -> "D:\\werk\\workspace\\QMRITools\\QMRITools"}, 
+  "WelcomeScreenSettings" -> {"FEStarting" -> False}, "Author" -> "mfroelin", 
+  "CreationDate" -> "01-25-2022 17:42:49"},
+FrontEndVersion->"13.0 for Microsoft Windows (64-bit) (December 2, 2021)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "GuidePageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"],
+ExpressionUUID->"12e89f3c-eb99-4b9a-b05e-d2f7da34926f"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 597, 14, 24, "History",ExpressionUUID->"a2e588d0-5713-424a-ae27-2844ed25669d",
+ CellID->12593269],
+Cell[1158, 36, 140, 1, 20, "AuthorDate",ExpressionUUID->"1feb5608-7319-4499-a1be-a75f26df096a",
+ CellID->162535513],
+Cell[CellGroupData[{
+Cell[1323, 41, 122, 1, 29, "CategorizationSection",ExpressionUUID->"64f042d1-a937-4697-a7c7-11e3b2c8ff0f",
+ CellID->120338726],
+Cell[1448, 44, 132, 2, 32, "Categorization",ExpressionUUID->"8b907b41-8546-41b6-a307-b8d253787881",
+ CellID->34452467],
+Cell[1583, 48, 136, 2, 32, "Categorization",ExpressionUUID->"273347d1-6778-42f0-ba10-56f5aa1951db",
+ CellID->10894268],
+Cell[1722, 52, 134, 2, 32, "Categorization",ExpressionUUID->"1b019604-2dc3-4028-847f-e8e33ba0ff43",
+ CellID->141371565],
+Cell[1859, 56, 145, 2, 32, "Categorization",ExpressionUUID->"b8e5854a-ac00-4933-b738-8dfc2a16d2a8",
+ CellID->513123227]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2041, 63, 110, 1, 29, "KeywordsSection",ExpressionUUID->"6c0fedda-05c8-498a-9d32-f6e5288182dc",
+ CellID->244567600],
+Cell[2154, 66, 99, 1, 19, "Keywords",ExpressionUUID->"5f91d566-3f2c-4b9d-b183-7f56128d26fc",
+ CellID->334141963]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2290, 72, 106, 1, 77, "GuideTitle",ExpressionUUID->"08e25533-94c6-414d-9365-43db090eae68",
+ CellID->601237957],
+Cell[2399, 75, 530, 9, 136, "GuideAbstract",ExpressionUUID->"f0c9d75d-8477-4934-a408-7e6e9823f128",
+ CellID->616745991]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2966, 89, 108, 1, 70, "GuideFunctionsSection",ExpressionUUID->"47798554-471d-4648-b226-fddf187b9f70",
+ CellID->101536336],
+Cell[3077, 92, 539, 11, 25, "GuideText",ExpressionUUID->"7b2c26a6-a697-49ab-aafa-8201670394a3",
+ CellID->477633887],
+Cell[3619, 105, 561, 11, 25, "GuideText",ExpressionUUID->"be3009b7-c23a-4182-b5b6-96c08adec359",
+ CellID->232714109],
+Cell[4183, 118, 572, 11, 25, "GuideText",ExpressionUUID->"f60e4b51-e13b-4067-9068-9c2322edbf05",
+ CellID->66216567],
+Cell[4758, 131, 662, 16, 25, "GuideText",ExpressionUUID->"5419f9b1-04f2-44b6-a2ce-949c6423d2c9",
+ CellID->517095776],
+Cell[5423, 149, 532, 11, 25, "GuideText",ExpressionUUID->"92b301f1-1fbd-47ab-85cf-45f718016c41",
+ CellID->165376383],
+Cell[5958, 162, 465, 10, 25, "GuideText",ExpressionUUID->"6df68b23-c62f-4776-8908-8964dd42e5fb",
+ CellID->802208633],
+Cell[6426, 174, 549, 11, 25, "GuideText",ExpressionUUID->"7d112481-230e-4922-882a-8e71c610007b",
+ CellID->149941791],
+Cell[6978, 187, 545, 12, 25, "GuideText",ExpressionUUID->"181f4b6f-70c0-4a45-83d8-4ec35c32e385",
+ CellID->118820786],
+Cell[7526, 201, 564, 12, 25, "GuideText",ExpressionUUID->"a528fd37-eb39-4134-9bd3-b6bf8fd23c2d",
+ CellID->409057696],
+Cell[8093, 215, 686, 16, 25, "GuideText",ExpressionUUID->"70baa991-136d-4284-8042-c8c15d02093c",
+ CellID->694971446],
+Cell[8782, 233, 576, 13, 25, "GuideText",ExpressionUUID->"b92cb8f2-8efc-49ba-af74-4879810cff54",
+ CellID->249276998],
+Cell[9361, 248, 551, 12, 25, "GuideText",ExpressionUUID->"e4cad378-0aaa-476b-87a5-14a37fc7d67b",
+ CellID->185210090],
+Cell[9915, 262, 572, 12, 25, "GuideText",ExpressionUUID->"8df6bcba-dd13-45e1-9ab0-09d09adc60c7",
+ CellID->95232703],
+Cell[10490, 276, 587, 13, 41, "GuideText",ExpressionUUID->"55ebeab9-c5eb-4201-bda6-f79f995fd60e",
+ CellID->472343599],
+Cell[11080, 291, 594, 13, 41, "GuideText",ExpressionUUID->"da2f59d2-0a9c-42e1-aa8b-2dbe93b059f9",
+ CellID->43424256],
+Cell[11677, 306, 551, 11, 25, "GuideText",ExpressionUUID->"2170e686-5355-4edb-b797-78487ca392cd",
+ CellID->479178129],
+Cell[12231, 319, 541, 11, 25, "GuideText",ExpressionUUID->"90bda70b-a3de-4969-96d2-2063351995f0",
+ CellID->511139367],
+Cell[12775, 332, 555, 11, 25, "GuideText",ExpressionUUID->"5d2d779e-0c33-4b9d-bdcc-983ee9057565",
+ CellID->212486955],
+Cell[13333, 345, 708, 17, 25, "GuideText",ExpressionUUID->"3bf882c0-cfc3-4020-b994-a8c3e202d17f",
+ CellID->714579119],
+Cell[CellGroupData[{
+Cell[14066, 366, 103, 1, 26, "GuideDelimiter",ExpressionUUID->"41bf8dbb-f2fa-4d19-a8b7-871e1d6880e3",
+ CellID->153204802],
+Cell[14172, 369, 745, 21, 21, "InlineGuideFunctionListing",ExpressionUUID->"579ee75f-3f48-490f-bcda-97038606cd7f",
+ CellID->175121666]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[14966, 396, 117, 1, 72, "GuideTutorialsSection",ExpressionUUID->"ed976ec4-f9fb-4379-a9d0-bb7e1dfef263",
+ CellID->85268136],
+Cell[15086, 399, 104, 1, 22, "GuideTutorial",ExpressionUUID->"4124c8ae-8ff5-47c8-9ee1-ba017cc92dba",
+ CellID->107776785],
+Cell[15193, 402, 104, 1, 22, "GuideTutorial",ExpressionUUID->"a7b55f46-fc3a-497f-92d2-c6615ef584b0",
+ CellID->379610112]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[15334, 408, 189, 2, 72, "GuideMoreAboutSection",ExpressionUUID->"45c0194a-4887-44b0-9d16-d89b18a18701",
+ CellID->68260594],
+Cell[15526, 412, 267, 4, 22, "GuideMoreAbout",ExpressionUUID->"c9a34a3b-024e-47c7-a16e-44e3232d4024",
+ CellID->72328153],
+Cell[15796, 418, 105, 1, 22, "GuideMoreAbout",ExpressionUUID->"ef36faa6-3b70-4e71-9080-e912ff767bdf",
+ CellID->752947342]
+}, Open  ]],
+Cell[15916, 422, 124, 1, 72, "GuideRelatedLinksSection",ExpressionUUID->"05a9f02b-9b8e-4297-87a5-ca2a098b813c",
+ CellID->911536142]
+}
+]
+*)
+
