@@ -579,7 +579,7 @@ TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
 					itt++;
 					soli = sol;
 					(*perform WLLS*)
-					w = (mvec Exp[bmat.sol])^2;
+					w = (mvec Exp[2 bmat.sol]);
 					wmat =Transpose[bmat].DiagonalMatrix[w];
 					sol = LeastSquares[wmat.bmat, wmat.LS];
 					(*update weight*)

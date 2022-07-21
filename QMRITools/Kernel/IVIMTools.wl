@@ -1181,9 +1181,11 @@ IVIMCorrectData[data_, {S0_, f_, pdc_}, bval_, OptionsPattern[]] := Module[{ff, 
   {dataCor, dataSyn}
   ]
 
-SynDatai = Compile[{{s0, _Real, 3}, {f, _Real, 3}, {pdc, _Real, 3}, {bval, _Real, 1}}, Transpose[Map[(f s0 Exp[-# pdc]) &, bval]]];
+SynDatai = Compile[{{s0, _Real, 3}, {f, _Real, 3}, {pdc, _Real, 3}, {bval, _Real, 1}}, 
+	Transpose[Map[(f s0 Exp[-# pdc]) &, bval]]];
 
-LapFilt[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@data, "Real"], fil, Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
+LapFilt[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@data, "Real"], fil, 
+	Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
 
 
 

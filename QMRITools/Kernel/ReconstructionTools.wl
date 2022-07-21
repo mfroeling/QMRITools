@@ -511,7 +511,7 @@ FourierKspace2DIF = Compile[{{data, _Complex, 2}, {ham, _Complex, 2}, {ksPad, _I
 
 SyntaxInformation[FourierKspace3D] = {"ArgumentsPattern" -> {_, _, _.}};
 
-FourierKspace3D[kspace_, head_, filt_ : False] := Block[{ksize, dim, over, kfull, ksPad, shift, clip, data},
+FourierKspace3D[kspace_, head_, filt_:False] := Block[{ksize, kspacef, dim, over, kfull, ksPad, shift, clip, data},
 	(*the acquired k-space size*)
 	ksize = {"N_kz", "N_ky", "N_samp"} /. head;
 	(*get the final target data dimentions*)
@@ -527,16 +527,19 @@ FourierKspace3D[kspace_, head_, filt_ : False] := Block[{ksize, dim, over, kfull
 	ksPad = Transpose[{Floor[#], Ceiling[#]} &[(kfull - ksize)/2]];
 	(*the amout of data that needs to be removed to come to correct dimensions*)
 	clip = Transpose[{Floor[#] + 1, -Ceiling[#] - 1} &[(kfull - dim)/2]];
-	
+
 	(*Reconstruct and Hammingfilter the data if needed*)
-	data = FourierKspace3DI[kspace, ksPad, shift, clip];
-	If[filt === True,Map[HammingFilterData, data, {-3}],data]
+	kspacef = If[filt === "Raw", Map[MakeHammingFilter[Dimensions[#]]#&, kspace, {-3}], kspace];
+	
+	data = FourierKspace3DI[kspacef, ksPad, shift, clip];
+	
+	If[filt === True, Map[HammingFilterData, data, {-3}], data]
   ]
 
 FourierKspace3DI = Compile[{{data, _Complex, 3}, {ksPad, _Integer, 2}, {shift, _Integer, 1}, {clip, _Integer, 2}},
 	Block[{dat},
 		(*pad the data to the full range*)
-		dat = ArrayPad[ data, ksPad];
+		dat = ArrayPad[data, ksPad];
 		(*perform the 3D Fourier*)
 		dat = FourierShifted[dat];
 		(*somhow the read direction needs to be shifted*)
@@ -888,7 +891,8 @@ Options[CoilWeightedRecon] = {
 	CoilSamples -> 2, 
 	Method -> "RoemerEqualSignal", 
 	OutputSense->False,
-	RescaleRecon->True
+	RescaleRecon->True,
+	ReconFilter->False
 	};
 
 CoilWeightedRecon[kspace_, noise_, head_, ops:OptionsPattern[]]:=CoilWeightedRecon[kspace, noise, head, 0,  ops]
@@ -897,14 +901,14 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 	arrD, cDim, recon, encDim},
 	shift = OptionValue[EchoShiftData];
 	encDim = "number_of_encoding_dimensions"/.head;
-	arrD = ArrayDepth[coilData];
 	cDim = (encDim + 1);
 
 	(*make Image Data*)
 	coilData = Switch[encDim,
-		2, Map[FourierKspace2D[#, head] &, kspace, {-4}],
-		3, FourierKspace3D[kspace, head]
+		2, Map[FourierKspace2D[#, head, OptionValue[ReconFilter]] &, kspace, {-4}],
+		3, FourierKspace3D[kspace, head, OptionValue[ReconFilter]]
 	];
+	arrD = ArrayDepth[coilData];
 
 	cov = NoiseCovariance[noise];
 	
