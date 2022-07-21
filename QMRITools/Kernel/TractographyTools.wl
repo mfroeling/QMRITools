@@ -3,7 +3,10 @@
 (* ::Title:: *)
 (*QMRITools VisteTools*)
 
+
  
+
+
 (* ::Subtitle:: *)
 (*Written by: Martijn Froeling, PhD*)
 (*m.froeling@gmail.com*)
@@ -77,9 +80,8 @@ MaxSeedPoints::usage =
 "MaxSeedPoints is an option for FiberTractography and defines the maximum number of seedspoints to be used."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
-
 
 
 (* ::Section:: *)
@@ -87,29 +89,6 @@ MaxSeedPoints::usage =
 
 
 Begin["`Private`"] 
-
-
-(* ::Subsection:: *)
-(*FitTract*)
-
-
-Options[FitTract] = {FittingOrder -> 4};
-
-SyntaxInformation[FitTract] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
-
-FitTract[tract_, OptionsPattern[]] := Block[{x, y, z, xx, rule, ord, tr},
-	ord = xx^# & /@ Range[0, OptionValue[FittingOrder]];
-	If[ArrayDepth[tract] === 2,
-		rule = xx -> Range[Length[tract]];
-		Transpose[(Fit[#, ord, xx] /. rule) & /@ Transpose[tract]]
-		,
-		(
-			tr = #;
-			rule = xx -> Range[Length[tr]];
-			Transpose[(Fit[#, ord, xx] /. rule) & /@ Transpose[tr]]
-		) & /@ tract
-	]
-];
 
 
 (* ::Subsection:: *)
@@ -199,12 +178,11 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 		smax = Ceiling[(lmax/step)];
 		trFunc = TractFunc[#, step, {amax, smax, stopT}, {intE, intS, intF}]&;
 		(*
-		
 		DistributeDefinitions[trFunc];
 		tracts = ParallelMap[trFunc, seeds, Method->"CoarsestGrained"];
 		*)
 		tracts = Monitor[Table[trFunc[seeds[[iii]]], {iii, 1, Length[seeds]}], ProgressIndicator[iii, {0, Length[seeds]}]];
-	
+		
 		(*select only tracts within correct range and clip tracts that are longer*)
 		tracts = If[step Length[#] > lmax, 
 				drop = Ceiling[(step Length[#] - lmax)/(2 step)] + 1; #[[drop ;; -drop]], 
@@ -254,25 +232,27 @@ RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
 
 
 (* ::Subsubsection::Closed:: *)
+(*VecAlign*)
+
+
+  
+  
+VecAlign = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Sign[Sign[v1 . v2] + 0.1] v2,
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+(* ::Subsubsection::Closed:: *)
 (*VecAng*)
 
 
 VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v,n},
 	n = Norm[v1] Norm[v2];
 	If[n > 0.,
-		v = v1 . v2/n;
+		v = (v1 . v2) / n;
 		If[-1. < v < 1., 180 ArcCos[v]/Pi, 0.],
 		0.
 	]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-  
-
-(* ::Subsubsection::Closed:: *)
-(*VecAlign*)
-  
-  
-VecAlign = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Sign[Sign[v1 . v2]+0.1] v2,
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -290,16 +270,16 @@ EigV[{xx_, yy_, zz_, xy_, xz_, yz_}] := First[Eigenvectors[{{xx, xy, xz}, {xy, y
 
 TractFunc[loc0_, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{st0, dir0, step1, in1, step2, in2},
 	(*initial direction*)
-	dir0 = Quiet[EigV[trF @@ loc0]];
+	dir0 = Quiet[EigV[trF@@loc0]];
 	
 	(*place two seed points arount initial points*)
-	step1 = intF[loc0, dir0, h, Quiet[EigV[trF @@ #]] &];
+	step1 = intF[loc0, dir0, h, Quiet[EigV[trF@@#]]&];
 	in1 = {loc0 - 0.5 step1, step1};
-	step2 = intF[loc0, -dir0, h, Quiet[EigV[trF @@ #]] &];
+	step2 = intF[loc0, -dir0, h, Quiet[EigV[trF@@#]]&];
 	in2 = {loc0 - 0.5 step2, step2};
 	
 	(*tractography in the two directions*)
-	Join[
+	ToPackedArray@Join[
 		Reverse@TractFunci[in1, h, {amax, smax, str}, {trF, stF, intF}],
 		TractFunci[in2, h, {amax, smax, str}, {trF, stF, intF}]
 	]
@@ -311,35 +291,58 @@ TractFunc[loc0_, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{st0, d
 
 
 TractFunci[{loc0_, step0_}, h_, {amax_, smax_, str_}, {trF_, stF_, intF_}] := Block[{i, ang, stop, loc, step, stepn, angt,out},
-
 	i = ang = 0;
 	stop = 1;
 	
-	If[stF @@ (loc0 + step0) < str || stF @@ (loc0) < str,
+	If[(stF@@(loc0 + step0)) < str || (stF@@loc0) < str,
 		{},
 		out=NestWhileList[(
 			i++;
 			(*get the new location*)
 			step = #[[2]];
 			loc = #[[1]] + step;
+			
 			(*get the new step*)
-			stepn = intF[loc, step, h, EigV[trF @@ #] &];
+			stepn = intF[loc, step, h, Quiet[EigV[trF@@#]]&];
 			
 			(*find direction change with previous step direction*)
 			ang = VecAng[step, stepn];
 			(*get the stop value at new location*)
-			stop = stF @@ (loc + stepn);
+			stop = stF@@(loc + stepn);
 			
 			(*output*)
 			{loc, stepn}
-			) &,{loc0, step0}, (i <= smax && ang < amax && stop > str) &];
+			) &,{loc0, step0}, (i <= smax && ang < amax && stop > str)&];
 		If[Length[out] > 1, out[[2 ;;, 1]]]
 	]
 ];
 
 
-(* ::Subsubsection::Closed:: *)
-(*FiberTractography*)
+(* ::Subsection::Closed:: *)
+(*FitTract*)
+
+
+Options[FitTract] = {FittingOrder -> 4};
+
+SyntaxInformation[FitTract] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+FitTract[tract_, OptionsPattern[]] := Block[{x, y, z, xx, rule, ord, tr},
+	ord = xx^# & /@ Range[0, OptionValue[FittingOrder]];
+	If[ArrayDepth[tract] === 2,
+		rule = xx -> Range[Length[tract]];
+		Transpose[(Fit[#, ord, xx] /. rule) & /@ Transpose[tract]]
+		,
+		(
+			tr = #;
+			rule = xx -> Range[Length[tr]];
+			Transpose[(Fit[#, ord, xx] /. rule) & /@ Transpose[tr]]
+		) & /@ tract
+	]
+];
+
+
+(* ::Subsection::Closed:: *)
+(*FindTensorPermutation*)
 
 
 Options[FindTensorPermutation] = {
@@ -393,6 +396,27 @@ FindTensorPermutation[tens_, vox_, stop_, OptionsPattern[]] := Block[{
 ]
 
 
+
+
+(* ::Subsection:: *)
+(*ROIs*)
+
+
+selectTractPlane = Compile[{{tract, _Real, 1}, {val, _Real, 0}},
+   Boole[0 < Total[UnitStep[tract - val]] < Length[tract]]
+   , RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
+selectTractTroughVol = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}}, Block[{pos},
+    pos = Round[#/vox] & /@ tract;
+    Max[roi[[#[[1]], #[[2]], #[[3]]]] & /@ pos]
+    ]
+   , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+selectTractInVol = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}}, Block[{pos},
+    pos = Round[#/vox] & /@ tract;
+    Boole[Total[roi[[#[[1]], #[[2]], #[[3]]]] & /@ pos] === Length[pos]]
+    ]
+   , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Section:: *)
