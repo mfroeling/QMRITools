@@ -146,18 +146,15 @@ Begin["`Private`"]
 SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_., OptionsPattern[]}};
 
 NormalizeData[data_] := Block[{mdat},
-	Switch[ArrayDepth[data],
-		3, NormalizeData[data, Mask[data - Min[data]]],
-		4, NormalizeData[data, mdat = Mean[Transpose[data]]; Mask[mdat - Min[mdat]]]
-	]
+	mdat = Switch[ArrayDepth[data], 3, data, 4, mdat = Mean[Transpose[data]]];
+	NormalizeData[data, Mask[mdat - Min[mdat]]]
 ]
 
+
 NormalizeData[data_, mask_] := Block[{dat,mn,min,dato},
-	min=Min[data];
-	dat = GetMaskData[Switch[ArrayDepth[data],3, data, 4, data[[All,1]]], mask];
-	If[min < 0, dat = dat - min; dato=data-min,dato=data];
-	mn = MeanNoZero[dat]/100.;
-	ToPackedArray[dato/mn]
+	dato = data - Min[data];
+	dat = GetMaskData[Switch[ArrayDepth[data], 3, dato, 4, dato[[All,1]]], mask];
+	ToPackedArray[100. dato/MeanNoZero[dat]]
 ]
 
 (* ::Subsubsection::Closed:: *)
@@ -166,7 +163,7 @@ NormalizeData[data_, mask_] := Block[{dat,mn,min,dato},
 
 NormalizeMeanData[data_] := NormalizeData@Mean@Transpose@data
 
-NormalizeMeanData[data_, mask_] := NormalizeData[Mean@Transpose@data,mask]
+NormalizeMeanData[data_, mask_] := NormalizeData[Mean@Transpose@data, mask]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -195,7 +192,7 @@ FitGradientMap[data_] := Module[{func, x, y, z, coor},
      ReleaseHold@If[#1 == 0, Hold[Sequence[]], Join[#2, {#1}]] &, 
      data, {3}], 2];
   func = Fit[coor, {1, x, y, z, x y, x z, y z, z^2, x^2, y^2(*, z^3, x^3, y^3, z x x, y x x, z y y , x y y , y z z, x z z*)}, {x, y, z}];
-  {x, y, z} = TransData[Array[{#1, #2, #3} &, Dimensions[data]], "r"];
+  {x, y, z} = RotateDimensionsRight[Array[{#1, #2, #3} &, Dimensions[data]]];
   func
   ]
 
@@ -212,49 +209,39 @@ Options[Mask]={MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> 5, Ma
 
 SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-Mask[data_,opts:OptionsPattern[]]:=Mask[data, 0, opts]
+Mask[dat_, opts : OptionsPattern[]] := Mask[dat, {0, 0}, opts]
 
-Mask[dat_?ArrayQ, tr_,opts:OptionsPattern[]]:= Block[{mask,tresh, dataD, datN, data, dil},
+Mask[dat_?ArrayQ, tr_?NumberQ, opts : OptionsPattern[]] := Mask[dat, {tr, 1.1 Max[dat]}, opts]
+
+Mask[inp : {{_?ArrayQ, _} ..}, opts : OptionsPattern[]] := Times @@ (Mask[#, opts] & /@ inp)
+
+Mask[{dat_?ArrayQ, tr_?NumberQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
+
+Mask[{dat_?ArrayQ, tr_?VectorQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
+
+Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, smooth, tresh, dataD, datN, data, dil},
 	
 	data = ToPackedArray@N@dat;
 	dataD = ArrayDepth[data];
 	
-	If[Length[tresh]>2, Message[Mask::tresh, tresh],
-		
-		If[ArrayDepth[data]>3, Message[Mask::dep, dataD],
+	smooth = OptionValue[MaskSmoothing];
+	dil = Round[OptionValue[MaskDilation]];
+	
+	If[Length[tr] =!= 2, Return@Message[Mask::tresh, tr]];
+	If[ArrayDepth[data] > 3, Return@Message[Mask::dep, dataD]];
 			
-			mask = If[tr===0,
-				datN = data/(0.95 MeanNoZero[Flatten[data]]);
-				(*no threshhold*)
-				datN = If[dataD==2,Image[datN],Image3D[datN]];
-				ImageData[Binarize[datN]]
-				,
-				(*threshhold*)
-				tresh=If[NumberQ[tr],{tr},tr];		
-				If[Length[tresh]==1,
-					UnitStep[data-tresh[[1]]],
-					UnitStep[data-tresh[[1]]]-UnitStep[data-tresh[[2]]]
-				]
-			];
-			
-			(*smooth the mask if needed*)		
-			mask = ToPackedArray@If[OptionValue[MaskSmoothing], 
-				SmoothMask[mask, MaskComponents -> OptionValue[MaskComponents], 
-					MaskClosing -> OptionValue[MaskClosing], MaskFiltKernel -> OptionValue[MaskFiltKernel]]
-				, 
-				mask
-			];
-			
-			dil = OptionValue[MaskDilation];
-			If[dil>0,
-				Dilation[mask,Round[OptionValue[MaskDilation]]], 
-				If[dil<0,
-					Erosion[mask,Round[OptionValue[MaskDilation]]],
-					mask	
-				]
-			]
-		]
-	]
+	mask = If[tr === {0, 0},
+		(*no threshhold*)
+		ImageData[Binarize[If[dataD == 2, Image, Image3D][Rescale[data, {1, 0.95} MinMax[data]]]]],
+		(*threshhold*)
+		UnitStep[data - tr[[1]]] - UnitStep[data - tr[[2]]]
+	];
+	
+	(*smooth the mask if needed*)
+	mask = If[smooth, SmoothMask[mask, FilterRules[{opts, Options[Mask2]}, Options[SmoothMask]]], mask];
+	mask = Which[dil > 0, Dilation[mask, dil], dil < 0, Erosion[mask, dil], True, mask];
+	
+	mask
 ]
 
 

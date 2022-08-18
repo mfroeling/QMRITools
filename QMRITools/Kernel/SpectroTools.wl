@@ -1601,7 +1601,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 						]
 						
 					(*loop over all voxesl*)
-					) &, TransData[{dataPlot, maxPlot, totPlot}, "l"], {2}]
+					) &, RotateDimensionsLeft[{dataPlot, maxPlot, totPlot}], {2}]
 					, Spacings -> {0.3,0.35}, Alignment -> Center, Background -> If[back, col, White], ItemSize -> Full, Frame -> All, FrameStyle -> If[back, col, White]
 				],
 				leg
@@ -2182,14 +2182,14 @@ ImportSparSdat[fspar_,fsdat_]:=Block[{nums,head,depth,row,nsamp,x,y,z,bw,te,nuc,
 		2,
 		If[row==1,
 			(*single voxel*)
-			TransData[Fold[Partition,nums,{2}],"r"],
+			RotateDimensionsRight[Fold[Partition,nums,{2}]],
 			(*dynamic series*)
-			TransData[Fold[Partition,nums,{2,nsamp}],"r"]
+			RotateDimensionsRight[Fold[Partition,nums,{2,nsamp}]]
 		],
 		3,
-		TransData[Fold[Partition,nums,{2,nsamp,x}],"r"],
+		RotateDimensionsRight[Fold[Partition,nums,{2,nsamp,x}]],
 		4,(*3DCSI*)
-		TransData[Fold[Partition,nums,{2,nsamp,x,y}],"r"]
+		RotateDimensionsRight[Fold[Partition,nums,{2,nsamp,x,y}]]
 	];
 	fids=fids[[1]]+fids[[2]]I;
 	
@@ -2245,7 +2245,7 @@ ExportSparSdat[file_, specs_, {bw_, te_}, {gyro_, nuc_}, opts:OptionsPattern[]] 
 ExportSparSdat[file_, specs_, {bw_, te_}, {gyro_, nuc_}, vox_, opts:OptionsPattern[]]:=Block[{fidsOut,numsOut,fileOut,datOut,headOut},
 	(*export data*)
 	fidsOut=Map[ShiftedInverseFourier,specs,{-2}];
-	numsOut=binO=ToVaxD[Flatten[TransData[{Re@fidsOut,Im@fidsOut},"l"]]];
+	numsOut=binO=ToVaxD[Flatten[RotateDimensionsLeft[{Re@fidsOut,Im@fidsOut}]]];
 	fileOut=file<>".SDAT";
 	If[FileExistsQ[fileOut],DeleteFile[fileOut]];
 	BinaryWrite[fileOut,numsOut,"UnsignedInteger32"];

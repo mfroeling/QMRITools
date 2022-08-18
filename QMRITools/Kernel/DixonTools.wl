@@ -118,6 +118,10 @@ UnwrapThresh::usage =
 "UnwrapThresh is an option for Unwrap. Is a value between 0.6 and 0.9, and defines when to unwrap, the higher the value the less unwrapping will be done."
 
 
+
+MakeGroups
+
+
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
@@ -318,7 +322,7 @@ DixonReconstruct[real_, imag_, echoi_, b0i_, t2_, OptionsPattern[]] := Block[{
 
 
 InOutPhase = Compile[{{phi, _Complex, 0}, {iop, _Real, 1}, {ioAmat, _Complex, 2}, {cWat, _Complex, 0}, {cFat, _Complex, 0}},
-	Abs[(Exp[phi iop] ioAmat).{cWat, cFat}],
+	Abs[(Exp[phi iop] ioAmat) . {cWat, cFat}],
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}, Parallelization -> True];
 
 
@@ -348,10 +352,10 @@ DixonFiti[{ydat_, phiInit_, phi0Init_, mask_}, {echo_, signs_}, {Amat_,Amati_}, 
 			
 			(*perform A.2 form 10.1002/jmri.21090*)
 			sigd = pMat ydat;
-			rho = Amati.sigd;
+			rho = Amati . sigd;
 						
 			(*A.rho is needed for Matrix B eq A.4 and eq A.5*)
-			sol = Amat.rho;
+			sol = Amat . rho;
 			
 			(*Define the matrix B including bipolar 10.1002/mrm.24657*)
 			B = Transpose[{2 Pi I echo sol, I signs sol, Amat[[All, 1]], Amat[[All, 2]]}];
@@ -382,9 +386,9 @@ DixonFiti[{ydat_, phi_, phi0_, mask_}, {echo_, signs_}, {Amat_,Amati_}] := Block
 		pMat = Exp[-2 Pi I phi echo] Exp[-I signs phi0];
 		(*find solution for complex fractions*)
 		sigd = pMat ydat;
-		rho = Amati.sigd;
+		rho = Amati . sigd;
 		(*calculate the residuals*)
-		res = sigd-(Amat.rho);
+		res = sigd-(Amat . rho);
 		(*ouput*)
 		{rho[[1]], rho[[2]], RootMeanSquare[res]}
 		,
@@ -420,7 +424,7 @@ SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] :=
   phi = N@2 Pi B0 I - 1./T2;
   
   sig = Exp[phi echo] Amat;
-  sig = sig.{fr, 1 - fr};
+  sig = sig . {fr, 1 - fr};
   
   {Re[sig], Im[sig]}
   ]
@@ -545,7 +549,7 @@ Unwrapi[dat_, thresh_, mon_] := Block[{data, mask, crp, dimi, sorted, groups, gr
 		data = If[ArrayDepth[data] == 3, crp = FindCrop[data]; ApplyCrop[data, crp], data];
 		
 		(*make mask to pervent unwrapping in background*)
-		mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1 MaskSmoothing ->False], 20], 10], -20];
+		mask = ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1, MaskSmoothing ->False], 20], 10], -20];
 		
 		(*Get the edges sotrted for reliability and precluster groups*)
 		sorted = GetEdgeList[data, mask];
@@ -669,7 +673,33 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 
 
 (* ::Subsubsection::Closed:: *)
-(*GetKernels*)
+(*GetEdgeList*)
+
+
+GetEdgeList[data_] := GetEdgeList[data, 1]
+
+GetEdgeList[data_, maski_] := Block[{dep, diff, diff1, diff2, mask, edge, coor, fedge, ord, pos},
+	dep = ArrayDepth[data];
+	(*maske a mask if needed*)
+	mask = If[maski === 1, Closing[Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False], 1], maski];
+	
+	(*calculate the second order diff*)
+	{diff1, diff2} = Transpose[Partition[DiffU[ListConvolve[#, data, {2, -2}]] & /@ GetKernels[dep], 2]];
+	diff = Total[(diff1 + diff2)^2];
+	
+	(*get the edge reliability*)
+	edge = (RotateLeft[diff, #] + diff) & /@ Switch[dep, 2, {{0, 1}, {1, 0}}, 3, {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}}];
+	edge = MaskData[edge,mask];
+	 
+	(*sort the edges for reliability*)
+	coor = MapIndexed[#2 &, edge, {dep + 1}];
+	fedge = Flatten[edge, dep];
+	ord = Ordering[fedge];
+	pos = Position[Unitize[fedge[[ord]]], 1, 1, 1];
+	pos=If[pos==={},1,pos[[1,1]]];
+	
+	Flatten[coor, dep][[ord]][[pos ;;]]
+]
 
 
 GetKernels[dep_] := Block[{ker, i, j, k, keri, kers},
@@ -695,34 +725,6 @@ GetKernels[dep_] := Block[{ker, i, j, k, keri, kers},
    ];
 
 
-(* ::Subsubsection::Closed:: *)
-(*GetEdgeList*)
-
-
-GetEdgeList[data_] := GetEdgeList[data, 1]
-
-GetEdgeList[data_, maski_] := Block[{dep, diff, diff1, diff2, mask, edge, coor, fedge, ord, pos},
-	dep = ArrayDepth[data];
-	(*maske a mask if needed*)
-	mask = If[maski === 1, Closing[Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False], 1], maski];
-	
-	(*calculate the second order diff*)
-	{diff1, diff2} = Transpose[Partition[DiffU[ListConvolve[#, data, {2, -2}]] & /@ GetKernels[dep], 2]];
-	diff = Total[(diff1 + diff2)^2];
-	
-	(*get the edge reliability*)
-	edge = (RotateLeft[diff, #] + diff) & /@ Switch[dep, 2, {{0, 1}, {1, 0}}, 3, {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}}];
-	edge = MaskData[edge,mask];
-	 
-	(*sort the edges for reliability*)
-	coor = MapIndexed[#2 &, edge, {dep + 1}];
-	fedge = Flatten[edge, dep];
-	ord = Ordering[fedge];
-	pos = Position[Unitize[fedge[[ord]]], 1, 1, 1][[1, 1]];
-	Flatten[coor, dep][[ord]][[pos ;;]]
-]
-
-
 DiffU = Compile[{{diff, _Real, 0}}, diff - Sign[diff] Ceiling[Abs[diff]-0.5], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -738,9 +740,7 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus
 	fun=If[dep==2,Image,Image3D];
 	
 	(*maske a mask if needed*)
-	mask = If[maski === 1, ArrayPad[Closing[ArrayPad[
-		Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False
-	], 20], 10], -20], maski];
+	mask = If[maski === 1, ArrayPad[Closing[ArrayPad[Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False], 20], 10], -20], maski];
 	
 	(*find mask ranges*)
 	{min,max}=MinMax[data];

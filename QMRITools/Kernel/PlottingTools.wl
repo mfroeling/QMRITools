@@ -259,7 +259,8 @@ ColorRound = With[{n = ncol}, Compile[{{x, _Real, 0}, {r, _Real, 1}},
 
 ManPannel[name_,cont_,depl_:True]:= Module[{controls = DeleteCases[cont, Null]},
 	OpenerView[{Style[name, Bold, Medium],
-		Grid[If[ArrayDepth[controls] == 1, {controls}, controls],Alignment -> {{Right, Left}, Center}, ItemSize -> {{13, 30}}]
+		Grid[If[ArrayDepth[controls] == 1, {controls}, controls],
+			Alignment -> {{Right, Left}, Center}, ItemSize -> {{13, 30}}]
 	},depl]
 ]
 
@@ -554,23 +555,6 @@ CheckBoard[dim_, check_] := Image[Table[If[
 ], {i, 1, dim[[1]], 1}, {j, 1, dim[[2]]}]]
 
 
-(* ::Subsubsection::Closed:: *)
-(*DifferencePlot*)
-
-
-DifferencePlot[data_,minmax_,label_,ps_,color_,legend_,frame_,flip_,range_,ccolor_,aspect_]:=Block[
-	{pdat,a,b,min1,max1,min2,max2},
-	
-	{a,b} = If[flip,{2,1},{1,2}];
-	{min1,max1} = minmax[[a,1;;2]];
-	{min2,max2} = minmax[[b,1;;2]];
-	
-	pdat=(Subtract@@(JoinResc[data[[a]],data[[b]]]));
-	
-	(*make plot*)
-	Ploti[pdat, {-1,1}range, LabelJoin[label], ps, color[[a]], False, legend, frame, ccolor[[a]], aspect]
-]
-
 
 (* ::Subsubsection::Closed:: *)
 (*OpacityPlot*)
@@ -599,6 +583,26 @@ OpacityPlot[data_,minmax_,label_,ps_,color_,autosc_,legend_,frame_,flip_,op_,cco
 	LabLeg[Show[im, ImageSize -> psize, AspectRatio -> ratio, Frame -> frame, FrameTicks -> tks], 
 		LabSize[psize, ratio], LabelJoin[label], {legend, lc, lr}]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DifferencePlot*)
+
+
+DifferencePlot[data_,minmax_,label_,ps_,color_,legend_,frame_,flip_,range_,ccolor_,aspect_]:=Block[
+	{pdat,a,b,min1,max1,min2,max2},
+	
+	{a,b} = If[flip,{2,1},{1,2}];
+	{min1,max1} = minmax[[a,1;;2]];
+	{min2,max2} = minmax[[b,1;;2]];
+	
+	pdat=(Subtract@@(JoinResc[data[[a]],data[[b]]]));
+	
+	(*make plot*)
+	Ploti[pdat, {-1,1}range, LabelJoin[label], ps, color[[a]], False, legend, frame, ccolor[[a]], aspect]
+]
+
+
 
 
 (* ::Subsection:: *)
@@ -912,7 +916,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 (*PlotData 2 datasets*)
 
 
-PlotData[dat1_?ArrayQ,dat2_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPattern[]]:=
+PlotData[dat1_?ArrayQ, dat2_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPattern[]]:=
 Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1,tab2,ccol,
 	x,xp,yp,min1,max1,min2,max2,mind1,maxd1,mind2,maxd2,reverse,or,plabs,plab,plot,aspect,cfs1,cfs2,
 	minclip1,maxclip1,minclip2,maxclip2,clip1,clip2,ps,legend,color1,color2,lstyle1,lstyle2,control,
@@ -969,7 +973,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 
 	(*Define the different tabs of the control pannel*)
 	(*first tabs, plotting controls*)
-	tab1=Column[{
+	tab1 = Column[{
 		{"",
 		ManPannel["Slice Selection",{
 			{"Slice",Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
@@ -1039,8 +1043,9 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
  					4 -> Control@{{diffr, .5*maxabs, ""}, Dynamic[0.00001*maxabs], Dynamic[2*maxabs] /. 0. -> 1., Dynamic[(1.5*maxabs /. 0. -> 1.)/1000]}}
  					,Dynamic[overlay]]
  			}},False]}];
+	
 	(*second tab, exporting controls*)
-	tab2=Column[{
+	tab2 = Column[{
 		ManPannel["Export plot",{
 			{"File Type",Control@{{fileType,".jpg",""},files}},
 			{"Export Size",Control@{{size,400,""},sizes,ControlType->PopupMenu}},
@@ -1073,9 +1078,13 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		}];
 		
 	(*Build the control pannel, allows for easy addition of more tabs*)
-	control={str,Delimiter,
-		{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,
-		PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
+	control={
+		str,
+		Delimiter,
+		{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},
+		Delimiter,
+		PaneSelector[{1->tab1,2->tab2}, Dynamic[pannel]]
+	};
 
 	(*Deploy plot window*)
 	pan=Manipulate[

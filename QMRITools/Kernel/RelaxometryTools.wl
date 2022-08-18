@@ -989,7 +989,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	];
 
 	(*restructure fit solution*)
-	sol = ToPackedArray/@If[VectorQ[datal], sol, TransData[sol, "r"]];
+	sol = ToPackedArray/@If[VectorQ[datal], sol, RotateDimensionsRight[sol]];
 	
 	(*Get the B1map*)
 	B1Map = sol[[2]];	
@@ -1015,7 +1015,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		i = 0; SetSharedVariable[i]; ParallelEvaluate[j = 0];
 		
 		(*definet fit data*)
-		dataf = TransData[{datal, B1Int}, "l"];
+		dataf = RotateDimensionsLeft[{datal, B1Int}];
 		
 		(*Recalculate solution*)
 		sol =Switch[val,
@@ -1047,7 +1047,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		];
 		
 		(*update the solution*)
-		sol = ToPackedArray/@TransData[sol,"r"];
+		sol = RotateDimensionsRight[sol];
 	];
 
 	(*get the outputs*)
@@ -1116,7 +1116,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	  maskT2 = Mask[Mean[datan]];
 	  dataT2 = NormalizeData[maskT2 # & /@ datan];
 	  (*create mask selecting fat*)
-	  fmask = Mask[dataT2[[-1]], {50}];
+	  fmask = Mask[dataT2[[-1]], 50];
 	  fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
 	  (*data for calibration fit*)
 	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ (dataT2 + 10.^-10)] echo- 10.^-10;
@@ -1127,7 +1127,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	  maskT2 = Mask[Mean[Transpose[datan]]];
 	  dataT2 = NormalizeData[MaskData[datan, maskT2]];
 	   (*create mask selecting fat*)
-	  fmask = Mask[dataT2[[All, -1]], {50}];
+	  fmask = Mask[dataT2[[All, -1]], 50];
 	  fmask = Dilation[Erosion[fmask, 1], 2] fmask;
 	  fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
 	  (*data for calibration fit*)

@@ -326,7 +326,7 @@ MaskToCoordinates[mask_]:=Block[{x,y,z2,z1,p,xm,ym,r,phi,rad, dim, xcor,ycor},
 	xcor=Transpose@ConstantArray[Range[1,dim[[1]]],dim[[2]]]-xm;
 	ycor=ConstantArray[Range[1,dim[[2]]],dim[[1]]]-ym;
 	
-	{rad,phi}=TransData[CoordinateTransform["Cartesian"->"Polar",TransData[{xcor,ycor},"l"]],"r"];
+	{rad,phi}=RotateDimensionsRight[CoordinateTransform["Cartesian"->"Polar",RotateDimensionsLeft[{xcor,ycor}]]];
 	{xcor,ycor,rad,phi}
 ];
 
@@ -387,7 +387,7 @@ BandFilter[dim_,waveVecs_]:=BandFilter[dim,waveVecs]=Block[{
 	{wxMat,wyMat}={Transpose@ConstantArray[wx,dim[[2]]],ConstantArray[wy,dim[[1]]]};
 	
 	(*get polar cordiantes*)
-	{rMat,phiMat}=TransData[Map[If[#=={0.,0.},#,ToPolarCoordinates[#]]&,N@TransData[{wxMat,wyMat},"l"],{2}],"r"];
+	{rMat,phiMat}=RotateDimensionsRight[Map[If[#=={0.,0.},#,ToPolarCoordinates[#]]&,N@RotateDimensionsLeft[{wxMat,wyMat}],{2}]];
 	rMat[[1,1]]=10^-10.;
 	
 	(*make fileters*)
