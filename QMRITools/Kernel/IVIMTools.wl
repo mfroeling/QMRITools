@@ -436,10 +436,10 @@ BayesianIVIMFit2[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Mod
     	
   useDat = MaskData[data, mask];
   
-  {thetai,post} = Switch[dep,3,Data2DToVector[fitpar,mask],4,Data3DToVector[fitpar,mask]];
+  {thetai,post} = DataToVector[fitpar,mask];
   thetai=Transpose@thetai;
   
-  ynf = First@Switch[dep,3,Data2DToVector[data,mask],4,Data3DToVector[Transpose[data],mask]];
+  ynf = First@DataToVector[Switch[dep,3,data,4,Transpose@data],mask];
   
   If[fix, 
   	thetai[[3]] = RandomVariate[NormalDistribution[Mean[thetai[[3]]], fixSD], Length[thetai[[3]]]]
@@ -619,11 +619,11 @@ BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] :=
   
   useDat = MaskData[data, mask];
   
-  {thetai,post} = Switch[dep, 3, Data2DToVector[fitpar,mask], 4, Data3DToVector[fitpar,mask]];
+  {thetai,post} = DataToVector[fitpar,mask];
   thetai=Transpose@thetai;
   
-  ynf = First@Switch[dep, 3,Data2DToVector[data,mask], 4, Data3DToVector[Transpose[data],mask]];
-  
+  ynf = First@DataToVector[Switch[dep,3,data,4,Transpose@data],mask];
+    
   If[fix,
    thetai[[4]] = RandomVariate[NormalDistribution[Mean[thetai[[4]]], fixSD], Length[thetai[[4]]]];
    thetai[[5]] = RandomVariate[NormalDistribution[Mean[thetai[[5]]], fixSD], Length[thetai[[5]]]];
@@ -1004,7 +1004,7 @@ SyntaxInformation[CorrectParMap] = {"ArgumentsPattern" -> {_, _, _}};
 CorrectParMap[par_, con_, mask_] := 
  Module[{dim, mean, cov, sig, clipmap, rand, clippar, parnew},
 
-  {mean, cov} = MeanCov[Transpose@Data3DToVector[par,mask][[1]]];
+  {mean, cov} = MeanCov[Transpose@DataToVector[par,mask][[1]]];
   sig = Diagonal[cov];
   dim = Dimensions[First@par];
   
@@ -1203,12 +1203,12 @@ IVIMResiduals[data_, binp_, pars_] :=
   depthP = ArrayDepth[pars];
   
   dat = N[If[depthD == 4, Transpose[data], data]];
-  dat = If[depthD > 1, TransData[dat, "l"], dat];
-  par = If[depthP > 1, TransData[pars, "l"], pars];
+  dat = If[depthD > 1, RotateDimensionsLeft[dat], dat];
+  par = If[depthP > 1, RotateDimensionsLeft[pars], pars];
   
   res = IVIMResCalcC[dat, binp, par];
   
-  res = If[depthD > 1, TransData[res, "r"], res];
+  res = If[depthD > 1, RotateDimensionsRight[res], res];
   
   Sqrt[Mean[Drop[res, 1]^2]] // N
   

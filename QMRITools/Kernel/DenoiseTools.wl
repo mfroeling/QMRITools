@@ -510,7 +510,7 @@ Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Corners"}
 
 SyntaxInformation[DenoiseCSIdata]={"ArgumentsPattern"->{_, OptionsPattern[]}}
 
-DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectraDen},
+DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectraDen, nn ,sel},
 	(* assusmes data is (x,y,z,spectra)*)
 	len = Dimensions[spectra][[-1]];
 	
@@ -529,11 +529,11 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 	];
 	
     (*Denoise the spectra data*)
-    {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[TransData[spectra, "r"]], 1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];
+    {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];
     
     Print[Mean@Flatten@sig];	
     	
-    TransData[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I, "l"]
+    RotateDimensionsLeft[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I]
 ]
 
 

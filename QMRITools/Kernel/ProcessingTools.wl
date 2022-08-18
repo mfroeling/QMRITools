@@ -1101,10 +1101,10 @@ Joini[sets_, setover_, step_] := Module[{over,dato,unit,noZero,tot},
   noZero = Times @@ unit;
   tot = Total[noZero];
   (*prepare the data for listable compliled function*)
-  noZero = TransData[noZero, "l"];
-  dato = TransData[TransData[setover, "l"], "l"];
+  noZero = RotateDimensionsLeft[noZero];
+  dato = RotateDimensionsLeft[setover, 2];
   (*merge the overlapping data*)
-  over = TransData[JoinFuncC[dato, noZero, tot, step], "r"];
+  over = RotateDimensionsRight[JoinFuncC[dato, noZero, tot, step]];
   (*merge the non ovelap with the overlap*)
   Chop[Join[sets[[1]], over, sets[[2]]]]
   ]

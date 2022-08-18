@@ -615,8 +615,8 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 	(*put ncoils as last dimensions signal*)
 	sigt = If[ArrayDepth[sig] > 1,
 		If[met === "WSVD",
-			If[ArrayDepth[sig] == 2, sig, TransData[TransData[Transpose[sig], "l"], "l"]],
-			TransData[weight.sig, "l"]
+			If[ArrayDepth[sig] == 2, sig, RotateDimensionsLeft[Transpose[sig], 2]],
+			RotateDimensionsLeft[weight.sig]
 		], weight.sig
 	];
 	
@@ -629,7 +629,7 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 	
 	(*put ncoils as last diemsnions sensitivity*)
 	If[sent =!= 1, sent = weight.sent];
-	sent = If[ArrayDepth[sent] > 1, TransData[sent, "l"], sent];
+	sent = If[ArrayDepth[sent] > 1, RotateDimensionsLeft[sent], sent];
 		
 	(*perform ND reconstruction for (coils,ND)*)
 	rec = Switch[OptionValue[Method],
@@ -803,7 +803,7 @@ HammingFilterData[data_]:= Block[{ham},
 
 SyntaxInformation[HammingFilterCSI]={"ArgumentsPattern"->{_,_.}}
 
-HammingFilterCSI[data_] := TransData[HammingFilterData[TransData[data,"r"]],"l"]
+HammingFilterCSI[data_] := RotateDimensionsLeft[HammingFilterData[RotateDimensionsRight[data]]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -828,7 +828,7 @@ DeconvolveCSIdata[spectra_, hami_,OptionsPattern[]] := Block[{dim, filt, spectra
 	filt = DevideNoZero[filt, Total[Flatten[filt]]];
 	
 	(*zero pad the spectra by factor two*)
-	spectraOut = FourierRescaleData[TransData[spectra, "r"]];
+	spectraOut = FourierRescaleData[RotateDimensionsRight[spectra]];
 	
 	(*perform the deconvolution*)
 	Switch[OptionValue[DeconvolutionMethod],
@@ -842,8 +842,7 @@ DeconvolveCSIdata[spectra_, hami_,OptionsPattern[]] := Block[{dim, filt, spectra
 	];
 	
 	(*rescale to original dimensions*)
-	(*TransData[(RescaleData[Re@#, dim, InterpolationOrder -> 1] + RescaleData[Im@#, dim, InterpolationOrder -> 1] I) & /@ spectraOut, "l"]*)
-	TransData[FourierRescaleData[#, dim] & /@ spectraOut, "l"]
+	RotateDimensionsLeft[FourierRescaleData[#, dim] & /@ spectraOut]
 ]
 
 
@@ -954,12 +953,12 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 	readout = OptionValue[AcquisitionMethod];
 	spectra = Switch[ArrayDepth[kspace],
 		4,(*no coil combination for 3D CSI*)
-		fids = TransData[FourierKspaceCSI[kspace, head], "l"];
+		fids = RotateDimensionsLeft[FourierKspaceCSI[kspace, head]];
 		Map[ShiftedFourier[#, readout] &, fids, {-2}]
 		,
 		5,(*perform spatial fourier for CSI*)
 		fids = Transpose[FourierKspaceCSI[#, head] & /@ kspace];
-		spectra = TransData[Map[ShiftedFourier[#, readout] &, TransData[fids, "l"], {-2}], "r"];
+		spectra = RotateDimensionsRight[Map[ShiftedFourier[#, readout] &, RotateDimensionsLeft[fids], {-2}]];
 		
 		(*noise correlation, inverse and withening matrix*)
 		cov = NoiseCovariance[noise];
@@ -969,7 +968,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 			(*sens = MakeSense[HammingFilterCSI[Mean[fids[[1 ;; OptionValue[CoilSamples]]]]],cov];*)
 			sens = MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]],cov];
 			(*perform the recon*)
-			TransData[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra, "l"]
+			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra]
 			,
 			"WSVD",
 			CoilCombine[spectra, cov, Method -> "WSVD"]

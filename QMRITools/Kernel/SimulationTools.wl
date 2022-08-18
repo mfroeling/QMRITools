@@ -664,7 +664,7 @@ CalculateGfactori[factorsi_, sensitivity_, Wmat_, maski_, OptionsPattern[]] := B
 	mask = If[maski=!=0, maski, Mask[Total@Abs@sensitivity, .001]];
 	
 	(*define the sensitivity and regularization mat*)
-	sens = TransData[sensitivity, "l"];
+	sens = RotateDimensionsLeft[sensitivity];
 	Wmati = Inverse[Wmat];
 	
 	DistributeDefinitions[factors, UsFactor, dim, lambda, Wmat];
