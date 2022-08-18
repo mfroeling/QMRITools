@@ -56,7 +56,10 @@ PartTracts::usage = ""
 SelectTracts::usage = ""
 CombineROIs::usage = ""
 TractDensityMap::usage = "TractDensityMap[tracts_, vox_, dim_]"
+SeedDensityMap::usage = ""
 FilterTracts::usage = "FilterTracts[tracts_, vox_, select_]"
+
+PlotTracts::usage = ""
 MakeColor::usage = ""
 
 (* ::Subsection::Closed:: *)
@@ -89,6 +92,9 @@ StepSize::usage =
 
 MaxSeedPoints::usage = 
 "MaxSeedPoints is an option for FiberTractography and defines the maximum number of seedspoints to be used."
+
+
+MaxTracts::usage = ""
 
 
 (* ::Subsection:: *)
@@ -132,7 +138,7 @@ FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, o
 FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[]] := Block[{
 		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, trFunc,
 		tens, tensMask, inpTr, treshs, stop, coors, intE, intS,
-		ones, n, seeds, t1, tracts, iii, drop, smax		 
+		ones, n, seedN, seeds, t1, tracts, iii, drop, smax, len ,sel		 
 	},
 	
 	(*get the options*)
@@ -161,7 +167,13 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	
 	(*make the random seed points*)
 	SeedRandom[1234];
-	seeds = Threaded[vox] (RandomChoice[SparseArray[stop]["NonzeroPositions"], Round[1.2 maxSeed]] + RandomReal[{-0.5, 0.5}, {Round[1.2 maxSeed], 3}]);
+	seedN = Total@Flatten@stop; 
+	seeds = SparseArray[stop]["NonzeroPositions"];
+	
+	seeds = Flatten[RandomSample[seeds, #] & /@ Block[{i = Round[1.2 maxSeed]},
+		First@Last@Reap[Until[i < 0, Sow[If[i > seedN, seedN, i]]; i = i - seedN;]]], 1];
+	seeds = Threaded[vox](seeds + RandomReal[{-0.49, 0.49}, {Round[1.2 maxSeed], 3}]);
+    
     seeds = Pick[seeds, intS @@@ seeds, 1.];
     seeds = seeds[[;;Min[{Length@seeds,maxSeed}]]];
 
@@ -460,8 +472,47 @@ ThreadedDiv = Compile[{{coor, _Real, 1}, {vox, _Real, 1}},
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
+(* ::Subsection::Closed:: *)
+(*SeedDensityMap*)
+
+
+SeedDensityMap[seeds_, vox_, dim_] := Normal@SparseArray[Normal@Counts@ThreadedDiv[seeds, vox], dim];
+
+
 (* ::Subsection:: *)
 (*plotTracts*)
+
+
+Options[PlotTracts] = {MaxTracts -> 5000, ImageSize -> 800}
+
+PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
+
+PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{range, vox, size, select, opts, col, tube, line, plot},
+	vox = Reverse@voxi;
+	
+	range = If[dimi === 0,
+		Round[Reverse[MinMax /@ Transpose@Flatten[tracts, 1]]/vox],
+		Reverse@Thread[{{0, 0, 0}, dimi}]
+	];
+	
+	size = vox Flatten[Differences /@ range];
+	
+	select = ToPackedArray /@ Map[Reverse, RandomSample[tracts, Min[OptionValue[MaxTracts], Length[tracts]]], {-2}];
+	
+	opts = Sequence[{
+		Method -> {"TubePoints" -> {6, 2}}, Lighting -> "Accent", 
+		ImageSize -> OptionValue[ImageSize], SphericalRegion -> True, Boxed -> True,
+		Background -> Lighter@Gray, BoxRatios -> size, PlotRange -> range, 
+		Axes -> True, LabelStyle -> Directive[{Bold, 16, White}]
+	}];
+	
+	col = MakeColor@select;
+	
+	tube = MapThread[Scale[Tube[#1, 0.75, VertexColors -> #2], 1./vox, {0, 0, 0}] &, {select, col}];
+	line = MapThread[Scale[Line[#1, VertexColors -> #2], 1/vox, {0, 0, 0}] &, {select, col}];
+	
+	plot = Graphics3D[{CapForm["Square"], JoinForm["Miter"], line}, opts]
+]
 
 
 MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := 
