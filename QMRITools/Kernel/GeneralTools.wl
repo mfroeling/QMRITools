@@ -160,6 +160,10 @@ LapFilter::usage =
 "LapFilter[data] Laplacian filter of data with kernel size 0.8.
 LapFilter[data, ker] Laplacian filter of data with kernel ker."
 
+MedFilter::usage = 
+"MedFilter[data] Median filter of data with kernel size 1.
+MedFilter[data, ker] Madian filter of data with kernel ker."
+
 StdFilter::usage =
 "StdFilter[data] StandardDeviation filter of data using gaussian kernel 2. 
 StdFilter[data, ker] StandardDeviation filter of data using kernel with size ker."
@@ -176,7 +180,10 @@ DynamicPartition[data,part,last] patitions the data into parts which is a list o
 If last is All, the remainders is just one partition."
 
 
-
+MakeIntFunction::usage = 
+"MakeIntFunction[data,int]
+MakeIntFunction[data, vox ,int]
+"
 
 
 DecomposeScaleMatrix::usage = 
@@ -923,6 +930,25 @@ SyntaxInformation[StichData] = {"ArgumentsPattern" -> {_,_}}
 StichData[datal_, datar_] := RotateDimensionsLeft[Join[RotateDimensionsRight[datal], RotateDimensionsRight[datar]]];
 
 
+(* ::Subsection::Closed:: *)
+(*MakeIntFunction*)
+
+
+MakeIntFunction[dat_, int_?IntegerQ]:=MakeIntFunction[dat, {1,1,1}, int]
+
+MakeIntFunction[dat_, vox_, int_?IntegerQ] := Block[{def, range},
+	range = Thread[{vox, vox Dimensions[dat][[1;;3]]}] - (0.5 vox);
+	def = 0. dat[[1,1,1]];
+	def =If[ListQ[def], Flatten@def, def];
+	With[{ex=def},InterpolatingFunction[
+		range,
+		{5,If[ArrayDepth[dat]===3,6,2],0,Dimensions[dat][[;;3]],{int,int,int}+1,0,0,0,0,ex&,{},{},False},
+		Range[range[[#,1]],range[[#,2]],vox[[#]]]&/@{1,2,3},
+		ToPackedArray@N@dat,
+		{Automatic,Automatic,Automatic}]]
+]
+
+
 (* ::Subsection:: *)
 (*Package Functions*)
 
@@ -1292,6 +1318,15 @@ LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}},Inverse[A.Transpose[A]].A.y, Runti
 LapFilter[data_, fil_:0.5] := Clip[Chop[ImageData[TotalVariationFilter[
 	If[ArrayDepth[data]===3,Image3D[N@data, "Real"],Image[N@data, "Real"]],
 	 fil, Method -> "Laplacian", MaxIterations -> 30]]], MinMax[data]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MedFilter*)
+
+
+MedFilter[data_, fil_:1] := Clip[Chop[ImageData[MedianFilter[
+	If[ArrayDepth[data]===3, Image3D[N@data, "Real"], Image[N@data, "Real"]],
+	 fil]]], MinMax[data]]
 
 
 (* ::Subsubsection::Closed:: *)
