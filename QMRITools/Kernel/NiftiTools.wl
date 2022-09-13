@@ -618,7 +618,7 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 	
 	opt = NiiScaling->OptionValue[NiiScaling];
 	
-	output=Switch[what,
+	output = Switch[what,
 		"data", Import[file, {"nii", "Data"}, opt],
 		"header", Import[file, {"nii", {"Data", "VoxelSize", "Header"}}, opt],
 		"headerMat", Import[file, {"nii", {"Data", "VoxelSize", "Header", "RotationMatrix"}}, opt],
@@ -634,7 +634,7 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 	(*remove temp files for gz format*)
 	Quiet[DeleteFile[FileNames["*" <> FileBaseName[Last[FileNameSplit[file]]], $TemporaryDirectory]]];
 	
-	output
+	ToPackedArray@N@output
 ]
 
 
@@ -846,10 +846,13 @@ CorrectDixonData[data_, scale_] := Block[{data0, B0, echos, phase, mag, real ,im
   (*fat,inphase,outphase,water*)
   data0 = data[[All, 1 ;; 4]];
   B0 = (scale[[1]] (data[[All, -1]] + 0.5) + scale[[2]]) /. (scale[[2]] + 0.5 scale[[1]]) -> 0.;
+  
   (*I,M,P,R*)
   echos = data[[All, 5 ;; -2]];
+  {sl, ech} = Dimensions[echos][[1;;2]]/{1,4};
   echos = Partition[Flatten[Transpose[echos], 1], 4*Length[data]];
   echos = Partition[#, 4] & /@ echos;
+
   (*convert I,P and R to radians*)
   phase = N[(2 Pi echos[[3]] / 4094.) - Pi] /. N[-Pi] -> 0.;
   mag = echos[[2]];
@@ -867,8 +870,10 @@ CorrectDixonDataNew[data_, scale_] := Block[{data0, B0, echos, phase, mag, real 
  
  (*I,M,P,R*)
  echos = data[[All, ;; -6]];
- echos = Partition[Flatten[Transpose[echos], 1], 4*Length[data]];
- echos = Partition[#, 4] & /@ echos;
+ {sl, ech} = Dimensions[echos][[1;;2]]/{1,4};
+ echos = Partition[Flatten[Transpose[echos], 1], ech sl];
+ echos = Partition[#, ech] & /@ echos;
+ 
  (*convert I,P and R to radians*)
  phase = N[(2 Pi echos[[4]] / 4094.) - Pi] /. N[-Pi] -> 0.;
  mag = echos[[1]];

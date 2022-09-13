@@ -576,8 +576,7 @@ ErrorFunc2F[y_, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T2m, T1f, ec
       EPGSignali[echo, {T1m, T2m}, angle, B1],
       EPGSignali[echo, {T1f, T2f}, angle, B1]
       }];
-   LeastSquaresErrorC[sig, y]
-   ]
+   LeastSquaresErrorC[sig, y]]
    
 (*Two compartment, fit fat, fix muscle, shifted fat frofile*)
 ErrorFunc2FS[y_, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T2m, T1f, echo, angle, angleS},
@@ -586,9 +585,7 @@ ErrorFunc2FS[y_, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T2m, T1f, e
       EPGSignali[echo, {T1m, T2m}, angle, B1],
       EPGSignali[echo, {T1f, T2f}, angleS, B1]
       }];
-   LeastSquaresErrorC[sig, y]
-   ]
-
+   LeastSquaresErrorC[sig, y]]
 
 (*Two compartment, fit muscle, fix fat*)
 ErrorFunc2M[y_, T2m_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, T2f, echo, angle},
@@ -598,8 +595,7 @@ ErrorFunc2M[y_, T2m_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, T2f, ec
       Abs[EPGSignali[echo, {T1f, T2f}, angle, B1]]
       }];
    LeastSquaresErrorC[sig, y]]
-
-
+   
 (*Two compartment, fit muscle and fat*)
 ErrorFunc2MF[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle},
    {echo, {T1m, T1f}, angle} = vals;
@@ -607,8 +603,7 @@ ErrorFunc2MF[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T
       EPGSignali[echo, {T1m, T2m}, angle, B1],
       EPGSignali[echo, {T1f, T2f}, angle, B1]
       }];
-   LeastSquaresErrorC[sig, y]
-   ]
+   LeastSquaresErrorC[sig, y]]
    
 (*Two compartment, fit muscle and fat, shifted fat profile*)
 ErrorFunc2MFS[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle, angleS},
@@ -617,8 +612,7 @@ ErrorFunc2MFS[y_, T2m_Real, T2f_Real, B1_Real, vals_] := Quiet@Block[{sig, T1m, 
       EPGSignali[echo, {T1m, T2m}, angle, B1],
       EPGSignali[echo, {T1f, T2f}, angleS, B1]
       }];
-   LeastSquaresErrorC[sig, y]
-   ]
+   LeastSquaresErrorC[sig, y]]
 
 
 
@@ -850,7 +844,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	(*Get Input*)
 	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
   	ad = ArrayDepth[datan];
-	datal = N@Switch[ad, 1, datan, 3, Transpose[datan, {3, 1, 2}], 4, Transpose[datan, {1, 4, 2, 3}]];
+	datal = N@Switch[ad, 1, datan, 3, RotateDimensionsLeft@datan, 4, RotateDimensionsLeft@Transpose[datan]];
 	
 	(*Get Options*)
 	{T1m, T1f} = N@OptionValue[EPGRelaxPars];
@@ -1178,7 +1172,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 			out
 			) &, fitData[[1 ;; ;; step]]];
 		
-		,"2compF", (*fit only fat compartment but include water with fixe T2*)
+		,"2compF", (*fit only fat compartment but include water with fixed T2*)
 		valsf = {echo, {T1m, 20, T1f}, ang, angS};
 		DistributeDefinitions[valsf, fun];
 		
@@ -1294,7 +1288,7 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 	];
 	
 	(*output*)
-	{ToPackedArray[dict],ToPackedArray[vals]}
+	{ToPackedArray[N@dict], ToPackedArray[N@vals]}
 ]
 
 

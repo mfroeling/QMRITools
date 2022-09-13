@@ -177,8 +177,8 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	stop = Unitize[Total@Abs@tens] Mask[inp];
 			
 	(*make the trac and stop interpolation functions*)
-	intE = ToIntFunction[RotateDimensionsLeft[{tens}, 2], vox, int];
-	intS = ToIntFunction[stop, vox, int];
+	intE = MakeIntFunction[RotateDimensionsLeft[{tens}, 2], vox, int];
+	intS = MakeIntFunction[stop, vox, int];
 	
 	(*make the random seed points*)
 	SeedRandom[1234];
@@ -229,35 +229,21 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 
 
 (* ::Subsubsection::Closed:: *)
-(*ToIntFunction*)
-
-
-ToIntFunction[dat_, vox_, int_] := Block[{def, range},
-	range = Thread[{vox, vox Dimensions[dat][[1;;3]]}]-0.5 vox;
-	def = 0. dat[[1,1,1]];
-	def =If[ListQ[def], Flatten@def, def];
-	(*With[{ex=def},ListInterpolation[ToPackedArray[dat], range, InterpolationOrder -> int, 
-		"ExtrapolationHandler" -> {ex &, "WarningMessage" -> False}(*, Method -> "Hermite"*)]]*)
-	With[{ex=def},InterpolatingFunction[
-		range,
-		{5,6,0,Dimensions[dat][[;;3]],{int,int,int}+1,0,0,0,0,ex&,{},{},False},
-		Range[range[[#,1]],range[[#,2]],vox[[#]]]&/@{1,2,3},
-		ToPackedArray@N@dat,
-		{Automatic,Automatic,Automatic}]]
-]
-
-
-(* ::Subsubsection::Closed:: *)
 (*TractFunc*)
 
 
 TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0},
+	dir0 = h EigVec[First[fun]@@loc0];
 	(*tractography in the two directions around seed point*)
-	dir0 = h EigV[First[fun]@@loc0];
-	ToPackedArray@Join[Reverse@TractFunc[{loc0+dir0/2, -dir0}, h, stp, fun], TractFunc[{loc0-dir0/2, dir0}, h, stp, fun]]
+	ToPackedArray@Join[
+		Reverse@TractFunc[{loc0 + dir0/2, -dir0}, h, stp, fun], 
+		TractFunc[{loc0 - dir0/2, dir0}, h, stp, fun]
+	]
 ]
 
-TractFunc[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, intS_, tracF_}] := Block[{ang, stop, loc, locn, step, stepn, angt,out},
+TractFunc[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, intS_, tracF_}] := Block[
+	{ang, stop, loc, locn, step, stepn, angt,out},
+	
 	ang = 0;
 	stop = intS@@(loc0 + step0);
 	(*perform tractography*)
@@ -265,7 +251,7 @@ TractFunc[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, 
 		(*get new location and the step at new location*)
 		{loc, step} = #;
 		locn = loc + step;
-		stepn = tracF[locn, step, h, EigV[intE@@#]&];
+		stepn = tracF[locn, step, h, EigVec[intE@@#]&];
 		(*get stop criteria*)
 		ang = VecAng[step, stepn];
 		stop = (intS@@(locn + stepn));			
@@ -328,7 +314,6 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 	n2 = Sqrt[v2 . v2];
 	v = If[n1 > 0. && n2 > 0., (v1 . v2)/(n1 n2), v1 . v2];
 	Re[180. ArcCos[v] / Pi]
-
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -336,7 +321,7 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 (*EigV*)
 
 
-EigV = Compile[{{tens, _Complex, 1}},Block[{
+EigVec = Compile[{{tens, _Complex, 1}},Block[{
 	xx,yy,zz,xy,xz,yz,xx2,yy2,zz2,xy2,xz2,yz2,det,tr,tr2,b,c,d,m1,m2,m3,u1,u2,u3,out,e1, u33},
 	
 	(*tens and tensor squared indices*)
@@ -354,13 +339,14 @@ EigV = Compile[{{tens, _Complex, 1}},Block[{
 		b = tr;
 		c = 0.5(tr2 - tr^2);
 		d = xx yy zz - xx yz2 - yy xz2 - zz xy2 + 2 xy xz yz; (*det*)
-		 
+		
+		(*first root is first eigenvalue*) 
 		e1 = -Abs[(1/6)*(2*b 
 			+ (2*(b^2 + 3*c))/(b^3 + (9*b*c)/2 + (3/2)*(9*d + Sqrt[-3*c^2*(b^2 + 4*c) + 6*b*(2*b^2 + 9*c)*d + 81*d^2]))^(1/3) 
 			+ 2^(2/3)*(2*b^3 + 9*b*c + 3*(9*d + Sqrt[-3*c^2*(b^2 + 4*c) + 6*b*(2*b^2 + 9*c)*d + 81*d^2]))^(1/3)
 		)];
 	
-		(*QR decomp Using the Gram\[Dash]Schmidt process*)
+		(*QR decomp Using the Gram\[Dash]Schmidt process to find first vector*)
 		{u1, m2, m3} = {{xx + e1, xy, xz}, {xy, yy + e1, yz}, {xz, yz, zz + e1}};
 		u2 = m2 - (u1 . m2/u1 . u1)u1;
 		u3 = m3 - (u1 . m3/u1 . u1)u1 - (u2 . m3/u2 . u2)u2;

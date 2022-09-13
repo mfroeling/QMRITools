@@ -400,7 +400,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	];
 	
 	(*correct output data for weightings*)
-	datao = Transpose@RotateDimensionsRight[DevideNoZero[datao, weights]];
+	datao = Transpose@RotateDimensionsRight[Re@DevideNoZero[datao, weights]];
 	If[OptionValue[PCAClipping], datao = Clip[datao, {min, max}]];
 	sigmat = DevideNoZero[sigmat, weights];
 	output = ArrayPad[#, off] & /@ RotateDimensionsRight[output];
@@ -408,8 +408,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	(*define output*)
 	If[OptionValue[PCAOutput],
 		(*fitted dta,average sigma,{sigma fit,number components, number of fitted voxesl,number of max fits}*)
-		{ToPackedArray@N@datao, sigmat, output},
-		{ToPackedArray@N@datao, sigmat}
+		{datao, sigmat, output},
+		{datao, sigmat}
 	]
 ]
 
@@ -482,6 +482,7 @@ NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{back, dat, coor, n, r
 	(*make selection mask and vectorize data*)
 	back = mask Mask[NormalizeMeanData[data], OptionValue[NNThreshhold]];
 	{dat, coor} = DataToVector[data, back];
+	dat = ToPackedArray@N@dat;
 	
 	(*Get dimensions, training sample and define network*)
 	n = Range@Length@First@dat;
@@ -498,7 +499,7 @@ NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{back, dat, coor, n, r
 			trained[dati]
 		, {i, n}], ProgressIndicator[Dynamic[i], {0, Max[n]}]];
 	
-	Clip[Transpose[VectorToData[#, coor] & /@ dat], ran]
+	ToPackedArray@N@Clip[Transpose[VectorToData[#, coor] & /@ dat], ran]
 ]
 
 
@@ -533,7 +534,7 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
     
     Print[Mean@Flatten@sig];	
     	
-    RotateDimensionsLeft[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I]
+    ToPackedArray@N@RotateDimensionsLeft[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I]
 ]
 
 
@@ -555,7 +556,7 @@ DenoiseDynamicSpectraData[spectra_] := Block[{len, data, sig, comp},
 	data = Transpose[data[[;;len]] + I data[[len+1;;]]];
 	
 	(*output data and sigma*)
-	{data, sig}
+	{ToPackedArray@N@data, sig}
 ]
 
 
@@ -643,7 +644,7 @@ WeightMapCalc[data_,OptionsPattern[]]:=Block[{
 		dat=100#/Max[Abs[#]];
 		(*add to the weights*)
 		weights+=WeightCalc[FinDiffCalc[dat,kers],wts,kappa,type];
-	)&/@Transpose[data];
+	)&/@Transpose[ToPackedArray@N@data];
 	
 	(*normalize the weights between 0 and 1*)
 	(*weights=Mean[weights];
@@ -674,14 +675,14 @@ KernelWeights[]:=Block[{cent,ker,keri,wtsi},
 (*WeightCalc*)
 
 
-WeightCalc[finDiff_,wts_,kappa_,type_]:=wts Switch[type,1,Exp[-((finDiff/kappa)^2)],2,1./(1.+(finDiff/kappa)^2)];
+WeightCalc[finDiff_,wts_,kappa_,type_] := wts Switch[type,1,Exp[-((finDiff/kappa)^2)],2,1./(1.+(finDiff/kappa)^2)];
 
 
 (* ::Subsubsection::Closed:: *)
 (*FinDiffCalc*)
 
 
-FinDiffCalc[dat_,kers_]:=ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
+FinDiffCalc[dat_,kers_] := ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 
 
 (* ::Subsection:: *)
@@ -697,7 +698,7 @@ AnisoFilterData[data_, opts:OptionsPattern[]] := AnisoFilterData[data, {1,1,1}, 
 AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{dd, grads, k, jacTot, tMat, eval, evec, div, dati,
 	sig, rho , step, itt, sc, max},
 	(*get the 4th dimensions on first place *)
-	dati = N@Transpose[data];
+	dati = ToPackedArray@N@Transpose[data];
 	max = Max[dati];
 	(*aniso filter kernel size *)
 	{sig,rho} = OptionValue[AnisoKernel];
@@ -727,7 +728,7 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{dd, grads, k, jacT
 		div = Total[sc MapThread[GaussianFilter[#1, 1, #2] &, {#, IdentityMatrix[3]}]] & /@ div;
 		
 		(*perform the smoothing step*)
-		dati = Clip[dati + step div, {0,2} max];
+		dati = ToPackedArray@N@Clip[dati + step div, {0,2} max];
 	, {itt}];
 	
 	(*output the data*)

@@ -91,6 +91,9 @@ FACalc::usage =
 ECalc::usage =
 "ECalc[eigenvalues] caculates the E from the given eigenvalues."
 
+WestinMeasures::usage = 
+"WestinMeasures[eigenvalues] calculates the westin measures."
+
 ParameterCalc::usage = "ParameterCalc[tensor] caculates the eigenvalues and MD and FA from the given tensor. The parameters are l1, l2, l3, MD and FA. l1, l2, l3, MD are in (10^-3 mm^2/s)."
 
 FlipTensorOrientation::usage = 
@@ -256,7 +259,7 @@ ConcatenateDiffusionData[data_, grad_, val_, vox_] :=
    
    voxout = If[ListQ[vox] && ! ListQ[vox[[1]]], vox, vox[[1]]];
    
-   {dataout, gradout, valout, voxout}
+   {ToPackedArray@N@dataout, gradout, valout, voxout}
    ];
 
 
@@ -269,7 +272,7 @@ SyntaxInformation[SortDiffusionData] = {"ArgumentsPattern" -> {_, _, _}};
 SortDiffusionData[data_, grad_, val_] := Module[{pos, valu, sel},
 	{valu, pos} = UniqueBvalPosition[val];
 	sel = Flatten[pos];
-	{data[[All, sel]], grad[[sel]], val[[sel]]}
+	{ToPackedArray@N@data[[All, sel]], grad[[sel]], val[[sel]]}
 ]
 
 
@@ -283,7 +286,7 @@ RemoveIsoImages[data_, grad_, val_] := Module[{sel},
 	sel = Complement[
 		Range[Length[val]],Complement[Flatten[Position[grad, {0., 0., 0.}]], Flatten[Position[val, 0.]]]
 	];
-	{data[[All, sel]], grad[[sel]], val[[sel]]}
+	{ToPackedArray@N@data[[All, sel]], grad[[sel]], val[[sel]]}
 ]
 
 
@@ -320,6 +323,7 @@ Block[{depthD,dirD,dirG,grad,bvec},
 		TensorCalc[data,Bmatrix[bvec,grad, Method->"DKI"],opts]
 	]
 ]
+
 
 (*bvector*)
 TensorCalc[data_,grad_,bvec:{_?NumberQ ..},opts:OptionsPattern[]]:=
@@ -376,8 +380,9 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD, bmatI,fout,met
 	bmatI = PseudoInverse[bmat];
 	
 	(*make diff direction last dimension*)
-	data = Chop[Clip[N[RotateDimensionsLeft@If[depthD==4, Transpose@dat, dat]], {0., Infinity}]];
-	dataL = Chop[LogNoZero[data]];
+	data = ToPackedArray@N@dat;
+	data = Chop[Clip[N[RotateDimensionsLeft@If[depthD==4, Transpose@data, data]], {0., Infinity}]];
+	dataL = ToPackedArray@N@Chop[LogNoZero[data]];
 	
 	l = Length@data;
 	dd = {depthD-1};
@@ -399,12 +404,10 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD, bmatI,fout,met
 		If[depthD == 1,
 			FindTensOutliers[dataL, bmat, con, kappa],
 			func[FindTensOutliers[#, bmat, con, kappa]&, dataL, dd]
-		]
-		, 
+		], 
 		ConstantArray[0., Dimensions[data]]
 	];
 	outFit = If[method === "LLS", (0 outliers) + 1, 1-outliers];
-
 	
 	If[mon,PrintTemporary["Fitting tensor"]]; 
 	fitresult = If[depthD == 1,
@@ -520,7 +523,8 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	],
 	
 	{{sol, _Real, 1}},
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}, 
+	RuntimeAttributes -> {Listable}, 
+	RuntimeOptions -> {"Speed", "WarningMessages"->False}, 
 	CompilationOptions -> {"ExpressionOptimization" -> False}
 ]
 
@@ -949,6 +953,16 @@ Module[{EC},
 		EC[#[[1]],#[[3]]],
 		0]&,eigen,{ArrayDepth[eigen]-1}]
 	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*WestinMeasures*)
+
+
+WestinMeasures[eig_]:=Block[{l1, l2, l3},
+	{l1,l2,l3} = RotateDimensionsRight[eig];
+	{DevideNoZero[l1-l2,l1], DevideNoZero[l2-l3,l1], DevideNoZero[l3,l1]}
+]
 
 
 (* ::Subsubsection::Closed:: *)

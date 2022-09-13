@@ -1383,7 +1383,8 @@ Options[PlotSpectra] = {
 	PlotLabels -> None,
 	AspectRatio -> .2, 
 	ImageSize -> 750, 
-	PlotLabel -> None
+	PlotLabel -> None,
+	CenterFrequency -> 0.
 };
 
 SyntaxInformation[PlotSpectra] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
@@ -1411,6 +1412,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		If[gridS === 0, {}, -Range[0, -Round[min], gridS]],
 		OptionValue[GridLines]
 	];
+	shift = OptionValue[CenterFrequency];
 	
 	(*if only one spectra plot normal else plot expanded list of spectra*)
 	If[VectorQ[spec],
@@ -1418,7 +1420,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		(*get the plot functions*)
 		fun = Switch[OptionValue[Method], "Abs", {Abs}, "Re", {Re}, "Im", {Im}, "ReIm", {Im, Re}, "All", {Im, Re, Abs}];
 		(*plot single spectra*)
-		plot = Transpose[{ppm, #}] & /@ (#@spec & /@ fun);
+		plot = Transpose[{ppm + shift, #}] & /@ (#@spec & /@ fun);
 		(*get the plot color*)
 		col = If[OptionValue[PlotColor] === Automatic, ({Gray, {Red, Thin}, {Thick, Black}}[[-Length[fun] ;;]]), OptionValue[PlotColor]];
 		
@@ -1438,7 +1440,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		space = Reverse@Range[0, Length[spec]] Max[Abs[spec]] OptionValue[SpectraSpacing];
 		
 		(*plot the spectra*)
-		plot = Transpose[{ppm, #}] & /@ (fun[Append[spec, Total[spec]]] + space);
+		plot = Transpose[{ppm + shift, #}] & /@ (fun[Append[spec, Total[spec]]] + space);
 		
 		(*correct the plot range*)
 		If[rr[[2]] =!= Full, rr[[2, 2]] = 1.1 Max[plot[[All, All, 2]]]];
@@ -1459,7 +1461,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		
 		(*make Im plot if needed*)
 		If[OptionValue[Method] === "ReIm",
-			plot2 = Transpose[{ppm, #}] & /@ (Im[Append[spec, Total[spec]]] + space);
+			plot2 = Transpose[{ppm + shift, #}] & /@ (Im[Append[spec, Total[spec]]] + space);
 			cols2 = {Append[ConstantArray[Gray, Length[plot] - 1], Gray]};
 			
 			pl2 = ListLinePlot[plot2, Frame -> {{False, False}, {True, False}}, FrameStyle -> Thickness[.003], FrameTicksStyle -> Thickness[.003], 
