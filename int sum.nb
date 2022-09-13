@@ -1,0 +1,584 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     21625,        576]
+NotebookOptionsPosition[     20442,        550]
+NotebookOutlinePosition[     20842,        566]
+CellTagsIndexPosition[     20799,        563]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["\<\
+Interpolation functions of large arrays in combination with parallel \
+evaluation cannot be evaluated using normal code. 
+Based on my educated guess has to do with issues of memory management of \
+unpacked arrays and parallel kernels. 
+
+To benefit from parallel evaluation using large datasets one has to overcome \
+the burden of parallel distribution of large arrays which is very slow for \
+arrays that are not in packed array form. Additionally using normal \
+distribution of functions wont work since somehow the int-function is between \
+13x and 50000x slower on parallel kernels (depending on size of data). This \
+slowdown in on top of the slow parallel distribution of large arrays. 
+
+Using using parallel evaluate of the direct definition of int function using \
+packed arrays one is able to perform efficient parallel evaluation with the \
+expected speed up of around 3x using 4 kernels. 
+
+This has been tested on mac (12.5, i5) and windows (10, i7) in Mathematica \
+13.1\
+\>", "Text",
+ CellChangeTimes->{{3.870846077571315*^9, 3.870846158620289*^9}, {
+  3.8708463768451033`*^9, 3.870846441400996*^9}, {3.8708472843172073`*^9, 
+  3.8708473163039713`*^9}, {3.870849292401412*^9, 3.870849404714744*^9}, {
+  3.870851910390984*^9, 3.870851924104651*^9}, {3.870851961377924*^9, 
+  3.8708520082364473`*^9}, {3.870852368709453*^9, 3.870852412360972*^9}, {
+  3.870852859769415*^9, 3.870852913423311*^9}, {3.870853150886527*^9, 
+  3.8708532899646473`*^9}, {3.870857354031162*^9, 3.8708573574806967`*^9}, {
+  3.870857402885192*^9, 
+  3.8708574038331566`*^9}},ExpressionUUID->"9d4a9f2f-4433-4578-bb7c-\
+e9c9ce8a186a"],
+
+Cell[BoxData[{
+ RowBox[{"Needs", "[", "\"\<Developer`\>\"", "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ParallelEvaluate", "[", 
+    RowBox[{"Needs", "[", "\"\<Developer`\>\"", "]"}], "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"MBCount", "=", 
+    RowBox[{
+     RowBox[{"UnitConvert", "[", 
+      RowBox[{
+       RowBox[{"Quantity", "[", 
+        RowBox[{
+         RowBox[{"N", "@", 
+          RowBox[{"ByteCount", "[", "#", "]"}]}], ",", "\"\<Byte\>\""}], 
+        "]"}], ",", "\"\<MB\>\""}], "]"}], "&"}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", 
+    RowBox[{"MakeIntFunc", ",", "MakeIntFuncList"}], "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"MakeIntFunc", "[", 
+    RowBox[{"dat_", ",", "vox_", ",", 
+     RowBox[{"int_", "?", "IntegerQ"}]}], "]"}], ":=", 
+   RowBox[{"Block", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"range", ",", 
+       RowBox[{"d", "=", 
+        RowBox[{"dat", "[", 
+         RowBox[{"[", 
+          RowBox[{"1", ",", "1", ",", "1"}], "]"}], "]"}]}]}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"range", "=", 
+       RowBox[{
+        RowBox[{"Thread", "[", 
+         RowBox[{"{", 
+          RowBox[{"vox", ",", 
+           RowBox[{"vox", " ", 
+            RowBox[{
+             RowBox[{"Dimensions", "[", "dat", "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ";;", "3"}], "]"}], "]"}]}]}], "}"}], "]"}], "-", 
+        RowBox[{"(", 
+         RowBox[{"0.5", " ", "vox"}], ")"}]}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"d", "=", 
+       RowBox[{"0.", " ", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"ListQ", "[", "d", "]"}], ",", 
+          RowBox[{"Flatten", "@", "d"}], ",", "d"}], "]"}]}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"With", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"ex", "=", "d"}], "}"}], ",", 
+        RowBox[{"InterpolatingFunction", "[", 
+         RowBox[{"range", ",", "\[IndentingNewLine]", 
+          RowBox[{"(*", 
+           RowBox[{
+           "no", " ", "clue", " ", "what", " ", "this", " ", "vector", " ", 
+            "means", " ", "just", " ", "copy", " ", "it", " ", "from", " ", 
+            "output", " ", "of", " ", "ListInterpolation"}], "*)"}], 
+          "\[IndentingNewLine]", 
+          RowBox[{"{", 
+           RowBox[{"5", ",", 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"ArrayDepth", "[", "dat", "]"}], "===", "3"}], ",", 
+              "6", ",", "2"}], "]"}], ",", "0", ",", 
+            RowBox[{
+             RowBox[{"Dimensions", "[", "dat", "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{";;", "3"}], "]"}], "]"}], ",", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"int", ",", "int", ",", "int"}], "}"}], "+", "1"}], ",",
+             "0", ",", "0", ",", "0", ",", "0", ",", 
+            RowBox[{"ex", "&"}], ",", 
+            RowBox[{"{", "}"}], ",", 
+            RowBox[{"{", "}"}], ",", "False"}], "}"}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Range", "[", 
+             RowBox[{
+              RowBox[{"range", "[", 
+               RowBox[{"[", 
+                RowBox[{"#", ",", "1"}], "]"}], "]"}], ",", 
+              RowBox[{"range", "[", 
+               RowBox[{"[", 
+                RowBox[{"#", ",", "2"}], "]"}], "]"}], ",", 
+              RowBox[{"vox", "[", 
+               RowBox[{"[", "#", "]"}], "]"}]}], "]"}], "&"}], "/@", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "2", ",", "3"}], "}"}]}], ",", "dat", ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"{", 
+           RowBox[{"Automatic", ",", "Automatic", ",", "Automatic"}], "}"}]}],
+          "]"}]}], "]"}]}]}], "\[IndentingNewLine]", "]"}]}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"MakeIntFuncList", "[", 
+    RowBox[{"dat_", ",", "vox_", ",", 
+     RowBox[{"int_", "?", "IntegerQ"}]}], "]"}], ":=", 
+   RowBox[{"Block", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"range", ",", 
+       RowBox[{"d", "=", 
+        RowBox[{"dat", "[", 
+         RowBox[{"[", 
+          RowBox[{"1", ",", "1", ",", "1"}], "]"}], "]"}]}]}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"range", "=", 
+       RowBox[{
+        RowBox[{"Thread", "[", 
+         RowBox[{"{", 
+          RowBox[{"vox", ",", 
+           RowBox[{"vox", " ", 
+            RowBox[{
+             RowBox[{"Dimensions", "[", "dat", "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ";;", "3"}], "]"}], "]"}]}]}], "}"}], "]"}], "-", 
+        RowBox[{"(", 
+         RowBox[{"0.5", " ", "vox"}], ")"}]}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"d", "=", 
+       RowBox[{"0.", " ", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"ListQ", "[", "d", "]"}], ",", 
+          RowBox[{"Flatten", "@", "d"}], ",", "d"}], "]"}]}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"With", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"ex", "=", "d"}], "}"}], ",", 
+        RowBox[{"ListInterpolation", "[", 
+         RowBox[{"dat", ",", "range", ",", 
+          RowBox[{"InterpolationOrder", "->", "int"}], ",", 
+          RowBox[{"\"\<ExtrapolationHandler\>\"", "->", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"ex", "&"}], ",", 
+             RowBox[{"\"\<WarningMessage\>\"", "->", "False"}]}], "}"}]}]}], 
+         "]"}]}], "]"}]}]}], "\[IndentingNewLine]", "]"}]}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"DistributeDefinitions", "[", 
+    RowBox[{"MakeIntFunc", ",", "MakeIntFuncList"}], "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"vox", "=", 
+   RowBox[{"{", 
+    RowBox[{"6", ",", "3", ",", "3"}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"rr6", "=", 
+   RowBox[{"ToPackedArray", "@", 
+    RowBox[{"RandomReal", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"0", ",", "1"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"50", ",", "160", ",", "160", ",", "1", ",", "6"}], "}"}]}], 
+     "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"n", "=", "10"}], ";"}], "\[IndentingNewLine]", 
+  "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{"normal", " ", "evaluation"}], "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ClearAll", "[", "f", "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ParallelEvaluate", "[", 
+   RowBox[{"ClearAll", "[", "f", "]"}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"m1", "=", 
+    RowBox[{"AbsoluteTiming", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"t1", "=", 
+       RowBox[{
+        RowBox[{"AbsoluteTiming", "[", 
+         RowBox[{
+          RowBox[{"f", "=", 
+           RowBox[{"MakeIntFunc", "[", 
+            RowBox[{"rr6", ",", "vox", ",", "1"}], "]"}]}], ";"}], "]"}], "[", 
+        RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"t2", "=", 
+       RowBox[{
+        RowBox[{"AbsoluteTiming", "[", 
+         RowBox[{
+          RowBox[{"res1", "=", 
+           RowBox[{"Table", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Do", "[", 
+               RowBox[{
+                RowBox[{"f", "[", 
+                 RowBox[{"i", ",", "j", ",", "k"}], "]"}], ",", 
+                RowBox[{"{", "n", "}"}]}], "]"}], ";", 
+              RowBox[{"f", "[", 
+               RowBox[{"i", ",", "j", ",", "k"}], "]"}]}], ",", 
+             RowBox[{"{", 
+              RowBox[{"i", ",", "2", ",", "10", ",", ".1"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"j", ",", "5", ",", "10", ",", ".1"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"k", ",", "5", ",", "10", ",", ".1"}], "}"}]}], "]"}]}],
+           ";"}], "]"}], "[", 
+        RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"{", 
+       RowBox[{"t1", ",", "t2"}], "}"}]}], "]"}]}], ";"}], 
+  "\[IndentingNewLine]", "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+   "parallel", " ", "evaluation", " ", "using", " ", "distribute", " ", 
+    "build", " ", "in", " ", "int", " ", "func"}], 
+   "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ClearAll", "[", "f", "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ParallelEvaluate", "[", 
+   RowBox[{"ClearAll", "[", "f", "]"}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"m3", "=", 
+    RowBox[{"AbsoluteTiming", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"t1", "=", 
+       RowBox[{
+        RowBox[{"AbsoluteTiming", "[", 
+         RowBox[{
+          RowBox[{"ParallelEvaluate", "[", 
+           RowBox[{
+            RowBox[{"f", "=", 
+             RowBox[{"MakeIntFuncList", "[", 
+              RowBox[{"rr6", ",", "vox", ",", "1"}], "]"}]}], ";"}], "]"}], 
+          ";"}], "]"}], "[", 
+        RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"t2", "=", 
+       RowBox[{
+        RowBox[{"AbsoluteTiming", "[", 
+         RowBox[{
+          RowBox[{"res3", "=", 
+           RowBox[{"ParallelTable", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Do", "[", 
+               RowBox[{
+                RowBox[{"f", "[", 
+                 RowBox[{"i", ",", "j", ",", "k"}], "]"}], ",", 
+                RowBox[{"{", "n", "}"}]}], "]"}], ";", 
+              RowBox[{"f", "[", 
+               RowBox[{"i", ",", "j", ",", "k"}], "]"}]}], ",", 
+             RowBox[{"{", 
+              RowBox[{"i", ",", "2", ",", "10", ",", ".1"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"j", ",", "5", ",", "10", ",", ".1"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"k", ",", "5", ",", "10", ",", ".1"}], "}"}]}], "]"}]}],
+           ";"}], "]"}], "[", 
+        RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"{", 
+       RowBox[{"t1", ",", "t2"}], "}"}]}], "]"}]}], ";"}], 
+  "\[IndentingNewLine]", "\n", 
+  RowBox[{"(*", 
+   RowBox[{"!", 
+    RowBox[{"!", 
+     RowBox[{"!", 
+      RowBox[{"!", 
+       RowBox[{"!", 
+        RowBox[{"!", 
+         RowBox[{"!", 
+          RowBox[{"!", 
+           RowBox[{"!", 
+            RowBox[{"!", 
+             RowBox[{
+              RowBox[{
+               RowBox[{
+                RowBox[{
+                 RowBox[{"winner", "!!"}], "!!"}], "!!"}], "!!"}], 
+              "!"}]}]}]}]}]}]}]}]}]}]}], "*)"}], "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{"parallel", " ", "evaluation", " ", "using", " ", "distribute"}], 
+    ",", " ", 
+    RowBox[{"custom", " ", "int", " ", "func"}]}], 
+   "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ClearAll", "[", "f", "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ParallelEvaluate", "[", 
+   RowBox[{"ClearAll", "[", "f", "]"}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"m4", "=", 
+    RowBox[{"AbsoluteTiming", "[", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"t1", "=", 
+       RowBox[{
+        RowBox[{"AbsoluteTiming", "[", 
+         RowBox[{
+          RowBox[{"ParallelEvaluate", "[", 
+           RowBox[{
+            RowBox[{"f", "=", 
+             RowBox[{"MakeIntFunc", "[", 
+              RowBox[{"rr6", ",", "vox", ",", "1"}], "]"}]}], ";"}], "]"}], 
+          ";"}], "]"}], "[", 
+        RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"t2", "=", 
+       RowBox[{
+        RowBox[{"AbsoluteTiming", "[", 
+         RowBox[{
+          RowBox[{"res4", "=", 
+           RowBox[{"ParallelTable", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"Do", "[", 
+               RowBox[{
+                RowBox[{"f", "[", 
+                 RowBox[{"i", ",", "j", ",", "k"}], "]"}], ",", 
+                RowBox[{"{", "n", "}"}]}], "]"}], ";", 
+              RowBox[{"f", "[", 
+               RowBox[{"i", ",", "j", ",", "k"}], "]"}]}], ",", 
+             RowBox[{"{", 
+              RowBox[{"i", ",", "2", ",", "10", ",", ".1"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"j", ",", "5", ",", "10", ",", ".1"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"k", ",", "5", ",", "10", ",", ".1"}], "}"}]}], "]"}]}],
+           ";"}], "]"}], "[", 
+        RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"{", 
+       RowBox[{"t1", ",", "t2"}], "}"}]}], "]"}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\n", 
+ RowBox[{"Column", "@", 
+  RowBox[{"{", 
+   RowBox[{"m1", ",", "m2", ",", "m4"}], "}"}]}], "\[IndentingNewLine]", 
+ RowBox[{"res1", "==", "res3", "==", "res4"}]}], "Input",
+ CellChangeTimes->{{3.870845576057851*^9, 3.870845776725205*^9}, {
+   3.870845816990705*^9, 3.870845831559819*^9}, {3.8708458989399567`*^9, 
+   3.870845900505801*^9}, {3.870846459234385*^9, 3.8708464659668713`*^9}, {
+   3.8708468682252073`*^9, 3.870846880889351*^9}, {3.870847093681089*^9, 
+   3.870847098912696*^9}, {3.870852604082213*^9, 3.870852613812742*^9}, {
+   3.870853331120659*^9, 3.8708533355534*^9}, {3.8708533700891457`*^9, 
+   3.870853388251116*^9}, {3.870857058345578*^9, 3.8708570587489862`*^9}, {
+   3.8708571145228024`*^9, 3.870857134299532*^9}, {3.870857278318682*^9, 
+   3.870857305770638*^9}, {3.870858615661394*^9, 3.8708586163650565`*^9}, 
+   3.870859308055351*^9},ExpressionUUID->"05a9b0ac-86d5-4e55-bff2-\
+dec6aae2ccff"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"(*", "windows", "*)"}]], "Input",
+ CellChangeTimes->{{3.870859301797577*^9, 
+  3.8708593054753895`*^9}},ExpressionUUID->"8c392e58-457a-43f2-a98a-\
+7bc5c3160ae6"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {
+     RowBox[{"{", 
+      RowBox[{"33.0514082`", ",", 
+       RowBox[{"{", 
+        RowBox[{"0.4631274`", ",", "32.5882632`"}], "}"}]}], "}"}]},
+    {
+     RowBox[{"{", 
+      RowBox[{"21.1686036`", ",", 
+       RowBox[{"{", 
+        RowBox[{"4.025577`", ",", "17.1430075`"}], "}"}]}], "}"}]},
+    {
+     RowBox[{"{", 
+      RowBox[{"16.3275805`", ",", 
+       RowBox[{"{", 
+        RowBox[{"0.7027249`", ",", "15.6248381`"}], "}"}]}], "}"}]}
+   },
+   DefaultBaseStyle->"Column",
+   GridBoxAlignment->{"Columns" -> {{Left}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+  "Column"]], "Output",
+ CellChangeTimes->{3.8708593358494625`*^9},
+ CellLabel->
+  "Out[199]=",ExpressionUUID->"7294b32d-b189-4180-a2c1-671c729861db"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{3.8708593359354153`*^9},
+ CellLabel->
+  "Out[200]=",ExpressionUUID->"09025560-2b7b-4474-955d-205e6887934c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"(*", "mac", "*)"}]], "Input",
+ CellChangeTimes->{{3.8708592970572815`*^9, 
+  3.870859300402708*^9}},ExpressionUUID->"9faebdd2-743b-46b4-b4ac-\
+7ddd4028decd"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {
+     RowBox[{"{", 
+      RowBox[{"30.210024`", ",", 
+       RowBox[{"{", 
+        RowBox[{"0.357606`", ",", "29.852403`"}], "}"}]}], "}"}]},
+    {
+     RowBox[{"{", 
+      RowBox[{"12.060744`", ",", 
+       RowBox[{"{", 
+        RowBox[{"2.008425`", ",", "10.052292`"}], "}"}]}], "}"}]},
+    {
+     RowBox[{"{", 
+      RowBox[{"9.825299`", ",", 
+       RowBox[{"{", 
+        RowBox[{"0.443977`", ",", "9.381308`"}], "}"}]}], "}"}]}
+   },
+   DefaultBaseStyle->"Column",
+   GridBoxAlignment->{"Columns" -> {{Left}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+  "Column"]], "Output",
+ CellChangeTimes->{3.8708574723368464`*^9},
+ CellLabel->"Out[46]=",ExpressionUUID->"f6d3532f-5931-4f58-8660-e83689a907e9"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{3.870857472394734*^9},
+ CellLabel->"Out[47]=",ExpressionUUID->"a310284a-f25d-490a-b073-6e29822f9843"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{"parallel", " ", "evaluation", " ", "using", " ", "distribute"}], 
+    ",", " ", 
+    RowBox[{
+    "This", " ", "does", " ", "not", " ", "work", " ", "for", " ", "large", 
+     " ", "arrays", " ", "did", " ", "not", " ", "finish", " ", "after", " ", 
+     "overnight", " ", "evaluation"}]}], "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"ClearAll", "[", "f", "]"}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"ParallelEvaluate", "[", 
+     RowBox[{"ClearAll", "[", "f", "]"}], "]"}], ";"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"m2", "=", 
+     RowBox[{"AbsoluteTiming", "[", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"t1", "=", 
+        RowBox[{
+         RowBox[{"AbsoluteTiming", "[", 
+          RowBox[{
+           RowBox[{"f", "=", 
+            RowBox[{"MakeIntFunc", "[", 
+             RowBox[{"rr6", ",", "vox", ",", "1"}], "]"}]}], ";"}], "]"}], 
+         "[", 
+         RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"t2", "=", 
+        RowBox[{
+         RowBox[{"AbsoluteTiming", "[", 
+          RowBox[{
+           RowBox[{"res2", "=", 
+            RowBox[{"ParallelTable", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Do", "[", 
+                RowBox[{
+                 RowBox[{"f", "[", 
+                  RowBox[{"i", ",", "j", ",", "k"}], "]"}], ",", 
+                 RowBox[{"{", "n", "}"}]}], "]"}], ";", 
+               RowBox[{"f", "[", 
+                RowBox[{"i", ",", "j", ",", "k"}], "]"}]}], ",", 
+              RowBox[{"{", 
+               RowBox[{"i", ",", "2", ",", "10", ",", ".1"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"j", ",", "5", ",", "10", ",", ".1"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"k", ",", "5", ",", "10", ",", ".1"}], "}"}]}], 
+             "]"}]}], ";"}], "]"}], "[", 
+         RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"{", 
+        RowBox[{"t1", ",", "t2"}], "}"}]}], "]"}]}], ";"}]}]}]], "Input",
+ CellChangeTimes->{{3.870859472589882*^9, 
+  3.8708594850265265`*^9}},ExpressionUUID->"f1c65987-6cc0-4040-a27a-\
+fdccb69ce82e"]
+},
+WindowSize->{557, 606},
+WindowMargins->{{172, Automatic}, {Automatic, 199}},
+FrontEndVersion->"13.1 for Microsoft Windows (64-bit) (June 16, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"5dddac97-b079-4609-bbca-f04b6a9a8bbc"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 1626, 29, 449, "Text",ExpressionUUID->"9d4a9f2f-4433-4578-bb7c-e9c9ce8a186a"],
+Cell[2187, 51, 13673, 361, 1570, "Input",ExpressionUUID->"05a9b0ac-86d5-4e55-bff2-dec6aae2ccff"],
+Cell[CellGroupData[{
+Cell[15885, 416, 185, 4, 29, "Input",ExpressionUUID->"8c392e58-457a-43f2-a98a-7bc5c3160ae6"],
+Cell[16073, 422, 789, 24, 65, "Output",ExpressionUUID->"7294b32d-b189-4180-a2c1-671c729861db"],
+Cell[16865, 448, 158, 3, 33, "Output",ExpressionUUID->"09025560-2b7b-4474-955d-205e6887934c"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[17060, 456, 181, 4, 29, "Input",ExpressionUUID->"9faebdd2-743b-46b4-b4ac-7ddd4028decd"],
+Cell[17244, 462, 775, 23, 65, "Output",ExpressionUUID->"f6d3532f-5931-4f58-8660-e83689a907e9"],
+Cell[18022, 487, 152, 2, 33, "Output",ExpressionUUID->"a310284a-f25d-490a-b073-6e29822f9843"]
+}, Open  ]],
+Cell[18189, 492, 2249, 56, 230, "Input",ExpressionUUID->"f1c65987-6cc0-4040-a27a-fdccb69ce82e"]
+}
+]
+*)
+

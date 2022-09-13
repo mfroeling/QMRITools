@@ -155,7 +155,7 @@ verb = False;
 (*SimHamiltonian*)
 
 
-Options[SimHamiltonian] = {FieldStrength->3, SimNucleus -> "1H"}
+Options[SimHamiltonian] = {FieldStrength->3, SimNucleus -> "1H", CenterFrequency -> 0}
 
 SyntaxInformation[SimHamiltonian] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
@@ -169,7 +169,7 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 	nuc = OptionValue[SimNucleus];
 	gyro = GyromagneticRatio[nuc];
 	
-	sys = If[StringQ[sysi],GetSpinSystem[sysi],sysi];
+	sys = If[StringQ[sysi],GetSpinSystem[sysi, CenterFrequency -> OptionValue[CenterFrequency]],sysi];
 	
 	(*define frequencys*)
 	{sysJ,sysS,scale,sysSi,names,it,name} = sys;
@@ -433,7 +433,7 @@ Options[SimReadout] = {
 	ReadoutOutput->"all", 
 	ReadoutPhase->90, 
 	Linewidth->5, 
-	LinewidthShape->"Lorentzian", 
+	LinewidthShape->"Voigt", 
 	ReadoutSamples -> 2046, 
 	ReadoutBandwith -> 2000,
 	CenterFrequency -> 0,
@@ -457,7 +457,7 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	shift = OptionValue[CenterFrequency];
 	
 	(*Get hamiltonian info*)
-	{valD, matU, nSpins2, Fxy, Ixy}={"Hval","Hvec","nSpins2","wFxy","wIxy"}/.H;
+	{valD, matU, nSpins2, Fxy, Ixy} = {"Hval","Hvec","nSpins2","wFxy","wIxy"}/.H;
 	(*evlolve matrix*)
 	dt = 1./bandwidth;
 	devolve = SimEvolveM[matU,valD,dt];
@@ -473,8 +473,8 @@ SimReadout[din_,H_,OptionsPattern[]]:=Block[{
 	decay = If[linewidth===0, 1, 
 		Switch[shape,
 		"Lorentzian", Exp[-time linewidth],
-		"Gaussian", Exp[-time^2 linewidth^2],
-		"Voigt", 0.5 Exp[-time linewidth] + 0.5 Exp[-time^2 linewidth^2]
+		"Gaussian", Exp[-(time linewidth)^2],
+		"Voigt", Exp[-(time linewidth) -(time linewidth)^2]
 	]];
 	
 	val = (1./nSpins2) decay Exp[I phase Degree];

@@ -345,7 +345,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   mapfun=If[OptionValue[Parallelize]&&depthD>1,
   	ParallelEvaluate[j=0];
   	SetSharedVariable[i];
-  	DistributeDefinitions[bin,funcin,fitd,funcf,start,fpars,method,out];
+  	DistributeDefinitions[bin, funcin, fitd, funcf, start, fpars, method, out];
   	ParallelMap,
   	Map];
   

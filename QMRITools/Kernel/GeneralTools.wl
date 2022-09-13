@@ -182,8 +182,7 @@ If last is All, the remainders is just one partition."
 
 MakeIntFunction::usage = 
 "MakeIntFunction[data,int]
-MakeIntFunction[data, vox ,int]
-"
+MakeIntFunction[data, vox ,int]"
 
 
 DecomposeScaleMatrix::usage = 
@@ -227,6 +226,7 @@ MemoryUsage[n] gives a table of which definitions use up memory, where n is the 
 
 ClearTemporaryVariables::usage = 
 "ClearTemporaryVariables[] Clear temporary variables."
+
 
 (* ::Subsection::Closed:: *)
 (*General Options*)
@@ -514,7 +514,7 @@ GridData[dati_, part_, OptionsPattern[]] := Block[{dim, data, adepth, pad, val},
 		pad = PadLeft[{pad, pad}, adepth];
 		ArrayPad[#, pad, val] & /@ dati
 		,
-		dati
+		ToPackedArray@N@dati
 	];
 	
 	(*make the first dimention such that it is devidable by part*)	
@@ -1054,7 +1054,9 @@ CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1
 
 SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
 
-DevideNoZero[numi_, deni_] := N@Chop@DevideNoZeroi[numi, deni]
+DevideNoZero[numi_, deni_, "Comp"] := N@DevideNoZeroi[numi, deni]
+
+DevideNoZero[numi_, deni_] := Re@N@DevideNoZeroi[numi, deni]
 
 DevideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[Abs[den] == 0., 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
