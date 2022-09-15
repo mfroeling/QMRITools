@@ -1198,12 +1198,13 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
   	]
   	,
   	(*no offsets are given use default values*)
-  	{xoffq ,yoffq, zoffq} = offs = {-N[vox[[3]] dim[[-1]]/2],-N[vox[[2]] dim[[-2]]/2],-N[vox[[1]] dim[[1]]/2]};
+  	offs = {dim[[-1]], dim[[-2]], dim[[1]]}/2;
+  	{xoffq ,yoffq, zoffq} = N[Reverse[vox] offs];
   	{qb, qc, qd} = {0., 0., 0.};
   	{sx, sy, sz} = MakeNiiOrentationS[offs, vox];
   	
   	If[OptionValue[NiiLegacy],
-  		qcode = "Coregistration" /. Reverse[coordinateNii, 2];
+  		qcode = "Scanner Posistion" /. Reverse[coordinateNii, 2];
   		scode = "Scanner Posistion" /. Reverse[coordinateNii, 2];
   		,
   		scode = qcode = "None" /. Reverse[coordinateNii, 2];

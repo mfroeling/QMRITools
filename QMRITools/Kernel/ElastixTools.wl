@@ -295,14 +295,16 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (ResultImagePixelType \"float\")
 
 (ErodeMask \"false\")
+(ErodeMovingMask \"false\")
 (ErodeFixedMask \"false\")
+
 
 (Registration \"MultiResolutionRegistration\")
 
 (ImageSampler \"RandomCoordinate\")
-(CheckNumberOfSamples \"false\")
+(CheckNumberOfSamples \"true\")
 (NewSamplesEveryIteration \"true\")
-(MaximumNumberOfSamplingAttempts 5)
+(MaximumNumberOfSamplingAttempts 10)
 
 (HowToCombineTransforms \"Compose\")
 
@@ -310,6 +312,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (ASGDParameterEstimationMethod \"Original\")
 (AutomaticParameterEstimation \"true\")
 (AutomaticTransformInitialization \"true\")
+
 
 "<>If[openCL,
 (*check to uses openCL needs custom compile of elastix*)
@@ -321,6 +324,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (MovingImagePyramid \"OpenCLMovingGenericImagePyramid\")
 (OpenCLMovingGenericImagePyramidUseOpenCL \"true\")"
 ,
+
 "(Resampler \"DefaultResampler\")
 (FixedImagePyramid \"FixedGenericImagePyramid\")
 (MovingImagePyramid \"MovingGenericImagePyramid\")"
@@ -968,7 +972,7 @@ type_,OptionsPattern[]]:=Module[{
 		ExportNii[moving,voxm,tempdir<>movingF];
 		{fmaskF,mmaskF}={"",""};
 		(*check if target mask is needed*)
-		If[dimtarm == dimtar && maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxm,tempdir<>fmaskF]];
+		If[dimtarm == dimtar && maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
 		(*check if moving mask is needed*)
 		If[(dimmovm == dimmov && maskm!={1}),mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
@@ -986,7 +990,7 @@ type_,OptionsPattern[]]:=Module[{
 		(*export one mask for every volume in the series*)
 		If[dimtarm == dimtar && maskt!={1},
 		fmaskF="targetMask.nii";
-		ExportNii[maskt,voxm,tempdir<>fmaskF]];
+		ExportNii[maskt,voxt,tempdir<>fmaskF]];
 		(*check if mask needs to be exported for each volume*)
 		maske=(dimmovm == dimmov && maskm!={1});
 		(*check if same mask for all volumes*)
@@ -1019,7 +1023,7 @@ type_,OptionsPattern[]]:=Module[{
 		{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
 		ExportNii[moving,voxm,tempdir<>movingF];
 		If[maskm!={1},mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
-		If[maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxm,tempdir<>fmaskF]];
+		If[maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
 		If[$debugElastix, Print[command]];
 		RunProcess[$SystemShell,"StandardOutput",command];
@@ -1197,22 +1201,20 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 
 SyntaxInformation[ReadTransformParameters]={"ArgumentsPattern"->{_}};
 
-ReadTransformParameters[dir_] := Block[{files,filenum,cor},
-  files = FileNames["TransformParameters*", dir, 3];
-  filenum = If[Length[files] == 1,
-  	{1},
-  	ToExpression[First[StringCases[FileNameSplit[#][[-2]],DigitCharacter ..]]] & /@ files
-  	];
-  files = files[[Ordering[filenum]]];
-  cor =  
-    Partition[
-        ToExpression[
-         StringSplit[StringTake[Import[#, "Lines"][[3]], {2, -2}]][[
-          2 ;;]]], 3][[{1, 4, 3, 2}, {3,2,1}]] & /@ files;
-  cor[[All, 1]] = cor[[All, 1]]/Degree;
-
-  Flatten /@ cor
-  ]
+ReadTransformParameters[dir_] := Block[{files, filenum, cor, pars},
+	(*get all the transform files and sort them*)
+	files = FileNames["TransformParameters*", dir, 3];
+	filenum = If[Length[files] == 1, {1}, ToExpression[First[StringCases[FileNameSplit[#][[-2]], DigitCharacter ..]]] & /@ files];
+	files = files[[Ordering[filenum]]];
+	
+	(*read and parse the parameter file*)
+	pars = (((First[#] -> ToExpression[Rest[#]]) &[StringSplit[StringTake[#, {2, -2}]]]) & /@ Select[DeleteCases[Import[#, "Lines"], ""], StringTake[#, 2] =!= "//" &]) & /@ files;
+	
+	(*extract the trans*)
+	cor = Partition[#, 3][[{1, 4, 3, 2}, {3, 2, 1}]] & /@ ("TransformParameters" /. pars);
+	cor[[All, 1]] = cor[[All, 1]]/Degree;
+	Flatten /@ cor
+]
 
 
 (* ::Subsection:: *)

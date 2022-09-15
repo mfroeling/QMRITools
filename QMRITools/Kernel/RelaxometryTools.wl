@@ -436,7 +436,7 @@ EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_?ListQ, ref_?ListQ}, B1_, f_:0
   ]
 
 EPGSignali[{Necho_, echoSpace_}, {T1_, T2_}, {exi_, refi_}, B1_, f_:0.] := Block[
-	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, states, w, funRot,funMove},
+	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, states, w, funRot, funMove},
 	(*define internal paramters*)
 	states = Round[If[Necho >= 10, Max[{Necho/2, 10}], Necho]];
 	(*convert to Rad*)
@@ -446,7 +446,7 @@ EPGSignali[{Necho_, echoSpace_}, {T1_, T2_}, {exi_, refi_}, B1_, f_:0.] := Block
 	
 	(*if use off ressonance then use complex matrix*)
 	w = -tau/1000. 2. Pi f;
-	{funRot,funMove}=If[w==0.,{RotMatrixT, MoveStates}, {RotMatrixTI, MoveStatesI}];
+	{funRot, funMove} = If[w==0., {RotMatrixT, MoveStates}, {RotMatrixTI, MoveStatesI}];
 	
 	(*Selection matrix to move all traverse states up one coherence Level*)
 	Smat = MixMatrix[states];
@@ -497,8 +497,6 @@ MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, vec, off1, off2},
     , {o, 3, len - 3, 3}];
    Smat
    ]
-   
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -512,7 +510,7 @@ RotMatrixTC = Compile[{{alpha, _Real, 0}}, Chop[{
      {Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
      {Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
      {-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
-     }], RuntimeOptions -> "Speed"];
+}], RuntimeOptions -> "Speed"];
 
 RotMatrixTI[alpha_, phi_: 90] := RotMatrixTCI[alpha, phi];
 
@@ -521,7 +519,7 @@ RotMatrixTCI = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
      {Cos[alpha/2]^2, Exp [2 phi I] Sin[alpha/2]^2, -I Exp [phi I] Sin[alpha]},
      {Exp [-2 phi I] Sin[alpha/2]^2, Cos[alpha/2]^2, I Exp [-phi I] Sin[alpha]},
      {-0.5 I Exp [-phi I] Sin[alpha], 0.5 I Exp [phi I] Sin[alpha], Cos[alpha]}
-     }], RuntimeOptions -> "Speed"];
+}], RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
