@@ -32,6 +32,9 @@ FileSelect::usage =
 "FileSelect[action] creates a systemdialog wicht returs file/foldername action can be \"FileOpen\", \"FileSave\" or \"Directory\".
 FileSelect[action, {type}] same but allows the definition of filetypes for \"FileOpen\" and \"FileSave\" e.g. \"jpg\" or \"pdf\"."
 
+CheckExtension::usage = 
+"CheckExtension[filename, extension] checks if file has correct extention. Removes .gz or add ext if not present."
+
 SaveImage::usage = 
 "SaveImage[image] exports graph to image, ImageSize, FileType and ImageResolution can be given as options.
 SaveImage[image, \"filename\"] exports graph to image with \"filname\", ImageSize, FileType and ImageResolution can be given as options."
@@ -328,6 +331,22 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
   		input
   		]
   	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CheckExtension*)
+
+
+SyntaxInformation[CheckExtension] = {"ArgumentsPattern" -> {_, _}};
+
+CheckExtension[file_?StringQ, exti_?StringQ] := Block[{ext, extp},
+	{ext, extp} = If[StringTake[exti, 1] === ".", {StringDrop[exti, 1], exti}, {exti, "." <> exti}];
+	Switch[FileExtension[file],
+		"", file <> extp,
+		"gz", CheckExtension[StringDrop[file, -3], ext],
+		ext, file
+	]
 ]
 
 
