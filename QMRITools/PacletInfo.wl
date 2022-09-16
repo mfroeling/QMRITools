@@ -15,8 +15,10 @@ PacletObject[<|
             {"Kernel", "Root" -> "Kernel", "Context" -> "QMRITools`"}, 
             {"Documentation", "Language" -> "English", "MainPage" -> "Guides/QMRITools"},
             
-            {"Resource", "Root" -> "Resources", "Resources" -> {{"Logo", "icon.png"}}},
-            {"Resource", "Root" -> "Resources", "Resources" -> {{"Functions", "All-Functions.nb"}}},
+            {"Asset", "Root" -> "Resources", "Assets" -> {{"Logo", "icon.png"}}},
+            {"Asset", "Root" -> "Resources", "Assets" -> {{"Functions", "All-Functions.nb"}}},
+            {"Asset", "Root" -> "Resources", "Assets" -> {{"Demo", "Demonstrations.nb"}}},
+            {"Asset", "Root" -> "Resources", "Assets" -> {{"DemoData", "DemoData.zip"}}},
             
             {"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},
             {"Asset", "Root" -> "Applications/MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},

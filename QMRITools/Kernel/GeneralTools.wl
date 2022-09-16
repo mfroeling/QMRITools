@@ -28,6 +28,9 @@ GetAssetLocation::usage =
 "GetAssetLocation[name] Gets the location of the executable assets of the package for the highest installed version.
 Current assests are \"Elastix\", \"Transformix\" and \"DcmToNii\"." 
 
+ExtractDemoData::usage = 
+"ExtractDemoData[] Extracts the demo data archilve."
+
 FileSelect::usage = 
 "FileSelect[action] creates a systemdialog wicht returs file/foldername action can be \"FileOpen\", \"FileSave\" or \"Directory\".
 FileSelect[action, {type}] same but allows the definition of filetypes for \"FileOpen\" and \"FileSave\" e.g. \"jpg\" or \"pdf\"."
@@ -297,13 +300,25 @@ Begin["`Private`"]
 
 
 (* ::Subsection:: *)
-(*General Functions*)
+(*Asset Functions*)
 
 
 GetAssetLocation[name_] := Block[{file},
-	file=Last[SortBy[PacletFind["QMRITools"], #["Version"]]]["AssetLocation", name];
+	file = Last[SortBy[PacletFind["QMRITools"], #["Version"]]]["AssetLocation", name];
 	If[FileExistsQ[file],file,$Failed]
 ]
+
+
+ExtractDemoData[] := Block[{file},
+	file = GetAssetLocation["DemoData"];
+	If[! DirectoryQ[FileNameJoin[{DirectoryName[file], "DemoData"}]],
+		If[FileExistsQ[file], Quiet@ExtractArchive[file, DirectoryName[file]],
+		Print["DemoData archive does not exist"]]
+	]
+]
+
+(* ::Subsection:: *)
+(*General Functions*)
 
 
 (* ::Subsubsection::Closed:: *)
