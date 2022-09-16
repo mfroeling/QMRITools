@@ -1074,7 +1074,10 @@ ExportNii[dato_, voxi_, opts:OptionsPattern[]] := ExportNii[dato, voxi, "" ,opts
 
 ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	
-	fileo = If[fil == "", FileSelect["FileSave",{"*.nii"},"nifti",WindowTitle->"Select the destination file"], fil];
+	fileo = If[fil == "", 
+		FileSelect["FileSave",{"*.nii"},"nifti",WindowTitle->"Select the destination file"], 
+		CheckExtension[fil,".nii"]
+	];
 	If[fileo == Null || fileo === $Canceled || fileo === $Failed, Return[$Failed,Module]];
 	
 	(*if numbertyp is integer, Round data*)
