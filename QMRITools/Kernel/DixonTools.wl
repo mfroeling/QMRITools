@@ -104,6 +104,8 @@ DixonBipolar::usage =
 DixonClipFraction::usage =
 "DixonClipFraction is an option for DixonReconstruct. If set true the fat fraction is clipped between 0 and 1."
 
+DixonFilterType::usage = 
+"DixonFilterType is an option for DixonReconstruct. FilterType can me \"Median\" or \"Laplacian\"."
 
 MonitorUnwrap::usage = 
 "MonitorUnwrap is an option for Unwrap. Monitor the unwrapping progress."
@@ -114,10 +116,6 @@ UnwrapDimension::usage =
 
 UnwrapThresh::usage = 
 "UnwrapThresh is an option for Unwrap. Is a value between 0.6 and 0.9, and defines when to unwrap, the higher the value the less unwrapping will be done."
-
-
-
-MakeGroups
 
 
 (* ::Subsection::Closed:: *)
@@ -193,6 +191,7 @@ Options[DixonReconstruct] = {
 	DixonFilterInput -> True, 
 	DixonFilterOutput -> True,
 	DixonFilterSize -> 1,
+	DixonFilterType -> "Median",
 	DixonBipolar -> False,
 	DixonClipFraction -> False
 	};
@@ -207,7 +206,7 @@ DixonReconstruct[real_, imag_, echo_, b0i_, opts : OptionsPattern[]] := DixonRec
 DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 	necho, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, mat, iop, Amat, Amati, ioAmat,
 	complex, mask, range, zero, b0, r2, phi, phi0, result, cWat, cFat, phiEst, phi0Est, res, itt,
-	fraction, signal, ioPhase, fit, t2
+	fraction, signal, ioPhase, fit, t2, func
 	},
 	
 	(*algorithems are base on: *)	
@@ -233,16 +232,18 @@ DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 	(*define filter*)
 	filti = OptionValue[DixonFilterInput];
 	filto = OptionValue[DixonFilterOutput];
-	filtFunc = MedFilter[#, Round@OptionValue[DixonFilterSize]]&;
+	func = Switch[OptionValue[DixonFilterType],"Median", MedFilter, "Laplacian",LapFilter];
+	filtFunc = func[#, OptionValue[DixonFilterSize]]&;
+
+	(*get alternating readout signs for bipolar acquisition*)
+	necho = Range@Length[echo];
+	mat = If[OptionValue[DixonBipolar], Transpose[{echo, -(-1)^necho}], Transpose[{echo, (1)^necho}]];
+
 
 	(*define the water fat matrixes*)
 	Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
 	Amati = Inverse[ConjugateTranspose[Amat] . Amat] . ConjugateTranspose[Amat];
 	ioAmat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ iop;
-
-	(*get alternating readout signs for bipolar acquisition*)
-	necho = Range@Length[echo];
-	mat = If[OptionValue[DixonBipolar], Transpose[{echo, -(-1)^necho}], Transpose[{echo, (1)^necho}]];
 			
 	(*create complex data for fit*)
 	PrintTemporary["Prepairing data and field maps"];
@@ -320,7 +321,8 @@ InOutPhase = Compile[{{cWat, _Complex, 0}, {cFat, _Complex, 0}, {ioAmat, _Comple
 DixonFitiC = Compile[{
 	{ydat, _Complex, 1}, {phi, _Complex, 1}, {mask, _Real, 0},
 	{mat,_Real,2}, {Amat, _Complex, 2}, {Amati, _Complex, 2}, 
-	{eta, _Real, 0}, {maxItt, _Integer, 0}}, 
+	{eta, _Real, 0}, {maxItt, _Integer, 0}
+	}, 
 	Block[{i, continue, phiEst, phi0Est, dPhi, dPhi0, res, rho,
 		pMat, sigd, sol, B, Bi},
 		If[mask > 0,

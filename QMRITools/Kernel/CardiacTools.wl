@@ -68,28 +68,28 @@ GetMaskSegmentPoints::usage =
 
 MaskToLines::usage = 
 "MaskToLines[mask, vox]
-MaskToLines[mask, wall, cent]."
+MaskToLines[mask, wall, cent]"
 
 SegmentsPerSlice::usage = 
-"SegmentsPerSlice[points, segmi]."
+"SegmentsPerSlice[points, segmi]"
 
 GetSegmentSlices::usage = 
-"GetSegmentSlices[mask_?ArrayQ]"
+"GetSegmentSlices[mask]"
 
 LinesToSegmentIndex::usage = 
-"LinesToSegmentIndex[lines, pts, seg, OptionsPattern]."
+"LinesToSegmentIndex[lines, pts, seg]"
 
 GetSegmentLines::usage = 
-"GetSegmentLines[lines, lineIndex, seg]."
+"GetSegmentLines[lines, lineIndex, seg]"
 
 SegmentLinesToMask::usage = 
-"SegmentLinesToMask[smsk, segLines]."
+"SegmentLinesToMask[smsk, segLines]"
 
 MakeLineImage::usage = 
-"MakeLineImage[back, segLines, pts]."
+"MakeLineImage[back, segLines, pts]"
 
 MakeMaskImage::usage = 
-"MakeMaskImage[back, mask]."
+"MakeMaskImage[back, mask]"
 
 
 CardiacSegment::usage = 

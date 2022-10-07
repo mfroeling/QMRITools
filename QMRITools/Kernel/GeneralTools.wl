@@ -187,8 +187,9 @@ If last is All, the remainders is just one partition."
 
 
 MakeIntFunction::usage = 
-"MakeIntFunction[data,int]
-MakeIntFunction[data, vox ,int]"
+"MakeIntFunction[data] makes an interpolation function of the data using voxel size {1, 1, 1} and interpolation order 1
+MakeIntFunction[data, int] makes an interpolation function of the data using voxel size {1, 1, 1} and interpolation order int.
+MakeIntFunction[data, vox ,int] makes an interpolation function of the data using voxel size vox and interpolation order int."
 
 
 DecomposeScaleMatrix::usage = 
@@ -273,15 +274,6 @@ SplineRegularization::usage =
 RescaleData::dim = "Given dimensions `1` not the same depth as that of the given data `2`."
 
 RescaleData::data = "Error: Inpunt must be 2D with {xdim,ydim} input or 3D dataset with {xdim,ydim} or {zdim, xdim, ydim} input."
-
-
-Data2DToVector::dim = "Data should be 2D or 3D, data is `1`D."
-
-Data2DToVector::mask = "Data and mask should have the same dimensions: data `1` and mask `2`."
-
-Data3DToVector::dim = "Data should be 3D or 4D, data is `1`D."
-
-Data3DToVector::mask = "Data and mask should have the same dimensions: data `1` and mask `2`."
 
 
 DataToVector::dim = "`1` should be 2D, 3D or 4D, data is `2`D.";
@@ -592,7 +584,7 @@ DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm,
 	If[! (depthd == 2 || depthd == 3 || depthd == 4), Return@Message[DataToVector::dim, "Data", depthd]];
 	
 	data = N[datai];	
-	mask = If[maski === 1, Unitize[data], maski];
+	mask = Round[If[maski === 1, Unitize[data], maski]];
 	
 	depthm = ArrayDepth[mask];
 	depth = depthd - depthm;
@@ -968,7 +960,9 @@ StichData[datal_, datar_] := RotateDimensionsLeft[Join[RotateDimensionsRight[dat
 (*MakeIntFunction*)
 
 
-MakeIntFunction[dat_, int_?IntegerQ]:=MakeIntFunction[dat, {1,1,1}, int]
+MakeIntFunction[dat_] := MakeIntFunction[dat, {1,1,1}, 1]
+
+MakeIntFunction[dat_, int_?IntegerQ] := MakeIntFunction[dat, {1,1,1}, int]
 
 MakeIntFunction[dat_, vox_, int_?IntegerQ] := Block[{def, range},
 	range = Thread[{vox, vox Dimensions[dat][[1;;3]]}] - (0.5 vox);
@@ -1362,7 +1356,7 @@ LapFilter[data_, fil_:0.5] := Clip[Chop[ImageData[TotalVariationFilter[
 
 MedFilter[data_, fil_:1] := Clip[Chop[ImageData[MedianFilter[
 	If[ArrayDepth[data]===3, Image3D[N@data, "Real"], Image[N@data, "Real"]],
-	 fil]]], MinMax[data]]
+	 Round[fil]]]], MinMax[data]]
 
 
 (* ::Subsubsection::Closed:: *)

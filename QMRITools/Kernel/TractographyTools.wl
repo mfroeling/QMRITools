@@ -48,7 +48,7 @@ Ouput = {permutations, flips, plot}
 FindTensorPermutation[] is based on DOI: 10.1016/j.media.2014.05.012."
 
 
-TractDensityMap::usage = "TractDensityMap[tracts_, vox_, dim_]"
+TractDensityMap::usage = "TractDensityMap[tracts, vox, dim]"
 
 SeedDensityMap::usage = ""
 
@@ -67,7 +67,7 @@ SelectTracts::usage = ""
 
 CombineROIs::usage = ""
 
-FilterTracts::usage = "FilterTracts[tracts_, vox_, select_]"
+FilterTracts::usage = "FilterTracts[tracts, vox, select]"
 
 
 PlotTracts::usage = ""
@@ -539,7 +539,7 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{range, vox, size, 
 	tube = MapThread[Scale[Tube[#1, 0.75, VertexColors -> #2], 1./vox, {0, 0, 0}] &, {select, col}];
 	line = MapThread[Scale[Line[#1, VertexColors -> #2], 1/vox, {0, 0, 0}] &, {select, col}];
 	
-	plot = Graphics3D[{CapForm["Square"], JoinForm["Miter"], line}, opts]
+	plot = Graphics3D[{CapForm["Square"], JoinForm["Miter"], tube}, opts]
 ]
 
 

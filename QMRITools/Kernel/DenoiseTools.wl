@@ -261,47 +261,46 @@ Module[{},
 (*DeNoiseApp*)
 
 
-DeNoiseApp[data_, sig_, filt_, kern_] := 
- Module[{secmod, quadmod},
-  secmod = ListConvolve[kern, data^2, Transpose[{filt + 1, -(filt + 1)}], 0.];
-  quadmod = ListConvolve[kern, data^4, Transpose[{filt + 1, -(filt + 1)}], 0.];
-  If[NumberQ[sig],
-  	NoiseAppCN[secmod, quadmod, data, sig],
-  	NoiseAppC[secmod, quadmod, data, sig]
-  ]
-  ]
+DeNoiseApp[data_, sig_, filt_, kern_] := Module[{secmod, quadmod},
+	secmod = ListConvolve[kern, data^2, Transpose[{filt + 1, -(filt + 1)}], 0.];
+	quadmod = ListConvolve[kern, data^4, Transpose[{filt + 1, -(filt + 1)}], 0.];
+	If[NumberQ[sig],
+		NoiseAppCN[secmod, quadmod, data, sig],
+		NoiseAppC[secmod, quadmod, data, sig]
+	]
+]
 
 NoiseAppCN = Compile[{{secmod, _Real, 2}, {quadmod, _Real, 2}, {data, _Real, 2}, {sig, _Real, 0}},
-   Block[{top, div, K, deb},
-    top = (4 sig^2 (secmod - sig^2));
-    div = (quadmod - secmod^2) + 10^-10;
-    K = (1 - top/div);
-    deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
-    ]];
+	Block[{top, div, K, deb},
+		top = (4 sig^2 (secmod - sig^2));
+		div = (quadmod - secmod^2) + 10^-10;
+		K = (1 - top/div);
+		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
+	]];
 
 NoiseAppC = Compile[{{secmod, _Real, 2}, {quadmod, _Real, 2}, {data, _Real, 2}, {sig, _Real, 2}},
-   Block[{top, div, K, deb},
-    top = (4 sig^2 (secmod - sig^2));
-    div = (quadmod - secmod^2) + 10^-10;
-    K = (1 - top/div);
-    deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
-    ]];
+	Block[{top, div, K, deb},
+		top = (4 sig^2 (secmod - sig^2));
+		div = (quadmod - secmod^2) + 10^-10;
+		K = (1 - top/div);
+		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
+	]];
 
 NoiseAppCN = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, {sig, _Real, 0}},
-   Block[{top, div, K, deb},
-    top = (4 sig^2 (secmod - sig^2));
-    div = (quadmod - secmod^2) + 10^-10;
-    K = (1 - top/div);
-    deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
-    ]];
+	Block[{top, div, K, deb},
+		top = (4 sig^2 (secmod - sig^2));
+		div = (quadmod - secmod^2) + 10^-10;
+		K = (1 - top/div);
+		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
+	]];
     
 NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, {sig, _Real, 3}},
-   Block[{top, div, K, deb},
-    top = (4 sig^2 (secmod - sig^2));
-    div = (quadmod - secmod^2) + 10^-10;
-    K = (1 - top/div);
-    deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
-    ]];
+	Block[{top, div, K, deb},
+		top = (4 sig^2 (secmod - sig^2));
+		div = (quadmod - secmod^2) + 10^-10;
+		K = (1 - top/div);
+		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
+	]];
 
 
 
@@ -480,7 +479,7 @@ NNDeNoise[data_, opts : OptionsPattern[]] := NNDeNoise[data, 1, opts];
 
 NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{back, dat, coor, n, ran, dati, train, i},
 	(*make selection mask and vectorize data*)
-	back = mask Mask[NormalizeMeanData[data], OptionValue[NNThreshhold]];
+	back = Round[mask Mask[NormalizeMeanData[data], OptionValue[NNThreshhold]]];
 	{dat, coor} = DataToVector[data, back];
 	dat = ToPackedArray@N@dat;
 	
@@ -493,11 +492,12 @@ NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{back, dat, coor, n, r
 	dat = Monitor[Table[
 		train = Thread[(dati = dat[[All, Complement[n, {i}]]]) -> dat[[All, i]]];
 		trained = Predict[train, ValidationSet -> RandomSample[train, Round[.1 Length[dat]]],
-			Method -> {"LinearRegression", "OptimizationMethod" -> "NormalEquation"},
-			PerformanceGoal -> {"DirectTraining", "Speed", "Memory"},
-			AnomalyDetector -> None, TrainingProgressReporting -> None, MissingValueSynthesis -> None];
-			trained[dati]
-		, {i, n}], ProgressIndicator[Dynamic[i], {0, Max[n]}]];
+			Method -> {"LinearRegression", "OptimizationMethod" -> "StochasticGradientDescent","L2Regularization"->0.01},
+			PerformanceGoal -> {"DirectTraining"},
+			AnomalyDetector -> None, TrainingProgressReporting -> None, MissingValueSynthesis -> None
+		];
+		trained[dati]
+	, {i, n}], ProgressIndicator[Dynamic[i], {0, Max[n]}]];
 	
 	ToPackedArray@N@Clip[Transpose[VectorToData[#, coor] & /@ dat], ran]
 ]

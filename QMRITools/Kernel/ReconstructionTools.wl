@@ -281,7 +281,7 @@ ReadListData[file_,print_]:=Block[{
 	
 	(*create squeezed k-space*)
 	Clear[line];
-	kspace = ReplacePart[ConstantArray[line, size[[locs]]], Thread[indData[[All, locs]] -> data]];(*longest part*)
+	kspace = ToPackedArray@ReplacePart[ConstantArray[line, size[[locs]]], Thread[indData[[All, locs]] -> data]];(*longest part*)
 	line = ConstantArray[0. + 0. I, nSamp];
 	size = Dimensions[kspace];
 	
@@ -294,7 +294,7 @@ ReadListData[file_,print_]:=Block[{
 	Clear[data, indData];
 	
 	(*output*)
-	{{kspace,noise},{Join[dataVals,dataValsN,head],types}}
+	{{ToPackedArray@kspace,noise},{Join[dataVals,dataValsN,head],types}}
 ]
 
 
@@ -354,7 +354,7 @@ SyntaxInformation[MeanAt]={"ArgumentsPattern"->{_,_}}
 MeanAt[list_,level_]:=Block[{tot,wgth},
 	tot = Total[list, {level}];
 	wgth= Total[Unitize[Abs[list]],{level}];
-	DevideNoZero[Re@tot, wgth] + I DevideNoZero[Im@tot, wgth]
+	ToPackedArray[DevideNoZero[Re@tot, wgth] + I DevideNoZero[Im@tot, wgth]]
 ]
 
 
@@ -365,7 +365,7 @@ MeanAt[list_,level_]:=Block[{tot,wgth},
 SyntaxInformation[TotalAt]={"ArgumentsPattern"->{_,_}}
 
 (*calculate mean at specific level*)
-TotalAt[list_,level_]:=Total[list,{level}]/;1<=Abs[level]<=ArrayDepth@list
+TotalAt[list_,level_]:=ToPackedArray@Total[list,{level}]/;1<=Abs[level]<=ArrayDepth@list
 
 
 (* ::Subsubsection::Closed:: *)
@@ -384,7 +384,7 @@ mis=If[!MemberQ[type,#],#,Nothing]&/@order;
 		sel = If[MemberQ[order, #], 1, 0] & /@ type;
 		typeOut = Pick[type, sel, 1];
 		sel = All sel + 1 - sel;
-		{Transpose[(kspace[[##]] & @@ sel), Flatten[(Position[order, #1] &) /@ typeOut]], order}		
+		{ToPackedArray[Transpose[(kspace[[##]] & @@ sel), Flatten[(Position[order, #1] &) /@ typeOut]]], order}		
 	]
 ]
 
@@ -458,51 +458,42 @@ InverseFourierShifted[spec_] := InverseFourierShift[InverseFourier[spec,FourierP
 
 SyntaxInformation[FourierKspace2D] = {"ArgumentsPattern" -> {_, _, _.}};
 
-FourierKspace2D[kspace_, head_, filt_:False] := Block[{ksize, dim, over, kfull, ksPad, shift, clip, ham},
+FourierKspace2D[kspace_, head_, filt_:False] := Block[{ksize, data, kspacef, dim, over, kfull, ksPad, shift, clip, ham},
 	(*the acquired k-space size*)
 	ksize = {"N_ky", "N_samp"} /. head;
-	(*get the final target data dimentions*)
+	(*get the final target data dimensions*)
 	dim = {"Y-resolution", "X-resolution"} /. head;
 	(*the amount of oversampling performed*)
 	over = {"ky_oversample_factor", "kx_oversample_factor"} /. head;
 	(*get the image padding and image shift*)
-	shift = Total[#] & /@ ({"Y_range", "X_range"} /. head);
+	shift = Round[Total[#] & /@ ({"Y_range", "X_range"} /. head)/2];
 	
-	(*to what size to pad the immages*)
+	(*to what size to pad the images*)
 	kfull = Round[dim over];
 	(*padding after zero filling and fourier*)
 	ksPad = Transpose[{Floor[#], Ceiling[#]} &[(kfull - ksize)/2]];
-	(*the amout of data that needs to be removed to come to correct dimensions*)
+	(*the amount of data that needs to be removed to come to correct dimensions*)
 	clip = Transpose[{Floor[#] + 1, -Ceiling[#] - 1} &[(kfull - dim)/2]];
 	
-	If[filt === True,
-		ham = MakeHammingFilter[Dimensions[kspace][[-2 ;;]]];
-		(*perform the fourie transform*)
-		FourierKspace2DIF[kspace, ham, ksPad, shift, clip],
-		(*perform the fourie transform*)
-		FourierKspace2DI[kspace, ksPad, shift, clip]
-	]
+	(*Reconstruct and Hammingfilter the data if needed*)
+	kspacef = If[filt === "Raw", Map[MakeHammingFilter[Dimensions[#]]#&, kspace, {-2}], kspace];
+	data = FourierKspace2DI[kspacef, ksPad, shift, clip];
+	ToPackedArray@If[filt === True, Map[HammingFilterData, data, {-2}], data]
 ]
 
 FourierKspace2DI = Compile[{{data, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {clip, _Integer, 2}},
 	Block[{dat},
+		(*pad the data to the full range*)
 		dat = ArrayPad[data, ksPad];
+		(*perform the 2D Fourier*)
 		dat = FourierShifted[dat];
-		dat = RotateRight[dat, Reverse[shift]];
+		dat = FourierShift[dat];
+		(*perform the correction for the k-space range*)
+		dat = RotateRight[dat, shift];
+		(*clip the data to the correct dimensions*)
 		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]]]]]
 	], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
-];
-
-FourierKspace2DIF = Compile[{{data, _Complex, 2}, {ham, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _Real, 1}, {clip, _Integer, 2}},
-	Block[{dat},
-		dat = ArrayPad[ham data, ksPad];
-		dat = FourierShifted[dat];
-		dat = RotateRight[dat, Reverse[shift]];
-		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]]]]]
-		], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
-];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -514,25 +505,23 @@ SyntaxInformation[FourierKspace3D] = {"ArgumentsPattern" -> {_, _, _.}};
 FourierKspace3D[kspace_, head_, filt_:False] := Block[{ksize, kspacef, dim, over, kfull, ksPad, shift, clip, data},
 	(*the acquired k-space size*)
 	ksize = {"N_kz", "N_ky", "N_samp"} /. head;
-	(*get the final target data dimentions*)
+	(*get the final target data dimensions*)
 	dim = {"Z-resolution", "Y-resolution", "X-resolution"} /. head;
 	(*the amount of oversampling performed*)
 	over = {"kz_oversample_factor", "ky_oversample_factor", "kx_oversample_factor"} /. head;
 	(*get the image padding and image shift*)
-	shift = Total[#] & /@ ({"Z_range", "Y_range", "X_range"} /. head);
+	shift = Round[Total[#] & /@ ({"Z_range", "Y_range", "X_range"} /. head)];
 	
-	(*to what size to pad the immages*)
+	(*to what size to pad the images*)
 	kfull = Round[dim over];
 	(*padding after zero filling and fourier*)
 	ksPad = Transpose[{Floor[#], Ceiling[#]} &[(kfull - ksize)/2]];
-	(*the amout of data that needs to be removed to come to correct dimensions*)
+	(*the amount of data that needs to be removed to come to correct dimensions*)
 	clip = Transpose[{Floor[#] + 1, -Ceiling[#] - 1} &[(kfull - dim)/2]];
 
 	(*Reconstruct and Hammingfilter the data if needed*)
 	kspacef = If[filt === "Raw", Map[MakeHammingFilter[Dimensions[#]]#&, kspace, {-3}], kspace];
-	
 	data = FourierKspace3DI[kspacef, ksPad, shift, clip];
-	
 	If[filt === True, Map[HammingFilterData, data, {-3}], data]
   ]
 
@@ -541,16 +530,15 @@ FourierKspace3DI = Compile[{{data, _Complex, 3}, {ksPad, _Integer, 2}, {shift, _
 		(*pad the data to the full range*)
 		dat = ArrayPad[data, ksPad];
 		(*perform the 3D Fourier*)
-		dat = FourierShifted[dat];
-		(*somhow the read direction needs to be shifted*)
-		dat = Map[FourierShift, dat, {-2}];
+		dat = ShiftedFourier[dat];
+		dat = FourierShift[dat];
 		(*perform the correction for the k-space range*)
 		dat = RotateRight[dat, shift];
 		(*clip the data to the correct dimensions*)
-		dat = dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]], clip[[3, 1]] ;; clip[[3, 2]]]];
-		dat
+		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]], clip[[3, 1]] ;; clip[[3, 2]]]]];
 	], 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
 
 (* ::Subsubsection::Closed:: *)
 (*FourierKspaceCSI*)
@@ -560,15 +548,15 @@ SyntaxInformation[FourierKspaceCSI] = {"ArgumentsPattern" -> {_, _}}
 
 FourierKspaceCSI[kspace_,head_]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
 	(*get the oversampling padding*)
-	ksPad=Round[({"Z-resolution","Y-resolution","X-resolution"}{"kz_oversample_factor","ky_oversample_factor","kx_oversample_factor"}-{"N_kz","N_ky","N_kx"})/2/.head];
+	ksPad = Round[({"Z-resolution","Y-resolution","X-resolution"}{"kz_oversample_factor","ky_oversample_factor","kx_oversample_factor"}-{"N_kz","N_ky","N_kx"})/2/.head];
 	(*get the final data dimentions*)
-	dim={"Z-resolution","Y-resolution","X-resolution"}/.head;
+	dim = {"Z-resolution","Y-resolution","X-resolution"}/.head;
 	(*pad the kaspaces with zeros*)
-	kspaceP=ArrayPad[#,Transpose@{ksPad,ksPad},0.+0.I]&/@kspace;
+	kspaceP = ArrayPad[#,Transpose@{ksPad,ksPad},0.+0.I]&/@kspace;
 	(*get the image padding and image shift*)
-	shift=Total[#]&/@({"Z_range","Y_range","X_range"}/.head);
+	shift = Total[#]&/@({"Z_range","Y_range","X_range"}/.head);
 	(*perform the fourie transform*)
-	imData=RotateRight[FourierShift[FourierShifted[#]],shift]&/@kspaceP
+	imData = RotateRight[FourierShift[FourierShifted[#]],shift]&/@kspaceP
 ]
 
 
