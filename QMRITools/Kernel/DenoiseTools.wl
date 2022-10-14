@@ -317,7 +317,8 @@ Options[PCADeNoise] = {
 	PCAOutput -> False,
 	PCATollerance -> 0, 
 	PCAWeighting -> True, 
-	PCAClipping -> True
+	PCAClipping -> True,
+	Method -> "Similarity"
 };
 
 SyntaxInformation[PCADeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
@@ -328,7 +329,7 @@ PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., 
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		wht, ker, tol, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, m, n, off, datao, weights, sigmat, start,
-		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, weight
+		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, weight, pos, leng, nearPos,p
 	},
 	
 	wht = OptionValue[PCAWeighting];
@@ -340,71 +341,138 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	
 	
 	(*make everything numerical to speed up*)
-	data = Transpose[ToPackedArray[N@datai]];
+	data = ToPackedArray[N@datai];
 	{min, max} = 1.1 MinMax[Abs[data]];
-	maskd = Unitize@Total@data;
-	data = RotateDimensionsLeft[data];
-	
-	mask = ToPackedArray[N@maski];
+	maskd = Unitize@Total@Transpose[data];
+	mask = ToPackedArray[N@(maski maskd)];
 	sigm = ToPackedArray[N@sigmai];
-	
+		
 	(*get data dimensions*)
-	dim = {zdim, ydim, xdim, ddim} = Dimensions[data];
+	dim = {zdim, ddim, ydim, xdim} = Dimensions[data];
 	
-	(*define runtime parameters*)
-	{m, n} = MinMax[{ddim, ker^3}];
-	off = Round[(ker - 1)/2];
-	
-	(*ouput data*)
-	datao = ConstantArray[0., dim];
-	weights = sigmat = datao[[All, All, All, 1]];
+	(*define sigma*)
 	sigm = If[NumberQ[sigm], ConstantArray[sigm, {zdim, ydim, xdim}], sigm];
 	
-	(*if mask is a number make it 1 for all voxels*)
-	mask = If[NumberQ[mask], maskd (weights + 1), maskd mask];
-	(*parameters for monitor*)
-	start = off + 1;
-	totalItt = Total[Flatten[mask[[start ;; zdim - off, start ;; ydim - off, start ;; xdim - off]]]];
-	
-	j = 0;
-	Monitor[output = Table[
-		(*Check if masked voxel*)
-		If[mask[[z, y, x]] === 0.,
-			{0., 0., 0.}
+	Switch[OptionValue[Method],
+		(*--------------use similar signals--------------*)
+		"Similarity",
+		
+		(*vectorize data*)
+		{data, pos} = DataToVector[data, mask];
+		sigm = First@DataToVector[sigm, mask];
+		
+		(*define runtime parameters*)
+		m = Length[data[[1]]];
+		n = ker m;
+		
+		(*parameters for monitor*)
+		leng = Length[data];
+		
+		(*ouput data*)
+		datao = 0. data;
+		weights = sigmat = datao[[All, 1]];
+				
+		(*parameters for monitor*)
+		j = 0;
+		totalItt = leng;
+		
+		PrintTemporary["Preparing data similarity"];
+		(*get positions of similar signals*)
+		nearPos = Nearest[data -> Range[leng], data, n, DistanceFunction -> EuclideanDistance];
+		
+		(*perform denoising*)
+		Monitor[
+
+			(*loop over parameters*)
+			output = Map[(
+				j++;
+				p = nearPos[[#]];
+				
+				(*perform the fit and reconstruct the noise free data*)
+				{sigo, Nes, datn} = PCADeNoiseFiti[data[[p]], {m, n}, sigm[[#]], tol];
+				
+				(*get the weightes*)
+				weight = If[wht, 1./(m - Nes), 1.];
+				
+				(*sum data and sigma and weight for numer of components*)
+				datao[[p]] += weight datn;
+				sigmat[[p]] += weight sigo;
+				weights[[p]] += weight;
+				
+				(*output sig, Nest and itterations*)
+				{sigo, Nes}
+			) &, Range[leng]];
 			,
-			j++;
-			(*define initial sigma and get pixel range and data*)
-			sigi = sigm[[z, y, x]];
-			{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
-			fitdata = Flatten[data[[zm ;; zp, ym ;; yp, xm ;; xp]], 2];
-			
-			(*perform the fit and reconstruct the noise free data*)
-			{sigo, Nes, datn} = PCADeNoiseFiti[fitdata, {m, n}, sigi, tol];
-			
-			(*reshape the vector into kernel box and get the weightes*)
-			datn = Fold[Partition, datn, {ker, ker}];
-			weight = If[wht, 1./(m - Nes + 1), 1.];
-			
-			(*sum data and sigma and weight for numer of components*)
-			datao[[zm ;; zp, ym ;; yp, xm ;; xp, All]] += (weight datn);
-			sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight sigo;
-			weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight;
-			
-			(*output sig, Nest and itterations*)
-			{sigo, Nes}
-		], {z, start, zdim - off}, {y, start, ydim - off}, {x, start, xdim - off}];
+			(*monitor*)
+			ProgressIndicator[j, {0, totalItt}]
+		];
+		(*make everything in arrays*)
+		datao = VectorToData[DevideNoZero[datao, weights], pos];
+		sigmat = VectorToData[DevideNoZero[sigmat, weights], pos];
+		output = Transpose[VectorToData[output, pos]];
+						
 		,
-		(*monitor*)
-		ProgressIndicator[j, {0, totalItt}]
+		(*--------------use patch---------------*)
+		_,
+		
+		(*prepare data*)
+		data = RotateDimensionsLeft[Transpose[data]];
+			
+		(*define runtime parameters*)
+		{m, n} = MinMax[{ddim, ker^3}];
+		off = Round[(ker - 1)/2];
+		
+		(*ouput data*)
+		datao = 0. data;
+		weights = sigmat = datao[[All, All, All, 1]];
+			
+		(*parameters for monitor*)
+		j = 0;
+		start = off + 1;
+		totalItt = Total[Flatten[mask[[start ;; zdim - off, start ;; ydim - off, start ;; xdim - off]]]];
+		
+		
+		(*perform denoising*)
+		Monitor[output = Table[
+			(*Check if masked voxel*)
+			If[mask[[z, y, x]] === 0.,
+				{0., 0.}
+				,
+				j++;
+				(*define initial sigma and get pixel range and data*)
+				sigi = sigm[[z, y, x]];
+				{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
+				fitdata = Flatten[data[[zm ;; zp, ym ;; yp, xm ;; xp]], 2];
+				
+				(*perform the fit and reconstruct the noise free data*)
+				{sigo, Nes, datn} = PCADeNoiseFiti[fitdata, {m, n}, sigi, tol];
+				
+				(*reshape the vector into kernel box and get the weightes*)
+				datn = Fold[Partition, datn, {ker, ker}];
+				weight = If[wht, 1./(m - Nes), 1.];
+				
+				(*sum data and sigma and weight for numer of components*)
+				datao[[zm ;; zp, ym ;; yp, xm ;; xp, All]] += (weight datn);
+				sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight sigo;
+				weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight;
+				
+				(*output sig, Nest and itterations*)
+				{sigo, Nes}
+			], {z, start, zdim - off}, {y, start, ydim - off}, {x, start, xdim - off}];
+			,
+			(*monitor*)
+			ProgressIndicator[j, {0, totalItt}]
+		];
+		(*make everything in arrays*)
+		output = ArrayPad[#, off] & /@ RotateDimensionsRight[output];
+		
+		(*correct output data for weightings*)
+		datao = Transpose@RotateDimensionsRight[Re@DevideNoZero[datao, weights]];
+		sigmat = DevideNoZero[sigmat, weights];
 	];
 	
-	(*correct output data for weightings*)
-	datao = Transpose@RotateDimensionsRight[Re@DevideNoZero[datao, weights]];
-	If[OptionValue[PCAClipping], datao = Clip[datao, {min, max}]];
-	sigmat = DevideNoZero[sigmat, weights];
-	output = ArrayPad[#, off] & /@ RotateDimensionsRight[output];
-	
 	(*define output*)
+	If[OptionValue[PCAClipping], datao = Clip[datao, {min, max}]];
 	If[OptionValue[PCAOutput],
 		(*fitted dta,average sigma,{sigma fit,number components, number of fitted voxesl,number of max fits}*)
 		{datao, sigmat, output},
@@ -441,10 +509,10 @@ PCADeNoiseFiti[data_, {m_, n_}, sigi_?NumberQ, toli_] := Block[{trans, xmat, xma
 	(*if sigma is given perform with fixed sigma,else fit both*)
 	{pi, sig} = GridSearch[Re[val], m, n, sigi];
 	(*constartin pi plus tol*)
-	tol = Round[Clip[pi + 1 - toli, {1, m}]];
+	tol = Round[Clip[pi - toli, {1, m}]];
 	(*give output,simga,number of noise comp,and denoised matrix*)
 	out = Transpose[mat[[tol ;;]]] . mat[[tol ;;]] . xmat;
-	{sig, tol - 1, If[trans, Transpose@out, out]}
+	{sig, tol, If[trans, Transpose@out, out]}
 ]
 
 
