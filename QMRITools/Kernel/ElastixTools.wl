@@ -886,8 +886,13 @@ type_,OptionsPattern[]]:=Module[{
 	derivativeScaleB=OptionValue[BsplineDirections];
 	derivativeScaleA=OptionValue[AffineDirections];
 	
-	{openCL,gpu}=OptionValue[UseGPU];
-	gpu=If[gpu===Automatic,0,gpu];
+	openCL = OptionValue[UseGPU];
+	If[ListQ[openCL],
+		{openCL, gpu} = openCL;
+		gpu = If[gpu===Automatic, 0, gpu];
+		,
+		gpu = 0;
+	];
 	pca=OptionValue[PCAComponents];
 	
 	(*Print[{derivativeScaleA,derivativeScaleB}];*)
