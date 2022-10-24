@@ -23,7 +23,7 @@ BeginPackage["QMRITools`TractographyTools`", Join[{"Developer`"}, Complement[QMR
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -70,13 +70,18 @@ CombineROIs::usage = ""
 FilterTracts::usage = "FilterTracts[tracts, vox, select]"
 
 
+FiberLength::usage = ""
+
+GetTractValues::usage = "GetTractValues[tracts_,val_,vox_,int_:1]"
+
+
 PlotTracts::usage = ""
 
 MakeColor::usage = ""
 
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -109,6 +114,8 @@ MaxSeedPoints::usage =
 
 
 MaxTracts::usage = ""
+
+TractColoring::usage = ""
 
 
 (* ::Subsection:: *)
@@ -149,7 +156,7 @@ FiberTractography[tensor_, voxi_, opts : OptionsPattern[]] := FiberTractography[
 
 FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FiberTractography[tensor, voxi, {{par, {min, max}}}, opts]
 
-FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[]] := Block[{
+FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, trFunc,
 		tens, tensMask, inpTr, treshs, stop, coors, intE, intS,
 		ones, n, seedN, seeds, t1, tracts, iii, drop, smax, len ,sel		 
@@ -173,7 +180,8 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
 	smax = Ceiling[(lmax/step)];
  	 	
 	(*prepare tensor and stop data*)
-	tens = FlipTensorOrientation[tensor, per /. Thread[{"x","y","z"} -> {"z","y","x"}], Reverse[flip]];
+	(*tens = FlipTensorOrientation[tensor, per /. Thread[{"x","y","z"} -> {"z","y","x"}], Reverse[flip]];*)
+	tens = FlipTensorOrientation[tensor, per, flip];
 	stop = Unitize[Total@Abs@tens] Mask[inp];
 			
 	(*make the trac and stop interpolation functions*)
@@ -194,7 +202,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, opts : OptionsPattern[
     seeds = seeds[[;;Min[{Length@seeds,maxSeed}]]];
     
     If[OptionValue[TracMonitor],
-		Print["number of voxels within stop mask: ", Total@Flatten@stop];
+		Print["number of voxels within stop mask: ", maxSeed];
 		Print["number of selected valid seedpoints: ", Length[seeds]];
 	];
 
@@ -487,14 +495,14 @@ CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not, test},
 TractDensityMap[tracts_, vox_, dim_] := Normal@SparseArray[Normal@Counts@ThreadedDiv[Flatten[tracts, 1], vox], dim];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SeedDensityMap*)
 
 
 SeedDensityMap[seeds_, vox_, dim_] := Normal@SparseArray[Normal@Counts@ThreadedDiv[seeds, vox], dim];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ThreadedDiv*)
 
 
@@ -504,14 +512,38 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsection:: *)
+(*Tract Evaluation*)
+
+
+(* ::Subsubsection:: *)
+(*FiberLength*)
+
+
+FiberLength[tracts_]:=FLengthC[tracts]
+
+FLengthC=Compile[{{trc,_Real,2}},Block[{diff,ll},
+	diff=Differences[trc];
+	ll=Norm/@diff;
+	Total[ll]
+],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
+
+
+(* ::Subsubsection:: *)
+(*GetTractValues*)
+
+
+GetTractValues[tracts_,val_,vox_,int_:1]:=MakeIntFunction[val,vox,int]@@@#&/@tracts;
+
+
+(* ::Subsection:: *)
 (*PlotTracts*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*PlotTracts*)
 
 
-Options[PlotTracts] = {MaxTracts -> 5000, ImageSize -> 800}
+Options[PlotTracts] = {MaxTracts -> 5000, ImageSize -> 800, Method->"line", TractColoring->"Direction"}
 
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
@@ -534,37 +566,55 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{range, vox, size, 
 		Axes -> True, LabelStyle -> Directive[{Bold, 16, White}]
 	}];
 	
-	col = MakeColor@select;
+	colOpt=OptionValue[TractColoring];
+	{met,set}=If[ListQ[colOpt],colOpt,{colOpt,Automatic}];
 	
-	tube = MapThread[Scale[Tube[#1, 0.75, VertexColors -> #2], 1./vox, {0, 0, 0}] &, {select, col}];
-	line = MapThread[Scale[Line[#1, VertexColors -> #2], 1/vox, {0, 0, 0}] &, {select, col}];
+	col = Switch[met,
+		"Length",
+		MakeLengthColor[select,set],
+		"Direction",
+		MakeColor[select]
+	];
 	
-	plot = Graphics3D[{CapForm["Square"], JoinForm["Miter"], tube}, opts]
+	plot=Switch[OptionValue[Method],
+		"tube",
+		MapThread[Scale[Tube[#1, 0.75, VertexColors -> #2], 1./vox, {0, 0, 0}] &, {select, col}],
+		_,
+		MapThread[Scale[Line[#1, VertexColors -> #2], 1/vox, {0, 0, 0}] &, {select, col}]
+	];
+	
+	Graphics3D[{CapForm["Square"], JoinForm["Miter"], plot}, opts]
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Make Color*)
 
 
-MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := 
- Block[{dirs},
-  dirs = Abs[Differences[tract]];
-  ToPackedArray[
-   Normalize[#] & /@ 
-    Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
-  ]
+MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
+	dirs = Abs[Differences[tract]];
+	ToPackedArray[Normalize[#] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
+]
+
 MakeColor[tracts : {_?ListQ ..}] := MakeColor /@ tracts
 
 MakeColor[tract_, fun_, ran_] := Block[{prange, colFunc, cval, fore},
-  prange = ran;
-  colFunc = ColorData["ThermometerColors"];
-  cval = fun @@ # & /@ tract;
-  fore = Unitize[cval];
-  (fore (colFunc /@ Rescale[cval, prange])) + Gray (1 - fore)
-  ]
-  
+	prange = ran;
+	colFunc = ColorData["ThermometerColors"];
+	cval = fun @@ # & /@ tract;
+	fore = Unitize[cval];
+	(fore (colFunc /@ Rescale[cval, prange])) + Gray (1 - fore)
+]
 
+
+MakeLengthColor[tracts_,set_]:=Block[{len,col},
+	len=FiberLength[tracts];
+	
+	sc = If[set===Automatic,Quantile[len,{.05,0.95}],set];
+	col=ColorData["RedBlueTones"]/@Rescale[len,sc];
+	
+	MapThread[ConstantArray[#2,Length@#1]&,{tracts,col}]
+];
 
 
 (* ::Subsection::Closed:: *)

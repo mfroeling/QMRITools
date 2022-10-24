@@ -298,13 +298,12 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (ErodeMovingMask \"false\")
 (ErodeFixedMask \"false\")
 
-
 (Registration \"MultiResolutionRegistration\")
 
 (ImageSampler \"RandomCoordinate\")
 (CheckNumberOfSamples \"true\")
 (NewSamplesEveryIteration \"true\")
-(MaximumNumberOfSamplingAttempts 10)
+(MaximumNumberOfSamplingAttempts 5)
 
 (HowToCombineTransforms \"Compose\")
 
@@ -312,7 +311,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (ASGDParameterEstimationMethod \"Original\")
 (AutomaticParameterEstimation \"true\")
 (AutomaticTransformInitialization \"true\")
-
+(AutomaticScalesEstimation \"true\")
 
 "<>If[openCL,
 (*check to uses openCL needs custom compile of elastix*)
@@ -332,7 +331,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 // ***************************************************************
 
 
-// ** setting specific for PCA or non PCA methods **
+// ** Metric settings for PCA or non PCA **
 // ***************************************************************
 "<>Which[(*if PCA uses stack transform*)
 	(*PCA based methods*)
@@ -341,15 +340,11 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (NumEigenValues "<>ToString[pca]<>")
 (SubtractMean \"true\")
 
-(AutomaticScalesEstimationStackTransform \"true\")
-
 (Interpolator \"ReducedDimensionBSplineInterpolator\")
 (ResampleInterpolator \"FinalReducedDimensionBSplineInterpolator\")",
 	True,
 	(*Non PCA based methods*)
 "(Metric \"AdvancedMattesMutualInformation\")
-
-(AutomaticScalesEstimation \"true\")
 
 (Interpolator \"BSplineInterpolator\")
 (ResampleInterpolator \"FinalBSplineInterpolator\")"
@@ -414,7 +409,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (MovingImageDerivativeScales "<>DerivativePar[{1.,1.,1.}, dtar-1, "0.0"]<>")",
 "PCAbspline",
 "(Transform \"BSplineStackTransform\")
-(FinalGridSpacingInPhysicalUnits "<>DerivativePar[Round[grid], dtar]<>")
+(FinalGridSpacingInPhysicalUnits "<>DerivativePar[Round[grid], dtar-1]<>")
 (MovingImageDerivativeScales "<>DerivativePar[N@Clip[derscB], dtar-1, "0.0"]<>")"
 ]<>"
 // ***************************************************************
@@ -517,16 +512,19 @@ StringPad[x_] :=
 (*ConcatenateTransformFiles*)
 
 
-ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile},
+ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile, f, p},
   (*import the transform files*)
   len = Range[Length[files]];
   filesi = Import[#, "Lines"] & /@ files;
   
   (*concatenate the transform files*)
   (
+  	f = filesi[[#]];
   	tfile = If[# == 1, "NoInitialTransform", outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 2] <> ".txt"];
-  	filesi[[#, 4]] = "(InitialTransformParametersFileName \"" <> tfile <> "\")";
-  	Export[outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 1] <> ".txt", filesi[[#]]];
+  	p = Position[Boole[StringContainsQ[#, "InitialTransformParametersFileName"] & /@ f], 1][[1, 1]];
+  	
+  	f[[p]] = "(InitialTransformParametersFileName \"" <> tfile <> "\")";
+  	Export[outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 1] <> ".txt", f];
   ) & /@ len;
   ]
 
@@ -638,7 +636,7 @@ DeleteTempDirectory->True,
 PrintTempDirectory->True,
 OutputTransformation->False,
 UseGPU->{False,Automatic},
-PCAComponents->3
+PCAComponents->1
 };
 
 SyntaxInformation[RegisterData]={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
@@ -729,54 +727,54 @@ If[cyclyc,
 
 (*register two data sets, vox definition and mask definition*)
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ..},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,maskm:{_?ListQ..}}
+{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,voxt},{moving,maskm,{1,1,1}},opts];
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ..}},
-{moving_?ArrayQ,maskm:{_?ListQ..},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
+{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,{1,1,1}},{moving,maskm,voxm},opts];
 
 (*register two data sets, vox definition and maskt definition*)
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ..},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
 moving_?ArrayQ
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,voxt},{moving,{1},{1,1,1}},opts];
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ..}},
+{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
 {moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,{1,1,1}},{moving,{1},voxm},opts];
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ..},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
 {moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,voxt},{moving,{1},voxm},opts];
 
 (*register two data sets, vox definition and maskm definition*)
 RegisterData[
 {target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,maskm:{_?ListQ..}}
+{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},voxt},{moving,maskm,{1,1,1}},opts];
 RegisterData[
 target_?ArrayQ,
-{moving_?ArrayQ,maskm:{_?ListQ..},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},{1,1,1}},{moving,maskm,voxm},opts];
 RegisterData[
 {target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,maskm:{_?ListQ..},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},voxt},{moving,maskm,voxm},opts];
 
 (*register two data sets, no vox definition and mask definition*)
 RegisterData[
-{target_?ArrayQ,maskt_:{_?ListQ..}},
+{target_?ArrayQ,maskt_:{_?ListQ ..} | {1}},
 moving_?ArrayQ
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,{1,1,1}},{moving,{1},{1,1,1}},opts];
 RegisterData[
 target_?ArrayQ,
-{moving_?ArrayQ,maskm:{_?ListQ..}}
+{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},{1,1,1}},{moving,maskm,{1,1,1}},opts];
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ..}},
-{moving_?ArrayQ,maskm:{_?ListQ..}}
+{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
+{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,{1,1,1}},{moving,maskm,{1,1,1}},opts];
 
 (*register two data sets, vox definition and no mask definition*)
@@ -1124,7 +1122,7 @@ SplitInput[input_]:=Module[{data,mask,vox},
 (*TransformData*)
 
 
-Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All",PrintTempDirectory->True}
+Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All", PrintTempDirectory->True}
 
 SyntaxInformation[TransformData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
@@ -1237,16 +1235,17 @@ SyntaxInformation[RegisterDataTransform] = {"ArgumentsPattern" -> {_, _, _, Opti
 RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,tdir},
 	reg = RegisterData[target, moving, DeleteTempDirectory -> False, opts];
 	
+	tdir = OptionValue[TempDirectory];
+	
 	mov = If[
 		ArrayDepth[moving2]==4 && ArrayDepth[reg]==3 ,
-		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ Transpose[moving2]] ,
+		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir] & /@ Transpose[moving2]] ,
 		If[ArrayDepth[moving2]==3 && ArrayDepth[reg]==2 ,
-			TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False] & /@ moving2,
-			TransformData[{moving2, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False]
+			TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir] & /@ moving2,
+			TransformData[{moving2, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir]
 			]
 		];
 	
-	tdir = OptionValue[TempDirectory];
 	tdir = (If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];		
@@ -1388,12 +1387,12 @@ RegisterDiffusionData[
   If[OptionValue[OutputTransformation], {dtidatar,w} = dtidatar];
     
   target = OptionValue[RegistrationTarget];
-  movingdata=If[ListQ[target] && AllTrue[target, IntegerQ] && Min[target] > 0 && Max[target] <= Length[dtidatar[[1]]],
+  movingdata = If[ListQ[target] && AllTrue[target, IntegerQ] && Min[target] > 0 && Max[target] <= Length[dtidatar[[1]]],
   	Median /@ dtidatar[[All, DeleteDuplicates[target]]],
   	Switch[target,
-  		"Median", Median /@ dtidatar,
-  		"First", dtidatar[[All, 1]],
-  		_, Mean /@ dtidatar
+  		"Median", Median@Transpose@dtidatar,
+  		"First", First@Transpose@dtidatar,
+  		_, Mean@Transpose@dtidatar
   		]];
   
   (*perform anat registration*)

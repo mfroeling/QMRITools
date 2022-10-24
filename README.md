@@ -96,9 +96,9 @@ Manual installation:
 
 Automatic installation:
 1.	Download the `QMRITools-2.3.3.paclet`.
-2.	Install the packlet using `PacletInstall`.
+2.	Install the paclet using `PacletInstall`.
 
-`PackletInstall["xxx\\QMRITools-2.3.3.paclet"]`  
+`PacletInstall["xxx\\QMRITools-2.3.3.paclet"]`  
 
 Some functions of QMRITools call on external executables and software.
 These executables need to be present in “QMRITools” and are included in
@@ -128,19 +128,12 @@ options for testing so if any issues arise please let me know.
 
 ## Demonstrations
 
-The release contains a zip file
-[DemoAndTest.zip](https://github.com/mfroeling/QMRITools/releases/download/2.0/DemoAndTest.zip)
-in which there is a file `demo.nb`, a folder `DemoData` and a folder
-`Testing`. To have a global overview of the functionality of the toolbox
-you can download this folder and run the `demo.nb`. By default the
-`demo.nb` looks for the folders `DemoData` and `Testing` in the same
+The release and repository contains [a demo data sets and a demonstration file](https://github.com/mfroeling/QMRITools/tree/master/QMRITools/Resources)
+in which there is a file `Demonstrations.nb` and a folder `DemoData`. 
+If the tool has been installed as a paclet the paclet folder conains the `Demonstrations.nb`
+ which will automatically unpack the demo data. By default the
+`Demonstrations.nb` looks for the folders `DemoData` in the same
 folder as the notebook.
-
-In the first section of the demo notebook the toolbox is loaded and two
-tests are performed. The first test is to check of all files that are
-needed to run the toolbox are present. The second test runs after the
-toolbox is loaded and checks if all the functions and their options that
-are defined are correct.
 
 ------------------------------------------------------------------------
 
@@ -156,10 +149,7 @@ up as a package in the Mathematica add-ons.
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/addons.PNG" alt="QMRITools package add on"  width="70%" />
 </p>
 
-All code and documentation is maintained and uploaded to github using
-[Workbench](https://www.wolfram.com/workbench/). An online version of
-the full documentation can be found
-[here](https://mfroeling.github.io/QMRITools/htmldoc/guide/QMRITools.html).
+An online version of the full documentation can be found [here](https://www.qmritools.com/assets/htmldoc/html/guide/qmritools).
 
 <p align="center">
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/Guide.PNG" alt="Guides QMRITools mathematica documentation"  width="70%" />
