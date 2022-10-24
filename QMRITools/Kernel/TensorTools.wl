@@ -1112,8 +1112,8 @@ TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]]:=
 		PrintTemporary["Cacluating Derivative"];
 		(*local derivative of the displacement in the slice direction*)
 		der=If[!ArrayQ[mask],
-		Deriv[pxshift,vox],
-		Deriv[pxshift,vox,mask]
+			Deriv[pxshift,vox],
+			Deriv[pxshift,vox,mask]
 		];
 		F=Fmat[der,shift[[2]]];
 		
@@ -1191,11 +1191,11 @@ Module[{Dx,Dy,Dz,dim,zero,ones,F},
 
 
 DRot[D_,F_]:=Module[{val,e1,e2,e3,n1,n2,n3,NN},
-{val,{e1,e2,e3}}=Eigensystem[D];
-n1=Normalize[F.e1];
-n2=Normalize[F.e2-(n1.(F.e2))*n1]//N;
-n3=Normalize[Cross[n1,n2]]//N;
-NN=Transpose[{n1,n2,n3}];
+	{val,{e1,e2,e3}}=Eigensystem[D];
+	n1=Normalize[F.e1];
+	n2=Normalize[F.e2-(n1.(F.e2))*n1]//N;
+	n3=Normalize[Cross[n1,n2]]//N;
+	NN=Transpose[{n1,n2,n3}];
 Chop[NN.(IdentityMatrix[3]val).Transpose[NN]]
 ];
 

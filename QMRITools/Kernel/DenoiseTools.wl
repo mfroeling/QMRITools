@@ -65,6 +65,8 @@ AnisoFilterTensor::usage =
 It uses the diffusion weighted data diffdata to find edges that are not visible in the tensor.
 Edge weights based on the diffusion data are averaged over all normalized diffusion direction.
 
+AnisoFilterTensor[tens] Same but does not use the data for edge identification.
+
 Output is the smoothed tensor.
 
 AnisoFilterTensor[] is based on DOI: 10.1109/ISBI.2006.1624856."
@@ -640,6 +642,8 @@ Options[AnisoFilterTensor] = {AnisoWeightType->2, AnisoKappa->5., AnisoStepTime-
 
 SyntaxInformation[AnisoFilterTensor] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
+AnisoFilterTensor[tensi_,opts:OptionsPattern[]]:=AnisoFilterTensor[tensi, 1, opts]
+
 AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
 	weights,kernels,mn,j,datf,kers,wts,lambda,finDiff,wtsI,
 	itt,time,kappa,type, data, tens
@@ -651,11 +655,14 @@ AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
 	type=Clip[Round@OptionValue[AnisoWeightType],{1,2}];
 	
 	(*calculate the edges based on the diffusion images*)
-	PrintTemporary["Determaning the weights based on the data."];
-	data=ToPackedArray@N@dat;
-	tens=ToPackedArray@N@tensi;
-	weights=WeightMapCalc[data, AnisoKappa->kappa, AnisoWeightType->type];
+	weights = If[dat===1,
+		1,
+		PrintTemporary["Determaning the weights based on the data."];
+		WeightMapCalc[ToPackedArray@N@dat, AnisoKappa->kappa, AnisoWeightType->type]
+	];
+	
 	(*get the fixed parameters*)
+	tens=ToPackedArray@N@tensi;
 	mn=Mean[tens[[1;;3]]];
 	{kers,wts}=KernelWeights[];
 	lambda=1/Length[kers];
@@ -669,9 +676,9 @@ AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
 		(*perform the diffusion smoothing itterations*)
 		Do[
 			j++;
-			finDiff=FinDiffCalc[datf,kers];
-			wtsI=weights WeightCalc[finDiff,wts,kappa,type];
-			datf=datf+time lambda Total@(wtsI finDiff);
+			finDiff = FinDiffCalc[datf,kers];
+			wtsI = weights WeightCalc[finDiff,wts,kappa,type];
+			datf = datf+time lambda Total@(wtsI finDiff);
 			,itt
 		];
 		(*revert tensor normalization*)
