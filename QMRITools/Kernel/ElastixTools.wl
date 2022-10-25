@@ -208,6 +208,9 @@ MethodRegA::usage =
 "MethodRegA is an option for RegisterDiffusionData.
 It spefifies which registration method to use when registering diffusion data to anatomical space. Mehtods can be be \"rigid\",\"affine\" or \"bspline\"."
 
+ShowMetric::usage=
+"ShowMetric is an option for RegisterData. If set to True it will print a plot of the Metric."
+
 UseGPU::usage = 
 "UseGPU is an option for RegisterData. The value is {bool, gpu} where bool is True or False, and gpu is the gpu ID which is an integer or Automatic."
 
@@ -237,7 +240,9 @@ RegisterData::voxs="voxel size should be {z,x,y} and numeric, current size is `1
 
 RegisterData::met="MethodReg should be \"translation\", \"rigid\", \"affine\", \"bspline\", \"rigidDTI\", \"affineDTI\", \"PCAtranslation\", \"PCArigid\", \"PCAaffine\", or \"PCAbspline\", current method is `1`."
 
-RegisterData::metc="If the MethodReg is \"cyclyc\" no target can be given."
+RegisterData::metc="If the MethodReg is \"PCAxx\" no target can be given."
+
+RegisterData::cyc="If any MethodReg is \"PCAxx\" all should be \"PCAxx\"."
 
 RegisterData::mask="The mask dimensions `1` should be equal to the data dimensions `2`."
 
@@ -331,7 +336,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 // ***************************************************************
 
 
-// ** Metric settings for PCA or non PCA **
+// ** Metric settings **
 // ***************************************************************
 "<>Which[(*if PCA uses stack transform*)
 	(*PCA based methods*)
@@ -621,22 +626,23 @@ TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
 
 
 Options[RegisterData]={
-Iterations->250,
-Resolutions->1,
-HistogramBins->64,
-NumberSamples->4000,
-InterpolationOrderReg->3,
-BsplineSpacing->30,
-BsplineDirections->{1,1,1},
-AffineDirections->{1,1,1},
-MethodReg->"affine",
-OutputImage->True,
-TempDirectory->"Default",
-DeleteTempDirectory->True,
-PrintTempDirectory->True,
-OutputTransformation->False,
-UseGPU->{False,Automatic},
-PCAComponents->1
+	Iterations->250,
+	Resolutions->1,
+	HistogramBins->32,
+	NumberSamples->5000,
+	InterpolationOrderReg->3,
+	BsplineSpacing->30,
+	BsplineDirections->{1,1,1},
+	AffineDirections->{1,1,1},
+	MethodReg->"affine",
+	OutputImage->True,
+	TempDirectory->"Default",
+	DeleteTempDirectory->True,
+	PrintTempDirectory->True,
+	OutputTransformation->False,
+	UseGPU->{False,Automatic},
+	PCAComponents->1,
+	ShowMetric->False
 };
 
 SyntaxInformation[RegisterData]={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
@@ -648,74 +654,83 @@ SyntaxInformation[RegisterData]={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
 
 (*series have no target defninition*)
 (*register series of data sets, no vox definition, no mask definition*)
-RegisterData[series_?ArrayQ,opts:OptionsPattern[]]:=RegisterData[{series,{1,1,1}},opts]
+RegisterData[
+	series_?ArrayQ
+,opts:OptionsPattern[]]:=RegisterData[{series,{1,1,1}},opts]
+
 (*register series of data sets, vox definition, no mask definition*)
-RegisterData[{series_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=RegisterData[{series,{1},vox},opts]
+RegisterData[
+	{series_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}}
+,opts:OptionsPattern[]]:=RegisterData[{series,{1},vox},opts]
+
 (*register series of data sets, no vox definition, mask definition*)
-RegisterData[{series_?ArrayQ,mask_?ArrayQ},opts:OptionsPattern[]]:=RegisterData[{series,mask,{1,1,1}},opts]
+RegisterData[
+	{series_?ArrayQ,mask_?ArrayQ}
+,opts:OptionsPattern[]]:=RegisterData[{series,mask,{1,1,1}},opts]
 
 (*register series of data sets, vox definition, mask definition, no target definition*)
-RegisterData[{series_?ArrayQ,mask_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Module[
-{depthS,error,dim,dimm,dimL,target,moving,dataout,
-voxL,output,cyclyc,maskf,maskm},
-
-(*set error*)
-error=False;
-
-(*get data properties*)
-depthS=ArrayDepth[series];
-dim=Dimensions[series];
-dimL=If[depthS==3,dim[[1]],dim[[2]]];
-dimm=Dimensions[mask];
-voxL=Length[vox];
-
-cyclyc = OptionValue[MethodReg]==="PCAtranslation"||OptionValue[MethodReg]==="PCArigid"||OptionValue[MethodReg]==="PCAaffine"||OptionValue[MethodReg]==="PCAbspline";
-
-(*check dimensions*)
-(*series must be 3 of 4D*)
-If[!(depthS==3||depthS==4),Message[RegisterData::dims,depthS];Return[Message[RegisterData::fatal]]];
-(*sereis must have 2 or more volumes*)
-If[!dimL>=2,Message[RegisterData::vol,depthS,dim[[1]]];Return[Message[RegisterData::fatal]]];
-
-(*check voxel sizes*)
-If[voxL!=3||!(NumberQ@Total@vox),Message[RegisterData::voxs,vox];Return[Message[RegisterData::fatal]]];
-
-(*check mask*)
-If[mask!={1},
+RegisterData[
+	{series_?ArrayQ,mask_?ArrayQ,vox:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Module[{
+		depthS,dim,dimm,dimL,target,moving,dataout,voxL,output,cyclyc,cyc,maskf,maskm
+	},
+	
+	(*get data properties*)
+	depthS=ArrayDepth[series];
+	dim=Dimensions[series];
+	dimL=If[depthS==3,dim[[1]],dim[[2]]];
+	dimm=Dimensions[mask];
+	voxL=Length[vox];
+	
+	(*check for cyclic*)
+	cyc = AnyTrue[OptionValue[MethodReg], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
+	cyclyc = AllTrue[methodReg, (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
+	If[cyc =!= cyclyc, Message[RegisterData::cyc];Return[Message[RegisterData::fatal]]];
+	
+	(*check dimensions*)
+	(*series must be 3 of 4D*)
+	If[!(depthS==3||depthS==4),Message[RegisterData::dims,depthS];Return[Message[RegisterData::fatal]]];
+	(*sereis must have 2 or more volumes*)
+	If[!dimL>=2,Message[RegisterData::vol,depthS,dim[[1]]];Return[Message[RegisterData::fatal]]];
+	
+	(*check voxel sizes*)
+	If[voxL!=3||!(NumberQ@Total@vox),Message[RegisterData::voxs,vox];Return[Message[RegisterData::fatal]]];
+	
+	(*check mask*)
+	If[mask!={1},
+		If[cyclyc,
+			(*cyclyc mask needs to be same dimensions as moving data*)
+			If[dim!=dimm,Message[RegisterData::mask,dimm,dim];Return[Message[RegisterData::fatal]]],
+			If[depthS==3,
+				(*normal mask, one mask for all or one mask per volume*)
+				If[!(dim[[2;;3]]==dimm||dim==dimm),Message[RegisterData::mask,dimm,dim];Return[Message[RegisterData::fatal]]],
+				If[!(dim[[{1,3,4}]]==dimm||dim==dimm),Message[RegisterData::mask,dimm,dim];Return[Message[RegisterData::fatal]]]
+			]
+		]
+	];
+	
+	(*check if method is cyclyc*)
 	If[cyclyc,
-		(*cyclyc mask needs to be same dimensions as moving data*)
-		If[dim!=dimm,Message[RegisterData::mask,dimm,dim];Return[Message[RegisterData::fatal]]],
-		If[depthS==3,
-			(*normal mask, one mask for all or one mask per volume*)
-			If[!(dim[[2;;3]]==dimm||dim==dimm),Message[RegisterData::mask,dimm,dim];Return[Message[RegisterData::fatal]]],
-			If[!(dim[[{1,3,4}]]==dimm||dim==dimm),Message[RegisterData::mask,dimm,dim];Return[Message[RegisterData::fatal]]]
+		(*cyclyc series define moving and target voluems*)
+		target=moving=series;
+		(*go to registration function*)
+		RegisterDatai[{target,mask,vox},{moving,mask,vox},"PCA",opts]
+		,
+		(*normal series define moving and target voluems*)
+		{target,moving}=If[depthS==3,{series[[1]],series[[2;;]]},{series[[All,1]],Transpose@series[[All,2;;]]}];
+		{maskf,maskm}=If[dimm==dim,If[depthS==3,{mask[[1]],mask[[2;;]]},{mask[[All,1]],Transpose@mask[[All,2;;]]}],{mask,mask}];
+		(*go to registration function*)
+		output = RegisterDatai[{target,maskf,vox},{moving,maskm,vox},"series",opts];
+		(*prepare output*)
+		If[OptionValue[OutputTransformation],
+			(*output data with tranformation parameters*)
+			dataout = Prepend[output[[1]],target];
+			{If[depthS==4,Transpose@dataout,dataout],Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}]}
+			,
+			(*output dat without transformation parameters*)
+			dataout = Prepend[output,target];
+			If[depthS==4,Transpose@dataout,dataout]
 		]
 	]
-];
-
-(*check if method is cyclyc*)
-If[cyclyc,
-	(*cyclyc series define moving and target voluems*)
-	target=moving=series;
-	(*go to registration function*)
-	RegisterDatai[{target,mask,vox},{moving,mask,vox},OptionValue[MethodReg],opts]
-	,
-	(*normal series define moving and target voluems*)
-	{target,moving}=If[depthS==3,{series[[1]],series[[2;;]]},{series[[All,1]],Transpose@series[[All,2;;]]}];
-	{maskf,maskm}=If[dimm==dim,If[depthS==3,{mask[[1]],mask[[2;;]]},{mask[[All,1]],Transpose@mask[[All,2;;]]}],{mask,mask}];
-	(*go to registration function*)
-	output = RegisterDatai[{target,maskf,vox},{moving,maskm,vox},"series",opts];
-	(*prepare output*)
-	If[OptionValue[OutputTransformation],
-		(*output data with tranformation parameters*)
-		dataout=Prepend[output[[1]],target];
-		{If[depthS==4,Transpose@dataout,dataout],Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}]}
-		,
-		(*output dat without transformation parameters*)
-		dataout=Prepend[output,target];
-		If[depthS==4,Transpose@dataout,dataout]
-	]
-]
 ]
 
 
@@ -727,118 +742,113 @@ If[cyclyc,
 
 (*register two data sets, vox definition and mask definition*)
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
+	{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,voxt},{moving,maskm,{1,1,1}},opts];
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
-{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+	{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
+	{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,{1,1,1}},{moving,maskm,voxm},opts];
 
 (*register two data sets, vox definition and maskt definition*)
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-moving_?ArrayQ
+	{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	moving_?ArrayQ
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,voxt},{moving,{1},{1,1,1}},opts];
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
-{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+	{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
+	{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,{1,1,1}},{moving,{1},voxm},opts];
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+	{target_?ArrayQ,maskt:{_?ListQ ..} | {1},voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,voxt},{moving,{1},voxm},opts];
 
 (*register two data sets, vox definition and maskm definition*)
 RegisterData[
-{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
+	{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},voxt},{moving,maskm,{1,1,1}},opts];
 RegisterData[
-target_?ArrayQ,
-{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+	target_?ArrayQ,
+	{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},{1,1,1}},{moving,maskm,voxm},opts];
 RegisterData[
-{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+	{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,maskm:{_?ListQ ..} | {1},voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},voxt},{moving,maskm,voxm},opts];
 
 (*register two data sets, no vox definition and mask definition*)
 RegisterData[
-{target_?ArrayQ,maskt_:{_?ListQ ..} | {1}},
-moving_?ArrayQ
+	{target_?ArrayQ,maskt_:{_?ListQ ..} | {1}},
+	moving_?ArrayQ
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,{1,1,1}},{moving,{1},{1,1,1}},opts];
 RegisterData[
-target_?ArrayQ,
-{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
+	target_?ArrayQ,
+	{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},{1,1,1}},{moving,maskm,{1,1,1}},opts];
 RegisterData[
-{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
-{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
+	{target_?ArrayQ,maskt:{_?ListQ ..} | {1}},
+	{moving_?ArrayQ,maskm:{_?ListQ ..} | {1}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,maskt,{1,1,1}},{moving,maskm,{1,1,1}},opts];
 
 (*register two data sets, vox definition and no mask definition*)
 RegisterData[
-{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-moving_?ArrayQ
+	{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	moving_?ArrayQ
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},voxt},{moving,{1},{1,1,1}},opts]
 RegisterData[
-target_?ArrayQ,
-{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+	target_?ArrayQ,
+	{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},{1,1,1}},{moving,{1},voxm},opts]
 RegisterData[
-{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+	{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},voxt},{moving,{1},voxm},opts]
 
 (*register two data sets, no vox definition and no mask definition*)
 RegisterData[
-target_?ArrayQ,
-moving_?ArrayQ
+	target_?ArrayQ,
+	moving_?ArrayQ
 ,opts:OptionsPattern[]]:=RegisterData[{target,{1},{1,1,1}},{moving,{1},{1,1,1}},opts]
 
 (*register two data sets, mask and vox definition*)
 RegisterData[
-{target_?ArrayQ,maskt_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-{moving_?ArrayQ,maskm_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Module[
-{depthT,depthM,voxtL,voxmL,error,dim,type,mov,output},
+	{target_?ArrayQ,maskt_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,maskm_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Module[{
+		depthT,depthM,voxtL,voxmL,dim,type,mov,output
+	},
 
-(*set error*)
-error=False;
-
-(*Check Method, PCA only possible for series*)
-If[OptionValue[MethodReg]==="PCAtranslation"||OptionValue[MethodReg]==="PCArigid"||OptionValue[MethodReg]==="PCAaffine"||OptionValue[MethodReg]==="PCAbspline",
-	error=True;Message[RegisterData::metc]];
-
-(*get data properties*)
-depthT=ArrayDepth[target];
-depthM=ArrayDepth[moving];
-dim=Dimensions[moving];
-voxtL=Length[voxt];
-voxmL=Length[voxm];
-
-(*check dimensions and determine type*)
-type=Which[
-	depthT == depthM, "vol", (*2D-2D, 3D-3D*)
-	(depthT == 2 || depthT == 3) && depthM == depthT + 1, "series", (*2D-3D, 3D-4D*)
-	True, error=True;Message[RegisterData::dim,depthT,depthM]; (*error*)];
-
-(*check voxel sies*)
-If[voxtL!=3||voxmL!=3||!(NumberQ@Total@voxt)||!(NumberQ@Total@voxm),Message[RegisterData::vox,voxt,voxm];Return[Message[RegisterData::fatal]]];
-
-(*if error found quit*)
-If[error,Return[Message[RegisterData::fatal]]];
-
-(*define moving voluems*)
-mov=If[depthM==4,Transpose@moving,moving];
-
-(*No errors, go to registration function only "vol" or "series"*)
-output=RegisterDatai[{target,maskt,voxt},{mov,maskm,voxm},type,opts];
-
-If[OptionValue[OutputTransformation],
+	(*Check Method, PCA only possible for series*)
+	If[AnyTrue[OptionValue[MethodReg], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &], 
+		Message[RegisterData::metc];Return[Message[RegisterData::fatal]]];
+	
+	(*get data properties*)
+	depthT=ArrayDepth[target];
+	depthM=ArrayDepth[moving];
+	dim=Dimensions[moving];
+	voxtL=Length[voxt];
+	voxmL=Length[voxm];
+	
+	(*check dimensions and determine type*)
+	type=Which[
+		depthT == depthM, "vol", (*2D-2D, 3D-3D*)
+		(depthT == 2 || depthT == 3) && depthM == depthT + 1, "series", (*2D-3D, 3D-4D*)
+		True,Message[RegisterData::dim,depthT,depthM];Return[Message[RegisterData::fatal]] (*error*)];
+	
+	(*check voxel sies*)
+	If[voxtL!=3||voxmL!=3||!(NumberQ@Total@voxt)||!(NumberQ@Total@voxm),Message[RegisterData::vox,voxt,voxm];Return[Message[RegisterData::fatal]]];
+	
+	(*define moving voluems*)
+	mov=If[depthM==4,Transpose@moving,moving];
+	
+	(*No errors, go to registration function only "vol" or "series"*)
+	output=RegisterDatai[{target,maskt,voxt},{mov,maskm,voxm},type,opts];
+	
+	If[OptionValue[OutputTransformation],
 		{If[depthM==4,Transpose@output[[1]],output[[1]]],Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}]},
 		If[depthM==4,Transpose@output,output]
-]
+	]
 ]
 
 
@@ -846,31 +856,34 @@ If[OptionValue[OutputTransformation],
 (*RegisterDatai*)
 
 
-Options[RegisterDatai]=Options[RegisterData];
-
-RegisterDatai[{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}},type_,opts:OptionsPattern[]]:=
-RegisterDatai[{target,{1},voxt},{moving,{1},voxm},type,opts]
-
-RegisterDatai[{target_?ArrayQ,maskt_,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}},type_,opts:OptionsPattern[]]:=
-RegisterDatai[{target,maskt,voxt},{moving,{1},voxm},type,opts]
-
-RegisterDatai[{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},{moving_?ArrayQ,maskm_,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}},type_,opts:OptionsPattern[]]:=
-RegisterDatai[{target,{1},voxt},{moving,maskm,voxm},type,opts]
+Options[RegisterDatai] = Options[RegisterData];
 
 RegisterDatai[
-{target_?ArrayQ,maskt_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},{moving_?ArrayQ,maskm_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}},
-type_,OptionsPattern[]]:=Module[{
-	tdir, tempdir, elastix, targetFile, parstring, outputImg, iterations, resolutions,
-	histogramBins, numberSamples, derivativeScaleA, derivativeScaleB, interpolationOrder,
-	method, bsplineSpacing, data, vox, dimmov, dimtar, dimmovm, dimtarm, inpfol, movfol, outfol, 
-	fixedF, movingF, outF, parF, depth, index, error, regpars, lenMeth, command, outfile, 
-	fmaskF, mmaskF, maske, maske2, w, openCL, gpu, pca, dtar},
+	{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+,type_ ,opts:OptionsPattern[]]:= RegisterDatai[{target,{1},voxt},{moving,{1},voxm},type,opts]
+
+RegisterDatai[
+	{target_?ArrayQ,maskt_,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+,type_ ,opts:OptionsPattern[]]:= RegisterDatai[{target,maskt,voxt},{moving,{1},voxm},type,opts]
+
+RegisterDatai[
+	{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,maskm_,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
+,type_	,opts:OptionsPattern[]]:= RegisterDatai[{target,{1},voxt},{moving,maskm,voxm},type,opts]
+
+RegisterDatai[
+	{target_?ArrayQ,maskt_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ,maskm_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}, type_,OptionsPattern[]]:=Module[{
+		tdir, tempdir, elastix, targetFile, parstring, outputImg, iterations, resolutions,
+		histogramBins, numberSamples, derivativeScaleA, derivativeScaleB, interpolationOrder,
+		method, bsplineSpacing, data, vox, dimmov, dimtar, dimmovm, dimtarm, inpfol, movfol, outfol,
+		fixedF, movingF, outF, parF, depth, index, regpars, lenMeth, command, outfile,
+		fmaskF, mmaskF, maske, maske2, w, openCL, gpu, pca, dtar
+	},
 	
 	w={{0,0,0,0,0,0,1,1,1,0,0,0}};
-	
-	(*set error*)
-	error=False;
-	maske=False;
 	
 	(*get option values*)
 	tdir=OptionValue[TempDirectory];
@@ -883,17 +896,10 @@ type_,OptionsPattern[]]:=Module[{
 	bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
 	derivativeScaleB=OptionValue[BsplineDirections];
 	derivativeScaleA=OptionValue[AffineDirections];
-	
+
 	openCL = OptionValue[UseGPU];
-	If[ListQ[openCL],
-		{openCL, gpu} = openCL;
-		gpu = If[gpu===Automatic, 0, gpu];
-		,
-		gpu = 0;
-	];
+	If[ListQ[openCL], {openCL, gpu} = openCL; gpu = If[gpu===Automatic, 0, gpu];, gpu = 0;];
 	pca=OptionValue[PCAComponents];
-	
-	(*Print[{derivativeScaleA,derivativeScaleB}];*)
 	
 	iterations=OptionValue[Iterations];
 	resolutions=OptionValue[Resolutions];
@@ -901,7 +907,8 @@ type_,OptionsPattern[]]:=Module[{
 	numberSamples=OptionValue[NumberSamples];
 	interpolationOrder=OptionValue[InterpolationOrderReg];
 	regpars={iterations,resolutions,histogramBins,numberSamples,interpolationOrder};
-	
+
+	(*get all data dimensions*)
 	dimmov=Dimensions[moving];
 	dimtar=Dimensions[target];
 	dtar=ArrayDepth[target];
@@ -910,15 +917,11 @@ type_,OptionsPattern[]]:=Module[{
 	
 	(*find the elastix program*)
 	elastix=GetAssetLocation["Elastix"];
-	If[elastix=="error",error=True;Message[RegisterData::elastix];];
+	If[elastix=="error",Message[RegisterData::elastix];Return[Message[RegisterData::fatal]]];
 	
 	(*create temp directory*)
 	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
-	
-	tdir=If[Last[FileNameSplit[tdir]] === "QMRIToolsReg" || Last[FileNameSplit[tdir]] === "anat",
-		tdir,
-		tdir<>$PathnameSeparator<>"QMRIToolsReg"
-	];
+	tdir=If[Last[FileNameSplit[tdir]] === "QMRIToolsReg" || Last[FileNameSplit[tdir]] === "anat", tdir,	tdir<>$PathnameSeparator<>"QMRIToolsReg"];
 	
 	If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
 	tempdir=CreateDirectory[tdir]<>$PathnameSeparator;
@@ -932,68 +935,61 @@ type_,OptionsPattern[]]:=Module[{
 		]&/@method; 
 	lenMeth=Length[method];
 	
-	(*only cyclyc is possible*)
-	If[(MemberQ[method,"PCAtranslation"]||MemberQ[method,"PCArigid"]||MemberQ[method,"PCAaffine"]||MemberQ[method,"PCAbspline"] )&&lenMeth>1,error=True];
-	
 	(*create parameter list*)
 	regpars=If[NumberQ[#],ConstantArray[#,lenMeth],
-	If[Length[#]==lenMeth,#,Message[RegisterData::par,#,lenMeth];Return[Message[RegisterData::fatal]];
+		If[Length[#]==lenMeth,#,Message[RegisterData::par,#,lenMeth];Return[Message[RegisterData::fatal]];
 	]]&/@regpars;
+
 	
-	(*check mask dimensions*)
-	
-	(*if error quit*)
-	If[error,Return[Message[RegisterData::fatal]]];
+	(*start export*)
 	If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
 
 	(*create target file*)
-	depth=If[type==="PCAtranslation"||type==="PCArigid"||type==="PCAaffine"||type==="PCAbspline",
-		ToString[dtar-1]<>"D-t",
-		ToString[dtar]<>"D"];
+	depth=If[type==="PCA", ToString[dtar-1]<>"D-t", ToString[dtar]<>"D"];
 	fixedF="target-"<>depth<>".nii";
 	targetFile=tempdir<>fixedF;
 	(*export the target*)
 	ExportNii[target,voxt,targetFile];
 	
 	(*create parameter files*)
-	
 	parF = MapThread[(
 		parstring=ParString[#2, {#1,outputImg}, {dtar, bsplineSpacing, derivativeScaleB, derivativeScaleA, pca},{openCL, gpu}];
 		parF="parameters-"<>#1<>".txt";
 		Export[tempdir<>parF,parstring];
 		parF
 	)&, {method, Transpose[regpars]}];
-	
 
-	
 	(*perform registration which is either "series", "vol" or PCA based method*)
 	Which[
-		type==="vol",(*volume to volume registration (2D-2D, 3D-3D)*)
+		(*volume to volume registration (2D-2D, 3D-3D)*)
+		type==="vol",
 		
 		{inpfol,movfol,outfol}={"","",""};
-		{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
-		ExportNii[moving,voxm,tempdir<>movingF];
 		{fmaskF,mmaskF}={"",""};
-		(*check if target mask is needed*)
+		{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+		
+		(*Check if masks are needed*)
 		If[dimtarm == dimtar && maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
-		(*check if moving mask is needed*)
 		If[(dimmovm == dimmov && maskm!={1}),mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
+		(*Export moving data*)
+		ExportNii[moving,voxm,tempdir<>movingF];
+		(*Create command and run elastix*)
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
 		If[$debugElastix, Print[command]];
 		RunProcess[$SystemShell,"StandardOutput",command];
-		(*RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];*)
+		(*Import Results*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
 			
 		,
-		type==="series", (*series to volume registration (2D-3D, 3D-4D)*)
+		(*series to volume registration (2D-3D, 3D-4D)*)
+		type==="series", 
 		
 		inpfol="";
 		{fmaskF,mmaskF}={"",""};
 		{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
-		(*export one mask for every volume in the series*)
-		If[dimtarm == dimtar && maskt!={1},
-		fmaskF="targetMask.nii";
-		ExportNii[maskt,voxt,tempdir<>fmaskF]];
+		
+		(*Check if masks are needed*)
+		If[dimtarm == dimtar && maskt!={1},	fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
 		(*check if mask needs to be exported for each volume*)
 		maske=(dimmovm == dimmov && maskm!={1});
 		(*check if same mask for all volumes*)
@@ -1004,41 +1000,48 @@ type_,OptionsPattern[]]:=Module[{
 			index=StringPad[#];
 			movfol=outfol="vol"<>index;
 			CreateDirectory[tempdir<>outfol];
+			(*export moving*)
 			ExportNii[moving[[#]],voxm,tempdir<>movfol<>$PathnameSeparator<>movingF];
 			(*export mask*)
 			If[maske,mmaskF=movfol<>$PathnameSeparator<>"moveMask.nii";ExportNii[maskm[[#]],voxm,tempdir<>mmaskF]];
 			If[maske2,mmaskF=movfol<>$PathnameSeparator<>"moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
-			
+			(*create command*)
 			ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}]
 		)&/@Range[Length[moving]]);
-		(*create and run batch*)
+		(*Create and run batch*)
+		If[$debugElastix, Print[First@command]];
 		RunBatfile[tempdir,command];
 		(*Import data*)
 		data=(First@ImportNii[#])&/@outfile;
-		
 		If[OptionValue[OutputTransformation], w = ReadTransformParameters[tempdir]];
 		
 		,
-		True, (*if not series or vol then PCA based method*)
+		(*if not series or vol then PCA based method*)
+		type==="PCA", 
 		
 		{inpfol,movfol,outfol}={"","",""};
 		{fmaskF,mmaskF}={"",""};
 		{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+		(*Check if masks are needed*)		
+		If[maskm!={1}, mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
+		If[maskt!={1}, fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
+		(*Export moving data*)
 		ExportNii[moving,voxm,tempdir<>movingF];
-		If[maskm!={1},mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
-		If[maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
+		(*Create command and run elastix*)
 		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
 		If[$debugElastix, Print[command]];
 		RunProcess[$SystemShell,"StandardOutput",command];
-		(*RunElastix[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}];*)
+		(*Import Results*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
 	];
 	
+	(*do some cleanup*)
+	If[OptionValue[ShowMetric], Print[ListLinePlot[Flatten[Import[#, "Data"][[2 ;;, 2]] /@ FileNames["IterationInfo*", tempdir]]]]];
+	If[OptionValue[DeleteTempDirectory], DeleteDirectory[tempdir,DeleteContents->True]];
+	
+	(*output results*)
 	data=ToPackedArray[N@Chop[Clip[data,MinMax[moving]]]];
-	
-	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempdir,DeleteContents->True]];
-	If[OptionValue[OutputTransformation], {data,w},	data]
-	
+	If[OptionValue[OutputTransformation], {data, w}, data]
 ]
 
 
@@ -1051,21 +1054,18 @@ Options[RegisterDataSplit] = Join[Options[RegisterData],{SplitMethod->"Mean"}];
 SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
-	reg, mov,
-	target ,maskT, voxT,
-	moving, maskM, voxM,
-	targetl, targetr, maskTl, maskTr, cut1,
-	movingl, movingr, maskMl, maskMr, cut2,
+	reg, mov, target ,maskT, voxT, moving, maskM, voxM,
+	targetl, targetr, maskTl, maskTr, cut1, movingl, movingr, maskMl, maskMr, cut2,
 	regl, regr, movl, movr
 	},
 	
 	(*prepare the input*)
-	{target ,maskT, voxT}=SplitInput[targeti];
-	{moving, maskM, voxM}=SplitInput[movingi];
+	{target ,maskT, voxT} = SplitInput[targeti];
+	{moving, maskM, voxM} = SplitInput[movingi];
 	
 	(*find the common split*)	
-	{targetl, targetr, cut1}=CutData[target];
-	{movingl, movingr, cut2}=CutData[moving];
+	{targetl, targetr, cut1} = CutData[target];
+	{movingl, movingr, cut2} = CutData[moving];
 	
 	{cut1, cut2} = Switch[OptionValue[SplitMethod],
 		"target", Round[{cut1, (cut1 voxT[[2]])/voxM[[2]]}],
@@ -1073,7 +1073,7 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 		"nearest", Round[First@Nearest[{cut1 Last@voxT, cut2 Last@voxM}, (Last@Dimensions[target]/2) Last[voxT]]/{Last@voxT, Last@voxM}],
 		"own", Round[{cut1, cut2}],
 		_, Round[Mean[{cut1 voxT[[2]], cut2 voxM[[2]]}]/{voxT[[2]], voxM[[2]]}]
-		];
+	];
 	
 	(*cut data*)
 	{targetl, targetr, cut1}=CutData[target,cut1];
@@ -1088,8 +1088,7 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 	regr = RegisterData[{targetr, maskTr, voxT}, {movingr, maskMr, voxM},  Sequence@@FilterRules[{opts}, Options[RegisterData]]];
 	
 	StichData[regl,regr]
-	
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1104,8 +1103,7 @@ SplitInput[input_]:=Module[{data,mask,vox},
 		,
 		If[Length[input]==2 && ArrayQ[input[[1]]] && Length[input[[2]]]==3,
 			(*data and vox*)
-			data=input[[1]];mask={1};vox=input[[2]];
-			,
+			data=input[[1]];mask={1};vox=input[[2]];,
 			(*data, mask and vox*)
 			data=input[[1]];mask=input[[2]];vox=input[[3]];
 		]
@@ -1195,7 +1193,7 @@ TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
 		"' -tp '" <> transfile <>
 		"' > '" <> tempDir <> "/outputT.txt' \n exit \n"
 	]
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1251,7 +1249,7 @@ RegisterDataTransform[target_, moving_, {moving2_, vox_}, opts : OptionsPattern[
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];		
 		
 	{reg, mov}
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1302,8 +1300,7 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 	{regr, movr} = RegisterDataTransform[{targetr, maskTr, voxT}, {movingr, maskMr, voxM}, {moving2r, vox}, Sequence@@FilterRules[{opts}, Options[RegisterDataTransform]]];
 	
 	{StichData[regl,regr],StichData[movl,movr]}
-	
-  ]
+]
 
 
 
@@ -1330,119 +1327,112 @@ SyntaxInformation[RegisterDiffusionData] = {"ArgumentsPattern" -> {_, _., Option
 
 (*No anatomical data, goto Registerdata*)
 RegisterDiffusionData[
+	{dtidata_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}}
+,opts : OptionsPattern[]] := RegisterDiffusionData[{dtidata, {1}, vox}, opts]
+
+RegisterDiffusionData[
+	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}}
+,opts:OptionsPattern[]] := RegisterData[{dtidata, dtimask, vox},(*OutputTransformation->True,*) 
+	MethodReg-> (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}),
+	AffineDirections -> {1, 1, 1}, FilterRules[{opts}, Options[RegisterData]]]
+
+(*Anatomical data present, define two registrations*)
+RegisterDiffusionData[
 	{dtidata_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	opts : OptionsPattern[]
-	] := RegisterDiffusionData[{dtidata, {1}, vox}, opts]
+	{anatdata_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}}
+,opts : OptionsPattern[]] := RegisterDiffusionData[{dtidata, {1}, vox}, {anatdata, {1},voxa}, opts]
 
 RegisterDiffusionData[
 	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	opts:OptionsPattern[]
-	] := (RegisterData[{dtidata, dtimask, vox},(*OutputTransformation->True,*) 
+	{anatdata_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}}
+,opts : OptionsPattern[]] := RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, {1}, voxa}, opts]
+
+RegisterDiffusionData[
+	{dtidata_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
+	{anatdata_?ArrayQ, anatmask_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}}
+,opts : OptionsPattern[]] := RegisterDiffusionData[{dtidata, {1}, vox}, {anatdata, anatmask, voxa}, opts]
+
+RegisterDiffusionData[
+	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
+	{anatdata_?ArrayQ, anatmask_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}},opts : OptionsPattern[]] := Module[{
+		dtidatar, tempDir, tempDira, volDirs, w,tFilesA, tFilesD, dtidatarA, cmd, target, movingdata
+	},
+  
+	(*get the current temp dir and define the anat tempdir*)
+	tempDir = OptionValue[TempDirectory];
+	tempDir = (If[StringQ[tempDir], tempDir, "Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
+	tempDira = tempDir <> $PathnameSeparator <> "anat";
+	
+	(*perform DTI registration*)
+	dtidatar = RegisterData[{dtidata, dtimask, vox},
+		TempDirectory -> tempDir, 
+		DeleteTempDirectory -> False, 
+		OutputTransformation->OptionValue[OutputTransformation], 
 		MethodReg-> (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}),
-		AffineDirections -> {1, 1, 1},
-		FilterRules[{opts}, Options[RegisterData]]]
-		)
-
-(**)
-RegisterDiffusionData[
-	{dtidata_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	{anatdata_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	opts : OptionsPattern[]
-	] := RegisterDiffusionData[{dtidata, {1}, vox}, {anatdata, {1},voxa}, opts]
-
-RegisterDiffusionData[
-	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	{anatdata_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-	opts : OptionsPattern[]
-	] := RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, {1}, voxa}, opts]
-
-RegisterDiffusionData[
-	{dtidata_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	{anatdata_?ArrayQ, anatmask_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	opts : OptionsPattern[]
-	] := RegisterDiffusionData[{dtidata, {1}, vox}, {anatdata, anatmask, voxa}, opts]
-
-RegisterDiffusionData[
-	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	{anatdata_?ArrayQ, anatmask_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}},
-	opts : OptionsPattern[]
-	] := Module[{dtidatar, tempDir, tempDira, volDirs, w,tFilesA, tFilesD, dtidatarA, cmd, target, movingdata},
-  
-  (*Print["RegisterDiffusionData"];*)
- 
-  (*get the current temp dir and define the anat tempdir*)
-  tempDir = OptionValue[TempDirectory];
-  tempDir = (If[StringQ[tempDir], tempDir, "Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
-  tempDira = tempDir <> $PathnameSeparator <> "anat";
-
-  (*perform DTI registration*)
-  dtidatar = RegisterData[{dtidata, dtimask, vox},
-    TempDirectory -> tempDir, 
-    DeleteTempDirectory -> False, 
-    OutputTransformation->OptionValue[OutputTransformation], 
-    MethodReg-> (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}),
-    (*AffineDirections -> {1, 1, 1},*)
-    FilterRules[{opts} , Options[RegisterData]]];
-
-  If[OptionValue[OutputTransformation], {dtidatar,w} = dtidatar];
-    
-  target = OptionValue[RegistrationTarget];
-  movingdata = If[ListQ[target] && AllTrue[target, IntegerQ] && Min[target] > 0 && Max[target] <= Length[dtidatar[[1]]],
-  	Median /@ dtidatar[[All, DeleteDuplicates[target]]],
-  	Switch[target,
-  		"Median", Median@Transpose@dtidatar,
-  		"First", First@Transpose@dtidatar,
-  		_, Mean@Transpose@dtidatar
-  		]];
-  
-  (*perform anat registration*)
-  RegisterData[{anatdata, anatmask, voxa}, {movingdata, vox},
-   TempDirectory -> tempDira, 
-   DeleteTempDirectory -> False,
-   Iterations -> OptionValue[IterationsA], 
-   Resolutions -> OptionValue[ResolutionsA],
-   HistogramBins -> OptionValue[HistogramBinsA], 
-   NumberSamples -> OptionValue[NumberSamplesA],
-   InterpolationOrderReg -> OptionValue[InterpolationOrderRegA],
-   BsplineSpacing -> OptionValue[BsplineSpacing], 
-   BsplineDirections -> OptionValue[BsplineDirections],
-   AffineDirections -> OptionValue[AffineDirections],
-   MethodReg -> OptionValue[MethodRegA]/. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}, 
-   FilterRules[{opts}, Options[RegisterData]]
-   ];
-  
-  (*transform all diffusion files to anatomy*)
-  
-  (*export diffusion reg target*)
-  CreateDirectory[tempDir<>$PathnameSeparator<>"vol0000"];
-  ExportNii[dtidatar[[All,1]],vox,tempDir<>$PathnameSeparator<>"vol0000"<>$PathnameSeparator<>"moving-3D.nii"];
-  
-  (*get vol folders and anat transform files*)
-  volDirs = FileNames["vol*", tempDir, 1];
-  tFilesA = FileNames["TransformParameters*", tempDira];
-  
-  (*create Final Transform files*)
-  (
-     tFilesD = FileNames["TransformParameters*", #];
-     ConcatenateTransformFiles[Join[tFilesD, tFilesA], #]
-     ) & /@ volDirs;
-  
-  (*call transformix*)
-  cmd = TransformixCommand[tempDir];
-  PrintTemporary["Combining transformations"];
-  RunBatfileT[tempDir, cmd];
-  
-  (*import dti data in anat space*)
-  dtidatarA = Transpose[ImportNii[#][[1]] & /@ FileNames["resultA*", tempDir, 2]];
-  
-  (*finalize by deleting temp director*)
-  If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempDir,DeleteContents->True]];
-  
-  (*output data*)
-  If[OptionValue[OutputTransformation],
-  	{dtidatar, dtidatarA, w},
-  	{dtidatar, dtidatarA}
-  ]
+		(*AffineDirections -> {1, 1, 1},*)
+		FilterRules[{opts} , Options[RegisterData]]
+	];
+	
+	If[OptionValue[OutputTransformation], {dtidatar,w} = dtidatar];
+	
+	target = OptionValue[RegistrationTarget];
+	movingdata = If[ListQ[target] && AllTrue[target, IntegerQ] && Min[target] > 0 && Max[target] <= Length[dtidatar[[1]]],
+		Median /@ dtidatar[[All, DeleteDuplicates[target]]],
+		Switch[target,
+			"Median", Median@Transpose@dtidatar,
+			"First", First@Transpose@dtidatar,
+			_, Mean@Transpose@dtidatar
+		]
+	];
+	
+	(*perform anat registration*)
+	RegisterData[{anatdata, anatmask, voxa}, {movingdata, vox},
+		TempDirectory -> tempDira, 
+		DeleteTempDirectory -> False,
+		Iterations -> OptionValue[IterationsA], 
+		Resolutions -> OptionValue[ResolutionsA],
+		HistogramBins -> OptionValue[HistogramBinsA], 
+		NumberSamples -> OptionValue[NumberSamplesA],
+		InterpolationOrderReg -> OptionValue[InterpolationOrderRegA],
+		BsplineSpacing -> OptionValue[BsplineSpacing], 
+		BsplineDirections -> OptionValue[BsplineDirections],
+		AffineDirections -> OptionValue[AffineDirections],
+		MethodReg -> OptionValue[MethodRegA]/. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}, 
+		FilterRules[{opts}, Options[RegisterData]]
+	];
+	
+	(*transform all diffusion files to anatomy*)
+	
+	(*export diffusion reg target*)
+	CreateDirectory[tempDir<>$PathnameSeparator<>"vol0000"];
+	ExportNii[dtidatar[[All,1]],vox,tempDir<>$PathnameSeparator<>"vol0000"<>$PathnameSeparator<>"moving-3D.nii"];
+	
+	(*get vol folders and anat transform files*)
+	volDirs = FileNames["vol*", tempDir, 1];
+	tFilesA = FileNames["TransformParameters*", tempDira];
+	
+	(*create Final Transform files*)
+	(
+		tFilesD = FileNames["TransformParameters*", #];
+		ConcatenateTransformFiles[Join[tFilesD, tFilesA], #]
+	) & /@ volDirs;
+	
+	(*call transformix*)
+	cmd = TransformixCommand[tempDir];
+	PrintTemporary["Combining transformations"];
+	RunBatfileT[tempDir, cmd];
+	
+	(*import dti data in anat space*)
+	dtidatarA = Transpose[ImportNii[#][[1]] & /@ FileNames["resultA*", tempDir, 2]];
+	
+	(*finalize by deleting temp director*)
+	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tempDir,DeleteContents->True]];
+	
+	(*output data*)
+	If[OptionValue[OutputTransformation],
+		{dtidatar, dtidatarA, w},
+		{dtidatar, dtidatarA}
+	]
 ]
 
 
@@ -1542,42 +1532,42 @@ RegisterCardiacData[{data_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}}, opts:Op
 RegisterCardiacData[{data_?ArrayQ ,mask_?ArrayQ}, opts:OptionsPattern[]]:=RegisterCardiacData[{data,mask,{1,1,1}},opts]
 (*data with mask and voxel*)
 RegisterCardiacData[{data_?ArrayQ, mask_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}}, opts:OptionsPattern[]]:=Block[
-{tdir, datar, slices, maskr, i, size, target},
-
-tdir=OptionValue[TempDirectory];
-tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
-
-If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
-
-slices=Range[Length[data]];
-size=Length[data[[1]]];
-maskr=If[mask=={1},ConstantArray[1,Dimensions[data[[All,1]]]],mask];
-
-target=If[OptionValue[MethodReg]==="PCAtranslation"||OptionValue[MethodReg]==="PCArigid"||OptionValue[MethodReg]==="PCAaffine"||OptionValue[MethodReg]==="PCAbspline",
-	"stack",
-	OptionValue[RegistrationTarget]];
-
-(*monitro over slices*)
-Monitor[
-	i=0;
-	datar=Switch[
-	target,
-	"Mean",
-	(i++;RegisterData[{N[Mean@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
-		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-	"Median",
-	(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
-		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-	"First",
-	(i++;RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
-		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-	"stack",
-	(i++;RegisterData[{data[[#]],ConstantArray[maskr[[#]],size],vox},
-		OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices
-	]
-	,ProgressIndicator[i,{0,Length[data]}]
-];
-datar
+	{tdir, datar, slices, maskr, i, size, target},
+	
+	tdir=OptionValue[TempDirectory];
+	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
+	
+	If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
+	
+	slices=Range[Length[data]];
+	size=Length[data[[1]]];
+	maskr=If[mask=={1},ConstantArray[1,Dimensions[data[[All,1]]]],mask];
+	
+	target=If[OptionValue[MethodReg]==="PCAtranslation"||OptionValue[MethodReg]==="PCArigid"||OptionValue[MethodReg]==="PCAaffine"||OptionValue[MethodReg]==="PCAbspline",
+		"stack",
+		OptionValue[RegistrationTarget]];
+	
+	(*monitro over slices*)
+	Monitor[
+		i=0;
+		datar=Switch[
+		target,
+		"Mean",
+		(i++;RegisterData[{N[Mean@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
+			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+		"Median",
+		(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
+			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+		"First",
+		(i++;RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
+			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
+		"stack",
+		(i++;RegisterData[{data[[#]],ConstantArray[maskr[[#]],size],vox},
+			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices
+		]
+		,ProgressIndicator[i,{0,Length[data]}]
+	];
+	datar
 ]
 
 

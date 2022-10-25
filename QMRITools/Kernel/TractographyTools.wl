@@ -543,7 +543,13 @@ GetTractValues[tracts_,val_,vox_,int_:1]:=MakeIntFunction[val,vox,int]@@@#&/@tra
 (*PlotTracts*)
 
 
-Options[PlotTracts] = {MaxTracts -> 5000, ImageSize -> 800, Method->"line", TractColoring->"Direction"}
+Options[PlotTracts] = {
+	MaxTracts -> 5000, 
+	ImageSize -> 800, 
+	Method->"line", 
+	TractColoring->"Direction",
+	Boxed->True
+}
 
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
@@ -561,9 +567,9 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{range, vox, size, 
 	
 	opts = Sequence[{
 		Method -> {"TubePoints" -> {6, 2}}, Lighting -> "Accent", 
-		ImageSize -> OptionValue[ImageSize], SphericalRegion -> True, Boxed -> True,
+		ImageSize -> OptionValue[ImageSize], SphericalRegion -> True, Boxed -> OptionValue[Boxed],
 		Background -> Lighter@Gray, BoxRatios -> size, PlotRange -> range, 
-		Axes -> True, LabelStyle -> Directive[{Bold, 16, White}]
+		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
 	}];
 	
 	colOpt=OptionValue[TractColoring];
