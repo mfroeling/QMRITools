@@ -255,6 +255,8 @@ CropInit::usage =
 CropPadding::usage = 
 "CropPadding is an option for AutoCropData or FindCrop. It specifies how much padding to use around the data."
 
+CropAlways::usage = 
+"CropAlways is an optin for ApplyCrop. If set True is will always crop even if outside the data."
 
 OutputWeights::usage = 
 "OutputWeights is an option for SumOfSqares. If True it also output the SoS weights."
@@ -851,23 +853,31 @@ ReverseCrop[data_, dim_, crop_, {v1_, v2_}] := Module[{datac, pad},
 (*ApplyCrop*)
 
 
-SyntaxInformation[ApplyCrop] = {"ArgumentsPattern" -> {_, _, _.}};
+Options[ApplyCrop]={CropAlways->False}
 
-ApplyCrop[data_, crop_] := ApplyCrop[data, crop, {{1,1,1}, {1,1,1}}]
+SyntaxInformation[ApplyCrop] = {"ArgumentsPattern" -> {_, _, _.,OptionsPattern[]}};
 
-ApplyCrop[data_, crop_ , {v1_,v2_}] := Module[{z1, z2, x1, x2, y1, y2, dim, out},
+ApplyCrop[data_, crop_, opts:OptionsPattern[]] := ApplyCrop[data, crop, {{1,1,1}, {1,1,1}}, opts]
+
+ApplyCrop[data_, crop_ , {v1_,v2_}, opts:OptionsPattern[]] := Module[{z1, z2, x1, x2, y1, y2, dim, out},
 	
 	dim = Dimensions[data];
 	dim = If[Length[dim]==4,dim[[{1,3,4}]],dim];
 	
 	(*get crops coors*)
 	{z1, z2, x1, x2, y1, y2} = Round[crop Flatten[{#, #} & /@ (v1/v2)]];
-	
-	If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]],Return[Message[ApplyCrop::dim]]];
+
+	If[OptionValue[CropAlways],
+		{z1,z2}=Clip[{z1,z2},{1,dim[[1]]}];
+		{x1,x2}=Clip[{x1,x2},{1,dim[[2]]}];
+		{y1,y2}=Clip[{y1,y2},{1,dim[[3]]}];
+		,
+		If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]],Return[Message[ApplyCrop::dim]]]
+	];
 	
 	out = Switch[ArrayDepth[data],
 		4, data[[z1 ;; z2, All, x1 ;; x2, y1 ;; y2]],
-		3,	data[[z1 ;; z2, x1 ;; x2, y1 ;; y2]],
+		3, data[[z1 ;; z2, x1 ;; x2, y1 ;; y2]],
 		2, data[[x1 ;; x2, y1 ;; y2]]
 	];
 
