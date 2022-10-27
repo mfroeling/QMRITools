@@ -107,7 +107,7 @@ Output is the registered data."
 
 
 RegisterCardiacData::usage =
-"RegisterCardiacData[data] registers the data using a 2D algorithm. data can be 3D or 4D.  
+"RegisterCardiacData[data] registers the data using a 2D algorithm. data can be 3D or 4D.
 RegisterCardiacData[{data,vox}] registers the data series using the given voxel size.
 RegisterCardiacData[{data,mask}] registers the data series only using data whithin the mask.
 RegisterCardiacData[{data,mask,vox}] registers the data series using the given voxel size only using data within the mask.
@@ -287,6 +287,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 "// ***************************************************************
 // ** "<>type<>" **
 
+// ** Generated using QMRITools by M.Froeling **
 
 // ** fixed general settings **
 // ***************************************************************
@@ -359,7 +360,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 
 // ** setting allowed by QMRITools **
 // ***************************************************************
-(WriteResultImage  \""<>output<>"\")
+(WriteResultImage \""<>output<>"\")
 
 (NumberOfResolutions "<>ToString[resolutions]<>")
 "<>Which[(*if multi resolution PCA imagePyramidSchedule has to be defined*)
@@ -507,10 +508,7 @@ RunBatfile[tempdir_,command_]:=Block[{file,batfile,com},
 (*StringPad*)
 
 
-StringPad[x_] := 
- StringJoin[
-  PadLeft[{ToString[x]}, 5 - StringLength[ToString[x]], "0"]
-]
+StringPad[x_] := StringJoin[PadLeft[{ToString[x]}, 5 - StringLength[ToString[x]], "0"]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -518,20 +516,20 @@ StringPad[x_] :=
 
 
 ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile, f, p},
-  (*import the transform files*)
-  len = Range[Length[files]];
-  filesi = Import[#, "Lines"] & /@ files;
-  
-  (*concatenate the transform files*)
-  (
-  	f = filesi[[#]];
-  	tfile = If[# == 1, "NoInitialTransform", outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 2] <> ".txt"];
-  	p = Position[Boole[StringContainsQ[#, "InitialTransformParametersFileName"] & /@ f], 1][[1, 1]];
-  	
-  	f[[p]] = "(InitialTransformParametersFileName \"" <> tfile <> "\")";
-  	Export[outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 1] <> ".txt", f];
-  ) & /@ len;
-  ]
+	(*import the transform files*)
+	len = Range[Length[files]];
+	filesi = Import[#, "Lines"] & /@ files;
+	
+	(*concatenate the transform files*)
+	(
+		f = filesi[[#]];
+		tfile = If[# == 1, "NoInitialTransform", outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 2] <> ".txt"];
+		p = Position[Boole[StringContainsQ[#, "InitialTransformParametersFileName"] & /@ f], 1][[1, 1]];
+		
+		f[[p]] = "(InitialTransformParametersFileName \"" <> tfile <> "\")";
+		Export[outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 1] <> ".txt", f];
+	) & /@ len;
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -566,54 +564,54 @@ RunBatfileT[tempdir_, command_] := Block[{batfile, com},
 
 
 TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
-  transformix = GetAssetLocation["Transformix"];
-  transFol = StringDrop[DirectoryName[transformix, 2], -1];
-    
-  volDirs = FileNames["vol*", tempDir, 1];
-  
-  Movfile[fol_] := First[FileNames["moving*", fol]];
-  
-  Transfile[fol_] := Last[SortBy[FileNames["FinalTransform*", fol],FileDate[#, "Modification"] &]];
-  
-  command=Switch[operatingSystem,
-  	"Windows",
-  	(
-  		"@ \"" <> transformix <>
-  		"\" -in \"" <> Movfile[#] <>
-  		"\" -out \"" <> # <>
-  		"\" -tp \"" <> Transfile[#] <>
-  		"\" > \"" <> # <> "\\outputa.txt\" \n" <>
-  		"@ rename \"" <> # <> "\\result.nii.gz\" resultA-3D.nii.gz \n"
-  	) & /@ volDirs
-  	,
-  	"MacOSX",
-  	(
-  		"export PATH="<>transFol<>"/bin:$PATH \n"<>
-  		"export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
-  		transformix <>
-		" -in '" <> Movfile[#] <>
-		"' -out '" <> # <>
-		"' -tp '" <> Transfile[#] <>
-		"' > '" <> # <> "/outputa.txt' \n" <>
-		" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
-	) & /@ volDirs
-	,
-	"Unix",
-	(
-		"export PATH="<>transFol<>"/bin:$PATH \n"<>
-		"export LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
-		transformix <>
-		" -in '" <> Movfile[#] <>
-		"' -out '" <> # <>
-		"' -tp '" <> Transfile[#] <>
-		"' > '" <> # <> "/outputa.txt' \n" <>
-		" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
-	) & /@ volDirs
-  ];
-  
-  If[$debugElastix, Print[command]];
-  
-  command
+	transformix = GetAssetLocation["Transformix"];
+	transFol = StringDrop[DirectoryName[transformix, 2], -1];
+	
+	volDirs = FileNames["vol*", tempDir, 1];
+	
+	Movfile[fol_] := First[FileNames["moving*", fol]];
+	
+	Transfile[fol_] := Last[SortBy[FileNames["FinalTransform*", fol],FileDate[#, "Modification"] &]];
+	
+	command=Switch[operatingSystem,
+		"Windows",
+		(
+			"@ \"" <> transformix <>
+			"\" -in \"" <> Movfile[#] <>
+			"\" -out \"" <> # <>
+			"\" -tp \"" <> Transfile[#] <>
+			"\" > \"" <> # <> "\\outputa.txt\" \n" <>
+			"@ rename \"" <> # <> "\\result.nii.gz\" resultA-3D.nii.gz \n"
+		) & /@ volDirs
+		,
+		"MacOSX",
+		(
+			"export PATH="<>transFol<>"/bin:$PATH \n"<>
+			"export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
+			transformix <>
+			" -in '" <> Movfile[#] <>
+			"' -out '" <> # <>
+			"' -tp '" <> Transfile[#] <>
+			"' > '" <> # <> "/outputa.txt' \n" <>
+			" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
+		) & /@ volDirs
+		,
+		"Unix",
+		(
+			"export PATH="<>transFol<>"/bin:$PATH \n"<>
+			"export LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
+			transformix <>
+			" -in '" <> Movfile[#] <>
+			"' -out '" <> # <>
+			"' -tp '" <> Transfile[#] <>
+			"' > '" <> # <> "/outputa.txt' \n" <>
+			" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
+		) & /@ volDirs
+	];
+	
+	If[$debugElastix, Print[command]];
+	
+	command
 ]
 
 
@@ -682,8 +680,8 @@ RegisterData[
 	voxL=Length[vox];
 	
 	(*check for cyclic*)
-	cyc = AnyTrue[OptionValue[MethodReg], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
-	cyclyc = AllTrue[methodReg, (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
+	cyc = AnyTrue[Flatten[{OptionValue[MethodReg]}], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
+	cyclyc = AllTrue[Flatten[{OptionValue[MethodReg]}], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
 	If[cyc =!= cyclyc, Message[RegisterData::cyc];Return[Message[RegisterData::fatal]]];
 	
 	(*check dimensions*)
@@ -885,6 +883,8 @@ RegisterDatai[
 	
 	w={{0,0,0,0,0,0,1,1,1,0,0,0}};
 	
+	
+	
 	(*get option values*)
 	tdir=OptionValue[TempDirectory];
 	outputImg=ToLowerCase[ToString[OptionValue[OutputImage]]];
@@ -1036,7 +1036,7 @@ RegisterDatai[
 	];
 	
 	(*do some cleanup*)
-	If[OptionValue[ShowMetric], Print[ListLinePlot[Flatten[Import[#, "Data"][[2 ;;, 2]] /@ FileNames["IterationInfo*", tempdir]]]]];
+	If[OptionValue[ShowMetric], Print[ListLinePlot[Flatten[Import[#, "Data"][[2 ;;, 2]]& /@ FileNames["IterationInfo*", tempdir]]]]];
 	If[OptionValue[DeleteTempDirectory], DeleteDirectory[tempdir,DeleteContents->True]];
 	
 	(*output results*)
@@ -1083,9 +1083,9 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 	{maskMl, maskMr}=If[maskM==={1},{{1},{1}},CutData[maskM,cut2][[;;-2]]];
 	
 	(*register left part*)
-	regl = RegisterData[{targetl, maskTl, voxT}, {movingl, maskMl, voxM},  Sequence@@FilterRules[{opts}, Options[RegisterData]]];
+	regl = RegisterData[{targetl, maskTl, voxT}, {movingl, maskMl, voxM},Sequence@@FilterRules[{opts}, Options[RegisterData]]];
 	(*register right part*)
-	regr = RegisterData[{targetr, maskTr, voxT}, {movingr, maskMr, voxM},  Sequence@@FilterRules[{opts}, Options[RegisterData]]];
+	regr = RegisterData[{targetr, maskTr, voxT}, {movingr, maskMr, voxM},Sequence@@FilterRules[{opts}, Options[RegisterData]]];
 	
 	StichData[regl,regr]
 ]
@@ -1146,7 +1146,7 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 	
 	(*Delete temp directory*)
 	Switch[OptionValue[DeleteTempDirectory],
-		"All", DeleteDirectory[FileNameTake[tdir, {1, -2}],  DeleteContents -> True],
+		"All", DeleteDirectory[FileNameTake[tdir, {1, -2}],DeleteContents -> True],
 		"Trans", DeleteDirectory[tdir, DeleteContents -> True],
 		_, Null];
 		
@@ -1312,16 +1312,16 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 (*RegisterDiffusionData*)
 
 
-Options[RegisterDiffusionData] = 
-  Join[Options[RegisterData] /. {{1, 1, 1} -> {0, 1, 1}, "affine" -> "affineDTI", "rigid" -> "rigidDTI"},
-   {IterationsA -> 1000, 
-   	ResolutionsA -> 1, 
-   	HistogramBinsA -> 64, 
-    NumberSamplesA -> 20000, 
-    InterpolationOrderRegA -> 1, 
-    MethodRegA -> {"rigid", "bspline"},
-    RegistrationTarget->"Fist"
-    }];
+Options[RegisterDiffusionData] = Join[
+	Options[RegisterData] /. {{1, 1, 1} -> {0, 1, 1}, "affine" -> "affineDTI", "rigid" -> "rigidDTI"},{
+	IterationsA -> 1000, 
+ 	ResolutionsA -> 1, 
+ 	HistogramBinsA -> 64,
+ 	NumberSamplesA -> 20000,
+ 	InterpolationOrderRegA -> 1,
+ 	MethodRegA -> {"rigid", "bspline"},
+ 	RegistrationTarget->"Fist"
+}];
 
 SyntaxInformation[RegisterDiffusionData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -1357,7 +1357,7 @@ RegisterDiffusionData[
 	{anatdata_?ArrayQ, anatmask_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}},opts : OptionsPattern[]] := Module[{
 		dtidatar, tempDir, tempDira, volDirs, w,tFilesA, tFilesD, dtidatarA, cmd, target, movingdata
 	},
-  
+
 	(*get the current temp dir and define the anat tempdir*)
 	tempDir = OptionValue[TempDirectory];
 	tempDir = (If[StringQ[tempDir], tempDir, "Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
@@ -1446,74 +1446,74 @@ SyntaxInformation[RegisterDiffusionDataSplit] = {"ArgumentsPattern" -> {_, _., O
 
 RegisterDiffusionDataSplit[
 	{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-	opts : OptionsPattern[]
-	] := Block[{datal, datar, cut},
-   {datal, datar, cut} = CutData[data];
-   datal = RegisterDiffusionData[{datal, vox}, opts];
-   datar = RegisterDiffusionData[{datar, vox}, opts];
-   StichData[datal, datar]
-   ];
+	opts : OptionsPattern[]] := Block[
+		{datal, datar, cut},
+	
+	{datal, datar, cut} = CutData[data];
+	datal = RegisterDiffusionData[{datal, vox}, opts];
+	datar = RegisterDiffusionData[{datar, vox}, opts];
+	StichData[datal, datar]
+];
 
 RegisterDiffusionDataSplit[
 	{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-	opts : OptionsPattern[]
-	] := Block[{datal, datar, cut,maskr,maskl},
+	opts : OptionsPattern[]] := Block[
+		{datal, datar, cut,maskr,maskl},
 	
 	{datal, datar, cut} = CutData[data];
 	{maskl, maskr, cut} = CutData[mask,cut];
 	datal = RegisterDiffusionData[{datal, maskl, vox}, opts];
 	datar = RegisterDiffusionData[{datar, maskr, vox}, opts];
 	StichData[datal, datar]
-   ];
+];
 
 RegisterDiffusionDataSplit[
 	{data_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
 	{dataa_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-	opts : OptionsPattern[]
-	] := Block[{datal, datar, dataal, dataar, cut1, cut2},
-   	
-   (*find cuts*)
-   {datal, datar, cut1} = CutData[data];
-   {dataal, dataar, cut2} = CutData[dataa];
-   (*align cuts*)
-   {cut1,cut2}=Round[First@Nearest[{cut1 Last@vox, cut2 Last@voxa}, Round[Last@Dimensions[data]/2] Last@vox] / {Last@vox, Last@voxa}];
-   (*{cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];*)
-   
-   (*cut with the aligned cuts*)
-   {datal, datar, cut1} = CutData[data, cut1];
-   {dataal, dataar, cut2} = CutData[dataa, cut2];
-   
-   datal = RegisterDiffusionData[{datal, vox}, {dataal, voxa}, opts][[2]];
-   datar = RegisterDiffusionData[{datar, vox}, {dataar, voxa}, opts][[2]];
-   StichData[datal, datar]
-   ];
+	opts : OptionsPattern[]] := Block[
+		{datal, datar, dataal, dataar, cut1, cut2},
+ 	
+	(*find cuts*)
+	{datal, datar, cut1} = CutData[data];
+	{dataal, dataar, cut2} = CutData[dataa];
+	(*align cuts*)
+	{cut1,cut2}=Round[First@Nearest[{cut1 Last@vox, cut2 Last@voxa}, Round[Last@Dimensions[data]/2] Last@vox] / {Last@vox, Last@voxa}];
+	(*{cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];*)
+	
+	(*cut with the aligned cuts*)
+	{datal, datar, cut1} = CutData[data, cut1];
+	{dataal, dataar, cut2} = CutData[dataa, cut2];
+	
+	datal = RegisterDiffusionData[{datal, vox}, {dataal, voxa}, opts][[2]];
+	datar = RegisterDiffusionData[{datar, vox}, {dataar, voxa}, opts][[2]];
+	StichData[datal, datar]
+];
 
 RegisterDiffusionDataSplit[
 	{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
 	{dataa_, maska_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
-	opts : OptionsPattern[]
-	] := Block[{datal, datar, dataal, dataar, maskl, maskr, maskal, maskar,cut1,cut2},
+	opts : OptionsPattern[]] := Block[
+		{datal, datar, dataal, dataar, maskl, maskr, maskal, maskar,cut1,cut2},
 	
 	(*find cuts*)
-   {datal, datar, cut1} = CutData[data];
-   {dataal, dataar, cut2} = CutData[dataa];
-   
-   (*align cuts*)
-   {cut1,cut2}=Round[First@Nearest[{cut1 Last@vox, cut2 Last@voxa}, Round[Last@Dimensions[data]/2] Last@vox] / {Last@vox, Last@voxa}];
-   (*{cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];*)
-   
-   (*cut with the aligned cuts*)   
-   {datal, datar, cut1} = CutData[data,cut1];
-   {maskl, maskr, cut1} = CutData[mask,cut1];
-   {dataal, dataar, cut2} = CutData[dataa,cut2];
-   {maskal, maskar, cut2} = CutData[maska,cut2];
-  
-   
-   datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, maskal, voxa}, opts][[2]];
-   datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, maskar, voxa}, opts][[2]];
-   
-   StichData[datal, datar]
-   ];
+	{datal, datar, cut1} = CutData[data];
+	{dataal, dataar, cut2} = CutData[dataa];
+	
+	(*align cuts*)
+	{cut1,cut2}=Round[First@Nearest[{cut1 Last@vox, cut2 Last@voxa}, Round[Last@Dimensions[data]/2] Last@vox] / {Last@vox, Last@voxa}];
+	(*{cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];*)
+	
+	(*cut with the aligned cuts*) 
+	{datal, datar, cut1} = CutData[data,cut1];
+	{maskl, maskr, cut1} = CutData[mask,cut1];
+	{dataal, dataar, cut2} = CutData[dataa,cut2];
+	{maskal, maskar, cut2} = CutData[maska,cut2];
+	 
+	datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, maskal, voxa}, opts][[2]];
+	datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, maskar, voxa}, opts][[2]];
+	
+	StichData[datal, datar]
+];
 
 
 (* ::Subsection::Closed:: *)

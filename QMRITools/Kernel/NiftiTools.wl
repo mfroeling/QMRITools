@@ -1072,7 +1072,7 @@ SyntaxInformation[ExportNii] = {"ArgumentsPattern" -> {_,_,_., OptionsPattern[]}
 
 ExportNii[dato_, voxi_, opts:OptionsPattern[]] := ExportNii[dato, voxi, "" ,opts]
 
-ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
+ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo, data, type, off, leg, sl},
 	
 	fileo = If[fil == "", 
 		FileSelect["FileSave",{"*.nii"},"nifti",WindowTitle->"Select the destination file"], 
@@ -1082,7 +1082,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 	
 	(*if numbertyp is integer, Round data*)
 	type=OptionValue[NiiDataType];
-	data = ToPackedArray@Switch[type,"Integer",Round[dato],_,N[dato]];
+	data = ToPackedArray@Switch[type,"Integer",Round[Normal@dato],_,N[Normal@dato]];
 	(*for lagecy reasons still allow Integer and Real*)
 	type = type/.{"Integer"->"Integer16","Real"->"Real32"};
 	off = OptionValue[NiiOffset];
@@ -1112,23 +1112,21 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo,data,type,off},
 
 Options[ExportNiiDefault] = {NiiDataType -> Automatic, NiiLegacy->False, NiiSliceCode->0, NiiVersion -> 1, "Channel" -> Null, "ExtensionParsing" -> False}
 
-ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := 
- Module[{ver, data, header, type, strm},
-  
-  ver = Clip[OptionsPattern[NiiVersion], {1, 2}];
-  ver = If[NumberQ[ver], ver, 1];
-  (*make the nii header*)
-  header = MakeNiiHeader[rule, ver, opts];
-  If[header === $Failed, Return[$Failed, Module]];
-  {header, type} = header;
-  (*get the data*)
-  data = "Data" /. rule;
-  (*write to file*)
-  strm = OpenWrite[file, BinaryFormat -> True];
-  BinaryWrite[strm, #[[1]], #[[2]]] & /@ header;
-  BinaryWrite[strm, ArrangeData[data], type];
-  Close[strm];
-  ]
+ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := Module[{ver, data, header, type, strm},
+	ver = Clip[OptionsPattern[NiiVersion], {1, 2}];
+	ver = If[NumberQ[ver], ver, 1];
+	(*make the nii header*)
+	header = MakeNiiHeader[rule, ver, opts];
+	If[header === $Failed, Return[$Failed, Module]];
+	{header, type} = header;
+	(*get the data*)
+	data = "Data" /. rule;
+	(*write to file*)
+	strm = OpenWrite[file, BinaryFormat -> True];
+	BinaryWrite[strm, #[[1]], #[[2]]] & /@ header;
+	BinaryWrite[strm, ArrangeData[data], type];
+	Close[strm];
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1136,137 +1134,133 @@ ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] :=
 
 
 MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
-  {vox, dim, ndim, type, range, data, header,
-   headerInp, voxInp, headerDef, off, offInp, Rs, R, Rq,
-   code, scode, qcode, qb, qc, qd, sx, sy, sz, offs, xoffq, yoffq, zoffq},
-  type = OptionValue[NiiDataType];
-  sl = OptionValue[NiiSliceCode];
-  
-  (*get the data*)
-  data = "Data" /. rule;
-  (*check if data if number array*)
-  If[! ArrayQ[data, _, NumberQ], Message[Export::niidat]; 
-   Return[$Failed, Module]];
-  (*get data properties*)
-  ndim = ArrayDepth[data];
-  dim = Dimensions[data];
-   
-  type = type /. (Automatic :> DetectDataType[data]);
-  range = type /. rangeNii;
-  
-  (*Check data type and range*)
-  If[! ArrayQ[data, _, type /. typeCheckNii], If[! ArrayQ[IntegerChop[data], _, type /. typeCheckNii], Message[Export::niitype, type]; Return[$Failed, Module]]];
-  If[ListQ[range] && (Min[data] < range[[1]] || Max[data] > range[[2]]), Message[Export::niiran, MinMax[data]]; Return[$Failed, Module]];
-  If[type == {"Byte", "Byte", "Byte"} && Last[dim] != 3, Message[Export::niidim, type]; Return[$Failed, Module]];
-  
-  (*is header given as input and is header a list of rules, 
-  if given an valid use header*)
-  header = "Header" /. rule;
-  headerInp = MatchQ[header, {_Rule ..}];
-  
-  (*check if valid header*)
-  If[headerInp,
-   headerInp = 
-    AllTrue[{Length[header] === 44 | Length[header] === 38}];
-   If[! headerInp, Message[Export::niihdr]; Return[$Failed, Module]]
-   ];
-  
-  (*is vox given as input and is header a list 3 number, 
-  vox is given use vox (override in header) else use default 1x1x1*)
-  vox = "VoxelSize" /. rule;
-  voxInp = MatchQ[vox, {_?NumberQ, _?NumberQ, _?NumberQ}];
-  (*if no voxel is given default*)
-  vox = If[voxInp, vox, {1.,1.,1}];
-  
-  (*chekc if a offset is given*)
-  off = "Offset" /. rule;
-  offInp = ListQ[off];
-  If[offInp,
-  	(*offsets are given*)
-  	If[Length[off]===4,
-  		(*one off for s and q form*)
-  		{code, off, R} = off;
-  		scode = qcode = code /. Reverse[coordinateNii, 2];
-  		
-  		{xoffq ,yoffq, zoffq} = off;
-  		{qb, qc, qd} = MakeNiiOrentationQ[R];
-  		{sx, sy, sz} = MakeNiiOrentationS[off, vox, R]
-  		,
-  		(*seperate off for s and q form*)
-  		{{scode, offs, Rs} , {qcode, {xoffq ,yoffq, zoffq}, Rq}} = off;
-  		{scode, qcode} = {scode, qcode} /. Reverse[coordinateNii, 2];
-  		
-  		{qb, qc, qd} = MakeNiiOrentationQ[Rq];
-  		{sx, sy, sz} = MakeNiiOrentationS[offs, vox, Rs]
-  	]
-  	,
-  	(*no offsets are given use default values*)
-  	offs = {dim[[-1]], dim[[-2]], dim[[1]]}/2;
-  	{xoffq ,yoffq, zoffq} = N[Reverse[vox] offs];
-  	{qb, qc, qd} = {0., 0., 0.};
-  	{sx, sy, sz} = MakeNiiOrentationS[offs, vox];
-  	
-  	If[OptionValue[NiiLegacy],
-  		qcode = "Scanner Posistion" /. Reverse[coordinateNii, 2];
-  		scode = "Scanner Posistion" /. Reverse[coordinateNii, 2];
-  		,
-  		scode = qcode = "None" /. Reverse[coordinateNii, 2];
-  	];
-  ];
-  
-  headerDef = {
-    "size" -> Switch[ver, 1, 348, 2, 540],
-    "data_Type" -> StringPadRight["", 10],
-    "dbName" -> StringPadRight["", 18],
-    "extents" -> 0,
-    "sessionError" -> 0,
-    "regular" -> "r",
-    "dimInfo" -> DimInfo[{"x", "y", "z", Undefined}],(*input*)
-    
-    "dim" -> PadRight[Flatten[{ndim, If[ndim == 4, dim[[{4, 3, 1, 2}]], Reverse[dim]]}], 8, 1],(*input*)
-    "intentP1" -> 0.,
-    "intentP2" -> 0.,
-    "intentP3" -> 0.,
-    "intentCode" -> 0,
-    "dataType" -> type /. Reverse[dataTypeNii, 2],(*input*)
-    "bitPix" -> type /. Reverse[dataTypeNii, 2] /. typeSizeNii,(*input*)
-    "sliceStart" -> 0,
-    "pixDim" -> PadRight[Flatten[{If[sl===2,-1.,1.], Reverse[vox]}], 8, 0],(*input*)
-    "voxOffset" -> Switch[ver, 1, 352, 2, 544],
-    "scaleSlope" -> 1.,
-    "scaleInteger" -> 0.,
-    "sliceEnd" -> 0,
-    "sliceCode" -> sl,
-    "xyztUnits" -> XyztUnits[{"Millimeters", "Seconds"}],(*input*)
-    "calMax" -> 0.,
-    "calMin" -> 0.,
-    "sliecDuration" -> 0.,
-    "tOffset" -> 0.,
-    "glMax" -> 0,
-    "glMin" -> 0,
-    
-    "descrip" -> StringPadRight["Created with QMRITools", 80, FromCharacterCode[0]],(*input*)
-    "auxFile" -> StringPadRight["None", 24, FromCharacterCode[0]],
-    "qformCode" -> qcode,
-    "sformCode" -> scode,
-    "quaternB" -> qb,
-    "quaternC" -> qc,
-    "quaternD" -> qd,
-    "qOffsetX" -> xoffq,
-    "qOffsetY" -> yoffq,
-    "qOffsetZ" -> zoffq,
-    "sRowx" -> sx,
-    "sRowy" -> sy,
-    "sRowz" -> sz,
-    "intentName" -> StringPadRight["", 16],
-    "magic" -> StringPadRight[Switch[ver, 1, "n+1", 2, "n+2"], 4, FromCharacterCode[0]],
-    "ECode" -> {0, 0, 0, 0}
-    };
-  
-  header = GetNiiHeaderValues[ver] /. headerDef;
-  
-  {header, type}
-  ]
+	{vox, dim, ndim, type, range, data, header, headerInp, voxInp, headerDef, off, sl, 
+		offInp, Rs, R, Rq, code, scode, qcode, qb, qc, qd, sx, sy, sz, offs, xoffq, yoffq, zoffq},
+	
+	type = OptionValue[NiiDataType];
+	sl = OptionValue[NiiSliceCode];
+	
+	(*get the data*)
+	data = "Data" /. rule;
+	(*check if data if number array*)
+	If[! ArrayQ[data, _, NumberQ], Message[Export::niidat]; Return[$Failed, Module]];
+	
+	(*get data properties*)
+	ndim = ArrayDepth[data];
+	dim = Dimensions[data];
+	
+	type = type /. (Automatic :> DetectDataType[data]);
+	range = type /. rangeNii;
+	
+	(*Check data type and range*)
+	If[! ArrayQ[data, _, type /. typeCheckNii], If[! ArrayQ[IntegerChop[data], _, type /. typeCheckNii], Message[Export::niitype, type]; Return[$Failed, Module]]];
+	If[ListQ[range] && (Min[data] < range[[1]] || Max[data] > range[[2]]), Message[Export::niiran, MinMax[data]]; Return[$Failed, Module]];
+	If[type == {"Byte", "Byte", "Byte"} && Last[dim] != 3, Message[Export::niidim, type]; Return[$Failed, Module]];
+	
+	(*is header given as input and is header a list of rules,
+	if given an valid use header*)
+	header = "Header" /. rule;
+	headerInp = MatchQ[header, {_Rule ..}];
+	
+	(*check if valid header*)
+	If[headerInp,
+		headerInp = AllTrue[{Length[header] === 44 | Length[header] === 38}];
+		If[! headerInp, Message[Export::niihdr]; Return[$Failed, Module]]
+	];
+	
+	(*is vox given as input and is header a list 3 number,
+	vox is given use vox (override in header) else use default 1x1x1*)
+	vox = "VoxelSize" /. rule;
+	voxInp = MatchQ[vox, {_?NumberQ, _?NumberQ, _?NumberQ}];
+	(*if no voxel is given default*)
+	vox = If[voxInp, vox, {1.,1.,1}];
+	
+	(*chekc if a offset is given*)
+	off = "Offset" /. rule;
+	offInp = ListQ[off];
+	If[offInp,
+		(*offsets are given*)
+		If[Length[off]===4,
+			(*one off for s and q form*)
+			{code, off, R} = off;
+			scode = qcode = code /. Reverse[coordinateNii, 2];
+				
+			{xoffq ,yoffq, zoffq} = off;
+			{qb, qc, qd} = MakeNiiOrentationQ[R];
+			{sx, sy, sz} = MakeNiiOrentationS[off, vox, R]
+			,
+			(*seperate off for s and q form*)
+			{{scode, offs, Rs} , {qcode, {xoffq ,yoffq, zoffq}, Rq}} = off;
+			{scode, qcode} = {scode, qcode} /. Reverse[coordinateNii, 2];
+			
+			{qb, qc, qd} = MakeNiiOrentationQ[Rq];
+			{sx, sy, sz} = MakeNiiOrentationS[offs, vox, Rs]
+		],
+		(*no offsets are given use default values*)
+		offs = {dim[[-1]], dim[[-2]], dim[[1]]}/2;
+		{xoffq ,yoffq, zoffq} = N[Reverse[vox] offs];
+		{qb, qc, qd} = {0., 0., 0.};
+		{sx, sy, sz} = MakeNiiOrentationS[offs, vox];
+		
+		If[OptionValue[NiiLegacy],
+			qcode = "Scanner Posistion" /. Reverse[coordinateNii, 2];
+			scode = "Scanner Posistion" /. Reverse[coordinateNii, 2];
+			,
+			scode = qcode = "None" /. Reverse[coordinateNii, 2];
+		];
+	];
+	headerDef = {
+		"size" -> Switch[ver, 1, 348, 2, 540],
+		"data_Type" -> StringPadRight["", 10],
+		"dbName" -> StringPadRight["", 18],
+		"extents" -> 0,
+		"sessionError" -> 0,
+		"regular" -> "r",
+		"dimInfo" -> DimInfo[{"x", "y", "z", Undefined}],(*input*)
+		
+		"dim" -> PadRight[Flatten[{ndim, If[ndim == 4, dim[[{4, 3, 1, 2}]], Reverse[dim]]}], 8, 1],(*input*)
+		"intentP1" -> 0.,
+		"intentP2" -> 0.,
+		"intentP3" -> 0.,
+		"intentCode" -> 0,
+		"dataType" -> type /. Reverse[dataTypeNii, 2],(*input*)
+		"bitPix" -> type /. Reverse[dataTypeNii, 2] /. typeSizeNii,(*input*)
+		"sliceStart" -> 0,
+		"pixDim" -> PadRight[Flatten[{If[sl===2,-1.,1.], Reverse[vox]}], 8, 0],(*input*)
+		"voxOffset" -> Switch[ver, 1, 352, 2, 544],
+		"scaleSlope" -> 1.,
+		"scaleInteger" -> 0.,
+		"sliceEnd" -> 0,
+		"sliceCode" -> sl,
+		"xyztUnits" -> XyztUnits[{"Millimeters", "Seconds"}],(*input*)
+		"calMax" -> 0.,
+		"calMin" -> 0.,
+		"sliecDuration" -> 0.,
+		"tOffset" -> 0.,
+		"glMax" -> 0,
+		"glMin" -> 0,
+		
+		"descrip" -> StringPadRight["Created with QMRITools", 80, FromCharacterCode[0]],(*input*)
+		"auxFile" -> StringPadRight["None", 24, FromCharacterCode[0]],
+		"qformCode" -> qcode,
+		"sformCode" -> scode,
+		"quaternB" -> qb,
+		"quaternC" -> qc,
+		"quaternD" -> qd,
+		"qOffsetX" -> xoffq,
+		"qOffsetY" -> yoffq,
+		"qOffsetZ" -> zoffq,
+		"sRowx" -> sx,
+		"sRowy" -> sy,
+		"sRowz" -> sz,
+		"intentName" -> StringPadRight["", 16],
+		"magic" -> StringPadRight[Switch[ver, 1, "n+1", 2, "n+2"], 4, FromCharacterCode[0]],
+		"ECode" -> {0, 0, 0, 0}
+	};
+	
+	header = GetNiiHeaderValues[ver] /. headerDef;
+	{header, type}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1274,36 +1268,36 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 
 
 DetectDataType[input_] := Module[{data, min, max},
-  data = Flatten[input];
-  Switch[Head[Total[data]],
-   Integer,
-   {min, max} = MinMax[data];
-   If[min >= 0 && max <= 18446744073709551615,
-   (*positive integer*)
-   Switch[Total@Boole[# >= max & /@ {255, 65535, 4294967295, 18446744073709551615}], 
-    	4, "Byte", 
-    	3, "UnsignedInteger16", 
-    	2, "UnsignedInteger32", 
-    	1, "UnsignedInteger64"
-    ],
-    If[max <= 9223372036854775807 && min >= -9223372036854775807,
-    (*signed integer*)
-    Switch[Total@Boole[(max <= # && min >= -#) & /@ {127, 32767, 2147483647, 9223372036854775807}], 
-     	4, "Integer8", 
-     	3, "Integer16", 
-     	2, "Integer32", 
-     	1, "Integer64"
-     ],
-     (*else real*)
-     "Real32"
-     ]
-    ],
-   Real, "Real32",
-   Rational, "Real32",
-   Complex, "Complex64",
-   _, "Real32"
-   ]
-  ]
+	data = Flatten[input];
+	Switch[Head[Total[data]],
+		Integer,
+		{min, max} = MinMax[data];
+		If[min >= 0 && max <= 18446744073709551615,
+			(*positive integer*)
+			Switch[Total@Boole[# >= max & /@ {255, 65535, 4294967295, 18446744073709551615}],
+				4, "Byte",
+				3, "UnsignedInteger16",
+				2, "UnsignedInteger32",
+				1, "UnsignedInteger64"
+			],
+			If[max <= 9223372036854775807 && min >= -9223372036854775807,
+				(*signed integer*)
+				Switch[Total@Boole[(max <= # && min >= -#) & /@ {127, 32767, 2147483647, 9223372036854775807}],
+					4, "Integer8",
+					3, "Integer16",
+					2, "Integer32",
+					1, "Integer64"
+				],
+				(*else real*)
+				"Real32"
+			]
+		],
+		Real, "Real32",
+		Rational, "Real32",
+		Complex, "Complex64",
+		_, "Real32"
+	]
+]
 
 
 (* ::Subsection:: *)

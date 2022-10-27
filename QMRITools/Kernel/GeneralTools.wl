@@ -829,23 +829,21 @@ SyntaxInformation[ReverseCrop] = {"ArgumentsPattern" -> {_, _, _, _.}};
 ReverseCrop[data_, dim_, crop_] := ReverseCrop[data, dim, crop, {0, 0}]
 
 ReverseCrop[data_, dim_, crop_, {v1_, v2_}] := Module[{datac, pad},
-  
-  pad = If[v1 === 0 && v2 === 0,
-    (*use original crop*)
-    Partition[Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2]
-    ,
-    (*use other voxel size*)
-    Floor[(v1/v2) Partition[
-       Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2]]
-    ];
-
-  datac = Switch[ArrayDepth[data],
-    3, ArrayPad[data, pad],
-    4, Transpose[ArrayPad[#, pad] & /@ Transpose[data]],
-    _, Return[$Failed, Module]
-    ];
-    
-    ToPackedArray@N@datac
+	
+	pad = If[v1 === 0 && v2 === 0,
+		(*use original crop*)
+		Partition[Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2],
+		(*use other voxel size*)
+		Floor[(v1/v2) Partition[Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2]]
+	];
+	
+	datac = Switch[ArrayDepth[data],
+		3, ArrayPad[data, pad],
+		4, Transpose[ArrayPad[#, pad] & /@ Transpose[data]],
+		_, Return[$Failed, Module]
+	];
+	
+	ToPackedArray@N@datac
 ]
 
 
@@ -855,32 +853,26 @@ ReverseCrop[data_, dim_, crop_, {v1_, v2_}] := Module[{datac, pad},
 
 SyntaxInformation[ApplyCrop] = {"ArgumentsPattern" -> {_, _, _.}};
 
-ApplyCrop[data_, crop_] := ApplyCrop[data, crop , {0,0}]
+ApplyCrop[data_, crop_] := ApplyCrop[data, crop, {{1,1,1}, {1,1,1}}]
 
-ApplyCrop[data_, crop_ , {v1_,v2_}] := Module[{z1, z2, x1, x2, y1, y2,dim},
+ApplyCrop[data_, crop_ , {v1_,v2_}] := Module[{z1, z2, x1, x2, y1, y2, dim, out},
 	
-	dim=Dimensions[data];
-	dim=If[Length[dim]==4,dim[[{1,3,4}]],dim];
+	dim = Dimensions[data];
+	dim = If[Length[dim]==4,dim[[{1,3,4}]],dim];
 	
-	{z1, z2, x1, x2, y1, y2} = If[v1===0&&v2===0,
-		crop,
-		Round[(crop - 1) Flatten[Transpose[ConstantArray[v1/v2, 2]]] + 1]
-	];
+	(*get crops coors*)
+	{z1, z2, x1, x2, y1, y2} = Round[crop Flatten[{#, #} & /@ (v1/v2)]];
 	
 	If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]],Return[Message[ApplyCrop::dim]]];
-		
-  out = If[ArrayDepth[data] === 4,
-   data[[z1 ;; z2, All, x1 ;; x2, y1 ;; y2]],
-   If[ArrayDepth[data] === 3,
-    data[[z1 ;; z2, x1 ;; x2, y1 ;; y2]],
-    If[ArrayDepth[data] === 2,
-     data[[x1 ;; x2, y1 ;; y2]]
-     ]]];
-     
-     
-     ToPackedArray@N@out
-     
-     ]
+	
+	out = Switch[ArrayDepth[data],
+		4, data[[z1 ;; z2, All, x1 ;; x2, y1 ;; y2]],
+		3,	data[[z1 ;; z2, x1 ;; x2, y1 ;; y2]],
+		2, data[[x1 ;; x2, y1 ;; y2]]
+	];
+
+	ToPackedArray@N@out
+]
 
 
 (* ::Subsection:: *)
@@ -898,11 +890,12 @@ CutData[data_] := CutData[data, FindMiddle[data, False]]
 CutData[data_, print_?BooleanQ] := CutData[data, FindMiddle[data, print]]
 
 CutData[data_, cut_?IntegerQ] := Switch[ArrayDepth[data],
-		4,{data[[All, All, All, ;; cut]],data[[All, All, All, (cut + 1) ;;]],cut},
-		3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}]
+	4,{data[[All, All, All, ;; cut]],data[[All, All, All, (cut + 1) ;;]],cut},
+	3,{data[[All, All, ;; cut]], data[[All, All, (cut + 1) ;;]],cut}
+]
+
 
 FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,mask,ran,blur,i, max},
-  
 	(*flatten mean and normalize data*)
 	dat=dati;
 	fdat = Flatten[dat];
@@ -918,14 +911,14 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 	blur = 20;
 	i = 0;
 	While[peaks === {} && i < 5,
-	 (*smooth the data a bit*)
-	 datf = max - GaussianFilter[mask dat, len/blur];
-	 (*find the peaks*)
-	 peaks = FindPeaks[datf];
-	 peaks = If[Length[peaks] >= 3, peaks[[2 ;; -2]], peaks];
-	 peaks = Select[peaks, (ran[[1]] < #[[1]] < ran[[2]]) &];
-	 blur += 10;
-	 i++;
+		(*smooth the data a bit*)
+		datf = max - GaussianFilter[mask dat, len/blur];
+		(*find the peaks*)
+		peaks = FindPeaks[datf];
+		peaks = If[Length[peaks] >= 3, peaks[[2 ;; -2]], peaks];
+		peaks = Select[peaks, (ran[[1]] < #[[1]] < ran[[2]]) &];
+		blur += 10;
+		i++;
 	];
 	
 	If[peaks==={},
@@ -944,7 +937,7 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 		(*output*)
 		Round[First@First@peak]
 	]
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -973,7 +966,8 @@ MakeIntFunction[dat_, vox_, int_?IntegerQ] := Block[{def, range},
 		{5,If[ArrayDepth[dat]===3,6,2],0,Dimensions[dat][[;;3]],{int,int,int}+1,0,0,0,0,ex&,{},{},False},
 		Range[range[[#,1]],range[[#,2]],vox[[#]]]&/@{1,2,3},
 		ToPackedArray@N@dat,
-		{Automatic,Automatic,Automatic}]]
+		{Automatic,Automatic,Automatic}]
+	]
 ]
 
 
@@ -1012,6 +1006,7 @@ QMRIToolsFunctions[toolb_String]:= Block[{packages,names,functions,options,allNa
 	If[toolb === "", output, First@output]
 ]
 
+
 QMRIToolsFunctions[p_Integer]:=Block[{toolbox,functions,options},
 	{toolbox,functions,options}=Transpose[QMRIToolsFunctions[]];
 	
@@ -1024,6 +1019,7 @@ QMRIToolsFunctions[p_Integer]:=Block[{toolbox,functions,options},
 	Print[Column[{"",Style["Functions", Bold, 16], "",functions // Transpose // TableForm,""}]];
 	Print[Column[{"",Style["Options", Bold, 16], "",options // Transpose // TableForm,""}]];
 ]
+
 
 QMRIToolsFunctions[toolb_String,p_Integer]:=Block[{toolbox,functions,options, output},
 	If[toolb == "All",
@@ -1055,11 +1051,11 @@ QMRIToolsFuncPrint[]:=QMRIToolsFuncPrint[""]
 QMRIToolsFuncPrint[toolb_String]:=If[toolb=="",PrintAll/@QMRIToolsFunctions[];,PrintAll[QMRIToolsFunctions[toolb]];]
 
 PrintAll[{name_, functions_, options_}]:=(
-   Print[Style[name, Bold, 24]];
-   Print[Style["Functions", {Bold, 16}]];
-   Print[Information[#]]& /@ functions;
-   Print[Style["Options", {Bold, 16}]];
-   Print[Information[#]]& /@ options;
+	Print[Style[name, Bold, 24]];
+	Print[Style["Functions", {Bold, 16}]];
+	Print[Information[#]]& /@ functions;
+	Print[Style["Options", {Bold, 16}]];
+	Print[Information[#]]& /@ options;
 );
 
 

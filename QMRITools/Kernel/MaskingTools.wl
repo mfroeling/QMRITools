@@ -72,8 +72,8 @@ SmoothSegmentation::usage =
 RemoveMaskOverlaps::usage = 
 "RemoveMaskOverlaps[mask] removes the overlaps between multiple masks. Mask is a 4D dataset with {z, masks, x, y}."
 
-GrowMask::usage=
-"GrowMask[mask,size] if size > 0 the mask is dilated and if size < 0 the mask is eroded."
+DilateMask::usage=
+"DilateMask[mask,size] if size > 0 the mask is dilated and if size < 0 the mask is eroded."
 
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
@@ -89,19 +89,22 @@ maskdim is the dimensions of the output {zout,xout,yout}."
 
 
 MaskSmoothing::usage = 
-"MaskSmoothing is an options for Mask, if set to True it smooths the mask, by closing holse and smoothing the contours."
+"MaskSmoothing is an options for Mask, SmoothMask and SmoothSegmentation, if set to True it smooths the mask, by closing holse and smoothing the contours."
 
 MaskComponents::usage =
-"MaskComponents is an option for Mask and SmoothMask. Determinse the amount of largest clusters used as mask." 
+"MaskComponents is an option for Mask, SmoothMask and SmoothSegmentation. Determinse the amount of largest clusters used as mask." 
 
 MaskClosing::usage =
-"MaskClosing  is an option for Mask and SmoothMask. The size of the holes in the mask that will be closed." 
+"MaskClosing  is an option for Mask, SmoothMask and SmoothSegmentation. The size of the holes in the mask that will be closed." 
 
 MaskDilation::usage = 
-"MaskDilation is an option for Mask. If the value is greater than 0 it will dilate the mask, if the value is smaller than 0 it will erode the mask."
+"MaskDilation is an option for Mask, SmoothMask and SmoothSegmentation. If the value is greater than 0 it will dilate the mask, if the value is smaller than 0 it will erode the mask."
 
 MaskFiltKernel::usage =
 "MaskFiltKernel is an option for Mask, SmoothMask and SmoothSegmentation. How mucht the contours are smoothed." 
+
+SmoothItterations::usage =
+"SmootItterations is an option for Mask, SmoothMask and SmoothSegmentation and defines how often the smoothing is repeated."
 
 GetMaskOutput::usage = 
 "GetMaskOutput is an option for GetMaskData. Defaul is \"Slices\" which gives the mask data per slices. Else the entire mask data is given as output."
@@ -205,7 +208,7 @@ FitGradientMap[data_] := Module[{func, x, y, z, coor},
 (*Mask*)
 
 
-Options[Mask]={MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> 5, MaskFiltKernel -> 2, MaskDilation -> 0};
+Options[Mask] = {MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> 5, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->3};
 
 SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -219,17 +222,15 @@ Mask[{dat_?ArrayQ, tr_?NumberQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
 
 Mask[{dat_?ArrayQ, tr_?VectorQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
 
-Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, smooth, tresh, dataD, datN, data, dil},
+Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, dataD, datN, data, dil},
 	
+	(*perform data checks*)
 	data = ToPackedArray@N@dat;
 	dataD = ArrayDepth[data];
-	
-	smooth = OptionValue[MaskSmoothing];
-	dil = Round[OptionValue[MaskDilation]];
-	
 	If[Length[tr] =!= 2, Return@Message[Mask::tresh, tr]];
 	If[ArrayDepth[data] > 3, Return@Message[Mask::dep, dataD]];
-			
+	
+	(*perform the masking*)		
 	mask = If[tr === {0, 0},
 		(*no threshhold*)
 		ImageData[Binarize[If[dataD == 2, Image, Image3D][Rescale[data, {1, 0.95} MinMax[data]]]]],
@@ -238,10 +239,7 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, smooth, tre
 	];
 	
 	(*smooth the mask if needed*)
-	mask = If[smooth, SmoothMask[mask, FilterRules[{opts, Options[Mask2]}, Options[SmoothMask]]], mask];
-	mask = Which[dil > 0, Dilation[mask, dil], dil < 0, Erosion[mask, dil], True, mask];
-	
-	mask
+	SparseArray@If[OptionValue[MaskSmoothing], SmoothMask[mask, FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]], mask]
 ]
 
 
@@ -249,20 +247,55 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, smooth, tre
 (*SmoothMask*)
 
 
-Options[SmoothMask]={MaskComponents->1, MaskClosing->5, MaskFiltKernel->2}
+Options[SmoothMask] = {MaskComponents->1, MaskClosing->5, MaskFiltKernel->2, MaskDilation -> 0, SmoothItterations->3}
 
 SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close, obj, filt},
-  close = OptionValue[MaskClosing];(*close holes in mask*)
-  pad = 3 close;
-  obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
-  filt = OptionValue[MaskFiltKernel];(*how much smooting*)
+SmoothMask[msk_,OptionsPattern[]] := Block[{itt, dil, pad, close, obj, filt, mask},
+	
+	(*get the options*)
+	itt = Round[OptionValue[SmoothItterations]];(*how much the smoothing is repeated*)
+	dil = Round[OptionValue[MaskDilation]];(*how much the mask is eroded or dilated*)
+	obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
+	filt = OptionValue[MaskFiltKernel];(*how much smooting*)
+	close = OptionValue[MaskClosing];(*close holes in mask*)
+	pad = Max[{5,2 close}];
+	
+	(*perform padding to avoid border effects*)
+	mask = ArrayPad[Normal@msk,pad];
+	(*select number of mask components*)
+	mask = ImageData[SelectComponents[ If[ArrayDepth[mask]==2,Image,Image3D][mask],"Count", -obj]];
+	(*perform the closing opperation*)
+	mask = Closing[mask, close];
+	(*perform itterative smoothing*)
+	mask = ImageData@Nest[Round[GaussianFilter[Erosion[Round[GaussianFilter[Dilation[#, 1], filt] + 0.05], 1], filt] + 0.05]&, Image3D@mask, itt];
+	(*perform dilation if needed*)
+	mask = DilateMask[mask,dil];
+	(*reverse padding*)
+	SparseArray[ArrayPad[mask,-pad]]
+]
 
-  If[ArrayDepth[mask]==2,
-  	Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]],
-  	Round[GaussianFilter[ArrayPad[Closing[ImageData[SelectComponents[Image3D[ArrayPad[mask, pad]],"Count", -obj]], close],-pad], filt]]
-  ]
+
+(* ::Subsubsection::Closed:: *)
+(*DilateMask*)
+
+
+SyntaxInformation[DilateMask] = {"ArgumentsPattern" -> {_, _}};
+
+DilateMask[seg_, size_] := Which[
+	(*dilation*)
+	size > 0,
+	If[ArrayDepth[seg]>3,
+		Transpose[SparseArray[SparseArray[ImageData@Dilation[Image3D[#], Round[size]]] & /@ Transpose[seg]]],
+		SparseArray[Dilation[Normal[seg], Round[size]]]
+	],
+	(*erosion*)
+	size< 0,
+	If[ArrayDepth[seg]>3,
+		Transpose[SparseArray[SparseArray[ImageData@Erosion[Image3D[#], Round[Abs[size]]]] & /@ Transpose[seg]]],
+		SparseArray[Dilation[Normal[seg], Round[size]]]
+	],
+	True, SparseArray[seg]
 ]
 
 
@@ -273,28 +306,27 @@ SmoothMask[mask_,OptionsPattern[]] := Block[{pad, close, obj, filt},
 SyntaxInformation[MaskData] = {"ArgumentsPattern" -> {_, _}};
 
 MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
+	(*get the data properties*)
 	dataD = ArrayDepth[data];
 	maskD = ArrayDepth[mask];
 	dimD = Dimensions[data];
 	dimM = Dimensions[mask];
 	
+	(*determine how to mask the data*)
 	out = Switch[{dataD,maskD},
 		{2,2}, If[dimD == dimM, mask data, 1],
 		{3,3}, If[dimD == dimM, mask data, 1],
 		{3,2}, If[dimD[[2;;]] == dimM, mask # &/@ data, 1],
-		{4,3}, 
-		Which[
-			dimD[[2;;]] == dimM, mask # & /@ data,
-			dimD[[{1,3,4}]] == dimM, Transpose[mask # & /@ Transpose[data]],
-			True, 1
-			],
-		_, 2;
+		{4,3}, Which[dimD[[2;;]] == dimM, mask # & /@ data, dimD[[{1,3,4}]] == dimM, Transpose[mask # & /@ Transpose[data]], True, 1],
+		_, 2
 	];
 	
+	(*check for errors*)
 	If[out === 1, Message[MaskData::dim, dimD, dimM]];
 	If[out === 2, Message[MaskData::dep, dataD, maskD]];
 	
-	ToPackedArray@N@out
+	(*make the output*)
+	ToPackedArray@N@Normal@out
 ]
 
 
@@ -337,29 +369,16 @@ SyntaxInformation[MeanSignal] = {"ArgumentsPattern" -> {_, _.,OptionsPattern[]}}
 
 MeanSignal[data_, opts:OptionsPattern[]] := MeanSignal[data, "", opts];
 
-MeanSignal[data_, posi_ ,OptionsPattern[]] := Block[{mean, mask, pos, dat,mdat},
-  
-  Which[
-  	ListQ[posi],
-  	pos=posi; dat=data[[All,pos]];
-  	,
-  	IntegerQ[posi],
-  	pos={posi}; dat=data[[All,pos]];
-  	,
-  	True,
-  	pos=All; dat=data;
-  ];
-  
-  mask = If[OptionValue[UseMask],
-  	mdat = NormalizeData[Mean@Transpose@dat];
-   	Round@GaussianFilter[Mask[mdat], 5]
-   	,
-   	ConstantArray[1,Dimensions[dat[[All,1]]]]
-  ];   
-  
-  mean = MeanNoZero[Flatten[#]] & /@ Transpose[MaskData[dat, mask]];
-   
-  N@mean
+MeanSignal[data_, posi_, OptionsPattern[]] := Block[{pos, dat, mask},
+	{pos,dat} = Which[
+		ListQ[posi], {posi, data[[All,pos]]},
+		IntegerQ[posi], {{posi}, data[[All,pos]]},
+		True, {All, data}
+	];
+	
+	mask = If[OptionValue[UseMask], Mask[NormalizeMeanData[dat], MaskSmoothing->True], 0 dat[[All,1]] + 1];
+	
+	N@MeanNoZero[Flatten[#]] & /@ Transpose[MaskData[dat, mask]]
 ]
 
 
@@ -375,13 +394,13 @@ SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
 
 SplitSegmentations[masksI_]:=SplitSegmentations[masksI, True]
 
-SplitSegmentations[masksI_,sparse_] := Block[{vals, masks},
+SplitSegmentations[masksI_, sparse_] := Block[{vals, masks},
 	masks=SparseArray[masksI];
 	vals = DeleteCases[Sort@Round[DeleteDuplicates[Flatten[masksI]]],0];
 	masks =(1 - Unitize[masks - #]) & /@ vals;
 	masks = Transpose[masks];
-	{If[sparse,masks,Normal@masks], vals}
-  ]
+	{If[sparse, masks, Normal@masks], vals}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -397,11 +416,11 @@ MergeSegmentations[masks_, vals_] := Normal@Total[vals Transpose@SparseArray[mas
 (*SmoothSegmentation*)
 
 
-Options[SmoothSegmentation] = {MaskFiltKernel -> 2, MaskComponents->1}
+Options[SmoothSegmentation] = {MaskComponents -> 2, MaskClosing -> 5, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->3}
 
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothSegmentation[masks_, OptionsPattern[]] := 
+SmoothSegmentation[masks_, opts:OptionsPattern[]] := 
  Block[{obj, maskInp, maskOver, maskOut, smooth, posOver, x, y, z, p, tmp},
  	smooth = OptionValue[MaskFiltKernel];
 	obj = OptionValue[MaskComponents];
@@ -410,7 +429,7 @@ SmoothSegmentation[masks_, OptionsPattern[]] :=
 	maskInp = Transpose[SparseArray[Round@masks]];
 	
 	(*Get smoothed or non smoothed masks*)
-	maskInp = SparseArray@Round[ImageData[SelectComponents[Image3D[Round[GaussianFilter[Normal[#], smooth] + 0.15], "Bit"], "Count", -If[obj<1, 1, obj], CornerNeighbors -> False]]]& /@ maskInp;
+	maskInp = SmoothMask[#,FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]]&/@maskInp;
 	
 	(*remove the overlaps*)
 	Transpose@RemoveMaskOverlapsI[SparseArray[maskInp]]
@@ -440,25 +459,6 @@ RemoveMaskOverlapsI[masks_] := Block[{maskOver, posOver, maskInp, maskOut, z, x,
 (*RescaleSegmentation*)
 
 
-GrowMask[seg_, size_] := Which[size === 0,
-	SparseArray[seg],
-	size > 0,
-	If[ArrayDepth[seg]>3,
-		Transpose[SparseArray[SparseArray[ImageData@Dilation[Image3D[#], Round[size]]] & /@ Transpose[seg]]],
-		SparseArray[Dilation[Normal[seg], Round[size]]]
-	],
-	size< 0,
-	If[ArrayDepth[seg]>3,
-		Transpose[SparseArray[SparseArray[ImageData@Erosion[Image3D[#], Round[Abs[size]]]] & /@ Transpose[seg]]],
-		SparseArray[Dilation[Normal[seg], Round[size]]]
-	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RescaleSegmentation*)
-
-
 SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
 
 RescaleSegmentation[seg_, vox_] := Block[{segs, val},
@@ -479,13 +479,13 @@ RescaleSegmentation[seg_, vox_] := Block[{segs, val},
 SyntaxInformation[SegmentMask] = {"ArgumentsPattern" -> {_, _, _.}};
 
 SegmentMask[mask_, seg_?IntegerQ] := Block[{pos, f, l, sel, out},
-  pos = Flatten@Position[Unitize[Total[Flatten[#]]] & /@ mask, 1];
-  {f, l} = {First[pos], Last[pos]};
-  sel = Partition[Round[Range[f, l, ((l - f)/seg)]], 2, 1] + Append[ConstantArray[{0, -1}, seg - 1], {0, 0}];
-  out = ConstantArray[0*mask, seg];
-  Table[out[[i, sel[[i, 1]] ;; sel[[i, 2]]]] = mask[[sel[[i, 1]] ;; sel[[i, 2]]]], {i, 1, seg}];
-  out
-  ]
+	pos = Flatten@Position[Unitize[Total[Flatten[#]]] & /@ mask, 1];
+	{f, l} = {First[pos], Last[pos]};
+	sel = Partition[Round[Range[f, l, ((l - f)/seg)]], 2, 1] + Append[ConstantArray[{0, -1}, seg - 1], {0, 0}];
+	out = ConstantArray[0*mask, seg];
+	Table[out[[i, sel[[i, 1]] ;; sel[[i, 2]]]] = mask[[sel[[i, 1]] ;; sel[[i, 2]]]], {i, 1, seg}];
+	out
+]
 
 
 (* ::Subsection::Closed:: *)
