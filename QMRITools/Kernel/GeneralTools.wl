@@ -646,7 +646,6 @@ TensMat[tens : {_?ArrayQ ..}] := RotateDimensionsLeft[TensMati[tens], 2];
 
 TensMat[tens_?ListQ] := TensMati[tens]
 
-
 TensMati[{xx_, yy_, zz_, xy_, xz_, yz_}] := {{xx, xy, xz}, {xy, yy, yz}, {xz, yz, zz}};
 
 
@@ -963,12 +962,16 @@ StichData[datal_, datar_] := RotateDimensionsLeft[Join[RotateDimensionsRight[dat
 (*MakeIntFunction*)
 
 
-MakeIntFunction[dat_] := MakeIntFunction[dat, {1,1,1}, 1]
+Options[MakeIntFunction]={CenterVoxel->True}
 
-MakeIntFunction[dat_, int_?IntegerQ] := MakeIntFunction[dat, {1,1,1}, int]
+SyntaxInformation[MakeIntFunction] = {"ArgumentsPattern" -> {_,_.,_.,OptionsPattern[]}};
 
-MakeIntFunction[dat_, vox_, int_?IntegerQ] := Block[{def, range},
-	range = Thread[{vox, vox Dimensions[dat][[1;;3]]}] - (0.5 vox);
+MakeIntFunction[dat_, opts:OptionsPattern[]] := MakeIntFunction[dat, {1,1,1}, 1, opts]
+
+MakeIntFunction[dat_, int_?IntegerQ, opts:OptionsPattern[]] := MakeIntFunction[dat, {1,1,1}, int, opts]
+
+MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{def, range},
+	range = Thread[{vox, vox Dimensions[dat][[1;;3]]}] - If[OptionValue[CenterVoxel],0.5, 0] vox;
 	def = 0. dat[[1,1,1]];
 	def =If[ListQ[def], Flatten@def, def];
 	With[{ex=def},InterpolatingFunction[
@@ -1092,7 +1095,8 @@ DevideNoZero[numi_, deni_, "Comp"] := N@DevideNoZeroi[numi, deni]
 
 DevideNoZero[numi_, deni_] := Re@N@DevideNoZeroi[numi, deni]
 
-DevideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[Abs[den] == 0., 0., num/den], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DevideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[Abs[den] == 0., 0., num/den], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1103,7 +1107,8 @@ SyntaxInformation[LogNoZero] = {"ArgumentsPattern" -> {_}};
 
 LogNoZero[val_] := N[LogNoZeroi[val]]
 
-LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
+LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1114,7 +1119,8 @@ SyntaxInformation[ExpNoZero] = {"ArgumentsPattern" -> {_}};
 
 ExpNoZero[val_] := N[ExpNoZeroi[val]]
 
-ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
+ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1125,7 +1131,8 @@ SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_}};
 
 MeanNoZero[vec_] := MeanNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
 
-MeanNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Mean[Pick[vec, Unitize[vec], 1]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MeanNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Mean[Pick[vec, Unitize[vec], 1]]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1136,7 +1143,8 @@ SyntaxInformation[MedianNoZero] = {"ArgumentsPattern" -> {_}};
 
 MedianNoZero[vec_] := MedianNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
 
-MedianNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Median[Pick[vec, Unitize[vec], 1]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MedianNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Median[Pick[vec, Unitize[vec], 1]]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 
@@ -1148,7 +1156,8 @@ SyntaxInformation[RMSNoZero] = {"ArgumentsPattern" -> {_}};
 
 RMSNoZero[vec_] := RMSNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
 
-RMSNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., RootMeanSquare[Pick[vec, Unitize[vec], 1]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RMSNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., RootMeanSquare[Pick[vec, Unitize[vec], 1]]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1159,7 +1168,8 @@ SyntaxInformation[MADNoZero] = {"ArgumentsPattern" -> {_}};
 
 MADNoZero[vec_] := MADNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
 
-MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianDeviation[Pick[vec, Unitize[vec], 1]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianDeviation[Pick[vec, Unitize[vec], 1]]],
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)

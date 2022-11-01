@@ -50,7 +50,7 @@ FindTensorPermutation[] is based on DOI: 10.1016/j.media.2014.05.012."
 
 TractDensityMap::usage = "TractDensityMap[tracts, vox, dim]"
 
-SeedDensityMap::usage = ""
+SeedDensityMap::usage = "SeedDensityMap[seeds, vox, dim]"
 
 
 SelectTractTroughPlane::usage = ""
@@ -70,14 +70,18 @@ CombineROIs::usage = ""
 FilterTracts::usage = "FilterTracts[tracts, vox, select]"
 
 
-FiberLength::usage = ""
+FiberLength::usage = "FiberLength[tracts]"
 
-GetTractValues::usage = "GetTractValues[tracts_,val_,vox_,int_:1]"
+GetTractValues::usage = "GetTractValues[tracts, val, vox, int]"
 
 
-PlotTracts::usage = ""
+PlotTracts::usage = "
+PlotTracts[tracts, vox]
+PlotTracts[tracts, vox, dim]"
 
-MakeColor::usage = ""
+MakeColor::usage = "
+MakeColor[tract]
+MakeColor[tract, fun, ran]"
 
 
 
@@ -182,7 +186,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	(*prepare tensor and stop data*)
 	(*tens = FlipTensorOrientation[tensor, per /. Thread[{"x","y","z"} -> {"z","y","x"}], Reverse[flip]];*)
 	tens = FlipTensorOrientation[tensor, per, flip];
-	stop = Unitize[Total@Abs@tens] Mask[inp];
+	stop = Unitize[Total@Abs@tens] Normal[Mask[inp]];
 			
 	(*make the trac and stop interpolation functions*)
 	intE = MakeIntFunction[RotateDimensionsLeft[{tens}, 2], vox, int];
@@ -492,7 +496,10 @@ CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not, test},
 (*TractDensityMap*)
 
 
-TractDensityMap[tracts_, vox_, dim_] := Normal@SparseArray[Normal@Counts@ThreadedDiv[Flatten[tracts, 1], vox], dim];
+TractDensityMap[tracts_, vox_, dim_] := Normal@SparseArray[Select[
+		Normal[Counts@ThreadedDiv[Flatten[tracts, 1], vox]], 
+		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]])&
+	], dim];
 
 
 (* ::Subsubsection::Closed:: *)

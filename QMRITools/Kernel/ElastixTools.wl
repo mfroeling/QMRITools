@@ -20,7 +20,7 @@ BeginPackage["QMRITools`ElastixTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -238,11 +238,13 @@ RegisterData::vox="voxel size should be {z,x,y} and numeric, current sizes are `
 
 RegisterData::voxs="voxel size should be {z,x,y} and numeric, current size is `1`."
 
-RegisterData::met="MethodReg should be \"translation\", \"rigid\", \"affine\", \"bspline\", \"rigidDTI\", \"affineDTI\", \"PCAtranslation\", \"PCArigid\", \"PCAaffine\", or \"PCAbspline\", current method is `1`."
+RegisterData::met="MethodReg should be \"translation\", \"rigid\", \"affine\", \"bspline\", \"rigidDTI\", \"affineDTI\", \"PCAtranslation\", \"PCArigid\", \"PCAaffine\", or \"PCAbspline\", \"rigidMulti\", \"affineMulti\", \"bsplineMulti\", current method is `1`."
 
-RegisterData::metc="If the MethodReg is \"PCAxx\" no target can be given."
+RegisterData::metc="If the MethodReg is \"PCAxx\" no target can be given. If the method is \"xxxMulti\" a target should be given."
 
 RegisterData::cyc="If any MethodReg is \"PCAxx\" all should be \"PCAxx\"."
+
+RegisterData::mult="If any MethodReg is \"xxxMulti\" all should be \"xxxMulti\"."
 
 RegisterData::mask="The mask dimensions `1` should be equal to the data dimensions `2`."
 
@@ -262,10 +264,6 @@ RegisterData::fatal="Fatal error encountered."
 Begin["`Private`"]
 
 
-(* ::Subsection::Closed:: *)
-(*Support Functions*)
-
-
 operatingSystem = $OperatingSystem;
 
 (*QMRITools`ElastixTools`$debugElastix = If[QMRITools`ElastixTools`$debugElastix===True, True, False];*)
@@ -273,17 +271,38 @@ operatingSystem = $OperatingSystem;
 QMRITools`ElastixTools`$debugElastix = False;
 
 
+(* ::Subsection:: *)
+(*Support Functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*StringPad*)
+
+
+StringPad[x_?IntegerQ]:=StringPad["", {x, 3}, ""]
+
+StringPad[{x_?IntegerQ, n_?IntegerQ}]:=StringPad["", {x, n}, ""]
+
+StringPad[pre_?StringQ, x_?IntegerQ]:=StringPad[pre, {x, 3}, ""]
+
+StringPad[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}]:=StringPad[pre, {x, n}, ""]
+
+StringPad[x_?IntegerQ, post_?StringQ]:=StringPad["", {x, 3}, post]
+
+StringPad[{x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=StringPad["", {x, n}, post]
+
+StringPad[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=pre<>StringPadLeft[ToString[x], n, "0"]<>post
+
+
 (* ::Subsubsection::Closed:: *)
 (*ParString*)
 
 
-ListToString[list_, add_: ""] := StringTrim[StringJoin[Riffle[ToString /@ list, " "]] <> " " <> add]
+ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, output_}, {{dtar_, n_}, grid_, derscB_, derscA_, eig_}, {openCL_, gpu_}]:=Block[
+	{pca, mul},
+	pca = (type === "PCAtranslation" || type === "PCArigid" || type === "PCAaffine" || type==="PCAbspline");
+	mul = (type === "rigidMulti" || type === "affineMulti" || type === "bsplineMulti");
 
-SchedulePar[res_, dtar_] := ListToString[ListToString[2.^ConstantArray[#, dtar - 1], "0.0"] & /@ Reverse[Range[res] - 1]]
-
-DerivativePar[par_, dtar_, add_: ""] := ListToString[Reverse[par[[-dtar ;;]]], add]
-
-ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, output_}, {dtar_, grid_, derscB_, derscA_, pca_}, {openCL_, gpu_}]:=(
 "// ***************************************************************
 // ** "<>type<>" **
 
@@ -304,9 +323,9 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 (ErodeMovingMask \"false\")
 (ErodeFixedMask \"false\")
 
-(Registration \"MultiResolutionRegistration\")
+(Registration "<>If[!mul, "\"MultiResolutionRegistration\"", "\"MultiMetricMultiResolutionRegistration\""]<>")
 
-(ImageSampler \"RandomCoordinate\")
+(ImageSampler "<>StringRep["\"RandomCoordinate\"",n]<>")
 (CheckNumberOfSamples \"true\")
 (NewSamplesEveryIteration \"true\")
 (MaximumNumberOfSamplingAttempts 5)
@@ -324,15 +343,15 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 "(OpenCLDeviceID \""<>ToString[gpu]<>"\")
 (Resampler \"OpenCLResampler\")
 (OpenCLResamplerUseOpenCL \"true\")
-(FixedImagePyramid \"OpenCLFixedGenericImagePyramid\")
+(FixedImagePyramid "<>StringRep["\"OpenCLFixedGenericImagePyramid\"",n]<>")
 (OpenCLFixedGenericImagePyramidUseOpenCL \"true\")
-(MovingImagePyramid \"OpenCLMovingGenericImagePyramid\")
+(MovingImagePyramid "<>StringRep["\"OpenCLMovingGenericImagePyramid\"",n]<>")
 (OpenCLMovingGenericImagePyramidUseOpenCL \"true\")"
 ,
 
 "(Resampler \"DefaultResampler\")
-(FixedImagePyramid \"FixedGenericImagePyramid\")
-(MovingImagePyramid \"MovingGenericImagePyramid\")"
+(FixedImagePyramid "<>StringRep["\"FixedGenericImagePyramid\"",n]<>")
+(MovingImagePyramid "<>StringRep["\"MovingGenericImagePyramid\"",n]<>")"
 ]<>"
 // ***************************************************************
 
@@ -341,18 +360,18 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 // ***************************************************************
 "<>Which[(*if PCA uses stack transform*)
 	(*PCA based methods*)
-	type==="PCAtranslation"||type==="PCArigid"||type==="PCAaffine"||type==="PCAbspline",
+	pca,
 "(Metric \"PCAMetric2\")
-(NumEigenValues "<>ToString[pca]<>")
+(NumEigenValues "<>ToString[eig]<>")
 (SubtractMean \"true\")
 
 (Interpolator \"ReducedDimensionBSplineInterpolator\")
 (ResampleInterpolator \"FinalReducedDimensionBSplineInterpolator\")",
 	True,
 	(*Non PCA based methods*)
-"(Metric \"AdvancedMattesMutualInformation\")
+"(Metric "<>StringRep["\"AdvancedMattesMutualInformation\"",n]<>")
 
-(Interpolator \"BSplineInterpolator\")
+(Interpolator "<>StringRep["\"BSplineInterpolator\"",n]<>")
 (ResampleInterpolator \"FinalBSplineInterpolator\")"
 ]<>"
 // ***************************************************************
@@ -364,7 +383,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 
 (NumberOfResolutions "<>ToString[resolutions]<>")
 "<>Which[(*if multi resolution PCA imagePyramidSchedule has to be defined*)
-	type==="PCAtranslation"||type==="PCArigid"||type==="PCAaffine"||type==="PCAbspline",
+	pca,
 	"(ImagePyramidSchedule "<>SchedulePar[resolutions, dtar]<>")",
 	True,""
 ]<>"
@@ -381,15 +400,15 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 // ** Transform type specific settings **
 // ***************************************************************
 "<>Switch[type, (*switch beteen registration types*)
-(*normal methods*)	
+(*normal or multi methods*)	
 "translation",
 "(Transform \"TranslationTransform\")",
-"rigid",
+"rigid" | "rigidMulti",
 "(Transform \"EulerTransform\")",
-"affine",
+"affine" | "affineMulti",
 "(Transform \"AffineTransform\")
 (MovingImageDerivativeScales "<>DerivativePar[N@Clip[derscA], dtar]<>")",
-"bspline",
+"bspline" | "bsplineMulti",
 "(Transform \"RecursiveBSplineTransform\")
 (FinalGridSpacingInPhysicalUnits "<>DerivativePar[N@Round[grid], dtar]<>")
 (MovingImageDerivativeScales "<>DerivativePar[N@Clip[derscB], dtar]<>")",
@@ -421,50 +440,68 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 // ***************************************************************
 
 //****************** end of file ***************
-")
+"
+]
+
+StringRep[st_, n_] := StringJoin@Riffle[ConstantArray[st, n], " "]
+
+ListToString[list_, add_: ""] := StringTrim[StringJoin[Riffle[ToString /@ list, " "]] <> " " <> add]
+
+SchedulePar[res_, dtar_] := ListToString[ListToString[2.^ConstantArray[#, dtar - 1], "0.0"] & /@ Reverse[Range[res] - 1]]
+
+DerivativePar[par_, dtar_, add_: ""] := ListToString[Reverse[par[[-dtar ;;]]], add]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ElastixCommand*)
 
 
-ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,movingi_,out_},{maskfi_,maskmi_}]:=Module[{
-	quote, cp, num, fixed, moving, maskf, maskm, command, resout, finout, output, elas, outfile,
-	inpfold, outfold, movfold, parfiles, copy, maskfFile, maskmFile, elastixFol
+ElastixCommand[elas_, tempdir_, parfile_, fols_, files_, mask_]:=ElastixCommand[elas, tempdir, parfile, fols, files, mask, 1]
+
+ElastixCommand[elas_, tempdir_, parfile_, {inpfol_, movfol_, outfol_}, {fixedi_, movingi_, out_}, {maskfi_, maskmi_}, n_]:=Block[{
+		quote, cp, num, maskf, maskm, command, resout, finout, output, elastix, outfile,
+		inpfold, outfold, movfold, parfiles, copy, maskfFile, maskmFile, elastixFol, fixedFile, moveFile
 	},
 	
 	(*operating specific settings *)
 	quote = Switch[operatingSystem,"Windows","\"",_,"'"];
 	cp = Switch[operatingSystem,"Windows","@ copy ",_,"cp "];
-	elas = Switch[operatingSystem, 
+	
+	elastix = quote<>elas<>quote;
+	elastixFol = DirectoryName[elas, 2];
+	
+	elastix = Switch[operatingSystem, 
 		"Windows", 
-		"@ "<>quote<>elastix<>quote,
+		"@ "<>elastix,
 		"MacOSX", 
-		elastixFol = DirectoryName[elastix, 2];
-		"export PATH="<>elastixFol<>"bin:$PATH\nexport DYLD_LIBRARY_PATH="<>elastixFol<>"lib:$DYLD_LIBRARY_PATH\n"<>elastix
-		,
+		"export PATH="<>elastixFol<>"bin:$PATH\nexport DYLD_LIBRARY_PATH="<>elastixFol<>"lib:$DYLD_LIBRARY_PATH\n"<>elastix,
 		"Unix",
-		elastixFol=DirectoryName[elastix, 2];
 		"export PATH="<>elastixFol<>"bin:$PATH\nexport LD_LIBRARY_PATH="<>elastixFol<>"lib:$LD_LIBRARY_PATH\n"<>elastix
 	];
 	
-	(*make files into gz where needed*)
-	fixed = If[FileExtension[fixedi] == "nii", fixedi<>".gz", fixedi];
-	moving = If[FileExtension[movingi] == "nii", movingi<>".gz", fixedi];
+	(*in and output folders*)
+	inpfold = FileNameJoin[{tempdir, inpfol}];
+	movfold = FileNameJoin[{tempdir, movfol}];
+	outfold = FileNameJoin[{tempdir, outfol}];
+	outfile = FileNameJoin[{outfold, out}];
+		
+	(*moving and fixed files*)
+	fixedFile = MakeElasFiles["-f", fixedi, inpfold, quote, n];
+	moveFile = MakeElasFiles["-m", movingi, movfold, quote, n];
+			
+	(*maskfiles*)	
 	maskf = If[FileExtension[maskfi] == "nii", maskfi<>".gz", maskfi];
 	maskm = If[FileExtension[maskmi] == "nii", maskmi<>".gz", maskmi];
-	
-	(*in and output folders*)
-	inpfold=If[inpfol=="",tempdir,FileNameJoin[{tempdir,inpfol}]];
-	movfold=If[movfol=="",tempdir,FileNameJoin[{tempdir,movfol}]];
-	outfold=If[outfol=="",StringDrop[tempdir,-1], FileNameJoin[{tempdir,outfol}]];
-	outfile = FileNameJoin[{outfold,out}];
-	(*maskfiles*)	
-	maskfFile=If[maskf==="",""," -fMask "<>quote<>FileNameJoin[{tempdir,maskf}]<>quote];
-	maskmFile=If[maskm==="",""," -mMask "<>quote<>FileNameJoin[{tempdir,maskm}]<>quote];
+	maskfFile=If[maskf==="", "", " -fMask "<>quote<>FileNameJoin[{tempdir,maskf}]<>quote];
+	maskmFile=If[maskm==="", "", " -mMask "<>quote<>FileNameJoin[{tempdir,maskm}]<>quote];
 	
 	(*par file string*)
 	parfiles = StringJoin[" -p "<>quote<>FileNameJoin[{tempdir,#}]<>quote &/@parfile];
+
+	(*output*)
+	outfold = " -out "<>quote<>outfold<>quote;
+	output = " > "<>quote<>FileNameJoin[{movfold,"output.txt"}]<>quote;
+	
 	(*copy string*)
 	copy = If[out=="", 
 		"", 
@@ -474,41 +511,91 @@ ElastixCommand[elastix_,tempdir_,parfile_,{inpfol_,movfol_,outfol_},{fixedi_,mov
 		finout = quote<>FileNameJoin[{tempdir,outfol,out}]<>quote;
 		cp<>resout<>" "<>finout
 	];
-	output = quote<>FileNameJoin[{movfold,"output.txt"}]<>quote;
 
-	command = elas<>" -f "<>quote<>FileNameJoin[{inpfold,fixed}]<>quote<>" -m "<>quote<>FileNameJoin[{movfold,moving}]<>quote<>" -out "<>quote<>outfold<>quote<>
-		maskfFile<>maskmFile<>parfiles<>" > "<>output<>" \n"<>copy<>" \n"<>"exit \n";
+	command = elastix<>fixedFile<>moveFile<>outfold<>maskfFile<>maskmFile<>parfiles<>output<>" \n"<>copy<>" \n"<>"exit \n";
 
-	{command,outfile}	
+	{command, outfile}	
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*RunBatfile*)
-
-
-RunBatfile[tempdir_,command_]:=Block[{file,batfile,com},
-	(*make elastix sh/bat based on operating system*)
-	file = "elastix-batch."<>Switch[operatingSystem,"Windows","bat",_,"sh"];
-	
-	batfile = FileNameJoin[{tempdir,file}];
-	Export[batfile,StringJoin[StringReplace[command,"exit \n"->""]],"TEXT"];
-	
-	com = Switch[operatingSystem,
-		"Windows","\"" <> batfile <> "\"\n exit \n",
-		_,"chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n"];
-	
-	(*perform sh/bat on system shell*)
-	If[$debugElastix, Print[com]];	
-	RunProcess[$SystemShell, "StandardOutput", com];
+MakeElasFiles[pre_,filei_, fol_, q_, n_]:=Block[{fixed, index, file},
+	StringJoin[(
+		index = StringPad["-",#];
+		file = If[n===1, filei, filei[index]];
+		fixed = If[FileExtension[file] == "nii", file<>".gz", file];
+		" "<>pre<>If[n===1, "", ToString[#-1]]<>" "<>q<>FileNameJoin[{fol, fixed}]<>q
+	)&/@Range[n]]
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*StringPad*)
+(* ::Subsubsection:: *)
+(*TransformixCommand*)
 
 
-StringPad[x_] := StringJoin[PadLeft[{ToString[x]}, 5 - StringLength[ToString[x]], "0"]]
+TransformixCommand[tempDir_, ind_] := Block[{
+	trans, quote, cp, transformix, transFol, transfile, movfile, output, outfold, volDirs, copy
+	},
+	
+	trans = GetAssetLocation["Transformix"];
+
+	(*operating specific settings *)
+	quote = Switch[operatingSystem,"Windows","\"",_,"'"];
+	cp = Switch[operatingSystem,"Windows","@ copy ",_,"cp "];
+	
+	(*transformix command*)
+	transformix = quote<>trans<>quote;
+	transFol = DirectoryName[trans, 2];
+	transformix = Switch[operatingSystem, 
+		"Windows", 
+		"@ "<>transformix,
+		"MacOSX", 
+		"export PATH="<>transFol<>"bin:$PATH\nexport DYLD_LIBRARY_PATH="<>transFol<>"lib:$DYLD_LIBRARY_PATH\n"<>transformix,
+		"Unix",
+		"export PATH="<>transFol<>"bin:$PATH\nexport LD_LIBRARY_PATH="<>transFol<>"lib:$LD_LIBRARY_PATH\n"<>transformix
+	];
+		
+	(*make trans file*)
+	If[ind,
+		(*individual trans file*)
+		(*files*)
+		transfile = " -tp "<>quote<>TransfileT[tempDir]<>quote;
+		movfile = " -in " <>quote<>MovfileT[tempDir]<>quote;
+		
+		(*outputs*)
+		outfold = " -out "<>quote<>tempDir<>quote;
+		output = " > "<>quote<>FileNameJoin[{tempDir, "output.txt"}]<>quote;
+		
+		(*command*)
+		transformix <> movfile <> outfold <> transfile <> output<>" \n exit \n"
+		,
+		(*range of trans files*)
+		volDirs = FileNames["vol*", tempDir, 1];
+		(
+			(*files*)
+			transfile = " -tp "<>quote<>TransfileF[#]<>quote;
+			movfile = " -in " <>quote<>MovfileF[#]<>quote;
+			
+			(*outputs*)
+			outfold = " -out "<>quote<>#<>quote;
+			output = " > "<>quote<>FileNameJoin[{#, "output.txt"}]<>quote;
+			
+			(*copy*)
+			copy = cp<>quote<>FileNameJoin[{#, "result.nii.gz"}]<>quote<>" "<>quote<>FileNameJoin[{#, "resultA-3D.nii.gz"}]<>quote;
+			
+			(*command*)
+			transformix <> movfile <> outfold <> transfile <> output<>" \n"<>copy<>" \n"
+		)&/@volDirs
+	]
+]
+
+
+MovfileF[fol_] := First[FileNames["moving*", fol]];
+	
+TransfileF[fol_] := Last[SortBy[FileNames["FinalTransform*", fol], FileDate[#, "Modification"] &]];
+
+MovfileT[fol_] := First[FileNames["trans*", fol]];
+
+TransfileT[fol_] := Last[SortBy[FileNames["TransformParameters*", DirectoryName[fol]], FileDate[#, "Modification"] &]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -532,86 +619,37 @@ ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile, f, p},
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*RunBatfileT*)
+(* ::Subsubsection:: *)
+(*RunCommand*)
 
 
-RunBatfileT[tempdir_, command_] := Block[{batfile, com},
-	Switch[operatingSystem,
-		"Windows",
-		batfile = tempdir <> "\\transformix-batch.bat";
-		Export[batfile, StringJoin[command], "TEXT"];
-		com = batfile <> "\n exit \n";
-		,
-		"MacOSX",
-		batfile = tempdir <> "/transformix-bash.sh";
-		Export[batfile, StringJoin[command], "TEXT"];
-		com = "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
-		,
-		"Unix",
-		batfile = tempdir <> "/transformix-bash.sh";
-		Export[batfile, StringJoin[command], "TEXT"];
-		com = "chmod 700 "<>batfile<>"\n"<>batfile<> "\n exit \n";
-	];
-	
-	If[$debugElastix, Print[com]];
-	RunProcess[$SystemShell, "StandardOutput", com];
-]
+RunCommand[com_]:=(If[$debugElastix, Print["Command line: \n"<>com]]; RunProcess[$SystemShell, "StandardOutput", com])
 
 
-(* ::Subsubsection::Closed:: *)
-(*TransformixCommand*)
+(* ::Subsubsection:: *)
+(*RunBatfile*)
 
 
-TransformixCommand[tempDir_] := Block[{volDirs, transformix, transFol,command},
-	transformix = GetAssetLocation["Transformix"];
-	transFol = StringDrop[DirectoryName[transformix, 2], -1];
+RunBatfile[tempdir_, command_]:=RunBatfile[tempdir, command, "E"]
+
+RunBatfile[tempdir_, command_, f_]:=Block[{file, batfile, com, quote},
+	If[$debugElastix, Print["Command line: \n"<>First[command]]];
 	
-	volDirs = FileNames["vol*", tempDir, 1];
+	quote = Switch[operatingSystem,"Windows","\"",_,"'"];
+
+	(*make elastix/transformix sh/bat based on operating system*)
+	file = Switch[f,"E","elastix","T","transformix"]<>"-batch."<>Switch[operatingSystem,"Windows","bat",_,"sh"];
+	batfile = FileNameJoin[{tempdir, file}];
+	Export[batfile,StringJoin[StringReplace[command,"exit \n"->""]],"TEXT"];
+	batfile = quote<>batfile<>quote;
 	
-	Movfile[fol_] := First[FileNames["moving*", fol]];
+	(*make command*)
+	com = Switch[operatingSystem,
+		"Windows",batfile<>" \nexit \n",
+		_,"chmod 700 "<>batfile<>"\n"<>batfile<>" \nexit \n"];
 	
-	Transfile[fol_] := Last[SortBy[FileNames["FinalTransform*", fol],FileDate[#, "Modification"] &]];
-	
-	command=Switch[operatingSystem,
-		"Windows",
-		(
-			"@ \"" <> transformix <>
-			"\" -in \"" <> Movfile[#] <>
-			"\" -out \"" <> # <>
-			"\" -tp \"" <> Transfile[#] <>
-			"\" > \"" <> # <> "\\outputa.txt\" \n" <>
-			"@ rename \"" <> # <> "\\result.nii.gz\" resultA-3D.nii.gz \n"
-		) & /@ volDirs
-		,
-		"MacOSX",
-		(
-			"export PATH="<>transFol<>"/bin:$PATH \n"<>
-			"export DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH \n"<>
-			transformix <>
-			" -in '" <> Movfile[#] <>
-			"' -out '" <> # <>
-			"' -tp '" <> Transfile[#] <>
-			"' > '" <> # <> "/outputa.txt' \n" <>
-			" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
-		) & /@ volDirs
-		,
-		"Unix",
-		(
-			"export PATH="<>transFol<>"/bin:$PATH \n"<>
-			"export LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH \n"<>
-			transformix <>
-			" -in '" <> Movfile[#] <>
-			"' -out '" <> # <>
-			"' -tp '" <> Transfile[#] <>
-			"' > '" <> # <> "/outputa.txt' \n" <>
-			" mv '" <> # <> "/result.nii.gz' '"<> # <> "/resultA-3D.nii.gz' \n"
-		) & /@ volDirs
-	];
-	
-	If[$debugElastix, Print[command]];
-	
-	command
+	(*perform sh/bat on system shell*)
+	RunCommand[com];
 ]
 
 
@@ -647,10 +685,11 @@ SyntaxInformation[RegisterData]={"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
 
 
 (* ::Subsubsection::Closed:: *)
-(*RegisterData Series*)
+(*RegisterData Series or PCA*)
 
 
-(*series have no target defninition*)
+(*series of cyclyc have no target defninition*)
+
 (*register series of data sets, no vox definition, no mask definition*)
 RegisterData[
 	series_?ArrayQ
@@ -672,17 +711,23 @@ RegisterData[
 		depthS,dim,dimm,dimL,target,moving,dataout,voxL,output,cyclyc,cyc,maskf,maskm
 	},
 	
-	(*get data properties*)
-	depthS=ArrayDepth[series];
-	dim=Dimensions[series];
-	dimL=If[depthS==3,dim[[1]],dim[[2]]];
-	dimm=Dimensions[mask];
-	voxL=Length[vox];
+	If[$debugElastix, Print@"RegisterData: PCA or Series"];
+	
+	(*Check Method, Multi only possible for target and moving*)
+	If[AnyTrue[OptionValue[MethodReg], (# === "rigidMulti" || # === "affineMulti" || # === "bsplineMulti") &], 
+		Message[RegisterData::metc]; Return[Message[RegisterData::fatal]]];
 	
 	(*check for cyclic*)
 	cyc = AnyTrue[Flatten[{OptionValue[MethodReg]}], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
 	cyclyc = AllTrue[Flatten[{OptionValue[MethodReg]}], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
 	If[cyc =!= cyclyc, Message[RegisterData::cyc];Return[Message[RegisterData::fatal]]];
+	
+	(*get data properties*)
+	depthS = ArrayDepth[series];
+	dim = Dimensions[series];
+	dimL = If[depthS==3, dim[[1]], dim[[2]]];
+	dimm = Dimensions[mask];
+	voxL = Length[vox];
 	
 	(*check dimensions*)
 	(*series must be 3 of 4D*)
@@ -709,15 +754,15 @@ RegisterData[
 	(*check if method is cyclyc*)
 	If[cyclyc,
 		(*cyclyc series define moving and target voluems*)
-		target=moving=series;
+		target = moving = series;
 		(*go to registration function*)
-		RegisterDatai[{target,mask,vox},{moving,mask,vox},"PCA",opts]
+		RegisterDatai[{target,mask,vox}, {moving,mask,vox}, "PCA", opts]
 		,
 		(*normal series define moving and target voluems*)
-		{target,moving}=If[depthS==3,{series[[1]],series[[2;;]]},{series[[All,1]],Transpose@series[[All,2;;]]}];
-		{maskf,maskm}=If[dimm==dim,If[depthS==3,{mask[[1]],mask[[2;;]]},{mask[[All,1]],Transpose@mask[[All,2;;]]}],{mask,mask}];
+		{target, moving} = If[depthS==3, {series[[1]],series[[2;;]]}, {series[[All,1]],Transpose@series[[All,2;;]]}];
+		{maskf, maskm} = If[dimm==dim, If[depthS==3, {mask[[1]],mask[[2;;]]}, {mask[[All,1]],Transpose@mask[[All,2;;]]}], {mask,mask}];
 		(*go to registration function*)
-		output = RegisterDatai[{target,maskf,vox},{moving,maskm,vox},"series",opts];
+		output = RegisterDatai[{target,maskf,vox}, {moving,maskm,vox}, "series", opts];
 		(*prepare output*)
 		If[OptionValue[OutputTransformation],
 			(*output data with tranformation parameters*)
@@ -733,10 +778,10 @@ RegisterData[
 
 
 (* ::Subsubsection::Closed:: *)
-(*RegisterData Volumes*)
+(*RegisterData Volumes or Multi*)
 
 
-(*Volumes do have target defninition*)
+(*Volumes or multi do have target defninition*)
 
 (*register two data sets, vox definition and mask definition*)
 RegisterData[
@@ -812,24 +857,33 @@ RegisterData[
 
 (*register two data sets, mask and vox definition*)
 RegisterData[
-	{target_?ArrayQ,maskt_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
-	{moving_?ArrayQ,maskm_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}},opts:OptionsPattern[]]:=Module[{
-		depthT,depthM,voxtL,voxmL,dim,type,mov,output
+	{target_?ArrayQ, maskt_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
+	{moving_?ArrayQ, maskm_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}, opts:OptionsPattern[]]:=Module[{
+		depthT, depthM, voxtL, voxmL, dimT, dimM, type, output, mul ,multi
 	},
+	
+	If[$debugElastix, Print@"RegisterData: Volumes or Multi"];
 
 	(*Check Method, PCA only possible for series*)
 	If[AnyTrue[OptionValue[MethodReg], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &], 
-		Message[RegisterData::metc];Return[Message[RegisterData::fatal]]];
+		Message[RegisterData::metc]; Return[Message[RegisterData::fatal]]];
+	
+	(*check for cyclic*)
+	mul = AnyTrue[Flatten[{OptionValue[MethodReg]}], (# === "rigidMulti" || # === "affineMulti" || # === "bsplineMulti") &];
+	multi = AllTrue[Flatten[{OptionValue[MethodReg]}], (# === "rigidMulti" || # === "affineMulti" || # === "bsplineMulti") &];
+	If[mul =!= multi, Message[RegisterData::mult];Return[Message[RegisterData::fatal]]];
 	
 	(*get data properties*)
-	depthT=ArrayDepth[target];
-	depthM=ArrayDepth[moving];
-	dim=Dimensions[moving];
-	voxtL=Length[voxt];
-	voxmL=Length[voxm];
+	depthT = ArrayDepth[target];
+	depthM = ArrayDepth[moving];
+	dimT = Dimensions[target];
+	dimM = Dimensions[moving];
+	voxtL = Length[voxt];
+	voxmL = Length[voxm];
 	
 	(*check dimensions and determine type*)
-	type=Which[
+	type = Which[
+		multi && depthM == depthT, "multi",
 		depthT == depthM, "vol", (*2D-2D, 3D-3D*)
 		(depthT == 2 || depthT == 3) && depthM == depthT + 1, "series", (*2D-3D, 3D-4D*)
 		True,Message[RegisterData::dim,depthT,depthM];Return[Message[RegisterData::fatal]] (*error*)];
@@ -837,20 +891,24 @@ RegisterData[
 	(*check voxel sies*)
 	If[voxtL!=3||voxmL!=3||!(NumberQ@Total@voxt)||!(NumberQ@Total@voxm),Message[RegisterData::vox,voxt,voxm];Return[Message[RegisterData::fatal]]];
 	
-	(*define moving voluems*)
-	mov=If[depthM==4,Transpose@moving,moving];
+	(*define moving and target voluems*)
+	output = RegisterDatai[
+		{If[depthT==4, Transpose@target, target], maskt, voxt},
+		{If[depthM==4,Transpose@moving, moving], maskm, voxm}, 
+		type, opts];
 	
-	(*No errors, go to registration function only "vol" or "series"*)
-	output=RegisterDatai[{target,maskt,voxt},{mov,maskm,voxm},type,opts];
-	
+	(*generate output*)
 	If[OptionValue[OutputTransformation],
-		{If[depthM==4,Transpose@output[[1]],output[[1]]],Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}]},
-		If[depthM==4,Transpose@output,output]
+		{
+			If[depthM==4, Transpose@output[[1]], output[[1]]], 
+			Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}]
+		},
+		If[depthM==4, Transpose@output, output]
 	]
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*RegisterDatai*)
 
 
@@ -859,38 +917,37 @@ Options[RegisterDatai] = Options[RegisterData];
 RegisterDatai[
 	{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
 	{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
-,type_ ,opts:OptionsPattern[]]:= RegisterDatai[{target,{1},voxt},{moving,{1},voxm},type,opts]
+, type_ , opts:OptionsPattern[]]:= RegisterDatai[{target,{1},voxt},{moving,{1},voxm},type,opts]
 
 RegisterDatai[
 	{target_?ArrayQ,maskt_,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
 	{moving_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
-,type_ ,opts:OptionsPattern[]]:= RegisterDatai[{target,maskt,voxt},{moving,{1},voxm},type,opts]
+, type_ , opts:OptionsPattern[]]:= RegisterDatai[{target,maskt,voxt},{moving,{1},voxm},type,opts]
 
 RegisterDatai[
 	{target_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
 	{moving_?ArrayQ,maskm_,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}
-,type_	,opts:OptionsPattern[]]:= RegisterDatai[{target,{1},voxt},{moving,maskm,voxm},type,opts]
+, type_, opts:OptionsPattern[]]:= RegisterDatai[{target,{1},voxt},{moving,maskm,voxm},type,opts]
 
 RegisterDatai[
 	{target_?ArrayQ,maskt_?ArrayQ,voxt:{_?NumberQ,_?NumberQ,_?NumberQ}},
 	{moving_?ArrayQ,maskm_?ArrayQ,voxm:{_?NumberQ,_?NumberQ,_?NumberQ}}, type_,OptionsPattern[]]:=Module[{
-		tdir, tempdir, elastix, targetFile, parstring, outputImg, iterations, resolutions,
+		tdir, tempdir, elastix, parstring, outputImg, iterations, resolutions,
 		histogramBins, numberSamples, derivativeScaleA, derivativeScaleB, interpolationOrder,
 		method, bsplineSpacing, data, vox, dimmov, dimtar, dimmovm, dimtarm, inpfol, movfol, outfol,
 		fixedF, movingF, outF, parF, depth, index, regpars, lenMeth, command, outfile,
-		fmaskF, mmaskF, maske, maske2, w, openCL, gpu, pca, dtar
+		fmaskF, mmaskF, w, openCL, gpu, pca, dtar, lengM
 	},
 	
-	w={{0,0,0,0,0,0,1,1,1,0,0,0}};
-	
-	
+	w = {{0,0,0,0,0,0,1,1,1,0,0,0}};
 	
 	(*get option values*)
 	tdir=OptionValue[TempDirectory];
 	outputImg=ToLowerCase[ToString[OptionValue[OutputImage]]];
 	
-	method=OptionValue[MethodReg];
-	If[$debugElastix,Print[method]];
+	method = OptionValue[MethodReg];
+	method = If[StringQ[method], {method}, method];
+	If[$debugElastix, Print["RegisterDatai: "<>StringJoin[Riffle[method," - "]]<>" / "<>type]];
 	
 	bsplineSpacing=OptionValue[BsplineSpacing];
 	bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
@@ -909,15 +966,22 @@ RegisterDatai[
 	regpars={iterations,resolutions,histogramBins,numberSamples,interpolationOrder};
 
 	(*get all data dimensions*)
-	dimmov=Dimensions[moving];
-	dimtar=Dimensions[target];
-	dtar=ArrayDepth[target];
-	dimmovm=Dimensions[maskm];
-	dimtarm=Dimensions[maskt];
+	dimmov = Dimensions[moving];
+	dimtar = Dimensions[target];
+	
+	dtar = ArrayDepth[target];
+	lengM = Length[moving];
+	
+	dimmovm = Dimensions[maskm];
+	dimtarm = Dimensions[maskt];
+	depth = Switch[type,
+		"PCA", ToString[dtar-1]<>"D-t", 
+		"multi", ToString[dtar-1]<>"D",
+		_,ToString[dtar]<>"D"];
 	
 	(*find the elastix program*)
-	elastix=GetAssetLocation["Elastix"];
-	If[elastix=="error",Message[RegisterData::elastix];Return[Message[RegisterData::fatal]]];
+	elastix = GetAssetLocation["Elastix"];
+	If[elastix=="error", Message[RegisterData::elastix]; Return[Message[RegisterData::fatal]]];
 	
 	(*create temp directory*)
 	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
@@ -928,111 +992,122 @@ RegisterDatai[
 	If[!DirectoryQ[tempdir],Message[RegisterData::dir];Return[Message[RegisterData::fatal]]];
 	
 	(*check registration method*)
-	method=If[StringQ[method],{method},method];
-	If[!MemberQ[{"translation", "rigid", "affine", "bspline", "rigidDTI", "affineDTI", "PCAtranslation", "PCArigid", "PCAaffine", "PCAbspline"},#],
+	If[!MemberQ[{
+			"translation", "rigid", "affine", "bspline", (*traditional*)
+			"rigidDTI", "affineDTI", (*DTI specific*)
+			"PCAtranslation", "PCArigid", "PCAaffine", "PCAbspline", (*PCA cyclyc*)
+			"rigidMulti", "affineMulti", "bsplineMulti" (*multi contrast*)
+		},#],
 		Message[RegisterData::met,#];
 		Return[Message[RegisterData::fatal],Module]
 		]&/@method; 
-	lenMeth=Length[method];
+	lenMeth = Length[method];
 	
 	(*create parameter list*)
-	regpars=If[NumberQ[#],ConstantArray[#,lenMeth],
+	regpars = If[NumberQ[#],ConstantArray[#,lenMeth],
 		If[Length[#]==lenMeth,#,Message[RegisterData::par,#,lenMeth];Return[Message[RegisterData::fatal]];
 	]]&/@regpars;
 
-	
-	(*start export*)
-	If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
 
-	(*create target file*)
-	depth=If[type==="PCA", ToString[dtar-1]<>"D-t", ToString[dtar]<>"D"];
-	fixedF="target-"<>depth<>".nii";
-	targetFile=tempdir<>fixedF;
-	(*export the target*)
-	ExportNii[target,voxt,targetFile];
-	
+	(*start export*)
+	If[OptionValue[PrintTempDirectory], PrintTemporary["using as temp directory: "<>tdir]];
+
 	(*create parameter files*)
 	parF = MapThread[(
-		parstring=ParString[#2, {#1,outputImg}, {dtar, bsplineSpacing, derivativeScaleB, derivativeScaleA, pca},{openCL, gpu}];
-		parF="parameters-"<>#1<>".txt";
+		parstring = ParString[#2, {#1, outputImg}, {If[type === "multi", {dtar-1, lengM}, {dtar, 1}], bsplineSpacing, derivativeScaleB, derivativeScaleA, pca}, {openCL, gpu}];
+		parF = "parameters-"<>#1<>".txt";
 		Export[tempdir<>parF,parstring];
 		parF
 	)&, {method, Transpose[regpars]}];
 
-	(*perform registration which is either "series", "vol" or PCA based method*)
-	Which[
+	(*perform registration which is either: "vol"|"PCA", "series" or "multi" based method  *)
+	Switch[type,
 		(*volume to volume registration (2D-2D, 3D-3D)*)
-		type==="vol",
-		
-		{inpfol,movfol,outfol}={"","",""};
-		{fmaskF,mmaskF}={"",""};
-		{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
+		(*cyclyc volume to volume registration (2Dt-2Dt, 3Dt-3Dt)*)
+		"vol"|"PCA",
+
+		(*define folders*)
+		{inpfol, movfol, outfol} = {"", "", ""};
 		
 		(*Check if masks are needed*)
-		If[dimtarm == dimtar && maskt!={1},fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
-		If[(dimmovm == dimmov && maskm!={1}),mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
-		(*Export moving data*)
-		ExportNii[moving,voxm,tempdir<>movingF];
+		{fmaskF, mmaskF} = {"", ""};
+		If[dimtarm == dimtar && maskt!={1}, fmaskF="targetMask.nii"; ExportNii[maskt,voxt,tempdir<>fmaskF]];
+		If[dimmovm == dimmov && maskm!={1}, mmaskF="moveMask.nii"; ExportNii[maskm,voxm,tempdir<>mmaskF]];
+		
+		(*Export target and moving data*)
+		{fixedF, movingF, outF} = {"target-"<>depth<>".nii", "moving-"<>depth<>".nii", "result-"<>depth<>".nii.gz"};
+		ExportNii[target, voxt, tempdir<>fixedF];
+		ExportNii[moving, voxm, tempdir<>movingF];
+		
 		(*Create command and run elastix*)
-		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
-		If[$debugElastix, Print[command]];
-		RunProcess[$SystemShell,"StandardOutput",command];
+		command = ElastixCommand[elastix, tempdir, parF, {inpfol, movfol, outfol}, {fixedF, movingF, outF}, {fmaskF, mmaskF}][[1]];
+		RunCommand[command];
+		
 		(*Import Results*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
 			
 		,
 		(*series to volume registration (2D-3D, 3D-4D)*)
-		type==="series", 
-		
-		inpfol="";
-		{fmaskF,mmaskF}={"",""};
-		{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
-		
+		"series", 
+
+		(*define folders*)
+		{inpfol, movfol, outfol} = {"", "", ""};		
 		(*Check if masks are needed*)
-		If[dimtarm == dimtar && maskt!={1},	fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
-		(*check if mask needs to be exported for each volume*)
-		maske=(dimmovm == dimmov && maskm!={1});
-		(*check if same mask for all volumes*)
-		maske2=(dimmovm == Drop[dimmov,1] && maskm!={1});
-		(*export data*)
-		{command,outfile}=Transpose@(
+		{fmaskF, mmaskF} = {"", ""};
+		If[dimtarm == dimtar && maskt!={1},	fmaskF="targetMask.nii"; ExportNii[maskt, voxt, tempdir<>fmaskF]];
+		(*Export target and moving data*)
+		{fixedF, movingF, outF} = {"target-"<>depth<>".nii", "moving-"<>depth<>".nii", "result-"<>depth<>".nii.gz"};
+		ExportNii[target, voxt, tempdir<>fixedF];
+		
+		(*export moving data, loop over series*)
+		{command, outfile}=Transpose@(
 		(
-			index=StringPad[#];
-			movfol=outfol="vol"<>index;
-			CreateDirectory[tempdir<>outfol];
+			index = StringPad[#];
+			(*define folders*)
+			movfol = outfol = "vol"<>index; CreateDirectory[tempdir<>outfol];
+			(*Check if masks are needed*)
+			If[(dimmovm == dimmov || dimmovm == Drop[dimmov,1]) && maskm!={1}, mmaskF = movfol<>$PathnameSeparator<>"moveMask.nii"; ExportNii[If[dimmovm == dimmov, maskm[[#]], maskm], voxm, tempdir<>mmaskF]];
 			(*export moving*)
-			ExportNii[moving[[#]],voxm,tempdir<>movfol<>$PathnameSeparator<>movingF];
-			(*export mask*)
-			If[maske,mmaskF=movfol<>$PathnameSeparator<>"moveMask.nii";ExportNii[maskm[[#]],voxm,tempdir<>mmaskF]];
-			If[maske2,mmaskF=movfol<>$PathnameSeparator<>"moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
+			ExportNii[moving[[#]], voxm, tempdir<>movfol<>$PathnameSeparator<>movingF];
+			
 			(*create command*)
-			ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}]
-		)&/@Range[Length[moving]]);
+			ElastixCommand[elastix, tempdir, parF, {inpfol, movfol, outfol}, {fixedF, movingF, outF}, {fmaskF, mmaskF}]
+		)&/@Range[lengM]);
+		
 		(*Create and run batch*)
-		If[$debugElastix, Print[First@command]];
-		RunBatfile[tempdir,command];
-		(*Import data*)
+		RunBatfile[tempdir, command];
+		
+		(*Import results*)
 		data=(First@ImportNii[#])&/@outfile;
 		If[OptionValue[OutputTransformation], w = ReadTransformParameters[tempdir]];
-		
+
 		,
 		(*if not series or vol then PCA based method*)
-		type==="PCA", 
+		"multi", 
+
+		(*define folders*)
+		{inpfol, movfol, outfol} = {"", "", ""};
 		
-		{inpfol,movfol,outfol}={"","",""};
-		{fmaskF,mmaskF}={"",""};
-		{movingF,outF}={"moving-"<>depth<>".nii","result-"<>depth<>".nii.gz"};
-		(*Check if masks are needed*)		
-		If[maskm!={1}, mmaskF="moveMask.nii";ExportNii[maskm,voxm,tempdir<>mmaskF]];
-		If[maskt!={1}, fmaskF="targetMask.nii";ExportNii[maskt,voxt,tempdir<>fmaskF]];
-		(*Export moving data*)
-		ExportNii[moving,voxm,tempdir<>movingF];
+		(*Check if masks are needed*)
+		{fmaskF, mmaskF} = {"", ""};
+		If[Drop[dimtar, 1] == dimtarm && maskt!={1}, fmaskF="targetMask.nii"; ExportNii[maskt,voxt,tempdir<>fmaskF]];
+		If[Drop[dimmov, 1] == dimmovm && maskm!={1}, mmaskF="moveMask.nii"; ExportNii[maskm,voxm,tempdir<>mmaskF]];
+		
+		(*Export target and moving data*)
+		{fixedF, movingF, outF} = {"target-"<>depth<>#<>".nii"&, "moving-"<>depth<>#<>".nii"&, "result-"<>depth<>".nii.gz"};
+		(
+			index = StringPad["-",#];
+			ExportNii[target[[#]], voxt, tempdir<>fixedF[index]];
+			ExportNii[moving[[#]], voxm, tempdir<>movingF[index]];
+		)&/@Range[lengM];
+		
 		(*Create command and run elastix*)
-		command = ElastixCommand[elastix,tempdir,parF,{inpfol,movfol,outfol},{fixedF,movingF,outF},{fmaskF,mmaskF}][[1]];
-		If[$debugElastix, Print[command]];
-		RunProcess[$SystemShell,"StandardOutput",command];
-		(*Import Results*)
-		{data,vox}=ImportNii[tempdir<>outfol<>outF];
+		command = ElastixCommand[elastix, tempdir, parF, {inpfol, movfol, outfol}, {fixedF, movingF, outF}, {fmaskF, mmaskF}, lengM][[1]];
+		RunCommand[command];
+		
+		(*perform translation on all files *)
+		If[$debugElastix, Print["TransformData: making multi output"]];
+		data = TransformData[{#, voxm}, TempDirectory->DirectoryName[tdir], DeleteTempDirectory->False, PrintTempDirectory->False]&/@moving;
 	];
 	
 	(*do some cleanup*)
@@ -1040,7 +1115,7 @@ RegisterDatai[
 	If[OptionValue[DeleteTempDirectory], DeleteDirectory[tempdir,DeleteContents->True]];
 	
 	(*output results*)
-	data=ToPackedArray[N@Chop[Clip[data,MinMax[moving]]]];
+	data=ToPackedArray[N@Chop[Clip[data, MinMax[moving]]]];
 	If[OptionValue[OutputTransformation], {data, w}, data]
 ]
 
@@ -1076,11 +1151,11 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 	];
 	
 	(*cut data*)
-	{targetl, targetr, cut1}=CutData[target,cut1];
-	{movingl, movingr, cut2}=CutData[moving,cut2];
+	{targetl, targetr, cut1} = CutData[target,cut1];
+	{movingl, movingr, cut2} = CutData[moving,cut2];
 	(*cut masks*)
-	{maskTl, maskTr}=If[maskT==={1},{{1},{1}},CutData[maskT,cut1][[;;-2]]];
-	{maskMl, maskMr}=If[maskM==={1},{{1},{1}},CutData[maskM,cut2][[;;-2]]];
+	{maskTl, maskTr} = If[maskT==={1}, {{1},{1}}, CutData[maskT,cut1][[;;-2]]];
+	{maskMl, maskMr} = If[maskM==={1}, {{1},{1}}, CutData[maskM,cut2][[;;-2]]];
 	
 	(*register left part*)
 	regl = RegisterData[{targetl, maskTl, voxT}, {movingl, maskMl, voxM},Sequence@@FilterRules[{opts}, Options[RegisterData]]];
@@ -1116,7 +1191,7 @@ SplitInput[input_]:=Module[{data,mask,vox},
 (*TransformData*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*TransformData*)
 
 
@@ -1128,21 +1203,18 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 	
 	(*define the directory*)
 	tdir = OptionValue[TempDirectory];
-	tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}) <>$PathnameSeparator<>"QMRIToolsReg"<>$PathnameSeparator<>"transform";
+	tdir = FileNameJoin[{(If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}),"QMRIToolsReg","transform"}];
 	
 	(*create and print the directory*)
-	If[OptionValue[PrintTempDirectory],PrintTemporary[tdir]];
-	If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
+	If[OptionValue[PrintTempDirectory], PrintTemporary["using as temp directory: "<>tdir]];
+	If[DirectoryQ[tdir], DeleteDirectory[tdir,DeleteContents->True]];
 	CreateDirectory[tdir];
 	
 	(*Export and transform*)
-	ExportNii[data, vox, tdir <> $PathnameSeparator <> "trans.nii"];
-	command = TransformixCommandInd[tdir];
-
-	If[$debugElastix, Print[command]];
-	RunProcess[$SystemShell, "StandardOutput", command];
-	
-	output = ToPackedArray[ImportNii[tdir <> $PathnameSeparator <> "result.nii"][[1]]];
+	ExportNii[data, vox, FileNameJoin[{tdir,"trans.nii"}]];
+	command = TransformixCommand[tdir, True];
+	RunCommand[command];
+	output = ToPackedArray[ImportNii[FileNameJoin[{tdir,"result.nii"}]][[1]]];
 	
 	(*Delete temp directory*)
 	Switch[OptionValue[DeleteTempDirectory],
@@ -1152,47 +1224,6 @@ TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output}
 		
 	(*give the output*)
 	ToPackedArray@N@Chop[Clip[output,MinMax[data]],10^-6]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*TransformixCommandInd*)
-
-
-TransformixCommandInd[tempDir_] := Block[{transformix, transfile,transFol},
-	transformix = GetAssetLocation["Transformix"];
-	transFol = StringDrop[DirectoryName[transformix, 2], -1];
-	
-	transfile = Last[SortBy[
-		FileNames["TransformParameters*", FileNameTake[tempDir, {1, -2}]],
-		FileDate[#, "Modification"] &]];
-	
-	Switch[$OperatingSystem,
-		"Windows",
-		"@ \"" <> transformix <>
-		"\" -in \"" <> First[FileNames["trans*", tempDir]] <>
-		"\" -out \"" <> tempDir <>
-		"\" -tp \"" <> transfile <>
-		(*"\" -def all" <>*)
-		"\"" <>
-		" > \"" <> tempDir <> "\\outputT.txt\" \n exit \n"
-		,
-		"MacOSX",
-		"export PATH="<>transFol<>"/bin:$PATH\nexport DYLD_LIBRARY_PATH="<>transFol<>"/lib:$DYLD_LIBRARY_PATH\n"<>
-		transformix <>
-		" -in '" <> First[FileNames["trans*", tempDir]] <>
-		"' -out '" <> tempDir <>
-		"' -tp '" <> transfile <>
-		"' > '" <> tempDir <> "/outputT.txt' \n exit \n"
-		,
-		"Unix",
-		"export PATH="<>transFol<>"/bin:$PATH\nexport LD_LIBRARY_PATH="<>transFol<>"/lib:$LD_LIBRARY_PATH\n"<>
-		transformix <>
-		" -in '" <> First[FileNames["trans*", tempDir]] <>
-		"' -out '" <> tempDir <>
-		"' -tp '" <> transfile <>
-		"' > '" <> tempDir <> "/outputT.txt' \n exit \n"
-	]
 ]
 
 
@@ -1261,21 +1292,18 @@ Options[RegisterDataTransformSplit] = Join[Options[RegisterData],{SplitMethod->"
 SyntaxInformation[RegisterDataTransformSplit] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,
-	target ,maskT, voxT,
-	moving, maskM, voxM,
-	targetl, targetr, maskTl, maskTr, cut1,
-	movingl, movingr, maskMl, maskMr, cut2,
-	moving2l, moving2r, tdir,
-	regl, regr, movl, movr
+	target ,maskT, voxT, moving, maskM, voxM,
+	targetl, targetr, maskTl, maskTr, cut1, movingl, movingr, maskMl, maskMr, cut2,
+	moving2l, moving2r, tdir, regl, regr, movl, movr
 	},
 	
 	(*prepare the input*)
-	{target ,maskT, voxT}=SplitInput[targeti];
-	{moving, maskM, voxM}=SplitInput[movingi];
+	{target ,maskT, voxT} = SplitInput[targeti];
+	{moving, maskM, voxM} = SplitInput[movingi];
 	
 	(*find the common split*)	
-	{targetl, targetr, cut1}=CutData[target];
-	{movingl, movingr, cut2}=CutData[moving];
+	{targetl, targetr, cut1} = CutData[target];
+	{movingl, movingr, cut2} = CutData[moving];
 	
 	{cut1, cut2} = Switch[OptionValue[SplitMethod],
 		"Target", Round[{cut1, (cut1 voxT[[2]])/voxM[[2]]}],
@@ -1286,11 +1314,11 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 		];
 	
 	(*cut data*)
-	{targetl, targetr, cut1}=CutData[target,cut1];
-	{movingl, movingr, cut2}=CutData[moving,cut2];
+	{targetl, targetr, cut1} = CutData[target,cut1];
+	{movingl, movingr, cut2} = CutData[moving,cut2];
 	(*cut masks*)
-	{maskTl, maskTr}=If[maskT==={1},{{1},{1}},CutData[maskT,cut1][[;;-2]]];
-	{maskMl, maskMr}=If[maskM==={1},{{1},{1}},CutData[maskM,cut2][[;;-2]]];
+	{maskTl, maskTr} = If[maskT === {1}, {{1}, {1}}, CutData[maskT,cut1][[;;-2]]];
+	{maskMl, maskMr} = If[maskM === {1}, {{1}, {1}}, CutData[maskM,cut2][[;;-2]]];
 	
 	(*split the moving2 data*)
 	{moving2l, moving2r, cut2} = CutData[moving2, cut2];
@@ -1299,16 +1327,15 @@ RegisterDataTransformSplit[targeti_, movingi_, {moving2_, vox_}, opts : OptionsP
 	
 	{regr, movr} = RegisterDataTransform[{targetr, maskTr, voxT}, {movingr, maskMr, voxM}, {moving2r, vox}, Sequence@@FilterRules[{opts}, Options[RegisterDataTransform]]];
 	
-	{StichData[regl,regr],StichData[movl,movr]}
+	{StichData[regl,regr], StichData[movl,movr]}
 ]
-
 
 
 (* ::Subsection:: *)
 (*RegisterDiffusionData/Split*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*RegisterDiffusionData*)
 
 
@@ -1332,9 +1359,11 @@ RegisterDiffusionData[
 
 RegisterDiffusionData[
 	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}}
-,opts:OptionsPattern[]] := RegisterData[{dtidata, dtimask, vox},(*OutputTransformation->True,*) 
+,opts:OptionsPattern[]] := (
+If[$debugElastix, Print["Diffusion registration"]];	
+RegisterData[{dtidata, dtimask, vox},(*OutputTransformation->True,*) 
 	MethodReg-> (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}),
-	AffineDirections -> {1, 1, 1}, FilterRules[{opts}, Options[RegisterData]]]
+	AffineDirections -> {1, 1, 1}, FilterRules[{opts}, Options[RegisterData]]])
 
 (*Anatomical data present, define two registrations*)
 RegisterDiffusionData[
@@ -1355,7 +1384,7 @@ RegisterDiffusionData[
 RegisterDiffusionData[
 	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}},
 	{anatdata_?ArrayQ, anatmask_?ArrayQ, voxa : {_?NumberQ, _?NumberQ, _?NumberQ}},opts : OptionsPattern[]] := Module[{
-		dtidatar, tempDir, tempDira, volDirs, w,tFilesA, tFilesD, dtidatarA, cmd, target, movingdata
+		dtidatar, tempDir, tempDira, volDirs, w,tFilesA, tFilesD, dtidatarA, cmd, target, movingdata, vdir
 	},
 
 	(*get the current temp dir and define the anat tempdir*)
@@ -1364,6 +1393,7 @@ RegisterDiffusionData[
 	tempDira = tempDir <> $PathnameSeparator <> "anat";
 	
 	(*perform DTI registration*)
+	If[$debugElastix, Print["Diffusion registration"]];	
 	dtidatar = RegisterData[{dtidata, dtimask, vox},
 		TempDirectory -> tempDir, 
 		DeleteTempDirectory -> False, 
@@ -1386,6 +1416,7 @@ RegisterDiffusionData[
 	];
 	
 	(*perform anat registration*)
+	If[$debugElastix, Print["Anatomy registration"]];
 	RegisterData[{anatdata, anatmask, voxa}, {movingdata, vox},
 		TempDirectory -> tempDira, 
 		DeleteTempDirectory -> False,
@@ -1402,10 +1433,12 @@ RegisterDiffusionData[
 	];
 	
 	(*transform all diffusion files to anatomy*)
+	If[$debugElastix, Print["Combine transforms"]];
 	
 	(*export diffusion reg target*)
-	CreateDirectory[tempDir<>$PathnameSeparator<>"vol0000"];
-	ExportNii[dtidatar[[All,1]],vox,tempDir<>$PathnameSeparator<>"vol0000"<>$PathnameSeparator<>"moving-3D.nii"];
+	vdir = FileNameJoin[{tempDir,"vol"<>StringPad[0]}];
+	CreateDirectory[vdir];
+	ExportNii[dtidatar[[All,1]],vox,FileNameJoin[{vdir,"moving-3D.nii"}]];
 	
 	(*get vol folders and anat transform files*)
 	volDirs = FileNames["vol*", tempDir, 1];
@@ -1418,9 +1451,9 @@ RegisterDiffusionData[
 	) & /@ volDirs;
 	
 	(*call transformix*)
-	cmd = TransformixCommand[tempDir];
+	cmd = TransformixCommand[tempDir, False];
 	PrintTemporary["Combining transformations"];
-	RunBatfileT[tempDir, cmd];
+	RunBatfile[tempDir, cmd, "T"];
 	
 	(*import dti data in anat space*)
 	dtidatarA = Transpose[ImportNii[#][[1]] & /@ FileNames["resultA*", tempDir, 2]];

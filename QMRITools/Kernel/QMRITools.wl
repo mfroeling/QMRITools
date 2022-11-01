@@ -116,4 +116,3 @@ Get["Developer`"];
 	Get[First@#];
 	SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#]
 )& /@ QMRITools`$ContextsFunctions;
-
