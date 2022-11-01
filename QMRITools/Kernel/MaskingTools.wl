@@ -104,7 +104,7 @@ MaskFiltKernel::usage =
 "MaskFiltKernel is an option for Mask, SmoothMask and SmoothSegmentation. How mucht the contours are smoothed." 
 
 SmoothItterations::usage =
-"SmootItterations is an option for Mask, SmoothMask and SmoothSegmentation and defines how often the smoothing is repeated."
+"SmoothItterations is an option for Mask, SmoothMask and SmoothSegmentation and defines how often the smoothing is repeated."
 
 GetMaskOutput::usage = 
 "GetMaskOutput is an option for GetMaskData. Defaul is \"Slices\" which gives the mask data per slices. Else the entire mask data is given as output."
@@ -225,7 +225,7 @@ Mask[{dat_?ArrayQ, tr_?VectorQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
 Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, dataD, datN, data, dil},
 	
 	(*perform data checks*)
-	data = ToPackedArray@N@dat;
+	data = ToPackedArray@N@Normal@dat;
 	dataD = ArrayDepth[data];
 	If[Length[tr] =!= 2, Return@Message[Mask::tresh, tr]];
 	If[ArrayDepth[data] > 3, Return@Message[Mask::dep, dataD]];
@@ -239,7 +239,7 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, data
 	];
 	
 	(*smooth the mask if needed*)
-	SparseArray@If[OptionValue[MaskSmoothing], SmoothMask[mask, FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]], mask]
+	Normal@If[OptionValue[MaskSmoothing], SmoothMask[mask, FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]], mask]
 ]
 
 

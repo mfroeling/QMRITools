@@ -233,7 +233,7 @@ GenerateGradients[grds : {{_, _, _} ..}, opts : OptionsPattern[]] := If[OptionVa
 (*GenerateGradientsi*)
 
 
-Options[GenerateGradientsi] = {Steps -> 1000, Runs -> 1, VisualOpt -> True, GradType -> "Normal", ConditionCalc -> False, FullSphere -> False, Method -> "Default"};
+Options[GenerateGradientsi] = {Steps -> 1000, Runs -> 1, VisualOpt -> False, GradType -> "Normal", ConditionCalc -> False, FullSphere -> False, Method -> "Default"};
 
 GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 	steps, runs, method, vis, cond, condtot, nf, ni, condnr, velocity0, velocity1, parti, part, ns, plot, tempplot, vel, charge, tempc, sph, cols, output, half
@@ -271,7 +271,7 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
     ];
    
    (*visualisation*)
-   If[OptionValue[VisualOpt],
+   If[vis,
     
     (*Initialize graphics*)
     vp = {1.3, -2.4, 2}; vv = {0, 0, 1}; va = 30 Degree;

@@ -64,7 +64,7 @@ Output is {centerpoints, normalvecs, inout} or {centerpoints, normalvecs, inout,
 
 
 GetMaskSegmentPoints::usage = 
-"GetMaskSegmentPoints[mask]."
+"GetMaskSegmentPoints[mask]"
 
 MaskToLines::usage = 
 "MaskToLines[mask, vox]
