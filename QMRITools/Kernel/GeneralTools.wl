@@ -84,6 +84,10 @@ output is the vecotrized data and a list contining the original data dimensions 
 VectorToData::usage = 
 "VectorToData[vec, {dim,pos}] converts the vectroized data from DataToVector back to its original Dimensoins."
 
+MakeCoordinates::usage = 
+"MakeCoordinates[data, vox] gives the coordiantes of every voxel.
+MakeCoordinates[dim, vox] gives the coordiantes of every voxel for a dataset with dimensions dim."
+
 Squeeze::usage =
 "Squeeze[data] Removes the singleton dimensions from data."
 
@@ -293,7 +297,7 @@ ApplyCrop::dim = "Crop region lies outside data range."
 Begin["`Private`"]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Asset Functions*)
 
 
@@ -310,6 +314,8 @@ ExtractDemoData[] := Block[{file},
 		Print["DemoData archive does not exist"]]
 	]
 ]
+
+
 
 (* ::Subsection:: *)
 (*General Functions*)
@@ -528,6 +534,7 @@ RescaleImgi[dat_, {sc_, met_}, n_] := Block[{type, im, dim},
 (* ::Subsubsection::Closed:: *)
 (*GridData*)
 
+
 Options[GridData] = {Padding-> None}
 
 SyntaxInformation[GridData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
@@ -634,6 +641,17 @@ VectorToData[vec_, {dim_, pos_}] := ToPackedArray@N@If[VectorQ[vec],
 		Transpose[Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec]]
 	]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeCoordinates*)
+
+
+SyntaxInformation[MakeCoordinates] = {"ArgumentsPattern" -> {_, _}};
+
+MakeCoordinates[dim_?VectorQ,vox_]:=vox RotateDimensionsRight@Array[{##}&,dim]
+
+MakeCoordinates[dat_?ArrayQ,vox_]:=MakeCoordinates[Dimensions@dat,vox]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -785,6 +803,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 
 (* ::Subsubsection::Closed:: *)
 (*FindCrop*)
+
 
 Options[FindCrop] = {CropPadding->5}
 
@@ -1282,16 +1301,18 @@ LLeastSquares[Ai_,y_]:=Block[{A},
 
 
 LLeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, 
-	Inverse[Transpose[A].A].Transpose[A].y,
+	Inverse[Transpose[A] . A] . Transpose[A] . y,
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 LLeastSquaresCC = Compile[{{A, _Real, 2}, {y, _Complex, 1}}, 
-	Inverse[Transpose[A].A].Transpose[A].y,
+	Inverse[Transpose[A] . A] . Transpose[A] . y,
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 LLeastSquaresCCC = Compile[{{A, _Complex, 2}, {y, _Complex, 1}}, 
-	Inverse[ConjugateTranspose[A].A].ConjugateTranspose[A].y,
+	Inverse[ConjugateTranspose[A] . A] . ConjugateTranspose[A] . y,
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
 
 (* ::Subsection::Closed:: *)
 (*NNLeastSquares*)
@@ -1349,8 +1370,8 @@ NNLeastSquares[A_, y_] := Block[{At, x, zeroed, w, zerow, pos, sp, xp, neg, xi, 
 ]
 
 PosInd = Compile[{{v, _Real, 1}}, Block[{z = Round@Total[1 - v]}, Ordering[v][[;; z]]], RuntimeOptions -> "Speed"];
-CalcW = Compile[{{A, _Real, 2}, {At, _Real, 2}, {y, _Real, 1}, {x, _Real, 1}}, Chop[At.(y - A.x)], RuntimeOptions -> "Speed"];
-LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}},Inverse[A.Transpose[A]].A.y, RuntimeOptions -> "Speed"];
+CalcW = Compile[{{A, _Real, 2}, {At, _Real, 2}, {y, _Real, 1}, {x, _Real, 1}}, Chop[At . (y - A . x)], RuntimeOptions -> "Speed"];
+LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}},Inverse[A . Transpose[A]] . A . y, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
@@ -1434,7 +1455,7 @@ BSplineCurveFit[pts_, opts : OptionsPattern[]] := Block[{paras, knots, coeffMat,
 	{coeffMat, Amat} = BSplineBasisFunctions[len, opts];
 	ptsP = PadRight[pts, Length[Amat]];
 	ctrlpts = LLeastSquares[Amat, ptsP];
-	(Amat.ctrlpts)[[;; (-cpn - 1)]]
+	(Amat . ctrlpts)[[;; (-cpn - 1)]]
 	]
 
 
@@ -1463,7 +1484,7 @@ BSplineBasisFunctions[Npts_, opts : OptionsPattern[]] := BSplineBasisFunctions[N
 	(*maker reg coefficient matirx*)
 	coeffMatDD = ListConvolve[{1, -2, 1}, #] & /@ coeffMat;
 	coeffMat = Transpose[coeffMat[[All, 2 ;; -2]]];
-	smooth = reg (coeffMatDD.Transpose[coeffMatDD]);
+	smooth = reg (coeffMatDD . Transpose[coeffMatDD]);
 	coeffMatR = Join[coeffMat, smooth];
 	(*output*)
 	{coeffMat, coeffMatR}

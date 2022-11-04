@@ -20,25 +20,8 @@ BeginPackage["QMRITools`TensorTools`", Join[{"Developer`"}, Complement[QMRITools
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
-
-
-DriftCorrect::usage = 
-"DriftCorrect[data, bval] dirft corrects the data using the signals of the lowest bvalue that has 6 or more unique volumes.
-For the function to work optimal it is best to have these volumes evenly spread througout thet data and for the first and last volume to have this low bvalue.
-
-DriftCorrect[] is based on DOI: 10.1002/mrm.26124."
-
-ConcatenateDiffusionData::usage =
-"ConcatenateDiffusionData[{{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}}] concatenates the diffusion data sets.
-ConcatenateDiffusionData[{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}] concatenates the diffusion data sets."
-
-SortDiffusionData::usage = 
-"SortDiffusionData[data, grad, bval] sorts the diffusion datasets grad and bval for magnitude of bvalue."
-
-RemoveIsoImages::usage = 
-"RemoveIsoImages[data, grad, bval] Romoves the ISO images from the philips scanner from the data. ISO images have g={0,0,0} and b>0."
 
 
 TensorCalc::usage = 
@@ -56,21 +39,17 @@ The bvalue assumed to be is in s/mm^2 and therfore the output is in mm^2/2.
 TensorCalc[] is based on DOI: 10.1016/j.neuroimage.2013.05.028 and 10.1002/mrm.25165."
 
 
-ResidualCalc::usage =
-"ResidualCalc[DTI,{tensor,S0},gradients,bvector] calculates the tensor residuals for the given dataset.
-ResidualCalc[DTI,{tensor,S0},outlier,gradients,bvector] calculates the tensor residuals for the given dataset taking in account the outliers.
-ResidualCalc[DTI,{tensor,S0},bmat] calculates the tensor residuals for the given dataset.
-ResidualCalc[DTI,{tensor,S0},outlier,bmat] calculates the tensor residuals for the given dataset taking in account the outliers.
-ResidualCalc[DTI,tensor,gradients,bvector] calculates the tensor residuals for the given dataset. Tensor must contain Log[S0].
-ResidualCalc[DTI,tensor,outlier,gradients,bvector] calculates the tensor residuals for the given dataset taking in account the outliers. Tensor must contain Log[S0].
-ResidualCalc[DTI,tensor,bmat] calculates the tensor residuals for the given dataset. Tensor must contain Log[S0].
-ResidualCalc[DTI,tensor,outlier,bmat] calculates the tensor residuals for the given dataset taking in account the outliers. Tensor must contain Log[S0]."
+FlipTensorOrientation::usage = 
+"FlipTensorOrientation[tens, perm] permutes the internal orientation of the tensor, perm can be any permutation of {\"x\",\"y\",\"z\"}.
+FlipTensorOrientation[tens, flip] flips the internal orientation of the tensor, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
+FlipTensorOrientation[tens, flip, perm] flips and permuter the internal orientation of the tensor.
+FlipTensorOrientation[tens, perm, flip]flips and permuter the internal orientation of the tensor."
 
-SigmaCalc::usage = 
-"SigmaCalc[DTI,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 10.
-SigmaCalc[DTI,tens,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 10.
-SigmaCalc[DTI,grad,bvec,blur] calculates the noise sigma based on the tensor residual, If blur is 1 ther is no blurring.
-SigmaCalc[DTI,tens,grad,bvec,blur] calculates the noise sigma based on the tensor residual. If blur is 1 ther is no blurring."
+FlipGradientOrientation::usage = 
+"FlipGradientOrientation[grad, perm] permutes the internal orientation of the gradients, perm can be any permutation of {\"x\",\"y\",\"z\"}.
+FlipGradientOrientation[grad, flip] flips the internal orientation of the gradients, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
+FlipGradientOrientation[grad, flip, perm] flips and permuter the internal orientation of the gradients.
+FlipGradientOrientation[grad, perm, flip]flips and permuter the internal orientation of the gradients."
 
 
 EigenvalCalc::usage = 
@@ -94,19 +73,19 @@ ECalc::usage =
 WestinMeasures::usage = 
 "WestinMeasures[eigenvalues] calculates the westin measures."
 
-ParameterCalc::usage = "ParameterCalc[tensor] caculates the eigenvalues and MD and FA from the given tensor. The parameters are l1, l2, l3, MD and FA. l1, l2, l3, MD are in (10^-3 mm^2/s)."
+ParameterCalc::usage = 
+"ParameterCalc[tensor] caculates the eigenvalues and MD and FA from the given tensor. The parameters are l1, l2, l3, MD and FA. l1, l2, l3, MD are in (10^-3 mm^2/s)."
 
-FlipTensorOrientation::usage = 
-"FlipTensorOrientation[tens, perm] permutes the internal orientation of the tensor, perm can be any permutation of {\"x\",\"y\",\"z\"}.
-FlipTensorOrientation[tens, flip] flips the internal orientation of the tensor, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
-FlipTensorOrientation[tens, flip, perm] flips and permuter the internal orientation of the tensor.
-FlipTensorOrientation[tens, perm, flip]flips and permuter the internal orientation of the tensor."
 
-FlipGradientOrientation::usage = 
-"FlipGradientOrientation[grad, perm] permutes the internal orientation of the gradients, perm can be any permutation of {\"x\",\"y\",\"z\"}.
-FlipGradientOrientation[grad, flip] flips the internal orientation of the gradients, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
-FlipGradientOrientation[grad, flip, perm] flips and permuter the internal orientation of the gradients.
-FlipGradientOrientation[grad, perm, flip]flips and permuter the internal orientation of the gradients."
+LogTensor::usage = 
+"LogTensor[tensor] transforms the tensor to LogEuclidian space.
+
+LogTensor[] is based on DOI: 10.1109/42.963816."
+
+ExpTensor::usage = 
+"ExpTensor[tensor] transforms the tensor from LogEuclidian space.
+
+ExpTensor[] is based on DOI: 10.1109/42.963816."
 
 
 AngleCalc::usage = 
@@ -114,6 +93,47 @@ AngleCalc::usage =
 
 AngleMap::usage = 
 "AngleMap[data] calculates the zennith and azimuth angles of a 3D dataset (z,x,y,3) containing vectors relative to the slice direction."
+
+
+DriftCorrect::usage = 
+"DriftCorrect[data, bval] dirft corrects the data using the signals of the lowest bvalue that has 6 or more unique volumes.
+For the function to work optimal it is best to have these volumes evenly spread througout thet data and for the first and last volume to have this low bvalue.
+
+DriftCorrect[] is based on DOI: 10.1002/mrm.26124."
+
+ConcatenateDiffusionData::usage =
+"ConcatenateDiffusionData[{{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}}] concatenates the diffusion data sets.
+ConcatenateDiffusionData[{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}] concatenates the diffusion data sets."
+
+SortDiffusionData::usage = 
+"SortDiffusionData[data, grad, bval] sorts the diffusion datasets grad and bval for magnitude of bvalue."
+
+RemoveIsoImages::usage = 
+"RemoveIsoImages[data, grad, bval] Romoves the ISO images from the philips scanner from the data. ISO images have g={0,0,0} and b>0."
+
+
+ResidualCalc::usage =
+"ResidualCalc[DTI,{tensor,S0},gradients,bvector] calculates the tensor residuals for the given dataset.
+ResidualCalc[DTI,{tensor,S0},outlier,gradients,bvector] calculates the tensor residuals for the given dataset taking in account the outliers.
+ResidualCalc[DTI,{tensor,S0},bmat] calculates the tensor residuals for the given dataset.
+ResidualCalc[DTI,{tensor,S0},outlier,bmat] calculates the tensor residuals for the given dataset taking in account the outliers.
+ResidualCalc[DTI,tensor,gradients,bvector] calculates the tensor residuals for the given dataset. Tensor must contain Log[S0].
+ResidualCalc[DTI,tensor,outlier,gradients,bvector] calculates the tensor residuals for the given dataset taking in account the outliers. Tensor must contain Log[S0].
+ResidualCalc[DTI,tensor,bmat] calculates the tensor residuals for the given dataset. Tensor must contain Log[S0].
+ResidualCalc[DTI,tensor,outlier,bmat] calculates the tensor residuals for the given dataset taking in account the outliers. Tensor must contain Log[S0]."
+
+SigmaCalc::usage = 
+"SigmaCalc[DTI,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 10.
+SigmaCalc[DTI,tens,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 10.
+SigmaCalc[DTI,grad,bvec,blur] calculates the noise sigma based on the tensor residual, If blur is 1 ther is no blurring.
+SigmaCalc[DTI,tens,grad,bvec,blur] calculates the noise sigma based on the tensor residual. If blur is 1 ther is no blurring."
+
+
+TransformTensor::usage = 
+"TransformTensor[tensor, disp, vox] corrects the tensor with voxel size vox based on the displacementfield disp. The displacementfield is te displacement in mm
+for each voxel location in x, y and z.
+
+TransformTensor[] is based on DOI: 10.1109/42.963816."
 
 
 Correct::usage =
@@ -126,10 +146,6 @@ TensorCorrect::usage=
 Deriv::usage = 
 "Deriv[disp, vox] calculates the derivative of the displacement along the three main axes. disp is the displacement field, vox is the voxel size.
 Deriv[disp, vox, mask] calculates the derivative of the displacement along the three main axes. Sharp edges between the background en disp are solved by the mask. mask is a mask delining the edge of the displacement field.";
-
-
-ColorFAPlot::usage = 
-"ColorFAPlot[tenor] create a color coded FA map from the tensor for l1, l2 and l3."
 
 
 (* ::Subsection::Closed:: *)
@@ -204,90 +220,6 @@ ConcatenateDiffusionData::dim = "data, grad and bval should be the same length: 
 
 
 Begin["`Private`"]
-
-
-(* ::Subsection::Closed:: *)
-(*DriftCorrect*)
-
-
-Options[DriftCorrect]={NormalizeSignal->True, UseMask->True}
-
-SyntaxInformation[DriftCorrect] = {"ArgumentsPattern" -> {_, _,_., OptionsPattern[]}}
-
-DriftCorrect[data_, bi_, opts:OptionsPattern[]] := Block[{bval,pos},
-	bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
-	pos = First@UniqueBvalPosition[bval, 5][[2]];
-	DriftCorrect[data, bval, pos, opts]
-];
-  
-DriftCorrect[data_, bi_, pos_, OptionsPattern[]] := Block[{
-	sig, cor, bval, sol1, sol2, sol3, a, b, c, x, outp, dat
-	},
-	bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
-	sig = MeanSignal[data, pos, UseMask->OptionValue[UseMask]];
-	dat = Transpose[{pos, sig}];
-	
-	{sol1, sol2, sol3} = {a, b, c} /. FindFit[dat, {c + b x + a x^2}, {a, b, c}, x];
-	cor = sol3/Table[sol3 + sol2 x + sol1 x^2, {x, 1, Length[bi]}];
-	
-	outp = ConstantArray[cor, Length[data]] data;
-	
-	If[OptionValue[NormalizeSignal], 100 outp / (sig[[1]] cor[[1]]) , outp]
-];
-
-
-(* ::Subsection::Closed:: *)
-(*ConcatenateDiffusionData*)
-
-
-SyntaxInformation[ConcatenateDiffusionData] = {"ArgumentsPattern" -> {_, _., _., _.}};
-
-ConcatenateDiffusionData[data_?ListQ] :=If[Length[data] == 4,ConcatenateDiffusionData[data[[1]], data[[2]], data[[3]], data[[4]]]]
-
-ConcatenateDiffusionData[data_, grad_, val_, vox_] := 
-  Module[{dataout, gradout, valout, voxout},
-   If[Length[data] == Length[grad] == Length[val],
-    dataout = Transpose@Flatten[Transpose[NormalizeData[#]] & /@ data, 1];
-    gradout = Flatten[grad, 1];
-    valout = Flatten[val];
-    
-    {dataout, gradout, valout} = RemoveIsoImages[dataout, gradout, valout];
-    {dataout, gradout, valout} = SortDiffusionData[dataout, gradout, valout];
-    ,
-    Return[Message[ConcatenateDiffusionData::dim, Length[data],Length[grad], Length[val]]];
-    ];
-   
-   voxout = If[ListQ[vox] && ! ListQ[vox[[1]]], vox, vox[[1]]];
-   
-   {ToPackedArray@N@dataout, gradout, valout, voxout}
-   ];
-
-
-(* ::Subsection::Closed:: *)
-(*SortDiffusionData*)
-
-
-SyntaxInformation[SortDiffusionData] = {"ArgumentsPattern" -> {_, _, _}};
-
-SortDiffusionData[data_, grad_, val_] := Module[{pos, valu, sel},
-	{valu, pos} = UniqueBvalPosition[val];
-	sel = Flatten[pos];
-	{ToPackedArray@N@data[[All, sel]], grad[[sel]], val[[sel]]}
-]
-
-
-(* ::Subsection::Closed:: *)
-(*RemoveIsoImages*)
-
-
-SyntaxInformation[RemoveIsoImages] = {"ArgumentsPattern" -> {_, _, _}};
-
-RemoveIsoImages[data_, grad_, val_] := Module[{sel},
-	sel = Complement[
-		Range[Length[val]],Complement[Flatten[Position[grad, {0., 0., 0.}]], Flatten[Position[val, 0.]]]
-	];
-	{ToPackedArray@N@data[[All, sel]], grad[[sel]], val[[sel]]}
-]
 
 
 (* ::Subsection:: *)
@@ -474,7 +406,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	  				soli = sol;
 	  				itt++;
 	  				(*a. Calculate the residuals e* in the linear domain*)
-	  				res = LS - bmat.sol;
+	  				res = LS - bmat . sol;
 	  				(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
 	  				mad = 1.4826 MedianDeviation[res];
 	  				(*prevent calculation with 0*)
@@ -482,7 +414,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	  					(*c. Recompute the weights according to Eq. [13].*)
 	  					wts = 1 / (1 + (res/mad)^2)^2;
 	  					(*d. Perform WLLS fit with new weights*)
-	  					wmat = Transpose[bmat].DiagonalMatrix[wts];
+	  					wmat = Transpose[bmat] . DiagonalMatrix[wts];
 	  					sol = PseudoInverse[wmat . bmat] . wmat . LS;
 	  					(*e. Check convergence*)
 	  					If[Total[UnitStep[Abs[sol - soli] - con (Max /@ Transpose[{Abs[sol], Abs[soli]}])]] === 0 || itt === 5, cont = 0];
@@ -490,7 +422,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	  			];(*end first while*)
 	  			
 	  			(*Step 3: Transform variables for heteroscedasticity*)
-	  			fitE = Exp[-bmat.sol] + 10^-10;
+	  			fitE = Exp[-bmat . sol] + 10^-10;
 	  			LS2 = LS / fitE;
 	  			bmat2 = bmat / fitE;
 	  			
@@ -504,7 +436,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	  				soli = sol;
 	  				itt++;
 	  				(*a. Calculate the residuals e* in the linear domain*)
-					res = LS2 - bmat2.sol;
+					res = LS2 - bmat2 . sol;
 					(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
 					mad = 1.4826 MedianDeviation[res];
 					(*prevent calculation with 0*)
@@ -512,7 +444,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 						(*c. Recompute the weights according to Eq. [13].*)
 						wts = 1 / (1 + (res/mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
-						wmat = Transpose[bmat2].DiagonalMatrix[wts];
+						wmat = Transpose[bmat2] . DiagonalMatrix[wts];
 						sol = PseudoInverse[wmat . bmat2] . wmat . LS2;
 						(*e. Check convergence*)
 	  					If[Total[UnitStep[Abs[sol - soli] - con (Max /@ Transpose[{Abs[sol], Abs[soli]}])]] === 0 || itt === 5, cont = 0];
@@ -524,7 +456,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 			];(*end main while*)
 	  			
 			(*Step 7: Identify and exclude outliers*)
-			res = LS2 - bmat2.sol;
+			res = LS2 - bmat2 . sol;
 			out = UnitStep[Abs[res] - (kappa 1.4826 MedianDeviation[res])];
 			
 			];(*close if negative S0*)
@@ -544,7 +476,7 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 
 
 TensMinLLS = Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmatI, _Real, 2}},
-	bmatI.LS,
+	bmatI . LS,
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
@@ -558,8 +490,8 @@ TensMinWLLS = Compile[{{S, _Real, 1},{LS, _Real, 1},{bmat, _Real, 2}},
 		If[!(AllTrue[LS, 0. === # &] || Total[Unitize[LS]] < 7),
 	    	mvec = UnitStep[LS] Unitize[LS]; 
 	    	(*if 0 then it is not used because w=0*)
-	    	wmat = Transpose[bmat].DiagonalMatrix[mvec S^2];
-	    	sol = PseudoInverse[wmat.bmat].wmat.LS;
+	    	wmat = Transpose[bmat] . DiagonalMatrix[mvec S^2];
+	    	sol = PseudoInverse[wmat . bmat] . wmat . LS;
 	    ];
 	    sol]
     ,{{wmat,_Real,2}, {sol, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
@@ -581,7 +513,7 @@ TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
 			itt = 0;
 			cont = 1;
 			(*initialize using LLS*)
-			sol = PseudoInverse[bmat].LS;
+			sol = PseudoInverse[bmat] . LS;
 			(*check for implausabole solution (negative S0 or high S0)*)
 			If[Last[sol] >= 3*max || Last[sol] <= 0.,
 				sol = sol0;
@@ -592,9 +524,9 @@ TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
 					itt++;
 					soli = sol;
 					(*perform WLLS*)
-					w = (mvec Exp[2 bmat.sol]);
-					wmat =Transpose[bmat].DiagonalMatrix[w];
-					sol = PseudoInverse[wmat.bmat].wmat.LS;
+					w = (mvec Exp[2 bmat . sol]);
+					wmat =Transpose[bmat] . DiagonalMatrix[w];
+					sol = PseudoInverse[wmat . bmat] . wmat . LS;
 					(*update weight*)
 					(*see if to quit loop*)
 					If[(Last[sol] >= 3*max || Last[sol] <= 0), cont = 0.; sol = sol0];
@@ -604,6 +536,8 @@ TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}]
         
 
+
+
 (* ::Subsubsection::Closed:: *)
 (*DKI*)
 
@@ -612,7 +546,7 @@ TensMiniWLLS = Quiet@Compile[{{S, _Real, 1}, {LS, _Real, 1}, {bmat, _Real, 2}},
 TensMinDKI = Compile[{{S, _Real, 1}, {bmatI, _Real, 2}},
 	If[Total[S]==0.,
     	{0.,0.,0.,0.,0.,0.,0.},
-    	bmatI.S
+    	bmatI . S
 	],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"(*, Parallelization -> True*)];
 
 
@@ -622,12 +556,12 @@ TensMinDKI = Compile[{{S, _Real, 1}, {bmatI, _Real, 2}},
 
 TensMinNLS[S_,LS_,bmat_,bmatI_]:=
 Module[{v,xx,yy,zz,xy,xz,yz,init,tens,sol},
-	tens=bmatI.LS;
+	tens=bmatI . LS;
 	If[tens=={0.,0.,0.,0.,0.,0.,0.},
 		tens,
 		v={xx,yy,zz,xy,xz,yz,tens[[7]]};
 		init=Thread[{v[[1;;6]],tens[[1;;6]]}];
-		sol=FindMinimum[.5 Total[(S-Exp[bmat.v])^2],init][[2]];
+		sol=FindMinimum[.5 Total[(S-Exp[bmat . v])^2],init][[2]];
 		v/.sol
 	]
 ]
@@ -640,12 +574,12 @@ Module[{v,xx,yy,zz,xy,xz,yz,init,tens,sol},
 TensMinGMM[S_,LS_,bmat_,bmatI_]:=
 Module[{v,xx,yy,zz,xy,xz,yz,init,tens,res,w},
 	S;
-	tens=bmatI.LS;
+	tens=bmatI . LS;
 	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
 		v={xx,yy,zz,xy,xz,yz,tens[[7]]};
 		init=Thread[{v[[1;;6]],tens[[1;;6]]}];
 		v/.FindMinimum[(
-			res=LS-bmat.v;
+			res=LS-bmat . v;
 			w=1/(res^2+Mean[res]^2);
 			.5 Total[(w/Mean[w])*(res)^2]
 		(*w=1/(res^2+(1.4826*Median[Abs[res-Median[res]]])^2);*)
@@ -661,11 +595,11 @@ Module[{v,xx,yy,zz,xy,xz,yz,init,tens,res,w},
 TensMinCLLS[S_,LS_,bmat_,bmatI_]:=
 Module[{v,R0,R1,R2,R3,R4,R5,init,tens},
 	S;
-	tens=bmatI.LS;
+	tens=bmatI . LS;
 	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
 		v={R0^2,R1^2+R3^2,R2^2+R4^2+R5^2,R0 R3,R0 R4,R3 R4+R1 R5,tens[[7]]};
 		init=Thread[{{R0,R1,R2,R3,R4,R5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
-		v/.FindMinimum[.5Total[(LS-bmat.v)^2],init][[2]]
+		v/.FindMinimum[.5Total[(LS-bmat . v)^2],init][[2]]
 		]
 	]
 
@@ -677,12 +611,12 @@ Module[{v,R0,R1,R2,R3,R4,R5,init,tens},
 TensMinCWLLS[S_,LS_,bmat_,bmatI_]:=
 Module[{v,R0,R1,R2,R3,R4,R5,init,tens,std=1,wmat},
 	bmatI;
-	wmat=Transpose[bmat].DiagonalMatrix[S^2/std^2];
-	tens=PseudoInverse[wmat.bmat].wmat.LS;
+	wmat=Transpose[bmat] . DiagonalMatrix[S^2/std^2];
+	tens=PseudoInverse[wmat . bmat] . wmat . LS;
 	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
 		v={R0^2,R1^2+R3^2,R2^2+R4^2+R5^2,R0 R3,R0 R4,R3 R4+R1 R5,tens[[7]]};
 		init=Thread[{{R0,R1,R2,R3,R4,R5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
-		v/.FindMinimum[.5Total[(S^2/std^2)*(LS-bmat.v)^2],init][[2]]
+		v/.FindMinimum[.5Total[(S^2/std^2)*(LS-bmat . v)^2],init][[2]]
 		]
 	]
 
@@ -693,11 +627,11 @@ Module[{v,R0,R1,R2,R3,R4,R5,init,tens,std=1,wmat},
 
 TensMinCNLS[S_,LS_,bmat_,bmatI_]:=
 Module[{v,R0,R1,R2,R3,R4,R5,init,tens},
-	tens=bmatI.LS;
+	tens=bmatI . LS;
 	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
 		v={R0^2,R1^2+R3^2,R2^2+R4^2+R5^2,R0 R3,R0 R4,R3 R4+R1 R5,tens[[7]]};
 		init=Thread[{{R0,R1,R2,R3,R4,R5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
-		v/.FindMinimum[.5Total[(S-Exp[bmat.v])^2],init][[2]]
+		v/.FindMinimum[.5Total[(S-Exp[bmat . v])^2],init][[2]]
 		]
 	]
 
@@ -720,7 +654,7 @@ Module[{n,beta,theta,Cm,Lm,Dm,Em,j},
 			(*j>1 vul Lm matrix*)
 			Lm[[j,;;j-1]]=Cm[[j,;;j-1]]/(Diagonal[Dm][[;;j-1]]/.(0.->Infinity));
 			If[j<n,
-				Cm[[j+1;;,j]]=Tm[[j+1;;,j]]-Lm[[j,j-1;;]].Transpose[Cm[[j+1;;,j-1;;]]]
+				Cm[[j+1;;,j]]=Tm[[j+1;;,j]]-Lm[[j,j-1;;]] . Transpose[Cm[[j+1;;,j-1;;]]]
 				];
 			];
 		theta=If[j==n,0,Max[Abs[Cm[[j+1;;,j]]]]];
@@ -729,110 +663,58 @@ Module[{n,beta,theta,Cm,Lm,Dm,Em,j},
 		Cm=Cm-DiagonalMatrix[PadLeft[(1/(Dm[[j,j]]/.(0.->Infinity)))*Cm[[j+1;;,j]]^2,n]];
 		];
 	Lm=Lm+IdentityMatrix[n];
-	Transpose[Lm.MatrixPower[Dm,.5]]
+	Transpose[Lm . MatrixPower[Dm,.5]]
 	]
 
 
-(* ::Subsection::Closed:: *)
-(*ResidualCalc*)
+(* ::Subsection:: *)
+(*Reorient Tensor*)
 
 
-Options[ResidualCalc] = {MeanRes -> "All"};
-
-SyntaxInformation[ResidualCalc] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
-
-(*b0, no outliers, bval, bvec*)
-ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] := 
- ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], ConstantArray[0., Dimensions[data]], Bmatrix[bval, grad], opts]
-
-(*b0, no outliers bmat*)
-ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, bmat_?ArrayQ, opts : OptionsPattern[]] :=
- ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], ConstantArray[0., Dimensions[data]], bmat, opts]
-
-(*b0, outliers, bval, bvec*)
-ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, outlier_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] :=
- ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], outlier, Bmatrix[bval, grad], opts]
-
-(*b0, outliers, bmat*)
-ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, outlier_?ArrayQ, bmat_?ArrayQ, opts : OptionsPattern[]] :=
- ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], outlier, bmat, opts]
-
-(*no outliers, bval, bvec*)
-ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] := 
- ResidualCalc[data, tensor, ConstantArray[0., Dimensions[data]], Bmatrix[bval, grad], opts]
-
-(*no outliers bmat*)
-ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, bmat_?ArrayQ, opts : OptionsPattern[]] :=
- ResidualCalc[data, tensor, ConstantArray[0., Dimensions[data]], bmat, opts]
-
-(*outliers, bval, bvec*)
-ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] :=
- ResidualCalc[data, tensor, outlier, Bmatrix[bval, grad], opts]
-
-ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_?ArrayQ, OptionsPattern[]] := Block[{
-	fit, dat, err, dimD,dimT
-	},
-  dat = N[data];
-  (*check data and tensor dimensions*)
-  dimD=Dimensions[If[ArrayDepth[dat] == 4,dat[[All,1]],dat[[1]]]];
-  dimT=Dimensions[tensor[[1]]];
-  
-  If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datdim, Dimensions[data], Dimensions[tensor]]]];
-
-  (*remove ouliers*)
-  
-  fit = Clip[ExpNoZero[bmat.tensor], {-1.5, 1.5} Max[dat], {0., 0.}];
- 
-  err = If[ArrayDepth[dat] == 4,
-    Transpose[(1 - outlier)] (Transpose[dat] - fit),
-    (1 - outlier) (dat - fit)
-    ];
-  
-  Switch[OptionValue[MeanRes],
-   "RMSE", RMSNoZero[err],
-   "MAD", MADNoZero[err],
-   _, If[ArrayDepth[dat] == 4, Transpose[err], err] // N
-   ]
-  ]
+(* ::Subsubsection::Closed:: *)
+(*FlipTensorOrientation*)
 
 
-(* ::Subsection::Closed:: *)
-(*SigmaCalc*)
+SyntaxInformation[FlipTensorOrientation] = {"ArgumentsPattern" -> {_, _, _.}};
+
+FlipTensorOrientation[tensor_, p_] /; AllTrue[p, NumberQ] := FlipTensorOrientation[tensor, {"x", "y", "z"}, p]
+
+FlipTensorOrientation[tensor_, v_] /; AllTrue[v, StringQ] := FlipTensorOrientation[tensor, v, {1, 1, 1}]
+
+FlipTensorOrientation[tensor_, p_, v_]/; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]):=FlipTensorOrientation[tensor, v, p]
+
+FlipTensorOrientation[tensor_, v_, p_]/; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]):= Block[{times, transp},
+	If[DeleteDuplicates[Abs[p]] === {1} && Sort[v] === {"x", "y", "z"},
+		times = Join[{1, 1, 1}, Flatten[Table[p[[i]] p[[j]], {i, 1, 3}, {j, i + 1, 3}]]];
+		transp = (StringJoin[Sort[Characters[#]]] & /@ (
+			StringReplace[{"xx", "yy", "zz", "xy","xz", "yz"}, Thread[{"x", "y", "z"} -> v]])
+		) /. Thread[{"xx", "yy", "zz", "xy", "xz", "yz"} -> {1, 2, 3, 4, 5, 6}];
+		(times tensor)[[transp]]
+		,
+		$Failed
+	]
+]
 
 
-Options[SigmaCalc] = {FilterShape -> "Median"};
-
-SyntaxInformation[SigmaCalc] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
-
-SigmaCalc[DTI_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, OptionsPattern[]] := Module[
-	{tens, res,len,sig}, 
-  tens = TensorCalc[DTI, grad, bvalue, MonitorCalc -> False];
-  res = ResidualCalc[DTI, tens, grad, bvalue, MeanRes -> "MAD"];
-  len = Length[grad];
-  sig = Sqrt[len/(len - 7)]*res;
-   PrintTemporary["Filtering noisemap"];
-  Switch[OptionValue[FilterShape],
-   "Gaussian",
-   GaussianFilter[sig, blur],
-   "Median",
-   MedianFilter[sig, blur]
-   ]
-  ]
+(* ::Subsubsection::Closed:: *)
+(*FlipTensorOrientation*)
 
 
-SigmaCalc[DTI_?ArrayQ, tens_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, OptionsPattern[]] := Module[
-	{res,len,sig},
-  res = ResidualCalc[DTI, tens, grad, bvalue, MeanRes -> "MAD"];
-  len = Length[grad];
-  sig = Sqrt[len/(len - 7)]*res;
-   PrintTemporary["Filtering noisemap"];
-  Switch[OptionValue[FilterShape],
-   "Gaussian",
-   GaussianFilter[sig, blur],
-   "Median",
-   MedianFilter[sig, blur]
-   ]
-  ]
+FlipGradientOrientation[grad_, p_] /; AllTrue[p, NumberQ] := FlipGradientOrientation[grad, {"x", "y", "z"}, p]
+
+FlipGradientOrientation[grad_, v_] /; AllTrue[v, StringQ] := FlipGradientOrientation[grad, v, {1, 1, 1}]
+
+FlipGradientOrientation[grad_, p_, v_] /; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]) := FlipGradientOrientation[grad, v, p]
+
+FlipGradientOrientation[grad_, v_, p_] /; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]) := Block[{transp, times},
+	If[DeleteDuplicates[Abs[p]] === {1} && Sort[v] === {"x", "y", "z"},
+		times = ConstantArray[p, Length[grad]];
+		transp = v /. Thread[{"x", "y", "z"} -> {1, 2, 3}];
+		(times grad)[[All, transp]]
+		,
+		$Failed
+	]
+]
 
 
 (* ::Subsection:: *)
@@ -991,49 +873,346 @@ ParameterCalc[tensor_,OptionsPattern[]]:= Block[{eig,adc,fa},
 
 
 (* ::Subsection:: *)
-(*FlipTensorOrientation*)
+(*LogEuclidian *)
 
 
-SyntaxInformation[FlipTensorOrientation] = {"ArgumentsPattern" -> {_, _, _.}};
+(* ::Subsubsection::Closed:: *)
+(*LogTensor*)
 
-FlipTensorOrientation[tensor_, p_] /; AllTrue[p, NumberQ] := FlipTensorOrientation[tensor, {"x", "y", "z"}, p]
 
-FlipTensorOrientation[tensor_, v_] /; AllTrue[v, StringQ] := FlipTensorOrientation[tensor, v, {1, 1, 1}]
+SyntaxInformation[LogTensor]={"ArgumentsPattern"->{_}};
 
-FlipTensorOrientation[tensor_, p_, v_]/; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]):=FlipTensorOrientation[tensor, v, p]
+LogTensor[tens_]:=Block[{t,v,e},
+	t=TensMat[tens];
+	t=Map[(
+		If[Total[Flatten[#]]===0.,#,{v,e}=Eigensystem[#];
+		If[AnyTrue[v,#<=0.&],0.#,
+		Transpose[e] . DiagonalMatrix[Log[v]] . e]]
+	)&,t,{-3}];
+	{1.,1.,1.,Sqrt[2.],Sqrt[2.],Sqrt[2.]}TensVec[t]
+]
 
-FlipTensorOrientation[tensor_, v_, p_]/; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]):= Block[{times, transp},
-	If[DeleteDuplicates[Abs[p]] === {1} && Sort[v] === {"x", "y", "z"},
-		times = Join[{1, 1, 1}, Flatten[Table[p[[i]] p[[j]], {i, 1, 3}, {j, i + 1, 3}]]];
-		transp = (StringJoin[Sort[Characters[#]]] & /@ (
-			StringReplace[{"xx", "yy", "zz", "xy","xz", "yz"}, Thread[{"x", "y", "z"} -> v]])
-		) /. Thread[{"xx", "yy", "zz", "xy", "xz", "yz"} -> {1, 2, 3, 4, 5, 6}];
-		(times tensor)[[transp]]
-		,
-		$Failed
-	]
+
+(* ::Subsubsection::Closed:: *)
+(*ExpTensor*)
+
+
+SyntaxInformation[ExpTensor]={"ArgumentsPattern"->{_}};
+
+ExpTensor[tens_]:=Block[{t,e,v},
+	t=TensMat[{1.,1.,1.,1./Sqrt[2.],1./Sqrt[2.],1./Sqrt[2.]}tens];
+	t=Map[(
+		If[Total[Flatten[#]]===0.,#,{v,e}=Eigensystem[#];
+		Transpose[e] . DiagonalMatrix[Exp[v]] . e]
+	)&,t,{-3}];
+	TensVec[t]
 ]
 
 
 (* ::Subsection:: *)
-(*FlipTensorOrientation*)
+(*Angle maps*)
 
 
-FlipGradientOrientation[grad_, p_] /; AllTrue[p, NumberQ] := FlipGradientOrientation[grad, {"x", "y", "z"}, p]
+(* ::Subsubsection::Closed:: *)
+(*AngleCalc*)
 
-FlipGradientOrientation[grad_, v_] /; AllTrue[v, StringQ] := FlipGradientOrientation[grad, v, {1, 1, 1}]
 
-FlipGradientOrientation[grad_, p_, v_] /; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]) := FlipGradientOrientation[grad, v, p]
+Options[AngleCalc]={Distribution->"0-180"};
 
-FlipGradientOrientation[grad_, v_, p_] /; (AllTrue[v, StringQ] && AllTrue[p, NumberQ]) := Block[{transp, times},
-	If[DeleteDuplicates[Abs[p]] === {1} && Sort[v] === {"x", "y", "z"},
-		times = ConstantArray[p, Length[grad]];
-		transp = v /. Thread[{"x", "y", "z"} -> {1, 2, 3}];
-		(times grad)[[All, transp]]
-		,
-		$Failed
+SyntaxInformation[AngleCalc] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+
+AngleCalc[data_?ArrayQ,vec_?VectorQ,OptionsPattern[]]:=
+Module[{angles},
+	angles=Map[If[Re[#]==#,ArcCos[# . vec],"no"]&,data,{Depth[data]-2}];
+	
+	Switch[
+		OptionValue[Distribution],
+		"0-180",
+		(180/Pi)angles,
+		"0-90",
+		Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(Pi-#),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
+		"-90-90",
+		Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(#-Pi),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
+		_,
+		Message[AngleCalc::dist,OptionValue[Distribution]]
+		]
 	]
+
+
+AngleCalc[data_?ArrayQ,vec_?ArrayQ,OptionsPattern[]]:=
+Module[{angles},
+	If[Dimensions[data]!=Dimensions[vec],
+		Print["Error"],
+		
+		angles=MapThread[If[Re[#1]==#1,ArcCos[#1 . #2],"no"]&,{data,vec},ArrayDepth[vec]-1];
+		
+		Switch[
+			OptionValue[Distribution],
+			"0-180",
+			(180/Pi)angles,
+			"0-90",
+			Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(-(#-Pi)),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
+			"-90-90",
+			Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(#-Pi),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
+			_,
+			Message[AngleCalc::dist,OptionValue[Distribution]]
+			]
+		]
+	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*AngleMap*)
+
+
+SyntaxInformation[AngleMap] = {"ArgumentsPattern" -> {_}};
+
+AngleMap[vec_]:=
+Module[{az,zen},
+	Transpose[Map[If[#=={0,0,1},
+		{0,0},
+		If[Negative[#[[3]]],v=-#,v=#];
+		az=ArcCos[v[[3]]]/Degree;
+		zen=ArcTan[v[[2]],v[[1]]]/Degree;
+		(*zen=If[zen<-90,zen+180,If[zen>90,zen-180,zen]];*)
+		zen=If[Negative[zen],zen+180,zen];
+		{az,zen}
+		]&,vec,{3}],{2,3,4,1}]
+	]
+
+
+
+
+
+(* ::Subsection:: *)
+(*Diffusion data functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*DriftCorrect*)
+
+
+Options[DriftCorrect]={NormalizeSignal->True, UseMask->True}
+
+SyntaxInformation[DriftCorrect] = {"ArgumentsPattern" -> {_, _,_., OptionsPattern[]}}
+
+DriftCorrect[data_, bi_, opts:OptionsPattern[]] := Block[{bval,pos},
+	bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
+	pos = First@UniqueBvalPosition[bval, 5][[2]];
+	DriftCorrect[data, bval, pos, opts]
+];
+  
+DriftCorrect[data_, bi_, pos_, OptionsPattern[]] := Block[{
+	sig, cor, bval, sol1, sol2, sol3, a, b, c, x, outp, dat
+	},
+	bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
+	sig = MeanSignal[data, pos, UseMask->OptionValue[UseMask]];
+	dat = Transpose[{pos, sig}];
+	
+	{sol1, sol2, sol3} = {a, b, c} /. FindFit[dat, {c + b x + a x^2}, {a, b, c}, x];
+	cor = sol3/Table[sol3 + sol2 x + sol1 x^2, {x, 1, Length[bi]}];
+	
+	outp = ConstantArray[cor, Length[data]] data;
+	
+	If[OptionValue[NormalizeSignal], 100 outp / (sig[[1]] cor[[1]]) , outp]
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*ConcatenateDiffusionData*)
+
+
+SyntaxInformation[ConcatenateDiffusionData] = {"ArgumentsPattern" -> {_, _., _., _.}};
+
+ConcatenateDiffusionData[data_?ListQ] :=If[Length[data] == 4,ConcatenateDiffusionData[data[[1]], data[[2]], data[[3]], data[[4]]]]
+
+ConcatenateDiffusionData[data_, grad_, val_, vox_] := 
+  Module[{dataout, gradout, valout, voxout},
+   If[Length[data] == Length[grad] == Length[val],
+    dataout = Transpose@Flatten[Transpose[NormalizeData[#]] & /@ data, 1];
+    gradout = Flatten[grad, 1];
+    valout = Flatten[val];
+    
+    {dataout, gradout, valout} = RemoveIsoImages[dataout, gradout, valout];
+    {dataout, gradout, valout} = SortDiffusionData[dataout, gradout, valout];
+    ,
+    Return[Message[ConcatenateDiffusionData::dim, Length[data],Length[grad], Length[val]]];
+    ];
+   
+   voxout = If[ListQ[vox] && ! ListQ[vox[[1]]], vox, vox[[1]]];
+   
+   {ToPackedArray@N@dataout, gradout, valout, voxout}
+   ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*SortDiffusionData*)
+
+
+SyntaxInformation[SortDiffusionData] = {"ArgumentsPattern" -> {_, _, _}};
+
+SortDiffusionData[data_, grad_, val_] := Module[{pos, valu, sel},
+	{valu, pos} = UniqueBvalPosition[val];
+	sel = Flatten[pos];
+	{ToPackedArray@N@data[[All, sel]], grad[[sel]], val[[sel]]}
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RemoveIsoImages*)
+
+
+SyntaxInformation[RemoveIsoImages] = {"ArgumentsPattern" -> {_, _, _}};
+
+RemoveIsoImages[data_, grad_, val_] := Module[{sel},
+	sel = Complement[
+		Range[Length[val]],Complement[Flatten[Position[grad, {0., 0., 0.}]], Flatten[Position[val, 0.]]]
+	];
+	{ToPackedArray@N@data[[All, sel]], grad[[sel]], val[[sel]]}
+]
+
+
+(* ::Subsection:: *)
+(*Tensor Residuals*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*ResidualCalc*)
+
+
+Options[ResidualCalc] = {MeanRes -> "All"};
+
+SyntaxInformation[ResidualCalc] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
+
+(*b0, no outliers, bval, bvec*)
+ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] := 
+ ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], ConstantArray[0., Dimensions[data]], Bmatrix[bval, grad], opts]
+
+(*b0, no outliers bmat*)
+ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, bmat_?ArrayQ, opts : OptionsPattern[]] :=
+ ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], ConstantArray[0., Dimensions[data]], bmat, opts]
+
+(*b0, outliers, bval, bvec*)
+ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, outlier_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] :=
+ ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], outlier, Bmatrix[bval, grad], opts]
+
+(*b0, outliers, bmat*)
+ResidualCalc[data_?ArrayQ, {tensor_?ArrayQ, S0_?ArrayQ}, outlier_?ArrayQ, bmat_?ArrayQ, opts : OptionsPattern[]] :=
+ ResidualCalc[data, Join[tensor, {LogNoZero[S0]}], outlier, bmat, opts]
+
+(*no outliers, bval, bvec*)
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] := 
+ ResidualCalc[data, tensor, ConstantArray[0., Dimensions[data]], Bmatrix[bval, grad], opts]
+
+(*no outliers bmat*)
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, bmat_?ArrayQ, opts : OptionsPattern[]] :=
+ ResidualCalc[data, tensor, ConstantArray[0., Dimensions[data]], bmat, opts]
+
+(*outliers, bval, bvec*)
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] :=
+ ResidualCalc[data, tensor, outlier, Bmatrix[bval, grad], opts]
+
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_?ArrayQ, OptionsPattern[]] := Block[{
+	fit, dat, err, dimD,dimT
+	},
+  dat = N[data];
+  (*check data and tensor dimensions*)
+  dimD=Dimensions[If[ArrayDepth[dat] == 4,dat[[All,1]],dat[[1]]]];
+  dimT=Dimensions[tensor[[1]]];
+  
+  If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datdim, Dimensions[data], Dimensions[tensor]]]];
+
+  (*remove ouliers*)
+  
+  fit = Clip[ExpNoZero[bmat . tensor], {-1.5, 1.5} Max[dat], {0., 0.}];
+ 
+  err = If[ArrayDepth[dat] == 4,
+    Transpose[(1 - outlier)] (Transpose[dat] - fit),
+    (1 - outlier) (dat - fit)
+    ];
+  
+  Switch[OptionValue[MeanRes],
+   "RMSE", RMSNoZero[err],
+   "MAD", MADNoZero[err],
+   _, If[ArrayDepth[dat] == 4, Transpose[err], err] // N
+   ]
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SigmaCalc*)
+
+
+Options[SigmaCalc] = {FilterShape -> "Median"};
+
+SyntaxInformation[SigmaCalc] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
+
+SigmaCalc[DTI_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, OptionsPattern[]] := Module[
+	{tens, res,len,sig}, 
+  tens = TensorCalc[DTI, grad, bvalue, MonitorCalc -> False];
+  res = ResidualCalc[DTI, tens, grad, bvalue, MeanRes -> "MAD"];
+  len = Length[grad];
+  sig = Sqrt[len/(len - 7)]*res;
+   PrintTemporary["Filtering noisemap"];
+  Switch[OptionValue[FilterShape],
+   "Gaussian",
+   GaussianFilter[sig, blur],
+   "Median",
+   MedianFilter[sig, blur]
+   ]
+  ]
+
+
+SigmaCalc[DTI_?ArrayQ, tens_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, OptionsPattern[]] := Module[
+	{res,len,sig},
+  res = ResidualCalc[DTI, tens, grad, bvalue, MeanRes -> "MAD"];
+  len = Length[grad];
+  sig = Sqrt[len/(len - 7)]*res;
+   PrintTemporary["Filtering noisemap"];
+  Switch[OptionValue[FilterShape],
+   "Gaussian",
+   GaussianFilter[sig, blur],
+   "Median",
+   MedianFilter[sig, blur]
+   ]
+  ]
+
+
+(* ::Subsection:: *)
+(*TensorCorrect*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*TransformTensor*)
+
+
+SyntaxInformation[TransformTensor] = {"ArgumentsPattern" -> {_, _, _}};
+
+TransformTensor[tens_, disp_, vox_]:=Block[{imat, jac},
+	imat=IdentityMatrix[3];
+	jac=Chop[imat+Table[GaussianFilter[disp[[i]],1,imat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
+	TensVec[Apply[DRot,RotateDimensionsLeft[{RotateDimensionsRight[tens,2],jac},3],{-4}]];
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TensorRotate*)
+
+
+ 10.1109/42.963816
+TensorRotate[D_,F_]:=Block[{val,e1,e2,e3,n1,n2,n3,nMat,fMat},
+	If[D[[1,1]]==0.,
+		D,
+		{val,{e1,e2,e3}}=Eigensystem[D];
+		fMat=PseudoInverse[F];
+		n1=Normalize[fMat . e1];
+		n2=Normalize[fMat . e2-(n1 . (fMat . e2))*n1]//N;
+		n3=Normalize[Cross[n1,n2]]//N;
+		nMat={n1,n2,n3};
+		Chop[Transpose[nMat] . DiagonalMatrix[val] . nMat]
+	]
+];
 
 
 (* ::Subsection:: *)
@@ -1192,11 +1371,11 @@ Module[{Dx,Dy,Dz,dim,zero,ones,F},
 
 DRot[D_,F_]:=Module[{val,e1,e2,e3,n1,n2,n3,NN},
 	{val,{e1,e2,e3}}=Eigensystem[D];
-	n1=Normalize[F.e1];
-	n2=Normalize[F.e2-(n1.(F.e2))*n1]//N;
+	n1=Normalize[F . e1];
+	n2=Normalize[F . e2-(n1 . (F . e2))*n1]//N;
 	n3=Normalize[Cross[n1,n2]]//N;
 	NN=Transpose[{n1,n2,n3}];
-Chop[NN.(IdentityMatrix[3]val).Transpose[NN]]
+Chop[NN . (IdentityMatrix[3]val) . Transpose[NN]]
 ];
 
 
@@ -1253,108 +1432,6 @@ Module[{coor,f,fr,df,dfr},
 		MapThread[If[#1==0,#2,#1]&,{df,dfr}]
 		)&,{disp,mask},2]
 	];
-
-
-(* ::Subsection:: *)
-(*Angle maps*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*AngleCalc*)
-
-
-Options[AngleCalc]={Distribution->"0-180"};
-
-SyntaxInformation[AngleCalc] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
-
-
-AngleCalc[data_?ArrayQ,vec_?VectorQ,OptionsPattern[]]:=
-Module[{angles},
-	angles=Map[If[Re[#]==#,ArcCos[#.vec],"no"]&,data,{Depth[data]-2}];
-	
-	Switch[
-		OptionValue[Distribution],
-		"0-180",
-		(180/Pi)angles,
-		"0-90",
-		Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(Pi-#),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
-		"-90-90",
-		Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(#-Pi),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
-		_,
-		Message[AngleCalc::dist,OptionValue[Distribution]]
-		]
-	]
-
-
-AngleCalc[data_?ArrayQ,vec_?ArrayQ,OptionsPattern[]]:=
-Module[{angles},
-	If[Dimensions[data]!=Dimensions[vec],
-		Print["Error"],
-		
-		angles=MapThread[If[Re[#1]==#1,ArcCos[#1.#2],"no"]&,{data,vec},ArrayDepth[vec]-1];
-		
-		Switch[
-			OptionValue[Distribution],
-			"0-180",
-			(180/Pi)angles,
-			"0-90",
-			Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(-(#-Pi)),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
-			"-90-90",
-			Map[If[#=!="no",If[#>=1/2Pi,(180/Pi)(#-Pi),(180/Pi)(#)]]&,angles,{ArrayDepth[angles]}],
-			_,
-			Message[AngleCalc::dist,OptionValue[Distribution]]
-			]
-		]
-	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*AngleMap*)
-
-
-SyntaxInformation[AngleMap] = {"ArgumentsPattern" -> {_}};
-
-AngleMap[vec_]:=
-Module[{az,zen},
-	Transpose[Map[If[#=={0,0,1},
-		{0,0},
-		If[Negative[#[[3]]],v=-#,v=#];
-		az=ArcCos[v[[3]]]/Degree;
-		zen=ArcTan[v[[2]],v[[1]]]/Degree;
-		(*zen=If[zen<-90,zen+180,If[zen>90,zen-180,zen]];*)
-		zen=If[Negative[zen],zen+180,zen];
-		{az,zen}
-		]&,vec,{3}],{2,3,4,1}]
-	]
-
-
-(* ::Subsection::Closed:: *)
-(*ColorFAPlot*)
-
-
-SyntaxInformation[ColorFAPlot] = {"ArgumentsPattern" -> {_}};  
-  
-ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask},
-  {eig, eigv} = EigensysCalc[tens];
-  mask = Mask[tens[[1]], 10^-6];
-  
-  eigv = mask Abs[eigv];
-  FA = FACalc[eig];
-  eigFA = mask FA eigv;
-  
-  DynamicModule[{colEigFA, colEig, im},
-   colEigFA = Table[Image[eigFA[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
-   colEig = Table[Image[eigv[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
-   
-   Manipulate[
-    im = GraphicsRow[{colEig, colEigFA}[[i, j, sel]], ImageSize -> Length[sel]*size],
-    {{j, Round[Length[colEig]/2], "slice"}, 1, Length[colEig], 1},
-    {{i, 2, "method"}, {1 -> "raw", 2 -> "FA"}},
-    {{sel, {1, 2, 3}, "eigenvectors"}, {1 -> "first", 2 -> "second", 3 -> "third"}, ControlType -> TogglerBar},
-    Button["save image", SaveImage[im], Method -> "Queued"],
-    {{size, 300, "image size"}, {200, 300, 400, 600, 1000}}]
-   ]
-  ]  
 
 
 (* ::Section:: *)

@@ -81,6 +81,10 @@ PlotSequence::usage =
 "PlotSequence[seq,var] where seq is the output from GradSeq."
 
 
+ColorFAPlot::usage = 
+"ColorFAPlot[tenor] create a color coded FA map from the tensor for l1, l2 and l3."
+
+
 (*Ploti::usage = "testing"*) 
 
 
@@ -2888,6 +2892,37 @@ PlotSequence[(*{seq_,hw_,te_}*)inp_, t_] := DynamicModule[{
    {{start, Round[-0.07 te], "Time start"}, Round[-0.07 te], Round[.5 te], Appearance -> "Labeled"},
    {{stop, Round[1.15 te], "Time end"}, Round[0.5 te], Round[1.20 te], Appearance -> "Labeled"}
    ]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*ColorFAPlot*)
+
+
+SyntaxInformation[ColorFAPlot] = {"ArgumentsPattern" -> {_}};  
+  
+ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask},
+	{eig, eigv} = EigensysCalc[tens];
+	mask = Mask[tens[[1]], 10^-6];
+	
+	eigv = mask Abs[eigv];
+	FA = FACalc[eig];
+	eigFA = mask FA eigv;
+	
+	DynamicModule[{colEigFA, colEig, im},
+		colEigFA = Table[Image[eigFA[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
+		colEig = Table[Image[eigv[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
+		
+		Manipulate[
+			im = GraphicsRow[{colEig, colEigFA}[[i, j, sel]], ImageSize -> Length[sel]*size],
+				
+			{{j, Round[Length[colEig]/2], "slice"}, 1, Length[colEig], 1},
+			{{i, 2, "method"}, {1 -> "raw", 2 -> "FA"}},
+			{{sel, {1, 2, 3}, "eigenvectors"}, {1 -> "first", 2 -> "second", 3 -> "third"}, ControlType -> TogglerBar},
+			Button["save image", SaveImage[im], Method -> "Queued"],
+			{{size, 300, "image size"}, {200, 300, 400, 600, 1000}}
+		]
+	]
 ]
 
 
