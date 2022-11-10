@@ -1498,28 +1498,29 @@ RegisterTensorData[
 		trans, coor, coorM, tari, movi, met, mov2, vox2, reg, reg2, tensR,cmask, disp
 	},
 	
-	trans=moving2=!={1};
+	trans = moving2=!={1};
 	
 	(*get coordinates*)
-	coor=MakeCoordinates[Dimensions@If[trans,target,target[[1]]],voxt];
-	coorM=MakeCoordinates[Dimensions@If[trans,moving2[[1]],moving[[1]]],If[trans,vox,voxm]];
+	coor = MakeCoordinates[Dimensions@If[trans, target, target[[1]]],voxt];
+	coorM = MakeCoordinates[Dimensions@If[trans, moving2[[1]], moving[[1]]], If[trans, vox, voxm]];
 	
 	(*makte the moving and target data*)
-	tari=If[trans,target,Transpose[LogTensor@target]];
-	movi=If[trans,moving,Transpose[LogTensor@target]];
-	mov2=Transpose@If[trans,Join[LogTensor@moving2,coorM],coorM];
-	vox2=If[trans,vox,voxt];
+	tari = If[trans, target, Transpose[LogTensor@target]];
+	movi = If[trans, moving, Transpose[LogTensor@moving]];
+	mov2 = Transpose@If[trans, Join[LogTensor@moving2, coorM], coorM];
+	vox2 = If[trans, vox, voxm];
+
+	(*perorm the registration of tens and coor*)
+	met = OptionValue[MethodReg]/.If[trans,{},{"rigid"->"rigidMulti","affine"->"affineMulti","bspline"->"bsplineMulti"}];
+	{reg, reg2} = RegisterDataTransform[{tari, maskt, voxt}, {movi, maskm, voxm}, {mov2, vox}, MethodReg->met, InterpolationOrderReg->1, opts];
 	
-	(*perorm the registration and get output*)
-	met=OptionValue[MethodReg]/.If[trans,{},{"rigid"->"rigidMulti","affine"->"affineMulti","bspline"->"bsplineMulti"}];
-	{reg,reg2}=RegisterDataTransform[{tari,maskt,voxt},{movi,maskm,voxm},{mov2,vox},MethodReg->met,InterpolationOrderReg->1,opts];
-	
-	tensR=ExpTensor@Transpose@If[trans,Transpose[reg2[[All,;;6]]],Transpose[reg]];
-	coorM=If[trans,Transpose@reg2[[All,7;;]],Transpose@reg2];
-	disp=Transpose[MaskData[coorM-coor,Times@@((Mask[#,5])&/@coorM)]];
+	(*correct the tensor for deformation*)
+	tensR = ExpTensor@If[trans, Transpose[reg2[[All,;;6]]], Transpose[reg]];
+	coorM = If[trans, Transpose@reg2[[All,7;;]], Transpose@reg2];
+	disp = MaskData[coorM-coor, Times@@((Mask[#,5])&/@coorM)];
+	tensR = TransformTensor[tensR, disp, voxt];
 	
 	(*generate the output*)
-	tensR = TransformTensor[tensR, disp, voxt];
 	If[trans, {reg, tensR}, tensR]
 ]
 
