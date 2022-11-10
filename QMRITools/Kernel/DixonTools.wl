@@ -450,7 +450,7 @@ unwraping algorithem. Unwraps one image, needs functions: Diff, SecDiff, EdgeRel
 Unwrap[dat_,OptionsPattern[]]:= Block[{data, ind, undim, out, mon, thresh, len},
 	undim = OptionValue[UnwrapDimension];
 	mon = OptionValue[MonitorUnwrap];
-	thresh = Clip[OptionValue[UnwrapThresh],{0.6, 0.9}];
+	thresh = Clip[OptionValue[UnwrapThresh],{0.3, 0.9}];
 	
 	Switch[undim,
 		

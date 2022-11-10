@@ -662,7 +662,7 @@ SyntaxInformation[TensMat] = {"ArgumentsPattern" -> {_}};
 
 TensMat[tens : {_?ArrayQ ..}] := RotateDimensionsLeft[TensMati[tens], 2];
 
-TensMat[tens_?ListQ] := TensMati[tens]
+TensMat[tens_?VectorQ] := TensMati[tens]
 
 TensMati[{xx_, yy_, zz_, xy_, xz_, yz_}] := {{xx, xy, xz}, {xy, yy, yz}, {xz, yz, zz}};
 

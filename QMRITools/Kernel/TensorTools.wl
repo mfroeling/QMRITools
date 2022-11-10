@@ -1192,7 +1192,8 @@ SyntaxInformation[TransformTensor] = {"ArgumentsPattern" -> {_, _, _}};
 TransformTensor[tens_, disp_, vox_]:=Block[{imat, jac},
 	imat=IdentityMatrix[3];
 	jac=Chop[imat+Table[GaussianFilter[disp[[i]],1,imat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
-	TensVec[Apply[DRot,RotateDimensionsLeft[{RotateDimensionsRight[tens,2],jac},3],{-4}]];
+	
+	TensVec[Apply[TensorRotate,RotateDimensionsLeft[{RotateDimensionsRight[TensMat[tens],2],jac},3],{-4}]]
 ]
 
 
@@ -1200,7 +1201,6 @@ TransformTensor[tens_, disp_, vox_]:=Block[{imat, jac},
 (*TensorRotate*)
 
 
- 10.1109/42.963816
 TensorRotate[D_,F_]:=Block[{val,e1,e2,e3,n1,n2,n3,nMat,fMat},
 	If[D[[1,1]]==0.,
 		D,

@@ -23,13 +23,9 @@ BeginPackage["QMRITools`TractographyTools`", Join[{"Developer`"}, Complement[QMR
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
-
-FitTract::usage = "
-FitTract[tract] fits a tract defined as a list of {x,y,z} coordinates with a polinomial function.
-FitTract[{tract, ...}] fits a list of tracts defined as a list of {x,y,z} coordinates with a polinomial function."
 
 FiberTractography::usage =
 "FiberTractography[tensor, vox] performs fibertractography on the tensor with voxels dimensions vox.
@@ -37,6 +33,15 @@ FiberTractography[tensor, vox, {par, {min, max}}] performs fibertractography on 
 par, where tracts are only generated between values of par min and max.
 FiberTractography[tensor, vox, {{par, {min, max}}, ..}] performs fibertractography on the tensor with voxels dimensions vox with 
 multiple additional stopping criteria."
+
+FitTract::usage = 
+"FitTract[tract] fits a tract defined as a list of {x,y,z} coordinates with a polinomial function.
+FitTract[{tract, ...}] fits a list of tracts defined as a list of {x,y,z} coordinates with a polinomial function."
+
+PlotTracts::usage = "
+PlotTracts[tracts, vox]
+PlotTracts[tracts, vox, dim]"
+
 
 FindTensorPermutation::usage = 
 "FindTensorPermutation[tensor, vox] performs tractography for all tensor permutations and gives back the one that has the longest tracts.
@@ -48,9 +53,17 @@ Ouput = {permutations, flips, plot}
 FindTensorPermutation[] is based on DOI: 10.1016/j.media.2014.05.012."
 
 
-TractDensityMap::usage = "TractDensityMap[tracts, vox, dim]"
+TractDensityMap::usage = 
+"TractDensityMap[tracts, vox, dim]"
 
-SeedDensityMap::usage = "SeedDensityMap[seeds, vox, dim]"
+SeedDensityMap::usage = 
+"SeedDensityMap[seeds, vox, dim]"
+
+TractLengthMap::usage = 
+"TractLengthMap[tracts, vox, dim]"
+
+TractAngleMap::usage = 
+"TractAngleMap[tracts, vox, dim]"
 
 
 SelectTractTroughPlane::usage = ""
@@ -75,17 +88,10 @@ FiberLength::usage = "FiberLength[tracts]"
 GetTractValues::usage = "GetTractValues[tracts, val, vox, int]"
 
 
-PlotTracts::usage = "
-PlotTracts[tracts, vox]
-PlotTracts[tracts, vox, dim]"
-
-MakeColor::usage = "
-MakeColor[tract]
-MakeColor[tract, fun, ran]"
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -116,10 +122,14 @@ StepSize::usage =
 MaxSeedPoints::usage = 
 "MaxSeedPoints is an option for FiberTractography and defines the maximum number of seedspoints to be used."
 
-
 MaxTracts::usage = ""
 
 TractColoring::usage = ""
+
+
+NormalizeDensity::usage = 
+"NormalizeDensity is an option for TractDensityMap."
+
 
 
 (* ::Subsection:: *)
@@ -137,7 +147,7 @@ Begin["`Private`"]
 (*FiberTractography*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*FiberTractography*)
 
 
@@ -333,12 +343,13 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 (*EigV*)
 
 
-EigVec = Compile[{{tens, _Complex, 1}},Block[{
-	xx,yy,zz,xy,xz,yz,xx2,yy2,zz2,xy2,xz2,yz2,det,tr,tr2,b,c,d,m1,m2,m3,u1,u2,u3,out,e1, u33},
+EigVec = Compile[{{tens, _Complex, 1}}, Block[{
+	xx,yy,zz,xy,xz,yz,xx2,yy2,zz2,xy2,xz2,yz2,det,tr,tr2,b,c,d,m1,m2,m3,u1,u2,u3,out,e1, 
+	u11, u22, u33},
 	
 	(*tens and tensor squared indices*)
-	{xx,yy,zz,xy,xz,yz} = tens;
-	{xx2,yy2,zz2,xy2,xz2,yz2} = tens^2;
+	{xx, yy, zz, xy, xz, yz} = tens;
+	{xx2, yy2, zz2, xy2, xz2, yz2} = tens^2;
 	
 	(*matrix properties for root*)
 	tr = xx + yy + zz;
@@ -358,13 +369,18 @@ EigVec = Compile[{{tens, _Complex, 1}},Block[{
 			+ 2^(2/3)*(2*b^3 + 9*b*c + 3*(9*d + Sqrt[-3*c^2*(b^2 + 4*c) + 6*b*(2*b^2 + 9*c)*d + 81*d^2]))^(1/3)
 		)];
 	
-		(*QR decomp Using the Gram\[Dash]Schmidt process to find first vector*)
+		(*QR decomp Using the Gram\Schmidt process to find first vector*)
 		{u1, m2, m3} = {{xx + e1, xy, xz}, {xy, yy + e1, yz}, {xz, yz, zz + e1}};
-		u2 = m2 - (u1 . m2/u1 . u1)u1;
-		u3 = m3 - (u1 . m3/u1 . u1)u1 - (u2 . m3/u2 . u2)u2;
+		u11 = u1 . u1;
+		If[u11 <=0., {0., 0., 0.},
+		u2 = m2 - (u1 . m2/u11) u1;
+		u22 = u2 . u2;
+		If[u22 <= 0., {0., 0., 0.},
+		u3 = m3 - (u1 . m3/u11) u1 - (u2 . m3/u22)u2;
 		u33 = u3 . u3;
-		
-		If[u33 <= 0., u3, (u3/Sqrt[u33])]		
+		If[u33 <= 0., {0., 0., 0.}, 
+		(u3/Sqrt[u33])
+		]]]		
 	]
 ], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
@@ -382,6 +398,146 @@ FitTract[tract_, OptionsPattern[]] := ToPackedArray/@FitTractC[tract, Round@Opti
 FitTractC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat = #^Range[0., ord] & /@ Range[Length[trf]]},
 	mat . (PseudoInverse[mat] . trf)
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+(* ::Subsection:: *)
+(*PlotTracts*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*PlotTracts*)
+
+
+Options[PlotTracts] = {
+	MaxTracts -> 5000, 
+	ImageSize -> 800, 
+	Method->"line", 
+	TractColoring->"Direction",
+	Boxed->True
+}
+
+PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
+
+PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{range, vox, size, select, opts, col, tube, line, plot},
+	vox = Reverse@voxi;
+	
+	range = If[dimi === 0,
+		Round[Reverse[MinMax /@ Transpose@Flatten[tracts, 1]]/vox],
+		Reverse@Thread[{{0, 0, 0}, dimi}]
+	];
+	
+	size = vox Flatten[Differences /@ range];
+	
+	select = ToPackedArray /@ Map[Reverse, RandomSample[tracts, Min[OptionValue[MaxTracts], Length[tracts]]], {-2}];
+	
+	opts = Sequence[{
+		Method -> {"TubePoints" -> {6, 2}}, Lighting -> "Accent", 
+		ImageSize -> OptionValue[ImageSize], SphericalRegion -> True, Boxed -> OptionValue[Boxed],
+		Background -> Lighter@Gray, BoxRatios -> size, PlotRange -> range, 
+		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
+	}];
+	
+	colOpt=OptionValue[TractColoring];
+	{met,set}=If[ListQ[colOpt],colOpt,{colOpt,Automatic}];
+	
+	col = Switch[met,
+		"Length",
+		MakeLengthColor[select,set],
+		"Direction",
+		MakeColor[select]
+	];
+	
+	plot = Switch[OptionValue[Method],
+		"tube",
+		MapThread[Scale[Tube[#1, 0.75, VertexColors -> #2], 1./vox, {0, 0, 0}] &, {select, col}],
+		_,
+		MapThread[Scale[Line[#1, VertexColors -> #2], 1/vox, {0, 0, 0}] &, {select, col}]
+	];
+	
+	Graphics3D[{CapForm["Square"], JoinForm["Miter"], plot}, opts]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Make Color*)
+
+
+MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
+	dirs = Abs[Differences[tract]];
+	ToPackedArray[Normalize[#] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
+]
+
+MakeColor[tracts : {_?ListQ ..}] := MakeColor /@ tracts
+
+MakeColor[tract_, fun_, ran_] := Block[{prange, colFunc, cval, fore},
+	prange = ran;
+	colFunc = ColorData["ThermometerColors"];
+	cval = fun @@ # & /@ tract;
+	fore = Unitize[cval];
+	(fore (colFunc /@ Rescale[cval, prange])) + Gray (1 - fore)
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeLengthColor*)
+
+
+MakeLengthColor[tracts_,set_]:=Block[{len,col, sc},
+	len=FiberLength[tracts];
+	
+	sc = If[set===Automatic, Quantile[len, {.05,0.95}], set];
+	col = ColorData["SouthwestColors"]/@Rescale[len, sc];
+	
+	MapThread[ConstantArray[#2, Length@#1]&, {tracts, col}]
+];
+
+
+(* ::Subsection::Closed:: *)
+(*FindTensorPermutation*)
+
+
+Options[FindTensorPermutation] = {
+	FiberLengthRange -> {10, 200},
+	FiberAngle -> 30,
+	InterpolationOrder -> 0,
+	StopThreshhold -> 0.5,
+	StepSize -> 2,
+	Method -> "Euler",
+	MaxSeedPoints -> 500
+};
+
+SyntaxInformation[FindTensorPermutation] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+FindTensorPermutation[tensor_, vox_, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {0. First@tensor, {0., 1.}}, opts]
+
+FindTensorPermutation[tensor_, vox_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {{par, {min, max}}}, opts]
+
+FindTensorPermutation[tens_, vox_, stop_, opts : OptionsPattern[]] := Block[{
+	step, tracts, perms, flips, lengs, i, j, pl, ind
+	},
+	
+	step = OptionValue[StepSize];
+	step = N@If[NumberQ[step],step, Min[0.5 vox]];
+	
+	perms = {{"x", "y", "z"}, {"x", "z", "y"}, {"y", "x", "z"}, {"y","z", "x"}, {"z", "x", "y"}, {"z", "y", "x"}};
+	flips = {{1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}};
+	ind = {1, 1};
+	
+	PrintTemporary[Dynamic[{ind, flips[[ind[[1]]]], perms[[ind[[2]]]]}]];
+	lengs = Table[
+		ind = {i, j};
+		tracts = First@FiberTractography[tens, vox, stop, TracMonitor -> False,TensorFilps -> flips[[i]], TensorPermutations -> perms[[j]],
+			(Sequence[# -> OptionValue[#] & /@ FilterRules[Options[FiberTractography], Options[FindTensorPermutation]][[All, 1]]])
+		];
+		N@Mean[Length /@ tracts] step
+	, {i, 1, 4}, {j, 1, 6}];
+	
+	pl = ArrayPlot[lengs, ColorFunction -> "Rainbow", ImageSize -> 150, Frame -> True, 
+		FrameTicks -> {{Thread[{Range[4], flips}], None},{None, Thread[{Range[6], Rotate[#, 90 Degree] & /@ perms}]}}];
+	
+	{i, j} = FirstPosition[lengs, Max[lengs]];
+	{perms[[j]], flips[[i]], pl}
+]
 
 
 (* ::Subsection:: *)
@@ -492,21 +648,64 @@ CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not, test},
 (*DensityMap*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*TractDensityMap*)
 
 
-TractDensityMap[tracts_, vox_, dim_] := Normal@SparseArray[Select[
+Options[TractDensityMap] = {NormalizeDensity -> True}
+
+SyntaxInformation[TractDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+TractDensityMap[tracts_, vox_, dim_,  OptionsPattern[]] := Block[{dens,norm},
+	dens = Normal@SparseArray[Select[
 		Normal[Counts@ThreadedDiv[Flatten[tracts, 1], vox]], 
 		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]])&
 	], dim];
+	norm = MedianNoZero@Flatten[dens];
+	If[OptionValue[NormalizeDensity], dens/norm, dens]	
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*SeedDensityMap*)
 
 
+SyntaxInformation[SeedDensityMap] = {"ArgumentsPattern" -> {_, _, _}};
+
 SeedDensityMap[seeds_, vox_, dim_] := Normal@SparseArray[Normal@Counts@ThreadedDiv[seeds, vox], dim];
+
+
+(* ::Subsubsection::Closed:: *)
+(*TractLengthMap*)
+
+
+SyntaxInformation[TractLengthMap] = {"ArgumentsPattern" -> {_, _, _}};
+
+TractLengthMap[tracts_, vox_, dim_] := Block[{lengs, vals},
+	(*Length per coordinate, gathered*)
+	lengs = GatherBy[Flatten[Thread /@ Thread[ThreadedDiv[tracts, vox] -> FiberLength@tracts], 1], First];
+	(*coordinate with mean length for array*) 
+	vals = Select[Thread[lengs[[All, 1, 1]] -> (Mean /@ lengs[[All, All, 2]])], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
+	Normal@SparseArray[vals, dim]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TractAngleMap*)
+
+
+SyntaxInformation[TractAngleMap] = {"ArgumentsPattern" -> {_, _, _}};
+
+TractAngleMap[tracts_, vox_, dim_] := Block[{coors, angs, angsCoor, vals},
+	(*Get the coordinates of each segemnt*)
+	coors = ThreadedDiv[(Mean /@ Partition[#, 2, 1]) & /@ tracts, vox];
+	(*Get the angles of each segment*)
+	angs = 90 - VecAng[{1, 0, 0}, (Normalize[Sign[#[[1]]] #] & /@ Differences[#]) & /@ tracts];
+	(*coordinates with mean angle for array*)
+	angsCoor = GatherBy[Flatten[Thread /@ Thread[coors -> angs], 1], First];
+	vals = Select[Thread[angsCoor[[All, 1, 1]] -> (Mean /@ angsCoor[[All, All, 2]])], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
+	Normal@SparseArray[vals, dim]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -522,7 +721,7 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 (*Tract Evaluation*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*FiberLength*)
 
 
@@ -535,147 +734,11 @@ FLengthC=Compile[{{trc,_Real,2}},Block[{diff,ll},
 ],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetTractValues*)
 
 
 GetTractValues[tracts_,val_,vox_,int_:1]:=MakeIntFunction[val,vox,int]@@@#&/@tracts;
-
-
-(* ::Subsection:: *)
-(*PlotTracts*)
-
-
-(* ::Subsubsection:: *)
-(*PlotTracts*)
-
-
-Options[PlotTracts] = {
-	MaxTracts -> 5000, 
-	ImageSize -> 800, 
-	Method->"line", 
-	TractColoring->"Direction",
-	Boxed->True
-}
-
-PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
-
-PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{range, vox, size, select, opts, col, tube, line, plot},
-	vox = Reverse@voxi;
-	
-	range = If[dimi === 0,
-		Round[Reverse[MinMax /@ Transpose@Flatten[tracts, 1]]/vox],
-		Reverse@Thread[{{0, 0, 0}, dimi}]
-	];
-	
-	size = vox Flatten[Differences /@ range];
-	
-	select = ToPackedArray /@ Map[Reverse, RandomSample[tracts, Min[OptionValue[MaxTracts], Length[tracts]]], {-2}];
-	
-	opts = Sequence[{
-		Method -> {"TubePoints" -> {6, 2}}, Lighting -> "Accent", 
-		ImageSize -> OptionValue[ImageSize], SphericalRegion -> True, Boxed -> OptionValue[Boxed],
-		Background -> Lighter@Gray, BoxRatios -> size, PlotRange -> range, 
-		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
-	}];
-	
-	colOpt=OptionValue[TractColoring];
-	{met,set}=If[ListQ[colOpt],colOpt,{colOpt,Automatic}];
-	
-	col = Switch[met,
-		"Length",
-		MakeLengthColor[select,set],
-		"Direction",
-		MakeColor[select]
-	];
-	
-	plot=Switch[OptionValue[Method],
-		"tube",
-		MapThread[Scale[Tube[#1, 0.75, VertexColors -> #2], 1./vox, {0, 0, 0}] &, {select, col}],
-		_,
-		MapThread[Scale[Line[#1, VertexColors -> #2], 1/vox, {0, 0, 0}] &, {select, col}]
-	];
-	
-	Graphics3D[{CapForm["Square"], JoinForm["Miter"], plot}, opts]
-]
-
-
-(* ::Subsubsection:: *)
-(*Make Color*)
-
-
-MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
-	dirs = Abs[Differences[tract]];
-	ToPackedArray[Normalize[#] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
-]
-
-MakeColor[tracts : {_?ListQ ..}] := MakeColor /@ tracts
-
-MakeColor[tract_, fun_, ran_] := Block[{prange, colFunc, cval, fore},
-	prange = ran;
-	colFunc = ColorData["ThermometerColors"];
-	cval = fun @@ # & /@ tract;
-	fore = Unitize[cval];
-	(fore (colFunc /@ Rescale[cval, prange])) + Gray (1 - fore)
-]
-
-
-MakeLengthColor[tracts_,set_]:=Block[{len,col},
-	len=FiberLength[tracts];
-	
-	sc = If[set===Automatic,Quantile[len,{.05,0.95}],set];
-	col=ColorData["RedBlueTones"]/@Rescale[len,sc];
-	
-	MapThread[ConstantArray[#2,Length@#1]&,{tracts,col}]
-];
-
-
-(* ::Subsection::Closed:: *)
-(*FindTensorPermutation*)
-
-
-Options[FindTensorPermutation] = {
-	FiberLengthRange -> {10, 200},
-	FiberAngle -> 30,
-	InterpolationOrder -> 0,
-	StopThreshhold -> 0.5,
-	StepSize -> 2,
-	Method -> "Euler",
-	MaxSeedPoints -> 500
-};
-
-SyntaxInformation[FindTensorPermutation] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
-
-FindTensorPermutation[tensor_, vox_, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {0. First@tensor, {0., 1.}}, opts]
-
-FindTensorPermutation[tensor_, vox_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {{par, {min, max}}}, opts]
-
-FindTensorPermutation[tens_, vox_, stop_, opts : OptionsPattern[]] := Block[{
-	step, tracts, perms, flips, lengs, i, j, pl, ind
-	},
-	
-	step = OptionValue[StepSize];
-	step = N@If[NumberQ[step],step, Min[0.5 vox]];
-	
-	perms = {{"x", "y", "z"}, {"x", "z", "y"}, {"y", "x", "z"}, {"y","z", "x"}, {"z", "x", "y"}, {"z", "y", "x"}};
-	flips = {{1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}};
-	ind = {1, 1};
-	
-	PrintTemporary[Dynamic[{ind, flips[[ind[[1]]]], perms[[ind[[2]]]]}]];
-	lengs = Table[
-		ind = {i, j};
-		tracts = First@FiberTractography[tens, vox, stop, TracMonitor -> False,TensorFilps -> flips[[i]], TensorPermutations -> perms[[j]],
-			(Sequence[# -> OptionValue[#] & /@ FilterRules[Options[FiberTractography], Options[FindTensorPermutation]][[All, 1]]])
-		];
-		N@Mean[Length /@ tracts] step
-	, {i, 1, 4}, {j, 1, 6}];
-	
-	pl = ArrayPlot[lengs, ColorFunction -> "Rainbow", ImageSize -> 150, Frame -> True, 
-		FrameTicks -> {{Thread[{Range[4], flips}], None},{None, Thread[{Range[6], Rotate[#, 90 Degree] & /@ perms}]}}];
-	
-	{i, j} = FirstPosition[lengs, Max[lengs]];
-	{perms[[j]], flips[[i]], pl}
-]
 
 
 (* ::Section:: *)
