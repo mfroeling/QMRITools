@@ -38,8 +38,8 @@ FitTract::usage =
 "FitTract[tract] fits a tract defined as a list of {x,y,z} coordinates with a polinomial function.
 FitTract[{tract, ...}] fits a list of tracts defined as a list of {x,y,z} coordinates with a polinomial function."
 
-PlotTracts::usage = "
-PlotTracts[tracts, vox]
+PlotTracts::usage = 
+"PlotTracts[tracts, vox]
 PlotTracts[tracts, vox, dim]"
 
 
@@ -66,6 +66,8 @@ TractAngleMap::usage =
 "TractAngleMap[tracts, vox, dim]"
 
 
+FilterTracts::usage = "FilterTracts[tracts, vox, select]"
+
 SelectTractTroughPlane::usage = ""
 
 SelectTractTroughVol::usage = ""
@@ -80,15 +82,10 @@ SelectTracts::usage = ""
 
 CombineROIs::usage = ""
 
-FilterTracts::usage = "FilterTracts[tracts, vox, select]"
-
 
 FiberLength::usage = "FiberLength[tracts]"
 
 GetTractValues::usage = "GetTractValues[tracts, val, vox, int]"
-
-
-
 
 
 (* ::Subsection::Closed:: *)
@@ -301,7 +298,7 @@ Euler[y_, v_, h_, func_] := Block[{k1},
 
 RK2[y_, v_, h_, func_] := Block[{k1, k2},
 	k1 = VecAlign[v, h func[y]];
-	k2 = VecAlign[v, h*func[y + k1/2]];
+	k2 = VecAlign[v, h func[y + k1/2]];
 	k2	
 ]
 
@@ -344,44 +341,45 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 
 
 EigVec = Compile[{{tens, _Complex, 1}}, Block[{
-	xx,yy,zz,xy,xz,yz,xx2,yy2,zz2,xy2,xz2,yz2,det,tr,tr2,b,c,d,m1,m2,m3,u1,u2,u3,out,e1, 
-	u11, u22, u33},
+	def, xx, yy, zz, xy, xz, yz, tr, xx2, yy2, zz2, xy2, xz2, yz2, tr2, 
+	p, b, b2, c, d, e, f, e1, u1, u11, u12, u13, u2, u21, u22, u23, u3, u1n, u3n},
+	
+	def = {0., 0., 1.};
 	
 	(*tens and tensor squared indices*)
 	{xx, yy, zz, xy, xz, yz} = tens;
-	{xx2, yy2, zz2, xy2, xz2, yz2} = tens^2;
-	
-	(*matrix properties for root*)
 	tr = xx + yy + zz;
-	tr2 = xx2 + yy2 + zz2 + 2 xy2 + 2 xz2 + 2 yz2;
 	
-	Re@If[tr <= 0.,
-		{0., 0., 0.},
+	Re@If[tr <= 0., def,
+		(*root finding parameters*)
+		{xx2, yy2, zz2, xy2, xz2, yz2} = tens^2;
+		tr2 = xx2 + yy2 + zz2 + 2 xy2 + 2 xz2 + 2 yz2;
+				
+		p = 1/3;
+		b = tr; b2 = b^2;
+		c = 0.5 (tr2 - tr^2);
+		d = xx yy zz - xx yz2 - yy xz2 - zz xy2 + 2 xy xz yz;
 		
-		(*root finding*)
-		b = tr;
-		c = 0.5(tr2 - tr^2);
-		d = xx yy zz - xx yz2 - yy xz2 - zz xy2 + 2 xy xz yz; (*det*)
+		e = Sqrt[-3 c^2 (b2 + 4 c) + 6 b (2 b2 + 9 c) d + 81 d^2];
+		f = (2 b^3 + 9 b c + 3 (9 d + e))^p;
 		
-		(*first root is first eigenvalue*) 
-		e1 = -Abs[(1/6)*(2*b 
-			+ (2*(b^2 + 3*c))/(b^3 + (9*b*c)/2 + (3/2)*(9*d + Sqrt[-3*c^2*(b^2 + 4*c) + 6*b*(2*b^2 + 9*c)*d + 81*d^2]))^(1/3) 
-			+ 2^(2/3)*(2*b^3 + 9*b*c + 3*(9*d + Sqrt[-3*c^2*(b^2 + 4*c) + 6*b*(2*b^2 + 9*c)*d + 81*d^2]))^(1/3)
-		)];
-	
-		(*QR decomp Using the Gram\Schmidt process to find first vector*)
-		{u1, m2, m3} = {{xx + e1, xy, xz}, {xy, yy + e1, yz}, {xz, yz, zz + e1}};
-		u11 = u1 . u1;
-		If[u11 <=0., {0., 0., 0.},
-		u2 = m2 - (u1 . m2/u11) u1;
-		u22 = u2 . u2;
-		If[u22 <= 0., {0., 0., 0.},
-		u3 = m3 - (u1 . m3/u11) u1 - (u2 . m3/u22)u2;
-		u33 = u3 . u3;
-		If[u33 <= 0., {0., 0., 0.}, 
-		(u3/Sqrt[u33])
-		]]]		
-	]
+		If[f == 0., def,
+			(*first root is first eigenvalue*) 
+			e1 = Abs[(1/6) (2 b + (2^(1 + p) (b2 + 3 c))/f + 4^p f)];
+		
+			(*QR decomp Using the Gram\Schmidt process to find first vector*)
+			u1 = {u11, u12, u13} = {xx - e1, xy, xz};
+			u2 = {xy, yy - e1, yz};
+			
+			u1n = u1 . u1;
+			If[u1n <= 0., def,
+				{u21, u22, u23} = u2 - ((u1 . u2)/u1n) u1;
+				u3 = {-u13 u22 + u12 u23, u13 u21 - u11 u23, -u12 u21 + u11 u22};
+				u3n = u3 . u3;
+				If[u3n <= 0., def, Sign[u3[[1]]] (u3/Sqrt[u3n])]
+			]
+		]
+	]		
 ], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
 
@@ -418,7 +416,10 @@ Options[PlotTracts] = {
 
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
-PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{range, vox, size, select, opts, col, tube, line, plot},
+PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
+	range, vox, size, select, opts, col, tube, line, plot, colOpt, met, set
+	},
+	
 	vox = Reverse@voxi;
 	
 	range = If[dimi === 0,
@@ -437,8 +438,8 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{range, vox, size, 
 		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
 	}];
 	
-	colOpt=OptionValue[TractColoring];
-	{met,set}=If[ListQ[colOpt],colOpt,{colOpt,Automatic}];
+	colOpt = OptionValue[TractColoring];
+	{met,set} = If[ListQ[colOpt],colOpt,{colOpt,Automatic}];
 	
 	col = Switch[met,
 		"Length",
@@ -738,7 +739,7 @@ FLengthC=Compile[{{trc,_Real,2}},Block[{diff,ll},
 (*GetTractValues*)
 
 
-GetTractValues[tracts_,val_,vox_,int_:1]:=MakeIntFunction[val,vox,int]@@@#&/@tracts;
+GetTractValues[tracts_, val_, vox_, int_:1]:=MakeIntFunction[val,vox,int]@@@#&/@tracts;
 
 
 (* ::Section:: *)

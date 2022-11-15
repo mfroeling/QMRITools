@@ -151,6 +151,10 @@ RotateTensor::usage =
 "RotateTensor[tens] rotates the tensor 180 degree, e.g. inversion of the z direction with also inversing the tensor orientation."
 
 
+FindActivations::usage = 
+"FindActivations[data] Finds the activation in MUMRI or DTI data after data normalization. 
+FindActivations[data, mask] Finds the activation in MUMRI or DTI data after data normalizeation within the mask."
+
 (* ::Subsection::Closed::*)
 (*Options*)
 
@@ -263,6 +267,18 @@ B1EqualPower::usage =
 "B1EqualPower is an option for B1shimming. If true equal power for both channels is used."
 
 
+ActivationThreshold::usage =
+"ActivationThresholdis an option for FindActivations. Fist value is the number of standard deviations second is the pecentage threshold."
+
+ThresholdMethod::usage =
+"ThresholdMethodis an option for FindActivations. Values can be \"StandardDeviation\", \"Fraction\" or \"Both\"."
+
+IgnoreSlices::usage =
+"IgnoreSlices is an option for FindActivations. Determins how many slices of the start and end of the dataset are ignored."
+
+ActivationOutput::usage = 
+"ActivationOutput is an option for ActivationOutput. If set to All aslo the mn and treshhold values are retured."
+
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
@@ -278,6 +294,8 @@ Hist::size = "Length of data (`1`)must be the same as the length of the range (`
 ErrorPlot::size = "Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`)."
 
 Hist2::size = "Length of data (`1`), labels (`2`) and range (`3`) must be 5."
+
+FindActivations::tresh = "Given thresholds are not valid. The sd should be >1 and is `1` and the fr should be < 1 and is `2`." ;
 
 
 (* ::Section:: *)
@@ -1580,6 +1598,101 @@ B1MapErrorN[c1_?VectorQ, c2_?VectorQ, target_, {f1_?NumberQ, f2_?NumberQ, a_?Num
 	diff = Abs@CombineB1[c1, c2, {f1, f2, a}, B1Scaling -> sc] - target;
 	RootMeanSquare[diff] + StandardDeviation[diff]
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*FindActivations*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindActivations*)
+
+
+Options[FindActivations] = Options[FindActivationsI] = {
+	ActivationThreshold -> {3.0, 0.6}, 
+	ThresholdMethod -> "Both", 
+	ActivationOutput -> "Activation",
+	MaskDilation -> 0, 
+    IgnoreSlices -> {0, 0}
+};
+
+FindActivations[data_, ops : OptionsPattern[]] := FindActivationsI[NormalizeData[data, NormalizeMethod -> "Volumes"], ops]
+
+FindActivations[data_, mask_, ops : OptionsPattern[]] := FindActivationsI[
+		NormalizeData[data, DilateMask[mask, OptionValue[MaskDilation]], NormalizeMethod -> "Volumes"], ops]
+
+FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, dat, act, mn ,tr},
+	
+	(*Get and check options*)
+	met = OptionValue[ThresholdMethod];
+	{sc, fr} = OptionValue[ActivationThreshold];
+	If[sc < 1 || fr > 1, Return[Message[FindActivations::tresh, sc, fr]]];
+	{start, stop} = OptionValue[IgnoreSlices];
+	
+	(*set the threshold*)
+	{sc, fr} = Switch[met,
+		"Both", {sc, fr},
+		"Fraction", {0, fr},
+		"StandardDeviation", {sc, 1}
+	];
+	
+	(*perfomr the activation finding in the selected slices*)
+	dat = RotateDimensionsLeft[Transpose[data[[start + 1 ;; -stop - 1]]]];
+	act = FindActC[dat, sc, fr];
+	
+	(*create extra ouput if needed*)
+	If[OptionValue[ActivationOutput]==="Activation",
+		{mn,tr} = RotateDimensionsRight[MeanTresh[dat, act, sc, fr]];
+		mn = ToPackedArray@ArrayPad[mn, {{start, stop}, 0, 0}];
+		tr = ToPackedArray@ArrayPad[tr, {{start, stop}, 0, 0}];
+	];
+	
+	(*give outpu*)
+	act = ToPackedArray@Round@ArrayPad[Transpose[RotateDimensionsRight[act]], {{start, stop}, 0, 0, 0}];
+	If[OptionValue[ActivationOutput]==="Activation", act, {act, data, mn ,tr}] 
+  ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindActC*)
+
+
+FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}}, Block[{ts, ti, c, i, mn, tr},
+	If[Total[t] <= 0.,
+		(*if backgroud do nothing*)
+		t, 
+		(*find activation function*)
+		ts = ti = t;
+		c = True;
+		i = 0;
+		
+		(*keep find activation till convergence*)
+		While[c && i < 10, i++;
+			mn = Mean[ti];
+			tr = Max[{0.1, Min[{1 - sc StandardDeviation[ti/mn], fr}]}];
+			ts = Select[t, # > tr mn &];
+			c = (ts =!= ti);
+			ti = ts;
+		];
+		
+		(*based on data vector without dropouts find correct thresshold*)
+		mn = Mean[ti];
+		tr = Max[{0.1, Min[{1 - sc StandardDeviation[ti/mn], fr}]}];
+		(*the activations*)
+		UnitStep[-t + tr mn]
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+MeanTresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}}, Block[{ts, ti, c, i, mn, tr},
+	If[Total[t] <= 0.,
+		(*if backgroud do nothing*)
+		{0, 0}, 
+		ti = Pick[t, s, 0.];
+		mn = Mean[ti];
+		tr = Max[{0.1, Min[{1 - sc StandardDeviation[ti/mn], fr}]}];
+		{mn, tr mn}
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Section:: *)
