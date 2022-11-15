@@ -26,7 +26,7 @@ BeginPackage["QMRITools`MaskingTools`", Join[{"Developer`"}, Complement[QMRITool
 
 NormalizeData::usage = 
 "NormalizeData[data] normalizes the data to the mean signal of the data. For 4D data it normalizes to the first volume of the 4th dimension.
-NormalizeData[data,{min,max}] normalizes the data between min and max."
+NormalizeData[data, mask] normalizes the data based on the mean signal only within the mask."
 
 NormalizeMeanData::usage = 
 "NormalizeMeanData[data] calculates the mean normalized data from a 4D dataset."
@@ -88,6 +88,9 @@ maskdim is the dimensions of the output {zout,xout,yout}."
 (*Options*)
 
 
+NormalizeMethod::usage = 
+"NormalizeMethod is an option for NormalizeData. Can be \"Set\" or \"Volumes\" wichi normalizes to the firs volume or normalizes each volume individually, respectively."
+
 MaskSmoothing::usage = 
 "MaskSmoothing is an options for Mask, SmoothMask and SmoothSegmentation, if set to True it smooths the mask, by closing holse and smoothing the contours."
 
@@ -148,23 +151,44 @@ Begin["`Private`"]
 
 SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_,_., OptionsPattern[]}};
 
-NormalizeData[data_] := Block[{mdat},
-	mdat = Switch[ArrayDepth[data], 3, data, 4, mdat = Mean[Transpose[data]]];
-	NormalizeData[data, Mask[mdat - Min[mdat]]]
+Options[NormalizeData] = {NormalizeMethod -> "Set"}
+
+SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
+NormalizeData[data_, opts : OptionsPattern[]] := Block[{ndat, mask},
+	ndat = Switch[ArrayDepth[data], 3, data, 4, Mean@Transpose@data];
+	mask = Mask[NormDat[ndat - Min@ndat, 0.]];
+	NormalizeData[data, mask, opts]
 ]
 
-
-NormalizeData[data_, mask_] := Block[{dat,mn,min,dato},
+NormalizeData[data_, msk_, opts : OptionsPattern[]] := Block[{dat, mn, min, dato, mask},
+	mask = Normal@msk;
 	dato = data - Min[data];
-	dat = GetMaskData[Switch[ArrayDepth[data], 3, dato, 4, dato[[All,1]]], mask];
-	ToPackedArray[100. dato/MeanNoZero[dat]]
+	mn = Switch[ArrayDepth[data],
+		3, MeanNoZero[Flatten[mask dato]],
+		4, Switch[OptionValue[NormalizeMethod],
+			"Volumes", MedianNoZero[Flatten[mask #]] & /@ Transpose[dato],
+			_, MedianNoZero[Flatten[mask dato[[All, 1]]]]
+		]
+	];
+	NormDat[dato, mn]
 ]
+
+
+NormDat[dat_, mn_] := ToPackedArray[100. Which[
+	mn===0., dat/MedianNoZero[Flatten@dat],
+	ListQ[mn],Transpose[Transpose[dat]/mn],
+	True, dat/mn]
+]
+
 
 (* ::Subsubsection::Closed:: *)
 (*NormalizeMeanData*)
 
 
-NormalizeMeanData[data_] := NormalizeData@Mean@Transpose@data
+SyntaxInformation[NormalizeMeanData] = {"ArgumentsPattern" -> {_,_., OptionsPattern[]}};
+
+NormalizeMeanData[data_] := NormalizeData[Mean@Transpose@data]
 
 NormalizeMeanData[data_, mask_] := NormalizeData[Mean@Transpose@data, mask]
 
