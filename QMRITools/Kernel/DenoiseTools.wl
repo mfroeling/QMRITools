@@ -529,7 +529,8 @@ GridSearch = Compile[{{val, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig,
 	(*find at which value eq1>eq2*)
 	pi = If[sig === 0.,
 		Total[1 - UnitStep[sigq2 - sigq1]],
-		Total[1 - UnitStep[Mean[{sigq1, sigq2}] - sig^2]]		];
+		Total[1 - UnitStep[Mean[{sigq1, sigq2}] - sig^2]]
+	];
 	pi = If[pi <= 0, 1, pi];
 	
 	(*give output*)

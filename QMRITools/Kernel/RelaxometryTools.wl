@@ -992,7 +992,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		PrintTemporary["Smoothing B1 to refit with smooth B1: ", DateString[]];
 		(*smooth the B1 map*)
 		B1mask = Unitize[B1Map];
-		B1Map = B1mask Clip[N[Round[(*LapFilter[N[B1Map] /. 0.->1. , 1.2]*)MedianFilter[N[B1Map] /. 0.->1.,1] - b1ran[[1]], b1ran[[3]]] + b1ran[[1]]], b1ran[[1;;2]], b1ran[[1;;2]]];
+		B1Map = B1mask Clip[N[Round[MedianFilter[N[B1Map] /. 0.->1.,1] - b1ran[[1]], b1ran[[3]]] + b1ran[[1]]], b1ran[[1;;2]], b1ran[[1;;2]]];
 	];
 	
 	(*refit data with either smoothed B1 and/of T2fat fit*)
@@ -1010,7 +1010,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		dataf = RotateDimensionsLeft[{datal, B1Int}];
 		
 		(*Recalculate solution*)
-		sol =Switch[val,
+		sol = Switch[val,
 			2,(*perfomr the brute force fit of water only*)
 			PrintTemporary["Refitting with smooth B1: ", DateString[]];
 			DistributeDefinitions[inp];

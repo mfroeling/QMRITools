@@ -2486,7 +2486,7 @@ SyntaxInformation[GetSlicePositions]={"ArgumentsPattern"->{_,_.,OptionsPattern[]
 
 GetSlicePositions[data_, opts:OptionsPattern[]]:=GetSlicePositions[data, {1,1,1},opts]
 
-GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,pers,min,max,minmax,result,num,s1,s2,s3,mid},
+GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,pers,min,max,minmax,result,num,s1,s2,s3,mid,mn,tot},
 	(*get the max intensity slice*)
 	pers={{2,3},{1,3},{1,2}};
 	{s1,s2,s3}=OptionValue[DropSlices];

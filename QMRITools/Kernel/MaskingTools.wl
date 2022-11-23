@@ -72,11 +72,15 @@ SmoothSegmentation::usage =
 RemoveMaskOverlaps::usage = 
 "RemoveMaskOverlaps[mask] removes the overlaps between multiple masks. Mask is a 4D dataset with {z, masks, x, y}."
 
+
 DilateMask::usage=
 "DilateMask[mask,size] if size > 0 the mask is dilated and if size < 0 the mask is eroded."
 
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
+
+ImportITKLabels::usgae = 
+"ImportITKLables[file] imports the ITKSnap label file."
 
 
 ROIMask::usage = 
@@ -362,21 +366,21 @@ Options[GetMaskData] = {GetMaskOutput -> "All",GetMaskOnly->False}
 
 SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-GetMaskData[data_?ArrayQ, mask_?ArrayQ, OptionsPattern[]] := Block[{fdat},
+GetMaskData[data_?ArrayQ, mask_, OptionsPattern[]] := Block[{fdat},
 	If[!(Dimensions[data]=!=Dimensions[mask]||Drop[Dimensions[data], {2}]=!=Dimensions[mask]),
 		Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]]
 		,
 		If[OptionValue[GetMaskOnly],
 			(*get true mask values*)
 			Switch[OptionValue[GetMaskOutput],
-				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[#2]], 1]&, {data,mask}, ArrayDepth[data]-2],
-				_, Pick[Chop[Flatten[N[data]]], Unitize[Flatten[mask]], 1]
+				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[Normal@#2]], 1]&, {data,mask}, ArrayDepth[data]-2],
+				_, Pick[Chop[Flatten[N[data]]], Unitize[Flatten[Normal@mask]], 1]
 			]
 			,			
 			(*get all non zero values in mask*)
 			Switch[OptionValue[GetMaskOutput],
-				"Slices", Map[(fdat=Chop[Flatten[N@#]];Pick[fdat, Unitize[fdat], 1])&, data*mask, {ArrayDepth[data]-2}],
-				_ , fdat=N@Chop[Flatten[N[data mask]]];	Pick[fdat, Unitize[fdat], 1]
+				"Slices", Map[(fdat=Chop[Flatten[N@Normal@#]];Pick[fdat, Unitize[fdat], 1])&, data*mask, {ArrayDepth[data]-2}],
+				_ , fdat=N@Chop[Flatten[N[Normal[data mask]]]];	Pick[fdat, Unitize[fdat], 1]
 			]
 		]
 	]
@@ -509,6 +513,15 @@ SegmentMask[mask_, seg_?IntegerQ] := Block[{pos, f, l, sel, out},
 	out = ConstantArray[0*mask, seg];
 	Table[out[[i, sel[[i, 1]] ;; sel[[i, 2]]]] = mask[[sel[[i, 1]] ;; sel[[i, 2]]]], {i, 1, seg}];
 	out
+]
+
+
+ImportITKLabels[file_]:=Block[{labels},
+	labels = ({
+		ToExpression[StringSplit[#][[1]]],
+		StringSplit[#, "\""][[-1]]
+	} & /@ Select[Import[file, "Lines"], StringTake[#, 1] =!= "#" &])[[2 ;;]];
+	Thread[labels[[All, 1]] -> labels[[All, 2]]]
 ]
 
 
