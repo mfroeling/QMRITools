@@ -85,20 +85,33 @@ When using the toolbox please cite one of the following references:
 
 ## Installation
 
-The latest release can be found
-[here](https://github.com/mfroeling/QMRITools/releases).
-
-Manual installation:
-1.	Download the `QMRITools.zip`.
-2.	Extract the `QMRITools` folder and place it in the Mathematica UserBaseDirectory &gt; Applications.
-
-`FileNameJoin[{$UserBaseDirectory, "Applications"}]`
+The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases).
+The toolbox is best installed via the Mathematica paclet system. 
 
 Automatic installation:
 1.	Download the `QMRITools-2.3.3.paclet`.
 2.	Install the paclet using `PacletInstall`.
 
 `PacletInstall["xxx\\QMRITools-2.3.3.paclet"]`  
+
+Or alternatively you can directly install it from the latest release page
+
+`PacletInstall["https://github.com/mfroeling/QMRITools/releases/download/x.x.x/QMRITools-x.x.x.paclet"]`
+
+
+If you prefer you can also use the manual installation:
+1.	Download the `QMRITools.zip`.
+2.	Extract the `QMRITools` folder and place it in the Mathematica UserBaseDirectory &gt; Applications.
+
+If you want to know your UserBaseDirectory run the following code in Mathematica
+
+`SystemOpen[FileNameJoin[{$UserBaseDirectory, "Applications"}]]`
+
+Alternatively you can also use the `$BaseDirectory` if you want the tools to be available to all users.
+
+------------------------------------------------------------------------
+
+## External dependencies
 
 Some functions of QMRITools call on external executables and software.
 These executables need to be present in “QMRITools” and are included in
