@@ -137,7 +137,7 @@ The Output can be \"Map\", \"MagPhase\", or \"Complex\"}
 B1MapCalc[] is based on DOI: 10.1002/mrm.21120."
 
 CombineB1::usage = 
-"CobineB1[b10,b190,{f1,f2,ang}] combines the complex b1 maps with relative amplitudes f1 and f2 using phase angle ang."
+"CombineB1[b10,b190,{f1,f2,ang}] combines the complex b1 maps with relative amplitudes f1 and f2 using phase angle ang."
 
 B1Shimming::usage = 
 "B1Shimming[b10, b190, mask] finds the optimal shim values to shim to 100% b1. Assumes B1Scaling \"Relative\".
@@ -544,57 +544,60 @@ SyntaxInformation[FindOutliers] = {"ArgumentsPattern" -> {_, _., OptionsPattern[
 FindOutliers[datai_?VectorQ, opts:OptionsPattern[]]:=FindOutliers[datai,1,opts]
 
 FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
-	data, maxIt, diff, it, out, outI, outNew, q1, q2, q3, sc, iqr, dataQ, up, low, mc, met, incZero, output
+		data, maxIt, diff, it, out, outI, outNew, q1, q2, q3, sc, iqr, dataQ, up, low, mc, met, incZero, output
 	},
-  (*make numeric*)
-  data = N@datai;
-  
-  (*get options*)
-  met = OptionValue[OutlierMethod];
-  output = OptionValue[OutlierOutput];
-  maxIt = OptionValue[OutlierIterations];
-  sc = OptionValue[OutlierRange];
-  incZero = OptionValue[OutlierIncludeZero];
-  
-  (*initialize*)
-  diff = it = 1;
-  outI = out = N@If[incZero, 0 data + 1, Unitize[data]];
-  
-  (*perform itterative outlier detection*)
-  While[(diff != 0.) && it <= maxIt,
-   
-   (*get the data quantiles and iqr*)
-   dataQ = Pick[data, ignore out, 1.];
-   {q1, q2, q3} = Quantile[dataQ, {.25, .50, .75}];
-   iqr = (q3 - q1);
-   
-   (*switch methods*)
-   (*IQR-inter quantile range, SIQR-skewed iql, aIQR-
-   adjusted iqr using medcouple for skewness*)
-   {low, up} = Switch[OptionValue[OutlierMethod],
-     "IQR", {q1 - sc iqr, q3 + sc iqr},
-     "SIQR", {q1 - sc 2 (q2 - q1), q3 + sc 2 (q3 - q2)},
-     "aIQR",
-     mc = MedCouple[dataQ, q2];
-     If[mc >= 0,
-      {q1 - sc iqr Exp[-4 mc], q3 + sc iqr Exp[3 mc]},
-      {q1 - sc iqr Exp[-3 mc], q3 + sc iqr Exp[4 mc]}
-      ]
-     ];
-   (*make the oulier mask*)
-   outNew = N[outI (If[(# < low || # > up), 0, 1] & /@ N[data])];
-   (*update ouliers and itteration*)
-   diff = Total[out - outNew];
-   out = outNew;
-   it++
-   ];
-  
-  (*make the output*)
-  If[output === "Mask",
-   Round[out],
-   {Pick[datai, out, 1.], Pick[datai, out, 0.]}
-   ]
-  ]
+	
+	(*make numeric*)
+	data = N@datai;
+	
+	(*get options*)
+	met = OptionValue[OutlierMethod];
+	output = OptionValue[OutlierOutput];
+	maxIt = OptionValue[OutlierIterations];
+	sc = OptionValue[OutlierRange];
+	incZero = OptionValue[OutlierIncludeZero];
+	
+	(*initialize*)
+	diff = it = 1;
+	outI = out = N@If[incZero, 0 data + 1, Unitize[data]];
+	
+	(*perform itterative outlier detection*)
+	While[(diff != 0.) && it <= maxIt,
+		(*get the data quantiles and iqr*)
+		dataQ = Pick[data, ignore out, 1.];
+		{q1, q2, q3} = Quantile[dataQ, {.25, .50, .75}];
+		iqr = (q3 - q1);
+		
+		(*switch methods*)
+		(*IQR-inter quantile range, SIQR-skewed iql, aIQR-adjusted iqr using medcouple for skewness*)
+		{low, up} = Switch[OptionValue[OutlierMethod],
+			"IQR", 
+			{q1 - sc iqr, q3 + sc iqr},
+			"SIQR", 
+			{q1 - sc 2 (q2 - q1), q3 + sc 2 (q3 - q2)},
+			"aIQR", 
+			mc = MedCouple[dataQ, q2];
+			If[mc >= 0,
+				{q1 - sc iqr Exp[-4 mc], q3 + sc iqr Exp[3 mc]},
+				{q1 - sc iqr Exp[-3 mc], q3 + sc iqr Exp[4 mc]}
+			]
+		];
+		
+		(*make the oulier mask*)
+		outNew = N[outI (If[(# < low || # > up), 0, 1] & /@ N[data])];
+		
+		(*update ouliers and itteration*)
+		diff = Total[out - outNew];
+		out = outNew;
+		it++
+	];
+	
+	(*make the output*)
+	If[output === "Mask",
+		Round[out],
+		{Pick[datai, out, 1.], Pick[datai, out, 0.]}
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -604,17 +607,16 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 MedCouple[data_] := MedCouple[data,Median[data]];
 
 MedCouple[data_, q2_] := Block[{xi, li, xj, lj, pi, hxixj},
-  xi = Select[data, # >= q2 &];
-  li = Range[pi = Length[xi]];
-  xj = Select[data, # <= q2 &];
-  lj = Range[Length[xj]];
-  hxixj = Flatten@Table[
-     If[xi[[i]] > xj[[j]],
-      ((xi[[i]] - q2) - (q2 - xj[[j]]))/(xi[[i]] - xj[[j]]),
-      pi - 1 - i - j
-      ], {i, li}, {j, lj}];
-  Median[hxixj]
-  ]
+	xi = Select[data, # >= q2 &];
+	li = Range[pi = Length[xi]];
+	xj = Select[data, # <= q2 &];
+	lj = Range[Length[xj]];
+	hxixj = Flatten@Table[If[xi[[i]] > xj[[j]],
+		((xi[[i]] - q2) - (q2 - xj[[j]]))/(xi[[i]] - xj[[j]]),
+		pi - 1 - i - j
+	], {i, li}, {j, lj}];
+	Median[hxixj]
+]
 
 
 (* ::Subsection:: *)
@@ -692,7 +694,9 @@ Options[SNRMapCalc] = {OutputSNR -> "SNR", SmoothSNR->2};
 
 SyntaxInformation[SNRMapCalc] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
+
 SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, opts:OptionsPattern[]] := SNRMapCalc[data, noise, OptionValue[SmoothSNR], opts]
+
 SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[{sigma, sigmac, snr, depthD, depthN},
 	
  	sigma = N[GaussianFilter[noise, 4]];
@@ -729,7 +733,9 @@ SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[
 	 ]
   ]
 
+
 SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, opts:OptionsPattern[]] := SNRMapCalc[{data1, data2}, 2, opts]
+
 SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, k_?NumberQ, OptionsPattern[]] := 
  Module[{noise, signal, sigma, snr},
   noise = (data1 - data2);
@@ -743,7 +749,9 @@ SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, k_?NumberQ, OptionsPattern[]] :=
 	 ]
  ]
 
+
 SNRMapCalc[data : {_?ArrayQ ...}, opts:OptionsPattern[]] := SNRMapCalc[data, 2, opts]
+
 SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] := 
  Module[{signal, sigma, snr,div},
   signal = Mean[data];
@@ -864,10 +872,10 @@ DataTransformation[data_, vox_, wi_, OptionsPattern[]] :=
 
 
 GetCoordinates[data_, vox_] := Block[{dim, off, coor},
-   off = Dimensions[data]/2;
-   coor = MapIndexed[#2 &, data, {ArrayDepth[data]}] - 0.5;
-   CoordC[coor, off, vox]
-   ];
+	off = Dimensions[data]/2;
+	coor = MapIndexed[#2 &, data, {ArrayDepth[data]}] - 0.5;
+	CoordC[coor, off, vox]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -876,8 +884,8 @@ GetCoordinates[data_, vox_] := Block[{dim, off, coor},
 
    
 CoordC = Compile[{{coor, _Real, 1}, {off, _Real, 1}, {vox, _Real, 1}},
-    vox (coor - off),
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	vox (coor - off),
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -885,8 +893,8 @@ CoordC = Compile[{{coor, _Real, 1}, {off, _Real, 1}, {vox, _Real, 1}},
 
 
 ApplyRotC = Compile[{{coor, _Real, 1}, {rot, _Real, 2}}, 
-  	(rot . Append[coor, 1])[[1 ;; 3]],
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	(rot . Append[coor, 1])[[1 ;; 3]],
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -933,24 +941,6 @@ ParametersToTransformFull[w_, opt_] := Block[{
 		Append[Flatten /@ Thread[{rMat, tMat}], {0, 0, 0, 1}]
 		]
 	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*InvertDataset*)
-
-
-InvertDataset[data_] := Module[{dep},
-  dep = ArrayDepth[data];
-  Switch[dep,
-   4, Transpose[Inverse3Di /@ Transpose[data]],
-   _, Inverse3Di[data]
-   ]
-  ]
-
-Inverse3Di[data_] := Block[{out},
-  out = data;
-  (out = Reverse[out, #]) & /@ {1, 2, 3};
-  out]
 
 
 (* ::Subsection:: *)
@@ -1100,47 +1090,52 @@ Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1
 
 
 Joini[sets_, setover_, step_] := Module[{over,dato,unit,noZero,tot},
-  (*define the overlapping voxels*)
-  unit = Unitize[setover];
-  noZero = Times @@ unit;
-  tot = Total[noZero];
-  (*prepare the data for listable compliled function*)
-  noZero = RotateDimensionsLeft[noZero];
-  dato = RotateDimensionsLeft[setover, 2];
-  (*merge the overlapping data*)
-  over = RotateDimensionsRight[JoinFuncC[dato, noZero, tot, step]];
-  (*merge the non ovelap with the overlap*)
-  Chop[Join[sets[[1]], over, sets[[2]]]]
-  ]
+	(*define the overlapping voxels*)
+	unit = Unitize[setover];
+	noZero = Times @@ unit;
+	tot = Total[noZero];
+	(*prepare the data for listable compliled function*)
+	noZero = RotateDimensionsLeft[noZero];
+	dato = RotateDimensionsLeft[setover, 2];
+	(*merge the overlapping data*)
+	over = RotateDimensionsRight[JoinFuncC[dato, noZero, tot, step]];
+	(*merge the non ovelap with the overlap*)
+	Chop[Join[sets[[1]], over, sets[[2]]]]
+]
 
 
-JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0}, {steps, _Integer, 0}},
-	Block[{ran, unit, tot1, out},
-    If[tot === 0,
-     (*all zeros, no overlap of signals so just the sum of signals*)
-     out = Total[(0 dat + 1) dat];
-     ,
-     (*overlap of signals*)
-     (*define the range needed*)
-     tot1 = 1./(tot + 1.);
-     ran = Reverse@Range[tot1, 1. - tot1, tot1];
-     
-     (*replace with gradient*)
-     If[tot === steps,
-      (*full overlap*)
-      out = Total[{ran, 1. - ran} dat];
-      ,
-      (*partial overlap*)
-      (*summ all signals*)
-      unit = (0 dat + 1);
-      (*replace the overlapping signals with a gradient*)
-      unit[[All, Flatten[Position[noZero, 1]]]] = {ran, 1 - ran};
-      (*sum the signals*)
-      out = Total[unit dat]
-      ]];
-    (*give the output*)
-    out],
-    {{out, _Real, 1}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0}, {steps, _Integer, 0}}, Block[{
+		ran, unit, tot1, out
+	},
+	
+	out = First@dat;
+	
+	If[tot === 0,
+		(*all zeros, no overlap of signals so just the sum of signals*)
+		out = Total[(0 dat + 1) dat];
+		,
+		(*overlap of signals*)
+		(*define the range needed*)
+		tot1 = 1./(tot + 1.);
+		ran = Reverse@Range[tot1, 1. - tot1, tot1];
+		
+		(*replace with gradient*)
+		If[tot === steps,
+			(*full overlap*)
+			out = Total[{ran, 1. - ran} dat];
+			,
+			(*partial overlap*)
+			(*summ all signals*)
+			unit = (0 dat + 1);
+			(*replace the overlapping signals with a gradient*)
+			unit[[All, Flatten[Position[noZero, 1]]]] = {ran, 1 - ran};
+			(*sum the signals*)
+			out = Total[unit dat]
+		]
+	];
+	(*give the output*)
+	out
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1254,24 +1249,49 @@ SplitSets[data_, sets_, overlap_, OptionsPattern[]] := Module[{lengthSet, sels, 
 (*RotateData*)
 
 
+(* ::Subsubsection::Closed:: *)
+(*RotateData*)
+
+
 SyntaxInformation[RotateData] = {"ArgumentsPattern" -> {_}};
 
 RotateData[data_] := Switch[ArrayDepth[data],
-  3, RotDati[data],
-  4, Transpose[RotDati /@ Transpose[data]],
-  5, RotDati[data]
-  ]
+	3, RotDati[data],
+	4, Transpose[RotDati /@ Transpose[data]],
+	5, RotDati[data]
+]
+
 
 RotDati[data_] := Reverse[Reverse[data, 2], 1]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*RotateTensor*)
 
 
 SyntaxInformation[RotateTensor] = {"ArgumentsPattern" -> {_}};
 
 RotateTensor[tens_] := FlipTensorOrientation[RotDati /@ tens, {1, 1, -1}, {"y", "x", "z"}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*InvertDataset*)
+
+
+InvertDataset[data_] := Module[{dep},
+	dep = ArrayDepth[data];
+	Switch[dep,
+		4, Transpose[Inverse3Di /@ Transpose[data]],
+		_, Inverse3Di[data]
+	]
+]
+
+
+Inverse3Di[data_] := Block[{out},
+	out = data;
+	(out = Reverse[out, #]) & /@ {1, 2, 3};
+	out
+]
 
 
 (* ::Subsection::Closed:: *)

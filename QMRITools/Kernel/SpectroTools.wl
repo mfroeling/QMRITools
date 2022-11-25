@@ -81,6 +81,12 @@ PhaseShiftSpectra[spec, ppm, gyro, {phi0, phi1}] aplies the 0th and 1st order ph
 The 0th order phase phi0 is in radians and the 1st order phase phi1 is in ms."
 
 TimeShiftFidV::usage = 
+"TimeShiftFidV[fid, time, gam] aplies a linebroadening with linewidth gam and a Voigt lineshape to the fid. The time can be obtained using GetTimeRange.
+TimeShiftFidV[fid, time, {gamL, gamG}] aplies a linebroadening with linewidth gamG \"Gaussian\" and gamL \"Lorentzian\".
+TimeShiftFidV[fid, time, gyro, {gam, eps}] aplies a linebroadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro.
+TimeShiftFidV[fid, time, gyro, {{gamL, gamG}, eps}] aplies a linebroadening with linewidth linewidth gamG \"Gaussian\" and gamL \"Lorentzian\" to the fid and a phase eps that results in eps ppm shift of the spectra.
+
+The linewidth gam is given in ms and the spectra shift eps is given in ppm."
 
 TimeShiftFid::usage = 
 "TimeShiftFid[fid, time, gam] aplies a linebroadening with linewidth gam and a Voigt lineshape to the fid. The time can be obtained using GetTimeRange.
@@ -760,8 +766,8 @@ FindSpectraPpmShift[spec_, {dw_, gyro_}, {peaks_, amp_}] := Block[{ppm, dppm, ta
 
 SyntaxInformation[ChangeDwellTimeFid] = {"ArgumentsPattern" -> {_, _, _}}
 
-ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampTar, timeTar},
-	sc=dwOrig/dwTar;
+ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampTar, timeTar, sc},
+	sc = dwOrig/dwTar;
 	(*get time of original signal*)
 	timeOrig = dwOrig(Range[Round[Length@time]]-1);
 	timeTar = dwTar(Range[Round[sc Length@time]]-1);
@@ -1394,7 +1400,7 @@ PlotSpectra[spec_, {dwell_?NumberQ, gyro_?NumberQ}, opts : OptionsPattern[]] := 
 PlotSpectra[spec_, {dwell_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts : OptionsPattern[]] := PlotSpectra[GetPpmRange[If[MatrixQ[spec],spec[[1]],spec], dwell, field, nuc], spec, opts]
 
 PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
-	fun, plot, plot2, grid, gridS, or, rr, col, space, cols, cols2, pl1, pl2, lables
+		fun, plot, plot2, grid, gridS, or, rr, col, space, cols, cols2, pl1, pl2, lables, min, max, shift
 	},
 	
 	(*get the plot range*)

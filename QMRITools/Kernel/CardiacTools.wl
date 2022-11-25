@@ -83,7 +83,7 @@ LinesToSegmentIndex::usage =
 "LinesToSegmentIndex[lines, points, segments] finds the lines indeces correspoinding to the points and the segments borders. Additionally it finds all the lines indeces for all lines within each segment.
 The lines are comupted by MaskToLines, the points are cumputed by GetMaskSegmentPoints, and the segments is the output of SegmentsPerSlices.
 
-Output {pointIndex, segmentIndex, lineIndex}"
+Output {pointIndex, segmentIndex, lineIndex}."
 
 GetSegmentLines::usage = 
 "GetSegmentLines[lines, lineIndex, segments] groups the transmural lines per segment."
@@ -104,7 +104,7 @@ CardiacSegment[mask, vox, pts, seg] does the same but seg can be an alternate se
 CardiacSegment[mask, back, vox, pts, seg] does the same but seg can be an alternate segmentation to the AHA17 where back is used for image generation."
 
 CardiacSegmentGUI::usage = 
-"CardiacSegment[data, mask, vox] allows to segment the heart in 1, 4, 6 or AHA-17 segements for each slice 360 radial samples are generated.
+"CardiacSegmentGUI[data, mask, vox] allows to segment the heart in 1, 4, 6 or AHA-17 segements for each slice 360 radial samples are generated.
 
 data is a background image on which all overlays are projected. 
 mask is the mask of the left ventricle (same as used for CentralAxes) and defines the area in which the data is sampled.
@@ -216,7 +216,7 @@ MaskWallMap::usage =
 
 
 GroupPerSegment::usage =
-"GroupPerSegment is an option for SegmentsPerSlice. If set False segements are grouped per slice and not per segment"
+"GroupPerSegment is an option for SegmentsPerSlice. If set False segements are grouped per slice and not per segment."
 
 SegmentationMethod::usage =
 "SegmentationMethod is an option for SegmentsPerSlice. Values can be \"AHA\", \"AHA+\", 1, 2, 3, 6 or 8."
@@ -296,12 +296,6 @@ Begin["`Private`"]
 (* ::Subsection:: *)
 (*General functions*)
 
-
-(* ::Subsubsection::Closed:: *)
-(*Sign2*)
-
-
-Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -385,14 +379,14 @@ HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?
 	out = Flatten[Table[
 		evec = Map[Reverse, data[[All,All,All,All,i]], {3}];
 		(*align vector with projection vector*)
-		evec = Sign2[DotC[{norvec,radvec,cirvec}[[j]],evec]] evec;
+		evec = SignNoZero[DotC[{norvec,radvec,cirvec}[[j]],evec]] evec;
 		(*Helix,Transverse,Sheet}*)
 		projection = MakePerpendicular[evec, {radvec,cirvec,norvec}[[j]]];
 		inp = DotC[projection,{cirvec,norvec,radvec}[[j]]];
 		helix = ArcCos[Abs[inp]]/Degree;
 		
 		(*keep sign only for helix[[1,1]]*)
-		If[(j==1 && i==1), Sign2[inp], 1] helix;
+		If[(j==1 && i==1), SignNoZero[inp], 1] helix;
 	, {i, 3}, {j, 3}],1];
 
 	If[OptionValue[ShowPlot], {Re@out,plots}, Re@out]
@@ -525,7 +519,7 @@ WallAngleMap[mask_, vox_, inout_] := Block[{dim, cent, len, edge1, edge2, fout, 
 	walldir = {in, out};
 	wallang = Transpose[Map[(
 		wallvec = Normalize[vox {1, #[[2]], 0}];
-		sign = Sign2[#[[2]]];
+		sign = SignNoZero[#[[2]]];
 		{#[[1]], sign VectorAngle[{1, 0, 0}, wallvec]/Degree}
 	) &, Transpose[walldir, {2, 3, 1}], {2}], {3, 1, 2}];
 	

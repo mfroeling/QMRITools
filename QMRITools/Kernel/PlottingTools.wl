@@ -2727,7 +2727,7 @@ GradientPlot[veci_, val_, OptionsPattern[]] :=
  Block[{pts, range, norm, mnorm, cnorm, col, pcol, vec}, 
  	
   vec = If[OptionValue[PositiveZ],
-  	Sign2[#[[3]]]#&/@veci,
+  	SignNoZero[#[[3]]]#&/@veci,
   	veci
   ];
   
@@ -2755,8 +2755,7 @@ GradientPlot[veci_, val_, OptionsPattern[]] :=
     {pts, cnorm}], ImageSize -> 400, BoxStyle -> Thick, 
    SphericalRegion -> True, Lighting -> "Neutral", BoxRatios -> 1, 
    PlotRange -> range]]
-  
-  Sign2[dat_]:=Sign[Sign[dat] + 0.0001];
+
 
 
 (* ::Subsubsection::Closed:: *)
