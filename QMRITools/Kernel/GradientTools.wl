@@ -1371,16 +1371,13 @@ BmatrixInv[bm_, bvi___] := Module[{bv, sigb, sign, gr},
    
    sign = If[Sign[bm[[3]]] == 0, If[Sign[bm[[2]]] == 0, If[Sign[bm[[1]]] == 0,
      {1, 1, 1},
-     Sign2[bm[[{1, 3, 4}]] sigb]],Sign2[bm[[{4, 2, 5}]] sigb]],Sign2[bm[[{5, 6, 3}]] sigb]
+     SignNoZero[bm[[{1, 3, 4}]] sigb]], SignNoZero[bm[[{4, 2, 5}]] sigb]], SignNoZero[bm[[{5, 6, 3}]] sigb]
      ];
     
    gr = sign*Sqrt[sigb bm[[1 ;; 3]]/(bv /. 0. -> Infinity)];
    
    {bv, gr}]
    ]
-
-
-Sign2 = Sign[Sign[# + .00001]] &;
 
 
 (* ::Subsubsection::Closed:: *)

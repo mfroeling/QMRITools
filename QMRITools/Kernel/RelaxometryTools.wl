@@ -221,32 +221,31 @@ LinFit[datan_, times_] := Block[{datal, mat, r, s},
 (*LogFit*)
 
 
-LogFit[datan_, times_] := 
- Block[{result, fdat, offset, T1r, off, t1rho, t, ad, datal},
-  ad = ArrayDepth[datan];
-  datal = Switch[ad,
-    3, Transpose[datan, {3, 1, 2}],
-    4, Transpose[datan, {1, 4, 2, 3}]
-    ];
-  
-  result = ParallelMap[
-    (
-      fdat = Transpose[{times, #}];
-      {off, t1rho} /. Quiet[NonlinearModelFit[
-          fdat,
-          {off Exp[-t/t1rho], 10 < t1rho < 301},
-          {{off, Last@Last@fdat}, {t1rho, 100}},
-          t]["BestFitParameters"]]
-      ) &, datal, {ad - 1}];
-  
-  {offset, T1r} = Switch[ad,
-    3, Transpose[result, {2, 3, 1}],
-    4, Transpose[result, {2, 3, 4, 1}]
-    ];
-  
-  T1r = Clip[T1r, {0, 500}, {0, 500}];
-  {offset, T1r}
-  ]
+LogFit[datan_, times_] := Block[{result, fdat, offset, T1r, off, t1rho, t, ad, datal},
+	ad = ArrayDepth[datan];
+	datal = Switch[ad,
+		3, Transpose[datan, {3, 1, 2}],
+		4, Transpose[datan, {1, 4, 2, 3}]
+	];
+	
+	result = ParallelMap[(
+		fdat = Transpose[{times, #}];
+		{off, t1rho} /. Quiet[NonlinearModelFit[
+			fdat,
+			{off Exp[-t/t1rho], 10 < t1rho < 301},
+			{{off, Last@Last@fdat}, {t1rho, 100}},
+			t
+		]["BestFitParameters"]]
+	) &, datal, {ad - 1}];
+		
+	{offset, T1r} = Switch[ad,
+		3, Transpose[result, {2, 3, 1}],
+		4, Transpose[result, {2, 3, 4, 1}]
+	];
+	
+	T1r = Clip[T1r, {0, 500}, {0, 500}];
+	{offset, T1r}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -436,7 +435,7 @@ EPGSignali[{Nechoi_, echoSpace_}, {T1_, T2_}, {ex_?ListQ, ref_?ListQ}, B1_, f_:0
   ]
 
 EPGSignali[{Necho_, echoSpace_}, {T1_, T2_}, {exi_, refi_}, B1_, f_:0.] := Block[
-	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, states, w, funRot, funMove},
+	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, t2r1, t2r2, states, w, funRot, funMove},
 	(*define internal paramters*)
 	states = Round[If[Necho >= 10, Max[{Necho/2, 10}], Necho]];
 	(*convert to Rad*)
@@ -484,19 +483,19 @@ MakeDiagMat[mat_, Necho_] := ArrayFlatten[IdentityMatrix[Necho] ConstantArray[ma
 
 (*if run once with Necho definition is stored*)
 MixMatrix[Necho_] := MixMatrix[Necho] = Block[{len, Smat, vec, off1, off2},
-   (*mixing matirx*)
-   len = 3*(Necho);
-   Smat = ConstantArray[0, {len, len}];
-   (*define state transitions*)
-   Smat[[1, 5]] = 1;(*yi-1\[Rule]xi*)
-   Smat[[len, len]] = 1;(*zn*)
-   Table[
-    Smat[[o - 1, o + 2]] = 1;(*yi\[Rule]yi-1*)
-    Smat[[o + 1, o - 2]] = 1;(*xi\[Rule]xi+1*)
-    Smat[[o, o]] = 1;(*zi\[Rule]zi*)
-    , {o, 3, len - 3, 3}];
-   Smat
-   ]
+	(*mixing matirx*)
+	len = 3*(Necho);
+	Smat = ConstantArray[0, {len, len}];
+	(*define state transitions*)
+	Smat[[1, 5]] = 1;(*yi-1\[Rule]xi*)
+	Smat[[len, len]] = 1;(*zn*)
+	Table[
+		Smat[[o - 1, o + 2]] = 1;(*yi\[Rule]yi-1*)
+		Smat[[o + 1, o - 2]] = 1;(*xi\[Rule]xi+1*)
+		Smat[[o, o]] = 1;(*zi\[Rule]zi*)
+	,{o, 3, len - 3, 3}];
+	Smat
+]
 
 
 (* ::Subsubsection::Closed:: *)

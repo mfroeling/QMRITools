@@ -38,10 +38,10 @@ EvaluateActivation[out, actS] The same with the extra annalysis of the SelectAct
 
 
 ActivationThreshold::usage =
-"ActivationThresholdis an option for FindActivations. Fist value is the number of standard deviations second is the pecentage threshold."
+"ActivationThreshold is an option for FindActivations. Fist value is the number of standard deviations second is the pecentage threshold."
 
 ThresholdMethod::usage =
-"ThresholdMethodis an option for FindActivations. Values can be \"StandardDeviation\", \"Fraction\" or \"Both\"."
+"ThresholdMethod is an option for FindActivations. Values can be \"StandardDeviation\", \"Fraction\" or \"Both\"."
 
 IgnoreSlices::usage =
 "IgnoreSlices is an option for FindActivations. Determins how many slices of the start and end of the dataset are ignored."
@@ -54,7 +54,8 @@ ActivationOutput::usage =
 (*Error Messages*)
 
 
-FindActivations::tresh = "Given thresholds are not valid. The sd should be >1 and is `1` and the fr should be < 1 and is `2`." ;
+FindActivations::tresh = 
+"Given thresholds are not valid. The sd should be >1 and is `1` and the fr should be < 1 and is `2`." ;
 
 
 (* ::Section:: *)

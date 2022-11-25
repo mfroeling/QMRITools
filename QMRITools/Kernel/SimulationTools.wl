@@ -205,7 +205,7 @@ AddNoise[dat_,noise_,OptionsPattern[]]:=Block[{sig,data,mdat,fdat},
 		];
 	Switch[OptionValue[NoiseType],
 		"Absolute", RicianDistribution[data,sig],
-		"Complex", CompledDistribution[data,sig]
+		"Complex", ComplexDistribution[data,sig]
 	]
 	]
 
@@ -214,7 +214,7 @@ RicianDistribution = Compile[{{Mu, _Real, 0}, {Sigma, _Real, 0}},
 	Sqrt[RandomReal[NormalDistribution[Mu, Sigma]]^2 + RandomReal[NormalDistribution[0, Sigma]]^2],
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
-CompledDistribution = Compile[{{Mu, _Complex, 0}, {Sigma, _Complex, 0}},
+ComplexDistribution = Compile[{{Mu, _Complex, 0}, {Sigma, _Complex, 0}},
 	RandomReal[NormalDistribution[Re@Mu, Sigma]] + I RandomReal[NormalDistribution[Im@Mu, Sigma]],
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
@@ -331,7 +331,7 @@ CreateDiffData[S0_,eig_,bmat_?ArrayQ,dim_]:= Block[{diff},
 SignalTensor[S0_, bmat_, D_] := Module[{Dv},
 	Dv=Append[If[Dimensions[D]=={3,3},TensVec[D],D],Log[S0]];
 	Exp[bmat.Dv]
-	]
+]
 
 
 (* ::Subsection:: *)
@@ -416,25 +416,24 @@ Options[GetPulseProfile] = {MagnetizationVector -> {0, 0, 1}, SliceRange -> 12, 
 
 SyntaxInformation[GetPulseProfile] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-GetPulseProfile[ex_?ListQ, ref_?ListQ, opts : OptionsPattern[]] := 
- Module[{exOut, pl1, refOut, pl2, samps},
-  samps = OptionValue[SliceRangeSamples];
-  {exOut, pl1, sl1} = GetPulseProfile[ex, opts];
-  {refOut, pl2, sl2} = GetPulseProfile[ref, opts];
-  If[OptionValue[FatFieldStrength] > 0,
-  	(*calculate the fat slice shift in mm*)
-  	shift = 3.4 OptionValue[FatFieldStrength] 42.5775 (sl1/ex[[3,3]] - sl2/ex[[3,3]]);
-  	step = OptionValue[SliceRange]/OptionValue[SliceRangeSamples]/2.;
-  	fatShift = Abs[shift/step];
-  	{exOut[[6, samps + 1 ;;]], refOut[[6, samps + 1 ;;]], fatShift, {pl1, pl2}}
-  	,
-  	{exOut[[6, samps + 1 ;;]], refOut[[6, samps + 1 ;;]], {pl1, pl2}} 
-  ]
-  ]
+GetPulseProfile[ex_?ListQ, ref_?ListQ, opts : OptionsPattern[]] := Module[{exOut, pl1, refOut, pl2, samps, sl1, sl2, shift, step, fatShift},
+	samps = OptionValue[SliceRangeSamples];
+	{exOut, pl1, sl1} = GetPulseProfile[ex, opts];
+	{refOut, pl2, sl2} = GetPulseProfile[ref, opts];
+	If[OptionValue[FatFieldStrength] > 0,
+		(*calculate the fat slice shift in mm*)
+		shift = 3.4 OptionValue[FatFieldStrength] 42.5775 (sl1/ex[[3,3]] - sl2/ex[[3,3]]);
+		step = OptionValue[SliceRange]/OptionValue[SliceRangeSamples]/2.;
+		fatShift = Abs[shift/step];
+		{exOut[[6, samps + 1 ;;]], refOut[[6, samps + 1 ;;]], fatShift, {pl1, pl2}}
+		,
+		{exOut[[6, samps + 1 ;;]], refOut[[6, samps + 1 ;;]], {pl1, pl2}}
+	]
+]
 
 GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, OptionsPattern[]] := Block[{
-	gamma, gradStrength, duration, bandwith, sliceRange, sliceSamp, maxFreq, flipAngle, pos,time,maxt,
-	thickness, inM, pulse, pulseSamp, freqRange, deltat, power, output, info, out, slice, opts, plot
+		gamma, gradStrength, duration, bandwith, sliceRange, sliceSamp, maxFreq, flipAngle, pos,time,maxt,
+		thickness, inM, pulse, pulseSamp, freqRange, deltat, power, output, info, out, slice, opts, plot
 	},
 	
 	(*fixed parameters*)
@@ -709,11 +708,11 @@ CalculateGfactori[factorsi_, sensitivity_, Wmat_, maski_, OptionsPattern[]] := B
 
 
 UsFactor[dim_, R_] := Block[{usdim, Rus, shift},
-  usdim = Ceiling[dim/R];
-  Rus = N[dim/usdim];
-  shift = (dim/2) - dim/(2 Rus);
-  {Rus, usdim, shift, R*usdim, R}
-  ]
+	usdim = Ceiling[dim/R];
+	Rus = N[dim/usdim];
+	shift = (dim/2) - dim/(2 Rus);
+	{Rus, usdim, shift, R*usdim, R}
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -740,7 +739,7 @@ Module[{eig,ADC,FA,dataAll,rangy,bins,wbins,sol,fit,x,Omega,Xi,Alpha},
 		fit=Append[ParameterFit[#]&/@dataAll,{Length[dataAll[[1]]]}];
 		{dataAll,wbins,sol,fit}
 		)&/@tens
-	]
+]
 
 
 (* ::Subsection::Closed:: *)

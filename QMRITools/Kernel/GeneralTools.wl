@@ -73,8 +73,8 @@ RescaleData::usage =
 RescaleData[data,{vox1, vox2}] rescales image/data from size vox1 to size vox2."
 
 
-DataToVector::usage = "
-DataToVector[data] converst the non zero data to vector.
+DataToVector::usage = 
+"DataToVector[data] converst the non zero data to vector.
 DataToVector[data, mask] converst the data within the mask to vector.
 
 the data can be reconstructed using VectorToData.
@@ -147,6 +147,8 @@ RMSNoZero::usage =
 MADNoZero::usage = 
 "MADNoZero[vec] return the MAD error of the vec which can be anny dimonsion array. if vec={0...} the output is 0. Zeros are ignored."
 
+SignNoZero::usage = 
+"SignNoZero[val] gives the sign of the val, where the sign of val > 0 is 1 and val < 0 is -1." 
 
 SumOfSquares::usage = 
 "SumOfSquares[{data1, data2, .... datan}] calculates the sum of squares of the datasets.
@@ -491,44 +493,43 @@ RescaleData[data_?ArrayQ, dim_?VectorQ, opts : OptionsPattern[]] := RescaleDatai
 Options[RescaleDatai] = {InterpolationOrder -> 3};
 
 RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[{type, dim, int, dataOut},
-  dim = Dimensions[data];
-  int = OptionValue[InterpolationOrder];
-  
-  dataOut = Switch[ArrayDepth[data],
-   (*rescale an image*)
-   2,
-   If[Length[sc] != 2,
-    Return[Message[RescaleData::dim, sc, Dimensions[data]]];,
-    RescaleImgi[data, {sc, met}, int]
-    ],
-   3(*rescale a 3D dataset*),
-   Switch[Length[sc],
-    2(*rescale a stac of 2D images*),
-    RescaleImgi[#, {sc, met}, int] & /@ data
-    ,
-    3(*rescale 3D data*),
-    RescaleImgi[data, {sc, met}, int],
-    _,
-    Return[Message[RescaleData::dim, sc, Dimensions[data]]];
-    ],
-   4(*rescale a 4D dataset, treat data as multiple 3D sets*),
-   Transpose[RescaleDatai[#, sc, met, opts] & /@ Transpose[data]],
-   _,
-   Return[Message[RescaleData::data]];
-   ];
-   
-   ToPackedArray[N@Chop[Clip[dataOut,MinMax[data]]]]
-  ]
+	dim = Dimensions[data];
+	int = OptionValue[InterpolationOrder];
+	
+	dataOut = Switch[ArrayDepth[data],
+		(*rescale an image*)
+		2,
+		If[Length[sc] != 2,
+			Return[Message[RescaleData::dim, sc, Dimensions[data]]];,
+			RescaleImgi[data, {sc, met}, int]
+		],
+		3(*rescale a 3D dataset*),
+		Switch[Length[sc],
+			2(*rescale a stac of 2D images*),
+			RescaleImgi[#, {sc, met}, int] & /@ data,
+			3(*rescale 3D data*),
+			RescaleImgi[data, {sc, met}, int],
+			_,
+			Return[Message[RescaleData::dim, sc, Dimensions[data]]];
+		],
+		4(*rescale a 4D dataset, treat data as multiple 3D sets*),
+		Transpose[RescaleDatai[#, sc, met, opts] & /@ Transpose[data]],
+		_,
+		Return[Message[RescaleData::data]];
+	];
+	
+	ToPackedArray[N@Chop[Clip[dataOut,MinMax[data]]]]
+]
 
 
 RescaleImgi[dat_, {sc_, met_}, n_] := Block[{type, im, dim},
-  (*data type*)
-  type = If[ArrayQ[dat, _, IntegerQ], "Bit16", "Real32"];
-  dim = If[met == "v", Round[sc Dimensions[dat]], sc];
-  (*convert to 2D or 3D image*)
-  im = Switch[ArrayDepth[dat], 2, Image[dat, type], 3, Image3D[dat, type]];
-  ImageData[ImageResize[im, Reverse[dim], Resampling ->{"Spline", n}], type]
-  ]
+	(*data type*)
+	type = If[ArrayQ[dat, _, IntegerQ], "Bit16", "Real32"];
+	dim = If[met == "v", Round[sc Dimensions[dat]], sc];
+	(*convert to 2D or 3D image*)
+	im = Switch[ArrayDepth[dat], 2, Image[dat, type], 3, Image3D[dat, type]];
+	ImageData[ImageResize[im, Reverse[dim], Resampling ->{"Spline", n}], type]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -561,7 +562,7 @@ GridData[dati_, part_, OptionsPattern[]] := Block[{dim, data, adepth, pad, val},
 	data = MapThread[Join, #, adepth - 2] & /@ data;
 	data = MapThread[Join, data, adepth - 1];
 	ToPackedArray@N@data
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -576,7 +577,8 @@ GridData3D[data_, part_] := Block[{AX, COR, SAG},
 	SAG = GridData[Transpose[Reverse@#, {2, 3, 1}] & /@ data, part];
 	If[Dimensions[AX]===Dimensions[COR]===Dimensions[SAG],
 		Transpose[{AX, COR, SAG}],
-		{AX, COR, SAG}]
+		{AX, COR, SAG}
+	]
 ]
 
 
@@ -663,6 +665,7 @@ SyntaxInformation[TensMat] = {"ArgumentsPattern" -> {_}};
 TensMat[tens : {_?ArrayQ ..}] := RotateDimensionsLeft[TensMati[tens], 2];
 
 TensMat[tens_?VectorQ] := TensMati[tens]
+
 
 TensMati[{xx_, yy_, zz_, xy_, xz_, yz_}] := {{xx, xy, xz}, {xy, yy, yz}, {xz, yz, zz}};
 
@@ -1143,6 +1146,18 @@ ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],
 
 
 (* ::Subsubsection::Closed:: *)
+(*SignNoZero*)
+
+
+SyntaxInformation[SignNoZero] = {"ArgumentsPattern" -> {_}};
+
+SignNoZero[val_] := N[SignNoZeroi[val]]
+
+SignNoZeroi = Compile[{{val, _Real, 0}}, Sign[Sign[val] + 0.0001],
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
+
+
+(* ::Subsubsection::Closed:: *)
 (*MeanNoZero*)
 
 
@@ -1202,49 +1217,55 @@ MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianD
 SyntaxInformation[MemoryUsage] = {"ArgumentsPattern" -> {_.}}
 
 MemoryUsage[size_: 1] := Module[{},
-  NotebookClose[memwindow];
-  memwindow = 
-   CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]],
-      Manipulate[
-       If[listing === {},
-        "Noting found",
-        TableForm[Join[#, {
-             Row[Dimensions[ToExpression["Global`" <> #[[1]]]], "x"],
-             Head[ToExpression["Global`" <> #[[1]]]],
-             ClearButton["Global`" <> #[[1]]]
-             }] & /@ listing, 
-         TableHeadings -> {None, {"Name", "Size (MB)", "Dimensions", "Head"}}]
-        ]
-       ,
-       {{msize, size, "minimum size [MB]"}, {1, 10, 100, 1000}},
-       Button["Update", listing = MakeListing[msize]],
-       {listing, ControlType -> None},
-       ContentSize -> {500, 600},
-       Paneled -> False,
-       AppearanceElements -> None,
-       Initialization :> {
-         MakeListing[mb_] := Reverse@SortBy[Select[myByteCount[Names["Global`*"]], #[[2]] > mb &], Last],
-         ClearButton[name_] := Button["Clear",       
-           Replace[ToExpression[name, InputForm, Hold], Hold[x__] :> Clear[Unevaluated[x]]];
-           listing = MakeListing[msize]
-         ],
-         listing = MakeListing[size];
-         }
-       ]}, WindowTitle -> "Plot data window", Background -> White]
-    ];
-  ]
+	NotebookClose[memwindow];
+	memwindow = CreateWindow[DialogNotebook[{
+		CancelButton["Close", DialogReturn[]],
+		Manipulate[
+			If[listing === {},
+				"Noting found",
+				TableForm[Join[	#, 
+						{
+							Row[Dimensions[ToExpression["Global`" <> #[[1]]]], "x"], Head[ToExpression["Global`" <> #[[1]]]], 
+							ClearButton["Global`" <> #[[1]]]
+						}
+					] & /@ listing,
+				TableHeadings -> {None, {"Name", "Size (MB)", "Dimensions", "Head"}}]
+			]
+			,
+			
+			{{msize, size, "minimum size [MB]"}, {1, 10, 100, 1000}},
+			Button["Update", listing = MakeListing[msize]],
+			{listing, ControlType -> None},
+			
+			ContentSize -> {500, 600},
+			Paneled -> False,
+			AppearanceElements -> None,
+			Initialization :> {
+				MakeListing[mb_] := Reverse@SortBy[Select[myByteCount[Names["Global`*"]], #[[2]] > mb &], Last],
+				ClearButton[name_] := Button["Clear", 
+					Replace[ToExpression[name, InputForm, Hold], Hold[x__] :> Clear[Unevaluated[x]]];
+					listing = MakeListing[msize]
+				],
+				listing = MakeListing[size];
+			}
+		]}, WindowTitle -> "Plot data window", Background -> White]
+	];
+]
 
 
 SetAttributes[myByteCount, Listable ]
 
 myByteCount[symbolName_String] := Replace[
-	ToExpression[symbolName, InputForm, Hold], Hold[x__] :> If[MemberQ[Attributes[x], Protected | ReadProtected],
-     Sequence @@ {},
-     (*output size in MB and name*)
-     {StringDelete[symbolName, "Global`"], 
-      Round[ByteCount[Through[{OwnValues, DownValues, UpValues, SubValues, DefaultValues, FormatValues, NValues}[Unevaluated@x, Sort -> False]]]/1000000., .01]}
-     ]
-   ];
+	ToExpression[symbolName, InputForm, Hold], 
+	Hold[x__] :> If[MemberQ[Attributes[x], Protected | ReadProtected],
+		Sequence @@ {},
+		(*output size in MB and name*)
+		{
+			StringDelete[symbolName, "Global`"],
+			Round[ByteCount[Through[{OwnValues, DownValues, UpValues, SubValues, DefaultValues, FormatValues, NValues}[Unevaluated@x, Sort -> False]]]/1000000., .01]
+		}
+	]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1254,10 +1275,10 @@ myByteCount[symbolName_String] := Replace[
 SyntaxInformation[ClearTemporaryVariables] = {"ArgumentsPattern" -> {_.}}
 
 ClearTemporaryVariables[] := Block[{names, attr},
-  names = Names["QMRITools`*`Private`*"];
-  attr = Attributes /@ names;
-  MapThread[If[#1 === {Temporary}, ClearAll[#2]] &, {attr, names}];
-  ]
+	names = Names["QMRITools`*`Private`*"];
+	attr = Attributes /@ names;
+	MapThread[If[#1 === {Temporary}, ClearAll[#2]] &, {attr, names}];
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -1269,15 +1290,16 @@ Options[SumOfSquares] = {OutputWeights -> True}
 SyntaxInformation[SumOfSquares] = {"ArgumentsPattern" -> {_,OptionsPattern[]}};
 
 SumOfSquares[data_, OptionsPattern[]] := Block[{sos, weights, dataf},
-  dataf = RotateDimensionsLeft[data];
-  sos = SumOfSquaresi[dataf];
-  
-  If[OptionValue[OutputWeights],
-   weights = DevideNoZero[dataf, sos];
-   {sos, RotateDimensionsRight[weights]},
-   sos
-   ]
-  ]
+	dataf = RotateDimensionsLeft[data];
+	sos = SumOfSquaresi[dataf];
+	
+	If[OptionValue[OutputWeights],
+		weights = DevideNoZero[dataf, sos];
+		{sos, RotateDimensionsRight[weights]},
+		sos
+	]
+]
+
 
 SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
@@ -1370,8 +1392,10 @@ NNLeastSquares[A_, y_] := Block[{At, x, zeroed, w, zerow, pos, sp, xp, neg, xi, 
 ]
 
 PosInd = Compile[{{v, _Real, 1}}, Block[{z = Round@Total[1 - v]}, Ordering[v][[;; z]]], RuntimeOptions -> "Speed"];
+
 CalcW = Compile[{{A, _Real, 2}, {At, _Real, 2}, {y, _Real, 1}, {x, _Real, 1}}, Chop[At . (y - A . x)], RuntimeOptions -> "Speed"];
-LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}},Inverse[A . Transpose[A]] . A . y, RuntimeOptions -> "Speed"];
+
+LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Inverse[A.Transpose[A]].A.y, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
@@ -1384,7 +1408,8 @@ LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}},Inverse[A . Transpose[A]] . A . y,
 
 LapFilter[data_, fil_:0.5] := Clip[Chop[ImageData[TotalVariationFilter[
 	If[ArrayDepth[data]===3,Image3D[N@data, "Real"],Image[N@data, "Real"]],
-	 fil, Method -> "Laplacian", MaxIterations -> 30]]], MinMax[data]]
+	fil, Method -> "Laplacian", MaxIterations -> 30]]], MinMax[data]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1393,7 +1418,8 @@ LapFilter[data_, fil_:0.5] := Clip[Chop[ImageData[TotalVariationFilter[
 
 MedFilter[data_, fil_:1] := Clip[Chop[ImageData[MedianFilter[
 	If[ArrayDepth[data]===3, Image3D[N@data, "Real"], Image[N@data, "Real"]],
-	 Round[fil]]]], MinMax[data]]
+	Round[fil]]]], MinMax[data]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1409,7 +1435,6 @@ StdFilter[data_, ker_:2] := Abs[Sqrt[GaussianFilter[data^2, ker] - GaussianFilte
 
 GyromagneticRatio[nuc_]:=(nuc/.{"1H"->42.57747892,"2H"-> 6.536,"3He"-> -32.434,"7Li"->16.546,"13C"->10.7084,"14N"->3.077,"15N"-> -4.316,"17O"-> -5.772,
 "19F"->40.052,"23Na"->11.262,"27Al"->11.103,"29Si"-> -8.465,"31P"->17.235,"57Fe"->1.382,"63Cu"->11.319,"67Zn"->2.669,"129Xe"-> 11.777})
-gyro
 
 
 (* ::Subsection::Closed:: *)
@@ -1592,48 +1617,46 @@ QuaternionVectorToRotationMatrix[{b_?NumericQ, c_?NumericQ, d_?NumericQ}] := Qua
 
 SyntaxInformation[RotationMatrixToQuaternion] = {"ArgumentsPattern" -> {_}}
 
-RotationMatrixToQuaternion[{{r11_?NumericQ, r12_?NumericQ, 
-     r13_?NumericQ}, {r21_?NumericQ, r22_?NumericQ, 
-     r23_?NumericQ}, {r31_?NumericQ, r32_?NumericQ, r33_?NumericQ}}] := 
-  Block[
-   {trace, a, b, c, d, x, y, z},
-   
-   trace = 1. + r11 + r22 + r33;
-   
-   If[trace > .5,
-    a = .5 Sqrt[trace];
-    b = .25 (r32 - r23)/a;
-    c = .25 (r13 - r31)/a;
-    d = .25 (r21 - r12)/a
-    
-    ,
-    x = 1. + r11 - (r22 + r33);
-    y = 1. + r22 - (r11 + r33);
-    z = 1. + r33 - (r11 + r22);
-    
-    Which[
-     x > 1.,
-     b = .5 Sqrt[x];
-     a = .25 (r32 - r23)/b;
-     c = .25 (r12 + r21)/b;
-     d = .25 (r13 + r31)/b,
-     
-     y > 1.,
-     c = .5 Sqrt[y];
-     a = .25 (r13 - r31)/c;
-     b = .25 (r12 + r21)/c;
-     d = .25 (r23 + r32)/c,
-     
-     True,
-     d = .5 Sqrt[z];
-     a = .25 (r21 - r12)/d;
-     b = .25 (r13 + r31)/d;
-     c = .25 (r23 + r32)/d;
-     ];
-    If[a < 0., {a, b, c, d} *= -1.]
-    ];
-   N@{a, b, c, d}	  
-   ];
+RotationMatrixToQuaternion[{
+	{r11_?NumericQ, r12_?NumericQ, r13_?NumericQ}, 
+	{r21_?NumericQ, r22_?NumericQ, r23_?NumericQ}, 
+	{r31_?NumericQ, r32_?NumericQ, r33_?NumericQ}}] := Block[{trace, a, b, c, d, x, y, z},
+		
+	trace = 1. + r11 + r22 + r33;
+	If[trace > .5,
+		a = .5 Sqrt[trace];
+		b = .25 (r32 - r23)/a;
+		c = .25 (r13 - r31)/a;
+		d = .25 (r21 - r12)/a
+		,
+		x = 1. + r11 - (r22 + r33);
+		y = 1. + r22 - (r11 + r33);
+		z = 1. + r33 - (r11 + r22);
+		
+		Which[
+			x > 1.,
+			b = .5 Sqrt[x];
+			a = .25 (r32 - r23)/b;
+			c = .25 (r12 + r21)/b;
+			d = .25 (r13 + r31)/b,
+			
+			y > 1.,
+			c = .5 Sqrt[y];
+			a = .25 (r13 - r31)/c;
+			b = .25 (r12 + r21)/c;
+			d = .25 (r23 + r32)/c,
+			
+			True,
+			d = .5 Sqrt[z];
+			a = .25 (r21 - r12)/d;
+			b = .25 (r13 + r31)/d;
+			c = .25 (r23 + r32)/d;
+		];
+		
+		If[a < 0., {a, b, c, d} *= -1.]
+	];
+	N@{a, b, c, d}
+];
    
 SyntaxInformation[RotationMatrixToQuaternionVector] = {"ArgumentsPattern" -> {_}}
    

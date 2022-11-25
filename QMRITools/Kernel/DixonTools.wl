@@ -717,7 +717,8 @@ GetKernels[dep_] := Block[{ker, i, j, k, keri},
 ];
 
 
-DiffU = Compile[{{diff, _Real, 0}}, diff - Sign[diff] Ceiling[ Abs[diff] - 0.5]
+DiffU = Compile[{{diff, _Real, 0}}, 
+	diff - Sign[diff] Ceiling[ Abs[diff] - 0.5]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -726,6 +727,7 @@ DiffU = Compile[{{diff, _Real, 0}}, diff - Sign[diff] Ceiling[ Abs[diff] - 0.5]
 
 
 MakeGroups[data_] := MakeGroups[data, 1]
+
 MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus,clus,groupsize,groups,groupnr,mask},
 
 	(*maske a mask if needed*)

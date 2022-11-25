@@ -39,8 +39,8 @@ FitTract::usage =
 FitTract[{tract, ...}] fits a list of tracts defined as a list of {x,y,z} coordinates with a polinomial function."
 
 PlotTracts::usage = 
-"PlotTracts[tracts, vox]
-PlotTracts[tracts, vox, dim]"
+"PlotTracts[tracts, vox] ...
+PlotTracts[tracts, vox, dim] ..."
 
 
 FindTensorPermutation::usage = 
@@ -54,38 +54,48 @@ FindTensorPermutation[] is based on DOI: 10.1016/j.media.2014.05.012."
 
 
 TractDensityMap::usage = 
-"TractDensityMap[tracts, vox, dim]"
+"TractDensityMap[tracts, vox, dim] ..."
 
 SeedDensityMap::usage = 
-"SeedDensityMap[seeds, vox, dim]"
+"SeedDensityMap[seeds, vox, dim] ..."
 
 TractLengthMap::usage = 
-"TractLengthMap[tracts, vox, dim]"
+"TractLengthMap[tracts, vox, dim] ..."
 
 TractAngleMap::usage = 
-"TractAngleMap[tracts, vox, dim]"
+"TractAngleMap[tracts, vox, dim] ..."
 
 
-FilterTracts::usage = "FilterTracts[tracts, vox, select]"
+FilterTracts::usage = 
+"FilterTracts[tracts, vox, select] ..."
 
-SelectTractTroughPlane::usage = ""
+SelectTractTroughPlane::usage = 
+"SelectTractTroughPlane[] ..."
 
-SelectTractTroughVol::usage = ""
+SelectTractTroughVol::usage = 
+"SelectTractTroughVol[] ..."
 
-SelectTractInVol::usage = ""
+SelectTractInVol::usage = 
+"SelectTractInVol[] ..."
 
-SelectTractPartInVol::usage = "" 
+SelectTractPartInVol::usage = 
+"SelectTractPartInVol[] ..." 
 
-PartTracts::usage = ""
+PartTracts::usage = 
+"PartTracts[] ..."
 
-SelectTracts::usage = ""
+SelectTracts::usage = 
+"SelectTracts[] ..."
 
-CombineROIs::usage = ""
+CombineROIs::usage = 
+"CombineROIs[] ..."
 
 
-FiberLength::usage = "FiberLength[tracts]"
+FiberLength::usage = 
+"FiberLength[tracts] ..."
 
-GetTractValues::usage = "GetTractValues[tracts, val, vox, int]"
+GetTractValues::usage = 
+"GetTractValues[tracts, val, vox, int] ..."
 
 
 (* ::Subsection::Closed:: *)
@@ -119,13 +129,15 @@ StepSize::usage =
 MaxSeedPoints::usage = 
 "MaxSeedPoints is an option for FiberTractography and defines the maximum number of seedspoints to be used."
 
-MaxTracts::usage = ""
+MaxTracts::usage = 
+"MaxTracts ..."
 
-TractColoring::usage = ""
+TractColoring::usage = 
+"TractColoring ..."
 
 
 NormalizeDensity::usage = 
-"NormalizeDensity is an option for TractDensityMap."
+"NormalizeDensity is an option for TractDensityMap ..."
 
 
 
@@ -467,6 +479,7 @@ MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
 	dirs = Abs[Differences[tract]];
 	ToPackedArray[Normalize[#] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
 ]
+
 
 MakeColor[tracts : {_?ListQ ..}] := MakeColor /@ tracts
 

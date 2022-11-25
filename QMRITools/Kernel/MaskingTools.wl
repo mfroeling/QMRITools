@@ -79,8 +79,8 @@ DilateMask::usage=
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
 
-ImportITKLabels::usgae = 
-"ImportITKLables[file] imports the ITKSnap label file."
+ImportITKLabels::usage = 
+"ImportITKLabels[file] imports the ITKSnap label file."
 
 
 ROIMask::usage = 
@@ -203,29 +203,26 @@ NormalizeMeanData[data_, mask_] := NormalizeData[Mean@Transpose@data, mask]
 
 SyntaxInformation[HomoginizeData] = {"ArgumentsPattern" -> {_, _}};
 
-HomoginizeData[datai_, mask_] := 
- Module[{data, mn, fit, datac, maskout},
-  data = mask GaussianFilter[datai, 5];
-  mn = Mean[Cases[Flatten[N[data]],Except[0.]]];
-  fit = FitGradientMap[Erosion[mask, 3] data];
-  
-  datac = (datai/(fit + 0.001));
-  maskout = Mask[datac, 0.1];
-  maskout = Dilation[SmoothMask[maskout], 5];
-  maskout Clip[mn datac, {0.8, 1.5} MinMax[data], {0, 0}]
-  ]
+HomoginizeData[datai_, mask_] := Module[{data, mn, fit, datac, maskout},
+	data = mask GaussianFilter[datai, 5];
+	mn = Mean[Cases[Flatten[N[data]],Except[0.]]];
+	fit = FitGradientMap[Erosion[mask, 3] data];
+	
+	datac = (datai/(fit + 0.001));
+	maskout = Mask[datac, 0.1];
+	maskout = Dilation[SmoothMask[maskout], 5];
+	maskout Clip[mn datac, {0.8, 1.5} MinMax[data], {0, 0}]
+]
 
 
 FitGradientMap[data_] := Module[{func, x, y, z, coor},
-  Clear[x, y, z];
-  coor = Flatten[
-    MapIndexed[
-     ReleaseHold@If[#1 == 0, Hold[Sequence[]], Join[#2, {#1}]] &, 
-     data, {3}], 2];
-  func = Fit[coor, {1, x, y, z, x y, x z, y z, z^2, x^2, y^2(*, z^3, x^3, y^3, z x x, y x x, z y y , x y y , y z z, x z z*)}, {x, y, z}];
-  {x, y, z} = RotateDimensionsRight[Array[{#1, #2, #3} &, Dimensions[data]]];
-  func
-  ]
+	Clear[x, y, z];
+	coor = Flatten[MapIndexed[ReleaseHold@If[#1 == 0, Hold[Sequence[]], Join[#2, {#1}]]&, data, {3}], 2];
+	
+	func = Fit[coor, {1, x, y, z, x y, x z, y z, z^2, x^2, y^2(*, z^3, x^3, y^3, z x x, y x x, z y y , x y y , y z z, x z z*)}, {x, y, z}];
+	{x, y, z} = RotateDimensionsRight[Array[{#1, #2, #3} &, Dimensions[data]]];
+	func
+]
 
 
 (* ::Subsection:: *)

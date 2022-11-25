@@ -664,13 +664,16 @@ MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, scale, dim, low, sense}
 
 MeanCombine[sig_] := Mean[sig];
 
+
 RSSCombine = Compile[{{sig, _Complex, 1}}, 
 	Abs@Sqrt[sig.Conjugate[sig]],
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
+
 RSSCovCombine = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}}, 
 	Abs@Sqrt[sig.cov.Conjugate[sig]],
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
 
 RSSCovCombineSNR = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}}, 
 	Sqrt[2] Abs@Sqrt[Conjugate[sig].cov.sig],
@@ -685,6 +688,7 @@ RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex
 	(sig.cov.Conjugate[sen])/Sqrt[sen.cov.Conjugate[sen]],
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
+
 RoemerNCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
 	Sqrt[2] Abs[(Conjugate[sen].cov.sig)]/Sqrt[Conjugate[sen].cov.sen], 
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
@@ -697,6 +701,7 @@ RoemerNCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Comp
 RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
 	(sig.cov.Conjugate[sen])/(sen.cov.Conjugate[sen]),
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
 
 RoemerSCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
 	Sqrt[2] Abs[(Conjugate[sen].cov.sig)]/(Conjugate[sen].cov.sen),
@@ -712,7 +717,9 @@ WSVDCombine[sig_, cov_] := Block[{weight},
 	Map[WSVDCombineT[#, weight] &, sig, {-3}]
 ];
 
+
 CovToWeight[cov_] := Conjugate[DiagonalMatrix[Sqrt[1./#[[1]]]].#[[2]] &[Eigensystem[cov]]];
+
 
 WSVDCombineT[sig_, weight_] := Block[{u, s, v, scale},
 	{u, s, v} = SingularValueDecomposition[weight.sig,1];
@@ -750,7 +757,6 @@ MakeHammingFilteri[{xi_?IntegerQ}] := MakeHammingFilteri[{xi}] = MakeHammingFilt
 
 MakeHammingFilteri[xi_?IntegerQ] := MakeHammingFilteri[xi] = MakeHammingFilterI[{-Floor[xi/2], Ceiling[xi/2] - 1}];
 
-
 MakeHammingFilterI[{{xs_?IntegerQ, xe_?IntegerQ}, {ys_?IntegerQ, ye_?IntegerQ}, {zs_?IntegerQ, ze_?IntegerQ}}] := MakeHammingFilterI[{{xs,xe},{ys,ye},{zs,zs}}] = Block[{xm, ym, zm},
 	{xm, ym, zm} = Max /@ Abs[{{xs, xe}, {ys, ye}, {zs, ze}}];
 	Table[Ham[x, xm] Ham[y, ym] Ham[z, zm], {z, zs, ze}, {y, ys, ye}, {x, xs, xe}]
@@ -765,6 +771,7 @@ MakeHammingFilterI[{xs_?IntegerQ, xe_?IntegerQ}] := MakeHammingFilterI[{xs,xe}] 
 	xm = Max[Abs[{xs, xe}]];
 	Table[Ham[x, xm], {x, xs, xe}]
 ]
+
 
 Ham[x_, xm_] := (0.54 + 0.46 Cos[(Pi x)/xm])
 
