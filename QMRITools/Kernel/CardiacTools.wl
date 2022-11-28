@@ -451,7 +451,7 @@ CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?Numbe
 		(*plot hear geo*)
 		sp = Ceiling[Dimensions[mask]/{12, 24, 24}];
 		{spz, spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
-		maskCont = PlotMaskVolume[mask + maskp, vox];
+		maskCont = PlotContour[Reverse[Clip[mask + maskp,{0,1},{0,1}],2], vox, ContourColor->Gray];
 		n = (spz 0.6 vox[[1]]) {1, -1, 1}/vox;
 		vectorField = Table[
 			If[mask[[z, y, x]] == 0,
@@ -781,7 +781,7 @@ PlotSegmentation[mask_, inner_, outer_, {off_, offi_, offo_}, vox_] := Block[{vo
 	offop = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[offo, {}];
 	
 	Show[
-		PlotMaskVolume[mask, vox],
+		PlotContour[Reverse[mask,2], vox],
 		(*center points*)
 		ListPointPlot3D[offp, PlotStyle -> Directive[{Thick, Black, PointSize[Large]}]],
 		Graphics3D[{Thick, Black, Line[offp]}],
@@ -856,12 +856,13 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	
 	(*plane fit visualisation*)
 	If[OptionValue[ShowPlot],
-		surfpl = ListContourPlot3D[
+		(*surfpl = ListContourPlot3D[
 			(*fix for 13.1*)
 			RescaleData[GaussianFilter[mask, 1], Reverse@dim], 
 			
 			Contours -> {0.6}, Mesh -> False, PlotRange -> Transpose[{{0, 0, 0}, Reverse@(dim)}],
-			BoxRatios -> Reverse@(vox dim), ContourStyle -> Directive[Gray, Opacity[0.5]], Lighting -> "Neutral", Axes -> False];
+			BoxRatios -> Reverse@(vox dim), ContourStyle -> Directive[Gray, Opacity[0.5]], Lighting -> "Neutral", Axes -> False];*)
+		surfpl = PlotContour[mask, vox, ContourColor->Gray];
 		pointspl = ListPointPlot3D[
 			ptsi, PlotRange -> Transpose[{{0, 0, 0}, Reverse@dim}], BoxRatios -> 1, PlotStyle -> Red];
 		planepl = Plot3D[plane,  {x, 0, dim[[3]]}, {y, 0, dim[[2]]}, Mesh -> False, PlotStyle -> Directive[Red, Opacity[.2]], BoundaryStyle -> Darker[Red]];
@@ -887,14 +888,15 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	
 	If[OptionValue[ShowPlot],
 		(*Create Inner and outer surfaces*)
-		{surfout, surfin} = ListContourPlot3D[
+		{surfout, surfin} = PlotContour[{mout2, min2}[[#]], vox, ContourColor->{Red, Blue}[[#]]] & /@ {1, 2};
+			(*{surfout, surfin} = ListContourPlot3D[
 			(*fix for 13.1*)
 			RescaleData[GaussianFilter[min2 + mout2, 1], Reverse@dim], 
 			
 			Contours -> {0.3, 1.5}[[#]], Mesh -> False, 
 			PlotRange -> Transpose[{{0, 0, 0}, Reverse@(dim)}], Lighting -> "Neutral", 
 			BoxRatios -> Reverse@(vox dim), ContourStyle -> Directive[{Red, Blue}[[#]], Opacity[0.4]], 
-			MaxPlotPoints -> {50, 100}] & /@ {1, 2};
+			MaxPlotPoints -> {50, 100}] & /@ {1, 2};*)
 		
 		ptspl = Show[surfin, surfout, ListPointPlot3D[{Reverse[#]-1&/@ptsin[[;; ;;2]], Reverse[#]-1&/@ptsout[[;; ;;2]]}, PlotStyle -> {Blue, Red}], PerformanceGoal -> "Speed",ImageSize->350]
 	];

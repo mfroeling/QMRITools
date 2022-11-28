@@ -70,25 +70,25 @@ FilterTracts::usage =
 "FilterTracts[tracts, vox, select] ..."
 
 SelectTractTroughPlane::usage = 
-"SelectTractTroughPlane[] ..."
+"SelectTractTroughPlane ..."
 
 SelectTractTroughVol::usage = 
-"SelectTractTroughVol[] ..."
+"SelectTractTroughVol ..."
 
 SelectTractInVol::usage = 
-"SelectTractInVol[] ..."
+"SelectTractInVol ..."
 
 SelectTractPartInVol::usage = 
-"SelectTractPartInVol[] ..." 
+"SelectTractPartInVol ..." 
 
 PartTracts::usage = 
-"PartTracts[] ..."
+"PartTracts ..."
 
 SelectTracts::usage = 
-"SelectTracts[] ..."
+"SelectTracts ..."
 
 CombineROIs::usage = 
-"CombineROIs[] ..."
+"CombineROIs ..."
 
 
 FiberLength::usage = 
