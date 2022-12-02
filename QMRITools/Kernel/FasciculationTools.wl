@@ -32,6 +32,9 @@ EvaluateActivation::usage =
 "EvaluateActivation[out] allows to evaluate the activation deterction using FindActivations, where out is the output of that function with the option Activationoutput set to True.
 EvaluateActivation[out, actS] The same with the extra annalysis of the SelectActivations funcion output given as actS."
 
+AnalyzeActivations::usage = 
+"AnalyzeActivations[actMap, mask] Analysis of the activation map generated from the mask."
+
 SelectActivations::usage = 
 "SelectActivations[act] selects the activations above the given ActivationSize.
 SelectActivations[act, vox] selects the activations above the given ActivationSize where the activation size is in mm^3.
@@ -56,6 +59,12 @@ ThresholdMethod::usage =
 IgnoreSlices::usage =
 "IgnoreSlices is an option for FindActivations and SelectActivations. Determins how many slices of the start and end of the dataset are ignored."
 
+ActivationBackground::usage = 
+"ActivationBackground is an option for FindActivations. If all normalized signals, which range between 0-150, are below this value the algorithm does notihing."
+
+ActivationIterations::usage = 
+"ActivationBackground is an option for FindActivations. The maximum number of iteration that can be used for activation detection."
+
 ActivationOutput::usage = 
 "ActivationOutput is an option for ActivationOutput. If set to All aslo the mn and treshhold values are retured."
 
@@ -75,6 +84,8 @@ SelectActivations::dim =
 
 SelectActivations::size = 
 "The data and/or mask size are wrong. The activation should be the same size as the mask and the background mask. Current sizes are `1`, `2`, and `3` respectively.";
+
+AnalyzeActivations::size = "The mask and activation map must have the same Dimensions.";
 
 
 (* ::Section:: *)
@@ -97,23 +108,27 @@ Options[FindActivations] = Options[FindActivationsI] = {
 	ThresholdMethod -> "Both", 
 	ActivationOutput -> "Activation",
 	MaskDilation -> 0, 
-    IgnoreSlices -> {0, 0}
+    IgnoreSlices -> {0, 0},
+    ActivationBackground ->10,
+    ActivationIterations-> 10
 };
 
 SyntaxInformation[FindActivations] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-FindActivations[data_, ops : OptionsPattern[]] := FindActivationsI[NormalizeData[data, NormalizeMethod -> "Volumes"], 1, ops]
+FindActivations[data_, ops : OptionsPattern[]] := FindActivationsI[NormalizeData[data, NormalizeMethod -> "Volumes"],  ops]
 
 FindActivations[data_, mask_, ops : OptionsPattern[]] := FindActivationsI[
-		NormalizeData[data, DilateMask[mask, OptionValue[MaskDilation]], NormalizeMethod -> "Volumes"], mask, ops]
+		NormalizeData[data, DilateMask[mask, OptionValue[MaskDilation]], NormalizeMethod -> "Volumes"], ops]
 
-FindActivationsI[data_, mask_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, dat, act, mn ,tr},
+FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, dat, act, mn ,tr, itt, back},
 	
 	(*Get and check options*)
 	met = OptionValue[ThresholdMethod];
 	{sc, fr} = OptionValue[ActivationThreshold];
 	If[sc < 1 || fr > 1, Return[Message[FindActivations::tresh, sc, fr]]];
 	{start, stop} = OptionValue[IgnoreSlices];
+	itt = OptionValue[ActivationIterations];
+	back = OptionValue[ActivationBackground];
 	
 	(*set the threshold*)
 	{sc, fr} = Switch[met,
@@ -123,20 +138,19 @@ FindActivationsI[data_, mask_, OptionsPattern[]] := Block[{met, sc, fr, start, s
 	];
 	
 	(*perfomr the activation finding in the selected slices*)
-	dat = MaskData[data, mask];
-	dat = RotateDimensionsLeft[Transpose[dat[[start + 1 ;; -stop - 1]]]];
-			
-	act = FindActC[dat, sc, fr];
-	
+	dat = RotateDimensionsLeft[Transpose[data[[start + 1 ;; -stop - 1]]]];	
+	act = FindActC[dat, sc, fr, itt, back];
+
 	(*create extra ouput if needed*)
 	If[OptionValue[ActivationOutput]=!="Activation",
-		{mn, tr, sc, fr} = RotateDimensionsRight[MeanTresh[dat, act, sc, fr]];
-		mn = ToPackedArray@N@ArrayPad[mn, {{start, stop}, 0, 0}];
-		tr = ToPackedArray@N@ArrayPad[Transpose[{tr, sc, fr}], {{start, stop}, 0, 0, 0}];
+		{mn, tr, sc, fr} = RotateDimensionsRight[MeanTresh[dat, act, sc, fr, back]];
+		mn = ToPackedArray@ArrayPad[mn, {{start, stop}, {0, 0}, {0, 0}}, 0.];
+		tr = ToPackedArray@ArrayPad[Transpose[{tr, sc, fr}], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}, 0.];
 	];
-	
+		
 	(*give outpu*)
-	act = SparseArray@Round@ArrayPad[Transpose[RotateDimensionsRight[act]], {{start, stop}, 0, 0, 0}];
+	act = SparseArray[ArrayPad[Round[Transpose[RotateDimensionsRight[act]]], {{3, 3}, {0, 0}, {0, 0}, {0, 0}}]];
+
 	If[OptionValue[ActivationOutput]==="Activation", {act, data}, {act, data, mn ,tr}] 
   ]
 
@@ -145,63 +159,77 @@ FindActivationsI[data_, mask_, OptionsPattern[]] := Block[{met, sc, fr, start, s
 (*FindActC*)
 
 
-FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}}, Block[{ts, ti, c, i, mn, tr},
-	If[Total[t] <= 0.,
+FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0}, {back, _Real, 0}}, Block[
+	{tSelect, ti, cont, err, i, mn, tr, out},
+	
+	If[Mean[t] <= back,
 		(*if backgroud do nothing*)
-		t, 
+		0 t,
+		
 		(*find activation function*)
-		ts = ti = t;
-		c = True;
+		tSelect = ti = t;
+		cont = True;
+		err = False;
 		i = 0;
 		
 		(*keep find activation till convergence*)
-		While[c && i < 10, i++;
-			mn = Mean[ti];
+		While[cont && i <= it, 
+			i++;
 			(*select on fr only*)
-			ts = Select[t, # > fr mn &];
-			If[Length[ts]<=4,
-				(*check if selection is not to short*)
-				ti=t;
-				c=False;
-				,
+			mn = Mean[ti];
+			tSelect = Select[t, # > fr mn &];
+			If[Length[tSelect] <= 5, 
+				err = True; 
+				cont = False;
+				,			
 				(*perform selection on sd and fr*)
-				tr = Max[{0., Min[{1 - sc StandardDeviation[ts/mn], fr}]}];
-				ts = Select[t, # > tr mn &];
-				c = (ts =!= ti);
-				ti = ts;
+				tr = Min[{1 - (sc/mn) StandardDeviation[tSelect], fr}];
+				tSelect = Select[t, # > tr mn &];
+				If[Length[tSelect] <= 5, 
+					err = True;
+					cont = False;
+					,
+					cont = (tSelect =!= ti);
+					ti = tSelect;
+				];
 			];
 		];
 		
-		(*based on data vector without dropouts find correct thresshold*)
-		mn = Mean[ti];
-		tr = Max[{0.1, Min[{1 - sc StandardDeviation[ti/mn], fr}]}];
-		(*the activations*)
-		UnitStep[-t + tr mn]
+		If[err,
+			(*if while get into error do nothing*)
+			0 t,
+			(*based on data vector without dropouts find correct thresshold*)
+			mn = Mean[ti];
+			tr = Min[{1 - (sc/mn) StandardDeviation[ti], fr}];
+			UnitStep[-t + tr mn]
+		]
 	]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization->True]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MeanTresh*)
 
 
-MeanTresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}}, Block[{ts, ti, c, i, mn, tr},
-	If[Total[t] <= 0.,
+MeanTresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {back, _Real, 0}}, Block[
+	{ti, mn, sd, tr},
+	If[Mean[t] <= back,
 		(*if backgroud do nothing*)
 		{0, 0, 0, 0}, 
-		ti = Pick[t, s, 0.];
+		ti = Select[(1-s) t, #>0.&];
 		mn = Mean[ti];
-		tr = Max[{0.1, Min[{1 - sc StandardDeviation[ti/mn], fr}]}];
-		mn {1, tr, (1 - sc StandardDeviation[ti/mn]), fr}
+		sd = Ramp[1 - (sc/mn) StandardDeviation[ti]];
+		tr = Min[{sd, fr}];
+		mn {1, tr, sd, fr}
 	]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization->True]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*SelectActivations*)
 
 
-Options[SelectActivations]={ActivationSize->4, IgnoreSlices->{0,0}};
+Options[SelectActivations] = {ActivationSize->4, IgnoreSlices->{0,0}};
 
 SyntaxInformation[EvaluateActivation2]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
@@ -269,6 +297,54 @@ SelectActivationI[im_?MatrixQ,size_?IntegerQ]:=If[Total[Flatten[im]]<size,
 ]; 
 
 
+(* ::Subsection:: *)
+(*AnalyzeActivations*)
+
+
+AnalyzeActivations[act_,msk_]:=AnalyzeActivations[act,msk,""]
+
+AnalyzeActivations[act_,msk_,lab_]:=Block[{aDepth,aDim,mDepth,mDim,labs},
+	aDepth=ArrayDepth[act];
+	aDim=Dimensions[If[aDepth===4,act[[All,1]],act[[1,All,1]]]];
+	mDepth=ArrayDepth[msk];
+	mDim=Dimensions[If[mDepth==3,msk,msk[[All,1]]]];
+	
+	If[aDepth=!=(mDepth+1)||aDim=!=mDim, Return[Message[AnalyzeActivations::size]]];
+	
+	If[mDepth===3,
+		AnalyzeActivationsI[act,msk,lab],
+		labs=If[lab===""||Length[lab]=!=Length[act],"Vol_"<>StringPadLeft[ToString[#],3,"0"]&/@Range[Length[act]],lab];
+		Association[MapThread[AnalyzeActivationsI[#1,#2,#3]&,{act,Transpose@msk,labs}]]
+	]
+]
+
+
+AnalyzeActivationsI[act_,msk_,lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVols,nObs,mSd,quants,chance,chanceO,chanceV,vals,out},
+	sizes=N@Flatten[Map[If[Total[Flatten[#]]<=1,{},ComponentMeasurements[Image[#,"Bit"],"Count"][[All,2]]]&,act,{2}]];
+	
+	nActs=Length@sizes;
+	
+	mSize=Map[Total[Flatten[#]]&,msk];
+	mSizeT=Total@mSize;
+	
+	nSlices=Total@Unitize@mSize;
+	nVols=Length@act[[1]];
+	nObs=nSlices nVols;
+	
+	mSd=If[nActs>2,{Mean[sizes],StandardDeviation[sizes]},{0,0}];
+	quants=If[nActs>2,Quantile[sizes,{0.5,0.05,0.95}],{0,0,0}];
+	
+	chance=100. nActs/nVols;
+	chanceO=100. nActs/nObs;
+	chanceV = 1000. 100. nActs/nObs / mSizeT;
+	
+	vals=Flatten@{mSizeT,nActs,nObs,chance,chanceO,chanceV,mSd,quants};
+	
+	out=Association[Thread[{"ROI vol","Amount","Observ.","Chance/Vol","Chance/Obs","Chance/Vox","Mean Size","StDv Size","Median Size","5% Size","95% Size"}->vals]];
+	If[lab==="",out, Association[lab->out]]
+]
+
+
 (* ::Subsection::Closed:: *)
 (*EvaluateActivation*)
 
@@ -281,8 +357,8 @@ EvaluateActivation[{act_,dat_,mn_,tr_}]:=EvaluateActivation[act,dat,mn,tr,act]
 
 EvaluateActivation[{act_,dat_,mn_,tr_},actS_]:=EvaluateActivation[act,dat,mn,tr,actS]
 
-EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,dim,aim,
-	ddim},
+EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,dim,aim
+	(*ddim, zz, dd, yy ,xx, sl, dyn*)},
 	NotebookClose[plotwindow];
 	
 	actD=Normal[act];
@@ -294,6 +370,8 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 	aim = RotateDimensionsLeft[N@{actD-actSD, actSD, 0.actD, Clip[actD+actSD,{0,1}]}];
 	
 	ddim = Dimensions[datD];
+	{zz, dd, yy, xx} = ddim;
+	{sl,dyn} = Ceiling[{zz,dd}/2];
 		
 	PrintTemporary["Prepping Manipulate window"];
 	pan = Manipulate[
@@ -340,10 +418,10 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 		,{{sel,False,"Use Locator"},{True,False}}
 		,Delimiter
 		,{{m,1,"Number of act."},max,ControlType->SetterBar}
-		,{{n,1,"Position number"},1,Dynamic[l],1}
+		,{{n,1,"Position number"}, 1, Dynamic[l], 1}
 		,Delimiter
-		,{{sl, Ceiling[zz/2], "Slice"},1,zz,1}
-		,{{dyn, Ceiling[dd/2], "Dynamic"},1,dd,1}
+		,{{sl, 1, "Slice"}, 1, Dynamic[zz], 1}
+		,{{dyn, 1, "Dynamic"}, 1, Dynamic[dd], 1}
 		,Delimiter
 		,{{alpha, 0.5, "Opacity"},0,1}
 		,{{crs, True,"Show cross"},{True,False}}
@@ -359,13 +437,13 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 		{mean,ControlType->None},{tresh,ControlType->None},
 		
 		Initialization:>{
-			{zz,dd,yy,xx} = ddim,
-			{sl,dyn} = ddim[[1;;2]],
+			{zz, dd, yy, xx} = ddim,
+			{sl,dyn} = Ceiling[{zz,dd}/2],
 			max = Select[Sort[DeleteDuplicates[Flatten@Total@Transpose@actSD]],#>0&],
 			pos = Position[Round@Total@Transpose@actSD,#]&/@max
 		},
 		
-		SynchronousInitialization->False,
+		SynchronousInitialization->True,
 		SaveDefinitions->False,
 		ControlPlacement->Right
 	];

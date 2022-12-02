@@ -752,10 +752,10 @@ SyntaxInformation[PlotData] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[
 (*PlotData 1 dataset*)
 
 
-PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPattern[]]:= Module[
-	{data,dim,n,control,str,exp,clipMin, clipMax,reverse,start1,end1,start2,end2,dur,loop,tab1,tab2,depth,
+PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPattern[]]:= Module[{
+	data,dim,n,control,str,exp,clipMin, clipMax,reverse,start1,end1,start2,end2,dur,loop,tab1,tab2,depth,
 	x,xp,yp,min,max,minclip,maxclip,label,ps,color,lstyle,legend,fileType,size,pannel,aspect,or,rangex,rangey,frame,
-	mind,maxd,plab,plot,pdata,cfs,lab,pcol,ccol
+	mind,maxd,plab,plot,pdata,cfs,lab,pcol,ccol, ran
 	},
 	
 	NotebookClose[plotwindow];
@@ -805,11 +805,11 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Min Clipping", Row[{
 	        	Control@{{clipMin,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{minclip, Black, ""}, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
+	        	Control@{{minclip, Black, ""}, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"]&}
 	        }]},
 	        {"Max Clipping", Row[{
 	        	Control@{{clipMax,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{maxclip, White, "" }, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
+	        	Control@{{maxclip, White, "" }, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"]&}
 	        }]}
 		}]
 		,(*Plot style controls*)
@@ -942,7 +942,7 @@ PlotData[dat1_?ArrayQ, dat2_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1
 Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1,tab2,ccol,
 	x,xp,yp,min1,max1,min2,max2,mind1,maxd1,mind2,maxd2,reverse,or,plabs,plab,plot,aspect,cfs1,cfs2,
 	minclip1,maxclip1,minclip2,maxclip2,clipMax1,clipMin1,clipMax2,clipMin2,ps,legend,color1,color2,lstyle1,lstyle2,control,
-	pannel,pdata1,pdata2,flip,overlay,checksize,opac,diffr,fileType,size,leftright,lab,mpdim,leg,
+	pannel,pdata1,pdata2,flip,overlay,checksize,opac,diffr,fileType,size,leftright,lab,mpdim,leg, ran,
 	start1,end1,start2,end2,dur,loop,exp,dim1,dim2,prange,frame,adep1,adep2,maxabs,pcol,pcol1,pcol2},
 	
 	NotebookClose[plotwindow];
@@ -1156,7 +1156,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		plabs={{},{#1},{#1,#2}}[[#3-1]]&;
 		plab=If[adep1 == adep2,
 			(*if both are no label set bot to zero*)
-			If[label1!=""||label2!="",{label1,label2}={label1,label2} /. ""->" "];
+			If[label1!=""||label2!="", {label1,label2} = {label1,label2} /. ""->" "];
 			{
 				If[label1==="",None,label1],
 				If[label2==="",None,label2],
@@ -1354,7 +1354,8 @@ PlotData3D[dat_?ArrayQ, v:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1}] := DynamicM
 		(*select the correct plot*)
 		Column[{
 			(*{t1,t2,t3,t4,t5,t6,t7},*)
-			Switch[show, 1, plax, 2, plcor, 3, plsag, 4, imall, 5, plsl3D, 6, plim3D, 7, merge]}]
+			Switch[show, 1, plax, 2, plcor, 3, plsag, 4, imall, 5, plsl3D, 6, plim3D, 7, merge]
+		}]
 		
 	    (*start control pannel*)
 	    ,
@@ -1414,7 +1415,7 @@ PlotData3D[dat_?ArrayQ, v:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1}] := DynamicM
 	    Delimiter,
 	    Column[{
 	      ManPannel["3D options", {
-	        { "Colorfunction 3D", Control@{{col3D, Automatic, ""}, colors3D}},
+	        { "Colorfunction 3D", Control@{{col3D, "WhiteBlackOpacity", ""}, colors3D}},
 	        {"Viewpoint", Control@{{vp, 3.5 {0.384, 0.709, 0.591}, ""}, views, ControlType -> SetterBar}},
 	        {"Show Planes", Row[{
 	           "Axial:  ", Control@{{planez, True, ""}, {True, False}},
@@ -2564,13 +2565,14 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,per
 (*PlotContour*)
 
 
-Options[PlotContour]={ContourColor->Gray, ContourOpacity->0.5, ContourColorRange->Automatic,ContourSize->"Dimensions",ColorFunction->"SunsetColors"};
+Options[PlotContour]={ContourColor->Gray, ContourOpacity->0.5, ContourColorRange->Automatic,ContourSize->"Dimensions",ColorFunction->"SunsetColors",Quality->""};
 
 SyntaxInformation[PlotContour]={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
 PlotContour[dati_,voxi_,OptionsPattern[]]:=Block[{data,vox,pvox,dim,fun, color, col, opac, style,colfunc,ran, coldat},
 
-	data=Rescale[ToPackedArray@N@Normal@dati];
+	data=Rescale[ToPackedArray@N@Normal@dati,{0, Quantile[DeleteCases[N@Flatten[dati],0.],0.98]}];
+	
 	(*prepare data*)
 	vox=Reverse[voxi];
 	pvox=If[OptionValue[ContourSize]=!="Dimensions",vox,{1,1,1}];
@@ -2590,8 +2592,10 @@ PlotContour[dati_,voxi_,OptionsPattern[]]:=Block[{data,vox,pvox,dim,fun, color, 
 		Function[{z,y,x},ColorData[OptionValue[ColorFunction]][coldat[[Clip[Round[x],{1,dim[[3]]}],Clip[Round[y],{1,dim[[2]]}],Clip[Round[z],{1,dim[[1]]}]]]]]
 	];
 	
+	{pt, mr}=If[OptionValue[Quality]==="High",{10,2},{10,1}];
+	
 	ContourPlot3D[fun[x+pvox[[3]],y+pvox[[2]],z+pvox[[1]]],{z,-0.5pvox[[1]],pvox[[1]](dim[[1]]+0.5)},{y,-0.5pvox[[2]],pvox[[2]](dim[[2]]+0.5)},{x,-0.5pvox[[3]],pvox[[3]](dim[[3]]+0.5)},
-		PlotPoints->10,MaxRecursion->1,Contours->{0.5},Mesh->False,BoundaryStyle->None,Axes->True,
+		PlotPoints->pt,MaxRecursion->mr,Contours->{0.5},Mesh->False,BoundaryStyle->None,Axes->True,
 		ColorFunctionScaling->False,ColorFunction->colfunc,SphericalRegion->True,ImageSize->300,
 		ContourStyle->style,Lighting->"Neutral",BoxRatios->vox dim,PlotRange->Transpose[{{0,0,0},pvox dim}]
 	]
