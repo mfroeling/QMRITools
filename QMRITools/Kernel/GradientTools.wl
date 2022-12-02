@@ -1337,21 +1337,17 @@ Options[BmatrixCalc] = {UseGrad -> {1, 1, {1, 1}, 1, 1}, OutputType -> "Matrix",
 
 SyntaxInformation[BmatrixCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-BmatrixCalc[folder_, grads_, opts : OptionsPattern[]] := Module[
-  {seq, Gt, hw, te, bmat, t},
-  seq = ImportGradObj[folder];
-  bmat = Map[(
-      {Gt, hw, te} = 
-       GradSeq[seq, t, #, UseGrad -> OptionValue[UseGrad], 
-        UnitMulti -> OptionValue[UnitMulti], 
-        FilterRules[{opts}, Options[GradSeq]]];
-      Chop[GradBmatrix[
-        Gt, hw, te, t, Method -> OptionValue[Method], StepSizeI -> OptionValue[StepSizeI], 
-        FilterRules[{opts}, Options[GradBmatrix]]
-        ]]
-      ) &, grads];
-  Switch[OptionValue[OutputType], "Matrix", bmat, "Gradient", 
-   BmatrixInv[#] & /@ bmat]]
+BmatrixCalc[folder_, grads_, opts : OptionsPattern[]] := Module[{seq, Gt, hw, te, bmat, t},
+	
+	seq = ImportGradObj[folder];
+	
+	bmat = Map[(
+		{Gt, hw, te} = GradSeq[seq, t, #, UseGrad -> OptionValue[UseGrad], UnitMulti -> OptionValue[UnitMulti], FilterRules[{opts}, Options[GradSeq]]];
+		Chop[GradBmatrix[Gt, hw, te, t, Method -> OptionValue[Method], StepSizeI -> OptionValue[StepSizeI], FilterRules[{opts}, Options[GradBmatrix]]]]
+	) &, grads];
+	
+	Switch[OptionValue[OutputType], "Matrix", bmat, "Gradient", BmatrixInv[#] & /@ bmat]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1361,23 +1357,21 @@ BmatrixCalc[folder_, grads_, opts : OptionsPattern[]] := Module[
 SyntaxInformation[BmatrixInv] = {"ArgumentsPattern" -> {_, _.}};
 
 BmatrixInv[bm_, bvi___] := Module[{bv, sigb, sign, gr},
-  If[ArrayDepth[bm] == 2,
-   
-   Transpose[BmatrixInv[#,bvi]& /@ bm],
-   
-   bv = Total[bm[[1 ;; 3]]];
-   sigb=Sign[bv];
-   bv = If[bvi === Null, sigb bv, bvi];
-   
-   sign = If[Sign[bm[[3]]] == 0, If[Sign[bm[[2]]] == 0, If[Sign[bm[[1]]] == 0,
-     {1, 1, 1},
-     SignNoZero[bm[[{1, 3, 4}]] sigb]], SignNoZero[bm[[{4, 2, 5}]] sigb]], SignNoZero[bm[[{5, 6, 3}]] sigb]
-     ];
-    
-   gr = sign*Sqrt[sigb bm[[1 ;; 3]]/(bv /. 0. -> Infinity)];
-   
-   {bv, gr}]
-   ]
+	If[ArrayDepth[bm] == 2,
+		Transpose[BmatrixInv[#,bvi]& /@ bm]
+		,
+		bv = Total[bm[[1 ;; 3]]];
+		sigb=Sign[bv];
+		bv = If[bvi === Null, sigb bv, bvi];
+		sign = If[Sign[bm[[3]]] == 0, If[Sign[bm[[2]]] == 0, If[Sign[bm[[1]]] == 0,
+			{1, 1, 1},
+			SignNoZero[bm[[{1, 3, 4}]] sigb]], SignNoZero[bm[[{4, 2, 5}]] sigb]], SignNoZero[bm[[{5, 6, 3}]] sigb]
+		];
+		
+		gr = sign*Sqrt[sigb bm[[1 ;; 3]]/(bv /. 0. -> Infinity)];
+		{bv, gr}
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1504,45 +1498,49 @@ GetGradientScanOrder[file_?StringQ, grd_?ListQ, bval_?ListQ,OptionsPattern[]] :=
 
 SyntaxInformation[ImportGradObj] = {"ArgumentsPattern" -> {_}};
 
-ImportGradObj[folder_] := 
- Module[{files, imp, obj}, 
- 	files = FileNames["GR*.acq", folder];
- 	(
- 		imp = Import[#, "Lines"];
- 		obj = (obj = StringSplit[StringDrop[StringTrim[#], -1], " = "];
- 		obj[[1]] -> ToExpression[obj[[2]]] // N) & /@ imp[[2 ;;]];
- 		StringReplace[imp[[1]], "$ modify_object " -> ""] -> obj
- 		) & /@files
- 	]
+ImportGradObj[folder_] := Block[{files, imp, obj, name},
+	files = FileNames["GR*.acq", folder];
+	(
+		imp = Import[#, "Lines"];
+		name = StringTrim[StringTrim[StringReplace[imp[[1]], {"$ modify_object " -> "", "GR`" -> "", "[" -> "_", "]" -> "_"}], "\""], "_"];
+		obj = (
+			obj = StringSplit[StringDrop[StringTrim[#], -1], " = "];
+			obj[[1]] -> ToExpression[obj[[2]]] // N
+		) & /@ imp[[2 ;;]];
+	
+		name -> obj
+	) & /@ files
+]
 
-ImportGradObj[{base_, xbase_}] := 
- Module[{objectNames, objects, name, vals, props},
-  objectNames = {"\"GR`blip\"", "\"GR`d_echo\"",
-    "\"GR`diff[0]\"", "\"GR`diff[1]\"", "\"GR`diff[2]\"",
-    "\"GR`diff_2nd[0]\"", "\"GR`diff_2nd[1]\"", "\"GR`diff_2nd[2]\"",
-    "\"GR`r_diff[0]\"", "\"GR`r_diff[1]\"", "\"GR`r_diff[2]\"",
-    "\"GR`diff_crush[0]\"", "\"GR`diff_crush[1]\"",
-    "\"GR`m[0]\"", "\"GR`mc[0]\"", "\"GR`md\"",
-    "\"GR`mf_base[0]\"", "\"GR`mf_base[1]\"", "\"GR`pf[0]\"", 
-    "\"GR`pf[1]\"", "\"GR`sf_base[0]\"", "\"GR`sf_base[1]\"",
-    "\"GR`py\"",
-    "\"GR`r_echo\"", "\"GR`s_echo\"",
-    "\"GR`r_ex\"", "\"GR`s_ex\"",
-    "\"GR`s_ex1\"", "\"GR`s_ex2\"", "\"GR`s_diff_echo\"", 
-    "\"GR`TM_crush\""
-    };
-  
-  objects = Flatten[Partition[SplitBy[Import[#, "Lines"], (StringTake[#, 1] === "$" &)],2] & /@ {base, xbase}, 1];
-  objects = Sort@DeleteCases[(
-  	name = Last[StringSplit[First@First@#]];
-  	If[MemberQ[objectNames, name],
-  		vals = #[[2]];
-  		vals = (
-  			props = StringSplit[StringDrop[StringTrim[#], -1], " = "];
-  			props[[1]] -> ToExpression[props[[2]]] // N
-  		) & /@ vals;
-  		name -> vals
-  	]) & /@ objects, Null]
+ImportGradObj[{base_, xbase_}] := Module[{objectNames, objects, name, vals, props},
+	objectNames = {
+		"\"GR`blip\"", "\"GR`d_echo\"",
+		"\"GR`diff[0]\"", "\"GR`diff[1]\"", "\"GR`diff[2]\"",
+		"\"GR`diff_2nd[0]\"", "\"GR`diff_2nd[1]\"", "\"GR`diff_2nd[2]\"",
+		"\"GR`r_diff[0]\"", "\"GR`r_diff[1]\"", "\"GR`r_diff[2]\"",
+		"\"GR`diff_crush[0]\"", "\"GR`diff_crush[1]\"",
+		"\"GR`m[0]\"", "\"GR`mc[0]\"", "\"GR`md\"",
+		"\"GR`mf_base[0]\"", "\"GR`mf_base[1]\"", "\"GR`pf[0]\"",
+		"\"GR`pf[1]\"", "\"GR`sf_base[0]\"", "\"GR`sf_base[1]\"",
+		"\"GR`py\"",
+		"\"GR`r_echo\"", "\"GR`s_echo\"",
+		"\"GR`r_ex\"", "\"GR`s_ex\"",
+		"\"GR`s_ex1\"", "\"GR`s_ex2\"", "\"GR`s_diff_echo\"",
+		"\"GR`TM_crush\""
+	};
+	
+	objects = Flatten[Partition[SplitBy[Import[#, "Lines"], (StringTake[#, 1] === "$" &)],2] & /@ {base, xbase}, 1];
+	objects = Sort@DeleteCases[(
+		name = Last[StringSplit[First@First@#]];
+		If[MemberQ[objectNames, name],
+			vals = #[[2]];
+			vals = (
+				props = StringSplit[StringDrop[StringTrim[#], -1], " = "];
+				props[[1]] -> ToExpression[props[[2]]] // N
+			) & /@ vals;
+			name -> vals
+		]
+	) & /@ objects, Null]
 ]
 
 
@@ -1554,128 +1552,115 @@ Options[GradSeq] = {UseGrad -> {0, 1, {1, 0}, 1}, FlipGrad -> False, UnitMulti -
 
 SyntaxInformation[GradSeq] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Module[{
-   seq, rule, G, slope, leng, start, repn, repf, repi, dur, ori, flip,
-    grepi1, grepi2, gr180, grdiff, grex, unit, func, name, str, seqt, 
-   startRep, orVec, t180, te, hw, i, usegrad, grflow, g1, g2, g3, t1, 
-   t2, t3, t4, t901, t902, t1801, t1802, flipg, AP},
-  
-  unit = OptionValue[UnitMulti];
-  Clear[t];
-  
-  AP = If[OptionValue[PhaseEncoding] == "A"||OptionValue[PhaseEncoding] == "R", 1, -1];
-  
-  flipg = 
-   If[MemberQ[pars[[All, 1]], "\"GR`s_diff_echo\""], 
-   	{"\"GR`s_echo\"", "\"GR`d_echo\"", "\"GR`r_echo\""}, 
-   	{"\"GR`s_echo\"", "\"GR`d_echo\"", "\"GR`r_echo\"", "\"GR`s_ex1\"", "\"GR`s_ex2\"", "\"GR`diff_crush[1]\"", "\"GR`diff_crush[0]\""}];
-  
-  grepi1 = {"\"GR`mc[0]\"", "\"GR`md\""};
-  grepi2 = {"\"GR`blip\"", "\"GR`m[0]\"", "\"GR`py\""};
-  
-  gr180 = {"\"GR`d_echo\"", "\"GR`r_echo\"", "\"GR`s_echo\"", 
-    "\"GR`diff_crush[0]\"", "\"GR`diff_crush[1]\"", 
-    "\"GR`s_diff_echo\"", "\"GR`s_ex1\"", "\"GR`s_ex2\"", 
-    "\"GR`TM_crush\""};
-  grex = {"\"GR`r_ex\"", "\"GR`s_ex\""};
-  
-  grflow = {
-  	"\"GR`sf_base[0]\"", "\"GR`sf_base[1]\"", 
-    "\"GR`mf_base[0]\"", "\"GR`mf_base[1]\"",
-     "\"GR`pf[0]\"", "\"GR`pf[1]\""
-     };
-  
-  grdiff = {"\"GR`diff[2]\"", "\"GR`diff_2nd[2]\""};
-    
-  usegrad = OptionValue[UseGrad];
-  (*{grex, gr180, {grepi1, grepi2}, grdiff, grflow}*)
-  If[Length[usegrad] == 4, AppendTo[usegrad, 0]];
-  seqt = Transpose[DeleteCases[(
-         
-         name = #[[1]];
-         
-         If[
-          MemberQ[Flatten[
-            usegrad {grex, gr180, {grepi1, grepi2}, grdiff, grflow}], 
-           name], rule = #[[2]];
-          
-          G = (
-          	str = If[("gr_str" /. rule) != 0,"gr_str" /. rule,("gr_str_step"*"gr_str_factor_max") /. rule];
-          	If[("gr_lenc" /. rule) >= 0.,str,((str/"gr_slope")*("gr_slope" + "gr_lenc")) /. rule]
-          	)unit;
-          
-          G = If[MemberQ[flipg, name] && OptionValue[FlipGrad], -G, G];
-          G = If[MemberQ[Join[grepi1, grepi2], name], AP*G, G];
-          
-          (*{slope,leng,dur,start,repn,repf,repi,ori}={
-          If[("gr_lenc"/.rule)\[GreaterEqual]0.,
-          "gr_slope"/.rule,("gr_slope"+"gr_lenc")/.rule] unit,
-          Abs[("gr_lenc"/.rule)] unit,
-          ("gr_dur"/.rule) unit,
-          (("gr_time"-"gr_ref")/.rule) unit,
-          "gr_repetitions",
-          "gr_rep_alt_factor",
-          ("gr_interval"/.rule) unit,
-          "gr_ori"
-          }/.rule;*)
-          
-          slope = If[("gr_lenc" /. rule) >= 0.,"gr_slope" /. rule,("gr_slope" + "gr_lenc") /. rule] unit;
-          leng = Abs[("gr_lenc" /. rule)] unit;
-          dur = ("gr_dur" /. rule) unit;
-          start = (("gr_time" - "gr_ref") /. rule) unit;
-          repn = "gr_repetitions" /. rule;
-          repf = "gr_rep_alt_factor" /. rule;
-          repi = ("gr_interval" /. rule) unit;
-          ori = "gr_ori" /. rule;
-          
-          orVec = RotateLeft[If[MemberQ[grdiff, name], grad // N, {0, 0, 1} // N],Abs[ori - 2]];
-          
-          func = Transpose[
-            Table[flip = repf^(i + 1);
-             startRep = start + (i - 1) (dur + repi);
-             t1 = startRep;
-             t2 = startRep + slope;
-             t3 = startRep + slope + leng;
-             t4 = startRep + 2 slope + leng;
-             g1 = (G/slope) (t - t1);
-             g2 = G;
-             g3 = G - ((G/slope) (t - t3));
-             
-             orVec*Piecewise[{{flip g1, t1 <= t <= t2}, {flip g2, 
-                 t2 <= t <= t3}, {flip g3, t3 <= t <= t4}}]
-             , {i, 1, repn}]
-            ];
-            
-          func = If[MemberQ[grdiff, name],
-            (OptionValue[FlipAxes][[1]])*func[[OptionValue[SwitchAxes][[1]]]],
-            Total[#]&/@(OptionValue[FlipAxes][[2]]*func[[OptionValue[SwitchAxes][[2]]]])
-            ]
-          ]
-         ) & /@ pars, Null]
-     ];
-     
-  seq = Total[Flatten[#]] & /@ seqt;
-  
-  te = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "\"GR`m[0]\""][[1]]][[1, 2]]) unit;
-  
-  If[!StringQ["\"GR`s_echo\"" /. pars] && StringQ["\"GR`s_diff_echo\"" /. pars],
-   t180 = ("gr_time" /.Take[pars, Position[pars[[All, 1]], "\"GR`s_echo\""][[1]]][[1,2]]) unit;
-   hw = Piecewise[{{1, 0 <= t <= t180}, {-1, t180 <= t (*<= te*)}}];];
-  
-  If[!StringQ["\"GR`s_echo\"" /. pars] && !StringQ["\"GR`s_diff_echo\"" /. pars],
-   t1801 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "\"GR`s_echo\""][[1]]][[1,2]]) unit;
-   t1802 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "\"GR`s_diff_echo\""][[1]]][[1, 2]]) unit;
-   hw = Piecewise[{{1, 0 <= t <= t1801}, {-1, t1801 <= t <= t1802}, {1, t1802 <= t (*<= te*)}}];
-   ];
-  
-  If[!StringQ["\"GR`s_ex1\"" /. pars] && !StringQ["\"GR`s_ex2\"" /. pars],
-   t901 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "\"GR`s_ex1\""][[1]]][[1, 2]]) unit;
-   t902 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "\"GR`s_ex2\""][[1]]][[1, 2]]) unit;
-   hw = Piecewise[{{1, 0 <= t <= t901}, {-1, t902 <= t (*<= te*)}}];
-   ];
-  
-  {PiecewiseExpand/@seq, PiecewiseExpand@hw, te}
-  ]
+GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Block[{
+	seq, rule, G, slope, leng, start, repn, repf, repi, dur, ori, flip,
+	grepi1, grepi2, gr180, grdiff, grex, unit, func, name, str, seqt,
+	startRep, orVec, t180, te, hw, i, usegrad, grflow, g1, g2, g3, t1,
+	t2, t3, t4, t901, t902, t1801, t1802, flipg, AP, Gd},
+	
+	unit = OptionValue[UnitMulti];
+	Clear[t];
+	
+	AP = If[OptionValue[PhaseEncoding] == "A"||OptionValue[PhaseEncoding] == "R", 1, -1];
+	
+	flipg = If[MemberQ[pars[[All, 1]], "s_diff_echo"],
+		{"s_echo", "d_echo", "r_echo"},
+		{"s_echo", "d_echo", "r_echo", "s_ex1", "s_ex2", "diff_crush_1", "diff_crush_0"}
+	];
+	
+	grepi1 = {"mc_0", "md"};
+	grepi2 = {"blip", "m_0", "py"};
+	
+	gr180 = {"d_echo", "r_echo", "s_echo", "diff_crush_0", "diff_crush_1", "s_diff_echo", "s_ex1", "s_ex2",	"TM_crush"};
+	
+	grex = {"r_ex", "s_ex"};
+	
+	grflow = {"sf_base_0", "sf_base_1", "mf_base_0", "mf_base_1", "pf_0", "pf_1" };
+	
+	grdiff = {"diff_2", "diff_2nd_2"};
+	
+	Gd = Norm[Max[Abs[{"gr_str", ("gr_str_step"*"gr_str_factor_max")} /. #]] & /@ Select[({"diff_0", "diff_1", "diff_2"} /. pars), ! StringQ[#] &]];
+	
+	usegrad = OptionValue[UseGrad];
+	
+	(*{grex, gr180, {grepi1, grepi2}, grdiff, grflow}*)
+	If[Length[usegrad] == 4, AppendTo[usegrad, 0]];
+	
+	seqt = Transpose[DeleteCases[(
+		
+		name = #[[1]];
+		If[MemberQ[Flatten[usegrad {grex, gr180, {grepi1, grepi2}, grdiff, grflow}], name], 
+			
+			rule = #[[2]];
+			
+			G = unit If[name === "diff_2" || name === "diff_2nd_2",
+				Gd,
+				str = If[("gr_str" /. rule) != 0,"gr_str" /. rule,("gr_str_step"*"gr_str_factor_max") /. rule];
+				If[("gr_lenc" /. rule) >= 0.,str,((str/"gr_slope")*("gr_slope" + "gr_lenc")) /. rule]
+			];
+			
+			G = If[MemberQ[flipg, name] && OptionValue[FlipGrad], -G, G];
+			G = If[MemberQ[Join[grepi1, grepi2], name], AP*G, G];
+			
+			slope = If[("gr_lenc" /. rule) >= 0.,"gr_slope" /. rule,("gr_slope" + "gr_lenc") /. rule] unit;
+			leng = Abs[("gr_lenc" /. rule)] unit;
+			dur = ("gr_dur" /. rule) unit;
+			start = (("gr_time" - "gr_ref") /. rule) unit;
+			repn = "gr_repetitions" /. rule;
+			repf = "gr_rep_alt_factor" /. rule;
+			repi = ("gr_interval" /. rule) unit;
+			ori = "gr_ori" /. rule;
+			
+			orVec = RotateLeft[If[MemberQ[grdiff, name], grad // N, {0, 0, 1} // N],Abs[ori - 2]];
+			
+			func = Transpose[Table[
+				flip = repf^(i + 1);
+				startRep = start + (i - 1) (dur + repi);
+				t1 = startRep;
+				t2 = startRep + slope;
+				t3 = startRep + slope + leng;
+				t4 = startRep + 2 slope + leng;
+				g1 = (G/slope) (t - t1);
+				g2 = G;
+				g3 = G - ((G/slope) (t - t3));
+				
+				orVec*Piecewise[{
+					{flip g1, t1 <= t <= t2}, 
+					{flip g2, t2 <= t <= t3}, 
+					{flip g3, t3 <= t <= t4}
+				}]
+			, {i, 1, repn}]];
+			
+			func = If[MemberQ[grdiff, name],
+				(OptionValue[FlipAxes][[1]])*func[[OptionValue[SwitchAxes][[1]]]], 
+				Total[#]&/@(OptionValue[FlipAxes][[2]]*func[[OptionValue[SwitchAxes][[2]]]])
+			]
+		]
+	) & /@ pars, Null]];
+	
+	seq = Total[Flatten[#]] & /@ seqt;
+	
+	te = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "m_0"][[1]]][[1, 2]]) unit;
+	
+	If[!StringQ["s_echo" /. pars] && StringQ["s_diff_echo" /. pars], 
+		t180 = ("gr_time" /.Take[pars, Position[pars[[All, 1]], "s_echo"][[1]]][[1,2]]) unit;
+		hw = Piecewise[{{1, 0 <= t <= t180}, {-1, t180 <= t (*<= te*)}}];
+	];
+	
+	If[!StringQ["s_echo" /. pars] && !StringQ["s_diff_echo" /. pars],
+		t1801 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "s_echo"][[1]]][[1,2]]) unit;
+		t1802 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "s_diff_echo"][[1]]][[1, 2]]) unit;
+		hw = Piecewise[{{1, 0 <= t <= t1801}, {-1, t1801 <= t <= t1802}, {1, t1802 <= t (*<= te*)}}];
+	];
+	
+	If[!StringQ["s_ex1" /. pars] && !StringQ["s_ex2" /. pars],
+		t901 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "s_ex1"][[1]]][[1, 2]]) unit;
+		t902 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "s_ex2"][[1]]][[1, 2]]) unit;
+		hw = Piecewise[{{1, 0 <= t <= t901}, {-1, t902 <= t (*<= te*)}}];
+	];
+		
+	{PiecewiseExpand/@seq, PiecewiseExpand@hw, te}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1686,35 +1671,32 @@ Options[GradBmatrix] = {OutputPlot -> False, Method -> "Analytical", StepSizeI -
 
 SyntaxInformation[GradBmatrix] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-GradBmatrix[Gti_, hw_, te_, t_, OptionsPattern[]] := Module[{Ft, Ft2, Ft2i, s = 267.522 10^6, plot, bmat, Gtfn, Gt},
-  (*Gt = {1, -1, -1} Gti[[{2, 1, 3}]];*)
-  Gt=Gti;  
-  Switch[OptionValue[Method],
-   "Analytical",
-   Ft = Chop[Integrate[s hw # 10^-3 // N, t], 10^-5] & /@ Gt;
-   Ft2 = N[PiecewiseExpand[#]] & /@ {Ft[[1]] Ft[[1]], Ft[[2]] Ft[[2]], Ft[[3]] Ft[[3]], 2 Ft[[1]] Ft[[2]], 2 Ft[[1]] Ft[[3]], 2 Ft[[2]] Ft[[3]]};
-   Ft2i = Map[Integrate[#, t] &, Ft2];
-   bmat = ((Ft2i /. t -> te) - (Ft2i /. t -> 0));,
-   "Numerical",
-   Gtfn = Transpose[Table[s hw Gt 10^-3, {t, 0, te, OptionValue[StepSizeI]/1000}]];
-   Ft = Integrate[ListInterpolation[#, {0, te}][t], t] & /@ Gtfn;
-   Ft2 = {Ft[[1]] Ft[[1]], Ft[[2]] Ft[[2]], Ft[[3]] Ft[[3]], 2 Ft[[1]] Ft[[2]], 2 Ft[[1]] Ft[[3]], 2 Ft[[2]] Ft[[3]]};   
-   bmat = Quiet[(NIntegrate[#, {t, 0, te}]) & /@ Ft2];
-   ];
-   
-  If[OptionValue[OutputPlot],
-   plot = GraphicsGrid[
-       Partition[
-        Plot[#1, {t, 0, te}, PlotRange -> {{-.1 te, 1.1 te}, Full}, 
-           PlotPoints -> 500, Exclusions -> None,
-           PlotRange -> Full, AspectRatio -> .2, 
-           PlotStyle -> Directive[{Black, Thick}]] & /@ #, 3], 
-       ImageSize -> 1000
-       ] & /@ {Gt, Ft, Ft2};
-       
-   {bmat, plot},
-   bmat]
-   ]
+GradBmatrix[Gti_, hw_, te_, t_, OptionsPattern[]] := Block[{Ft, Ft2, Ft2i, s = 267.522 10^6, plot, bmat, Gtfn, Gt},
+	(*Gt = {1, -1, -1} Gti[[{2, 1, 3}]];*)
+	Gt=Gti;
+	Switch[OptionValue[Method],
+		"Analytical",
+		Ft = Chop[Integrate[s hw # 10^-3 // N, t], 10^-5] & /@ Gt;
+		Ft2 = N[PiecewiseExpand[#]] & /@ {Ft[[1]] Ft[[1]], Ft[[2]] Ft[[2]], Ft[[3]] Ft[[3]], 2 Ft[[1]] Ft[[2]], 2 Ft[[1]] Ft[[3]], 2 Ft[[2]] Ft[[3]]};
+		Ft2i = Map[Integrate[#, t] &, Ft2];
+		bmat = ((Ft2i /. t -> te) - (Ft2i /. t -> 0));,
+		
+		"Numerical",
+		Gtfn = Transpose[Table[s hw Gt 10^-3, {t, 0, te, OptionValue[StepSizeI]/1000}]];
+		Ft = Integrate[ListInterpolation[#, {0, te}][t], t] & /@ Gtfn;
+		Ft2 = {Ft[[1]] Ft[[1]], Ft[[2]] Ft[[2]], Ft[[3]] Ft[[3]], 2 Ft[[1]] Ft[[2]], 2 Ft[[1]] Ft[[3]], 2 Ft[[2]] Ft[[3]]};
+		bmat = Quiet[(NIntegrate[#, {t, 0, te}]) & /@ Ft2];
+	];
+	
+	If[OptionValue[OutputPlot],
+		plot = GraphicsGrid[Partition[
+			Plot[#1, {t, 0, te}, PlotRange -> {{-.1 te, 1.1 te}, Full}, PlotPoints -> 500, Exclusions -> None, PlotRange -> Full, AspectRatio -> .2,
+				PlotStyle -> Directive[{Black, Thick}]] & /@ #, 3], ImageSize -> 1000
+		] & /@ {Gt, Ft, Ft2};
+		{bmat, plot},
+		bmat
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1735,6 +1717,7 @@ GetSliceNormal[folder_String,part_Integer] := Module[{or,files,grads,norm,gradRo
 			grad
 		];
 	)&/@ meta,.00001];
+	
 	or = "ImageOrientation" /. meta[[1]];
 	gradRotmat=Transpose[{or[[1 ;; 3]], or[[4 ;; 6]],Cross[or[[1 ;; 3]], or[[4 ;; 6]]]}];
 	norm={0, 0, 1}.gradRotmat;
@@ -1748,8 +1731,7 @@ GetSliceNormal[folder_String,part_Integer] := Module[{or,files,grads,norm,gradRo
 
 SyntaxInformation[GetSliceNormalDir] = {"ArgumentsPattern" -> {_}};
 
-GetSliceNormalDir[Dfile_String] := 
- Module[{meta, directions, slice, groups, orientation,grads,norm,gradRotmat},
+GetSliceNormalDir[Dfile_String] := Module[{meta, directions, slice, groups, orientation,grads,norm,gradRotmat},
   meta = Import[Dfile, "MetaInformation"];
   directions = "(2005,1415)" /. meta;
   slice = "(2001,1018)" /. meta;
@@ -1784,7 +1766,7 @@ CalculateMoments[{Gt_, hw_, te_}, t_] := Module[{fun, M0, M1, M2, M3, vals},
 	vals = {M0, M1, M2, M3} /. t -> te;
 	
 	{{PiecewiseExpand/@Gt, M0, M1, M2, M3}, vals}
-  ]
+]
 
 
 (* ::Subsection:: *)
@@ -1799,21 +1781,19 @@ Options[CorrectBmatrix] = {MethodReg -> "Full"}
 
 SyntaxInformation[CorrectBmatrix] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
  
- CorrectBmatrix[bmati_, w_,OptionsPattern[]] := 
-  Block[{bmat, trans, bmi, rot, bm, bmnew, bminew},
-   bmat = If[Length[First[bmati]] == 7, BmatrixConv[bmati], bmati];
-   MapThread[(
-      trans = #1;
-      bmi = #2;
-      rot = ParametersToTransform[trans, OptionValue[MethodReg]];
-      bm = TensMat[(bmi/{1, 1, 1, 2, 2, 2})[[{2, 1, 3, 4, 6, 5}]]];
-      bmnew = rot.bm.Transpose[rot];
-      
-      (*Print[MatrixForm/@Round[{bm,bmnew,rot},.00001]];*)
-      bminew = ({1, 1, 1, 2, 2, 2} TensVec[bmnew]
-      )[[{2, 1, 3, 4, 6, 5}]]
-      ) &, {w, bmat}]
-   ]
+CorrectBmatrix[bmati_, w_,OptionsPattern[]] := Block[{bmat, trans, bmi, rot, bm, bmnew, bminew},
+	bmat = If[Length[First[bmati]] == 7, BmatrixConv[bmati], bmati];
+	MapThread[(
+		trans = #1;
+		bmi = #2;
+		rot = ParametersToTransform[trans, OptionValue[MethodReg]];
+		bm = TensMat[(bmi/{1, 1, 1, 2, 2, 2})[[{2, 1, 3, 4, 6, 5}]]];
+		bmnew = rot.bm.Transpose[rot];
+		
+		(*Print[MatrixForm/@Round[{bm,bmnew,rot},.00001]];*)
+		bminew = ({1, 1, 1, 2, 2, 2} TensVec[bmnew])[[{2, 1, 3, 4, 6, 5}]]
+	) &, {w, bmat}]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1824,12 +1804,7 @@ Options[CorrectGradients] = {MethodReg -> "Rotation"}
 
 SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
  
- CorrectGradients[grad_, w_,OptionsPattern[]] := 
-  Block[{gr,grnew,trans,rot},
-   MapThread[(
-      ParametersToTransform[#1, OptionValue[MethodReg]].#2
-      ) &, {w, grad}]
-   ]
+CorrectGradients[grad_, w_, OptionsPattern[]] := Block[{gr,grnew,trans,rot}, MapThread[(ParametersToTransform[#1, OptionValue[MethodReg]].#2) &, {w, grad}]]
 
 
 (* ::Subsubsection::Closed:: *)

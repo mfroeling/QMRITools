@@ -326,68 +326,73 @@ SyntaxInformation[ParameterFit] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 ParameterFit[dat : {_?ListQ ..}, opts : OptionsPattern[]] := ParameterFit[Flatten[#], opts] & /@ dat
 
-ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, mdat, sdat, fdat, sol ,par, fun},
-  
-  (*get option values*)
-  mod = OptionValue[FitFunction];
-  out = OptionValue[FitOutput];
-  met = OptionValue[Method];
-  
-  (*prepare data*)
-  data = dat;
-  data=Pick[data, Unitize[data], 1];
-  
-  (*initialization for mean and std*)
-  mdat = Mean[data];
-  sdat = StandardDeviation[data];
-
-  Off[NonlinearModelFit::"cvmit"]; Off[NonlinearModelFit::"sszero"];
-  
-  nodat = Length[data] <= 10;
-  (*perform the fit for one compartment*)
-  If[nodat,
-   Print["Not Enough data in the ROI"];
-   ,
-   (*fit data*)
-   fdat = FitData[data];
-   
-   Switch[mod,
-    (*SkewNormal dist parameter fit*)
-    "SkewNormal",
-    sol = NonlinearModelFit[fdat,  PDF[SkewNormalDistribution[Mu, Sigma, Alpha], x], {{Mu, mdat}, {Sigma, sdat}, {Alpha, 0}}, x, Method -> met];
-    par = sol["BestFitParameters"];
-    fun = SkewNormalDistribution[Mu, Sigma, Alpha] /. par;
-    ,
-    (*Normal dist parameter fit*)
-    "Normal",
-    sol = NonlinearModelFit[fdat, {PDF[NormalDistribution[Mu, Sigma], x],Sigma>0}, {{Mu, mdat}, {Sigma, sdat}}, x];
-    par = sol["BestFitParameters"];
-    fun = NormalDistribution[Mu, Sigma] /. par;
-    ,
-    _,
-    Message[ParameterFit::func, mod]]
-   ];
-  On[NonlinearModelFit::"cvmit"]; On[NonlinearModelFit::"sszero"];
-  
-  (*generate Output*)
-  Switch[out,
-   "Parameters",
-   If[nodat,
-   	{0,0},
-   	{Mean[fun], StandardDeviation[fun]}
-   ],
-   "ParametersExtra",
-   If[nodat,
-   	{0.,0.,0.,0.,0.},
-   	Flatten[{Mean[fun], StandardDeviation[fun], Quantile[fun, {.5, .05, .95}]}]
-   ],
-   "Function",
-   If[nodat,0.,sol],
-   "BestFitParameters",
-   If[nodat,0.,par[[All,2]]],
-   _, Message[ParameterFit::outp, out]
-   ]
-  ]
+ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, mdat, sdat, fdat, sol ,par, fun},
+	(*get option values*)
+	mod = OptionValue[FitFunction];
+	out = OptionValue[FitOutput];
+	met = OptionValue[Method];
+	
+	(*prepare data*)
+	data = Pick[dat, Unitize[dat], 1];
+	nodat = Length[data] <= 10;
+	
+	Off[NonlinearModelFit::"cvmit"]; Off[NonlinearModelFit::"sszero"];
+	(*perform the fit for one compartment*)
+	If[nodat,
+		Print["Not Enough data in the ROI"];
+		,
+		(*initialization for mean and std*)
+		mdat = Mean[data];
+		sdat = StandardDeviation[data];
+		
+		noFit = (sdat === 0.);
+		
+		If[!noFit,
+			(*fit data*)
+			fdat = FitData[data];
+			
+			Switch[mod,
+				(*SkewNormal dist parameter fit*)
+				"SkewNormal",
+				sol = NonlinearModelFit[fdat,  PDF[SkewNormalDistribution[Mu, Sigma, Alpha], x], {{Mu, mdat}, {Sigma, sdat}, {Alpha, 0}}, x, Method -> met];
+				par = sol["BestFitParameters"];
+				fun = SkewNormalDistribution[Mu, Sigma, Alpha] /. par;
+				,
+				(*Normal dist parameter fit*)
+				"Normal",
+				sol = NonlinearModelFit[fdat, {PDF[NormalDistribution[Mu, Sigma], x],Sigma>0}, {{Mu, mdat}, {Sigma, sdat}}, x];
+				par = sol["BestFitParameters"];
+				fun = NormalDistribution[Mu, Sigma] /. par;
+				,
+				_,
+				Message[ParameterFit::func, mod]
+			]
+		]
+	];
+	On[NonlinearModelFit::"cvmit"]; On[NonlinearModelFit::"sszero"];
+	
+	(*generate Output*)
+	Switch[out,
+		"Parameters",
+		Which[
+			nodat, {0.,0.},
+			noFit, {mdat,0.},
+			True,{Mean[fun], StandardDeviation[fun]}
+		],
+		"ParametersExtra",
+		Which[
+			nodat, {0.,0.,0.,0.,0.},
+			noFit, {mdat,0.,mdat,0.,0.},
+			True, Flatten[{Mean[fun], StandardDeviation[fun], Quantile[fun, {.5, .05, .95}]}]
+		],
+		"Function",
+		If[nodat||noFit,0.,sol],
+		"BestFitParameters",
+		If[nodat||noFit,0.,par[[All,2]]],
+		_, 
+		Message[ParameterFit::outp, out]
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -476,7 +481,7 @@ Module[{m, s, min, max, range, step, xdat, data, out},
 (*GetMaskMeans*)
 
 
-Options[GetMaskMeans] = {MeanMethod -> "SkewNormalDist", Method->Automatic}
+Options[GetMaskMeans] = {MeanMethod -> "SkewNormalDist"}
 
 SyntaxInformation[GetMaskMeans] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -487,10 +492,10 @@ GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] :=
   labels = If[name==="", {"mean", "std", "Median", "5%", "95%"}, name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
   ];
   out = If[Total[Flatten[#]]<=10,
-  	If[OptionValue[Method]===Automatic,Print["Less than 10 voxels, output will be 0."]];{0.,0.,0.,0.,0.}
+  	{0.,0.,0.,0.,0.}
   	,
  
-      fl = GetMaskData[dat, #, GetMaskOutput -> All];
+      fl = GetMaskData[dat, #, GetMaskOutput -> "All"];
 
       Switch[OptionValue[MeanMethod],
        "NormalDist",
