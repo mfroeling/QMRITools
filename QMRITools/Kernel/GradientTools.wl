@@ -87,6 +87,12 @@ UniqueBvalPosition::usage =
 "UniqueBvalPosition[bval] generates a list of all the unique bvalues and their positions.
 UniqueBvalPosition[bval, num] generates a list of all the unique bvalues and their positions that are present in the dataset equal or more than num times."
 
+SelectBvalueData::usage = 
+"SelectBvalueData[{data, vals}, sel] selects the volumes and bvalues based on sel. The value of sel can be a number, for which al higher bvalues are selected, or a list {min, max}.
+SelectBvalueData[{data, vals, grads}, sel] the same but also including the gradients.
+
+Output is {data, vals} or {data, vals, grads}."
+
 GetGradientScanOrder::usage = 
 "GetGradientScanOrder[grad, bval] determines the scanorder based on the txt file provided to the scanner as input. 
 GetGradientScanOrder[file, grad, bval] determines the scanorder based on the txt file provided to the scanner as input."
@@ -1445,6 +1451,24 @@ UniqueBvalPosition[bval_, num_: 1] := Block[{bvalU, pos},
   pos = Flatten[Position[bval, #]] & /@ bvalU;
   Transpose[Select[Transpose[{bvalU, pos}], Length[#[[2]]] >= num &]]
   ]
+
+
+(* ::Subsection::Closed:: *)
+(*SelectBvalueData*)
+
+
+SelectBvalueData[{dwi_?ArrayQ, val_?VectorQ}, sel_?NumberQ] := SelectBvalueData[{dwi, val, None}, {sel, Max[val]}]
+SelectBvalueData[{dwi_?ArrayQ, val_?VectorQ}, sel_?VectorQ] := SelectBvalueData[{dwi, val, None}, sel]
+SelectBvalueData[{dwi_?ArrayQ, val_?VectorQ, grad_?MatrixQ|None}, sel_?NumberQ] := SelectBvalueData[{dwi, val, grad}, {sel, Max[val]}]
+SelectBvalueData[{dwi_?ArrayQ, val_?VectorQ, grad_?MatrixQ|None}, sel_?VectorQ] := Block[{vals, pos, min, max, spos},
+	{min, max} = sel;
+	{vals, pos} = UniqueBvalPosition[val];
+	spos = Flatten[Pick[pos, Boole[Thread[min <= vals <= max]], 1]];
+	If[grad === None,
+		{dwi[[All, spos]], val[[spos]]},
+		{dwi[[All, spos]], val[[spos]], grad[[spos]]}
+	]
+]
 
 
 (* ::Subsection::Closed:: *)
