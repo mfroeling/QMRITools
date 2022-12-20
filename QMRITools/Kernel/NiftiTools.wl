@@ -140,6 +140,8 @@ RotateGradients::usage = "RotateGradients is an option for ImportNiiDiff."
 
 FlipBvec::usage = "FlipBvec is an option for ImportBvalvec."
 
+PositiveZ::usage = "PositiveZ  is an option for ImportBvalvec."
+
 UseVersion::usage = "UseVersion is an option for DcmToNii. For windows it allows to switch between different versions of dcm2niix.exe."
 
 DeleteOutputFolder::usage = "DeleteOutputFolder is an option of DcmToNii. If the ouput folder already exists it will be deleted."
@@ -800,7 +802,7 @@ ImportNiiHeader[file_, OptionsPattern[ImportNiiDefault]] :=
 (*ImportNiiDiff*)
 
 
-Options[ImportNiiDiff]={RotateGradients->False,FlipBvec->True}
+Options[ImportNiiDiff]={RotateGradients->False, FlipBvec->True}
 
 SyntaxInformation[ImportNiiDiff]= {"ArgumentsPattern" -> {_.,_.,_.,OptionsPattern[]}};
 
@@ -989,15 +991,10 @@ SyntaxInformation[ImportBvec] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
 ImportBvec[opts:OptionsPattern[]]:=ImportBvec[FileSelect["FileOpen", {".bvec"}, WindowTitle -> "Select *.bvec"], opts]
 
 ImportBvec[file_?StringQ, OptionsPattern[]]:=Module[{grads},
-	grads=Round[LineToList[file],0.00001];
-	grads=If[OptionValue[FlipBvec],
-		{1, -1, 1}#&/@grads,
-		{1, -1, 1}RotateLeft[#]&/@grads
-		];
-	If[OptionValue[PositiveZ],
-		If[Negative[#[[3]]],-#,#]&/@grads,
-		grads
-	]
+	grads = Round[LineToList[file],0.00001];
+	grads = If[OptionValue[FlipBvec], {1, -1, 1}RotateLeft[#]&/@grads, grads];
+	grads = If[OptionValue[PositiveZ], If[Negative[#[[3]]],-#,#]&/@grads, grads];
+	grads
 ]
 
 
@@ -1005,7 +1002,7 @@ ImportBvec[file_?StringQ, OptionsPattern[]]:=Module[{grads},
 (*ImportBvalvec*)
 
 
-Options[ImportBvalvec]={FlipBvec->False};
+Options[ImportBvalvec]={FlipBvec->False, PositiveZ->False};
 
 SyntaxInformation[ImportBvalvec] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
@@ -1076,7 +1073,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo, data, type, off
 	
 	fileo = If[fil == "", 
 		FileSelect["FileSave",{"*.nii"},"nifti",WindowTitle->"Select the destination file"], 
-		CheckExtension[fil,".nii"]
+		ConvertExtension[fil,".nii"]
 	];
 	If[fileo == Null || fileo === $Canceled || fileo === $Failed, Return[$Failed,Module]];
 	
@@ -1371,34 +1368,38 @@ SyntaxInformation[ExportBval] = {"ArgumentsPattern" -> {_,_.}};
 ExportBval[bv_] := ExportBval[bv, ""]
 
 ExportBval[bv_,fil_String] := Module[{file,bve},
-  
-  file = If[fil == "", FileSelect["FileSave", {"*.bval"}, "bval file", WindowTitle -> "Select the destination file"], fil];
-  If[file === Null, Return[]];
-  file = If[StringTake[file, -5] == ".bval", file, file <> ".bval"];
-  
-  bve=StringJoin[ToString[#] <> " " & /@ bv];
-  Export[file, bve, "Text"]
-  ]
+	
+	file = If[fil == "", FileSelect["FileSave", {"*.bval"}, "bval file", WindowTitle -> "Select the destination file"], fil];
+	If[file === Null, Return[]];
+	file = If[StringTake[file, -5] == ".bval", file, file <> ".bval"];
+	
+	bve = StringJoin[ToString[#] <> " " & /@ bv];
+	Export[file, bve, "Text"]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ExportBvec*)
 
 
-SyntaxInformation[ExportBvec] = {"ArgumentsPattern" -> {_,_.}};
+Options[ExportBvec]={FlipBvec->False, PositiveZ->False};
 
-ExportBvec[grad_] := ExportBvec[grad, ""]
+SyntaxInformation[ExportBvec] = {"ArgumentsPattern" -> {_,_.,OptionsPattern[]}};
 
-ExportBvec[grad_, fil_String] := Module[{file,grade},
-  
-  file = If[fil == "", FileSelect["FileSave", {"*.bvec"}, "bvec file", WindowTitle -> "Select the destination file"], fil];
-  If[file === Null, Return[]];
-  file = If[StringTake[file, -5] == ".bvec", file, file <> ".bvec"];
-  
-  grade=StringJoin[(ToString[#] <> " " & /@ #)] & /@ Transpose[Round[{1,1,-1}RotateRight[#]&/@grad,0.00001]];
-  (*grade=If[Negative[#[[3]]],-#,#]&/@grade;*)
-  Export[file, grade, "Text"]
-  ]
+ExportBvec[grad_ opts:OptionsPattern[]] := ExportBvec[grad, "", opts]
+
+ExportBvec[grad_, fil_String, OptionsPattern[]] := Module[{file,grade,grads},
+	file = If[fil == "", FileSelect["FileSave", {"*.bvec"}, "bvec file", WindowTitle -> "Select the destination file"], fil];
+	If[file === Null, Return[]];
+	file = If[StringTake[file, -5] == ".bvec", file, file <> ".bvec"];
+	
+	grads = grad;
+	grads = If[OptionValue[FlipBvec], {1, 1, -1}RotateLeft[#]&/@grads, grads];
+	grads = If[OptionValue[PositiveZ], If[Negative[#[[3]]],-#,#]&/@grads, grads];
+	
+	grade = StringJoin[(ToString[#] <> " " & /@ #)] & /@ Transpose[Round[grads, 0.00001]];
+	Export[file, grade, "Text"]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1410,17 +1411,15 @@ SyntaxInformation[ExportBmat] = {"ArgumentsPattern" -> {_,_.}};
 ExportBmat[bmat_] := ExportBmat[bmat, ""]
 
 ExportBmat[bmat_, fil_String] := Module[{bmate, file},
-  
-  file = If[fil == "", FileSelect["FileSave", {"*.txt"}, "txt file", WindowTitle -> "Select the destination file"], fil];
-  If[file == Null, Return[]];
-  file = If[StringTake[file, -4] == ".txt", file, file <> ".txt"];
-  bmate = If[Length[bmat[[1]]]==7,
-  	StringReplace[ToString[-{1,1,1,1,1,1}#&/@Round[bmat[[All, {2,4,6,1,5,3}]], 0.0001]], {"{{" -> "","}}" -> "", "}, {" -> "\n", ", " -> "\t\t"}],
-  	StringReplace[ToString[{1,1,1,1,1,1}#&/@Round[bmat[[All, {2,4,6,1,5,3}]], 0.0001]], {"{{" -> "","}}" -> "", "}, {" -> "\n", ", " -> "\t\t"}]
-  ];
-  
-  Export[file, bmate]
-  ]
+	file = If[fil == "", FileSelect["FileSave", {"*.txt"}, "txt file", WindowTitle -> "Select the destination file"], fil];
+	If[file == Null, Return[]];
+	file = If[StringTake[file, -4] == ".txt", file, file <> ".txt"];
+	bmate = If[Length[bmat[[1]]]==7,
+		StringReplace[ToString[-{1,1,1,1,1,1}#&/@Round[bmat[[All, {2,4,6,1,5,3}]], 0.0001]], {"{{" -> "","}}" -> "", "}, {" -> "\n", ", " -> "\t\t"}],
+		StringReplace[ToString[{1,1,1,1,1,1}#&/@Round[bmat[[All, {2,4,6,1,5,3}]], 0.0001]], {"{{" -> "","}}" -> "", "}, {" -> "\n", ", " -> "\t\t"}]
+	];
+	Export[file, bmate]
+]
 
 
 (* ::Subsection:: *)

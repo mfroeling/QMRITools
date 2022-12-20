@@ -290,7 +290,7 @@ DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 
 	(*signal and in/out phase data *)
 	signal = 1000 Clip[Abs[{cWat, cFat}], range] / range[[2]];
-	res = 1000 Abs[res] / range[[2]];
+	res = 1000 Clip[Abs[res], range] / range[[2]];
 	ioPhase = 1000 Clip[RotateDimensionsRight[InOutPhase[cWat, cFat, ioAmat]], range]  / range[[2]];
 	
 	(*estimate b0 and t2star*)
@@ -736,12 +736,12 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus
 		
 	(*find mask ranges*)
 	{min,max}=MinMax[data];
-	part = {#[[1]] + 0.001, #[[2]] - 0.001} & /@ Partition[Range[-1, 1, 0.25] // N, 2, 1];
+	part = {#[[1]] + 0.001, #[[2]] - 0.001} & /@ Partition[Range[-1, 1, 0.2] // N, 2, 1];
 		
 	(*make groups from masks*)
 	clus = DeleteSmallComponents[MorphologicalComponents[
 		Mask[dat, #, MaskSmoothing -> False], CornerNeighbors -> False], 
-		If[ArrayDepth[data]===3, 10, 2], CornerNeighbors -> False] & /@ part;
+		If[ArrayDepth[data]===3, 15, 3], CornerNeighbors -> False] & /@ part;
 		
 	nclus = Prepend[Drop[Accumulate[Max /@ clus], -1], 0];
 	groups = Total[MapThread[#2 Unitize[#1] + #1 &, {clus, nclus}]] + mask;

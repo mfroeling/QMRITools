@@ -1,10 +1,7 @@
 (* ::Package:: *)
 
 (* ::Title:: *)
-(*QMRITools VisteTools*)
-
-
- 
+(*QMRITools TractographyTools*)
 
 
 (* ::Subtitle:: *)

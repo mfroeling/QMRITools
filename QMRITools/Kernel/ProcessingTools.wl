@@ -968,16 +968,16 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 	(*get the options*)
 	motion = OptionValue[MotionCorrectSets];
 	pad = OptionValue[PaddOverlap];
-	normalize=OptionValue[NormalizeSets];
-	normover=OptionValue[NormalizeOverlap];
-	depth=ArrayDepth[data];
+	normalize = OptionValue[NormalizeSets];
+	normover = OptionValue[NormalizeOverlap];
+	depth = ArrayDepth[data];
 	overlap = If[ListQ[over],First@over,over];
 	
 	(*normalize the data*)
-	dat=If[normalize, PrintTemporary["normalizing data"]; NormalizeData/@data, data];
+	dat = If[normalize, PrintTemporary["normalizing data"]; NormalizeData/@data, data];
 
 	(*reverse the order of the sets if needed*)
-	dat=If[OptionValue[ReverseSets],Reverse[dat],dat];
+	dat = If[OptionValue[ReverseSets],Reverse[dat],dat];
 	
 	If[motion,
 		Switch[depth,
@@ -1031,8 +1031,10 @@ Module[{sets,set1,set2,step,set1over,set2over,joined,mn1,mn2},
 		If[norm,
 			mn1 = MeanNoZero[Flatten[#]] & /@ set1over;
 			mn2 = MeanNoZero[Flatten[#]] & /@ set2over;
-			mn1 = mn1[[1]]/mn1;
-			mn2 = mn2[[-1]]/mn2;
+			
+			mn1 = DevideNoZero[mn1[[1]],mn1];
+			mn2 = DevideNoZero[mn2[[-1]],mn2];
+			
 			set1over = mn1 set1over;
 			set2over = mn2 set2over;
 		];
@@ -1079,13 +1081,11 @@ Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1
 		set1over=Take[data1,{-overl,-1}];
 		set2=Drop[data2,{1,overl}];
 		set2over=Take[data2,{1,overl}];
-		
+	
 		joined=Joini[{set1,set2},{set1over,set2over},overl];
 		];
-		
 	joined
-
-	];
+];
 	
 
 
@@ -1117,7 +1117,7 @@ JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0},
 	
 	If[tot === 0,
 		(*all zeros, no overlap of signals so just the sum of signals*)
-		out = Total[(0 dat + 1) dat];
+		out = Total[dat];
 		,
 		(*overlap of signals*)
 		(*define the range needed*)
@@ -1201,9 +1201,9 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 		samp = Round[((Total@Flatten@maskd1)+(Total@Flatten@maskd2))/20];
 		
 		(*perform the registration*)
-		sets[[n + 1]] = Last@regFunc[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
-				MethodReg -> "rigid", Iterations -> 150, NumberSamples -> samp, 
-				PrintTempDirectory -> False, InterpolationOrderReg -> 0];
+		sets[[n + 1]] = Last@regFunc[{d1, (*maskd1,*) vox}, {d2, (*maskd2,*) vox}, {sets[[n + 1]], vox},
+				MethodReg -> "rigid", Iterations -> 300, NumberSamples -> samp, 
+				PrintTempDirectory -> False, InterpolationOrderReg -> 1];
 		
 		, {n, 1, nmax - 1}
 	];
