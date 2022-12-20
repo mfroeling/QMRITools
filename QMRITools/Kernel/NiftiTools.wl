@@ -243,7 +243,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		Print[{filfolin,folout}];
 			
 		(*create the cmd window command to run dcm2niix*)
-		log = FileNameJoin[{folout,"output.txt"}];
+		log = FileNameJoin[{folout,"DcmToNiiLog.txt"}];
 		
 		command = Switch[$OperatingSystem,
 			"Windows",

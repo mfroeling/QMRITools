@@ -40,8 +40,8 @@ QMRITools`$Log::usage = "The logging file."
 (*subpackages names*)
 QMRITools`$SubPackages = {
 	(*core packages that contain functions for other toolboxes*)
-	(*"LoggingTools`",*) "GeneralTools`", "MaskingTools`", "NiftiTools`",
-	 "ElastixTools`", "PlottingTools`", (*"MuscleBidsTools`",*)
+	"LoggingTools`", "GeneralTools`", "MaskingTools`", "NiftiTools`",
+	 "ElastixTools`", "PlottingTools`", "MuscleBidsTools`",
 	(*toolboxes for processing specific data types*)
 	"DixonTools`", "IVIMTools`", "DenoiseTools`", "CardiacTools`",
 	"RelaxometryTools`", "GradientTools`", "TensorTools`", 

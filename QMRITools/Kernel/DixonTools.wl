@@ -20,7 +20,7 @@ BeginPackage["QMRITools`DixonTools`", Join[{"Developer`"}, Complement[QMRITools`
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -46,10 +46,22 @@ The fractions are between 0 and 1, the B0 field map is in Hz and the T2start map
 
 DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737 (10.1002/nbm.3766)."
 
+
+FixDixonFlips::usage = 
+"FixDixonFlips[{mag, phase, real, imag}] checks if any volumes are 180 degrees out of phase and corrects them."
+
+
 SimulateDixonSignal::usage = 
 "SimulateDixonSignal[echo, fr, B0, T2] simulates an Dixon gradient echo sequence with echotimes.
 Echotimes echo in ms, fat fraction fr between 0 and 1, field of resonance B0 in Hz and relaxation T2 in ms."
 
+OptimizeDixonEcho::usage = "
+SimulateDixonSignal[] shows a manipulate pannel which allos to optimize the dixon echos.
+"
+
+
+FindInPhaseEchos::usage = 
+"FindInPhaseEchos[echos, iop] finds the two nearest echos to inphase which are best used for unwrapping using the iop time."
 
 Unwrap::usage = 
 "Unwrap[data] unwraps the given dataset. The data should be between -Pi and Pi. 
@@ -58,6 +70,9 @@ Unwrap[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 UnwrapSplit::usage = 
 "UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData based in the data and performs the unwrapping seperately. The data should be between -Pi and Pi.
 UnwrapSplit[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
+
+UnwrapList::usage = 
+"UnwrapList[list] unwraps a 1D list of values between -Pi and Pi. "
 
 
 (* ::Subsection::Closed:: *)
@@ -173,6 +188,32 @@ DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{atot, fatMap, waterMap, f
 
 (* ::Subsection:: *)
 (*DixonReconstruct*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*FixDixonFlips*)
+
+
+SyntaxInformation[FixDixonFlips] = {"ArgumentsPattern" -> {{_, _, _, _}}};
+
+FixDixonFlips[{mag_,phase_,real_,imag_}]:=Block[{p,r,i,c},
+	p=FindComplexFlips[real,imag];
+	{If[p==={},
+		{mag,phase,real,imag}
+		, 
+		r=real;r[[All,p]]=-r[[All,p]];i=imag;i[[All,p]]=-i[[All,p]];
+		Through[{Abs,Arg,Re,Im}[r+I i]]
+	],p}
+]
+
+
+FindComplexFlips[real_,imag_]:=Block[{comp,diff,diffM,means},
+	comp=real+I imag;
+	diff=Differences[Transpose[comp]];
+	diffM=Median@Abs@diff;
+	means=MeanNoZero[Flatten[#]]&/@Abs[#-diffM&/@Abs[diff]];
+	Flatten[Position[Partition[Boole[#>2Median[means]&/@means],2,1],{1,1}]]+1
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -310,7 +351,7 @@ DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 
 
 InOutPhase = Compile[{{cWat, _Complex, 0}, {cFat, _Complex, 0}, {ioAmat, _Complex, 2}},
-	Abs[ioAmat.{cWat, cFat}]
+	Abs[ioAmat . {cWat, cFat}]
 , RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
@@ -341,7 +382,7 @@ DixonFitiC = Compile[{
    				phi0Est += Re@dPhi0;
    				
    				(*define complex field map P(-phi) or (E D)^-1 *)
-   				pMat = Exp[-I mat.{phiEst, phi0Est}];
+   				pMat = Exp[-I mat . {phiEst, phi0Est}];
    				
    				(*demodulate the phase of the signal*)
    				(*perform A.2 form 10.1002/jmri.21090, the water fat fraction*)
@@ -384,7 +425,7 @@ DixonFitiC2 = Compile[{
 			rho = res = ydat 0.;
 			
 			(*define complex field map P(-phi) or (E D)^-1, demodulate signal and find complex fraction*)
-			pMat = Exp[-I mat.phi];
+			pMat = Exp[-I mat . phi];
 			sigd = pMat ydat;
 			rho = Amati . sigd;
 			
@@ -415,25 +456,109 @@ Options[SimulateDixonSignal] = {
 
 SyntaxInformation[SimulateDixonSignal] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] := 
- Block[{precession,field,freqs,amps, Amat, phi, sig},
-  precession = OptionValue[DixonPrecessions](*-1,1*);
-  field = OptionValue[DixonFieldStrength];
-  freqs = precession field GyromagneticRatio[OptionValue[DixonNucleus]] OptionValue[DixonFrequencies];
-  amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
-  
-  Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
-  phi = N@2 Pi B0 I - 1./T2;
-  
-  sig = Exp[phi echo] Amat;
-  sig = sig . {fr, 1 - fr};
-  
-  {Re[sig], Im[sig]}
-  ]
+SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] := Block[{precession,field,freqs,amps, Amat, phi, sig},
+	precession = OptionValue[DixonPrecessions](*-1,1*);
+	field = OptionValue[DixonFieldStrength];
+	freqs = precession field GyromagneticRatio[OptionValue[DixonNucleus]] OptionValue[DixonFrequencies];
+	amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
+	
+	Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
+	phi = N@2 Pi B0 I - 1./T2;
+	sig = Exp[phi echo] Amat;
+	
+	sig = sig . {fr, 1 - fr};
+	{Re[sig], Im[sig]}
+]
+
+
+(* ::Subsection::Closed:: *)
+(*OptimizeDixonEcho*)
+
+
+SyntaxInformation[UnwrapList] = {"ArgumentsPattern" -> {}};
+
+OptimizeDixonEcho[]:=Manipulate[
+	fr=300/(field GyromagneticRatio["1H"]);
+	echos=first+Range[0,necho-1]delta;
+	pts=Transpose[Through[{Im,Re}[Exp[-2Pi echos/fr I]]]];
+	e=FindInPhaseEchos[echos,fr,bip];
+	Switch[vis,
+		"path",
+		Show[
+			ListLinePlot[pts,PlotRange->{{-1.1,1.1},{-1.1,1.1}},AspectRatio->1,PlotStyle->Black,Mesh->All,Ticks->None,ImageSize->400,
+				PlotLabel->"Inphase echos for unwrapping: "<>ToString[e]],
+			Graphics[{{Green,PointSize[.04],Point@First@pts},{Red,PointSize[.04],Point@Last@pts}}],
+				If[io,Graphics[{{PointSize[.02],Blue,Point[pts[[e]]]}}],Graphics[]]
+		],
+		"vectors",
+		Show[
+			Graphics[{Black,PointSize[.02],Point[pts[[2;;-2]]]},PlotRange->{{-1.1,1.1},{-1.1,1.1}},AspectRatio->1,Axes->True,Ticks->None,ImageSize->400,PlotLabel->"Inphase echos for unwrapping: "<>ToString[e]],
+			Graphics[{{PointSize[.04],Green,Point@First@pts}}],
+			Graphics[{{PointSize[.04],Red,Point@Last@pts}}],
+			Graphics[{Thick,Arrow[{{0,0},#}&/@pts[[2;;-2]]]}],
+			Graphics[{Thick,Green,Arrow[{{0,0},First@pts}]}],
+			Graphics[{Thick,Red,Arrow[{{0,0},Last@pts}]}],
+			If[io,Graphics[{Blue,Arrow[{{0,0},#}&/@pts[[e]]]}],Graphics[]],
+			If[io,Graphics[{{PointSize[.02],Blue,Point[pts[[e]]]}}],Graphics[]]
+		]
+	]
+	,
+	{{first,1.4(*fr*),"first echo"},0,2fr,0.05},
+	{{delta,1.4,"echo spacing"},0.0,2fr,.005},
+	{{necho,10,"number of echos"},2,25,1},
+	Delimiter,
+	{{field,3,"field strength"},{1,1.5,3,7,9.4}},
+	Delimiter,
+	{{vis,"path","visualization"},{"path","vectors"}},
+	Delimiter,
+	{{io,False,"show inphase echos"},{True,False}},
+	{{bip,False,"bipolar"},{True,False}},
+	{fr,ControlType->None},
+	{echos,ControlType->None},
+	{pts,ControlType->None},
+	{e,ControlType->None},
+	ControlPlacement->Left,
+	Initialization:>{
+		field=3;
+		fr=300/(field GyromagneticRatio["1H"])},
+	SaveDefinitions->True
+]
 
 
 (* ::Subsection:: *)
 (*Phase unwrap*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindInPhaseEchos*)
+
+
+Options[FindInPhaseEchos] = {DixonBipolar -> False}
+
+SyntaxInformation[FindInPhaseEchos] = {"ArgumentsPattern" -> {_,_}};
+
+FindInPhaseEchos[echos_, iop_, OptionsPattern[]]:=Block[{ord,phase},
+	phase=If[#>0.5 ,#-1,#]&/@FractionalPart[echos/iop];
+	ord=Flatten[Position[phase,#]&/@Nearest[phase,0,Length[phase]]];
+	Sort[If[OptionValue[DixonBipolar],
+		Select[ord,If[OddQ[First@ord],OddQ,EvenQ]][[1;;2]],
+	ord[[;;2]]]]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*UnwrapList*)
+
+
+SyntaxInformation[UnwrapList] = {"ArgumentsPattern" -> {_}};
+
+UnwrapList[list_]:=Block[{jumps,lst,diff,out},
+	lst=If[Head[First@list]===Complex,Arg@list,list]/Pi;
+	diff=Differences[lst];
+	jumps=2 Prepend[Accumulate[(-Sign[diff]) Round[Chop[Abs[diff],1.5]/2]],0];
+	out=jumps+lst;
+	Pi(Round[Subtract[Mean[list],Mean[out]],2]+out)
+]
 
 
 (* ::Subsubsection::Closed:: *)
