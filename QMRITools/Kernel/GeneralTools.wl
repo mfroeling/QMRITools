@@ -31,12 +31,24 @@ Current assests are \"Elastix\", \"Transformix\" and \"DcmToNii\"."
 ExtractDemoData::usage = 
 "ExtractDemoData[] Extracts the demo data archilve."
 
+
+StringPadInteger::usage = 
+"StringPadInteger[num] converts the integer num to a string and pads it with zeros to length 3.
+StringPadInteger[{num, len}] converts the integer num to a string and pads it with zeros to length len.
+StringPadInteger[pre, num] the same but with prefix pre.
+StringPadInteger[pre, {num, len}] the same but with prefix pre.
+StringPadInteger[num, post] the same but with postfix post.
+StringPadInteger[{num, len}, post] the same but with postfix post.
+StringPadInteger[pre, num, post] the same but with pre and postfix pre and post.
+StringPadInteger[post, {num, len}, post] the same but with pre and postfix pre and post."
+
 FileSelect::usage = 
 "FileSelect[action] creates a systemdialog wicht returs file/foldername action can be \"FileOpen\", \"FileSave\" or \"Directory\".
 FileSelect[action, {type}] same but allows the definition of filetypes for \"FileOpen\" and \"FileSave\" e.g. \"jpg\" or \"pdf\"."
 
-CheckExtension::usage = 
-"CheckExtension[filename, extension] checks if file has correct extention. Removes .gz or add ext if not present."
+ConvertExtension::usage = 
+"CheckExtension[filename, extension] checks if file has correct extention. Removes .gz or changes the extension or adds extension if not present."
+
 
 SaveImage::usage = 
 "SaveImage[image] exports graph to image, ImageSize, FileType and ImageResolution can be given as options.
@@ -324,6 +336,25 @@ ExtractDemoData[] := Block[{file},
 
 
 (* ::Subsubsection::Closed:: *)
+(*StringPad*)
+
+
+StringPadInteger[x_?IntegerQ]:=StringPadInteger["", {x, 3}, ""]
+
+StringPadInteger[{x_?IntegerQ, n_?IntegerQ}]:=StringPadInteger["", {x, n}, ""]
+
+StringPadInteger[pre_?StringQ, x_?IntegerQ]:=StringPadInteger[pre, {x, 3}, ""]
+
+StringPadInteger[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}]:=StringPadInteger[pre, {x, n}, ""]
+
+StringPadInteger[x_?IntegerQ, post_?StringQ]:=StringPadInteger["", {x, 3}, post]
+
+StringPadInteger[{x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=StringPadInteger["", {x, n}, post]
+
+StringPadInteger[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=pre<>StringPadLeft[ToString[x], n, "0"]<>post
+
+
+(* ::Subsubsection::Closed:: *)
 (*File Select*)
 
 
@@ -336,18 +367,19 @@ FileSelect[action_, opts:OptionsPattern[]] := FileSelect[action, {""}, "*" ,opts
 FileSelect[action_, type:{_String ..}, opts:OptionsPattern[]] := FileSelect[action, type, "*", opts]
 
 FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[]] := Module[{input},
-  If[!Element[action, {"FileOpen", "FileSave", "Directory"}], Return[]];
-  input = If[(action == "FileOpen" || action == "FileSave"),
-  	  	SystemDialogInput[action, {Directory[], {name ->type}},opts],
-  	  	SystemDialogInput["Directory", Directory[],opts]
-    ];
-  If[input === $Canceled, 
-  	Print["Canceled!"], 
-  	If[action == "Directory",
-  		StringDrop[input,-1],
-  		input
-  		]
-  	]
+	If[!Element[action, {"FileOpen", "FileSave", "Directory"}], Return[]];
+	input = If[(action == "FileOpen" || action == "FileSave"),
+		SystemDialogInput[action, {Directory[], {name ->type}},opts],
+		SystemDialogInput["Directory", Directory[],opts]
+	];
+	If[input === $Canceled,
+		Print["Canceled!"];$Canceled
+		,
+		If[action == "Directory",
+			StringDrop[input,-1],
+			input
+		]
+	]
 ]
 
 
@@ -355,14 +387,23 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 (*CheckExtension*)
 
 
-SyntaxInformation[CheckExtension] = {"ArgumentsPattern" -> {_, _}};
+SyntaxInformation[ConvertExtension] = {"ArgumentsPattern" -> {_, _}};
 
-CheckExtension[file_?StringQ, exti_?StringQ] := Block[{ext, extp},
-	{ext, extp} = If[StringTake[exti, 1] === ".", {StringDrop[exti, 1], exti}, {exti, "." <> exti}];
-	Switch[FileExtension[file],
-		"", file <> extp,
-		"gz", CheckExtension[StringDrop[file, -3], ext],
-		ext, file
+
+ConvertExtension[fileIn : {_?StringQ ..}, ext_?StringQ] := ConvertExtension[#, ext] & /@ fileIn
+
+ConvertExtension[fileIn_?StringQ, ext_?StringQ] := Block[{extOld, file, extNew},
+	(*get filename and extension*)
+	file = StringReplace[fileIn,".gz"->""];
+	extOld = "." <> FileExtension[file];
+	
+	(*make new extension*)
+	extNew = If[StringTake[ext, 1] === ".", ext, "." <> ext];
+	
+	(*add or replace *)
+	If[extOld === ".",
+		file <> extNew,
+		StringReplace[file, extOld -> extNew]
 	]
 ]
 

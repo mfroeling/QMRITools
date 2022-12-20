@@ -34,16 +34,18 @@ QMRITools`$Contexts::usage = "The package contexts.";
 QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions.";
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
+QMRITools`$Log::usage = "The logging file." 
 
 
 (*subpackages names*)
 QMRITools`$SubPackages = {
 	(*core packages that contain functions for other toolboxes*)
-	"GeneralTools`", "MaskingTools`", "NiftiTools`", "ElastixTools`", "PlottingTools`",
+	(*"LoggingTools`",*) "GeneralTools`", "MaskingTools`", "NiftiTools`",
+	 "ElastixTools`", "PlottingTools`", (*"MuscleBidsTools`",*)
 	(*toolboxes for processing specific data types*)
 	"DixonTools`", "IVIMTools`", "DenoiseTools`", "CardiacTools`",
 	"RelaxometryTools`", "GradientTools`", "TensorTools`", 
-	"JcouplingTools`","SpectroTools`", "ReconstructionTools`",
+	"JcouplingTools`", "SpectroTools`", "ReconstructionTools`",
 	(*general processing tools with lots of dependancys*)
 	"TractographyTools`", "VisteTools`", "ProcessingTools`", "FasciculationTools`",
 	"SimulationTools`", "PhysiologyTools`", "CoilTools`", "TaggingTools`",
@@ -116,3 +118,6 @@ Get["Developer`"];
 	Get[First@#];
 	SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#]
 )& /@ QMRITools`$ContextsFunctions;
+
+Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
+Unprotect/@{"QMRITools`ElastixTools`$debugElastix", "QMRITools`$Log"};

@@ -273,25 +273,6 @@ QMRITools`ElastixTools`$debugElastix = False;
 
 
 (* ::Subsubsection::Closed:: *)
-(*StringPad*)
-
-
-StringPad[x_?IntegerQ]:=StringPad["", {x, 3}, ""]
-
-StringPad[{x_?IntegerQ, n_?IntegerQ}]:=StringPad["", {x, n}, ""]
-
-StringPad[pre_?StringQ, x_?IntegerQ]:=StringPad[pre, {x, 3}, ""]
-
-StringPad[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}]:=StringPad[pre, {x, n}, ""]
-
-StringPad[x_?IntegerQ, post_?StringQ]:=StringPad["", {x, 3}, post]
-
-StringPad[{x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=StringPad["", {x, n}, post]
-
-StringPad[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=pre<>StringPadLeft[ToString[x], n, "0"]<>post
-
-
-(* ::Subsubsection::Closed:: *)
 (*ParString*)
 
 
@@ -517,7 +498,7 @@ ElastixCommand[elas_, tempdir_, parfile_, {inpfol_, movfol_, outfol_}, {fixedi_,
 
 MakeElasFiles[pre_,filei_, fol_, q_, n_]:=Block[{fixed, index, file},
 	StringJoin[(
-		index = StringPad["-",#];
+		index = StringPadInteger["-",#];
 		file = If[n===1, filei, filei[index]];
 		fixed = If[FileExtension[file] == "nii", file<>".gz", file];
 		" "<>pre<>If[n===1, "", ToString[#-1]]<>" "<>q<>FileNameJoin[{fol, fixed}]<>q
@@ -1004,7 +985,7 @@ RegisterDatai[
 		(*export moving data, loop over series*)
 		{command, outfile}=Transpose@(
 		(
-			index = StringPad[#];
+			index = StringPadInteger[#];
 			(*define folders*)
 			movfol = outfol = "vol"<>index; CreateDirectory[tempdir<>outfol];
 			(*Check if masks are needed*)
@@ -1038,7 +1019,7 @@ RegisterDatai[
 		(*Export target and moving data*)
 		{fixedF, movingF, outF} = {"target-"<>depth<>#<>".nii"&, "moving-"<>depth<>#<>".nii"&, "result-"<>depth<>".nii.gz"};
 		(
-			index = StringPad["-",#];
+			index = StringPadInteger["-",#];
 			ExportNii[target[[#]], voxt, tempdir<>fixedF[index]];
 			ExportNii[moving[[#]], voxm, tempdir<>movingF[index]];
 		)&/@Range[lengM];
@@ -1361,7 +1342,7 @@ RegisterDiffusionData[
 	If[$debugElastix, Print["Combine transforms"]];
 	
 	(*export diffusion reg target*)
-	vdir = FileNameJoin[{tempDir,"vol"<>StringPad[0]}];
+	vdir = FileNameJoin[{tempDir,"vol"<>StringPadInteger[0]}];
 	CreateDirectory[vdir];
 	ExportNii[dtidatar[[All,1]],vox,FileNameJoin[{vdir,"moving-3D.nii"}]];
 	
