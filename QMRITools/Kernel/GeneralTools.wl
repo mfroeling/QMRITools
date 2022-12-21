@@ -47,7 +47,10 @@ FileSelect::usage =
 FileSelect[action, {type}] same but allows the definition of filetypes for \"FileOpen\" and \"FileSave\" e.g. \"jpg\" or \"pdf\"."
 
 ConvertExtension::usage = 
-"CheckExtension[filename, extension] checks if file has correct extention. Removes .gz or changes the extension or adds extension if not present."
+"ConvertExtension[filename, extension] checks if file has correct extention. Removes .gz or changes the extension or adds extension if not present."
+
+EmptyDirectoryQ::usage = 
+"EmptyDirectoryQ[dir] checks if directory dir is empty."
 
 
 SaveImage::usage = 
@@ -287,6 +290,10 @@ SplineRegularization::usage =
 "SplineRegularization is an option for BSplineCurveFit and defines the amount of regularization for the linear fit."
 
 
+CenterVoxel::usage = 
+"CenterVoxel is an option for MakeIntFunction. If set true the centers of the voxels are interploated else its the corners."
+
+
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
@@ -406,6 +413,15 @@ ConvertExtension[fileIn_?StringQ, ext_?StringQ] := Block[{extOld, file, extNew},
 		StringReplace[file, extOld -> extNew]
 	]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*EmptyDirectoryQ*)
+
+
+SyntaxInformation[EmptyDirectoryQ] = {"ArgumentsPattern" -> {_}};
+
+EmptyDirectoryQ[dir_] := FileNames[All, dir] === {}
 
 
 (* ::Subsubsection::Closed:: *)

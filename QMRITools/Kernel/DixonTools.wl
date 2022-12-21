@@ -55,9 +55,8 @@ SimulateDixonSignal::usage =
 "SimulateDixonSignal[echo, fr, B0, T2] simulates an Dixon gradient echo sequence with echotimes.
 Echotimes echo in ms, fat fraction fr between 0 and 1, field of resonance B0 in Hz and relaxation T2 in ms."
 
-OptimizeDixonEcho::usage = "
-SimulateDixonSignal[] shows a manipulate pannel which allos to optimize the dixon echos.
-"
+OptimizeDixonEcho::usage = 
+"OptimizeDixonEcho[] shows a manipulate pannel which allos to optimize the dixon echos."
 
 
 FindInPhaseEchos::usage = 
@@ -72,7 +71,7 @@ UnwrapSplit::usage =
 UnwrapSplit[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 
 UnwrapList::usage = 
-"UnwrapList[list] unwraps a 1D list of values between -Pi and Pi. "
+"UnwrapList[list] unwraps a 1D list of values between -Pi and Pi."
 
 
 (* ::Subsection::Closed:: *)

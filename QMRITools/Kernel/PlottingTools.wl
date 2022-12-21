@@ -133,6 +133,9 @@ SphereColor::usage =
 PositiveZ::usage = 
 "PositiveZ is an options for GradientPlot. If True all Gradients are displayed with a positive z direction."
 
+ContourQuality::usage = 
+"ContourQuality is an option for PlotCountour. If set \"High\" it is slower but better quality."
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -2565,7 +2568,7 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,per
 (*PlotContour*)
 
 
-Options[PlotContour]={ContourColor->Gray, ContourOpacity->0.5, ContourColorRange->Automatic,ContourSize->"Dimensions",ColorFunction->"SunsetColors",Quality->""};
+Options[PlotContour]={ContourColor->Gray, ContourOpacity->0.5, ContourColorRange->Automatic,ContourSize->"Dimensions",ColorFunction->"SunsetColors", ContourQuality->""};
 
 SyntaxInformation[PlotContour]={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
 
@@ -2592,7 +2595,7 @@ PlotContour[dati_,voxi_,OptionsPattern[]]:=Block[{data,vox,pvox,dim,fun, color, 
 		Function[{z,y,x},ColorData[OptionValue[ColorFunction]][coldat[[Clip[Round[x],{1,dim[[3]]}],Clip[Round[y],{1,dim[[2]]}],Clip[Round[z],{1,dim[[1]]}]]]]]
 	];
 	
-	{pt, mr}=If[OptionValue[Quality]==="High",{10,2},{10,1}];
+	{pt, mr}=If[OptionValue[ContourQuality]==="High",{10,2},{10,1}];
 	
 	ContourPlot3D[fun[x+pvox[[3]],y+pvox[[2]],z+pvox[[1]]],{z,-0.5pvox[[1]],pvox[[1]](dim[[1]]+0.5)},{y,-0.5pvox[[2]],pvox[[2]](dim[[2]]+0.5)},{x,-0.5pvox[[3]],pvox[[3]](dim[[3]]+0.5)},
 		PlotPoints->pt,MaxRecursion->mr,Contours->{0.5},Mesh->False,BoundaryStyle->None,Axes->True,

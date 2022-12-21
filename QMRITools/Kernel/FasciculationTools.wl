@@ -63,7 +63,7 @@ ActivationBackground::usage =
 "ActivationBackground is an option for FindActivations. If all normalized signals, which range between 0-150, are below this value the algorithm does notihing."
 
 ActivationIterations::usage = 
-"ActivationBackground is an option for FindActivations. The maximum number of iteration that can be used for activation detection."
+"ActivationIterations is an option for FindActivations. The maximum number of iteration that can be used for activation detection."
 
 ActivationOutput::usage = 
 "ActivationOutput is an option for ActivationOutput. If set to All aslo the mn and treshhold values are retured."
@@ -85,7 +85,8 @@ SelectActivations::dim =
 SelectActivations::size = 
 "The data and/or mask size are wrong. The activation should be the same size as the mask and the background mask. Current sizes are `1`, `2`, and `3` respectively.";
 
-AnalyzeActivations::size = "The mask and activation map must have the same Dimensions.";
+AnalyzeActivations::size = 
+"The mask and activation map must have the same Dimensions.";
 
 
 (* ::Section:: *)
