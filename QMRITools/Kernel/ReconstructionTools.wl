@@ -165,7 +165,8 @@ RescaleRecon::usage =
 SenseRescale::usage = 
 "SenseRescale is an option for MakeSense. If set True the data is first downscaled by a factor 2 before making the sense map."
 
-
+ReconFilter::usage = 
+"ReconFilter is an option for CoilWeighted recon. If true the reconstruction gets a hamming filter."
 
 (* ::Subsection:: *)
 (*Error Messages*)

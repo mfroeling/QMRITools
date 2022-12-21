@@ -1249,7 +1249,7 @@ FindPoint[pmid_, step_, fun_] := Block[
 (*LinesToSegmentIndex*)
 
 
-Options[LinesToSegmentIndex]={ReversePoints->True,ReverseDirection->False};
+Options[LinesToSegmentIndex]= {ReversePoints->True, ReverseDirection->False};
 
 SyntaxInformation[LinesToSegmentIndex] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
@@ -1519,7 +1519,7 @@ CardiacSegmenti[mask_?ArrayQ, back_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ},
 	
 	lines = MaskToLines[mask, vox];
 	{ptIndex, segIndex, lineIndex} = LinesToSegmentIndex[lines, pts, seg, 
-		ReversePoints->OptionValue[ReversePoints],ReverseDirection->OptionValue[ReverseDirection]];
+		ReversePoints->OptionValue[ReversePoints], ReverseDirection->OptionValue[ReverseDirection]];
 	segLines = GetSegmentLines[lines, lineIndex, seg];
 	segMask = SegmentLinesToMask[mask, segLines];
 	
