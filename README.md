@@ -199,12 +199,15 @@ QMRITools contains the following toolboxes:
 -   DenoiseTools
 -   DixonTools
 -   ElastixTools
+-   FasciculationTools
 -   GeneralTools
 -   GradientTools
 -   ImportTools
 -   IVIMTools
 -   JcouplingTools
+-   LoggingTools
 -   MaskingTools
+-   MuscleBidsTools
 -   NiftiTools
 -   PhysiologyTools
 -   PlottingTools
@@ -213,11 +216,11 @@ QMRITools contains the following toolboxes:
 -   RelaxometryTools
 -   SimulationTools
 -   SpectroTools
+-   TaggingTools
+-   TensorTools
+-   TractographyTools
 -   VisteTools
 
-Under development
-
--   TaggingTools
 
 ------------------------------------------------------------------------
 
@@ -378,6 +381,8 @@ performs the registration. After registration is completed the data is
 again loaded into Mathematica. Most of the functionality is demonstrated
 in the `demo.nb`.
 
+### FasciculationTools
+
 ### GeneralTools
 
 This toolbox provides core functions used in many other functions and
@@ -430,6 +435,8 @@ smoothing cutting and merging masks and functions for the evaluation of
 data within masks. Most of the functionality is demonstrated in the
 `demo.nb`.
 
+### MuscleBidsTools
+
 ### NiftiTools
 
 Import and export of the NIfTI file format. Part of the code is based on
@@ -453,7 +460,7 @@ A variety of functions for visualization of various data types. The main
 functions are ‘PlotData’ and ‘PlotData3D’ which allow viewing 2D, 3D and
 4D data. Most of the functionality is demonstrated in the `demo.nb`.
 
-### Reconstruction Tools
+### ReconstructionTools
 
 A variety of function for raw MRI data reconstruction. The main goal was to 
 create a set of functions that allow for the reconstruction of multi coil 3D CSI 
@@ -495,6 +502,8 @@ is demonstrated in the `demo.nb`.
 ![Comparison of fitted and measured 31P spectra of muscle.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/spectra_fit.gif)
 
 ![Resulting basis spectra of a fit of 31P spectra of muacle.](https://github.com/mfroeling/QMRITools/blob/master/docs/images/spectra_fit.jpg)
+
+### TaggingTools
 
 ### TensorTools
 
