@@ -48,6 +48,10 @@ AddToLog[list, True, level] specifies both the level and the timestamp.
 AddToLog[list, level, True] specifies both the level and the timestamp."
 
 
+ExportDirectoryTree::usage = 
+"ExportDirectoryTree[fol] make a DirectoryTree for the folder and exports it there as FileTree.txt.
+ExportDirectoryTree[fol,name] make a DirectoryTree for the folder and exports it there as name .txt."
+
 DirectoryTree::usage=
 "DirectoryTree[dir] makes a directory tree from the dir."
 
@@ -119,7 +123,7 @@ SyntaxInformation[ShowLog] = {"ArgumentsPattern" -> {_.}};
 ShowLog[] := ShowLog[True]
 
 ShowLog[win_] := Block[{pane},
-	pane = Pane[Dynamic@Column[QMRITools`$Log], {1000, 600}, Scrollbars -> {False, True}, ImageMargins -> 20];
+	pane = Pane[Dynamic@Column[QMRITools`$Log], {1000, 600}, Scrollbars -> {False, True}, ImageMargins -> 20, AppearanceElements -> None];
 	If[! win, pane,
 		NotebookClose[logWindow];
 		logWindow = CreateWindow[DialogNotebook@pane, WindowTitle -> "Logging window", Background -> White]
@@ -177,6 +181,14 @@ AddToLog[logAdd_, a___] := AddToLog[{logAdd}, a]
 
 (* ::Subsection:: *)
 (*DirectoryTree*)
+
+
+SyntaxInformation[DirectoryTree] = {"ArgumentsPattern" -> {_}};
+
+
+ExportDirectoryTree[fol_]:=ExportDirectoryTree[fol, "FileTree"]
+
+ExportDirectoryTree[fol_,name_]:=Export[FileNameJoin[{fol,ConvertExtension[name,"txt"]}], DirectoryTree[fol]]
 
 
 (* ::Subsubsection::Closed:: *)
