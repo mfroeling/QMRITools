@@ -43,7 +43,7 @@ facilitate development and prototyping of new functions. The core of the
 toolbox contains various functions for data manipulation and
 restructuring.
 
-For more information [visit our website>>](https://www.qmritools.com/){:target="_blank"}
+For more information [visit our website](https://www.qmritools.com/)
 
 <p align="center">
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.png" alt="Quantitative muscle MRI processing"  width="70%" />
@@ -117,7 +117,7 @@ their website.
 
 ## Toolboxes
 
-QMRITools contains the following [toolboxes>>](https://www.qmritools.com/tool/):
+QMRITools contains the following [toolboxes](https://www.qmritools.com/tool/):
 
 -   CardiacTools
 -   CoilTools
