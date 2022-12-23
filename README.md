@@ -5,13 +5,9 @@
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fmfroeling%2FQMRITools&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
-------------------------------------------------------------------------
-
 [![MR-Hub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/MR-Hub.png)](https://ismrm.github.io/mrhub/)
 [![MRSHub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/MRSHub.png)](https://mrshub.org/software_analysis/#QMRITools)
 [![OpenSourceImaging](https://github.com/mfroeling/QMRITools/blob/master/docs/images/open_source_images.png)](https://www.opensourceimaging.org/project/qmritools-mathematica-toolbox-for-quantitative-mri-data/)
-
-------------------------------------------------------------------------
 
 [![wolfram language](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_language.png)](https://www.wolfram.com/language/)
 [![wolfram workbench](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_workbench.jpg)](https://www.wolfram.com/workbench/)
@@ -49,12 +45,10 @@ For more information [visit our website](https://www.qmritools.com/)
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.png" alt="Quantitative muscle MRI processing"  width="70%" />
 </p>
 
-------------------------------------------------------------------------
-
 ## Installation
 
 The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases).
-The toolbox is best installed via the Mathematica paclet system.  
+The toolbox is best installed via the Mathematica paclet system. For more information [vist the website](https://www.qmritools.com/doc/instal/).
 
 Automatic installation:
 1.	Download the `QMRITools-x.x.x.paclet`.
@@ -65,8 +59,6 @@ Automatic installation:
 Or alternatively you can directly install it from the latest release page
 
 `PacletInstall["https://github.com/mfroeling/QMRITools/releases/download/x.x.x/QMRITools-x.x.x.paclet"]`
-
-------------------------------------------------------------------------
 
 ## Citing
 
@@ -87,8 +79,6 @@ When using the toolbox please cite one of the following references:
 	quantitative MRI measures in healthy calf muscles; NMR Biomed. 2019;32:e4119
 	[link](https://onlinelibrary.wiley.com/doi/full/10.1002/nbm.4119) 
 
-------------------------------------------------------------------------
-
 ## Documentation
 
 An online version of the full documentation can be found [here](https://www.qmritools.com/assets/htmldoc/html/guide/qmritools).
@@ -97,8 +87,6 @@ An online version of the full documentation can be found [here](https://www.qmri
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/addons.PNG" alt="QMRITools package add on"  width="70%" />
 </p>
 
-
-------------------------------------------------------------------------
 
 ## External dependencies
 
@@ -111,9 +99,6 @@ their website.
 
 -   [dcm2niix](https://github.com/rordenlab/dcm2niix/)
 -   [Elastix](http://elastix.isi.uu.nl/)
-
-
-------------------------------------------------------------------------
 
 ## Toolboxes
 
