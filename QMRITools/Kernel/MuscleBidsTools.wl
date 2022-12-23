@@ -117,7 +117,7 @@ Begin["`Private`"]
 
 
 (* ::Subsection:: *)
-(*BIDS*)
+(*BIDS name and select*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -223,7 +223,7 @@ SelectBidsFolders[fol_?StringQ, tag_] := Block[{folSel, done, cont},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SelectBidsSubjects*)
 
 
@@ -232,7 +232,7 @@ SyntaxInformation[SelectBidsSubjects] = {"ArgumentsPattern" -> {_}};
 SelectBidsSubjects[fol_] := Select[FileNames[All, fol], (DirectoryQ[#] && StringTake[FileNameTake[#], 3] === "sub") &]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SelectBidsSessions*)
 
 
@@ -352,13 +352,16 @@ Options[MuscleBidsConvert] = {DeleteAfterConversion->False, SelectSubjects->All}
 
 SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-MuscleBidsConvert[niiFol_?StringQ, datDis_,ops:OptionsPattern[]]:=Block[{datType,fols,subs,logFile,fol,nam,filesSl,jsons,files,nTyp,pat,ass,rfol},
+MuscleBidsConvert[niiFol_?StringQ, datDis_, ops:OptionsPattern[]]:=Block[{datType,fols,subs,logFile,fol,nam,filesSl,jsons,files,nTyp,pat,type,rfol},
+	
+	{log, folTag, labTag} ={"BIDSConvert.log", "InFolder", "Label"}
+	
 	(*convert the nameType to valid input*)
 	datType=CheckDataDiscription[datDis];
 	datType=If[AssociationQ[datType],{datType},datType];
 	
 	(*slect the subjects to be processed*)
-	fols = SelectBidsSubjects[niiFol];
+	fols = SelectBidsSessions[niiFol];
 	subs = OptionValue[SelectSubjects];
 	subs = If[subs===All,
 		fols,
@@ -371,7 +374,7 @@ MuscleBidsConvert[niiFol_?StringQ, datDis_,ops:OptionsPattern[]]:=Block[{datType
 	(*loop over the subjects*)
 	Table[
 		(*start logging*)
-		logFile = FileNameJoin[{fol,"BIDSConvert.log"}];
+		logFile = FileNameJoin[{fol, "BIDSConvert.log"}];
 		Print[logFile];
 		ImportLog[logFile];
 		(*----*)AddToLog[{"Starting bids conversion for directory: ", fol},True,0];
@@ -380,37 +383,37 @@ MuscleBidsConvert[niiFol_?StringQ, datDis_,ops:OptionsPattern[]]:=Block[{datType
 		(*loop over the datType*)
 		Table[
 			(*check if datType is valid*)
-			If[KeyExistsQ[ass,$Failed],
+			If[KeyExistsQ[type,$Failed],
 			(*----*)AddToLog[dataToLog@ass,2,True];
 			(*----*)AddToLog["Skipping",3],
 			(*if valid perform conversion*)
 			(*----*)AddToLog[dataToLog@ass,2,True];
-			rfol=SelectBidsFolders[fol,ass["InFolder"]];
+			rfol = SelectBidsFolders[fol, type["InFolder"]];
 			
 			(*loop over all inFolders in subject folder*)
 			Table[
-				(*----*)AddToLog[{"Finding all JSON files in the directory",foli},2];
+				(*----*)AddToLog[{"Finding all JSON files in the directory", foli},2];
 				files=FileNames["*.json",foli];
-				(*----*)AddToLog[{"There were",Length[files]," JSON files found"},3];
+				(*----*)AddToLog[{"There were", Length[files]," JSON files found"},3];
 				
 				(*select the files to process*)
-				nam=ass["Label"];
-				pat=Switch[ass["Class"],
-				"Volume",__~~nam~~__,
-				"Stacks"|"Repetitions",__~~nam~~DigitCharacter..~~__
+				nam = type["Label"];
+				pat = Switch[type["Class"],
+					"Volume",__~~nam~~__,
+					"Stacks"|"Repetitions",__~~nam~~DigitCharacter..~~__
 				];
-				filesSl=Select[files,StringContainsQ[#,pat]&];
-				(*----*)AddToLog[{"Importing",Length[filesSl],"JSON files containing",nam, "that are part of class",ass["Class"]},4];
+				filesSl = Select[files,StringContainsQ[#,pat]&];
+				(*----*)AddToLog[{"Importing", Length[filesSl], "JSON files containing", nam, "that are part of class", type["Class"]},4];
 				jsons=ImportJSON/@filesSl;
 				
 				(*perform the conversions*)
-				MuscleBidsConvertI[foli, filesSl, jsons, ass, OptionValue[DeleteAfterConversion]]
+				MuscleBidsConvertI[foli, filesSl, jsons, type, OptionValue[DeleteAfterConversion]]
 			
 			(*Close sub folders loop*)
 			,{foli,rfol}]
 	
 		(*close datatype loop*)
-		],{ass,datType}];
+		],{type, datType}];
 		
 		(*export the log files*)
 		ExportLog[logFile,True];
@@ -420,51 +423,7 @@ MuscleBidsConvert[niiFol_?StringQ, datDis_,ops:OptionsPattern[]]:=Block[{datType
 ] 
 
 
-(* ::Subsubsection:: *)
-(*CheckDataDiscription*)
-
-
-SyntaxInformation[CheckDataDiscription] = {"ArgumentsPattern" -> {_}};
-
-CheckDataDiscription[dis:{_List..}]:=CheckDataDiscription/@dis
-
-CheckDataDiscription[dis:{_Rule..}]:=Block[{ass,key,man,typ, fail},
-	(*Get the data discription keys*)
-	ass=Association[dis];
-	key=Keys[ass];
-	
-	(*fail output*)
-	fail = Association[$Failed->ToString[Normal[ass]]];
-	
-	(*Check if manditory keys are present*)
-	man=ContainsAll[key,{"Label","Type"}];
-	If[!man,
-		Return[Message[Bids::man];fail],
-		
-		(*Check if type is valid*)
-		If[!MemberQ[Keys[bidsTypes],ass["Type"]], Message[Bids::type,ass["Type"]]];
-		(*Check if class is present*)
-		If[KeyExistsQ[ass,"Class"],
-			(*if present add check class is vlid*)
-			If[!MemberQ[bidsClass,ass["Class"]],Return[Message[Bids::class,ass["Class"]];fail]],
-			(*add class if not present*)
-			ass=Association[ass,"Class"->"Volume"]
-		];
-		
-		(*check suffic, in and out folder*)
-		If[!KeyExistsQ[ass,"Suffix"],ass=Association[ass,"Suffix"->""]];
-		If[!KeyExistsQ[ass,"InFolder"],ass=Association[ass,"InFolder"->"raw"]];
-		ass=Association[ass,"OutFolder"->(bidsTypes[ass["Type"]]/. {Missing[___]->"miss"})];
-		
-		(*add overlap if class is stacks*)
-		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass,"Overlap"],Message[Bids::stk];ass=Association[ass,"Overlap"->0]];
-		
-		ass
-	]
-]
-
-
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsConvertI*)
 
 
@@ -474,10 +433,10 @@ MuscleBidsConvertI[foli_,files_,json_,datType_,del_]:=Block[{
 	},
 	
 	(*see if one label or session|repetion*)
-	{name,nType,type,suf}=datType/@{"Label","Class","Type","Suffix"};
-	{fol,parts}=PartitionBidsFolderName[foli];
+	{name,nType,type,suf} = datType/@{"Label","Class","Type","Suffix"};
+	{fol,parts} = PartitionBidsFolderName[foli];
 	
-	names=If[nType==="Volume",{name},GetStackLabels[json,name]];
+	names = If[nType==="Volume",{name}, GetStackLabels[json,name]];
 	(*-----*)AddToLog[{"Found",ToString[Length[names]],nType,"with the label","\""<>name<>"\""},3];
 	
 	(*skip if nothing found*)
@@ -489,7 +448,7 @@ MuscleBidsConvertI[foli_,files_,json_,datType_,del_]:=Block[{
 		(*loop over stac names*)
 		Table[
 			(*-----*)AddToLog[{"Processing:",namei},True,4];
-			nr=GetStackNr[nType,namei];
+			nr = GetStackNr[nType, namei];
 			
 			(*see which data type is expected*)
 			Switch[type,
@@ -499,11 +458,11 @@ MuscleBidsConvertI[foli_,files_,json_,datType_,del_]:=Block[{
 				(*loop over dixon data types*)
 				Table[
 					(*get the posisiton of the files needed*)
-					pos=GetJSONPosition[json,{{"SeriesDescription",namei},{"ImageType",dixType}},"EchoNumber"];
+					pos = GetJSONPosition[json,{{"SeriesDescription",namei},{"ImageType",dixType}},"EchoNumber"];
 					(*-----*)AddToLog[{"Importing",Length[pos],type,"datasets with properties: ",{namei, dixType}},5];
 					
 					(*get the json and data*)
-					info=ii=MergeJSON[json[[pos]]];
+					info = MergeJSON[json[[pos]]];
 					{data,vox}=Transpose[ImportNii[#]&/@ConvertExtension[files[[pos]],".nii"]];
 					data=Transpose[data];
 					vox=First@vox;
@@ -586,7 +545,62 @@ MuscleBidsConvertI[foli_,files_,json_,datType_,del_]:=Block[{
 ] 
 
 
+(* ::Subsection:: *)
+(*BidsSupport*)
+
+
 (* ::Subsubsection:: *)
+(*BidsFolderLoop*)
+
+
+ 
+
+
+(* ::Subsubsection::Closed:: *)
+(*CheckDataDiscription*)
+
+
+SyntaxInformation[CheckDataDiscription] = {"ArgumentsPattern" -> {_}};
+
+CheckDataDiscription[dis:{_List..}]:=CheckDataDiscription/@dis
+
+CheckDataDiscription[dis:{_Rule..}]:=Block[{ass,key,man,typ, fail},
+	(*Get the data discription keys*)
+	ass=Association[dis];
+	key=Keys[ass];
+	
+	(*fail output*)
+	fail = Association[$Failed->ToString[Normal[ass]]];
+	
+	(*Check if manditory keys are present*)
+	man=ContainsAll[key,{"Label","Type"}];
+	If[!man,
+		Return[Message[Bids::man];fail],
+		
+		(*Check if type is valid*)
+		If[!MemberQ[Keys[bidsTypes],ass["Type"]], Message[Bids::type,ass["Type"]]];
+		(*Check if class is present*)
+		If[KeyExistsQ[ass,"Class"],
+			(*if present add check class is vlid*)
+			If[!MemberQ[bidsClass,ass["Class"]],Return[Message[Bids::class,ass["Class"]];fail]],
+			(*add class if not present*)
+			ass=Association[ass,"Class"->"Volume"]
+		];
+		
+		(*check suffic, in and out folder*)
+		If[!KeyExistsQ[ass,"Suffix"],ass=Association[ass,"Suffix"->""]];
+		If[!KeyExistsQ[ass,"InFolder"],ass=Association[ass,"InFolder"->"raw"]];
+		ass=Association[ass,"OutFolder"->(bidsTypes[ass["Type"]]/. {Missing[___]->"miss"})];
+		
+		(*add overlap if class is stacks*)
+		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass,"Overlap"],Message[Bids::stk];ass=Association[ass,"Overlap"->0]];
+		
+		ass
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*GetStackLabels*)
 
 
@@ -595,7 +609,7 @@ GetStackLabels[jsons:{_?AssociationQ..},name_]:=Sort@DeleteDuplicates@Flatten@St
 	#["SeriesDescription"]&/@jsons,name~~num:DigitCharacter..:>name<>num]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetStackNr*)
 
 
@@ -610,14 +624,14 @@ GetStackNr[nType_,namei_]:=Switch[nType,
 (*JSON*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ImportJSON*)
 
 
 ImportJSON[file_]:=Import[file,"RawJSON"]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetJSONPosition*)
 
 
@@ -632,7 +646,7 @@ GetJSONPosition[json_,selection_,sort_]:=Block[{seli,self,list,key,val,inds,pos}
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MergeJSON*)
 
 
@@ -646,7 +660,7 @@ MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
 
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*AddToJson*)
 
 
