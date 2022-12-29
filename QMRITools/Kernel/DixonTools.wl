@@ -196,11 +196,11 @@ DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{atot, fatMap, waterMap, f
 SyntaxInformation[FixDixonFlips] = {"ArgumentsPattern" -> {{_, _, _, _}}};
 
 FixDixonFlips[{mag_,phase_,real_,imag_}]:=Block[{p,r,i,c},
-	p=FindComplexFlips[real,imag];
+	p = FindComplexFlips[real,imag];
 	{If[p==={},
-		{mag,phase,real,imag}
-		, 
-		r=real;r[[All,p]]=-r[[All,p]];i=imag;i[[All,p]]=-i[[All,p]];
+		{mag,phase,real,imag}, 
+		r = real;r[[All,p]]=-r[[All,p]];
+		i = imag;i[[All,p]]=-i[[All,p]];
 		Through[{Abs,Arg,Re,Im}[r+I i]]
 	],p}
 ]
@@ -211,7 +211,7 @@ FindComplexFlips[real_,imag_]:=Block[{comp,diff,diffM,means},
 	diff=Differences[Transpose[comp]];
 	diffM=Median@Abs@diff;
 	means=MeanNoZero[Flatten[#]]&/@Abs[#-diffM&/@Abs[diff]];
-	Flatten[Position[Partition[Boole[#>2Median[means]&/@means],2,1],{1,1}]]+1
+	Flatten[Position[Partition[Boole[# > 2 Median[means] & /@ means], 2, 1], {1, 1}]] + 1
 ]
 
 
@@ -226,14 +226,15 @@ Options[DixonReconstruct] = {
 	DixonFrequencies -> {{0}, {3.8, 3.4, 3.13, 2.67, 2.46, 1.92, 0.57, -0.60}},
 	DixonAmplitudes -> {{1}, {0.089, 0.598, 0.047, 0.077, 0.052, 0.011, 0.035, 0.066}},
 	DixonIterations -> 10, 
-	DixonTollerance -> 0.01, 
-	DixonMaskThreshhold -> 0.01,
+	DixonTollerance -> 0.1, 
+	DixonMaskThreshhold -> 0.1,
 	DixonFilterInput -> True, 
 	DixonFilterOutput -> True,
 	DixonFilterSize -> 1,
 	DixonFilterType -> "Median",
 	DixonBipolar -> False,
-	DixonClipFraction -> False
+	DixonClipFraction -> False,
+	MonitorCalc -> False
 	};
 
 
@@ -246,7 +247,7 @@ DixonReconstruct[real_, imag_, echo_, b0i_, opts : OptionsPattern[]] := DixonRec
 DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 	necho, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, mat, iop, Amat, Amati, ioAmat,
 	complex, mask, range, zero, b0, r2, phi, phi0, result, cWat, cFat, phiEst, phi0Est, res, itt,
-	fraction, signal, ioPhase, fit, t2, func
+	fraction, signal, ioPhase, fit, t2, func, mon
 	},
 	
 	(*algorithems are base on: *)	
@@ -257,8 +258,9 @@ DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 	(*Peterson et.al.10.1002/mrm.24657 - bipolar*)
 	
 	(*Byder et.al. 10.1016/j.mri.2011.07.004 - a matrix with bonds*)
-
-
+	
+	mon = OptionValue[MonitorCalc];
+	
 	(*metabolite frequencies and amplitudes*)
 	freqs = OptionValue[DixonPrecessions] OptionValue[DixonFieldStrength] OptionValue[DixonFrequencies] GyromagneticRatio[OptionValue[DixonNucleus]];
 	amps = #/Total[#] &/@ OptionValue[DixonAmplitudes];
@@ -286,7 +288,7 @@ DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 	ioAmat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ iop;
 			
 	(*create complex data for fit*)
-	PrintTemporary["Prepairing data and field maps"];
+	If[mon, PrintTemporary["Prepairing data and field maps"]];
 	complex = N[real + imag I];
 	If[ArrayDepth[complex] === 4, complex = Transpose[complex]];
 	mask = Closing[UnitStep[Abs[First@complex] - thresh], 1] Unitize[Total[Abs[complex]]];
@@ -302,13 +304,13 @@ DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 
 	
 	(*perform the dixon reconstruction*)
-	PrintTemporary["performing dixon iDEAL reconstruction"];
+	If[mon, PrintTemporary["performing dixon iDEAL reconstruction"]];
 	result = DixonFitiC[complex, phi, mask, mat, Amat, Amati, eta, maxItt];
  	{cWat, cFat, phiEst ,phi0Est, res, itt} = RotateDimensionsRight[Chop[result]];
 
 	(*filter the output*)
 	If[filto,
-		PrintTemporary["Filtering field estimation and recalculating signal fractions"];
+		If[mon, PrintTemporary["Filtering field estimation and recalculating signal fractions"]];
 		(*smooth b0 field and R2star maps*)
 		phiEst = mask (filtFunc[Re[phiEst]] + DevideNoZero[1. ,filtFunc[Ramp[DevideNoZero[1., Im[phiEst]]]]] I);
 		phi0Est = mask (filtFunc[Re[phi0Est]]);
@@ -323,7 +325,7 @@ DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, OptionsPattern[]] := Block[{
 	(*create the output*)
 	itt = Round@Re@itt;
 	
-	PrintTemporary["performing water fat calculation"];
+	If[mon, PrintTemporary["performing water fat calculation"]];
 	mask = Times @@ (Mask[Abs[#], 2 range, MaskSmoothing -> False] & /@ {cWat, cFat});
 	{cWat, cFat} = {mask cWat, mask cFat};
 	fraction = DixonToPercent[cWat, cFat, OptionValue[DixonClipFraction]];
@@ -379,6 +381,7 @@ DixonFitiC = Compile[{
    				(*update the field map*)
    				phiEst += dPhi;
    				phi0Est += Re@dPhi0;
+   				phi0Est = If[Abs[phi0Est]>0.25 Pi, 0, phi0Est];
    				
    				(*define complex field map P(-phi) or (E D)^-1 *)
    				pMat = Exp[-I mat . {phiEst, phi0Est}];
@@ -403,7 +406,7 @@ DixonFitiC = Compile[{
    				continue = ! ((
    					Abs[Re[dPhi]/(2 Pi)] < eta && 
    					Abs[Im[dPhi]] < eta && 
-   					Abs[Re[dPhi0]] < eta/100 
+   					Abs[Re[dPhi0]] < eta / 10 
    				) || i >= maxItt);
    			];
    			
@@ -534,7 +537,7 @@ OptimizeDixonEcho[]:=Manipulate[
 
 Options[FindInPhaseEchos] = {DixonBipolar -> False}
 
-SyntaxInformation[FindInPhaseEchos] = {"ArgumentsPattern" -> {_,_}};
+SyntaxInformation[FindInPhaseEchos] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 FindInPhaseEchos[echos_, iop_, OptionsPattern[]]:=Block[{ord,phase},
 	phase=If[#>0.5 ,#-1,#]&/@FractionalPart[echos/iop];

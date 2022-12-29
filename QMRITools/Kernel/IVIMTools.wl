@@ -128,8 +128,13 @@ The fraction is defined between 0 and 1, the pdc is in mm^2/s.
 
 output is the corrected data."
 
+
 IVIMResiduals::usage = 
 "IVIMResiduals[data, binp, pars] calculates the root mean square residuals of an IVIM fit ussing IVIMCalc, BayesianIVIMFit2 or BayesianIVIMFit3."
+
+MeanBvalueSignal::usage = 
+"MeanBvalueSignal[data, bval] calculates the geometric mean of the data for each unique bval. 
+output is the mean data and the unique bvalues."
 
 
 (* ::Subsection::Closed:: *)
@@ -1182,15 +1187,25 @@ LapFilt[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@d
 	Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
 
 
+(* ::Subsection::Closed:: *)
+(*IVIMResiduals*)
 
+
+SyntaxInformation[MeanBvalueSignal] = {"ArgumentsPattern" -> {_, _}};
+
+MeanBvalueSignal[data_, val_] := Block[{valU, pos, mean},
+	{valU, pos} = UniqueBvalPosition[val];
+	mean = Transpose[GeometricMean[Transpose[data[[All, #]]]] & /@ pos];
+	{mean, valU}
+]
 
 
 (* ::Subsection::Closed:: *)
 (*IVIMResiduals*)
 
+SyntaxInformation[MeanBvalueSignal] = {"ArgumentsPattern" -> {_, _, _}};
 
-IVIMResiduals[data_, binp_, pars_] := 
- Module[{depthD,depthP,dat,par,res},
+IVIMResiduals[data_, binp_, pars_] := Module[{depthD,depthP,dat,par,res},
   
   (*data checks*)
   depthD = ArrayDepth[data];

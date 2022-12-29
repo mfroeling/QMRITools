@@ -52,6 +52,9 @@ ConvertExtension::usage =
 EmptyDirectoryQ::usage = 
 "EmptyDirectoryQ[dir] checks if directory dir is empty."
 
+NiiFileExistQ::usage = 
+"NiiFileExistQ[file] checks if the *.nii or *.nii.gz file exists."
+
 
 SaveImage::usage = 
 "SaveImage[image] exports graph to image, ImageSize, FileType and ImageResolution can be given as options.
@@ -294,6 +297,10 @@ CenterVoxel::usage =
 "CenterVoxel is an option for MakeIntFunction. If set true the centers of the voxels are interploated else its the corners."
 
 
+MonitorCalc::usage = 
+"MonitorCalc is an option for many processing functions. When true the proceses of the calculation is shown."
+
+
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
@@ -422,6 +429,14 @@ ConvertExtension[fileIn_?StringQ, ext_?StringQ] := Block[{extOld, file, extNew},
 SyntaxInformation[EmptyDirectoryQ] = {"ArgumentsPattern" -> {_}};
 
 EmptyDirectoryQ[dir_] := FileNames[All, dir] === {}
+
+
+(* ::Subsubsection::Closed:: *)
+(*NiiFileExistQ*)
+
+NiiFileExistQ[file_] := 
+ FileExistsQ[ConvertExtension[file, ".nii"]] || 
+  FileExistsQ[ConvertExtension[file, ".nii.gz"]]
 
 
 (* ::Subsubsection::Closed:: *)
