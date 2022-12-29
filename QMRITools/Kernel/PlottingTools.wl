@@ -808,11 +808,11 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Min Clipping", Row[{
 	        	Control@{{clipMin,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{minclip, Black, ""}, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"]&}
+	        	Control@{{minclip, Black, ""}, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
 	        }]},
 	        {"Max Clipping", Row[{
 	        	Control@{{clipMax,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{maxclip, White, "" }, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"]&}
+	        	Control@{{maxclip, White, "" }, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
 	        }]}
 		}]
 		,(*Plot style controls*)
@@ -1033,21 +1033,21 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			{"Min Clipping", PaneSelector[{
 				1->Row[{
 					Control@{{clipMin1,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-					Control@{{minclip1, Black, ""}, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
+					Control@{{minclip1, Black, ""}, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
 				}],
 				2->Row[{
 					Control@{{clipMin2,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-					Control@{{minclip2, Black, ""}, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
+					Control@{{minclip2, Black, ""}, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
 				}]
 	        },Dynamic[leftright]]},
 	        {"Max Clipping", PaneSelector[{
 	        	1->Row[{
 					Control@{{clipMax1,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-					Control@{{maxclip1, White, "" }, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
+					Control@{{maxclip1, White, "" }, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
 				}],
 				2->Row[{
 					Control@{{clipMax2,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-					Control@{{maxclip2, White, "" }, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
+					Control@{{maxclip2, White, "" }, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
 				}]
 	        },Dynamic[leftright]]}
 		}, False],

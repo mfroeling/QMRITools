@@ -151,7 +151,11 @@ ExportLog[file_, tree_] := Block[{},
 
 SyntaxInformation[ImportLog] = {"ArgumentsPattern" -> {_}};
 
-ImportLog[file_] := If[FileExistsQ[file], Import[file, "Lines"], ResetLog[]];
+ImportLog[file_] := If[FileExistsQ[file], 
+	QMRITools`$Log = Append[
+		Import[file, "Lines"],
+		"===================================================================="
+	], ResetLog[]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -299,9 +303,14 @@ PrintDirectoryTree[tree_]:=StringJoin[StringReplace[#,Thread[{"  ","\[VerticalLi
 
 SyntaxInformation[MakeCheckFile] = {"ArgumentsPattern" -> {{_, _, _}, _}};
 
-MakeCheckFile[{fol_, name_, tag_}, stat_?ListQ] := Export[
-	FileNameJoin[{fol, name <> "_" <> tag <> "_check.json"}],
-	Join[stat, {"Version" -> QMRITools`$InstalledVersion, "Date" -> DateString[]}]
+MakeCheckFile[{fol_, name_, tag_}, stat_?ListQ] := MakeCheckFile[FileNameJoin[{fol, name <> "_" <> tag }], stat]
+
+MakeCheckFile[nam_?StringQ, stat_?ListQ] := Export[
+	nam <> "_check.json",
+	Join[stat, {
+		"ProcessingSoftware" -> "QMRITools.com",
+		"Version" -> QMRITools`$InstalledVersion, 
+		"Date" -> DateString[]}]
 ]
 
 
@@ -311,12 +320,14 @@ MakeCheckFile[{fol_, name_, tag_}, stat_?ListQ] := Export[
 
 SyntaxInformation[CheckFile] = {"ArgumentsPattern" -> {{_, _, _},_ ,_}};
 
-CheckFile[{fol_,name_,tag_}, stat_, ver_]:=Block[{file,check},
-	file=FileNameJoin[{fol,name<>"_"<>tag<>"_check.json"}];
-	(*Print[file,FileExistsQ@file];*)
+CheckFile[{fol_,name_,tag_}, stat_, ver_]:=CheckFile[FileNameJoin[{fol,name<>"_"<>tag}], stat, ver]
+
+CheckFile[nam_?StringQ, stat_, ver_]:=Block[{file, check},
+	file = nam <> "_check.json";
 	If[!FileExistsQ[file],False,
-	check=Import[file,"RawJSON"];
-	AllTrue[{check["Check"]==="done",If[ver,!CheckVersion[check["Version"]],True]},TrueQ]]
+		check=Import[file,"RawJSON"];
+		AllTrue[{check["Check"]===stat,If[ver,!CheckVersion[check["Version"]],True]},TrueQ]
+	]
 ]
 
 

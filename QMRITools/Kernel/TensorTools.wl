@@ -156,9 +156,6 @@ NormalizeSignal::usage =
 "NormalizeSignal is an option for DriftCorrect."
 
 
-MonitorCalc::usage = 
-"MonitorCalc is an option for all Calc fucntions. When true the proceses of the calculation is shown."
-
 FullOutput::usage = 
 "FullOutput is an option for TensorCalc when using bvector. When True also the S0 is given as output."
 

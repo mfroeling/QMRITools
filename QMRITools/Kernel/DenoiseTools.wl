@@ -320,7 +320,8 @@ Options[PCADeNoise] = {
 	PCATollerance -> 0, 
 	PCAWeighting -> True, 
 	PCAClipping -> True,
-	Method -> "Similarity"
+	Method -> "Similarity",
+	MonitorCalc -> False
 };
 
 SyntaxInformation[PCADeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
@@ -334,12 +335,13 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, weight, pos, leng, nearPos,p
 	},
 	
+	mon = OptionValue[MonitorCalc];
 	wht = OptionValue[PCAWeighting];
 	(*tollerane if>0 more noise components are kept*)
 	tol = OptionValue[PCATollerance];
 	(*kernel size*)
 	ker = OptionValue[PCAKernel];
-	ker = If[EvenQ[ker], ker - 1, ker];
+	
 	
 	
 	(*make everything numerical to speed up*)
@@ -365,7 +367,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		
 		(*define runtime parameters*)
 		m = Length[data[[1]]];
-		n = ker m;
+		n = Round[ker m];
 		
 		(*parameters for monitor*)
 		leng = Length[data];
@@ -378,36 +380,32 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		j = 0;
 		totalItt = leng;
 		
-		PrintTemporary["Preparing data similarity"];
+		If[mon, PrintTemporary["Preparing data similarity"]];
 		(*get positions of similar signals*)
-		nearPos = Nearest[data -> Range[leng], data, n, DistanceFunction -> EuclideanDistance];
+		nearPos = Nearest[data -> Range[leng], data, n, DistanceFunction -> EuclideanDistance, 
+			Method -> "Scan", WorkingPrecision -> MachinePrecision];
 		
 		(*perform denoising*)
-		Monitor[
-
-			(*loop over parameters*)
-			output = Map[(
-				j++;
-				p = nearPos[[#]];
-				
-				(*perform the fit and reconstruct the noise free data*)
-				{sigo, Nes, datn} = PCADeNoiseFiti[data[[p]], {m, n}, sigm[[#]], tol];
-				
-				(*get the weightes*)
-				weight = If[wht, 1./(m - Nes), 1.];
-				
-				(*sum data and sigma and weight for numer of components*)
-				datao[[p]] += weight datn;
-				sigmat[[p]] += weight sigo;
-				weights[[p]] += weight;
-				
-				(*output sig, Nest and itterations*)
-				{sigo, Nes}
-			) &, Range[leng]];
-			,
-			(*monitor*)
-			ProgressIndicator[j, {0, totalItt}]
-		];
+		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, totalItt}]]];
+		output = Map[(
+			j++;
+			p = nearPos[[#]];
+			
+			(*perform the fit and reconstruct the noise free data*)
+			{sigo, Nes, datn} = PCADeNoiseFiti[data[[p]], {m, n}, sigm[[#]], tol];
+			
+			(*get the weightes*)
+			weight = If[wht, 1./(m - Nes), 1.];
+			
+			(*sum data and sigma and weight for numer of components*)
+			datao[[p]] += weight datn;
+			sigmat[[p]] += weight sigo;
+			weights[[p]] += weight;
+			
+			(*output sig, Nest and itterations*)
+			{sigo, Nes}
+		) &, Range[leng]];
+		
 		(*make everything in arrays*)
 		datao = VectorToData[DevideNoZero[datao, weights], pos];
 		sigmat = VectorToData[DevideNoZero[sigmat, weights], pos];
@@ -416,6 +414,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		,
 		(*--------------use patch---------------*)
 		_,
+		ker = If[EvenQ[ker], ker - 1, ker];
 		
 		(*prepare data*)
 		data = RotateDimensionsLeft[Transpose[data]];
