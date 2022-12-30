@@ -713,12 +713,13 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPa
 
 
 MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
-		fol, parts, name, nType, type, suf, files, sets, dfile, nfile, pro, keys,
+		con, fol, parts, name, nType, type, suf, files, sets, dfile, nfile, pro, keys,
 		dfiles, jfile, nfiles, outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask,
 		pos, e1, e2, phasediff, hz, b0i, t2stari, watFr, fatFr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res,
 		outTypes, preProc, nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg,
 		valU, mean, fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd
 	},
+	con = Context[con];
 
 	(*see if one label or session|repetion*)
 	{fol, parts} = PartitionBidsFolderName[foli];
@@ -782,7 +783,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];
 						
 						(*calculated B0 map and convert to Hz*)
-						{e1,e2}=FindInPhaseEchos[echos,0.0024,DixonBipolar->True];
+						{e1 ,e2} = FindInPhaseEchos[echos, 0.0024, DixonBipolar->True];
 						(*-----*)AddToLog[{"Starting B0 map calcualtion using echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(",1000echos[[e2]]"ms )"}, 4];
 						phasediff = ph[[All,e2]]-ph[[All,e1]];
 						hz = 1/(2 Pi(echos[[e2]]-echos[[e1]]));
@@ -799,9 +800,9 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						(*export all the calculated data*)
 						(*----*)AddToLog["Exporting the calculated data to:",4];
 						(*----*)AddToLog[outfile,5];
-						outTypes={"real", "imag", "mag", "ph", "b0i", "b0", "phi", "t2stari", "t2star", "r2star", 
+						outTypes = {"real", "imag", "mag", "ph", "b0i", "b0", "phi", "t2stari", "t2star", "r2star", 
 							"inph", "outph", "wat", "fat", "watFr", "fatFr", "itt", "res"};
-						ExportNii[ToExpression[#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+						ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 						
 						(*export the checkfile*)
 						MakeCheckFile[outfile, Sort@Join[
@@ -869,13 +870,13 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						(*export all the calculated data*)
 						(*----*)AddToLog["Exporting the calculated data to:",4];
 						(*----*)AddToLog[outfile,5];
-						outTypes={"den", "reg", "sig", "snr0", "snr"};
-						ExportNii[ToExpression[#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+						outTypes = {"den", "reg", "sig", "snr0", "snr"};
+						ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 						ExportBval[val, ConvertExtension[outfile <> "_reg", ".bval"]];
 						ExportBvec[grad, ConvertExtension[outfile <> "_reg", ".bvec"]];
 						
 						(*export the checkfile*)
-						MakeCheckFile[outfile<>"prep", Sort@Join[
+						MakeCheckFile[outfile<>"_prep", Sort@Join[
 							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
 							ExtractFromJSON[keys]
 						]];
@@ -890,9 +891,14 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			(*-------------------------------------------*)
 			(*------------ dwi processing script -----------*)
 			(*-------------------------------------------*)
+			
+			Print[{
+				If[!preProc, aa= CheckFile[outfile, "done", verCheck], False],
+				{preProc, aa}
+			}];
 									
 			(*check if processin is already done, redo is prep is done*)					
-			If[If[!preProc, CheckFile[outfile,"done", verCheck], False],
+			If[If[!preProc, CheckFile[outfile, "done", verCheck], False],
 				(*if checkfile has label done and version is recent skip*)
 				(*----*)AddToLog["Processing already done for: ", True, 3];
 				(*----*)AddToLog[outfile, 4],
@@ -939,10 +945,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						(*----*)AddToLog[outfile, 5];					
 						outTypes = {"data", "mean", "tens", "res", "out", "s0", 
 							"l1", "l1", "l3", "md",	"fa", "rd", "adci", "fri", "s0i"};
-						ExportNii[ToExpression[#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+						ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 												
 						(*export the checkfile*)
-						MakeCheckFile[outfile<>"_prep", Sort@Join[
+						MakeCheckFile[outfile, Sort@Join[
 							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
 							ExtractFromJSON[keys]
 						]];				
