@@ -1183,7 +1183,7 @@ CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1
 (*DevideNoZero*)
 
 
-SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_}};
+SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_,_.}};
 
 DevideNoZero[numi_, deni_, "Comp"] := N@DevideNoZeroi[numi, deni]
 
