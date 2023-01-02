@@ -102,6 +102,11 @@ GESignal[ang_?ListQ, {{tr1_, tr2_}, t1_}] calculates the dual tr gradient echo s
 SimulateDualTR::usage =
 "SimulateDualTR[] simulates the signal of a Dual TR T1 map."
 
+ErnstAngle::usage = 
+"ErnstAngle[] shows Ernst angle plot for t1 = 1400ms and tr = 15 ms.
+ErnstAngle[t1] shows Ernst angle plot for t1 and tr = 15 ms.
+ErnstAngle[t1, tr] shows Ernst angle plot for t1 and tr." 
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -1061,6 +1066,8 @@ GESignal[ang_?NumberQ, {{tr1_, tr2_}, t1_}] := Block[{a, e1, e2, s1, s2},
 (*SimulateDualTR*)
 
 
+SyntaxInformation[SimulateDualTR] = {"ArgumentsPattern" -> {_.}};
+
 SimulateDualTR[T1_ : 6000] := Manipulate[
 	{s1, s2} = GESignal[ang, {{tr1, n tr1}, T1}]/0.35;
 	s2a = Abs[s2];
@@ -1092,6 +1099,41 @@ SimulateDualTR[T1_ : 6000] := Manipulate[
 	, {p1, ControlType -> None}
 	, {p2, ControlType -> None}
 	, Initialization :> (ang = Range[1, 180])
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ErnstAngle*)
+
+
+SyntaxInformation[ErnstAngle] = {"ArgumentsPattern" -> {_., _.}};
+
+ErnstAngle[] := ErnstAngle[1400, 15]
+
+ErnstAngle[t1i_] := ErnstAngle[t1i, 15]
+
+ErnstAngle[t1i_, tri_] := Manipulate[
+	sge = (Sin[a Degree] (1 - Exp[-tr/t1]))/(1 - Cos[a Degree] Exp[-tr/t1]);
+	ang = Round[N@ArcCos[Exp[-tr/t1]]/Degree, .1];
+	top = {ang, sge /. a -> ang};
+	pt = {act, sge /. a -> act};
+	loss = Round[100 (sge /. a -> act)/(sge /. a -> ang)];
+	
+	Show[
+		Plot[sge /. a -> x, {x, 0, 90}, GridLines -> {{ang}, {pt[[2]]}}, Ticks -> {Automatic, None}, PlotRange -> {All, {0, 1.4 top[[2]]}},
+			PlotLabel -> "Actual flip angle: " <> ToString[act] <> " (" <> ToString[loss] <> " %)"],
+		ListPlot[{Callout[top, top[[1]]], pt}]
+	],
+	
+	{{t1, t1i, "t1 relaxation"}, 100, 5000},
+	{{tr, tri, "repetition time"}, 1, 100},
+	{{act, 5, "actual ang"}, 0, 90},
+	{a, ControlType -> None},
+	{pt, ControlType -> None},
+	{loss, ControlType -> None},
+	{ang, ControlType -> None},
+	{sge, ControlType -> None},
+	{top, ControlType -> None}
 ]
 
 
