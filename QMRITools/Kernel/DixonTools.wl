@@ -211,7 +211,7 @@ FindComplexFlips[real_,imag_]:=Block[{comp,diff,diffM,means},
 	diff=Differences[Transpose[comp]];
 	diffM=Median@Abs@diff;
 	means=MeanNoZero[Flatten[#]]&/@Abs[#-diffM&/@Abs[diff]];
-	Flatten[Position[Partition[Boole[# > 2 Median[means] & /@ means], 2, 1], {1, 1}]] + 1
+	Flatten[Position[Partition[Append[Boole[# > 2 Median[means] & /@ means],1], 2, 1], {1, 1}]] + 1
 ]
 
 
@@ -366,32 +366,36 @@ DixonFitiC = Compile[{
 		{mat,_Real,2}, {Amat, _Complex, 2}, {Amati, _Complex, 2}, 
 		{eta, _Real, 0}, {maxItt, _Integer, 0}
 	}, Block[{
-		i, continue, phiEst, phi0Est, dPhi, dPhi0, res, rho, pMat, sigd, sol, B, Bi
+		i, continue, phiEst, phi0Est, dPhi, dPhi0, rms, res, rho, pMat, sigd, sol, B, Bi
 	},
-	If[mask > 0,
-		(*initialize fit*)
-		i = 0;
-		continue = True;
-		{phiEst, phi0Est} = phi;
-		dPhi = dPhi0 = 0. I;
-		res = rho = ydat 0.;
-		
-		(*perform itterative fitting*)
-		While[continue,			
+	
+	(*initialize variables*)
+	res = ydat 0.;
+	rho = {0. + 0. I, 0. + 0. I};
+	{phiEst, phi0Est} = phi;
+	dPhi = dPhi0 = rms = 0. I;
+	
+	(*loop parameters*)
+	i = 0;
+	continue = True;
+	
+	(*perform itterative fitting*)
+	If[mask > 0, 
+		While[continue,	i++;
 			(*update the field map*)
 			phiEst += dPhi;
-			phi0Est += Re@dPhi0;
-			phi0Est = If[Abs[phi0Est] > 0.6, 0., phi0Est];
+			phi0Est += dPhi0;
+			phi0Est = If[Abs[Re@phi0Est] > 0.6, 0., phi0Est];
 			
 			(*define complex field map P(-phi) or (E D)^-1 *)
-			pMat = Exp[-I mat . {phiEst, phi0Est}];
+			pMat = Exp[-I mat.{phiEst, phi0Est}];
 			
 			(*demodulate the phase of the signal*)
 			(*perform A.2 form 10.1002/jmri.21090, the water fat fraction*)
 			(*A.rho is needed for Matrix B eq A.4 and eq A.5, calculat the fitted demodulated signal*)
 			sigd = pMat ydat;
-			rho = Amati . sigd;
-			sol = Amat . rho;
+			rho = Amati.sigd;
+			sol = Amat.rho;
 			res = sigd - sol;
 			
 			(*Define the matrix B including bipolar 10.1002/mrm.24657 and initial phase*)
@@ -403,11 +407,14 @@ DixonFitiC = Compile[{
 			(*chech for continue*)
 			(*Re@deltaPhi = B0; 2Pi Im@deltaPhi = r2Star; Re@deltaPhi0 = phase errors;*)
 			continue = !((Abs[Re@dPhi/(2 Pi)] < eta && Abs[Im@dPhi] < eta && Abs[100 Re@dPhi0] < eta) || i >= maxItt);
-			i++;
 		];
-		(*output*)
-		Join[rho, {phiEst, phi0Est, Sqrt[Mean[res^2]], i}],	ConstantArray[0., Length[Amat[[1]]] + 4]
-	]
+		
+		rms = Sqrt[Mean[res^2]];
+	];
+
+	(*output*)
+	Join[rho, {phiEst, phi0Est, rms, i}]
+	
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 

@@ -891,11 +891,6 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			(*-------------------------------------------*)
 			(*------------ dwi processing script -----------*)
 			(*-------------------------------------------*)
-			
-			Print[{
-				If[!preProc, aa= CheckFile[outfile, "done", verCheck], False],
-				{preProc, aa}
-			}];
 									
 			(*check if processin is already done, redo is prep is done*)					
 			If[If[!preProc, CheckFile[outfile, "done", verCheck], False],
