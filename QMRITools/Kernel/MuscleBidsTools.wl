@@ -144,7 +144,7 @@ bidsTypes = <|
 	(*anata types*)
 	"T1w"->"anat", "T1w-FS"->"anat", "T2w"->"anat", "T2w-FS"->"anat",
 	(*dixon*)
-	"megre"->"dix", "mese"->"dix",
+	"megre"->"dix", "mese"->"quant",
 	(*quant types*)
 	"T1"->"quant", "T2"->"quant", "wT2"->"quant",
 	(*diff types*)
@@ -523,7 +523,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass,"Overlap"], Message[Bids::stk]; ass = Association[ass, "Overlap"->0]];
 		
 		(*output the completed data discription*)
-		{ass}
+		{KeySort@ass}
 	]
 ]
 
@@ -549,7 +549,7 @@ MuscleBidsConvert[niiFol_?StringQ, datDis_, ops:OptionsPattern[]]:= BidsFolderLo
 
 MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 		name, nType, type, suf, pro, fol, parts, files, json, infoExtra,
-		pos, info, data, vox, grad, val, sufd, outFile
+		pos, posi, info, data, vox, grad, val, sufd, outFile
 	},
 	
 	(*see if one label or session|repetion*)
@@ -572,6 +572,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			(*---------- DIXON conversion script -----------*)
 			(*-------------------------------------------*)
 			"megre",
+			
 			(*loop over dixon data types*)
 			Table[
 				(*get the posisiton of the files needed*)
@@ -609,10 +610,9 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 				Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
 				
 				(*Delete used files*)
-				If[del,
-					(*-----*)AddToLog[{"Deleting", Length[pos], type, "datasets with properties: ", {namei, dixType}},4];
-					Quiet@DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-					Quiet@DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
+				Quiet@If[del,
+					DeleteFile[ConvertExtension[files[[pos]],".nii"]];
+					DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
 					DeleteFile[ConvertExtension[files[[pos]],".json"]]
 				];
 				
@@ -627,7 +627,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			"dwi",
 			
 			(*get the posisiton of the files needed*)
-			pos = GetJSONPosition[json,{{"SeriesDescription",namei}}];
+			pos = GetJSONPosition[json, {{"SeriesDescription", namei}}];
 			(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
 			
 			(*get the json and data*)
@@ -652,10 +652,10 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
 			Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
 			
-			If[del,
+			Quiet@If[del,
 				(*-----*)AddToLog[{"Deleting", Length[pos], type, "dataset with properties: ", namei}, 4];
-				Quiet@DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-				Quiet@DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
+				DeleteFile[ConvertExtension[files[[pos]],".nii"]];
+				DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
 				DeleteFile[ConvertExtension[files[[pos]],".json"]];
 				DeleteFile[ConvertExtension[files[[pos]],".bval"]];
 				DeleteFile[ConvertExtension[files[[pos]],".bvec"]];
@@ -664,8 +664,44 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			(*-------------------------------------------*)
 			(*------------ T2 processing script ------------*)
 			(*-------------------------------------------*)
-			"T2",
-			Print["t2 data conversion is not done yet"],
+			"mese",
+			
+			(*get the posisiton of the files needed*)
+			pos = posi = GetJSONPosition[json, {{"SeriesDescription", namei}}];
+			(*select only echos*)
+			info = MergeJSON[json[[pos]]];
+			pos = pos[[;; info["EchoTrainLength"]]];
+			(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
+			
+			(*get the json and data*)
+			AssociateTo[info, "EchoNumber" -> Range@info["EchoTrainLength"]];
+			{data, vox} = Transpose[ImportNii /@ ConvertExtension[files[[pos]],".nii"]];
+			data = Transpose[data];
+			vox = First@vox;
+			(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+			
+			(*make the additional manditory bids json values*)
+			infoExtra=<|
+				"ForthDimension"->"EchoTime",
+				"DataClass"->datType["Class"],
+				If[datType["Class"]==="Repetitions", "Repetition"->namei, Nothing],
+				If[datType["Class"]==="Stacks", "Stack"->namei, Nothing],
+				If[datType["Class"]==="Stacks", "OverLap"->datType["Overlap"], Nothing]
+			|>;
+			
+			(*export to the correct folder*)
+			outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetStackName[nType, namei], "suf"->{suf}|>];
+			(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
+			ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+			Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
+			
+			(*Delete used files*)
+			Quiet@If[del,
+				(*-----*)AddToLog[{"Deleting", Length[posi], type, "datasets with properties: ", namei},4];
+				DeleteFile[ConvertExtension[files[[posi]],".nii"]];
+				DeleteFile[ConvertExtension[files[[posi]],".nii.gz"]];
+				DeleteFile[ConvertExtension[files[[posi]],".json"]]
+			],
 			
 			(*-------------------------------------------*)
 			(*---------- Other processing script -----------*)
@@ -689,7 +725,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 GetStackName[nType_, namei_]:=Switch[nType,
 	"Volume", "",
 	"Stacks"|"Repetition",
-	Switch[nType, "Stacks", "stk", "Repetition", "rep"] -> namei
+	Switch[nType, "Stacks", "stk", "Repetition", "rep"] -> StringReplace[namei,{"-"->"","_"->""}]
 ]
 
 
@@ -714,7 +750,7 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPa
 
 MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		con, fol, parts, name, nType, type, suf, files, sets, dfile, nfile, pro, keys,
-		dfiles, jfile, nfiles, outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask,
+		dfiles, jfile, nfiles, outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i,
 		pos, e1, e2, phasediff, hz, b0i, t2stari, watFr, fatFr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res,
 		outTypes, preProc, nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg,
 		valU, mean, fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd
@@ -727,7 +763,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 	keys = {"EchoTime", "ForthDimension", "DataClass", "Stack", "OverLap", "SliceThickness", "SpacingBetweenSlices"};
 
 	(*see what needs to be processed*)
-	files = Flatten[FileNames["*"<>#<>"*.json", foli]&/@name];
+	files = Flatten[FileNames["*"<>StringReplace[#, {"-"->"","_"->""}]<>"*.json", foli]&/@name];
 	sets = If[type==="megre",
 		DeleteDuplicates[KeyDrop[#,"suf"]&/@PartitionBidsName[FileBaseName/@files]],
 		DeleteDuplicates[PartitionBidsName[FileBaseName/@files]]];
@@ -779,23 +815,17 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						{mag, ph, real, imag} = MaskData[#,B0mask]&/@{mag,ph,real,imag};
 						
 						(*see if there are dixon flips*)
-						{{mag, ph, real, imag}, pos}=FixDixonFlips[{mag, ph, real, imag}];
-						(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];
+						(*{{mag, ph, real, imag}, pos} = FixDixonFlips[{mag, ph, real, imag}];
+						(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];*)
 						
-						(*calculated B0 map and convert to Hz*)
-						{e1 ,e2} = FindInPhaseEchos[echos, 0.0024, DixonBipolar->True];
-						(*-----*)AddToLog[{"Starting B0 map calcualtion using echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(",1000echos[[e2]]"ms )"}, 4];
-						phasediff = ph[[All,e2]]-ph[[All,e1]];
-						hz = 1/(2 Pi(echos[[e2]]-echos[[e1]]));
-						b0i = hz UnwrapSplit[phasediff, magM, UnwrapDimension->"3D", MonitorUnwrap->False];
-						
-						(*calculate the t2 star*)
-						(*-----*)AddToLog["Starting T2 star map calculation",4];
-						t2stari = Last@T2Fit[mag,echos];
+						(*calculated field maps*)
+						(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
+						{b0i, ph0i, t2stari, {e1, e2}, n} = DixonPhase[real, imag, echos, True];
+						(*-----*)AddToLog[{"using echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(",1000echos[[e2]]"ms )"},5];
 						
 						(*perform the IDEAL dixon fit*)
 						(*-----*)AddToLog["Starting Dixon reconstruction",4];
-						{{watFr, fatFr}, {wat, fat}, {inph, outph}, {b0, t2star, r2star, phi}, itt, res} = DixonReconstruct[real, imag, echos, b0i, t2stari, DixonBipolar->True];
+						{{watFr, fatFr}, {wat, fat}, {inph, outph}, {b0, t2star, r2star, phi}, itt, res} = DixonReconstruct[real, imag, echos, b0i, t2stari, ph0i, DixonBipolar->True];
 						
 						(*export all the calculated data*)
 						(*----*)AddToLog["Exporting the calculated data to:",4];
@@ -861,7 +891,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						
 						(*calculate SNR*)
 						snr = SNRCalc[den, sig];
-						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, 2];
+						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, 2}];
 						
 						(*register data - each leg seperate*)
 						(*-----*)AddToLog["Starting dwi motion and eddy correction", 4];
@@ -928,7 +958,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						(*calculate tensor from corrected data*)
 						(*-----*)AddToLog["Starting tensor calculation", 4];
 						data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
-						{tens, s0, out, res} = TensorCalc[data, grad, val, FullOutput->True, Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
+						{tens, s0, out, res} = Quiet@TensorCalc[data, grad, val, FullOutput->True, Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
 						out = Total@Transpose@out;
 						(*calculate tensor parameters*)
 						{l1, l2, l3, md, fa} = ParameterCalc[tens];
