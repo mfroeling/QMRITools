@@ -569,7 +569,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 		Switch[type,
 		
 			(*-------------------------------------------*)
-			(*---------- DIXON conversion script -----------*)
+			(*-------- DIXON conversion script ----------*)
 			(*-------------------------------------------*)
 			"megre",
 			
@@ -622,7 +622,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			,{dixType, {"Mixed", "Phase", "Real", "Imaginary"}}],
 			
 			(*-------------------------------------------*)
-			(*----------- DWI processing script ------------*)
+			(*---------- DWI processing script ----------*)
 			(*-------------------------------------------*)
 			"dwi",
 			
@@ -662,12 +662,12 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			],
 			
 			(*-------------------------------------------*)
-			(*------------ T2 processing script ------------*)
+			(*----------- T2 processing script ----------*)
 			(*-------------------------------------------*)
 			"mese",
 			
 			(*get the posisiton of the files needed*)
-			pos = posi = GetJSONPosition[json, {{"SeriesDescription", namei}}];
+			pos = posi = GetJSONPosition[json, {{"SeriesDescription", namei}}, "EchoTime"];
 			(*select only echos*)
 			info = MergeJSON[json[[pos]]];
 			pos = pos[[;; info["EchoTrainLength"]]];
@@ -704,7 +704,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			],
 			
 			(*-------------------------------------------*)
-			(*---------- Other processing script -----------*)
+			(*-------- Other processing script ----------*)
 			(*-------------------------------------------*)
 			_,Print["Unknow type for conversion"];
 		
@@ -749,17 +749,19 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPa
 
 
 MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
-		con, fol, parts, name, nType, type, suf, files, sets, dfile, nfile, pro, keys,
-		dfiles, jfile, nfiles, outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i,
-		pos, e1, e2, phasediff, hz, b0i, t2stari, watFr, fatFr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res,
-		outTypes, preProc, nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg,
-		valU, mean, fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd
+		con, fol, parts, name, nType, type, suf, files, sets, dfile, nfile, pro, keys, dfiles, jfile, nfiles,
+		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, phasediff, hz, b0i,
+		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
+		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
+		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, setting, ex, ref, thk
 	},
+	
+	(*get the context for exporting*)
 	con = Context[con];
 
-	(*see if one label or session|repetion*)
+	(*get the information needed for processing, e.g. session|repetion*)
 	{fol, parts} = PartitionBidsFolderName[foli];
-	{name, nType, type, suf, pro} = datType/@{"Label", "Class", "Type", "Suffix","Process"};
+	{name, nType, type, suf, pro, setting} = datType/@{"Label", "Class", "Type", "Suffix", "Process", "Settings"};
 	keys = {"EchoTime", "ForthDimension", "DataClass", "Stack", "OverLap", "SliceThickness", "SpacingBetweenSlices"};
 
 	(*see what needs to be processed*)
@@ -774,81 +776,100 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		(*-----*)AddToLog[dataToLog@set,2 ];
 		(*see which data type is expected*)
 		Switch[type,
-			(*-------------------------------------------*)
-			(*---------- DIXON processing script -----------*)
-			(*-------------------------------------------*)
+			
 			"megre",
+			(*-------------------------------------------*)
+			(*-------- megre processing scripts ---------*)
+			(*-------------------------------------------*)
 			
-			(*input file names*)
-			dfiles = GenerateBidsFileName[fol, <|set, "suf"->{suf, #}|>]&/@{"", "ph", "real", "imag"};
-			jfile = ConvertExtension[First@dfiles, ".json"];
-			nfiles = ConvertExtension[dfiles, ".nii"];
 			
-			(*ouput file names*)
-			outfile = GenerateBidsFileName[folo, set];
-	
-			(*check if files are already done*)
-			If[CheckFile[outfile, "done", verCheck],
-				(*if checkfile has label done and version is recent skip*)
-				(*----*)AddToLog["Processing already done for: ", True, 3];
-				(*----*)AddToLog[outfile, 4],
-				(*----*)AddToLog["Starting processing for data:", 3, True];
-				(*----*)AddToLog[First@dfiles, 4];
+			Switch[pro,
+				"Dixon",
+				(*-------------------------------------------*)
+				(*-------- Dixon processing scripts ---------*)
+				(*-------------------------------------------*)
 				
-				(*Check if needed json Exist*)
-				If[!FileExistsQ[jfile],
-					(*----*)AddToLog["Could not find the needed JSON file", 4];,
-					(*Check if needed nii Exist*)
-					If[!AllTrue[nfiles, NiiFileExistQ],
-						(*----*)AddToLog[{"Could not find all the ", First@dfiles}, 4],
-						(*----*)AddToLog["Importing the data", 4];
-
-						(*import the data*)
-						json = ImportJSON[jfile];
-						echos = json["EchoTime"];
-						{{mag, ph, real, imag}, dvox} = Transpose[ImportNii/@nfiles];
-						dvox = First@dvox;
-						
-						(*Apply background mask*)
-						magM = NormalizeData[Mean@Transpose@mag];
-						B0mask = Dilation[Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2], 1];
-						{mag, ph, real, imag} = MaskData[#,B0mask]&/@{mag,ph,real,imag};
-						
-						(*see if there are dixon flips*)
-						(*{{mag, ph, real, imag}, pos} = FixDixonFlips[{mag, ph, real, imag}];
-						(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];*)
-						
-						(*calculated field maps*)
-						(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
-						{b0i, ph0i, t2stari, {e1, e2}, n} = DixonPhase[real, imag, echos, True];
-						(*-----*)AddToLog[{"using echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(",1000echos[[e2]]"ms )"},5];
-						
-						(*perform the IDEAL dixon fit*)
-						(*-----*)AddToLog["Starting Dixon reconstruction",4];
-						{{watFr, fatFr}, {wat, fat}, {inph, outph}, {b0, t2star, r2star, phi}, itt, res} = DixonReconstruct[real, imag, echos, b0i, t2stari, ph0i, DixonBipolar->True];
-						
-						(*export all the calculated data*)
-						(*----*)AddToLog["Exporting the calculated data to:",4];
-						(*----*)AddToLog[outfile,5];
-						outTypes = {"real", "imag", "mag", "ph", "b0i", "b0", "phi", "t2stari", "t2star", "r2star", 
-							"inph", "outph", "wat", "fat", "watFr", "fatFr", "itt", "res"};
-						ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
-						
-						(*export the checkfile*)
-						MakeCheckFile[outfile, Sort@Join[
-							{"Check"->"done", "DixonFlips" -> pos, "DixonBipolar" -> True, "Outputs" -> outTypes, "SetProperteis"->set},
-							ExtractFromJSON[keys]
-						]];
+				(*input file names*)
+				dfiles = GenerateBidsFileName[fol, <|set, "suf"->{suf, #}|>]&/@{"", "ph", "real", "imag"};
+				jfile = ConvertExtension[First@dfiles, ".json"];
+				nfiles = ConvertExtension[dfiles, ".nii"];
+				
+				(*ouput file names*)
+				outfile = GenerateBidsFileName[folo, set];
+		
+				(*check if files are already done*)
+				If[CheckFile[outfile, "done", verCheck],
+					(*if checkfile has label done and version is recent skip*)
+					(*----*)AddToLog["Processing already done for: ", True, 3];
+					(*----*)AddToLog[outfile, 4],
+					(*----*)AddToLog["Starting processing for data:", 3, True];
+					(*----*)AddToLog[First@dfiles, 4];
+					
+					(*Check if needed json Exist*)
+					If[!FileExistsQ[jfile],
+						(*----*)AddToLog["Could not find the needed JSON file", 4];,
+						(*Check if needed nii Exist*)
+						If[!AllTrue[nfiles, NiiFileExistQ],
+							(*----*)AddToLog[{"Could not find all the ", First@dfiles}, 4],
+							(*----*)AddToLog["Importing the data", 4];
 	
-					(*close nii, json and check*)
+							(*import the data*)
+							json = ImportJSON[jfile];
+							echos = json["EchoTime"];
+							{{mag, ph, real, imag}, dvox} = Transpose[ImportNii/@nfiles];
+							dvox = First@dvox;
+							
+							(*Apply background mask*)
+							magM = NormalizeData[Mean@Transpose@mag];
+							B0mask = Dilation[Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2], 1];
+							{mag, ph, real, imag} = MaskData[#,B0mask]&/@{mag,ph,real,imag};
+							
+							(*see if there are dixon flips*)
+							(*{{mag, ph, real, imag}, pos} = FixDixonFlips[{mag, ph, real, imag}];
+							(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];*)
+							pos = {};
+							
+							(*calculated field maps*)
+							(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
+							{b0i, ph0i, t2stari, {e1, e2}, n} = DixonPhase[real, imag, echos, True];
+							(*-----*)AddToLog[{"using echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(",1000echos[[e2]]"ms )"},5];
+							
+							(*perform the IDEAL dixon fit*)
+							(*-----*)AddToLog["Starting Dixon reconstruction",4];
+							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {b0, t2star, r2star, phi}, itt, res} = DixonReconstruct[real, imag, echos, b0i, t2stari, ph0i, DixonBipolar->True];
+							
+							(*export all the calculated data*)
+							(*----*)AddToLog["Exporting the calculated data to:",4];
+							(*----*)AddToLog[outfile,5];
+							outTypes = {"real", "imag", "mag", "ph", "b0i", "b0", "phi", "t2stari", "t2star", "r2star", 
+								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res"};
+							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+							
+							(*export the checkfile*)
+							MakeCheckFile[outfile, Sort@Join[
+								{"Check"->"done", "EchoTimes"->echos, "DixonFlips" -> pos, "DixonBipolar" -> True, "Outputs" -> outTypes, "SetProperteis"->set},
+								ExtractFromJSON[keys]
+							]];
+						]
 					]
-				]
+				(*close dixon processing*)
+				],
+				
+				True,
+				(*-------------------------------------------*)
+				(*-------------- Unknown megre --------------*)
+				(*-------------------------------------------*)
+				(*----*)AddToLog[{"Unkonwn processing ",pro, "for datatype", type}, True, 3];
+			
+			(*close megre processing*)
 			],
 			
-			(*-------------------------------------------*)
-			(*----------- dwi processing script ------------*)
-			(*-------------------------------------------*)
+			
 			"dwi",
+			(*-------------------------------------------*)
+			(*--------- dwi processing script -----------*)
+			(*-------------------------------------------*)
+			
 			
 			(*input file names*)
 			dfile = GenerateBidsFileName[fol, set];
@@ -860,7 +881,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			outfile = GenerateBidsFileName[folo, set];
 			
 			(*-------------------------------------------*)
-			(*--------- dwi pre -processing script ---------*)
+			(*------- dwi pre -processing script --------*)
 			(*-------------------------------------------*)
 			
 			(*check if pre-processin is already done*)
@@ -915,82 +936,164 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						preProc = True;
 					]
 				]
-			(*close prep*)
+			(*close preprocessing*)
 			];
 			
-			(*-------------------------------------------*)
-			(*------------ dwi processing script -----------*)
-			(*-------------------------------------------*)
-									
-			(*check if processin is already done, redo is prep is done*)					
-			If[If[!preProc, CheckFile[outfile, "done", verCheck], False],
-				(*if checkfile has label done and version is recent skip*)
-				(*----*)AddToLog["Processing already done for: ", True, 3];
-				(*----*)AddToLog[outfile, 4],
-				(*----*)AddToLog["Starting processing for data:", 3, True];
-				(*----*)AddToLog[nfilep, 4];				
+			Switch[pro,
 				
-				If[!FileExistsQ[jfile],
-					(*----*)AddToLog["Could not find the needed JSON file", 4];,
+				"DTI",
+				(*-------------------------------------------*)
+				(*---------- dwi processing script ----------*)
+				(*-------------------------------------------*)
+										
+				(*check if processin is already done, redo is prep is done*)					
+				If[If[!preProc, CheckFile[outfile, "done", verCheck], False],
+					(*if checkfile has label done and version is recent skip*)
+					(*----*)AddToLog["Processing already done for: ", True, 3];
+					(*----*)AddToLog[outfile, 4],
+					(*----*)AddToLog["Starting processing for data:", 3, True];
+					(*----*)AddToLog[nfilep, 4];				
 					
-					(*Check if needed nii Exist*)
-					If[!(NiiFileExistQ[nfilep]&&FileExistsQ[ConvertExtension[nfilep,".bval"]]&&FileExistsQ[ConvertExtension[nfilep,".bvec"]]),
-						(*----*)AddToLog[{"Skipping, could not find .nii, .bval and .bvec"}, 4],
-						(*----*)AddToLog["Importing the data", 4];
-
-						(*import the data*)
-						json = ImportJSON[jfile];
-						{data, grad, val, diffvox} = ImportNiiDiff[nfilep, FlipBvec->False];
-						mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
-						data = MaskData[data, mask];
-						(*get bvalues and mean data*)
-						{mean, valU} = MeanBvalueSignal[data, val];
+					If[!FileExistsQ[jfile],
+						(*----*)AddToLog["Could not find the needed JSON file", 4];,
 						
-						(*initialize IVIM fit*)
-						(*-----*)AddToLog["Starting ivim calculation", 4];
-						fiti = IVIMCalc[MeanSignal[mean], valU, {1,.05,.003,.015}, IVIMFixed->True];
-						(*perform IVIM correction*)
-						{s0i, fri, adci, pD}= IVIMCalc[mean, valU, fiti, IVIMConstrained->False, Parallelize->True, MonitorIVIMCalc->False, IVIMFixed->True];
-						fri = Clip[fri, {0,1}, {0,1}];
-						adci = 1000 adci;
-						resi = IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
-						
-						(*calculate tensor from corrected data*)
-						(*-----*)AddToLog["Starting tensor calculation", 4];
-						data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
-						{tens, s0, out, res} = Quiet@TensorCalc[data, grad, val, FullOutput->True, Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
-						out = Total@Transpose@out;
-						(*calculate tensor parameters*)
-						{l1, l2, l3, md, fa} = ParameterCalc[tens];
-						rd = Mean[{l2, l3}];
-						tens = Transpose[tens];
-						
-						(*export all the calculated data*)
-						(*----*)AddToLog["Exporting the calculated data to:", 4];
-						(*----*)AddToLog[outfile, 5];					
-						outTypes = {"data", "mean", "tens", "res", "out", "s0", 
-							"l1", "l1", "l3", "md",	"fa", "rd", "adci", "fri", "s0i"};
-						ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
-												
-						(*export the checkfile*)
-						MakeCheckFile[outfile, Sort@Join[
-							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
-							ExtractFromJSON[keys]
-						]];				
+						(*Check if needed nii Exist*)
+						If[!(NiiFileExistQ[nfilep]&&FileExistsQ[ConvertExtension[nfilep,".bval"]]&&FileExistsQ[ConvertExtension[nfilep,".bvec"]]),
+							(*----*)AddToLog[{"Skipping, could not find .nii, .bval and .bvec"}, 4],
+							(*----*)AddToLog["Importing the data", 4];
+	
+							(*import the data*)
+							json = ImportJSON[jfile];
+							{data, grad, val, diffvox} = ImportNiiDiff[nfilep, FlipBvec->False];
+							mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
+							data = MaskData[data, mask];
+							(*get bvalues and mean data*)
+							{mean, valU} = MeanBvalueSignal[data, val];
+							
+							(*initialize IVIM fit*)
+							(*-----*)AddToLog["Starting ivim calculation", 4];
+							fiti = IVIMCalc[MeanSignal[mean], valU, {1,.05,.003,.015}, IVIMFixed->True];
+							(*perform IVIM correction*)
+							{s0i, fri, adci, pD}= IVIMCalc[mean, valU, fiti, IVIMConstrained->False, Parallelize->True, MonitorIVIMCalc->False, IVIMFixed->True];
+							fri = Clip[fri, {0,1}, {0,1}];
+							adci = 1000 adci;
+							resi = IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
+							
+							(*calculate tensor from corrected data*)
+							(*-----*)AddToLog["Starting tensor calculation", 4];
+							data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
+							{tens, s0, out, res} = Quiet@TensorCalc[data, grad, val, FullOutput->True, Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
+							out = Total@Transpose@out;
+							(*calculate tensor parameters*)
+							{l1, l2, l3, md, fa} = ParameterCalc[tens];
+							rd = Mean[{l2, l3}];
+							tens = Transpose[tens];
+							
+							(*export all the calculated data*)
+							(*----*)AddToLog["Exporting the calculated data to:", 4];
+							(*----*)AddToLog[outfile, 5];					
+							outTypes = {"data", "mean", "tens", "res", "out", "s0", 
+								"l1", "l1", "l3", "md",	"fa", "rd", "adci", "fri", "s0i"};
+							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+													
+							(*export the checkfile*)
+							MakeCheckFile[outfile, Sort@Join[
+								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
+								ExtractFromJSON[keys]
+							]];				
+						]
 					]
-				]
-			(*close main processing*)
-			]
-			,
+				(*close dti processing*)
+				],
+				
+				True,
+				(*-------------------------------------------*)
+				(*--------------- Unknown dti ---------------*)
+				(*-------------------------------------------*)
+				(*----*)AddToLog[{"Unkonwn processing ",pro, "for datatype", type}, True, 3];
+			],
 			
 			(*-------------------------------------------*)
-			(*------------ T2 processing script ------------*)
+			(*-------- mese processing scripts ----------*)
 			(*-------------------------------------------*)
-			"T2",
-			Print["t2 processing is not done yet"],
+			"mese",
 			
+			(*input file names*)
+			dfile = GenerateBidsFileName[fol, set];
+			jfile = ConvertExtension[dfile,".json"];
+			nfile = ConvertExtension[dfile,".nii"];
+			
+			(*ouput file names*)
+			outfile = GenerateBidsFileName[folo, set];
+			
+			Switch[pro,
+				
+				"EPGT2",
+				(*-------------------------------------------*)
+				(*---------- EPG processing script ----------*)
+				(*-------------------------------------------*)
+				(*check if files are already done*)
+				If[CheckFile[outfile, "done", verCheck],
+					(*if checkfile has label done and version is recent skip*)
+					(*----*)AddToLog["Processing already done for: ", True, 3];
+					(*----*)AddToLog[outfile, 4],
+					(*----*)AddToLog["Starting processing for data:", 3, True];
+					(*----*)AddToLog[dfile, 4];
+					
+					(*Check if needed json Exist*)
+					If[!FileExistsQ[jfile],
+						(*----*)AddToLog[{"Could not find the needed JSON file of", jfile}, 4];,
+						(*Check if needed nii Exist*)
+						If[!NiiFileExistQ[nfile],
+							(*----*)AddToLog[{"Could not find the data of", dfile}, 4],
+							(*----*)AddToLog["Importing the data", 4];
+							
+							(*import the data*)
+							json = ImportJSON[jfile];
+							echos = json["EchoTime"];
+							{data, t2vox} = ImportNii[nfile];
+							
+							(*mask the background*)		
+							mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
+							data = MaskData[data, mask];
+							
+							(*determine the pulse profiles*)
+							(*-----*)AddToLog["Calculating the slice profiles", 4];							
+							{ex, ref} = setting;
+							thk = 2 json["SliceThickness"];
+							angle = GetPulseProfile[ex, ref, SliceRange -> thk, SliceRangeSamples -> thk][[1;;2]];
+							
+							(*caculate the water t2 map*)
+							(*-----*)AddToLog["Starting EPG T2 calculation", 4];
+							{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
+								MonitorCalc -> False, DictT2IncludeWater -> True, DictT2fValue -> 200, DictT2fRange -> {150, 250, 5}, 
+								DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}
+							];
+							
+							(*export all the calculated data*)
+							(*----*)AddToLog["Exporting the calculated data to:", 4];
+							(*----*)AddToLog[outfile, 5];					
+							outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
+							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+													
+							(*export the checkfile*)
+							MakeCheckFile[outfile, Sort@Join[
+								{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperteis"->set},
+								ExtractFromJSON[keys]
+							]];				
+						]
+					]
+				(*close t2 processing*)
+				],
+				
+				True,
+				(*-------------------------------------------*)
+				(*--------------- Unknown mese ---------------*)
+				(*-------------------------------------------*)
+				(*----*)AddToLog[{"Unkonwn processing ",pro, "for datatype", type}, True, 3];
+			],
 			(*-------------------------------------------*)
-			(*------------------- Other ------------------*)
+			(*------------------ Other ------------------*)
 			(*-------------------------------------------*)
 			_,
 			Print["Unknow type for conversion"];
@@ -1020,14 +1123,22 @@ ImportJSON[file_]:=Import[file,"RawJSON"]
 (*GetJSONPosition*)
 
 
-GetJSONPosition[json_,selection_]:=GetJSONPosition[json,selection,""]
+GetJSONPosition[json_, selection_]:=GetJSONPosition[json, selection, ""]
 
-GetJSONPosition[json_,selection_,sort_]:=Block[{seli,self,list,key,val,inds,pos},
+GetJSONPosition[json_, selection_, sort_]:=Block[{seli, self, list, key, val, inds, pos},
+	(*selection functions*)
 	seli = ToLowerCase[Last[Flatten[{#1/.#3}]]]===ToLowerCase[#2]&;
-	self = (list=#1;key=#2[[1]];val=#2[[2]];Select[list,seli[key,val,json[[#]]]&])&;
-	inds = Range[Length[json]];
-	pos = Fold[self,inds,selection];
-	If[sort==="", pos, pos[[Ordering[sort/.json[[pos]]]]]]
+	self = (
+		list=#1;
+		key=#2[[1]]; 
+		val=#2[[2]]; 
+		Select[list, seli[key,val,json[[#]]]&]
+	)&;
+	
+	(*get the file positions*)
+	pos = Fold[self, Range[Length[json]], selection];
+	(*sort positions if needed*)
+	If[sort==="", pos, pos[[Ordering[sort /. json[[pos]]]]]]
 ]
 
 
@@ -1036,10 +1147,15 @@ GetJSONPosition[json_,selection_,sort_]:=Block[{seli,self,list,key,val,inds,pos}
 
 
 MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
-	keys=DeleteDuplicates[Flatten[Keys/@json]];
-	Association[If[#[[2]]==={},Nothing,#]&/@Thread[
-		keys->(If[Length[#]===1,First@#,#]&/@(
-		(DeleteDuplicates/@Transpose[(#/@keys)&/@json])/.Missing[___]->Nothing))]
+	keys=DeleteDuplicates[Flatten[Keys /@ json]];
+	
+	Association[If[#[[2]]==={},Nothing,#]& /@ Thread[
+			keys->(
+				If[Length[#]===1,First@#,#]& /@ (
+					(DeleteDuplicates /@ Transpose[(# /@ keys)& /@ json]) /. Missing[___]->Nothing
+				)
+			)
+		]
 	]
 ]
 

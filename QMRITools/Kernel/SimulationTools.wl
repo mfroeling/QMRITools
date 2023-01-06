@@ -417,7 +417,7 @@ Pulses[name_] := Switch[name,
 (*GetPulseProfile*)
 
 
-Options[GetPulseProfile] = {MagnetizationVector -> {0, 0, 1}, SliceRange -> 12, SliceRangeSamples -> 25, FatFieldStrength -> 0};
+Options[GetPulseProfile] = Options[GetPulseProfileI] = {MagnetizationVector -> {0, 0, 1}, SliceRange -> 12, SliceRangeSamples -> 25, FatFieldStrength -> 0};
 
 SyntaxInformation[GetPulseProfile] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -436,7 +436,11 @@ GetPulseProfile[ex_?ListQ, ref_?ListQ, opts : OptionsPattern[]] := Module[{exOut
 	]
 ]
 
-GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, OptionsPattern[]] := Block[{
+GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, ops:OptionsPattern[]] := 
+GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwithi}}, ops]
+
+GetPulseProfileI[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, ops:OptionsPattern[]] := 
+GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwithi}}, ops] = Block[{
 		gamma, gradStrength, duration, bandwith, sliceRange, sliceSamp, maxFreq, flipAngle, pos,time,maxt,
 		thickness, inM, pulse, pulseSamp, freqRange, deltat, power, output, info, out, slice, opts, plot
 	},

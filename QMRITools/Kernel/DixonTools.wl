@@ -264,6 +264,7 @@ DixonReconstruct[real_, imag_, echo_, b0i_, t2i_, ph0i_, OptionsPattern[]] := Bl
 	(*Bydder et.al. 10.1016/j.mri.2010.08.011 - initial phase*)
 	(*Peterson et.al.10.1002/mrm.24657 - bipolar*)
 	
+	(*Chebrolu et.al. 10.1002/mrm.22300 - two t2* species*)
 	(*Byder et.al. 10.1016/j.mri.2011.07.004 - a matrix with bonds*)
 	
 	mon = OptionValue[MonitorCalc];
@@ -377,7 +378,7 @@ DixonFitiC = Compile[{
 	rho = dPhi = {0. + 0. I, 0. + 0. I};
 	(*-----*)phiEst = {1, 0.5} phi;
 	rms = 0. I;
-	(*-----*)sc = {1.,0.};
+	(*-----*)sc = If[Sign@Im@mat[[1, 2]]===-1, {1.,0.}, {1.,1.}];
 	
 	(*loop parameters*)
 	i = 0;
@@ -407,7 +408,7 @@ DixonFitiC = Compile[{
 			(*chech for continue*)
 			(*-----*)sc = If[(Abs[Re@dPhi[[1]]] < 10 eta && Abs[(Im@dPhi[[1]])] < 10 eta) || sc[[2]] === 1. || i > 4, {1., 1.}, {1., 0}];
 			(*Re@deltaPhi = B0; 2Pi Im@deltaPhi = r2Star; Re@deltaPhi0 = phase errors;*)
-			continue = ! ((Abs[Re@dPhi[[1]]] < eta && Abs[(Im@dPhi[[1]])] < eta && Abs[1000Re@dPhi[[2]]] < eta) || i >= maxItt);
+			continue = ! ((Abs[Re@dPhi[[1]]] < eta && Abs[(Im@dPhi[[1]])] < eta && Abs[1000 Re@dPhi[[2]]] < eta) || i >= maxItt);
 		];
 		
 		rms = Sqrt[Mean[res^2]];

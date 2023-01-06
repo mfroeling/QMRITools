@@ -102,9 +102,6 @@ Output is {{T2, B1}, fwfraction, residualError}."
 EPGMethod::usage =
 "EPGMethod is an optionf for EPGT2Fit. Values can be \"NLLS\", \"dictionary\" or \"dictionaryM\"."
 
-MonitorEPGFit::usage = 
-"MonitorEPGFit show waitbar during EPGT2Fit."
-
 EPGFitFat::usage = 
 "EPGFitFat is an option for EPGT2Fit."
 
@@ -814,7 +811,7 @@ Options[EPGT2Fit]= {
 	
 	EPGFitPoints -> 50, 
 	EPGMethod -> "dictionary", 
-	MonitorEPGFit -> True, 
+	MonitorCalc -> True, 
 	OutputCalibration -> False, 
 	EPGSmoothB1 -> True,
 	
@@ -829,14 +826,16 @@ Options[EPGT2Fit]= {
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 
 EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
-	echo, T1m, T1f, T2f, ad, datal, sol, wat, fat, fatMap, T2map, B1Map, clip, fatc,
+	mon, echo, T1m, T1f, T2f, ad, datal, sol, wat, fat, fatMap, T2map, B1Map, clip, fatc,
 	B1i, T2i, T2s, B1s, soli, error, dictf, valsf, ydat, fwf, residualError, T2mc, B1c, cal,
 	ran,dict,vals,cons,start, b1ran, b1step, t2ran, t2step, points, dim, size,
 	b1rule, B1Int, dataf, b1, b1vals, b1len, t2rule, t2Int, t2, t2vals, t2len,
 	sig, dictMat, dictfMat, t2fran, S0c, met, val, out, T2fmap, wMat, fval, t2fval,
 	clipf, t2fdic, t2fpos, dictMatW, inp, consi, vals2, inpf, inp2, smoothing, optDic,
-	shift
+	shift, B1mask
 	},
+	
+	mon = OptionValue[MonitorCalc];
 	
 	(*Get Input*)
 	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
@@ -854,7 +853,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		
 	(*clibrate the fat signal from the real data*)
 	If[OptionValue[EPGCalibrate]&&!VectorQ[datan],
-		Print["Callibrating EPG fat T2."];
+		If[mon, Print["Callibrating EPG fat T2."]];
 		cal = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, clipf, {T1m, T1f}}, 
 	  	EPGFitPoints -> OptionValue[EPGFitPoints], EPGFatShift->OptionValue[EPGFatShift], 
 	  	EPGMethodCal -> OptionValue[EPGMethodCal]];
@@ -862,12 +861,12 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	  	Switch[OptionValue[EPGMethodCal],
 	  		"1comp", {t2fval, B1c, S0c} = cal[[1]];,
 	  		"2comp", {T2mc, t2fval, B1c} = cal[[1]];,
-	  		"2compF", {t2fval,B1c} = cal[[1]]
+	  		"2compF", {t2fval, B1c} = cal[[1]]
 	  	];
 	  	
 	  	(*make whole 5 ms such that it is more likely for same values, needs less libraries, round up higher is better then lower*)
 	  	t2fval = N@Ceiling[t2fval,5];
-	  	Print["EPG fat callibration:  ", t2fval, " ms"];
+	  	If[mon, Print["EPG fat callibration:  ", t2fval, " ms"]];
 	];
 	
 	(*find the correct method*)
@@ -875,7 +874,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		(*2D fitting*)
 		val = 2;
 		t2fdic = t2fval;
-		PrintTemporary["Fitting using single Fat value: ", t2fdic]; 
+		If[mon, PrintTemporary["Fitting using single Fat value: ", t2fdic]]; 
 		
 		met = OptionValue[EPGMethod];
 		,
@@ -887,8 +886,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		t2fval = Nearest[Range @@ t2fdic, t2fval, 1][[1]];
 		t2fpos = Position[Range @@ t2fdic, t2fval, 1][[1, 1]]; 
 		
-		PrintTemporary["Fitting using dictionary of Fat values: ", t2fdic];
-		PrintTemporary["Initial fat value for fit: ", t2fval]; 
+		If[mon, PrintTemporary["Fitting using dictionary of Fat values: ", t2fdic]];
+		If[mon, PrintTemporary["Initial fat value for fit: ", t2fval]]; 
 		
 		met = OptionValue[EPGMethod];
 		met = If[met==="NLLS","dictionaryM",met];
@@ -897,7 +896,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	(*create the dictionary*)
 	If[OptionValue[EPGMethod]=!="NLLS",
 		optDic = {OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater]};
-		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f}, echo, angle, {t2ran, b1ran, t2fdic}, optDic];
+		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f}, echo, angle, {t2ran, b1ran, t2fdic}, optDic ,mon];
 		cons = Dimensions[vals][[;; -2]];
 		dictMat = PseudoInverseC[dict];
 		
@@ -926,13 +925,13 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	
 	(*monitor calculation*)
 	i=j=0; SetSharedVariable[i]; ParallelEvaluate[j = 0];
-	If[OptionValue[MonitorEPGFit]&&!VectorQ[datan], 
+	If[mon &&! VectorQ[datan], 
 		dim = Times@@Dimensions[datal][[;;-2]];
 		size = Round[dim/100];
 		PrintTemporary[ProgressIndicator[Dynamic[i], {0, dim-size}]]];
 	
 	(*Perform T2 water and B1 fitting*)
-	PrintTemporary["Fitting T2 water and B1: ", DateString[]];
+	If[mon, PrintTemporary["Fitting T2 water and B1: ", DateString[]]];
 	sol = Switch[met,
 				
 		(*non linear least squares not possible with fat fitting. very slow*)
@@ -944,7 +943,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			(*single voxel*)
 			NonLinearEPGFiti[{valsf, clip}, datal],
 			(*monitor calculation*)
-			PrintTemporary["Starting NLLS fitting: ", DateString[]];
+			If[mon, PrintTemporary["Starting NLLS fitting: ", DateString[]]];
 			(*perform the fit using parallel kernels*)
 			Map[(j++; If[j > size, i += j; j = 1;];
 				NonLinearEPGFiti[{valsf, clip}, #])&, datal, {ad - 1}]
@@ -957,7 +956,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			(*single voxel*)
 			DictionaryMinSearchi[inp, datal, consi],
 			(*monitor calculation*)
-			PrintTemporary["Starting dictionary min search (Nmin): ", DateString[]];
+			If[mon, PrintTemporary["Starting dictionary min search (Nmin): ", DateString[]]];
 			DistributeDefinitions[inp, consi, size, LeastSquaresC, LeastSquaresError2C, DictionaryMinSearchi, dicmet];
 			(*perform the fit using parallel kernels*)
 			ParallelMap[(j++; If[j > size, i += j; j = 1;]; 
@@ -971,7 +970,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			(*single voxel*)
 			DictionaryMinSearchi[inpf, datal],
 			(*monitor calculation*)
-			PrintTemporary["Starting dictionary min search (Brute): ", DateString[]];
+			If[mon, PrintTemporary["Starting dictionary min search (Brute): ", DateString[]]];
 			DistributeDefinitions[inpf, size, LeastSquaresC, LeastSquaresErrorC, ErrorC, DictionaryMinSearchi, dicmet];
 			(*perform the fit using parallel kernels*)
 			ParallelMap[(j++; If[j > size, i += j; j = 1;]; 
@@ -988,10 +987,11 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	smoothing = (OptionValue[EPGSmoothB1] && (OptionValue[EPGMethod]=!="NLLS") && !VectorQ[datal]);
 	(* check if B1map needs to be smoothed, only works for dictionary methods *)
 	If[smoothing,
-		PrintTemporary["Smoothing B1 to refit with smooth B1: ", DateString[]];
+		If[mon, PrintTemporary["Smoothing B1 to refit with smooth B1: ", DateString[]]];
 		(*smooth the B1 map*)
 		B1mask = Unitize[B1Map];
-		B1Map = B1mask Clip[N[Round[MedianFilter[N[B1Map] /. 0.->1.,1] - b1ran[[1]], b1ran[[3]]] + b1ran[[1]]], b1ran[[1;;2]], b1ran[[1;;2]]];
+		B1Map = N@Round[MedFilter[B1Map - B1mask + 1, 2] - b1ran[[1]], b1ran[[3]]] + b1ran[[1]];
+		B1Map = B1mask Clip[B1Map, b1ran[[1;;2]], b1ran[[1;;2]]];
 	];
 	
 	(*refit data with either smoothed B1 and/of T2fat fit*)
@@ -1011,7 +1011,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		(*Recalculate solution*)
 		sol = Switch[val,
 			2,(*perfomr the brute force fit of water only*)
-			PrintTemporary["Refitting with smooth B1: ", DateString[]];
+			If[mon, PrintTemporary["Refitting with smooth B1: ", DateString[]]];
 			DistributeDefinitions[inp];
 			(*only fit T2 water*)
 			ParallelMap[(j++; If[j > size, i += j; j = 1;];
@@ -1019,10 +1019,10 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 				DictionaryMinSearchi[inp[[All,All,b1]], sig]) &, dataf, {ad - 1}]
 			,
 			3,(*perfomr refit with know B1 also fitting T2fat*)
-			If[smoothing,
+			If[mon, If[smoothing,
 				PrintTemporary["Fitting T2 fat with smooth B1: ", DateString[]];,
 				PrintTemporary["Fitting T2 fat with known B1: ", DateString[]];
-			];
+			]];
 
 			consi = cons[[{1,2}]];
 			inp2 = {dict, dictMat, vals2};
@@ -1057,10 +1057,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		fat = Clip[DataTransformation[fat, {1,1,1}, w, InterpolationOrder -> 2],MinMax[fat]];
 	];
 	
-	If[OptionValue[DictT2IncludeWater],
-		wat = wat + 0.1fat;
-		fat = .9 fat; 
-	];
+	(*If[OptionValue[DictT2IncludeWater], wat = wat + 0.1fat; fat = .9 fat;];*)
 	
 	fatMap = ToPackedArray@DevideNoZero[fat, (wat + fat)];
 	error = ToPackedArray@Sqrt[sol[[val+3]]];
@@ -1198,17 +1195,23 @@ Options[CreateT2Dictionary] = {
 	DictT2fRange -> {100., 200., 2.},
 	
 	DictT2IncludeWater->False, 
-	EPGFatShift -> 0.};
+	EPGFatShift -> 0.,
+	MonitorCalc ->True
+};
 
 SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 CreateT2Dictionary[relax_, echo_, ang_, OptionsPattern[]] := CreateT2Dictionaryi[relax, echo, ang, 
-	{OptionValue[DictT2Range], OptionValue[DictB1Range], OptionValue[DictT2fRange]}, {OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater]}]
+	{OptionValue[DictT2Range], OptionValue[DictB1Range], OptionValue[DictT2fRange]}, 
+	{OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater]}, 
+	OptionValue[MonitorCalc]
+]
 
 (*save each unique dictionary*)
-CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shift_, incW_}] := CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, incW}] = Block[{
-	T1m, T1f, t2Mvals, t2Mlen, b1vals, b1len, t2val, t2Fvals, t2Flen, time, fatSig, watSig, 
-	dict, vals, fatSigW, ang, angS
+CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shift_, incW_}, mon_] := 
+CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, incW}, mon] = Block[{
+		T1m, T1f, t2Mvals, t2Mlen, b1vals, b1len, t2val, t2Fvals, t2Flen, time, fatSig, watSig, 
+		dict, vals, fatSigW, ang, angS
 	},
 	
 	(*set parameters*)
@@ -1229,21 +1232,22 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 	
 	(*shift the slice profile of fat*)
 	If[shift > 0,
-		{ang, angS} = ShiftPulseProfile[angle,shift]
-		,
+		{ang, angS} = ShiftPulseProfile[angle,shift],
 		ang = angS = angle
-		];
+	];
 	
 	(*distribute the needed funtions for parrallel evaluation*)
-	DistributeDefinitions[EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, RotMatrixTI, 
-		MoveStates, MoveStatesI,
-		 echo, T1m, ang, angS, T1f, b1vals, t2Mvals, t2Fvals, t2val];
+	DistributeDefinitions[
+		EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, 
+		RotMatrixTI, MoveStates, MoveStatesI,
+		echo, T1m, ang, angS, T1f, b1vals, t2Mvals, t2Fvals, t2val
+	];
 	
 	(*create the dictionary signals*)
 	If[NumberQ[t2frange],
 		
 		(*2D dictionary*)
-		PrintTemporary["Creating new dictionary with fixed T2 fat value"];
+		If[mon, PrintTemporary["Creating new dictionary with fixed T2 fat value"]];
 		(*fixed T2 value*)
 		time = AbsoluteTiming[
 			watSig = ParallelTable[EPGSignali[echo, {T1m, T2m}, ang, B1], {B1, b1vals}, {T2m, t2Mvals}];
@@ -1258,12 +1262,12 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 			vals = Table[{t2m, b1}, {t2m, t2Mvals}, {b1, b1vals}];
 		][[1]];
 		
-		Print["The dictionary contains "<>ToString[Times @@ Dimensions[dict][[;; -3]]]<>" values, with T2fat = "<>
-			ToString[Round[t2val]]<>" ms, and took "<>ToString[Round[time, .1]]<>" seconds to generate."];
+		If[mon, Print["The dictionary contains "<>ToString[Times @@ Dimensions[dict][[;; -3]]]<>" values, with T2fat = "<>
+			ToString[Round[t2val]]<>" ms, and took "<>ToString[Round[time, .1]]<>" seconds to generate."]];
 			
 		,
 		(*3D dictionary*)
-		PrintTemporary["Creating new dictionary with range of T2 fat values"];
+		If[mon, PrintTemporary["Creating new dictionary with range of T2 fat values"]];
 		(*range of T2 values*)
 		time = AbsoluteTiming[
 			watSig = ParallelTable[EPGSignali[echo, {T1m, T2m}, ang, B1], {B1, b1vals}, {T2m, t2Mvals}];
@@ -1280,8 +1284,8 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 			vals = Table[{t2m, t2f, b1}, {t2m, t2Mvals}, {t2f, t2Fvals}, {b1, b1vals}];
 		][[1]];
 		
-		Print["The dictionary contains "<>ToString[Times @@ Dimensions[dict][[;; -3]]]<>
-			" values, and took "<> ToString[Round[time, .1]]<>" seconds to generate."];
+		If[mon, Print["The dictionary contains "<>ToString[Times @@ Dimensions[dict][[;; -3]]]<>
+			" values, and took "<> ToString[Round[time, .1]]<>" seconds to generate."]];
 	];
 	
 	(*output*)
