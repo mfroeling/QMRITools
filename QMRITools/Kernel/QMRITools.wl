@@ -20,9 +20,9 @@ BeginPackage["QMRITools`"];
 If[$VersionNumber < 13,
 	CreateDialog[Column[{Style["
 	Current Mathematica version is "<>ToString[$VersionNumber]<>"
-	The toolbox is tested developed in 13.0.
+	The toolbox is tested developed in 13.0+.
 	You need to update! (Or I am behind)
-	Some functions wont work in older versions
+	Some functions might not work in older versions
 	", TextAlignment -> Center], DefaultButton[], ""}, 
 	Alignment -> Center], WindowTitle -> "Update!"];
 ];
@@ -64,6 +64,15 @@ QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Versi
 Quiet[Get/@QMRITools`$Contexts];
 QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
 
+Begin["`Private`"];
+
+End[];
+
+EndPackage[];
+
+
+(*Load all subpackages*)
+
 
 (*print the Toolbox content and version*)
 If[QMRITools`$Verbose,
@@ -76,13 +85,6 @@ If[QMRITools`$Verbose,
 		Print[Last@#];
 	)&/@ QMRITools`$ContextsFunctions
 ];
-
-
-Begin["`Private`"];
-
-End[];
-
-EndPackage[];
 
 
 (*Destroy all functions defined in the subpackages*)

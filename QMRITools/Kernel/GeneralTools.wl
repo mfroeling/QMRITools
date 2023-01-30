@@ -469,6 +469,7 @@ ReverseDimensions[dat_] := RotateDimensions[dat, 1, Reverse]
 (* ::Subsubsection::Closed:: *)
 (*RotateDimensions*)
 
+RotateDimensions[dat_, 0, dir_] := dat
 
 RotateDimensions[dat_, i_, dir_] := Transpose[ToPackedArray[dat], dir[Range[ArrayDepth[dat]], i]]
 

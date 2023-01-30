@@ -355,7 +355,7 @@ SyntaxInformation[MeanAt]={"ArgumentsPattern"->{_,_}}
 MeanAt[list_,level_]:=Block[{tot,wgth},
 	tot = Total[list, {level}];
 	wgth= Total[Unitize[Abs[list]],{level}];
-	ToPackedArray[DevideNoZero[Re@tot, wgth] + I DevideNoZero[Im@tot, wgth]]
+	ToPackedArray[DevideNoZero[Re@tot, wgth, "Comp"] + I DevideNoZero[Im@tot, wgth, "Comp"]]
 ]
 
 
@@ -409,7 +409,7 @@ SagitalTranspose[data_]:=(Reverse[Transpose[#1],2]&)/@data;
 
 SyntaxInformation[FourierShift]={"ArgumentsPattern"->{_}}
 
-FourierShift[data_]:=RotateRight[data,Floor[Dimensions[data]/2]];
+FourierShift[data_]:=RotateRight[data, Floor[Dimensions[data]/2]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -528,15 +528,16 @@ FourierKspace3D[kspace_, head_, filt_:False] := Block[{ksize, kspacef, dim, over
 
 FourierKspace3DI = Compile[{{data, _Complex, 3}, {ksPad, _Integer, 2}, {shift, _Integer, 1}, {clip, _Integer, 2}},
 	Block[{dat},
+		dat = data;
 		(*pad the data to the full range*)
-		dat = ArrayPad[data, ksPad];
+		dat = ArrayPad[dat, ksPad];
 		(*perform the 3D Fourier*)
-		dat = ShiftedFourier[dat];
-		dat = FourierShift[dat];
+		dat = FourierShifted[dat];
+		dat = Map[FourierShift, dat, {-2}];
 		(*perform the correction for the k-space range*)
 		dat = RotateRight[dat, shift];
 		(*clip the data to the correct dimensions*)
-		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]], clip[[3, 1]] ;; clip[[3, 2]]]]];
+		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]], clip[[3, 1]] ;; clip[[3, 2]]]]]
 	], 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
@@ -545,9 +546,11 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 (*FourierKspaceCSI*)
 
 
-SyntaxInformation[FourierKspaceCSI] = {"ArgumentsPattern" -> {_, _}}
+SyntaxInformation[FourierKspaceCSI] = {"ArgumentsPattern" -> {_, _, _.}}
 
-FourierKspaceCSI[kspace_,head_]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
+FourierKspaceCSI[kspace_, head_]:= FourierKspaceCSI[kspace, head, "3D"]
+
+FourierKspaceCSI[kspace_, head_, "3D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
 	(*get the oversampling padding*)
 	ksPad = Round[({"Z-resolution","Y-resolution","X-resolution"}{"kz_oversample_factor","ky_oversample_factor","kx_oversample_factor"}-{"N_kz","N_ky","N_kx"})/2/.head];
 	(*get the final data dimentions*)
@@ -556,6 +559,19 @@ FourierKspaceCSI[kspace_,head_]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
 	kspaceP = ArrayPad[#,Transpose@{ksPad,ksPad},0.+0.I]&/@kspace;
 	(*get the image padding and image shift*)
 	shift = Total[#]&/@({"Z_range","Y_range","X_range"}/.head);
+	(*perform the fourie transform*)
+	imData = RotateRight[FourierShift[FourierShifted[#]],shift]&/@kspaceP
+]
+
+FourierKspaceCSI[kspace_, head_, "2D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
+	(*get the oversampling padding*)
+	ksPad = Round[({"Y-resolution","X-resolution"}{"ky_oversample_factor","kx_oversample_factor"}-{"N_ky","N_kx"})/2/.head];
+	(*get the final data dimentions*)
+	dim = {"Y-resolution","X-resolution"}/.head;
+	(*pad the kaspaces with zeros*)
+	kspaceP = ArrayPad[#,Transpose@{ksPad,ksPad},0.+0.I]&/@kspace;
+	(*get the image padding and image shift*)
+	shift = Total[#]&/@({"Y_range","X_range"}/.head);
 	(*perform the fourie transform*)
 	imData = RotateRight[FourierShift[FourierShifted[#]],shift]&/@kspaceP
 ]
@@ -647,12 +663,12 @@ SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, scale, dim, low, sense},
 	If[OptionValue[SenseRescale],
 		sos = CoilCombine[coils, cov, Method -> "RootSumSquares"];
-		DevideNoZero[#1, sos] & /@ coils
+		DevideNoZero[#1, sos, "Comp"] & /@ coils
 		,
 		dim = Dimensions[coils][[2 ;;]];
 		low = HammingFilterData[FourierRescaleData[coils, 0.5]];
 		sos = CoilCombine[low, cov, Method -> "RootSumSquares"];
-		sense = HammingFilterData[DevideNoZero[#1, sos] & /@ low];
+		sense = HammingFilterData[DevideNoZero[#1, sos, "Comp"] & /@ low];
 		FourierRescaleData[sense, dim]
 	]
 ]
@@ -821,7 +837,7 @@ DeconvolveCSIdata[spectra_, hami_,OptionsPattern[]] := Block[{dim, filt, spectra
 	
 	(*make the complex hamming filter point spread function and take the real part*)
 	filt = Abs@FourierShift[ShiftedInverseFourier[ArrayPad[ham, Transpose[{Floor[dim/2], Ceiling[dim/2]}]]]];
-	filt = DevideNoZero[filt, Total[Flatten[filt]]];
+	filt = DevideNoZero[filt, Total[Flatten[filt]], "Comp"];
 	
 	(*zero pad the spectra by factor two*)
 	spectraOut = FourierRescaleData[RotateDimensionsRight[spectra]];
@@ -890,6 +906,8 @@ Options[CoilWeightedRecon] = {
 	ReconFilter->False
 	};
 
+SyntaxInformation[CoilWeightedRecon]={"ArgumentsPattern"->{_, _, _, _., OptionsPattern[]}}
+
 CoilWeightedRecon[kspace_, noise_, head_, ops:OptionsPattern[]]:=CoilWeightedRecon[kspace, noise, head, 0,  ops]
 
 CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{shift, coilData, cov, sens, 
@@ -903,8 +921,8 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 		2, Map[FourierKspace2D[#, head, OptionValue[ReconFilter]] &, kspace, {-4}],
 		3, FourierKspace3D[kspace, head, OptionValue[ReconFilter]]
 	];
-	arrD = ArrayDepth[coilData];
 
+	arrD = ArrayDepth[coilData];
 	cov = NoiseCovariance[noise];
 	
 	(*shift the echos to center if needed*)
@@ -943,17 +961,28 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 (*Coil weighted recon CSI*)
 
 
-Options[CoilWeightedReconCSI] = {HammingFilter -> False, CoilSamples -> 5, Method -> "Roemer", NormalizeOutputSpectra->True, AcquisitionMethod->"Fid"};
+Options[CoilWeightedReconCSI] = {HammingFilter -> False, CoilSamples -> 5, Method -> "WSVD", NormalizeOutputSpectra->True, AcquisitionMethod->"Fid"};
 
-CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, spectra, cov, coils, sosCoils, sens,readout},
+SyntaxInformation[CoilWeightedReconCSI]={"ArgumentsPattern"->{_, _, _, _., OptionsPattern[]}}
+
+CoilWeightedReconCSI[kspace_, noise_, head_, ops:OptionsPattern[]]:=CoilWeightedReconCSI[kspace, noise, head, 0, ops]
+
+CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Block[{
+		fids, spectra, cov, coils, sosCoils, sens,readout, 
+		nenc, met, noCoils
+	},
 	readout = OptionValue[AcquisitionMethod];
-	spectra = Switch[ArrayDepth[kspace],
-		4,(*no coil combination for 3D CSI*)
-		fids = RotateDimensionsLeft[FourierKspaceCSI[kspace, head]];
+	nenc = "number_of_encoding_dimensions" /. head;
+	met = Switch[nenc, 3, "2D", 4, "3D"];
+	noCoils = ArrayDepth[kspace] =!= nenc + 1;
+	
+	spectra = If[noCoils,
+		(*no coil combination for 2D or 3D CSI*)
+		fids = RotateDimensionsLeft[FourierKspaceCSI[kspace, head, met]];
 		Map[ShiftedFourier[#, readout] &, fids, {-2}]
 		,
-		5,(*perform spatial fourier for CSI*)
-		fids = Transpose[FourierKspaceCSI[#, head] & /@ kspace];
+		(*coil combination for 2D or 3D CSI*)
+		fids = Transpose[FourierKspaceCSI[#, head, met] & /@ kspace];
 		spectra = RotateDimensionsRight[Map[ShiftedFourier[#, readout] &, RotateDimensionsLeft[fids], {-2}]];
 		
 		(*noise correlation, inverse and withening matrix*)
@@ -962,7 +991,10 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 			"Roemer",
 			(*make coil sensitivity using the first 5 samples of the fid*)
 			(*sens = MakeSense[HammingFilterCSI[Mean[fids[[1 ;; OptionValue[CoilSamples]]]]],cov];*)
-			sens = MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]],cov];
+			sens = If[sense === 0,
+				MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]],cov],
+				sense
+			];
 			(*perform the recon*)
 			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra]
 			,
@@ -974,8 +1006,9 @@ CoilWeightedReconCSI[kspace_, noise_, head_, OptionsPattern[]] := Block[{fids, s
 	(*Normalize spectra*)
 	If[OptionValue[NormalizeOutputSpectra],	spectra = NormalizeSpectra[spectra]];
 	If[OptionValue[HammingFilter], spectra = HammingFilterCSI[spectra]];
-	
-	spectra
+
+	(*make 2D 3D*)
+	If[nenc===3, {spectra}, spectra]
 ]
 
 
