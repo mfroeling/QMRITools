@@ -152,7 +152,7 @@ bidsTypes = <|
 |>;
 
 
-bidsName = {"sub", "ses", "stk", "rep", "type", "suf"};
+bidsName = {"sub", "ses", "stk", "rep", "Type", "suf"};
 
 
 bidsClass = {"Volume", "Stacks", "Repetitions"};
@@ -176,7 +176,7 @@ PartitionBidsName[string_?StringQ]:=Block[{parts,labs,suf},
 	parts=StringSplit[#,"-"]&/@StringSplit[string,"_"];
 	labs=Rule@@#&/@Select[parts,Length[#]===2&];
 	suf=Flatten[Select[parts,Length[#]=!=2&]];
-	suf=If[suf=!={},If[MemberQ[Keys[bidsTypes],First@suf],{"type"->First@suf,"suf"->Rest@suf},{"suf"->suf}],{"suf"->{}}];
+	suf=If[suf=!={},If[MemberQ[Keys[bidsTypes],First@suf],{"Type"->First@suf,"suf"->Rest@suf},{"suf"->suf}],{"suf"->{}}];
 	Association[Join[labs,suf]]
 ] 
 
@@ -203,7 +203,7 @@ SyntaxInformation[GenerateBidsName] = {"ArgumentsPattern" -> {_}};
 GenerateBidsName[list_?ListQ]:=GenerateBidsName/@list
 
 GenerateBidsName[parts_?AssociationQ]:=StringJoin[Riffle[Select[Join[
-	BidsString[parts,{"sub", "ses", "stk", "rep"}],BidsValue[parts,{"type", "suf"}
+	BidsString[parts,{"sub", "ses", "stk", "rep"}],BidsValue[parts,{"Type", "suf"}
 ]],#=!=""&],"_"]]
 
 
@@ -278,7 +278,7 @@ SelectBidsSessions[fol_?StringQ] := Select[FileNames[All, fol], (DirectoryQ[#] &
 
 BidsType[type_?StringQ]:= bidsTypes[type] /. {Missing[___]->"miss"} 
 
-BidsType[parts_?AssociationQ]:= bidsTypes[parts["type"]] /. {Missing[___]->"miss"} 
+BidsType[parts_?AssociationQ]:= bidsTypes[parts["Type"]] /. {Missing[___]->"miss"} 
 
 
 (* ::Subsubsection::Closed:: *)
@@ -482,8 +482,8 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 	
 	(*Check if manditory keys are present*)
 	man = ContainsAll[key, Switch[met,
-		"Convert",{"Label", "Type"},
-		"Process",{"Type"}
+		"Convert", {"Label", "Type"},
+		"Process", {"Type"}
 	]];
 	
 	If[!man,
@@ -543,20 +543,20 @@ SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _, OptionsPatt
 MuscleBidsConvert[niiFol_?StringQ, datDis_, ops:OptionsPattern[]]:= BidsFolderLoop[niiFol, datDis, Method->"Convert", ops]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsConvertI*)
 
 
 MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
-		name, nType, type, suf, pro, fol, parts, files, json, infoExtra,
-		pos, posi, info, data, vox, grad, val, sufd, outFile
+		type, fol, parts, files, json, infoExtra, pos, posi, info, data, vox, grad, val, sufd, outFile
 	},
 	
 	(*see if one label or session|repetion*)
 	{fol, parts} = PartitionBidsFolderName[foli];
-	{name, nType, type, suf, pro} = datType/@{"Label", "Class", "Type", "Suffix", "Process"};
-	(*-----*)AddToLog[{"Processing", ToString[Length[name]], nType}, 2, True];
-	(*-----*)AddToLog[StringJoin@@Riffle[name,", "], 3];
+	type = datType["Type"];
+	
+	(*-----*)AddToLog[{"Processing", ToString[Length[datType["Label"]]], datType["Class"]}, 2, True];
+	(*-----*)AddToLog[StringJoin@@Riffle[datType["Label"],", "], 3];
 	
 	(*loop over stac names*)
 	Table[
@@ -566,7 +566,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 		json = ImportJSON/@files;
 		
 		(*see which data type is expected*)
-		Switch[type,
+		Switch[datType["Type"],
 		
 			(*-------------------------------------------*)
 			(*-------- DIXON conversion script ----------*)
@@ -604,7 +604,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 				|>;
 				
 				(*export to the correct folder*)
-				outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetStackName[nType, namei], "suf"->Flatten@{suf, sufd}|>];
+				outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->Flatten@{datType["Suffix"], sufd}|>];
 				(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 				ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
 				Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
@@ -645,7 +645,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			|>;
 			
 			(*export to the correct folder*)
-			outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetStackName[nType, namei], "suf"->{suf}|>];
+			outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
 			(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
 			ExportBval[val, ConvertExtension[outFile, ".bval"]];
 			ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
@@ -690,7 +690,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			|>;
 			
 			(*export to the correct folder*)
-			outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetStackName[nType, namei], "suf"->{suf}|>];
+			outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
 			(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
 			ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
 			Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
@@ -714,18 +714,18 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 		(*export the log after each name*)
 		ExportLog[logFile]
 	(*close loop over stac names*)
-	,{namei, name}];
+	,{namei, datType["Label"]}];
 ] 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*GetStackName*)
 
 
-GetStackName[nType_, namei_]:=Switch[nType,
+GetStackName[class_, namei_]:=Switch[class,
 	"Volume", "",
-	"Stacks"|"Repetition",
-	Switch[nType, "Stacks", "stk", "Repetition", "rep"] -> StringReplace[namei,{"-"->"","_"->""}]
+	"Stacks"|"Repetitions",
+	Switch[class, "Stacks", "stk", "Repetitions", "rep"] -> StringReplace[namei,{"-"->"","_"->"","."->""}]
 ]
 
 
@@ -749,11 +749,11 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPa
 
 
 MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
-		con, fol, parts, name, nType, type, suf, files, sets, dfile, nfile, pro, keys, dfiles, jfile, nfiles,
+		con, fol, parts, type, files, sets, dfile, nfile, process, keys, dfiles, jfile, nfiles,
 		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, phasediff, hz, b0i,
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
 		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
-		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, setting, ex, ref, thk
+		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk
 	},
 	
 	(*get the context for exporting*)
@@ -761,15 +761,16 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 
 	(*get the information needed for processing, e.g. session|repetion*)
 	{fol, parts} = PartitionBidsFolderName[foli];
-	{name, nType, type, suf, pro, setting} = datType/@{"Label", "Class", "Type", "Suffix", "Process", "Settings"};
+	type = datType["Type"];
+	process = datType["Process"];
 	keys = {"EchoTime", "ForthDimension", "DataClass", "Stack", "OverLap", "SliceThickness", "SpacingBetweenSlices"};
 
 	(*see what needs to be processed*)
-	files = Flatten[FileNames["*"<>StringReplace[#, {"-"->"","_"->""}]<>"*.json", foli]&/@name];
+	files = Flatten[FileNames["*"<>StringReplace[#, {"-"->"","_"->"","."->""}]<>"*.json", foli]&/@datType["Label"]];
 	sets = If[type==="megre",
 		DeleteDuplicates[KeyDrop[#,"suf"]&/@PartitionBidsName[FileBaseName/@files]],
 		DeleteDuplicates[PartitionBidsName[FileBaseName/@files]]];
-	(*-----*)AddToLog[{"Found", ToString[Length[sets]], nType, "that will be processed:"}, 2];
+	(*-----*)AddToLog[{"Found", ToString[Length[sets]], datType["Class"], "that will be processed:"}, 2];
 	
 	(*loop over sets*)
 	Table[
@@ -783,14 +784,14 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			(*-------------------------------------------*)
 			
 			
-			Switch[pro,
+			Switch[process["Method"],
 				"Dixon",
 				(*-------------------------------------------*)
 				(*-------- Dixon processing scripts ---------*)
 				(*-------------------------------------------*)
 				
 				(*input file names*)
-				dfiles = GenerateBidsFileName[fol, <|set, "suf"->{suf, #}|>]&/@{"", "ph", "real", "imag"};
+				dfiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"", "ph", "real", "imag"};
 				jfile = ConvertExtension[First@dfiles, ".json"];
 				nfiles = ConvertExtension[dfiles, ".nii"];
 				
@@ -831,8 +832,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							
 							(*calculated field maps*)
 							(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
-							{b0i, ph0i, t2stari, {e1, e2}, n} = DixonPhase[real, imag, echos, True];
-							(*-----*)AddToLog[{"using echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(",1000echos[[e2]]"ms )"},5];
+							{b0i, ph0i, t2stari, {e1, e2}, n} = DixonPhase[real, imag, echos, False];
+							(*-----*)AddToLog[{"using echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]]"ms )"},5];
 							
 							(*perform the IDEAL dixon fit*)
 							(*-----*)AddToLog["Starting Dixon reconstruction",4];
@@ -855,11 +856,11 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 				(*close dixon processing*)
 				],
 				
-				True,
+				_,
 				(*-------------------------------------------*)
 				(*-------------- Unknown megre --------------*)
 				(*-------------------------------------------*)
-				(*----*)AddToLog[{"Unkonwn processing ",pro, "for datatype", type}, True, 3];
+				(*----*)AddToLog[{"Unkonwn processing ", process, "for datatype", type}, True, 3];
 			
 			(*close megre processing*)
 			],
@@ -875,7 +876,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			dfile = GenerateBidsFileName[fol, set];
 			jfile = ConvertExtension[dfile,".json"];
 			nfile = ConvertExtension[dfile,".nii"];
-			nfilep = ConvertExtension[GenerateBidsFileName[folo, <|set, "suf"->{suf, "reg"}|>],".nii"];
+			nfilep = ConvertExtension[GenerateBidsFileName[folo, <|set, "suf"->{datType["Suffix"], "reg"}|>],".nii"];
 			
 			(*ouput file names*)
 			outfile = GenerateBidsFileName[folo, set];
@@ -939,7 +940,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			(*close preprocessing*)
 			];
 			
-			Switch[pro,
+			Switch[process,
 				
 				"DTI",
 				(*-------------------------------------------*)
@@ -1006,11 +1007,11 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 				(*close dti processing*)
 				],
 				
-				True,
+				_,
 				(*-------------------------------------------*)
 				(*--------------- Unknown dti ---------------*)
 				(*-------------------------------------------*)
-				(*----*)AddToLog[{"Unkonwn processing ",pro, "for datatype", type}, True, 3];
+				(*----*)AddToLog[{"Unkonwn processing ", process, "for datatype", type}, True, 3];
 			],
 			
 			(*-------------------------------------------*)
@@ -1026,7 +1027,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			(*ouput file names*)
 			outfile = GenerateBidsFileName[folo, set];
 			
-			Switch[pro,
+			Switch[process,
 				
 				"EPGT2",
 				(*-------------------------------------------*)
@@ -1059,7 +1060,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							
 							(*determine the pulse profiles*)
 							(*-----*)AddToLog["Calculating the slice profiles", 4];							
-							{ex, ref} = setting;
+							{ex, ref} = datType["Settings"];
 							thk = 2 json["SliceThickness"];
 							angle = GetPulseProfile[ex, ref, SliceRange -> thk, SliceRangeSamples -> thk][[1;;2]];
 							
@@ -1074,7 +1075,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*----*)AddToLog["Exporting the calculated data to:", 4];
 							(*----*)AddToLog[outfile, 5];					
 							outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
-							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+							ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 													
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
@@ -1086,11 +1087,11 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 				(*close t2 processing*)
 				],
 				
-				True,
+				_,
 				(*-------------------------------------------*)
 				(*--------------- Unknown mese ---------------*)
 				(*-------------------------------------------*)
-				(*----*)AddToLog[{"Unkonwn processing ",pro, "for datatype", type}, True, 3];
+				(*----*)AddToLog[{"Unkonwn processing ", process, "for datatype", type}, True, 3];
 			],
 			(*-------------------------------------------*)
 			(*------------------ Other ------------------*)
@@ -1103,8 +1104,9 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		
 		(*export the log after each set*)
 		ExportLog[logFile]
+		
 	(*close loop over sets*)
-	,{set, sets}]
+	, {set, sets}]
 ]
 
 

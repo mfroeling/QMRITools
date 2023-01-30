@@ -808,11 +808,23 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Min Clipping", Row[{
 	        	Control@{{clipMin,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{minclip, Black, ""}, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
+	        	Control@{{minclip, Black, ""},  
+Button[
+Dynamic[Graphics[{minclip, Rectangle[]}, ImageSize -> {20, 20}]],
+new = SystemDialogInput["Color", #];
+minclip = If[new === $Canceled, minclip, new]
+, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
+						(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 	        }]},
 	        {"Max Clipping", Row[{
 	        	Control@{{clipMax,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{maxclip, White, "" }, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
+	        	Control@{{maxclip, White, "" },  
+Button[
+Dynamic[Graphics[{maxclip, Rectangle[]}, ImageSize -> {20, 20}]],
+new = SystemDialogInput["Color", #];
+maxclip = If[new === $Canceled, maxclip, new]
+, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
+						(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 	        }]}
 		}]
 		,(*Plot style controls*)
@@ -1033,21 +1045,45 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			{"Min Clipping", PaneSelector[{
 				1->Row[{
 					Control@{{clipMin1,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-					Control@{{minclip1, Black, ""}, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
+					Control@{{minclip1, Black, ""}, 
+Button[
+Dynamic[Graphics[{minclip1, Rectangle[]}, ImageSize -> {20, 20}]],
+new = SystemDialogInput["Color", #];
+minclip1 = If[new === $Canceled, minclip1, new]
+, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
+						(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 				}],
 				2->Row[{
 					Control@{{clipMin2,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-					Control@{{minclip2, Black, ""}, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
+					Control@{{minclip2, Black, ""},  
+Button[
+Dynamic[Graphics[{minclip2, Rectangle[]}, ImageSize -> {20, 20}]],
+new = SystemDialogInput["Color", #];
+minclip2 = If[new === $Canceled, minclip2, new]
+, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
+						(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 				}]
 	        },Dynamic[leftright]]},
 	        {"Max Clipping", PaneSelector[{
 	        	1->Row[{
 					Control@{{clipMax1,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-					Control@{{maxclip1, White, "" }, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
+					Control@{{maxclip1, White, "" },  
+Button[
+Dynamic[Graphics[{maxclip1, Rectangle[]}, ImageSize -> {20, 20}]],
+new = SystemDialogInput["Color", #];
+maxclip1 = If[new === $Canceled, maxclip1, new]
+, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
+						(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 				}],
 				2->Row[{
 					Control@{{clipMax2,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-					Control@{{maxclip2, White, "" }, ColorSetter[#, ImageMargins->-5, ImageSize->{35, 35}]&}
+					Control@{{maxclip2, White, "" },  
+Button[
+Dynamic[Graphics[{maxclip2, Rectangle[]}, ImageSize -> {20, 20}]],
+new = SystemDialogInput["Color", #];
+maxclip2 = If[new === $Canceled, maxclip2, new]
+, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
+						(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 				}]
 	        },Dynamic[leftright]]}
 		}, False],

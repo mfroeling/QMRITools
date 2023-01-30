@@ -1555,7 +1555,6 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 		,
 	
 		pan = Manipulate[
-			
 			(*prepare the data*)
 			datai = fun@data;
 			
@@ -1580,8 +1579,9 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 						Switch[or, 1, data[[n, coor[[1]], coor[[2]]]], 2, data[[coor[[1]], n, coor[[2]]]], 3, data[[coor[[1]], coor[[2]], n]]]
 					];
 					lab = Switch[or, 1, {n, coor[[1]], coor[[2]]}, 2, {coor[[1]], n, coor[[2]]}, 3, {coor[[1]], coor[[2]], n}];
+				
 					FlipView[{
-						PlotSpectra[ApodizePadSpectra[spec], {dw,gyro}, PlotRange -> {{pmin, pmax}, Full}, Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size],
+						PlotSpectra[If[app,ApodizePadSpectra[spec],spec], {dw,gyro}, PlotRange -> {{pmin, pmax}, Full}, Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size],
 						PlotFid[tdat, ShiftedInverseFourier[spec], Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size]
 					}]
 				]
@@ -1620,6 +1620,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, {{n, Ceiling[Length[data]/2], "Slice"}, 1, Dynamic[nmax], 1}
 			, Delimiter
 			, {{funs, "ReIm", "Function vox"}, {"Re", "Im", "ReIm", "Abs", "All"}}
+			, {{app, False, "Appodize and Pad"}, {True,False}}
 			, {{fun, Abs, "Function CSI"}, {Abs -> "Absolute", Re -> "Real", Im -> "Imaginary"}}
 			, {{size, 40, "Plot size"}, {20 -> "Small", 40 -> "Medium", 60 -> "Large", 80 -> "Extra large"}}
 			, Delimiter
@@ -1629,7 +1630,13 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, Delimiter
 			, {{backScale, "Max", "Background"}, {"Max", "Total"}}
 			, {{back, True, "Magnitude background"}, {True,False}}
-			, {{col, Black, "Grid Color"}, ColorSlider}
+			, {{col, Black, "Grid Color"}, (*ColorSlider*)
+Button[
+Dynamic[Graphics[{col, Rectangle[]}, ImageSize -> {20, 20}]],
+new = SystemDialogInput["Color", #];
+col = If[new === $Canceled, col, new]
+, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
+}
 			
 			(* hidden manipulate paramterrs *)
 			, {{coor, {0, 0}}, ControlType -> None}
@@ -1653,7 +1660,8 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 				
 				xdat = -GetPpmRange[data[[1, 1, 1]], dw, gyro];
 				tdat = GetTimeRange[data[[1, 1, 1]], dw];
-				{xmin, xmax} = If[OptionValue[PlotRange]===Full, MinMax[xdat],OptionValue[PlotRange]];
+				
+				{pmin,pmax} = {xmin, xmax} = If[OptionValue[PlotRange]===Full, MinMax[xdat], OptionValue[PlotRange]];
 				
 				leg = BarLegend[{{"DarkRainbow", "Reverse"}, {0, 100}}, LegendLayout -> "Row", LegendMarkerSize -> 400, LabelStyle -> Directive[Large, Black, Bold]];
 			)
@@ -2253,7 +2261,7 @@ ExportSparSdat[file_, specs_, {bw_, te_}, {gyro_, nuc_}, opts:OptionsPattern[]] 
 ExportSparSdat[file_, specs_, {bw_, te_}, {gyro_, nuc_}, vox_, opts:OptionsPattern[]]:=Block[{fidsOut,numsOut,fileOut,datOut,headOut},
 	(*export data*)
 	fidsOut=Map[ShiftedInverseFourier,specs,{-2}];
-	numsOut=binO=ToVaxD[Flatten[RotateDimensionsLeft[{Re@fidsOut,Im@fidsOut}]]];
+	numsOut=ToVaxD[Flatten[RotateDimensionsLeft[{Re@fidsOut,Im@fidsOut}]]];
 	fileOut=file<>".SDAT";
 	If[FileExistsQ[fileOut],DeleteFile[fileOut]];
 	BinaryWrite[fileOut,numsOut,"UnsignedInteger32"];

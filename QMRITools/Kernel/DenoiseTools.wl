@@ -331,7 +331,7 @@ PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, 0., opts];
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
-		wht, ker, tol, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, m, n, off, datao, weights, sigmat, start,
+		wht, ker, tol, mon, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, m, n, off, datao, weights, sigmat, start,
 		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, weight, pos, leng, nearPos,p
 	},
 	
@@ -390,9 +390,9 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		output = Map[(
 			j++;
 			p = nearPos[[#]];
-			
+						
 			(*perform the fit and reconstruct the noise free data*)
-			{sigo, Nes, datn} = PCADeNoiseFiti[data[[p]], {m, n}, sigm[[#]], tol];
+			{sigo, Nes, datn} = PCADeNoiseFiti[data[[p]], MinMax[{m, n}], sigm[[#]], tol];
 			
 			(*get the weightes*)
 			weight = If[wht, 1./(m - Nes), 1.];
@@ -502,15 +502,21 @@ PCADeNoiseFit[data_, {m_, n_}, sigi_?NumberQ, toli_] := PCADeNoiseFiti[data, {m,
 
 
 (*internal function*)
-PCADeNoiseFiti[data_, {m_, n_}, sigi_?NumberQ, toli_] := Block[{trans, xmat, xmatT, val, mat, pi, sig, xmatN, tol, out},
+PCADeNoiseFiti[data_, {m_, n_}, sigi_?NumberQ, toli_] := Block[{
+		trans, xmat, xmatT, val, mat, pi, sig, xmatN, tol, out
+	},
+	
 	(*perform decomp*)
 	trans = Subtract @@ Dimensions[data] > 0;
 	{xmat, xmatT} = If[trans, {Transpose@data, data}, {data, Transpose@data}];
 	{val, mat} = Reverse /@ Eigensystem[xmat . xmatT];
+
 	(*if sigma is given perform with fixed sigma,else fit both*)
 	{pi, sig} = GridSearch[Re[val], m, n, sigi];
+	
 	(*constartin pi plus tol*)
 	tol = Round[Clip[pi - toli, {1, m}]];
+	
 	(*give output,simga,number of noise comp,and denoised matrix*)
 	out = Transpose[mat[[tol ;;]]] . mat[[tol ;;]] . xmat;
 	{sig, tol, If[trans, Transpose@out, out]}
@@ -600,7 +606,8 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 	];
 	
     (*Denoise the spectra data*)
-    {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel]];
+    {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, 
+    	PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel], MonitorCalc->True];
     
     Print[Mean@Flatten@sig];	
     	

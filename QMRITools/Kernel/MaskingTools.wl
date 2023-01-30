@@ -295,9 +295,10 @@ SmoothMask[msk_,OptionsPattern[]] := Block[{itt, dil, pad, close, obj, filt, mas
 	(*perform itterative smoothing*)
 	mask = ImageData@Nest[Round[GaussianFilter[Erosion[Round[GaussianFilter[Dilation[#, 1], filt] + 0.05], 1], filt] + 0.05]&, Image3D@mask, itt];
 	(*perform dilation if needed*)
-	mask = DilateMask[mask,dil];
+	mask=ArrayPad[mask,-pad];
+	mask = DilateMask[mask, dil];
 	(*reverse padding*)
-	SparseArray[ArrayPad[mask,-pad]]
+	SparseArray[mask]
 ]
 
 
@@ -318,7 +319,7 @@ DilateMask[seg_, size_] := Which[
 	size< 0,
 	If[ArrayDepth[seg]>3,
 		Transpose[SparseArray[SparseArray[ImageData@Erosion[Image3D[#], Round[Abs[size]]]] & /@ Transpose[seg]]],
-		SparseArray[Dilation[Normal[seg], Round[size]]]
+		SparseArray[Erosion[Normal[seg], Round[size]]]
 	],
 	True, SparseArray[seg]
 ]
