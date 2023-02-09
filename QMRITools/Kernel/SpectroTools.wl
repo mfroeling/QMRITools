@@ -2297,6 +2297,7 @@ ToVaxD=Compile[{{num,_Real,0}},Block[{signBin,numA,exp,expBin,frac,fracBin},
 (* ::Subsubsection::Closed:: *)
 (*MakeSpar*)
 
+
 Options[MakeSpar] = Options[ExportSparSdat];
 
 MakeSpar[specs_, {bw_, te_}, {gyro_, nuc_}, vox_, OptionsPattern[]]:=Block[{

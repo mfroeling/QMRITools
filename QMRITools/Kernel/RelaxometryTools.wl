@@ -210,7 +210,7 @@ LinFit[datan_, times_] := Block[{datal, mat, r, s},
 	(*solve system for all voxels*)
 	{r, s} = mat . datal;
 	(*constrain solutions*)
-	{Clip[ExpNoZero[s], {0, 5 Max[datan]},{0.,0.}], Clip[DevideNoZero[1, r], {0, 20 Max[times]},{0.,0.}]}
+	{Clip[ExpNoZero[s], {0, 5 Max[datan]},{0.,0.}], Clip[DevideNoZero[1, r], {0, 50 Max[times]},{0, 50 Max[times]}]}
 ]
 
 
@@ -249,11 +249,13 @@ LogFit[datan_, times_] := Block[{result, fdat, offset, T1r, off, t1rho, t, ad, d
 (*T1Fit*)
 
 
-SyntaxInformation[T1Fit]= {"ArgumentsPattern" -> {_, _}}
+SyntaxInformation[T1Fit]= {"ArgumentsPattern" -> {_, _,_.}}
 
-T1Fit[fdat_?VectorQ, time_?VectorQ] := T1LinFit[fdat, time]
+T1Fit[fdat_?VectorQ, time_?VectorQ] := T1LinFit[fdat, time,Automatic]
 
-T1Fit[datan_, timei_] := Block[{ad, datal, dim, times, dat, time, result, t1out, t1outs, aparo, bparo},
+T1Fit[datan_?ArrayQ, timei_?VectorQ]:=T1Fit[datan, timei, Automatic]
+
+T1Fit[datan_, timei_,met_] := Block[{ad, datal, dim, times, dat, time, result, t1out, t1outs, aparo, bparo},
 	ad = ArrayDepth[datan];
 	datal = Switch[ad, 3, {Transpose[datan, {3, 1, 2}]}, 4, Transpose[datan, {1, 4, 2, 3}]];
 	dim = Dimensions[datal];
@@ -265,7 +267,7 @@ T1Fit[datan_, timei_] := Block[{ad, datal, dim, times, dat, time, result, t1out,
 		dat = #1;
 		time = #2;
 		DistributeDefinitions[time];
-		Quiet@ParallelMap[T1LinFit[#, time] &, dat, {2}]
+		Quiet@ParallelMap[T1LinFit[#, time, met] &, dat, {2}]
 	) &, {datal, times}, 1];
 	
 	(*constrain the output to fixed values*)
@@ -278,20 +280,35 @@ T1Fit[datan_, timei_] := Block[{ad, datal, dim, times, dat, time, result, t1out,
 ]
 
 
-T1LinFit[fdat_?VectorQ, time_?VectorQ] := Block[{min, max, sol, aparf, bparf, tt, t1sf, t1s, apar, bpar, cor},
+T1LinFit[fdat_?VectorQ, time_?VectorQ, met_] := Block[{min, max, sol, aparf, bparf, tt, t1sf, t1s, apar, bpar, cor},
 	{min, max} = MinMax[fdat];
 	
 	If[Total[fdat] == 0.,
 		{0., 0., 0., 0.},
 		(*calculate T1 star (look locker assuptions)*)
-		sol = Quiet[FindFit[Transpose[{time, fdat}], {
-			(*model*)
-			Abs[aparf - bparf Exp[-tt/t1sf]],
-			(*contraints*)
-			{0 < aparf < bparf < 4 max, 0 < t1sf < 3000}
-			},
-			(*initial values*)
-			{{aparf, 0.5 max}, {bparf, 3 max}, {t1sf, 500}}, tt]
+		Switch[met,
+			Automatic,
+			ti = If[min<0.5 max, time[[First@First@Position[fdat, Min[fdat]]]],First@time];
+			sol = Quiet[FindFit[Transpose[{time, fdat}], {
+				(*model*)
+				Abs[aparf - bparf Exp[-tt/t1sf]],
+				(*contraints*)
+				{0 < aparf, 1.8 aparf < bparf < 2.2 aparf, 0 < t1sf < 3000}
+				},
+				(*initial values*)
+				{{aparf, Last@fdat}, {bparf, 2 (Last@fdat + First@fdat)}, {t1sf, 1.5 ti}}, tt]
+			];
+			,
+			"NMinimize",
+			sol = Quiet[FindFit[Transpose[{time, fdat}], {
+				(*model*)
+				Abs[aparf - bparf Exp[-tt/t1sf]],
+				(*contraints*)
+				{0 < aparf < bparf < 2 max, 0 < t1sf < 3000}
+				},
+				(*initial values*)
+				{aparf, bparf, t1sf}, tt]
+			];
 		];
 		
 		(*get the fit results*)
@@ -299,7 +316,7 @@ T1LinFit[fdat_?VectorQ, time_?VectorQ] := Block[{min, max, sol, aparf, bparf, tt
 		
 		(*correct the T1 star an convert to T1*)
 		If[apar > 0, 
-			cor = Clip[(bpar/apar - 1), {0., 3.}, {0., 3.}];
+			cor = Clip[(bpar/apar - 1), {0.5, 1.5}, {0.5, 1.5}];
 			{cor t1s, t1s, apar, bpar}, 
 			{0., 0., 0., 0.}
 		]
