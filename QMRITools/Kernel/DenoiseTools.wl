@@ -607,7 +607,7 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 	
     (*Denoise the spectra data*)
     {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, 
-    	PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel], MonitorCalc->True];
+    	PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel], MonitorCalc->False];
     
     Print[Mean@Flatten@sig];	
     	

@@ -622,7 +622,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			,{dixType, {"Mixed", "Phase", "Real", "Imaginary"}}],
 			
 			(*-------------------------------------------*)
-			(*---------- DWI processing script ----------*)
+			(*---------- DWI conversion script ----------*)
 			(*-------------------------------------------*)
 			"dwi",
 			
@@ -662,7 +662,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			],
 			
 			(*-------------------------------------------*)
-			(*----------- T2 processing script ----------*)
+			(*----------- T2 conversion script ----------*)
 			(*-------------------------------------------*)
 			"mese",
 			
@@ -753,7 +753,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, phasediff, hz, b0i,
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
 		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
-		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk
+		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk, 
+		phii, phbpi, phbp
 	},
 	
 	(*get the context for exporting*)
@@ -782,7 +783,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			(*-------------------------------------------*)
 			(*-------- megre processing scripts ---------*)
 			(*-------------------------------------------*)
-			
+			Print[process["Method"]];
 			
 			Switch[process["Method"],
 				"Dixon",
@@ -832,17 +833,17 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							
 							(*calculated field maps*)
 							(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
-							{b0i, ph0i, t2stari, {e1, e2}, n} = DixonPhase[real, imag, echos, False];
-							(*-----*)AddToLog[{"using echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]]"ms )"},5];
+							{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
+							(*-----*)AddToLog[{"used echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]]"ms )"}, 5];
 							
 							(*perform the IDEAL dixon fit*)
 							(*-----*)AddToLog["Starting Dixon reconstruction",4];
-							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {b0, t2star, r2star, phi}, itt, res} = DixonReconstruct[real, imag, echos, b0i, t2stari, ph0i, DixonBipolar->True];
+							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {{b0, phi, phbp}, {t2star, r2star}}, itt, res} = DixonReconstruct[{real, imag}, echos, {b0i, t2stari, phii, phbpi}, DixonBipolar->True];
 							
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:",4];
 							(*----*)AddToLog[outfile,5];
-							outTypes = {"real", "imag", "mag", "ph", "b0i", "b0", "phi", "t2stari", "t2star", "r2star", 
+							outTypes = {"real", "imag", "mag", "ph", "b0i", "phii", "t2stari", "phbpi", "b0", "phi", "phbp", "t2star", "r2star", 
 								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res"};
 							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 							
