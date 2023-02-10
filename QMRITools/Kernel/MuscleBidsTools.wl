@@ -358,7 +358,7 @@ BidsDcmToNii[loc_,dcmFol_,niiFol_,OptionsPattern[]]:=Block[{logFile,fols,folsi,f
 		
 		(*perform the conversions only when output folder is empty*)
 		If[EmptyDirectoryQ[out],
-			DcmToNii[{folsi,out}];
+			DcmToNii[{folsi,out},MonitorCalc->False];
 			(*----*)AddToLog["Folder was converted",1],
 			(*----*)AddToLog["Folder was skipped since output folder already exists",1];
 		];
@@ -783,9 +783,9 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			(*-------------------------------------------*)
 			(*-------- megre processing scripts ---------*)
 			(*-------------------------------------------*)
-			Print[process["Method"]];
-			
+	
 			Switch[process["Method"],
+				
 				"Dixon",
 				(*-------------------------------------------*)
 				(*-------- Dixon processing scripts ---------*)
@@ -941,7 +941,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			(*close preprocessing*)
 			];
 			
-			Switch[process,
+			Switch[process["Method"],
 				
 				"DTI",
 				(*-------------------------------------------*)
@@ -1015,25 +1015,27 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 				(*----*)AddToLog[{"Unkonwn processing ", process, "for datatype", type}, True, 3];
 			],
 			
+			"mese",
 			(*-------------------------------------------*)
 			(*-------- mese processing scripts ----------*)
 			(*-------------------------------------------*)
-			"mese",
 			
-			(*input file names*)
-			dfile = GenerateBidsFileName[fol, set];
-			jfile = ConvertExtension[dfile,".json"];
-			nfile = ConvertExtension[dfile,".nii"];
-			
-			(*ouput file names*)
-			outfile = GenerateBidsFileName[folo, set];
-			
-			Switch[process,
+			Switch[process["Method"],				
 				
 				"EPGT2",
 				(*-------------------------------------------*)
 				(*---------- EPG processing script ----------*)
 				(*-------------------------------------------*)
+
+				(*input file names*)
+				dfile = GenerateBidsFileName[fol, set];
+				jfile = ConvertExtension[dfile,".json"];
+				nfile = ConvertExtension[dfile,".nii"];
+				
+				(*ouput file names*)
+				outfile = GenerateBidsFileName[folo, set];
+				
+				
 				(*check if files are already done*)
 				If[CheckFile[outfile, "done", verCheck],
 					(*if checkfile has label done and version is recent skip*)
@@ -1061,7 +1063,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							
 							(*determine the pulse profiles*)
 							(*-----*)AddToLog["Calculating the slice profiles", 4];							
-							{ex, ref} = datType["Settings"];
+							{ex, ref} = datType["Process"]["Settings"];
 							thk = 2 json["SliceThickness"];
 							angle = GetPulseProfile[ex, ref, SliceRange -> thk, SliceRangeSamples -> thk][[1;;2]];
 							

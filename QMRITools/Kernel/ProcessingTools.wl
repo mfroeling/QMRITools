@@ -682,12 +682,10 @@ MeanRange[inp_,quant_] := Block[{q1, q2, q3},
 SyntaxInformation[SNRCalc] = {"ArgumentsPattern" -> {_, _}};
 
 SNRCalc[data_?ArrayQ, sig_?ArrayQ]:= Block[{sigma, snr},
-	sigma = GaussianFilter[Chop[sig, 10^-3], 2]; 
+	sigma = MedianFilter[Chop[sig, 10^-3], 2]; 
 	snr = Which[
-		ArrayDepth[data]===4&&ArrayDepth[sigma]===3,
-		Transpose[Map[DevideNoZero[#, sigma]&, Transpose[data]]],
-		ArrayDepth[data]===ArrayDepth[sigma],
-		DevideNoZero[data, sigma]
+		ArrayDepth[data]===4 && ArrayDepth[sigma]===3, Transpose[Map[DevideNoZero[#, sigma]&, Transpose[data]]],
+		ArrayDepth[data]===ArrayDepth[sigma], DevideNoZero[data, sigma]
 	];
 	Clip[snr, {0, Quantile[Flatten[snr],0.99]}]
 ]

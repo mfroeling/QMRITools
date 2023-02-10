@@ -306,7 +306,7 @@ SyntaxInformation[MakeCheckFile] = {"ArgumentsPattern" -> {{_, _, _}, _}};
 MakeCheckFile[{fol_, name_, tag_}, stat_?ListQ] := MakeCheckFile[FileNameJoin[{fol, name <> "_" <> tag }], stat]
 
 MakeCheckFile[nam_?StringQ, stat_?ListQ] := Export[
-	aa=nam <> "_check.json";Print[aa];aa,
+	nam <> "_check.json",
 	Join[stat, {
 		"ProcessingSoftware" -> "QMRITools.com",
 		"Version" -> QMRITools`$InstalledVersion, 
