@@ -1154,11 +1154,9 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		If[i =!= 0, AppendTo[norm, norm[[-1]]]];
 		i++;
 		(*b0 phase*)
-		phi = Mean[UnwrapDCT[(Arg[compi[[# + de]]] - Arg[compi[[#]]])] & /@ Range[e1, l-de, de]];
-		
+		phi = Mean[(UnwrapDCT /@ (Arg[compi[[# + de]]] - Arg[compi[[#]]])) & /@ Range[e1, e1 + 5, 5]];
 		ph += msk phi;
 		compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
-		
 		norm[[-1, 1]] = Norm[Pick[Flatten[phi], Flatten[msk], 1]];
 		normN = Transpose[100 Transpose[norm]/norm[[1]]];
 		
@@ -1166,7 +1164,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		If[normN[[-1, 3]] >= .5,
 			UF = If[i > 2 && (normN[[-1, 3]] < 25|| sw0), sw0 = True; # &, UnwrapDCT];
 			ph0i = Mean[(bip[[#]] UF[Arg@DevideNoZero[compi[[#]]^2, compi[[# - 1]] compi[[# + 1]], "Comp"]] & /@ Range[2, l-1, 3])];
-			ph0i = FitBipolar[ph0i, msk];
+			(*ph0i = FitBipolar[ph0i, msk];*)
 			
 			ph0 += msk ph0i;
 			compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
@@ -1175,32 +1173,38 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		normN = Transpose[100 Transpose[norm]/norm[[1]]];
 		
 		(*initial phase*)
-		If[normN[[-1, 2]] >= 1 && normN[[-1, 3]] < 50, 
-			f1 = True; 
-			ph1i = UnwrapDCT@Arg[DotAc[RotateDimensionsLeft[(Ah[[All, ;; e2]] . compi[[;; e2]])], RotateDimensionsLeft[Ai[[All, ;; e2]] . compi[[;; e2]]]]];
-			
-			ph1 += msk ph1i;
-			compi = ApplyPhase[comp, hz ph, 0.5 ph1, 0.25 ph0, mat];
-		];
-		If[f1,
-			ni = norm[[-1, 2]] = Norm[Pick[Flatten[ph1i], Flatten[msk], 1]];
-			If[! f0, f0 = True; norm[[1 ;; -1, 2]] = ni, norm[[-1, 2]] = ni]
-		];
+		ph1i = UnwrapDCT@Arg[DotAc[RotateDimensionsLeft[(Ah[[All, ;; e2]] . compi[[;; e2]])], RotateDimensionsLeft[Ai[[All, ;; e2]] . compi[[;; e2]]]]];
+		ph1 += msk ph1i;
+		compi = ApplyPhase[comp, hz ph, 0.5 ph1, 0.25 ph0, mat];
+		norm[[-1, 2]] = Norm[Pick[Flatten[ph1i], Flatten[msk], 1]];
 		normN = Transpose[100 Transpose[norm]/norm[[1]]];
 		
-		If[AllTrue[Last[normN], # < 1 &], Break[]]
+		If[AllTrue[Last[normN], # < 4 &], Break[]]
 	, {itt}];
+		
+	(*fix the initial phase*)
+	phi = Mean[(UnwrapDCT[(Arg[compi[[# + de]]] - Arg[compi[[#]]])]) & /@ Range[e1, e1 + 5, 5]];
+	ph += msk phi;
+	compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
+		
+	ph1i = UnwrapDCT[Arg@First@compi, msk];
+	ph1 += msk ph1i;
+	compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
+	
+	ph1i = Arg@First@compi;
+	ph1 += msk ph1i;
+	compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
 	
 	(*get R2 star*)
 	n = First@ FirstPosition[echos, First[Select[echos, # > 1.5 iop &]]];
 	t2s = Last@T2Fit[Abs[Transpose[comp[[n ;;]]]], echos[[n ;;]]];
 
-	{{hz ph/(2 Pi), t2s, (ph1)/(2 Pi), 0.25 ph0/(2 Pi)}, {e1, e2, n}}
+	{{hz ph/(2 Pi), t2s, (ph1+Pi)/(2 Pi), 0.25 ph0/(2 Pi)}, {e1, e2, n}}
 ]
 
 
 ApplyPhase = Compile[{{comp, _Complex, 4}, {ph, _Complex, 3}, {phi, _Complex, 3}, {phb, _Complex, 3}, {mat, _Complex, 2}},
-	comp Exp[mat . {ph, phi, phb}],
+	comp Exp[mat . {ph, phi+Pi, phb}],
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 

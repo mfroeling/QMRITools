@@ -185,7 +185,7 @@ Begin["`Private`"]
 (*DcmToNii*)
 
 
-Options[DcmToNii]={CompressNii->True, Method->Automatic, UseVersion->1, UseSubfolders -> False, DeleteOutputFolder->False}
+Options[DcmToNii]={CompressNii->True, Method->Automatic, UseVersion->1, UseSubfolders -> False, DeleteOutputFolder->False, MonitorCalc->True}
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
@@ -227,7 +227,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 			dcm2niif = DirectoryName[dcm2nii];
 		];
 		
-		Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"];
+		If[OptionValue[MonitorCalc],Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
 			
 		If[DirectoryQ[folout],
 			delete = If[OptionValue[DeleteOutputFolder], 
@@ -240,7 +240,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		
 		Quiet[CreateDirectory[folout]];
 		
-		Print[{filfolin,folout}];
+		If[OptionValue[MonitorCalc],Print[{filfolin,folout}]];
 			
 		(*create the cmd window command to run dcm2niix*)
 		log = FileNameJoin[{folout,"DcmToNiiLog.txt"}];
