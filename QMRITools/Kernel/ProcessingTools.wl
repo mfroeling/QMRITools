@@ -963,7 +963,8 @@ Options[JoinSets]={
 	NormalizeSets -> True, 
 	MotionCorrectSets -> False, 
 	PaddOverlap -> 0, 
-	JoinSetSplit -> True
+	JoinSetSplit -> True,
+	MonitorCalc -> True
 };
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
@@ -971,18 +972,21 @@ SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 JoinSets[data_?ArrayQ,over_,opts:OptionsPattern[]]:=JoinSets[data,over,{1,1,1},opts]
 
 JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
-	{dat, overlap, motion, pad, normalize, depth, meth, target, normover, ran},
+	{dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran},
 	
 	(*get the options*)
 	motion = OptionValue[MotionCorrectSets];
 	pad = OptionValue[PaddOverlap];
 	normalize = OptionValue[NormalizeSets];
 	normover = OptionValue[NormalizeOverlap];
+	mon = OptionValue[MonitorCalc];
 	depth = ArrayDepth[data];
 	overlap = If[ListQ[over],First@over,over];
 	
 	(*normalize the data*)
-	dat = If[normalize, PrintTemporary["normalizing data"]; NormalizeData/@data, data];
+	dat = If[normalize, 
+		If[mon,PrintTemporary["normalizing data"]]; 
+		NormalizeData/@data, data];
 	
 	ran = MinMax[data];
 
@@ -994,11 +998,11 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 			5,
 			motion=False;
 			(*define the moving data*)
-			Print["motion correct is only for 3D volues"]
+			If[mon,Print["motion correct is only for 3D volues"]]
 			,
 			4,
-			PrintTemporary["motion correcting data"];
-			dat = CorrectJoinSetMotion[dat, vox, over, PaddOverlap->pad, JoinSetSplit->OptionValue[JoinSetSplit]];
+			If[mon,PrintTemporary["motion correcting data"]];
+			dat = CorrectJoinSetMotion[dat, vox, over, PaddOverlap->pad, JoinSetSplit->OptionValue[JoinSetSplit], MonitorCalc->mon];
 			overlap = overlap + 2*pad;
 		]
 	];
@@ -1006,7 +1010,7 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 	(*reverse the order of the slices if needed*)
 	dat=N@If[OptionValue[ReverseData], Reverse[dat,2], dat];
 	
-	PrintTemporary["Joining data"];	
+	If[mon,PrintTemporary["Joining data"]];	
 	dat = Switch[depth,
 		5,Transpose[(JoinSetsi[dat[[All, All, #]],overlap,normover]) & /@ Range[Length[dat[[1, 1]]]]],
 		4,JoinSetsi[dat,overlap,normover],
@@ -1158,15 +1162,16 @@ JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0},
 (*CorrectJoinSetMotion*)
 
 
-Options[CorrectJoinSetMotion] = {JoinSetSplit -> True, PaddOverlap -> 2}
+Options[CorrectJoinSetMotion] = {JoinSetSplit -> True, PaddOverlap -> 2, MonitorCalc->True}
 
 SyntaxInformation[CorrectJoinSetMotion] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
-	{sets, nmax, dim, d1, d2, maskd1, maskd2, samp, overp, pad, regFunc, depth},
+	{sets, mon, nmax, dim, d1, d2, maskd1, maskd2, samp, overp, pad, regFunc, depth},
  	
  	(*get the input*)
  	pad = OptionValue[PaddOverlap];
+ 	mon = OptionVAlue[MonitorCalc];
  	depth = ArrayDepth[input];
  	
 	(*data which will be joined, make all data sets 4D*)
@@ -1187,7 +1192,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 	regFunc = If[OptionValue[JoinSetSplit], RegisterDataTransformSplit, RegisterDataTransform];
 	
 	i=0;
-	PrintTemporary[Dynamic[i]];
+	If[mon,PrintTemporary[Dynamic[i]]];
 	
 	(*perform the motion correction*)
 	Table[

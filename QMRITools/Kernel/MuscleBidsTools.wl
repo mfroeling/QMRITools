@@ -41,6 +41,9 @@ AddToJson[json, \"QMRITools\"] adds the QMRITools software version to the json."
 ExtractFromJSON::usage = 
 "ExtractFromJSON[keys] if the keys exist they are extracted from the json."
 
+CheckConfig::usage = 
+"CheckConfig[config]"
+
 
 PartitionBidsName::usage = 
 "PartitionBidsName[name] converts a Bids name to the a Bids labels as an association, i.e. {\"sub\",\"ses\",\"stk\",\"rep\",\"type\",\"suf\"}."
@@ -87,11 +90,15 @@ MuscleBidsProcess::usage =
 "MuscleBidsProcess[niiFol, discription]"
 
 
+MuscleBidsMerge::usage = 
+"MuscleBidsMerge[niiFol, discription]"
+
+
 CheckDataDiscription::usage =
 "CheckDataDiscription[discription] checks the data discription used in MuscleBidsConvert. For example {\"Label\"->\"DTI\",\"Type\"->\"dwi\",\"Class\"->\"Stacks\",\"Overlap\"->5,\"Suffix\"->\"dti\"},"
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -110,7 +117,7 @@ VersionCheck::usage =
 "VersionCheck is an option for MuscleBidsProcess. If set True data processed with an old version is reprocessed."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -160,7 +167,7 @@ bidsClass = {"Volume", "Stacks", "Repetitions"};
 
 dataToLog =If[KeyExistsQ[#, $Failed], 
 	"Wrong data dicription: " <> #[$Failed], 
-	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[#]]
+	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[KeyDrop[#, {"Process", "Merging"}]]]
 ]&;
 
 
@@ -297,7 +304,7 @@ BidsValue[parts_,val_?StringQ]:=parts[val] /. {Missing[___]->""}
 CheckBidsTypes[type_]:=If[!MemberQ[Drop[Keys[bidsTypes],-1], type], Message[Bids::type,type]]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*BidsString*)
 
 
@@ -307,6 +314,13 @@ BidsString[parts_, val_?StringQ]:=Block[{str},
 	str = BidsValue[parts, val];
 	If[str==="", "", val<>"-"<>str]
 ]
+
+
+CheckConfig[config_]:=TabView[Join[
+{"folders"->Column[Flatten@{config["folders"]["root"],
+config["folders"]/@{"dicomData","rawData","derivedData","mergeData"}}]
+},
+{#["Type"],#["Suffix"]}->Column[Normal[#]]&/@CheckDataDiscription[config["dataSets"], "Process"]]]
 
 
 (* ::Subsection::Closed:: *)
@@ -375,7 +389,7 @@ BidsDcmToNii[loc_,dcmFol_,niiFol_,OptionsPattern[]]:=Block[{logFile,fols,folsi,f
 (*BidsSupport*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*BidsFolderLoop*)
 
 
@@ -401,23 +415,31 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPatter
 	
 	(*open log*)
 	ShowLog[];
-	
+
 	(*loop over the subjects*)
 	Table[
 		nam = GenerateBidsName[PartitionBidsFolderName[fol][[-1]]];
+		
 		(*start method specific logging*)
 		Switch[met,
+			(*MuscleBidsConvert*)
+			"Convert", 
 			logFile = FileNameJoin[{fol, nam<>"_BIDSConvert.log"}];
 			ImportLog[logFile];
-			"Convert", (*MuscleBidsConvert*)
 			(*----*)AddToLog[{"Starting bids conversion for directory: ", fol}, True, 0];
 			(*----*)AddToLog["Perform conversion for: ",1],
-			"Process", (*MuscleBidsProcess*)
+			
+			(*MuscleBidsProcess*)
+			"Process", 
 			logFile = FileNameJoin[{GenerateBidsFolderName[outFol, Last[PartitionBidsFolderName[fol]]], nam<>"_BIDSProcess.log"}];
 			ImportLog[logFile];
 			(*----*)AddToLog[{"Starting bids processing for directory: ", fol}, True, 0],
+			
+			(*MuscleBidsMerge*)
 			"Merge",
-			""
+			logFile = FileNameJoin[{GenerateBidsFolderName[outFol, Last[PartitionBidsFolderName[fol]]], nam<>"_BIDSMerge.log"}];
+			ImportLog[logFile];
+			(*----*)AddToLog[{"Starting bids merging for directory: ", fol}, True, 0];
 		];
 		
 		(*loop over the datType*)
@@ -430,24 +452,16 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPatter
 				(*----*)AddToLog[dataToLog@type, 2, True];
 				rfol = SelectBidsFolders[fol, type["InFolder"]];
 				
-				(*loop over all inFolders in subject folder*)
+				(*method specific scripts: loop over all inFolders in subject folder*)
 				Table[
-					(*----*)AddToLog[{"Finding all JSON files in the directory", foli}, 2];
-					files = FileNames["*.json", foli];
-					(*----*)AddToLog[{"There were", Length[files], " JSON files found"}, 3];
-					
-					(*method specific scripts*)
 					Switch[met,
 						"Convert", (*MuscleBidsConvert*)
-						MuscleBidsConvertI[foli, type, logFile, OptionValue[DeleteAfterConversion]]
-						,
+						MuscleBidsConvertI[foli, type, logFile, OptionValue[DeleteAfterConversion]],
 						"Process", (*MuscleBidsProcess*)
-						MuscleBidsProcessI[foli, outFol, type, logFile, OptionValue[VersionCheck]]
-						,
-						"Merge",
-						""
+						MuscleBidsProcessI[foli, outFol, type, logFile, OptionValue[VersionCheck]],
+						"Merge", (*MuscleBidsMerge*)
+						MuscleBidsMergeI[foli, outFol, type, logFile, OptionValue[VersionCheck]]
 					];
-					
 					ExportLog[logFile];				
 				(*Close sub folders loop*)
 				, {foli, rfol}];		
@@ -483,7 +497,8 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 	(*Check if manditory keys are present*)
 	man = ContainsAll[key, Switch[met,
 		"Convert", {"Label", "Type"},
-		"Process", {"Type"}
+		"Process", {"Type"},
+		"Merge", {"Type", "Merging"}
 	]];
 	
 	If[!man,
@@ -514,13 +529,13 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 			If[!KeyExistsQ[ass, "InFolder"], ass = Association[ass, "InFolder"->"raw"]];
 			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];
 			,
-			"Process",
+			"Process"|"Merge",
 			If[!KeyExistsQ[ass, "InFolder"], ass = Association[ass, "InFolder"->BidsType[ass["Type"]]]];
-			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];
+			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];			
 		];
 		
 		(*add overlap if class is stacks*)
-		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass,"Overlap"], Message[Bids::stk]; ass = Association[ass, "Overlap"->0]];
+		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass["Merging"],"Overlap"], Message[Bids::stk]; ass = Association[ass, "Overlap"->0]];
 		
 		(*output the completed data discription*)
 		{KeySort@ass}
@@ -532,7 +547,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 (*MuscleBidsConvert*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsConvert*)
 
 
@@ -718,7 +733,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 ] 
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetStackName*)
 
 
@@ -733,13 +748,13 @@ GetStackName[class_, namei_]:=Switch[class,
 (*MuscleBidsProcess*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsProcess*)
 
 
 Options[MuscleBidsProcess] = {SelectSubjects->All, VersionCheck->False};
 
-SyntaxInformation[MuscleBidsProcess] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[MuscleBidsProcess] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"Process", ops]
 
@@ -754,7 +769,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
 		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
 		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk, 
-		phii, phbpi, phbp
+		phii, phbpi, phbp,ta
 	},
 	
 	(*get the context for exporting*)
@@ -767,9 +782,9 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 	keys = {"EchoTime", "ForthDimension", "DataClass", "Stack", "OverLap", "SliceThickness", "SpacingBetweenSlices"};
 
 	(*see what needs to be processed*)
-	files = Flatten[FileNames["*"<>StringReplace[#, {"-"->"","_"->"","."->""}]<>"*.json", foli]&/@datType["Label"]];
+	files = Flatten[FileNames["*"<>StringReplace[#, {"-"->"","_"->"","."->""}]<>"*.json", foli]& /@ datType["Label"]];
 	sets = If[type==="megre",
-		DeleteDuplicates[KeyDrop[#,"suf"]&/@PartitionBidsName[FileBaseName/@files]],
+		DeleteDuplicates[(ta = #;AssociateTo[ta, "suf"->{First[ta["suf"]]}])&/@PartitionBidsName[FileBaseName/@files]],
 		DeleteDuplicates[PartitionBidsName[FileBaseName/@files]]];
 	(*-----*)AddToLog[{"Found", ToString[Length[sets]], datType["Class"], "that will be processed:"}, 2];
 	
@@ -1034,8 +1049,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 				
 				(*ouput file names*)
 				outfile = GenerateBidsFileName[folo, set];
-				
-				
+
 				(*check if files are already done*)
 				If[CheckFile[outfile, "done", verCheck],
 					(*if checkfile has label done and version is recent skip*)
@@ -1110,6 +1124,129 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		
 	(*close loop over sets*)
 	, {set, sets}]
+]
+
+
+(* ::Subsection:: *)
+(*MuscleBidsMerge*)
+
+
+(* ::Subsubsection:: *)
+(*MuscleBidsMerge*)
+
+
+Options[MuscleBidsMerge] = {SelectSubjects->All, VersionCheck->False};
+
+SyntaxInformation[MuscleBidsMerge] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Merge", ops]
+
+
+(* ::Subsubsection:: *)
+(*MuscleBidsMergeI*)
+
+
+MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
+		nonQuant, motion, reverse, fol, parts, merge, outfile, tarType, tarCon, movType, movCon, n,
+		movs, stacs, overT, overM, targets, movings, mov, nStac, nCheck, nSet, target, voxt, dimt, moving, voxm, dimm,
+		files, im, func, reg
+	},
+
+	nonQuant = {"inph","outph","wat","fat","S0"};
+	motion = True;
+	reverse = False;
+
+	(*get teh outfiles*)
+	{fol, parts} = PartitionBidsFolderName[foli];
+	merge = datType["Merging"];
+	(*get the outfile*)
+	outfile=GenerateBidsFileName[folo,<|parts, "suf"->datType["Suffix"],"Type"->datType["Type"]|>];
+
+	(*-----*)AddToLog[{"Starting data merging for subject", foli}, 2, True];
+	(*get the settings*)
+	{tarType, tarCon} = merge["Target"];
+	movType = datType["InFolder"];
+	movCon = merge["Moving"];
+	movs = merge["Process"];
+	stacs = StringReplace[#, {"-"->"","_"->"","."->""}]&/@datType["Label"];
+	overT = merge["Overlap"];
+	{overT, overM} = If[IntegerQ[overT], {overT, overT}, overT];
+	
+	If[CheckFile[outfile,"done",verCheck],
+		(*if checkfile has label done and version is recent skip*)
+		(*-----*)AddToLog[{"Processing already done for label", lab}, 3],
+		(*-----*)AddToLog[{"The types that will be merged are: "}, 3];
+		(*-----*)AddToLog[{StringJoin@Riffle[movs,", "]}, 4];
+		
+		(*get all the moving and target data file names*)
+		targets = Flatten[FileNames["*"<>tarType<>"*"<>tarCon<>".nii.gz", FileNameJoin[{DirectoryName[foli],tarType}]]];
+		movings = (mov = #; Flatten[FileNames["*"<>#<>"*"<>mov<>".nii.gz", foli]& /@stacs])& /@movs;
+		
+		(*check if number of stacks are consistant*)
+		nStac=Length@stacs;
+		nCheck=AllTrue[n=Join[{Length[targets]},Length/@movings], #===nStac&];
+		nSet=Length[movs];
+		
+		If[!nCheck,
+			(*-----*)AddToLog[{"Not all types have the same number of stacs:",StringJoin@Riffle[ToString/@n,", "]}, 3],
+			(*-----*)AddToLog[{"Start joining ",nStac,"stacs for",nSet,"dataypes"}, 3];
+			
+			(*import the Target data*)
+			(*-----*)AddToLog[{"Importing and processing the target data"}, 4];
+			{target, voxt} = Transpose[ImportNii/@targets];
+			dimt = Dimensions@First@target;
+			voxt = First@voxt;
+			
+			(*-----*)AddToLog[{"Importing and processing the moving data"}, 4];
+			{moving, voxm} = Transpose[(files=#;Transpose[ImportNii[#]&/@files])& /@movings];
+			dimm = Dimensions@First@First@moving;
+			voxm = First@First@voxm;
+			
+			(*join the target and split for the motion correction.*)
+			(*-----*)AddToLog[{"Joining the primary datatype",If[motion,"with","without"],"motion correction"}, 4];
+			If[nStac=!=1,
+				target = JoinSets[target, overT, voxt, ReverseSets->reverse, MotionCorrectSets->motion, 
+					NormalizeSets->True, NormalizeOverlap->True, MonitorCalc->False];
+				target = SplitSets[target, nStac, overT, ReverseSets->reverse];
+				(*If[dimm=!=dimt,target=RescaleData[#,dimm]&/@target];*)
+			];
+			
+			(*perform motion correction after target merging*)
+			im = First@First@Position[movs, movCon];
+			If[motion,
+				(*-----*)AddToLog[{"Perfroming the registration for the all the datasets"}, 4];
+				moving = Table[
+					(*only split if not first stack*)
+					(*move the target from anatomical to native space*)
+					func = If[i===If[reverse, nStac, 1], RegisterData, RegisterDataSplit];
+					reg = func[{moving[[im,i]],voxm},{target[[i]],voxt}, Iterations->400, PrintTempDirectory->False,BsplineSpacing->{80,40,40},
+						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]];
+					(*register back the target from native space to anatomy and tranfrom the rest*)
+					func = If[i===If[reverse, nStac, 1], RegisterDataTransform, RegisterDataTransformSplit];
+					Last@func[{target[[i]],voxt},{reg, voxm},{Transpose[moving[[All,i]]], voxm},
+						Iterations->400, PrintTempDirectory->False,BsplineSpacing->{80,40,40},InterpolationOrderReg->1,
+						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]]
+				,{i,1,nStac}];
+				
+				(*extract all parameters after registration*)
+				moving = Transpose[moving,{2,3,1,4,5}];
+			];(*clolse motion moving*)
+			
+			(*join the moving types*)
+			(*-----*)AddToLog[{"Joining the data"}, 4];
+			moving = JoinSets[moving[[#]], overT, voxm, MonitorCalc->False,
+				ReverseSets->reverse, MotionCorrectSets->False, NormalizeSets->MemberQ[nonQuant, movs[[#]]]
+			]&/@Range[nSet];
+			
+			(*export the joined data*)
+			(*----*)AddToLog["Exporting the calculated data to:", 4];
+			(*----*)AddToLog[outfile, 5];		
+			ExportNii[moving[[#]],voxt, outfile<>"_"<>movs[[#]]<>".nii"] &/@ Range[nSet];
+			
+			(*make the checkfile*)
+			MakeCheckFile[outfile, Sort@Join[{"Check"->"done"},Normal@datType]];
+		](*close ncheck*)
+	](*close checkfile*)
 ]
 
 
