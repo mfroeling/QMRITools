@@ -329,11 +329,18 @@ config["folders"]/@{"dicomData","rawData","derivedData","mergeData"}}]
 
 Options[BidsDcmToNii]={BidsIncludeSession->True}
 
-SyntaxInformation[BidsDcmToNii] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+SyntaxInformation[BidsDcmToNii] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-BidsDcmToNii[dcmFol_,niiFol_,opts:OptionsPattern[]]:=BidsDcmToNii[Directory[],dcmFol,niiFol,opts]
+BidsDcmToNii[config_?AssociationQ, opts:OptionsPattern[]] := BidsDcmToNii[
+	config["folders"]["root"],(*the root folder of all the data*)
+	config["folders"]["dicomData"],(*the input folder of the dcm data*)
+	config["folders"]["rawData"],(*the output folder for converstion*)
+	opts
+];
+
+BidsDcmToNii[dcmFol_, niiFol_, opts:OptionsPattern[]]:=BidsDcmToNii[Directory[], dcmFol, niiFol, opts]
  
-BidsDcmToNii[loc_,dcmFol_,niiFol_,OptionsPattern[]]:=Block[{logFile,fols,folsi,foli,keys,name,ses,bidsname,out},
+BidsDcmToNii[loc_, dcmFol_, niiFol_, OptionsPattern[]]:=Block[{logFile,fols,folsi,foli,keys,name,ses,bidsname,out},
 	(*start logging*)
 	ResetLog[];
 	ShowLog[];
@@ -553,9 +560,15 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 
 Options[MuscleBidsConvert] = {DeleteAfterConversion->False, SelectSubjects->All};
 
-SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-MuscleBidsConvert[niiFol_?StringQ, datDis_, ops:OptionsPattern[]]:= BidsFolderLoop[niiFol, datDis, Method->"Convert", ops]
+MuscleBidsConvert[config_?AssociationQ, opts:OptionsPattern[]]:=MuscleBidsConvert[
+	config["folders"]["rawData"],(*the input folder for the data*)
+	config["dataSets"],(*what to process*)
+	opts
+]
+
+MuscleBidsConvert[niiFol_?StringQ, datDis_, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, datDis, Method->"Convert", ops]
 
 
 (* ::Subsubsection:: *)
@@ -754,7 +767,14 @@ GetStackName[class_, namei_]:=Switch[class,
 
 Options[MuscleBidsProcess] = {SelectSubjects->All, VersionCheck->False};
 
-SyntaxInformation[MuscleBidsProcess] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+SyntaxInformation[MuscleBidsProcess] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
+
+MuscleBidsProcess[config_?AssociationQ, opts:OptionsPattern[]]:=MuscleBidsProcess[
+	config["folders"]["rawData"],(*the input folder for the data*)
+	config["folders"]["derivedData"],(*the output folder for processing*)
+	config["dataSets"],(*what to process*)
+	opts
+]
 
 MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"Process", ops]
 
@@ -867,6 +887,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 								{"Check"->"done", "EchoTimes"->echos, "DixonFlips" -> pos, "DixonBipolar" -> True, "Outputs" -> outTypes, "SetProperteis"->set},
 								ExtractFromJSON[keys]
 							]];
+							(*----*)AddToLog["Finished processing", 3, True];
 						]
 					]
 				(*close dixon processing*)
@@ -948,6 +969,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
 							ExtractFromJSON[keys]
 						]];
+						(*----*)AddToLog["Finished pre-processing", 3, True];
 						
 						(*Set preproc true, overrules checkfile for processing*)
 						preProc = True;
@@ -1017,7 +1039,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
 								ExtractFromJSON[keys]
-							]];				
+							]];
+							(*----*)AddToLog["Finished processing", 3, True];				
 						]
 					]
 				(*close dti processing*)
@@ -1098,7 +1121,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperteis"->set},
 								ExtractFromJSON[keys]
-							]];				
+							]];
+							(*----*)AddToLog["Finished processing", 3, True];
 						]
 					]
 				(*close t2 processing*)
@@ -1137,7 +1161,14 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 
 Options[MuscleBidsMerge] = {SelectSubjects->All, VersionCheck->False};
 
-SyntaxInformation[MuscleBidsMerge] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+SyntaxInformation[MuscleBidsMerge] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
+
+MuscleBidsMerge[config_?AssociationQ, opts:OptionsPattern[]]:=MuscleBidsMerge[
+	config["folders"]["derivedData"],(*the input folder for the data*)
+	config["folders"]["mergeData"],(*the output folder for merging*)
+	config["dataSets"],(*what to process*)
+	opts
+]
 
 MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Merge", ops]
 
@@ -1149,10 +1180,10 @@ MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPatt
 MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		nonQuant, motion, reverse, fol, parts, merge, outfile, tarType, tarCon, movType, movCon, n,
 		movs, stacs, overT, overM, targets, movings, mov, nStac, nCheck, nSet, target, voxt, dimt, moving, voxm, dimm,
-		files, im, func, reg
+		files, im, func, reg, mskm, mskt
 	},
 
-	nonQuant = {"inph","outph","wat","fat","S0"};
+	nonQuant = {"inph", "outph", "wat", "fat", "S0"};
 	motion = True;
 	reverse = False;
 
@@ -1162,7 +1193,6 @@ MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 	(*get the outfile*)
 	outfile=GenerateBidsFileName[folo,<|parts, "suf"->datType["Suffix"],"Type"->datType["Type"]|>];
 
-	(*-----*)AddToLog[{"Starting data merging for subject", foli}, 2, True];
 	(*get the settings*)
 	{tarType, tarCon} = merge["Target"];
 	movType = datType["InFolder"];
@@ -1172,9 +1202,10 @@ MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 	overT = merge["Overlap"];
 	{overT, overM} = If[IntegerQ[overT], {overT, overT}, overT];
 	
-	If[CheckFile[outfile,"done",verCheck],
+	If[CheckFile[outfile, "done", verCheck],
 		(*if checkfile has label done and version is recent skip*)
-		(*-----*)AddToLog[{"Processing already done for label", lab}, 3],
+		(*-----*)AddToLog[{"Processing already done for:"}, 3];
+		(*-----*)AddToLog[{StringJoin@Riffle[movs,", "]}, 4];,
 		(*-----*)AddToLog[{"The types that will be merged are: "}, 3];
 		(*-----*)AddToLog[{StringJoin@Riffle[movs,", "]}, 4];
 		
@@ -1216,15 +1247,20 @@ MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			If[motion,
 				(*-----*)AddToLog[{"Perfroming the registration for the all the datasets"}, 4];
 				moving = Table[
+					(*make masks*)
+					mskm = DilateMask[Mask[NormalizeData[moving[[im, i]]], 10], 5];
+					mskt = DilateMask[Mask[NormalizeData[target[[i]]], 10], 5];
+					
 					(*only split if not first stack*)
 					(*move the target from anatomical to native space*)
 					func = If[i===If[reverse, nStac, 1], RegisterData, RegisterDataSplit];
-					reg = func[{moving[[im,i]],voxm},{target[[i]],voxt}, Iterations->400, PrintTempDirectory->False,BsplineSpacing->{80,40,40},
+					reg = func[{moving[[im,i]], mskm, voxm},{target[[i]],voxt}, 
+						Iterations->300, PrintTempDirectory->False, BsplineSpacing->20 voxm, InterpolationOrderReg->1, NumberSamples -> 10000,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]];
 					(*register back the target from native space to anatomy and tranfrom the rest*)
 					func = If[i===If[reverse, nStac, 1], RegisterDataTransform, RegisterDataTransformSplit];
-					Last@func[{target[[i]],voxt},{reg, voxm},{Transpose[moving[[All,i]]], voxm},
-						Iterations->400, PrintTempDirectory->False,BsplineSpacing->{80,40,40},InterpolationOrderReg->1,
+					Last@func[{target[[i]], mskt, voxt},{reg, voxm},{Transpose[moving[[All,i]]], voxm},
+						Iterations->300, PrintTempDirectory->False, BsplineSpacing->10 voxm, InterpolationOrderReg->1, NumberSamples -> 10000,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]]
 				,{i,1,nStac}];
 				
@@ -1245,6 +1281,8 @@ MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			
 			(*make the checkfile*)
 			MakeCheckFile[outfile, Sort@Join[{"Check"->"done"},Normal@datType]];
+			(*----*)AddToLog["Finished merging", 3, True];
+		
 		](*close ncheck*)
 	](*close checkfile*)
 ]

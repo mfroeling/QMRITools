@@ -149,8 +149,8 @@ FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, da
 		tr = ToPackedArray@ArrayPad[Transpose[{tr, sc, fr}], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}, 0.];
 	];
 		
-	(*give outpu*)
-	act = SparseArray[ArrayPad[Round[Transpose[RotateDimensionsRight[act]]], {{3, 3}, {0, 0}, {0, 0}, {0, 0}}]];
+	(*give output*)
+	act = SparseArray[ArrayPad[Round[Transpose[RotateDimensionsRight[act]]], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}]];
 
 	If[OptionValue[ActivationOutput]==="Activation", {act, data}, {act, data, mn ,tr}] 
   ]
