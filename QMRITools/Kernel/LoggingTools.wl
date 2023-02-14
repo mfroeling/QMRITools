@@ -192,7 +192,7 @@ SyntaxInformation[DirectoryTree] = {"ArgumentsPattern" -> {_}};
 
 ExportDirectoryTree[fol_]:=ExportDirectoryTree[fol, "FileTree"]
 
-ExportDirectoryTree[fol_,name_]:=Export[FileNameJoin[{fol,ConvertExtension[name,"txt"]}], DirectoryTree[fol]]
+ExportDirectoryTree[fol_, name_]:=Export[FileNameJoin[{fol, ConvertExtension[name,"txt"]}], DirectoryTree[fol]]
 
 
 (* ::Subsubsection::Closed:: *)
