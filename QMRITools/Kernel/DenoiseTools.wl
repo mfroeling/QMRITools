@@ -783,7 +783,7 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{dd, grads, k, jacT
 	dati = ToPackedArray@N@Transpose[data];
 	max = Max[dati];
 	(*aniso filter kernel size *)
-	{sig,rho} = OptionValue[AnisoKernel];
+	{sig, rho} = OptionValue[AnisoKernel];
 	step = OptionValue[AnisoStepTime] ;
 	itt = OptionValue[AnisoItterations];
 	

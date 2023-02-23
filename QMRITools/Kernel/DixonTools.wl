@@ -271,8 +271,9 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		fraction, signal, ioPhase, fit, t2, func, mon, n, t1c, tr, fa, t1f, t1m, sf, sw
 	},
 	
-	(*algorithems are base on: *)	
+	(*algorithem is base on: *)	
 	(*Triplett WT et.al. 10.1002/mrm.23917 - fat peaks*)
+	
 	(*Reeder et.al. 10.1002/mrm.20624 - iDEAL*)
 	(*Huanzhou Yu et.al. 10.1002/jmri.21090 - iDEAL algorithm and T2* correction*)
 	(*Bydder et.al. 10.1016/j.mri.2010.08.011 - initial phase*)
@@ -337,7 +338,8 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	result = DixonFitiC[complex, phi, mask, mat, Amat, Amati, eta, maxItt, n];
  	If[n==2,
  		{cWat, cFat, phEst ,ph0Est, res, itt} = RotateDimensionsRight[Chop[result]];
- 		phbEst = zero; 		,
+ 		phbEst = zero;
+ 		,
  		{cWat, cFat, phEst ,ph0Est, phbEst, res, itt} = RotateDimensionsRight[Chop[result]];
  	];
 
@@ -347,8 +349,8 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		(*smooth b0 field and R2star maps*)
 		(*phiEst = mask (filtFunc[Re[phiEst]] + DevideNoZero[1. ,filtFunc[Ramp[DevideNoZero[1., Im[phiEst]]]]] I);*)
 		phEst = mask (filtFunc[Re[phEst]] + I DevideNoZero[1., filtFunc[DevideNoZero[1.,filtFunc[Ramp[Im[phEst]]]]]]);
-		ph0Est = mask (filtFunc[Re[ph0Est]]);
-		phbEst = mask (filtFunc[Re[phbEst]]);
+		ph0Est = mask filtFunc[Re[ph0Est]](*(filtFunc[Re[ph0Est]] + I filtFunc[Im[ph0Est]])*);
+		phbEst = mask filtFunc[Re[phbEst]](*(filtFunc[Re[phbEst]] + I filtFunc[Im[phbEst]])*);
 		phi = RotateDimensionsLeft[{phEst ,ph0Est, phbEst}[[;;n]]];
 		
 		(*recalculate the water fat signals*)
@@ -364,7 +366,8 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	fraction = DixonToPercent[cWat, cFat, OptionValue[DixonClipFraction]];
 
 	(*signal and in/out phase data *)
-	signal = 1000 Clip[Abs[{cWat, cFat}], range] / range[[2]];
+	(*signal = 1000 Clip[Abs[{cWat, cFat}], range] / range[[2]];*)
+	signal = 1000 {cWat, cFat} / range[[2]];
 	res = 1000 Clip[Abs[res], range] / range[[2]];
 	ioPhase = 1000 Clip[RotateDimensionsRight[InOutPhase[cWat, cFat, ioAmat]], range]  / range[[2]];
 	
@@ -423,10 +426,11 @@ DixonFitiC = Compile[{
 			sol = Amat . rho;
 			res = sigd - sol;
 			
-			(*Define the matrix B including bipolar 10.1002/mrm.24657 and initial phase*)
+			(*Define the matrix B including bipolar 10.1002/mrm.24657 and initial phase 10.1016/J.MRI.2010.08.011*)
 			(*Obtain the error terms eq A.5*)
 			Bi = PseudoInverse[Join[mat sol, Amat, 2]][[1 ;; n]];
 			dPhi = Bi . res;
+			(*only look at phase for initial and bipolar*)
 			dPhi[[2;;n]]=Re@dPhi[[2;;n]];
 
 			(*chech for continue*)
@@ -501,20 +505,35 @@ SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] := Block[{precession
 
 SyntaxInformation[UnwrapList] = {"ArgumentsPattern" -> {}};
 
-OptimizeDixonEcho[]:=OptimizeDixonEcho[1,1]
+Options[OptimizeDixonEcho] = {
+	DixonPrecessions -> -1,
+	DixonFieldStrength -> 3,
+	DixonNucleus -> "1H",
+	DixonFrequencies -> {{0}, {3.8, 3.4, 3.1, 2.7, 2.5, 1.95, 0.5, -0.5, -0.6}},
+	DixonAmplitudes -> {{1}, {0.088, 0.628, 0.059, 0.064, 0.059, 0.01, 0.039, 0.01, 0.042}}
+}
+	
+OptimizeDixonEcho[ops:OptionsPattern[]]:=OptimizeDixonEcho[1,1,ops]
 
-OptimizeDixonEcho[fi_,di_]:=Manipulate[
-	fr=297.466/(field GyromagneticRatio["1H"]);
-	echos=first+Range[0,necho-1]delta;
-	pts=Transpose[Through[{Im,Re}[Exp[-2Pi echos/fr I]]]];
-	e=FindInPhaseEchos[echos,fr,DixonBipolar -> bip];
+OptimizeDixonEcho[fi_,di_,OptionsPattern[]]:=Manipulate[
+	fr = 297.466/(field GyromagneticRatio["1H"]);
+	echos = first+Range[0,necho-1]delta;
+	pts = Transpose[Through[{Im,Re}[Exp[-2Pi echos/fr I]]]];
+	e = FindInPhaseEchos[echos,fr,DixonBipolar -> bip];
 	pre = Table[1/n -> Ceiling[n/2] fr/n, {n, 2, 7}];
+	
+	(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
+	freqs = OptionValue[DixonPrecessions] OptionValue[DixonFieldStrength] OptionValue[DixonFrequencies] GyromagneticRatio[OptionValue[DixonNucleus]];
+	amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
+	A = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echos;
+	condNum = Divide @@ SingularValueList[A];
 	
 	Column[{
 		Switch[vis,
 			"path",
 			Show[
-				Graphics[{Black,PointSize[.02],Point[pts]},PlotRange->{{-1.2,1.2},{-1.2,1.2}},AspectRatio->1,Axes->True,Ticks->None,ImageSize->300,PlotLabel->"Inphase echos for unwrapping: "<>ToString[e]],
+				Graphics[{Black,PointSize[.02],Point[pts]},PlotRange->{{-1.2,1.2},{-1.2,1.2}},AspectRatio->1,Axes->True,Ticks->None,ImageSize->300,
+					PlotLabel->Column[{"Inphase echos for unwrapping: "<>ToString[e],"Condition Number: "<>ToString[Round[condNum, 0.001]]}]],
 				ListLinePlot[
 					Table[Callout[pts[[i]], i, LabelStyle -> {FontSize -> 14, Bold}, CalloutStyle -> None], {i, Length[pts]}],
 					PlotRange->{{-1.2,1.2},{-1.2,1.2}}, PlotStyle->Black, Mesh->All],
@@ -548,10 +567,16 @@ OptimizeDixonEcho[fi_,di_]:=Manipulate[
 	Delimiter,
 	{{io,False,"show inphase echos"},{True,False}},
 	{{bip,False,"bipolar"},{True,False}},
-	{fr,ControlType->None},
-	{echos,ControlType->None},
-	{pts,ControlType->None},
-	{e,ControlType->None},
+	
+	{fr, ControlType->None},
+	{echos, ControlType->None},
+	{pts, ControlType->None},
+	{freqs, ControlType->None},
+	{amps, ControlType->None},
+	{A, ControlType->None},
+	{condNum, ControlType->None},
+	
+	
 	ControlPlacement->Left,
 	Initialization:>{
 		field=3;
@@ -1105,17 +1130,19 @@ Options[DixonPhase] = {
    DixonPrecessions -> -1,
    DixonFieldStrength -> 3,
    DixonNucleus -> "1H",
-   DixonFrequencies -> {{0}, {3.8, 3.4, 3.1, 2.7, 2.5, 1.95, 
-      0.5, -0.5, -0.6}},
-   DixonAmplitudes -> {{1}, {0.088, 0.628, 0.059, 0.064, 0.059, 0.01, 
-      0.039, 0.01, 0.042}}
+   DixonFrequencies -> {{0}, {3.8, 3.4, 3.1, 2.7, 2.5, 1.95, 0.5, -0.5, -0.6}},
+   DixonAmplitudes -> {{1}, {0.088, 0.628, 0.059, 0.064, 0.059, 0.01, 0.039, 0.01, 0.042}},
+   MonitorCalc->False
    };
 
 SyntaxInformation[DixonPhase] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	freqs, amps, iop, A, Ah, Ai, e1, e2, de, dt, hz, bip, mat, msk, comp, compi, ph, ph1, ph0, phi, 
-	ph1i, ph0i, norm, i, itt, l, sw, sw1, sw0, f0, f1, normN, UF, ni, n, t2s},
+	ph1i, ph0i, norm, i, itt, l, hl, sw, sw1, sw0, f0, f1, normN, UF, ni, n, t2s, Ac},
+		
+	(*initial phase 10.1016/J.MRI.2010.08.011*)
+	(*bipolar phase 10.1002/mrm.24657*)
 	
 	(*define the water and fat frequencies and amplitudes*)
 	freqs = OptionValue[DixonPrecessions] OptionValue[DixonFieldStrength] OptionValue[DixonFrequencies] GyromagneticRatio[OptionValue[DixonNucleus]];
@@ -1125,13 +1152,13 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	(*define the solution matrix*)
 	A = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echos;
 	Ah = ConjugateTranspose[A];
-	Ai = Re[Inverse[Ah . A]] . Ah;
+	Ai = Inverse[Re[Ah . A]];
 	
 	(*get the two first inphase locations and calculate timing*)
 	{e1, e2} = FindInPhaseEchos[echos, iop, DixonBipolar -> False];
 	de = e2 - e1;
 	dt = (echos[[e2]] - echos[[e1]]);
-	hz = Abs[1/((*2 Pi *)dt)];
+	hz = {Abs[1/dt], 0.5, 0.25};
 	
 	(*make the time matrix*)
 	bip = (-1)^Range[Length[echos]];
@@ -1143,68 +1170,86 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	ph = ph1 = ph0 = phi = ph1i = ph0i = 0 Re@First@compi;
 	
 	(*prepare itterative optimization*)
-	norm = {{1, 1, 1}};
+	norm = {{1., 1., 1.}};
 	i = 0;
 	itt = 50;
 	l = Length[echos];
+	hl = Round[.5 l];
 	sw = sw1 = sw0 = f0 = f1 = False;
 	
+	t1=t2=t3=0.;
+	If[OptionValue[MonitorCalc], PrintTemporary[Dynamic[{i, Last@Transpose[100 Transpose[norm]/norm[[1]]],{t1,t2,t3}}]]];
+		
 	(*start optimization*)
 	Do[
 		If[i =!= 0, AppendTo[norm, norm[[-1]]]];
 		i++;
+		
+		t1=First@AbsoluteTiming[
 		(*b0 phase*)
-		phi = Mean[(UnwrapDCT /@ (Arg[compi[[# + de]]] - Arg[compi[[#]]])) & /@ Range[e1, e1 + 5, 5]];
+		phi = Mean[(UnwrapDCT /@ (Arg[compi[[# + de]]] - Arg[compi[[#]]])) & /@ Range[e1, e1 + hl, hl]];
 		ph += msk phi;
-		compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
-		norm[[-1, 1]] = Norm[Pick[Flatten[phi], Flatten[msk], 1]];
-		normN = Transpose[100 Transpose[norm]/norm[[1]]];
+		compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
 		
-		(*biplolar phase*)
-		If[normN[[-1, 3]] >= .5,
-			UF = If[i > 2 && (normN[[-1, 3]] < 25|| sw0), sw0 = True; # &, UnwrapDCT];
-			ph0i = Mean[(bip[[#]] UF[Arg@DevideNoZero[compi[[#]]^2, compi[[# - 1]] compi[[# + 1]], "Comp"]] & /@ Range[2, l-1, 3])];
-			(*ph0i = FitBipolar[ph0i, msk];*)
-			
-			ph0 += msk ph0i;
-			compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
+		(*clac norm*)
+		norm[[-1, 1]] = Norm@Flatten@Pick[phi, msk, 1];
+		normN = 100 (#/norm[[1]]&/@norm);
 		];
-		norm[[-1, 3]] = Norm[Pick[Flatten[ph0i], Flatten[msk], 1]];
-		normN = Transpose[100 Transpose[norm]/norm[[1]]];
 		
+		t3=First@AbsoluteTiming[
+		(*biplolar phase*)
+		If[normN[[-1, 3]] >= .1,
+			UF = If[normN[[-1, 3]] < 25 || sw0, sw0 = True; # &, UnwrapDCT];
+			ph0i = Mean[(bip[[#]] UF[Arg@DevideNoZero[compi[[#]]^2, compi[[# - 1]] compi[[# + 1]], "Comp"]] & /@ Range[2, l-1, 3])];
+						
+			ph0 += msk ph0i;
+			compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
+			
+			(*clac norm*)
+			norm[[-1, 3]] = Norm@Flatten@Pick[ph0i, msk, 1],
+			norm[[-1, 3]] = norm[[-2, 3]]
+		];
+		(*clac norm*)
+		normN = 100 (#/norm[[1]]&/@norm);
+		];
+		
+		
+		t2=First@AbsoluteTiming[
 		(*initial phase*)
-		ph1i = UnwrapDCT@Arg[DotAc[RotateDimensionsLeft[(Ah[[All, ;; e2]] . compi[[;; e2]])], RotateDimensionsLeft[Ai[[All, ;; e2]] . compi[[;; e2]]]]];
+		Ac = Ah.compi;
+		ph1i = UnwrapDCT /@ Arg[DotAc[RotateDimensionsLeft[Ac], RotateDimensionsLeft[Ai . Ac]]];
 		ph1 += msk ph1i;
-		compi = ApplyPhase[comp, hz ph, 0.5 ph1, 0.25 ph0, mat];
-		norm[[-1, 2]] = Norm[Pick[Flatten[ph1i], Flatten[msk], 1]];
-		normN = Transpose[100 Transpose[norm]/norm[[1]]];
+		compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
+		
+		(*clac norm*)
+		norm[[-1, 2]] = Norm@Flatten@Pick[ph1i, msk, 1];
+		normN = 100 (#/norm[[1]]&/@norm);
+		];
 		
 		If[AllTrue[Last[normN], # < 4 &], Break[]]
 	, {itt}];
 		
 	(*fix the initial phase*)
-	phi = Mean[(UnwrapDCT[(Arg[compi[[# + de]]] - Arg[compi[[#]]])]) & /@ Range[e1, e1 + 5, 5]];
+	phi = Mean[(UnwrapDCT[(Arg[compi[[# + de]]] - Arg[compi[[#]]])]) & /@ Range[e1, e1 + hl, hl]];
 	ph += msk phi;
-	compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
+	compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
 		
-	ph1i = UnwrapDCT[Arg@First@compi, msk];
+	ph1i = UnwrapDCT[Arg@compi[[e2]]];
 	ph1 += msk ph1i;
-	compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
-	
-	ph1i = Arg@First@compi;
-	ph1 += msk ph1i;
-	compi = ApplyPhase[comp, hz ph, ph1, 0.25 ph0, mat];
-	
+	compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
+
 	(*get R2 star*)
 	n = First@ FirstPosition[echos, First[Select[echos, # > 1.5 iop &]]];
 	t2s = Last@T2Fit[Abs[Transpose[comp[[n ;;]]]], echos[[n ;;]]];
-
-	{{hz ph/(2 Pi), t2s, (ph1+Pi)/(2 Pi), 0.25 ph0/(2 Pi)}, {e1, e2, n}}
+	
+	(*give output*)
+	{ph, ph1, ph0} = hz {ph, ph1, ph0} / (2 Pi);
+	{{ph, t2s, ph1, ph0}, {e1, e2, n}}
 ]
 
 
-ApplyPhase = Compile[{{comp, _Complex, 4}, {ph, _Complex, 3}, {phi, _Complex, 3}, {phb, _Complex, 3}, {mat, _Complex, 2}},
-	comp Exp[mat . {ph, phi+Pi, phb}],
+ApplyPhase = Compile[{{comp, _Complex, 4}, {phase, _Complex, 4}, {mat, _Complex, 2}},
+	comp Exp[mat . phase],
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
