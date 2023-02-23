@@ -2219,7 +2219,7 @@ MakeECVBloodMask[pre_, post_, OptionsPattern[]] := Block[{
 
 
 ECVCalc[mappre_, mappost_, hema_?RealQ] := Block[{z, x, y, mask},
-	mask = MakeECVBloodMask[mappre, mappost];
+	mask = MakeECVBloodMask[mappre, mappost, OutputCheckImage -> False];
 	ECVCalc[mappre, mappost, mask, hema]
 ]
 
