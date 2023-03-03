@@ -431,7 +431,7 @@ DixonFitiC = Compile[{
 			Bi = PseudoInverse[Join[mat sol, Amat, 2]][[1 ;; n]];
 			dPhi = Bi . res;
 			(*only look at phase for initial and bipolar*)
-			dPhi[[2;;n]]=Re@dPhi[[2;;n]];
+			dPhi[[2;;n]] = Re@dPhi[[2;;n]];
 
 			(*chech for continue*)
 			continue = ! ((Abs[Re@dPhi[[1]]] < eta && Abs[(Im@dPhi[[1]])] < eta && Abs[10 Re@dPhi[[2]]] < eta && Abs[100 Re@dPhi[[n]]] < eta) || i >= maxItt);
@@ -517,9 +517,9 @@ OptimizeDixonEcho[ops:OptionsPattern[]]:=OptimizeDixonEcho[1,1,ops]
 
 OptimizeDixonEcho[fi_,di_,OptionsPattern[]]:=Manipulate[
 	fr = 297.466/(field GyromagneticRatio["1H"]);
-	echos = first+Range[0,necho-1]delta;
+	echos = first + Range[0,necho-1]delta;
 	pts = Transpose[Through[{Im,Re}[Exp[-2Pi echos/fr I]]]];
-	e = FindInPhaseEchos[echos,fr,DixonBipolar -> bip];
+	e = FindInPhaseEchos[echos, fr,DixonBipolar -> bip];
 	pre = Table[1/n -> Ceiling[n/2] fr/n, {n, 2, 7}];
 	
 	(*define the water and fat frequencies and amplitudes to calcluate the condition number*)

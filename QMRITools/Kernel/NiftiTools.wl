@@ -556,6 +556,7 @@ ArrangeData[data_, depth_] :=
 RemoveExtention[fil_] := Module[{file},
   file = FileNameSplit[fil];
   file[[-1]] = FileBaseName[file[[-1]]];
+  Print[file[[-1]]];
   FileNameJoin[file]
   ]
 
@@ -814,7 +815,7 @@ ImportNiiDiff[OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 
 ImportNiiDiff[file_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[file,NiiMethod -> "headerMat"];
-	{bvec, grad}=ImportBvalvec[RemoveExtention[file],FlipBvec->OptionValue[FlipBvec]];
+	{bvec, grad}=ImportBvalvec[file,FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
@@ -1007,8 +1008,8 @@ Options[ImportBvalvec]={FlipBvec->False, PositiveZ->False};
 SyntaxInformation[ImportBvalvec] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
 ImportBvalvec[file_?StringQ,opts:OptionsPattern[]] := Module[{valf, vecf},
-  valf = RemoveExtention[file]<>".bval";
-  vecf = RemoveExtention[file]<>".bvec";
+  valf = ConvertExtension[file,".bval"];
+  vecf = ConvertExtension[file,".bvec"];
   ImportBvalvec[valf,vecf,opts]
 ]
 

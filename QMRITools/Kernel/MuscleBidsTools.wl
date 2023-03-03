@@ -42,7 +42,10 @@ ExtractFromJSON::usage =
 "ExtractFromJSON[keys] if the keys exist they are extracted from the json."
 
 CheckConfig::usage = 
-"CheckConfig[config]"
+"CheckConfig[config] show a config file for Muscle Bids processing."
+
+GetConfig::usage = 
+"GetConfig[folder] Imports a Muscle Bids config file from the given folder."
 
 
 PartitionBidsName::usage = 
@@ -130,6 +133,9 @@ Bids::lab = "Invalid combination of Class and Label: `1` with `2` is not allowed
 Bids::man = "Manditory values \"Lable\" and \"Type\" are not in the data discription.";
 
 Bids::stk = "Class \"stacks\" is used but overlap is not defined, assuming overlap 0.";
+
+
+GetConfig::conf = "Could not find config file in given folder."
 
 
 (* ::Section:: *)
@@ -316,11 +322,33 @@ BidsString[parts_, val_?StringQ]:=Block[{str},
 ]
 
 
-CheckConfig[config_]:=TabView[Join[
-{"folders"->Column[Flatten@{config["folders"]["root"],
-config["folders"]/@{"dicomData","rawData","derivedData","mergeData"}}]
-},
-{#["Type"],#["Suffix"]}->Column[Normal[#]]&/@CheckDataDiscription[config["dataSets"], "Process"]]]
+(* ::Subsection::Closed:: *)
+(*CheckConfig*)
+
+
+CheckConfig[config_?StringQ]:=CheckConfig[GetConfig[config]]
+
+CheckConfig[config_?AssociationQ]:=TabView[Join[
+	{
+		"folders"->Column[Flatten@{config["folders"]["root"],
+		config["folders"]/@{"dicomData","rawData","derivedData","mergeData"}}]
+	},{
+	#["Type"],#["Suffix"]}->Column[Normal[#]]&/@CheckDataDiscription[config["dataSets"], "Process"]]]
+
+
+(* ::Subsection::Closed:: *)
+(*GetConfig*)
+
+
+GetConfig[config_?StringQ]:=Block[{file},
+	If[DirectoryQ[config],
+		file = FileNameJoin[{config,"config.json"}];
+		If[FileExistsQ[file],
+			Import[file, "RawJSON"],
+			Message[GetConfig::conf,Return[]]
+		]
+	]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -331,6 +359,8 @@ Options[BidsDcmToNii]={BidsIncludeSession->True}
 
 SyntaxInformation[BidsDcmToNii] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
+BidsDcmToNii[folder_?StringQ]:=BidsDcmToNii[GetConfig[folder]];
+
 BidsDcmToNii[config_?AssociationQ, opts:OptionsPattern[]] := BidsDcmToNii[
 	config["folders"]["root"],(*the root folder of all the data*)
 	config["folders"]["dicomData"],(*the input folder of the dcm data*)
@@ -340,11 +370,15 @@ BidsDcmToNii[config_?AssociationQ, opts:OptionsPattern[]] := BidsDcmToNii[
 
 BidsDcmToNii[dcmFol_, niiFol_, opts:OptionsPattern[]]:=BidsDcmToNii[Directory[], dcmFol, niiFol, opts]
  
-BidsDcmToNii[loc_, dcmFol_, niiFol_, OptionsPattern[]]:=Block[{logFile,fols,folsi,foli,keys,name,ses,bidsname,out},
+BidsDcmToNii[loc_, dcmFol_, niiFol_, OptionsPattern[]]:=Block[{logFile, fols, folsi, foli, keys, name, ses, bidsname, out, dir},
 	(*start logging*)
 	ResetLog[];
 	ShowLog[];
-	logFile=FileNameJoin[{niiFol,"DcmToNii_"<>StringReplace[DateString[{"Day", "Month", "YearShort", "-", "Time"}],":"->""]<>".log"}];
+	
+	dir = Directory[];
+	SetDirectory[loc];
+	
+	logFile = FileNameJoin[{niiFol,"DcmToNii_"<>StringReplace[DateString[{"Day", "Month", "YearShort", "-", "Time"}],":"->""]<>".log"}];
 	
 	(*find all foders that need to be converted*)
 	fols=FileNameJoin[{loc, #}]&/@Select[FileNames[All,dcmFol],DirectoryQ];
@@ -389,6 +423,8 @@ BidsDcmToNii[loc_, dcmFol_, niiFol_, OptionsPattern[]]:=Block[{logFile,fols,fols
 	
 	(*export the log file*)
 	ExportLog[logFile, True];
+	
+	SetDirectory[dir];
 ]
 
 
@@ -415,7 +451,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPatter
 	(*slect the subjects to be processed*)
 	fols = SelectBidsSessions[SelectBidsSubjects[inFol]];
 	subs = OptionValue[SelectSubjects];
-	subs = If[subs===All, fols, Select[fols, MemberQ[subs, PartitionBidsFolderName[#][[-1]]["sub"]]&]];
+	subs = If[subs===All||subs==="All", fols, Select[fols, MemberQ[subs, PartitionBidsFolderName[#][[-1]]["sub"]]&]];
 	
 	(*convert the nameType to valid input, will always be a list of associations*)
 	datType = CheckDataDiscription[datDis, met];
@@ -491,6 +527,8 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPatter
 
 SyntaxInformation[CheckDataDiscription] = {"ArgumentsPattern" -> {_, _}};
 
+CheckDataDiscription[dis:{_Association..}, met_]:=Flatten[CheckDataDiscription[Normal[#], met]&/@dis]
+
 CheckDataDiscription[dis:{_List..}, met_]:= Flatten[CheckDataDiscription[#, met]&/@dis]
 
 CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail},
@@ -562,13 +600,20 @@ Options[MuscleBidsConvert] = {DeleteAfterConversion->False, SelectSubjects->All}
 
 SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-MuscleBidsConvert[config_?AssociationQ, opts:OptionsPattern[]]:=MuscleBidsConvert[
-	config["folders"]["rawData"],(*the input folder for the data*)
-	config["dataSets"],(*what to process*)
-	opts
-]
+MuscleBidsConvert[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsConvert[GetConfig[folder], opts];
 
-MuscleBidsConvert[niiFol_?StringQ, datDis_, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, datDis, Method->"Convert", ops]
+MuscleBidsConvert[config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+	dir = Directory[];
+	SetDirectory[config["folders"]["root"]];
+	MuscleBidsConvert[
+		config["folders"]["rawData"],(*the input folder for the data*)
+		config["dataSets"],(*what to process*)
+		opts];
+	SetDirectory[dir]
+]
+		
+
+MuscleBidsConvert[niiFol_?StringQ, datDis_, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, datDis, Method->"Convert", opts]
 
 
 (* ::Subsubsection:: *)
@@ -604,7 +649,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			(*loop over dixon data types*)
 			Table[
 				(*get the posisiton of the files needed*)
-				pos = GetJSONPosition[json, {{"SeriesDescription", namei}, {"ImageType", dixType}}, "EchoNumber"];
+				pos = GetJSONPosition[json, {{"ProtocolName", namei}, {"ImageType", dixType}}, "EchoNumber"];
 				(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {namei, dixType}}, 4];
 				
 				(*get the json and data*)
@@ -655,7 +700,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			"dwi",
 			
 			(*get the posisiton of the files needed*)
-			pos = GetJSONPosition[json, {{"SeriesDescription", namei}}];
+			pos = GetJSONPosition[json, {{"ProtocolName", namei}}];
 			(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
 			
 			(*get the json and data*)
@@ -695,7 +740,7 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 			"mese",
 			
 			(*get the posisiton of the files needed*)
-			pos = posi = GetJSONPosition[json, {{"SeriesDescription", namei}}, "EchoTime"];
+			pos = posi = GetJSONPosition[json, {{"ProtocolName", namei}}, "EchoTime"];
 			(*select only echos*)
 			info = MergeJSON[json[[pos]]];
 			pos = pos[[;; info["EchoTrainLength"]]];
@@ -769,11 +814,17 @@ Options[MuscleBidsProcess] = {SelectSubjects->All, VersionCheck->False};
 
 SyntaxInformation[MuscleBidsProcess] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-MuscleBidsProcess[config_?AssociationQ, opts:OptionsPattern[]]:=MuscleBidsProcess[
-	config["folders"]["rawData"],(*the input folder for the data*)
-	config["folders"]["derivedData"],(*the output folder for processing*)
-	config["dataSets"],(*what to process*)
-	opts
+MuscleBidsProcess[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsProcess[GetConfig[folder], opts];
+
+MuscleBidsProcess[config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+	dir = Directory[];
+	SetDirectory[config["folders"]["root"]];
+	MuscleBidsProcess[
+		config["folders"]["rawData"],(*the input folder for the data*)
+		config["folders"]["derivedData"],(*the output folder for processing*)
+		config["dataSets"],(*what to process*)
+		opts];
+	SetDirectory[dir]	
 ]
 
 MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"Process", ops]
@@ -1013,10 +1064,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*-----*)AddToLog["Starting ivim calculation", 4];
 							fiti = IVIMCalc[MeanSignal[mean], valU, {1,.05,.003,.015}, IVIMFixed->True];
 							(*perform IVIM correction*)
-							{s0i, fri, adci, pD}= IVIMCalc[mean, valU, fiti, IVIMConstrained->False, Parallelize->True, MonitorIVIMCalc->False, IVIMFixed->True];
+							{s0i, fri, adci, pD}= Quiet@IVIMCalc[mean, valU, fiti, IVIMConstrained->False, Parallelize->True, MonitorIVIMCalc->False, IVIMFixed->True];
 							fri = Clip[fri, {0,1}, {0,1}];
 							adci = 1000 adci;
-							resi = IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
+							resi = Quiet@IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
 							
 							(*calculate tensor from corrected data*)
 							(*-----*)AddToLog["Starting tensor calculation", 4];
@@ -1158,16 +1209,35 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 (* ::Subsubsection:: *)
 (*MuscleBidsMerge*)
 
+MuscleBidsProcess[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsProcess[GetConfig[folder], opts];
+
+MuscleBidsProcess[config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+	dir = Directory[];
+	SetDirectory[config["folders"]["root"]];
+	MuscleBidsProcess[
+		config["folders"]["rawData"],(*the input folder for the data*)
+		config["folders"]["derivedData"],(*the output folder for processing*)
+		config["dataSets"],(*what to process*)
+		opts];
+	SetDirectory[dir]	
+]
+
 
 Options[MuscleBidsMerge] = {SelectSubjects->All, VersionCheck->False};
 
 SyntaxInformation[MuscleBidsMerge] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-MuscleBidsMerge[config_?AssociationQ, opts:OptionsPattern[]]:=MuscleBidsMerge[
-	config["folders"]["derivedData"],(*the input folder for the data*)
-	config["folders"]["mergeData"],(*the output folder for merging*)
-	config["dataSets"],(*what to process*)
-	opts
+MuscleBidsMerge[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsMerge[GetConfig[folder], opts];
+
+MuscleBidsMerge[config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+	dir = Directory[];
+	SetDirectory[config["folders"]["root"]];
+	MuscleBidsMerge[
+		config["folders"]["derivedData"],(*the input folder for the data*)
+		config["folders"]["mergeData"],(*the output folder for merging*)
+		config["dataSets"],(*what to process*)
+		opts];
+	SetDirectory[dir];	
 ]
 
 MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Merge", ops]

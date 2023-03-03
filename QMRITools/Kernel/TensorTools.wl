@@ -726,40 +726,37 @@ Options[EigensysCalc] = {RejectMap -> False, Reject -> True};
 
 SyntaxInformation[EigensysCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-EigensysCalc[tensor_?ArrayQ, OptionsPattern[]] := Block[{tensM, val, vec, reject},
-	tensM = N@TensMat[tensor];
-	If[MatrixQ[tensM] && Dimensions[tensM] === {3, 3},
-		{val, vec} = EigensysCalci[tensM];
-		If[OptionValue[Reject],
-			val = RejectEig[val];
-			reject = RejectMapi[val];
-			vec = reject vec + (1-reject){{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}};
-			If[OptionValue[RejectMap], {val, vec, reject}, {val, vec}], {val, vec}
-		]
+EigensysCalc[tensor_?ArrayQ, OptionsPattern[]] := Block[{val, vec, reject, sel},
+	If[VectorQ[tensor],
+		(*tensor is just one value*)
+		{val, vec} = EigensysCalci[tensor];		
 		,
-		{val, vec} = RotateDimensionsRight[Map[EigensysCalci, tensM, {-3}], 2];
-		val = RotateDimensionsLeft[val, 1];
-		vec = RotateDimensionsLeft[vec, 1];
-		
-		If[OptionValue[Reject],
-			val = RejectEig[val];
-			reject = Map[RejectMapi, val, {ArrayDepth[tensor] - 1}];
-			vec = reject vec + (1 - reject) ConstantArray[{{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}, Dimensions[reject]];
-			If[OptionValue[RejectMap], {val, vec, reject}, {val, vec}], {val, vec}
-		]
-	]
+		(*calculate the eigensystem*)
+		val = Map[EigensysCalci, RotateDimensionsLeft[tensor], {-2}];
+		vec = Switch[ArrayDepth[tensor] - 1, 1, val[[All, 2]], 2, val[[All, All, 2]], 3, val[[All, All, All, 2]]];
+		val = Switch[ArrayDepth[tensor] - 1, 1, val[[All, 1]], 2, val[[All, All, 1]], 3, val[[All, All, All, 1]]];
+	];
+	
+	(*find the reject values if needed*)	
+	If[OptionValue[Reject],
+		sel = SelectEig[val];
+		reject = 1 - sel;
+		val = sel val; 
+		vec = sel vec + reject ConstantArray[{{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}, Dimensions[reject]];
+	];
+	
+	If[OptionValue[RejectMap]&&OptionValue[Reject], {val, vec, reject}, {val, vec}]
 ]
 
 
-RejectEig = Compile[{{eig, _Real, 1}}, If[Total[1 - UnitStep[eig]] > 0, {0., 0., 0.}, eig],
+SelectEig = Compile[{{eig, _Real, 1}}, UnitStep[Last[eig]],
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True
 ];
 
+EigensysCalci[{0., 0., 0., 0., 0., 0.}] := {{0., 0., 0.}, {{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}}
 EigensysCalci[{{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}] := {{0., 0., 0.}, {{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}}
-EigensysCalci[tensor_] := Eigensystem[tensor]
-
-RejectMapi[{0., 0., 0.}] := 0;
-RejectMapi[{_, _, _}] := 1;
+EigensysCalci[tensor_?MatrixQ] := Eigensystem[tensor]
+EigensysCalci[tensor_?VectorQ] := Eigensystem[TensMat[tensor]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -770,7 +767,7 @@ Options[EigenvecCalc] = Options[EigensysCalc];
 
 SyntaxInformation[EigenvecCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-EigenvecCalc[tens_, OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens][[{2, 3}]], EigensysCalc[tens][[2]]]
+EigenvecCalc[tens_, opts:OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens,opts][[{2, 3}]], EigensysCalc[tens,opts][[2]]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -781,7 +778,7 @@ Options[EigenvalCalc] = Options[EigensysCalc];
 
 SyntaxInformation[EigenvalCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-EigenvalCalc[tens_, OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens][[{1, 3}]], EigensysCalc[tens][[1]]]
+EigenvalCalc[tens_, opts:OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens, opts][[{1, 3}]], EigensysCalc[tens, opts][[1]]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -857,14 +854,14 @@ WestinMeasures[eig_]:=Block[{l1, l2, l3},
 (*ParameterCalc*)
 
 
-Options[ParameterCalc]={Reject->False}
+Options[ParameterCalc] = {Reject->False}
 
 SyntaxInformation[ParameterCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 ParameterCalc[tensor_,OptionsPattern[]]:= Block[{eig,adc,fa},
-	eig=1000.*EigenvalCalc[tensor,Reject->OptionValue[Reject]];
-	adc=ADCCalc[eig];
-	fa=FACalc[eig];
+	eig = 1000 EigenvalCalc[tensor, Reject->OptionValue[Reject], RejectMap->OptionValue[Reject]];
+	adc = ADCCalc[eig];
+	fa = FACalc[eig];
 	Join[RotateDimensionsRight[eig],{adc,fa}]
 	]
 
