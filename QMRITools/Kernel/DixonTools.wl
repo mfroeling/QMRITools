@@ -250,6 +250,7 @@ Options[DixonReconstruct] = {
 	DixonBipolar -> False,
 	DixonClipFraction -> False,
 	DixonCorrectT1->False,
+	DixonComplexOutput->False,
 	MonitorCalc -> False
 	};
 
@@ -366,8 +367,10 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	fraction = DixonToPercent[cWat, cFat, OptionValue[DixonClipFraction]];
 
 	(*signal and in/out phase data *)
-	(*signal = 1000 Clip[Abs[{cWat, cFat}], range] / range[[2]];*)
-	signal = 1000 {cWat, cFat} / range[[2]];
+	signal = If[OptionValue[DixonComplexOutput],
+		1000 {cWat, cFat} / range[[2]],
+		1000 Clip[Abs[{cWat, cFat}], range] / range[[2]]
+	];	
 	res = 1000 Clip[Abs[res], range] / range[[2]];
 	ioPhase = 1000 Clip[RotateDimensionsRight[InOutPhase[cWat, cFat, ioAmat]], range]  / range[[2]];
 	
@@ -1187,7 +1190,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		
 		t1=First@AbsoluteTiming[
 		(*b0 phase*)
-		phi = Mean[(UnwrapDCT /@ (Arg[compi[[# + de]]] - Arg[compi[[#]]])) & /@ Range[e1, e1 + hl, hl]];
+		phi = Mean[(UnwrapDCT /@ (Arg[compi[[# + de]]] - Arg[compi[[#]]])) & /@ Range[e1, Min[{e1 + hl, l - de}], Min[{hl,3}]]];
 		ph += msk phi;
 		compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
 		
@@ -1230,7 +1233,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	, {itt}];
 		
 	(*fix the initial phase*)
-	phi = Mean[(UnwrapDCT[(Arg[compi[[# + de]]] - Arg[compi[[#]]])]) & /@ Range[e1, e1 + hl, hl]];
+	phi = Mean[(UnwrapDCT[(Arg[compi[[# + de]]] - Arg[compi[[#]]])]) & /@ Range[e1, Min[{e1 + hl, l - de}], Min[{hl,3}]]];
 	ph += msk phi;
 	compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
 		

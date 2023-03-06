@@ -331,7 +331,7 @@ PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, 0., opts];
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
-		wht, ker, tol, mon, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, m, n, off, datao, weights, sigmat, start,
+		wht, ker, tol, mon, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, m, n, off, datao, weights, sigmat, start, 
 		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, weight, pos, leng, nearPos,p
 	},
 	
@@ -341,8 +341,6 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	tol = OptionValue[PCATollerance];
 	(*kernel size*)
 	ker = OptionValue[PCAKernel];
-	
-	
 	
 	(*make everything numerical to speed up*)
 	data = ToPackedArray[N@datai];
@@ -375,18 +373,15 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		(*ouput data*)
 		datao = 0. data;
 		weights = sigmat = datao[[All, 1]];
-				
-		(*parameters for monitor*)
-		j = 0;
-		totalItt = leng;
 		
-		If[mon, PrintTemporary["Preparing data similarity"]];
 		(*get positions of similar signals*)
+		If[mon, PrintTemporary["Preparing data similarity"]];
 		nearPos = Nearest[data -> Range[leng], data, n, DistanceFunction -> EuclideanDistance, 
 			Method -> "Scan", WorkingPrecision -> MachinePrecision];
 		
 		(*perform denoising*)
-		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, totalItt}]]];
+		j = 0;
+		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
 		output = Map[(
 			j++;
 			p = nearPos[[#]];
@@ -431,7 +426,6 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		j = 0;
 		start = off + 1;
 		totalItt = Total[Flatten[mask[[start ;; zdim - off, start ;; ydim - off, start ;; xdim - off]]]];
-		
 		
 		(*perform denoising*)
 		Monitor[output = Table[
