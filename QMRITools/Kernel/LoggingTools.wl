@@ -139,10 +139,8 @@ SyntaxInformation[ExportLog] = {"ArgumentsPattern" -> {_, _.}};
 
 ExportLog[file_]:=ExportLog[file, False]
 
-ExportLog[file_, tree_] := Block[{},
-	Export[file, QMRITools`$Log, "Text"];
-	If[tree,Export[FileNameJoin[{DirectoryName[file],"FileTree.txt"}],DirectoryTree[DirectoryName[file]]];]
-]
+ExportLog[file_, tree_] := (Export[file, QMRITools`$Log, "Text"];
+	If[tree, Export[FileNameJoin[{DirectoryName[file],"FileTree.txt"}], DirectoryTree[DirectoryName[file]]];])
 
 
 (* ::Subsubsection::Closed:: *)
@@ -286,7 +284,7 @@ StyleTree[tree_,{preFix_,level_,notlast_},rule_]:=Block[{prefix,hasFiles,pre,not
 
 SyntaxInformation[PrintDirectoryTree] = {"ArgumentsPattern" -> {_}};
 
-PrintDirectoryTree[tree_]:=StringJoin[StringReplace[#,Thread[{"  ","\[VerticalLine] ","\:2514\[HorizontalLine]","\:251c\[HorizontalLine]"}->{"   ","|  ","\- ","|- "}]]<>"\n"&/@tree]
+PrintDirectoryTree[tree_]:=StringJoin[StringReplace[#,Thread[{"  ","\[VerticalLine] ","\:2514\[HorizontalLine]","\:251c\[HorizontalLine]"}->{"   ","|  ","\\- ","|- "}]]<>"\n"&/@tree]
 
 
 (* ::Input:: *)

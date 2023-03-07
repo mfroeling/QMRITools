@@ -221,42 +221,26 @@ DeNoise[dat_, sigi_, filt_, OptionsPattern[]] := Module[{kern, out, type, dimsig
 (*DeNoisei*)
 
 
-DeNoisei[data_?MatrixQ,sig_,filt_,kern_?MatrixQ]:=
-Module[{},
-	(*PrintTemporary["Appling 2D kernel on 2D dataset."];*)
-	DeNoiseApp[data,sig,filt,kern]]
+(*Appling 2D kernel on 2D dataset*)
+DeNoisei[data_?MatrixQ,sig_,filt_,kern_?MatrixQ]:=DeNoiseApp[data,sig,filt,kern]
 
-DeNoisei[data:{_?MatrixQ..},sig_,filt_,kern:{_?MatrixQ..}]:=
-Module[{},
-	(*PrintTemporary["Appling 3D kernel on 3D dataset."];*)
-	DeNoiseApp[data,sig,filt,kern]]
+(*Appling 3D kernel on 3D dataset*)
+DeNoisei[data:{_?MatrixQ..},sig_,filt_,kern:{_?MatrixQ..}]:=DeNoiseApp[data,sig,filt,kern]
 
-DeNoisei[data:{_?MatrixQ..},sig_,filt_,kern_?MatrixQ]:=
-Module[{},
-	(*PrintTemporary["Appling 2D kernel on 3D dataset."];*)
-	(*Using one sigma value for all slices."];*)
-	If[NumberQ[sig],
-		Map[DeNoiseApp[#,sig,filt,kern]&,data],
-		MapThread[DeNoiseApp[#1,#2,filt,kern]&,{data,sig}]
-		]
-	]
+(*Appling 2D kernel on 3D dataset, Using one sigma value for all slices*)
+DeNoisei[data:{_?MatrixQ..},sig_,filt_,kern_?MatrixQ]:=If[NumberQ[sig],
+	Map[DeNoiseApp[#,sig,filt,kern]&,data],
+	MapThread[DeNoiseApp[#1,#2,filt,kern]&,{data,sig}]
+]
 
-DeNoisei[data:{{_?MatrixQ..}..},sig_,filt_,kern_?MatrixQ]:=
-Module[{},
-	(*PrintTemporary["Appling 2D kernel on 4D dataset."];*)
-	(*Using one sigma value for all slices and directions."];*)
-	If[NumberQ[sig],
-		Map[DeNoiseApp[#,sig,filt,kern]&,data,{2}],
-		Transpose[Map[MapThread[DeNoiseApp[#1,#2,filt,kern]&,{#,sig}]&,Transpose[data]]]
-		]
-	]
+(*Appling 2D kernel on 4D dataset, Using one sigma value for all slices and directions.*)
+DeNoisei[data:{{_?MatrixQ..}..},sig_,filt_,kern_?MatrixQ]:=If[NumberQ[sig],
+	Map[DeNoiseApp[#,sig,filt,kern]&,data,{2}],
+	Transpose[Map[MapThread[DeNoiseApp[#1,#2,filt,kern]&,{#,sig}]&,Transpose[data]]]
+]
 
-DeNoisei[data:{{_?MatrixQ..}..},sig_,filt_,kern:{_?MatrixQ..}]:=
-Module[{},
-	(*PrintTemporary["Appling 3D kernel on 4D dataset."];*)
-	(*Using one sigma value for all diffusion directions."];*)
-	Transpose[Map[DeNoiseApp[#1,sig,filt,kern]&,Transpose[data]]]
-	]
+(*Appling 3D kernel on 4D dataset, Using one sigma value for all diffusion directions*)
+DeNoisei[data:{{_?MatrixQ..}..},sig_,filt_,kern:{_?MatrixQ..}]:=Transpose[Map[DeNoiseApp[#1,sig,filt,kern]&,Transpose[data]]]
 
 
 (* ::Subsubsection::Closed:: *)

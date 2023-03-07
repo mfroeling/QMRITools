@@ -2760,7 +2760,7 @@ ListSpherePlot[ptsi_, OptionsPattern[]] := Module[{cols, graphics, pt, pc, ran, 
     (ColorData[1] /@ N[Range[1, len]])[[ran]],
     ConstantArray[coli, len]
     ];
-  cols = cols;
+
   graphics = MapThread[(pt = #1; pc = #2;
       If[ArrayDepth[pt] == 1,
        {pc, Sphere[pt, size]},

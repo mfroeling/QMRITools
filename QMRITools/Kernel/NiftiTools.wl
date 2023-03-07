@@ -1387,7 +1387,7 @@ Options[ExportBvec]={FlipBvec->False, PositiveZ->False};
 
 SyntaxInformation[ExportBvec] = {"ArgumentsPattern" -> {_,_.,OptionsPattern[]}};
 
-ExportBvec[grad_ opts:OptionsPattern[]] := ExportBvec[grad, "", opts]
+ExportBvec[grad_, opts:OptionsPattern[]] := ExportBvec[grad, "", opts]
 
 ExportBvec[grad_, fil_String, OptionsPattern[]] := Module[{file,grade,grads},
 	file = If[fil == "", FileSelect["FileSave", {"*.bvec"}, "bvec file", WindowTitle -> "Select the destination file"], fil];

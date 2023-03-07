@@ -333,8 +333,8 @@ CreateDiffData[S0_,eig_,bmat_?ArrayQ,dim_]:= Block[{diff},
 (*SignalTensor*)
 
 
-SignalTensor[S0_, bmat_, D_] := Module[{Dv},
-	Dv=Append[If[Dimensions[D]=={3,3},TensVec[D],D],Log[S0]];
+SignalTensor[S0_, bmat_, tens_] := Module[{Dv},
+	Dv=Append[If[Dimensions[tens]=={3,3},TensVec[tens],tens],Log[S0]];
 	Exp[bmat.Dv]
 ]
 

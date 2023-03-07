@@ -375,6 +375,8 @@ Block[{dirD,dirB,tensor,rl,rr,TensMin,out,tenscalc,x,data,depthD, bmatI,fout,met
 FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}}, Block[{
 	sol, ittA, contA, solA, itt, cont, soli, res, mad, wts, wmat, fitE, LS2, bmat2, out},
 	
+	(*based on DOI: 10.1002/mrm.25165*)
+	
 	(*initialize some values*)
 	out = (0. LS); 
 	LS2 = LS; 
@@ -405,11 +407,11 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	  				(*a. Calculate the residuals e* in the linear domain*)
 	  				res = LS - bmat . sol;
 	  				(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-	  				mad = 1.4826 MedianDeviation[res];
+	  				mad = 1.4826 N[Chop[MedianDeviation[res]]];
 	  				(*prevent calculation with 0*)
 	  				If[mad === 0., cont = 0,
 	  					(*c. Recompute the weights according to Eq. [13].*)
-	  					wts = 1 / (1 + (res/mad)^2)^2;
+	  					wts = Normalize[1 / (1 + (res/mad)^2)^2];
 	  					(*d. Perform WLLS fit with new weights*)
 	  					wmat = Transpose[bmat] . DiagonalMatrix[wts];
 	  					sol = PseudoInverse[wmat . bmat] . wmat . LS;
@@ -435,11 +437,12 @@ FindTensOutliers = Quiet@Compile[{{LS, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	  				(*a. Calculate the residuals e* in the linear domain*)
 					res = LS2 - bmat2 . sol;
 					(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
-					mad = 1.4826 MedianDeviation[res];
+					mad = 1.4826 N[Chop[MedianDeviation[res]]];
 					(*prevent calculation with 0*)
-					If[mad === 0., cont = 0,
+					If[mad === 0., 
+						cont = 0,
 						(*c. Recompute the weights according to Eq. [13].*)
-						wts = 1 / (1 + (res/mad)^2)^2;
+						wts = Normalize[1 / (1 + (res/mad)^2)^2];
 						(*d. Perform WLLS fit with new weights*)
 						wmat = Transpose[bmat2] . DiagonalMatrix[wts];
 						sol = PseudoInverse[wmat . bmat2] . wmat . LS2;
@@ -1195,10 +1198,10 @@ TransformTensor[tens_, disp_, vox_]:=Block[{imat, jac},
 (*TensorRotate*)
 
 
-TensorRotate[D_,F_]:=Block[{val,e1,e2,e3,n1,n2,n3,nMat,fMat},
-	If[D[[1,1]]==0.,
-		D,
-		{val,{e1,e2,e3}}=Eigensystem[D];
+TensorRotate[tens_,F_]:=Block[{val,e1,e2,e3,n1,n2,n3,nMat,fMat},
+	If[tens[[1,1]]==0.,
+		tens,
+		{val, {e1,e2,e3}}=Eigensystem[tens];
 		fMat=PseudoInverse[F];
 		n1=Normalize[fMat . e1];
 		n2=Normalize[fMat . e2-(n1 . (fMat . e2))*n1]//N;
@@ -1363,8 +1366,8 @@ Module[{Dx,Dy,Dz,dim,zero,ones,F},
 (*Drot*)
 
 
-DRot[D_,F_]:=Module[{val,e1,e2,e3,n1,n2,n3,NN},
-	{val,{e1,e2,e3}}=Eigensystem[D];
+DRot[tens_,F_]:=Module[{val,e1,e2,e3,n1,n2,n3,NN},
+	{val,{e1,e2,e3}}=Eigensystem[tens];
 	n1=Normalize[F . e1];
 	n2=Normalize[F . e2-(n1 . (F . e2))*n1]//N;
 	n3=Normalize[Cross[n1,n2]]//N;

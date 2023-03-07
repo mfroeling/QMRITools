@@ -487,14 +487,14 @@ Options[SimulateDixonSignal] = {
 
 SyntaxInformation[SimulateDixonSignal] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-SimulateDixonSignal[echo_, fr_, B0_, T2_, OptionsPattern[]] := Block[{precession,field,freqs,amps, Amat, phi, sig},
+SimulateDixonSignal[echo_, fr_, b0_, t2_, OptionsPattern[]] := Block[{precession,field,freqs,amps, Amat, phi, sig},
 	precession = OptionValue[DixonPrecessions](*-1,1*);
 	field = OptionValue[DixonFieldStrength];
 	freqs = precession field GyromagneticRatio[OptionValue[DixonNucleus]] OptionValue[DixonFrequencies];
 	amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
 	
 	Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
-	phi = N@2 Pi B0 I - 1./T2;
+	phi = N@2 Pi b0 I - 1./t2;
 	sig = Exp[If[Length[T2] === 2, Transpose[echos # & /@ phi], phi echo]] Amat;
 	
 	sig = sig . {fr, 1 - fr};

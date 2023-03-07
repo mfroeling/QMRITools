@@ -97,7 +97,7 @@ Begin["`Private`"]
 SyntaxInformation[LoadCoilSetup] = {"ArgumentsPattern" -> {_,_.}};
 
  (*load a sereis of linked coils measurements.*)
-LoadCoilSetup[fileC_?StringQ,n:_ 1]:=Block[{dataC, vox, len, noiseC, sosC, snrC, sigmapC, weights, mn},
+LoadCoilSetup[fileC_?StringQ, n__:1]:=Block[{dataC, vox, len, noiseC, sosC, snrC, sigmapC, weights, mn},
 	(*import the data*)
 	{dataC, vox} = ImportNii[fileC];
 	(*split the noise dan data*)
