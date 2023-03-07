@@ -1025,14 +1025,15 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 ]
 
 
-JoinSetsi[data_?ArrayQ,overlap_?IntegerQ,norm_:False]:=
-Module[{sets,set1,set2,step,set1over,set2over,joined,mn1,mn2},
+JoinSetsi[data_?ArrayQ,overlap_?IntegerQ,norm_:False]:= Block[{
+		sets,set1,set2,step,set1over,set2over,joined,mn1,mn2
+	},
 	
 	sets=Length[data];
 	step=1/(overlap+1);
 	
 	(*perform the join*)
-	For[i=1,i<sets,i++,
+	Table[
 		If[i==1,
 			set1=Drop[data[[i]],{-overlap,-1}];
 			set1over=Take[data[[i]],{-overlap,-1}];
@@ -1055,11 +1056,10 @@ Module[{sets,set1,set2,step,set1over,set2over,joined,mn1,mn2},
 		];
 
 		joined = Joini[{set1, set2}, {set1over, set2over}, overlap];
-		];
+	,{i, 1, sets}];
 	
-	joined	
-
-	];
+	joined
+];
 
 
 JoinSetsi[data_?ArrayQ,overlap_?ListQ,OptionsPattern[]]:=
@@ -1068,7 +1068,7 @@ Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1
 	sets=Length[data];
 	
 	(*perform the join*)
-	For[i=1,i<sets,i++,
+	Table[
 		overSet=overlap[[i]];
 		If[i==1,
 			data1=data[[i]];,
@@ -1098,11 +1098,10 @@ Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1
 		set2over=Take[data2,{1,overl}];
 	
 		joined=Joini[{set1,set2},{set1over,set2over},overl];
-		];
+	,{i,1,sets}];
+
 	joined
 ];
-	
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1223,14 +1222,13 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 		
 		sets[[n+1]] = MaskData[sets[[n+1]], Dilation[Mask[NormalizeMeanData[sets[[n+1]]], .5], 2]];
 		
-		, {n, 1, nmax - 1}
-	];
+	, {n, 1, nmax - 1}];
 	
 	(*output the data, make the 3D data 3D again*)
 	Switch[depth,
 		5, sets,
 		4, sets[[All,All,1]]
-		]
+	]
   
   ]
 

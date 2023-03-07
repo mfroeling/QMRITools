@@ -330,7 +330,7 @@ Begin["`Private`"]
 
 
 GetAssetLocation[name_] := Block[{file},
-	file = Last[SortBy[PacletFind["QMRITools"], #["Version"]]]["AssetLocation", name];
+	file = Last[SortBy[PacletFind["QMRITools"], #["Version"]&]]["AssetLocation", name];
 	If[FileExistsQ[file],file,$Failed]
 ]
 
@@ -1289,7 +1289,7 @@ MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianD
 
 SyntaxInformation[MemoryUsage] = {"ArgumentsPattern" -> {_.}}
 
-MemoryUsage[size_: 1] := Module[{},
+MemoryUsage[size_: 1] := (
 	NotebookClose[memwindow];
 	memwindow = CreateWindow[DialogNotebook[{
 		CancelButton["Close", DialogReturn[]],
@@ -1323,7 +1323,7 @@ MemoryUsage[size_: 1] := Module[{},
 			}
 		]}, WindowTitle -> "Plot data window", Background -> White]
 	];
-]
+)
 
 
 SetAttributes[myByteCount, Listable ]
@@ -1383,13 +1383,13 @@ SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes
 
 SyntaxInformation[LLeastSquares] = {"ArgumentsPattern" -> {_, _}};
 
-LLeastSquares[Ai_,y_]:=Block[{A},
-	A = If[Length[y] == Length[Ai], Ai, Transpose[Ai]];
+LLeastSquares[ai_,y_]:=Block[{a},
+	a = If[Length[y] == Length[ai], ai, Transpose[ai]];
 	If[RealQ[Total[Flatten[y]]], 
-		LLeastSquaresC[A, y], 
-		If[RealQ[Total[Flatten[A]]],
-			LLeastSquaresCC[A, y],
-			LLeastSquaresCCC[A, y]
+		LLeastSquaresC[a, y], 
+		If[RealQ[Total[Flatten[a]]],
+			LLeastSquaresCC[a, y],
+			LLeastSquaresCCC[a, y]
 		]
 	]
 ]	
@@ -1416,17 +1416,17 @@ LLeastSquaresCCC = Compile[{{A, _Complex, 2}, {y, _Complex, 1}},
 SyntaxInformation[NNLeastSquares] = {"ArgumentsPattern" -> {_, _}};
 
 (*Main function*)
-NNLeastSquares[A_, y_] := Block[{At, x, zeroed, w, zerow, pos, sp, xp, neg, xi, si, alpha, i, j ,l},
+NNLeastSquares[a_, y_] := Block[{at, x, zeroed, w, zerow, pos, sp, xp, neg, xi, si, alpha, i, j ,l},
 	(*Initialze values*)
-	At = Transpose[A];(*already define Transpose A for speed up CalcW*)
+	at = Transpose[a];(*already define Transpose A for speed up CalcW*)
 	
 	(*initialize values*)
-	x = 0. A[[1]];
+	x = 0. a[[1]];
 	l = Length[x];
 	zeroed = x + 1.;
 	
 	(*initial vector w*)
-	w = CalcW[A, At, y, x];
+	w = CalcW[a, at, y, x];
 	
 	(*first while loop: select highest positive solution in the zero set as long as the zero set is not empty*)
 	j = 1; 
@@ -1436,7 +1436,7 @@ NNLeastSquares[A_, y_] := Block[{At, x, zeroed, w, zerow, pos, sp, xp, neg, xi, 
 		zeroed[[Last[Ordering[zerow]]]] = 0.;
 		(*Calculate the LLS solution of the positive set*)
 		pos = PosInd[zeroed];
-		sp = LLSC[At[[pos]], y];
+		sp = LLSC[at[[pos]], y];
 		
 		(*recalculate the solutions of sp untill all values of sp are positive*)
 		i = 1;
@@ -1454,12 +1454,12 @@ NNLeastSquares[A_, y_] := Block[{At, x, zeroed, w, zerow, pos, sp, xp, neg, xi, 
 			zeroed[[Pick[pos, Unitize[Chop[(xp + alpha (sp - xp))]], 0]]] = 1.;
 			(*recalculate the solution sp*)
 			pos = PosInd[zeroed];
-			sp = LLSC[At[[pos]], y];
+			sp = LLSC[at[[pos]], y];
 		];
 		
 		(*set xp to sp and recalculate w*)
 		x = 0. x; x[[pos]] = sp;
-		w = CalcW[A, At, y, x];
+		w = CalcW[a, at, y, x];
 	];
 	x
 ]
@@ -1526,12 +1526,12 @@ Squeeze[data_] := ToPackedArray@First@Flatten[data, Flatten[Position[Dimensions[
 SyntaxInformation[DynamicPartition] = {"ArgumentsPattern" -> {_,_,_.}}
 
 (*partition data in lists of arbitrary length*)
-DynamicPartition[L_, p : {__Integer}, x___] := dPcore[L, Accumulate@p, x] /; ! Negative@Min@p && Length@L >= Tr@p
+DynamicPartition[l_, p : {__Integer}, x___] := dPcore[l, Accumulate@p, x] /; ! Negative@Min@p && Length@l >= Tr@p
 
 (*Partition function*)
-dPcore[L_, p : {q___, _}] := Inner[L[[# ;; #2]] &, {0, q} + 1, p, Head@L]
-dPcore[L_, p_, All] := Append[dPcore[L, p], Drop[L, Last@p]]
-dPcore[L_, p_, n__] := Join[dPcore[L, p], Partition[Drop[L, Last@p], n]]
+dPcore[l_, p : {q___, _}] := Inner[l[[# ;; #2]] &, {0, q} + 1, p, Head@l]
+dPcore[l_, p_, All] := Append[dPcore[l, p], Drop[l, Last@p]]
+dPcore[l_, p_, n__] := Join[dPcore[l, p], Partition[Drop[l, Last@p], n]]
 
 
 (* ::Subsection::Closed:: *)
@@ -1563,7 +1563,7 @@ BSplineCurveFit[pts_, opts : OptionsPattern[]] := Block[{paras, knots, coeffMat,
 
 Options[BSplineBasisFunctions] = {SplineDegree -> 2, SplineKnotsNumber -> 50, SplineRegularization -> 0};
 
-BSplineBasisFunctions[Npts_, opts : OptionsPattern[]] := BSplineBasisFunctions[Npts, opts] = Block[{
+BSplineBasisFunctions[nPts_, opts : OptionsPattern[]] := BSplineBasisFunctions[nPts, opts] = Block[{
 	cpn, sd, reg, len, paras, knots, coeffMat, coeffMatR, coeffMatDD, smooth
 	},
 	(*Get the options*)
@@ -1572,7 +1572,7 @@ BSplineBasisFunctions[Npts_, opts : OptionsPattern[]] := BSplineBasisFunctions[N
 	reg = OptionValue[SplineRegularization];
 	
 	(*define the bpline points x = [0,1]*)
-	paras = Range[0, 1, 1/(Npts - 1 + 2)] // N;
+	paras = Range[0, 1, 1/(nPts - 1 + 2)] // N;
 	(*define the knots for order sd and cpn degrees of freedome*)
 	knots = Join[ConstantArray[0., sd], N@Range[0, 1, 1/(cpn - sd)], ConstantArray[1., sd]];
 	
@@ -1652,9 +1652,9 @@ PolarDecomposition[mat_] := Block[{R, S},
 ]
 
 
-GetScaleSkew[S_] := Block[{sc},
-	sc = (Norm /@ Transpose[S]) /. 0. -> 1.;
-	N@{DiagonalMatrix[sc], Transpose[Transpose[S]/sc]}
+GetScaleSkew[s_] := Block[{sc},
+	sc = (Norm /@ Transpose[s]) /. 0. -> 1.;
+	N@{DiagonalMatrix[sc], Transpose[Transpose[s]/sc]}
 ]
 
 
@@ -1664,7 +1664,7 @@ GetScaleSkew[S_] := Block[{sc},
 
 SyntaxInformation[DecomposeScaleMatrix] = {"ArgumentsPattern" -> {_}}
 
-DecomposeScaleMatrix[S_] := DeleteCases[N@MapThread[IdentityMatrix[4] + Transpose[{#2}] . {#2} (#1 - 1) &, Eigensystem[S]], N@IdentityMatrix[4]]
+DecomposeScaleMatrix[s_] := DeleteCases[N@MapThread[IdentityMatrix[4] + Transpose[{#2}] . {#2} (#1 - 1) &, Eigensystem[s]], N@IdentityMatrix[4]]
 
 
 (* ::Subsubsection::Closed:: *)

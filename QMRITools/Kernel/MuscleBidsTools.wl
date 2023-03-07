@@ -537,7 +537,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?ListQ, ops:OptionsPatt
 						"Process", (*MuscleBidsProcess*)
 						MuscleBidsProcessI[foli, outFol, type, logFile, OptionValue[VersionCheck]],
 						"Merge", (*MuscleBidsMerge*)
-						MuscleBidsMergeI[foli, outFol, type, logFile, OptionValue[VersionCheck]]
+						MuscleBidsMergeI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]]
 					];
 					ExportLog[logFile];				
 				(*Close sub folders loop*)
@@ -954,7 +954,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*calculated field maps*)
 							(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
 							{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
-							(*-----*)AddToLog[{"used echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]]"ms )"}, 5];
+							(*-----*)AddToLog[{"used echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
 							
 							(*perform the IDEAL dixon fit*)
 							(*-----*)AddToLog["Starting Dixon reconstruction",4];
@@ -1268,10 +1268,10 @@ MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPatt
 (*MuscleBidsMergeI*)
 
 
-MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
+MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 		nonQuant, motion, reverse, fol, parts, merge, outfile, tarType, tarCon, movType, movCon, n,
-		movs, stacs, overT, overM, targets, movings, mov, nStac, nCheck, nSet, target, voxt, dimt, moving, voxm, dimm,
-		files, im, func, reg, mskm, mskt
+		movs, movStacs, tarStacs, overT, overM, targets, movings, mov, nStac, nCheck, nSet, target, voxt, dimt, moving, 
+		voxm, dimm,	files, im, func, reg, mskm, mskt
 	},
 
 	nonQuant = {"inph", "outph", "wat", "fat", "S0"};
@@ -1282,14 +1282,19 @@ MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 	{fol, parts} = PartitionBidsFolderName[foli];
 	merge = datType["Merging"];
 	(*get the outfile*)
-	outfile=GenerateBidsFileName[folo,<|parts, "suf"->datType["Suffix"],"Type"->datType["Type"]|>];
+	outfile = GenerateBidsFileName[folo,<|parts, "suf"->datType["Suffix"],"Type"->datType["Type"]|>];
 
-	(*get the settings*)
+	(*get the settings for the target*)
 	{tarType, tarCon} = merge["Target"];
+	tarStacs = StringReplace[#, {"-" -> "", "_" -> "", "." -> ""}] & /@ First[Select[allType, #["InFolder"] === "dix" &]]["Label"];
+	
+	(*get the settings for the moving*)
 	movType = datType["InFolder"];
 	movCon = merge["Moving"];
 	movs = merge["Process"];
-	stacs = StringReplace[#, {"-"->"","_"->"","."->""}]&/@datType["Label"];
+	movStacs = StringReplace[#, {"-"->"","_"->"","."->""}]&/@datType["Label"];
+	
+	(*get the settings for the merging*) 
 	overT = merge["Overlap"];
 	{overT, overM} = If[IntegerQ[overT], {overT, overT}, overT];
 	
@@ -1301,16 +1306,16 @@ MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		(*-----*)AddToLog[{StringJoin@Riffle[movs,", "]}, 4];
 		
 		(*get all the moving and target data file names*)
-		targets = Flatten[FileNames["*"<>tarType<>"*"<>tarCon<>".nii.gz", FileNameJoin[{DirectoryName[foli],tarType}]]];
-		movings = (mov = #; Flatten[FileNames["*"<>#<>"*"<>mov<>".nii.gz", foli]& /@stacs])& /@movs;
+		targets = Flatten[FileNames["*"<>#<>"*"<>tarType<>"*"<>tarCon<>".nii.gz", FileNameJoin[{DirectoryName[foli], tarType}]]&/@tarStacs];
+		movings = (mov = #; Flatten[FileNames["*"<>#<>"*"<>mov<>".nii.gz", foli]& /@movStacs])& /@movs;
 		
 		(*check if number of stacks are consistant*)
-		nStac = Length@stacs;
+		nStac = Length@movStacs;
 		nCheck = AllTrue[n=Join[{Length[targets]},Length/@movings], #===nStac&];
 		nSet = Length[movs];
 		
 		If[!nCheck,
-			(*-----*)AddToLog[{"Not all types have the same number of stacs:",StringJoin@Riffle[ToString/@n,", "]}, 3],
+			(*-----*)AddToLog[{"Not all types have the same number of stacs:", StringJoin@Riffle[ToString/@n,", "]}, 3],
 			(*-----*)AddToLog[{"Start joining ",nStac,"stacs for",nSet,"dataypes"}, 3];
 			
 			(*import the Target data*)
@@ -1324,21 +1329,18 @@ MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			dimm = Dimensions@First@First@moving;
 			voxm = First@First@voxm;
 			
-			Print[{"Joinsets",MinMax[target],MinMax[overT],voxt}];
-			
 			(*join the target and split for the motion correction.*)
 			(*-----*)AddToLog[{"Joining the primary datatype",If[motion,"with","without"],"motion correction"}, 4];
 			If[nStac=!=1,
-				Print[{"Joinsets",MinMax[target],MinMax[overT],voxt}];
 				target = JoinSets[target, overT, voxt, ReverseSets->reverse, MotionCorrectSets->motion, 
 					NormalizeSets->True, NormalizeOverlap->True, MonitorCalc->False];
 				target = SplitSets[target, nStac, overT, ReverseSets->reverse];
-				(*If[dimm=!=dimt,target=RescaleData[#,dimm]&/@target];*)
 			];
 			
 			(*perform motion correction after target merging*)
 			im = First@First@Position[movs, movCon];
-			If[motion,
+			
+			If[!(!motion&&movType==="dix"),
 				(*-----*)AddToLog[{"Perfroming the registration for the all the datasets"}, 4];
 				moving = Table[
 					(*make masks*)
@@ -1348,15 +1350,16 @@ MuscleBidsMergeI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 					(*only split if not first stack*)
 					(*move the target from anatomical to native space*)
 					func = If[i===If[reverse, nStac, 1], RegisterData, RegisterDataSplit];
-					reg = func[{moving[[im,i]], mskm, voxm},{target[[i]],voxt}, 
+					reg = func[{moving[[im,i]], mskm, voxm}, {target[[i]],voxt}, 
 						Iterations->300, PrintTempDirectory->False, BsplineSpacing->20 voxm, InterpolationOrderReg->1, NumberSamples -> 10000,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]];
+						
 					(*register back the target from native space to anatomy and tranfrom the rest*)
 					func = If[i===If[reverse, nStac, 1], RegisterDataTransform, RegisterDataTransformSplit];
-					Last@func[{target[[i]], mskt, voxt},{reg, voxm},{Transpose[moving[[All,i]]], voxm},
+					Last@func[{target[[i]], mskt, voxt}, {reg, voxm},{Transpose[moving[[All,i]]], voxm},
 						Iterations->300, PrintTempDirectory->False, BsplineSpacing->10 voxm, InterpolationOrderReg->1, NumberSamples -> 10000,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]]
-				,{i,1,nStac}];
+				,{i, 1, nStac}];
 				
 				(*extract all parameters after registration*)
 				moving = Transpose[moving,{2,3,1,4,5}];

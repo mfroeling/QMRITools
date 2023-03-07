@@ -1080,10 +1080,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	error = ToPackedArray@Sqrt[sol[[val+3]]];
 	
 	(*if needed also output callibaration*)
-	out = If[val==2,
-		{{T2map, T2fmap, B1Map}, {wat, fat, fatMap}, error},
-		{{T2map, T2fmap, B1Map}, {wat, fat, fatMap}, error}
-	];
+	out = {{T2map, T2fmap, B1Map}, {wat, fat, fatMap}, error};
 	
 	If[OptionValue[OutputCalibration]&&OptionValue[EPGCalibrate], {out, cal[[1]]}, out]
 ]

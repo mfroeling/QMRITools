@@ -674,7 +674,7 @@ SyntaxInformation[TimeShiftFidV] = {"ArgumentsPattern" -> {_, _, _., _.}}
 
 TimeShiftFidV[fid_, time_, gam_] := TimeShiftFidC2[fid, time, 0, gam, gam, 0.];
 
-TimeShiftFidV[fid_, time_, {gamL_, gamG_}_] := TimeShiftFidC2[fid, time, 0., gamL, gamG, 0.];
+TimeShiftFidV[fid_, time_, {gamL_, gamG_}] := TimeShiftFidC2[fid, time, 0., gamL, gamG, 0.];
 
 TimeShiftFidV[fid_, time_, gyro_, {gam_, eps_}] := TimeShiftFidC2[fid, time, gyro, gam, gam, eps];
 
@@ -2189,7 +2189,8 @@ ImportSparSdat[fspar_,fsdat_]:=Block[{nums,head,depth,row,nsamp,x,y,z,bw,te,nuc,
 	head=ParseSpar[Import[fspar,"Lines"]];
 	
 	(*get header infor*)
-	{bw,te,nuc,gyro}={"sample_frequency","spectrum_echo_time","nucleus","synthesizer_frequency" 10^-6}/.head;
+	{bw,te,nuc,gyro}={"sample_frequency","spectrum_echo_time","nucleus","synthesizer_frequency"}/.head;
+	gyro = gyro 10^-6;
 	field=Round[gyro /GyromagneticRatio[nuc],.1];
 	
 	{depth,row,nsamp,x,y,z}={"num_dimensions","spec_num_row","dim1_pnts","dim2_pnts","dim3_pnts","dim4_pnts"}/.head;

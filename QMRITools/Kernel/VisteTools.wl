@@ -209,9 +209,7 @@ Module[{addi,folderi,file,files,fileb,filesb,print},
 
 SyntaxInformation[DTItoolExpFile] = {"ArgumentsPattern" -> {_, _, _, _}};
 
-DTItoolExpFile[file_String,back_String,add_String,vox_List]:= 
-Module[{},
-	Export[file,
+DTItoolExpFile[file_String,back_String,add_String,vox_List]:= Export[file,
 "/* DTI BMT format */
 T
 float
@@ -223,7 +221,7 @@ XZ XZ"<>add<>".dat
 YZ YZ"<>add<>".dat
 I "<>back<>add<>".dat
 "<>ToString[vox[[2]]]<>" "<>ToString[vox[[3]]]<>" "<>ToString[vox[[1]]]
-		,"Text"]]
+		,"Text"]
 
 
 (* ::Subsection:: *)
@@ -236,8 +234,7 @@ I "<>back<>add<>".dat
 
 SyntaxInformation[ImportDTI] = {"ArgumentsPattern" -> {_,_.}};
 
-ImportDTI[folder_String,add_String:""]:=Module[{},
-DatRead[folder<>$PathnameSeparator<>#<>If[add=="","","-"<>add]<>".dat"]&/@{"xx","yy","zz","xy","xz","yz"}];
+ImportDTI[folder_String,add_String:""]:=DatRead[folder<>$PathnameSeparator<>#<>If[add=="","","-"<>add]<>".dat"]&/@{"xx","yy","zz","xy","xz","yz"};
 
 ImportDTI[files:{_?StringQ..}]:=Module[{filesc},
 filesc=If[StringLength[#]<4,#<>".dat",If[StringTake[#,-4]==".dat",#,#<>".dat"]]&/@files;
@@ -302,9 +299,7 @@ Module[{strm},
 (*ExportVolFile*)
 
 
-ExportVolFile[file_,dim_,vox_,bit_]:=
-Module[{},
-	Export[file<>".vol",
+ExportVolFile[file_,dim_,vox_,bit_]:=Export[file<>".vol",
 "Data.FileName     = "<>Last[StringSplit[file,$PathnameSeparator]]<>".raw
 Data.Type         = raw
 Data.Dimensions   = "<>StringReplace[StringTrim[ToString[Reverse[dim]],("{"|"}")...],","->""]<>"
@@ -313,7 +308,6 @@ Data.NrBits       = "<>StringCases[bit,NumberString]<>"
 Data.NrComponents = 1
 "
 ,"Text"]
-]
 
 
 (* ::Subsection::Closed:: *)

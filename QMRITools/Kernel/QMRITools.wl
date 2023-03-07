@@ -11,7 +11,7 @@
 
 (*set HistoryLength to 0 to prevent excessive memory used when working with large data*)
 $HistoryLength = 0;
-
+$ProgressReporting = False;
 
 BeginPackage["QMRITools`"];
 
@@ -93,6 +93,7 @@ If[QMRITools`$Verbose,
 	Print["Removing all local and global definitions of:"];
 ];
 
+
 With[{
 		global = Intersection[Names["Global`*"], "Global`" <> # & /@ Last[#]]
 	},
@@ -114,12 +115,14 @@ If[QMRITools`$Verbose,
 	Print["Loading and protecting all definitions of:"];
 ];
 
+
 Get["Developer`"];
 (
 	If[QMRITools`$Verbose, Print["   - ", First@#]];
 	Get[First@#];
 	SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#]
 )& /@ QMRITools`$ContextsFunctions;
+
 
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
 Unprotect/@{"QMRITools`ElastixTools`$debugElastix", "QMRITools`$Log"};
