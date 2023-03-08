@@ -529,28 +529,28 @@ ImportITKLabels[file_]:=Block[{labels},
 
 SyntaxInformation[ROIMask] = {"ArgumentsPattern" -> {_, _, _.}};
 
-ROIMask[ROIdim_,maskdim_,ROI:{(_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..})..}]:=
+ROIMask[roiDim_,maskdim_,ROI:{(_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..})..}]:=
 Module[{output},
-	output=Map[#[[1]]->ROIMask[ROIdim,maskdim,#[[2]]]&,ROI];
+	output=Map[#[[1]]->ROIMask[roiDim,maskdim,#[[2]]]&,ROI];
 	Print["The Folowing masks were Created: ",output[[All,1]]];
 	Return[output]
 	]
 
-ROIMask[ROIdim_,maskdim_,ROI:{{_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}}..}]:=
+ROIMask[roiDim_,maskdim_,ROI:{{_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}}..}]:=
 Module[{output},
-	output=Map[#[[1,1]]->ROIMask[ROIdim,maskdim,#[[1,2]]]&,ROI];
+	output=Map[#[[1,1]]->ROIMask[roiDim,maskdim,#[[1,2]]]&,ROI];
 	Print["The Folowing masks were Created: ",output[[All,1]]];
 	Return[output]
 	]
 
-ROIMask[ROIdim_,maskdim_,ROI:{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}]:=
-Module[{output,ROIcor,ROIslice,msk},
-	output=ConstantArray[0,Join[{ROIdim[[1]]},maskdim]];
+ROIMask[roiDim_,maskdim_,ROI:{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}]:=
+Module[{output,roiCor,roiSlice,msk},
+	output=ConstantArray[0,Join[{roiDim[[1]]},maskdim]];
 	If[ROI[[All,1]]!={{{0,0}}},
-		ROIcor=Round[ROI[[All,1]]];
-		ROIslice=Clip[ROI[[All,2]],{1,ROIdim[[1]]}];
-		msk=1-ImageData[Image[Graphics[Polygon[#],PlotRange->{{0,ROIdim[[3]]},{0,ROIdim[[2]]}}],"Bit",ColorSpace->"Grayscale",ImageSize->maskdim]]&/@ROIcor;
-		MapIndexed[output[[#1]]=msk[[First[#2]]];&,ROIslice];
+		roiCor=Round[ROI[[All,1]]];
+		roiSlice=Clip[ROI[[All,2]],{1,roiDim[[1]]}];
+		msk=1-ImageData[Image[Graphics[Polygon[#],PlotRange->{{0,roiDim[[3]]},{0,roiDim[[2]]}}],"Bit",ColorSpace->"Grayscale",ImageSize->maskdim]]&/@roiCor;
+		MapIndexed[output[[#1]]=msk[[First[#2]]];&,roiSlice];
 		];
 	Return[output];
 	]
@@ -570,19 +570,19 @@ Module[{output},
 	]
 
 ROIMask[maskdim_,ROI:{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}]:=
-Module[{output, ROIcor, ROIslice, msk},
+Module[{output, roiCor, roiSlice, msk},
  output = ConstantArray[0, maskdim];
  If[ROI[[All, 1]] != {{{0, 0}}},
-  ROIcor = Round[Map[Reverse[maskdim[[2 ;; 3]]]*# &, ROI[[All, 1]], {2}]];
+  roiCor = Round[Map[Reverse[maskdim[[2 ;; 3]]]*# &, ROI[[All, 1]], {2}]];
   If[Max[ROI[[All, 2]]] > maskdim[[1]], Message[ROIMask::war]];
-  ROIslice = Clip[ROI[[All, 2]], {1, maskdim[[1]]}];
+  roiSlice = Clip[ROI[[All, 2]], {1, maskdim[[1]]}];
   msk = 1 - 
       ImageData[
        Image[Graphics[Polygon[#], 
          PlotRange -> {{0, maskdim[[3]]}, {0, maskdim[[2]]}}], "Bit", 
         ColorSpace -> "Grayscale", 
-        ImageSize -> maskdim[[2 ;; 3]]]] & /@ ROIcor;
-  MapIndexed[output[[#1]] = msk[[First[#2]]]; &, ROIslice];
+        ImageSize -> maskdim[[2 ;; 3]]]] & /@ roiCor;
+  MapIndexed[output[[#1]] = msk[[First[#2]]]; &, roiSlice];
   ];
  Return[output];]
 

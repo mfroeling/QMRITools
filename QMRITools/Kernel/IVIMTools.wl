@@ -29,11 +29,11 @@ IVIMCalc::usage =
  
 data should be 1D ,2D, 3D or 4D. 
 binp should be full bmatrix which can be calculated from the bvecs en bvals using Bmatrix with the bvalues in s/mm^2. 
-init should are the initialization parameters for 2 components this is {S0, f, D, Dp} for 3 componentes this is {S0, f1, f2, D, Dp1, Dp2}.
+init should are the initialization parameters for 2 components this is {s0, f, D, Dp} for 3 componentes this is {s0, f1, f2, D, Dp1, Dp2}.
 
 The fraction is defined between 0 and 1, the D, Dp, Dp1 and Dp2 is in mm^2/s.
 
-output is {S0, f1, D, pD1} or {S0, f1, f2, D, pD1, pD2}."
+output is {s0, f1, D, pD1} or {s0, f1, f2, D, pD1, pD2}."
 
 IVIMFunction::usage =
 "IVIMFunction[] gives the IVIM function with 2 comps.
@@ -43,7 +43,7 @@ IVIMFunction[components, type] gives the IVIM function.
 type can be \"Normal\" or \"Exp\".
 componenets can be 2 or 3.
 
-output is the function with b, S0, f1, f2, D, pD1, pD2 as parameters. The fraction is defined between 0 and 1, the D, Dp, Dp1 and Dp2 is in mm^2/s."
+output is the function with b, s0, f1, f2, D, pD1, pD2 as parameters. The fraction is defined between 0 and 1, the D, Dp, Dp1 and Dp2 is in mm^2/s."
 
 
 BayesianIVIMFit2::usage = 
@@ -51,7 +51,7 @@ BayesianIVIMFit2::usage =
 
 data is the data which should be {slice, Ndiff, x, y}.
 bval is the bvector whould be length Ndiff.
-init is the initalization of the bayesian fit which comes from IVIMCalc, (without S0 using 2 compartments).
+init is the initalization of the bayesian fit which comes from IVIMCalc, (without s0 using 2 compartments).
 mask is the region in which the bayesian fit is performed.
 
 output is {f1, dc, pdc1}. The fraction is defined between 0 and 1, the dc, pdc1 is in mm^2/s."
@@ -61,7 +61,7 @@ BayesianIVIMFit3::usage =
 
 data is the data which should be {slice, Ndiff, x, y}.
 bval is the bvector whould be length Ndiff.
-init is the initalization of the bayesian fit which comes from IVIMCalC, (without S0 using 3 compartments).
+init is the initalization of the bayesian fit which comes from IVIMCalC, (without s0 using 3 compartments).
 mask is the region in which the bayesian fit is performed.
 
 output is {f1, f2, dc, pdc1, pdc2}. The fractions f1 and f2 are defined between 0 and 1, the dc, pdc1 and pdc1 is in mm^2/s."
@@ -79,9 +79,9 @@ The te and tr as well as the relaxation times T2 and T1 can be defines in any ti
 output is the corrected fraction maps.";
 
 ThetaConv::usage = 
-"ThetaConv[{F1, Fc, pDc}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
-ThetaConv[{F1, F2, Dc, pDc1}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
-ThetaConv[{F1, F2, Dc, pDc1, pDc2}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3."
+"ThetaConv[{f1, Fc, pDc}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
+ThetaConv[{f1, f2, dc, pDc1}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
+ThetaConv[{f1, f2, dc, pDc1, pDc2}] converts the parameters from Log space to normal space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3."
 
 ThetaConvi::usage = 
 "ThetaConvi[{f, dc, pdc}] converts the parameters from Normal space to Log space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3.
@@ -89,7 +89,7 @@ ThetaConvi[{f1, f2, dc, pdc1}] converts the parameters from Normal space to Log 
 ThetaConvi[{f1, f2, dc, pdc1, pdc2}] converts the parameters from Normal space to Log space. Is used in BayesianIVIMFit2 and BayesianIVIMFit3."
 
 FConvert::usage = 
-"FConvert[F] convers the fraction F from log space."
+"FConvert[f] convers the fraction f from log space."
 
 FConverti::usage = 
 "FConverti[f] converts the fraction f to log space."
@@ -118,10 +118,10 @@ output is a row of histograms."
 
 
 IVIMCorrectData::usage = 
-"IVIMCorrectData[data, {S0, f, pdc}, bval] removes the ivim signal from the data.
+"IVIMCorrectData[data, {s0, f, pdc}, bval] removes the ivim signal from the data.
 
 data is the original data.
-{S0, f, pdc} are the solution to a 2 compartment IVIM fit using IVIMCalc or BayesianIVIMFit2.
+{s0, f, pdc} are the solution to a 2 compartment IVIM fit using IVIMCalc or BayesianIVIMFit2.
 bval are the bvalues.
 
 The fraction is defined between 0 and 1, the pdc is in mm^2/s.
@@ -153,7 +153,7 @@ IVIMComponents::usage =
 IVIMConstrains::usage = 
 "IVIMConstrains is an option for IVIMCalc.
 Default values are: {{0.8, 1.2}, {0, 1}, {0.0005, 0.0035}, {0.005, 0.5}, {0.002, 0.015}}.
-Where {{S0 in percentage},{fractions},{tissue diffusion},{blood compartment Dp},{third compartment}}."
+Where {{s0 in percentage},{fractions},{tissue diffusion},{blood compartment Dp},{third compartment}}."
 
 IVIMFixed::usage =
 "IVIMFixed is an option for IVIMCalc and the default value is False. 
@@ -233,10 +233,10 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
  Module[{tensFit, components, fixed, constrained, method, bmdc, bin,fcon,
    s0min, s0max, fmin, fmax, dcmin, dcmax, pdc1min, pdc1max, pdc2min, pdc2max,
    depthD,dirD,dirB,func,dat,dat0,datn,rl,rr,ivim, mdat, sol, fitd, start, funcf,
-   S0s, frin1, frin2, dcin, pdcin1, pdcin2, funcin, fixrule,cons,dccon,pdccon, fpars, mapfun, out
+   s0s, frin1, frin2, dcin, pdcin1, pdcin2, funcin, fixrule,cons,dccon,pdccon, fpars, mapfun, out
    },
   
-  Clear[bm, bm1, bm2, bm3, bm4, bm5, bm6, S0, f1, f2, dc, pdc1, pdc2];
+  Clear[bm, bm1, bm2, bm3, bm4, bm5, bm6, s0, f1, f2, dc, pdc1, pdc2];
   
   (*data checks*)
   depthD = ArrayDepth[data];
@@ -276,9 +276,9 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   
  (*initial values for fit*)
   Switch[components,
-   1, f1 = f2 = 0; {S0s,dcin} = init;,
-   2, f2 = 0; {S0s, frin1, dcin, pdcin1} = init;,
-   3, Clear[f2]; {S0s, frin1, frin2, dcin, pdcin1, pdcin2} = init;
+   1, f1 = f2 = 0; {s0s,dcin} = init;,
+   2, f2 = 0; {s0s, frin1, dcin, pdcin1} = init;,
+   3, Clear[f2]; {s0s, frin1, frin2, dcin, pdcin1, pdcin2} = init;
   ];
   
   (*initial fit values*)
@@ -306,7 +306,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   		_, {}(*fix no components*)]];
   
   (*generate fix fuctions*)
-  func =Chop[Simplify[(S0*((((1 - f1 - f2)*Exp[-bmdc]) + (f1* Exp[-bm pdc1]) + (f2* Exp[-bm pdc2]))))]] /. fixrule;
+  func =Chop[Simplify[(s0*((((1 - f1 - f2)*Exp[-bmdc]) + (f1* Exp[-bm pdc1]) + (f2* Exp[-bm pdc2]))))]] /. fixrule;
   
   (*constrains for fit*)
   cons = If[constrained,
@@ -339,7 +339,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
    
    (*define output*)
    out=Join[
-   	{S0, f1, f2}[[1 ;; components]],
+   	{s0, f1, f2}[[1 ;; components]],
    	If[tensFit, {{xx, yy, zz, xy, xz, yz}}, {dc}], 
    	If[components==1,{},{pdc1, pdc2}[[1 ;; components - 1]]]
    	] /. fixrule;
@@ -361,15 +361,15 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] :=
   ivim = Quiet@Transpose[mapfun[
   		(
   		
-  		S0s = #[[1]];
-  		If[N[#] == #*0. || S0s == 0.,
+  		s0s = #[[1]];
+  		If[N[#] == #*0. || s0s == 0.,
 		   (*masked voxel*)
 		   0. out
 		   ,
 		   j++;If[j>1000,i+=j;j=0;];
 		   (*data voxel*)
 		   fitd = Flatten /@ ({bin, #} // Transpose);
-		   start=Prepend[funcin,{S0,S0s}];
+		   start=Prepend[funcin,{s0,s0s}];
 		   sol = Quiet[FindFit[fitd, funcf, start , fpars, Method -> method, MaxIterations -> 150]];
 		   out /. sol		    
   		]
@@ -391,7 +391,7 @@ IVIMFunction[]:=IVIMFunction[2, "Normal"]
 IVIMFunction[pars_]:=IVIMFunction[pars, "Normal"]
 
 IVIMFunction[pars_, fun_] := 
- Block[{func, Global`S0, Global`f1, Global`bm, Global`dc, Global`pdc1, Global`f2, Global`pdc2, ff1, ff2, fdc, fpdc1, 
+ Block[{func, Global`s0, Global`f1, Global`bm, Global`dc, Global`pdc1, Global`f2, Global`pdc2, ff1, ff2, fdc, fpdc1, 
    fpdc2},
   Switch[fun,
    "Normal", ff1 = Global`f1; ff2 = Global`f2; fdc = Global`dc; fpdc1 = Global`pdc1; fpdc2 = Global`pdc2;,
@@ -400,9 +400,9 @@ IVIMFunction[pars_, fun_] :=
    ];
   
   func = Switch[pars,
-    2, Simplify[Global`S0*(((1 - ff1)*Exp[-Global`bm fdc]) + (ff1*Exp[-Global`bm fpdc1]))],
+    2, Simplify[Global`s0*(((1 - ff1)*Exp[-Global`bm fdc]) + (ff1*Exp[-Global`bm fpdc1]))],
     3, Simplify[
-     Global`S0*( (1 - ff1 - ff2)*Exp[-Global`bm*fdc] + ff1*Exp[-Global`bm*fpdc1] + 
+     Global`s0*( (1 - ff1 - ff2)*Exp[-Global`bm*fdc] + ff1*Exp[-Global`bm*fpdc1] + 
         ff2*Exp[-Global`bm*fpdc2] )]
     ]]
 
@@ -947,7 +947,7 @@ FracCorrect[{f1_, f2_?VectorQ}, time_] :=
   ]
 
 (*correct fraction for T2 relaxation*)
-Sigval[par_, TR_, TE_] := par[[1]] (1 - Exp[-TR/par[[2]]]) Exp[-TE/par[[3]]]=
+Sigval[par_, tr_, te_] := par[[1]] (1 - Exp[-tr/par[[2]]]) Exp[-te/par[[3]]]=
 
 
 (* ::Subsubsection::Closed:: *)
@@ -967,9 +967,9 @@ ThetaConv[{f1_, f2_, dc_, pdc1_, pdc2_}] := {Exp[f1]/(1 + Exp[f1]), Exp[f2]/(1 +
 
 SyntaxInformation[ThetaConvi] = {"ArgumentsPattern" -> {_}};
 
-ThetaConvi[{F_, Dc_, pDc_}] := N[{Log[F] - Log[1 - F], Log[Dc], Log[pDc]}] /. {-Infinity -> 0., Indeterminate -> 0.};
-ThetaConvi[{F1_, F2_, Dc_, pDc1_}] := N[{Log[F1] - Log[1 - F1], Log[F2] - Log[1 - F2], Log[Dc], Log[pDc1]}] /. {-Infinity -> 0., Indeterminate -> 0.};
-ThetaConvi[{F1_, F2_, Dc_, pDc1_, pDc2_}] := N[{Log[F1] - Log[1 - F1], Log[F2] - Log[1 - F2], Log[Dc], Log[pDc1], Log[pDc2]}] /. {-Infinity -> 0., Indeterminate -> 0.};
+ThetaConvi[{f_, dc_, pDc_}] := N[{Log[f] - Log[1 - f], Log[dc], Log[pDc]}] /. {-Infinity -> 0., Indeterminate -> 0.};
+ThetaConvi[{f1_, f2_, dc_, pDc1_}] := N[{Log[f1] - Log[1 - f1], Log[f2] - Log[1 - f2], Log[dc], Log[pDc1]}] /. {-Infinity -> 0., Indeterminate -> 0.};
+ThetaConvi[{f1_, f2_, dc_, pDc1_, pDc2_}] := N[{Log[f1] - Log[1 - f1], Log[f2] - Log[1 - f2], Log[dc], Log[pDc1], Log[pDc2]}] /. {-Infinity -> 0., Indeterminate -> 0.};
 
 
 (* ::Subsubsection::Closed:: *)
@@ -989,9 +989,9 @@ FConvf = Compile[{{f1, _Real, 1}}, Exp[f1]/(1 + Exp[f1]), Parallelization -> Tru
 
 SyntaxInformation[FConverti] = {"ArgumentsPattern" -> {_}};
 
-FConverti[F_] := If[VectorQ[F], FConvif[F], FConvi[F]];
-FConvi = Compile[{{F, _Real, 3}}, Log[F] - Log[1 - F], Parallelization -> True];
-FConvif = Compile[{{F, _Real, 1}}, Log[F] - Log[1 - F], Parallelization -> True];
+FConverti[f_] := If[VectorQ[f], FConvif[f], FConvi[f]];
+FConvi = Compile[{{f, _Real, 3}}, Log[f] - Log[1 - f], Parallelization -> True];
+FConvif = Compile[{{f, _Real, 1}}, Log[f] - Log[1 - f], Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1037,12 +1037,13 @@ HistogramPar[dat_, {con_, bin_, mu_, cov_}, sel_, col_, ran_: .5] :=
       1, 2, 3}, {0.5, 1, 2, 5, 10, 20, 50, 100, 500}};
   tickste = ThetaConvi[{1., .001, .001} tickst];
   
-  data = If[sel == 1, 
+  data = DeleteCases[Flatten[#], 0.] & /@ dat;
+  (*If[sel == 1, 
   	DeleteCases[Flatten[#], 0.] & /@ dat, 
     DeleteCases[Flatten[#], 0.(*Indeterminate*)] & /@ dat
-    ];
+    ];*)
   
-  label = {{"F", "D", "pD"}, {"f", "d", "pd"}, {"F  (no units)", 
+  label = {{"f", "D", "pD"}, {"f", "d", "pd"}, {"f  (no units)", 
       "D  (\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \
 \!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s)", 
       "pD  (\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \
@@ -1125,7 +1126,7 @@ UncertainPlot[mn_, sig_, con_, ran_:.1] :=
       1, 2, 3}, {0.5, 1, 2, 5, 10, 20, 50, 100, 500}};
   tickste = ThetaConvi[{1., .001, .001} tickst];
   
-  label = {{"F  (no units)", 
+  label = {{"f  (no units)", 
      "\!\(\*SubscriptBox[\(\[Sigma]\), \(f\)]\)"}, {"D  \
 (\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \!\(\*SuperscriptBox[\(mm\), \
 \(2\)]\)/s)", 
@@ -1161,7 +1162,7 @@ Options[IVIMCorrectData] = {FilterMaps -> True, FilterType -> "Median", FilterSi
 
 SyntaxInformation[IVIMCorrectData] = {"ArgumentsPattern" -> {_, {_, _,_} , _ , OptionsPattern[]}};
 
-IVIMCorrectData[data_, {S0_, f_, pdc_}, bval_, OptionsPattern[]] := Module[{ff, pdcf, filt, dataSyn, dataCor},
+IVIMCorrectData[data_, {s0_, f_, pdc_}, bval_, OptionsPattern[]] := Module[{ff, pdcf, filt, dataSyn, dataCor},
     
   {ff, pdcf} = If[OptionValue[FilterMaps],
     filt = Switch[OptionValue[FilterType],
@@ -1174,7 +1175,7 @@ IVIMCorrectData[data_, {S0_, f_, pdc_}, bval_, OptionsPattern[]] := Module[{ff, 
     {f, pdc}
     ];
   
-  dataSyn = Round@Clip[SynDatai[S0, ff, pdcf, bval], {0, Infinity}];
+  dataSyn = Round@Clip[SynDatai[s0, ff, pdcf, bval], {0, Infinity}];
   dataCor = Clip[data - dataSyn, {0, 1.1 Max[data]}];
   
   {dataCor, dataSyn}
@@ -1224,18 +1225,18 @@ IVIMResiduals[data_, binp_, pars_] := Module[{depthD,depthP,dat,par,res},
   ];
   
   IVIMResCalcC = 
-  Block[{S0, f1, f2, dc, pdc1, pdc2, out}, 
+  Block[{s0, f1, f2, dc, pdc1, pdc2, out}, 
    Compile[{{dat, _Real, 1}, {binp, _Real, 1}, {pars, _Real, 1}},
     out = Switch[Length[pars],
       2,
-      {S0, dc} = pars;
-      (S0*(((Exp[-binp dc])))),
+      {s0, dc} = pars;
+      (s0*(((Exp[-binp dc])))),
       4,
-      {S0, f1, dc, pdc1} = pars;
-      (S0*((((1 - f1)*Exp[-binp dc]) + (f1*Exp[-binp pdc1])))),
+      {s0, f1, dc, pdc1} = pars;
+      (s0*((((1 - f1)*Exp[-binp dc]) + (f1*Exp[-binp pdc1])))),
       6,
-      {S0, f1, f2, dc, pdc1, pdc2} = pars;
-      (S0*((((1 - f1 - f2)*Exp[-binp dc]) + (f1*
+      {s0, f1, f2, dc, pdc1, pdc2} = pars;
+      (s0*((((1 - f1 - f2)*Exp[-binp dc]) + (f1*
              Exp[-binp pdc1]) + (f2*Exp[-binp pdc2]))))
       ];
     dat - out

@@ -99,7 +99,7 @@ GetGradientScanOrder[file, grad, bval] determines the scanorder based on the txt
 
 
 GradBmatrix::usage = 
-"GradBmatrix[Gt, hw, te, t] Calculates the true bmatrix from the sequence created by GradSeq."
+"GradBmatrix[gt, hw, te, t] Calculates the true bmatrix from the sequence created by GradSeq."
 
 GradSeq::usage = 
 "GradSeq[pars, t, grad] Creates a sequence from the gradient pars imported by ImportGradObj."
@@ -114,7 +114,7 @@ GetSliceNormalDir::usage =
 "GetSliceNormalDir[file] imports the slice normal from a enhanced dicom image."
 
 CalculateMoments::usage = 
-"CalculateMoments[{Gt, hw, te}, t] calculates the 0th to 3th order moments of the sequence created by GradSeq. Output is {{Gt, M0, M1, M2, M3}, vals}."
+"CalculateMoments[{gt, hw, te}, t] calculates the 0th to 3th order moments of the sequence created by GradSeq. Output is {{gt, M0, M1, M2, M3}, vals}."
 
 
 CorrectGradients::usage = 
@@ -460,29 +460,20 @@ Prepare[numbs_, half_, fixed_, alph_] :=
 
 (*Generate cartesian grid*)
 GradGrid[n_, full_] := Block[{points},
-  points = If[EvenQ[n],
-    If[full,
-     (*even grid full*)
-     Flatten[
-       Table[{i, j, k}, {i, -1, 1, 2/(n - 1)}, {j, -1, 1, 
-         2/(n - 1)}, {k, 1/(n - 1), 1, 2/(n - 1)}], 2] // N
-     ,
-     (*even spaced in between odd grid*)
-     Flatten[
-       Table[{i, j, k}, {i, -1 + 1/n, 1, 2/n}, {j, -1 + 1/n, 1, 
-         2/n}, {k, 1/n, 1, 2/n}], 2] // N
-     ]
-    ,
+	points = If[EvenQ[n],
+	If[full,
+		(*even grid full*)
+		Flatten[Table[{i, j, k}, {i, -1, 1, 2/(n - 1)}, {j, -1, 1, 2/(n - 1)}, {k, 1/(n - 1), 1, 2/(n - 1)}], 2] // N
+		,
+		(*even spaced in between odd grid*)
+		Flatten[Table[{i, j, k}, {i, -1 + 1/n, 1, 2/n}, {j, -1 + 1/n, 1, 2/n}, {k, 1/n, 1, 2/n}], 2] // N
+	],
     (*odd spaced*)
-    points = 
-     Flatten[Table[{i, j, k}, {i, -1, 1, 2/(n - 1)}, {j, -1, 1, 
-         2/(n - 1)}, {k, 0, 1, 2/(n - 1)}], 2] // N;
-    DeleteCases[
-     If[(#[[1]] < 0. && ##[[3]] == 0.) || (#[[1]] == 0. && #[[2]] < 
-            0 && ##[[3]] == 0.), Null, #] & /@ points, Null]
+    points = Flatten[Table[{i, j, k}, {i, -1, 1, 2/(n - 1)}, {j, -1, 1, 2/(n - 1)}, {k, 0, 1, 2/(n - 1)}], 2] // N;
+    DeleteCases[If[(#[[1]] < 0. && #[[3]] == 0.) || (#[[1]] == 0. && #[[2]] < 0 && #[[3]] == 0.), Null, #] & /@ points, Null]
     ];
-  points = Sort[points, Norm[#1] < Norm[#2] &] // N
-  ]
+	points = Sort[points, Norm[#1] < Norm[#2] &] // N
+]
 
 (*optimize singel shell no fixed gradients*)
 GradOptimize1C = Compile[{{points, _Real, 2}, {half, _Integer, 0}},
@@ -1343,13 +1334,13 @@ Options[BmatrixCalc] = {UseGrad -> {1, 1, {1, 1}, 1, 1}, OutputType -> "Matrix",
 
 SyntaxInformation[BmatrixCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-BmatrixCalc[folder_, grads_, opts : OptionsPattern[]] := Module[{seq, Gt, hw, te, bmat, t},
+BmatrixCalc[folder_, grads_, opts : OptionsPattern[]] := Module[{seq, gt, hw, te, bmat, t},
 	
 	seq = ImportGradObj[folder];
 	
 	bmat = Map[(
-		{Gt, hw, te} = GradSeq[seq, t, #, UseGrad -> OptionValue[UseGrad], UnitMulti -> OptionValue[UnitMulti], FilterRules[{opts}, Options[GradSeq]]];
-		Chop[GradBmatrix[Gt, hw, te, t, Method -> OptionValue[Method], StepSizeI -> OptionValue[StepSizeI], FilterRules[{opts}, Options[GradBmatrix]]]]
+		{gt, hw, te} = GradSeq[seq, t, #, UseGrad -> OptionValue[UseGrad], UnitMulti -> OptionValue[UnitMulti], FilterRules[{opts}, Options[GradSeq]]];
+		Chop[GradBmatrix[gt, hw, te, t, Method -> OptionValue[Method], StepSizeI -> OptionValue[StepSizeI], FilterRules[{opts}, Options[GradBmatrix]]]]
 	) &, grads];
 	
 	Switch[OptionValue[OutputType], "Matrix", bmat, "Gradient", BmatrixInv[#] & /@ bmat]
@@ -1386,12 +1377,7 @@ BmatrixInv[bm_, bvi___] := Module[{bv, sigb, sign, gr},
 
 SyntaxInformation[BmatrixConv] = {"ArgumentsPattern" -> {_}};
 
-BmatrixConv[bmat_] := Module[{},
-  If[Length[bmat[[1]]] == 6,
-   Append[-#, 1] & /@ bmat,
-   -bmat[[All, 1 ;; 6]]
-   ]
-  ]
+BmatrixConv[bmat_] := If[Length[bmat[[1]]] == 6, Append[-#, 1] & /@ bmat, -bmat[[All, 1 ;; 6]]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1695,18 +1681,18 @@ Options[GradBmatrix] = {OutputPlot -> False, Method -> "Analytical", StepSizeI -
 
 SyntaxInformation[GradBmatrix] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-GradBmatrix[Gti_, hw_, te_, t_, OptionsPattern[]] := Block[{Ft, Ft2, Ft2i, s = 267.522 10^6, plot, bmat, Gtfn, Gt},
-	(*Gt = {1, -1, -1} Gti[[{2, 1, 3}]];*)
-	Gt=Gti;
+GradBmatrix[gti_, hw_, te_, t_, OptionsPattern[]] := Block[{Ft, Ft2, Ft2i, s = 267.522 10^6, plot, bmat, Gtfn, gt},
+	(*gt = {1, -1, -1} gti[[{2, 1, 3}]];*)
+	gt=gti;
 	Switch[OptionValue[Method],
 		"Analytical",
-		Ft = Chop[Integrate[s hw # 10^-3 // N, t], 10^-5] & /@ Gt;
+		Ft = Chop[Integrate[s hw # 10^-3 // N, t], 10^-5] & /@ gt;
 		Ft2 = N[PiecewiseExpand[#]] & /@ {Ft[[1]] Ft[[1]], Ft[[2]] Ft[[2]], Ft[[3]] Ft[[3]], 2 Ft[[1]] Ft[[2]], 2 Ft[[1]] Ft[[3]], 2 Ft[[2]] Ft[[3]]};
 		Ft2i = Map[Integrate[#, t] &, Ft2];
 		bmat = ((Ft2i /. t -> te) - (Ft2i /. t -> 0));,
 		
 		"Numerical",
-		Gtfn = Transpose[Table[s hw Gt 10^-3, {t, 0, te, OptionValue[StepSizeI]/1000}]];
+		Gtfn = Transpose[Table[s hw gt 10^-3, {t, 0, te, OptionValue[StepSizeI]/1000}]];
 		Ft = Integrate[ListInterpolation[#, {0, te}][t], t] & /@ Gtfn;
 		Ft2 = {Ft[[1]] Ft[[1]], Ft[[2]] Ft[[2]], Ft[[3]] Ft[[3]], 2 Ft[[1]] Ft[[2]], 2 Ft[[1]] Ft[[3]], 2 Ft[[2]] Ft[[3]]};
 		bmat = Quiet[(NIntegrate[#, {t, 0, te}]) & /@ Ft2];
@@ -1716,7 +1702,7 @@ GradBmatrix[Gti_, hw_, te_, t_, OptionsPattern[]] := Block[{Ft, Ft2, Ft2i, s = 2
 		plot = GraphicsGrid[Partition[
 			Plot[#1, {t, 0, te}, PlotRange -> {{-.1 te, 1.1 te}, Full}, PlotPoints -> 500, Exclusions -> None, PlotRange -> Full, AspectRatio -> .2,
 				PlotStyle -> Directive[{Black, Thick}]] & /@ #, 3], ImageSize -> 1000
-		] & /@ {Gt, Ft, Ft2};
+		] & /@ {gt, Ft, Ft2};
 		{bmat, plot},
 		bmat
 	]
@@ -1755,8 +1741,8 @@ GetSliceNormal[folder_String,part_Integer] := Module[{or,files,grads,norm,gradRo
 
 SyntaxInformation[GetSliceNormalDir] = {"ArgumentsPattern" -> {_}};
 
-GetSliceNormalDir[Dfile_String] := Module[{meta, directions, slice, groups, orientation,grads,norm,gradRotmat},
-  meta = Import[Dfile, "MetaInformation"];
+GetSliceNormalDir[dFile_String] := Module[{meta, directions, slice, groups, orientation,grads,norm,gradRotmat},
+  meta = Import[dFile, "MetaInformation"];
   directions = "(2005,1415)" /. meta;
   slice = "(2001,1018)" /. meta;
   groups = If[("FrameCount"/slice /. meta) == directions, 
@@ -1779,17 +1765,17 @@ GetSliceNormalDir[Dfile_String] := Module[{meta, directions, slice, groups, orie
 
 SyntaxInformation[CalculateMoments] = {"ArgumentsPattern" -> {_, _}};
 
-CalculateMoments[{Gt_, hw_, te_}, t_] := Module[{fun, M0, M1, M2, M3, vals},
-	fun = N@PiecewiseExpand[#*hw] & /@ Gt;
+CalculateMoments[{gt_, hw_, te_}, t_] := Module[{fun, m0, m1, m2, m3, vals},
+	fun = N@PiecewiseExpand[#*hw] & /@ gt;
 	
-	M0 = hw Integrate[PiecewiseExpand[# ]    , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
-	M1 = hw Integrate[PiecewiseExpand[# t]   , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
-	M2 = hw Integrate[PiecewiseExpand[# t^2 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
-	M3 = hw Integrate[PiecewiseExpand[# t^3 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	m0 = hw Integrate[PiecewiseExpand[# ]    , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	m1 = hw Integrate[PiecewiseExpand[# t]   , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	m2 = hw Integrate[PiecewiseExpand[# t^2 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	m3 = hw Integrate[PiecewiseExpand[# t^3 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
 	
-	vals = {M0, M1, M2, M3} /. t -> te;
+	vals = {m0, m1, m2, m3} /. t -> te;
 	
-	{{PiecewiseExpand/@Gt, M0, M1, M2, M3}, vals}
+	{{PiecewiseExpand/@gt, m0, m1, m2, m3}, vals}
 ]
 
 

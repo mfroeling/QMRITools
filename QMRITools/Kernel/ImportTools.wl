@@ -227,17 +227,17 @@ Options[ReadDicomDiff]={ScaleCorrect->False};
 SyntaxInformation[ReadDicomDiff] = {"ArgumentsPattern" -> {_,_,OptionsPattern[]}};
 
 ReadDicomDiff[fol_String,part_Integer,OptionsPattern[]]:=
-Module[{files,DTI,grad,vox,bvec,folder},
+Module[{files,dti,grad,vox,bvec,folder},
 		folder = If[fol == "", FileSelect["Directory",WindowTitle->"Select the directory containing the *.dcm files"], fol];
 		If[folder == Null, Return[]];
 		If[!DirectoryQ[folder],Return[]];
 		files=FileNames["*.dcm",folder];
-		DTI=iReadDicom[files,part,OptionValue[ScaleCorrect]];
+		dti=iReadDicom[files,part,OptionValue[ScaleCorrect]];
 		Print["Importing gradients"];
 		grad=ReadGradients[folder,part];
 		bvec=ReadBvalue[folder,part];
 		vox=ReadVoxSize[files[[1]]];
-		{DTI,grad,bvec,vox}
+		{dti,grad,bvec,vox}
 ]
 
 
@@ -414,22 +414,20 @@ Module[{meta, slice, directions, groups, sliceSpacing, pixelSpacing,
 
 SyntaxInformation[ShiftPar] = {"ArgumentsPattern" -> {_,_}};
 
-ShiftPar[Pfile_,Dfile_]:=
-Module[{metaDTI, metaB0, Ddir, phaseM, freqN, phaseSteps, echoLength, 
-  BW, TE, TEB0}, 
- If[! FileExistsQ[Pfile], Return[Message[ShiftPar::file, Pfile]]];
- If[! FileExistsQ[Dfile], Return[Message[ShiftPar::file, Dfile]]];
- metaDTI = Import[Dfile, "MetaInformation"];
- metaB0 = Import[Pfile, "MetaInformation"];
- If[StringTake[Dfile, -4] == StringTake[Pfile, -4] == ".dcm",
-  Ddir = "PhaseEncodingDirection" /. metaDTI;
-  {phaseM, freqN, phaseSteps, echoLength, BW} = 
-   Join[If[Ddir == "COL", {"Columns", "Rows"}, {"Rows", 
+ShiftPar[pFile_,dFile_]:=Block[{metaDTI, metaB0, dDir, phaseM, freqN, phaseSteps, echoLength, bw, te, TEB0}, 
+ If[! FileExistsQ[pFile], Return[Message[ShiftPar::file, pFile]]];
+ If[! FileExistsQ[dFile], Return[Message[ShiftPar::file, dFile]]];
+ metaDTI = Import[dFile, "MetaInformation"];
+ metaB0 = Import[pFile, "MetaInformation"];
+ If[StringTake[dFile, -4] == StringTake[pFile, -4] == ".dcm",
+  dDir = "PhaseEncodingDirection" /. metaDTI;
+  {phaseM, freqN, phaseSteps, echoLength, bw} = 
+   Join[If[dDir == "COL", {"Columns", "Rows"}, {"Rows", 
        "Columns"}], {"PhaseEncodingSteps", "EchoTrainLength", 
       "PixelBandwidth"}] /. metaDTI;
   ,
-  {phaseM, freqN, phaseSteps, echoLength, BW} = Join[
-    If[(Ddir = ("PhaseEncodingDirection" /. ("(0018,9125)" /. \
+  {phaseM, freqN, phaseSteps, echoLength, bw} = Join[
+    If[(dDir = ("PhaseEncodingDirection" /. ("(0018,9125)" /. \
 ("(5200,9229)" /. metaDTI)))) == "COLUMN", {"Columns", 
        "Rows"}, {"Rows", "Columns"}] /. 
      metaDTI, {"PhaseEncodingSteps"} /. ("(2005,140E)" /. \
@@ -439,11 +437,9 @@ Module[{metaDTI, metaB0, Ddir, phaseM, freqN, phaseSteps, echoLength,
     {"PixelBandwidth"} /. ("(0018,9006)" /. ("(5200,9229)" /. metaDTI))
     ]
   ];
- TE = "(2001,1025)" /. metaB0;
- TEB0 = ToExpression[
-    StringTake[TE, -3] <> "-" <> StringTake[TE, 3]] 10^-3;
- {(1/(2 Pi TEB0))*(freqN*echoLength/(BW*phaseSteps)), Ddir} /. 
-  "COLUMN" -> "COL"]
+ te = "(2001,1025)" /. metaB0;
+ TEB0 = ToExpression[StringTake[te, -3] <> "-" <> StringTake[te, 3]] 10^-3;
+ {(1/(2 Pi TEB0))*(freqN*echoLength/(bw*phaseSteps)), dDir} /. "COLUMN" -> "COL"]
 
 
 (* ::Subsection::Closed:: *)

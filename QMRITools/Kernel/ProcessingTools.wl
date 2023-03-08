@@ -354,15 +354,15 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, 
 			Switch[mod,
 				(*SkewNormal dist parameter fit*)
 				"SkewNormal",
-				sol = NonlinearModelFit[fdat,  PDF[SkewNormalDistribution[Mu, Sigma, Alpha], x], {{Mu, mdat}, {Sigma, sdat}, {Alpha, 0}}, x, Method -> met];
+				sol = NonlinearModelFit[fdat,  PDF[SkewNormalDistribution[mu, sigma, alpha], x], {{mu, mdat}, {sigma, sdat}, {alpha, 0}}, x, Method -> met];
 				par = sol["BestFitParameters"];
-				fun = SkewNormalDistribution[Mu, Sigma, Alpha] /. par;
+				fun = SkewNormalDistribution[mu, sigma, alpha] /. par;
 				,
 				(*Normal dist parameter fit*)
 				"Normal",
-				sol = NonlinearModelFit[fdat, {PDF[NormalDistribution[Mu, Sigma], x],Sigma>0}, {{Mu, mdat}, {Sigma, sdat}}, x];
+				sol = NonlinearModelFit[fdat, {PDF[NormalDistribution[mu, sigma], x],sigma>0}, {{mu, mdat}, {sigma, sdat}}, x];
 				par = sol["BestFitParameters"];
-				fun = NormalDistribution[Mu, Sigma] /. par;
+				fun = NormalDistribution[mu, sigma] /. par;
 				,
 				_,
 				Message[ParameterFit::func, mod]
@@ -405,8 +405,8 @@ SyntaxInformation[ParameterFit2] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
 ParameterFit2[dat_List, OptionsPattern[]]:=
 Module[{i,datf,init,out,sol,par,
-	Omega1i,Omega2i,Alpha1i,Alpha2i,Xi1i,Xi2i,
-	Omega1,Xi1,Alpha1,Omega2,Xi2,Alpha2},
+	omega1i,omega2i,alpha1i,alpha2i,xi1i,xi2i,
+	omega1,xi1,alpha1,omega2,xi2,alpha2},
 	Off[NonlinearModelFit::cvmit];Off[NonlinearModelFit::eit];Off[NonlinearModelFit::sszero];
 	
 	init={
@@ -422,33 +422,33 @@ Module[{i,datf,init,out,sol,par,
 	sol=MapThread[
 		(
 		i++;
-		{Omega1i,Omega2i,Alpha1i,Alpha2i,Xi1i,Xi2i}=#2;
+		{omega1i,omega2i,alpha1i,alpha2i,xi1i,xi2i}=#2;
 		NonlinearModelFit[
 			FitData[#1,3.5],
-			{f SkewNorm[x,Omega1,Xi1,Alpha1]+(1-f)SkewNorm[x,Omega2,Xi2,Alpha2],
+			{f SkewNorm[x,omega1,xi1,alpha1]+(1-f)SkewNorm[x,omega2,xi2,alpha2],
 			0<=f<=1,
-			0<Omega1,
-			0<Omega2,
-			0<Mn[Omega1,Xi1,Alpha1]<1,
-			If[i==5,Mn[Omega1,Xi1,Alpha1]>1.2Mn[Omega2,Xi2,Alpha2],Mn[Omega1,Xi1,Alpha1]<Mn[Omega2,Xi2,Alpha2]],
-			If[i==5,-2<Alpha1<0,-1.5<Alpha1<1.5],
-			If[i==5,0<Alpha2<2,-1.5<Alpha2<1.5]},
-			{{f,0.5},{Omega1,Omega1i},{Omega2,Omega2i},{Alpha1,Alpha1i},{Alpha2,Alpha2i},{Xi1,Xi1i},{Xi2,Xi2i}},
+			0<omega1,
+			0<omega2,
+			0<Mn[omega1,xi1,alpha1]<1,
+			If[i==5,Mn[omega1,xi1,alpha1]>1.2Mn[omega2,xi2,alpha2],Mn[omega1,xi1,alpha1]<Mn[omega2,xi2,alpha2]],
+			If[i==5,-2<alpha1<0,-1.5<alpha1<1.5],
+			If[i==5,0<alpha2<2,-1.5<alpha2<1.5]},
+			{{f,0.5},{omega1,omega1i},{omega2,omega2i},{alpha1,alpha1i},{alpha2,alpha2i},{xi1,xi1i},{xi2,xi2i}},
 			x,MaxIterations->1000]
 		)&,{datf,init}];
 	
-	par={Mn[Omega1,Xi1,Alpha1],Sqrt[Var[Omega1,Alpha1]]}/.#["BestFitParameters"]&/@sol;
+	par={Mn[omega1,xi1,alpha1],Sqrt[Var[omega1,alpha1]]}/.#["BestFitParameters"]&/@sol;
 	
 	On[NonlinearModelFit::cvmit];On[NonlinearModelFit::eit];On[NonlinearModelFit::sszero];
 	
 	Switch[
 		out,
 		"Parameters",
-		{Mn[Omega1,Xi1,Alpha1],Sqrt[Var[Omega1,Alpha1]],Mn[Omega2,Xi2,Alpha2],Sqrt[Var[Omega2,Alpha2]]}/.#["BestFitParameters"]&/@sol,
+		{Mn[omega1,xi1,alpha1],Sqrt[Var[omega1,alpha1]],Mn[omega2,xi2,alpha2],Sqrt[Var[omega2,alpha2]]}/.#["BestFitParameters"]&/@sol,
 		"Function",
 		sol,
 		"BestFitParameters",
-		{f,Omega1,Omega2,Xi1,Xi2,Alpha1,Alpha2}/.#["BestFitParameters"]&/@sol,
+		{f,omega1,omega2,xi1,xi2,alpha1,alpha2}/.#["BestFitParameters"]&/@sol,
 		_,
 		Message[ParameterFit::outp,out]
 		]
@@ -515,7 +515,7 @@ GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] :=
 (*RegNorm*)
 
 
-RegNorm[x_,Mu_,Sigma_]:=1/(E^((x - Mu)^2/(2*Sigma^2))*(Sqrt[2*Pi]*Sigma));
+RegNorm[x_,mu_,sigma_]:=1/(E^((x - mu)^2/(2*sigma^2))*(Sqrt[2*Pi]*sigma));
 
 
 (* ::Subsubsection::Closed:: *)
@@ -524,13 +524,13 @@ RegNorm[x_,Mu_,Sigma_]:=1/(E^((x - Mu)^2/(2*Sigma^2))*(Sqrt[2*Pi]*Sigma));
 
 Phi[x_]:=1/(E^(x^2/2)*Sqrt[2*Pi]);
 CapitalPhi[x_]:=.5(1+Erf[(x)/Sqrt[2]]);
-SkewNorm[x_,Omega_,Xi_,Alpha_]:=(2/Omega)Phi[(x-Xi)/Omega]CapitalPhi[Alpha (x-Xi)/Omega];
+SkewNorm[x_,omega_,xi_,alpha_]:=(2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
 Delta[a_]:=a/Sqrt[1+a^2];
 Mn[w_,e_,a_]:=e+w Delta[a] Sqrt[2/Pi];
 Var[w_,a_]:=w^2(1-(2Delta[a]^2/Pi));
 
-SkewNormC=Compile[{{x, _Real},{Omega, _Real},{Xi, _Real},{Alpha, _Real}},
-Chop[(2/Omega)(1/(E^(((x-Xi)/Omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((Alpha (x-Xi)/Omega))/Sqrt[2]]))]
+SkewNormC=Compile[{{x, _Real},{omega, _Real},{xi, _Real},{alpha, _Real}},
+Chop[(2/omega)(1/(E^(((x-xi)/omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((alpha (x-xi)/omega))/Sqrt[2]]))]
 ];
 
 
@@ -732,7 +732,7 @@ SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[
  	];
   
   Switch[OptionValue[OutputSNR],
-	 "Sigma", sigma,
+	 "sigma", sigma,
 	 "Both", {snr, sigma},
 	 _, snr
 	 ]
@@ -748,7 +748,7 @@ SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, k_?NumberQ, OptionsPattern[]] :=
   sigma = ConstantArray[StandardDeviation[Cases[Flatten[noise] // N, Except[0.]]],Dimensions[signal]];
   snr = GaussianFilter[signal/(.5 Sqrt[2] sigma), k];
   Switch[OptionValue[OutputSNR],
-	 "Sigma", sigma,
+	 "sigma", sigma,
 	 "Both", {snr, sigma},
 	 _, snr
 	 ]
@@ -766,7 +766,7 @@ SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] :=
   snr = GaussianFilter[div, k];
   
   Switch[OptionValue[OutputSNR],
-	 "Sigma", sigma,
+	 "sigma", sigma,
 	 "Both", {snr, sigma},
 	 _, snr
 	 ]
@@ -831,8 +831,8 @@ SyntaxInformation[DatTot] = {"ArgumentsPattern" -> {_, _, _}};
 DatTot[data_,name_,vox_]:=
 Module[{fitdat},
 	fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
-	With[{Quant=Function[dat,{dat[[1]],dat[[2]],100dat[[2]]/dat[[1]]}]},
-		Flatten[{name,vox[[1]],vox[[2]],Quant[fitdat[[1]]],Quant[fitdat[[2]]],Quant[fitdat[[3]]],Quant[fitdat[[4]]],Quant[fitdat[[5]]]}]
+	With[{quant=Function[dat,{dat[[1]],dat[[2]],100dat[[2]]/dat[[1]]}]},
+		Flatten[{name,vox[[1]],vox[[2]],quant[fitdat[[1]]],quant[fitdat[[2]]],quant[fitdat[[3]]],quant[fitdat[[4]]],quant[fitdat[[5]]]}]
 		]
 	]
 
@@ -841,8 +841,8 @@ SyntaxInformation[DatTotXLS] = {"ArgumentsPattern" -> {_, _, _}};
 DatTotXLS[data_,name_,vox_]:=
 Module[{fitdat},
 	fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
-	With[{Quant=Function[dat,ToString[Round[dat[[1]],.01]]<>" \[PlusMinus] "<>ToString[Round[dat[[2]],.01]]]},
-		Flatten[{name,vox[[1]],vox[[2]],Quant[fitdat[[1]]],Quant[fitdat[[2]]],Quant[fitdat[[3]]],Quant[fitdat[[4]]],Quant[fitdat[[5]]]}]
+	With[{quant=Function[dat,ToString[Round[dat[[1]],.01]]<>" \[PlusMinus] "<>ToString[Round[dat[[2]],.01]]]},
+		Flatten[{name,vox[[1]],vox[[2]],quant[fitdat[[1]]],quant[fitdat[[2]]],quant[fitdat[[3]]],quant[fitdat[[4]]],quant[fitdat[[5]]]}]
 		]
 	]
 
@@ -1398,7 +1398,7 @@ Options[Hist2]={Scaling->False}
 SyntaxInformation[Hist2] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 Hist2[dat_?ArrayQ,range:{{_,_}..},label:{_String..},OptionsPattern[]]:=
-Module[{data,line,line1,line2,hist,x,f,Omega1,Omega2,Xi1,Xi2,Alpha1,Alpha2,r1,r2,sol},
+Module[{data,line,line1,line2,hist,x,f,omega1,omega2,xi1,xi2,alpha1,alpha2,r1,r2,sol},
 	
 	If[!(Length[range]==Length[dat]==Length[label]==5),Return[Message[Hist2::size,Length[dat],Length[range],Length[label]]]];
 	data=DeleteCases[Flatten[#]//N,0.]&/@dat;
@@ -1407,15 +1407,15 @@ Module[{data,line,line1,line2,hist,x,f,Omega1,Omega2,Xi1,Xi2,Alpha1,Alpha2,r1,r2
 		(
 		{r1,r2}=range[[#]];
 		
-		{f,Omega1,Omega2,Xi1,Xi2,Alpha1,Alpha2}=sol[[#]];
+		{f,omega1,omega2,xi1,xi2,alpha1,alpha2}=sol[[#]];
 			
-			line1=Plot[If[OptionValue[Scaling],(1-f),1]*SkewNorm[x,Omega2,Xi2,Alpha2],
+			line1=Plot[If[OptionValue[Scaling],(1-f),1]*SkewNorm[x,omega2,xi2,alpha2],
 				{x,r1,r2},PlotStyle->{Thick,Red},PlotRange->Full];
 			
-			line2=Plot[If[OptionValue[Scaling],(f),1]*SkewNorm[x,Omega1,Xi1,Alpha1],
+			line2=Plot[If[OptionValue[Scaling],(f),1]*SkewNorm[x,omega1,xi1,alpha1],
 				{x,r1,r2},PlotStyle->{Thick,Blue},PlotRange->Full];
 			
-			line=Plot[f SkewNorm[x,Omega1,Xi1,Alpha1]+(1-f)SkewNorm[x,Omega2,Xi2,Alpha2],
+			line=Plot[f SkewNorm[x,omega1,xi1,alpha1]+(1-f)SkewNorm[x,omega2,xi2,alpha2],
 				{x,r1,r2},PlotStyle->{Thick,Green},PlotRange->Full];
 			
 			hist=Histogram[
@@ -1436,7 +1436,7 @@ CapitalPhi[x_]:=.5(1+Erf[(x)/Sqrt[2]]);
 Delta[a_]:=a/Sqrt[1+a^2];
 Mn[w_,e_,a_]:=e+w Delta[a] Sqrt[2/Pi];
 Var[w_,a_]:=w^2(1-(2Delta[a]^2/Pi));
-SkewNorm[x_,Omega_,Xi_,Alpha_]:=(2/Omega)Phi[(x-Xi)/Omega]CapitalPhi[Alpha (x-Xi)/Omega];
+SkewNorm[x_,omega_,xi_,alpha_]:=(2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
 
 
 (* ::Subsection::Closed:: *)

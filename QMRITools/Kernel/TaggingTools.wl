@@ -339,12 +339,12 @@ MaskToCoordinates[mask_]:=Block[{x,y,z2,z1,p,xm,ym,r,phi,rad, dim, xcor,ycor},
 (*Wextend*)
 
 
-WExtend[Ux_, Uy_, back_, waveVecs_] := Block[{ker, pad, backF},
+WExtend[ux_, uy_, back_, waveVecs_] := Block[{ker, pad, backF},
 	{ker, pad} = GetKernel[waveVecs, 0.5];
 	(*filter background*)
 	backF=ListConvolve[ker, back, pad, 0.]+10^-5;
 	(*filter motion fields weigthed for background*)
-	{ListConvolve[ker, Ux back, pad, 0.]/ backF, ListConvolve[ker, Uy back, pad, 0.]/ backF}
+	{ListConvolve[ker, ux back, pad, 0.]/ backF, ListConvolve[ker, uy back, pad, 0.]/ backF}
 ]
 
 
