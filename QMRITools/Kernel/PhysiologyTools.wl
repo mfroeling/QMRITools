@@ -385,10 +385,10 @@ PlotRespiracti[dataAll_, scantimes_, steps_] := DynamicModule[
 (*LabFun*)
 
 
-LabFun[x_, CO2_, O2_] := Block[{st, en},
+LabFun[x_, co2_, o2_] := Block[{st, en},
   StringJoin@(ToString /@ {
-      "CO2:  ", CO2, "   ",
-      "O2:  ", O2, "\n",
+      "CO2:  ", co2, "   ",
+      "O2:  ", o2, "\n",
       "start:  ", st = Round[Min[x], .1], "  ",
       "end:  ", en = Round[Max[x], .1], "  ",
       "span:  ", en - st, "  "

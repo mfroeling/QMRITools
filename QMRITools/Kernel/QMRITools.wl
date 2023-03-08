@@ -34,7 +34,7 @@ QMRITools`$Contexts::usage = "The package contexts.";
 QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions.";
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
-QMRITools`$Log::usage = "The logging file." 
+QMRITools`$Log::usage = "The logging file.";
 
 
 (*subpackages names*)

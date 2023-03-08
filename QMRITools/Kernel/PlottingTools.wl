@@ -2920,7 +2920,7 @@ SyntaxInformation[PlotIVIM] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}
 
 PlotIVIM[val_, data_, bvals_, OptionsPattern[]] := 
  Module[{pdat, pdatL, rule, stdash, stsol, lstyle, pl, vals = val, 
-   func, cols, S0, f1, dc, pdc1, f2,f3, pdc2, bm,plr},
+   func, cols, s0, f1, dc, pdc1, f2,f3, pdc2, bm,plr},
   DynamicModule[{plot},
    cols = OptionValue[PlotColor];
    cols = If[Length[cols] != 4, {Red,Darker@ Green, Blue, Black}, cols];
@@ -2941,14 +2941,14 @@ PlotIVIM[val_, data_, bvals_, OptionsPattern[]] :=
    
    Switch[Length[vals],
    	2,
-    func = S0(f3*Exp[-bm*dc]);
- 	rule = Flatten@Append[Thread[{S0, dc} -> vals], {f2 -> 0,f1->0}];,
+    func = s0(f3*Exp[-bm*dc]);
+ 	rule = Flatten@Append[Thread[{s0, dc} -> vals], {f2 -> 0,f1->0}];,
     4,
-    func = S0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1]);
- 	rule = Append[Thread[{S0, f1, dc, pdc1} -> vals], f2 -> 0];,
+    func = s0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1]);
+ 	rule = Append[Thread[{s0, f1, dc, pdc1} -> vals], f2 -> 0];,
     6,
-    func = S0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1] + f2*Exp[-bm*pdc2]);
-    rule = Thread[{S0, f1, f2, dc, pdc1, pdc2} -> vals];,
+    func = s0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1] + f2*Exp[-bm*pdc2]);
+    rule = Thread[{s0, f1, f2, dc, pdc1, pdc2} -> vals];,
     _,
     Return[Message[PlotIVIM::vals]]];
    

@@ -47,10 +47,10 @@ ImportNiiDix::usage =
 "ImportNiiDix[\"file\"] imports the dixon nii file which should contain all possible outputs given by the scanner and corrects them accordingly."
 
 ImportNiiT2::usage = 
-"ImportNiiT2[\"file\"] imports the T2 file which should contain the echos and the T2map calculated by the scanner and corrects them accordingly."
+"ImportNiiT2[\"file\"] imports the t2 file which should contain the echos and the T2map calculated by the scanner and corrects them accordingly."
 
 ImportNiiT1::usage = 
-"ImportNiiT1[\"file\"] imports the T1 file which should contain the echos and the T1map calculated by the scanner and corrects them accordingly."
+"ImportNiiT1[\"file\"] imports the t1 file which should contain the echos and the T1map calculated by the scanner and corrects them accordingly."
 
 ImportExploreDTItens::usage = 
 "ImportExploreDTItens[\"file\"] imports the *.nii export for the tensor from explore DTI."
@@ -86,12 +86,12 @@ GetNiiOrientation::usage =
 "GetNiiOrientation[hdr] get the sform and qform orientations from a nii header."
 
 MakeNiiOrentationS::usage = 
-"MakeNiiOrentationS[off, vox] maxes the srow values for nii header assuming not R and Q.
-MakeNiiOrentationS[off, vox, R] maxes the srow values for nii header using rotation R.
-MakeNiiOrentationS[off, vox, R, Q] maxes the srow values for nii header using rotation R and skew Q."
+"MakeNiiOrentationS[off, vox] maxes the srow values for nii header assuming not rot and Q.
+MakeNiiOrentationS[off, vox, rot] maxes the srow values for nii header using rotation rot.
+MakeNiiOrentationS[off, vox, rot, Q] maxes the srow values for nii header using rotation rot and skew Q."
 
 MakeNiiOrentationQ::usage = 
-"MakeNiiOrentationQ[R] makes the q vector from rotation matrix R."
+"MakeNiiOrentationQ[rot] makes the q vector from rotation matrix rot."
 
 
 ExportBval::usage = 
@@ -574,14 +574,14 @@ ImportExport`RegisterImport["Nii",
 		"Header" :> ImportNiiHeader,
 		"Data" -> ImportNiiInfo,
 		"VoxelSize" -> ImportNiiInfo,
-		"TR" -> ImportNiiInfo,
+		"tr" -> ImportNiiInfo,
 		"RotationMatrix" -> ImportNiiInfo,
 		"Units" -> ImportNiiInfo,
 		"Scaling" -> ImportNiiInfo,
 		ImportNiiDefault
 	},
 	{},
-	"AvailableElements" -> {"Data", "Header", "VoxelSize", "TR", "RotationMatrix", "Units", "Scaling"},
+	"AvailableElements" -> {"Data", "Header", "VoxelSize", "tr", "RotationMatrix", "Units", "Scaling"},
 	"OriginalChannel" -> True,
 	"Options" -> {NiiScaling}
 ];
@@ -625,10 +625,10 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 		"data", Import[file, {"nii", "Data"}, opt],
 		"header", Import[file, {"nii", {"Data", "VoxelSize", "Header"}}, opt],
 		"headerMat", Import[file, {"nii", {"Data", "VoxelSize", "Header", "RotationMatrix"}}, opt],
-		"dataTR", Import[file, {"nii", {"Data", "VoxelSize", "TR"}}, opt], 
+		"dataTR", Import[file, {"nii", {"Data", "VoxelSize", "tr"}}, opt], 
 		"rotation", Import[file, {"nii", {"Data", "VoxelSize", "RotationMatrix"}}, opt],
 		"scaling", Import[file, {"nii", {"Data", "VoxelSize", "Scaling"}}, opt],
-		"all", out = Import[file, {"nii", {"Data", "VoxelSize", "Header", "TR", "Scaling", "RotationMatrix", "Units"}}, opt];
+		"all", out = Import[file, {"nii", {"Data", "VoxelSize", "Header", "tr", "Scaling", "RotationMatrix", "Units"}}, opt];
 		{out[[1]], out[[2]], out[[3 ;;]]},
 		_, Import[file, "nii", opt]
 	];
@@ -646,7 +646,7 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 
 
 GetNiiInformation[hdr_] := 
- Module[{type, size, dim, ddim, offSet, vox, voxU, TR, TRU, slope, intercept, rotmat},
+ Module[{type, size, dim, ddim, offSet, vox, voxU, tr, trU, slope, intercept, rotmat},
   
   dim = "dim" /. hdr;
   ddim = dim[[1]];
@@ -657,15 +657,15 @@ GetNiiInformation[hdr_] :=
   offSet = Round["voxOffset" /. hdr];
   
   vox = Reverse[("pixDim" /. hdr)[[2 ;; 4]]];
-  TR = ("pixDim" /. hdr)[[5]];
+  tr = ("pixDim" /. hdr)[[5]];
   {slope, intercept} = {"scaleSlope", "scaleInteger"} /. hdr;
   
   rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. hdr)[[All, 1 ;; 3]]/ConstantArray[Reverse[vox], 3];
   rotmat = DiagonalMatrix[{1, -1, 1}].ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
   
-  {voxU, TRU} = "xyztUnits" /. hdr;
+  {voxU, trU} = "xyztUnits" /. hdr;
   
-  {{type, size, dim, offSet},{vox, voxU, TR, TRU, slope, intercept, rotmat, ddim}}
+  {{type, size, dim, offSet},{vox, voxU, tr, trU, slope, intercept, rotmat, ddim}}
 ]
 
 
@@ -706,7 +706,7 @@ ImportNiiDefault[file_, opts : OptionsPattern[]] :=
    {
     "Data" -> data,
     "VoxelSize" -> info[[1]],
-    "TR" -> info[[3]],
+    "tr" -> info[[3]],
     "RotationMatrix" -> info[[7]],
     "Units" -> info[[{2, 4}]],
     "Scaling" -> info[[5 ;; 6]]
@@ -830,60 +830,60 @@ ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{dat
 (*ImportNiiDix*)
 
 
-ImportNiiDix[]:=Module[{Dix, vox, scale, B0, real, imag, mag, phase}, 
-	{Dix, vox, scale} = ImportNii[NiiScaling -> False, NiiMethod -> "scaling"];
-	{Dix, B0, {real, imag, mag, phase}} = CorrectDixonData[Dix, scale];
-	{Dix, B0, {real, imag, mag, phase}, vox}
+ImportNiiDix[]:=Module[{dix, vox, scale, b0, real, imag, mag, phase}, 
+	{dix, vox, scale} = ImportNii[NiiScaling -> False, NiiMethod -> "scaling"];
+	{dix, b0, {real, imag, mag, phase}} = CorrectDixonData[dix, scale];
+	{dix, b0, {real, imag, mag, phase}, vox}
 ]
 
 ImportNiiDix[file_String]:=ImportNiiDix[file,False]
 
-ImportNiiDix[file_String, new_]:=Module[{Dix, vox, scale, B0, real, imag, mag, phase},  
-	{Dix, vox, scale} = ImportNii[file, NiiScaling -> False, NiiMethod -> "scaling"];
-	{Dix, B0, {real, imag, mag, phase}} =If[new, CorrectDixonDataNew[Dix, scale], CorrectDixonData[Dix, scale]];
-	{Dix, B0, {real, imag, mag, phase}, vox}
+ImportNiiDix[file_String, new_]:=Module[{dix, vox, scale, b0, real, imag, mag, phase},  
+	{dix, vox, scale} = ImportNii[file, NiiScaling -> False, NiiMethod -> "scaling"];
+	{dix, b0, {real, imag, mag, phase}} =If[new, CorrectDixonDataNew[dix, scale], CorrectDixonData[dix, scale]];
+	{dix, b0, {real, imag, mag, phase}, vox}
 ]
 
 
-CorrectDixonData[data_, scale_] := Block[{data0, B0, echos, phase, mag, real ,imag, sl, ech},
+CorrectDixonData[data_, scale_] := Block[{data0, b0, echos, phase, mag, real ,imag, sl, ech},
 	(*fat,inphase,outphase,water*)
 	data0 = data[[All, 1 ;; 4]];
-	B0 = (scale[[1]] (data[[All, -1]] + 0.5) + scale[[2]]) /. (scale[[2]] + 0.5 scale[[1]]) -> 0.;
+	b0 = (scale[[1]] (data[[All, -1]] + 0.5) + scale[[2]]) /. (scale[[2]] + 0.5 scale[[1]]) -> 0.;
 	
-	(*I,M,P,R*)
+	(*I,M,P,rot*)
 	echos = data[[All, 5 ;; -2]];
 	{sl, ech} = Dimensions[echos][[1;;2]]/{1,4};
 	echos = Partition[Flatten[Transpose[echos], 1], 4*Length[data]];
 	echos = Partition[#, 4] & /@ echos;
 	
-	(*convert I,P and R to radians*)
+	(*convert I,P and rot to radians*)
 	phase = N[(2 Pi echos[[3]] / 4094.) - Pi] /. N[-Pi] -> 0.;
 	mag = 1000 echos[[2]] / 2047.;
 	{real, imag} = 1000(echos[[{4, 1}]] - 2047.) / 4094.;
 	(*Table[echos[[i]] = ((2 Pi echos[[i]]/4094.) - Pi) /. N[-Pi] -> 0., {i, {1, 3, 4}}];*)
 	(*output*)
-	{data0, B0, ToPackedArray/@{real, imag, mag, phase}}
+	{data0, b0, ToPackedArray/@{real, imag, mag, phase}}
 ]
 
 
-CorrectDixonDataNew[data_, scale_] := Block[{data0, B0, echos, phase, mag, real ,imag, sl, ech},
+CorrectDixonDataNew[data_, scale_] := Block[{data0, b0, echos, phase, mag, real ,imag, sl, ech},
 	(*fat,inphase,outphase,water*)
 	data0 = data[[All, -5 ;; -2]][[All, {4, 2, 3, 1}]];
-	B0 = (scale[[1]] (data[[All, -1]] + 0.5) + scale[[2]]) /. (scale[[2]] + 0.5 scale[[1]]) -> 0.;
+	b0 = (scale[[1]] (data[[All, -1]] + 0.5) + scale[[2]]) /. (scale[[2]] + 0.5 scale[[1]]) -> 0.;
 	
-	(*I,M,P,R*)
+	(*I,M,P,rot*)
 	echos = data[[All, ;; -6]];
 	{sl, ech} = Dimensions[echos][[1;;2]]/{1,4};
 	echos = Partition[Flatten[Transpose[echos], 1], ech sl];
 	echos = Partition[#, ech] & /@ echos;
 	
-	(*convert I,P and R to radians*)
+	(*convert I,P and rot to radians*)
 	phase = N[(2 Pi echos[[4]] / 4094.) - Pi] /. N[-Pi] -> 0.;
 	mag = 1000 echos[[1]] / 2047.;
 	{real, imag} = 1000(echos[[{2, 3}]] - 2047.) / 4094.;
 	
 	(*output*)
-	{data0, B0, ToPackedArray/@{real, imag, mag, phase}}
+	{data0, b0, ToPackedArray/@{real, imag, mag, phase}}
 ]
 
 
@@ -891,16 +891,16 @@ CorrectDixonDataNew[data_, scale_] := Block[{data0, B0, echos, phase, mag, real 
 (*ImportNiiT2*)
 
 
-ImportNiiT2[]:=Module[{T2, T2vox, T2cor, fit},
-	{T2, T2vox} = ImportNii[NiiScaling -> False];
-	{T2cor, fit} = CorrectMapData[T2,1];
-	{T2cor, fit, T2vox}
+ImportNiiT2[]:=Module[{t2, t2Vox, t2Cor, fit},
+	{t2, t2Vox} = ImportNii[NiiScaling -> False];
+	{t2Cor, fit} = CorrectMapData[t2,1];
+	{t2Cor, fit, t2Vox}
 ]
 
-ImportNiiT2[file_]:=Module[{T2, T2vox, T2cor, fit},
-	{T2, T2vox} = ImportNii[file,NiiScaling -> False];
-	{T2cor, fit} = CorrectMapData[T2,1];
-	{T2cor, fit, T2vox}
+ImportNiiT2[file_]:=Module[{t2, t2Vox, t2Cor, fit},
+	{t2, t2Vox} = ImportNii[file,NiiScaling -> False];
+	{t2Cor, fit} = CorrectMapData[t2,1];
+	{t2Cor, fit, t2Vox}
 ]
 
 
@@ -908,15 +908,15 @@ ImportNiiT2[file_]:=Module[{T2, T2vox, T2cor, fit},
 (*ImportNiiT1*)
 
 
-ImportNiiT1[] := Module[{T1, T1vox, T1cor, fit},
-  {T1, T1vox} = ImportNii[NiiScaling -> False];
-  {T1cor, fit} = CorrectMapData[T1];
-  {T1cor, fit, T1vox}]
+ImportNiiT1[] := Module[{t1, t1Vox, t1Cor, fit},
+  {t1, t1Vox} = ImportNii[NiiScaling -> False];
+  {t1Cor, fit} = CorrectMapData[t1];
+  {t1Cor, fit, t1Vox}]
 
-ImportNiiT1[file_] := Module[{T1, T1vox, T1cor, fit},
-  {T1, T1vox} = ImportNii[file,NiiScaling -> False];
-  {T1cor, fit} = CorrectMapData[T1, 2];
-  {T1cor, fit, T1vox}]
+ImportNiiT1[file_] := Module[{t1, t1Vox, t1Cor, fit},
+  {t1, t1Vox} = ImportNii[file,NiiScaling -> False];
+  {t1Cor, fit} = CorrectMapData[t1, 2];
+  {t1Cor, fit, t1Vox}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1133,7 +1133,7 @@ ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := Module[{ver, data, he
 
 MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 	{vox, dim, ndim, type, range, data, header, headerInp, voxInp, headerDef, off, sl, 
-		offInp, Rs, R, Rq, code, scode, qcode, qb, qc, qd, sx, sy, sz, offs, xoffq, yoffq, zoffq},
+		offInp, rotS, rot, rotQ, code, scode, qcode, qb, qc, qd, sx, sy, sz, offs, xoffq, yoffq, zoffq},
 	
 	type = OptionValue[NiiDataType];
 	sl = OptionValue[NiiSliceCode];
@@ -1180,19 +1180,19 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 		(*offsets are given*)
 		If[Length[off]===4,
 			(*one off for s and q form*)
-			{code, off, R} = off;
+			{code, off, rot} = off;
 			scode = qcode = code /. Reverse[coordinateNii, 2];
 				
 			{xoffq ,yoffq, zoffq} = off;
-			{qb, qc, qd} = MakeNiiOrentationQ[R];
-			{sx, sy, sz} = MakeNiiOrentationS[off, vox, R]
+			{qb, qc, qd} = MakeNiiOrentationQ[rot];
+			{sx, sy, sz} = MakeNiiOrentationS[off, vox, rot]
 			,
 			(*seperate off for s and q form*)
-			{{scode, offs, Rs} , {qcode, {xoffq ,yoffq, zoffq}, Rq}} = off;
+			{{scode, offs, rotS} , {qcode, {xoffq ,yoffq, zoffq}, rotQ}} = off;
 			{scode, qcode} = {scode, qcode} /. Reverse[coordinateNii, 2];
 			
-			{qb, qc, qd} = MakeNiiOrentationQ[Rq];
-			{sx, sy, sz} = MakeNiiOrentationS[offs, vox, Rs]
+			{qb, qc, qd} = MakeNiiOrentationQ[rotQ];
+			{sx, sy, sz} = MakeNiiOrentationS[offs, vox, rotS]
 		],
 		(*no offsets are given use default values*)
 		offs = {dim[[-1]], dim[[-2]], dim[[1]]}/2;
@@ -1319,14 +1319,14 @@ SyntaxInformation[GetNiiOrientation] = {"ArgumentsPattern" -> {_}};
 
 GetNiiOrientation[hdr_] := {GetNiiOrientationS[hdr], GetNiiOrientationQ[hdr]}
 
-GetNiiOrientationS[hdr_] := Block[{scode, mat, Ts, Rs, Ss, Qs, soff},
+GetNiiOrientationS[hdr_] := Block[{scode, mat, Ts, rotS, Ss, Qs, soff},
 	(*get sform infromation*)
 	scode = "sformCode" /. hdr;
 	mat = {"sRowx", "sRowy", "sRowz", {0., 0., 0., 1.}} /. hdr;
 	Table[If[Total[mat[[i]]] === 0., mat[[i, i]] = 1.], {i, 1, 4}];	
-	{Ts, Rs, Ss, Qs} = DecomposeAffineMatrix[mat];
+	{Ts, rotS, Ss, Qs} = DecomposeAffineMatrix[mat];
 	soff = Ts[[1 ;; 3, 4]];
-	{scode, soff, (Rs . Qs)}
+	{scode, soff, (rotS . Qs)}
 ]
 
 GetNiiOrientationQ[hdr_] := Block[{qcode, qoff, qrot},
@@ -1344,13 +1344,13 @@ GetNiiOrientationQ[hdr_] := Block[{qcode, qoff, qrot},
 
 MakeNiiOrentationS[soff_, vox_] := MakeNiiOrentationS[soff, vox, IdentityMatrix[4], IdentityMatrix[4]]
 
-MakeNiiOrentationS[soff_, vox_, R_, Q_] := MakeNiiOrentationS[soff, vox, R . Q]
+MakeNiiOrentationS[soff_, vox_, rot_, q_] := MakeNiiOrentationS[soff, vox, rot . q]
 
-MakeNiiOrentationS[soff_, vox_, RQ_] := Block[{T, S},
-	T = N@IdentityMatrix[4];
-	T[[1 ;; 3, 4]] = soff;
-	S = N@DiagonalMatrix[Append[Reverse[vox], 1]];
-	N@Chop[RQ . S . T][[1;;3]]
+MakeNiiOrentationS[soff_, vox_, rq_] := Block[{t, s},
+	t = N@IdentityMatrix[4];
+	t[[1 ;; 3, 4]] = soff;
+	s = N@DiagonalMatrix[Append[Reverse[vox], 1]];
+	N@Chop[rq . s . t][[1;;3]]
 ]
 
 MakeNiiOrentationQ[qrot_] := RotationMatrixToQuaternionVector[qrot[[1 ;; 3, 1 ;; 3]]]

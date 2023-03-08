@@ -1769,7 +1769,7 @@ RegionDisk[cent_,ang_,ran_,rev_]:=Block[{ans},
 	ans=Partition[If[Negative[#],#+2Pi,#]&/@(-ang+0.5Pi),2,1,1];
 	If[rev==1,
 		Disk[cent,ran,If[#[[1]]>#[[2]],#,#+{0,-2Pi}]]&/@ans,
-		Disk[cent,ran,If[#[[2]]>#[[1]],Reverse@#,Reverse[#+{0,+2Pi}]]]&/@ans
+		Disk[cent,ran,If[#[[2]]>#[[1]],Reverse@#,Reverse[#+{0, 2Pi}]]]&/@ans
 	]
 ]
 
