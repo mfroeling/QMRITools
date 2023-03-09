@@ -20,7 +20,7 @@ BeginPackage["QMRITools`MuscleBidsTools`", Join[{"Developer`"}, Complement[QMRIT
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -310,7 +310,7 @@ BidsValue[parts_,val_?StringQ]:=parts[val] /. {Missing[___]->""}
 CheckBidsTypes[type_]:=If[!MemberQ[Drop[Keys[bidsTypes],-1], type], Message[Bids::type,type]]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*BidsString*)
 
 
@@ -342,7 +342,7 @@ CheckConfig[infol_?StringQ, outfol_?StringQ]:=CheckConfig[infol, outfol, ""]
 
 CheckConfig[infol_?StringQ, outfol_?StringQ, confin_]:=Block[{conf, nam},
 	nam = GenerateBidsName[PartitionBidsFolderName[outfol][[-1]]];
-	conf = GetConfig[infol, nam];
+	conf = Quiet@GetConfig[infol, nam];
 	(*Print[FileNameJoin[{outfol, nam<>"_config.json"}]];*) 
 	If[conf =!= $Failed,
 		Export[FileNameJoin[{outfol, nam<>"_config.json"}], conf];
@@ -368,7 +368,8 @@ GetConfig[folder_?StringQ, nam_?StringQ]:=Block[{file},
 			file = FileNameJoin[{folder, nam<>"_config.json"}];
 			If[FileExistsQ[file],
 				Import[file, "RawJSON"],
-				Message[GetConfig::conf,Return[$Failed]]
+				Message[GetConfig::conf];
+				Return[$Failed]
 			]
 		]
 	]
@@ -458,7 +459,7 @@ BidsDcmToNii[dcmFol_, niiFol_, OptionsPattern[]]:=Block[{logFile, fols, folsi, f
 (*BidsSupport*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*BidsFolderLoop*)
 
 
@@ -626,7 +627,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 (*MuscleBidsConvert*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsConvert*)
 
 
@@ -650,7 +651,7 @@ MuscleBidsConvert[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{
 MuscleBidsConvert[niiFol_?StringQ, datDis_, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, datDis, Method->"Convert", opts]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsConvertI*)
 
 
@@ -840,7 +841,7 @@ GetStackName[class_, namei_]:=Switch[class,
 (*MuscleBidsProcess*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsProcess*)
 
 
@@ -864,7 +865,7 @@ MuscleBidsProcess[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{
 MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"Process", ops]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsProcessI*)
 
 
@@ -1240,7 +1241,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 (*MuscleBidsMerge*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsMerge*)
 
 
@@ -1264,7 +1265,7 @@ MuscleBidsMerge[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{di
 MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Merge", ops]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsMergeI*)
 
 
@@ -1316,7 +1317,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 		
 		If[!nCheck,
 			(*-----*)AddToLog[{"Not all types have the same number of stacs:", StringJoin@Riffle[ToString/@n,", "]}, 3],
-			(*-----*)AddToLog[{"Start joining ",nStac,"stacs for",nSet,"dataypes"}, 3];
+			(*-----*)AddToLog[{"Start joining ", nStac, "stacs for", nSet, "dataypes"}, 3];
 			
 			(*import the Target data*)
 			(*-----*)AddToLog[{"Importing and processing the target data"}, 4];
@@ -1362,7 +1363,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 				,{i, 1, nStac}];
 				
 				(*extract all parameters after registration*)
-				moving = Transpose[moving,{2,3,1,4,5}];
+				moving = Transpose[moving, {2,3,1,4,5}];
 			];(*clolse motion moving*)
 			
 			(*join the moving types*)
