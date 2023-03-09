@@ -1056,7 +1056,7 @@ JoinSetsi[data_?ArrayQ,overlap_?IntegerQ,norm_:False]:= Block[{
 		];
 
 		joined = Joini[{set1, set2}, {set1over, set2over}, overlap];
-	,{i, 1, sets}];
+	,{i, 1, sets-1}];
 	
 	joined
 ];
@@ -1098,7 +1098,7 @@ Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1
 		set2over=Take[data2,{1,overl}];
 	
 		joined=Joini[{set1,set2},{set1over,set2over},overl];
-	,{i,1,sets}];
+	,{i, 1, sets-1}];
 
 	joined
 ];
