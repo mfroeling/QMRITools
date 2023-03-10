@@ -68,10 +68,10 @@ SelectBidsFolders::usage =
 "SelectBidsFolders[fol, tag] Selects all folders in the fol with the name tag."
 
 SelectBidsSubjects::usage =
-"SelectBidsSubjects[fol] selects all subjects in the bids folder"
+"SelectBidsSubjects[fol] selects all subjects in the bids folder."
 
 SelectBidsSessions::usage =
-"SelectBidsSessions[fol] selects all sessions in the bids subject folder"
+"SelectBidsSessions[fol] selects all sessions in the bids subject folder."
 
 
 BidsDcmToNii::usage =
@@ -90,15 +90,15 @@ Example discription:
 
 
 MuscleBidsProcess::usage = 
-"MuscleBidsProcess[niiFol, discription]"
+"MuscleBidsProcess[niiFol, discription] ..."
 
 
 MuscleBidsMerge::usage = 
-"MuscleBidsMerge[niiFol, discription]"
+"MuscleBidsMerge[niiFol, discription] ..."
 
 
 CheckDataDiscription::usage =
-"CheckDataDiscription[discription] checks the data discription used in MuscleBidsConvert. For example {\"Label\"->\"DTI\",\"Type\"->\"dwi\",\"Class\"->\"Stacks\",\"Overlap\"->5,\"Suffix\"->\"dti\"},"
+"CheckDataDiscription[discription] checks the data discription used in MuscleBidsConvert. For example {\"Label\"->\"DTI\",\"Type\"->\"dwi\",\"Class\"->\"Stacks\",\"Overlap\"->5,\"Suffix\"->\"dti\"} ..."
 
 
 (* ::Subsection::Closed:: *)
@@ -113,7 +113,7 @@ DeleteAfterConversion::usage =
 "DeleteAfterConversion is an option for MuscleBidsConvert. If set True all files that have been converted will be deleted."
 
 SelectSubjects::usage = 
-"SelectSubjects is an option for MuscleBidsConvert. Can be a list of bids subject names else it is All"
+"SelectSubjects is an option for MuscleBidsConvert. Can be a list of bids subject names else it is All."
 
 
 VersionCheck::usage = 
@@ -124,15 +124,15 @@ VersionCheck::usage =
 (*Error Messages*)
 
 
-Bids::type = "Unknown Muscle-BIDS type: `1`, using folder \"miss\".";
+CheckDataDiscription::type = "Unknown Muscle-BIDS type: `1`, using folder \"miss\".";
 
-Bids::class = "Unknown Muscle-BIDS Class: `1`. Must be \"Volume\", \"Stacks\", \"Repetitions\".";
+CheckDataDiscription::class = "Unknown Muscle-BIDS Class: `1`. Must be \"Volume\", \"Stacks\", \"Repetitions\".";
 
-Bids::lab = "Invalid combination of Class and Label: `1` with `2` is not allowed.";
+CheckDataDiscription::lab = "Invalid combination of Class and Label: `1` with `2` is not allowed.";
 
-Bids::man = "Manditory values \"Lable\" and \"Type\" are not in the data discription.";
+CheckDataDiscription::man = "Manditory values \"Lable\" and \"Type\" are not in the data discription.";
 
-Bids::stk = "Class \"stacks\" is used but overlap is not defined, assuming overlap 0.";
+CheckDataDiscription::stk = "Class \"stacks\" is used but overlap is not defined, assuming overlap 0.";
 
 
 GetConfig::conf = "Could not find config file in given folder."
@@ -301,13 +301,6 @@ BidsType[parts_?AssociationQ]:= bidsTypes[parts["Type"]] /. {Missing[___]->"miss
 BidsValue[parts_,val_?ListQ]:=Flatten[BidsValue[parts,#]&/@val]
 
 BidsValue[parts_,val_?StringQ]:=parts[val] /. {Missing[___]->""} 
-
-
-(* ::Subsubsection::Closed:: *)
-(*CheckBidsTypes*)
-
-
-CheckBidsTypes[type_]:=If[!MemberQ[Drop[Keys[bidsTypes],-1], type], Message[Bids::type,type]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -582,15 +575,15 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 	]];
 	
 	If[!man,
-		Return[Message[Bids::man]; fail],
+		Return[Message[CheckDataDiscription::man]; fail],
 		
 		(*Check if type is valid*)
-		If[!MemberQ[Keys[bidsTypes], ass["Type"]], Message[Bids::type, ass["Type"]]];
+		If[!MemberQ[Keys[bidsTypes], ass["Type"]], Message[CheckDataDiscription::type, ass["Type"]]];
 		
 		(*Check if class is present*)
 		If[KeyExistsQ[ass, "Class"],
 			(*if present add check class is valid*)
-			If[!MemberQ[bidsClass, ass["Class"]], Return[Message[Bids::class,ass["Class"]]; fail]],
+			If[!MemberQ[bidsClass, ass["Class"]], Return[Message[CheckDataDiscription::class,ass["Class"]]; fail]],
 			(*add class if not present*)
 			ass = Association[ass, "Class"->"Volume"]
 		];
@@ -600,7 +593,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 			"Volume", StringQ[ass[["Label"]]],
 			"Stacks"|"Repetitions", ListQ[ass["Label"] && Length[ass]>1]
 		];
-		If[!cls, Return[Message[Bids::lab, ass["Class"], ass["Label"]]; fail]];
+		If[!cls, Return[Message[CheckDataDiscription::lab, ass["Class"], ass["Label"]]; fail]];
 		
 		(*check suffic, in and out folder*)
 		If[!KeyExistsQ[ass, "Suffix"], ass = Association[ass, "Suffix"->""]];
@@ -615,7 +608,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 		];
 		
 		(*add overlap if class is stacks*)
-		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass["Merging"],"Overlap"], Message[Bids::stk]; ass = Association[ass, "Overlap"->0]];
+		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass["Merging"],"Overlap"], Message[CheckDataDiscription::stk]; ass = Association[ass, "Overlap"->0]];
 		
 		(*output the completed data discription*)
 		{KeySort@ass}
