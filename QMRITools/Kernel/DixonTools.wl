@@ -541,7 +541,8 @@ OptimizeDixonEcho[fi_,di_,OptionsPattern[]]:=Manipulate[
 					Table[Callout[pts[[i]], i, LabelStyle -> {FontSize -> 14, Bold}, CalloutStyle -> None], {i, Length[pts]}],
 					PlotRange->{{-1.2,1.2},{-1.2,1.2}}, PlotStyle->Black, Mesh->All],
 				Graphics[{{Green,PointSize[.04],Point@First@pts},{Red,PointSize[.04],Point@Last@pts}}],
-					If[io,Graphics[{{PointSize[.02],Blue,Point[pts[[e]]]}}],Graphics[]]
+					If[io,Graphics[{{PointSize[.02],Blue,Point[pts[[e]]]}}],Graphics[]],
+				Graphics[{Lighter@Gray, Dashed, Opacity[.5], Circle[], Line[{{0, 0}, RotationMatrix[# Degree] . {0, 1}}] & /@ Range[0, 360, 60]}]
 			],
 			"vectors",
 			Show[
@@ -553,7 +554,8 @@ OptimizeDixonEcho[fi_,di_,OptionsPattern[]]:=Manipulate[
 				Graphics[{Thick,Green,Arrow[{{0,0},First@pts}]}],
 				Graphics[{Thick,Red,Arrow[{{0,0},Last@pts}]}],
 				If[io,Graphics[{Blue,Arrow[{{0,0},#}&/@pts[[e]]]}],Graphics[]],
-				If[io,Graphics[{{PointSize[.02],Blue,Point[pts[[e]]]}}],Graphics[]]
+				If[io,Graphics[{{PointSize[.02],Blue,Point[pts[[e]]]}}],Graphics[]],
+				Graphics[{Lighter@Gray, Dashed, Opacity[.5], Circle[], Line[{{0, 0}, RotationMatrix[# Degree] . {0, 1}}] & /@ Range[0, 360, 60]}]
 			]
 		],
 		ListLinePlot[Transpose@pts, Mesh -> All, PlotStyle -> {Red, Black}, ImageSize -> 300, Ticks -> None]

@@ -671,36 +671,130 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 		(*import the json belonging to name*)
 		(*-----*)AddToLog[{"Processing", namei, "as", type,":"}, True, 3];
 		files = FileNames["*"<>namei<>"*.json", foli];
-		json = ImportJSON/@files;
 		
-		(*see which data type is expected*)
-		Switch[datType["Type"],
-		
-			(*-------------------------------------------*)
-			(*-------- DIXON conversion script ----------*)
-			(*-------------------------------------------*)
-			"megre",
+		If[Length@files===0,
+			(*no json files found*)
+			(*-----*)AddToLog[{"No json files found with label ", namei , " skipping conversion"}, 4],
 			
-			(*loop over dixon data types*)
-			Table[
+			(*if json files found import them*)
+			json = ImportJSON/@files;
+			
+			(*see which data type is expected*)
+			Switch[datType["Type"],
+			
+				(*-------------------------------------------*)
+				(*-------- DIXON conversion script ----------*)
+				(*-------------------------------------------*)
+				"megre",
+				
+				(*loop over dixon data types*)
+				Table[
+					(*get the posisiton of the files needed*)
+					pos = GetJSONPosition[json, {{"ProtocolName", namei}, {"ImageType", dixType}}, "EchoNumber"];
+					Print[pos];
+					
+					(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {namei, dixType}}, 4];
+					
+					(*get the json and data*)
+					info = MergeJSON[json[[pos]]];
+					{data, vox} = Transpose[ImportNii[#]&/@ConvertExtension[files[[pos]], ".nii"]];
+					data = Transpose[data];
+					vox = First@vox;
+					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+					
+					(*correct data for different types*)
+					{data,sufd}=Switch[dixType,
+						"Mixed",{1000.data/2047.,""},
+						"Phase",{Pi (data-2047.)/2047,"ph"},
+						"Real",{1000.(data-2047.)/2047.,"real"},
+						"Imaginary",{1000.(data-2047.)/2047.,"imag"}
+					];
+					
+					(*make the additional manditory bids json values*)
+					infoExtra=<|
+						"ForthDimension"->"EchoTime",
+						"DataClass"->datType["Class"],
+						If[datType["Class"]==="Repetitions", "Repetition"->namei, Nothing],
+						If[datType["Class"]==="Stacks", "Stack"->namei, Nothing],
+						If[datType["Class"]==="Stacks", "OverLap"->datType["Overlap"], Nothing]
+					|>;
+					
+					(*export to the correct folder*)
+					outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->Flatten@{datType["Suffix"], sufd}|>];
+					(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
+					ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+					Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
+					
+					(*Delete used files*)
+					Quiet@If[del,
+						DeleteFile[ConvertExtension[files[[pos]],".nii"]];
+						DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
+						DeleteFile[ConvertExtension[files[[pos]],".json"]]
+					];
+					
+					(*export log after each type*)
+					ExportLog[logFile]			
+				(*Closeloop over dixon data types*)
+				,{dixType, {"Mixed", "Phase", "Real", "Imaginary"}}],
+				
+				(*-------------------------------------------*)
+				(*---------- DWI conversion script ----------*)
+				(*-------------------------------------------*)
+				"dwi",
+				
 				(*get the posisiton of the files needed*)
-				pos = GetJSONPosition[json, {{"ProtocolName", namei}, {"ImageType", dixType}}, "EchoNumber"];
-				(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {namei, dixType}}, 4];
+				pos = GetJSONPosition[json, {{"ProtocolName", namei}}];
+				(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
 				
 				(*get the json and data*)
+				info = json[[First@pos]];
+				{data, grad, val, vox} = ImportNiiDiff[ConvertExtension[files[[First@pos]],".nii"], FlipBvec->False];
+				(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+				
+				(*make the additional manditory bids json values*)
+				infoExtra=<|
+					"ForthDimension"->"Diffusion",
+					"DataClass"->datType["Class"],
+					If[datType["Class"]==="Repetitions", "Repetition"->namei, Nothing],
+					If[datType["Class"]==="Stacks", "Stack"->namei, Nothing],
+					If[datType["Class"]==="Stacks", "OverLap"->datType["Overlap"], Nothing]
+				|>;
+				
+				(*export to the correct folder*)
+				outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
+				(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
+				ExportBval[val, ConvertExtension[outFile, ".bval"]];
+				ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
+				ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+				Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
+				
+				Quiet@If[del,
+					(*-----*)AddToLog[{"Deleting", Length[pos], type, "dataset with properties: ", namei}, 4];
+					DeleteFile[ConvertExtension[files[[pos]],".nii"]];
+					DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
+					DeleteFile[ConvertExtension[files[[pos]],".json"]];
+					DeleteFile[ConvertExtension[files[[pos]],".bval"]];
+					DeleteFile[ConvertExtension[files[[pos]],".bvec"]];
+				],
+				
+				(*-------------------------------------------*)
+				(*----------- T2 conversion script ----------*)
+				(*-------------------------------------------*)
+				"mese",
+				
+				(*get the posisiton of the files needed*)
+				pos = posi = GetJSONPosition[json, {{"ProtocolName", namei}}, "EchoTime"];
+				(*select only echos*)
 				info = MergeJSON[json[[pos]]];
-				{data, vox} = Transpose[ImportNii[#]&/@ConvertExtension[files[[pos]], ".nii"]];
+				pos = pos[[;; info["EchoTrainLength"]]];
+				(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
+				
+				(*get the json and data*)
+				AssociateTo[info, "EchoNumber" -> Range@info["EchoTrainLength"]];
+				{data, vox} = Transpose[ImportNii /@ ConvertExtension[files[[pos]],".nii"]];
 				data = Transpose[data];
 				vox = First@vox;
 				(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
-				
-				(*correct data for different types*)
-				{data,sufd}=Switch[dixType,
-					"Mixed",{1000.data/2047.,""},
-					"Phase",{Pi (data-2047.)/2047,"ph"},
-					"Real",{1000.(data-2047.)/2047.,"real"},
-					"Imaginary",{1000.(data-2047.)/2047.,"imag"}
-				];
 				
 				(*make the additional manditory bids json values*)
 				infoExtra=<|
@@ -712,115 +806,30 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 				|>;
 				
 				(*export to the correct folder*)
-				outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->Flatten@{datType["Suffix"], sufd}|>];
-				(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
+				outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
+				(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
 				ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
 				Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
 				
 				(*Delete used files*)
 				Quiet@If[del,
-					DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-					DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
-					DeleteFile[ConvertExtension[files[[pos]],".json"]]
-				];
+					(*-----*)AddToLog[{"Deleting", Length[posi], type, "datasets with properties: ", namei},4];
+					DeleteFile[ConvertExtension[files[[posi]],".nii"]];
+					DeleteFile[ConvertExtension[files[[posi]],".nii.gz"]];
+					DeleteFile[ConvertExtension[files[[posi]],".json"]]
+				],
 				
-				(*export log after each type*)
-				ExportLog[logFile]			
-			(*Closeloop over dixon data types*)
-			,{dixType, {"Mixed", "Phase", "Real", "Imaginary"}}],
+				(*-------------------------------------------*)
+				(*-------- Other processing script ----------*)
+				(*-------------------------------------------*)
+				_,Print["Unknow type for conversion"];
 			
-			(*-------------------------------------------*)
-			(*---------- DWI conversion script ----------*)
-			(*-------------------------------------------*)
-			"dwi",
-			
-			(*get the posisiton of the files needed*)
-			pos = GetJSONPosition[json, {{"ProtocolName", namei}}];
-			(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
-			
-			(*get the json and data*)
-			info = json[[First@pos]];
-			{data, grad, val, vox} = ImportNiiDiff[ConvertExtension[files[[First@pos]],".nii"], FlipBvec->False];
-			(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
-			
-			(*make the additional manditory bids json values*)
-			infoExtra=<|
-				"ForthDimension"->"Diffusion",
-				"DataClass"->datType["Class"],
-				If[datType["Class"]==="Repetitions", "Repetition"->namei, Nothing],
-				If[datType["Class"]==="Stacks", "Stack"->namei, Nothing],
-				If[datType["Class"]==="Stacks", "OverLap"->datType["Overlap"], Nothing]
-			|>;
-			
-			(*export to the correct folder*)
-			outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
-			(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
-			ExportBval[val, ConvertExtension[outFile, ".bval"]];
-			ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
-			ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
-			Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
-			
-			Quiet@If[del,
-				(*-----*)AddToLog[{"Deleting", Length[pos], type, "dataset with properties: ", namei}, 4];
-				DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-				DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
-				DeleteFile[ConvertExtension[files[[pos]],".json"]];
-				DeleteFile[ConvertExtension[files[[pos]],".bval"]];
-				DeleteFile[ConvertExtension[files[[pos]],".bvec"]];
-			],
-			
-			(*-------------------------------------------*)
-			(*----------- T2 conversion script ----------*)
-			(*-------------------------------------------*)
-			"mese",
-			
-			(*get the posisiton of the files needed*)
-			pos = posi = GetJSONPosition[json, {{"ProtocolName", namei}}, "EchoTime"];
-			(*select only echos*)
-			info = MergeJSON[json[[pos]]];
-			pos = pos[[;; info["EchoTrainLength"]]];
-			(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
-			
-			(*get the json and data*)
-			AssociateTo[info, "EchoNumber" -> Range@info["EchoTrainLength"]];
-			{data, vox} = Transpose[ImportNii /@ ConvertExtension[files[[pos]],".nii"]];
-			data = Transpose[data];
-			vox = First@vox;
-			(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
-			
-			(*make the additional manditory bids json values*)
-			infoExtra=<|
-				"ForthDimension"->"EchoTime",
-				"DataClass"->datType["Class"],
-				If[datType["Class"]==="Repetitions", "Repetition"->namei, Nothing],
-				If[datType["Class"]==="Stacks", "Stack"->namei, Nothing],
-				If[datType["Class"]==="Stacks", "OverLap"->datType["Overlap"], Nothing]
-			|>;
-			
-			(*export to the correct folder*)
-			outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
-			(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
-			ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
-			Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
-			
-			(*Delete used files*)
-			Quiet@If[del,
-				(*-----*)AddToLog[{"Deleting", Length[posi], type, "datasets with properties: ", namei},4];
-				DeleteFile[ConvertExtension[files[[posi]],".nii"]];
-				DeleteFile[ConvertExtension[files[[posi]],".nii.gz"]];
-				DeleteFile[ConvertExtension[files[[posi]],".json"]]
-			],
-			
-			(*-------------------------------------------*)
-			(*-------- Other processing script ----------*)
-			(*-------------------------------------------*)
-			_,Print["Unknow type for conversion"];
-		
-		(*Close Type switch*)
+			(*Close Type switch*)
+			];
+		(*close file check*)	
 		];
-		
 		(*export the log after each name*)
-		ExportLog[logFile]
+		ExportLog[logFile];
 	(*close loop over stac names*)
 	,{namei, datType["Label"]}];
 ] 
