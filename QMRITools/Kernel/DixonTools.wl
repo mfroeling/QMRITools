@@ -56,7 +56,8 @@ SimulateDixonSignal::usage =
 Echotimes echo in ms, fat fraction fr between 0 and 1, field of resonance B0 in Hz and relaxation T2 in ms."
 
 OptimizeDixonEcho::usage = 
-"OptimizeDixonEcho[] shows a manipulate pannel which allos to optimize the dixon echos."
+"OptimizeDixonEcho[] shows a manipulate pannel which allos to optimize the dixon echos.
+OptimizeDixonEcho[echos] shows a manipulate pannel which allos to optimize the predifined dixon echos."
 
 
 FindInPhaseEchos::usage = 

@@ -25,10 +25,10 @@ BeginPackage["QMRITools`TaggingTools`", Join[{"Developer`"}, Complement[QMRITool
 
 
 AnnalyzeTagging::usage = 
-"AnnalyzeTagging[gridC].";
+"AnnalyzeTagging[gridC] ...";
 
 CalculateDispacementParameters::usage = 
-"CalculateDispacementParameters[{motx, moty}, mask].";
+"CalculateDispacementParameters[{motx, moty}, mask] ...";
 
 
 (* ::Subsection:: *)
