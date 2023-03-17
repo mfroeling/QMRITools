@@ -656,13 +656,13 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 	{fol, parts} = PartitionBidsFolderName[foli];
 	type = datType["Type"];
 	
-	(*-----*)AddToLog[{"Processing", ToString[Length[datType["Label"]]], datType["Class"]}, 2, True];
+	(*-----*)AddToLog[{"Converting", ToString[Length[datType["Label"]]], datType["Class"]}, 2, True];
 	(*-----*)AddToLog[StringJoin@@Riffle[datType["Label"],", "], 3];
 	
 	(*loop over stac names*)
 	Table[
 		(*import the json belonging to name*)
-		(*-----*)AddToLog[{"Processing", namei, "as", type,":"}, True, 3];
+		(*-----*)AddToLog[{"Converting", namei, "as", type,":"}, True, 3];
 		files = FileNames["*"<>namei<>"*.json", foli];
 		
 		If[Length@files===0,
@@ -684,7 +684,6 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 				Table[
 					(*get the posisiton of the files needed*)
 					pos = GetJSONPosition[json, {{"ProtocolName", namei}, {"ImageType", dixType}}, "EchoNumber"];
-					Print[pos];
 					
 					(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {namei, dixType}}, 4];
 					
@@ -815,7 +814,8 @@ MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 				(*-------------------------------------------*)
 				(*-------- Other processing script ----------*)
 				(*-------------------------------------------*)
-				_,Print["Unknow type for conversion"];
+				_,
+				Print["Unknow type for conversion"];
 			
 			(*Close Type switch*)
 			];
