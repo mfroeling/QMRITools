@@ -62,6 +62,9 @@ Next steps will be muscle segentation and per muscle analysis of quantitative va
     - will allow automated labeling for analysis
     - will allow grouping of segmentation in groups
 
-### histology based simualations
+### Histology based simualations
 
--  
+- If histology is availible allow diffusion simulations of cell segmentation
+  - based on the work of David Berry
+  - Allow parameterized generation of realistic muscle cells
+  - potentially add internal muscle organells
