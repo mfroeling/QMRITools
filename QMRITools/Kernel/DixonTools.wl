@@ -31,16 +31,13 @@ Output is {waterFraction, fatFraction}.
 The values of water and fat are arbitraty units and the ouput fractions are between 0 and 1."
 
 DixonReconstruct::usage = 
-"DixonReconstruct[real, imag, echo] reconstruxt Dixon data with initital guess b0 = 0 and T2star = 0.
-DixonReconstruct[real, imag, echo, b0] reconstructs Dixon data with intitial guess T2star = 0.
-DixonReconstruct[real, imag, echo, b0, t2] reconstructs Dixon data.
+"DixonReconstruct[{real, imag}, echo] reconstruxt Dixon data with initital guess b0 = 0 and T2star = 0.
+DixonReconstruct[{real, imag}, echo, {b0}] reconstructs Dixon data with intitial guess T2star = 0.
+DixonReconstruct[{real, imag}, echo, {b0, t2}] reconstructs Dixon data with t2star and B0.
+DixonReconstruct[{real, imag}, echo, {b0, t2, ph0}] reconstructs Dixon data with initial phase.
+DixonReconstruct[{real, imag}, echo, {b0, t2, ph0, phb}] reconstructs Dixon data with bipolar phase .
 
-real is the real data in radials.
-imag is the imaginary data in radians.
-B0 can be estimated from two phase images using Unwrap.
-T2 can be estimated from multiple echos using T2fit.
-
-Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{B0,T2star},itterations}.
+Output is {{watF,fatF},{watSig,fatSig},{inphase,outphase},{{b0, ph0, phb},{r2, t2}},itterations}.
 
 The fractions are between 0 and 1, the B0 field map is in Hz and the T2start map is in ms.
 
@@ -115,6 +112,9 @@ DixonFilterInput::usage =
 
 DixonFilterOutput::usage = 
 "DixonFilterOutput is an options for DixonReconstruct. If True the out b0 and T2star values are smoothed Median filter and lowpassfiltering after which the water and fat maps are recomputed."
+
+DixonComplexOutput::usage = 
+"DixonComplexOutput is an options for DixonReconstruct. If set True DixonReconstruct will return the complex data instead of the magnitude data."
 
 
 DixonFilterSize::usage = 
@@ -496,7 +496,7 @@ SimulateDixonSignal[echo_, fr_, b0_, t2_, OptionsPattern[]] := Block[{precession
 	
 	Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
 	phi = N@2 Pi b0 I - 1./t2;
-	sig = Exp[If[Length[T2] === 2, Transpose[echos # & /@ phi], phi echo]] Amat;
+	sig = Exp[If[Length[t2] === 2, Transpose[echo # & /@ phi], phi echo]] Amat;
 	
 	sig = sig . {fr, 1 - fr};
 	{Re[sig], Im[sig]}

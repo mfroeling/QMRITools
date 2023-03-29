@@ -969,9 +969,9 @@ Options[JoinSets]={
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-JoinSets[data_?ArrayQ,over_,opts:OptionsPattern[]]:=JoinSets[data,over,{1,1,1},opts]
+JoinSets[data_?ArrayQ, over_, opts:OptionsPattern[]]:=JoinSets[data, over, {1,1,1}, opts]
 
-JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
+JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 	{dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran},
 	
 	(*get the options*)
@@ -991,7 +991,7 @@ JoinSets[data_?ArrayQ,over_,vox_,OptionsPattern[]]:=Block[
 	ran = MinMax[data];
 
 	(*reverse the order of the sets if needed*)
-	dat = If[OptionValue[ReverseSets],Reverse[dat],dat];
+	dat = If[OptionValue[ReverseSets], Reverse[dat], dat];
 	
 	If[motion,
 		Switch[depth,
@@ -1191,7 +1191,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 	regFunc = If[OptionValue[JoinSetSplit], RegisterDataTransformSplit, RegisterDataTransform];
 	
 	i=0;
-	If[mon,PrintTemporary[Dynamic[i]]];
+	If[mon, PrintTemporary[Dynamic[i]]];
 	
 	(*perform the motion correction*)
 	Table[
