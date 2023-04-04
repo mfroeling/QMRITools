@@ -100,7 +100,7 @@ the latest version of these tools and their user license please visit
 their website.
 
 -   [dcm2niix](https://github.com/rordenlab/dcm2niix/)
--   [Elastix](http://elastix.isi.uu.nl/)
+-   [Elastix](https://elastix.lumc.nl/)
 
 ## Toolboxes
 
