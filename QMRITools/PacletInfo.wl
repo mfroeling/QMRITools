@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "3.1.6",
+	"Version" -> "3.1.7",
 	"WolframVersion" -> "13.0+",
 	"SystemID" -> All, 
 	
@@ -33,9 +33,11 @@ PacletObject[<|
 		{"Asset", "Root" -> "Applications/MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
 		{"Asset", "Root" -> "Applications/Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
 		
-		{"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"ElastixLib", "ANNlib-5.0.dll"}}},
-		{"Asset", "Root" -> "Applications/MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.0.1.dylib"}}},
-		{"Asset", "Root" -> "Applications/Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-4.9.so"}}},
+		{"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"ElastixLib", "ANNlib-5.1.dll"}}},
+		{"Asset", "Root" -> "Applications/MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.dylib"}}},
+		{"Asset", "Root" -> "Applications/MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.1.dylib"}}},
+		{"Asset", "Root" -> "Applications/Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.so"}}},
+		{"Asset", "Root" -> "Applications/Linux-x86-64", "SystemID" -> "Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.so.1"}}},
 		
 		(*dcm2niix*)
 		{"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"DcmToNii", "dcm2niix.exe"}}},

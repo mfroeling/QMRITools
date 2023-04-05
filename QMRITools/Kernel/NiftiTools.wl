@@ -247,15 +247,15 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		
 		command = Switch[$OperatingSystem,
 			"Windows",
-			First@FileNameSplit[dcm2niif]<>"\ncd "<>dcm2niif<>"\n"<>dcm2niix<>" -f %s_%t_%i_%m_%n_%p_%q -z "<>
+			First@FileNameSplit[dcm2niif]<>"\ncd "<>dcm2niif<>"\n"<>dcm2niix<>" -f %s_%t_%m_%n_%p -z "<>
 			compress<>" -m y -v y -o \""<>folout<>"\" \""<> filfolin<>"\" > \""<>log<>"\nexit\n"
 			,
 			"Unix",
-			dcm2nii<>" -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+			dcm2nii<>" -f %s_%t_%m_%n_%p -z "<>
 			compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 			,
 			"MacOSX",
-			dcm2nii<>" -f %f_%s_%t_%i_%m_%n_%p_%q -z "<>
+			dcm2nii<>" -f %s_%t_%m_%n_%p -z "<>
 			compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 		];
 		

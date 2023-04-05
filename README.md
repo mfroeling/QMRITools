@@ -21,13 +21,13 @@
 
 ## Content
 
--   [Introduction](#introduction)
--   [Installation](#installation)
--   [Citing](#citing)
--   [Documentation](#documentation)
--   [External dependencies](#external-dependencies)
--   [Toolboxes](#toolboxes)
--   [License](#license)
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Citing](#citing)
+- [Documentation](#documentation)
+- [External dependencies](#external-dependencies)
+- [Toolboxes](#toolboxes)
+- [License](#license)
 
 ------------------------------------------------------------------------
 
@@ -50,11 +50,12 @@ For more information [visit our website](https://www.qmritools.com/)
 ## Installation
 
 The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases).
-The toolbox is best installed via the Mathematica paclet system. For more information [vist the website](https://www.qmritools.com/doc/instal/).
+The toolbox is best installed via the Mathematica paclet system. For more information [visit the website](https://www.qmritools.com/doc/instal/).
 
 Automatic installation:
-1.	Download the `QMRITools-x.x.x.paclet`.
-2.	Install the paclet using `PacletInstall`.
+
+1. Download the `QMRITools-x.x.x.paclet`.
+2. Install the paclet using `PacletInstall`.
 
 `PacletInstall["xxx\\QMRITools-x.x.x.paclet"]`  
 
@@ -66,20 +67,20 @@ Or alternatively you can directly install it from the latest release page
 
 When using the toolbox please cite one of the following references:
 
-1.  Froeling M: QMRTools: a Mathematica toolbox for quantitative MRI
-    analysis. J Open Source Softw 2019; 4:1204.
-    [link](https://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
-2.  Froeling M, et al.: Reproducibility of diffusion tensor imaging in
-    human forearm muscles at 3.0 T in a clinical setting. Magn Reson Med
-    2010; 64:1182-1190.
-    [link](https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.22477)
-3.  Froeling M, et al.: Diffusion-tensor MRI reveals the complex muscle
-    architecture of the human forearm. J Magn Reson Imaging 2012;
-    36:237-248.
-    [link](https://onlinelibrary.wiley.com/doi/10.1002/jmri.23608)
-4.  Schlaffke et al.: Multi‐center evaluation of stability and reproducibility of 
-	quantitative MRI measures in healthy calf muscles; NMR Biomed. 2019;32:e4119
-	[link](https://onlinelibrary.wiley.com/doi/full/10.1002/nbm.4119) 
+1. Froeling M: QMRTools: a Mathematica toolbox for quantitative MRI
+  analysis. J Open Source Softw 2019; 4:1204.
+  [link](https://joss.theoj.org/papers/ef8bfb6c31499845d353b6a5af0d6300)
+2. Froeling M, et al.: Reproducibility of diffusion tensor imaging in
+  human forearm muscles at 3.0 T in a clinical setting. Magn Reson Med
+  2010; 64:1182-1190.
+  [link](https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.22477)
+3. Froeling M, et al.: Diffusion-tensor MRI reveals the complex muscle
+  architecture of the human forearm. J Magn Reson Imaging 2012;
+  36:237-248.
+  [link](https://onlinelibrary.wiley.com/doi/10.1002/jmri.23608)
+4. Schlaffke et al.: Multi‐center evaluation of stability and reproducibility of
+  quantitative MRI measures in healthy calf muscles; NMR Biomed. 2019;32:e4119
+  [link](https://onlinelibrary.wiley.com/doi/full/10.1002/nbm.4119)
 
 ## Documentation
 
@@ -88,7 +89,6 @@ An online version of the full documentation can be found [here](https://www.qmri
 <p align="center">
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/addons.PNG" alt="QMRITools package add on"  width="70%" />
 </p>
-
 
 ## External dependencies
 
@@ -99,45 +99,45 @@ versions you can replace them but functionality is not guaranteed. For
 the latest version of these tools and their user license please visit
 their website.
 
--   [dcm2niix](https://github.com/rordenlab/dcm2niix/)
--   [Elastix](http://elastix.isi.uu.nl/)
+- [dcm2niix](https://github.com/rordenlab/dcm2niix/)
+- [Elastix](https://elastix.lumc.nl/)
 
 ## Toolboxes
 
 QMRITools contains the following [toolboxes](https://www.qmritools.com/tool/):
 
--   CardiacTools
--   CoilTools
--   DenoiseTools
--   DixonTools
--   ElastixTools
--   FasciculationTools
--   GeneralTools
--   GradientTools
--   ImportTools
--   IVIMTools
--   JcouplingTools
--   LoggingTools
--   MaskingTools
--   MuscleBidsTools
--   NiftiTools
--   PhysiologyTools
--   PlottingTools
--   ProcessingTools
--   ReconstructionTools
--   RelaxometryTools
--   SimulationTools
--   SpectroTools
--   TaggingTools
--   TensorTools
--   TractographyTools
--   VisteTools
+- CardiacTools
+- CoilTools
+- DenoiseTools
+- DixonTools
+- ElastixTools
+- FasciculationTools
+- GeneralTools
+- GradientTools
+- ImportTools
+- IVIMTools
+- JcouplingTools
+- LoggingTools
+- MaskingTools
+- MuscleBidsTools
+- NiftiTools
+- PhysiologyTools
+- PlottingTools
+- ProcessingTools
+- ReconstructionTools
+- RelaxometryTools
+- SimulationTools
+- SpectroTools
+- TaggingTools
+- TensorTools
+- TractographyTools
+- VisteTools
 
 ------------------------------------------------------------------------
 
 ## License
 
-https://opensource.org/licenses/BSD-3-Clause
+`https://opensource.org/licenses/BSD-3-Clause`
 
 Note that restrictions imposed by these patents (and possibly others)
 exist independently of and may be in conflict with the freedoms granted
@@ -152,6 +152,4 @@ you from committing patent infringement. So, before you do anything with
 this program, make sure that you have permission to do so not merely in
 terms of copyright, but also in terms of patent law.
 
-Some code in the NiiTools packages was based on
-https://github.com/tomdelahaije/nifti-converter
-
+Some code in the NiiTools packages was based on `https://github.com/tomdelahaije/nifti-converter`

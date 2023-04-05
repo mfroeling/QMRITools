@@ -1407,7 +1407,7 @@ GetJSONPosition[json_, selection_]:=GetJSONPosition[json, selection, ""]
 
 GetJSONPosition[json_, selection_, sort_]:=Block[{seli, self, list, key, val, inds, pos},
 	(*selection functions*)
-	seli = ToLowerCase[Last[Flatten[{#1/.#3}]]]===ToLowerCase[#2]&;
+	seli = StringReplace[ToLowerCase[Last[Flatten[{#1 /. #3}]]], "wip " -> ""] === ToLowerCase[#2] &;
 	self = (
 		list=#1;
 		key=#2[[1]]; 
