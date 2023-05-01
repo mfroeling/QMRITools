@@ -186,7 +186,7 @@ Options[DeNoise] = {DeNoiseKernel -> "Gaussian", DeNoiseMonitor -> False, DeNois
 SyntaxInformation[DeNoise] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 DeNoise[dat_, sigi_, filt_, OptionsPattern[]] := Module[{kern, out, type, dimsig, dimdat, data, sig},
-	sig = N[sigi];
+	sig = N@sigi;
 	data = ToPackedArray@N@dat;
 	(*Check dimensions,must be of lower order than data*)
 	If[ArrayQ[sig] && (ArrayDepth[data] == 3 || ArrayDepth[data] == 4),
