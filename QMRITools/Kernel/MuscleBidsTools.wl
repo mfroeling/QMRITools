@@ -1272,25 +1272,26 @@ MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPatt
 
 
 MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
-		nonQuant, motion, reverse, fol, parts, merge, outfile, tarType, tarCon, movType, movCon, n,
-		movs, movStacs, tarStacs, overT, overM, targets, movings, mov, nStac, nCheck, nSet, target, voxt, dimt, moving, 
-		voxm, dimm,	files, im, func, reg, mskm, mskt
+		nonQuant, motion, reverse, fol, parts, merge, outfile, tarType, tarSuf, tarCon, tarFile, movType, movCon, n,
+		movs, movStacs, tarStacs, overT, overM, targets, movings, mov, nStac, nCheck, nSet, target, voxt, moving, 
+		voxm, files, im, func, reg, mskm, mskt
 	},
 
 	nonQuant = {"inph", "outph", "wat", "fat", "S0"};
 	motion = True;
 	reverse = False;
 
-	(*get teh outfiles*)
+	(*get the outfiles*)
 	{fol, parts} = PartitionBidsFolderName[foli];
 	merge = datType["Merging"];
 	(*get the outfile*)
-	outfile = GenerateBidsFileName[folo,<|parts, "suf"->datType["Suffix"],"Type"->datType["Type"]|>];
+	outfile = GenerateBidsFileName[folo, <|parts, "suf"->datType["Suffix"], "Type"->datType["Type"]|>];
 
 	(*get the settings for the target*)
-	{tarType, tarCon} = merge["Target"];
-	tarStacs = StringReplace[#, {"-" -> "", "_" -> "", "." -> ""}] & /@ First[Select[allType, #["InFolder"] === "dix" &]]["Label"];
-	
+	{tarType, tarSuf, tarCon} = merge["Target"];
+	tarFile = GenerateBidsFileName[folo, <|parts, "suf"->{tarSuf, tarCon}, "Type"->tarType|>]<>".nii";
+	tarStacs = StringReplace[#, {"-" -> "", "_" -> "", "." -> ""}] & /@ First[Select[allType, #["InFolder"] === tarSuf &]]["Label"];
+
 	(*get the settings for the moving*)
 	movType = datType["InFolder"];
 	movCon = merge["Moving"];
@@ -1309,9 +1310,9 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 		(*-----*)AddToLog[{StringJoin@Riffle[movs,", "]}, 4];
 		
 		(*get all the moving and target data file names*)
-		targets = Flatten[FileNames["*"<>#<>"*"<>tarType<>"*"<>tarCon<>".nii.gz", FileNameJoin[{DirectoryName[foli], tarType}]]&/@tarStacs];
+		targets = Flatten[FileNames["*"<>#<>"*"<>tarSuf<>"*"<>tarCon<>".nii.gz", FileNameJoin[{DirectoryName[foli], tarSuf}]]&/@tarStacs];
 		movings = (mov = #; Flatten[FileNames["*"<>#<>"*"<>mov<>".nii.gz", foli]& /@movStacs])& /@movs;
-		
+
 		(*check if number of stacks are consistant*)
 		nStac = Length@movStacs;
 		nCheck = AllTrue[n=Join[{Length[targets]},Length/@movings], #===nStac&];
@@ -1323,23 +1324,31 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 			
 			(*import the Target data*)
 			(*-----*)AddToLog[{"Importing and processing the target data"}, 4];
-			{target, voxt} = Transpose[ImportNii/@targets];
-			dimt = Dimensions@First@target;
-			voxt = First@voxt;
+			If[NiiFileExistQ[tarFile],
+				(*if the merged target exist import that*)
+				{target, voxt} = ImportNii[tarFile];
+
+				(*-----*)AddToLog[{"Splitting the primary datatype that already existed"}, 4];
+				If[nStac=!=1,target = SplitSets[target, nStac, overT, ReverseSets->reverse]];
+				,
+
+				(*If the merged target does not exist import the stacks*)
+				{target, voxt} = Transpose[ImportNii/@targets];
+				voxt = First@voxt;
+
+				(*join the target and split for the motion correction.*)
+				(*-----*)AddToLog[{"Joining the primary datatype",If[motion,"with","without"],"motion correction"}, 4];
+				If[nStac=!=1,
+					target = JoinSets[target, overT, voxt, ReverseSets->reverse, MotionCorrectSets->motion, 
+						NormalizeSets->True, NormalizeOverlap->True, MonitorCalc->False];
+					target = SplitSets[target, nStac, overT, ReverseSets->reverse];
+				];
+			];
 			
 			(*-----*)AddToLog[{"Importing and processing the moving data"}, 4];
 			{moving, voxm} = Transpose[(files=#;Transpose[ImportNii[#]&/@files])& /@movings];
-			dimm = Dimensions@First@First@moving;
 			voxm = First@First@voxm;
-			
-			(*join the target and split for the motion correction.*)
-			(*-----*)AddToLog[{"Joining the primary datatype",If[motion,"with","without"],"motion correction"}, 4];
-			If[nStac=!=1,
-				target = JoinSets[target, overT, voxt, ReverseSets->reverse, MotionCorrectSets->motion, 
-					NormalizeSets->True, NormalizeOverlap->True, MonitorCalc->False];
-				target = SplitSets[target, nStac, overT, ReverseSets->reverse];
-			];
-			
+
 			(*perform motion correction after target merging*)
 			im = First@First@Position[movs, movCon];
 			
@@ -1360,6 +1369,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 					(*register back the target from native space to anatomy and tranfrom the rest*)
 					func = If[i===If[reverse, nStac, 1], RegisterDataTransform, RegisterDataTransformSplit];
 					Last@func[{target[[i]], mskt, voxt}, {reg, voxm},{Transpose[moving[[All,i]]], voxm},
+						DeleteTempDirectory->False,
 						Iterations->300, PrintTempDirectory->False, BsplineSpacing->10 voxm, InterpolationOrderReg->1, NumberSamples -> 10000,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]]
 				,{i, 1, nStac}];
@@ -1377,7 +1387,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 			(*export the joined data*)
 			(*----*)AddToLog["Exporting the calculated data to:", 4];
 			(*----*)AddToLog[outfile, 5];		
-			ExportNii[moving[[#]],voxt, outfile<>"_"<>movs[[#]]<>".nii"] &/@ Range[nSet];
+			ExportNii[moving[[#]], voxt, outfile<>"_"<>movs[[#]]<>".nii"] &/@ Range[nSet];
 			
 			(*make the checkfile*)
 			MakeCheckFile[outfile, Sort@Join[{"Check"->"done"},Normal@datType]];
