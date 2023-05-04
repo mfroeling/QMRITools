@@ -126,7 +126,7 @@ FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, da
 	(*Get and check options*)
 	met = OptionValue[ThresholdMethod];
 	{sc, fr} = OptionValue[ActivationThreshold];
-	If[sc < 1 || fr > 1, Return[Message[FindActivations::tresh, sc, fr]]];
+	If[sc < 0 || fr > 1, Return[Message[FindActivations::tresh, sc, fr]]];
 	{start, stop} = OptionValue[IgnoreSlices];
 	itt = OptionValue[ActivationIterations];
 	back = OptionValue[ActivationBackground];
@@ -184,7 +184,7 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 				cont = False;
 				,			
 				(*perform selection on sd and fr*)
-				tr = Min[{1 - (sc/mn) StandardDeviation[tSelect], fr}];
+				tr = Max[{0.1, Min[{1 - (sc/mn) StandardDeviation[tSelect], fr}]}];
 				tSelect = Select[t, # > tr mn &];
 				If[Length[tSelect] <= 5, 
 					err = True;

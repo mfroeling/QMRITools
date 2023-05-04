@@ -985,7 +985,7 @@ JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 	
 	(*normalize the data*)
 	dat = If[normalize, 
-		If[mon,PrintTemporary["normalizing data"]]; 
+		If[mon, PrintTemporary["Normalizing data"]]; 
 		NormalizeData/@data, data];
 	
 	ran = MinMax[data];
@@ -998,10 +998,10 @@ JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 			5,
 			motion=False;
 			(*define the moving data*)
-			If[mon,Print["motion correct is only for 3D volues"]]
+			If[mon,Print["Motion correct is only for 3D volues"]]
 			,
 			4,
-			If[mon,PrintTemporary["motion correcting data"]];
+			If[mon,PrintTemporary["Motion correcting data"]];
 			dat = CorrectJoinSetMotion[dat, vox, over, PaddOverlap->pad, JoinSetSplit->OptionValue[JoinSetSplit], MonitorCalc->mon];
 			overlap = overlap + 2*pad;
 		]
