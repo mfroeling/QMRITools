@@ -502,16 +502,15 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			"Dicom",
 			If[logFile==="", logFile = FileNameJoin[{outFol, "DcmToNii_"<>StringReplace[DateString[{"Day", "Month", "YearShort", "-", "Time"}],":"->""]<>".log"}]];
 			(*----*)AddToLog[{"Starting dcm to nii conversion for directory: ", fol}, True, 0];
-			(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)",0];
-			(*----*)If[cc, AddToLog["Using custom config", 1]];
+			(*----*)If[cc, AddToLog["*** Using custom config ***", 1]];
+			(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)", 1];,
 
-			, 
 			(*MuscleBidsConvert*)
 			"Convert", 
 			logFile = FileNameJoin[{fol, nam<>"_BIDSConvert.log"}];
 			ImportLog[logFile];
 			(*----*)AddToLog[{"Starting bids conversion for directory: ", fol}, True, 0];
-			(*----*)If[cc, AddToLog["Using custom config", 1]];
+			(*----*)If[cc, AddToLog["*** Using custom config ***", 1]];
 			(*----*)AddToLog["Perform conversion for: ",1];,
 			
 			(*MuscleBidsProcess*)
@@ -519,16 +518,16 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			logFile = FileNameJoin[{out, nam<>"_BIDSProcess.log"}];
 			ImportLog[logFile];
 			(*----*)AddToLog[{"Starting bids processing for directory: ", fol}, True, 0];
-			(*----*)If[cc, AddToLog["Using custom config", 1]];,
+			(*----*)If[cc, AddToLog["*** Using custom config ***", 1]];
 			
 			(*MuscleBidsMerge*)
 			"Merge",
 			logFile = FileNameJoin[{out, nam<>"_BIDSMerge.log"}];
 			ImportLog[logFile];
 			(*----*)AddToLog[{"Starting bids merging for directory: ", fol}, True, 0];
-			(*----*)If[cc, AddToLog["Using custom config", 1]];
+			(*----*)If[cc, AddToLog["*** Using custom config ***", 1]];
 		];
-		
+
 		If[met==="Dicom",
 			(*perform dicom nii conversions*)
 			BidsDcmToNiiI[fol, out, logFile];
