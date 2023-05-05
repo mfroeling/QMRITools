@@ -647,7 +647,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 (*MuscleBidsConvert*)
 
 
-Options[MuscleBidsConvert] = {DeleteAfterConversion->False, SelectSubjects->All};
+Options[MuscleBidsConvert] = {DeleteAfterConversion->True, SelectSubjects->All};
 
 SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
