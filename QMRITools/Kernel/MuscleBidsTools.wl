@@ -373,11 +373,15 @@ GetConfig[folder_?StringQ, nam_?StringQ]:=Block[{file},
 (*BidsDcmToNii*)
 
 
-Options[BidsDcmToNii]={BidsIncludeSession->True}
+(* ::Subsubsection::Closed:: *)
+(*BidsDcmToNii*)
+
+
+Options[BidsDcmToNii]={BidsIncludeSession->True, SelectSubjects->All}
 
 SyntaxInformation[BidsDcmToNii] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-BidsDcmToNii[folder_?StringQ]:=BidsDcmToNii[folder, GetConfig[folder]];
+BidsDcmToNii[folder_?StringQ, opts:OptionsPattern[]]:=BidsDcmToNii[folder, GetConfig[folder], opts];
 
 BidsDcmToNii[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
 	dir = Directory[];
@@ -385,71 +389,68 @@ BidsDcmToNii[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Bl
 	BidsDcmToNii[
 		config["folders"]["dicomData"],(*the input folder of the dcm data*)
 		config["folders"]["rawData"],(*the output folder for converstion*)
+		"",
 		opts
 	];
 	SetDirectory[dir];
 ]
 
-BidsDcmToNii[dcmFol_, niiFol_, OptionsPattern[]]:=Block[{logFile, fols, folsi, foli, keys, name, ses, bidsname, out, dir, cc, conf},
-	(*start logging*)
-	ResetLog[];
-	ShowLog[];
-		
-	logFile = FileNameJoin[{niiFol,"DcmToNii_"<>StringReplace[DateString[{"Day", "Month", "YearShort", "-", "Time"}],":"->""]<>".log"}];
+BidsDcmToNii[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]:=BidsFolderLoop[inFol, outFol, datDisIn, Method->"Dicom", ops]
+
+(* ::Subsubsection::Closed:: *)
+(*BidsDcmToNiiI*)
+
+
+BidsDcmToNiiI[fol_, outI_, logFile_]:=Block[{out},
+	(*define the outfolder*)
+	out = FileNameJoin[{outI, "raw"}];
+	(*----*)AddToLog[{"Output folder: ", out},1];
+	Quiet[CreateDirectory[out]];
 	
-	(*find all foders that need to be converted*)
-	fols = FileNameJoin[{Directory[], #}] &/@ Select[FileNames[All, dcmFol],DirectoryQ];
-	
-	(*loop over all dcm folders*)
-	Table[
-		(*----*)AddToLog[{"Converting: ",folsi},True,0];
-		(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)",0];
-		
-		(*get the names*)
-		foli = PartitionBidsName[FileBaseName[folsi]];
-		keys=Keys[foli];
-		
-		(*if bids take sub key else assume first suf is name*)
-		name = "sub"->If[MemberQ[keys,"sub"],foli["sub"],First[foli["suf"]]];
-		
-		(*if bids take ses key else assume last suf is session*)
-		ses="ses"->If[MemberQ[keys,"ses"],
-			(*session is present take session*)
-			First[foli["ses"]],
-			(*more than one suf last is session*)
-			If[Length[foli["suf"]]>1,Last[foli["suf"]],
-				(*no session, see if need to be forced*)
-				If[OptionValue[BidsIncludeSession],"001", ""]
-			]
-		];
-		(*create the output with the bidsname to which all is exported*)
-		bidsname = GenerateBidsFileName[Association[{name, ses}]];
-		out = FileNameJoin[{StringReplace[DirectoryName[folsi], {dcmFol->niiFol}], DirectoryName[DirectoryName[bidsname]], "raw"}];
-		(*----*)AddToLog[{"Output folder: ", out},1];
-		Quiet[CreateDirectory[out]];
-		
-		(*check for config*)
-		{cc, conf} = CheckConfig[folsi, DirectoryName[out]];
-		(*----*)If[cc, AddToLog["Using custom config", 1]];
-		
-		(*perform the conversions only when output folder is empty*)
-		If[EmptyDirectoryQ[out],
-			(*perform conversion*)			
-			DcmToNii[{folsi, out},MonitorCalc->False];
-			(*----*)AddToLog["Folder was converted",1],
-			(*----*)AddToLog["Folder was skipped since output folder already exists",1];
-		];
-		
-	(*Close loop over folders*)	
-	,{folsi, fols}];
-	
-	(*export the log file*)
-	ExportLog[logFile, True];
+	(*perform the conversions only when output folder is empty*)
+	If[EmptyDirectoryQ[out],
+		(*perform conversion*)			
+		(*----*)AddToLog["Starting the conversion", 1, True];
+		DcmToNii[FileNameJoin[{Directory[],#}]&/@{fol,out}, MonitorCalc->False];
+		(*----*)AddToLog["Folder was converted", 1],
+		(*----*)AddToLog["Folder was skipped since output folder already exists", 1];
+	];
+
+	(*export the log after each name*)
+	ExportLog[logFile];
 ]
 
 
 (* ::Subsection:: *)
 (*BidsSupport*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*SubNameToBids*)
+
+
+Options[SubNameToBids] = {BidsIncludeSession -> True};
+
+SubNameToBids[nameIn_?ListQ, met_, opts : OptionsPattern[]] := SubNameToBids[#, met, opts] & /@ nameIn
+
+SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name, ses},
+	(*get the names*)
+	ass = Switch[met, "Sub", PartitionBidsName, "Dicom", PartitionBidsName[FileNameTake[#, {2, -1}]] &, _, PartitionBidsFolderName[#][[-1]] &]@nameIn;
+	keys = Keys[ass];
+	
+	(*if bids take sub key else assume first suf is name*)
+	name = "sub" -> If[MemberQ[keys, "sub"], ass["sub"], First[ass["suf"]]];
+	
+	(*if bids take ses key else assume last suf is session*)
+	ses = "ses" -> If[MemberQ[keys, "ses"],
+		(*session is present take session*)
+		ass["ses"],
+		(*more than one suf last is session*)
+		If[Length[ass["suf"]] > 1, Last[ass["suf"]],
+			(*no session,see if need to be forced*)
+			If[OptionValue[BidsIncludeSession], "001", ""]]];
+	Association[{name, ses, "suf" -> {}}]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -460,36 +461,51 @@ Options[BidsFolderLoop] = {DeleteAfterConversion->False, SelectSubjects->All, Me
 
 SyntaxInformation[BidsFolderLoop] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-BidsFolderLoop[inFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:=BidsFolderLoop[inFol, inFol, datDis, ops]
+BidsFolderLoop[inFol_?StringQ, datDis_, ops:OptionsPattern[]]:=BidsFolderLoop[inFol, inFol, datDis, ops]
 
-BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?ListQ, ops:OptionsPattern[]]:=Block[{
-		met, datType, fols, subs, logFile, nam, filesSl, jsons, files, nTyp, pat, rfol, cc, out, datDis
+BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]:=Block[{
+		met, datType, fols, subs, logFile, ass, nam, filesSl, jsons, files, nTyp, pat, rfol, cc, out, datDis
 	},
+	(*see which method*)
+	met = OptionValue[Method];
+
+	(*select the subjects to be processed*)
+	subs = OptionValue[SelectSubjects];
+	(*get all folders that can be processed*)
+	fols = If[met==="Dicom",
+		ResteLog[];
+		Select[FileNames[All, inFol], DirectoryQ],
+		SelectBidsSessions[SelectBidsSubjects[inFol]]	
+	];
+	subs = If[subs===All||subs==="All", fols, Select[fols, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#, met]]&]];
 	
 	(*open log*)
 	ShowLog[];
-	
-	(*see which method*)
-	met = OptionValue[Method];
-	(*slect the subjects to be processed*)
-	fols = SelectBidsSessions[SelectBidsSubjects[inFol]];
-	subs = OptionValue[SelectSubjects];
-	subs = If[subs===All||subs==="All", fols, Select[fols, MemberQ[subs, PartitionBidsFolderName[#][[-1]]["sub"]]&]];
-	
+	logFile="";
+
 	(*loop over the subjects*)
 	Table[
 		(*get the bidsname*)
-		nam = GenerateBidsName[PartitionBidsFolderName[fol][[-1]]];
-		out = GenerateBidsFolderName[outFol, Last[PartitionBidsFolderName[fol]]];
+		ass = SubNameToBids[fol, met];
+		nam = GenerateBidsName[ass];
+		out = GenerateBidsFolderName[outFol, ass];
 		
 		(*check for custom config*)
 		{cc, datDis} = CheckConfig[fol, out, datDisIn];
-				
+		
 		(*convert the nameType to valid input, will always be a list of associations*)
 		datType = CheckDataDiscription[datDis, met];
-				
+
 		(*start method specific logging*)
 		Switch[met,
+			(*BidsDcmToNii*)
+			"Dicom",
+			If[logFile==="", logFile = FileNameJoin[{outFol, "DcmToNii_"<>StringReplace[DateString[{"Day", "Month", "YearShort", "-", "Time"}],":"->""]<>".log"}]];
+			(*----*)AddToLog[{"Starting dcm to nii conversion for directory: ", fol}, True, 0];
+			(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)",0];
+			(*----*)If[cc, AddToLog["Using custom config", 1]];
+
+			, 
 			(*MuscleBidsConvert*)
 			"Convert", 
 			logFile = FileNameJoin[{fol, nam<>"_BIDSConvert.log"}];
@@ -513,37 +529,44 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?ListQ, ops:OptionsPatt
 			(*----*)If[cc, AddToLog["Using custom config", 1]];
 		];
 		
-		(*loop over the datType*)
-		Table[
-			(*check if datType is valid*)
-			If[KeyExistsQ[type, $Failed],
-				(*----*)AddToLog[dataToLog@type, 2, True];
-				(*----*)AddToLog["Skipping", 3],
-				(*if valid perform conversion*)
-				(*----*)AddToLog[dataToLog@type, 2, True];
-				rfol = SelectBidsFolders[fol, type["InFolder"]];
+		If[met==="Dicom",
+			(*perform dicom nii conversions*)
+			BidsDcmToNiiI[fol, out, logFile];
+			,
+			(*loop over the datType for other methods*)
+			Table[
+				(*check if datType is valid*)
+				If[KeyExistsQ[type, $Failed],
+					(*----*)AddToLog[dataToLog@type, 2, True];
+					(*----*)AddToLog["Skipping", 3],
+					(*if valid perform conversion*)
+					(*----*)AddToLog[dataToLog@type, 2, True];
+					rfol = SelectBidsFolders[fol, type["InFolder"]];
+					
+					(*method specific scripts: loop over all inFolders in subject folder*)
+					Table[
+						Switch[met,
+							"Convert", (*MuscleBidsConvert*)
+							MuscleBidsConvertI[foli, type, logFile, OptionValue[DeleteAfterConversion]],
+							"Process", (*MuscleBidsProcess*)
+							MuscleBidsProcessI[foli, outFol, type, logFile, OptionValue[VersionCheck]],
+							"Merge", (*MuscleBidsMerge*)
+							MuscleBidsMergeI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]]
+						];
+						ExportLog[logFile];				
+					(*Close sub folders loop*)
+					, {foli, rfol}];		
+				];
 				
-				(*method specific scripts: loop over all inFolders in subject folder*)
-				Table[
-					Switch[met,
-						"Convert", (*MuscleBidsConvert*)
-						MuscleBidsConvertI[foli, type, logFile, OptionValue[DeleteAfterConversion]],
-						"Process", (*MuscleBidsProcess*)
-						MuscleBidsProcessI[foli, outFol, type, logFile, OptionValue[VersionCheck]],
-						"Merge", (*MuscleBidsMerge*)
-						MuscleBidsMergeI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]]
-					];
-					ExportLog[logFile];				
-				(*Close sub folders loop*)
-				, {foli, rfol}];		
-			];
-			
-			ExportLog[logFile];	
-		(*close datatype loop*)
-		, {type, datType}];
-		
+				ExportLog[logFile];	
+			(*close datatype loop*)
+			, {type, datType}];
+		(*close dicom if*)
+		];
+
 		(*export the log files*)
 		ExportLog[logFile, True];
+
 	(*close subject loop*)
 	, {fol, subs}];
 ] 
