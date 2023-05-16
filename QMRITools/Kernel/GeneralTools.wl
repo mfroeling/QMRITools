@@ -749,12 +749,9 @@ TensMati[{xx_, yy_, zz_, xy_, xz_, yz_}] := {{xx, xy, xz}, {xy, yy, yz}, {xz, yz
 
 SyntaxInformation[TensVec] = {"ArgumentsPattern" -> {_}};
 
-TensVec[tens : {_?ArrayQ ..}] := TensVeci[RotateDimensionsRight[tens, 2]]
+TensVec[{{xx_, xy_, xz_}, {_, yy_, yz_}, {_, _, zz_}}] := {xx, yy, zz, xy, xz, yz};
 
-TensVec[tens_?MatrixQ] := TensVeci[tens]
-
-
-TensVeci[{{xx_, xy_, xz_}, {_, yy_, yz_}, {_, _, zz_}}] := {xx, yy, zz, xy, xz, yz};
+TensVec[tens : {_?ArrayQ ..}] := TensVec[RotateDimensionsRight[tens, 2]]
 
 
 (* ::Subsection:: *)

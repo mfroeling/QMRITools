@@ -76,7 +76,7 @@ AnisoFilterData::usage =
 
 Output is the smoothed data.
 
-AnisoFilterData[] is based on DOI: 10.1016/j.jbiomech.2021.110540."
+AnisoFilterData[] is based on DOI: 10.1016/j.jbiomech.2021.110540 and 10.1016/j.mri.2009.10.001 and 10.1371/journal.pone.0126953."
 
 WeightMapCalc::usage =  
 "WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterTensor.
@@ -362,16 +362,17 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		If[mon, PrintTemporary["Preparing data similarity"]];
 		nearPos = Nearest[data -> Range[leng], data, n, DistanceFunction -> EuclideanDistance, 
 			Method -> "Scan", WorkingPrecision -> MachinePrecision];
-		
+				
 		(*perform denoising*)
 		j = 0;
 		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
+		{m, n} = MinMax[{m, n}];
 		output = Map[(
 			j++;
 			p = nearPos[[#]];
-						
+			
 			(*perform the fit and reconstruct the noise free data*)
-			{sigo, Nes, datn} = PCADeNoiseFiti[data[[p]], MinMax[{m, n}], sigm[[#]], tol];
+			{sigo, Nes, datn} = PCADeNoiseFiti[data[[p]], {m, n}, sigm[[#]], tol];
 			
 			(*get the weightes*)
 			weight = If[wht, 1./(m - Nes), 1.];
@@ -389,7 +390,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		datao = VectorToData[DevideNoZero[datao, weights], pos];
 		sigmat = VectorToData[DevideNoZero[sigmat, weights], pos];
 		output = Transpose[VectorToData[output, pos]];
-						
+		
 		,
 		(*--------------use patch---------------*)
 		_,
@@ -397,7 +398,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		
 		(*prepare data*)
 		data = RotateDimensionsLeft[Transpose[data]];
-			
+		
 		(*define runtime parameters*)
 		{m, n} = MinMax[{ddim, ker^3}];
 		off = Round[(ker - 1)/2];
@@ -412,7 +413,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		totalItt = Total[Flatten[mask[[start ;; zdim - off, start ;; ydim - off, start ;; xdim - off]]]];
 		
 		(*perform denoising*)
-		Monitor[output = Table[
+		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, totalItt}]]];
+		output = Table[
 			(*Check if masked voxel*)
 			If[mask[[z, y, x]] === 0.,
 				{0., 0.}
@@ -437,11 +439,9 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 				
 				(*output sig, Nest and itterations*)
 				{sigo, Nes}
-			], {z, start, zdim - off}, {y, start, ydim - off}, {x, start, xdim - off}];
-			,
-			(*monitor*)
-			ProgressIndicator[j, {0, totalItt}]
-		];
+			], 
+		{z, start, zdim - off}, {y, start, ydim - off}, {x, start, xdim - off}];
+
 		(*make everything in arrays*)
 		output = ArrayPad[#, off] & /@ RotateDimensionsRight[output];
 		
@@ -701,7 +701,7 @@ WeightMapCalc[data_,OptionsPattern[]]:=Block[{
 	(
 		i++;
 		(*normalize the data*)
-		dat=100#/Max[Abs[#]];
+		dat=100 #/Max[Abs[#]];
 		(*add to the weights*)
 		weights+=WeightCalc[FinDiffCalc[dat,kers],wts,kappa,type];
 	)&/@Transpose[ToPackedArray@N@data];
@@ -749,50 +749,61 @@ FinDiffCalc[dat_,kers_] := ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 (*AnisoFilterData*)
 
 
-Options[AnisoFilterData] = {AnisoStepTime -> 0.35, AnisoItterations -> 3, AnisoKernel -> {0.05,0.1}};
+Options[AnisoFilterData] = {AnisoStepTime -> 0.5, AnisoItterations -> 10, AnisoKernel -> {0.1, 0.2}};
 
 SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-AnisoFilterData[data_, opts:OptionsPattern[]] := AnisoFilterData[data, {1,1,1}, opts]
+AnisoFilterData[data_, opts:OptionsPattern[]] := AnisoFilterData[data, {1, 1, 1}, opts]
 
-AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{dd, grads, k, jacTot, tMat, eval, evec, div, dati,
-	sig, rho , step, itt, sc, max},
+AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
+	dd, grads, k, jacTot, tMat, eval, evec, div, dati,
+	sig, rho , step, itt, sc, max
+	},
+	(*for implementation see 10.1002/mrm.20339*)
+	
 	(*get the 4th dimensions on first place *)
 	dati = ToPackedArray@N@Transpose[data];
 	max = Max[dati];
+	
 	(*aniso filter kernel size *)
 	{sig, rho} = OptionValue[AnisoKernel];
-	step = OptionValue[AnisoStepTime] ;
+	step = OptionValue[AnisoStepTime];
 	itt = OptionValue[AnisoItterations];
 	
-	sc = Reverse[Min[vox]/vox];
+	sc = Max[vox]/vox;
 	
 	Do[(*loop over itterrations*)
 		(*get the data gradients*)
-		grads = (
-			dd = GaussianFilter[#, {1, sig}];
-			MapThread[#2 GaussianFilter[dd, 1, #1] &, {IdentityMatrix[3], sc}]
-		) & /@ dati;
+		grads = ToPackedArray@N[(
+			dd = GaussianFilter[#, {1, sc sig}];
+			sc (GaussianFilter[dd, 1, #1] &/@IdentityMatrix[3])
+		) & /@ dati];
+
 		(*calculate the jacobian*)
-		jacTot = GaussianFilter[Total[(Map[Outer[Times, #, #] &, RotateDimensionsLeft[#], {3}]) & /@ grads], {1, rho}];
-		
+		jacTot = ToPackedArray@N@Chop[TensMat[GaussianFilter[#, {1, sc rho}] & /@ Total[{#[[1]]^2, #[[2]]^2, #[[3]]^2, #[[1]] #[[2]], #[[1]] #[[3]], #[[2]] #[[3]]} & /@ grads]]];
+
 		(*get the step matrix*)
-		tMat = Map[({eval, evec} = Chop[Eigensystem[#]];
-			eval = Which[eval[[1]] == 0., {1, 1, 1}, eval[[2]] == 0., {0., 1.5, 1.5}, eval[[3]] == 0., {0., 0., 3}, True, 3./(eval Total[1./eval])];
+		tMat = ToPackedArray@N@Map[If[# == {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}, #,
+			{eval, evec} = Eigensystem[#];
+			eval = Switch[Unitize[eval],
+				{1, 1, 0}, {0., 0., 3.},
+				{1, 0, 0}, {0., 1.5, 1.5},
+				_, 3./eval/Total[1./eval]
+			];
 			Transpose[evec] . DiagonalMatrix[eval] . evec
-		) &, jacTot, {3}];
+		] &, jacTot, {3}];
 		
 		(*get the time step*)
-		div = RotateDimensionsRight[MapThread[#2.#1 &, {tMat, RotateDimensionsLeft[grads, 2]}, 3], 2];
+		div = RotateDimensionsRight[ToPackedArray@N@MapThread[#2.#1 &, {tMat, RotateDimensionsLeft[grads, 2]}, 3], 2];
 		(*calculate divergence of vector field*)
-		div = Total[sc MapThread[GaussianFilter[#1, 1, #2] &, {#, IdentityMatrix[3]}]] & /@ div;
+		div = ToPackedArray@N@Total[MapThread[GaussianFilter[#1, 1, #2] &, {#, IdentityMatrix[3]}]] & /@ div;
 		
 		(*perform the smoothing step*)
-		dati = ToPackedArray@N@Clip[dati + step div, {0,2} max];
+		dati = ToPackedArray@N@Clip[dati + step div, {0, 2} max];
 	, {itt}];
 	
 	(*output the data*)
-	Clip[Transpose[dati], {0, 2} max]
+	Transpose[dati]
 ]
 
 

@@ -72,6 +72,10 @@ SmoothSegmentation::usage =
 RemoveMaskOverlaps::usage = 
 "RemoveMaskOverlaps[mask] removes the overlaps between multiple masks. Mask is a 4D dataset with {z, masks, x, y}."
 
+GetCommonSegmentation::usage = 
+"GetCommonSegmentation[dat, seg, vox] For a list of multiple datasets dat the common segmentations from the list seg are determined.
+Output is a list of segmentations where for each region only the part present in all datasets is selected."
+
 
 DilateMask::usage=
 "DilateMask[mask,size] if size > 0 the mask is dilated and if size < 0 the mask is eroded."
@@ -478,6 +482,47 @@ RemoveMaskOverlapsI[masks_] := Block[{maskOver, posOver, maskInp, maskOut, z, x,
 	maskInp = maskOver Transpose[masks, {4, 1, 2, 3}];
 	p = ({z, x, y} = #; {First@First[maskInp[[z, x, y]]["ExplicitPositions"]], z, x, y}) & /@posOver;
 	maskOut + SparseArray[p -> 1, Dimensions[maskOut]]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetCommonSegmentation*)
+
+SyntaxInformation[GetCommonSegmentation] = {"ArgumentsPattern" -> {_, _, _}};
+
+GetCommonSegmentation[dat:{_?ArrayQ ..}, seg:{_?ArrayQ ..}, vox:{_?ListQ ..}] := Block[
+	{dims, datC, cr, len, segs, labs, labAll, labSel, l, gr, segR},
+	
+	(*auto crop all the datasets*)
+	dims = Dimensions /@ dat;
+	{datC, cr} = Transpose[AutoCropData /@ dat];
+	len = Length[datC];
+	
+	(*split and smooth all the segmentations*)
+	{segs, labs} = Transpose[SplitSegmentations[ApplyCrop[#[[1]], #[[2]]]] & /@ Thread[{seg, cr}]];
+	segs = SmoothSegmentation[#, MaskComponents -> 1, SmoothItterations -> 2] & /@ segs;
+	
+	(*find common labels*)
+	labAll = Intersection @@ labs;
+	labSel = (l = #; Flatten[Position[l, #] & /@ labAll]) & /@ labs;
+	
+	gr = 5 Mean@vox;
+	(*find the common segmentation for each dataset*)
+	Table[
+		segR = Times @@ Table[
+			If[tar === mov,
+				segs[[tar, All, labSel[[tar]]]],
+				Round@Last@RegisterDataTransform[
+					{datC[[tar]], vox[[tar]]},
+					{datC[[mov]], vox[[mov]]},
+					{segs[[mov, All, labSel[[mov]]]], vox[[mov]]},
+					MethodReg -> {"rigid", "affine", "bspline"}, Resolutions -> 3, NumberSamples -> 5000, BsplineSpacing -> gr
+				]
+			]
+		, {mov, 1, len}];
+		
+		MergeSegmentations[ReverseCrop[RemoveMaskOverlaps[segR], dims[[tar]], cr[[tar]]], labSel[[tar]]]
+	, {tar, 1, len}]
 ]
 
 

@@ -457,7 +457,7 @@ SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name
 (*BidsFolderLoop*)
 
 
-Options[BidsFolderLoop] = {DeleteAfterConversion->False, SelectSubjects->All, Method->"Convert", VersionCheck->False};
+Options[BidsFolderLoop] = {DeleteAfterConversion->True, SelectSubjects->All, Method->"Convert", VersionCheck->False};
 
 SyntaxInformation[BidsFolderLoop] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -676,7 +676,9 @@ MuscleBidsConvert[niiFol_?StringQ, datDis_, opts:OptionsPattern[]]:= BidsFolderL
 MuscleBidsConvertI[foli_, datType_, logFile_, del_]:=Block[{
 		type, fol, parts, files, json, infoExtra, pos, posi, info, data, vox, grad, val, sufd, outFile
 	},
-	
+	Print[del];
+
+
 	(*see if one label or session|repetion*)
 	{fol, parts} = PartitionBidsFolderName[foli];
 	type = datType["Type"];
@@ -1059,7 +1061,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						(*Denoise*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
 						mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
-						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATollerance->0, PCAKernel->1.5];
+						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATollerance->0, PCAKernel->5, Method->"Patch"];
 						
 						(*calculate SNR*)
 						snr = SNRCalc[den, sig];
