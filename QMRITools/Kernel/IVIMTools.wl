@@ -1204,7 +1204,7 @@ MeanBvalueSignal[data_, val_] := Block[{valU, pos, mean},
 (* ::Subsection::Closed:: *)
 (*IVIMResiduals*)
 
-SyntaxInformation[MeanBvalueSignal] = {"ArgumentsPattern" -> {_, _, _}};
+SyntaxInformation[IVIMResiduals] = {"ArgumentsPattern" -> {_, _, _}};
 
 IVIMResiduals[data_, binp_, pars_] := Module[{depthD,depthP,dat,par,res},
   

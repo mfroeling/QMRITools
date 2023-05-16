@@ -728,8 +728,14 @@ Options[EigensysCalc] = {RejectMap -> False, Reject -> True};
 
 SyntaxInformation[EigensysCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
+EigensysCalc[tens_?VectorQ] := Block[{val}, 
+	val = EigenValsC[tens] ; {val, EigenVecsC[tens, val]}]
+
+EigensysCalc[tens_?MatrixQ] := Block[{t, val}, 
+	val = EigenValsC[t = TensVec[tens]] ; {val, EigenVecsC[t, val]}]
+
 EigensysCalc[tensor_?ArrayQ, OptionsPattern[]] := Block[{val, vec, reject, sel},
-	If[VectorQ[tensor],
+	(*If[VectorQ[tensor],
 		(*tensor is just one value*)
 		{val, vec} = EigensysCalci[tensor];		
 		,
@@ -737,8 +743,10 @@ EigensysCalc[tensor_?ArrayQ, OptionsPattern[]] := Block[{val, vec, reject, sel},
 		val = Map[EigensysCalci, RotateDimensionsLeft[tensor], {-2}];
 		vec = Switch[ArrayDepth[tensor] - 1, 1, val[[All, 2]], 2, val[[All, All, 2]], 3, val[[All, All, All, 2]]];
 		val = Switch[ArrayDepth[tensor] - 1, 1, val[[All, 1]], 2, val[[All, All, 1]], 3, val[[All, All, All, 1]]];
-	];
-	
+	];*)
+
+	{val, vec} = EigensysCalci[tensor];
+
 	(*find the reject values if needed*)	
 	If[OptionValue[Reject],
 		sel = SelectEig[val];
@@ -755,32 +763,109 @@ SelectEig = Compile[{{eig, _Real, 1}}, UnitStep[Last[eig]],
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True
 ];
 
+
+EigensysCalci[tens_] := Block[{t, val}, 
+	t = RotateDimensionsLeft[tens]; val = EigenValsC[t] ; {val, EigenVecsC[t, val]}]
+
+
+(*
 EigensysCalci[{0., 0., 0., 0., 0., 0.}] := {{0., 0., 0.}, {{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}}
 EigensysCalci[{{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}] := {{0., 0., 0.}, {{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}}
 EigensysCalci[tensor_?MatrixQ] := Eigensystem[tensor]
 EigensysCalci[tensor_?VectorQ] := Eigensystem[TensMat[tensor]]
+*)
+
+(* ::Subsubsection::Closed:: *)
+(*EigenvalCac*)
+
+(*
+Options[EigenvalCalc] = Options[EigensysCalc];
+
+SyntaxInformation[EigenvalCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+EigenvalCalc[tens_, opts:OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens, opts][[{1, 3}]], EigensysCalc[tens, opts][[1]]]
+*)
+
+Options[EigenvalCalc] = Options[EigensysCalc];
+
+SyntaxInformation[EigenvalCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+EigenvalCalc[tens_?VectorQ, opts:OptionsPattern[]] := EigenValsC[tens]
+
+EigenvalCalc[tens_?MatrixQ, opts:OptionsPattern[]] := EigenValsC[TensVec[tens]]
+
+EigenvalCalc[tens_, opts:OptionsPattern[]] := EigenValsC[RotateDimensionsLeft[tens]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*EigenValsC*)
+
+
+EigenValsC = Compile[{{d, _Real, 1}}, Block[{
+		i1, i2, i3, i13, v, vs, v1, s, phi, l1, l2, dxx, dyy, dzz, dxy, dxz, dyz
+	},
+
+    If[Total[d] === 0.,
+		{0., 0., 0.},
+		{dxx, dyy, dzz, dxy, dxz, dyz} = d;
+		
+		i1 = dxx + dyy + dzz;
+		i2 = (dxx dyy + dxx dzz + dyy dzz) - (dxy^2 + dxz^2 + dyz^2);
+		i3 = dxx dyy dzz + 2 dxy dxz dyz - (dzz (dxy)^2 + dyy (dxz)^2 + dxx (dyz)^2);
+		
+		i13 = i1/3;
+		v = i13^2 - i2/3 + .1^30;
+		vs = 2 Sqrt[v];
+		v1 = 1./v;
+		s = (i13)^3 - i1 i2/6 + i3/2;
+		phi = ArcCos[(v1 s) Sqrt[v1]]/3;
+		
+		l1 = i13 + vs Cos[phi];
+		l2 = i13 - vs Cos[Pi/3 + phi];
+		{l1, l2, i1 - l1 - l2}
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
 (*EigenvecCalc*)
+
+(*
+Options[EigenvecCalc] = Options[EigensysCalc];
+
+SyntaxInformation[EigenvecCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+EigenvecCalc[tens_, opts:OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens,opts][[{2, 3}]], EigensysCalc[tens,opts][[2]]]
+*)
 
 
 Options[EigenvecCalc] = Options[EigensysCalc];
 
 SyntaxInformation[EigenvecCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-EigenvecCalc[tens_, opts:OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens,opts][[{2, 3}]], EigensysCalc[tens,opts][[2]]]
+EigenvecCalc[tens_?VectorQ, opts:OptionsPattern[]] := EigenVecsC[tens, EigenValsC[tens]]
+
+EigenvecCalc[tens_?MatrixQ, opts:OptionsPattern[]] := Block[{t}, t = TensVec[t]; EigenVecsC[t, EigenValsC[t]]] 
+
+EigenvecCalc[tens_, opts:OptionsPattern[]] := Block[{t}, t = RotateDimensionsLeft[tens]; EigenVecsC[t, EigenValsC[t]]]
 
 
 (* ::Subsubsection::Closed:: *)
-(*EigenvalCaci*)
+(*EigenVecsC*)
 
 
-Options[EigenvalCalc] = Options[EigensysCalc];
-
-SyntaxInformation[EigenvalCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
-
-EigenvalCalc[tens_, opts:OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens, opts][[{1, 3}]], EigensysCalc[tens, opts][[1]]]
+EigenVecsC = Compile[{{d, _Real, 1}, {v, _Real, 1}}, Block[{
+		dxx, dyy, dzz, dxy, dxz, dyz, a, b , c
+	},
+	If[Total[d] === 0.,
+		{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}},
+		{dxx, dyy, dzz, dxy, dxz, dyz} = d;
+		(
+			{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - #);
+			Normalize[{b c, a c, a b}]
+		) & /@ v
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)

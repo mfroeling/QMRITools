@@ -1008,18 +1008,18 @@ JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 	];
 	
 	(*reverse the order of the slices if needed*)
-	dat=N@If[OptionValue[ReverseData], Reverse[dat,2], dat];
+	dat = N@If[OptionValue[ReverseData], Reverse[dat,2], dat];
 	
-	If[mon,PrintTemporary["Joining data"]];	
+	If[mon, PrintTemporary["Joining data"]];	
 	dat = Switch[depth,
-		5,Transpose[(JoinSetsi[dat[[All, All, #]],overlap,normover]) & /@ Range[Length[dat[[1, 1]]]]],
-		4,JoinSetsi[dat,overlap,normover],
+		5, Transpose[(JoinSetsi[dat[[All, All, #]],overlap,normover]) & /@ Range[Length[dat[[1, 1]]]]],
+		4, JoinSetsi[dat, overlap, normover],
 		_,$Failed
 	];
 	
 	(*give output*)	
-	dat = If[motion, ArrayPad[dat, Prepend[ConstantArray[{0, 0}, ArrayDepth[dat] - 1], {-pad, -pad}]],dat];
-	dat = Clip[dat, 1.1 ran, 1.1ran];
+	dat = If[motion, ArrayPad[dat, Prepend[ConstantArray[{0., 0.}, ArrayDepth[dat] - 1], {-pad, -pad}]],dat];
+	dat = ToPackedArray@N@Clip[dat, 1.1 ran, 1.1 ran];
 	
 	Return[If[OptionValue[ReverseData],Reverse[dat],dat]]
 ]
