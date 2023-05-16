@@ -178,8 +178,8 @@ FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, o
 
 FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, trFunc,
-		tens, tensMask, inpTr, treshs, stop, coors, intE, intS,
-		ones, n, seedN, seeds, t1, tracts, iii, drop, smax, len ,sel		 
+		tens, tensMask, inpTr, treshs, stop, coors, intE, intS, ones, n, 
+		seedN, seedI, seedT, seeds, t1, tracts, iii, drop, smax, len ,sel		 
 	},
 	
 	(*get the options*)
@@ -202,36 +202,41 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	(*prepare tensor and stop data*)
 	(*tens = FlipTensorOrientation[tensor, per /. Thread[{"x","y","z"} -> {"z","y","x"}], Reverse[flip]];*)
 	tens = FlipTensorOrientation[tensor, per, flip];
-	stop = Unitize[Total@Abs@tens] Normal[Mask[inp]];
+	stop = SparseArray@Unitize[Total@Abs@tens] Mask[inp];
 			
 	(*make the trac and stop interpolation functions*)
 	intE = MakeIntFunction[RotateDimensionsLeft[{tens}, 2], vox, int];
-	intS = MakeIntFunction[stop, vox, int];
+	intS = MakeIntFunction[Normal@stop, vox, int];
 	
 	(*make the random seed points*)
 	SeedRandom[1234];
-	seedN = Total@Flatten@stop; 
-	seeds = SparseArray[stop]["NonzeroPositions"];
+	seedN = Total@Flatten@stop;
+	seedI = stop["NonzeroPositions"];
+	seeds = {};
 	maxSeed = If[NumberQ[maxSeed],maxSeed,seedN];
 	
-	seeds = Flatten[RandomSample[seeds, #] & /@ Block[{i = maxSeed},
-		First@Last@Reap[Until[i < 0, Sow[If[i > seedN, seedN, i]]; i = i - seedN;]]], 1];
-	seeds = Threaded[vox](seeds + RandomReal[{-0.99,0}, {maxSeed, 3}]);
-    
-    seeds = Pick[seeds, intS @@@ seeds, 1.];
-    seeds = seeds[[;;Min[{Length@seeds,maxSeed}]]];
-    
-    If[OptionValue[TracMonitor],
-		Print["number of voxels within stop mask: ", maxSeed];
-		Print["number of selected valid seedpoints: ", Length[seeds]];
+	While[Length[seeds] < maxSeed,
+		seedT = Flatten[RandomSample[seedI, #] & /@ Block[{i = maxSeed},
+			First@Last@Reap[Until[i < 0, Sow[If[i > seedN, seedN, i]];
+			i = i - seedN;]]], 1];
+		seedT = Threaded[vox] (seedT + RandomReal[{-0.99, 0}, {maxSeed, 3}]);
+		seedT = Pick[seedT, intS @@@ seedT, 1.];
+		
+		seeds = Join[seeds, seedT];
+		seeds = seeds[[;; Min[{Length@seeds, maxSeed}]]]
+	];
+	seedN = Length@seeds;
+
+	If[OptionValue[TracMonitor],
+		Print["Starting tractography for ", seedN, " seed points"];
 	];
 
 	(*perform tractography for each seed point*)	
 	t1 = First[AbsoluteTiming[
 		trFunc = TractFunc[#, step, {amax, smax, stopT}, {intE, intS, tracF}]&;
 		tracts = If[OptionValue[TracMonitor],
-			Monitor[Table[trFunc@seeds[[iii]], {iii, 1, Length[seeds]}], ProgressIndicator[iii, {0, Length[seeds]}]],
-			Table[trFunc@seeds[[iii]], {iii, 1, Length[seeds]}]];
+			Monitor[Table[trFunc@seeds[[iii]], {iii, 1, seedN}], ProgressIndicator[iii, {0, seedN}]],
+			Table[trFunc@seeds[[iii]], {iii, 1, seedN}]];
 		]];
 	
 	len = Length /@ tracts;
@@ -247,8 +252,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	(*report timing*)
 	If[OptionValue[TracMonitor],
 		Print["Tractography took ", t1, " seconds"];
-		Print["number of selected valid tracts: ", Length[tracts]];	
-		Print[Length[tracts], " tracts within length range were selecte with length ", Round[step Mean[Length /@ tracts], 0.1],"\[PlusMinus]", Round[step StandardDeviation[Length /@ tracts], 0.1] , " mm"];
+		Print[Length[tracts], " valid tracts with length ", Round[step Mean[Length /@ tracts], 0.1],"\[PlusMinus]", Round[step StandardDeviation[Length /@ tracts], 0.1] , " mm"];	
 	];
 
 	(*output tracts*)
@@ -346,10 +350,37 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 
 
 (* ::Subsubsection::Closed:: *)
-(*EigV*)
+(*EigVec*)
 
 
-EigVec = Compile[{{tens, _Complex, 1}}, Block[{
+EigVec = Compile[{{tens, _Real, 1}}, Block[{
+	dxx, dyy, dzz, dxy, dxz, dyz, i1, i2, i3, i13, phi, v1, v, s, l1, a, b, c},
+	(*method from 10.1016/j.mri.2009.10.001*)
+	If[Total[tens] === 0.,
+		{0., 0., 1.},
+		
+		{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
+		
+		i1 = dxx + dyy + dzz;
+		i2 = (dxx dyy + dxx dzz + dyy dzz) - (dxy^2 + dxz^2 + dyz^2);
+		i3 = dxx dyy dzz + 2 dxy dxz dyz - (dzz (dxy)^2 + dyy (dxz)^2 + dxx (dyz)^2);
+		
+		i13 = i1/3;
+		v = i13^2 - i2/3 + .1^30;
+		v1 = 1./v;
+		s = (i13)^3 - i1 i2/6 + i3/2;
+		phi = ArcCos[(v1 s) Sqrt[v1]]/3;
+		
+		l1 = i13 + 2 Sqrt[v] Cos[phi];
+		
+		{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
+		
+		Normalize[{b c, a c, a b}]
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+EigVec2 = Compile[{{tens, _Complex, 1}}, Block[{
 	def, xx, yy, zz, xy, xz, yz, tr, xx2, yy2, zz2, xy2, xz2, yz2, tr2, 
 	p, b, b2, c, d, e, f, e1, u1, u11, u12, u13, u2, u21, u22, u23, u3, u1n, u3n},
 	
@@ -426,7 +457,7 @@ Options[PlotTracts] = {
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
 PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
-	range, vox, size, select, opts, col, tube, line, plot, colOpt, met, set
+	range, vox, size, select, opts, col, tube, line, plot, colOpt, met, set, max
 	},
 	
 	vox = Reverse@voxi;
@@ -438,7 +469,9 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	
 	size = vox Flatten[Differences /@ range];
 	
-	select = ToPackedArray /@ Map[Reverse, RandomSample[tracts, Min[OptionValue[MaxTracts], Length[tracts]]], {-2}];
+	max = OptionValue[MaxTracts];
+	If[OptionValue[Method]==="tube", max =  Min[4000, max]];
+	select = ToPackedArray /@ Map[Reverse, RandomSample[tracts, Min[max, Length[tracts]]], {-2}];
 	
 	opts = Sequence[{
 		Method -> {"TubePoints" -> {6, 2}}, Lighting -> "Accent", 
@@ -458,10 +491,9 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	];
 	
 	plot = Switch[OptionValue[Method],
-		"tube",
-		MapThread[Scale[Tube[#1, 0.75, VertexColors -> #2], 1./vox, {0, 0, 0}] &, {select, col}],
-		_,
-		MapThread[Scale[Line[#1, VertexColors -> #2], 1/vox, {0, 0, 0}] &, {select, col}]
+		"tube", Scale[Tube[select, 0.5 Min[vox], VertexColors -> col], 1/size, {0, 0, 0}],
+		"line", Scale[Line[select, VertexColors -> col], 1/vox, {0, 0, 0}],
+		_, $Failed
 	];
 	
 	Graphics3D[{CapForm["Square"], JoinForm["Miter"], plot}, opts]
