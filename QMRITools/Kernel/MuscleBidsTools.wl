@@ -1028,8 +1028,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 			dfile = GenerateBidsFileName[fol, set];
 			jfile = ConvertExtension[dfile,".json"];
 			nfile = ConvertExtension[dfile,".nii"];
-			nfilep = ConvertExtension[GenerateBidsFileName[folo, <|set, "suf"->{datType["Suffix"], "reg"}|>],".nii"];
-			
+						
 			(*ouput file names*)
 			outfile = GenerateBidsFileName[folo, set];
 			
@@ -1070,14 +1069,17 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						(*register data - each leg seperate*)
 						(*-----*)AddToLog["Starting dwi motion and eddy correction", 4];
 						reg = RegisterDiffusionDataSplit[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, PrintTempDirectory->False];
+
+						(*anisotropic filtering*)
+						filt = AnisoFilterData[reg, diffvox];
 						
 						(*export all the calculated data*)
 						(*----*)AddToLog["Exporting the calculated data to:",4];
-						(*----*)AddToLog[outfile,5];
-						outTypes = {"den", "reg", "sig", "snr0", "snr"};
+						(*----*)AddToLog[outfile, 5];
+						outTypes = {"den", "reg", "sig", "snr0", "snr", "filt"};
 						ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
-						ExportBval[val, ConvertExtension[outfile <> "_reg", ".bval"]];
-						ExportBvec[grad, ConvertExtension[outfile <> "_reg", ".bvec"]];
+						ExportBval[val, ConvertExtension[outfile <> "_"<>#, ".bval"]]&/@{"reg","filt"};
+						ExportBvec[grad, ConvertExtension[outfile <> "_"<>#, ".bvec"]]&/@{"reg","filt"};
 						
 						(*export the checkfile*)
 						MakeCheckFile[outfile<>"_prep", Sort@Join[
@@ -1099,7 +1101,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 				(*-------------------------------------------*)
 				(*---------- dwi processing script ----------*)
 				(*-------------------------------------------*)
-										
+
+				(*input file for processing*)
+				nfilep = ConvertExtension[GenerateBidsFileName[folo, <|set, "suf"->{datType["Suffix"], "filt"}|>],".nii"];
+
 				(*check if processin is already done, redo is prep is done*)					
 				If[If[!preProc, CheckFile[outfile, "done", verCheck], False],
 					(*if checkfile has label done and version is recent skip*)
