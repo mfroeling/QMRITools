@@ -749,7 +749,7 @@ FinDiffCalc[dat_,kers_] := ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 (*AnisoFilterData*)
 
 
-Options[AnisoFilterData] = {AnisoStepTime -> 0.5, AnisoItterations -> 10, AnisoKernel -> {0.1, 0.2}};
+Options[AnisoFilterData] = {AnisoStepTime -> 0.3, AnisoItterations -> 4, AnisoKernel -> {0.15, 0.3}};
 
 SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 

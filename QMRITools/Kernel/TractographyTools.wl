@@ -228,7 +228,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	seedN = Length@seeds;
 
 	If[OptionValue[TracMonitor],
-		Print["Starting tractography for ", seedN, " seed points"];
+		Print["Starting tractography for ", seedN, " seed points with stepsize ", step, " mm"];
 	];
 
 	(*perform tractography for each seed point*)	
@@ -451,13 +451,14 @@ Options[PlotTracts] = {
 	ImageSize -> 800, 
 	Method->"line", 
 	TractColoring->"Direction",
+	ColorFunction->"SouthwestColors",
 	Boxed->True
 }
 
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
 PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
-	range, vox, size, select, opts, col, tube, line, plot, colOpt, met, set, max
+	range, vox, size, select, opts, col, tube, line, plot, colOpt, met, set, max, colf
 	},
 	
 	vox = Reverse@voxi;
@@ -480,12 +481,15 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
 	}];
 	
+	colf = OptionValue[ColorFunction];
 	colOpt = OptionValue[TractColoring];
-	{met,set} = If[ListQ[colOpt],colOpt,{colOpt,Automatic}];
+	{met, set} = If[ListQ[colOpt], colOpt, {colOpt, Automatic}];
 	
 	col = Switch[met,
 		"Length",
-		MakeLengthColor[select,set],
+		MakeLengthColor[select, set, colf],
+		"Angle",
+		MakeAngleColor[select, set, colf],
 		"Direction",
 		MakeColor[select]
 	];
@@ -509,7 +513,6 @@ MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
 	ToPackedArray[Normalize[#] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
 ]
 
-
 MakeColor[tracts : {_?ListQ ..}] := MakeColor /@ tracts
 
 MakeColor[tract_, fun_, ran_] := Block[{prange, colFunc, cval, fore},
@@ -525,13 +528,22 @@ MakeColor[tract_, fun_, ran_] := Block[{prange, colFunc, cval, fore},
 (*MakeLengthColor*)
 
 
-MakeLengthColor[tracts_,set_]:=Block[{len,col, sc},
-	len=FiberLength[tracts];
-	
+MakeLengthColor[tracts_, set_, colf_]:=Block[{len, sc},
+	len = FiberLength[tracts];
 	sc = If[set===Automatic, Quantile[len, {.05,0.95}], set];
-	col = ColorData["SouthwestColors"]/@Rescale[len, sc];
-	
-	MapThread[ConstantArray[#2, Length@#1]&, {tracts, col}]
+	MapThread[ConstantArray[#2, Length@#1]&, {tracts, (ColorData[colf]/@Rescale[len, sc])}]
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeAngColor*)
+
+
+MakeAngleColor[tracts_, set_, colf_] := Block[{ang, sc},
+	ang = VecAngC[tracts];
+	sc = If[set === Automatic, {0, 90}, set];
+	ang = Rescale[(Mean[{Prepend[#, #[[1]]], Append[#, #[[-1]]]}]) & /@ ang, sc];
+	ToPackedArray[ColorData[colf] /@ #] & /@ ang
 ];
 
 
@@ -692,20 +704,31 @@ CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not, test},
 
 
 (* ::Subsubsection::Closed:: *)
-(*TractDensityMap*)
+(*ThreadedDiv*)
 
 
-Options[TractDensityMap] = {NormalizeDensity -> True}
+ThreadedDiv = Compile[{{coor, _Real, 1}, {vox, _Real, 1}}, 
+	Ceiling[coor/vox],
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
-SyntaxInformation[TractDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-TractDensityMap[tracts_, vox_, dim_,  OptionsPattern[]] := Block[{dens,norm},
-	dens = Normal@SparseArray[Select[
-		Normal[Counts@ThreadedDiv[Flatten[tracts, 1], vox]], 
-		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]])&
-	], dim];
-	norm = MedianNoZero@Flatten[dens];
-	If[OptionValue[NormalizeDensity], dens/norm, dens]	
+ThreadedDivD = Compile[{{coor, _Real, 2}, {vox, _Real, 1}}, 
+	Ceiling[#/vox] & /@ Mean[{coor[[2 ;; -1]], coor[[1 ;; -2]]}], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+ThreadedDivL = Compile[{{coor, _Real, 2}, {vox, _Real, 1}}, 
+	Ceiling[#/vox] & /@ coor, 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeList*)
+
+
+MakeList[len_] := Block[{ran},
+	ran = Range[0, len, 50000];
+	{1, 0} + # & /@ Partition[If[Last@ran =!= len, Append[ran, len], ran], 2, 1]
 ]
 
 
@@ -719,17 +742,39 @@ SeedDensityMap[seeds_, vox_, dim_] := Normal@SparseArray[Normal@Counts@ThreadedD
 
 
 (* ::Subsubsection::Closed:: *)
+(*TractDensityMap*)
+
+
+Options[TractDensityMap] = {NormalizeDensity -> True}
+
+SyntaxInformation[TractDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+TractDensityMap[tracts_, vox_, dim_,  OptionsPattern[]] := Block[{dens},
+	dens = ConstantArray[0., dim];
+	Table[dens += Normal@SparseArray[Select[
+		Normal[Counts[Flatten[DeleteDuplicates /@ ThreadedDivL[tracts[[i[[1]] ;; i[[2]]]], vox], 1]]],
+		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &], dim],
+	{i, MakeList[Length[tracts]]}];
+	
+	If[OptionValue[NormalizeDensity], dens/MedianNoZero[Flatten[dens]], dens]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*TractLengthMap*)
 
 
 SyntaxInformation[TractLengthMap] = {"ArgumentsPattern" -> {_, _, _}};
 
-TractLengthMap[tracts_, vox_, dim_] := Block[{lengs, vals},
-	(*Length per coordinate, gathered*)
-	lengs = GatherBy[Flatten[Thread /@ Thread[ThreadedDiv[tracts, vox] -> FiberLength@tracts], 1], First];
-	(*coordinate with mean length for array*) 
-	vals = Select[Thread[lengs[[All, 1, 1]] -> (Mean /@ lengs[[All, All, 2]])], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
-	Normal@SparseArray[vals, dim]
+TractLengthMap[tracts_, vox_, dim_] := Block[{tr, vals, lengs},
+	vals = GatherBy[Flatten[Table[
+		tr = tracts[[i[[1]] ;; i[[2]]]];
+		lengs = GatherBy[Flatten[Thread /@ Thread[(DeleteDuplicates /@ ThreadedDivL[tr, vox]) -> FiberLength@tr], 1], First];
+		Select[Thread[lengs[[All, 1, 1]] -> lengs[[All, All, 2]]], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &]
+    , {i, MakeList[Length[tracts]]}]], First];
+	
+	vals = Thread[vals[[All, 1, 1]] -> vals[[All, All, 2]]];
+	Normal@SparseArray[Thread[vals[[All, 1]] -> (Median[Flatten[#]] & /@ vals[[All, 2]])], dim]
 ]
 
 
@@ -739,29 +784,20 @@ TractLengthMap[tracts_, vox_, dim_] := Block[{lengs, vals},
 
 SyntaxInformation[TractAngleMap] = {"ArgumentsPattern" -> {_, _, _}};
 
-TractAngleMap[tracts_, vox_, dim_] := Block[{coors, angs, angsCoor, vals},
-	(*Get the coordinates of each segemnt*)
-	coors = ThreadedDiv[(Mean /@ Partition[#, 2, 1]) & /@ tracts, vox];
-	(*Get the angles of each segment*)
-	angs = 90 - VecAng[{1, 0, 0}, (Normalize[Sign[#[[1]]] #] & /@ Differences[#]) & /@ tracts];
-	(*coordinates with mean angle for array*)
-	angsCoor = GatherBy[Flatten[Thread /@ Thread[coors -> angs], 1], First];
-	vals = Select[Thread[angsCoor[[All, 1, 1]] -> (Mean /@ angsCoor[[All, All, 2]])], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
-	Normal@SparseArray[vals, dim]
+TractAngleMap[tracts_, vox_, dim_] := Block[{tr, angsCoor, vals},
+	vals = GatherBy[Flatten[Table[
+		tr = tracts[[i[[1]] ;; i[[2]]]];
+		angsCoor = GatherBy[Flatten[Thread /@ Thread[ThreadedDivD[tr, vox] -> VecAngC[tr]], 1], First];
+		vals = Select[Thread[angsCoor[[All, 1, 1]] -> angsCoor[[All, All, 2]]], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &]
+	, {i, MakeList[Length[tracts]]}]], First];
+	vals = Thread[vals[[All, 1, 1]] -> vals[[All, All, 2]]];
+	Normal@SparseArray[Thread[vals[[All, 1]] -> (Median[Flatten[#]] & /@ vals[[All, 2]])],dim]
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*ThreadedDiv*)
-
-
-ThreadedDiv = Compile[{{coor, _Real, 1}, {vox, _Real, 1}}, 
-	Ceiling[coor/vox],
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-
-
-(* ::Subsection:: *)
-(*Tract Evaluation*)
+VecAngC = Compile[{{tr, _Real, 2}},
+	90 - ((180./Pi) ArcCos[{1, 0, 0}.Normalize[Sign[#[[1]]] #]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]))
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -770,11 +806,9 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 FiberLength[tracts_]:=FLengthC[tracts]
 
-FLengthC=Compile[{{trc,_Real,2}},Block[{diff,ll},
-	diff=Differences[trc];
-	ll=Norm/@diff;
-	Total[ll]
-],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
+FLengthC = Compile[{{trc,_Real,2}},
+	Total[Norm/@Differences[trc]]
+,RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
