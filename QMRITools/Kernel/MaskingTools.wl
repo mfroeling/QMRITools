@@ -400,9 +400,9 @@ SyntaxInformation[MeanSignal] = {"ArgumentsPattern" -> {_, _.,OptionsPattern[]}}
 MeanSignal[data_, opts:OptionsPattern[]] := MeanSignal[data, "", opts];
 
 MeanSignal[data_, posi_, OptionsPattern[]] := Block[{pos, dat, mask},
-	{pos,dat} = Which[
-		ListQ[posi], {posi, data[[All,pos]]},
-		IntegerQ[posi], {{posi}, data[[All,pos]]},
+	{pos, dat} = Which[
+		ListQ[posi], {posi, data[[All,posi]]},
+		IntegerQ[posi], {{posi}, data[[All,posi]]},
 		True, {All, data}
 	];
 	

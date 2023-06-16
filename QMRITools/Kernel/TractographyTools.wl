@@ -447,7 +447,7 @@ FitTractC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat = #^Range[0.,
 
 
 Options[PlotTracts] = {
-	MaxTracts -> 5000, 
+	MaxTracts -> 2000, 
 	ImageSize -> 800, 
 	Method->"line", 
 	TractColoring->"Direction",
