@@ -505,7 +505,6 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			(*----*)If[cc, AddToLog["*** Using custom config ***", 1]];
 			(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)", 1];
 			,
-
 			(*MuscleBidsConvert*)
 			"Convert", 
 			logFile = FileNameJoin[{fol, nam<>"_BIDSConvert.log"}];
@@ -514,7 +513,6 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			(*----*)If[cc, AddToLog["*** Using custom config ***", 1]];
 			(*----*)AddToLog["Perform conversion for: ",1];
 			,
-			
 			(*MuscleBidsProcess*)
 			"Process", 
 			logFile = FileNameJoin[{out, nam<>"_BIDSProcess.log"}];
@@ -522,7 +520,6 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			(*----*)AddToLog[{"Starting bids processing for directory: ", fol}, True, 0];
 			(*----*)If[cc, AddToLog["*** Using custom config ***", 1]];
 			,
-			
 			(*MuscleBidsMerge*)
 			"Merge",
 			logFile = FileNameJoin[{out, nam<>"_BIDSMerge.log"}];
@@ -531,6 +528,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			(*----*)If[cc, AddToLog["*** Using custom config ***", 1]];
 		];
 
+		(*The actual process loops*)
 		If[met==="Dicom",
 			(*perform dicom nii conversions*)
 			BidsDcmToNiiI[fol, out, logFile];
