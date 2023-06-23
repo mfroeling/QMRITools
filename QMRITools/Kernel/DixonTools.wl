@@ -186,16 +186,14 @@ DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{atot, fatMap, waterMap, f
 	fMask = (1 - wMask) Mask[fatMap, .5, MaskSmoothing->False];
 	
 	If[clip,
-		waterMap = Abs[wMask waterMap + (fMask - fMask fatMap)];
-		fatMap = Abs[(wMask + fMask) - waterMap];
-		waterMap = Abs[(wMask + fMask) - fatMap];
-		Clip[{waterMap,fatMap},{0,1}]
-		,
+		fatMap = fMask (1 - waterMap) + wMask fatMap;
+		waterMap = (wMask + fMask) - fatMap;
+		Clip[{waterMap, fatMap}, {0, 1}],
 		waterMap = wMask waterMap + (fMask - fMask fatMap);
 		fatMap = (wMask + fMask) - waterMap;
 		waterMap = (wMask + fMask) - fatMap;
-		Clip[{waterMap,fatMap},{-0.1,1.1},{-0.1,1.1}]
-	]
+		Clip[{waterMap, fatMap}, {-0.1, 1.1}, {-0.1, 1.1}]
+ 	]
 ]
 
 
