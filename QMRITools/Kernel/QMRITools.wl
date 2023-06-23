@@ -20,7 +20,7 @@ BeginPackage["QMRITools`"];
 If[$VersionNumber < 13,
 	CreateDialog[Column[{Style["
 	Current Mathematica version is "<>ToString[$VersionNumber]<>"
-	The toolbox is tested developed in 13.0+.
+	The toolbox is tested developed in 13.2+.
 	You need to update! (Or I am behind)
 	Some functions might not work in older versions
 	", TextAlignment -> Center], DefaultButton[], ""}, 
