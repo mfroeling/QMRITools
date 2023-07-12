@@ -1018,7 +1018,7 @@ JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 	];
 	
 	(*give output*)	
-	dat = If[motion, ArrayPad[dat, Prepend[ConstantArray[{0., 0.}, ArrayDepth[dat] - 1], {-pad, -pad}]],dat];
+	dat = If[motion, ArrayPad[dat, Prepend[ConstantArray[{0, 0}, ArrayDepth[dat] - 1], {-pad, -pad}]],dat];
 	dat = ToPackedArray@N@Clip[dat, 1.1 ran, 1.1 ran];
 	
 	Return[If[OptionValue[ReverseData],Reverse[dat],dat]]

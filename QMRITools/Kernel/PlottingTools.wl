@@ -190,7 +190,7 @@ views = Thread[2*{{0.65, -1.2, 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0},
 
 (*default gradient color funtions*)
 colorNames = {"GrayTones", "Rainbow", "DarkRainbow", "ThermometerColors", "SunsetColors", 
-	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", 
+	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", "CherryTones", "SolarColors",
 	"BlueGreenYellow", "AvocadoColors", "SouthwestColors"};
 
 (*custom color functions and generate image of custom color*)
@@ -2454,7 +2454,13 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 (*MakeSliceImages*)
 
 
-Options[MakeSliceImages]={PlotRange->Automatic, ColorFunction->"GrayTones", ImageLegend->False,ImageOrientation->Automatic};
+Options[MakeSliceImages]={
+	PlotRange->Automatic, 
+	ColorFunction->"GrayTones", 
+	ImageLegend->False,
+	ImageOrientation->Automatic,
+	ImageSize->300
+};
 
 SyntaxInformation[MakeSliceImages]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
@@ -2465,7 +2471,8 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},opts:OptionsPattern[]]:=MakeSlic
 MakeSliceImages[selData_,vox:{_,_,_},opts:OptionsPattern[]]:=MakeSliceImages[selData,{0,{}},vox,opts]
 
 MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=Block[{
-	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2, dim, dim1, dim2, d1, d2, pl ,ml, sz, n
+	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2, 
+	dim, dim1, dim2, d1, d2, pl ,ml, sz, n, imSize
 	},
 	
 	rule=Thread[N[vals]->Range[Length[vals]]];
@@ -2480,11 +2487,13 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=B
 		
 		(*find the range*)
 		datf=DeleteCases[Flatten[pdat][[;;;;10]],0.];
-		ran=If[OptionValue[PlotRange]===Automatic,If[datf==={},{0,1},{0,Quantile[DeleteCases[Flatten[pdat][[;;;;10]],0.],.9]}],OptionValue[PlotRange]];
+		ran=If[OptionValue[PlotRange]===Automatic,If[datf==={},{0,1},{0,Quantile[DeleteCases[Flatten[pdat][[;;;;10]],0.],.99]}],OptionValue[PlotRange]];
 		
 		size=vox[[{{2,3},{1,2},{1,3}}[[n]]]];
 		bar=BarLegend[{colF/@Range[0,1,.01],ran},LabelStyle->Directive[{Black,Bold,12}]];
 		
+		imSize=OptionValue[ImageSize];
+
 		(*loop over the slices, 1 axial, 2 cor, 3 sag*)
 		MapThread[(
 			dim = {dim1,dim2} =  Dimensions[#1];
@@ -2493,11 +2502,11 @@ MakeSliceImages[selData_,{selMask_,vals_?ListQ},vox:{_,_,_},OptionsPattern[]]:=B
 
 			{pl, ml, ratio, sz} = Switch[OptionValue[ImageOrientation],
 				"Horizontal", 
-				If[d2 <= d1, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {300, Automatic}}, {#1,#2,ratio, {300, Automatic}}], 
+				If[d2 <= d1, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {imSize, Automatic}}, {#1,#2,ratio, {imSize, Automatic}}], 
 				"Vertical", 
-				If[d1 <= d2, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {Automatic,300}}, {#1,#2,ratio, {Automatic,300}}],
+				If[d1 <= d2, {Reverse@Transpose@#1,Reverse@Transpose@#2,1/ratio, {Automatic,imSize}}, {#1,#2,ratio, {Automatic,imSize}}],
 				_,
-				If[d1 <= d2, {#1,#2,ratio, {300, Automatic}}, {#1,#2,ratio, {Automatic, 300}}] 
+				If[d1 <= d2, {#1,#2,ratio, {imSize, Automatic}}, {#1,#2,ratio, {Automatic, imSize}}] 
 			];
 			
 			pl1 = ArrayPlot[pl, AspectRatio->ratio,Frame->False,ImageSize->sz, PlotRangePadding->1, PlotRange->ran,ColorFunction->colF,ClippingStyle->(colF/@{0,1})];

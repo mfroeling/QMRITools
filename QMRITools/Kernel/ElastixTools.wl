@@ -1035,7 +1035,7 @@ RegisterDatai[
 	
 	(*do some cleanup*)
 	If[OptionValue[ShowMetric], Print[ListLinePlot[Flatten[Import[#, "Data"][[2 ;;, 2]]& /@ FileNames["IterationInfo*", tempdir]]]]];
-	If[OptionValue[DeleteTempDirectory], DeleteDirectory[tempdir,DeleteContents->True]];
+	If[OptionValue[DeleteTempDirectory], DeleteDirectory[tempdir, DeleteContents->True]];
 	
 	(*output results*)
 	data=ToPackedArray[N@Chop[Clip[data, MinMax[moving]]]];
@@ -1097,35 +1097,57 @@ RegisterDataSplit[targeti_, movingi_, opts : OptionsPattern[]] := Block[{
 (*TransformData*)
 
 
-Options[TransformData] = {TempDirectory -> "Default", FindTransform -> "Auto", DeleteTempDirectory -> "All", PrintTempDirectory->True}
+Options[TransformData] = {
+	TempDirectory -> "Default", 
+	FindTransform -> "Auto", 
+	DeleteTempDirectory -> "All", 
+	PrintTempDirectory->True,
+	Method -> "Default"
+}
 
 SyntaxInformation[TransformData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-TransformData[{data_, vox_}, OptionsPattern[]] := Module[{tdir, command, output},
-	
-	(*define the directory*)
-	tdir = OptionValue[TempDirectory];
-	tdir = FileNameJoin[{(If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}),"QMRIToolsReg","transform"}];
-	
-	(*create and print the directory*)
-	If[OptionValue[PrintTempDirectory], PrintTemporary["using as temp directory: "<>tdir]];
-	If[DirectoryQ[tdir], DeleteDirectory[tdir,DeleteContents->True]];
-	CreateDirectory[tdir];
-	
-	(*Export and transform*)
-	ExportNii[data, vox, FileNameJoin[{tdir,"trans.nii"}]];
-	command = TransformixCommand[tdir, True];
-	RunCommand[command];
-	output = ToPackedArray[ImportNii[FileNameJoin[{tdir,"result.nii"}]][[1]]];
-	
-	(*Delete temp directory*)
-	Switch[OptionValue[DeleteTempDirectory],
-		"All", DeleteDirectory[FileNameTake[tdir, {1, -2}],DeleteContents -> True],
-		"Trans", DeleteDirectory[tdir, DeleteContents -> True],
-		_, Null];
+TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command, output},
+	If[OptionValue[Method]=="Loop",
+		(*Loop over multi dimensions when set by user*)
+		dat = If[ArrayDepth[data]===4,Transpose@data, data];
+		dat = TransformData[{#,vox}, Method->"Default", DeleteTempDirectory->False, ops]&/@dat;
+
+		Print[Dimensions@dat];
+
+		(*Delete temp directory*)
+		Switch[OptionValue[DeleteTempDirectory],
+			"All", DeleteDirectory[FileNameTake[tdir, {1, -2}],DeleteContents -> True],
+			"Trans", DeleteDirectory[tdir, DeleteContents -> True],
+			_, Null];
+
+		If[ArrayDepth[data]===4,Transpose@dat, dat];
+		,
+		(*perform normal tranform for single volume*)
+		(*define the directory*)
+		tdir = OptionValue[TempDirectory];
+		tdir = FileNameJoin[{(If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}),"QMRIToolsReg","transform"}];
 		
-	(*give the output*)
-	ToPackedArray@N@Chop[Clip[output,MinMax[data]],10^-6]
+		(*create and print the directory*)
+		If[OptionValue[PrintTempDirectory], PrintTemporary["using as temp directory: "<>tdir]];
+		If[DirectoryQ[tdir], DeleteDirectory[tdir,DeleteContents->True]];
+		CreateDirectory[tdir];
+		
+		(*Export and transform*)
+		ExportNii[data, vox, FileNameJoin[{tdir,"trans.nii"}]];
+		command = TransformixCommand[tdir, True];
+		RunCommand[command];
+		output = ToPackedArray[ImportNii[FileNameJoin[{tdir,"result.nii"}]][[1]]];
+		
+		(*Delete temp directory*)
+		Switch[OptionValue[DeleteTempDirectory],
+			"All", DeleteDirectory[FileNameTake[tdir, {1, -2}],DeleteContents -> True],
+			"Trans", DeleteDirectory[tdir, DeleteContents -> True],
+			_, Null];
+			
+		(*give the output*)
+		ToPackedArray@N@Chop[Clip[output,MinMax[data]],10^-6]
+	]
 ]
 
 

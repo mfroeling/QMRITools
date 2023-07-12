@@ -20,7 +20,7 @@ BeginPackage["QMRITools`DixonTools`", Join[{"Developer`"}, Complement[QMRITools`
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -227,7 +227,7 @@ FindComplexFlips[real_,imag_]:=Block[{comp,diff,diffM,means},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*DixonReconstruct*)
 
 
@@ -390,7 +390,7 @@ InOutPhase = Compile[{{cWat, _Complex, 0}, {cFat, _Complex, 0}, {ioAmat, _Comple
 , RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*DixonFit*)
 
 
@@ -765,7 +765,7 @@ Unwrapi[dat_, thresh_] := Block[{data, mask, crp, dimi, sorted, groups, groupsiz
 		mask = Mask[Ceiling[Abs@data], 1, MaskSmoothing ->False];
 		
 		(*Get the edges sotrted for reliability and precluster groups*)
-		sorted = GetEdgeList[data, mask];
+		sorted = GetEdgeList[data, True, mask];
 		{groups, groupsize} = MakeGroups[data, mask];
 	
 		(*make 2D data 3D and define shifts in add*)
@@ -884,16 +884,19 @@ RuntimeOptions -> "Speed", Parallelization -> True];
 (*GetEdgeList*)
 
 
-GetEdgeList[data_] := GetEdgeList[data, 1]
+GetEdgeList[data_, met_] := GetEdgeList[data, met, 1]
 
-GetEdgeList[data_, maski_] := Block[{dep, diff, diff1, diff2, mask, edge, coor, fedge, ord, pos},
+GetEdgeList[data_, met_, maski_] := Block[{dep, diff, ker, mask, edge, coor, fedge, ord, pos},
 	dep = ArrayDepth[data];
 	(*maske a mask if needed*)
 	mask = If[maski === 1, Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False], maski];
 	
 	(*calculate the second order diff*)
-	{diff1, diff2} = Transpose[Partition[DiffU[ListConvolve[#, data, {2, -2}]] & /@ GetKernels[dep], 2]];
-	diff = Total[(diff1 + diff2)^2];
+	ker = Switch[dep,
+		2, {{0, 1}, {1, 0}, {1, 1}, {1, -1}}[[If[met, {1, 2}, All]]],
+		3, {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {1, 1, 0}, {-1, 1, 0}, {1, 0, 1}, {-1, 0, 1}, {0, 1, 1}, {0, -1, 1}, {1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}}
+	][[If[met, Range[dep], All]]];
+	diff = Total[(DiffU[(data - RotateLeft[data, #]) & /@ ker] + DiffU[(data - RotateLeft[data, -#]) & /@ ker])^2];
 	
 	(*get the edge reliability*)
 	edge = (RotateLeft[diff, #] + diff) & /@ Switch[dep, 2, {{0, 1}, {1, 0}}, 3, {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}}];
@@ -910,30 +913,8 @@ GetEdgeList[data_, maski_] := Block[{dep, diff, diff1, diff2, mask, edge, coor, 
 ]
 
 
-GetKernels[dep_] := Block[{ker, i, j, k, keri},
-	Switch[dep,
-		2,
-		ker = ConstantArray[0, {3, 3}];
-		ker[[2, 2]] = -1;
-		({i, j} = #; keri = ker; keri[[i, j]] = 1; keri) & /@ {
-			{2, 1}, {2, 3}, {1, 2}, {3, 2}, {1, 1}, {3, 3}, {1, 3}, {3, 1}
-		}(*H,V,D1,D2*),
-		3,
-		ker = ConstantArray[0, {3, 3, 3}];
-		ker[[2, 2, 2]] = -1;
-		({i, j, k} = #; keri = ker; keri[[i, j, k]] = 1; keri) & /@ {
-			{2, 1, 2}, {2, 3, 2}, {1, 2, 2}, {3, 2, 2}, {2, 2, 1}, {2, 2, 3},(*H,V,N*)
-			{1, 1, 2}, {3, 3, 2}, {1, 3, 2}, {3, 1, 2},(*plane 1*)
-			{1, 2, 1}, {3, 2, 3}, {1, 2, 3}, {3, 2, 1},(*plane 2*)
-			{2, 1, 1}, {2, 3, 3}, {2, 1, 3}, {2, 3, 1},(*plane 3*)
-			{1, 1, 1}, {3, 3, 3}, {1, 1, 3}, {3, 3, 1}, {1, 3, 1}, {3, 1, 3}, {3, 1, 1}, {1, 3, 3}(*diagonals*)
-		}
-	]
-];
-
-
 DiffU = Compile[{{diff, _Real, 0}}, 
-	diff - Sign[diff] Ceiling[ Abs[diff] - 0.5]
+	If[-0.5 <= diff <= 0.5, diff, diff - Sign[diff] Ceiling[Abs[diff] - 0.5]]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -1129,6 +1110,10 @@ GetDev[a_, d_] := GetDev[a, d] = a (Total@Cos[Pi RotateDimensionsRight[N[Array[{
 (*DixonPhase*)
 
 
+(* ::Subsubsection::Closed:: *)
+(*DixonPhase*)
+
+
 Options[DixonPhase] = {
    DixonBipolar -> True,
    DixonPrecessions -> -1,
@@ -1136,14 +1121,18 @@ Options[DixonPhase] = {
    DixonNucleus -> "1H",
    DixonFrequencies -> {{0}, {3.8, 3.4, 3.1, 2.7, 2.5, 1.95, 0.5, -0.5, -0.6}},
    DixonAmplitudes -> {{1}, {0.088, 0.628, 0.059, 0.064, 0.059, 0.01, 0.039, 0.01, 0.042}},
-   MonitorCalc->False
+   MonitorCalc->False,
+   UnwrapDimension->"3D",
+   MaxIterations->25
    };
 
 SyntaxInformation[DixonPhase] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	freqs, amps, iop, A, Ah, Ai, e1, e2, de, dt, hz, bip, mat, msk, comp, compi, ph, ph1, ph0, phi, 
-	ph1i, ph0i, norm, i, itt, l, hl, sw, sw1, sw0, f0, f1, normN, UF, ni, n, t2s, Ac},
+	ph1i, ph0i, norm, i, itt, l, hl, sw, sw1, sw0, f0, f1, normN, UF, ni, n, t2s, Ac,
+	unwrapF
+	},
 		
 	(*initial phase 10.1016/J.MRI.2010.08.011*)
 	(*bipolar phase 10.1002/mrm.24657*)
@@ -1158,29 +1147,42 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	Ah = ConjugateTranspose[A];
 	Ai = Inverse[Re[Ah . A]];
 	
+	(*make the time matrix*)
+	bip = (-1)^Range[Length[echos]];
+	mat = -I Transpose[{echos, Abs[bip], bip}];
+
 	(*get the two first inphase locations and calculate timing*)
 	{e1, e2} = FindInPhaseEchos[echos, iop, DixonBipolar -> False];
 	de = e2 - e1;
 	dt = (echos[[e2]] - echos[[e1]]);
 	hz = {Abs[1/dt], 0.5, 0.25};
 	
-	(*make the time matrix*)
-	bip = (-1)^Range[Length[echos]];
-	mat = -I Transpose[{echos, Abs[bip], bip}];
-	
-	(*prepare signals for *)
-	comp = compi = Transpose[real + imag I];
-	msk = Unitize@Total@Abs@compi;
-	ph = ph1 = ph0 = phi = ph1i = ph0i = 0 Re@First@compi;
+	(*prepare signals for*)
+	comp = Chop[Transpose[real + imag I]];
+	msk = Unitize@Total@Abs@comp;
+
+	cr = FindCrop[msk];
+	dm = Dimensions[msk];
+
+	comp = compi = ApplyCrop[#, cr] & /@ comp;
+	msk = Round@ApplyCrop[msk, cr];
+
+	ph = ph1 = ph0 = phi = ph1i = ph0i = ToPackedArray[0. Re@First@compi];
 	
 	(*prepare itterative optimization*)
 	norm = {{1., 1., 1.}};
 	i = 0;
-	itt = 50;
+	itt = OptionValue[MaxIterations];
 	l = Length[echos];
 	hl = Round[.5 l];
 	sw = sw1 = sw0 = f0 = f1 = False;
 	
+	unwrapF=Switch[OptionValue[UnwrapDimension],
+		"2D", UnwrapDCT/@#&,
+		"3D", UnwrapDCT@#&
+	];
+
+
 	t1=t2=t3=0.;
 	If[OptionValue[MonitorCalc], PrintTemporary[Dynamic[{i, Last@Transpose[100 Transpose[norm]/norm[[1]]],{t1,t2,t3}}]]];
 		
@@ -1191,9 +1193,9 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		
 		t1=First@AbsoluteTiming[
 		(*b0 phase*)
-		phi = Mean[(UnwrapDCT /@ (Arg[compi[[# + de]]] - Arg[compi[[#]]])) & /@ Range[e1, Min[{e1 + hl, l - de}], Min[{hl,3}]]];
+		phi = Mean[(UnwrapDCT[Arg[compi[[# + de]] Conjugate[compi[[#]]]]]) & /@ Range[e1, Min[{e1 + hl, l - de}], Min[{hl, 3}]]];
 		ph += msk phi;
-		compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
+		(*compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];*)
 		
 		(*clac norm*)
 		norm[[-1, 1]] = Norm@Flatten@Pick[phi, msk, 1];
@@ -1202,12 +1204,11 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		
 		t3=First@AbsoluteTiming[
 		(*biplolar phase*)
-		If[normN[[-1, 3]] >= .1,
+		If[normN[[-1, 3]] >= 1,
 			UF = If[normN[[-1, 3]] < 25 || sw0, sw0 = True; # &, UnwrapDCT];
-			ph0i = Mean[(bip[[#]] UF[Arg@DevideNoZero[compi[[#]]^2, compi[[# - 1]] compi[[# + 1]], "Comp"]] & /@ Range[2, l-1, 3])];
-						
+			ph0i = Mean[(bip[[#]] UF[Arg[Conjugate[compi[[# - 1]] compi[[# + 1]]] compi[[#]]^2]] & /@ Range[2, l - 1, 3])];
 			ph0 += msk ph0i;
-			compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
+			(*compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];*)
 			
 			(*clac norm*)
 			norm[[-1, 3]] = Norm@Flatten@Pick[ph0i, msk, 1],
@@ -1220,19 +1221,18 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		
 		t2=First@AbsoluteTiming[
 		(*initial phase*)
-		Ac = Ah.compi;
-		ph1i = UnwrapDCT /@ Arg[DotAc[RotateDimensionsLeft[Ac], RotateDimensionsLeft[Ai . Ac]]];
+		Ac = Ah . compi; ph1i = 0.5 UnwrapDCT[Arg[DotAc[RotateDimensionsLeft[Ac], RotateDimensionsLeft[Ai . Ac]]]];
 		ph1 += msk ph1i;
-		compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
-		
 		(*clac norm*)
 		norm[[-1, 2]] = Norm@Flatten@Pick[ph1i, msk, 1];
 		normN = 100 (#/norm[[1]]&/@norm);
 		];
 		
-		If[AllTrue[Last[normN], # < 4 &], Break[]]
+		compi = ApplyPhase[comp, hz {ph, ph1, ph0}, mat];
+
+		If[AllTrue[Last[normN], # < 8 &], Break[]]
 	, {itt}];
-		
+
 	(*fix the initial phase*)
 	phi = Mean[(UnwrapDCT[(Arg[compi[[# + de]]] - Arg[compi[[#]]])]) & /@ Range[e1, Min[{e1 + hl, l - de}], Min[{hl,3}]]];
 	ph += msk phi;
@@ -1248,8 +1248,13 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	
 	(*give output*)
 	{ph, ph1, ph0} = hz {ph, ph1, ph0} / (2 Pi);
+	{ph, t2s, ph1, ph0} = ReverseCrop[#, dm, cr] & /@ {ph, t2s, ph1, ph0};
 	{{ph, t2s, ph1, ph0}, {e1, e2, n}}
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ApplyPhase*)
 
 
 ApplyPhase = Compile[{{comp, _Complex, 4}, {phase, _Complex, 4}, {mat, _Complex, 2}},
@@ -1257,9 +1262,18 @@ ApplyPhase = Compile[{{comp, _Complex, 4}, {phase, _Complex, 4}, {mat, _Complex,
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
+(* ::Subsubsection::Closed:: *)
+(*DotAc*)
+
+
 DotAc = Compile[{{v1, _Complex, 1}, {v2, _Complex, 1}}, 
 	v1 . v2,
 RuntimeOptions -> "Speed", Parallelization -> True, RuntimeAttributes -> {Listable}];
+
+
+(* ::Subsubsection::Closed:: *)
+(*FitBipolar*)
+
 
 FitBipolar[ph0_, msk_] := Block[{m, ydat, xdat, dat, fit, vals},
 	m = UnitStep[Rescale[Total@Total@msk] - 0.5];

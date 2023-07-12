@@ -1066,12 +1066,13 @@ MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{def,
 	range = Thread[{vox, vox Dimensions[dat][[1;;3]]}] - If[OptionValue[CenterVoxel],0.5, 0] vox;
 	def = 0. dat[[1,1,1]];
 	def =If[ListQ[def], Flatten@def, def];
-	With[{ex=def},InterpolatingFunction[
-		range,
-		{5,If[ArrayDepth[dat]===3,6,2],0,Dimensions[dat][[;;3]],{int,int,int}+1,0,0,0,0,ex&,{},{},False},
-		Range[range[[#,1]],range[[#,2]],vox[[#]]]&/@{1,2,3},
-		ToPackedArray@N@dat,
-		{Automatic,Automatic,Automatic}]
+	With[{ex=def,fdat=Flatten[dat,3]},
+		InterpolatingFunction[
+			range,
+			{5,If[ArrayDepth[dat]===3, 6, 2],0,Dimensions[dat][[;;3]],{int,int,int}+1,0,0,0,0,ex&,{},{},False},
+			Range[range[[#,1]],range[[#,2]],vox[[#]]]&/@{1,2,3},
+			If[ArrayDepth[dat]===3, {PackedArrayForm, Range[0,Length[fdat]], fdat}, ToPackedArray@N@dat],
+			{Automatic,Automatic,Automatic}]
 	]
 ]
 
