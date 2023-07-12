@@ -817,7 +817,7 @@ EigenValsC = Compile[{{d, _Real, 1}}, Block[{
 		v = i13^2 - i2/3 + .1^30;
 		vs = 2 Sqrt[v];
 		v1 = 1./v;
-		s = (i13)^3 - i1 i2/6 + i3/2;
+		s = Chop[(i13)^3 - i1 i2/6 + i3/2];
 		phi = ArcCos[(v1 s) Sqrt[v1]]/3;
 		
 		l1 = i13 + vs Cos[phi];

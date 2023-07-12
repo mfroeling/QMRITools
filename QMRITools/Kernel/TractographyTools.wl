@@ -178,10 +178,10 @@ FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, o
 
 FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, trFunc,
-		tens, tensMask, inpTr, treshs, stop, coors, intE, intS, ones, n, 
+		tens, tensMask, inpTr, treshs, stop, coors, intE, intS, ones,
 		seedN, seedI, seedT, seeds, t1, tracts, iii, drop, smax, len ,sel		 
 	},
-	
+
 	(*get the options*)
 	{lmin, lmax} = OptionValue[FiberLengthRange];
 	amax = OptionValue[FiberAngle];
@@ -198,7 +198,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	
 	tracF = Switch[OptionValue[Method], "RungeKutta" | "RK" | "RK2", RK2, "RungeKutta4" | "RK4", RK4, _, Euler];
 	smax = Ceiling[(lmax/step)];
- 	 	
+
 	(*prepare tensor and stop data*)
 	(*tens = FlipTensorOrientation[tensor, per /. Thread[{"x","y","z"} -> {"z","y","x"}], Reverse[flip]];*)
 	tens = FlipTensorOrientation[tensor, per, flip];
@@ -206,15 +206,15 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 			
 	(*make the trac and stop interpolation functions*)
 	intE = MakeIntFunction[RotateDimensionsLeft[{tens}, 2], vox, int];
-	intS = MakeIntFunction[Normal@stop, vox, int];
-	
+	intS = MakeIntFunction[N@Normal@stop, vox, int];
+
 	(*make the random seed points*)
 	SeedRandom[1234];
 	seedN = Total@Flatten@stop;
 	seedI = stop["NonzeroPositions"];
 	seeds = {};
 	maxSeed = If[NumberQ[maxSeed],maxSeed,seedN];
-	
+
 	While[Length[seeds] < maxSeed,
 		seedT = Flatten[RandomSample[seedI, #] & /@ Block[{i = maxSeed},
 			First@Last@Reap[Until[i < 0, Sow[If[i > seedN, seedN, i]];
@@ -333,8 +333,9 @@ RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
 (*VecAlign*)
 
 
-VecAlign = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Sign[Sign[v1 . v2] + 0.1] v2,
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+VecAlign = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, 
+	Sign[Sign[v1.v2] + 0.1] v2,
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)

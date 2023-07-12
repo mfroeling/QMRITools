@@ -661,7 +661,7 @@ GetNiiInformation[hdr_] :=
   {slope, intercept} = {"scaleSlope", "scaleInteger"} /. hdr;
   
   rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. hdr)[[All, 1 ;; 3]]/ConstantArray[Reverse[vox], 3];
-  rotmat = DiagonalMatrix[{1, -1, 1}].ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
+  rotmat = DiagonalMatrix[{1, -1, 1}] . ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
   
   {voxU, trU} = "xyztUnits" /. hdr;
   
@@ -810,19 +810,19 @@ SyntaxInformation[ImportNiiDiff]= {"ArgumentsPattern" -> {_.,_.,_.,OptionsPatter
 ImportNiiDiff[OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[NiiMethod -> "headerMat"];
 	{bvec, grad}=ImportBvalvec[FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],0.00001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad . Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
 ImportNiiDiff[file_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[file,NiiMethod -> "headerMat"];
 	{bvec, grad}=ImportBvalvec[file,FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],0.00001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad . Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
 ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[fnii,NiiMethod -> "headerMat"];
 	{bvec, grad} = ImportBvalvec[fval, fvec,FlipBvec->OptionValue[FlipBvec]];
-	{data,Round[If[OptionValue[RotateGradients],grad.Inverse[mat], grad],0.00001],bvec,vox}
+	{data,Round[If[OptionValue[RotateGradients],grad . Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
 
@@ -1298,7 +1298,7 @@ DetectDataType[input_] := Module[{data, min, max},
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*CorrectNiiOrientation*)
 
 
@@ -1312,6 +1312,10 @@ CorrectNiiOrientation[data_, hdr_] := Block[{rev},
 
 
 (* ::Subsection:: *)
+(*GetNiiOrientation*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*GetNiiOrientation*)
 
 
@@ -1340,6 +1344,10 @@ GetNiiOrientationQ[hdr_] := Block[{qcode, qoff, qrot},
 ]
 
 
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeNiiOrentationS*)
 
 
 MakeNiiOrentationS[soff_, vox_] := MakeNiiOrentationS[soff, vox, IdentityMatrix[4], IdentityMatrix[4]]

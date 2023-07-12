@@ -20,7 +20,7 @@ BeginPackage["QMRITools`PlottingTools`", Join[{"Developer`"}, Complement[QMRIToo
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -83,7 +83,7 @@ ColorFAPlot::usage =
 "ColorFAPlot[tenor] create a color coded FA map from the tensor for l1, l2 and l3."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -2609,7 +2609,7 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,per
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*PlotContour*)
 
 

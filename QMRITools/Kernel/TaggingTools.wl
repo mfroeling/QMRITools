@@ -20,7 +20,7 @@ BeginPackage["QMRITools`TaggingTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -31,7 +31,7 @@ CalculateDispacementParameters::usage =
 "CalculateDispacementParameters[{motx, moty}, mask] ...";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -53,7 +53,7 @@ MonitorTagging::usage =
 Begin["`Private`"] 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*CalculateWaveVector*)
 
 
@@ -96,7 +96,7 @@ CalculateWaveVector[dat_]:=Block[{all,dim,cent,pts,vecs,phi,rw,vals,vs,ang,n,npt
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*AnnalyzeTagging*)
 
 
@@ -170,7 +170,7 @@ AnnalyzeTagging[gridC_, OptionsPattern[]] := Block[{
 MakeImage[im_] := Image[Rescale@N@im, ImageSize -> 200]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*ImageToMotion*)
 
 
@@ -250,7 +250,7 @@ ImageToMotion[im0_, im1_, waveVecs_] := Block[{
   ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*ImageToWave*)
 
 
@@ -283,7 +283,7 @@ ImageToWave[data_, waveVecs_] := Block[{
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*MotionToImage*)
 
 
@@ -335,7 +335,7 @@ MaskToCoordinates[mask_]:=Block[{x,y,z2,z1,p,xm,ym,r,phi,rad, dim, xcor,ycor},
 (*Filters*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Wextend*)
 
 
@@ -348,7 +348,7 @@ WExtend[ux_, uy_, back_, waveVecs_] := Block[{ker, pad, backF},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*GetKernel*)
 
 
@@ -372,7 +372,7 @@ GetKernel[waveVecs_,sc_]:=GetKernel[waveVecs,sc]=Block[{dGrid,v,pad,ker,win},
 GetWin[ker_,pad_,dim_]:=GetWin[ker,pad,dim]=Clip[2ListConvolve[ker,ConstantArray[1.,dim],pad,0.]-1,{0,1}]^2;
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*BandFilter*)
 
 

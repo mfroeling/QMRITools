@@ -20,7 +20,7 @@ BeginPackage["QMRITools`LoggingTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -70,7 +70,7 @@ CheckFile::usage =
 (*Options*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -131,7 +131,7 @@ ShowLog[win_] := Block[{pane},
 ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ExportLog*)
 
 
@@ -183,14 +183,6 @@ AddToLog[logAdd_, a___] := AddToLog[{logAdd}, a]
 
 (* ::Subsection:: *)
 (*DirectoryTree*)
-
-
-SyntaxInformation[DirectoryTree] = {"ArgumentsPattern" -> {_}};
-
-
-ExportDirectoryTree[fol_]:=ExportDirectoryTree[fol, "FileTree"]
-
-ExportDirectoryTree[fol_, name_]:=Export[FileNameJoin[{fol, ConvertExtension[name,"txt"]}], DirectoryTree[fol]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -278,7 +270,7 @@ StyleTree[tree_,{preFix_,level_,notlast_},rule_]:=Block[{prefix,hasFiles,pre,not
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PrintDirTree*)
 
 
@@ -287,8 +279,15 @@ SyntaxInformation[PrintDirectoryTree] = {"ArgumentsPattern" -> {_}};
 PrintDirectoryTree[tree_]:=StringJoin[StringReplace[#,Thread[{"  ","\[VerticalLine] ","\:2514\[HorizontalLine]","\:251c\[HorizontalLine]"}->{"   ","|  ","\\- ","|- "}]]<>"\n"&/@tree]
 
 
-(* ::Input:: *)
-(**)
+(* ::Subsubsection::Closed:: *)
+(*ExportDirectoryTree*)
+
+
+SyntaxInformation[ExportDirectoryTree] = {"ArgumentsPattern" -> {_}};
+
+ExportDirectoryTree[fol_]:=ExportDirectoryTree[fol, "FileTree"]
+
+ExportDirectoryTree[fol_, name_]:=Export[FileNameJoin[{fol, ConvertExtension[name,"txt"]}], DirectoryTree[fol]]
 
 
 (* ::Subsection:: *)
