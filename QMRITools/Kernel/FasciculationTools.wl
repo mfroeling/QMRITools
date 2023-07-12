@@ -20,7 +20,7 @@ BeginPackage["QMRITools`FasciculationTools`", Join[{"Developer`"}, Complement[QM
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -46,7 +46,7 @@ Output is {actSelected, actTotal} is mask is 3D.
 Output is {{actSelected, Total[actSelected]}, {actTotal, Total[actTotal]}} is mask is 4D where actSelected and actTotal are per mask."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -72,7 +72,7 @@ ActivationSize::usage =
 "ActivationSize is an option for SelectActivations. Its the size of the activations selected defined in number of voxels if no voxel size is given. If a voxel size is given its the volume.";
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -230,6 +230,10 @@ MeanTresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}
 (*SelectActivations*)
 
 
+(* ::Subsubsection::Closed:: *)
+(*SelectActivations*)
+
+
 Options[SelectActivations] = {ActivationSize->4, IgnoreSlices->{0,0}};
 
 SyntaxInformation[EvaluateActivation2]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
@@ -282,6 +286,10 @@ SelectActivations[act_?ArrayQ, {mask_,bmask_}, vox:{_?NumberQ,_?NumberQ,_?Number
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*SelectActivationI*)
+
+
 SelectActivationI[act_?ArrayQ,masks_?ArrayQ,size_?IntegerQ]:=Block[{msk,dat},
 	SparseArray[(
 	(*loop over masks for analysis*)
@@ -289,7 +297,6 @@ SelectActivationI[act_?ArrayQ,masks_?ArrayQ,size_?IntegerQ]:=Block[{msk,dat},
 	dat=SparseArray[Transpose[msk #&/@Transpose[act]]];
 	SparseArray[Round[Map[SelectActivationI[#,size]&,dat,{2}]]]
 )&/@masks]];
-
 
 (*actual selection function*)
 SelectActivationI[im_?MatrixQ,size_?IntegerQ]:=If[Total[Flatten[im]]<size,
@@ -299,6 +306,10 @@ SelectActivationI[im_?MatrixQ,size_?IntegerQ]:=If[Total[Flatten[im]]<size,
 
 
 (* ::Subsection:: *)
+(*AnalyzeActivations*)
+
+
+(* ::Subsubsection::Closed:: *)
 (*AnalyzeActivations*)
 
 
@@ -318,6 +329,10 @@ AnalyzeActivations[act_,msk_,lab_]:=Block[{aDepth,aDim,mDepth,mDim,labs},
 		Association[MapThread[AnalyzeActivationsI[#1,#2,#3]&,{act,Transpose@msk,labs}]]
 	]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*AnalyzeActivationsI*)
 
 
 AnalyzeActivationsI[act_,msk_,lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVols,nObs,mSd,quants,chance,chanceO,chanceV,vals,out},
@@ -350,7 +365,7 @@ AnalyzeActivationsI[act_,msk_,lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVo
 (*EvaluateActivation*)
 
 
-SyntaxInformation[EvaluateActivation2]={"ArgumentsPattern"->{_,_.,_.,_.,_.,OptionsPattern[]}};
+SyntaxInformation[EvaluateActivation]={"ArgumentsPattern"->{_,_.,_.,_.,_.,OptionsPattern[]}};
 
 EvaluateActivation[act_,dat_,mn_,tr_]:=EvaluateActivation[act,dat,mn,tr,act]
 

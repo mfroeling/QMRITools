@@ -682,12 +682,16 @@ MeanRange[inp_,quant_] := Block[{q1, q2, q3},
 SyntaxInformation[SNRCalc] = {"ArgumentsPattern" -> {_, _}};
 
 SNRCalc[data_?ArrayQ, sig_?ArrayQ]:= Block[{sigma, snr},
-	sigma = MedianFilter[Chop[sig, 10^-3], 2]; 
-	snr = Which[
-		ArrayDepth[data]===4 && ArrayDepth[sigma]===3, Transpose[Map[DevideNoZero[#, sigma]&, Transpose[data]]],
-		ArrayDepth[data]===ArrayDepth[sigma], DevideNoZero[data, sigma]
-	];
-	Clip[snr, {0, Quantile[Flatten[snr],0.99]}]
+	sigma = MedianFilter[ToPackedArray@N@Chop[sig, 10^-3], 2];
+	Which[
+		ArrayDepth[data] === 4 && ArrayDepth[sigma] === 3,
+		snr = Map[DevideNoZero[#, sigma] &, Transpose[data]];
+		Transpose[Clip[#, {0, Quantile[DeleteCases[Flatten[#], 0.], 0.995]}] & /@ snr]
+		,
+		ArrayDepth[data] === ArrayDepth[sigma],
+		snr = DevideNoZero[data, sigma];
+		Clip[snr, {0, Quantile[DeleteCases[Flatten[snr], 0.], 0.995]}]
+	]
 ]
 
 
@@ -1588,8 +1592,12 @@ CombineB1[b10_, b190_, {f1_?NumberQ, f2_?NumberQ, a_?NumberQ}, OptionsPattern[]]
 ][{ f1 b10, f2 Exp[I (a Degree)] b190}]
 
 
-(* ::Subsection::Closed:: *)
-(*CombineB1*)
+(* ::Subsection:: *)
+(*B1Shimming*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*B1Shimming*)
 
 
 Options[B1Shimming] = {B1ShimMethod -> "All", B1MaxPower -> 1.5, B1EqualPower -> False, B1Scaling -> "Relative"}
@@ -1619,6 +1627,11 @@ B1Shimming[c1_, c2_, mask_, target_, OptionsPattern[]] := Block[{c1f, c2f, tarf,
 	sol = Last[NMinimize[Flatten[{B1MapErrorN[c1f, c2f, tarf, inp, sc], DeleteDuplicates[con]}], DeleteDuplicates[vars]]];
 	inp /. sol /. {f -> 1, f1 -> 1., f2 -> 1., a -> 0.}
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*B1MapErrorN*)
+
 
 B1MapErrorN[c1_?VectorQ, c2_?VectorQ, target_, {f1_?NumberQ, f2_?NumberQ, a_?NumberQ}, sc_] := Block[{diff},
 	diff = Abs@CombineB1[c1, c2, {f1, f2, a}, B1Scaling -> sc] - target;

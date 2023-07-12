@@ -502,7 +502,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			"Dicom",
 			If[logFile==="", logFile = FileNameJoin[{outFol, "DcmToNii_"<>StringReplace[DateString[{"Day", "Month", "YearShort", "-", "Time"}],":"->""]<>".log"}]];
 			(*----*)AddToLog[{"Starting dcm to nii conversion for directory: ", fol}, True, 0];
-			(*----*)If[cc, AddToLog["********** Using custom config **********", 0]];
+			(*----*)If[cc, AddToLog["**********   -----   Using custom config   -----   **********", 0]];
 			(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)", 1];
 			,
 			(*MuscleBidsConvert*)
@@ -510,7 +510,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			logFile = FileNameJoin[{fol, nam<>"_BIDSConvert.log"}];
 			ImportLog[logFile];
 			(*----*)AddToLog[{"Starting bids conversion for directory: ", fol}, True, 0];
-			(*----*)If[cc, AddToLog["********** Using custom config **********", 0]];
+			(*----*)If[cc, AddToLog["**********   -----   Using custom config   -----   **********", 0]];
 			(*----*)AddToLog["Perform conversion for: ",1];
 			,
 			(*MuscleBidsProcess*)
@@ -518,7 +518,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			logFile = FileNameJoin[{out, nam<>"_BIDSProcess.log"}];
 			ImportLog[logFile];
 			(*----*)AddToLog[{"Starting bids processing for directory: ", fol}, True, 0];
-			(*----*)If[cc, AddToLog["********** Using custom config **********", 0]];
+			(*----*)If[cc, AddToLog["**********   -----   Using custom config   -----   **********", 0]];
 			,
 			(*MuscleBidsMerge*)
 			"Merge",
@@ -1400,13 +1400,13 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 					(*only split if not first stack*)
 					(*move the target from anatomical to native space*)
 					func = If[i===If[reverse, nStac, 1], RegisterData, RegisterDataSplit];
-					reg = func[{moving[[im,i]], mskm, voxm}, {target[[i]],voxt}, 
+					reg = ToPackedArray@N@Chop@func[{moving[[im,i]], mskm, voxm}, {target[[i]],voxt}, 
 						Iterations->300, PrintTempDirectory->False, BsplineSpacing->20 voxm, InterpolationOrderReg->1, NumberSamples -> 10000,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]];
 						
 					(*register back the target from native space to anatomy and tranfrom the rest*)
 					func = If[i===If[reverse, nStac, 1], RegisterDataTransform, RegisterDataTransformSplit];
-					Last@func[{target[[i]], mskt, voxt}, {reg, voxm}, {Transpose[movingA[[All,i]]], voxm},
+					ToPackedArray@N@Chop@Last@func[{target[[i]], mskt, voxt}, {reg, voxm}, {Transpose[movingA[[All,i]]], voxm},
 						Iterations->300,  BsplineSpacing->10 voxm, InterpolationOrderReg->1, NumberSamples -> 10000, 
 						PrintTempDirectory->False, DeleteTempDirectory->False,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]]
@@ -1419,26 +1419,20 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 			(*join the moving types*)
 			(*-----*)AddToLog[{"Joining the data"}, 4];
 			movsA = Flatten[{movs, ConstantArray[#[[1]], #[[2]]] & /@ Thread[{movsMD, lengMD}]}];
-			Print[movsA];
 			movingA = JoinSets[movingA[[#]], overT, voxm, MonitorCalc->False, MotionCorrectSets->False, 
-					ReverseSets->reverse, NormalizeSets->MemberQ[nonQuant, movsA[[#]]]
+					ReverseSets->reverse, NormalizeSets->MemberQ[nonQuant, movsA[[#]]], NormalizeOverlap->MemberQ[nonQuant, movsA[[#]]]
 				]&/@Range[Length[movsA]];
 			
 			(*split in single dim and multi dim*)
-			Print[Dimensions@movingA];
 			moving = movingA[[1;;leng]];
 			movingMD = movingA[[leng+1;;]];
-			Print[Dimensions/@{moving, movingMD, movingA}];
 			movingMD = Transpose[movingMD[[#[[1]];;#[[2]]]]] & /@ ({1, 0} + # & /@ Partition[Prepend[Accumulate[lengMD], 0], 2, 1]);
 			movingA = Join[moving, movingMD];
-			Print[Dimensions/@{moving, movingMD, movingA}];
-			Print[Dimensions/@movingA];
 			
 			(*export the joined data*)
 			(*----*)AddToLog["Exporting the calculated data to:", 4];
 			(*----*)AddToLog[outfile, 5];
 			movsA = Join[movs, movsMD];
-			Print[{nSet, movsA}];
 			ExportNii[movingA[[#]], voxt, outfile<>"_"<>movsA[[#]]<>".nii"] &/@ Range[nSet];
 			
 			(*make the checkfile*)
