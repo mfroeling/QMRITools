@@ -458,49 +458,55 @@ Options[PlotTracts] = {
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
 PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
-	range, vox, size, select, opts, col, tube, line, plot, colOpt, met, set, max, colf
+	range, vox, size, select, opts, col, tube, line, plot, colOpt, 
+	met, pran, max, colf, colArray, sc
 	},
 	
-	vox = Reverse@voxi;
-	
-	range = If[dimi === 0,
-		Round[Reverse[MinMax /@ Transpose@Flatten[tracts, 1]]/vox],
-		Reverse@Thread[{{0, 0, 0}, dimi}]
-	];
-	
-	size = vox Flatten[Differences /@ range];
-	
+	(*select correct number of tracts*)
 	max = OptionValue[MaxTracts];
 	If[OptionValue[Method]==="tube", max =  Min[4000, max]];
-	select = ToPackedArray /@ Map[Reverse, RandomSample[tracts, Min[max, Length[tracts]]], {-2}];
+	select = ToPackedArray /@ RandomSample[tracts, Min[max, Length[tracts]]];
+
+	(*calculated needed sizes ranges and scales*)
+	vox = Reverse@voxi;
+	range = If[dimi === 0,
+		Round[Reverse[MinMax /@ Transpose@Flatten[tracts, 1]]/vox],
+		Reverse@Thread[{{0, 0, 0}, dimi}]];
+	size = vox Flatten[Differences /@ range];
+	sc = Max[size]/size;
 	
+	(*get the tract vertex colors*)
+	colf = OptionValue[ColorFunction];
+	colOpt = OptionValue[TractColoring];
+	{met, pran} = If[StringQ[colOpt]||ArrayQ[colOpt], {colOpt, Automatic}, If[Length[colOpt]===2, colOpt, {"Direction", Automatic}]];
+	If[ArrayQ[met], colArray=met; met="Array"];
+	
+	col = Switch[met,
+		"Direction",
+		MakeColor[select],
+		"Length",
+		MakeLengthColor[select, {pran, colf}],
+		"Angle",
+		MakeAngleColor[select, {pran, colf}],
+		"Array",
+		MakeArrayColor[select, {pran, colf}, colArray, voxi],
+		_,
+		White
+	];
+		
+	(*make the plot*)
 	opts = Sequence[{
 		Method -> {"TubePoints" -> {6, 2}}, Lighting -> "Accent", 
 		ImageSize -> OptionValue[ImageSize], SphericalRegion -> True, Boxed -> OptionValue[Boxed],
 		Background -> Lighter@Gray, BoxRatios -> size, PlotRange -> range, 
 		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
 	}];
-	
-	colf = OptionValue[ColorFunction];
-	colOpt = OptionValue[TractColoring];
-	{met, set} = If[ListQ[colOpt], colOpt, {colOpt, Automatic}];
-	
-	col = Switch[met,
-		"Length",
-		MakeLengthColor[select, set, colf],
-		"Angle",
-		MakeAngleColor[select, set, colf],
-		"Direction",
-		MakeColor[select]
-	];
-	
-	plot = Switch[OptionValue[Method],
-		"tube", Scale[Tube[select, 0.5 Min[vox], VertexColors -> col], 1/size, {0, 0, 0}],
-		"line", Scale[Line[select, VertexColors -> col], 1/vox, {0, 0, 0}],
-		_, $Failed
-	];
-	
-	Graphics3D[{CapForm["Square"], JoinForm["Miter"], plot}, opts]
+
+	select = ToPackedArray/@Map[Reverse[#]/(vox sc) &, select, {-2}];
+	plot = Graphics3D[Switch[OptionValue[Method],
+		"tube", {CapForm["Square"], JoinForm["Miter"],Scale[Tube[select, 0.5, VertexColors -> col], sc, {0, 0, 0}]},
+		"line", Scale[Line[select, VertexColors -> col], sc, {0, 0, 0}],
+		_, $Failed], opts]
 ]
 
 
@@ -510,28 +516,22 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 
 MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
 	dirs = Abs[Differences[tract]];
-	ToPackedArray[Normalize[#] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
+	ToPackedArray[Reverse[Normalize[#]] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
 ]
 
 MakeColor[tracts : {_?ListQ ..}] := MakeColor /@ tracts
-
-MakeColor[tract_, fun_, ran_] := Block[{prange, colFunc, cval, fore},
-	prange = ran;
-	colFunc = ColorData["ThermometerColors"];
-	cval = fun @@ # & /@ tract;
-	fore = Unitize[cval];
-	(fore (colFunc /@ Rescale[cval, prange])) + Gray (1 - fore)
-]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MakeLengthColor*)
 
 
-MakeLengthColor[tracts_, set_, colf_]:=Block[{len, sc},
-	len = FiberLength[tracts];
-	sc = If[set===Automatic, Quantile[len, {.05,0.95}], set];
-	MapThread[ConstantArray[#2, Length@#1]&, {tracts, (ColorData[colf]/@Rescale[len, sc])}]
+MakeLengthColor[tracts_, {pran_, colf_}]:=Block[{len, col},
+	len = FLengthC[tracts];
+	len = Rescale[len, If[pran === Automatic, Quantile[len, {.05, 0.95}], pran]];
+	col = ColorData[colf];
+
+	MapThread[ToPackedArray@ConstantArray[#2 /. RGBColor -> List, Length@#1] &, {tracts, col /@ len}]
 ];
 
 
@@ -539,13 +539,26 @@ MakeLengthColor[tracts_, set_, colf_]:=Block[{len, sc},
 (*MakeAngColor*)
 
 
-MakeAngleColor[tracts_, set_, colf_] := Block[{ang, sc},
-	ang = VecAngC[tracts];
-	sc = If[set === Automatic, {0, 90}, set];
-	ang = Rescale[(Mean[{Prepend[#, #[[1]]], Append[#, #[[-1]]]}]) & /@ ang, sc];
-	ToPackedArray[ColorData[colf] /@ #] & /@ ang
+MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
+	ang = (Mean[{Prepend[#, #[[1]]], Append[#, #[[-1]]]}]) & /@VecAngC[tracts];
+	ang = Rescale[ang, If[pran === Automatic, {0, 90}, pran]];
+	col = ColorData[colf];
+
+	ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ ang
 ];
 
+
+(* ::Subsubsection::Closed:: *)
+(*MakeLengthColor*)
+
+
+MakeArrayColor[tract_, {pran_, colf_}, dat_, vox_] := Block[{vals, col},
+	vals = GetTractValues[tract, dat, vox, 0];
+	vals = Rescale[vals, If[pran === Automatic, Quantile[Flatten[vals], {.05, 0.95}], pran]];
+	col = ColorData[colf];
+
+	ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ vals
+]
 
 (* ::Subsection::Closed:: *)
 (*FindTensorPermutation*)
@@ -815,7 +828,10 @@ FLengthC = Compile[{{trc,_Real,2}},
 (*GetTractValues*)
 
 
-GetTractValues[tracts_, val_, vox_, int_:1]:=MakeIntFunction[val,vox,int]@@@#&/@tracts;
+GetTractValues[tracts_, val_, vox_, int_:1]:=Block[{fun},
+	fun = MakeIntFunction[val, vox, int];
+	ToPackedArray[fun @@@ #] & /@ tracts
+]
 
 
 (* ::Section:: *)
