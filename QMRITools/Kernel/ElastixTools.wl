@@ -214,6 +214,11 @@ FindTransform::usage =
 SplitMethod::usage = 
 "SplitMethod is an option for RegisterDataSplit and RegisterDataTransformSplit. values can be \"mean\", \"moving\", \"target\"."
 
+TransformMethod::usage = 
+"TransformMethod is an option for RegisterDataSplit and RegisterDataTransformSplit. values can be \"Data\", \"Mask\", \"Segmentation\". 
+If set to \"Mask\" a binary mask is expected as the second moving input.
+If set to \"Segmentation\" a multi label segmenation is expected as the second moving input.
+Uses SplitSegmenations internally then."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -1181,7 +1186,7 @@ ReadTransformParameters[dir_] := Block[{files, filenum, cor, pars},
 (*RegisterDataTransform*)
 
 
-Options[RegisterDataTransform] = Options[RegisterData];
+Options[RegisterDataTransform] = Append[Options[RegisterData], TransformMethod->"Data"];
 
 SyntaxInformation[RegisterDataTransform] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
@@ -1189,21 +1194,30 @@ RegisterDataTransform[target_, moving_, moving2_, opts : OptionsPattern[]]:=Regi
 
 RegisterDataTransform[_, _, $Failed, opts : OptionsPattern[]]:=Return[Message[RegisterData::inp]; $Failed]
 
-RegisterDataTransform[target_, moving_, {moving2_, _, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,tdir},
-	reg = RegisterData[target, moving, DeleteTempDirectory -> False, opts];
+RegisterDataTransform[target_, moving_, {moving2_, _, vox_}, opts : OptionsPattern[]] := Block[{reg, mov, met, fun, lab, tdir},
+	reg = RegisterData[target, moving, DeleteTempDirectory -> False, Sequence@@FilterRules[{opts}, Options[RegisterData]]];
 	
 	tdir = OptionValue[TempDirectory];
 	
-	mov = If[
-		ArrayDepth[moving2]==4 && ArrayDepth[reg]>=3 ,
-		Transpose[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir] & /@ Transpose[moving2]] ,
-		If[ArrayDepth[moving2]==3 && ArrayDepth[reg]==2 ,
-			TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir] & /@ moving2,
-			TransformData[{moving2, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir]
-			]
-		];
+	met=OptionValue[TransformMethod];
+	fun = Switch[met,
+		"Mask"|"Segmentation", SparseArray[Round[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir]]]&,
+		_, TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir]&
+	];
+
+	mov = If[met==="Segmentation", {mov, lab} = SplitSegmentations[moving2]; mov, moving2];
 	
-	tdir = (If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
+	mov = Which[
+		ArrayDepth[mov]==4 && ArrayDepth[reg]>=3 ,
+		Transpose[fun /@ Transpose[mov]] ,
+		ArrayDepth[mov]==3 && ArrayDepth[reg]==2 ,
+		fun /@ mov,
+		True,
+		fun @ mov
+	];
+	If[met==="Segmentation", mov = MergeSegmentations[RemoveMaskOverlaps[mov], lab]];
+
+	tdir = (If[StringQ[tdir], tdir, "Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
 	
 	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];		
 		
@@ -1215,7 +1229,7 @@ RegisterDataTransform[target_, moving_, {moving2_, _, vox_}, opts : OptionsPatte
 (*RegisterDataTransformSplit*)
 
 
-Options[RegisterDataTransformSplit] = Join[Options[RegisterData],{SplitMethod->"Mean"}];
+Options[RegisterDataTransformSplit] = Join[Options[RegisterData],{SplitMethod->"Mean", TransformMethod->"Data"}];
 
 SyntaxInformation[RegisterDataTransformSplit] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 

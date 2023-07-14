@@ -125,8 +125,7 @@ FindCrop::usage =
 "FindCrop[data] finds the crop values of the data by removing all zeros surrounding the data."
 
 AutoCropData::usage = 
-"AutoCropData[data] crops the data by removing all background zeros.
-AutoCropData[data,pad] crops the data by removing all background zeros with padding of pad."
+"AutoCropData[data] crops the data by removing all background zeros."
 
 ReverseCrop::usage = 
 "ReverseCrop[data,dim,crop] reverses the crop on the cropped data with crop values crop to the original size dim.
