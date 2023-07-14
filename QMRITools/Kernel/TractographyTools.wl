@@ -95,7 +95,7 @@ GetTractValues::usage =
 "GetTractValues[tracts, val, vox, int] ..."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -130,7 +130,8 @@ MaxTracts::usage =
 "MaxTracts ..."
 
 TractColoring::usage = 
-"TractColoring ..."
+"TractColoring is an option for FiberTractography and sets how the tracts are colored. Values can be \"Direction\", \"Length\", \"Angle\", {par}, or RGBColor[].
+For \"Length\", \"Angle\", {par} it can be defined in the form {..., {min, max}} where the {min, max} specifies the range of the color function."
 
 
 NormalizeDensity::usage = 
@@ -153,7 +154,7 @@ Begin["`Private`"]
 (*FiberTractography*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*FiberTractography*)
 
 
@@ -178,8 +179,8 @@ FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, o
 
 FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, trFunc,
-		tens, tensMask, inpTr, treshs, stop, coors, intE, intS, ones,
-		seedN, seedI, seedT, seeds, t1, tracts, iii, drop, smax, len ,sel		 
+		tens, tensMask, inpTr, treshs, stop, coors, intE, intS, ones, dim, crp,
+		seedN, seedI, seedT, seeds, t1, tracts, iii, drop, smax, len ,sel
 	},
 
 	(*get the options*)
@@ -199,21 +200,20 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	tracF = Switch[OptionValue[Method], "RungeKutta" | "RK" | "RK2", RK2, "RungeKutta4" | "RK4", RK4, _, Euler];
 	smax = Ceiling[(lmax/step)];
 
-	(*prepare tensor and stop data*)
-	(*tens = FlipTensorOrientation[tensor, per /. Thread[{"x","y","z"} -> {"z","y","x"}], Reverse[flip]];*)
-	tens = FlipTensorOrientation[tensor, per, flip];
-	stop = SparseArray@Unitize[Total@Abs@tens] Mask[inp];
-			
-	(*make the trac and stop interpolation functions*)
+	(*prepare tensor and stop data, remove background for performance and make int functions*)
+	dim = Rest@Dimensions@tensor;
+	{stop, crp} = AutoCropData[Unitize[First@tensor] Mask[inp], CropPadding -> 0];
+	tens = ApplyCrop[#,crp]&/@FlipTensorOrientation[tensor, per, flip];
+
 	intE = MakeIntFunction[RotateDimensionsLeft[{tens}, 2], vox, int];
 	intS = MakeIntFunction[N@Normal@stop, vox, int];
 
 	(*make the random seed points*)
 	SeedRandom[1234];
 	seedN = Total@Flatten@stop;
-	seedI = stop["NonzeroPositions"];
+	maxSeed = If[NumberQ[maxSeed], maxSeed, seedN];
+	seedI = SparseArray[stop]["NonzeroPositions"];
 	seeds = {};
-	maxSeed = If[NumberQ[maxSeed],maxSeed,seedN];
 
 	While[Length[seeds] < maxSeed,
 		seedT = Flatten[RandomSample[seedI, #] & /@ Block[{i = maxSeed},
@@ -239,12 +239,12 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 			Table[trFunc@seeds[[iii]], {iii, 1, seedN}]];
 		]];
 	
+	(*select only tracts within correct range and clip tracts that are longer*)
 	len = Length /@ tracts;
 	sel = UnitStep[len - lmin/step];
 	tracts = Pick[tracts, sel, 1];
 	seeds = Pick[seeds, sel, 1];
 	
-	(*select only tracts within correct range and clip tracts that are longer*)
 	tracts = If[step Length[#] >= lmax, 
 		drop = Ceiling[(step Length[#] - lmax)/(2 step)] + 1; #[[drop ;; -drop]], 
 		#] & /@ tracts;
@@ -256,8 +256,17 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	];
 
 	(*output tracts*)
-	{tracts, seeds}
+	TransTract[#, vox (crp[[;; ;; 2]] - 1)]&/@{tracts, seeds}
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TransTract*)
+
+
+TransTract = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
+  # + off & /@ tr
+  , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -265,33 +274,31 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 
 
 TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0},
-	dir0 = h EigVec[First[fun]@@loc0];
+	dir0 = h GetVec[First[fun], loc0];
 	(*tractography in the two directions around seed point*)
 	ToPackedArray@Join[
-		Reverse@TractFunc[{loc0 + dir0/2, -dir0}, h, stp, fun], 
-		TractFunc[{loc0 - dir0/2, dir0}, h, stp, fun]
+		Reverse@TractFuncI[{loc0 + dir0/2, -dir0}, h, stp, fun], 
+		TractFuncI[{loc0 - dir0/2, dir0}, h, stp, fun]
 	]
 ]
 
-TractFunc[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, intS_, tracF_}] := Block[
-	{ang, stop, loc, locn, step, stepn, angt,out},
-	
-	ang = 0;
-	stop = intS@@(loc0 + step0);
+
+TractFuncI[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, intS_, tracF_}] := Block[
+	{loc, locn, step, stepn, out},
+
 	(*perform tractography*)
 	out = NestWhileList[(
-		(*get new location and the step at new location*)
-		{loc, step} = #;
-		locn = loc + step;
-		stepn = tracF[locn, step, h, EigVec[intE@@#]&];
-		(*get stop criteria*)
-		ang = VecAng[step, stepn];
-		stop = (intS@@(locn + stepn));			
-		(*output*)
-		{locn, stepn})&, {loc0, step0}, 
-		(ang < amax && stop > stoptr)&, 1, smax
-	];
-	If[Length[out] > 1, out[[2;;, 1]], {}]
+			(*get new location and the step at new location*)
+			{loc, step} = #[[1;;2]];
+			locn = loc + step;
+			stepn = tracF[locn, step, h, intE];
+			(*output, new location and its direction, angle and stop*)
+			{locn, stepn, VecAng[step, stepn], GetStop[intS, locn + stepn]}
+		)&, {loc0, step0, 0, GetStop[intS, loc0 + step0]}, 
+	(#[[3]] < amax && #[[4]] > stoptr)&, 1, smax][[All,1]];
+
+	(*only output anything if more than one step is taken*)
+	If[Length[out] > 1, out[[2;;]], {}]
 ];
 
 
@@ -300,7 +307,7 @@ TractFunc[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, 
 
 
 Euler[y_, v_, h_, func_] := Block[{k1},
-	k1 = VecAlign[v, h func[y]];
+	k1 = h GetVecAlign[func, y, v];
 	k1
 ]
 
@@ -310,8 +317,8 @@ Euler[y_, v_, h_, func_] := Block[{k1},
 
 
 RK2[y_, v_, h_, func_] := Block[{k1, k2},
-	k1 = VecAlign[v, h func[y]];
-	k2 = VecAlign[v, h func[y + k1/2]];
+	k1 = h GetVecAlign[func, y, v];
+	k2 = h GetVecAlign[func, y + k1/2, v];
 	k2	
 ]
 
@@ -321,12 +328,33 @@ RK2[y_, v_, h_, func_] := Block[{k1, k2},
 
 
 RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
-	k1 = VecAlign[v, h func[y]];
-	k2 = VecAlign[v, h func[y + k1/2]];
-	k3 = VecAlign[v, h func[y + k2/2]];
-	k4 = VecAlign[v, h func[y + k3]];
+	k1 = h GetVecAlign[func, y, v];
+	k2 = h GetVecAlign[func, y + k1/2, v];
+	k3 = h GetVecAlign[func, y + k2/2, v];
+	k4 = h GetVecAlign[func, y + k3, v];
 	k1/6 + k2/3 + k3/3 + k4/6
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetStop*)
+
+
+GetStop = #1@@#2&
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetVec*)
+
+
+GetVec = EigVec[#1@@#2]&
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetVec*)
+
+
+GetVecAlign = VecAlign[#3, GetVec[#1, #2]]&
 
 
 (* ::Subsubsection::Closed:: *)
@@ -334,7 +362,7 @@ RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
 
 
 VecAlign = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, 
-	Sign[Sign[v1.v2] + 0.1] v2,
+	Sign[Sign[v1 . v2] + 0.1] v2,
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -379,49 +407,6 @@ EigVec = Compile[{{tens, _Real, 1}}, Block[{
 		Normalize[{b c, a c, a b}]
 	]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-
-
-EigVec2 = Compile[{{tens, _Complex, 1}}, Block[{
-	def, xx, yy, zz, xy, xz, yz, tr, xx2, yy2, zz2, xy2, xz2, yz2, tr2, 
-	p, b, b2, c, d, e, f, e1, u1, u11, u12, u13, u2, u21, u22, u23, u3, u1n, u3n},
-	
-	def = {0., 0., 1.};
-	
-	(*tens and tensor squared indices*)
-	{xx, yy, zz, xy, xz, yz} = tens;
-	tr = xx + yy + zz;
-	
-	Re@If[tr <= 0., def,
-		(*root finding parameters*)
-		{xx2, yy2, zz2, xy2, xz2, yz2} = tens^2;
-		tr2 = xx2 + yy2 + zz2 + 2 xy2 + 2 xz2 + 2 yz2;
-				
-		p = 1/3;
-		b = tr; b2 = b^2;
-		c = 0.5 (tr2 - tr^2);
-		d = xx yy zz - xx yz2 - yy xz2 - zz xy2 + 2 xy xz yz;
-		
-		e = Sqrt[-3 c^2 (b2 + 4 c) + 6 b (2 b2 + 9 c) d + 81 d^2];
-		f = (2 b^3 + 9 b c + 3 (9 d + e))^p;
-		
-		If[f == 0., def,
-			(*first root is first eigenvalue*) 
-			e1 = Abs[(1/6) (2 b + (2^(1 + p) (b2 + 3 c))/f + 4^p f)];
-		
-			(*QR decomp Using the Gram\Schmidt process to find first vector*)
-			u1 = {u11, u12, u13} = {xx - e1, xy, xz};
-			u2 = {xy, yy - e1, yz};
-			
-			u1n = u1 . u1;
-			If[u1n <= 0., def,
-				{u21, u22, u23} = u2 - ((u1 . u2)/u1n) u1;
-				u3 = {-u13 u22 + u12 u23, u13 u21 - u11 u23, -u12 u21 + u11 u22};
-				u3n = u3 . u3;
-				If[u3n <= 0., def, Sign[u3[[1]]] (u3/Sqrt[u3n])]
-			]
-		]
-	]		
-], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
 
 (* ::Subsection::Closed:: *)
@@ -479,7 +464,12 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	(*get the tract vertex colors*)
 	colf = OptionValue[ColorFunction];
 	colOpt = OptionValue[TractColoring];
-	{met, pran} = If[StringQ[colOpt]||ArrayQ[colOpt], {colOpt, Automatic}, If[Length[colOpt]===2, colOpt, {"Direction", Automatic}]];
+	{met, pran} = Which[
+		StringQ[colOpt]||ArrayQ[colOpt], {colOpt, Automatic}, 
+		Length[colOpt]===2, colOpt, 
+		Head@colOpt===RGBColor, {"Color", colOpt},
+		True, {"Direction", Automatic}
+	];
 	If[ArrayQ[met], colArray=met; met="Array"];
 	
 	col = Switch[met,
@@ -491,6 +481,8 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		MakeAngleColor[select, {pran, colf}],
 		"Array",
 		MakeArrayColor[select, {pran, colf}, colArray, voxi],
+		"Color",
+		MakeConstantColor[select, pran],
 		_,
 		White
 	];
@@ -532,7 +524,7 @@ MakeLengthColor[tracts_, {pran_, colf_}]:=Block[{len, col},
 	len = Rescale[len, If[pran === Automatic, Quantile[len, {.05, 0.95}], pran]];
 	col = ColorData[colf];
 
-	MapThread[ToPackedArray@ConstantArray[#2 /. RGBColor -> List, Length@#1] &, {tracts, col /@ len}]
+	MapThread[ToPackedArray[ConstantArray[#2 /. RGBColor -> List, Length@#1]]&, {tracts, col /@ len}]
 ];
 
 
@@ -550,7 +542,7 @@ MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
 
 
 (* ::Subsubsection::Closed:: *)
-(*MakeLengthColor*)
+(*MakeArrayColor*)
 
 
 MakeArrayColor[tract_, {pran_, colf_}, dat_, vox_] := Block[{vals, col},
@@ -560,6 +552,18 @@ MakeArrayColor[tract_, {pran_, colf_}, dat_, vox_] := Block[{vals, col},
 
 	ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ vals
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeConstantColor*)
+
+
+MakeConstantColor[tract_, pran_] := Block[{vals, col},
+	col = pran /. RGBColor -> List;
+	ToPackedArray[ConstantArray[col, Length@#1]]&/@tract
+]
+
+
 
 (* ::Subsection::Closed:: *)
 (*FindTensorPermutation*)
@@ -810,7 +814,7 @@ TractAngleMap[tracts_, vox_, dim_] := Block[{tr, angsCoor, vals},
 
 
 VecAngC = Compile[{{tr, _Real, 2}},
-	90 - ((180./Pi) ArcCos[{1, 0, 0}.Normalize[Sign[#[[1]]] #]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]))
+	90 - ((180./Pi) ArcCos[{1, 0, 0} . Normalize[Sign[#[[1]]] #]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]))
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -825,7 +829,7 @@ FLengthC = Compile[{{trc,_Real,2}},
 ,RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*GetTractValues*)
 
 

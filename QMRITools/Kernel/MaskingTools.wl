@@ -280,7 +280,7 @@ Options[SmoothMask] = {MaskComponents->1, MaskClosing->5, MaskFiltKernel->2, Mas
 
 SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothMask[msk_,OptionsPattern[]] := Block[{itt, dil, pad, close, obj, filt, mask},
+SmoothMask[msk_,OptionsPattern[]] := Block[{itt, dil, pad, close, obj, filt, mask, crp, dim},
 	
 	(*get the options*)
 	itt = Round[OptionValue[SmoothItterations]];(*how much the smoothing is repeated*)
@@ -289,20 +289,24 @@ SmoothMask[msk_,OptionsPattern[]] := Block[{itt, dil, pad, close, obj, filt, mas
 	filt = OptionValue[MaskFiltKernel];(*how much smooting*)
 	close = OptionValue[MaskClosing];(*close holes in mask*)
 	pad = Max[{5,2 close}];
-	
+
+	dim = Dimensions@msk;
+	{mask,crp} = AutoCropData[msk];
+
 	(*perform padding to avoid border effects*)
-	mask = ArrayPad[Normal@msk,pad];
+	mask = ArrayPad[Normal@mask, pad];
 	(*select number of mask components*)
-	mask = ImageData[SelectComponents[ If[ArrayDepth[mask]==2,Image,Image3D][mask],"Count", -obj]];
+	mask = ImageData[SelectComponents[If[ArrayDepth[mask]==2, Image, Image3D][mask], "Count", -obj]];
 	(*perform the closing opperation*)
 	mask = Closing[mask, close];
 	(*perform itterative smoothing*)
 	mask = ImageData@Nest[Round[GaussianFilter[Erosion[Round[GaussianFilter[Dilation[#, 1], filt] + 0.05], 1], filt] + 0.05]&, Image3D@mask, itt];
-	(*perform dilation if needed*)
-	mask=ArrayPad[mask,-pad];
+	(*perform reverse padding dilation if needed*)
+	mask=ArrayPad[mask, -pad];
 	mask = DilateMask[mask, dil];
-	(*reverse padding*)
-	SparseArray[mask]
+	
+	(*reverse cropping*)
+	SparseArray[ReverseCrop[mask, dim, crp]]
 ]
 
 
@@ -450,19 +454,26 @@ Options[SmoothSegmentation] = {MaskComponents -> 2, MaskClosing -> 5, MaskFiltKe
 
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothSegmentation[masks_, opts:OptionsPattern[]] := 
- Block[{obj, maskInp, maskOver, maskOut, smooth, posOver, x, y, z, p, tmp},
+SmoothSegmentation[maskIn_, opts:OptionsPattern[]] := 
+ Block[{smooth,obj, md, masks, labs},
  	smooth = OptionValue[MaskFiltKernel];
 	obj = OptionValue[MaskComponents];
 	
+	md = ArrayDepth[maskIn];
+
+	(*split segmentations if needed*)
+	If[md===3, {masks, labs} = SplitSegmentations[maskIn],	masks = maskIn];
+
 	(*convert data to sparse Array and transpose*)
-	maskInp = Transpose[SparseArray[Round@masks]];
+	masks = Transpose[SparseArray[Round@masks]];
 	
 	(*Get smoothed or non smoothed masks*)
-	maskInp = SmoothMask[#,FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]]&/@maskInp;
+	masks = SmoothMask[#,FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]]&/@masks;
 	
 	(*remove the overlaps*)
-	Transpose@RemoveMaskOverlapsI[SparseArray[maskInp]]
+	masks = Transpose@RemoveMaskOverlapsI[SparseArray[masks]];
+
+	If[md===3, MergeSegmentations[masks,labs], masks]
   ]
 
 
