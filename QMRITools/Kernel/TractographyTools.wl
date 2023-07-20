@@ -94,6 +94,12 @@ FiberLength::usage =
 GetTractValues::usage = 
 "GetTractValues[tracts, val, vox, int] ..."
 
+ImportTracts::usage = 
+"ImportTracts[file] ..."
+
+ExportTracts::usage = 
+"ExportTracts[file, tracts, vox, dim, seeds] ..."
+
 
 (* ::Subsection:: *)
 (*Options*)
@@ -240,14 +246,9 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 		]];
 	
 	(*select only tracts within correct range and clip tracts that are longer*)
-	len = Length /@ tracts;
-	sel = UnitStep[len - lmin/step];
-	tracts = Pick[tracts, sel, 1];
+
+	{tracts, sel} = FilterTractLength[tracts, {lmin, lmax}, "both"];
 	seeds = Pick[seeds, sel, 1];
-	
-	tracts = If[step Length[#] >= lmax, 
-		drop = Ceiling[(step Length[#] - lmax)/(2 step)] + 1; #[[drop ;; -drop]], 
-		#] & /@ tracts;
 	
 	(*report timing*)
 	If[OptionValue[TracMonitor],
@@ -495,10 +496,13 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
 	}];
 
-	select = ToPackedArray/@Map[Reverse[#]/(vox sc) &, select, {-2}];
 	plot = Graphics3D[Switch[OptionValue[Method],
-		"tube", {CapForm["Square"], JoinForm["Miter"],Scale[Tube[select, 0.5, VertexColors -> col], sc, {0, 0, 0}]},
-		"line", Scale[Line[select, VertexColors -> col], sc, {0, 0, 0}],
+		"tube", 
+		select = ToPackedArray/@Map[sc Reverse[#]/vox &, select, {-2}];
+		{CapForm["Square"], JoinForm["Miter"], Scale[Tube[select, 0.5, VertexColors -> col], 1/sc, {0, 0, 0}]},
+		"line", 
+		select = ToPackedArray/@Map[Reverse[#]/vox &, select, {-2}];
+		Line[select, VertexColors -> col],
 		_, $Failed], opts]
 ]
 
@@ -669,13 +673,18 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 (*FilterTracts*)
 
 
-FilterTracts[tracts_, vox_, select_] := SelectTracts[tracts,
-	CombineROIs[{#[[1]], Switch[ToLowerCase[#[[2, 1]]],
-		"through", SelectTractTroughVol,
-		"within", SelectTractInVol,
-		"partwithin", SelectTractPartInVol,
-		"x" | "y" | "z", SelectTractTroughPlane
-	][tracts, If[StringLength[#[[2, 1]]] == 1, #[[2]], #[[2, 2]]], vox]} & /@ select]
+Options[FilterTracts] = {FiberLengthRange -> {10, 200}}
+
+FilterTracts[tracts_, vox_, select_, OptionsPattern[]] := FilterTractLength[
+	SelectTracts[tracts,
+		CombineROIs[{#[[1]], Switch[ToLowerCase[#[[2, 1]]],
+			"through", SelectTractTroughVol,
+			"within", SelectTractInVol,
+			"partwithin", SelectTractPartInVol,
+			"x" | "y" | "z", SelectTractTroughPlane
+		][tracts, If[StringLength[#[[2, 1]]] == 1, #[[2]], #[[2, 2]]], vox]} & /@ select]
+	]
+	, OptionValue[FiberLengthRange]
 ]
 
 
@@ -829,6 +838,21 @@ FLengthC = Compile[{{trc,_Real,2}},
 ,RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
 
 
+(* ::Subsubsection::Closed:: *)
+(*FiberLength*)
+
+
+FilterTractLength[trksI_, {lmin_, lmax_}] := FilterTractLength[trksI, {lmin, lmax}, "tracts"]
+
+FilterTractLength[trksI_, {lmin_, lmax_}, what_] := Block[{len, sel, drop, trks},
+	len = FLengthC[trksI];
+	sel = UnitStep[len - lmin];
+	trks = Pick[trksI, sel, 1];
+	len = Pick[len, sel, 1];
+	trks = MapThread[If[#1 >= lmax, drop = Ceiling[((#1 - lmax)/Mean[Norm /@ Differences[#2]])/2] + 1; #2[[drop ;; -drop]], #2] &, {len, trks}];
+	Switch[what, "tracts", trks, "sel", sel, "both", {trks, sel}]
+]
+
 (* ::Subsection::Closed:: *)
 (*GetTractValues*)
 
@@ -837,6 +861,137 @@ GetTractValues[tracts_, val_, vox_, int_:1]:=Block[{fun},
 	fun = MakeIntFunction[val, vox, int];
 	ToPackedArray[fun @@@ #] & /@ tracts
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*ImportTracts*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*RegisterImport*)
+
+
+ImportExport`RegisterImport["trk", ImportTractsDefault, {}, 
+  "AvailableElements" -> {"Tracts", "VoxelSize", "Dimensions", 
+    "Seeds"}, "OriginalChannel" -> True];
+
+
+(* ::Subsubsection::Closed:: *)
+(*ImportTracts*)
+
+
+ImportTracts[] := ImportTracts[""]
+
+ImportTracts[file_] := Block[{fileI},
+	fileI = If[file == "",
+		FileSelect["FileOpen", {"*.trk"}, "trk", WindowTitle -> "Select the trk file to import"],
+		If[FileExistsQ[file], file, $Failed]
+	];
+	Import[fileI, "trk"]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ImportTractsDefault*)
+
+
+ImportTractsDefault[file_, ___] := Block[{strm, all, nTr, nTrLeng, dim, vox, seeds, tracts},
+
+	strm = OpenRead[file, BinaryFormat -> True];
+	
+	(*nDim, nVox, nSeed, nTrCoor*)
+	all = BinaryReadList[strm, "Integer32", 4];
+	
+	(*the number of tracts and each tracts length*)
+	nTr = First@BinaryReadList[strm, "Integer32", 1];
+	nTrLeng = BinaryReadList[strm, "Integer32", nTr];
+	
+	(*read the data*)
+	{dim, vox, seeds, tracts} = DynamicPartition[BinaryReadList[strm, "Real64", Total[all]], all];
+	
+	(*partition the seeds*)
+	seeds = Partition[seeds, 3];
+	tracts = DynamicPartition[Partition[tracts, 3], nTrLeng];
+	Close[strm];
+	
+	(*give the output*)
+	{tracts, vox, Round[dim], seeds}
+]
+
+
+(* ::Subsection::Closed:: *)
+(*ExportTracts*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*RegisterExport*)
+
+
+ImportExport`RegisterExport["trk",
+	ExportTractsDefault,
+	"DefaultElement" -> {"Tracts", "VoxelSize", "Dimensions", "Seeds"},
+	"AvailableElements" -> {"Tracts", "VoxelSize", "Dimensions", "Seeds"},
+	"OriginalChannel" -> True
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*ExportTracts*)
+
+
+ExportTracts[tracts : {_?ListQ ..}] := ExportTracts["", tracts, {0, 0, 0}, {0, 0, 0}, {}]
+
+ExportTracts[tracts : {_?ListQ ..}] := ExportTracts["", tracts, {0, 0, 0}, {0, 0, 0}, {}]
+
+ExportTracts[tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := ExportTracts["", tracts, vox, {0, 0, 0}, {}]
+
+ExportTracts[tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim : {_?NumberQ, _?NumberQ, _?NumberQ}] := ExportTracts["", tracts, vox, dim, {}]
+
+ExportTracts[tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim : {_?NumberQ, _?NumberQ, _?NumberQ}, seeds_?ListQ] := ExportTracts["", tracts, vox, dim, seeds]
+
+ExportTracts[file_?StringQ, tracts : {_?ListQ ..}] := ExportTracts[file, tracts, {0, 0, 0}, {0, 0, 0}, {}]
+
+ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := ExportTracts[file, tracts, vox, {0, 0, 0}, {}]
+
+ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim : {_?NumberQ, _?NumberQ, _?NumberQ}] := ExportTracts[file, tracts, vox, dim, {}]
+
+ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim : {_?NumberQ, _?NumberQ, _?NumberQ}, seeds_?ListQ] := Block[{fileo},
+	fileo = If[file == "",
+		FileSelect["FileSave", {"*.trk"}, "trk", WindowTitle -> "Select the destination file"],
+		ConvertExtension[file, ".trk"]
+	];
+	
+	Export[fileo, {tracts, vox, dim, seeds}, {"trk", {"Tracts", "VoxelSize", "Dimensions", "Seeds"}}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ExportTractsDefault*)
+
+ExportTractsDefault[file_, rule_, ___] := Block[{
+		tracts, vox, dim, seeds, strm, nDim, nVox, nSeed, nTr, nTrCoor, nTrLeng
+	},
+	
+	{tracts, vox, dim, seeds} = {"Tracts", "VoxelSize", "Dimensions", "Seeds"} /. rule;
+	
+	(*voxel size and dimensions*)
+	nDim = If[dim =!= {0, 0, 0}, 3, 0];
+	nVox = If[vox =!= {0, 0, 0}, 3, 0];
+	(*Number of seed coordinates*)
+	nSeed = 3 Length[seeds];
+	(*number of tracts tracts coordinates and trac lenghts*)
+	nTr = Length[tracts];
+	nTrCoor = 3 Total[Length /@ tracts];
+	nTrLeng = Length /@ tracts;
+	strm = OpenWrite[file, BinaryFormat -> True];
+	
+	(*how to partition the stream*)
+	BinaryWrite[strm, Flatten@{nDim, nVox, nSeed, nTrCoor, nTr, nTrLeng}, "Integer32"];
+	(*Write the data*)
+	BinaryWrite[strm, Flatten@{dim, vox, seeds, tracts}, "Real64"];
+	Close[strm];
+]
+
 
 
 (* ::Section:: *)

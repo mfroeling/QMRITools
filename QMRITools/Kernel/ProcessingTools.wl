@@ -982,7 +982,7 @@ JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 	motion = OptionValue[MotionCorrectSets];
 	pad = OptionValue[PaddOverlap];
 	normalize = OptionValue[NormalizeSets];
-	normover = OptionValue[NormalizeOverlap];
+	normover = If[normalize, OptionValue[NormalizeOverlap], False];
 	mon = OptionValue[MonitorCalc];
 	depth = ArrayDepth[data];
 	overlap = If[ListQ[over],First@over,over];
@@ -992,7 +992,7 @@ JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 		If[mon, PrintTemporary["Normalizing data"]]; 
 		NormalizeData/@data, data];
 	
-	ran = MinMax[data];
+	ran = MinMax[dat];
 
 	(*reverse the order of the sets if needed*)
 	dat = If[OptionValue[ReverseSets], Reverse[dat], dat];

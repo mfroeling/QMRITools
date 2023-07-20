@@ -2613,6 +2613,63 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,per
 (*PlotContour*)
 
 
+Options[PlotContour1] = {
+   ContourColor -> Gray,
+   ContourOpacity -> 0.5,
+   ContourColorRange -> Automatic,
+   ColorFunction -> "SunsetColors",
+   ContourSmoothing -> None
+   };
+
+SyntaxInformation[
+   PlotContour1] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+PlotContour1[dati_, vox_, OptionsPattern[]] := Block[{
+	data, smooth, color, opac, dim , pad, col, style, ran, coldat, colfunc
+	},
+
+	smooth = OptionValue[ContourSmoothing];
+	color = OptionValue[ContourColor];
+	opac = OptionValue[ContourOpacity];
+
+	dim = Dimensions@dati;
+	pad = 10;
+	data = ArrayPad[dati, pad];
+	If[IntegerQ[smooth], data = GaussianFilter[data, smooth]];
+
+	col = If[ColorQ[color], color, GrayLevel[1.]];
+	style = Directive[{Opacity[opac], col, Specularity[Lighter@Lighter@col, 5]}];
+
+	colfunc = If[! ArrayQ[color],
+		Automatic,
+		ran = OptionValue[ContourColorRange];
+		ran = If[ran === Automatic,
+			Quantile[DeleteCases[N@Flatten[color], 0.], {0.02, 0.98}],
+			ran];
+		coldat = Rescale[color, ran];
+		Function[{z, y, x},
+			ColorData[OptionValue[ColorFunction]][
+			coldat[[Clip[Round[x], {1, dim[[3]]}], 
+			Clip[Round[y], {1, dim[[2]]}], Clip[Round[z], {1, dim[[1]]}]]]]
+		]
+	];
+
+	ListContourPlot3D[data,
+		Contours -> {0.5},
+		Mesh -> False, BoundaryStyle -> None, Axes -> True, 
+		SphericalRegion -> True,
+		ColorFunctionScaling -> False, ColorFunction -> colfunc,
+		ContourStyle -> style, Lighting -> "Neutral",
+
+		ImageSize -> 300,
+		DataRange -> Transpose[{{0, 0, 0} - pad, Reverse[dim + pad]}],
+		BoxRatios -> Reverse[vox dim],
+		PlotRange -> Transpose[{{0, 0, 0}, Reverse[dim]}]
+	]
+  ]
+
+
+(*
 Options[PlotContour]={ContourColor->Gray, ContourOpacity->0.5, ContourColorRange->Automatic,ContourSize->"Dimensions",ColorFunction->"SunsetColors", ContourQuality->""};
 
 SyntaxInformation[PlotContour]={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
@@ -2648,7 +2705,7 @@ PlotContour[dati_,voxi_,OptionsPattern[]]:=Block[{data,vox,pvox,dim,fun, color, 
 		ContourStyle->style,Lighting->"Neutral",BoxRatios->vox dim,PlotRange->Transpose[{{0,0,0},pvox dim}]
 	]
 ]
-
+*)
 
 (*
 
