@@ -2613,7 +2613,7 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,per
 (*PlotContour*)
 
 
-Options[PlotContour1] = {
+Options[PlotContour] = {
    ContourColor -> Gray,
    ContourOpacity -> 0.5,
    ContourColorRange -> Automatic,
@@ -2621,10 +2621,9 @@ Options[PlotContour1] = {
    ContourSmoothing -> None
    };
 
-SyntaxInformation[
-   PlotContour1] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-PlotContour1[dati_, vox_, OptionsPattern[]] := Block[{
+PlotContour[dati_, vox_, OptionsPattern[]] := Block[{
 	data, smooth, color, opac, dim , pad, col, style, ran, coldat, colfunc
 	},
 
@@ -2667,100 +2666,6 @@ PlotContour1[dati_, vox_, OptionsPattern[]] := Block[{
 		PlotRange -> Transpose[{{0, 0, 0}, Reverse[dim]}]
 	]
   ]
-
-
-(*
-Options[PlotContour]={ContourColor->Gray, ContourOpacity->0.5, ContourColorRange->Automatic,ContourSize->"Dimensions",ColorFunction->"SunsetColors", ContourQuality->""};
-
-SyntaxInformation[PlotContour]={"ArgumentsPattern"->{_,_,OptionsPattern[]}};
-
-PlotContour[dati_,voxi_,OptionsPattern[]]:=Block[{data,vox,pvox,dim,fun, color, col, opac, style,colfunc,ran, coldat},
-
-	data=Rescale[ToPackedArray@N@Normal@dati,{0, Quantile[DeleteCases[N@Flatten[dati],0.],0.98]}];
-	
-	(*prepare data*)
-	vox=Reverse[voxi];
-	pvox=If[OptionValue[ContourSize]=!="Dimensions",vox,{1,1,1}];
-	dim=Reverse@Dimensions@data;
-	
-	fun=MakeIntFunction[GaussianFilter[ArrayPad[data,1],2],Reverse@pvox,1];
-	
-	color=OptionValue[ContourColor];
-	opac=OptionValue[ContourOpacity];
-	col=If[ColorQ[color],color,GrayLevel[1.]];
-	style=Directive[{Opacity[opac],col,Specularity[Lighter@Lighter@col,5]}];
-	
-	colfunc=If[!ArrayQ[color],Automatic,
-		ran=OptionValue[ContourColorRange];
-		ran=If[ran===Automatic,Quantile[DeleteCases[N@Flatten[color],0.],{0.02,0.98}],ran];
-		coldat=Rescale[color,ran];
-		Function[{z,y,x},ColorData[OptionValue[ColorFunction]][coldat[[Clip[Round[x],{1,dim[[3]]}],Clip[Round[y],{1,dim[[2]]}],Clip[Round[z],{1,dim[[1]]}]]]]]
-	];
-	
-	{pt, mr}=If[OptionValue[ContourQuality]==="High",{10,2},{10,1}];
-	
-	ContourPlot3D[fun[x+pvox[[3]],y+pvox[[2]],z+pvox[[1]]],{z,-0.5pvox[[1]],pvox[[1]](dim[[1]]+0.5)},{y,-0.5pvox[[2]],pvox[[2]](dim[[2]]+0.5)},{x,-0.5pvox[[3]],pvox[[3]](dim[[3]]+0.5)},
-		PlotPoints->pt,MaxRecursion->mr,Contours->{0.5},Mesh->False,BoundaryStyle->None,Axes->True,
-		ColorFunctionScaling->False,ColorFunction->colfunc,SphericalRegion->True,ImageSize->300,
-		ContourStyle->style,Lighting->"Neutral",BoxRatios->vox dim,PlotRange->Transpose[{{0,0,0},pvox dim}]
-	]
-]
-*)
-
-(*
-
-Options[PlotContour] = {ContourStyle -> {Gray, 0.25}};
-
-SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern[]}}; 
-
-PlotContour[data_, voxi_, opts:OptionsPattern[]] := PlotContour[data, voxi, {0}, 0, opts]
-
-PlotContour[data_, voxi_, scaleI_?ArrayQ, opts:OptionsPattern[]] := PlotContour[data, voxi, scaleI, {0}, opts]
-
-PlotContour[data_, voxi_, scaleI_?ArrayQ, range_, OptionsPattern[]] :=  Block[{vox, pdata, dim, color, opac, style, scale, mean, func},
-	(*prepare data*)
-	vox = Reverse[voxi];
-	pdata = ArrayPad[data, 1];
-	dim = Reverse@Dimensions[pdata];
-	
-	color = OptionValue[ContourStyle];
-	{color, opac} = If[ColorQ[color], {color, 0.25}, color];
-	
-	(*create a plot scale if needed*)
-	style = If[scaleI === {0},
-		Directive[{Opacity[opac], color, Specularity[Lighter@color, 5]}],
-		GrayLevel[1]
-	];
-	
-	(*create a colorfunction if needed*)
-	func = If[scaleI =!= {0},
-    
-	    (*get the scaling*)
-	    scale = ArrayPad[scaleI, 1];
-	    mean = If[range === 0,
-	    	Quantile[DeleteCases[N@Flatten[data scaleI], 0.], .95],
-	    	range
-	    ];
-	    
-	    scale = scale/(mean);
-	    Function[{x, y, z}, ColorData["SunsetColors"][scale[[Ceiling[z], Ceiling[y], Ceiling[x]]]]]
-	    ,
-	    Automatic
-	];
-	
-	Quiet@ListContourPlot3D[
-		(*fix for 13.1*)
-		RescaleData[pdata,dim],
-		BoundaryStyle -> None,
-		Contours -> 1, BoxRatios -> dim vox, PlotRange -> Thread[{{0, 0, 0} - 5, dim + 2 + 5}], 
-		ContourStyle -> style, ColorFunction -> func, Mesh -> False,
-		Lighting -> "Neutral", MaxPlotPoints -> Round[Max[dim]/2], 
-		ColorFunctionScaling -> False, SphericalRegion -> True, ImageSize -> 300, 
-		PerformanceGoal -> "Speed", Axes -> False
-	]
-]
-*)
-
 
 
 (* ::Subsection:: *)
