@@ -2544,7 +2544,8 @@ SyntaxInformation[GetSlicePositions]={"ArgumentsPattern"->{_,_.,OptionsPattern[]
 
 GetSlicePositions[data_, opts:OptionsPattern[]]:=GetSlicePositions[data, {1,1,1},opts]
 
-GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,pers,min,max,minmax,result,num,s1,s2,s3,mid,mn,tot},
+GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
+	dat,peaks,len,fil,ran,pers,min,max,result,num,s1,s2,s3,mid,mn,tot},
 	(*get the max intensity slice*)
 	pers={{2,3},{1,3},{1,2}};
 	{s1,s2,s3}=OptionValue[DropSlices];
@@ -2566,29 +2567,24 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{dat,peaks,len,fil,ran,per
 		(*dat=MeanNoZero@Flatten[dat,pers[[#,1;;2]]];*)
 		
 		mn = MeanNoZero@Flatten[dat, pers[[#,1;;2]]];
-		mn = mn/Max[mn];
 		tot = Total@Flatten[dat, pers[[#,1;;2]]];
-		tot = tot/Max[tot];
-		dat = mn + 0.5 tot;
+		dat = Rescale[mn] + 0.5 Rescale[tot];
 		
 		(*constrain and filter data*)
-		len=Length[dat];
-		fil=Clip[len/50.,{2,Infinity}];
-		dat=GaussianFilter[dat,fil];
-		
-		{min,max}=MinMax[dat];
-		minmax=(min+0.5(max-min));
-		mid={len/2.,minmax};
-		dat[[;;ran]]=min;
-		dat[[-ran;;]]=min;
-		
+		len = Length[dat];
+		dat[[;;ran]] = 0;
+		dat[[-ran;;]] = 0;
+		fil = Clip[len/50., {2, Infinity}];
+		dat = Rescale@GaussianFilter[dat, fil];
+
 		(*find the peak locations and select the ones above treshhold*)
-		peaks=FindPeaks[dat,fil];
-		peaks=Select[peaks,#[[2]]>minmax&];
+		peaks = FindPeaks[dat, fil];
+		peaks = Select[peaks, #[[2]]>0.5&];
 		
 		(*select peaks closes to center*)
+		mid = {len,1}/2.;
 		num=Min[{Length[peaks],num}];
-		Join[{dat,peaks,mid},If[num===0,
+		Join[{dat, peaks, mid},If[num===0,
 				{{},{}},
 				peaks=Nearest[peaks,mid,num];
 				{peaks,peaks[[All,1]]}

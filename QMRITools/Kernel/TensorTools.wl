@@ -720,152 +720,171 @@ FlipGradientOrientation[grad_, v_, p_] /; (AllTrue[v, StringQ] && AllTrue[p, Num
 (*Tensor Parameters*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*EigensysCalc*)
 
 
-Options[EigensysCalc] = {RejectMap -> False, Reject -> True};
+Options[EigensysCalc]={RejectMap->False,Reject->True,PerformanceGoal->"Speed"};
 
-SyntaxInformation[EigensysCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+SyntaxInformation[EigensysCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-EigensysCalc[tens_?VectorQ] := Block[{val}, 
-	val = EigenValsC[tens] ; {val, EigenVecsC[tens, val]}]
+EigensysCalc[tens_,opts:OptionsPattern[]]:=Eigensys[tens,"all",opts]
 
-EigensysCalc[tens_?MatrixQ] := Block[{t, val}, 
-	val = EigenValsC[t = TensVec[tens]] ; {val, EigenVecsC[t, val]}]
-
-EigensysCalc[tensor_?ArrayQ, OptionsPattern[]] := Block[{val, vec, reject, sel},
-	(*If[VectorQ[tensor],
-		(*tensor is just one value*)
-		{val, vec} = EigensysCalci[tensor];		
-		,
-		(*calculate the eigensystem*)
-		val = Map[EigensysCalci, RotateDimensionsLeft[tensor], {-2}];
-		vec = Switch[ArrayDepth[tensor] - 1, 1, val[[All, 2]], 2, val[[All, All, 2]], 3, val[[All, All, All, 2]]];
-		val = Switch[ArrayDepth[tensor] - 1, 1, val[[All, 1]], 2, val[[All, All, 1]], 3, val[[All, All, All, 1]]];
-	];*)
-
-	{val, vec} = EigensysCalci[tensor];
-
-	(*find the reject values if needed*)	
-	If[OptionValue[Reject],
-		sel = SelectEig[val];
-		reject = 1 - sel;
-		val = sel val; 
-		vec = sel vec + reject ConstantArray[{{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}, Dimensions[reject]];
-	];
-	
-	If[OptionValue[RejectMap]&&OptionValue[Reject], {val, vec, reject}, {val, vec}]
-]
-
-
-SelectEig = Compile[{{eig, _Real, 1}}, UnitStep[Last[eig]],
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True
-];
-
-
-EigensysCalci[tens_] := Block[{t, val}, 
-	t = RotateDimensionsLeft[tens]; val = EigenValsC[t] ; {val, EigenVecsC[t, val]}]
-
-
-(*
-EigensysCalci[{0., 0., 0., 0., 0., 0.}] := {{0., 0., 0.}, {{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}}
-EigensysCalci[{{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}] := {{0., 0., 0.}, {{0., 0., 1.}, {0., 1., 0.}, {1., 0., 0.}}}
-EigensysCalci[tensor_?MatrixQ] := Eigensystem[tensor]
-EigensysCalci[tensor_?VectorQ] := Eigensystem[TensMat[tensor]]
-*)
 
 (* ::Subsubsection::Closed:: *)
 (*EigenvalCac*)
 
-(*
-Options[EigenvalCalc] = Options[EigensysCalc];
 
-SyntaxInformation[EigenvalCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+Options[EigenvalCalc]=Options[EigensysCalc];
 
-EigenvalCalc[tens_, opts:OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens, opts][[{1, 3}]], EigensysCalc[tens, opts][[1]]]
-*)
+SyntaxInformation[EigenvalCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-Options[EigenvalCalc] = Options[EigensysCalc];
-
-SyntaxInformation[EigenvalCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
-
-EigenvalCalc[tens_?VectorQ, opts:OptionsPattern[]] := EigenValsC[tens]
-
-EigenvalCalc[tens_?MatrixQ, opts:OptionsPattern[]] := EigenValsC[TensVec[tens]]
-
-EigenvalCalc[tens_, opts:OptionsPattern[]] := EigenValsC[RotateDimensionsLeft[tens]]
-
-
-(* ::Subsubsection::Closed:: *)
-(*EigenValsC*)
-
-
-EigenValsC = Compile[{{d, _Real, 1}}, Block[{
-		i1, i2, i3, i13, v, vs, v1, s, phi, l1, l2, dxx, dyy, dzz, dxy, dxz, dyz
-	},
-
-    If[Total[d] === 0.,
-		{0., 0., 0.},
-		{dxx, dyy, dzz, dxy, dxz, dyz} = d;
-		
-		i1 = dxx + dyy + dzz;
-		i2 = (dxx dyy + dxx dzz + dyy dzz) - (dxy^2 + dxz^2 + dyz^2);
-		i3 = dxx dyy dzz + 2 dxy dxz dyz - (dzz (dxy)^2 + dyy (dxz)^2 + dxx (dyz)^2);
-		
-		i13 = i1/3;
-		v = i13^2 - i2/3 + .1^30;
-		vs = 2 Sqrt[v];
-		v1 = 1./v;
-		s = Chop[(i13)^3 - i1 i2/6 + i3/2];
-		phi = ArcCos[(v1 s) Sqrt[v1]]/3;
-		
-		l1 = i13 + vs Cos[phi];
-		l2 = i13 - vs Cos[Pi/3 + phi];
-		{l1, l2, i1 - l1 - l2}
-	]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+EigenvalCalc[tens_,opts:OptionsPattern[]]:=Eigensys[tens,"val",opts]
 
 
 (* ::Subsubsection::Closed:: *)
 (*EigenvecCalc*)
 
-(*
-Options[EigenvecCalc] = Options[EigensysCalc];
 
-SyntaxInformation[EigenvecCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+Options[EigenvecCalc]=Options[EigensysCalc];
 
-EigenvecCalc[tens_, opts:OptionsPattern[]] := If[OptionValue[RejectMap], EigensysCalc[tens,opts][[{2, 3}]], EigensysCalc[tens,opts][[2]]]
-*)
+SyntaxInformation[EigenvecCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
+
+EigenvecCalc[tens_,opts:OptionsPattern[]]:=Eigensys[tens,"vec",opts]
 
 
-Options[EigenvecCalc] = Options[EigensysCalc];
+(* ::Subsubsection:: *)
+(*Eigensys*)
 
-SyntaxInformation[EigenvecCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-EigenvecCalc[tens_?VectorQ, opts:OptionsPattern[]] := EigenVecsC[tens, EigenValsC[tens]]
+Options[Eigensys]=Options[EigensysCalc];
 
-EigenvecCalc[tens_?MatrixQ, opts:OptionsPattern[]] := Block[{t}, t = TensVec[t]; EigenVecsC[t, EigenValsC[t]]] 
+Eigensys[tens_,out_,OptionsPattern[]]:=Block[{t, met, val, vec,reject, sel},
+	met=OptionValue[PerformanceGoal];
+	
+	t=Which[
+		VectorQ[tens],tens,
+		MatrixQ[tens],TensVec[tens],
+		ArrayQ[tens],RotateDimensionsLeft[tens]
+	];
+	
+	{val,vec} = If[met==="Speed",EigenSysC[t,out],EigenSysQ[t,out]];
+	
+	If[OptionValue[Reject],
+		reject=SelectEig[val];
+		sel=1-reject;
+		val = sel val;
+		If[vec=!=0,vec=sel vec+reject ConstantArray[{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}},Dimensions[reject]]];
+	];
+	
+	If[OptionValue[RejectMap]&&OptionValue[Reject],
+		Switch[out,
+			"val",{val,reject},
+			"vec",{vec,reject},
+			"all",{val,vec,reject}
+		],
+		Switch[out,
+			"val",val,
+			"vec",vec,
+			"all",{val,vec}
+		]
+	]
+]
 
-EigenvecCalc[tens_, opts:OptionsPattern[]] := Block[{t}, t = RotateDimensionsLeft[tens]; EigenVecsC[t, EigenValsC[t]]]
+
+SelectEig=Compile[{{eig,_Real,1}},1-UnitStep[Last[eig]],RuntimeAttributes->{Listable},RuntimeOptions->"Speed",Parallelization->True];
 
 
 (* ::Subsubsection::Closed:: *)
-(*EigenVecsC*)
+(*EigenSysQ*)
 
 
-EigenVecsC = Compile[{{d, _Real, 1}, {v, _Real, 1}}, Block[{
-		dxx, dyy, dzz, dxy, dxz, dyz, a, b , c
-	},
-	If[Total[d] === 0.,
-		{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}},
-		{dxx, dyy, dzz, dxy, dxz, dyz} = d;
-		(
-			{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - #);
-			Normalize[{b c, a c, a b}]
-		) & /@ v
+(*slow precice method*)
+EigenSysQ[tens_,out_]:=Block[{val,vec},
+	If[out=!="val",
+		If[VectorQ[tens],
+			(*tensor is just one value*)
+			EigenSysi[tens],
+			(*calculate the eigensystem*)
+			val=Map[EigenSysi,tens,{-2}];
+			vec=Switch[ArrayDepth[tens]-1,1,val[[All,2]],2,val[[All,All,2]],3,val[[All,All,All,2]]];
+			val=Switch[ArrayDepth[tens]-1,1,val[[All,1]],2,val[[All,All,1]],3,val[[All,All,All,1]]];
+			{val,vec}
+		],
+		If[VectorQ[tens],
+			(*tensor is just one value*)
+			{EigenVali[tens],0},
+			(*calculate the eigensystem*)
+			{Map[EigenVali,tens,{-2}],0}
+		]
 	]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+];
+
+
+EigenSysi[{0.,0.,0.,0.,0.,0.}]:={{0.,0.,0.},{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}}}
+EigenSysi[tensor_?VectorQ]:=Eigensystem[TensMat[tensor]]
+
+
+EigenVali[{0.,0.,0.,0.,0.,0.}]:={0.,0.,0.}
+EigenVali[tensor_?VectorQ]:=Eigenvalues[TensMat[tensor]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*EigenSysC*)
+
+
+(*fast direct method*)
+EigenSysC[tens_, out_]:=Block[{val},
+	val=EigenValC[tens];
+	If[out=!="val",{val,EigenVecC[tens,val]},{val,0}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*EigenValC*)
+
+
+EigenValC=Compile[{{tens,_Real,1}},Block[{dxx,dyy,dzz,dxy,dxz,dyz,dxy2,dxz2,dyz2,i1,i2,i3,i,v,s,p3,v2,phi},
+	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
+	If[Total[Abs[tens]]<10.^-15,
+		{0.,0.,0.},
+		
+		{dxx,dyy,dzz,dxy,dxz,dyz}=tens;
+		{dxy2,dxz2,dyz2}={dxy,dxz,dyz}^2;
+		
+		i1=dxx+dyy+dzz;
+		i2=dxx dyy+dxx dzz+dyy dzz-dxy2-dxz2-dyz2;
+		i3=dxx dyy dzz+2 dxy dxz dyz-dzz dxy2-dyy dxz2-dxx dyz2;
+		
+		i=i1/3;
+		v=i^2-i2/3;
+		s=i^3-(i1 i2)/6+i3/2;
+		p3=Pi/3;
+		v2=Sqrt[v];
+		
+		phi=Re[ArcCos[If[(v v2)===0,0,s/(v v2)]]/3];
+		{i+2 v2 Cos[phi],i-2 v2 Cos[p3+phi],i-2 v2 Cos[p3-phi]}
+	]
+],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*EigenVecC*)
+
+
+EigenVecC=Compile[{{tens,_Real,1},{eig,_Real,1}},Block[{dxx,dyy,dzz,dxy,dxz,dyz,a,b,c,norm},
+	If[Total[Abs[tens]]<10.^-15,
+		{{0,0,1},{0,1,0},{1,0,0}},
+		
+		{dxx,dyy,dzz,dxy,dxz,dyz}=tens;
+		(
+			{a,b,c}={dxz dxy,dxy dyz,dxz dyz}-{dyz,dxz,dxy} ({dxx,dyy,dzz}-#);
+			{a,b,c}={b c,a c,a b};
+			norm=Sqrt[Abs[a]^2 + Abs[b]^2 + Abs[c]^2];
+			If[norm===0,{a,b,c}/norm,{0.,0.,0.}]
+		)&/@eig
+	]
+],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -888,10 +907,10 @@ SyntaxInformation[FACalc] = {"ArgumentsPattern" -> {_}};
 FACalc[eig_] := FACalci[eig]
 
 FACalci = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3, teig},
-   l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
-   teig = Sqrt[2.*Total[eig^2]];
-   If[teig == 0., 0. ,Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2]/teig]
-   ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+	l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
+	teig = Sqrt[2.*Total[eig^2]];
+	If[teig == 0., 0. ,Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2]/teig]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -938,16 +957,16 @@ WestinMeasures[eig_]:=Block[{l1, l2, l3},
 (*ParameterCalc*)
 
 
-Options[ParameterCalc] = {Reject->False}
+Options[ParameterCalc] = {Reject->False, PerformanceGoal -> "Speed"}
 
 SyntaxInformation[ParameterCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 ParameterCalc[tensor_,OptionsPattern[]]:= Block[{eig,adc,fa},
-	eig = 1000 EigenvalCalc[tensor, Reject->OptionValue[Reject], RejectMap->OptionValue[Reject]];
+	eig = 1000 EigenvalCalc[tensor, Reject->OptionValue[Reject], RejectMap->False, PerformanceGoal->OptionValue[PerformanceGoal]];
 	adc = ADCCalc[eig];
 	fa = FACalc[eig];
 	Join[RotateDimensionsRight[eig],{adc,fa}]
-	]
+]
 
 
 (* ::Subsection:: *)
