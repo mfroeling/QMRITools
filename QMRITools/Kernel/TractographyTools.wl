@@ -135,6 +135,9 @@ MaxSeedPoints::usage =
 MaxTracts::usage = 
 "MaxTracts ..."
 
+TractSize::usage = 
+"TractSize ..."
+
 TractColoring::usage = 
 "TractColoring is an option for FiberTractography and sets how the tracts are colored. Values can be \"Direction\", \"Length\", \"Angle\", {par}, or RGBColor[].
 For \"Length\", \"Angle\", {par} it can be defined in the form {..., {min, max}} where the {min, max} specifies the range of the color function."
@@ -242,17 +245,21 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 		trFunc = TractFunc[#, step, {amax, smax, stopT}, {intE, intS, tracF}]&;
 		tracts = If[OptionValue[TracMonitor],
 			Monitor[Table[trFunc@seeds[[iii]], {iii, 1, seedN}], ProgressIndicator[iii, {0, seedN}]],
-			Table[trFunc@seeds[[iii]], {iii, 1, seedN}]];
-		]];
-	
-	(*select only tracts within correct range and clip tracts that are longer*)
+			Table[trFunc@seeds[[iii]], {iii, 1, seedN}]
+		];
+	]];
 
+	If[OptionValue[TracMonitor],
+		Print["Checking Lengths"];
+	];
+
+	(*select only tracts within correct range and clip tracts that are longer*)
 	{tracts, sel} = FilterTractLength[tracts, {lmin, lmax}, "both"];
 	seeds = Pick[seeds, sel, 1];
 	
 	(*report timing*)
 	If[OptionValue[TracMonitor],
-		Print["Tractography took ", t1, " seconds"];
+		Print["Tractography took ", Round[t1,.1], " seconds (",Round[seedN/t1]," tracts/s)"];
 		Print[Length[tracts], " valid tracts with length ", Round[step Mean[Length /@ tracts], 0.1],"\[PlusMinus]", Round[step StandardDeviation[Length /@ tracts], 0.1] , " mm"];	
 	];
 
@@ -266,8 +273,8 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 
 
 TransTract = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
-  # + off & /@ tr
-  , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+	# + off & /@ tr
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -278,17 +285,17 @@ TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0},
 	dir0 = h GetVec[First[fun], loc0];
 	(*tractography in the two directions around seed point*)
 	ToPackedArray@Join[
-		Reverse@TractFuncI[{loc0 + dir0/2, -dir0}, h, stp, fun], 
-		TractFuncI[{loc0 - dir0/2, dir0}, h, stp, fun]
+		Reverse@TractFuncI[{loc0 + dir0/2, dir0}, h, stp, fun], 
+		TractFuncI[{loc0 - dir0/2, -dir0}, h, stp, fun]
 	]
 ]
 
 
 TractFuncI[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, intS_, tracF_}] := Block[
-	{loc, locn, step, stepn, out},
+	{loc, locn, step, stepn},
 
 	(*perform tractography*)
-	out = NestWhileList[(
+	NestWhileList[(
 			(*get new location and the step at new location*)
 			{loc, step} = #[[1;;2]];
 			locn = loc + step;
@@ -296,10 +303,7 @@ TractFuncI[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_,
 			(*output, new location and its direction, angle and stop*)
 			{locn, stepn, VecAng[step, stepn], GetStop[intS, locn + stepn]}
 		)&, {loc0, step0, 0, GetStop[intS, loc0 + step0]}, 
-	(#[[3]] < amax && #[[4]] > stoptr)&, 1, smax][[All,1]];
-
-	(*only output anything if more than one step is taken*)
-	If[Length[out] > 1, out[[2;;]], {}]
+	(#[[3]] < amax && #[[4]] > stoptr)&, 1, smax][[All,1]]
 ];
 
 
@@ -383,13 +387,15 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 (*EigVec*)
 
 
-EigVec = Compile[{{tens, _Real, 1}}, Block[{
+EigVec = Compile[{{t, _Real, 1}}, Block[{
 		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, 
-		i1, i2, i3, i, v, s, v2, phi, l1, a, b, c
+		i1, i2, i3, i, v, s, v2, l1, a, b, c, norm
 	},
+	tens=1000 t;
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
-	If[Total[tens] === 0.,
+	If[Total[Abs[tens]]<10.^-15,
 		{0., 0., 0.},
+
 		{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
 		{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
 
@@ -402,13 +408,13 @@ EigVec = Compile[{{tens, _Real, 1}}, Block[{
 		s = i^3 - (i1 i2)/6 + i3/2;
 
 		v2 = Sqrt[v];
-		phi = Re[ArcCos[If[v === 0, 0, s/(v v2)]]/3];
-		
-		l1 = i + 2 v2 Cos[phi];
+		l1 = i + 2 v2 Cos[Re[ArcCos[If[(v v2)===0, 0., s/(v v2)]]/3]];
 		
 		{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
-		{a, b, c}= {b c, a c, a b};
-		{a, b, c}/Sqrt[a^2 + b^2 + c^2]
+		{a, b, c} = {b c, a c, a b};
+		norm = Sqrt[a^2 + b^2 + c^2];
+		
+		If[norm < 10.^-30, {0., 0., 0.}, {a, b, c} / norm]
 	]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
@@ -438,11 +444,12 @@ FitTractC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat = #^Range[0.,
 
 Options[PlotTracts] = {
 	MaxTracts -> 2000, 
-	ImageSize -> 800, 
+	ImageSize -> 600, 
 	Method->"line", 
 	TractColoring->"Direction",
 	ColorFunction->"SouthwestColors",
-	Boxed->True
+	Boxed->True,
+	TractSize-> 1
 }
 
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
@@ -455,6 +462,7 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	(*select correct number of tracts*)
 	max = OptionValue[MaxTracts];
 	If[OptionValue[Method]==="tube", max =  Min[4000, max]];
+	SeedRandom[1234];
 	select = ToPackedArray /@ RandomSample[tracts, Min[max, Length[tracts]]];
 
 	(*calculated needed sizes ranges and scales*)
@@ -463,8 +471,8 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		Round[Reverse[MinMax /@ Transpose@Flatten[tracts, 1]]/vox],
 		Reverse@Thread[{{0, 0, 0}, dimi}]];
 	size = vox Flatten[Differences /@ range];
-	sc = Max[size]/size;
-	
+	sc = OptionValue[TractSize] 0.01 Max[size/vox];
+
 	(*get the tract vertex colors*)
 	colf = OptionValue[ColorFunction];
 	colOpt = OptionValue[TractColoring];
@@ -501,10 +509,10 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 
 	plot = Graphics3D[Switch[OptionValue[Method],
 		"tube", 
-		select = ToPackedArray/@Map[sc Reverse[#]/vox &, select, {-2}];
-		{CapForm["Square"], JoinForm["Miter"], Scale[Tube[select, 0.5, VertexColors -> col], 1/sc, {0, 0, 0}]},
+		select = ToPackedArray/@Map[Reverse[#] &, select, {-2}];
+		{CapForm["Square"], JoinForm["Miter"], Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]},
 		"line", 
-		select = ToPackedArray/@Map[Reverse[#]/vox &, select, {-2}];
+		select = ToPackedArray/@Map[Reverse[#] / vox &, select, {-2}];
 		Line[select, VertexColors -> col],
 		_, $Failed], opts]
 ]

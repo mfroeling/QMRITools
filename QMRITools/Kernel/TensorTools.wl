@@ -720,7 +720,7 @@ FlipGradientOrientation[grad_, v_, p_] /; (AllTrue[v, StringQ] && AllTrue[p, Num
 (*Tensor Parameters*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*EigensysCalc*)
 
 
@@ -728,7 +728,7 @@ Options[EigensysCalc]={RejectMap->False,Reject->True,PerformanceGoal->"Speed"};
 
 SyntaxInformation[EigensysCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-EigensysCalc[tens_,opts:OptionsPattern[]]:=Eigensys[tens,"all",opts]
+EigensysCalc[tens_,opts:OptionsPattern[]]:=EigenSys[tens,"all",opts]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -739,7 +739,7 @@ Options[EigenvalCalc]=Options[EigensysCalc];
 
 SyntaxInformation[EigenvalCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-EigenvalCalc[tens_,opts:OptionsPattern[]]:=Eigensys[tens,"val",opts]
+EigenvalCalc[tens_,opts:OptionsPattern[]]:=EigenSys[tens,"val",opts]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -750,16 +750,16 @@ Options[EigenvecCalc]=Options[EigensysCalc];
 
 SyntaxInformation[EigenvecCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-EigenvecCalc[tens_,opts:OptionsPattern[]]:=Eigensys[tens,"vec",opts]
+EigenvecCalc[tens_,opts:OptionsPattern[]]:=EigenSys[tens,"vec",opts]
 
 
 (* ::Subsubsection:: *)
-(*Eigensys*)
+(*EigenSys*)
 
 
-Options[Eigensys]=Options[EigensysCalc];
+Options[EigenSys]=Options[EigensysCalc];
 
-Eigensys[tens_,out_,OptionsPattern[]]:=Block[{t, met, val, vec,reject, sel},
+EigenSys[tens_,out_,OptionsPattern[]]:=Block[{t, met, val, vec,reject, sel},
 	met=OptionValue[PerformanceGoal];
 	
 	t=Which[
@@ -844,7 +844,9 @@ EigenSysC[tens_, out_]:=Block[{val},
 (*EigenValC*)
 
 
-EigenValC=Compile[{{tens,_Real,1}},Block[{dxx,dyy,dzz,dxy,dxz,dyz,dxy2,dxz2,dyz2,i1,i2,i3,i,v,s,p3,v2,phi},
+EigenValC=Compile[{{tens,_Real,1}},Block[{
+		dxx,dyy,dzz,dxy,dxz,dyz,dxy2,dxz2,dyz2,i1,i2,i3,i,v,s,p3,v2,phi
+	},
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
 	If[Total[Abs[tens]]<10.^-15,
 		{0.,0.,0.},
@@ -880,7 +882,7 @@ EigenVecC=Compile[{{tens,_Real,1},{eig,_Real,1}},Block[{dxx,dyy,dzz,dxy,dxz,dyz,
 		(
 			{a,b,c}={dxz dxy,dxy dyz,dxz dyz}-{dyz,dxz,dxy} ({dxx,dyy,dzz}-#);
 			{a,b,c}={b c,a c,a b};
-			norm=Sqrt[Abs[a]^2 + Abs[b]^2 + Abs[c]^2];
+			norm = Sqrt[Abs[a]^2 + Abs[b]^2 + Abs[c]^2];
 			If[norm===0,{a,b,c}/norm,{0.,0.,0.}]
 		)&/@eig
 	]

@@ -2620,7 +2620,8 @@ Options[PlotContour] = {
 SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 PlotContour[dati_, vox_, OptionsPattern[]] := Block[{
-	data, smooth, color, opac, dim , pad, col, style, ran, coldat, colfunc
+		data, smooth, color, opac, dim , pad, col, style, crp,
+		ran, coldat, colfunc
 	},
 
 	smooth = OptionValue[ContourSmoothing];
@@ -2631,6 +2632,8 @@ PlotContour[dati_, vox_, OptionsPattern[]] := Block[{
 	pad = 10;
 	data = ArrayPad[dati, pad];
 	If[IntegerQ[smooth], data = GaussianFilter[data, smooth]];
+
+	{data, crp} = AutoCropData[data];
 
 	col = If[ColorQ[color], color, GrayLevel[1.]];
 	style = Directive[{Opacity[opac], col, Specularity[Lighter@Lighter@col, 5]}];
@@ -2657,7 +2660,7 @@ PlotContour[dati_, vox_, OptionsPattern[]] := Block[{
 		ContourStyle -> style, Lighting -> "Neutral",
 
 		ImageSize -> 300,
-		DataRange -> Transpose[{{0, 0, 0} - pad, Reverse[dim + pad]}],
+		DataRange -> Reverse[Partition[crp, 2]] - pad,(*Transpose[{{0, 0, 0} - pad, Reverse[dim + pad]}],*)
 		BoxRatios -> Reverse[vox dim],
 		PlotRange -> Transpose[{{0, 0, 0}, Reverse[dim]}]
 	]
