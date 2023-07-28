@@ -223,9 +223,9 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 
 	While[Length[seeds] < maxSeed,
 		seedT = Flatten[RandomSample[seedI, #] & /@ Block[{i = maxSeed},
-			First@Last@Reap[Until[i < 0, Sow[If[i > seedN, seedN, i]];
+			First@Last@Reap[While[i > 0, Sow[If[i > seedN, seedN, i]];
 			i = i - seedN;]]], 1];
-		seedT = Threaded[vox] (seedT + RandomReal[{-0.99, 0}, {maxSeed, 3}]);
+		seedT = # vox & /@ (seedT + RandomReal[{-0.99, 0}, {maxSeed, 3}]);
 		seedT = Pick[seedT, intS @@@ seedT, 1.];
 		
 		seeds = Join[seeds, seedT];
@@ -384,28 +384,31 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 
 
 EigVec = Compile[{{tens, _Real, 1}}, Block[{
-	dxx, dyy, dzz, dxy, dxz, dyz, i1, i2, i3, i13, phi, v1, v, s, l1, a, b, c},
-	(*method from 10.1016/j.mri.2009.10.001*)
+		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, 
+		i1, i2, i3, i, v, s, v2, phi, l1, a, b, c
+	},
+	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
 	If[Total[tens] === 0.,
-		{0., 0., 1.},
-		
+		{0., 0., 0.},
 		{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
-		
+		{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
+
 		i1 = dxx + dyy + dzz;
-		i2 = (dxx dyy + dxx dzz + dyy dzz) - (dxy^2 + dxz^2 + dyz^2);
-		i3 = dxx dyy dzz + 2 dxy dxz dyz - (dzz (dxy)^2 + dyy (dxz)^2 + dxx (dyz)^2);
+		i2 = dxx dyy + dxx dzz + dyy dzz - dxy2 - dxz2 - dyz2;
+		i3 = dxx dyy dzz + 2 dxy dxz dyz - dzz dxy2 - dyy dxz2 - dxx dyz2;
 		
-		i13 = i1/3;
-		v = i13^2 - i2/3 + .1^30;
-		v1 = 1./v;
-		s = (i13)^3 - i1 i2/6 + i3/2;
-		phi = ArcCos[(v1 s) Sqrt[v1]]/3;
+		i = i1/3;
+		v = i^2 - i2/3;
+		s = i^3 - (i1 i2)/6 + i3/2;
+
+		v2 = Sqrt[v];
+		phi = Re[ArcCos[If[v === 0, 0, s/(v v2)]]/3];
 		
-		l1 = i13 + 2 Sqrt[v] Cos[phi];
+		l1 = i + 2 v2 Cos[phi];
 		
 		{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
-		
-		Normalize[{b c, a c, a b}]
+		{a, b, c}= {b c, a c, a b};
+		{a, b, c}/Sqrt[a^2 + b^2 + c^2]
 	]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 

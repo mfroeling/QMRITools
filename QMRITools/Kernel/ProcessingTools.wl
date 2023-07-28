@@ -487,28 +487,29 @@ SyntaxInformation[GetMaskMeans] = {"ArgumentsPattern" -> {_, _, _., OptionsPatte
 
 GetMaskMeans[dat_, mask_, opts:OptionsPattern[]] := GetMaskMeans[dat, mask, "", opts]
 
-GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] := 
- Block[{labels, out, fl},
-  labels = If[name==="", {"mean", "std", "Median", "5%", "95%"}, name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
-  ];
-  out = If[Total[Flatten[#]]<=10,
-  	{0.,0.,0.,0.,0.}
-  	,
- 
-      fl = GetMaskData[dat, #, GetMaskOutput -> "All"];
+GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] := Block[{labels, out, fl},
 
-      Switch[OptionValue[MeanMethod],
-       "NormalDist",
-       ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "Normal"],
-       "SkewNormalDist",
-       ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "SkewNormal"],
-       _,
-       Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
-       ]
-  ]&/@ Transpose[mask];
-      
-  Prepend[out, labels]
-  ]
+	labels = If[name==="", 
+		{"mean", "std", "Median", "5%", "95%"}, 
+		name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
+	];
+
+	out = If[Total[Flatten[#]]<=10,
+		{0.,0.,0.,0.,0.}
+		,
+		fl = GetMaskData[dat, #, GetMaskOutput -> "All"];
+		Switch[OptionValue[MeanMethod],
+			"NormalDist",
+			ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "Normal"],
+			"SkewNormalDist",
+			ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "SkewNormal"],
+			_,
+			Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
+		]
+	]&/@ Transpose[mask];
+	
+	Prepend[out, labels]
+]
 
 
 (* ::Subsubsection::Closed:: *)
