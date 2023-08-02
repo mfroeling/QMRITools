@@ -35,6 +35,9 @@ FitTract::usage =
 "FitTract[tract] fits a tract defined as a list of {x,y,z} coordinates with a polinomial function.
 FitTract[{tract, ...}] fits a list of tracts defined as a list of {x,y,z} coordinates with a polinomial function."
 
+ResampleTracts::usage = 
+"ResampleTracts[tracts, n] ..."
+
 PlotTracts::usage = 
 "PlotTracts[tracts, vox] ...
 PlotTracts[tracts, vox, dim] ..."
@@ -108,6 +111,7 @@ ExportTracts::usage =
 FittingOrder::usage = 
 "FittingOrder is an option for FitTract. It specifies the polinominal order of the function to fit the tract."
 
+
 TracMonitor::usage = 
 "TracMonitor is an option for FiberTractography. When set True it prints the progress."
 
@@ -132,15 +136,19 @@ StepSize::usage =
 MaxSeedPoints::usage = 
 "MaxSeedPoints is an option for FiberTractography and defines the maximum number of seedspoints to be used."
 
+
 MaxTracts::usage = 
-"MaxTracts ..."
+"MaxTracts is an option for PlotTracts. It specifies how many tracts are plotted."
 
 TractSize::usage = 
-"TractSize ..."
+"TractSize is an option for PlotTracts. When tubes are used it specifies the tube withd."
 
 TractColoring::usage = 
-"TractColoring is an option for FiberTractography and sets how the tracts are colored. Values can be \"Direction\", \"Length\", \"Angle\", {par}, or RGBColor[].
+"TractColoring is an option for PlotTracts and sets how the tracts are colored. Values can be \"Direction\", \"Length\", \"Angle\", {par}, or RGBColor[].
 For \"Length\", \"Angle\", {par} it can be defined in the form {..., {min, max}} where the {min, max} specifies the range of the color function."
+
+TractReduction::usage = 
+"TractReduction is an option for PlotTracts. Value can be an Integer > 0, which determines with which facter the tract coordinates are subsampled."
 
 
 NormalizeDensity::usage = 
@@ -429,9 +437,21 @@ SyntaxInformation[FitTract] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 FitTract[tract_, OptionsPattern[]] := ToPackedArray/@FitTractC[tract, Round@OptionValue[FittingOrder]]
 
-FitTractC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat = #^Range[0., ord] & /@ Range[Length[trf]]},
-	mat . (PseudoInverse[mat] . trf)
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+FitTractC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat, r},
+	r = Range[Length[trf]];
+	mat = Transpose[r^# & /@ Range[0., ord]];
+	mat . (PseudoInverse[mat] . trf)]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+(* ::Subsection::Closed:: *)
+(*FitTract*)
+
+
+ResampleTracts[tracts_, len_] := Block[{int, r},
+	r = Rescale[N@Range[len]];
+	ToPackedArray@Map[(int = ListInterpolation[Transpose[{#}], {{0, 1}}, InterpolationOrder -> 1]; int /@ r) &, tracts]
+]
 
 
 (* ::Subsection:: *)
@@ -449,16 +469,21 @@ Options[PlotTracts] = {
 	TractColoring->"Direction",
 	ColorFunction->"SouthwestColors",
 	Boxed->True,
-	TractSize-> 1
+	TractSize-> 1,
+	TractReduction->1,
+	PerformanceGoal->"Quality"
 }
 
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
-PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
-	range, vox, size, select, opts, col, tube, line, plot, colOpt, 
-	met, pran, max, colf, colArray, sc
+PlotTracts[tractsI_, voxi_, dimi_, OptionsPattern[]] := Block[{
+		range, vox, size, select, opts, col, tube, line, plot, colOpt, 
+		met, pran, max, colf, colArray, sc, tracts
 	},
 	
+	(*reduce points along tracts*)
+	tracts = Select[tractsI[[All,1;;-1;;OptionValue[TractReduction]]],Length[#]>3&];
+
 	(*select correct number of tracts*)
 	max = OptionValue[MaxTracts];
 	If[OptionValue[Method]==="tube", max =  Min[4000, max]];
@@ -476,15 +501,16 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	(*get the tract vertex colors*)
 	colf = OptionValue[ColorFunction];
 	colOpt = OptionValue[TractColoring];
+
 	{met, pran} = Which[
 		StringQ[colOpt]||ArrayQ[colOpt], {colOpt, Automatic}, 
 		Length[colOpt]===2, colOpt, 
-		Head@colOpt===RGBColor, {"Color", colOpt},
+		MemberQ[{Hue, RGBColor, GrayLevel, CMYKColor, LABColor, LCHColor, LUVColor, XYZColor},Head[colOpt]], {"Color", RGBColor@colOpt},
 		True, {"Direction", Automatic}
 	];
 	If[ArrayQ[met], colArray=met; met="Array"];
 	
-	col = Switch[met,
+	col = ToPackedArray@Switch[met,
 		"Direction",
 		MakeColor[select],
 		"Length",
@@ -501,7 +527,8 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		
 	(*make the plot*)
 	opts = Sequence[{
-		Method -> {"TubePoints" -> {6, 2}}, Lighting -> "Accent", 
+		Method -> {"TubePoints" -> {If[OptionValue[PerformanceGoal]==="Quality",6,3], 2}}, 
+		Lighting -> "Accent", 
 		ImageSize -> OptionValue[ImageSize], SphericalRegion -> True, Boxed -> OptionValue[Boxed],
 		Background -> Lighter@Gray, BoxRatios -> size, PlotRange -> range, 
 		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
@@ -509,10 +536,10 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 
 	plot = Graphics3D[Switch[OptionValue[Method],
 		"tube", 
-		select = ToPackedArray/@Map[Reverse[#] &, select, {-2}];
+		select = ToPackedArray[ToPackedArray/@Map[Reverse[#] &, select, {-2}]];
 		{CapForm["Square"], JoinForm["Miter"], Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]},
 		"line", 
-		select = ToPackedArray/@Map[Reverse[#] / vox &, select, {-2}];
+		select = ToPackedArray[ToPackedArray/@Map[Reverse[#] / vox &, select, {-2}]];
 		Line[select, VertexColors -> col],
 		_, $Failed], opts]
 ]
@@ -524,7 +551,7 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 
 MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
 	dirs = Abs[Differences[tract]];
-	ToPackedArray[Reverse[Normalize[#]] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]]
+	ToPackedArray[Reverse[Normalize[#]]] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]
 ]
 
 MakeColor[tracts : {_?ListQ ..}] := MakeColor /@ tracts
@@ -573,11 +600,88 @@ MakeArrayColor[tract_, {pran_, colf_}, dat_, vox_] := Block[{vals, col},
 (*MakeConstantColor*)
 
 
-MakeConstantColor[tract_, pran_] := Block[{vals, col},
-	col = pran /. RGBColor -> List;
-	ToPackedArray[ConstantArray[col, Length@#1]]&/@tract
+MakeConstantColor[tract_, pran_] := MakeConstantColor[tract, pran, True]
+
+MakeConstantColor[tract_, pran_, rand_] := Block[{vals, col},
+	If[rand,
+		col = Table[Blend[{Darker[pran,.2], pran, Lighter[pran,.2]}, x], {x, 0., 1., 1./10}] /. RGBColor -> List;
+		ToPackedArray[ConstantArray[RandomChoice[col], Length@#1]] & /@ tract
+		,
+		col = pran /. RGBColor -> List;
+		ToPackedArray[ConstantArray[col, Length@#1]] & /@ tract
+	]
 ]
 
+
+(* ::Subsection::Closed:: *)
+(*FindTensorPermutation*)
+
+
+Options[PlotSegmentedTracts] := {
+	MaxTracts -> 5000,
+	FiberLengthRange -> {40, 400},
+	Method -> "line",
+	OutputForm -> "All"
+}
+
+PlotSegmentedTracts[tracts_, segments_, dim_, vox_, opts : OptionsPattern[]] := PlotSegmentedTracts[tracts, segments, None, dim, vox, opts]
+
+PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox_, opts : OptionsPattern[]] := Block[{
+		ntr, fran, type, segs, tractsF, ran, rand, colList, showF,
+		ref, bon, musc, trac, tracksSel, lengs, nTracts, sel
+	},
+	
+	(*get options*)
+	ntr = OptionValue[MaxTracts];
+	fran = OptionValue[FiberLengthRange];
+	type = OptionValue[Method];
+
+	(*prepare data*)
+	segs = Transpose@segments;
+	tractsF = FitTract[tracts, FittingOrder -> 3];
+
+	(*make colors*)
+	ran = Range[Length@segs];
+	SeedRandom[12345];
+	rand = RandomSample@ran;
+	colList = ColorData["DarkRainbow"] /@ N[Rescale[rand]];
+
+	(*reference environement*)
+	Echo["Making muscle iso volumes"];
+	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, 
+		Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
+	bon = If[bones =!= None, 
+		PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Gray, ContourSmoothing -> 2], 
+		Graphics3D[]
+	];
+
+	(*make the muscle contours*)
+	musc = EchoTiming@Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, ContourColor -> colList[[i]], ContourSmoothing -> 2], {i, ran}];
+
+	Echo["Making per muscle tracts"];
+	(*select the tracts per muscle and make fiber plots*)
+	tracksSel = EchoTiming[FilterTracts[tractsF, vox, {{"and", {"partwithin", #}}}, 
+		FiberLengthRange -> fran] & /@ segs];
+	lengs = Length /@ tracksSel;
+	nTracts = Round[ntr lengs/Total[lengs]];
+	sel = UnitStep[nTracts - 11];
+	trac = MapThread[
+		If[#4 === 1,
+			PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, TractSize -> 0.5, TractColoring -> #3, TractReduction -> 4, PerformanceGoal -> "Speed"],
+			Graphics3D[]
+		] &, {tracksSel, nTracts, colList, sel}
+	];
+
+	Echo["Finalizing scenes"];
+	showF = Show[ref, ##, ImageSize -> 400, Axes -> False, Boxed -> False, ViewPoint -> {0., -2., 1.}] & @@ # &;
+	
+	Switch[OptionValue[OutputForm],
+		"All", showF[{bon, trac, musc}],
+		"Groups", showF[{#}] & /@ {bon, trac, musc},
+		"Joined", showF[{bon, #}] & /@ Thread[{trac, musc}],
+		"Individual", {showF[{bon}], showF[{#}] & /@ trac, showF[{#}] & /@ musc}
+	]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -676,8 +780,8 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 SelectTractPartInVol[tracts_, roi_, vox_]:= SelectTractPartInVolC[Normal@roi, tracts, vox]
 
 SelectTractPartInVolC = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
-	(roi[[#[[1]], #[[2]], #[[3]]]] &[Ceiling[#/vox]]) & /@ tract, 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -703,7 +807,7 @@ FilterTracts[tracts_, vox_, select_, OptionsPattern[]] := FilterTractLength[
 (*SelectTracts*)
 
 
-SelectTracts[tracts_, sel_] := ToPackedArray/@PartTracts[Pick[tracts, Clip[Round@sel, {0,1}], 1]]
+SelectTracts[tracts_, sel_] := ToPackedArray/@PartTracts[DeleteCases[Pick[tracts, Clip[Round@sel, {0,1}], 1],{}]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -745,18 +849,13 @@ CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not, test},
 (*ThreadedDiv*)
 
 
-ThreadedDiv = Compile[{{coor, _Real, 1}, {vox, _Real, 1}}, 
-	Ceiling[coor/vox],
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+ThreadedDiv = Compile[{{coor, _Real, 2}, {vox, _Real, 1}},
+	Transpose[Ceiling[Transpose[coor]/vox]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
-ThreadedDivD = Compile[{{coor, _Real, 2}, {vox, _Real, 1}}, 
-	Ceiling[#/vox] & /@ Mean[{coor[[2 ;; -1]], coor[[1 ;; -2]]}], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-
-
-ThreadedDivL = Compile[{{coor, _Real, 2}, {vox, _Real, 1}}, 
-	Ceiling[#/vox] & /@ coor, 
+ThreadedDivD = Compile[{{coor, _Real, 2}, {vox, _Real, 1}},
+	Transpose[Ceiling[Transpose[Mean[{coor[[2 ;; -1]], coor[[1 ;; -2]]}]]/vox]], 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
@@ -790,7 +889,7 @@ SyntaxInformation[TractDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPat
 TractDensityMap[tracts_, vox_, dim_,  OptionsPattern[]] := Block[{dens},
 	dens = ConstantArray[0., dim];
 	Table[dens += Normal@SparseArray[Select[
-		Normal[Counts[Flatten[DeleteDuplicates /@ ThreadedDivL[tracts[[i[[1]] ;; i[[2]]]], vox], 1]]],
+		Normal[Counts[Flatten[DeleteDuplicates /@ ThreadedDiv[tracts[[i[[1]] ;; i[[2]]]], vox], 1]]],
 		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &], dim],
 	{i, MakeList[Length[tracts]]}];
 	
@@ -807,7 +906,7 @@ SyntaxInformation[TractLengthMap] = {"ArgumentsPattern" -> {_, _, _}};
 TractLengthMap[tracts_, vox_, dim_] := Block[{tr, vals, lengs},
 	vals = GatherBy[Flatten[Table[
 		tr = tracts[[i[[1]] ;; i[[2]]]];
-		lengs = GatherBy[Flatten[Thread /@ Thread[(DeleteDuplicates /@ ThreadedDivL[tr, vox]) -> FiberLength@tr], 1], First];
+		lengs = GatherBy[Flatten[Thread /@ Thread[(DeleteDuplicates /@ ThreadedDiv[tr, vox]) -> FiberLength@tr], 1], First];
 		Select[Thread[lengs[[All, 1, 1]] -> lengs[[All, All, 2]]], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &]
     , {i, MakeList[Length[tracts]]}]], First];
 	
