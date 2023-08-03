@@ -31,16 +31,51 @@ par, where tracts are only generated between values of par min and max.
 FiberTractography[tensor, vox, {{par, {min, max}}, ..}] performs fibertractography on the tensor with voxels dimensions vox with 
 multiple additional stopping criteria."
 
-FitTract::usage = 
-"FitTract[tract] fits a tract defined as a list of {x,y,z} coordinates with a polinomial function.
-FitTract[{tract, ...}] fits a list of tracts defined as a list of {x,y,z} coordinates with a polinomial function."
+
+FitTracts::usage = 
+"FitTracts[tract] fits a tract or a list of tracts, each defined as a list of {x, y, z} coordinates with a polinomial function.
+FitTracts[tract, vox, dim] does the same but contrains all the tract coordinates to the volume difined by dim."
 
 ResampleTracts::usage = 
-"ResampleTracts[tracts, n] ..."
+"ResampleTracts[tracts, n] resample each Tract to exactly n vertices."
+
+MoveTracts::usage = 
+"MoveTracts[tracts, off] moves the tract coordicantes by off, which is {x, y, z}."
+
+RescaleTracts::usage = 
+"RescaleTracts[tracts, sc] scales the tract coordinates by 1/sc, which is {x, y, z} or single number."
+
+FiberLength::usage = 
+"FiberLength[tracts] calculates the length of each tract."
+
+GetTractValues::usage = 
+"GetTractValues[tracts, parameter, vox] gets the value of the parameter map at each tract coordinate."
+
+
+FilterTracts::usage = 
+"FilterTracts[tracts, vox, select] ..."
+
+
+SeedDensityMap::usage = 
+"SeedDensityMap[seeds, vox, dim] makes a seed density map based on the seed loactions."
+
+TractDensityMap::usage = 
+"TractDensityMap[tracts, vox, dim] makes a tract density map based on the tracts vertices."
+
+TractLengthMap::usage = 
+"TractLengthMap[tracts, vox, dim] makes a tract length map based on the tracts lengths."
+
+TractAngleMap::usage = 
+"TractAngleMap[tracts, vox, dim] makes a tract angle map based on the tracts angles with the z-plane."
+
 
 PlotTracts::usage = 
 "PlotTracts[tracts, vox] ...
 PlotTracts[tracts, vox, dim] ..."
+
+PlotSegmentedTracts::usage = 
+"PlotSegmentedTracts[tracts, segments, dim, vox] ...
+PlotSegmentedTracts[tracts, segments, bones, dim, vox] ..."
 
 
 FindTensorPermutation::usage = 
@@ -53,50 +88,6 @@ Ouput = {permutations, flips, plot}
 FindTensorPermutation[] is based on DOI: 10.1016/j.media.2014.05.012."
 
 
-TractDensityMap::usage = 
-"TractDensityMap[tracts, vox, dim] ..."
-
-SeedDensityMap::usage = 
-"SeedDensityMap[seeds, vox, dim] ..."
-
-TractLengthMap::usage = 
-"TractLengthMap[tracts, vox, dim] ..."
-
-TractAngleMap::usage = 
-"TractAngleMap[tracts, vox, dim] ..."
-
-
-FilterTracts::usage = 
-"FilterTracts[tracts, vox, select] ..."
-
-SelectTractTroughPlane::usage = 
-"SelectTractTroughPlane ..."
-
-SelectTractTroughVol::usage = 
-"SelectTractTroughVol ..."
-
-SelectTractInVol::usage = 
-"SelectTractInVol ..."
-
-SelectTractPartInVol::usage = 
-"SelectTractPartInVol ..." 
-
-PartTracts::usage = 
-"PartTracts ..."
-
-SelectTracts::usage = 
-"SelectTracts ..."
-
-CombineROIs::usage = 
-"CombineROIs ..."
-
-
-FiberLength::usage = 
-"FiberLength[tracts] ..."
-
-GetTractValues::usage = 
-"GetTractValues[tracts, val, vox, int] ..."
-
 ImportTracts::usage = 
 "ImportTracts[file] ..."
 
@@ -104,12 +95,12 @@ ExportTracts::usage =
 "ExportTracts[file, tracts, vox, dim, seeds] ..."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
 FittingOrder::usage = 
-"FittingOrder is an option for FitTract. It specifies the polinominal order of the function to fit the tract."
+"FittingOrder is an option for FitTracts. It specifies the polinominal order of the function to fit the tract."
 
 
 TracMonitor::usage = 
@@ -168,15 +159,224 @@ Begin["`Private`"]
 
 
 (* ::Subsection:: *)
+(*Tract Operations*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*FitTracts*)
+
+
+Options[FitTracts] = {FittingOrder -> 3};
+
+SyntaxInformation[FitTracts] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+FitTracts[tract_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_, OptionsPattern[]]:= SelectValidCoor[FitTractsC[tract, Round@OptionValue[FittingOrder]], vox, dim]
+
+FitTracts[tract_, OptionsPattern[]] := ToPackedArray/@FitTractsC[tract, Round@OptionValue[FittingOrder]]
+
+
+FitTractsC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat, r},
+	r = Range[Length[trf]];
+	mat = Transpose[r^# & /@ Range[0., ord]];
+	mat . (PseudoInverse[mat] . trf)]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectValidCoor*)
+
+
+SelectValidCoor[trF_, vox_, dim_]:=Pick[trF, SelectValidCoorC[trF, vox, dim], 1]
+
+
+SelectValidCoorC = Compile[{{tr, _Real, 2}, {vox, _Real, 1}, {dim, _Integer, 1}}, Block[{x, y, z},
+	{x, y, z} = Ceiling[Transpose[tr]/vox];
+	UnitStep[x - 1] UnitStep[dim[[1]] - x] UnitStep[y - 1] UnitStep[dim[[2]] - y] UnitStep[z - 1] UnitStep[dim[[3]] - z]
+], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ResampleTracts*)
+
+
+ResampleTracts[tracts_, len_] := Block[{int, r},
+	r = Rescale[N@Range[len]];
+	ToPackedArray@Map[(int = ListInterpolation[Transpose[{#}], {{0, 1}}, InterpolationOrder -> 1]; int /@ r) &, tracts]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MoveTracts*)
+
+
+MoveTracts = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
+	# + off & /@ tr
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RescaleTracts*)
+
+
+RescaleTracts[tracts_, sc_?NumberQ]:=RescaleTractsC[tracts, {sc, sc, sc}]
+
+RescaleTracts[tracts_, sc:{_?NumberQ,_?NumberQ,_?NumberQ}]:=RescaleTractsC[tracts, sc]
+
+
+RescaleTractsC = Compile[{{tr, _Real, 2}, {sc, _Real, 1}},
+	Transpose[Ceiling[Transpose[tr]/sc]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+RescaleTractsCM = Compile[{{tr, _Real, 2}, {vox, _Real, 1}},
+	Transpose[Ceiling[Transpose[Mean[{tr[[2 ;; -1]], tr[[1 ;; -2]]}]]/vox]], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FilterTractLength*)
+
+
+FilterTractLength[trksI_, {lmin_, lmax_}] := FilterTractLength[trksI, {lmin, lmax}, "tracts"]
+
+FilterTractLength[trksI_, {lmin_, lmax_}, what_] := Block[{len, sel, drop, trks},
+	len = FLengthC[trksI];
+	sel = UnitStep[len - lmin];
+	trks = Pick[trksI, sel, 1];
+	len = Pick[len, sel, 1];
+	trks = MapThread[If[#1 >= lmax, drop = Ceiling[((#1 - lmax)/Mean[Norm /@ Differences[#2]])/2] + 1; #2[[drop ;; -drop]], #2] &, {len, trks}];
+	Switch[what, "tracts", trks, "sel", sel, "both", {trks, sel}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FiberLength*)
+
+
+FiberLength[tracts_]:=FLengthC[tracts]
+
+FLengthC = Compile[{{trc,_Real,2}},
+	Total[Norm/@Differences[trc]]
+,RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
+
+
+(* ::Subsection::Closed:: *)
+(*GetTractValues*)
+
+
+Options[GetTractValues]= {InterpolationOrder->1}
+
+GetTractValues[tracts_, val_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, OptionsPattern[]]:=Block[{fun},
+	fun = MakeIntFunction[val, vox, OptionValue[InterpolationOrder]];
+	ToPackedArray[fun @@@ #] & /@ tracts
+]
+
+
+(* ::Subsection::Closed:: *)
+(*GetTractValues*)
+
+
+Options[SegmentTracts] = {FiberLengthRange -> {20, 500}, OutputForm -> "Joined", FitTracts -> True}
+
+SegmentTracts[tracts_, segs_, vox_, dim_, OptionsPattern[]] := Block[{tractsI},
+	tractsI = RescaleTracts[tracts, vox];
+	tractsI = EchoTiming[FilterTracts[tracts, tractsI, {{"and", {"partwithin", #}}}, FiberLengthRange -> OptionValue[FiberLengthRange]] & /@ Transpose[segs]];
+	
+	If[OptionValue[FitTracts] === True, EchoTiming[tractsI = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> 3], #] & /@ tractsI]];
+
+	Switch[OptionValue[OutputForm],
+		"Joined", Flatten[tractsI, 1],
+		"Individual", tractsI
+	]
+  ]
+
+
+(* ::Subsection:: *)
+(*Tract Properties Maps*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*SeedDensityMap*)
+
+
+SyntaxInformation[SeedDensityMap] = {"ArgumentsPattern" -> {_, _, _}};
+
+SeedDensityMap[seeds_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Normal@SparseArray[Normal@Counts@RescaleTractsC[seeds, vox], dim];
+
+
+(* ::Subsubsection::Closed:: *)
+(*TractDensityMap*)
+
+
+Options[TractDensityMap] = {NormalizeDensity -> True}
+
+SyntaxInformation[TractDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+TractDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPattern[]] := Block[{dens},
+	dens = Normal@SparseArray[Select[
+		Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTracts[tracts, vox], 1]],
+		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
+		dim];
+	
+	If[OptionValue[NormalizeDensity], dens/MedianNoZero[Flatten[dens]], dens]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TractLengthMap*)
+
+
+SyntaxInformation[TractLengthMap] = {"ArgumentsPattern" -> {_, _, _}};
+
+TractLengthMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Block[{lengs},
+	lengs = GatherBy[Flatten[Thread /@ Thread[(DeleteDuplicates /@ RescaleTractsC[tracts, vox]) -> FiberLength[tracts]], 1], First];
+	lengs = Select[Thread[lengs[[All, 1, 1]] -> (Median /@ lengs[[All, All, 2]])], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
+	lengs = Normal@SparseArray[lengs, dim]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TractAngleMap*)
+
+
+SyntaxInformation[TractAngleMap] = {"ArgumentsPattern" -> {_, _, _}};
+
+TractAngleMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Block[{angs},
+	angs = GatherBy[Flatten[Thread /@ Thread[RescaleTractsCM[tracts, vox] -> VecAngC[tracts]], 1], First];
+	angs = Select[Thread[angs[[All, 1, 1]] -> (Median /@ angs[[All, All, 2]])], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
+	angs = Normal@SparseArray[angs, dim]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*VecAngC*)
+
+
+VecAngC = Compile[{{tr, _Real, 2}},
+	90 - ((180./Pi) ArcCos[{1, 0, 0} . Normalize[Sign[#[[1]]] #]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]))
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeList*)
+
+
+MakeList[len_] := Block[{ran},
+	ran = Range[0, len, 50000];
+	{1, 0} + # & /@ Partition[If[Last@ran =!= len, Append[ran, len], ran], 2, 1]
+]
+
+
+(* ::Subsection:: *)
 (*FiberTractography*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*FiberTractography*)
 
 
 Options[FiberTractography] = {
-	FiberLengthRange -> {10, 200},
+	FiberLengthRange -> {20, 500},
 	FiberAngle -> 30,
 	TensorFilps -> {1, 1, 1},
 	TensorPermutations -> {"x", "y", "z"},
@@ -194,7 +394,7 @@ FiberTractography[tensor_, voxi_, opts : OptionsPattern[]] := FiberTractography[
 
 FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FiberTractography[tensor, voxi, {{par, {min, max}}}, opts]
 
-FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
+FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, trFunc,
 		tens, tensMask, inpTr, treshs, stop, coors, intE, intS, ones, dim, crp,
 		seedN, seedI, seedT, seeds, t1, tracts, iii, drop, smax, len ,sel
@@ -228,7 +428,13 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	(*make the random seed points*)
 	SeedRandom[1234];
 	seedN = Total@Flatten@stop;
-	maxSeed = If[NumberQ[maxSeed], maxSeed, seedN];
+
+	maxSeed = Round@Which[
+		NumberQ[maxSeed], maxSeed, 
+		maxSeed === Automatic, seedN,
+		Head[maxSeed]===Scaled, First[maxSeed] seedN
+	];
+
 	seedI = SparseArray[stop]["NonzeroPositions"];
 	seeds = {};
 
@@ -245,7 +451,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	seedN = Length@seeds;
 
 	If[OptionValue[TracMonitor],
-		Print["Starting tractography for ", seedN, " seed points with stepsize ", step, " mm"];
+		Echo["Starting tractography for "<>ToString[seedN]<>" seed points with stepsize "<>ToString[step]<>" mm"];
 	];
 
 	(*perform tractography for each seed point*)	
@@ -258,7 +464,7 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	]];
 
 	If[OptionValue[TracMonitor],
-		Print["Checking Lengths"];
+		Echo["Checking Lengths"];
 	];
 
 	(*select only tracts within correct range and clip tracts that are longer*)
@@ -267,22 +473,13 @@ FiberTractography[tensor_, vox_, inp : {{_, {_, _}} ...}, OptionsPattern[]] := B
 	
 	(*report timing*)
 	If[OptionValue[TracMonitor],
-		Print["Tractography took ", Round[t1,.1], " seconds (",Round[seedN/t1]," tracts/s)"];
-		Print[Length[tracts], " valid tracts with length ", Round[step Mean[Length /@ tracts], 0.1],"\[PlusMinus]", Round[step StandardDeviation[Length /@ tracts], 0.1] , " mm"];	
+		Echo["Tractography took "<>ToString[Round[t1,.1]]<>" seconds ("<>ToString[Round[seedN/t1]]<>" tracts/s)"];
+		Echo[ToString[Length[tracts]]<>" valid tracts with length "<>ToString[Round[step Mean[Length /@ tracts], 0.1]]<>"\[PlusMinus]"<>ToString[Round[step StandardDeviation[Length /@ tracts], 0.1]]<>" mm"];	
 	];
 
 	(*output tracts*)
-	TransTract[#, vox (crp[[;; ;; 2]] - 1)]&/@{tracts, seeds}
+	MoveTracts[#, vox (crp[[;; ;; 2]] - 1)]&/@{tracts, seeds}
 ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*TransTract*)
-
-
-TransTract = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
-	# + off & /@ tr
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -290,8 +487,9 @@ TransTract = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
 
 
 TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0},
+	(*startpoint*)
 	dir0 = h GetVec[First[fun], loc0];
-	(*tractography in the two directions around seed point*)
+	(*tracts bi-directional*)
 	ToPackedArray@Join[
 		Reverse@TractFuncI[{loc0 + dir0/2, dir0}, h, stp, fun], 
 		TractFuncI[{loc0 - dir0/2, -dir0}, h, stp, fun]
@@ -299,54 +497,19 @@ TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0},
 ]
 
 
-TractFuncI[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, intS_, tracF_}] := Block[
-	{loc, locn, step, stepn},
-
+TractFuncI[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_, intS_, tracF_}] := Block[{loc, locn, step, stepn},
 	(*perform tractography*)
 	NestWhileList[(
 			(*get new location and the step at new location*)
 			{loc, step} = #[[1;;2]];
 			locn = loc + step;
 			stepn = tracF[locn, step, h, intE];
+			
 			(*output, new location and its direction, angle and stop*)
 			{locn, stepn, VecAng[step, stepn], GetStop[intS, locn + stepn]}
 		)&, {loc0, step0, 0, GetStop[intS, loc0 + step0]}, 
 	(#[[3]] < amax && #[[4]] > stoptr)&, 1, smax][[All,1]]
 ];
-
-
-(* ::Subsubsection::Closed:: *)
-(*Euler*)
-
-
-Euler[y_, v_, h_, func_] := Block[{k1},
-	k1 = h GetVecAlign[func, y, v];
-	k1
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RK2*)
-
-
-RK2[y_, v_, h_, func_] := Block[{k1, k2},
-	k1 = h GetVecAlign[func, y, v];
-	k2 = h GetVecAlign[func, y + k1/2, v];
-	k2	
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RK4*)
-
-
-RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
-	k1 = h GetVecAlign[func, y, v];
-	k2 = h GetVecAlign[func, y + k1/2, v];
-	k3 = h GetVecAlign[func, y + k2/2, v];
-	k4 = h GetVecAlign[func, y + k3, v];
-	k1/6 + k2/3 + k3/3 + k4/6
-]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -364,7 +527,7 @@ GetVec = EigVec[#1@@#2]&
 
 
 (* ::Subsubsection::Closed:: *)
-(*GetVec*)
+(*GetVecAlign*)
 
 
 GetVecAlign = VecAlign[#3, GetVec[#1, #2]]&
@@ -427,31 +590,225 @@ EigVec = Compile[{{t, _Real, 1}}, Block[{
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
-(* ::Subsection::Closed:: *)
-(*FitTract*)
+(* ::Subsubsection::Closed:: *)
+(*Euler*)
 
 
-Options[FitTract] = {FittingOrder -> 4};
-
-SyntaxInformation[FitTract] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
-
-FitTract[tract_, OptionsPattern[]] := ToPackedArray/@FitTractC[tract, Round@OptionValue[FittingOrder]]
-
-FitTractC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat, r},
-	r = Range[Length[trf]];
-	mat = Transpose[r^# & /@ Range[0., ord]];
-	mat . (PseudoInverse[mat] . trf)]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-
-
-(* ::Subsection::Closed:: *)
-(*FitTract*)
-
-
-ResampleTracts[tracts_, len_] := Block[{int, r},
-	r = Rescale[N@Range[len]];
-	ToPackedArray@Map[(int = ListInterpolation[Transpose[{#}], {{0, 1}}, InterpolationOrder -> 1]; int /@ r) &, tracts]
+Euler[y_, v_, h_, func_] := Block[{k1},
+	k1 = h GetVecAlign[func, y, v];
+	k1
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RK2*)
+
+
+RK2[y_, v_, h_, func_] := Block[{k1, k2},
+	k1 = h GetVecAlign[func, y, v];
+	k2 = h GetVecAlign[func, y + k1/2, v];
+	k2	
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RK4*)
+
+
+RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
+	k1 = h GetVecAlign[func, y, v];
+	k2 = h GetVecAlign[func, y + k1/2, v];
+	k3 = h GetVecAlign[func, y + k2/2, v];
+	k4 = h GetVecAlign[func, y + k3, v];
+	k1/6 + k2/3 + k3/3 + k4/6
+]
+
+
+(* ::Subsection::Closed:: *)
+(*FindTensorPermutation*)
+
+
+Options[FindTensorPermutation] = {
+	FiberLengthRange -> {20, 500},
+	FiberAngle -> 30,
+	InterpolationOrder -> 0,
+	StopThreshhold -> 0.5,
+	StepSize -> 2,
+	Method -> "Euler",
+	MaxSeedPoints -> 500
+};
+
+SyntaxInformation[FindTensorPermutation] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+FindTensorPermutation[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {0. First@tensor, {0., 1.}}, opts]
+
+FindTensorPermutation[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {{par, {min, max}}}, opts]
+
+FindTensorPermutation[tens_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, stop_, opts : OptionsPattern[]] := Block[{
+	step, tracts, perms, flips, lengs, i, j, pl, ind
+	},
+	
+	step = OptionValue[StepSize];
+	step = N@If[NumberQ[step],step, Min[0.5 vox]];
+	
+	perms = {{"x", "y", "z"}, {"x", "z", "y"}, {"y", "x", "z"}, {"y","z", "x"}, {"z", "x", "y"}, {"z", "y", "x"}};
+	flips = {{1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}};
+	ind = {1, 1};
+	
+	PrintTemporary[Dynamic[{ind, flips[[ind[[1]]]], perms[[ind[[2]]]]}]];
+	lengs = Table[
+		ind = {i, j};
+		tracts = First@FiberTractography[tens, vox, stop, TracMonitor -> False,TensorFilps -> flips[[i]], TensorPermutations -> perms[[j]],
+			(Sequence[# -> OptionValue[#] & /@ FilterRules[Options[FiberTractography], Options[FindTensorPermutation]][[All, 1]]])
+		];
+		N@Mean[Length /@ tracts] step
+	, {i, 1, 4}, {j, 1, 6}];
+	
+	pl = ArrayPlot[lengs, ColorFunction -> "Rainbow", ImageSize -> 150, Frame -> True, 
+		FrameTicks -> {{Thread[{Range[4], flips}], None},{None, Thread[{Range[6], Rotate[#, 90 Degree] & /@ perms}]}}];
+	
+	{i, j} = FirstPosition[lengs, Max[lengs]];
+	{perms[[j]], flips[[i]], pl}
+]
+
+
+(* ::Subsection:: *)
+(*ROI Filter Tracts *)
+
+
+(* ::Subsubsection::Closed:: *)
+(*FilterTracts*)
+
+
+Options[FilterTracts] = {FiberLengthRange -> {20, 500}}
+
+FilterTracts[tracts_, tractsI_, select_, opts:OptionsPattern[]]:=FilterTracts[tracts, tractsI, None, select, opts]
+
+FilterTracts[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, select_, opts:OptionsPattern[]]:= FilterTracts[tracts, tracts, vox, select, opts]
+
+FilterTracts[tracts_, tractsI_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}|None, select_, opts:OptionsPattern[]] := FilterTractLength[
+	SelectTracts[tracts,
+		CombineROIs[{#[[1]], Switch[ToLowerCase[#[[2, 1]]],
+			"through", SelectTractTroughVol,
+			"within", SelectTractInVol,
+			"partwithin", SelectTractPartInVol,
+			"x" | "y" | "z", SelectTractTroughPlane
+		][tractsI, If[StringLength[#[[2, 1]]] == 1, #[[2]], #[[2, 2]]], vox]} & /@ select]
+	]
+	, OptionValue[FiberLengthRange]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectTracts*)
+
+
+SelectTracts[tracts_, sel_] := ToPackedArray/@PartTracts[DeleteCases[Pick[tracts, Clip[Round@sel, {0, 1}], 1], {}]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PartTracts*)
+
+
+PartTracts[tracts_] := Block[{tmp, sts, st}, 
+	Select[Flatten[(
+		tmp = #;
+		sts = 1.1 Min[st = Norm /@ Differences[tmp]];
+		tmp[[#[[1]] + 1 ;; #[[2]]]] & /@ Partition[Flatten[{0, Position[UnitStep[st - sts], 1], Length[tmp]}], 2, 1]
+	) & /@ tracts, 1], Length[#] > 3 &]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CombineROIs*)
+
+
+CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not, test},
+	or = Select[rois, (ToLowerCase[#[[1]]]==="or") &][[All, 2]];
+	or = If[or === {}, 1, Clip[Total[or], {0, 1}]];
+
+	not = Select[rois, (ToLowerCase[#[[1]]]==="not") &][[All, 2]];
+	not = 1 - If[not === {}, 0, Clip[Total[not], {0, 1}]];
+			
+	and = Select[rois, (ToLowerCase[#[[1]]]==="and") &][[All, 2]];
+	and = If[and === {}, 1, Clip[Times @@ and, {0, 1}]];
+
+	Times @@ {or, and, not}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectTractTroughPlane*)
+
+
+SelectTractTroughPlane[tracts_, {dir_, slice_}, None]:= SelectTractTroughPlane[tracts, {dir, slice}, {1, 1, 1}]
+
+SelectTractTroughPlane[tracts_, {dir_, slice_}, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractTroughPlaneV@@Switch[ToLowerCase[dir],
+	"x", {tracts[[All, All, 3]], slice vox[[3]] - 0.5},
+	"y", {tracts[[All, All, 2]], slice vox[[2]] - 0.5},
+	"z", {tracts[[All, All, 1]], slice vox[[1]] - 0.5}
+];
+
+SelectTractTroughPlaneV = Compile[{{tract, _Real, 1}, {val, _Real, 0}},
+	Boole[0 < Total[UnitStep[tract - val]] < Length[tract]], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectTractTroughVol*)
+
+
+SelectTractTroughVol[tracts_, roi_, None]:= SelectTractTroughVolC[Normal@roi, tracts]
+
+SelectTractTroughVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractTroughVolV[Normal@roi, tracts, vox]
+
+
+SelectTractTroughVolV = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
+	Max[Part[roi, #[[1]], #[[2]], #[[3]]] & /@ tract], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+SelectTractTroughVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
+	Max[Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]], 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectTractInVol*)
+
+
+SelectTractInVol[tracts_, roi_, None]:= SelectTractInVolC[Normal@roi, tracts]
+
+SelectTractInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractInVolV[Normal@roi, tracts, vox]
+
+
+SelectTractInVolC = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
+	Floor[Total[Part[roi, #[[1]], #[[2]], #[[3]]] & /@ tract] / Length[tract]],
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+SelectTractInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
+	Floor[Total[Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]]/Length[tract]],
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectTractPartInVol*)
+
+
+SelectTractPartInVol[tracts_, roi_, None]:= SelectTractPartInVolC[Normal@roi, tracts]
+
+SelectTractPartInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractPartInVolV[Normal@roi, tracts, vox]
+
+
+SelectTractPartInVolC = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
+	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ tract
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+SelectTractPartInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
+	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
@@ -512,7 +869,7 @@ PlotTracts[tractsI_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	
 	col = ToPackedArray@Switch[met,
 		"Direction",
-		MakeColor[select],
+		MakeDirectionColor[select],
 		"Length",
 		MakeLengthColor[select, {pran, colf}],
 		"Angle",
@@ -546,15 +903,15 @@ PlotTracts[tractsI_, voxi_, dimi_, OptionsPattern[]] := Block[{
 
 
 (* ::Subsubsection::Closed:: *)
-(*Make Color*)
+(*MakeDirectionColor*)
 
 
-MakeColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
+MakeDirectionColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dirs},
 	dirs = Abs[Differences[tract]];
 	ToPackedArray[Reverse[Normalize[#]]] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]
 ]
 
-MakeColor[tracts : {_?ListQ ..}] := MakeColor /@ tracts
+MakeDirectionColor[tracts : {_?ListQ ..}] := MakeDirectionColor /@ tracts
 
 
 (* ::Subsubsection::Closed:: *)
@@ -571,7 +928,7 @@ MakeLengthColor[tracts_, {pran_, colf_}]:=Block[{len, col},
 
 
 (* ::Subsubsection::Closed:: *)
-(*MakeAngColor*)
+(*MakeAngleColor*)
 
 
 MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
@@ -587,8 +944,8 @@ MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
 (*MakeArrayColor*)
 
 
-MakeArrayColor[tract_, {pran_, colf_}, dat_, vox_] := Block[{vals, col},
-	vals = GetTractValues[tract, dat, vox, 0];
+MakeArrayColor[tract_, {pran_, colf_}, dat_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}] := Block[{vals, col},
+	vals = GetTractValues[tract, dat, vox, InterpolationOrder -> 0];
 	vals = Rescale[vals, If[pran === Automatic, Quantile[Flatten[vals], {.05, 0.95}], pran]];
 	col = ColorData[colf];
 
@@ -614,20 +971,20 @@ MakeConstantColor[tract_, pran_, rand_] := Block[{vals, col},
 
 
 (* ::Subsection::Closed:: *)
-(*FindTensorPermutation*)
+(*PlotSegmentedTracts*)
 
 
 Options[PlotSegmentedTracts] := {
 	MaxTracts -> 5000,
-	FiberLengthRange -> {40, 400},
+	FiberLengthRange -> {20, 500},
 	Method -> "line",
 	OutputForm -> "All"
 }
 
-PlotSegmentedTracts[tracts_, segments_, dim_, vox_, opts : OptionsPattern[]] := PlotSegmentedTracts[tracts, segments, None, dim, vox, opts]
+PlotSegmentedTracts[tracts_, segments_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := PlotSegmentedTracts[tracts, segments, None, dim, vox, opts]
 
-PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox_, opts : OptionsPattern[]] := Block[{
-		ntr, fran, type, segs, tractsF, ran, rand, colList, showF,
+PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := Block[{
+		ntr, fran, type, segs, tractsF, tractsFI, ran, rand, colList, showF,
 		ref, bon, musc, trac, tracksSel, lengs, nTracts, sel
 	},
 	
@@ -638,7 +995,11 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox_, opts : OptionsPatter
 
 	(*prepare data*)
 	segs = Transpose@segments;
-	tractsF = FitTract[tracts, FittingOrder -> 3];
+	Echo["Fitting tracts"];
+	EchoTiming[
+		tractsF = FitTracts[tracts, vox, dim, FittingOrder -> 3];
+		tractsFI = RescaleTractsC[tractsF, vox];
+	];
 
 	(*make colors*)
 	ran = Range[Length@segs];
@@ -651,29 +1012,33 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox_, opts : OptionsPatter
 	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, 
 		Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
 	bon = If[bones =!= None, 
-		PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Gray, ContourSmoothing -> 2], 
+		PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Gray, 
+			ContourSmoothing -> 2], 
 		Graphics3D[]
 	];
 
 	(*make the muscle contours*)
-	musc = EchoTiming@Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, ContourColor -> colList[[i]], ContourSmoothing -> 2], {i, ran}];
+	musc = EchoTiming@Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, 
+		ContourColor -> colList[[i]], ContourSmoothing -> 2], {i, ran}];
 
 	Echo["Making per muscle tracts"];
 	(*select the tracts per muscle and make fiber plots*)
-	tracksSel = EchoTiming[FilterTracts[tractsF, vox, {{"and", {"partwithin", #}}}, 
-		FiberLengthRange -> fran] & /@ segs];
+	tracksSel = EchoTiming[FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segs];
 	lengs = Length /@ tracksSel;
 	nTracts = Round[ntr lengs/Total[lengs]];
 	sel = UnitStep[nTracts - 11];
 	trac = MapThread[
 		If[#4 === 1,
-			PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, TractSize -> 0.5, TractColoring -> #3, TractReduction -> 4, PerformanceGoal -> "Speed"],
+			PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, 
+				TractSize -> 0.5, TractColoring -> #3, TractReduction -> 4, 
+				PerformanceGoal -> "Speed"],
 			Graphics3D[]
 		] &, {tracksSel, nTracts, colList, sel}
 	];
 
 	Echo["Finalizing scenes"];
-	showF = Show[ref, ##, ImageSize -> 400, Axes -> False, Boxed -> False, ViewPoint -> {0., -2., 1.}] & @@ # &;
+	showF = Show[ref, ##, ImageSize -> 400, Axes -> False, 
+		Boxed -> False, ViewPoint -> {0., -2., 1.}] & @@ # &;
 	
 	Switch[OptionValue[OutputForm],
 		"All", showF[{bon, trac, musc}],
@@ -681,295 +1046,6 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox_, opts : OptionsPatter
 		"Joined", showF[{bon, #}] & /@ Thread[{trac, musc}],
 		"Individual", {showF[{bon}], showF[{#}] & /@ trac, showF[{#}] & /@ musc}
 	]
-]
-
-
-(* ::Subsection::Closed:: *)
-(*FindTensorPermutation*)
-
-
-Options[FindTensorPermutation] = {
-	FiberLengthRange -> {10, 200},
-	FiberAngle -> 30,
-	InterpolationOrder -> 0,
-	StopThreshhold -> 0.5,
-	StepSize -> 2,
-	Method -> "Euler",
-	MaxSeedPoints -> 500
-};
-
-SyntaxInformation[FindTensorPermutation] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
-
-FindTensorPermutation[tensor_, vox_, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {0. First@tensor, {0., 1.}}, opts]
-
-FindTensorPermutation[tensor_, vox_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {{par, {min, max}}}, opts]
-
-FindTensorPermutation[tens_, vox_, stop_, opts : OptionsPattern[]] := Block[{
-	step, tracts, perms, flips, lengs, i, j, pl, ind
-	},
-	
-	step = OptionValue[StepSize];
-	step = N@If[NumberQ[step],step, Min[0.5 vox]];
-	
-	perms = {{"x", "y", "z"}, {"x", "z", "y"}, {"y", "x", "z"}, {"y","z", "x"}, {"z", "x", "y"}, {"z", "y", "x"}};
-	flips = {{1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}};
-	ind = {1, 1};
-	
-	PrintTemporary[Dynamic[{ind, flips[[ind[[1]]]], perms[[ind[[2]]]]}]];
-	lengs = Table[
-		ind = {i, j};
-		tracts = First@FiberTractography[tens, vox, stop, TracMonitor -> False,TensorFilps -> flips[[i]], TensorPermutations -> perms[[j]],
-			(Sequence[# -> OptionValue[#] & /@ FilterRules[Options[FiberTractography], Options[FindTensorPermutation]][[All, 1]]])
-		];
-		N@Mean[Length /@ tracts] step
-	, {i, 1, 4}, {j, 1, 6}];
-	
-	pl = ArrayPlot[lengs, ColorFunction -> "Rainbow", ImageSize -> 150, Frame -> True, 
-		FrameTicks -> {{Thread[{Range[4], flips}], None},{None, Thread[{Range[6], Rotate[#, 90 Degree] & /@ perms}]}}];
-	
-	{i, j} = FirstPosition[lengs, Max[lengs]];
-	{perms[[j]], flips[[i]], pl}
-]
-
-
-(* ::Subsection:: *)
-(*ROIs*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*SelectTractTroughPlane*)
-
-
-SelectTractTroughPlane[tracts_, {dir_, slice_}, vox_]:=	SelectTractTroughPlaneC@@Switch[ToLowerCase[dir],
-		"x", {tracts[[All,All,3]], slice vox[[3]] - 0.5},
-		"y", {tracts[[All,All,2]], slice vox[[2]] - 0.5},
-		"z", {tracts[[All,All,1]], slice vox[[1]] - 0.5}
-	];
-
-SelectTractTroughPlaneC = Compile[{{tract, _Real, 1}, {val, _Real, 0}},
-	Boole[0 < Total[UnitStep[tract - val]] < Length[tract]], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*SelectTractTroughVol*)
-
-
-SelectTractTroughVol[tracts_, roi_, vox_]:= SelectTractTroughVolC[Normal@roi, tracts, vox]
-
-SelectTractTroughVolC = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
-	Max[roi[[#[[1]], #[[2]], #[[3]]]] &[Ceiling[#/vox]] & /@ tract], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*SelectTractInVol*)
-
-
-SelectTractInVol[tracts_, roi_, vox_]:= SelectTractInVolC[Normal@roi, tracts, vox]
-
-SelectTractInVolC = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
-	Floor[Total[roi[[#[[1]], #[[2]], #[[3]]]] &[Ceiling[#/vox]] & /@ tract]/Length[tract]],
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*SelectTractPartInVol*)
-
-
-SelectTractPartInVol[tracts_, roi_, vox_]:= SelectTractPartInVolC[Normal@roi, tracts, vox]
-
-SelectTractPartInVolC = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
-	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*FilterTracts*)
-
-
-Options[FilterTracts] = {FiberLengthRange -> {10, 200}}
-
-FilterTracts[tracts_, vox_, select_, OptionsPattern[]] := FilterTractLength[
-	SelectTracts[tracts,
-		CombineROIs[{#[[1]], Switch[ToLowerCase[#[[2, 1]]],
-			"through", SelectTractTroughVol,
-			"within", SelectTractInVol,
-			"partwithin", SelectTractPartInVol,
-			"x" | "y" | "z", SelectTractTroughPlane
-		][tracts, If[StringLength[#[[2, 1]]] == 1, #[[2]], #[[2, 2]]], vox]} & /@ select]
-	]
-	, OptionValue[FiberLengthRange]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*SelectTracts*)
-
-
-SelectTracts[tracts_, sel_] := ToPackedArray/@PartTracts[DeleteCases[Pick[tracts, Clip[Round@sel, {0,1}], 1],{}]]
-
-
-(* ::Subsubsection::Closed:: *)
-(*PartTracts*)
-
-
-PartTracts[tracts_] := Block[{tmp, sts, st}, 
-	Select[Flatten[(
-		tmp = #;
-		sts = 1.1 Min[st = Norm /@ Differences[tmp]];
-		tmp[[#[[1]] + 1 ;; #[[2]]]] & /@ Partition[Flatten[{0, Position[UnitStep[st - sts], 1], Length[tmp]}], 2, 1]
-	) & /@ tracts, 1], Length[#] > 3 &]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*CombineROIs*)
-
-
-CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not, test},
-	or = Select[rois, (ToLowerCase[#[[1]]]==="or") &][[All, 2]];
-	or = If[or === {}, 1, Clip[Total[or], {0, 1}]];
-
-	not = Select[rois, (ToLowerCase[#[[1]]]==="not") &][[All, 2]];
-	not = 1 - If[not === {}, 0, Clip[Total[not], {0, 1}]];
-			
-	and = Select[rois, (ToLowerCase[#[[1]]]==="and") &][[All, 2]];
-	and = If[and === {}, 1, Clip[Times @@ and, {0, 1}]];
-
-	Times @@ {or, and, not}
-]
-
-
-(* ::Subsection:: *)
-(*DensityMap*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*ThreadedDiv*)
-
-
-ThreadedDiv = Compile[{{coor, _Real, 2}, {vox, _Real, 1}},
-	Transpose[Ceiling[Transpose[coor]/vox]]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-
-
-ThreadedDivD = Compile[{{coor, _Real, 2}, {vox, _Real, 1}},
-	Transpose[Ceiling[Transpose[Mean[{coor[[2 ;; -1]], coor[[1 ;; -2]]}]]/vox]], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-
-
-(* ::Subsubsection::Closed:: *)
-(*MakeList*)
-
-
-MakeList[len_] := Block[{ran},
-	ran = Range[0, len, 50000];
-	{1, 0} + # & /@ Partition[If[Last@ran =!= len, Append[ran, len], ran], 2, 1]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*SeedDensityMap*)
-
-
-SyntaxInformation[SeedDensityMap] = {"ArgumentsPattern" -> {_, _, _}};
-
-SeedDensityMap[seeds_, vox_, dim_] := Normal@SparseArray[Normal@Counts@ThreadedDiv[seeds, vox], dim];
-
-
-(* ::Subsubsection::Closed:: *)
-(*TractDensityMap*)
-
-
-Options[TractDensityMap] = {NormalizeDensity -> True}
-
-SyntaxInformation[TractDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
-
-TractDensityMap[tracts_, vox_, dim_,  OptionsPattern[]] := Block[{dens},
-	dens = ConstantArray[0., dim];
-	Table[dens += Normal@SparseArray[Select[
-		Normal[Counts[Flatten[DeleteDuplicates /@ ThreadedDiv[tracts[[i[[1]] ;; i[[2]]]], vox], 1]]],
-		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &], dim],
-	{i, MakeList[Length[tracts]]}];
-	
-	If[OptionValue[NormalizeDensity], dens/MedianNoZero[Flatten[dens]], dens]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*TractLengthMap*)
-
-
-SyntaxInformation[TractLengthMap] = {"ArgumentsPattern" -> {_, _, _}};
-
-TractLengthMap[tracts_, vox_, dim_] := Block[{tr, vals, lengs},
-	vals = GatherBy[Flatten[Table[
-		tr = tracts[[i[[1]] ;; i[[2]]]];
-		lengs = GatherBy[Flatten[Thread /@ Thread[(DeleteDuplicates /@ ThreadedDiv[tr, vox]) -> FiberLength@tr], 1], First];
-		Select[Thread[lengs[[All, 1, 1]] -> lengs[[All, All, 2]]], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &]
-    , {i, MakeList[Length[tracts]]}]], First];
-	
-	vals = Thread[vals[[All, 1, 1]] -> vals[[All, All, 2]]];
-	Normal@SparseArray[Thread[vals[[All, 1]] -> (Median[Flatten[#]] & /@ vals[[All, 2]])], dim]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*TractAngleMap*)
-
-
-SyntaxInformation[TractAngleMap] = {"ArgumentsPattern" -> {_, _, _}};
-
-TractAngleMap[tracts_, vox_, dim_] := Block[{tr, angsCoor, vals},
-	vals = GatherBy[Flatten[Table[
-		tr = tracts[[i[[1]] ;; i[[2]]]];
-		angsCoor = GatherBy[Flatten[Thread /@ Thread[ThreadedDivD[tr, vox] -> VecAngC[tr]], 1], First];
-		vals = Select[Thread[angsCoor[[All, 1, 1]] -> angsCoor[[All, All, 2]]], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &]
-	, {i, MakeList[Length[tracts]]}]], First];
-	vals = Thread[vals[[All, 1, 1]] -> vals[[All, All, 2]]];
-	Normal@SparseArray[Thread[vals[[All, 1]] -> (Median[Flatten[#]] & /@ vals[[All, 2]])],dim]
-]
-
-
-VecAngC = Compile[{{tr, _Real, 2}},
-	90 - ((180./Pi) ArcCos[{1, 0, 0} . Normalize[Sign[#[[1]]] #]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]))
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*FiberLength*)
-
-
-FiberLength[tracts_]:=FLengthC[tracts]
-
-FLengthC = Compile[{{trc,_Real,2}},
-	Total[Norm/@Differences[trc]]
-,RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
-
-
-(* ::Subsubsection::Closed:: *)
-(*FiberLength*)
-
-
-FilterTractLength[trksI_, {lmin_, lmax_}] := FilterTractLength[trksI, {lmin, lmax}, "tracts"]
-
-FilterTractLength[trksI_, {lmin_, lmax_}, what_] := Block[{len, sel, drop, trks},
-	len = FLengthC[trksI];
-	sel = UnitStep[len - lmin];
-	trks = Pick[trksI, sel, 1];
-	len = Pick[len, sel, 1];
-	trks = MapThread[If[#1 >= lmax, drop = Ceiling[((#1 - lmax)/Mean[Norm /@ Differences[#2]])/2] + 1; #2[[drop ;; -drop]], #2] &, {len, trks}];
-	Switch[what, "tracts", trks, "sel", sel, "both", {trks, sel}]
-]
-
-(* ::Subsection::Closed:: *)
-(*GetTractValues*)
-
-
-GetTractValues[tracts_, val_, vox_, int_:1]:=Block[{fun},
-	fun = MakeIntFunction[val, vox, int];
-	ToPackedArray[fun @@@ #] & /@ tracts
 ]
 
 
@@ -1077,6 +1153,7 @@ ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, 
 
 (* ::Subsubsection::Closed:: *)
 (*ExportTractsDefault*)
+
 
 ExportTractsDefault[file_, rule_, ___] := Block[{
 		tracts, vox, dim, seeds, strm, nDim, nVox, nSeed, nTr, nTrCoor, nTrLeng
