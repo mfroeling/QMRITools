@@ -75,30 +75,20 @@ SelectBidsSessions::usage =
 
 
 BidsDcmToNii::usage =
-"BidsDcmToNii[sourceFolder, rawFolder] converts the bids sourceFolder with dicom files to raw nii files save in the rawFolder. The conversion directory is the current working Directory.
-BidsDcmToNii[fol, sourceFolder, rawFolder] the same but the conversion directory is fol."
+"BidsDcmToNii[dir] converts the bids sourceFolder with dicom files to raw nii files based on the config file."
 
 
 MuscleBidsConvert::usage =
-"MuscleBidsConvert[niiFol, discription] converts all nii data in the niiFol subfolder \"raw\" to Muscle-Bids based on the data discription.
-
-Example discription:
-{\"Label\" -> \"DIXON\", \"Type\" -> \"megre\", \"Class\" -> \"Stacks\", \"Overlap\" -> 5}
-{\"Label\" -> \"DIXON\", \"Type\" -> \"megre\", \"Class\" -> \"Stacks\"}
-{\"Label\" -> \"DTI\", \"Type\" -> \"dwi\", \"Class\" -> \"Stacks\", \"Overlap\" -> 5, \"Suffix\" -> \"dti\"}
-{\"Label\" -> \"DIXON\", \"Type\" -> \"megre\"}."
-
+"MuscleBidsConvert[dir] converts all raw nii data in the to Muscle-Bids named nii based on the config file in the bids sourceFolder dir."
 
 MuscleBidsProcess::usage = 
-"MuscleBidsProcess[niiFol, discription] ..."
-
+"MuscleBidsProcess[dir] processes all Muscle-Bids named nii based on the config file in the bids sourceFolder dir."
 
 MuscleBidsMerge::usage = 
-"MuscleBidsMerge[niiFol, discription] ..."
-
+"MuscleBidsMerge[niiFol] merges multiple stack data for all Muscle-Bids named nii based on the config file in the bids sourceFolder dir."
 
 CheckDataDiscription::usage =
-"CheckDataDiscription[discription] checks the data discription used in MuscleBidsConvert. For example {\"Label\"->\"DTI\",\"Type\"->\"dwi\",\"Class\"->\"Stacks\",\"Overlap\"->5,\"Suffix\"->\"dti\"} ..."
+"CheckDataDiscription[discription] checks the data discription config file used in BidsDcmToNii, MuscleBidsConvert, MuscleBidsProcess and MuscleBidsMerge."
 
 
 (* ::Subsection::Closed:: *)

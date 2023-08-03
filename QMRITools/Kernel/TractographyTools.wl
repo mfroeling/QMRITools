@@ -53,7 +53,18 @@ GetTractValues::usage =
 
 
 FilterTracts::usage = 
-"FilterTracts[tracts, vox, select] ..."
+"FilterTracts[tracts, vox, {select.. }] filters the tracts based on the list of select criteria.
+Select criteria are defined as {\"logic\",{\"how\", criteria}}.
+The \"logic\" parameter can be \"and\", \"or\" and \"not\".
+The \"how\" parameter can be:
+	- \"x\", \"y\", or \"z\" for slice selection, here criteria is a slice number
+	- \"thourgh\" for selecting tract that go through a roi, here criteria is a 3D mask.
+	- \"within\" for selecting tract that fit fully within the roi, here criteria is a 3D mask.
+	- \"partwithin\" for selecting the part of the tracts that fall within the roi, here criteria is a 3D mask.
+Any number of select criteria can be listed."
+
+SegmentTracts::usage = 
+"SegmentTracts[tracts, segs, vox, dim] segments the tracts based on segs."
 
 
 SeedDensityMap::usage = 
@@ -70,12 +81,12 @@ TractAngleMap::usage =
 
 
 PlotTracts::usage = 
-"PlotTracts[tracts, vox] ...
-PlotTracts[tracts, vox, dim] ..."
+"PlotTracts[tracts, vox] plots the tracts assuming an Boxratio based on vox.
+PlotTracts[tracts, vox, dim] plots the tracts assuming an Boxratio based on vox with a PlotRange spanning the full dim."
 
 PlotSegmentedTracts::usage = 
-"PlotSegmentedTracts[tracts, segments, dim, vox] ...
-PlotSegmentedTracts[tracts, segments, bones, dim, vox] ..."
+"PlotSegmentedTracts[tracts, segments, dim, vox] plots the tracts after segmenting each segments.
+PlotSegmentedTracts[tracts, segments, bones, dim, vox] plots the tracts after segmenting each segments also rendering a bone volume."
 
 
 FindTensorPermutation::usage = 
@@ -89,10 +100,10 @@ FindTensorPermutation[] is based on DOI: 10.1016/j.media.2014.05.012."
 
 
 ImportTracts::usage = 
-"ImportTracts[file] ..."
+"ImportTracts[file] imports a *.trk file. It can contain {tracts, vox, dim, seeds}."
 
 ExportTracts::usage = 
-"ExportTracts[file, tracts, vox, dim, seeds] ..."
+"ExportTracts[file, tracts, vox, dim, seeds] exports the tracts, vox, dim and seeds to *.trk file."
 
 
 (* ::Subsection::Closed:: *)
@@ -143,7 +154,7 @@ TractReduction::usage =
 
 
 NormalizeDensity::usage = 
-"NormalizeDensity is an option for TractDensityMap ..."
+"NormalizeDensity is an option for TractDensityMap. If set True the tractdensity is normalized, if False then it is the true tract count."
 
 
 
@@ -978,7 +989,8 @@ Options[PlotSegmentedTracts] := {
 	MaxTracts -> 5000,
 	FiberLengthRange -> {20, 500},
 	Method -> "line",
-	OutputForm -> "All"
+	OutputForm -> "All",
+	ImageSize->400
 }
 
 PlotSegmentedTracts[tracts_, segments_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := PlotSegmentedTracts[tracts, segments, None, dim, vox, opts]
@@ -996,10 +1008,10 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	(*prepare data*)
 	segs = Transpose@segments;
 	Echo["Fitting tracts"];
-	EchoTiming[
-		tractsF = FitTracts[tracts, vox, dim, FittingOrder -> 3];
-		tractsFI = RescaleTractsC[tractsF, vox];
-	];
+	SeedRandom[12345];
+	tractsF = RandomSample[tracts, Min[{5 ntr, Length@tracts}]];
+	tractsF = FitTracts[tractsF, vox, dim, FittingOrder -> 3];
+	tractsFI = RescaleTractsC[tractsF, vox];
 
 	(*make colors*)
 	ran = Range[Length@segs];
@@ -1018,12 +1030,12 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	];
 
 	(*make the muscle contours*)
-	musc = EchoTiming@Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, 
+	musc = Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, 
 		ContourColor -> colList[[i]], ContourSmoothing -> 2], {i, ran}];
 
 	Echo["Making per muscle tracts"];
 	(*select the tracts per muscle and make fiber plots*)
-	tracksSel = EchoTiming[FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segs];
+	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segs;
 	lengs = Length /@ tracksSel;
 	nTracts = Round[ntr lengs/Total[lengs]];
 	sel = UnitStep[nTracts - 11];
@@ -1037,8 +1049,7 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	];
 
 	Echo["Finalizing scenes"];
-	showF = Show[ref, ##, ImageSize -> 400, Axes -> False, 
-		Boxed -> False, ViewPoint -> {0., -2., 1.}] & @@ # &;
+	showF = Show[ref, ##, ImageSize -> OptionValue[ImageSize], Axes -> False, Boxed -> False, ViewPoint -> {0., -2., 1.}] & @@ # &;
 	
 	Switch[OptionValue[OutputForm],
 		"All", showF[{bon, trac, musc}],
@@ -1178,7 +1189,6 @@ ExportTractsDefault[file_, rule_, ___] := Block[{
 	BinaryWrite[strm, Flatten@{dim, vox, seeds, tracts}, "Real64"];
 	Close[strm];
 ]
-
 
 
 (* ::Section:: *)
