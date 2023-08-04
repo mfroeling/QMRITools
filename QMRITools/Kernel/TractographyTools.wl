@@ -179,7 +179,7 @@ Begin["`Private`"]
 
 Options[FitTracts] = {FittingOrder -> 3};
 
-SyntaxInformation[FitTracts] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+SyntaxInformation[FitTracts] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 FitTracts[tract_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_, OptionsPattern[]]:= SelectValidCoor[FitTractsC[tract, Round@OptionValue[FittingOrder]], vox, dim]
 
@@ -210,6 +210,8 @@ SelectValidCoorC = Compile[{{tr, _Real, 2}, {vox, _Real, 1}, {dim, _Integer, 1}}
 (*ResampleTracts*)
 
 
+SyntaxInformation[ResampleTracts] = {"ArgumentsPattern" -> {_, _}};
+
 ResampleTracts[tracts_, len_] := Block[{int, r},
 	r = Rescale[N@Range[len]];
 	ToPackedArray@Map[(int = ListInterpolation[Transpose[{#}], {{0, 1}}, InterpolationOrder -> 1]; int /@ r) &, tracts]
@@ -220,7 +222,12 @@ ResampleTracts[tracts_, len_] := Block[{int, r},
 (*MoveTracts*)
 
 
-MoveTracts = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
+SyntaxInformation[MoveTracts] = {"ArgumentsPattern" -> {_, _}};
+
+MoveTracts[tracts_, off:{_?NumberQ,_?NumberQ,_?NumberQ}]:=MoveTractsC[tracts, off]
+
+
+MoveTractsC = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
 	# + off & /@ tr
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
@@ -229,9 +236,16 @@ MoveTracts = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
 (*RescaleTracts*)
 
 
-RescaleTracts[tracts_, sc_?NumberQ]:=RescaleTractsC[tracts, {sc, sc, sc}]
+SyntaxInformation[RescaleTracts] = {"ArgumentsPattern" -> {_, _}};
 
-RescaleTracts[tracts_, sc:{_?NumberQ,_?NumberQ,_?NumberQ}]:=RescaleTractsC[tracts, sc]
+RescaleTracts[tracts_, sc_?NumberQ]:= ToPackedArray[ToPackedArray/@RescaleTractsI[tracts, {sc, sc, sc}]]
+
+RescaleTracts[tracts_, sc:{_?NumberQ,_?NumberQ,_?NumberQ}]:=ToPackedArray[ToPackedArray/@RescaleTractsI[tracts, sc]]
+
+
+RescaleTractsI = Compile[{{tr, _Real, 2}, {sc, _Real, 1}},
+	Transpose[Transpose[tr]/sc]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 RescaleTractsC = Compile[{{tr, _Real, 2}, {sc, _Real, 1}},
@@ -247,6 +261,8 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 (* ::Subsubsection::Closed:: *)
 (*FilterTractLength*)
 
+
+SyntaxInformation[FilterTractLength] = {"ArgumentsPattern" -> {_, _, _.}};
 
 FilterTractLength[trksI_, {lmin_, lmax_}] := FilterTractLength[trksI, {lmin, lmax}, "tracts"]
 
@@ -264,6 +280,8 @@ FilterTractLength[trksI_, {lmin_, lmax_}, what_] := Block[{len, sel, drop, trks}
 (*FiberLength*)
 
 
+SyntaxInformation[FiberLength] = {"ArgumentsPattern" -> {_}};
+
 FiberLength[tracts_]:=FLengthC[tracts]
 
 FLengthC = Compile[{{trc,_Real,2}},
@@ -277,6 +295,8 @@ FLengthC = Compile[{{trc,_Real,2}},
 
 Options[GetTractValues]= {InterpolationOrder->1}
 
+SyntaxInformation[GetTractValues] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
 GetTractValues[tracts_, val_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, OptionsPattern[]]:=Block[{fun},
 	fun = MakeIntFunction[val, vox, OptionValue[InterpolationOrder]];
 	ToPackedArray[fun @@@ #] & /@ tracts
@@ -287,13 +307,19 @@ GetTractValues[tracts_, val_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, OptionsPatter
 (*GetTractValues*)
 
 
-Options[SegmentTracts] = {FiberLengthRange -> {20, 500}, OutputForm -> "Joined", FitTracts -> True}
+Options[SegmentTracts] = {
+	FiberLengthRange -> {20, 500}, 
+	OutputForm -> "Joined", 
+	FitTracts -> True
+}
+
+SyntaxInformation[SegmentTracts] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
 SegmentTracts[tracts_, segs_, vox_, dim_, OptionsPattern[]] := Block[{tractsI},
-	tractsI = RescaleTracts[tracts, vox];
-	tractsI = EchoTiming[FilterTracts[tracts, tractsI, {{"and", {"partwithin", #}}}, FiberLengthRange -> OptionValue[FiberLengthRange]] & /@ Transpose[segs]];
+	tractsI = RescaleTractsC[tracts, vox];
+	tractsI = FilterTracts[tracts, tractsI, {{"and", {"partwithin", #}}}, FiberLengthRange -> OptionValue[FiberLengthRange]] & /@ Transpose[segs];
 	
-	If[OptionValue[FitTracts] === True, EchoTiming[tractsI = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> 3], #] & /@ tractsI]];
+	If[OptionValue[FitTracts] === True, tractsI = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> 3], #] & /@ tractsI];
 
 	Switch[OptionValue[OutputForm],
 		"Joined", Flatten[tractsI, 1],
@@ -325,7 +351,7 @@ SyntaxInformation[TractDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPat
 
 TractDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPattern[]] := Block[{dens},
 	dens = Normal@SparseArray[Select[
-		Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTracts[tracts, vox], 1]],
+		Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTractsC[tracts, vox], 1]],
 		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
 		dim];
 	
@@ -366,16 +392,6 @@ TractAngleMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Block[{angs
 VecAngC = Compile[{{tr, _Real, 2}},
 	90 - ((180./Pi) ArcCos[{1, 0, 0} . Normalize[Sign[#[[1]]] #]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]))
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*MakeList*)
-
-
-MakeList[len_] := Block[{ran},
-	ran = Range[0, len, 50000];
-	{1, 0} + # & /@ Partition[If[Last@ran =!= len, Append[ran, len], ran], 2, 1]
-]
 
 
 (* ::Subsection:: *)
@@ -570,10 +586,10 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 
 
 EigVec = Compile[{{t, _Real, 1}}, Block[{
-		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, 
+		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, tens,
 		i1, i2, i3, i, v, s, v2, l1, a, b, c, norm
 	},
-	tens=1000 t;
+	tens = 1000 t;
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
 	If[Total[Abs[tens]]<10.^-15,
 		{0., 0., 0.},
@@ -693,6 +709,8 @@ FindTensorPermutation[tens_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, stop_, opts : 
 
 Options[FilterTracts] = {FiberLengthRange -> {20, 500}}
 
+SyntaxInformation[FilterTracts] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
+
 FilterTracts[tracts_, tractsI_, select_, opts:OptionsPattern[]]:=FilterTracts[tracts, tractsI, None, select, opts]
 
 FilterTracts[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, select_, opts:OptionsPattern[]]:= FilterTracts[tracts, tracts, vox, select, opts]
@@ -759,6 +777,7 @@ SelectTractTroughPlane[tracts_, {dir_, slice_}, vox:{_?NumberQ,_?NumberQ,_?Numbe
 	"y", {tracts[[All, All, 2]], slice vox[[2]] - 0.5},
 	"z", {tracts[[All, All, 1]], slice vox[[1]] - 0.5}
 ];
+
 
 SelectTractTroughPlaneV = Compile[{{tract, _Real, 1}, {val, _Real, 0}},
 	Boole[0 < Total[UnitStep[tract - val]] < Length[tract]], 
@@ -842,21 +861,25 @@ Options[PlotTracts] = {
 	PerformanceGoal->"Quality"
 }
 
+SyntaxInformation[PlotTracts] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
-PlotTracts[tractsI_, voxi_, dimi_, OptionsPattern[]] := Block[{
+PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		range, vox, size, select, opts, col, tube, line, plot, colOpt, 
-		met, pran, max, colf, colArray, sc, tracts
+		met, pran, max, colf, colArray, sc, n
 	},
 	
 	(*reduce points along tracts*)
-	tracts = Select[tractsI[[All,1;;-1;;OptionValue[TractReduction]]],Length[#]>3&];
+	(*tracts = Select[tractsI[[All,1;;-1;;OptionValue[TractReduction]]],Length[#]>3&];*)
 
 	(*select correct number of tracts*)
 	max = OptionValue[MaxTracts];
-	If[OptionValue[Method]==="tube", max =  Min[4000, max]];
+	(*If[OptionValue[Method]==="tube", max =  Min[4000, max]];*)
 	SeedRandom[1234];
-	select = ToPackedArray /@ RandomSample[tracts, Min[max, Length[tracts]]];
+	select = ToPackedArray/@RandomSample[tracts, Min[max, Length[tracts]]];
+	n = Round[Quantile[Length/@select, 0.75] / OptionValue[TractReduction]];
+	select = ResampleTracts[select, n];
 
 	(*calculated needed sizes ranges and scales*)
 	vox = Reverse@voxi;
@@ -895,21 +918,22 @@ PlotTracts[tractsI_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		
 	(*make the plot*)
 	opts = Sequence[{
-		Method -> {"TubePoints" -> {If[OptionValue[PerformanceGoal]==="Quality",6,3], 2}}, 
+		Method -> {"TubePoints" -> {If[OptionValue[PerformanceGoal]==="Quality",5,3], 2}}, 
 		Lighting -> "Accent", 
-		ImageSize -> OptionValue[ImageSize], SphericalRegion -> True, Boxed -> OptionValue[Boxed],
+		ImageSize -> OptionValue[ImageSize], 
+		SphericalRegion -> True, Boxed -> OptionValue[Boxed],
 		Background -> Lighter@Gray, BoxRatios -> size, PlotRange -> range, 
 		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
 	}];
 
+	select = Reverse[select, 3];
 	plot = Graphics3D[Switch[OptionValue[Method],
 		"tube", 
-		select = ToPackedArray[ToPackedArray/@Map[Reverse[#] &, select, {-2}]];
-		{CapForm["Square"], JoinForm["Miter"], Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]},
+		{CapForm["Butt"], JoinForm[{"Miter", 1}], Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]},
 		"line", 
-		select = ToPackedArray[ToPackedArray/@Map[Reverse[#] / vox &, select, {-2}]];
-		Line[select, VertexColors -> col],
-		_, $Failed], opts]
+		Line[RescaleTracts[select, vox], VertexColors -> col],
+		_, $Failed
+	], opts]
 ]
 
 
@@ -922,7 +946,7 @@ MakeDirectionColor[tract : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{dir
 	ToPackedArray[Reverse[Normalize[#]]] & /@ Mean[{Prepend[dirs, dirs[[1]]], Append[dirs, dirs[[-1]]]}]
 ]
 
-MakeDirectionColor[tracts : {_?ListQ ..}] := MakeDirectionColor /@ tracts
+MakeDirectionColor[tracts : {_?ListQ ..}] := ToPackedArray[MakeDirectionColor /@ tracts]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -934,7 +958,7 @@ MakeLengthColor[tracts_, {pran_, colf_}]:=Block[{len, col},
 	len = Rescale[len, If[pran === Automatic, Quantile[len, {.05, 0.95}], pran]];
 	col = ColorData[colf];
 
-	MapThread[ToPackedArray[ConstantArray[#2 /. RGBColor -> List, Length@#1]]&, {tracts, col /@ len}]
+	ToPackedArray@MapThread[ToPackedArray[ConstantArray[#2 /. RGBColor -> List, Length@#1]]&, {tracts, col /@ len}]
 ];
 
 
@@ -947,7 +971,7 @@ MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
 	ang = Rescale[ang, If[pran === Automatic, {0, 90}, pran]];
 	col = ColorData[colf];
 
-	ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ ang
+	ToPackedArray[ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ ang]
 ];
 
 
@@ -960,7 +984,7 @@ MakeArrayColor[tract_, {pran_, colf_}, dat_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}
 	vals = Rescale[vals, If[pran === Automatic, Quantile[Flatten[vals], {.05, 0.95}], pran]];
 	col = ColorData[colf];
 
-	ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ vals
+	ToPackedArray[ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ vals]
 ]
 
 
@@ -971,13 +995,13 @@ MakeArrayColor[tract_, {pran_, colf_}, dat_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}
 MakeConstantColor[tract_, pran_] := MakeConstantColor[tract, pran, True]
 
 MakeConstantColor[tract_, pran_, rand_] := Block[{vals, col},
-	If[rand,
+	ToPackedArray[If[rand,
 		col = Table[Blend[{Darker[pran,.2], pran, Lighter[pran,.2]}, x], {x, 0., 1., 1./10}] /. RGBColor -> List;
 		ToPackedArray[ConstantArray[RandomChoice[col], Length@#1]] & /@ tract
 		,
 		col = pran /. RGBColor -> List;
 		ToPackedArray[ConstantArray[col, Length@#1]] & /@ tract
-	]
+	]]
 ]
 
 
@@ -992,6 +1016,8 @@ Options[PlotSegmentedTracts] := {
 	OutputForm -> "All",
 	ImageSize->400
 }
+
+SyntaxInformation[PlotSegmentedTracts] = {"ArgumentsPattern" -> {_, _, _, _, _., OptionsPattern[]}};
 
 PlotSegmentedTracts[tracts_, segments_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := PlotSegmentedTracts[tracts, segments, None, dim, vox, opts]
 
@@ -1077,6 +1103,8 @@ ImportExport`RegisterImport["trk", ImportTractsDefault, {},
 (*ImportTracts*)
 
 
+SyntaxInformation[ImportTracts] = {"ArgumentsPattern" -> {_}};
+
 ImportTracts[] := ImportTracts[""]
 
 ImportTracts[file_] := Block[{fileI},
@@ -1135,6 +1163,8 @@ ImportExport`RegisterExport["trk",
 (* ::Subsubsection::Closed:: *)
 (*ExportTracts*)
 
+
+SyntaxInformation[ExportTracts] = {"ArgumentsPattern" -> {_, _., _., _., _.}};
 
 ExportTracts[tracts : {_?ListQ ..}] := ExportTracts["", tracts, {0, 0, 0}, {0, 0, 0}, {}]
 

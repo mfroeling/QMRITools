@@ -369,7 +369,7 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 (*GetMaskData*)
 
 
-Options[GetMaskData] = {GetMaskOutput -> "All",GetMaskOnly->False}
+Options[GetMaskData] = {GetMaskOutput -> "All", GetMaskOnly->False}
 
 SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 

@@ -63,6 +63,10 @@ Or alternatively you can directly install it from the latest release page
 
 `PacletInstall["https://github.com/mfroeling/QMRITools/releases/download/x.x.x/QMRITools-x.x.x.paclet"]`
 
+<p align="center">
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/line-small.gif" alt="whole leg fiber tractography"  width="70%" />
+</p>
+
 ## Citing
 
 When using the toolbox please cite one of the following references:

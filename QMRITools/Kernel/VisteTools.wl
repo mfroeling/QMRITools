@@ -350,7 +350,6 @@ ImportVol[fil_String: "", OptionsPattern[]] := Module[{file,hdr,datafile,dim,vox
 
 SyntaxInformation[LoadFiberTracts] = {"ArgumentsPattern" -> {_.}};
 
-
 LoadFiberTracts[]:=Module[{file},
 	file = FileSelect["FileOpen", {"*.fbs"}, WindowTitle -> "Select the *.fbs file to import"];
 	If[file == Null || file === $Canceled, 

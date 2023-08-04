@@ -653,9 +653,9 @@ NumberTableForm[dat_, depth_, opts : OptionsPattern[]] :=
 (*MeanStd*)
 
 
-MeanStd[inp_]:=MeanStd[inp, 1]
+MeanStd[inp_]:=MeanStd[inp, 2]
 
-MeanStd[inp_,n_] := Block[{dat}, 
+MeanStd[inp_, n_?IntegerQ] := Block[{dat}, 
 	dat = inp /. {Mean[{}] -> Nothing, 0. -> Nothing};
 	Quiet@Row[{NumberForm[Round[Mean[dat], .001], {3, n}], NumberForm[Round[StandardDeviation[dat], .001], {7, n}]}, "\[PlusMinus]"]
   ]
@@ -664,17 +664,17 @@ MeanStd[inp_,n_] := Block[{dat},
 (* ::Subsubsection::Closed:: *)
 (*MeanRange*)
 
+MeanRange[inp_] := MeanRange[inp, {.14, .86}, 2]
 
-MeanRange[inp_] := Block[{q1, q2, q3},
-  {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {.14, .5, .86}];
-  Quiet@Row[{NumberForm[Round[q2, .0001], {7, 2}], "  (", NumberForm[Round[q1, .0001], {7, 2}], " - ", NumberForm[Round[q3, .001], {7, 2}], ")"}]
-  ]
+MeanRange[inp_, n_?IntegerQ] := MeanRange[inp, {.14, .86}, n]
+
+MeanRange[inp_, q_?ListQ] := MeanRange[inp, q, 2]
+
+MeanRange[inp_, q_?ListQ, n_?IntegerQ]:= Block[{q1, q2, q3},
+	{q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing},  {q[[1]], .5, q[[2]]}];
+	Quiet@Row[{NumberForm[Round[q2, .0001], {7, n}], "  (", NumberForm[Round[q1, .0001], {7, n}], " - ", NumberForm[Round[q3, .001], {7, n}], ")"}]
+]
   
-MeanRange[inp_,quant_] := Block[{q1, q2, q3},
-  {q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing}, {quant[[1]],.5,quant[[2]]}];
-  Quiet@Row[{NumberForm[Round[q2, .0001], {7, 2}], "  (", NumberForm[Round[q1, .0001], {7, 2}], " - ", NumberForm[Round[q3, .001], {7, 2}], ")"}]
-  ]
-
 
 (* ::Subsection::Closed:: *)
 (*SNRCalc*)
