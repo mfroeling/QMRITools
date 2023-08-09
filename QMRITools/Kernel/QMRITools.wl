@@ -17,21 +17,20 @@ BeginPackage["QMRITools`"];
 
 
 (*check mathematica version*)
-If[$VersionNumber < 13,
+If[$VersionNumber < 13.3,
 	CreateDialog[Column[{Style["
-	Current Mathematica version is "<>ToString[$VersionNumber]<>"
-	The toolbox is tested developed in 13.2+.
-	You need to update! (Or I am behind)
-	Some functions might not work in older versions
+		Current Mathematica version is "<>ToString[$VersionNumber]<>"
+		The toolbox is tested developed in 13.3+.
+		Some functions might not work in older versions
 	", TextAlignment -> Center], DefaultButton[], ""}, 
 	Alignment -> Center], WindowTitle -> "Update!"];
 ];
 
 
 (*usage notes*)
-QMRITools`$SubPackages::usage = "List of the subpackages.";
-QMRITools`$Contexts::usage = "The package contexts.";
-QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions.";
+QMRITools`$SubPackages::usage = "List of the subpackages in the toolbox.";
+QMRITools`$Contexts::usage = "The package contexts needed for loading.";
+QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions for each context.";
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
 QMRITools`$Log::usage = "The logging file.";
@@ -39,7 +38,7 @@ QMRITools`$Log::usage = "The logging file.";
 
 (*subpackages names*)
 QMRITools`$SubPackages = {
-	(*core packages that contain functions for other toolboxes*)
+	(*core packages that contain many functions for other toolboxes*)
 	"LoggingTools`", "GeneralTools`", "MaskingTools`", "NiftiTools`",
 	 "ElastixTools`", "PlottingTools`", "MuscleBidsTools`",
 	(*toolboxes for processing specific data types*)
@@ -47,10 +46,10 @@ QMRITools`$SubPackages = {
 	"RelaxometryTools`", "GradientTools`", "TensorTools`", 
 	"JcouplingTools`", "SpectroTools`", "ReconstructionTools`",
 	(*general processing tools with lots of dependancys*)
-	"TractographyTools`", "VisteTools`", "ProcessingTools`", "FasciculationTools`",
+	"TractographyTools`", "ProcessingTools`", "FasciculationTools`",
 	"SimulationTools`", "PhysiologyTools`", "CoilTools`", "TaggingTools`",
-	 (*legacy import functions*)
-	"ImportTools`"
+	 (*legacy functions*)
+	"Legacy`"
 };
 
 
@@ -74,23 +73,23 @@ EndPackage[];
 (*Load all subpackages*)
 
 
-(*print the Toolbox content and version*)
+(*Echo the Toolbox content and version*)
 If[QMRITools`$Verbose,
-	Print["--------------------------------------"];
-	Print["Loading ", Context[]," with version number ", QMRITools`$InstalledVersion];
-	Print["--------------------------------------"];
-	Print["Defined packages and functions to be loaded are: "];
+	Echo["--------------------------------------"];
+	Echo["Version number "<>ToString[QMRITools`$InstalledVersion], "QMRITools"];
+	Echo["--------------------------------------"];
+	Echo["Defined packages and functions to be loaded are: "];
 	(
-		Print["   - ", First@#, " with functions:"];
-		Print[Last@#];
+		Echo["with functions:", First@#];
+		Echo[Grid[Partition[Last@#, 5, 5 , 1, ""], Alignment->Left, ItemSize->18]];
 	)&/@ QMRITools`$ContextsFunctions
 ];
 
 
 (*Destroy all functions defined in the subpackages*)
 If[QMRITools`$Verbose, 
-	Print["--------------------------------------"];
-	Print["Removing all local and global definitions of:"];
+	Echo["--------------------------------------"];
+	Echo["Removing all local and global definitions of:"];
 ];
 
 
@@ -99,8 +98,8 @@ With[{
 	},
 		
 	If[QMRITools`$Verbose, 
-		Print["   - ", First@#];
-		If[global=!={}, Print[global]]
+		Echo["", First@#];
+		If[global=!={}, Echo[global]]
 	];
 
 	Unprotect @@ Join[Last@#,global];
@@ -111,14 +110,14 @@ With[{
 
 (*Reload and protect all the sub packages with error reporting*)
 If[QMRITools`$Verbose, 
-	Print["--------------------------------------"];
-	Print["Loading and protecting all definitions of:"];
+	Echo["--------------------------------------"];
+	Echo["Loading and protecting all definitions of:"];
 ];
 
 
 Get["Developer`"];
 (
-	If[QMRITools`$Verbose, Print["   - ", First@#]];
+	If[QMRITools`$Verbose, Echo["", First@#]];
 	Get[First@#];
 	SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#]
 )& /@ QMRITools`$ContextsFunctions;

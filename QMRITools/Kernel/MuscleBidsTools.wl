@@ -1292,10 +1292,10 @@ MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPatt
 MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 		nonQuant, motion, reverse, fol, parts, merge, outfile, tarType, tarSuf, tarCon, tarFile, movType, movCon, n,
 		movs, movStacs, tarStacs, overT, overM, targets, movings, mov, nStac, nCheck, nSet, target, voxt, moving, 
-		voxm, files, im, func, reg, mskm, mskt, vox,
+		voxm, files, im, func, reg, mskm, mskt, vox, sameType,
 		multDim, movsA, movsMD, movingsA, movingsMD, movingA, movingMD, leng, lengMD
 	},
-	
+
 	(*muscle bids that are non quantitative of multi dimensional*)
 	nonQuant = {"inph", "outph", "wat", "fat", "s0"};
 	multDim = {"tens"};
@@ -1313,6 +1313,9 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 	{tarType, tarSuf, tarCon} = merge["Target"];
 	tarFile = GenerateBidsFileName[folo, <|parts, "suf"->{tarSuf, tarCon}, "Type"->tarType|>]<>".nii";
 	tarStacs = StringReplace[#, {"-" -> "", "_" -> "", "." -> ""}] & /@ First[Select[allType, #["InFolder"] === tarSuf &]]["Label"];
+
+	(*check if moving is the same type as target*)
+	sameType = tarType === datType["Type"] && tarSuf === datType["Suffix"];
 
 	(*get the settings for the moving data*)
 	movType = datType["InFolder"];
@@ -1350,7 +1353,8 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 			
 			(*import the Target data, import merged target if it exists else merge it*)
 			(*-----*)AddToLog[{"Importing and processing the target data"}, 4];
-			If[NiiFileExistQ[tarFile],
+			(*if target is same type as moving always perform joinsets, never load from disk*)
+			If[NiiFileExistQ[tarFile] && !sameType,
 				{target, voxt} = ImportNii[tarFile];
 				(*-----*)AddToLog[{"Splitting the primary datatype that already existed"}, 4];
 				If[nStac=!=1,target = SplitSets[target, nStac, overT, ReverseSets->reverse]];
@@ -1371,16 +1375,17 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 			{moving, vox} = Transpose[(files=#;Transpose[ImportNii[#]&/@files])& /@movings];
 			leng = Length[movs];
 			voxm = First@First@vox;
-			If[movingsMD=!={},
+			movingMD = If[movingsMD=!={},
 				{movingMD, vox} = Transpose[(files=#;Transpose[ImportNii[#]&/@files])& /@movingsMD];
 				lengMD = Length /@ movingMD[[All, 1, 1]];
-				movingMD = Flatten[movingMD, {1, 4}],
+				Flatten[movingMD, {1, 4}],
 				{}];
 			movingA = Join[moving, movingMD];
 
 			(*perform motion correction after target merging*)
-			If[!(!motion&&movType==="dix"), (*If motion correction for joning is false dixon does not need correction*)
-				(*-----*)AddToLog[{"Perfroming the registration for the all the datasets"}, 4];
+			(*If motion correction for joning is False and target is of same type no need for motion correction*)
+			If[!(!motion&&sameType), 
+				(*-----*)AddToLog[{"Performing the registration for the all the datasets"}, 4];
 				im = First@First@Position[movs, movCon];
 				movingA = Table[
 					(*make masks*)
@@ -1414,10 +1419,12 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 				]&/@Range[Length[movsA]];
 			
 			(*split in single dim and multi dim*)
-			moving = movingA[[1;;leng]];
-			movingMD = movingA[[leng+1;;]];
-			movingMD = Transpose[movingMD[[#[[1]];;#[[2]]]]] & /@ ({1, 0} + # & /@ Partition[Prepend[Accumulate[lengMD], 0], 2, 1]);
-			movingA = Join[moving, movingMD];
+			If[movingMD =!= {},
+				moving = movingA[[1;;leng]];
+				movingMD = movingA[[leng+1;;]];
+				movingMD = Transpose[movingMD[[#[[1]];;#[[2]]]]] & /@ ({1, 0} + # & /@ Partition[Prepend[Accumulate[lengMD], 0], 2, 1]);
+				movingA = Join[moving, movingMD];
+			];
 			
 			(*export the joined data*)
 			(*----*)AddToLog["Exporting the calculated data to:", 4];
