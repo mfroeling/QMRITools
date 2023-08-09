@@ -2617,54 +2617,60 @@ Options[PlotContour] = {
    ContourSmoothing -> None
    };
 
-SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-PlotContour[dati_, vox_, OptionsPattern[]] := Block[{
+PlotContour[dati_, opts:OptionsPattern[]]:=PlotContour[dati, {1,1,1}, opts]
+
+PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 		data, smooth, color, opac, dim , pad, col, style, crp,
 		ran, coldat, colfunc
 	},
 
-	smooth = OptionValue[ContourSmoothing];
-	color = OptionValue[ContourColor];
-	opac = OptionValue[ContourOpacity];
+	If[ArrayDepth[dati]===4, 
+		Show[PlotContour[#, vox, opts]&/@Transpose[dati]]
+		,
+		smooth = OptionValue[ContourSmoothing];
+		color = OptionValue[ContourColor];
+		opac = OptionValue[ContourOpacity];
 
-	dim = Dimensions@dati;
-	pad = 10;
-	data = ArrayPad[dati, pad];
-	If[IntegerQ[smooth], data = GaussianFilter[data, smooth]];
+		dim = Dimensions@dati;
+		pad = 10;
+		data = ArrayPad[dati, pad];
+		If[IntegerQ[smooth], data = GaussianFilter[data, smooth]];
 
-	{data, crp} = AutoCropData[data];
+		{data, crp} = AutoCropData[data];
 
-	col = If[ColorQ[color], color, GrayLevel[1.]];
-	style = Directive[{Opacity[opac], col, Specularity[Lighter@Lighter@col, 5]}];
+		col = If[ColorQ[color], color, If[color==="Random", RandomColor[], GrayLevel[1.]]];
+		style = Directive[{Opacity[opac], col, Specularity[Lighter@Lighter@col, 5]}];
 
-	colfunc = If[! ArrayQ[color],
-		Automatic,
-		ran = OptionValue[ContourColorRange];
-		ran = If[ran === Automatic,
-			Quantile[DeleteCases[N@Flatten[color], 0.], {0.02, 0.98}],
-			ran];
-		coldat = Rescale[color, ran];
-		Function[{z, y, x},
-			ColorData[OptionValue[ColorFunction]][
-			coldat[[Clip[Round[x], {1, dim[[3]]}], 
-			Clip[Round[y], {1, dim[[2]]}], Clip[Round[z], {1, dim[[1]]}]]]]
+		colfunc = If[! ArrayQ[color],
+			Automatic,
+			ran = OptionValue[ContourColorRange];
+			ran = If[ran === Automatic,
+				Quantile[DeleteCases[N@Flatten[color], 0.], {0.02, 0.98}],
+				ran];
+			coldat = Rescale[color, ran];
+			Function[{z, y, x},
+				ColorData[OptionValue[ColorFunction]][
+				coldat[[Clip[Round[x], {1, dim[[3]]}], 
+				Clip[Round[y], {1, dim[[2]]}], Clip[Round[z], {1, dim[[1]]}]]]]
+			]
+		];
+
+		ListContourPlot3D[data,
+			Contours -> {0.5},
+			Mesh -> False, BoundaryStyle -> None, Axes -> True, 
+			SphericalRegion -> True,
+			ColorFunctionScaling -> False, ColorFunction -> colfunc,
+			ContourStyle -> style, Lighting -> "Neutral",
+
+			ImageSize -> 300,
+			DataRange -> Reverse[Partition[crp, 2]] - pad,(*Transpose[{{0, 0, 0} - pad, Reverse[dim + pad]}],*)
+			BoxRatios -> Reverse[vox dim],
+			PlotRange -> Transpose[{{0, 0, 0}, Reverse[dim]}]
 		]
-	];
-
-	ListContourPlot3D[data,
-		Contours -> {0.5},
-		Mesh -> False, BoundaryStyle -> None, Axes -> True, 
-		SphericalRegion -> True,
-		ColorFunctionScaling -> False, ColorFunction -> colfunc,
-		ContourStyle -> style, Lighting -> "Neutral",
-
-		ImageSize -> 300,
-		DataRange -> Reverse[Partition[crp, 2]] - pad,(*Transpose[{{0, 0, 0} - pad, Reverse[dim + pad]}],*)
-		BoxRatios -> Reverse[vox dim],
-		PlotRange -> Transpose[{{0, 0, 0}, Reverse[dim]}]
 	]
-  ]
+]
 
 
 (* ::Subsection:: *)

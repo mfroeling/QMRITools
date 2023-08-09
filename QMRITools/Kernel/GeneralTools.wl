@@ -667,7 +667,7 @@ DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm,
 	If[! (depthd == 2 || depthd == 3 || depthd == 4), Return@Message[DataToVector::dim, "Data", depthd]];
 	
 	data = N[datai];	
-	mask = Round[If[maski === 1, Unitize[data], maski]];
+	mask = Round[If[maski === 1, Unitize[If[depthd == 4, Mean@Transpose@data, data]], maski]];
 	
 	depthm = ArrayDepth[mask];
 	depth = depthd - depthm;
@@ -1102,53 +1102,67 @@ QMRIToolsPackages[] := DeleteDuplicates[(StringSplit[#, "`"] & /@ Contexts["QMRI
 
 SyntaxInformation[QMRIToolsFunctions] = {"ArgumentsPattern" -> {_.,_.}};
 
-QMRIToolsFunctions[]:=QMRIToolsFunctions[""];
+QMRIToolsFunctions[] := QMRIToolsFunctions[QMRIToolsPackages[], 0];
 
-QMRIToolsFunctions[toolb_String]:= Block[{packages,names,functions,options,allNames,output},
-	packages = If[toolb === "", QMRIToolsPackages[], {toolb}];
-	allNames = Sort[Flatten[Names["QMRITools`" <> # <> "`*"]]] & /@ packages;
-		
-	{functions, options} = Transpose[(names = #;
-		options = ToString /@ Sort[DeleteDuplicates[Flatten[Options[ToExpression[#]][[All, 1]] & /@ names]]];
-		functions = Complement[names, options];
-		{functions, options}) & /@ allNames];
-	
-	output = Transpose[{packages, functions, options}];
-	
-	If[toolb === "", output, First@output]
-]
+QMRIToolsFunctions[toolb_?StringQ] := QMRIToolsFunctions[{toolb}, 0]
 
+QMRIToolsFunctions[toolb : {_?StringQ ..}] := QMRIToolsFunctions[toolb, 0]
 
-QMRIToolsFunctions[p_Integer]:=Block[{toolbox,functions,options},
-	{toolbox,functions,options}=Transpose[QMRIToolsFunctions[]];
-	
-	functions = Sort@DeleteDuplicates@Flatten[functions];
-	options = Sort@DeleteDuplicates@Flatten[options];
-	
-	functions = If[Length[functions]<=p,{functions},Partition[functions, p, p, 1, ""]];
-	options = If[Length[options]<=p,{options},Partition[options, p, p, 1, ""]];
-	
-	Print[Column[{"",Style["Functions", Bold, 16], "",functions // Transpose // TableForm,""}]];
-	Print[Column[{"",Style["Options", Bold, 16], "",options // Transpose // TableForm,""}]];
-]
+QMRIToolsFunctions[p_?IntegerQ] := QMRIToolsFunctions[QMRIToolsPackages[], p]
 
+QMRIToolsFunctions[toolb_?StringQ, p_?IntegerQ] := QMRIToolsFunctions[{toolb}, p]
 
-QMRIToolsFunctions[toolb_String,p_Integer]:=Block[{toolbox,functions,options, output},
-	If[toolb == "All",
-		QMRIToolsFunctions[#, p] & /@ QMRIToolsPackages[];
-		,
-		{toolbox,functions,options}=QMRIToolsFunctions[toolb];
-		
-		functions = If[Length[functions]<=p,{functions},Partition[functions, p, p, 1, ""]];
-		options = If[Length[options]<=p,{options},Partition[options, p, p, 1, ""]];
+QMRIToolsFunctions[toolb : {_?StringQ ..} | {"All"}, p_?IntegerQ] := Block[{
+		pack, ind, contexts, allNames, func, opts, names, out
+	},
+
+	{pack, ind} = If[toolb === {"All"}, {QMRIToolsPackages[], False}, {toolb, True}];
+	contexts = Select["QMRITools`" <> # <> "`" & /@ pack, MemberQ[QMRITools`$Contexts, #] &];
+	allNames = Names[# <> "*"] & /@ contexts;
+
+	{func, opts} = Transpose[(
+		names = #;
+		opts = ToString /@ Sort[DeleteDuplicates[Flatten[Options[ToExpression[#]][[All, 1]] & /@ names]]];
+		func = Complement[names, opts];
+		{func, opts}
+	) & /@ allNames];
 	
-		output = Column[{"",
-			Style[toolbox, Bold, 24], "",
-			Style["Functions", Bold, 16], functions // Transpose// TableForm,"",
-			Style["Options", Bold, 16], options// Transpose // TableForm,""}];
-		
-		Print[output];
+	out = If[ind,
+		Transpose[{pack, func, opts}],
+		{{"QMRITools", Sort@DeleteDuplicates@Flatten@func, Sort@DeleteDuplicates@Flatten@opts}}
+	];
+
+	If[p > 0,
+		PrintFuncList[#, p] & /@ out;,
+		If[ind, out, First@out]
 	]
+]
+
+
+PrintFuncList[{toolbox_, functions_, options_}, p_] := Block[{i, func, opt},
+	func = If[Length[functions] > 0,
+		i = Ceiling[Length[functions]/p];
+		Transpose@Partition[functions, i, i, 1, ""],
+		functions
+	];
+	
+	opt = If[Length[options] > 0,
+		i = Ceiling[Length[options]/p];
+		Transpose@Partition[options, i, i, 1, ""],
+		options
+	];
+	
+	Print@Column[{
+		"",
+		Style[toolbox, Bold, 24],
+		"",
+		Style["Functions", Bold, 16],
+		Grid[func, Alignment -> Left, ItemSize -> 18],
+		"",
+		Style["Options", Bold, 16],
+		Grid[opt, Alignment -> Left, ItemSize -> 18],
+		""
+	}];
 ]
 
 
@@ -1177,7 +1191,7 @@ PrintAll[{name_, functions_, options_}]:=(
 
 SyntaxInformation[CompilebleFunctions] = {"ArgumentsPattern" -> {}};
 
-CompilebleFunctions[]:=(Partition[Compile`CompilerFunctions[] // Sort, 50, 50, 1, 1] // Transpose) /. 1 -> {} // TableForm
+CompilebleFunctions[]:=Grid[Transpose@Partition[l=Compile`CompilerFunctions[] // Sort, i=Ceiling[Length[l]/4], i, 1, ""], Alignment -> Left, ItemSize -> 18]
 
 
 (* ::Subsection:: *)

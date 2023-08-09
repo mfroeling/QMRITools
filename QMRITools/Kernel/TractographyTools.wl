@@ -355,7 +355,7 @@ TractDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPatt
 		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
 		dim];
 	
-	If[OptionValue[NormalizeDensity], dens/MedianNoZero[Flatten[dens]], dens]
+	ToPackedArray@N@If[OptionValue[NormalizeDensity], dens/MedianNoZero[Flatten[dens]], dens]
 ]
 
 
@@ -365,11 +365,7 @@ TractDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPatt
 
 SyntaxInformation[TractLengthMap] = {"ArgumentsPattern" -> {_, _, _}};
 
-TractLengthMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Block[{lengs},
-	lengs = GatherBy[Flatten[Thread /@ Thread[(DeleteDuplicates /@ RescaleTractsC[tracts, vox]) -> FiberLength[tracts]], 1], First];
-	lengs = Select[Thread[lengs[[All, 1, 1]] -> (Median /@ lengs[[All, All, 2]])], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
-	lengs = Normal@SparseArray[lengs, dim]
-]
+TractLengthMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := GatherThread[RescaleTractsC[tracts, vox], FiberLength[tracts], dim]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -378,10 +374,29 @@ TractLengthMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Block[{len
 
 SyntaxInformation[TractAngleMap] = {"ArgumentsPattern" -> {_, _, _}};
 
-TractAngleMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Block[{angs},
-	angs = GatherBy[Flatten[Thread /@ Thread[RescaleTractsCM[tracts, vox] -> VecAngC[tracts]], 1], First];
-	angs = Select[Thread[angs[[All, 1, 1]] -> (Median /@ angs[[All, All, 2]])], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
-	angs = Normal@SparseArray[angs, dim]
+TractAngleMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := GatherThread[RescaleTractsCM[tracts, vox], VecAngC[tracts], dim]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GatherThread*)
+
+
+GatherThread[coor_, val_, dim_] := Block[{len, ran, list, out},
+	(*Split in sublists to prevent memory crash for large tracts sets*)
+	len = Length[coor];
+	ran = Range[0, len, 10000];
+	list = {1, 0} + # & /@ Partition[If[Last@ran =!= len, Append[ran, len], ran], 2, 1];
+	(*Median of Medians is a good approximation*)
+	out = Table[GatherThread[coor[[i[[1]] ;; i[[2]]]], val[[i[[1]] ;; i[[2]]]]], {i, list}];
+	out = Select[GatherThread[out], (1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &];
+	ToPackedArray@N@Normal@SparseArray[out, dim]
+]
+
+GatherThread[coor_, val_] := GatherThread[Thread /@ Thread[coor -> val]]
+
+GatherThread[rule_] := Block[{out},
+	out = GatherBy[Flatten[rule, 1], First];
+	Thread[out[[All, 1, 1]] -> (Median /@ out[[All, All, 2]])]
 ]
 
 
@@ -390,7 +405,7 @@ TractAngleMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Block[{angs
 
 
 VecAngC = Compile[{{tr, _Real, 2}},
-	90 - ((180./Pi) ArcCos[{1, 0, 0} . Normalize[Sign[#[[1]]] #]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]))
+	Abs[(180./Pi) ArcCos[(#[[1]]/Sqrt[Total[Abs[#]^2]]) & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]])] - 90]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -1042,7 +1057,7 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	(*make colors*)
 	ran = Range[Length@segs];
 	SeedRandom[12345];
-	rand = RandomSample@ran;
+	rand = RandomSample[ran];
 	colList = ColorData["DarkRainbow"] /@ N[Rescale[rand]];
 
 	(*reference environement*)
