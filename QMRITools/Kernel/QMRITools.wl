@@ -47,7 +47,7 @@ QMRITools`$SubPackages = {
 	"JcouplingTools`", "SpectroTools`", "ReconstructionTools`",
 	(*general processing tools with lots of dependancys*)
 	"TractographyTools`", "ProcessingTools`", "FasciculationTools`",
-	"SimulationTools`", "PhysiologyTools`", "CoilTools`", "TaggingTools`",
+	"SimulationTools`", "CoilTools`", "TaggingTools`",
 	 (*legacy functions*)
 	"Legacy`"
 };
@@ -80,8 +80,8 @@ If[QMRITools`$Verbose,
 	Echo["--------------------------------------"];
 	Echo["Defined packages and functions to be loaded are: "];
 	(
-		Echo["with functions:", First@#];
-		Echo[Grid[Partition[Last@#, 5, 5 , 1, ""], Alignment->Left, ItemSize->18]];
+		Echo["with exposed functions and options:", First@#];
+		Echo[Grid[Partition[Last@#, 4, 4 , 1, ""], Alignment->Left, ItemSize->18]];
 	)&/@ QMRITools`$ContextsFunctions
 ];
 

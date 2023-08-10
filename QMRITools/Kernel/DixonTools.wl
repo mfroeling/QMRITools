@@ -505,7 +505,7 @@ SimulateDixonSignal[echo_, fr_, b0_, t2_, OptionsPattern[]] := Block[{precession
 (*OptimizeDixonEcho*)
 
 
-SyntaxInformation[UnwrapList] = {"ArgumentsPattern" -> {}};
+SyntaxInformation[OptimizeDixonEcho] = {"ArgumentsPattern" -> {}};
 
 Options[OptimizeDixonEcho] = {
 	DixonPrecessions -> -1,
