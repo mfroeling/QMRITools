@@ -41,12 +41,6 @@ Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitt
 
 PCADeNoise[] is based on DOI: 10.1016/j.neuroimage.2016.08.016 and 10.1002/mrm.26059."
 
-PCADeNoiseFit::usage = 
-"PCADeNoiseFit[data] fits the marchencopasteur distribution to the PCA of the data using grid search.
-PCADeNoiseFit[data, sig] fits the marchencopasteur distribution to the PCA of the data using sig as start value or fixed value using grid search.
-
-Output is {simga, number of noise comp, and denoised matrix}."
-
 NNDeNoise::usage = 
 "NNDeNoise[data] removes rician noise from the data using self supravized neural net.
 NNDeNoise[data, mask] removes rician noise from the data with PCA  using self supravized neural net withing the mask.
@@ -71,6 +65,12 @@ Output is the smoothed tensor.
 
 AnisoFilterTensor[] is based on DOI: 10.1109/ISBI.2006.1624856."
 
+WeightMapCalc::usage =  
+"WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterTensor.
+
+Output is a weight map of the diffdata which is high in isotropic regions and low at edges."
+
+
 AnisoFilterData::usage = 
 "AnisoFilterData[data] Filter the diffusion tensor data using an anisotropic filter based on the strucure tensor of the data. 
 
@@ -78,10 +78,7 @@ Output is the smoothed data.
 
 AnisoFilterData[] is based on DOI: 10.1016/j.jbiomech.2021.110540 and 10.1016/j.mri.2009.10.001 and 10.1371/journal.pone.0126953."
 
-WeightMapCalc::usage =  
-"WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterTensor.
 
-Output is a weight map of the diffdata which is high in isotropic regions and low at edges."
 
 
 (* ::Subsection::Closed:: *)
@@ -464,23 +461,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 (*PCADeNoiseFit*)
 
 
-(*PCAfit using set of equations*)
-SyntaxInformation[PCADeNoiseFit] = {"ArgumentsPattern" -> {_, _., _., _.}};
-
-(*only data*)
-PCADeNoiseFit[data_] := PCADeNoiseFiti[data, MinMax[Dimensions[data]], 0., 0]
-(*only data and sigma*)
-PCADeNoiseFit[data_,sigi_?NumberQ] := PCADeNoiseFiti[data, MinMax[Dimensions[data]], sigi, 0]
-(*no initial sigma given*)
-PCADeNoiseFit[data_, {m_, n_}] := PCADeNoiseFiti[data, {m, n}, 0., 0]
-(*no initial normal tolarance*)
-PCADeNoiseFit[data_, {m_, n_}, sigi_?NumberQ] := PCADeNoiseFiti[data, {m, n}, sigi, 0]
-(*initial sigma is given*)
-PCADeNoiseFit[data_, {m_, n_}, sigi_?NumberQ, toli_] := PCADeNoiseFiti[data, {m, n}, sigi, toli]
-
-
 (*internal function*)
-PCADeNoiseFiti[data_, {m_, n_}, sigi_?NumberQ, toli_] := Block[{
+PCADeNoiseFit[data_, {m_, n_}, sigi_?NumberQ, toli_] := Block[{
 		trans, xmat, xmatT, val, mat, pi, sig, xmatN, tol, out
 	},
 	

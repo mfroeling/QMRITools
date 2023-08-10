@@ -830,7 +830,7 @@ maxclip = If[new === $Canceled, maxclip, new]
 		,(*Plot style controls*)
 		ManPannel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
-			{"Plot Size",Control@{{ps,400,""},psizes,ControlType->PopupMenu}},
+			{"Plot Size",Control@{{ps,200,""},psizes,ControlType->PopupMenu}},
 			{"Color function",Control@{{color,pcol,""},colors,ControlType->PopupMenu}},
 			{"Color style",Control@{{lstyle,"Normal",""},colfuncs}},
 			{"Layout",Row@{
@@ -1089,7 +1089,7 @@ maxclip2 = If[new === $Canceled, maxclip2, new]
 		}, False],
 		ManPannel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
-			{"Plot Size",Control@{{ps,400,""},psizes,ControlType->PopupMenu}},
+			{"Plot Size",Control@{{ps,200,""},psizes,ControlType->PopupMenu}},
 			{"Layout",Row@{
 				"  Legend:",Control@{{legend,False,""},{True,False}},
 				"  Frame:",Control@{{frame,False,""},{True,False}},

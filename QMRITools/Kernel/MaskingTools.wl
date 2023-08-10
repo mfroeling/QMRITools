@@ -31,8 +31,8 @@ NormalizeData[data, mask] normalizes the data based on the mean signal only with
 NormalizeMeanData::usage = 
 "NormalizeMeanData[data] calculates the mean normalized data from a 4D dataset."
 
-HomoginizeData::usage = 
-"HomoginizeData[data, mask] tries to homoginize the data within the mask by removing intensity gradients."
+HomogenizeData::usage = 
+"HomogenizeData[data, mask] tries to homoginize the data within the mask by removing intensity gradients."
 
 
 Mask::usage =
@@ -98,6 +98,9 @@ maskdim is the dimensions of the output {zout,xout,yout}."
 
 NormalizeMethod::usage = 
 "NormalizeMethod is an option for NormalizeData. Can be \"Set\" or \"Volumes\" wichi normalizes to the firs volume or normalizes each volume individually, respectively."
+
+FitOrder::usage = 
+"FitOrder is an option for HomogenizeData. It specifies the order of harmonics to be used for the homogenization."
 
 MaskSmoothing::usage = 
 "MaskSmoothing is an options for Mask, SmoothMask and SmoothSegmentation, if set to True it smooths the mask, by closing holse and smoothing the contours."
@@ -202,28 +205,29 @@ NormalizeMeanData[data_, mask_] := NormalizeData[Mean@Transpose@data, mask]
 
 
 (* ::Subsubsection::Closed:: *)
-(*HomoginizeData*)
+(*HomogenizeData*)
 
 
-SyntaxInformation[HomoginizeData] = {"ArgumentsPattern" -> {_, _}};
+Options[HomogenizeData] = {FitOrder->5}
 
-HomoginizeData[datai_, mask_] := Module[{data, mn, fit, datac, maskout},
-	data = mask GaussianFilter[datai, 5];
-	mn = Mean[Cases[Flatten[N[data]],Except[0.]]];
-	fit = FitGradientMap[Erosion[mask, 3] data];
-	
-	datac = (datai/(fit + 0.001));
-	maskout = Mask[datac, 0.1];
-	maskout = Dilation[SmoothMask[maskout], 5];
-	maskout Clip[mn datac, {0.8, 1.5} MinMax[data], {0, 0}]
+SyntaxInformation[HomogenizeData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
+HomogenizeData[dat_, opts:OptionsPattern[]]:=HomogenizeData[dat, Unitize[dat], opts]
+
+HomogenizeData[dat_, mask_, OptionsPattern[]] := Block[{fit},
+	fit = FitGradientMap[Erosion[mask, 1] GaussianFilter[dat, 5], OptionValue[FitOrder]];
+	NormalizeData[Clip[mask DevideNoZero[dat, fit], {0, 3}, {0, 0}]]
 ]
 
 
-FitGradientMap[data_] := Module[{func, x, y, z, coor},
+FitGradientMap[data_, ord_] := Block[{func, x, y, z, coor, mod, min, max},
 	Clear[x, y, z];
-	coor = Flatten[MapIndexed[ReleaseHold@If[#1 == 0, Hold[Sequence[]], Join[#2, {#1}]]&, data, {3}], 2];
+	coor = Flatten[MapIndexed[ReleaseHold@If[#1 == 0, Hold[Sequence[]], Join[#2, {#1}]] &, data, {3}], 2];
+	mod = DeleteDuplicates[Times @@ # & /@ Tuples[{1, x, y, z}, ord]];
 	
-	func = Fit[coor, {1, x, y, z, x y, x z, y z, z^2, x^2, y^2(*, z^3, x^3, y^3, z x x, y x x, z y y , x y y , y z z, x z z*)}, {x, y, z}];
+	{min, max} = Quantile[coor[[All, 4]], {0.15, 0.95}];
+	func = Fit[Select[coor, min < #[[4]] < max &], mod, {x, y, z}];
+	
 	{x, y, z} = RotateDimensionsRight[Array[{#1, #2, #3} &, Dimensions[data]]];
 	func
 ]
@@ -533,7 +537,7 @@ GetCommonSegmentation[dat:{_?ArrayQ ..}, seg:{_?ArrayQ ..}, vox:{_?ListQ ..}] :=
 			]
 		, {mov, 1, len}];
 		
-		MergeSegmentations[ReverseCrop[RemoveMaskOverlaps[segR], dims[[tar]], cr[[tar]]], labSel[[tar]]]
+		MergeSegmentations[ReverseCrop[RemoveMaskOverlaps[segR], dims[[tar]], cr[[tar]]], labAll[[labSel[[tar]]]]]
 	, {tar, 1, len}]
 ]
 
