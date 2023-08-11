@@ -23,13 +23,7 @@ Next steps will be muscle segentation and per muscle analysis of quantitative va
 
 ### Tractography
 
-- Finilize tractography documentation
-- optimize tractography functions
-- Create functions to facilitate easy batch processing
-- make better demo examples
 - create tract quantification and analysis tools
-  - tract lengt mapping
-  - tract angle mapping
   - muscle force line definitions
     - pennation anlge definitions
     - muscle to model files
@@ -38,9 +32,6 @@ Next steps will be muscle segentation and per muscle analysis of quantitative va
 ### Mask alignment
 
 - tools for mask homogenization
-  - add GetCommonMask to allow mask aligment between timepoints
-    - union with only common area
-    - union to expand common area
   - Mask templating between subjects/cohorts
 
 ### Muscle Bids
