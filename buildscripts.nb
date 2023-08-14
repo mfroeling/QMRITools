@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[    724551,      12620]
-NotebookOptionsPosition[    717294,      12500]
-NotebookOutlinePosition[    718071,      12523]
-CellTagsIndexPosition[    718028,      12520]
+NotebookDataLength[    725832,      12655]
+NotebookOptionsPosition[    718693,      12537]
+NotebookOutlinePosition[    719470,      12560]
+CellTagsIndexPosition[    719427,      12557]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -47,50 +47,395 @@ Cell[BoxData[{
    3.9000614964816055`*^9, 3.9007470254228354`*^9, 3.9007471177234387`*^9},
  CellLabel->"In[1]:=",ExpressionUUID->"482abba0-2105-4d77-b848-81e97fb3ecb3"],
 
-Cell[BoxData[
+Cell[BoxData[{
  RowBox[{
-  RowBox[{"ShowStatus", "[", "dir_", "]"}], ":=", 
-  RowBox[{"Block", "[", 
+  RowBox[{
    RowBox[{
-    RowBox[{"{", 
-     RowBox[{"ker", "=", 
-      RowBox[{"FileNameJoin", "[", 
-       RowBox[{"{", 
-        RowBox[{"dir", ",", "\"\<QMRITools\\\\Kernel\>\""}], "}"}], "]"}]}], 
-     "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"Options", "[", "ApplicationBuild", "]"}], "=", 
+    RowBox[{"{", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"RebuildDoc", "->", "False"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"MakePaclet", "->", "True"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"RebuildExtentions", "->", "True"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"PushRelese", "->", "False"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"ReleaseTitle", "->", "\"\<\>\""}], ",", "\[IndentingNewLine]", 
+      RowBox[{"ReleaseNote", "->", "\"\<\>\""}], ",", "\[IndentingNewLine]", 
+      RowBox[{"InstallApplication", "->", "False"}]}], "\[IndentingNewLine]", 
+     "}"}]}], ";"}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ApplicationBuild", "[", 
     RowBox[{
-     RowBox[{"Print", "[", 
-      RowBox[{"\"\<- Total lines: \>\"", ",", 
-       RowBox[{"Total", "[", 
-        RowBox[{
-         RowBox[{
-          RowBox[{"Length", "[", 
-           RowBox[{"DeleteCases", "[", 
-            RowBox[{
-             RowBox[{"Import", "[", 
-              RowBox[{"#", ",", "\"\<Lines\>\""}], "]"}], ",", "\"\<\>\""}], 
-            "]"}], "]"}], "&"}], "/@", 
-         RowBox[{"FileNames", "[", 
-          RowBox[{"All", ",", "ker"}], "]"}]}], "]"}]}], "]"}], ";", 
+     RowBox[{"location_", "?", "StringQ"}], ",", 
+     RowBox[{"opts", ":", 
+      RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+   RowBox[{"ApplicationBuild", "[", 
+    RowBox[{
+     RowBox[{"LoadApplicationFolder", "[", "location", "]"}], ",", "opts"}], 
+    "]"}]}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ApplicationBuild", "[", 
+    RowBox[{"pac_", ",", 
+     RowBox[{"OptionsPattern", "[", "]"}]}], "]"}], ":=", 
+   RowBox[{"Block", "[", 
+    RowBox[{
+     RowBox[{"{", "\[IndentingNewLine]", 
+      RowBox[{
+      "location", ",", " ", "dir", ",", "tag", ",", "name", ",", " ", 
+       "filesApp", ",", "filesAppTar", ",", "buildDir", ",", "files", ",", 
+       "partsG", ",", "parts", ",", "\[IndentingNewLine]", "file", ",", " ", 
+       "pacs", ",", " ", "pacFiles", ",", " ", "exp", ",", " ", "gitHub", ",",
+        " ", "command"}], "\[IndentingNewLine]", "}"}], ",", 
      "\[IndentingNewLine]", 
-     RowBox[{"Print", "[", 
-      RowBox[{"\"\<- Total characters: \>\"", ",", 
-       RowBox[{"Total", "[", 
+     RowBox[{"(*", 
+      RowBox[{"get", " ", "packlet", " ", "information"}], "*)"}], 
+     "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"location", "=", 
+       RowBox[{"pac", "[", "\"\<Location\>\"", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"dir", "=", 
+       RowBox[{"DirectoryName", "@", "location"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"name", "=", 
+       RowBox[{"pac", "[", "\"\<Name\>\"", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"tag", "=", 
+       RowBox[{"pac", "[", "\"\<Version\>\"", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"buildDir", "=", 
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"DirectoryName", "@", "location"}], ",", "\"\<build\>\"", 
+          ",", "\"\<QMRITools\>\""}], "}"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"Print", "[", 
+       RowBox[{
+       "\"\<Building \>\"", "<>", "name", "<>", "\"\< in location \>\"", "<>",
+         "buildDir"}], "]"}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"copy", " ", "all", " ", "*", 
+        RowBox[{".", "wl"}], " ", "and", " ", "extention", " ", "files"}], 
+       "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"Print", "[", 
+       RowBox[{"\"\<   - Building application \>\"", "<>", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"OptionValue", "[", "RebuildExtentions", "]"}], ",", 
+          "\"\<with\>\"", ",", "\"\<without\>\""}], "]"}], "<>", 
+        "\"\< the extentions\>\""}], "]"}], ";", "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"get", " ", "filenames"}], "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"filesApp", "=", 
+       RowBox[{"Prepend", "[", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"StringLength", "[", 
-           RowBox[{"Import", "[", 
-            RowBox[{"#", ",", "\"\<Text\>\""}], "]"}], "]"}], "&"}], "/@", 
-         RowBox[{"FileNames", "[", 
-          RowBox[{"All", ",", "\"\<QMRITools\\\\Kernel\>\""}], "]"}]}], 
-        "]"}]}], "]"}], ";"}]}], "\[IndentingNewLine]", "]"}]}]], "Input",
- InitializationCell->True,
- CellChangeTimes->{{3.900566951196618*^9, 3.9005669557165565`*^9}, {
-  3.90074554064834*^9, 3.9007455880167327`*^9}, {3.900745628726746*^9, 
-  3.9007457064528103`*^9}, {3.90074577079599*^9, 3.900745789523176*^9}},
- CellLabel->"In[4]:=",ExpressionUUID->"18a88b41-ab3f-40dd-94ce-230c4fd06efa"],
-
-Cell[BoxData[
+          RowBox[{"files", "=", 
+           RowBox[{"Flatten", "[", 
+            RowBox[{
+             RowBox[{"Select", "[", 
+              RowBox[{
+               RowBox[{"Normal", "[", 
+                RowBox[{"PacletExtensionFiles", "[", 
+                 RowBox[{"pac", ",", 
+                  RowBox[{"\"\<SystemID\>\"", "->", "All"}]}], "]"}], "]"}], 
+               ",", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"#", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"1", ",", "1"}], "]"}], "]"}], "=!=", 
+                 "\"\<Documentation\>\""}], "&"}]}], "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"All", ",", "2"}], "]"}], "]"}], "]"}]}], ";", 
+          "\[IndentingNewLine]", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{"OptionValue", "[", "RebuildExtentions", "]"}], ",", 
+            "files", ",", 
+            RowBox[{"Select", "[", 
+             RowBox[{"files", ",", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"FileExtension", "[", "#", "]"}], "==", 
+                "\"\<wl\>\""}], "&"}]}], "]"}]}], "]"}]}], ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"location", ",", "\"\<PacletInfo.wl\>\""}], "}"}], "]"}]}],
+         "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"filesAppTar", "=", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"StringReplace", "[", 
+          RowBox[{"#", ",", 
+           RowBox[{"location", "->", "buildDir"}]}], "]"}], "&"}], "/@", 
+        "filesApp"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"copy", " ", "files"}], "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"MapThread", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"Quiet", "@", 
+            RowBox[{"CreateDirectory", "[", 
+             RowBox[{"DirectoryName", "[", "#2", "]"}], "]"}]}], ";", 
+           RowBox[{"CopyFile", "[", 
+            RowBox[{"#1", ",", "#2", ",", 
+             RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}]}], ")"}],
+          "&"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"filesApp", ",", "filesAppTar"}], "}"}]}], "]"}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"rebuild", " ", "doc", " ", "if", " ", "needed"}], "*)"}], 
+      "\[IndentingNewLine]", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{"OptionValue", "[", "RebuildDoc", "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"Print", "[", "\"\<   - Rebuilding documentation\>\"", "]"}],
+          ";", "\[IndentingNewLine]", 
+         RowBox[{"PacletDocumentationBuild", "[", 
+          RowBox[{"pac", ",", " ", 
+           RowBox[{"DirectoryName", "@", "buildDir"}], ",", 
+           RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}]}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+         "Print", "[", "\"\<   - Not building documentation\>\"", "]"}], 
+         ";"}]}], "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+       "make", " ", "the", " ", "packlet", " ", "for", " ", "install"}], 
+       "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{"OptionValue", "[", "MakePaclet", "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"Print", "[", "\"\<Making the install paclet\>\"", "]"}], 
+         ";", "\[IndentingNewLine]", 
+         RowBox[{"CreatePacletArchive", "[", "buildDir", "]"}]}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+         "Print", "[", "\"\<Did not create the install paclet\>\"", "]"}], 
+         ";"}]}], "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"make", " ", "pacletSite"}], "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"Print", "[", "\"\<Making the PacletSite.mz\>\"", "]"}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"file", "=", 
+       RowBox[{"MakePacletSite", "[", 
+        RowBox[{"dir", ",", "tag"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+        RowBox[{"push", " ", "everyting", " ", "to", " ", "git"}], ",", " ", 
+        RowBox[{
+        "to", " ", "allow", " ", "this", " ", "GitHub", " ", "CLI", " ", 
+         "needs", " ", "to", " ", "be", " ", "installed"}]}], " ", "*)"}], 
+      "\[IndentingNewLine]", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{"!", 
+         RowBox[{"OptionValue", "[", "PushRelese", "]"}]}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+        "Print", "[", "\"\<Not pushing the relese to GitHub\>\"", "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"Print", "[", "\"\<Pushing the relese to GitHub\>\"", "]"}], 
+         ";", "\[IndentingNewLine]", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"!", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"OptionValue", "[", "ReleaseTitle", "]"}], "=!=", 
+               "\"\<\>\""}], "||", 
+              RowBox[{
+               RowBox[{"OptionValue", "[", "ReleaseNote", "]"}], "=!=", 
+               "\"\<\>\""}]}], ")"}]}], ",", "\[IndentingNewLine]", 
+           RowBox[{
+           "Print", "[", 
+            "\"\<   - Cant push to GitHub not title or note is given\>\"", 
+            "]"}], ",", "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{
+            "Print", "[", "\"\<   - Creating the release on GitHub\>\"", 
+             "]"}], ";", "\[IndentingNewLine]", 
+            RowBox[{"GitHubPush", "[", 
+             RowBox[{"dir", ",", " ", "file", ",", "tag", ",", 
+              RowBox[{"OptionValue", "[", "ReleaseTitle", "]"}], ",", 
+              RowBox[{"OptionValue", "[", "ReleaseNote", "]"}]}], "]"}]}]}], 
+          "\[IndentingNewLine]", "]"}]}]}], "]"}], ";", "\[IndentingNewLine]",
+       "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+       "install", " ", "the", " ", "last", " ", "paclet", " ", "version"}], 
+       "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{"OptionValue", "[", "InstallApplication", "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"Print", "[", "\"\<Installing the latest release\>\"", "]"}],
+          ";", "\[IndentingNewLine]", 
+         RowBox[{"PacletInstall", "[", 
+          RowBox[{
+           RowBox[{"Last", "[", 
+            RowBox[{"FileNames", "[", 
+             RowBox[{"\"\<*.paclet\>\"", ",", 
+              RowBox[{"FileNameJoin", "[", 
+               RowBox[{"{", 
+                RowBox[{"dir", ",", "\"\<Paclets\>\""}], "}"}], "]"}]}], 
+             "]"}], "]"}], ",", 
+           RowBox[{"ForceVersionInstall", "->", "True"}]}], "]"}]}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+        "Print", "[", "\"\<Not installing the latest release\>\"", "]"}]}], 
+       "\[IndentingNewLine]", "]"}]}]}], "\[IndentingNewLine]", "]"}]}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"MakePacletSite", "[", 
+    RowBox[{"dir_", ",", "tag_"}], "]"}], ":=", 
+   RowBox[{"Block", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"pacFiles", ",", "pacs", ",", "exp", ",", "file"}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", 
+      RowBox[{
+      "copy", " ", "the", " ", "file", " ", "to", " ", "the", " ", "Paclets", 
+       " ", "install", " ", "folder"}], "*)"}], "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"file", "=", 
+       RowBox[{"First", "@", 
+        RowBox[{"FileNames", "[", 
+         RowBox[{
+          RowBox[{"\"\<*\>\"", "<>", "tag", "<>", "\"\<*.paclet\>\""}], ",", 
+          RowBox[{"FileNameJoin", "[", 
+           RowBox[{"{", 
+            RowBox[{"dir", ",", "\"\<build\>\""}], "}"}], "]"}]}], "]"}]}]}], 
+      ";", "\[IndentingNewLine]", 
+      RowBox[{"CopyFile", "[", 
+       RowBox[{"file", ",", 
+        RowBox[{"StringReplace", "[", 
+         RowBox[{"file", ",", 
+          RowBox[{"\"\<build\>\"", "->", "\"\<Paclets\>\""}]}], "]"}], ",", 
+        RowBox[{"OverwriteTarget", "->", "True"}]}], "]"}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+       "to", " ", "make", " ", "paclet", " ", "install", " ", "via", " ", 
+        "github", " ", "work", " ", "install", " ", "git", " ", "lfs", " ", 
+        "in", " ", "the", " ", "repository"}], "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+       "use", " ", "the", " ", "command", " ", "\"\<git lfs track \>\"", "*", 
+        RowBox[{".", "paclet"}], "\"\<\>\"", " ", "to", " ", "trac", " ", 
+        "the", " ", "paclet", " ", "files"}], " ", "*)"}], 
+      "\[IndentingNewLine]", 
+      RowBox[{"pacFiles", "=", 
+       RowBox[{"FileNames", "[", 
+        RowBox[{"\"\<*.paclet\>\"", ",", 
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"dir", ",", "\"\<Paclets\>\""}], "}"}], "]"}]}], "]"}]}], 
+      ";", "\[IndentingNewLine]", 
+      RowBox[{"pacs", "=", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"First", "@", 
+          RowBox[{"Import", "[", 
+           RowBox[{"#", ",", " ", "\"\<*/PacletInfo.*\>\""}], "]"}]}], "&"}], 
+        "/@", "pacFiles"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"exp", "=", 
+       RowBox[{"PacletSite", "@@", 
+        RowBox[{"DeleteDuplicates", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Paclet", "@@", 
+            RowBox[{"Normal", "[", 
+             RowBox[{"#", "[", 
+              RowBox[{"[", "1", "]"}], "]"}], "]"}]}], "&"}], "/@", "pacs"}], 
+         "]"}]}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"Export", "[", 
+       RowBox[{
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"dir", ",", "\"\<PacletSite.mz\>\""}], "}"}], "]"}], ",", 
+        RowBox[{"{", "exp", "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"\"\<ZIP\>\"", ",", 
+          RowBox[{"{", 
+           RowBox[{"{", 
+            RowBox[{"\"\<PacletSite.m\>\"", ",", "\"\<Package\>\""}], "}"}], 
+           "}"}]}], "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+       "check", " ", "which", " ", "pacs", " ", "are", " ", "availible"}], 
+       "*)"}], "\[IndentingNewLine]", 
+      RowBox[{"Print", "[", "\"\<Current availible verions are\>\"", "]"}], 
+      ";", "\[IndentingNewLine]", 
+      RowBox[{"Print", "[", 
+       RowBox[{"Column", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"\"\<   - \>\"", "<>", 
+           RowBox[{"#", "[", "\"\<Version\>\"", "]"}]}], "&"}], "/@", 
+         "pacs"}], "]"}], "]"}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+       "get", " ", "the", " ", "paclet", " ", "file", " ", "for", " ", 
+        "git"}], "*)"}], "\[IndentingNewLine]", "file"}]}], 
+    "\[IndentingNewLine]", "]"}]}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"GitHubPush", "[", 
+    RowBox[{"dir_", ",", "file_", ",", "tag_", ",", "title_", ",", "note_"}], 
+    "]"}], ":=", 
+   RowBox[{"Block", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"gitHub", ",", "command"}], "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{
+      "gitHub", "=", 
+       "\"\<\\\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\\\"\>\""}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"command", "=", 
+       RowBox[{
+        RowBox[{"First", "[", 
+         RowBox[{"FileNameSplit", "[", "dir", "]"}], "]"}], "<>", 
+        "\"\<\\ncd \>\"", "<>", "dir", "<>", "\"\<\\n\>\"", "<>", 
+        "\[IndentingNewLine]", "gitHub", "<>", "\"\< release create \>\"", "<>",
+         "tag", "<>", "\"\< --title \\\"\>\"", "<>", "note", "<>", 
+        "\"\<\\\" --notes \\\"\>\"", "<>", "title", "<>", "\"\<\\\"\\n\>\"", "<>",
+         "\[IndentingNewLine]", "gitHub", "<>", "\"\< release upload \>\"", "<>",
+         "tag", "<>", "\"\< \\\"\>\"", "<>", "file", "<>", 
+        "\"\<\\\"\\ngit commit -am \\\"update release \>\"", "<>", 
+        "\[IndentingNewLine]", "tag", "<>", 
+        "\"\<\\\" && git push\\nexit\\n\>\""}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"RunProcess", "[", 
+       RowBox[{
+       "$SystemShell", ",", "\"\<StandardOutput\>\"", ",", "command"}], 
+       "]"}]}]}], "\[IndentingNewLine]", "]"}]}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"LoadApplicationFolder", "[", "location_", "]"}], ":=", 
   RowBox[{"Block", "[", 
@@ -137,361 +482,7 @@ Cell[BoxData[
      RowBox[{"Print", "[", "\"\<Loading dev application:\>\"", "]"}], ";", 
      "\[IndentingNewLine]", 
      RowBox[{"Print", "[", "pac", "]"}], ";", "\[IndentingNewLine]", 
-     "pac"}]}], "\[IndentingNewLine]", "]"}]}]], "Input",
- InitializationCell->True,
- CellChangeTimes->{
-  3.865577612047282*^9, {3.865577972855522*^9, 3.8655779932220545`*^9}, {
-   3.865578023684369*^9, 3.865578058030753*^9}},
- CellLabel->"In[5]:=",ExpressionUUID->"fcf5a211-25c4-42cb-9c0d-ecd955395106"],
-
-Cell[BoxData[{
- RowBox[{
-  RowBox[{
-   RowBox[{
-    RowBox[{"Options", "[", "ApplicationBuild", "]"}], "=", 
-    RowBox[{"{", "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"RebuildDoc", "->", "False"}], ",", "\[IndentingNewLine]", 
-      RowBox[{"MakePaclet", "->", "True"}], ",", "\[IndentingNewLine]", 
-      RowBox[{"RebuildExtentions", "->", "True"}], ",", "\[IndentingNewLine]", 
-      RowBox[{"PushRelese", "->", "False"}], ",", "\[IndentingNewLine]", 
-      RowBox[{"ReleaseTitle", "->", "\"\<\>\""}], ",", "\[IndentingNewLine]", 
-      RowBox[{"ReleaseNote", "->", "\"\<\>\""}], ",", "\[IndentingNewLine]", 
-      RowBox[{"InstallApplication", "->", "False"}]}], "\[IndentingNewLine]", 
-     "}"}]}], ";"}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{
-   RowBox[{"ApplicationBuild", "[", 
-    RowBox[{
-     RowBox[{"location_", "?", "StringQ"}], ",", 
-     RowBox[{"opts", ":", 
-      RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
-   RowBox[{"ApplicationBuild", "[", 
-    RowBox[{
-     RowBox[{"LoadApplicationFolder", "[", "location", "]"}], ",", "opts"}], 
-    "]"}]}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"ApplicationBuild", "[", 
-   RowBox[{"pac_", ",", 
-    RowBox[{"OptionsPattern", "[", "]"}]}], "]"}], ":=", 
-  RowBox[{"Block", "[", 
-   RowBox[{
-    RowBox[{"{", "\[IndentingNewLine]", 
-     RowBox[{
-     "location", ",", " ", "dir", ",", "tag", ",", "name", ",", " ", 
-      "filesApp", ",", "filesAppTar", ",", "buildDir", ",", "files", ",", 
-      "partsG", ",", "parts", ",", "\[IndentingNewLine]", "file", ",", " ", 
-      "pacs", ",", " ", "pacFiles", ",", " ", "exp", ",", " ", "gitHub", ",", 
-      " ", "command"}], "\[IndentingNewLine]", "}"}], ",", 
-    "\[IndentingNewLine]", 
-    RowBox[{"(*", 
-     RowBox[{"get", " ", "packlet", " ", "information"}], "*)"}], 
-    "\[IndentingNewLine]", 
-    RowBox[{
-     RowBox[{"location", "=", 
-      RowBox[{"pac", "[", "\"\<Location\>\"", "]"}]}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{"dir", "=", 
-      RowBox[{"DirectoryName", "@", "location"}]}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{"name", "=", 
-      RowBox[{"pac", "[", "\"\<Name\>\"", "]"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"tag", "=", 
-      RowBox[{"pac", "[", "\"\<Version\>\"", "]"}]}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{"buildDir", "=", 
-      RowBox[{"FileNameJoin", "[", 
-       RowBox[{"{", 
-        RowBox[{
-         RowBox[{"DirectoryName", "@", "location"}], ",", "\"\<build\>\"", 
-         ",", "\"\<QMRITools\>\""}], "}"}], "]"}]}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"Print", "[", 
-      RowBox[{
-      "\"\<Building \>\"", "<>", "name", "<>", "\"\< in location \>\"", "<>", 
-       "buildDir"}], "]"}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"(*", 
-      RowBox[{"copy", " ", "all", " ", "*", 
-       RowBox[{".", "wl"}], " ", "and", " ", "extention", " ", "files"}], 
-      "*)"}], "\[IndentingNewLine]", 
-     RowBox[{"Print", "[", 
-      RowBox[{"\"\<   - Building application \>\"", "<>", 
-       RowBox[{"If", "[", 
-        RowBox[{
-         RowBox[{"OptionValue", "[", "RebuildExtentions", "]"}], ",", 
-         "\"\<with\>\"", ",", "\"\<without\>\""}], "]"}], "<>", 
-       "\"\< the extentions\>\""}], "]"}], ";", "\[IndentingNewLine]", 
-     RowBox[{"(*", 
-      RowBox[{"get", " ", "filenames"}], "*)"}], "\[IndentingNewLine]", 
-     RowBox[{"filesApp", "=", 
-      RowBox[{"Prepend", "[", "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{
-         RowBox[{"files", "=", 
-          RowBox[{"Flatten", "[", 
-           RowBox[{
-            RowBox[{"Select", "[", 
-             RowBox[{
-              RowBox[{"Normal", "[", 
-               RowBox[{"PacletExtensionFiles", "[", 
-                RowBox[{"pac", ",", 
-                 RowBox[{"\"\<SystemID\>\"", "->", "All"}]}], "]"}], "]"}], 
-              ",", 
-              RowBox[{
-               RowBox[{
-                RowBox[{"#", "[", 
-                 RowBox[{"[", 
-                  RowBox[{"1", ",", "1"}], "]"}], "]"}], "=!=", 
-                "\"\<Documentation\>\""}], "&"}]}], "]"}], "[", 
-            RowBox[{"[", 
-             RowBox[{"All", ",", "2"}], "]"}], "]"}], "]"}]}], ";", 
-         "\[IndentingNewLine]", 
-         RowBox[{"If", "[", 
-          RowBox[{
-           RowBox[{"OptionValue", "[", "RebuildExtentions", "]"}], ",", 
-           "files", ",", 
-           RowBox[{"Select", "[", 
-            RowBox[{"files", ",", 
-             RowBox[{
-              RowBox[{
-               RowBox[{"FileExtension", "[", "#", "]"}], "==", "\"\<wl\>\""}],
-               "&"}]}], "]"}]}], "]"}]}], ",", "\[IndentingNewLine]", 
-        RowBox[{"FileNameJoin", "[", 
-         RowBox[{"{", 
-          RowBox[{"location", ",", "\"\<PacletInfo.wl\>\""}], "}"}], "]"}]}], 
-       "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"filesAppTar", "=", 
-      RowBox[{
-       RowBox[{
-        RowBox[{"StringReplace", "[", 
-         RowBox[{"#", ",", 
-          RowBox[{"location", "->", "buildDir"}]}], "]"}], "&"}], "/@", 
-       "filesApp"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"(*", 
-      RowBox[{"copy", " ", "files"}], "*)"}], "\[IndentingNewLine]", 
-     RowBox[{"MapThread", "[", 
-      RowBox[{
-       RowBox[{
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{"Quiet", "@", 
-           RowBox[{"CreateDirectory", "[", 
-            RowBox[{"DirectoryName", "[", "#2", "]"}], "]"}]}], ";", 
-          RowBox[{"CopyFile", "[", 
-           RowBox[{"#1", ",", "#2", ",", 
-            RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}]}], ")"}], 
-        "&"}], ",", 
-       RowBox[{"{", 
-        RowBox[{"filesApp", ",", "filesAppTar"}], "}"}]}], "]"}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"(*", 
-      RowBox[{"rebuild", " ", "doc", " ", "if", " ", "needed"}], "*)"}], 
-     "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
-      RowBox[{
-       RowBox[{"OptionValue", "[", "RebuildDoc", "]"}], ",", 
-       "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"Print", "[", "\"\<   - Rebuilding documentation\>\"", "]"}], 
-        ";", "\[IndentingNewLine]", 
-        RowBox[{"PacletDocumentationBuild", "[", 
-         RowBox[{"pac", ",", " ", 
-          RowBox[{"DirectoryName", "@", "buildDir"}], ",", 
-          RowBox[{"OverwriteTarget", "\[Rule]", "True"}]}], "]"}]}], ",", 
-       "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{
-        "Print", "[", "\"\<   - Not building documentation\>\"", "]"}], 
-        ";"}]}], "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-     "\[IndentingNewLine]", 
-     RowBox[{"(*", 
-      RowBox[{
-      "make", " ", "the", " ", "packlet", " ", "for", " ", "install"}], 
-      "*)"}], "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
-      RowBox[{
-       RowBox[{"OptionValue", "[", "MakePaclet", "]"}], ",", 
-       "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"Print", "[", "\"\<Making the install paclet\>\"", "]"}], ";",
-         "\[IndentingNewLine]", 
-        RowBox[{"CreatePacletArchive", "[", "buildDir", "]"}]}], ",", 
-       "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{
-        "Print", "[", "\"\<Did not create the install paclet\>\"", "]"}], 
-        ";"}]}], "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-     "\[IndentingNewLine]", 
-     RowBox[{"Print", "[", "\"\<Making the PacletSite.mz\>\"", "]"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{"(*", 
-      RowBox[{
-      "copy", " ", "the", " ", "file", " ", "to", " ", "the", " ", "Paclets", 
-       " ", "install", " ", "folder"}], "*)"}], "\[IndentingNewLine]", 
-     RowBox[{"file", "=", 
-      RowBox[{"First", "@", 
-       RowBox[{"FileNames", "[", 
-        RowBox[{
-         RowBox[{"\"\<*\>\"", "<>", "tag", "<>", "\"\<*.paclet\>\""}], ",", 
-         RowBox[{"FileNameJoin", "[", 
-          RowBox[{"{", 
-           RowBox[{"dir", ",", "\"\<build\>\""}], "}"}], "]"}]}], "]"}]}]}], 
-     ";", "\[IndentingNewLine]", 
-     RowBox[{"CopyFile", "[", 
-      RowBox[{"file", ",", 
-       RowBox[{"StringReplace", "[", 
-        RowBox[{"file", ",", 
-         RowBox[{"\"\<build\>\"", "->", "\"\<Paclets\>\""}]}], "]"}], ",", 
-       RowBox[{"OverwriteTarget", "->", "True"}]}], "]"}], ";", 
-     "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"(*", 
-      RowBox[{
-      "to", " ", "make", " ", "paclet", " ", "install", " ", "via", " ", 
-       "github", " ", "work", " ", "install", " ", "git", " ", "lfs", " ", 
-       "in", " ", "the", " ", "repository"}], "*)"}], "\[IndentingNewLine]", 
-     RowBox[{"(*", 
-      RowBox[{
-      "use", " ", "the", " ", "command", " ", "\"\<git lfs track \>\"", "*", 
-       RowBox[{".", "paclet"}], "\"\<\>\"", " ", "to", " ", "trac", " ", 
-       "the", " ", "paclet", " ", "files"}], " ", "*)"}], 
-     "\[IndentingNewLine]", 
-     RowBox[{"pacFiles", "=", 
-      RowBox[{"FileNames", "[", 
-       RowBox[{"\"\<*.paclet\>\"", ",", 
-        RowBox[{"FileNameJoin", "[", 
-         RowBox[{"{", 
-          RowBox[{"dir", ",", "\"\<Paclets\>\""}], "}"}], "]"}]}], "]"}]}], 
-     ";", "\[IndentingNewLine]", 
-     RowBox[{"pacs", "=", 
-      RowBox[{
-       RowBox[{
-        RowBox[{"First", "@", 
-         RowBox[{"Import", "[", 
-          RowBox[{"#", ",", " ", "\"\<*/PacletInfo.*\>\""}], "]"}]}], "&"}], "/@",
-        "pacFiles"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"exp", "=", 
-      RowBox[{"PacletSite", "@@", 
-       RowBox[{"DeleteDuplicates", "[", 
-        RowBox[{
-         RowBox[{
-          RowBox[{"Paclet", "@@", 
-           RowBox[{"Normal", "[", 
-            RowBox[{"#", "[", 
-             RowBox[{"[", "1", "]"}], "]"}], "]"}]}], "&"}], "/@", "pacs"}], 
-        "]"}]}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{"Export", "[", 
-      RowBox[{
-       RowBox[{"FileNameJoin", "[", 
-        RowBox[{"{", 
-         RowBox[{"dir", ",", "\"\<PacletSite.mz\>\""}], "}"}], "]"}], ",", 
-       RowBox[{"{", "exp", "}"}], ",", 
-       RowBox[{"{", 
-        RowBox[{"\"\<ZIP\>\"", ",", 
-         RowBox[{"{", 
-          RowBox[{"{", 
-           RowBox[{"\"\<PacletSite.m\>\"", ",", "\"\<Package\>\""}], "}"}], 
-          "}"}]}], "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
-     "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
-      RowBox[{
-       RowBox[{"OptionValue", "[", "PushRelese", "]"}], ",", 
-       "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"Print", "[", "\"\<Pushing the relese to GitHub\>\"", "]"}], 
-        ";", "\[IndentingNewLine]", 
-        RowBox[{"If", "[", 
-         RowBox[{
-          RowBox[{"!", 
-           RowBox[{"(", 
-            RowBox[{
-             RowBox[{
-              RowBox[{"OptionValue", "[", "ReleaseTitle", "]"}], "=!=", 
-              "\"\<\>\""}], "||", 
-             RowBox[{
-              RowBox[{"OptionValue", "[", "ReleaseNote", "]"}], "=!=", 
-              "\"\<\>\""}]}], ")"}]}], ",", "\[IndentingNewLine]", 
-          RowBox[{
-           RowBox[{
-           "Print", "[", 
-            "\"\<   - Cant push to GitHub not title or note is given\>\"", 
-            "]"}], ";"}], "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
-          RowBox[{
-           RowBox[{
-           "Print", "[", "\"\<   - Creating the release on GitHub\>\"", "]"}],
-            ";", "\[IndentingNewLine]", 
-           RowBox[{"(*", 
-            RowBox[{
-            "to", " ", "allow", " ", "git", " ", "command", " ", "line", " ", 
-             "release", " ", "creation", " ", "GitHub", " ", "CLI", " ", 
-             "needs", " ", "to", " ", "be", " ", "installed"}], "*)"}], 
-           "\[IndentingNewLine]", 
-           RowBox[{"(*", 
-            RowBox[{
-            "also", " ", "commit", " ", "and", " ", "push", " ", "to", " ", 
-             "git"}], "*)"}], "\[IndentingNewLine]", 
-           RowBox[{
-           "gitHub", "=", 
-            "\"\<\\\"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\\\"\>\""}], 
-           ";", "\[IndentingNewLine]", 
-           RowBox[{"command", "=", 
-            RowBox[{
-             RowBox[{"First", "[", 
-              RowBox[{"FileNameSplit", "[", "dir", "]"}], "]"}], "<>", 
-             "\"\<\\ncd \>\"", "<>", "dir", "<>", "\"\<\\n\>\"", "<>", 
-             "\[IndentingNewLine]", "gitHub", "<>", 
-             "\"\< release create \>\"", "<>", "tag", "<>", 
-             "\"\< --title \\\"\>\"", "<>", 
-             RowBox[{"OptionValue", "[", "ReleaseTitle", "]"}], "<>", 
-             "\"\<\\\" --notes \\\"\>\"", "<>", 
-             RowBox[{"OptionValue", "[", "ReleaseNote", "]"}], "<>", 
-             "\"\<\\\"\\n\>\"", "<>", "\[IndentingNewLine]", "gitHub", "<>", 
-             "\"\< release upload \>\"", "<>", "tag", "<>", "\"\< \\\"\>\"", "<>",
-              "file", "<>", 
-             "\"\<\\\"\\ngit commit -am \\\"update release \>\"", "<>", 
-             "\[IndentingNewLine]", "tag", "<>", 
-             "\"\<\\\" && git push\\nexit\\n\>\""}]}], ";", 
-           "\[IndentingNewLine]", 
-           RowBox[{"RunProcess", "[", 
-            RowBox[{
-            "$SystemShell", ",", "\"\<StandardOutput\>\"", ",", "command"}], 
-            "]"}]}]}], "\[IndentingNewLine]", "]"}]}], ",", 
-       "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{
-        "Print", "[", "\"\<Not pushing the relese to GitHub\>\"", "]"}], 
-        ";"}]}], "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-     "\[IndentingNewLine]", 
-     RowBox[{"Print", "[", "\"\<Current availible verions are\>\"", "]"}], 
-     ";", "\[IndentingNewLine]", 
-     RowBox[{"Print", "[", 
-      RowBox[{"Column", "[", 
-       RowBox[{
-        RowBox[{
-         RowBox[{"\"\<   - \>\"", "<>", 
-          RowBox[{"#", "[", "\"\<Version\>\"", "]"}]}], "&"}], "/@", "pacs"}],
-        "]"}], "]"}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
-     RowBox[{"If", "[", 
-      RowBox[{
-       RowBox[{"OptionValue", "[", "InstallApplication", "]"}], ",", 
-       "\[IndentingNewLine]", 
-       RowBox[{
-        RowBox[{"Print", "[", "\"\<Installing the latest release\>\"", "]"}], 
-        ";", "\[IndentingNewLine]", 
-        RowBox[{"PacletInstall", "[", 
-         RowBox[{
-          RowBox[{"Last", "[", 
-           RowBox[{"FileNames", "[", 
-            RowBox[{"\"\<*.paclet\>\"", ",", 
-             RowBox[{"FileNameJoin", "[", 
-              RowBox[{"{", 
-               RowBox[{"dir", ",", "\"\<Paclets\>\""}], "}"}], "]"}]}], "]"}],
-            "]"}], ",", 
-          RowBox[{"ForceVersionInstall", "->", "True"}]}], "]"}]}], ",", 
-       "\[IndentingNewLine]", 
-       RowBox[{
-       "Print", "[", "\"\<Not installing the latest release\>\"", "]"}]}], 
-      "\[IndentingNewLine]", "]"}]}]}], "\[IndentingNewLine]", 
-   "]"}]}]}], "Input",
+     "pac"}]}], "\[IndentingNewLine]", "]"}]}]}], "Input",
  InitializationCell->True,
  CellChangeTimes->{{3.8655776310643883`*^9, 3.8655776364175463`*^9}, {
    3.8655797415201564`*^9, 3.865579748191532*^9}, {3.8660136107331023`*^9, 
@@ -509,8 +500,52 @@ Cell[BoxData[{
    3.900744306234126*^9}, {3.900744653219406*^9, 3.900744708528295*^9}, {
    3.90074476158963*^9, 3.9007448502298813`*^9}, 3.900744908420277*^9, {
    3.9007451125508633`*^9, 3.900745321806281*^9}, {3.9007453824861507`*^9, 
-   3.9007453925965743`*^9}, {3.900746040570948*^9, 3.900746073225849*^9}},
- CellLabel->"In[6]:=",ExpressionUUID->"ca10575f-2c86-4bbe-8069-b24af8920541"],
+   3.9007453925965743`*^9}, {3.900746040570948*^9, 3.900746073225849*^9}, {
+   3.900985788527046*^9, 3.9009858014269934`*^9}, {3.900985987678468*^9, 
+   3.9009861034264593`*^9}, {3.900986153626616*^9, 3.900986290756293*^9}, {
+   3.9009863368467536`*^9, 
+   3.9009863371662626`*^9}},ExpressionUUID->"ca10575f-2c86-4bbe-8069-\
+b24af8920541"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"ShowStatus", "[", "dir_", "]"}], ":=", 
+  RowBox[{"Block", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"ker", "=", 
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{"dir", ",", "\"\<QMRITools\\\\Kernel\>\""}], "}"}], "]"}]}], 
+     "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"Print", "[", 
+      RowBox[{"\"\<- Total lines: \>\"", ",", 
+       RowBox[{"Total", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Length", "[", 
+           RowBox[{"DeleteCases", "[", 
+            RowBox[{
+             RowBox[{"Import", "[", 
+              RowBox[{"#", ",", "\"\<Lines\>\""}], "]"}], ",", "\"\<\>\""}], 
+            "]"}], "]"}], "&"}], "/@", 
+         RowBox[{"FileNames", "[", 
+          RowBox[{"All", ",", "ker"}], "]"}]}], "]"}]}], "]"}], ";", 
+     "\[IndentingNewLine]", 
+     RowBox[{"Print", "[", 
+      RowBox[{"\"\<- Total characters: \>\"", ",", 
+       RowBox[{"Total", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"StringLength", "[", 
+           RowBox[{"Import", "[", 
+            RowBox[{"#", ",", "\"\<Text\>\""}], "]"}], "]"}], "&"}], "/@", 
+         RowBox[{"FileNames", "[", 
+          RowBox[{"All", ",", "\"\<QMRITools\\\\Kernel\>\""}], "]"}]}], 
+        "]"}]}], "]"}], ";"}]}], "\[IndentingNewLine]", "]"}]}]], "Input",
+ InitializationCell->
+  True,ExpressionUUID->"a0825629-e96c-44c4-812c-2fd263874971"],
 
 Cell[BoxData[{
  RowBox[{
@@ -568,7 +603,7 @@ Cell[BoxData[{
             RowBox[{"{", 
              RowBox[{"\"\<Toolbox\>\"", ",", "\"\<Functions\>\""}], "}"}]}]}],
            "}"}]}]}], "]"}]}]}], "\[IndentingNewLine]", "]"}]}], 
-  "\[IndentingNewLine]"}], "\n", 
+  "\n"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{
    RowBox[{"FuncButtonDel", "[", 
@@ -904,7 +939,7 @@ Cell[BoxData[{
           RowBox[{"FuncButtonDel", "[", 
            RowBox[{"wrong", ",", "symdir"}], "]"}]}]}], "\[IndentingNewLine]",
          "}"}], "]"}]}]}], "\[IndentingNewLine]", "]"}]}], 
-  "\n"}], "\[IndentingNewLine]", 
+  "\[IndentingNewLine]"}], "\n", 
  RowBox[{
   RowBox[{"(*", "\n", 
    RowBox[{"(*", 
@@ -946,7 +981,7 @@ Cell[BoxData[{
    3.87836980261125*^9, 3.8786387293197517`*^9, {3.900738023200388*^9, 
    3.900738027862177*^9}},
  CellLabel->"In[9]:=",ExpressionUUID->"45995832-e775-468a-8f71-f39e49de7205"]
-}, Closed]],
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -974,10 +1009,11 @@ Cell[BoxData[
  CellChangeTimes->{
   3.9007458043068333`*^9, 3.90074608909195*^9, 3.900747150300338*^9, 
    3.900748787824224*^9, 3.9007502518176794`*^9, {3.9007605686497345`*^9, 
-   3.9007605693365545`*^9}, {3.9007645503059387`*^9, 3.9007645509291854`*^9}},
+   3.9007605693365545`*^9}, {3.9007645503059387`*^9, 
+   3.9007645509291854`*^9}, {3.900985693816861*^9, 3.9009856944666557`*^9}},
  CellLabel->
   "During evaluation of \
-In[13]:=",ExpressionUUID->"3d445bf7-ca78-4998-8142-be57d1dda0f5"],
+In[13]:=",ExpressionUUID->"b3232614-38cf-4d3c-96ba-6cb274440fde"],
 
 Cell[BoxData[
  InterpretationBox[
@@ -987,10 +1023,11 @@ Cell[BoxData[
  CellChangeTimes->{
   3.9007458043068333`*^9, 3.90074608909195*^9, 3.900747150300338*^9, 
    3.900748787824224*^9, 3.9007502518176794`*^9, {3.9007605686497345`*^9, 
-   3.9007605693365545`*^9}, {3.9007645503059387`*^9, 3.9007645512008314`*^9}},
+   3.9007605693365545`*^9}, {3.9007645503059387`*^9, 
+   3.9007645509291854`*^9}, {3.900985693816861*^9, 3.900985694736689*^9}},
  CellLabel->
   "During evaluation of \
-In[13]:=",ExpressionUUID->"396d4f79-a5cd-4534-9cc5-7888669d4c7c"]
+In[13]:=",ExpressionUUID->"65abfaf4-11a9-4590-8dee-c1c0f42d933c"]
 }, Open  ]]
 }, Open  ]],
 
@@ -12528,98 +12565,96 @@ Cell[CellGroupData[{
 Cell[811, 30, 156, 3, 41, "Subsection",ExpressionUUID->"2b47722d-d1db-4a96-a3c0-9ee34ae20352"],
 Cell[970, 35, 595, 12, 76, "Input",ExpressionUUID->"482abba0-2105-4d77-b848-81e97fb3ecb3",
  InitializationCell->True],
-Cell[1568, 49, 1668, 41, 76, "Input",ExpressionUUID->"18a88b41-ab3f-40dd-94ce-230c4fd06efa",
+Cell[1568, 49, 19884, 458, 1732, "Input",ExpressionUUID->"ca10575f-2c86-4bbe-8069-b24af8920541",
  InitializationCell->True],
-Cell[3239, 92, 2215, 52, 276, "Input",ExpressionUUID->"fcf5a211-25c4-42cb-9c0d-ecd955395106",
+Cell[21455, 509, 1434, 38, 76, "Input",ExpressionUUID->"a0825629-e96c-44c4-812c-2fd263874971",
  InitializationCell->True],
-Cell[5457, 146, 16135, 366, 1318, "Input",ExpressionUUID->"ca10575f-2c86-4bbe-8069-b24af8920541",
+Cell[22892, 549, 18102, 433, 1106, "Code",ExpressionUUID->"45995832-e775-468a-8f71-f39e49de7205"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[41031, 987, 218, 4, 41, "Subsection",ExpressionUUID->"b4eaab9d-188e-404d-929d-668477992f79"],
+Cell[CellGroupData[{
+Cell[41274, 995, 238, 4, 33, "Input",ExpressionUUID->"1640ecaf-18ee-4cbf-b4da-1691157cf742",
  InitializationCell->True],
-Cell[21595, 514, 18102, 433, 1106, "Code",ExpressionUUID->"45995832-e775-468a-8f71-f39e49de7205"]
+Cell[CellGroupData[{
+Cell[41537, 1003, 575, 12, 18, "Print",ExpressionUUID->"b3232614-38cf-4d3c-96ba-6cb274440fde"],
+Cell[42115, 1017, 587, 12, 18, "Print",ExpressionUUID->"65abfaf4-11a9-4590-8dee-c1c0f42d933c"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[42751, 1035, 177, 3, 34, "Subsubsection",ExpressionUUID->"ca64ad25-4211-44d9-bdef-413028e569b7"],
+Cell[CellGroupData[{
+Cell[42953, 1042, 251, 4, 21, "Input",ExpressionUUID->"21ac8464-11f2-4c1e-9cf3-1e39e5776ec1"],
+Cell[43207, 1048, 336, 5, 24, "Output",ExpressionUUID->"792b539c-10d4-4164-b1f4-272950de5071"]
+}, Open  ]],
+Cell[43558, 1056, 243, 4, 21, "Input",ExpressionUUID->"31c81a25-bc90-4e0e-a221-d973782d7d59"],
+Cell[43804, 1062, 340, 7, 21, "Input",ExpressionUUID->"0dc74759-b021-4be1-95c3-8ee5b4e9a4cf"]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[39734, 952, 218, 4, 30, "Subsection",ExpressionUUID->"b4eaab9d-188e-404d-929d-668477992f79"],
+Cell[44181, 1074, 223, 4, 29, "Subsubsection",ExpressionUUID->"880da830-2a5f-4d38-aadc-b99351c51832"],
 Cell[CellGroupData[{
-Cell[39977, 960, 238, 4, 33, "Input",ExpressionUUID->"1640ecaf-18ee-4cbf-b4da-1691157cf742",
- InitializationCell->True],
+Cell[44429, 1082, 219, 3, 21, "Input",ExpressionUUID->"596b1949-83d4-4101-97d2-029a91470261"],
 Cell[CellGroupData[{
-Cell[40240, 968, 523, 11, 18, "Print",ExpressionUUID->"3d445bf7-ca78-4998-8142-be57d1dda0f5"],
-Cell[40766, 981, 537, 11, 18, "Print",ExpressionUUID->"396d4f79-a5cd-4534-9cc5-7888669d4c7c"]
+Cell[44673, 1089, 356, 7, 18, "Print",ExpressionUUID->"2ba5e077-17f7-4194-908d-1c179c931480"],
+Cell[45032, 1098, 329, 6, 18, "Print",ExpressionUUID->"cb3776a2-3e03-47d5-83f9-29795e4ebc8c"],
+Cell[45364, 1106, 162066, 2702, 60, "Print",ExpressionUUID->"c0a418ec-f43c-4b91-8710-2d49348026ee"],
+Cell[207433, 3810, 337, 6, 18, "Print",ExpressionUUID->"24e00c0d-27b7-4b90-9de2-a65ed8d5dc78"],
+Cell[207773, 3818, 320, 6, 18, "Print",ExpressionUUID->"3c0540c0-07c6-4e94-bd10-c28b62f03e67"],
+Cell[208096, 3826, 343, 6, 18, "Print",ExpressionUUID->"e646bb54-9700-460c-bf7b-c4d6ad55840c"],
+Cell[208442, 3834, 355, 7, 18, "Print",ExpressionUUID->"d4e8f242-d665-4366-8d3f-d6a9345cb6db"],
+Cell[208800, 3843, 351, 7, 18, "Print",ExpressionUUID->"716f85e8-ef71-4de1-95d6-edfcd1d0446b"],
+Cell[209154, 3852, 340, 6, 18, "Print",ExpressionUUID->"5965525a-8dd2-4530-86a5-8416ea720664"],
+Cell[209497, 3860, 341, 6, 18, "Print",ExpressionUUID->"f8a30577-1e8b-46f5-8100-b3f61f6a7c80"],
+Cell[209841, 3868, 353, 7, 18, "Print",ExpressionUUID->"49dc7982-035f-4504-9701-46c6b8697c6f"],
+Cell[210197, 3877, 346, 6, 18, "Print",ExpressionUUID->"1a2a053d-5223-4615-8194-d6d129929a84"]
+}, Open  ]],
+Cell[210558, 3886, 7941, 196, 389, "Output",ExpressionUUID->"b59e18a7-5e4b-41cc-8816-a3dcd3665255"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[41352, 998, 177, 3, 34, "Subsubsection",ExpressionUUID->"ca64ad25-4211-44d9-bdef-413028e569b7"],
+Cell[218548, 4088, 221, 4, 34, "Subsubsection",ExpressionUUID->"13dafe55-0170-479e-b12b-62df1d5708d8"],
 Cell[CellGroupData[{
-Cell[41554, 1005, 251, 4, 21, "Input",ExpressionUUID->"21ac8464-11f2-4c1e-9cf3-1e39e5776ec1"],
-Cell[41808, 1011, 336, 5, 24, "Output",ExpressionUUID->"792b539c-10d4-4164-b1f4-272950de5071"]
+Cell[218794, 4096, 1527, 28, 207, "Input",ExpressionUUID->"cc0af2c7-b84f-4437-b85b-16355050e2e3"],
+Cell[CellGroupData[{
+Cell[220346, 4128, 427, 8, 18, "Print",ExpressionUUID->"e368e176-207e-4ee7-897e-9647d69db1b9"],
+Cell[220776, 4138, 402, 7, 18, "Print",ExpressionUUID->"8930b093-83e3-442c-97d1-1595ab16266a"],
+Cell[221181, 4147, 161898, 2696, 60, "Print",ExpressionUUID->"a113d709-9e96-419f-bb2b-0e6b126f3c9d"],
+Cell[383082, 6845, 469, 8, 18, "Print",ExpressionUUID->"55d168b5-d3a0-4679-95a8-d7bc9b408118"],
+Cell[383554, 6855, 423, 7, 18, "Print",ExpressionUUID->"41d87aac-c8ac-49fb-bd7d-cc6e475632d3"],
+Cell[383980, 6864, 407, 7, 18, "Print",ExpressionUUID->"0318be44-8550-4d41-bfcd-a8718a7b7f64"],
+Cell[384390, 6873, 401, 7, 18, "Print",ExpressionUUID->"ce7908e1-4ebd-4a82-8ac8-d9d8a1c39d80"],
+Cell[384794, 6882, 400, 7, 18, "Print",ExpressionUUID->"895b844e-8c61-4ec4-83a6-da818bdc53b9"],
+Cell[385197, 6891, 404, 7, 18, "Print",ExpressionUUID->"5cb825ed-67a1-4fa1-a7ce-88c0e40bca4e"],
+Cell[385604, 6900, 413, 7, 18, "Print",ExpressionUUID->"d0ccf837-ea0a-4b06-ab8d-dd62b18601d1"],
+Cell[386020, 6909, 407, 7, 18, "Print",ExpressionUUID->"0390fd15-3dfb-4c02-ba18-77afac0459a6"],
+Cell[386430, 6918, 668, 17, 50, "Print",ExpressionUUID->"c233506a-e286-446b-b988-2909141d056a"],
+Cell[387101, 6937, 407, 7, 18, "Print",ExpressionUUID->"f0b15d1a-9b0a-43af-8267-3d737a85b742"]
 }, Open  ]],
-Cell[42159, 1019, 243, 4, 21, "Input",ExpressionUUID->"31c81a25-bc90-4e0e-a221-d973782d7d59"],
-Cell[42405, 1025, 340, 7, 21, "Input",ExpressionUUID->"0dc74759-b021-4be1-95c3-8ee5b4e9a4cf"]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[42782, 1037, 223, 4, 29, "Subsubsection",ExpressionUUID->"880da830-2a5f-4d38-aadc-b99351c51832"],
-Cell[CellGroupData[{
-Cell[43030, 1045, 219, 3, 21, "Input",ExpressionUUID->"596b1949-83d4-4101-97d2-029a91470261"],
-Cell[CellGroupData[{
-Cell[43274, 1052, 356, 7, 18, "Print",ExpressionUUID->"2ba5e077-17f7-4194-908d-1c179c931480"],
-Cell[43633, 1061, 329, 6, 18, "Print",ExpressionUUID->"cb3776a2-3e03-47d5-83f9-29795e4ebc8c"],
-Cell[43965, 1069, 162066, 2702, 60, "Print",ExpressionUUID->"c0a418ec-f43c-4b91-8710-2d49348026ee"],
-Cell[206034, 3773, 337, 6, 18, "Print",ExpressionUUID->"24e00c0d-27b7-4b90-9de2-a65ed8d5dc78"],
-Cell[206374, 3781, 320, 6, 18, "Print",ExpressionUUID->"3c0540c0-07c6-4e94-bd10-c28b62f03e67"],
-Cell[206697, 3789, 343, 6, 18, "Print",ExpressionUUID->"e646bb54-9700-460c-bf7b-c4d6ad55840c"],
-Cell[207043, 3797, 355, 7, 18, "Print",ExpressionUUID->"d4e8f242-d665-4366-8d3f-d6a9345cb6db"],
-Cell[207401, 3806, 351, 7, 18, "Print",ExpressionUUID->"716f85e8-ef71-4de1-95d6-edfcd1d0446b"],
-Cell[207755, 3815, 340, 6, 18, "Print",ExpressionUUID->"5965525a-8dd2-4530-86a5-8416ea720664"],
-Cell[208098, 3823, 341, 6, 18, "Print",ExpressionUUID->"f8a30577-1e8b-46f5-8100-b3f61f6a7c80"],
-Cell[208442, 3831, 353, 7, 18, "Print",ExpressionUUID->"49dc7982-035f-4504-9701-46c6b8697c6f"],
-Cell[208798, 3840, 346, 6, 18, "Print",ExpressionUUID->"1a2a053d-5223-4615-8194-d6d129929a84"]
+Cell[387523, 6947, 161784, 2693, 66, "Output",ExpressionUUID->"68d33aaf-c67d-4789-998f-f8853ff9cea9"]
 }, Open  ]],
-Cell[209159, 3849, 7941, 196, 389, "Output",ExpressionUUID->"b59e18a7-5e4b-41cc-8816-a3dcd3665255"]
-}, Open  ]]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[217149, 4051, 221, 4, 34, "Subsubsection",ExpressionUUID->"13dafe55-0170-479e-b12b-62df1d5708d8"],
-Cell[CellGroupData[{
-Cell[217395, 4059, 1527, 28, 207, "Input",ExpressionUUID->"cc0af2c7-b84f-4437-b85b-16355050e2e3"],
-Cell[CellGroupData[{
-Cell[218947, 4091, 427, 8, 18, "Print",ExpressionUUID->"e368e176-207e-4ee7-897e-9647d69db1b9"],
-Cell[219377, 4101, 402, 7, 18, "Print",ExpressionUUID->"8930b093-83e3-442c-97d1-1595ab16266a"],
-Cell[219782, 4110, 161898, 2696, 60, "Print",ExpressionUUID->"a113d709-9e96-419f-bb2b-0e6b126f3c9d"],
-Cell[381683, 6808, 469, 8, 18, "Print",ExpressionUUID->"55d168b5-d3a0-4679-95a8-d7bc9b408118"],
-Cell[382155, 6818, 423, 7, 18, "Print",ExpressionUUID->"41d87aac-c8ac-49fb-bd7d-cc6e475632d3"],
-Cell[382581, 6827, 407, 7, 18, "Print",ExpressionUUID->"0318be44-8550-4d41-bfcd-a8718a7b7f64"],
-Cell[382991, 6836, 401, 7, 18, "Print",ExpressionUUID->"ce7908e1-4ebd-4a82-8ac8-d9d8a1c39d80"],
-Cell[383395, 6845, 400, 7, 18, "Print",ExpressionUUID->"895b844e-8c61-4ec4-83a6-da818bdc53b9"],
-Cell[383798, 6854, 404, 7, 18, "Print",ExpressionUUID->"5cb825ed-67a1-4fa1-a7ce-88c0e40bca4e"],
-Cell[384205, 6863, 413, 7, 18, "Print",ExpressionUUID->"d0ccf837-ea0a-4b06-ab8d-dd62b18601d1"],
-Cell[384621, 6872, 407, 7, 18, "Print",ExpressionUUID->"0390fd15-3dfb-4c02-ba18-77afac0459a6"],
-Cell[385031, 6881, 668, 17, 50, "Print",ExpressionUUID->"c233506a-e286-446b-b988-2909141d056a"],
-Cell[385702, 6900, 407, 7, 18, "Print",ExpressionUUID->"f0b15d1a-9b0a-43af-8267-3d737a85b742"]
-}, Open  ]],
-Cell[386124, 6910, 161784, 2693, 66, "Output",ExpressionUUID->"68d33aaf-c67d-4789-998f-f8853ff9cea9"]
-}, Open  ]],
-Cell[547923, 9606, 154, 3, 21, "Input",ExpressionUUID->"bb37df44-4252-4175-a19d-433f75a01107"]
+Cell[549322, 9643, 154, 3, 21, "Input",ExpressionUUID->"bb37df44-4252-4175-a19d-433f75a01107"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[548138, 9616, 81, 0, 50, "Section",ExpressionUUID->"d936d6fd-b88f-47ad-93d1-cb9082fbf224"],
+Cell[549537, 9653, 81, 0, 50, "Section",ExpressionUUID->"d936d6fd-b88f-47ad-93d1-cb9082fbf224"],
 Cell[CellGroupData[{
-Cell[548244, 9620, 159, 3, 41, "Subsection",ExpressionUUID->"2368a39b-4c76-49d1-a3c2-1ea72a68007d"],
+Cell[549643, 9657, 159, 3, 41, "Subsection",ExpressionUUID->"2368a39b-4c76-49d1-a3c2-1ea72a68007d"],
 Cell[CellGroupData[{
-Cell[548428, 9627, 1081, 26, 93, "Input",ExpressionUUID->"53bb06c7-691b-4770-93cc-24775a220e3c"],
+Cell[549827, 9664, 1081, 26, 93, "Input",ExpressionUUID->"53bb06c7-691b-4770-93cc-24775a220e3c"],
 Cell[CellGroupData[{
-Cell[549534, 9657, 351, 7, 18, "Print",ExpressionUUID->"fa172e20-30f7-4d83-809f-268a579e0745"],
-Cell[549888, 9666, 324, 6, 18, "Print",ExpressionUUID->"5cb42c76-344b-4871-a044-bf5e03b9d0d2"],
-Cell[550215, 9674, 161822, 2695, 60, "Print",ExpressionUUID->"dc35c455-1dfc-4e56-b9f7-0c683e226eda"]
+Cell[550933, 9694, 351, 7, 18, "Print",ExpressionUUID->"fa172e20-30f7-4d83-809f-268a579e0745"],
+Cell[551287, 9703, 324, 6, 18, "Print",ExpressionUUID->"5cb42c76-344b-4871-a044-bf5e03b9d0d2"],
+Cell[551614, 9711, 161822, 2695, 60, "Print",ExpressionUUID->"dc35c455-1dfc-4e56-b9f7-0c683e226eda"]
 }, Open  ]],
-Cell[712052, 12372, 329, 5, 24, "Output",ExpressionUUID->"22a9c4b2-f18c-487d-8e26-3ec9077c686e"],
-Cell[712384, 12379, 287, 4, 24, "Output",ExpressionUUID->"8dd5ee71-39b5-4fb8-9014-1b5c213a5f53"],
-Cell[712674, 12385, 338, 5, 24, "Output",ExpressionUUID->"9140c67a-dc80-432c-8845-d953e823a885"],
-Cell[713015, 12392, 343, 5, 24, "Output",ExpressionUUID->"7cb3641e-4ee0-40f3-9465-e3c09d5b6e32"]
+Cell[713451, 12409, 329, 5, 24, "Output",ExpressionUUID->"22a9c4b2-f18c-487d-8e26-3ec9077c686e"],
+Cell[713783, 12416, 287, 4, 24, "Output",ExpressionUUID->"8dd5ee71-39b5-4fb8-9014-1b5c213a5f53"],
+Cell[714073, 12422, 338, 5, 24, "Output",ExpressionUUID->"9140c67a-dc80-432c-8845-d953e823a885"],
+Cell[714414, 12429, 343, 5, 24, "Output",ExpressionUUID->"7cb3641e-4ee0-40f3-9465-e3c09d5b6e32"]
 }, Open  ]],
-Cell[713373, 12400, 592, 13, 36, "Input",ExpressionUUID->"e0a57815-7279-49d8-84d0-8800c0402f0f"],
-Cell[713968, 12415, 1327, 28, 107, "Input",ExpressionUUID->"0679d9b2-3248-40f3-89af-04838c565c75"],
-Cell[715298, 12445, 1968, 51, 164, "Input",ExpressionUUID->"0cafc2d0-e22e-439c-8862-c4b7c222c283"]
+Cell[714772, 12437, 592, 13, 36, "Input",ExpressionUUID->"e0a57815-7279-49d8-84d0-8800c0402f0f"],
+Cell[715367, 12452, 1327, 28, 107, "Input",ExpressionUUID->"0679d9b2-3248-40f3-89af-04838c565c75"],
+Cell[716697, 12482, 1968, 51, 164, "Input",ExpressionUUID->"0cafc2d0-e22e-439c-8862-c4b7c222c283"]
 }, Open  ]]
 }, Open  ]]
 }
