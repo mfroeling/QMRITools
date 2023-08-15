@@ -197,10 +197,20 @@ FitTractsC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat, r},
 (*SelectValidCoor*)
 
 
-SelectValidCoor[trF_, vox_, dim_]:=Pick[trF, SelectValidCoorC[trF, vox, dim], 1]
+SyntaxInformation[SelectValidCoor] = {"ArgumentsPattern" -> {_, _, _.}};
+
+SelectValidCoor[trF_, dim_]:=Pick[trF, SelectValidCoorC[trF, dim], 1]
+
+SelectValidCoor[trF_, vox_, dim_]:=Pick[trF, SelectValidCoorV[trF, vox, dim], 1]
 
 
-SelectValidCoorC = Compile[{{tr, _Real, 2}, {vox, _Real, 1}, {dim, _Integer, 1}}, Block[{x, y, z},
+SelectValidCoorC = Compile[{{tr, _Real, 2}, {dim, _Integer, 1}}, Block[{x, y, z},
+	{x, y, z} = Transpose[tr];
+	UnitStep[x - 1] UnitStep[dim[[1]] - x] UnitStep[y - 1] UnitStep[dim[[2]] - y] UnitStep[z - 1] UnitStep[dim[[3]] - z]
+], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+
+
+SelectValidCoorV = Compile[{{tr, _Real, 2}, {vox, _Real, 1}, {dim, _Integer, 1}}, Block[{x, y, z},
 	{x, y, z} = Ceiling[Transpose[tr]/vox];
 	UnitStep[x - 1] UnitStep[dim[[1]] - x] UnitStep[y - 1] UnitStep[dim[[2]] - y] UnitStep[z - 1] UnitStep[dim[[3]] - z]
 ], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
@@ -297,10 +307,31 @@ Options[GetTractValues]= {InterpolationOrder->1}
 
 SyntaxInformation[GetTractValues] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-GetTractValues[tracts_, val_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, OptionsPattern[]]:=Block[{fun},
-	fun = MakeIntFunction[val, vox, OptionValue[InterpolationOrder]];
-	ToPackedArray[fun @@@ #] & /@ tracts
+GetTractValues[tracts_, val_, opts : OptionsPattern[]] := GetTractValues[tracts, val, {1., 1., 1.}, opts]
+
+GetTractValues[tracts_, val_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, OptionsPattern[]]:=Block[{fun, tractsSc, int, dim},
+	int = OptionValue[InterpolationOrder];
+
+	Which[IntegerQ[int] && int >= 1,
+		fun = MakeIntFunction[val, vox, OptionValue[InterpolationOrder]];
+		ToPackedArray[fun @@@ #] & /@ tracts,
+		True,
+		tractsSc = SelectValidCoor[If[vox === {1., 1., 1.}, tracts, RescaleTractsC[tracts, vox]], Dimensions[val]];
+		If[IntegerQ[int] && int === 0,
+			SelectTractVal[val, tractsSc],
+			SelectTractValD[val, tractsSc]
+		]
+	]
 ]
+
+
+SelectTractVal = Compile[{{roi, _Real, 3}, {tract, _Integer, 2}}, 
+	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ tract
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+SelectTractValD = Compile[{{roi, _Real, 3}, {tract, _Integer, 2}}, 
+	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ DeleteDuplicates[tract]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
