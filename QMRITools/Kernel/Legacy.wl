@@ -1221,6 +1221,834 @@ StringJoin@(ToString /@ {
 "span:  ", en - st, "  "
 })]
 
+
+(*
+SyntaxInformation[PlotData3D] = {"ArgumentsPattern" -> {_, _.}};
+
+PlotData3D[data_, vox:{_, _, _}:{1, 1, 1}] := Module[{
+   tran, depth, mind, maxd, dimd, ratio, dim, setp, slicep, columnp, rowp, line,
+  scal, dats, pdat, im3D,colf, linax, lincor, linsag, plax, plcor, plsag, imall, sel, slices3D, plsl3D, plim3D, dat,
+  imax, imcor, imsag, size1, size2, size3, size1b, mins,
+     maxs
+  },
+ 
+ NotebookClose[plotwindow3D];
+ ClearTemporaryVariables[];
+ 
+ tran = False;
+ depth = ArrayDepth[data];
+ mind = Min[data];
+ maxd = Max[data];
+ dat = If[depth == 4, Reverse@ToByte[data, {mind, maxd}], 
+    Reverse@ToByte[data, {mind, maxd}]];
+ dimd = Dimensions[dat];
+ 
+   size1b = 1;
+   
+   pan = Manipulate[
+     
+     t0 = (
+         (*determine scaling and dimensions*)
+         dim = {size1, size2, size3} = If[depth == 4, 
+            If[trans, 
+            	size1b = dimd[[1]]; dimd[[{2, 3, 4}]],
+            	size1b = dimd[[2]]; dimd[[{1, 3, 4}]]
+            	], 
+            dimd];
+         ratio = Reverse[vox*dim]/Max[(vox*dim)];
+         
+         (*correctly clip the slice numbers and mirror slices if needed*)
+         If[depth == 4 && trans != tran, {tran, slice, set} = {trans, set, slice}];
+         
+         set = If[NumericQ[set], Clip[set, {1, size1b}], 1];
+         slice = If[NumericQ[slice], Clip[slice, {1, size1}], 1];
+         column = If[NumericQ[column], Clip[column, {1, size2}], 1];
+         row = If[NumericQ[row], Clip[row, {1, size3}], 1];
+         
+         {setp, slicep, columnp, rowp} = If[trans && depth == 4, 
+         	{size1b - set + 1, slice, column, size3 - row + 1}, 
+         	{set, size1 - slice + 1, column, size3 - row + 1}];
+         
+         (*determine to draw lines and adjust pot scaling for all pannels*)
+         {line, scal} = 
+          If[show != 4, {False, scale}, {lines, 0.5 scale}];
+         ) // AbsoluteTiming // First;
+     
+     (*create im3D*)
+     t1 = (
+         (*rescale 3D values for 3D image and select correct dataset*)
+
+         
+         dats = 
+          If[depth == 4, 
+           If[trans, {dat[[setp]]}, {dat[[All, setp]]}], {dat}];
+         mins = Min[dats];
+         maxs = Max[dats];
+         min3D = Clip[min3D, {mins, 1}];
+         max3D = Clip[max3D, {0, 2 maxs}];
+         
+         (*create im3D*)
+         pdat = 
+          If[show == 6, ToByte[##, {min3D, max3D}], ##] & @@
+            dats;
+         im3D = 
+          Image3D[##, ColorFunction -> col3D] & @@ 
+           If[reverse, {Reverse[pdat]}, {pdat}];
+         ) // AbsoluteTiming // First;
+     
+     (*Create dynamic color function, 1000 values, 
+     with clipping for min and max vals*)
+     t2 = (
+         If[show != 6,
+         	(*colf = LookUpTable3[cfs, {lstyle, color}, {minclip, maxclip},If[cfs,{mind,maxd,mind,maxd},{mind,maxd,min,max}]]*)
+         	colf = LookUpTable[{lstyle, color}, {minclip, maxclip}]         	
+         	]
+         ) // AbsoluteTiming // First;
+     
+     (*create the lices for the pannel all view*)
+     t3 = (If[show == 4 && lines,
+          
+          linax = Graphics[{Red, Thickness[.01], 
+             Line[{{column, 0}, {column, size2}}], Green, 
+             Thickness[.01], Line[{{0, row}, {size3, row}}]}];
+          
+          lincor = 
+           Graphics[{Red, Thickness[.01], 
+             Line[{{column, 0}, {column, size3}}], Blue, 
+             Thickness[.01], Line[{{0, slice}, {size3, slice}}]}];
+          
+          linsag = 
+           Graphics[{Green, Thickness[.01], 
+             Line[{{row, 0}, {row, size3}}], Blue, Thickness[.01], 
+             Line[{{0, slice}, {size3, slice}}]}];
+          ]
+         ) // AbsoluteTiming // First;
+     
+     (*create the axial coronal and sagital images*)
+     t4 = (
+         If[MemberQ[If[planez, {1, 4, 5}, {1, 4}], show],
+          
+          imax = Colorize[Image3DSlices[im3D, {slicep}, 1][[1]], 
+            ColorFunction -> colf, ColorFunctionScaling -> cfs];
+          
+          plax = Show[##, ImageSize -> scal {ratio[[1]], ratio[[2]]}, 
+              AspectRatio -> Full] & @@ 
+            If[line, {imax, linax}, {imax}];
+          ];
+         If[MemberQ[If[planey, {2, 4, 5}, {2, 4}], show],
+          
+          imcor = Colorize[Image3DSlices[im3D, {rowp}, 2][[1]], 
+            ColorFunction -> colf, ColorFunctionScaling -> cfs];
+          
+          plcor = Show[##, ImageSize -> scal {ratio[[1]], ratio[[3]]},
+               AspectRatio -> Full] & @@ 
+            If[line, {imcor, lincor}, {imcor}];
+          ];
+         If[MemberQ[If[planex, {3, 4, 5}, {3, 4}], show],
+          
+          imsag = ImageReflect[
+            Colorize[Image3DSlices[im3D, {columnp}, 3][[1]], 
+             ColorFunction -> colf, ColorFunctionScaling -> cfs], 
+            Left -> Right];
+          
+          plsag = Show[##, ImageSize -> scal {ratio[[2]], ratio[[3]]},
+               AspectRatio -> Full] & @@ 
+            If[line, {imsag, linsag}, {imsag}];
+          ];
+         ) // AbsoluteTiming // First;
+     
+     (*create the pannel all view with event handles to click and \
+select*)
+     t5 = (
+         If[show == 4,
+           imall = Grid[{{
+               
+               EventHandler[
+                plax, {"MouseDown" :> ({column, row} = 
+                    Abs[Round[
+                    MousePosition["Graphics"]] - {-1, -1}])}]}, {
+               
+               EventHandler[
+                plcor, {"MouseDown" :> ({column, slice} = 
+                    Abs[Round[MousePosition["Graphics"]] - {-1, 1}])}],
+               
+               EventHandler[
+                
+                plsag, {"MouseDown" :> ({row, 
+                    slice} = (Abs[
+                    Round[MousePosition["Graphics"]] - {-1, 1}]))}]
+               }}, Background -> White, Spacings -> {0, 0}, 
+             Frame -> All, 
+             FrameStyle -> Directive[{Thickness[6], White}]]];
+         ) // AbsoluteTiming // First;
+     
+     If[MemberQ[views[[All, 1]], vp], vv = {0, 0, 1}];
+     
+     t6 = (If[show == 5,
+           
+           sel = DeleteCases[{If[planez, 1], If[planey, 2], 
+              If[planex, 3]}, Null];
+           
+           slices3D = 
+            If[sel == {}, {}, {Opacity[{opz, opy, opx}[[#]]], 
+                Dynamic[Texture[{imax, imcor, imsag}[[#]]]], Polygon[{
+                   {{1, 1, slice}, {size3, 1, slice}, {size3, size2, 
+                    slice}, {1, size2, slice}},
+                   {{1, row, 1}, {size2, row, 1}, {size2, row, 
+                    size1}, {1, row, size1}},
+                   {{column, 1, 1}, {column, size3, 1}, {column, 
+                    size3, size1}, {column, 1, size1}}
+                   }[[#]], 
+                 VertexTextureCoordinates -> {{0, 0}, {1, 0}, {1, 
+                    1}, {0, 1}}]} & /@ sel
+             ];
+           plsl3D = Show[Graphics3D[slices3D,
+              BoxRatios -> ratio, ImageSize -> scale, 
+              SphericalRegion -> True, Background -> back, 
+              Lighting -> "Neutral",
+              ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], 
+              ViewAngle -> Dynamic[va],
+              Boxed -> box, Axes -> axes, 
+              AxesStyle -> Thread[List[{Red, Green, Blue}, Thick]]
+              ], 
+             PlotRange -> {{-1, size3 + 1}, {-1, size2 + 1}, {-1, 
+                size1 + 1}}]
+           ];
+         ) // AbsoluteTiming // First;
+     
+     If[show == 6, plim3D = Show[
+         im3D,
+         BoxRatios -> ratio, ImageSize -> scale, 
+         SphericalRegion -> True, Background -> back, 
+         Lighting -> "Neutral",
+         ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], 
+         ViewAngle -> Dynamic[va],
+         Boxed -> box, Axes -> axes, 
+         AxesStyle -> Thread[List[{Red, Green, Blue}, Thick]],
+         PlotRange -> {{-1, size3 + 1}, {-1, size2 + 1}, {-1, 
+            size1 + 1}}
+         ];
+      ];
+     
+     Switch[show,
+      1, plax,
+      2, plcor,
+      3, plsag,
+      4, imall,
+      5, plsl3D,
+      6, plim3D
+      ]
+     
+     ,
+     
+     (*show what*)
+     {{show, 4, "Plot Mode"}, {1 -> "Axial", 2 -> "Coronal", 
+       3 -> "Sagital", 4 -> "All Planes", 5 -> "Planes 3D", 
+       6 -> "Volume 3D"}},
+     {{scale, 500, "Plot Size"}, psizes},
+     {{back, Gray, "BackGround"}, 
+      ColorSlider[#, ImageSize -> {Automatic, 15}] &},
+     
+     (*general 4D*)
+     {{set, 1, "Set (4D)"}, 1, Dynamic[size1b], 1},
+     (*general 3D 4D*)
+     {{trans, False, "Transpose 4D"}, {True, False}},
+     {{reverse, False, "Reverse slices"}, {True, False}},
+     {{slice, Round[size1/2], "Axial"}, 1, Dynamic[size1], 1},
+     {{row, Round[size2/2], "Coronal"}, 1, Dynamic[size2], 1},
+     {{column, Round[size3/2], "Sagital"}, 1, Dynamic[size3], 1},
+     
+     (*all planes 4*)
+     {{lines, True, "Show lines"}, {True -> "On", False -> "Off"}},
+     
+     (*planes color 1-5*)
+     {{color, "BlackToWhite", "ColorFunction"}, colors},
+     {{lstyle, 1, "lstyle"}, colfuncs},
+     {{cfs, False, "Auto Scaling"}, {True -> "On", False -> "Off"}},
+     (*on or off by auto scale*)
+     {{min, mind, "Min"}, mind, 0.9 max},
+     {{minclip, RGBColor[{0, 0, 0}], "MinClip"}, 
+      ColorSlider[#, ImageSize -> {Automatic, 15}] &},
+     {{max, maxd, "Max"}, 1.1 min, maxd},
+     {{maxclip, RGBColor[{255, 255, 255}], "MaxClip"}, 
+      ColorSlider[#, ImageSize -> {Automatic, 15}] &},
+     
+     (*3D general 5-6*)
+     {{box, True, "Show box"}, {True, False}},
+     {{axes, True, "Show axis"}, {True, False}},
+     {{vp, 3.5 {0.384, 0.709, 0.591}, "Viewpoint"}, views, 
+      ControlType -> SetterBar},
+     
+     (*3D planes 5*)
+     {{planex, True, "Show plane x"}, {True, False}},
+     {{opx, 1, "Opacity plane x"}, 0, 1, 0.1},
+     {{planey, True, "Show plane y"}, {True, False}},
+     {{opy, 1, "Opacity plane y"}, 0, 1, 0.1},
+     {{planez, True, "Show plane z"}, {True, False}},
+     {{opz, 1, "Opacity plane z"}, 0, 1, 0.1},
+     
+     (*3Dvol 6*)
+     {{col3D, Automatic, "Colorfunction 3D"}, colors3D},
+     {{min3D, mins, "min 3D"}, Dynamic[mins], max3D},
+     {{max3D, maxs, "max 3D"}, min3D, Dynamic[2 maxs]},
+     
+     {{vp, 3.5 {0.384, 0.709, 0.591}, "ViewPoint"}, Dynamic[vp] &, 
+      ControlType -> None},
+     {{vv, {0, 0, 1}, "ViewVertical"}, Dynamic[vv] &, 
+      ControlType -> None},
+     {{va, 25 Degree, "ViewAngle"}, Dynamic[va] &, 
+      ControlType -> None},
+     
+     ControlPlacement -> Right,
+     SynchronousInitialization -> False
+     ];
+
+   plotwindow3D = 
+    CreateWindow[
+     DialogNotebook[{CancelButton["Close",Clear[data]; DialogReturn[]], pan}, 
+      WindowSize -> All, WindowTitle -> "Plot data window"]];
+ ]
+*)
+
+(*
+PointsFunc = 
+  Compile[{{qual, _Real, 0}, {dx, _Integer, 0}, {dy, _Integer, 
+     0}, {dz, _Integer, 0}, {size, _Integer, 0}, {alpha, _Real, 
+     0}, {beta, _Real, 0}, {or, _Real, 1}},
+   Block[{pts, pt = {1, 1, 1}, ptls, blank = {{1, 1, 1}}, test = 0, 
+     step = Round[size/(qual*size)]},
+    pts = Table[
+      Round[(({{1, 0, 0}, {0, Cos[alpha], -Sin[alpha]}, {0, 
+              Sin[alpha], Cos[alpha]}}.{{Cos[beta], 0, Sin[beta]}, {0,
+               1, 0}, {-Sin[beta], 0, Cos[beta]}}).({x, y, or[[3]]} - 
+            or)) + or],
+      {y, -Round[(size - dy)/2], Round[(size - dy)/2] + dy, step},
+      {x, -Round[(size - dx)/2], Round[(size - dx)/2] + dx, step}];
+    Do[pts = DeleteCases[(
+          ptls = #;
+          blank = ConstantArray[0, Dimensions[ptls]];
+          
+          test = Total[(pt = #; 
+               If[1 - step <= pt[[1]] <= dx + step && 
+                 1 - step <= pt[[2]] <= dy + step && 
+                 1 - step <= pt[[3]] <= dz + step, 1, 0]) & /@ ptls];
+          If[test > 0, ptls, blank]
+          ) & /@ pts, blank];
+     pts = Transpose[DeleteCases[(
+           ptls = #;
+           blank = ConstantArray[0, Dimensions[ptls]];
+           
+           test = Total[(pt = #; 
+                If[1 - step <= pt[[1]] <= dx + step && 
+                  1 - step <= pt[[2]] <= dy + step && 
+                  1 - step <= pt[[3]] <= dz + step, 1, 0]) & /@ ptls];
+           If[test > 0, ptls, blank]
+           ) & /@ Transpose[pts], blank]];
+     , {2}];
+    pts
+    ]];
+
+AngCor = Function[{ang, cor}, 
+   If[-45 <= ang <= 45, ang*(cor/45), 
+     If[Positive[ang], 
+      cor + (ang - 45)*(90 - cor)/45, -cor + (ang + 45)*(90 - cor)/
+         45]] Degree];
+
+
+SyntaxInformation[PlotData3D] = {"ArgumentsPattern" -> {_, _.}};
+
+PlotData3D[data_, vox : {_, _, _} : {1, 1, 1}] := 
+ Module[{tab1, tab2, tab3, tab4, control, dim, dz, dx, dy, planes, 
+   qual, xx, yy, zz, planex, opx, planey, opy, planez, opz, ratio, or,
+    clip, slicex, slicey, slicez, 
+   slicea, sliceao, surf, vp, va, vv, plot, exp, diag, dorig, dqual, 
+   opd, diagx, diagy, diagz, alpha, beta, box, axes, label, ps, color,
+    lstyle, bcol, legend, min, max, minclip, maxclip, 
+   pxmin, pxmax, pymin, pymax, pzmin, pzmax, iso, isoval, surfqual, 
+   surfop, surfcol, fileType, size, pannel, dimq, pts, pol, gr, vec, 
+   a, b, c, ang, angx, angy}, 
+  If[(! ArrayQ[data, _, NumericQ]) || (! ArrayDepth[data] == 3), Return[Message[PlotData3D::data]]];
+  
+  dim = {dz, dy, dx} = Dimensions[data];
+  size = Round[Sqrt[Total[#^2 & /@ Drop[Sort[dim], 1]]] // N];
+  
+  tab1 = Column[{ManPannel[
+      "Planes", {
+      	{"Show Planes",Control@{{planes, True, ""}, {True, False}}}, 
+      	{"Plane Quality (%)", Control@{{qual, .5, ""}, .2, 1, .2}}, 
+      	{Style["Plane Navigation", Bold], ""}, 
+        {"Corronal Slice (x)",Control@{{xx, Round[dx/2], ""}, 1, dx, 1}}, 
+        {"Saggital Slice (y)",Control@{{yy, Round[dy/2], ""}, 1, dy, 1}}, 
+        {"Axial Slice (z)",Control@{{zz, Round[dz/2], ""}, 1, dz, 1}}, 
+        {Style["Plane Settings", Bold], ""}, 
+        {"Show Corronal (x)",Control@{{planex, True, ""}, {True, False}}}, 
+        {"Plane Opacity (x)",Control@{{opx, 1, ""}, 0, 1, 0.1}}, 
+        {"Show Saggital (y)",Control@{{planey, True, ""}, {True, False}}}, 
+        {"Plane Opacity (y)",Control@{{opy, 1, ""}, 0, 1, 0.1}}, 
+        {"Show Axial (z)",Control@{{planez, True, ""}, {True, False}}}, 
+        {"Plane Opacity (z)",Control@{{opz, 1, ""}, 0, 1, 0.1}}}], 
+     ManPannel[
+      "Diagonal plane", {
+      	{"Show Diagonal",  Control@{{diag, False, ""}, {True,False}}}, 
+        {"Show Plane Origin",Control@{{dorig, False, ""}, {True,False}}}, 
+        {"Plane Quality (%)", Control@{{dqual, .5, ""},.2,1,.2}}, 
+        {"Plane Opacity", Control@{{opd, 1, ""}, 0, 1, 0.1}}, 
+        {Style["Position", Bold], ""}, 
+        {"Diagonal x Position", Control@{{diagx, Round[dx/2], ""}, 1, dx, 1}}, 
+        {"Diagonal y Position", Control@{{diagy, Round[dy/2], ""}, 1, dy,1}}, 
+        {"Diagonal z Position",  Control@{{diagz, Round[dz/2], ""}, 1, dz, 1}}, 
+        {Style["Rotation", Bold], ""}, 
+        {"Rotation x-axis (\[Degree])", Control@{{alpha, 15, ""}, -90, 90,  1}}, 
+        {"Rotation y-axis (\[Degree])",  Control@{{beta, 15, ""}, -90, 90, 1}}}, False]}];
+  tab2 = Column[{ManPannel[
+      "Plot Style", {
+      	{"Show Box", Control@{{box, False, ""}, {True, False}}}, 
+        {"Show Axes", Control@{{axes, False, ""}, {True, False}}}, 
+        {"Plot Title", Control@{{label, "", ""}, InputField[#, String] &}}, 
+        {"Plot Size", Control@{{ps, 400, ""}, sizes, ControlType -> PopupMenu}},
+        {"Color function", Control@{{color, "GrayTones", ""}, colors, ControlType -> PopupMenu}}, 
+        {"Color style", Control@{{lstyle, 1, ""}, colfuncs}}, 
+        {"Background Color", Control@{{bcol, Gray, ""}, ColorSlider[#,  ImageSize -> {Automatic, 15}] &}}, 
+        {"Legend on/off", Control@{{legend, False, ""}, {True, False}}}}], 
+     ManPannel[
+      "Plot Range", {
+      	{"Min value", Control@{{min, Min[data], ""}, Min[data], max, (max - Min[data])/100}}, 
+        {"Max value",  Control@{{max, Max[data], ""}, min, Max[data], (Max[data] - min)/100}}, 
+        (*{"Transparent Clipping", Control@{{transclip, False, ""}, {True, False}}},*) 
+        {"Min Clipping",  Control@{{minclip, Black, ""},  ColorSlider[#,  ImageSize -> {Automatic, 15}] &}}, 
+        {"Max Clipping", Control@{{maxclip, White, ""},   ColorSlider[#, ImageSize -> {Automatic, 15}] &}}}], 
+     ManPannel[
+      "Slice Range", {
+      	{"Minimal x value", Control@{{pxmin, 1, ""}, 1, pxmax, 1}}, 
+        {"Maximal x value", Control@{{pxmax, dx, ""}, pxmin + 1, dx,1}}, 
+        {"Minimal y value", Control@{{pymin, 1, ""}, 1, pymax, 1}}, 
+        {"Maximal y value", Control@{{pymax, dy, ""}, pymin + 1, dy, 1}}, 
+        {"Minimal z value", Control@{{pzmin, 1, ""}, 1, pzmax, 1}}, 
+        {"Maximal z value", Control@{{pzmax, dz, ""}, pzmin + 1, dz, 1}}}]}];
+  tab3 = Column[{ManPannel[
+      "Iso Surface", {
+      	{"Show IsoSurface", Control@{{iso, False, ""}, {True, False}}}, 
+        {"Iso Value",  Control@{{isoval, {Round[Max[data]/2]}, ""}, InputField[#] &}}, 
+        {"Surface Quality (%)", Control@{{surfqual, 50, ""}, 20, 125, 1}}, 
+        {"Surface Opacity", Control@{{surfop, 1, ""}, 0, 1, 0.1}}, 
+        {"Surface Color", Control@{{surfcol, Darker[Red], ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}}}]}];
+  tab4 = Column[{ManPannel[
+      "Export plot", {
+      	{"File Type", Control@{{fileType, ".jpg", ""}, files}}, 
+        {"Export Size", Control@{{size, 400, ""}, sizes, ControlType -> PopupMenu}}, 
+        {"Export", Button["Save Plot", FileSave[exp, fileType, size],  Method -> "Queued", ImageSize -> 150]}}]}
+        ];
+  control = {{{pannel, 1, ""}, {1 -> "Planes", 
+      2 -> "Plotting Options", 3 -> "IsoSurface", 4 -> "Export"}}, 
+    Delimiter, 
+    PaneSelector[{1 -> tab1, 2 -> tab2, 3 -> tab3, 4 -> tab4}, 
+     pannel]};
+  
+  (*mind=If[Min[data//N]==0.,0.0001 Max[data],0.];*)
+  PrintTemporary["Initializing plot window, please wait"];
+  
+  Manipulate[If[! ListQ[data], Return[]];
+    If[! ArrayQ[data], Return[]];
+    (*define box ratio*)
+    
+    ratio = {(pxmax - pxmin), (pymax - pymin), (pzmax - 
+         pzmin)} Reverse[vox];
+    ang = {angx, angy} = 
+      N[{ArcTan[(ratio[[3]]/vox[[1]])/(ratio[[3]]/vox[[2]])], 
+         ArcTan[(ratio[[3]]/vox[[1]])/(ratio[[3]]/vox[[3]])]}/Degree];
+    
+    (*diagonal slice parameters*)
+    
+    or = {diagx, diagy, diagz};
+    vec = {a, b, c} = 
+      Normalize[
+       Reverse[vox] {Sin[
+          AngCor[beta, angy]], -Cos[AngCor[beta, angy]] Sin[
+           AngCor[alpha, angx]], 
+         Cos[AngCor[alpha, angx]] Cos[AngCor[beta, angy]]}];
+    
+    clip = {minclip,maxclip};
+     (*If[transclip, {Transparent, Transparent}, {minclip, maxclip}];*)
+    With[{
+      
+      (*slice plot function*)
+      
+      SlicePlot = 
+       Function[{n, op}, 
+        dimq = Round[qual*dim[[Drop[{1, 2, 3}, {n}]]]];
+        {Opacity[op], 
+          Texture[Graphics[
+            Raster[Clip[
+              Rescale[
+               RescaleImg[{data[[zz]], data[[All, yy, All]], 
+                  data[[All, All, xx]]}[[n]], dimq], {min, max}], {0, 
+               1}, {-1, -2}], 
+             ColorFunction -> (ColSelC[#, clip, {lstyle, color}] &)], 
+            PlotRange -> {{0, dimq[[2]]}, {0, dimq[[1]]}}]], 
+          Polygon[{{{1, 1, zz}, {dx, 1, zz}, {dx, dy, zz}, {1, dy, 
+               zz}}, {{1, yy, 1}, {dx, yy, 1}, {dx, yy, dz}, {1, yy, 
+               dz}}, {{xx, 1, 1}, {xx, dy, 1}, {xx, dy, dz}, {xx, 1, 
+               dz}}}[[n]], 
+           VertexTextureCoordinates -> {{0, 0}, {1, 0}, {1, 1}, {0, 
+              1}}]}]
+      
+     (*, SlicePlotAng = 
+       Function[{col, op}, 
+        pts = PointsFunc[dqual, dx, dy, dz, size, AngCor[alpha, angx],
+           AngCor[beta, angy], {diagx, diagy, diagz}];
+        pol = {First[First[pts]], First[Last[pts]], Last[Last[pts]], 
+          Last[First[pts]]};
+          
+        gr = 
+         Graphics[
+          Raster[Clip[
+            Rescale[
+             Map[data[[Clip[#[[3]], {1, dz}], Clip[#[[2]], {1, dy}], 
+                Clip[#[[1]], {1, dx}]]] &, pts, {2}], {min, max}], {0,
+              1}, {-1, -2}], 
+           ColorFunction -> (ColSelC[#, clip, {lstyle, col}] &)], 
+          PlotRange -> {{0, Length[pts[[1]]]}, {0, Length[pts]}}];
+        {Opacity[op], Texture[gr], 
+          Polygon[pol, 
+           VertexTextureCoordinates -> {{0, 0}, {0, 1}, {1, 1}, {1, 
+              0}}]}]*)},
+     
+     (*Draw planes*)
+     
+     slicex = If[#1 && #2, SlicePlot[2, opx], {}] &;
+     slicey = If[#1 && #2, SlicePlot[3, opy], {}] &;
+     slicez = If[#1 && #2, SlicePlot[1, opz], {}] &;
+     slicea = If[#, 
+     	pts = PointsFunc[dqual, dx, dy, dz, size, AngCor[alpha, angx],
+           AngCor[beta, angy], {diagx, diagy, diagz}];
+        pol = {First[First[pts]], First[Last[pts]], Last[Last[pts]], 
+          Last[First[pts]]};
+        gr = Graphics[Raster[Clip[Rescale[
+             Map[data[[Clip[#[[3]], {1, dz}], Clip[#[[2]], {1, dy}], 
+                Clip[#[[1]], {1, dx}]]] &, pts, {2}], {min, max}], {0,
+              1}, {-1, -2}], 
+           ColorFunction -> (ColSelC[#, clip, {lstyle, color}] &)], 
+          PlotRange -> {{0, Length[pts[[1]]]}, {0, Length[pts]}}];
+        {Opacity[opd], Texture[gr], 
+          Polygon[pol, 
+           VertexTextureCoordinates -> {{0, 0}, {0, 1}, {1, 1}, {1, 
+              0}}]}
+  , {}] &;];
+    
+    (*Draw diagonal slice marker*)
+    
+    sliceao = 
+     If[#, Dynamic[{Red, 
+         Scale[Sphere[or, (1/20 Min[dim*vox])], Min[vox]/Reverse[vox],
+           or], Green, Thick, Arrowheads[0.05], 
+         Scale[Arrow[
+           Tube[{or, 
+             or + (.5 Min[dim*vox]) (Normalize[vec/Reverse[vox]])}, 
+            0.8]], Min[vox]/Reverse[vox], or]}], {}] &;
+    
+    (*Draw iso surface*)
+    
+    surf = 
+     If[#, Dynamic[
+        ListContourPlot3D[data, Contours -> Cases[isoval, _?NumberQ], 
+          Mesh -> False, Axes -> False, 
+          ContourStyle -> Directive[Opacity[surfop], surfcol], 
+          MaxPlotPoints -> Round[0.75 surfqual], 
+          BoundaryStyle -> None][[1]]], {}] &;
+    
+    (*Generate Plot*)
+    
+    plot = 
+     Dynamic[Graphics3D[{sliceao[dorig], surf[iso], slicez[planes, planez], 
+       slicey[planes, planey], slicex[planes, planex], slicea[diag]}, 
+      Lighting -> "Neutral", BoxRatios -> ratio, 
+      ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], 
+      ViewAngle -> Dynamic[va], ImageSize -> ps, Background -> bcol, 
+      SphericalRegion -> True, Boxed -> box, Axes -> axes, 
+      AxesStyle -> Thread[List[{Red, Green, Blue}, Thick]], 
+      BaseStyle -> {FontWeight -> Bold, FontFamily -> "sans-serif", 
+        28}, LabelStyle -> 14, AxesLabel -> {"X", "Y", "Z"}, 
+      PlotRange -> {{pxmin - 1, pxmax + 1}, {pymin - 1, 
+         pymax + 1}, {pzmin - 1, pzmax + 1}}, 
+      ContentSelectable -> True, PlotLabel -> label, 
+      ImagePadding -> {{5, 5}, {5, 5}}]];
+    
+    (*Display Plot*)
+    
+    exp = If[legend, Legendi[plot, {lstyle, color, bcol}, min, max, ps], plot]
+    
+    (*Insert control pannels*)
+    , ## ,
+    (*Hidden manipulation parameters*)
+    {{vp, {1.3, -2.4, 2}, "ViewPoint"}, Dynamic[vp] &, ControlType -> None}, 
+    {{vv, {0, 0, 1}, "ViewVertical"}, Dynamic[vv] &, ControlType -> None}, 
+    {{va, 25 Degree, "ViewAngle"}, Dynamic[va] &, ControlType -> None}, 
+    Deployed -> False, 
+    SynchronousInitialization -> False, 
+    SynchronousUpdating -> False, 
+    ContinuousAction -> False,
+    ControlPlacement -> Right
+    ]&@@ control]
+*)
+
+
+(*
+PlotData3D[data_, vox:{_,_,_}:{1,1,1}] := 
+ Module[{tab1, tab2, tab3, tab4, control, dim, dz, dx, dy,
+   planes, qual, xx, yy, zz, planex, opx, planey, opy, planez, opz,
+   ratio,or,clip,CR=Clip[Round[#1], {1, #2}]&,
+   slicex,slicey,slicez,slicea,sliceao,surf,vp,va,vv,plot,exp,
+   diag, dorig, dqual, opd, diagx, diagy, diagz, alpha, beta,
+   box, axes, label, ps, color, lstyle, bcol, legend,
+   min, max, transclip, minclip, maxclip,
+   pxmin, pxmax, pymin, pymax, pzmin, pzmax,
+   iso, isoval, surfqual, surfop, surfcol,
+   fileType, size, pannel,dimq,
+   vec, a, b, c, ang, angx, angy, afunc, arang, asel, v1, v2
+   },
+  
+  If[(! ArrayQ[data, _, NumericQ]) || (! ArrayDepth[data] == 3),Return[Message[PlotData3D::data]]];
+  
+  dim = {dz, dy, dx} = Dimensions[data];
+  
+  tab1 = Column[{
+     ManPannel["Planes", {
+       {"Show Planes", Control@{{planes, True, ""}, {True, False}}},
+       {"Plane Quality (%)", Control@{{qual, .5, ""}, .1, 1, .1}},
+       {Style["Plane Navigation", Bold], ""},
+       {"Corronal Slice (x)", 
+        Control@{{xx, Round[dx/2], ""}, 1, dx, 1}},
+       {"Saggital Slice (y)", 
+        Control@{{yy, Round[dy/2], ""}, 1, dy, 1}},
+       {"Axial Slice (z)", Control@{{zz, Round[dz/2], ""}, 1, dz, 1}},
+       {Style["Plane Settings", Bold], ""},
+       {"Show Corronal (x)", 
+        Control@{{planex, True, ""}, {True, False}}},
+       {"Plane Opacity (x)", Control@{{opx, 1, ""}, 0, 1, 0.1}},
+       {"Show Saggital (y)", 
+        Control@{{planey, True, ""}, {True, False}}},
+       {"Plane Opacity (y)", Control@{{opy, 1, ""}, 0, 1, 0.1}},
+       {"Show Axial (z)", Control@{{planez, True, ""}, {True, False}}},
+       {"Plane Opacity (z)", Control@{{opz, 1, ""}, 0, 1, 0.1}}
+       }]
+     ,
+     ManPannel["Diagonal plane", {
+       {"Show Diagonal", Control@{{diag, False, ""}, {True, False}}},
+       {"Show Plane Origin", 
+        Control@{{dorig, False, ""}, {True, False}}},
+       {"Plane Quality (%)", Control@{{dqual, .5, ""}, .1, 1, .1}},
+       {"Plane Opacity", Control@{{opd, 1, ""}, 0, 1, 0.1}},
+       {Style["Position", Bold], ""},
+       {"Diagonal x Position", 
+        Control@{{diagx, Round[dx/2], ""}, 1, dx, 1}},
+       {"Diagonal y Position", 
+        Control@{{diagy, Round[dy/2], ""}, 1, dy, 1}},
+       {"Diagonal z Position", 
+        Control@{{diagz, Round[dz/2], ""}, 1, dz, 1}},
+       {Style["Rotation", Bold], ""},
+       {"Rotation x-axis (\[Degree])", 
+        Control@{{alpha, 15, ""}, -90, 90, 1}},
+       {"Rotation y-axis (\[Degree])", 
+        Control@{{beta, 15, ""}, -90, 90, 1}}
+       }, False]
+     }];
+  
+  tab2 = Column[{
+     ManPannel["Plot Style", {
+       {"Show Box", Control@{{box, False, ""}, {True, False}}},
+       {"Show Axes", Control@{{axes, False, ""}, {True, False}}},
+       {"Plot Title", 
+        Control@{{label, "", ""}, InputField[#, String] &}},
+       {"Plot Size", 
+        Control@{{ps, 400, ""}, sizes, ControlType -> PopupMenu}},
+       {"Color function", 
+        Control@{{color, "GrayTones", ""}, colors, 
+          ControlType -> PopupMenu}},
+       {"Color style", Control@{{lstyle, 1, ""}, colfuncs}},
+       {"Background Color", 
+        Control@{{bcol, Gray, ""}, 
+          ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
+       {"Legend on/off", Control@{{legend, False, ""}, {True, False}}}
+       }]
+     ,
+     ManPannel["Plot Range", {
+       {"Min value", 
+        Control@{{min, Min[data], ""}, Min[data], 
+          max, (max - Min[data])/100}},
+       {"Max value", 
+        Control@{{max, Max[data], ""}, min, 
+          Max[data], (Max[data] - min)/100}},
+       {"Transparent Clipping", 
+        Control@{{transclip, False, ""}, {True, False}}},
+       {"Min Clipping", 
+        Control@{{minclip, Black, ""}, 
+          ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
+       {"Max Clipping", 
+        Control@{{maxclip, White, ""}, 
+          ColorSlider[#, ImageSize -> {Automatic, 15}] &}}
+       }]
+     ,
+     ManPannel["Slice Range", {
+       {"Minimal x value", Control@{{pxmin, 1, ""}, 1, pxmax, 1}},
+       {"Maximal x value", 
+        Control@{{pxmax, dx, ""}, pxmin + 1, dx, 1}},
+       {"Minimal y value", Control@{{pymin, 1, ""}, 1, pymax, 1}},
+       {"Maximal y value", 
+        Control@{{pymax, dy, ""}, pymin + 1, dy, 1}},
+       {"Minimal z value", Control@{{pzmin, 1, ""}, 1, pzmax, 1}},
+       {"Maximal z value", Control@{{pzmax, dz, ""}, pzmin + 1, dz, 1}}
+       }]
+     }];
+  
+  tab3 = Column[{
+     ManPannel["Iso Surface", {
+       {"Show IsoSurface", Control@{{iso, False, ""}, {True, False}}},
+       {"Iso Value", 
+        Control@{{isoval, {Round[Max[data]/2]}, ""}, InputField[#] &}},
+       {"Surface Quality (%)", 
+        Control@{{surfqual, 50, ""}, 20, 125, 1}},
+       {"Surface Opacity", Control@{{surfop, 1, ""}, 0, 1, 0.1}},
+       {"Surface Color", 
+        Control@{{surfcol, Darker[Red], ""}, 
+          ColorSlider[#, ImageSize -> {Automatic, 15}] &}}
+       }]
+     }];
+  
+  tab4 = Column[{
+     ManPannel["Export plot", {
+       {"File Type", Control@{{fileType, ".jpg", ""}, files}},
+       {"Export Size", 
+        Control@{{size, 400, ""}, sizes, ControlType -> PopupMenu}},
+       {"Export", 
+        Button["Save Plot", FileSave[exp, fileType, size], 
+         Method -> "Queued", ImageSize -> 150]}
+       }]
+     }];
+  
+  control = {
+    {{pannel, 1, ""}, {1 -> "Planes", 2 -> "Plotting Options", 
+      3 -> "IsoSurface", 4 -> "Export"}},
+    Delimiter,
+    PaneSelector[{1 -> tab1, 2 -> tab2, 3 -> tab3, 4 -> tab4}, pannel]
+    };
+  
+  (*mind = If[Min[data // N] == 0., 0.0001 Max[data], 0.];*)
+  
+  PrintTemporary["Initializing plot window, please wait"];
+  
+  Manipulate[
+  	
+  	If[!ArrayQ[data],Return[]];
+     
+     (*define box ratio*)
+     ratio = {(pymax - pymin), (pxmax - pxmin), (pzmax - pzmin)} Reverse[vox];
+     
+     (*diagonal slice parameters*)
+     or = {diagx, diagy, diagz};
+     vec = {a, b, c} = Normalize[Reverse[vox] {Sin[alpha Degree] Cos[beta Degree], Sin[alpha Degree] Sin[beta Degree], Cos[alpha Degree]}];
+     If[diag, 
+     	ang = {angx, angy} = N[{ArcTan[dz/dx], ArcTan[dx/dy]}/Degree];
+      	asel = If[Abs[alpha] > angx && Abs[beta] > angy, 1, If[Abs[alpha] > angx, 2, 3]];
+      	afunc = {
+      		{v1,(-a (v1 - diagx) - b (-diagy) - c (v2 - diagz))/If[b == 0 || b == 0., 1, b], v2}, 
+          	{(-a (-diagx) - b (v1 - diagy) - c (v2 - diagz))/If[a == 0 || a == 0., 1, a], v1, v2}, 
+          	{v1, v2, (-a (v1 - diagx) - b (v2 - diagy) - c (-diagz))/If[c == 0 || c == 0., 1, c]}
+          	}[[asel]]// N;
+      	arang = {{dx, dz}, {dy, dz}, {dx, dy}}[[asel]];
+      	;
+      ];
+     
+     clip=If[transclip, {Transparent,Transparent}, {minclip,maxclip}];
+     
+     With[{
+        (*slice plot function*)
+        SlicePlot = Function[{vecf, rang, op, qualf},
+        	ParametricPlot3D[vecf, {v1, 1, rang[[1]]}, {v2, 1, rang[[2]]},
+        		PlotStyle -> Opacity[op], PlotPoints -> Round[qualf rang], Mesh -> False, ColorFunctionScaling -> False,
+        		ColorFunction -> (ColSelC[Clip[Rescale[data[[CR[#3,dz],CR[#1,dx],CR[#2,dy]]],{min,max}],{0,1},{-1,2}],clip,{lstyle,color}]&)
+        	]]
+        ,
+    	SlicePlot2 = 
+  Function[{n, op}, dimq = Round[qual*dim[[Drop[{1, 2, 3}, {n}]]]];
+   Graphics3D[{Opacity[op], 
+     Texture[Graphics[
+       Raster[Clip[
+         Rescale[RescaleImg[{data[[zz]], data[[All, All, yy]], 
+             data[[All, xx, All]]}[[n]], dimq], {min, max}], {0, 
+          1}, {-1, -2}], 
+        ColorFunction -> (ColSelC[#, clip, {lstyle, color}] &)], 
+       PlotRange -> {{0, dimq[[2]]}, {0, dimq[[1]]}}, 
+       AspectRatio -> (Divide @@ (dimq*Drop[vox, {n}]))]],
+     Polygon[{
+        {{1, 1, zz}, {dim[[2]], 1, zz}, {dim[[2]], dim[[3]], zz}, {1, 
+          dim[[3]], zz}},
+        {{1, xx, 1}, {dim[[2]], xx, 1}, {dim[[2]], xx, dim[[1]]}, {1, 
+          xx, dim[[1]]}},
+        {{yy, 1, 1}, {yy, dim[[3]], 1}, {yy, dim[[3]], dim[[1]]}, {yy,
+           1, dim[[1]]}}
+        }[[n]], 
+      VertexTextureCoordinates -> {{{0, 0}, {0, 1}, {1, 1}, {1, 
+           0}}, {{0, 0}, {1, 0}, {1, 1}, {0, 1}}, {{0, 0}, {1, 0}, {1,
+            1}, {0, 
+           1}}}[[n]]]}]]},
+           (*Draw planes*)
+		(*slicex=If[#1&&#2,SlicePlot[{v1,xx,v2},{dy,dz},opx,qual],Graphics3D[]]&;
+		slicey=If[#1&&#2,SlicePlot[{yy,v1,v2},{dx,dz},opy,qual],Graphics3D[]]&;
+		slicez=If[#1&&#2,SlicePlot[{v1,v2,zz},{dx,dy},opz,qual],Graphics3D[]]&;*)
+		slicex = If[#1 && #2, SlicePlot2[2, opx], Graphics3D[]] &;
+		slicey = If[#1 && #2, SlicePlot2[3, opy], Graphics3D[]] &;
+		slicez = If[#1 && #2, SlicePlot2[1, opz], Graphics3D[]] &;
+      slicea = If[#, SlicePlot[afunc, arang, opd, dqual], Graphics3D[]]&;
+      ];
+     
+     (*Draw diagonal slice marker*)
+     sliceao = If[#, Graphics3D[{Red,Scale[Sphere[or, 3], Min[vox]/Reverse[vox], or], Green, Thick, Arrowheads[0.05], 
+         Scale[Arrow[Tube[{or, or + (1/5 Min[dim*vox]) (Normalize[vec/Reverse[vox]])}, 0.8]], Min[vox]/Reverse[vox], or]}],
+       Graphics3D[]]&;
+     
+     (*Draw iso surface*)
+     surf = If[#, ListContourPlot3D[Transpose[data, {1, 3, 2}], Contours -> Cases[isoval, _?NumberQ],Mesh -> False, Axes -> False,
+        ContourStyle -> Directive[Opacity[surfop], surfcol], MaxPlotPoints -> Round[0.75 surfqual], BoundaryStyle -> None],
+       Graphics3D[]]&;
+     
+     (*Generate Plot*)
+     plot = Show[
+       sliceao[dorig], surf[iso], slicez[planes,planez], slicey[planes,planey], slicex[planes,planex], slicea[diag],
+       Lighting -> "Neutral", BoxRatios -> ratio, 
+       ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], 
+       ViewAngle -> Dynamic[va], ImageSize -> ps, Background -> bcol, 
+       SphericalRegion -> True, Boxed -> box, Axes -> axes, 
+       AxesStyle -> Thread[List[{ Green, Red, Blue}, Thick]], 
+       BaseStyle -> {FontWeight -> Bold, FontFamily -> "sans-serif", 
+         28}, LabelStyle -> 14, AxesLabel -> { "Y", "X", "Z"}, 
+       PlotRange -> {{pymin - 1, pymax + 1}, {pxmin - 1, 
+          pxmax + 1}, {pzmin - 1, pzmax + 1}}, 
+       ContentSelectable -> True, PlotLabel -> label, 
+       ImagePadding -> {{5, 5}, {5, 5}}
+       ];
+     
+     (*Display Plot*)  
+     exp=If[legend,Dynamic[Legendi[plot,{lstyle,color,bcol},min,max,ps]],Dynamic[plot]]
+       
+     (*Insert control pannels*)  
+     , ##,
+     (*Hidden manipulation parameters*)
+     {{vp, {1.3, -2.4, 2}, "ViewPoint"}, Dynamic[vp] &, ControlType -> None},
+     {{vv, {0, 0, 1}, "ViewVertical"}, Dynamic[vv] &, ControlType -> None},
+     {{va, 25 Degree, "ViewAngle"}, Dynamic[va] &, ControlType -> None},
+     
+     Deployed->True,
+     SynchronousInitialization -> False,
+     ControlPlacement -> Right,
+     SynchronousUpdating -> False,
+     ContinuousAction -> False] & @@ control
+  ]
+*)
+
+(*CreateWindow[DialogNotebook[
+    {CancelButton["Close", DialogReturn[]],*) 
+
+
 (* ::Section:: *)
 (*End Package*)
 

@@ -58,8 +58,17 @@ DatTotXLS::usage =
 "DatTotXLS[{data1, data2, ..}, name, vox] is the same as DatTot, but gives the parameters as strings for easy export to excel."
 
 GetMaskMeans::usage = 
-"GetMaskMeans[dat, mask, name] calculates the mean, std, 5,50 and 95% CI form the given data for each of the given masks. 
-Mask can be genereated by SplitSegmentations. name is a string that is added to the header."
+"GetMaskMeans[dat, mask] calculates the mean, std, 5,50 and 95% CI form the given data for each of the given masks. 
+Mask can be genereated by SegmentTracts. 
+
+GetMaskMeans[dat, mask, name] where name is a string that is added to the header."
+
+
+GetTractMeans::usge = 
+"GetTractMeans[dat, tracts, vox] calculates the mean, std, 5,50 and 95% CI form the given data for each of the given tracts. 
+Tracts can be by SplitSegmentations. name is a string that is added to the header.
+
+GetTractMeans[dat, tracts, vox, name] where name is a string that is added to the header."
 
 FiberDensityMap::usage =
 "FiberDensityMap[fiberPoins, dim, vox] generates a fiber density map for the fiberPoins which are imported by LoadFiberTracts. 
@@ -354,13 +363,13 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, 
 			Switch[mod,
 				(*SkewNormal dist parameter fit*)
 				"SkewNormal",
-				sol = NonlinearModelFit[fdat,  PDF[SkewNormalDistribution[mu, sigma, alpha], x], {{mu, mdat}, {sigma, sdat}, {alpha, 0}}, x, Method -> met];
+				sol = NonlinearModelFit[fdat, {PDF[SkewNormalDistribution[mu, sigma, alpha], x], sigma>0}, {{mu, mdat}, {sigma, sdat}, {alpha, 0}}, x, Method -> met];
 				par = sol["BestFitParameters"];
 				fun = SkewNormalDistribution[mu, sigma, alpha] /. par;
 				,
 				(*Normal dist parameter fit*)
 				"Normal",
-				sol = NonlinearModelFit[fdat, {PDF[NormalDistribution[mu, sigma], x],sigma>0}, {{mu, mdat}, {sigma, sdat}}, x];
+				sol = NonlinearModelFit[fdat, {PDF[NormalDistribution[mu, sigma], x], sigma>0}, {{mu, mdat}, {sigma, sdat}}, x, Method -> met];
 				par = sol["BestFitParameters"];
 				fun = NormalDistribution[mu, sigma] /. par;
 				,
@@ -377,7 +386,7 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, 
 		Which[
 			nodat, {0.,0.},
 			noFit, {mdat,0.},
-			True,{Mean[fun], StandardDeviation[fun]}
+			True, {Mean[fun], StandardDeviation[fun]}
 		],
 		"ParametersExtra",
 		Which[
@@ -386,9 +395,9 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, 
 			True, Flatten[{Mean[fun], StandardDeviation[fun], Quantile[fun, {.5, .05, .95}]}]
 		],
 		"Function",
-		If[nodat||noFit,0.,sol],
+		If[nodat||noFit, 0., sol],
 		"BestFitParameters",
-		If[nodat||noFit,0.,par[[All,2]]],
+		If[nodat||noFit, 0., par[[All,2]]],
 		_, 
 		Message[ParameterFit::outp, out]
 	]
@@ -461,20 +470,20 @@ Module[{i,datf,init,out,sol,par,
 
 SyntaxInformation[FitData] = {"ArgumentsPattern" -> {_, _.}};
 
-FitData[dat_,sdr_:2]:=
-Module[{m, s, min, max, range, step, xdat, data, out}, 
-  If[dat == {} || Length[dat] == 1, {}, 
-  	m = Mean[dat];
-  	s = StandardDeviation[dat];
-  	min = (m - sdr s); max = (m + sdr s);
-  	range = max - min;
-  	step = range/100;
-  	data = BinCounts[dat, {min, max, step}];
-  	xdat = Range[min + 0.5 step, max - 0.5 step, step];
-  	out = Transpose[{xdat, data/Length[dat]/step}];
-  	DeleteCases[out, {_, 0.}]
-   ]
-  ];
+FitData[dat_, sdr_:2]:=
+Module[{m, s, min, max, range, step, xdat, data, out},
+	If[dat == {} || Length[dat] == 1, {}, 
+		m = Mean[dat];
+		s = StandardDeviation[dat];
+		min = (m - sdr s); max = (m + sdr s);
+		range = max - min;
+		step = range/50;
+		data = BinCounts[dat, {min, max, step}];
+		xdat = Range[min + 0.5 step, max - 0.5 step, step];
+		out = Transpose[{xdat, data/Length[dat]/step}];
+		DeleteCases[out, {_, 0.}]
+	]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -487,11 +496,11 @@ SyntaxInformation[GetMaskMeans] = {"ArgumentsPattern" -> {_, _, _., OptionsPatte
 
 GetMaskMeans[dat_, mask_, opts:OptionsPattern[]] := GetMaskMeans[dat, mask, "", opts]
 
-GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] := Block[{labels, out, fl},
+GetMaskMeans[dat_, mask_, lab_, OptionsPattern[]] := Block[{labels, out, fl},
 
-	labels = If[name==="", 
+	labels = If[lab==="", 
 		{"mean", "std", "Median", "5%", "95%"}, 
-		name <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
+		lab <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
 	];
 
 	out = If[Total[Flatten[#]]<=10,
@@ -507,6 +516,37 @@ GetMaskMeans[dat_, mask_, name_, OptionsPattern[]] := Block[{labels, out, fl},
 			Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
 		]
 	]&/@ Transpose[mask];
+	
+	Prepend[out, labels]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetTractMeans*)
+
+
+Options[GetTractMeans] = {MeanMethod -> "SkewNormalDist", InterpolationOrder -> 0}
+
+SyntaxInformation[GetTractMeans] = {"ArgumentsPattern" -> {_, _, _, _.,  OptionsPattern[]}};
+
+GetTractMeans[dat_, tracts_, vox_, opts : OptionsPattern[]] := GetTractMeans[dat, tracts, vox, "", opts]
+
+GetTractMeans[dat_, tracts_, vox_, lab_, OptionsPattern[]] := Block[{labels, fl, out},
+	labels = If[lab === "", 
+		{"mean", "std", "Median", "5%", "95%"}, 
+		lab <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
+	];
+	
+	out = If[Length[#] <= 10,
+		{0., 0., 0., 0., 0.},
+		fl = GetTractValues[Flatten[#, 1], dat, vox, InterpolationOrder -> OptionValue[InterpolationOrder]];
+		fl = Pick[fl, Unitize[fl], 1];
+		Switch[OptionValue[MeanMethod],
+			"NormalDist", ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "Normal"],
+			"SkewNormalDist", ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "SkewNormal"],
+			_, Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
+		]
+	] & /@ tracts;
 	
 	Prepend[out, labels]
 ]
@@ -1334,64 +1374,75 @@ SyntaxInformation[Hist] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 Hist[dat_, ops : OptionsPattern[]] := Hist[dat, 0, ops]
 
 Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, coledge, color2, color3, color4, data, r1, r2, sdr, m, s, title, label,mn,std ,fdat},
-  
-  {{colbar,coledge}, color2, color3, color4} = OptionValue[ColorValue];
-  
-  title = OptionValue[PlotLabel];
-  title = If[title === "", None, title];
-  label = OptionValue[AxesLabel];
-  label = If[label === "", None, label];
-  
-  fdat = N@Flatten[dat];
-  data = Pick[fdat, Unitize[fdat], 1];
-  
-  {r1, r2} = If[range===0,
-  	Quantile[data, {0.01, .99}],
-  	If[IntegerQ[range],
-  		sdr = range;
-  		{m, s} = {Mean[data], StandardDeviation[data]};
-  		{(m - sdr s), (m + sdr s)},
-  		range
-    ]];
 
-  Switch[OptionValue[Method],
-   "None",
-   line = Graphics[{}],
-   "Normal",
-   sol = ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal"];
-   line = Plot[sol[x], {x, r1, r2}, PlotStyle -> {Thick, color2}, PlotRange -> Full],
-   "SkewNormal",
-   sol = ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal"];
-   line = Plot[sol[x], {x, r1, r2}, PlotStyle -> {Thick, color2}, PlotRange -> Full],
-   "Both",
-   sol = {
-     ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal"], 
-     ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal"]
-     };
-   line = Plot[{sol[[1]][x], sol[[2]][x]}, {x, r1, r2}, PlotStyle -> {Directive[Thick, color2], Directive[Thick, color3]}, PlotRange -> Full],
-   "All",
-   sol = {
-     ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal"], 
-     ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal"]
-     };
-     mn=Mean[data];
-     std=StandardDeviation[data];
-     line = Plot[{sol[[1]][x], sol[[2]][x],PDF[NormalDistribution[mn, std], x]}, {x, r1, r2}, 
-     	PlotStyle -> {Directive[Thick, color2], Directive[Thick, color3], Directive[Thick, color4]}, PlotRange -> Full]
-   ];
-  
-  hist = Histogram[
-    Select[data, (r1 < # < r2) &], {r1, r2, (r2 - r1)/30}, 
-    "ProbabilityDensity",
-    PerformanceGoal -> "Speed", PlotRange -> {{r1, r2}, All},
-    PlotLabel -> title, LabelStyle -> labStyle, Axes -> False, 
-    FrameStyle -> Thick,
-    FrameLabel -> {label, "Probability Density"}, 
-    Frame -> {True, True, False, False}, 
-    ChartBaseStyle -> EdgeForm[coledge], ChartStyle -> colbar];
-  
-  Show[hist, line, ImageSize -> OptionValue[ImageSize]]
-  ]
+	{{colbar,coledge}, color2, color3, color4} = OptionValue[ColorValue];
+
+
+	title = OptionValue[PlotLabel];
+	title = If[title === "", None, title];
+	label = OptionValue[AxesLabel];
+	label = If[label === "", None, label];
+
+
+	fdat = Normal[N@Flatten[Chop[dat]]];
+	data = Pick[fdat, Unitize[fdat], 1];
+
+	{r1, r2} = If[range===0,
+		Quantile[data, {0.01, .99}],
+		If[IntegerQ[range],
+			sdr = range;
+			{m, s} = {Mean[data], StandardDeviation[data]};
+			{(m - sdr s), (m + sdr s)},
+			range
+		]
+	];
+
+	Quiet@Switch[OptionValue[Method],
+		"None",
+		line = Graphics[{}],
+		"Normal",
+		sol = ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal"];
+		line = Plot[sol[x], {x, r1, r2}, PlotStyle -> {Thick, color2}, PlotRange -> Full, PlotHighlighting -> None],
+
+		"SkewNormal",
+		sol = ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal"];
+		line = Plot[sol[x], {x, r1, r2}, PlotStyle -> {Thick, color2}, PlotRange -> Full, PlotHighlighting -> None],
+
+		"Both",
+		sol = {
+			ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal"], 
+			ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal"]
+		};
+		line = Plot[{sol[[1]][x], sol[[2]][x]}, {x, r1, r2}, PlotStyle -> {Directive[Thick, color2], Directive[Thick, color3]}, PlotRange -> Full, PlotHighlighting -> None],
+
+		"All",
+		sol = {
+			ParameterFit[data, FitOutput -> "Function", FitFunction -> "SkewNormal", Method->"NMinimize"], 
+			ParameterFit[data, FitOutput -> "Function", FitFunction -> "Normal", Method->"NMinimize"]
+		};
+		mn = Mean[data];
+		std = StandardDeviation[data];
+		line = Plot[{sol[[1]][x], sol[[2]][x], PDF[NormalDistribution[mn, std], x]}, {x, r1, r2}, 
+			PlotStyle -> {Directive[Thick, color2], Directive[Thick, color3], Directive[Thick, color4]}, PlotRange -> Full, PlotHighlighting -> None]
+	];
+
+
+	hist = Histogram[
+		Select[data, (r1 < # < r2) &], {r1, r2, (r2 - r1)/50}, 
+		"ProbabilityDensity",
+		PerformanceGoal -> "Speed", PlotRange -> {{r1, r2}, All},
+		PlotLabel -> title, LabelStyle -> labStyle, Axes -> False, 
+		FrameStyle -> Thick,
+		FrameLabel -> {label, "Probability Density"}, 
+		Frame -> {True, True, False, False}, 
+		ChartBaseStyle -> EdgeForm[coledge], ChartStyle -> colbar];
+
+
+
+	Show[hist, line, ImageSize -> OptionValue[ImageSize]]
+
+
+]
 
 
 (* ::Subsection::Closed:: *)
