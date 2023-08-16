@@ -44,7 +44,10 @@ restructuring.
 For more information [visit our website](https://www.qmritools.com/)
 
 <p align="center">
-<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.png" alt="Quantitative muscle MRI processing"  width="70%" />
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/both-small.gif" 
+alt="bilateral whole leg diffusion tensor imaging muscle fiber tractography"
+title="bilateral whole leg diffusion tensor imaging muscle fiber tractography"  
+width="40%" />
 </p>
 
 ## Installation
@@ -64,7 +67,10 @@ Or alternatively you can directly install it from the latest release page
 `PacletInstall["https://github.com/mfroeling/QMRITools/releases/download/x.x.x/QMRITools-x.x.x.paclet"]`
 
 <p align="center">
-<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/line.gif" alt="whole leg fiber tractography"  width="40%" />
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.png" 
+alt="Quantitative muscle MRI processing of diffusion tensor imaging, T2 mapping and water fat chemical shift imaging."
+title="Quantitative muscle MRI processing of diffusion tensor imaging, T2 mapping and water fat chemical shift imaging."
+width="70%" />
 </p>
 
 ## Citing
