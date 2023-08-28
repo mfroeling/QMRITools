@@ -904,93 +904,61 @@ Options[DataTransformation]={InterpolationOrder->1}
 
 SyntaxInformation[DataTransformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
-DataTransformation[data_, vox_, wi_, OptionsPattern[]] := 
- Block[{coor, rot, coorR, interFunc, interFuncC, w},
-  w = If[Length[wi]==3,Join[wi,{0,0,0,1,1,1,0,0,0}],wi];
-  
-  coor = GetCoordinates[data, vox];
-  rot = ParametersToTransformFull[w, "Inverse"];
-  coorR = ApplyRotC[coor, rot];
-  interFunc = Interpolation[Transpose[{Flatten[coor, ArrayDepth[coor] - 2], Flatten[data]}], InterpolationOrder -> OptionValue[InterpolationOrder], "ExtrapolationHandler" -> {0. &, "WarningMessage" -> False}];
-  interFuncC = Compile[{{coor, _Real, 1}}, interFunc[coor[[1]], coor[[2]], coor[[3]]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-  interFuncC[coorR]
-  ]
+DataTransformation[data_, vox_, wi_, opts:OptionsPattern[]]:=DataTransformation[data, vox, wi, "Real32", opts]
 
+DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, dat,int, dim, idim, ran, aff},
 
-(* ::Subsubsection::Closed:: *)
-(*GetCoordinates*)
+	w = If[Length[wi] == 3, Join[wi, {0, 0, 0, 1, 1, 1, 0, 0, 0}], wi];
+	dat = If[ArrayDepth[data] === 4, Transpose[data], {data}];
+	int = Switch[Round@OptionValue[InterpolationOrder], 0, "NearestLeft", _, "Linear"];
 
+	dim = Dimensions[dat][[-3 ;;]];
+	idim = Reverse[vox  dim]/2.;
+	ran = Thread[{-idim, idim}];
 
-GetCoordinates[data_, vox_] := Block[{dim, off, coor},
-	off = Dimensions[data]/2;
-	coor = MapIndexed[#2 &, data, {ArrayDepth[data]}] - 0.5;
-	CoordC[coor, off, vox]
-];
+	aff = ParametersToTransformFull[w, "Inverse"];
+	n = Max@Ceiling@Abs@aff[[1,1;;3,4]];
 
+	dat = ImageData[ImageTransformation[Image3D[#, type], aff, All, 
+		Resampling -> int, DataRange -> ran,
+		Padding -> 0., Background -> 0., Masking -> All
+	]] & /@ dat;
 
-(* ::Subsubsection::Closed:: *)
-(*CoordC*)
-
-
-   
-CoordC = Compile[{{coor, _Real, 1}, {off, _Real, 1}, {vox, _Real, 1}},
-	vox (coor - off),
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*ApplyRotC*)
-
-
-ApplyRotC = Compile[{{coor, _Real, 1}, {rot, _Real, 2}}, 
-	(rot . Append[coor, 1])[[1 ;; 3]],
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	If[ArrayDepth[data] === 4, Transpose[dat], First@dat]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ParametersToTransformFull*)
 
 
-ParametersToTransformFull[w_] := ParametersToTransformFull[w, "Normal"]
+ParametersToTransformFull[w_] :=  ParametersToTransformFull[w, "Normal"]
 
 ParametersToTransformFull[w_, opt_] := Block[{
-	tx, ty, tz, rx, ry, rz, sx, sy, sz, gx, gy, gz, 
-	T, R, G, S, Rx, Ry, Rz, Gx, Gy, Gz, 
-	mat, rMat, tMat}, 
-	
-	{rz, rx, ry, tz, tx, ty, sz, sx, sy, gz, gx, gy} = w;
-	
-	(*translation*)
-	T = N@{{1, 0, 0, tz}, {0, 1, 0, tx}, {0, 0, 1, ty}, {0, 0, 0, 1}};
-	
-	(*rotation*)
-	rx = rx Degree; ry = ry Degree; rz = rz Degree;
-	Rz = {{1, 0, 0, 0}, {0, Cos[rz], -Sin[rz], 0}, {0, Sin[rz], Cos[rz], 0}, {0, 0, 0, 1}};
-	Rx = {{Cos[rx], 0, Sin[rx], 0}, {0, 1, 0, 0}, {-Sin[rx], 0, Cos[rx], 0}, {0, 0, 0, 1}};
-	Ry = {{Cos[ry], -Sin[ry], 0, 0}, {Sin[ry], Cos[ry], 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-	R = N@Rx . Ry . Rz;
-	
-	(*scaling*)
-	If[N@{sx,sy,sz}=={0.,0.,0.},{sx,sy,sz}={1.,1.,1.}];
-	S = N@{{sz, 0, 0, 0}, {0, sx, 0, 0}, {0, 0, sy, 0}, {0, 0, 0, 1}};
-	
-	(*skew*)
-	Gz = {{1, gz, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-	Gx = {{1, 0, 0, 0}, {0, 1, gx, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-	Gy = {{1, 0, gy, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-	G = N@Gx . Gy . Gz;
+		rz, rx, ry, tz, tx, ty, sz, sx, sy, gz, gx, gy, rotM, transM, 
+		skewM, scaleM, mat, rMat, tMat, rr
+	},
 
-	mat = T . R . G . S;
-	
+	(*parameters for tranformation*)
+	{rz, rx, ry, tz, tx, ty, sz, sx, sy, gz, gx, gy} = N@w;
+	(*rotation*)
+	rotM = Dot @@ MapThread[RotationTransform[#1 , #2] &, {{-ry, rx, rz} Degree, N@IdentityMatrix[3]}];
+	(*translation*)
+	rr= rotM[[1, 1 ;; 3, 1 ;; 3]];
+	rr = Switch[opt, "Normal", rr, "Inverse", Inverse@rr];
+	transM = TranslationTransform[rr.{ty, -tx, -tz}];
+	(*scaling*)
+	scaleM = ScalingTransform[{sy, sx, sz} /. {0. -> 1}];
+	(*skew*)
+	skewM = AffineTransform[{{1, gy, gz}, {0, 1, gx}, {0, 0, 1}}];
+	(*final*)
+	mat = skewM . scaleM . rotM . transM;
+
 	Switch[opt,
-		"Normal",
-		mat,
-		"Inverse",
-		rMat = Inverse[mat[[1 ;; 3, 1 ;; 3]]];
-		tMat = -rMat . mat[[1 ;; 3, 4]];
-		Append[Flatten /@ Thread[{rMat, tMat}], {0, 0, 0, 1}]
-		]
+		"Normal", mat,
+		"Inverse", TransformationFunction@Inverse@First@mat
 	]
+]
 
 
 (* ::Subsection:: *)

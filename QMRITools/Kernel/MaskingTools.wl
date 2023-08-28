@@ -34,6 +34,9 @@ NormalizeMeanData::usage =
 HomogenizeData::usage = 
 "HomogenizeData[data, mask] tries to homoginize the data within the mask by removing intensity gradients."
 
+FitGradientMap::usage = 
+"FitGradientMap[data, ord] fit of gradient trough all non zero values withing the data."
+
 
 Mask::usage =
 "Mask[data] creates a mask by automatically finding a threshold.
