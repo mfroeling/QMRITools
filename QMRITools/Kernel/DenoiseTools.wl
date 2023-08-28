@@ -369,7 +369,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 			p = nearPos[[#]];
 			
 			(*perform the fit and reconstruct the noise free data*)
-			{sigo, Nes, datn} = PCADeNoiseFiti[data[[p]], {m, n}, sigm[[#]], tol];
+			{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], {m, n}, sigm[[#]], tol];
 			
 			(*get the weightes*)
 			weight = If[wht, 1./(m - Nes), 1.];
@@ -390,6 +390,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		
 		,
 		(*--------------use patch---------------*)
+		
 		_,
 		ker = If[EvenQ[ker], ker - 1, ker];
 		
@@ -423,7 +424,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 				fitdata = Flatten[data[[zm ;; zp, ym ;; yp, xm ;; xp]], 2];
 				
 				(*perform the fit and reconstruct the noise free data*)
-				{sigo, Nes, datn} = PCADeNoiseFiti[fitdata, {m, n}, sigi, tol];
+				{sigo, Nes, datn} = PCADeNoiseFit[fitdata, {m, n}, sigi, tol];
 				
 				(*reshape the vector into kernel box and get the weightes*)
 				datn = Fold[Partition, datn, {ker, ker}];
@@ -587,7 +588,7 @@ DenoiseDynamicSpectraData[spectra_] := Block[{len, data, sig, comp},
 	data = Join[Re@#, Im@#] &[Transpose[spectra]];
 	
 	(*perform denoising*)	
-	{sig, comp, data} = PCADeNoiseFiti[data, MinMax[Dimensions[data]], 0., 0];
+	{sig, comp, data} = PCADeNoiseFit[data, MinMax[Dimensions[data]], 0., 0];
 	
 	(*reconstruct complex spectra*)
 	data = Transpose[data[[;;len]] + I data[[len+1;;]]];

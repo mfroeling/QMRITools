@@ -149,6 +149,9 @@ DevideNoZero::usage =
 MeanNoZero::usage = 
 "MeanNoZero[data] calculates the mean of the data ignoring the zeros."
 
+StandardDeviationNoZero::usage = 
+"StandardDeviationNoZero[data] calculates the mean of the data ignoring the zeros."
+
 MedianNoZero::usage = 
 "MedianNoZero[data] calculates the Median of the data ignoring the zeros."
 
@@ -293,7 +296,10 @@ SplineRegularization::usage =
 
 
 CenterVoxel::usage = 
-"CenterVoxel is an option for MakeIntFunction. If set true the centers of the voxels are interploated else its the corners."
+"CenterVoxel is an option for MakeIntFunction. If set True the centers of the voxels are interploated else its the corners."
+
+CenterRange::usage = 
+"CenterRange is an option for MakeIntFunction. If set True the centers of the dataset is the origin else its the corner."
 
 
 MonitorCalc::usage = 
@@ -533,21 +539,23 @@ Options[PadToDimensions]={PadValue->0., PadDirection -> "Center"}
 SyntaxInformation[PadToDimensions] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 PadToDimensions[data_, dim_, OptionsPattern[]] := Block[{diffDim, padval, pad,dir,zer},
-  padval = OptionValue[PadValue];
-  diffDim = dim - Dimensions[data];
-  
-  dir = OptionValue[PadDirection];
-  dir = If[StringQ[dir], ConstantArray[dir, Length[dim]], dir];
-  zer = ConstantArray[0, Length[dim]];
-  
-  pad = MapThread[
-  Switch[#1, "Left", #2, "Right", #3, _, #4] &, {dir, 
-   Transpose@{zer, diffDim}, Transpose@{diffDim, zer}, 
-   Transpose@{Floor[diffDim/2], Ceiling[diffDim/2]}}];
-  
-  ToPackedArray[N@ArrayPad[data,pad,padval]]
-	 
-  ]
+	padval = OptionValue[PadValue];
+	diffDim = dim - Dimensions[data];
+
+	dir = OptionValue[PadDirection];
+	dir = If[StringQ[dir], ConstantArray[dir, Length[dim]], dir];
+	zer = ConstantArray[0, Length[dim]];
+
+	pad = MapThread[
+		Switch[#1, "Left", #2, "Right", #3, _, #4] &, {
+			dir, 
+			Transpose@{zer, diffDim}, Transpose@{diffDim, zer}, 
+			Transpose@{Floor[diffDim/2], Ceiling[diffDim/2]}
+		}
+	];
+
+	ToPackedArray[N@ArrayPad[data,pad,padval]]	
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1053,7 +1061,7 @@ StichData[datal_, datar_] := RotateDimensionsLeft[Join[RotateDimensionsRight[dat
 (*MakeIntFunction*)
 
 
-Options[MakeIntFunction]={CenterVoxel->True}
+Options[MakeIntFunction]={CenterVoxel->True, CenterRange->False}
 
 SyntaxInformation[MakeIntFunction] = {"ArgumentsPattern" -> {_,_.,_.,OptionsPattern[]}};
 
@@ -1061,17 +1069,21 @@ MakeIntFunction[dat_, opts:OptionsPattern[]] := MakeIntFunction[dat, {1,1,1}, 1,
 
 MakeIntFunction[dat_, int_?IntegerQ, opts:OptionsPattern[]] := MakeIntFunction[dat, {1,1,1}, int, opts]
 
-MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{def, range},
-	range = Thread[{vox, vox Dimensions[dat][[1;;3]]}] - If[OptionValue[CenterVoxel],0.5, 0] vox;
+MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{dim, def, range},
+	dim = Dimensions[dat][[;;3]];
+
+	range = Thread[{vox, vox dim}] - If[OptionValue[CenterVoxel], 0.5, 0] vox - If[OptionValue[CenterRange], 0.5, 0] dim;
+	
 	def = 0. dat[[1,1,1]];
 	def =If[ListQ[def], Flatten@def, def];
+	
 	With[{
 			ex = def,
 			fdat = Flatten[dat, 3]
 		},
 		InterpolatingFunction[
 			range,
-			{5,If[ArrayDepth[dat]===3, 6, 2],0,Dimensions[dat][[;;3]],
+			{5,If[ArrayDepth[dat]===3, 6, 2],0, dim,
 			{int,int,int}+1,0,0,0,0,ex&,{},{},False},
 			Range[range[[#,1]],range[[#,2]],vox[[#]]]&/@{1,2,3},
 			If[ArrayDepth[dat] === 3 && $VersionNumber >= 13.3, 
@@ -1280,6 +1292,18 @@ MeanNoZero[vec_] := MeanNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec
 MeanNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Mean[Pick[vec, Unitize[vec], 1]]], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
+
+
+(* ::Subsubsection::Closed:: *)
+(*StandardDeviationNoZero*)
+
+
+SyntaxInformation[StandardDeviationNoZero] = {"ArgumentsPattern" -> {_}};
+
+StandardDeviationNoZero[vec_] := StandardDeviationNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
+
+StandardDeviationNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., StandardDeviation[Pick[vec, Unitize[vec], 1]]], 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 (* ::Subsubsection::Closed:: *)
 (*MedianNoZero*)
