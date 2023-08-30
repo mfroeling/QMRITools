@@ -70,6 +70,11 @@ PatchesToData::usage =
 The patches are have dimensions {x, y, z} each and ran is speciefied as {{xmin, xmax}, {ymin, ymax}, {zmin, zmax}}.
 PatchesToData[patches, ran, dim] creates a continous dataset from the patches with dimensions dim."
 
+PatchesToSegmentation::usage = 
+"PatchesToSegmentation[patches, ran]
+PatchesToSegmentation[patches, ran, dim] ...
+"
+
 DataToPatches::usage =
 "DataToPatches[data, patchSize] creates the maximal number of patches with patchSize from data, where the patches have minimal overlap.
 DataToPatches[data, patchSize, n] gives n random patches from the maximal number of patches with patchSize from data, where the patches have minimal overlap."
@@ -547,22 +552,40 @@ Options[SegmentData]={TargetDevice->"GPU"}
 
 SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-SegmentData[data_, net_, OptionsPattern[]]:=Block[{dim, inp, out, encs,dimR, dimN,n, dataPad, seg},
-	dim = Dimensions[data];
+SegmentData[data_, net_, OptionsPattern[]]:=Block[{dev, inp, out, dim, patch, pts, dimN, seg},
+	dev = OptionValue[TargetDevice];
+
 	inp = NetDimensions[net,"Input"];
-	out = NetDimensions[net,"Output"];
-	
-	(*get dimensions of deepest enc layer*)
-	dimR = NetDimensions[net,"LastEncoding"];
-	dimR = (inp/dimR)[[2;;]];
-	dimN = dimR Ceiling[dim/dimR];
-	
-	(*apply network*)
-	dataPad = {PadToDimensions[NormDat[data], dimN, PadDirection->"Right"]};
-	seg = ClassDecoder@NetReplacePart[net, "Input" -> Prepend[dimN, First@inp]][dataPad,TargetDevice->OptionValue[TargetDevice]];
-	
-	(*decode output and crop to original dimensions*)
-	Round[PadToDimensions[seg, dim, PadDirection->"Right"] - 1]
+	out = Rest[NetDimensions[net, "LastEncoding"]];
+	dim = Dimensions[data];
+	dimN = Rest[inp]/out;
+
+	(*if patching padding is needed for bad edge behaviour of CNN*)
+	lim = 112;
+	pad = 8;
+
+	If[CubeRoot[N[Times @@ dim]] > lim && dev=!="GPU",
+		(*run data on small CPU*)
+		dim = (dim+2 pad);
+		patch = Min[{lim, #}] & /@ (out Ceiling[dim/out]);
+		patch = dimN Ceiling[patch/dimN];
+		Echo[patch, "Data is probably to big for memmory. Patching with patchsize:"];
+
+		(*patch padded data and run each patch seperate*)	
+		{patch, pts} = DataToPatches[ArrayPad[data, pad, 0.], patch, PatchNumber -> 0];
+		patch = SegmentData[#, net, TargetDevice->dev] & /@ patch;
+
+		(*contract all the patches and thus the pts, keep expanded dim for depatching, then contract*)
+		ArrayPad[PatchesToSegmentation[ArrayPad[#, -pad]&/@patch, Map[# + {pad, -pad} &, pts, {2}], dim], -pad]
+		,
+		dimN = dimN Ceiling[dim/dimN];
+		(*run full data on big GPU*)
+		seg = {PadToDimensions[NormDat[data], dimN, PadDirection->"Right"]};
+		(*apply network*)
+		seg = ClassDecoder@NetReplacePart[net, "Input" -> Prepend[dimN, First@inp]][seg, TargetDevice->dev];
+		(*decode output and crop to original dimensions*)
+		Round[PadToDimensions[seg, dim, PadDirection->"Right"] - 1]
+	]
 ]
 
 
@@ -592,9 +615,12 @@ CropDatSeg[dat_,seg_,labs_]:=Block[{datO, segO, lab, dim,cr},
 
 
 NormDat = Compile[{{dat, _Real, 3}}, Block[{data},
-	data = Flatten[dat];
-	0.5 dat/Median[Pick[data, Unitize[data], 1]]
-], RuntimeOptions -> "Speed"];
+	If[Min[dat]=!=Max[dat],
+		data = Flatten[dat];
+		0.5 dat/Median[Pick[data, Unitize[data], 1]],
+		dat
+	]
+], RuntimeOptions -> "Speed", RuntimeAttributes->Listable];
 
 
 NormSeg[seg_, labs_]:=Block[{zero, segT, labT, sel},
@@ -622,12 +648,34 @@ PatchesToData[patches_, ran_]:=PatchesToData[patches, ran,  Max/@Transpose[ran[[
 
 PatchesToData[patches_, ran_, dim_]:=Block[{sel,zero,a1,a2,b1,b2,c1,c2,out},
 	zero = ConstantArray[0., dim];
-	MeanNoZero[MapThread[(
+	out = MapThread[(
 		out = zero;
-		{{a1,a2},{b1,b2},{c1,c2}} = #3;
+		{{a1,a2},{b1,b2},{c1,c2}} = #2;
 		out[[a1;;a2, b1;;b2, c1;;c2]] = #1;
 		out
-	)&,{patches, ran}]]
+	)&,{patches, ran}];
+
+	DevideNoZero[N[Total[out]], N[Total[Unitize /@ out]]]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PatchesToSegmentation*)
+
+
+SyntaxInformation[PatchesToSegmentation] = {"ArgumentsPattern" -> {_, _, _.}};
+
+PatchesToSegmentation[patches_, ran_] := PatchesToSegmentation[patches, ran, Max /@ Transpose[ran[[All, All, 2]]]]
+
+PatchesToSegmentation[patches_, ran_, dim_] := Block[{segs, labs, allLab, pos, roi, seg},
+	{segs, labs} = Transpose[SplitSegmentations /@ patches];
+	segs = Transpose /@ segs; (*first index of segs is patches and second is labs*)
+	
+	allLab = Sort[DeleteDuplicates[Flatten[labs]]];
+	pos = Position[labs, #] & /@ allLab;
+	
+	segs = PatchesToData[N[Normal[segs[[#[[1]], #[[2]]]] + 1 & /@ #]], ran[[#[[All,1]]]], dim] & /@ pos;
+	MergeSegmentations[ Transpose[SparseArray[Round[Ramp[# - 1]]] & /@ segs], allLab]
 ]
 
 
@@ -635,14 +683,16 @@ PatchesToData[patches_, ran_, dim_]:=Block[{sel,zero,a1,a2,b1,b2,c1,c2,out},
 (*DataToPatches*)
 
 
-SyntaxInformation[DataToPatches] = {"ArgumentsPattern" -> {_, _, _.}};
+Options[DataToPatches] = {PatchNumber->2}
 
-DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}]:=DataToPatches[dat, patch, "All"] 
+SyntaxInformation[DataToPatches] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, opts:OptionsPattern[]]:=DataToPatches[dat, patch, "All", opts] 
 
 DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, pts:{{{_,_},{_,_},{_,_}}..}]:={GetPatch[dat, patch, pts], pts}
 
-DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, n_]:=Block[{ptch, pts},
-	pts = GetPatchRanges[dat, patch, If[StringQ[n], "All", n]];
+DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, nPatch_, OptionsPattern[]]:=Block[{ptch, pts},
+	pts = GetPatchRanges[dat, patch, If[IntegerQ[nPatch], nPatch, "All"], OptionValue[PatchNumber]];
 	ptch = GetPatch[dat, patch, pts];
 	{ptch, pts}
 ] 
@@ -661,18 +711,18 @@ GetPatch[dat_, patch:{_,_,_}, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}]:=PadRight[dat[[
 (*GetPatchRanges*)
 
 
-GetPatchRanges[dat_, patch_, n_]:=Block[{pts},
-	pts = GetPatchRangeI[Dimensions[dat], patch];
-	If[n==="All", pts, RandomSample[pts, Min[{Length@pts,n}]]]
+GetPatchRanges[dat_, patch_, nPatch_, nRan_]:=Block[{pts},
+	pts = GetPatchRangeI[Dimensions[dat], patch, nRan];
+	If[nPatch==="All", pts, RandomSample[pts, Min[{Length@pts, nPatch}]]]
 ]
 
 
-GetPatchRangeI[datDim_?ListQ, patchDim_?ListQ]:=Tuples@MapThread[GetPatchRangeI[#1,#2]&, {datDim, patchDim}]
+GetPatchRangeI[datDim_?ListQ, patchDim_?ListQ, n_]:=Tuples@MapThread[GetPatchRangeI[#1,#2, n]&, {datDim, patchDim}]
 
-GetPatchRangeI[d_?IntegerQ, p_?IntegerQ]:=Block[{i,st},
-	i = Ceiling[d/p];
+GetPatchRangeI[d_?IntegerQ, p_?IntegerQ, n_]:=Block[{i,st},
+	i = Ceiling[d/p]+n;
 	If[i>1,
-		st=Append[Range[0, i]Round[(d-p)/(i+2)], d-p]+1;
+		st=Round[Range[0, 1, 1./(i - 1)](d-p)]+1;
 		Thread[{st, st+p-1}],
 		{{1,d}}
 	]
@@ -706,6 +756,7 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 	aug = If[BooleanQ[aug], # && aug & /@ {True, True, True, True, False, False, False}, PadRight[aug, 7, False]];
 
 	itt = Ceiling[nBatch/nSet];
+
 	Do[
 		dat = RandomChoice[datas];
 		
