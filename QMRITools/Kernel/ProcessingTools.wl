@@ -944,7 +944,7 @@ ParametersToTransformFull[w_, opt_] := Block[{
 	(*rotation*)
 	rotM = Dot @@ MapThread[RotationTransform[#1 , #2] &, {{-ry, rx, rz} Degree, N@IdentityMatrix[3]}];
 	(*translation*)
-	rr= rotM[[1, 1 ;; 3, 1 ;; 3]];
+	rr = rotM[[1, 1 ;; 3, 1 ;; 3]];
 	rr = Switch[opt, "Normal", rr, "Inverse", Inverse@rr];
 	transM = TranslationTransform[rr.{ty, -tx, -tz}];
 	(*scaling*)

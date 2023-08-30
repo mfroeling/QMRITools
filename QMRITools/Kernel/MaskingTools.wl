@@ -429,7 +429,7 @@ SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
 SplitSegmentations[masksI_]:=SplitSegmentations[masksI, True]
 
 SplitSegmentations[masksI_, sparse_] := Block[{vals, masks},
-	masks=SparseArray[masksI];
+	masks = SparseArray[masksI];
 	vals = DeleteCases[Sort@Round[DeleteDuplicates[Flatten[masksI]]],0];
 	masks =(1 - Unitize[masks - #]) & /@ vals;
 	masks = Transpose[masks];
@@ -443,7 +443,10 @@ SplitSegmentations[masksI_, sparse_] := Block[{vals, masks},
 
 SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
 
-MergeSegmentations[masks_, vals_] := Normal@Total[vals Transpose@SparseArray[masks]];
+MergeSegmentations[masks_, vals_] := Block[{mt},
+	mt = Transpose[SparseArray[masks]];
+	Normal[Total[vals mt](1 - UnitStep[Total[mt] - 2])]
+]
 
 
 (* ::Subsubsection::Closed:: *)
