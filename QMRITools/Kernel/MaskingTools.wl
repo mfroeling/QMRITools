@@ -471,7 +471,7 @@ SmoothSegmentation[maskIn_, opts:OptionsPattern[]] :=
 	masks = Transpose[SparseArray[Round@masks]];
 
 	(*Get smoothed or non smoothed masks*)
-	masks = SmoothMask[#,Sequence@@FilterRules[{opts}, Options[SmoothMask]]]&/@masks;
+	masks = SmoothMask[#, Sequence@@FilterRules[{opts}, Options[SmoothMask]]]&/@masks;
 	
 	(*remove the overlaps*)
 	masks = Transpose@RemoveMaskOverlapsI[SparseArray[masks]];
