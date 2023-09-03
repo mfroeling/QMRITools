@@ -33,9 +33,9 @@
 
 ## Introduction
 
-`QMRITools` is written in Mathematica using Wolfram Workbench and
-Eclipse and contains a collection of tools and functions for processing
-quantitative MRI data. The toolbox does not provide a GUI and its
+`QMRITools` is written in Mathematica and contains a collection of
+tools and functions for processing quantitative MRI data.
+The toolbox does not provide a GUI and its
 primary goal is to allow for fast and batch data processing, and
 facilitate development and prototyping of new functions. The core of the
 toolbox contains various functions for data manipulation and
@@ -44,7 +44,7 @@ restructuring.
 For more information [visit our website](https://www.qmritools.com/)
 
 <p align="center">
-<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/both-small.gif" 
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/both-small.gif"
 alt="bilateral whole leg diffusion tensor imaging muscle fiber tractography"
 title="bilateral whole leg diffusion tensor imaging muscle fiber tractography"  
 width="40%" />
@@ -67,7 +67,7 @@ Or alternatively you can directly install it from the latest release page
 `PacletInstall["https://github.com/mfroeling/QMRITools/releases/download/x.x.x/QMRITools-x.x.x.paclet"]`
 
 <p align="center">
-<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.png" 
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/processing.png"
 alt="Quantitative muscle MRI processing of diffusion tensor imaging, T2 mapping and water fat chemical shift imaging."
 title="Quantitative muscle MRI processing of diffusion tensor imaging, T2 mapping and water fat chemical shift imaging."
 width="70%" />

@@ -62,7 +62,11 @@ MeanSurfaceDistance[x, y, {class, ..}, vox] gives the mean surface distance of s
 
 
 SegmentData::usage = 
-"SegmentData[data, net] segements the data using the pretrained net."
+"SegmentData[data, what] segements the data. The what specifies the segmentation to be done.
+It currently allows for \"LegBones\" for the bones or \"Legs\" for the muscles."
+
+ApplySegmentationNetwork::usage = 
+"ApplySegmentationNetwork[data, net] segements the data using the pretrained net."
 
 
 PatchesToData::usage = 
@@ -72,8 +76,7 @@ PatchesToData[patches, ran, dim] creates a continous dataset from the patches wi
 
 PatchesToSegmentation::usage = 
 "PatchesToSegmentation[patches, ran]
-PatchesToSegmentation[patches, ran, dim] ...
-"
+PatchesToSegmentation[patches, ran, dim] ..."
 
 DataToPatches::usage =
 "DataToPatches[data, patchSize] creates the maximal number of patches with patchSize from data, where the patches have minimal overlap.
@@ -97,20 +100,34 @@ MakeChannelClassImage::usage =
 MakeChannelClassImage[data, label, {off,max}, vox]
 ..."
 
-
 MakeChannelImage::usage = 
 "MakeChannelImage[label]\[IndentingNewLine]MakeChannelImage[label, {off,max}]\[IndentingNewLine]MakeChannelImage[label, vox]
 MakeChannelImage[label, {off,max}, vox]
 ..."
 
-
 MakeClassImage::usage = 
 "MakeClassImage[label]\[IndentingNewLine]MakeClassImage[data, vox]
 ..."
 
+PlotSegmentations::usage = 
+"PlotSegmentations[seg, bone]
+PlotSegmentations[seg, bone, vox] ..."
 
-CropDatSeg::usage=
+
+CropDatSeg::usage =
 "CropDatSeg..."
+
+
+SplitDataForSegementation::usage = 
+"SplitDataForSegementation[data] is a specific function for leg data to prepare data for segmentation. It detects the side and location and will split and label the data accordingly.
+SplitDataForSegementation[data ,seg] does the same but is rather used when preparing training data. Here the seg is split in exaclty the same way as the data."
+
+FindSide::usage = 
+"FindSide[data] ..."
+
+FindPos::usage = 
+"FindPos[data] ..."
+
 
 
 (* ::Subsection:: *)
@@ -186,12 +203,13 @@ MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
 		{NetworkDepth, DropoutRate, BlockType, DownsampleSchedule, InputFilters, ActivationType}
 	];
 	
-	dim = Switch[Length@dimIn, 2, "2D", 3, "3D"];
+	nDim = Length@dimIn;
+	dim = Switch[nDim, 2, "2D", 3, "3D"];
 	filt = Switch[type, 
 		"DenseNet" | "UDenseNet", Table[{filtIn, 1 + i}, {i, {1, 2, 4, 6, 8}}],
 		_, filtIn {1, 2, 4, 8, 16}
 	];
-	stride = Prepend[If[stride===Automatic, ConstantArray[2, {dep-1, 3}], stride], {1, 1, 1}];
+	stride = Prepend[If[stride===Automatic, ConstantArray[2, {dep-1, nDim}], stride], {1, 1, 1}[[;;nDim]]];
 
 	NetGraph[
 		Association@Join[
@@ -372,9 +390,9 @@ AddLossLayer[net_]:=Block[{dim},
 	dim = Length[Information[net,"OutputPorts"][[1]]]-1;
 	NetGraph[<|
 		"net"->net,
-		"SoftDice" -> SoftDiceLossLayer[dim],
+		"SoftDice" -> {SoftDiceLossLayer[dim], FunctionLayer[.1 #&]},
 		"CrossEntropy" -> CrossEntropyLossLayer["Probabilities"],
-		"Brier" -> {BrierLossLayer[dim], FunctionLayer[10 #&]}
+		"Brier" -> {BrierLossLayer[dim], FunctionLayer[1000 #&]}
 		|>,{
 		NetPort["Input"]->"net"->NetPort["Output"],
 		{"net",NetPort["Target"]}->"SoftDice"->NetPort["SoftDice"],
@@ -445,7 +463,7 @@ FlatTotLayer[lev_]:=NetChain[{FlattenLayer[lev],AggregationLayer[Total,1]}];
 (*Encoders*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*ClassEndocer*)
 
 
@@ -544,52 +562,159 @@ GetEdge[lab_, class_] := Block[{seg, n, per, pts},
 (*SegmentData*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
+(*Networks*)
+
+
+thighNet := thighNet = Import[GetAssetLocation["SegThighMuscle"]];
+legNet := legNet = Import[GetAssetLocation["SegLegMuscle"]];
+boneNet := boneNet = Import[GetAssetLocation["SegBones"]];
+
+
+(* ::Subsubsection::Closed:: *)
 (*SegmentData*)
 
 
-Options[SegmentData]={TargetDevice->"GPU"}
+Options[SegmentData] = {TargetDevice -> "GPU", MaxPatchSize->Automatic};
 
-SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SegmentData[data_, what_, OptionsPattern[]] := Block[{
+		legL,legR,thighL,thighR,bonesLegL,bonesLegR,
+		patch,pts,dim,loc,set, segs,rule,dev, max
+	},
+	{dev, max} = OptionValue[{TargetDevice, MaxPatchSize}];
 
-SegmentData[data_, net_, OptionsPattern[]]:=Block[{dev, inp, out, dim, patch, pts, dimN, seg},
-	dev = OptionValue[TargetDevice];
+	(*labels for network*)
+	{legL, legR} = {{13, 15, 17, 19, 21, 23, 25}, {14, 16, 18, 20, 22, 24, 26}};
+	{thighL, thighR} = {{1, 3, 5, 7, 9, 11, 27, 29}, {2, 4, 6, 8, 10, 12, 28, 30}};
+	{bonesLegL, bonesLegR} = {{91, 93, 95, 97, 99}, {92, 94, 96, 98, 100}};
 
+	(*rule to select correct network*)
+	rule = {"Upper" -> "ThighMuscles", "Lower" -> "LegMuscles"};
+
+	(*split the data in upper and lower legs and left and right*)
+	Echo[Dimensions@data, "Analyzing the data with dimensions:"];
+	{{patch, pts, dim}, loc, set} = SplitDataForSegementation[data];
+	Echo[loc, "Found "<>what<>" locations:"];
+	Echo[Dimensions/@ patch, "Using patch sizes:"];
+
+	(*decide what to segment*)
+	segs = Switch[what,
+		"LegBones",
+		MapThread[(
+			(*Echo[{#2, Dimensions[#1]}, "Segmenting bones for"];*)
+			segs = ApplySegmentationNetwork[#1, "LegBones", TargetDevice -> dev, MaxPatchSize->max];
+			ReplaceLabelsBone[segs, Switch[#2[[2]], "Left", bonesLegL, "Right", bonesLegR], #2[[1]]]
+		) &, {patch, loc}],
+		"Legs",
+		MapThread[(
+			(*Echo[{#2, Dimensions[#1]}, "Segmenting legs for"];*)
+			segs = ApplySegmentationNetwork[#1, #2[[1]] /. rule, TargetDevice -> dev, MaxPatchSize->max];
+			ReplaceLabelsLeg[segs, Switch[#2,
+				{"Upper", "Right"}, thighR,
+				{"Lower", "Right"}, legR,
+				{"Upper", "Left"}, thighL,
+				{"Lower", "Left"}, legL]
+			]
+		) &, {patch, loc}]
+	];
+
+	Echo["", "Putting togeteher the segmenations"];
+	PatchesToData[segs, pts, dim]
+]
+
+
+ReplaceLabelsLeg[seg_, lab_] := Block[{sel, segs, labs, a, b},
+	sel = Range[Length[lab]];
+	{segs, labs} = SplitSegmentations[seg];
+	a = Flatten[Position[labs, #] & /@ sel];
+	b = Select[sel, MemberQ[labs, #] &];
+	If[a==={}, 0 seg, MergeSegmentations[segs[[All, a]], lab[[b]]]]
+]
+
+ReplaceLabelsBone[seg_, lab_, loc_] := Block[{sel, segs, labs, a, b},
+	sel = Switch[loc, "Upper", {1,2,5}, "Lower", {2,3,4}];
+	{segs,labs} = SplitSegmentations[seg];
+	a = Flatten[Position[labs, #] & /@ sel];
+	b = Select[sel, MemberQ[labs, #] &];
+	If[a==={}, 0 seg, MergeSegmentations[segs[[All, a]], lab[[b]]]]
+]
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*ApplySegmentationNetwork*)
+
+
+Options[ApplySegmentationNetwork]={TargetDevice->"GPU", DataPadding->8, MaxPatchSize->Automatic}
+
+SyntaxInformation[ApplySegmentationNetwork] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
+		dev, inp, data, crp, out, dim, patch, pts, 
+		dimN, seg, lab, pad, net, lim},
+	{dev, pad, lim} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize}];
+
+	{data, crp} = AutoCropData[dat];
+
+	net = If[StringQ[netI],
+		Switch[netI,
+			"LegMuscles",legNet ,
+			"ThighMuscles",thighNet,
+			"LegBones",boneNet],
+		netI
+	];
+
+	(*get net properties*)
 	inp = NetDimensions[net,"Input"];
 	out = Rest[NetDimensions[net, "LastEncoding"]];
-	dim = Dimensions[data];
+	dim = Dimensions[data] + 2 pad;
 	dimN = Rest[inp]/out;
 
 	(*if patching padding is needed for bad edge behaviour of CNN*)
-	lim = 112;
-	pad = 8;
+	If[lim === Automatic, lim = If[dev==="GPU", 192, 112]];
 
-	If[CubeRoot[N[Times @@ dim]] > lim && dev=!="GPU",
+	seg = If[CubeRoot[N[Times @@ dim]] >= lim,
 		(*run data on small CPU*)
-		dim = (dim+2 pad);
-		patch = Min[{lim, #}] & /@ (out Ceiling[dim/out]);
-		patch = dimN Ceiling[patch/dimN];
+		patch = FindPatchDim[dim, lim];
 		Echo[patch, "Data is probably to big for memmory. Patching with patchsize:"];
 
-		(*patch padded data and run each patch seperate*)	
-		{patch, pts} = DataToPatches[ArrayPad[data, pad, 0.], patch, PatchNumber -> 0];
-		patch = SegmentData[#, net, TargetDevice->dev] & /@ patch;
+		(*patch padded data and run each patch seperate*)
+		{patch, pts} = DataToPatches[ArrayPad[data, pad, 0.], patch, PatchNumber -> 0, PatchPadding->pad];
+		Echo[Length@patch, "Created number of patches is:"];
+		patch = ApplySegmentationNetwork[#, net, MaxPatchSize->100000, TargetDevice->dev] & /@ patch;
 
 		(*contract all the patches and thus the pts, keep expanded dim for depatching, then contract*)
 		ArrayPad[PatchesToSegmentation[ArrayPad[#, -pad]&/@patch, Map[# + {pad, -pad} &, pts, {2}], dim], -pad]
 		,
 		dimN = dimN Ceiling[dim/dimN];
 		(*run full data on big GPU*)
-		seg = {PadToDimensions[NormDat[data], dimN, PadDirection->"Right"]};
+		seg = {PadToDimensions[ArrayPad[NormDat[data], pad, 0.], dimN, PadDirection->"Right"]};
 		(*apply network*)
 		seg = ClassDecoder@NetReplacePart[net, "Input" -> Prepend[dimN, First@inp]][seg, TargetDevice->dev];
 		(*decode output and crop to original dimensions*)
-		Round[PadToDimensions[seg, dim, PadDirection->"Right"] - 1]
-	]
+		ArrayPad[Round[PadToDimensions[seg, dim, PadDirection->"Right"] - 1], -pad]
+	];
+
+	(*select only the larges component per segmentation*)
+	{seg, lab} = SplitSegmentations[seg];
+	seg = Transpose[TakeLargestComponent/@ Transpose[seg]];
+	ReverseCrop[MergeSegmentations[seg, lab], Dimensions@dat, crp]
 ]
 
 
-(* ::Subsubsection:: *)
+TakeLargestComponent = SparseArray[ImageData[Closing[SelectComponents[Image3D[#, "Bit"], "Count", -1, CornerNeighbors -> False],1]]]& 
+
+
+FindPatchDim[dimi_, lim_] := Block[{i, rat, dim},
+	i = 1;
+	rat = dimi/Max[dimi];
+	dim = Floor[i 16 rat, 16];
+	While[(CubeRoot[N[Times @@ dim]]) < (lim - 16), i++; dim = Floor[i 16 rat, 16]];
+	dim
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*NetDimensions*)
 
 
@@ -600,7 +725,7 @@ NetDimensions[net_, port_]:=Switch[port,
 ] 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Prepare Data*)
 
 
@@ -683,7 +808,7 @@ PatchesToSegmentation[patches_, ran_, dim_] := Block[{segs, labs, allLab, pos, r
 (*DataToPatches*)
 
 
-Options[DataToPatches] = {PatchNumber->2}
+Options[DataToPatches] = {PatchNumber->2, PatchPadding->0}
 
 SyntaxInformation[DataToPatches] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -692,7 +817,7 @@ DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, opts:OptionsPatt
 DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, pts:{{{_,_},{_,_},{_,_}}..}]:={GetPatch[dat, patch, pts], pts}
 
 DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, nPatch_, OptionsPattern[]]:=Block[{ptch, pts},
-	pts = GetPatchRanges[dat, patch, If[IntegerQ[nPatch], nPatch, "All"], OptionValue[PatchNumber]];
+	pts = GetPatchRanges[dat, patch, If[IntegerQ[nPatch], nPatch, "All"], OptionValue[{PatchNumber, PatchPadding}]];
 	ptch = GetPatch[dat, patch, pts];
 	{ptch, pts}
 ] 
@@ -702,29 +827,33 @@ DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, nPatch_, Options
 (*GetPatch*)
 
 
-GetPatch[dat_, patch:{_,_,_}, pts:{{{_,_},{_,_},{_,_}}..}]:=GetPatch[dat, patch, #]&/@pts
+GetPatch[dat_, pts:{{{_,_},{_,_},{_,_}}..}]:=GetPatch[dat, #]&/@pts
 
-GetPatch[dat_, patch:{_,_,_}, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}]:=PadRight[dat[[i1;;i2,j1;;j2,k1;;k2]], patch, 0.]
+GetPatch[dat_, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}]:=dat[[i1;;i2,j1;;j2,k1;;k2]]
+
+GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, pts:{{{_,_},{_,_},{_,_}}..}]:=GetPatch[dat, patch, #]&/@pts
+
+GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}]:=PadRight[dat[[i1;;i2,j1;;j2,k1;;k2]], patch, 0.]
 
 
 (* ::Subsubsection::Closed:: *)
 (*GetPatchRanges*)
 
 
-GetPatchRanges[dat_, patch_, nPatch_, nRan_]:=Block[{pts},
-	pts = GetPatchRangeI[Dimensions[dat], patch, nRan];
+GetPatchRanges[dat_, patch_, nPatch_, {nRan_, pad_}]:=Block[{pts},
+	pts = GetPatchRangeI[Dimensions[dat], patch, {nRan, pad}];
 	If[nPatch==="All", pts, RandomSample[pts, Min[{Length@pts, nPatch}]]]
 ]
 
 
-GetPatchRangeI[datDim_?ListQ, patchDim_?ListQ, n_]:=Tuples@MapThread[GetPatchRangeI[#1,#2, n]&, {datDim, patchDim}]
+GetPatchRangeI[datDim_?ListQ, patchDim_?ListQ, {nr_, pad_}]:=Tuples@MapThread[GetPatchRangeI[#1,#2, {nr, pad}]&, {datDim, patchDim}]
 
-GetPatchRangeI[d_?IntegerQ, p_?IntegerQ, n_]:=Block[{i,st},
-	i = Ceiling[d/p]+n;
+GetPatchRangeI[dim_?IntegerQ, patch_?IntegerQ, {nr_, pad_}]:=Block[{i,st},
+	i = Ceiling[dim/(patch-2 pad)]+nr;
 	If[i>1,
-		st=Round[Range[0, 1, 1./(i - 1)](d-p)]+1;
-		Thread[{st, st+p-1}],
-		{{1,d}}
+		st=Round[Range[0, 1, 1./(i - 1)](dim-patch)]+1;
+		Thread[{st, st+patch-1}],
+		{{1,dim}}
 	]
 ]
 
@@ -821,7 +950,7 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 	(*Augmentations of sharpness intensity and noise*)
 	If[bright, datT = RandomChoice[{RandomReal[{1, 1.5}], 1/RandomReal[{1, 1.5}]}] datT];
 	If[blur, datT = GaussianFilter[datT, RandomReal[{0.1, 1.5}]]];
-	If[noise && RandomChoice[{True, False, False}], datT = AddNoise[datT, 0.5/RandomReal[{10, 50}]]];
+	If[noise && RandomChoice[{True, False, False}], datT = AddNoise[datT, 0.5/RandomReal[{10, 100}]]];
 	
 	{ToPackedArray[N[datT]], ToPackedArray[Round[segT]]}
 ]
@@ -830,7 +959,7 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 ReverseC = Compile[{{dat, _Real, 1}}, Reverse[dat], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PatchTrainingData*)
 
 
@@ -841,8 +970,137 @@ PatchTrainingData[{dat_,seg_}, patch_, n_]:=Block[{pts,datP,segP},
 ]
 
 
+(* ::Subsection:: *)
+(*SplitDataForSegmentation*)
+
+
 (* ::Subsubsection:: *)
-(*PatchTrainingData*)
+(*Load Networks*)
+
+
+sideNet := sideNet = Import[GetAssetLocation["LegSide"]];
+posNet := posNet = Import[GetAssetLocation["LegPosition"]];
+imSize := imSize = NetDimensions[NetReplacePart[sideNet, "Input" -> None], "Input"][[2 ;;]]
+
+
+(* ::Subsubsection:: *)
+(*SplitDataForSegmentation*)
+
+
+SyntaxInformation[SplitDataForSegementation] = {"ArgumentsPattern" -> {_, _.}};
+
+SplitDataForSegementation[data_,seg_]:=Block[{dat,pts,dim,loc,set, segp},
+	{{dat,pts,dim},loc,set} = SplitDataForSegementation[dat];
+	segp = GetPatch[seg,pts];
+	{{dat,pts,dim},{seg,pts,dim}, loc,set}
+]
+
+
+SplitDataForSegementation[data_]:=Block[{dim,whatSide,side,whatPos,pos,dat,right,left,cut,pts,loc},
+	dim=Dimensions[data];
+
+	(*find which side using NN*)
+	whatSide=FindSide[data];
+
+	(*based on side cut data or propagate*)
+	dat=If[whatSide==="Both",
+		{right,left,cut}=CutData[data];
+		{{right,{"Right", {1,cut}}},{left,{"Left", {cut+1,dim[[3]]}}}},
+		{{data,cut=0;{whatSide,{1,dim[[3]]}}}}
+	];
+
+	(*loop over data to find upper or lower*)
+	dat=Flatten[(
+		{dat,side}=#;
+		{whatPos,pos}=FindPos[dat];
+
+		Switch[whatPos,
+			(*if upper and lower split upper and lower*)
+			"Both",{{dat[[pos[[1]];;]],{"Upper",{pos[[1]],dim[[1]]}},side},{dat[[;;pos[[2]]]],{"Lower",{1,pos[[2]]}},side}},
+			(*if only knee data duplicate for both networks*)
+			"Knee",{{dat,{"Upper",{1,dim[[1]]}},side},{dat,{"Lower",{1,dim[[1]]}},side}},
+			(*if only upper or only lower return what it is*)
+			_,{{dat,{whatPos,{1,dim[[1]]}},side}}
+		]
+	)&/@dat,1];
+
+	{dat,pts,loc}=Transpose[CropPart/@dat];
+
+	{{dat,pts,dim},loc,{{whatSide,cut},{whatPos,pos}}}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CropPart*)
+
+
+CropPart[data_]:=Block[{dat,up,sid,upst,upend,sidst,sidend,crp},
+	{dat,{up,{upst,upend}},{sid,{sidst,sidend}}}=data;
+
+	{dat, crp}=AutoCropData[Dilation[Normal[TakeLargestComponent[Mask[NormalizeData[dat],10]]],1]dat];
+	{dat,Partition[crp,2]+{upst-1,0,sidst-1},{up,sid}}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeImage*)
+
+
+(*make standardized image from data*)
+MakeImage = If[Total[Flatten[#]]<10,Image@ConstantArray[0., imSize],ImageResize[Image[Rescale[First[AutoCropData[{#},CropPadding->0][[1]]]]], imSize]]&;
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindSide*)
+
+
+(*find the side of the data*)
+FindSide[data_]:=Last@Keys@Sort@Counts[sideNet[MakeImage/@data]];
+
+
+(* ::Subsubsection:: *)
+(*FindPos*)
+
+
+(*find the posigion of the data*)
+FindPos[data_]:=Block[{len,ran,datF,kneeStart,kneeEnd,side},
+
+	len = Length[data];
+	ran = Range[1,len];
+	(*find loc per slice*)
+	datF = MedianFilter[posNet[MakeImage/@data]/.Thread[{"Lower","Knee","Upper"}->{1.,2.,3.}],1];
+
+	{kneeStart, kneeEnd} = First[SortBy[
+			Flatten[Table[{a, b, PosFunc[a, b, len, ran, datF]}, {a, 0, len}, {b, a+1, len}], 1]
+		,Last]][[1;;2]];
+
+	side=Which[
+		kneeStart==0. && kneeEnd==len, "Knee",
+		kneeStart>0 && kneeEnd>=len, "Lower",
+		kneeStart==0. && kneeEnd=!=len, "Upper",
+		kneeStart=!=0. && kneeEnd=!=len, "Both"
+	];
+
+	{side, {kneeStart+1, kneeEnd}}
+]
+
+
+(* ::Subsubsection:: *)
+(*PosFunc*)
+
+
+(*fit position of knee after posNN has been applied to stack of images*)
+PosFunc = Compile[{{a,_Integer,0},{b,_Integer,0},{l,_Integer,0},{x,_Integer,1},{d,_Real,1}},
+	Total[((Which[1<=#<=a,1.,a<=#<=b,2.,b<=#<=l,3.,True,0]&/@x)-d)^2]
+];
+
+
+(* ::Subsection:: *)
+(*Make evaluation images*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeChannelClassImage*)
 
 
 SyntaxInformation[MakeChannelClassImage]={"ArgumentsPattern"->{_, _, _., _.}};
@@ -858,6 +1116,10 @@ MakeChannelClassImage[data_,label_,{off_,max_},vox_]:=Block[{i1,i2},
 	i2=MakeChannelImage[data,vox];
 	ImageCollage[ImageCompose[#,SetAlphaChannel[i1,0.5AlphaChannel[i1]]]&/@i2]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeClassImage*)
 
 
 SyntaxInformation[MakeClassImage]={"ArgumentsPattern"->{_, _., _.}};
@@ -878,6 +1140,10 @@ MakeClassImage[label_,{off_,max_}, vox_]:=Block[{cols, im, rat},
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*MakeChannelImage*)
+
+
 SyntaxInformation[MakeChannelImage]={"ArgumentsPattern"->{_, _., _.}};
 
 MakeChannelImage[data_]:=MakeChannelImage[data,{1,1,1}]
@@ -891,6 +1157,35 @@ MakeChannelImage[data_,vox_]:=Block[{dat, im, rat},
 		ImageResize[Image[Clip[im,{0,1}]],Round@Reverse[rat Dimensions[im]],Resampling->"Nearest"]
 	)&/@dat
 ]
+
+
+Options[PlotSegmentations] = {
+	ColorFunction -> "DarkRainbow", 
+	ImageSize -> 400, 
+	ContourSmoothing -> 2
+};
+
+PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
+
+PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
+		smooth, size, plotb, segM, lab, cols, plotm
+	},
+	{smooth, cols, size} = OptionValue[{ContourSmoothing, ColorFunction, ImageSize}];
+
+	plotb = If[bone === None, Graphics3D[],
+		Show[PlotContour[#, vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothing -> smooth] & /@ Transpose[First@SplitSegmentations[bone]]]
+	];
+	{segM, lab} = SplitSegmentations[seg];
+
+	cols = ColorData[OptionValue[ColorFunction]] /@ Rescale[Range[Length[lab]]];
+	RandomSeed[34267];
+	cols = Flatten[RandomSample[Partition[cols, 2]]];
+
+	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> 0.6, ContourSmoothing -> smooth], {i, 1, Length[lab]}]];
+
+	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]
+]
+
 
 
 (* ::Section:: *)

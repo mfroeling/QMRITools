@@ -275,7 +275,7 @@ ColorRound = ncol + 2 - Ramp[ncol + 1 - Ramp[Round[(ncol - 1) Rescale[#1, #2]] +
 (*ManPannel*)
 
 
-ManPannel[name_,cont_,depl_:True]:= Module[{controls = DeleteCases[cont, Null]},
+ManPannel[name_, cont_, depl_:True]:= Module[{controls = DeleteCases[cont, Null]},
 	OpenerView[{Style[name, Bold, Medium],
 		Grid[If[ArrayDepth[controls] == 1, {controls}, controls],
 			Alignment -> {{Right, Left}, Center}, ItemSize -> {{13, 30}}]

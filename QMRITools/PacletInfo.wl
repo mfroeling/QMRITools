@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "3.6.0",
+	"Version" -> "3.6.5",
 	"WolframVersion" -> "13.0+",
 	"SystemID" -> All, 
 	
@@ -24,6 +24,13 @@ PacletObject[<|
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"DemoData", "DemoData.zip"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"GradientTool", "GradientGUI-v14.cdf"}}},
 		
+		(*Neural Networks for segmentation*)
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "Muscle_upper.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "Muscle_lower.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegBones", "Bones_full.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Side_full.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Pos_full.wlnet"}}},
+
 		(*elastix and transformix*)
 		{"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},
 		{"Asset", "Root" -> "Applications/MacOSX-x86-64", "SystemID" -> "MacOSX-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},
