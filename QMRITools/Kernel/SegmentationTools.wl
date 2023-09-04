@@ -596,11 +596,13 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 	{dev, max} = OptionValue[{TargetDevice, MaxPatchSize}];
 
 	(*labels for network*)
-	(*labels for network*)
 	{legL,legR}={{9,11,13,1,25,5,23},{10,12,14,2,26,6,24}};
 	{thighL,thighR}={{37,41,35,47,45,43,33,49},{38,42,36,48,46,44,34,50}};
 	{bonesLegL,bonesLegR}={{91,93,95,97,99},{92,94,96,98,100}};
 
+
+	(*rule to select correct network and network labels*)
+	rule = {"Upper" -> "ThighMuscles", "Lower" -> "LegMuscles"};
 	musRule = {
 		{"Upper", "Right"} -> thighR,
 		{"Lower", "Right"} -> legR,
@@ -611,9 +613,6 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		"Right" -> bonesLegR,
 		"Left" -> bonesLegL
 	};
-
-	(*rule to select correct network*)
-	rule = {"Upper" -> "ThighMuscles", "Lower" -> "LegMuscles"};
 
 	(*split the data in upper and lower legs and left and right*)
 	Echo[Dimensions@data, "Analyzing the data with dimensions:"];
@@ -627,24 +626,20 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		MapThread[(
 			(*Echo[{#2, Dimensions[#1]}, "Segmenting bones for"];*)
 			segs = ApplySegmentationNetwork[#1, "LegBones", TargetDevice -> dev, MaxPatchSize->max];
-			ruleL = bonRule;
-			ReplaceLabelsBone[segs, #2[[2]]/.bonRule, #2[[1]]]
+			ReplaceLabelsBone[segs, #2[[2]]/.(ruleL = bonRule), #2[[1]]]
 		) &, {patch, loc}],
 		"Legs",
 		MapThread[(
 			(*Echo[{#2, Dimensions[#1]}, "Segmenting legs for"];*)
 			segs = ApplySegmentationNetwork[#1, #2[[1]] /. rule, TargetDevice -> dev, MaxPatchSize->max];
-			ruleL = musRule;
-			ReplaceLabelsLeg[segs, #2/.musRule]
+			ReplaceLabelsLeg[segs, #2/.(ruleL = musRule)]
 		) &, {patch, loc}]
 	];
 
 	Echo["", "Putting togeteher the segmenations"];
+	(*Merge all segmentations for all expected labels*)
 	all = Select[DeleteDuplicates[Sort[Flatten[loc /. ruleL]]], IntegerQ];
-	seg = SelectSegmentations[PatchesToData[segs, pts, dim], all];
-	{seg, lab} = SplitSegmentations[seg];
-	seg = Transpose[TakeLargestComponent/@ Transpose[seg]];
-	MergeSegmentations[seg, lab]
+	PatchesToData[segs, pts, dim, all]
 ]
 
 
@@ -735,7 +730,12 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 ]
 
 
-TakeLargestComponent = SparseArray[ImageData[Closing[SelectComponents[Image3D[#, "Bit"], "Count", -1, CornerNeighbors -> False],1]]]& 
+TakeLargestComponent[seg_] := Block[{dim, segc, cr},
+	dim = Dimensions[seg];
+	{segc, cr} = AutoCropData[seg];
+	segc = SparseArray[ImageData[SelectComponents[Image3D[NumericArray[segc, "Integer8"]], "Count", -1, CornerNeighbors -> False]]];
+	ReverseCrop[segc, dim, cr]
+]
 
 
 FindPatchDim[dimi_, lim_] := Block[{i, rat, dim},
@@ -800,20 +800,46 @@ NormSeg[seg_, labs_]:=Block[{zero, segT, labT, sel},
 (*PatchesToData*)
 
 
-SyntaxInformation[PatchesToData] = {"ArgumentsPattern" -> {_, _, _.}};
+SyntaxInformation[PatchesToData2] = {"ArgumentsPattern" -> {_, _, _., _.}};
 
-PatchesToData[patches_, ran_]:=PatchesToData[patches, ran,  Max/@Transpose[ran[[All,All,2]]]]
+PatchesToData[patches_, ran_] := PatchesToData[patches, ran, Max /@ Transpose[ran[[All, All, 2]]], {}]
 
-PatchesToData[patches_, ran_, dim_]:=Block[{sel,zero,a1,a2,b1,b2,c1,c2,out},
-	zero = ConstantArray[0., dim];
-	out = MapThread[(
-		out = zero;
-		{{a1,a2},{b1,b2},{c1,c2}} = #2;
-		out[[a1;;a2, b1;;b2, c1;;c2]] = #1;
-		out
-	)&,{patches, ran}];
+PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}] := PatchesToData[patches, ran, dim, {}]
 
-	DevideNoZero[N[Total[out]], N[Total[Unitize /@ out]]]
+PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?ListQ] := Block[{
+		sel, zero, a1, a2, b1, b2, c1, c2, dat, wt,
+		seg, lab, pos, si, pi, overlap
+	},
+	zero = SparseArray[{}, dim];
+
+	If[labs === {},
+		(*no labs given, assuming normal data*)
+		{dat, wt} = Total /@ Transpose@MapThread[(
+			dat = wt = zero;
+			{{a1, a2}, {b1, b2}, {c1, c2}} = #2;
+			dat[[a1 ;; a2, b1 ;; b2, c1 ;; c2]] = #1;
+			wt[[a1 ;; a2, b1 ;; b2, c1 ;; c2]] = Unitize[#1];
+			{dat, wt}
+		) &, {patches, ran}];
+		SparseArray[dat["ExplicitPositions"] -> dat["ExplicitValues"]/wt["ExplicitValues"], dim]
+		,
+		(*labs given, assuming segmentations*)
+		{seg, lab} = Transpose[SplitSegmentations /@ patches];
+		seg = Transpose /@ seg;
+
+		seg = (
+			pos = Position[lab, #];
+			If[pos === {},
+				zero,
+				si = seg[[##]] & @@ # & /@ pos;
+				pi = ran[[#[[1]]]] & /@ pos;
+				Round[PatchesToData[si, pi, dim]]
+			]
+		) & /@ labs;
+
+		overlap = SparseArray[1 - UnitStep[Total[seg] - 2]];
+		MergeSegmentations[Transpose[SparseArray[TakeLargestComponent[overlap #] & /@ seg]], labs]
+	]
 ]
 
 

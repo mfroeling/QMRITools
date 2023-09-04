@@ -464,6 +464,11 @@ SelectSegmentations[segm_, labs_] := Block[{seg, lab, sel},
 	MergeSegmentations[Transpose[Pick[Transpose[seg], sel, True]], Pick[lab, sel, True]]
 ]
 
+SelectSegmentations[seg_, lab_, labs_] := Block[{lab, sel},
+	sel = MemberQ[labs, #] & /@ lab;
+	Transpose[Pick[Transpose[seg], sel, True]], Pick[lab, sel, True]
+]
+
 
 (* ::Subsubsection::Closed:: *)
 (*SmoothSegmentation*)
