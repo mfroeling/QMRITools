@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "3.6.5",
+	"Version" -> "3.7.0",
 	"WolframVersion" -> "13.0+",
 	"SystemID" -> All, 
 	
@@ -30,6 +30,7 @@ PacletObject[<|
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegBones", "Bones_full.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Side_full.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Pos_full.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegMuscleLabels", "Leg_muscles.txt"}}},
 
 		(*elastix and transformix*)
 		{"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},
