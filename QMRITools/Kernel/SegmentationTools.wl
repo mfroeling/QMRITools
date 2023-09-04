@@ -169,10 +169,17 @@ AugmentData::usage =
 "AugmentData is an option for GetTrainData. If set True the trainingdata is augemnted"
 
 
-MaxPatchSize::usage=
+MaxPatchSize::usage = 
 "MaxPatchSize ..."
 
+DataPadding::usage = 
+"DataPadding ..."
 
+PatchNumber::usage = 
+"PatchNumber..."
+
+PatchPadding::usage = 
+"PatchPadding ..."
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -731,10 +738,13 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 
 
 TakeLargestComponent[seg_] := Block[{dim, segc, cr},
-	dim = Dimensions[seg];
-	{segc, cr} = AutoCropData[seg];
-	segc = SparseArray[ImageData[SelectComponents[Image3D[NumericArray[segc, "Integer8"]], "Count", -1, CornerNeighbors -> False]]];
-	ReverseCrop[segc, dim, cr]
+	If[Total[Flatten[seg]] === 0,
+		seg,
+		dim = Dimensions[seg];
+		{segc, cr} = AutoCropData[seg];
+		segc = SparseArray[ImageData[SelectComponents[Image3D[NumericArray[segc, "Integer8"]], "Count", -1, CornerNeighbors -> False]]];
+		ReverseCrop[segc, dim, cr]
+	]
 ]
 
 
@@ -800,7 +810,7 @@ NormSeg[seg_, labs_]:=Block[{zero, segT, labT, sel},
 (*PatchesToData*)
 
 
-SyntaxInformation[PatchesToData2] = {"ArgumentsPattern" -> {_, _, _., _.}};
+SyntaxInformation[PatchesToData] = {"ArgumentsPattern" -> {_, _, _., _.}};
 
 PatchesToData[patches_, ran_] := PatchesToData[patches, ran, Max /@ Transpose[ran[[All, All, 2]]], {}]
 
