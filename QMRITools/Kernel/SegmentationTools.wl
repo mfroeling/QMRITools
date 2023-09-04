@@ -129,6 +129,12 @@ FindPos::usage =
 "FindPos[data] ..."
 
 
+MuscleLabelToName::usage =
+"MuscleLabelToName"
+
+MuscleNameToLabel::usage = 
+"MuscleNameToLabel"
+
 
 (* ::Subsection:: *)
 (*Options*)
@@ -161,6 +167,11 @@ PatchesPerSet::usage =
 
 AugmentData::usage = 
 "AugmentData is an option for GetTrainData. If set True the trainingdata is augemnted"
+
+
+MaxPatchSize::usage=
+"MaxPatchSize ..."
+
 
 
 (* ::Subsection:: *)
@@ -463,7 +474,7 @@ FlatTotLayer[lev_]:=NetChain[{FlattenLayer[lev],AggregationLayer[Total,1]}];
 (*Encoders*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*ClassEndocer*)
 
 
@@ -571,22 +582,35 @@ legNet := legNet = Import[GetAssetLocation["SegLegMuscle"]];
 boneNet := boneNet = Import[GetAssetLocation["SegBones"]];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*SegmentData*)
 
 
 Options[SegmentData] = {TargetDevice -> "GPU", MaxPatchSize->Automatic};
 
 SegmentData[data_, what_, OptionsPattern[]] := Block[{
-		legL,legR,thighL,thighR,bonesLegL,bonesLegR,
-		patch,pts,dim,loc,set, segs,rule,dev, max
+		legL, legR, thighL, thighR, bonesLegL, bonesLegR, musRule, bonRule,
+		patch, pts, dim, loc, set, segs, rule, ruleL, dev, max, all, seg, lab
 	},
+
 	{dev, max} = OptionValue[{TargetDevice, MaxPatchSize}];
 
 	(*labels for network*)
-	{legL, legR} = {{13, 15, 17, 19, 21, 23, 25}, {14, 16, 18, 20, 22, 24, 26}};
-	{thighL, thighR} = {{1, 3, 5, 7, 9, 11, 27, 29}, {2, 4, 6, 8, 10, 12, 28, 30}};
-	{bonesLegL, bonesLegR} = {{91, 93, 95, 97, 99}, {92, 94, 96, 98, 100}};
+	(*labels for network*)
+	{legL,legR}={{9,11,13,1,25,5,23},{10,12,14,2,26,6,24}};
+	{thighL,thighR}={{37,41,35,47,45,43,33,49},{38,42,36,48,46,44,34,50}};
+	{bonesLegL,bonesLegR}={{91,93,95,97,99},{92,94,96,98,100}};
+
+	musRule = {
+		{"Upper", "Right"} -> thighR,
+		{"Lower", "Right"} -> legR,
+		{"Upper", "Left"} -> thighL,
+		{"Lower", "Left"} -> legL
+	};
+	bonRule = {
+		"Right" -> bonesLegR,
+		"Left" -> bonesLegL
+	};
 
 	(*rule to select correct network*)
 	rule = {"Upper" -> "ThighMuscles", "Lower" -> "LegMuscles"};
@@ -603,24 +627,29 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		MapThread[(
 			(*Echo[{#2, Dimensions[#1]}, "Segmenting bones for"];*)
 			segs = ApplySegmentationNetwork[#1, "LegBones", TargetDevice -> dev, MaxPatchSize->max];
-			ReplaceLabelsBone[segs, Switch[#2[[2]], "Left", bonesLegL, "Right", bonesLegR], #2[[1]]]
+			ruleL = bonRule;
+			ReplaceLabelsBone[segs, #2[[2]]/.bonRule, #2[[1]]]
 		) &, {patch, loc}],
 		"Legs",
 		MapThread[(
 			(*Echo[{#2, Dimensions[#1]}, "Segmenting legs for"];*)
 			segs = ApplySegmentationNetwork[#1, #2[[1]] /. rule, TargetDevice -> dev, MaxPatchSize->max];
-			ReplaceLabelsLeg[segs, Switch[#2,
-				{"Upper", "Right"}, thighR,
-				{"Lower", "Right"}, legR,
-				{"Upper", "Left"}, thighL,
-				{"Lower", "Left"}, legL]
-			]
+			ruleL = musRule;
+			ReplaceLabelsLeg[segs, #2/.musRule]
 		) &, {patch, loc}]
 	];
 
 	Echo["", "Putting togeteher the segmenations"];
-	PatchesToData[segs, pts, dim]
+	all = Select[DeleteDuplicates[Sort[Flatten[loc /. ruleL]]], IntegerQ];
+	seg = SelectSegmentations[PatchesToData[segs, pts, dim], all];
+	{seg, lab} = SplitSegmentations[seg];
+	seg = Transpose[TakeLargestComponent/@ Transpose[seg]];
+	MergeSegmentations[seg, lab]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ReplaceLabelsLeg*)
 
 
 ReplaceLabelsLeg[seg_, lab_] := Block[{sel, segs, labs, a, b},
@@ -631,6 +660,11 @@ ReplaceLabelsLeg[seg_, lab_] := Block[{sel, segs, labs, a, b},
 	If[a==={}, 0 seg, MergeSegmentations[segs[[All, a]], lab[[b]]]]
 ]
 
+
+(* ::Subsubsection::Closed:: *)
+(*ReplaceLabelsBone*)
+
+
 ReplaceLabelsBone[seg_, lab_, loc_] := Block[{sel, segs, labs, a, b},
 	sel = Switch[loc, "Upper", {1,2,5}, "Lower", {2,3,4}];
 	{segs,labs} = SplitSegmentations[seg];
@@ -638,7 +672,6 @@ ReplaceLabelsBone[seg_, lab_, loc_] := Block[{sel, segs, labs, a, b},
 	b = Select[sel, MemberQ[labs, #] &];
 	If[a==={}, 0 seg, MergeSegmentations[segs[[All, a]], lab[[b]]]]
 ]
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -974,7 +1007,7 @@ PatchTrainingData[{dat_,seg_}, patch_, n_]:=Block[{pts,datP,segP},
 (*SplitDataForSegmentation*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Load Networks*)
 
 
@@ -983,7 +1016,7 @@ posNet := posNet = Import[GetAssetLocation["LegPosition"]];
 imSize := imSize = NetDimensions[NetReplacePart[sideNet, "Input" -> None], "Input"][[2 ;;]]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SplitDataForSegmentation*)
 
 
@@ -1058,7 +1091,7 @@ MakeImage = If[Total[Flatten[#]]<10,Image@ConstantArray[0., imSize],ImageResize[
 FindSide[data_]:=Last@Keys@Sort@Counts[sideNet[MakeImage/@data]];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*FindPos*)
 
 
@@ -1085,7 +1118,7 @@ FindPos[data_]:=Block[{len,ran,datF,kneeStart,kneeEnd,side},
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PosFunc*)
 
 
@@ -1179,13 +1212,41 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 
 	cols = ColorData[OptionValue[ColorFunction]] /@ Rescale[Range[Length[lab]]];
 	RandomSeed[34267];
-	cols = Flatten[RandomSample[Partition[cols, 2]]];
+	cols = RandomSample[cols];
 
 	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> 0.6, ContourSmoothing -> smooth], {i, 1, Length[lab]}]];
 
 	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]
 ]
 
+
+(* ::Subsection:: *)
+(*Muscle Names*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*Definitions*)
+
+
+lines = Import[GetAssetLocation["LegMuscleLabels"], "Lines"][[15 ;;]];
+muscleNames = StringRiffle[
+		Capitalize /@ ToLowerCase[Select[StringSplit[StringSplit[#, "\""][[-1]], " "], ! IntegerQ[ToExpression[#]] &]]
+	, "_"] & /@ lines;
+muscleLabels = ToExpression[StringSplit[#, " "][[1]]] & /@ lines;
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleLabelToName*)
+
+
+MuscleLabelToName[num_] := num /. Thread[muscleLabels -> muscleNames]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleLabelToName*)
+
+
+MuscleNameToLabel[num_] := num /. Thread[muscleNames -> muscleLabels]
 
 
 (* ::Section:: *)

@@ -69,6 +69,9 @@ MergeSegmentations::usage =
 "MergeSegmentations[masks, labels] generates an ITKsnap or slices3D compatible segmentation from individual masks and label numbers.
 Output is a labled segmentation."
 
+SelectSegmentations::usage=
+"SelectSegmentations[seg, lab]..."
+
 SmoothSegmentation::usage =
 "SmoothSegmentation[masks] smooths segmentations and removes the overlaps between multiple segmentations." 
 
@@ -446,6 +449,19 @@ SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
 MergeSegmentations[masks_, vals_] := Block[{mt},
 	mt = Transpose[SparseArray[masks]];
 	Normal[Total[vals mt](1 - UnitStep[Total[mt] - 2])]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectSegmentations*)
+
+
+SyntaxInformation[SelectSegmentations] = {"ArgumentsPattern" -> {_,_}};
+
+SelectSegmentations[segm_, labs_] := Block[{seg, lab, sel},
+	{seg, lab} = SplitSegmentations[segm];
+	sel = MemberQ[labs, #] & /@ lab;
+	MergeSegmentations[Transpose[Pick[Transpose[seg], sel, True]], Pick[lab, sel, True]]
 ]
 
 
