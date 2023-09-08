@@ -89,9 +89,6 @@ DilateMask::usage=
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
 
-ImportITKLabels::usage = 
-"ImportITKLabels[file] imports the ITKSnap label file."
-
 
 ROIMask::usage = 
 "ROIMask[maskdim, {name->{{{x,y},slice}..}..}] crates mask from coordinates x and y at slice. 
@@ -456,7 +453,7 @@ MergeSegmentations[masks_, vals_] := Block[{mt},
 (*SelectSegmentations*)
 
 
-SyntaxInformation[SelectSegmentations] = {"ArgumentsPattern" -> {_,_}};
+SyntaxInformation[SelectSegmentations] = {"ArgumentsPattern" -> {_,_,_.}};
 
 SelectSegmentations[segm_, labs_] := Block[{seg, lab, sel},
 	{seg, lab} = SplitSegmentations[segm];
@@ -464,9 +461,9 @@ SelectSegmentations[segm_, labs_] := Block[{seg, lab, sel},
 	MergeSegmentations[Transpose[Pick[Transpose[seg], sel, True]], Pick[lab, sel, True]]
 ]
 
-SelectSegmentations[seg_, lab_, labs_] := Block[{lab, sel},
+SelectSegmentations[seg_, lab_, labs_] := Block[{sel},
 	sel = MemberQ[labs, #] & /@ lab;
-	Transpose[Pick[Transpose[seg], sel, True]], Pick[lab, sel, True]
+	Transpose[Pick[Transpose[seg], sel, True], Pick[lab, sel, True]]
 ]
 
 
@@ -591,15 +588,6 @@ SegmentMask[mask_, seg_?IntegerQ] := Block[{pos, f, l, sel, out},
 	out = ConstantArray[0*mask, seg];
 	Table[out[[i, sel[[i, 1]] ;; sel[[i, 2]]]] = mask[[sel[[i, 1]] ;; sel[[i, 2]]]], {i, 1, seg}];
 	out
-]
-
-
-ImportITKLabels[file_]:=Block[{labels},
-	labels = ({
-		ToExpression[StringSplit[#][[1]]],
-		StringSplit[#, "\""][[-1]]
-	} & /@ Select[Import[file, "Lines"], StringTake[#, 1] =!= "#" &])[[2 ;;]];
-	Thread[labels[[All, 1]] -> labels[[All, 2]]]
 ]
 
 
