@@ -91,6 +91,9 @@ DataToPatches::usage =
 "DataToPatches[data, patchSize] creates the maximal number of patches with patchSize from data, where the patches have minimal overlap.
 DataToPatches[data, patchSize, n] gives n random patches from the maximal number of patches with patchSize from data, where the patches have minimal overlap."
 
+TrainSegmentationNetwork::usage =
+"TrainSegmentationNetwork[{inFol, outFol}]
+TrainSegmentationNetwork[{inFol, outFol}, netCont] ..."
 
 GetTrainData::usage =
 "GetTrainData[data, batchsize, patch] creates a training batch of size batchsize with patchsize patch. 
@@ -193,6 +196,11 @@ PatchNumber::usage =
 PatchPadding::usage = 
 "PatchPadding ..."
 
+PatchSize::usage =
+"PatchSize ..."
+
+RoundLength::usage = 
+"RoundLength ..."
 
 
 (* ::Subsection:: *)
@@ -1004,6 +1012,180 @@ GetPatchRangeI[dim_?IntegerQ, patch_?IntegerQ, {nr_, pad_}]:=Block[{i,st},
 		Thread[{st + 1, st + patch}]
 	]
 ]
+
+
+(* ::Subsection:: *)
+(*Get Train Data*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*Get Train Data*)
+
+
+Options[TrainSegmentationNetwork] = {
+	PatchSize -> {32, 96, 96},
+	DownsampleSchedule -> {{1, 2, 2}, {2, 2, 2} , {1, 2, 2}, {2, 2, 2}},
+	NetworkDepth -> 5,
+	InputFilters -> 24,
+	DropoutRate -> 0.2,
+	BlockType -> "ResNet",
+
+	BatchSize -> 4,
+	RoundLength -> 256,
+	MaxTrainingRounds -> 500,
+	AugmentData -> True
+};
+
+TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPattern[]] := TrainSegmentationNetwork[{inFol, outFol}, "Start", opts]
+
+TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
+		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, ittName, makeIm,
+		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im,
+		netName, monitorFunction, netMon, netOut, trained
+	},
+
+	(*------------ Get all the configuration struff -----------------*)
+
+	(*getting all the options*)
+	netOpts = Join[FilterRules[Options@TrainSegmentation, Options@MakeUnet], FilterRules[{opts}, Options@MakeUnet]];
+	{batch, roundLength, rounds, augment} = OptionValue[{BatchSize, RoundLength, MaxTrainingRounds, AugmentData}];
+	
+	(*import all the train data*)
+	data = Import /@ FileNames["*.wxf", inFol];
+
+	(*figure out network properties*)
+	dDim = Dimensions@data[[All, 1]][[1]];
+	nChan = If[Length@dDim === 3, 1, dDim[[2]]];
+	nClass = Max@data[[All, 2]] + 1;
+	patch = OptionValue[PatchSize];
+
+	(*local pure functions*)
+	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
+	netName = outName["itt_" <> StringPadLeft[ToString[#], 4, "0"] <> ".wlnet"]&;
+	ittName = FileNameJoin[{outFol, "itt_" <> StringPadLeft[ToString[#], 4, "0"] <> ".png"}]&;
+	makeIm = ImageResize[MakeChannelClassImage[#1, #2, {0, nClass - 1}], 500, Resampling -> "Nearest"]&;
+
+	(*------------ Define the network -----------------*)
+
+	(*make or import network*)
+	{netIn, ittTrain} = Which[
+		(*start with a clean network*)
+		netCont === "Start",
+		{MakeUnet[nChan, nClass, patch, Sequence@netOpts], 0}
+		,
+		(*continue with given network*)
+		Head@netCont === NetGraph,
+		{netCont , 0}
+		,
+		(*string can be different things*)
+		StringQ[netCont],
+		Which[
+			(*is wlnet import and start*)
+			FileExtension[netCont] === "wlnet",
+			If[FileExistsQ[netCont], 
+				{Import[netCont], 0}, 
+				Return[$Failed]
+			]
+			,
+			(*is an output directory look for net*)
+			DirectoryQ[netCont],
+			netIn = FileNames["*_itt_*.wlnet", netCont];
+			If[Length[netIn] > 0, 
+				{Import@Last@netIn, ToExpression@Last@StringSplit[FileBaseName@Last@netIn, "_"]},
+				Return[$Failed]
+			]
+			,
+			True, Return[$Failed]
+		],
+		True, Return[$Failed]
+	];
+
+	If[rounds - ittTrain < 50,
+		Print["not engouh round"];
+		Return[$Failed]
+		,
+		(*if the network already exists make the dimensions, 
+		classes en channels match the input*)
+		netIn = NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
+
+		Echo[netIn, "Network for training"];
+
+		(*---------- Stuff for monitoring ----------------*)
+
+		(*Make and export test data*)
+		{testData, testVox} = MakeTestData[data, 2, patch];
+		testSeg = ApplySegmentationNetwork[testData, netIn];
+
+		im = makeIm[testData, testSeg];
+		Export[ittName[ittTrain], im];
+		ExportNii[First@testData, testVox, outName["testSet.nii"]];
+		ExportNii[testSeg, testVox, outName["testSeg.nii"]];
+
+		(*Print progress function*)
+		Echo[Dynamic[Column[
+			{Style["Training Round: " <> ToString[ittTrain], Bold, Large], im}
+		, Alignment -> Center]], "Progress"];
+
+		(*define the monitor function, exports image and last net and Nii of result*)
+		monitorFunction = (ittTrain++;
+			(*perform segmentation*)
+			netMon = NetExtract[#Net, "net"];
+			testSeg = ApplySegmentationNetwork[testData, netMon];
+			(*export test Segmentation*)
+			ExportNii[testSeg, testVox, outName["testSeg.nii"]];
+			(*export test image*)
+			im = makeIm[testData, testSeg];
+			Export[FileNameJoin[{outFol, "itt_" <> StringPadLeft[ToString[ittTrain], 4, "0"] <> ".png"}], im];
+			(*export the network and delete the one from the last itteration*)
+			Export[netName[ittTrain], netMon];
+			Quiet@DeleteFile[netName[ittTrain - 1]];
+		)&;
+
+		(*---------- Train the network ----------------*)
+
+		Echo[DateString[], "Starting training"];
+
+		trained = NetTrain[
+			AddLossLayer@netIn,
+			{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment] &, "RoundLength" -> roundLength},
+			All, ValidationSet -> GetTrainData[data, Round[0.2 roundLength], patch, nClass](*Scaled[0.2]*),
+
+			LossFunction -> {"CrossEntropy", "SoftDice", "Brier"},
+			MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
+			TargetDevice -> "GPU", WorkingPrecision -> "Mixed",
+			LearningRate -> 0.01, Method -> {"ADAM", "Beta1" -> 0.99},
+
+			TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[1, "Rounds"]},
+			TrainingProgressReporting -> File[outName[StringReplace[DateString["ISODateTime"], ":" | "-" -> ""] <> ".json"]]
+		];
+
+		(*---------- Export the network ----------------*)
+
+		netOut = NetExtract[trained["TrainedNet"], "net"];
+		Export[outName["trained" <> ".wxf"], trained];
+		Export[outName["final" <> ".wlnet"], netOut];
+		Export[outName["final" <> ".onnx"], netOut];
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeTestData*)
+
+
+MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
+	testData = data[[1, 1]];
+	len = Length@testData;
+	If[len > First@patch,
+	sel = 
+	Range @@ 
+	Clip[Round[(Clip[
+	Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, 
+	n First@patch})], {1, len}, {1, len}];
+	testData = First@AutoCropData[testData[[sel]]]
+	];
+	{{PadToDimensions[testData, patch]}, data[[1, 3]]}
+];
 
 
 (* ::Subsection:: *)
