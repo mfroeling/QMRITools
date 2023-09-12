@@ -35,8 +35,6 @@ AddLossLayer::usage =
 SoftDiceLossLayer::usage = 
 "SoftDiceLossLayer[dim] represents a net layer that computes the SoftDice loss by comparing input class probability vectors with the target class vector."
 
-BrierLossLayer::usage = 
-"BrierLossLayer[dim] represents a net layer that computes the Brier loss by comparing input class probability vectors with the target class vector."
 
 PrintKernels::usage = 
 "PrintKernels[net] ..."
@@ -231,7 +229,7 @@ Options[MakeUnet] = {
 	ActivationType -> "GELU"
 }
 
-SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
+SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
 		dep, drop, type, dim, filt, enc, dec, stride, filtIn, actType
@@ -499,14 +497,13 @@ AddLossLayer[net_]:=Block[{dim},
 	dim = Length[Information[net,"OutputPorts"][[1]]]-1;
 	NetGraph[<|
 		"net"->net,
-		"SoftDice" -> {SoftDiceLossLayer[dim], FunctionLayer[.1 #&]},
-		"CrossEntropy" -> CrossEntropyLossLayer["Probabilities"],
-		"Brier" -> {BrierLossLayer[dim], FunctionLayer[1000 #&]}
-		|>,{
-		NetPort["Input"]->"net"->NetPort["Output"],
+		"SoftDice" -> SoftDiceLossLayer[dim],
+		"SquaredDiff" -> {MeanSquaredLossLayer[], ElementwiseLayer[10 #&]},
+		"CrossEntropy" -> {CrossEntropyLossLayer["Binary"], ElementwiseLayer[10 #&]}
+	|>,{
 		{"net",NetPort["Target"]}->"SoftDice"->NetPort["SoftDice"],
-		{"net",NetPort["Target"]}->"CrossEntropy"->NetPort["CrossEntropy"],
-		{"net",NetPort["Target"]}->"Brier"->NetPort["Brier"]
+		{"net",NetPort["Target"]}->"SquaredDiff"->NetPort["SquaredDiff"],
+		{"net",NetPort["Target"]}->"CrossEntropy"->NetPort["CrossEntropy"]
 	}]
 ]
 
@@ -517,55 +514,17 @@ AddLossLayer[net_]:=Block[{dim},
 
 SyntaxInformation[SoftDiceLossLayer] = {"ArgumentsPattern" -> {_}};
 
-SoftDiceLossLayer[dim_]:=NetGraph[<|
-	"times" -> ThreadingLayer[Times],
-	"flattot1" -> FlatTotLayer[dim - 1],
-	"flattot2" -> FlatTotLayer[dim - 1],
-	"flattot3" -> FlatTotLayer[dim - 1],
-	"total" -> TotalLayer[],
-	"devide" -> {ThreadingLayer[Divide], AggregationLayer[Mean, 1], ElementwiseLayer[1 - 2 # &]},
-	"weight" -> ElementwiseLayer[1/(# + 1) &],
-	"times1" -> ThreadingLayer[Times],
-	"times2" -> ThreadingLayer[Times]
+SoftDiceLossLayer[dim_] := NetGraph[<|
+	"sumInp" -> {AggregationLayer[Total, ;; dim]},
+	"sumTar" -> {AggregationLayer[Total, ;; dim]},
+	"sumProd" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; dim]},
+	"dice" -> {ThreadingLayer[1. - ((2. #1) / (#2 + #3 + 10.^-10)) &], AggregationLayer[Mean, 1]}
 |>, {
-	{NetPort["Input"], NetPort["Target"]} -> "times" -> "flattot1",
-	NetPort["Input"] -> "flattot2",
-	NetPort["Target"] -> "flattot3",
-	{"flattot2", "flattot3"} -> "total", "flattot3" -> "weight",
-	{"flattot1", "weight"} -> "times1",
-	{"total", "weight"} -> "times2",
-	{"times1", "times2"} -> "devide" -> NetPort["Loss"]
+	NetPort["Input"] -> "sumInp",
+	NetPort["Target"] -> "sumTar",
+	{NetPort["Target"], NetPort["Input"]} -> "sumProd",
+	{"sumProd",  "sumTar", "sumInp"} -> "dice" -> NetPort["Loss"]
 }, "Loss" -> "Real"]
-
-
-(* ::Subsubsection::Closed:: *)
-(*BrierLossLayer*)
-
-
-SyntaxInformation[BrierLossLayer] = {"ArgumentsPattern" -> {_}};
-   
-BrierLossLayer[dim_] := NetGraph[<|
-	"sub" -> ThreadingLayer[Subtract],
-	"SqMn" -> {ElementwiseLayer[#^2 &], FlattenLayer[dim - 1], TransposeLayer[], AggregationLayer[Mean]},
-	"weigth" -> {FlatTotLayer[dim - 1], ElementwiseLayer[1/(# + 1) &]},
-	"times" -> ThreadingLayer[Times],
-	"tot1" -> AggregationLayer[Total, 1],
-	"tot2" -> AggregationLayer[Total, 1],
-	"devide" -> ThreadingLayer[Divide]
-|>, {
-	{NetPort["Input"], NetPort["Target"]} -> "sub" -> "SqMn",
-	NetPort["Target"] -> "weigth",
-	{"weigth", "SqMn"} -> "times" -> "tot1",
-	"weigth" -> "tot2",
-	{"tot1", "tot2"} -> "devide" -> NetPort["Loss"]
-}, "Loss" -> "Real"]
-
-
-(* ::Subsubsection::Closed:: *)
-(*FlatTotLayer*)
-
-
-FlatTotLayer[lev_]:=NetChain[{FlattenLayer[lev],AggregationLayer[Total,1]}];
 
 
 (* ::Subsection:: *)
@@ -827,17 +786,6 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 ]
 
 
-TakeLargestComponent[seg_] := Block[{dim, segc, cr},
-	If[Total[Flatten[seg]] === 0,
-		seg,
-		dim = Dimensions[seg];
-		{segc, cr} = AutoCropData[seg];
-		segc = ImageData[SelectComponents[Image3D[NumericArray[segc, "Integer8"]], "Count", -1, CornerNeighbors -> False]];
-		SparseArray@Round@ReverseCrop[segc, dim, cr]
-	]
-]
-
-
 FindPatchDim[dim_, lim_, sc_] := Block[{u, cont, dimM, dimN},
 	dimM = sc Ceiling[dim/sc];
 	If[CubeRoot[N[Times @@dimM]]<lim,
@@ -925,12 +873,12 @@ PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?
 	If[labs === {},
 		(*no labs given, assuming normal data*)
 		{dat, wt} = Total /@ Transpose@MapThread[(
-			dat = wt = zero;
+			dat = zero;
 			{{a1, a2}, {b1, b2}, {c1, c2}} = #2;
 			dat[[a1 ;; a2, b1 ;; b2, c1 ;; c2]] = #1[[1 ;; a2 - a1 + 1, 1 ;; b2 - b1 + 1, 1 ;; c2 - c1 + 1]];
 			{dat, SparseArray[Unitize[dat]]}
 		) &, {patches, ran}];
-		SparseArray[dat["ExplicitPositions"] -> dat["ExplicitValues"]/wt["ExplicitValues"], dim]
+		SparseArray[dat["ExplicitPositions"] -> dat["ExplicitValues"] / wt["ExplicitValues"], dim]
 		,
 		(*labs given, assuming segmentations*)
 		{seg, lab} = Transpose[SplitSegmentations /@ patches];
@@ -942,17 +890,34 @@ PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?
 				zero,
 				si = seg[[##]] & @@ # & /@ pos;
 				pi = ran[[#[[1]]]] & /@ pos;
-				Round[PatchesToData[si, pi, dim]]
+				Ceiling[PatchesToData[si, pi, dim]]
 			]
 		) & /@ labs;
 
 		(*set overlapping to zero and then add to background label*)
+		seg = TakeLargestComponent[#, True] &/@ seg;
 		overlap = SparseArray[1 - UnitStep[Total[seg] - 2]];
 		seg = TakeLargestComponent[overlap #] &/@ seg;
+		(*seg = TakeLargestComponent/@Transpose[RemoveMaskOverlaps[Transpose@seg]];*)
 		MergeSegmentations[Transpose[seg], labs]
 	]
 ]
 
+
+TakeLargestComponent[seg_]:=TakeLargestComponent[seg, False]
+
+TakeLargestComponent[seg_, err_] := Block[{dim, segc, cr},
+	If[Total[Flatten[seg]] === 0,
+		seg,
+		dim = Dimensions[seg];
+		{segc, cr} = AutoCropData[seg];
+		segc = If[err,
+			ImageData[Dilation[SelectComponents[Erosion[Image3D[NumericArray[segc, "Integer8"]], CrossMatrix[{1, 1, 1}]], "Count", -1, CornerNeighbors -> False], CrossMatrix[{1, 1, 1}]]],
+			ImageData[SelectComponents[Image3D[NumericArray[segc, "Integer8"]], "Count", -1, CornerNeighbors -> False]]
+		];
+		SparseArray@Round@ReverseCrop[segc, dim, cr]
+	]
+]
 
 (* ::Subsubsection::Closed:: *)
 (*DataToPatches*)
@@ -1100,7 +1065,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		True, Return[$Failed]
 	];
 
-	If[rounds - ittTrain < 50,
+	If[rounds - ittTrain < 5,
 		Print["not engouh round"];
 		Return[$Failed]
 		,
@@ -1150,7 +1115,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 			{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment] &, "RoundLength" -> roundLength},
 			All, ValidationSet -> GetTrainData[data, Round[0.2 roundLength], patch, nClass](*Scaled[0.2]*),
 
-			LossFunction -> {"CrossEntropy", "SoftDice", "Brier"},
+			LossFunction -> {"SoftDice", "SquaredDiff", "CrossEntropy"}, 
 			MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
 			TargetDevice -> "GPU", WorkingPrecision -> "Mixed",
 			LearningRate -> 0.01, Method -> {"ADAM", "Beta1" -> 0.99},
@@ -1177,12 +1142,8 @@ MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
 	testData = data[[1, 1]];
 	len = Length@testData;
 	If[len > First@patch,
-	sel = 
-	Range @@ 
-	Clip[Round[(Clip[
-	Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, 
-	n First@patch})], {1, len}, {1, len}];
-	testData = First@AutoCropData[testData[[sel]]]
+		sel = Range @@ Clip[Round[(Clip[Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, n First@patch})], {1, len}, {1, len}];
+		testData = First@AutoCropData[testData[[sel]]]
 	];
 	{{PadToDimensions[testData, patch]}, data[[1, 3]]}
 ];
@@ -1237,7 +1198,7 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 		dat = PadToDimensions[dat, dim];
 		seg = PadToDimensions[seg, dim];
 
-		ran = RandomChoice[{True, False}];
+		ran = RandomChoice[{True, True, True, False}];
 		{dat, seg} = AugmentTrainingData[{dat, seg}, vox, ran && # & /@ aug];
 		{dat, seg} = PatchTrainingData[{dat, seg}, patch, nSet];
 
@@ -1275,6 +1236,7 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 			If[scale, {0., 1., 1.} RandomReal[{0.5, 1.5}, 3], {1., 1., 1.}],
 			{0., 0., 0.}
 		];
+		
 		datT = DataTransformation[datT, vox, w, InterpolationOrder -> 1];
 		segT = DataTransformation[segT, vox, w, InterpolationOrder -> 0];
 	];
@@ -1400,13 +1362,13 @@ FindPos[data_]:=Block[{len,ran,datF,kneeStart,kneeEnd,side},
 	len = Length[data];
 	ran = Range[1,len];
 	(*find loc per slice*)
-	datF = MedianFilter[posNet[MakeImage/@data]/.Thread[{"Lower","Knee","Upper"}->{1.,2.,3.}],1];
+	datF = MedianFilter[posNet[MakeImage/@data]/.Thread[{"Lower", "Knee", "Upper"}->{1.,2.,3.}],1];
 
 	{kneeStart, kneeEnd} = First[SortBy[
 			Flatten[Table[{a, b, PosFunc[a, b, len, ran, datF]}, {a, 0, len}, {b, a+1, len}], 1]
 		,Last]][[1;;2]];
 
-	side=Which[
+	side = Which[
 		kneeStart==0. && kneeEnd==len, "Knee",
 		kneeStart>0 && kneeEnd>=len, "Lower",
 		kneeStart==0. && kneeEnd=!=len, "Upper",
@@ -1486,7 +1448,7 @@ MakeChannelImage[data_, vox_]:=Block[{dat, im, rat},
 	(
 		im=#;
 		im=If[ArrayDepth[#]===3, im[[Round[Length@im/2]]], im];
-		ImageResize[Image[Clip[im,{0,1}]],Round@Reverse[rat Dimensions[im]],Resampling->"Nearest"]
+		ImageResize[Image[Clip[im,{0,1}]], Round@Reverse[rat Dimensions[im]], Resampling->"Nearest"]
 	)&/@dat
 ]
 
@@ -1494,26 +1456,28 @@ MakeChannelImage[data_, vox_]:=Block[{dat, im, rat},
 Options[PlotSegmentations] = {
 	ColorFunction -> "DarkRainbow", 
 	ImageSize -> 400, 
-	ContourSmoothing -> 2
+	ContourSmoothing -> 2,
+	RandomizeColor->True
 };
 
 PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
 
 PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
-		smooth, size, plotb, segM, lab, cols, plotm
+		smooth, size, plotb, segM, nSeg, cols, plotm, ranCol
 	},
-	{smooth, cols, size} = OptionValue[{ContourSmoothing, ColorFunction, ImageSize}];
+	{smooth, cols, size, ranCol} = OptionValue[{ContourSmoothing, ColorFunction, ImageSize, RandomizeColor}];
 
 	plotb = If[bone === None, Graphics3D[],
-		Show[PlotContour[#, vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothing -> smooth] & /@ Transpose[First@SplitSegmentations[bone]]]
+		PlotContour[Unitize[bone], vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothing -> smooth]
 	];
-	{segM, lab} = SplitSegmentations[seg];
 
-	cols = ColorData[OptionValue[ColorFunction]] /@ Rescale[Range[Length[lab]]];
-	RandomSeed[34267];
-	cols = RandomSample[cols];
+	segM = If[ArrayDepth[seg]===3, First@SplitSegmentations[seg], seg];
+	nSeg = Length@First@segM;
 
-	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> 0.6, ContourSmoothing -> smooth], {i, 1, Length[lab]}]];
+	cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[Range[nSeg]]];
+	If[ranCol, RandomSeed[1234]; cols = RandomSample[cols]];
+
+	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> 0.6, ContourSmoothing -> smooth], {i, 1, nSeg}]];
 
 	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]
 ]
