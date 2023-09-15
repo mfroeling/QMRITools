@@ -121,11 +121,13 @@ MakeClassImage::usage =
 
 PlotSegmentations::usage = 
 "PlotSegmentations[seg, bone]
-PlotSegmentations[seg, bone, vox] ..."
+PlotSegmentations[seg, bone, vox] 
+..."
 
 
 CropDatSeg::usage =
-"CropDatSeg..."
+"CropDatSeg 
+..."
 
 
 SplitDataForSegementation::usage = 
@@ -133,17 +135,21 @@ SplitDataForSegementation::usage =
 SplitDataForSegementation[data ,seg] does the same but is rather used when preparing training data. Here the seg is split in exaclty the same way as the data."
 
 FindSide::usage = 
-"FindSide[data] ..."
+"FindSide[data] 
+..."
 
 FindPos::usage = 
-"FindPos[data] ..."
+"FindPos[data] 
+..."
 
 
 MuscleLabelToName::usage =
-"MuscleLabelToName..."
+"MuscleLabelToName 
+..."
 
 MuscleNameToLabel::usage = 
-"MuscleNameToLabel..."
+"MuscleNameToLabel 
+..."
 
 ImportITKLabels::usage = 
 "ImportITKLabels[file] imports the ITKSnap label file."
@@ -179,26 +185,38 @@ PatchesPerSet::usage =
 "PatchesPerSet is an option for GetTrainData. Defines how many random patches per dataset are created within the batch."
 
 AugmentData::usage = 
-"AugmentData is an option for GetTrainData. If set True the trainingdata is augemnted"
+"AugmentData is an option for GetTrainData. If set True the trainingdata is augmented."
 
 
 MaxPatchSize::usage = 
-"MaxPatchSize ..."
+"MaxPatchSize 
+..."
 
 DataPadding::usage = 
-"DataPadding ..."
+"DataPadding 
+..."
 
 PatchNumber::usage = 
-"PatchNumber..."
+"PatchNumber 
+..."
 
 PatchPadding::usage = 
-"PatchPadding ..."
+"PatchPadding 
+..."
 
 PatchSize::usage =
-"PatchSize ..."
+"PatchSize 
+..."
 
 RoundLength::usage = 
-"RoundLength ..."
+"RoundLength 
+..."
+
+
+RandomizeColor::usage = 
+"RandomizeColor 
+..."
+
 
 
 (* ::Subsection:: *)
@@ -232,7 +250,7 @@ Options[MakeUnet] = {
 SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
-		dep, drop, type, dim, filt, enc, dec, stride, filtIn, actType
+		dep, dep1, drop, type, dim, nDim, filt, enc, dec, stride, filtIn, actType
 	},
 
 	enc ="enc_" <> ToString[#]&;
@@ -240,7 +258,9 @@ MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
 	{dep, drop, type, stride, filtIn, actType} = OptionValue[
 		{NetworkDepth, DropoutRate, BlockType, DownsampleSchedule, InputFilters, ActivationType}
 	];
-	
+	dep1 = dep-1;
+
+
 	nDim = Length@dimIn;
 	dim = Switch[nDim, 2, "2D", 3, "3D"];
 	filt = Switch[type, 
@@ -253,24 +273,21 @@ MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
 	NetGraph[
 		Association@Join[
 			Table[
-				enc[i] -> ConvNode[filt[[i]], 
-					"Dropout" -> drop, "Dimensions" -> dim, "Stride" -> stride[[i]],
-					"ConvType" -> type, "NodeType" -> "Encode", "ActivationType" -> actType
-				]
+				enc[i] -> ConvNode[filt[[i]], "Dropout" -> drop, "Dimensions" -> dim, "Stride" -> stride[[i]],
+					"ConvType" -> type, "NodeType" -> "Encode", "ActivationType" -> actType]
 			, {i, 1, dep}],
 			Table[
-				dec[i] -> ConvNode[filt[[i]], 
-					"Dropout" -> drop, "Dimensions" -> dim, "Stride" -> stride[[i+1]],
-					"ConvType" -> type, "NodeType" -> "Decode", "ActivationType" -> actType
-				]
-			, {i, 1, dep - 1}],
+				dec[i] -> ConvNode[filt[[i]], "Dropout" -> drop, "Dimensions" -> dim, "Stride" -> stride[[i+1]],
+					"ConvType" -> type, "NodeType" -> "Decode", "ActivationType" -> actType]
+			, {i, 1, dep1}],
 			{"start" -> UNetStart[filt[[1]], nChan, dimIn, actType]},
 			{"map" -> UNetMap[dimIn, nClass]}
 		],
 		Join[
-			Table[If[i === 1, NetPort["Input"] -> "start" -> enc[i], enc[i - 1] -> enc[i]], {i, 1, dep}],
-			Table[If[i === dep - 1,	{enc[i + 1], enc[i]} -> dec[i],	{dec[i + 1], enc[i]} -> dec[i] ], {i, 1, dep - 1}],
-			{"dec_1" -> "map"}]
+			{NetPort["Input"] -> "start" -> enc[1], {enc[dep], enc[dep1]} -> dec[dep1], dec[1] -> "map"},
+			Table[enc[i - 1] -> enc[i], {i, 2, dep}],
+			Table[{dec[i + 1], enc[i]} -> dec[i], {i, 1, dep-2}]
+		]
 	]
 ]
 
@@ -310,7 +327,11 @@ Options[ConvNode] = {
 ConvNode[chan_, OptionsPattern[]] := Block[{
 		convType, nodeType, actType, mode, node, drop, dim, stride
 	},
-	{convType, nodeType, actType, drop, dim, stride} = OptionValue[{"ConvType", "NodeType", "ActivationType", "Dropout", "Dimensions", "Stride"}];
+
+	(*get the options*)
+	{convType, nodeType, actType, drop, dim, stride} = OptionValue[
+		{"ConvType", "NodeType", "ActivationType", "Dropout", "Dimensions", "Stride"}
+	];
 
 	(*mode is encoding or decoding, decoding is solved later and treated as normal here*)
 	mode = If[nodeType === "Encode", "down", "normal"];
@@ -337,14 +358,15 @@ ConvNode[chan_, OptionsPattern[]] := Block[{
 		"DenseNet",
 		With[{n = chan[[1]], dep = chan[[2]], layName = "lay_" <> ToString[#] &},{
 			Join[
-				<|If[mode === "down", "down"->ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], Nothing]|>,
+				<|If[mode === "down", "down" -> ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], Nothing]|>,
 				Association@Table[If[rep==dep, "lay_end", layName[rep]] -> ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> "catenate"], {rep, 1, dep}]
 			],
 			Table[Table[If[rr == 0, If[mode==="down", "down", NetPort["Input"]], layName[rr]], {rr, 0, rep - 1}] -> If[rep==dep, "lay_end", layName[rep]], {rep, 1, dep}]
 		}],
 
 		"UDenseNet", 
-		Flatten[{If[mode === "down", ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], Nothing], ConstantArray[ConvBlock[chan[[1]], "ActivationType" -> actType], chan[[2]]]}],
+		Flatten[{If[mode === "down", ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], Nothing], 
+			ConstantArray[ConvBlock[chan[[1]], "ActivationType" -> actType], chan[[2]]]}],
 
 		_,
 		Flatten[{ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], ConvBlock[chan, "ActivationType" -> actType]}]
@@ -396,7 +418,10 @@ Options[ConvBlock] = {
 	"Stride" -> 2
 };
 
-ConvBlock[channels_, OptionsPattern[]] := Block[{chan, kern,  actType, pad, actLayer, convMode, dim, str},
+ConvBlock[channels_, OptionsPattern[]] := Block[{
+		chan, kern,  actType, pad, actLayer, convMode, dim, str
+	},
+
 	{actType, convMode, dim, str} = OptionValue[{"ActivationType", "ConvMode", "Dimensions", "Stride"}];
 	chan = Round@First@Flatten@{channels};
 	
@@ -404,13 +429,13 @@ ConvBlock[channels_, OptionsPattern[]] := Block[{chan, kern,  actType, pad, actL
 		"up", 
 		{ResizeLayer[Scaled/@str, Resampling -> "Nearest"], ConvolutionLayer[chan, 2, "PaddingSize" -> ConstantArray[{0,1},Length[str]], "Stride" -> 1]},
 		"down"|"downS", 
-		{ConvolutionLayer[chan, str, "PaddingSize" -> 0, "Stride" -> str], BatchNormalizationLayer[],  ActivationLayer[actType]},
+		{ConvolutionLayer[chan, str, "PaddingSize" -> 0, "Stride" -> str], BatchNormalizationLayer[], ActivationLayer[actType]},
 		"normal", 
-		{ConvolutionLayer[chan, 3, "PaddingSize" -> 1, "Stride" -> 1], BatchNormalizationLayer[],  ActivationLayer[actType]},
+		{ConvolutionLayer[chan, 3, "PaddingSize" -> 1, "Stride" -> 1], BatchNormalizationLayer[], ActivationLayer[actType]},
 		"normalS", 
-		{ConvolutionLayer[chan, 1, "PaddingSize" -> 0, "Stride" -> 1], BatchNormalizationLayer[],  ActivationLayer[actType]},
+		{ConvolutionLayer[chan, 1, "PaddingSize" -> 0, "Stride" -> 1], BatchNormalizationLayer[], ActivationLayer[actType]},
 		"catenate", 
-		{CatenateLayer[], ConvolutionLayer[chan, 3, "PaddingSize" -> 1, "Stride" -> 1], BatchNormalizationLayer[],  ActivationLayer[actType]}
+		{CatenateLayer[], ConvolutionLayer[chan, 3, "PaddingSize" -> 1, "Stride" -> 1], BatchNormalizationLayer[], ActivationLayer[actType]}
 	]
 ]
 
@@ -419,21 +444,22 @@ ConvBlock[channels_, OptionsPattern[]] := Block[{chan, kern,  actType, pad, actL
 (*ActivationLayer*)
 
 
-ActivationLayer[actType_?StringQ] := Switch[actType, "LeakyRELU", ParametricRampLayer[], "None", Nothing, _, ElementwiseLayer[actType]]
-
-ActivationLayer[act_] := act
-
+ActivationLayer[actType_] := If[StringQ[actType],
+	Switch[actType, "LeakyRELU", ParametricRampLayer[], "None", Nothing, _, ElementwiseLayer[actType]],
+	actType
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*PrintKernels*)
 
 
-PrintKernels[net_] := Block[{convs, kerns, count},
+PrintKernels[net_] := Block[{convs, kerns, count, pars},
 	convs = Select[Information[net, "LayersList"], Head[#] === ConvolutionLayer &];
 	kerns = Information[#, "ArraysDimensions"][{"Weights"}] & /@ convs;
 	count = Sort[{#[[1, 1]], Total[#[[All, 2]]]} & /@ GatherBy[{#[[3 ;;]], Times @@ #[[1 ;; 2]]} & /@ kerns, First]];
-	Column[Prepend[count, {Length[convs], Total[count[[All, 2]]]}]]
+	pars = Information[net, "ArraysTotalElementCount"];
+	Column[Join[{Length[convs], Total[count[[All, 2]]]}, count, {pars}], Alignment->Center]
 ]
 
 
@@ -442,20 +468,21 @@ PrintKernels[net_] := Block[{convs, kerns, count},
 
 
 Options[ChangeNetDimensions] = {
-   "Dimensions" -> None,
-   "Channels" -> None,
-   "Classes" -> None
-   };
+	"Dimensions" -> None,
+	"Channels" -> None,
+	"Classes" -> None
+};
 
 SyntaxInformation[ChangeNetDimensions] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 		dimIn, nChanIn, nClassIn,
 		dimOut, nChanOut, nClassOut, filt, netOut, start
-},
+	},
 
 	{dimOut, nChanOut, nClassOut} = OptionValue[{"Dimensions", "Channels", "Classes"}];
 
+	(*Figure out all the dimensions*)
 	netOut = netIn;
 	dimIn = NetDimensions[netIn, "Input"];
 	nChanIn = First@dimIn;
@@ -464,7 +491,7 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 
 	(*Change network Dimensions if needed*)
 	If[dimOut =!= None && dimOut =!= dimIn, 
-		netOut = NetReplacePart[netOut, "Input" -> Prepend[dimOut, nChanIn]],
+		netOut = NetReplacePart[netOut, "Input" -> Round[Prepend[dimOut, nChanIn]]],
 		dimOut = dimIn
 	];
 
@@ -472,12 +499,12 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 	If[nChanOut =!= None && nChanOut=!=nChanIn,
 		filt = First@NetDimensions[netOut, "FirstEncoding"];
 		start = NetFlatten[NetTake[netOut, "start"]];
-		netOut = NetReplacePart[netOut, {"Input" -> Prepend[dimOut, nChanOut], "start" -> UNetStart[filt, nChanOut, dimOut, start[[-1]]]}]
-		];
+		netOut = NetReplacePart[netOut, {"Input" -> Prepend[Round@dimOut, Round@nChanOut], "start" -> UNetStart[filt, Round@nChanOut, Round@dimOut, start[[-1]]]}]
+	];
 
 	(*Change output Classes if needed*)
 	If[nClassOut =!= None && nClassOut=!=nClassIn,
-		netOut = NetReplacePart[netOut, {"map" -> UNetMap[dimOut, nClassOut], "Output" -> Append[dimOut, nClassOut]}]
+		netOut = NetReplacePart[netOut, {"map" -> UNetMap[Round@dimOut, Round@nClassOut], "Output" -> Round@Append[dimOut, nClassOut]}]
 	];
 	netOut
 ]
@@ -498,8 +525,8 @@ AddLossLayer[net_]:=Block[{dim},
 	NetGraph[<|
 		"net"->net,
 		"SoftDice" -> SoftDiceLossLayer[dim],
-		"SquaredDiff" -> {MeanSquaredLossLayer[], ElementwiseLayer[10 #&]},
-		"CrossEntropy" -> {CrossEntropyLossLayer["Binary"], ElementwiseLayer[10 #&]}
+		"SquaredDiff" -> {MeanSquaredLossLayer[], ElementwiseLayer[100 #&]},
+		"CrossEntropy" -> {CrossEntropyLossLayer["Binary"], ElementwiseLayer[100 #&]}
 	|>,{
 		{"net",NetPort["Target"]}->"SoftDice"->NetPort["SoftDice"],
 		{"net",NetPort["Target"]}->"SquaredDiff"->NetPort["SquaredDiff"],
@@ -514,17 +541,19 @@ AddLossLayer[net_]:=Block[{dim},
 
 SyntaxInformation[SoftDiceLossLayer] = {"ArgumentsPattern" -> {_}};
 
-SoftDiceLossLayer[dim_] := NetGraph[<|
-	"sumInp" -> {AggregationLayer[Total, ;; dim]},
-	"sumTar" -> {AggregationLayer[Total, ;; dim]},
-	"sumProd" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; dim]},
-	"dice" -> {ThreadingLayer[1. - ((2. #1) / (#2 + #3 + 10.^-10)) &], AggregationLayer[Mean, 1]}
-|>, {
-	NetPort["Input"] -> "sumInp",
-	NetPort["Target"] -> "sumTar",
-	{NetPort["Target"], NetPort["Input"]} -> "sumProd",
-	{"sumProd",  "sumTar", "sumInp"} -> "dice" -> NetPort["Loss"]
-}, "Loss" -> "Real"]
+SoftDiceLossLayer[dim_] := NetGraph[
+	<|
+		"sumInp" -> {AggregationLayer[Total, ;; dim]},
+		"sumTar" -> {AggregationLayer[Total, ;; dim]},
+		"sumProd" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; dim]},
+		"dice" -> {ThreadingLayer[1. - ((2. #1) / (#2 + #3 + 10.^-10)) &], AggregationLayer[Mean, 1]}
+	|>, {
+		NetPort["Input"] -> "sumInp",
+		NetPort["Target"] -> "sumTar",
+		{NetPort["Target"], NetPort["Input"]} -> "sumProd",
+		{"sumProd",  "sumTar", "sumInp"} -> "dice" -> NetPort["Loss"]
+	}, "Loss" -> "Real"
+]
 
 
 (* ::Subsection:: *)
@@ -537,13 +566,13 @@ SoftDiceLossLayer[dim_] := NetGraph[<|
 
 SyntaxInformation[ClassEncoder] = {"ArgumentsPattern" -> {_, _.}};
 
-ClassEncoder[data_]:= If[nClass === 1, data, ClassEncoderC[data, Max@data]]
+ClassEncoder[data_]:= ClassEncoderC[data, Max@data]
 
 ClassEncoder[data_, nClass_]:= If[nClass === 1, data, ClassEncoderC[data, nClass]]
 
 ClassEncoderC = Compile[{{data, _Integer, 2}, {n, _Integer, 0}},
 	Transpose[1 - Unitize[ConstantArray[data, n] - Range[n]], {3, 1, 2}]
-,RuntimeAttributes -> {Listable}]
+, RuntimeAttributes -> {Listable}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -654,8 +683,15 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 	{dev, max, mon, repLab} = OptionValue[{TargetDevice, MaxPatchSize, Monitor, ReplaceLabel}];
 
 	(*labels for network*)
-	{legL, legR} = {{9, 11, 13, 1, 25, 5, 23}, {10, 12, 14, 2, 26, 6, 24}};
-	{thighL, thighR} = {{37, 41, 35, 47, 45, 43, 33, 49}, {38, 42, 36, 48, 46, 44, 34, 50}};
+	{legL, legR} = {
+		{11, 9, 13, 15, 17, 21, 19, 23, 25, 1, 5, 3, 7, 93, 95, 97},
+		{12, 10, 14, 16, 18, 22, 20, 24, 26, 2, 6, 4, 8, 94, 96, 98}
+	};
+	(*{thighL, thighR} = {{37, 41, 35, 47, 45, 43, 33, 49}, {38, 42, 36, 48, 46, 44, 34, 50}};*)
+	{thighL, thighR} = {
+		{43, 59, 47, 45, 57, 55, 53, 49, 65, 37, 39, 41, 35, 33, 51, 99, 91, 93},
+		{44, 60, 48, 46, 58, 56, 54, 50, 66, 38, 40, 42, 36, 34, 52, 100, 92, 94}
+	};
 	{bonesLegL, bonesLegR} = {{91, 93, 95, 97, 99}, {92, 94, 96, 98, 100}};
 
 	(*rule to select correct network and network labels*)
@@ -681,14 +717,14 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		"LegBones",
 		MapThread[(
 			(*Echo[{#2, Dimensions[#1]}, "Segmenting bones for"];*)
-			segs = ApplySegmentationNetwork[#1, "LegBones", TargetDevice -> dev, MaxPatchSize->max, Monitor->False];
+			segs = ApplySegmentationNetwork[#1, "LegBones", TargetDevice -> dev, MaxPatchSize->max, Monitor->mon];
 			ruleL = bonRule;
 			If[repLab, ReplaceLabelsBone[segs, #2[[2]] /. ruleL, #2[[1]]], segs]
 		) &, {patch, loc}],
 		"Legs",
 		MapThread[(
 			(*Echo[{#2, Dimensions[#1]}, "Segmenting legs for"];*)
-			segs = ApplySegmentationNetwork[#1, #2[[1]] /. rule, TargetDevice -> dev, MaxPatchSize->max, Monitor->False];
+			segs = ApplySegmentationNetwork[#1, #2[[1]] /. rule, TargetDevice -> dev, MaxPatchSize->max, Monitor->mon];
 			ruleL = musRule;
 			If[repLab, ReplaceLabelsLeg[segs, #2 /. ruleL], segs]
 		) &, {patch, loc}]
@@ -698,6 +734,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 	all = Select[DeleteDuplicates[Sort[Flatten[loc /. ruleL]]], IntegerQ];
 	all = If[repLab, all, Range@Length@all];
 	If[mon, Echo[all, "Putting togeteher the segmenations with lables"]];
+	(*after this only one cluster per label remains*)
 	PatchesToData[segs, pts, dim, all]
 ]
 
@@ -775,7 +812,7 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 
 	net = ChangeNetDimensions[net, "Dimensions" ->ptch];
 	seg = ClassDecoder[net[{NormDat[#]}, TargetDevice->dev]]&/@patch;
-	If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Output segmentations dimensions and labels:"]];
+	If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Segmentations dimensions and labels:"]];
 
 	seg = ArrayPad[PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[class]], -pad];
 	seg = Ramp[seg - 1]; (*set background to zero*)
@@ -784,6 +821,10 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 
 	seg
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindPatchDim*)
 
 
 FindPatchDim[dim_, lim_, sc_] := Block[{u, cont, dimM, dimN},
@@ -805,6 +846,7 @@ FindPatchDim[dim_, lim_, sc_] := Block[{u, cont, dimM, dimN},
 (* ::Subsubsection::Closed:: *)
 (*NetDimensions*)
 
+
 NetDimensions[net_]:=NetDimensions[net, ""]
 
 NetDimensions[net_, port_]:=Switch[port,
@@ -816,17 +858,17 @@ NetDimensions[net_, port_]:=Switch[port,
 ] 
 
 
-(* ::Subsection:: *)
-(*Prepare Data*)
+(* ::Subsection::Closed:: *)
+(*Prepare Data!*)
 
 
 CropDatSeg[dat_,seg_,labs_]:=Block[{datO, segO, lab, dim,cr},
-	dim=Dimensions@dat;
-	cr=FindCrop[dat Mask[NormalizeData[dat],5,MaskDilation->1]];
-	datO = NormDat[ApplyCrop[dat,cr]];
-	{segO,lab} = NormSeg[ApplyCrop[seg,cr],labs];
+	dim = Dimensions@dat;
+	cr = FindCrop[dat Mask[NormalizeData[dat], 5, MaskDilation->1]];
+	datO = NormDat[ApplyCrop[dat, cr]];
+	{segO, lab} = NormSeg[ApplyCrop[seg, cr], labs];
 	
-	{{datO,segO},{lab,dim,Dimensions@datO,cr}}
+	{{datO, segO}, {lab, dim, Dimensions@datO, cr}}
 ]
 
 
@@ -841,12 +883,12 @@ NormDat = Compile[{{dat, _Real, 3}}, Block[{data},
 
 NormSeg[seg_, labs_]:=Block[{zero, segT, labT, sel},
 	zero=0 seg;
-	{segT,labT}=SplitSegmentations[seg];
+	{segT, labT} = SplitSegmentations[seg];
 	
-	sel=Flatten[(Flatten[Position[labT,#]]&/@labs)/.{}->{0}];
-	segT=Transpose[If[#===0,zero,segT[[All,#]]]&/@sel];
+	sel = Flatten[(Flatten[Position[labT,#]]&/@labs)/.{}->{0}];
+	segT = Transpose[If[#===0,zero,segT[[All,#]]]&/@sel];
 	
-	{MergeSegmentations[segT,Range[Length[sel]]],Unitize[sel]labs}
+	{MergeSegmentations[segT,Range[Length[sel]]], Unitize[sel]labs}
 ]
 
 
@@ -918,6 +960,8 @@ TakeLargestComponent[seg_, err_] := Block[{dim, segc, cr},
 		SparseArray@Round@ReverseCrop[segc, dim, cr]
 	]
 ]
+
+
 
 (* ::Subsubsection::Closed:: *)
 (*DataToPatches*)
@@ -1021,7 +1065,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*figure out network properties*)
 	dDim = Dimensions@data[[All, 1]][[1]];
 	nChan = If[Length@dDim === 3, 1, dDim[[2]]];
-	nClass = Max@data[[All, 2]] + 1;
+	nClass = Round[Max@data[[All, 2]] + 1];
 	patch = OptionValue[PatchSize];
 
 	(*local pure functions*)
@@ -1165,15 +1209,22 @@ Options[GetTrainData] = {
 GetTrainData[datas_, nBatch_, patch_, opts:OptionsPattern[]]:=GetTrainData[datas, nBatch, patch, False, opts]
 
 GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
-		itt, i, datO, segO, dat, seg, vox, dim, aug, ran, nSet
+		itt, i, datO, segO, dat, seg, vox, dim, aug, nSet
 	},
 
 	itt = 0;
 	datO = segO = {};
 
 	{aug, nSet} = OptionValue[{AugmentData, PatchesPerSet}];
-	
-	aug = If[BooleanQ[aug], # && aug & /@ {True, True, True, True, False, False, False}, PadRight[aug, 7, False]];
+
+	Which[
+		aug === 1, True,
+		aug === 0, False,
+		0 < aug < 1, RandomChoice[{aug, 1 - aug} -> {True, False}],
+		BooleanQ[aug], aug,
+		True, True
+	];
+	aug = # && aug & /@ {True, True, True, True, False, False, False};
 
 	itt = Ceiling[nBatch/nSet];
 
@@ -1198,8 +1249,7 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 		dat = PadToDimensions[dat, dim];
 		seg = PadToDimensions[seg, dim];
 
-		ran = RandomChoice[{True, True, True, False}];
-		{dat, seg} = AugmentTrainingData[{dat, seg}, vox, ran && # & /@ aug];
+		{dat, seg} = AugmentTrainingData[{dat, seg}, vox, aug];
 		{dat, seg} = PatchTrainingData[{dat, seg}, patch, nSet];
 
 		datO = Join[datO, dat];
@@ -1492,14 +1542,15 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 
 
 ImportITKLabels[file_] := Block[{lines, muscleNames, muscleLabels},
+	(*import*)
 	lines = Select[Import[file, "Lines"], StringTake[#, 1] =!= "#" &];
-	muscleNames = StringRiffle[
-   Capitalize[ToLowerCase[Select[#, ! IntegerQ[ToExpression[#]] &]]], 
-   "_"] & /@ 
- StringSplit[(Select[StringTrim[#], (# =!= "\t" && # =!= "") &] & /@ 
-     StringSplit[lines, "\""])[[All, -1]]];
+	(*extract names and numbers*)
+	muscleNames = StringRiffle[Capitalize[ToLowerCase[Select[#, ! IntegerQ[ToExpression[#]] &]]], "_"] & /@ 
+		StringSplit[(Select[StringTrim[#], (# =!= "\t" && # =!= "") &] & /@ 
+		StringSplit[lines, "\""])[[All, -1]]];
 	muscleLabels = ToExpression[StringSplit[#, " "][[1]]] & /@ lines;
-
+	
+	(*output*)
 	{muscleNames, muscleLabels}
 ]
 
