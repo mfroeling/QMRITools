@@ -11,7 +11,11 @@
 
 (*set HistoryLength to 0 to prevent excessive memory used when working with large data*)
 $HistoryLength = 0;
-$ProgressReporting = False;
+
+
+(* ::Section:: *)
+(*Package Definitions*)
+
 
 BeginPackage["QMRITools`"];
 
@@ -61,6 +65,7 @@ QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Versi
 Quiet[Get/@QMRITools`$Contexts];
 QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
 
+
 Begin["`Private`"];
 
 End[];
@@ -68,7 +73,8 @@ End[];
 EndPackage[];
 
 
-(*Load all subpackages*)
+(* ::Section:: *)
+(*Package Loader*)
 
 
 (*Echo the Toolbox content and version*)
@@ -89,7 +95,6 @@ If[QMRITools`$Verbose,
 	Echo["--------------------------------------"];
 	Echo["Removing all local and global definitions of:"];
 ];
-
 
 With[{
 		global = Intersection[Names["Global`*"], "Global`" <> # & /@ Last[#]]
@@ -112,7 +117,6 @@ If[QMRITools`$Verbose,
 	Echo["Loading and protecting all definitions of:"];
 ];
 
-
 Get["Developer`"];
 (
 	If[QMRITools`$Verbose, Echo["", First@#]];
@@ -121,5 +125,6 @@ Get["Developer`"];
 )& /@ QMRITools`$ContextsFunctions;
 
 
+(*Protect definitions*)
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
 Unprotect/@{"QMRITools`ElastixTools`$debugElastix", "QMRITools`$Log"};
