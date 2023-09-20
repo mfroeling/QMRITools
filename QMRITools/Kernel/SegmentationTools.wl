@@ -189,35 +189,29 @@ AugmentData::usage =
 
 
 MaxPatchSize::usage = 
-"MaxPatchSize 
-..."
+"MaxPatchSize ..."
 
 DataPadding::usage = 
-"DataPadding 
-..."
+"DataPadding ..."
 
 PatchNumber::usage = 
-"PatchNumber 
-..."
+"PatchNumber ..."
 
 PatchPadding::usage = 
-"PatchPadding 
-..."
+"PatchPadding ..."
 
 PatchSize::usage =
-"PatchSize 
-..."
+"PatchSize ..."
 
 RoundLength::usage = 
-"RoundLength 
-..."
+"RoundLength ..."
 
 
 RandomizeColor::usage = 
-"RandomizeColor 
-..."
+"RandomizeColor ..."
 
-
+ReplaceLabel::usage = 
+"ReplaceLabel ..."
 
 (* ::Subsection:: *)
 (*Error Messages*)
