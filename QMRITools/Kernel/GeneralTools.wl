@@ -904,7 +904,10 @@ Options[FindCrop] = {CropPadding->5}
 
 SyntaxInformation[FindCrop] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-FindCrop[data_, OptionsPattern[]] := Block[{unit, crp, p, dim, add},
+FindCrop[dat_, OptionsPattern[]] := Block[{unit, crp, p, dim, add, data},
+
+	data = If[ArrayDepth[dat]===4, dat[[All,1]], dat];
+
 	add= OptionValue[CropPadding];
 	unit = Unitize[Total[Total[data, {#[[1]]}], {#[[2]]}] & /@ {{2, 2}, {1, 2}, {1, 1}}];
 	dim = Dimensions[data];
@@ -943,8 +946,10 @@ SyntaxInformation[ReverseCrop] = {"ArgumentsPattern" -> {_, _, _, _.}};
 
 ReverseCrop[data_, dim_, crop_] := ReverseCrop[data, dim, crop, {0, 0}]
 
-ReverseCrop[data_, dim_, crop_, {v1_, v2_}] := Module[{datac, pad},
-	
+ReverseCrop[data_, dimI_, crop_, {v1_, v2_}] := Module[{datac, pad, dim},
+
+	dim = If[Length@Dimensions@data===4, dimI[[{1,3,4}]], dimI];
+
 	pad = If[v1 === 0 && v2 === 0,
 		(*use original crop*)
 		Partition[Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2],

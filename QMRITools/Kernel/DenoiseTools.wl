@@ -484,7 +484,9 @@ PCADeNoiseFit[data_, {m_, n_}, sigi_?NumberQ, toli_] := Block[{
 ]
 
 
-GridSearch = Compile[{{val, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig, _Real, 0}}, Block[{valn, gam, sigq1, sigq2,p, pi},
+GridSearch = Compile[{{val, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig, _Real, 0}}, Block[
+	{valn, gam, sigq1, sigq2,p, pi},
+	
 	(*calculate all possible values for eq1 and eq2*)
 	valn = val[[;; -2]]/n;
 	p = Range[m - 1];
