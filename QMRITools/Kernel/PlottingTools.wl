@@ -827,7 +827,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		,(*Plot style controls*)
 		ManPannel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
-			{"Plot Size",Control@{{ps,200,""},psizes,ControlType->PopupMenu}},
+			{"Plot Size",Control@{{ps,300,""},psizes,ControlType->PopupMenu}},
 			{"Color function",Control@{{color,pcol,""},colors,ControlType->PopupMenu}},
 			{"Color style",Control@{{lstyle,"Normal",""},colfuncs}},
 			{"Layout",Row@{
@@ -1087,7 +1087,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		}, False],
 		ManPannel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
-			{"Plot Size",Control@{{ps,200,""},psizes,ControlType->PopupMenu}},
+			{"Plot Size",Control@{{ps,300,""},psizes,ControlType->PopupMenu}},
 			{"Layout",Row@{
 				"  Legend:",Control@{{legend,False,""},{True,False}},
 				"  Frame:",Control@{{frame,False,""},{True,False}},

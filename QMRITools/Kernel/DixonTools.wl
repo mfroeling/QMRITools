@@ -436,7 +436,8 @@ DixonFitiC = Compile[{
 			dPhi[[2;;n]] = Re@dPhi[[2;;n]];
 
 			(*chech for continue*)
-			continue = ! ((Abs[Re@dPhi[[1]]] < eta && Abs[(Im@dPhi[[1]])] < eta && Abs[10 Re@dPhi[[2]]] < eta && Abs[100 Re@dPhi[[n]]] < eta) || i >= maxItt);
+			continue = ! ((Abs[Re@dPhi[[1]]] < eta && Abs[(Im@dPhi[[1]])] < eta && 
+				Abs[10 Re@dPhi[[2]]] < eta && Abs[100 Re@dPhi[[n]]] < eta) || i >= maxItt);
 		];
 		
 		rms = Sqrt[Mean[res^2]];
@@ -654,7 +655,7 @@ UnwrapList[list_]:=Block[{jumps,lst,diff,out},
 (*Unwrap*)
 
 
-Options[Unwrap]={MonitorUnwrap->True, UnwrapDimension->"2D", UnwrapThresh->0.5};
+Options[Unwrap]={MonitorUnwrap->False, UnwrapDimension->"2D", UnwrapThresh->0.5};
 
 SyntaxInformation[Unwrap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
