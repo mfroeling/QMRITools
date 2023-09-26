@@ -910,7 +910,8 @@ DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, da
 
 	w = If[Length[wi] == 3, Join[wi, {0, 0, 0, 1, 1, 1, 0, 0, 0}], wi];
 	dat = If[ArrayDepth[data] === 4, Transpose[data], {data}];
-	int = Switch[Round@OptionValue[InterpolationOrder], 0, "NearestLeft", 1, "Linear", 2, "Quadratic", _, "Linear"];
+	int = Round@OptionValue[InterpolationOrder];
+	int = Which[int===0, "NearestLeft", 0 < int <=9, {"Spline", int}, True, {"Spline", 1}];
 
 	dim = Dimensions[dat][[-3 ;;]];
 	idim = Reverse[vox  dim]/2.;
