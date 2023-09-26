@@ -310,6 +310,10 @@ MonitorCalc::usage =
 "MonitorCalc is an option for many processing functions. When true the proceses of the calculation is shown."
 
 
+LabelPlacement::usage =
+"LabelPlacement ..."
+
+
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
@@ -1233,7 +1237,7 @@ CompilableFunctions[]:=Block[{list1, list2, grids},
 	list2 = DownValues[Internal`CompileValues] /. HoldPattern[Verbatim[HoldPattern][Internal`CompileValues[sym_]] :> _] :> sym;
 	list2 = Select[Complement[list2, list1], ! StringContainsQ[ToString[#], "`"] &];
 
-	grids=Grid[Transpose@Partition[# // Sort, i=Ceiling[Length[#]/4], i, 1, ""], Alignment -> Left, ItemSize -> 18]&/@{list1, list2};
+	grids=Grid[Transpose@Partition[# // Sort, i=Ceiling[Length[#]/4], i, 1, ""], Alignment -> Left, ItemSize -> 15]&/@{list1, list2};
 
 	Column[{
 		Style["CompilerFunctions",Bold,16],
@@ -1833,25 +1837,29 @@ RotationMatrixToQuaternionVector[r : {{_?NumericQ, _?NumericQ, _?NumericQ}, {_?N
 (*MakeFunctionGraph*)
 
 
-SyntaxInformation[MakeFunctionGraph] = {"ArgumentsPattern" -> {_}}
+Options[MakeFunctionGraph]= {
+	LabelPlacement -> Tooltip
+}
 
-MakeFunctionGraph[func_Symbol] := MakeFunctionGraph @@ GetFunctionDependencies[func]
+SyntaxInformation[MakeFunctionGraph] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-MakeFunctionGraph[func_String] := MakeFunctionGraph @@ GetFunctionDependencies[ToExpression[func]]
+MakeFunctionGraph[func_Symbol, opts:OptionsPattern[]] := MakeFunctionGraph[##, opts]& @@ GetFunctionDependencies[func]
 
-MakeFunctionGraph[edge_List, type_List] := Block[{vertCol, vertFunc, vertLab},
+MakeFunctionGraph[func_String, opts:OptionsPattern[]] := MakeFunctionGraph[##, opts]& @@ GetFunctionDependencies[ToExpression[func]]
+
+MakeFunctionGraph[edge_List, type_List, opts:OptionsPattern[]] := Block[{vertCol, vertFunc, vertLab},
 	
 	vertCol = Thread[type[[All, 1]] -> (Directive[#, EdgeForm[None]] & /@ (type[[All, 3]] /. Thread[
 		{"Internal_Global", "Internal_Private", "External_Global", "External_Private"} -> 
 		{RGBColor[{52, 168, 83}/256], RGBColor[{66, 133, 244}/256],RGBColor[{251, 188, 5}/256], RGBColor[{235, 67, 53}/256]}]))
 	];
 	vertFunc = Thread[type[[All, 1]] -> type[[All, 2]] /. {"SetDelayed" -> "Circle", "Function" -> "Triangle", "Compiled" -> "Star"}];
-	vertLab = Thread[type[[All, 1]] -> (Placed[#, Tooltip] & /@ type[[All, 1]])];
+	vertLab = Thread[type[[All, 1]] -> (Placed[#, OptionValue[LabelPlacement]] & /@ type[[All, 1]])];
 
-	Graph[edge, VertexLabels -> vertLab, 
-		VertexShapeFunction -> vertFunc, VertexStyle -> vertCol,
-		VertexLabelStyle -> Directive[Black, Bold, 15], 
-		EdgeStyle -> Directive[Black, Thick], VertexSize -> 0.4]
+	Graph[edge, 
+		VertexLabels -> vertLab, VertexShapeFunction -> vertFunc, VertexStyle -> vertCol,
+		VertexLabelStyle -> Directive[Black, Bold, Automatic], EdgeStyle -> Directive[Black, Thick], 
+		VertexSize -> Automatic]
 ]
 
 
