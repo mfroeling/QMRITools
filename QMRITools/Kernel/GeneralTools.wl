@@ -313,6 +313,9 @@ MonitorCalc::usage =
 LabelPlacement::usage =
 "LabelPlacement ..."
 
+AllowSelfDependencies::usage = 
+"AllowSelfDependencies ..."
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
