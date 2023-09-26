@@ -1837,56 +1837,58 @@ RotationMatrixToQuaternionVector[r : {{_?NumericQ, _?NumericQ, _?NumericQ}, {_?N
 (*MakeFunctionGraph*)
 
 
-Options[MakeFunctionGraph]= {
-	LabelPlacement -> Tooltip
+Options[MakeFunctionGraph] = {
+	LabelPlacement -> Tooltip,
+	AllowSelfDependencies -> False
 }
 
 SyntaxInformation[MakeFunctionGraph] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-MakeFunctionGraph[func_Symbol, opts:OptionsPattern[]] := MakeFunctionGraph[##, opts]& @@ GetFunctionDependencies[func]
+MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
+		fName, lab, self, in, cont, flist, names, types, contexts, edges, 
+		vertCol, vertFunc, vertLab
+	},
 
-MakeFunctionGraph[func_String, opts:OptionsPattern[]] := MakeFunctionGraph[##, opts]& @@ GetFunctionDependencies[ToExpression[func]]
+	fName = StringSplit[ToString[#], "`"][[-1]] &;
 
-MakeFunctionGraph[edge_List, type_List, opts:OptionsPattern[]] := Block[{vertCol, vertFunc, vertLab},
-	
-	vertCol = Thread[type[[All, 1]] -> (Directive[#, EdgeForm[None]] & /@ (type[[All, 3]] /. Thread[
+	(*get options*)
+	{lab, self} = OptionValue[{LabelPlacement, AllowSelfDependencies}];
+
+	(*get list of all dependant functions*)
+	in = {ToString@func};
+	cont = True;
+	While[cont, flist = DeleteDuplicates[Flatten[{in, GetDependencies /@ in}]];
+		cont = If[in === flist, False, in = flist; True]];
+
+	(*get properties of function list*)
+	names = fName /@flist;
+
+	types = Which[
+		Head[ToExpression@#] === CompiledFunction, "Compiled",
+		Head[ToExpression@#] === Function, "Function",
+		True, "SetDelayed"
+	]& /@flist;
+
+	contexts = 	(cont = ToString[Context[#]];
+		If[StringSplit[cont, "`"][[2]] === StringSplit[Context[func], "`"][[2]], "Internal", "External"] <> "_" <> If[StringContainsQ[cont, "Private"], "Private", "Global"]
+	)& /@ flist;
+
+	edges = DeleteDuplicates[Flatten[(f = #; DirectedEdge[fName[f], fName[#]] & /@ GetDependencies[f]) & /@ flist]];
+
+	If[!self, edges = Select[edges, #[[1]] =!= #[[2]] &]];
+
+	(*make graph properties*)
+	vertCol = Thread[names -> (Directive[#, EdgeForm[None]] & /@ (contexts /. Thread[
 		{"Internal_Global", "Internal_Private", "External_Global", "External_Private"} -> 
 		{RGBColor[{52, 168, 83}/256], RGBColor[{66, 133, 244}/256],RGBColor[{251, 188, 5}/256], RGBColor[{235, 67, 53}/256]}]))
 	];
-	vertFunc = Thread[type[[All, 1]] -> type[[All, 2]] /. {"SetDelayed" -> "Circle", "Function" -> "Triangle", "Compiled" -> "Star"}];
-	vertLab = Thread[type[[All, 1]] -> (Placed[#, OptionValue[LabelPlacement]] & /@ type[[All, 1]])];
+	vertFunc = Thread[names -> types /. {"SetDelayed" -> "Circle", "Function" -> "Triangle", "Compiled" -> "Star"}];
+	vertLab = Thread[names -> (Placed[#, lab] & /@ names)];
 
-	Graph[edge, 
+	Graph[edges, 
 		VertexLabels -> vertLab, VertexShapeFunction -> vertFunc, VertexStyle -> vertCol,
 		VertexLabelStyle -> Directive[Black, Bold, Automatic], EdgeStyle -> Directive[Black, Thick], 
 		VertexSize -> Automatic]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetFunctionDependencies*)
-
-
-GetFunctionDependencies[func_] := Block[{flist, edges, discr},
-	flist = GetFunctionList[func];
-	edges = MakeEdges[flist];
-	discr = FunctionDescribe[DeleteDuplicates[Flatten[flist]], func];
-	{edges, discr}
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetFunctionList*)
-
-
-GetFunctionList[func_] := Block[{in, cont, out},
-	in = {ToString@func};
-	cont = True;
-	While[cont,
-		out = DeleteDuplicates[Flatten[{in, GetDependencies /@ in}]];
-		cont = If[in === out, False, in = out; True]
-	];
-	out
 ]
 
 
@@ -1897,60 +1899,10 @@ GetFunctionList[func_] := Block[{in, cont, out},
 GetDependencies[sym_String] := If[SymbolQ[ToExpression[sym]], SelectFunctions[(Union@Level[(Hold @@ DownValues[sym])[[All, 2]], {-1}, Hold, Heads -> True])], Nothing]
 
 
-(* ::Subsubsection::Closed:: *)
-(*SelectFunctions*)
-
-
 SelectFunctions[func_] := Select[StringSplit[ToString /@ Pick[List @@ Defer /@ func, List@ReleaseHold[FunctionQC /@ func], 1],"[" | "]"][[All, 2]], Context[#] =!= "System`" &]
 
-
 FunctionQC[f_Symbol] := If[(DownValues[f] =!= {}) && (OwnValues[f] === {}), 1, 0]
-
 FunctionQC[f_] := If[Head[f] === Function || Head[f] === CompiledFunction, 1, 0]
-
-
-(* ::Subsubsection::Closed:: *)
-(*MakeEdges*)
-
-
-MakeEdges[inp_] := Block[{f}, DeleteDuplicates@Flatten[(f = #; DirectedEdge[FunctionName[f], FunctionName[#]] & /@ GetDependencies[f]) & /@ inp]]
-
-
-(* ::Subsubsection::Closed:: *)
-(*FunctionDescribe*)
-
-
-FunctionDescribe[all_, inp_] := {FunctionName[#],FunctionType[#],FunctionContext[#, inp]} & /@ all
-
-
-(* ::Subsubsection::Closed:: *)
-(*FunctionName*)
-
-
-FunctionName = StringSplit[ToString[#], "`"][[-1]] &;
-
-
-(* ::Subsubsection::Closed:: *)
-(*FunctionType*)
-
-
-FunctionType[sym_] := Which[
-	Head[ToExpression@sym] === CompiledFunction, "Compiled",
-	Head[ToExpression@sym] === Function, "Function",
-	True, "SetDelayed"
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*FunctionContext*)
-
-
-FunctionContext[sym_, int_] := Block[{cont, priv, loc},
-	cont = ToString[Context[sym]];
-	priv = If[StringContainsQ[cont, "Private"], "Private", "Global"];
-	loc = If[StringSplit[cont, "`"][[2]] === StringSplit[Context[int], "`"][[2]], "Internal", "External"];
-	loc <> "_" <> priv
-]
 
 
 (* ::Section:: *)
