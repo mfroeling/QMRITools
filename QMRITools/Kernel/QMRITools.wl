@@ -40,6 +40,7 @@ QMRITools`$Log::usage = "The logging file.";
 
 (*subpackages names*)
 QMRITools`$SubPackages = {
+	"ScientificColorData`",
 	(*core packages that contain many functions for other toolboxes*)
 	"LoggingTools`", "GeneralTools`", "MaskingTools`", "NiftiTools`",
 	 "ElastixTools`", "PlottingTools`", "MuscleBidsTools`",
@@ -110,6 +111,16 @@ With[{
 	Remove @@ global;
 ] &/@ QMRITools`$ContextsFunctions
 
+(*getting the color functions*)
+If[QMRITools`$Verbose, 
+	Echo["--------------------------------------"];
+	Echo["Loading color data:"];
+	Get[First@QMRITools`$Contexts];
+	Quiet[
+	QMRITools`PlottingTools`ExtractColorData[];
+	QMRITools`PlottingTools`ScientificColorData[StringDrop[GetAssetLocation["ColorData"], -4]];
+]
+];
 
 (*Reload and protect all the sub packages with error reporting*)
 If[QMRITools`$Verbose, 
@@ -128,3 +139,10 @@ Get["Developer`"];
 (*Protect definitions*)
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
 Unprotect/@{"QMRITools`ElastixTools`$debugElastix", "QMRITools`$Log"};
+
+
+(*load scientific colors*)
+Quiet[
+	ExtractColorData[];
+	QMRITools`PlottingTools`ScientificColorData[StringDrop[GetAssetLocation["ColorData"], -4]];
+]

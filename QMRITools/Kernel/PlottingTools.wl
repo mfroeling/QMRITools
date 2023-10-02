@@ -24,6 +24,8 @@ BeginPackage["QMRITools`PlottingTools`", Join[{"Developer`"}, Complement[QMRIToo
 (*Functions*)
 
 
+
+
 PlotData::usage =
 "PlotData[data] plots the data.
 PlotData[data, vox] plots the data and for 3D and 4D data assumes the voxelsize vox (z,x,y).
@@ -192,7 +194,10 @@ views = Thread[2*{{0.65, -1.2, 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0},
 (*default gradient color funtions*)
 colorNames = {"GrayTones", "Rainbow", "DarkRainbow", "ThermometerColors", "SunsetColors", 
 	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", "CherryTones", "SolarColors",
-	"BlueGreenYellow", "AvocadoColors", "SouthwestColors"};
+	"BlueGreenYellow", "AvocadoColors", "SouthwestColors",
+	(*scientific color maps*)
+	"Batlow", "Navia", "Devon", "Lapaz", "Lajolla", "Lipari", "Turku", "Davos", "Managua", "Vik", "Roma", "RomaO", "VikO"
+};
 
 
 (*custom color functions and generate image of custom color*)
@@ -204,7 +209,7 @@ custColors = {
 	"NIH" -> (Blend[{Black, Purple, Blue, Green, Yellow, Orange, Red, Darker@Darker@Red}, #] &),
 	"Cardiac" -> (Blend[{Darker@Green, Cyan, Blue, Purple, Red, Yellow, Darker@Green}, #] &),
 	"GEcol" -> (Blend[{Black, RGBColor[0, .22, .22], RGBColor[0, .45, .45], RGBColor[.4, .0, .9], RGBColor[.75, .25, .5], Orange, RGBColor[1, .7, .35],  White}, #] &)
-	};
+};
 
 
 (*generate color list and functions*)
@@ -1628,6 +1633,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 Options[MakeSliceImages]={
 	PlotRange->Automatic, 
 	ColorFunction->"GrayTones", 
+	ClippingStyle->Automatic,
 	ImageLegend->False,
 	ImageOrientation->Automatic,
 	ImageSize->300
@@ -1643,14 +1649,16 @@ MakeSliceImages[selData_, vox:{_, _, _}, opts:OptionsPattern[]]:=MakeSliceImages
 
 MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]]:=Block[{
 	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2, 
-	dim, dim1, dim2, d1, d2, pl ,ml, sz, n, imSize
+	dim, dim1, dim2, d1, d2, pl ,ml, sz, n, imSize, clip
 	},
 	
 	rule = N@Thread[vals -> Rescale[Range[0, Length[vals]]][[2 ;;]]];
 	colo = OptionValue[ColorFunction];
-	
 	colF = If[MemberQ[colorFunctions[[All,1]], colo], colo, "GrayTones"]/.colorFunctions;
-	
+
+	clip = OptionValue[ClippingStyle];
+	clip = If[clip===Automatic, colF/@{0, 1}, If[ColorQ[clip], {clip, colF[1]}, clip]];
+
 	Table[
 		(*get the data*)
 		pdat = N@selData[[n]];
@@ -1680,8 +1688,10 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 				If[d1 <= d2, {#1, #2, ratio, {imSize, Automatic}}, {#1, #2, ratio, {Automatic, imSize}}] 
 			];
 			
-			pl1 = ArrayPlot[pl, AspectRatio->ratio, Frame->False, ImageSize->sz, PlotRangePadding->1, PlotRange->ran, ColorFunction->colF, ClippingStyle->(colF/@{0, 1})];
-			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.4], ColorData["Rainbow"][#]}]&), ColorFunctionScaling->False, ColorRules->{0.->Transparent}];
+			pl1 = ArrayPlot[pl, AspectRatio->ratio, Frame->False, ImageSize->sz, PlotRangePadding->1, 
+				PlotRange->ran, ColorFunction->colF, ClippingStyle->clip];
+			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.4], ColorData["Rainbow"][#]}]&), 
+				ColorFunctionScaling->False, ColorRules->{0.->Transparent}];
 			If[OptionValue[ImageLegend], Legended[Show[pl1, pl2], bar], Show[pl1, pl2]]
 		)&, {pdat, mdat}]
 	,{n, 1, 3}]
@@ -2210,6 +2220,8 @@ ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask},
 		]
 	]
 ]
+
+
 
 
 (* ::Section:: *)

@@ -29,8 +29,7 @@ GetAssetLocation::usage =
 Current assests are \"Elastix\", \"Transformix\" and \"DcmToNii\"." 
 
 ExtractDemoData::usage = 
-"ExtractDemoData[] Extracts the demo data archilve."
-
+"ExtractDemoData[] Extracts the demo data archive."
 
 StringPadInteger::usage = 
 "StringPadInteger[num] converts the integer num to a string and pads it with zeros to length 3.
@@ -356,9 +355,8 @@ ExtractDemoData[] := Block[{file},
 	If[! DirectoryQ[FileNameJoin[{DirectoryName[file], "DemoData"}]],
 		If[FileExistsQ[file], Quiet@ExtractArchive[file, DirectoryName[file]],
 		Print["DemoData archive does not exist"]]
-	]
+	];
 ]
-
 
 
 (* ::Subsection:: *)
