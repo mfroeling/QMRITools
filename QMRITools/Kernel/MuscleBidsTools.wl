@@ -1046,7 +1046,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						(*Denoise*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
 						mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
-						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATollerance->0, PCAKernel->5, Method->"Patch"];
+						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATollerance->0, PCAKernel->5];
 						
 						(*calculate SNR*)
 						snr = SNRCalc[den, sig];
@@ -1057,6 +1057,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 						reg = RegisterDiffusionDataSplit[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, PrintTempDirectory->False];
 
 						(*anisotropic filtering*)
+						(*-----*)AddToLog["Starting anisotrpic data smooting", 4];
 						filt = AnisoFilterData[reg, diffvox];
 						
 						(*export all the calculated data*)

@@ -339,7 +339,7 @@ SelectTractValD = Compile[{{roi, _Real, 3}, {tract, _Integer, 2}},
 
 
 Options[SegmentTracts] = {
-	FiberLengthRange -> {20, 500}, 
+	FiberLengthRange -> {15, 500}, 
 	OutputForm -> "Joined", 
 	FitTracts -> True
 }
@@ -409,6 +409,15 @@ TractAngleMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := GatherThrea
 
 
 (* ::Subsubsection::Closed:: *)
+(*VecAngC*)
+
+
+VecAngC = Compile[{{tr, _Real, 2}},
+	Abs[(180./Pi) ArcCos[(#[[1]]/Sqrt[Total[Abs[#]^2]]) & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]])] - 90]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
 (*GatherThread*)
 
 
@@ -429,15 +438,6 @@ GatherThread[rule_] := Block[{out},
 	out = GatherBy[Flatten[rule, 1], First];
 	Thread[out[[All, 1, 1]] -> (Median /@ out[[All, All, 2]])]
 ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*VecAngC*)
-
-
-VecAngC = Compile[{{tr, _Real, 2}},
-	Abs[(180./Pi) ArcCos[(#[[1]]/Sqrt[Total[Abs[#]^2]]) & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]])] - 90]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
@@ -561,7 +561,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 
 TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0},
 	(*startpoint*)
-	dir0 = h GetVec[First[fun], loc0];
+	dir0 = h EigVec[First[fun]@@loc0, {0,0,1}];
 	(*tracts bi-directional*)
 	ToPackedArray@Join[
 		Reverse@TractFuncI[{loc0 + dir0/2, dir0}, h, stp, fun], 
@@ -579,40 +579,10 @@ TractFuncI[{loc0_?VectorQ, step0_?VectorQ}, h_, {amax_, smax_, stoptr_}, {intE_,
 			stepn = tracF[locn, step, h, intE];
 			
 			(*output, new location and its direction, angle and stop*)
-			{locn, stepn, VecAng[step, stepn], GetStop[intS, locn + stepn]}
-		)&, {loc0, step0, 0, GetStop[intS, loc0 + step0]}, 
+			{locn, stepn, VecAng[step, stepn], intS@@(locn+stepn)}
+		)&, {loc0, step0, 0, intS@@(loc0+step0)}, 
 	(#[[3]] < amax && #[[4]] > stoptr)&, 1, smax][[All,1]]
 ];
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetStop*)
-
-
-GetStop = #1@@#2&
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetVec*)
-
-
-GetVec = EigVec[#1@@#2]&
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetVecAlign*)
-
-
-GetVecAlign = VecAlign[#3, GetVec[#1, #2]]&
-
-
-(* ::Subsubsection::Closed:: *)
-(*VecAlign*)
-
-
-VecAlign = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, 
-	Sign[Sign[v1 . v2] + 0.1] v2,
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -631,13 +601,13 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 ,n2},
 (*EigVec*)
 
 
-EigVec = Compile[{{t, _Real, 1}}, Block[{
+EigVec = Compile[{{t, _Real, 1}, {vdir, _Real, 1}}, Block[{
 		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, tens,
-		i1, i2, i3, i, v, s, v2, l1, a, b, c, norm
+		i1, i2, i3, i, v, s, v2, l1, a, b, c, norm, vec
 	},
 	tens = 1000 t;
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
-	If[Total[Abs[tens]]<10.^-15,
+	vec = If[Total[Abs[tens]]<10.^-15,
 		{0., 0., 0.},
 
 		{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
@@ -659,7 +629,9 @@ EigVec = Compile[{{t, _Real, 1}}, Block[{
 		norm = Sqrt[a^2 + b^2 + c^2];
 		
 		If[norm < 10.^-30, {0., 0., 0.}, {a, b, c} / norm]
-	]
+	];
+
+	 Sign[Sign[vdir . vec] + 0.1] vec
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
@@ -668,7 +640,7 @@ EigVec = Compile[{{t, _Real, 1}}, Block[{
 
 
 Euler[y_, v_, h_, func_] := Block[{k1},
-	k1 = h GetVecAlign[func, y, v];
+	k1 = h EigVec[func@@(y), v];
 	k1
 ]
 
@@ -678,8 +650,8 @@ Euler[y_, v_, h_, func_] := Block[{k1},
 
 
 RK2[y_, v_, h_, func_] := Block[{k1, k2},
-	k1 = h GetVecAlign[func, y, v];
-	k2 = h GetVecAlign[func, y + k1/2, v];
+	k1 = h EigVec[func@@(y), v];
+	k2 = h EigVec[func@@(y + k1/2), v];
 	k2	
 ]
 
@@ -689,10 +661,10 @@ RK2[y_, v_, h_, func_] := Block[{k1, k2},
 
 
 RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
-	k1 = h GetVecAlign[func, y, v];
-	k2 = h GetVecAlign[func, y + k1/2, v];
-	k3 = h GetVecAlign[func, y + k2/2, v];
-	k4 = h GetVecAlign[func, y + k3, v];
+	k1 = h EigVec[func@@(y), v];
+	k2 = h EigVec[func@@(y + k1/2), v];
+	k3 = h EigVec[func@@(y + k2/2), v];
+	k4 = h EigVec[func@@(y + k3), v];
 	k1/6 + k2/3 + k3/3 + k4/6
 ]
 
@@ -1060,7 +1032,8 @@ Options[PlotSegmentedTracts] := {
 	FiberLengthRange -> {20, 500},
 	Method -> "line",
 	OutputForm -> "All",
-	ImageSize->400
+	ImageSize->400,
+	Monitor -> False
 }
 
 SyntaxInformation[PlotSegmentedTracts] = {"ArgumentsPattern" -> {_, _, _, _, _., OptionsPattern[]}};
@@ -1069,17 +1042,18 @@ PlotSegmentedTracts[tracts_, segments_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ
 
 PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := Block[{
 		ntr, fran, type, segs, tractsF, tractsFI, ran, rand, colList, showF,
-		ref, bon, musc, trac, tracksSel, lengs, nTracts, sel
+		ref, bon, musc, trac, tracksSel, lengs, nTracts, sel, mon
 	},
 	
 	(*get options*)
 	ntr = OptionValue[MaxTracts];
 	fran = OptionValue[FiberLengthRange];
 	type = OptionValue[Method];
+	mon = OptionValue[Monitor];
 
 	(*prepare data*)
 	segs = Transpose@segments;
-	Echo["Fitting tracts"];
+	If[mon, Echo["Fitting tracts"]];
 	SeedRandom[12345];
 	tractsF = RandomSample[tracts, Min[{5 ntr, Length@tracts}]];
 	tractsF = FitTracts[tractsF, vox, dim, FittingOrder -> 3];
@@ -1092,7 +1066,7 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	colList = ColorData["DarkRainbow"] /@ N[Rescale[rand]];
 
 	(*reference environement*)
-	Echo["Making muscle iso volumes"];
+	If[mon, Echo["Making muscle iso volumes"]];
 	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, 
 		Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
 	bon = If[bones =!= None, 
@@ -1105,7 +1079,7 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	musc = Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, 
 		ContourColor -> colList[[i]], ContourSmoothing -> 2], {i, ran}];
 
-	Echo["Making per muscle tracts"];
+	If[mon, Echo["Making per muscle tracts"]];
 	(*select the tracts per muscle and make fiber plots*)
 	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segs;
 	lengs = Length /@ tracksSel;
@@ -1120,7 +1094,7 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 		] &, {tracksSel, nTracts, colList, sel}
 	];
 
-	Echo["Finalizing scenes"];
+	If[mon, Echo["Finalizing scenes"]];
 	showF = Show[ref, ##, ImageSize -> OptionValue[ImageSize], Axes -> False, Boxed -> False, ViewPoint -> {0., -2., 1.}] & @@ # &;
 	
 	Switch[OptionValue[OutputForm],

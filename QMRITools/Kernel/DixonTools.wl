@@ -235,8 +235,6 @@ Options[DixonReconstruct] = {
 	DixonPrecessions -> -1, 
 	DixonFieldStrength -> 3, 
 	DixonNucleus -> "1H",
-	(*DixonFrequencies -> {{0}, {3.8, 3.4, 3.13, 2.67, 2.46, 1.92, 0.57, -0.60}},
-	DixonAmplitudes -> {{1}, {0.089, 0.598, 0.047, 0.077, 0.052, 0.011, 0.035, 0.066}},*)
 	DixonFrequencies -> {{0}, {3.8, 3.4, 3.1, 2.7, 2.5, 1.95, 0.5, -0.5, -0.6}},
 	DixonAmplitudes -> {{1}, {0.088, 0.628, 0.059, 0.064, 0.059, 0.01, 0.039, 0.01, 0.042}},
 	DixonIterations -> 20, 

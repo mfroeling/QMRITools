@@ -312,8 +312,10 @@ PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, 0., opts];
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
-		wht, ker, tol, mon, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, m, n, off, datao, weights, sigmat, start, 
-		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, weight, pos, leng, nearPos,p
+		wht, ker, tol, mon, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, 
+		m, n, off, datao, weights, sigmat, start, sigmati, nmati, 
+		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
+		weight, posV, leng, nearPos, p, pi, pos, np
 	},
 	
 	mon = OptionValue[MonitorCalc];
@@ -339,37 +341,54 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	Switch[OptionValue[Method],
 		(*--------------use similar signals--------------*)
 		"Similarity",
-		
 		(*vectorize data*)
-		{data, pos} = DataToVector[data, mask];
+		{data, posV} = DataToVector[data, mask];
 		sigm = First@DataToVector[sigm, mask];
 		
 		(*define runtime parameters*)
 		m = Length[data[[1]]];
-		n = Round[ker m];
+		n = Round[ker^3];
 		
 		(*parameters for monitor*)
 		leng = Length[data];
-		
+		pos = Range@leng;
+
 		(*ouput data*)
 		datao = 0. data;
-		weights = sigmat = datao[[All, 1]];
-		
-		(*get positions of similar signals*)
+		weights = sigmat = sigmati = nmati = datao[[All, 1]];
+
+		(*get positions of similar signals but in random batches such that nearest has speed*)
+		np = 30000;
+		np = Floor[leng/Floor[leng/np]];
+
 		If[mon, PrintTemporary["Preparing data similarity"]];
-		nearPos = Nearest[data -> Range[leng], data, n, DistanceFunction -> EuclideanDistance, 
-			Method -> "Scan", WorkingPrecision -> MachinePrecision];
-				
+		pos = If[leng <= 2 np, 
+			{pos},
+			SeedRandom[1234];
+			pos = Partition[RandomSample[pos], np, np, 1, Nothing];
+			If[Length[Last@pos]===np,
+				pos,
+				Append[pos[[;; -3]], Flatten[pos[[-2 ;;]], 1]]
+			]
+		];
+
+		(*for each random batch find the nearest voxels and make pos array*)
+		nearPos = Nearest[data[[#]] -> #, data[[#]], 2 n, 
+			DistanceFunction -> EuclideanDistance, Method -> "Scan", 
+			WorkingPrecision -> MachinePrecision] & /@ pos;
+		nearPos = Flatten[Map[Prepend[RandomSample[Rest@#, n - 1], First@#] &, nearPos, {2}], 1];
+
 		(*perform denoising*)
 		j = 0;
 		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
 		{m, n} = MinMax[{m, n}];
-		output = Map[(
-			j++;
-			p = nearPos[[#]];
+		Map[(j++;
 			
+			p = #;
+			pi = First@p;
+	
 			(*perform the fit and reconstruct the noise free data*)
-			{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], {m, n}, sigm[[#]], tol];
+			{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], {m, n}, sigm[[pi]], tol];
 			
 			(*get the weightes*)
 			weight = If[wht, 1./(m - Nes), 1.];
@@ -380,13 +399,14 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 			weights[[p]] += weight;
 			
 			(*output sig, Nest and itterations*)
-			{sigo, Nes}
-		) &, Range[leng]];
+			sigmati[[pi]] = sigo;
+			nmati[[pi]] = Nes;
+		) &, nearPos];
 		
 		(*make everything in arrays*)
-		datao = VectorToData[DevideNoZero[datao, weights], pos];
-		sigmat = VectorToData[DevideNoZero[sigmat, weights], pos];
-		output = Transpose[VectorToData[output, pos]];
+		datao = VectorToData[DevideNoZero[datao, weights], posV];
+		sigmat = VectorToData[DevideNoZero[sigmat, weights], posV];
+		output = {VectorToData[sigmati, posV], VectorToData[nmati, posV]};
 		
 		,
 		(*--------------use patch---------------*)
@@ -408,7 +428,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		(*parameters for monitor*)
 		j = 0;
 		start = off + 1;
-		totalItt = Total[Flatten[mask[[start ;; zdim - off, start ;; ydim - off, start ;; xdim - off]]]];
+		{zdim, ydim, xdim} = {zdim, ydim, xdim} - off;
+		totalItt = Total[Flatten[mask[[start ;; zdim, start ;; ydim, start ;; xdim]]]];
 		
 		(*perform denoising*)
 		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, totalItt}]]];
@@ -438,7 +459,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 				(*output sig, Nest and itterations*)
 				{sigo, Nes}
 			], 
-		{z, start, zdim - off}, {y, start, ydim - off}, {x, start, xdim - off}];
+		{z, start, zdim}, {y, start, ydim}, {x, start, xdim}];
 
 		(*make everything in arrays*)
 		output = ArrayPad[#, off] & /@ RotateDimensionsRight[output];
@@ -479,7 +500,7 @@ PCADeNoiseFit[data_, {m_, n_}, sigi_?NumberQ, toli_] := Block[{
 	tol = Round[Clip[pi - toli, {1, m}]];
 	
 	(*give output,simga,number of noise comp,and denoised matrix*)
-	out = Transpose[mat[[tol ;;]]] . mat[[tol ;;]] . xmat;
+	out = Transpose[mat[[tol ;;]]] . (mat[[tol ;;]] . xmat);
 	{sig, tol, If[trans, Transpose@out, out]}
 ]
 
@@ -516,7 +537,9 @@ SyntaxInformation[NNDeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern
 
 NNDeNoise[data_, opts : OptionsPattern[]] := NNDeNoise[data, 1, opts];
 
-NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{back, dat, coor, n, ran, dati, train, i},
+NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{
+		back, dat, coor, n, ran, dati, train, i
+	},
 	(*make selection mask and vectorize data*)
 	back = Round[mask Mask[NormalizeMeanData[data], OptionValue[NNThreshhold]]];
 	{dat, coor} = DataToVector[data, back];
@@ -734,7 +757,7 @@ FinDiffCalc[dat_,kers_] := ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 (*AnisoFilterData*)
 
 
-Options[AnisoFilterData] = {AnisoStepTime -> 0.3, AnisoItterations -> 4, AnisoKernel -> {0.15, 0.3}};
+Options[AnisoFilterData] = {AnisoStepTime -> 0.25, AnisoItterations -> 4, AnisoKernel -> {0.2, 0.4}};
 
 SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
@@ -742,13 +765,17 @@ AnisoFilterData[data_, opts:OptionsPattern[]] := AnisoFilterData[data, {1, 1, 1}
 
 AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 	dd, grads, k, jacTot, tMat, eval, evec, div, dati,
-	sig, rho , step, itt, sc, max
+	sig, rho , step, itt, sc, max, tr, cr
 	},
 	(*for implementation see 10.1002/mrm.20339*)
 	
+	(*crop background for speed*)
+	{dati, cr} = AutoCropData[data];
+
 	(*get the 4th dimensions on first place *)
-	dati = ToPackedArray@N@Transpose[data];
+	dati = ToPackedArray@N@Transpose[dati];
 	max = Max[dati];
+	tr = max/10000;
 	
 	(*aniso filter kernel size *)
 	{sig, rho} = OptionValue[AnisoKernel];
@@ -761,14 +788,20 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 		(*get the data gradients*)
 		grads = ToPackedArray@N[(
 			dd = GaussianFilter[#, {1, sc sig}];
-			sc (GaussianFilter[dd, 1, #1] &/@IdentityMatrix[3])
+			sc (GaussianFilter[dd, 1, #1] & /@ IdentityMatrix[3])
 		) & /@ dati];
 
-		(*calculate the jacobian*)
-		jacTot = ToPackedArray@N@Chop[TensMat[GaussianFilter[#, {1, sc rho}] & /@ Total[{#[[1]]^2, #[[2]]^2, #[[3]]^2, #[[1]] #[[2]], #[[1]] #[[3]], #[[2]] #[[3]]} & /@ grads]]];
+		(*calculate the jacobian (aka structure tensor) and smooth it*)
+		jacTot = ToPackedArray@N@TensMat[
+			GaussianFilter[#, {1, sc rho}] & /@ Total[
+				{#[[1]]^2, #[[2]]^2, #[[3]]^2, #[[1]] #[[2]], #[[1]] #[[3]], #[[2]] #[[3]]} &[Transpose[grads]]
+			, {2}]
+		];
 
 		(*get the step matrix*)
-		tMat = ToPackedArray@N@Map[If[# == {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}, #,
+		tMat = ToPackedArray@N@Map[If[Max[#] < tr, 
+			{{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}
+			,
 			{eval, evec} = Eigensystem[#];
 			eval = Switch[Unitize[eval],
 				{1, 1, 0}, {0., 0., 3.},
@@ -779,18 +812,22 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 		] &, jacTot, {3}];
 		
 		(*get the time step*)
-		div = RotateDimensionsRight[ToPackedArray@N@MapThread[#2.#1 &, {tMat, RotateDimensionsLeft[grads, 2]}, 3], 2];
+		div = RotateDimensionsRight[DivDot[tMat, RotateDimensionsLeft[grads, 2]], 2];
 		(*calculate divergence of vector field*)
-		div = ToPackedArray@N@Total[MapThread[GaussianFilter[#1, 1, #2] &, {#, IdentityMatrix[3]}]] & /@ div;
+		div = Total[MapThread[GaussianFilter[#1, 1, #2] &, {div, ConstantArray[IdentityMatrix[3], Length@div]}, 2], {2}];
 		
 		(*perform the smoothing step*)
 		dati = ToPackedArray@N@Clip[dati + step div, {0, 2} max];
 	, {itt}];
 	
 	(*output the data*)
-	Transpose[dati]
+	ReverseCrop[Transpose@dati, Dimensions@data, cr]
 ]
 
+
+DivDot = Compile[{{t, _Real, 2}, {gr, _Real, 2}}, 
+	gr . t, 
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 (* ::Section:: *)
 (*End Package*)
