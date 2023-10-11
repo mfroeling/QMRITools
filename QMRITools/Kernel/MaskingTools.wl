@@ -382,13 +382,13 @@ SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}
 
 GetMaskData[data_?ArrayQ, mask_, opts:OptionsPattern[]] := Block[{out},
 	If[ArrayDepth[data]===4&&ArrayDepth[mask]===3, 
-		
 		GetMaskData[#,mask]&/@Transpose[data]
 		,
 		If[!(Dimensions[data]=!=Dimensions[mask] || Drop[Dimensions[data], {2}]=!=Dimensions[mask]),
 			Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]],
 			out = Switch[OptionValue[GetMaskOutput],
 				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[Normal@#2]], 1]&, {data, mask}, ArrayDepth[data]-2],
+				"Sparse", (data mask)["ExplicitValues"],
 				_, Pick[Chop[Flatten[N[data]]], Unitize[Flatten[Normal@mask]], 1]
 			];
 			(*select only non zero values if mask only to false*)

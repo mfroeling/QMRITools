@@ -772,7 +772,7 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 		mon, dimi, dimc, lab, class
 	},
 	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
-	If[lim === Automatic, lim = If[dev==="GPU", 192, 112]];
+	If[lim === Automatic, lim = If[dev==="GPU", 224, 112]];
 
 	data=If[First@Dimensions@dat===1, First@dat, dat];
 

@@ -757,7 +757,10 @@ FinDiffCalc[dat_,kers_] := ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 (*AnisoFilterData*)
 
 
-Options[AnisoFilterData] = {AnisoStepTime -> 0.25, AnisoItterations -> 4, AnisoKernel -> {0.2, 0.4}};
+Options[AnisoFilterData] = {
+	AnisoStepTime -> 1, 
+	AnisoItterations -> 1, 
+	AnisoKernel -> {0.25, 0.5}};
 
 SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
@@ -765,7 +768,7 @@ AnisoFilterData[data_, opts:OptionsPattern[]] := AnisoFilterData[data, {1, 1, 1}
 
 AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 	dd, grads, k, jacTot, tMat, eval, evec, div, dati,
-	sig, rho , step, itt, sc, max, tr, cr
+	sig, rho , step, itt, sc, max, tr, cr, ind
 	},
 	(*for implementation see 10.1002/mrm.20339*)
 	
@@ -776,19 +779,19 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 	dati = ToPackedArray@N@Transpose[dati];
 	max = Max[dati];
 	tr = max/10000;
+	ind = IdentityMatrix[3];
+	sc = Max[vox]/vox;
 	
 	(*aniso filter kernel size *)
 	{sig, rho} = OptionValue[AnisoKernel];
 	step = OptionValue[AnisoStepTime];
 	itt = OptionValue[AnisoItterations];
 	
-	sc = Max[vox]/vox;
-	
 	Do[(*loop over itterrations*)
 		(*get the data gradients*)
 		grads = ToPackedArray@N[(
 			dd = GaussianFilter[#, {1, sc sig}];
-			sc (GaussianFilter[dd, 1, #1] & /@ IdentityMatrix[3])
+			sc (GaussianFilter[dd, 1, #1] & /@ ind)
 		) & /@ dati];
 
 		(*calculate the jacobian (aka structure tensor) and smooth it*)
@@ -800,22 +803,16 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 
 		(*get the step matrix*)
 		tMat = ToPackedArray@N@Map[If[Max[#] < tr, 
-			{{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}}
-			,
+			{{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}},
 			{eval, evec} = Eigensystem[#];
-			eval = Switch[Unitize[eval],
-				{1, 1, 0}, {0., 0., 3.},
-				{1, 0, 0}, {0., 1.5, 1.5},
-				_, 3./eval/Total[1./eval]
-			];
-			Transpose[evec] . DiagonalMatrix[eval] . evec
+			eval = eval = 1/(eval + 10.^-16);
+			Transpose[evec] . DiagonalMatrix[3 eval/Total[eval]] . evec
 		] &, jacTot, {3}];
 		
-		(*get the time step*)
-		div = RotateDimensionsRight[DivDot[tMat, RotateDimensionsLeft[grads, 2]], 2];
-		(*calculate divergence of vector field*)
-		div = Total[MapThread[GaussianFilter[#1, 1, #2] &, {div, ConstantArray[IdentityMatrix[3], Length@div]}, 2], {2}];
-		
+		(*get the time step and calculate divergence of vector field*)
+		div = Total[MapThread[GaussianFilter[#1, 1, #2] &, {#, ind}] & /@ 
+			RotateDimensionsRight[DivDot[tMat, RotateDimensionsLeft[grads, 2]], 2], {2}];
+
 		(*perform the smoothing step*)
 		dati = ToPackedArray@N@Clip[dati + step div, {0, 2} max];
 	, {itt}];
@@ -828,6 +825,13 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 DivDot = Compile[{{t, _Real, 2}, {gr, _Real, 2}}, 
 	gr . t, 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+StrucTensCalc = Compile[{{eval, _Real, 1}, {evec, _Real, 2}, {tr, _Real, 0}},
+	If[Max[eval] < tr, {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}},
+		Transpose[evec] . DiagonalMatrix[3 eval/Total[eval]] . evec
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
 
 (* ::Section:: *)
 (*End Package*)

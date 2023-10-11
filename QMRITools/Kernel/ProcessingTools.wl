@@ -499,8 +499,8 @@ GetMaskMeans[dat_, mask_, opts:OptionsPattern[]] := GetMaskMeans[dat, mask, "", 
 GetMaskMeans[dat_, mask_, lab_, OptionsPattern[]] := Block[{labels, out, fl},
 
 	labels = If[lab==="", 
-		{"mean", "std", "Median", "5%", "95%"}, 
-		lab <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
+		{"Mean", "Std", "Median", "5%", "95%"}, 
+		lab <> " " <> # & /@ {"Mean", "Std", "Median", "5%", "95%"}
 	];
 
 	out = If[Total[Flatten[#]]<=10,

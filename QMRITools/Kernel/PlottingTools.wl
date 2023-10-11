@@ -24,8 +24,6 @@ BeginPackage["QMRITools`PlottingTools`", Join[{"Developer`"}, Complement[QMRIToo
 (*Functions*)
 
 
-
-
 PlotData::usage =
 "PlotData[data] plots the data.
 PlotData[data, vox] plots the data and for 3D and 4D data assumes the voxelsize vox (z,x,y).
@@ -1690,7 +1688,7 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 			
 			pl1 = ArrayPlot[pl, AspectRatio->ratio, Frame->False, ImageSize->sz, PlotRangePadding->1, 
 				PlotRange->ran, ColorFunction->colF, ClippingStyle->clip];
-			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.4], ColorData["Rainbow"][#]}]&), 
+			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.4], ColorData["DarkRainbow"][#]}]&), 
 				ColorFunctionScaling->False, ColorRules->{0.->Transparent}];
 			If[OptionValue[ImageLegend], Legended[Show[pl1, pl2], bar], Show[pl1, pl2]]
 		)&, {pdat, mdat}]
