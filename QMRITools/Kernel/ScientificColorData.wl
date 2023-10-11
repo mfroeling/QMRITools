@@ -133,14 +133,8 @@ AddScientificColours[dir_]:=Block[{
 ]
 
 
-GetAssetLocationI[name_] := Block[{file},
-	file = Last[SortBy[PacletFind["QMRITools"], #["Version"]&]]["AssetLocation", name];
-	If[FileExistsQ[file],file,$Failed]
-]
-
-
-ExtractColorData[] := Block[{file},
-	file = GetAssetLocationI["ColorData"];
+ExtractColorData[dir_] := Block[{file},
+	file = dir<>".zip";
 	If[! DirectoryQ[FileNameJoin[{DirectoryName[file], "ColorData"}]],
 		If[FileExistsQ[file], Quiet@ExtractArchive[file, DirectoryName[file]],
 		Print["DemoData archive does not exist"]]

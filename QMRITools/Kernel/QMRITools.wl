@@ -59,13 +59,14 @@ QMRITools`$SubPackages = {
 (*define context and verbose*)
 QMRITools`$Contexts = (Context[] <> # & /@ QMRITools`$SubPackages);
 QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
+QMRITools`$LoadedColor = If[QMRITools`$LoadedColor===True, True, False];
 QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Version"];
 
 
 (*load all the packages without error reporting such we can find the names of all the functions and options*)
 Quiet[Get/@QMRITools`$Contexts];
 QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
-
+tempDir = StringDrop[GetAssetLocation["ColorData"], -4];
 
 Begin["`Private`"];
 
@@ -112,15 +113,19 @@ With[{
 ] &/@ QMRITools`$ContextsFunctions
 
 (*getting the color functions*)
-If[QMRITools`$Verbose, 
-	Echo["--------------------------------------"];
-	Echo["Loading color data:"];
-	Get[First@QMRITools`$Contexts];
-	Quiet[
-	QMRITools`PlottingTools`ExtractColorData[];
-	QMRITools`PlottingTools`ScientificColorData[StringDrop[GetAssetLocation["ColorData"], -4]];
+If[!QMRITools`$LoadedColor, 
+	If[QMRITools`$Verbose, 
+		Echo["--------------------------------------"];
+		Echo["Loading color data:"];
+	];
+	Get["QMRITools`ScientificColorData`"];
+	QMRITools`ScientificColorData`ExtractColorData[tempDir];
+	QMRITools`ScientificColorData`AddScientificColours[tempDir];
+	ClearAll[tempDir];
+	Remove[tempDir];
+	QMRITools`$LoadedColor=True;
 ]
-];
+
 
 (*Reload and protect all the sub packages with error reporting*)
 If[QMRITools`$Verbose, 

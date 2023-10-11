@@ -961,13 +961,13 @@ ReverseCrop[data_, dimI_, crop_, {v1_, v2_}] := Module[{datac, pad, dim},
 		(*use other voxel size*)
 		Floor[(v1/v2) Partition[Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2]]
 	];
-	
+
 	datac = Switch[ArrayDepth[data],
-		3, ArrayPad[data, pad],
-		4, Transpose[ArrayPad[#, pad] & /@ Transpose[data]],
+		3, ArrayPad[data, pad, 0.],
+		4, ArrayPad[data, Insert[pad, {0, 0}, 2], 0.],
 		_, Return[$Failed, Module]
 	];
-	
+
 	ToPackedArray@N@datac
 ]
 
