@@ -1501,7 +1501,8 @@ Options[PlotSegmentations] = {
 	ColorFunction -> "DarkRainbow", 
 	ImageSize -> 400, 
 	ContourSmoothing -> 2,
-	RandomizeColor->True
+	RandomizeColor->True,
+	Opacity->0.6
 };
 
 PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
@@ -1509,7 +1510,7 @@ PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg,
 PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 		smooth, size, plotb, segM, nSeg, cols, plotm, ranCol
 	},
-	{smooth, cols, size, ranCol} = OptionValue[{ContourSmoothing, ColorFunction, ImageSize, RandomizeColor}];
+	{smooth, cols, size, ranCol, op} = OptionValue[{ContourSmoothing, ColorFunction, ImageSize, RandomizeColor, Opacity}];
 
 	plotb = If[bone === None, Graphics3D[],
 		PlotContour[Unitize[bone], vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothing -> smooth]
@@ -1521,7 +1522,7 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 	cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[Range[nSeg]]];
 	If[ranCol, RandomSeed[1234]; cols = RandomSample[cols]];
 
-	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> 0.6, ContourSmoothing -> smooth], {i, 1, nSeg}]];
+	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothing -> smooth], {i, 1, nSeg}]];
 
 	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]
 ]
