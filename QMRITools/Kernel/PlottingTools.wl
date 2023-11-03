@@ -2194,32 +2194,26 @@ PlotSequence[(*{seq_,hw_,te_}*)inp_, t_] := DynamicModule[{
 
 
 SyntaxInformation[ColorFAPlot] = {"ArgumentsPattern" -> {_}};  
-  
-ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask},
-	{eig, eigv} = EigensysCalc[tens];
-	mask = Mask[tens[[1]], 10^-6];
-	
+
+ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask, all},
+	mask = Mask[Mean@tens[[1;;3]], 0.00001, MaskSmoothing->False];
+
+	{eig, eigv} = EigensysCalc[tens, PerformanceGoal -> "Quality"];
+
+	FA = Clip[2 FACalc[eig], {0,1}];
 	eigv = mask Abs[eigv];
-	FA = FACalc[eig];
-	eigFA = mask FA eigv;
-	
-	DynamicModule[{colEigFA, colEig, im},
-		colEigFA = Table[Image[eigFA[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
-		colEig = Table[Image[eigv[[j, All, All, i]], ColorSpace -> "RGB"], {j, 1, Length[eigv]}, {i, 1, 3}];
-		
-		Manipulate[
-			im = GraphicsRow[{colEig, colEigFA}[[i, j, sel]], ImageSize -> Length[sel]*size],
-				
-			{{j, Round[Length[colEig]/2], "slice"}, 1, Length[colEig], 1},
-			{{i, 2, "method"}, {1 -> "raw", 2 -> "FA"}},
-			{{sel, {1, 2, 3}, "eigenvectors"}, {1 -> "first", 2 -> "second", 3 -> "third"}, ControlType -> TogglerBar},
-			Button["save image", SaveImage[im], Method -> "Queued"],
-			{{size, 300, "image size"}, {200, 300, 400, 600, 1000}}
-		]
+	all = {eigv, FA eigv};
+
+	Manipulate[
+		im = Image[all[[i, j, All, All, sel, {3,2,1}]], ColorSpace -> "RGB", ImageSize->size],
+
+		{{j, Round[Length[all[[1]]]/2], "slice"}, 1, Length[all[[1]]], 1},
+		{{i, 2, "method"}, {1 -> "raw", 2 -> "FA"}},
+		{{sel, 1(*, 2, 3*), "eigenvectors"}, {1 -> "first", 2 -> "second", 3 -> "third"}, ControlType -> SetterBar},
+		{{size, 400, "image size"}, {200, 300, 400, 600, 1000}},
+		Button["save image", SaveImage[im], Method -> "Queued"]
 	]
 ]
-
-
 
 
 (* ::Section:: *)

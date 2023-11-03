@@ -1508,7 +1508,7 @@ Options[PlotSegmentations] = {
 PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
 
 PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
-		smooth, size, plotb, segM, nSeg, cols, plotm, ranCol
+		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op
 	},
 	{smooth, cols, size, ranCol, op} = OptionValue[{ContourSmoothing, ColorFunction, ImageSize, RandomizeColor, Opacity}];
 
@@ -1518,9 +1518,10 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 
 	segM = If[ArrayDepth[seg]===3, First@SplitSegmentations[seg], seg];
 	nSeg = Length@First@segM;
+	rSeg = Range[nSeg];
 
-	cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[Range[nSeg]]];
-	If[ranCol, RandomSeed[1234]; cols = RandomSample[cols]];
+	cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
+	If[ranCol, SeedRandom[12345]; cols = cols[[RandomSample@rSeg]]];
 
 	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothing -> smooth], {i, 1, nSeg}]];
 

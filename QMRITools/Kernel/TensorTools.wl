@@ -724,7 +724,7 @@ FlipGradientOrientation[grad_, v_, p_] /; (AllTrue[v, StringQ] && AllTrue[p, Num
 (*EigensysCalc*)
 
 
-Options[EigensysCalc]={RejectMap->False,Reject->True,PerformanceGoal->"Speed"};
+Options[EigensysCalc]={RejectMap->False,Reject->True, PerformanceGoal->"Speed"};
 
 SyntaxInformation[EigensysCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
@@ -763,16 +763,16 @@ EigenSys[tens_,out_,OptionsPattern[]]:=Block[{t, met, val, vec,reject, sel},
 	met=OptionValue[PerformanceGoal];
 	
 	t=Which[
-		VectorQ[tens],tens,
-		MatrixQ[tens],TensVec[tens],
-		ArrayQ[tens],RotateDimensionsLeft[tens]
+		VectorQ[tens], tens,
+		MatrixQ[tens], TensVec[tens],
+		ArrayQ[tens], RotateDimensionsLeft[tens]
 	];
 	
-	{val,vec} = If[met==="Speed",EigenSysC[t,out],EigenSysQ[t,out]];
+	{val,vec} = If[met==="Speed", EigenSysC[t,out], EigenSysQ[t,out]];
 	
 	If[OptionValue[Reject],
-		reject=SelectEig[val];
-		sel=1-reject;
+		reject = SelectEig[val];
+		sel = 1-reject;
 		val = sel val;
 		If[vec=!=0,vec=sel vec+reject ConstantArray[{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}},Dimensions[reject]]];
 	];
