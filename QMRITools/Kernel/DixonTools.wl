@@ -188,7 +188,8 @@ DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{
 		fatMap = fMask (1 - waterMap) + wMask fatMap;
 		waterMap = tMask Abs[tMask - fatMap];
 		fatMap = tMask (tMask - waterMap);
-		Clip[{waterMap, fatMap}, {0, 1}],
+		Clip[{waterMap, fatMap}, {0, 1}]
+		,
 		waterMap = wMask waterMap + (fMask - fMask fatMap);
 		fatMap = (wMask + fMask) - waterMap;
 		waterMap = (wMask + fMask) - fatMap;
@@ -246,9 +247,9 @@ Options[DixonReconstruct] = {
 	DixonFilterType -> "Median",
 	DixonPhases -> {True, True, False, False, False},
 	DixonClipFraction -> False,
-	DixonCorrectT1->False,
+	DixonCorrectT1-> False,
 	MonitorCalc -> False
-	};
+};
 
 
 SyntaxInformation[DixonReconstruct] = {"ArgumentsPattern" -> {_, _, _, _., _., OptionsPattern[]}};
@@ -377,7 +378,9 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		If[mon, PrintTemporary["Filtering field estimation and recalculating signal fractions"]];
 		(*smooth b0 field and R2star maps*)
 		phi = mask RotateDimensionsLeft@If[First[sel]===1,
-			Join[{DevideNoZero[1., filtFunc[DevideNoZero[1., Ramp@First[phi]]]]}, filtFunc/@ Rest[phi]],
+			phi[[1]] = mask (-(Ramp[-(Ramp[phi[[1]] - 4] + 4) + 200] - 200));
+			filtFunc /@ phi,
+			(*Join[{DevideNoZero[1., filtFunc[DevideNoZero[1., Ramp@First[phi]]]]}, filtFunc/@ Rest[phi]],*)
 			filtFunc /@ phi];
 		(*recalculate the water fat signals*)
 		result = RotateDimensionsRight@Chop@DixonFitFC[complex, phi, mask, matC, matA, matAi];
@@ -423,15 +426,11 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 (* ::Subsubsection::Closed:: *)
 (*InOutPhase*)
 
-(*
-InOutPhase = Compile[{{wat, _Complex, 0}, {fat, _Complex, 0}, {matA, _Complex, 2}},
-	Abs[matA . {wat, fat}]
-, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
-*)
 
 InOutPhase = Compile[{{sig, _Complex, 1}, {matA, _Complex, 2}},
 	Abs[matA . sig]
 , RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
 
 (* ::Subsubsection::Closed:: *)
 (*DixonFit*)
@@ -462,7 +461,6 @@ DixonFitC = Compile[{
 		While[continue,	i++;
 			(*update the field map*)
 			phiEst += dPhi;
-			(*phiEst[[1]] = Ramp@phiEst[[1]];*)
 			
 			(*define complex field map P(-phi) or (E D)^-1 and demodulate signal phase*)
 			sig = Exp[-matC . phiEst] ydat;
