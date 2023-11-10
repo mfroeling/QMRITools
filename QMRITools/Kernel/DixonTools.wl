@@ -173,11 +173,11 @@ DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{
 		atot, fatMap, waterMap, fMask, wMask, tMask, afat, awater
 	},
 
-	atot = water + fat;
+	atot = Abs[water + fat];
 
 	(*define water and fat maps*)
-	waterMap = Chop[DevideNoZero[water, atot]];
-	fatMap = Chop[DevideNoZero[fat, atot]];
+	waterMap = Chop[DevideNoZero[Abs[water], atot]];
+	fatMap = Chop[DevideNoZero[Abs[fat], atot]];
 	
 	(*noise bias correction*)
 	wMask = Mask[waterMap, .5, MaskSmoothing->False];
@@ -232,10 +232,10 @@ FindComplexFlips[real_,imag_]:=Block[{comp,diff,diffM,means},
 
 
 Options[DixonReconstruct] = {
-	DixonPrecessions -> -1, 
+	DixonPrecessions -> 1, 
 	DixonFieldStrength -> 3, 
 	DixonNucleus -> "1H",
-	DixonFrequencies -> {{0}, {3.8, 3.4, 3.1, 2.68, 2.5, 1.95, 0.5, -0.49, -0.59}},
+	DixonFrequencies -> ({{4.7}, {0.89, 1.3, 1.58, 2.03, 2.25, 2.76, 4.19, 5.22, 5.32 }} - 4.7),
 	DixonAmplitudes -> {{1}, {0.089, 0.593, 0.059, 0.081, 0.059, 0.015, 0.039, 0.01, 0.055}},(*{cl -> 17.5, ndb -> 2.8, nmidb -> 0.75}*)
 	DixonIterations -> 20, 
 	DixonTollerance -> 0.1, 
@@ -263,8 +263,8 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_}, opts : OptionsPatte
 
 
 DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPattern[]] := Block[{
-		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, 
-		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, r2, phi,
+		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n,
+		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, r2, phi, mod, cll, ndb, nmidb,
 		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero,
 		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop
 	},
@@ -279,16 +279,14 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	
 	(*Chebrolu et.al. 10.1002/mrm.22300 - two t2* species*)
 	(*Byder et.al. 10.1016/j.mri.2011.07.004 - a matrix with bonds*)
-	
+
+	(*---- all the options and bookkeeping for what is needed ----*)
+
 	mon = OptionValue[MonitorCalc];
 	
 	(*optimization settings*)
 	{eta, maxItt, thresh} = OptionValue[{DixonTollerance, DixonIterations, DixonMaskThreshhold}];
 
-	(*metabolite frequencies and amplitudes*)
-	freqs = GyromagneticRatio[OptionValue[DixonNucleus]] Times@@OptionValue[{DixonPrecessions, DixonFieldStrength, DixonFrequencies}] ;
-	amps = #/Total[#] &/@ OptionValue[DixonAmplitudes];
-	
 	(*define filter*)
 	{filti, filto} = OptionValue[{DixonFilterInput, DixonFilterOutput}];
 	filtFunc = Switch[OptionValue[DixonFilterType],"Median", MedFilter, "Laplacian",LapFilter][#, OptionValue[DixonFilterSize]]&;
@@ -300,6 +298,31 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		sf = ((1. - Exp[-tr/t1f]) Sin[fa Degree])/(1 - Exp[-tr/t1f] Cos[fa Degree]);
 		sw = ((1. - Exp[-tr/t1m]) Sin[fa Degree])/(1 - Exp[-tr/t1m] Cos[fa Degree]);
 		sf/sw
+	];
+
+	(*metabolite frequencies and amplitudes*)
+	mod = Expand[{9, 6 (cll - 4) - 8 ndb + 2 nmidb, 6, 4 (ndb - nmidb), 6, 2 nmidb, 4, 1, 2 ndb}];
+	freqs = GyromagneticRatio[OptionValue[DixonNucleus]] Times@@OptionValue[{DixonPrecessions, DixonFieldStrength, DixonFrequencies}];
+	amps = OptionValue[DixonAmplitudes];
+
+	(*specific for proton fat*)
+	Which[StringQ[amps],
+		(*use the model and fit the cl and the ndb*)
+		amps = {
+			amps = mod /. {nmidb -> 0.8, cll -> 0, ndb -> 0},
+			mod - amps /. {nmidb -> 0.8, cll -> 1, ndb -> 0},
+			mod - amps /. {nmidb -> 0.8, cll -> 0, ndb -> 1}
+		};
+		freqs = Prepend[ConstantArray[freqs[[2]], Length@amps],freqs[[1]]];
+		amps = Prepend[amps, 2];	
+		,
+		(*use the model but with specified {cl,ndb, nmidb}*)
+		Length[amps]===3,
+		amps =  # / Total[#] &/@{{1}, mod} /. Thread[{cll, ndb, nmidb}->amps];
+		,
+		(*use the given amplitudes*)
+		True,
+		amps = #/Total[#] &/@ amps;
 	];
 
 	(*figure out which phases to fit*)
@@ -314,11 +337,14 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	matA = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
 	matA = Join[Join[Re@matA, Im@matA], Join[-Im@matA, Re@matA], 2];
 	matAi = PseudoInverse@matA;
+	n = Length@matAi;
 
 	(* {r2, b0, bp, init, bpt} *)
 	vec = {-echo, 2 Pi echo, 2 Pi  vp, 2 Pi v1, 2 Pi vp echo};
 	matC = N@Transpose[{1, I, I, I, I} vec][[All,sel]];
 	mat = N@Transpose[Join[{1, -1, -1, -1, -1} vec, vec, 2]][[All,sel]];
+
+	(*---- start with actual input data ----*)
 
 	(*create data for fit*)
 	If[mon, PrintTemporary["Prepairing data and field maps"]];
@@ -331,51 +357,61 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	
 	(*define data and complex field map and background phase for fitting*)
 	complex = RotateDimensionsLeft@MaskData[complex, mask];
-
 	r2 = If[t2i === 0, 0, DevideNoZero[1., Clip[t2i, {0., 0.075}, {0., 0.075}]]];
 	phi = {r2, b0i, phbi, ph0i, 0}[[sel]];
 	phi = If[# === 0||# === zero, zero, mask If[filti, filtFunc[#], #]]& /@ phi;
 	phi = RotateDimensionsLeft@phi;
 
+	(*---- the actual fitting ----*)
+
 	(*perform the dixon reconstruction*)
 	If[mon, PrintTemporary["Performing dixon iDEAL reconstruction"]];
 	result = RotateDimensionsRight@Chop@DixonFitC[complex, phi, mask, matC, matA, matAi, mat, eta, maxItt, sel];
 
-	{wat, fat, watc, fatc} = result[[1 ;; 4]];
-	{res, itt} = result[[5 ;; 6]];
-	phi = result[[7 ;;]];
+	(*get the results*)
+	{res, itt} = result[[n+1 ;; n+2]];
+	phi = result[[n+3 ;;]];
 
 	(*filter the output phase maps if needed and then recalculate the water fat fractions*)
 	If[filto,
 		If[mon, PrintTemporary["Filtering field estimation and recalculating signal fractions"]];
 		(*smooth b0 field and R2star maps*)
 		phi = mask RotateDimensionsLeft@If[First[sel]===1,
-				Join[{DevideNoZero[1., filtFunc[DevideNoZero[1., Ramp@First[phi]]]]}, filtFunc/@ Rest[phi]],
-				filtFunc /@ phi
-			];
+			Join[{DevideNoZero[1., filtFunc[DevideNoZero[1., Ramp@First[phi]]]]}, filtFunc/@ Rest[phi]],
+			filtFunc /@ phi];
 		(*recalculate the water fat signals*)
-		{wat, fat, watc, fatc, res} = RotateDimensionsRight@Chop[DixonFitFC[complex, phi, mask, matC, matA, matAi]];
+		result = RotateDimensionsRight@Chop@DixonFitFC[complex, phi, mask, matC, matA, matAi];
+		res = result[[-1]];
 		phi = RotateDimensionsRight[phi];
 	];
-	
+
+	(*Fitted signal*)
+	signal = scale Clip[result, {-2,2} max];
+	signal = signal[[1 ;; Ceiling[n/2]]] + signal[[Ceiling[n/2] + 1 ;; n]] I;
+
+	(*---- All the bookkeeping for the outputs ----*)
+
 	(*create the output*)
 	If[mon, PrintTemporary["Generating all the needed outputs"]];
-	
-	(*fraction*)
-	fraction = DixonToPercent[wat, fat, OptionValue[DixonClipFraction]];
-
-	(*Fitted complex signal and residuals*)
-	
-	{wat, fat} = Clip[{t1c mask wat, mask fat}, {0., max}];
-	{watc, fatc} = Clip[{t1c mask watc, mask fatc}, {0., max}];
-	signal = scale Chop[{wat + watc I, fat + fatc I}];
-	res = scale Clip[Chop[Abs[res]], range];
 
 	(*in\out phase data*)
 	iop = {0, 0.5}/Abs[Total[(amps[[2]]^2) freqs[[2]]]/Total[amps[[2]]^2]];
 	matA = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ iop;
-	iop = scale Clip[Chop[RotateDimensionsRight[InOutPhase[wat + watc I, fat + fatc I, matA]]], {0., max}];
-	
+	iop = scale Clip[Chop[RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]]], {0., max}];
+
+	(*correct the signals if the model is used*)
+	If[StringQ[OptionValue[DixonAmplitudes]],
+		(*signal is {wat, fat, cl, ndb}*)
+		signal[[3]] = Clip[Re@DevideNoZero[signal[[3]], signal[[2]], "Comp"], {0, 25}];
+		signal[[4]] = Clip[Re@DevideNoZero[signal[[4]], signal[[2]], "Comp"], {0,5}];
+		(*signal[[{3, 4}]]=filtFunc/@signal[[{3, 4}]];*)
+		signal[[{1, 2}]] = {2 signal[[1]], (6 signal[[3]] - 2 signal[[4]] + 2) signal[[2]]};
+	];
+
+	(*fraction and residuals*)
+	fraction = DixonToPercent[signal[[1]], signal[[2]], OptionValue[DixonClipFraction]];
+	res = scale Clip[Chop[Abs[res]], {0., max}];
+
 	(*estimate b0 and t2star*)
 	phi = If[MemberQ[sel, 1], {Rest@phi, {DevideNoZero[1, First@phi], First@phi}}, phi];
 
@@ -387,11 +423,15 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 (* ::Subsubsection::Closed:: *)
 (*InOutPhase*)
 
-
+(*
 InOutPhase = Compile[{{wat, _Complex, 0}, {fat, _Complex, 0}, {matA, _Complex, 2}},
 	Abs[matA . {wat, fat}]
 , RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+*)
 
+InOutPhase = Compile[{{sig, _Complex, 1}, {matA, _Complex, 2}},
+	Abs[matA . sig]
+, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 (* ::Subsubsection::Closed:: *)
 (*DixonFit*)
@@ -410,7 +450,7 @@ DixonFitC = Compile[{
 	rho = 0. matA[[1]];
 	res = 0. ydat;
 
-	w = {1, 1000, 1, 1000, 1000}[[sel]];
+	w = {1, 1, 100, 100, 100}[[sel]];
 	rms = 0.;
 
 	(*loop parameters*)
@@ -422,6 +462,7 @@ DixonFitC = Compile[{
 		While[continue,	i++;
 			(*update the field map*)
 			phiEst += dPhi;
+			(*phiEst[[1]] = Ramp@phiEst[[1]];*)
 			
 			(*define complex field map P(-phi) or (E D)^-1 and demodulate signal phase*)
 			sig = Exp[-matC . phiEst] ydat;
@@ -462,7 +503,7 @@ DixonFitFC = Compile[{
 
 		(*initialize variables*)
 		l = Length[ydat];
-		rho = {0., 0., 0., 0.};
+		rho = 0. matA[[1]];
 		rms = 0.;
 
 		If[mask > 0,
@@ -1259,6 +1300,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	(*give output*)
 	{ph, ph1, ph0} = hz {ph, ph1, ph0} / (2 Pi);
 	{ph, t2s, ph1, ph0} = ReverseCrop[#, dm, cr] & /@ {ph, t2s, ph1, ph0};
+	ph1 = Unitize[ph1] (ph1 + (0 - Floor[MeanNoZero[Flatten[ph1]], 0.5]));
 	{{ph, t2s, ph1, ph0}, {e1, e2, n}}
 ]
 

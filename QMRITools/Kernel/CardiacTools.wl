@@ -377,17 +377,17 @@ HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?
 
 	(*create helix angle maps*)
 	out = Flatten[Table[
-		evec = Map[Reverse, data[[All,All,All,All,i]], {3}];
+		evec = Map[Reverse, data[[All,All,All,(*All,*)i]], {3}];
 		(*align vector with projection vector*)
 		evec = SignNoZero[DotC[{norvec,radvec,cirvec}[[j]],evec]] evec;
 		(*Helix,Transverse,Sheet}*)
 		projection = MakePerpendicular[evec, {radvec,cirvec,norvec}[[j]]];
-		inp = DotC[projection,{cirvec,norvec,radvec}[[j]]];
+		inp = DotC[projection, {cirvec,norvec,radvec}[[j]]];
 		helix = ArcCos[Abs[inp]]/Degree;
 		
 		(*keep sign only for helix[[1,1]]*)
-		If[(j==1 && i==1), SignNoZero[inp], 1] helix;
-	, {i, 3}, {j, 3}],1];
+		If[(j==1 && i==1), SignNoZero[inp], 1] helix
+	, {i, 3}, {j, 3}], 1];
 
 	If[OptionValue[ShowPlot], {Re@out,plots}, Re@out]
 ]
