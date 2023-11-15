@@ -976,7 +976,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*-----*)AddToLog["Starting Dixon reconstruction",4];
 							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {{b0, phi, phbp}, {t2star, r2star}}, itt, res} = DixonReconstruct[{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
 								DixonBipolar->True, DixonInitial->True, 
-								DixonClipFraction->True, DixonAmplitudes -> {15, 3.0, 0.75}];
+								DixonClipFraction->True, DixonAmplitudes -> {15.5, 3.0, 0.75}];
 							
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:",4];

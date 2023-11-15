@@ -169,7 +169,7 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 	nuc = OptionValue[SimNucleus];
 	gyro = GyromagneticRatio[nuc];
 	
-	sys = If[StringQ[sysi],GetSpinSystem[sysi, CenterFrequency -> OptionValue[CenterFrequency]],sysi];
+	sys = If[StringQ[sysi],GetSpinSystem[sysi, CenterFrequency -> OptionValue[CenterFrequency]], sysi];
 	
 	(*define frequencys*)
 	{sysJ,sysS,scale,sysSi,names,it,name} = sys;
@@ -460,7 +460,7 @@ SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
 	{valD, matU, nSpins2, Fxy, Ixy} = {"Hval","Hvec","nSpins2","wFxy","wIxy"}/.ham;
 	(*evlolve matrix*)
 	dt = 1./bandwidth;
-	devolve = SimEvolveM[matU,valD,dt];
+	devolve = SimEvolveM[matU, valD, dt];
 	(*initial signal and spin state*)
 	di = din;
 	

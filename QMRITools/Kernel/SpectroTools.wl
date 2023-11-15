@@ -1390,7 +1390,8 @@ Options[PlotSpectra] = {
 	AspectRatio -> .2, 
 	ImageSize -> 750, 
 	PlotLabel -> None,
-	CenterFrequency -> 0.
+	CenterFrequency -> 0.,
+	Filling->False
 };
 
 SyntaxInformation[PlotSpectra] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
@@ -1431,10 +1432,10 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		col = If[OptionValue[PlotColor] === Automatic, ({Gray, {Red, Thin}, {Thick, Black}}[[-Length[fun] ;;]]), OptionValue[PlotColor]];
 		
 		(*Make the plot*)
-		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, None}, AspectRatio -> OptionValue[AspectRatio],
+		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0}}, AspectRatio -> OptionValue[AspectRatio],
 			ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], ScalingFunctions -> {"Reverse", Automatic},
 			Frame -> {{False, False}, {True, False}}, FrameStyle -> Directive[{Thick, Black}], FrameLabel -> {"PPM", None},
-			LabelStyle -> {Bold, 14, Black}
+			LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Filling->OptionValue[Filling]
 		]
 		
 		,
@@ -1462,7 +1463,8 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		pl1 = ListLinePlot[plot, Frame -> {{False, False}, {True, False}}, FrameStyle -> Thickness[.003], FrameTicksStyle -> Thickness[.003],
 			PlotRange -> rr, PlotRangeClipping -> True, PlotStyle -> cols, ScalingFunctions -> {"Reverse", Automatic}, PlotLabel -> OptionValue[PlotLabel], 
 			PlotLabels ->If[(OptionValue[Method] === "ReIm") || (lables === None), None, (Style[#, Black, Bold, 14] & /@ Append[lables, "All"])],
-			GridLines -> {grid, None}, PlotRange -> rr, AspectRatio -> .5, ImageSize -> 1000, FrameLabel -> {"PPM", None}, LabelStyle -> {Bold, 14, Black}
+			GridLines -> {grid, None}, AspectRatio -> .5, ImageSize -> 1000, FrameLabel -> {"PPM", None}, LabelStyle -> {Bold, 14, Black}, 
+			PerformanceGoal->"Speed", MaxPlotPoints->Infinity
 		];
 		
 		(*make Im plot if needed*)
@@ -1474,8 +1476,8 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 				PlotRange -> rr, PlotRangeClipping -> True, PlotStyle -> cols2, ScalingFunctions -> {"Reverse", Automatic},
 				PlotLabels -> (Style[#, Black, Bold, 14] & /@ Append[OptionValue[PlotLabels], "All"]), PlotLabel -> OptionValue[PlotLabel],
 				GridLines -> {grid, None}, PlotRange -> rr, AspectRatio -> .5, 
-				ImageSize -> 1000, FrameLabel -> {"PPM", None},
-				LabelStyle -> {Bold, 14, Black}
+				ImageSize -> 1000, FrameLabel -> {"PPM", None}, MaxPlotPoints->Infinity,
+				LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed"
 			];
 			
 			Show[pl2, pl1]

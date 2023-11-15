@@ -248,6 +248,7 @@ Options[DixonReconstruct] = {
 	DixonPhases -> {True, True, False, False, False},
 	DixonClipFraction -> False,
 	DixonCorrectT1-> False,
+	DixonFixT2 ->False,
 	MonitorCalc -> False
 };
 
@@ -265,9 +266,9 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_}, opts : OptionsPatte
 
 DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPattern[]] := Block[{
 		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n,
-		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, r2, phi, mod, cll, ndb, nmidb,
-		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero,
-		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop
+		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, r2, phi, mod, cl, db, idb,
+		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero, ls, amp,
+		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop, modApply
 	},
 	
 	(*algorithem is base on: *)	
@@ -302,28 +303,40 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	];
 
 	(*metabolite frequencies and amplitudes*)
-	mod = Expand[{9, 6 (cll - 4) - 8 ndb + 2 nmidb, 6, 4 (ndb - nmidb), 6, 2 nmidb, 4, 1, 2 ndb}];
+	mod = Expand[{9, 6 (cl - 4) - 8 db + 2 idb, 6, 4 (db - idb), 6, 2 idb, 4, 1, 2 db}];
+	modApply = Expand[#1 /. Thread[{cl, db, idb} -> #2]] &;
+
 	freqs = GyromagneticRatio[OptionValue[DixonNucleus]] Times@@OptionValue[{DixonPrecessions, DixonFieldStrength, DixonFrequencies}];
-	amps = OptionValue[DixonAmplitudes];
+	amp = OptionValue[DixonAmplitudes];
 
 	(*specific for proton fat*)
-	Which[StringQ[amps],
+	Which[StringQ[amp],
 		(*use the model and fit the cl and the ndb*)
-		amps = {
-			amps = mod /. {nmidb -> 0.8, cll -> 0, ndb -> 0},
-			mod - amps /. {nmidb -> 0.8, cll -> 1, ndb -> 0},
-			mod - amps /. {nmidb -> 0.8, cll -> 0, ndb -> 1}
-		};
+		amps = Switch[amp,
+			"Full", (*fitting full fat model*)
+			mout = {cl, db, idb};
+			{amps = modApply[mod, {0., 0., 0.}], modApply[mod, {1., 0., 0.}] - amps, modApply[mod, {0., 1., 0.}] - amps, modApply[mod, {0., 0., 1.}] - amps},
+			"Call", (*fitting calibrated fat model*)
+			mout = {cl};
+			mod = modApply[mod, {cl, 0.11 cl + 1.06, -0.08 cl + 2.08}];
+			{amps = modApply[mod, {0, 0, 0}], modApply[mod, {1, 0, 0}] - amps},
+			"CallDB", (*fitting calibrated fat model*)
+			mout = {db};
+			mod = modApply[mod, {2.82 + 7.63 db, db, 0.56 + 0.09 db}];
+			{amps = modApply[mod, {0, 0, 0}], modApply[mod, {0, 1, 0}] - amps},
+			_,
+			{amps = modApply[mod, {0., 0., 0.8}], modApply[mod, {1., 0., 0.8}] - amps, modApply[mod, {0., 1., 0.8}] - amps}
+		];
 		freqs = Prepend[ConstantArray[freqs[[2]], Length@amps],freqs[[1]]];
-		amps = Prepend[amps, 2];	
+		amps = Prepend[amps, 20];
 		,
 		(*use the model but with specified {cl,ndb, nmidb}*)
-		Length[amps]===3,
-		amps =  # / Total[#] &/@{{1}, mod} /. Thread[{cll, ndb, nmidb}->amps];
+		Length[amp]===3,
+		amps =  # / Total[#] &/@ {{1}, modApply[mod, amp]};
 		,
 		(*use the given amplitudes*)
 		True,
-		amps = #/Total[#] &/@ amps;
+		amps = #/Total[#] &/@ amp;
 	];
 
 	(*figure out which phases to fit*)
@@ -336,6 +349,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	v1 = ConstantArray[1, ne];
 
 	matA = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
+	If[OptionValue[DixonFixT2], matA = Transpose[Join[{Exp[(-1/30.) echo]}, ConstantArray[Exp[(-1/100.) echo], Length[matA[[1]]] - 1]]] matA];
 	matA = Join[Join[Re@matA, Im@matA], Join[-Im@matA, Re@matA], 2];
 	matAi = PseudoInverse@matA;
 	n = Length@matAi;
@@ -377,11 +391,8 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	If[filto,
 		If[mon, PrintTemporary["Filtering field estimation and recalculating signal fractions"]];
 		(*smooth b0 field and R2star maps*)
-		phi = mask RotateDimensionsLeft@If[First[sel]===1,
-			phi[[1]] = mask (-(Ramp[-(Ramp[phi[[1]] - 4] + 4) + 200] - 200));
-			filtFunc /@ phi,
-			(*Join[{DevideNoZero[1., filtFunc[DevideNoZero[1., Ramp@First[phi]]]]}, filtFunc/@ Rest[phi]],*)
-			filtFunc /@ phi];
+		If[First[sel]===1, phi[[1]] = mask (-(Ramp[-(Ramp[phi[[1]] - 5] + 5) + 150] - 150))];
+		phi = mask RotateDimensionsLeft[filtFunc /@ phi];
 		(*recalculate the water fat signals*)
 		result = RotateDimensionsRight@Chop@DixonFitFC[complex, phi, mask, matC, matA, matAi];
 		res = result[[-1]];
@@ -389,7 +400,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	];
 
 	(*Fitted signal*)
-	signal = scale Clip[result, {-2,2} max];
+	signal = scale Clip[result[[1;;n]], {-2,2} max];
 	signal = signal[[1 ;; Ceiling[n/2]]] + signal[[Ceiling[n/2] + 1 ;; n]] I;
 
 	(*---- All the bookkeeping for the outputs ----*)
@@ -403,16 +414,14 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	iop = scale Clip[Chop[RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]]], {0., max}];
 
 	(*correct the signals if the model is used*)
-	If[StringQ[OptionValue[DixonAmplitudes]],
-		(*signal is {wat, fat, cl, ndb}*)
-		signal[[3]] = Clip[Re@DevideNoZero[signal[[3]], signal[[2]], "Comp"], {0, 25}];
-		signal[[4]] = Clip[Re@DevideNoZero[signal[[4]], signal[[2]], "Comp"], {0,5}];
-		(*signal[[{3, 4}]]=filtFunc/@signal[[{3, 4}]];*)
-		signal[[{1, 2}]] = {2 signal[[1]], (6 signal[[3]] - 2 signal[[4]] + 2) signal[[2]]};
+	If[StringQ[amp],
+		ls = Range[3, Length@signal];
+		signal[[ls]] = Abs@DevideNoZero[signal[[#]], signal[[2]], "Comp"] &/@ ls;
+		signal[[{1, 2}]] =  {amps[[1]], Total[mod] /. Thread[mout -> signal[[ls]]]} signal[[1;;2]];
 	];
 
 	(*fraction and residuals*)
-	fraction = DixonToPercent[signal[[1]], signal[[2]], OptionValue[DixonClipFraction]];
+	fraction = DixonToPercent[t1c signal[[1]], signal[[2]], OptionValue[DixonClipFraction]];
 	res = scale Clip[Chop[Abs[res]], {0., max}];
 
 	(*estimate b0 and t2star*)
@@ -568,7 +577,7 @@ OptimizeDixonEcho[ops:OptionsPattern[]]:=OptimizeDixonEcho[1,1,ops]
 
 OptimizeDixonEcho[fi_,di_,OptionsPattern[]]:=Manipulate[
 	fr = 297.466/(field GyromagneticRatio["1H"]);
-	echos = first + Range[0,necho-1]delta;
+	echos = first + Range[0,necho-1] delta;
 	pts = Transpose[Through[{Im,Re}[Exp[-2Pi echos/fr I]]]];
 	e = FindInPhaseEchos[echos, fr,DixonBipolar -> bip];
 	pre = Table[1/n -> Ceiling[n/2] fr/n, {n, 2, 7}];
