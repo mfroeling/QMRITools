@@ -322,7 +322,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 			{amps = modApply[mod, {0, 0, 0}], modApply[mod, {1, 0, 0}] - amps},
 			"CallDB", (*fitting calibrated fat model*)
 			mout = {db};
-			mod = modApply[mod, {2.82 + 7.63 db, db, 0.56 + 0.09 db}];
+			mod = modApply[mod, {16.8 + 0.25 db, db, 0.35 db}];
 			{amps = modApply[mod, {0, 0, 0}], modApply[mod, {0, 1, 0}] - amps},
 			_,
 			{amps = modApply[mod, {0., 0., 0.8}], modApply[mod, {1., 0., 0.8}] - amps, modApply[mod, {0., 1., 0.8}] - amps}
