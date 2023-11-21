@@ -43,6 +43,9 @@ The fractions are between 0 and 1, the B0 field map is in Hz and the T2start map
 
 DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737 (10.1002/nbm.3766)."
 
+GenerateAmps::usage = 
+"GenerateAmps[amp_]"
+
 
 FixDixonFlips::usage = 
 "FixDixonFlips[{mag, phase, real, imag}] checks if any volumes are 180 degrees out of phase and corrects them."
@@ -131,6 +134,9 @@ DixonFilterType::usage =
 
 DixonCorrectT1::usage = 
 "DixonCorrectT1 is an option for DixonReconstruct. To perform T1 correction provide the TR and FA as a list, {TR, FA}. TR is in ms and FA in degrees."
+
+DixonFixT2::usage = 
+"DixonFixT2 is an option for DixonReconstruct. If set to true the R2' is fitted rather then the R2*. This is done by fixing T2-water to 30ms and T2-fat to 100ms."
 
 MonitorUnwrap::usage = 
 "MonitorUnwrap is an option for Unwrap. Monitor the unwrapping progress."
@@ -236,8 +242,8 @@ Options[DixonReconstruct] = {
 	DixonPrecessions -> 1, 
 	DixonFieldStrength -> 3, 
 	DixonNucleus -> "1H",
-	DixonFrequencies -> ({{4.7}, {0.89, 1.3, 1.58, 2.03, 2.25, 2.76, 4.19, 5.22, 5.32 }} - 4.7),
-	DixonAmplitudes -> {{1}, {0.089, 0.593, 0.059, 0.081, 0.059, 0.015, 0.039, 0.01, 0.055}},(*{cl -> 17.5, ndb -> 2.8, nmidb -> 0.75}*)
+	DixonFrequencies -> ({{4.7}, {0.89, 1.3, 1.58, 2.03, 2.25, 2.76, 4.07, 4.3, 5.22, 5.32}} - 4.7),
+	DixonAmplitudes -> {{1}, {0.089, 0.593, 0.059, 0.081, 0.059, 0.015, 0.02, 0.02, 0.01, 0.055}},(*{cl -> 17.5, ndb -> 2.8, nmidb -> 0.75}*)
 	DixonIterations -> 20, 
 	DixonTollerance -> 0.1, 
 	DixonMaskThreshhold -> 0.1,
@@ -265,7 +271,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_}, opts : OptionsPatte
 
 
 DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPattern[]] := Block[{
-		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n,
+		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n, mout,
 		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, r2, phi, mod, cl, db, idb,
 		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero, ls, amp,
 		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop, modApply
@@ -303,58 +309,25 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	];
 
 	(*metabolite frequencies and amplitudes*)
-	mod = Expand[{9, 6 (cl - 4) - 8 db + 2 idb, 6, 4 (db - idb), 6, 2 idb, 4, 1, 2 db}];
-	modApply = Expand[#1 /. Thread[{cl, db, idb} -> #2]] &;
-
 	freqs = GyromagneticRatio[OptionValue[DixonNucleus]] Times@@OptionValue[{DixonPrecessions, DixonFieldStrength, DixonFrequencies}];
-	amp = OptionValue[DixonAmplitudes];
-
-	(*specific for proton fat*)
-	Which[StringQ[amp],
-		(*use the model and fit the cl and the ndb*)
-		amps = Switch[amp,
-			"Full", (*fitting full fat model*)
-			mout = {cl, db, idb};
-			{amps = modApply[mod, {0., 0., 0.}], modApply[mod, {1., 0., 0.}] - amps, modApply[mod, {0., 1., 0.}] - amps, modApply[mod, {0., 0., 1.}] - amps},
-			"Call", (*fitting calibrated fat model*)
-			mout = {cl};
-			mod = modApply[mod, {cl, 0.11 cl + 1.06, -0.08 cl + 2.08}];
-			{amps = modApply[mod, {0, 0, 0}], modApply[mod, {1, 0, 0}] - amps},
-			"CallDB", (*fitting calibrated fat model*)
-			mout = {db};
-			mod = modApply[mod, {16.8 + 0.25 db, db, 0.35 db}];
-			{amps = modApply[mod, {0, 0, 0}], modApply[mod, {0, 1, 0}] - amps},
-			_,
-			{amps = modApply[mod, {0., 0., 0.8}], modApply[mod, {1., 0., 0.8}] - amps, modApply[mod, {0., 1., 0.8}] - amps}
-		];
-		freqs = Prepend[ConstantArray[freqs[[2]], Length@amps],freqs[[1]]];
-		amps = Prepend[amps, 20];
-		,
-		(*use the model but with specified {cl,ndb, nmidb}*)
-		Length[amp]===3,
-		amps =  # / Total[#] &/@ {{1}, modApply[mod, amp]};
-		,
-		(*use the given amplitudes*)
-		True,
-		amps = #/Total[#] &/@ amp;
-	];
+	{amps, mout} = GenerateAmps[OptionValue[DixonAmplitudes]];
+	freqs = Join[{freqs[[1]]}, ConstantArray[freqs[[2]], Length[amps] - 1]];
 
 	(*figure out which phases to fit*)
 	sel = Boole[OptionValue[DixonPhases]];
 	sel = Flatten[Position[sel, 1]];
 
 	(*define the water fat and phase matrixes*)
-	ne = Length[echo];
-	vp = (-1)^Range[ne];
-	v1 = ConstantArray[1, ne];
-
 	matA = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
-	If[OptionValue[DixonFixT2], matA = Transpose[Join[{Exp[(-1/30.) echo]}, ConstantArray[Exp[(-1/100.) echo], Length[matA[[1]]] - 1]]] matA];
+	matA = If[OptionValue[DixonFixT2], Transpose[Join[{Exp[(-1/30.) echo]}, ConstantArray[Exp[(-1/100.) echo], Length[matA[[1]]] - 1]]], 1] matA;
 	matA = Join[Join[Re@matA, Im@matA], Join[-Im@matA, Re@matA], 2];
 	matAi = PseudoInverse@matA;
 	n = Length@matAi;
 
 	(* {r2, b0, bp, init, bpt} *)
+	ne = Length[echo];
+	vp = (-1)^Range[ne];
+	v1 = ConstantArray[1, ne];
 	vec = {-echo, 2 Pi echo, 2 Pi  vp, 2 Pi v1, 2 Pi vp echo};
 	matC = N@Transpose[{1, I, I, I, I} vec][[All,sel]];
 	mat = N@Transpose[Join[{1, -1, -1, -1, -1} vec, vec, 2]][[All,sel]];
@@ -409,15 +382,15 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	If[mon, PrintTemporary["Generating all the needed outputs"]];
 
 	(*in\out phase data*)
-	iop = {0, 0.5}/Abs[Total[(amps[[2]]^2) freqs[[2]]]/Total[amps[[2]]^2]];
+	iop = {0, 0.5} / Abs[Total[Flatten[(amps[[2 ;;]]^2) freqs[[2 ;;]]]] / Total[Flatten[amps[[2 ;;]]]^2]];
 	matA = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ iop;
 	iop = scale Clip[Chop[RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]]], {0., max}];
 
 	(*correct the signals if the model is used*)
-	If[StringQ[amp],
+	If[mout[[2]] =!= None,
 		ls = Range[3, Length@signal];
-		signal[[ls]] = Abs@DevideNoZero[signal[[#]], signal[[2]], "Comp"] &/@ ls;
-		signal[[{1, 2}]] =  {amps[[1]], Total[mod] /. Thread[mout -> signal[[ls]]]} signal[[1;;2]];
+		signal[[ls]] = Ramp@DevideNoZero[Abs@signal[[#]], Abs@signal[[2]]] &/@ ls;
+		signal[[1;;2]] = {amps[[1, 1]], mout[[1]] /. Thread[mout[[2]] -> signal[[ls]]]} signal[[1;;2]];
 	];
 
 	(*fraction and residuals*)
@@ -528,6 +501,59 @@ DixonFitFC = Compile[{
 		Join[rho, {rms}]
 	]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*GenerateAmps*)
+
+
+GenerateAmps[ampi_] := Block[{mout, modC, mod, amp, amps, cl, db, idb},
+	With[{
+		modApply = Expand[#1 /. Thread[{cl, db, idb} -> #2]] &,
+		modPar = Switch[#, cl, {1, 0, 0}, db, {0, 1, 0}, idb, {0, 0, 1}] &
+	},
+
+	(*general model definition*)
+	mod = Expand[{9, 6 (cl - 4) - 8 db + 2 idb, 6, 4 (db - idb), 6, 2 idb, 2, 2, 1, 2 db}];
+	mout = modC = None;
+
+	(*convert string in predifined models*)
+	amp = If[StringQ[ampi], Switch[ampi,
+		"Fixed", {16.7, 3.5, 0.9},
+		"FitCL", {cl, 3.5, 0.9},
+		"FitDB", {16.7, db, 0.9},
+		"FitIDB", {16.7, 3.5, idb},
+		(*
+		"CallCL", {cl, -1.20506 + 0.269827 cl, -6.33544 + 0.427702 cl},
+		"CallBB", {16.6897 + 0.118954 db, db, -1.02077 + 0.586008 db},
+		"CallIDB", {16.6726 + 0.432745 idb, 2.09481 + 1.34493 idb, idb},
+		*)
+		"CallCL", {1. cl,5.7 -0.13 cl,4.3 -0.2 cl},
+		"CallBB", {17.65 -0.25 db,1. db,-0.85+0.5 db},
+		"CallIDB", {17.61 - 0.94 idb, 2.45 + 1.18 idb, 1. idb},
+
+		"CallCL3", {18.0039 - 0.635511 db + 1.28747 idb, db, idb},
+		"CallDB3", {cl, 8.34317 - 0.374768 cl + 1.50711 idb, idb},
+		"CallIDB3", {cl, -5.66919 + 0.278521 cl + 0.552877 db, idb},
+		_, {16.7, 3.5, 0.9}
+	], ampi];
+
+	(*Either model based or traditional PD*)
+	amps = If[Length[amp] === 3,
+		(*use the model but with specified {cl,ndb,nmidb}*)
+		modC = modApply[mod, amp];
+		mout = Variables[Total[modC]];
+		amp = modApply[modC, {0, 0, 0}];
+		Join[{{20}, amp}, (modApply[modC, modPar[#]] - amp) & /@ mout]
+		,
+		(*use the given amplitudes*)
+		#/Total[#] & /@ amp
+	];
+
+	(*give the output*)
+	{amps, {Expand[Total[modC]], mout}}
+]]
 
 
 (* ::Subsection::Closed:: *)
@@ -1307,7 +1333,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	(*give output*)
 	{ph, ph1, ph0} = hz {ph, ph1, ph0} / (2 Pi);
 	{ph, t2s, ph1, ph0} = ReverseCrop[#, dm, cr] & /@ {ph, t2s, ph1, ph0};
-	ph1 = Unitize[ph1] (ph1 + (0 - Floor[MeanNoZero[Flatten[ph1]], 0.5]));
+	(*ph1 = Unitize[ph1] (ph1 + (0 - Floor[MeanNoZero[Flatten[ph1]], 0.5]));*)
 	{{ph, t2s, ph1, ph0}, {e1, e2, n}}
 ]
 

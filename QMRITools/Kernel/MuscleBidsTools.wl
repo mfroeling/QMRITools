@@ -974,15 +974,19 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							
 							(*perform the IDEAL dixon fit*)
 							(*-----*)AddToLog["Starting Dixon reconstruction",4];
-							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {{b0, phi, phbp}, {t2star, r2star}}, itt, res} = DixonReconstruct[{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-								DixonBipolar->True, DixonInitial->True, 
-								DixonClipFraction->True, DixonAmplitudes -> {15.5, 3.0, 0.75}];
-							
+							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {{b0, phi, phbp}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
+								DixonPhases -> {True, True, True, True, False},
+								DixonClipFraction->True, DixonAmplitudes -> {15.5, 3.0, 0.75}
+							];
+							{wat, fat} = Abs[wat, fat];
+
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:",4];
 							(*----*)AddToLog[outfile,5];
-							outTypes = {"real", "imag", "mag", "ph", "b0i", "phii", "t2stari", "phbpi", "b0", "phi", "phbp", "t2star", "r2star", 
-								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res"};
+							outTypes = {"real", "imag", "mag", "ph", "b0i", "phii", "t2stari", "phbpi", 
+								"b0", "phi", "phbp", "t2star", "r2star", "inph", "outph", 
+								"wat", "fat", "watfr", "fatfr", "itt", "res"};
 							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 							
 							(*export the checkfile*)
@@ -1365,6 +1369,9 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 
 				{target, vox} = Transpose[ImportNii/@targets];
 				voxt = First@vox;
+				(* make data real valued*)
+				target = If[RealQ[target[[1, 1, 1, 1]]],target,Abs[target]];
+				
 				(*-----*)AddToLog[{"Joining the primary datatype",If[motion,"with","without"],"motion correction"}, 4];
 				If[nStac=!=1,
 					target = JoinSets[target, overT, voxt, ReverseSets->reverse, MotionCorrectSets->motion, 
@@ -1375,7 +1382,10 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 			
 			(*-----*)AddToLog[{"Importing and processing the moving data"}, 4];
 			(*import the moving data, only import multi dim if present*)
-			{moving, vox} = Transpose[(files=#;Transpose[ImportNii[#]&/@files])& /@movings];
+			{moving, vox} = Transpose[(files=#;Transpose[ImportNii[#]&/@files])&/@movings];
+			(* make data real valued*)
+
+			moving = If[RealQ[N@#[[1,1,1,1]]], #, Abs[#]] &/@ moving;
 			leng = Length[movs];
 			voxm = First@First@vox;
 			movingMD = If[movingsMD=!={},
@@ -1384,7 +1394,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 				Flatten[movingMD, {1, 4}],
 				{}];
 			movingA = Join[moving, movingMD];
-
+			
 			(*perform motion correction after target merging*)
 			(*If motion correction for joning is False and target is of same type no need for motion correction*)
 			If[!(!motion&&sameType), 
@@ -1399,16 +1409,17 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 					(*move the target from anatomical to native space*)
 					func = If[i===If[reverse, nStac, 1], RegisterData, RegisterDataSplit];
 					reg = ToPackedArray@N@Chop@func[{moving[[im,i]], mskm, voxm}, {target[[i]],voxt}, 
-						Iterations->300, PrintTempDirectory->False, BsplineSpacing->20 voxm, InterpolationOrderReg->1, NumberSamples -> 10000,
+						Iterations->300, BsplineSpacing->20 voxm, InterpolationOrderReg->1, NumberSamples -> 10000,
+						PrintTempDirectory->False,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]];
-						
+					
 					(*register back the target from native space to anatomy and tranfrom the rest*)
 					func = If[i===If[reverse, nStac, 1], RegisterDataTransform, RegisterDataTransformSplit];
 					ToPackedArray@N@Chop@Last@func[{target[[i]], mskt, voxt}, {reg, voxm}, {Transpose[movingA[[All,i]]], voxm},
 						Iterations->300,  BsplineSpacing->10 voxm, InterpolationOrderReg->1, NumberSamples -> 10000, 
 						PrintTempDirectory->False, DeleteTempDirectory->False,
 						MethodReg->Switch[movType, "dix", "rigid", "quant", {"rigid","affine"}, _, {"rigid","affine","bspline"}]]
-				,{i, 1, nStac}];
+				, {i, 1, nStac}];
 				
 				(*extract all parameters after registration*)
 				movingA = Transpose[movingA, {2,3,1,4,5}];
@@ -1428,7 +1439,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 				movingMD = Transpose[movingMD[[#[[1]];;#[[2]]]]] & /@ ({1, 0} + # & /@ Partition[Prepend[Accumulate[lengMD], 0], 2, 1]);
 				movingA = Join[moving, movingMD];
 			];
-			
+
 			(*export the joined data*)
 			(*----*)AddToLog["Exporting the calculated data to:", 4];
 			(*----*)AddToLog[outfile, 5];
