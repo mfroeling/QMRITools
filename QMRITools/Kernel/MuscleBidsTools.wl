@@ -885,7 +885,7 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPa
 
 
 MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
-		con, fol, parts, type, files, sets, dfile, nfile, process, keys, dfiles, jfile, nfiles,
+		con, fol, parts, type, files, sets, dfile, nfile, process, keys, dfiles, jfile, nfiles, phbpt,
 		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, phasediff, hz, b0i,
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
 		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
@@ -928,7 +928,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 				(*-------------------------------------------*)
 				
 				(*input file names*)
-				dfiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"", "ph", "real", "imag"};
+				dfiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"real", "imag"};
 				jfile = ConvertExtension[First@dfiles, ".json"];
 				nfiles = ConvertExtension[dfiles, ".nii"];
 				
@@ -954,14 +954,19 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*import the data*)
 							json = ImportJSON[jfile];
 							echos = json["EchoTime"];
-							{{mag, ph, real, imag}, dvox} = Transpose[ImportNii/@nfiles];
+							{{real, imag}, dvox} = Transpose[ImportNii/@nfiles];
 							dvox = First@dvox;
 							
 							(*Apply background mask*)
-							magM = NormalizeData[Mean@Transpose@mag];
+							magM = NormalizeData[Mean@Transpose@Abs[real + I imag]];
 							B0mask = Dilation[Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2], 1];
-							{mag, ph, real, imag} = MaskData[#,B0mask]&/@{mag,ph,real,imag};
+							{real, imag} = MaskData[#, B0mask] &/@ {real, imag};
 							
+							{{real, imag}, sig} = PCADeNoise[{real, imag}, PCAKernel -> 5, Method -> "Patch", PCAComplex -> True];
+							mag = Abs[real + I imag];
+							ph = MaskData[Arg[real + I imag], B0mask];
+							snr = SNRCalc[Mean@Transpose@mag, sig];
+
 							(*see if there are dixon flips*)
 							(*{{mag, ph, real, imag}, pos} = FixDixonFlips[{mag, ph, real, imag}];
 							(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];*)
@@ -970,23 +975,22 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*calculated field maps*)
 							(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
 							{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
-							(*-----*)AddToLog[{"used echo ", ToString[e1], "(",1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
+							(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
 							
 							(*perform the IDEAL dixon fit*)
 							(*-----*)AddToLog["Starting Dixon reconstruction",4];
-							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {{b0, phi, phbp}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-								DixonPhases -> {True, True, True, True, False},
-								DixonClipFraction->True, DixonAmplitudes -> {15.5, 3.0, 0.75}
-							];
+								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> True,
+								DixonClipFraction->True, DixonAmplitudes -> {15.5, 3.0, 0.75}];
 							{wat, fat} = Abs[wat, fat];
 
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:",4];
 							(*----*)AddToLog[outfile,5];
 							outTypes = {"real", "imag", "mag", "ph", "b0i", "phii", "t2stari", "phbpi", 
-								"b0", "phi", "phbp", "t2star", "r2star", "inph", "outph", 
-								"wat", "fat", "watfr", "fatfr", "itt", "res"};
+								"b0", "phi", "phbp", "phbpt", "t2star", "r2star", "inph", "outph", 
+								"wat", "fat", "watfr", "fatfr", "itt", "res", "snr"};
 							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 							
 							(*export the checkfile*)
@@ -1221,8 +1225,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*-----*)AddToLog["Starting EPG T2 calculation", 4];
 							{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
 								MonitorCalc -> False, DictT2IncludeWater -> True, DictT2fValue -> 200, DictT2fRange -> {150, 250, 5}, 
-								DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}
-							];
+								DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}];
 							
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:", 4];
