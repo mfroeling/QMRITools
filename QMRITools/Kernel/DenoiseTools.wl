@@ -114,6 +114,9 @@ PCAClipping::usage =
 PCANoiseSigma::usage = 
 "PCANoiseSigma is an option of DenoiseCSIdata and can be \"Corners\" or \"Automatic\"."
 
+PCAComplex::uasge = 
+"PCAComplex is an option of PCADeNoise and can be True of False. If set true the input data is expexted to be {real, imag}."
+
 
 NNThreshhold::usage = 
 "NNThreshhold is an options for NNDeNoise and specifies the automated back ground masking value."
@@ -301,6 +304,7 @@ Options[PCADeNoise] = {
 	PCATollerance -> 0, 
 	PCAWeighting -> True, 
 	PCAClipping -> True,
+	PCAComplex->False,
 	Method -> "Similarity",
 	MonitorCalc -> False
 };
@@ -313,20 +317,20 @@ PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., 
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		wht, ker, tol, mon, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, 
-		m, n, off, datao, weights, sigmat, start, sigmati, nmati, 
+		m, n, off, datao, weights, sigmat, start, sigmati, nmati, clip, comp, len,
 		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
 		weight, posV, leng, nearPos, p, pi, pos, np
 	},
 	
-	mon = OptionValue[MonitorCalc];
-	wht = OptionValue[PCAWeighting];
 	(*tollerane if>0 more noise components are kept*)
-	tol = OptionValue[PCATollerance];
-	(*kernel size*)
-	ker = OptionValue[PCAKernel];
+	{mon, wht, tol, ker, clip, comp} = OptionValue[{MonitorCalc, PCAWeighting, PCATollerance, PCAKernel, PCAClipping, PCAComplex}];
 	
-	(*make everything numerical to speed up*)
-	data = ToPackedArray[N@datai];
+	(*concatinate complex data and make everything numerical to speed up*)
+	data = ToPackedArray@N@If[comp, 
+		clip = False;
+		Join[datai[[1]], datai[[2]], 2], 
+		datai
+	];
 	{min, max} = 1.1 MinMax[Abs[data]];
 	maskd = Unitize@Total@Transpose[data];
 	mask = ToPackedArray[N@(maski maskd)];
@@ -469,8 +473,13 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		sigmat = DevideNoZero[sigmat, weights];
 	];
 	
-	(*define output*)
-	If[OptionValue[PCAClipping], datao = Clip[datao, {min, max}]];
+	(*define output, split it if data is complex*)
+	datao = Which[
+		comp, len = Round[Length[datao[[1]]]/2]; {datao[[All,1;;len]], datao[[All,len+1;;-1]]},
+		clip, Clip[datao, {min, max}], 
+		True, datao
+	];
+
 	If[OptionValue[PCAOutput],
 		(*fitted dta,average sigma,{sigma fit,number components, number of fitted voxesl,number of max fits}*)
 		{datao, sigmat, output},
@@ -655,10 +664,10 @@ AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
 	];
 	
 	(*get the fixed parameters*)
-	tens=ToPackedArray@N@tensi;
-	mn=Mean[tens[[1;;3]]];
-	{kers,wts}=KernelWeights[];
-	lambda=1/Length[kers];
+	tens = ToPackedArray@N@tensi;
+	mn = Mean[tens[[1;;3]]];
+	{kers, wts} = KernelWeights[];
+	lambda = 1/Length[kers];
 	
 	(*filter the tensor*)
 	PrintTemporary["Anisotropic filtering of the tensor."];

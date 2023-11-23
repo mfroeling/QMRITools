@@ -520,33 +520,39 @@ GenerateAmps[ampi_] := Block[{mout, modC, mod, amp, amps, cl, db, idb},
 
 	(*convert string in predifined models*)
 	amp = If[StringQ[ampi], Switch[ampi,
-		"Fixed", {16.7, 3.5, 0.9},
-		"FitCL", {cl, 3.5, 0.9},
-		"FitDB", {16.7, db, 0.9},
-		"FitIDB", {16.7, 3.5, idb},
-		(*
-		"CallCL", {cl, -1.20506 + 0.269827 cl, -6.33544 + 0.427702 cl},
-		"CallBB", {16.6897 + 0.118954 db, db, -1.02077 + 0.586008 db},
-		"CallIDB", {16.6726 + 0.432745 idb, 2.09481 + 1.34493 idb, idb},
-		*)
-		"CallCL", {1. cl,5.7 -0.13 cl,4.3 -0.2 cl},
-		"CallBB", {17.65 -0.25 db,1. db,-0.85+0.5 db},
-		"CallIDB", {17.61 - 0.94 idb, 2.45 + 1.18 idb, 1. idb},
+		"Full", {cl, db, idb},
 
-		"CallCL3", {18.0039 - 0.635511 db + 1.28747 idb, db, idb},
-		"CallDB3", {cl, 8.34317 - 0.374768 cl + 1.50711 idb, idb},
-		"CallIDB3", {cl, -5.66919 + 0.278521 cl + 0.552877 db, idb},
-		_, {16.7, 3.5, 0.9}
+		(*models based on  https://doi.org/10.1002/mrm.28300, trinh et al.*)	
+		"Fixed", {17.31, 2.62, 0.46},
+		"FitCL", {cl, 2.62, 0.46},
+		"FitDB", {17.31, db, 0.46},
+		"FitIDB", {17.31, 2.62, idb},
+		"CallCL", {cl, -30.31 + 1.9 cl, -13.64 + 0.81 cl},
+		"CallDB", {16.29 + 0.39 db, db, -0.73 + 0.45 db},
+		"CallIDB", {17.06 + 0.56 idb, 1.93 + 1.52 idb, idb},
+
+		(*models based on full fitting own data, dont use!*)
+		"Fixedi", {13.95, 2.74, 0.6},
+		"FitCLi", {cl, 2.74, 0.6},
+		"FitDBi", {13.95, db, 0.6},
+		"FitIDBi", {13.95, 2.74, idb},
+		"CallCLi", {cl, 2.09 + 0.05 cl, 1.00 - 0.03 cl},
+		"CallDBi", {8.58 + 1.98 db, db, -0.20 + 0.29 db},
+		"CallIDBi", {16.71 - 4.56 idb, 2.11 + 1.05 idb, idb},
+
+		_, {17., 3., 1.}
+
 	], ampi];
 
 	(*Either model based or traditional PD*)
 	amps = If[Length[amp] === 3,
 		(*use the model but with specified {cl,ndb,nmidb}*)
 		modC = modApply[mod, amp];
-		mout = Variables[Total[modC]];
+		mout = Sort[DeleteDuplicates[Flatten[Variables /@ modC]]];
 		amp = modApply[modC, {0, 0, 0}];
 		Join[{{20}, amp}, (modApply[modC, modPar[#]] - amp) & /@ mout]
 		,
+
 		(*use the given amplitudes*)
 		#/Total[#] & /@ amp
 	];
