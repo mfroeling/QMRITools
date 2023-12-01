@@ -807,7 +807,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Min value",Control@{{min,mind,""},mind,max-(maxd-mind)/250,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Min Clipping", Row[{
-	        	Control@{{clipMin,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
+	        	Control@{{clipMin, "Custom", ""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
 	        	Control@{{minclip, Black, ""},  
 		Button[
 		Dynamic[Graphics[{minclip, Rectangle[]}, ImageSize -> {20, 20}]],
@@ -817,7 +817,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 								(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 					}]},
 					{"Max Clipping", Row[{
-						Control@{{clipMax,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
+						Control@{{clipMax, "Auto", ""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
 						Control@{{maxclip, White, "" },  
 		Button[
 		Dynamic[Graphics[{maxclip, Rectangle[]}, ImageSize -> {20, 20}]],
@@ -834,9 +834,9 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Color function",Control@{{color,pcol,""},colors,ControlType->PopupMenu}},
 			{"Color style",Control@{{lstyle,"Normal",""},colfuncs}},
 			{"Layout",Row@{
-				"  Legend:",Control@{{legend,False,""},{True,False}},
-				"  Frame:",Control@{{frame,False,""},{True,False}},
-				"  Label:",Control@{{lab,True,""},{True,False}}}}
+				"  Legend:",Control@{{legend, False, ""}, {True, False}},
+				"  Frame:",Control@{{frame, False, ""}, {True, False}},
+				"  Label:",Control@{{lab, False, ""}, {True, False}}}}
 		}]
 	}];
 	
