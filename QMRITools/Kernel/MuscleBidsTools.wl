@@ -885,7 +885,7 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPa
 
 
 MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
-		con, fol, parts, type, files, sets, dfile, nfile, process, keys, dfiles, jfile, nfiles, phbpt,
+		con, fol, parts, type, files, sets, dfile, nfile, process, keys, dfiles, jfile, nfiles, phbpt, dbond,
 		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, phasediff, hz, b0i,
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
 		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
@@ -962,6 +962,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							B0mask = Dilation[Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2], 1];
 							{real, imag} = MaskData[#, B0mask] &/@ {real, imag};
 							
+							(*----*)AddToLog["Starting denoising and SNR calculation", 4];
 							{{real, imag}, sig} = PCADeNoise[{real, imag}, PCAKernel -> 5, Method -> "Patch", PCAComplex -> True];
 							mag = Abs[real + I imag];
 							ph = MaskData[Arg[real + I imag], B0mask];
@@ -979,18 +980,18 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							
 							(*perform the IDEAL dixon fit*)
 							(*-----*)AddToLog["Starting Dixon reconstruction",4];
-							{{watfr, fatfr}, {wat, fat}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
 								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> True,
-								DixonClipFraction->True, DixonAmplitudes -> {15.5, 3.0, 0.75}];
-							{wat, fat} = Abs[wat, fat];
+								DixonClipFraction->True, DixonAmplitudes -> "CallDB"];
+							{wat, fat} = Abs[{wat, fat}];
 
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:",4];
 							(*----*)AddToLog[outfile,5];
 							outTypes = {"real", "imag", "mag", "ph", "b0i", "phii", "t2stari", "phbpi", 
 								"b0", "phi", "phbp", "phbpt", "t2star", "r2star", "inph", "outph", 
-								"wat", "fat", "watfr", "fatfr", "itt", "res", "snr"};
+								"wat", "fat", "dbond", "watfr", "fatfr", "itt", "res", "snr", "sig"};
 							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 							
 							(*export the checkfile*)
