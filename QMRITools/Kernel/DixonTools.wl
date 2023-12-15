@@ -171,8 +171,9 @@ Unwrap::dim = "Unwrapping Dimensions can be \"2D\" or \"3D\", current value is `
 Begin["`Private`"]
 
 
-dixFreq = ({{4.7}, {0.89, 1.3, 1.58, 2.03, 2.25, 2.76, 4.07, 4.3, 5.22, 5.32}} - 4.7);
-dixAmp = {{1}, {0.089, 0.595, 0.06, 0.086, 0.06, 0.009, 0.02, 0.02, 0.01, 0.052}}; (*{cl -> 17.5, ndb -> 2.8, nmidb -> 0.75}*)
+dixFreq = ({{4.7}, {0.89, 1.3, 1.58, 2.03, 2.25, 2.76, 4.07, 4.3, 5.22, 5.32}} - 4.7); (*ppm with water = 0*)
+dixAmp = {{1}, {0.089, 0.595, 0.06, 0.086, 0.06, 0.009, 0.02, 0.02, 0.01, 0.052}}; (*{17.31, 2.62, 0.46}*)
+dixRel = {{35}, {80, 85, 35, 45, 50, 40, 50, 50, 35, 35}};(*in ms*)
 
 
 (* ::Subsection:: *)
@@ -388,6 +389,7 @@ Options[DixonReconstruct] = {
 	DixonNucleus -> "1H",
 	DixonFrequencies -> dixFreq,
 	DixonAmplitudes -> dixAmp,
+	DixonRelaxivity -> dixRel,
 	DixonIterations -> 10, 
 	DixonTollerance -> 1, 
 	DixonMaskThreshhold -> 0.1,
@@ -416,7 +418,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_}, opts : OptionsPatte
 
 
 DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPattern[]] := Block[{
-		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n, mout, con, 
+		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n, mout, con, sig,
 		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, r2, phi, mod, cl, db, idb, fF,
 		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero, ls, amp, ipi,
 		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop, modApply
@@ -431,6 +433,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*Peterson et.al.10.1002/mrm.24657 - bipolar*)
 	
 	(*Chebrolu et.al. 10.1002/mrm.22300 - two t2* species*)
+	(*Peterson et. al. 10.1002/MRM.24297 - T2 relaxation times*)
 	(*Byder et.al. 10.1016/j.mri.2011.07.004 - a matrix with bonds*)
 	(*Hamilton et al. 10.1002/nbm.1622 - model cl db idb*)
 	
@@ -457,12 +460,13 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*metabolite frequencies and amplitudes*)
 	freqs = GyromagneticRatio[OptionValue[DixonNucleus]] Times@@OptionValue[{DixonPrecessions, DixonFieldStrength, DixonFrequencies}];
 	{amps, mout} = GenerateAmps[OptionValue[DixonAmplitudes]];
+	sig = If[OptionValue[DixonFixT2], -1000./OptionValue[DixonRelaxivity], 0.] + 2 Pi freqs I;
+	sig = Join[{sig[[1]]}, ConstantArray[sig[[2]], Length[amps] - 1]];
 	freqs = Join[{freqs[[1]]}, ConstantArray[freqs[[2]], Length[amps] - 1]];
 
 	(*define the water fat and phase matrixes*)
+	matA = (Total /@ (amps Exp[sig #])) & /@ echo;
 	con = OptionValue[DixonConstrainPhase];
-	matA = (Total /@ (amps Exp[(2 Pi freqs #) I ])) & /@ echo;
-	matA = If[OptionValue[DixonFixT2], Transpose[Join[{Exp[-echo/30.]}, ConstantArray[Exp[-echo/80.], Length[matA[[1]]] - 1]]], 1] matA;
 	matA = If[con, Join[Re@matA, Im@matA], Join[Join[Re@matA, Im@matA], Join[-Im@matA, Re@matA], 2]];
 	matAi = PseudoInverse@matA;
 	n = Length@matAi;
@@ -516,12 +520,9 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		If[mon, PrintTemporary["Filtering field estimation and recalculating signal fractions"]];
 		
 		(*Constrain R2*)
-		If[First[sel]===1, phi[[1]] = mask (-(Ramp[-(Ramp[phi[[1]] - 5] + 5) + 150] - 150))];
-		
-		(*Constrain initial phase, only when initial phase is fitten and initial phase is not constrained*)
-		If[!con && MemberQ[sel, 4], 
-			phi[[ipi]] += Arg[Total[result[[1 ;; 2]] + result[[Ceiling[n/2]+1 ;; Ceiling[n/2]+2]] I]] / (2 Pi);
-		];
+		If[First[sel]===1, phi[[1]] = mask (-(Ramp[-(Ramp[phi[[1]] - 2] + 2) + 200] - 200))];
+		(*Correct initial phase, only when initial phase is fitted and initial phase is not constrained*)
+		If[!con && MemberQ[sel, 4], phi[[ipi]] += Arg[Total[result[[1 ;; 2]] + result[[Ceiling[n/2] + 1 ;; Ceiling[n/2] + 2]] I]] / (2 Pi)];
 
 		(*smooth b0 field and R2star maps*)
 		phi = mask RotateDimensionsLeft[filtFunc /@ phi];
@@ -545,8 +546,8 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 
 	(*in\out phase data*)
 	iop = {0, 0.5} / Abs[Total[Flatten[(amps[[2 ;;]]^2) freqs[[2 ;;]]]] / Total[Flatten[amps[[2 ;;]]]^2]];
-	matA = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ iop;
-	iop = scale Clip[Chop[RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]]], {0., max}];
+	matA = (Total /@ (amps Exp[sig #])) & /@ iop;
+	iop = Clip[Chop[RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]]], {0., max}];
 
 	(*correct the signals if a fat model is used to get cl db idb*)
 	If[mout[[2]] =!= None,

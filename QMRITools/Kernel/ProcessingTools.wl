@@ -512,6 +512,9 @@ GetMaskMeans[dat_, mask_, lab_, OptionsPattern[]] := Block[{labels, out, fl},
 			ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "Normal"],
 			"SkewNormalDist",
 			ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "SkewNormal"],
+			"Mean",
+			labels={""};
+			{Mean[fl]},
 			_,
 			Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
 		]

@@ -979,15 +979,14 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
 							
 							(*perform the IDEAL dixon fit*)
-							(*-----*)AddToLog["Starting Dixon reconstruction",4];
+							(*-----*)AddToLog["Starting Dixon reconstruction", 4];
 							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> True,
-								DixonClipFraction->True, DixonAmplitudes -> "CallDB"];
+								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> True, DixonAmplitudes -> "CallDB"];
 							{wat, fat} = Abs[{wat, fat}];
 
 							(*export all the calculated data*)
-							(*----*)AddToLog["Exporting the calculated data to:",4];
+							(*----*)AddToLog["Exporting the calculated data to:", 4];
 							(*----*)AddToLog[outfile,5];
 							outTypes = {"real", "imag", "mag", "ph", "b0i", "phii", "t2stari", "phbpi", 
 								"b0", "phi", "phbp", "phbpt", "t2star", "r2star", "inph", "outph", 
