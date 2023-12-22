@@ -124,7 +124,7 @@ DixonIterations::usage =
 "DixonIterations is an options for DixonReconstruct. Defines the maximum itterations the fit can use."
 
 DixonPhases::usage = 
-"DixonBipolar is an option for DixonReconstruct. It defines which phases to fit within the model.
+"DixonPhases is an option for DixonReconstruct. It defines which phases to fit within the model.
 The order is {T2*, B0, bipolar, initial, bipolar}."
 
 PhaseEchos::usage = 

@@ -177,7 +177,7 @@ InputFilters::usage =
 "InputFilters is an option for MakeUnet. It defines the amount of convolutional filters of the the first UNET block."
 
 ActivationType::usage = 
-"InputFilters is an option for MakeUnet. It sepecifies which activation layer is used in the network. It can be \"LeakyRELU\" or any type allowed 
+"ActivationType is an option for MakeUnet. It sepecifies which activation layer is used in the network. It can be \"LeakyRELU\" or any type allowed 
 by a \"name\" definition in ElementwiseLayer."
 
 

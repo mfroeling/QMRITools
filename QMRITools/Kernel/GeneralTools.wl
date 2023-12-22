@@ -310,10 +310,10 @@ MonitorCalc::usage =
 
 
 LabelPlacement::usage =
-"LabelPlacement ..."
+"LabelPlacement is an option for MakeFunctionGraph. Defines where to place the label of the functiongraph. Accepts values that can be used in Placed."
 
 AllowSelfDependencies::usage = 
-"AllowSelfDependencies ..."
+"AllowSelfDependencies is and option for MakeFunctionGraph. Can be True or False. If True a function that calls itself is also shown."
 
 
 (* ::Subsection::Closed:: *)
