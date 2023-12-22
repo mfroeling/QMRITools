@@ -25,10 +25,10 @@ BeginPackage["QMRITools`ScientificColorData`"];
 
 
 AddScientificColours::usage = 
-"AddScientificColours[dir]..."
+"AddScientificColours[dir] adds the scientific colour data (https://zenodo.org/records/8409685) from the specified folder."
 
 ExtractColorData::usage = 
-"ExtractColorData[] Extracts the scientific colordata archive."
+"ExtractColorData[] Extracts the scientific colordata archive (https://zenodo.org/records/8409685)."
 
 
 (* ::Subsection:: *)

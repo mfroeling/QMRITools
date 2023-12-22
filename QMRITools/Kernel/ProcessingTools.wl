@@ -64,7 +64,7 @@ Mask can be genereated by SegmentTracts.
 GetMaskMeans[dat, mask, name] where name is a string that is added to the header."
 
 
-GetTractMeans::usge = 
+GetTractMeans::usage = 
 "GetTractMeans[dat, tracts, vox] calculates the mean, std, 5,50 and 95% CI form the given data for each of the given tracts. 
 Tracts can be by SplitSegmentations. name is a string that is added to the header.
 

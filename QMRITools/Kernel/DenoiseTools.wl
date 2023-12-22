@@ -114,7 +114,7 @@ PCAClipping::usage =
 PCANoiseSigma::usage = 
 "PCANoiseSigma is an option of DenoiseCSIdata and can be \"Corners\" or \"Automatic\"."
 
-PCAComplex::uasge = 
+PCAComplex::usage = 
 "PCAComplex is an option of PCADeNoise and can be True of False. If set true the input data is expexted to be {real, imag}."
 
 

@@ -70,7 +70,7 @@ MergeSegmentations::usage =
 Output is a labled segmentation."
 
 SelectSegmentations::usage=
-"SelectSegmentations[seg, lab]..."
+"SelectSegmentations[seg, labs] selects only the segmentaions with label number labs."
 
 SmoothSegmentation::usage =
 "SmoothSegmentation[masks] smooths segmentations and removes the overlaps between multiple segmentations." 
