@@ -24,8 +24,8 @@ BeginPackage["QMRITools`ScientificColorData`"];
 (*Functions*)
 
 
-AddScientificColours::usage = 
-"AddScientificColours[dir] adds the scientific colour data (https://zenodo.org/records/8409685) from the specified folder."
+AddScientificColors::usage = 
+"AddScientificColors[dir] adds the scientific colour data (https://zenodo.org/records/8409685) from the specified folder."
 
 ExtractColorData::usage = 
 "ExtractColorData[] Extracts the scientific colordata archive (https://zenodo.org/records/8409685)."
@@ -46,11 +46,15 @@ ExtractColorData::usage =
 Begin["`Private`"]
 
 
-(* ::Subsection::Closed:: *)
-(*AddScientificColours*)
+(* ::Subsection:: *)
+(*AddScientificColors*)
 
 
-AddScientificColours[dir_]:=Block[{
+(* ::Subsubsection::Closed:: *)
+(*AddScientificColors*)
+
+
+AddScientificColors[dir_]:=Block[{
 		grads,gradDiv,gradMulti,cyclic,all,swatches,colName,groupName,getCol,colRange,allDef,
 		nameDef,groupDef,newGroupsPattern,newShemeNames,newShemes,scientificColorMapsGroups,gr
 	},
@@ -121,9 +125,10 @@ AddScientificColours[dir_]:=Block[{
 		DataPaclets`ColorDataDump`colorSchemes=newShemes;
 		
 		(*Modify ColorData such it can display the Scientific color map groups*)
-		scientificColorMapsGroups={"SequentialGradients","SequentialGradientsDiscrete","SequentialGradientsCategorical","DivergingGradients",
-			"DivergingGradientsDiscrete","MultiSequentialGradients","MultiSequentialGradientsDiscrete",
-			"CyclicGradients","CyclicGradientsDiscrete"};
+		scientificColorMapsGroups={
+			"SequentialGradients", "SequentialGradientsDiscrete", "SequentialGradientsCategorical", "DivergingGradients",
+			"DivergingGradientsDiscrete", "MultiSequentialGradients", "MultiSequentialGradientsDiscrete",
+			"CyclicGradients", "CyclicGradientsDiscrete"};
 			
 		Unprotect[ColorData];
 		ColorData["ScientificColorMapsGroups"]=scientificColorMapsGroups;
@@ -133,13 +138,19 @@ AddScientificColours[dir_]:=Block[{
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*ExtractColorData*)
+
+
 ExtractColorData[dir_] := Block[{file},
 	file = dir<>".zip";
 	If[! DirectoryQ[FileNameJoin[{DirectoryName[file], "ColorData"}]],
 		If[FileExistsQ[file], Quiet@ExtractArchive[file, DirectoryName[file]],
-		Print["DemoData archive does not exist"]]
+		Print["ColorData archive does not exist"]]
 	];
 ]
+
+
 
 (* ::Section:: *)
 (*End Package*)

@@ -10,7 +10,7 @@
 
 
 (* ::Section:: *)
-(*start Package*)
+(*Begin Package*)
 
 
 BeginPackage["QMRITools`JcouplingTools`", Join[{"Developer`"}, Complement[QMRITools`$Contexts, {"QMRITools`JcouplingTools`"}]]];
@@ -142,7 +142,7 @@ CenterFrequency::usage =
 
 
 (* ::Section:: *)
-(*Jcoupling Core Functionality*)
+(*Functions*)
 
 
 Begin["`Private`"]
@@ -212,9 +212,9 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 	Hcs = Hjs = Hjw = zero;
 	MatrixForm@Table[Hcs-=Hres[[j]]Hiz[[j]] ;(* izj *)
 		Table[
-			Hjs-=Hj[[j,k]](Hiz[[j]].Hiz[[k]]);(* izj, izk*)
-			Hjw-=Hj[[j,k]](Hix[[j]].Hix[[k]]);(* ixj, ixk*)
-			Hjw-=Hj[[j,k]](Hiy[[j]].Hiy[[k]]);(* ixj, ixk*)
+			Hjs-=Hj[[j,k]](Hiz[[j]] . Hiz[[k]]);(* izj, izk*)
+			Hjw-=Hj[[j,k]](Hix[[j]] . Hix[[k]]);(* ixj, ixk*)
+			Hjw-=Hj[[j,k]](Hiy[[j]] . Hiy[[k]]);(* ixj, ixk*)
 		,{k,j+1,nSpins}]
 	,{j,nSpins}];
 	
@@ -281,10 +281,10 @@ SyntaxInformation[SimEvolve]={"ArgumentsPattern" -> {_, _, _}};
 SimEvolve[din_,ham_,t_]:=Block[{d, matU,valD},
 	{valD,matU}={"Hval","Hvec"}/.ham;(*use eigen basis for fast computation*)
 	d = SimEvolveM[matU,valD,t](*= Exp[-I ham t]*);
-	Chop[d.din.ConjugateTranspose[d]]
+	Chop[d . din . ConjugateTranspose[d]]
 ]
 
-SimEvolveM[matU_,valD_,t_]:=Chop[Transpose[matU].SparseArray[DiagonalMatrix[Exp[I valD t]]].matU]
+SimEvolveM[matU_,valD_,t_]:=Chop[Transpose[matU] . SparseArray[DiagonalMatrix[Exp[I valD t]]] . matU]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -297,8 +297,8 @@ SimRotate[din_,ham_,angle_,phase_:90]:=Block[{alpha,ph,dinS,Fx,Fy,Fz,Rz,rotate, 
 	{alpha,ph}={angle, phase}Degree;(*to rad*)
 	rMat=MatrixExp[I alpha ("Fx"/.ham)];(*rotation around x*)
 	pMat=MatrixExp[-I ph ("Fz"/.ham)];(*phase - rotation around z*)
-	tMat=pMat.rMat.ConjugateTranspose[pMat];(*define rot matirx*)
-	Chop[tMat.din.ConjugateTranspose[tMat]](*predef matrix preven extra comp*)
+	tMat=pMat . rMat . ConjugateTranspose[pMat];(*define rot matirx*)
+	Chop[tMat . din . ConjugateTranspose[tMat]](*predef matrix preven extra comp*)
 ];
 
 
@@ -310,7 +310,7 @@ SyntaxInformation[SimAddPhase]={"ArgumentsPattern" -> {_, _, _}};
 
 SimAddPhase[din_,ham_,phase_]:=Block[{pMat},
 	pMat=MatrixExp[-I ("Fz"/.ham) phase Degree];(*phase - rotation around z*)
-	Chop[pMat.din.ConjugateTranspose[pMat]](*add phase due to gradients, rotation around z*)
+	Chop[pMat . din . ConjugateTranspose[pMat]](*add phase due to gradients, rotation around z*)
 ]
 
 
@@ -481,8 +481,8 @@ SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
 	
 	(*perform readout and evolve spin states by dt*)
 	fids = val Table[
-		samp = If[output === "all", Tr[(di.Fxy)], (Tr[di.#])&/@Ixy];
-		di = Chop[devolve.di.ConjugateTranspose[devolve]];
+		samp = If[output === "all", Tr[(di . Fxy)], (Tr[di . #])&/@Ixy];
+		di = Chop[devolve . di . ConjugateTranspose[devolve]];
 		samp
 	,{i,1,nsamp}];
 	
@@ -505,11 +505,11 @@ SimSignal[din_,ham_,OptionsPattern[]]:=Block[{Ixy,w,sel},
 	sel=OptionValue[ReadoutOutput];
 	Switch[sel,
 		(*total signal*)
-		"all",w Tr[din.("wFxy"/.ham)],
+		"all",w Tr[din . ("wFxy"/.ham)],
 		(*seperate signal for each peak*)
-		"each",Ixy=("wIxy"/.ham);w Tr[din.#]&/@Ixy,
+		"each",Ixy=("wIxy"/.ham);w Tr[din . #]&/@Ixy,
 		(*signal for peak selection either one or list*)
-		_,Ixy=("wIxy"/.ham);If[ListQ[sel],w Tr[din.Ixy[[#]]]&/@sel,w Tr[din.Ixy[[sel]]]]
+		_,Ixy=("wIxy"/.ham);If[ListQ[sel],w Tr[din . Ixy[[#]]]&/@sel,w Tr[din . Ixy[[sel]]]]
 	]
 ]
 

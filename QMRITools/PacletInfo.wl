@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "3.12.0",
+	"Version" -> "3.13.0",
 	"WolframVersion" -> "13.0+",
 	"SystemID" -> All, 
 	
@@ -17,7 +17,7 @@ PacletObject[<|
 		{"Kernel", "Root" -> "Kernel", "Context" -> "QMRITools`"}, 
 		{"Documentation", "Language" -> "English", "MainPage" -> "Guides/QMRITools"},
 		
-		(*files that need to be build*)
+		(*files that need to be included in the build*)
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"Logo", "icon.png"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"Functions", "All-Functions.nb"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"Demo", "Demonstrations.nb"}}},

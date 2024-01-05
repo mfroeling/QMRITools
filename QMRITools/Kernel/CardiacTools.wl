@@ -297,7 +297,6 @@ Begin["`Private`"]
 (*General functions*)
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*DotC*)
 
@@ -1532,7 +1531,7 @@ CardiacSegmenti[mask_?ArrayQ, back_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ},
 ]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*CardiacSegmentGUI*)
 
 
