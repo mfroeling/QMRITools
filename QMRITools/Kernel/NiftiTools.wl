@@ -953,7 +953,7 @@ ImportExploreDTItens[fil_String] := Module[{tens, vox, file},
 
 
 (* ::Subsection:: *)
-(*Importing val, vec and mat*)
+(*Importing values, vectors and matrix*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1365,7 +1365,7 @@ MakeNiiOrentationQ[qrot_] := RotationMatrixToQuaternionVector[qrot[[1 ;; 3, 1 ;;
 
 
 (* ::Subsection:: *)
-(*Exporting val, vec and mat*)
+(*Exporting values, vectors and matrix*)
 
 
 (* ::Subsubsection::Closed:: *)

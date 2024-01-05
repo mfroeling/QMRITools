@@ -378,10 +378,10 @@ HenkelFit[fid_ ,dw_, te_, gyro_, ppmRan_]:=Block[{timeOr, timeMis, henk, fit},
 	
 	(*get the henkel values*)
 	henk = HenkelSVDFid[fid, dw, gyro, ppmRan];
-	fit = (PseudoInverse[HenkelSVDBasisC[timeOr, henk]].fid);
+	fit = (PseudoInverse[HenkelSVDBasisC[timeOr, henk]] . fid);
 	
 	(*missing and full henkle fid*)
-	{If[timeMis =!= {}, HenkelSVDBasisC[timeMis,henk].fit,{}],	HenkelSVDBasisC[timeOr, henk].fit}
+	{If[timeMis =!= {}, HenkelSVDBasisC[timeMis,henk] . fit,{}],	HenkelSVDBasisC[timeOr, henk] . fit}
 ]
 
 
@@ -404,7 +404,7 @@ HenkelSVDFid[fid_, dw_, gyro_, ppmRan_] := Block[{
 	(*create the henkel matrix and the singula values*)
 	H = fid[[Range[mmax] + #]] & /@ Range[0, lmax - 1];
 	U = First@SingularValueDecomposition[H, 32];
-	q = Log[Eigenvalues[PseudoInverse[U[[;; -2]]].U[[2 ;;]]]];
+	q = Log[Eigenvalues[PseudoInverse[U[[;; -2]]] . U[[2 ;;]]]];
 	
 	(*get the frequencies and delay times*)
 	decay = Re[q]/dw;
@@ -684,6 +684,8 @@ TimeShiftFidC2 = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}
 	Exp[-(gamL time + (gamG time)^2)] Exp[2 Pi eps gyro I time] fid, 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ]
+
+
 
 (* ::Subsubsection::Closed:: *)
 (*TimeShiftEcho*)
@@ -1079,7 +1081,7 @@ FitSpectra[specBasisIn_, specIn_, {st_,end_}, dtime_, {lwvals_?VectorQ, lwamsp_?
 	timeBasisIn = ShiftedInverseFourier[#, readout]&/@specBasisIn;
 	basis = BasisSpectraApply[{ppm, time, timeBasisIn}, sol, gyro, readout];
 	fit = fit/scale;
-	specFit = fit.basis;
+	specFit = fit . basis;
 	
 	(*fit a spline through the residuals*)
 	spline=BSplineCurveFit[specIn-specFit, SplineKnotsNumber-> cpn, SplineRegularization->0, SplineDegree-> 2];
@@ -1162,8 +1164,8 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		fit = Quiet@NNLeastSquares[Join[Transpose[Re[specBasisF]],Transpose[Im[specBasisF]]], Join[Re[specF],Im[specF]]];			
 		
 		(*define errors fid and spectra*)
-		errorS = specF - fit.specBasisF;
-		errorF = fidF - fit.fidBasisF;
+		errorS = specF - fit . specBasisF;
+		errorF = fidF - fit . fidBasisF;
 				
 		(*Re and Im error normalized for number of points*)
 		err = Mean[Join[Re[errorS]^2, Re[errorF]^2, Im[errorS]^2, Im[errorF]^2]];
@@ -1202,7 +1204,7 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		(*perform Fit of basis spectra*)
 		fit = Quiet@Clip[NNLeastSquares[Join[Transpose[Re[specBasis]],Transpose[Im[specBasis]]], Join[Re[spec],Im[spec]]],{0,Infinity}];
 		
-		specFit = fit.specBasis;
+		specFit = fit . specBasis;
 		
 		(*fit a spline through the residuals*)
 		spline = BSplineCurveFit[spec - specFit, SplineKnotsNumber -> cpn, SplineRegularization -> 0, SplineDegree -> 2];
@@ -1336,7 +1338,7 @@ EstimatePhaseShift[{ppm_,spec_},{time_,fids_},{gam_,eps_},gyro_,{st_,en_},readou
 	specsC=Transpose[ShiftedFourier[func[#,time,gyro,{gam,eps,.5}], readout][[st;;en]]&/@fids];
 
 	(*Fit absolute basis spectra to absolute spectrum*)
-	fit=specsC.(NNLeastSquares[Abs[specsC],Abs[specf]]);
+	fit=specsC . (NNLeastSquares[Abs[specsC],Abs[specf]]);
 	(*minimize error with the target spectra*)
 	sol1=Quiet@NMinimize[{PhaseError[ppmf,fit,specf,{phi0f,0 },gyro],-Pi<phi0f<Pi},{phi0f},MaxIterations->25][[2]];
 	phi1={phi0f, 0}/.sol1;
@@ -1344,7 +1346,7 @@ EstimatePhaseShift[{ppm_,spec_},{time_,fids_},{gam_,eps_},gyro_,{st_,en_},readou
 	(*apply the zeroth order phase to the basis spectra*)
 	specsC=Transpose[PhaseShiftSpectra[#,ppmf,gyro,phi1]&/@Transpose[specsC]];
 	(*calculate the fit based on the imaginary part of the spectra*)
-	fit=specsC.(NNLeastSquares[Re@specsC,Re@specf]);
+	fit=specsC . (NNLeastSquares[Re@specsC,Re@specf]);
 	
 	(*minimize error with the target spectra*)
 	sol2=Quiet@NMinimize[{PhaseError[ppmf,fit,specf,{phi0f,phi1f },gyro],-Pi<phi0f<Pi,-lim<phi1f<lim},{phi0f,phi1f},MaxIterations->25][[2]];
@@ -1790,7 +1792,7 @@ MakeSpectraResultPlot[ppmF_, specF_, {fit_, basisFit_}, names_, ppmran_] := Bloc
 	
 	sp = 2;
 	met = "ReIm";
-	specFit = fit.basisFit;
+	specFit = fit . basisFit;
 	pmax = Max[Abs[specFit], Abs[specF]];
 	pran = {-pmax, pmax};
 	
@@ -2135,7 +2137,7 @@ SpectraFitResult[specf_, {fit_, basisFit_}, te_, {dw_, gyro_}, {pars_, names_, m
 	{resTotPl, resBasPl} = MakeSpectraResultPlot[ppm, specf, {fit, basisFit}, names, ran][[1 ;; 2]];
 	
 	(*make fitted spectra and fids*)
-	specFit = fit.basisFit;
+	specFit = fit . basisFit;
 	fidf = ShiftedInverseFourier[specf];
 	fidFit = ShiftedInverseFourier[specFit];
 	
@@ -2176,7 +2178,7 @@ MakeLogging[log_] := Block[{tmp},
 
 
 (* ::Subsection:: *)
-(*Spar-Sdat*)
+(*Spar and Sdat*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2254,6 +2256,7 @@ FromVaxD=Compile[{{int,_Integer,0}},Block[{bin,sign ,fraction, exponent},
 
 (* ::Subsubsection::Closed:: *)
 (*ExportSparSdat*)
+
 
 Options[ExportSparSdat]={SparName->"QMRITools", SparOrientation->{0,0},SparID->""}
 

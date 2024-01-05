@@ -68,6 +68,7 @@ Quiet[Get/@QMRITools`$Contexts];
 QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
 tempDir = StringDrop[GetAssetLocation["ColorData"], -4];
 
+
 Begin["`Private`"];
 
 End[];
@@ -120,7 +121,7 @@ If[!QMRITools`$LoadedColor,
 	];
 	Get["QMRITools`ScientificColorData`"];
 	QMRITools`ScientificColorData`ExtractColorData[tempDir];
-	QMRITools`ScientificColorData`AddScientificColours[tempDir];
+	QMRITools`ScientificColorData`AddScientificColors[tempDir];
 	ClearAll[tempDir];
 	Remove[tempDir];
 	QMRITools`$LoadedColor=True;
@@ -144,10 +145,3 @@ Get["Developer`"];
 (*Protect definitions*)
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
 Unprotect/@{"QMRITools`ElastixTools`$debugElastix", "QMRITools`$Log"};
-
-
-(*load scientific colors*)
-Quiet[
-	ExtractColorData[];
-	QMRITools`PlottingTools`ScientificColorData[StringDrop[GetAssetLocation["ColorData"], -4]];
-]

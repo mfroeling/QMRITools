@@ -29,21 +29,21 @@ MakeUnet::usage =
 he number of parameter of the first convolution layer can be set with dep.\n
 The data dimensions can be 2D or 3D and each of the dimensions should be 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240 or 256."
 
+PrintKernels::usage = 
+"PrintKernels[net] gives a short summary of the convolution kernels and array elements in the network."
+
+NetDimensions::usage = 
+"NetDimensions[net] extracts the input channels, output classes, the input patch dimension, and the number of input filters."
+
+ChangeNetDimensions::usage =
+"ChangeNetDimensions[netIn] changes input channels, output classes, the input patch dimension of the input network netIn."
+
+
 AddLossLayer::usage = 
 "AddLossLayer[net] adds three loss layers to a NetGraph, a SoftDiceLossLayer, BrierLossLayer and a CrossEntropyLossLayer."
 
 SoftDiceLossLayer::usage = 
 "SoftDiceLossLayer[dim] represents a net layer that computes the SoftDice loss by comparing input class probability vectors with the target class vector."
-
-
-PrintKernels::usage = 
-"PrintKernels[net] ..."
-
-ChangeNetDimensions::usage =
-"ChangeNetDimensions[netIn] ..."
-
-NetDimensions::usage = 
-"NetDimensions[net] ..."
 
 
 ClassEncoder::usage = 
@@ -76,22 +76,10 @@ ApplySegmentationNetwork::usage =
 "ApplySegmentationNetwork[data, net] segements the data using the pretrained net."
 
 
-PatchesToData::usage = 
-"PatchesToData[patches, ran] creates a continous dataset from the patches. For each patch the range in the data nees to be specified in ran.
-The patches are have dimensions {x, y, z} each and ran is speciefied as {{xmin, xmax}, {ymin, ymax}, {zmin, zmax}}.
-PatchesToData[patches, ran, dim] creates a continous dataset from the patches with dimensions dim."
-
-PatchesToSegmentation::usage = 
-"PatchesToSegmentation[patches, ran]
-PatchesToSegmentation[patches, ran, dim] ..."
-
-DataToPatches::usage =
-"DataToPatches[data, patchSize] creates the maximal number of patches with patchSize from data, where the patches have minimal overlap.
-DataToPatches[data, patchSize, n] gives n random patches from the maximal number of patches with patchSize from data, where the patches have minimal overlap."
-
 TrainSegmentationNetwork::usage =
-"TrainSegmentationNetwork[{inFol, outFol}]
-TrainSegmentationNetwork[{inFol, outFol}, netCont] ..."
+"TrainSegmentationNetwork[{inFol, outFol}] trains a segmentation network. The correctly prepared training data should be stored in inFol. The progress each round will be saved in outFol.
+TrainSegmentationNetwork[{inFol, outFol}, netCont] does the same but defines how to continue with netCont. If netCont is \"Start\" training will be restarted.
+If netCont is a initialized network or network file (wlnet) this will be used. If netCont is a a outFol the last saved network will be used."
 
 GetTrainData::usage =
 "GetTrainData[data, batchsize, patch] creates a training batch of size batchsize with patchsize patch. 
@@ -100,62 +88,58 @@ The input data can be out of memory in the form of a list of \"*wxf\" files that
 GetTrainData[data, batchsize, patch, nClass] If nClass is set to an value n > 0 the segmentations are decoded in n classes."
 
 
+DataToPatches::usage =
+"DataToPatches[data, patchSize] creates the maximal number of patches with patchSize from data, where the patches have minimal overlap.
+DataToPatches[data, patchSize, n] gives n random patches from the maximal number of patches with patchSize from data, where the patches have minimal overlap."
+
+PatchesToData::usage = 
+"PatchesToData[patches, ran] creates a continous dataset from the patches. For each patch the range in the data nees to be specified in ran.
+The patches are have dimensions {x, y, z} each and ran is speciefied as {{xmin, xmax}, {ymin, ymax}, {zmin, zmax}}.
+PatchesToData[patches, ran, dim] creates a continous dataset from the patches with dimensions dim."
+
+
 AugmentTrainingData::usage = 
 "AugmentTrainingData[{data, segmentation}, vox] augments the data and segmentation in the same way.
-AugmentTrainingData[{data, segmentation}, vox, aug] by setting aug to True or False the autmentation can be turend on or off."
+AugmentTrainingData[{data, segmentation}, vox, aug] by setting aug to True or False the autmentation can be turend on or off.
+The value aug can also be a list of boolean values contoling various augentation parameters {flip, rotate, translate, scale, noise, blur, brightness}.
+The defualt settings are {True, True, True, True, False, False, False}."
 
-
-MakeChannelClassImage::usage = 
-"MakeChannelClassImage[data, label]\[IndentingNewLine]MakeChannelClassImage[data, label, {off,max}]\[IndentingNewLine]MakeChannelClassImage[data, label, vox]
-MakeChannelClassImage[data, label, {off,max}, vox]
-..."
 
 MakeChannelImage::usage = 
-"MakeChannelImage[label]\[IndentingNewLine]MakeChannelImage[label, {off,max}]\[IndentingNewLine]MakeChannelImage[label, vox]
-MakeChannelImage[label, {off,max}, vox]
-..."
+"MakeChannelImage[data] makes a crossectional image of the channels data of a training dataset generated by GetTrainData.
+MakeChannelImage[data, vox] same but with the aspect ratio determined by vox."
 
 MakeClassImage::usage = 
-"MakeClassImage[label]\[IndentingNewLine]MakeClassImage[data, vox]
-..."
+"MakeClassImage[label ] makes a crossectional image of the classes label of a training dataset generated by GetTrainData
+MakeChannelImage[label, {b, n}] same but with explicit definition of background value b and number of classes n. 
+MakeClassImage[data, vox] same but with the aspect ratio determined by vox.
+MakeChannelImage[label, {b, n}, vox] same with explicit definition and aspect ratio definition."
 
-PlotSegmentations::usage = 
-"PlotSegmentations[seg, bone]
-PlotSegmentations[seg, bone, vox] 
-..."
-
-
-CropDatSeg::usage =
-"CropDatSeg 
-..."
+MakeChannelClassImage::usage = 
+"MakeChannelClassImage[data, label] makes a crossectional image of the channels data overlaid with a crossectional image of the classes label of a training dataset generated
+MakeChannelClassImage[data, label, {off,max}] same but with explicit definition of background value b and number of classes n. 
+MakeChannelClassImage[data, label, vox] same but with the aspect ratio determined by vox.
+MakeChannelClassImage[data, label, {off,max}, vox] same with explicit definition and aspect ratio definition."
 
 
 SplitDataForSegementation::usage = 
 "SplitDataForSegementation[data] is a specific function for leg data to prepare data for segmentation. It detects the side and location and will split and label the data accordingly.
 SplitDataForSegementation[data ,seg] does the same but is rather used when preparing training data. Here the seg is split in exaclty the same way as the data."
 
-FindSide::usage = 
-"FindSide[data] 
-..."
-
-FindPos::usage = 
-"FindPos[data] 
-..."
-
 
 MuscleLabelToName::usage =
-"MuscleLabelToName 
-..."
+"MuscleLabelToName[{lab, ..}] converts list of lab, which need to be integers to names using the file GetAssetLocation[\"LegMuscleLabels\"].
+MuscleLabelToName[{lab, ..}, file] does the same but uses a user defined ITKSnap label definition file."
 
 MuscleNameToLabel::usage = 
-"MuscleNameToLabel 
-..."
+"MuscleNameToLabel[{name, ..}] converts list of muscle names to integer labels using the file GetAssetLocation[\"LegMuscleLabels\"]
+MuscleNameToLabel[{name, ..}, file] does the same but uses a user defined ITKSnap label definition file."
 
 ImportITKLabels::usage = 
 "ImportITKLabels[file] imports the ITKSnap label file."
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Options*)
 
 
@@ -185,33 +169,33 @@ PatchesPerSet::usage =
 "PatchesPerSet is an option for GetTrainData. Defines how many random patches per dataset are created within the batch."
 
 AugmentData::usage = 
-"AugmentData is an option for GetTrainData. If set True the trainingdata is augmented."
+"AugmentData is an option for GetTrainData and TrainSegmentationNetwork. If set True the trainingdata is augmented."
+
+PatchSize::usage =
+"PatchSize is an option for TrainSegmentationNetwork. Defines the patch size used in the network training."
+
+RoundLength::usage = 
+"RoundLength is an option for TrainSegmentationNetwork. Defines how many batches will be seen during eacht training round."
 
 
 MaxPatchSize::usage = 
-"MaxPatchSize ..."
-
-DataPadding::usage = 
-"DataPadding ..."
-
-PatchNumber::usage = 
-"PatchNumber ..."
-
-PatchPadding::usage = 
-"PatchPadding ..."
-
-PatchSize::usage =
-"PatchSize ..."
-
-RoundLength::usage = 
-"RoundLength ..."
-
-
-RandomizeColor::usage = 
-"RandomizeColor ..."
+"MaxPatchSize is an option for SegmentData and ApplySegmentationNetwork. Defines the patch size used when segmenting data. Bigger patches are better."
 
 ReplaceLabel::usage = 
-"ReplaceLabel ..."
+"ReplaceLabel is an option for SegmentData. If True the labels used in training are replaced with whole leg labels.
+The used labels are defined in GetAssetLocation[\"LegMuscleLabels\"]."
+
+DataPadding::usage = 
+"DataPadding is an option for ApplySegmentationNetwork. Defines how much to pad the data patches in all directions."
+
+
+PatchNumber::usage = 
+"PatchNumber is an option for DataToPatches. Can be an integer value >= 0. The larger the number the more overlap the patches have.
+The minimal number of patches in each direction is calculated, and then for each dimension the given number is added."
+
+PatchPadding::usage = 
+"PatchPadding is an option for DataToPatches. Can be an integer value >= 0. It padds the chosen patch size with the given number."
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -453,7 +437,13 @@ PrintKernels[net_] := Block[{convs, kerns, count, pars},
 	kerns = Information[#, "ArraysDimensions"][{"Weights"}] & /@ convs;
 	count = Sort[{#[[1, 1]], Total[#[[All, 2]]]} & /@ GatherBy[{#[[3 ;;]], Times @@ #[[1 ;; 2]]} & /@ kerns, First]];
 	pars = Information[net, "ArraysTotalElementCount"];
-	Column[Join[{Length[convs], Total[count[[All, 2]]]}, count, {pars}], Alignment->Center]
+	Grid[Transpose[{
+		Style[#, Bold] & /@ Join[
+			{"Convolution Layers", "Total Array Elements"}, 
+			ConstantArray["{Kernel, Elements}", Length@count], 
+			{"Total Element Count"}],
+		Join[{Length[convs], Total[count[[All, 2]]]}, count, {pars}]
+	}], Alignment -> Left, Spacings -> {2, 1}]
 ]
 
 
@@ -853,7 +843,11 @@ NetDimensions[net_, port_]:=Switch[port,
 
 
 (* ::Subsection::Closed:: *)
-(*Prepare Data!*)
+(*Prepare Data*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*CropDatSeg*)
 
 
 CropDatSeg[dat_,seg_,labs_]:=Block[{datO, segO, lab, dim,cr},
@@ -866,6 +860,10 @@ CropDatSeg[dat_,seg_,labs_]:=Block[{datO, segO, lab, dim,cr},
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*NormDat*)
+
+
 NormDat = Compile[{{dat, _Real, 3}}, Block[{data},
 	If[Min[dat]=!=Max[dat],
 		data = Flatten[dat];
@@ -873,6 +871,10 @@ NormDat = Compile[{{dat, _Real, 3}}, Block[{data},
 		dat
 	]
 ], RuntimeOptions -> "Speed", RuntimeAttributes->Listable];
+
+
+(* ::Subsubsection::Closed:: *)
+(*NormSeg*)
 
 
 NormSeg[seg_, labs_]:=Block[{zero, segT, labT, sel},
@@ -961,7 +963,7 @@ TakeLargestComponent[seg_, err_] := Block[{dim, segc, cr},
 (*DataToPatches*)
 
 
-Options[DataToPatches] = {PatchNumber->2, PatchPadding->0}
+Options[DataToPatches] = {PatchNumber->0, PatchPadding->0}
 
 SyntaxInformation[DataToPatches] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
@@ -975,7 +977,7 @@ DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, nPatch_, Options
 	{nRan, pad} = OptionValue[{PatchNumber, PatchPadding}];
 	If[Or @@ (#<=2 pad &/@ patch),
 		$Failed,
-		pts = GetPatchRanges[dat, patch, If[IntegerQ[nPatch], nPatch, "All"], OptionValue[{PatchNumber, PatchPadding}]];
+		pts = GetPatchRanges[dat, patch, If[IntegerQ[nPatch], nPatch, "All"], {nRan, pad}];
 		ptch = GetPatch[dat, patch, pts];
 		{ptch, pts}
 	]
@@ -1008,7 +1010,7 @@ GetPatchRanges[dat_, patch_, nPatch_, {nRan_, pad_}]:=Block[{pts},
 GetPatchRangeI[datDim_?ListQ, patchDim_?ListQ, {nr_, pad_}]:=Tuples@MapThread[GetPatchRangeI[#1,#2, {nr, pad}]&, {datDim, patchDim}]
 
 GetPatchRangeI[dim_?IntegerQ, patch_?IntegerQ, {nr_, pad_}]:=Block[{i,st},
-	i = Ceiling[(dim - 2 pad)/(patch - 2 pad)]+nr;
+	i = Ceiling[(dim - 2 pad)/(patch - 2 pad)] + nr;
 	If[!(dim > patch && i > 1),
 		{{1,dim}},
 		st = Round[Range[0, 1, 1./(i - 1)](dim - patch)];
@@ -1231,8 +1233,8 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 			,
 			If[Length[dat]===2, 
 				(*datas is list of nii files {dat.nii, seg.nii}*)
-				{dat, vox} = ImportNii[dat[[1]]];
 				{seg, vox} = ImportNii[dat[[2]]];
+				{dat, vox} = ImportNii[dat[[1]]];
 				,
 				(*data is in memory*)
 				{dat, seg, vox} = dat;
@@ -1302,7 +1304,7 @@ ReverseC = Compile[{{dat, _Real, 1}}, Reverse[dat], RuntimeAttributes -> {Listab
 
 
 PatchTrainingData[{dat_,seg_}, patch_, n_]:=Block[{pts,datP,segP},
-	{datP, pts} = DataToPatches[dat, patch, n];
+	{datP, pts} = DataToPatches[dat, patch, n, PatchNumber->2];
 	segP = DataToPatches[seg, patch, pts][[1]];
 	{ToPackedArray[N[#]]&/@datP, ToPackedArray[Round[#]]&/@segP}
 ]
@@ -1327,12 +1329,15 @@ imSize := imSize = NetDimensions[NetReplacePart[sideNet, "Input" -> None], "Inpu
 
 SyntaxInformation[SplitDataForSegementation] = {"ArgumentsPattern" -> {_, _.}};
 
-SplitDataForSegementation[data_,seg_]:=Block[{dat,pts,dim,loc,set, segp},
+SplitDataForSegementation[data_, "pos"]:=FindPos[data]
+
+SplitDataForSegementation[data_, "side"]:=FindSide[data]
+
+SplitDataForSegementation[data_, seg_]:=Block[{dat,pts,dim,loc,set, segp},
 	{{dat, pts, dim}, loc, set} = SplitDataForSegementation[data];
 	segp = GetPatch[seg, pts];
 	{{dat, pts, dim}, {segp, pts, dim}, loc,set}
 ]
-
 
 SplitDataForSegementation[data_]:=Block[{dim,whatSide,side,whatPos,pos,dat,right,left,cut,pts,loc},
 	dim = Dimensions[data];
@@ -1443,16 +1448,16 @@ PosFunc = Compile[{{a,_Integer,0},{b,_Integer,0},{l,_Integer,0},{x,_Integer,1},{
 
 SyntaxInformation[MakeChannelClassImage]={"ArgumentsPattern"->{_, _, _., _.}};
 
-MakeChannelClassImage[data_,label_]:=MakeChannelClassImage[data,label,MinMax[label],{1,1,1}]
+MakeChannelClassImage[data_, label_]:=MakeChannelClassImage[data,label,MinMax[label], {1,1,1}]
 
-MakeChannelClassImage[data_,label_,{off_,max_}]:=MakeChannelClassImage[data,label,{off,max},{1,1,1}]
+MakeChannelClassImage[data_,label_, {off_, max_}]:=MakeChannelClassImage[data, label,{off,max}, {1,1,1}]
 
-MakeChannelClassImage[data_, label_, vox_]:=MakeChannelClassImage[data,label,MinMax[label],vox]
+MakeChannelClassImage[data_, label_, vox_]:=MakeChannelClassImage[data, label, MinMax[label], vox]
 
-MakeChannelClassImage[data_,label_,{off_, max_}, vox_]:=Block[{i1,i2},
+MakeChannelClassImage[data_, label_, {off_, max_}, vox_]:=Block[{i1, i2},
 	i1 = MakeClassImage[label, {off, max}, vox];
 	i2 = MakeChannelImage[data, vox];
-	ImageCollage[ImageCompose[#,SetAlphaChannel[i1,0.4AlphaChannel[i1]]]&/@i2]
+	ImageCollage[ImageCompose[#, SetAlphaChannel[i1,0.4 AlphaChannel[i1]]]&/@i2]
 ]
 
 
@@ -1462,16 +1467,16 @@ MakeChannelClassImage[data_,label_,{off_, max_}, vox_]:=Block[{i1,i2},
 
 SyntaxInformation[MakeClassImage]={"ArgumentsPattern"->{_, _., _.}};
 
-MakeClassImage[label_]:=MakeClassImage[label,MinMax[label],{1,1,1}]
+MakeClassImage[label_]:=MakeClassImage[label, MinMax[label],{1,1,1}]
+ 
+MakeClassImage[label_, {off_, max_}]:=MakeClassImage[label, {off, max}, {1,1,1}]
 
-MakeClassImage[label_,{off_,max_}]:=MakeClassImage[label,{off,max},{1,1,1}]
+MakeClassImage[label_, vox_]:=MakeClassImage[label,MinMax[label],vox]
 
-MakeClassImage[label_,vox_]:=MakeClassImage[label,MinMax[label],vox]
-
-MakeClassImage[label_,{off_,max_}, vox_]:=Block[{cols, im, rat},
-	cols=Prepend[ColorData["DarkRainbow"][#]&/@Rescale[Range[off+1,max]],Transparent];
+MakeClassImage[label_,{off_, max_}, vox_]:=Block[{cols, im, rat},
+	cols = Prepend[ColorData["DarkRainbow"][#]&/@Rescale[Range[off+1, max]],Transparent];
 	
-	im=If[ArrayDepth[label]===3,label[[Round[Length@label/2]]],label]-off+1;
+	im = Round@Clip[If[ArrayDepth[label] === 3, label[[Round[Length@label/2]]], label] - off + 1, {1, max + 1}, {1, 1}];
 	rat=vox[[{2,3}]]/Min[vox[[{2,3}]]];
 	
 	ImageResize[Image[cols[[#]]&/@im], Round@Reverse[rat Dimensions[im]], Resampling->"Nearest"]
@@ -1494,38 +1499,6 @@ MakeChannelImage[data_, vox_]:=Block[{dat, im, rat},
 		im=If[ArrayDepth[#]===3, im[[Round[Length@im/2]]], im];
 		ImageResize[Image[Clip[im,{0,1}]], Round@Reverse[rat Dimensions[im]], Resampling->"Nearest"]
 	)&/@dat
-]
-
-
-Options[PlotSegmentations] = {
-	ColorFunction -> "DarkRainbow", 
-	ImageSize -> 400, 
-	ContourSmoothing -> 2,
-	RandomizeColor->True,
-	Opacity->0.6
-};
-
-PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
-
-PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
-		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op
-	},
-	{smooth, cols, size, ranCol, op} = OptionValue[{ContourSmoothing, ColorFunction, ImageSize, RandomizeColor, Opacity}];
-
-	plotb = If[bone === None, Graphics3D[],
-		PlotContour[Unitize[bone], vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothing -> smooth]
-	];
-
-	segM = If[ArrayDepth[seg]===3, First@SplitSegmentations[seg], seg];
-	nSeg = Length@First@segM;
-	rSeg = Range[nSeg];
-
-	cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
-	If[ranCol, SeedRandom[12345]; cols = cols[[RandomSample@rSeg]]];
-
-	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothing -> smooth], {i, 1, nSeg}]];
-
-	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]
 ]
 
 

@@ -20,7 +20,7 @@ BeginPackage["QMRITools`DixonTools`", Join[{"Developer`"}, Complement[QMRITools`
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -41,13 +41,15 @@ The fractions are between 0 and 1, the B0 field map is in Hz and the T2start map
 DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737 (10.1002/nbm.3766)."
 
 GenerateAmps::usage = 
-"GenerateAmps[amp] generates the chemical species amplitudes needed for DixonReconstruct."
+"GenerateAmps[amp] generates the fat based chemical species amplitudes needed for DixonReconstruct."
 
 DixonToPercent::usage = 
 "DixonToPercent[water, fat] converts the dixon water and fat data to percent maps.
 
 Output is {waterFraction, fatFraction}.
-The values of water and fat are arbitraty units and the ouput fractions are between 0 and 1."
+The values of water and fat are arbitraty units and the ouput fractions are between 0 and 1.
+
+DixonToPercent[] is based on DOI: 10.1002/mrm.21301."
 
 
 FixDixonFlips::usage = 
@@ -91,37 +93,40 @@ UnwrapDCT[] is based on DOI: 10.1364/JOSAA.11.000107."
 
 
 DixonPrecessions::usage = 
-"DixonPrecessions is an options for DixonReconstruct. Defines the rotation of the signal {-1,1} default is -1."
+"DixonPrecessions is an option for DixonReconstruct. Defines the rotation of the signal {-1,1} default is -1."
 
 DixonFieldStrength::usage = 
-"DixonFieldStrength is an options for DixonReconstruct. Defines the fieldstrengths in Tesla on which the data was acquired."
+"DixonFieldStrength is an option for DixonReconstruct. Defines the fieldstrengths in Tesla on which the data was acquired."
 
 DixonFrequencies::usage = 
-"DixonFrequencies is an options for DixonReconstruct. Defines the frequencies in ppm of the fat peaks being used."
+"DixonFrequencies is an option for DixonReconstruct. Defines the frequencies in ppm of the fat peaks being used."
 
 DixonAmplitudes::usage = 
-"DixonAmplitudes is an options for DixonReconstruct. Defines the relative amplitudes of the fat peaks being used."
+"DixonAmplitudes is an option for DixonReconstruct. Defines the relative amplitudes of the fat peaks being used."
+
+DixonRelaxivity::usage = 
+"DixonRelaxivity is an option for DixonReconstruct. Defines the T2 relaxation times of the fat peaks being used. Is only used if DixonFixT2 is set to True."
 
 DixonNucleus::usage = 
 "DixonNucleus is an option for DixonReconstruct. Defines the nucleus for which the reconstruction is performed."
 
 DixonTollerance::usage = 
-"DixonTollerance is an options for DixonReconstruct. Defines at which change per itteration of b0 and R2star the ittarative methods stops. Default value is 0.1."
+"DixonTollerance is an option for DixonReconstruct. Defines at which change per itteration of b0 and R2star the ittarative methods stops. Default value is 0.1."
 
 DixonMaskThreshhold::usage = 
-"DixonMaskThreshhold is an options for DixonReconstruct. Defines at which threshhold the dixon reconstruction considers a voxel to be background noise. Defualt values is 0.05."
+"DixonMaskThreshhold is an option for DixonReconstruct. Defines at which threshhold the dixon reconstruction considers a voxel to be background noise. Defualt values is 0.05."
 
 DixonFilterInput::usage = 
-"DixonFilterInput is an options for DixonReconstruct. If True the input b0 and T2star values are smoothed using a gaussian kernel."
+"DixonFilterInput is an option for DixonReconstruct. If True the input b0 and T2star values are smoothed using a gaussian kernel."
 
 DixonFilterOutput::usage = 
-"DixonFilterOutput is an options for DixonReconstruct. If True the out b0 and T2star values are smoothed Median filter and lowpassfiltering after which the water and fat maps are recomputed."
+"DixonFilterOutput is an option for DixonReconstruct. If True the out b0 and T2star values are smoothed Median filter and lowpassfiltering after which the water and fat maps are recomputed."
 
 DixonFilterSize::usage = 
-"DixonFilterSize is an options for DixonReconstruct. Defines the number of voxel with which the input b0 and T2star values are smoothed."
+"DixonFilterSize is an option for DixonReconstruct. Defines the number of voxel with which the input b0 and T2star values are smoothed."
 
 DixonIterations::usage = 
-"DixonIterations is an options for DixonReconstruct. Defines the maximum itterations the fit can use."
+"DixonIterations is an option for DixonReconstruct. Defines the maximum itterations the fit can use."
 
 DixonPhases::usage = 
 "DixonPhases is an option for DixonReconstruct. It defines which phases to fit within the model.
@@ -155,6 +160,8 @@ UnwrapDimension::usage =
 UnwrapThresh::usage = 
 "UnwrapThresh is an option for Unwrap. Is a value between 0.6 and 0.9, and defines when to unwrap, the higher the value the less unwrapping will be done."
 
+DixonBipolar::usage = 
+"DixonBipolar is an option for FindInPhaseEchos. If set True the found echos will always be of the same polaritiy."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -172,6 +179,11 @@ Unwrap::dim = "Unwrapping Dimensions can be \"2D\" or \"3D\", current value is `
 
 
 Begin["`Private`"]
+
+
+(* ::Subsection::Closed:: *)
+(*Fat spectra*)
+
 
 (*fat model used in multiple functions as options*)
 dixFreq = ({{4.7}, {0.89, 1.3, 1.58, 2.03, 2.25, 2.76, 4.07, 4.3, 5.22, 5.32}} - 4.7); (*ppm with water = 0*)
@@ -213,7 +225,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	(*define the water and fat frequencies and amplitudes*)
 	freqs = OptionValue[DixonPrecessions] OptionValue[DixonFieldStrength] OptionValue[DixonFrequencies] GyromagneticRatio[OptionValue[DixonNucleus]];
 	amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
-	iop = 1/Abs[Total[(amps[[2]]^2) freqs[[2]]]/Total[amps[[2]]^2]];
+	iop = 1/Abs[Total[(amps[[2]]^2) (freqs[[2]]-freqs[[1,1]])]/Total[amps[[2]]^2]];
 
 	(*define the solution matrix*)
 	A = (Total /@ (amps Exp[(2 Pi freqs #) I ])) & /@ echos;
@@ -299,7 +311,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	, {itt}];
 
 	(*get R2 star*)
-	n = First@ FirstPosition[echos, First[Select[echos, # > 0.75 iop &]]];
+	n = First@FirstPosition[echos, First[Select[echos, # > 0.75 iop &]]];
 	t2s = Last@T2Fit[Abs[Transpose[comp[[n ;;]]]], echos[[n ;;]]];
 	r2s = DevideNoZero[1, t2s];
 
@@ -1307,112 +1319,113 @@ GetDev[a_, d_] := GetDev[a, d] = a (Total@Cos[Pi RotateDimensionsRight[N[Array[{
 Options[OptimizeDixonEcho]={DixonNucleus->"1H",DixonFrequencies->dixFreq,DixonAmplitudes->dixAmp};
 
 OptimizeDixonEcho[ops:OptionsPattern[]]:=With[{
-plotContour=ListContourPlot[Flatten[#1,1],PlotRange->{{0.0,#2},{0.0,#2},{1.0,2.6}},Contours->Range[1.0,2.6,.1],
-Frame->{{True,True},{True,True}},FrameStyle->Directive[{Thick,Black}],LabelStyle->{Bold,16,Black},
-PerformanceGoal->"Speed",MaxPlotPoints->Infinity,ClippingStyle->Automatic,ImageSize->500,
-PlotLegends->Placed[Automatic,Right],ColorFunction->ColorData[{"RedGreenSplit","Reverse"}],
-InterpolationOrder->2,MaxPlotPoints->50,ContourStyle->Thick,FrameLabel->{"initial TE [ms]","delta TE [ms]"},
-PlotLabel->"Nr. echos: "<>ToString[#3]<>" - field: "<>ToString[ToString[#4]]]&
-,
-plotSignal=Block[{time,sigF,tes,sigA},{time,sigF}=#1;{tes,sigA}=#2;
-Show[
-ListLinePlot[Transpose[{1000time,#}]&/@{Re[sigF],Im[sigF]},PlotStyle->(Directive[Opacity[.4],Dashed,#]&/@{Red,Black}),PerformanceGoal->"Speed"],
-ListLinePlot[Transpose[{1000tes,#}]&/@{Re[sigA],Im[sigA]},Mesh->All,PlotStyle->{Red,Black},PerformanceGoal->"Speed"],
-PlotRange->{1000{0,1.1Max[tes]},Full},
- PlotLabel->"initial TE: "<>ToString[Round[First[1000tes],.01]]<>" / delta TE: "<>ToString[Round[First@Differences[1000tes[[1;;2]]],.01]],
-ImageSize->500,Frame->{{True,False},{True,False}},FrameStyle->Directive[{Thick,Black}],LabelStyle->{Bold,16,Black},PerformanceGoal->"Speed",MaxPlotPoints->Infinity,ClippingStyle->Automatic,FrameLabel->{"echo time [ms]","signal"},AspectRatio->.6
-]]&
-,
-plotPhase=Block[{pts=#1},Show[
-Graphics[{Black,PointSize[.02],Point[pts]},PlotRange->{{-1.5,1.5},{-1.5,1.5}},AspectRatio->1,Axes->True,Ticks->None,ImageSize->250],ListLinePlot[Table[Callout[pts[[i]],i,1.02pts[[i]],LabelStyle->{FontSize->20,Bold},CalloutStyle->None],{i,Length[pts]}],PlotRange->{{-1.5,1.5},{-1.5,1.5}},PlotStyle->Black,Mesh->All],
-Graphics[{{Green,PointSize[.04],Point@First@pts},{Red,PointSize[.04],Point@Last@pts}}],Graphics[{Gray,Dashed,Opacity[.75],Circle[],Line[{{0,0},RotationMatrix[# Degree] . {0,1}}]&/@Range[0,360,60]}]
-]]&
-},
+		plotContour = ListContourPlot[Flatten[#1,1],PlotRange->{{0.0,#2},{0.0,#2},{1.0,2.6}},Contours->Range[1.0,2.6,.1],
+			Frame->{{True,True},{True,True}},FrameStyle->Directive[{Thick,Black}],LabelStyle->{Bold,16,Black},
+			PerformanceGoal->"Speed",MaxPlotPoints->Infinity,ClippingStyle->Automatic,ImageSize->500,
+			PlotLegends->Placed[Automatic,Right],ColorFunction->ColorData[{"RedGreenSplit","Reverse"}],
+			InterpolationOrder->2,MaxPlotPoints->50,ContourStyle->Thick,FrameLabel->{"initial TE [ms]","delta TE [ms]"},
+			PlotLabel->"Nr. echos: "<>ToString[#3]<>" - field: "<>ToString[ToString[#4]]]&
+		,
+		plotSignal = Block[{time,sigF,tes,sigA},{time,sigF}=#1;{tes,sigA}=#2;
+			Show[
+				ListLinePlot[Transpose[{1000time,#}]&/@{Re[sigF],Im[sigF]},PlotStyle->(Directive[Opacity[.4],Dashed,#]&/@{Red,Black}),PerformanceGoal->"Speed"],
+				ListLinePlot[Transpose[{1000tes,#}]&/@{Re[sigA],Im[sigA]},Mesh->All,PlotStyle->{Red,Black},PerformanceGoal->"Speed"],
+				PlotRange->{1000{0,1.1 Max[tes]},Full}, PlotLabel->"initial TE: "<>ToString[Round[First[1000tes],.01]]<>" / delta TE: "<>ToString[Round[First@Differences[1000tes[[1;;2]]],.01]],
+				ImageSize->500, AspectRatio->.6, Frame->{{True,False},{True,False}}, FrameStyle->Directive[{Thick,Black}], LabelStyle->{Bold,16,Black}, 
+				PerformanceGoal->"Speed",MaxPlotPoints->Infinity,ClippingStyle->Automatic,FrameLabel->{"echo time [ms]","signal"}]]&
+		,
+		plotPhase = Block[{pts=#1},
+			Show[
+				Graphics[{Black,PointSize[.02],Point[pts]}, PlotRange->{{-1.5,1.5},{-1.5,1.5}}, AspectRatio->1, Axes->True, Ticks->None, ImageSize->250],
+				ListLinePlot[Table[Callout[pts[[i]],i,1.02pts[[i]], LabelStyle->{FontSize->20,Bold}, CalloutStyle->None], {i,Length[pts]}], PlotRange->{{-1.5,1.5},{-1.5,1.5}}, PlotStyle->Black, Mesh->All],
+				Graphics[{{Green,PointSize[.04],Point@First@pts},{Red,PointSize[.04],Point@Last@pts}}],
+				Graphics[{Gray,Dashed,Opacity[.75],Circle[],Line[{{0,0},RotationMatrix[# Degree] . {0,1}}]&/@Range[0,360,60]}]
+		]]&
+	},
 
-Manipulate[
-tes=makeEcho[tei,dte,ne];
-time=Range[0,1.1Max[tes],0.05/1000];
-
-sigA=makeA[tes];
-sigF=makeA[time];
-
-pt=Clip[pt,{0,fr},{0,fr}];
-{tei,dte}=pt;
-
-Grid[{{
-Column[{
-Style["Condition Nr.: "<>ToString[ToString[ConditionNumberCalc[makeA[makeEcho[tei,dte,ne]]]]],Black,Bold,24,FontFamily->"Helvetica"],
-"",
-LocatorPane[Dynamic[pt],condPl,Appearance->Graphics[{Black,Disk[]},ImageSize->10]]
-},Alignment->Center],
-plotSignal[{time,sigF[[All,2]]},{tes,sigA[[All,2]]}]},
-{SpanFromAbove,plotPhase[Normalize[Reverse[#]]&/@Transpose[Through[{Re,Im}[sigA[[All,2]]]]]]}
-},Alignment->{Center,Center}]
-
-,
-
-{{nech,10,"number of echos"},2,15,1},
-{{ran,1,"number of echos"},{1,2}},
-{{fld,3,"field strength"},{0.5,1,1.5,3,7,9.4},ControlType->Setter},
-Button["Set experiment",
-
-gyro=(fld GyromagneticRatio[OptionValue[DixonNucleus]]);
-
-(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
-freqs=OptionValue[DixonFrequencies] gyro;
-amp=OptionValue[DixonAmplitudes];
-amps=If[VectorQ[amps]&&Length[amp]===3,GenerateAmps[amp][[1]],#/Total[#]&/@amp];
-makeA=(Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
-makeEcho=(#1+#2 Range[0,#3-1])/1000.&;
-
-ne=nech;
-fr=ran Ceiling[297.466/gyro,.1];
-cond=Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},{iecho,0,fr,fr/50},{decho,0,fr,fr/50}];
-condPl=plotContour[cond,fr,ne,fld];
-,Method->"Queued"]
-
-,
-{tes,ControlType->None},
-{time,ControlType->None},
-{sigA,ControlType->None},
-{sigF,ControlType->None},
-
-
-{tei,0,fr,0.01,ControlType->None},
-{dte,0,fr,0.01,ControlType->None},
-
-{pt,ControlType->None},
-{ne,ControlType->None},
-{fr,ControlType->None},
-{gyro,ControlType->None},
-{cond,ControlType->None},
-{condPl,ControlType->None},
-
-{freqs,ControlType->None},
-{amp,ControlType->None},
-{amps,ControlType->None},
-{makeA,ControlType->None},
-{makeEcho,ControlType->None},
-
-Initialization:>(
-pt={1.237,1.237};
-gyro=(3 GyromagneticRatio[OptionValue[DixonNucleus]]);
-
-(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
-freqs=OptionValue[DixonFrequencies] gyro;
-amp=OptionValue[DixonAmplitudes];
-amps=If[VectorQ[amps]&&Length[amp]===3,GenerateAmps[amp][[1]],#/Total[#]&/@amp];
-makeA=(Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
-makeEcho=(#1+#2 Range[0,#3-1])/1000.&;
-
-ne=10;
-fr=Ceiling[297.466/gyro,.1];
-
-cond=Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},{iecho,0,fr,0.05},{decho,0,fr,0.05}];
-condPl=plotContour[cond,fr,ne,fld];
-),
-SaveDefinitions->True
-]
+	Manipulate[
+		tes=makeEcho[tei,dte,ne];
+		time=Range[0,1.1Max[tes],0.05/1000];
+		
+		sigA=makeA[tes];
+		sigF=makeA[time];
+		
+		pt=Clip[pt,{0,fr},{0,fr}];
+		{tei,dte}=pt;
+		
+		Grid[{{
+			Column[{
+				Style["Condition Nr.: "<>ToString[ToString[ConditionNumberCalc[makeA[makeEcho[tei,dte,ne]]]]],Black,Bold,24,FontFamily->"Helvetica"],
+				"", LocatorPane[Dynamic[pt],condPl,Appearance->Graphics[{Black,Disk[]},ImageSize->10]]
+			}, Alignment->Center],
+			plotSignal[{time,sigF[[All,2]]},{tes,sigA[[All,2]]}]},
+			{SpanFromAbove,plotPhase[Normalize[Reverse[#]]&/@Transpose[Through[{Re,Im}[sigA[[All,2]]]]]]}
+		}, Alignment->{Center,Center}]
+		
+		,
+		{{nech,10,"number of echos"},2,15,1},
+		{{ran,1,"number of rotations"},{1,2}},
+		{{fld,3,"field strength"},{0.5,1,1.5,3,7,9.4},ControlType->Setter},
+		
+		Delimiter,
+		Button["Set experiment",
+			gyro=(fld GyromagneticRatio[OptionValue[DixonNucleus]]);
+			
+			(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
+			freqs=OptionValue[DixonFrequencies] gyro;
+			amp=OptionValue[DixonAmplitudes];
+			amps=If[VectorQ[amps]&&Length[amp]===3,GenerateAmps[amp][[1]],#/Total[#]&/@amp];
+			makeA=(Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
+			makeEcho=(#1+#2 Range[0,#3-1])/1000.&;
+			
+			ne=nech;
+			fr=ran Ceiling[297.466/gyro,.1];
+			cond=Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},{iecho,0,fr,fr/50},{decho,0,fr,fr/50}];
+			condPl=plotContour[cond,fr,ne,fld];
+		, Method->"Queued"],
+		
+		
+		{tes,ControlType->None},
+		{time,ControlType->None},
+		{sigA,ControlType->None},
+		{sigF,ControlType->None},
+				
+		{tei,0,fr,0.01,ControlType->None},
+		{dte,0,fr,0.01,ControlType->None},
+		
+		{pt,ControlType->None},
+		{ne,ControlType->None},
+		{fr,ControlType->None},
+		{gyro,ControlType->None},
+		{cond,ControlType->None},
+		{condPl,ControlType->None},
+		
+		{freqs,ControlType->None},
+		{amp,ControlType->None},
+		{amps,ControlType->None},
+		{makeA,ControlType->None},
+		{makeEcho,ControlType->None},
+		
+		Initialization:>(
+			pt={1.237,1.237};
+			gyro=(3 GyromagneticRatio[OptionValue[DixonNucleus]]);
+			
+			(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
+			freqs=OptionValue[DixonFrequencies] gyro;
+			amp=OptionValue[DixonAmplitudes];
+			amps=If[VectorQ[amps]&&Length[amp]===3,GenerateAmps[amp][[1]],#/Total[#]&/@amp];
+			makeA=(Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
+			makeEcho=(#1+#2 Range[0,#3-1])/1000.&;
+			
+			ne=10;
+			fr=Ceiling[297.466/gyro,.1];
+			
+			cond=Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},{iecho,0,fr,0.05},{decho,0,fr,0.05}];
+			condPl=plotContour[cond,fr,ne,fld];
+		),
+		
+		SaveDefinitions->True
+	]
 ]
 
 

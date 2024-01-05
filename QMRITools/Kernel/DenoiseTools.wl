@@ -762,7 +762,7 @@ WeightCalc[finDiff_,wts_,kappa_,type_] := wts Switch[type,1,Exp[-((finDiff/kappa
 FinDiffCalc[dat_,kers_] := ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*AnisoFilterData*)
 
 

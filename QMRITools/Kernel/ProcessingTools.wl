@@ -707,6 +707,7 @@ MeanStd[inp_, n_?IntegerQ] := Block[{dat},
 (* ::Subsubsection::Closed:: *)
 (*MeanRange*)
 
+
 MeanRange[inp_] := MeanRange[inp, {.14, .86}, 2]
 
 MeanRange[inp_, n_?IntegerQ] := MeanRange[inp, {.14, .86}, n]
@@ -718,6 +719,8 @@ MeanRange[inp_, q_?ListQ, n_?IntegerQ]:= Block[{q1, q2, q3},
 	Quiet@Row[{NumberForm[Round[q2, .0001], {7, n}], "  (", NumberForm[Round[q1, .0001], {7, n}], " - ", NumberForm[Round[q3, .001], {7, n}], ")"}]
 ]
   
+
+
 
 (* ::Subsection::Closed:: *)
 (*SNRCalc*)
@@ -950,7 +953,7 @@ ParametersToTransformFull[w_, opt_] := Block[{
 	(*translation*)
 	rr = rotM[[1, 1 ;; 3, 1 ;; 3]];
 	rr = Switch[opt, "Normal", rr, "Inverse", Inverse@rr];
-	transM = TranslationTransform[rr.{ty, -tx, -tz}];
+	transM = TranslationTransform[rr . {ty, -tx, -tz}];
 	(*scaling*)
 	scaleM = ScalingTransform[{sy, sx, sz} /. {0. -> 1}];
 	(*skew*)
