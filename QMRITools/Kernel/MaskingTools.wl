@@ -61,6 +61,9 @@ SplitSegmentations::usage =
 "SplitSegmentations[segmentation] splits a lable mask from ITKsnap or slicer3D in seperate masks and label numbers.
 Output is masks and label numbers, {mask, labs}."
 
+GetSegmentationLabels::usage = 
+"GetSegmentationLabels[segmentation] gives a list of all labels in the segmentation."
+
 RescaleSegmentation::usage = 
 "RescaleSegmentation[data, dim] rescales segmentations to given dimensions.
 RescaleSegmentation[data, {vox1, vox2}] rescales segmentations from voxelsize vox1 to voxelsize vox2."
@@ -69,11 +72,15 @@ MergeSegmentations::usage =
 "MergeSegmentations[masks, labels] generates an ITKsnap or slices3D compatible segmentation from individual masks and label numbers.
 Output is a labled segmentation."
 
-SelectSegmentations::usage=
-"SelectSegmentations[seg, labs] selects only the segmentaions with label number labs."
+SelectSegmentations::usage =
+"SelectSegmentations[seg, labs] selects only the segmentaions from seg with label number labs."
+
+ReplaceSegmentations::usage =
+"ReplaceSegmentations[seg, labs, new] relapaces the labels labs form the segmentation seg for labels new. Both labs and new should
+be lists of integers of the same size. If seg contains more labels then given in labs these will be replaced by 0." 
 
 SmoothSegmentation::usage =
-"SmoothSegmentation[masks] smooths segmentations and removes the overlaps between multiple segmentations." 
+"SmoothSegmentation[segmentation] smooths segmentations and removes the overlaps between multiple segmentations." 
 
 RemoveMaskOverlaps::usage = 
 "RemoveMaskOverlaps[mask] removes the overlaps between multiple masks. Mask is a 4D dataset with {z, masks, x, y}."
@@ -436,15 +443,22 @@ MeanSignal[data_, posi_, OptionsPattern[]] := Block[{pos, dat, mask},
 
 SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
 
-SplitSegmentations[masksI_]:=SplitSegmentations[masksI, True]
+SplitSegmentations[segI_]:=SplitSegmentations[segI, True]
 
-SplitSegmentations[masksI_, sparse_] := Block[{vals, masks},
-	masks = SparseArray[masksI];
-	vals = DeleteCases[Sort@Round[DeleteDuplicates[Flatten[masksI]]],0];
-	masks =(1 - Unitize[masks - #]) & /@ vals;
-	masks = Transpose[masks];
-	{If[sparse, masks, Normal@masks], vals}
+SplitSegmentations[segI_, sparse_] := Block[{vals, seg},
+	seg = SparseArray[segI];
+	vals = DeleteCases[Sort@Round[DeleteDuplicates[Flatten[segI]]],0];
+	seg =(1 - Unitize[seg - #]) & /@ vals;
+	seg = Transpose[seg];
+	{If[sparse, seg, Normal@seg], vals}
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetSegmentationLabels*)
+
+
+GetSegmentationLabels[seg_]:= DeleteCases[Sort@Round[DeleteDuplicates[Flatten[seg]]],0];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -453,9 +467,9 @@ SplitSegmentations[masksI_, sparse_] := Block[{vals, masks},
 
 SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
 
-MergeSegmentations[masks_, vals_] := Block[{mt},
-	mt = Transpose[SparseArray[masks]];
-	Normal[Total[vals mt](1 - UnitStep[Total[mt] - 2])]
+MergeSegmentations[seg_, lab_] := Block[{mt},
+	mt = Transpose[SparseArray[seg]];
+	Normal[Total[lab mt](1 - UnitStep[Total[mt] - 2])]
 ]
 
 
@@ -463,17 +477,31 @@ MergeSegmentations[masks_, vals_] := Block[{mt},
 (*SelectSegmentations*)
 
 
-SyntaxInformation[SelectSegmentations] = {"ArgumentsPattern" -> {_,_,_.}};
+SyntaxInformation[SelectSegmentations] = {"ArgumentsPattern" -> {_,_}};
 
-SelectSegmentations[segm_, labs_] := Block[{seg, lab, sel},
+SelectSegmentations[seg_, labSel_] := SelectReplaceSegmentations[seg, labSel, labSel]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ReplaceSegmentations*)
+
+
+SyntaxInformation[ReplaceSegmentations] = {"ArgumentsPattern" -> {_,_,_}};
+
+ReplaceSegmentations[segm_, labSel_, labNew_] := SelectReplaceSegmentations[segm, labSel, labNew]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SelectReplaceSegmentations*)
+
+
+SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{seg, lab, sel},
 	{seg, lab} = SplitSegmentations[segm];
-	sel = MemberQ[labs, #] & /@ lab;
-	MergeSegmentations[Transpose[Pick[Transpose[seg], sel, True]], Pick[lab, sel, True]]
-]
-
-SelectSegmentations[seg_, lab_, labs_] := Block[{sel},
-	sel = MemberQ[labs, #] & /@ lab;
-	Transpose[Pick[Transpose[seg], sel, True], Pick[lab, sel, True]]
+	sel = MemberQ[labSel, #] & /@ lab;
+	MergeSegmentations[
+		Transpose[Pick[Transpose[seg], sel, True]],
+		Pick[lab /. Thread[labSel->labNew], sel, True]
+	]
 ]
 
 

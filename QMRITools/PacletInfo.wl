@@ -25,13 +25,20 @@ PacletObject[<|
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"ColorData", "SCMv8txt.zip"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"GradientTool", "GradientGUI-v14.cdf"}}},
 		
-		(*Neural Networks for segmentation*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "Muscle_upper.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "Muscle_lower.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegBones", "Bones_full.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Side_full.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Pos_full.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegMuscleLabels", "Leg_muscles.txt"}}},
+		(*Neural Networks*)
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "Muscles_leg_upper.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "Muscles_leg_lower.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegBones", "Bones_leg_full.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Leg_side_full.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Leg_pos_full.wlnet"}}},
+
+		(*muscle segmentation labels*)
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"BonesLegLabels", "Bones_leg.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegLabels", "Muscles_leg.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegAllLabels", "Muscles_leg_all.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegHipLabels", "Muscles_leg_hip.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegLowerLabels", "Muscles_leg_lower.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegUpperLabels", "Muscles_leg_upper.txt"}}},
 
 		(*elastix and transformix*)
 		{"Asset", "Root" -> "Applications/Windows-x86-64", "SystemID" -> "Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},
