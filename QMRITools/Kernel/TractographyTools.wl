@@ -947,7 +947,7 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	select = Reverse[select, 3];
 	plot = Graphics3D[Switch[OptionValue[Method],
 		"tube", 
-		{CapForm["Butt"], JoinForm[{"Miter", 1}], Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]},
+		{CapForm["Butt"], JoinForm["Miter"], Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]},
 		"line", 
 		Line[RescaleTracts[select, vox], VertexColors -> col],
 		_, $Failed

@@ -83,7 +83,8 @@ FindMaxDimensions::usage =
 "FindMaxDimensions[{data1, data2, ..}] finds the maximal dimensions of all datasets. Each dataset is 3D."
 
 PadToDimensions::usage = 
-"PadToDimensions[data, dim] pads the data to dimensions dim." 
+"PadToDimensions[data] pads the data to the max dimensions of data, using FindMaxDimensions.
+PadToDimensions[data, dim] pads the data to dimensions dim." 
 
 RescaleData::usage = 
 "RescaleData[data,dim] rescales image/data to given dimensions.
