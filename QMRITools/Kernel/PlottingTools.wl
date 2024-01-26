@@ -102,8 +102,14 @@ ContourOpacity::usage =
 ContourColorRange::usage = 
 "ContourColorRange is an option for PlotContour. If the ContourColor is an array this values gives the plot range."
 
-ContourSize::usage = 
-"ContourSize is an option for PlotContour. Default is is \"Dimensions\" and will plot the controur on the i,j,k grid. If set to \"Size\" it is plotted in world coordinates."
+ContourScaling::usage = 
+"ContourScaling is an option for PlotCountour. The value can be \"World\" or \"Voxel\", if the value is \"Wold\" the segmentation is in mm else in voxel coordinates."
+
+ContourSmoothRadius::usage = 
+"ContourSmoothRadius is and option for PlotContour. It defines the smoothing radius with an integer, None or 0 does not smooth. "
+
+ContourResolution::usage = 
+"ContourResolution is an option for PlotContour. It defines the mesh resolution used, can be a singel number or a list of 3 numbers."
 
 RandomizeColor::usage = 
 "RandomizeColor is an option for PlotSegmentations. If True the colors are randomly assigened to each segmentation."
@@ -1807,8 +1813,10 @@ Options[PlotContour] = {
    ContourOpacity -> 0.5,
    ContourColorRange -> Automatic,
    ColorFunction -> "SunsetColors",
-   ContourSmoothing -> None
-   };
+   ContourSmoothRadius -> None,
+   ContourScaling->"World",
+   ContourResolution->Automatic
+};
 
 SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -1816,7 +1824,7 @@ PlotContour[dati_, opts:OptionsPattern[]]:=PlotContour[dati, {1,1,1}, opts]
 
 PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 		data, smooth, color, opac, dim , pad, col, style, crp,
-		ran, coldat, colfunc
+		ran, coldat, colfunc, scale, range, reso
 	},
 
 	If[ArrayDepth[dati]===4,
@@ -1824,16 +1832,18 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 		Show[PlotContour[#[[1]], vox, ContourColor->#[[2]], opts
 			]&/@ Transpose[{Transpose[dati], RandomColor[Length@First@dati]}]]
 		,
-		smooth = OptionValue[ContourSmoothing];
+		smooth = OptionValue[ContourSmoothRadius];
+		reso = OptionValue[ContourResolution];
+		scale = OptionValue[ContourScaling];
 		color = OptionValue[ContourColor];
 		opac = OptionValue[ContourOpacity];
 
 		dim = Dimensions@dati;
 		pad = 10;
 		data = ArrayPad[dati, pad];
-		If[IntegerQ[smooth], data = GaussianFilter[data, smooth]];
 
 		{data, crp} = AutoCropData[data];
+		If[IntegerQ[smooth], If[smooth>0, data = GaussianFilter[data, smooth]]];
 		
 		col = If[ColorQ[color], color, If[color==="Random", RandomColor[], GrayLevel[1.]]];
 		style = Directive[{Opacity[opac], col, Specularity[Lighter@Lighter@col, 5]}];
@@ -1852,17 +1862,23 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 			]
 		];
 
+		reso = Reverse@Round[(vox Dimensions[data]) / Switch[reso, Automatic, Reverse[vox], _, reso]];
+		scale = Switch[scale, "World", Reverse[vox], _, {1,1,1}];
+		range = Reverse[Partition[crp, 2]] - pad - {{1, 0}, {1, 0}, {1, 0}};
+		dim = Reverse[dim];
+
 		ListContourPlot3D[data,
 			Contours -> {0.5},
 			Mesh -> False, BoundaryStyle -> None, Axes -> True, 
 			SphericalRegion -> True,
 			ColorFunctionScaling -> False, ColorFunction -> colfunc,
 			ContourStyle -> style, Lighting -> "Neutral",
-
+			
+			MaxPlotPoints -> reso,
 			ImageSize -> 300,
-			DataRange -> Reverse[Partition[crp, 2]] - pad,(*Transpose[{{0, 0, 0} - pad, Reverse[dim + pad]}],*)
-			BoxRatios -> Reverse[vox dim],
-			PlotRange -> Transpose[{{0, 0, 0}, Reverse[dim]}]
+			DataRange -> scale range,
+			BoxRatios -> scale dim,
+			PlotRange -> Thread[{0, scale dim}]
 		]
 	]
 ]
@@ -1876,7 +1892,7 @@ Options[PlotSegmentations] = {
 	ImageSize -> 400, 
 	ContourOpacity->0.6,
 	ColorFunction -> "DarkRainbow", 
-	ContourSmoothing -> 2,
+	ContourSmoothRadius -> 2,
 	RandomizeColor->True
 };
 
@@ -1887,10 +1903,10 @@ PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg,
 PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op
 	},
-	{smooth, cols, size, ranCol, op} = OptionValue[{ContourSmoothing, ColorFunction, ImageSize, RandomizeColor, ContourOpacity}];
+	{smooth, cols, size, ranCol, op} = OptionValue[{ContourSmoothRadius, ColorFunction, ImageSize, RandomizeColor, ContourOpacity}];
 
 	plotb = If[bone === None, Graphics3D[],
-		PlotContour[Unitize[bone], vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothing -> smooth]
+		PlotContour[Unitize[bone], vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothRadius -> smooth]
 	];
 
 	segM = If[ArrayDepth[seg]===3, First@SplitSegmentations[seg], seg];
@@ -1900,7 +1916,7 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 	cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
 	If[ranCol, SeedRandom[12345]; cols = cols[[RandomSample@rSeg]]];
 
-	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothing -> smooth], {i, 1, nSeg}]];
+	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothRadius -> smooth], {i, 1, nSeg}]];
 
 	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]
 ]

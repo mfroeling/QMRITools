@@ -760,6 +760,7 @@ SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[
  	
  	depthD=ArrayDepth[data];
  	depthN=ArrayDepth[noise];
+	
  	snr = If[k>=1,
  		If[depthD==depthN,
  		GaussianFilter[data/(sigmac), k],
@@ -783,8 +784,8 @@ SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[
  	];
   
   Switch[OptionValue[OutputSNR],
-	 "sigma", sigma,
-	 "Both", {snr, sigma},
+	 "Sigma"|"sigma", sigma,
+	 "Both"|"both", {snr, sigma},
 	 _, snr
 	 ]
   ]
@@ -799,8 +800,8 @@ SNRMapCalc[{data1_?ArrayQ, data2_?ArrayQ}, k_?NumberQ, OptionsPattern[]] :=
   sigma = ConstantArray[StandardDeviation[Cases[Flatten[noise] // N, Except[0.]]],Dimensions[signal]];
   snr = GaussianFilter[signal/(.5 Sqrt[2] sigma), k];
   Switch[OptionValue[OutputSNR],
-	 "sigma", sigma,
-	 "Both", {snr, sigma},
+	 "Sigma"|"sigma", sigma,
+	 "Both"|"both", {snr, sigma},
 	 _, snr
 	 ]
  ]
@@ -817,8 +818,8 @@ SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] :=
   snr = GaussianFilter[div, k];
   
   Switch[OptionValue[OutputSNR],
-	 "sigma", sigma,
-	 "Both", {snr, sigma},
+	 "Sigma"|"sigma", sigma,
+	 "Both"|"both", {snr, sigma},
 	 _, snr
 	 ]
  ]

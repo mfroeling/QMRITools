@@ -980,9 +980,14 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							
 							(*perform the IDEAL dixon fit*)
 							(*-----*)AddToLog["Starting Dixon reconstruction", 4];
-							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+							(*fit with fixed fat model to get better phase estimate*)
+							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> True, DixonAmplitudes -> "CallDB"];
+								DixonPhases -> {True, True, True, True, False}, DixonFixT2 -> False, DixonAmplitudes -> "Fixed"];
+							(*fit with DB fat model*)
+							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+								{real, imag}, echos, {b0, t2star, phi, phbp}, 
+								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> False, DixonAmplitudes -> "CallDB", DixonTollerance->.1];
 							{wat, fat} = Abs[{wat, fat}];
 
 							(*export all the calculated data*)

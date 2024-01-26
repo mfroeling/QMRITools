@@ -152,6 +152,8 @@ For \"Length\", \"Angle\", {par} it can be defined in the form {..., {min, max}}
 TractReduction::usage = 
 "TractReduction is an option for PlotTracts. Value can be an Integer > 0, which determines with which facter the tract coordinates are subsampled."
 
+TractScaling::usage = 
+"TractScaling is an option for PlotTracts. The value can be \"World\" or \"Voxel\", if the value is \"Wold\" the tracts are in mm else in voxel coordinates."
 
 NormalizeDensity::usage = 
 "NormalizeDensity is an option for TractDensityMap. If set True the tractdensity is normalized, if False then it is the true tract count."
@@ -876,6 +878,7 @@ Options[PlotTracts] = {
 	Boxed->True,
 	TractSize-> 1,
 	TractReduction->1,
+	TractScaling -> "World",
 	PerformanceGoal->"Quality"
 }
 
@@ -900,12 +903,13 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	select = ResampleTracts[select, n];
 
 	(*calculated needed sizes ranges and scales*)
-	vox = Reverse@voxi;
+	scale = OptionValue[TractScaling];
+	vox = Switch[scale, "World", {1,1,1}, _, Reverse@voxi];
 	range = If[dimi === 0,
 		Round[Reverse[MinMax /@ Transpose@Flatten[tracts, 1]]/vox],
-		Reverse@Thread[{{0, 0, 0}, dimi}]];
+		Reverse@Thread[{{0, 0, 0}, Switch[scale, "World", voxi dimi, _, dimi]}]];
 	size = vox Flatten[Differences /@ range];
-	sc = OptionValue[TractSize] 0.01 Max[size/vox];
+	sc = OptionValue[TractSize];
 
 	(*get the tract vertex colors*)
 	colf = OptionValue[ColorFunction];
@@ -944,12 +948,21 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		Axes -> OptionValue[Boxed], LabelStyle -> Directive[{Bold, 16, White}]
 	}];
 
+	
 	select = Reverse[select, 3];
 	plot = Graphics3D[Switch[OptionValue[Method],
 		"tube", 
-		{CapForm["Butt"], JoinForm["Miter"], Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]},
+		{CapForm["Butt"], JoinForm["Miter"], 
+			Switch[scale, 
+				"World", Tube[select, sc, VertexColors -> col],
+				_, Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]
+			]
+		},
 		"line", 
-		Line[RescaleTracts[select, vox], VertexColors -> col],
+		Switch[scale, 
+			"World", Line[select, VertexColors -> col], 
+			_, Line[RescaleTracts[select, vox], VertexColors -> col]
+		],
 		_, $Failed
 	], opts]
 ]
@@ -1067,17 +1080,11 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 
 	(*reference environement*)
 	If[mon, Echo["Making muscle iso volumes"]];
-	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, 
-		Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
-	bon = If[bones =!= None, 
-		PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Gray, 
-			ContourSmoothing -> 2], 
-		Graphics3D[]
-	];
+	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
 
 	(*make the muscle contours*)
-	musc = Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, 
-		ContourColor -> colList[[i]], ContourSmoothing -> 2], {i, ran}];
+	musc = Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, ContourColor -> colList[[i]], ContourSmoothRadius -> 2, ContourResolution -> 3], {i, ran}];
+	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Gray, ContourSmoothRadius -> 2, ContourResolution -> 3], Graphics3D[]];
 
 	If[mon, Echo["Making per muscle tracts"]];
 	(*select the tracts per muscle and make fiber plots*)
@@ -1085,14 +1092,9 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	lengs = Length /@ tracksSel;
 	nTracts = Round[ntr lengs/Total[lengs]];
 	sel = UnitStep[nTracts - 11];
-	trac = MapThread[
-		If[#4 === 1,
-			PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, 
-				TractSize -> 0.5, TractColoring -> #3, TractReduction -> 4, 
-				PerformanceGoal -> "Speed"],
-			Graphics3D[]
-		] &, {tracksSel, nTracts, colList, sel}
-	];
+	trac = MapThread[If[#4 =!= 1, Graphics3D[],
+		PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, TractSize -> 1, TractColoring -> #3, TractReduction -> 4, PerformanceGoal -> "Speed"]
+	] &, {tracksSel, nTracts, colList, sel}];
 
 	If[mon, Echo["Finalizing scenes"]];
 	showF = Show[ref, ##, ImageSize -> OptionValue[ImageSize], Axes -> False, Boxed -> False, ViewPoint -> {0., -2., 1.}] & @@ # &;

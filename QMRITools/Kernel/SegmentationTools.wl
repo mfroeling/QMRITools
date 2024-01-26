@@ -606,9 +606,9 @@ ClassEncoderC = Compile[{{data, _Integer, 2}, {n, _Integer, 0}},
 
 SyntaxInformation[ClassDecoder] = {"ArgumentsPattern" -> {_, _.}};
 
-ClassDecoder[data_]:=ClassDecoderC[data, Last@Dimensions@data]
+ClassDecoder[data_]:= ToPackedArray@Round@ClassDecoderC[data, Last@Dimensions@data]
 
-ClassDecoder[data_, nClass_]:=ClassDecoderC[data, nClass]
+ClassDecoder[data_, nClass_]:=ToPackedArray@Round@ClassDecoderC[data, nClass]
 
 ClassDecoderC = Compile[{{data, _Real, 1}, {n, _Integer, 0}}, Block[{cl},
 	cl = (1 - Unitize[Chop[(data/Max[data]) - 1]]);
@@ -833,7 +833,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, file},
 	{what, side} = loc;
 	labIn = GetSegmentationLabels[seg];
-	
+
 	(*for now overwrite the labIn with custom values since some muscles are not segemnted *)
 	file = GetAssetLocation@Switch[type,
 		"Muscle", Switch[what, 
@@ -889,15 +889,18 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 		{patch, pts} = DataToPatches[data, ptch, PatchNumber -> 0, PatchPadding->pad];
 		If[mon, Echo[{ptch, Length@patch}, "Patch size and created number of patches is:"]];
 
+		(*actualy perform the segmentation with the NN*)
 		net = ChangeNetDimensions[net, "Dimensions" ->ptch];
-		seg = ClassDecoder[net[{NormDat[#]}, TargetDevice->dev]]&/@patch;
+		seg = ToPackedArray[Round[ClassDecoder[net[{NormDat[#]}, TargetDevice->dev]]&/@patch]];
+		
+		(*reverse all the padding and cropping and merged the patches if needed*)
 		If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Segmentations dimensions and labels:"]];
-
 		seg = ArrayPad[PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[class]], -pad];
 		seg = Ramp[seg - 1]; (*set background to zero*)
-		seg = ToPackedArray@Round[ReverseCrop[seg, dimi, crp]];
+		seg = ToPackedArray@Round@ReverseCrop[seg, dimi, crp];
 		If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Output segmentations dimensions and labels:"]];
-
+		
+		(*give the output*)
 		seg
 	]
 ]
@@ -998,8 +1001,7 @@ PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?
 		(*set overlapping to zero and then add to background label*)
 		seg = TakeLargestComponent[#, True] &/@ seg;
 		overlap = SparseArray[1 - UnitStep[Total[seg] - 2]];
-		seg = TakeLargestComponent[overlap #] &/@ seg;
-		(*seg = TakeLargestComponent/@Transpose[RemoveMaskOverlaps[Transpose@seg]];*)
+		If[Min[overlap]===1, seg = TakeLargestComponent[overlap #] &/@ seg];
 		MergeSegmentations[Transpose[seg], labs]
 	]
 ]
@@ -1008,15 +1010,15 @@ PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?
 TakeLargestComponent[seg_]:=TakeLargestComponent[seg, False]
 
 TakeLargestComponent[seg_, err_] := Block[{dim, segc, cr},
-	If[Total[Flatten[seg]] === 0,
+	If[Max[seg] < 1,
 		seg,
 		dim = Dimensions[seg];
 		{segc, cr} = AutoCropData[seg];
-		segc = If[err,
+		segc = ToPackedArray@N@If[err,
 			ImageData[Dilation[SelectComponents[Erosion[Image3D[NumericArray[segc, "Integer8"]], CrossMatrix[{1, 1, 1}]], "Count", -1, CornerNeighbors -> False], CrossMatrix[{1, 1, 1}]]],
 			ImageData[SelectComponents[Image3D[NumericArray[segc, "Integer8"]], "Count", -1, CornerNeighbors -> False]]
 		];
-		SparseArray@Round@ReverseCrop[segc, dim, cr]
+		Round@SparseArray@ReverseCrop[segc, dim, cr]
 	]
 ]
 
