@@ -500,7 +500,6 @@ GradOptimize2C = Compile[{{points, _Real, 2}, {nf, _Real, 0}, {half, _Integer, 0
    Block[{n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, 
      velocity, pointsnew, rang},
     n = Length[points];
-    pointsi = Join[points, -points];
     If[half == 1,
      pointsi = Join[points, -points]; n2 = 2 n;,
      pointsi = points; n2 = n

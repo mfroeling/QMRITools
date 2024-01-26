@@ -967,7 +967,7 @@ ParameterCalc[tensor_,OptionsPattern[]]:= Block[{eig,adc,fa},
 	eig = 1000 EigenvalCalc[tensor, Reject->OptionValue[Reject], RejectMap->False, PerformanceGoal->OptionValue[PerformanceGoal]];
 	adc = ADCCalc[eig];
 	fa = FACalc[eig];
-	Join[RotateDimensionsRight[eig],{adc,fa}]
+	Join[RotateDimensionsRight[eig], {adc,fa}]
 ]
 
 
