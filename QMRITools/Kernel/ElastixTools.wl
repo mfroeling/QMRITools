@@ -545,7 +545,7 @@ TransformixCommand[tempDir_, ind_] := Block[{
 		movfile = " -in " <>quote<>MovfileT[tempDir]<>quote;
 		
 		(*outputs*)
-		outfold = " -out "<>quote<>tempDir<>quote;
+		outfold = " -def all -out "<>quote<>tempDir<>quote;
 		output = " > "<>quote<>FileNameJoin[{tempDir, "output.txt"}]<>quote;
 		
 		(*command*)
@@ -559,7 +559,7 @@ TransformixCommand[tempDir_, ind_] := Block[{
 			movfile = " -in " <>quote<>MovfileF[#]<>quote;
 			
 			(*outputs*)
-			outfold = " -out "<>quote<>#<>quote;
+			outfold = " -def all -out "<>quote<>#<>quote;
 			output = " > "<>quote<>FileNameJoin[{#, "output.txt"}]<>quote;
 			
 			(*copy*)
@@ -1141,6 +1141,7 @@ TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command
 		(*Export and transform*)
 		ExportNii[data, vox, FileNameJoin[{tdir,"trans.nii"}]];
 		command = TransformixCommand[tdir, True];
+
 		RunCommand[command];
 		output = ToPackedArray[ImportNii[FileNameJoin[{tdir,"result.nii"}]][[1]]];
 		

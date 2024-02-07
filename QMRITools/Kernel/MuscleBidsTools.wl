@@ -181,7 +181,7 @@ PartitionBidsName[string_?StringQ]:=Block[{parts,labs,suf},
 	suf=Flatten[Select[parts,Length[#]=!=2&]];
 	suf=If[suf=!={},If[MemberQ[Keys[bidsTypes],First@suf],{"Type"->First@suf,"suf"->Rest@suf},{"suf"->suf}],{"suf"->{}}];
 	Association[Join[labs,suf]]
-] 
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -463,7 +463,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 	subs = OptionValue[SelectSubjects];
 	(*get all folders that can be processed*)
 	fols = If[met==="Dicom",
-		ResteLog[];
+		ResetLog[];
 		Select[FileNames[All, inFol], DirectoryQ],
 		SelectBidsSessions[SelectBidsSubjects[inFol]]	
 	];

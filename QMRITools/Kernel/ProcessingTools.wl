@@ -907,15 +907,15 @@ Module[{fitdat},
 (*TransformData*)
 
 
-Options[DataTransformation]={InterpolationOrder->1}
+Options[DataTransformation]={InterpolationOrder->1, PadOutputDimensions->False}
 
 SyntaxInformation[DataTransformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
 
 DataTransformation[data_, vox_, wi_, opts:OptionsPattern[]]:=DataTransformation[data, vox, wi, "Real32", opts]
 
-DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, dat,int, dim, idim, ran, aff},
+DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, dat,int, dim, idim, ran, aff, pad},
 
-	w = If[Length[wi] == 3, Join[wi, {0, 0, 0, 1, 1, 1, 0, 0, 0}], wi];
+	w = Which[Length[wi] == 3, Join[wi, {0, 0, 0, 1, 1, 1, 0, 0, 0}], Length[wi] == 12, wi, True, Return[$Failed]];
 	dat = If[ArrayDepth[data] === 4, Transpose[data], {data}];
 	int = Round@OptionValue[InterpolationOrder];
 	int = Which[int===0, "NearestLeft", 0 < int <=9, {"Spline", int}, True, {"Spline", 1}];
@@ -927,8 +927,10 @@ DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, da
 	aff = ParametersToTransformFull[w, "Inverse"];
 	n = Max@Ceiling@Abs@aff[[1,1;;3,4]];
 
-	dat = ImageData[ImageTransformation[Image3D[#, type], aff, All, 
-		Resampling -> int, DataRange -> ran,
+	pad = If[OptionValue[PadOutputDimensions]===True, All, Automatic];
+
+	dat = ImageData[ImageTransformation[Image3D[#, type], aff, (*All, *)
+		Resampling -> int, DataRange -> ran, PlotRange->pad,
 		Padding -> 0., Background -> 0., Masking -> All
 	]] & /@ dat;
 
