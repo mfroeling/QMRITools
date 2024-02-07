@@ -1893,7 +1893,8 @@ Options[PlotSegmentations] = {
 	ContourOpacity->0.6,
 	ColorFunction -> "DarkRainbow", 
 	ContourSmoothRadius -> 2,
-	RandomizeColor->True
+	RandomizeColor->True,
+	ContourResolution->Automatic
 };
 
 SyntaxInformation[PlotSegmentations] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
@@ -1901,12 +1902,12 @@ SyntaxInformation[PlotSegmentations] = {"ArgumentsPattern" -> {_, _, _., Options
 PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
 
 PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
-		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op
+		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op, res
 	},
-	{smooth, cols, size, ranCol, op} = OptionValue[{ContourSmoothRadius, ColorFunction, ImageSize, RandomizeColor, ContourOpacity}];
+	{smooth, cols, size, ranCol, op, res} = OptionValue[{ContourSmoothRadius, ColorFunction, ImageSize, RandomizeColor, ContourOpacity, ContourResolution}];
 
 	plotb = If[bone === None, Graphics3D[],
-		PlotContour[Unitize[bone], vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothRadius -> smooth]
+		PlotContour[Unitize[bone], vox, ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothRadius -> smooth, ContourResolution->res]
 	];
 
 	segM = If[ArrayDepth[seg]===3, First@SplitSegmentations[seg], seg];
@@ -1916,7 +1917,7 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 	cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
 	If[ranCol, SeedRandom[12345]; cols = cols[[RandomSample@rSeg]]];
 
-	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothRadius -> smooth], {i, 1, nSeg}]];
+	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothRadius -> smooth, ContourResolution->res], {i, 1, nSeg}]];
 
 	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]
 ]

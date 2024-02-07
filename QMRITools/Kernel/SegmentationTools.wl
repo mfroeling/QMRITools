@@ -476,15 +476,18 @@ ActivationLayer[actType_] := If[StringQ[actType],
 PrintKernels[net_] := Block[{convs, kerns, count, pars},
 	convs = Select[Information[net, "LayersList"], Head[#] === ConvolutionLayer &];
 	kerns = Information[#, "ArraysDimensions"][{"Weights"}] & /@ convs;
-	count = Sort[{#[[1, 1]], Total[#[[All, 2]]]} & /@ GatherBy[{#[[3 ;;]], Times @@ #[[1 ;; 2]]} & /@ kerns, First]];
+	count = Sort[{Length[#], #[[1, 1]], Total[#[[All, 2]]], Total[#[[All, 3]]]} & /@ 
+		GatherBy[{#[[3 ;;]], Times @@ #[[1 ;; 2]], Times @@ #[[1 ;;]]} & /@ 
+			kerns, First]];
 	pars = Information[net, "ArraysTotalElementCount"];
-	Grid[Transpose[{
-		Style[#, Bold] & /@ Join[
-			{"Convolution Layers", "Total Array Elements"}, 
-			ConstantArray["{Kernel, Elements}", Length@count], 
-			{"Total Element Count"}],
-		Join[{Length[convs], Total[count[[All, 2]]]}, count, {pars}]
-	}], Alignment -> Left, Spacings -> {2, 1}]
+	Column[{Grid[
+		Transpose[{Style[#, Bold] & /@ {"Convolution Layers", "Total Kernels", "Total Weighths"},
+		{Length[convs], Total[count[[All, 3]]], 
+		Total[count[[All, 4]]]}}], Alignment -> Left, Spacings -> {2, 1}],
+		"",
+		Grid[Join[{Style[#, Bold] & /@ {"Size", "Count", "Kernels", "Weights"}}, 
+		count], Alignment -> Left, Spacings -> {2, 1}]}, 
+	Alignment -> Center]
 ]
 
 
@@ -910,13 +913,7 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 (*NormDat*)
 
 
-NormDat = Compile[{{dat, _Real, 3}}, Block[{data},
-	If[Min[dat]=!=Max[dat],
-		data = Flatten[dat];
-		0.5 dat/Median[Pick[data, Unitize[data], 1]],
-		dat
-	]
-], RuntimeOptions -> "Speed", RuntimeAttributes->Listable];
+NormDat[dat_] := Block[{q = Quantile[Flatten[dat], 0.9], m = Max[dat]}, If[q <= 0.5 m, If[m===0., dat, dat/m], If[q===0., dat, 0.75 dat/q]]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1103,7 +1100,8 @@ Options[TrainSegmentationNetwork] = {
 	BatchSize -> 4,
 	RoundLength -> 256,
 	MaxTrainingRounds -> 500,
-	AugmentData -> True
+	AugmentData -> True,
+	LoadTrainingData -> True
 };
 
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPattern[]] := TrainSegmentationNetwork[{inFol, outFol}, "Start", opts]
@@ -1111,22 +1109,24 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPatter
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
 		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, ittName, makeIm,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im,
-		netName, monitorFunction, netMon, netOut, trained
+		netName, monitorFunction, netMon, netOut, trained, 
+		validation, files
 	},
 
 	(*------------ Get all the configuration struff -----------------*)
 
 	(*getting all the options*)
-	netOpts = Join[FilterRules[Options@TrainSegmentation, Options@MakeUnet], FilterRules[{opts}, Options@MakeUnet]];
+	netOpts = Join[FilterRules[{opts}, Options@MakeUnet], FilterRules[Options@TrainSegmentationNetwork, Options@MakeUnet]];
 	{batch, roundLength, rounds, augment} = OptionValue[{BatchSize, RoundLength, MaxTrainingRounds, AugmentData}];
 	
 	(*import all the train data*)
-	data = Import /@ FileNames["*.wxf", inFol];
+	files = FileNames["*.wxf", inFol];
 
 	(*figure out network properties*)
-	dDim = Dimensions@data[[All, 1]][[1]];
-	nChan = If[Length@dDim === 3, 1, dDim[[2]]];
-	nClass = Round[Max@data[[All, 2]] + 1];
+	data = Import@First@files;
+	dDim = Dimensions@data[[1]][[1]];
+	nChan = If[Length@dDim === 2, 1, dDim[[2]]];
+	nClass = Round[Max@data[[2]] + 1];
 	patch = OptionValue[PatchSize];
 
 	(*local pure functions*)
@@ -1185,7 +1185,6 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		(*Make and export test data*)
 		{testData, testVox} = MakeTestData[data, 2, patch];
 		testSeg = ApplySegmentationNetwork[testData, netIn];
-
 		im = makeIm[testData, testSeg];
 		Export[ittName[ittTrain], im];
 		ExportNii[First@testData, testVox, outName["testSet.nii"]];
@@ -1215,10 +1214,12 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 		Echo[DateString[], "Starting training"];
 
+		data = If[OptionValue[LoadTrainingData]===True, Import/@files, files];
+
+		validation = GetTrainData[data, Round[0.2 roundLength], patch, nClass];
 		trained = NetTrain[
-			AddLossLayer@netIn,
-			{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment] &, "RoundLength" -> roundLength},
-			All, ValidationSet -> GetTrainData[data, Round[0.2 roundLength], patch, nClass](*Scaled[0.2]*),
+			AddLossLayer@netIn,	{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment] &, "RoundLength" -> roundLength},
+			All, ValidationSet -> validation,
 
 			LossFunction -> {"SoftDice", "SquaredDiff", "CrossEntropy"}, 
 			MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
@@ -1244,13 +1245,13 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 
 MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
-	testData = data[[1, 1]];
+	testData = data[[1]];
 	len = Length@testData;
 	If[len > First@patch,
 		sel = Range @@ Clip[Round[(Clip[Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, n First@patch})], {1, len}, {1, len}];
 		testData = First@AutoCropData[testData[[sel]]]
 	];
-	{{PadToDimensions[testData, patch]}, data[[1, 3]]}
+	{{PadToDimensions[testData, patch]}, data[[3]]}
 ];
 
 
@@ -1285,7 +1286,7 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 		BooleanQ[aug], aug,
 		True, True
 	];
-	aug = # && aug & /@ {True, True, True, True, False, False, False};
+	aug = # && aug & /@ {True, True, True, True, True, True, True(*False, False, False*)};
 
 	itt = Ceiling[nBatch/nSet];
 
@@ -1358,20 +1359,20 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 	(*Augmentation of orientation and scale*)
 	If[rot || trans || scale,
 		w = Join[
-			If[rot, {1., 0., 0.} {RandomReal[{-90, 90}], RandomReal[{-20, 20}], RandomReal[{-20, 20}]}, {0., 0., 0.}],
-			If[trans, {0., 1., 1.} (Dimensions[dat] vox)  RandomReal[{-0.1, 0.1}, 3], {0., 0., 0.}],
-			If[scale, {0., 1., 1.} RandomReal[{0.5, 1.5}, 3], {1., 1., 1.}],
+			If[rot, {1., 1., 1.} {RandomReal[{-180, 180}], RandomReal[{-10, 10}], RandomReal[{-10, 10}]}, {0., 0., 0.}],
+			If[trans, {1., 1., 1.} (Dimensions[dat] vox)  RandomReal[{-0.05, 0.05}, 3], {0., 0., 0.}],
+			If[scale, {1., 1., 1.} RandomReal[{0.5, 2}, 3], {1., 1., 1.}],
 			{0., 0., 0.}
 		];
 		
-		datT = DataTransformation[datT, vox, w, InterpolationOrder -> 1];
-		segT = DataTransformation[segT, vox, w, InterpolationOrder -> 0];
+		datT = DataTransformation[datT, vox, w, InterpolationOrder -> 0, PadOutputDimensions -> False];
+		segT = DataTransformation[segT, vox, w, InterpolationOrder -> 0, PadOutputDimensions -> False];
 	];
 	
 	(*Augmentations of sharpness intensity and noise*)
 	If[bright, datT = RandomChoice[{RandomReal[{1, 1.5}], 1/RandomReal[{1, 1.5}]}] datT];
 	If[blur, datT = GaussianFilter[datT, RandomReal[{0.1, 1.5}]]];
-	If[noise && RandomChoice[{True, False, False}], datT = AddNoise[datT, 0.5/RandomReal[{10, 100}]]];
+	If[noise && RandomChoice[{True, False, False}], datT = AddNoise[datT, 0.5/RandomReal[{1, 100}]]];
 	
 	{ToPackedArray[N[datT]], ToPackedArray[Round[segT]]}
 ]
@@ -1504,8 +1505,11 @@ MakeClassImage[label_, {off_, max_}]:=MakeClassImage[label, {off, max}, {1,1,1}]
 MakeClassImage[label_, vox_]:=MakeClassImage[label,MinMax[label],vox]
 
 MakeClassImage[label_,{off_, max_}, vox_]:=Block[{cols, im, rat},
-	cols = Prepend[ColorData["DarkRainbow"][#]&/@Rescale[Range[off+1, max]],Transparent];
+	(*SeedRandom[1345];
+	cols = Prepend[ColorData["DarkRainbow"][#]&/@RandomSample[Rescale[Range[off+1, max]]],Transparent];*)
 	
+	cols = Prepend[ColorData["DarkRainbow"][#]&/@Rescale[Range[off+1, max]],Transparent];
+
 	im = Round@Clip[If[ArrayDepth[label] === 3, label[[Round[Length@label/2]]], label] - off + 1, {1, max + 1}, {1, 1}];
 	rat=vox[[{2,3}]]/Min[vox[[{2,3}]]];
 	
@@ -1522,7 +1526,9 @@ SyntaxInformation[MakeChannelImage]={"ArgumentsPattern"->{_, _., _.}};
 MakeChannelImage[data_]:=MakeChannelImage[data, {1, 1, 1}]
 
 MakeChannelImage[data_, vox_]:=Block[{dat, im, rat},
-	dat = NormDat[data];
+	(*dat = Rescale[data];*)
+	dat = NormDat@data;
+
 	rat = vox[[{2, 3}]] / Min[vox[[{2, 3}]]];
 	(
 		im=#;
