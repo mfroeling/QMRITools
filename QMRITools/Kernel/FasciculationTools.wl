@@ -347,9 +347,15 @@ AnalyzeActivationsI[act_,msk_,lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVo
 	nVols=Length@act[[1]];
 	nObs=nSlices nVols;
 	
-	mSd=If[nActs>2,{Mean[sizes],StandardDeviation[sizes]},{0,0}];
-	quants=If[nActs>2,Quantile[sizes,{0.5,0.05,0.95}],{0,0,0}];
+	(*mSd=If[nActs>2,{Mean[sizes],StandardDeviation[sizes]},{0,0}];
+	quants=If[nActs>2,Quantile[sizes, {0.5,0.05,0.95}],{0,0,0}];*)
 	
+	mSd = Which[
+		nActs > 2, {Mean[sizes], StandardDeviation[sizes]},
+		0 < nActs <=2, {Mean[sizes], 0.},
+		True, {0., 0.}];
+	quants = If[0 < nActs, Quantile[sizes, {0.5, 0.05, 0.95}], {0. ,0. ,0.}];
+
 	chance=100. nActs/nVols;
 	chanceO=100. nActs/nObs;
 	chanceV = 1000. 100. nActs/nObs / mSizeT;
