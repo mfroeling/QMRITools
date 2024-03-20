@@ -305,9 +305,9 @@ PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, out_:True] := PhaseCorrectSpectra[
 
 PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, out_:True] := PhaseCorrectSpectra[spec, dw, te, 0, Full, out]
 
-PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, gyro_?NumberQ, ppmRan_?ListQ, out_:True] := PhaseCorrectSpectra[spec, dw, 0, gyro, ppmRan, out]
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, gyro_?NumberQ, ppmRan_, out_:True] := PhaseCorrectSpectra[spec, dw, 0, gyro, ppmRan, out]
 
-PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, gyro_?NumberQ, ppmRan_?ListQ, out_:True] := Module[{fid, specOut, missing, full, henkelSpec, phi, phi0},
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, gyro_?NumberQ, ppmRan_, out_:True] := Module[{fid, specOut, missing, full, henkelSpec, phi, phi0},
 	(*create the fid*)
 	fid = ShiftedInverseFourier[spec];
 	
@@ -801,7 +801,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 	
 	(*get the option values*)
 	{seq, svals} = OptionValue[BasisSequence];
-	readout = Switch[seq, "PulseAcquire","Fid", "SpaceEcho","Echo"];
+	readout = Switch[seq, "PulseAcquire"|"STEAM","Fid", "SpaceEcho","Echo"];
 	
 	nsamp = OptionValue[SpectraSamples];
 	bw = OptionValue[SpectraBandwith];
@@ -833,6 +833,9 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 				"PulseAcquire",
 				te = svals;
 				dr = SequencePulseAcquire[din, struct, te],
+				"STEAM",
+				{te, tm} = svals;
+				dr = SequenceSteam[din, struct, {te, tm}],
 				"SpaceEcho",
 				{t1, t2, necho} = svals;
 				dr = SequenceSpaceEcho[din, struct, t1, t2, necho, 1]

@@ -992,7 +992,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 			(*make coil sensitivity using the first 5 samples of the fid*)
 			(*sens = MakeSense[HammingFilterCSI[Mean[fids[[1 ;; OptionValue[CoilSamples]]]]],cov];*)
 			sens = If[sense === 0,
-				MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]],cov],
+				MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]],cov, SenseRescale -> False],
 				sense
 			];
 			(*perform the recon*)

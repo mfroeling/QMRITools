@@ -30,7 +30,8 @@ are \"LegSide\", \"LegSide\", \"SegThighMuscle\", \"SegLegMuscle\", and \"SegLeg
 
 
 MakeUnet::usage = 
-"MakeUnet[nChannels, nClasses, dep, dimIn] Generates a UNET with nChannels as input and nClasses as output. 
+"MakeUnet[nClasses, dimIn] Generates a UNET with one channel as input and nClasses as output. 
+MakeUnet[nChannels, nClasses, dimIn] Generates a UNET with nChannels as input and nClasses as output. 
 he number of parameter of the first convolution layer can be set with dep.\n
 The data dimensions can be 2D or 3D and each of the dimensions should be 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240 or 256."
 
@@ -186,6 +187,9 @@ DownsampleSchedule::usage =
 "DownsampleSchedule is an option for MakeUnet. It defines how the data is downsampled for each of the deeper layers of the Unet. 
 By default is is a factor two for each layer. A custum schedual for a 4 layer 3D Unet could be {{2,2,2},{1,2,2},{2,2,2},{1,2,2}}."
 
+FeatureSchedule::usage = "FeatureSchedule is an option for MakeUnet. It defines how the number of features is upsampled for each of the deeper layers of the Unet.
+By default it increases the number of features by a factor 2 each layer, i.e. {1, 2, 4, 8, 16}"
+
 InputFilters::usage = 
 "InputFilters is an option for MakeUnet. It defines the amount of convolutional filters of the the first UNET block."
 
@@ -261,19 +265,22 @@ Options[MakeUnet] = {
 	DropoutRate -> 0.2, 
 	NetworkDepth -> 5, 
 	DownsampleSchedule -> Automatic, 
+	FeatureSchedule -> Automatic,
 	InputFilters -> 32, 
 	ActivationType -> "GELU"
 }
 
-SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+MakeUnet[nClass_, dimIn_, opts:OptionsPattern[]] :=MakeUnet[1, nClass, dimIn, opts]
 
 MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
-		dep, dep1, drop, type, dim, nDim, filt, enc, dec, stride, filtIn, actType
+		dep, dep1, drop, type, dim, nDim, filt, feat, enc, dec, stride, filtIn, actType
 	},
 
 	(*Get the options*)
-	{dep, drop, type, stride, filtIn, actType} = OptionValue[
-		{NetworkDepth, DropoutRate, BlockType, DownsampleSchedule, InputFilters, ActivationType}
+	{dep, drop, type, stride, feat, filtIn, actType} = OptionValue[
+		{NetworkDepth, DropoutRate, BlockType, DownsampleSchedule, FeatureSchedule, InputFilters, ActivationType}
 	];
 
 	(*Define UNET properties*)
@@ -282,10 +289,11 @@ MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
 	dep1 = dep-1;
 	nDim = Length@dimIn;
 	dim = Switch[nDim, 2, "2D", 3, "3D"];
-	filt = Switch[type, 
-		"DenseNet" | "UDenseNet", Table[{filtIn, 1 + i}, {i, {1, 2, 4, 6, 8}}],
-		_, filtIn {1, 2, 4, 8, 16}
-	];
+	feat = If[feat===Automatic,
+		Switch[type, "DenseNet" | "UDenseNet", {1, 2, 4, 6, 8}, _, {1, 2, 4, 8, 16}],
+		feat];
+	feat = PadRight[feat, dep, Last@feat];
+	filt = Switch[type, "DenseNet" | "UDenseNet", Table[{filtIn, 1 + i}, {i, feat}], _, filtIn feat];
 	stride = Prepend[If[stride===Automatic, ConstantArray[2, {dep-1, nDim}], stride], {1, 1, 1}[[;;nDim]]];
 
 	(*make the UNET*)
@@ -302,6 +310,7 @@ MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
 			{"start" -> UNetStart[filt[[1]], nChan, dimIn, actType]},
 			{"map" -> UNetMap[dimIn, nClass]}
 		],
+
 		Join[
 			{NetPort["Input"] -> "start" -> enc[1], {enc[dep], enc[dep1]} -> dec[dep1], dec[1] -> "map"},
 			Table[enc[i - 1] -> enc[i], {i, 2, dep}],
@@ -327,7 +336,7 @@ UNetMap[dim_, nClass_] :=  Flatten[{
 (*UNetStart*)
 
 
-UNetStart[filt_, nChan_, dimIn_, actType_] := {ConvolutionLayer[filt, 1, "Input" -> Prepend[dimIn, nChan]], BatchNormalizationLayer[], ActivationLayer[actType]}
+UNetStart[filt_, nChan_, dimIn_, actType_] := {ConvolutionLayer[If[IntegerQ[filt],filt,First@filt], 1, "Input" -> Prepend[dimIn, nChan]], BatchNormalizationLayer[], ActivationLayer[actType]}
 
 
 (* ::Subsubsection::Closed:: *)
@@ -485,7 +494,7 @@ PrintKernels[net_] := Block[{convs, kerns, count, pars},
 		{Length[convs], Total[count[[All, 3]]], 
 		Total[count[[All, 4]]]}}], Alignment -> Left, Spacings -> {2, 1}],
 		"",
-		Grid[Join[{Style[#, Bold] & /@ {"Size", "Count", "Kernels", "Weights"}}, 
+		Grid[Join[{Style[#, Bold] & /@ {"Count", "Size", "Kernels", "Weights"}}, 
 		count], Alignment -> Left, Spacings -> {2, 1}]}, 
 	Alignment -> Center]
 ]
@@ -884,16 +893,19 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 		inp = NetDimensions[net,"Input"];
 		out = Rest[NetDimensions[net, "LastEncoding"]];
 		class = NetDimensions[net,"Output"][[-1]];
+
 		dim = Dimensions[data];
 		sc = Rest[inp]/out;
 
 		(*calculate the patch size for the data *)
 		ptch = FindPatchDim[dim, lim, sc];
+		ptch = Max /@ Thread[{ptch, Rest@inp}];
 		{patch, pts} = DataToPatches[data, ptch, PatchNumber -> 0, PatchPadding->pad];
 		If[mon, Echo[{ptch, Length@patch}, "Patch size and created number of patches is:"]];
 
 		(*actualy perform the segmentation with the NN*)
 		net = ChangeNetDimensions[net, "Dimensions" ->ptch];
+
 		seg = ToPackedArray[Round[ClassDecoder[net[{NormDat[#]}, TargetDevice->dev]]&/@patch]];
 		
 		(*reverse all the padding and cropping and merged the patches if needed*)
@@ -1092,8 +1104,9 @@ GetPatchRangeI[dim_?IntegerQ, patch_?IntegerQ, {nr_, pad_}]:=Block[{i,st},
 Options[TrainSegmentationNetwork] = {
 	PatchSize -> {32, 96, 96},
 	DownsampleSchedule -> {{1, 2, 2}, {2, 2, 2} , {1, 2, 2}, {2, 2, 2}},
+	FeatureSchedule -> {1, 2, 4, 8, 16},
 	NetworkDepth -> 5,
-	InputFilters -> 24,
+	InputFilters -> 32,
 	DropoutRate -> 0.2,
 	BlockType -> "ResNet",
 
@@ -1101,6 +1114,7 @@ Options[TrainSegmentationNetwork] = {
 	RoundLength -> 256,
 	MaxTrainingRounds -> 500,
 	AugmentData -> True,
+	PatchesPerSet -> 1,
 	LoadTrainingData -> True
 };
 
@@ -1117,7 +1131,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*getting all the options*)
 	netOpts = Join[FilterRules[{opts}, Options@MakeUnet], FilterRules[Options@TrainSegmentationNetwork, Options@MakeUnet]];
-	{batch, roundLength, rounds, augment} = OptionValue[{BatchSize, RoundLength, MaxTrainingRounds, AugmentData}];
+	{batch, roundLength, rounds, augment, patches} = OptionValue[{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PatchesPerSet}];
 	
 	(*import all the train data*)
 	files = FileNames["*.wxf", inFol];
@@ -1218,7 +1232,9 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 		validation = GetTrainData[data, Round[0.2 roundLength], patch, nClass];
 		trained = NetTrain[
-			AddLossLayer@netIn,	{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment] &, "RoundLength" -> roundLength},
+			AddLossLayer@netIn,	{GetTrainData[data, #BatchSize, patch, nClass, 
+				AugmentData -> augment, PatchesPerSet->patches
+			] &, "RoundLength" -> roundLength},
 			All, ValidationSet -> validation,
 
 			LossFunction -> {"SoftDice", "SquaredDiff", "CrossEntropy"}, 
@@ -1506,9 +1522,11 @@ MakeClassImage[label_, vox_]:=MakeClassImage[label,MinMax[label],vox]
 
 MakeClassImage[label_,{off_, max_}, vox_]:=Block[{cols, im, rat},
 	(*SeedRandom[1345];
-	cols = Prepend[ColorData["DarkRainbow"][#]&/@RandomSample[Rescale[Range[off+1, max]]],Transparent];*)
-	
-	cols = Prepend[ColorData["DarkRainbow"][#]&/@Rescale[Range[off+1, max]],Transparent];
+		cols = Prepend[ColorData["DarkRainbow"][#]&/@RandomSample[Rescale[Range[off+1, max]]],Transparent];
+		cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Range[off+1, max]],Transparent];
+	*)
+
+ 	cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Join[Select[Range[off + 1, max], EvenQ], Select[Range[off + 1, max], OddQ]]],Transparent];
 
 	im = Round@Clip[If[ArrayDepth[label] === 3, label[[Round[Length@label/2]]], label] - off + 1, {1, max + 1}, {1, 1}];
 	rat=vox[[{2,3}]]/Min[vox[[{2,3}]]];

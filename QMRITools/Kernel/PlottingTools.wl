@@ -1914,8 +1914,11 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 	nSeg = Length@First@segM;
 	rSeg = Range[nSeg];
 
-	cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
-	If[ranCol, SeedRandom[12345]; cols = cols[[RandomSample@rSeg]]];
+	If[ColorQ[cols],
+		cols = ConstantArray[cols, nSeg];,
+		cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
+		If[ranCol, SeedRandom[12345]; cols = cols[[RandomSample@rSeg]]];
+	];
 
 	plotm = Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothRadius -> smooth, ContourResolution->res], {i, 1, nSeg}]];
 

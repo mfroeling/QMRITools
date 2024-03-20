@@ -92,6 +92,20 @@ When using the toolbox please cite one of the following references:
   quantitative MRI measures in healthy calf muscles; NMR Biomed. 2019;32:e4119
   [link](https://onlinelibrary.wiley.com/doi/full/10.1002/nbm.4119)
 
+## Media and awards
+
+- During the 2023 ISMRM in Toronto QMRITools was awarded received the “Best Open Source Tool Award” from the Quantitative MRI study group.
+- If you want to learn more about the workings of QMRITools you can watch a live discussion with the Wolfram academic outreach team about <a href="https://www.youtube.com/live/wupxxiPJkxU?si=22BV_HSSa5u7Ds3D" target="_blank">QMRITools</a> and the role of computational Wolfram technology.
+- A more in depth explanation of <a href="https://www.youtube.com/live/LVUBupORthA?si=UjoNpM2szsrgB7xx" target="_blank">the paclet functionality</a> was presented to the Wolfram R&D Team.
+- QMRITools is build using Wolfram language for which it was awarded the <a href="https://www.wolfram.com/events/technology-conference/innovator-award/2023/martijn-froeling" target="_blank">Wolfram Innovator Award</a> in 2023 during the Wolfram Technology conference.
+
+<p align="center">
+<img src="https://github.com/mfroeling/QMRITools/raw/master/docs/images/ToolAward.png"
+alt="Best Open Source Tool Award for quantitative MRI."
+title="Best Open Source Tool Award for quantitative MRI."
+width="70%" />
+</p>
+
 ## Documentation
 
 An online version of the full documentation can be found [here](https://www.qmritools.com/assets/htmldoc/html/guide/qmritools).

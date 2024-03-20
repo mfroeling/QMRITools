@@ -326,11 +326,14 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	{mon, wht, tol, ker, clip, comp} = OptionValue[{MonitorCalc, PCAWeighting, PCATollerance, PCAKernel, PCAClipping, PCAComplex}];
 	
 	(*concatinate complex data and make everything numerical to speed up*)
+	comps = False;
 	data = ToPackedArray@N@If[comp, 
 		clip = False;
-		Join[datai[[1]], datai[[2]], 2], 
+		data = If[Length@datai===2, datai, comps = True; Through[{Re, Im}[datai]]];
+		Join[data[[1]], data[[2]], 2],
 		datai
 	];
+	
 	{min, max} = 1.1 MinMax[Abs[data]];
 	maskd = Unitize@Total@Transpose[data];
 	mask = ToPackedArray[N@(maski maskd)];
@@ -480,6 +483,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		True, datao
 	];
 
+	If[comps, datao = datao[[1]]+ I datao[[2]]];
+
 	If[OptionValue[PCAOutput],
 		(*fitted dta,average sigma,{sigma fit,number components, number of fitted voxesl,number of max fits}*)
 		{datao, sigmat, output},
@@ -602,9 +607,7 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 	
     (*Denoise the spectra data*)
     {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, 
-    	PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel], MonitorCalc->False];
-    
-    Print[Mean@Flatten@sig];	
+    	PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel], MonitorCalc->False, Method -> "Patch"];
     	
     ToPackedArray@N@RotateDimensionsLeft[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I]
 ]
