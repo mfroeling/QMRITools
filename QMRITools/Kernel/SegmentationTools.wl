@@ -873,7 +873,7 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 	},
 	
 	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
-	If[lim === Automatic, lim = If[dev==="GPU", 224, 112]];
+	If[lim === Automatic, lim = If[dev==="GPU", 224, 224]];
 
 	data=If[First@Dimensions@dat===1, First@dat, dat];
 
@@ -1411,7 +1411,7 @@ PatchTrainingData[{dat_,seg_}, patch_, n_]:=Block[{pts,datP,segP},
 (* ::Subsubsection::Closed:: *)
 (*PrepTrainData*)
 
-PrepTrainData[dat_, seg_]:= PrepTrainData[dat, seg, {0, 0}]
+PrepTrainData[dat_, seg_]:= PrepTrainData[dat, seg, {0}]
 
 PrepTrainData[dat_, seg_, labi_?VectorQ]:= PrepTrainData[dat, seg, {labi, labi}]
 
@@ -1419,7 +1419,7 @@ PrepTrainData[dat_, seg_, {labi_?VectorQ, labo_?VectorQ}] := Block[{cr},
 	cr = FindCrop[dat  Mask[NormalizeData[dat], 5, MaskDilation -> 1]];
 	{
 		NormDat[ApplyCrop[dat, cr]], 
-		If[labi===0,
+		If[labi==={0},
 			ApplyCrop[seg,cr],
 			ReplaceSegmentations[ApplyCrop[seg, cr], labi, labo]
 		]

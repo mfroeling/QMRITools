@@ -1067,24 +1067,26 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	(*prepare data*)
 	segs = Transpose@segments;
 	If[mon, Echo["Fitting tracts"]];
-	SeedRandom[12345];
+	SeedRandom[1234];
 	tractsF = RandomSample[tracts, Min[{5 ntr, Length@tracts}]];
 	tractsF = FitTracts[tractsF, vox, dim, FittingOrder -> 3];
 	tractsFI = RescaleTractsC[tractsF, vox];
 
 	(*make colors*)
+	SeedRandom[1234];
 	ran = Range[Length@segs];
-	SeedRandom[12345];
-	rand = RandomSample[ran];
-	colList = ColorData["DarkRainbow"] /@ N[Rescale[rand]];
+	colList = Reverse[ColorData["DarkRainbow"] /@ Rescale[ran]][[RandomSample[ran]]];
+
+	(*rand = RandomSample[ran];
+	colList = ColorData["DarkRainbow"] /@ N[Rescale[rand]];*)
 
 	(*reference environement*)
 	If[mon, Echo["Making muscle iso volumes"]];
 	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
 
 	(*make the muscle contours*)
-	musc = Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, ContourColor -> colList[[i]], ContourSmoothRadius -> 2, ContourResolution -> 3], {i, ran}];
-	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Gray, ContourSmoothRadius -> 2, ContourResolution -> 3], Graphics3D[]];
+	musc = Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, ContourColor -> colList[[i]], ContourSmoothRadius -> 2, ContourResolution -> {12, 3, 3}], {i, ran}];
+	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Gray, ContourSmoothRadius -> 2, ContourResolution -> {12, 3, 3}], Graphics3D[]];
 
 	If[mon, Echo["Making per muscle tracts"]];
 	(*select the tracts per muscle and make fiber plots*)
@@ -1093,7 +1095,7 @@ PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_
 	nTracts = Round[ntr lengs/Total[lengs]];
 	sel = UnitStep[nTracts - 11];
 	trac = MapThread[If[#4 =!= 1, Graphics3D[],
-		PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, TractSize -> 1, TractColoring -> #3, TractReduction -> 4, PerformanceGoal -> "Speed"]
+		PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, TractSize -> 1, TractColoring -> #3, TractReduction -> 5, PerformanceGoal -> "Speed"]
 	] &, {tracksSel, nTracts, colList, sel}];
 
 	If[mon, Echo["Finalizing scenes"]];

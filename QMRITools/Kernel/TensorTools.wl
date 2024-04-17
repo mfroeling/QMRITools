@@ -764,8 +764,8 @@ EigenSys[tens_,out_,OptionsPattern[]]:=Block[{t, met, val, vec,reject, sel},
 	
 	t=Which[
 		VectorQ[tens], tens,
-		MatrixQ[tens], TensVec[tens],
-		ArrayQ[tens], RotateDimensionsLeft[tens]
+		MatrixQ[tens]&&Dimensions[tens]==={3,3}, TensVec[tens],
+		(*ArrayQ[tens]*)True, RotateDimensionsLeft[tens]
 	];
 	
 	{val,vec} = If[met==="Speed", EigenSysC[t,out], EigenSysQ[t,out]];

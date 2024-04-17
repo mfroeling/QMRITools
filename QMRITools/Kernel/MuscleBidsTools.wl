@@ -85,7 +85,10 @@ MuscleBidsProcess::usage =
 "MuscleBidsProcess[dir] processes all Muscle-Bids named nii based on the config file in the bids sourceFolder dir."
 
 MuscleBidsMerge::usage = 
-"MuscleBidsMerge[niiFol] merges multiple stack data for all Muscle-Bids named nii based on the config file in the bids sourceFolder dir."
+"MuscleBidsMerge[dir] merges multiple stack data for all Muscle-Bids named nii based on the config file in the bids sourceFolder dir."
+
+MuscleBidsSegment::usage = 
+"MuscleBidsSegment[dir]."
 
 CheckDataDiscription::usage =
 "CheckDataDiscription[discription] checks the data discription config file used in BidsDcmToNii, MuscleBidsConvert, MuscleBidsProcess and MuscleBidsMerge."
@@ -120,7 +123,7 @@ CheckDataDiscription::class = "Unknown Muscle-BIDS Class: `1`. Must be \"Volume\
 
 CheckDataDiscription::lab = "Invalid combination of Class and Label: `1` with `2` is not allowed.";
 
-CheckDataDiscription::man = "Manditory values \"Lable\" and \"Type\" are not in the data discription.";
+CheckDataDiscription::man = "Manditory values \"Label\" and \"Type\" are not in the data discription.";
 
 CheckDataDiscription::stk = "Class \"stacks\" is used but overlap is not defined, assuming overlap 0.";
 
@@ -151,7 +154,9 @@ bidsTypes = <|
 	(*quant types*)
 	"T1"->"quant", "T2"->"quant", "wT2"->"quant",
 	(*diff types*)
-	"dwi"->"dwi"
+	"dwi"->"dwi",
+	(*seg types*)
+	"seg"->"seg"
 |>;
 
 
@@ -163,7 +168,7 @@ bidsClass = {"Volume", "Stacks", "Repetitions"};
 
 dataToLog =If[KeyExistsQ[#, $Failed], 
 	"Wrong data dicription: " <> #[$Failed], 
-	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[KeyDrop[#, {"Process", "Merging"}]]]
+	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[KeyDrop[#, {"Process", "Merging","Segment"}]]]
 ]&;
 
 
@@ -326,7 +331,8 @@ CheckConfig[infol_?StringQ, outfol_?StringQ]:=CheckConfig[infol, outfol, ""]
 CheckConfig[infol_?StringQ, outfol_?StringQ, confin_]:=Block[{conf, nam},
 	nam = GenerateBidsName[PartitionBidsFolderName[outfol][[-1]]];
 	conf = Quiet@GetConfig[infol, nam];
-	(*Print[FileNameJoin[{outfol, nam<>"_config.json"}]];*) 
+
+(*Print[FileNameJoin[{outfol, nam<>"_config.json"}]];*) 
 	If[conf =!= $Failed,
 		Export[FileNameJoin[{outfol, nam<>"_config.json"}], conf];
 		{True, conf}, 
@@ -480,9 +486,13 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 		nam = GenerateBidsName[ass];
 		out = GenerateBidsFolderName[outFol, ass];
 		
-		(*check for custom config*)
+		(*check for custom config - overwrite general config if a subeject/session one exists*)
 		{cc, datDis} = CheckConfig[fol, out, datDisIn];
-		
+
+
+(*Print["fol:",{fol,outFol, out}];*)
+(*Print["check:",{datDis, datDisIn}];*)
+
 		(*convert the nameType to valid input, will always be a list of associations*)
 		datType = CheckDataDiscription[datDis, met];
 
@@ -516,13 +526,22 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			ImportLog[logFile];
 			(*----*)AddToLog[{"Starting bids merging for directory: ", fol}, True, 0];
 			(*----*)If[cc, AddToLog["********** Using custom config **********", 0]];
+			,
+			(*MuscleBidsSegment*)
+			"Segment",
+			logFile = FileNameJoin[{out, nam<>"_BIDSSegment.log"}];
+			ImportLog[logFile];
+			(*----*)AddToLog[{"Starting bids segmentation for directory: ", fol}, True, 0];
+			(*----*)If[cc, AddToLog["********** Using custom config **********", 0]];
 		];
 
 		(*The actual process loops*)
-		If[met==="Dicom",
+		Switch[met,
+			"Dicom",
 			(*perform dicom nii conversions*)
 			BidsDcmToNiiI[fol, out, logFile];
 			,
+			_,
 			(*loop over the datType for other methods*)
 			Table[
 				(*check if datType is valid*)
@@ -532,7 +551,10 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 					(*if valid perform conversion*)
 					(*----*)AddToLog[dataToLog@type, 2, True];
 					rfol = SelectBidsFolders[fol, type["InFolder"]];
-					
+
+(*Print[type];*)
+(*Print["loop input", {met, fol, type["InFolder"], rfol}];*)
+
 					(*method specific scripts: loop over all inFolders in subject folder*)
 					Table[
 						Switch[met,
@@ -541,7 +563,9 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 							"Process", (*MuscleBidsProcess*)
 							MuscleBidsProcessI[foli, outFol, type, logFile, OptionValue[VersionCheck]],
 							"Merge", (*MuscleBidsMerge*)
-							MuscleBidsMergeI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]]
+							MuscleBidsMergeI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]],
+							"Segment", 
+							MuscleBidsSegmentI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]]
 						];
 						ExportLog[logFile];				
 					(*Close sub folders loop*)
@@ -584,7 +608,8 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 	man = ContainsAll[key, Switch[met,
 		"Convert", {"Label", "Type"},
 		"Process", {"Type"},
-		"Merge", {"Type", "Merging"}
+		"Merge", {"Type", "Merging"},
+		"Segment", {"Type"}
 	]];
 	
 	If[!man,
@@ -615,7 +640,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 			If[!KeyExistsQ[ass, "InFolder"], ass = Association[ass, "InFolder"->"raw"]];
 			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];
 			,
-			"Process"|"Merge",
+			"Process"|"Merge"|"Segment",
 			If[!KeyExistsQ[ass, "InFolder"], ass = Association[ass, "InFolder"->BidsType[ass["Type"]]]];
 			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];			
 		];
@@ -958,7 +983,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							dvox = First@dvox;
 							
 							(*Apply background mask*)
-							magM = NormalizeData[Mean@Transpose@Abs[real + I imag]];
+							magM = NormalizeMeanData@Abs[real + I imag];
 							B0mask = Dilation[Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2], 1];
 							{real, imag} = MaskData[#, B0mask] &/@ {real, imag};
 							
@@ -980,14 +1005,13 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							
 							(*perform the IDEAL dixon fit*)
 							(*-----*)AddToLog["Starting Dixon reconstruction", 4];
-							(*fit with fixed fat model to get better phase estimate*)
-							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-								DixonPhases -> {True, True, True, True, False}, DixonFixT2 -> False, DixonAmplitudes -> "Fixed"];
+							
 							(*fit with DB fat model*)
 							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-								{real, imag}, echos, {b0, t2star, phi, phbp}, 
-								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> False, DixonAmplitudes -> "CallDB", DixonTollerance->.1];
+								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
+								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> True, 
+								DixonAmplitudes -> "CallDB", DixonTollerance->1];
+							
 							{wat, fat} = Abs[{wat, fat}];
 
 							(*export all the calculated data*)
@@ -1378,7 +1402,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 				{target, vox} = Transpose[ImportNii/@targets];
 				voxt = First@vox;
 				(* make data real valued*)
-				target = If[RealQ[target[[1, 1, 1, 1]]],target,Abs[target]];
+				target = If[RealValuedNumberQ[target[[1, 1, 1, 1]]], target, Abs[target]];
 				
 				(*-----*)AddToLog[{"Joining the primary datatype",If[motion,"with","without"],"motion correction"}, 4];
 				If[nStac=!=1,
@@ -1393,7 +1417,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 			{moving, vox} = Transpose[(files=#;Transpose[ImportNii[#]&/@files])&/@movings];
 			(* make data real valued*)
 
-			moving = If[RealQ[N@#[[1,1,1,1]]], #, Abs[#]] &/@ moving;
+			moving = If[RealValuedNumberQ[N@#[[1,1,1,1]]], #, Abs[#]] &/@ moving;
 			leng = Length[movs];
 			voxm = First@First@vox;
 			movingMD = If[movingsMD=!={},
@@ -1436,7 +1460,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 			(*join the moving types*)
 			(*-----*)AddToLog[{"Joining the data"}, 4];
 			movsA = Flatten[{movs, ConstantArray[#[[1]], #[[2]]] & /@ Thread[{movsMD, lengMD}]}];
-			movingA = JoinSets[movingA[[#]], overT, voxm, MonitorCalc->False, MotionCorrectSets->False, 
+			movingA = JoinSets[movingA[[#]], overT, voxt, MonitorCalc->False, MotionCorrectSets->False, 
 					ReverseSets->reverse, NormalizeSets->MemberQ[nonQuant, movsA[[#]]], NormalizeOverlap->MemberQ[nonQuant, movsA[[#]]]
 				]&/@Range[Length[movsA]];
 			
@@ -1460,6 +1484,93 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
 		
 		](*close ncheck*)
 	](*close checkfile*)
+]
+
+(* ::Subsection:: *)
+(*MuscleBidsSegment*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleBidsSegment*)
+
+
+Options[MuscleBidsSegment] = {SelectSubjects->All, VersionCheck->False};
+
+SyntaxInformation[MuscleBidsSegment] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
+
+MuscleBidsSegment[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsSegment[folder, GetConfig[folder], opts];
+
+MuscleBidsSegment[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+	dir = Directory[];
+	SetDirectory[folder];(*SetDirectory[config["folders"]["root"]];*)
+	MuscleBidsSegment[
+		config["folders"]["mergeData"],(*the input folder for the data*)
+		config["folders"]["mergeData"],(*the output folder for merging*)
+		config["dataSets"],(*what to process*)
+		opts];
+	SetDirectory[dir];	
+]
+
+MuscleBidsSegment[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Segment", ops]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleBidsSegmentI*)
+
+
+MuscleBidsSegmentI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{segment, segType, segTypeLab, checkFile, fol, parts, outfile, segfile, out, vox, seg},
+	
+	segment = datType["Segment"];
+
+	If[segment===Missing["KeyAbsent", "Segment"],
+		(*no segmentation specified*)
+		(*-----*)AddToLog[{"No Segmentations defined for this data"}, 3];
+		,
+		(*Segmentation specified*)
+		
+		(*Get the segmentation targets and its names*)
+		segType=segment["Target"];
+		If[ArrayDepth[segType]===1,segType={segType}];
+		segTypeLab = StringRiffle[#, "_"]&/@segType;
+
+		{fol, parts} = PartitionBidsFolderName[foli];
+		checkFile = GenerateBidsFileName[folo, <|parts, "Type" -> "seg","suf"->{"auto", datType["Type"]}|>];
+
+(*Print[segType];*)
+(*Print[CheckFile[checkFile, "done", verCheck]];*)
+
+		(*Check if segmentation needs to be performed*)
+		If[CheckFile[checkFile, "done", verCheck],
+			(*-----*)AddToLog[{"Segmentation already done for:", StringJoin@Riffle[segTypeLab,", "]}, 3];,
+			(*-----*)AddToLog[{"The types that will be segmented are: ", StringJoin@Riffle[segTypeLab,", "]}, 3];
+			
+			(*Loop over the segmentation types if more are specified*)
+			Table[
+				(*-----*)AddToLog[{"Performing segmentation for ", StringRiffle[segi, "_"]}, 3];
+
+				(*get the correct filenames*)
+				outfile = GenerateBidsFileName[folo, <|parts, "Type" -> "seg", "suf" -> Join[{"auto"}, segi]|>]<>".nii";
+				segfile = GenerateBidsFileName[fol, <|parts, "Type" -> First[segi], "suf" -> Rest[segi]|>]<>".nii";
+
+(*Print[segfile];*)
+
+				(*check if target file exists if so perform the segmentation*)
+				If[!NiiFileExistQ[segfile],
+					AddToLog[{"The segement file does not exist", segfile}, 4];
+					,
+					{out, vox} = ImportNii[segfile];
+					seg = SegmentData[out, "Legs", TargetDevice -> "GPU", Monitor->False];
+					ExportNii[seg, vox, outfile];
+				];
+				, {segi, segType}			
+			];
+
+			(*make the checkfile*)
+			MakeCheckFile[checkFile, Sort@Join[{"Check"->"done"}, Normal@datType]];
+			(*----*)AddToLog["Finished merging", 3, True];
+		]
+	]
+
 ]
 
 

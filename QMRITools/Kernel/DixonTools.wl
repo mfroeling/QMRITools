@@ -187,8 +187,8 @@ Begin["`Private`"]
 
 (*fat model used in multiple functions as options*)
 dixFreq = ({{4.7}, {0.89, 1.3, 1.58, 2.03, 2.25, 2.76, 4.07, 4.3, 5.22, 5.32}} - 4.7); (*ppm with water = 0*)
-dixAmp = {{1}, {0.089, 0.595, 0.06, 0.086, 0.06, 0.009, 0.02, 0.02, 0.01, 0.052}}; (*{17.31, 2.62, 0.46}*)
-dixRel = {{35}, {80, 85, 35, 45, 50, 40, 50, 50, 35, 35}};(*in ms*)
+dixAmp = {{1}, {0.089, 0.577, 0.059, 0.093, 0.059, 0.013, 0.02, 0.02, 0.01, 0.059}}; (*{17.5, 3.0, 0.62}*)
+dixRel = {{35}, {80, 85, 35, 45, 50, 40, 50, 50, 35, 35}+50};(*in ms*)
 
 
 (* ::Subsection:: *)
@@ -515,7 +515,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	
 	(*define data and complex field map and background phase for fitting*)
 	complex = RotateDimensionsLeft@MaskData[complex, mask];
-	r2 = If[t2i === 0, 0, DevideNoZero[1., Clip[t2i, {0., 0.075}, {0., 0.075}]]];
+	r2 = If[t2i === 0, 0, DevideNoZero[1., Clip[t2i, {0., 0.25}, {0., 0.25}]]];
 	phi = {r2, b0i, phbi, ph0i, 0}[[sel]];
 	phi = If[# === 0||# === zero, zero, mask If[filti, filtFunc[#], #]]& /@ phi;
 	phi = RotateDimensionsLeft@phi;
@@ -537,7 +537,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		If[mon, PrintTemporary["Filtering field estimation and recalculating signal fractions"]];
 		
 		(*Constrain R2*)
-		If[First[sel]===1, phi[[1]] = mask (-(Ramp[-(Ramp[phi[[1]] - 2] + 2) + 200] - 200))];
+		If[First[sel]===1, phi[[1]] = mask (-(Ramp[-(Ramp[phi[[1]] - 1] + 1) + 200] - 200))];
 		(*Correct initial phase, only when initial phase is fitted and initial phase is not constrained*)
 		If[!con && MemberQ[sel, 4], phi[[ipi]] += Arg[Total[result[[1 ;; 2]] + result[[Ceiling[n/2] + 1 ;; Ceiling[n/2] + 2]] I]] / (2 Pi)];
 
@@ -709,7 +709,7 @@ GenerateAmps[ampi_] := Block[{mout, modC, mod, amp, amps, cl, db, idb},
 		"CallCL", {cl, -30.31 + 1.9 cl, -13.64 + 0.81 cl},
 		"CallDB", {16.29 + 0.39 db, db, -0.73 + 0.45 db},
 		"CallIDB", {17.06 + 0.56 idb, 1.93 + 1.52 idb, idb},
-		_, {17.5, 2.8, 0.6}
+		_, {17.5, 3.0, 0.65}
 	], ampi];
 
 	(*Either model based or traditional PD*)

@@ -992,9 +992,9 @@ Options[JoinSets]={
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-JoinSets[data_?ArrayQ, over_, opts:OptionsPattern[]]:=JoinSets[data, over, {1,1,1}, opts]
+JoinSets[data: {_?ArrayQ ..} over_, opts:OptionsPattern[]]:=JoinSets[data, over, {1,1,1}, opts]
 
-JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
+JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[
 	{dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran},
 	
 	(*get the options*)
@@ -1004,8 +1004,9 @@ JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 	normover = If[normalize, OptionValue[NormalizeOverlap], False];
 	mon = OptionValue[MonitorCalc];
 	depth = ArrayDepth[data];
+	depth = 1 + ArrayDepth@First@data;
 	overlap = If[ListQ[over],First@over,over];
-	
+
 	(*normalize the data*)
 	dat = If[normalize, 
 		If[mon, PrintTemporary["Normalizing data"]]; 
@@ -1048,7 +1049,7 @@ JoinSets[data_?ArrayQ, over_, vox_, OptionsPattern[]]:=Block[
 ]
 
 
-JoinSetsi[data_?ArrayQ,overlap_?IntegerQ,norm_:False]:= Block[{
+JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ,norm_:False]:= Block[{
 		sets,set1,set2,step,set1over,set2over,joined,mn1,mn2
 	},
 	
