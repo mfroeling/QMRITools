@@ -2245,7 +2245,7 @@ ParseSpar[spari_]:=Block[{textIn,values,lab,val,spar},
 
 FromVaxD=Compile[{{int,_Integer,0}},Block[{bin,sign ,fraction, exponent},
 	(*pad to 32 binary numbers*)
-	bin=PadLeft[IntegerDigits[int,2],32];
+	bin=IntegerDigits[int,2,32];
 	(*sign is bit 17*)
 	sign=(-1)^bin[[17]];
 	(*fraction is stored at the end the beginning of the binary number*)

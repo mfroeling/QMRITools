@@ -446,10 +446,9 @@ SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
 SplitSegmentations[segI_]:=SplitSegmentations[segI, True]
 
 SplitSegmentations[segI_, sparse_] := Block[{vals, seg},
-	seg = SparseArray[segI];
-	vals = DeleteCases[Sort@Round[DeleteDuplicates[Flatten[segI]]],0];
-	seg =(1 - Unitize[seg - #]) & /@ vals;
-	seg = Transpose[seg];
+	seg = SparseArray[Round[segI]];
+	vals = Sort[DeleteDuplicates[seg["ExplicitValues"]]];
+	seg = Transpose[1 - SparseArray[(Unitize[seg - #] & /@ vals)]];
 	{If[sparse, seg, Normal@seg], vals}
 ]
 
