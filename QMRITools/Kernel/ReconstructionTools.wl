@@ -942,6 +942,8 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 	];
 	
 	(*perform the recon*)
+Print[{cDim,arrD,Dimensions@coilData,Dimensions@sens}];
+
 	recon = If[cDim === arrD,
 		CoilCombine[coilData, cov, sens, Method -> OptionValue[Method]],
 		CoilCombine[#, cov, sens, Method -> OptionValue[Method]] & /@ coilData

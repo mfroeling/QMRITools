@@ -88,7 +88,10 @@ MuscleBidsMerge::usage =
 "MuscleBidsMerge[dir] merges multiple stack data for all Muscle-Bids named nii based on the config file in the bids sourceFolder dir."
 
 MuscleBidsSegment::usage = 
-"MuscleBidsSegment[dir]."
+"MuscleBidsSegment[dir]...."
+
+MuscleBidsTractography::usage=
+"MuscleBidsTractography[dir]..."
 
 CheckDataDiscription::usage =
 "CheckDataDiscription[discription] checks the data discription config file used in BidsDcmToNii, MuscleBidsConvert, MuscleBidsProcess and MuscleBidsMerge."
@@ -168,7 +171,7 @@ bidsClass = {"Volume", "Stacks", "Repetitions"};
 
 dataToLog =If[KeyExistsQ[#, $Failed], 
 	"Wrong data dicription: " <> #[$Failed], 
-	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[KeyDrop[#, {"Process", "Merging","Segment"}]]]
+	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[KeyDrop[#, {"Process", "Merging","Segment","Tractography"}]]]
 ]&;
 
 
@@ -533,6 +536,13 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 			ImportLog[logFile];
 			(*----*)AddToLog[{"Starting bids segmentation for directory: ", fol}, True, 0];
 			(*----*)If[cc, AddToLog["********** Using custom config **********", 0]];
+			,
+			(*MuscleBidsTractogrpahy*)
+			"Tractography",
+			logFile = FileNameJoin[{out, nam<>"_BIDSTractography.log"}];
+			ImportLog[logFile];
+			(*----*)AddToLog[{"Starting bids tractography for directory: ", fol}, True, 0];
+			(*----*)If[cc, AddToLog["********** Using custom config **********", 0]];
 		];
 
 		(*The actual process loops*)
@@ -565,7 +575,9 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 							"Merge", (*MuscleBidsMerge*)
 							MuscleBidsMergeI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]],
 							"Segment", 
-							MuscleBidsSegmentI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]]
+							MuscleBidsSegmentI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]],
+							"Tractography",
+							MuscleBidsTractographyI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]]
 						];
 						ExportLog[logFile];				
 					(*Close sub folders loop*)
@@ -609,7 +621,8 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 		"Convert", {"Label", "Type"},
 		"Process", {"Type"},
 		"Merge", {"Type", "Merging"},
-		"Segment", {"Type"}
+		"Segment", {"Type"},
+		"Tractography", {"Type"}
 	]];
 	
 	If[!man,
@@ -640,7 +653,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 			If[!KeyExistsQ[ass, "InFolder"], ass = Association[ass, "InFolder"->"raw"]];
 			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];
 			,
-			"Process"|"Merge"|"Segment",
+			"Process"|"Merge"|"Segment"|"Tractography",
 			If[!KeyExistsQ[ass, "InFolder"], ass = Association[ass, "InFolder"->BidsType[ass["Type"]]]];
 			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];			
 		];
@@ -1518,8 +1531,14 @@ MuscleBidsSegment[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPa
 (*MuscleBidsSegmentI*)
 
 
-MuscleBidsSegmentI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{segment, segType, segTypeLab, checkFile, fol, parts, outfile, segfile, out, vox, seg},
+MuscleBidsSegmentI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
+		segment, segType, segTypeLab, checkFile, fol, segLocation, device,
+		parts, outfile, segfile, out, vox, seg
+	},
 	
+	segLocation = "Legs";
+	device = "GPU";
+
 	segment = datType["Segment"];
 
 	If[segment===Missing["KeyAbsent", "Segment"],
@@ -1559,7 +1578,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block
 					AddToLog[{"The segement file does not exist", segfile}, 4];
 					,
 					{out, vox} = ImportNii[segfile];
-					seg = SegmentData[out, "Legs", TargetDevice -> "GPU", Monitor->False];
+					seg = SegmentData[out, segLocation, TargetDevice -> device, Monitor->False];
 					ExportNii[seg, vox, outfile];
 				];
 				, {segi, segType}			
@@ -1568,6 +1587,82 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block
 			(*make the checkfile*)
 			MakeCheckFile[checkFile, Sort@Join[{"Check"->"done"}, Normal@datType]];
 			(*----*)AddToLog["Finished merging", 3, True];
+		]
+	]
+
+]
+
+
+(* ::Subsection:: *)
+(*MuscleBidsTractography*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleBidsTractography*)
+
+
+Options[MuscleBidsTractography] = {SelectSubjects->All, VersionCheck->False};
+
+SyntaxInformation[MuscleBidsTractography] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
+
+MuscleBidsTractography[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsTractography[folder, GetConfig[folder], opts];
+
+MuscleBidsTractography[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+	dir = Directory[];
+	SetDirectory[folder];(*SetDirectory[config["folders"]["root"]];*)
+	MuscleBidsTractography[
+		config["folders"]["mergeData"],(*the input folder for the data*)
+		config["folders"]["mergeData"],(*the output folder for merging*)
+		config["dataSets"],(*what to process*)
+		opts];
+	SetDirectory[dir];	
+]
+
+MuscleBidsTractography[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Tractography", ops]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleBidsTractographyI*)
+
+
+MuscleBidsTractographyI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block[{
+		
+	},
+
+	tracto = datType["Tractography"];
+
+	If[tracto===Missing["KeyAbsent", "Tractography"],
+		(*no tractography specified*)
+		(*-----*)AddToLog[{"No tractography defined for this data"}, 3];
+		,
+		(*Tractography specified*)
+		
+		(*Get the tractography target and its names*)
+		tractType = tracto["Target"];
+		tractSeg = tracto["Segmentation"];
+		{tractStopLab,tractStopVal} = Transpose@tracto["Stopping"];
+
+		If[ArrayDepth[tractStopLab]===1,tractStopLab={tractStopLab}];
+		If[ArrayDepth[tractStopVal]===1,tractStopVal={tractStopVal}];
+
+		tractStopLabNam = StringRiffle[#, "_"]&/@tractStopLab;
+		tractTypeLab = StringRiffle[tractType, "_"];
+
+		{fol, parts} = PartitionBidsFolderName[foli];
+		checkFile = GenerateBidsFileName[folo, <|parts, "Type" -> "dwi", "suf"->{"trk", datType["Type"]}|>];
+
+Print[tractType];
+Print[tractSeg];
+Print[CheckFile[checkFile, "done", verCheck]];
+Print[Column/@{tractStopLab,tractStopVal}];
+
+		(*Check if segmentation needs to be performed*)
+		If[CheckFile[checkFile, "done", verCheck],
+			(*-----*)AddToLog[{"Segmentation already done for:", tractTypeLab}, 3];,
+			(*-----*)AddToLog[{"The type that will be tracted is: ", tractTypeLab}, 3];
+
+
+
 		]
 	]
 
