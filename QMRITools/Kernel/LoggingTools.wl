@@ -321,9 +321,9 @@ CheckFile[{fol_,name_,tag_}, stat_, ver_]:=CheckFile[FileNameJoin[{fol,name<>"_"
 
 CheckFile[nam_?StringQ, stat_, ver_]:=Block[{file, check},
 	file = nam <> "_check.json";
-	If[!FileExistsQ[file],False,
+	If[!FileExistsQ[file], False,
 		check=Import[file,"RawJSON"];
-		AllTrue[{check["Check"]===stat,If[ver,!CheckVersion[check["Version"]],True]},TrueQ]
+		AllTrue[{check["Check"]===stat, If[ver,!CheckVersion[check["Version"]], True]},TrueQ]
 	]
 ]
 
