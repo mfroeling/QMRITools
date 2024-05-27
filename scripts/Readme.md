@@ -14,7 +14,7 @@ https://reference.wolfram.com/language/workflow/InstallWolframScript.html
 
 Install QMRITools using WolframScript
 
-The latest release link can be found on the releases (page)[https://github.com/mfroeling/QMRITools/releases]
+The latest release link can be found on the releases [page](https://github.com/mfroeling/QMRITools/releases)
 
 wolframscript -f "path to file\Install_QMRITools.wls" https://github.com/mfroeling/QMRITools/releases/download/3.17.0/QMRITools-x.xx.x.paclet
 
