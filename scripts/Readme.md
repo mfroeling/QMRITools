@@ -1,33 +1,30 @@
 # Wolfram engine and script
 
-
-Install the Wolfram Engine
-
+- Install the free Wolfram Engine as described here:
 https://support.wolfram.com/45743
 
-Install WolframScript
-
+- Install WolframScript as described here
 https://reference.wolfram.com/language/workflow/InstallWolframScript.html
 
 
 # QMRITools 
 
-Install QMRITools using WolframScript
+Install QMRITools for the worlfram enging using the `Install_QMRITools.wls` WolframScript
 
-The latest release link can be found on the releases [page](https://github.com/mfroeling/QMRITools/releases)
+The latest release link needed for the command line command can be found on the releases [page](https://github.com/mfroeling/QMRITools/releases)
 
-wolframscript -f "path to file\Install_QMRITools.wls" https://github.com/mfroeling/QMRITools/releases/download/3.17.0/QMRITools-x.xx.x.paclet
+`wolframscript -f "path to file\Install_QMRITools.wls" https://github.com/mfroeling/QMRITools/releases/download/3.17.0/QMRITools-x.xx.x.paclet`
 
 
 # Segmentation script
 
-Run the segmentation script:
+Run the segmentation script (networks are currelty for out-phase dixon data):
 
-wolframscript -f "path to file\Segment_Nii.wls" "file to be segmented.nii.gz" "output file.nii"
+`wolframscript -f "path to file\Segment_Nii.wls" "file to be segmented.nii.gz" "output file.nii"`
 
 For the situation where you run the scrip from its own folder with the test folder also there this will be script
 
-wolframscript -f "Segment_Nii.wls" "test data\test.nii.gz" "test data\out.nii"
+`wolframscript -f "Segment_Nii.wls" "test data\test.nii.gz" "test data\out.nii"`
 
 <p align="center">
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/script.png"
