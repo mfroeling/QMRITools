@@ -33,5 +33,5 @@ wolframscript -f "Segment_Nii.wls" "test data\test.nii.gz" "test data\out.nii"
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/script.png"
 alt="Example script for automate leg muscle segmentation."
 title="Example script for automate leg muscle segmentation."  
-width="40%" />
+width="80%" />
 </p>
