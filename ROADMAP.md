@@ -36,9 +36,6 @@ Next steps will be muscle segentation and per muscle analysis of quantitative va
 
 ### Muscle Bids
 
-- Finilize muscle bids naming for segmentations
-  - which suffixes are needed
-  - where and how to store masks in pipeline
 - add MuscleBidsAnalysis
   - Automated per muscle analysis once segmentation are present
 - add MuscleBidsQualityReport
