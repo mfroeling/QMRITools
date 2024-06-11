@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10621,        225]
-NotebookOptionsPosition[     10077,        209]
-NotebookOutlinePosition[     10483,        225]
-CellTagsIndexPosition[     10440,        222]
+NotebookDataLength[     11492,        247]
+NotebookOptionsPosition[     10819,        228]
+NotebookOutlinePosition[     11225,        244]
+CellTagsIndexPosition[     11182,        241]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -27,125 +27,132 @@ Cell[BoxData[
  RowBox[{
   RowBox[{
    RowBox[{"SegmentDataGUI", "[", "]"}], ":=", 
-   RowBox[{"Block", "[", 
+   RowBox[{"DynamicModule", "[", 
     RowBox[{
      RowBox[{"{", 
-      RowBox[{"dat", ",", "vox", ",", "seg"}], "}"}], ",", 
-     "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"NotebookClose", "[", "segwindow", "]"}], ";", 
-      "\[IndentingNewLine]", "\[IndentingNewLine]", 
-      RowBox[{"diag", "=", 
-       RowBox[{"DialogNotebook", "[", "\[IndentingNewLine]", 
-        RowBox[{
-         RowBox[{"status", "=", 
-          RowBox[{"TextCell", "@", "\"\<\>\""}]}], ";", "\[IndentingNewLine]", 
-         RowBox[{"{", "\[IndentingNewLine]", 
+      RowBox[{"inputFile", ",", " ", "outputFile"}], "}"}], ",", 
+     RowBox[{"Block", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"dat", ",", "vox", ",", "seg"}], "}"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"NotebookClose", "[", "segwindow", "]"}], ";", 
+        "\[IndentingNewLine]", "\[IndentingNewLine]", 
+        RowBox[{"diag", "=", 
+         RowBox[{"DialogNotebook", "[", "\[IndentingNewLine]", 
           RowBox[{
-           RowBox[{
-           "TextCell", "[", 
-            "\"\<Please enter the paths for the input and output files:\>\"", 
-            "]"}], ",", "\[IndentingNewLine]", "\[IndentingNewLine]", 
-           RowBox[{"Grid", "[", 
+           RowBox[{"status", "=", 
+            RowBox[{"TextCell", "@", "\"\<\>\""}]}], ";", 
+           "\[IndentingNewLine]", 
+           RowBox[{"{", "\[IndentingNewLine]", 
             RowBox[{
-             RowBox[{"{", 
+             RowBox[{
+             "TextCell", "[", 
+              "\"\<Please enter the paths for the input and output \
+files:\>\"", "]"}], ",", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+             RowBox[{"Grid", "[", 
               RowBox[{
-               RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{"{", 
                 RowBox[{
-                 RowBox[{"TextCell", "[", "\"\<Status: \>\"", "]"}], ",", 
-                 RowBox[{"Dynamic", "[", "status", "]"}]}], 
-                "\[IndentingNewLine]", "}"}], ",", 
-               RowBox[{"{", "\[IndentingNewLine]", 
-                RowBox[{
-                 RowBox[{"TextCell", "[", "\"\<Input File: \>\"", "]"}], ",", 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"InputField", "[", 
+                 RowBox[{"{", "\[IndentingNewLine]", 
                   RowBox[{
-                   RowBox[{"Dynamic", "[", "inputFile", "]"}], ",", "String", 
-                   ",", 
-                   RowBox[{
-                   "FieldHint", "->", "\"\<Enter input file path\>\""}], ",", 
-                   RowBox[{"FieldSize", "\[Rule]", 
+                   RowBox[{"TextCell", "[", "\"\<Status: \>\"", "]"}], ",", 
+                   RowBox[{"Dynamic", "[", "status", "]"}]}], 
+                  "\[IndentingNewLine]", "}"}], ",", 
+                 RowBox[{"{", "\[IndentingNewLine]", 
+                  RowBox[{
+                   RowBox[{"TextCell", "[", "\"\<Input File: \>\"", "]"}], 
+                   ",", "\[IndentingNewLine]", 
+                   RowBox[{"InputField", "[", 
+                    RowBox[{
+                    RowBox[{"Dynamic", "[", "inputFile", "]"}], ",", "String",
+                     ",", 
+                    RowBox[{
+                    "FieldHint", "->", "\"\<Enter input file path\>\""}], ",", 
+                    RowBox[{"FieldSize", "\[Rule]", 
                     RowBox[{"{", 
                     RowBox[{"25", ",", "1"}], "}"}]}]}], "]"}], ",", 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"Button", "[", 
-                  RowBox[{"\"\<Browse\>\"", ",", 
-                   RowBox[{"inputFile", "=", 
+                   "\[IndentingNewLine]", 
+                   RowBox[{"Button", "[", 
+                    RowBox[{"\"\<Browse\>\"", ",", 
+                    RowBox[{"inputFile", "=", 
                     RowBox[{
                     "SystemDialogInput", "[", "\"\<FileOpen\>\"", "]"}]}], 
-                   ",", 
-                   RowBox[{"Method", "->", "\"\<Queued\>\""}]}], "]"}]}], 
-                "\[IndentingNewLine]", "}"}], ",", 
-               RowBox[{"{", "\[IndentingNewLine]", 
-                RowBox[{
-                 RowBox[{"TextCell", "[", "\"\<Output File: \>\"", "]"}], ",", 
-                 RowBox[{"InputField", "[", 
-                  RowBox[{
-                   RowBox[{"Dynamic", "[", "outputFile", "]"}], ",", "String",
                     ",", 
-                   RowBox[{
-                   "FieldHint", "->", "\"\<Enter output file path\>\""}], ",", 
-                   RowBox[{"FieldSize", "\[Rule]", 
+                    RowBox[{"Method", "->", "\"\<Queued\>\""}]}], "]"}]}], 
+                  "\[IndentingNewLine]", "}"}], ",", 
+                 RowBox[{"{", "\[IndentingNewLine]", 
+                  RowBox[{
+                   RowBox[{"TextCell", "[", "\"\<Output File: \>\"", "]"}], 
+                   ",", 
+                   RowBox[{"InputField", "[", 
+                    RowBox[{
+                    RowBox[{"Dynamic", "[", "outputFile", "]"}], ",", 
+                    "String", ",", 
+                    RowBox[{
+                    "FieldHint", "->", "\"\<Enter output file path\>\""}], 
+                    ",", 
+                    RowBox[{"FieldSize", "\[Rule]", 
                     RowBox[{"{", 
                     RowBox[{"25", ",", "1"}], "}"}]}]}], "]"}], ",", 
-                 "\[IndentingNewLine]", 
-                 RowBox[{"Button", "[", 
-                  RowBox[{"\"\<Browse\>\"", ",", "\[IndentingNewLine]", 
-                   RowBox[{"outputFile", "=", 
+                   "\[IndentingNewLine]", 
+                   RowBox[{"Button", "[", 
+                    RowBox[{"\"\<Browse\>\"", ",", "\[IndentingNewLine]", 
+                    RowBox[{"outputFile", "=", 
                     RowBox[{
                     "SystemDialogInput", "[", "\"\<FileSave\>\"", "]"}]}], 
-                   ",", 
-                   RowBox[{"Method", "->", "\"\<Queued\>\""}]}], "]"}]}], 
-                "\[IndentingNewLine]", "}"}], ",", 
-               RowBox[{"{", "\[IndentingNewLine]", 
-                RowBox[{
-                 RowBox[{"TextCell", "[", "\"\<Segmentation type\>\"", "]"}], 
-                 ",", 
-                 RowBox[{"PopupMenu", "[", 
+                    ",", 
+                    RowBox[{"Method", "->", "\"\<Queued\>\""}]}], "]"}]}], 
+                  "\[IndentingNewLine]", "}"}], ",", 
+                 RowBox[{"{", "\[IndentingNewLine]", 
                   RowBox[{
-                   RowBox[{"Dynamic", "[", "option", "]"}], ",", 
-                   RowBox[{"{", 
+                   RowBox[{
+                   "TextCell", "[", "\"\<Segmentation type\>\"", "]"}], ",", 
+                   RowBox[{"PopupMenu", "[", 
+                    RowBox[{
+                    RowBox[{"Dynamic", "[", "option", "]"}], ",", 
+                    RowBox[{"{", 
                     RowBox[{"\"\<Legs\>\"", ",", "\"\<LegBones\>\""}], 
                     "}"}]}], "]"}]}], "\[IndentingNewLine]", "}"}]}], 
-              "\[IndentingNewLine]", "}"}], ",", 
-             RowBox[{"Alignment", "->", "Left"}]}], "]"}], ",", 
-           "\[IndentingNewLine]", 
-           RowBox[{"Row", "[", 
-            RowBox[{"{", "\[IndentingNewLine]", 
-             RowBox[{
-              RowBox[{"Button", "[", 
-               RowBox[{"\"\<Segment\>\"", ",", "\[IndentingNewLine]", 
-                RowBox[{"If", "[", 
-                 RowBox[{
-                  RowBox[{"!", 
-                   RowBox[{"NiiFileExistQ", "[", "inputFile", "]"}]}], ",", 
-                  "\[IndentingNewLine]", 
-                  RowBox[{
-                  "MessageDialog", "[", 
-                   "\"\<Input file could not be foud.\>\"", "]"}], 
-                  "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
-                  RowBox[{
-                   RowBox[{"status", "=", 
-                    RowBox[{"TextCell", "@", "\"\<Importing\>\""}]}], ";", 
-                   "\[IndentingNewLine]", 
+                "\[IndentingNewLine]", "}"}], ",", 
+               RowBox[{"Alignment", "->", "Left"}]}], "]"}], ",", 
+             "\[IndentingNewLine]", 
+             RowBox[{"Row", "[", 
+              RowBox[{"{", "\[IndentingNewLine]", 
+               RowBox[{
+                RowBox[{"Button", "[", 
+                 RowBox[{"\"\<Segment\>\"", ",", "\[IndentingNewLine]", 
+                  RowBox[{"If", "[", 
                    RowBox[{
+                    RowBox[{"!", 
+                    RowBox[{"NiiFileExistQ", "[", "inputFile", "]"}]}], ",", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{
+                    "MessageDialog", "[", 
+                    "\"\<Input file could not be foud.\>\"", "]"}], 
+                    "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
+                    RowBox[{
+                    RowBox[{"status", "=", 
+                    RowBox[{"TextCell", "@", "\"\<Importing\>\""}]}], ";", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{
                     RowBox[{"{", 
                     RowBox[{"dat", ",", "vox"}], "}"}], "=", 
                     RowBox[{"ImportNii", "[", "inputFile", "]"}]}], ";", 
-                   "\[IndentingNewLine]", 
-                   RowBox[{"status", "=", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"status", "=", 
                     RowBox[{"TextCell", "@", "\"\<Segmenting Data\>\""}]}], 
-                   ";", "\[IndentingNewLine]", 
-                   RowBox[{"seg", " ", "=", " ", 
+                    ";", "\[IndentingNewLine]", 
+                    RowBox[{"seg", " ", "=", " ", 
                     RowBox[{"SegmentData", "[", 
                     RowBox[{"dat", ",", "\"\<Legs\>\"", ",", " ", 
                     RowBox[{"TargetDevice", "->", "\"\<CPU\>\""}]}], "]"}]}], 
-                   ";", "\[IndentingNewLine]", 
-                   RowBox[{"status", "=", 
+                    ";", "\[IndentingNewLine]", 
+                    RowBox[{"status", "=", 
                     RowBox[{"TextCell", "@", "\"\<Exporting\>\""}]}], ";", 
-                   "\[IndentingNewLine]", 
-                   RowBox[{"CopyFile", "[", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"CopyFile", "[", 
                     RowBox[{
                     RowBox[{
                     "GetAssetLocation", "[", "\"\<MusclesLegLabels\>\"", 
@@ -154,32 +161,33 @@ Cell[BoxData[
                     RowBox[{"outputFile", ",", " ", "\"\<.txt\>\""}], "]"}], 
                     ",", " ", 
                     RowBox[{"OverwriteTarget", "->", "True"}]}], "]"}], ";", 
-                   "\[IndentingNewLine]", 
-                   RowBox[{"ExportNii", "[", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"ExportNii", "[", 
                     RowBox[{"seg", ",", " ", "vox", ",", " ", "outputFile"}], 
                     "]"}], ";", "\[IndentingNewLine]", 
-                   RowBox[{"status", "=", 
+                    RowBox[{"status", "=", 
                     RowBox[{"Button", "[", 
                     RowBox[{
-                    RowBox[{"\"\<Got to \>\"", "<>", 
+                    RowBox[{"\"\<Go to \>\"", "<>", 
                     RowBox[{"FileBaseName", "@", "outputFile"}]}], ",", 
                     RowBox[{"SystemOpen", "[", 
                     RowBox[{"DirectoryName", "@", "outputFile"}], "]"}]}], 
                     "]"}]}], ";"}]}], "\[IndentingNewLine]", "]"}], 
-                "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
-                RowBox[{"Method", "->", "\"\<Queued\>\""}]}], 
-               "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
-              RowBox[{"DefaultButton", "[", "]"}], ",", "\[IndentingNewLine]", 
-              RowBox[{"CancelButton", "[", "]"}]}], "\[IndentingNewLine]", 
-             "}"}], "]"}]}], "\[IndentingNewLine]", "}"}]}], 
-        "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
-      "\[IndentingNewLine]", 
-      RowBox[{"segwindow", "=", 
-       RowBox[{"CreateWindow", "[", 
-        RowBox[{"diag", ",", 
-         RowBox[{"WindowTitle", "->", "\"\<Muscle segmentation\>\""}], ",", 
-         RowBox[{"WindowSize", "->", "All"}]}], "]"}]}], ";"}]}], 
-    "\[IndentingNewLine]", "]"}]}], ";"}]], "Input",
+                  "\[IndentingNewLine]", ",", "\[IndentingNewLine]", 
+                  RowBox[{"Method", "->", "\"\<Queued\>\""}]}], 
+                 "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
+                RowBox[{"DefaultButton", "[", "]"}], ",", 
+                "\[IndentingNewLine]", 
+                RowBox[{"CancelButton", "[", "]"}]}], "\[IndentingNewLine]", 
+               "}"}], "]"}]}], "\[IndentingNewLine]", "}"}]}], 
+          "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
+        "\[IndentingNewLine]", 
+        RowBox[{"segwindow", "=", 
+         RowBox[{"CreateWindow", "[", 
+          RowBox[{"diag", ",", 
+           RowBox[{"WindowTitle", "->", "\"\<Muscle segmentation\>\""}], ",", 
+           RowBox[{"WindowSize", "->", "All"}]}], "]"}]}], ";"}]}], 
+      "\[IndentingNewLine]", "]"}]}], "]"}]}], ";"}]], "Input",
  CellChangeTimes->{{3.925785752345864*^9, 3.9257858441696873`*^9}, {
    3.9257858743845673`*^9, 3.925785942559189*^9}, {3.9257859985263596`*^9, 
    3.925786000875513*^9}, {3.9257860357167225`*^9, 3.925786112431214*^9}, {
@@ -198,14 +206,25 @@ Cell[BoxData[
    3.925788384471934*^9}, 3.925788417947033*^9, {3.925788459020122*^9, 
    3.925788524027033*^9}, {3.925788681567562*^9, 3.925788714721796*^9}, {
    3.9257887523481026`*^9, 3.9257888682923193`*^9}, {3.9258279853491096`*^9, 
-   3.9258279855652294`*^9}},
- CellLabel->"In[2]:=",ExpressionUUID->"47a8f42c-633c-4040-8f3e-a266b722cb5e"],
+   3.9258279855652294`*^9}, {3.925828359547844*^9, 3.9258283769869385`*^9}, {
+   3.9258285047034626`*^9, 
+   3.925828511167654*^9}},ExpressionUUID->"47a8f42c-633c-4040-8f3e-\
+a266b722cb5e"],
+
+Cell[CellGroupData[{
 
 Cell[BoxData[
  RowBox[{"SegmentDataGUI", "[", "]"}]], "Input",
  CellChangeTimes->{{3.925786032447876*^9, 3.925786032447876*^9}, {
   3.925786614704065*^9, 3.9257866160385227`*^9}},
- CellLabel->"In[3]:=",ExpressionUUID->"ec25646f-30f1-e94e-8333-4d337d221645"]
+ CellLabel->"In[5]:=",ExpressionUUID->"ec25646f-30f1-e94e-8333-4d337d221645"],
+
+Cell[BoxData[
+ DynamicModuleBox[{$CellContext`inputFile$$}, "Null",
+  DynamicModuleValues:>{}]], "Output",
+ CellChangeTimes->{3.92582837994141*^9},
+ CellLabel->"Out[5]=",ExpressionUUID->"0dfea100-255f-1249-8c8e-3559520cc324"]
+}, Open  ]]
 },
 WindowSize->{1440, 747.75},
 WindowMargins->{{-6, Automatic}, {Automatic, -6}},
@@ -225,8 +244,11 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[558, 20, 201, 3, 21, "Input",ExpressionUUID->"deba30a3-f409-2445-bd1a-c0504b40da38"],
-Cell[762, 25, 9051, 176, 678, "Input",ExpressionUUID->"47a8f42c-633c-4040-8f3e-a266b722cb5e"],
-Cell[9816, 203, 257, 4, 21, "Input",ExpressionUUID->"ec25646f-30f1-e94e-8333-4d337d221645"]
+Cell[762, 25, 9531, 186, 678, "Input",ExpressionUUID->"47a8f42c-633c-4040-8f3e-a266b722cb5e"],
+Cell[CellGroupData[{
+Cell[10318, 215, 257, 4, 21, "Input",ExpressionUUID->"ec25646f-30f1-e94e-8333-4d337d221645"],
+Cell[10578, 221, 225, 4, 24, "Output",ExpressionUUID->"0dfea100-255f-1249-8c8e-3559520cc324"]
+}, Open  ]]
 }
 ]
 *)

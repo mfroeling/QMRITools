@@ -261,6 +261,9 @@ MemoryUsage::usage =
 "MemoryUsage[] gives a table of which definitions use up memory.
 MemoryUsage[n] gives a table of which definitions use up memory, where n is the amout of definitions to show."
 
+MBCount::usgae =
+"MBCount[expr] gives the memory usage of the expression in MB."
+
 ClearTemporaryVariables::usage = 
 "ClearTemporaryVariables[] Clear temporary variables."
 
@@ -1372,6 +1375,13 @@ MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianD
 
 (* ::Subsection:: *)
 (*Memory functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*MBCount*)
+
+
+MBCount[exp_] := Round[UnitConvert[N@Quantity[ByteCount[exp], "Byte"], "Megabytes"], .1];
 
 
 (* ::Subsubsection::Closed:: *)
