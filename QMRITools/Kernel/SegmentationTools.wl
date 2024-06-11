@@ -96,6 +96,10 @@ The input method can be a filename of a classify network or a classify network.
 Additionally the input method can be one of the predefined methods \"LegPosition\" or \"LegSide\"."
 
 
+ShowTrainLog::usage =
+"ShowTrainLog[fol] shows the training log of the network training stored in fol.
+ShowTrainLog[fol, min] shows the training log of the network training stored in fol if the log has a minimum of min rounds."
+
 TrainSegmentationNetwork::usage =
 "TrainSegmentationNetwork[{inFol, outFol}] trains a segmentation network. The correctly prepared training data should be stored in inFol. The progress each round will be saved in outFol.
 TrainSegmentationNetwork[{inFol, outFol}, netCont] does the same but defines how to continue with netCont. If netCont is \"Start\" training will be restarted.
@@ -168,6 +172,10 @@ MuscleNameToLabel[{name, ..}, file] does the same but uses a user defined ITKSna
 ImportITKLabels::usage = 
 "ImportITKLabels[file] imports the ITKSnap label file."
 
+SegmentDataGUI::usage = "
+SegmentDataGUI[] is a function that creates a graphical user interface (GUI) for segmenting data. 
+It prompts the user to enter the paths for the input and output files, and allows them to select the segmentation type. " 
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -225,9 +233,21 @@ The minimal number of patches in each direction is calculated, and then for each
 PatchPadding::usage = 
 "PatchPadding is an option for DataToPatches. Can be an integer value >= 0. It padds the chosen patch size with the given number."
 
+FindPatchDim::usage = "";
+
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
+
+
+TrainSegmentationNetwork::net = "The net input is not \"Start\", a network, a network file, or a previous train folder."
+
+TrainSegmentationNetwork::cont = "Could not find a previous network in the specified folder."
+
+TrainSegmentationNetwork::inp = "The string input given is not a network file or a directory."
+
+TrainSegmentationNetwork::itt = "Not enough itterations specified for training. Remaining itterations are less than 5."
 
 
 (* ::Section:: *)
@@ -238,17 +258,78 @@ Begin["`Private`"]
 
 
 (* ::Subsection::Closed:: *)
+(*SegmentDataGUI*)
+
+
+SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg, status, diag, option},
+	NotebookClose[segwindow];
+
+	option = "Legs";
+	
+	diag = DialogNotebook[
+		status = TextCell@"";
+		{
+			TextCell["Please enter the paths for the input and output files:"],
+
+			Grid[{{
+				TextCell["Status: "], Dynamic[status]
+			}, {
+				TextCell["Input File: "],
+				InputField[Dynamic[inputFile], String, 
+				FieldHint -> "Enter input file path", FieldSize -> {25, 1}],
+				Button["Browse", inputFile = SystemDialogInput["FileOpen"], Method -> "Queued"]
+			}, {
+				TextCell["Output File: "], 
+				InputField[Dynamic[outputFile], String, 
+				FieldHint -> "Enter output file path", 
+				FieldSize -> {25, 1}],
+				Button["Browse", outputFile = SystemDialogInput["FileSave"], Method -> "Queued"]
+			}, {
+				TextCell["Segmentation type"], 
+				PopupMenu[Dynamic[option], {"Legs", "LegBones"}]
+			},{
+				Button["Start Segmentation, please be patient", 
+					If[! NiiFileExistQ[inputFile], 
+						MessageDialog["Input file could not be foud."]
+						,
+						status = TextCell@"Importing";
+						{dat, vox} = ImportNii[inputFile];
+						status = TextCell@"Segmenting Data";
+						seg = SegmentData[dat, option, TargetDevice -> "CPU"];
+						status = TextCell@"Exporting";
+
+						CopyFile[GetAssetLocation["MusclesLegLabels"], 
+						ConvertExtension[outputFile, ".txt"], 
+						OverwriteTarget -> True];
+						ExportNii[seg, vox, outputFile];
+						status = Button["Go to " <> FileBaseName@outputFile, 
+							SystemOpen[DirectoryName@outputFile]];
+					],
+				Method -> "Queued"]
+			}}, Alignment -> Left],
+			Row[{
+				DefaultButton[],
+				CancelButton[]
+			}]
+		}
+	];
+
+	segwindow = CreateWindow[diag, WindowTitle -> "Muscle segmentation", WindowSize -> All];
+];];
+
+
+(* ::Subsection::Closed:: *)
 (*GetNeuralNet*)
 
 
 SyntaxInformation[GetNeuralNet] = {"ArgumentsPattern" -> {_}};
 
-GetNeuralNet[name_?StringQ]:=GetNeuralNetI[name]
+GetNeuralNet[name_?StringQ]:= GetNeuralNetI[name]
 
 GetNeuralNetI[name_]:=GetNeuralNetI[name]=Which[
-	FileExistsQ[name],Import[name],
-	FileExistsQ[GetAssetLocation[name]],Import[GetAssetLocation[name]],
-	True,$Failed
+	FileExistsQ[name], Import[name],
+	FileExistsQ[GetAssetLocation[name]], Import[GetAssetLocation[name]],
+	True, $Failed
 ]
 
 
@@ -558,16 +639,21 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 SyntaxInformation[AddLossLayer] = {"ArgumentsPattern" -> {_}};
 
 AddLossLayer[net_]:=Block[{dim},
+	(*http://arxiv.org/abs/2312.05391*)
 	dim = Length[Information[net,"OutputPorts"][[1]]]-1;
 	NetGraph[<|
 		"net"->net,
-		"SoftDice" -> SoftDiceLossLayer[dim],
+		"SoftDice" -> SoftDiceLossLayer[dim, 2],
+		"Jaccard" -> SofJaccardLossLayer[dim],
+		"Tversky" -> TverskyLossLayer[dim, 0.7],
 		"SquaredDiff" -> {MeanSquaredLossLayer[], ElementwiseLayer[100 #&]},
-		"CrossEntropy" -> {CrossEntropyLossLayer["Binary"], ElementwiseLayer[100 #&]}
+		"CrossEntropy" -> {CrossEntropyLossLayer["Probabilities"]}
 	|>,{
-		{"net",NetPort["Target"]}->"SoftDice"->NetPort["SoftDice"],
-		{"net",NetPort["Target"]}->"SquaredDiff"->NetPort["SquaredDiff"],
-		{"net",NetPort["Target"]}->"CrossEntropy"->NetPort["CrossEntropy"]
+		{"net", NetPort["Target"]}->"SoftDice"->NetPort["SoftDice"],(*using squared dice*)
+		{"net", NetPort["Target"]}->"Jaccard"->NetPort["Jaccard"],
+		{"net", NetPort["Target"]}->"Tversky"->NetPort["Tversky"],
+		{"net", NetPort["Target"]}->"SquaredDiff"->NetPort["SquaredDiff"],(*Brier Score*)
+		{"net", NetPort["Target"]}->"CrossEntropy"->NetPort["CrossEntropy"]
 	}]
 ]
 
@@ -576,20 +662,82 @@ AddLossLayer[net_]:=Block[{dim},
 (*SoftDiceLossLayer*)
 
 
-SyntaxInformation[SoftDiceLossLayer] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[SoftDiceLossLayer] = {"ArgumentsPattern" -> {_, _.}};
 
-SoftDiceLossLayer[dim_] := NetGraph[
-	<|
-		"sumInp" -> {AggregationLayer[Total, ;; dim]},
-		"sumTar" -> {AggregationLayer[Total, ;; dim]},
-		"sumProd" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; dim]},
-		"dice" -> {ThreadingLayer[1. - ((2. #1) / (#2 + #3 + 10.^-10)) &], AggregationLayer[Mean, 1]}
+SoftDiceLossLayer[dim_ ] := SoftDiceLossLayer[dim, 1]
+
+SoftDiceLossLayer[dim_, n_] := Block[{smooth},
+	(*10.48550/arXiv.1911.02855 and 10.48550/arXiv.1606.04797 for scquared dice loss look at v-net*)
+	smooth =1;
+	NetGraph[<|
+		(*flatten input and target; function layer allows to switch to L2 norm if #^2*)
+		"input" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; dim]},
+		"target" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; dim]},
+		(*intersection or TP*)
+		"intersection" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; dim]},
+		(*the loss function 2*intersection / (input + target)*)
+		"dice" -> {ThreadingLayer[1. - ((2. #1 + smooth) / (#2 + #3 + smooth)) &], AggregationLayer[Mean, 1]}
 	|>, {
-		NetPort["Input"] -> "sumInp",
-		NetPort["Target"] -> "sumTar",
-		{NetPort["Target"], NetPort["Input"]} -> "sumProd",
-		{"sumProd",  "sumTar", "sumInp"} -> "dice" -> NetPort["Loss"]
-	}, "Loss" -> "Real"
+		NetPort["Input"] -> "input",
+		NetPort["Target"] -> "target",
+		{NetPort["Target"], NetPort["Input"]} -> "intersection",
+		{"intersection",  "target", "input"} -> "dice" -> NetPort["Loss"]
+	}, "Loss" -> "Real"]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SofJaccardLossLayer*)
+
+
+SyntaxInformation[SofJaccardLossLayer] = {"ArgumentsPattern" -> {_}};
+
+SofJaccardLossLayer[dim_ ] := SofJaccardLossLayer[dim, 1]
+
+SofJaccardLossLayer[dim_, n_]:= Block[{smooth},
+	smooth = 1;
+	NetGraph[<|
+		(*flatten input and target; function layer allows to switch to L2 norm if #^2*)
+		"input" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; dim]},
+		"target" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; dim]},
+		(*intersection or TP*)
+		"intersection" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; dim]},
+		(*the loss function intersection / union with union = (input + target - intersection)*)
+		"Jaccard" -> {ThreadingLayer[1. - ((#1 + smooth) / ((#2 + #3) - #1 + smooth)) &], AggregationLayer[Mean, 1]}
+	|>, {
+		NetPort["Input"] -> "input",
+		NetPort["Target"] -> "target",
+		{NetPort["Target"], NetPort["Input"]} -> "intersection",
+		{"intersection", "target", "input"} -> "Jaccard" -> NetPort["Loss"]
+	}, "Loss" -> "Real"]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*TwerskyLossLayer*)
+
+
+SyntaxInformation[TwerskyLossLayer] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+TverskyLossLayer[dim_] := TverskyLossLayer[dim, 0.7]
+
+TverskyLossLayer[dim_, beta_?NumberQ] := Block[{smooth, alpha},
+	smooth = 1;
+	alpha = 1- beta;
+	(* https://doi.org/10.48550/arXiv.1706.05721 *)
+	NetGraph[<|
+		(*intersection or TP*)
+		"truePos" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; dim]},
+		"falsePos" -> {ThreadingLayer[(1 - #1) #2 &], AggregationLayer[Total, ;; dim]},
+		"falseNeg" -> {ThreadingLayer[#1 (1 - #2) &], AggregationLayer[Total, ;; dim]},
+		(*the loss function TP / (TP + a FP + b FN)*)
+		"Twersky" -> {ThreadingLayer[1. - (#1 + smooth) / (#1 + alpha #2 + beta #3 + smooth) &], AggregationLayer[Mean, 1]}
+	|>, {
+		{NetPort["Target"], NetPort["Input"]} -> "truePos",
+		{NetPort["Target"], NetPort["Input"]} -> "falsePos",
+		{NetPort["Target"], NetPort["Input"]} -> "falseNeg",
+		{"truePos", "falsePos", "falseNeg"} -> "Twersky" -> NetPort["Loss"]
+	}, "Loss" -> "Real"]
 ]
 
 
@@ -603,94 +751,29 @@ SoftDiceLossLayer[dim_] := NetGraph[
 
 SyntaxInformation[ClassEncoder] = {"ArgumentsPattern" -> {_, _.}};
 
-ClassEncoder[data_]:= ClassEncoderC[data, Max@data]
+ClassEncoder[data_]:= ClassEncoder[data, Round[Max@data]]
 
-ClassEncoder[data_, nClass_]:= If[nClass === 1, data, ClassEncoderC[data, nClass]]
+ClassEncoder[data_, nClass_]:= ToPackedArray@Round@If[nClass === 1, data, ClassEncoderC[data, nClass]]
 
 ClassEncoderC = Compile[{{data, _Integer, 2}, {n, _Integer, 0}},
 	Transpose[1 - Unitize[ConstantArray[data, n] - Range[n]], {3, 1, 2}]
 , RuntimeAttributes -> {Listable}]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*ClassDecoder*)
 
 
 SyntaxInformation[ClassDecoder] = {"ArgumentsPattern" -> {_, _.}};
 
-ClassDecoder[data_]:= ToPackedArray@Round@ClassDecoderC[data, Last@Dimensions@data]
+ClassDecoder[data_]:= ClassDecoder[data, Last@Dimensions@data]
 
-ClassDecoder[data_, nClass_]:=ToPackedArray@Round@ClassDecoderC[data, nClass]
+ClassDecoder[data_, nClass_]:=ToPackedArray@Round@ClassDecoderC[data, Range[nClass]]
 
-ClassDecoderC = Compile[{{data, _Real, 1}, {n, _Integer, 0}}, Block[{cl},
+ClassDecoderC = Compile[{{data, _Real, 1}, {nl, _Integer, 1}}, Block[{cl},
 	cl = (1 - Unitize[Chop[(data/Max[data]) - 1]]);
-	If[Total[cl] > 1, 1, Total[Range[n] cl]]
+	If[Total[cl] > 1, 1, Total[nl cl]]
 ], RuntimeAttributes -> {Listable}]
-
-
-(* ::Subsection:: *)
-(*Distance measures*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*DiceSimilarity*)
-
-
-SyntaxInformation[DiceSimilarity] = {"ArgumentsPattern" -> {_, _, _}};
-
-DiceSimilarity[ref_, pred_, nClasses_?ListQ] := Table[DiceSimilarity[ref, pred, c], {c, nClasses}]
-
-DiceSimilarity[ref_, pred_] := DiceSimilarityC[Flatten[ref], Flatten[pred], 1]
-
-DiceSimilarity[ref_, pred_, c_?IntegerQ] := DiceSimilarityC[Flatten[ref], Flatten[pred], c]
-
-
-DiceSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{refv, predv, denom},
-	refv = Flatten[1 - Unitize[ref - class]];
-	predv = Flatten[1 - Unitize[pred - class]];
-	denom = (Total[refv] + Total[predv]);
-	If[denom === 0., 1., N[2 Total[refv predv] / denom]]
- ], RuntimeOptions -> "Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*MeanSurfaceDistance*)
-
-
-SyntaxInformation[MeanSurfaceDistance] = {"ArgumentsPattern" -> {_, _, _, _.}};
-
-MeanSurfaceDistance[ref_, pred_] := MeanSurfaceDistance[ref, pred, 1, {1, 1, 1}]
-
-MeanSurfaceDistance[ref_, pred_, class_?IntegerQ] := MeanSurfaceDistance[ref, pred, class, {1, 1, 1}]
-
-MeanSurfaceDistance[ref_, pred_, nClasses_?ListQ] := MeanSurfaceDistance[ref, pred, nClasses, {1, 1, 1}]
-
-MeanSurfaceDistance[ref_, pred_, nClasses_?ListQ, vox_] := Table[MeanSurfaceDistance[ref, pred, class, vox], {class, nClasses}]
-
-MeanSurfaceDistance[ref_, pred_, class_?IntegerQ, vox_] := Block[{coorRef, coorPred, fun},
-	coorRef = Transpose[vox Transpose[GetEdge[ref, class]["ExplicitPositions"]]];
-	coorPred = Transpose[vox Transpose[GetEdge[pred, class]["ExplicitPositions"]]];
-	If[coorRef==={}||coorPred==={},
-		"noSeg",
-		fun = Nearest[coorRef];
-		Mean@Sqrt@Total[(fun[coorPred,1][[All,1]]-coorPred)^2,{2}]
-	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetEdge*)
-
-
-GetEdge[lab_, class_] := Block[{seg, n, per, pts},
-	seg = 1 - Unitize[lab - class];
-	n = Length[seg];
-	per = Flatten[Table[
-		pts = Ceiling[Flatten[ComponentMeasurements[Image[seg[[i]]], "PerimeterPositions"][[All, 2]], 2]];
-		If[pts === {}, Nothing, Join[ConstantArray[i, {Length[pts], 1}], pts[[All, {2, 1}]], 2]]
-	, {i, 1, n}], 1];
-	Reverse[SparseArray[per -> 1, Dimensions[seg]], 2]
-]
 
 
 (* ::Subsection:: *)
@@ -704,9 +787,9 @@ GetEdge[lab_, class_] := Block[{seg, n, per, pts},
 Options[MakeClassifyNetwork]={ImageSize->{128,128}};
 
 MakeClassifyNetwork[classes_,OptionsPattern[]]:=Block[{enc, dec, net,imSize},
-	imSize=OptionValue[ImageSize];
-	enc=NetEncoder[{"Class",classes,"IndicatorVector"}];
-	dec=NetDecoder[{"Class",classes}];
+	imSize = OptionValue[ImageSize];
+	enc = NetEncoder[{"Class",classes,"IndicatorVector"}];
+	dec = NetDecoder[{"Class",classes}];
 	net = NetChain[{
 		ConvolutionLayer[16,7,"Stride"->1,PaddingSize->3],BatchNormalizationLayer[],ElementwiseLayer["GELU"],PoolingLayer[4,4],
 		ConvolutionLayer[32,5,"Stride"->1,PaddingSize->2],BatchNormalizationLayer[],ElementwiseLayer["GELU"],PoolingLayer[4,4],
@@ -859,16 +942,16 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*ApplySegmentationNetwork*)
 
 
-Options[ApplySegmentationNetwork]={TargetDevice->"GPU", DataPadding->8, MaxPatchSize->Automatic, Monitor->False}
+Options[ApplySegmentationNetwork]={TargetDevice->"GPU", DataPadding->0, MaxPatchSize->Automatic, Monitor->False}
 
 SyntaxInformation[ApplySegmentationNetwork] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
-		dev, pad , lim, data, crp, net, inp, out, dim, sc, ptch, 
+		dev, pad , lim, data, crp, net, dim, ptch, 
 		patch, pts, seg, mon, dimi, dimc, lab, class
 	},
 	
@@ -880,7 +963,7 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 	dimi = Dimensions@data;
 	{data, crp} = AutoCropData[data, CropPadding->0];
 	dimc = Dimensions@data;
-	data = N@ArrayPad[data, 8, 0.];
+	data = N@ArrayPad[data, pad, 0.];
 	dim = Dimensions[data];
 
 	If[mon, Echo[{dimi, dimc, dim}, "Data dimensions before and after cropping and padding are: "]];
@@ -888,32 +971,27 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 	net = If[StringQ[netI],	GetNeuralNet[netI],	netI];
 
 	If[net===$Failed, $Failed,
-
-		(*get net properties*)
-		inp = NetDimensions[net,"Input"];
-		out = Rest[NetDimensions[net, "LastEncoding"]];
-		class = NetDimensions[net,"Output"][[-1]];
-
-		dim = Dimensions[data];
-		sc = Rest[inp]/out;
-
 		(*calculate the patch size for the data *)
-		ptch = FindPatchDim[dim, lim, sc];
-		ptch = Max /@ Thread[{ptch, Rest@inp}];
+		ptch = FindPatchDim[net, dim, lim];
+
+		(*create the patches*)
 		{patch, pts} = DataToPatches[data, ptch, PatchNumber -> 0, PatchPadding->pad];
 		If[mon, Echo[{ptch, Length@patch}, "Patch size and created number of patches is:"]];
 
 		(*actualy perform the segmentation with the NN*)
 		net = ChangeNetDimensions[net, "Dimensions" ->ptch];
-
-		seg = ToPackedArray[Round[ClassDecoder[net[{NormDat[#]}, TargetDevice->dev]]&/@patch]];
+		seg = ToPackedArray[Round[ClassDecoder[net[{NormDatH[#]}, TargetDevice->dev]]&/@patch]];
 		
 		(*reverse all the padding and cropping and merged the patches if needed*)
-		If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Segmentations dimensions and labels:"]];
-		seg = ArrayPad[PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[class]], -pad];
+		class = NetDimensions[net,"Output"][[-1]];
+		If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, 
+			"Segmentations dimensions and labels:"]];
+		seg = ArrayPad[PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], 
+			dim, Range[class]], -pad];
 		seg = Ramp[seg - 1]; (*set background to zero*)
 		seg = ToPackedArray@Round@ReverseCrop[seg, dimi, crp];
-		If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Output segmentations dimensions and labels:"]];
+		If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, 
+			"Output segmentations dimensions and labels:"]];
 		
 		(*give the output*)
 		seg
@@ -928,23 +1006,53 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 NormDat[dat_] := Block[{q = Quantile[Flatten[dat], 0.9], m = Max[dat]}, If[q <= 0.5 m, If[m===0., dat, dat/m], If[q===0., dat, 0.75 dat/q]]]
 
 
+NormDatH = Compile[{{dat, _Real, 3}}, Block[{fl, flp, min, max, bins, cdf, n},
+	n = 512;
+	fl = Flatten[dat];
+	flp = Pick[fl, Unitize[fl], 1];
+	{min, max} = MinMax[flp];
+	bins = BinCounts[flp, {min, max, (max - min)/n}];
+	cdf = Prepend[N[Accumulate[bins]/Total[bins]], 0.];
+	Map[cdf[[# + 1]] &, Clip[Floor[(dat - min)/(max - min)  n], {0, n}, {0, n}], {-2}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
+
+
 (* ::Subsubsection::Closed:: *)
 (*FindPatchDim*)
 
 
-FindPatchDim[dim_, lim_, sc_] := Block[{u, cont, dimM, dimN},
-	dimM = sc Ceiling[dim/sc];
-	If[CubeRoot[N[Times @@dimM]]<lim,
-		dimN = dimM,
-		u = 1;
+FindPatchDim[net_, dims_] := FindPatchDim[net, dims, 1000]
+
+FindPatchDim[net_, dims_, lim_] := Block[{
+		dim, inp, out, class, sc, ptch, cont, u, dimM, dimN
+	},
+
+	(*if dim is data array then get the dimensions, 
+	if it is vector it is already dim*)
+	dim = If[! VectorQ[dims], Dimensions@dims, dims];
+
+	(*get net properties*)
+	inp = Rest[NetDimensions[net, "Input"]];
+	out = Rest[NetDimensions[net, "LastEncoding"]];
+	class = NetDimensions[net, "Output"][[-1]];
+	sc = inp/out;
+
+	(*initialize dim*)
+	dimM = sc  Ceiling[dim/sc];
+
+	(*if memeory limit is given find patch that fits*)
+	If[lim =!= 1000,
+		If[CubeRoot[N[Times @@ dimM]] < lim, dimN = dimM, u = 1;
 		cont = True;
 		While[cont, u++;
-			dimN = u sc;
+			dimN = u  sc;
 			dimN = Min /@ Transpose[{dimN, dimM}];
-			cont = CubeRoot[Times @@ dimN] < lim && Min[dimN] < Min[dim]
-		]
+			cont = CubeRoot[Times @@ dimN] < lim && Min [dimN] < Min[dim]]],
+		dimN = dimM
 	];
-	dimN
+
+	(*output the patch dim*)
+	Max /@ Thread[{dimN, inp}]
 ]
 
 
@@ -1097,7 +1205,7 @@ GetPatchRangeI[dim_?IntegerQ, patch_?IntegerQ, {nr_, pad_}]:=Block[{i,st},
 (*TrainSegmentationNetwork*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*TrainSegmentationNetwork*)
 
 
@@ -1122,7 +1230,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPatter
 
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
 		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, ittName, makeIm,
-		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im,
+		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
 		netName, monitorFunction, netMon, netOut, trained, 
 		validation, files
 	},
@@ -1136,22 +1244,18 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*import all the train data*)
 	files = FileNames["*.wxf", inFol];
 
-	(*figure out network properties*)
+	(*figure out network properties from train data*)
+	(*background is 0 but for network its 1 so class +1*)
 	data = Import@First@files;
 	dDim = Dimensions@data[[1]][[1]];
 	nChan = If[Length@dDim === 2, 1, dDim[[2]]];
 	nClass = Round[Max@data[[2]] + 1];
 	patch = OptionValue[PatchSize];
 
-	(*local pure functions*)
-	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
-	netName = outName["itt_" <> StringPadLeft[ToString[#], 4, "0"] <> ".wlnet"]&;
-	ittName = FileNameJoin[{outFol, "itt_" <> StringPadLeft[ToString[#], 4, "0"] <> ".png"}]&;
-	makeIm = ImageResize[MakeChannelClassImage[#1, #2, {0, nClass - 1}], 500, Resampling -> "Nearest"]&;
 
 	(*------------ Define the network -----------------*)
 
-	(*make or import network*)
+	(*make or import network, netCont can be a network or a previous train folder*)
 	{netIn, ittTrain} = Which[
 		(*start with a clean network*)
 		netCont === "Start",
@@ -1171,80 +1275,109 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 				Return[$Failed]
 			]
 			,
-			(*is an output directory look for net*)
+			(*is an output directory from previous training look for net*)
 			DirectoryQ[netCont],
 			netIn = FileNames["*_itt_*.wlnet", netCont];
 			If[Length[netIn] > 0, 
 				{Import@Last@netIn, ToExpression@Last@StringSplit[FileBaseName@Last@netIn, "_"]},
-				Return[$Failed]
+				Return[
+					Message[TrainSegmentationNetwork::net];
+					Message[TrainSegmentationNetwork::cont]; 
+					$Failed]
 			]
 			,
-			True, Return[$Failed]
+			True, Return[
+				Message[TrainSegmentationNetwork::net]; 
+				Message[TrainSegmentationNetwork::inp]; 
+				$Failed]
 		],
-		True, Return[$Failed]
+		True, Return[Message[TrainSegmentationNetwork::net]; $Failed]
 	];
 
-	If[rounds - ittTrain < 5,
-		Print["not engouh round"];
-		Return[$Failed]
-		,
-		(*if the network already exists make the dimensions, 
-		classes en channels match the input*)
-		netIn = NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
 
+	(*------------ Define the network -----------------*)
+
+
+	If[rounds - ittTrain < 5,
+		Return[Message[TrainSegmentationNetwork::itt]; $Failed]
+		,
+		
+		(*if the network already exists make the dimensions, classes en channels match the input*)
+		netIn = NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
 		Echo[netIn, "Network for training"];
 
 		(*---------- Stuff for monitoring ----------------*)
-
+		
+		(*Functions for consistant file names*)
+		outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
+		netName = outName["itt_" <> StringPadLeft[ToString[#], 4, "0"] <> ".wlnet"]&;
+		ittName = FileNameJoin[{outFol, "itt_" <> StringPadLeft[ToString[#], 4, "0"] <> ".png"}]&;
+		
 		(*Make and export test data*)
 		{testData, testVox} = MakeTestData[data, 2, patch];
-		testSeg = ApplySegmentationNetwork[testData, netIn];
+		ExportNii[First@testData, testVox, outName["testSet.nii"]];
+
+		(*segment test data *)
+		testSeg = Ramp[ClassDecoder[netIn[testData, TargetDevice -> "GPU"]] - 1];
+		ExportNii[testSeg, testVox, outName["testSeg.nii"]];
+		
+		(*make and export image*)
+		makeIm[data_, label_] := ImageAssemble[Partition[
+			MakeChannelClassImage[data[[All, #]], label[[#]], {0, nClass - 1}
+				] & /@ (Round[Range[2, Length[label] - 1, (Length[label] - 2) / 9.]])
+		, 3]];
 		im = makeIm[testData, testSeg];
 		Export[ittName[ittTrain], im];
-		ExportNii[First@testData, testVox, outName["testSet.nii"]];
-		ExportNii[testSeg, testVox, outName["testSeg.nii"]];
 
 		(*Print progress function*)
 		Echo[Dynamic[Column[
-			{Style["Training Round: " <> ToString[ittTrain], Bold, Large], im}
+			{Style["Training Round: " <> ToString[ittTrain], Bold, Large], Image[im, ImageSize->400]}
 		, Alignment -> Center]], "Progress"];
 
 		(*define the monitor function, exports image and last net and Nii of result*)
-		monitorFunction = (ittTrain++;
-			(*perform segmentation*)
+		monitorFunction = (
+			ittTrain++;
+			(*perform segmentation and export*)
 			netMon = NetExtract[#Net, "net"];
-			testSeg = ApplySegmentationNetwork[testData, netMon];
-			(*export test Segmentation*)
+			testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "GPU"]] - 1];
 			ExportNii[testSeg, testVox, outName["testSeg.nii"]];
-			(*export test image*)
+			(*make and export test image*)
 			im = makeIm[testData, testSeg];
-			Export[FileNameJoin[{outFol, "itt_" <> StringPadLeft[ToString[ittTrain], 4, "0"] <> ".png"}], im];
+			Export[ittName[ittTrain], im];
 			(*export the network and delete the one from the last itteration*)
 			Export[netName[ittTrain], netMon];
 			Quiet@DeleteFile[netName[ittTrain - 1]];
 		)&;
 
+
 		(*---------- Train the network ----------------*)
 
 		Echo[DateString[], "Starting training"];
 
+		(*import all train data or train out of memory*)
 		data = If[OptionValue[LoadTrainingData]===True, Import/@files, files];
-
-		validation = GetTrainData[data, Round[0.2 roundLength], patch, nClass];
+		
+		(*prepare a validation set*)
+		validation = GetTrainData[data, Round[0.2 roundLength], patch, nClass, AugmentData->augment];
+		
+		(*train the network*)
 		trained = NetTrain[
-			AddLossLayer@netIn,	{GetTrainData[data, #BatchSize, patch, nClass, 
-				AugmentData -> augment, PatchesPerSet->patches
-			] &, "RoundLength" -> roundLength},
+			AddLossLayer@netIn, 
+			{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment, PatchesPerSet->patches] &, 
+				"RoundLength" -> roundLength}, 
 			All, ValidationSet -> validation,
+			
+			LossFunction -> {"SoftDice", "SquaredDiff", "Tversky" , "CrossEntropy", "Jaccard"}, 
 
-			LossFunction -> {"SoftDice", "SquaredDiff", "CrossEntropy"}, 
 			MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
 			TargetDevice -> "GPU", WorkingPrecision -> "Mixed",
-			LearningRate -> 0.01, Method -> {"ADAM", "Beta1" -> 0.99},
+			LearningRate -> 0.05, Method -> {"ADAM", "Beta1" -> 0.99, "Beta2"->0.999, "Epsilon"->10^-5},
 
 			TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[1, "Rounds"]},
-			TrainingProgressReporting -> File[outName[StringReplace[DateString["ISODateTime"], ":" | "-" -> ""] <> ".json"]]
+			TrainingProgressReporting -> File[outName[StringReplace[DateString["ISODateTime"], 
+				":" | "-" -> ""] <> ".json"]]
 		];
+
 
 		(*---------- Export the network ----------------*)
 
@@ -1256,7 +1389,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MakeTestData*)
 
 
@@ -1267,8 +1400,40 @@ MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
 		sel = Range @@ Clip[Round[(Clip[Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, n First@patch})], {1, len}, {1, len}];
 		testData = First@AutoCropData[testData[[sel]]]
 	];
-	{{PadToDimensions[testData, patch]}, data[[3]]}
+	{{NormDatH@PadToDimensions[testData, patch]}, data[[3]]}
 ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*ShowTrainLog*)
+
+
+ShowTrainLog[fol_] := ShowTrainLog[fol, 5]
+
+ShowTrainLog[fol_, max_] := Block[{files, log, keys, plots},
+	(* Get a list of log files in the specified folder *)
+	files = Sort[FileNames["*.json", fol]];
+	
+	(* Read the log files and extract the relevant information *)
+	log = Flatten[Select[(Select[Import[#, "Lines"], StringContainsQ[#, "ProgressFraction"] &] & /@ files), Length[#] > max &], 1];
+	
+	(* Convert the log data into a dataset *)
+	log = "[\n" <> StringDrop[StringRiffle[If[StringTake[#, -1] === "}", # <> ",", #] & /@ log, "\n"], -1] <> "\n]";
+	log = Dataset[Association /@ Import[Export[FileNameJoin[{$TemporaryDirectory, "log.json"}], log, "text"]]];
+	
+	(* Get the unique keys (metrics) in the log data *)
+	keys = Sort@DeleteDuplicates[Flatten[Normal@log[All, Keys]]];
+	
+	(* Create a dynamic module to display the interactive plot *)
+	DynamicModule[{pdat = log, klist = keys},
+		Manipulate[
+			(* Plot the selected metrics *)
+			ListLinePlot[If[key === {}, {}, Transpose[Values /@ Normal[pdat[All, key]][[All, All]]]], PlotLegends -> key, ImageSize -> 400, PlotRange->All],
+			Control[{{key, {}, ""}, klist, ControlType -> TogglerBar, Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
+			{{key, {}}, ControlType -> None}
+		]
+	]
+]
 
 
 (* ::Subsection:: *)
@@ -1287,27 +1452,18 @@ Options[GetTrainData] = {
 GetTrainData[datas_, nBatch_, patch_, opts:OptionsPattern[]]:=GetTrainData[datas, nBatch, patch, False, opts]
 
 GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
-		itt, i, datO, segO, dat, seg, vox, dim, aug, nSet
+		itt, i, datO, segO, dat, seg, vox, dim, augI, aug, nSet
 	},
 
 	itt = 0;
 	datO = segO = {};
 
-	{aug, nSet} = OptionValue[{AugmentData, PatchesPerSet}];
-
-	Which[
-		aug === 1, True,
-		aug === 0, False,
-		0 < aug < 1, RandomChoice[{aug, 1 - aug} -> {True, False}],
-		BooleanQ[aug], aug,
-		True, True
-	];
-	aug = # && aug & /@ {True, True, True, True, True, True, True(*False, False, False*)};
+	{augI, nSet} = OptionValue[{AugmentData, PatchesPerSet}];
 
 	itt = Ceiling[nBatch/nSet];
 
 	Do[
-		dat = RandomChoice[datas];
+		dat =RandomChoice[datas];
 		
 		If[StringQ[dat], 
 			(*data is wxf file format*)
@@ -1323,10 +1479,22 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 			]
 		];
 
+		(*normalize the data and segmentations and pad to at least patch dimensions*)
 		dim = Max /@ Transpose[{Dimensions@dat, patch}];
-		dat = PadToDimensions[dat, dim];
+		dat = NormDatH@PadToDimensions[dat, dim];
 		seg = PadToDimensions[seg, dim];
 
+		(*check if augmentation is a boolean or a list*)
+		aug = Which[
+			augI === 1, True,
+			augI === 0, False,
+			0 < augI < 1, RandomChoice[{augI, 1 - augI} -> {True, False}],
+			BooleanQ[augI], augI,
+			True, True];
+		(* {flip, rot, trans, scale, noise, blur, bright} *)
+		aug = (# && aug) & /@ {True, True, True, True, True, False, False};
+
+		(*perform augmentation on full data and get the defined number of patches*)
 		{dat, seg} = AugmentTrainingData[{dat, seg}, vox, aug];
 		{dat, seg} = PatchTrainingData[{dat, seg}, patch, nSet];
 
@@ -1334,10 +1502,9 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 		segO = Join[segO, seg];
 	, itt];
 
-	If[IntegerQ[nClass],
-		Thread[Transpose[{datO[[;; nBatch]]}] -> ClassEncoder[segO[[;; nBatch]] + 1, nClass]],
-		Thread[Transpose[{datO[[;; nBatch]]}] -> segO[[;; nBatch]] + 1]
-	]
+	datO = datO[[;; nBatch]];
+	segO = If[IntegerQ[nClass], ClassEncoder[segO[[;; nBatch]] + 1, nClass], segO[[;; nBatch]] + 1];
+	Thread[Transpose[{datO}] -> segO]
 ];
 
 
@@ -1388,13 +1555,36 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 	(*Augmentations of sharpness intensity and noise*)
 	If[bright, datT = RandomChoice[{RandomReal[{1, 1.5}], 1/RandomReal[{1, 1.5}]}] datT];
 	If[blur, datT = GaussianFilter[datT, RandomReal[{0.1, 1.5}]]];
-	If[noise && RandomChoice[{True, False, False}], datT = AddNoise[datT, 0.5/RandomReal[{1, 100}]]];
+	(*If[noise && RandomChoice[{True, False, False}], datT = AddNoise[datT, 0.5/RandomReal[{1, 100}]]];*)
+
+	If[(nn=noise && RandomChoice[{1/3, 2/3} -> {True, False}]), datT = addNoise[datT, Mean[Flatten[datT]]/RandomReal[{10, 100}], RandomChoice[{0.8, 0.2} -> {0, 1}] RandomReal[{0, 1}]/100]];
 	
 	{ToPackedArray[N[datT]], ToPackedArray[Round[segT]]}
 ]
 
 
 ReverseC = Compile[{{dat, _Real, 1}}, Reverse[dat], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+addNoise[data_, sigma_, p_] := Block[{dims, g1, g2, num, coors},
+	dims = Dimensions[data];
+	(*random noise*)
+	{g1, g2} = 
+	RandomReal[NormalDistribution[0., sigma], Prepend[dims, 2]];
+	(*salt and pepper noise*)
+	num = Max[{1, Round[p*Times @@ dims/2]}];
+	coors = Transpose[RandomInteger[{1, #}, 2 num] & /@ dims];
+	(*add the noise*)
+	SaltAndRiceC[data, coors, num, g1, g2]
+];
+
+
+SaltAndRiceC = Compile[{{data, _Real, 3}, {coors, _Integer, 2}, {num, _Integer, 0}, {g1, _Real, 3}, {g2, _Real, 3}}, Block[{newData},
+	newData = Sqrt[(data + g1)^2 + g2^2];
+	(newData[[#[[1]], #[[2]], #[[3]]]] = 1) & /@ coors[[1 ;; num]];
+	(newData[[#[[1]], #[[2]], #[[3]]]] = 0) & /@ coors[[num + 1 ;; -1]];
+	newData
+], RuntimeAttributes -> {Listable}, Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1408,8 +1598,10 @@ PatchTrainingData[{dat_,seg_}, patch_, n_]:=Block[{pts,datP,segP},
 ]
 
 
+
 (* ::Subsubsection::Closed:: *)
 (*PrepTrainData*)
+
 
 PrepTrainData[dat_, seg_]:= PrepTrainData[dat, seg, {0}]
 
@@ -1504,7 +1696,7 @@ MakeChannelClassImage[data_, label_, vox_]:=MakeChannelClassImage[data, label, M
 MakeChannelClassImage[data_, label_, {off_, max_}, vox_]:=Block[{i1, i2},
 	i1 = MakeClassImage[label, {off, max}, vox];
 	i2 = MakeChannelImage[data, vox];
-	ImageCollage[ImageCompose[#, SetAlphaChannel[i1,0.4 AlphaChannel[i1]]]&/@i2]
+	ImageCollage[ImageCompose[#, SetAlphaChannel[i1, 0.4 AlphaChannel[i1]]]& /@ i2]
 ]
 
 
@@ -1514,23 +1706,23 @@ MakeChannelClassImage[data_, label_, {off_, max_}, vox_]:=Block[{i1, i2},
 
 SyntaxInformation[MakeClassImage]={"ArgumentsPattern"->{_, _., _.}};
 
-MakeClassImage[label_]:=MakeClassImage[label, MinMax[label],{1,1,1}]
+MakeClassImage[label_]:=MakeClassImage[label, MinMax[label], {1,1,1}]
  
 MakeClassImage[label_, {off_, max_}]:=MakeClassImage[label, {off, max}, {1,1,1}]
 
-MakeClassImage[label_, vox_]:=MakeClassImage[label,MinMax[label],vox]
+MakeClassImage[label_, vox_]:=MakeClassImage[label, MinMax[label], vox]
 
-MakeClassImage[label_,{off_, max_}, vox_]:=Block[{cols, im, rat},
+MakeClassImage[label_,{off_, maxI_}, vox_]:=Block[{max, cols, im, rat},
 	(*SeedRandom[1345];
 		cols = Prepend[ColorData["DarkRainbow"][#]&/@RandomSample[Rescale[Range[off+1, max]]],Transparent];
 		cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Range[off+1, max]],Transparent];
 	*)
-
+	max = Max[{Max[label], maxI}];
  	cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Join[Select[Range[off + 1, max], EvenQ], Select[Range[off + 1, max], OddQ]]],Transparent];
-
-	im = Round@Clip[If[ArrayDepth[label] === 3, label[[Round[Length@label/2]]], label] - off + 1, {1, max + 1}, {1, 1}];
+	im = Round@Clip[If[ArrayDepth[label] === 3, 
+		label[[Round[Length@label/2]]], label
+		] - off + 1, {1, max + 1}, {1, 1}];
 	rat=vox[[{2,3}]]/Min[vox[[{2,3}]]];
-	
 	ImageResize[Image[cols[[#]]&/@im], Round@Reverse[rat Dimensions[im]], Resampling->"Nearest"]
 ]
 
@@ -1544,8 +1736,8 @@ SyntaxInformation[MakeChannelImage]={"ArgumentsPattern"->{_, _., _.}};
 MakeChannelImage[data_]:=MakeChannelImage[data, {1, 1, 1}]
 
 MakeChannelImage[data_, vox_]:=Block[{dat, im, rat},
-	(*dat = Rescale[data];*)
-	dat = NormDat@data;
+	dat = Rescale[data];
+	(*dat = NormDat@data;*)
 
 	rat = vox[[{2, 3}]] / Min[vox[[{2, 3}]]];
 	(
@@ -1599,6 +1791,71 @@ MuscleNameToLabel[num_] := num /. Thread[#[[1]] -> #[[2]]] &[ImportITKLabels[Get
 MuscleNameToLabel[num_, file_] := Block[{muscleNames, muscleLabels},
 	{muscleNames, muscleLabels} = ImportITKLabels[file];
 	num /. Thread[muscleNames -> muscleLabels]
+]
+
+
+(* ::Subsection:: *)
+(*Distance measures*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*DiceSimilarity*)
+
+
+SyntaxInformation[DiceSimilarity] = {"ArgumentsPattern" -> {_, _, _}};
+
+DiceSimilarity[ref_, pred_, nClasses_?ListQ] := Table[DiceSimilarity[ref, pred, c], {c, nClasses}]
+
+DiceSimilarity[ref_, pred_] := DiceSimilarityC[Flatten[ref], Flatten[pred], 1]
+
+DiceSimilarity[ref_, pred_, c_?IntegerQ] := DiceSimilarityC[Flatten[ref], Flatten[pred], c]
+
+
+DiceSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{refv, predv, denom},
+	refv = Flatten[1 - Unitize[ref - class]];
+	predv = Flatten[1 - Unitize[pred - class]];
+	denom = (Total[refv] + Total[predv]);
+	If[denom === 0., 1., N[2 Total[refv predv] / denom]]
+ ], RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MeanSurfaceDistance*)
+
+
+SyntaxInformation[MeanSurfaceDistance] = {"ArgumentsPattern" -> {_, _, _, _.}};
+
+MeanSurfaceDistance[ref_, pred_] := MeanSurfaceDistance[ref, pred, 1, {1, 1, 1}]
+
+MeanSurfaceDistance[ref_, pred_, class_?IntegerQ] := MeanSurfaceDistance[ref, pred, class, {1, 1, 1}]
+
+MeanSurfaceDistance[ref_, pred_, nClasses_?ListQ] := MeanSurfaceDistance[ref, pred, nClasses, {1, 1, 1}]
+
+MeanSurfaceDistance[ref_, pred_, nClasses_?ListQ, vox_] := Table[MeanSurfaceDistance[ref, pred, class, vox], {class, nClasses}]
+
+MeanSurfaceDistance[ref_, pred_, class_?IntegerQ, vox_] := Block[{coorRef, coorPred, fun},
+	coorRef = Transpose[vox Transpose[GetEdge[ref, class]["ExplicitPositions"]]];
+	coorPred = Transpose[vox Transpose[GetEdge[pred, class]["ExplicitPositions"]]];
+	If[coorRef==={}||coorPred==={},
+		"noSeg",
+		fun = Nearest[coorRef];
+		Mean@Sqrt@Total[(fun[coorPred,1][[All,1]]-coorPred)^2,{2}]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetEdge*)
+
+
+GetEdge[lab_, class_] := Block[{seg, n, per, pts},
+	seg = 1 - Unitize[lab - class];
+	n = Length[seg];
+	per = Flatten[Table[
+		pts = Ceiling[Flatten[ComponentMeasurements[Image[seg[[i]]], "PerimeterPositions"][[All, 2]], 2]];
+		If[pts === {}, Nothing, Join[ConstantArray[i, {Length[pts], 1}], pts[[All, {2, 1}]], 2]]
+	, {i, 1, n}], 1];
+	Reverse[SparseArray[per -> 1, Dimensions[seg]], 2]
 ]
 
 
