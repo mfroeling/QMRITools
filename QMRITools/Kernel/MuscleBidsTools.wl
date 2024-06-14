@@ -1016,7 +1016,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*fit with DB fat model*)
 							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> True, 
+								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> False, 
 								DixonAmplitudes -> "CallDB", DixonTollerance->1];
 							
 							{wat, fat} = Abs[{wat, fat}];

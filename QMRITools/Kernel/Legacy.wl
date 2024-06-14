@@ -502,7 +502,7 @@ files=FileNames["*.dcm",folder];
 -Round[If[part==1,
 GradRead[files[[1]]],
 GradRead/@files[[;;part]]
-].Inverse[(GradRotMat[files[[1]]])],.00001]
+] . Inverse[(GradRotMat[files[[1]]])],.00001]
 ]
 
 
@@ -744,7 +744,7 @@ grads = If[("(0018,9075)" /. #) == "NONE" || ("(0018,9075)" /. #) ==
 "ISOTROPIC", {0, 0, 
 0}, ("(0018,9089)" /. ("(0018,9076)" /. #))] & /@ (("(0018,9117)" /. #) & /@ groups);
 bvec = "(0018,9087)" /. ("(0018,9117)" /. #[[2]]) & /@ groups;
-gradsRot = Round[grads.gradRotmat, .0001];
+gradsRot = Round[grads . gradRotmat, .0001];
 data = If[("FrameCount"/slice /. meta) == directions,
 Partition[Import[file, "Data"], directions],
 Partition[Import[file, "Data"],("FrameCount"/"(2001,1018)") /. meta]
@@ -2047,6 +2047,234 @@ PlotData3D[data_, vox:{_,_,_}:{1,1,1}] :=
 
 (*CreateWindow[DialogNotebook[
     {CancelButton["Close", DialogReturn[]],*) 
+
+
+(* ::Subsection:: *)
+(*MakeUnet - old*)
+
+(*
+(* ::Subsubsection::Closed:: *)
+(*MakeUnet*)
+
+
+Options[MakeUnet] = {
+	BlockType -> "ResNet", 
+	DropoutRate -> 0.2, 
+	NetworkDepth -> 5, 
+	DownsampleSchedule -> Automatic, 
+	FeatureSchedule -> Automatic,
+	InputFilters -> 32, 
+	ActivationType -> "GELU"
+}
+
+SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+MakeUnet[nClass_, dimIn_, opts:OptionsPattern[]] :=MakeUnet[1, nClass, dimIn, opts]
+
+MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
+		dep, dep1, drop, type, dim, nDim, filt, feat, enc, dec, stride, filtIn, actType
+	},
+
+	(*Get the options*)
+	{dep, drop, type, stride, feat, filtIn, actType} = OptionValue[
+		{NetworkDepth, DropoutRate, BlockType, DownsampleSchedule, FeatureSchedule, InputFilters, ActivationType}
+	];
+
+	(*Define UNET properties*)
+	enc ="enc_" <> ToString[#]&;
+	dec ="dec_" <> ToString[#]&;
+	dep1 = dep-1;
+	nDim = Length@dimIn;
+	dim = Switch[nDim, 2, "2D", 3, "3D"];
+	feat = If[feat===Automatic,
+		Switch[type, "DenseNet" | "UDenseNet", {1, 2, 4, 6, 8}, _, {1, 2, 4, 8, 16}],
+		feat];
+	feat = PadRight[feat, dep, Last@feat];
+	filt = Switch[type, "DenseNet" | "UDenseNet", Table[{filtIn, 1 + i}, {i, feat}], _, filtIn feat];
+	stride = Prepend[If[stride===Automatic, ConstantArray[2, {dep-1, nDim}], stride], {1, 1, 1}[[;;nDim]]];
+
+	(*make the UNET*)
+	NetGraph[
+		Association@Join[
+			Table[
+				enc[i] -> ConvNode[filt[[i]], "Dropout" -> drop, "Dimensions" -> dim, "Stride" -> stride[[i]],
+					"ConvType" -> type, "NodeType" -> "Encode", "ActivationType" -> actType]
+			, {i, 1, dep}],
+			Table[
+				dec[i] -> ConvNode[filt[[i]], "Dropout" -> drop, "Dimensions" -> dim, "Stride" -> stride[[i+1]],
+					"ConvType" -> type, "NodeType" -> "Decode", "ActivationType" -> actType]
+			, {i, 1, dep1}],
+			{"start" -> UNetStart[filt[[1]], nChan, dimIn, actType]},
+			{"map" -> UNetMap[dimIn, nClass]}
+		],
+
+		Join[
+			{NetPort["Input"] -> "start" -> enc[1], {enc[dep], enc[dep1]} -> dec[dep1], dec[1] -> "map"},
+			Table[enc[i - 1] -> enc[i], {i, 2, dep}],
+			Table[{dec[i + 1], enc[i]} -> dec[i], {i, 1, dep-2}]
+		]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*UNetMap*)
+
+
+UNetMap[dim_, nClass_] :=  Flatten[{
+	ConvolutionLayer[nClass, 1], If[nClass > 1,	
+		{TransposeLayer[Switch[Length@dim, 2, {3, 1, 2}, 3, {4, 1, 2, 3}]], SoftmaxLayer[]},
+		{LogisticSigmoid, FlattenLayer[1]}
+	]
+}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*UNetStart*)
+
+
+UNetStart[filt_, nChan_, dimIn_, actType_] := {ConvolutionLayer[If[IntegerQ[filt],filt,First@filt], 1, "Input" -> Prepend[dimIn, nChan]], BatchNormalizationLayer[], ActivationLayer[actType]}
+
+
+(* ::Subsubsection::Closed:: *)
+(*ConvNode*)
+
+
+Options[ConvNode] = {
+	"Dimensions" -> "3D",
+	"ActivationType" -> "GELU",
+	"Dropout" -> 0.2,
+	"ConvType" -> "ResNet",
+	"NodeType" -> "Encode",(*encode, decode, start*)
+	"Stride" -> Automatic
+};
+
+ConvNode[chan_, OptionsPattern[]] := Block[{
+		convType, nodeType, actType, mode, node, drop, dim, stride
+	},
+
+	(*get the options*)
+	{convType, nodeType, actType, drop, dim, stride} = OptionValue[
+		{"ConvType", "NodeType", "ActivationType", "Dropout", "Dimensions", "Stride"}
+	];
+
+	(*mode is encoding or decoding, decoding is solved later and treated as normal here*)
+	mode = If[nodeType === "Encode", "down", "normal"];
+
+	(*make convblocks for various convolution types*)
+	node = Switch[convType,	
+		"UResNet", 
+		Flatten[{
+			ConvBlock[chan/2, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], 
+			ConvBlock[chan, "ActivationType" -> actType, "Stride"->stride]
+		}],
+
+		"ResNet",
+		{<|
+			"con" -> Join[
+				ConvBlock[chan/2, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], 
+				ConvBlock[chan, "ActivationType" -> "None"]], 
+			"skip" -> ConvBlock[chan, "ConvMode" -> mode<>"S", "ActivationType" -> "None", "Stride"->stride],
+			"tot" -> {TotalLayer[], ActivationLayer[actType]}
+		|>, {
+			{"con", "skip"} -> "tot"
+		}},
+
+		"DenseNet",
+		With[{n = chan[[1]], dep = chan[[2]], layName = "lay_" <> ToString[#] &},{
+			Join[
+				<|If[mode === "down", "down" -> ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], Nothing]|>,
+				Association@Table[If[rep==dep, "lay_end", layName[rep]] -> ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> "catenate"], {rep, 1, dep}]
+			],
+			Table[Table[If[rr == 0, If[mode==="down", "down", NetPort["Input"]], layName[rr]], {rr, 0, rep - 1}] -> If[rep==dep, "lay_end", layName[rep]], {rep, 1, dep}]
+		}],
+
+		"UDenseNet", 
+		Flatten[{If[mode === "down", ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], Nothing], 
+			ConstantArray[ConvBlock[chan[[1]], "ActivationType" -> actType], chan[[2]]]}],
+
+		_,
+		Flatten[{ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> mode, "Stride"->stride], ConvBlock[chan, "ActivationType" -> actType]}]
+	];
+
+
+	(*Add dropout and upconv for deconding block*)
+	NetFlatten@If[nodeType === "Decode",
+
+		(*convert to decoding block and add dropout*)
+		NetGraph[<|
+			"upconv" -> ConvBlock[chan, "ActivationType" -> actType, "ConvMode" -> "up", Dimensions -> dim, "Stride"->stride],
+			"conv" -> If[convType==="ResNet"||convType==="DenseNet",
+				NetGraph[
+					Join[node[[1]], <|"cat"->CatenateLayer[],"drop"->DropoutLayer[drop]|>],
+					Switch[convType,
+						"ResNet", Join[node[[2]], {"cat"->{"con","skip"}, "tot"->"drop"}],
+						"DenseNet", Join[node[[2]] /. NetPort["Input"]->"cat", {"lay_end"->"drop"}]
+					]
+				],
+				Flatten[{CatenateLayer[], node, DropoutLayer[drop]}]
+			]
+		|>, {
+			{NetPort["Input2"] -> "upconv", NetPort["Input1"]} -> "conv"
+		}]
+		,
+
+		(*add dropout to encoding block*)
+		If[convType==="ResNet"||convType==="DenseNet",
+				NetGraph[
+					Join[node[[1]], <|"drop"->DropoutLayer[drop]|>],
+					Join[node[[2]], {Switch[convType,"ResNet", "tot", "DenseNet", "lay_end"]->"drop"}]
+				],
+				NetChain[Flatten@{node, DropoutLayer[drop]}]
+			]
+		
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ConvBlock*)
+
+
+Options[ConvBlock] = {
+	"Dimensions" -> "3D",
+	"ActivationType" -> "GELU",
+	"ConvMode" -> "normal"(*normal, up, down, catenate*),
+	"Stride" -> 2
+};
+
+ConvBlock[channels_, OptionsPattern[]] := Block[{
+		chan, kern,  actType, pad, actLayer, convMode, dim, str
+	},
+
+	{actType, convMode, dim, str} = OptionValue[{"ActivationType", "ConvMode", "Dimensions", "Stride"}];
+	chan = Round@First@Flatten@{channels};
+	
+	Switch[convMode,
+		"up", 
+		{ResizeLayer[Scaled/@str, Resampling -> "Nearest"], ConvolutionLayer[chan, 2, "PaddingSize" -> ConstantArray[{0,1},Length[str]], "Stride" -> 1]},
+		"down"|"downS", 
+		{ConvolutionLayer[chan, str, "PaddingSize" -> 0, "Stride" -> str], BatchNormalizationLayer[], ActivationLayer[actType]},
+		"normal", 
+		{ConvolutionLayer[chan, 3, "PaddingSize" -> 1, "Stride" -> 1], BatchNormalizationLayer[], ActivationLayer[actType]},
+		"normalS", 
+		{ConvolutionLayer[chan, 1, "PaddingSize" -> 0, "Stride" -> 1], BatchNormalizationLayer[], ActivationLayer[actType]},
+		"catenate", 
+		{CatenateLayer[], ConvolutionLayer[chan, 3, "PaddingSize" -> 1, "Stride" -> 1], BatchNormalizationLayer[], ActivationLayer[actType]}
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ActivationLayer*)
+
+
+ActivationLayer[actType_] := If[StringQ[actType],
+	Switch[actType, "LeakyRELU", ParametricRampLayer[], "None", Nothing, _, ElementwiseLayer[actType]],
+	actType
+]
+*)
+
 
 
 (* ::Section:: *)

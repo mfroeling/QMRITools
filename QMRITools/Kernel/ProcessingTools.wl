@@ -909,7 +909,7 @@ Module[{fitdat},
 
 Options[DataTransformation]={InterpolationOrder->1, PadOutputDimensions->False}
 
-SyntaxInformation[DataTransformation]={"ArgumentsPattern"->{_,_,_,OptionsPattern[]}};
+SyntaxInformation[DataTransformation]={"ArgumentsPattern"->{_, _, _, _., OptionsPattern[]}};
 
 DataTransformation[data_, vox_, wi_, opts:OptionsPattern[]]:=DataTransformation[data, vox, wi, "Real32", opts]
 

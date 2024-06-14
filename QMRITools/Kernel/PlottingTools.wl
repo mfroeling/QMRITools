@@ -106,7 +106,7 @@ ContourScaling::usage =
 "ContourScaling is an option for PlotCountour. The value can be \"World\" or \"Voxel\", if the value is \"Wold\" the segmentation is in mm else in voxel coordinates."
 
 ContourSmoothRadius::usage = 
-"ContourSmoothRadius is and option for PlotContour. It defines the smoothing radius with an integer, None or 0 does not smooth. "
+"ContourSmoothRadius is and option for PlotContour. It defines the smoothing radius with an integer, None or 0 does not smooth."
 
 ContourResolution::usage = 
 "ContourResolution is an option for PlotContour. It defines the mesh resolution used, can be a singel number or a list of 3 numbers."

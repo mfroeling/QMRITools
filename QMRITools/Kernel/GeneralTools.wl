@@ -261,7 +261,7 @@ MemoryUsage::usage =
 "MemoryUsage[] gives a table of which definitions use up memory.
 MemoryUsage[n] gives a table of which definitions use up memory, where n is the amout of definitions to show."
 
-MBCount::usgae =
+MBCount::usage =
 "MBCount[expr] gives the memory usage of the expression in MB."
 
 ClearTemporaryVariables::usage = 

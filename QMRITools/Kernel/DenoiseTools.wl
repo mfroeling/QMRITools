@@ -26,7 +26,6 @@ BeginPackage["QMRITools`DenoiseTools`", Join[{"Developer`"}, Complement[QMRITool
 
 DeNoise::usage = 
 "DeNoise[data,sigma,filtersize] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" a gaussian kernel.
-DeNoise[data,sigma,filtersize, Kernel->\"kerneltype\"] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" and type \"kerneltype\".
 
 Output is data denoised.
 
