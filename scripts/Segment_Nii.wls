@@ -7,7 +7,7 @@ Print["Working from directory ", dir];
 Print["Loading QMRITools"];
 load = Get["QMRITools`"];
 
-If[load===$Failed,
+If[load === $Failed,
 	Print["Could not load QMRITools"];
 	,
 	pack = Last@PacletFind["QMRITools"];
@@ -19,12 +19,12 @@ If[load===$Failed,
 	in = FileExistsQ[infile];
 	
 	If[!in,
-		Print["Could not find input file"];
+		Print["Could not find input file."];
 		,
-		{dat,vox}=ImportNii[infile];
+		{dat, vox} = ImportNii[infile];
 		
 		Print["  - Performing segmentation"];
-		seg = SegmentData[dat,"Legs", TargetDevice->"CPU"];
+		seg = SegmentData[dat, "Legs", TargetDevice->"CPU"];
 		
 		Print["  - Exporting segmentation to ", outfile];
 		CopyFile[GetAssetLocation["MusclesLegLabels"], 

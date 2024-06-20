@@ -24,7 +24,8 @@ Run the segmentation script (networks are currelty for out-phase dixon data):
 
 For the situation where you run the scrip from its own folder with the test folder also there this will be script
 
-`wolframscript -f "Segment_Nii.wls" "test data\test.nii.gz" "test data\out.nii"`
+`wolframscript -f "Segment_Nii.wls" "test data\test_up.nii.gz" "test data\out_up.nii"`
+`wolframscript -f "Segment_Nii.wls" "test data\test_low.nii.gz" "test data\out_low.nii"`
 
 <p align="center">
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/script.png"
