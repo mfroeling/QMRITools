@@ -642,9 +642,11 @@ RescaleImgi[dat_, {sc_, met_}, n_] := Block[{type, im, dim},
 
 Options[GridData] = {Padding-> None}
 
-SyntaxInformation[GridData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[GridData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-GridData[dati_, part_, OptionsPattern[]] := Block[{dim, data, adepth, pad, val},
+GridData[dati_, opts:OptionsPattern[]]:=GridData[dati, Ceiling[Sqrt[Length@dati]], opts]
+
+GridData[dati_, part_, opts:OptionsPattern[]] := Block[{dim, data, adepth, pad, val},
 	adepth = ArrayDepth[dati[[1]]];
 	
 	(*pad the images with zeros*)
