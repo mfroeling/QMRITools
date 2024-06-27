@@ -2,31 +2,40 @@
 (* ::Package:: *)
 
 dir = Directory[];
-Print["Working from directory ", dir];
+Print["\nWorking from directory "]
+Echo[dir];
 
-Print["Loading QMRITools"];
-load = Get["QMRITools`"];
+Print["\nLoading QMRITools"];
+t1 = First@AbsoluteTiming[load = Get["QMRITools`"]];
+Echo[t1, "Loading time [s]: "];
 
 If[load === $Failed,
-	Print["Could not load QMRITools"];
+	Echo["Could not load QMRITools"];
 	,
 	pack = Last@PacletFind["QMRITools"];
-	Print["  - Using QMRITools ",pack["Location"]];
+	Echo["Using QMRITools ",pack["Location"]];
 
 	{infile, outfile} = Rest @ $ScriptCommandLine;
 	
-	Print["Loading input data ", infile];
-	in = FileExistsQ[infile];
+	Print["\nLoading input data "];
+	Echo[infile];
+	
+	in = NiiFileExistQ[infile];
 	
 	If[!in,
-		Print["Could not find input file."];
+		Print["\nCould not find input file."];
 		,
-		{dat, vox} = ImportNii[infile];
+		t2 = First@AbsoluteTiming[
+			{dat, vox} = ImportNii[infile];
 		
-		Print["  - Performing segmentation"];
-		seg = SegmentData[dat, "Legs", TargetDevice->"CPU"];
+			Print["\nPerforming segmentation"];
+			seg = SegmentData[dat, "Legs", TargetDevice->"CPU", Monitor->True];
+		];
+		Echo[t2, "Segmentation time [s]: "];
 		
-		Print["  - Exporting segmentation to ", outfile];
+		Print["\nExporting segmentation to "]
+		Echo[outfile];
+		
 		CopyFile[GetAssetLocation["MusclesLegLabels"], 
 			ConvertExtension[outfile, ".txt"],
 			OverwriteTarget->True];
