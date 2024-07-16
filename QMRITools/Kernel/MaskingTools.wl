@@ -49,6 +49,10 @@ SmoothMask::usage =
 MaskData::usage = 
 "MaskData[data, mask] applies a mask to data. mask can be 2D or 3D, data can be 2D, 3D or 4D."
 
+MaskSegmentation::usage = 
+"MaskSegmentation[seg, mask] applies a mask to a splited segmentation seg from SplitSegmentations. 
+The mask is 3D, seg is 4D."
+
 GetMaskData::usage =
 "GetMaskData[data, mask] retruns the data selected by the mask."
 
@@ -107,7 +111,8 @@ maskdim is the dimensions of the output {zout,xout,yout}."
 
 
 NormalizeMethod::usage = 
-"NormalizeMethod is an option for NormalizeData. Can be \"Set\" or \"Volumes\" wichi normalizes to the firs volume or normalizes each volume individually, respectively."
+"NormalizeMethod is an option for NormalizeData. Can be \"Set\" or \"Volumes\" wich normalizes to the first volume or normalizes each volume individually, respectively.
+If \"Uniform\" normalizes the histogram of the data to have a uniform distribution between 0 and 1 where 0 is treated as background of the data."
 
 FitOrder::usage = 
 "FitOrder is an option for HomogenizeData. It specifies the order of harmonics to be used for the homogenization."
@@ -177,9 +182,13 @@ Options[NormalizeData] = {NormalizeMethod -> "Set"}
 SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 NormalizeData[data_, opts : OptionsPattern[]] := Block[{ndat, mask},
-	ndat = Switch[ArrayDepth[data], 3, data, 4, Mean@Transpose@data];
-	mask = Mask[NormDat[ndat - Min@ndat, 0.]];
-	NormalizeData[data, mask, opts]
+	If[OptionValue[NormalizeMethod]=!="Uniform",
+		ndat = Switch[ArrayDepth[data], 3, data, 4, Mean@Transpose@data];
+		mask = Mask[NormDat[ndat - Min@ndat, 0.]];
+		NormalizeData[data, mask, opts]
+		,
+		NormDatC[data]
+	]
 ]
 
 NormalizeData[data_, msk_, opts : OptionsPattern[]] := Block[{dat, mn, min, dato, mask},
@@ -196,6 +205,19 @@ NormalizeData[data_, msk_, opts : OptionsPattern[]] := Block[{dat, mn, min, dato
 ]
 
 
+(*normalization towards uniform distribution*)
+NormDatC = Compile[{{dat, _Real, 3}}, Block[{fl, flp, min, max, bins, cdf, n},
+	n = 512;
+	fl = Flatten[dat];
+	flp = Pick[fl, Unitize[fl], 1];
+	{min, max} = MinMax[flp];
+	bins = BinCounts[flp, {min, max, (max - min)/n}];
+	cdf = Prepend[N[Accumulate[bins]/Total[bins]], 0.];
+	Map[cdf[[# + 1]] &, Clip[Floor[(dat - min)/(max - min)  n], {0, n}, {0, n}], {-2}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+
+
+(*normalization towards median of given valueue*)
 NormDat[dat_, mn_] := ToPackedArray[100. Which[
 	mn===0., dat/MedianNoZero[Flatten@dat],
 	ListQ[mn],Transpose[Transpose[dat]/mn],
@@ -330,22 +352,25 @@ SmoothMask[msk_, OptionsPattern[]] := Block[{itt, dil, pad, close, obj, filt, ma
 
 SyntaxInformation[DilateMask] = {"ArgumentsPattern" -> {_, _}};
 
-DilateMask[seg_, size_] := Which[
-	(*dilation*)
-	size > 0,
-	If[ArrayDepth[seg]>3,
-		Transpose[SparseArray[SparseArray[ImageData@Dilation[Image3D[#], Round[size]]] & /@ Transpose[seg]]],
-		SparseArray[Dilation[Normal[seg], Round[size]]]
-	],
-	(*erosion*)
-	size < 0,
-	If[ArrayDepth[seg]>3,
-		Transpose[SparseArray[SparseArray[ImageData@Erosion[Image3D[#], Round[Abs[size]]]] & /@ Transpose[seg]]],
-		SparseArray[Erosion[Normal[seg], Round[Abs[size]]]]
-	],
-	True, 
-	SparseArray[seg]
+DilateMask[seg_, size_] := Block[{sz, fun},
+	sz = Abs[Round[size]];
+
+	If[sz =!= 0,
+		(*see if dilation of erosion*)
+		fun = If[size > 0, Dilation, Erosion];
+
+		(*3D or 4D data*)
+		SparseArray@Switch[ArrayDepth[seg],
+			3, DilateMaskI[seg, fun, sz],
+			4, Transpose[DilateMaskI[#, fun, sz] & /@ Transpose[seg]]
+		]
+		,
+		(*if size is 0 dont do anything*)
+		SparseArray@seg
+	]
 ]
+
+DilateMaskI[seg_, fun_, size_] := Round[SparseArray[ReverseCrop[fun[#[[1]], size], Dimensions[seg], #[[2]]]] &[AutoCropData[seg]]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -366,16 +391,31 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 		{2,2}, If[dimD == dimM, mask data, 1],
 		{3,3}, If[dimD == dimM, mask data, 1],
 		{3,2}, If[dimD[[2;;]] == dimM, mask # &/@ data, 1],
-		{4,3}, Which[dimD[[2;;]] == dimM, mask # & /@ data, dimD[[{1,3,4}]] == dimM, Transpose[mask # & /@ Transpose[data]], True, 1],
-		_, 2
+		{4,3}, Which[
+			dimD[[2;;]] == dimM, mask # & /@ data, 
+			dimD[[{1,3,4}]] == dimM, Transpose[mask # & /@ Transpose[data]], 
+			True, Return[Message[MaskData::dim, dimD, dimM];$Failed]],
+		_, Return[Message[MaskData::dep, dataD, maskD];,$Failed]
 	];
-	
-	(*check for errors*)
-	If[out === 1, Message[MaskData::dim, dimD, dimM]];
-	If[out === 2, Message[MaskData::dep, dataD, maskD]];
 	
 	(*make the output*)
 	ToPackedArray@N@Normal@out
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MaskSegmentation*)
+
+
+SyntaxInformation[MaskSegmentation] = {"ArgumentsPattern" -> {_, _}};
+
+MaskSegmentation[seg_, mask_] := Block[{dim, sc, cr},
+	msk = Normal@mask;
+	dim = Dimensions[seg[[All, 1]]];
+	Transpose[(
+		{sc, cr} = AutoCropData[#];
+		Round@SparseArray@ReverseCrop[ApplyCrop[msk, cr] sc, dim, cr]
+	) & /@ Transpose[seg]]
 ]
 
 
@@ -390,18 +430,25 @@ SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}
 GetMaskData[data_?ArrayQ, mask_, opts:OptionsPattern[]] := Block[{out},
 	Which[
 		ArrayDepth[data]===4&&ArrayDepth[mask]===3, 
-		GetMaskData[#,mask, opts]&/@Transpose[data]
+		GetMaskData[#, mask, opts]&/@Transpose[data]
 		,
 		ArrayDepth[data]===3&&ArrayDepth[mask]===4, 
-		GetMaskData[data,#, opts]&/@Transpose[mask]
+		GetMaskData[data, #, opts]&/@Transpose[mask]
 		,
 		True,
 		If[!(Dimensions[data]=!=Dimensions[mask] || Drop[Dimensions[data], {2}]=!=Dimensions[mask]),
-			Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]],
+			Retrun[Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]];$Failed]
+			,
 			out = Switch[OptionValue[GetMaskOutput],
 				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[Normal@#2]], 1]&, {data, mask}, ArrayDepth[data]-2],
 				"Sparse", (data mask)["ExplicitValues"],
 				_, Pick[Flatten[N[data]], Unitize[Flatten[Normal@mask]], 1]
+			];
+
+			out = Switch[OptionValue[GetMaskOutput],
+				"Mean", Mean[out],
+				"Median", Median[out],
+				_, out			
 			];
 			(*select only non zero values if mask only to false*)
 			If[OptionValue[GetMaskOnly],out,Pick[out, Unitize[out], 1]]
@@ -445,10 +492,16 @@ SyntaxInformation[SplitSegmentations] = {"ArgumentsPattern" -> {_}};
 
 SplitSegmentations[segI_]:=SplitSegmentations[segI, True]
 
-SplitSegmentations[segI_, sparse_] := Block[{vals, seg},
+SplitSegmentations[segI_, sparse_] := Block[{seg, dim, exVals, exPos, vals},
 	seg = SparseArray[Round[segI]];
-	vals = Sort[DeleteDuplicates[seg["ExplicitValues"]]];
-	seg = Transpose[1 - SparseArray[(Unitize[seg - #] & /@ vals)]];
+	dim = Dimensions[seg];
+
+	exVals = seg["ExplicitValues"];
+	exPos = seg["ExplicitPositions"];
+	vals = Sort@DeleteDuplicates@exVals;
+	
+	seg = Transpose[SparseArray[Pick[exPos, Unitize[exVals - #], 0] -> 1, dim] & /@ vals];
+	
 	{If[sparse, seg, Normal@seg], vals}
 ]
 
@@ -457,7 +510,7 @@ SplitSegmentations[segI_, sparse_] := Block[{vals, seg},
 (*GetSegmentationLabels*)
 
 
-GetSegmentationLabels[seg_]:= DeleteCases[Sort@Round[DeleteDuplicates[Flatten[seg]]],0];
+GetSegmentationLabels[segI_]:= Sort[DeleteDuplicates[SparseArray[Round[segI]]["ExplicitValues"]]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -466,9 +519,12 @@ GetSegmentationLabels[seg_]:= DeleteCases[Sort@Round[DeleteDuplicates[Flatten[se
 
 SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
 
-MergeSegmentations[seg_, lab_] := Block[{mt},
-	mt = Transpose[SparseArray[seg]];
-	Normal[Total[lab mt](1 - UnitStep[Total[mt] - 2])]
+MergeSegmentations[seg_, lab_] := Block[{mt,nv},
+	mt = Transpose[SparseArray[Round[seg]]];
+	nv = Range[Length@lab];
+
+	(*mapping over sparce is quicker than direct multiplication and total*)
+	Normal[Total[mt[[#]] lab[[#]] & /@ nv] (1 - UnitStep[Total[mt[[#]] & /@ nv] - 2])]
 ]
 
 
@@ -494,13 +550,17 @@ ReplaceSegmentations[segm_, labSel_, labNew_] := SelectReplaceSegmentations[segm
 (*SelectReplaceSegmentations*)
 
 
-SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{seg, lab, sel},
-	{seg, lab} = SplitSegmentations[segm];
+SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, sel},
+	split = If[Length[segm] == 2, False, True];
+
+	{seg, lab} = If[split,  SplitSegmentations[segm], segm];
+	
 	sel = MemberQ[labSel, #] & /@ lab;
-	MergeSegmentations[
-		Transpose[Pick[Transpose[seg], sel, True]],
-		Pick[lab /. Thread[labSel->labNew], sel, True]
-	]
+	seg = Transpose[Pick[Transpose[seg], sel, True]];
+	lab = Pick[lab /. Thread[labSel->labNew], sel, True];
+	or = Ordering[lab];
+
+	If[split, MergeSegmentations[seg, lab], {seg[[All,or]], lab[[or]]}]
 ]
 
 

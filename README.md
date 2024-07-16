@@ -138,24 +138,22 @@ QMRITools contains the following [toolboxes](https://www.qmritools.com/tool/):
 - FasciculationTools
 - GeneralTools
 - GradientTools
-- ImportTools
 - IVIMTools
 - JcouplingTools
 - LoggingTools
 - MaskingTools
 - MuscleBidsTools
 - NiftiTools
-- PhysiologyTools
 - PlottingTools
 - ProcessingTools
 - ReconstructionTools
 - RelaxometryTools
+- SegmentationTools
 - SimulationTools
 - SpectroTools
 - TaggingTools
 - TensorTools
 - TractographyTools
-- VisteTools
 
 ------------------------------------------------------------------------
 
