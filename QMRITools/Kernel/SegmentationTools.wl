@@ -60,10 +60,16 @@ ChangeNetDimensions::usage =
 
 
 AddLossLayer::usage = 
-"AddLossLayer[net] adds three loss layers to a NetGraph, a SoftDiceLossLayer, BrierLossLayer and a CrossEntropyLossLayer."
+"AddLossLayer[net] adds three loss layers to a NetGraph, a DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MeanSqyaredLossLayer and a CrossEntropyLossLayer are added."
 
-SoftDiceLossLayer::usage = 
-"SoftDiceLossLayer[dim] represents a net layer that computes the SoftDice loss by comparing input class probability vectors with the target class vector."
+DiceLossLayer::usage = 
+"DiceLossLayer[dim] represents a net layer that computes the Dice loss by comparing input class probability vectors with the target class vector."
+
+JaccardLossLayer::usage =
+"JaccardLossLayer[dim] represents a net layer that computes the Jaccard loss by comparing input class probability vectors with the target class vector."
+
+TverskyLossLayer::usage =
+"TverskyLossLayer[dim] represents a net layer that computes the Tversky loss by comparing input class probability vectors with the target class vector."
 
 
 ClassEncoder::usage = 
@@ -80,12 +86,17 @@ DiceSimilarity::usage =
 DiceSimilarity[x, y, class] gives the Dice Similarity of segmentations ref and pred for class.
 DiceSimilarity[x, y, {class, ..}] gives the Dice Similarity of segmentations ref and pred for the list of gives classes."
 
-MeanSurfaceDistance::usage = 
-"MeanSurfaceDistance[ref, pred] gives the mean surface distance of segmentations ref and pred for class equals 1 in voxels.
-MeanSurfaceDistance[x, y, class] gives the mean surface distance of segmentations ref and pred for class in voxels.
-MeanSurfaceDistance[x, y, {class, ..}] gives the mean surface distance of segmentations ref and pred for the list of gives classes in voxels.
-MeanSurfaceDistance[x, y, class , vox] gives the mean surface distance of segmentations ref and pred for class in milimeter.
-MeanSurfaceDistance[x, y, {class, ..}, vox] gives the mean surface distance of segmentations ref and pred for the list of gives classes in milimeters."
+JaccardSimilarity::usage = 
+"JaccardSimilarity[ref, pred] gives the Jaccard Similarity between 1 and 0 of segmentations ref and pred for class equals 1.
+JaccardSimilarity[x, y, class] gives the Jaccard Similarity of segmentations ref and pred for class.
+JaccardSimilarity[x, y, {class, ..}] gives the Jaccard Similarity of segmentations ref and pred for the list of gives classes."
+
+SurfaceDistance::usage = 
+"SurfaceDistance[ref, pred] gives the mean surface distance of segmentations ref and pred for class equals 1 in voxels.
+SurfaceDistance[x, y, class] gives the mean surface distance of segmentations ref and pred for class in voxels.
+SurfaceDistance[x, y, {class, ..}] gives the mean surface distance of segmentations ref and pred for the list of gives classes in voxels.
+SurfaceDistance[x, y, class , vox] gives the mean surface distance of segmentations ref and pred for class in milimeter.
+SurfaceDistance[x, y, {class, ..}, vox] gives the mean surface distance of segmentations ref and pred for the list of gives classes in milimeters."
 
 
 SegmentData::usage = 
@@ -185,6 +196,9 @@ It prompts the user to enter the paths for the input and output files, and allow
 FindPatchDim::usage = 
 "FindPatchDim[net, data] finds the optimal patch size for the network net and the data data."
 
+AnalyseNetworkFeatures::usage = 
+"AnalyseNetworkFeatures[net, data] gives overview of the information density of the network features by analysing them with SVD."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -281,6 +295,10 @@ The specification can also be a list of number per layer where the length of the
 MakeUnet::sett = "The setting input is not valid. It can be a number or a list of numbers that will be applied to the Layers.";
 
 MakeUnet::feat = "The feature input is not valid. It can be a number or a list of numbers that will be applied to the Layers.";
+
+
+SurfaceDistance::met = "Method `1` not recognized";
+
 
 (*ConvBlock::usage = "";MakeNode::usage ="";*)
 
@@ -662,15 +680,17 @@ AddLossLayer[net_]:=Block[{dim},
 	dim = Length[Information[net,"OutputPorts"][[1]]]-1;
 	NetGraph[<|
 		"net"->net,
-		"SoftDice" -> SoftDiceLossLayer[dim, 2],
-		"Jaccard" -> SofJaccardLossLayer[dim],
+		"Dice" -> DiceLossLayer[dim, 2],
+		"Jaccard" -> JaccardLossLayer[dim],
 		"Tversky" -> TverskyLossLayer[dim, 0.7],
+		"Focal" -> FocalLossLayer[1 ,1],
 		"SquaredDiff" -> {MeanSquaredLossLayer[], ElementwiseLayer[50 #&]},
 		"CrossEntropy" -> {CrossEntropyLossLayer["Probabilities"]}
 	|>,{
-		{"net", NetPort["Target"]}->"SoftDice"->NetPort["SoftDice"],(*using squared dice*)
+		{"net", NetPort["Target"]}->"Dice"->NetPort["Dice"],(*using squared dice, F1score*)
 		{"net", NetPort["Target"]}->"Jaccard"->NetPort["Jaccard"],
 		{"net", NetPort["Target"]}->"Tversky"->NetPort["Tversky"],
+		{"net", NetPort["Target"]}->"Focal"->NetPort["Focal"],(*not weighted for size, alpha=1,gamma=1*)
 		{"net", NetPort["Target"]}->"SquaredDiff"->NetPort["SquaredDiff"],(*Brier Score*)
 		{"net", NetPort["Target"]}->"CrossEntropy"->NetPort["CrossEntropy"]
 	}]
@@ -678,14 +698,14 @@ AddLossLayer[net_]:=Block[{dim},
 
 
 (* ::Subsubsection::Closed:: *)
-(*SoftDiceLossLayer*)
+(*DiceLossLayer*)
 
 
-SyntaxInformation[SoftDiceLossLayer] = {"ArgumentsPattern" -> {_, _.}};
+SyntaxInformation[DiceLossLayer] = {"ArgumentsPattern" -> {_, _.}};
 
-SoftDiceLossLayer[dim_ ] := SoftDiceLossLayer[dim, 1]
+DiceLossLayer[dim_ ] := DiceLossLayer[dim, 1]
 
-SoftDiceLossLayer[dim_, n_] := Block[{smooth},
+DiceLossLayer[dim_, n_] := Block[{smooth},
 	(*10.48550/arXiv.1911.02855 and 10.48550/arXiv.1606.04797 for scquared dice loss look at v-net*)
 	smooth =1;
 	NetGraph[<|
@@ -706,14 +726,14 @@ SoftDiceLossLayer[dim_, n_] := Block[{smooth},
 
 
 (* ::Subsubsection::Closed:: *)
-(*SofJaccardLossLayer*)
+(*JaccardLossLayer*)
 
 
-SyntaxInformation[SofJaccardLossLayer] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[JaccardLossLayer] = {"ArgumentsPattern" -> {_}};
 
-SofJaccardLossLayer[dim_ ] := SofJaccardLossLayer[dim, 1]
+JaccardLossLayer[dim_ ] := JaccardLossLayer[dim, 1]
 
-SofJaccardLossLayer[dim_, n_]:= Block[{smooth},
+JaccardLossLayer[dim_, n_]:= Block[{smooth},
 	smooth = 1;
 	NetGraph[<|
 		(*flatten input and target; function layer allows to switch to L2 norm if #^2*)
@@ -730,6 +750,30 @@ SofJaccardLossLayer[dim_, n_]:= Block[{smooth},
 		{"intersection", "target", "input"} -> "Jaccard" -> NetPort["Loss"]
 	}, "Loss" -> "Real"]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*JaccardLossLayer*)
+
+
+FocalLossLayer[] := FocalLossLayer[1, 1]
+
+FocalLossLayer[g_] := FocalLossLayer[g, 1]
+
+FocalLossLayer[g_, a_] := NetGraph[{
+	"flatPr" -> {ThreadingLayer[#1  #2 &], AggregationLayer[Total, {-1}], FlattenLayer[]},
+	"focal" -> {ThreadingLayer[-a  Log[#1 + 10^-20](*#2*) (1 - #1)^g &], AggregationLayer[Mean, 1], FunctionLayer[# &]}
+	(*
+	"alph"->{AggregationLayer[Total,1;;-2],FunctionLayer[1. / ((# + 1) Total[1. / (# + 1)])&]},
+	"trans"->TransposeLayer[4->1],
+	"alphGt"->{DotLayer[],FlattenLayer[]},
+	*)
+	}, {
+		{NetPort["Input"], NetPort["Target"]} -> "flatPr" -> "focal" -> NetPort["Loss"]
+		(*,NetPort["Target"]->{"alph","trans"}->"alphGt",
+		{"flatPr","alphGt"}->"focal"*)
+}, "Loss" -> "Real"]
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1028,9 +1072,11 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 
 Options[ApplySegmentationNetwork]={TargetDevice->"GPU", DataPadding->0, MaxPatchSize->Automatic, Monitor->False}
 
-SyntaxInformation[ApplySegmentationNetwork] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[ApplySegmentationNetwork] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
+ApplySegmentationNetwork[dat_, netI_, opt:OptionsPattern[]]:=ApplySegmentationNetwork[dat, netI, "", opt]
+
+ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]]:=Block[{
 		dev, pad , lim, data, crp, net, dim, ptch, 
 		patch, pts, seg, mon, dimi, dimc, lab, class
 	},
@@ -1058,43 +1104,43 @@ ApplySegmentationNetwork[dat_, netI_, OptionsPattern[]]:=Block[{
 		{patch, pts} = DataToPatches[data, ptch, PatchNumber -> 0, PatchPadding->pad];
 		If[mon, Echo[{ptch, Length@patch}, "Patch size and created number of patches is:"]];
 
-		(*actualy perform the segmentation with the NN*)
+		(*create the network*)
 		net = ChangeNetDimensions[net, "Dimensions" ->ptch];
-		seg = ToPackedArray[Round[ClassDecoder[net[{NormDatH[#]}, TargetDevice->dev]]&/@patch]];
+
+		(*perform the segmentation*)
+		If[node==="",
+			(*actualy perform the segmentation with the NN*)
+			seg = ToPackedArray[Round[ClassDecoder[net[{NormalizeData[#, NormalizeMethod -> "Uniform"]}, TargetDevice->dev]]&/@patch]];
+			
+			(*reverse all the padding and cropping and merged the patches if needed*)
+			class = NetDimensions[net,"Output"][[-1]];
+			If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, 
+				"Segmentations dimensions and labels:"]];
+			seg = ArrayPad[PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], 
+				dim, Range[class]], -pad];
+			seg = Ramp[seg - 1]; (*set background to zero*)
+			seg = ToPackedArray@Round@ReverseCrop[seg, dimi, crp];
+			If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Output segmentations dimensions and labels:"]];
 		
-		(*reverse all the padding and cropping and merged the patches if needed*)
-		class = NetDimensions[net,"Output"][[-1]];
-		If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, 
-			"Segmentations dimensions and labels:"]];
-		seg = ArrayPad[PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], 
-			dim, Range[class]], -pad];
-		seg = Ramp[seg - 1]; (*set background to zero*)
-		seg = ToPackedArray@Round@ReverseCrop[seg, dimi, crp];
-		If[mon, Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, 
-			"Output segmentations dimensions and labels:"]];
-		
+			,
+			(*perform the segmentation on a specific node*)
+			(*check if node is part of the network*)
+			nodes = DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]];
+			If[!MemberQ[nodes, node],
+				Echo["The node "<>node<>" is not part of the network"];
+				Echo[nodes];
+				Return[$Failed]
+				,
+				seg = NetTake[net, node][{First@patch}];
+				If[Head[seg] === Association, seg = Last@seg];
+				If[node == nodes[[-1]], seg = RotateDimensionsRight[seg]];
+			];
+		];
+
 		(*give the output*)
 		seg
 	]
 ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*NormDat*)
-
-
-NormDat[dat_] := Block[{q = Quantile[Flatten[dat], 0.9], m = Max[dat]}, If[q <= 0.5 m, If[m===0., dat, dat/m], If[q===0., dat, 0.75 dat/q]]]
-
-
-NormDatH = Compile[{{dat, _Real, 3}}, Block[{fl, flp, min, max, bins, cdf, n},
-	n = 512;
-	fl = Flatten[dat];
-	flp = Pick[fl, Unitize[fl], 1];
-	{min, max} = MinMax[flp];
-	bins = BinCounts[flp, {min, max, (max - min)/n}];
-	cdf = Prepend[N[Accumulate[bins]/Total[bins]], 0.];
-	Map[cdf[[# + 1]] &, Clip[Floor[(dat - min)/(max - min)  n], {0, n}, {0, n}], {-2}]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1151,20 +1197,26 @@ NetDimensions[net_]:=NetDimensions[net, ""]
 NetDimensions[net_, port_]:=Block[{block, neti},Switch[port,
 	"Input", 
 	Information[net,"InputPorts"]["Input"],
+	
 	"Output", 
 	Information[net,"OutputPorts"]["Output"],
+	
 	"FirstEncodingIn",
 	Last@Values@Information[
 		NetTake[net, {block = First[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &]], block}], "InputPorts"],
+	
 	"FirstEncodingOut", 
 	Values@Information[
 		NetTake[net, {block = First[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &]], block}], "OutputPorts"],
+	
 	"LastEncodingIn", 
 	Last@Values@Information[
 		NetTake[net, {block = Last[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &]], block}], "InputPorts"],
+	
 	"LastEncodingOut", 
 	Last@Values@Information[
 		NetTake[net, {block = Last[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &]], block}], "OutputPorts"],
+	
 	"U2Encoding",
 	block = First@Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &];
 	neti = NetFlatten[NetTake[net, {block, block}], 1];
@@ -1547,11 +1599,11 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 		(*define the training loss funciton*)
 		loss = Which[
-			loss === All, {"SoftDice", "SquaredDiff", "Tversky" , "CrossEntropy", "Jaccard"},
+			loss === All, {"Dice", "SquaredDiff", "Tversky" , "CrossEntropy", "Jaccard", "Focal"},
 			StringQ[loss], {loss},
 			True, loss
 		];
-		If[! And @@ (MemberQ[{"SoftDice", "SquaredDiff", "Tversky", "CrossEntropy", "Jaccard"}, #] & /@ loss), 
+		If[! And @@ (MemberQ[{"Dice", "SquaredDiff", "Tversky", "CrossEntropy", "Jaccard", "Focal"}, #] & /@ loss), 
 			Return[Message[TrainSegmentationNetwork::loss]; $Failed]];
 
 		Echo[DateString[], "Starting training"];
@@ -1596,7 +1648,7 @@ MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
 		sel = Range @@ Clip[Round[(Clip[Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, n First@patch})], {1, len}, {1, len}];
 		testData = First@AutoCropData[testData[[sel]]]
 	];
-	{{NormDatH@PadToDimensions[testData, patch]}, data[[3]]}
+	{{NormalizeData[PadToDimensions[testData, patch], NormalizeMethod -> "Uniform"]}, data[[3]]}
 ];
 
 
@@ -1610,14 +1662,25 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, plots},
 	{keys, log} = LoadLog[fol, max];
 
 	(* Create a dynamic module to display the interactive plot *)
-	DynamicModule[{pdat = log, klist = keys, folder=fol, plot, ymaxv, xmin, xmax, key, ymax, temp},
+	DynamicModule[{pdat = log, klist = keys, folder = fol, plot, ymaxv, xmin, xmax, key, ymax, temp},
+		key1 = Select[klist, ! StringContainsQ[#, "Current"] &];
+		key2 = Select[Select[key1, StringContainsQ[#, "Loss"] &], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
+		key1 = Select[Complement[key1, key2], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
+		key0 = {"RoundLoss", "ValidationLoss"};
+
 		Manipulate[
 			plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
+			
+			plotf = If[filt, GaussianFilter[#, fsize]&/@plot,plot];
+
 			ymaxv = Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}];
 			ymax = Min[{ymax, ymaxv}];
+
 			(* Plot the selected metrics *)
-			ListLinePlot[If[key === {}, {}, plot], 
-				PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{0,ymax}}],
+			ListLinePlot[If[key === {}, {}, plotf], 
+				PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{0,ymax}},
+				If[grid, GridLines -> Automatic, GridLines -> None], PlotHighlighting -> "YSlice"],
+			
 			(*the controls*)
 			Row[{
 				InputField[Dynamic[folder], String, Enabled -> True, FieldSize -> 50], 
@@ -1628,8 +1691,24 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, plots},
 					, ImageSize -> {60, Automatic}, Method->"Queued"]}
 			],
 			Button["Reload", {klist, pdat} = LoadLog[folder, max]; xmax = Length[pdat];],
-			Control[{{key, {}, ""}, klist, ControlType -> TogglerBar, 
-				Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
+
+			Delimiter,
+			{{filt, False, "Filter"}, {True, False}},
+			{{fsize, 5, "FilterSize"}, 1, 10, 1},
+			{{grid, False, "Grid"}, {True, False}},
+
+			Delimiter,
+			(*Control[{{key, {}, ""}, klist, ControlType -> TogglerBar, Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],*)
+			Control[{{key, {}, ""}, key0, ControlType -> TogglerBar, 
+			Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
+			Delimiter,
+			Control[{{key, {}, ""}, key2, ControlType -> TogglerBar, 
+			Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
+			Delimiter,
+			Control[{{key, {}, ""}, key1, ControlType -> TogglerBar, 
+			Appearance -> "Vertical" -> {2, Automatic}, BaseStyle -> Medium}],
+			Delimiter,
+			
 			Row[{
 				Control[{{xmin, 1,"X min"},1, Dynamic[xmax-1], 1}], "   ", 
 				Control[{{xmax,Length[pdat],"X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
@@ -1712,7 +1791,7 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 
 		(*normalize the data and segmentations and pad to at least patch dimensions*)
 		dim = Max /@ Transpose[{Dimensions@dat, patch}];
-		dat = NormDatH@PadToDimensions[dat, dim];
+		dat = NormalizeData[PadToDimensions[dat, dim], NormalizeMethod -> "Uniform"];
 		seg = PadToDimensions[seg, dim];
 
 		(*check if augmentation is a boolean or a list*)
@@ -1836,7 +1915,7 @@ PrepTrainData[dat_, seg_, labi_?VectorQ]:= PrepTrainData[dat, seg, {labi, labi}]
 PrepTrainData[dat_, seg_, {labi_?VectorQ, labo_?VectorQ}] := Block[{cr},
 	cr = FindCrop[dat  Mask[NormalizeData[dat], 5, MaskDilation -> 1]];
 	{
-		NormDat[ApplyCrop[dat, cr]], 
+		NormalizeData[ApplyCrop[dat, cr], NormalizeMethod -> "Uniform"], 
 		If[labi==={0},
 			ApplyCrop[seg,cr],
 			ReplaceSegmentations[ApplyCrop[seg, cr], labi, labo]
@@ -1898,7 +1977,7 @@ SplitDataForSegementation[data_]:=Block[{dim,whatSide,side,whatPos,pos,dat,right
 CropPart[data_]:=Block[{dat,up,sid,upst,upend,sidst,sidend,crp},
 	{dat, {up, {upst, upend}}, {sid, {sidst, sidend}}} = data;
 
-	{dat, crp} = AutoCropData[Dilation[Normal[TakeLargestComponent[Mask[NormalizeData[dat],10]]],1] dat, CropPadding->0];
+	{dat, crp} = AutoCropData[Dilation[Normal[TakeLargestComponent[Mask[NormalizeData[dat], 10]]],1] dat, CropPadding->0];
 	{dat, Partition[crp,2]+{upst-1,0,sidst-1}, {up,sid}}
 ]
 
@@ -2024,54 +2103,202 @@ MuscleNameToLabel[num_, file_] := Block[{muscleNames, muscleLabels},
 (*DiceSimilarity*)
 
 
-SyntaxInformation[DiceSimilarity] = {"ArgumentsPattern" -> {_, _, _}};
+SyntaxInformation[DiceSimilarity] = {"ArgumentsPattern" -> {_, _, _.}};
 
-DiceSimilarity[ref_, pred_, nClasses_?ListQ] := Table[DiceSimilarity[ref, pred, c], {c, nClasses}]
+DiceSimilarity[ref_, pred_, nClasses_?ListQ] := Block[{refF, predF},
+	refF = Flatten@Round@ToPackedArray@ref;
+	predF = Flatten@Round@ToPackedArray@pred;
+	Table[DiceSimilarityC[refF, predF, c], {c, nClasses}]
+]
 
-DiceSimilarity[ref_, pred_] := DiceSimilarityC[Flatten[ref], Flatten[pred], 1]
+DiceSimilarity[ref_, pred_] := DiceSimilarityC[Flatten@Round@ToPackedArray@ref, Flatten@Round@ToPackedArray@pred, 1]
 
-DiceSimilarity[ref_, pred_, c_?IntegerQ] := DiceSimilarityC[Flatten[ref], Flatten[pred], c]
+DiceSimilarity[ref_, pred_, c_?IntegerQ] := DiceSimilarityC[Flatten@Round@ToPackedArray@ref, Flatten@Round@ToPackedArray@pred, c]
 
 
-DiceSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{refv, predv, denom},
-	refv = Flatten[1 - Unitize[ref - class]];
-	predv = Flatten[1 - Unitize[pred - class]];
-	denom = (Total[refv] + Total[predv]);
-	(*If[denom === 0., 1., N[2 Total[refv predv] / denom]]*)
-	N[(2 Total[refv predv] + 1) / (denom + 1)]
- ], RuntimeOptions -> "Speed"];
+DiceSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{refv, predv, inter},
+	refv = 1 - Unitize[ref - class];
+	predv = 1 - Unitize[pred - class];
+	inter = Total[refv predv];
+	N[(2 inter + 1) / (Total[refv] + Total[predv] + 1)]]
+, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
-(*MeanSurfaceDistance*)
+(*JaccardSimilarity*)
 
 
-SyntaxInformation[MeanSurfaceDistance] = {"ArgumentsPattern" -> {_, _, _, _.}};
+SyntaxInformation[JaccardSimilarity] = {"ArgumentsPattern" -> {_, _, _.}};
 
-MeanSurfaceDistance[ref_, pred_] := MeanSurfaceDistance[ref, pred, 1, {1, 1, 1}]
+JaccardSimilarity[ref_, pred_, nClasses_?ListQ] := Block[{refF, predF},
+	refF = Flatten@Round@ToPackedArray@ref;
+	predF = Flatten@Round@ToPackedArray@pred;
+	Table[JaccardSimilarityC[refF, predF, c], {c, nClasses}]
+]
 
-MeanSurfaceDistance[ref_, pred_, class_?IntegerQ] := MeanSurfaceDistance[ref, pred, class, {1, 1, 1}]
+JaccardSimilarity[ref_, pred_] := JaccardSimilarityC[Flatten@Round@ToPackedArray@ref, Flatten@Round@ToPackedArray@pred, 1]
 
-MeanSurfaceDistance[ref_, pred_, nClasses_?ListQ] := MeanSurfaceDistance[ref, pred, nClasses, {1, 1, 1}]
+JaccardSimilarity[ref_, pred_, c_?IntegerQ] := JaccardSimilarityC[Flatten@Round@ToPackedArray@ref, Flatten@Round@ToPackedArray@pred, c]
 
-MeanSurfaceDistance[ref_, pred_, nClasses_?ListQ, vox_] := Table[MeanSurfaceDistance[ref, pred, class, vox], {class, nClasses}]
 
-MeanSurfaceDistance[ref_, pred_, class_?IntegerQ, vox_] := Block[{coorRef, coorPred, fun},
-	coorRef = Transpose[vox Transpose[GetEdge[ref, class]["ExplicitPositions"]]];
-	coorPred = Transpose[vox Transpose[GetEdge[pred, class]["ExplicitPositions"]]];
+JaccardSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{refv, predv, inter},
+	refv = 1 - Unitize[ref - class];
+	predv = 1 - Unitize[pred - class];
+	inter = Total[refv predv];
+	N[(inter + 1) / (Total[refv] + Total[predv] - inter + 1)]]
+, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*SurfaceDistance*)
+
+
+Options[SurfaceDistance] = {Method->"HD95"};
+
+
+SyntaxInformation[SurfaceDistance] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
+
+SurfaceDistance[ref_, pred_, opts : OptionsPattern[]] := SurfaceDistance[Round@ToPackedArray@ref, Round@ToPackedArray@pred, 1, {1, 1, 1}, opts]
+
+SurfaceDistance[ref_, pred_, class_?IntegerQ, opts : OptionsPattern[]] := SurfaceDistance[Round@ToPackedArray@ref, Round@ToPackedArray@pred, class, {1, 1, 1}, opts]
+
+SurfaceDistance[ref_, pred_, nClasses_?ListQ, opts : OptionsPattern[]] := SurfaceDistance[ref, pred, nClasses, {1, 1, 1}, opts]
+
+SurfaceDistance[ref_, pred_, nClasses_?ListQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsPattern[]] := Block[{refF, predF},
+	refF = Round@ToPackedArray@ref;
+	predF = Round@ToPackedArray@pred;
+	Table[SurfaceDistance[refF, predF, class, vox, opts], {class, nClasses}]
+]
+
+
+SurfaceDistance[ref_, pred_, class_?IntegerQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, opts :OptionsPattern[]] := Block[{
+		coorRef, coorPred, funRef, funPred, met, dist
+	},
+
+	coorRef = GetEdge[ref, class, vox];
+	coorPred = GetEdge[pred, class, vox];
 	If[coorRef==={}||coorPred==={},
 		"noSeg",
-		fun = Nearest[coorRef];
-		Mean@Sqrt@Total[(fun[coorPred,1][[All,1]]-coorPred)^2,{2}]
+		met = OptionValue[Method];
+
+		funRef = Nearest[coorRef, DistanceFunction -> EuclideanDistance];
+		funPred = Nearest[coorPred, DistanceFunction -> EuclideanDistance];
+		dist = Sqrt@Total[Join[
+			funRef[coorPred, 1][[All,1]] - coorPred,
+			funPred[coorRef, 1][[All,1]] - coorRef
+		]^2, {2}];
+
+		If[ListQ[met],
+			SufDistFunc[dist, #]&/@met,
+			SufDistFunc[dist, met]
+		]
 	]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SufDistFunc*)
+
+
+SufDistFunc[dist_, met_] := Switch[met,
+			"Mean", Mean@dist,
+			"Median", Median@dist,
+			"RootMeanSquare"|"RMS", Sqrt[Mean[dist^2]],
+			"Max"|"Hausdorff"|"HD", Max@dist,
+			"Hausdorff95"|"HD95", Quantile[dist,.95],
+			"Std"|"StandardDeviation", StandardDeviation@dist,
+			_ , Message[SurfaceDistance::met, met]; $Failed
+		]
 
 
 (* ::Subsubsection::Closed:: *)
 (*GetEdge*)
 
 
-GetEdge[lab_, class_]:= SparseArray[ImageData[MorphologicalPerimeter[Image3D[1 - Unitize[lab - class], "Bit"], CornerNeighbors -> False],"Bit"]]
+GetEdge[lab_, class_] := GetEdge[lab, class, {1, 1, 1}]
+GetEdge[lab_, class_, vox_] := Block[{out},
+	out = SparseArray[ImageData[MorphologicalPerimeter[Image3D[1 - Unitize[lab - class], "Bit"],
+		CornerNeighbors -> False], "Bit"]]["ExplicitPositions"];
+	If[out =!= {}, Transpose[vox  Transpose[out]], out]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*AnalyseNetworkFeatures*)
+
+
+AnalyseNetworkFeatures[net_, data_] := AnalyseNetworkFeatures[net, data, ""]
+
+AnalyseNetworkFeatures[net_, data_, met_] := Block[{
+		dim, dataP, netP, nodes, vals, cutoff, table, plot, feat, nfeat, ttt, n
+	},
+
+	(*find the patch dimensions and adjust data and network*)
+	dim = FindPatchDim[net, Dimensions@data];
+	dataP = NormalizeData[PadToDimensions[data, dim], NormalizeMethod -> "Uniform"];
+	netP = ChangeNetDimensions[net, "Dimensions" -> dim];
+
+	(*extract the network nodes*)
+	nodes = DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]];
+	
+	(*calculate the singular values for plotting and reporting*)
+	{nfeat, table, plot} = Transpose[(
+		(*get the features*)
+		feat = NetTake[netP, #][{dataP}, TargetDevice -> "GPU"];
+		If[Head[feat] === Association, feat = Last@feat];
+		If[# == nodes[[-1]], feat = RotateDimensionsRight[feat]];
+		feat = Map[Flatten, feat];
+
+		(*calculate the singular values of the features*)
+		nfeat = Length@feat;
+		vals = Diagonal[SingularValueDecomposition[feat, UpTo[nfeat]][[2]]];
+		vals = 100 Rescale[Accumulate[vals]];
+	
+		(*find cuoff index and percentage*)
+		cutoff = First[Position[UnitStep[vals - 99], 1]] - 1;
+
+		(*give the output*)
+		{
+			nfeat, 
+			Flatten[{Style[#, Bold], cutoff, Round[100 cutoff/nfeat, .1]}], 
+			Transpose[{100 Rescale[Range[1., nfeat]], vals}]
+		}
+	) & /@ nodes];
+
+	ttt = table[[2;;-2, 2]];
+	n = Ceiling[(Length@ttt)/2];
+	n = Max /@ Thread[{ttt[[ ;; n]], Reverse[ttt[[n ;; ]]]}];
+
+	(*output based on method*)
+	If[met === "",
+		Echo[n];
+
+		(*dynamic plot output*)
+		DynamicModule[{cols, tab = table, pl = plot, nods =  nodes},
+
+			(*define colors for plotting*)
+			cols = Table[Directive[{GrayLevel[.5 + i/100], Dashed, Thick}], {i, Length@nodes}];
+			cols[[1]] = Directive[{Red, Dashing[None], Thick}];
+			
+			(*define the plots within a manipulate that allows to select the nodes of the network*)
+			Manipulate[Column[{
+				Grid[Transpose@tab, Frame -> All, Background -> {{k -> Lighter@Red}, None}, Spacings -> {1.2, 1.2}],
+				Show[
+					ListLinePlot[pl, PlotStyle -> RotateRight[cols, k - 1], GridLines -> {{tab[[k, 3]]}, {99}}, 
+						ImageSize -> 500, AxesStyle -> Directive[{Black, Thick}], AspectRatio -> 1, 
+						LabelStyle -> Directive[{Black, 14, Bold}]
+					],
+					Plot[x, {x, 0, 100}, PlotStyle -> Directive[{Thick, Gray, Dotted}]]
+				]
+			}, Alignment -> Center],
+			{{k, 1, ""}, Thread[Range@Length@nods -> (Style[#, Black, 14, Bold] & /@ nods)], ControlType -> SetterBar}
+			]
+		],
+
+		(*value per node*)
+		table[[All, 3]]
+	]
+]
 
 
 (* ::Section:: *)
