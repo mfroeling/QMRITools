@@ -547,7 +547,7 @@ nam = #1 <> ToString[#2] &;
 		"UNet",
 		dep = blockSet;
 		NetGraph@NetFlatten@NetGraph[{
-			"conv" -> Flatten[Table[Conv[If[i === dep, featOut, featOut], {dim, 3, dil}, act], {i, 1, dep}]]}, {}
+			"conv" -> Flatten[Table[Conv[(*If[i === dep, featOut, featOut]*) featOut, {dim, 3, dil}, act], {i, 1, dep}]]}, {}
 		],
 
 		"ResNet",
@@ -684,8 +684,8 @@ AddLossLayer[net_]:=Block[{dim},
 		"Jaccard" -> JaccardLossLayer[dim],
 		"Tversky" -> TverskyLossLayer[dim, 0.7],
 		"Focal" -> FocalLossLayer[1 ,1],
-		"SquaredDiff" -> {MeanSquaredLossLayer[], ElementwiseLayer[50 #&]},
-		"CrossEntropy" -> {CrossEntropyLossLayer["Probabilities"]}
+		"SquaredDiff" -> NetGraph[NetChain[{MeanSquaredLossLayer[], ElementwiseLayer[50 #&]}]],
+		"CrossEntropy" -> NetGraph[NetChain[{CrossEntropyLossLayer["Probabilities"]}]]
 	|>,{
 		{"net", NetPort["Target"]}->"Dice"->NetPort["Dice"],(*using squared dice, F1score*)
 		{"net", NetPort["Target"]}->"Jaccard"->NetPort["Jaccard"],
@@ -708,7 +708,7 @@ DiceLossLayer[dim_ ] := DiceLossLayer[dim, 1]
 DiceLossLayer[dim_, n_] := Block[{smooth},
 	(*10.48550/arXiv.1911.02855 and 10.48550/arXiv.1606.04797 for scquared dice loss look at v-net*)
 	smooth =1;
-	NetGraph[<|
+	NetFlatten@NetGraph[<|
 		(*flatten input and target; function layer allows to switch to L2 norm if #^2*)
 		"input" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; dim]},
 		"target" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; dim]},
@@ -735,7 +735,7 @@ JaccardLossLayer[dim_ ] := JaccardLossLayer[dim, 1]
 
 JaccardLossLayer[dim_, n_]:= Block[{smooth},
 	smooth = 1;
-	NetGraph[<|
+	NetFlatten@NetGraph[<|
 		(*flatten input and target; function layer allows to switch to L2 norm if #^2*)
 		"input" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; dim]},
 		"target" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; dim]},
@@ -760,7 +760,7 @@ FocalLossLayer[] := FocalLossLayer[1, 1]
 
 FocalLossLayer[g_] := FocalLossLayer[g, 1]
 
-FocalLossLayer[g_, a_] := NetGraph[{
+FocalLossLayer[g_, a_] := NetFlatten@NetGraph[{
 	"flatPr" -> {ThreadingLayer[#1  #2 &], AggregationLayer[Total, {-1}], FlattenLayer[]},
 	"focal" -> {ThreadingLayer[-a  Log[#1 + 10^-20](*#2*) (1 - #1)^g &], AggregationLayer[Mean, 1], FunctionLayer[# &]}
 	(*
@@ -788,7 +788,7 @@ TverskyLossLayer[dim_, beta_?NumberQ] := Block[{smooth, alpha},
 	smooth = 1;
 	alpha = 1- beta;
 	(* https://doi.org/10.48550/arXiv.1706.05721 *)
-	NetGraph[<|
+	NetFlatten@NetGraph[<|
 		(*intersection or TP*)
 		"truePos" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; dim]},
 		"falsePos" -> {ThreadingLayer[(1 - #1) #2 &], AggregationLayer[Total, ;; dim]},
@@ -1131,7 +1131,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]]:=Block[{
 				Echo[nodes];
 				Return[$Failed]
 				,
-				seg = NetTake[net, node][{First@patch}];
+				seg = NetTake[net, node][{NormalizeData[First@patch, NormalizeMethod -> "Uniform"]}];
 				If[Head[seg] === Association, seg = Last@seg];
 				If[node == nodes[[-1]], seg = RotateDimensionsRight[seg]];
 			];
@@ -1442,22 +1442,22 @@ Options[TrainSegmentationNetwork] = {
 
 	PatchSize -> {32, 112, 112},
 	PatchesPerSet -> 1,
-	BatchSize -> 3,
+	BatchSize -> 4,
 	RoundLength -> 512,
-	MaxTrainingRounds -> 500,
+	MaxTrainingRounds -> 150,
 
+	BlockType -> "ResNet",
 	DownsampleSchedule -> 2,
 	SettingSchedule -> Automatic,
 	FeatureSchedule -> 32,
 	NetworkDepth -> 5,
-	BlockType -> "ResNet",
-
+	
 	AugmentData -> True,
 
 	LossFunction -> All,
-	DropoutRate -> 0.1,
-	LearningRate -> 0.005,
-	L2Regularization -> None,
+	DropoutRate -> 0.2,
+	LearningRate -> 0.001,
+	L2Regularization -> 0.0001,
 
 	MonitorCalc->False
 }
@@ -1465,9 +1465,9 @@ Options[TrainSegmentationNetwork] = {
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPattern[]] := TrainSegmentationNetwork[{inFol, outFol}, "Start", opts]
 
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
-		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, ittName, makeIm,
+		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, makeIm, ittString,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
-		netName, monitorFunction, netMon, netOut, trained, l2reg,
+		monitorFunction, netMon, netOut, trained, l2reg, nval,
 		validation, files, loss, rep, learningRate
 	},
 
@@ -1485,14 +1485,16 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*figure out network properties from train data*)
 	(*background is 0 but for network its 1 so class +1*)
-	data = Import@First@files;
-	dDim = Dimensions@data[[1]][[1]];
+	testData = Import@First@files;
+	dDim = Dimensions@testData[[1]][[1]];
 	nChan = If[Length@dDim === 2, 1, dDim[[2]]];
-	nClass = Round[Max@data[[2]] + 1];
+	nClass = Round[Max@testData[[2]] + 1];
 	patch = OptionValue[PatchSize];
 
 
 	(*------------ Define the network -----------------*)
+
+	Echo[DateString[], "Preparing the network"];
 
 	(*make or import network, netCont can be a network or a previous train folder*)
 	{netIn, ittTrain} = Which[
@@ -1533,107 +1535,105 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		True, Return[Message[TrainSegmentationNetwork::net]; $Failed]
 	];
 
+	(*quit if there are not enough rounds*)
+	If[rounds - ittTrain < 5, Return[Message[TrainSegmentationNetwork::itt]; $Failed]];
 
-	(*------------ Define the network -----------------*)
+	(*define and check the training loss function*)
+	loss = Which[
+		loss === All, {"Dice", "SquaredDiff", "Tversky" , "CrossEntropy", "Jaccard", "Focal"},
+		StringQ[loss], {loss},
+		True, loss];
+	If[!And @@ (MemberQ[{"Dice", "SquaredDiff", "Tversky", "CrossEntropy", "Jaccard", "Focal"}, #] & /@ loss), 
+		Return[Message[TrainSegmentationNetwork::loss]; $Failed]];
 
-	If[rounds - ittTrain < 5,
-		Return[Message[TrainSegmentationNetwork::itt]; $Failed]
-		,
+	(*if the network already exists make the dimensions, classes en channels match the input*)
+	netIn = AddLossLayer@NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
+	Echo[{MBCount@netIn, netIn}];
+
+
+	(*---------- Stuff for monitoring ----------------*)
+
+	(*Local functions*)
+	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
+	ittString = "itt_" <> StringPadLeft[ToString[#], 4, "0"]&;
+	makeIm[dat_, lab_] := RemoveAlphaChannel@ImageAssemble[Partition[MakeChannelClassImage[dat[[All, #]], lab[[#]], {0, nClass - 1}
+		] & /@ (Round[Range[2, Length[lab] - 1, (Length[lab] - 2) / 9.]]), 3]];
+
+	(*Make and export test data*)
+	{testData, testVox} = MakeTestData[testData, 2, patch];
+	ExportNii[First@testData, testVox, outName["testSet.nii"]];
+	(*segment test data and export*)
+	testSeg = Ramp[ClassDecoder[NetExtract[netIn, "net"][testData, TargetDevice -> "GPU"]] - 1];
+	ExportNii[testSeg, testVox, outName[ittString[ittTrain]<>".nii"]];
+	(*make and export test image*)
+	Export[outName[ittString[ittTrain] <> ".png"], im = makeIm[testData, testSeg], "ColorMapLength" -> 256];
+
+	(*define the monitor function*)
+	monitorFunction = (
+		ittTrain++;
+		(*perform segmentation and export*)
+		netMon = NetExtract[#Net, "net"];
+		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "GPU"]] - 1];
+		ExportNii[testSeg, testVox, outName[ittString[ittTrain]<>".nii"]];
+		(*make and export test image*)
+		Export[outName[ittString[ittTrain] <> ".png"], im = makeIm[testData, testSeg], "ColorMapLength" -> 256];
+		(*export the network and delete the one from the last itteration*)
+		Export[outName[ittString[ittTrain] <> ".wlnet"], netMon];
+		Quiet@DeleteFile[outName[ittString[ittTrain - 1] <> ".wlnet"]];
+	)&;
+
+
+	(*---------- Prepare the data ----------------*)
+
+	Echo[DateString[], "Preparing the data"];
+
+	(*import all train data or train out of memory*)
+	data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
+
+	(*prepare a validation set*)
+	nval = Round[If[augment===False || augment === 0., 0.1, 0.05] roundLength];
+	validation = Flatten[GetTrainData[{#}, 1, patch, nClass, AugmentData -> False]&/@RandomSample[data, Min[{Length@data, nval}]], 1];
+	If[augment=!=False || augment > 0., validation = Join[validation, GetTrainData[data, nval, patch, nClass, AugmentData -> True]]];
+	validation = DeleteDuplicates[validation];
+
+	(*prepare the training data*)
+
+	Echo[{"data: ", Length@data, " - validation: ", Length@validation}];
+
+
+	(*---------- Train the network ----------------*)
+
+	(*Print progress function*)
+	Echo[{DateString[], loss}, "Starting training"];
+	Echo[Dynamic[Column[
+		{Style["Training Round: " <> ToString[ittTrain], Bold, Large], Image[im, ImageSize->400]}
+	, Alignment -> Center]]];
+
+	(*train the network*)
+	trained = NetTrain[
+		netIn, 
+		{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment, PatchesPerSet -> patches] &, "RoundLength" -> roundLength}, 
+		All, 
 		
-		(*if the network already exists make the dimensions, classes en channels match the input*)
-		netIn = NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
-		Echo[netIn, "Network for training"];
+		ValidationSet -> validation,
+		LossFunction -> loss,
+		TargetDevice -> "GPU", WorkingPrecision -> "Mixed",
 
-		(*---------- Stuff for monitoring ----------------*)
+		MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch, 
+		LearningRate -> learningRate, 
+		Method -> {"ADAM", "Beta1" -> 0.99, "Beta2" -> 0.999, "Epsilon" -> 10^-5, "L2Regularization" -> l2reg},
 
-		(*Functions for consistant file names*)
-		outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
-		netName = outName["itt_" <> StringPadLeft[ToString[#], 4, "0"] <> ".wlnet"]&;
-		ittName = FileNameJoin[{outFol, "itt_" <> StringPadLeft[ToString[#], 4, "0"] <> ".png"}]&;
-
-		(*Make and export test data*)
-		{testData, testVox} = MakeTestData[data, 2, patch];
-		ExportNii[First@testData, testVox, outName["testSet.nii"]];
-
-		(*segment test data *)
-		testSeg = Ramp[ClassDecoder[netIn[testData, TargetDevice -> "GPU"]] - 1];
-		ExportNii[testSeg, testVox, outName["testSeg.nii"]];
-
-		(*make and export image*)
-		makeIm[data_, label_] := ImageAssemble[Partition[
-			MakeChannelClassImage[data[[All, #]], label[[#]], {0, nClass - 1}
-		] & /@ (Round[Range[2, Length[label] - 1, (Length[label] - 2) / 9.]]), 3]];
-		im = makeIm[testData, testSeg];
-		Export[ittName[ittTrain], im];
-
-		(*Print progress function*)
-		Echo[Dynamic[Column[
-			{Style["Training Round: " <> ToString[ittTrain], Bold, Large], Image[im, ImageSize->400]}
-		, Alignment -> Center]], "Progress"];
-
-		(*define the monitor function, exports image and last net and Nii of result*)
-		monitorFunction = (
-			ittTrain++;
-			(*perform segmentation and export*)
-			netMon = NetExtract[#Net, "net"];
-			testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "GPU"]] - 1];
-			ExportNii[testSeg, testVox, outName["testSeg.nii"]];
-			(*make and export test image*)
-			im = makeIm[testData, testSeg];
-			Export[ittName[ittTrain], im];
-			(*export the network and delete the one from the last itteration*)
-			Export[netName[ittTrain], netMon];
-			Quiet@DeleteFile[netName[ittTrain - 1]];
-		)&;
+		TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
+		TrainingProgressReporting -> File[outName[StringReplace[DateString["ISODateTime"], ":" | "-" -> ""] <> ".json"]]
+	];
 
 
-		(*---------- Train the network ----------------*)
+	(*---------- Export the network ----------------*)
 
-		Echo[DateString[], "Making validation set"];
-
-		(*import all train data or train out of memory*)
-		data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
-
-		(*prepare a validation set*)
-		validation = GetTrainData[data, Round[0.1 roundLength], patch, nClass, AugmentData -> augment];
-
-		(*define the training loss funciton*)
-		loss = Which[
-			loss === All, {"Dice", "SquaredDiff", "Tversky" , "CrossEntropy", "Jaccard", "Focal"},
-			StringQ[loss], {loss},
-			True, loss
-		];
-		If[! And @@ (MemberQ[{"Dice", "SquaredDiff", "Tversky", "CrossEntropy", "Jaccard", "Focal"}, #] & /@ loss), 
-			Return[Message[TrainSegmentationNetwork::loss]; $Failed]];
-
-		Echo[DateString[], "Starting training"];
-		Echo[loss, "Using loss functions: "];
-
-		(*train the network*)
-		trained = NetTrain[
-			AddLossLayer@netIn, 
-			{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment, PatchesPerSet -> patches] &, 
-				"RoundLength" -> roundLength}, 
-			All, ValidationSet -> validation,
-			
-			LossFunction -> loss, MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
-			TargetDevice -> "GPU", WorkingPrecision -> "Mixed",
-			LearningRate -> learningRate, 
-			Method -> {"ADAM", "Beta1" -> 0.99, "Beta2" -> 0.999, "Epsilon" -> 10^-5, "L2Regularization" -> l2reg},
-
-			TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
-			TrainingProgressReporting -> File[outName[StringReplace[DateString["ISODateTime"], 
-				":" | "-" -> ""] <> ".json"]]
-		];
-
-
-		(*---------- Export the network ----------------*)
-
-		netOut = NetExtract[trained["TrainedNet"], "net"];
-		Export[outName["trained" <> ".wxf"], trained];
-		Export[outName["final" <> ".wlnet"], netOut];
-		Export[outName["final" <> ".onnx"], netOut];
-	]
+	netOut = NetExtract[trained["TrainedNet"], "net"];
+	Export[outName["trained" <> ".wxf"], trained];
+	Export[outName["final" <> ".wlnet"], netOut];
+	Export[outName["final" <> ".onnx"], netOut];
 ]
 
 
@@ -1658,11 +1658,11 @@ MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
 
 ShowTrainLog[fol_] := ShowTrainLog[fol, 5]
 
-ShowTrainLog[fol_, max_] := Block[{files, log, keys, plots},
-	{keys, log} = LoadLog[fol, max];
+ShowTrainLog[fol_, max_] := Block[{files, log, keys, leng, plots},
+	{keys, log, leng} = LoadLog[fol, max];
 
 	(* Create a dynamic module to display the interactive plot *)
-	DynamicModule[{pdat = log, klist = keys, folder = fol, plot, ymaxv, xmin, xmax, key, ymax, temp},
+	DynamicModule[{pdat = log, klist = keys, folder = fol, len = leng, plot, ymaxv, xmin, xmax, key, ymin, ymax, temp},
 		key1 = Select[klist, ! StringContainsQ[#, "Current"] &];
 		key2 = Select[Select[key1, StringContainsQ[#, "Loss"] &], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
 		key1 = Select[Complement[key1, key2], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
@@ -1670,16 +1670,15 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, plots},
 
 		Manipulate[
 			plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
-			
 			plotf = If[filt, GaussianFilter[#, fsize]&/@plot,plot];
 
 			ymaxv = Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}];
 			ymax = Min[{ymax, ymaxv}];
 
 			(* Plot the selected metrics *)
-			ListLinePlot[If[key === {}, {}, plotf], 
-				PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{0,ymax}},
-				If[grid, GridLines -> Automatic, GridLines -> None], PlotHighlighting -> "YSlice"],
+			If[logp, ListLogPlot, ListLinePlot][If[key === {}, {}, plotf], Joined -> True, 
+				PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{ymin,ymax}},
+				If[grid, GridLines -> {len, Automatic}, GridLines -> {len, None}], PlotHighlighting -> "YSlice"],
 			
 			(*the controls*)
 			Row[{
@@ -1690,12 +1689,13 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, plots},
 						{klist, pdat} = LoadLog[folder, max];xmax = Length[pdat];];
 					, ImageSize -> {60, Automatic}, Method->"Queued"]}
 			],
-			Button["Reload", {klist, pdat} = LoadLog[folder, max]; xmax = Length[pdat];],
+			Button["Reload", {klist, pdat, len} = LoadLog[folder, max]; xmax = Length[pdat];],
 
 			Delimiter,
 			{{filt, False, "Filter"}, {True, False}},
 			{{fsize, 5, "FilterSize"}, 1, 10, 1},
 			{{grid, False, "Grid"}, {True, False}},
+			{{logp, False, "Log"}, {True, False}},
 
 			Delimiter,
 			(*Control[{{key, {}, ""}, klist, ControlType -> TogglerBar, Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],*)
@@ -1714,9 +1714,12 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, plots},
 				Control[{{xmax,Length[pdat],"X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
 			}],
 			Row[{
-				Control[{{ymax, 1, "Y max"}, 0.01, Dynamic[ymaxv]}], "   ",
+				Control[{{ymin, 0, "Y min"}, 0, Dynamic[ymax-0.01]}], "   ",
+				Control[{{ymax, 1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxv]}]
+			}],
+			Row[{
 				Button["Autoscale X", {xmax, xmax} = {1, Length[pdat]}], "   ",
-				Button["Autoscale Y", ymax = Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}]]
+				Button["Autoscale Y", {ymin, ymax} = {0, Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}]}]
 			}],
 			{{key, {}}, ControlType -> None},
 			Initialization :> (
@@ -1733,16 +1736,17 @@ LoadLog[fol_, max_]:=Block[{files, keys, log},
 	files = Sort[FileNames["*.json", fol]];
 	
 	(* Read the log files and extract the relevant information *)
-	log = Flatten[Select[(Select[Import[#, "Lines"], StringContainsQ[#, "ProgressFraction"] &] & /@ files), Length[#] > max &], 1];
+	log = Select[(Select[Import[#, "Lines"], StringContainsQ[#, "ProgressFraction"] &] & /@ files), Length[#] > max &];
+	leng = Accumulate[Length /@ log];
 	
 	(* Convert the log data into a dataset *)
-	log = "[\n" <> StringDrop[StringRiffle[If[StringTake[#, -1] === "}", # <> ",", #] & /@ log, "\n"], -1] <> "\n]";
+	log = "[\n" <> StringDrop[StringRiffle[If[StringTake[#, -1] === "}", # <> ",", #] & /@ Flatten[log, 1], "\n"], -1] <> "\n]";
 	log = Dataset[Association /@ Import[Export[FileNameJoin[{$TemporaryDirectory, "log.json"}], log, "text"]]];
 	
 	(* Get the unique keys (metrics) in the log data *)
 	keys = Sort@DeleteDuplicates[Flatten[Normal@log[All, Keys]]];
 
-	{keys, log}
+	{keys, log, leng}
 ]
 
 
@@ -1773,7 +1777,7 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 	itt = Ceiling[nBatch/nSet];
 
 	Do[
-		dat =RandomChoice[datas];
+		dat = RandomChoice[datas];
 		
 		If[StringQ[dat], 
 			(*data is wxf file format*)
@@ -1856,11 +1860,13 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 			{0., 0., 0.}
 		];
 		
-		{datT, segT} = DataTransformation[#, vox, w, InterpolationOrder -> 0, PadOutputDimensions -> False]&/@{datT, segT};
+		datT = DataTransformation[datT, vox, w, InterpolationOrder -> 1, PadOutputDimensions -> False];
+		segT = DataTransformation[segT, vox, w, InterpolationOrder -> 0, PadOutputDimensions -> False];
+
 	];
 	
 	(*Augmentations of sharpness intensity and noise*)
-	If[(blur&& RandomChoice[{0.3, 0.7} -> {True, False}]), datT = GaussianFilter[datT, RandomReal[{0.1, 1.5}]]]; (*blur some datasets*)
+	If[(blur && RandomChoice[{0.3, 0.7} -> {True, False}]), datT = GaussianFilter[datT, RandomReal[{0.1, 1.5}]]]; (*blur some datasets*)
 	If[(noise && RandomChoice[{0.3, 0.7} -> {True, False}]), 
 		datT = addNoise[datT, Mean[Flatten[datT]]/RandomReal[{10, 150}], RandomChoice[{0.8, 0.2} -> {0, 1}] RandomReal[{0, 0.5}]/100]];
 	If[bright, datT = RandomChoice[{RandomReal[{1, 1.5}], 1/RandomReal[{1, 1.5}]}] datT]; (*brighten or darken*)
@@ -2216,6 +2222,7 @@ SufDistFunc[dist_, met_] := Switch[met,
 
 
 GetEdge[lab_, class_] := GetEdge[lab, class, {1, 1, 1}]
+
 GetEdge[lab_, class_, vox_] := Block[{out},
 	out = SparseArray[ImageData[MorphologicalPerimeter[Image3D[1 - Unitize[lab - class], "Bit"],
 		CornerNeighbors -> False], "Bit"]]["ExplicitPositions"];
@@ -2230,7 +2237,7 @@ GetEdge[lab_, class_, vox_] := Block[{out},
 AnalyseNetworkFeatures[net_, data_] := AnalyseNetworkFeatures[net, data, ""]
 
 AnalyseNetworkFeatures[net_, data_, met_] := Block[{
-		dim, dataP, netP, nodes, vals, cutoff, table, plot, feat, nfeat, ttt, n
+		dim, dataP, netP, nodes, vals, cutoff, table, plot, feat, nfeat, ttt, n, col
 	},
 
 	(*find the patch dimensions and adjust data and network*)
@@ -2240,13 +2247,17 @@ AnalyseNetworkFeatures[net_, data_, met_] := Block[{
 
 	(*extract the network nodes*)
 	nodes = DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]];
-	
+	nodes = nodes[[2;;-2]];
+
+	col = ColorData["SolarColors"] /@Rescale[Range[Ceiling[Length[nodes]/2]]];
+	col = Join[col , Reverse[col][[2;;]]];
+
 	(*calculate the singular values for plotting and reporting*)
 	{nfeat, table, plot} = Transpose[(
 		(*get the features*)
 		feat = NetTake[netP, #][{dataP}, TargetDevice -> "GPU"];
 		If[Head[feat] === Association, feat = Last@feat];
-		If[# == nodes[[-1]], feat = RotateDimensionsRight[feat]];
+		(*If[# == nodes[[-1]], feat = RotateDimensionsRight[feat]];*)(*only for map*)
 		feat = Map[Flatten, feat];
 
 		(*calculate the singular values of the features*)
@@ -2260,43 +2271,51 @@ AnalyseNetworkFeatures[net_, data_, met_] := Block[{
 		(*give the output*)
 		{
 			nfeat, 
-			Flatten[{Style[#, Bold], cutoff, Round[100 cutoff/nfeat, .1]}], 
+			Flatten[{Style[#, 14, Bold], cutoff, Round[100 cutoff/nfeat, .1]}], 
 			Transpose[{100 Rescale[Range[1., nfeat]], vals}]
 		}
 	) & /@ nodes];
 
-	ttt = table[[2;;-2, 2]];
+	(*find the nodes with the highest singular values*)
+	ttt = table[[All, 2]];
 	n = Ceiling[(Length@ttt)/2];
 	n = Max /@ Thread[{ttt[[ ;; n]], Reverse[ttt[[n ;; ]]]}];
 
 	(*output based on method*)
 	If[met === "",
+		Echo[Thread{nodes,nfeat}];
 		Echo[n];
 
 		(*dynamic plot output*)
-		DynamicModule[{cols, tab = table, pl = plot, nods =  nodes},
+		DynamicModule[{cols, tab = table, pl = plot, nods =  nodes, clist = col, ln, pcol},
 
 			(*define colors for plotting*)
-			cols = Table[Directive[{GrayLevel[.5 + i/100], Dashed, Thick}], {i, Length@nodes}];
-			cols[[1]] = Directive[{Red, Dashing[None], Thick}];
+			cols = Table[Directive[{(*GrayLevel[.5 + i/100]*)clist[[i]], Dashed, Thick}], {i, Length@nodes}];
+			(*cols[[1]] = Directive[{Red, Dashing[None], Thick}];*)
 			
+			ln = Range@Length@nods;
+
 			(*define the plots within a manipulate that allows to select the nodes of the network*)
-			Manipulate[Column[{
-				Grid[Transpose@tab, Frame -> All, Background -> {{k -> Lighter@Red}, None}, Spacings -> {1.2, 1.2}],
+			Manipulate[
+				pcol = cols;
+				pcol[[k]] = Directive[{(*Black*)clist[[k]], Dashing[None], Thickness[.01]}];
+				
+				Column[{
+				Grid[Transpose@tab, Frame -> All, Background -> {{k -> Gray}, None, Thread[Thread[{1, ln}] -> (Lighter/@clist)]}, Spacings -> {1.2, 1.2}],
 				Show[
-					ListLinePlot[pl, PlotStyle -> RotateRight[cols, k - 1], GridLines -> {{tab[[k, 3]]}, {99}}, 
+					ListLinePlot[pl, PlotStyle -> pcol(*RotateRight[cols, k - 1]*), GridLines -> {{tab[[k, 3]]}, {99}}, 
 						ImageSize -> 500, AxesStyle -> Directive[{Black, Thick}], AspectRatio -> 1, 
 						LabelStyle -> Directive[{Black, 14, Bold}]
 					],
 					Plot[x, {x, 0, 100}, PlotStyle -> Directive[{Thick, Gray, Dotted}]]
 				]
 			}, Alignment -> Center],
-			{{k, 1, ""}, Thread[Range@Length@nods -> (Style[#, Black, 14, Bold] & /@ nods)], ControlType -> SetterBar}
+			{{k, 1, ""}, Thread[ln -> (Style[#, Black, 14, Bold] & /@ nods)], ControlType -> SetterBar}
 			]
 		],
 
 		(*value per node*)
-		table[[All, 3]]
+		table[[All, 2]]
 	]
 ]
 

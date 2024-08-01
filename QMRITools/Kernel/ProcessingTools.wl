@@ -992,7 +992,7 @@ Options[JoinSets]={
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-JoinSets[data: {_?ArrayQ ..} over_, opts:OptionsPattern[]]:=JoinSets[data, over, {1,1,1}, opts]
+JoinSets[data: {_?ArrayQ ..}, over_, opts:OptionsPattern[]]:=JoinSets[data, over, {1,1,1}, opts]
 
 JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[
 	{dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran},
@@ -1194,7 +1194,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
  	
  	(*get the input*)
  	pad = OptionValue[PaddOverlap];
- 	mon = OptionVAlue[MonitorCalc];
+ 	mon = OptionValue[MonitorCalc];
  	depth = ArrayDepth[input];
  	
 	(*data which will be joined, make all data sets 4D*)
@@ -1226,26 +1226,20 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 		(*pad to allow motion*)
 		d1 = PadLeft[d1, dim];
 		maskd1 = PadLeft[maskd1, dim];
-		
 		(*get the seconds overlap stac*)
 		d2 = sets[[n + 1, -overp ;;,1]];
 		maskd2 = Dilation[#, 3] &/@ Mask[d2,2];
 		(*pad to allow motion*)
 		d2 = PadLeft[d2, dim];
 		maskd2 = PadLeft[maskd2, dim];
-		
 		maskd1 = maskd2 = Dilation[maskd1 maskd2, 1];
-		
 		(*get the number of samples for the registration*)
 		samp = Round[((Total@Flatten@maskd1)+(Total@Flatten@maskd2))/20];
-		
 		(*perform the registration*)
 		sets[[n + 1]] = Last@regFunc[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
 				MethodReg -> "rigid", Iterations -> 300, NumberSamples -> samp, 
 				PrintTempDirectory -> False, InterpolationOrderReg -> 1];
-		
 		sets[[n+1]] = MaskData[sets[[n+1]], Dilation[Mask[NormalizeMeanData[sets[[n+1]]], .5], 2]];
-		
 	, {n, 1, nmax - 1}];
 	
 	(*output the data, make the 3D data 3D again*)
