@@ -100,6 +100,9 @@ DilateMask::usage=
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
 
+SegmentationVolume::usage = 
+"SegmentationVolume[seg] calculates the volume of each label in the segmentation."
+
 
 ROIMask::usage = 
 "ROIMask[maskdim, {name->{{{x,y},slice}..}..}] crates mask from coordinates x and y at slice. 
@@ -556,11 +559,16 @@ SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, s
 	{seg, lab} = If[split,  SplitSegmentations[segm], segm];
 	
 	sel = MemberQ[labSel, #] & /@ lab;
-	seg = Transpose[Pick[Transpose[seg], sel, True]];
-	lab = Pick[lab /. Thread[labSel->labNew], sel, True];
-	or = Ordering[lab];
 
-	If[split, MergeSegmentations[seg, lab], {seg[[All,or]], lab[[or]]}]
+	If[AllTrue[sel, # === False &],
+		If[split, 0 MergeSegmentations[seg, lab], {0 seg[[All,1]], {}}]
+		,
+		seg = Transpose[Pick[Transpose[seg], sel, True]];
+		lab = Pick[lab /. Thread[labSel->labNew], sel, True];
+		or = Ordering[lab];
+
+		If[split, MergeSegmentations[seg, lab], {seg[[All,or]], lab[[or]]}]
+	]
 ]
 
 
@@ -570,9 +578,11 @@ SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, s
 
 Options[SmoothSegmentation] = {MaskComponents -> 1, MaskClosing -> 5, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->3}
 
-SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SmoothSegmentation[maskIn_, opts:OptionsPattern[]] := 
+SmoothSegmentation[maskIn_,  opts:OptionsPattern[]] :=SmoothSegmentation[maskIn, All, opts]
+
+SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := 
  Block[{smooth,obj, md, masks, labs},
  	smooth = OptionValue[MaskFiltKernel];
 	obj = OptionValue[MaskComponents];
@@ -586,7 +596,7 @@ SmoothSegmentation[maskIn_, opts:OptionsPattern[]] :=
 	masks = Transpose[SparseArray[Round@masks]];
 
 	(*Get smoothed or non smoothed masks*)
-	masks = SmoothMask[#, Sequence@@FilterRules[{opts}, Options[SmoothMask]]]&/@masks;
+	masks[[what]] = SmoothMask[#, Sequence@@FilterRules[{opts}, Options[SmoothMask]]]&/@masks[[what]];
 	
 	(*remove the overlaps*)
 	masks = Transpose@RemoveMaskOverlapsI[SparseArray[masks]];
@@ -686,6 +696,25 @@ SegmentMask[mask_, seg_?IntegerQ] := Block[{pos, f, l, sel, out},
 	Table[out[[i, sel[[i, 1]] ;; sel[[i, 2]]]] = mask[[sel[[i, 1]] ;; sel[[i, 2]]]], {i, 1, seg}];
 	out
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SegmentationVolume*)
+
+
+SyntaxInformation[SegmentationVolume] = {"ArgumentsPattern" -> {_, _.}};
+
+SegmentationVolume[seg_] := SegmentationVolume[seg, {0, 0, 0}]
+
+SegmentationVolume[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := 
+ Block[{vol},
+  vol = If[vox === {0, 0, 0}, 1, N@((Times @@ vox)/1000)];
+  vol  Total[Flatten[#]] & /@ Switch[ArrayDepth[seg],
+    3, Transpose[First@SplitSegmentations[seg]],
+    4, Transpose[seg],
+    _, Return[$Failed]
+    ]
+  ]
 
 
 (* ::Subsection::Closed:: *)

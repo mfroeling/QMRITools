@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "3.24.0",
+	"Version" -> "3.26.0",
 	"WolframVersion" -> "14.0+",
 	"SystemID" -> All, 
 	
@@ -47,7 +47,7 @@ PacletObject[<|
 		(*Windows*)
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"Transformix", "transformix.exe"}}},
-		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"ElastixLib", "ANNlib-5.1.dll"}}},
+		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"ElastixLib", "ANNlib-5.2.dll"}}},
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"DcmToNii", "dcm2niix.exe"}}},
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"pigz", "pigz.exe"}}},
 
@@ -61,22 +61,22 @@ PacletObject[<|
 		(*Mac-x86*)
 		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},
 		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
-		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.dylib"}}},
-		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.1.dylib"}}},
+		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.dylib"}}},
+		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.1.dylib"}}},
 		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}},
 
 		(*Mac-x86*)
 		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},
 		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
-		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.dylib"}}},
-		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.1.dylib"}}},
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.dylib"}}},
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.1.dylib"}}},
 		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}},
 
 		(*Linux-x86*)
 		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},
 		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
-		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.so"}}},
-		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.1.so.1"}}},
+		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.so"}}},
+		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.so.1"}}},
 		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}}
 	}
 |>]
