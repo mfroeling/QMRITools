@@ -209,15 +209,20 @@ NormalizeData[data_, msk_, opts : OptionsPattern[]] := Block[{dat, mn, min, dato
 
 
 (*normalization towards uniform distribution*)
-NormDatC = Compile[{{dat, _Real, 3}}, Block[{fl, flp, min, max, bins, cdf, n},
-	n = 512;
+NormDatC = Compile[{{dat, _Real, 3}}, Block[{fl, min, max, bins, cdf, n, tot},
+	n = 1024;
 	fl = Flatten[dat];
-	flp = Pick[fl, Unitize[fl], 1];
-	{min, max} = MinMax[flp];
-	bins = BinCounts[flp, {min, max, (max - min)/n}];
-	cdf = Prepend[N[Accumulate[bins]/Total[bins]], 0.];
-	Map[cdf[[# + 1]] &, Clip[Floor[(dat - min)/(max - min)  n], {0, n}, {0, n}], {-2}]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+	{min, max} = MinMax[fl];
+	If[min == max, dat,
+		bins = BinCounts[fl, {min, max, (max - min)/n}];
+		bins[[1]] = 0.;
+		tot = Total[bins];
+		If[tot == 0., dat,
+			cdf = Accumulate[bins]/tot;
+			Map[cdf[[#]] &, Clip[Floor[(n - 1) (dat - min)/(max - min) + 1], {1, n}, {1, n}], {-2}]]
+		]
+	],
+RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
 
 
 (*normalization towards median of given valueue*)

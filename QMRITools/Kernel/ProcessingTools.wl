@@ -918,7 +918,7 @@ DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, da
 	w = Which[Length[wi] == 3, Join[wi, {0, 0, 0, 1, 1, 1, 0, 0, 0}], Length[wi] == 12, wi, True, Return[$Failed]];
 	dat = If[ArrayDepth[data] === 4, Transpose[data], {data}];
 	int = Round@OptionValue[InterpolationOrder];
-	int = Which[int===0, "NearestLeft", 0 < int <=9, {"Spline", int}, True, {"Spline", 1}];
+	int = Which[int===0, "Nearest", 0 < int <=9, {"Spline", int}, True, {"Spline", 1}];
 
 	dim = Dimensions[dat][[-3 ;;]];
 	idim = Reverse[vox  dim]/2.;
@@ -929,9 +929,9 @@ DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, da
 
 	pad = If[OptionValue[PadOutputDimensions]===True, All, Automatic];
 
-	dat = ImageData[ImageTransformation[Image3D[#, type], aff, (*All, *)
+	dat = ImageData[ImageTransformation[Image3D[#, type], aff, Automatic,
 		Resampling -> int, DataRange -> ran, PlotRange->pad,
-		Padding -> 0., Background -> 0., Masking -> All
+		Padding -> 0., Background -> 0., Masking -> Full
 	]] & /@ dat;
 
 	If[ArrayDepth[data] === 4, Transpose[dat], First@dat]
