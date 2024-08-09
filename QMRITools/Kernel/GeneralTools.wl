@@ -915,14 +915,21 @@ Options[FindCrop] = {CropPadding->5}
 
 SyntaxInformation[FindCrop] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-FindCrop[dat_, OptionsPattern[]] := Block[{unit, crp, p, dim, add, data},
-
-	data = If[ArrayDepth[dat]===4, dat[[All,1]], dat];
-
-	add= OptionValue[CropPadding];
-	unit = Unitize[Total[Total[data, {#[[1]]}], {#[[2]]}] & /@ {{2, 2}, {1, 2}, {1, 1}}];
+FindCrop[dat_, OptionsPattern[]] := Block[{add, data, dim, d1, d2, unit, crp},
+	add = {-1, 1} OptionValue[CropPadding];
+	
+	data = Unitize@Switch[ArrayDepth[dat],
+		3, dat,
+		4, dat[[All, 1]],
+		_, Return[$Failed]
+    ];
 	dim = Dimensions[data];
-	crp = (p = Position[#, 1]; Flatten@{First[p] - add, Last[p] + add}) & /@ unit;
+
+	d1 = Unitize@Total[data];
+	d2 = Unitize@Total[data, {2}];
+	unit = Unitize[{Total[d2, {2}], Total[d1, {2}], Total[d1]}];
+
+	crp = MinMax[DeleteCases[# Range[Length[#]], 0]] + add & /@ unit;
 	Flatten[MapThread[Clip[#1, {1, #2}] &, {crp, dim}]]
 ]
 
@@ -935,18 +942,10 @@ Options[AutoCropData] = {CropPadding->5}
 
 SyntaxInformation[AutoCropData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-AutoCropData[data_, opts:OptionsPattern[]] := Module[{datac,crp, add},
-	add= OptionValue[CropPadding];
-	datac = Switch[ArrayDepth[data],
-		3, data,
-		4, data[[All, 1]],
-		_, Return[$Failed]
-    ];
-  
-    crp = FindCrop[datac, opts];
-    
-    {ApplyCrop[data,crp],crp}
-  ]
+AutoCropData[data_, opts:OptionsPattern[]] := Module[{crp},
+    crp = FindCrop[data, opts];
+    {ApplyCrop[data,crp], crp}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -957,7 +956,7 @@ SyntaxInformation[ReverseCrop] = {"ArgumentsPattern" -> {_, _, _, _.}};
 
 ReverseCrop[data_, dim_, crop_] := ReverseCrop[data, dim, crop, {0, 0}]
 
-ReverseCrop[data_, dimI_, crop_, {v1_, v2_}] := Module[{datac, pad, dim},
+ReverseCrop[data_, dimI_, crop_, {v1_, v2_}] := Module[{datac, pad, dim, p},
 
 	dim = If[Length@Dimensions@data===4, dimI[[{1,3,4}]], dimI];
 
@@ -968,13 +967,14 @@ ReverseCrop[data_, dimI_, crop_, {v1_, v2_}] := Module[{datac, pad, dim},
 		Floor[(v1/v2) Partition[Abs[{1, dim[[1]], 1, dim[[2]], 1, dim[[3]]} - crop], 2]]
 	];
 
+	p = If[IntegerQ[Min@data], 0, 0.];
 	datac = Switch[ArrayDepth[data],
-		3, ArrayPad[data, pad, 0.],
-		4, ArrayPad[data, Insert[pad, {0, 0}, 2], 0.],
+		3, ArrayPad[data, pad, p],
+		4, ArrayPad[data, Insert[pad, {0, 0}, 2], p],
 		_, Return[$Failed, Module]
 	];
 
-	ToPackedArray@N@datac
+	ToPackedArray@datac
 ]
 
 
@@ -986,31 +986,30 @@ Options[ApplyCrop]={CropAlways->False}
 
 SyntaxInformation[ApplyCrop] = {"ArgumentsPattern" -> {_, _, _.,OptionsPattern[]}};
 
-ApplyCrop[data_, crop_, opts:OptionsPattern[]] := ApplyCrop[data, crop, {{1,1,1}, {1,1,1}}, opts]
+ApplyCrop[data_, crop_?VectorQ, opts:OptionsPattern[]] := ApplyCrop[data, crop, {{1,1,1}, {1,1,1}}, opts]
 
-ApplyCrop[data_, crop_ , {v1_,v2_}, opts:OptionsPattern[]] := Module[{z1, z2, x1, x2, y1, y2, dim, out},
+ApplyCrop[data_, crop_?VectorQ , {v1_,v2_}, opts:OptionsPattern[]] := Module[{z1, z2, x1, x2, y1, y2, dim, out},
 	
-	dim = Dimensions[data];
-	dim = If[Length[dim]==4,dim[[{1,3,4}]],dim];
+	out = ToPackedArray@data;
+	dim = Dimensions[out];
+	dim = If[Length[dim]==4, dim[[{1,3,4}]], dim];
 	
 	(*get crops coors*)
 	{z1, z2, x1, x2, y1, y2} = Round[crop Flatten[{#, #} & /@ (v1/v2)]];
 
 	If[OptionValue[CropAlways],
-		{z1,z2}=Clip[{z1,z2},{1,dim[[1]]}];
-		{x1,x2}=Clip[{x1,x2},{1,dim[[2]]}];
-		{y1,y2}=Clip[{y1,y2},{1,dim[[3]]}];
+		{z1,z2} = Clip[{z1, z2},{1, dim[[1]]}];
+		{x1,x2} = Clip[{x1, x2},{1, dim[[2]]}];
+		{y1,y2} = Clip[{y1, y2},{1, dim[[3]]}];
 		,
-		If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]],Return[Message[ApplyCrop::dim]]]
+		If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]], Return[Message[ApplyCrop::dim]]]
 	];
 	
-	out = Switch[ArrayDepth[data],
-		4, data[[z1 ;; z2, All, x1 ;; x2, y1 ;; y2]],
-		3, data[[z1 ;; z2, x1 ;; x2, y1 ;; y2]],
-		2, data[[x1 ;; x2, y1 ;; y2]]
-	];
-
-	ToPackedArray@N@out
+	ToPackedArray@Switch[ArrayDepth[out],
+		4, out[[z1 ;; z2, All, x1 ;; x2, y1 ;; y2]],
+		3, out[[z1 ;; z2, x1 ;; x2, y1 ;; y2]],
+		2, out[[x1 ;; x2, y1 ;; y2]]
+	]
 ]
 
 
@@ -1488,9 +1487,9 @@ SyntaxInformation[LLeastSquares] = {"ArgumentsPattern" -> {_, _}};
 
 LLeastSquares[ai_, y_]:=Block[{a},
 	a = If[Length[y] == Length[ai], ai, Transpose[ai]];
-	If[RealQ[Total[Flatten[y]]], 
+	If[RealValuedNumberQ[Total[Flatten[y]]], 
 		LLeastSquaresC[a, y], 
-		If[RealQ[Total[Flatten[a]]],
+		If[RealValuedNumberQ[Total[Flatten[a]]],
 			LLeastSquaresCC[a, y],
 			LLeastSquaresCCC[a, y]
 		]

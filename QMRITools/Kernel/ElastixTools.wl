@@ -594,9 +594,9 @@ ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile, f, p},
 	(
 		f = filesi[[#]];
 		tfile = If[# == 1, "NoInitialTransform", outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 2] <> ".txt"];
-		p = Position[Boole[StringContainsQ[#, "InitialTransformParametersFileName"] & /@ f], 1][[1, 1]];
+		p = Position[Boole[StringContainsQ[#, "InitialTransformParameterFileName"] & /@ f], 1][[1, 1]];
 		
-		f[[p]] = "(InitialTransformParametersFileName \"" <> tfile <> "\")";
+		f[[p]] = "(InitialTransformParameterFileName \"" <> tfile <> "\")";
 		Export[outDir <> $PathnameSeparator <> "FinalTransform." <> ToString[# - 1] <> ".txt", f];
 	) & /@ len;
 ]
@@ -1386,7 +1386,7 @@ RegisterDiffusionData[
 	(*get vol folders and anat transform files*)
 	volDirs = FileNames["vol*", tempDir, 1];
 	tFilesA = FileNames["TransformParameters*", tempDira];
-	
+
 	(*create Final Transform files*)
 	(
 		tFilesD = FileNames["TransformParameters*", #];
@@ -1463,6 +1463,31 @@ RegisterDiffusionDataSplit[
 	
 	datal = RegisterDiffusionData[{datal, vox}, {dataal, voxa}, opts][[2]];
 	datar = RegisterDiffusionData[{datar, vox}, {dataar, voxa}, opts][[2]];
+	StichData[datal, datar]
+];
+
+RegisterDiffusionDataSplit[
+	{data_, mask_, vox: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
+	{dataa_, voxa: {_?NumberQ, _?NumberQ, _?NumberQ}}, 
+	opts : OptionsPattern[]] := Block[
+		{datal, datar, dataal, dataar, maskl, maskr, cut1,cut2},
+	
+	(*find cuts*)
+	{datal, datar, cut1} = CutData[data];
+	{dataal, dataar, cut2} = CutData[dataa];
+	
+	(*align cuts*)
+	{cut1,cut2}=Round[First@Nearest[{cut1 Last@vox, cut2 Last@voxa}, Round[Last@Dimensions[data]/2] Last@vox] / {Last@vox, Last@voxa}];
+	(*{cut1,cut2}=Round[Mean[{cut1 vox[[2]], cut2 voxa[[2]]}]/{vox[[2]],voxa[[2]]}];*)
+	
+	(*cut with the aligned cuts*) 
+	{datal, datar, cut1} = CutData[data,cut1];
+	{maskl, maskr, cut1} = CutData[mask,cut1];
+	{dataal, dataar, cut2} = CutData[dataa,cut2];
+	 
+	datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, voxa}, opts][[2]];
+	datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, voxa}, opts][[2]];
+	
 	StichData[datal, datar]
 ];
 

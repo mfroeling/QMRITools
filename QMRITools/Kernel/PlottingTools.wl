@@ -1827,7 +1827,7 @@ PlotContour[dati_, opts:OptionsPattern[]]:=PlotContour[dati, {1,1,1}, opts]
 
 PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 		data, smooth, color, opac, dim , pad, col, style, crp,
-		ran, coldat, colfunc, scale, range, reso
+		ran, coldat, colfunc, scale, range, reso, cdim, cfunc
 	},
 
 	If[ArrayDepth[dati]===4,
@@ -1835,6 +1835,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 		Show[PlotContour[#[[1]], vox, ContourColor->#[[2]], opts]&/@ Transpose[{Transpose[dati], RandomColor[Length@First@dati]}]]
 		,
 		smooth = OptionValue[ContourSmoothRadius];
+		If[smooth === None, smooth = 0];
 		reso = OptionValue[ContourResolution];
 		scale = OptionValue[ContourScaling];
 		color = OptionValue[ContourColor];
@@ -1842,7 +1843,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 
 		If[N[Max[dati]] === 0., 
 			Graphics3D[],
-
+			
 			dim = Dimensions@dati;
 			pad = 2 (smooth + 1);
 
@@ -1855,28 +1856,33 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 			col = If[ColorQ[color], color, If[color==="Random", RandomColor[], GrayLevel[1.]]];
 			style = Directive[{Opacity[opac], col, Specularity[Lighter@Lighter@col, 5]}];
 
-			colfunc = If[! ArrayQ[color],
+			colfunc = If[!ArrayQ[color],
 				Automatic,
 				ran = OptionValue[ContourColorRange];
+				cfunc = OptionValue[ColorFunction];
 				ran = If[ran === Automatic,
 					Quantile[DeleteCases[N@Flatten[color], 0.], {0.02, 0.98}],
 					ran];
-				coldat = Rescale[color, ran];
+				coldat = Clip[Rescale[color, ran], {0, 1}];
+				cdim = Dimensions[coldat];
+				style = Directive[{Opacity[opac],Specularity[Red,0]}];
 				Function[{z, y, x},
-					ColorData[OptionValue[ColorFunction]][
-					coldat[[Clip[Round[x], {1, dim[[3]]}], 
-					Clip[Round[y], {1, dim[[2]]}], Clip[Round[z], {1, dim[[1]]}]]]]
+					ColorData[cfunc][coldat[[
+						Clip[Round[x/vox[[1]] + 0.5], {1, cdim[[1]]}],
+						Clip[Round[y/vox[[2]] + 0.5], {1, cdim[[2]]}], 
+						Clip[Round[z/vox[[3]] + 0.5], {1, cdim[[3]]}]
+					]]]
 				]
 			];
 
-			reso = Reverse@Round[(vox Dimensions[data]) / Switch[reso, Automatic, Reverse[vox], _, reso]];
+			reso = Reverse@Round[(vox Dimensions[data]) / Switch[reso, Automatic, 1.5 vox, _, reso]];
 			scale = Switch[scale, "World", Reverse[vox], _, {1,1,1}];
 
 			range = Reverse[Partition[crp, 2]] + {{-pad - 1, pad}, {-pad - 1, pad}, {-pad - 1, pad}};
 			dim = Reverse[dim];
 
 			ListContourPlot3D[data,
-				Contours -> {0.4},
+				Contours -> {0.7},
 				Mesh -> False, BoundaryStyle -> None, Axes -> True, 
 				SphericalRegion -> True,
 				ColorFunctionScaling -> False, ColorFunction -> colfunc,
@@ -2299,14 +2305,13 @@ PlotSequence[(*{seq_,hw_,te_}*)inp_, t_] := DynamicModule[{
 
 SyntaxInformation[ColorFAPlot] = {"ArgumentsPattern" -> {_}};  
 
-ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask, all},
+ColorFAPlot[tens_] := DynamicModule[{FA, eig, eigv, mid, eigFA, mask},
 	mask = Mask[Mean@tens[[1;;3]], 0.00001, MaskSmoothing->False];
 
 	{eig, eigv} = EigensysCalc[tens, PerformanceGoal -> "Quality"];
 
 	FA = Clip[2 FACalc[eig], {0,1}];
 	eigv = mask Abs[eigv];
-	all = {eigv, FA eigv};
 
 	Manipulate[
 		im = Image[all[[i, j, All, All, sel, {3,2,1}]], ColorSpace -> "RGB", ImageSize->size],
@@ -2315,7 +2320,10 @@ ColorFAPlot[tens_] := Block[{FA, eig, eigv, mid, eigFA, mask, all},
 		{{i, 2, "method"}, {1 -> "raw", 2 -> "FA"}},
 		{{sel, 1(*, 2, 3*), "eigenvectors"}, {1 -> "first", 2 -> "second", 3 -> "third"}, ControlType -> SetterBar},
 		{{size, 400, "image size"}, {200, 300, 400, 600, 1000}},
-		Button["save image", SaveImage[im], Method -> "Queued"]
+		Button["save image", SaveImage[im], Method -> "Queued"],
+
+		{all, ControlType -> None},
+		Initialization :> (all = {eigv, FA eigv}; j = Round[Length[all[[1]]]/2])
 	]
 ]
 
