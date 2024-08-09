@@ -312,7 +312,7 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, data
 	];
 	
 	(*smooth the mask if needed*)
-	Normal@If[OptionValue[MaskSmoothing], SmoothMask[mask, FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]], mask]
+	Round@Normal@If[OptionValue[MaskSmoothing], SmoothMask[mask, FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]], mask]
 ]
 
 
