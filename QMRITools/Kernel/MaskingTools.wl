@@ -20,7 +20,7 @@ BeginPackage["QMRITools`MaskingTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -53,13 +53,6 @@ MaskSegmentation::usage =
 "MaskSegmentation[seg, mask] applies a mask to a splited segmentation seg from SplitSegmentations. 
 The mask is 3D, seg is 4D."
 
-GetMaskData::usage =
-"GetMaskData[data, mask] retruns the data selected by the mask."
-
-MeanSignal::usage = 
-"MeanSignal[data] calculates the mean signal per volume of 4D data.
-MeanSignal[data, pos] calculates the mean signal per volume of 4D data for the given list of positions."
-
 
 SplitSegmentations::usage = 
 "SplitSegmentations[segmentation] splits a lable mask from ITKsnap or slicer3D in seperate masks and label numbers.
@@ -84,7 +77,8 @@ ReplaceSegmentations::usage =
 be lists of integers of the same size. If seg contains more labels then given in labs these will be replaced by 0." 
 
 SmoothSegmentation::usage =
-"SmoothSegmentation[segmentation] smooths segmentations and removes the overlaps between multiple segmentations." 
+"SmoothSegmentation[segmentation] smooths segmentations and removes the overlaps between multiple segmentations.
+SmoothSegmentation[segmentation, labs] only smooths the selected label number labs." 
 
 RemoveMaskOverlaps::usage = 
 "RemoveMaskOverlaps[mask] removes the overlaps between multiple masks. Mask is a 4D dataset with {z, masks, x, y}."
@@ -97,16 +91,15 @@ Output is a list of segmentations where for each region only the part present in
 DilateMask::usage=
 "DilateMask[mask,size] if size > 0 the mask is dilated and if size < 0 the mask is eroded."
 
+SelectMaskComponents::usage=
+"SelectMaskComponents[mask] selects the largest connected component in the mask.
+SelectMaskComponents[mask,n] selects the n largest connected components in the mask."
+
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
 
 SegmentationVolume::usage = 
 "SegmentationVolume[seg] calculates the volume of each label in the segmentation."
-
-
-ROIMask::usage = 
-"ROIMask[maskdim, {name->{{{x,y},slice}..}..}] crates mask from coordinates x and y at slice. 
-maskdim is the dimensions of the output {zout,xout,yout}."
 
 
 (* ::Subsection::Closed:: *)
@@ -138,29 +131,16 @@ MaskFiltKernel::usage =
 SmoothItterations::usage =
 "SmoothItterations is an option for Mask, SmoothMask and SmoothSegmentation and defines how often the smoothing is repeated."
 
-GetMaskOutput::usage = 
-"GetMaskOutput is an option for GetMaskData. Defaul is \"Slices\" which gives the mask data per slices. Else the entire mask data is given as output."
 
-GetMaskOnly::usage = 
-"GetMaskOnly is an option for GetMaskData. If set True all values in the mask are given, if set False only non zero values in the mask are give."
-
-UseMask::usage = 
-"UseMask is a function for MeanSignal and DriftCorrect."
-
-
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Error Messages*)
 
 
 Mask::tresh = "Given treshhold `1` value is not a vallid input, must be a number for min treshhold only or a vector {min tresh, max tresh}."
 
-GetMaskData::tresh = "The dimensions of the data and the mask must be the same, dataset: `1`, mask: `2`."
-
 MaskData::dim = "Dimensions are not equal, data: `1`, mask `2`." 
 
 MaskData::dep = "Data dimensions should be 2D, 3D or 4D. Mask dimensions should be 2D or 3D. Data is `1`D and Mask is `2`D."
-
-ROIMask::war = "there are more slices in the roi set than in the given dimensions."
 
 
 (* ::Section:: *)
@@ -239,9 +219,11 @@ NormDat[dat_, mn_] := ToPackedArray[100. Which[
 
 SyntaxInformation[NormalizeMeanData] = {"ArgumentsPattern" -> {_,_., OptionsPattern[]}};
 
-NormalizeMeanData[data_] := NormalizeData[Mean@Transpose@data]
+Options[NormalizeMeanData] = Options[NormalizeData]
 
-NormalizeMeanData[data_, mask_] := NormalizeData[Mean@Transpose@data, mask]
+NormalizeMeanData[data_, opts:OptionsPattern[]] := NormalizeData[Mean@Transpose@data, opts]
+
+NormalizeMeanData[data_, mask_, opts:OptionsPattern[]] := NormalizeData[Mean@Transpose@data, mask, opts]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -281,11 +263,11 @@ FitGradientMap[data_, ord_] := Block[{func, x, y, z, coor, mod, min, max},
 (*Mask*)
 
 
-Options[Mask] = {MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> 5, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->3};
+Options[Mask] = {MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> False, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->3};
 
 SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-Mask[dat_, opts : OptionsPattern[]] := Mask[dat, {0, 0}, opts]
+Mask[dat_?ArrayQ, opts : OptionsPattern[]] := Mask[dat, {0, 0}, opts]
 
 Mask[dat_?ArrayQ, tr_?NumberQ, opts : OptionsPattern[]] := Mask[dat, {tr, 1.1 Max[dat]}, opts]
 
@@ -320,39 +302,62 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, data
 (*SmoothMask*)
 
 
-Options[SmoothMask] = {MaskComponents->1, MaskClosing->5, MaskFiltKernel->2, MaskDilation -> 0, SmoothItterations->3}
+Options[SmoothMask] = {MaskComponents->1, MaskClosing->True, MaskFiltKernel->2, MaskDilation -> 0, SmoothItterations -> 3}
 
 SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-SmoothMask[msk_, OptionsPattern[]] := Block[{itt, dil, pad, close, obj, filt, mask, crp, dim},
+SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, dim, crp},
 	
 	(*get the options*)
-	itt = Round[OptionValue[SmoothItterations]];(*how much the smoothing is repeated*)
-	dil = Round[OptionValue[MaskDilation]];(*how much the mask is eroded or dilated*)
-	obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
-	filt = OptionValue[MaskFiltKernel];(*how much smooting*)
-	close = OptionValue[MaskClosing];(*close holes in mask*)
-	pad = Max[{5,2 close}];
-
-	dim = Dimensions@msk;
-	{mask,crp} = AutoCropData[msk];
-
-	(*perform padding to avoid border effects*)
-	mask = ArrayPad[Normal@mask, pad];
-	(*select number of mask components*)
-	mask = ImageData[SelectComponents[If[ArrayDepth[mask]==2, Image, Image3D][mask], "Count", -obj]];
-	(*perform the closing opperation*)
-	mask = Closing[mask, close];
-	(*perform itterative smoothing*)
-	mask = ImageData@Nest[Round[GaussianFilter[Erosion[Round[GaussianFilter[Dilation[#, 1], filt] + 0.05], 1], filt] + 0.05]&, Image3D@mask, itt];
-	(*perform reverse padding dilation if needed*)
-	mask = ArrayPad[mask, -pad];
-	mask = DilateMask[mask, dil];
 	
-	(*reverse cropping*)
-	SparseArray[ReverseCrop[mask, dim, crp]]
+	dil = OptionValue[MaskDilation];(*how much the mask is eroded or dilated*)
+	dil = If[NumberQ[dil],  Round@dil];
+	obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
+	obj = If[NumberQ[obj], Round[obj]];
+	close = OptionValue[MaskClosing];(*close holes in mask*)
+	If[IntegerQ[close], If[close>=1, close = True, close = False]];(*for legacy purposes*)
+	itt = OptionValue[SmoothItterations];(*how much the smoothing is repeated*)
+	ker = OptionValue[MaskFiltKernel];(*how much smooting*)
+
+	(*prep the segmentation*)
+	dim = Dimensions@mask;
+	{maskI, crp} = AutoCropData[mask];
+	maskI = Image3D[NumericArray[maskI, "Integer8"]];
+
+	(*remove the mask holes*)
+	If[close===True, maskI = 1 - TakeObject[1 - maskI, 1]];
+
+	(*select number of mask components*)
+	If[obj>=1, maskI = TakeObject[maskI, obj]];
+
+	(*Dilate or Erode the mask*)
+	Which[
+		dil > 0, maskI = Dilation[maskI, dil],
+		dil < 0, maskI = Erosion[maskI, -dil]
+	];
+
+	(*Filter the segmentation*)
+	Which[
+		itt === 1, maskI = Erosion[Round[GaussianFilter[Dilation[maskI,1], ker]],1],
+		itt > 1, maskI = Nest[Erosion[Round[GaussianFilter[Dilation[#, 1], ker] + 0.05], 1] &, maskI, itt]
+	];
+
+	(*reverse cropping and return the mask*)
+	ReverseCrop[SparseArray@ImageData@Round@maskI, dim, crp]
 ]
 
+
+(* ::Subsubsection::Closed:: *)
+(*TakeObject*)
+
+
+TakeObject[maskI_, obj_] := Block[{morph, keys},
+	morph = MorphologicalComponents[maskI, CornerNeighbors -> False];
+	If[Max[morph] <= obj, maskI,
+		keys = Reverse[k=Keys[SortBy[ComponentMeasurements[morph, "Count", CornerNeighbors -> False], Last]]][[;; obj]];
+		Image3D[NumericArray[Total[SparseArray[1 - Unitize[morph - #]] & /@ keys], "Integer8"]]
+	]
+];
 
 (* ::Subsubsection::Closed:: *)
 (*DilateMask*)
@@ -360,25 +365,20 @@ SmoothMask[msk_, OptionsPattern[]] := Block[{itt, dil, pad, close, obj, filt, ma
 
 SyntaxInformation[DilateMask] = {"ArgumentsPattern" -> {_, _}};
 
-DilateMask[seg_, size_] := Block[{sz, fun},
-	sz = Abs[Round[size]];
+DilateMask[mask_, size_] := SmoothMask[mask, MaskDilation -> size, 
+	MaskComponents -> Infinity, MaskClosing -> False, SmoothItterations -> 0]
 
-	If[sz =!= 0,
-		(*see if dilation of erosion*)
-		fun = If[size > 0, Dilation, Erosion];
 
-		(*3D or 4D data*)
-		SparseArray@Switch[ArrayDepth[seg],
-			3, DilateMaskI[seg, fun, sz],
-			4, Transpose[DilateMaskI[#, fun, sz] & /@ Transpose[seg]]
-		]
-		,
-		(*if size is 0 dont do anything*)
-		SparseArray@seg
-	]
-]
+(* ::Subsubsection::Closed:: *)
+(*DilateMask*)
 
-DilateMaskI[seg_, fun_, size_] := Round[SparseArray[ReverseCrop[fun[#[[1]], size], Dimensions[seg], #[[2]]]] &[AutoCropData[seg]]]
+
+SyntaxInformation[SelectMaskComponents] = {"ArgumentsPattern" -> {_, _.}};
+
+SelectMaskComponents[mask_] := SelectMaskComponents[mask, 1]
+
+SelectMaskComponents[mask_, n_] := SmoothMask[mask, MaskComponents -> n,
+	MaskDilation -> 0, MaskClosing -> False, SmoothItterations -> 0]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -395,7 +395,7 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 	dimM = Dimensions[mask];
 	
 	(*determine how to mask the data*)
-	out = Switch[{dataD,maskD},
+	out = Switch[{dataD, maskD},
 		{2,2}, If[dimD == dimM, mask data, 1],
 		{3,3}, If[dimD == dimM, mask data, 1],
 		{3,2}, If[dimD[[2;;]] == dimM, mask # &/@ data, 1],
@@ -417,79 +417,25 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 
 SyntaxInformation[MaskSegmentation] = {"ArgumentsPattern" -> {_, _}};
 
-MaskSegmentation[seg_, mask_] := Block[{dim, sc, cr},
+MaskSegmentation[seg_, mask_] := Block[{msk, dim, sc, cr},
 	msk = Normal@mask;
 	dim = Dimensions[seg[[All, 1]]];
 	Transpose[(
 		{sc, cr} = AutoCropData[#];
-		Round@SparseArray@ReverseCrop[ApplyCrop[msk, cr] sc, dim, cr]
+		SparseArray@Round@ReverseCrop[ApplyCrop[msk, cr] sc, dim, cr]
 	) & /@ Transpose[seg]]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetMaskData*)
-
-
-Options[GetMaskData] = {GetMaskOutput -> "All", GetMaskOnly->False}
-
-SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
-
-GetMaskData[data_?ArrayQ, mask_, opts:OptionsPattern[]] := Block[{out},
-	Which[
-		ArrayDepth[data]===4&&ArrayDepth[mask]===3, 
-		GetMaskData[#, mask, opts]&/@Transpose[data]
-		,
-		ArrayDepth[data]===3&&ArrayDepth[mask]===4, 
-		GetMaskData[data, #, opts]&/@Transpose[mask]
-		,
-		True,
-		If[!(Dimensions[data]=!=Dimensions[mask] || Drop[Dimensions[data], {2}]=!=Dimensions[mask]),
-			Retrun[Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]];$Failed]
-			,
-			out = Switch[OptionValue[GetMaskOutput],
-				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[Normal@#2]], 1]&, {data, mask}, ArrayDepth[data]-2],
-				"Sparse", (data mask)["ExplicitValues"],
-				_, Pick[Flatten[N[data]], Unitize[Flatten[Normal@mask]], 1]
-			];
-
-			out = Switch[OptionValue[GetMaskOutput],
-				"Mean", Mean[out],
-				"Median", Median[out],
-				_, out			
-			];
-			(*select only non zero values if mask only to false*)
-			If[OptionValue[GetMaskOnly],out,Pick[out, Unitize[out], 1]]
-		]
-	]
-]
-
-
-(* ::Subsection::Closed:: *)
-(*MeanSignal*)
-
-
-Options[MeanSignal] = { UseMask->True }
-
-SyntaxInformation[MeanSignal] = {"ArgumentsPattern" -> {_, _.,OptionsPattern[]}};
-
-MeanSignal[data_, opts:OptionsPattern[]] := MeanSignal[data, "", opts];
-
-MeanSignal[data_, posi_, OptionsPattern[]] := Block[{pos, dat, mask},
-	{pos, dat} = Which[
-		ListQ[posi], {posi, data[[All,posi]]},
-		IntegerQ[posi], {{posi}, data[[All,posi]]},
-		True, {All, data}
-	];
-	
-	mask = If[OptionValue[UseMask], Mask[NormalizeMeanData[dat], MaskSmoothing->True], 0 dat[[All,1]] + 1];
-	
-	N@MeanNoZero[Flatten[#]] & /@ Transpose[MaskData[dat, mask]]
 ]
 
 
 (* ::Subsection:: *)
 (*Segmentation functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetSegmentationLabels*)
+
+
+GetSegmentationLabels[segI_]:= Sort[DeleteDuplicates[SparseArray[Round[segI]]["ExplicitValues"]]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -515,24 +461,15 @@ SplitSegmentations[segI_, sparse_] := Block[{seg, dim, exVals, exPos, vals},
 
 
 (* ::Subsubsection::Closed:: *)
-(*GetSegmentationLabels*)
-
-
-GetSegmentationLabels[segI_]:= Sort[DeleteDuplicates[SparseArray[Round[segI]]["ExplicitValues"]]];
-
-
-(* ::Subsubsection::Closed:: *)
 (*MergeSegmentations*)
 
 
 SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
 
-MergeSegmentations[seg_, lab_] := Block[{mt,nv},
-	mt = Transpose[SparseArray[Round[seg]]];
-	nv = Range[Length@lab];
-
+MergeSegmentations[seg_, lab_] := Block[{mt, nv},
+	mt = Transpose[If[!SparseArrayQ@seg, SparseArray@Round@seg, seg]];
 	(*mapping over sparce is quicker than direct multiplication and total*)
-	Normal[Total[mt[[#]] lab[[#]] & /@ nv] (1 - UnitStep[Total[mt[[#]] & /@ nv] - 2])]
+	Normal[Total[mt[[#]] lab[[#]] & /@ Range[Length@lab]] (1 - UnitStep[Total[# & /@ mt] - 2])]
 ]
 
 
@@ -581,33 +518,35 @@ SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, s
 (*SmoothSegmentation*)
 
 
-Options[SmoothSegmentation] = {MaskComponents -> 1, MaskClosing -> 5, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->3}
+Options[SmoothSegmentation] = {MaskComponents -> 1, MaskClosing -> 1, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->1}
 
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 SmoothSegmentation[maskIn_,  opts:OptionsPattern[]] :=SmoothSegmentation[maskIn, All, opts]
 
-SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := 
- Block[{smooth,obj, md, masks, labs},
- 	smooth = OptionValue[MaskFiltKernel];
-	obj = OptionValue[MaskComponents];
-	
+SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := Block[{smooth,obj, md, masks, labs},
 	md = ArrayDepth[maskIn];
-
-	(*split segmentations if needed*)
-	If[md===3, {masks, labs} = SplitSegmentations[maskIn],	masks = maskIn];
-
-	(*convert data to sparse Array and transpose*)
-	masks = Transpose[SparseArray[Round@masks]];
-
-	(*Get smoothed or non smoothed masks*)
-	masks[[what]] = SmoothMask[#, Sequence@@FilterRules[{opts}, Options[SmoothMask]]]&/@masks[[what]];
+	(*split segmentations and make sparse if needed*)
+	If[md===3, {masks, labs} = SplitSegmentations[maskIn], masks = maskIn];
+	masks = Transpose[If[!SparseArrayQ@masks, SparseArray@Round@masks, masks]];
 	
-	(*remove the overlaps*)
-	masks = Transpose@RemoveMaskOverlapsI[SparseArray[masks]];
+	(*Get smoothed segmentations of the given labels and merge*)
+	masks[[what]] = SmoothMask[#, Sequence@@FilterRules[{opts}, Options[SmoothMask]]]&/@masks[[what]];
+	If[md===3, MergeSegmentations[Transpose[masks], labs], masks]
+]
 
-	If[md===3, MergeSegmentations[masks,labs], masks]
-  ]
+
+(* ::Subsubsection::Closed:: *)
+(*RescaleSegmentation*)
+
+
+SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
+
+RescaleSegmentation[seg_, vox_] := Block[{segs, val},
+	If[ArrayDepth[seg] == 3, {segs, val} = SplitSegmentations[seg], segs = seg];
+	segs = Transpose@RemoveMaskOverlapsI[SparseArray[SparseArray[Round[RescaleData[Normal[#], vox, InterpolationOrder -> 1]]] & /@Transpose[segs]]];
+	If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -629,8 +568,9 @@ RemoveMaskOverlapsI[masks_] := Block[{maskOver, posOver, maskInp, maskOut, z, x,
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*GetCommonSegmentation*)
+
 
 SyntaxInformation[GetCommonSegmentation] = {"ArgumentsPattern" -> {_, _, _}};
 
@@ -670,24 +610,7 @@ GetCommonSegmentation[dat:{_?ArrayQ ..}, seg:{_?ArrayQ ..}, vox:{_?ListQ ..}] :=
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*RescaleSegmentation*)
-
-
-SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
-
-RescaleSegmentation[seg_, vox_] := Block[{segs, val},
-	If[ArrayDepth[seg] == 3,
-		{segs, val} = SplitSegmentations[seg],
-		segs = seg
-	];
-	segs = Transpose@RemoveMaskOverlapsI[SparseArray[SparseArray[Round[RescaleData[Normal[#], vox, InterpolationOrder -> 1]]] & /@Transpose[segs]]];
-	If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
-]
-
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*SegmentMask*)
 
 
@@ -703,7 +626,7 @@ SegmentMask[mask_, seg_?IntegerQ] := Block[{pos, f, l, sel, out},
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*SegmentationVolume*)
 
 
@@ -711,79 +634,14 @@ SyntaxInformation[SegmentationVolume] = {"ArgumentsPattern" -> {_, _.}};
 
 SegmentationVolume[seg_] := SegmentationVolume[seg, {0, 0, 0}]
 
-SegmentationVolume[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := 
- Block[{vol},
-  vol = If[vox === {0, 0, 0}, 1, N@((Times @@ vox)/1000)];
-  vol  Total[Flatten[#]] & /@ Switch[ArrayDepth[seg],
-    3, Transpose[First@SplitSegmentations[seg]],
-    4, Transpose[seg],
-    _, Return[$Failed]
-    ]
-  ]
-
-
-(* ::Subsection::Closed:: *)
-(*ROIMask*)
-
-
-SyntaxInformation[ROIMask] = {"ArgumentsPattern" -> {_, _, _.}};
-
-ROIMask[roiDim_,maskdim_,ROI:{(_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..})..}]:=
-Module[{output},
-	output=Map[#[[1]]->ROIMask[roiDim,maskdim,#[[2]]]&,ROI];
-	Print["The Folowing masks were Created: ",output[[All,1]]];
-	Return[output]
+SegmentationVolume[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := Block[{vol},
+	vol = If[vox === {0, 0, 0}, 1, N@((Times @@ vox)/1000)];
+	vol  Total[Flatten[#]] & /@ Switch[ArrayDepth[seg],
+		3, Transpose[First@SplitSegmentations[seg]],
+		4, Transpose[seg],
+		_, Return[$Failed]
 	]
-
-ROIMask[roiDim_,maskdim_,ROI:{{_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}}..}]:=
-Module[{output},
-	output=Map[#[[1,1]]->ROIMask[roiDim,maskdim,#[[1,2]]]&,ROI];
-	Print["The Folowing masks were Created: ",output[[All,1]]];
-	Return[output]
-	]
-
-ROIMask[roiDim_,maskdim_,ROI:{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}]:=
-Module[{output,roiCor,roiSlice,msk},
-	output=ConstantArray[0,Join[{roiDim[[1]]},maskdim]];
-	If[ROI[[All,1]]!={{{0,0}}},
-		roiCor=Round[ROI[[All,1]]];
-		roiSlice=Clip[ROI[[All,2]],{1,roiDim[[1]]}];
-		msk=1-ImageData[Image[Graphics[Polygon[#],PlotRange->{{0,roiDim[[3]]},{0,roiDim[[2]]}}],"Bit",ColorSpace->"Grayscale",ImageSize->maskdim]]&/@roiCor;
-		MapIndexed[output[[#1]]=msk[[First[#2]]];&,roiSlice];
-		];
-	Return[output];
-	]
-
-ROIMask[maskdim_,ROI:{(_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..})..}]:=
-Module[{output},
-	output=Map[#[[1]]->ROIMask[maskdim,#[[2]]]&,ROI];
-	Print["The Folowing masks were Created: ",output[[All,1]]];
-	Return[output]
-	]
-
-ROIMask[maskdim_,ROI:{{_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}}..}]:=
-Module[{output},
-	output=Map[#[[1,1]]->ROIMask[maskdim,#[[1,2]]]&,ROI];
-	Print["The Folowing masks were Created: ",output[[All,1]]];
-	Return[output]
-	]
-
-ROIMask[maskdim_,ROI:{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}]:=
-Module[{output, roiCor, roiSlice, msk},
- output = ConstantArray[0, maskdim];
- If[ROI[[All, 1]] != {{{0, 0}}},
-  roiCor = Round[Map[Reverse[maskdim[[2 ;; 3]]]*# &, ROI[[All, 1]], {2}]];
-  If[Max[ROI[[All, 2]]] > maskdim[[1]], Message[ROIMask::war]];
-  roiSlice = Clip[ROI[[All, 2]], {1, maskdim[[1]]}];
-  msk = 1 - 
-      ImageData[
-       Image[Graphics[Polygon[#], 
-         PlotRange -> {{0, maskdim[[3]]}, {0, maskdim[[2]]}}], "Bit", 
-        ColorSpace -> "Grayscale", 
-        ImageSize -> maskdim[[2 ;; 3]]]] & /@ roiCor;
-  MapIndexed[output[[#1]] = msk[[First[#2]]]; &, roiSlice];
-  ];
- Return[output];]
+]
 
 
 (* ::Section:: *)

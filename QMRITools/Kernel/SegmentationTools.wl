@@ -20,7 +20,7 @@ BeginPackage["QMRITools`SegmentationTools`", Join[{"Developer`"}, Complement[QMR
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -141,11 +141,17 @@ The input data can be out of memory in the form of a list of \"*wxf\" files that
 {{\"data.nii\", \"segmentation.nii\"}..}. The input data can be in memory in a list in the form {{data, segmentation, vox}..}
 GetTrainData[data, batchsize, patch, nClass] If nClass is set to an value n > 0 the segmentations are decoded in n classes."
 
-PrepTrainData::usage=
+PrepareTrainingData::usage = 
+"PrepareTrainingData[inFolder, outFolder] prepares the data in de inFolder for training a neural network for segmentation and outputs in outFolder.
+PrepareTrainingData[{labFolder, datFolder}, outFolder] does the same but the labels are stored in labFolder and data is stored in datFolder."
+
+PrepTrainData::usage =
 "PrepTrainData[data, segmentation] crops and normalizes the data and segementation such that it is optimal for training CCN for segmentation.
 PrepTrainData[data, segmentation, labin] does the same but only selects the labin from the segmentation.
 PrepTrainData[data, segmentation, {labin, labout}] does the same but only selects the labin from the segmentation and replaces it with labout."
 
+CheckSegmentation::usage=
+"CheckSegmentation[seg] checks the segmentation for errors and returns a vector of two numbers, the first indicates if the segmentation has more than one region, the second indicates if it hase holes."
 
 DataToPatches::usage =
 "DataToPatches[data, patchSize] creates the maximal number of patches with patchSize from data, where the patches have minimal overlap.
@@ -185,6 +191,11 @@ MakeChannelClassImage[data, label, {off,max}] same but with explicit definition 
 MakeChannelClassImage[data, label, vox] same but with the aspect ratio determined by vox.
 MakeChannelClassImage[data, label, {off,max}, vox] same with explicit definition and aspect ratio definition."
 
+MakeChannelClassGrid::usage =
+"MakeChannelClassGrid[data, label] makes a 3 x 3 grid of crossectional images of the channels data overlaid with a crossectional image of the classes label of a training dataset generated
+MakeChannelClassGrid[data, label, n] makes a n x n."
+
+
 
 SplitDataForSegementation::usage = 
 "SplitDataForSegementation[data] is a specific function for leg data to prepare data for segmentation. It detects the side and location and will split and label the data accordingly.
@@ -211,7 +222,7 @@ AnalyseNetworkFeatures::usage =
 "AnalyseNetworkFeatures[net, data] gives overview of the information density of the network features by analysing them with SVD."
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Options*)
 
 
@@ -283,6 +294,17 @@ The minimal number of patches in each direction is calculated, and then for each
 PatchPadding::usage = 
 "PatchPadding is an option for DataToPatches. Can be an integer value >= 0. It padds the chosen patch size with the given number."
 
+LabelTag::usage = "LabelTag is an option for PrepareTrainingData. It defines the tag used in the filenames of the label data."
+
+DataTag::usage = "DataTag is an option for PrepareTrainingData. It defines the tag used in the filenames of the data."
+
+InputLabels::usage = "InputLabels is an option for PrepareTrainingData. Can be set to a list of integers corresponding to the labels to be used from the given segmentation."
+
+OutputLabels::usage = "OutputLabels is an option for PrepareTrainingData. Can be set to a list of integers. The used label number will be replaced by these numbers."
+
+TestRun::usage = "TestRun is an option for PrepareTrainingData. If set to True the data is not saved only analyzed."
+
+CleanUpSegmentations::usage = "CleanUpSegmentations is an option for PrepareTrainingData. If set to True the segmentations are cleaned up by removing holes reducing to one volume and smoothing."
 
 DistanceRange::usage =
 "DistanceRange is an option for MakeDistanceMap. It defines the range of the distance map outside the segmentation in voxels.
@@ -290,7 +312,7 @@ Values can be Automatic, All, or a integer value. If All the distance map is cal
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Error Messages*)
 
 
@@ -956,7 +978,7 @@ RuntimeAttributes -> {Listable}]
 (*Data Patching*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*PatchesToData*)
 
 
@@ -977,7 +999,9 @@ PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?
 		dat = zero;
 		{{a1, a2}, {b1, b2}, {c1, c2}} = ran[[1]];
 		dat[[a1 ;; a2, b1 ;; b2, c1 ;; c2]] = patches[[1, 1 ;; a2 - a1 + 1, 1 ;; b2 - b1 + 1, 1 ;; c2 - c1 + 1]];
-		dat
+		If[labs === {}, dat,
+			SmoothSegmentation[dat, MaskComponents -> 1, MaskClosing -> False, SmoothItterations -> 0]
+		]
 		,
 		(*multiple patches, need to merge*)
 		If[labs === {},
@@ -1004,34 +1028,19 @@ PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?
 				]
 			) & /@ labs;
 
+			(*only keep the largest connected segmentation*)
+			seg = SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothItterations -> 0] &/@ seg;
+
 			(*set overlapping to zero and then add to background label*)
-			seg = TakeLargestComponent/@ seg;
 			overlap = SparseArray[1 - UnitStep[Total[seg] - 2]];
-			If[Min[overlap]===1, seg = TakeLargestComponent[overlap #] &/@ seg];
+			If[Min[overlap]===1, 
+				seg = SmoothMask[overlap #, MaskComponents -> 1, MaskClosing -> False, SmoothItterations -> 0]&/@ seg
+			];
+
 			MergeSegmentations[Transpose[seg], labs]
 		]
 	]
 ]
-
-
-TakeLargestComponent[seg_] := Block[{dim, segc, cr},
-	If[Max[seg] < 1,
-		seg,
-		dim = Dimensions[seg];
-		{segc, cr} = AutoCropData[seg];
-
-		segc = MorphologicalComponents[Image3D[NumericArray[segc, "Integer8"]], CornerNeighbors -> False];
-
-		SparseArray@If[Max[segc] > 1, 
-			segc = SparseArray[1 - Unitize[
-				segc - Keys[First@MaximalBy[ComponentMeasurements[segc, "Count", CornerNeighbors -> False], Last]]
-			]];
-			Round@ReverseCrop[segc, dim, cr],
-			seg
-		]
-	]
-]
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1258,7 +1267,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 			{{patch, pts, dim}, loc, set} = SplitDataForSegementation[Mask[NormalizeData[data], 10] data, Monitor->mon]
 		];
 		If[mon, mon||StringQ[mon][Round[time, .1], "Total time for analysis [s]: "]];
-		If[mon, Echo[Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimenisons:"]];
+		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimenisons:"]];
 
 		(*get the network name and data type*)
 		{net, type} = Switch[what,
@@ -1427,8 +1436,10 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]]:=Block[{
 			time = First@AbsoluteTiming[
 				(*actualy perform the segmentation with the NN*)
 				seg = ClassDecoder[net[{NormalizeData[#, NormalizeMethod -> "Uniform"]}, TargetDevice->dev, WorkingPrecision ->prec]]&/@patch;
-				(*reverse all the padding and cropping and merged the patches if needed*)	
-				seg = ReverseCrop[ArrayPad[PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[nClass]], -pad], dimi, crp];
+				(*reverse all the padding and cropping and merged the patches if needed*)
+				seg = ReverseCrop[ArrayPad[
+						PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[nClass]]
+					, -pad], dimi, crp];
 			];
 			If[mon, 
 				Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Output segmentations dimensions and labels:"];
@@ -1540,7 +1551,7 @@ SyntaxInformation[TrainSegmentationNetwork] = {"ArgumentsPattern" -> {{_, _}, _.
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPattern[]] := TrainSegmentationNetwork[{inFol, outFol}, "Start", opts]
 
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
-		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, makeIm, ittString,
+		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, ittString,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
 		monitorFunction, netMon, netOut, trained, l2reg, nval,
 		validation, files, loss, rep, learningRate
@@ -1622,10 +1633,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*if the network already exists make the dimensions, classes en channels match the input*)
 	netIn = NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
-	Echo[{MBCount@netIn, 
-		Round[Information[netIn, "ArraysTotalElementCount"]/1000000, .1],
-		Round[UnitConvert[Quantity[32. (Information[netIn, "ArraysTotalElementCount"] + Total[Times @@@ Values[(Information[#, "OutputPorts"]["Output"]) & /@ Information[netIn, "Layers"]]]), "Bits"], "GB"], .1]
-	}];
+	Echo[NetSummary[netIn,"Mem"], "Network summary: "];
 	
 	(*define the network for training*)
 	netIn = AddLossLayer@netIn;
@@ -1636,8 +1644,6 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*Local functions*)
 	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
 	ittString = "itt_" <> StringPadLeft[ToString[#], 4, "0"]&;
-	makeIm[dat_, lab_] := RemoveAlphaChannel@ImageAssemble[Partition[MakeChannelClassImage[dat[[All, #]], lab[[#]], {0, nClass - 1}
-		] & /@ (Round[Range[2, Length[lab] - 1, (Length[lab] - 2) / 9.]]), 3]];
 
 	(*define the monitor function*)
 	monitorFunction = (
@@ -1647,7 +1653,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "GPU", WorkingPrecision -> "Mixed"]]];
 		ExportNii[testSeg, testVox, outName[ittString[ittTrain]<>".nii"]];
 		(*make and export test image*)
-		Export[outName[ittString[ittTrain] <> ".png"], im = makeIm[testData, testSeg], "ColorMapLength" -> 256];
+		im = MakeChannelClassGrid[testData, testSeg, {0, nClass-1}, 3];
+		Export[outName[ittString[ittTrain] <> ".png"], im , "ColorMapLength" -> 256];
 		(*export the network and delete the one from the last itteration*)
 		Export[outName[ittString[ittTrain] <> ".wlnet"], netMon];
 		Quiet@DeleteFile[outName[ittString[ittTrain - 1] <> ".wlnet"]];
@@ -1673,7 +1680,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*Print progress function*)
 	Echo[{DateString[], loss}, "Starting training"];
-	Echo[Dynamic[Column[
+	PrintTemporary[Dynamic[Column[
 		{Style["Training Round: " <> ToString[ittTrain], Bold, Large], Image[im, ImageSize->400]}
 	, Alignment -> Center]]];
 
@@ -1919,7 +1926,127 @@ PatchTrainingData[{dat_, seg_}, patch_, n_]:=Block[{pts,datP,segP},
 ]
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
+(*PrepareTrainingData*)
+
+
+(* ::Subsubsection:: *)
+(*PrepareTrainingData*)
+
+
+Options[PrepareTrainingData] = {
+  LabelTag -> "label",
+  DataTag -> "data",
+  InputLabels -> Automatic,
+  OutputLabels -> Automatic,
+  CleanUpSegmentations -> True,
+  TestRun -> False
+  }
+
+SyntaxInformation[PrepareTrainingData] = {"ArgumentsPattern" -> {_, _,OptionsPattern[]}};
+
+PrepareTrainingData[labFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]]:=PrepareTrainingData[{labFol, labFol}, outFol, opt]
+
+PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, OptionsPattern[]] := Block[{
+		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, 
+		seg, err, vox, voxd, dat, im, nl, outf, out, gr, clean
+	},
+
+	{labT, datT, inLab, outLab, test, clean} = OptionValue[{LabelTag, DataTag, InputLabels, OutputLabels, TestRun, CleanUpSegmentations}];
+	{inLab, outLab} = {inLab, outLab} /. Automatic -> {0};
+
+	(*look for the files in the given folder*)
+	segFiles = FileNames["*" <> labT <> ".nii.gz", labFol];
+	datFiles = FileNames["*" <> datT <> ".nii.gz", datFol];
+
+	(*prepare stuff for monitoring*)
+	i = 1; out = ""; im = Image[{{0}}];
+	PrintTemporary["Number of segmentation files: ", Length@segFiles];
+	PrintTemporary[Dynamic[out]];
+	If[! test, PrintTemporary[Dynamic[Show[im, ImageSize -> 300]]]];
+
+	(*loop over segfiles check for data and validate*)
+	out = Table[
+		(*search data file*)
+		name = StringTrim[StringReplace[FileBaseName@FileBaseName[sf], {labT -> ""}], "_" ...];
+		df = Select[datFiles, StringContainsQ[#, StringReplace[Last@FileNameSplit[sf], labT -> datT]] &];
+
+		(*check if data file exist*)
+		If[df === {},
+			out = {i++, name, "Data file does not exist"},
+
+			(*import data and label*)
+			{seg, vox} = ImportNii@sf;
+			{dat, voxd} = ImportNii@First@df;
+
+			(*check dimensions and voxel size*)
+			If[vox =!= voxd,
+				out = {i++, name, "Data and segmentation have different voxel size."},
+				If[Dimensions[dat] =!= Dimensions[seg],
+					out = {i++, name, "Data and segmentation have different dimensions size."},
+
+					(*Prepare and analyse the training data and segmentation*)
+					{dat, seg} = PrepTrainData[dat, seg, {inLab, outLab}];
+					
+					(*output label check*)
+					err = CheckSegmentation[seg];
+					out = {i++, name, err};
+					
+					(*Cleanup if needed*)
+					If[clean && (!test), seg = SmoothSegmentation[seg, MaskComponents -> 1, MaskClosing -> True, SmoothItterations -> 1]];
+
+					(*export*)
+					If[!test,
+						im = MakeChannelClassGrid[{dat}, seg, 5];
+						outf = FileNameJoin[{outFol, name}];
+						ExportNii[dat, vox, outf <> "_data.nii"];
+						ExportNii[seg, vox, outf <> "_label.nii"];
+						Export[outf <> ".png", im, "ColorMapLength" -> 256];
+						Export[outf <> ".wxf", {dat, seg, vox}, PerformanceGoal -> "Size", Method -> {"PackedArrayRealType" -> "Real32"}];
+					];
+
+					out
+				]
+			]
+		]
+	, {sf, segFiles}];
+
+	(*export the overview of what has happend*)
+	out = Grid[Prepend[out, Style[#, Bold] & /@ {"#", "Name", "Labels"}], 
+		Spacings -> {1, 1}, Background -> {None, {{White, Lighter@LightGray}}}, Alignment -> Left];
+	Export[FileNameJoin[{outFol, "summary.png"}], ImagePad[Rasterize[out], 6, White]];
+
+	out
+]
+
+
+(* ::Subsubsection:: *)
+(*SplitSegmentations*)
+
+
+SyntaxInformation[CheckSegmentation] = {"ArgumentsPattern" -> {_, _.}};
+
+CheckSegmentation[seg_]:=CheckSegmentation[seg, "label"]
+
+CheckSegmentation[seg_, out_?StringQ] := Block[{arrDep, segs, lab, err},
+	arrDep = ArrayDepth[seg];
+	If[arrDep === 3, {segs, lab} = SplitSegmentations[seg], lab = Range@Length@First@seg; segs = seg];
+	segs = Transpose[segs];
+	err = Thread[{CheckSegmentation[segs, 0], CheckSegmentation[segs, 1]}];
+	lab = Style[#[[1]], Switch[#[[2]],
+		{0, 0}, Black,
+		{1, 1}, {Red, Bold, Italic, Underlined},
+		{1, 0}, {Purple, Bold, Italic, Underlined},
+		{0, 1}, {Blue, Bold, Italic, Underlined}]
+	] & /@ Thread[{lab, err}];
+
+	If[out==="label", lab, err]
+]
+
+CheckSegmentation[seg_, i_?IntegerQ] := Unitize[Max[MorphologicalComponents[Image3D[NumericArray[Abs[i - First@AutoCropData@#], "Integer8"]], CornerNeighbors -> False]] - 1 & /@ seg]
+
+
+(* ::Subsubsection:: *)
 (*PrepTrainData*)
 
 
@@ -1944,6 +2071,21 @@ PrepTrainData[dat_, seg_, {labi_?VectorQ, labo_?VectorQ}] := Block[{cr},
 (* ::Subsection:: *)
 (*Make evaluation images*)
 
+SyntaxInformation[MakeChannelClassGrid] = {"ArgumentsPattern"->{_, _, _., _.}};
+
+MakeChannelClassGrid[dat_, lab_] := MakeChannelClassGrid[dat, lab, MinMax[lab], 3]
+
+MakeChannelClassGrid[dat_, lab_ , ni_?IntegerQ] := MakeChannelClassGrid[dat, lab, MinMax[lab], ni]
+
+MakeChannelClassGrid[dat_, lab_,  {off_, max_}] := MakeChannelClassGrid[dat, lab, {off, max}, 3]
+
+MakeChannelClassGrid[dat_, lab_,  {off_, max_}, ni_?IntegerQ] := Block[{len, n},
+	len = Length@lab;
+	n = Min[{Floor[Sqrt[len]], ni}];
+	RemoveAlphaChannel@ImageAssemble@Partition[
+		ImagePad[MakeChannelClassImage[dat[[{1}, #]], lab[[#]], {off, max}], 4, White
+	] & /@ (Round[Range[1., len, (len - 1)/(n^2 - 1)]]), n]
+]
 
 (* ::Subsubsection::Closed:: *)
 (*MakeChannelClassImage*)
@@ -1951,9 +2093,9 @@ PrepTrainData[dat_, seg_, {labi_?VectorQ, labo_?VectorQ}] := Block[{cr},
 
 SyntaxInformation[MakeChannelClassImage]={"ArgumentsPattern"->{_, _, _., _.}};
 
-MakeChannelClassImage[data_, label_]:=MakeChannelClassImage[data,label,MinMax[label], {1,1,1}]
+MakeChannelClassImage[data_, label_]:=MakeChannelClassImage[data, label, MinMax[label], {1,1,1}]
 
-MakeChannelClassImage[data_,label_, {off_, max_}]:=MakeChannelClassImage[data, label,{off,max}, {1,1,1}]
+MakeChannelClassImage[data_, label_, {off_, max_}]:=MakeChannelClassImage[data, label, {off,max}, {1,1,1}]
 
 MakeChannelClassImage[data_, label_, vox_]:=MakeChannelClassImage[data, label, MinMax[label], vox]
 
@@ -1976,12 +2118,13 @@ MakeClassImage[label_, {off_?NumberQ, max_?NumberQ}]:=MakeClassImage[label, {off
 
 MakeClassImage[label_, vox_?VectorQ]:=MakeClassImage[label, Round@MinMax[label], vox]
 
-MakeClassImage[label_,{off_?NumberQ, maxI_?NumberQ}, vox_?VectorQ]:=Block[{max, cols, imlab, rat},
+MakeClassImage[labelI_,{offI_?NumberQ, maxI_?NumberQ}, vox_?VectorQ]:=Block[{max, cols, imlab, rat, label, off},
 	(*SeedRandom[1345];
 		cols = Prepend[ColorData["DarkRainbow"][#]&/@RandomSample[Rescale[Range[off+1, max]]],Transparent];
 		cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Range[off+1, max]],Transparent];
 	*)
-	max = Max[{Max[label], maxI}];
+	{label, off, max} = Round[{labelI, offI, maxI}];
+	max = Max[{Max[label], max}];
  	cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Join[Select[Range[off + 1, max], EvenQ], Select[Range[off + 1, max], OddQ]]],Transparent];
 	imlab = Round@Clip[If[ArrayDepth[label] === 3, label[[Round[Length@label/2]]], label] - off + 1, {1, max + 1}, {1, 1}];
 	rat = vox[[{2,3}]]/Min[vox[[{2,3}]]];
@@ -2300,7 +2443,7 @@ NetSummary[net_, rep_?StringQ] := Block[{
 		"Full",
 		nodes = DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]];
 		netIm = Information[net, "SummaryGraphic"];
-		nodeIm = Information[NetFlatten[NetTake[net, {#, #}], 1], "SummaryGraphic"] & /@ nodes;
+		nodeIm = Information[NetTake[net, {#, #}][[1]], "SummaryGraphic"] & /@ nodes;
 		TabView[Join[{"summary" -> table, "net" -> netIm}, Thread[nodes -> nodeIm]],
 			ControlPlacement -> Left, Alignment -> Center],
 

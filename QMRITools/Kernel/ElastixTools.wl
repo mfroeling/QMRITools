@@ -370,7 +370,7 @@ ParString[{itterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outp
 	"(ImagePyramidSchedule "<>SchedulePar[resolutions, dtar]<>")",
 	True,""
 ]<>"
-(BSplineInterpolationOrder "<>ToString[intOrder]<>")
+(BSplineInterpolationOrder "<>ToString[Clip[intOrder,{1,3},{1,3}]]<>")
 (FinalBSplineInterpolationOrder "<>ToString[intOrder]<>")
 
 (NumberOfHistogramBins "<>ToString[bins]<>")
