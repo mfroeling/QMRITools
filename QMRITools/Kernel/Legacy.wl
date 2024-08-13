@@ -20,7 +20,7 @@ BeginPackage["QMRITools`Legacy`", Join[{"Developer`"}, Complement[QMRITools`$Con
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -141,6 +141,15 @@ PlotRespiract::usage =
 PlotRespiract[data, dataP, scantimes, steps]."
 
 
+ROIMask::usage = 
+"ROIMask[maskdim, {name->{{{x,y},slice}..}..}] crates mask from coordinates x and y at slice. 
+maskdim is the dimensions of the output {zout,xout,yout}."
+
+
+SetupDataStructure::usage = 
+"SetupDataStructure[dcmFolder] makes nii folders and generates nii files for a directory of dmc data where the data is structured per subject."
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -196,6 +205,8 @@ ReadBrukerDiff::seq = "File 2dseq not found at: `1`."
 ReadBrukerDiff::proc = "File d3proc not found at: `1`."
 
 ReadBrukerDiff::meth = "File meth not found at: `1`."
+
+ROIMask::war = "there are more slices in the roi set than in the given dimensions."
 
 
 (* ::Section:: *)
@@ -1222,6 +1233,9 @@ StringJoin@(ToString /@ {
 })]
 
 
+(* ::Subsection::Closed:: *)
+(*PlotData3D Old*)
+
 (*
 SyntaxInformation[PlotData3D] = {"ArgumentsPattern" -> {_, _.}};
 
@@ -2045,17 +2059,11 @@ PlotData3D[data_, vox:{_,_,_}:{1,1,1}] :=
   ]
 *)
 
-(*CreateWindow[DialogNotebook[
-    {CancelButton["Close", DialogReturn[]],*) 
-
 
 (* ::Subsection:: *)
 (*MakeUnet - old*)
 
 (*
-(* ::Subsubsection::Closed:: *)
-(*MakeUnet*)
-
 
 Options[MakeUnet] = {
 	BlockType -> "ResNet", 
@@ -2117,10 +2125,6 @@ MakeUnet[nChan_, nClass_, dimIn_, OptionsPattern[]] := Block[{
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*UNetMap*)
-
-
 UNetMap[dim_, nClass_] :=  Flatten[{
 	ConvolutionLayer[nClass, 1], If[nClass > 1,	
 		{TransposeLayer[Switch[Length@dim, 2, {3, 1, 2}, 3, {4, 1, 2, 3}]], SoftmaxLayer[]},
@@ -2129,15 +2133,7 @@ UNetMap[dim_, nClass_] :=  Flatten[{
 }]
 
 
-(* ::Subsubsection::Closed:: *)
-(*UNetStart*)
-
-
 UNetStart[filt_, nChan_, dimIn_, actType_] := {ConvolutionLayer[If[IntegerQ[filt],filt,First@filt], 1, "Input" -> Prepend[dimIn, nChan]], BatchNormalizationLayer[], ActivationLayer[actType]}
-
-
-(* ::Subsubsection::Closed:: *)
-(*ConvNode*)
 
 
 Options[ConvNode] = {
@@ -2232,10 +2228,6 @@ ConvNode[chan_, OptionsPattern[]] := Block[{
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*ConvBlock*)
-
-
 Options[ConvBlock] = {
 	"Dimensions" -> "3D",
 	"ActivationType" -> "GELU",
@@ -2265,16 +2257,103 @@ ConvBlock[channels_, OptionsPattern[]] := Block[{
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*ActivationLayer*)
-
-
 ActivationLayer[actType_] := If[StringQ[actType],
 	Switch[actType, "LeakyRELU", ParametricRampLayer[], "None", Nothing, _, ElementwiseLayer[actType]],
 	actType
 ]
+
+
 *)
 
+
+
+(* ::Subsection::Closed:: *)
+(*ROIMask*)
+
+
+SyntaxInformation[ROIMask] = {"ArgumentsPattern" -> {_, _, _.}};
+
+ROIMask[roiDim_, maskdim_,ROI:{(_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..})..}]:=
+Module[{output},
+	output=Map[#[[1]]->ROIMask[roiDim,maskdim,#[[2]]]&,ROI];
+	Print["The Folowing masks were Created: ",output[[All,1]]];
+	Return[output]
+	]
+
+ROIMask[roiDim_,maskdim_,ROI:{{_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}}..}]:=
+Module[{output},
+	output=Map[#[[1,1]]->ROIMask[roiDim,maskdim,#[[1,2]]]&,ROI];
+	Print["The Folowing masks were Created: ",output[[All,1]]];
+	Return[output]
+	]
+
+ROIMask[roiDim_,maskdim_,ROI:{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}]:=
+Module[{output,roiCor,roiSlice,msk},
+	output=ConstantArray[0,Join[{roiDim[[1]]},maskdim]];
+	If[ROI[[All,1]]!={{{0,0}}},
+		roiCor=Round[ROI[[All,1]]];
+		roiSlice=Clip[ROI[[All,2]],{1,roiDim[[1]]}];
+		msk=1-ImageData[Image[Graphics[Polygon[#],PlotRange->{{0,roiDim[[3]]},{0,roiDim[[2]]}}],"Bit",ColorSpace->"Grayscale",ImageSize->maskdim]]&/@roiCor;
+		MapIndexed[output[[#1]]=msk[[First[#2]]];&,roiSlice];
+		];
+	Return[output];
+	]
+
+ROIMask[maskdim_,ROI:{(_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..})..}]:=
+Module[{output},
+	output=Map[#[[1]]->ROIMask[maskdim,#[[2]]]&,ROI];
+	Print["The Folowing masks were Created: ",output[[All,1]]];
+	Return[output]
+	]
+
+ROIMask[maskdim_,ROI:{{_?StringQ->{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}}..}]:=
+Module[{output},
+	output=Map[#[[1,1]]->ROIMask[maskdim,#[[1,2]]]&,ROI];
+	Print["The Folowing masks were Created: ",output[[All,1]]];
+	Return[output]
+	]
+
+ROIMask[maskdim_,ROI:{{{{_?NumberQ,_?NumberQ}..},_?NumberQ}..}]:=
+Module[{output, roiCor, roiSlice, msk},
+ output = ConstantArray[0, maskdim];
+ If[ROI[[All, 1]] != {{{0, 0}}},
+  roiCor = Round[Map[Reverse[maskdim[[2 ;; 3]]]*# &, ROI[[All, 1]], {2}]];
+  If[Max[ROI[[All, 2]]] > maskdim[[1]], Message[ROIMask::war]];
+  roiSlice = Clip[ROI[[All, 2]], {1, maskdim[[1]]}];
+  msk = 1 - 
+      ImageData[
+       Image[Graphics[Polygon[#], 
+         PlotRange -> {{0, maskdim[[3]]}, {0, maskdim[[2]]}}], "Bit", 
+        ColorSpace -> "Grayscale", 
+        ImageSize -> maskdim[[2 ;; 3]]]] & /@ roiCor;
+  MapIndexed[output[[#1]] = msk[[First[#2]]]; &, roiSlice];
+  ];
+ Return[output];]
+
+
+(* ::Subsection::Closed:: *)
+(*SetupDataStructure*)
+
+
+SetupDataStructure[dcmFolder_] := 
+ Module[{folderdcm, foldernii, folderout, folders,fol, niiFolder, outFolder},
+  folderdcm = Directory[] <> $PathnameSeparator <> # & /@ Select[FileNames["*", "dcm"], DirectoryQ];
+
+  foldernii = StringReplace[#, "dcm" -> "nii"] & /@ folderdcm;
+  folderout = StringReplace[#, "dcm" -> "out"] & /@ folderdcm;
+  folders = Transpose[{folderdcm, foldernii, folderout}];
+  
+  fol = Last@FileNameSplit[dcmFolder];
+  niiFolder = StringReplace[dcmFolder, fol -> "nii"];
+  outFolder = StringReplace[dcmFolder, fol -> "out"];
+  If[! DirectoryQ[niiFolder], CreateDirectory[niiFolder]];
+  If[! DirectoryQ[outFolder], CreateDirectory[outFolder]];
+  
+  (*create nii files*)
+  If[! DirectoryQ[#[[2]]], CreateDirectory[#[[2]]]; DcmToNii[#[[1 ;; 2]]]] & /@ folders;
+  
+  folders
+]
 
 
 (* ::Section:: *)
