@@ -232,6 +232,9 @@ BlockType::usage =
 DropoutRate::usage = 
 "DropoutRate is an option for MakeUnet. It specifies how musch dropout is used after each block. It is a value between 0 and 1, default is .2."
 
+RescaleMethod::usage =
+"RescaleMethod is an option for MakeUnet. It specifies how the network rescales. It can be \"Conv\" or \"Pool\"."
+
 NetworkDepth::usage = 
 "NetworkDepth is an option for MakeUnet. It specifief how deep the UNET will be."
 
@@ -346,6 +349,9 @@ SurfaceDistance::met = "Method `1` not recognized";
 Begin["`Private`"] 
 
 
+QMRITools`SegmentationTools`$debugUnet = False;
+
+
 (* ::Subsection::Closed:: *)
 (*GetNeuralNet*)
 
@@ -380,7 +386,9 @@ Options[MakeUnet] = {
 	DropoutRate -> 0.2, 
 	BlockType -> "ResNet", 
 	ActivationType -> "GELU",
+	RescaleMethod -> "Conv",
 	NetworkDepth -> 5,
+	NetworkArchitecture -> "UNet",
 
 	DownsampleSchedule -> Automatic,
 	SettingSchedule -> Automatic,
@@ -394,11 +402,13 @@ SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]
 MakeUnet[nClass_?IntegerQ, dimIn_, opts : OptionsPattern[]] := MakeUnet[1, nClass, dimIn, opts]
 
 MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
-		ndim, depth, nam, drop, blockType, actType, scaling, feature, setting, mon, net, boolSc
+		ndim, depth, nam, drop, blockType, actType, scaling, feature, setting, mon, net, boolSc, metSc
 	},
 
-	{drop, blockType, actType, depth, scaling, feature, setting, mon} = 
-		OptionValue[{DropoutRate, BlockType, ActivationType, NetworkDepth, DownsampleSchedule, FeatureSchedule, SettingSchedule, MonitorCalc}];
+	{drop, blockType, actType, depth, scaling, feature, setting, mon, metSc, arch} = 
+		OptionValue[{DropoutRate, BlockType, ActivationType, NetworkDepth, 
+			DownsampleSchedule, FeatureSchedule, SettingSchedule, MonitorCalc, 
+			RescaleMethod, NetworkArchitecture}];
 
 	If[mon, Echo[{blockType, actType}, "Network block type: "]];
 
@@ -445,35 +455,85 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 	If[VectorQ[feature], feature = Round[Transpose[{feature, feature/2}]]];
 	If[mon, Echo[feature, "Network feature shedual: "]];
 
-
 	(*make the network*)
-	nam = #1 <> ToString[#2] &;
-	net = NetGraph[
-		(*define the blocks*)
-		Join[
-			(*encoding layers*)
-			Table[nam["enc_", i] -> MakeNode[{"Encode", If[i==depth, 1, scaling[[i]]], drop}, {{blockType, setting[[i]]}, feature[[i]], {actType, ndim}}, feature[[i, 1]]], {i, 1, depth}],
-			(*deconding layers*)
-			Table[nam["dec_", i] -> MakeNode[{"Decode", scaling[[i]], drop (*If[i === 1, 0, drop]*)}, {{blockType, setting[[i]]}, feature[[i]], {actType, ndim}}, feature[[i,1]]], {i, 1, depth - 1}],
-			(*start and mapping*)
-			{"start" -> UNetStart[nChan, Last@Flatten@{First@feature}, dimIn, actType],
-			"map" -> UNetMap[ndim, nClass]}
-		],
+	Switch[arch,
+		"UNet",
+		nam = #1 <> ToString[#2] &;
+		net = NetGraph[
+			(*define the blocks*)
+			Sort@Join[
+				(*encoding layers*)
+				Table[If[$debugUnet, Print[nam["enc_", i]]]; nam["enc_", i] -> MakeNode[
+					{1, If[i==depth, 1, scaling[[i]]]}, {1, True},
+					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},(*config*)
+					DropoutRate -> drop, RescaleMethod -> metSc
+				], {i, 1, depth}],
+				(*deconding layers*)
+				Table[If[$debugUnet, Print[nam["dec_", i]]];nam["dec_", i] -> MakeNode[
+					{scaling[[i]], 1}, {1, False},
+					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},(*config*)
+					DropoutRate -> drop, RescaleMethod -> metSc
+				], {i, 1, depth - 1}],
+				(*start and mapping*)
+				{"start" -> UNetStart[nChan, Last@Flatten@{First@feature}, dimIn, actType],
+				"map" -> UNetMap[ndim, nClass]}
+			],
 
-		(*define the connections*)
-		Join[
-			Flatten@Table[{
-				NetPort[nam["enc_", i], If[boolSc[[i]],"Scale","Skip"]] -> nam["enc_", i + 1],
-				NetPort[nam["enc_", i], "Skip"] -> NetPort[nam["dec_", i], "Skip"],
-				If[i === depth - 1, NetPort[nam["enc_", i + 1], "Skip"], nam["dec_", i + 1]] -> NetPort[nam["dec_", i], "Scale"]
-			}, {i, 1, depth - 1}],
-			{"start" -> "enc_1", "dec_1" -> "map"}
-		], 
-		
-		(*network settings and options*)
-		"Input" -> Join[{nChan}, dimIn]
+			(*define the connections*)
+			cons = Join[
+				Flatten@Table[{
+					NetPort[nam["enc_", i], If[boolSc[[i]],"Down","Skip"]] -> nam["enc_", i + 1],
+					NetPort[nam["enc_", i], "Skip"] -> NetPort[nam["dec_", i], "Skip"],
+					If[i === depth - 1, NetPort[nam["enc_", i + 1], "Skip"], nam["dec_", i + 1]] -> NetPort[nam["dec_", i], "Scale"]
+				}, {i, 1, depth - 1}],
+				{"start" -> "enc_1", "dec_1" -> "map"}
+			];
+			If[$debugUnet, Print[cons]]; cons, 
+			
+			(*network settings and options*)
+			"Input" -> Join[{nChan}, dimIn]
+		];
+
+		,
+		"UNet+"|"UNet++",
+		nam = "node_"<>ToString[#1]<>"_"<>ToString[#2] &;
+		sk = "Skip"<>ToString[#1]&;
+		depthj = depth + 1;
+		net = NetGraph[
+			Join[
+				(*Make all the nodes*)
+				Flatten@Table[If[$debugUnet, Print[nam[i, j]]];	nam[i, j] -> MakeNode[
+					{If[j > 1, scaling[[i]], 1], If[j=!=1 || i==depth, 1, scaling[[i]]]}, 
+					{If[j > 1, If[arch==="UNet++", j-1, 1], 1], If[j < depthj - i, True, False]},
+					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},(*config*)
+					DropoutRate -> drop, RescaleMethod -> metSc
+				], {i, 1, 5}, {j, 1, depthj - i}],
+				(*start and mapping*)
+				{"start" -> UNetStart[nChan, Last@Flatten@{First@feature}, dimIn, actType],
+				"map" -> UNetMap[ndim, nClass, depth-1]}
+			],
+			cons = Sort@Join[
+				Flatten@Table[{
+					If[j === 1 && i=!= depth, NetPort[nam[i, j], If[boolSc[[i]], "Down", "Skip"]] -> nam[i + 1, j], Nothing],
+					If[1 < i < depth, NetPort[nam[i, j], If[j==depthj-i, "Up", "Skip"]] -> NetPort[nam[i-1, j+1], "Scale"],  Nothing],
+					If[i == depth, nam[i, j] -> NetPort[nam[i-1, j+1], "Scale"], Nothing],
+					Switch[arch,
+						"UNet+",
+						If[j < depthj - i && i=!= depth, NetPort[nam[i, j], "Skip"] -> NetPort[nam[i, j + 1], "Skip"], Nothing],
+						"UNet++",
+						If[j < depthj - i && i=!= depth, 
+							NetPort[nam[i, j], "Skip"] -> Table[NetPort[nam[i, ji], If[ji===2, "Skip", sk[j]]], {ji, j + 1, depthj - i}]
+						, Nothing]
+					]
+				}, {i, 1, depth}, {j, 1, depthj - i}],
+				{"start" -> "node_1_1", Table[NetPort["node_1_"<>ToString[n], If[n=!=depth,"Skip","Up"]], {n, 2, depth}] -> "map"}
+			];
+			If[$debugUnet, Print[cons]]; cons, 
+			
+			(*network settings and options*)
+			"Input" -> Join[{nChan}, dimIn]		
+		]
 	];
-
 	(*Monitor network properties*)
 	If[mon, Echo[NetSummary[net], "Network discription: "]];
 
@@ -492,66 +552,72 @@ UNetStart[nChan_, feat_, dimIn_, actType_] := NetGraph[NetChain[Conv[feat , {Len
 (* ::Subsubsection::Closed:: *)
 (*ClassMap*)
 
+UNetMap[dim_, nClass_]:=UNetMap[dim, nClass, 1]
 
-UNetMap[dim_, nClass_] := NetGraph@NetChain@Flatten[{ConvolutionLayer[nClass, 1], 
-	If[nClass > 1, 
-		{TransposeLayer[Which[dim === 2, {3, 1, 2}, dim === 3, {4, 1, 2, 3}]], SoftmaxLayer[]}, 
-		{LogisticSigmoid, FlattenLayer[1]}
-	]
-}]
+UNetMap[dim_, nClass_, n_] := Block[{map},
+	map = Flatten[{ConvolutionLayer[nClass, 1], 
+		If[nClass > 1, 
+			{TransposeLayer[Which[dim === 2, {3, 1, 2}, dim === 3, {4, 1, 2, 3}]], SoftmaxLayer[]}, 
+			{LogisticSigmoid, FlattenLayer[1]}
+		]}];
+	map = If[n>1,Prepend[map, CatenateLayer[]], map];
+	NetGraph@NetChain@map
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MakeNode*)
 
+Options[MakeNode] = {
+	DropoutRate -> 0,
+	RescaleMethod -> "Pool"
+}
 
-SyntaxInformation[MakeNode] = {"ArgumentsPattern" -> {_, _, _.}};
+SyntaxInformation[MakeNode] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-MakeNode[nodeType_?StringQ, blockConfig_] := MakeNode[{nodeType, 1, 0}, blockConfig, 0]
-
-MakeNode[nodeType_?StringQ, blockConfig_, chan_?IntegerQ] := MakeNode[{nodeType, 1, 0}, blockConfig, chan]
-
-MakeNode[{nodeType_, scale_}, blockConfig_] := MakeNode[{nodeType, scale, 0}, blockConfig, 0]
-
-MakeNode[{nodeType_, scale_, drop_}, blockConfig_]:= MakeNode[{nodeType, scale, drop}, blockConfig, 0]
-
-MakeNode[{nodeType_, scale_}, blockConfig_, chan__?IntegerQ] := MakeNode[{nodeType, scale, 0}, blockConfig, chan]
-
-MakeNode[{nodeType_, scale_, drop_}, blockConfig_, chan__?IntegerQ] := Block[{
-		block, scaleVec, dropL, scaleL, boolSc, boolDr
+MakeNode[{scUp_ ,scDown_}, {skIn_, skOut_}, blockConfig_, OptionsPattern[]] := Block[{
+		drop, metSc, chan, dim, block, scaleUp, boolScUp, scale, scaleDown, boolScDown, 
+		boolDr, con, boolCat, cat, catIn, skip
 	},
+	{drop, metSc} = OptionValue[{DropoutRate, RescaleMethod}];
+	chan = First@Flatten@{blockConfig[[2]]};
+	dim = blockConfig[[3, 2]];
 
-	(*make the block*)
-	block = ConvBlock @@ blockConfig;
-	(*chan = Last@Flatten@{blockConfig[[2]]};*)
+	If[$debugUnet, Print[Column@{{scUp ,scDown}, {skIn, skOut}, {drop, metSc}, blockConfig}]];
 
-	(*make correct scale vector*)
-	scaleVec = If[IntegerQ[scale], ConstantArray[scale, blockConfig[[3, 2]](*dim*)], scale];
+	block = "block" -> ConvBlock @@ blockConfig;
 
-	(*figure if scaling or dropout is needed*)
-	boolSc = Times @@ scaleVec =!= 1;
+	scaleUp = scUp /. False -> 1;
+	scaleUp = If[IntegerQ[scaleUp], ConstantArray[scaleUp, dim], scaleUp];
+	boolScUp = Times @@ scaleUp =!= 1;
+	scaleUp = If[boolScUp, "scaleU" -> ConvScale[{"Decode", metSc}, scaleUp, chan], Nothing];
+	scale = If[boolScUp, NetPort["Scale"] -> "scaleU", NetPort["Scale"]];
+
+	scaleDown = scDown /. False -> 1;
+	scaleDown = If[IntegerQ[scaleDown], ConstantArray[scaleDown, dim], scaleDown];
+	boolScDown = Times @@ scaleDown =!= 1;
+	scaleDown = If[boolScDown, "scaleD" -> ConvScale[{"Encode", metSc}, scaleDown, chan], Nothing];
+
 	boolDr = 0 < drop;
+	drop = If[boolDr, "drop" -> DropoutLayer[drop], Nothing];
+	con = If[boolDr, "drop", "block"];
 
-	(*figure out dropout*)
-	dropL = If[boolDr, "drop" -> DropoutLayer[drop], Nothing];
-	scaleL = If[boolSc, "scale" -> ConvScale[nodeType, scaleVec, chan], Nothing];
+	boolCat = skIn > 0 && boolScUp;
+	cat = If[boolCat, "cat" -> CatenateLayer[], Nothing];
+	catIn = If[boolCat, Append[If[skIn>1, Table[NetPort["Skip"<>ToString[i]], {i, skIn}], {NetPort["Skip"]}], scale], Nothing];
+	skip = If[skOut=!=False, con -> NetPort["Skip"<>If[IntegerQ[skOut], ToString[skOut], ""]], Nothing];
 
-	NetGraph@NetFlatten[Switch[nodeType, 
-		"Encode", 
-		NetGraph[{"block" -> block, scaleL, dropL}, Which[
-			boolSc && boolDr, {"block"->"drop"->"scale"->NetPort["Scale"], "drop" -> NetPort["Skip"]},
-			boolSc, {"block"->"scale"->NetPort["Scale"], "block"->NetPort["Skip"]},
-			boolDr, {"block"->"drop"->NetPort["Skip"]},
-			True, {"block"->NetPort["Skip"]}
-		]],
+	node = NetGraph@NetFlatten[NetGraph[{block, drop, scaleUp, scaleDown, cat
+		(*cat, block, scaleUp, scaleDown, drop*)}, {
+			If[boolDr, "block" -> "drop", Nothing],
+			If[boolScUp && skOut===False, con -> NetPort["Up"], Nothing],
+			If[boolScDown, con -> "scaleD" -> NetPort["Down"], Nothing],
+			If[boolCat, catIn -> "cat" -> "block", Nothing],
+			skip
+	}],1];
 
-		"Decode",
-		NetGraph[{"cat" -> CatenateLayer[], "block" -> block, scaleL, dropL}, {
-			{NetPort["Skip"],  If[boolSc, NetPort["Scale"] -> "scale", NetPort["Scale"]]} -> "cat" ,
-			"cat"-> "block",
-			If[boolDr, "block"->"drop", Nothing]
-		}]
-	], 1]
+	If[$debugUnet, Print[node]];
+	node
 ]
 
 
@@ -559,17 +625,20 @@ MakeNode[{nodeType_, scale_, drop_}, blockConfig_, chan__?IntegerQ] := Block[{
 (*ConvScale*)
 
 
-ConvScale["Decode", scaleVec_, chan_] := {ResizeLayer[Scaled /@ scaleVec, Resampling -> "Nearest"]}
-
-ConvScale["Encode", scaleVec_, chan_] := {PoolingLayer[scaleVec, scaleVec]}
-
-ConvScaleC["Encode", scaleVec_, chan_] := {ConvolutionLayer[chan, scaleVec, "Stride" -> scaleVec]}
-
-ConvScaleC["Decode", scaleVec_, chan_] := {
-	ResizeLayer[Scaled /@ scaleVec, Resampling -> "Nearest"],
-	ConvolutionLayer[chan, scaleVec, "Stride" -> 0 scaleVec + 1, 
-		"PaddingSize" -> (If[OddQ[#], {(Ceiling[#/2] - 1), (Ceiling[#/2] - 1)}, {0, #/2}] & /@ scaleVec)]
-}
+ConvScale[type_, scaleVec_, chan_] = Switch[type,
+	{"Encode","Pool"}, 
+	{PoolingLayer[scaleVec, scaleVec]},
+	{"Encode","Conv"}, 
+	{ConvolutionLayer[chan, scaleVec, "Stride" -> scaleVec]},
+	{"Decode","Pool"}, 
+	{ResizeLayer[Scaled /@ scaleVec, Resampling -> "Nearest"]},
+	{"Decode","Conv"}, 
+	{
+		ResizeLayer[Scaled /@ scaleVec, Resampling -> "Nearest"],
+		ConvolutionLayer[chan, scaleVec, "Stride" -> 0 scaleVec + 1, 
+			"PaddingSize" -> (If[OddQ[#], {(Ceiling[#/2] - 1), (Ceiling[#/2] - 1)}, {0, #/2}] & /@ scaleVec)]
+	}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -587,13 +656,12 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_}] := ConvBlock[block, {featO
 ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 		blockType, type, blockSet, repBlock, dep, rep, nam, dilf, sclf
 	},
-(*short notation for naming layers*)
-nam = #1 <> ToString[#2] &;
-(*get the block settings if not defined*)
-{blockType, blockSet} = If[Length[block] === 2, block, {block, block /. netDefaults}];
+	(*short notation for naming layers*)
+	nam = #1 <> ToString[#2] &;
+	(*get the block settings if not defined*)
+	{blockType, blockSet} = If[Length[block] === 2, block, {block, block /. netDefaults}];
 
-(*swtich between the different block types*)
-(*NetGraph@NetFlatten@*)
+	(*swtich between the different block types*)
 	Switch[blockType,
 		"Conv", 
 		dep = blockSet;
@@ -646,8 +714,14 @@ nam = #1 <> ToString[#2] &;
 		sclf = If[! #1, 1, 2] &;
 		NetGraph[
 			Join[
-				Table[nam["enc_", i] -> MakeNode[{"Encode", If[i == dep, 1, sclf[type]]}, {"Conv", featInt, {act, 3, dilf[type, i, 1]}}, featInt], {i, 1, dep}],
-				Table[nam["dec_", i] -> MakeNode[{"Decode", sclf[type]}, {"Conv", If[i === 1, featOut, featInt], {act, 3, dilf[type, i, 1]}}, featInt], {i, 1, dep - 1}],
+				Table[nam["enc_", i] -> MakeNode[
+					{"Encode", If[i == dep, 1, sclf[type]]}, 
+					{"Conv", featInt, {act, 3, dilf[type, i, 1]}}
+				], {i, 1, dep}],
+				Table[nam["dec_", i] -> MakeNode[
+					{"Decode", sclf[type]}, 
+					{"Conv", If[i === 1, featOut, featInt], {act, 3, dilf[type, i, 1]}}
+				], {i, 1, dep - 1}],
 				{"start" -> Conv[featOut, {dim, 1}, act], "add" -> TotalLayer[]}
 			], 
 			Join[
@@ -1266,7 +1340,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		time = First@AbsoluteTiming[
 			{{patch, pts, dim}, loc, set} = SplitDataForSegementation[Mask[NormalizeData[data], 10] data, Monitor->mon]
 		];
-		If[mon, mon||StringQ[mon][Round[time, .1], "Total time for analysis [s]: "]];
+		If[mon, Echo[Round[time, .1], "Total time for analysis [s]: "]];
 		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimenisons:"]];
 
 		(*get the network name and data type*)
@@ -1282,7 +1356,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 			segs = ApplySegmentationNetwork[#1, net[#2], TargetDevice -> dev, MaxPatchSize->max, Monitor->mon];
 			ReplaceLabels[segs, #2, type]
 		) &, {patch, loc}]];
-		If[mon||StringQ[mon], Echo[Round[time, .1], "Total time for segmentations [s]: "]];
+		If[mon, Echo[Round[time, .1], "Total time for segmentations [s]: "]];
 
 		(*Merge all segmentations for all expected labels*)
 		all = Select[DeleteDuplicates[Sort[Flatten[GetSegmentationLabels/@segs]]], IntegerQ];
@@ -1290,9 +1364,9 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		
 		(*after this only one cluster per label remains*)
 		time = First@AbsoluteTiming[segs = PatchesToData[segs, pts, dim, all]];
-		If[mon||StringQ[mon], Echo[Round[time, .1], "Total time for final evaluation [s]: "]];
+		If[mon, Echo[Round[time, .1], "Total time for final evaluation [s]: "]];
 	];
-	If[mon||StringQ[mon], Echo[Round[timeAll, .1], "Total evaluation time [s]: "]];
+	If[mon, Echo[Round[timeAll, .1], "Total evaluation time [s]: "]];
 
 	segs
 ]
@@ -1338,7 +1412,7 @@ SplitDataForSegementation[data_?ArrayQ, OptionsPattern[]]:=Block[{
 	(*find which side using NN*)
 	time= First@AbsoluteTiming[whatSide = ClassifyData[data, "LegSide"]];
 	If[mon, Echo[whatSide, "Data contains sides: "]];
-	If[mon, Echo[time, "Time for side estimation [s]:"]];
+	If[mon, Echo[Round[time, .1], "Time for side estimation [s]:"]];
 
 	(*based on side cut data or propagate*)
 	dat = If[whatSide === "Both",
@@ -1363,7 +1437,7 @@ SplitDataForSegementation[data_?ArrayQ, OptionsPattern[]]:=Block[{
 	)&/@dat, 1]];
 
 	If[mon, Echo[whatPos, "Data contains positions: "]];
-	If[mon, Echo[time, "Time for position estimation [s]:"]];
+	If[mon, Echo[Round[time, .1], "Time for position estimation [s]:"]];
 
 	{dat, pts, loc} = Transpose[CropPart/@dat];
 

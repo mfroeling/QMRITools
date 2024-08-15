@@ -7,7 +7,7 @@ Echo[dir];
 
 Print["\nLoading QMRITools"];
 t1 = First@AbsoluteTiming[load = Get["QMRITools`"]];
-Echo[t1, "Loading time [s]: "];
+Echo[Round[t1,.1], "Loading time [s]: "];
 
 If[load === $Failed,
 	Echo["Could not load QMRITools"];
@@ -25,14 +25,11 @@ If[load === $Failed,
 	If[!in,
 		Print["\nCould not find input file."];
 		,
-		t2 = First@AbsoluteTiming[
-			{dat, vox} = ImportNii[infile];
-		
-			Print["\nPerforming segmentation"];
-			seg = SegmentData[dat, "Legs", TargetDevice->"CPU", Monitor->True];
-		];
-		Echo[t2, "Segmentation time [s]: "];
-		
+		{dat, vox} = ImportNii[infile];
+	
+		Print["\nPerforming segmentation"];
+		seg = SegmentData[dat, "Legs", TargetDevice->"CPU", Monitor->True];
+			
 		Print["\nExporting segmentation to "]
 		Echo[outfile];
 		

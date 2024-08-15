@@ -144,4 +144,4 @@ Get["Developer`"];
 
 (*Protect definitions*)
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
-Unprotect/@{"QMRITools`ElastixTools`$debugElastix", "QMRITools`$Log"};
+Unprotect/@{"QMRITools`ElastixTools`$debugElastix", "QMRITools`SegmentationTools`$debugUnet", "QMRITools`$Log"};

@@ -416,7 +416,7 @@ BidsDcmToNiiI[fol_, outI_, logFile_]:=Block[{out},
 	If[EmptyDirectoryQ[out],
 		(*perform conversion*)			
 		(*----*)AddToLog["Starting the conversion", 1, True];
-		DcmToNii[FileNameJoin[{Directory[],#}]&/@{fol,out}, MonitorCalc->False];
+		DcmToNii[FileNameJoin[{Directory[],#}]&/@{fol,out}, MonitorCalc->False, UseVersion->"23"];
 		(*----*)AddToLog["Folder was converted", 1],
 		(*----*)AddToLog["Folder was skipped since output folder already exists", 1];
 	];
@@ -922,7 +922,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
 		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
 		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk, 
-		phii, phbpi, phbp, ta, filt
+		phii, phbpi, phbp, ta, filt, field
 	},
 	
 	(*get the context for exporting*)
@@ -985,7 +985,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 	
 							(*import the data*)
 							json = ImportJSON[jfile];
-							echos = json["EchoTime"];
+							{echos, field} = json /@ {"EchoTime", "MagneticFieldStrength"};
+
 							{{real, imag}, dvox} = Transpose[ImportNii/@nfiles];
 							dvox = First@dvox;
 							
@@ -1016,7 +1017,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, logFile_, verCheck_]:=Block[{
 							(*fit with DB fat model*)
 							{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 								{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-								DixonPhases -> {True, True, True, True, True}, DixonFixT2 -> False, 
+								DixonPhases -> {True, True, True, True, True}, 
+								DixonFixT2 -> False, DixonFieldStrength -> field, 
 								DixonAmplitudes -> "CallDB", DixonTollerance->1];
 							
 							{wat, fat} = Abs[{wat, fat}];
