@@ -67,7 +67,8 @@ RescaleSegmentation[data, {vox1, vox2}] rescales segmentations from voxelsize vo
 
 MergeSegmentations::usage = 
 "MergeSegmentations[masks, labels] generates an ITKsnap or slices3D compatible segmentation from individual masks and label numbers.
-Output is a labled segmentation."
+Output is a labled segmentation.
+MergeSegmentations[masks] does the same but automatically numbers the segmentations."
 
 SelectSegmentations::usage =
 "SelectSegmentations[seg, labs] selects only the segmentaions from seg with label number labs."
@@ -239,19 +240,6 @@ HomogenizeData[dat_, opts:OptionsPattern[]]:=HomogenizeData[dat, Unitize[dat], o
 HomogenizeData[dat_, mask_, OptionsPattern[]] := Block[{fit},
 	fit = FitGradientMap[Erosion[mask, 1] GaussianFilter[dat, 5], OptionValue[FitOrder]];
 	NormalizeData[Clip[mask DevideNoZero[dat, fit], {0, 3}, {0, 0}]]
-]
-
-
-FitGradientMap[data_, ord_] := Block[{func, x, y, z, coor, mod, min, max},
-	Clear[x, y, z];
-	coor = Flatten[MapIndexed[ReleaseHold@If[#1 == 0, Hold[Sequence[]], Join[#2, {#1}]] &, data, {3}], 2];
-	mod = DeleteDuplicates[Times @@ # & /@ Tuples[{1, x, y, z}, ord]];
-	
-	{min, max} = Quantile[coor[[All, 4]], {0.15, 0.95}];
-	func = Fit[Select[coor, min < #[[4]] < max &], mod, {x, y, z}];
-	
-	{x, y, z} = RotateDimensionsRight[Array[{#1, #2, #3} &, Dimensions[data]]];
-	func
 ]
 
 
@@ -464,7 +452,9 @@ SplitSegmentations[segI_, sparse_] := Block[{seg, dim, exVals, exPos, vals},
 (*MergeSegmentations*)
 
 
-SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_,_}};
+SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_, _.}};
+
+MergeSegmentations[seg_]:= MergeSegmentations[seg, Range[Length[First@seg]]]
 
 MergeSegmentations[seg_, lab_] := Block[{mt, nv},
 	mt = Transpose[If[!SparseArrayQ@seg, SparseArray@Round@seg, seg]];
