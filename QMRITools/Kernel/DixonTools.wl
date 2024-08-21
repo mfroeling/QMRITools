@@ -267,7 +267,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	(*unwrapping funciton*)
 	unwrapF = Switch[OptionValue[UnwrapDimension],
 		"2D", msk(UnwrapDCT/@(msk #))&,
-		"3D", msk(UnwrapDCT[msk #])&
+		"3D", msk(UnwrapDCT[msk #, 0. msk + 1.])&
 	];
 	
 	(*start optimization*)
@@ -418,7 +418,8 @@ Options[DixonReconstruct] = {
 	DixonCorrectT1-> False,
 	DixonFixT2 ->False,
 	DixonConstrainPhase -> False,
-	MonitorCalc -> False
+	MonitorCalc -> False,
+	DixonFitPhase -> False
 };
 
 
@@ -462,7 +463,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	{eta, maxItt, thresh} = OptionValue[{DixonTollerance, DixonIterations, DixonMaskThreshhold}];
 
 	(*define filter for input and output*)
-	{filti, filto} = OptionValue[{DixonFilterInput, DixonFilterOutput}];
+	{filti, filto, fitphase} = OptionValue[{DixonFilterInput, DixonFilterOutput, DixonFitPhase}];
 	filtFunc = Switch[OptionValue[DixonFilterType],"Median", MedFilter, "Laplacian",LapFilter][#, OptionValue[DixonFilterSize]]&;
 	
 	(*Get the T1 correction Factor*)
@@ -516,10 +517,19 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*define data and complex field map and background phase for fitting*)
 	complex = RotateDimensionsLeft@MaskData[complex, mask];
 	r2 = If[t2i === 0, 0, DevideNoZero[1., Clip[t2i, {0., 0.25}, {0., 0.25}]]];
-	phi = {r2, b0i, phbi, ph0i, 0}[[sel]];
-	phi = If[# === 0||# === zero, zero, mask If[filti, filtFunc[#], #]]& /@ phi;
-	phi = RotateDimensionsLeft@phi;
+	phi = {r2, b0i, phbi, ph0i, 0};
 
+	If[!fitphase,
+		phi = If[# === 0||# === zero, zero, mask If[filti, filtFunc[#], #]]& /@ phi;
+		,
+		masks = DilateMask[mask, -4];
+		phi = Table[ph = phi[[i]];
+				If[ph === 0||ph === zero, zero,
+					If[filti, If[sel[[i]] <= 2, filtFunc[ph], FitGradientMap[{ph, masks}, 3, 50]], ph]
+				]
+			, {i, Range@Length@sel}];
+	];
+	phi = RotateDimensionsLeft@phi;
 
 	(*---- the actual fitting ----*)
 
@@ -542,8 +552,14 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		If[!con && MemberQ[sel, 4], phi[[ipi]] += Arg[Total[result[[1 ;; 2]] + result[[Ceiling[n/2] + 1 ;; Ceiling[n/2] + 2]] I]] / (2 Pi)];
 
 		(*smooth b0 field and R2star maps*)
-		phi = mask RotateDimensionsLeft[filtFunc /@ phi];
-		
+		If[!fitphase,
+			phi = mask RotateDimensionsLeft[filtFunc /@ phi];
+			,
+			phi = mask RotateDimensionsLeft[Table[
+				If[sel[[i]] <= 2,filtFunc[phi[[i]]], FitGradientMap[{phi[[i]], masks}, 3, 50]]
+			, {i, Range@Length@sel}]];
+		];
+
 		(*recalculate the signals and redefine the residuals and phases*)
 		result = RotateDimensionsRight@Chop@DixonFitFC[complex, phi, mask, matC, matA, matAi];
 
@@ -1204,7 +1220,7 @@ UnwrapDCT[psii_, wi_]:=Block[{
 		i = 0;
 		phi = 0.psi;
 		norm = 10^-6 Norm@Flatten@rhoi;
-		maxi = 100 (*Round[0.1 Times@@d]*);
+		maxi = 5 (*Round[0.1 Times@@d]*);
 		
 		(*run loop*)
 		(*If[a===3, PrintTemporary[Dynamic[i]," / ", maxi, "   ", norm, " < ", Dynamic[normi]]];*)

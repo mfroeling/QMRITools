@@ -721,7 +721,7 @@ DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm,
 	
 	(*Dimensions must be equal*)
 	If[ dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
-	
+	(*
 	(*Flatten the data*)
 	data = If[depthd == 4,
 		Flatten[RotateDimensionsLeft[Transpose[data]], 2],
@@ -729,10 +729,14 @@ DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm,
 			Flatten[RotateDimensionsLeft[data], 1],
 			Flatten[data]
 		]
-	];
+	];*)
+
+	sp = SparseArray[mask data];
+	cor = sp["ExplicitPositions"];
+	val = sp["ExplicitValues"];
 
 	(*get the data and positions there mask is 1*)
-	{Pick[data, Round[Flatten[mask]], 1] , {dimd, Position[mask, 1]}}
+	{val , {dimd, cor}}
 ]
 
 
@@ -748,6 +752,31 @@ VectorToData[vec_, {dim_, pos_}] := ToPackedArray@N@If[VectorQ[vec],
 		Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec],
 		Transpose[Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec]]
 	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FitGradientMap*)
+
+
+SyntaxInformation[FitGradientMap] = {"ArgumentsPattern" -> {_, _., _.}};
+
+FitGradientMap[data_]:=FitGradientMap[data, 2, 1]
+
+FitGradientMap[data_, ord_]:=FitGradientMap[data, ord, 1]
+
+FitGradientMap[data_, ord_, smp_]:=FitGradientMap[{data, 1}, ord, smp]
+FitGradientMap[{data_, msk_}, ord_, smp_] := Block[{val, dim, coor, fit, x, y, z},
+	Clear[x, y, z];
+	{val, {dim, coor}} = DataToVector[msk data];
+	fit = Fit[
+		Thread[{coor[[;;;;smp, 1]], coor[[;;;;smp, 2]], coor[[;;;;smp, 3]], val[[;;;;smp]]}], 
+		DeleteDuplicates[Times @@ # & /@ Tuples[{1, x, y, z}, ord]], 
+		{x, y, z}
+	];
+	If[msk=!=1, coor = DataToVector[data][[2,2]]];
+	{x, y, z} = Transpose[coor];
+	VectorToData[fit, {dim, coor}]
 ]
 
 
