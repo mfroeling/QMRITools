@@ -153,9 +153,6 @@ SphereColor::usage =
 PositiveZ::usage = 
 "PositiveZ is an options for GradientPlot. If True all Gradients are displayed with a positive z direction."
 
-ContourQuality::usage = 
-"ContourQuality is an option for PlotCountour. If set \"High\" it is slower but better quality."
-
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)

@@ -132,6 +132,9 @@ DixonPhases::usage =
 "DixonPhases is an option for DixonReconstruct. It defines which phases to fit within the model.
 The order is {T2*, B0, bipolar, initial, bipolar}."
 
+DixonFitPhase::usage =
+"DixonFitPhase is an option for DixonReconstruct. If set to True the phase maps are fitted using polinomial functions."
+
 PhaseEchos::usage = 
 "PhaseEchos is an option for DixonPhase. Can be Automatic or a list of two integers."
 

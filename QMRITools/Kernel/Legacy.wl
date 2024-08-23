@@ -71,6 +71,14 @@ LoadFiberTracts::usage =
 "LoadFiberTracts[] promts for a .fbs to open.
 LoadFiberTracts[\"file\"] imports the file."
 
+FiberDensityMap::usage =
+"FiberDensityMap[fiberPoins, dim, vox] generates a fiber density map for the fiberPoins which are imported by LoadFiberTracts. 
+The dimensions dim should be the dimensions of the tracked datasets van vox its volxel size."
+
+FiberLengths::usage =
+"FiberLengths[fpoints, flines] calculates the fiber lenght using the output from LoadFiberTacts.
+FiberLengths[{fpoints, flines}] calculates the fiber lenght using the output from LoadFiberTacts."
+
 
 ReadVoxSize::usage = 
 "ReadVoxSize[filename] imports the voxelsize from a .dcm file. filename must be a string. 
@@ -153,6 +161,9 @@ SetupDataStructure::usage =
 (* ::Subsection::Closed:: *)
 (*Options*)
 
+
+SeedDensity::usage = 
+"SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
 
 BinaryType::usage = 
 "BinaryType is an option for ExportVol and must be \"Integer16\" for an integer array and \"Real32\" for a Double array."
@@ -478,6 +489,54 @@ LoadFiberTracts[file]
 
 LoadFiberTracts[filename_] :=  Import[filename, {{"VertexData", "LineData"}}]
 
+
+(* ::Subsection::Closed:: *)
+(*FiberDensityMap*)
+
+
+Options[FiberDensityMap] = {SeedDensity -> Automatic};
+
+SyntaxInformation[FiberDensityMap] = {"ArgumentsPattern" -> {_, _, _,OptionsPattern[]}};
+
+FiberDensityMap[fibers_, dim_, vox_, OptionsPattern[]] := 
+ Module[{pixindex, density, dens,densi},
+  pixindex = GetFiberCoor[fibers, vox];
+  pixindex = Transpose[MapThread[Clip[#1, {1, #2}] &, {Transpose[pixindex], dim}]];
+  density = CountVoxels[ConstantArray[0, dim], pixindex];
+  densi = OptionValue[SeedDensity];
+  (*Print[{(Times @@ vox)/0.75,Median[DeleteCases[Flatten[density], 0]]}];*)
+  dens = If[NumberQ[densi],
+    Times @@ (vox/densi),
+    Median[Cases[Flatten[density], Except[0]]]
+    ];
+  Clip[NormalizeDens[density, dens], {0., 10.}]
+  ]
+
+GetFiberCoor = Compile[{{fibcor, _Real, 1}, {vox, _Real, 1}},
+   Round[Reverse[fibcor + vox]/vox],
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", 
+   Parallelization -> True];
+
+CountVoxels = Compile[{{const, _Integer, 3}, {pix, _Integer, 2}}, Block[{out = const},
+    (out[[#[[1]], #[[2]], #[[3]]]] += 1) & /@ pix;
+    out
+    ]];
+
+NormalizeDens = Compile[{{dens, _Integer, 3}, {n, _Real, 0}}, dens/n];
+
+
+(* ::Subsection::Closed:: *)
+(*FiberLengths*)
+
+
+SyntaxInformation[FiberLengths] = {"ArgumentsPattern" -> {_, _.}};
+
+FiberLengths[fpoints_, flines_] := FiberLengths[{fpoints, flines}]
+FiberLengths[{fpoints_, flines_}] := Module[{len, mpos},
+   len = (Length /@ flines) - 1;
+   mpos = First@First@Position[len, Max[len]];
+   len Mean[EuclideanDistance @@@ Partition[fpoints[[flines[[mpos]]]], 2, 1]]
+];
 
 
 (* ::Subsection::Closed:: *)

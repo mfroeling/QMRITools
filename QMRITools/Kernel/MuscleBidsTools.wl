@@ -104,16 +104,20 @@ CheckDataDiscription::usage =
 BidsIncludeSession::usage = 
 "BidsIncludeSession is an option for BidsDcmToNii. If True session folders will be used in output even if they are not specified."
 
-
 DeleteAfterConversion::usage = 
 "DeleteAfterConversion is an option for MuscleBidsConvert. If set True all files that have been converted will be deleted."
 
-SelectSubjects::usage = 
-"SelectSubjects is an option for MuscleBidsConvert. Can be a list of bids subject names else it is All."
+BidsTractographyMethod::usage=
+"BidsTractographyMethod is an option for MuscleBidsTractography and can be \"Full\", \"Tractography\" or \"Segmentation\". 
+With Tractography only the tractography is performed without segmentation.
+With Segmentation only the segmentation is performed without tractography. With Full both are performed."
 
+
+SelectSubjects::usage = 
+"SelectSubjects is an option for Bids functions. Can be a list of bids subject names else it is All."
 
 VersionCheck::usage = 
-"VersionCheck is an option for MuscleBidsProcess. If set True data processed with an old version is reprocessed."
+"VersionCheck is an option for all Bids functions. If set True data processed with an old version is reprocessed."
 
 
 (* ::Subsection::Closed:: *)
@@ -462,7 +466,7 @@ SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name
 (*BidsFolderLoop*)
 
 
-Options[BidsFolderLoop] = {DeleteAfterConversion->True, SelectSubjects->All, Method->"Convert", VersionCheck->False, TractMethod->"Full"};
+Options[BidsFolderLoop] = {DeleteAfterConversion->True, SelectSubjects->All, Method->"Convert", VersionCheck->False, BidsTractographyMethod->"Full"};
 
 SyntaxInformation[BidsFolderLoop] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -571,7 +575,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]
 							"Segment", 
 							MuscleBidsSegmentI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck]],
 							"Tractography",
-							MuscleBidsTractographyI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck], OptionValue[TractMethod]]
+							MuscleBidsTractographyI[foli, outFol, type, datType, logFile, OptionValue[VersionCheck], OptionValue[BidsTractographyMethod]]
 						];
 						ExportLog[logFile];				
 					(*Close sub folders loop*)
@@ -1594,7 +1598,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, logFile_, verCheck_]:=Block
 (* ::Subsubsection::Closed:: *)
 (*MuscleBidsTractography*)
 
-Options[MuscleBidsTractography] = {SelectSubjects->All, VersionCheck->False, TractMethod->"Full"};
+Options[MuscleBidsTractography] = {SelectSubjects->All, VersionCheck->False, BidsTractographyMethod->"Full"};
 
 SyntaxInformation[MuscleBidsTractography] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 

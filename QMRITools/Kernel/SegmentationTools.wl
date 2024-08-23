@@ -50,6 +50,7 @@ MakeClassifyImage::usage =
 "MakeClassifyImage[data] makes a image of the input data. The data is automatically cropped to remove the background and normalized.
 If the input data is 3D a list of images is returned."
 
+$debugUnet::usage = "$debugUnet is a debugging flag for the UNET function, if set True extra reporting is done.";
 
 NetSummary::usage = 
 "NetSummary[net] gives a short summary of the convolution kernels and array elements in the network.
@@ -147,10 +148,6 @@ PrepareTrainingData::usage =
 "PrepareTrainingData[inFolder, outFolder] prepares the data in de inFolder for training a neural network for segmentation and outputs in outFolder.
 PrepareTrainingData[{labFolder, datFolder}, outFolder] does the same but the labels are stored in labFolder and data is stored in datFolder."
 
-PrepTrainData::usage =
-"PrepTrainData[data, segmentation] crops and normalizes the data and segementation such that it is optimal for training CCN for segmentation.
-PrepTrainData[data, segmentation, labin] does the same but only selects the labin from the segmentation.
-PrepTrainData[data, segmentation, {labin, labout}] does the same but only selects the labin from the segmentation and replaces it with labout."
 
 CheckSegmentation::usage=
 "CheckSegmentation[seg] checks the segmentation for errors and returns a vector of two numbers, the first indicates if the segmentation has more than one region, the second indicates if it hase holes."
@@ -256,11 +253,9 @@ FeatureSchedule::usage =
 By default it increases the number of features by a factor 2 each layer, i.e. {1, 2, 4, 8, 16}."
 
 NetworkArchitecture::usage = 
-"NeworkArchitecture is an option for MakeUnet. It defines the architecture of the network. It can be \"UNet\", \"UNet+\", or \"UNet++\".
+"NetworkArchitecture is an option for MakeUnet. It defines the architecture of the network. It can be \"UNet\", \"UNet+\", or \"UNet++\".
 For \"UNet+\" or \"UNet++\" it can also be {arch, i} where i specifies how many of the top layers are connected to the mapping layer."
 
-InputFilters::usage = 
-"InputFilters is an option for MakeUnet. It defines the amount of convolutional filters of the the first UNET block."
 
 ActivationType::usage = 
 "ActivationType is an option for MakeUnet. It sepecifies which activation layer is used in the network. It can be \"LeakyRELU\" or any type allowed 
@@ -431,7 +426,8 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 			RescaleMethod, NetworkArchitecture}];
 
 	(*check the input*)
-	{architecture, mapCon} =If[StringQ[architecture], {architecture, Automatic}, If[Length[architecture]===2, architecture, Return[Message[MakeUnet::arch]; $Failed]]];
+	{architecture, mapCon} = If[StringQ[architecture], {architecture, Automatic}, If[Length[architecture]===2, architecture, Return[Message[MakeUnet::arch]; $Failed]]];
+	
 	If[!MemberQ[{"UNet", "UNet+", "UNet++"}, architecture], Return[Message[MakeUnet::arch]; $Failed]];
 	If[!MemberQ[{"Conv", "UNet", "ResNet", "DenseNet", "Inception", "U2Net"}, blockType], Return[Message[MakeUnet::block]; $Failed]];
 	(*is the network 2D or 3D*)
@@ -855,29 +851,33 @@ NetDimensions[net_, port_]:=Block[{block, neti},Switch[port,
 	
 	"FirstEncodingIn",
 	Last@Values@Information[
-		NetTake[net, {block = First[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &]], block}], "InputPorts"],
+		NetTake[net, {block = First[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"| ("node_" ~~ __ ~~ "_1")] &]], block}], "InputPorts"],
 	
 	"FirstEncodingOut", 
 	Values@Information[
-		NetTake[net, {block = First[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &]], block}], "OutputPorts"],
+		NetTake[net, {block = First[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"| ("node_" ~~ __ ~~ "_1")] &]], block}], "OutputPorts"],
 	
 	"LastEncodingIn", 
 	Last@Values@Information[
-		NetTake[net, {block = Last[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &]], block}], "InputPorts"],
+		NetTake[net, {block = Last[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"| ("node_" ~~ __ ~~ "_1")] &]], block}], "InputPorts"],
 	
 	"LastEncodingOut", 
 	Last@Values@Information[
-		NetTake[net, {block = Last[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &]], block}], "OutputPorts"],
+		NetTake[net, {block = Last[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"| ("node_" ~~ __ ~~ "_1")] &]], block}], "OutputPorts"],
+	
+	"MinEncodingOut",
+	Min /@ Transpose[Flatten[Values[Information[#, "OutputPorts"]] & /@ Information[net, "LayersList"], 1]],
 	
 	"U2Encoding",
-	block = First@Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"] &];
-	neti = NetFlatten[NetTake[net, {block, block}], 1];
-	block = Select[Keys[Normal[neti]], StringContainsQ[#, "block/enc_"] &];
-	If[block =!= {},
-		block = Last[block];
-		Last@Values@Information[NetTake[neti, {block, block}], "OutputPorts"],
-		$Failed
-	],
+	block = Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"|("node_" ~~ __ ~~ "_1")] &];
+	If[block==={}, Return[$Failed],
+		block = First[block];
+		neti = NetFlatten[NetTake[net, {block, block}], 1];
+		block = Select[Keys[Normal[neti]], StringContainsQ[#, "block/U2enc_"] &];
+		If[block === {}, Return[$Failed],
+			block = Last[block];
+			Last@Values@Information[NetTake[neti, {block, block}], "OutputPorts"]
+	]],
 	_, 
 	{First@NetDimensions[net, "Input"], Last@NetDimensions[net, "Output"], Rest@NetDimensions[net, "Input"], First@NetDimensions[net, "FirstEncodingIn"]}
 ]]
@@ -1404,7 +1404,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		(*split the data in upper and lower legs and left and right*)
 		If[mon, Echo[Dimensions@data, "Analyzing the data with dimensions:"]];
 		time = First@AbsoluteTiming[
-			{{patch, pts, dim}, loc, set} = SplitDataForSegementation[Mask[NormalizeData[data], 10] data, Monitor->mon]
+			{{patch, pts, dim}, loc, set} = SplitDataForSegementation[data, Monitor->mon]
 		];
 		If[mon, Echo[Round[time, .1], "Total time for analysis [s]: "]];
 		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimenisons:"]];
@@ -1664,9 +1664,8 @@ FindPatchDim[net_, dims_, lim_] := Block[{
 	inp = Rest[NetDimensions[net, "Input"]];
 	class = NetDimensions[net, "Output"][[-1]];
 
-	(*check smalest net dimensions, different for U2net*)
-	out = NetDimensions[net, "U2Encoding"];
-	out = Rest[If[out === $Failed, NetDimensions[net, "LastEncodingOut"], out]];
+	(*check smalest net dimensions output*)
+	out = Rest[NetDimensions[net, "MinEncodingOut"]];
 
 	(*needed scaling*)
 	sc = inp/out;
@@ -1834,7 +1833,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "GPU", WorkingPrecision -> "Mixed"]]];
 		ExportNii[testSeg, testVox, outName[ittString[ittTrain]<>".nii"]];
 		(*make and export test image*)
-		im = MakeChannelClassGrid[testData, testSeg, 3, LabelRange->{0, nClass-1}];
+		im = MakeChannelClassGrid[testData, {testSeg, {0, nClass-1}}, 3];
 		Export[outName[ittString[ittTrain] <> ".png"], im , "ColorMapLength" -> 256];
 		(*export the network and delete the one from the last itteration*)
 		Export[outName[ittString[ittTrain] <> ".wlnet"], netMon];
@@ -2241,24 +2240,24 @@ PrepTrainData[dat_, seg_, {labi_?VectorQ, labo_?VectorQ}] := Block[{cr},
 (* ::Subsection:: *)
 (*Make evaluation images*)
 
-Options[MakeChannelClassGrid] = {LabelRange -> Automatic};
 
-SyntaxInformation[MakeChannelClassGrid] = {"ArgumentsPattern"->{_, _, _., _.}};
+SyntaxInformation[MakeChannelClassGrid] = {"ArgumentsPattern"->{_, _, _.}};
 
-MakeChannelClassGrid[dat_, lab_, opts:OptionsPattern[]] := MakeChannelClassGrid[dat, lab, 3, opts]
+MakeChannelClassGrid[dat_, lab_] := MakeChannelClassGrid[dat, lab, 3]
 
-MakeChannelClassGrid[dat_, lab_, ni_, OptionsPattern[]] := Block[{len, n1, n2},
-	len = Length@lab;
+MakeChannelClassGrid[dat_, lab_, ni_] := Block[{len, n1, n2},
+	len = Length@First@dat;
 	If[IntegerQ[ni],
 		n1 = n2 = Min[{Floor[Sqrt[len]], ni}],
 		{n1, n2} = ni;
 		While[n1 n2 > l, n1--; n2--;]
 	];
-	ran = OptionValue[LabelRange];
-	ran = If[ran===Automatic, MinMax@lab, ran];
+
+	{labp, ran} = If[TensorQ[lab], {lab, MinMax@lab}, lab];
+	If[IntegerQ[Round[ran]], ran = {0, ran}];
 
 	RemoveAlphaChannel@ImageAssemble@Partition[
-		ImagePad[MakeChannelClassImage[dat[[{1}, #]], lab[[#]], ran], 4, White
+		ImagePad[MakeChannelClassImage[dat[[{1}, #]], labp[[#]], ran], 4, White
 	] & /@ (Round[Range[1., len, (len - 1)/(n1 n2 - 1)]]), n1]
 ]
 
