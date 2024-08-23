@@ -75,13 +75,7 @@ Tracts can be by SplitSegmentations. name is a string that is added to the heade
 
 GetTractMeans[dat, tracts, vox, name] where name is a string that is added to the header."
 
-FiberDensityMap::usage =
-"FiberDensityMap[fiberPoins, dim, vox] generates a fiber density map for the fiberPoins which are imported by LoadFiberTracts. 
-The dimensions dim should be the dimensions of the tracked datasets van vox its volxel size."
 
-FiberLengths::usage =
-"FiberLengths[fpoints, flines] calculates the fiber lenght using the output from LoadFiberTacts.
-FiberLengths[{fpoints, flines}] calculates the fiber lenght using the output from LoadFiberTacts."
 
 
 JoinSets::usage =
@@ -181,8 +175,7 @@ OutputSNR::usage =
 SmoothSNR::usage = 
 "SmoothSNR is an option for SNRMapCalc."
 
-SeedDensity::usage = 
-"SeedDensity is an option for FiberDensityMap. The seedpoint spacing in mm."
+
 
 MeanMethod::usage = 
 "MeanMethod is an option for GetMaskMeans. The option can be  \"NormalDist\", \"SkewNormalDist\", or \"Mean\"."
@@ -197,6 +190,8 @@ GetMaskOutput::usage =
 GetMaskOnly::usage = 
 "GetMaskOnly is an option for GetMaskData. If set True all values in the mask are given, if set False only non zero values in the mask are give."
 
+PadOutputDimensions::usage =
+"PadOutputDimensions is an options for DataTransformation. If False the data is the same dimensions as the input else the data is padded."
 
 ReverseData::usage =
 "ReverseData is an option for JoinSets. Reverses each individual datset given as input for the JoinSets function. True by default."
@@ -646,7 +641,8 @@ SyntaxInformation[FindOutliers] = {"ArgumentsPattern" -> {_, _., OptionsPattern[
 FindOutliers[datai_?VectorQ, opts:OptionsPattern[]]:=FindOutliers[datai,1,opts]
 
 FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
-		data, maxIt, diff, it, out, outI, outNew, q1, q2, q3, sc, iqr, dataQ, up, low, mc, met, incZero, output
+		data, maxIt, diff, it, out, outI, outNew, q1, q2, q3, sc, iqr, dataQ, up, low, mc, met, incZero, output,
+		sd, mn, mad, med
 	},
 	
 	(*make numeric*)
@@ -667,17 +663,32 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 	While[(diff != 0.) && it <= maxIt,
 		(*get the data quantiles and iqr*)
 		dataQ = Pick[data, ignore out, 1.];
+		
+		
 		{q1, q2, q3} = Quantile[dataQ, {.25, .50, .75}];
 		iqr = (q3 - q1);
 		
-		(*switch methods*)
+		(*switch methods: 10.1016/j.csda.2007.11.008*)
 		(*IQR-inter quantile range, SIQR-skewed iql, aIQR-adjusted iqr using medcouple for skewness*)
 		{low, up} = Switch[OptionValue[OutlierMethod],
+			"SD",
+			sd = StandardDeviation[dataQ];
+			mn = Mean[dataQ];
+			{mn - sc sd, mn + sc sd},
+			"MAD",
+			mad = 1.4826 MedianDeviation[dataQ];
+			med = Median[dataQ];
+			{med - sc mad, med + sc mad},
 			"IQR", 
+			{q1, q3} = Quantile[dataQ, {.25, .75}];
+			iqr = (q3 - q1);
 			{q1 - sc iqr, q3 + sc iqr},
-			"SIQR", 
+			"sIQR", 
+			{q1, q2, q3} = Quantile[dataQ, {.25, 0.5, .75}];
 			{q1 - sc 2 (q2 - q1), q3 + sc 2 (q3 - q2)},
 			"aIQR", 
+			{q1, q2, q3} = Quantile[dataQ, {.25, 0.5, .75}];
+			iqr = (q3 - q1);
 			mc = MedCouple[dataQ, q2];
 			If[mc >= 0,
 				{q1 - sc iqr Exp[-4 mc], q3 + sc iqr Exp[3 mc]},
@@ -705,19 +716,38 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 (* ::Subsubsection::Closed:: *)
 (*MedCouple*)
 
+MedCouple[data_]:= MedCouple[data, Median@Flatten@data]
 
-MedCouple[data_] := MedCouple[data,Median[data]];
+MedCouple[data_, q2_] := Block[{dat, diff, larger, smaller, equal, xi, xid, xj, xjd, xk, xkd, lk},
+	(*doi.org/10.1198/106186004X12632*)
+	dat = Flatten[data];
+	diff = dat - q2;
 
-MedCouple[data_, q2_] := Block[{xi, li, xj, lj, pi, hxixj},
-	xi = Select[data, # >= q2 &];
-	li = Range[pi = Length[xi]];
-	xj = Select[data, # <= q2 &];
-	lj = Range[Length[xj]];
-	hxixj = Flatten@Table[If[xi[[i]] > xj[[j]],
-		((xi[[i]] - q2) - (q2 - xj[[j]]))/(xi[[i]] - xj[[j]]),
-		pi - 1 - i - j
-	], {i, li}, {j, lj}];
-	Median[hxixj]
+	larger = UnitStep[diff];
+	smaller = UnitStep[-diff];
+	equal = larger smaller;
+
+	xi = Pick[dat, (1 - equal) larger, 1];
+	xid = Pick[diff, (1 - equal) larger, 1];
+	xj = Pick[dat, (1 - equal) smaller, 1];
+	xjd = Pick[diff, (1 - equal) smaller, 1];
+	xk = Pick[dat, equal, 1];
+	xkd = Pick[diff, equal, 1];
+	lk = Length[xk];
+
+	Median@ToPackedArray@N@Join[
+		Flatten[(xid + # & /@ xjd)/(xi - # & /@ xj)]
+		,
+		If[lk > 0, Join[
+			Flatten[(xid + # & /@ xkd)/(xi - # & /@ xk)],
+			Flatten[(xjd + # & /@ xkd)/(xj - # & /@ xk)],
+			Flatten[Table[Which[
+				i + j - 1 < lk, -1.,
+				i + j - 1 == lk, 0.,
+				i + j - 1 > lk, 1.
+			], {i, lk}, {j, lk}]]
+		], {}]
+	]
 ]
 
 
@@ -874,55 +904,6 @@ SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] :=
 	 _, snr
 	 ]
  ]
-
-
-(* ::Subsection::Closed:: *)
-(*FiberDensityMap*)
-
-
-Options[FiberDensityMap] = {SeedDensity -> Automatic};
-
-SyntaxInformation[FiberDensityMap] = {"ArgumentsPattern" -> {_, _, _,OptionsPattern[]}};
-
-FiberDensityMap[fibers_, dim_, vox_, OptionsPattern[]] := 
- Module[{pixindex, density, dens,densi},
-  pixindex = GetFiberCoor[fibers, vox];
-  pixindex = Transpose[MapThread[Clip[#1, {1, #2}] &, {Transpose[pixindex], dim}]];
-  density = CountVoxels[ConstantArray[0, dim], pixindex];
-  densi = OptionValue[SeedDensity];
-  (*Print[{(Times @@ vox)/0.75,Median[DeleteCases[Flatten[density], 0]]}];*)
-  dens = If[NumberQ[densi],
-    Times @@ (vox/densi),
-    Median[Cases[Flatten[density], Except[0]]]
-    ];
-  Clip[NormalizeDens[density, dens], {0., 10.}]
-  ]
-
-GetFiberCoor = Compile[{{fibcor, _Real, 1}, {vox, _Real, 1}},
-   Round[Reverse[fibcor + vox]/vox],
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", 
-   Parallelization -> True];
-
-CountVoxels = Compile[{{const, _Integer, 3}, {pix, _Integer, 2}}, Block[{out = const},
-    (out[[#[[1]], #[[2]], #[[3]]]] += 1) & /@ pix;
-    out
-    ]];
-
-NormalizeDens = Compile[{{dens, _Integer, 3}, {n, _Real, 0}}, dens/n];
-
-
-(* ::Subsection::Closed:: *)
-(*FiberLengths*)
-
-
-SyntaxInformation[FiberLengths] = {"ArgumentsPattern" -> {_, _.}};
-
-FiberLengths[fpoints_, flines_] := FiberLengths[{fpoints, flines}]
-FiberLengths[{fpoints_, flines_}] := Module[{len, mpos},
-   len = (Length /@ flines) - 1;
-   mpos = First@First@Position[len, Max[len]];
-   len Mean[EuclideanDistance @@@ Partition[fpoints[[flines[[mpos]]]], 2, 1]]
-];
 
 
 (* ::Subsection::Closed:: *)

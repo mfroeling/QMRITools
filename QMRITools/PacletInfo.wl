@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "3.31.0",
+	"Version" -> "4.0.0",
 	"WolframVersion" -> "14.0+",
 	"SystemID" -> All, 
 	
@@ -23,6 +23,7 @@ PacletObject[<|
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"Logo", "icon.png"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"Functions", "All-Functions.nb"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"Demo", "Demonstrations.nb"}}},
+		{"Asset", "Root" -> "Resources", "Assets" -> {{"Demo_Unet", "Demo_UNet.nb"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"DemoData", "DemoData.zip"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"ColorData", "SCMv8txt.zip"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"GradientTool", "GradientGUI-v14.cdf"}}},

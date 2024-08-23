@@ -113,6 +113,8 @@ ExportTracts::usage =
 FittingOrder::usage = 
 "FittingOrder is an option for FitTracts. It specifies the polinominal order of the function to fit the tract."
 
+FitTractSegments::usage =
+"FitTractSegments is an option for SegmentTracts. If set True the segmented tracts are fitted with FitTracts."
 
 TracMonitor::usage = 
 "TracMonitor is an option for FiberTractography. When set True it prints the progress."
@@ -343,7 +345,7 @@ SelectTractValD = Compile[{{roi, _Real, 3}, {tract, _Integer, 2}},
 Options[SegmentTracts] = {
 	FiberLengthRange -> {15, 500}, 
 	OutputForm -> "Joined", 
-	FitTracts -> True
+	FitTractSegments -> True
 }
 
 SyntaxInformation[SegmentTracts] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
@@ -352,7 +354,7 @@ SegmentTracts[tracts_, segs_, vox_, dim_, OptionsPattern[]] := Block[{tractsI},
 	tractsI = RescaleTractsC[tracts, vox];
 	tractsI = FilterTracts[tracts, tractsI, {{"and", {"partwithin", #}}}, FiberLengthRange -> OptionValue[FiberLengthRange]] & /@ Transpose[segs];
 	
-	If[OptionValue[FitTracts] === True, tractsI = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> 3], #] & /@ tractsI];
+	If[OptionValue[FitTractSegments] === True, tractsI = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> 3], #] & /@ tractsI];
 
 	Switch[OptionValue[OutputForm],
 		"Joined", Flatten[tractsI, 1],
