@@ -546,7 +546,8 @@ ArrangeData[data_] := ArrangeData[data, ArrayDepth[data]]
 ArrangeData[data_, depth_] := 
  Flatten[If[depth == 4, 
    Transpose[Reverse[Reverse[data, depth], depth - 1]], 
-   Reverse[Reverse[data, depth], depth - 1]]]
+   Reverse[Reverse[data, depth], depth - 1]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -554,11 +555,11 @@ ArrangeData[data_, depth_] :=
 
 
 RemoveExtention[fil_] := Module[{file},
-  file = FileNameSplit[fil];
-  file[[-1]] = FileBaseName[file[[-1]]];
-  Print[file[[-1]]];
-  FileNameJoin[file]
-  ]
+	file = FileNameSplit[fil];
+	file[[-1]] = FileBaseName[file[[-1]]];
+	Print[file[[-1]]];
+	FileNameJoin[file]
+]
 
 
 (* ::Subsection:: *)
