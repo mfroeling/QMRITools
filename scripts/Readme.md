@@ -33,3 +33,5 @@ alt="Example script for automate leg muscle segmentation."
 title="Example script for automate leg muscle segmentation."  
 width="80%" />
 </p>
+
+By default the CPU is used, if you want to switch to GPU open the script in any text editor and change "CPU" for "GPU"

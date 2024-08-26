@@ -880,6 +880,7 @@ RegisterDatai[
 
 	openCL = OptionValue[UseGPU];
 	If[ListQ[openCL], {openCL, gpu} = openCL; gpu = If[gpu===Automatic, 0, gpu];, gpu = 0;];
+	If[openCL, method = method /. {"rigidDTI"->"rigid", "affineDTI"->"affine"} ];
 	pca=OptionValue[PCAComponents];
 	
 	iterations=OptionValue[Iterations];
@@ -1302,11 +1303,13 @@ RegisterDiffusionData[
 
 RegisterDiffusionData[
 	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}}
-,opts:OptionsPattern[]] := (
-If[$debugElastix, Print["Diffusion registration"]];	
-RegisterData[{dtidata, dtimask, vox},(*OutputTransformation->True,*) 
-	MethodReg-> (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}),
-	AffineDirections -> {1, 1, 1}, FilterRules[{opts}, Options[RegisterData]]])
+,opts:OptionsPattern[]] := Block[{met},
+	If[$debugElastix, Print["Diffusion registration"]];
+	met = (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"});
+	RegisterData[{dtidata, dtimask, vox},(*OutputTransformation->True,*) 
+		MethodReg-> met,
+		AffineDirections -> {1, 1, 1}, FilterRules[{opts}, Options[RegisterData]]]
+]
 
 (*Anatomical data present, define two registrations*)
 RegisterDiffusionData[
