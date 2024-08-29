@@ -354,7 +354,7 @@ SurfaceDistance::met = "Method `1` not recognized";
 Begin["`Private`"] 
 
 
-QMRITools`SegmentationTools`$debugUnet = False;
+QMRITools`$debugUnet = False;
 
 
 (* ::Subsection::Closed:: *)
@@ -962,7 +962,6 @@ AddLossLayer[net_]:=NetGraph[<|
 	{"net", NetPort["Target"]}->"SquaredDiff"->NetPort["SquaredDiff"],(*Brier Score*)
 	{"net", NetPort["Target"]}->"CrossEntropy"->NetPort["CrossEntropy"]
 }]
-
 
 
 (* ::Subsubsection::Closed:: *)

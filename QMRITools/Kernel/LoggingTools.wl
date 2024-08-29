@@ -27,6 +27,12 @@ BeginPackage["QMRITools`LoggingTools`", Join[{"Developer`"}, Complement[QMRITool
 QMRITools`$Log::usage = 
 "QMRITools`$Log is the current log. Is a list of strings."
 
+QMRITools`$LogFile::usage = 
+"QMRITools`$LogFile is the current log file name."
+
+SetLogFile::usage =
+"SetLogFile[file] sets the log file name to file."
+
 ResetLog::usage = 
 "ResetLog[] restes the log to {}."
 
@@ -69,6 +75,7 @@ CheckFile::usage =
 (* ::Subsection:: *)
 (*Options*)
 
+SaveLogFile::usage = "SaveLogFile is an option for AddToLog. If True the log is saved to the log file each time something is added."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -93,6 +100,7 @@ Begin["`Private`"]
 
 
 QMRITools`$Log = {};
+QMRITools`$LogFile = "";
 
 
 (* ::Subsubsection::Closed:: *)
@@ -112,6 +120,14 @@ ResetLog[] := QMRITools`$Log = {
 "",
 "===================================================================="
 };
+
+
+(* ::Subsubsection::Closed:: *)
+(*SetLogFile*)
+
+SetLogFile[] := QMRITools`$LogFile = "";
+
+SetLogFile[file_?StringQ] := QMRITools`$LogFile = file;
 
 
 (* ::Subsubsection::Closed:: *)
@@ -137,9 +153,13 @@ ShowLog[win_] := Block[{pane},
 
 SyntaxInformation[ExportLog] = {"ArgumentsPattern" -> {_, _.}};
 
-ExportLog[file_]:=ExportLog[file, False]
+ExportLog[]:=ExportLog[QMRITools`$LogFile]
 
-ExportLog[file_, tree_] := (Export[file, QMRITools`$Log, "Text"];
+ExportLog[tree_?BooleanQ]:=ExportLog[QMRITools`$LogFile, tree]
+
+ExportLog[file_?StringQ]:=ExportLog[file, False]
+
+ExportLog[file_?StringQ, tree_?BooleanQ] := (Export[file, QMRITools`$Log, "Text"];
 	If[tree, Export[FileNameJoin[{DirectoryName[file],"FileTree.txt"}], DirectoryTree[DirectoryName[file]]];])
 
 
@@ -149,6 +169,8 @@ ExportLog[file_, tree_] := (Export[file, QMRITools`$Log, "Text"];
 
 SyntaxInformation[ImportLog] = {"ArgumentsPattern" -> {_}};
 
+ImportLog[]:=ImportLog[QMRITools`$LogFile]
+
 ImportLog[file_] := If[FileExistsQ[file], 
 	QMRITools`$Log = Append[
 		Import[file, "Lines"],
@@ -157,26 +179,31 @@ ImportLog[file_] := If[FileExistsQ[file],
 
 
 (* ::Subsubsection::Closed:: *)
-(*ShowLog*)
+(*AddToLog*)
 
 
-SyntaxInformation[AddToLog] = {"ArgumentsPattern" -> {_,_.,_.}};
+Options[AddToLog] = {SaveLogFile->True};
 
-AddToLog[logAdd_?ListQ] := AddToLog[logAdd, 1, False]
+SyntaxInformation[AddToLog] = {"ArgumentsPattern" -> {_,_.,_.,OptionsPattern[]}};
 
-AddToLog[logAdd_?ListQ, date_?BooleanQ] := AddToLog[logAdd, 1, date]
+AddToLog[logAdd_?ListQ, opt:OptionsPattern[]] := AddToLog[logAdd, 1, False, opt]
 
-AddToLog[logAdd_?ListQ, lev_?IntegerQ] := AddToLog[logAdd, lev, False]
+AddToLog[logAdd_?ListQ, date_?BooleanQ, opt:OptionsPattern[]] := AddToLog[logAdd, 1, date, opt]
 
-AddToLog[logAdd_?ListQ, date_?BooleanQ, lev_?IntegerQ] := AddToLog[logAdd, lev, date]
+AddToLog[logAdd_?ListQ, lev_?IntegerQ, opt:OptionsPattern[]] := AddToLog[logAdd, lev, False, opt]
 
-AddToLog[logAdd_?ListQ, lev_?IntegerQ, date_?BooleanQ] := AppendTo[QMRITools`$Log, 
-	StringJoin[
-		If[date, DateString[{"Day", "-", "Month", "-", "YearShort", " ","Time"}] <> " / ", "                  / "],
-		If[lev == 0, "", StringJoin[ConstantArray[" ", 2 lev]] <> "- "],
-		StringTrim[StringJoin[StringTrim[ToString[#]] <> " " & /@ logAdd]]
-	]
-];
+AddToLog[logAdd_?ListQ, date_?BooleanQ, lev_?IntegerQ, opt:OptionsPattern[]] := AddToLog[logAdd, lev, date, opt]
+
+AddToLog[logAdd_?ListQ, lev_?IntegerQ, date_?BooleanQ, OptionsPattern[]] := Block[{},
+	AppendTo[QMRITools`$Log, 
+		StringJoin[
+			If[date, DateString[{"Day", "-", "Month", "-", "YearShort", " ","Time"}] <> " / ", "                  / "],
+			If[lev == 0, "", StringJoin[ConstantArray[" ", 2 lev]] <> "- "],
+			StringTrim[StringJoin[StringTrim[ToString[#]] <> " " & /@ logAdd]]
+		]
+	];
+	If[OptionValue[SaveLogFile], ExportLog[]];
+]
 
 AddToLog[logAdd_, a___] := AddToLog[{logAdd}, a]
 
@@ -228,7 +255,9 @@ DirTree[dir_]:=Block[{all,dirs,files,childs},
 
 SyntaxInformation[StyleTree] = {"ArgumentsPattern" -> {_}};
 
-StyleTree[tree_,{preFix_,level_,notlast_},rule_]:=Block[{prefix,hasFiles,pre,notl,nfiles,fileNr,fileList},
+StyleTree[tree_, {preFix_, level_, notlast_}, rule_]:=Block[{
+		prefix, hasFiles, pre, notl, nfiles, fileNr, fileList
+	},
 	(*make prefix list editable*)
 	prefix=preFix;
 	

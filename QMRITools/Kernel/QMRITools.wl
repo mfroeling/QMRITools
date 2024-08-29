@@ -35,7 +35,6 @@ QMRITools`$Contexts::usage = "The package contexts needed for loading.";
 QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions for each context.";
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
-QMRITools`$Log::usage = "The logging file.";
 
 
 (*subpackages names*)
@@ -99,6 +98,7 @@ If[QMRITools`$Verbose,
 	Echo["Removing all local and global definitions of:"];
 ];
 
+
 With[{
 		global = Intersection[Names["Global`*"], "Global`" <> # & /@ Last[#]]
 	},
@@ -113,18 +113,19 @@ With[{
 	Remove @@ global;
 ] &/@ QMRITools`$ContextsFunctions
 
-(*getting the color functions*)
+
+(*getting the color functions, prevents from reloading if kernel is not restarted*)
 If[!QMRITools`$LoadedColor, 
 	If[QMRITools`$Verbose, 
 		Echo["--------------------------------------"];
-		Echo["Loading color data:"];
+		Echo["Loading color data"];
 	];
 	Get["QMRITools`ScientificColorData`"];
 	QMRITools`ScientificColorData`ExtractColorData[tempDir];
 	QMRITools`ScientificColorData`AddScientificColors[tempDir];
 	ClearAll[tempDir];
 	Remove[tempDir];
-	QMRITools`$LoadedColor=True;
+	QMRITools`$LoadedColor = True;
 ]
 
 
@@ -133,6 +134,7 @@ If[QMRITools`$Verbose,
 	Echo["--------------------------------------"];
 	Echo["Loading and protecting all definitions of:"];
 ];
+
 
 Get["Developer`"];
 (
@@ -144,4 +146,10 @@ Get["Developer`"];
 
 (*Protect definitions*)
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
-Unprotect/@{"QMRITools`ElastixTools`$debugElastix", "QMRITools`SegmentationTools`$debugUnet", "QMRITools`$Log"};
+Unprotect/@{
+	"QMRITools`$debugElastix", 
+	"QMRITools`$debugUnet", 
+	"QMRITools`$debugBids",
+	"QMRITools`$Log",
+	"QMRITools`$LogFile"
+};
