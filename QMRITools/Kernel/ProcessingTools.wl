@@ -579,25 +579,30 @@ GetMaskData[data_?ArrayQ, mask_, opts:OptionsPattern[]] := Block[{out},
 		GetMaskData[#, mask, opts]&/@Transpose[data]
 		,
 		ArrayDepth[data]===3&&ArrayDepth[mask]===4, 
-		GetMaskData[data, #, opts]&/@Transpose[mask]
+		(
+			{msk, cr} = AutoCropData[#];
+			GetMaskData[ApplyCrop[data, cr], msk, opts]
+		)&/@Transpose[mask]
 		,
 		True,
 		If[!(Dimensions[data]=!=Dimensions[mask] || Drop[Dimensions[data], {2}]=!=Dimensions[mask]),
 			Retrun[Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]];$Failed]
 			,
+			(*select the correct method*)
 			out = Switch[OptionValue[GetMaskOutput],
 				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[Normal@#2]], 1]&, {data, mask}, ArrayDepth[data]-2],
 				"Sparse", (data mask)["ExplicitValues"],
-				_, Pick[Flatten[N[data]], Unitize[Flatten[Normal@mask]], 1]
-			];
-
-			out = Switch[OptionValue[GetMaskOutput],
-				"Mean", Mean[out],
-				"Median", Median[out],
-				_, out			
+				_, If[Max[mask]===0, {}, Pick[Flatten[N[data]], Unitize[Flatten[Normal@mask]], 1]]
 			];
 			(*select only non zero values if mask only to false*)
-			If[OptionValue[GetMaskOnly],out,Pick[out, Unitize[out], 1]]
+			out = If[OptionValue[GetMaskOnly], out, Pick[out, Unitize[out], 1]];
+			(*Check what to output*)
+			out = Switch[OptionValue[GetMaskOutput],
+				"Mean", If[out==={}, 0., Mean[out]],
+				"Median", If[out==={}, 0., Median[out]],
+				_, out			
+			];
+			out
 		]
 	]
 ]
@@ -1588,7 +1593,7 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 			ParameterFit2[pars][[All,{2,4,6}]]
 			]
 			,
-			ParameterFit[GetMaskData[#,maski pmask]&/@pars,FitOutput->"BestFitParameters"]
+			ParameterFit[GetMaskData[#, maski pmask]&/@pars,FitOutput->"BestFitParameters"]
 		];
 	
 	

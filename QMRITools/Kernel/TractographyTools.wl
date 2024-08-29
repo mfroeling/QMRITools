@@ -1158,7 +1158,7 @@ ImportTractsDefault[file_, ___] := Block[{strm, all, nTr, nTrLeng, dim, vox, see
 	nTrLeng = BinaryReadList[strm, "Integer32", nTr];
 	
 	(*read the data*)
-	{dim, vox, seeds, tracts} = DynamicPartition[BinaryReadList[strm, "Real64", Total[all]], all];
+	{dim, vox, seeds, tracts} = DynamicPartition[BinaryReadList[strm, "Real32", Total[all]], all];
 	
 	(*partition the seeds*)
 	seeds = Partition[seeds, 3];
@@ -1235,14 +1235,16 @@ ExportTractsDefault[file_, rule_, ___] := Block[{
 	nSeed = 3 Length[seeds];
 	(*number of tracts tracts coordinates and trac lenghts*)
 	nTr = Length[tracts];
-	nTrCoor = 3 Total[Length /@ tracts];
 	nTrLeng = Length /@ tracts;
+	nTrCoor = 3 Total[nTrLeng];
+
+	(*open the stream*)
 	strm = OpenWrite[file, BinaryFormat -> True];
-	
 	(*how to partition the stream*)
 	BinaryWrite[strm, Flatten@{nDim, nVox, nSeed, nTrCoor, nTr, nTrLeng}, "Integer32"];
 	(*Write the data*)
-	BinaryWrite[strm, Flatten@{dim, vox, seeds, tracts}, "Real64"];
+	BinaryWrite[strm, Flatten@{dim, vox, seeds, tracts}, "Real32"];
+	(*close the stream*)
 	Close[strm];
 ]
 

@@ -353,8 +353,10 @@ TakeObject[maskI_, obj_] := Block[{morph, keys},
 
 SyntaxInformation[DilateMask] = {"ArgumentsPattern" -> {_, _}};
 
-DilateMask[mask_, size_] := SmoothMask[mask, MaskDilation -> size, 
-	MaskComponents -> Infinity, MaskClosing -> False, SmoothItterations -> 0]
+DilateMask[mask_, size_] := If[ArrayDepth[mask]===3,
+	SmoothMask[mask, MaskDilation -> size, MaskComponents -> Infinity, MaskClosing -> False, SmoothItterations -> 0],
+	Transpose[DilateMask[#,size]&/@Transpose[mask]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
