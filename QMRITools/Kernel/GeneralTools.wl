@@ -41,6 +41,9 @@ StringPadInteger[{num, len}, post] the same but with postfix post.
 StringPadInteger[pre, num, post] the same but with pre and postfix pre and post.
 StringPadInteger[post, {num, len}, post] the same but with pre and postfix pre and post."
 
+DateName::usage =
+"DateName[] gives the current date and time in the format \"YYYYMMDD-HH\"."
+
 FileSelect::usage = 
 "FileSelect[action] creates a systemdialog wicht returs file/foldername action can be \"FileOpen\", \"FileSave\" or \"Directory\".
 FileSelect[action, {type}] same but allows the definition of filetypes for \"FileOpen\" and \"FileSave\" e.g. \"jpg\" or \"pdf\"."
@@ -384,6 +387,13 @@ StringPadInteger[x_?IntegerQ, post_?StringQ]:=StringPadInteger["", {x, 3}, post]
 StringPadInteger[{x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=StringPadInteger["", {x, n}, post]
 
 StringPadInteger[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=pre<>StringPadLeft[ToString[x], n, "0"]<>post
+
+
+(* ::Subsubsection::Closed:: *)
+(*DateName*)
+
+
+DateName[]:=StringReplace[DateString[{"YearShort", "Month", "Day", "-", "Hour"}], ":" -> ""]
 
 
 (* ::Subsubsection::Closed:: *)

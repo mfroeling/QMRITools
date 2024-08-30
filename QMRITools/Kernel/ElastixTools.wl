@@ -106,7 +106,7 @@ RegisterCardiacData[{data,mask,vox}] registers the data series using the given v
 Output is the registered data."
 
 
-QMRITools`$debugElastix::usage = "$debugElastix is a parameter that allows to print Elastix commands if set to True."
+QMRITools`ElastixTools`$debugElastix::usage = "$debugElastix is a parameter that allows to print Elastix commands if set to True."
 
 
 (* ::Subsection::Closed:: *)

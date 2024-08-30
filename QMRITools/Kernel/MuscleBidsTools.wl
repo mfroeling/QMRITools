@@ -151,8 +151,7 @@ GetConfig::conf = "Could not find config file in given folder."
 Begin["`Private`"] 
 
 
-QMRITools`$debugBids = False;
-
+QMRITools`MuscleBidsTools`$debugBids = False;
 
 
 (* ::Subsection:: *)
@@ -177,15 +176,15 @@ bidsTypes = <|
 |>;
 
 
-bidsName = {"sub", "ses", "stk", "rep", "Type", "suf"};
+bidsName = {"sub", "ses", "stk", "chunk", "rep", "acq" ,"part", "Type", "suf"};
 
 
-bidsClass = {"Volume", "Stacks", "Repetitions"};
+bidsClass = {"Volume", "Stacks", "Repetitions", "Chunks", "Acquisitions"};
 
 
 dataToLog =If[KeyExistsQ[#, $Failed], 
 	"Wrong data dicription: " <> #[$Failed], 
-	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[KeyDrop[#, {"Process", "Merging","Segment","Tractography"}]]]
+	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[KeyDrop[#, {"Process", "Merging", "Segment", "Tractography"}]]]
 ]&;
 
 
@@ -368,7 +367,6 @@ CheckConfig[infol_?StringQ, outfol_?StringQ]:=CheckConfig[infol, outfol, ""]
 CheckConfig[infol_?StringQ, outfol_?StringQ, confin_]:=Block[{conf, nam},
 	nam = GenerateBidsName[PartitionBidsFolderName[outfol][[-1]]];
 	conf = Quiet@GetConfig[infol, nam];
-
 	If[$debugBids, Print[FileNameJoin[{outfol, nam<>"_config.json"}]]];
 
 	If[conf =!= $Failed,
@@ -412,66 +410,84 @@ GetConfig[folder_?StringQ, nam_?StringQ]:=Block[{file},
 (*MergeConfig*)
 
 
-MergeConfig[assoc_, replace_] := Block[{assocNew },
-	assocNew = assoc;
+MergeConfig[assoc_?ListQ, replace_?AssociationQ] := Normal@MergeConfig[Association@assoc, replace]
+
+MergeConfig[assoc_?AssociationQ, replace_?ListQ] := MergeConfig[assoc, Association@replace]
+
+MergeConfig[assoc_?AssociationQ, replace_?AssociationQ] := Block[{assocNew }, 
+	assocNew = Association[assoc];
 	KeyValueMap[Function[{key, subAssoc},
 		If[AssociationQ[subAssoc],
 			If[KeyExistsQ[assocNew, key],
-				assocNew = ReplacePart[assocNew, key -> MergeReplaceAssociations[assocNew[key], subAssoc]],
+				assocNew = ReplacePart[assocNew, key -> MergeConfig[assocNew[key], subAssoc]],
 				assocNew = Append[assocNew, key -> subAssoc]],
 			assocNew = ReplacePart[assocNew, key -> subAssoc]]]
 	, replace];
 	assocNew
 ]
 
-(* ::Subsection::Closed:: *)
-(*BidsDcmToNii*)
+
+(* ::Subsection:: *)
+(*JSON*)
 
 
 (* ::Subsubsection::Closed:: *)
-(*BidsDcmToNii*)
+(*ImportJSON*)
 
 
-Options[BidsDcmToNii]={BidsIncludeSession->True, SelectSubjects->All}
+ImportJSON[file_]:=Import[file,"RawJSON"]
 
-SyntaxInformation[BidsDcmToNii] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-BidsDcmToNii[folder_?StringQ, opts:OptionsPattern[]]:=BidsDcmToNii[folder, GetConfig[folder], opts];
+(* ::Subsubsection::Closed:: *)
+(*GetJSONPosition*)
 
-BidsDcmToNii[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
-	dir = Directory[];
-	SetDirectory[folder];
-	BidsDcmToNii[
-		config["folders"]["dicomData"],(*the input folder of the dcm data*)
-		config["folders"]["rawData"],(*the output folder for converstion*)
-		"",
-		opts
-	];
-	SetDirectory[dir];
+
+GetJSONPosition[json_, selection_]:=GetJSONPosition[json, selection, ""]
+
+GetJSONPosition[json_, selection_, sort_]:=Block[{seli, self, list, key, val, inds, pos},
+	(*selection functions*)
+	seli = StringReplace[ToLowerCase[Last[Flatten[{#1 /. #3}]]], "wip " -> ""] === ToLowerCase[#2] &;
+	self = (
+		list=#1;
+		key=#2[[1]]; 
+		val=#2[[2]]; 
+		Select[list, seli[key,val,json[[#]]]&]
+	)&;
+	
+	(*get the file positions*)
+	pos = Fold[self, Range[Length[json]], selection];
+	(*sort positions if needed*)
+	If[sort==="", pos, pos[[Ordering[sort /. json[[pos]]]]]]
 ]
 
-BidsDcmToNii[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]:=BidsFolderLoop[inFol, outFol, datDisIn, Method->"Dicom", ops]
 
+(* ::Subsubsection::Closed:: *)
+(*MergeJSON*)
+
+
+MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
+	keys=DeleteDuplicates[Flatten[Keys /@ json]];
+	Association[If[#[[2]]==={}, Nothing, #]& /@ Thread[
+		keys->(If[Length[#]===1,First@#,#]& /@ ((DeleteDuplicates /@ Transpose[(# /@ keys)& /@ json]) /. Missing[___]->Nothing))
+	]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
-(*BidsDcmToNiiI*)
+(*ExtractFromJSON*)
 
 
-BidsDcmToNiiI[fol_, outI_]:=Block[{out},
-	(*define the outfolder*)
-	out = FileNameJoin[{outI, "raw"}];
-	(*----*)AddToLog[{"Output folder: ", out},1];
-	Quiet[CreateDirectory[out]];
-	
-	(*perform the conversions only when output folder is empty*)
-	If[EmptyDirectoryQ[out],
-		(*perform conversion*)			
-		(*----*)AddToLog["Starting the conversion", 1, True];
-		DcmToNii[FileNameJoin[{Directory[],#}]&/@{fol,out}, MonitorCalc->False, UseVersion->"23"];
-		(*----*)AddToLog["Folder was converted", 1],
-		(*----*)AddToLog["Folder was skipped since output folder already exists", 1];
-	];
+ExtractFromJSON[keys_] := ((# -> json[#]) & /@ keys) /. {(_ -> Missing[___]) -> Nothing};
+
+
+(* ::Subsubsection::Closed:: *)
+(*AddToJson*)
+
+
+AddToJson[json_, add_]:=MergeJSON[{json,
+	Switch[add,
+		"QMRITools",<|"ConversionSoftware"->"QMRITools.com", "ConversionSoftwareVersion"->QMRITools`$InstalledVersion|>,
+		_,add]}
 ]
 
 
@@ -489,7 +505,7 @@ SubNameToBids[nameIn_?ListQ, met_, opts : OptionsPattern[]] := SubNameToBids[#, 
 
 SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name, ses},
 	(*get the names*)
-	ass = Switch[met, "Sub", PartitionBidsName, "Dicom", PartitionBidsName[FileNameTake[#, {2, -1}]] &, _, PartitionBidsFolderName[#][[-1]] &]@nameIn;
+	ass = Switch[met, "Sub", PartitionBidsName, "BidsDcmToNii", PartitionBidsName[FileNameTake[#, {2, -1}]] &, _, PartitionBidsFolderName[#][[-1]] &]@nameIn;
 	keys = Keys[ass];
 	
 	(*if bids take sub key else assume first suf is name*)
@@ -508,169 +524,15 @@ SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name
 
 
 (* ::Subsubsection::Closed:: *)
-(*BidsFolderLoop*)
+(*GetClassName*)
 
 
-Options[BidsFolderLoop] = {DeleteAfterConversion->True, SelectSubjects->All, Method->"Convert", VersionCheck->False, BidsTractographyMethod->"Full"};
-
-SyntaxInformation[BidsFolderLoop] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
-
-BidsFolderLoop[inFol_?StringQ, datDis_, ops:OptionsPattern[]]:=BidsFolderLoop[inFol, inFol, datDis, ops]
-
-BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_, ops:OptionsPattern[]]:=Block[{
-		met, datType, fols, subs, logFile, ass, nam, filesSl, jsons, 
-		files, nTyp, pat, rfol, custConf, out, datDis, lab
-	},
-
-	(*see which method*)
-	met = OptionValue[Method];
-	(*select the subjects to be processed*)
-	subs = OptionValue[SelectSubjects];
-
-	If[$debugBids, Print["Enter BidsFolderLoop for method: "<>met]];
-	
-	(*get all folders that can be processed*)
-	fols = If[met==="Dicom",
-		ResetLog[];
-		Select[FileNames[All, inFol], DirectoryQ],
-		SelectBidsSessions[SelectBidsSubjects[inFol]]	
-	];
-	subs = If[subs===All||subs==="All", fols, Select[fols, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#, met]]&]];
-	
-	(*open log*)
-	ShowLog[];
-	SetLogFile@"test";
-
-	(*loop over the subjects*)
-	Table[
-		If[$debugBids, Print[fol]];
-
-		(*get the bidsname*)
-		ass = SubNameToBids[fol, met];
-		nam = GenerateBidsName[ass];
-		out = GenerateBidsFolderName[outFol, ass];
-		
-		(*check for custom config - merge if config exists in input folder and copy it to output folder*)
-		If[met=!= "Analysis", 
-			{custConf, datDis} = CheckConfig[fol, out];
-			datType = CheckDataDiscription[MergeConfig[datDisIn, datDis], met];
-			, 
-			{custConf, datDis} = {False, datDisIn}
-		];
-
-		If[$debugBids, Print[datDis]];
-		
-		(*start method specific logging*)
-		Switch[met,
-			(*BidsDcmToNii*)
-			"Dicom",
-			SetLogFile@FileNameJoin[{outFol, "DcmToNii_"<>StringReplace[DateString[{"Day", "Month", "YearShort", "-", "Time"}],":"->""]<>".log"}];
-			lab = "dcm to nii conversion";
-			,
-			(*MuscleBidsConvert*)
-			"Convert", 
-			SetLogFile@FileNameJoin[{fol, nam<>"_BIDSConvert.log"}];
-			lab = "bids conversion";
-			,
-			(*MuscleBidsProcess*)
-			"Process", 
-			SetLogFile@FileNameJoin[{out, nam<>"_BIDSProcess.log"}];
-			lab = "bids processing";
-			,
-			(*MuscleBidsMerge*)
-			"Merge",
-			SetLogFile@FileNameJoin[{out, nam<>"_BIDSMerge.log"}];
-			lab = "bids merging";
-			,
-			(*MuscleBidsSegment*)
-			"Segment",
-			SetLogFile@FileNameJoin[{out, nam<>"_BIDSSegment.log"}];
-			lab = "bids segmentation";
-			,
-			(*MuscleBidsTractogrpahy*)
-			"Tractography",
-			SetLogFile@FileNameJoin[{out, nam<>"_BIDSTractography.log"}];
-			lab = "bids tractography";
-			,
-			(*MuscleBidsAnalysis*)
-			"Analysis",
-			SetLogFile@FileNameJoin[{out, nam<>"_BIDSAnalysis.log"}];
-			lab = "bids analysis";
-		];
-		
-		(*open the log*)
-		If[met=!= "Dicom", ImportLog[]];
-		(*----*)AddToLog[{"Starting "<>lab<>" for directory: ", fol}, True, 0];
-		(*----*)If[custConf, AddToLog["**********   -----   Using custom config   -----   **********", 0]];
-		If[met === "Dicom",
-			(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)", 1];
-		];
-
-		(*The actual process loops*)
-		Switch[met,
-			"Dicom",
-			(*perform dicom nii conversions*)
-			BidsDcmToNiiI[fol, out];
-			,
-			"Analysis",
-			(*perform data analysis*)
-			MuscleBidsAnalysisI[fol, outFol, datDis, OptionValue[VersionCheck]]
-			,
-			_,
-			(*loop over the datType for other methods*)
-			Table[
-				(*check if datType is valid*)
-				If[KeyExistsQ[type, $Failed],
-					(*----*)AddToLog[dataToLog@type, 2, True];
-					(*----*)AddToLog["Skipping", 3],
-					(*if valid perform conversion*)
-					(*----*)AddToLog[dataToLog@type, 2, True];
-					rfol = SelectBidsFolders[fol, type["InFolder"]];
-
-					(*method specific scripts: loop over all inFolders in subject folder*)
-					Table[
-						Switch[met,
-							"Convert", (*MuscleBidsConvert*)
-							MuscleBidsConvertI[foli, type, OptionValue[DeleteAfterConversion]],
-							"Process", (*MuscleBidsProcess*)
-							MuscleBidsProcessI[foli, outFol, type, OptionValue[VersionCheck]],
-							"Merge", (*MuscleBidsMerge*)
-							MuscleBidsMergeI[foli, outFol, type, datType, OptionValue[VersionCheck]],
-							"Segment", 
-							MuscleBidsSegmentI[foli, outFol, type, datType, OptionValue[VersionCheck]],
-							"Tractography",
-							MuscleBidsTractographyI[foli, outFol, type, datType, OptionValue[VersionCheck], OptionValue[BidsTractographyMethod]]
-						];
-						ExportLog[];				
-					(*Close sub folders loop*)
-					, {foli, rfol}];		
-				];
-				ExportLog[];	
-			(*close datatype loop*)
-			, {type, datType}];
-		(*close dicom/analysis if*)
-		];
-
-		(*export the log file and directory tree and clear logfilename*)
-		ExportLog[True];SetLogFile[];
-
-	(*close subject loop*)
-	, {fol, subs}];
-
-	
-] 
-
-
-DataName := StringJoin[StringPadLeft[#, 2, "0"] & /@ Reverse[StringSplit[DateString["LocaleDateCompact"], "/"]]]
-
-InsertID[dataAll_, key_] := Block[{vals, id, pos, ins},
-	vals = Normal@dataAll[All, key];
-	id = DeleteDuplicates@vals;
-	id = Thread[id -> Range[Length@id]];
-	pos = Position[Keys@dataAll[[1]], key][[1, 1]] + 1;
-	ins = Thread[key <> "ID" -> (vals /. id)];
-	Dataset[Association /@ Transpose[Insert[Transpose[Normal@Normal@dataAll], ins, pos]]]
+GetClassName[class_, namei_]:=Switch[class,
+	"Volume", "",
+	"Stacks"|"Repetitions",
+	Switch[class, "Stacks", "stk", "Chunks", "chunk", "Acquisitions", "rep","Repetitions", "rep"] -> StringReplace[namei,{"-"->"","_"->"","."->""}]
 ]
+
 
 (* ::Subsubsection::Closed:: *)
 (*CheckDataDiscription*)
@@ -694,11 +556,11 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 	
 	(*Check if manditory keys are present*)
 	man = ContainsAll[key, Switch[met,
-		"Convert", {"Label", "Type"},
-		"Process", {"Type"},
-		"Merge", {"Type", "Merging"},
-		"Segment", {"Type"},
-		"Tractography", {"Type"}
+		"MuscleBidsConvert", {"Label", "Type"},
+		"MuscleBidsProcess", {"Type"},
+		"MuscleBidsMerge", {"Type", "Merging"},
+		"MuscleBidsSegment", {"Type"},
+		"MuscleBidsTractogrpahy", {"Type"}
 	]];
 	
 	If[!man,
@@ -725,11 +587,11 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 		(*check suffic, in and out folder*)
 		If[!KeyExistsQ[ass, "Suffix"], ass = Association[ass, "Suffix"->""]];
 		Switch[met,
-			"Convert",
+			"MuscleBidsConvert",
 			If[!KeyExistsQ[ass, "InFolder"], ass = Association[ass, "InFolder"->"raw"]];
 			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];
 			,
-			"Process"|"Merge"|"Segment"|"Tractography",
+			"MuscleBidsProcess"|"MuscleBidsMerge"|"MuscleBidsSegment"|"MuscleBidsTractogrpahy",
 			If[!KeyExistsQ[ass, "InFolder"], ass = Association[ass, "InFolder"->BidsType[ass["Type"]]]];
 			ass = Association[ass, "OutFolder" -> BidsType[ass["Type"]]];			
 		];
@@ -740,6 +602,158 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 		(*output the completed data discription*)
 		{KeySort@ass}
 	]
+]
+
+
+(* ::Subsubsection:: *)
+(*BidsFolderLoop*)
+
+
+Options[BidsFolderLoop] = {DeleteAfterConversion->True, SelectSubjects->All, Method->"MuscleBidsConvert", VersionCheck->False, BidsTractographyMethod->"Full"};
+
+SyntaxInformation[BidsFolderLoop] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, ops:OptionsPattern[]] := BidsFolderLoop[inFol, outFol, {""}, ops]
+
+BidsFolderLoop[inFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]] := BidsFolderLoop[inFol, inFol, datDis, ops]
+
+BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:OptionsPattern[]] := Block[{
+		met, datType, fols, subs, logFile, ass, nam, filesSl, jsons, 
+		files, nTyp, pat, rfol, custConf, out, datDis
+	},
+
+	(*see which method*)
+	met = OptionValue[Method];
+	If[$debugBids, Print["Enter BidsFolderLoop for method: "<>met]];
+	If[$debugBids, Print[inFol]];
+
+	(*select the subjects and folders to be processed*)
+	fols =Switch[met,
+		"BidsDcmToNii", ResetLog[]; Select[FileNames[All, inFol], DirectoryQ],
+		_, SelectBidsSessions[SelectBidsSubjects[inFol]]
+	];
+	subs = OptionValue[SelectSubjects];
+	subs = If[subs===All||subs==="All", fols, Select[fols, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#, met]]&]];
+	
+	(*loop over the subjects*)
+	Table[
+		If[$debugBids, Print[fol]];
+
+		(*get the bidsname*)
+		ass = SubNameToBids[fol, met];
+		nam = GenerateBidsName[ass];
+		out = GenerateBidsFolderName[outFol, ass];
+		
+		(*check for custom config - merge if config exists in input folder and copy it to output folder*)
+		If[$debugBids, Print[datDisIn]];
+		Switch[met,
+			"MuscleBidsAnalysis", custConf = False,
+			_,
+			{custConf, datDis} = CheckConfig[fol, out];
+			datType = CheckDataDiscription[MergeConfig[datDisIn, datDis], met];
+		];
+		If[$debugBids, Print[{custConf, datDis}]];
+		If[$debugBids, Print[datType]];
+
+		(*start method specific logging*)
+		SetLogFile@Switch[met,
+			"BidsDcmToNii", FileNameJoin[{outFol, "DcmToNii_"<>DateName[]<>".log"}],
+			"MuscleBidsConvert", FileNameJoin[{fol, nam<>"_BIDSConvert.log"}],
+			"MuscleBidsProcess", FileNameJoin[{out, nam<>"_BIDSProcess.log"}],
+			"MuscleBidsMerge", FileNameJoin[{out, nam<>"_BIDSMerge.log"}],
+			"MuscleBidsSegment", FileNameJoin[{out, nam<>"_BIDSSegment.log"}],
+			"MuscleBidsTractogrpahy", FileNameJoin[{out, nam<>"_BIDSTractography.log"}],
+			"MuscleBidsAnalysis", FileNameJoin[{out, nam<>"_BIDSAnalysis.log"}]
+		];
+		If[met=!= "BidsDcmToNii", ImportLog[]]; 
+		ShowLog[];
+		(*----*)AddToLog[{"Starting "<>met<>" for directory: ", fol}, True, 0];
+		(*----*)If[custConf, AddToLog["**********   -----   Using custom config   -----   **********", 0]];
+		If[met === "BidsDcmToNii",
+			(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)", 1];
+		];
+
+		(*The actual process loops*)
+		Switch[met,
+			"BidsDcmToNii", BidsDcmToNiiI[fol, out],
+			"MuscleBidsAnalysis", MuscleBidsAnalysisI[fol, outFol, datDisIn, OptionValue[VersionCheck]],
+			_,
+			(*loop over the datType*)
+			Table[
+				(*check if datType is valid*)
+				If[KeyExistsQ[type, $Failed],
+					(*----*)AddToLog[dataToLog@type, 2, True];
+					(*----*)AddToLog["Skipping", 3],
+					(*if valid perform conversion*)
+					(*----*)AddToLog[dataToLog@type, 2, True];
+					rfol = SelectBidsFolders[fol, type["InFolder"]];
+
+					(*method specific scripts: loop over all folders in subject/session folder*)
+					Table[Switch[met,
+							"MuscleBidsConvert", MuscleBidsConvertI[foli, type, OptionValue[DeleteAfterConversion]],
+							"MuscleBidsProcess", MuscleBidsProcessI[foli, outFol, type, OptionValue[VersionCheck]],
+							"MuscleBidsMerge", MuscleBidsMergeI[foli, outFol, type, datType, OptionValue[VersionCheck]],
+							"MuscleBidsSegment", MuscleBidsSegmentI[foli, outFol, type, datType, OptionValue[VersionCheck]],
+							"MuscleBidsTractogrpahy", MuscleBidsTractographyI[foli, outFol, type, datType, OptionValue[VersionCheck], OptionValue[BidsTractographyMethod]]
+					], {foli, rfol}];(*Close sub folders loop*)		
+				];(*close type check*)
+			, {type, datType}];(*close datatype loop*)
+		]; (*close method switch*)
+		
+		(*clear logfilename*)
+		SetLogFile[];
+		
+	, {fol, subs}];(*close subject/folder loop*)
+] 
+
+
+(* ::Subsection:: *)
+(*BidsDcmToNii*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*BidsDcmToNii*)
+
+
+Options[BidsDcmToNii]={BidsIncludeSession->True, SelectSubjects->All}
+
+SyntaxInformation[BidsDcmToNii] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
+BidsDcmToNii[folder_?StringQ, opts:OptionsPattern[]] := BidsDcmToNii[folder, GetConfig[folder], opts];
+
+
+BidsDcmToNii[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
+	If[$debugBids, Print["starting BidsDcmToNii"]];
+	dir = Directory[]; SetDirectory[folder];
+	BidsDcmToNii[
+		config["folders"]["dicomData"],(*the input folder of the dcm data*)
+		config["folders"]["rawData"],(*the output folder for converstion*)
+		config["datasets"],
+		opts];
+	SetDirectory[dir];
+]
+
+BidsDcmToNii[inFol_?StringQ, outFol_?StringQ, datDis_, opts:OptionsPattern[]] := BidsFolderLoop[inFol, outFol, datDis, Method->"BidsDcmToNii", opts]
+
+
+(* ::Subsubsection:: *)
+(*BidsDcmToNiiI*)
+
+
+BidsDcmToNiiI[fol_, outI_]:=Block[{out},
+	(*define the outfolder*)
+	out = FileNameJoin[{outI, "raw"}];
+	(*----*)AddToLog[{"Output folder: ", out},1];
+	Quiet[CreateDirectory[out]];
+	
+	(*perform the conversions only when output folder is empty*)
+	If[EmptyDirectoryQ[out],
+		(*perform conversion*)			
+		(*----*)AddToLog["Starting the conversion", 1, True];
+		DcmToNii[FileNameJoin[{Directory[],#}]&/@{fol,out}, MonitorCalc->False, UseVersion->"23"];
+		(*----*)AddToLog["Folder was converted", 1],
+		(*----*)AddToLog["Folder was skipped since output folder already exists", 1];
+	];
 ]
 
 
@@ -755,24 +769,23 @@ Options[MuscleBidsConvert] = {DeleteAfterConversion->True, SelectSubjects->All};
 
 SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-MuscleBidsConvert[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsConvert[folder, GetConfig[folder], opts];
+MuscleBidsConvert[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsConvert[folder, GetConfig[folder], opts];
 
-MuscleBidsConvert[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
-	dir = Directory[];
-	SetDirectory[folder];(*SetDirectory[config["folders"]["root"]];*)
-
+MuscleBidsConvert[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
+	If[$debugBids, Print["starting MuscleBidsConvert"]];
+	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsConvert[
-		config["folders"]["rawData"],(*the input folder for the data*)
-		Values[config["datasets"]],(*what to process*)
+		config["folders"]["rawData"],(*the input and output folder for the data*)
+		config["folders"]["rawData"],
+		config["datasets"],(*what to process*)
 		opts];
 	SetDirectory[dir];
 ]
-		
 
-MuscleBidsConvert[niiFol_?StringQ, datDis_, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, datDis, Method->"Convert", opts]
+MuscleBidsConvert[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsConvert", opts]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsConvertI*)
 
 
@@ -781,7 +794,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 	},
 
 	If[$debugBids, Print["Starting MuscleBidsConvertI"]];
-	If[$debugBids, Print[foli, folo]];
+	If[$debugBids, Print[foli]];
 
 	(*see if one label or session|repetion*)
 	{fol, parts} = PartitionBidsFolderName[foli];
@@ -843,7 +856,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 					|>;
 					
 					(*export to the correct folder*)
-					outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->Flatten@{datType["Suffix"], sufd}|>];
+					outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetClassName[datType["Class"], namei], "suf"->Flatten@{datType["Suffix"], sufd}|>];
 					(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 					ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
 					Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
@@ -882,7 +895,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 				|>;
 				
 				(*export to the correct folder*)
-				outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
+				outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetClassName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
 				(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
 				ExportBval[val, ConvertExtension[outFile, ".bval"]];
 				ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
@@ -927,7 +940,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 				|>;
 				
 				(*export to the correct folder*)
-				outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetStackName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
+				outFile = GenerateBidsFileName[fol, <|parts, "Type"->type, GetClassName[datType["Class"], namei], "suf"->{datType["Suffix"]}|>];
 				(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
 				ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
 				Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
@@ -955,17 +968,6 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 ] 
 
 
-(* ::Subsubsection::Closed:: *)
-(*GetStackName*)
-
-
-GetStackName[class_, namei_]:=Switch[class,
-	"Volume", "",
-	"Stacks"|"Repetitions",
-	Switch[class, "Stacks", "stk", "Repetitions", "rep"] -> StringReplace[namei,{"-"->"","_"->"","."->""}]
-]
-
-
 (* ::Subsection:: *)
 (*MuscleBidsProcess*)
 
@@ -978,23 +980,23 @@ Options[MuscleBidsProcess] = {SelectSubjects->All, VersionCheck->False};
 
 SyntaxInformation[MuscleBidsProcess] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-MuscleBidsProcess[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsProcess[folder, GetConfig[folder], opts];
+MuscleBidsProcess[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsProcess[folder, GetConfig[folder], opts];
 
-MuscleBidsProcess[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
-	dir = Directory[];
-	SetDirectory[folder];(*SetDirectory[config["folders"]["root"]];*)
+MuscleBidsProcess[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
+	If[$debugBids, Print["starting MuscleBidsProcess"]];
+	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsProcess[
 		config["folders"]["rawData"],(*the input folder for the data*)
 		config["folders"]["derivedData"],(*the output folder for processing*)
-		Values[config["datasets"]],(*what to process*)
+		config["datasets"],(*what to process*)
 		opts];
 	SetDirectory[dir];	
 ]
 
-MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"Process", ops]
+MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsProcess", ops]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsProcessI*)
 
 
@@ -1399,23 +1401,23 @@ Options[MuscleBidsMerge] = {SelectSubjects->All, VersionCheck->False};
 
 SyntaxInformation[MuscleBidsMerge] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-MuscleBidsMerge[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsMerge[folder, GetConfig[folder], opts];
+MuscleBidsMerge[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsMerge[folder, GetConfig[folder], opts];
 
-MuscleBidsMerge[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
-	dir = Directory[];
-	SetDirectory[folder];(*SetDirectory[config["folders"]["root"]];*)
+MuscleBidsMerge[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+	If[$debugBids, Print["starting MuscleBidsMerge"]];
+	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsMerge[
 		config["folders"]["derivedData"],(*the input folder for the data*)
 		config["folders"]["mergeData"],(*the output folder for merging*)
-		Values[config["datasets"]],(*what to process*)
+		config["datasets"],(*what to process*)
 		opts];
 	SetDirectory[dir];	
 ]
 
-MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Merge", ops]
+MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"MuscleBidsMerge", ops]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsMergeI*)
 
 
@@ -1594,23 +1596,23 @@ Options[MuscleBidsSegment] = {SelectSubjects->All, VersionCheck->False};
 
 SyntaxInformation[MuscleBidsSegment] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-MuscleBidsSegment[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsSegment[folder, GetConfig[folder], opts];
+MuscleBidsSegment[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsSegment[folder, GetConfig[folder], opts];
 
-MuscleBidsSegment[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
-	dir = Directory[];
-	SetDirectory[folder];(*SetDirectory[config["folders"]["root"]];*)
+MuscleBidsSegment[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
+	If[$debugBids, Print["starting MuscleBidsSegment"]]; 
+	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsSegment[
-		config["folders"]["mergeData"],(*the input folder for the data*)
-		config["folders"]["mergeData"],(*the output folder for merging*)
-		Values[config["datasets"]],(*what to process*)
+		config["folders"]["mergeData"],(*the input folder for the data, output is in same folder*)
+		config["folders"]["mergeData"],
+		config["datasets"],(*what to process*)
 		opts];
 	SetDirectory[dir];	
 ]
 
-MuscleBidsSegment[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Segment", ops]
+MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, outFol, datDis, Method->"MuscleBidsSegment", ops]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsSegmentI*)
 
 
@@ -1682,194 +1684,28 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 (* ::Subsubsection::Closed:: *)
 (*MuscleBidsTractography*)
 
-Options[MuscleBidsAnalysis] = {SelectSubjects->All, VersionCheck->False};
-
-SyntaxInformation[MuscleBidsAnalysis] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
-
-MuscleBidsAnalysis[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsAnalysis[folder, GetConfig[folder], opts];
-
-MuscleBidsAnalysis[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
-	If[$debugBids, Print["settings"]];
-	dir = Directory[];
-	SetDirectory[folder];(*SetDirectory[config["folders"]["root"]];*)
-	MuscleBidsAnalysis[
-		config["folders"]["mergeData"],(*the input folder for the data*)
-		config["folders"]["analysis"],(*the output folder for analsys*)
-		config["analysis"],(*what to process*)
-		opts];
-	SetDirectory[dir];	
-]
-
-MuscleBidsAnalysis[datFol_?StringQ, anFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]] := Block[{data, name},
-	BidsFolderLoop[datFol, anFol, datDis, Method->"Analysis", ops];
-
-	data = Join @@ (Import /@ Select[FileNames["*.wxf", anFol, Infinity], 
-		!StringMatchQ[FileBaseName[#], NumberString] &]);
-	name = FileNameJoin[{anFol,
-		StringJoin[StringPadLeft[#, 2, "0"] & /@ StringSplit[DateString["LocaleDateCompact"], "/"][[{3, 1, 2}]]]}];
-
-	Export[name <> ".xlsx", data];
-	Export[name <> ".wxf", data];
-]
-
-(*function that needs to be saved for futer*)
-InsertID[dataAll_, key_] := Block[{vals, id, pos, ins},
-	vals = Normal@dataAll[All, key];
-	id = DeleteDuplicates@vals;
-	id = Thread[id -> Range[Length@id]];
-	pos = Position[Keys@dataAll[[1]], key][[1, 1]] + 1;
-	ins = Thread[key <> "ID" -> (vals /. id)];
-	Dataset[Association /@ Transpose[Insert[Transpose[Normal@Normal@dataAll], ins, pos]]]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*MuscleBidsTractographyI*)
-
-
-MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_] := Block[{maskErosion, tractWeigthing, anaSeg, fol, parts, segfile,
-		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, densFile, trType, trMask, segT,
-		datfile, data, scale, tract, outFile
-	},
-	If[$debugBids, Print["Starting MuscleBidsAnalysisI"]];
-	If[$debugBids, Print[foli, folo]];
-
-	(*Options*)
-	maskErosion = True;
-	tractWeigthing = False;
-
-	(*get the segmentation settings*)
-	anaSeg = datDis["Segmentation"];
-	{fol, parts} = PartitionBidsFolderName[foli];
-	(*----*)AddToLog[{"Segmentation file used for analysis is:", StringRiffle[anaSeg, "_"]}, 3];
-	segfile = GenerateBidsFileName[fol, <|parts, "Type" -> First[anaSeg], "suf" -> Rest[anaSeg]|>]<>".nii";
-	
-	(*Perform the segementation analysis, what are the label names and volumes*)
-	If[$debugBids, Print["Segmentation analysis"]];
-	Which[
-		!NiiFileExistQ[segfile],
-		(*----*)AddToLog[{"The segmentation file does not exist: ", segfile}, 4],
-		True,
-		(*----*)AddToLog[{"Importing and processing the needed segmentation"}, 4];
-		
-		{n, what} = datDis["Labels"];
-		{seg, vox} = ImportNii[segfile];
-		{seg, musNr} = SelectSegmentations[SplitSegmentations[seg], Range[n]];
-
-		(*----*)AddToLog[{"Calculating the volume of the segmentation"}, 4];
-		vol = SegmentationVolume[seg, vox];
-
-		If[what === "Legs",
-			(*----*)AddToLog[{"Using the Legs for muscle labeling"}, 4];
-			musName = MuscleLabelToName[musNr, GetAssetLocation["MusclesLegLabels"]];
-			{musName, sideName} = Transpose[(str = StringSplit[#, "_"];
-				If[Last[str] == "Left" || Last[str] == "Right",
-					{StringRiffle[Most@str, "_"], Last@str},
-					{StringRiffle[str, "_"], "Both"}
-				]) & /@ musName];
-
-			sideNr = sideName /. Thread[{"Left", "Right", "Both"} -> {1, 2, 3}];
-			musNr = MuscleNameToLabel[musName, GetAssetLocation["MusclesLegAllLabels"]];
-
-			,
-			(*----*)AddToLog[{"Unknown Label type: ", what}, 4];
-		];
-		(*summarize the data labels for export later*)
-		dataLabs = Join[
-			Thread[{"subject", "subjectID", "session", "sessionID"} -> Transpose@ConstantArray[{
-				parts["sub"], ToExpression[Last@StringCases[parts["sub"], NumberString]],
-				parts["ses"], ToExpression[Last@StringCases[parts["ses"], NumberString]]}, Length[musNr]
-			]],
-			{"muscle"->musName, "muscleID"->musNr, "side"->sideName, "sideID"->sideNr, "volume"->vol}
-		];
-
-		(*get the labels for analysis, see if and which need to be done using tract based analysis*)
-		If[$debugBids, Print["data analysis"]];
-		(*labels to be analysed*)
-		anaType = datDis["Analysis"];
-		anaType = Flatten[Thread /@ anaType, 1];
-		(*----*)AddToLog[{"Analsysis will be performed for:", StringRiffle[#, "_"]&/@anaType}, 3];
-		If[$debugBids, Print["tract mask"]];
-		(*Figure out the tract analysis*)
-		If[KeyExistsQ[datDis, "TractBased"],
-			densLab = {"dwi", "dti", "trk","dens"};
-			densFile = GenerateBidsFileName[fol, <|parts, "Type" -> First[densLab], "suf" -> Rest[densLab]|>]<>".nii";
-			trType = Flatten[Thread /@ datDis["TractBased"], 1];
-			trType = Select[trType, MemberQ[anaType, #] &];
-			(*----*)AddToLog[{"The types with tract weighting will be:", StringRiffle[#, "_"]&/@trType}, 3];
-			(*----*)AddToLog[{"Import tract mask:", StringRiffle[densLab, "_"]}, 4];
-			trMask = ImportNii[densFile][[1]];
-			trMask = If[tractWeigthing, trMask, Unitize@trMask];
-			,
-			(*----*)AddToLog[{"No tract bases analysis given"}, 4];
-			trMask = 1;
-		];
-
-		(*perform the data analysis *)
-		(*----*)AddToLog[{"Starting the data analysis:"}, 3, True];
-		If[$debugBids, Print[{"tract mask", Dimensions@seg, Dimensions@trMask}]];
-		If[maskErosion,	seg = DilateMask[seg, -1]];
-		segT = If[trMask=!=1, MaskSegmentation[seg, trMask], seg];
-		(*loop over all datatypes and perform the mask analysis*)
-		data = Table[
-			datfile = GenerateBidsFileName[fol, <|parts, "Type" -> First[datType], "suf" -> Rest[datType]|>]<>".nii";
-			Which[
-				!NiiFileExistQ[datfile],
-				(*----*)AddToLog[{"The data does not exist: ", StringRiffle[datType, "_"]}, 4],
-				True,
-				tract = MemberQ[trType, datType];
-				(*----*)AddToLog[{"Processing file "<>If[tract,"with","without"]<>" tract weighting:", StringRiffle[datType, "_"]}, 4];
-				scale = Switch[datType, {"megre","dix","fatfr"}, 100, {"megre","dix","t2star"}, 1000, _, 1];
-				seg = If[tract, segT, seg];
-				If[$debugBids, Print[datType]];
-				{data, vox} = ImportNii[datfile];
-				mn = (datType==={"dwi", "dti", "trk", "seed"} || datType==={"dwi", "dti", "trk", "dens"});
-				StringRiffle[datType[[-2;;]], "_"]-> scale GetMaskData[data, seg, 
-					GetMaskOutput->If[mn, "Mean", "Median"],
-					GetMaskOnly -> If[mn, True, False]
-				]
-			]
-		, {datType, anaType}];
-
-		(*Export the data*)
-		outFile = FileNameJoin[{GenerateBidsFolderName[folo, parts], GenerateBidsName[parts]}];
-		If[$debugBids, Print[{"exporting", outFile}]];
-		(*----*)AddToLog[{"Data will be exported to:", DirectoryName@outFile}, 3, True];
-		data = Dataset[Association /@ Transpose[Thread[#] & /@ Join[dataLabs, data]]];
-		Export[outFile<>".xlsx", data];
-		Export[outFile<>".wxf", data];
-	];	
-]
-
-
-(* ::Subsection:: *)
-(*MuscleBidsTractography*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*MuscleBidsTractography*)
 
 Options[MuscleBidsTractography] = {SelectSubjects->All, VersionCheck->False, BidsTractographyMethod->"Full"};
 
 SyntaxInformation[MuscleBidsTractography] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-MuscleBidsTractography[folder_?StringQ, opts:OptionsPattern[]]:=MuscleBidsTractography[folder, GetConfig[folder], opts];
+MuscleBidsTractography[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsTractography[folder, GetConfig[folder], opts];
 
-MuscleBidsTractography[folder_, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
-	dir = Directory[];
-	SetDirectory[folder];(*SetDirectory[config["folders"]["root"]];*)
+MuscleBidsTractography[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
+	If[$debugBids, Print["starting MuscleBidsTractography"]];
+	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsTractography[
-		config["folders"]["mergeData"],(*the input folder for the data*)
-		config["folders"]["mergeData"],(*the output folder for merging*)
-		Values[config["datasets"]],(*what to process*)
+		config["folders"]["mergeData"],(*the input folder for the data, output is in same folder*)
+		config["folders"]["mergeData"],
+		config["datasets"],(*what to process*)
 		opts];
 	SetDirectory[dir];	
 ]
 
-MuscleBidsTractography[datFol_?StringQ, merFol_?StringQ, datDis_?ListQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"Tractography", ops]
+MuscleBidsTractography[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, outFol, datDis, Method->"MuscleBidsTractogrpahy", ops]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsTractographyI*)
 
 
@@ -1891,10 +1727,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 	(* Check if tractography is specified *)
 	If[tracto===Missing["KeyAbsent", "Tractography"],
 		(* If no tractography specified, log the event *)
-		AddToLog[{"No tractography defined for this data"}, 3];
+		(*-----*)AddToLog[{"No tractography defined for this data"}, 3];
 		,
-		(* If tractography is specified, proceed with the process *)
-
 		(* Extract tractography target, segmentation and stopping criteria *)
 		tractType = tracto["Target"];
 		tractSeg = tracto["Segmentation"];
@@ -1967,7 +1801,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 					];
 
 					(* Export the tractography results *)
-					AddToLog[{"Exporting the whole volume tractography"}, 4];
+					(*-----*)AddToLog[{"Exporting the whole volume tractography"}, 4];
 					ExportTracts[trkFile[".trk"], tracts, vox, dim, seeds];
 
 					MakeCheckFile[checkFile, Sort@Join[{"Check"->"track"}, Normal@datType]];
@@ -2046,72 +1880,173 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 
 
 (* ::Subsection:: *)
-(*JSON*)
+(*MuscleBidsAnalysis*)
 
 
 (* ::Subsubsection::Closed:: *)
-(*ImportJSON*)
+(*MuscleBidsAnalysis*)
 
 
-ImportJSON[file_]:=Import[file,"RawJSON"]
+Options[MuscleBidsAnalysis] = {SelectSubjects->All, VersionCheck->False};
 
+SyntaxInformation[MuscleBidsAnalysis] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-(* ::Subsubsection::Closed:: *)
-(*GetJSONPosition*)
+MuscleBidsAnalysis[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsAnalysis[folder, GetConfig[folder], opts];
 
+MuscleBidsAnalysis[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+	If[$debugBids, Print["starting MuscleBidsAnalysis"]];
+	dir = Directory[]; SetDirectory[folder];
+	MuscleBidsAnalysis[
+		config["folders"]["mergeData"],(*the input folder for the data*)
+		config["folders"]["analysis"],(*the output folder for analsys*)
+		config["analysis"],(*what to process*)
+		opts];
+	SetDirectory[dir];	
+]
 
-GetJSONPosition[json_, selection_]:=GetJSONPosition[json, selection, ""]
-
-GetJSONPosition[json_, selection_, sort_]:=Block[{seli, self, list, key, val, inds, pos},
-	(*selection functions*)
-	seli = StringReplace[ToLowerCase[Last[Flatten[{#1 /. #3}]]], "wip " -> ""] === ToLowerCase[#2] &;
-	self = (
-		list=#1;
-		key=#2[[1]]; 
-		val=#2[[2]]; 
-		Select[list, seli[key,val,json[[#]]]&]
-	)&;
+MuscleBidsAnalysis[datFol_?StringQ, anFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]] := Block[{data, name},
+	(*loop over all folders*)
+	BidsFolderLoop[datFol, anFol, datDis, Method->"MuscleBidsAnalysis", ops];
 	
-	(*get the file positions*)
-	pos = Fold[self, Range[Length[json]], selection];
-	(*sort positions if needed*)
-	If[sort==="", pos, pos[[Ordering[sort /. json[[pos]]]]]]
+	(*processing for joining all generated datafiles*)
+	data = Join @@ (Import /@ Select[FileNames["*.wxf", anFol, Infinity], !StringMatchQ[FileBaseName[#], NumberString] &]);
+	name = FileNameJoin[{anFol, "All_"<>DateName[]}];
+	
+	(*export to summary data file*)
+	Export[name <> ".xlsx", data];
+	Export[name <> ".wxf", data];
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*MergeJSON*)
+(* ::Subsubsection:: *)
+(*MuscleBidsAnalysisI*)
 
 
-MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
-	keys=DeleteDuplicates[Flatten[Keys /@ json]];
+MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_] := Block[{maskErosion, tractWeigthing, anaSeg, fol, parts, segfile,
+		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, densFile, trType, trMask, segT,
+		datfile, data, scale, tract, outFile, meanType
+	},
+	If[$debugBids, Print["Starting MuscleBidsAnalysisI"]];
+	If[$debugBids, Print[foli, folo]];
+
+	(*Options*)
+	maskErosion = True;
+	tractWeigthing = False;
+
+	(*get the segmentation settings*)
+	anaSeg = datDis["Segmentation"];
+	{fol, parts} = PartitionBidsFolderName[foli];
+	(*----*)AddToLog[{"Segmentation file used for analysis is:", StringRiffle[anaSeg, "_"]}, 3];
 	
-	Association[If[#[[2]]==={},Nothing,#]& /@ Thread[
-			keys->(
-				If[Length[#]===1,First@#,#]& /@ (
-					(DeleteDuplicates /@ Transpose[(# /@ keys)& /@ json]) /. Missing[___]->Nothing
-				)
-			)
-		]
-	]
-]
+	(*Perform the segementation analysis, what are the label names and volumes*)
+	If[$debugBids, Print["Segmentation analysis"]];
+	segfile = GenerateBidsFileName[fol, <|parts, "Type" -> First[anaSeg], "suf" -> Rest[anaSeg]|>]<>".nii";
+	Which[
+		(*no segmentation file exists*)
+		!NiiFileExistQ[segfile],
+		(*----*)AddToLog[{"The segmentation file does not exist: ", segfile}, 4],
+		
+		(*segmentation file existes perform the analysis*)
+		True,
+		(*----*)AddToLog[{"Importing and processing the needed segmentation"}, 4];
+		{n, what} = datDis["Labels"];
+		{seg, vox} = ImportNii[segfile];
+		{seg, musNr} = SelectSegmentations[SplitSegmentations[seg], Range[n]];
 
+		(*----*)AddToLog[{"Calculating the volume of the segmentation"}, 4];
+		vol = SegmentationVolume[seg, vox];
 
-(* ::Subsubsection::Closed:: *)
-(*ExtractFromJSON*)
+		(*switch to the correct segmentation label*)
+		Switch[what,
+			"Legs",
+			(*----*)AddToLog[{"Using the Legs for muscle labeling"}, 4];
+			musName = MuscleLabelToName[musNr, GetAssetLocation["MusclesLegLabels"]];
+			{musName, sideName} = Transpose[(str = StringSplit[#, "_"];
+				If[Last[str] == "Left" || Last[str] == "Right",
+					{StringRiffle[Most@str, "_"], Last@str},
+					{StringRiffle[str, "_"], "Both"}
+				]) & /@ musName];
+			sideNr = sideName /. Thread[{"Left", "Right", "Both"} -> {1, 2, 3}];
+			musNr = MuscleNameToLabel[musName, GetAssetLocation["MusclesLegAllLabels"]];
+			,
+			_,(*unknown label type*)
+			(*----*)AddToLog[{"Unknown Label type: ", what}, 4];
+		];
 
+		(*summarize the data labels for export later*)
+		dataLabs = Join[
+			Thread[{"subject", "subjectID", "session", "sessionID"} -> Transpose@ConstantArray[{
+				parts["sub"], ToExpression[Last@StringCases[parts["sub"], NumberString]],
+				parts["ses"], ToExpression[Last@StringCases[parts["ses"], NumberString]]}, Length[musNr]
+			]],
+			{"muscle"->musName, "muscleID"->musNr, "side"->sideName, "sideID"->sideNr, "volume"->vol}
+		];
 
-ExtractFromJSON[keys_] := ((# -> json[#]) & /@ keys) /. {(_ -> Missing[___]) -> Nothing};
+		(*get the labels for analysis, see if and which need to be done using tract based analysis*)
+		If[$debugBids, Print["data analysis"]];
+		(*labels to be analysed*)
+		anaType = datDis["Analysis"];
+		anaType = Flatten[Thread /@ anaType, 1];
+		(*----*)AddToLog[{"Analsysis will be performed for:", StringRiffle[#, "_"]&/@anaType}, 3];
+		
+		(*Figure out the tract analysis*)
+		If[$debugBids, Print["tract mask"]];
+		If[KeyExistsQ[datDis, "TractBased"],
+			densLab = {"dwi", "dti", "trk","dens"};
+			densFile = GenerateBidsFileName[fol, <|parts, "Type" -> First[densLab], "suf" -> Rest[densLab]|>]<>".nii";
+			trType = Flatten[Thread /@ datDis["TractBased"], 1];
+			trType = Select[trType, MemberQ[anaType, #] &];
+			(*----*)AddToLog[{"The types with tract weighting will be:", StringRiffle[#, "_"]&/@trType}, 3];
+			(*----*)AddToLog[{"Import tract mask:", StringRiffle[densLab, "_"]}, 4];
+			trMask = ImportNii[densFile][[1]];
+			trMask = If[tractWeigthing, trMask, Unitize@trMask];
+			,
+			(*----*)AddToLog[{"No tract bases analysis given"}, 4];
+			trMask = 1;
+		];
 
+		(*perform the actual data analysis *)
+		(*----*)AddToLog[{"Starting the data analysis:"}, 3, True];
+		If[$debugBids, Print[{"tract mask", Dimensions@seg, Dimensions@trMask}]];
+		(*make the correcet masks*)
+		If[maskErosion,	seg = DilateMask[seg, -1]];
+		segT = If[trMask=!=1, MaskSegmentation[seg, trMask], seg];
 
-(* ::Subsubsection::Closed:: *)
-(*AddToJson*)
+		(*loop over all datatypes and perform the mask analysis*)
+		data = Table[
+			datfile = GenerateBidsFileName[fol, <|parts, "Type" -> First[datType], "suf" -> Rest[datType]|>]<>".nii";
+			Which[
+				(*data does not exist so skip*)
+				!NiiFileExistQ[datfile],
+				(*----*)AddToLog[{"The data does not exist: ", StringRiffle[datType, "_"]}, 4],
 
+				(*data exists so perform the analysis*)
+				True,
+				If[$debugBids, Print[datType]];
+				{data, vox} = ImportNii[datfile];
 
-AddToJson[json_, add_]:=MergeJSON[{json,
-	Switch[add,
-		"QMRITools",<|"ConversionSoftware"->"QMRITools.com", "ConversionSoftwareVersion"->QMRITools`$InstalledVersion|>,
-		_,add]}
+				(*figure out how to handle this type *)
+				tract = MemberQ[trType, datType];
+				scale = Switch[datType, {"megre","dix","fatfr"}|{"mese","t2","fatfr"}, 100, {"megre","dix","t2star"}, 1000, _, 1];
+				meanType = (datType==={"dwi", "dti", "trk", "seed"} || datType==={"dwi", "dti", "trk", "dens"});
+				(*----*)AddToLog[{"Processing file "<>If[tract,"with","without"]<>" tract weighting:", StringRiffle[datType, "_"]}, 4];
+				
+				(*mask based analysis*)
+				StringRiffle[datType[[-2;;]], "_"]-> scale GetMaskData[data, If[tract, segT, seg], 
+					GetMaskOutput->If[meanType, "Mean", "Median"],
+					GetMaskOnly -> If[meanType, True, False]
+				]
+			]
+		, {datType, anaType}];
+
+		(*merge the data and export*)
+		outFile = FileNameJoin[{GenerateBidsFolderName[folo, parts], GenerateBidsName[parts]}];
+		If[$debugBids, Print[{"exporting", outFile}]];
+		(*----*)AddToLog[{"Data will be exported to:", DirectoryName@outFile}, 3, True];
+		data = Dataset[Association /@ Transpose[Thread[#] & /@ Join[dataLabs, data]]];
+		Export[outFile<>".xlsx", data];
+		Export[outFile<>".wxf", data];
+	];	
 ]
 
 
