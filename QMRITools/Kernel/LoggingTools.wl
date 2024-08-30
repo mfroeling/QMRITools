@@ -139,10 +139,14 @@ SyntaxInformation[ShowLog] = {"ArgumentsPattern" -> {_.}};
 ShowLog[] := ShowLog[True]
 
 ShowLog[win_] := Block[{pane},
-	pane = Pane[Dynamic@Column[QMRITools`$Log], {1000, 600}, Scrollbars -> {False, True}, ImageMargins -> 20, AppearanceElements -> None];
+	pane = Dynamic@Pane[Style[StringRiffle[QMRITools`$Log, "\n"], Bold, White]];
 	If[! win, pane,
 		NotebookClose[logWindow];
-		logWindow = CreateWindow[DialogNotebook@pane, WindowTitle -> "Logging window", Background -> White]
+		logWindow = CreateWindow@DialogNotebook[pane, Background -> Black,
+			WindowSize -> Automatic, WindowTitle -> "Logging window",
+			WindowFrameElements -> {"CloseBox", "ZoomBox", "MinimizeBox", "ResizeArea"},
+			WindowElements -> {"VerticalScrollBar", "HorizontalScrollBar"}
+		];
 	];
 ];
 

@@ -354,7 +354,7 @@ SurfaceDistance::met = "Method `1` not recognized";
 Begin["`Private`"] 
 
 
-QMRITools`$debugUnet = False;
+QMRITools`SegmentationTools`$debugUnet = False;
 
 
 (* ::Subsection::Closed:: *)
