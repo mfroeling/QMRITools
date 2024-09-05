@@ -428,7 +428,19 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 		
 		Row[{Show[
 			ListLinePlot[Thread[{ddat,sig}],PlotStyle->Black,PlotMarkers->Automatic,PlotRange->{0,1.1 Max@sig},ImageSize->500,
-				GridLines->{{{dyn,Directive[Black,Thick]}},{{mean,Directive[Black,Thick]},{tresh[[1]],Red},{tresh[[2]],Directive[Thick,Gray]},{tresh[[3]],Directive[Thick,Gray,Dashed]}}}],
+				GridLines->If[grid,{
+					{{dyn,Directive[Black,Thick]}},
+					{{mean,Directive[Black,Thick]},
+						{tresh[[1]],Directive[Red,Thick]},
+						{tresh[[2]],Directive[Thick,RGBColor[0.812807, 0.518694, 0.303459], Dashed]},
+						{tresh[[3]],Directive[Thick,RGBColor[0.253651, 0.344893, 0.558151], Dashed]}}},
+						None
+					]
+			],
+			Graphics[{
+				RGBColor[0.812807, 0.518694, 0.303459],Line[{{0,tresh[[2]]},{Length@sig,tresh[[2]]}}],
+				RGBColor[0.253651, 0.344893, 0.558151],Line[{{0,tresh[[2]]},{Length@sig,tresh[[2]]}}]
+			}],
 			ListPlot[Pick[Thread[{ddat,sig}],actt,1],PlotStyle->Red,PlotMarkers->{Automatic,10}],
 			ListPlot[Pick[Thread[{ddat,sig}],actSt,1],PlotStyle->Green,PlotMarkers->{Automatic,10}]]
 			,
@@ -447,7 +459,9 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 		,Delimiter
 		,{{alpha, 0.5, "Opacity"},0,1}
 		,{{crs, True,"Show cross"},{True,False}}
-		
+		,Delimiter
+		,{{grid,False},{True,False}}
+		,Row[{Dynamic[{z,y,x}]}]
 		,
 		{zz,ControlType->None},{dd,ControlType->None},{xx,ControlType->None},{yy,ControlType->None},
 		{max,ControlType->None},{pos,ControlType->None},{l,1,ControlType->None},
