@@ -731,7 +731,7 @@ DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm,
 	
 	(*Dimensions must be equal*)
 	If[ dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
-	(*
+
 	(*Flatten the data*)
 	data = If[depthd == 4,
 		Flatten[RotateDimensionsLeft[Transpose[data]], 2],
@@ -739,14 +739,10 @@ DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm,
 			Flatten[RotateDimensionsLeft[data], 1],
 			Flatten[data]
 		]
-	];*)
-
-	sp = SparseArray[mask data];
-	cor = sp["ExplicitPositions"];
-	val = sp["ExplicitValues"];
+	];
 
 	(*get the data and positions there mask is 1*)
-	{val , {dimd, cor}}
+	{Pick[data, Round[Flatten[mask]], 1] , {dimd, Position[mask, 1]}}
 ]
 
 

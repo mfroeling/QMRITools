@@ -1031,62 +1031,63 @@ SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 JoinSets[data: {_?ArrayQ ..}, over_, opts:OptionsPattern[]]:=JoinSets[data, over, {1,1,1}, opts]
 
-JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[
-	{dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran},
+JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
+		dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran,
+		reverseS, reverseD, split
+	},
 	
 	(*get the options*)
-	motion = OptionValue[MotionCorrectSets];
+	{motion, pad, normalize, normover, mon, reverseS, reverseD, split} = OptionValue[{MotionCorrectSets, PaddOverlap, 
+		NormalizeSets, NormalizeOverlap, MonitorCalc, ReverseSets, ReverseData, JoinSetSplit}];
+
+	(*motion = OptionValue[MotionCorrectSets];
 	pad = OptionValue[PaddOverlap];
 	normalize = OptionValue[NormalizeSets];
 	normover = If[normalize, OptionValue[NormalizeOverlap], False];
-	mon = OptionValue[MonitorCalc];
+	mon = OptionValue[MonitorCalc];*)
+	normover = If[normalize, normover, False];
 	depth = ArrayDepth[data];
 	depth = 1 + ArrayDepth@First@data;
-	overlap = If[ListQ[over],First@over,over];
-
+	overlap = If[ListQ[over], First@over, over];
+	
 	(*normalize the data*)
 	dat = If[normalize, 
 		If[mon, PrintTemporary["Normalizing data"]]; 
 		NormalizeData/@data, data];
-	
 	ran = MinMax[dat];
-
-	(*reverse the order of the sets if needed*)
-	dat = If[OptionValue[ReverseSets], Reverse[dat], dat];
 	
-	If[motion,
-		Switch[depth,
-			5,
-			motion=False;
-			(*define the moving data*)
-			If[mon,Print["Motion correct is only for 3D volues"]]
-			,
-			4,
-			If[mon,PrintTemporary["Motion correcting data"]];
-			dat = CorrectJoinSetMotion[dat, vox, over, PaddOverlap->pad, JoinSetSplit->OptionValue[JoinSetSplit], MonitorCalc->mon];
-			overlap = overlap + 2*pad;
-		]
-	];
+	(*reverse the order of the sets if needed*)
+	dat = If[reverseS, Reverse[dat], dat];
+	
+	If[motion, Switch[depth,
+		5,
+		motion = False;
+		If[mon, Print["Motion correct is only for 3D volues"]],
+		4,
+		If[mon,PrintTemporary["Motion correcting data"]];
+		dat = CorrectJoinSetMotion[dat, vox, over, PaddOverlap->pad, JoinSetSplit->split, MonitorCalc->mon];
+	]];
 	
 	(*reverse the order of the slices if needed*)
-	dat = N@If[OptionValue[ReverseData], Reverse[dat,2], dat];
+	dat = N@If[reverseD, Reverse[dat, 2], dat];
 	
 	If[mon, PrintTemporary["Joining data"]];	
+	overlap = overlap + 2*pad;
 	dat = Switch[depth,
-		5, Transpose[(JoinSetsi[dat[[All, All, #]],overlap,normover]) & /@ Range[Length[dat[[1, 1]]]]],
+		5, Transpose[(JoinSetsi[dat[[All, All, #]], overlap, normover]) & /@ Range[Length[dat[[1, 1]]]]],
 		4, JoinSetsi[dat, overlap, normover],
 		_,$Failed
 	];
-	
+
 	(*give output*)	
-	dat = If[motion, ArrayPad[dat, Prepend[ConstantArray[{0, 0}, ArrayDepth[dat] - 1], {-pad, -pad}]],dat];
+	dat = ArrayPad[dat, Prepend[ConstantArray[{0, 0}, ArrayDepth[dat] - 1], {-pad, -pad}]];
 	dat = ToPackedArray@N@Clip[dat, 1.1 ran, 1.1 ran];
 	
-	Return[If[OptionValue[ReverseData],Reverse[dat],dat]]
+	Return[If[reverseD, Reverse[dat], dat]]
 ]
 
 
-JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ,norm_:False]:= Block[{
+JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False]:= Block[{
 		sets,set1,set2,step,set1over,set2over,joined,mn1,mn2
 	},
 	
@@ -1292,7 +1293,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 (*SplitSets*)
 
 
-Options[SplitSets] = {ReverseSets -> False, ReverseData -> True, PaddOverlap->0};
+Options[SplitSets] = {ReverseSets -> False, ReverseData -> True, PaddOverlap -> 0};
 
 SyntaxInformation[SplitSets] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
@@ -1301,9 +1302,8 @@ SplitSets[data_, sets_, overlap_, OptionsPattern[]] := Module[{lengthSet, sels, 
   dat = If[OptionValue[ReverseData], Reverse[data], data];
   
   pad = OptionValue[PaddOverlap];  
-  dat = ArrayPad[dat,{{pad,pad},{0,0},{0,0}}];
-  
-  over=overlap+2pad;
+  dat = ArrayPad[dat, {{pad, pad}, {0,0}, {0,0}}];
+  over = overlap + 2 pad;
   
   lengthSet = Round[(Length[dat] + (sets - 1)*over)/sets];
   sels = Table[
