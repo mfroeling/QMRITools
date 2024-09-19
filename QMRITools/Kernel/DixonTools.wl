@@ -584,8 +584,8 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*in\out phase data*)
 	iop = {0, 0.5} / Abs[Total[Flatten[(amps[[2 ;;]]^2) freqs[[2 ;;]]]] / Total[Flatten[amps[[2 ;;]]]^2]];
 	matA = (Total /@ (amps Exp[sig #])) & /@ iop;
-	iop = Chop[RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]]];
-
+	iop = Clip[Chop[RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]]], {0., max}];
+	
 	(*correct the signals if a fat model is used to get cl db idb*)
 	If[mout[[2]] =!= None,
 		ls = Range[3, Length@signal];
