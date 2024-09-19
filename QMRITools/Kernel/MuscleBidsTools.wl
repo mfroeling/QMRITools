@@ -113,11 +113,13 @@ BidsIncludeSession::usage =
 DeleteAfterConversion::usage = 
 "DeleteAfterConversion is an option for MuscleBidsConvert. If set True all files that have been converted will be deleted."
 
-BidsTractographyMethod::usage=
+BidsTractographyMethod::usage =
 "BidsTractographyMethod is an option for MuscleBidsTractography and can be \"Full\", \"Tractography\" or \"Segmentation\". 
 With Tractography only the tractography is performed without segmentation.
 With Segmentation only the segmentation is performed without tractography. With Full both are performed."
 
+BidsOutputImages::usage = 
+"BidsOutputImages is an option for MuscleBidsAnalysis. If set True the output images are saved in the output folder."
 
 SelectSubjects::usage = 
 "SelectSubjects is an option for Bids functions. Can be a list of bids subject names else it is All."
@@ -613,7 +615,17 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 (*0. BidsFolderLoop*)
 
 
-Options[BidsFolderLoop] = {DeleteAfterConversion->True, SelectSubjects->All, Method->"MuscleBidsConvert", VersionCheck->False, BidsTractographyMethod->"Full"};
+Options[BidsFolderLoop] = {
+	(*loop method*)
+	Method->"MuscleBidsConvert", 
+	(*general options*)
+	SelectSubjects->All, 
+	VersionCheck->False, 
+	(*method specific options*)	
+	DeleteAfterConversion->True, 
+	BidsTractographyMethod->"Full",
+	BidsOutputImages->"All"
+};
 
 SyntaxInformation[BidsFolderLoop] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
@@ -623,10 +635,11 @@ BidsFolderLoop[inFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]] := Bi
 
 BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:OptionsPattern[]] := Block[{
 		met, datType, fols, subs, logFile, ass, nam, filesSl, jsons, versCheck, delete, tractMet,
-		files, nTyp, pat, rfol, custConf, out, datDis
+		files, nTyp, pat, rfol, custConf, out, datDis, imOut
 	},
 	
-	{met, subs, versCheck, delete, tractMet} = OptionValue[{Method, SelectSubjects, VersionCheck, DeleteAfterConversion, BidsTractographyMethod}];
+	{met, subs, versCheck, delete, tractMet, imOut} = OptionValue[{
+		Method, SelectSubjects, VersionCheck, DeleteAfterConversion, BidsTractographyMethod, BidsOutputImages}];
 	If[$debugBids, Print["Enter BidsFolderLoop for method: "<>met]];
 	If[$debugBids, Print[inFol]];
 
@@ -655,9 +668,10 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:Opti
 			_,
 			{custConf, datDis} = CheckConfig[fol, out];
 			datType = CheckDataDiscription[MergeConfig[datDisIn, datDis], met];
+
+			If[$debugBids, Print[{custConf, datDis}]];
+			If[$debugBids, Print[datType]];
 		];
-		If[$debugBids, Print[{custConf, datDis}]];
-		If[$debugBids, Print[datType]];
 
 		(*-------------- Logging --------------*)
 		SetLogFile@Switch[met,
@@ -680,7 +694,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:Opti
 		(* -------------- The actual process loops -------------- *)
 		Switch[met,
 			"BidsDcmToNii", BidsDcmToNiiI[fol, out],
-			"MuscleBidsAnalysis", MuscleBidsAnalysisI[fol, outFol, datDisIn, versCheck],
+			"MuscleBidsAnalysis", MuscleBidsAnalysisI[fol, outFol, datDisIn, versCheck, imOut],
 			_,
 			(*loop over the datType*)
 			Table[
@@ -1932,7 +1946,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 (*MuscleBidsAnalysis*)
 
 
-Options[MuscleBidsAnalysis] = {SelectSubjects->All, VersionCheck->False};
+Options[MuscleBidsAnalysis] = {SelectSubjects->All, VersionCheck->False, BidsOutputImages->"All"};
 
 SyntaxInformation[MuscleBidsAnalysis] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -1968,26 +1982,41 @@ MuscleBidsAnalysis[datFol_?StringQ, anFol_?StringQ, datDis_?AssociationQ, ops:Op
 (*MuscleBidsAnalysisI*)
 
 
-MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_] := Block[{maskErosion, tractWeigthing, anaSeg, fol, parts, segfile,
+MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{maskErosion, tractWeigthing, anaSeg, fol, parts, segfile,
 		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, 
 		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType
 	},
 	If[$debugBids, Print["Starting MuscleBidsAnalysisI"]];
-	If[$debugBids, Print[foli, folo]];
+	If[$debugBids, Print[{foli, folo}]];
 
 	(*Options*)
 	maskErosion = True;
 	tractWeigthing = False;
 
+	(*----------- make the xls files -------------*)
+
 	(*get the segmentation settings*)
-	anaSeg = datDis["Segmentation", "Type"];
 	{fol, parts} = PartitionBidsFolderName[foli];
+	fileName = GenerateBidsFileName[fol, <|parts, "Type" -> First[#], "suf" -> Rest[#]|>]&;
+	partsO = parts;
+	fileNameO = FileNameJoin[{GenerateBidsFolderName[folo, #], GenerateBidsName[#]}]&;
+
+	partsO["suf"] = {"xls"}; checkFileX = fileNameO[partsO];
+	partsO["suf"] = {"img"}; checkFileI = fileNameO[partsO];
+
+	anaSeg = datDis["Segmentation", "Type"];
+	{n, what} = datDis["Segmentation", "Labels"];
 	(*----*)AddToLog[{"Segmentation file used for analysis is:", StringRiffle[anaSeg, "_"]}, 3];
 	
 	(*Perform the segementation analysis, what are the label names and volumes*)
-	If[$debugBids, Print["Segmentation analysis"]];
-	segfile = GenerateBidsFileName[fol, <|parts, "Type" -> First[anaSeg], "suf" -> Rest[anaSeg]|>]<>".nii";
+	If[$debugBids, Print[{"Segmentation to xls analysis", parts}]];
+	segfile = fileName[anaSeg]<>".nii";
+
 	Which[
+		(*segmentation is already done*)
+		CheckFile[checkFileX, "done", verCheck],
+		(*----*)AddToLog[{"Skipping: the segmentation to xls analysis is already done "}, 4],
+
 		(*no segmentation file exists*)
 		!NiiFileExistQ[segfile],
 		(*----*)AddToLog[{"The segmentation file does not exist: ", segfile}, 4],
@@ -1995,7 +2024,6 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_] := Block[{maskErosion, tra
 		(*segmentation file existes perform the analysis*)
 		True,
 		(*----*)AddToLog[{"Importing and processing the needed segmentation"}, 4];
-		{n, what} = datDis["Segmentation", "Labels"];
 		{seg, vox} = ImportNii[segfile];
 		{seg, musNr} = SelectSegmentations[SplitSegmentations[seg], Range[n]];
 
@@ -2039,7 +2067,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_] := Block[{maskErosion, tra
 		If[$debugBids, Print["tract mask"]];
 		If[KeyExistsQ[datDis["Analysis"], "TractBased"],
 			densLab = {"dwi", "dti", "trk","dens"};
-			densFile = GenerateBidsFileName[fol, <|parts, "Type" -> First[densLab], "suf" -> Rest[densLab]|>]<>".nii";
+			densFile = fileName[densLab]<>".nii";
 			trType = Flatten[Thread /@ datDis["Analysis", "TractBased"], 1];
 			trType = Select[trType, MemberQ[anaType, #] &];
 			(*----*)AddToLog[{"The types with tract weighting will be:", StringRiffle[#, "_"]&/@trType}, 3];
@@ -2060,7 +2088,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_] := Block[{maskErosion, tra
 
 		(*loop over all datatypes and perform the mask analysis*)
 		data = Table[
-			datfile = GenerateBidsFileName[fol, <|parts, "Type" -> First[datType], "suf" -> Rest[datType]|>]<>".nii";
+			datfile = fileName[datType]<>".nii";
 			Which[
 				(*data does not exist so skip*)
 				!NiiFileExistQ[datfile],
@@ -2086,14 +2114,183 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_] := Block[{maskErosion, tra
 		, {datType, anaType}];
 
 		(*merge the data and export*)
-		outFile = FileNameJoin[{GenerateBidsFolderName[folo, parts], GenerateBidsName[parts]}];
+		outFile = fileNameO[parts];
 		If[$debugBids, Print[{"exporting", outFile}]];
 		(*----*)AddToLog[{"Data will be exported to:", DirectoryName@outFile}, 3, True];
 		data = Dataset[Association /@ Transpose[Thread[#] & /@ Join[dataLabs, data]]];
 		Export[outFile<>".xlsx", data];
 		Export[outFile<>".wxf", data];
-	];	
-]
+
+		MakeCheckFile[checkFileX, Sort@Join[{"Check"->"done"}, Normal@datDis]];
+	];
+
+	(*----------- make the images -------------*)
+
+	(*figure out which images to make based on setting*)
+	{quantIm, segIm, tractIm} = Switch[imOut, 
+		"All", {True, True, True},
+		"Quantitative", {True, False, False},
+		"Segmentation", {False, True, False},
+		"Tractography", {False, False, True},
+		_, {False, False, False}
+	];
+	If[$debugBids, Print[{"Image Analysis", {quantIm, segIm, tractIm}}]];
+
+	(*make images if needed*)
+	Which[
+		(*segmentation is already done*)
+		CheckFile[checkFileI, "done", verCheck],
+		(*----*)AddToLog[{"Skipping: the iamges are already done"}, 4],
+		
+		(*No images need to be made*)
+		!AnyTrue[{quantIm, segIm, tractIm}, # &],
+		(*----*)AddToLog[{"No images will be made since option is set to None:"}, 3],
+
+		(*making the images*)
+		True,
+		(*----*)AddToLog[{"Starting making the images:"}, 3];
+	
+		(*get the reference file and figure out image slice posisions*)
+		imRef = datDis["Images", "Reference"];
+		(*----*)AddToLog[{"Checking the reference file for 2D images: ", StringRiffle[imRef, "_"]}, 3];
+		reffile = fileName[imRef]<>".nii";
+		If[$debugBids, Print[{reffile, NiiFileExistQ[reffile]}]];
+
+		(*quantIm and SegIm need refffile, check if there to get needed information.*)
+		If[!NiiFileExistQ[reffile],
+			(*----*)AddToLog[{"No reference file skipping 2D quant and seg images."}, 4]; 
+			quantIm = segIm = False;
+			,
+			(*get the ref data for the slice posisions and background of seg images*)
+			{ref, vox} = ImportNii[reffile];
+			crp = FindCrop[ref, CropPadding -> 10];
+			refC = ApplyCrop[ref, crp];
+			size = Dimensions[refC] vox;
+			pos = GetSlicePositions[GaussianFilter[refC, 15], vox, MakeCheckPlot -> False, 
+				DropSlices -> {1, 1, 1}, PeakNumber -> {0, 1, 2}];
+			pos[[1]] = Reverse[Range[0., 1., 1/(Round[Divide @@ size[[;; 2]]] + 1)][[2 ;; -2]] size[[1]]];
+
+			(*Function to extract slice data for 2D images*)
+			sliceData = Block[{slDat},
+				slDat = GetSliceData[ApplyCrop[#, crp, {vox, voxi}], pos, voxi];
+				{slDat[[1]], {slDat[[3, 1]], slDat[[2, 1]], Reverse[slDat[[3, 2]], 2]}, {}}
+			] &;
+		];
+
+		(*3D image function needed for segmentation and tractography*)
+		make3DImage = With[{gc = #, sc = 0.75}, 
+			ImageResize[ImagePad[ImageCrop@Image[Graphics3D[Table[
+				Translate[Rotate[(First@gc), -i 90 Degree, {0, 0, 1}, 0.5 Options[gc, PlotRange][[1, 2, All, 2]]], 
+					{sc i Options[gc, PlotRange][[1, 2, 1, 2]], 0, 0}], 
+				{i, 0, 3}], Background -> Lighter@Gray, ViewPoint -> {0, -2, 1}, ##] & @@ Join[{
+					BoxRatios -> {sc  4, 1, 1} Options[gc, BoxRatios][[1, 2]], 
+					PlotRange -> {sc  4, 1, 1} Options[gc, PlotRange][[1, 2]], 
+					Options@gc
+					}], ImageSize -> 1400, ImageResolution -> 300], 
+			{{60, 60}, {90, 90}}, Lighter@Gray], {Automatic, 640}]
+		]&;
+
+		(*2D image function*)
+		make2DImage = ImagePad[ImageAssemble[ImageResize[#, {Automatic, 600}] & /@ Join[
+			{ImageAssemble[Transpose@{ImagePad[#, -3] & /@ #[[1]]}, Spacings -> 20, Background -> White]},
+			ImagePad[#, -3] & /@ #[[2]]], Spacings -> 20, Background -> White, 
+			ImageSize -> {Automatic, 600}, ImageResolution -> 300], 20, White
+		]&;
+
+		(*------------ quantiatavite images ------------*)
+		If[!quantIm,
+			(*----*)AddToLog[{"Not making Quant images since setting is False."}, 3],
+			(*----*)AddToLog[{"Start making Quant images:"}, 3]; 
+
+			If[$debugBids, Print["Making quant images:"]];
+			Table[
+				(*get the color and styling function for the image*)
+				cols = Rest@im;
+				{cFun, ran} = Switch[Length@cols,
+					0, {"BlackToWhite", Automatic},
+					1, {cols[[1]], Automatic},
+					2, cols];
+				clip = If[cFun === "BlackToWhite", Automatic, Black];
+
+				(*get the filenames for import and export*)
+				type = First@im;				
+				imFile = fileName[type]<>".nii";
+				partsO["suf"] = type;
+
+				(*check if the data file exist*)				
+				If[!NiiFileExistQ[imFile],
+					(*----*)AddToLog[{"Cant make image for because data does not exist: ", StringRiffle[type, "_"]}, 4],
+					(*----*)AddToLog[{"Making image for: ", StringRiffle[type, "_"]}, 4];
+
+					(*import data and make image and export*)
+					{imDat, voxi} = ImportNii[imFile];
+					Export[fileNameO[partsO]<>".jpg", 
+						make2DImage@MakeSliceImages[sliceData@imDat, voxi, 
+							ColorFunction -> cFun, PlotRange -> ran, ClippingStyle -> clip, ImageSize -> 600]
+					, ImageResolution -> 300];
+					If[$debugBids, Print[Column@{fll, imm}]];
+				]
+			, {im, datDis["Images", "QuantImages"]}];
+		];
+
+		(*------------ segmentation images ------------*)
+
+		(*check if segmentation can be done*)
+		If[!NiiFileExistQ[segfile], 
+			(*----*)AddToLog[{"Tract file does not exist."}, 3];
+			segIm = False
+		];
+		If[$debugBids, Print[{segfile, NiiFileExistQ[segfile]}]];
+
+		If[!segIm,
+			(*----*)AddToLog[{"Not making Segment images since setting is False."}, 3],
+			(*----*)AddToLog[{"Start making Segment images:"}, 3]; 
+			If[$debugBids, Print["Making segment images:"]];
+
+			(*import the segmation*)
+			{seg, voxs} = ImportNii[segfile];
+
+			(*make the 2D segmentation image*)
+			(*----*)AddToLog[{"Making 2D Segment image"}, 4]; 
+			partsO["suf"] = anaSeg[[;;3]];
+			Export[fileNameO[partsO]<>".jpg", 
+				make2DImage@MakeSliceImages[sliceData@ref, {sliceData@seg, GetSegmentationLabels[seg]}, vox,
+					ColorFunction -> "BlackToWhite", PlotRange -> Automatic, ClippingStyle -> Automatic, ImageSize -> 600]
+			, ImageResolution -> 300];
+			If[$debugBids, Print[Column@{fll, imm}]];
+
+			(*make the 3D segmentation image*)
+			(*----*)AddToLog[{"Making 3D Segment image"}, 4];
+			partsO = parts;	partsO["suf"] = Join[anaSeg[[;;3]], {"vol"}];
+			segPl = PlotSegmentations[SelectSegmentations[seg, Range[n]], SelectSegmentations[seg, Range[n+1,n+30]], 
+				voxs, ContourResolution -> 2 voxs];
+			Export[fileNameO[partsO]<>".jpg", make3DImage@segPl, ImageResolution -> 300];
+		];
+
+		(*------------ segmentation images ------------*)
+
+		(*check if tract image can be done*)
+		imTrk = datDis["Images", "TractImages"];
+		trkfile = fileName[imTrk]<>".wxf";
+		If[!FileExistQ[trkfile], 
+			(*----*)AddToLog[{"Tract file does not exist."}, 3];
+			tractIm = False
+		];
+		If[$debugBids, Print[{trkfile, FileExistQ[trkfile]}]];
+
+		If[!tractIm,
+			(*----*)AddToLog[{"Not making Tract images since setting is False."}, 3],
+			(*----*)AddToLog[{"Start making Tract image:"}, 3]; 
+			
+			(*import the tractography, make the image and export*)
+			If[$debugBids, Print["Making tract images:"]];
+			partsO["suf"] = Join[imTrk[[;;3]], {"vol"}];
+			Export[fileNameO[partsO]<>".jpg", make3DImage@Import@trkfile, ImageResolution -> 300];
+		];
+		
+		(*finalize image making*)
+		MakeCheckFile[checkFileI, Sort@Join[{"Check"->"done"}, Normal@datDis]];
+	]
 
 
 (* ::Section:: *)

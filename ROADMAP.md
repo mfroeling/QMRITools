@@ -36,8 +36,6 @@ Next steps will be muscle segentation and per muscle analysis of quantitative va
 
 ### Muscle Bids
 
-- add MuscleBidsAnalysis
-  - Automated per muscle analysis once segmentation are present
 - add MuscleBidsQualityReport
 - add MuscleBidsAnalysisReport
 - add facicualtion analysis in MuscleBidsProcess

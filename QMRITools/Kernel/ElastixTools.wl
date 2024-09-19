@@ -269,7 +269,7 @@ Begin["`Private`"]
 
 
 operatingSystem = $OperatingSystem;
-QMRITools`$debugElastix = False;
+QMRITools`ElastixTools`$debugElastix = False;
 
 
 (* ::Subsection:: *)
