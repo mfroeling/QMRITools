@@ -50,7 +50,6 @@ MakeClassifyImage::usage =
 "MakeClassifyImage[data] makes a image of the input data. The data is automatically cropped to remove the background and normalized.
 If the input data is 3D a list of images is returned."
 
-$debugUnet::usage = "$debugUnet is a debugging flag for the UNET function, if set True extra reporting is done.";
 
 NetSummary::usage = 
 "NetSummary[net] gives a short summary of the convolution kernels and array elements in the network.
@@ -352,9 +351,6 @@ SurfaceDistance::met = "Method `1` not recognized";
 
 
 Begin["`Private`"] 
-
-
-QMRITools`SegmentationTools`$debugUnet = False;
 
 
 (* ::Subsection::Closed:: *)

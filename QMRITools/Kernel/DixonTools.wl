@@ -627,7 +627,7 @@ DixonFitC = Compile[{
 	
 	(*initialize variables such that compile does not complain*)
 	l = Length[ydat];
-	phiEst = phi;
+	phiEst = phi[[sel]];
 	dPhi = 0. phi;
 	rho = 0. matA[[1]];
 	res = 0. ydat;

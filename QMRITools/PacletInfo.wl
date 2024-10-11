@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "4.0.0",
+	"Version" -> "4.0.3",
 	"WolframVersion" -> "14.0+",
 	"SystemID" -> All, 
 	
@@ -49,7 +49,7 @@ PacletObject[<|
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"Transformix", "transformix.exe"}}},
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"ElastixLib", "ANNlib-5.2.dll"}}},
-		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"DcmToNii", "dcm2niix.exe"}}},
+		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"DcmToNii", "dcm2niix-20240202.exe"}}},
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"pigz", "pigz.exe"}}},
 
 		(*windows olf dcm2nii versions*)
