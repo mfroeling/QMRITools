@@ -259,7 +259,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 			compress<>" -m y -o '"<>folout<>"' '"<>filfolin<>"' > '"<>log<>"'\nexit\n"
 		];
 		
-		If[OptionValue[Method]=!=Automatic,Print[command]];
+		If[OptionValue[Method]=!=Automatic, Print[command]];
 		
 		(*perform the conversion*)
 		Monitor[RunProcess[$SystemShell,"StandardOutput",command],ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]];

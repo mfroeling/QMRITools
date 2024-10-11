@@ -37,6 +37,11 @@ QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
 
 
+QMRITools`ElastixTools`$debugElastix::usage = "Debug flag for Elastix.";
+QMRITools`SegmentationTools`$debugUnet::usage = "Debug flag for Unet."; 
+QMRITools`MuscleBidsTools`$debugBids::usage = "Debug flag for Bids.";
+
+
 (*subpackages names*)
 QMRITools`$SubPackages = {
 	"ScientificColorData`",
@@ -61,6 +66,10 @@ QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
 QMRITools`$LoadedColor = If[QMRITools`$LoadedColor===True, True, False];
 QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Version"];
 
+
+QMRITools`ElastixTools`$debugElastix = False;
+QMRITools`SegmentationTools`$debugUnet = False;
+QMRITools`MuscleBidsTools`$debugBids = False;
 
 (*load all the packages without error reporting such we can find the names of all the functions and options*)
 Quiet[Get/@QMRITools`$Contexts];

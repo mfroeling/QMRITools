@@ -106,9 +106,6 @@ RegisterCardiacData[{data,mask,vox}] registers the data series using the given v
 Output is the registered data."
 
 
-QMRITools`ElastixTools`$debugElastix::usage = "$debugElastix is a parameter that allows to print Elastix commands if set to True."
-
-
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -194,7 +191,7 @@ It specifies the number of random samples that are taken each iteration when reg
 InterpolationOrderRegA::usage =
 "InterpolationOrderRegA is an option for RegisterDiffusionData.
 It specifies the interpolation order used in the registration functions when registering diffusion data to anatomical space."
- 
+
 MethodRegA::usage =
 "MethodRegA is an option for RegisterDiffusionData.
 It spefifies which registration method to use when registering diffusion data to anatomical space. Mehtods can be be \"rigid\",\"affine\" or \"bspline\"."
@@ -269,7 +266,6 @@ Begin["`Private`"]
 
 
 operatingSystem = $OperatingSystem;
-QMRITools`ElastixTools`$debugElastix = False;
 
 
 (* ::Subsection:: *)
