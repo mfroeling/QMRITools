@@ -65,6 +65,9 @@ PlotSegmentations[seg, bone, vox] same but also generates an extra contour with 
 Link3DGraphic::usage =
 "Link3DGraphic[3Dgraphics] creates a 3D graphic with a linked view options between all 3D graphics that have been linked."
 
+ShowLink::usage =
+"ShowLink[] shows the linked view options between all 3D graphics that have been linked."
+
 GenerateRotationFrames::usage =
 "GenerateRotationFrames[3Dgraphics, nFrames] generates nFrames of the 3D graphics rotating around the z-axis."
 
@@ -103,6 +106,9 @@ ContourColor::usage =
 
 ContourOpacity::usage = 
 "ContourOpacity is an option for PlotContour and PlotSegmentations. It specifies the opacity of the contour."
+
+ContourSpecularity::usage =
+"ContourSpecularity is an option for PlotContour. It specifies the specularity of the contour."
 
 ContourColorRange::usage = 
 "ContourColorRange is an option for PlotContour. If the ContourColor is an array this values gives the plot range."
@@ -1813,6 +1819,7 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
 Options[PlotContour] = {
    ContourColor -> Gray,
    ContourOpacity -> 0.5,
+   ContourSpecularity -> 50,
    ContourColorRange -> Automatic,
    ColorFunction -> "SunsetColors",
    ContourSmoothRadius -> None,
@@ -1839,6 +1846,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 		scale = OptionValue[ContourScaling];
 		color = OptionValue[ContourColor];
 		opac = OptionValue[ContourOpacity];
+		spec = OptionValue[ContourSpecularity];
 
 		If[N[Max[dati]] === 0., 
 			Graphics3D[],
@@ -1853,7 +1861,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 			data = SparseArray[data];
 			
 			col = If[ColorQ[color], color, If[color==="Random", RandomColor[], GrayLevel[1.]]];
-			style = Directive[{Opacity[opac], col, Specularity[Lighter@Lighter@col, 5]}];
+			style = Directive[{Opacity[opac], col, Specularity[Lighter@col, spec]}];
 
 			colfunc = If[!ArrayQ[color],
 				Automatic,
@@ -1864,7 +1872,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 					ran];
 				coldat = Clip[Rescale[color, ran], {0, 1}];
 				cdim = Dimensions[coldat];
-				style = Directive[{Opacity[opac],Specularity[Red,0]}];
+				style = Directive[{Opacity[opac], Specularity[Red, 0]}];
 				Function[{z, y, x},
 					ColorData[cfunc][coldat[[
 						Clip[Round[x/vox[[1]] + 0.5], {1, cdim[[1]]}],
@@ -1904,7 +1912,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 
 viewPoint = {1.3, -2.4, 2.0};
 viewVertical = {0., 0., 1.};
-viewAngle = 35. Degree;
+viewAngle = 20. Degree;
 viewCenter = {0.5, 0.5, 0.5};
 
 Link3DGraphic[graphics_]:=Show[graphics, SphericalRegion -> True, 
@@ -1913,6 +1921,16 @@ Link3DGraphic[graphics_]:=Show[graphics, SphericalRegion -> True,
 	ViewAngle -> Dynamic[viewAngle],
 	ViewCenter -> Dynamic[viewCenter]
 ]
+
+
+ShowLink[]:=Dynamic[Grid[{
+	{"ViewPoint: ", Round[viewPoint,.01]}, 
+	{"ViewVertical: ", Round[viewVertical,.01]}, 
+	{"ViewAngle: ", Round[viewAngle/Degree,.01]}, 
+	{"ViewCenter: ", Round[viewCenter,.01]}}, Alignment -> Left]]
+
+(* ::Subsection::Closed:: *)
+(*GenerateRotationFrames*)
 
 
 Options[GenerateRotationFrames] = {
@@ -1944,6 +1962,7 @@ Table[Rasterize[Show[gr,(*Graphics3D[InfiniteLine[{0,0,0}, {0,0,1}]]*) ViewPoint
 Options[PlotSegmentations] = {
 	ImageSize -> 400, 
 	ContourOpacity->0.6,
+	ContourSpecularity -> 5,
 	ColorFunction -> "DarkRainbow", 
 	ContourSmoothRadius -> 2,
 	RandomizeColor->True,
@@ -1955,9 +1974,10 @@ SyntaxInformation[PlotSegmentations] = {"ArgumentsPattern" -> {_, _, _., Options
 PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
 
 PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
-		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op, res
+		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op, res, spec
 	},
-	{smooth, cols, size, ranCol, op, res} = OptionValue[{ContourSmoothRadius, ColorFunction, ImageSize, RandomizeColor, ContourOpacity, ContourResolution}];
+	{smooth, cols, size, ranCol, op, res, spec} = OptionValue[{ContourSmoothRadius, ColorFunction, ImageSize, 
+		RandomizeColor, ContourOpacity, ContourResolution, ContourSpecularity}];
 
 	plotb = If[bone === None, Graphics3D[],
 		PlotContour[If[ArrayDepth[bone]===3, Unitize@bone, Unitize@Total@Transpose@bone], vox, 
@@ -1976,7 +1996,8 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 			cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
 			If[ranCol, SeedRandom[1234]; cols = cols[[RandomSample[rSeg]]]];
 		];
-		Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, ContourSmoothRadius -> smooth, ContourResolution->res], {i, 1, nSeg}]]
+		Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, 
+			ContourSpecularity -> spec, ContourSmoothRadius -> smooth, ContourResolution->res], {i, 1, nSeg}]]
 	];
 
 	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]

@@ -2328,7 +2328,9 @@ MakeChannelImage[data_, vox_]:=Block[{dat, imdat, rat},
 (*ImportITKLabels*)
 
 
-SyntaxInformation[ImportITKLabels] = {"ArgumentsPattern"->{_}};
+SyntaxInformation[ImportITKLabels] = {"ArgumentsPattern"->{_.}};
+
+ImportITKLabels[] := ImportITKLabels[GetAssetLocation["MusclesLegLabels"]];
 
 ImportITKLabels[file_] := Block[{lines, muscleNames, muscleLabels},
 	(*import*)
