@@ -1136,9 +1136,7 @@ MakeIntFunction[dat_, int_?IntegerQ, opts:OptionsPattern[]] := MakeIntFunction[d
 
 MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{dim, def, range},
 	dim = Dimensions[dat][[;;3]];
-
 	range = Thread[{vox, vox dim}] - If[OptionValue[CenterVoxel], 0.5, 0] vox - If[OptionValue[CenterRange], 0.5, 0] dim;
-	
 	def = 0. dat[[1,1,1]];
 	def =If[ListQ[def], Flatten@def, def];
 	
@@ -1149,13 +1147,13 @@ MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{dim,
 		InterpolatingFunction[
 			range,
 			{5,If[ArrayDepth[dat]===3, 6, 2],0, dim,
-			{int,int,int}+1,0,0,0,0,ex&,{},{},False},
-			Range[range[[#,1]],range[[#,2]],vox[[#]]]&/@{1,2,3},
+			{int, int, int} + 1, 0, 0, 0, 0, ex&, {}, {}, False},
+			Range[range[[#, 1]], range[[#, 2]], vox[[#]]]& /@ {1, 2, 3},
 			If[ArrayDepth[dat] === 3 && $VersionNumber >= 13.3, 
 				{PackedArrayForm, Range[0,Length[fdat]], fdat}, 
 				ToPackedArray@N@dat
 			],
-			{Automatic,Automatic,Automatic}]
+			{Automatic, Automatic, Automatic}]
 	]
 ]
 
@@ -1936,7 +1934,7 @@ MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
 	Graph[edges, 
 		VertexLabels -> vertLab, VertexShapeFunction -> vertFunc, VertexStyle -> vertCol,
 		VertexLabelStyle -> Directive[Black, Bold, Automatic], EdgeStyle -> Directive[Black, Thick], 
-		VertexSize -> Automatic]
+		VertexSize -> Automatic, ImageSize -> {Automatic, 600}]
 ]
 
 
@@ -1944,7 +1942,10 @@ MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
 (*GetDependencies*)
 
 
-GetDependencies[sym_String] := If[SymbolQ[ToExpression[sym]], SelectFunctions[(Union@Level[(Hold @@ DownValues[sym])[[All, 2]], {-1}, Hold, Heads -> True])], Nothing]
+GetDependencies[sym_String] := If[
+	Head[ToExpression[sym]] === Symbol,
+	(*SymbolQ[ToExpression[sym]],*) 
+	SelectFunctions[(Union@Level[(Hold @@ DownValues[sym])[[All, 2]], {-1}, Hold, Heads -> True])], Nothing]
 
 
 SelectFunctions[func_] := Select[StringSplit[ToString /@ Pick[List @@ Defer /@ func, List@ReleaseHold[FunctionQC /@ func], 1],"[" | "]"][[All, 2]], Context[#] =!= "System`" &]

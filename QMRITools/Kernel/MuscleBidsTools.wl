@@ -136,6 +136,7 @@ VersionCheck::usage =
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
+
 CheckDataDiscription::key = "Datasets have duplicate names which is not allowed.";
 
 CheckDataDiscription::type = "Unknown Muscle-BIDS type: `1`, using folder \"miss\".";
@@ -2011,7 +2012,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 		tracto, tractType, tractSeg, tractStopLab, tractStopVal, tractStopLabNam, trkFile,
 		tractTypeLab, fol, parts, checkFile, outfile, seed, lenS, segBone, tractSegLab,
 		datfile, stopfile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg,
-		segfile, muscles, mlabs, mus, bones, con, leng, dens, flip, per
+		segfile, muscles, mlabs, mus, bones, con, leng, dens, flip, per, duplicate, key
 	}, 
 
 	debugBids["Starting MuscleBidsTractographyI"];
@@ -2019,7 +2020,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 	debugBids[datType];
 
 	(*!!options!!*)
-	{len, ang, step, seed} = {{15, 500}, 25, 1.5, Scaled[.35]};
+	{len, ang, step, seed} = {{15, 500}, 25, 1.5, Scaled[.30]};
 	{lenS, segBone} = {{15, 500}, 100};
 
 	(*figure out if duplicate handeling is needed.*)
@@ -2111,7 +2112,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
 				InterpolationOrder -> 0, StepSize -> step, Method -> "Euler", MaxSeedPoints -> seed, 
 				FiberLengthRange -> len, FiberAngle -> ang, TracMonitor -> False,
-				TensorFilps -> flip, TensorPermutations -> per
+				TensorFilps -> flip, TensorPermutations -> per, Parallelization -> True
 			];
 
 			(* Export the tractography results *)

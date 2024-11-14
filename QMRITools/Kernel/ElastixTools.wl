@@ -657,7 +657,7 @@ SplitRegInput[input_] := Which[
 (*RegisterData*)
 
 
-Options[RegisterData]={
+Options[RegisterData] = {
 	Iterations->250,
 	Resolutions->1,
 	HistogramBins->32,
