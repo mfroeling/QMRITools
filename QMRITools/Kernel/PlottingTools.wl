@@ -217,7 +217,7 @@ colorNames = {"GrayTones", "Rainbow", "DarkRainbow", "ThermometerColors", "Sunse
 	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", "CherryTones", "SolarColors",
 	"BlueGreenYellow", "AvocadoColors", "SouthwestColors",
 	(*scientific color maps*)
-	"Batlow", "Navia", "Devon", "Lapaz", "Lajolla", "Lipari", "Turku", "Davos", "Managua", "Vik", "Roma", "RomaO", "VikO"
+	"Batlow", "Navia", "Bilbao", "Bamako", "Devon", "Lapaz", "Lajolla", "Lipari", "Turku", "Davos", "Managua", "Vik", "Roma", "RomaO", "VikO"
 };
 
 
@@ -240,7 +240,7 @@ colors = Sort@Join[
 	# -> Show[ColorData[#, "Image"], ImageSize -> 100] & /@ colorNames,
 	#[[1]] -> CustCol[#[[2]]] & /@ custColors
 ];
-
+colors = #[[1]] -> Tooltip[#[[2]], #[[1]]] & /@ colors;
 
 CustCol[colf_] := Graphics[Raster[{Range[100]/100.}, {{0, 0}, {1, 1}}, ColorFunction -> colf], 
 	AspectRatio -> 1/8, ContentSelectable -> False, ImageSize -> 100, PlotRange -> {{0, 1}, {0, 1}}]
@@ -283,7 +283,7 @@ LookUpTable[{lstyle_, color_}, {minclip_, maxclip_}] := With[{
 		collist = Join[{Col2List[minclip]},(ColorLookup[lstyle, color]),{Col2List[maxclip]}]
 	}, 
 	Function[{x}, Which[NumberQ[x] || VectorQ[x], collist[[x]], MatrixQ[x], collist[[#]] & /@ x]]
-  ]
+]
 
 
 Attributes[Col2List] = {Listable};
@@ -325,11 +325,11 @@ LabLeg[im_, {fnts_,legs_}, label_, {legend_, color_, {min_,max_}}] := Block[{lab
     ];
     
     (*make the image grid*)
-   Grid[Which[
-    	StringQ[label] && legend, {{lab, ""}, {im, bar}},
-    	legend, {{im, bar}},
-    	StringQ[label], {{lab}, {im}},
-    	True, {{im}}
+	Grid[Which[
+		StringQ[label] && legend, {{lab, ""}, {im, bar}},
+		legend, {{im, bar}},
+		StringQ[label], {{lab}, {im}},
+		True, {{im}}
     ],Spacings->{2,2}]
 ]
 
@@ -410,8 +410,6 @@ ClipColor[{clipMin_, clipMax_}, {minCol_, maxCol_}, {lstyle_, color_}] := {
 	Switch[clipMin, "Auto", ColSel[lstyle, color][0], "Custom", minCol, "Transparent", Transparent],
 	Switch[clipMax, "Auto", ColSel[lstyle, color][1], "Custom", maxCol, "Transparent", Transparent]
 };
-   
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -834,25 +832,27 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{"Min value",Control@{{min,mind,""},mind,max-(maxd-mind)/250,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Min Clipping", Row[{
-	        	Control@{{clipMin, "Custom", ""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{minclip, Black, ""},  
-		Button[
-		Dynamic[Graphics[{minclip, Rectangle[]}, ImageSize -> {20, 20}]],
-		new = SystemDialogInput["Color", #];
-		minclip = If[new === $Canceled, minclip, new]
-		, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
-								(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
-					}]},
-					{"Max Clipping", Row[{
-						Control@{{clipMax, "Auto", ""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-						Control@{{maxclip, White, "" },  
-		Button[
-		Dynamic[Graphics[{maxclip, Rectangle[]}, ImageSize -> {20, 20}]],
-		new = SystemDialogInput["Color", #];
-		maxclip = If[new === $Canceled, maxclip, new]
-		, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
-						(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
-	        }]}
+				Control@{{clipMin, "Custom", ""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
+				Control@{{minclip, Black, ""},  
+				Button[
+					Dynamic[Graphics[{minclip, Rectangle[]}, ImageSize -> {20, 20}]],
+					new = SystemDialogInput["Color", #];
+					minclip = If[new === $Canceled, minclip, new]
+					, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"
+				]&
+				(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
+			}]},
+			{"Max Clipping", Row[{
+				Control@{{clipMax, "Auto", ""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
+				Control@{{maxclip, White, "" },  
+				Button[
+					Dynamic[Graphics[{maxclip, Rectangle[]}, ImageSize -> {20, 20}]],
+					new = SystemDialogInput["Color", #];
+					maxclip = If[new === $Canceled, maxclip, new]
+					, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"
+				]&
+				(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
+			}]}
 		}]
 		,(*Plot style controls*)
 		ManPannel["Plot Style",{
@@ -1091,9 +1091,9 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 					, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
 							(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 				}]
-	        },Dynamic[leftright]]},
-	        {"Max Clipping", PaneSelector[{
-	        	1->Row[{
+			},Dynamic[leftright]]},
+			{"Max Clipping", PaneSelector[{
+				1->Row[{
 					Control@{{clipMax1,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
 					Control@{{maxclip1, White, "" },  
 				Button[
@@ -1113,7 +1113,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
 						(*ColorSetter[#, ImageMargins->-5, ImageSize->{50, 50}]&*)}
 				}]
-	        },Dynamic[leftright]]}
+			},Dynamic[leftright]]}
 		}, False],
 		ManPannel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
@@ -1140,13 +1140,13 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			{"Legend",Control@{{leg,1,""},{1->"First","Second"}}},
 			{
 				PaneSelector[{1 -> Null, 2 -> "Check Size (pix)",3 -> "Overlay Opacity", 4 -> "Difference plot range"},Dynamic[overlay]],
- 				PaneSelector[{
- 					1 -> Null,
- 					2 -> Control@{{checksize, Ceiling[0.1*mpdim], ""}, 1, Ceiling[.5*mpdim], 1},
- 					3 -> Control@{{opac, 0.4, ""}, 0, 1},
- 					4 -> Control@{{diffr, .5*maxabs, ""}, Dynamic[0.00001*maxabs], Dynamic[2*maxabs] /. 0. -> 1., Dynamic[(1.5*maxabs /. 0. -> 1.)/1000]}}
- 					,Dynamic[overlay]]
- 			}},False]}];
+				PaneSelector[{
+					1 -> Null,
+					2 -> Control@{{checksize, Ceiling[0.1*mpdim], ""}, 1, Ceiling[.5*mpdim], 1},
+					3 -> Control@{{opac, 0.4, ""}, 0, 1},
+					4 -> Control@{{diffr, .5*maxabs, ""}, Dynamic[0.00001*maxabs], Dynamic[2*maxabs] /. 0. -> 1., Dynamic[(1.5*maxabs /. 0. -> 1.)/1000]}
+				}, Dynamic[overlay]]
+			}},False]}];
 	
 	(*second tab, exporting controls*)
 	tab2 = Column[{
@@ -1425,130 +1425,130 @@ DynamicModule[{data, vox, dep},
 			Switch[show, 1, plax, 2, plcor, 3, plsag, 4, imall, 5, plsl3D, 6, plim3D, 7, merge]
 		}]
 		
-	    (*start control pannel*)
-	    ,
-	    (*--------------clean from here---------------------*)
-	    Row[{str}],
-	    Delimiter,
-	    (*The menu that selects what to show*)
-	    {{show, 4, "Plot Mode"}, {1 -> "Axial", 2 -> "Coronal", 3 -> "Sagital", 4 -> "All Planes", 5 -> "Planes 3D", 6 -> "Volume 3D", 7 -> "Planes + 3D"}},
-	    (*slice selection menu and *)
-	    Delimiter,
-	    Column[{
-	      ManPannel["Slice Selection", {
-	        {Dynamic["Axial (1-" <> ToString[size1] <> ")"], Control@{{slice, Round[size1/2], ""}, 1, size1, 1}},
-	        {Dynamic[ "Coronal (1-" <> ToString[size2] <> ")"], Control@{{column, Round[size2/2], ""}, 1, size2, 1}},
-	        {Dynamic["Sagital (1-" <> ToString[size3] <> ")"], Control@{{row, Round[size3/2], ""}, 1, size3, 1}},
-	        {"Data order", Row[{
-	        	Control@{{trans, False, ""}, {True, False}},"  Transpose 4D   ", 
-	        	Control@{{reverse, False, ""}, {True, False}}, "  Reverse slices"
-	        }]},
-	        {Dynamic["Set (4D)  (1-" <> ToString[sets] <> ")"], Control@{{set, 1, ""}, 1, Dynamic[sets], 1}}, 
-	        {"Clip 3D", Row[{Control@{{clip3D, False, ""}, {True, False}}, "  Clip   ", CheckboxBar[Dynamic[flip], {1 -> "Flip LR", 2 -> "Flip AP",3 -> "Flip FH"}]}]} 
-	        }]
-	      }],
-	    Delimiter,
-	    Column[{
-	      ManPannel["Plot Range", {
-	        {"Auto Scaling", Control@{{cfs, False, ""}, {True -> "On", False -> "Off"}}},
-	        {"Min value", Control@{{min, mind, ""}, mind, Dynamic[0.9 max]}},
-	        {"Max value", Control@{{max, maxd, ""}, Dynamic[1.1 min], maxd}},
-	        {"Min Clipping", Row[{
-	        	Control@{{clipMin,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{minclip, Black, ""}, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
-	        }]},
-	        {"Max Clipping", Row[{
-	        	Control@{{clipMax,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
-	        	Control@{{maxclip, White, "" }, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
-	        }]}
-	        }]
-	      }],
-	    Delimiter,
-	    (*menu for plot style*)
-	    Column[{
-	      ManPannel["Plot Style", {
-	        {"Plot Title", Control@{{label, "", ""}, InputField[#, String] &}},
-	        {"Plot Size", Control@{{scale, 500, "" }, psizes}},
-	        {"Color function", Control@{{color, "BlackToWhite", ""}, colors, ControlType -> PopupMenu}},
-	        {"Color style", Control@{{lstyle, "Normal", ""}, colfuncs}},
-	        {"Layout", Row[
-	          {"  Show box:", Control@{{box, True, ""}, {True, False}},
-	           "  Show axis:", Control@{{axes, True, ""}, {True, False}},
-	           "  Show lines:", Control@{{lines, True, ""}, {True, False}}
-	           }]},
-	        {"BackGround", Control@{{back, Gray, ""}, ColorSlider[#, ImageSize -> {Automatic, 20}] &}}
-	        }]
-	      }],
-	    (* menu for 3D plot options*)
-	    Delimiter,
-	    Column[{
-	      ManPannel["3D options", {
-	        { "Colorfunction 3D", Control@{{col3D, "WhiteBlackOpacity", ""}, colors3D}},
-	        {"Viewpoint", Control@{{vp, 3.5 {0.384, 0.709, 0.591}, ""}, views, ControlType -> SetterBar}},
-	        {"Show Planes", Row[{
-	           "Axial:  ", Control@{{planez, True, ""}, {True, False}},
-	           "  Coronal:  ", Control@{{planey, True, ""}, {True, False}},
-	           "  Sagital:  ", Control@{{planex, True, ""}, {True, False}}
-	           }]},
-	        {"Opacity Axial", Control@{{opz, 1, ""}, 0, 1, 0.1}},
-	        {"Opacity Coronal", Control@{{opy, 1, ""}, 0, 1, 0.1}},
-	        {"Opacity Sagital", Control@{{opx, 1, ""}, 0, 1, 0.1}}
-	        }, False]
-	      }],
-	    
-	    (*Hidden parameters*)
-	    (*for controls*)
-	    {slice, ControlType -> None}, {column, ControlType -> None}, {row, ControlType -> None}, 
-	    {trans, ControlType -> None}, {reverse, ControlType -> None}, {set, ControlType -> None}, 
-	    {clip, ControlType -> None}, {flip, ControlType -> None},
-	    
-	    {{cfs, False}, ControlType -> None}, {min, ControlType -> None}, {max, ControlType -> None}, {ran, ControlType -> None}, 
-	    {{minclip, RGBColor[{0, 0, 0, 1}]}, ControlType -> None}, {{maxclip, RGBColor[{255, 255, 255}]}, ControlType -> None}, 
-	    {{transp, False}, ControlType -> None}, {col3D, ControlType -> None},
-	    
-	    {label, ControlType -> None}, {scale, ControlType -> None}, {color, ControlType -> None}, {lstyle, ControlType -> None},
-	    {{box, True}, ControlType -> None}, {{axes, True}, ControlType -> None}, {{lines, True}, ControlType -> None}, {{back, Gray}, ControlType -> None},
-	    
-	    {{planez, True}, ControlType -> None}, {{planey, True}, ControlType -> None}, {{planex, True}, ControlType -> None},
-	    {{opz, 1}, ControlType -> None}, {{opy, 1}, ControlType -> None}, {{opx, 1}, ControlType -> None},
-	    
-	    (*3d volume view*)
-	    {{vp, 2{0.65, -1.2, 1}, "ViewPoint"}, Dynamic[vp] &, ControlType -> None},
-	    {{vv, {0, 0, 1}, "ViewVertical"}, Dynamic[vv] &, ControlType -> None},
-	    {{va, 25. Degree, "ViewAngle"}, Dynamic[va] &, ControlType -> None},
-	    
-	    (*for calculations*)
-	    {mind, ControlType -> None}, {maxd, ControlType -> None}, {depth, ControlType -> None},
-	    {dimd, ControlType -> None}, {sets, ControlType -> None}, {size1, ControlType -> None}, 
-	    {size2, ControlType -> None}, {size3, ControlType -> None}, {slicep, ControlType -> None}, 
-	    {columnp, ControlType -> None}, {rowp, ControlType -> None},
-	    
-	    {dim, ControlType -> None}, {size, ControlType -> None}, {scal, ControlType -> None}, {ratio, ControlType -> None},
-	    
-	    {dats, ControlType -> None}, {pdat, ControlType -> None},
-	     
-	    {linax, ControlType -> None}, {lincor, ControlType -> None}, {linsag, ControlType -> None},
-	    {plax, ControlType -> None}, {plcor, ControlType -> None}, {plsag, ControlType -> None},
-	    {imax, ControlType -> None}, {imcor, ControlType -> None}, {imsag, ControlType -> None}, {imall, ControlType -> None},
-	    {sel, ControlType -> None}, {slices3D, ControlType -> None}, {plsl3D, ControlType -> None}, {plim3D, ControlType -> None},
-	    
-	    (*initialization*)
-	    Initialization :> {
-		  {mind, maxd} = {min, max} = MinMax[data],
-		  depth = ArrayDepth[data], 
-		  dimd = If[ArrayDepth[data] != 4, Prepend[Dimensions@data, 1], Dimensions@Transpose[data]], 
-		  {sets, size1, size2, size3} = dimd,
-		  {slice, column, row} = Round[{size1, size2, size3}/2],
-		  str = "Displaying " <> DataString[dimd]
-	  	},
-	    
-	    ContentSize -> 1.15 {scale, scale},
-	    Alignment -> {Center, Center},
-	    ControlPlacement -> Right,
-	    ContinuousAction -> True,
-	    AppearanceElements -> None,
-	    AutorunSequencing -> {1},
-	    SynchronousInitialization -> False
+		(*start control pannel*)
+		,
+		(*--------------clean from here---------------------*)
+		Row[{str}],
+		Delimiter,
+		(*The menu that selects what to show*)
+		{{show, 4, "Plot Mode"}, {1 -> "Axial", 2 -> "Coronal", 3 -> "Sagital", 4 -> "All Planes", 5 -> "Planes 3D", 6 -> "Volume 3D", 7 -> "Planes + 3D"}},
+		(*slice selection menu and *)
+		Delimiter,
+		Column[{
+			ManPannel["Slice Selection", {
+				{Dynamic["Axial (1-" <> ToString[size1] <> ")"], Control@{{slice, Round[size1/2], ""}, 1, size1, 1}},
+				{Dynamic[ "Coronal (1-" <> ToString[size2] <> ")"], Control@{{column, Round[size2/2], ""}, 1, size2, 1}},
+				{Dynamic["Sagital (1-" <> ToString[size3] <> ")"], Control@{{row, Round[size3/2], ""}, 1, size3, 1}},
+				{"Data order", Row[{
+					Control@{{trans, False, ""}, {True, False}},"  Transpose 4D   ", 
+					Control@{{reverse, False, ""}, {True, False}}, "  Reverse slices"
+				}]},
+				{Dynamic["Set (4D)  (1-" <> ToString[sets] <> ")"], Control@{{set, 1, ""}, 1, Dynamic[sets], 1}}, 
+				{"Clip 3D", Row[{Control@{{clip3D, False, ""}, {True, False}}, "  Clip   ", CheckboxBar[Dynamic[flip], {1 -> "Flip LR", 2 -> "Flip AP",3 -> "Flip FH"}]}]} 
+			}]
+		}],
+		Delimiter,
+		Column[{
+			ManPannel["Plot Range", {
+				{"Auto Scaling", Control@{{cfs, False, ""}, {True -> "On", False -> "Off"}}},
+				{"Min value", Control@{{min, mind, ""}, mind, Dynamic[0.9 max]}},
+				{"Max value", Control@{{max, maxd, ""}, Dynamic[1.1 min], maxd}},
+				{"Min Clipping", Row[{
+					Control@{{clipMin,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
+					Control@{{minclip, Black, ""}, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
+				}]},
+					{"Max Clipping", Row[{
+					Control@{{clipMax,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
+					Control@{{maxclip, White, "" }, ColorSlider[#, ImageSize -> {20, 20}, AppearanceElements->"Swatch"] &}
+				}]}
+			}]
+		}],
+		Delimiter,
+		(*menu for plot style*)
+		Column[{
+			ManPannel["Plot Style", {
+				{"Plot Title", Control@{{label, "", ""}, InputField[#, String] &}},
+				{"Plot Size", Control@{{scale, 500, "" }, psizes}},
+				{"Color function", Control@{{color, "BlackToWhite", ""}, colors, ControlType -> PopupMenu}},
+				{"Color style", Control@{{lstyle, "Normal", ""}, colfuncs}},
+				{"Layout", Row[{
+					"  Show box:", Control@{{box, True, ""}, {True, False}},
+					"  Show axis:", Control@{{axes, True, ""}, {True, False}},
+					"  Show lines:", Control@{{lines, True, ""}, {True, False}}
+				}]},
+				{"BackGround", Control@{{back, Gray, ""}, ColorSlider[#, ImageSize -> {Automatic, 20}] &}}
+			}]
+		}],
+		(* menu for 3D plot options*)
+		Delimiter,
+		Column[{
+			ManPannel["3D options", {
+				{ "Colorfunction 3D", Control@{{col3D, "WhiteBlackOpacity", ""}, colors3D}},
+				{"Viewpoint", Control@{{vp, 3.5 {0.384, 0.709, 0.591}, ""}, views, ControlType -> SetterBar}},
+				{"Show Planes", Row[{
+					"Axial:  ", Control@{{planez, True, ""}, {True, False}},
+					"  Coronal:  ", Control@{{planey, True, ""}, {True, False}},
+					"  Sagital:  ", Control@{{planex, True, ""}, {True, False}}
+				}]},
+				{"Opacity Axial", Control@{{opz, 1, ""}, 0, 1, 0.1}},
+				{"Opacity Coronal", Control@{{opy, 1, ""}, 0, 1, 0.1}},
+				{"Opacity Sagital", Control@{{opx, 1, ""}, 0, 1, 0.1}}
+			}, False]
+		}],
+
+		(*Hidden parameters*)
+		(*for controls*)
+		{slice, ControlType -> None}, {column, ControlType -> None}, {row, ControlType -> None}, 
+		{trans, ControlType -> None}, {reverse, ControlType -> None}, {set, ControlType -> None}, 
+		{clip, ControlType -> None}, {flip, ControlType -> None},
+
+		{{cfs, False}, ControlType -> None}, {min, ControlType -> None}, {max, ControlType -> None}, {ran, ControlType -> None}, 
+		{{minclip, RGBColor[{0, 0, 0, 1}]}, ControlType -> None}, {{maxclip, RGBColor[{255, 255, 255}]}, ControlType -> None}, 
+		{{transp, False}, ControlType -> None}, {col3D, ControlType -> None},
+
+		{label, ControlType -> None}, {scale, ControlType -> None}, {color, ControlType -> None}, {lstyle, ControlType -> None},
+		{{box, True}, ControlType -> None}, {{axes, True}, ControlType -> None}, {{lines, True}, ControlType -> None}, {{back, Gray}, ControlType -> None},
+
+		{{planez, True}, ControlType -> None}, {{planey, True}, ControlType -> None}, {{planex, True}, ControlType -> None},
+		{{opz, 1}, ControlType -> None}, {{opy, 1}, ControlType -> None}, {{opx, 1}, ControlType -> None},
+
+		(*3d volume view*)
+		{{vp, 2{0.65, -1.2, 1}, "ViewPoint"}, Dynamic[vp] &, ControlType -> None},
+		{{vv, {0, 0, 1}, "ViewVertical"}, Dynamic[vv] &, ControlType -> None},
+		{{va, 25. Degree, "ViewAngle"}, Dynamic[va] &, ControlType -> None},
+
+		(*for calculations*)
+		{mind, ControlType -> None}, {maxd, ControlType -> None}, {depth, ControlType -> None},
+		{dimd, ControlType -> None}, {sets, ControlType -> None}, {size1, ControlType -> None}, 
+		{size2, ControlType -> None}, {size3, ControlType -> None}, {slicep, ControlType -> None}, 
+		{columnp, ControlType -> None}, {rowp, ControlType -> None},
+
+		{dim, ControlType -> None}, {size, ControlType -> None}, {scal, ControlType -> None}, {ratio, ControlType -> None},
+
+		{dats, ControlType -> None}, {pdat, ControlType -> None},
+			
+		{linax, ControlType -> None}, {lincor, ControlType -> None}, {linsag, ControlType -> None},
+		{plax, ControlType -> None}, {plcor, ControlType -> None}, {plsag, ControlType -> None},
+		{imax, ControlType -> None}, {imcor, ControlType -> None}, {imsag, ControlType -> None}, {imall, ControlType -> None},
+		{sel, ControlType -> None}, {slices3D, ControlType -> None}, {plsl3D, ControlType -> None}, {plim3D, ControlType -> None},
+
+		(*initialization*)
+		Initialization :> {
+			{mind, maxd} = {min, max} = MinMax[data],
+			depth = ArrayDepth[data], 
+			dimd = If[ArrayDepth[data] != 4, Prepend[Dimensions@data, 1], Dimensions@Transpose[data]], 
+			{sets, size1, size2, size3} = dimd,
+			{slice, column, row} = Round[{size1, size2, size3}/2],
+			str = "Displaying " <> DataString[dimd]
+		},
+
+		ContentSize -> 1.15 {scale, scale},
+		Alignment -> {Center, Center},
+		ControlPlacement -> Right,
+		ContinuousAction -> True,
+		AppearanceElements -> None,
+		AutorunSequencing -> {1},
+		SynchronousInitialization -> False
 	];
 	
 	NotebookClose[plotwindow];
@@ -1817,14 +1817,14 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
 
 
 Options[PlotContour] = {
-   ContourColor -> Gray,
-   ContourOpacity -> 0.5,
-   ContourSpecularity -> 50,
-   ContourColorRange -> Automatic,
-   ColorFunction -> "SunsetColors",
-   ContourSmoothRadius -> None,
-   ContourScaling->"World",
-   ContourResolution->Automatic
+	ContourColor -> Gray,
+	ContourOpacity -> 0.5,
+	ContourSpecularity -> 50,
+	ContourColorRange -> Automatic,
+	ColorFunction -> "SunsetColors",
+	ContourSmoothRadius -> None,
+	ContourScaling->"World",
+	ContourResolution->Automatic
 };
 
 SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
@@ -2058,23 +2058,25 @@ Options[ListSpherePlot] = {SphereSize->2, SphereColor->Automatic}
 SyntaxInformation[ListSpherePlot] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};  
 
 ListSpherePlot[ptsi_, OptionsPattern[]] := Module[{cols, graphics, pt, pc, ran, len,coli,size},
- 	coli = OptionValue[SphereColor];
- 	size = OptionValue[SphereSize];
- 	
-  len = Length[ptsi];
-  ran = RandomSampleFix[len];
-  cols = If[coli === Automatic,
-    (ColorData[1] /@ N[Range[1, len]])[[ran]],
-    ConstantArray[coli, len]
-    ];
+	coli = OptionValue[SphereColor];
+	size = OptionValue[SphereSize];
 
-  graphics = MapThread[(pt = #1; pc = #2;
-      If[ArrayDepth[pt] == 1,
-       {pc, Sphere[pt, size]},
-       {pc, Sphere[#, size]} & /@ pt
-       ]) &, {ptsi, cols}];
-  Graphics3D[Flatten[graphics], Lighting -> "Neutral"]
-  ]
+	len = Length[ptsi];
+	ran = RandomSampleFix[len];
+	cols = If[coli === Automatic,
+		(ColorData[1] /@ N[Range[1, len]])[[ran]],
+		ConstantArray[coli, len]
+	];
+
+	graphics = MapThread[(
+		pt = #1; pc = #2;
+		If[ArrayDepth[pt] == 1,
+			{pc, Sphere[pt, size]},
+			{pc, Sphere[#, size]} & /@ pt
+		]
+	) &, {ptsi, cols}];
+	Graphics3D[Flatten[graphics], Lighting -> "Neutral"]
+]
 
 RandomSampleFix[len_] := RandomSampleFix[len] = RandomSample[Range[len]];
 
@@ -2085,30 +2087,27 @@ RandomSampleFix[len_] := RandomSampleFix[len] = RandomSample[Range[len]];
 
 SyntaxInformation[PlotDuty] = {"ArgumentsPattern" -> {{_,_,_},_.}};
 
-PlotDuty[{grad_, bval_, ord_}, mode_:True] := 
- Module[{grads, order, testgr, mn, ran},
-  grads = Abs[grad*Sqrt[bval]];
-  grads = If[NumberQ[bval], grads, Flatten[grads, 1]];
-  grads = (grads - Min[grads])/(Max[grads] - Min[grads]);
-  ran = MinMax[grads];
-  order = If[! mode, Range[Length[grads]], ord];
-  testgr = Mean[Transpose[Partition[#, 10, 1]]] & /@ Transpose[grads[[order]]];
-  mn = Max /@ Transpose@testgr;
-  Show[
-   ListLinePlot[testgr, PlotLabel -> "Average Gradient Load", 
-    AxesStyle -> Directive[{Thick, Black}],
-    LabelStyle -> 
-     Directive[{Black, Bold, 12, FontFamily -> "Helvetica"}],
-    Ticks -> {Automatic, {{0.1, "Min G"}, {.55, "Avrg. G"}, {1, 
-        "Max G"}}}, PlotRange -> {0, 1},
-    GridLines -> {None, {00.1, 0.55, 
-       1, {Max@mn, Directive[Red, Thick]}}}
-    ],
-   ListLinePlot[mn, PlotStyle -> Directive[Black, Dashed, Thick]]
-   ]
-  ]
-  
-
+PlotDuty[{grad_, bval_, ord_}, mode_:True] := Module[{grads, order, testgr, mn, ran},
+	grads = Abs[grad*Sqrt[bval]];
+	grads = If[NumberQ[bval], grads, Flatten[grads, 1]];
+	grads = (grads - Min[grads])/(Max[grads] - Min[grads]);
+	ran = MinMax[grads];
+	order = If[! mode, Range[Length[grads]], ord];
+	testgr = Mean[Transpose[Partition[#, 10, 1]]] & /@ Transpose[grads[[order]]];
+	mn = Max /@ Transpose@testgr;
+	Show[
+		ListLinePlot[testgr, 
+			PlotLabel -> "Average Gradient Load", 
+			AxesStyle -> Directive[{Thick, Black}],
+			LabelStyle -> Directive[{Black, Bold, 12, FontFamily -> "Helvetica"}],
+			Ticks -> {Automatic, {{0.1, "Min G"}, {.55, "Avrg. G"}, {1, "Max G"}}}, 
+			PlotRange -> {0, 1},
+			GridLines -> {None, {00.1, 0.55, 
+			1, {Max@mn, Directive[Red, Thick]}}}
+		],
+		ListLinePlot[mn, PlotStyle -> Directive[Black, Dashed, Thick]]
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2123,38 +2122,38 @@ SyntaxInformation[GradientPlot] = {"ArgumentsPattern" -> {_, _., OptionsPattern[
 	{val,vec}=BmatrixInv[bmat];
 	GradientPlot[vec,val,opts]]*)
 
-GradientPlot[veci_, val_, OptionsPattern[]] := 
- Block[{pts, range, norm, mnorm, cnorm, col, pcol, vec}, 
- 	
-  vec = If[OptionValue[PositiveZ],
-  	SignNoZero[#[[3]]]#&/@veci,
-  	veci
-  ];
-  
-  pts = Switch[OptionValue[PlotSpace], 
-  	"bspace", vec val, 
-  	"qspace", vec Sqrt[val]
-  	];
-  norm = Norm /@ pts;
-  mnorm = Max[Abs[pts]];
-  cnorm = norm/(1.25 Max[norm]);
-  
-  range = ConstantArray[{-1.1, 1.1} mnorm, 3];
-  col = OptionValue[PlotColor];
-  
-  pcol = If[MemberQ[ColorData["Gradients"], col],
-    ColorData[col],
-    If[ColorQ[col],
-     col &,
-     ColorData["SunsetColors"]
-     ]
-    ];
-  
-  Graphics3D[MapThread[
-    {pcol[#2], Sphere[#1, OptionValue[SphereSize] mnorm]} &,
-    {pts, cnorm}], ImageSize -> 400, BoxStyle -> Thick, 
-   SphericalRegion -> True, Lighting -> "Neutral", BoxRatios -> 1, 
-   PlotRange -> range]]
+GradientPlot[veci_, val_, OptionsPattern[]] := Block[{pts, range, norm, mnorm, cnorm, col, pcol, vec}, 
+	
+	vec = If[OptionValue[PositiveZ],
+		SignNoZero[#[[3]]]#&/@veci,
+		veci
+	];
+
+	pts = Switch[OptionValue[PlotSpace], 
+		"bspace", vec val, 
+		"qspace", vec Sqrt[val]
+	];
+	norm = Norm /@ pts;
+	mnorm = Max[Abs[pts]];
+	cnorm = norm/(1.25 Max[norm]);
+
+	range = ConstantArray[{-1.1, 1.1} mnorm, 3];
+	col = OptionValue[PlotColor];
+
+	pcol = If[MemberQ[ColorData["Gradients"], col],
+		ColorData[col],
+		If[ColorQ[col],
+			col &,
+			ColorData["SunsetColors"]
+		]
+	];
+
+	Graphics3D[MapThread[
+		{pcol[#2], Sphere[#1, OptionValue[SphereSize] mnorm]} &,
+		{pts, cnorm}], ImageSize -> 400, BoxStyle -> Thick, 
+		SphericalRegion -> True, Lighting -> "Neutral", BoxRatios -> 1, 
+		PlotRange -> range]
+]
 
 
 
@@ -2164,57 +2163,56 @@ GradientPlot[veci_, val_, OptionsPattern[]] :=
 
 SyntaxInformation[PlotMoments] = {"ArgumentsPattern" -> {_, _, _}};
 
-PlotMoments[fmom_, te_, t_] := Module[{
-   plab, rlab, cols, alabs, grnr, fun, max, len, sc, lens
-   },
-  
-  plab = {"Gx", "Gy", "Gz"};
-  rlab = {"Gradients", "Zeroth order moment", "First order moment", "Second order moment", "Third order moment"};
-  cols = {Black, Red, Purple, Blue, Green};
-  alabs = {
-    "mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\)",
-    "mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\) \!\(\*SuperscriptBox[\(ms\), \(-1\)]\)",
-    "mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\) \!\(\*SuperscriptBox[\(ms\), \(-2\)]\)",
-    "mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\) \!\(\*SuperscriptBox[\(ms\), \(-3\)]\)",
-    "mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\) \!\(\*SuperscriptBox[\(ms\), \(-4\)]\)"
-    };
-  
-  plots = MapIndexed[(
-     grnr = #2[[1]];
-     Column[
-      Prepend[MapIndexed[(
-          fun = #1;
-          max = Max[Abs[Table[fun, {t, 0, te, .25}]]];
-          len = IntegerLength[Round[max]] - 1;
-          
-          If[len <= 1,
-           sc = 1;
-           lens = "";
-           ,
-           sc = 10^len;
-           lens = ToString[Superscript[10, len], StandardForm];
-           ];
-          
-          Plot[fun/sc, {t, -.1 te, 1.5 te}, 
-           PlotRange -> {{0, te}, 1.1 {-max, max}/sc}, 
-           Exclusions -> None,
-           AspectRatio -> .15, ImageSize -> 800, 
-           PlotStyle -> Directive[{cols[[grnr]], Thick}],
-           AxesLabel -> {"ms", lens <> " " <> alabs[[grnr]]}, 
-           PlotLabel -> plab[[#2[[1]]]], 
-           LabelStyle -> Directive[Black, Bold, FontFamily -> "Arial"]]
-          ) &, #1],
-       Style[rlab[[grnr]], Directive[Black, Bold, FontFamily -> "Arial"]]],
-      Alignment -> Center]
-     ) &, fmom];
-     
-     Manipulate[
-     	pl=plots[[(n+1)]],
-     	
-     	 {{n,0,"Moment"}, 0, Length[plots]-1, 1},
-     	 Button["Save Image",SaveImage[pl], Method -> "Queued"]
-     	 ]
-  ]
+PlotMoments[fmom_, te_, t_] := Module[{plab, rlab, cols, alabs, grnr, fun, max, len, sc, lens
+},
+
+plab = {"Gx", "Gy", "Gz"};
+rlab = {"Gradients", "Zeroth order moment", "First order moment", "Second order moment", "Third order moment"};
+cols = {Black, Red, Purple, Blue, Green};
+alabs = {
+"mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\)",
+"mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\) \!\(\*SuperscriptBox[\(ms\), \(-1\)]\)",
+"mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\) \!\(\*SuperscriptBox[\(ms\), \(-2\)]\)",
+"mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\) \!\(\*SuperscriptBox[\(ms\), \(-3\)]\)",
+"mT \!\(\*SuperscriptBox[\(m\), \(-1\)]\) \!\(\*SuperscriptBox[\(ms\), \(-4\)]\)"
+};
+
+plots = MapIndexed[(
+grnr = #2[[1]];
+Column[
+Prepend[MapIndexed[(
+fun = #1;
+max = Max[Abs[Table[fun, {t, 0, te, .25}]]];
+len = IntegerLength[Round[max]] - 1;
+
+If[len <= 1,
+sc = 1;
+lens = "";
+,
+sc = 10^len;
+lens = ToString[Superscript[10, len], StandardForm];
+];
+
+Plot[fun/sc, {t, -.1 te, 1.5 te}, 
+PlotRange -> {{0, te}, 1.1 {-max, max}/sc}, 
+Exclusions -> None,
+AspectRatio -> .15, ImageSize -> 800, 
+PlotStyle -> Directive[{cols[[grnr]], Thick}],
+AxesLabel -> {"ms", lens <> " " <> alabs[[grnr]]}, 
+PlotLabel -> plab[[#2[[1]]]], 
+LabelStyle -> Directive[Black, Bold, FontFamily -> "Arial"]]
+) &, #1],
+Style[rlab[[grnr]], Directive[Black, Bold, FontFamily -> "Arial"]]],
+Alignment -> Center]
+) &, fmom];
+
+Manipulate[
+pl=plots[[(n+1)]],
+
+{{n,0,"Moment"}, 0, Length[plots]-1, 1},
+Button["Save Image",SaveImage[pl], Method -> "Queued"]
+]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2226,71 +2224,71 @@ Options[PlotIVIM] = {Method -> "", PlotColor -> {Red, Green, Blue, Black}, Norma
 SyntaxInformation[PlotIVIM] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 PlotIVIM[val_, data_, bvals_, OptionsPattern[]] := 
- Module[{pdat, pdatL, rule, stdash, stsol, lstyle, pl, vals = val, 
-   func, cols, s0, f1, dc, pdc1, f2,f3, pdc2, bm,plr},
-  DynamicModule[{plot},
-   cols = OptionValue[PlotColor];
-   cols = If[Length[cols] != 4, {Red,Darker@ Green, Blue, Black}, cols];
-   
-   If[OptionValue[NormalizeIVIM]==="Fit",
-   pdatL = {bvals, Log[data/vals[[1]]]} // Transpose;
-   pdat = {bvals, data/vals[[1]]} // Transpose;
-   vals[[1]] = 1;
-   ,
-   pdatL = {bvals, Log[data/data[[1]]]} // Transpose;
-   pdat = {bvals, data/data[[1]]} // Transpose;
-   vals[[1]] = vals[[1]]/data[[1]];
-   ];
-   
-   stdash = Directive[{Thick, #, Dashed}] &;
-   stsol = Directive[{Thick, #}] &;
-   lstyle = Directive[Black, Bold, If[OptionValue[ImageSize]<=200,Small,Medium], FontFamily -> "Helvetica"];
-   
-   Switch[Length[vals],
-   	2,
-    func = s0(f3*Exp[-bm*dc]);
- 	rule = Flatten@Append[Thread[{s0, dc} -> vals], {f2 -> 0,f1->0}];,
-    4,
-    func = s0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1]);
- 	rule = Append[Thread[{s0, f1, dc, pdc1} -> vals], f2 -> 0];,
-    6,
-    func = s0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1] + f2*Exp[-bm*pdc2]);
-    rule = Thread[{s0, f1, f2, dc, pdc1, pdc2} -> vals];,
-    _,
-    Return[Message[PlotIVIM::vals]]];
-   
-   plr=If[OptionValue[PlotRange]==="Auto",{1.2 Min[pdatL[[All,2]]], 0.1},OptionValue[PlotRange]];
-   
-   pl = Plot[#6 /. {f1 -> #1, f2 -> #2, f3->#3} /. rule, {bm, -0.1, #5}, 
-      PlotStyle -> ({stdash[#4[[1]]], stsol[#4[[1]]]}[[#4[[2]]]]), 
-      PlotRange -> ({{0, 1.1}, plr }[[#7]]), 
-      LabelStyle -> lstyle, Frame -> {{True, False}, {True, False}}, 
-      FrameStyle -> Thick, ImageSize -> OptionValue[ImageSize], 
-      FrameLabel -> {"b-value [\!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s]", {"Signal", "Log[Signal]"}[[#7]]}] &;
-      
-   plot = GraphicsRow[{
-       Show[
-        pl[f1, f2, 1-f1-f2, {cols[[4]], 2}, #, func, 1],
-        pl[1-f2, 0, 0, {cols[[1]], 1}, #, func, 1],
-        pl[0, 1, 0, {cols[[2]], 1}, #, func, 1],
-        pl[0, 0,  1-f1-f2, {cols[[3]], 1}, #, func, 1],
-        ListPlot[pdat, PlotStyle -> {cols[[4]], PointSize[0.02]}]
-       ],
-       Show[
-        pl[f1, f2, 1-f1-f2, {cols[[4]], 2}, #, Log[func], 2],
-        pl[1-f2, 0, 0, {cols[[1]], 1}, #, Log[func], 2],
-        pl[0, 1, 0, {cols[[2]], 1}, #, Log[func], 2],
-        pl[0, 0, 1-f1-f2, {cols[[3]], 1}, #, Log[func], 2],
-        ListPlot[pdatL, PlotStyle -> {cols[[4]], PointSize[0.02]}]
-        ]
-       }] &;
-   
-   If[OptionValue[Method] === "Dynamic",
-    Manipulate[plot[bran],{{bran, 1.1 Max[bvals], "Plot Range"}, 10, 1.5 Max[bvals], 10},SaveDefinitions -> True],
-    plot[Max[bvals]]
-    ]
-   ]
-  ]
+Module[{pdat, pdatL, rule, stdash, stsol, lstyle, pl, vals = val, 
+func, cols, s0, f1, dc, pdc1, f2,f3, pdc2, bm,plr},
+DynamicModule[{plot},
+cols = OptionValue[PlotColor];
+cols = If[Length[cols] != 4, {Red,Darker@ Green, Blue, Black}, cols];
+
+If[OptionValue[NormalizeIVIM]==="Fit",
+pdatL = {bvals, Log[data/vals[[1]]]} // Transpose;
+pdat = {bvals, data/vals[[1]]} // Transpose;
+vals[[1]] = 1;
+,
+pdatL = {bvals, Log[data/data[[1]]]} // Transpose;
+pdat = {bvals, data/data[[1]]} // Transpose;
+vals[[1]] = vals[[1]]/data[[1]];
+];
+
+stdash = Directive[{Thick, #, Dashed}] &;
+stsol = Directive[{Thick, #}] &;
+lstyle = Directive[Black, Bold, If[OptionValue[ImageSize]<=200,Small,Medium], FontFamily -> "Helvetica"];
+
+Switch[Length[vals],
+2,
+func = s0(f3*Exp[-bm*dc]);
+rule = Flatten@Append[Thread[{s0, dc} -> vals], {f2 -> 0,f1->0}];,
+4,
+func = s0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1]);
+rule = Append[Thread[{s0, f1, dc, pdc1} -> vals], f2 -> 0];,
+6,
+func = s0(f3*Exp[-bm*dc] + f1*Exp[-bm*pdc1] + f2*Exp[-bm*pdc2]);
+rule = Thread[{s0, f1, f2, dc, pdc1, pdc2} -> vals];,
+_,
+Return[Message[PlotIVIM::vals]]];
+
+plr=If[OptionValue[PlotRange]==="Auto",{1.2 Min[pdatL[[All,2]]], 0.1},OptionValue[PlotRange]];
+
+pl = Plot[#6 /. {f1 -> #1, f2 -> #2, f3->#3} /. rule, {bm, -0.1, #5}, 
+PlotStyle -> ({stdash[#4[[1]]], stsol[#4[[1]]]}[[#4[[2]]]]), 
+PlotRange -> ({{0, 1.1}, plr }[[#7]]), 
+LabelStyle -> lstyle, Frame -> {{True, False}, {True, False}}, 
+FrameStyle -> Thick, ImageSize -> OptionValue[ImageSize], 
+FrameLabel -> {"b-value [\!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s]", {"Signal", "Log[Signal]"}[[#7]]}] &;
+
+plot = GraphicsRow[{
+Show[
+pl[f1, f2, 1-f1-f2, {cols[[4]], 2}, #, func, 1],
+pl[1-f2, 0, 0, {cols[[1]], 1}, #, func, 1],
+pl[0, 1, 0, {cols[[2]], 1}, #, func, 1],
+pl[0, 0,  1-f1-f2, {cols[[3]], 1}, #, func, 1],
+ListPlot[pdat, PlotStyle -> {cols[[4]], PointSize[0.02]}]
+],
+Show[
+pl[f1, f2, 1-f1-f2, {cols[[4]], 2}, #, Log[func], 2],
+pl[1-f2, 0, 0, {cols[[1]], 1}, #, Log[func], 2],
+pl[0, 1, 0, {cols[[2]], 1}, #, Log[func], 2],
+pl[0, 0, 1-f1-f2, {cols[[3]], 1}, #, Log[func], 2],
+ListPlot[pdatL, PlotStyle -> {cols[[4]], PointSize[0.02]}]
+]
+}] &;
+
+If[OptionValue[Method] === "Dynamic",
+Manipulate[plot[bran],{{bran, 1.1 Max[bvals], "Plot Range"}, 10, 1.5 Max[bvals], 10},SaveDefinitions -> True],
+plot[Max[bvals]]
+]
+]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2300,44 +2298,44 @@ PlotIVIM[val_, data_, bvals_, OptionsPattern[]] :=
 SyntaxInformation[PlotSequence] = {"ArgumentsPattern" -> {_, _}};
 
 PlotSequence[(*{seq_,hw_,te_}*)inp_, t_] := DynamicModule[{
-	hw1, Gx, Gy, Gz, seq2, len, pdat, seq, te, start, stop, x, clip, plots
-	},
-  
-  {len, pdat} = If[Dimensions[inp] === {3}, {1, {inp}}, {Length[inp], inp}];
-  te = Last@First@pdat;
-  hw1 = Piecewise[{{1, t <= te}, {0, t > te}}];
-  seq = {PiecewiseExpand[#[[1]]], PiecewiseExpand[hw1 #[[1]]]} & /@ pdat;
-  
-  plots = Map[(
-      seq2 = #;
-      Plot[seq2[[#]],
-         {t, -0.5 te, 1.5 te}, PlotRange -> {-100, 100}, 
-         PlotStyle -> {Thick, Black}, Exclusions -> None,
-         AspectRatio -> .15, ImageSize -> 1000, 
-         PlotPoints -> Round[te/.25],
-         Axes -> False, Frame -> True, 
-         FrameTicks -> {{None, None}, {Range[0, 150, 10], None}},
-         PlotLabel -> {"Gx", "Gy", "Gz"}[[#]], 
-         LabelStyle -> {FontFamily -> "Helvetica", Bold},
-         GridLines -> {{{0, Directive[Red, Thick]}, {te/2, 
-             Directive[Red, Thick]}, {te, 
-             Directive[Red, Thick]}}, {0}}] & /@ Range[3]
-      ) &, seq, {2}];
-  
-  Manipulate[
-   
-   Column[(Show[plots[[x, clip, #]], PlotRange -> ({{start, stop}, {{-Gx, Gx}, {-Gy, Gy}, {-Gz, Gz}}[[#]]})]) & /@ Range[3]],
-   
-   {{x, 1, "Sequence"}, 1, len, 1, Appearance -> "Labeled"},
-   {{clip, 1, "Clip the te"}, {1 -> "False", 2 -> "True"}},
-   
-   {{Gx, 90, "Gx"}, 5, 100, 10, Appearance -> "Labeled"},
-   {{Gy, 90, "Gy"}, 5, 100, 10, Appearance -> "Labeled"},
-   {{Gz, 90, "Gz"}, 5, 100, 10, Appearance -> "Labeled"},
-   
-   {{start, Round[-0.07 te], "Time start"}, Round[-0.07 te], Round[.5 te], Appearance -> "Labeled"},
-   {{stop, Round[1.15 te], "Time end"}, Round[0.5 te], Round[1.20 te], Appearance -> "Labeled"}
-   ]
+hw1, Gx, Gy, Gz, seq2, len, pdat, seq, te, start, stop, x, clip, plots
+},
+
+{len, pdat} = If[Dimensions[inp] === {3}, {1, {inp}}, {Length[inp], inp}];
+te = Last@First@pdat;
+hw1 = Piecewise[{{1, t <= te}, {0, t > te}}];
+seq = {PiecewiseExpand[#[[1]]], PiecewiseExpand[hw1 #[[1]]]} & /@ pdat;
+
+plots = Map[(
+seq2 = #;
+Plot[seq2[[#]],
+{t, -0.5 te, 1.5 te}, PlotRange -> {-100, 100}, 
+PlotStyle -> {Thick, Black}, Exclusions -> None,
+AspectRatio -> .15, ImageSize -> 1000, 
+PlotPoints -> Round[te/.25],
+Axes -> False, Frame -> True, 
+FrameTicks -> {{None, None}, {Range[0, 150, 10], None}},
+PlotLabel -> {"Gx", "Gy", "Gz"}[[#]], 
+LabelStyle -> {FontFamily -> "Helvetica", Bold},
+GridLines -> {{{0, Directive[Red, Thick]}, {te/2, 
+Directive[Red, Thick]}, {te, 
+Directive[Red, Thick]}}, {0}}] & /@ Range[3]
+) &, seq, {2}];
+
+Manipulate[
+
+Column[(Show[plots[[x, clip, #]], PlotRange -> ({{start, stop}, {{-Gx, Gx}, {-Gy, Gy}, {-Gz, Gz}}[[#]]})]) & /@ Range[3]],
+
+{{x, 1, "Sequence"}, 1, len, 1, Appearance -> "Labeled"},
+{{clip, 1, "Clip the te"}, {1 -> "False", 2 -> "True"}},
+
+{{Gx, 90, "Gx"}, 5, 100, 10, Appearance -> "Labeled"},
+{{Gy, 90, "Gy"}, 5, 100, 10, Appearance -> "Labeled"},
+{{Gz, 90, "Gz"}, 5, 100, 10, Appearance -> "Labeled"},
+
+{{start, Round[-0.07 te], "Time start"}, Round[-0.07 te], Round[.5 te], Appearance -> "Labeled"},
+{{stop, Round[1.15 te], "Time end"}, Round[0.5 te], Round[1.20 te], Appearance -> "Labeled"}
+]
 ]
 
 

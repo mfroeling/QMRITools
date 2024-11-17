@@ -23,9 +23,8 @@ BeginPackage["QMRITools`MuscleBidsTools`", Join[{"Developer`"}, Complement[QMRIT
 (* ::Subsection::Closed:: *)
 (*Functions*)
 
-
 ImportJSON::usage = 
-"ImportJSON[file] imports a json file as rawJSON."
+"ImportJSON[file] imports a JSON file as rawJSON."
 
 GetJSONPosition::usage = 
 "GetJSONPosition[{json..}, {{key, value}..}] gets the position from a list of JSON association lists where keys have the given value.
@@ -36,20 +35,20 @@ MergeJSON::usage =
 
 AddToJson::usage = 
 "AddToJson[json, <|key->value..|>] adds new keys and values to the JSON list where duplicate keys are either removed or joined.
-AddToJson[json, \"QMRITools\"] adds the QMRITools software version to the json."
+AddToJson[json, \"QMRITools\"] adds the QMRITools software version to the JSON."
 
 ExtractFromJSON::usage = 
-"ExtractFromJSON[keys] if the keys exist they are extracted from the json."
+"ExtractFromJSON[keys] if the keys exist they are extracted from the JSON."
 
 
 SelectSubjects::usage = 
-"SelectSubjects[dir] selects the subjects in the given data directory which has a configfile.";
+"SelectSubjects[dir] selects the subjects in the given data directory which has a config file."
 
 ViewConfig::usage = 
 "ViewConfig[config] shows a config file for Muscle Bids processing."
 
 GetConfig::usage = 
-"GetConfig[folder] Imports a Muscle Bids config file from the given folder."
+"GetConfig[folder] imports a Muscle Bids config file from the given folder."
 
 MergeConfig::usage =
 "MergeConfig[assoc, replace] merges the replace association with the assoc association."
@@ -72,7 +71,7 @@ GenerateBidsFileName::usage =
 GenerateBidsFileName[fol, parts] the same but with a custom root folder."
 
 SelectBidsFolders::usage =
-"SelectBidsFolders[fol, tag] Selects all folders in the fol with the name tag."
+"SelectBidsFolders[fol, tag] selects all folders in the fol with the name tag."
 
 SelectBidsSubjects::usage =
 "SelectBidsSubjects[fol] selects all subjects in the bids folder."
@@ -100,13 +99,14 @@ MuscleBidsTractography::usage =
 "MuscleBidsTractography[dir] performs tractography on the Muscle-Bids named nii based on the config file in the bids sourceFolder dir. If a segmentation is present it is used as a mask for per muscle segmentation."
 
 MuscleBidsAnalysis::usage = 
-"MuscleBidsAnalysis[dir] performs analysis on the Muscle-Bids named nii based on the config file in the bids sourceFolder dir. If a segmentation is present it is used to calculate the mean per segementation."
+"MuscleBidsAnalysis[dir] performs analysis on the Muscle-Bids named nii based on the config file in the bids sourceFolder dir. If a segmentation is present it is used to calculate the mean per segmentation."
 
 CheckDataDiscription::usage =
 "CheckDataDiscription[description] checks the data description config file used in BidsDcmToNii, MuscleBidsConvert, MuscleBidsProcess, and MuscleBidsMerge."
 
 
 SubNameToBids::usage ="..."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -137,17 +137,17 @@ VersionCheck::usage =
 (*Error Messages*)
 
 
-CheckDataDiscription::key = "Datasets have duplicate names which is not allowed.";
+CheckDataDiscription::key = "Datasets have duplicate names which is not allowed."
 
-CheckDataDiscription::type = "Unknown Muscle-BIDS type: `1`, using folder \"miss\".";
+CheckDataDiscription::type = "Unknown Muscle-BIDS type: `1`, using folder \"miss\"."
 
-CheckDataDiscription::class = "Unknown Muscle-BIDS Class: `1`. Must be \"Volume\", \"Stacks\", \"Repetitions\", \"Chunks\", \"Acquisitions\".";
+CheckDataDiscription::class = "Unknown Muscle-BIDS Class: `1`. Must be \"Volume\", \"Stacks\", \"Repetitions\", \"Chunks\", \"Acquisitions\"."
 
-CheckDataDiscription::lab = "Invalid combination of Class and Label: `1` with `2` is not allowed.";
+CheckDataDiscription::lab = "Invalid combination of Class and Label: `1` with `2` is not allowed."
 
-CheckDataDiscription::man = "Manditory values \"Label\" and \"Type\" are not in the data discription.";
+CheckDataDiscription::man = "Mandatory values \"Label\" and \"Type\" are not in the data description."
 
-CheckDataDiscription::stk = "Class \"stacks\" or \"Chunk\" is used but overlap is not defined, assuming overlap 0.";
+CheckDataDiscription::stk = "Class \"stacks\" or \"Chunk\" is used but overlap is not defined, assuming overlap 0."
 
 
 GetConfig::conf = "Could not find config file in given folder."
@@ -2011,7 +2011,7 @@ MuscleBidsTractography[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, o
 MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Block[{
 		tracto, tractType, tractSeg, tractStopLab, tractStopVal, tractStopLabNam, trkFile,
 		tractTypeLab, fol, parts, checkFile, outfile, seed, lenS, segBone, tractSegLab,
-		datfile, stopfile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg,
+		datfile, stopfile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
 		segfile, muscles, mlabs, mus, bones, con, leng, dens, flip, per, duplicate, key
 	}, 
 
@@ -2110,7 +2110,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 
 			(* Perform tractography *)
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
-				InterpolationOrder -> 0, StepSize -> step, Method -> "Euler", MaxSeedPoints -> seed, 
+				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", MaxSeedPoints -> seed, 
 				FiberLengthRange -> len, FiberAngle -> ang, TracMonitor -> False,
 				TensorFilps -> flip, TensorPermutations -> per, Parallelization -> True
 			];
@@ -2165,17 +2165,19 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			(*----*)AddToLog[{"Analyzing the tracts"}, 4];
 			(*fit and segment the tracts*)
 			tracts = SegmentTracts[tracts, muscles, vox, dim, FiberLengthRange -> lenS];
+			tracts = FitTracts[tracts, vox, dim, FittingOrder -> 3];
 
 			(*Calculate tract parameters*)
 			seed = SeedDensityMap[seeds, vox, dim];
 			dens = TractDensityMap[tracts, vox, dim];
 			leng = TractLengthMap[tracts, vox, dim];
 			ang = TractAngleMap[tracts, vox, dim];
+			curv = TractCurvatureMap[tracts, vox, dim];
 
 			(*----*)AddToLog[{"Exporting the results and maps"}, 4];
 			(*export stuff*)
 			con = Context[con];
-			ExportNii[ToExpression[con<>#], vox, trkFile["_"<>#<>".nii.gz"]]&/@{"dens", "leng", "ang", "seed"};
+			ExportNii[ToExpression[con<>#], vox, trkFile["_"<>#<>".nii.gz"]]&/@{"dens", "leng", "ang", "seed","curv"};
 			ExportTracts[trkFile["_seg.trk"], tracts, vox, dim, seeds];
 
 			(*export plot scene*)
