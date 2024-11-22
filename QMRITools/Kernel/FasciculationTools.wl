@@ -26,11 +26,11 @@ BeginPackage["QMRITools`FasciculationTools`", Join[{"Developer`"}, Complement[QM
 
 FindActivations::usage = 
 "FindActivations[data] Finds the activation in MUMRI or DTI data after data normalization. 
-FindActivations[data, mask] Finds the activation in MUMRI or DTI data after data normalizeation within the mask."
+FindActivations[data, mask] Finds the activation in MUMRI or DTI data after data normalization within the mask."
 
 EvaluateActivation::usage =
 "EvaluateActivation[out] allows to evaluate the activation deterction using FindActivations, where out is the output of that function with the option Activationoutput set to True.
-EvaluateActivation[out, actS] The same with the extra annalysis of the SelectActivations funcion output given as actS."
+EvaluateActivation[out, actS] The same with the extra annalysis of the SelectActivations function output given as actS."
 
 AnalyzeActivations::usage = 
 "AnalyzeActivations[actMap, mask] Analysis of the activation map generated from the mask."

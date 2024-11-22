@@ -28,16 +28,16 @@ HelixAngleCalc::usage =
 "HelixAngleCalc[eigenvectors, mask, vox] calculates the helix angle matrix of cardiac data using only a left ventricle mask.
 HelixAngleCalc[eigenvectors, mask, maskp, vox] calculates the helix angle matrix of cardiac data using only a left ventricle mask, and a maskp for visualization.
 HelixAngleCalc[eigenvectors, mask, centerpoint, vec, inout, vox]  calculates the helix angle matrix of cardiac data using only a left ventricle mask.
-HelixAngleCalc[eigenvectors, mask, maskp, centerpoint, vec, inout, vox] calculates the helix angle matrix of cardiac data using a left vantricle mask and a maskp for visualization.
+HelixAngleCalc[eigenvectors, mask, maskp, centerpoint, vec, inout, vox] calculates the helix angle matrix of cardiac data using a left ventricle mask and a maskp for visualization.
 
 eigenvectors are the tensor eigenvectors calculated with EigenvecCalc.
 mask is a mask of the left ventricle.
 maskp is a mask used for visualization.
 vox is the voxels size, {slice, x, y}.
 
-The folowing values are calculated automaticlay Using CentralAxes but can also be provided as an input.
+The following values are calculated automatically Using CentralAxes but can also be provided as an input.
 centerpoint is the center of each slice calculated with CentralAxes.
-inout is the inner and outer radius calcualted with CentralAxes.
+inout is the inner and outer radius calculated with CentralAxes.
 vec is the vector describin the central axes of the heart, calculated with CentralAxes.
 
 Output is het fiber angle matrix FAM = {9, slice, x, y} or {FAM, plot}.
@@ -47,7 +47,7 @@ HelixAngleCalc[] is based on DOI: 10.1186/1532-429X-17-S1-P15."
 
 CardiacCoordinateSystem::usage = 
 "CardiacCoordinateSystem[mask, vox] creates the cardiac coordinate system within the mask and is used in HelixAngleCalc. 
-Output is a set of vectors {radvecn, norvecc, cirvec}, being the radial, normal and circular axes of each voxel respectivley.
+Output is a set of vectors {radvecn, norvecc, cirvec}, being the radial, normal and circular axes of each voxel respectively.
 If the option showPlot is true the output is {{radvecn, norvecc, cirvec}, plots}."
 
 CentralAxes::usage = 
@@ -63,12 +63,12 @@ Output is {wallmap, wallDerivative}."
 
 
 GetMaskSegmentPoints::usage = 
-"GetMaskSegmentPoints[mask] get the attacthment points from a cardiac segmentation where the heart has label 1, and the attachment points have label 2 and 3.
+"GetMaskSegmentPoints[mask] get the attachment points from a cardiac segmentation where the heart has label 1, and the attachment points have label 2 and 3.
 
 Output is {maks, pts} where now in mask the points are removed."
 
 GetSegmentSlices::usage = 
-"GetSegmentSlices[mask] based on the mask it gives back the slice numbers of the apex, apical, mid-ventircal, and basal slices.
+"GetSegmentSlices[mask] based on the mask it gives back the slice numbers of the apex, apical, mid-vertical, and basal slices.
 GetSegmentSlices[points] does the same but then based on the points obtained form GetMaskSegmentPoints."
 
 SegmentsPerSlice::usage = 
@@ -80,8 +80,8 @@ MaskToLines::usage =
 MaskToLines[mask, wall, cent] where mask is the first output of CalculateWallMap and cent is the first output of CentralAxes."
 
 LinesToSegmentIndex::usage = 
-"LinesToSegmentIndex[lines, points, segments] finds the lines indeces correspoinding to the points and the segments borders. Additionally it finds all the lines indeces for all lines within each segment.
-The lines are comupted by MaskToLines, the points are cumputed by GetMaskSegmentPoints, and the segments is the output of SegmentsPerSlices.
+"LinesToSegmentIndex[lines, points, segments] finds the lines indices corresponding to the points and the segments borders. Additionally it finds all the lines indices for all lines within each segment.
+The lines are computed by MaskToLines, the points are cumputed by GetMaskSegmentPoints, and the segments is the output of SegmentsPerSlices.
 
 Output {pointIndex, segmentIndex, lineIndex}."
 
@@ -89,7 +89,7 @@ GetSegmentLines::usage =
 "GetSegmentLines[lines, lineIndex, segments] groups the transmural lines per segment."
 
 SegmentLinesToMask::usage = 
-"SegmentLinesToMask[mask, segLines] cuts the mask based one the tranmural lines per segments which can be obtained by GetGesmentLines."
+"SegmentLinesToMask[mask, segLines] cuts the mask based one the tranmural lines per segments which can be obtained by GetSegmentLines."
 
 MakeLineImage::usage = 
 "MakeLineImage[back, segLines, pts] makes an image of the cardiac segmentation lines."
@@ -98,13 +98,13 @@ MakeMaskImage::usage =
 "MakeMaskImage[back, mask] maskes an image of the cardiac segmentation mask."
 
 CardiacSegment::usage = 
-"CardiacSegment[mask, vox, pts] segments the mask in the AHA17 segmenation using pts to indicate the attachemnts.
+"CardiacSegment[mask, vox, pts] segments the mask in the AHA17 segmentation using pts to indicate the attachments.
 CardiacSegment[mask, back, vox, pts] the same where back is used for image generation.
 CardiacSegment[mask, vox, pts, seg] does the same but seg can be an alternate segmentation to the AHA17.
 CardiacSegment[mask, back, vox, pts, seg] does the same but seg can be an alternate segmentation to the AHA17 where back is used for image generation."
 
 CardiacSegmentGUI::usage = 
-"CardiacSegmentGUI[data, mask, vox] allows to segment the heart in 1, 4, 6 or AHA-17 segements for each slice 360 radial samples are generated.
+"CardiacSegmentGUI[data, mask, vox] allows to segment the heart in 1, 4, 6 or AHA-17 segments for each slice 360 radial samples are generated.
 
 data is a background image on which all overlays are projected. 
 mask is the mask of the left ventricle (same as used for CentralAxes) and defines the area in which the data is sampled.
@@ -124,39 +124,39 @@ PlotSegments::usage =
 "PlotSegments[mask, data, segang] shows how the heart wil be sampled by RadialSample. 
 
 mask is a mask the left ventricle that was used in the CardiacSegment.
-function and the segang is the output of the cardaic SegmentFunction.
+function and the segang is the output of the cardiac SegmentFunction.
 
 Output is a plot window."
 
 PlotSegmentMask::usage = 
-"PlotSegmentMask[mask, segmask, vox] plots the mask segements created by CardiacSegment.
+"PlotSegmentMask[mask, segmask, vox] plots the mask segments created by CardiacSegment.
 
 mask is a mask the left ventricle that was used in the CardiacSegment.
-segmask is the output of CardiacSegemnt.
+segmask is the output of CardiacSegment.
 vox is the voxels size, {slice, x, y}.
 
 Output is a plot window."
 
 
 RadialSample::usage = 
-"RadialSample[mask, data, segang] radialy samples the provided parametermap data. 
+"RadialSample[mask, data, segang] radialy samples the provided parameter map data. 
 
 The mask should be a mask of the left ventricle that was used in the CardiacSegment.
-segang is the output of the cardaic SegmentFunction.
+segang is the output of the cardiac SegmentFunction.
 
 Output is {points, vals} which are orderd as indicated by the user."
 
 TransmuralPlot::usage = 
 "TransmuralPlot[data] plots transmural profiles of the data which are created by RadialSample.
 
-data can be a single profile or a list of profiles. In the second case the mean and standardeviations are plotted.
+data can be a single profile or a list of profiles. In the second case the mean and standard deviations are plotted.
 
 Output is a plot of the transmural profile."
 
 
 BullseyePlot::usage = 
-"BullseyePlot[data, segmask] generates a AHA-17 segement bullseye plot. 
-BullseyePlot[list] generates a AHA-17 segement bullseye plot of the lists (which needs to have 17 values) provide.
+"BullseyePlot[data, segmask] generates a AHA-17 segment bullseye plot. 
+BullseyePlot[list] generates a AHA-17 segment bullseye plot of the lists (which needs to have 17 values) provide.
 
 data is a 3D volume used for the plot. 
 segmask is the AHA-17 segmentation resulting form the CardiacSegment function when AHA17 is selected.
@@ -169,20 +169,20 @@ BullseyePlot[] is based on DOI: 10.1161/hc0402.102975."
 ExcludeSlices::usage = 
 "ExcludeSlices[data] excludes slices that do not look like the others based on various distance measures.
 
-Output is an array with 1 or 0 with the dimensiosn {slices, diff dirs}."
+Output is an array with 1 or 0 with the dimensions {slices, diff dirs}."
 
 
 MakeECVBloodMask::usage = 
 "MakeECVBloodMask[T1pre, T1post] makes a bloodpool mask based on the T1pre and T1post images. It assumes that the hart is cropped with the blood in the center.
 
-The T1pre and T1post maps are assuemed to be in ms."
+The T1pre and T1post maps are assumed to be in ms."
 
 
 ECVCalc::usage = 
 "ECVCalc[T1pre, T1post, hema] calculates the ECVmap using MakeECVBloodMask.
 ECVCalc[T1pre, T1post, bloodMask, hema] calculates the ECVmap using bloodMask.
 
-The T1pre and T1post maps are assuemed to be in ms."
+The T1pre and T1post maps are assumed to be in ms."
 
 
 CreateHeart::usage = 
@@ -197,9 +197,9 @@ Output is the heart shape, the voxel size and the parameters needed to generate 
 
 
 LCMMethod::usage = 
-"LCMMethod is an option for HelixAngleCalc and LMCSytemCalc. Can be \"CentralAxes\" or \"WallMap\". 
-\"CentralAxes\" uses wall distance calculation using projection of the centarl axes and circular approximation of the ventricle. This method is fairly fast and uses CentralAxes internaly.
-\"WallMap\" uses wall distance interpolation and subsequential gradient calculation. Can take long for high res datasets but is most accurate. Uses CalculateWallMap internaly."
+"LCMMethod is an option for HelixAngleCalc and LMCSystemCalc. Can be \"CentralAxes\" or \"WallMap\". 
+\"CentralAxes\" uses wall distance calculation using projection of the central axes and circular approximation of the ventricle. This method is fairly fast and uses CentralAxes internally.
+\"WallMap\" uses wall distance interpolation and subsequential gradient calculation. Can take long for high res datasets but is most accurate. Uses CalculateWallMap internally."
 
 AxesMethod::usage = 
 "AxesMethod is an option for HelixAngleCalc and CentralAxes and CardiacCoordinateSystem. Can be \"Linear\", \"Quadratic\", \"Cubic\"."
@@ -216,7 +216,7 @@ MaskWallMap::usage =
 
 
 GroupPerSegment::usage =
-"GroupPerSegment is an option for SegmentsPerSlice. If set False segements are grouped per slice and not per segment."
+"GroupPerSegment is an option for SegmentsPerSlice. If set False segments are grouped per slice and not per segment."
 
 SegmentationMethod::usage =
 "SegmentationMethod is an option for SegmentsPerSlice. Values can be \"AHA\", \"AHA+\", 1, 2, 3, 6 or 8."
@@ -226,10 +226,10 @@ ReversePoints::usage =
 "ReversePoints is an option for LinesToSegmentIndex, CardiacSegment. Defines at which point to start, can be True or False."
 
 ReverseDirection::usage = 
-"ReverseDirection is an option for LinesToSegmentIndex, CardiacSegment. Defines the direction of rotiation, clockwise or anti-clockwise, can be True of False."
+"ReverseDirection is an option for LinesToSegmentIndex, CardiacSegment. Defines the direction of rotation, clockwise or anti-clockwise, can be True of False."
 
 MakeSegmentPlots::usage = 
-"MakeSegmentPlots is an option for CardiacSegment. If True plots of the sementation are made."
+"MakeSegmentPlots is an option for CardiacSegment. If True plots of the segmentation are made."
 
 StartPoints::usage = 
 "StartPoints is an option for CardiacSegmentGUI. Value is \"Default\" or the point list given by CardiacSegment."
@@ -246,15 +246,15 @@ DropSamples::usage =
 
 
 GridLineSpacing::usage = 
-"GridLineSpacing is an option of TransmuralPlot. It defines the spacing of the gridlines."
+"GridLineSpacing is an option of TransmuralPlot. It defines the spacing of the grid lines."
 
 ShowOutliers::usage = "ShowOutliers is an option for ExcludeSlices."
 
 SmoothHelix::usage = 
-"SmoothHelix is an option for MaskHelix, sets the kernelsize for the MedianFilter." 
+"SmoothHelix is an option for MaskHelix, sets the kernel size for the MedianFilter." 
 
 BackgroundValue::usage = 
-"BackgroundValue is an option for MaskHelix. Sets the backgroud value (default is -100)."
+"BackgroundValue is an option for MaskHelix. Sets the background value (default is -100)."
 
 TextOffset::usage = 
 "TextOffset is an option for BullseyePlot. Determines where the text is placed, can be 0 to 1."
@@ -1129,7 +1129,7 @@ MaskToLines[mask_?ArrayQ, wall_?ArrayQ, cent_?ListQ] := Block[{
 				dis = .4 Min[dis];
 				
 				(*get the wall derivatives*)
-				(*make the derivative funciton-vector pointing perpendicularto the wall at wall mid point*)
+				(*make the derivative function-vector pointing perpendicularto the wall at wall mid point*)
 				{int1, int2} = ListInterpolation[GaussianFilter[walli, {k, k}, #], InterpolationOrder -> 1]& /@ IdentityMatrix[2];
 				intDer = {int1[#[[1]], #[[2]]], int2[#[[1]], #[[2]]]}&;
 				
@@ -1719,7 +1719,7 @@ CardiacSegmentGUI[data_, maski_, vox_, OptionsPattern[]]:=DialogInput[{
 		](*close Manipulate*)
 	](*close dynamic module*)
 (*close dialog input*)
-},WindowTitle->"Segement the heart"(*,WindowFloating->True,Modal->False*)];
+},WindowTitle->"Segment the heart"(*,WindowFloating->True,Modal->False*)];
 
 
 Rev[pts_]:=Map[If[#=!=None,Reverse@#,#]&,pts,{2}]
@@ -2223,7 +2223,7 @@ ECVCalc[mappre_, mappost_, hema_?NumberQ] := Block[{z, x, y, mask},
 ]
 
 ECVCalc[mappre_, mappost_, bloodMask_, hema_] := Block[{deltaR1, deltaR1b, rPre, rPost},
-	deltaR1 = Clip[DevideNoZero[1, mappost] - DevideNoZero[1, mappre], {0, Infinity}];
+	deltaR1 = Clip[DivideNoZero[1, mappost] - DivideNoZero[1, mappre], {0, Infinity}];
 	(*deltaR1b = Median@Flatten[GetMaskData[deltaR1, bloodMask]];*)
 	rPre = 1./ Median@Select[GetMaskData[mappre, bloodMask], 2000 > # > 1500 &];
 	rPost = 1./ Median@Select[GetMaskData[mappost, bloodMask], 500 > # > 200 &];

@@ -26,7 +26,7 @@ BeginPackage["QMRITools`GeneralTools`", Join[{"Developer`"}, Complement[QMRITool
 
 GetAssetLocation::usage = 
 "GetAssetLocation[name] Gets the location of the executable assets of the package for the highest installed version.
-Current assests are \"Elastix\", \"Transformix\" and \"DcmToNii\"." 
+Current assess are \"Elastix\", \"Transformix\" and \"DcmToNii\"." 
 
 ExtractDemoData::usage = 
 "ExtractDemoData[] Extracts the demo data archive."
@@ -55,11 +55,11 @@ DateName::usage =
 "DateName[] gives the current date and time in the format \"YYYYMMDD-HH\"."
 
 FileSelect::usage = 
-"FileSelect[action] creates a systemdialog wicht returs file/foldername action can be \"FileOpen\", \"FileSave\" or \"Directory\".
+"FileSelect[action] creates a system dialog which returns file/foldername action can be \"FileOpen\", \"FileSave\" or \"Directory\".
 FileSelect[action, {type}] same but allows the definition of filetypes for \"FileOpen\" and \"FileSave\" e.g. \"jpg\" or \"pdf\"."
 
 ConvertExtension::usage = 
-"ConvertExtension[filename, extension] checks if file has correct extention. Removes .gz or changes the extension or adds extension if not present."
+"ConvertExtension[filename, extension] checks if file has correct extension. Removes .gz or changes the extension or adds extension if not present."
 
 EmptyDirectoryQ::usage = 
 "EmptyDirectoryQ[dir] checks if directory dir is empty."
@@ -70,14 +70,14 @@ NiiFileExistQ::usage =
 
 SaveImage::usage = 
 "SaveImage[image] exports graph to image, ImageSize, FileType and ImageResolution can be given as options.
-SaveImage[image, \"filename\"] exports graph to image with \"filname\", ImageSize, FileType and ImageResolution can be given as options."
+SaveImage[image, \"filename\"] exports graph to image with \"filename\", ImageSize, FileType and ImageResolution can be given as options."
 
 
 GridData::usage = 
 "GridData[{data1,data2,...}, part] makes a grid of multiple datasets with part sets on each row."
 
 GridData3D::usage = 
-"GridData3D[{data1,data2,...}, part] same as grid data, but only works on 4D data where the data is gridded in axial, coronal and sagital."
+"GridData3D[{data1,data2,...}, part] same as grid data, but only works on 4D data where the data is gridded in axial, coronal and sagittal."
 
 
 RotateDimensionsLeft::usage = 
@@ -105,19 +105,19 @@ RescaleData[data,{vox1, vox2}] rescales image/data from size vox1 to size vox2."
 
 
 DataToVector::usage = 
-"DataToVector[data] converst the non zero data to vector.
-DataToVector[data, mask] converst the data within the mask to vector.
+"DataToVector[data] converts the non zero data to vector.
+DataToVector[data, mask] converts the data within the mask to vector.
 
 the data can be reconstructed using VectorToData.
 
-output is the vecotrized data and a list contining the original data dimensions and a list with the data coordinates. {vec, {dim,pos}}."
+output is the vectorized data and a list containing the original data dimensions and a list with the data coordinates. {vec, {dim,pos}}."
 
 VectorToData::usage = 
-"VectorToData[vec, {dim,pos}] converts the vectroized data from DataToVector back to its original Dimensoins."
+"VectorToData[vec, {dim,pos}] converts the vectorized data from DataToVector back to its original Dimensions."
 
 MakeCoordinates::usage = 
-"MakeCoordinates[data, vox] gives the coordiantes of every voxel.
-MakeCoordinates[dim, vox] gives the coordiantes of every voxel for a dataset with dimensions dim."
+"MakeCoordinates[data, vox] gives the coordinates of every voxel.
+MakeCoordinates[dim, vox] gives the coordinates of every voxel for a dataset with dimensions dim."
 
 Squeeze::usage =
 "Squeeze[data] Removes the singleton dimensions from data."
@@ -131,7 +131,7 @@ TensVec::usage=
 
 
 CropData::usage =
-"CropData[data] creates a dialog window to crop the data (assumes voxsize (1,1,1)).
+"CropData[data] creates a dialog window to crop the data (assumes voxel size (1,1,1)).
 CropData[data,vox] creates a dialog window to crop the data."
 
 FindCrop::usage = 
@@ -141,12 +141,12 @@ AutoCropData::usage =
 "AutoCropData[data] crops the data by removing all background zeros."
 
 ReverseCrop::usage = 
-"ReverseCrop[data,dim,crop] reverses the crop on the cropped data with crop values crop to the original size dim.
-ReverseCrop[data,dim,crop,{voxorig,voxnew}] reverses the crop on the cropped data with crop values crop to the original size dim."
+"ReverseCrop[data, dim, crop] reverses the crop on the cropped data with crop values crop to the original size dim.
+ReverseCrop[data, dim, crop, {voxorig, voxnew}] reverses the crop on the cropped data with crop values crop to the original size dim."
 
 ApplyCrop::usage =
-"ApplyCrop[data,crop] aplies the corpped region obtained form CropData to the data.
-ApplyCrop[data,crop,{voxorig,voxnew}] aplies the corpped region obtained form CropData to the data." 
+"ApplyCrop[data,crop] applies the cropped region obtained form CropData to the data.
+ApplyCrop[data,crop,{voxorig,voxnew}] applies the cropped region obtained form CropData to the data." 
 
 
 CutData::usage = 
@@ -156,8 +156,8 @@ StichData::usage =
 "StichData[datal,datar] joins left and right part of the data generated by CutData."
 
 
-DevideNoZero::usage = 
-"DevideNoZero[a, b] devides a/b but when b=0 the result is 0. a can be a number or vector."
+DivideNoZero::usage = 
+"DivideNoZero[a, b] divides a/b but when b=0 the result is 0. a can be a number or vector."
 
 MeanNoZero::usage = 
 "MeanNoZero[data] calculates the mean of the data ignoring the zeros."
@@ -169,16 +169,16 @@ MedianNoZero::usage =
 "MedianNoZero[data] calculates the Median of the data ignoring the zeros."
 
 LogNoZero::usage = 
-"LogNoZero[val] return the log of the val which can be anny dimonsion array. if val=0 the output is 0."
+"LogNoZero[val] return the log of the val which can be any dimension array. if val=0 the output is 0."
 
 ExpNoZero::usage = 
-"ExpNoZero[val] return the Exp of the val which can be anny dimonsion array. if val=0 the output is 0."
+"ExpNoZero[val] return the Exp of the val which can be any dimension array. if val=0 the output is 0."
 
 RMSNoZero::usage = 
-"RMSNoZero[vec] return the RMS error of the vec which can be anny dimonsion array. if vec={0...} the output is 0. Zeros are ignored."
+"RMSNoZero[vec] return the RMS error of the vec which can be any dimension array. if vec={0...} the output is 0. Zeros are ignored."
 
 MADNoZero::usage = 
-"MADNoZero[vec] return the MAD error of the vec which can be anny dimonsion array. if vec={0...} the output is 0. Zeros are ignored."
+"MADNoZero[vec] return the MAD error of the vec which can be any dimension array. if vec={0...} the output is 0. Zeros are ignored."
 
 SignNoZero::usage = 
 "SignNoZero[val] gives the sign of the val, where the sign of val > 0 is 1 and val < 0 is -1." 
@@ -198,7 +198,7 @@ finds an x that solves the linear least-squares problem for the matrix equation 
 output is the solution x."
 
 BSplineCurveFit::usage = 
-"BSplineCurveFit[points] fits a bspline to the points. Output is a list of same size as points."
+"BSplineCurveFit[points] fits a b-spline to the points. Output is a list of same size as points."
 
 
 LapFilter::usage = 
@@ -207,7 +207,7 @@ LapFilter[data, ker] Laplacian filter of data with kernel ker."
 
 MedFilter::usage = 
 "MedFilter[data] Median filter of data with kernel size 1.
-MedFilter[data, ker] Madian filter of data with kernel ker."
+MedFilter[data, ker] Median filter of data with kernel ker."
 
 StdFilter::usage =
 "StdFilter[data] StandardDeviation filter of data using gaussian kernel 2. 
@@ -216,12 +216,12 @@ StdFilter[data, ker] StandardDeviation filter of data using kernel with size ker
 
 GyromagneticRatio::usage =
 "GyromagneticRatio[] gives the gyromagnetic ratio for \"1H\" in MHz/T.
-GyromagneticRatio[nucle] gives the gyromagnetir ratio for the nuclei, e.g. \"31P\" of \"1H\"."
+GyromagneticRatio[nuclei] gives the gyromagnetic ratio for the nuclei, e.g. \"31P\" of \"1H\"."
 
 
 DynamicPartition::usage = 
-"DynamicPartition[data, {part}] patitions the data into parts which is a list of integers. The remainders is los. 
-DynamicPartition[data,part,last] patitions the data into parts which is a list of integers. The remainders is partitioned into equal parts defined by last.
+"DynamicPartition[data, {part}] partitions the data into parts which is a list of integers. The remainders is los. 
+DynamicPartition[data,part,last] partitions the data into parts which is a list of integers. The remainders is partitioned into equal parts defined by last.
 If last is All, the remainders is just one partition."
 
 
@@ -232,47 +232,47 @@ MakeIntFunction[data, vox ,int] makes an interpolation function of the data usin
 
 
 DecomposeScaleMatrix::usage = 
-"DecomposeScaleMatrix[mat] decomposes the affine matirx in T, R, S and Q."
+"DecomposeScaleMatrix[mat] decomposes the affine matrix in T, R, S and Q."
 
 DecomposeAffineMatrix::usage = 
 "DecomposeAffineMatrix[S] decomposes the scale matrix in S1, S2 and S3."
 
 QuaternionToRotationMatrix::usage =
-"QuaternionToRotationMatrix[{a, b,c,d}] converts quarternion to rotation matrix R."
+"QuaternionToRotationMatrix[{a, b,c,d}] converts quaternion to rotation matrix R."
 
 QuaternionVectorToRotationMatrix::usage =
-"QuaternionVectorToRotationMatrix[{b,c,d}] converts quarternion to rotation matrix R."
+"QuaternionVectorToRotationMatrix[{b,c,d}] converts quaternion to rotation matrix R."
 
 RotationMatrixToQuaternion::usage = 
-"RotationMatrixToQuaternion[R] converts rotation matrix to quarternions {a, b,c,d}."
+"RotationMatrixToQuaternion[R] converts rotation matrix to quaternions {a, b,c,d}."
 
 RotationMatrixToQuaternionVector::usage =
-"RotationMatrixToQuaternionVector[R] converts rotation matrix to quarternions {b,c,d}."
+"RotationMatrixToQuaternionVector[R] converts rotation matrix to quaternions {b,c,d}."
 
 
 QMRIToolsPackages::usage =
-"QMRIToolsPackages[] give list of all the QMRITools pacakges."
+"QMRIToolsPackages[] give list of all the QMRITools packages."
 
 QMRIToolsFunctions::usage = 
 "QMRIToolsFunctions[] give list of all the QMRITools packages, functions and options.
 QMRIToolsFunctions[p] print a table with length p of all the QMRITools functions and options.
-QMRIToolsFunctions[\"toobox\"] gives a list of all the functions and options in toolbox.
-QMRIToolsFunctions[\"toobox\", p] gives a table op length p of all the functions and options in toolbox. If toolbox is \"All\" it will list all toolboxes."
+QMRIToolsFunctions[\"toolbox\"] gives a list of all the functions and options in toolbox.
+QMRIToolsFunctions[\"toolbox\", p] gives a table op length p of all the functions and options in toolbox. If toolbox is \"All\" it will list all toolboxes."
 
 QMRIToolsFuncPrint::usage = 
-"QMRIToolsFuncPrint[] gives a list of all the QMRITools functions with their usage infomation."
+"QMRIToolsFuncPrint[] gives a list of all the QMRITools functions with their usage information."
 
 CompilableFunctions::usage = 
 "CompilableFunctions[] generates a formatted table of all compilable functions generated by Compile`CompilerFunctions."
 
 
 MakeFunctionGraph::usage = 
-"MakeFunctionGraph[function] makes a function dependancy graph of the function."
+"MakeFunctionGraph[function] makes a function dependency graph of the function."
 
 
 MemoryUsage::usage = 
 "MemoryUsage[] gives a table of which definitions use up memory.
-MemoryUsage[n] gives a table of which definitions use up memory, where n is the amout of definitions to show."
+MemoryUsage[n] gives a table of which definitions use up memory, where n is the amount of definitions to show."
 
 MBCount::usage =
 "MBCount[expr] gives the memory usage of the expression in MB."
@@ -305,29 +305,29 @@ CropAlways::usage =
 "CropAlways is an optin for ApplyCrop. If set True is will always crop even if outside the data."
 
 OutputWeights::usage = 
-"OutputWeights is an option for SumOfSqares. If True it also output the SoS weights."
+"OutputWeights is an option for SumOfSquares. If True it also output the SoS weights."
 
 
 SplineKnotsNumber::usage =
-"SplineKnotsNumber is an option for BSplineCurveFit and defines how many knots the bspline has."
+"SplineKnotsNumber is an option for BSplineCurveFit and defines how many knots the b-spline has."
 
 SplineRegularization::usage =
 "SplineRegularization is an option for BSplineCurveFit and defines the amount of regularization for the linear fit."
 
 
 CenterVoxel::usage = 
-"CenterVoxel is an option for MakeIntFunction. If set True the centers of the voxels are interploated else its the corners."
+"CenterVoxel is an option for MakeIntFunction. If set True the centers of the voxels are interpolated else its the corners."
 
 CenterRange::usage = 
 "CenterRange is an option for MakeIntFunction. If set True the centers of the dataset is the origin else its the corner."
 
 
 MonitorCalc::usage = 
-"MonitorCalc is an option for many processing functions. When true the proceses of the calculation is shown."
+"MonitorCalc is an option for many processing functions. When true the process of the calculation is shown."
 
 
 LabelPlacement::usage =
-"LabelPlacement is an option for MakeFunctionGraph. Defines where to place the label of the functiongraph. Accepts values that can be used in Placed."
+"LabelPlacement is an option for MakeFunctionGraph. Defines where to place the label of the function graph. Accepts values that can be used in Placed."
 
 AllowSelfDependencies::usage = 
 "AllowSelfDependencies is and option for MakeFunctionGraph. Can be True or False. If True a function that calls itself is also shown."
@@ -339,7 +339,7 @@ AllowSelfDependencies::usage =
 
 RescaleData::dim = "Given dimensions `1` not the same depth as that of the given data `2`."
 
-RescaleData::data = "Error: Inpunt must be 2D with {xdim,ydim} input or 3D dataset with {xdim,ydim} or {zdim, xdim, ydim} input."
+RescaleData::data = "Error: Input must be 2D with {xdim,ydim} input or 3D dataset with {xdim,ydim} or {zdim, xdim, ydim} input."
 
 
 DataToVector::dim = "`1` should be 2D, 3D or 4D, data is `2`D.";
@@ -634,16 +634,16 @@ RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[
 			Return[Message[RescaleData::dim, sc, Dimensions[data]]];,
 			RescaleImgi[data, {sc, met}, int]
 		],
-		3(*rescale a 3D dataset*),
+		3 (*rescale a 3D dataset*),
 		Switch[Length[sc],
-			2(*rescale a stac of 2D images*),
+			2 (*rescale a stac of 2D images*),
 			RescaleImgi[#, {sc, met}, int] & /@ data,
-			3(*rescale 3D data*),
+			3 (*rescale 3D data*),
 			RescaleImgi[data, {sc, met}, int],
 			_,
 			Return[Message[RescaleData::dim, sc, Dimensions[data]]];
 		],
-		4(*rescale a 4D dataset, treat data as multiple 3D sets*),
+		4 (*rescale a 4D dataset, treat data as multiple 3D sets*),
 		Transpose[RescaleDatai[#, sc, met, opts] & /@ Transpose[data]],
 		_,
 		Return[Message[RescaleData::data]];
@@ -686,7 +686,7 @@ GridData[dati_, part_, opts:OptionsPattern[]] := Block[{dim, data, adepth, pad, 
 		ToPackedArray@N@dati
 	];
 	
-	(*make the first dimention such that it is devidable by part*)	
+	(*make the first dimension such that it is dividable by part*)	
 	dim = Dimensions[data];
 	dim[[1]] = dim[[1]] + (part - (Mod[dim[[1]], part] /. 0 -> part));
 	data = Transpose[Partition[PadRight[data, dim], part]];
@@ -1311,16 +1311,16 @@ CompilableFunctions[]:=Block[{list1, list2, grids},
 
 
 (* ::Subsubsection::Closed:: *)
-(*DevideNoZero*)
+(*DivideNoZero*)
 
 
-SyntaxInformation[DevideNoZero] = {"ArgumentsPattern" -> {_,_,_.}};
+SyntaxInformation[DivideNoZero] = {"ArgumentsPattern" -> {_,_,_.}};
 
-DevideNoZero[numi_, deni_, "Comp"] := N@DevideNoZeroi[numi, deni]
+DivideNoZero[numi_, deni_, "Comp"] := N@DivideNoZeroi[numi, deni]
 
-DevideNoZero[numi_, deni_] := Re@N@DevideNoZeroi[numi, deni]
+DivideNoZero[numi_, deni_] := Re@N@DivideNoZeroi[numi, deni]
 
-DevideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[Abs[den] == 0., 0., num/den], 
+DivideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[Abs[den] == 0., 0., num/den], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
@@ -1521,7 +1521,7 @@ SumOfSquares[data_, OptionsPattern[]] := Block[{sos, weights, dataf},
 	sos = SumOfSquaresi[dataf];
 	
 	If[OptionValue[OutputWeights],
-		weights = DevideNoZero[dataf, sos];
+		weights = DivideNoZero[dataf, sos];
 		{sos, RotateDimensionsRight[weights]},
 		sos
 	]

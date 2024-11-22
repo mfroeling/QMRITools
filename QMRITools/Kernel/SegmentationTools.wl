@@ -1128,7 +1128,7 @@ PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?
 		{{a1, a2}, {b1, b2}, {c1, c2}} = ran[[1]];
 		dat[[a1 ;; a2, b1 ;; b2, c1 ;; c2]] = patches[[1, 1 ;; a2 - a1 + 1, 1 ;; b2 - b1 + 1, 1 ;; c2 - c1 + 1]];
 		If[labs === {}, dat,
-			SmoothSegmentation[dat, MaskComponents -> 1, MaskClosing -> False, SmoothItterations -> 0]
+			SmoothSegmentation[dat, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0]
 		]
 		,
 		(*multiple patches, need to merge*)
@@ -1157,12 +1157,12 @@ PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?
 			) & /@ labs;
 
 			(*only keep the largest connected segmentation*)
-			seg = SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothItterations -> 0] &/@ seg;
+			seg = SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0] &/@ seg;
 
 			(*set overlapping to zero and then add to background label*)
 			overlap = SparseArray[1 - UnitStep[Total[seg] - 2]];
 			If[Min[overlap]===1, 
-				seg = SmoothMask[overlap #, MaskComponents -> 1, MaskClosing -> False, SmoothItterations -> 0]&/@ seg
+				seg = SmoothMask[overlap #, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0]&/@ seg
 			];
 
 			MergeSegmentations[Transpose[seg], labs]
@@ -2171,7 +2171,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 					out = {i++, name, err};
 					
 					(*Cleanup if needed*)
-					If[clean && (!test), seg = SmoothSegmentation[seg, MaskComponents -> 1, MaskClosing -> True, SmoothItterations -> 1]];
+					If[clean && (!test), seg = SmoothSegmentation[seg, MaskComponents -> 1, MaskClosing -> True, SmoothIterations -> 1]];
 
 					(*export*)
 					If[!test,

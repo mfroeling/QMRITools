@@ -34,7 +34,7 @@ SetLogFile::usage =
 "SetLogFile[file] sets the log file name to file."
 
 ResetLog::usage = 
-"ResetLog[] restes the log to {}."
+"ResetLog[] resets the log to {}."
 
 ShowLog::usage = 
 "ShowLog[] shows the log in a popup window.

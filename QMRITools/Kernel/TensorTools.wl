@@ -53,28 +53,28 @@ FlipGradientOrientation[grad, perm, flip]flips and permuter the internal orienta
 
 
 EigenvalCalc::usage = 
-"EigenvalCalc[tensor] caculates the eigenvalues for the given tensor."
+"EigenvalCalc[tensor] calculates the eigenvalues for the given tensor."
 
 EigenvecCalc::usage =
-"EigenvecCalc[tensor] caculates the eigenvectors for the given tensor."
+"EigenvecCalc[tensor] calculates the eigenvectors for the given tensor."
 
 EigensysCalc::usage = 
-"EigensysCalc[tensor] caculates the eigensystem for the given tensor."
+"EigensysCalc[tensor] calculates the eigensystem for the given tensor."
 
 ADCCalc::usage =
-"ADCCalc[eigenvalues] caculates the ADC from the given eigenvalues."
+"ADCCalc[eigenvalues] calculates the ADC from the given eigenvalues."
 
 FACalc::usage =
-"FACalc[eigenvalues] caculates the FA from the given eigenvalues."
+"FACalc[eigenvalues] calculates the FA from the given eigenvalues."
 
 ECalc::usage =
-"ECalc[eigenvalues] caculates the E from the given eigenvalues."
+"ECalc[eigenvalues] calculates the E from the given eigenvalues."
 
 WestinMeasures::usage = 
 "WestinMeasures[eigenvalues] calculates the westin measures."
 
 ParameterCalc::usage = 
-"ParameterCalc[tensor] caculates the eigenvalues and MD and FA from the given tensor. The parameters are l1, l2, l3, MD and FA. l1, l2, l3, MD are in (10^-3 mm^2/s)."
+"ParameterCalc[tensor] calculates the eigenvalues and MD and FA from the given tensor. The parameters are l1, l2, l3, MD and FA. l1, l2, l3, MD are in (10^-3 mm^2/s)."
 
 
 LogTensor::usage = 
@@ -97,7 +97,7 @@ AngleMap::usage =
 
 DriftCorrect::usage = 
 "DriftCorrect[data, bval] dirft corrects the data using the signals of the lowest bvalue that has 6 or more unique volumes.
-For the function to work optimal it is best to have these volumes evenly spread througout thet data and for the first and last volume to have this low bvalue.
+For the function to work optimal it is best to have these volumes evenly spread throughout thet data and for the first and last volume to have this low bvalue.
 
 DriftCorrect[] is based on DOI: 10.1002/mrm.26124."
 
@@ -130,7 +130,7 @@ SigmaCalc[dti,tens,grad,bvec,blur] calculates the noise sigma based on the tenso
 
 
 TransformTensor::usage = 
-"TransformTensor[tensor, disp, vox] corrects the tensor with voxel size vox based on the displacementfield disp. The displacementfield is te displacement in mm
+"TransformTensor[tensor, disp, vox] corrects the tensor with voxel size vox based on the displacement field disp. The displacement field is te displacement in mm
 for each voxel location in x, y and z.
 
 TransformTensor[] is based on DOI: 10.1109/42.963816."
@@ -164,7 +164,7 @@ RobustFit::usage =
 If FullOutput is given the outlier map is given.";
 
 RobustFitParameters::usage =
-"RobustFitParameters is an option for TensorCalc. gives the threshold for stopping the itterations and the kappa for the outlier marging, {tr,kappa}."
+"RobustFitParameters is an option for TensorCalc. gives the threshold for stopping the iterations and the kappa for the outlier marging, {tr,kappa}."
 
 
 FilterShape::usage = 
@@ -274,7 +274,7 @@ Block[{depthD,dirD,dirG,dirB},
 	If[depthD>4,Return[Message[TensorCalc::data,ArrayDepth[data]]]];
 	(*check if gradient dimensions are the same in the data and grad vector*)
 	If[dirD!=dirG,Return[Message[TensorCalc::grad,dirD,dirG]]];
-	(*check if bvec is the same lengt as gradient vec*)
+	(*check if bvec is the same length as gradient vec*)
 	If[dirB!=dirG,Return[Message[TensorCalc::bvec,dirG,dirB]]];
 	
 	If[OptionValue[Method]!="DKI",
@@ -316,7 +316,7 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 	
 	(*check if data is 4D, 3D, 2D or 1D*)
 	If[depthD>4, Return[Message[TensorCalc::data, depthD];$Failed]];
-	(*check if bmat is the same lengt as data*)
+	(*check if bmat is the same length as data*)
 	If[dirB!=dirD, Return[Message[TensorCalc::bvec, dirD, dirB];$Failed]];
 
 	(*prepare for parallel computing if needed*)
@@ -513,7 +513,7 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 				,
 				(*itterative reweighting*)
 				While[cont == 1,
-					(*init itteration values*)
+					(*init iteration values*)
 					itt++;
 					soli = sol;
 					(*perform WLLS*)
@@ -945,7 +945,7 @@ ECalci[eigen_]:= Block[{ec},
 
 WestinMeasures[eig_]:=Block[{l1, l2, l3},
 	{l1,l2,l3} = RotateDimensionsRight[eig];
-	{DevideNoZero[l1-l2,l1], DevideNoZero[l2-l3,l1], DevideNoZero[l3,l1]}
+	{DivideNoZero[l1-l2,l1], DivideNoZero[l2-l3,l1], DivideNoZero[l3,l1]}
 ]
 
 

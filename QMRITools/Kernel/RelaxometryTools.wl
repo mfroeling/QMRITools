@@ -25,7 +25,7 @@ BeginPackage["QMRITools`RelaxometryTools`", Join[{"Developer`"}, Complement[QMRI
 
 
 T1rhoFit::usage = 
-"T1rhoFit[data, EchoTimes] fits the T1rho value to the data using linear or nonlinear methdos.
+"T1rhoFit[data, EchoTimes] fits the T1rho value to the data using linear or nonlinear methods.
 
 The output is in units as defined by the EchoTimes, e.g. if EchoTimes is in ms the output is in ms.
 
@@ -124,7 +124,7 @@ WaterFatShiftDirection::usage =
 "WaterFatShiftDirection is an options for EPGT2Fit. It specifies the water fat shift direction: \"left\", \"right\", \"up\" and \"down\"."
 
 EPGFatShift::usage = 
-"EPGFatShift is an options for EPGT2Fit. Specfies the amount of shift of the fat refocussing pulse relative to the fat exitation pulse.
+"EPGFatShift is an options for EPGT2Fit. Specifies the amount of shift of the fat refocusing pulse relative to the fat exitation pulse.
 Can be obtained form GetPulseProfile."
 
 DictT2IncludeWater::usage =
@@ -210,7 +210,7 @@ LinFit[datan_, times_] := Block[{datal, mat, r, s},
 	(*solve system for all voxels*)
 	{r, s} = mat . datal;
 	(*constrain solutions*)
-	{Clip[ExpNoZero[s], {0, 5 Max[datan]},{0.,0.}], Clip[DevideNoZero[1, r], {0, 50 Max[times]},{0, 50 Max[times]}]}
+	{Clip[ExpNoZero[s], {0, 5 Max[datan]},{0.,0.}], Clip[DivideNoZero[1, r], {0, 50 Max[times]},{0, 50 Max[times]}]}
 ]
 
 
@@ -292,7 +292,7 @@ T1LinFit[fdat_?VectorQ, time_?VectorQ, met_] := Block[{min, max, sol, aparf, bpa
 			sol = Quiet[FindFit[Transpose[{time, fdat}], {
 				(*model*)
 				Abs[aparf - bparf Exp[-tt/t1sf]],
-				(*contraints*)
+				(*constraints*)
 				{0 < aparf, 1.8 aparf < bparf < 2.2 aparf, 0 < t1sf < 3000}
 				},
 				(*initial values*)
@@ -303,7 +303,7 @@ T1LinFit[fdat_?VectorQ, time_?VectorQ, met_] := Block[{min, max, sol, aparf, bpa
 			sol = Quiet[FindFit[Transpose[{time, fdat}], {
 				(*model*)
 				Abs[aparf - bparf Exp[-tt/t1sf]],
-				(*contraints*)
+				(*constraints*)
 				{0 < aparf < bparf < 2 max, 0 < t1sf < 3000}
 				},
 				(*initial values*)
@@ -1076,7 +1076,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	
 	(*If[OptionValue[DictT2IncludeWater], wat = wat + 0.1fat; fat = .9 fat;];*)
 	
-	fatMap = ToPackedArray@DevideNoZero[fat, (wat + fat)];
+	fatMap = ToPackedArray@DivideNoZero[fat, (wat + fat)];
 	error = ToPackedArray@Sqrt[sol[[val+3]]];
 	
 	(*if needed also output callibaration*)
@@ -1250,7 +1250,7 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 		ang = angS = angle
 	];
 	
-	(*distribute the needed funtions for parrallel evaluation*)
+	(*distribute the needed functions for parrallel evaluation*)
 	DistributeDefinitions[
 		EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, 
 		RotMatrixTI, MoveStates, MoveStatesI,

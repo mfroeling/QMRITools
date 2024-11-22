@@ -27,8 +27,8 @@ BeginPackage["QMRITools`TaggingTools`", Join[{"Developer`"}, Complement[QMRITool
 AnnalyzeTagging::usage = 
 "AnnalyzeTagging[gridC] work in progress...";
 
-CalculateDispacementParameters::usage = 
-"CalculateDispacementParameters[{motx, moty}, mask] work in progress...";
+CalculateDisplacementParameters::usage = 
+"CalculateDisplacementParameters[{motx, moty}, mask] work in progress...";
 
 
 (* ::Subsection::Closed:: *)
@@ -67,7 +67,7 @@ CalculateWaveVector[dat_]:=Block[{all,dim,cent,pts,vecs,phi,rw,vals,vs,ang,n,npt
 	While[npts<5 && n>0.5,
 		n-=0.05;
 		all=Mask[alli,n];
-		(*find the peaks in the power spectrum, one in center and four arround*)
+		(*find the peaks in the power spectrum, one in center and four around*)
 		pts=ComponentMeasurements[Image@all,"Centroid"][[All,2]];
 		pts=Nearest[pts,cent,5];
 		npts=Length[pts];
@@ -103,68 +103,66 @@ CalculateWaveVector[dat_]:=Block[{all,dim,cent,pts,vecs,phi,rw,vals,vs,ang,n,npt
 Options[AnnalyzeTagging] = {HistoryWeighting -> 0.7, MonitorTagging -> True}
 
 AnnalyzeTagging[gridC_, OptionsPattern[]] := Block[{
-   waveVecs, im0, im1, im1p, dux, duy, ux, uy, Uall, W0, W1, imi, uxF, uyF, im, w, w0, uxAll, uyAll, s, f, smax, fmax, alpha
-   },
-  (*get the wave vec is needed*)
-  alpha = OptionValue[HistoryWeighting];
-  waveVecs = CalculateWaveVector[gridC];
-  (*Dynamic monitoring*)
-  im0 = im1 = im1p = dux = duy = ux = uy = 0. gridC[[1, 1]];
-  s = f = 0;
-  smax = Length[gridC];
-  fmax = Length[gridC[[1]]];
-  
-  PrintTemporary[Dynamic[If[OptionValue[MonitorTagging],
-     Column[{
-       "Slice: " <> ToString[s] <> "/" <> ToString[smax] <> " - Frame: " <> ToString[f] <> "/" <> ToString[fmax],
-       Grid@{{MakeImage[im0], MakeImage[im1p]}, {MakeImage[dux], MakeImage[duy]}, {MakeImage[ux], MakeImage[uy]}}
-       }, Alignment -> Center]
-     ,
-     "Slice: " <> ToString[s] <> "/" <> ToString[smax] <> " - Frame: " <> ToString[f] <> "/" <> ToString[fmax]
-     ]]];
-  
-  (*perform analisys*)
-  Uall = Table[
-    Table[
-     {s, f} = {slice, frame};
-     If[frame == 1,
-      {W0, im0} = ImageToWave[gridC[[slice, frame]], waveVecs];
-      ux = uy = dux = duy = 0 im0;
-      im1 = imi = im0;
-      W1 = W0;
-      ,
-      (*get the next frame*)
-      im1 = gridC[[slice, frame]];
-      
-      (*extend the motion field*)
-      {uxF, uyF} = WExtend[ux, uy, W0, waveVecs];
-      
-      (*Distort the frame according to the accumulated motion up to the previous frame*)
-      im1 = MotionToImage[im1, uxF, uyF];
-      {W1, im1} = ImageToWave[im1, waveVecs];
-      imi = im1;
-      
-      (*calculate the displacement between the two frames*)
-      {dux, duy} = ImageToMotion[im0, im1, waveVecs];
-      
-      (*displace the image and increment displacement*)
-      im1 = im1p = MotionToImage[im1, dux, duy];
-      W1 = MotionToImage[W1, dux, duy];
-      ux = uxF + dux;
-      uy = uyF + duy;
-      
-      (*update refernece images*)
-      im0 = (1-alpha) im0 + alpha im1;
-      W0 = (1-alpha) W0 + alpha W1;
-      ];
-     {im0, im1, W0, W1, ux, uy}
-     , {frame, 1, fmax, 1}]
-    , {slice, 1, smax, 1}];
-  
-  (*create output*)
-  {im0, im, w0, w, uxAll, uyAll} = Transpose[Uall, {2, 3, 1, 4, 5}];
-  {{uxAll, uyAll}, {im0, im, w0, w}}
-  ]
+		waveVecs, im0, im1, im1p, dux, duy, ux, uy, Uall, W0, W1, imi, uxF, uyF, im, w, w0, uxAll, uyAll, s, f, smax, fmax, alpha
+	},
+	(*get the wave vec is needed*)
+	alpha = OptionValue[HistoryWeighting];
+	waveVecs = CalculateWaveVector[gridC];
+	(*Dynamic monitoring*)
+	im0 = im1 = im1p = dux = duy = ux = uy = 0. gridC[[1, 1]];
+	s = f = 0;
+	smax = Length[gridC];
+	fmax = Length[gridC[[1]]];
+	
+	PrintTemporary[Dynamic[If[OptionValue[MonitorTagging],
+		Column[{
+		"Slice: " <> ToString[s] <> "/" <> ToString[smax] <> " - Frame: " <> ToString[f] <> "/" <> ToString[fmax],
+		Grid@{{MakeImage[im0], MakeImage[im1p]}, {MakeImage[dux], MakeImage[duy]}, {MakeImage[ux], MakeImage[uy]}}
+		}, Alignment -> Center]
+		,
+		"Slice: " <> ToString[s] <> "/" <> ToString[smax] <> " - Frame: " <> ToString[f] <> "/" <> ToString[fmax]
+	]]];
+	
+	(*perform analisys*)
+	Uall = Table[Table[
+		{s, f} = {slice, frame};
+		If[frame == 1,
+		{W0, im0} = ImageToWave[gridC[[slice, frame]], waveVecs];
+		ux = uy = dux = duy = 0 im0;
+		im1 = imi = im0;
+		W1 = W0;
+		,
+		(*get the next frame*)
+		im1 = gridC[[slice, frame]];
+		
+		(*extend the motion field*)
+		{uxF, uyF} = WExtend[ux, uy, W0, waveVecs];
+		
+		(*Distort the frame according to the accumulated motion up to the previous frame*)
+		im1 = MotionToImage[im1, uxF, uyF];
+		{W1, im1} = ImageToWave[im1, waveVecs];
+		imi = im1;
+		
+		(*calculate the displacement between the two frames*)
+		{dux, duy} = ImageToMotion[im0, im1, waveVecs];
+		
+		(*displace the image and increment displacement*)
+		im1 = im1p = MotionToImage[im1, dux, duy];
+		W1 = MotionToImage[W1, dux, duy];
+		ux = uxF + dux;
+		uy = uyF + duy;
+		
+		(*update refernece images*)
+		im0 = (1-alpha) im0 + alpha im1;
+		W0 = (1-alpha) W0 + alpha W1;
+		];
+		{im0, im1, W0, W1, ux, uy}
+	, {frame, 1, fmax, 1}]	, {slice, 1, smax, 1}];
+	
+	(*create output*)
+	{im0, im, w0, w, uxAll, uyAll} = Transpose[Uall, {2, 3, 1, 4, 5}];
+	{{uxAll, uyAll}, {im0, im, w0, w}}
+]
 
 (*plot image*)
 MakeImage[im_] := Image[Rescale@N@im, ImageSize -> 200]
@@ -175,79 +173,78 @@ MakeImage[im_] := Image[Rescale@N@im, ImageSize -> 200]
 
 
 ImageToMotion[im0_, im1_, waveVecs_] := Block[{
-   imRef, imDefi, imDef, dim, row, col, band, uxi, uyi, x, y, dGrid, ker, pad, iwRef, iwDef, win,
-   mask, bf, wrg, xmin, xmax, ymin, ymax, iwAux, jm1, jm2, jmD1, jmD2, f1, f2, g1, g2, fmap, gmap, wmap, thrW, bf2, dUr,
-   weightL, weightH, phase, tmap, phaseEst, nmap, dU, dUx, dUy
-   },
-  
-  (*initialize parameters and band filters*)
-  imRef = im0;
-  imDefi = imDef = im1;
-  dim = {row, col} = Dimensions[imRef];
-  uxi = uyi = 0. imRef;
-  (*bandfilters are shifted to center*)
-  band = BandFilter[dim, waveVecs, True];
-  
-  (*loop over waveVectors*)
-  Table[
-   (*get the filters*)
-   {mask, bf, wrg} = band[[All, i]];
-   
-   (*get wave vecotr properties*)
-   {x, y} = Normalize[waveVecs[[i]]];
-   dGrid = Norm[waveVecs[[i]]];
-   {ker, pad} = GetKernel[waveVecs[[i]], 1];
-   win = GetWin[ker, pad, dim];
-   
-   (*fourier transform of images with shift to center*)
-   iwRef = Shift@FFT[win imRef];
-   iwDef = Shift@FFT[win imDef];
-   
-   (*crop to frequncey area*)
-   {{xmin, xmax}, {ymin, ymax}} = (MinMax[#] + {-1, 1}) & /@ Transpose[Position[mask, 1]];
-   {iwRef, iwDef, mask, bf, wrg} = #[[xmin ;; xmax, ymin ;; ymax]] & /@ {iwRef, iwDef, mask, bf, wrg};
-   bf2 =mask( bf/( Sqrt[wrg]+10^-10));
-   
-   (*weigthed background filter to calculate motion and derivatives*)
-   (*reference image*)
-   iwAux = iwRef bf2; jm1 = IFFT[iwAux];
-   iwAux = wrg iwAux; jmD1 = IFFT[iwAux];
-   (*deformed images*)
-   iwAux = iwDef bf2; jm2 = IFFT[iwAux];
-   iwAux = wrg iwAux; jmD2 = IFFT[iwAux];
-   
-   (*make abs and calculated needed maps*)
-   {f1, f2, g1, g2} = Abs[{jm1, jm2, jmD1, jmD2}];
-   fmap = Sqrt[f1^2 + f2^2];
-   gmap = Sqrt[g1^2 + g2^2];
-   wmap = f1*f2 + g1*g2;
-   
-   (*find Threshold for weighting map and calculate wheight*)
-   thrW = 0.3 Mean[Flatten[wmap]];
-   weightL = DevideNoZero[thrW, (wmap + thrW)];
-   weightH = 1 - weightL;
-   
-   (*calculate phases and anti aliasing*)
-   phase = Arg[jm1 Conjugate[jm2] + jmD1 Conjugate[jmD2]];
-   tmap = fmap phase;
-   phaseEst = ListConvolve[ker, tmap, pad, 0.]/ListConvolve[ker, fmap, pad, 0.];
-   tmap = fmap (Mod[phase + Pi - phaseEst, 2 Pi] + phaseEst - Pi);
-   nmap = (2 Pi/dGrid) gmap;
-   
-   (*estimate dispacement map U with low spatial smaling rate, in low regions smooth extra*)
-   dUr = (tmap weightH + ListConvolve[ker, tmap, pad, 0.] weightL)/(nmap weightH + ListConvolve[ker, nmap, pad, 0.] weightL );
-   
-   dU = RescaleData[dUr, dim, InterpolationOrder -> 1];
-   
-   (*update motion and deform image*)
-   uxi += x dU; uyi += y dU;
-   (*imDef=MotionToImage[imDefi,uxi,uyi]*)
-   
-   , {i, 1, Length[waveVecs]}];
-  
-  (*output*)
-  {uxi, uyi}
-  ]
+		imRef, imDefi, imDef, dim, row, col, band, uxi, uyi, x, y, dGrid, ker, pad, iwRef, iwDef, win,
+		mask, bf, wrg, xmin, xmax, ymin, ymax, iwAux, jm1, jm2, jmD1, jmD2, f1, f2, g1, g2, fmap, gmap, wmap, thrW, bf2, dUr,
+		weightL, weightH, phase, tmap, phaseEst, nmap, dU, dUx, dUy
+	},
+
+	(*initialize parameters and band filters*)
+	imRef = im0;
+	imDefi = imDef = im1;
+	dim = {row, col} = Dimensions[imRef];
+	uxi = uyi = 0. imRef;
+	(*bandfilters are shifted to center*)
+	band = BandFilter[dim, waveVecs, True];
+
+	(*loop over waveVectors*)
+	Table[
+		(*get the filters*)
+		{mask, bf, wrg} = band[[All, i]];
+
+		(*get wave vecotr properties*)
+		{x, y} = Normalize[waveVecs[[i]]];
+		dGrid = Norm[waveVecs[[i]]];
+		{ker, pad} = GetKernel[waveVecs[[i]], 1];
+		win = GetWin[ker, pad, dim];
+
+		(*fourier transform of images with shift to center*)
+		iwRef = Shift@FFT[win imRef];
+		iwDef = Shift@FFT[win imDef];
+
+		(*crop to frequncey area*)
+		{{xmin, xmax}, {ymin, ymax}} = (MinMax[#] + {-1, 1}) & /@ Transpose[Position[mask, 1]];
+		{iwRef, iwDef, mask, bf, wrg} = #[[xmin ;; xmax, ymin ;; ymax]] & /@ {iwRef, iwDef, mask, bf, wrg};
+		bf2 =mask( bf/( Sqrt[wrg]+10^-10));
+
+		(*weigthed background filter to calculate motion and derivatives*)
+		(*reference image*)
+		iwAux = iwRef bf2; jm1 = IFFT[iwAux];
+		iwAux = wrg iwAux; jmD1 = IFFT[iwAux];
+		(*deformed images*)
+		iwAux = iwDef bf2; jm2 = IFFT[iwAux];
+		iwAux = wrg iwAux; jmD2 = IFFT[iwAux];
+
+		(*make abs and calculated needed maps*)
+		{f1, f2, g1, g2} = Abs[{jm1, jm2, jmD1, jmD2}];
+		fmap = Sqrt[f1^2 + f2^2];
+		gmap = Sqrt[g1^2 + g2^2];
+		wmap = f1*f2 + g1*g2;
+
+		(*find Threshold for weighting map and calculate weight*)
+		thrW = 0.3 Mean[Flatten[wmap]];
+		weightL = DivideNoZero[thrW, (wmap + thrW)];
+		weightH = 1 - weightL;
+
+		(*calculate phases and anti aliasing*)
+		phase = Arg[jm1 Conjugate[jm2] + jmD1 Conjugate[jmD2]];
+		tmap = fmap phase;
+		phaseEst = ListConvolve[ker, tmap, pad, 0.]/ListConvolve[ker, fmap, pad, 0.];
+		tmap = fmap (Mod[phase + Pi - phaseEst, 2 Pi] + phaseEst - Pi);
+		nmap = (2 Pi/dGrid) gmap;
+
+		(*estimate Displacement map U with low spatial scaling rate, in low regions smooth extra*)
+		dUr = (tmap weightH + ListConvolve[ker, tmap, pad, 0.] weightL)/(nmap weightH + ListConvolve[ker, nmap, pad, 0.] weightL );
+
+		dU = RescaleData[dUr, dim, InterpolationOrder -> 1];
+
+		(*update motion and deform image*)
+		uxi += x dU; uyi += y dU;
+		(*imDef=MotionToImage[imDefi,uxi,uyi]*)
+	, {i, 1, Length[waveVecs]}];
+
+	(*output*)
+	{uxi, uyi}
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -269,12 +266,12 @@ ImageToWave[data_, waveVecs_] := Block[{
 	iwX = iw # & /@ bf;
 	fiwX = IFFT /@ iwX;
 	
-	(*homoginize background and filter*)
+	(*homogenize background and filter*)
 	back = Total[Abs[fiwX]^2];
 	back = back/(back + Median[Flatten[back]]);
 	back = win ListConvolve[ker, back, pad, 0.];
 	
-	(*weigthing of tag grid for background*)
+	(*weighting of tag grid for background*)
 	grid = Total[Re[fiwX]];
 	grid = grid back;
 	
@@ -309,7 +306,7 @@ MotionToImage[data_, ux_, uy_] := Block[{dim, xcor, ycor, intdata, intFun, zx, z
 
 
 MaskToCoordinates[mask_]:=Block[{x,y,z2,z1,p,xm,ym,r,phi,rad, dim, xcor,ycor},
-	(*get coordiantes*)
+	(*get coordinates*)
 	{x,y}=Transpose@Position[mask,1];
 	
 	(*fit circle*)
@@ -321,7 +318,7 @@ MaskToCoordinates[mask_]:=Block[{x,y,z2,z1,p,xm,ym,r,phi,rad, dim, xcor,ycor},
 	{xm,ym}=p[[1;;2]]/2;
 	rad=Sqrt[xm^2+ym^2+p[[3]]];
 	
-	(*get the polar coordiantes*)
+	(*get the polar coordinates*)
 	dim=Dimensions[mask];
 	xcor=Transpose@ConstantArray[Range[1,dim[[1]]],dim[[2]]]-xm;
 	ycor=ConstantArray[Range[1,dim[[2]]],dim[[1]]]-ym;
@@ -437,13 +434,13 @@ Shift[img_]:=Block[{dx,dy},
 
 
 (* ::Subsection::Closed:: *)
-(*CalculateDispacementParameters*)
+(*CalculateDisplacementParameters*)
 
 
-CalculateDispacementParameters[{motx_,moty_},mask_]:=Block[{
-	v,kx,ky,xcor,ycor,rad,phi,sphi,cphi,ss,cc,cs2,
-	du,ux,uy,v1,v2,nv1,nv2,v2n,v1n,dot,crs,rot,
-	Fxx,Fxy,Fyx,Fyy,Exx,Eyy,Exy,Ecc,Ecr,out
+CalculateDisplacementParameters[{motx_,moty_},mask_]:=Block[{
+		v,kx,ky,xcor,ycor,rad,phi,sphi,cphi,ss,cc,cs2,
+		du,ux,uy,v1,v2,nv1,nv2,v2n,v1n,dot,crs,rot,
+		Fxx,Fxy,Fyx,Fyy,Exx,Eyy,Exy,Ecc,Ecr,out
 	},
 	(*denife kernel for derivative*)
 	v=6;
@@ -458,7 +455,7 @@ CalculateDispacementParameters[{motx_,moty_},mask_]:=Block[{
 		(*define base vector and norm*)
 		v1={xcor,ycor};
 		nv1=rad;(*Sqrt[v1[[1]]^2+v1[[2]]^2];*)
-		v1n=DevideNoZero[#,nv1]&/@v1;
+		v1n=DivideNoZero[#,nv1]&/@v1;
 		
 		(*define angles for calculating Ecc and Ecr*)
 		sphi = Sin[phi];cphi = Cos[phi];
@@ -472,7 +469,7 @@ CalculateDispacementParameters[{motx_,moty_},mask_]:=Block[{
 			
 			(*calculate the norm and normalized displaced vector*)
 			nv2=Sqrt[v2[[1]]^2+v2[[2]]^2];
-			v2n=DevideNoZero[#,nv2]&/@v2;
+			v2n=DivideNoZero[#,nv2]&/@v2;
 			
 			(*angle between two vectors = AcrTan[Dot[A,B],Cross[A,B]]*)
 			dot=v1n[[1]]v2n[[1]]+v1n[[2]]v2n[[2]];(*dot*)

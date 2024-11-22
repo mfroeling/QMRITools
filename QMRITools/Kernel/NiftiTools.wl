@@ -85,13 +85,13 @@ CorrectNiiOrientation::usage =
 GetNiiOrientation::usage = 
 "GetNiiOrientation[hdr] get the sform and qform orientations from a nii header."
 
-MakeNiiOrentationS::usage = 
-"MakeNiiOrentationS[off, vox] maxes the srow values for nii header assuming not rot and Q.
-MakeNiiOrentationS[off, vox, rot] maxes the srow values for nii header using rotation rot.
-MakeNiiOrentationS[off, vox, rot, Q] maxes the srow values for nii header using rotation rot and skew Q."
+MakeNiiOrientationS::usage = 
+"MakeNiiOrientationS[off, vox] maxes the srow values for nii header assuming not rot and Q.
+MakeNiiOrientationS[off, vox, rot] maxes the srow values for nii header using rotation rot.
+MakeNiiOrientationS[off, vox, rot, Q] maxes the srow values for nii header using rotation rot and skew Q."
 
-MakeNiiOrentationQ::usage = 
-"MakeNiiOrentationQ[rot] makes the q vector from rotation matrix rot."
+MakeNiiOrientationQ::usage = 
+"MakeNiiOrientationQ[rot] makes the q vector from rotation matrix rot."
 
 
 ExportBval::usage = 
@@ -126,7 +126,7 @@ NiiScaling::usage = "NiiScaling is an option for ImportNii. It scales the nii va
 
 NiiLegacy::usage = "NiiLegacy is an option for ExportNii, if set True default orientations are set instead of unknown."
 
-NiiSliceCode::usage = "NiiSliceCode is an option for Export nii. Whith this you can set the slice code of the nii file."
+NiiSliceCode::usage = "NiiSliceCode is an option for Export nii. With this you can set the slice code of the nii file."
 
 CompressNii::usage = "CompressNii is an option for DcmToNii and ExportNii. If set True .nii.gz files will be created."
 
@@ -1185,21 +1185,21 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 			scode = qcode = code /. Reverse[coordinateNii, 2];
 				
 			{xoffq ,yoffq, zoffq} = off;
-			{qb, qc, qd} = MakeNiiOrentationQ[rot];
-			{sx, sy, sz} = MakeNiiOrentationS[off, vox, rot]
+			{qb, qc, qd} = MakeNiiOrientationQ[rot];
+			{sx, sy, sz} = MakeNiiOrientationS[off, vox, rot]
 			,
 			(*seperate off for s and q form*)
 			{{scode, offs, rotS} , {qcode, {xoffq ,yoffq, zoffq}, rotQ}} = off;
 			{scode, qcode} = {scode, qcode} /. Reverse[coordinateNii, 2];
 			
-			{qb, qc, qd} = MakeNiiOrentationQ[rotQ];
-			{sx, sy, sz} = MakeNiiOrentationS[offs, vox, rotS]
+			{qb, qc, qd} = MakeNiiOrientationQ[rotQ];
+			{sx, sy, sz} = MakeNiiOrientationS[offs, vox, rotS]
 		],
 		(*no offsets are given use default values*)
 		offs = {dim[[-1]], dim[[-2]], dim[[1]]}/2;
 		{xoffq ,yoffq, zoffq} = N[Reverse[vox] offs];
 		{qb, qc, qd} = {0., 0., 0.};
-		{sx, sy, sz} = MakeNiiOrentationS[offs, vox];
+		{sx, sy, sz} = MakeNiiOrientationS[offs, vox];
 		
 		If[OptionValue[NiiLegacy],
 			qcode = "Scanner Posistion" /. Reverse[coordinateNii, 2];
@@ -1348,21 +1348,21 @@ GetNiiOrientationQ[hdr_] := Block[{qcode, qoff, qrot},
 
 
 (* ::Subsubsection::Closed:: *)
-(*MakeNiiOrentationS*)
+(*MakeNiiOrientationS*)
 
 
-MakeNiiOrentationS[soff_, vox_] := MakeNiiOrentationS[soff, vox, IdentityMatrix[4], IdentityMatrix[4]]
+MakeNiiOrientationS[soff_, vox_] := MakeNiiOrientationS[soff, vox, IdentityMatrix[4], IdentityMatrix[4]]
 
-MakeNiiOrentationS[soff_, vox_, rot_, q_] := MakeNiiOrentationS[soff, vox, rot . q]
+MakeNiiOrientationS[soff_, vox_, rot_, q_] := MakeNiiOrientationS[soff, vox, rot . q]
 
-MakeNiiOrentationS[soff_, vox_, rq_] := Block[{t, s},
+MakeNiiOrientationS[soff_, vox_, rq_] := Block[{t, s},
 	t = N@IdentityMatrix[4];
 	t[[1 ;; 3, 4]] = soff;
 	s = N@DiagonalMatrix[Append[Reverse[vox], 1]];
 	N@Chop[rq . s . t][[1;;3]]
 ]
 
-MakeNiiOrentationQ[qrot_] := RotationMatrixToQuaternionVector[qrot[[1 ;; 3, 1 ;; 3]]]
+MakeNiiOrientationQ[qrot_] := RotationMatrixToQuaternionVector[qrot[[1 ;; 3, 1 ;; 3]]]
 
 
 (* ::Subsection:: *)

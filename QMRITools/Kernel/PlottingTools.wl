@@ -59,7 +59,7 @@ PlotContour::usage =
 The data can be 3D or 4D, when its 4D each contour is given a random color."
 
 PlotSegmentations::usage = 
-"PlotSegmentations[seg, vox] crates a contour of each of the segementations in seg. Uses PlotContour.
+"PlotSegmentations[seg, vox] crates a contour of each of the segmentations in seg. Uses PlotContour.
 PlotSegmentations[seg, bone, vox] same but also generates an extra contour with the bones in gray."
 
 Link3DGraphic::usage =
@@ -212,7 +212,7 @@ colors3D = {Automatic -> "Automatic", "XRay", "HighRange",
 views = Thread[2*{{0.65, -1.2, 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}} -> {"Start", "Right", "Left", "Front", "Back", "Top", "Bottom"}];
 
 
-(*default gradient color funtions*)
+(*default gradient color functions*)
 colorNames = {"GrayTones", "Rainbow", "DarkRainbow", "ThermometerColors", "SunsetColors", 
 	"TemperatureMap", "LightTemperatureMap", "GrayYellowTones", "CherryTones", "SolarColors",
 	"BlueGreenYellow", "AvocadoColors", "SouthwestColors",
@@ -276,7 +276,7 @@ With[{ran = Range[0, 1., 1./(ncol - 1)]},
 	Table[ColorLookup[j, i] = Col2List[ColSel[j, i][#] & /@ ran], {j, colfuncs}, {i, colorFunctions[[All, 1]]}]
 ];
 
-(*color lookup function, presersing clipping and transparentcy. It converts integers to color values*)
+(*color lookup function, presersing clipping and transparency. It converts integers to color values*)
 (*returs the color function*)
 LookUpTable[{lstyle_, color_}, {minclip_, maxclip_}] := With[{
 		(*generate color lookup table with correct clipping colors for min and max,add opacity for Image function*)
@@ -816,13 +816,13 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		{"",
 		ManPannel["Slice Selection",{
 			{Dynamic["Slice (1-"<>ToString[rangex]<>")"],Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
-			{"Orientation",Control@{{or,1,""},{1->"Transversal",2->"Sagital",3->"Coronal"}}},
+			{"Orientation",Control@{{or,1,""},{1->"Transversal",2->"Sagittal",3->"Coronal"}}},
 			{"Reverse Slice Order",Control@{{reverse,False,""},{True,False}}}
 		}],
 		ManPannel["Slice Selection",{
 			{Dynamic["Slice 1 (1-"<>ToString[rangex]<>")"],Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Slice 2 (1-"<>ToString[rangey]<>")",Control@{{yp,1,""},1,rangey,1, Appearance -> "Labeled"}},
-			{"Orientation",Control@{{or,1,""},{1->"Transversal",2->"Sagital",3->"Coronal"}}},
+			{"Orientation",Control@{{or,1,""},{1->"Transversal",2->"Sagittal",3->"Coronal"}}},
 			{"Reverse Slice Order",Control@{{reverse,False,""},{True,False}}}
 			}]
 		}[[n]]
@@ -1043,14 +1043,14 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		ManPannel["Slice Selection",{
 			{"Slice",Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Reverse Slice Order", Control@{{reverse, False, ""}, {True, False}}},
-			{##} & @@ If[dim1 == dim2, {"Orientation",Control@{{or, 1, ""}, {1->"Transversal",2->"Sagital",3->"Coronal"}}},or=1; Null]
+			{##} & @@ If[dim1 == dim2, {"Orientation",Control@{{or, 1, ""}, {1->"Transversal",2->"Sagittal",3->"Coronal"}}},or=1; Null]
 			}],
 		ManPannel["Slice Selection",{
 			{"Slice 1",Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Slice 2",Control@{{yp,1,""},1,rangey,1, Appearance -> "Labeled"}},
 			{"Reverse Slice Order", Control@{{reverse, False, ""}, {True, False}}},
 			{##} & @@ If[(Take[dim1, -2] == Take[dim2, -2])&&(Length[dim1]>=3)&&(Length[dim2]>=3), {"Orientation",Control@{{or, 1, ""}, 
-				{1->"Transversal",2->"Sagital",3->"Coronal"}}}, or=1;Null]
+				{1->"Transversal",2->"Sagittal",3->"Coronal"}}}, or=1;Null]
 			}]
 			}[[n]]
 		,
@@ -1431,14 +1431,14 @@ DynamicModule[{data, vox, dep},
 		Row[{str}],
 		Delimiter,
 		(*The menu that selects what to show*)
-		{{show, 4, "Plot Mode"}, {1 -> "Axial", 2 -> "Coronal", 3 -> "Sagital", 4 -> "All Planes", 5 -> "Planes 3D", 6 -> "Volume 3D", 7 -> "Planes + 3D"}},
+		{{show, 4, "Plot Mode"}, {1 -> "Axial", 2 -> "Coronal", 3 -> "Sagittal", 4 -> "All Planes", 5 -> "Planes 3D", 6 -> "Volume 3D", 7 -> "Planes + 3D"}},
 		(*slice selection menu and *)
 		Delimiter,
 		Column[{
 			ManPannel["Slice Selection", {
 				{Dynamic["Axial (1-" <> ToString[size1] <> ")"], Control@{{slice, Round[size1/2], ""}, 1, size1, 1}},
 				{Dynamic[ "Coronal (1-" <> ToString[size2] <> ")"], Control@{{column, Round[size2/2], ""}, 1, size2, 1}},
-				{Dynamic["Sagital (1-" <> ToString[size3] <> ")"], Control@{{row, Round[size3/2], ""}, 1, size3, 1}},
+				{Dynamic["Sagittal (1-" <> ToString[size3] <> ")"], Control@{{row, Round[size3/2], ""}, 1, size3, 1}},
 				{"Data order", Row[{
 					Control@{{trans, False, ""}, {True, False}},"  Transpose 4D   ", 
 					Control@{{reverse, False, ""}, {True, False}}, "  Reverse slices"
@@ -1488,11 +1488,11 @@ DynamicModule[{data, vox, dep},
 				{"Show Planes", Row[{
 					"Axial:  ", Control@{{planez, True, ""}, {True, False}},
 					"  Coronal:  ", Control@{{planey, True, ""}, {True, False}},
-					"  Sagital:  ", Control@{{planex, True, ""}, {True, False}}
+					"  Sagittal:  ", Control@{{planex, True, ""}, {True, False}}
 				}]},
 				{"Opacity Axial", Control@{{opz, 1, ""}, 0, 1, 0.1}},
 				{"Opacity Coronal", Control@{{opy, 1, ""}, 0, 1, 0.1}},
-				{"Opacity Sagital", Control@{{opx, 1, ""}, 0, 1, 0.1}}
+				{"Opacity Sagittal", Control@{{opx, 1, ""}, 0, 1, 0.1}}
 			}, False]
 		}],
 
@@ -2039,10 +2039,10 @@ PlotCorrection[w_]:=Module[{sel},
 					] &, {
 						({1, 1, 1, 1}*Partition[Transpose[w], 3]) + {0, 0, 0, 0},
 						{"Rotation [Degree]", "Translation [mm]", "Scale", "Scew "},
-						{{"Coronal axis (roll)", "Sagital axis (pitch)","Axial axis (yaw)"},
-						{"Coronal direction", "Sagital direction", "Axial direction"},
-						{"Coronal direction", "Sagital direction", "Axial direction"},
-						{"Coronal direction", "Sagital direction", "Axial direction"}},
+						{{"Coronal axis (roll)", "Sagittal axis (pitch)","Axial axis (yaw)"},
+						{"Coronal direction", "Sagittal direction", "Axial direction"},
+						{"Coronal direction", "Sagittal direction", "Axial direction"},
+						{"Coronal direction", "Sagittal direction", "Axial direction"}},
 						{{-3, 3}, {-4, 4}, {.95, 1.05}, {-.05, .05}},
 						{{0, 0}, {0, 0}, {0, 1}, {0, 0}}
 					}[[All,;;sel]]], 2]]

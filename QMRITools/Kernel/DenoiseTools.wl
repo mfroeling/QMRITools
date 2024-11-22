@@ -41,8 +41,8 @@ Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitt
 PCADeNoise[] is based on DOI: 10.1016/j.neuroimage.2016.08.016 and 10.1002/mrm.26059."
 
 NNDeNoise::usage = 
-"NNDeNoise[data] removes rician noise from the data using self supravized neural net.
-NNDeNoise[data, mask] removes rician noise from the data with PCA  using self supravized neural net withing the mask.
+"NNDeNoise[data] removes rician noise from the data using self supersized neural net.
+NNDeNoise[data, mask] removes rician noise from the data with PCA  using self supersized neural net withing the mask.
 
 PCADeNoise[] is based on DOI:10.48550/arXiv.2011.01355."
 
@@ -101,8 +101,8 @@ PCAOutput::usage =
 "PCAOutput is an option of PCADeNoise. If output is full the output is {datao, {output[[1]], sigmat}, {output[[2]], output[[3]], j}, timetot}.
 Else the output is {datao, sigmat}."
 
-PCATollerance::usage = 
-"PCATollerance is an option of PCADeNoise and shuld be an integer > 0. Default value is 0. When increased the denoise method removes less noise."
+PCATolerance::usage = 
+"PCATolerance is an option of PCADeNoise and shuld be an integer > 0. Default value is 0. When increased the denoise method removes less noise."
 
 PCAWeighting::usage = 
 "PCAWeighting is an option of PCADeNoise and can be True of False. Default value is False. When True the weights of the per voxel result are calculated based on the number of non noise components."
@@ -117,8 +117,8 @@ PCAComplex::usage =
 "PCAComplex is an option of PCADeNoise and can be True of False. If set true the input data is expexted to be {real, imag}."
 
 
-NNThreshhold::usage = 
-"NNThreshhold is an options for NNDeNoise and specifies the automated back ground masking value."
+NNThreshold::usage = 
+"NNThreshold is an options for NNDeNoise and specifies the automated back ground masking value."
 
 
 AnisoStepTime::usage =
@@ -133,8 +133,8 @@ AnisoWeightType::usage =
 AnisoKappa::usage =
 "AnisoKappa is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting strenght, all data is normalize to 100 before filetering."
 
-AnisoItterations::usage = 
-"AnisoItterations is an options for AnisoFilterData. It specifies the amount of denoising itterations."
+AnisoIterations::usage = 
+"AnisoIterations is an options for AnisoFilterData. It specifies the amount of denoising iterations."
 
 AnisoKernel::usage = 
 "AnisoKernel is an options for AnisoFilterData. It defines the kernel size."
@@ -300,7 +300,7 @@ NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, 
 Options[PCADeNoise] = {
 	PCAKernel -> 5, 
 	PCAOutput -> False,
-	PCATollerance -> 0, 
+	PCATolerance -> 0, 
 	PCAWeighting -> True, 
 	PCAClipping -> True,
 	PCAComplex->False,
@@ -322,7 +322,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	},
 	
 	(*tollerane if>0 more noise components are kept*)
-	{mon, wht, tol, ker, clip, comp} = OptionValue[{MonitorCalc, PCAWeighting, PCATollerance, PCAKernel, PCAClipping, PCAComplex}];
+	{mon, wht, tol, ker, clip, comp} = OptionValue[{MonitorCalc, PCAWeighting, PCATolerance, PCAKernel, PCAClipping, PCAComplex}];
 	
 	(*concatinate complex data and make everything numerical to speed up*)
 	comps = False;
@@ -405,14 +405,14 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 			sigmat[[p]] += weight sigo;
 			weights[[p]] += weight;
 			
-			(*output sig, Nest and itterations*)
+			(*output sig, Nest and iterations*)
 			sigmati[[pi]] = sigo;
 			nmati[[pi]] = Nes;
 		) &, nearPos];
 		
 		(*make everything in arrays*)
-		datao = VectorToData[DevideNoZero[datao, weights], posV];
-		sigmat = VectorToData[DevideNoZero[sigmat, weights], posV];
+		datao = VectorToData[DivideNoZero[datao, weights], posV];
+		sigmat = VectorToData[DivideNoZero[sigmat, weights], posV];
 		output = {VectorToData[sigmati, posV], VectorToData[nmati, posV]};
 		
 		,
@@ -463,7 +463,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 				sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight sigo;
 				weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight;
 				
-				(*output sig, Nest and itterations*)
+				(*output sig, Nest and iterations*)
 				{sigo, Nes}
 			], 
 		{z, start, zdim}, {y, start, ydim}, {x, start, xdim}];
@@ -472,8 +472,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		output = ArrayPad[#, off] & /@ RotateDimensionsRight[output];
 		
 		(*correct output data for weightings*)
-		datao = Transpose@RotateDimensionsRight[Re@DevideNoZero[datao, weights]];
-		sigmat = DevideNoZero[sigmat, weights];
+		datao = Transpose@RotateDimensionsRight[Re@DivideNoZero[datao, weights]];
+		sigmat = DivideNoZero[sigmat, weights];
 	];
 	
 	(*define output, split it if data is complex*)
@@ -545,7 +545,7 @@ GridSearch = Compile[{{val, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig,
 (*NNDeNoise*)
 
 
-Options[NNDeNoise] = {NNThreshhold -> 2};
+Options[NNDeNoise] = {NNThreshold -> 2};
 
 SyntaxInformation[NNDeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -555,7 +555,7 @@ NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{
 		back, dat, coor, n, ran, dati, train, i
 	},
 	(*make selection mask and vectorize data*)
-	back = Round[mask Mask[NormalizeMeanData[data], OptionValue[NNThreshhold]]];
+	back = Round[mask Mask[NormalizeMeanData[data], OptionValue[NNThreshold]]];
 	{dat, coor} = DataToVector[data, back];
 	dat = ToPackedArray@N@dat;
 	
@@ -677,8 +677,8 @@ AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
 	j=0;PrintTemporary[ProgressIndicator[Dynamic[j],{0,itt 6}]];
 	Table[
 		(*Normalize the diffusion tensor*)
-		datf = 100 DevideNoZero[tens[[tt]],mn];
-		(*perform the diffusion smoothing itterations*)
+		datf = 100 DivideNoZero[tens[[tt]],mn];
+		(*perform the diffusion smoothing iterations*)
 		Do[
 			j++;
 			finDiff = FinDiffCalc[datf,kers];
@@ -771,7 +771,7 @@ FinDiffCalc[dat_,kers_] := ParallelMap[ListConvolve[#,dat,{2,2,2},0]&,kers]
 
 Options[AnisoFilterData] = {
 	AnisoStepTime -> 1, 
-	AnisoItterations -> 1, 
+	AnisoIterations -> 1, 
 	AnisoKernel -> {0.25, 0.5}};
 
 SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
@@ -797,7 +797,7 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 	(*aniso filter kernel size *)
 	{sig, rho} = OptionValue[AnisoKernel];
 	step = OptionValue[AnisoStepTime];
-	itt = OptionValue[AnisoItterations];
+	itt = OptionValue[AnisoIterations];
 	
 	Do[(*loop over itterrations*)
 		(*get the data gradients*)

@@ -28,11 +28,11 @@ AddNoise::usage =
 "AddNoise[data, noise] ads rician noise to the data with a given sigma or SNR value."
 
 Tensor::usage = 
-"Tensor[{l1, l2, l3}] creates a diffuison tensor with vectors {{0,0,1},{0,1,0},{1,0,0}} and eigenvalues {l1, l2, l3}.
-Tensor[{l1, l2, l3}, {e1, e2, e3}] creates a diffuison tensor with vectors {e1, e2, e3} and eigenvalues {l1, l2, l3}.
-Tensor[{l1, l2, l3}, \"Random\"] creates a diffuison tensor with random orthogonal eigenvectors {e1, e2, e2} and eigenvalues {l1, l2, l3}.
-Tensor[{l1, l2, l3}, \"RandomZ\"] creates a diffuison tensor with random orthogonal eigenvectors {{1,0,0}, e2, e3} with random eigenvectors and eigenvalues {l1, l2, l3}.
-Tensor[{l1, l2, l3}, \"OrtRandom\"] creates a diffuison tensor with random orthogonal eigenvectors {{1,0,0},{0,1,0},{0,0,1}} and eigenvalues {l1, l2, l3}.
+"Tensor[{l1, l2, l3}] creates a diffusion tensor with vectors {{0,0,1},{0,1,0},{1,0,0}} and eigenvalues {l1, l2, l3}.
+Tensor[{l1, l2, l3}, {e1, e2, e3}] creates a diffusion tensor with vectors {e1, e2, e3} and eigenvalues {l1, l2, l3}.
+Tensor[{l1, l2, l3}, \"Random\"] creates a diffusion tensor with random orthogonal eigenvectors {e1, e2, e2} and eigenvalues {l1, l2, l3}.
+Tensor[{l1, l2, l3}, \"RandomZ\"] creates a diffusion tensor with random orthogonal eigenvectors {{1,0,0}, e2, e3} with random eigenvectors and eigenvalues {l1, l2, l3}.
+Tensor[{l1, l2, l3}, \"OrtRandom\"] creates a diffusion tensor with random orthogonal eigenvectors {{1,0,0},{0,1,0},{0,0,1}} and eigenvalues {l1, l2, l3}.
 Tensor[] is based on DOI: 10.1002/nbm.2959."
 
 Signal::usage = 
@@ -52,7 +52,7 @@ Pulses::usage =
 "Pulses[name] gives the pulse shape of some predefinec Philips pulse shapes."
 
 GetPulseProfile::usage = 
-"GetPulseProfile[excitation, refocus] gives the pusl angle profiles for the exitation and refocussing pulses.
+"GetPulseProfile[excitation, refocus] gives the pusl angle profiles for the exitation and refocusing pulses.
 a pulse is defined as {\"name\", flipangle, {G_strnth, Dur, BW}}.
 GetPulseProfile[{\"name\", flipangle, {G_strnth, Dur, BW}}] gives detaile slice profile information of one pulse.
 
@@ -72,7 +72,7 @@ The sensefactors are a list of integers in a given direction: \"LR\", \"FH\", or
 GfactorSimulation[sensitivity, cov, {dir1,sense1}, {dir2,sense2}] calculates the gfactormaps for given sensitivity maps and noise corraltion w in two directions."
 
 SimParameters::usage = 
-"SimParameters[tens] caculates the diffusion parameters for tens. The output can be used in PlotSimulationHist and PlotSimulation."
+"SimParameters[tens] calculates the diffusion parameters for tens. The output can be used in PlotSimulationHist and PlotSimulation."
 
 PlotSimulationHist::usage = 
 "PlotSimulationHist[pars, label, xdata, tr] plots the pars (output form Parameters). 
@@ -83,7 +83,7 @@ PlotSimulation::usage =
 tr are the true parameter values. color are the color used for the plot."
 
 SimAngleParameters::usage = 
-"SimAngleParameters[tens,vec] caculates the diffusion eigenvectors for tens compared to the true values vec. 
+"SimAngleParameters[tens,vec] calculates the diffusion eigenvectors for tens compared to the true values vec. 
 The output can be used in PlotSimulationAngleHist and PlotSimulationAngle."
 
 PlotSimulationAngleHist::usage = 
@@ -143,7 +143,7 @@ ReportFits::usage =
 "ReportFits is an option for SimulateSliceEPG. If True it also reports the fit values."
 
 FatFieldStrength::usage = 
-"FatFieldStrength is an option for GetPulseProfile. If the value >0 it will calculate the shift of the fat refocussing pulse compared to the fat exitation pulse.
+"FatFieldStrength is an option for GetPulseProfile. If the value >0 it will calculate the shift of the fat refocusing pulse compared to the fat exitation pulse.
 The shift is in SliceRangeSamples steps."
 
 
@@ -351,7 +351,7 @@ BlochSeries[mi_, dt_, w_, p_, gyro_ : "1H"] := BlochSeriesi[mi, dt, w, p N[2 Pi 
 
 BlochSeriesi = Compile[{{mi, _Real, 1}, {dt, _Real, 0}, {w, _Real, 0}, {p, _Real, 1}}, Block[{M = mi, Mt, Mz, Mx, My},
 	(M = MatrixExp[dt {{0, w, 0}, {-w, 0, #}, {0, -#, 0}}].M) & /@ p;
-	(*calculate tranverse longitudinal and xy magnetization*)
+	(*calculate transverse longitudinal and xy magnetization*)
 	{Mx, My, Mz} = M;
 	Mt = Norm[{Mx, My}];
 	(*give output {w,MT,Mz,Mx,My,ang,phase}*)
@@ -436,12 +436,12 @@ GetPulseProfile[ex_?ListQ, ref_?ListQ, opts : OptionsPattern[]] := Module[{exOut
 	]
 ]
 
-GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, ops:OptionsPattern[]] := 
-GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwithi}}, ops]
+GetPulseProfile[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwidthi_}}, ops:OptionsPattern[]] := 
+GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwidthi}}, ops]
 
-GetPulseProfileI[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwithi_}}, ops:OptionsPattern[]] := 
-GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwithi}}, ops] = Block[{
-		gamma, gradStrength, duration, bandwith, sliceRange, sliceSamp, maxFreq, flipAngle, pos,time,maxt,
+GetPulseProfileI[{name_, flipAnglei_, {gradStrengthi_, durationi_, bandwidthi_}}, ops:OptionsPattern[]] := 
+GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwidthi}}, ops] = Block[{
+		gamma, gradStrength, duration, bandwidth, sliceRange, sliceSamp, maxFreq, flipAngle, pos,time,maxt,
 		thickness, inM, pulse, pulseSamp, freqRange, deltat, power, output, info, out, slice, opts, plot
 	},
 	
@@ -451,7 +451,7 @@ GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwithi}}, ops]
 	(*converrt the inputs *)
 	gradStrength = gradStrengthi 10^-3;(*input in mT/m convert to T/m*)
 	duration = durationi 10^-3;(*input in ms convert to s*)
-	bandwith = N@2 Pi bandwithi;(*is in Hz convert to rad/s*)
+	bandwidth = N@2 Pi bandwidthi;(*is in Hz convert to rad/s*)
 	flipAngle = flipAnglei;(*in degree*)
 	
 	(*get options*)
@@ -463,9 +463,9 @@ GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwithi}}, ops]
 	(*Define frequencies*)
 	pulse = Pulses[name];
 	pulseSamp = Length[pulse] - 1;
-  
+
 	(*calculate dependant parameters*)
-	thickness = bandwith/(gamma gradStrength);(*in m*)
+	thickness = bandwidth/(gamma gradStrength);(*in m*)
 	slice = 1000 thickness/2;(*in mm*)
 	deltat = duration/pulseSamp;
 	pos = Position[pulse, Max[pulse]][[1, 1]]-1;
@@ -473,24 +473,24 @@ GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwithi}}, ops]
 	maxt = 1.1 Max[Abs[time]];
 	
 	(*power optimization to get flip angle*)
- 	power = 10.^-6;(*Tesla*)
+	power = 10.^-6;(*Tesla*)
 	power = power flipAngle/BlochSeries[{0, 0, 1}, deltat, 0, power pulse][[6]];
- 	
+
 	(*sweep over frequency range, {{feq [kHz],Mt,Mz,Mx,My,ang,phase}}*)
- 	maxFreq = gamma gradStrength (sliceRange);
+	maxFreq = gamma gradStrength (sliceRange);
 	freqRange = Range[-maxFreq, maxFreq, 2 maxFreq/sliceSamp];
 	output = BlochSeries[inM, deltat, freqRange, power pulse];
-  
+
 	(*generate info label*)
 	info = Grid[{
-	    Style[#, Bold] & /@ {"G [mT/m]", "D [ms]", "T [mm]", "\[Gamma]GDT", "power [uT]", "BW [Hz]"},
-	    Style[#, Bold] & /@ Round[{1000 gradStrength, 1000 duration, 2 slice, bandwith/2 Pi  thickness, 1000000 power, bandwithi}, .01],
-	    {}
-	    }, Spacings -> {2, 0.5}];
-  
+		Style[#, Bold] & /@ {"G [mT/m]", "D [ms]", "T [mm]", "\[Gamma]GDT", "power [uT]", "BW [Hz]"},
+		Style[#, Bold] & /@ Round[{1000 gradStrength, 1000 duration, 2 slice, bandwidth/2 Pi  thickness, 1000000 power, bandwidthi}, .01],
+		{}
+		}, Spacings -> {2, 0.5}];
+
 	(*define plot values*)
 	out = output;
-	out[[All, 1]] = 1000 thickness out[[All, 1]]/bandwith;
+	out[[All, 1]] = 1000 thickness out[[All, 1]]/bandwidth;
 	slice = 1000 thickness/2;
 
 	(*make plot grid*)
@@ -506,11 +506,11 @@ GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwithi}}, ops]
 			ListLinePlot[out[[All, {1, 3}]], PlotRange -> {-1.1, 1.1}, GridLines -> {{-slice, slice}, {-1, 0, 1}}, PlotLabel -> "Mz", Sequence @@ opts],
 			ListLinePlot[{out[[All, {1, 4}]], out[[All, {1, 5}]]}, PlotRange -> {-1.1, 1.1}, GridLines -> {{-slice, slice}, {-1, 1}}, PlotLabel -> "Mx / My", Sequence @@ opts]
 		}
-     }, ImageSize -> 800, PlotLabel -> info, LabelStyle -> Black];
-     
-     (*give full output and plot*)
-     {Transpose@output, plot, 2 slice}
-  ]
+	}, ImageSize -> 800, PlotLabel -> info, LabelStyle -> Black];
+	
+	(*give full output and plot*)
+	{Transpose@output, plot, 2 slice}
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -522,74 +522,77 @@ Options[SimulateSliceEPG]={ReportFits->False}
 SyntaxInformation[SimulateSliceEPG] = {"ArgumentsPattern" -> {_, _,_, OptionsPattern[]}};
 
 SimulateSliceEPG[exitation_, refocus_, {{t1_, t2_}, {nEcho_, echoSp_}, b1_}, OptionsPattern[]] := Module[{
-   sig, sigTrue, sigT, sigAll, sigInd, len, max, vv, vp, va, sigo, prof,
-   info, fit, fitT2, fitT2T, epgT2, epgT2T, lines, plots, te, t2f, maxSig
-   },
-  
-  (*define the signals for plotting*)
-  sig = EPGSignal[{nEcho, echoSp}, {t1, t2}, #, b1] & /@ Transpose[{exitation, refocus}];
-  sig = Join[Reverse[sig[[2 ;;]]], sig];
-  maxSig = Max[Flatten[sig]];
-  sig = sig/maxSig;
-  sigT = Mean[sig]/Max[Mean[sig]];
-  
-  sigTrue = EPGSignal[{nEcho, echoSp}, {t1, t2}, {First@exitation, First@refocus}, b1]/maxSig;
-  
-  sigo = {sigTrue, sigT, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}};
-  sigAll = Join[sigo, sig];
-  
-  sigInd = MapIndexed[Flatten@{#2, #1} &, sigAll, {2}];
-  sigInd[[1, All, 1]] = sigInd[[1, All, 1]] /. 1 -> 2;
-  len = Length[sigInd];
-  max = Max@sigAll;
-  
-  (*make info tble*)
-  info = Grid[{Style[#, Bold] & /@ {"T2 [ms]", "B1 [%]", "echos" , "\[CapitalDelta]te [ms] "},
-     Style[#, Bold] & /@ Round[{t2, 100 b1, nEcho, echoSp}, .1]
-     }, Spacings -> {2, 0.5}];
-  
-  fit = If[OptionValue[ReportFits],
-	  (*find fits of true and EPG signal*)
-	  fitT2 = t2f /. FindFit[Transpose[{echoSp Range[nEcho], sigTrue}][[3 ;;]], Exp[-te/t2f], {t2f}, te];
-	  fitT2T = t2f /. FindFit[Transpose[{echoSp Range[nEcho], sigT}][[3 ;;]], Exp[-te/t2f], {t2f}, te];
-	  
-	  epgT2 = NonLinearEPGFit[{{{nEcho, echoSp}, {1400, 365, 135}, {90, 180}}, {5, 80, 0.3}}, sigTrue][[1 ;; 4]];
-	  epgT2[[3 ;; 4]] = epgT2[[3 ;; 4]]/Total[epgT2[[3 ;; 4]]];
-	  
-	  epgT2T = NonLinearEPGFit[{{{nEcho, echoSp}, {1400, 365, 135}, {exitation, refocus}}, {5, 80, 0.3}}, sigT][[1 ;; 4]];
-	  epgT2T[[3 ;; 4]] = epgT2T[[3 ;; 4]]/Total[epgT2T[[3 ;; 4]]];
-	  
-	  (*make fit table*)
-	  fit = Grid[{Style[#, Bold] & /@ {"lin t2 nor", "lin t2 slice", "{EPG t2 nor, b1, watFr}", "{EPG t2 slice, b1, watFr}"},
-	     Style[#, Bold] & /@ Round[{fitT2, fitT2T, {1, 100, 100} epgT2[[1 ;; 3]], {1, 100, 100} epgT2T[[1 ;; 3]]}, .1]
-	     }];
-	 {" ",fit}    
-     ,
-     Nothing
-  ];
-  
-  (*make plot*)
-  lines = Graphics3D[{Lighter@Gray, Line[{{2, 1, #}, {2, nEcho, #}}]} & /@ Range[0, 1.1, .1]];
-  prof = Graphics3D[{Lighter@Gray, Thick, Line[sigInd[[Length[sigo];;,1]]]}];
-  plots = Table[
-  	ParametricPlot3D[sigInd[[m, Round[#]]] &[n], {n, 1, nEcho}, 
-  	ColorFunction -> "DarkRainbow", ColorFunctionScaling -> False, PlotRange -> Full, PerformanceGoal -> "Speed",PlotPoints->nEcho]
-  , {m, 2, len, 1}];
-  PrependTo[plots, ParametricPlot3D[sigInd[[1, Round[#]]] &[n], {n, 1, nEcho}, PlotStyle -> Directive[{Dashed, Darker@Gray}, PlotRange -> Full]]];
-  text=Graphics3D[Text[Style["Mean signal (colored line)\nMid slice signal (gray line)", Bold, Black], {0, 0.5 nEcho, 1.3 max}]];
-  vv = {0.24, 0.19, 0.95};
-  vp = {2.57, 1.90, 1.08};
-  va = 35 Degree;
-  (*Column[Flatten@{
-    "  ", info, fit,*)
-    Show[plots, lines, prof, (*text,*) BoxRatios -> 1, PlotRange -> {{0, len}, {0, nEcho}, {-0., 1.1 max}}, 
-     BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
-     ViewAngle -> va, ImageSize -> 400,FrameLabel->{}, 
-     Axes -> True, (*AxesLabel -> {"Slice Profile", "Nr. echos", "Normalized\nSignal"},*) 
-     AxesEdge -> {{1, -1}, {1, -1}, {1, -1}},
-     Ticks -> False, LabelStyle -> Directive[{Bold, Black}]]
-    (*}, Alignment -> Center, Spacings -> 0]*)
-  ]
+		sig, sigTrue, sigT, sigAll, sigInd, len, max, vv, vp, va, sigo, prof,
+		info, fit, fitT2, fitT2T, epgT2, epgT2T, lines, plots, te, t2f, maxSig
+	},
+
+	(*define the signals for plotting*)
+	sig = EPGSignal[{nEcho, echoSp}, {t1, t2}, #, b1] & /@ Transpose[{exitation, refocus}];
+	sig = Join[Reverse[sig[[2 ;;]]], sig];
+	maxSig = Max[Flatten[sig]];
+	sig = sig/maxSig;
+	sigT = Mean[sig]/Max[Mean[sig]];
+
+	sigTrue = EPGSignal[{nEcho, echoSp}, {t1, t2}, {First@exitation, First@refocus}, b1]/maxSig;
+
+	sigo = {sigTrue, sigT, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}};
+	sigAll = Join[sigo, sig];
+
+	sigInd = MapIndexed[Flatten@{#2, #1} &, sigAll, {2}];
+	sigInd[[1, All, 1]] = sigInd[[1, All, 1]] /. 1 -> 2;
+	len = Length[sigInd];
+	max = Max@sigAll;
+
+	(*make info tble*)
+	info = Grid[{Style[#, Bold] & /@ {"T2 [ms]", "B1 [%]", "echos" , "\[CapitalDelta]te [ms] "},
+		Style[#, Bold] & /@ Round[{t2, 100 b1, nEcho, echoSp}, .1]
+		}, Spacings -> {2, 0.5}];
+
+	fit = If[OptionValue[ReportFits],
+		(*find fits of true and EPG signal*)
+		fitT2 = t2f /. FindFit[Transpose[{echoSp Range[nEcho], sigTrue}][[3 ;;]], Exp[-te/t2f], {t2f}, te];
+		fitT2T = t2f /. FindFit[Transpose[{echoSp Range[nEcho], sigT}][[3 ;;]], Exp[-te/t2f], {t2f}, te];
+		
+		epgT2 = NonLinearEPGFit[{{{nEcho, echoSp}, {1400, 365, 135}, {90, 180}}, {5, 80, 0.3}}, sigTrue][[1 ;; 4]];
+		epgT2[[3 ;; 4]] = epgT2[[3 ;; 4]]/Total[epgT2[[3 ;; 4]]];
+		
+		epgT2T = NonLinearEPGFit[{{{nEcho, echoSp}, {1400, 365, 135}, {exitation, refocus}}, {5, 80, 0.3}}, sigT][[1 ;; 4]];
+		epgT2T[[3 ;; 4]] = epgT2T[[3 ;; 4]]/Total[epgT2T[[3 ;; 4]]];
+		
+		(*make fit table*)
+		fit = Grid[{Style[#, Bold] & /@ {"lin t2 nor", "lin t2 slice", "{EPG t2 nor, b1, watFr}", "{EPG t2 slice, b1, watFr}"},
+			Style[#, Bold] & /@ Round[{fitT2, fitT2T, {1, 100, 100} epgT2[[1 ;; 3]], {1, 100, 100} epgT2T[[1 ;; 3]]}, .1]
+			}];
+		{" ",fit}    
+		,
+		Nothing
+	];
+
+	(*make plot*)
+	lines = Graphics3D[{Lighter@Gray, Line[{{2, 1, #}, {2, nEcho, #}}]} & /@ Range[0, 1.1, .1]];
+	prof = Graphics3D[{Lighter@Gray, Thick, Line[sigInd[[Length[sigo];;,1]]]}];
+	plots = Table[
+		ParametricPlot3D[sigInd[[m, Round[#]]] &[n], {n, 1, nEcho}, 
+		ColorFunction -> "DarkRainbow", ColorFunctionScaling -> False, PlotRange -> Full, PerformanceGoal -> "Speed",PlotPoints->nEcho]
+	, {m, 2, len, 1}];
+	
+	PrependTo[plots, ParametricPlot3D[sigInd[[1, Round[#]]] &[n], {n, 1, nEcho}, PlotStyle -> Directive[{Dashed, Darker@Gray}, PlotRange -> Full]]];
+	text = Graphics3D[Text[Style["Mean signal (colored line)\nMid slice signal (gray line)", Bold, Black], {0, 0.5 nEcho, 1.3 max}]];
+	vv = {0.24, 0.19, 0.95};
+	vp = {2.57, 1.90, 1.08};
+	va = 35 Degree;
+
+	(*Column[Flatten@{
+	"  ", info, fit,*)
+	Show[plots, lines, prof, (*text,*) BoxRatios -> 1, PlotRange -> {{0, len}, {0, nEcho}, {-0., 1.1 max}}, 
+		BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
+		ViewAngle -> va, ImageSize -> 400,FrameLabel->{}, 
+		Axes -> True, (*AxesLabel -> {"Slice Profile", "Nr. echos", "Normalized\nSignal"},*) 
+		AxesEdge -> {{1, -1}, {1, -1}, {1, -1}},
+		Ticks -> False, LabelStyle -> Directive[{Bold, Black}]
+	]
+	(*}, Alignment -> Center, Spacings -> 0]*)
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -607,37 +610,38 @@ GfactorSimulation[sensitivity_, w_, {dir1_, sensea_?ListQ}, {dir2_, senseb_?List
 GfactorSimulation[sensitivity_, w_, mask_, {dir1_, sensea_?ListQ}, opts : OptionsPattern[]] := GfactorSimulation[sensitivity, w, mask, {dir1, sensea}, {"", {0}}, opts]
 
 GfactorSimulation[sensitivity_, w_, mask_, {dir1_, sensea_?ListQ}, {dir2_, senseb_?ListQ}, OptionsPattern[]] := Block[{
-   dir, dim, factors, gfactorsAX, gfactorsCOR, gfactorsSAG, lambda, sense1, sense2, sense3, nn, gfactors, reg},
-  
-  (*get the sense factor and directions*)
-  dir = {{dir1, sensea}, {dir2, senseb}};
-  {sense1, sense2} = dir[[All, 2]];
-  dir = dir[[All, 1]];
-  reg = OptionValue[GRegularization];
-  
-  (*generate all the sense factor lists*)
-  factors = Switch[dir,
-  	(*one directions*)
-    {"FH",""}, Table[{i, 1, 1}, {i, sense2}],
-    {"AP",""}, Table[{1, i, 1}, {i, sense2}],
-    {"LR",""}, Table[{1, 1, i}, {i, sense2}],
-    
-    {"FH", "LR"}, Flatten[Table[{i, 1, j}, {i, sense1}, {j, sense2}], 1],
-    {"LR", "FH"}, Flatten[Table[{i, 1, j}, {j, sense2}, {i, sense1}], 1],
-    
-    {"AP", "LR"}, Flatten[Table[{1, i, j}, {i, sense1}, {j, sense2}], 1],
-    {"LR", "AP"}, Flatten[Table[{1, i, j}, {j, sense2}, {i, sense1}], 1],
-    
-    {"AP", "FH"}, Flatten[Table[{j, i, 1}, {i, sense1}, {j, sense2}], 1],
-    {"FH", "AP"}, Flatten[Table[{j, i, 1}, {j, sense2}, {i, sense1}], 1]
-    ];
-  
-  (*perform the gfactor calculations*)
-  gfactors = CalculateGfactori[factors, sensitivity, w, mask, GRegularization -> reg];
-  
-  (*output the gfactor*)
-  If[OptionValue[GOutput] === "Grid", GridData3D[gfactors,Length[sense2]], {gfactors, factors}]
-  ]
+		dir, dim, factors, gfactorsAX, gfactorsCOR, gfactorsSAG, lambda, sense1, sense2, sense3, nn, gfactors, reg
+	},
+	
+	(*get the sense factor and directions*)
+	dir = {{dir1, sensea}, {dir2, senseb}};
+	{sense1, sense2} = dir[[All, 2]];
+	dir = dir[[All, 1]];
+	reg = OptionValue[GRegularization];
+	
+	(*generate all the sense factor lists*)
+	factors = Switch[dir,
+	(*one directions*)
+	{"FH",""}, Table[{i, 1, 1}, {i, sense2}],
+	{"AP",""}, Table[{1, i, 1}, {i, sense2}],
+	{"LR",""}, Table[{1, 1, i}, {i, sense2}],
+	
+	{"FH", "LR"}, Flatten[Table[{i, 1, j}, {i, sense1}, {j, sense2}], 1],
+	{"LR", "FH"}, Flatten[Table[{i, 1, j}, {j, sense2}, {i, sense1}], 1],
+	
+	{"AP", "LR"}, Flatten[Table[{1, i, j}, {i, sense1}, {j, sense2}], 1],
+	{"LR", "AP"}, Flatten[Table[{1, i, j}, {j, sense2}, {i, sense1}], 1],
+	
+	{"AP", "FH"}, Flatten[Table[{j, i, 1}, {i, sense1}, {j, sense2}], 1],
+	{"FH", "AP"}, Flatten[Table[{j, i, 1}, {j, sense2}, {i, sense1}], 1]
+	];
+	
+	(*perform the gfactor calculations*)
+	gfactors = CalculateGfactori[factors, sensitivity, w, mask, GRegularization -> reg];
+	
+	(*output the gfactor*)
+	If[OptionValue[GOutput] === "Grid", GridData3D[gfactors,Length[sense2]], {gfactors, factors}]
+	]
 
 
 (* ::Subsection::Closed:: *)
@@ -696,19 +700,19 @@ CalculateGfactori[factorsi_, sensitivity_, wMat_, maski_, OptionsPattern[]] := B
 			fcors = Flatten[Table[Flatten[Table[{i, j, k}, {i, fcorx[[x]]}, {j, fcory[[y]]}, {k, fcorz[[z]]}], 2], {x, FOVux}, {y, FOVuy}, {z, FOVuz}], 2];
 			(*Calculate the gfactors*)
 			corsG = Map[(
-		        Smat = Transpose[Extract[sens, #]];
-		        mat = ConjugateTranspose[Smat].Wmati.Smat;
-		        pmat = PseudoInverse[mat + Rmat];
-		        gfac = Abs[Sqrt[Diagonal[pmat] Diagonal[mat]]]
-		    ) &, fcors];
-		    (*map the gfactors to 3D volume*)
-		    gfactor = ConstantArray[-1, dim];
-		    MapThread[(gfactor[[#1[[1]], #1[[2]], #1[[3]]]] = #2) &, {fcors, corsG}, 2];
-		    
-		    (*calculate 1/g and clip between 0 and 1 and apply mask*)
-		    gfactor = Clip[DevideNoZero[1,gfactor], {0,1}];
-		    ToPackedArray[N[(mask gfactor) - (1.-mask)/10]]
-		    
+				Smat = Transpose[Extract[sens, #]];
+				mat = ConjugateTranspose[Smat].Wmati.Smat;
+				pmat = PseudoInverse[mat + Rmat];
+				gfac = Abs[Sqrt[Diagonal[pmat] Diagonal[mat]]]
+			) &, fcors];
+			(*map the gfactors to 3D volume*)
+			gfactor = ConstantArray[-1, dim];
+			MapThread[(gfactor[[#1[[1]], #1[[2]], #1[[3]]]] = #2) &, {fcors, corsG}, 2];
+			
+			(*calculate 1/g and clip between 0 and 1 and apply mask*)
+			gfactor = Clip[DivideNoZero[1,gfactor], {0,1}];
+			ToPackedArray[N[(mask gfactor) - (1.-mask)/10]]
+			
 		), {f,1,Length[factors]}], 
 	Row[{Dynamic[factor],ProgressIndicator[f,{0,Length[factors]}]}]];
 		
@@ -785,11 +789,15 @@ files={".pdf",".jpg",".gif",".tif",".png"};
 
 labStyle = Directive[Bold,FontFamily->"Helvetica",14,Black];
 unit = " [\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s]";
+
 lambda[x_] :="\!\(\*SubscriptBox[\"\[Lambda]\", \"" <> ToString[x] <> "\"]\)";
+
 epsilon[x_] := "\!\(\*SubscriptBox[\(\[CurlyEpsilon]\), \"" <> ToString[x] <> "\"]\)"
 
 Phi[x_]:=1/(E^(x^2/2)*Sqrt[2*Pi]);
+
 CapitalPhi[x_]:=.5(1+Erf[(x)/Sqrt[2]]);
+
 SkewNorm[x_,omega_,xi_,alpha_]:=(2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
 
 HalfNorm[x_,theta_]:=PDF[HalfNormalDistribution[theta],x]
@@ -801,8 +809,7 @@ HalfNorm[x_,theta_]:=PDF[HalfNormalDistribution[theta],x]
 
 SyntaxInformation[PlotSimulationHist] = {"ArgumentsPattern" -> {_, _, _, _}};
 
-PlotSimulationHist[pars_,label_,xdata_,tr_]:=
-DynamicModule[{rangy,xlabel,exp},
+PlotSimulationHist[pars_,label_,xdata_,tr_]:=DynamicModule[{rangy,xlabel,exp},
 	rangy={{0,3},{0,3},{0,3},{0,3},{0,1}};
 	xlabel={lambda[1]<>unit, lambda[2]<>unit, lambda[3]<>unit, "MD"<>unit, "fa [-]"};
 	Manipulate[
@@ -824,8 +831,8 @@ DynamicModule[{rangy,xlabel,exp},
 			{{size, 500, "Export Size"}, sizes}, 
 			{{file, ".jpg","File Type"}, files},
 		SaveDefinitions->True
-		]
 	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -836,8 +843,7 @@ Options[PlotSimulation]={PlotRange->{{0,3},{0,3},{0,3},{0,3},{0,1}}};
 
 SyntaxInformation[PlotSimulation] = {"ArgumentsPattern" -> {_, _, _, _, _, OptionsPattern[]}};
 
-PlotSimulation[pars_,xval_,tr_,label_,color_,OptionsPattern[]]:=
-Module[{pl,dat,err,rangx,rangy,ylabel,truey,off},
+PlotSimulation[pars_,xval_,tr_,label_,color_,OptionsPattern[]]:= Module[{pl,dat,err,rangx,rangy,ylabel,truey,off},
 
 	off=0.025(Max[xval]-Min[xval]);
 	rangx={Min[xval]-off,Max[xval]+off};
@@ -856,7 +862,7 @@ Module[{pl,dat,err,rangx,rangy,ylabel,truey,off},
 		]
 	)&/@{1,2,3,4,5};
 	GraphicsGrid[Partition[pl, 3, 3, 1, {}], ImageSize -> 1200]
-	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -900,33 +906,32 @@ SyntaxInformation[PlotSimulationAngleHist] = {"ArgumentsPattern" -> {_, _, _, _,
 PlotSimulationAngle[par_, xdata_, label_, col_, OptionsPattern[]]:=
 PlotSimulationAngle[par, xdata, label, col, {.25,.5,.95}, PlotRange->OptionValue[PlotRange]]
 
-PlotSimulationAngle[par_, xdata_, label_, col_, quantinp_, OptionsPattern[]] := 
-Module[{quant,pars=Transpose[par[[All,4]]],e,pdat,xrange,off},
+PlotSimulationAngle[par_, xdata_, label_, col_, quantinp_, OptionsPattern[]] := Module[{quant,pars=Transpose[par[[All,4]]],e,pdat,xrange,off},
 	off=0.025(Max[xdata]-Min[xdata]);
 	xrange = {Min[xdata]-off,Max[xdata]+off};
+
 	GraphicsRow[(
-    e = #;
-    pdat = (
-        quant = #;
-        Transpose[{xdata, 
-          Quantile[HalfNormalDistribution[#], quant] & /@ pars[[e]]}]
-        ) & /@ quantinp;
-    ListLinePlot[pdat,
-     PlotStyle -> {Directive[col, Thick], 
-       Directive[col, Thick, Dashing[Large]], 
-       Directive[col, Thick, Dashing[Medium]], 
-       Directive[col, Thick, Dashing[Small]], 
-       Directive[col, Thick, Dashing[Tiny]]},
-     FrameTicks->{xdata,Automatic},
-     LabelStyle -> labStyle,
-     PlotMarkers -> {"\[FilledSmallCircle]", 14},
-     PlotRange -> {xrange,OptionValue[PlotRange]},
-     FrameLabel -> {label, "Error "<>epsilon[#]<>" [\[Degree]]"}, Axes -> False,
-     FrameStyle -> Thick,
-     FrameTicks -> {Automatic, {0, 15, 30, 45, 60, 75, 90}},
-     Frame -> {True, True, False, False}]
-    ) & /@ {1, 2, 3}
- , ImageSize -> 1000, Spacings -> 0]
+		e = #;
+		pdat = (
+			quant = #;
+			Transpose[{xdata, Quantile[HalfNormalDistribution[#], quant] & /@ pars[[e]]}]
+		) & /@ quantinp;
+		ListLinePlot[pdat,
+			PlotStyle -> {Directive[col, Thick], 
+			Directive[col, Thick, Dashing[Large]], 
+			Directive[col, Thick, Dashing[Medium]], 
+			Directive[col, Thick, Dashing[Small]], 
+			Directive[col, Thick, Dashing[Tiny]]},
+			FrameTicks->{xdata,Automatic},
+			LabelStyle -> labStyle,
+			PlotMarkers -> {"\[FilledSmallCircle]", 14},
+			PlotRange -> {xrange,OptionValue[PlotRange]},
+			FrameLabel -> {label, "Error "<>epsilon[#]<>" [\[Degree]]"}, Axes -> False,
+			FrameStyle -> Thick,
+			FrameTicks -> {Automatic, {0, 15, 30, 45, 60, 75, 90}},
+			Frame -> {True, True, False, False}
+		]
+	) & /@ {1, 2, 3}, ImageSize -> 1000, Spacings -> 0]
 ]
 
 
@@ -938,84 +943,75 @@ Options[PlotSimulationVec]={SortVecs->True}
 
 SyntaxInformation[PlotSimulationVec] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-PlotSimulationVec[tens_, xdata_, label_, OptionsPattern[]] := Module[
-  {eigvm, eigvcm, arrows1, arrows2, arrows3, vp1, vp2, vp3, 
-   va1, va2, va3, vv1, vv2, vv3, data, exp, xd},
-  
-  eigvm = Flatten[EigenvecCalc[#,MonitorCalc->False], 1] & /@ tens;
-  
-  eigvcm =If[OptionValue[SortVecs],
-  Map[(
-      {
-       RandomReal[NormalDistribution[1.025, .025]] If[
-         Negative[#[[1, 3]]], {1, -1, -1}, {1, -1, 1}]*#[[1]],
-       RandomReal[NormalDistribution[1.025, .025]] If[
-         Negative[#[[2, 2]]], {1, 1, 1}, {1, -1, 1}]*#[[2]],
-       RandomReal[NormalDistribution[1.025, .025]] If[
-         Negative[#[[3, 1]]], {-1, -1, 1}, {1, -1, 1}]*#[[3]]
-       }
-      ) &, eigvm, {2}]
-  ,
-  eigvm
-  ];
-  
-  arrows1 = Graphics3D[
-    {{Darker[Blue], Arrowheads[0.05], 
-      Arrow[Tube[{{-1, 1, 0.5}, {-1, 1, 1}}, 0.025]]},
-     {Darker[Red], Arrowheads[0.05], 
-      Arrow[Tube[{{-1, 1, 0.5}, {-1, .5, 0.5}}, 0.025]]},
-     {Darker[Green], Arrowheads[0.05], 
-      Arrow[Tube[{{-1, 1, 0.5}, {-.5, 1, 0.5}}, 0.025]]
-      }}];
-  arrows2 = Graphics3D[{
-     {Darker[Blue], Arrowheads[0.05], 
-      Arrow[Tube[{{-1, -.5, -1}, {-1, -.5, -.5}}, 0.025]]},
-     {Darker[Red], Arrowheads[0.05], 
-      Arrow[Tube[{{-1, -.5, -1}, {-1, -1, -1}}, 0.025]]},
-     {Darker[Green], Arrowheads[0.05], 
-      Arrow[Tube[{{-1, -.5, -1}, {-.5, -.5, -1}}, 0.025]]
-      }}];
-  arrows3 = Graphics3D[{
-     {Darker[Blue], Arrowheads[0.05], 
-      Arrow[Tube[{{.5, 1, -1}, {.5, 1, -.5}}, 0.025]]},
-     {Darker[Red], Arrowheads[0.05], 
-      Arrow[Tube[{{.5, 1, -1}, {.5, .5, -1}}, 0.025]]},
-     {Darker[Green], Arrowheads[0.05], 
-      Arrow[Tube[{{.5, 1, -1}, {1, 1, -1}}, 0.025]]
-      }}];
-    
-  vp1 = {0.426945, -0.474858, 3.32298}; 
-  vv1 = {0.0421748, -0.881393, 0.470498}; va1 = 25 Degree;
-  (*{Dynamic[vp1],Dynamic[vv1],Dynamic[va1]}*)
-  vp2 = {0.429321, -3.30821, 0.56695}; 
-  vv2 = {0.058434, -0.443718, 0.894259}; va2 = 25 Degree;
-  (*{Dynamic[vp2],Dynamic[vv2],Dynamic[va2]}*)
-  vp3 = {3.1877, 0.899157, 0.692886}; 
-  vv3 = {0.416537, 0.112532, 0.902127}; va3 = 25 Degree;
-  (*{Dynamic[vp3],Dynamic[vv3],Dynamic[va3]}*)
+PlotSimulationVec[tens_, xdata_, label_, OptionsPattern[]] := Module[{
+		eigvm, eigvcm, arrows1, arrows2, arrows3, vp1, vp2, vp3, va1, va2, va3, vv1, vv2, vv3, data, exp, xd
+	},
 
-  Manipulate[
-  	If[!ListQ[eigvcm],Return[],
-	   data = eigvcm[[set]] // Transpose;
-	   xd = xdata[[set]];
-	      
-	   exp = GraphicsRow[{
-	      EigPlot[data, vp1, vv1, va1, arrows1, 1], 
-	      EigPlot[data, vp2, vv2, va2, arrows2, 2], 
-	      EigPlot[data, vp3, vv3, va3, arrows3, 3]
-	      }, 
-	      ImageSize -> {1000}, Spacings -> 0,
-	      PlotLabel-> Style[label <> " - " <>ToString[xdata[[set]]],18],
-	      LabelStyle -> labStyle
-      ]
-  	]
-   ,
-   {{set, 1, "Simulation Value"}, 1, Length[xdata], 1},
-   Button["Export Plot To File", FileSave[exp, "jpg", 2000], Method -> "Queued"],
-   {{size, 500, "Export Size"}, sizes}, {{file, ".jpg","File Type"}, files},
-   SaveDefinitions->True
-   ]
-  ]
+	eigvm = Flatten[EigenvecCalc[#,MonitorCalc->False], 1] & /@ tens;
+
+	eigvcm =If[OptionValue[SortVecs],
+		Map[(
+			{
+			RandomReal[NormalDistribution[1.025, .025]] If[
+				Negative[#[[1, 3]]], {1, -1, -1}, {1, -1, 1}]*#[[1]],
+			RandomReal[NormalDistribution[1.025, .025]] If[
+				Negative[#[[2, 2]]], {1, 1, 1}, {1, -1, 1}]*#[[2]],
+			RandomReal[NormalDistribution[1.025, .025]] If[
+				Negative[#[[3, 1]]], {-1, -1, 1}, {1, -1, 1}]*#[[3]]
+			}
+		) &, eigvm, {2}]
+		,
+		eigvm
+	];
+
+	arrows1 = Graphics3D[{
+		{Darker[Blue], Arrowheads[0.05], Arrow[Tube[{{-1, 1, 0.5}, {-1, 1, 1}}, 0.025]]},
+		{Darker[Red], Arrowheads[0.05], Arrow[Tube[{{-1, 1, 0.5}, {-1, .5, 0.5}}, 0.025]]},
+		{Darker[Green], Arrowheads[0.05], Arrow[Tube[{{-1, 1, 0.5}, {-.5, 1, 0.5}}, 0.025]]}
+	}];
+	arrows2 = Graphics3D[{
+		{Darker[Blue], Arrowheads[0.05], Arrow[Tube[{{-1, -.5, -1}, {-1, -.5, -.5}}, 0.025]]},
+		{Darker[Red], Arrowheads[0.05], Arrow[Tube[{{-1, -.5, -1}, {-1, -1, -1}}, 0.025]]},
+		{Darker[Green], Arrowheads[0.05], Arrow[Tube[{{-1, -.5, -1}, {-.5, -.5, -1}}, 0.025]]}
+	}];
+	arrows3 = Graphics3D[{
+		{Darker[Blue], Arrowheads[0.05], Arrow[Tube[{{.5, 1, -1}, {.5, 1, -.5}}, 0.025]]},
+		{Darker[Red], Arrowheads[0.05], Arrow[Tube[{{.5, 1, -1}, {.5, .5, -1}}, 0.025]]},
+		{Darker[Green], Arrowheads[0.05], Arrow[Tube[{{.5, 1, -1}, {1, 1, -1}}, 0.025]]}
+	}];
+	
+	vp1 = {0.426945, -0.474858, 3.32298}; 
+	vv1 = {0.0421748, -0.881393, 0.470498}; va1 = 25 Degree;
+	(*{Dynamic[vp1],Dynamic[vv1],Dynamic[va1]}*)
+	vp2 = {0.429321, -3.30821, 0.56695}; 
+	vv2 = {0.058434, -0.443718, 0.894259}; va2 = 25 Degree;
+	(*{Dynamic[vp2],Dynamic[vv2],Dynamic[va2]}*)
+	vp3 = {3.1877, 0.899157, 0.692886}; 
+	vv3 = {0.416537, 0.112532, 0.902127}; va3 = 25 Degree;
+	(*{Dynamic[vp3],Dynamic[vv3],Dynamic[va3]}*)
+
+	Manipulate[
+	If[!ListQ[eigvcm],Return[],
+		data = eigvcm[[set]] // Transpose;
+		xd = xdata[[set]];
+			
+		exp = GraphicsRow[{
+				EigPlot[data, vp1, vv1, va1, arrows1, 1], 
+				EigPlot[data, vp2, vv2, va2, arrows2, 2], 
+				EigPlot[data, vp3, vv3, va3, arrows3, 3]
+			}, 
+			ImageSize -> {1000}, Spacings -> 0,
+			PlotLabel-> Style[label <> " - " <>ToString[xdata[[set]]],18],
+			LabelStyle -> labStyle
+		]
+	]
+	,
+	{{set, 1, "Simulation Value"}, 1, Length[xdata], 1},
+	Button["Export Plot To File", FileSave[exp, "jpg", 2000], Method -> "Queued"],
+	{{size, 500, "Export Size"}, sizes}, {{file, ".jpg","File Type"}, files},
+	SaveDefinitions->True
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1023,22 +1019,20 @@ PlotSimulationVec[tens_, xdata_, label_, OptionsPattern[]] := Module[
 
 
 EigPlot[data_, vp_, vv_, va_, arrows_, val_] := Module[{sphere,line},
-	 sphere = SphericalPlot3D[.975, {theta, 0, Pi}, {Phi, 0, 2 Pi}, Lighting -> "Neutral"];
-	 line = ParametricPlot3D[{{Sin[u], 0, Cos[u]}, -{0, Sin[u], Cos[u]}}, {u, -Pi, Pi},
-	 	PlotStyle -> {Directive[Dashed, Thickness[.0125], Darker[Green]], Directive[Dashed, Thickness[.0125], Darker[Red]]}
-	 	];
-	 	Show[
-	 		ListPointPlot3D[data, 
-	 			ViewPoint -> vp, ViewVertical -> vv, ViewAngle -> va,
-	 			PlotLabel -> {"First", "Second", "Third"}[[val]]<>" eigenvector",
-	 			PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, 
-			   BoxRatios -> 1, PlotStyle -> {Darker[Blue], Darker[Red], Darker[Green]}, 
-			   Lighting -> "Neutral", Axes -> False, Boxed -> False, 
-			   SphericalRegion -> True, 
-			   LabelStyle -> labStyle
-	 			], arrows, sphere, line
-	 			]
-    		];
+	sphere = SphericalPlot3D[.975, {theta, 0, Pi}, {Phi, 0, 2 Pi}, Lighting -> "Neutral"];
+	line = ParametricPlot3D[{{Sin[u], 0, Cos[u]}, -{0, Sin[u], Cos[u]}}, {u, -Pi, Pi},
+		PlotStyle -> {Directive[Dashed, Thickness[.0125], Darker[Green]], Directive[Dashed, Thickness[.0125], Darker[Red]]}
+	];
+	Show[ListPointPlot3D[data, 
+		ViewPoint -> vp, ViewVertical -> vv, ViewAngle -> va,
+		PlotLabel -> {"First", "Second", "Third"}[[val]]<>" eigenvector",
+		PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, 
+		BoxRatios -> 1, PlotStyle -> {Darker[Blue], Darker[Red], Darker[Green]}, 
+		Lighting -> "Neutral", Axes -> False, Boxed -> False, 
+		SphericalRegion -> True, 
+		LabelStyle -> labStyle
+	], arrows, sphere, line]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1046,6 +1040,7 @@ EigPlot[data_, vp_, vv_, va_, arrows_, val_] := Module[{sphere,line},
 
 
 GESignal[ang_?ListQ, {tr_, t1_}] := Transpose[GESignal[#, {tr, t1}] & /@ ang]
+
 GESignal[ang_?NumberQ, {tr_, t1_}] := Block[{e1, a},
 	a = ang Degree;
 	e1 = Exp[-tr/t1];
@@ -1054,6 +1049,7 @@ GESignal[ang_?NumberQ, {tr_, t1_}] := Block[{e1, a},
 
 
 GESignal[ang_?ListQ, {{tr1_, tr2_}, t1_}] := Transpose[GESignal[#, {{tr1, tr2}, t1}] & /@ ang]
+
 GESignal[ang_?NumberQ, {{tr1_, tr2_}, t1_}] := Block[{a, e1, e2, s1, s2},
 	a = N[ang Degree];
 	e1 = Exp[-tr1/t1];
@@ -1062,8 +1058,6 @@ GESignal[ang_?NumberQ, {{tr1_, tr2_}, t1_}] := Block[{a, e1, e2, s1, s2},
 	s2 = Sin[a] (1 - e1 + (1 - e2) e1 Cos[a])/(1 - e1 e2 (Cos[a])^2);
 	{s1, s2}
 ]
-
-
 
 
 (* ::Subsubsection::Closed:: *)
