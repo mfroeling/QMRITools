@@ -203,15 +203,15 @@ dixRel = {{35}, {80, 85, 35, 45, 50, 40, 50, 50, 35, 35}+50};(*in ms*)
 
 
 Options[DixonPhase] = {
-   DixonPrecessions -> 1,
-   DixonFieldStrength -> 3,
-   DixonNucleus -> "1H",
-   DixonFrequencies -> dixFreq,
-   DixonAmplitudes -> dixAmp,
-   MonitorCalc->False,
-   UnwrapDimension->"3D",
-   MaxIterations->15,
-   PhaseEchos -> Automatic
+	DixonPrecessions -> 1,
+	DixonFieldStrength -> 3,
+	DixonNucleus -> "1H",
+	DixonFrequencies -> dixFreq,
+	DixonAmplitudes -> dixAmp,
+	MonitorCalc->False,
+	UnwrapDimension->"3D",
+	MaxIterations->15,
+	PhaseEchos -> Automatic
 };
 
 SyntaxInformation[DixonPhase] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
@@ -422,7 +422,8 @@ Options[DixonReconstruct] = {
 	DixonFixT2 ->False,
 	DixonConstrainPhase -> False,
 	MonitorCalc -> False,
-	DixonFitPhase -> False
+	DixonFitPhase -> False,
+	Parallelize ->True
 };
 
 
@@ -441,7 +442,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n, mout, con, sig,
 		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, r2, phi, mod, cl, db, idb, fF,
 		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero, ls, amp, ipi,
-		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop, modApply
+		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop, modApply, fitphase
 	},
 	
 
@@ -538,7 +539,12 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 
 	(*perform the dixon reconstruction*)
 	If[mon, PrintTemporary["Performing dixon iDEAL reconstruction"]];
-	result = RotateDimensionsRight@Chop@DixonFitC[complex, phi, mask, matC, matA, matAi, mat, eta, maxItt, sel];
+	result = If[OptionValue[Parallelize],
+		DistributeDefinitions[DixonFitC, matC, matA, matAi, mat, eta, maxItt, sel];
+		ParallelMap[DixonFitC[#[[1]], #[[2]], #[[3]], matC, matA, matAi, mat, eta, maxItt, sel]&, Transpose[{complex, phi, mask}]],
+		DixonFitC[complex, phi, mask, matC, matA, matAi, mat, eta, maxItt, sel]
+	];
+	result = RotateDimensionsRight@Chop@result;
 
 	(*get the residuals and itterations and phases*)
 	{res, itt} = result[[n+1 ;; n+2]];
@@ -559,7 +565,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 			phi = mask RotateDimensionsLeft[filtFunc /@ phi];
 			,
 			phi = mask RotateDimensionsLeft[Table[
-				If[sel[[i]] <= 2,filtFunc[phi[[i]]], FitGradientMap[{phi[[i]], masks}, 3, 50]]
+				If[sel[[i]] <= 2, filtFunc[phi[[i]]], FitGradientMap[{phi[[i]], masks}, 3, 50]]
 			, {i, Range@Length@sel}]];
 		];
 
@@ -781,7 +787,7 @@ DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{
 		fatMap = (wMask + fMask) - waterMap;
 		waterMap = (wMask + fMask) - fatMap;
 		Clip[{waterMap, fatMap}, {-0.1, 1.1}, {-0.1, 1.1}]
- 	]
+	]
 ]
 
 
@@ -1044,7 +1050,7 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 			z1=#[[2]]; z2 = If[z1==dim[[1]], dim[[1]], z1+add[[1]]];
 			x1=#[[3]]; x2 = If[x1==dim[[2]], dim[[2]], x1+add[[2]]];
 			y1=#[[4]]; y2 = If[y1==dim[[3]], dim[[3]], y1+add[[3]]];
-			        
+
 			(*Get the group numbers*)
 			group1 = groups[[z1, x1, y1]];
 			group2 = groups[[z2, x2, y2]];
@@ -1135,7 +1141,7 @@ GetEdgeList[data_, met_, maski_] := Block[{dep, diff, ker, mask, edge, coor, fed
 	(*get the edge reliability*)
 	edge = (RotateLeft[diff, #] + diff) & /@ Switch[dep, 2, {{0, 1}, {1, 0}}, 3, {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}}];
 	edge = MaskData[edge, mask];
-	 
+
 	(*sort the edges for reliability*)
 	coor = MapIndexed[#2 &, edge, {dep + 1}];
 	fedge = Flatten[edge, dep];

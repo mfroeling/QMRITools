@@ -93,8 +93,8 @@ TractCurvature::usage =
 
 
 PlotTracts::usage = 
-"PlotTracts[tracts, vox] plots the tracts assuming a Boxratio based on vox.
-PlotTracts[tracts, vox, dim] plots the tracts assuming a Boxratio based on vox with a PlotRange spanning the full dim."
+"PlotTracts[tracts, vox] plots the tracts assuming a BoxRatio based on vox.
+PlotTracts[tracts, vox, dim] plots the tracts assuming a BoxRatio based on vox with a PlotRange spanning the full dim."
 
 PlotSegmentedTracts::usage = 
 "PlotSegmentedTracts[tracts, segments, dim, vox] plots the tracts after segmenting each segment.
@@ -128,8 +128,8 @@ FittingOrder::usage =
 FitTractSegments::usage =
 "FitTractSegments is an option for SegmentTracts. If set True the segmented tracts are fitted with FitTracts."
 
-TracMonitor::usage = 
-"TracMonitor is an option for FiberTractography. When set True it prints the progress."
+TractMonitor::usage = 
+"TractMonitor is an option for FiberTractography. When set True it prints the progress."
 
 FiberLengthRange::usage = 
 "FiberLengthRange is an option for FiberTractography and specifies the allowed tract range."
@@ -143,8 +143,8 @@ TensorFlips::usage =
 TensorPermutations::usage = 
 "TensorPermutations is an option for FiberTractography and specifies if the tensor orientation is permuted, see FlipTensorOrientation."
 
-StopThreshhold::usage = 
-"StopThreshhold is an option for FiberTractography and defines the stop threshold which is a value between 0 and 1."
+StopThreshold::usage = 
+"StopThreshold is an option for FiberTractography and defines the stop threshold which is a value between 0 and 1."
 
 StepSize::usage = 
 "StepSize is an option for FiberTractography and defines the tractography step size."
@@ -193,7 +193,7 @@ Begin["`Private`"]
 (*FitTracts*)
 
 
-Options[FitTracts] = {FittingOrder -> 3};
+Options[FitTracts] = {FittingOrder -> 5};
 
 SyntaxInformation[FitTracts] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -484,7 +484,7 @@ VecAngCv2 = Compile[{{tr, _Real, 2}, {v1, _Real, 1}, {v2, _Real, 1}}, Block[{vec
 		proj = vec - dotv v1;
 		nr = Norm[proj];
 		dotp = Dot[If[nr <= 0., v2, proj/nr], v2];
-		(*calcualte angles*)
+		(*calculate angles*)
 		{ArcSin[Abs[dotv]], ArcCos[Abs[dotp]]}
 	) & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]);
 	Transpose[(180./Pi) angs]
@@ -525,7 +525,7 @@ CurvC = Compile[{{tract, _Real, 2}}, Block[{diff, ds, d1, d2},
 
 
 GatherThread[coor_?ListQ, val_?ListQ, dim_?VectorQ] := Block[{len, ran, list, out},
-	(*Split in sublists to prevent memory crash for large tracts sets*)
+	(*Split in sub lists to prevent memory crash for large tracts sets*)
 	len = Length@coor;
 	out = If[len <= 50000,
 		GatherThread[coor, val],
@@ -565,14 +565,14 @@ GatherThread[rule_] := Block[{out},
 Options[FiberTractography] = {
 	FiberLengthRange -> {20, 500},
 	FiberAngle -> 30,
-	TensorFilps -> {1, 1, 1},
+	TensorFlips -> {1, 1, 1},
 	TensorPermutations -> {"x", "y", "z"},
 	InterpolationOrder -> 1,
-	StopThreshhold -> 0.5,
+	StopThreshold -> 0.5,
 	StepSize -> Automatic,
 	Method -> "Euler",
 	MaxSeedPoints -> Automatic,
-	TracMonitor->True,
+	TractMonitor->True,
 	Parallelization -> False
 };
 
@@ -590,8 +590,8 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 
 	(*get the options*)
 	{{lmin, lmax}, amax, maxSeed, flip, per, int, stopT, step} = OptionValue[{
-		FiberLengthRange, FiberAngle, MaxSeedPoints, TensorFilps,
-		TensorPermutations, InterpolationOrder, StopThreshhold, StepSize}];
+		FiberLengthRange, FiberAngle, MaxSeedPoints, TensorFlips,
+		TensorPermutations, InterpolationOrder, StopThreshold, StepSize}];
 
 	step = N@If[NumberQ[step],step, Min[0.5 vox]];
 	smax = Ceiling[(lmax/step)];
@@ -608,11 +608,12 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	seedN = Total@Flatten@stop;
 	maxSeed = Round@Which[
 		NumberQ[maxSeed], maxSeed, 
-		maxSeed === Automatic, seedN,
+		maxSeed === Automatic, 0.3 seedN,
+		maxSeed === All, seedN,
 		Head[maxSeed]===Scaled, First[maxSeed] seedN
 	];
 
-	(*random seedpoint selection untill maxSeed is found*)
+	(*random seedpoint selection until maxSeed is found*)
 	seeds = {};
 	seedI = SparseArray[stop]["NonzeroPositions"];
 	intS = MakeIntFunction[stop, vox, int];
@@ -631,14 +632,14 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	seedN = Length@seeds;
 
 	(*start the tractography*)
-	If[OptionValue[TracMonitor],
+	If[OptionValue[TractMonitor],
 		Echo["Starting tractography for "<>ToString[seedN]<>" seed points with stepsize "<>ToString[step]<>" mm"];
 	];
 
-	(*check if paralelle or normal computing is needed*)
+	(*check if parallel or normal computing is needed*)
 	If[OptionValue[Parallelization],
 		(*parallel tractography preparation*)
-		If[OptionValue[TracMonitor], Echo["Starting parallel preparation"]];
+		If[OptionValue[TractMonitor], Echo["Starting parallel preparation"]];
 		ran = Thread[{vox/2, vox Dimensions[stop] - vox/2}];
 		t2 = First@AbsoluteTiming[
 			DistributeDefinitions[step, amax, smax, stopT, tracF, seeds, tens, stop, vox, int, ran,
@@ -650,30 +651,30 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 					"ExtrapolationHandler" -> {(0. &), "WarningMessage" -> False}];
 				trFunc = TractFunc[#, step, {amax, smax, stopT}, {intE, intS, tracF}]&;
 			, DistributedContexts -> None]];
-		If[OptionValue[TracMonitor], Echo["Parallel preparation time: "<>ToString[Round[t2,.1]]<>" seconds"]];
-		(*actual tracto for paralelle with memory clear*)
+		If[OptionValue[TractMonitor], Echo["Parallel preparation time: "<>ToString[Round[t2,.1]]<>" seconds"]];
+		(*actual tracto for parallel with memory clear*)
 		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, Method -> 
-			"EvaluationsPerKernel"->10, ProgressReporting->OptionValue[TracMonitor]];
+			"EvaluationsPerKernel"->10, ProgressReporting->OptionValue[TractMonitor]];
 		ParallelEvaluate[Clear[intE, intS, trFunc, tens, stop]];
 		ClearDistributedDefinitions[];
 		,
-		(*normal tractography with moniotring*)
+		(*normal tractography with monitoring*)
 		intE = MakeIntFunction[tens, vox, int];
 		intS = MakeIntFunction[stop, vox, int];
 		trFunc = TractFunc[#, step, {amax, smax, stopT}, {intE, intS, tracF}]&;
-		{t1, tracts} = AbsoluteTiming@If[OptionValue[TracMonitor],
+		{t1, tracts} = AbsoluteTiming@If[OptionValue[TractMonitor],
 			Monitor[Table[trFunc@seeds[[iii]], {iii, 1, seedN}], ProgressIndicator[iii, {0, seedN}]],
 			Table[trFunc@seeds[[iii]], {iii, 1, seedN}]
 		];
 	];
 
 	(*select only tracts within correct range and clip tracts that are longer*)
-	If[OptionValue[TracMonitor], Echo["Checking tract lengths"]];
+	If[OptionValue[TractMonitor], Echo["Checking tract lengths"]];
 	{tracts, sel} = FilterTractLength[tracts, {lmin, lmax}, "both"];
 	seeds = Pick[seeds, sel, 1];
 	
 	(*report timing an resutls*)
-	If[OptionValue[TracMonitor],
+	If[OptionValue[TractMonitor],
 		Echo["Tractography took "<>ToString[Round[t1,.1]]<>" seconds ("<>ToString[Round[seedN/t1]]<>" tracts/s)"];
 		Echo[ToString[Length[tracts]]<>" valid tracts with length "<>ToString[Round[step Mean[Length /@ tracts], 0.1]]<>"\[PlusMinus]"<>ToString[Round[step StandardDeviation[Length /@ tracts], 0.1]]<>" mm"];	
 	];
@@ -690,7 +691,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0, mh = 0.75 h, out},
 	(*startpoint*)
 	dir0 = h EigVec[First[fun]@@loc0, {0,0,1}];
-	(*only trac if step is actuall step size*)
+	(*only tract if step is actuall step size*)
 	If[Norm[dir0] <= mh, {loc0},
 		(*tracts go bi-directional from start with half step offset*)
 		out = ToPackedArray@Join[
@@ -830,7 +831,7 @@ Options[FindTensorPermutation] = {
 	FiberLengthRange -> {20, 500},
 	FiberAngle -> 30,
 	InterpolationOrder -> 0,
-	StopThreshhold -> 0.5,
+	StopThreshold -> 0.5,
 	StepSize -> 2,
 	Method -> "Euler",
 	MaxSeedPoints -> 500
@@ -856,7 +857,7 @@ FindTensorPermutation[tens_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, stop_, opts : 
 	PrintTemporary[Dynamic[{ind, flips[[ind[[1]]]], perms[[ind[[2]]]]}]];
 	lengs = Table[
 		ind = {i, j};
-		tracts = First@FiberTractography[tens, vox, stop, TracMonitor -> False,TensorFilps -> flips[[i]], TensorPermutations -> perms[[j]],
+		tracts = First@FiberTractography[tens, vox, stop, TractMonitor -> False,TensorFlips -> flips[[i]], TensorPermutations -> perms[[j]],
 			(Sequence[# -> OptionValue[#] & /@ FilterRules[Options[FiberTractography], Options[FindTensorPermutation]][[All, 1]]])
 		];
 		N@Mean[Length /@ tracts] step
@@ -1073,9 +1074,10 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	colOpt = OptionValue[TractColoring];
 
 	{met, pran} = Which[
+		Head[colOpt]===MaterialShading, {"Material", colOpt},
 		StringQ[colOpt]||ArrayQ[colOpt], {colOpt, Automatic}, 
 		Length[colOpt]===2, colOpt, 
-		MemberQ[{Hue, RGBColor, GrayLevel, CMYKColor, LABColor, LCHColor, LUVColor, XYZColor},Head[colOpt]], {"Color", RGBColor@colOpt},
+		MemberQ[{Hue, RGBColor, GrayLevel, CMYKColor, LABColor, LCHColor, LUVColor, XYZColor}, Head[colOpt]], {"Color", RGBColor@colOpt},
 		True, {"Direction", Automatic}
 	];
 	If[ArrayQ[met], colArray=met; met="Array"];
@@ -1091,6 +1093,8 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		MakeArrayColor[select, {pran, colf}, colArray, voxi],
 		"Color",
 		MakeConstantColor[select, pran],
+		"Material",
+		None,
 		_,
 		White
 	];
@@ -1104,14 +1108,14 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		Axes -> OptionValue[Boxed],
 		BoxRatios -> size,
 		PlotRange -> range,
-		SphericalRegion -> True, Lighting -> "Accent", 
+		SphericalRegion -> True, Lighting -> "ThreePoint", 
 		Background -> Lighter@Gray,  LabelStyle -> Directive[{Bold, 16, White}]
 	}];
 	
 	select = Reverse[select, 3];
 	plot = Graphics3D[Switch[OptionValue[Method],
 		"tube", 
-		{CapForm["Butt"], JoinForm["Miter"], 
+		{If[met==="Material", pran, Nothing], CapForm["Butt"], JoinForm["Miter"], 
 			Switch[scale, 
 				"World", Tube[select, sc, VertexColors -> col],
 				_, Scale[Tube[select, sc, VertexColors -> col], 1/vox, {0,0,0}]
@@ -1205,7 +1209,9 @@ Options[PlotSegmentedTracts] := {
 	Method -> "line",
 	OutputForm -> "All",
 	ImageSize->400,
-	Monitor -> False
+	Monitor -> False,
+	TractSize -> 1,
+	ColorFunction -> "RomaO"
 }
 
 SyntaxInformation[PlotSegmentedTracts] = {"ArgumentsPattern" -> {_, _, _, _, _., OptionsPattern[]}};
@@ -1213,58 +1219,65 @@ SyntaxInformation[PlotSegmentedTracts] = {"ArgumentsPattern" -> {_, _, _, _, _.,
 PlotSegmentedTracts[tracts_, segments_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := PlotSegmentedTracts[tracts, segments, None, dim, vox, opts]
 
 PlotSegmentedTracts[tracts_, segments_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := Block[{
-		ntr, fran, type, segs, tractsF, tractsFI, ran, rand, colList, showF,
-		ref, bon, musc, trac, tracksSel, lengs, nTracts, sel, mon
+		ntr, fran, type, segs, tractsF, tractsFI, ran, rand, colListT, colListC, showF,
+		ref, bon, musc, tract, tracksSel, lengs, nTracts, sel, mon, size, output, colFunc
 	},
 	
 	(*get options*)
-	ntr = OptionValue[MaxTracts];
-	fran = OptionValue[FiberLengthRange];
-	type = OptionValue[Method];
-	mon = OptionValue[Monitor];
+	{ntr, fran, type, mon, size, output, colFunc, sizeT} = OptionValue[{MaxTracts, FiberLengthRange, Method, Monitor, 
+		ImageSize, OutputForm, ColorFunction, TractSize}];
 
 	(*prepare data*)
 	segs = Transpose@segments;
 	If[mon, Echo["Fitting tracts"]];
 	SeedRandom[1234];
 	tractsF = RandomSample[tracts, Min[{5 ntr, Length@tracts}]];
-	tractsF = FitTracts[tractsF, vox, dim, FittingOrder -> 3];
 	tractsFI = RescaleTractsC[tractsF, vox];
 
 	(*make colors*)
 	SeedRandom[1234];
 	ran = Range[Length@segs];
-	colList = Reverse[ColorData["DarkRainbow"] /@ Rescale[ran]][[RandomSample[ran]]];
-
-	(*rand = RandomSample[ran];
-	colList = ColorData["DarkRainbow"] /@ N[Rescale[rand]];*)
+	If[Head[colFunc] === MaterialShading,
+		colListC = None;
+		colListT = If[ListQ[colFunc[[1]]]&&AllTrue[colFunc[[1]], StringQ], 
+			MaterialShading/@RandomChoice[colFunc[[1]], Length@segs], 
+			ConstantArray[colFunc, Length@segs]
+		],
+		colListT = colListC = Reverse[ColorData[colFunc] /@ Rescale[ran]][[RandomSample[ran]]];
+	];
 
 	(*reference environement*)
 	If[mon, Echo["Making muscle iso volumes"]];
 	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
+	ref[[1]] = {};
 
 	(*make the muscle contours*)
-	musc = Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, ContourColor -> colList[[i]], ContourSmoothRadius -> 2, ContourResolution -> {12, 3, 3}], {i, ran}];
-	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Gray, ContourSmoothRadius -> 2, ContourResolution -> {12, 3, 3}], Graphics3D[]];
+	musc = If[colListC =!= None, Table[PlotContour[segs[[i]], vox, ContourOpacity -> 0.3, ContourColor -> colListC[[i]], 
+		ContourSmoothRadius -> 2, ContourResolution -> 2], {i, ran}], Graphics3D[]];
+	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Lighter@Gray, 
+		ContourSmoothRadius -> 2, ContourResolution -> 2], Graphics3D[]];
 
 	If[mon, Echo["Making per muscle tracts"]];
 	(*select the tracts per muscle and make fiber plots*)
 	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segs;
+	tracksSel = FitTracts[#, vox, dim, FittingOrder -> 3]&/@tracksSel;
 	lengs = Length /@ tracksSel;
 	nTracts = Round[ntr lengs/Total[lengs]];
 	sel = UnitStep[nTracts - 11];
-	trac = MapThread[If[#4 =!= 1, Graphics3D[],
-		PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, TractSize -> 1, TractColoring -> #3, TractReduction -> 5, PerformanceGoal -> "Speed"]
-	] &, {tracksSel, nTracts, colList, sel}];
+	tract = MapThread[If[#4 =!= 1, Graphics3D[],
+		PlotTracts[#1, vox, dim, MaxTracts -> #2, Method -> type, TractSize -> sizeT, TractColoring -> #3, 
+		TractReduction -> 5, PerformanceGoal -> "Speed"]
+	] &, {tracksSel, nTracts, colListT, sel}];
 
 	If[mon, Echo["Finalizing scenes"]];
-	showF = Show[ref, ##, ImageSize -> OptionValue[ImageSize], Axes -> False, Boxed -> False, ViewPoint -> {0., -2., 1.}] & @@ # &;
+	showF = Show[ref, ##, ImageSize -> size, Axes -> False, Boxed -> False, 
+		ViewPoint -> {0., -2., 1.}] & @@ # &;
 	
-	Switch[OptionValue[OutputForm],
-		"All", showF[{bon, trac, musc}],
-		"Groups", showF[{#}] & /@ {bon, trac, musc},
-		"Joined", showF[{bon, #}] & /@ Thread[{trac, musc}],
-		"Individual", {showF[{bon}], showF[{#}] & /@ trac, showF[{#}] & /@ musc}
+	Switch[output,
+		"All", showF[{bon, musc, tract}],
+		"Groups", showF[{#}] & /@ {bon, tract, musc},
+		"Joined", showF[{bon, #}] & /@ Thread[{tract, musc}],
+		"Individual", {showF[{bon}], showF[{#}] & /@ tract, showF[{#}] & /@ musc}
 	]
 ]
 
@@ -1392,7 +1405,7 @@ ExportTractsDefault[file_, rule_, ___] := Block[{
 	nVox = If[vox =!= {0, 0, 0}, 3, 0];
 	(*Number of seed coordinates*)
 	nSeed = 3 Length[seeds];
-	(*number of tracts tracts coordinates and trac lenghts*)
+	(*number of tracts tracts coordinates and tract lenghts*)
 	nTr = Length[tracts];
 	nTrLeng = Length /@ tracts;
 	nTrCoor = 3 Total[nTrLeng];
