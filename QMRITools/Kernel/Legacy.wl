@@ -33,7 +33,7 @@ DTItoolExpInd[data, file ,folder] exports data to given file and folder.
 DTItoolExpInd[data, file ,folder, add] exports data to given file and folder and adds -add to the filename.";
 
 DTItoolExpTens::usage =
-"DTItoolExpTens[tensor] exports a diffustion tensor array to the DTItool format (*.dat).
+"DTItoolExpTens[tensor] exports a diffusion tensor array to the DTItool format (*.dat).
 DTItoolExpTens[tensor, add] exports tensor and adds - add to the filenames.
 DTItoolExpTens[tensor, add, folder] exports tensor to the given folder and adds - add to the filenames."
 
@@ -101,7 +101,7 @@ ReadDicomDir::usage =
 "ReadDicomDir[file] reads the image data from a dicom directory.";
 
 ReadDicomDirDiff::usage = 
-"ReadDicomDirDiff[file] reads the image data and relevant diffuison parameters from a dicom directory."
+"ReadDicomDirDiff[file] reads the image data and relevant diffusion parameters from a dicom directory."
 
 ReadGradients::usage = 
 "ReadGradients[folder, nr] imports the diffusion gradient directions from the dicom header of the first nr of files in de given folder.
@@ -1516,7 +1516,7 @@ select*)
      
      (*show what*)
      {{show, 4, "Plot Mode"}, {1 -> "Axial", 2 -> "Coronal", 
-       3 -> "Sagital", 4 -> "All Planes", 5 -> "Planes 3D", 
+       3 -> "Sagittal", 4 -> "All Planes", 5 -> "Planes 3D", 
        6 -> "Volume 3D"}},
      {{scale, 500, "Plot Size"}, psizes},
      {{back, Gray, "BackGround"}, 
@@ -1529,7 +1529,7 @@ select*)
      {{reverse, False, "Reverse slices"}, {True, False}},
      {{slice, Round[size1/2], "Axial"}, 1, Dynamic[size1], 1},
      {{row, Round[size2/2], "Coronal"}, 1, Dynamic[size2], 1},
-     {{column, Round[size3/2], "Sagital"}, 1, Dynamic[size3], 1},
+     {{column, Round[size3/2], "Sagittal"}, 1, Dynamic[size3], 1},
      
      (*all planes 4*)
      {{lines, True, "Show lines"}, {True -> "On", False -> "Off"}},

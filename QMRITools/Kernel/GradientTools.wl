@@ -26,7 +26,7 @@ BeginPackage["QMRITools`GradientTools`", Join[{"Developer`"}, Complement[QMRIToo
 
 GenerateGradients::usage = 
 "GenerateGradients[numb] optimizes a set with numb gradients, numb mus be an integer.
-GenerateGradients[{numb, fixed}] optimizes a set with numb gradients, numb must ba an integer and fixed a list of 3D coordiantes e.g. {{0,0,1},{0,1,0}}. The fixed gradients will not be moved.
+GenerateGradients[{numb, fixed}] optimizes a set with numb gradients, numb must ba an integer and fixed a list of 3D coordinates e.g. {{0,0,1},{0,1,0}}. The fixed gradients will not be moved.
 GenerateGradients[{numb1, numb2 ...}, alpha] optimizes a multi shel gradient set with numb gradients per shel. If alpha is set to 0.5 equal importance is given to\
 the optimal distribution of each shell en the enitre set. if alpha is 0 only the sub shels will be optimized, if alpha is set to 1 only the global set wil be optimized.
 
@@ -67,8 +67,8 @@ Bmatrix::usage =
 Bmatrix[{bvec, grad}] creates bmatrix form grad and bvec in form {bxx, byy, bzz, bxy, bxz, byz}."
 
 BmatrixInv::usage = 
-"BmatrixInv[bm] generates a bvecotr and gradiens directions form a given bmatrx.
-BmatrixInv[bm, bvi] generates a bvecotr and gradiens directions form a given bmatrx using the given bvalues bvi."
+"BmatrixInv[bm] generates a bvecotr and gradient directions form a given bmatrx.
+BmatrixInv[bm, bvi] generates a bvecotr and gradient directions form a given bmatrx using the given bvalues bvi."
 
 BmatrixConv::usage = 
 "BmatrixConv[bm] converts the bmatrix form 7 to 6 or from 6 to 7."
@@ -118,12 +118,12 @@ CalculateMoments::usage =
 
 
 CorrectGradients::usage = 
-"CorrectGradients[grad, transformation] corrects the gradient directions grad with the tranformation parameters from RegisterData or RegisterDiffusionData.
+"CorrectGradients[grad, transformation] corrects the gradient directions grad with the transformation parameters from RegisterData or RegisterDiffusionData.
 
 Output is the corrected gradient vector."
 
 CorrectBmatrix::usage = 
-"CorrectBmatrix[bmat, transformation] corrects the bmatrix bmat with the tranformation parameters from RegisterData or RegisterDiffusionData.
+"CorrectBmatrix[bmat, transformation] corrects the bmatrix bmat with the transformation parameters from RegisterData or RegisterDiffusionData.
 
 Output is the corrected bmatrix."
 
@@ -136,10 +136,10 @@ Steps::usage =
 "Steps is an option GenerateGrads and is the number of step that is used."
 
 Runs::usage = 
-"Runs is an option for GenerateGradients. Set how often the minimalization function is run. The best solution of all runs is the output. Default value is 1."
+"Runs is an option for GenerateGradients. Set how often the minimization function is run. The best solution of all runs is the output. Default value is 1."
 
 VisualOpt::usage = 
-"VisualOpt is an option for GenerateGradients. Show the minimalization proces of eacht calculation step. Default is False."
+"VisualOpt is an option for GenerateGradients. Show the minimization proces of eacht calculation step. Default is False."
 
 GradType::usage = 
 "GradType is an option GenerateGradients. It specifies what type of gradient set wil be produced, \"Normal\" or \"OverPlus\"."
@@ -1211,10 +1211,10 @@ FindOrder[grad_, bval_,OptionsPattern[]] :=
   minval = Infinity;
   n = m = 0;
   
-  (*brute force the solution, max 100000 itteration*)
-  (*bo better solution after 25000 itteration probably already pritty good so stop*)
+  (*brute force the solution, max 100000 iteration*)
+  (*bo better solution after 25000 iteration probably already pritty good so stop*)
   While[n < 50000 && m < 150000,
-   (*count itterations make new order and calculae load value*)
+   (*count iterations make new order and calculae load value*)
    m++;
    order = RandomSample[order];
    val = ValCalc[temp[[order]], local];
@@ -1400,29 +1400,28 @@ BmatrixRot[bmat_, rotmat_] :=
 
 SyntaxInformation[BmatrixToggle] = {"ArgumentsPattern" -> {_, _, _}};
 
-BmatrixToggle[bmat_, axes_, flip_] := 
- Block[{tmpa, tmpf, bmati, bmatn, outp, rule},
-  (*error checking*)
-  If[Sort[axes] != {"x", "y", "z"},
-   Return[Message[BmatrixToggle::axes, axes]],
-   If[!MemberQ[{{1, 1, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}}, flip],
-    Return[Message[BmatrixToggle::flip, flip]],
-    
-    (*make bmat vecs of input*)
-    tmpa = axes /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
-    tmpf = flip /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
-    
-    (*check shape of bmat*)
-    bmati = If[Length[bmat[[1]]] == 7, -bmat[[All, 1 ;; 6]], bmat];
-    
-    (*Toggle bmat*)
-    bmatn = (rule = Thread[{("x")^2, ("y")^2, ("z")^2, "x" "y", "x" "z", "y" "z"} -> #]; tmpf (tmpa /. rule)) & /@ bmati;
-    
-    (*output bmat*)
-    outp = If[Length[bmat[[1]]] == 7, Append[-#, 1] & /@ bmatn, bmatn]
-    ]
-   ]
-  ]
+BmatrixToggle[bmat_, axes_, flip_] := Block[{tmpa, tmpf, bmati, bmatn, outp, rule},
+	(*error checking*)
+	If[Sort[axes] != {"x", "y", "z"},
+	Return[Message[BmatrixToggle::axes, axes]],
+	If[!MemberQ[{{1, 1, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}}, flip],
+		Return[Message[BmatrixToggle::flip, flip]],
+
+		(*make bmat vecs of input*)
+		tmpa = axes /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
+		tmpf = flip /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
+
+		(*check shape of bmat*)
+		bmati = If[Length[bmat[[1]]] == 7, -bmat[[All, 1 ;; 6]], bmat];
+
+		(*Toggle bmat*)
+		bmatn = (rule = Thread[{("x")^2, ("y")^2, ("z")^2, "x" "y", "x" "z", "y" "z"} -> #]; tmpf (tmpa /. rule)) & /@ bmati;
+
+		(*output bmat*)
+		outp = If[Length[bmat[[1]]] == 7, Append[-#, 1] & /@ bmatn, bmatn]
+	]
+	]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -1432,10 +1431,10 @@ BmatrixToggle[bmat_, axes_, flip_] :=
 SyntaxInformation[UniqueBvalPosition] = {"ArgumentsPattern" -> {_, _.}};
 
 UniqueBvalPosition[bval_, num_: 1] := Block[{bvalU, pos},
-  bvalU = Sort[DeleteDuplicates[bval]];
-  pos = Flatten[Position[bval, #]] & /@ bvalU;
-  Transpose[Select[Transpose[{bvalU, pos}], Length[#[[2]]] >= num &]]
-  ]
+	bvalU = Sort[DeleteDuplicates[bval]];
+	pos = Flatten[Position[bval, #]] & /@ bvalU;
+	Transpose[Select[Transpose[{bvalU, pos}], Length[#[[2]]] >= num &]]
+]
 
 
 (* ::Subsection::Closed:: *)

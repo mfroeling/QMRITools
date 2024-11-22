@@ -29,10 +29,10 @@ ReadjMRUI::usage =
 Output is the {time, spec, {begintime, samplingInterval}}."
 
 PadFid::usage = 
-"PadFid[fid] pads the fid with zeros to increse its length."
+"PadFid[fid] pads the fid with zeros to increase its length."
 
 PadEcho::usage =
-"PadEcho[echo] pads the echo with zeros to increse its length."
+"PadEcho[echo] pads the echo with zeros to increase its length."
 
 ApodizeFid::usage = 
 "ApodizeFid[fid] performs apodization on the fid. The apodization function is set with the option ApodizationFunction."
@@ -81,35 +81,35 @@ PhaseShiftSpectra[spec, ppm, gyro, {phi0, phi1}] aplies the 0th and 1st order ph
 The 0th order phase phi0 is in radians and the 1st order phase phi1 is in ms."
 
 TimeShiftFidV::usage = 
-"TimeShiftFidV[fid, time, gam] aplies a linebroadening with linewidth gam and a Voigt lineshape to the fid. The time can be obtained using GetTimeRange.
-TimeShiftFidV[fid, time, {gamL, gamG}] aplies a linebroadening with linewidth gamG \"Gaussian\" and gamL \"Lorentzian\".
-TimeShiftFidV[fid, time, gyro, {gam, eps}] aplies a linebroadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro.
-TimeShiftFidV[fid, time, gyro, {{gamL, gamG}, eps}] aplies a linebroadening with linewidth linewidth gamG \"Gaussian\" and gamL \"Lorentzian\" to the fid and a phase eps that results in eps ppm shift of the spectra.
+"TimeShiftFidV[fid, time, gam] aplies a line broadening with linewidth gam and a Voigt line shape to the fid. The time can be obtained using GetTimeRange.
+TimeShiftFidV[fid, time, {gamL, gamG}] aplies a line broadening with linewidth gamG \"Gaussian\" and gamL \"Lorentzian\".
+TimeShiftFidV[fid, time, gyro, {gam, eps}] aplies a line broadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro.
+TimeShiftFidV[fid, time, gyro, {{gamL, gamG}, eps}] aplies a line broadening with linewidth linewidth gamG \"Gaussian\" and gamL \"Lorentzian\" to the fid and a phase eps that results in eps ppm shift of the spectra.
 
 The linewidth gam is given in ms and the spectra shift eps is given in ppm."
 
 TimeShiftFid::usage = 
-"TimeShiftFid[fid, time, gam] aplies a linebroadening with linewidth gam and a Voigt lineshape to the fid. The time can be obtained using GetTimeRange.
-TimeShiftFid[fid, time, {gam, f}] aplies a linebroadening with linewidth gam and a custom lineshape f to the fid (f=0, \"Gaussian\", f=1 \"Lorentzian\").
-TimeShiftFid[fid, time, gyro, {gam, eps}] aplies a linebroadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro.
-TimeShiftFid[fid, time, gyro, {gam, eps, f}] aplies a linebroadening with linewidth gam using a custom lineshape f to the fid and a phase eps that results in eps ppm shift of the spectra.
+"TimeShiftFid[fid, time, gam] aplies a line broadening with linewidth gam and a Voigt line shape to the fid. The time can be obtained using GetTimeRange.
+TimeShiftFid[fid, time, {gam, f}] aplies a line broadening with linewidth gam and a custom line shape f to the fid (f=0, \"Gaussian\", f=1 \"Lorentzian\").
+TimeShiftFid[fid, time, gyro, {gam, eps}] aplies a line broadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro.
+TimeShiftFid[fid, time, gyro, {gam, eps, f}] aplies a line broadening with linewidth gam using a custom line shape f to the fid and a phase eps that results in eps ppm shift of the spectra.
 
 The linewidth gam is given in ms and the spectra shift eps is given in ppm."
 
 TimeShiftEcho::usage =
-"TimeShiftEcho[fid, time, gam] aplies a linebroadening with linewidth gam and a Voigt lineshape to the fid. The time can be obtained using GetTimeRange.
-TTimeShiftEcho[fid, time, {gam, f}] aplies a linebroadening with linewidth gam and a custom lineshape f to the fid (f=0, \"Gaussinan\", f=1 \"Lorentzian\").
-TTimeShiftEcho[fid, time, gyro, {gam, eps}] aplies a linebroadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro.
-TTimeShiftEcho[fid, time, gyro, {gam, eps, f}] aplies a linebroadening with linewidth gam using a custom lineshape f to the fid and a phase eps that results in eps ppm shift of the spectra.
+"TimeShiftEcho[fid, time, gam] aplies a line broadening with linewidth gam and a Voigt line shape to the fid. The time can be obtained using GetTimeRange.
+TTimeShiftEcho[fid, time, {gam, f}] aplies a line broadening with linewidth gam and a custom line shape f to the fid (f=0, \"Gaussian\", f=1 \"Lorentzian\").
+TTimeShiftEcho[fid, time, gyro, {gam, eps}] aplies a line broadening with linewidth gam to the fid and a phase eps that results in eps ppm shift of the spectra. The gyro can be obtained with GetGyro.
+TTimeShiftEcho[fid, time, gyro, {gam, eps, f}] aplies a line broadening with linewidth gam using a custom line shape f to the fid and a phase eps that results in eps ppm shift of the spectra.
 
 The linewidth gam is given in ms and the spectra shift eps is given in ppm."
 
 ShiftSpectra::usage = 
-"ShiftSpectra[speca, {dw, gyro}, shift] shifts the spectra by shift. The shift is in ppm." 
+"ShiftSpectra[spectra, {dw, gyro}, shift] shifts the spectra by shift. The shift is in ppm." 
 
 
 ChangeDwellTimeFid::usage = 
-"ChangeDwellTimeFid[fid, dt, dtnew] changes the sampleling time of an fid from dwelltime dt to dwelltime dtnew."
+"ChangeDwellTimeFid[fid, dt, dtnew] changes the sampling time of an fid from dwelltime dt to dwelltime dtnew."
 
 PhaseCorrectSpectra::usage =
 "PhaseCorrectSpectra[spec] performs 0th order phase correction of the spectra by minimizing the difference between the real and absolute spectra velaue.
@@ -140,12 +140,12 @@ PlotCSIData::usage =
 PlotCSIData[spectra, {dwell, field, nuc}] plots the CSI spectra which has dimensions {z,y,x,nsamp}. The ppm axes is determined by dwell and field and nuc."
 
 PlotFid::usage = 
-"PlotFid[fid, dwell] plots the fid assuming dwell as the sampeling time.
+"PlotFid[fid, dwell] plots the fid assuming dwell as the sampling time.
 PlotFid[time, fid] plot the fid where time is the timing of the fid which can be obtained with GetTimeRange."
 
 PlotSpectra::usage = 
 "PlotSpectra[spectra, {dwell, gyro}] plots the spectra, the ppm axes is determined by dwell and gyro. Gyro can be obtained with GetGyro.
-PlotSpectra[spespectradwell, field, nuc}] plots the spectra, the ppm axes is determined by dwell field and nuc.
+PlotSpectra[spectra {dwell, field, nuc}] plots the spectra, the ppm axes is determined by dwell field and nuc.
 PlotSpectra[ppm, spectra] plots the spectra where ppm is the pmm range of the spectra which can be obtained with GetPpmRange." 
 
 
@@ -200,8 +200,8 @@ BasisSequence::usage =
 SpectraSamples::usage =
 "SpectraSamples is an option for GetSpectraBasisFunctions and sets the number of samples in the spectra."
 
-SpectraBandwith::usage =
-"SpectraBandwith is an option for GetSpectraBasisFunctions and sets the bandwith of the spectra." 
+Spectrabandwidth::usage =
+"Spectrabandwidth is an option for GetSpectraBasisFunctions and sets the bandwidth of the spectra." 
 
 SpectraNucleus::usage =
 "SpectraNucleus is an option for GetSpectraBasisFunctions and FitSpectra and specifies which nucleus to Simulate or fit, see GyromagneticRatio."
@@ -216,13 +216,13 @@ SplineSpacingFactor::usage =
 "SplineSpacingFactor is an option for FitSpectra and defines the distance between the bsplien points relative the the mean linewithd of the peaks."
 
 FineTuneFit::usage = 
-"FineTuneFit is an option for FitSpectra and when True it performs a second fitting run where for each peak is an individual linewidth, lineshape and shift are fitted."
+"FineTuneFit is an option for FitSpectra and when True it performs a second fitting run where for each peak is an individual linewidth, line shape and shift are fitted."
 
 InitializeFit::usage = 
-"InitializeFit is an option for FitSpectra and is used to set initila values for the global fit {gami,epsi,{phi0i,phi1i},lineshape}."
+"InitializeFit is an option for FitSpectra and is used to set initila values for the global fit {gami,epsi,{phi0i,phi1i},line shape}."
 
 FitLineShape::usage = 
-"FitLineShape is an option for FitSpectra and when True allows to fit the lineshap. If False a voigt lineshape is used."
+"FitLineShape is an option for FitSpectra and when True allows to fit the lineshap. If False a voigt line shape is used."
 
 SpectraOutputPlots::usage = 
 "SpectraOutputPlots is an option for FitSpectra. If True the automatica calibration plot for the initial fit are generated."
@@ -753,7 +753,7 @@ FindSpectraPpmShift[spec_, {dw_, gyro_}, {peaks_, amp_}] := Block[{ppm, dppm, ta
 	wgth = 1/(Exp[(ppm^2/(2*s^2))]*(Sqrt[2*Pi]*s));
 	wgth = 1;
 	corrf = ListCorrelate[tar, Abs[spec], Round[Length[tar]/2], 0];
-	corrf = bb = wgth DevideNoZero[corrf, Max[corrf]];
+	corrf = wgth DivideNoZero[corrf, Max[corrf]];
 	maxPos = Position[corrf, Max[corrf]][[1, 1]];
 	
 	(*contrain shift to 5ppm*)
@@ -785,7 +785,7 @@ ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampT
 Options[GetSpectraBasisFunctions] = {
 	BasisSequence -> {"PulseAcquire", 0},
 	SpectraSamples -> 2046,
-	SpectraBandwith -> 2000,
+	Spectrabandwidth -> 2000,
 	SpectraNucleus -> "1H",
 	SpectraPpmShift -> 4.65,
 	SpectraFieldStrength -> 3
@@ -804,7 +804,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 	readout = Switch[seq, "PulseAcquire"|"STEAM","Fid", "SpaceEcho","Echo"];
 	
 	nsamp = OptionValue[SpectraSamples];
-	bw = OptionValue[SpectraBandwith];
+	bw = OptionValue[Spectrabandwidth];
 	cf = OptionValue[SpectraPpmShift];
 	field = OptionValue[SpectraFieldStrength];
 	nuc = OptionValue[SpectraNucleus];
@@ -842,7 +842,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 			];
 			
 			(*simulate readout*)
-			fids = First@SimReadout[dr, struct, ReadoutSamples -> nsamp, ReadoutBandwith -> bw, CenterFrequency -> cf, Linewidth -> 0, ReadoutOutput -> read];
+			fids = First@SimReadout[dr, struct, ReadoutSamples -> nsamp, Readoutbandwidth -> bw, CenterFrequency -> cf, Linewidth -> 0, ReadoutOutput -> read];
 				
 			(*check if multiple fids for metabolite and act acordingly*)
 			If[VectorQ[fids],
@@ -1159,7 +1159,7 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		(*select spectra range*)
 		specF = specF[[indSt ;; indEnd]];
 				
-		(*generate basis spectra from time domain by applying gam, eps and lineshape*)
+		(*generate basis spectra from time domain by applying gam, eps and line shape*)
 		{fidBasisF,specBasisF} = BasisSpectraApply[{timeFull, timeBasis}, {gam, eps, f}, gyro, {indSt, indEnd}, readout];
 		
 		(*----------- Perform Fit and calculate errro -------------*)
@@ -1201,7 +1201,7 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 		(* ------------ Calculate fitted spectra for output --------------*)
 		"Fit",
 		
-		(*generate basis spectra from time domain by applying gam, eps and lineshape*)
+		(*generate basis spectra from time domain by applying gam, eps and line shape*)
 		specBasis = BasisSpectraApply[{ppmFull, timeFull, timeBasis}, {gam, eps, phi, f}, gyro, readout];
 		
 		(*perform Fit of basis spectra*)
@@ -1251,7 +1251,7 @@ BasisSpectraApply[{ppmFull_,timeFull_,timeBasis_},{gam_,eps_,phi_,f_},gyro_,{st_
 	
 	(*get the reaout function*)
 	func = Switch[readout,"Fid",TimeShiftFid,"Echo",TimeShiftEcho];
-	(*generate basis spectra from time domain by applying gam,eps and lineshape*)
+	(*generate basis spectra from time domain by applying gam,eps and line shape*)
 	fidBasis = MapThread[func[#1, timeFull, gyro, {#2, #3, #4}] &, {timeBasis, gamv, epsv, fv}];
 	specBasis = ShiftedFourier[#, readout]&/@fidBasis;
 	
@@ -1275,7 +1275,7 @@ EstimateLineWidth[{ppm_,spec_},{peaks_,amps_},gyro_,ran_,plot_:True]:=Block[{
 	
 	(*perfomr correlation of spectra with delta function*)
 	corrf=ListCorrelate[deltaf,Abs[spec],Round[Length[deltaf]/2],0];
-	corrf=DevideNoZero[Length[corrf]corrf,Max[corrf]];
+	corrf=DivideNoZero[Length[corrf]corrf,Max[corrf]];
 	
 	(*Find max correlation and position*)
 	s = Max[ppm]/4;
@@ -1623,7 +1623,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			}, Alignment -> Center]
 			
 			(*active manipulate parametes*)
-			, {{or, 1, "Orientation"}, {1 -> "Transversal", 2 -> "Coronal", 3 -> "Sagital"}}
+			, {{or, 1, "Orientation"}, {1 -> "Transversal", 2 -> "Coronal", 3 -> "Sagittal"}}
 			, {{n, Ceiling[Length[data]/2], "Slice"}, 1, Dynamic[nmax], 1}
 			, Delimiter
 			, {{funs, "ReIm", "Function vox"}, {"Re", "Im", "ReIm", "Abs", "All"}}
@@ -2044,7 +2044,7 @@ CSIInterface[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := M
 			(*basis spectra*)
 			status = "Generating basis spectra"; statusP = True;
 			{names, fids, specs, table} = GetSpectraBasisFunctions[metSel, {"ATP"}, BasisSequence -> {"PulseAcquire", teu}, 
-				SpectraSamples -> nsamp, SpectraBandwith -> bw, SpectraPpmShift -> 0, SpectraFieldStrength -> field, SpectraNucleus -> nuc];
+				SpectraSamples -> nsamp, Spectrabandwidth -> bw, SpectraPpmShift -> 0, SpectraFieldStrength -> field, SpectraNucleus -> nuc];
 			status = "Done generating basis spectra!"; statusP = False;
 			
 			(*fitting*)
@@ -2071,7 +2071,7 @@ CSIInterface[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := M
 		}, " "]},
 		
 		(*fitting options*)
-		{TextCell["Fitting options "], Row[{TextCell[" Finetune fit  "], Checkbox[Dynamic[fine]], TextCell["   Fit lineshape  "], Checkbox[Dynamic[line]]}, ""]},
+		{TextCell["Fitting options "], Row[{TextCell[" Finetune fit  "], Checkbox[Dynamic[fine]], TextCell["   Fit line shape  "], Checkbox[Dynamic[line]]}, ""]},
 		(*select metabolites*)
 		{TextCell["Select metabolites to fit "], TogglerBar[Dynamic[metSel], met]},
 		

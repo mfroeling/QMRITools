@@ -26,16 +26,16 @@ BeginPackage["QMRITools`CoilTools`", Join[{"Developer`"}, Complement[QMRITools`$
 
 LoadCoilSetup::usage = 
 "LoadCoilSetup[file] load a very specific type of coil experiment, a dynmic scan with a setup of which the second dynamic is a noise measurement.
-The input file is the Nii file that conatins the individualy reconstruted coil images and the noise data.
-Internaly it uses CoilSNRCalc and SumOfSquares. 
+The input file is the Nii file that conatins the individually reconstruted coil images and the noise data.
+Internally it uses CoilSNRCalc and SumOfSquares. 
 
 Output is the coil data with coil noise data and snrmap based on the SumOfSquares addition, the SOS reconstruction and the SOS weights.
 {dataC, noiseC, sosC, snrC, sigmapC, weights, vox}."
 
 LoadCoilTarget::usage =
-"LoadCoilTarget[file] loads a very specific typ of experiment, a dynamic scan with with the second dynmaic is a noise measuremnt.
+"LoadCoilTarget[file] loads a very specific typ of experiment, a dynamic scan with with the second dynmaic is a noise measurement.
 The input file is the Nii file that conatins the scanner reconstruction and the noise data.
-Internaly it uses SNRMapCalc, 
+Internally it uses SNRMapCalc, 
 
 Output is the reconstructed data with noise data and snrMap {dataC, noiseC, sosC, snrC, sigmapC, weights, vox}."
 
@@ -163,19 +163,19 @@ CoilSNRCalc[coils_, noise_] := Block[{
 	noiseN = 10. noise/mn;
 	(*calcualte the sum of squares signal*)
 	{sumSquares, weights} = SumOfSquares[coilsN];
-	(*calculated the weitghted noise addition*)
-	{snr, sigmap} = WeigthedSNR[coilsN, noiseN, weights];
+	(*calculated the weighted noise addition*)
+	{snr, sigmap} = WeightedSNR[coilsN, noiseN, weights];
 	(*output*)
 	{coilsN, noiseN, sumSquares, snr, sigmap, weights}
 ]
 
 
-WeigthedSNR[signal_, noise_, weights_] := Block[{sigmap, sigtot, snr},
+WeightedSNR[signal_, noise_, weights_] := Block[{sigmap, sigtot, snr},
 	sigtot = Total[signal weights];
 	sigmap = Sqrt[Total[weights^2 (Sqrt[2./Pi] GaussianFilter[noise, 3])^2]];
-	snr = DevideNoZero[sigtot, sigmap];
+	snr = DivideNoZero[sigtot, sigmap];
 	{snr, sigmap}
-  ]
+]
 
 
 (* ::Subsection::Closed:: *)

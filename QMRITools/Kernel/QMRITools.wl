@@ -30,32 +30,32 @@ Some functions might not work in older versions"
 
 
 (*usage notes*)
-QMRITools`$SubPackages::usage = "List of the subpackages in the toolbox.";
+QMRITools`$SubPackages::usage = "List of the sub packages in the toolbox.";
 QMRITools`$Contexts::usage = "The package contexts needed for loading.";
 QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions for each context.";
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
 
 
-QMRITools`ElastixTools`$debugElastix::usage = "Debug flag for Elastix.";
-QMRITools`SegmentationTools`$debugUnet::usage = "Debug flag for Unet."; 
-QMRITools`MuscleBidsTools`$debugBids::usage = "Debug flag for Bids.";
+QMRITools`ElastixTools`$debugElastix::usage = "$debugElastix is a debug flag for Elastix functionality.";
+QMRITools`SegmentationTools`$debugUnet::usage = "$debugUnet is a debug flag for Unet functionality."; 
+QMRITools`MuscleBidsTools`$debugBids::usage = "$debugBids is a debug flag for Bids functionality.";
 
 
-(*subpackages names*)
+(*sub packages names*)
 QMRITools`$SubPackages = {
 	"ScientificColorData`",
 	(*core packages that contain many functions for other toolboxes*)
 	"LoggingTools`", "GeneralTools`", "MaskingTools`", "NiftiTools`",
-	 "ElastixTools`", "PlottingTools`", "MuscleBidsTools`",
+	"ElastixTools`", "PlottingTools`", "MuscleBidsTools`",
 	(*toolboxes for processing specific data types*)
 	"DixonTools`", "IVIMTools`", "DenoiseTools`", "CardiacTools`",
 	"RelaxometryTools`", "GradientTools`", "TensorTools`", 
 	"JcouplingTools`", "SpectroTools`", "ReconstructionTools`",
-	(*general processing tools with lots of dependancys*)
+	(*general processing tools with lots of dependency's*)
 	"TractographyTools`", "ProcessingTools`", "FasciculationTools`",
 	"SimulationTools`", "CoilTools`", "TaggingTools`", "SegmentationTools`"
-	 (*legacy functions*)
+	(*legacy functions*)
 	,"Legacy`"
 };
 
@@ -101,7 +101,7 @@ If[QMRITools`$Verbose,
 ];
 
 
-(*Destroy all functions defined in the subpackages*)
+(*Destroy all functions defined in the sub packages*)
 If[QMRITools`$Verbose, 
 	Echo["--------------------------------------"];
 	Echo["Removing all local and global definitions of:"];

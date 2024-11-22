@@ -101,11 +101,8 @@ MuscleBidsTractography::usage =
 MuscleBidsAnalysis::usage = 
 "MuscleBidsAnalysis[dir] performs analysis on the Muscle-Bids named nii based on the config file in the bids sourceFolder dir. If a segmentation is present it is used to calculate the mean per segmentation."
 
-CheckDataDiscription::usage =
-"CheckDataDiscription[description] checks the data description config file used in BidsDcmToNii, MuscleBidsConvert, MuscleBidsProcess, and MuscleBidsMerge."
-
-
-SubNameToBids::usage ="..."
+CheckDataDescription::usage =
+"CheckDataDescription[description] checks the data description config file used in BidsDcmToNii, MuscleBidsConvert, MuscleBidsProcess, and MuscleBidsMerge."
 
 
 (* ::Subsection::Closed:: *)
@@ -137,17 +134,17 @@ VersionCheck::usage =
 (*Error Messages*)
 
 
-CheckDataDiscription::key = "Datasets have duplicate names which is not allowed."
+CheckDataDescription::key = "Datasets have duplicate names which is not allowed."
 
-CheckDataDiscription::type = "Unknown Muscle-BIDS type: `1`, using folder \"miss\"."
+CheckDataDescription::type = "Unknown Muscle-BIDS type: `1`, using folder \"miss\"."
 
-CheckDataDiscription::class = "Unknown Muscle-BIDS Class: `1`. Must be \"Volume\", \"Stacks\", \"Repetitions\", \"Chunks\", \"Acquisitions\"."
+CheckDataDescription::class = "Unknown Muscle-BIDS Class: `1`. Must be \"Volume\", \"Stacks\", \"Repetitions\", \"Chunks\", \"Acquisitions\"."
 
-CheckDataDiscription::lab = "Invalid combination of Class and Label: `1` with `2` is not allowed."
+CheckDataDescription::lab = "Invalid combination of Class and Label: `1` with `2` is not allowed."
 
-CheckDataDiscription::man = "Mandatory values \"Label\" and \"Type\" are not in the data description."
+CheckDataDescription::man = "Mandatory values \"Label\" and \"Type\" are not in the data description."
 
-CheckDataDiscription::stk = "Class \"stacks\" or \"Chunk\" is used but overlap is not defined, assuming overlap 0."
+CheckDataDescription::stk = "Class \"stacks\" or \"Chunk\" is used but overlap is not defined, assuming overlap 0."
 
 
 GetConfig::conf = "Could not find config file in given folder."
@@ -584,31 +581,31 @@ GetClassName[class_, namei_]:=Switch[class,
 
 
 (* ::Subsubsection::Closed:: *)
-(*CheckDataDiscription*)
+(*CheckDataDescription*)
 
 
-SyntaxInformation[CheckDataDiscription] = {"ArgumentsPattern" -> {_, _}};
+SyntaxInformation[CheckDataDescription] = {"ArgumentsPattern" -> {_, _}};
 
-CheckDataDiscription[dis_Association, met_] := Block[{duplicate, disK},
+CheckDataDescription[dis_Association, met_] := Block[{duplicate, disK},
 	If[!DuplicateFreeQ[Keys[dis]],
 		(*datasets cannot have duplicate names*)
-		Return[Message[CheckdataDiscription::key];$Failed]
+		Return[Message[CheckdataDescription::key];$Failed]
 		,
 		(*check if there are duplicated datasets, i.e. same type and suffix*)
 		duplicate = !DuplicateFreeQ[{#["Type"], #["Suffix"]} & /@ Values[dis]];
-		debugBids["data discriptions duplicates: ", duplicate];
+		debugBids["data Descriptions duplicates: ", duplicate];
 		
-		(*If there are duplictes add the dataset name to the data discription*)
+		(*If there are duplictes add the dataset name to the data Description*)
 		disK = If[duplicate,
 			KeySort[Join @@ #] & /@ Thread[{Values[dis], Association /@ Thread["Key" -> Keys[dis]]}],
 			Values[dis]
 		];
-		Flatten[CheckDataDiscription[Normal[#], met]& /@ disK]
+		Flatten[CheckDataDescription[Normal[#], met]& /@ disK]
 	]
 ]
 
-CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail},
-	(*Get the data discription keys*)
+CheckDataDescription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail},
+	(*Get the data Description keys*)
 	ass = Association[dis];
 	key = Keys[ass];
 	(*fail output*)
@@ -623,15 +620,15 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 	]];
 	
 	If[!man,
-		Return[Message[CheckDataDiscription::man]; fail],
+		Return[Message[CheckDataDescription::man]; fail],
 		
 		(*Check if type is valid*)
-		If[!MemberQ[Keys[bidsTypes], ass["Type"]], Message[CheckDataDiscription::type, ass["Type"]]];
+		If[!MemberQ[Keys[bidsTypes], ass["Type"]], Message[CheckDataDescription::type, ass["Type"]]];
 		
 		(*Check if class is present*)
 		If[KeyExistsQ[ass, "Class"],
 			(*if present add check class is valid*)
-			If[!MemberQ[bidsClass, ass["Class"]], Return[Message[CheckDataDiscription::class,ass["Class"]]; fail]],
+			If[!MemberQ[bidsClass, ass["Class"]], Return[Message[CheckDataDescription::class,ass["Class"]]; fail]],
 			(*add class if not present*)
 			ass = Association[ass, "Class"->"Volume"]
 		];
@@ -641,7 +638,7 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 			"Volume", StringQ[ass[["Label"]]],
 			"Stacks"|"Repetitions"|"Mixed", ListQ[ass["Label"] && Length[ass]>1]
 		];
-		If[!cls, Return[Message[CheckDataDiscription::lab, ass["Class"], ass["Label"]]; fail]];
+		If[!cls, Return[Message[CheckDataDescription::lab, ass["Class"], ass["Label"]]; fail]];
 		
 		(*check suffic, in and out folder*)
 		If[!KeyExistsQ[ass, "Suffix"], ass = Association[ass, "Suffix"->""]];
@@ -656,10 +653,10 @@ CheckDataDiscription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail}
 		];
 		
 		(*add overlap if class is stacks*)
-		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass["Merging"], "Overlap"], Message[CheckDataDiscription::stk]; ass = Association[ass, "Overlap"->0]];
-		If[ass["Class"]==="Chunk"&&!KeyExistsQ[ass["Merging"], "Overlap"], Message[CheckDataDiscription::stk]; ass = Association[ass, "Overlap"->0]];
+		If[ass["Class"]==="Stacks"&&!KeyExistsQ[ass["Merging"], "Overlap"], Message[CheckDataDescription::stk]; ass = Association[ass, "Overlap"->0]];
+		If[ass["Class"]==="Chunk"&&!KeyExistsQ[ass["Merging"], "Overlap"], Message[CheckDataDescription::stk]; ass = Association[ass, "Overlap"->0]];
 		
-		(*output the completed data discription*)
+		(*output the completed data Description*)
 		{KeySort@ass}
 	]
 ]
@@ -733,7 +730,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:Opti
 			_,
 			{custConf, datDis} = CheckConfig[fol, out];
 			debugBids[{custConf, datDis}];
-			datDis = CheckDataDiscription[MergeConfig[datDisIn, datDis], met];
+			datDis = CheckDataDescription[MergeConfig[datDisIn, datDis], met];
 		];
 
 		(*-------------- Logging --------------*)
@@ -760,7 +757,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:Opti
 			"MuscleBidsAnalysis", MuscleBidsAnalysisI[fol, outFol, #, versCheck, imOut]&/@datDis
 			,
 			_,
-			(*loop over the data discriptions*)
+			(*loop over the data Descriptions*)
 			Table[
 				(*check if datDis is valid*)
 				If[KeyExistsQ[type, $Failed],
@@ -880,7 +877,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 	debugBids["Starting MuscleBidsConvertI"];
 	debugBids[foli];
 
-	(*see if one label or session|repetion*)
+	(*see if one label or session|repetition*)
 	{fol, parts} = PartitionBidsFolderName[foli];
 	type = datType["Type"];
 	labels = Flatten[{datType["Label"]}];
@@ -1293,7 +1290,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 									{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
 									DixonPhases -> {True, True, True, True, True}, 
 									DixonFixT2 -> False, DixonFieldStrength -> field, 
-									DixonAmplitudes -> "CallDB", DixonTollerance->1];
+									DixonAmplitudes -> "CallDB", DixonTolerance->1];
 
 								pos = {"DixonFlips" -> pos, "DixonBipolar" -> True};
 								outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
@@ -1392,7 +1389,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 						(*-----*)AddToLog["Starting dwi denoising", 4];
 						tr = If[KeyExistsQ[process, "Masking"], process["Masksing"], 5];
 						mask = Mask[NormalizeMeanData[data], tr, MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
-						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATollerance->0, PCAKernel->5];
+						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
 						
 						(*calculate SNR*)
 						snr = SNRCalc[den, sig];
@@ -1403,7 +1400,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 						reg = RegisterDiffusionDataSplit[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, PrintTempDirectory->False];
 
 						(*anisotropic filtering*)
-						(*-----*)AddToLog["Starting anisotrpic data smooting", 4];
+						(*-----*)AddToLog["Starting anisotrpic data smoothing", 4];
 						filt = AnisoFilterData[reg, diffvox];
 						
 						(*export all the calculated data*)
@@ -1969,7 +1966,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 
 		(*check if target file exists if so perform the segmentation*)
 		If[!NiiFileExistQ[segfile],
-			AddToLog[{"The segement file does not exist", segfile}, 4];
+			AddToLog[{"The segment file does not exist", segfile}, 4];
 			,
 			{out, vox} = ImportNii[segfile];
 			seg = SegmentData[out, segLocation, TargetDevice -> device, Monitor -> False];
@@ -2251,7 +2248,7 @@ MuscleBidsAnalysis[datFol_?StringQ, anFol_?StringQ, datDis_?AssociationQ, ops:Op
 
 
 MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
-		maskErosion, tractWeigthing, anaSeg, fol, parts, segfile, fileName, partsO, fileNameO, checkFileX, checkFileI,
+		maskErosion, tractWeighting, anaSeg, fol, parts, segfile, fileName, partsO, fileNameO, checkFileX, checkFileI,
 		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, 
 		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType,
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
@@ -2263,7 +2260,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 
 	(*Options*)
 	maskErosion = True;
-	tractWeigthing = False;
+	tractWeighting = False;
 
 	(*----------- make the xls files -------------*)
 
@@ -2294,7 +2291,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 	{n, what} = datDis["Segmentation", "Labels"];
 	(*----*)AddToLog[{"Segmentation file used for analysis is:", StringRiffle[stringStrip/@anaSeg, "_"]}, 3];
 	
-	(*Perform the segementation analysis, what are the label names and volumes*)
+	(*Perform the segmentation analysis, what are the label names and volumes*)
 	debugBids[{"Segmentation to xls analysis", parts}];
 	segfile = fileName[anaSeg]<>".nii";
 
@@ -2359,7 +2356,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			(*----*)AddToLog[{"The types with tract weighting will be:", StringRiffle[stringStrip/@#, "_"]&/@trType}, 3];
 			(*----*)AddToLog[{"Import tract mask:", StringRiffle[densLab, "_"]}, 4];
 			trMask = ImportNii[densFile][[1]];
-			trMask = If[tractWeigthing, trMask, Unitize@trMask];
+			trMask = If[tractWeighting, trMask, Unitize@trMask];
 			,
 			(*----*)AddToLog[{"No tract bases analysis given"}, 4];
 			trMask = 1;

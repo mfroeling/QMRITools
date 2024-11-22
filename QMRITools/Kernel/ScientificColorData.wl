@@ -56,7 +56,7 @@ Begin["`Private`"]
 
 AddScientificColors[dir_]:=Block[{
 		grads,gradDiv,gradMulti,cyclic,all,swatches,colName,groupName,getCol,colRange,allDef,
-		nameDef,groupDef,newGroupsPattern,newShemeNames,newShemes,scientificColorMapsGroups,gr
+		nameDef,groupDef,newGroupsPattern,newSchemeNames,newSchemes,scientificColorMapsGroups,gr
 	},
 	
 	(*activated ColorDataDump*)
@@ -117,12 +117,12 @@ AddScientificColors[dir_]:=Block[{
 		nameDef=allDef[[All,1,1]];
 		groupDef=DeleteCases[DeleteCases[DeleteDuplicates[Flatten[allDef[[All,2]]]],"Gradients"],"Indexed"];
 		newGroupsPattern=Alternatives@@Join[DataPaclets`ColorDataDump`colorSchemeGroupsPattern/.Alternatives->List,groupDef];
-		newShemeNames=Join[DataPaclets`ColorDataDump`colorSchemeNames,nameDef];
-		newShemes=Join[DataPaclets`ColorDataDump`colorSchemes,allDef];
+		newSchemeNames=Join[DataPaclets`ColorDataDump`colorSchemeNames,nameDef];
+		newSchemes=Join[DataPaclets`ColorDataDump`colorSchemes,allDef];
 		
 		DataPaclets`ColorDataDump`colorSchemeGroupsPattern=newGroupsPattern;
-		DataPaclets`ColorDataDump`colorSchemeNames=newShemeNames;
-		DataPaclets`ColorDataDump`colorSchemes=newShemes;
+		DataPaclets`ColorDataDump`colorSchemeNames=newSchemeNames;
+		DataPaclets`ColorDataDump`colorSchemes=newSchemes;
 		
 		(*Modify ColorData such it can display the Scientific color map groups*)
 		scientificColorMapsGroups={

@@ -32,7 +32,7 @@ NormalizeMeanData::usage =
 "NormalizeMeanData[data] calculates the mean normalized data from a 4D dataset."
 
 HomogenizeData::usage = 
-"HomogenizeData[data, mask] tries to homoginize the data within the mask by removing intensity gradients."
+"HomogenizeData[data, mask] tries to homogenize the data within the mask by removing intensity gradients."
 
 FitGradientMap::usage = 
 "FitGradientMap[data, ord] fit of gradient trough all non zero values withing the data."
@@ -71,7 +71,7 @@ Output is a labled segmentation.
 MergeSegmentations[masks] does the same but automatically numbers the segmentations."
 
 SelectSegmentations::usage =
-"SelectSegmentations[seg, labs] selects only the segmentaions from seg with label number labs."
+"SelectSegmentations[seg, labs] selects only the segmentations from seg with label number labs."
 
 ReplaceSegmentations::usage =
 "ReplaceSegmentations[seg, labs, new] relapaces the labels labs form the segmentation seg for labels new. Both labs and new should
@@ -129,15 +129,15 @@ MaskDilation::usage =
 MaskFiltKernel::usage =
 "MaskFiltKernel is an option for Mask, SmoothMask and SmoothSegmentation. How mucht the contours are smoothed." 
 
-SmoothItterations::usage =
-"SmoothItterations is an option for Mask, SmoothMask and SmoothSegmentation and defines how often the smoothing is repeated."
+SmoothIterations::usage =
+"SmoothIterations is an option for Mask, SmoothMask and SmoothSegmentation and defines how often the smoothing is repeated."
 
 
 (* ::Subsection:: *)
 (*Error Messages*)
 
 
-Mask::tresh = "Given treshhold `1` value is not a vallid input, must be a number for min treshhold only or a vector {min tresh, max tresh}."
+Mask::tresh = "Given treshhold `1` value is not a valid input, must be a number for min treshhold only or a vector {min tresh, max tresh}."
 
 MaskData::dim = "Dimensions are not equal, data: `1`, mask `2`." 
 
@@ -206,7 +206,7 @@ NormDatC = Compile[{{dat, _Real, 3}}, Block[{fl, min, max, bins, cdf, n, tot},
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
 
 
-(*normalization towards median of given valueue*)
+(*normalization towards median of given value*)
 NormDat[dat_, mn_] := ToPackedArray[100. Which[
 	mn===0., dat/MedianNoZero[Flatten@dat],
 	ListQ[mn],Transpose[Transpose[dat]/mn],
@@ -239,7 +239,7 @@ HomogenizeData[dat_, opts:OptionsPattern[]]:=HomogenizeData[dat, Unitize[dat], o
 
 HomogenizeData[dat_, mask_, OptionsPattern[]] := Block[{fit},
 	fit = FitGradientMap[Erosion[mask, 1] GaussianFilter[dat, 5], OptionValue[FitOrder]];
-	NormalizeData[Clip[mask DevideNoZero[dat, fit], {0, 3}, {0, 0}]]
+	NormalizeData[Clip[mask DivideNoZero[dat, fit], {0, 3}, {0, 0}]]
 ]
 
 
@@ -251,7 +251,7 @@ HomogenizeData[dat_, mask_, OptionsPattern[]] := Block[{fit},
 (*Mask*)
 
 
-Options[Mask] = {MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> False, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->3};
+Options[Mask] = {MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> False, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothIterations->3};
 
 SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -275,9 +275,9 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, data
 	
 	(*perform the masking*)		
 	mask = If[tr === {0, 0},
-		(*no threshhold*)
+		(*no Threshold*)
 		ImageData[Binarize[If[dataD == 2, Image, Image3D][Rescale[data, {1, 0.95} MinMax[data]]]]],
-		(*threshhold*)
+		(*Threshold*)
 		UnitStep[data - tr[[1]]] - UnitStep[data - tr[[2]]]
 	];
 	
@@ -290,7 +290,7 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, data
 (*SmoothMask*)
 
 
-Options[SmoothMask] = {MaskComponents->1, MaskClosing->True, MaskFiltKernel->2, MaskDilation -> 0, SmoothItterations -> 3}
+Options[SmoothMask] = {MaskComponents->1, MaskClosing->True, MaskFiltKernel->2, MaskDilation -> 0, SmoothIterations -> 3}
 
 SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
@@ -304,8 +304,8 @@ SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, 
 	obj = If[NumberQ[obj], Round[obj]];
 	close = OptionValue[MaskClosing];(*close holes in mask*)
 	If[IntegerQ[close], If[close>=1, close = True, close = False]];(*for legacy purposes*)
-	itt = OptionValue[SmoothItterations];(*how much the smoothing is repeated*)
-	ker = OptionValue[MaskFiltKernel];(*how much smooting*)
+	itt = OptionValue[SmoothIterations];(*how much the smoothing is repeated*)
+	ker = OptionValue[MaskFiltKernel];(*how much smoothing*)
 
 	(*prep the segmentation*)
 	dim = Dimensions@mask;
@@ -354,7 +354,7 @@ TakeObject[maskI_, obj_] := Block[{morph, keys},
 SyntaxInformation[DilateMask] = {"ArgumentsPattern" -> {_, _}};
 
 DilateMask[mask_, size_] := If[ArrayDepth[mask]===3,
-	SmoothMask[mask, MaskDilation -> size, MaskComponents -> Infinity, MaskClosing -> False, SmoothItterations -> 0],
+	SmoothMask[mask, MaskDilation -> size, MaskComponents -> Infinity, MaskClosing -> False, SmoothIterations -> 0],
 	Transpose[DilateMask[#,size]&/@Transpose[mask]]
 ]
 
@@ -368,7 +368,7 @@ SyntaxInformation[SelectMaskComponents] = {"ArgumentsPattern" -> {_, _.}};
 SelectMaskComponents[mask_] := SelectMaskComponents[mask, 1]
 
 SelectMaskComponents[mask_, n_] := SmoothMask[mask, MaskComponents -> n,
-	MaskDilation -> 0, MaskClosing -> False, SmoothItterations -> 0]
+	MaskDilation -> 0, MaskClosing -> False, SmoothIterations -> 0]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -460,7 +460,7 @@ MergeSegmentations[seg_]:= MergeSegmentations[seg, Range[Length[First@seg]]]
 
 MergeSegmentations[seg_, lab_] := Block[{mt, nv},
 	mt = Transpose[If[!SparseArrayQ@seg, SparseArray@Round@seg, seg]];
-	(*mapping over sparce is quicker than direct multiplication and total*)
+	(*mapping over sparse is quicker than direct multiplication and total*)
 	Normal[Total[mt[[#]] lab[[#]] & /@ Range[Length@lab]] (1 - UnitStep[Total[# & /@ mt] - 2])]
 ]
 
@@ -510,7 +510,7 @@ SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, s
 (*SmoothSegmentation*)
 
 
-Options[SmoothSegmentation] = {MaskComponents -> 1, MaskClosing -> 1, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothItterations->1}
+Options[SmoothSegmentation] = {MaskComponents -> 1, MaskClosing -> 1, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothIterations->1}
 
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -576,7 +576,7 @@ GetCommonSegmentation[dat:{_?ArrayQ ..}, seg:{_?ArrayQ ..}, vox:{_?ListQ ..}] :=
 	
 	(*split and smooth all the segmentations*)
 	{segs, labs} = Transpose[SplitSegmentations[ApplyCrop[#[[1]], #[[2]]]] & /@ Thread[{seg, cr}]];
-	segs = SmoothSegmentation[#, MaskComponents -> 1, SmoothItterations -> 2] & /@ segs;
+	segs = SmoothSegmentation[#, MaskComponents -> 1, SmoothIterations -> 2] & /@ segs;
 	
 	(*find common labels*)
 	labAll = Intersection @@ labs;

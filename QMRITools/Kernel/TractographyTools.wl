@@ -567,10 +567,10 @@ Options[FiberTractography] = {
 	FiberAngle -> 30,
 	TensorFlips -> {1, 1, 1},
 	TensorPermutations -> {"x", "y", "z"},
-	InterpolationOrder -> 1,
+	InterpolationOrder -> 0,
 	StopThreshold -> 0.5,
 	StepSize -> Automatic,
-	Method -> "Euler",
+	Method -> "RK4",
 	MaxSeedPoints -> Automatic,
 	TractMonitor->True,
 	Parallelization -> False
@@ -673,7 +673,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	{tracts, sel} = FilterTractLength[tracts, {lmin, lmax}, "both"];
 	seeds = Pick[seeds, sel, 1];
 	
-	(*report timing an resutls*)
+	(*report timing an results*)
 	If[OptionValue[TractMonitor],
 		Echo["Tractography took "<>ToString[Round[t1,.1]]<>" seconds ("<>ToString[Round[seedN/t1]]<>" tracts/s)"];
 		Echo[ToString[Length[tracts]]<>" valid tracts with length "<>ToString[Round[step Mean[Length /@ tracts], 0.1]]<>"\[PlusMinus]"<>ToString[Round[step StandardDeviation[Length /@ tracts], 0.1]]<>" mm"];	
@@ -744,7 +744,7 @@ VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1, n2},
 
 
 (*Solves the cubic equation analytically using the characteristic polynomial. This is an exact method.*)
-(*other possible methods could have been power itterations or newtons methods, both are itterative and are not faster than the analytical*)
+(*other possible methods could have been power iterations or newtons methods, both are itterative and are not faster than the analytical*)
 EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, 
 		i1, i2, i3, i, v, s, v2, vv2, l1, a, b, c, norm, vec
