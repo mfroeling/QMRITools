@@ -1823,8 +1823,8 @@ Options[PlotContour] = {
 	ContourColorRange -> Automatic,
 	ColorFunction -> "SunsetColors",
 	ContourSmoothRadius -> None,
-	ContourScaling->"World",
-	ContourResolution->Automatic
+	ContourScaling -> "World",
+	ContourResolution -> Automatic
 };
 
 SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
@@ -1832,7 +1832,7 @@ SyntaxInformation[PlotContour] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]
 PlotContour[dati_, opts:OptionsPattern[]]:=PlotContour[dati, {1,1,1}, opts]
 
 PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
-		data, smooth, color, opac, dim , pad, col, style, crp,
+		data, smooth, color, opac, dim , pad, col, style, crp, spec,
 		ran, coldat, colfunc, scale, range, reso, cdim, cfunc
 	},
 
@@ -1840,13 +1840,10 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 		SeedRandom[12345];
 		Show[PlotContour[#[[1]], vox, ContourColor->#[[2]], opts]&/@ Transpose[{Transpose[dati], RandomColor[Length@First@dati]}]]
 		,
-		smooth = OptionValue[ContourSmoothRadius];
+		{smooth, reso, scale, color, opac, spec} = OptionValue[{ContourSmoothRadius, ContourResolution, ContourScaling, 
+			ContourColor, ContourOpacity, ContourSpecularity}];
+
 		If[smooth === None, smooth = 0];
-		reso = OptionValue[ContourResolution];
-		scale = OptionValue[ContourScaling];
-		color = OptionValue[ContourColor];
-		opac = OptionValue[ContourOpacity];
-		spec = OptionValue[ContourSpecularity];
 
 		If[N[Max[dati]] === 0., 
 			Graphics3D[],
@@ -1854,7 +1851,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 			dim = Dimensions@dati;
 			pad = 2 (smooth + 1);
 
-			{data, crp} = AutoCropData[dati, CropPadding->0];
+			{data, crp} = AutoCropData[Unitize@dati, CropPadding->0];
 			data = ArrayPad[data, pad];
 
 			If[IntegerQ[smooth], If[smooth>0, data = GaussianFilter[data, smooth]]];
@@ -1882,18 +1879,21 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 				]
 			];
 
-			reso = Reverse@Round[(vox Dimensions[data]) / Switch[reso, Automatic, 1.5 vox, _, reso]];
+			reso = Which[reso===Automatic, 2 vox, IntegerQ[reso], reso vox, VectorQ[reso], reso, True, 2 vox];
+			reso = Reverse@Round[vox Dimensions[data] / reso];
+
 			scale = Switch[scale, "World", Reverse[vox], _, {1,1,1}];
 
 			range = Reverse[Partition[crp, 2]] + {{-pad - 1, pad}, {-pad - 1, pad}, {-pad - 1, pad}};
 			dim = Reverse[dim];
 
 			ListContourPlot3D[data,
-				Contours -> {0.7},
+				Contours -> {0.7}, Lighting -> "ThreePoint",
 				Mesh -> False, BoundaryStyle -> None, Axes -> True, 
-				SphericalRegion -> True,
-				ColorFunctionScaling -> False, ColorFunction -> colfunc,
-				ContourStyle -> style, Lighting -> "Neutral",
+				SphericalRegion -> True,ColorFunctionScaling -> False, 
+				
+				ColorFunction -> colfunc, 
+				ContourStyle -> style, 
 				
 				MaxPlotPoints -> reso,
 				ImageSize -> 300,
@@ -1938,20 +1938,17 @@ Options[GenerateRotationFrames] = {
 };
 
 GenerateRotationFrames[gr3D_, nFrames_, OptionsPattern[]] := Module[{initVp},
-If[ListQ[gr3D],
-opt = Thread[{ViewPoint, ViewVertical, ViewAngle, ViewCenter} -> ({ViewPoint, ViewVertical, ViewAngle, ViewCenter} /. AbsoluteOptions@First@gr3D)];
-ImageAssemble/@Thread[GenerateRotationFrames[Show[#, opt],nFrames]&/@gr3D]
-,
-
-opt = Thread[{ViewPoint, ViewVertical, ViewAngle, ViewCenter} -> ({ViewPoint, ViewVertical, ViewAngle, ViewCenter} /. AbsoluteOptions@gr3D)];
-(*{pt, cent} = ViewVector /. AbsoluteOptions[gr3D, ViewVector];*)
-gr = Show[gr3D, opt];
-{pt, cent} = ViewVector /. AbsoluteOptions[gr, ViewVector];
-
-pt = ViewPoint/. AbsoluteOptions[gr, ViewPoint];
-
-Table[Rasterize[Show[gr,(*Graphics3D[InfiniteLine[{0,0,0}, {0,0,1}]]*) ViewPoint -> RotationTransform[(2 Pi/nFrames) i, {0, 0, 1}, {0,0,0}][pt](*, cent}*)],ImageSize -> OptionValue[ImageSize]], {i, 0, nFrames - 1}]
-]
+	If[ListQ[gr3D],
+		opt = Thread[{ViewPoint, ViewVertical, ViewAngle, ViewCenter} -> ({ViewPoint, ViewVertical, ViewAngle, ViewCenter} /. AbsoluteOptions@First@gr3D)];
+		ImageAssemble/@Thread[GenerateRotationFrames[Show[#, opt],nFrames]&/@gr3D]
+		,
+		opt = Thread[{ViewPoint, ViewVertical, ViewAngle, ViewCenter} -> ({ViewPoint, ViewVertical, ViewAngle, ViewCenter} /. AbsoluteOptions@gr3D)];
+		(*{pt, cent} = ViewVector /. AbsoluteOptions[gr3D, ViewVector];*)
+		gr = Show[gr3D, opt];
+		{pt, cent} = ViewVector /. AbsoluteOptions[gr, ViewVector];
+		pt = ViewPoint/. AbsoluteOptions[gr, ViewPoint];
+		Table[Rasterize[Show[gr,(*Graphics3D[InfiniteLine[{0,0,0}, {0,0,1}]]*) ViewPoint -> RotationTransform[(2 Pi/nFrames) i, {0, 0, 1}, {0,0,0}][pt](*, cent}*)],ImageSize -> OptionValue[ImageSize]], {i, 0, nFrames - 1}]
+	]
 ];
 
 
@@ -1961,12 +1958,12 @@ Table[Rasterize[Show[gr,(*Graphics3D[InfiniteLine[{0,0,0}, {0,0,1}]]*) ViewPoint
 
 Options[PlotSegmentations] = {
 	ImageSize -> 400, 
-	ContourOpacity->0.6,
-	ContourSpecularity -> 5,
-	ColorFunction -> "DarkRainbow", 
+	ContourOpacity -> 0.6,
+	ContourSpecularity -> 200,
+	ColorFunction -> "RomaO", 
 	ContourSmoothRadius -> 2,
-	RandomizeColor->True,
-	ContourResolution->Automatic
+	RandomizeColor -> True,
+	ContourResolution -> Automatic
 };
 
 SyntaxInformation[PlotSegmentations] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
@@ -1981,7 +1978,9 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 
 	plotb = If[bone === None, Graphics3D[],
 		PlotContour[If[ArrayDepth[bone]===3, Unitize@bone, Unitize@Total@Transpose@bone], vox, 
-			ContourColor -> Gray, ContourOpacity -> 1, ContourSmoothRadius -> smooth, ContourResolution->res]
+			ContourColor -> Lighter@Gray, ContourOpacity -> 1, ContourSmoothRadius -> smooth, 
+			ContourResolution -> res
+		]
 	];
 
 	plotm = If[N[Max[seg]] === 0., 
@@ -1996,11 +1995,13 @@ PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
 			cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
 			If[ranCol, SeedRandom[1234]; cols = cols[[RandomSample[rSeg]]]];
 		];
+
 		Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, 
-			ContourSpecularity -> spec, ContourSmoothRadius -> smooth, ContourResolution->res], {i, 1, nSeg}]]
+			ContourSpecularity -> spec, ContourSmoothRadius -> smooth, 
+			ContourResolution -> res], {i, 1, nSeg}]]
 	];
 
-	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> False]
+	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> True]
 ]
 
 

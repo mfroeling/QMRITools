@@ -530,11 +530,12 @@ AddToJson[json_, add_]:=MergeJSON[{json,
 
 SyntaxInformation[SelectSubjects] = {"ArgumentsPattern" -> {_}};
 
-SelectSubjects[dir_?StringQ] := DynamicModule[{selectedSubjects, list},
-	list = Sort[FileBaseName[#] & /@ Select[FileNames["*", GetConfig[dir]["folders", "dicomData"]], DirectoryQ]];
+SelectSubjects[dir_?StringQ] := DynamicModule[{fol, selectedSubjects, list},
+	fol = FileNameJoin[{dir, GetConfig[dir]["folders", "dicomData"]}];
+	list = Sort[FileBaseName[#] & /@ Select[FileNames["*", fol], DirectoryQ]];
 	selectedSubjects = {};
 	Column[{
-		CheckboxBar[Dynamic[selectedSubjects], list, Appearance -> "Vertical" -> {15, Automatic}, Method -> "Active"],
+		CheckboxBar[Dynamic[selectedSubjects], list, Appearance -> "Vertical" -> {Min[{15, Length@list}], Automatic}, Method -> "Active"],
 		Row[{
 			Button["Select All", selectedSubjects = list],
 			Button["Copy selected list to clipboard", CopyToClipboard[selectedSubjects]]
@@ -872,7 +873,8 @@ MuscleBidsConvert[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 
 
 MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
-		type, fol, parts, files, json, infoExtra, pos, posi, info, data, vox, grad, val, sufd, outFile
+		type, fol, parts, files, json, infoExtra, pos, posi, info, data, vox, 
+		grad, val, sufd, outFile, echo, nEch, fit
 	},
 
 	debugBids["Starting MuscleBidsConvertI"];
@@ -1073,20 +1075,23 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 					(*get the json and data*)
 					(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
 					
-					(*get the json and data*)
+					(*echo times - get the echo time from the data json if present*)
 					info = json[[First@pos]];
-					{data, fit, vox} = ImportNiiT2[ConvertExtension[files[[First@pos]],".nii"]];
-					nEch = Length[data[[1]]];
-					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 
-					(*echo times*)
-					echo = datType["Process", "EchoTime"];
+					If[KeyExistsQ[info, "EchoTime"] && KeyExistsQ[info, "EchoTrainLength"],
+						{data, vox} = ImportNii[ConvertExtension[files[[First@pos]],".nii"]],
+						{data, fit, vox} = ImportNiiT2[ConvertExtension[files[[First@pos]],".nii"]]
+					];
+					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+					echo = If[KeyExistsQ[info, "EchoTime"],	info["EchoTime"], datType["Process", "EchoTime"]/1000.];
+					nEch = If[KeyExistsQ[info, "EchoTrainLength"], info["EchoTrainLength"], Length[data[[1]]]];
+					info = KeyDrop[info, "EchoTime"];
 					echo = <|
 						"EchoNumber" -> Range[nEch], 
-						"EchoTime" -> (echo + Range[0, nEch - 1] echo)/1000.
+						"EchoTime" -> (echo + Range[0, nEch - 1] echo)
 					|>;
 					debugBids[echo];
-					
+
 					,
 
 					(*get the posisiton of the files needed*)
@@ -1385,7 +1390,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 						
 						(*Denoise*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
-						mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
+						tr = If[KeyExistsQ[process, "Masking"], process["Masksing"], 5];
+						mask = Mask[NormalizeMeanData[data], tr, MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
 						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATollerance->0, PCAKernel->5];
 						
 						(*calculate SNR*)
@@ -1447,11 +1453,12 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 						If[!(NiiFileExistQ[nfilep]&&FileExistsQ[ConvertExtension[nfilep,".bval"]]&&FileExistsQ[ConvertExtension[nfilep,".bvec"]]),
 							(*----*)AddToLog[{"Skipping, could not find .nii, .bval and .bvec"}, 4],
 							(*----*)AddToLog["Importing the data", 4];
-	
+							
 							(*import the data*)
 							json = ImportJSON[jfile];
 							{data, grad, val, diffvox} = ImportNiiDiff[nfilep, FlipBvec->False];
-							mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
+							tr = If[KeyExistsQ[process, "Masking"], process["Masking"], 5];
+							mask = Mask[NormalizeMeanData[data], tr, MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
 							data = MaskData[data, mask];
 							(*get bvalues and mean data*)
 							{mean, valU} = MeanBvalueSignal[data, val];
@@ -1547,9 +1554,12 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							
 							(*determine the pulse profiles*)
 							(*-----*)AddToLog["Calculating the slice profiles", 4];							
-							{ex, ref} = datType["Process"]["Settings"];
-							thk = 2 json["SliceThickness"];
-							angle = GetPulseProfile[ex, ref, SliceRange -> thk, SliceRangeSamples -> thk][[1;;2]];
+							{ex, ref} = datType["Process", "Settings"];
+							angle = If[NumberQ[ex]&&NumberQ[ref],
+								{ex, ref},							
+								thk = 2 json["SliceThickness"];
+								GetPulseProfile[ex, ref, SliceRange -> thk, SliceRangeSamples -> thk][[1;;2]]
+							];
 							
 							(*caculate the water t2 map*)
 							(*-----*)AddToLog["Starting EPG T2 calculation", 4];
@@ -1917,9 +1927,6 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 	debugBids[foli, folo];
 	debugBids[datType];
 
-	(*!!options!!*)
-	device = "GPU";
-
 	(*get the segment data type*)
 	segment = datType["Segment"];
 	(*figure out if duplicate handeling is needed.*)
@@ -1937,6 +1944,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 	(*Get the segmentation targets and its names*)
 	segType = segment["Target"];
 	segLocation = segment["Location"];
+	device = If[KeyExistsQ[segment, "Device"], segment["Device"], "GPU"];
 	If[ArrayDepth[segType]===1, segType = {segType}];
 	segTypeLab = StringRiffle[#, "_"]&/@segType;
 
@@ -2112,7 +2120,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
 				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", MaxSeedPoints -> seed, 
 				FiberLengthRange -> len, FiberAngle -> ang, TracMonitor -> False,
-				TensorFilps -> flip, TensorPermutations -> per, Parallelization -> True
+				TensorFlips -> flip, TensorPermutations -> per, Parallelization -> True
 			];
 
 			(* Export the tractography results *)
@@ -2551,8 +2559,8 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		(*check if tract image can be done*)
 		imTrk = datDis["Images", "TractImages"];
 		trkfile = fileName[imTrk]<>".wxf";
-		debugBids[{trkfile, FileExistQ[trkfile]}];
-		If[!NiiFileExistQ[trkfile], 
+		debugBids[{trkfile, FileExistsQ[trkfile]}];
+		If[!FileExistsQ[trkfile], 
 			(*----*)AddToLog[{"Tract file does not exist."}, 4];
 			tractIm = False;
 		];

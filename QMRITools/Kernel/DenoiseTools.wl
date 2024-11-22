@@ -386,6 +386,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 		(*perform denoising*)
 		j = 0;
+		If[mon, PrintTemporary["Performing the denoising"]];
 		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
 		{m, n} = MinMax[{m, n}];
 		Map[(j++;

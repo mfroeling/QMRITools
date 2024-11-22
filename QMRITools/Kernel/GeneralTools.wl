@@ -31,6 +31,16 @@ Current assests are \"Elastix\", \"Transformix\" and \"DcmToNii\"."
 ExtractDemoData::usage = 
 "ExtractDemoData[] Extracts the demo data archive."
 
+OpenDemonstrationNotebook::usage =
+"OpenDemonstrationNotebook[] Opens the demonstration notebook."
+
+OpenQMRIToolsLocation::usage =
+"OpenQMRIToolsLocation[] Opens the QMRITools location in the file explorer."
+
+SetDemoDirectory::usage =
+"SetDemoDirectory[] Sets the directory to the demo data directory."
+
+
 StringPadInteger::usage = 
 "StringPadInteger[num] converts the integer num to a string and pads it with zeros to length 3.
 StringPadInteger[{num, len}] converts the integer num to a string and pads it with zeros to length len.
@@ -366,6 +376,15 @@ ExtractDemoData[] := Block[{file},
 ]
 
 
+OpenDemonstrationNotebook[] := NotebookOpen[GetAssetLocation["Demo"]];
+
+
+OpenQMRIToolsLocation[] := SystemOpen[First[PacletFind["QMRITools"]]["Location"]];
+
+
+SetDemoDirectory[]:=SetDirectory[FileNameJoin[{DirectoryName[GetAssetLocation["DemoData"]], "DemoData"}]];
+
+
 (* ::Subsection:: *)
 (*General Functions*)
 
@@ -463,9 +482,7 @@ EmptyDirectoryQ[dir_] := FileNames[All, dir] === {}
 (*NiiFileExistQ*)
 
 
-NiiFileExistQ[file_] := 
- FileExistsQ[ConvertExtension[file, ".nii"]] || 
-  FileExistsQ[ConvertExtension[file, ".nii.gz"]]
+NiiFileExistQ[file_] := FileExistsQ[ConvertExtension[file, ".nii"]] || FileExistsQ[ConvertExtension[file, ".nii.gz"]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -513,20 +530,20 @@ Options[SaveImage] = {ImageSize -> 6000, FileType -> ".jpg", ImageResolution -> 
 SyntaxInformation[SaveImage] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 SaveImage[exp_, opts : OptionsPattern[]] := Module[{input, type},
- 	type = OptionValue[FileType];
- 	type = If[StringTake[type, 2] === "*.", StringDrop[type,1], If[StringTake[type, 1] === ".",type, "."<>type]];
- 	
- 	input = FileSelect["FileSave", {"*"<>type}];
- 	
- 	If[input != "Canceled!",
- 		input=If[StringTake[input,-4]===type,input,input<>type];
- 		SaveImage[exp, input, opts]
-  	];
-  ]
+	type = OptionValue[FileType];
+	type = If[StringTake[type, 2] === "*.", StringDrop[type,1], If[StringTake[type, 1] === ".",type, "."<>type]];
+
+	input = FileSelect["FileSave", {"*"<>type}];
+
+	If[input != "Canceled!",
+		input=If[StringTake[input,-4]===type,input,input<>type];
+		SaveImage[exp, input, opts]
+	];
+]
 
 SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type},
 	type = OptionValue[FileType];
- 	type = If[StringTake[type, 2] === "*.", StringDrop[type,1], If[StringTake[type, 1] === ".",type, "."<>type]];
+	type = If[StringTake[type, 2] === "*.", StringDrop[type,1], If[StringTake[type, 1] === ".",type, "."<>type]];
 	
 	file=If[StringTake[filei,-4]===type||StringTake[filei,-5]===type,filei,filei<>type];
 	
@@ -534,12 +551,12 @@ SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type}
 	res=OptionValue[ImageResolution];
 	
 	If[OptionValue[FileType]===".tiff"||OptionValue[FileType]===".tif",
-  	  Export[file, exp , ImageSize->imsize, ImageResolution -> res,"ImageEncoding"->"LZW"],
-  	  Export[file, exp , ImageSize->imsize, ImageResolution -> res]
+		Export[file, exp , ImageSize->imsize, ImageResolution -> res,"ImageEncoding"->"LZW"],
+		Export[file, exp , ImageSize->imsize, ImageResolution -> res]
 	];
 	
 	Print["File was saved to: " <> file];
-  ]
+]
 
 
 (* ::Subsection:: *)
@@ -772,6 +789,7 @@ FitGradientMap[data_]:=FitGradientMap[data, 2, 1]
 FitGradientMap[data_, ord_]:=FitGradientMap[data, ord, 1]
 
 FitGradientMap[data_, ord_, smp_]:=FitGradientMap[{data, 1}, ord, smp]
+
 FitGradientMap[{data_, msk_}, ord_, smp_] := Block[{val, dim, coor, fit, x, y, z},
 	Clear[x, y, z];
 	{val, {dim, coor}} = DataToVector[msk data];
@@ -849,85 +867,83 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 		
 		clipall = Ceiling[{0.5, zd - 0.5, 0.5, xd - .5, 0.5, yd - .5}];
     
-	    r1 = (vox[[2]]*xd)/(vox[[3]]*yd);
-	    r2 = (vox[[1]]*zd)/(vox[[3]]*yd);
-	    r3 = (vox[[1]]*zd)/(vox[[2]]*xd);
+		r1 = (vox[[2]]*xd)/(vox[[3]]*yd);
+		r2 = (vox[[1]]*zd)/(vox[[3]]*yd);
+		r3 = (vox[[1]]*zd)/(vox[[2]]*xd);
     
-  		size = Min[{r1, r2, r3}] 400;
-  		
-  		init = OptionValue[CropInit];
-  		init = If[ListQ[init] && Length[init]==6,
-  			{0, 0, xd+1, xd+1, 0, 0} + {1, 1, -1, -1, 1, 1} init[[{1,2,4,3,5,6}]],
-  			{1,zd,1,xd,1,yd}
-  			];
-     
-    cropwindow = DialogInput[
-      {
-       DefaultButton[],
+		size = Min[{r1, r2, r3}] 400;
+		
+		init = OptionValue[CropInit];
+		init = If[ListQ[init] && Length[init]==6,
+			{0, 0, xd+1, xd+1, 0, 0} + {1, 1, -1, -1, 1, 1} init[[{1,2,4,3,5,6}]],
+			{1,zd,1,xd,1,yd}
+		];
+	
+		cropwindow = DialogInput[{
+			DefaultButton[],
 
-       Manipulate[
-        outp = Ceiling[{zmin, zmax, xd - xmax, xd - xmin, ymin, ymax}];
-        
-        Grid[
-         {
-         	{Dynamic[Row[{"size: ", Ceiling[{zmax-zmin,xmax-xmin,ymax-ymin}]},"   "]]},
-         	{
-     		LocatorPane[Dynamic[{{ymin, xmax}, {ymax, xmin}}],
-                Show[ArrayPlot[dat[[z]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r1, ImageSize -> size/r2],
-            	Graphics[{
-            		Red, Thick, Dynamic[Line[{{ymin, xmin}, {ymin, xmax}, {ymax, xmax}, {ymax, xmin}, {ymin, xmin}}]], 
-            		Green, Line[{{y - 0.5, -10}, {y - 0.5, xd + 10}}], 
-            		Blue, Line[{{-10, xd - x + 0.5}, {yd + 10, xd - x + 0.5}}], 
-            		Red, Dynamic[Circle[Mean[{{ymin, xmin}, {ymax, xmax}}], 2]]
-            		}], 
-        		PlotRange -> {{0, yd}, {0, xd}}
-            	], {{0.5, 0.5}, {yd - 0.5, xd - 0.5}}, Appearance -> Graphics[{Red, Disk[]}, ImageSize -> 10]
-             ]
-			}, {
-			LocatorPane[Dynamic[{{ymin, zmax}, {ymax, zmin}}],
-				Show[ArrayPlot[Reverse[dat[[All, x]]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r2, ImageSize -> size/r2], 
-				Graphics[{
-					Blue, Thick, Dynamic[Line[{{ymin, zmin}, {ymin, zmax}, {ymax, zmax}, {ymax, zmin}, {ymin, zmin}}]], 
-					Green, Line[{{y - 0.5, -10}, {y - 0.5, zd + 10}}], 
-					Red, Line[{{-10, z - 0.5}, {yd + 10, z - 0.5}}], 
-					Blue,  Dynamic[Circle[Mean[{{ymin, zmin}, {ymax, zmax}}], 2]]
-					}], 
-				PlotRange -> {{0, yd}, {0, zd}}
-				], {{0.5, 0.5}, {yd - 0.5, zd - 0.5}}, Appearance -> Graphics[{Blue, Disk[]}, ImageSize -> 10]]
-			,
-			LocatorPane[Dynamic[{{xmin, zmax}, {xmax, zmin}}],
-				Show[ArrayPlot[Reverse /@ Reverse[dat[[All, All, y]]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r3, ImageSize -> size/r3], 
-				Graphics[{
-					Green, Thick, Dynamic[ Line[{{xmin, zmin}, {xmin, zmax}, {xmax, zmax}, {xmax, zmin}, {xmin, zmin}}]],
-					Blue, Line[{{x - 0.5, -10}, {x - 0.5, zd + 10}}], 
-					Red, Line[{{-10, z - 0.5}, {xd + 10, z - 0.5}}], 
-					Green, Dynamic[Circle[Mean[{{xmin, zmin}, {xmax, zmax}}], 2]]
-					}], 
-				PlotRange -> {{0, xd}, {0, zd}}
-				], {{0.5, 0.5}, {xd - 0.5, zd - 0.5}}, Appearance -> Graphics[{Green, Disk[]}, ImageSize -> 10]]
-			}}, Spacings -> 0]
+			Manipulate[
+				outp = Ceiling[{zmin, zmax, xd - xmax, xd - xmin, ymin, ymax}];
+				
+				Grid[{
+					{Dynamic[Row[{"size: ", Ceiling[{zmax-zmin,xmax-xmin,ymax-ymin}]},"   "]]},
+					{
+						LocatorPane[Dynamic[{{ymin, xmax}, {ymax, xmin}}],
+							Show[ArrayPlot[dat[[z]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r1, ImageSize -> size/r2],
+								Graphics[{
+									Red, Thick, Dynamic[Line[{{ymin, xmin}, {ymin, xmax}, {ymax, xmax}, {ymax, xmin}, {ymin, xmin}}]], 
+									Green, Line[{{y - 0.5, -10}, {y - 0.5, xd + 10}}], 
+									Blue, Line[{{-10, xd - x + 0.5}, {yd + 10, xd - x + 0.5}}], 
+									Red, Dynamic[Circle[Mean[{{ymin, xmin}, {ymax, xmax}}], 2]]
+								}], 
+								PlotRange -> {{0, yd}, {0, xd}}
+							], {{0.5, 0.5}, {yd - 0.5, xd - 0.5}}, Appearance -> Graphics[{Red, Disk[]}, ImageSize -> 10]
+						]
+					}, {
+						LocatorPane[Dynamic[{{ymin, zmax}, {ymax, zmin}}],
+							Show[ArrayPlot[Reverse[dat[[All, x]]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r2, ImageSize -> size/r2], 
+								Graphics[{
+									Blue, Thick, Dynamic[Line[{{ymin, zmin}, {ymin, zmax}, {ymax, zmax}, {ymax, zmin}, {ymin, zmin}}]], 
+									Green, Line[{{y - 0.5, -10}, {y - 0.5, zd + 10}}], 
+									Red, Line[{{-10, z - 0.5}, {yd + 10, z - 0.5}}], 
+									Blue,  Dynamic[Circle[Mean[{{ymin, zmin}, {ymax, zmax}}], 2]]
+								}], 
+								PlotRange -> {{0, yd}, {0, zd}}
+							], {{0.5, 0.5}, {yd - 0.5, zd - 0.5}}, Appearance -> Graphics[{Blue, Disk[]}, ImageSize -> 10]
+						]
+						,
+						LocatorPane[Dynamic[{{xmin, zmax}, {xmax, zmin}}],
+							Show[ArrayPlot[Reverse /@ Reverse[dat[[All, All, y]]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r3, ImageSize -> size/r3], 
+								Graphics[{
+									Green, Thick, Dynamic[ Line[{{xmin, zmin}, {xmin, zmax}, {xmax, zmax}, {xmax, zmin}, {xmin, zmin}}]],
+									Blue, Line[{{x - 0.5, -10}, {x - 0.5, zd + 10}}], 
+									Red, Line[{{-10, z - 0.5}, {xd + 10, z - 0.5}}], 
+									Green, Dynamic[Circle[Mean[{{xmin, zmin}, {xmax, zmax}}], 2]]
+								}], 
+								PlotRange -> {{0, xd}, {0, zd}}
+						], {{0.5, 0.5}, {xd - 0.5, zd - 0.5}}, Appearance -> Graphics[{Green, Disk[]}, ImageSize -> 10]]
+					}
+				}, Spacings -> 0]
+					
+					,
+				{{z, Round[zd/2], "slice"}, 1, zd, 1},
+				{{x, Round[xd/2], "row"}, 1, xd, 1},
+				{{y, Round[yd/2], "column"}, 1, yd, 1},
+				{{xmin, init[[3]] - 0.5}, 1, xmax - 1, ControlType -> None},
+				{{xmax, init[[4]] - 0.5}, xmin + 1, xd, ControlType -> None},
+				{{ymin, init[[5]] - 0.5}, 1, ymax - 1, ControlType -> None},
+				{{ymax, init[[6]] - 0.5}, ymin + 1, yd, ControlType -> None},
+				{{zmin, init[[1]] - 0.5}, 1, zmax - 1, ControlType -> None},
+				{{zmax, init[[2]] - 0.5}, zmin + 1, zd, ControlType -> None},
+				SynchronousUpdating->True
 			
-			,
-        {{z, Round[zd/2], "slice"}, 1, zd, 1},
-        {{x, Round[xd/2], "row"}, 1, xd, 1},
-        {{y, Round[yd/2], "column"}, 1, yd, 1},
-        {{xmin, init[[3]] - 0.5}, 1, xmax - 1, ControlType -> None},
-        {{xmax, init[[4]] - 0.5}, xmin + 1, xd, ControlType -> None},
-        {{ymin, init[[5]] - 0.5}, 1, ymax - 1, ControlType -> None},
-        {{ymax, init[[6]] - 0.5}, ymin + 1, yd, ControlType -> None},
-        {{zmin, init[[1]] - 0.5}, 1, zmax - 1, ControlType -> None},
-        {{zmax, init[[2]] - 0.5}, zmin + 1, zd, ControlType -> None},
-        SynchronousUpdating->True
-        
-        ]
-       
-       }, WindowTitle -> "Crop the data and press done", 
-      WindowFloating -> True, Modal -> True
-      ];
+			]
+		}, WindowTitle -> "Crop the data and press done", WindowFloating -> True, Modal -> True
+	];
 
 	dataout =If[!(OptionValue[CropOutput] === "Clip"),
 	{a, b, c, d, e, f} = outp;
-	 ToPackedArray@N@If[dd == 3, 
+	ToPackedArray@N@If[dd == 3, 
 		data[[a ;; b, c ;; d, e ;; f]], 
 		data[[a ;; b, All, c ;; d, e ;; f]]]
 	];
@@ -1391,8 +1407,9 @@ SyntaxInformation[RMSNoZero] = {"ArgumentsPattern" -> {_}};
 
 RMSNoZero[vec_] := RMSNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
 
-RMSNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., RootMeanSquare[Pick[vec, Unitize[vec], 1]]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RMSNoZeroi = Compile[{{vec, _Real, 1}}, If[Total[vec] === 0., 0.,
+	Sqrt[Mean[Pick[vec, Unitize[vec], 1]^2]]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1403,8 +1420,10 @@ SyntaxInformation[MADNoZero] = {"ArgumentsPattern" -> {_}};
 
 MADNoZero[vec_] := MADNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
 
-MADNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., MedianDeviation[Pick[vec, Unitize[vec], 1]]],
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MADNoZeroi = Compile[{{vec, _Real, 1}}, Block[{vec2}, If[Total[vec] === 0.,	0.,
+	vec2 = Pick[vec, Unitize[vec], 1];
+	Median[Abs[vec2 - Median[vec2]]]
+]],	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
@@ -1869,9 +1888,9 @@ RotationMatrixToQuaternion[{
 	];
 	N@{a, b, c, d}
 ];
-   
+
 SyntaxInformation[RotationMatrixToQuaternionVector] = {"ArgumentsPattern" -> {_}}
-   
+
 RotationMatrixToQuaternionVector[r : {{_?NumericQ, _?NumericQ, _?NumericQ}, {_?NumericQ, _?NumericQ, _?NumericQ}, {_?NumericQ, _?NumericQ, _?NumericQ}}] := Rest[RotationMatrixToQuaternion[r]];
 
 

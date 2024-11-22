@@ -25,7 +25,7 @@ BeginPackage["QMRITools`SegmentationTools`", Join[{"Developer`"}, Complement[QMR
 
 
 GetNeuralNet::usage = 
-"GetNeuralNet[name] loads a pretrained neural net that come with the toolbox. Current named nets 
+"GetNeuralNet[name] loads a pre trained neural net that come with the toolbox. Current named nets 
 are \"LegSide\", \"LegSide\", \"SegThighMuscle\", \"SegLegMuscle\", and \"SegLegBones\". The loading is cashed within a session."
 
 
@@ -38,13 +38,13 @@ based on the network depth and the block type. The implemented block types are \
 
 MakeNode::usage = 
 "MakeNode[scale, conn, blockConfig] makes a node for a UNET. 
-The input scale defines the input and output scaling, is either an integer or a vector of lenth dim. 
+The input scale defines the input and output scaling, is either an integer or a vector of length dim. 
 The input conn defines the connections, is a list of two integer values defining the number of input and output ports.
 The blockConfig is defined as {{blockType, settings}, {features,..}, {act, dim}}."
 
 MakeClassifyNetwork::usage = 
-"MakeClassifyNetwork[classes] makes a classify network with three convolusion layers and 3 fully connected layers. 
-The input classes should be a list of strings. The imput image dimensions should not be smaller thand 64x64."
+"MakeClassifyNetwork[classes] makes a classify network with three convolution layers and 3 fully connected layers. 
+The input classes should be a list of strings. The input image dimensions should not be smaller than 64x64."
 
 MakeClassifyImage::usage =
 "MakeClassifyImage[data] makes a image of the input data. The data is automatically cropped to remove the background and normalized.
@@ -53,7 +53,7 @@ If the input data is 3D a list of images is returned."
 
 NetSummary::usage = 
 "NetSummary[net] gives a short summary of the convolution kernels and array elements in the network.
-NetSummary[net, what] does the same but what can be \"Full\" which also includes net and node images or \"Mem\" which only reporst the memory."
+NetSummary[net, what] does the same but what can be \"Full\" which also includes net and node images or \"Mem\" which only reports the memory."
 
 NetDimensions::usage = 
 "NetDimensions[net] extracts the input channels, output classes, the input patch dimension, and the number of input filters."
@@ -63,19 +63,19 @@ ChangeNetDimensions::usage =
 
 
 AddLossLayer::usage = 
-"AddLossLayer[net] adds three loss layers to a NetGraph, a DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MeanSqyaredLossLayer and a CrossEntropyLossLayer are added."
+"AddLossLayer[net] adds three loss layers to a NetGraph, a DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MeanSquaredLossLayer and a CrossEntropyLossLayer are added."
 
 DiceLossLayer::usage = 
 "DiceLossLayer[] represents a net layer that computes the Dice loss by comparing input class probability vectors with the target class vector.
-DiceLossLayer[n] does the same but n defines the power of the denomenator, with n=2 the squared dice score, is calculated."
+DiceLossLayer[n] does the same but n defines the power of the denominator, with n=2 the squared dice score, is calculated."
 
 JaccardLossLayer::usage =
 "JaccardLossLayer[] represents a net layer that computes the Jaccard loss by comparing input class probability vectors with the target class vector.
-JaccardLossLayer[n] does the same but n defines the power of the denomenator, with n=2 the squared jaccard score is calculated."
+JaccardLossLayer[n] does the same but n defines the power of the denominator, with n=2 the squared Jaccard score is calculated."
 
 TverskyLossLayer::usage =
 "TverskyLossLayer[] represents a net layer that computes the Tversky loss by comparing input class probability vectors with the target class vector.
-TverskyLossLayer[b] does the same but b defines the tversky beta factor. With beta = 0.5 its is the Dice coefficient. Here alpha + beta = 1."
+TverskyLossLayer[b] does the same but b defines the Tversky beta factor. With beta = 0.5 its is the Dice coefficient. Here alpha + beta = 1."
 
 FocalLossLayer::usage =
 "FocalLossLayer[] represents a net layer that computes the Focal loss by comparing input class probability vectors with the target class vector.
@@ -85,7 +85,7 @@ FocalLossLayer[g, a] does the same but uses as the balancing factor alpha."
 
 ClassEncoder::usage = 
 "ClassEncoder[label] encodes Integer label data of 0 to max value of label into a nClass + 1 vector of 1 and 0 as the last dimension.
-ClassEncoder[label, nClass] encodes Integer label data of 0 to nCalss into a nClass + 1 vector of 1 and 0 as the last dimension."
+ClassEncoder[label, nClass] encodes Integer label data of 0 to nClass into a nClass + 1 vector of 1 and 0 as the last dimension."
 
 ClassDecoder::usage = 
 "ClassDecoder[probability] decodes a probability vector of 1 and 0 into Integers of 0 to the value of the last dimension of probability minus one.
@@ -106,8 +106,8 @@ SurfaceDistance::usage =
 "SurfaceDistance[ref, pred] gives the mean surface distance of segmentations ref and pred for class equals 1 in voxels.
 SurfaceDistance[x, y, class] gives the mean surface distance of segmentations ref and pred for class in voxels.
 SurfaceDistance[x, y, {class, ..}] gives the mean surface distance of segmentations ref and pred for the list of gives classes in voxels.
-SurfaceDistance[x, y, class , vox] gives the mean surface distance of segmentations ref and pred for class in milimeter.
-SurfaceDistance[x, y, {class, ..}, vox] gives the mean surface distance of segmentations ref and pred for the list of gives classes in milimeters."
+SurfaceDistance[x, y, class , vox] gives the mean surface distance of segmentations ref and pred for class in millimeter.
+SurfaceDistance[x, y, {class, ..}, vox] gives the mean surface distance of segmentations ref and pred for the list of gives classes in millimeters."
 
 MakeDistanceMap::usage = 
 "MakeDistanceMap[mask] makes a distance map of the given mask in voxels. The distance map is negative inside the mask and positive outside the mask.
@@ -115,11 +115,11 @@ MakeDistanceMap[mask, vox] makes a distance map of the given mask in the same un
 
 
 SegmentData::usage = 
-"SegmentData[data, what] segements the data. The what specifies the segmentation to be done.
+"SegmentData[data, what] segments the data. The what specifies the segmentation to be done.
 It currently allows for \"LegBones\" for the bones or \"Legs\" for the muscles."
 
 ApplySegmentationNetwork::usage = 
-"ApplySegmentationNetwork[data, net] segements the data using the pretrained net."
+"ApplySegmentationNetwork[data, net] segments the data using the pre trained net."
 
 ClassifyData::usage = 
 "ClassifyData[data, method] classifies the input data using the given method. The data is converted to images using MakeClassifyImages.
@@ -138,10 +138,10 @@ If netCont is a initialized network or network file (wlnet) this will be used. I
 Possible loss functions are {\"SoftDice\", \"SquaredDiff\", \"Tversky\" , \"CrossEntropy\", \"Jaccard\"}."
 
 GetTrainData::usage =
-"GetTrainData[data, batchsize, patch] creates a training batch of size batchsize with patchsize patch. 
+"GetTrainData[data, batch size, patch] creates a training batch of size batch size with patch size patch. 
 The input data can be out of memory in the form of a list of \"*wxf\" files that contain the data, segmentation and voxel size or a list of \"*.nii\" files in the form
 {{\"data.nii\", \"segmentation.nii\"}..}. The input data can be in memory in a list in the form {{data, segmentation, vox}..}
-GetTrainData[data, batchsize, patch, nClass] If nClass is set to an value n > 0 the segmentations are decoded in n classes."
+GetTrainData[data, batch size, patch, nClass] If nClass is set to an value n > 0 the segmentations are decoded in n classes."
 
 PrepareTrainingData::usage = 
 "PrepareTrainingData[inFolder, outFolder] prepares the data in de inFolder for training a neural network for segmentation and outputs in outFolder.
@@ -149,23 +149,23 @@ PrepareTrainingData[{labFolder, datFolder}, outFolder] does the same but the lab
 
 
 CheckSegmentation::usage=
-"CheckSegmentation[seg] checks the segmentation for errors and returns a vector of two numbers, the first indicates if the segmentation has more than one region, the second indicates if it hase holes."
+"CheckSegmentation[seg] checks the segmentation for errors and returns a vector of two numbers, the first indicates if the segmentation has more than one region, the second indicates if it has holes."
 
 DataToPatches::usage =
 "DataToPatches[data, patchSize] creates the maximal number of patches with patchSize from data, where the patches have minimal overlap.
 DataToPatches[data, patchSize, n] gives n random patches from the maximal number of patches with patchSize from data, where the patches have minimal overlap."
 
 PatchesToData::usage = 
-"PatchesToData[patches, ran] creates a continous dataset from the patches. For each patch the range in the data nees to be specified in ran.
-The patches are have dimensions {x, y, z} each and ran is speciefied as {{xmin, xmax}, {ymin, ymax}, {zmin, zmax}}.
-PatchesToData[patches, ran, dim] creates a continous dataset from the patches with dimensions dim."
+"PatchesToData[patches, ran] creates a continuous dataset from the patches. For each patch the range in the data needs to be specified in ran.
+The patches are have dimensions {x, y, z} each and ran is specified as {{xmin, xmax}, {ymin, ymax}, {zmin, zmax}}.
+PatchesToData[patches, ran, dim] creates a continuous dataset from the patches with dimensions dim."
 
 
 AugmentTrainingData::usage = 
 "AugmentTrainingData[{data, segmentation}, vox] augments the data and segmentation in the same way.
-AugmentTrainingData[{data, segmentation}, vox, aug] by setting aug to True or False the autmentation can be turend on or off.
-The value aug can also be a list of boolean values contoling various augentation parameters {flip, rotate, translate, scale, noise, blur, brightness}.
-The defualt settings are {True, True, True, True, False, False, False}."
+AugmentTrainingData[{data, segmentation}, vox, aug] by setting aug to True or False the augmentation can be turned on or off.
+The value aug can also be a list of boolean values controlling various augmentation parameters {flip, rotate, translate, scale, noise, blur, brightness}.
+The default settings are {True, True, True, True, False, False, False}."
 
 AugmentImageData::usage = 
 "AugmentImageData[image, {rotate, flip}] augments the input image by rotating between -180 and 180 degrees and flipping. The inputs rotate and flip
@@ -174,30 +174,30 @@ AugmentImageData[{image, ..}, {rotate, flip}] same but for a list of images."
 
 
 MakeChannelImage::usage = 
-"MakeChannelImage[data] makes a crossectional image of the channels data of a training dataset generated by GetTrainData.
+"MakeChannelImage[data] makes a cross-sectional image of the channels data of a training dataset generated by GetTrainData.
 MakeChannelImage[data, vox] same but with the aspect ratio determined by vox."
 
 MakeClassImage::usage = 
-"MakeClassImage[label ] makes a crossectional image of the classes label of a training dataset generated by GetTrainData
+"MakeClassImage[label ] makes a cross-sectional image of the classes label of a training dataset generated by GetTrainData
 MakeChannelImage[label, {b, n}] same but with explicit definition of background value b and number of classes n. 
 MakeClassImage[data, vox] same but with the aspect ratio determined by vox.
 MakeChannelImage[label, {b, n}, vox] same with explicit definition and aspect ratio definition."
 
 MakeChannelClassImage::usage = 
-"MakeChannelClassImage[data, label] makes a crossectional image of the channels data overlaid with a crossectional image of the classes label of a training dataset generated
+"MakeChannelClassImage[data, label] makes a cross-sectional image of the channels data overlaid with a cross-sectional image of the classes label of a training dataset generated
 MakeChannelClassImage[data, label, {off,max}] same but with explicit definition of background value b and number of classes n. 
 MakeChannelClassImage[data, label, vox] same but with the aspect ratio determined by vox.
 MakeChannelClassImage[data, label, {off,max}, vox] same with explicit definition and aspect ratio definition."
 
 MakeChannelClassGrid::usage =
-"MakeChannelClassGrid[data, label] makes a 3 x 3 grid of crossectional images of the channels data overlaid with a crossectional image of the classes label of a training dataset generated
+"MakeChannelClassGrid[data, label] makes a 3 x 3 grid of cross-sectional images of the channels data overlaid with a cross-sectional image of the classes label of a training dataset generated
 MakeChannelClassGrid[data, label, n] makes a n x n.
 MakeChannelClassGrid[data, label, {n, m}] makes a n x m."
 
 
-SplitDataForSegementation::usage = 
-"SplitDataForSegementation[data] is a specific function for leg data to prepare data for segmentation. It detects the side and location and will split and label the data accordingly.
-SplitDataForSegementation[data ,seg] does the same but is rather used when preparing training data. Here the seg is split in exaclty the same way as the data."
+SplitDataForSegmentation::usage = 
+"SplitDataForSegmentation[data] is a specific function for leg data to prepare data for segmentation. It detects the side and location and will split and label the data accordingly.
+SplitDataForSegmentation[data ,seg] does the same but is rather used when preparing training data. Here the seg is split in exactly the same way as the data."
 
 
 MuscleLabelToName::usage =
@@ -216,8 +216,8 @@ SegmentDataGUI::usage =
 It prompts the user to enter the paths for the input and output files, and allows them to select the segmentation type." 
 
 
-AnalyseNetworkFeatures::usage = 
-"AnalyseNetworkFeatures[net, data] gives overview of the information density of the network features by analysing them with SVD."
+AnalyzeNetworkFeatures::usage = 
+"AnalyzeNetworkFeatures[net, data] gives overview of the information density of the network features by analyzing them with SVD."
 
 
 (* ::Subsection::Closed:: *)
@@ -228,17 +228,17 @@ BlockType::usage =
 "BlockType is an option for MakeUnet. It specifies the type of block used in the network. It can be \"Conv\", \"UNet\", \"ResNet\", \"DenseNet\", \"Inception\", or \"U2Net\"."
 
 DropoutRate::usage = 
-"DropoutRate is an option for MakeUnet. It specifies how musch dropout is used after each block. It is a value between 0 and 1, default is .2."
+"DropoutRate is an option for MakeUnet. It specifies how much dropout is used after each block. It is a value between 0 and 1, default is .2."
 
 RescaleMethod::usage =
 "RescaleMethod is an option for MakeUnet. It specifies how the network rescales. It can be \"Conv\" or \"Pool\"."
 
 NetworkDepth::usage = 
-"NetworkDepth is an option for MakeUnet. It specifief how deep the UNET will be."
+"NetworkDepth is an option for MakeUnet. It specifies how deep the UNET will be."
 
 DownsampleSchedule::usage = 
 "DownsampleSchedule is an option for MakeUnet. It defines how the data is downsampled for each of the deeper layers of the Unet. 
-By default is is a factor two for each layer. A custum schedual for a 5 layer 3D Unet could be {{2,2,2},{1,2,2},{2,2,2},{1,2,2}, 1}.
+By default is is a factor two for each layer. A custom schedule for a 5 layer 3D Unet could be {{2,2,2},{1,2,2},{2,2,2},{1,2,2}, 1}.
 The deepest layer is always downsampled by 1 and therefore not needed to be specified."
 
 SettingSchedule::usage =
@@ -248,7 +248,7 @@ If a list of settings is given the settings can be different per layer. The foll
 \"Inception\" -> {inception width, block repetitions}, {4,2}, \"U2Net\"-> {Unet depth, downscale}, {5, True}."
 
 FeatureSchedule::usage = 
-"FeatureSchedule is an option for MakeUnet. It defines how the number of features is upsampled for each of the deeper layers of the Unet.
+"FeatureSchedule is an option for MakeUnet. It defines how the number of features is up-sampled for each of the deeper layers of the Unet.
 By default it increases the number of features by a factor 2 each layer, i.e. {1, 2, 4, 8, 16}."
 
 NetworkArchitecture::usage = 
@@ -257,7 +257,7 @@ For \"UNet+\" or \"UNet++\" it can also be {arch, i} where i specifies how many 
 
 
 ActivationType::usage = 
-"ActivationType is an option for MakeUnet. It sepecifies which activation layer is used in the network. It can be \"LeakyRELU\" or any type allowed 
+"ActivationType is an option for MakeUnet. It specifies which activation layer is used in the network. It can be \"LeakyRELU\" or any type allowed 
 by a \"name\" definition in ElementwiseLayer."
 
 LoadTrainingData::usage =
@@ -274,13 +274,13 @@ PatchesPerSet::usage =
 "PatchesPerSet is an option for GetTrainData. Defines how many random patches per dataset are created within the batch."
 
 AugmentData::usage = 
-"AugmentData is an option for GetTrainData and TrainSegmentationNetwork. If set True the trainingdata is augmented."
+"AugmentData is an option for GetTrainData and TrainSegmentationNetwork. If set True the training data is augmented."
 
 PatchSize::usage =
 "PatchSize is an option for TrainSegmentationNetwork. Defines the patch size used in the network training."
 
 RoundLength::usage = 
-"RoundLength is an option for TrainSegmentationNetwork. Defines how many batches will be seen during eacht training round."
+"RoundLength is an option for TrainSegmentationNetwork. Defines how many batches will be seen during each training round."
 
 
 MaxPatchSize::usage = 
@@ -295,7 +295,7 @@ PatchNumber::usage =
 The minimal number of patches in each direction is calculated, and then for each dimension the given number is added."
 
 PatchPadding::usage = 
-"PatchPadding is an option for DataToPatches. Can be an integer value >= 0. It padds the chosen patch size with the given number."
+"PatchPadding is an option for DataToPatches. Can be an integer value >= 0. It pads the chosen patch size with the given number."
 
 LabelTag::usage = "LabelTag is an option for PrepareTrainingData. It defines the tag used in the filenames of the label data."
 
@@ -325,14 +325,14 @@ TrainSegmentationNetwork::cont = "Could not find a previous network in the speci
 
 TrainSegmentationNetwork::inp = "The string input given is not a network file or a directory."
 
-TrainSegmentationNetwork::itt = "Not enough itterations specified for training. Remaining itterations are less than 5."
+TrainSegmentationNetwork::itt = "Not enough iterations specified for training. Remaining iterations are less than 5."
 
 
 GetTrainData::aug = "The augmentation input is not a number or a boolean value. Using False by default."
 
 
-MakeUnet::scale = "The scaling input is not valid. It shoul be Automatic. It can also be a integer or a list of integers that will be applied to the Layers. 
-It can also be a vectro of integers per layer where the length of the vector should be equal to the depth of the network.";
+MakeUnet::scale = "The scaling input is not valid. It should be Automatic. It can also be a integer or a list of integers that will be applied to the Layers. 
+It can also be a vector of integers per layer where the length of the vector should be equal to the depth of the network.";
 
 MakeUnet::sett = "The setting input is not valid. It can be a number or a list of numbers that will be applied to the Layers.";
 
@@ -444,7 +444,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		True, Return[Message[MakeUnet::scale]; $Failed]
 	];
 	boolSc = (Times @@ If[IntegerQ[#], ConstantArray[#, ndim], #])=!=1&/@scaling;
-	If[mon, Echo[scaling, "Network scaling shedual: "]];
+	If[mon, Echo[scaling, "Network scaling schedule: "]];
 
 	(*define the setting, can be Automatic, number or {set}, or list of settings*)
 	setting = Which[
@@ -459,7 +459,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 			True, Return[Message[MakeUnet::sett]; $Failed]
 		]
 	];
-	If[mon, Echo[setting, "Network setting shedual: "]];
+	If[mon, Echo[setting, "Network setting schedule: "]];
 
 	(*define the number of features per layer*)
 	feature = Round[Which[
@@ -477,7 +477,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 	]];
 	If[VectorQ[feature], feature = Round[Transpose[{feature, feature/2}]]];
 	fStart = Last@Flatten@{First@feature};
-	If[mon, Echo[feature, "Network feature shedual: "]];
+	If[mon, Echo[feature, "Network feature schedule: "]];
 
 
 	(*make the network*)
@@ -496,7 +496,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					(*config*)
 					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},	DropoutRate -> drop, RescaleMethod -> metSc
 				], {i, 1, depth}],
-				(*deconding layers*)
+				(*decoding layers*)
 				Table[If[$debugUnet, Print[nam["dec_", i]]]; nam["dec_", i] -> MakeNode[
 					(*scale up -> always, scale down -> never*)
 					{scaling[[i]], 1}, 
@@ -552,7 +552,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 				Flatten@Table[{
 					(*connect the backbone, the downscaling*)
 					If[j === 1 && i=!= depth, NetPort[nam[i, j], If[boolSc[[i]], "Down", "Skip"]] -> nam[i + 1, j], Nothing],
-					(*connect the nodes with upcaling*)
+					(*connect the nodes with up scaling*)
 					If[1 < i <= depth, If[i=== depth, nam[i, j], NetPort[nam[i, j], If[j==depthj-i, "Up", "Skip"]]] -> NetPort[nam[i-1, j+1], "Scale"],  Nothing],
 					(*connect the node skip connection, for UNet++ its a dense connection.*)
 					Switch[architecture,
@@ -574,7 +574,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		]
 	];
 	(*Monitor network properties*)
-	If[mon, Echo[NetSummary[net], "Network discription: "]];
+	If[mon, Echo[NetSummary[net], "Network description: "]];
 
 	(*return network*)
 	net
@@ -591,6 +591,7 @@ UNetStart[nChan_, feat_, dimIn_, actType_] := NetGraph[NetChain[Conv[feat , {Len
 (* ::Subsubsection::Closed:: *)
 (*ClassMap*)
 
+
 UNetMap[dim_, nClass_]:=UNetMap[dim, nClass, 1]
 
 UNetMap[dim_, nClass_, n_] := Block[{map},
@@ -606,6 +607,7 @@ UNetMap[dim_, nClass_, n_] := Block[{map},
 
 (* ::Subsubsection::Closed:: *)
 (*MakeNode*)
+
 
 Options[MakeNode] = {
 	DropoutRate -> 0,
@@ -628,7 +630,7 @@ MakeNode[{scUp_ ,scDown_}, {skIn_, skOut_}, blockConfig_, OptionsPattern[]] := B
 	(*define the block*)
 	block = "block" -> ConvBlock @@ blockConfig;
 	
-	(*define the upscaling*)
+	(*define the up scaling*)
 	scaleUp = scUp /. False -> 1;
 	scaleUp = If[IntegerQ[scaleUp], ConstantArray[scaleUp, dim], scaleUp];
 	boolScUp = Times @@ scaleUp =!= 1;
@@ -704,7 +706,7 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 	(*get the block settings if not defined*)
 	{blockType, blockSet} = If[Length[block] === 2, block, {block, block /. netDefaults}];
 
-	(*swtich between the different block types*)
+	(*switch between the different block types*)
 	Switch[blockType,
 		"Conv", 
 		dep = blockSet;
@@ -804,7 +806,7 @@ Conv[featOut_, {dim_, kern_}, act_] := Conv[featOut, {dim, kern, 1}, act]
 Conv[featOut_, {dim_, kern_, dil_}] := Conv[featOut, {dim, kern, dil}, "None"]
 
 Conv[featOut_, {dim_, kern_, dil_}, act_] := {
-	(*The most basic conv block CON>BN>ACT used in each of the advanced conv blcoks*)
+	(*The most basic conv block CON>BN>ACT used in each of the advanced conv blocks*)
 	ConvolutionLayer[featOut, ConstantArray[kern, dim], 
 		"PaddingSize" -> (Ceiling[kern/2] - 1) dil, 
 		"Stride" -> 1, 
@@ -969,7 +971,7 @@ SyntaxInformation[DiceLossLayer] = {"ArgumentsPattern" -> {_.}};
 DiceLossLayer[] := DiceLossLayer[2]
 
 DiceLossLayer[n_] := Block[{smooth},
-	(*10.48550/arXiv.1911.02855 and 10.48550/arXiv.1606.04797 for scquared dice loss look at v-net*)
+	(*10.48550/arXiv.1911.02855 and 10.48550/arXiv.1606.04797 for squared dice loss look at v-net*)
 	smooth =1;
 	NetFlatten@NetGraph[<|
 		(*flatten input and target; function layer allows to switch to L2 norm if #^2*)
@@ -1034,12 +1036,12 @@ TverskyLossLayer[beta_?NumberQ] := Block[{smooth, alpha},
 		"falsePos" -> {ThreadingLayer[(1 - #1) #2 &], AggregationLayer[Total, ;; -2]},
 		"falseNeg" -> {ThreadingLayer[#1 (1 - #2) &], AggregationLayer[Total, ;; -2]},
 		(*the loss function TP / (TP + a FP + b FN)*)
-		"Twersky" -> {ThreadingLayer[1. - (#1 + smooth) / (#1 + alpha #2 + beta #3 + smooth) &], AggregationLayer[Mean, 1]}
+		"Tversky" -> {ThreadingLayer[1. - (#1 + smooth) / (#1 + alpha #2 + beta #3 + smooth) &], AggregationLayer[Mean, 1]}
 	|>, {
 		{NetPort["Target"], NetPort["Input"]} -> "truePos",
 		{NetPort["Target"], NetPort["Input"]} -> "falsePos",
 		{NetPort["Target"], NetPort["Input"]} -> "falseNeg",
-		{"truePos", "falsePos", "falseNeg"} -> "Twersky" -> NetPort["Loss"]
+		{"truePos", "falsePos", "falseNeg"} -> "Tversky" -> NetPort["Loss"]
 	}, "Loss" -> "Real"]
 ]
 
@@ -1058,16 +1060,9 @@ FocalLossLayer[g_, a_] := NetFlatten[
 	(*https://arxiv.org/abs/1708.02002v2*)
 	NetGraph[{
 		"flatPr" -> {ThreadingLayer[#1  #2 &], AggregationLayer[Total, {-1}], FlattenLayer[]},
-		"focal" -> {ThreadingLayer[-a  Log[#1 + 10^-20](*#2*) (1 - #1)^g &], AggregationLayer[Mean, 1], FunctionLayer[4 # &]}
-		(*
-		"alph"->{AggregationLayer[Total,1;;-2],FunctionLayer[1. / ((# + 1) Total[1. / (# + 1)])&]},
-		"trans"->TransposeLayer[4->1],
-		"alphGt"->{DotLayer[],FlattenLayer[]},
-		*)
+		"focal" -> {ThreadingLayer[-a  Log[#1 + 10^-20](1 - #1)^g &], AggregationLayer[Mean, 1], FunctionLayer[4 # &]}
 		}, {
 			{NetPort["Input"], NetPort["Target"]} -> "flatPr" -> "focal" -> NetPort["Loss"]
-			(*,NetPort["Target"]->{"alph","trans"}->"alphGt",
-			{"flatPr","alphGt"}->"focal"*)
 	}, "Loss" -> "Real"]
 ]
 
@@ -1078,7 +1073,7 @@ FocalLossLayer[g_, a_] := NetFlatten[
 
 
 (* ::Subsubsection::Closed:: *)
-(*ClassEndocer*)
+(*ClassEncoder*)
 
 
 SyntaxInformation[ClassEncoder] = {"ArgumentsPattern" -> {_, _.}};
@@ -1111,7 +1106,7 @@ RuntimeAttributes -> {Listable}]
 (*Data Patching*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PatchesToData*)
 
 
@@ -1356,10 +1351,10 @@ FindLegPos[data_, dev_]:=Block[{
 					Table[{a, b, PosFunc[a, b, len, ran, datF]}, {a, 0, len}, {b, a+1, len}]
 				, 1],Last]][[1;;2]];
 			pos = Which[
-				kneeStart == 0. && kneeEnd == len,"Knee",
-				kneeStart > 0 && kneeEnd >= len,"Lower",
-				kneeStart == 0. && kneeEnd =!= len,"Upper",
-				kneeStart =!= 0. && kneeEnd =!= len,"Both"
+				kneeStart == 0. && kneeEnd == len, "Knee",
+				kneeStart > 0 && kneeEnd >= len, "Lower",
+				kneeStart == 0. && kneeEnd =!= len, "Upper",
+				kneeStart =!= 0. && kneeEnd =!= len, "Both"
 			];
 			{pos, {kneeStart + 1, kneeEnd}}
 		]
@@ -1399,10 +1394,10 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		(*split the data in upper and lower legs and left and right*)
 		If[mon, Echo[Dimensions@data, "Analyzing the data with dimensions:"]];
 		time = First@AbsoluteTiming[
-			{{patch, pts, dim}, loc, set} = SplitDataForSegementation[data, Monitor->mon]
+			{{patch, pts, dim}, loc, set} = SplitDataForSegmentation[data, Monitor -> mon, TargetDevice -> dev]
 		];
 		If[mon, Echo[Round[time, .1], "Total time for analysis [s]: "]];
-		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimenisons:"]];
+		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"]];
 
 		(*get the network name and data type*)
 		{net, type} = Switch[what,
@@ -1421,7 +1416,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 
 		(*Merge all segmentations for all expected labels*)
 		all = Select[DeleteDuplicates[Sort[Flatten[GetSegmentationLabels/@segs]]], IntegerQ];
-		If[mon, Echo[all, "Putting togeteher the segmenations with lables"]];
+		If[mon, Echo[all, "Putting together the segmentations with labels"]];
 		
 		(*after this only one cluster per label remains*)
 		time = First@AbsoluteTiming[segs = PatchesToData[segs, pts, dim, all]];
@@ -1441,7 +1436,7 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 	{what, side} = loc;
 	labIn = GetSegmentationLabels[seg];
 
-	(*for now overwrite the labIn with custom values since some muscles are not segemnted *)
+	(*for now overwrite the labIn with custom values since some muscles are not segmented *)
 	file = GetAssetLocation@Switch[type,
 		"Muscle", Switch[what, 
 			"Upper", "MusclesLegUpperLabels",
@@ -1458,20 +1453,21 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 (*SplitDataForSegmentation*)
 
 
-Options[SplitDataForSegementation] = {
-	Monitor -> False
+Options[SplitDataForSegmentation] = {
+	Monitor -> False,
+	TargetDevice -> "GPU"
 };
 
-SyntaxInformation[SplitDataForSegementation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+SyntaxInformation[SplitDataForSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SplitDataForSegementation[data_?ArrayQ, opt:OptionsPattern[]]:=Block[{
-		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, mon
+SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]]:=Block[{
+		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, mon, dev
 	},
 	dim = Dimensions[data];
-	mon = OptionValue[Monitor];
+	{mon, dev} = OptionValue[{Monitor, TargetDevice}];
 
 	(*find which side using NN*)
-	time= First@AbsoluteTiming[whatSide = ClassifyData[data, "LegSide"]];
+	time= First@AbsoluteTiming[whatSide = ClassifyData[data, "LegSide", TargetDevice -> dev]];
 	If[mon, Echo[whatSide, "Data contains sides: "]];
 	If[mon, Echo[Round[time, .1], "Time for side estimation [s]:"]];
 
@@ -1485,7 +1481,7 @@ SplitDataForSegementation[data_?ArrayQ, opt:OptionsPattern[]]:=Block[{
 	(*loop over data to find upper or lower*)
 	time= First@AbsoluteTiming[dat = Flatten[(
 		{dat, side} = #;
-		{whatPos, pos} = ClassifyData[dat, "LegPosition"];
+		{whatPos, pos} = ClassifyData[dat, "LegPosition", TargetDevice -> dev];
 
 		Switch[whatPos,
 			(*if upper and lower split upper and lower*)
@@ -1506,8 +1502,8 @@ SplitDataForSegementation[data_?ArrayQ, opt:OptionsPattern[]]:=Block[{
 ]
 
 
-SplitDataForSegementation[data_?ArrayQ, seg_?ArrayQ, opt:OptionsPattern[]]:=Block[{dat,pts,dim,loc,set, segp},
-	{{dat, pts, dim}, loc, set} = SplitDataForSegementation[data, opt];
+SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, opt:OptionsPattern[]]:=Block[{dat,pts,dim,loc,set, segp},
+	{{dat, pts, dim}, loc, set} = SplitDataForSegmentation[data, opt];
 	segp = GetPatch[seg, pts];
 	{{dat, pts, dim}, {segp, pts, dim}, loc, set}
 ]
@@ -1526,7 +1522,6 @@ CropPart[data_]:=Block[{dat,up,sid,upst,upend,sidst,sidend,crp},
 
 (* ::Subsubsection::Closed:: *)
 (*ApplySegmentationNetwork*)
-
 
 
 Options[ApplySegmentationNetwork]={TargetDevice->"GPU", DataPadding->0, MaxPatchSize->Automatic, Monitor->False}
@@ -1554,7 +1549,7 @@ ApplySegmentationNetwork[inp_?(!(TensorQ[#, NumericQ] || StringQ[#])&), rest___]
 	rule = {"_" <> inLab -> "_" <> outLab, datFol -> outFol};
 	files = FileNames["*" <> inLab <> ".nii.gz", datFol][[i ;;]];
 
-	(*loop over actual apply segemnt function for all files*)
+	(*loop over actual apply segment function for all files*)
 	Table[EchoTiming[
 		{dat, vox} = ImportNii[f];
 		seg = ApplySegmentationNetwork[dat, rest];
@@ -1574,7 +1569,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]]:=Block[{
 	},
 	
 	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
-	If[lim === Automatic, lim = If[dev==="GPU", 224, 224]];
+	If[lim === Automatic, lim = If[dev==="GPU", 200, 224]];
 	prec = If[dev==="GPU", "Mixed", "Real32"];
 
 	data = Which[
@@ -1608,7 +1603,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]]:=Block[{
 		(*perform the segmentation*)
 		If[node==="",
 			time = First@AbsoluteTiming[
-				(*actualy perform the segmentation with the NN*)
+				(*actually perform the segmentation with the NN*)
 				seg = ClassDecoder[net[{NormalizeData[#, NormalizeMethod -> "Uniform"]}, TargetDevice->dev, WorkingPrecision ->prec]]&/@patch;
 				(*reverse all the padding and cropping and merged the patches if needed*)
 				seg = ReverseCrop[ArrayPad[
@@ -1664,10 +1659,11 @@ FindPatchDim[net_, dims_, lim_] := Block[{
 
 	(*needed scaling*)
 	sc = inp/out;
-	dimM = sc  Ceiling[dim/sc];
+	(*dimM = sc  Ceiling[dim/sc];*)
+	dimM = sc ({Floor[#[[1]]], Ceiling[#[[2]]], Ceiling[#[[3]]]} & [dim/sc]);
 
-	(*if memeory limit is given find patch that fits*)
-	If[!(lim === 1000 || lim ===Automatic),
+	(*if memory limit is given find patch that fits*)
+	If[!(lim === 1000 || lim === Automatic),
 		If[CubeRoot[N[Times @@ dimM]] < lim, 
 			dimN = dimM, 
 			u = 1;
@@ -1681,7 +1677,7 @@ FindPatchDim[net_, dims_, lim_] := Block[{
 	];
 
 	(*output the patch dim*)
-	Max /@ Thread[{dimN, inp}]
+	{Min@#[[1]], Max@#[[2]], Max@#[[3]]} & [Thread[{dimN, inp}]]
 ]
 
 
@@ -1712,6 +1708,7 @@ Options[TrainSegmentationNetwork] = {
 	NetworkDepth -> 5,
 	
 	AugmentData -> True,
+	PadData-> False,
 
 	LossFunction -> All,
 	DropoutRate -> 0.2,
@@ -1728,7 +1725,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPatter
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
 		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, ittString,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
-		monitorFunction, netMon, netOut, trained, l2reg, nval,
+		monitorFunction, netMon, netOut, trained, l2reg, pad,
 		validation, files, loss, rep, learningRate
 	},
 
@@ -1737,8 +1734,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*getting all the options*)
 	netOpts = Join[FilterRules[{opts}, Options@MakeUnet], FilterRules[Options@TrainSegmentationNetwork, Options@MakeUnet]];
 
-	{batch, roundLength, rounds, augment, patches, loss, rep, learningRate, l2reg} = OptionValue[
-		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PatchesPerSet, 
+	{batch, roundLength, rounds, augment, pad, patches, loss, rep, learningRate, l2reg} = OptionValue[
+		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PadData, PatchesPerSet, 
 			LossFunction, MonitorInterval, LearningRate, L2Regularization}];
 	
 	(*import all the train data*)
@@ -1830,7 +1827,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		(*make and export test image*)
 		im = MakeChannelClassGrid[testData, {testSeg, {0, nClass-1}}, 3];
 		Export[outName[ittString[ittTrain] <> ".png"], im , "ColorMapLength" -> 256];
-		(*export the network and delete the one from the last itteration*)
+		(*export the network and delete the one from the last iteration*)
 		Export[outName[ittString[ittTrain] <> ".wlnet"], netMon];
 		Quiet@DeleteFile[outName[ittString[ittTrain - 1] <> ".wlnet"]];
 	)&;
@@ -1861,8 +1858,10 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*train the network*)
 	trained = NetTrain[
-		netIn, 
-		{GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment, PatchesPerSet -> patches] &, "RoundLength" -> roundLength}, 
+		netIn, {
+			GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment, PatchesPerSet -> patches, PadData -> Round[pad]] &, 
+			"RoundLength" -> roundLength
+		}, 
 		All, 
 		
 		ValidationSet -> validation,
@@ -2022,7 +2021,8 @@ AugmentImageData[im_, {rot_, flip_}]:=Block[{rt, fl, tr},
 
 Options[GetTrainData] = {
 	PatchesPerSet -> 1, 
-	AugmentData -> True
+	AugmentData -> True,
+	PadData-> False
 };
 
 SyntaxInformation[GetTrainData] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
@@ -2030,13 +2030,13 @@ SyntaxInformation[GetTrainData] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPa
 GetTrainData[datas_, nBatch_, patch_, opts:OptionsPattern[]]:=GetTrainData[datas, nBatch, patch, False, opts]
 
 GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
-		itt, i, datO, segO, dat, seg, vox, dim, augI, aug, nSet
+		itt, datO, segO, dat, seg, vox, augI, aug, nSet, padd
 	},
 
 	itt = 0;
 	datO = segO = {};
 
-	{augI, nSet} = OptionValue[{AugmentData, PatchesPerSet}];
+	{augI, nSet, padd} = OptionValue[{AugmentData, PatchesPerSet, PadData}];
 	aug = If[BooleanQ[augI], augI, True];
 
 	(*get the number of sets*)
@@ -2070,8 +2070,26 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 
 	datO = datO[[;; nBatch]];
 	segO = If[IntegerQ[nClass], ClassEncoder[segO[[;; nBatch]], nClass], segO[[;; nBatch]] + 1];
-	Thread[Transpose[{datO}] -> segO]
+
+	If[IntegerQ[padd], {datO, segO} = AddPadding[padd, datO, segO]];
+
+	Thread[Transpose[{ToPackedArray@N@datO}] -> ToPackedArray@Round@segO]
 ];
+
+
+AddPadding[p_, dat_, seg_]:=Block[{datp, segp, padd},
+	Transpose@MapThread[(
+		datp = #1;
+		segp = #2;
+		If[RandomChoice[{0.3, 0.7}->{True, False}], padd = RandomInteger[{-p, p}];
+			Which[
+				padd < 0, datp[[padd ;;]] = 0. datp[[padd ;;]]; segp[[padd ;;]] = 0. segp[[padd ;;]];,
+				padd > 0, datp[[;; padd]] = 0. datp[[;; padd]]; segp[[;; padd]] = 0. segp[[;; padd]];
+			]
+		];
+		{datp, segp}
+	)& ,{dat,seg}]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2090,18 +2108,18 @@ PatchTrainingData[{dat_, seg_}, patch_, n_]:=Block[{pts,datP,segP},
 (*PrepareTrainingData*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PrepareTrainingData*)
 
 
 Options[PrepareTrainingData] = {
-  LabelTag -> "label",
-  DataTag -> "data",
-  InputLabels -> Automatic,
-  OutputLabels -> Automatic,
-  CleanUpSegmentations -> True,
-  TestRun -> False
-  }
+	LabelTag -> "label",
+	DataTag -> "data",
+	InputLabels -> Automatic,
+	OutputLabels -> Automatic,
+	CleanUpSegmentations -> True,
+	TestRun -> False
+}
 
 SyntaxInformation[PrepareTrainingData] = {"ArgumentsPattern" -> {_, _,OptionsPattern[]}};
 
@@ -2183,7 +2201,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*SplitSegmentations*)
 
 
@@ -2210,7 +2228,7 @@ CheckSegmentation[seg_, out_?StringQ] := Block[{arrDep, segs, lab, err},
 CheckSegmentation[seg_, i_?IntegerQ] := Unitize[Max[MorphologicalComponents[Image3D[NumericArray[Abs[i - First@AutoCropData@#], "Integer8"]], CornerNeighbors -> False]] - 1 & /@ seg]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PrepTrainData*)
 
 
@@ -2236,6 +2254,10 @@ PrepTrainData[dat_, seg_, {labi_?VectorQ, labo_?VectorQ}] := Block[{cr},
 (*Make evaluation images*)
 
 
+(* ::Subsubsection::Closed:: *)
+(*MakeChannelClassGrid*)
+
+
 SyntaxInformation[MakeChannelClassGrid] = {"ArgumentsPattern"->{_, _, _.}};
 
 MakeChannelClassGrid[dat_, lab_] := MakeChannelClassGrid[dat, lab, 3]
@@ -2255,6 +2277,8 @@ MakeChannelClassGrid[dat_, lab_, ni_] := Block[{len, n1, n2},
 		ImagePad[MakeChannelClassImage[dat[[{1}, #]], labp[[#]], ran], 4, White
 	] & /@ (Round[Range[1., len, (len - 1)/(n1 n2 - 1)]]), n1]
 ]
+
+
 
 (* ::Subsubsection::Closed:: *)
 (*MakeChannelClassImage*)
@@ -2282,7 +2306,7 @@ MakeChannelClassImage[data_, label_, {off_, max_}, vox_]:=Block[{i1, i2},
 SyntaxInformation[MakeClassImage]={"ArgumentsPattern"->{_, _., _.}};
 
 MakeClassImage[label_]:=MakeClassImage[label, Round@MinMax[label], {1,1,1}]
- 
+
 MakeClassImage[label_, {off_?NumberQ, max_?NumberQ}]:=MakeClassImage[label, {off, max}, {1,1,1}]
 
 MakeClassImage[label_, vox_?VectorQ]:=MakeClassImage[label, Round@MinMax[label], vox]
@@ -2294,7 +2318,7 @@ MakeClassImage[labelI_,{offI_?NumberQ, maxI_?NumberQ}, vox_?VectorQ]:=Block[{max
 	*)
 	{label, off, max} = Round[{labelI, offI, maxI}];
 	max = Max[{Max[label], max}];
- 	cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Join[Select[Range[off + 1, max], EvenQ], Select[Range[off + 1, max], OddQ]]],Transparent];
+	cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Join[Select[Range[off + 1, max], EvenQ], Select[Range[off + 1, max], OddQ]]],Transparent];
 	imlab = Round@Clip[If[ArrayDepth[label] === 3, label[[Round[Length@label/2]]], label] - off + 1, {1, max + 1}, {1, 1}];
 	rat = vox[[{2,3}]]/Min[vox[[{2,3}]]];
 	ImageResize[Image[cols[[#]]&/@imlab], Round@Reverse[rat Dimensions[imlab]], Resampling->"Nearest"]
@@ -2480,14 +2504,14 @@ SurfaceDistance[ref_, pred_, class_?IntegerQ, vox : {_?NumberQ, _?NumberQ, _?Num
 
 
 SufDistFunc[dist_, met_] := Switch[met,
-			"Mean", Mean@dist,
-			"Median", Median@dist,
-			"RootMeanSquare"|"RMS", Sqrt[Mean[dist^2]],
-			"Max"|"Hausdorff"|"HD", Max@dist,
-			"Hausdorff95"|"HD95", Quantile[dist,.95],
-			"Std"|"StandardDeviation", StandardDeviation@dist,
-			_ , Message[SurfaceDistance::met, met]; $Failed
-		]
+	"Mean", Mean@dist,
+	"Median", Median@dist,
+	"RootMeanSquare"|"RMS", Sqrt[Mean[dist^2]],
+	"Max"|"Hausdorff"|"HD", Max@dist,
+	"Hausdorff95"|"HD95", Quantile[dist,.95],
+	"Std"|"StandardDeviation", StandardDeviation@dist,
+	_ , Message[SurfaceDistance::met, met]; $Failed
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2626,12 +2650,12 @@ NetSummary[net_, rep_?StringQ] := Block[{
 
 
 (* ::Subsection::Closed:: *)
-(*AnalyseNetworkFeatures*)
+(*AnalyzeNetworkFeatures*)
 
 
-AnalyseNetworkFeatures[net_, data_] := AnalyseNetworkFeatures[net, data, ""]
+AnalyzeNetworkFeatures[net_, data_] := AnalyzeNetworkFeatures[net, data, ""]
 
-AnalyseNetworkFeatures[net_, data_, met_] := Block[{
+AnalyzeNetworkFeatures[net_, data_, met_] := Block[{
 		dim, dataP, netP, nodes, vals, cutoff, table, plot, feat, nfeat, ttt, n, col
 	},
 
@@ -2890,3 +2914,4 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 End[]
 
 EndPackage[]
+
