@@ -244,7 +244,7 @@ The deepest layer is always downsampled by 1 and therefore not needed to be spec
 SettingSchedule::usage =
 "SettingSchedule is an option for MakeUnet. It defines the settings for the Unet blocks. If one setting is given it applied to all layers.
 If a list of settings is given the settings can be different per layer. The following settings are the default settings. 
-\"Unet\": convblock repetitions, 2, \"ResNet\" -> convblock repetitions, 2, \"DenseNet\" -> {dense depth, block repetitions}, {4,2},
+\"Unet\": convolution block repetitions, 2, \"ResNet\" -> convolution block repetitions, 2, \"DenseNet\" -> {dense depth, block repetitions}, {4,2},
 \"Inception\" -> {inception width, block repetitions}, {4,2}, \"U2Net\"-> {Unet depth, downscale}, {5, True}."
 
 FeatureSchedule::usage = 
@@ -297,17 +297,23 @@ The minimal number of patches in each direction is calculated, and then for each
 PatchPadding::usage = 
 "PatchPadding is an option for DataToPatches. Can be an integer value >= 0. It pads the chosen patch size with the given number."
 
-LabelTag::usage = "LabelTag is an option for PrepareTrainingData. It defines the tag used in the filenames of the label data."
+LabelTag::usage = 
+"LabelTag is an option for PrepareTrainingData. It defines the tag used in the filenames of the label data."
 
-DataTag::usage = "DataTag is an option for PrepareTrainingData. It defines the tag used in the filenames of the data."
+DataTag::usage = 
+"DataTag is an option for PrepareTrainingData. It defines the tag used in the filenames of the data."
 
-InputLabels::usage = "InputLabels is an option for PrepareTrainingData. Can be set to a list of integers corresponding to the labels to be used from the given segmentation."
+InputLabels::usage = 
+"InputLabels is an option for PrepareTrainingData. Can be set to a list of integers corresponding to the labels to be used from the given segmentation."
 
-OutputLabels::usage = "OutputLabels is an option for PrepareTrainingData. Can be set to a list of integers. The used label number will be replaced by these numbers."
+OutputLabels::usage = 
+"OutputLabels is an option for PrepareTrainingData. Can be set to a list of integers. The used label number will be replaced by these numbers."
 
-TestRun::usage = "TestRun is an option for PrepareTrainingData. If set to True the data is not saved only analyzed."
+TestRun::usage = 
+"TestRun is an option for PrepareTrainingData. If set to True the data is not saved only analyzed."
 
-CleanUpSegmentations::usage = "CleanUpSegmentations is an option for PrepareTrainingData. If set to True the segmentations are cleaned up by removing holes reducing to one volume and smoothing."
+CleanUpSegmentations::usage = 
+"CleanUpSegmentations is an option for PrepareTrainingData. If set to True the segmentations are cleaned up by removing holes reducing to one volume and smoothing."
 
 DistanceRange::usage =
 "DistanceRange is an option for MakeDistanceMap. It defines the range of the distance map outside the segmentation in voxels.
@@ -351,6 +357,9 @@ SurfaceDistance::met = "Method `1` not recognized";
 
 
 Begin["`Private`"] 
+
+
+debugUnet[x___] := If[$debugUnet, Print[x]];
 
 
 (* ::Subsection::Closed:: *)
@@ -398,7 +407,7 @@ Options[MakeUnet] = {
 	ActivationType -> "GELU",
 	RescaleMethod -> "Conv",
 	NetworkDepth -> 5,
-	
+
 	DownsampleSchedule -> Automatic,
 	SettingSchedule -> Automatic,
 	FeatureSchedule -> 32,
@@ -423,7 +432,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 
 	(*check the input*)
 	{architecture, mapCon} = If[StringQ[architecture], {architecture, Automatic}, If[Length[architecture]===2, architecture, Return[Message[MakeUnet::arch]; $Failed]]];
-	
+
 	If[!MemberQ[{"UNet", "UNet+", "UNet++"}, architecture], Return[Message[MakeUnet::arch]; $Failed]];
 	If[!MemberQ[{"Conv", "UNet", "ResNet", "DenseNet", "Inception", "U2Net"}, blockType], Return[Message[MakeUnet::block]; $Failed]];
 	(*is the network 2D or 3D*)
@@ -488,7 +497,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 			(*define the blocks*)
 			Sort@Join[
 				(*encoding layers*)
-				Table[If[$debugUnet, Print[nam["enc_", i]]]; nam["enc_", i] -> MakeNode[
+				Table[debugUnet[nam["enc_", i]]; nam["enc_", i] -> MakeNode[
 					(*scale up -> never, scale down*)
 					{1, If[i==depth, 1, scaling[[i]]]}, 
 					(*skip in -> only input from above, skip out -> always for enc*)
@@ -497,7 +506,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},	DropoutRate -> drop, RescaleMethod -> metSc
 				], {i, 1, depth}],
 				(*decoding layers*)
-				Table[If[$debugUnet, Print[nam["dec_", i]]]; nam["dec_", i] -> MakeNode[
+				Table[debugUnet[nam["dec_", i]]; nam["dec_", i] -> MakeNode[
 					(*scale up -> always, scale down -> never*)
 					{scaling[[i]], 1}, 
 					(*skip in -> accepts one skip, skip out -> never for dec*)
@@ -523,8 +532,8 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 				(*attach the start and map layers*)
 				{"start" -> "enc_1", "dec_1" -> "map"}
 			];
-			If[$debugUnet, Print["The node connection list"]; Print[cons]]; cons, 
-			
+			debugUnet["The node connection list ", cons]; cons, 
+
 			(*network settings and options*)
 			"Input" -> Join[{nChan}, dimIn]
 		];
@@ -536,7 +545,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		net = NetGraph[
 			Join[
 				(*Make all the nodes*)
-				Flatten@Table[If[$debugUnet, Print[nam[i, j]]];	nam[i, j] -> MakeNode[
+				Flatten@Table[debugUnet[nam[i, j]];nam[i, j] -> MakeNode[
 					(*upscale for all nodes accept backbone -1, downscale only for backbone*)
 					{If[j > 1, scaling[[i]], 1], If[j =!= 1 || i == depth, 1, scaling[[i]]]}, 
 					(*skip in for all accept backbone, for UNET++ name the skips, skinp out for all except right most upscale*)
@@ -567,8 +576,8 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 				(*attach the start and map layers*)
 				{"start" -> "node_1_1", Table[NetPort["node_1_"<>ToString[n], If[n=!=depth, "Skip", "Up"]], {n, depthj - mapCon, depth}] -> "map"}
 			];
-			If[$debugUnet, Print["The node connection list"]; Print[cons]]; cons, 
-			
+			debugUnet["The node connection list: ", cons]; cons, 
+
 			(*network settings and options*)
 			"Input" -> Join[{nChan}, dimIn]		
 		]
@@ -625,29 +634,29 @@ MakeNode[{scUp_ ,scDown_}, {skIn_, skOut_}, blockConfig_, OptionsPattern[]] := B
 	chan = First@Flatten@{blockConfig[[2]]};
 	dim = blockConfig[[3, 2]];
 
-	If[$debugUnet, Print[Column@{{scUp ,scDown}, {skIn, skOut}, {drop, metSc}, blockConfig}]];
+	debugUnet[Column@{{scUp ,scDown}, {skIn, skOut}, {drop, metSc}, blockConfig}];
 
 	(*define the block*)
 	block = "block" -> ConvBlock @@ blockConfig;
-	
+
 	(*define the up scaling*)
 	scaleUp = scUp /. False -> 1;
 	scaleUp = If[IntegerQ[scaleUp], ConstantArray[scaleUp, dim], scaleUp];
 	boolScUp = Times @@ scaleUp =!= 1;
 	scaleUp = If[boolScUp, "scaleU" -> ConvScale[{"Decode", metSc}, scaleUp, chan], Nothing];
 	scale = If[boolScUp, NetPort["Scale"] -> "scaleU", NetPort["Scale"]];
-	
+
 	(*define the downscaling*)
 	scaleDown = scDown /. False -> 1;
 	scaleDown = If[IntegerQ[scaleDown], ConstantArray[scaleDown, dim], scaleDown];
 	boolScDown = Times @@ scaleDown =!= 1;
 	scaleDown = If[boolScDown, "scaleD" -> ConvScale[{"Encode", metSc}, scaleDown, chan], Nothing];
-	
+
 	(*define the dropout*)
 	boolDr = 0 < drop;
 	drop = If[boolDr, "drop" -> DropoutLayer[drop], Nothing];
 	con = If[boolDr, "drop", "block"];
-	
+
 	(*define the skip connections*)
 	boolCat = skIn > 0 (*&& boolScUp*);
 	cat = If[boolCat, "cat" -> CatenateLayer[], Nothing];
@@ -664,7 +673,7 @@ MakeNode[{scUp_ ,scDown_}, {skIn_, skOut_}, blockConfig_, OptionsPattern[]] := B
 			skip
 	}],1];
 
-	If[$debugUnet, Print[node]];
+	debugUnet[node];
 	node
 ]
 
@@ -757,7 +766,7 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 		sclf = If[! #1, 1, 2] &;
 		NetGraph[
 			Join[
-				Table[If[$debugUnet, Print[nam["U2enc_", i]]];nam["U2enc_", i] -> MakeNode[
+				Table[debugUnet[nam["U2enc_", i]]; nam["U2enc_", i] -> MakeNode[
 					(*scale up -> never, scale down*)
 					{1, If[i==dep, 1, sclf[type]]}, 
 					(*skip in -> only input from above, skip out -> always for enc*)
@@ -768,7 +777,7 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 					{"Encode", If[i == dep, 1, sclf[type]]}, 
 					{"Conv", featInt, {act, 3, dilf[type, i, 1]}}*)
 				], {i, 1, dep}],
-				Table[If[$debugUnet, Print[nam["U2dec_", i]]];nam["U2dec_", i] -> MakeNode[
+				Table[debugUnet[nam["U2dec_", i]]; nam["U2dec_", i] -> MakeNode[
 					(*scale up -> always, scale down -> never*)
 					{sclf[type], 1}, 
 					(*skip in -> accepts one skip, skip out -> never for dec*)
@@ -789,7 +798,7 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 				, {i, 1, dep - 1}],
 				{"start" -> "U2enc_1", {"start", "U2dec_1"} -> "add"}
 			];
-			If[$debugUnet, Print[cons]]; cons
+			debugUnet[cons]; cons
 		]
 	]
 ]
@@ -843,29 +852,29 @@ NetDimensions[net_]:=NetDimensions[net, ""]
 NetDimensions[net_, port_]:=Block[{block, neti},Switch[port,
 	"Input", 
 	Information[net,"InputPorts"]["Input"],
-	
+
 	"Output", 
 	Information[net,"OutputPorts"]["Output"],
-	
+
 	"FirstEncodingIn",
 	Last@Values@Information[
 		NetTake[net, {block = First[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"| ("node_" ~~ __ ~~ "_1")] &]], block}], "InputPorts"],
-	
+
 	"FirstEncodingOut", 
 	Values@Information[
 		NetTake[net, {block = First[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"| ("node_" ~~ __ ~~ "_1")] &]], block}], "OutputPorts"],
-	
+
 	"LastEncodingIn", 
 	Last@Values@Information[
 		NetTake[net, {block = Last[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"| ("node_" ~~ __ ~~ "_1")] &]], block}], "InputPorts"],
-	
+
 	"LastEncodingOut", 
 	Last@Values@Information[
 		NetTake[net, {block = Last[Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"| ("node_" ~~ __ ~~ "_1")] &]], block}], "OutputPorts"],
-	
+
 	"MinEncodingOut",
 	Min /@ Transpose[Flatten[Values[Information[#, "OutputPorts"]] & /@ Information[net, "LayersList"], 1]],
-	
+
 	"U2Encoding",
 	block = Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"|("node_" ~~ __ ~~ "_1")] &];
 	If[block==={}, Return[$Failed],
@@ -912,7 +921,7 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 		netOut = NetReplacePart[netOut, "Input" -> Round[Prepend[dimOut, nChanIn]]],
 		dimOut = dimIn
 	];
-	
+
 	(*Change input Channels if needed*)
 	If[nChanOut =!= None && nChanOut=!=nChanIn,		
 		netOut = NetReplacePart[netOut, {
@@ -920,7 +929,7 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 			"start" -> UNetStart[Round@nChanOut, First@NetDimensions[netOut, "FirstEncodingIn"], Round@dimOut, NetFlatten[NetTake[netOut, "start"]][[-1]]]
 		}]
 	];
-	
+
 	(*Change output Classes if needed*)
 	If[nClassOut =!= None && nClassOut=!=nClassIn,
 		netOut = NetReplacePart[netOut, {
@@ -928,7 +937,7 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 			"Output" -> Round@Append[dimOut, nClassOut]
 		}]
 	];
-	
+
 	netOut
 ]
 
@@ -1247,10 +1256,10 @@ SyntaxInformation[MakeClassifyNetwork] = {"ArgumentsPattern" -> {_, OptionsPatte
 
 MakeClassifyNetwork[classes_, OptionsPattern[]]:=Block[{enc, dec, net,imSize},
 	imSize = OptionValue[ImageSize];
-	
+
 	enc = NetEncoder[{"Class", classes, "IndicatorVector"}];
 	dec = NetDecoder[{"Class", classes}];
-	
+
 	net = NetChain[{
 		ConvolutionLayer[16, 7, "Stride"->1, PaddingSize->3], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[4,4],
 		ConvolutionLayer[32, 5, "Stride"->1, PaddingSize->2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[4,4],
@@ -1417,7 +1426,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		(*Merge all segmentations for all expected labels*)
 		all = Select[DeleteDuplicates[Sort[Flatten[GetSegmentationLabels/@segs]]], IntegerQ];
 		If[mon, Echo[all, "Putting together the segmentations with labels"]];
-		
+
 		(*after this only one cluster per label remains*)
 		time = First@AbsoluteTiming[segs = PatchesToData[segs, pts, dim, all]];
 		If[mon, Echo[Round[time, .1], "Total time for final evaluation [s]: "]];
@@ -1567,7 +1576,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]]:=Block[{
 		dev, pad , lim, data, crp, net, dim, ptch, time, nodes,
 		patch, pts, seg, mon, dimi, dimc, lab, nClass, prec
 	},
-	
+
 	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
 	If[lim === Automatic, lim = If[dev==="GPU", 200, 224]];
 	prec = If[dev==="GPU", "Mixed", "Real32"];
@@ -1654,7 +1663,7 @@ FindPatchDim[net_, dims_, lim_] := Block[{
 	inp = Rest[NetDimensions[net, "Input"]];
 	class = NetDimensions[net, "Output"][[-1]];
 
-	(*check smalest net dimensions output*)
+	(*check smallest net dimensions output*)
 	out = Rest[NetDimensions[net, "MinEncodingOut"]];
 
 	(*needed scaling*)
@@ -1706,7 +1715,7 @@ Options[TrainSegmentationNetwork] = {
 	SettingSchedule -> Automatic,
 	FeatureSchedule -> 32,
 	NetworkDepth -> 5,
-	
+
 	AugmentData -> True,
 	PadData-> False,
 
@@ -1737,7 +1746,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	{batch, roundLength, rounds, augment, pad, patches, loss, rep, learningRate, l2reg} = OptionValue[
 		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PadData, PatchesPerSet, 
 			LossFunction, MonitorInterval, LearningRate, L2Regularization}];
-	
+
 	(*import all the train data*)
 	files = FileNames["*.wxf", inFol];
 
@@ -1806,7 +1815,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*if the network already exists make the dimensions, classes en channels match the input*)
 	netIn = NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
 	Echo[NetSummary[netIn,"Mem"], "Network summary: "];
-	
+
 	(*define the network for training*)
 	netIn = AddLossLayer@netIn;
 	Echo[netIn, "Network is ready"];
@@ -1863,7 +1872,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 			"RoundLength" -> roundLength
 		}, 
 		All, 
-		
+
 		ValidationSet -> validation,
 		LossFunction -> loss,
 		TargetDevice -> "GPU", WorkingPrecision -> "Mixed",
@@ -1915,10 +1924,10 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 
 	datT = ToPackedArray[N[dat]];
 	segT = ToPackedArray[N[seg]];
-	
+
 	(*Augmentation of mirroring*)
 	If[flip && Coin[], {datT, segT} = ReverseC[{datT, segT}]];
-	
+
 	(*Augmentation of orientation and scale*)
 	If[rot || trans || scale,
 		w = Join[
@@ -1935,7 +1944,7 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 			},
 			{0., 0., 0.}(*no skewing*)
 		];
-		
+
 		datT = DataTransformation[datT, vox, w, InterpolationOrder -> 0, PadOutputDimensions -> True];
 		segT = DataTransformation[segT, vox, w, InterpolationOrder -> 0, PadOutputDimensions -> True];
 
@@ -1943,7 +1952,7 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 		datT = ApplyCrop[datT, cr];
 		segT = ApplyCrop[segT, cr];
 	];
-	
+
 	(*Augmentations of sharpness intensity and noise*)
 	If[(blur && RandomChoice[{0.3, 0.7} -> {True, False}]), 
 		datT = GaussianFilter[datT, RandomReal[{0.1, 1.5}]]]; (*blur some datasets*)
@@ -1951,7 +1960,7 @@ AugmentTrainingData[{dat_, seg_}, vox_, {flip_, rot_, trans_, scale_, noise_, bl
 		datT = AddSaltAndRice[datT, Mean[Flatten[datT]]/RandomReal[{10, 150}], RandomChoice[{0.8, 0.2} -> {0, 1}] RandomReal[{0, 0.5}]/100]];
 	If[bright, 
 		datT = RandomChoice[{RandomReal[{1, 1.5}], 1/RandomReal[{1, 1.5}]}] datT]; (*brighten or darken*)
-	
+
 	{ToPackedArray[N[datT]], ToPackedArray[Round[segT]]}
 ]
 
@@ -2045,7 +2054,7 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 
 	Do[
 		dat = RandomChoice[datas];
-		
+
 		If[StringQ[dat], 
 			(*data is wxf file format*)
 			{dat, seg, vox} = Import[dat];
@@ -2165,11 +2174,11 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 
 					(*Prepare and analyse the training data and segmentation*)
 					{dat, seg} = PrepTrainData[dat, seg, {inLab, outLab}];
-					
+
 					(*output label check*)
 					err = CheckSegmentation[seg];
 					out = {i++, name, err};
-					
+
 					(*Cleanup if needed*)
 					If[clean && (!test), seg = SmoothSegmentation[seg, MaskComponents -> 1, MaskClosing -> True, SmoothIterations -> 1]];
 
@@ -2364,7 +2373,7 @@ ImportITKLabels[file_] := Block[{lines, muscleNames, muscleLabels},
 		StringSplit[(Select[StringTrim[#], (# =!= "\t" && # =!= "") &] & /@ 
 		StringSplit[lines, "\""])[[All, -1]]];
 	muscleLabels = ToExpression[StringSplit[#, " "][[1]]] & /@ lines;
-	
+
 	(*output*)
 	{muscleNames, muscleLabels}
 ]
@@ -2642,7 +2651,7 @@ NetSummary[net_, rep_?StringQ] := Block[{
 
 		"Mem",
 		Grid[{{st["Weight mem: "], quantStr[elemSize]}, {st["Net mem: "], quantStr[netSize]}}, Alignment -> Left],
-		
+
 		_, 
 		table
 	]
@@ -2683,7 +2692,7 @@ AnalyzeNetworkFeatures[net_, data_, met_] := Block[{
 		nfeat = Length@feat;
 		vals = Diagonal[SingularValueDecomposition[feat, UpTo[nfeat]][[2]]];
 		vals = 100 Rescale[Accumulate[vals]];
-	
+
 		(*find cuoff index and percentage*)
 		cutoff = First[Position[UnitStep[vals - 99], 1]] - 1;
 
@@ -2711,14 +2720,14 @@ AnalyzeNetworkFeatures[net_, data_, met_] := Block[{
 			(*define colors for plotting*)
 			cols = Table[Directive[{(*GrayLevel[.5 + i/100]*)clist[[i]], Dashed, Thick}], {i, Length@nodes}];
 			(*cols[[1]] = Directive[{Red, Dashing[None], Thick}];*)
-			
+
 			ln = Range@Length@nods;
 
 			(*define the plots within a manipulate that allows to select the nodes of the network*)
 			Manipulate[
 				pcol = cols;
 				pcol[[k]] = Directive[{(*Black*)clist[[k]], Dashing[None], Thickness[.01]}];
-				
+
 				Column[{
 				Grid[Transpose@tab, Frame -> All, Background -> {{k -> Gray}, None, Thread[Thread[{1, ln}] -> (Lighter/@clist)]}, Spacings -> {1.2, 1.2}],
 				Show[
@@ -2770,7 +2779,7 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, leng, plots},
 			If[logp, ListLogPlot, ListLinePlot][If[key === {}, {}, plotf], Joined -> True, 
 				PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{ymin,ymax}},
 				If[grid, GridLines -> {len, Automatic}, GridLines -> {len, None}], PlotHighlighting -> "YSlice"],
-			
+
 			(*the controls*)
 			Row[{
 				InputField[Dynamic[folder], String, Enabled -> True, FieldSize -> 50], 
@@ -2799,7 +2808,7 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, leng, plots},
 			Control[{{key, {}, ""}, key1, ControlType -> TogglerBar, 
 			Appearance -> "Vertical" -> {2, Automatic}, BaseStyle -> Medium}],
 			Delimiter,
-			
+
 			Row[{
 				Control[{{xmin, 1,"X min"},1, Dynamic[xmax-1], 1}], "   ", 
 				Control[{{xmax,Length[pdat],"X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
@@ -2830,15 +2839,15 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, leng, plots},
 LoadLog[fol_, max_]:=Block[{files, keys, log, leng},
 	(* Get a list of log files in the specified folder *)
 	files = Sort[FileNames["*.json", fol]];
-	
+
 	(* Read the log files and extract the relevant information *)
 	log = Select[(Select[Import[#, "Lines"], StringContainsQ[#, "ProgressFraction"] &] & /@ files), Length[#] > max &];
 	leng = Accumulate[Length /@ log];
-	
+
 	(* Convert the log data into a dataset *)
 	log = "[\n" <> StringDrop[StringRiffle[If[StringTake[#, -1] === "}", # <> ",", #] & /@ Flatten[log, 1], "\n"], -1] <> "\n]";
 	log = Dataset[Association /@ Import[Export[FileNameJoin[{$TemporaryDirectory, "log.json"}], log, "text"]]];
-	
+
 	(* Get the unique keys (metrics) in the log data *)
 	keys = Sort@DeleteDuplicates[Flatten[Normal@log[All, Keys]]];
 
@@ -2854,7 +2863,7 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 	NotebookClose[segwindow];
 
 	option = "Legs";
-	
+
 	diag = DialogNotebook[
 		status = TextCell@"";
 		{
@@ -2914,4 +2923,3 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 End[]
 
 EndPackage[]
-

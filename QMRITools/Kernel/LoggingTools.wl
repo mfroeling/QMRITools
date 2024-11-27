@@ -75,7 +75,10 @@ CheckFile::usage =
 (* ::Subsection:: *)
 (*Options*)
 
+
 SaveLogFile::usage = "SaveLogFile is an option for AddToLog. If True the log is saved to the log file each time something is added."
+
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -125,6 +128,7 @@ ResetLog[] := QMRITools`$Log = {
 (* ::Subsubsection::Closed:: *)
 (*SetLogFile*)
 
+
 SetLogFile[] := QMRITools`$LogFile = "";
 
 SetLogFile[file_?StringQ] := QMRITools`$LogFile = file;
@@ -167,11 +171,11 @@ ExportLog[file_?StringQ, tree_?BooleanQ] := (Export[file, QMRITools`$Log, "Text"
 	If[tree, Export[FileNameJoin[{DirectoryName[file],"FileTree.txt"}], DirectoryTree[DirectoryName[file]]];])
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*ImportLog*)
 
 
-SyntaxInformation[ImportLog] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[ImportLog] = {"ArgumentsPattern" -> {_.}};
 
 ImportLog[]:=ImportLog[QMRITools`$LogFile]
 

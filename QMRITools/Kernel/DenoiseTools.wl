@@ -278,7 +278,7 @@ NoiseAppCN = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3},
 		K = (1 - top/div);
 		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
 	]];
-    
+	
 NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, {sig, _Real, 3}},
 	Block[{top, div, K, deb},
 		top = (4 sig^2 (secmod - sig^2));
@@ -605,11 +605,11 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 		"Automatic", 0
 	];
 	
-    (*Denoise the spectra data*)
-    {spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, 
-    	PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel], MonitorCalc->False, Method -> "Patch"];
-    	
-    ToPackedArray@N@RotateDimensionsLeft[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I]
+	(*Denoise the spectra data*)
+	{spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, 
+		PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel], MonitorCalc->False, Method -> "Patch"];
+		
+	ToPackedArray@N@RotateDimensionsLeft[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I]
 ]
 
 

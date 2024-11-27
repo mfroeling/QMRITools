@@ -176,10 +176,10 @@ Options[T1rhoFit] = {Method -> "Linear"};
 SyntaxInformation[T1rhoFit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
 T1rhoFit[datan_, times_, OptionsPattern[]] := 
- Switch[OptionValue[Method],
-  "Linear", LinFit[datan, times],
-  _, LogFit[datan, times]
-  ]
+	Switch[OptionValue[Method],
+	"Linear", LinFit[datan, times],
+	_, LogFit[datan, times]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -193,9 +193,9 @@ SyntaxInformation[T2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 T2Fit[datan_, times_?MatrixQ,opts:OptionsPattern[]]:=Transpose[MapThread[T2Fit[#1,#2,opts]&,{datan,times}]];
 
 T2Fit[datan_, times_?VectorQ, OptionsPattern[]] := Switch[OptionValue[Method],
-  "Linear", LinFit[N[datan], times],
-  _, LogFit[N[datan], times]
-  ]
+	"Linear", LinFit[N[datan], times],
+	_, LogFit[N[datan], times]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -332,103 +332,99 @@ Options[TriExponentialT2Fit]={OutputCalibration->False}
 
 SyntaxInformation[TriExponentialT2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
-TriExponentialT2Fit[datan_, times_,OptionsPattern[]] := 
- Block[{result, fdat, offset, T1r, off, t1rho, t, ad, datal,
-   model, cs, cf, T2s, t2f, Af, Am, t2m, x, Aff, Amm, T2mf, s0, ffr, 
-   mfr, t2, model2,cal,
-   maskT2, dataT2, fmask, fitData,
-   Afi, Ami, csi, T2mi, T2fi, T2si, sci
-   },
-  
-  ad = ArrayDepth[datan];
-  
-  Switch[ad,
-   
-   3,(*single slice*)
-   (*make mask an normalize data to first echo*)
-   maskT2 = Mask[Mean[datan], {2}, MaskSmoothing ->True, MaskComponents -> 2, MaskClosing -> 1];
-   dataT2 = MaskData[datan, maskT2];
-   dataT2 = dataT2/MeanNoZero[Flatten[dataT2]];
-   (*create mask selecting fat*)
-   fmask = Mask[dataT2[[-1]], {0.4}];
-   fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
-   (*data for calibration fit*)
-   fitData = Transpose[{times, Mean[Flatten[GetMaskData[#, fmask]]] & /@ dataT2}];
-   datal = Transpose[dataT2, {3, 1, 2}],
-   
-   4,(*mulit slice*)
-   (*make mask an normalize data to first echo*)
-   maskT2 = Mask[Mean[Transpose[datan]], {2}, MaskSmoothing->True, MaskComponents -> 2, MaskClosing -> 1]; 
-   dataT2 = NormalizeData[MaskData[datan, maskT2]];
-   (*create mask selecting fat*)
-   fmask = Mask[dataT2[[All, -1]], {0.4}];
-   fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
-   (*data for calibration fit*)
-   fitData = Transpose[{times, Mean[Flatten[GetMaskData[#, fmask]]] & /@ Transpose[dataT2]}];
-   datal = Transpose[dataT2, {1, 4, 2, 3}]
-   ];
- 
-  model = Af *(cs*Exp[-x/T2s] + (1 - cs)*Exp[-x/t2f]) + Am * Exp[-x/t2m];
-  
-  (*perform callibration fit*)
-  {Afi, Ami, csi, T2mi, T2fi, T2si} = {Af, Am, cs, t2m, t2f, T2s} /. 
-   FindFit[fitData, {model, 
-   	{0.1 <= cs <= 0.9, 30 < t2m < 50, t2m < t2f, t2f < T2s, 0 <= Am, Am < Af}},
-   	{{Af, 1 fitData[[1, 2]]}, {Am, 0.25 fitData[[1, 2]]},{cs, 0.33}, {t2m, 35}, {t2f, 81}, {T2s, 250}}, 
-   	x, Method -> "NMinimize"];
-  (*normalize signal fractions*)  	
-  sci = Afi + Ami;
-  {Afi, Ami} = {Afi, Ami}/sci;
-  cal = Round[{sci, {100 Ami, T2mi}, {100 csi, T2si, T2fi}}, .1];
-  
-  (*Print the callibration results*)
-  Print[Row[{
-    Column[Row /@ {
-       {"signal: ", Round[sci, .1]},
-       {"f mus: ", Round[100 Ami, .1] , " - t2 mus: ", 
-        Round[T2mi, .1] },
-       {""},
-       {"f fat-slow: ", Round[100 csi, .1]}, 
-       {" t2 slow: ", Round[T2si, .1], " - t2 fast: ", Round[T2fi, .1]}
-       }, Alignment -> Center], 
-    Show[
-    	ListLinePlot[fitData, PlotStyle -> Directive[Thick, Red], PlotRange -> {{0, 150}, {0, sci}}, ImageSize -> 150], 
-    	Plot[sci model /. Thread[{Af, Am, cs, t2m, t2f, T2s} -> {Afi, Ami, csi, T2mi, T2fi, T2si}], {x, 0, 200}, PlotStyle -> Directive[{Black, Dashed}]]
-    	]
-    	}, "   "]];
-  
-  (*define the fat values in the model*)
-  model2 = Af *(csi*Exp[-x/T2si] + (1 - csi)*Exp[-x/T2fi]) + Am * Exp[-x/t2m];
-  DistributeDefinitions[model2];
-  
-  (*perform the per voxel fit*)
-  result = ParallelMap[(
-      If[N@Total[#] === 0.,
-       {0., 0., 0., 0.},
-       
-       (*fit the muscle t2*)
-       fdat = Transpose[{times, #}];
-       {Aff, Amm, T2mf} = {Af, Am, t2m} /. Quiet[FindFit[fdat, model2, {{Af, 0.125 fdat[[1, 2]]}, {Am, 1.125 fdat[[1, 2]]}, {t2m, 35}}, x]];
-       
-       s0 = Aff + Amm;
-       {Aff, Amm} = {Aff, Amm}/s0;
-       {s0, Aff, Amm, T2mf}
-       
-       ]) &, datal, {ad - 1}];
-  
-  (*generate output*)
-  {s0, ffr, mfr, t2} = Switch[ad, 
-  	3, Transpose[result, {2, 3, 1}], 
-  	4, Transpose[result, {2, 3, 4, 1}]];
-  	
-  t2 = Clip[t2, {0, 500}, {0, 500}];
-  s0 = Clip[s0, {Min[datan], 1.5 Max[datan]}, {0, 0}];
-  mfr = Clip[mfr, {0, 1}, {0, 1}];
-  ffr = Clip[ffr, {0, 1}, {0, 1}];
-  
-  (*in needed also output the calibration values*)
-  If[OptionValue[OutputCalibration],{N@{s0, ffr, mfr, t2},cal},N@{s0, ffr, mfr, t2}]
-  ]
+TriExponentialT2Fit[datan_, times_,OptionsPattern[]] := Block[{
+		result, fdat, offset, T1r, off, t1rho, t, ad, datal, model, cs, cf, 
+		T2s, t2f, Af, Am, t2m, x, Aff, Amm, T2mf, s0, ffr, mfr, t2, model2,cal,
+		maskT2, dataT2, fmask, fitData, Afi, Ami, csi, T2mi, T2fi, T2si, sci
+	},
+
+	ad = ArrayDepth[datan];
+
+	Switch[ad,
+		3,(*single slice*)
+		(*make mask an normalize data to first echo*)
+		maskT2 = Mask[Mean[datan], {2}, MaskSmoothing ->True, MaskComponents -> 2, MaskClosing -> 1];
+		dataT2 = MaskData[datan, maskT2];
+		dataT2 = dataT2/MeanNoZero[Flatten[dataT2]];
+		(*create mask selecting fat*)
+		fmask = Mask[dataT2[[-1]], {0.4}];
+		fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
+		(*data for calibration fit*)
+		fitData = Transpose[{times, Mean[Flatten[GetMaskData[#, fmask]]] & /@ dataT2}];
+		datal = Transpose[dataT2, {3, 1, 2}],
+		4,(*mulit slice*)
+		(*make mask an normalize data to first echo*)
+		maskT2 = Mask[Mean[Transpose[datan]], {2}, MaskSmoothing->True, MaskComponents -> 2, MaskClosing -> 1]; 
+		dataT2 = NormalizeData[MaskData[datan, maskT2]];
+		(*create mask selecting fat*)
+		fmask = Mask[dataT2[[All, -1]], {0.4}];
+		fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
+		(*data for calibration fit*)
+		fitData = Transpose[{times, Mean[Flatten[GetMaskData[#, fmask]]] & /@ Transpose[dataT2]}];
+		datal = Transpose[dataT2, {1, 4, 2, 3}]
+	];
+
+	model = Af *(cs*Exp[-x/T2s] + (1 - cs)*Exp[-x/t2f]) + Am * Exp[-x/t2m];
+
+	(*perform callibration fit*)
+	{Afi, Ami, csi, T2mi, T2fi, T2si} = {Af, Am, cs, t2m, t2f, T2s} /. 
+	FindFit[fitData, {model, 
+		{0.1 <= cs <= 0.9, 30 < t2m < 50, t2m < t2f, t2f < T2s, 0 <= Am, Am < Af}},
+		{{Af, 1 fitData[[1, 2]]}, {Am, 0.25 fitData[[1, 2]]},{cs, 0.33}, {t2m, 35}, {t2f, 81}, {T2s, 250}}, 
+		x, Method -> "NMinimize"];
+	(*normalize signal fractions*)  	
+	sci = Afi + Ami;
+	{Afi, Ami} = {Afi, Ami}/sci;
+	cal = Round[{sci, {100 Ami, T2mi}, {100 csi, T2si, T2fi}}, .1];
+
+	(*Print the callibration results*)
+	Print[Row[{
+		Column[Row /@ {
+			{"signal: ", Round[sci, .1]},
+			{"f mus: ", Round[100 Ami, .1] , " - t2 mus: ", 
+			Round[T2mi, .1] },
+			{""},
+			{"f fat-slow: ", Round[100 csi, .1]}, 
+			{" t2 slow: ", Round[T2si, .1], " - t2 fast: ", Round[T2fi, .1]}
+			}, Alignment -> Center], 
+		Show[
+			ListLinePlot[fitData, PlotStyle -> Directive[Thick, Red], PlotRange -> {{0, 150}, {0, sci}}, ImageSize -> 150], 
+			Plot[sci model /. Thread[{Af, Am, cs, t2m, t2f, T2s} -> {Afi, Ami, csi, T2mi, T2fi, T2si}], {x, 0, 200}, PlotStyle -> Directive[{Black, Dashed}]]
+			]
+	}, "   "]];
+
+	(*define the fat values in the model*)
+	model2 = Af *(csi*Exp[-x/T2si] + (1 - csi)*Exp[-x/T2fi]) + Am * Exp[-x/t2m];
+	DistributeDefinitions[model2];
+
+	(*perform the per voxel fit*)
+	result = ParallelMap[(
+		If[N@Total[#] === 0.,
+		{0., 0., 0., 0.},
+		
+		(*fit the muscle t2*)
+		fdat = Transpose[{times, #}];
+		{Aff, Amm, T2mf} = {Af, Am, t2m} /. Quiet[FindFit[fdat, model2, {{Af, 0.125 fdat[[1, 2]]}, {Am, 1.125 fdat[[1, 2]]}, {t2m, 35}}, x]];
+		
+		s0 = Aff + Amm;
+		{Aff, Amm} = {Aff, Amm}/s0;
+		{s0, Aff, Amm, T2mf}
+		
+		]) &, datal, {ad - 1}];
+
+	(*generate output*)
+	{s0, ffr, mfr, t2} = Switch[ad, 
+	3, Transpose[result, {2, 3, 1}], 
+	4, Transpose[result, {2, 3, 4, 1}]];
+
+	t2 = Clip[t2, {0, 500}, {0, 500}];
+	s0 = Clip[s0, {Min[datan], 1.5 Max[datan]}, {0, 0}];
+	mfr = Clip[mfr, {0, 1}, {0, 1}];
+	ffr = Clip[ffr, {0, 1}, {0, 1}];
+
+	(*in needed also output the calibration values*)
+	If[OptionValue[OutputCalibration],{N@{s0, ffr, mfr, t2},cal},N@{s0, ffr, mfr, t2}]
+	]
 
 
 (* ::Subsection:: *)
@@ -446,7 +442,7 @@ EPGSignal[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_, ref_}, b1_, f_: 0] := EPGSign
 EPGSignali[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_?ListQ, ref_?ListQ}, b1_, f_:0.] := Block[{sig},
 	sig = Map[EPGSignali[{nEchoi, echoSpace}, {t1, t2}, #, b1, f] &, Transpose[{ex, ref}]];
 	sig = Mean@Join[sig, sig[[2 ;;]]]
-  ]
+]
 
 EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, f_:0.] := Block[
 	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, t2r1, t2r2, states, w, funRot, funMove},
@@ -481,7 +477,7 @@ EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, f_:0.] := Block
 	svec[[1 ;; 3]] = funRot[ex, 90].{0., 0., 1.};
 	(*combined relax and gradient and create output*)
 	Abs[funMove[Rmat, Rvec, Smat, Tmat, svec, Round@nEcho][[2 ;;, 1]]]
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -520,18 +516,18 @@ RotMatrixT[alpha_, ___] := RotMatrixTC[alpha];
 
 (*using CPMG condition*)
 RotMatrixTC = Compile[{{alpha, _Real, 0}}, Chop[{
-     {Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
-     {Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
-     {-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
+	{Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
+	{Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
+	{-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
 }], RuntimeOptions -> "Speed"];
 
 RotMatrixTI[alpha_, phi_: 90] := RotMatrixTCI[alpha, phi];
 
 (*Specify angle and phase*)
 RotMatrixTCI = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
-     {Cos[alpha/2]^2, Exp [2 phi I] Sin[alpha/2]^2, -I Exp [phi I] Sin[alpha]},
-     {Exp [-2 phi I] Sin[alpha/2]^2, Cos[alpha/2]^2, I Exp [-phi I] Sin[alpha]},
-     {-0.5 I Exp [-phi I] Sin[alpha], 0.5 I Exp [phi I] Sin[alpha], Cos[alpha]}
+	{Cos[alpha/2]^2, Exp [2 phi I] Sin[alpha/2]^2, -I Exp [phi I] Sin[alpha]},
+	{Exp [-2 phi I] Sin[alpha/2]^2, Cos[alpha/2]^2, I Exp [-phi I] Sin[alpha]},
+	{-0.5 I Exp [-phi I] Sin[alpha], 0.5 I Exp [phi I] Sin[alpha], Cos[alpha]}
 }], RuntimeOptions -> "Speed"];
 
 
@@ -541,15 +537,15 @@ RotMatrixTCI = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
 
 MoveStates = Compile[{{Rmat, _Real, 2}, {Rvec, _Real, 1}, {Smat, _Real, 2}, {Tmat, _Real, 2}, {svec, _Real, 1}, {nEcho, _Integer, 0}}, 
 	(*Rmat = relaxation; Rvec = Mz recovery; Tmat = Rf pulse;*)
-    (*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
-    NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, nEcho]
-    , RuntimeOptions -> "Speed"];
+	(*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
+	NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, nEcho]
+, RuntimeOptions -> "Speed"];
 
 MoveStatesI = Compile[{{Rmat, _Complex, 2}, {Rvec, _Complex, 1}, {Smat, _Integer, 2}, {Tmat, _Complex, 2}, {svec, _Complex, 1}, {nEcho, _Integer, 0}},
-   (*Rmat = relaxation; Rvec = Mz recovery; Tmat = Rf pulse;*)
-   (*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
-   NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, nEcho]
-   , RuntimeOptions -> "Speed"];
+	(*Rmat = relaxation; Rvec = Mz recovery; Tmat = Rf pulse;*)
+	(*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
+	NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, nEcho]
+, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
@@ -560,15 +556,14 @@ MoveStatesI = Compile[{{Rmat, _Complex, 2}, {Rvec, _Complex, 1}, {Smat, _Integer
 (*ShiftPulseProfile*)
 
 
-ShiftPulseProfile[angs_, shift_] := 
- Block[{exi, refi, cors, func, refo},
- 	{exi, refi} = Join[Reverse[#], #[[2 ;;]]] & /@ angs;
- 	cors = Range[1, Length[refi]];
- 	func = Interpolation[Transpose[{cors, refi}], InterpolationOrder -> 3, 
- 		"ExtrapolationHandler" -> {(0.) &, "WarningMessage" -> False}];
- 	refo = func[cors - shift];
- 	{{exi, refi}, {exi, refo}}
-  ]
+ShiftPulseProfile[angs_, shift_] := Block[{exi, refi, cors, func, refo},
+	{exi, refi} = Join[Reverse[#], #[[2 ;;]]] & /@ angs;
+	cors = Range[1, Length[refi]];
+	func = Interpolation[Transpose[{cors, refi}], InterpolationOrder -> 3, 
+		"ExtrapolationHandler" -> {(0.) &, "WarningMessage" -> False}];
+	refo = func[cors - shift];
+	{{exi, refi}, {exi, refo}}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -582,48 +577,48 @@ ErrorFunc1F[y_, t2f_Real, b1_Real, s0_, vals_] :=  Quiet@Block[{sig, T1m, T1f, e
 
 (*Two compartment, fit fat, fix muscle*)
 ErrorFunc2F[y_, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, t2m, T1f, echo, angle},
-   {echo, {T1m, t2m, T1f}, angle} = vals;
-   sig = Transpose[{
-      EPGSignali[echo, {T1m, t2m}, angle, b1],
-      EPGSignali[echo, {T1f, t2f}, angle, b1]
-      }];
-   LeastSquaresErrorC[sig, y]]
-   
+	{echo, {T1m, t2m, T1f}, angle} = vals;
+	sig = Transpose[{
+		EPGSignali[echo, {T1m, t2m}, angle, b1],
+		EPGSignali[echo, {T1f, t2f}, angle, b1]
+		}];
+	LeastSquaresErrorC[sig, y]]
+
 (*Two compartment, fit fat, fix muscle, shifted fat frofile*)
 ErrorFunc2FS[y_, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, t2m, T1f, echo, angle, angleS},
-   {echo, {T1m, t2m, T1f}, angle, angleS} = vals;
-   sig = Transpose[{
-      EPGSignali[echo, {T1m, t2m}, angle, b1],
-      EPGSignali[echo, {T1f, t2f}, angleS, b1]
-      }];
-   LeastSquaresErrorC[sig, y]]
+	{echo, {T1m, t2m, T1f}, angle, angleS} = vals;
+	sig = Transpose[{
+		EPGSignali[echo, {T1m, t2m}, angle, b1],
+		EPGSignali[echo, {T1f, t2f}, angleS, b1]
+		}];
+	LeastSquaresErrorC[sig, y]]
 
 (*Two compartment, fit muscle, fix fat*)
 ErrorFunc2M[y_, t2m_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, t2f, echo, angle},
-   {echo, {T1m, T1f, t2f}, angle} = vals;
-   sig = Transpose[{
-      Abs[EPGSignali[echo, {T1m, t2m}, angle, b1]],
-      Abs[EPGSignali[echo, {T1f, t2f}, angle, b1]]
-      }];
-   LeastSquaresErrorC[sig, y]]
-   
+	{echo, {T1m, T1f, t2f}, angle} = vals;
+	sig = Transpose[{
+		Abs[EPGSignali[echo, {T1m, t2m}, angle, b1]],
+		Abs[EPGSignali[echo, {T1f, t2f}, angle, b1]]
+		}];
+	LeastSquaresErrorC[sig, y]]
+
 (*Two compartment, fit muscle and fat*)
 ErrorFunc2MF[y_, t2m_Real, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle},
-   {echo, {T1m, T1f}, angle} = vals;
-   sig = Transpose[{
-      EPGSignali[echo, {T1m, t2m}, angle, b1],
-      EPGSignali[echo, {T1f, t2f}, angle, b1]
-      }];
-   LeastSquaresErrorC[sig, y]]
-   
+	{echo, {T1m, T1f}, angle} = vals;
+	sig = Transpose[{
+		EPGSignali[echo, {T1m, t2m}, angle, b1],
+		EPGSignali[echo, {T1f, t2f}, angle, b1]
+		}];
+	LeastSquaresErrorC[sig, y]]
+
 (*Two compartment, fit muscle and fat, shifted fat profile*)
 ErrorFunc2MFS[y_, t2m_Real, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle, angleS},
-   {echo, {T1m, T1f}, angle, angleS} = vals;
-   sig = Transpose[{
-      EPGSignali[echo, {T1m, t2m}, angle, b1],
-      EPGSignali[echo, {T1f, t2f}, angleS, b1]
-      }];
-   LeastSquaresErrorC[sig, y]]
+	{echo, {T1m, T1f}, angle, angleS} = vals;
+	sig = Transpose[{
+		EPGSignali[echo, {T1m, t2m}, angle, b1],
+		EPGSignali[echo, {T1f, t2f}, angleS, b1]
+		}];
+	LeastSquaresErrorC[sig, y]]
 
 
 
@@ -633,13 +628,13 @@ ErrorFunc2MFS[y_, t2m_Real, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, 
 
 (*calculate the pseudoinverse Ai*)
 PseudoInverseC = Compile[{{A, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.A].T)], 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 PseudoInverseWC = Compile[{{A, _Real, 2}, {W, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.W.A].T.W)], 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-   
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
 LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, (Inverse[T.A].T).y], 
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 (*Ai is Inverse[T.A].T*)   
 LeastSquares2C = Compile[{{Ai, _Real, 2}, {y, _Real, 1}},  Ai.y, 
@@ -682,22 +677,22 @@ NonLinearEPGFiti[{_,_}, {0. ..}] = {0., 0., 0., 0., 0.};
 NonLinearEPGFiti[{valsf_, cons_}, ydat_] := Block[{fwf, residualError, soli, T1m, T1f, t2f, echo, angle, T2s, B1s},
 	(*perform the fit*)
 	{residualError, soli} = Quiet@FindMinimum[{
-    	 ErrorFunc2M[ydat, T2i, B1i, valsf],
-     	{0.4 <= B1i, B1i <= 1.6, cons[[1]] <= T2i, T2i <= cons[[2]]}
-     	}, {{T2i, 35}, {B1i, 0.9}},
-     	AccuracyGoal -> 5, PrecisionGoal -> 5, MaxIterations -> 25];
-     {T2s, B1s} = soli[[All, 2]];
+			ErrorFunc2M[ydat, T2i, B1i, valsf],
+		{0.4 <= B1i, B1i <= 1.6, cons[[1]] <= T2i, T2i <= cons[[2]]}
+		}, {{T2i, 35}, {B1i, 0.9}},
+		AccuracyGoal -> 5, PrecisionGoal -> 5, MaxIterations -> 25];
+		{T2s, B1s} = soli[[All, 2]];
 
 	(*get corresponding fat fractions*)
 	{echo, {T1m, T1f, t2f}, angle} = valsf;
 	fwf = LeastSquaresC[Transpose[{
-    	EPGSignali[echo, {T1m, T2s}, angle, B1s],
-    	EPGSignali[echo, {T1f, t2f}, angle, B1s]
-    }], ydat];
-	
+		EPGSignali[echo, {T1m, T2s}, angle, B1s],
+		EPGSignali[echo, {T1f, t2f}, angle, B1s]
+	}], ydat];
+
 	(*export paramters*)
 	Flatten[{{T2s, B1s}, fwf, residualError}]
-   ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -716,13 +711,13 @@ DictionaryMinSearchi[{_, valsf_}, {0. ..}] := Join[0. valsf[[1]], {0., 0., 0.}]
 
 DictionaryMinSearchi[{dictf_, valsf_}, ydat_] := Block[{fwf, residualError, sol},
 	(*calcualte dictionary error*)
- 	fwf = LeastSquaresC[dictf, ydat];
- 	residualError = ErrorC[ydat, fwf, dictf];
- 	sol = First@Ordering[residualError, 1];
- 	(*find Min value*)
- 	Flatten[{valsf, fwf, residualError}[[All, sol]]]
-  ]
-  
+	fwf = LeastSquaresC[dictf, ydat];
+	residualError = ErrorC[ydat, fwf, dictf];
+	sol = First@Ordering[residualError, 1];
+	(*find Min value*)
+	Flatten[{valsf, fwf, residualError}[[All, sol]]]
+]
+
 (*brute force dictionary min search*)
 (*usging a the pseudo inverse dictionary*)
 DictionaryMinSearch[{dictf_, dictfMat_, valsf_}, ydat_] := DictionaryMinSearchi[{dictf, dictfMat, valsf}, ydat]
@@ -731,12 +726,12 @@ DictionaryMinSearchi[{_, _, valsf_}, {0. ..}] := Join[0. valsf[[1]], {0., 0., 0.
 
 DictionaryMinSearchi[{dictf_, dictfMat_, valsf_}, ydat_] := Block[{fwf, residualError, sol},
 	(*calcualte dictionary error*)
- 	fwf = LeastSquares2C[dictfMat, ydat];
- 	residualError = ErrorC[ydat, fwf, dictf];
- 	sol = First@Ordering[residualError, 1];
- 	(*find Min value*)
- 	Flatten[{valsf, fwf, residualError}[[All, sol]]]
-  ]
+	fwf = LeastSquares2C[dictfMat, ydat];
+	residualError = ErrorC[ydat, fwf, dictf];
+	sol = First@Ordering[residualError, 1];
+	(*find Min value*)
+	Flatten[{valsf, fwf, residualError}[[All, sol]]]
+]
 
 
 (*minimization dictionary min search*)
@@ -771,7 +766,7 @@ DictionaryMinSearchi[{dict_, vals_}, ydat_, {maxx_, maxy_, maxz_}] := Block[{err
 		Method -> "NelderMead"(*dictmet*)];
 	(*find the min vals*)
 	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
-  ]
+]
 
 
 (*minimization dictionary min search*)
@@ -809,7 +804,7 @@ DictionaryMinSearchi[{dict_, dictMat_, vals_}, ydat_, {maxx_, maxy_, maxz_}] := 
 			];
 	(*find the min vals*)
 	Flatten[{vals[[##]], LeastSquaresC[dict[[##]], ydat], err}] & @@ coor[[All, 2]]
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -856,7 +851,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	
 	(*Get Input*)
 	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
-  	ad = ArrayDepth[datan];
+	ad = ArrayDepth[datan];
 	datal = N@Switch[ad, 1, datan, 3, RotateDimensionsLeft@datan, 4, RotateDimensionsLeft@Transpose[datan]];
 	
 	(*Get Options*)
@@ -872,18 +867,18 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	If[OptionValue[EPGCalibrate]&&!VectorQ[datan],
 		If[mon, Print["Callibrating EPG fat t2."]];
 		cal = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, clipf, {T1m, T1f}}, 
-	  	EPGFitPoints -> OptionValue[EPGFitPoints], EPGFatShift->OptionValue[EPGFatShift], 
-	  	EPGMethodCal -> OptionValue[EPGMethodCal]];
-	  	
-	  	Switch[OptionValue[EPGMethodCal],
-	  		"1comp", {t2fval, B1c, S0c} = cal[[1]];,
-	  		"2comp", {T2mc, t2fval, B1c} = cal[[1]];,
-	  		"2compF", {t2fval, B1c} = cal[[1]]
-	  	];
-	  	
-	  	(*make whole 5 ms such that it is more likely for same values, needs less libraries, round up higher is better then lower*)
-	  	t2fval = N@Ceiling[t2fval,5];
-	  	If[mon, Print["EPG fat callibration:  ", t2fval, " ms"]];
+		EPGFitPoints -> OptionValue[EPGFitPoints], EPGFatShift->OptionValue[EPGFatShift], 
+		EPGMethodCal -> OptionValue[EPGMethodCal]];
+		
+		Switch[OptionValue[EPGMethodCal],
+			"1comp", {t2fval, B1c, S0c} = cal[[1]];,
+			"2comp", {T2mc, t2fval, B1c} = cal[[1]];,
+			"2compF", {t2fval, B1c} = cal[[1]]
+		];
+		
+		(*make whole 5 ms such that it is more likely for same values, needs less libraries, round up higher is better then lower*)
+		t2fval = N@Ceiling[t2fval,5];
+		If[mon, Print["EPG fat callibration:  ", t2fval, " ms"]];
 	];
 	
 	(*find the correct method*)
@@ -1093,7 +1088,6 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 Options[CalibrateEPGT2Fit] = {
 	EPGRelaxPars -> {{0, 100}, {20, 300}, {1400., 365.}}, 
 	EPGFitPoints -> 50,
-	 
 	EPGMethodCal -> "2comp",
 	EPGFatShift -> 0.
 	};
@@ -1107,35 +1101,34 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	
 	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
 	ad = ArrayDepth[datan];
-  
+
 	(*Swtich between 3D and 4D data*)
 	(*define thet fat mask and get the fat only signals*)
 	Switch[ad, 
+		3,
+		(*single slice*)
+		(*make mask an normalize data to first echo*)
+		maskT2 = Mask[Mean[datan]];
+		dataT2 = NormalizeData[maskT2 # & /@ datan];
+		(*create mask selecting fat*)
+		fmask = Mask[dataT2[[-1]], 50];
+		fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
+		(*data for calibration fit*)
+		fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ (dataT2 + 10.^-10)] echo- 10.^-10;
 		
-	  3,
-	  (*single slice*)
-	  (*make mask an normalize data to first echo*)
-	  maskT2 = Mask[Mean[datan]];
-	  dataT2 = NormalizeData[maskT2 # & /@ datan];
-	  (*create mask selecting fat*)
-	  fmask = Mask[dataT2[[-1]], 50];
-	  fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
-	  (*data for calibration fit*)
-	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ (dataT2 + 10.^-10)] echo- 10.^-10;
-	  
-	  ,4,
-	  (*mulit slice*)
-	  (*make mask an normalize data to first echo*)
-	  maskT2 = Mask[Mean[Transpose[datan]]];
-	  dataT2 = NormalizeData[MaskData[datan, maskT2]];
-	   (*create mask selecting fat*)
-	  fmask = Mask[dataT2[[All, -1]], 50];
-	  fmask = Dilation[Erosion[fmask, 1], 2] fmask;
-	  fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
-	  (*data for calibration fit*)
-	  fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose[dataT2 + 10.^-10]] - 10.^-10;
+		,4,
+		(*mulit slice*)
+		(*make mask an normalize data to first echo*)
+		maskT2 = Mask[Mean[Transpose[datan]]];
+		dataT2 = NormalizeData[MaskData[datan, maskT2]];
+		(*create mask selecting fat*)
+		fmask = Mask[dataT2[[All, -1]], 50];
+		fmask = Dilation[Erosion[fmask, 1], 2] fmask;
+		fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
+		(*data for calibration fit*)
+		fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose[dataT2 + 10.^-10]] - 10.^-10;
 	];
-  
+
 	(*select random fit points to calibrate fat signal and get the boundries*)
 	step = Ceiling[Length[fitData]/OptionValue[EPGFitPoints]];
 	{{T2mmin, T2mmax}, {T2fmin, T2fmax}, {T1m, T1f}} = OptionValue[EPGRelaxPars];
@@ -1162,7 +1155,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 			{residualError, soli} = Quiet@FindMinimum[{
 				ErrorFunc1F[#, T2fi, B1i, S0i, valsf],
 				{0.5 <= B1i <= 1.5, 20. <= T2fi <= 300., 0 < S0i}
-			    }, {{T2fi, 50.}, {B1i, 1}, {S0i, 5 s0}}, MaxIterations -> 25];
+				}, {{T2fi, 50.}, {B1i, 1}, {S0i, 5 s0}}, MaxIterations -> 25];
 			out = {T2fif, B1if, S0if} = soli[[All, 2]];
 			out
 			) &, fitData[[1 ;; ;; step]]];
@@ -1173,9 +1166,9 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 		
 		fits = ParallelMap[(
 			{residualError, soli} = Quiet@FindMinimum[{
-			    ErrorFunc2MFS[#, T2mi, T2fi, B1i, valsf],
-			    {0.5 <= B1i <= 1.5, 10 <= T2mi <= 50., 100 <= T2fi <= 300.}
-			    }, {{T2mi, 20.}, {T2fi, 150.}, {B1i, 1}}, MaxIterations -> 25];
+				ErrorFunc2MFS[#, T2mi, T2fi, B1i, valsf],
+				{0.5 <= B1i <= 1.5, 10 <= T2mi <= 50., 100 <= T2fi <= 300.}
+				}, {{T2mi, 20.}, {T2fi, 150.}, {B1i, 1}}, MaxIterations -> 25];
 			out = {T2mif, T2fif, B1if} = soli[[All, 2]];
 			out
 			) &, fitData[[1 ;; ;; step]]];
@@ -1186,17 +1179,17 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 		
 		fits = ParallelMap[(
 			{residualError, soli} = Quiet@FindMinimum[{
-			    ErrorFunc2FS[#, T2fi, B1i, valsf],
-			    {0.5 <= B1i <= 1.5, 100 <= T2fi <= 300.}
-			    }, {{T2fi, 150.}, {B1i, 1}}, MaxIterations -> 25];
+				ErrorFunc2FS[#, T2fi, B1i, valsf],
+				{0.5 <= B1i <= 1.5, 100 <= T2fi <= 300.}
+				}, {{T2fi, 150.}, {B1i, 1}}, MaxIterations -> 25];
 			out = {T2fif, B1if} = soli[[All, 2]];
 			out
 			) &, fitData[[1 ;; ;; step]]];
 		];
-  
-  	out = {Median[fits],StandardDeviation[fits]};
-  	out
-  ]
+
+	out = {Median[fits],StandardDeviation[fits]};
+	out
+]
 
 
 (* ::Subsubsection::Closed:: *)

@@ -53,6 +53,9 @@ MakeSliceImages[imgData, {labData, labels}] generates images from the imgData wh
 labels should be the label numbers used in the original segmentation (to allow correct scaling between slices).
 MakeSliceImages[imgData, {labData, labels},vox] generates images from the imgData which is obtained form GetSliceData with an overlay of the segmentations in labData, which can also be obtained using GetSliceData on the segmentations, vox is used for the correct aspect ratio of the images."
 
+LegendImage::usage =
+"LengendImage[colf, w, lab] generates a legend image for the color function colf with a width of w and labels lab."
+
 
 PlotContour::usage = 
 "PlotContour[data, vox] creates a contour of the data. 
@@ -140,6 +143,10 @@ ImageLegend::usage =
 
 ImageOrientation::usage = 
 "ImageOrientation is an option for MakeSliceImages. Can be Automatic, \"Vertical\" or \"Horizontal\"."
+
+MaskOpacity::usage =
+"MaskOpacity is an option for MakeSliceImages. It specifies the opacity of the mask."
+
 
 PlotSpace::usage = 
 "PlotSpace is an option for GradientPlot can be \"bspace\" or \"qspace\"."
@@ -296,7 +303,6 @@ Col2List[c_] := Col2List[RGBColor[c]]
 ColorRound = ncol + 2 - Ramp[ncol + 1 - Ramp[Round[(ncol - 1) Rescale[#1, #2]] + 1]] &
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*ManPannel*)
 
@@ -322,15 +328,15 @@ LabLeg[im_, {fnts_,legs_}, label_, {legend_, color_, {min_,max_}}] := Block[{lab
 		BarLegend[{(ColSel @@ color)[(# - min)/(max - min)] &, {min, max}}, 
 			LabelStyle -> Directive[Bold, FontFamily -> "Helvetica", fnts, Black],
 			LegendMarkerSize -> legs, LegendLayout -> "Column"]
-    ];
-    
-    (*make the image grid*)
+	];
+	
+	(*make the image grid*)
 	Grid[Which[
 		StringQ[label] && legend, {{lab, ""}, {im, bar}},
 		legend, {{im, bar}},
 		StringQ[label], {{lab}, {im}},
 		True, {{im}}
-    ],Spacings->{2,2}]
+	],Spacings->{2,2}]
 ]
 
 
@@ -346,8 +352,6 @@ Labeli[im_,fnts_,label_]:=Block[{lab},
 		im
 	]
 ]
-	
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1653,16 +1657,38 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 
 
 (* ::Subsubsection::Closed:: *)
+(*LegendImage*)
+
+
+SyntaxInformation[LegendImage] = {"ArgumentsPattern" -> {_, _, _}};
+
+LegendImage[colf_, w_, lab_] := Block[{rast, lc, mc, rc},
+	rast = Raster[{Range[256]/256.}, {{0, 0}, {1, 1}}, ColorFunction -> colf];
+	{lc, mc, rc} = If[ColorDistance[ColorData[colf][#], White] > ColorDistance[ColorData[colf][#], Black], 
+		White, Black] & /@ {0, 0.5, 1};
+	
+	ImagePad[Rasterize[Graphics[{rast,
+		Inset[Style[lab[[1]], lc, Bold, 20], {0.05, 0.5}],
+		Inset[Style[lab[[2]], rc, Bold, 20], {0.95, 0.5}],
+		Inset[Style[lab[[3]], mc, Bold, 20], {0.5, 0.5}]}
+		, AspectRatio -> 40/w, ContentSelectable -> False, ImageSize -> {w - 40, 40}
+		, PlotRange -> {{0, 1}, {0, 1}}], RasterSize -> {w - 40, 40}
+	], 20, White]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*MakeSliceImages*)
 
 
 Options[MakeSliceImages]={
-	PlotRange->Automatic, 
-	ColorFunction->"GrayTones", 
-	ClippingStyle->Automatic,
-	ImageLegend->False,
-	ImageOrientation->Automatic,
-	ImageSize->300
+	PlotRange -> Automatic, 
+	ColorFunction -> "GrayTones", 
+	ClippingStyle -> Automatic,
+	ImageLegend -> False,
+	ImageOrientation -> Automatic,
+	ImageSize -> 300,
+	MaskOpacity -> 0.6
 };
 
 SyntaxInformation[MakeSliceImages]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
@@ -1678,9 +1704,11 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 	dim, dim1, dim2, d1, d2, pl ,ml, sz, n, imSize, clip
 	},
 	
-	rule = N@Thread[vals -> Rescale[Range[0, Length[vals]]][[2 ;;]]];
 	colo = OptionValue[ColorFunction];
+	{colo, cols}	= If[StringQ[colo], {colo, "DarkRainbow"}, colo];
 	colF = If[MemberQ[colorFunctions[[All,1]], colo], colo, "GrayTones"]/.colorFunctions;
+	SeedRandom[1234];
+	rule = N@Thread[vals -> RandomSample@Rescale[Range[0,Length@vals]][[2;;]]];
 
 	clip = OptionValue[ClippingStyle];
 	clip = If[clip===Automatic, colF/@{0, 1}, If[ColorQ[clip], {clip, colF[1]}, clip]];
@@ -1692,12 +1720,12 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 		
 		(*find the range*)
 		datf = DeleteCases[Flatten[pdat][[;;;;10]], 0.];
-		ran = If[OptionValue[PlotRange]===Automatic, If[datf==={}, {0, 1}, {0, Quantile[datf, .99]}], OptionValue[PlotRange]];
+		ran = If[OptionValue[PlotRange] === Automatic, If[datf==={}, {0, 1}, {0, Quantile[datf, .99]}], OptionValue[PlotRange]];
 		
 		size = vox[[{{2,3}, {1,2}, {1,3}}[[n]]]];
 		bar = BarLegend[{colF/@Range[0, 1, .01], ran}, LabelStyle->Directive[{Black, Bold, 12}]];
 		
-		imSize=OptionValue[ImageSize];
+		imSize = OptionValue[ImageSize];
 
 		(*loop over the slices, 1 axial, 2 cor, 3 sag*)
 		MapThread[(
@@ -1716,7 +1744,7 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 			
 			pl1 = ArrayPlot[pl, AspectRatio->ratio, Frame->False, ImageSize->sz, PlotRangePadding->1, 
 				PlotRange->ran, ColorFunction->colF, ClippingStyle->clip];
-			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.4], ColorData["DarkRainbow"][#]}]&), 
+			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.6], ColorData[cols][#]}]&), 
 				ColorFunctionScaling->False, ColorRules->{0.->Transparent}];
 			If[OptionValue[ImageLegend], Legended[Show[pl1, pl2], bar], Show[pl1, pl2]]
 		)&, {pdat, mdat}]

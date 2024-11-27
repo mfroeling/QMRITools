@@ -215,15 +215,18 @@ SyntaxInformation[GenerateGradients] = {"ArgumentsPattern" -> {_, _., OptionsPat
 
 (*default*)
 GenerateGradients[numb_Integer, opts : OptionsPattern[]] := If[OptionValue[GradType] == "OverPlus", 
-  GenerateGradientsi[{numb}, {}, 0, 0, opts, Method -> "OverPlus"], 
-  If[OptionValue[GradType] == "Normal2", 
-   GenerateGradientsi[{numb}, {}, 0, 0, opts, Method -> "Default2"], 
-   GenerateGradientsi[{numb}, {}, 0, 0, opts, Method -> "Default"]]]
+	GenerateGradientsi[{numb}, {}, 0, 0, opts, Method -> "OverPlus"], 
+	If[OptionValue[GradType] == "Normal2", 
+		GenerateGradientsi[{numb}, {}, 0, 0, opts, Method -> "Default2"], 
+		GenerateGradientsi[{numb}, {}, 0, 0, opts, Method -> "Default"]
+	]
+]
 
 (*use fixed*)
 GenerateGradients[inp : {_Integer, _List}, opts : OptionsPattern[]] := If[OptionValue[GradType] == "OverPlus", 
-  GenerateGradientsi[{inp[[1]]}, inp[[2]], 0, 0, opts, Method -> "OverPlus"], 
-  GenerateGradientsi[{inp[[1]]}, inp[[2]], 0, 0, opts, Method -> "Fixed"]]
+	GenerateGradientsi[{inp[[1]]}, inp[[2]], 0, 0, opts, Method -> "OverPlus"], 
+	GenerateGradientsi[{inp[[1]]}, inp[[2]], 0, 0, opts, Method -> "Fixed"]
+]
 
 (*use shels*)
 GenerateGradients[numbs : {_Integer ..}, opts : OptionsPattern[]] := GenerateGradientsi[numbs, 0, 0.5, 0, opts, Method -> "Shels"]
@@ -245,140 +248,140 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 	steps, runs, method, vis, cond, condtot, nf, ni, condnr, velocity0, velocity1, parti, part, ns, plot, tempplot, vel, charge, tempc, sph, cols, output, half
 	},
 	DynamicModule[{vp, vv, va, tempp, points},
-   (*Initialisation *)
-   cols = {Red, Green, Blue, Yellow, Pink, Darker[Red], Darker[Green], Darker[Blue], Darker[Yellow], Darker[Pink]};
-   
-   (*get options*)
-   steps = OptionValue[Steps];
-   runs = OptionValue[Runs];
-   method = OptionValue[Method];
-   vis = OptionValue[VisualOpt];
-   cond = OptionValue[ConditionCalc];
-   half = 1 - Boole[OptionValue[FullSphere]];
-   
-   (*determine length*)
-   nf = Length[fixed];
-   ni = Total[numbs] - nf;
-   
-   If[method == "OverPlus" || method == "OverPlusNon", half = 1];
-   
-   condnr = Infinity;
-   If[method == "NonRandom" || method == "OverPlusNon",
-    points = tempp = initp;
-    runs = 1;
-    ,
-    points = tempp = ConstantArray[{0, 0, 0}, ni];
-    ];
-     
-   (*get velocity matrix for multishell*)
-   If[method == "Shels",
-    ns = Length[numbs];
-    {vel, part} = cc = Prepare[numbs, half, {}, alph][[2 ;;]]
-    ];
-   
-   (*visualisation*)
-   If[vis,
-    
-    (*Initialize graphics*)
-    vp = {1.3, -2.4, 2}; vv = {0, 0, 1}; va = 30 Degree;
-    sph = Graphics3D[{White, Sphere[{0, 0, 0}, 0.95]}, 
-      Lighting -> "Neutral", ImageSize -> 400, 
-      PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}},
-      ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], 
-      ViewAngle -> Dynamic[va]];
-    
-    If[! (method == "Shels"),
-     (*single shell*)
-     plot = Row[{
-         Show[sph, ListSpherePloti[Dynamic[points], Black, 0.05], 
-         If[half == 1, ListSpherePloti[Dynamic[-points], Red, 0.05], Graphics3D[]]],
-         Show[sph, ListSpherePloti[Dynamic[tempp], Black, 0.05], 
-         If[half == 1, ListSpherePloti[Dynamic[-tempp], Red, 0.05], Graphics3D[]]]
-         }];
-     ,
-     (*multi shell*)
-     plot = Row[{
-         Show[sph, MapThread[ListSpherePloti[#1, #2, 0.05] &, {Dynamic[points[[#]]] & /@ part, cols[[1 ;; ns]]}],
-         If[half == 1, ListSpherePloti[Dynamic[-points], Gray, 0.05], Graphics3D[]]],
-         Show[sph, MapThread[ListSpherePloti[#1, #2, 0.05] &, {Dynamic[tempp[[#]]] & /@ part, cols[[1 ;; ns]]}],
-         If[half == 1, ListSpherePloti[Dynamic[-tempp], Gray, 0.05], Graphics3D[]]]
-         }];
-     ];
-    tempplot = PrintTemporary[plot];
-    ];
-   
-   (*Do number of runs*)
-   condtot = Reap[Do[
-       (*initialize*)
-       If[! (method == "NonRandom" || method == "OverPlusNon"),
-        tempp = RandInit[ni, half];
-        If[! (method == "Fixed" || method == "OverPlus" || method == "Default2"),
-         tempp[[1]] = {0, 0, 1};
-         ]
-        ];
-       
-       tempp = Switch[
-         OptionValue[Method],
-         
-         "Default2",(* default *)
-         Do[tempp = GradOptimize1C[tempp, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
-         tempp
-         ,
-         
-         "Default",(* default *)
-         Do[tempp = GradOptimize2C[tempp, 1, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
-         tempp
-          ,
-         
-         "NonRandom",(* non rand *)
-         Do[tempp = GradOptimize1C[tempp, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
-         tempp
-         ,
-         
-         "Fixed",(* fixed *)
-         tempp = Join[fixed, tempp];
-         Do[tempp = GradOptimize2C[tempp, nf, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
-         tempp
-         ,
-         
-         "Shels",(* shells *)
-         Do[tempp = GradOptimize4C[tempp, vel, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
-         tempp
-         ,
-         
-          "OverPlus",(* overplus default *)
-         tempp = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, fixed, tempp];
-         charge = Join[ConstantArray[(.5 ni)^(1.2), 3], ConstantArray[1, ni + nf]];
-         Do[tempp = GradOptimize2C[tempp, nf + 3, 0], {Round[steps/10]}];
-         Do[tempp = GradOptimize3C[tempp, charge, nf + 3]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
-         tempp = Drop[tempp, 3];
-         Do[tempp = Normalize /@ Clip[tempp, {-1/Sqrt[2], 1/Sqrt[2]}, {-1/Sqrt[2], 1/Sqrt[2]}], {25}];
-         tempp
-         ,
-         
-         "OverPlusNon",(* overplus default *)
-         tempp = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, tempp];
-         charge = Join[ConstantArray[(.5 ni)^(1.2), 3], ConstantArray[1, ni + nf]];
-         Do[tempp = GradOptimize3C[tempp, charge, nf + 3]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
-         tempp = Drop[tempp, 3];
-         Do[tempp = Normalize /@ Clip[tempp, {-1/Sqrt[2], 1/Sqrt[2]}, {-1/Sqrt[2], 1/Sqrt[2]}], {25}];
-         tempp
-         
-         ];(*end switch*)
-       
-       tempc = ConditionNumberCalc[tempp];
-       
-       If[tempc < condnr, points = tempp; condnr = tempc;];
-       
-       (*end runs do loop*)
-       Pause[0.5];
-       , {runs}]][[2]];
-   NotebookDelete[tempplot];
-   
-   output = Chop[If[method == "Shels", points[[#]] & /@ part, points]];
-   ];
-  If[cond, {output, condtot[[1]]}, output]
-  ]
+		(*Initialisation *)
+		cols = {Red, Green, Blue, Yellow, Pink, Darker[Red], Darker[Green], Darker[Blue], Darker[Yellow], Darker[Pink]};
+		
+		(*get options*)
+		steps = OptionValue[Steps];
+		runs = OptionValue[Runs];
+		method = OptionValue[Method];
+		vis = OptionValue[VisualOpt];
+		cond = OptionValue[ConditionCalc];
+		half = 1 - Boole[OptionValue[FullSphere]];
+		
+		(*determine length*)
+		nf = Length[fixed];
+		ni = Total[numbs] - nf;
+		
+		If[method == "OverPlus" || method == "OverPlusNon", half = 1];
+		
+		condnr = Infinity;
+		If[method == "NonRandom" || method == "OverPlusNon",
+			points = tempp = initp;
+			runs = 1;
+			,
+			points = tempp = ConstantArray[{0, 0, 0}, ni];
+			];
+			
+		(*get velocity matrix for multishell*)
+		If[method == "Shels",
+			ns = Length[numbs];
+			{vel, part} = cc = Prepare[numbs, half, {}, alph][[2 ;;]]
+			];
+		
+		(*visualisation*)
+		If[vis,
+			
+			(*Initialize graphics*)
+			vp = {1.3, -2.4, 2}; vv = {0, 0, 1}; va = 30 Degree;
+			sph = Graphics3D[{White, Sphere[{0, 0, 0}, 0.95]}, 
+			Lighting -> "Neutral", ImageSize -> 400, 
+			PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}},
+			ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], 
+			ViewAngle -> Dynamic[va]];
+			
+			If[! (method == "Shels"),
+			(*single shell*)
+			plot = Row[{
+				Show[sph, ListSpherePloti[Dynamic[points], Black, 0.05], 
+				If[half == 1, ListSpherePloti[Dynamic[-points], Red, 0.05], Graphics3D[]]],
+				Show[sph, ListSpherePloti[Dynamic[tempp], Black, 0.05], 
+				If[half == 1, ListSpherePloti[Dynamic[-tempp], Red, 0.05], Graphics3D[]]]
+				}];
+			,
+			(*multi shell*)
+			plot = Row[{
+				Show[sph, MapThread[ListSpherePloti[#1, #2, 0.05] &, {Dynamic[points[[#]]] & /@ part, cols[[1 ;; ns]]}],
+				If[half == 1, ListSpherePloti[Dynamic[-points], Gray, 0.05], Graphics3D[]]],
+				Show[sph, MapThread[ListSpherePloti[#1, #2, 0.05] &, {Dynamic[tempp[[#]]] & /@ part, cols[[1 ;; ns]]}],
+				If[half == 1, ListSpherePloti[Dynamic[-tempp], Gray, 0.05], Graphics3D[]]]
+				}];
+			];
+			tempplot = PrintTemporary[plot];
+		];
+		
+		(*Do number of runs*)
+		condtot = Reap[Do[
+			(*initialize*)
+			If[! (method == "NonRandom" || method == "OverPlusNon"),
+				tempp = RandInit[ni, half];
+				If[! (method == "Fixed" || method == "OverPlus" || method == "Default2"),
+				tempp[[1]] = {0, 0, 1};
+				]
+				];
+			
+			tempp = Switch[
+				OptionValue[Method],
+				
+				"Default2",(* default *)
+				Do[tempp = GradOptimize1C[tempp, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
+				tempp
+				,
+				
+				"Default",(* default *)
+				Do[tempp = GradOptimize2C[tempp, 1, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
+				tempp
+				,
+				
+				"NonRandom",(* non rand *)
+				Do[tempp = GradOptimize1C[tempp, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
+				tempp
+				,
+				
+				"Fixed",(* fixed *)
+				tempp = Join[fixed, tempp];
+				Do[tempp = GradOptimize2C[tempp, nf, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
+				tempp
+				,
+				
+				"Shels",(* shells *)
+				Do[tempp = GradOptimize4C[tempp, vel, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
+				tempp
+				,
+				
+				"OverPlus",(* overplus default *)
+				tempp = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, fixed, tempp];
+				charge = Join[ConstantArray[(.5 ni)^(1.2), 3], ConstantArray[1, ni + nf]];
+				Do[tempp = GradOptimize2C[tempp, nf + 3, 0], {Round[steps/10]}];
+				Do[tempp = GradOptimize3C[tempp, charge, nf + 3]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
+				tempp = Drop[tempp, 3];
+				Do[tempp = Normalize /@ Clip[tempp, {-1/Sqrt[2], 1/Sqrt[2]}, {-1/Sqrt[2], 1/Sqrt[2]}], {25}];
+				tempp
+				,
+				
+				"OverPlusNon",(* overplus default *)
+				tempp = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, tempp];
+				charge = Join[ConstantArray[(.5 ni)^(1.2), 3], ConstantArray[1, ni + nf]];
+				Do[tempp = GradOptimize3C[tempp, charge, nf + 3]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
+				tempp = Drop[tempp, 3];
+				Do[tempp = Normalize /@ Clip[tempp, {-1/Sqrt[2], 1/Sqrt[2]}, {-1/Sqrt[2], 1/Sqrt[2]}], {25}];
+				tempp
+				
+			];(*end switch*)
+			
+			tempc = ConditionNumberCalc[tempp];
+			
+			If[tempc < condnr, points = tempp; condnr = tempc;];
+			
+			(*end runs do loop*)
+			Pause[0.5];
+			, {runs}]][[2]];
+		NotebookDelete[tempplot];
+		
+		output = Chop[If[method == "Shels", points[[#]] & /@ part, points]];
+	];
+	If[cond, {output, condtot[[1]]}, output]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -387,10 +390,9 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 
 (*random seed points on sphere*)
 RandInit[ni_, half_] := If[half == 1,
-   Sign[#[[3]] + 10.^-16] Normalize[#] & /@ 
-    RandomReal[NormalDistribution[], {ni, 3}],
-   Normalize[#] & /@ RandomReal[NormalDistribution[], {ni, 3}]
-   ];
+	Sign[#[[3]] + 10.^-16] Normalize[#] & /@ RandomReal[NormalDistribution[], {ni, 3}],
+	Normalize[#] & /@ RandomReal[NormalDistribution[], {ni, 3}]
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -414,44 +416,43 @@ ListStickPlot[pts_, size_] := Graphics3D[{Gray, Tube[0.98 {#, -#}, size] & /@ pt
 (*initialization of points*)
 Prepare[numbs_, half_] := Prepare[numbs, half, {}, 0];
 Prepare[numbs_, half_, fixed_] := Prepare[numbs, half, fixed, 0];
-Prepare[numbs_, half_, fixed_, alph_] := 
- Block[{nf, ni, ni2, parti, part, velocity0, velocity1, vel},
-  nf = Length[fixed];
-  ni = Total[numbs] - nf;
-  
-  (*only for multi shell numbs vector is longer than 1*)
-  If[Length[numbs] > 1,
-   (*case 1 multi shell*)
-   parti = {1, 0} + # & /@ Drop[Partition[Prepend[Accumulate[numbs], 0], 2, 1, 1], -1];
-   part = Range[#[[1]], #[[2]]] & /@ parti;
-   
-   ni2 = If[half == 0, ni, 2 ni];
-   
-   velocity0 = ConstantArray[0, {ni2, ni2, 3}];
-   velocity1 = ConstantArray[1, {ni2, ni2, 3}];
-   If[half == 1,
-    Table[
-        velocity0[[i, j]] = {1, 1, 1};
-        velocity0[[i, j + ni]] = {1, 1, 1};
-        velocity0[[i + ni, j]] = {1, 1, 1};
-        velocity0[[i + ni, j + ni]] = {1, 1, 1};
-        , {i, #1[[1]], #1[[2]]}, {j, #1[[1]], #1[[2]]}] & /@ parti;,
-    Table[
-        velocity0[[i, j]] = {1, 1, 1};
-        , {i, #1[[1]], #1[[2]]}, {j, #1[[1]], #1[[2]]}] & /@ parti;
-    ];
-   vel = (1 - alph) velocity0 + alph velocity1;
-   {RandInit[ni, half], vel, part}
-   ,
-   (*case 2 single shell*)
-   If[fixed === {},
-    (*no fixed*)
-    RandInit[ni, half],
-    (*fixed*)
-    Join[fixed, RandInit[ni, half]]
-    ]
-   ]
-  ]
+Prepare[numbs_, half_, fixed_, alph_] := Block[{nf, ni, ni2, parti, part, velocity0, velocity1, vel},
+	nf = Length[fixed];
+	ni = Total[numbs] - nf;
+
+	(*only for multi shell numbs vector is longer than 1*)
+	If[Length[numbs] > 1,
+		(*case 1 multi shell*)
+		parti = {1, 0} + # & /@ Drop[Partition[Prepend[Accumulate[numbs], 0], 2, 1, 1], -1];
+		part = Range[#[[1]], #[[2]]] & /@ parti;
+
+		ni2 = If[half == 0, ni, 2 ni];
+
+		velocity0 = ConstantArray[0, {ni2, ni2, 3}];
+		velocity1 = ConstantArray[1, {ni2, ni2, 3}];
+		If[half == 1,
+			Table[
+				velocity0[[i, j]] = {1, 1, 1};
+				velocity0[[i, j + ni]] = {1, 1, 1};
+				velocity0[[i + ni, j]] = {1, 1, 1};
+				velocity0[[i + ni, j + ni]] = {1, 1, 1};
+			, {i, #1[[1]], #1[[2]]}, {j, #1[[1]], #1[[2]]}] & /@ parti;,
+			Table[
+				velocity0[[i, j]] = {1, 1, 1};
+			, {i, #1[[1]], #1[[2]]}, {j, #1[[1]], #1[[2]]}] & /@ parti;
+		];
+		vel = (1 - alph) velocity0 + alph velocity1;
+		{RandInit[ni, half], vel, part}
+		,
+		(*case 2 single shell*)
+		If[fixed === {},
+			(*no fixed*)
+			RandInit[ni, half],
+			(*fixed*)
+			Join[fixed, RandInit[ni, half]]
+		]
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -468,100 +469,100 @@ GradGrid[n_, full_] := Block[{points},
 		(*even spaced in between odd grid*)
 		Flatten[Table[{i, j, k}, {i, -1 + 1/n, 1, 2/n}, {j, -1 + 1/n, 1, 2/n}, {k, 1/n, 1, 2/n}], 2] // N
 	],
-    (*odd spaced*)
-    points = Flatten[Table[{i, j, k}, {i, -1, 1, 2/(n - 1)}, {j, -1, 1, 2/(n - 1)}, {k, 0, 1, 2/(n - 1)}], 2] // N;
-    DeleteCases[If[(#[[1]] < 0. && #[[3]] == 0.) || (#[[1]] == 0. && #[[2]] < 0 && #[[3]] == 0.), Null, #] & /@ points, Null]
-    ];
+	(*odd spaced*)
+	points = Flatten[Table[{i, j, k}, {i, -1, 1, 2/(n - 1)}, {j, -1, 1, 2/(n - 1)}, {k, 0, 1, 2/(n - 1)}], 2] // N;
+	DeleteCases[If[(#[[1]] < 0. && #[[3]] == 0.) || (#[[1]] == 0. && #[[2]] < 0 && #[[3]] == 0.), Null, #] & /@ points, Null]
+	];
 	points = Sort[points, Norm[#1] < Norm[#2] &] // N
 ]
 
 (*optimize singel shell no fixed gradients*)
-GradOptimize1C = Compile[{{points, _Real, 2}, {half, _Integer, 0}},
-   Block[{n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, 
-     velocity, pointsnew, sign},
-    n = Length[points];
-    If[half == 1,
-     pointsi = Join[points, -points]; n2 = 2 n;,
-     pointsi = points; n2 = n
-     ];
-    pointsmat = ConstantArray[pointsi, n2];
-    distmatxyz = pointsmat - Transpose[pointsmat];
-    diag = DiagonalMatrix[ConstantArray[10.^32, n2]];
-    distmat = Total[Transpose[distmatxyz, {2, 3, 1}]^2] + diag;
-    velocity = Total[(distmatxyz/distmat)];
-    pointsnew = (Normalize[#] & /@ (pointsi + velocity));
-    If[half == 1, 
-     pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
-    pointsnew[[;; n]]]
-   ];
+GradOptimize1C = Compile[{{points, _Real, 2}, {half, _Integer, 0}},	Block[{
+		n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, velocity, pointsnew, sign
+	},
+	n = Length[points];
+	If[half == 1,
+		pointsi = Join[points, -points]; n2 = 2 n;,
+		pointsi = points; n2 = n
+	];
+	pointsmat = ConstantArray[pointsi, n2];
+	distmatxyz = pointsmat - Transpose[pointsmat];
+	diag = DiagonalMatrix[ConstantArray[10.^32, n2]];
+	distmat = Total[Transpose[distmatxyz, {2, 3, 1}]^2] + diag;
+	velocity = Total[(distmatxyz/distmat)];
+	pointsnew = (Normalize[#] & /@ (pointsi + velocity));
+	If[half == 1, 
+		pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
+	pointsnew[[;; n]]]
+, RuntimeOptions -> "Speed"];
 
 (*optimize singel shell with fixed gradients*)
-GradOptimize2C = Compile[{{points, _Real, 2}, {nf, _Real, 0}, {half, _Integer, 0}},
-   Block[{n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, 
-     velocity, pointsnew, rang},
-    n = Length[points];
-    If[half == 1,
-     pointsi = Join[points, -points]; n2 = 2 n;,
-     pointsi = points; n2 = n
-     ];
-    pointsmat = ConstantArray[pointsi, n2];
-    distmatxyz = pointsmat - Transpose[pointsmat];
-    diag = DiagonalMatrix[ConstantArray[10.^16, n2]];
-    distmat = Total[Transpose[distmatxyz, {2, 3, 1}]^2] + diag;
-    velocity = Total[(distmatxyz/distmat)];
-    If[half == 1,
-     rang = Round[Join[Range[1, nf], Range[1 + n, n + nf]]];,
-     rang = Round[Range[1, nf]];
-     ];
-    (velocity[[#]] = {0., 0., 0.}) & /@ rang;
-    pointsnew = (Normalize[#] & /@ (pointsi + velocity));
-    If[half == 1, 
-     pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
-    pointsnew[[;; n]]],
-   {{rang, _Real, 1}}  
-   ];
+GradOptimize2C = Compile[{{points, _Real, 2}, {nf, _Real, 0}, {half, _Integer, 0}},	Block[{
+		n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, velocity, pointsnew, rang
+	},
+	n = Length[points];
+	If[half == 1,
+		pointsi = Join[points, -points]; n2 = 2 n;,
+		pointsi = points; n2 = n
+	];
+	pointsmat = ConstantArray[pointsi, n2];
+	distmatxyz = pointsmat - Transpose[pointsmat];
+	diag = DiagonalMatrix[ConstantArray[10.^16, n2]];
+	distmat = Total[Transpose[distmatxyz, {2, 3, 1}]^2] + diag;
+	velocity = Total[(distmatxyz/distmat)];
+	If[half == 1,
+		rang = Round[Join[Range[1, nf], Range[1 + n, n + nf]]];,
+		rang = Round[Range[1, nf]];
+	];
+	(velocity[[#]] = {0., 0., 0.}) & /@ rang;
+	pointsnew = (Normalize[#] & /@ (pointsi + velocity));
+	If[half == 1, 
+		pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
+	pointsnew[[;; n]]],
+	{{rang, _Real, 1}}  
+, RuntimeOptions -> "Speed"];
 
 (*optimize singe shell Overplus*)
-GradOptimize3C = Compile[{{points, _Real, 2}, {char, _Real, 1}, {nf, _Real, 0}},
-   Block[{n, pointsi, pointsmat, distmatxyz, diag, distmat, velocity, 
-     pointsnew, chari, charmat, chars, rang},
-    n = Length[points];
-    pointsi = Join[points, -points];
-    chari = Join[char, char];
-    pointsmat = ConstantArray[pointsi, 2 n];
-    charmat = ConstantArray[chari, 2 n];
-    distmatxyz = pointsmat - Transpose[pointsmat];
-    chars = charmat*Transpose[charmat];
-    diag = DiagonalMatrix[ConstantArray[10.^32, 2 n]];
-    distmat = Total[Transpose[distmatxyz, {2, 3, 1}]^2] + diag;
-    velocity = Total[chars (distmatxyz/distmat)];
-    rang = Round[Join[Range[1, nf], Range[1 + n, n + nf]]];
-    velocity[[rang]] = {0., 0., 0.};
-    pointsnew = (Sign[#[[3]] + 10.^-16]*Normalize[#] & /@ (pointsi + 
-         velocity));
-    pointsnew[[;; n]]],
-   {{rang, _Real, 1}}
-   ];
+GradOptimize3C = Compile[{{points, _Real, 2}, {char, _Real, 1}, {nf, _Real, 0}}, Block[{
+		n, pointsi, pointsmat, distmatxyz, diag, distmat, velocity, pointsnew, chari, charmat, chars, rang
+	},
+	n = Length[points];
+	pointsi = Join[points, -points];
+	chari = Join[char, char];
+	pointsmat = ConstantArray[pointsi, 2 n];
+	charmat = ConstantArray[chari, 2 n];
+	distmatxyz = pointsmat - Transpose[pointsmat];
+	chars = charmat*Transpose[charmat];
+	diag = DiagonalMatrix[ConstantArray[10.^32, 2 n]];
+	distmat = Total[Transpose[distmatxyz, {2, 3, 1}]^2] + diag;
+	velocity = Total[chars (distmatxyz/distmat)];
+	rang = Round[Join[Range[1, nf], Range[1 + n, n + nf]]];
+	velocity[[rang]] = {0., 0., 0.};
+	pointsnew = (Sign[#[[3]] + 10.^-16]*Normalize[#] & /@ (pointsi + 
+			velocity));
+	pointsnew[[;; n]]],
+	{{rang, _Real, 1}}
+, RuntimeOptions -> "Speed"];
 
-(*optimize multi shell*)
+	(*optimize multi shell*)
 GradOptimize4C = Compile[{{points, _Real, 2}, {vel, _Real, 3}, {half, _Integer, 0}},
-   Block[{n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, 
-     velocity, pointsnew},
-    n = Length[points];
-    If[half == 1,
-     pointsi = Join[points, -points]; n2 = 2 n;,
-     pointsi = points; n2 = n;
-     ];
-    pointsmat = ConstantArray[pointsi, n2];
-    distmatxyz = pointsmat - Transpose[pointsmat];
-    diag = DiagonalMatrix[ConstantArray[10.^16, n2]];
-    distmat = Total[Transpose[distmatxyz, {2, 3, 1}]^2] + diag;
-    velocity = Total[vel (distmatxyz/distmat)];
-    pointsnew = (Normalize[#] & /@ (pointsi + velocity));
-    If[half == 1, 
-     pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
-    pointsnew[[;; n]]]
-   ];
+	Block[{n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, 
+		velocity, pointsnew},
+	n = Length[points];
+	If[half == 1,
+		pointsi = Join[points, -points]; n2 = 2 n;,
+		pointsi = points; n2 = n;
+	];
+	pointsmat = ConstantArray[pointsi, n2];
+	distmatxyz = pointsmat - Transpose[pointsmat];
+	diag = DiagonalMatrix[ConstantArray[10.^16, n2]];
+	distmat = Total[Transpose[distmatxyz, {2, 3, 1}]^2] + diag;
+	velocity = Total[vel (distmatxyz/distmat)];
+	pointsnew = (Normalize[#] & /@ (pointsi + velocity));
+	If[half == 1, 
+		pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
+	pointsnew[[;; n]]]
+, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
@@ -659,10 +660,10 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 						(*Shells Negative z*)
 						If[mirror, ListSpherePloti[-pointsc, Gray, 0.05], Graphics3D[{}]],
 					ImageSize -> size, PlotLabel -> "", Background -> app]
-				 }],
-				 4,(*DWI*)
-				 Show[
-				 	ListLinePlot[{{0, #}, {1, #}} & /@ Prepend[bvald, 0],
+				}],
+				4,(*DWI*)
+				Show[
+				ListLinePlot[{{0, #}, {1, #}} & /@ Prepend[bvald, 0],
 						PlotStyle -> Directive[{Gray, Thick}], PlotRange -> {{0, 2}, Full},
 						AxesStyle -> Thick, Axes -> {False, True}, AspectRatio -> 1.4,
 						AxesLabel -> {None, Style["b-value", Bold, Black]}],
@@ -1111,17 +1112,17 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 (*calculate polar coordinates from gradients*)
 CalcPolarPts[grad_, type_] := CalcPolarPts[grad, type, {0., 0.}]
 CalcPolarPts[grad_, type_, vec_] := Block[{sig, phi, gradp, rot},
-  (*rotate viewpoint*)
-  rot = (RotationMatrix[vec[[1]] 180 Degree, {0, 0, -1}].RotationMatrix[vec[[2]] 90 Degree, {0, 1, 0}]);
-  (*calculate spherical coordinates*)
-  {sig, phi} = Transpose@(Quiet[({90,0} + {-1, 1} ToSphericalCoordinates[rot.#][[2 ;;]]/Degree) & /@ grad] /. Indeterminate -> 0);
-  (*transform to correct axes system*)
-  {
-Transpose[{phi Cos[sig Degree], 90 Sin[sig Degree]}],
-    Transpose[{phi , sig}],
-    Transpose[{phi , 90 Sin[sig Degree]}]
-    }[[type]]
-  ]
+	(*rotate viewpoint*)
+	rot = (RotationMatrix[vec[[1]] 180 Degree, {0, 0, -1}].RotationMatrix[vec[[2]] 90 Degree, {0, 1, 0}]);
+	(*calculate spherical coordinates*)
+	{sig, phi} = Transpose@(Quiet[({90,0} + {-1, 1} ToSphericalCoordinates[rot.#][[2 ;;]]/Degree) & /@ grad] /. Indeterminate -> 0);
+	(*transform to correct axes system*)
+	{
+		Transpose[{phi Cos[sig Degree], 90 Sin[sig Degree]}],
+		Transpose[{phi , sig}],
+		Transpose[{phi , 90 Sin[sig Degree]}]
+	}[[type]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1197,42 +1198,41 @@ Options[FindOrder]={OrderSpan->"Auto"};
 
 SyntaxInformation[FindOrder] = {"ArgumentsPattern" -> {_,_,OptionsPattern[]}};
 
-FindOrder[grad_, bval_,OptionsPattern[]] := 
- Block[{local, minval, orderout, n, m, ord, val, temp, order,span},
-  (*define the absvec and initial order*)
-  temp = MakeAbsVec[grad, bval];
-  orderout = order = Range[Length[temp]];
-  
-  span=OptionValue[OrderSpan];
-  
-  (*define initialization parameters*)
-  local = Clip[If[span==="Auto",(*Round[Length[temp]/15],span]*)7,span],{5,Infinity}];
-  (*local = 11;*)
-  minval = Infinity;
-  n = m = 0;
-  
-  (*brute force the solution, max 100000 iteration*)
-  (*bo better solution after 25000 iteration probably already pritty good so stop*)
-  While[n < 50000 && m < 150000,
-   (*count iterations make new order and calculae load value*)
-   m++;
-   order = RandomSample[order];
-   val = ValCalc[temp[[order]], local];
-   
-   (*if new optimum reset counter and update output*)
-   If[val < minval,
-    n = 0;
-    minval = val;
-    orderout = order;
-    ,
-    n++;
-    ]];
-  (*give optimal random order*)
-  orderout
-  ]
+FindOrder[grad_, bval_,OptionsPattern[]] := Block[{local, minval, orderout, n, m, ord, val, temp, order,span},
+	(*define the absvec and initial order*)
+	temp = MakeAbsVec[grad, bval];
+	orderout = order = Range[Length[temp]];
+
+	span=OptionValue[OrderSpan];
+
+	(*define initialization parameters*)
+	local = Clip[If[span==="Auto",(*Round[Length[temp]/15],span]*)7,span],{5,Infinity}];
+	(*local = 11;*)
+	minval = Infinity;
+	n = m = 0;
+
+	(*brute force the solution, max 100000 iteration*)
+	(*bo better solution after 25000 iteration probably already pritty good so stop*)
+	While[n < 50000 && m < 150000,
+		(*count iterations make new order and calculae load value*)
+		m++;
+		order = RandomSample[order];
+		val = ValCalc[temp[[order]], local];
+
+		(*if new optimum reset counter and update output*)
+		If[val < minval,
+		n = 0;
+		minval = val;
+		orderout = order;
+		,
+		n++;
+	]];
+	(*give optimal random order*)
+	orderout
+]
 
 
-ValCalc =   Compile[{{vec, _Real, 2}, {local, _Integer, 0}}, Max[Mean[Transpose[Partition[vec, local, 1]]]]];
+ValCalc = Compile[{{vec, _Real, 2}, {local, _Integer, 0}}, Max[Mean[Transpose[Partition[vec, local, 1]]]]];
 
 
 MakeAbsVec[grad_, bval_] := Partition[Flatten[Abs@(grad*Sqrt[bval])], 3];
@@ -1249,9 +1249,9 @@ MakeAbsVec[grad_, bval_] := Partition[Flatten[Abs@(grad*Sqrt[bval])], 3];
 SyntaxInformation[ConditionNumberCalc] = {"ArgumentsPattern" -> {_}};
 
 ConditionNumberCalc[grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{gx, gy, gz},
-  {gx, gy, gz} = Transpose[grad];
-  (Max[#]/Min[#])&@SingularValueList[{gx^2, gy^2, gz^2, 2 gx gy, 2 gx gz, 2 gy gz}]
-  ]
+	{gx, gy, gz} = Transpose[grad];
+	(Max[#]/Min[#])&@SingularValueList[{gx^2, gy^2, gz^2, 2 gx gy, 2 gx gz, 2 gy gz}]
+]
 
 ConditionNumberCalc[mat_] := (Max[#]/Min[#])&@SingularValueList[mat];
 
@@ -1329,19 +1329,16 @@ GradVecConv[grad_,type_]:=Block[{gx,gy,gz},
 
 
 Options[BmatrixCalc] = {UseGrad -> {1, 1, {1, 1}, 1, 1}, OutputType -> "Matrix", Method -> "Numerical", StepSizeI -> 0.05,
-   UnitMulti -> 10^-3, PhaseEncoding -> "A", FlipAxes -> {{1, 1, 1}, {1, 1, 1}}, SwitchAxes -> {{1, 2, 3}, {1, 2, 3}}};
+	UnitMulti -> 10^-3, PhaseEncoding -> "A", FlipAxes -> {{1, 1, 1}, {1, 1, 1}}, SwitchAxes -> {{1, 2, 3}, {1, 2, 3}}};
 
 SyntaxInformation[BmatrixCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
 BmatrixCalc[folder_, grads_, opts : OptionsPattern[]] := Module[{seq, gt, hw, te, bmat, t},
-	
 	seq = ImportGradObj[folder];
-	
 	bmat = Map[(
 		{gt, hw, te} = GradSeq[seq, t, #, UseGrad -> OptionValue[UseGrad], UnitMulti -> OptionValue[UnitMulti], FilterRules[{opts}, Options[GradSeq]]];
 		Chop[GradBmatrix[gt, hw, te, t, Method -> OptionValue[Method], StepSizeI -> OptionValue[StepSizeI], FilterRules[{opts}, Options[GradBmatrix]]]]
 	) &, grads];
-	
 	Switch[OptionValue[OutputType], "Matrix", bmat, "Gradient", BmatrixInv[#] & /@ bmat]
 ]
 
@@ -1385,13 +1382,12 @@ BmatrixConv[bmat_] := If[Length[bmat[[1]]] == 6, Append[-#, 1] & /@ bmat, -bmat[
 
 SyntaxInformation[BmatrixRot] = {"ArgumentsPattern" -> {_, _}};
 
-BmatrixRot[bmat_, rotmat_] := 
- Module[{sc1 = {1, 1, 1, 0.5, 0.5, 0.5}, sc2 = {1, 1, 1, 2, 2, 2}},
-  If[Dimensions[bmat] == {6},
-   sc2 TensVec[Transpose[rotmat].TensMat[sc1 bmat].rotmat],
-   sc2 TensVec[Transpose[rotmat].TensMat[sc1 #].rotmat] & /@ bmat
-   ]
-  ]
+BmatrixRot[bmat_, rotmat_] := Module[{sc1 = {1, 1, 1, 0.5, 0.5, 0.5}, sc2 = {1, 1, 1, 2, 2, 2}},
+	If[Dimensions[bmat] == {6},
+		sc2 TensVec[Transpose[rotmat].TensMat[sc1 bmat].rotmat],
+		sc2 TensVec[Transpose[rotmat].TensMat[sc1 #].rotmat] & /@ bmat
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1462,38 +1458,38 @@ SelectBvalueData[{dwi_?ArrayQ, val_?VectorQ, grad_?MatrixQ|None}, sel_?VectorQ] 
 SyntaxInformation[GetGradientScanOrder] = {"ArgumentsPattern" -> {_, _, _.}};
 
 GetGradientScanOrder[grad_?ListQ, bval_?ListQ] := Module[{file},
-  file = FileSelect["FileOpen", {"*.txt"}, WindowTitle -> "Select gradient input *.txt"];
-  GetGradientScanOrder[file, grad, bval]
-  ]
+	file = FileSelect["FileOpen", {"*.txt"}, WindowTitle -> "Select gradient input *.txt"];
+	GetGradientScanOrder[file, grad, bval]
+]
 
-GetGradientScanOrder[file_?StringQ, grd_?ListQ, bval_?ListQ,OptionsPattern[]] := 
- Module[{input, bvali, gradi, order1, p1, p2, int, order2,grad},
-  input = Import[file, "Lines"];
-  input = (ToExpression@DeleteCases[StringSplit[StringTrim[#]] // StringTrim, ""]) & /@ input[[2 ;;]]; 
-  input = input /. {_, _, _, 0.} -> {0., 0., 0., 0.};
-  
-  bvali=input[[All,4]];
-  gradi=Normalize /@input[[All,1;;3]];
-  
-  
-  grad = Sign[Sign[grd[[All, 3]]] + 0.00001] grd;
-  
-  order1 = Flatten[MapThread[     (
-       p1 = Position[Round[bval, .1], #1]; 
-       p2 = Position[Round[grad, .1], #2]; 
-       int = Intersection[p1, p2]
-       ) &, {Round[bvali, .1], Round[gradi, .1]}
-     ]
-    ];
-  order2 = Flatten[MapThread[(
-  		p1 = Position[Round[bvali, .1], #1];
-  		p2 = Position[Round[gradi, .1], #2]; 
-  		int = Intersection[p1, p2]
-       ) &, {Round[bval, .1], Round[grad, .1]}
-     ]
-    ];
-  {order1, order2}
-  ]
+GetGradientScanOrder[file_?StringQ, grd_?ListQ, bval_?ListQ,OptionsPattern[]] :=  Module[{
+		input, bvali, gradi, order1, p1, p2, int, order2,grad
+	},
+	input = Import[file, "Lines"];
+	input = (ToExpression@DeleteCases[StringSplit[StringTrim[#]] // StringTrim, ""]) & /@ input[[2 ;;]]; 
+	input = input /. {_, _, _, 0.} -> {0., 0., 0., 0.};
+
+	bvali=input[[All,4]];
+	gradi=Normalize /@input[[All,1;;3]];
+
+	grad = Sign[Sign[grd[[All, 3]]] + 0.00001] grd;
+
+	order1 = Flatten[MapThread[     (
+		p1 = Position[Round[bval, .1], #1]; 
+		p2 = Position[Round[grad, .1], #2]; 
+		int = Intersection[p1, p2]
+		) &, {Round[bvali, .1], Round[gradi, .1]}
+		]
+	];
+	order2 = Flatten[MapThread[(
+		p1 = Position[Round[bvali, .1], #1];
+		p2 = Position[Round[gradi, .1], #2]; 
+		int = Intersection[p1, p2]
+		) &, {Round[bval, .1], Round[grad, .1]}
+		]
+	];
+	{order1, order2}
+]
 
 
 (* ::Subsection:: *)
@@ -1740,21 +1736,21 @@ GetSliceNormal[folder_String,part_Integer] := Module[{or,files,grads,norm,gradRo
 SyntaxInformation[GetSliceNormalDir] = {"ArgumentsPattern" -> {_}};
 
 GetSliceNormalDir[dFile_String] := Module[{meta, directions, slice, groups, orientation,grads,norm,gradRotmat},
-  meta = Import[dFile, "MetaInformation"];
-  directions = "(2005,1415)" /. meta;
-  slice = "(2001,1018)" /. meta;
-  groups = If[("FrameCount"/slice /. meta) == directions, 
-  	("(5200,9230)" /. meta)[[1 ;; directions]], 
-  	("(5200,9230)" /. meta)[[1 ;; ("FrameCount"/"(2001,1018)") /. meta]]
-  	];
-  orientation = "ImageOrientation" /. ("(0020,9116)" /. groups[[1]]);
-  gradRotmat = {v1 = {-1, 1, -1} orientation[[{5, 4, 6}]], v2 = {1, -1, 1} orientation[[{2, 1, 3}]],-Cross[v1, v2]} // Transpose;
-  
-  (*gradRotmat = Transpose[{orientation[[1 ;; 3]], orientation[[4 ;; 6]], Cross[orientation[[1 ;; 3]], orientation[[4 ;; 6]]]}];*)
-  grads = If[("(0018,9075)" /. #) == "NONE" || ("(0018,9075)" /. #) == "ISOTROPIC", {0, 0, 0},("(0018,9089)" /. ("(0018,9076)" /. #))] & /@ (("(0018,9117)" /. #) & /@ groups);
-  norm={0., 0, 1}.gradRotmat;
-  {norm,grads,gradRotmat}
-  ]
+	meta = Import[dFile, "MetaInformation"];
+	directions = "(2005,1415)" /. meta;
+	slice = "(2001,1018)" /. meta;
+	groups = If[("FrameCount"/slice /. meta) == directions, 
+		("(5200,9230)" /. meta)[[1 ;; directions]], 
+		("(5200,9230)" /. meta)[[1 ;; ("FrameCount"/"(2001,1018)") /. meta]]
+		];
+	orientation = "ImageOrientation" /. ("(0020,9116)" /. groups[[1]]);
+	gradRotmat = {v1 = {-1, 1, -1} orientation[[{5, 4, 6}]], v2 = {1, -1, 1} orientation[[{2, 1, 3}]],-Cross[v1, v2]} // Transpose;
+	
+	(*gradRotmat = Transpose[{orientation[[1 ;; 3]], orientation[[4 ;; 6]], Cross[orientation[[1 ;; 3]], orientation[[4 ;; 6]]]}];*)
+	grads = If[("(0018,9075)" /. #) == "NONE" || ("(0018,9075)" /. #) == "ISOTROPIC", {0, 0, 0},("(0018,9089)" /. ("(0018,9076)" /. #))] & /@ (("(0018,9117)" /. #) & /@ groups);
+	norm={0., 0, 1}.gradRotmat;
+	{norm,grads,gradRotmat}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1788,7 +1784,7 @@ CalculateMoments[{gt_, hw_, te_}, t_] := Module[{fun, m0, m1, m2, m3, vals},
 Options[CorrectBmatrix] = {MethodReg -> "Full"}
 
 SyntaxInformation[CorrectBmatrix] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
- 
+
 CorrectBmatrix[bmati_, w_,OptionsPattern[]] := Block[{bmat, trans, bmi, rot, bm, bmnew, bminew},
 	bmat = If[Length[First[bmati]] == 7, BmatrixConv[bmati], bmati];
 	MapThread[(
@@ -1811,7 +1807,7 @@ CorrectBmatrix[bmati_, w_,OptionsPattern[]] := Block[{bmat, trans, bmi, rot, bm,
 Options[CorrectGradients] = {MethodReg -> "Rotation"}
 
 SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
- 
+
 CorrectGradients[grad_, w_, OptionsPattern[]] := Block[{gr,grnew,trans,rot}, MapThread[(ParametersToTransform[#1, OptionValue[MethodReg]].#2) &, {w, grad}]]
 
 
@@ -1819,65 +1815,66 @@ CorrectGradients[grad_, w_, OptionsPattern[]] := Block[{gr,grnew,trans,rot}, Map
 (*ParametersToTransform*)
 
 
-ParametersToTransform[w_, opt_] := 
- Block[{tx, ty, tz, rx, ry, rz, sx, sy, sz, gx, gy, gz, T, R, G, S, 
-   Rx, Ry, Rz, Gx, Gy, Gz, mat, mats, matL},
-  {rx, ry, rz, tx, ty, tz, sx, sy, sz, gx, gy, gz} = w;
-  {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-  rx = rx Degree; ry = ry Degree; rz = rz Degree;
-  T = {
-    {1, 0, 0, tx},
-    {0, 1, 0, ty},
-    {0, 0, 1, tz},
-    {0, 0, 0, 1}};
-  Rx = {
-    {1, 0, 0, 0},
-    {0, Cos[rx], Sin[rx], 0},
-    {0, -Sin[rx], Cos[rx], 0},
-    {0, 0, 0, 1}};
-  Ry = {
-    {Cos[ry], 0, -Sin[ry], 0},
-    {0, 1, 0, 0},
-    {Sin[ry], 0, Cos[ry], 0},
-    {0, 0, 0, 1}};
-  Rz = {
-    {Cos[rz], Sin[rz], 0, 0},
-    {-Sin[rz], Cos[rz], 0, 0},
-    {0, 0, 1, 0},
-    {0, 0, 0, 1}};
-  R = Rx.Ry.Rz;
-  Gx = {
-    {1, 0, gx, 0},
-    {0, 1, 0, 0},
-    {0, 0, 1, 0},
-    {0, 0, 0, 1}};
-  Gy = {
-    {1, 0, 0, 0},
-    {gy, 1, 0, 0},
-    {0, 0, 1, 0},
-    {0, 0, 0, 1}};
-  Gz = {
-    {1, 0, 0, 0},
-    {0, 1, 0, 0},
-    {0, gz, 1, 0},
-    {0, 0, 0, 1}};
-  G = Gx.Gy.Gz;
-  S = {
-    {sx, 0, 0, 0},
-    {0, sy, 0, 0},
-    {0, 0, sz, 0},
-    {0, 0, 0, 1}};
-  
-  mat = Switch[opt,
-    "Full", T.R.G.S,
-    "Rotation", R,
-    _, R
-    ];
-  
-  mats = mat[[1 ;; 3, 1 ;; 3]];
-  
-  (MatrixPower[mats.Transpose[mats], -(1/2)].mats)
-  ]
+ParametersToTransform[w_, opt_] := Block[{
+		tx, ty, tz, rx, ry, rz, sx, sy, sz, gx, gy, gz, T, R, G, S, 
+		Rx, Ry, Rz, Gx, Gy, Gz, mat, mats, matL
+	},
+	{rx, ry, rz, tx, ty, tz, sx, sy, sz, gx, gy, gz} = w;
+	{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+	rx = rx Degree; ry = ry Degree; rz = rz Degree;
+	T = {
+		{1, 0, 0, tx},
+		{0, 1, 0, ty},
+		{0, 0, 1, tz},
+		{0, 0, 0, 1}};
+	Rx = {
+		{1, 0, 0, 0},
+		{0, Cos[rx], Sin[rx], 0},
+		{0, -Sin[rx], Cos[rx], 0},
+		{0, 0, 0, 1}};
+	Ry = {
+		{Cos[ry], 0, -Sin[ry], 0},
+		{0, 1, 0, 0},
+		{Sin[ry], 0, Cos[ry], 0},
+		{0, 0, 0, 1}};
+	Rz = {
+		{Cos[rz], Sin[rz], 0, 0},
+		{-Sin[rz], Cos[rz], 0, 0},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}};
+	R = Rx.Ry.Rz;
+	Gx = {
+		{1, 0, gx, 0},
+		{0, 1, 0, 0},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}};
+	Gy = {
+		{1, 0, 0, 0},
+		{gy, 1, 0, 0},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}};
+	Gz = {
+		{1, 0, 0, 0},
+		{0, 1, 0, 0},
+		{0, gz, 1, 0},
+		{0, 0, 0, 1}};
+	G = Gx.Gy.Gz;
+	S = {
+		{sx, 0, 0, 0},
+		{0, sy, 0, 0},
+		{0, 0, sz, 0},
+		{0, 0, 0, 1}};
+	
+	mat = Switch[opt,
+		"Full", T.R.G.S,
+		"Rotation", R,
+		_, R
+	];
+	
+	mats = mat[[1 ;; 3, 1 ;; 3]];
+	
+	(MatrixPower[mats.Transpose[mats], -(1/2)].mats)
+	]
 
 
 

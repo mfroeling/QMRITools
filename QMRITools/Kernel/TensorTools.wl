@@ -201,15 +201,20 @@ TensorCalc::data =
 - Multiple voxels (2D)-> {directions, voxels}
 - Single voxel (1D)-> {directions}"
 
-TensorCalc::bvec = "the `1` gradient directions do not match the `2` b values in the b vector."
+TensorCalc::bvec = 
+"the `1` gradient directions do not match the `2` b values in the b vector."
 
-TensorCalc::met = "The method specified (`1`) is not a valid method, please use: \"LLS\",\"WLLS\",\"NLS\"."
+TensorCalc::met = 
+"The method specified (`1`) is not a valid method, please use: \"LLS\",\"WLLS\",\"NLS\"."
 
-ResidualCalc::datdim = "DTIdata (`1`) and tensor data (`2`) are not the same dimensions."
+ResidualCalc::datdim = 
+"DTIdata (`1`) and tensor data (`2`) are not the same dimensions."
 
-AngleCalc::dist = "Unknown option (`1`), options can be. \"0-180\", \"0-90\" or \"-90-90\"."
+AngleCalc::dist = 
+"Unknown option (`1`), options can be. \"0-180\", \"0-90\" or \"-90-90\"."
 
-ConcatenateDiffusionData::dim = "data, grad and bval should be the same length:  data `1` / grad `2` / bval `2`."
+ConcatenateDiffusionData::dim = 
+"data, grad and bval should be the same length:  data `1` / grad `2` / bval `2`."
 
 
 (* ::Section:: *)
@@ -241,19 +246,19 @@ SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern
 (*bvalue, only one number, gr does not have b=0*)
 TensorCalc[data_, gr_, bvalue:_?NumberQ, opts:OptionsPattern[]]:=
 Block[{depthD,dirD,dirG,grad,bvec},
-	
+
 	depthD = ArrayDepth[data];
 	dirD = Length[If[depthD==4, data[[1]], data]];
 	dirG = Length[gr];
-	
+
 	(*check if data is 4D, 3D, 2D or 1D*)
 	If[depthD > 4, Return[Message[TensorCalc::data, ArrayDepth[data]]]];
 	(*check if gradient dimensions are the same in the data and grad vector*)
 	If[(dirD-1) != dirG,Return[Message[TensorCalc::grad,dirD,dirG]]];
-	
+
 	bvec = Prepend[ConstantArray[bvalue,{dirG}],0];
 	grad = N[Prepend[gr,{0,0,0}]];
-	
+
 	If[OptionValue[Method]!="DKI",
 		TensorCalc[data, Bmatrix[bvec, grad], opts],
 		TensorCalc[data, Bmatrix[bvec, grad, Method->"DKI"], opts]
@@ -264,19 +269,19 @@ Block[{depthD,dirD,dirG,grad,bvec},
 (*bvector*)
 TensorCalc[data_, grad_?MatrixQ, bvec:{_?NumberQ ..}, opts:OptionsPattern[]]:=
 Block[{depthD,dirD,dirG,dirB},
-	
+
 	depthD=ArrayDepth[data];
 	dirD = Length[If[depthD==4, data[[1]], data]];
 	dirG = Length[grad];
 	dirB = Length[bvec];
-	
+
 	(*check if data is 4D, 3D, 2D or 1D*)
 	If[depthD>4,Return[Message[TensorCalc::data,ArrayDepth[data]]]];
 	(*check if gradient dimensions are the same in the data and grad vector*)
 	If[dirD!=dirG,Return[Message[TensorCalc::grad,dirD,dirG]]];
 	(*check if bvec is the same length as gradient vec*)
 	If[dirB!=dirG,Return[Message[TensorCalc::bvec,dirG,dirB]]];
-	
+
 	If[OptionValue[Method]!="DKI",
 		TensorCalc[data,Bmatrix[bvec, grad], opts],
 		TensorCalc[data,Bmatrix[bvec, grad, Method->"DKI"],opts]
@@ -290,11 +295,11 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 		fout, method, output, robust, func, con, kappa, result, dataL, outliers, parallel, 
 		mon, fitFun, outFit, fitresult, residual, dataFit, s0, outFun
 	},
-	
+
 	(*get output form*)
 	{output, robust, {con,kappa}, parallel, mon, method} = OptionValue[{
 		FullOutput, RobustFit, RobustFitParameters, Parallelize, MonitorCalc, Method}];
-	
+
 	(*chekc method*)
 	If[!MemberQ[{"LLS", "WLLS", "iWLLS"(*,"NLS","GMM","CLLS","CWLLS","CNLS","DKI"*)}, method],
 		Return[Message[TensorCalc::met, method];$Failed]
@@ -313,7 +318,7 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 	data = ToPackedArray@Ramp@N@Round[dat, .000001];
 	data = RotateDimensionsLeft@If[depthD==4, Transpose@data, data];
 	dataL = ToPackedArray@N@LogNoZero[data];
-	
+
 	(*check if data is 4D, 3D, 2D or 1D*)
 	If[depthD>4, Return[Message[TensorCalc::data, depthD];$Failed]];
 	(*check if bmat is the same length as data*)
@@ -351,14 +356,14 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 	fitresult = RotateDimensionsRight[fitresult];
 	outliers = RotateDimensionsRight[outliers];
 	If[depthD == 4,	outliers = Transpose[outliers]];
-	
+
 	If[OptionValue[FullOutput], 
 		residual = ResidualCalc[dat, fitresult, outliers, bmat, MeanRes->"RMSE"]
 	];
-	
+
 	s0 = N@Clip[ExpNoZero[N@Chop[Last[fitresult]]],{0., 1.5 Max[data]}];
 	tensor = N@Clip[Drop[fitresult, -1],{-0.1,0.1}];
-		
+
 	If[OptionValue[FullOutput],If[robust,{tensor, s0, outliers, residual}, {tensor, s0, residual}], {tensor, s0}]
 ]
 
@@ -369,13 +374,13 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 
 FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}}, Block[{
 	sol, ittA, contA, solA, itt, cont, soli, res, mad, wts, wmat, fitE, LS2, bmat2, out},
-	
+
 	(*based on DOI: 10.1002/mrm.25165*)
 	(*initialize some values*)
 	out = (0. ls); 
 	LS2 = ls; 
 	bmat2 = bmat;
-	
+
 	(*If not background find the outliers*)
 	If[Total[ls] >1 ,
 		(*Step1: initial LLS fit*)
@@ -441,7 +446,7 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 						If[Total[UnitStep[Abs[sol - soli] - con Abs[soli]]] === 0 || itt === 3, cont = 0];
 					];
 				];(*end second while*)
-			
+
 				(*Step 6: Check convergence overall loop*)
 				If[Total[UnitStep[Abs[sol - solA] - con Abs[solA]]] === 0 || ittA === 5, contA = 0];
 			];(*end main while*)
@@ -449,10 +454,10 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 			(*Step 7: Identify and exclude outliers*)
 			res = LS2 - bmat2 . sol;
 			out = UnitStep[Abs[res] - (kappa 1.4826 MedianDeviation[res])];
-			
+
 			];(*close if negative s0*)
 		];(*close if background*)
-		
+
 		out
 	],
 	RuntimeAttributes -> {Listable}, 
@@ -530,7 +535,7 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 		sol
 	]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}]
-        
+
 
 (* ::Subsubsection::Closed:: *)
 (*DKI*)
@@ -718,7 +723,7 @@ FlipGradientOrientation[grad_, v_, p_] /; (AllTrue[v, StringQ] && AllTrue[p, Num
 (*EigensysCalc*)
 
 
-Options[EigensysCalc]={RejectMap->False,Reject->True, PerformanceGoal->"Speed"};
+Options[EigensysCalc]={RejectMap->False,Reject->True, PerformanceGoal->"Quality"};
 
 SyntaxInformation[EigensysCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
@@ -755,22 +760,22 @@ Options[EigenSys]=Options[EigensysCalc];
 
 EigenSys[tens_,out_,OptionsPattern[]]:=Block[{t, met, val, vec,reject, sel},
 	met = OptionValue[PerformanceGoal];
-	
+
 	t=Which[
 		VectorQ[tens], tens,
 		MatrixQ[tens]&&Dimensions[tens]==={3,3}, TensVec[tens],
 		(*ArrayQ[tens]*)True, RotateDimensionsLeft[tens]
 	];
-	
+
 	{val,vec} = If[met==="Speed", EigenSysC[t,out], EigenSysQ[t,out]];
-	
+
 	If[OptionValue[Reject],
 		reject = SelectEig[val];
 		sel = 1-reject;
 		val = sel val;
 		If[vec=!=0,vec=sel vec+reject ConstantArray[{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}},Dimensions[reject]]];
 	];
-	
+
 	If[OptionValue[RejectMap]&&OptionValue[Reject],
 		Switch[out,
 			"val",{val,reject},
@@ -807,9 +812,9 @@ EigenSysQ[tens_,out_]:=Block[{val,vec},
 		],
 		If[VectorQ[tens],
 			(*tensor is just one value*)
-			{EigenVali[tens],0},
+			{EigenVali[tens], 0},
 			(*calculate the eigensystem*)
-			{Map[EigenVali,tens,{-2}],0}
+			{Map[EigenVali, tens, {-2}], 0}
 		]
 	]
 ];
@@ -844,20 +849,20 @@ EigenValC = Compile[{{tens,_Real,1}},Block[{
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
 	If[Total[Abs[tens]]<10.^-15,
 		{0.,0.,0.},
-		
+
 		{dxx,dyy,dzz,dxy,dxz,dyz}=tens;
 		{dxy2,dxz2,dyz2}={dxy,dxz,dyz}^2;
-		
+
 		i1=dxx+dyy+dzz;
 		i2=dxx dyy+dxx dzz+dyy dzz-dxy2-dxz2-dyz2;
 		i3=dxx dyy dzz+2 dxy dxz dyz-dzz dxy2-dyy dxz2-dxx dyz2;
-		
+
 		i=i1/3;
 		v=i^2-i2/3;
 		s=i^3-(i1 i2)/6+i3/2;
 		p3=Pi/3;
 		v2=Sqrt[v];
-		
+
 		phi=Re[ArcCos[If[(v v2)===0,0,s/(v v2)]]/3];
 		{i+2 v2 Cos[phi],i-2 v2 Cos[p3+phi],i-2 v2 Cos[p3-phi]}
 	]
@@ -871,7 +876,7 @@ EigenValC = Compile[{{tens,_Real,1}},Block[{
 EigenVecC=Compile[{{tens,_Real,1},{eig,_Real,1}},Block[{dxx,dyy,dzz,dxy,dxz,dyz,a,b,c,norm},
 	If[Total[Abs[tens]]<10.^-15,
 		{{0,0,1},{0,1,0},{1,0,0}},
-		
+
 		{dxx,dyy,dzz,dxy,dxz,dyz}=tens;
 		(
 			{a,b,c}={dxz dxy,dxy dyz,dxz dyz}-{dyz,dxz,dxy} ({dxx,dyy,dzz}-#);
@@ -1018,7 +1023,7 @@ SyntaxInformation[AngleCalc] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 AngleCalc[data_?ArrayQ,vec_?VectorQ,OptionsPattern[]]:=
 Module[{angles},
 	angles=Map[If[Re[#]==#,ArcCos[# . vec],"no"]&,data,{Depth[data]-2}];
-	
+
 	Switch[
 		OptionValue[Distribution],
 		"0-180",
@@ -1037,9 +1042,9 @@ AngleCalc[data_?ArrayQ,vec_?ArrayQ,OptionsPattern[]]:=
 Module[{angles},
 	If[Dimensions[data]!=Dimensions[vec],
 		Print["Error"],
-		
+
 		angles=MapThread[If[Re[#1]==#1,ArcCos[#1 . #2],"no"]&,{data,vec},ArrayDepth[vec]-1];
-		
+
 		Switch[
 			OptionValue[Distribution],
 			"0-180",
@@ -1099,12 +1104,12 @@ DriftCorrect[data_, bi_, pos_, OptionsPattern[]] := Block[{
 	bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
 	sig = MeanSignal[data, pos, UseMask->OptionValue[UseMask]];
 	dat = Transpose[{pos, sig}];
-	
+
 	{sol1, sol2, sol3} = {a, b, c} /. FindFit[dat, {c + b x + a x^2}, {a, b, c}, x];
 	cor = sol3/Table[sol3 + sol2 x + sol1 x^2, {x, 1, Length[bi]}];
-	
+
 	outp = ConstantArray[cor, Length[data]] data;
-	
+
 	If[OptionValue[NormalizeSignal], 100 outp / (sig[[1]] cor[[1]]) , outp]
 ];
 
@@ -1280,7 +1285,7 @@ SyntaxInformation[TransformTensor] = {"ArgumentsPattern" -> {_, _, _}};
 TransformTensor[tens_, disp_, vox_]:=Block[{imat, jac},
 	imat=IdentityMatrix[3];
 	jac=Chop[imat+Table[GaussianFilter[disp[[i]],1,imat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
-	
+
 	TensVec[Apply[TensorRotate,RotateDimensionsLeft[{RotateDimensionsRight[TensMat[tens],2],jac},3],{-4}]]
 ]
 
@@ -1370,11 +1375,11 @@ TensorCorrect[tens,phase,0,shift,vox];
 (* met masker, dus zonder sprongen in de afgeleide by grens tussen deformatie veld en achtergrond *)
 TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]]:=
 	Module[{dim,pxshift,der,f,tensM,tensC,tensCV,tensT},
-	
+
 	dim=Dimensions[phase];
 	(*deformation expessed in pixels*)
 	pxshift=phase*shift[[1]];
-	
+
 	If[OptionValue[RotationCorrect]==True,
 		PrintTemporary["Cacluating Derivative"];
 		(*local derivative of the displacement in the slice direction*)
@@ -1383,7 +1388,7 @@ TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]]:=
 			Deriv[pxshift,vox,mask]
 		];
 		f=Fmat[der,shift[[2]]];
-		
+
 		PrintTemporary["Rotation Correction"];
 		(*rotation correction of matrix*)
 		(*tensor to matrixform*)
@@ -1395,7 +1400,7 @@ TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]]:=
 		,
 		tensCV=tens;
 		];
-	
+
 	PrintTemporary["Translation Correction"];
 	(*Translation correction of the rotation corrected Tensor*)
 	tensT=Map[(MapThread[TransCorrect[#1,#2,shift[[2]],1]&, {#,pxshift}])&,tensCV]
@@ -1422,7 +1427,7 @@ Module[{data,shift,pos,acpos,out},
 		ListInterpolation[#2,InterpolationOrder->int][Clip[acpos,{1,Length[acpos]}]]
 		(*[{Clip[acpos[[1]],{1,dimx}],Clip[acpos[[2]],{1,dimy}]}]*)
 		)&,{shift,data}];
-	
+
 	(*If deformation was in the "COL" direction rotate back*)
 	If[dir=="COL",Return[Transpose[Chop[out]]],Return[Chop[out]]]
 	];

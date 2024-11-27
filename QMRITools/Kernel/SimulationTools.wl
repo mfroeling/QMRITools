@@ -235,9 +235,9 @@ Options[Tensor]={TensOutput->"Vector"}
 
 SyntaxInformation[Tensor] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-Tensor[l_,ops:OptionsPattern[]]:=Tensor[l,{{0,0,1},{0,1,0},{1,0,0}},ops]
+Tensor[l_, ops:OptionsPattern[]]:=Tensor[l,{{0,0,1},{0,1,0},{1,0,0}}, ops]
 
-Tensor[l_,vec_,OptionsPattern[]]:= Block[{e,tens},
+Tensor[l_, vec_, OptionsPattern[]]:= Block[{e,tens},
 	e = Switch[vec,
 		"Random",
 		RandomMat[],
@@ -257,10 +257,10 @@ Tensor[l_,vec_,OptionsPattern[]]:= Block[{e,tens},
 		If[VectorQ[l]&&Length[l]==3,
 			Transpose[e].{{l[[1]],0,0},{0,l[[2]],0},{0,0,l[[3]]}}.e,
 			Return[Message[Tensor::val,l]]
-			]
-		];
+		]
+	];
 	Chop[Switch[OptionValue[TensOutput],"Vector",TensVec[tens],"Matrix",tens]]
-	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -268,22 +268,22 @@ Tensor[l_,vec_,OptionsPattern[]]:= Block[{e,tens},
 
 
 RandomMatZ[]:= Block[{l1,l2,l3},
-	l1={1,0,0};
-	l2=Normalize[{0,1,1}*RandomVec[]];
-	l3=Cross[l1,l2];
+	l1 = {1,0,0};
+	l2 = Normalize[{0,1,1}*RandomVec[]];
+	l3 = Cross[l1,l2];
 	{l1,l2,l3}
-	];
+];
 
 
 RandomMat[]:= Block[{l1,l2,l3},
-	l1={1,0,0};
-	l2=Normalize[{0,1,1}*RandomVec[]];
-	l3=Cross[l1,l2];
-	{l1,l2,l3}.RotationMatrix[{{1,0,0},RandomVec[]}]
-	];
+	l1 = {1,0,0};
+	l2 = Normalize[{0,1,1}*RandomVec[]];
+	l3 = Cross[l1,l2];
+	{l1, l2, l3 }. RotationMatrix[{{1,0,0}, RandomVec[]}]
+];
 
 
-RandomVec[]:=Normalize[RandomReal[NormalDistribution[],3]]
+RandomVec[]:= Normalize[RandomReal[NormalDistribution[], 3]]
 
 
 (* ::Subsection::Closed:: *)

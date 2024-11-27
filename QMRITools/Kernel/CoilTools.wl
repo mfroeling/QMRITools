@@ -316,22 +316,22 @@ MakeCoilLayout[coils_, opts : OptionsPattern[]] := MakeCoilLayouti[#, 0, opts] &
 Options[MakeCoilLayouti] = Options[MakeCoilLayout];
 
 MakeCoilLayouti[{name_?StringQ, size_?NumberQ, number_?ListQ}, val_, OptionsPattern[]] := Block[{grid, out},
-  If[val === 0,
-   grid = Transpose[Partition[number, size]];
-   out = Column[{name, Grid[grid, Frame -> All]}, Alignment -> Center];
-   ,
-   grid = Transpose[Partition[val[[number]], size]] /. _?Negative -> Green;
-   If[OptionValue[CoilArrayPlot],
-    out = ArrayPlot[grid, ImageSize -> OptionValue[ImageSize],
-       PlotRange -> OptionValue[PlotRange], 
-       PlotLabel -> Style[name, Black, Bold, 12],
-       ColorFunction -> OptionValue[ColorFunction], Frame -> False];
-    ,
-    out = Column[{name, Grid[grid, Frame -> All]}, Alignment -> Center];
-    ]
-   ];
-  out
-  ]
+	If[val === 0,
+		grid = Transpose[Partition[number, size]];
+		out = Column[{name, Grid[grid, Frame -> All]}, Alignment -> Center];
+		,
+		grid = Transpose[Partition[val[[number]], size]] /. _?Negative -> Green;
+		If[OptionValue[CoilArrayPlot],
+			out = ArrayPlot[grid, ImageSize -> OptionValue[ImageSize],
+			PlotRange -> OptionValue[PlotRange], 
+			PlotLabel -> Style[name, Black, Bold, 12],
+			ColorFunction -> OptionValue[ColorFunction], Frame -> False];
+			,
+			out = Column[{name, Grid[grid, Frame -> All]}, Alignment -> Center];
+		]
+	];
+	out
+]
 
 
 (* ::Section:: *)
