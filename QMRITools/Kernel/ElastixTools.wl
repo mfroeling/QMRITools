@@ -261,6 +261,9 @@ RegisterData::fatal="Fatal error encountered."
 Begin["`Private`"]
 
 
+debugElastix[x___] := If[$debugElastix, Print[x]];
+
+
 (* ::Subsection::Closed:: *)
 (*Definitions*)
 
@@ -601,7 +604,7 @@ ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile, f, p},
 (*RunCommand*)
 
 
-RunCommand[com_]:=(If[$debugElastix, Print["Command line: \n"<>com]]; RunProcess[$SystemShell, "StandardOutput", com])
+RunCommand[com_]:=(debugElastix["Command line: \n"<>com]; RunProcess[$SystemShell, "StandardOutput", com])
 
 
 (* ::Subsubsection::Closed:: *)
@@ -611,7 +614,7 @@ RunCommand[com_]:=(If[$debugElastix, Print["Command line: \n"<>com]]; RunProcess
 RunBatfile[tempdir_, command_]:=RunBatfile[tempdir, command, "E"]
 
 RunBatfile[tempdir_, command_, f_]:=Block[{file, batfile, com, quote},
-	If[$debugElastix, Print["Command line: \n"<>First[command]]];
+	debugElastix["Command line: \n"<>First[command]];
 	
 	quote = Switch[operatingSystem,"Windows","\"",_,"'"];
 
@@ -696,7 +699,7 @@ RegisterData[
 		depthS,dim,dimm,dimL,target,moving,dataout,voxL,output,cyclyc,cyc,maskf,maskm
 	},
 	
-	If[$debugElastix, Print@"RegisterData: PCA or Series"];
+	debugElastix["RegisterData: PCA or Series"];
 	
 	(*Check Method, Multi only possible for target and moving*)
 	If[AnyTrue[OptionValue[MethodReg], (# === "rigidMulti" || # === "affineMulti" || # === "bsplineMulti") &], 
@@ -782,7 +785,7 @@ RegisterData[
 		depthT, depthM, voxtL, voxmL, dimT, dimM, type, output, mul ,multi
 	},
 	
-	If[$debugElastix, Print@"RegisterData: Volumes or Multi"];
+	debugElastix["RegisterData: Volumes or Multi"];
 
 	(*Check Method, PCA only possible for series*)
 	If[AnyTrue[OptionValue[MethodReg], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &], 
@@ -866,7 +869,7 @@ RegisterDatai[
 	
 	method = OptionValue[MethodReg];
 	method = If[StringQ[method], {method}, method];
-	If[$debugElastix, Print["RegisterDatai: "<>StringJoin[Riffle[method," - "]]<>" / "<>type]];
+	debugElastix["RegisterDatai: "<>StringJoin[Riffle[method," - "]]<>" / "<>type];
 	
 	bsplineSpacing=OptionValue[BsplineSpacing];
 	bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
@@ -1030,7 +1033,7 @@ RegisterDatai[
 		RunCommand[command];
 		
 		(*perform translation on all files *)
-		If[$debugElastix, Print["TransformData: making multi output"]];
+		debugElastix["TransformData: making multi output"];
 		data = TransformData[{#, voxm}, TempDirectory->DirectoryName[tdir], DeleteTempDirectory->False, PrintTempDirectory->False]&/@moving;
 	];
 	
@@ -1039,7 +1042,7 @@ RegisterDatai[
 	If[OptionValue[DeleteTempDirectory], DeleteDirectory[tempdir, DeleteContents->True]];
 	
 	(*output results*)
-	data=ToPackedArray[N@Chop[Clip[data, MinMax[moving]]]];
+	data = ToPackedArray[N@Chop[Clip[data, MinMax[moving]]]];
 	If[OptionValue[OutputTransformation], {data, w}, data]
 ]
 
@@ -1113,8 +1116,6 @@ TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command
 		(*Loop over multi dimensions when set by user*)
 		dat = If[ArrayDepth[data]===4,Transpose@data, data];
 		dat = TransformData[{#,vox}, Method->"Default", DeleteTempDirectory->False, ops]&/@dat;
-
-		Print[Dimensions@dat];
 
 		(*Delete temp directory*)
 		Switch[OptionValue[DeleteTempDirectory],
@@ -1299,7 +1300,7 @@ RegisterDiffusionData[
 RegisterDiffusionData[
 	{dtidata_?ArrayQ, dtimask_?ArrayQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}}
 ,opts:OptionsPattern[]] := Block[{met},
-	If[$debugElastix, Print["Diffusion registration"]];
+	debugElastix["Diffusion registration"];
 	met = (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"});
 	RegisterData[{dtidata, dtimask, vox},(*OutputTransformation->True,*) 
 		MethodReg-> met,
@@ -1334,7 +1335,7 @@ RegisterDiffusionData[
 	tempDira = tempDir <> $PathnameSeparator <> "anat";
 	
 	(*perform DTI registration*)
-	If[$debugElastix, Print["Diffusion registration"]];	
+	debugElastix["Diffusion registration"];	
 	dtidatar = RegisterData[{dtidata, dtimask, vox},
 		TempDirectory -> tempDir, 
 		DeleteTempDirectory -> False, 
@@ -1357,7 +1358,7 @@ RegisterDiffusionData[
 	];
 	
 	(*perform anat registration*)
-	If[$debugElastix, Print["Anatomy registration"]];
+	debugElastix["Anatomy registration"];
 	RegisterData[{anatdata, anatmask, voxa}, {movingdata, vox},
 		TempDirectory -> tempDira, 
 		DeleteTempDirectory -> False,
@@ -1374,7 +1375,7 @@ RegisterDiffusionData[
 	];
 	
 	(*transform all diffusion files to anatomy*)
-	If[$debugElastix, Print["Combine transforms"]];
+	debugElastix["Combine transforms"];
 	
 	(*export diffusion reg target*)
 	vdir = FileNameJoin[{tempDir,"vol"<>StringPadInteger[0]}];
@@ -1482,7 +1483,7 @@ RegisterDiffusionDataSplit[
 	{datal, datar, cut1} = CutData[data,cut1];
 	{maskl, maskr, cut1} = CutData[mask,cut1];
 	{dataal, dataar, cut2} = CutData[dataa,cut2];
-	 
+	
 	datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, voxa}, opts][[2]];
 	datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, voxa}, opts][[2]];
 	
@@ -1508,7 +1509,7 @@ RegisterDiffusionDataSplit[
 	{maskl, maskr, cut1} = CutData[mask,cut1];
 	{dataal, dataar, cut2} = CutData[dataa,cut2];
 	{maskal, maskar, cut2} = CutData[maska,cut2];
-	 
+	
 	datal = RegisterDiffusionData[{datal, maskl, vox}, {dataal, maskal, voxa}, opts][[2]];
 	datar = RegisterDiffusionData[{datar, maskr, vox}, {dataar, maskar, voxa}, opts][[2]];
 	

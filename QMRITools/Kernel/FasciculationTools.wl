@@ -29,8 +29,8 @@ FindActivations::usage =
 FindActivations[data, mask] Finds the activation in MUMRI or DTI data after data normalization within the mask."
 
 EvaluateActivation::usage =
-"EvaluateActivation[out] allows to evaluate the activation deterction using FindActivations, where out is the output of that function with the option Activationoutput set to True.
-EvaluateActivation[out, actS] The same with the extra annalysis of the SelectActivations function output given as actS."
+"EvaluateActivation[out] allows to evaluate the activation detection using FindActivations, where out is the output of that function with the option ActivationOutput set to True.
+EvaluateActivation[out, actS] The same with the extra analysis of the SelectActivations function output given as actS."
 
 AnalyzeActivations::usage = 
 "AnalyzeActivations[actMap, mask] Analysis of the activation map generated from the mask."
@@ -51,7 +51,7 @@ Output is {{actSelected, Total[actSelected]}, {actTotal, Total[actTotal]}} is ma
 
 
 ActivationThreshold::usage =
-"ActivationThreshold is an option for FindActivations. Fist value is the number of standard deviations second is the pecentage threshold."
+"ActivationThreshold is an option for FindActivations. Fist value is the number of standard deviations second is the percentage threshold."
 
 ThresholdMethod::usage =
 "ThresholdMethod is an option for FindActivations. Values can be \"StandardDeviation\", \"Fraction\" or \"Both\"."
@@ -60,13 +60,13 @@ IgnoreSlices::usage =
 "IgnoreSlices is an option for FindActivations and SelectActivations. Determins how many slices of the start and end of the dataset are ignored."
 
 ActivationBackground::usage = 
-"ActivationBackground is an option for FindActivations. If all normalized signals, which range between 0-150, are below this value the algorithm does notihing."
+"ActivationBackground is an option for FindActivations. If all normalized signals, which range between 0-150, are below this value the algorithm does nothing."
 
 ActivationIterations::usage = 
 "ActivationIterations is an option for FindActivations. The maximum number of iteration that can be used for activation detection."
 
 ActivationOutput::usage = 
-"ActivationOutput is an option for ActivationOutput. If set to All aslo the mn and treshhold values are retured."
+"ActivationOutput is an option for ActivationOutput. If set to All also the mn and threshold values are returned."
 
 ActivationSize::usage = 
 "ActivationSize is an option for SelectActivations. Its the size of the activations selected defined in number of voxels if no voxel size is given. If a voxel size is given its the volume.";
@@ -109,9 +109,9 @@ Options[FindActivations] = Options[FindActivationsI] = {
 	ThresholdMethod -> "Both", 
 	ActivationOutput -> "Activation",
 	MaskDilation -> 0, 
-    IgnoreSlices -> {0, 0},
-    ActivationBackground ->10,
-    ActivationIterations-> 10
+	IgnoreSlices -> {0, 0},
+	ActivationBackground ->10,
+	ActivationIterations-> 10
 };
 
 SyntaxInformation[FindActivations] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
@@ -138,13 +138,13 @@ FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, da
 		"StandardDeviation", {sc, 1}
 	];
 	
-	(*perfomr the activation finding in the selected slices*)
+	(*perform the activation finding in the selected slices*)
 	dat = RotateDimensionsLeft[Transpose[data[[start + 1 ;; -stop - 1]]]];	
 	act = FindActC[dat, sc, fr, itt, back];
 
-	(*create extra ouput if needed*)
+	(*create extra output if needed*)
 	If[OptionValue[ActivationOutput]=!="Activation",
-		{mn, tr, sc, fr} = RotateDimensionsRight[MeanTresh[dat, act, sc, fr, back]];
+		{mn, tr, sc, fr} = RotateDimensionsRight[MeanThresh[dat, act, sc, fr, back]];
 		mn = ToPackedArray@ArrayPad[mn, {{start, stop}, {0, 0}, {0, 0}}, 0.];
 		tr = ToPackedArray@ArrayPad[Transpose[{tr, sc, fr}], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}, 0.];
 	];
@@ -153,7 +153,7 @@ FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, da
 	act = SparseArray[ArrayPad[Round[Transpose[RotateDimensionsRight[act]]], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}]];
 
 	If[OptionValue[ActivationOutput]==="Activation", {act, data}, {act, data, mn ,tr}] 
-  ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -164,7 +164,7 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 	{tSelect, ti, cont, err, i, mn, tr, out},
 	
 	If[Mean[t] <= back,
-		(*if backgroud do nothing*)
+		(*if background do nothing*)
 		0 t,
 		
 		(*find activation function*)
@@ -199,7 +199,7 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 		If[err,
 			(*if while get into error do nothing*)
 			0 t,
-			(*based on data vector without dropouts find correct thresshold*)
+			(*based on data vector without dropouts find correct threshold*)
 			mn = Mean[ti];
 			tr = Min[{1 - (sc/mn) StandardDeviation[ti], fr}];
 			UnitStep[-t + tr mn]
@@ -209,13 +209,13 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 
 
 (* ::Subsubsection::Closed:: *)
-(*MeanTresh*)
+(*MeanThresh*)
 
 
-MeanTresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {back, _Real, 0}}, Block[
+MeanThresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {back, _Real, 0}}, Block[
 	{ti, mn, sd, tr},
 	If[Mean[t] <= back,
-		(*if backgroud do nothing*)
+		(*if background do nothing*)
 		{0, 0, 0, 0}, 
 		ti = Select[(1-s) t, #>0.&];
 		mn = Mean[ti];
@@ -362,7 +362,7 @@ AnalyzeActivationsI[act_,msk_,lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVo
 	
 	vals=Flatten@{mSizeT,nActs,nObs,chance,chanceO,chanceV,mSd,quants};
 	
-	out=Association[Thread[{"ROI vol","Amount","Observ.","Chance/Vol","Chance/Obs","Chance/Vox","Mean Size","StDv Size","Median Size","5% Size","95% Size"}->vals]];
+	out=Association[Thread[{"ROI vol","Amount","Observed","Chance/Vol","Chance/Obs","Chance/Vox","Mean Size","StDv Size","Median Size","5% Size","95% Size"}->vals]];
 	If[lab==="",out, Association[lab->out]]
 ]
 
@@ -381,7 +381,7 @@ EvaluateActivation[{act_,dat_,mn_,tr_},actS_]:=EvaluateActivation[act,dat,mn,tr,
 
 EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,dim,aim
 	(*ddim, zz, dd, yy ,xx, sl, dyn*)},
-	NotebookClose[plotwindow];
+	NotebookClose[plotWindow];
 	
 	actD=Normal[act];
 	actSD=Normal[actS];
@@ -484,7 +484,7 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 		ControlPlacement->Right
 	];
 	
-	plotwindow=CreateWindow[DialogNotebook[{CancelButton["Close",Clear[datD,actD,actSD,mnD,trD,dim,aim];DialogReturn[]],pan},WindowSize->All,WindowTitle->"Plot data window"]];
+	plotWindow = CreateWindow[DialogNotebook[{CancelButton["Close",Clear[datD,actD,actSD,mnD,trD,dim,aim];DialogReturn[]],pan},WindowSize->All,WindowTitle->"Plot data window"]];
 ]
 
 

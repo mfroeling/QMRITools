@@ -76,8 +76,6 @@ Tracts can be by SplitSegmentations. name is a string that is added to the heade
 GetTractMeans[dat, tracts, vox, name] where name is a string that is added to the header."
 
 
-
-
 JoinSets::usage =
 "JoinSets[{dat1, dat2, ...}, over] joins dat1, dat2, ... with over slices overlap.
 JoinSets[{dat1, dat2, ...},{over1, over2, ...}] joins dat1 and dat2 with over1 slices overlap, Joins dat2 and dat3 with over2 slices overlap and so on.
@@ -174,7 +172,6 @@ OutputSNR::usage =
 
 SmoothSNR::usage = 
 "SmoothSNR is an option for SNRMapCalc."
-
 
 
 MeanMethod::usage = 
@@ -327,11 +324,11 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, 
 	mod = OptionValue[FitFunction];
 	out = OptionValue[FitOutput];
 	met = OptionValue[Method];
-	
+
 	(*prepare data*)
 	data = Pick[dat, Unitize[dat], 1];
 	nodat = Length[data] <= 10;
-	
+
 	Off[NonlinearModelFit::"cvmit"]; Off[NonlinearModelFit::"sszero"];
 	(*perform the fit for one compartment*)
 	If[nodat,
@@ -340,13 +337,13 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, 
 		(*initialization for mean and std*)
 		mdat = Mean[data];
 		sdat = StandardDeviation[data];
-		
+
 		noFit = (sdat === 0.);
-		
+
 		If[!noFit,
 			(*fit data*)
 			fdat = FitData[data];
-			
+
 			Switch[mod,
 				(*SkewNormal dist parameter fit*)
 				"SkewNormal",
@@ -366,7 +363,7 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, 
 		]
 	];
 	On[NonlinearModelFit::"cvmit"]; On[NonlinearModelFit::"sszero"];
-	
+
 	(*generate Output*)
 	Switch[out,
 		"Parameters",
@@ -404,7 +401,7 @@ Module[{i,datf,init,out,sol,par,
 	omega1i,omega2i,alpha1i,alpha2i,xi1i,xi2i,
 	omega1,xi1,alpha1,omega2,xi2,alpha2},
 	Off[NonlinearModelFit::cvmit];Off[NonlinearModelFit::eit];Off[NonlinearModelFit::sszero];
-	
+
 	init={
 		{.2,.2,0,0,.6,2.1},
 		{.2,.2,0,0,.6,1.6},
@@ -432,11 +429,11 @@ Module[{i,datf,init,out,sol,par,
 			{{f,0.5},{omega1,omega1i},{omega2,omega2i},{alpha1,alpha1i},{alpha2,alpha2i},{xi1,xi1i},{xi2,xi2i}},
 			x,MaxIterations->1000]
 		)&,{datf,init}];
-	
+
 	par={Mn[omega1,xi1,alpha1],Sqrt[Var[omega1,alpha1]]}/.#["BestFitParameters"]&/@sol;
-	
+
 	On[NonlinearModelFit::cvmit];On[NonlinearModelFit::eit];On[NonlinearModelFit::sszero];
-	
+
 	Switch[
 		out,
 		"Parameters",
@@ -506,7 +503,7 @@ GetMaskMeans[dat_, mask_, lab_, OptionsPattern[]] := Block[{labels, out, fl},
 			Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
 		]
 	]&/@ Transpose[mask];
-	
+
 	Prepend[out, labels]
 ]
 
@@ -526,7 +523,7 @@ GetTractMeans[dat_, tracts_, vox_, lab_, OptionsPattern[]] := Block[{labels, fl,
 		{"mean", "std", "Median", "5%", "95%"}, 
 		lab <> " " <> # & /@ {"mean", "std", "Median", "5%", "95%"}
 	];
-	
+
 	out = If[Length[#] <= 10,
 		{0., 0., 0., 0., 0.},
 		fl = GetTractValues[Flatten[#, 1], dat, vox, InterpolationOrder -> OptionValue[InterpolationOrder]];
@@ -537,7 +534,7 @@ GetTractMeans[dat_, tracts_, vox_, lab_, OptionsPattern[]] := Block[{labels, fl,
 			_, Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
 		]
 	] & /@ tracts;
-	
+
 	Prepend[out, labels]
 ]
 
@@ -624,9 +621,9 @@ MeanSignal[data_, posi_, OptionsPattern[]] := Block[{pos, dat, mask},
 		IntegerQ[posi], {{posi}, data[[All,posi]]},
 		True, {All, data}
 	];
-	
+
 	mask = If[OptionValue[UseMask], Mask[NormalizeMeanData[dat], MaskSmoothing->True], 0 dat[[All,1]] + 1];
-	
+
 	N@MeanNoZero[Flatten[#]] & /@ Transpose[MaskData[dat, mask]]
 ]
 
@@ -649,30 +646,30 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 		data, maxIt, diff, it, out, outI, outNew, q1, q2, q3, sc, iqr, dataQ, up, low, mc, met, incZero, output,
 		sd, mn, mad, med
 	},
-	
+
 	(*make numeric*)
 	data = N@datai;
-	
+
 	(*get options*)
 	met = OptionValue[OutlierMethod];
 	output = OptionValue[OutlierOutput];
 	maxIt = OptionValue[OutlierIterations];
 	sc = OptionValue[OutlierRange];
 	incZero = OptionValue[OutlierIncludeZero];
-	
+
 	(*initialize*)
 	diff = it = 1;
 	outI = out = N@If[incZero, 0 data + 1, Unitize[data]];
-	
+
 	(*perform iterative outlier detection*)
 	While[(diff != 0.) && it <= maxIt,
 		(*get the data quantile and iqr*)
 		dataQ = Pick[data, ignore out, 1.];
-		
+
 		
 		{q1, q2, q3} = Quantile[dataQ, {.25, .50, .75}];
 		iqr = (q3 - q1);
-		
+
 		(*switch methods: 10.1016/j.csda.2007.11.008*)
 		(*IQR-inter quantile range, SIQR-skewed iql, aIQR-adjusted iqr using medcouple for skewness*)
 		{low, up} = Switch[OptionValue[OutlierMethod],
@@ -700,16 +697,16 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 				{q1 - sc iqr Exp[-3 mc], q3 + sc iqr Exp[4 mc]}
 			]
 		];
-		
+
 		(*make the oulier mask*)
 		outNew = N[outI (If[(# < low || # > up), 0, 1] & /@ N[data])];
-		
+
 		(*update ouliers and iteration*)
 		diff = Total[out - outNew];
 		out = outNew;
 		it++
 	];
-	
+
 	(*make the output*)
 	If[output === "Mask",
 		Round[out],
@@ -839,7 +836,7 @@ SyntaxInformation[SNRMapCalc] = {"ArgumentsPattern" -> {_, _., _., OptionsPatter
 SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, opts:OptionsPattern[]] := SNRMapCalc[data, noise, OptionValue[SmoothSNR], opts]
 
 SNRMapCalc[data_?ArrayQ, noise_?ArrayQ, k_?NumberQ, OptionsPattern[]] := Module[{sigma, sigmac, snr, depthD, depthN},
-	
+
 	sigma = N[GaussianFilter[noise, 4]];
 	sigmac = (sigma/Sqrt[Pi/2.]) /. 0. -> Infinity;
 
@@ -1030,7 +1027,7 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 		dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran,
 		reverseS, reverseD, split
 	},
-	
+
 	(*get the options*)
 	{motion, pad, normalize, normover, mon, reverseS, reverseD, split} = OptionValue[{MotionCorrectSets, PadOverlap, 
 		NormalizeSets, NormalizeOverlap, MonitorCalc, ReverseSets, ReverseData, JoinSetSplit}];
@@ -1039,16 +1036,16 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 	depth = ArrayDepth[data];
 	depth = 1 + ArrayDepth@First@data;
 	overlap = If[ListQ[over], First@over, over];
-	
+
 	(*normalize the data*)
 	dat = If[normalize, 
 		If[mon, PrintTemporary["Normalizing data"]]; 
 		NormalizeData/@data, data];
 	ran = MinMax[dat];
-	
+
 	(*reverse the order of the sets if needed*)
 	dat = If[reverseS, Reverse[dat], dat];
-	
+
 	If[motion, Switch[depth,
 		5,
 		motion = False;
@@ -1057,10 +1054,10 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 		If[mon,PrintTemporary["Motion correcting data"]];
 		dat = CorrectJoinSetMotion[dat, vox, over, PadOverlap->pad, JoinSetSplit->split, MonitorCalc->mon];
 	]];
-	
+
 	(*reverse the order of the slices if needed*)
 	dat = N@If[reverseD, Reverse[dat, 2], dat];
-	
+
 	If[mon, PrintTemporary["Joining data"]];	
 	overlap = overlap + 2*pad;
 	dat = Switch[depth,
@@ -1072,7 +1069,7 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 	(*give output*)	
 	dat = ArrayPad[dat, Prepend[ConstantArray[{0, 0}, ArrayDepth[dat] - 1], {-pad, -pad}]];
 	dat = ToPackedArray@N@Clip[dat, 1.1 ran, 1.1 ran];
-	
+
 	Return[If[reverseD, Reverse[dat], dat]]
 ]
 
@@ -1080,10 +1077,10 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False]:= Block[{
 		sets,set1,set2,step,set1over,set2over,joined,mn1,mn2
 	},
-	
+
 	sets=Length[data];
 	step=1/(overlap+1);
-	
+
 	(*perform the join*)
 	Table[
 		If[i==1,
@@ -1095,30 +1092,30 @@ JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False]:= Block[{
 			];
 		set2=Drop[data[[i+1]],{1,overlap}];
 		set2over=Take[data[[i+1]],{1,overlap}];
-		
+
 		If[norm,
 			mn1 = MeanNoZero[Flatten[#]] & /@ set1over;
 			mn2 = MeanNoZero[Flatten[#]] & /@ set2over;
-			
+
 			mn1 = DivideNoZero[mn1[[1]],mn1];
 			mn2 = DivideNoZero[mn2[[-1]],mn2];
-			
+
 			set1over = mn1 set1over;
 			set2over = mn2 set2over;
 		];
 
 		joined = Joini[{set1, set2}, {set1over, set2over}, overlap];
 	,{i, 1, sets-1}];
-	
+
 	joined
 ];
 
 
 JoinSetsi[data_?ArrayQ,overlap_?ListQ,OptionsPattern[]]:=
 Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1,drop2,overl},
-	
+
 	sets=Length[data];
-	
+
 	(*perform the join*)
 	Table[
 		overSet=overlap[[i]];
@@ -1148,7 +1145,7 @@ Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1
 		set1over=Take[data1,{-overl,-1}];
 		set2=Drop[data2,{1,overl}];
 		set2over=Take[data2,{1,overl}];
-	
+
 		joined=Joini[{set1,set2},{set1over,set2over},overl];
 	,{i, 1, sets-1}];
 
@@ -1178,9 +1175,9 @@ Joini[sets_, setover_, step_] := Module[{over,dato,unit,noZero,tot},
 JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0}, {steps, _Integer, 0}}, Block[{
 		ran, unit, tot1, out
 	},
-	
+
 	out = First@dat;
-	
+
 	If[tot === 0,
 		(*all zeros, no overlap of signals so just the sum of signals*)
 		out = Total[dat];
@@ -1189,7 +1186,7 @@ JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0},
 		(*define the range needed*)
 		tot1 = 1./(tot + 1.);
 		ran = Reverse@Range[tot1, 1. - tot1, tot1];
-		
+
 		(*replace with gradient*)
 		If[tot === steps,
 			(*full overlap*)
@@ -1219,32 +1216,32 @@ SyntaxInformation[CorrectJoinSetMotion] = {"ArgumentsPattern" -> {_, _, _, Optio
 
 CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 	{sets, mon, nmax, dim, d1, d2, maskd1, maskd2, samp, overp, pad, regFunc, depth},
-	
+
 	(*get the input*)
 	pad = OptionValue[PadOverlap];
 	mon = OptionValue[MonitorCalc];
 	depth = ArrayDepth[input];
-	
+
 	(*data which will be joined, make all data sets 4D*)
 	sets = Switch[depth,
 		5, input,
 		4, Transpose[{#}]&/@input
 	];
-	
+
 	(*add z padding to allow more overlap*)
 	sets = ArrayPad[#, Prepend[ConstantArray[{0, 0}, ArrayDepth[#] - 1], {pad, pad}]] & /@ sets;
-	
+
 	(*set needed values*)
 	nmax = Length[sets];
 	overp = over + 2 pad;
 	dim = Dimensions[sets[[1,All,1]]];
-	
+
 	(*define the registration function*)
 	regFunc = If[OptionValue[JoinSetSplit], RegisterDataTransformSplit, RegisterDataTransform];
-	
+
 	i=0;
 	If[mon, PrintTemporary[Dynamic[i]]];
-	
+
 	(*perform the motion correction*)
 	Table[
 		i=n;
@@ -1269,7 +1266,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 				PrintTempDirectory -> False, InterpolationOrderReg -> 1];
 		sets[[n+1]] = MaskData[sets[[n+1]], Dilation[Mask[NormalizeMeanData[sets[[n+1]]], .5], 2]];
 	, {n, 1, nmax - 1}];
-	
+
 	(*output the data, make the 3D data 3D again*)
 	Switch[depth,
 		5, sets,
@@ -1449,25 +1446,25 @@ SyntaxInformation[Hist2] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 Hist2[dat_?ArrayQ,range:{{_,_}..},label:{_String..},OptionsPattern[]]:=
 Module[{data,line,line1,line2,hist,x,f,omega1,omega2,xi1,xi2,alpha1,alpha2,r1,r2,sol},
-	
+
 	If[!(Length[range]==Length[dat]==Length[label]==5),Return[Message[Hist2::size,Length[dat],Length[range],Length[label]]]];
 	data=DeleteCases[Flatten[#]//N,0.]&/@dat;
 	sol=ParameterFit2[data];
 	Map[
 		(
 		{r1,r2}=range[[#]];
-		
+
 		{f,omega1,omega2,xi1,xi2,alpha1,alpha2}=sol[[#]];
-			
+
 			line1=Plot[If[OptionValue[Scaling],(1-f),1]*SkewNorm[x,omega2,xi2,alpha2],
 				{x,r1,r2},PlotStyle->{Thick,Red},PlotRange->Full];
-			
+
 			line2=Plot[If[OptionValue[Scaling],(f),1]*SkewNorm[x,omega1,xi1,alpha1],
 				{x,r1,r2},PlotStyle->{Thick,Blue},PlotRange->Full];
-			
+
 			line=Plot[f SkewNorm[x,omega1,xi1,alpha1]+(1-f)SkewNorm[x,omega2,xi2,alpha2],
 				{x,r1,r2},PlotStyle->{Thick,Green},PlotRange->Full];
-			
+
 			hist=Histogram[
 				Select[data[[#]],(r1<#<r2)&],{Range[r1,r2,(r2-r1)/50]},"ProbabilityDensity",
 				PerformanceGoal->"Speed",
@@ -1475,7 +1472,7 @@ Module[{data,line,line1,line2,hist,x,f,omega1,omega2,xi1,xi2,alpha1,alpha2,r1,r2
 				FrameLabel->{label[[#]],"Probability Density"},Frame->{True,True,False,False},
 				ChartBaseStyle->EdgeForm[White],ChartStyle->Black
 				];
-				
+
 			Show[hist,line1,line2,line])&,Range[Length[range]]
 		]
 	]
@@ -1563,15 +1560,15 @@ SmartMask[input_,ops:OptionsPattern[]]:=SmartMask[input, 0, ops]
 SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 	sol,func,range,map,mask,pmask,pars
 	},
-	
+
 	(*get the parameter from the tensor else use input parameters*)
 	pars = If[Length[input]==6,
 		PrintTemporary["Caculating Parameters"];
 		ParameterCalc[input],
 		input];
-	
+
 	pmask = Mask[pars[[4]] , {0.1, 4}];
-	
+
 	(*find the histogram solution*)
 	sol=If[maski===0,
 		Switch[
@@ -1584,7 +1581,7 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 			,
 			ParameterFit[GetMaskData[#, maski pmask]&/@pars,FitOutput->"BestFitParameters"]
 		];
-	
+
 	
 	Switch[OptionValue[SmartMethod],
 		"Catagorical",
@@ -1598,7 +1595,7 @@ SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
 		map = Total[{1, 1, 1, 1, 2}*(#/Max[#] & /@ map)]/6;
 		mask = pmask * Mask[TotalVariationFilter[map, .25], {OptionValue[Strictness]}];
 		];
-		
+
 		If[OptionValue[SmartMaskOutput]==="mask",mask,{mask,map}]
 	]
 
@@ -1614,16 +1611,16 @@ SyntaxInformation[B1MapCalc] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]
 B1MapCalc[dat_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{r, n, mask, b1, b1c, b1m, b1p, sc, data, refB1},
 	refB1 = OptionValue[ReferenceB1];
 	data = If[OptionValue[B1FilterData], HammingFilterData /@ dat, dat];
-	
+
 	(*mask out where s2<s1*)
 	n = tr2/tr1;
 	r = DivideNoZero @@ Abs[Reverse@data];
 	mask = If[OptionValue[B1Masking], 1 - Mask[r, 1], 1];
-	
+
 	(*calculate the B1 map*)
 	b1m = If[NumericQ[refB1], refB1, 100.] mask (Abs[ArcCos[DivideNoZero[(r n - 1), (n - r)]]]/(a Degree));
 	b1p = Arg[Mean[data]];
-	
+
 	(*give output*)
 	Switch[OptionValue[B1Output], "Map", b1m, "MagPhase", {b1m, b1p}, "Complex", b1m Exp[I b1p]]
 ]
@@ -1661,11 +1658,11 @@ B1Shimming[c1_, c2_, mask_, target_, OptionsPattern[]] := Block[{c1f, c2f, tarf,
 	(*define the constrains*)
 	sc = OptionValue[B1Scaling];
 	fmax = OptionValue[B1MaxPower];
-	
+
 	(*vectorize the data and target*)
 	{c1f, c2f} = GetMaskData[#, mask, GetMaskOnly -> True] & /@ {c1, c2};
 	tarf = Abs@If[NumberQ[target], target, GetMaskData[target, mask, GetMaskOnly -> True]];
-		
+
 	(*define minimization parameters*)
 	cons = {-180 < a < 180, 0.0 < f1 < fmax, 0.0 < f2 < fmax, 0.0 < f < fmax};
 	{inp, vars, con} = Switch[OptionValue[B1ShimMethod],
@@ -1673,7 +1670,7 @@ B1Shimming[c1_, c2_, mask_, target_, OptionsPattern[]] := Block[{c1f, c2f, tarf,
 		"Magnitude", {{ f1, f2, 0}, {f1, f2}, cons[[{2, 3}]]},
 		_, {{f1, f2, a}, {f1, f2, a}, cons[[{1, 2, 3}]]}
 	] /. If[OptionValue[B1EqualPower], {f1 -> f, f2 -> f}, {}];
-	
+
 	(*perform shimming*)
 	sol = Last[NMinimize[Flatten[{B1MapErrorN[c1f, c2f, tarf, inp, sc], DeleteDuplicates[con]}], DeleteDuplicates[vars]]];
 	inp /. sol /. {f -> 1, f1 -> 1., f2 -> 1., a -> 0.}

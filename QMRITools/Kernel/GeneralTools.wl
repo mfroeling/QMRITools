@@ -866,11 +866,11 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 		{zd, xd, yd} = Dimensions[dat];
 		
 		clipall = Ceiling[{0.5, zd - 0.5, 0.5, xd - .5, 0.5, yd - .5}];
-    
+	
 		r1 = (vox[[2]]*xd)/(vox[[3]]*yd);
 		r2 = (vox[[1]]*zd)/(vox[[3]]*yd);
 		r3 = (vox[[1]]*zd)/(vox[[2]]*xd);
-    
+	
 		size = Min[{r1, r2, r3}] 400;
 		
 		init = OptionValue[CropInit];
@@ -973,7 +973,7 @@ FindCrop[dat_, OptionsPattern[]] := Block[{add, data, dim, d1, d2, unit, crp},
 		3, dat,
 		4, dat[[All, 1]],
 		_, Return[$Failed]
-    ];
+	];
 	dim = Dimensions[data];
 
 	d1 = Unitize@Total[data];
@@ -994,8 +994,8 @@ Options[AutoCropData] = {CropPadding->5}
 SyntaxInformation[AutoCropData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
 AutoCropData[data_, opts:OptionsPattern[]] := Module[{crp},
-    crp = FindCrop[data, opts];
-    {ApplyCrop[data,crp], crp}
+	crp = FindCrop[data, opts];
+	{ApplyCrop[data,crp], crp}
 ]
 
 

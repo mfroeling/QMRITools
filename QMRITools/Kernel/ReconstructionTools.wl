@@ -202,8 +202,9 @@ ReadListData[file_,print_]:=Block[{
 	(*Get the header*)
 	head=StringSplit/@Select[list,StringTake[#,1]==="."&];
 	head = (p = Position[#, ":"][[1, 1]]; 
-	     StringRiffle[#[[5 ;; (p - 1)]]] -> 
-	      ToExpression[#[[(p + 1) ;;]]]) & /@ head;
+		StringRiffle[#[[5 ;; (p - 1)]]] -> 
+		ToExpression[#[[(p + 1) ;;]]]
+	) & /@ head;
 	head[[All,2]]=If[Length[#]==1,#[[1]],#]&/@head[[All,2]];
 	(*get the labels*)
 	lab=StringSplit[list[[StringPosition[StringJoin[StringTake[#,1]&/@list],"# "][[1,1]]-2]]][[2;;-2]];
@@ -524,7 +525,7 @@ FourierKspace3D[kspace_, head_, filt_:False] := Block[{ksize, kspacef, dim, over
 	kspacef = If[filt === "Raw", Map[MakeHammingFilter[Dimensions[#]]#&, kspace, {-3}], kspace];
 	data = FourierKspace3DI[kspacef, ksPad, shift, clip];
 	If[filt === True, Map[HammingFilterData, data, {-3}], data]
-  ]
+]
 
 FourierKspace3DI = Compile[{{data, _Complex, 3}, {ksPad, _Integer, 2}, {shift, _Integer, 1}, {clip, _Integer, 2}},
 	Block[{dat},
@@ -1012,7 +1013,6 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 	(*make 2D 3D*)
 	If[nenc===3, {spectra}, spectra]
 ]
-
 
 
 (* ::Section:: *)

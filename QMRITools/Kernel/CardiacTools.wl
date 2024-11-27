@@ -161,7 +161,7 @@ BullseyePlot[list] generates a AHA-17 segment bullseye plot of the lists (which 
 data is a 3D volume used for the plot. 
 segmask is the AHA-17 segmentation resulting form the CardiacSegment function when AHA17 is selected.
 
-Output is a bullseye plot or a plotwindow, depending on the Method which can be \"Dynamic\" else it will be static.
+Output is a bullseye plot or a plotWindow, depending on the Method which can be \"Dynamic\" else it will be static.
 
 BullseyePlot[] is based on DOI: 10.1161/hc0402.102975."
 
@@ -468,10 +468,10 @@ CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?Numbe
 		{z, 1, dim[[1]], spz}, {y, 1, dim[[2]], spxy}, {x, 1, dim[[3]], spxy}];
 		
 		{vec1, vec2, vec3} =   DeleteCases[Flatten[#, 2], None] & /@ Transpose[vectorField, {2, 3, 4, 1}];
-	    plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3]];
-	    
-	    PrintTemporary[plot];
-	    Pause[1];
+		plot = Show[maskCont, Graphics3D[vec1], Graphics3D[vec2], Graphics3D[vec3]];
+		
+		PrintTemporary[plot];
+		Pause[1];
 	];
 	
 	If[OptionValue[ShowPlot],
@@ -538,8 +538,7 @@ WallAngleMap[mask_, vox_, inout_] := Block[{dim, cent, len, edge1, edge2, fout, 
 	Quiet@Table[
 		dist = EuclideanDistance[{j, k}, inout[[1, 1, z, 2 ;;]]];
 		wallangfunc[vox[[1]] z, vox[[2]] dist]
-	, {z, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}
-   ]
+	, {z, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}]	
 ]
 
 
@@ -616,7 +615,7 @@ CentralAxes[mask_,maskp_,vox_,OptionsPattern[]]:=Module[{
 	{off, vecs} = BoundCorrect[Min /@ Transpose[{inner[[3]], outer[[3]]} /. {{} -> 0}], off, vecs];
 	{offi, vecsi} = BoundCorrect[inner[[3]]/. {{} -> 0}, offi, vecsi];
 	{offo, vecso} = BoundCorrect[outer[[3]]/. {{} -> 0}, offo, vecso];
-	  
+	
 	(*generate plots*)
 	If[OptionValue[ShowPlot],
 		pl1 = PlotRadius[Clip[2 mask + maskp,{0,2}], inner, outer];
@@ -735,8 +734,8 @@ BoundCorrect[points_,off_,vec_]:=Block[{vv,first,last,offo,veco},
 	offo = Join[
 		{off[[first, 1]] + (first - #) (off[[first, 1]] - off[[first + 1, 1]]), off[[first, 2]] + (first - #) (off[[first, 2]] - off[[first + 1, 2]]), #} & /@ Range[1, first - 1],
 		off[[Range[first, last]]],
-	  	{off[[last, 1]] + (# - last) (off[[last, 1]] - off[[last - 1, 1]]), off[[last, 2]] + (# - last) (off[[last, 2]] - off[[last - 1, 2]]), #} & /@ Range[last + 1, Length[vv]]
-	  ];
+		{off[[last, 1]] + (# - last) (off[[last, 1]] - off[[last - 1, 1]]), off[[last, 2]] + (# - last) (off[[last, 2]] - off[[last - 1, 2]]), #} & /@ Range[last + 1, Length[vv]]
+	];
 	veco=Join[ConstantArray[vec[[first]],first-1],vec[[first;;last]],ConstantArray[vec[[last]],Length[vv]-last]];
 	{offo,veco}
 ]
@@ -917,15 +916,15 @@ CalculateWallMap[maski_, vox_, OptionsPattern[]] := Module[{
 	(*create the wall distance map*)
 	wall = GaussianFilter[Normal[SparseArray[Thread[ptsm -> dist], dim]] + (1 - mout2), 1];
 	der = GaussianFilter[wall, {{3,3,3}}(*{2 (1/vox)/(1/vox[[2]])}*), #] & /@ (IdentityMatrix[3]);
-    
-    If[OptionValue[MaskWallMap],
-    	wall = mask wall;
-    	der = mask # & /@ der;
-    	{mn, mx} = Quantile[Flatten[GetMaskData[wall, mask]],{0.01,0.99}];
-    	wall = Clip[mask ((wall - mn)/(mx-mn)),{0,1}];
-    ];
-    
-    If[OptionValue[ShowPlot], PrintTemporary[Row[fit = {planefit, ptspl}]]; {wall, der, fit}, {wall, der}]
+	
+	If[OptionValue[MaskWallMap],
+		wall = mask wall;
+		der = mask # & /@ der;
+		{mn, mx} = Quantile[Flatten[GetMaskData[wall, mask]],{0.01,0.99}];
+		wall = Clip[mask ((wall - mn)/(mx-mn)),{0,1}];
+	];
+	
+	If[OptionValue[ShowPlot], PrintTemporary[Row[fit = {planefit, ptspl}]]; {wall, der, fit}, {wall, der}]
 ]
 
 
@@ -1791,51 +1790,51 @@ Options[PlotSegments] = {RadialSamples -> 10};
 SyntaxInformation[PlotSegments] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 PlotSegments[data_, mask_, angs_, OptionsPattern[]] := Block[{pan}, 
- 	pan = Manipulate[ 		
- 		slices=angs[[n,All,1]];
- 		pts=DeleteCases[#,{}]&/@angs[[n,All,2]];
- 		nmr=Range[Length[slices]];
- 		
- 		datpl=ArrayPlot[data[[#]], DataReversed -> True, ColorFunction -> "GrayTones"]&/@slices;
- 		maskpl=mask[[slices]];
- 		
- 		size = Length[angs[[n]]] 250;
- 		(*switch between views*)
- 		GraphicsRow[Show[
- 		Switch[m,
- 			(*mask with inner and outer pionts only*) 
- 			1, {datpl[[#]],
- 				If[NumberQ[Mean[Flatten[pts[[#]]]]],
- 					ListPlot[{pts[[#,All,1]], pts[[#,All,2]]}, AspectRatio -> 1, PlotStyle -> {Red, Orange}],
- 					Graphics[]
- 				]},
- 			(*mask with inner and outer points plus radial samples*)
- 			2, {datpl[[#]],
- 				If[NumberQ[Mean[Flatten[pts[[#]]]]],
- 					ListPlot[Transpose@PointRange[pts[[#]], OptionValue[RadialSamples]], AspectRatio -> 1],
- 					Graphics[]
- 				]},
- 			3, {
- 				If[NumberQ[Mean[Flatten[pts[[#]]]]],
- 					ArrayPlot[Fun[maskpl[[#]], Round[pts[[#,All,1]]], Round[pts[[#,All,2]]]], DataReversed -> True, ColorFunction -> "GrayTones"],
- 					ArrayPlot[maskpl[[#]], DataReversed -> True, ColorFunction -> "GrayTones"]
- 				]}
-     		]
- 		] &/@ nmr, ImageSize->size], 
-	    {{n, 1, "segment"}, 1, Length[angs], 1}, 
-	    {{m, 1, "plot type"}, {1 -> "start stop point", 2 -> "radial samples", 3 -> "mask"}}, 
-	    {size, ControlType -> None},
-	    {pts, ControlType -> None},
-	    {nmr, ControlType -> None},
-	    {slices, ControlType -> None},
-	    {datpl, ControlType -> None},
-	    {maskpl, ControlType -> None},
-	    
-	    SaveDefinitions->True
-     ];
-  NotebookClose[plotwindow];
-  plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
-  ]
+	pan = Manipulate[ 		
+		slices=angs[[n,All,1]];
+		pts=DeleteCases[#,{}]&/@angs[[n,All,2]];
+		nmr=Range[Length[slices]];
+		
+		datpl=ArrayPlot[data[[#]], DataReversed -> True, ColorFunction -> "GrayTones"]&/@slices;
+		maskpl=mask[[slices]];
+		
+		size = Length[angs[[n]]] 250;
+		(*switch between views*)
+		GraphicsRow[Show[
+		Switch[m,
+			(*mask with inner and outer pionts only*) 
+			1, {datpl[[#]],
+				If[NumberQ[Mean[Flatten[pts[[#]]]]],
+					ListPlot[{pts[[#,All,1]], pts[[#,All,2]]}, AspectRatio -> 1, PlotStyle -> {Red, Orange}],
+					Graphics[]
+				]},
+			(*mask with inner and outer points plus radial samples*)
+			2, {datpl[[#]],
+				If[NumberQ[Mean[Flatten[pts[[#]]]]],
+					ListPlot[Transpose@PointRange[pts[[#]], OptionValue[RadialSamples]], AspectRatio -> 1],
+					Graphics[]
+				]},
+			3, {
+				If[NumberQ[Mean[Flatten[pts[[#]]]]],
+					ArrayPlot[Fun[maskpl[[#]], Round[pts[[#,All,1]]], Round[pts[[#,All,2]]]], DataReversed -> True, ColorFunction -> "GrayTones"],
+					ArrayPlot[maskpl[[#]], DataReversed -> True, ColorFunction -> "GrayTones"]
+				]}
+			]
+		] &/@ nmr, ImageSize->size], 
+		{{n, 1, "segment"}, 1, Length[angs], 1}, 
+		{{m, 1, "plot type"}, {1 -> "start stop point", 2 -> "radial samples", 3 -> "mask"}}, 
+		{size, ControlType -> None},
+		{pts, ControlType -> None},
+		{nmr, ControlType -> None},
+		{slices, ControlType -> None},
+		{datpl, ControlType -> None},
+		{maskpl, ControlType -> None},
+		
+		SaveDefinitions->True
+	];
+	NotebookClose[plotWindow];
+	plotWindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1886,10 +1885,10 @@ PlotSegmentMask[maski_, segmaski_, vox_] := Block[{heart, seg,pan},
 			Show[heart, seg[[n]], ViewPoint -> Top, Method -> {"RotationControl" -> None}],
 			Show[heart, seg[[n]], ViewPoint -> Left, Method -> {"RotationControl" -> None}]
 		}}, ImageSize -> 600]
-   , {{n,1,"Segment"}, 1, Length[segmaski], 1},SaveDefinitions->True];
-   
-   NotebookClose[plotwindow];
-   plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
+	, {{n,1,"Segment"}, 1, Length[segmaski], 1},SaveDefinitions->True];
+
+	NotebookClose[plotWindow];
+	plotWindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
 ]
 
 
@@ -2075,8 +2074,8 @@ BullseyePlot[dati_?ListQ,OptionsPattern[]]:=Block[{number, radius, datat, min, m
 	SaveDefinitions->True, Deployed->False, SynchronousInitialization -> False];
 	
 	If[OptionValue[BullPlotMethod] === "Dynamic",
-		NotebookClose[plotwindow];
-		plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
+		NotebookClose[plotWindow];
+		plotWindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
 		,
 		plfun[{OptionValue[ColorFunction], False}, {True, 2}]
 	]
@@ -2159,24 +2158,24 @@ CalculateMeasure[data_, type_] := Block[{
 	(*calculate measure*)
 	measure = Table[
 		mask=Unitize[target[[i]] datan[[i, j]]];
-		fun[Pick[target[[i]], mask, 1], Pick[datan[[i, j]], mask, 1]],
-   	 {i, 1, slice, 1}, {j, 1, dirs, 1}];
-   	 
-   	 (*normalize measure*)
-   	 measure = (
-   	 	mm = #;
-   	 	{q1, q2, q3} = Quantile[#, {0.25, 0.5, .75}];
-   	 	iqr = q3 - q1;
-   	 	mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
-   	 	{q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
-   	 	iqr = q3 - q1;
-   	 	mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
-   	 	{q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
-   	 	1 + (# - q2)/(10 (q3 - q1))
-   	 ) & /@ measure;
-   	 
-   	 (*make low value bad*)
-   	 If[type <= 3, 2 - measure, measure]
+		fun[Pick[target[[i]], mask, 1], Pick[datan[[i, j]], mask, 1]]
+	,{i, 1, slice, 1}, {j, 1, dirs, 1}];
+	
+	(*normalize measure*)
+	measure = (
+		mm = #;
+		{q1, q2, q3} = Quantile[#, {0.25, 0.5, .75}];
+		iqr = q3 - q1;
+		mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
+		{q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
+		iqr = q3 - q1;
+		mm = Select[mm, ((q1 - 1 iqr) < # < (q3 + 1 iqr)) &];
+		{q1, q2, q3} = Quantile[mm, {0.25, 0.5, .75}];
+		1 + (# - q2)/(10 (q3 - q1))
+	) & /@ measure;
+	
+	(*make low value bad*)
+	If[type <= 3, 2 - measure, measure]
 ]
 
 

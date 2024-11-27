@@ -120,31 +120,44 @@ CompressNiiFiles[folder] compresses all nii files to .nii.gz files in folder."
 (*Options*)
 
 
-NiiMethod::usage = "NiiMethod is an option for ImportNIi. Values can be \"data\", \"dataTR\", \"header\", \"scaling\", \"headerMat\", \"rotation\", \"all\"."
+NiiMethod::usage = 
+"NiiMethod is an option for ImportNIi. Values can be \"data\", \"dataTR\", \"header\", \"scaling\", \"headerMat\", \"rotation\", \"all\"."
 
-NiiScaling::usage = "NiiScaling is an option for ImportNii. It scales the nii values with scale slope and offset for quantitative data."
+NiiScaling::usage =
+ "NiiScaling is an option for ImportNii. It scales the nii values with scale slope and offset for quantitative data."
 
-NiiLegacy::usage = "NiiLegacy is an option for ExportNii, if set True default orientations are set instead of unknown."
+NiiLegacy::usage = 
+"NiiLegacy is an option for ExportNii, if set True default orientations are set instead of unknown."
 
-NiiSliceCode::usage = "NiiSliceCode is an option for Export nii. With this you can set the slice code of the nii file."
+NiiSliceCode::usage = 
+"NiiSliceCode is an option for Export nii. With this you can set the slice code of the nii file."
 
-CompressNii::usage = "CompressNii is an option for DcmToNii and ExportNii. If set True .nii.gz files will be created."
+CompressNii::usage = 
+"CompressNii is an option for DcmToNii and ExportNii. If set True .nii.gz files will be created."
 
-UseSubfolders::usage = "UseSubfolders is an option for DcmToNii. If set True the nii conversion is done for each folder in the selected input folder."
+UseSubfolders::usage = 
+"UseSubfolders is an option for DcmToNii. If set True the nii conversion is done for each folder in the selected input folder."
 
-NiiDataType::usage = "NiiDataType is an option of ExportNii. The number type of Nii file can be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
+NiiDataType::usage =
+"NiiDataType is an option of ExportNii. The number type of Nii file can be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
 
-NiiOffset::usage = "NiiOffset is an option of ExportNii. Is {xoff, yoff, zoff}."
+NiiOffset::usage = 
+"NiiOffset is an option of ExportNii. Is {xoff, yoff, zoff}."
 
-RotateGradients::usage = "RotateGradients is an option for ImportNiiDiff."
+RotateGradients::usage = 
+"RotateGradients is an option for ImportNiiDiff."
 
-FlipBvec::usage = "FlipBvec is an option for ImportBvalvec."
+FlipBvec::usage = 
+"FlipBvec is an option for ImportBvalvec."
 
-PositiveZ::usage = "PositiveZ  is an option for ImportBvalvec."
+PositiveZ::usage = 
+"PositiveZ  is an option for ImportBvalvec."
 
-UseVersion::usage = "UseVersion is an option for DcmToNii. For windows it allows to switch between different versions of dcm2niix.exe."
+UseVersion::usage = 
+"UseVersion is an option for DcmToNii. For windows it allows to switch between different versions of dcm2niix.exe."
 
-DeleteOutputFolder::usage = "DeleteOutputFolder is an option of DcmToNii. If the ouput folder already exists it will be deleted."
+DeleteOutputFolder::usage = 
+"DeleteOutputFolder is an option of DcmToNii. If the ouput folder already exists it will be deleted."
 
 
 (* ::Subsection::Closed:: *)
@@ -193,9 +206,9 @@ DcmToNii[opt:OptionsPattern[]]:=DcmToNii[{"",""},opt];
 
 DcmToNii[infol_?StringQ, outfol_?StringQ, opt:OptionsPattern[]] := DcmToNii[{infol, outfol}, OptionsPattern[]]
 
-DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
+DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 		filfolin, folout, log, command, compress, dcm2niix, dcm2niif, delete,
-		folsin, fols, folsout
+		folsin, fols, folsout, dcm2nii
 	},
 	
 	(*generate a popup to select the file or folder*)
@@ -222,7 +235,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Module[{
 		dcm2nii = GetAssetLocation[Switch[OptionValue[UseVersion],1,"DcmToNii",_,"DcmToNii-"<>ToString[OptionValue[UseVersion]]]];
 		
 		If[dcm2nii === $Failed, 
-			Return[$Failed,Module],
+			Return[$Failed, Block],
 			dcm2niix = Last@FileNameSplit@dcm2nii;
 			dcm2niif = DirectoryName[dcm2nii];
 		];
@@ -351,22 +364,22 @@ typeSizeNii = {
 
 rangeNii = {
 	Undefined -> Undefined,
-   	"Byte" -> {0, 255},
-   	"Integer16" -> {-32768, 32767},
-   	"Integer32" -> {-2147483648, 2147483647},
-   	"Real32" -> Undefined,
-   	"Complex64" -> Undefined,
-   	"Real64" -> Undefined, 
-   	{"Byte", "Byte", "Byte"} -> {0, 255},(*RGBColor*)
-   	"Integer8" -> {-128, 127},
-   	"UnsignedInteger16" -> {0, 65535},
-   	"UnsignedInteger32" -> {0, 4294967295},
-   	"Integer64" -> {-9223372036854775808, 9223372036854775807},
-   	"UnsignedInteger64" -> {0, 18446744073709551615},
-   	"Real128" -> Undefined,
-   	"Complex128" -> Undefined,
-   	"Complex256" -> Undefined,
-   	{"Byte", "Byte", "Byte","Byte"} -> {0,255}(*RGBA*)
+	"Byte" -> {0, 255},
+	"Integer16" -> {-32768, 32767},
+	"Integer32" -> {-2147483648, 2147483647},
+	"Real32" -> Undefined,
+	"Complex64" -> Undefined,
+	"Real64" -> Undefined, 
+	{"Byte", "Byte", "Byte"} -> {0, 255},(*RGBColor*)
+	"Integer8" -> {-128, 127},
+	"UnsignedInteger16" -> {0, 65535},
+	"UnsignedInteger32" -> {0, 4294967295},
+	"Integer64" -> {-9223372036854775808, 9223372036854775807},
+	"UnsignedInteger64" -> {0, 18446744073709551615},
+	"Real128" -> Undefined,
+	"Complex128" -> Undefined,
+	"Complex256" -> Undefined,
+	{"Byte", "Byte", "Byte","Byte"} -> {0,255}(*RGBA*)
 };
 
 
@@ -399,89 +412,89 @@ GetNiiHeaderValues[verNii_]:=GetNiiHeaderValues[verNii,""]
 GetNiiHeaderValues[verNii_,file_] := Switch[verNii,
 	1, {
 		{"size", "Integer32", 1},
-	    {"data_Type", "Character8", 10},
-	    {"dbName", "Character8", 18},
-	    {"extents", "Integer32", 1},
-	    {"sessionError", "Integer16", 1},
-	    {"regular", "Character8", 1},
-	    {"dimInfo", "UnsignedInteger8", 1},
-	    {"dim", "Integer16", 8},
-	    {"intentP1", "Real32", 1},
-	    {"intentP2", "Real32", 1},
-	    {"intentP3", "Real32", 1},
-	    {"intentCode", "Integer16", 1},
-	    {"dataType", "Integer16", 1},
-	    {"bitPix", "Integer16", 1},
-	    {"sliceStart", "Integer16", 1},
-	    {"pixDim", "Real32", 8},
-	    {"voxOffset", "Real32", 1},
-	    {"scaleSlope", "Real32", 1},
-	    {"scaleInteger", "Real32", 1},
-	    {"sliceEnd", "Integer16", 1},
-	    {"sliceCode", "UnsignedInteger8", 1},
-	    {"xyztUnits", "UnsignedInteger8", 1},
-	    {"calMax", "Real32", 1},
-	    {"calMin", "Real32", 1},
-	    {"sliecDuration", "Real32", 1},
-	    {"tOffset", "Real32", 1},
-	    {"glMax", "Integer32", 1},
-	    {"glMin", "Integer32", 1},
-	    {"descrip", "Character8", 80},
-	    {"auxFile", "Character8", 24},
-	    {"qformCode", "Integer16", 1},
-	    {"sformCode", "Integer16", 1},
-	    {"quaternB", "Real32", 1},
-	    {"quaternC", "Real32", 1},
-	    {"quaternD", "Real32", 1},
-	    {"qOffsetX", "Real32", 1},
-	    {"qOffsetY", "Real32", 1},
-	    {"qOffsetZ", "Real32", 1},
-	    {"sRowx", "Real32", 4},
-	    {"sRowy", "Real32", 4},
-	    {"sRowz", "Real32", 4},
-	    {"intentName", "Character8", 16},
-	    {"magic", "Character8", 4},
-	    {"ECode", "Byte", 4}
+		{"data_Type", "Character8", 10},
+		{"dbName", "Character8", 18},
+		{"extents", "Integer32", 1},
+		{"sessionError", "Integer16", 1},
+		{"regular", "Character8", 1},
+		{"dimInfo", "UnsignedInteger8", 1},
+		{"dim", "Integer16", 8},
+		{"intentP1", "Real32", 1},
+		{"intentP2", "Real32", 1},
+		{"intentP3", "Real32", 1},
+		{"intentCode", "Integer16", 1},
+		{"dataType", "Integer16", 1},
+		{"bitPix", "Integer16", 1},
+		{"sliceStart", "Integer16", 1},
+		{"pixDim", "Real32", 8},
+		{"voxOffset", "Real32", 1},
+		{"scaleSlope", "Real32", 1},
+		{"scaleInteger", "Real32", 1},
+		{"sliceEnd", "Integer16", 1},
+		{"sliceCode", "UnsignedInteger8", 1},
+		{"xyztUnits", "UnsignedInteger8", 1},
+		{"calMax", "Real32", 1},
+		{"calMin", "Real32", 1},
+		{"sliecDuration", "Real32", 1},
+		{"tOffset", "Real32", 1},
+		{"glMax", "Integer32", 1},
+		{"glMin", "Integer32", 1},
+		{"descrip", "Character8", 80},
+		{"auxFile", "Character8", 24},
+		{"qformCode", "Integer16", 1},
+		{"sformCode", "Integer16", 1},
+		{"quaternB", "Real32", 1},
+		{"quaternC", "Real32", 1},
+		{"quaternD", "Real32", 1},
+		{"qOffsetX", "Real32", 1},
+		{"qOffsetY", "Real32", 1},
+		{"qOffsetZ", "Real32", 1},
+		{"sRowx", "Real32", 4},
+		{"sRowy", "Real32", 4},
+		{"sRowz", "Real32", 4},
+		{"intentName", "Character8", 16},
+		{"magic", "Character8", 4},
+		{"ECode", "Byte", 4}
 	},
 	2,{
 		{"size", "Integer32", 1},
-	    {"magic", "Character8", 8},
-	    {"dataType", "Integer16", 1},
-	    {"bitPix", "Integer16", 1},
-	    {"dim", "Integer64", 8},
-	    {"intentP1", "Real64", 1},
-	    {"intentP2", "Real64", 1},
-	    {"intentP3", "Real64", 1},
-	    {"pixDim", "Real64", 8},
-	    {"voxOffset", "Integer64", 1},
-	    {"scaleSlope", "Real64", 1},
-	    {"scaleInteger", "Real64", 1},
-	    {"calMax", "Real64", 1},
-	    {"calMin", "Real64", 1},
-	    {"sliecDuration", 1},
-	    {"tOffset", "Real64", 1},
-	    {"sliceStart", "Integer64", 1},
-	    {"sliceEnd", "Integer64", 1},
-	    {"descrip", "Character8", 80},
-	    {"auxFile", "Character8", 24},
-	    {"qformCode", "Integer32", 1},
-	    {"sformCode", "Integer32", 1},
-	    {"quaternB", "Real64", 1},
-	    {"quaternC", "Real64", 1},
-	    {"quaternD", "Real64", 1},
-	    {"qOffsetX", "Real64", 1},
-	    {"qOffsetY", "Real64", 1},
-	    {"qOffsetZ", "Real64", 1},
-	    {"sRowX", "Real64", 4},
-	    {"sRowY", "Real64", 4},
-	    {"sRowZ", "Real64", 4},
-	    {"sliceCode", "Integer32", 1},
-	    {"xyztUnits", "Integer32", 1},
-	    {"intentCode", "Integer32", 1},
-	    {"intentName", "Character8", 16},
-	    {"dimInfo", "UnsignedInteger8", 1},
-	    {"unusedString", "Character8", 15},
-	    {"ECode", "Byte", 4}
+		{"magic", "Character8", 8},
+		{"dataType", "Integer16", 1},
+		{"bitPix", "Integer16", 1},
+		{"dim", "Integer64", 8},
+		{"intentP1", "Real64", 1},
+		{"intentP2", "Real64", 1},
+		{"intentP3", "Real64", 1},
+		{"pixDim", "Real64", 8},
+		{"voxOffset", "Integer64", 1},
+		{"scaleSlope", "Real64", 1},
+		{"scaleInteger", "Real64", 1},
+		{"calMax", "Real64", 1},
+		{"calMin", "Real64", 1},
+		{"sliecDuration", 1},
+		{"tOffset", "Real64", 1},
+		{"sliceStart", "Integer64", 1},
+		{"sliceEnd", "Integer64", 1},
+		{"descrip", "Character8", 80},
+		{"auxFile", "Character8", 24},
+		{"qformCode", "Integer32", 1},
+		{"sformCode", "Integer32", 1},
+		{"quaternB", "Real64", 1},
+		{"quaternC", "Real64", 1},
+		{"quaternD", "Real64", 1},
+		{"qOffsetX", "Real64", 1},
+		{"qOffsetY", "Real64", 1},
+		{"qOffsetZ", "Real64", 1},
+		{"sRowX", "Real64", 4},
+		{"sRowY", "Real64", 4},
+		{"sRowZ", "Real64", 4},
+		{"sliceCode", "Integer32", 1},
+		{"xyztUnits", "Integer32", 1},
+		{"intentCode", "Integer32", 1},
+		{"intentName", "Character8", 16},
+		{"dimInfo", "UnsignedInteger8", 1},
+		{"unusedString", "Character8", 15},
+		{"ECode", "Byte", 4}
 	},
 	_, If[file==="", Message[Export::niiver], Message[Export::niihdr, file]]; $Failed
 ];
@@ -492,25 +505,23 @@ GetNiiHeaderValues[verNii_,file_] := Switch[verNii,
 
 
 ConvertNiiExtention[file_, channel_, imghdr_] := Switch[imghdr,
-  "hdr",
-   If[
-   StringMatchQ[FileExtension[file], "img", IgnoreCase -> True],
-   First[System`ConvertersDump`Decode[
-     StringReplace[channel, 
-      RegularExpression["img(?!.*img)"] -> "hdr", 
-      IgnoreCase -> True], {Automatic}]],
-   file
-   ],
-  "img",
-  If[
-   StringMatchQ[FileExtension[file], "hdr", IgnoreCase -> True],
-   First[System`ConvertersDump`Decode[
-     StringReplace[channel, 
-      RegularExpression["hdr(?!.*hdr)"] -> "img", 
-      IgnoreCase -> True], {Automatic}]],
-   file
-   ]
-  ]
+	"hdr",
+	If[StringMatchQ[FileExtension[file], "img", IgnoreCase -> True],
+		First[System`ConvertersDump`Decode[
+			StringReplace[channel, 
+			RegularExpression["img(?!.*img)"] -> "hdr", 
+			IgnoreCase -> True], {Automatic}]],
+		file
+	],
+	"img",
+	If[StringMatchQ[FileExtension[file], "hdr", IgnoreCase -> True],
+		First[System`ConvertersDump`Decode[
+			StringReplace[channel, 
+			RegularExpression["hdr(?!.*hdr)"] -> "img", 
+			IgnoreCase -> True], {Automatic}]],
+		file
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -543,10 +554,9 @@ XyztUnits[inp_?ListQ] := FromDigits[PadLeft[Flatten[Reverse[IntegerDigits[#, 2, 
 
 ArrangeData[data_] := ArrangeData[data, ArrayDepth[data]]
 
-ArrangeData[data_, depth_] := 
- Flatten[If[depth == 4, 
-   Transpose[Reverse[Reverse[data, depth], depth - 1]], 
-   Reverse[Reverse[data, depth], depth - 1]]
+ArrangeData[data_, depth_] := Flatten[If[depth == 4, 
+	Transpose[Reverse[Reverse[data, depth], depth - 1]], 
+	Reverse[Reverse[data, depth], depth - 1]]
 ]
 
 
@@ -554,7 +564,7 @@ ArrangeData[data_, depth_] :=
 (*RemoveExtention*)
 
 
-RemoveExtention[fil_] := Module[{file},
+RemoveExtention[fil_] := Block[{file},
 	file = FileNameSplit[fil];
 	file[[-1]] = FileBaseName[file[[-1]]];
 	Print[file[[-1]]];
@@ -598,12 +608,12 @@ SyntaxInformation[ImportNii] = {"ArgumentsPattern" -> {_., OptionsPattern[]}};
 
 ImportNii [opts : OptionsPattern[]] := ImportNii["", opts];
 
-ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt},
+ImportNii[fil_String: "", OptionsPattern[]] := Block[{file,what, out,output,opt},
 	
 	what = OptionValue[NiiMethod];
 	
 	If[! MemberQ[{"default", "data", "dataTR", "header", "scaling", "headerMat", "rotation", "all"}, what], 
-		Return[Message[ImportNii::wht];$Failed,Module]
+		Return[Message[ImportNii::wht];$Failed, Block]
 		];
 
 	(*select a file if none was given*)
@@ -618,7 +628,7 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 	];
 	
 	(*stop if ther is no file*)
-	If[file == Null || file === $Canceled || file === $Failed, Message[Import::nffil,fil];Return[$Failed,Module]];
+	If[file == Null || file === $Canceled || file === $Failed, Message[Import::nffil,fil];Return[$Failed, Block]];
 	
 	opt = NiiScaling->OptionValue[NiiScaling];
 	
@@ -633,11 +643,10 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 		{out[[1]], out[[2]], out[[3 ;;]]},
 		_, Import[file, "nii", opt]
 	];
-	
-	
+
 	(*remove temp files for gz format*)
 	Quiet[DeleteFile[FileNames["*" <> FileBaseName[Last[FileNameSplit[file]]], $TemporaryDirectory]]];
-	
+
 	ToPackedArray@N@output
 ]
 
@@ -646,27 +655,25 @@ ImportNii[fil_String: "", OptionsPattern[]] := Module[{file,what, out,output,opt
 (*GetNiiInformation*)
 
 
-GetNiiInformation[hdr_] := 
- Module[{type, size, dim, ddim, offSet, vox, voxU, tr, trU, slope, intercept, rotmat},
-  
-  dim = "dim" /. hdr;
-  ddim = dim[[1]];
-  dim = dim[[2 ;; ddim + 1]];
-  size = Times @@ dim;
-  
-  type = "dataType" /. hdr;
-  offSet = Round["voxOffset" /. hdr];
-  
-  vox = Reverse[("pixDim" /. hdr)[[2 ;; 4]]];
-  tr = ("pixDim" /. hdr)[[5]];
-  {slope, intercept} = {"scaleSlope", "scaleInteger"} /. hdr;
-  
-  rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. hdr)[[All, 1 ;; 3]]/ConstantArray[Reverse[vox], 3];
-  rotmat = DiagonalMatrix[{1, -1, 1}] . ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
-  
-  {voxU, trU} = "xyztUnits" /. hdr;
-  
-  {{type, size, dim, offSet},{vox, voxU, tr, trU, slope, intercept, rotmat, ddim}}
+GetNiiInformation[hdr_] := Block[{type, size, dim, ddim, offSet, vox, voxU, tr, trU, slope, intercept, rotmat},
+	dim = "dim" /. hdr;
+	ddim = dim[[1]];
+	dim = dim[[2 ;; ddim + 1]];
+	size = Times @@ dim;
+
+	type = "dataType" /. hdr;
+	offSet = Round["voxOffset" /. hdr];
+
+	vox = Reverse[("pixDim" /. hdr)[[2 ;; 4]]];
+	tr = ("pixDim" /. hdr)[[5]];
+	{slope, intercept} = {"scaleSlope", "scaleInteger"} /. hdr;
+
+	rotmat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. hdr)[[All, 1 ;; 3]]/ConstantArray[Reverse[vox], 3];
+	rotmat = DiagonalMatrix[{1, -1, 1}] . ConstantArray[Diagonal[Sign[Sign[rotmat] + 0.0000001]], 3] rotmat;
+
+	{voxU, trU} = "xyztUnits" /. hdr;
+
+	{{type, size, dim, offSet},{vox, voxU, tr, trU, slope, intercept, rotmat, ddim}}
 ]
 
 
@@ -676,46 +683,45 @@ GetNiiInformation[hdr_] :=
 
 Options[ImportNiiDefault] = {"Channel" -> Null, "ExtensionParsing" -> False, NiiScaling -> False, NiiInfo -> False, NiiFlip->True};
 
-ImportNiiDefault[file_, opts : OptionsPattern[]] := 
- Module[{hdr, data, byteOrder, dataInfo, info, scaling},
-  hdr = ImportNiiHeader[file, opts];
-  byteOrder = "ByteOrder" /. hdr;
-  hdr = "Header" /. hdr;
-  
-  If[hdr === $Failed, Return[$Failed, Module]];
-  
-  (*get all the data and info*)
-  {dataInfo, info} = GetNiiInformation[hdr];
-  data = ImportNiiData[file, dataInfo, byteOrder, opts];
-  
-  (*flip dimensions*)
-  If[info[[8]] === 4, data = Transpose[data, {2, 1, 3, 4}]];
-  data = Map[Reverse[#] &, data, {info[[8]] - 2}];
-  If[OptionValue[NiiFlip],
-  	If[Positive[("sRowx" /. hdr)[[1]]+10^-10], 
-  		data = Map[Reverse[#] &, data, {info[[8]] - 1}]
-  		];
-  	,
-  	data = Map[Reverse[#] &, data, {info[[8]] - 1}];
-  ];
-  
-  (*scale data*)
-  scaling = If[info[[1]] =!= {"Byte", "Byte", "Byte"}, info[[6]] + info[[5]] # &, Identity];
-  If[OptionValue[NiiScaling], data = scaling[data]];
-  
-  If[OptionValue[NiiInfo],
-   {
-    "Data" -> data,
-    "VoxelSize" -> info[[1]],
-    "tr" -> info[[3]],
-    "RotationMatrix" -> info[[7]],
-    "Units" -> info[[{2, 4}]],
-    "Scaling" -> info[[5 ;; 6]]
-    }
-   ,
-   {data, info[[1]]}
-   ]
-  ]
+ImportNiiDefault[file_, opts : OptionsPattern[]] := Block[{hdr, data, byteOrder, dataInfo, info, scaling},
+	hdr = ImportNiiHeader[file, opts];
+	byteOrder = "ByteOrder" /. hdr;
+	hdr = "Header" /. hdr;
+
+	If[hdr === $Failed, Return[$Failed, Block]];
+
+	(*get all the data and info*)
+	{dataInfo, info} = GetNiiInformation[hdr];
+	data = ImportNiiData[file, dataInfo, byteOrder, opts];
+
+	(*flip dimensions*)
+	If[info[[8]] === 4, data = Transpose[data, {2, 1, 3, 4}]];
+	data = Map[Reverse[#] &, data, {info[[8]] - 2}];
+	If[OptionValue[NiiFlip],
+		If[Positive[("sRowx" /. hdr)[[1]]+10^-10], 
+			data = Map[Reverse[#] &, data, {info[[8]] - 1}]
+		];
+		,
+		data = Map[Reverse[#] &, data, {info[[8]] - 1}];
+	];
+
+	(*scale data*)
+	scaling = If[info[[1]] =!= {"Byte", "Byte", "Byte"}, info[[6]] + info[[5]] # &, Identity];
+	If[OptionValue[NiiScaling], data = scaling[data]];
+
+	If[OptionValue[NiiInfo],
+		{
+			"Data" -> data,
+			"VoxelSize" -> info[[1]],
+			"tr" -> info[[3]],
+			"RotationMatrix" -> info[[7]],
+			"Units" -> info[[{2, 4}]],
+			"Scaling" -> info[[5 ;; 6]]
+		}
+		,
+		{data, info[[1]]}
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -729,71 +735,69 @@ ImportNiiInfo[file_, opts : OptionsPattern[ImportNiiDefault]] := ImportNiiDefaul
 (*ImportNiiData*)
 
 
-ImportNiiData[file_, {type_, size_, dim_, off_}, byteorder_, OptionsPattern[ImportNiiDefault]] := Module[{datafile, strm, data},
-  
-  datafile = ConvertNiiExtention[file, OptionValue["Channel"], "img"];
-  
-  strm = OpenRead[datafile, BinaryFormat -> True];
-  SetStreamPosition[strm, off];
-  data = BinaryReadList[strm, type, size, ByteOrdering -> byteorder];
-  Close[strm];
-  
-  data = ArrayReshape[data, Reverse@dim];
-  
-  ToPackedArray[N@data]
-  ]
+ImportNiiData[file_, {type_, size_, dim_, off_}, byteorder_, OptionsPattern[ImportNiiDefault]] := Block[{datafile, strm, data},
+	datafile = ConvertNiiExtention[file, OptionValue["Channel"], "img"];
+
+	strm = OpenRead[datafile, BinaryFormat -> True];
+	SetStreamPosition[strm, off];
+	data = BinaryReadList[strm, type, size, ByteOrdering -> byteorder];
+	Close[strm];
+
+	data = ArrayReshape[data, Reverse@dim];
+
+	ToPackedArray[N@data]
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ImportNiiHeader*)
 
 
-ImportNiiHeader[file_, OptionsPattern[ImportNiiDefault]] := 
- Module[{strm, verNii,hdrfile, byteorder, hdrValues, hdr, val},
-  
-  hdrfile = ConvertNiiExtention[file, OptionValue["Channel"], "hdr"];
-  byteorder = $ByteOrdering;
-  
-  strm = OpenRead[hdrfile, BinaryFormat -> True];
-  
-  (*determine version*)
-  verNii = Switch[Quiet[BinaryRead[strm, "Integer32", ByteOrdering -> byteorder]], 
-     348, 1, 540, 2, _, Undefined
-     ];
-  (*check for bite ordering*)
-  If[verNii === Undefined,
-   byteorder *= -1;
-   SetStreamPosition[strm, 0];
-   verNii = Switch[Quiet[BinaryRead[strm, "Integer32", ByteOrdering -> byteorder]], 
-   	348, 1, 540, 2, _, Undefined];
-   ];
- 
+ImportNiiHeader[file_, OptionsPattern[ImportNiiDefault]] := Block[{strm, verNii,hdrfile, byteorder, hdrValues, hdr, val},
+
+	hdrfile = ConvertNiiExtention[file, OptionValue["Channel"], "hdr"];
+	byteorder = $ByteOrdering;
+
+	strm = OpenRead[hdrfile, BinaryFormat -> True];
+
+	(*determine version*)
+	verNii = Switch[Quiet[BinaryRead[strm, "Integer32", ByteOrdering -> byteorder]], 
+		348, 1, 540, 2, _, Undefined
+		];
+	(*check for bite ordering*)
+	If[verNii === Undefined,
+		byteorder *= -1;
+		SetStreamPosition[strm, 0];
+		verNii = Switch[Quiet[BinaryRead[strm, "Integer32", ByteOrdering -> byteorder]], 
+		348, 1, 540, 2, _, Undefined];
+	];
+
 	(*reset stream and read header in version is defined*)
-	 SetStreamPosition[strm, 0];
-	 
-	 hdrValues = GetNiiHeaderValues[verNii,file];
-	 If[hdrValues===$Failed, Return[$Failed, Module]];
-	 
-	 (*read the header and convert all values to readable text and numbers*)
-	 hdr = (
-	 	val = BinaryReadList[strm, #[[2]], #[[3]], ByteOrdering -> byteorder];
-	    #[[1]] -> If[#[[3]] === 1, First@val, If[#[[2]] === "Character8", JoinCharacters@val, val]]
-	  ) & /@ hdrValues;
-	 
-	 (*check if header is valid*)
-	 If[hdr[[-1, -1]] === EndOfFile, Message[Import::niihdr, file]; Return[$Failed, Module]];
-	 
-	 (*replace values with readable text*)
-	 hdr = ReplaceHeaderVal[hdr,"dimInfo",DimInfo["dimInfo" /. hdr]];
-	 hdr = ReplaceHeaderVal[hdr,"xyztUnits",XyztUnits["xyztUnits" /. hdr]];
-	 hdr = ReplaceHeaderRule[hdr,"dataType",dataTypeNii];
-	 hdr = ReplaceHeaderRule[hdr,"qformCode",coordinateNii];
-	 hdr = ReplaceHeaderRule[hdr,"sformCode",coordinateNii];
-	 
-	 Close[strm];
-	 
-	 {"Header" -> hdr, "ByteOrder" -> byteorder}
- ]
+	SetStreamPosition[strm, 0];
+	
+	hdrValues = GetNiiHeaderValues[verNii,file];
+	If[hdrValues===$Failed, Return[$Failed, Block]];
+	
+	(*read the header and convert all values to readable text and numbers*)
+	hdr = (
+		val = BinaryReadList[strm, #[[2]], #[[3]], ByteOrdering -> byteorder];
+		#[[1]] -> If[#[[3]] === 1, First@val, If[#[[2]] === "Character8", JoinCharacters@val, val]]
+	) & /@ hdrValues;
+	
+	(*check if header is valid*)
+	If[hdr[[-1, -1]] === EndOfFile, Message[Import::niihdr, file]; Return[$Failed, Block]];
+	
+	(*replace values with readable text*)
+	hdr = ReplaceHeaderVal[hdr,"dimInfo",DimInfo["dimInfo" /. hdr]];
+	hdr = ReplaceHeaderVal[hdr,"xyztUnits",XyztUnits["xyztUnits" /. hdr]];
+	hdr = ReplaceHeaderRule[hdr,"dataType",dataTypeNii];
+	hdr = ReplaceHeaderRule[hdr,"qformCode",coordinateNii];
+	hdr = ReplaceHeaderRule[hdr,"sformCode",coordinateNii];
+	
+	Close[strm];
+	
+	{"Header" -> hdr, "ByteOrder" -> byteorder}
+]
 
 
 (* ::Subsection:: *)
@@ -808,19 +812,19 @@ Options[ImportNiiDiff]={RotateGradients->False, FlipBvec->True}
 
 SyntaxInformation[ImportNiiDiff]= {"ArgumentsPattern" -> {_.,_.,_.,OptionsPattern[]}};
 
-ImportNiiDiff[OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
+ImportNiiDiff[OptionsPattern[]]:=Block[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[NiiMethod -> "headerMat"];
 	{bvec, grad}=ImportBvalvec[FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad . Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
-ImportNiiDiff[file_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
+ImportNiiDiff[file_String,OptionsPattern[]]:=Block[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[file,NiiMethod -> "headerMat"];
 	{bvec, grad}=ImportBvalvec[file,FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad . Inverse[mat], grad],0.00001],bvec,vox}
 ]
 
-ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{data,grad,bvec,vox,hdr,mat},
+ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Block[{data,grad,bvec,vox,hdr,mat},
 	{data,vox,hdr,mat}=ImportNii[fnii,NiiMethod -> "headerMat"];
 	{bvec, grad} = ImportBvalvec[fval, fvec,FlipBvec->OptionValue[FlipBvec]];
 	{data,Round[If[OptionValue[RotateGradients],grad . Inverse[mat], grad],0.00001],bvec,vox}
@@ -831,7 +835,7 @@ ImportNiiDiff[fnii_String,fvec_String,fval_String,OptionsPattern[]]:=Module[{dat
 (*ImportNiiDix*)
 
 
-ImportNiiDix[]:=Module[{dix, vox, scale, b0, real, imag, mag, phase}, 
+ImportNiiDix[]:=Block[{dix, vox, scale, b0, real, imag, mag, phase}, 
 	{dix, vox, scale} = ImportNii[NiiScaling -> False, NiiMethod -> "scaling"];
 	{dix, b0, {real, imag, mag, phase}} = CorrectDixonData[dix, scale];
 	{dix, b0, {real, imag, mag, phase}, vox}
@@ -839,7 +843,7 @@ ImportNiiDix[]:=Module[{dix, vox, scale, b0, real, imag, mag, phase},
 
 ImportNiiDix[file_String]:=ImportNiiDix[file,False]
 
-ImportNiiDix[file_String, new_]:=Module[{dix, vox, scale, b0, real, imag, mag, phase},  
+ImportNiiDix[file_String, new_]:=Block[{dix, vox, scale, b0, real, imag, mag, phase},  
 	{dix, vox, scale} = ImportNii[file, NiiScaling -> False, NiiMethod -> "scaling"];
 	{dix, b0, {real, imag, mag, phase}} =If[new, CorrectDixonDataNew[dix, scale], CorrectDixonData[dix, scale]];
 	{dix, b0, {real, imag, mag, phase}, vox}
@@ -892,13 +896,13 @@ CorrectDixonDataNew[data_, scale_] := Block[{data0, b0, echos, phase, mag, real 
 (*ImportNiiT2*)
 
 
-ImportNiiT2[]:=Module[{t2, t2Vox, t2Cor, fit},
+ImportNiiT2[]:=Block[{t2, t2Vox, t2Cor, fit},
 	{t2, t2Vox} = ImportNii[NiiScaling -> False];
 	{t2Cor, fit} = CorrectMapData[t2,1];
 	{t2Cor, fit, t2Vox}
 ]
 
-ImportNiiT2[file_]:=Module[{t2, t2Vox, t2Cor, fit},
+ImportNiiT2[file_]:=Block[{t2, t2Vox, t2Cor, fit},
 	{t2, t2Vox} = ImportNii[file,NiiScaling -> False];
 	{t2Cor, fit} = CorrectMapData[t2,1];
 	{t2Cor, fit, t2Vox}
@@ -909,48 +913,47 @@ ImportNiiT2[file_]:=Module[{t2, t2Vox, t2Cor, fit},
 (*ImportNiiT1*)
 
 
-ImportNiiT1[] := Module[{t1, t1Vox, t1Cor, fit},
-  {t1, t1Vox} = ImportNii[NiiScaling -> False];
-  {t1Cor, fit} = CorrectMapData[t1];
-  {t1Cor, fit, t1Vox}]
+ImportNiiT1[] := Block[{t1, t1Vox, t1Cor, fit},
+	{t1, t1Vox} = ImportNii[NiiScaling -> False];
+	{t1Cor, fit} = CorrectMapData[t1];
+	{t1Cor, fit, t1Vox}]
 
-ImportNiiT1[file_] := Module[{t1, t1Vox, t1Cor, fit},
-  {t1, t1Vox} = ImportNii[file,NiiScaling -> False];
-  {t1Cor, fit} = CorrectMapData[t1, 2];
-  {t1Cor, fit, t1Vox}]
+ImportNiiT1[file_] := Block[{t1, t1Vox, t1Cor, fit},
+	{t1, t1Vox} = ImportNii[file,NiiScaling -> False];
+	{t1Cor, fit} = CorrectMapData[t1, 2];
+	{t1Cor, fit, t1Vox}]
 
 
 (* ::Subsubsection::Closed:: *)
 (*CorrectMapData*)
 
 
-CorrectMapData[datai_, maps_: 1] := 
- Block[{slices, echos, data, map, mask},
-  {slices, echos} = Dimensions[datai][[1 ;; 2]] - {0, maps};
-  (*Flatten the data and remove the T2map*)
-  data = Flatten[Transpose[datai], 1];
-  (**)
-  map = data[[-maps slices ;;]];
-  map = Partition[map, maps];
-  (*partition to correct number of slices*)
-  data = Partition[Drop[data, -maps slices], echos];
-  data = Clip[NormalizeData[data], {0, Infinity}];
-  
-  {data, map}
-  ]
+CorrectMapData[datai_, maps_: 1] := Block[{slices, echos, data, map, mask},
+	{slices, echos} = Dimensions[datai][[1 ;; 2]] - {0, maps};
+	(*Flatten the data and remove the T2map*)
+	data = Flatten[Transpose[datai], 1];
+	(**)
+	map = data[[-maps slices ;;]];
+	map = Partition[map, maps];
+	(*partition to correct number of slices*)
+	data = Partition[Drop[data, -maps slices], echos];
+	data = Clip[NormalizeData[data], {0, Infinity}];
+
+	{data, map}
+]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ImportExploreDTItens*)
 
 
-ImportExploreDTItens[fil_String] := Module[{tens, vox, file},
-  file = If[fil == "", FileSelect["FileOpen", {"*.nii"}, WindowTitle -> "Select the nii tensor file to import"], fil];
-  If[file == Null, Return[]];
-  {tens, vox} = ImportNii[file];
-  tens = ((tens // Transpose)[[{4, 1, 6, 2, 5, 3}]]);
-  {tens, vox}
-  ]
+ImportExploreDTItens[fil_String] := Block[{tens, vox, file},
+	file = If[fil == "", FileSelect["FileOpen", {"*.nii"}, WindowTitle -> "Select the nii tensor file to import"], fil];
+	If[file == Null, Return[]];
+	{tens, vox} = ImportNii[file];
+	tens = ((tens // Transpose)[[{4, 1, 6, 2, 5, 3}]]);
+	{tens, vox}
+]
 
 
 (* ::Subsection:: *)
@@ -961,14 +964,14 @@ ImportExploreDTItens[fil_String] := Module[{tens, vox, file},
 (*LineToList*)
 
 
-LineToList[file_] := Module[{grads,tmp},
-  grads = Import[file, "Lines"];
-  grads = Transpose[(
-  	tmp = StringReplace[StringReplace[StringTrim[#], {" ".. -> ",", "\t" -> ",", "E" -> "*10^", "e" -> "*10^"}], "," .. -> ","];
+LineToList[file_] := Block[{grads,tmp},
+	grads = Import[file, "Lines"];
+	grads = Transpose[(
+	tmp = StringReplace[StringReplace[StringTrim[#], {" ".. -> ",", "\t" -> ",", "E" -> "*10^", "e" -> "*10^"}], "," .. -> ","];
 	tmp = If[StringTake[tmp, -1] == ",", StringDrop[tmp, -1], tmp];
 	tmp = ToExpression["{" <> tmp <> "}"]
-  	) & /@ grads]
-  ]
+	) & /@ grads]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -992,7 +995,7 @@ SyntaxInformation[ImportBvec] = {"ArgumentsPattern" -> {_.,OptionsPattern[]}};
 
 ImportBvec[opts:OptionsPattern[]]:=ImportBvec[FileSelect["FileOpen", {".bvec"}, WindowTitle -> "Select *.bvec"], opts]
 
-ImportBvec[file_?StringQ, OptionsPattern[]]:=Module[{grads},
+ImportBvec[file_?StringQ, OptionsPattern[]]:=Block[{grads},
 	grads = Round[LineToList[file],0.00001];
 	grads = If[OptionValue[FlipBvec], {1, -1, 1}RotateLeft[#]&/@grads, grads];
 	grads = If[OptionValue[PositiveZ], If[Negative[#[[3]]],-#,#]&/@grads, grads];
@@ -1008,18 +1011,18 @@ Options[ImportBvalvec]={FlipBvec->False, PositiveZ->False};
 
 SyntaxInformation[ImportBvalvec] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
-ImportBvalvec[file_?StringQ,opts:OptionsPattern[]] := Module[{valf, vecf},
-  valf = ConvertExtension[file,".bval"];
-  vecf = ConvertExtension[file,".bvec"];
-  ImportBvalvec[valf,vecf,opts]
+ImportBvalvec[file_?StringQ,opts:OptionsPattern[]] := Block[{valf, vecf},
+	valf = ConvertExtension[file,".bval"];
+	vecf = ConvertExtension[file,".bvec"];
+	ImportBvalvec[valf,vecf,opts]
 ]
 
 ImportBvalvec[valf__?StringQ,vecf__?StringQ,opts:OptionsPattern[]] := {ImportBval[valf],ImportBvec[vecf,opts]}
 
-ImportBvalvec[___,opts:OptionsPattern[]] := Module[{valf, vecf},
-  valf = FileSelect["FileOpen", {"*.bval"}, WindowTitle -> "Select *.bval"];
-  vecf = FileSelect["FileOpen", {"*.bvec"}, WindowTitle -> "Select *.bvec"];
-  ImportBvalvec[valf,vecf,opts]
+ImportBvalvec[___,opts:OptionsPattern[]] := Block[{valf, vecf},
+	valf = FileSelect["FileOpen", {"*.bval"}, WindowTitle -> "Select *.bval"];
+	vecf = FileSelect["FileOpen", {"*.bvec"}, WindowTitle -> "Select *.bvec"];
+	ImportBvalvec[valf,vecf,opts]
 ]
 
 
@@ -1032,11 +1035,11 @@ SyntaxInformation[ImportBmat] = {"ArgumentsPattern" -> {_.,_.}};
 
 ImportBmat[] := ImportBmat[FileSelect["FileOpen", {"*.txt"}, WindowTitle -> "Select *.txt"]]
 
-ImportBmat[fil_String] := Module[{bmati},
-  If[fil == Null, Return[]];
-  bmati = DeleteCases[#, ""] & /@ Import[fil, "Data"];
-  Append[{-1, -1, -1, -1, -1, -1} #, 1] & /@ bmati[[All, {4, 1, 6, 2, 5, 3}]]
-  ]
+ImportBmat[fil_String] := Block[{bmati},
+	If[fil == Null, Return[]];
+	bmati = DeleteCases[#, ""] & /@ Import[fil, "Data"];
+	Append[{-1, -1, -1, -1, -1, -1} #, 1] & /@ bmati[[All, {4, 1, 6, 2, 5, 3}]]
+]
 
 
 (* ::Subsection:: *)
@@ -1057,8 +1060,8 @@ ImportExport`RegisterExport["Nii",
 	"Options" -> {
 		NiiDataType,
 		NiiVersion
-    	}
-  ];
+		}
+];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1077,7 +1080,7 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo, data, type, off
 		FileSelect["FileSave",{"*.nii"},"nifti",WindowTitle->"Select the destination file"], 
 		ConvertExtension[fil,".nii"]
 	];
-	If[fileo == Null || fileo === $Canceled || fileo === $Failed, Return[$Failed,Module]];
+	If[fileo == Null || fileo === $Canceled || fileo === $Failed, Return[$Failed, Block]];
 	
 	(*if numbertyp is integer, Round data*)
 	type=OptionValue[NiiDataType];
@@ -1111,12 +1114,12 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo, data, type, off
 
 Options[ExportNiiDefault] = {NiiDataType -> Automatic, NiiLegacy->False, NiiSliceCode->0, NiiVersion -> 1, "Channel" -> Null, "ExtensionParsing" -> False}
 
-ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := Module[{ver, data, header, type, strm},
+ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := Block[{ver, data, header, type, strm},
 	ver = Clip[OptionsPattern[NiiVersion], {1, 2}];
 	ver = If[NumberQ[ver], ver, 1];
 	(*make the nii header*)
 	header = MakeNiiHeader[rule, ver, opts];
-	If[header === $Failed, Return[$Failed, Module]];
+	If[header === $Failed, Return[$Failed, Block]];
 	{header, type} = header;
 	(*get the data*)
 	data = "Data" /. rule;
@@ -1132,9 +1135,10 @@ ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := Module[{ver, data, he
 (*MakeNiiHeader*)
 
 
-MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
-	{vox, dim, ndim, type, range, data, header, headerInp, voxInp, headerDef, off, sl, 
-		offInp, rotS, rot, rotQ, code, scode, qcode, qb, qc, qd, sx, sy, sz, offs, xoffq, yoffq, zoffq},
+MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Block[{
+		vox, dim, ndim, type, range, data, header, headerInp, voxInp, headerDef, off, sl, 
+		offInp, rotS, rot, rotQ, code, scode, qcode, qb, qc, qd, sx, sy, sz, offs, xoffq, yoffq, zoffq
+	},
 	
 	type = OptionValue[NiiDataType];
 	sl = OptionValue[NiiSliceCode];
@@ -1142,7 +1146,7 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 	(*get the data*)
 	data = "Data" /. rule;
 	(*check if data if number array*)
-	If[! ArrayQ[data, _, NumberQ], Message[Export::niidat]; Return[$Failed, Module]];
+	If[! ArrayQ[data, _, NumberQ], Message[Export::niidat]; Return[$Failed, Block]];
 	
 	(*get data properties*)
 	ndim = ArrayDepth[data];
@@ -1152,9 +1156,9 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 	range = type /. rangeNii;
 	
 	(*Check data type and range*)
-	If[! ArrayQ[data, _, type /. typeCheckNii], If[! ArrayQ[IntegerChop[data], _, type /. typeCheckNii], Message[Export::niitype, type]; Return[$Failed, Module]]];
-	If[ListQ[range] && (Min[data] < range[[1]] || Max[data] > range[[2]]), Message[Export::niiran, MinMax[data]]; Return[$Failed, Module]];
-	If[type == {"Byte", "Byte", "Byte"} && Last[dim] != 3, Message[Export::niidim, type]; Return[$Failed, Module]];
+	If[! ArrayQ[data, _, type /. typeCheckNii], If[! ArrayQ[IntegerChop[data], _, type /. typeCheckNii], Message[Export::niitype, type]; Return[$Failed, Block]]];
+	If[ListQ[range] && (Min[data] < range[[1]] || Max[data] > range[[2]]), Message[Export::niiran, MinMax[data]]; Return[$Failed, Block]];
+	If[type == {"Byte", "Byte", "Byte"} && Last[dim] != 3, Message[Export::niidim, type]; Return[$Failed, Block]];
 	
 	(*is header given as input and is header a list of rules,
 	if given an valid use header*)
@@ -1164,7 +1168,7 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 	(*check if valid header*)
 	If[headerInp,
 		headerInp = AllTrue[{Length[header] === 44 | Length[header] === 38}];
-		If[! headerInp, Message[Export::niihdr]; Return[$Failed, Module]]
+		If[! headerInp, Message[Export::niihdr]; Return[$Failed, Block]]
 	];
 	
 	(*is vox given as input and is header a list 3 number,
@@ -1266,7 +1270,7 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Module[
 (*DetectDataType*)
 
 
-DetectDataType[input_] := Module[{data, min, max},
+DetectDataType[input_] := Block[{data, min, max},
 	data = Flatten[input];
 	Switch[Head[Total[data]],
 		Integer,
@@ -1377,7 +1381,7 @@ SyntaxInformation[ExportBval] = {"ArgumentsPattern" -> {_,_.}};
 
 ExportBval[bv_] := ExportBval[bv, ""]
 
-ExportBval[bv_,fil_String] := Module[{file,bve},
+ExportBval[bv_,fil_String] := Block[{file,bve},
 	
 	file = If[fil == "", FileSelect["FileSave", {"*.bval"}, "bval file", WindowTitle -> "Select the destination file"], fil];
 	If[file === Null, Return[]];
@@ -1398,7 +1402,7 @@ SyntaxInformation[ExportBvec] = {"ArgumentsPattern" -> {_,_.,OptionsPattern[]}};
 
 ExportBvec[grad_, opts:OptionsPattern[]] := ExportBvec[grad, "", opts]
 
-ExportBvec[grad_, fil_String, OptionsPattern[]] := Module[{file,grade,grads},
+ExportBvec[grad_, fil_String, OptionsPattern[]] := Block[{file,grade,grads},
 	file = If[fil == "", FileSelect["FileSave", {"*.bvec"}, "bvec file", WindowTitle -> "Select the destination file"], fil];
 	If[file === Null, Return[]];
 	file = If[StringTake[file, -5] == ".bvec", file, file <> ".bvec"];
@@ -1420,7 +1424,7 @@ SyntaxInformation[ExportBmat] = {"ArgumentsPattern" -> {_,_.}};
 
 ExportBmat[bmat_] := ExportBmat[bmat, ""]
 
-ExportBmat[bmat_, fil_String] := Module[{bmate, file},
+ExportBmat[bmat_, fil_String] := Block[{bmate, file},
 	file = If[fil == "", FileSelect["FileSave", {"*.txt"}, "txt file", WindowTitle -> "Select the destination file"], fil];
 	If[file == Null, Return[]];
 	file = If[StringTake[file, -4] == ".txt", file, file <> ".txt"];
@@ -1444,7 +1448,7 @@ SyntaxInformation[ExtractNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
 
 ExtractNiiFiles[lim_:Infinity] := ExtractNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
 
-ExtractNiiFiles[folder_,lim_:Infinity] := Module[{files},
+ExtractNiiFiles[folder_,lim_:Infinity] := Block[{files},
 	files = FileNames["*.nii.gz", folder,lim];
 	PrintTemporary[Dynamic[file]];
 	(file=#;ExtractNiiFile[#])&/@files;
@@ -1466,11 +1470,11 @@ CompressNiiFiles[folder_?StringQ]:=CompressNiiFiles[folder, Infinity]
 
 CompressNiiFiles[lim_] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
 
-CompressNiiFiles[folder_?StringQ,lim_] := Module[{files,file},
+CompressNiiFiles[folder_?StringQ,lim_] := Block[{files,file},
 	files = FileNames["*.nii", folder,lim];
 	PrintTemporary[Dynamic[file]];
 	(file=#;CompressNiiFile[#])&/@files;
-   ]
+]
 
 
 CompressNiiFile[file_] := Quiet[DeleteFile[file <> ".gz"];CreateArchive[file, file <> ".gz"];DeleteFile[file];]
