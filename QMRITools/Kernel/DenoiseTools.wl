@@ -78,8 +78,6 @@ Output is the smoothed data.
 AnisoFilterData[] is based on DOI: 10.1016/j.jbiomech.2021.110540 and 10.1016/j.mri.2009.10.001 and 10.1371/journal.pone.0126953."
 
 
-
-
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -286,7 +284,6 @@ NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, 
 		K = (1 - top/div);
 		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
 	]];
-
 
 
 (* ::Subsection:: *)

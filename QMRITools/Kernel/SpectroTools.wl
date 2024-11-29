@@ -686,7 +686,6 @@ TimeShiftFidC2 = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}
 ]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*TimeShiftEcho*)
 

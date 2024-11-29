@@ -1323,7 +1323,6 @@ GradVecConv[grad_,type_]:=Block[{gx,gy,gz},
 ]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*BmatrixCalc*)
 
@@ -1875,7 +1874,6 @@ ParametersToTransform[w_, opt_] := Block[{
 
 	(MatrixPower[mats.Transpose[mats], -(1/2)].mats)
 	]
-
 
 
 (* ::Section:: *)

@@ -173,7 +173,6 @@ NormalizeDensity::usage =
 "NormalizeDensity is an option for TractDensityMap. If set True the tract density is normalized, if False then it is the true tract count."
 
 
-
 (* ::Subsection:: *)
 (*Error Messages*)
 
@@ -491,7 +490,6 @@ VecAngCv2 = Compile[{{tr, _Real, 2}, {v1, _Real, 1}, {v2, _Real, 1}}, Block[{vec
 ], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*TractCurvatureMap*)
 
@@ -584,7 +582,7 @@ FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, o
 
 FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, vecF, trFunc, ran,
-		tens, tensMask, inpTr, treshs, stop, coors, vecInt, stopInt, ones, dim, crp,
+		tens, tensMask, inpTr, treshs, stop, coors, vecInt, stopInt, ones, dim, crp, t2,
 		seedN, seedI, seedT, seeds, t1, tracts, iii, drop, smax, len, sel, mon
 	},
 
@@ -639,7 +637,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 
 	(*start the tractography*)
 	If[mon,
-		Echo["Starting tractography for "<>ToString[seedN]<>" seed points with stepsize "<>ToString[step]<>" mm"];
+		Echo["Starting with "<>ToString[seedN]<>" seed points and stepsize "<>ToString[step]<>" mm"];
 	];
 
 	(*check if parallel or normal computing is needed*)
@@ -657,7 +655,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 					"ExtrapolationHandler" -> {(0. &), "WarningMessage" -> False}];
 				trFunc = TractFunc[#, step, {amax, smax, stopT}, {vecInt, stopInt, tracF, vecF}]&;
 			, DistributedContexts -> None]];
-		If[mon, Echo["Parallel preparation time: "<>ToString[Round[t2,.1]]<>" seconds"]];
+		If[mon, Echo["Parallel preparation time: "<>ToString[Round[t2, .1]]<>" seconds"]];
 		(*actual tracto for parallel with memory clear*)
 		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, 
 			Method -> "EvaluationsPerKernel" -> 10, ProgressReporting -> mon];
@@ -730,6 +728,40 @@ TractFuncI[{loci_?VectorQ, stepi_?VectorQ}, {h_, mh_}, {amax_, smax_, stoptr_}, 
 
 
 (* ::Subsubsection::Closed:: *)
+(*Euler*)
+
+
+Euler[y_, v_, h_, int_, vec_] := Block[{k1},
+	k1 = h vec[int@@(y), v];
+	k1
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RK2*)
+
+
+RK2[y_, v_, h_, int_, vec_] := Block[{k1, k2},
+	k1 = h vec[int@@(y), v];
+	k2 = h vec[int@@(y + k1/2), v];
+	k2	
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RK4*)
+
+
+RK4[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3, k4},
+	k1 = h vec[int@@(y), v];
+	k2 = h vec[int@@(y + k1/2), v];
+	k3 = h vec[int@@(y + k2/2), v];
+	k4 = h vec[int@@(y + k3), v];
+	k1/6 + k2/3 + k3/3 + k4/6
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*VecAng*)
 
 
@@ -795,42 +827,13 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
+(* ::Subsubsection::Closed:: *)
+(*Vec*)
+
+
 Vec = Compile[{{vec, _Real, 1}, {vdir, _Real, 1}},
 	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
-
-(* ::Subsubsection::Closed:: *)
-(*Euler*)
-
-
-Euler[y_, v_, h_, int_, vec_] := Block[{k1},
-	k1 = h vec[int@@(y), v];
-	k1
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RK2*)
-
-
-RK2[y_, v_, h_, int_, vec_] := Block[{k1, k2},
-	k1 = h vec[int@@(y), v];
-	k2 = h vec[int@@(y + k1/2), v];
-	k2	
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RK4*)
-
-
-RK4[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3, k4},
-	k1 = h vec[int@@(y), v];
-	k2 = h vec[int@@(y + k1/2), v];
-	k3 = h vec[int@@(y + k2/2), v];
-	k4 = h vec[int@@(y + k3), v];
-	k1/6 + k2/3 + k3/3 + k4/6
-]
 
 
 (* ::Subsection::Closed:: *)

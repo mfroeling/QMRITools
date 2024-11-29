@@ -1372,7 +1372,6 @@ MeanNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Mean[P
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*StandardDeviationNoZero*)
 
@@ -1385,7 +1384,6 @@ StandardDeviationNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*MedianNoZero*)
 
@@ -1396,7 +1394,6 @@ MedianNoZero[vec_] := MedianNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft
 
 MedianNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Median[Pick[vec, Unitize[vec], 1]]], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1560,7 +1557,6 @@ LLeastSquaresCC = Compile[{{A, _Real, 2}, {y, _Complex, 1}},
 LLeastSquaresCCC = Compile[{{A, _Complex, 2}, {y, _Complex, 1}}, 
 	Inverse[ConjugateTranspose[A] . A] . ConjugateTranspose[A] . y,
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
 
 
 (* ::Subsection::Closed:: *)

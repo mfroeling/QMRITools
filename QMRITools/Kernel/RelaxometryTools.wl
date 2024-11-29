@@ -151,7 +151,6 @@ EPGMethodCal::usage =
 "EPGMethodCal is an option for CalibrateEPGT2Fit and EPGT2Fit. The calibration can be done using \"1comp\", \"2comp\", \"2compF\"."
 
 
-
 (* ::Subsection:: *)
 (*Error Messages*)
 
@@ -621,7 +620,6 @@ ErrorFunc2MFS[y_, t2m_Real, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, 
 	LeastSquaresErrorC[sig, y]]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*LeastSquaresC*)
 
@@ -661,7 +659,6 @@ LeastSquaresError2C = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, To
 
 LeastSquaresError2CS = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Sqrt[Mean[(y - A.Ai.y)^2]], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
-
 
 
 (* ::Subsubsection::Closed:: *)

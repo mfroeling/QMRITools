@@ -491,7 +491,6 @@ SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
 ]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*SimSignal*)
 
@@ -778,8 +777,6 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={1,1,1,1,1,1};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-
-
 		"fatAll",
 		(*single spin system*)
 		names={"A","B","C","D","E","J"};
@@ -797,8 +794,6 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={9,66,6,12,6,6};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-
-
 		"fatGly",
 		(*single spin system*)
 		names={"G","G","ham","ham","I"};
@@ -893,7 +888,6 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		sysJ=SysToMat[sysJ,n];
 		scale=3 2 6{1}(*3 chains with 6 normal met with 2 ham*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
-
 		,
 		"water",
 		names={"A"};
@@ -905,7 +899,6 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		sysJ=SysToMat[sysJ,n];
 		scale=1(*3 chains with 6 normal met with 2 ham*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
-
 		,
 		"HDO",
 		names={"A"};
