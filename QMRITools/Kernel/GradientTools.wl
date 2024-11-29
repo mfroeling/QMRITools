@@ -250,7 +250,7 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 	DynamicModule[{vp, vv, va, tempp, points},
 		(*Initialisation *)
 		cols = {Red, Green, Blue, Yellow, Pink, Darker[Red], Darker[Green], Darker[Blue], Darker[Yellow], Darker[Pink]};
-		
+
 		(*get options*)
 		steps = OptionValue[Steps];
 		runs = OptionValue[Runs];
@@ -258,13 +258,13 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 		vis = OptionValue[VisualOpt];
 		cond = OptionValue[ConditionCalc];
 		half = 1 - Boole[OptionValue[FullSphere]];
-		
+
 		(*determine length*)
 		nf = Length[fixed];
 		ni = Total[numbs] - nf;
-		
+
 		If[method == "OverPlus" || method == "OverPlusNon", half = 1];
-		
+
 		condnr = Infinity;
 		If[method == "NonRandom" || method == "OverPlusNon",
 			points = tempp = initp;
@@ -272,16 +272,16 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 			,
 			points = tempp = ConstantArray[{0, 0, 0}, ni];
 			];
-			
+
 		(*get velocity matrix for multishell*)
 		If[method == "Shels",
 			ns = Length[numbs];
 			{vel, part} = cc = Prepare[numbs, half, {}, alph][[2 ;;]]
 			];
-		
+
 		(*visualisation*)
 		If[vis,
-			
+
 			(*Initialize graphics*)
 			vp = {1.3, -2.4, 2}; vv = {0, 0, 1}; va = 30 Degree;
 			sph = Graphics3D[{White, Sphere[{0, 0, 0}, 0.95]}, 
@@ -289,7 +289,7 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 			PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}},
 			ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], 
 			ViewAngle -> Dynamic[va]];
-			
+
 			If[! (method == "Shels"),
 			(*single shell*)
 			plot = Row[{
@@ -309,7 +309,7 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 			];
 			tempplot = PrintTemporary[plot];
 		];
-		
+
 		(*Do number of runs*)
 		condtot = Reap[Do[
 			(*initialize*)
@@ -319,36 +319,36 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 				tempp[[1]] = {0, 0, 1};
 				]
 				];
-			
+
 			tempp = Switch[
 				OptionValue[Method],
-				
+
 				"Default2",(* default *)
 				Do[tempp = GradOptimize1C[tempp, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
 				tempp
 				,
-				
+
 				"Default",(* default *)
 				Do[tempp = GradOptimize2C[tempp, 1, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
 				tempp
 				,
-				
+
 				"NonRandom",(* non rand *)
 				Do[tempp = GradOptimize1C[tempp, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
 				tempp
 				,
-				
+
 				"Fixed",(* fixed *)
 				tempp = Join[fixed, tempp];
 				Do[tempp = GradOptimize2C[tempp, nf, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
 				tempp
 				,
-				
+
 				"Shels",(* shells *)
 				Do[tempp = GradOptimize4C[tempp, vel, half]; If[cond, Sow[ConditionNumberCalc[tempp]]]; , {steps}];
 				tempp
 				,
-				
+
 				"OverPlus",(* overplus default *)
 				tempp = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, fixed, tempp];
 				charge = Join[ConstantArray[(.5 ni)^(1.2), 3], ConstantArray[1, ni + nf]];
@@ -358,7 +358,7 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 				Do[tempp = Normalize /@ Clip[tempp, {-1/Sqrt[2], 1/Sqrt[2]}, {-1/Sqrt[2], 1/Sqrt[2]}], {25}];
 				tempp
 				,
-				
+
 				"OverPlusNon",(* overplus default *)
 				tempp = Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, tempp];
 				charge = Join[ConstantArray[(.5 ni)^(1.2), 3], ConstantArray[1, ni + nf]];
@@ -366,18 +366,18 @@ GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
 				tempp = Drop[tempp, 3];
 				Do[tempp = Normalize /@ Clip[tempp, {-1/Sqrt[2], 1/Sqrt[2]}, {-1/Sqrt[2], 1/Sqrt[2]}], {25}];
 				tempp
-				
+
 			];(*end switch*)
-			
+
 			tempc = ConditionNumberCalc[tempp];
-			
+
 			If[tempc < condnr, points = tempp; condnr = tempc;];
-			
+
 			(*end runs do loop*)
 			Pause[0.5];
 			, {runs}]][[2]];
 		NotebookDelete[tempplot];
-		
+
 		output = Chop[If[method == "Shels", points[[#]] & /@ part, points]];
 	];
 	If[cond, {output, condtot[[1]]}, output]
@@ -579,10 +579,10 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 		(*covert bval and names*)
 		bvall = If[NumberQ[bvall], {bvall}, bvall];
 		names = StringReplace[#, " " -> "_"] & /@ names;
-		
+
 		(*constrain one shel to 124 directions*)
 		dirs1 = Clip[dirs1, {3, 128}];
-		
+
 		(*Constrain, multi shel to 60 per shell*)
 		{dirs21, dirs22, dirs23, dirs24, dirs25, dirs26} = Clip[{dirs21, dirs22, dirs23, dirs24, dirs25, dirs26}, {3, 128}];
 		dirs2 = {dirs21, dirs22, dirs23, dirs24, dirs25, dirs26}[[1 ;; nshels]];
@@ -597,7 +597,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 			(*single shel*)
 			1, If[grads === "", grads, FinalGrads[outs, {inter, int, bi}, {random, orders}]]
 		];
-			
+
 		(*The display, show the plots or show the Gradient directions txt*)
 		Dynamic[Switch[disp,
 			(*display as 3D plot*)
@@ -710,13 +710,13 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 			]
 		]]
 		,
-		
+
 		
 		(*Controls*)
 		(*set Name*)
 		Row[{"  Set Name ", InputField[Dynamic[names[[mult]]], String]}],
 		Delimiter,
-	
+
 		(*display controls*)
 		{{disp, 1, "display gradients"}, {1 -> "graphics", 2 -> "chart", 3 -> "text", 4 -> "G load"}},
 		{{opacity, 0.5, "sphere opacity"}, 0, 1, .1, ControlType -> Slider},
@@ -728,7 +728,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 			Button["reset", {vp, vv, va} = {{1.3, -2.4, 2}, {0, 0, 1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 0,FontSize->10]
 		}}],
 		Delimiter,
-	
+
 		(*multi or single shell*)
 		{{half, 1, "Full or half sphere"}, {1 -> "half sphere", 0 -> "full sphere"}},
 		{{mult, 1, "shells"}, {1 -> "single shell", 2 -> "multi shell", 3 -> "cartesian", 4 -> "DWI"}, ControlType -> PopupMenu, FieldSize -> {13, 0.7}},
@@ -765,7 +765,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 			4 -> Control[{{typed, "normal", "           type"}, {"normal", "over-plus"}, ControlType -> SetterBar}]
 		}, Dynamic[mult]],
 		Delimiter,
-	
+
 		(*input bvals*)
 		PaneSelector[{
 			1 -> Row[{"  b-value:   ", InputField[Dynamic[bvall], Expression, Background -> Dynamic[If[((AllTrue[bvall, NumberQ] && ListQ[bvall]) || NumberQ[bvall]), None, Lighter[Lighter[Red]]]]]}],
@@ -774,7 +774,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 			4 -> Row[{"      b-value:   ", InputField[Dynamic[bvald], Expression, Background ->Dynamic[If[((AllTrue[bvald, NumberQ] && ListQ[bvald]) || NumberQ[bvald]), None, Lighter[Lighter[Red]]]]]}]
 		}, Dynamic[mult]],
 		Delimiter,
-	
+
 		(*interleave b=0 and optimize gradient load*)
 		Dynamic[Grid[{
 			{"  interleave b: ", Checkbox[Dynamic[inter]], "Optimize G load: ", Checkbox[Dynamic[random]]},
@@ -784,7 +784,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 			]
 		}, Alignment->Left]],
 		Delimiter,
-		
+
 		(*quality and multi or single shell*)
 		{{steps, 1000, "quality (iterations)"}, {500 -> "poor (500)", 1000 -> "normal (1000)", 2500 -> "excellent (2500)",5000 -> "perfect (5000)", 10000 -> "extreme (10000)"}, ControlType -> PopupMenu, FieldSize -> {9, 0.7}},
 		(*generate gradietns button*)
@@ -867,7 +867,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 						points = Chop[Drop[points, 3]]
 					];(*end single shel options*)
 				];(*end generate grads*)
-				
+
 				(*covert gradients to txt and find optimal order dutycycle*)
 				(*mult:1-single shell; 2-multi shell; 3-cartesian;4-DWI*)
 				Switch[mult,
@@ -941,14 +941,14 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 					];
 					orderd = FindOrder[ConstantArray[gradd, Length[bvald]], bvald];
 				];
-				
+
 				(*stop gray background*)
 				Pause[0.1];
 				running = False;
 				app = White;
 				(*close button*)
 			, Method -> "Queued", ImageSize -> {120, 23},FontSize->10],
-			
+
 			(*output buttens*)
 			Button["clipboard", CopyToClipboard[out], ImageSize -> {100, 23},FontSize->10],
 			Button["file",
@@ -958,9 +958,9 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 		}],
 		(*disclaimer*)
 		Delimiter,
-		
+
 		Row[{Style["Made by Martijn Froeling, Phd \nm.froeling@umcutrecht.nl", {Small, Gray}]}],
-		
+
 		(*hidden dynamic local variables, using now control type*)
 		{{points, {}}, ControlType -> None},
 		{{pointspl, {}}, ControlType -> None},
@@ -982,7 +982,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 		{{orders, ""}, ControlType -> None},
 		{{out, ""}, ControlType -> None},
 		{{file, ""}, ControlType -> None},
-		
+
 		{{show, {1, 2}}, ControlType -> None},
 		{{showc, All}, ControlType -> None},
 		{{weight, 0.5}, ControlType -> None},
@@ -997,10 +997,10 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 		{{sticks, False}, ControlType -> None},
 		{{mirror, True}, ControlType -> None},
 		{{proj, False}, ControlType -> None},
-		
+
 		{{vel, 1}, ControlType -> None},
 		{{part, 1}, ControlType -> None},
-		
+
 		{{dirs1, 30}, ControlType -> None},
 		{{dirs21, 15}, ControlType -> None},
 		{{dirs22, 15}, ControlType -> None},
@@ -1008,12 +1008,12 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 		{{dirs24, 15}, ControlType -> None},
 		{{dirs25, 15}, ControlType -> None},
 		{{dirs26, 15}, ControlType -> None},
-		
+
 		{{bvald, {10, 20, 30, 40, 60, 80, 100, 200, 300, 500, 700, 1000}}, ControlType -> None},
 		{{bvall, {1000}}, ControlType -> None},
 		{{bvals, Range[1000, 6000, 1000]}, ControlType -> None},
 		{{bvalc, 9000}, ControlType -> None},
-		
+
 		{dirs2, ControlType -> None},
 		{type, ControlType -> None},
 		{typed, ControlType -> None},
@@ -1025,17 +1025,17 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 		{rlen, ControlType -> None},
 		{{rlenc, {}}, ControlType -> None},
 		{charge, ControlType -> None},
-		
+
 		{{names, {"Set_Name", "Shells_Name", "Grid_Name", "DWI_Name"}}, ControlType -> None},
-		
+
 		{{vp, {1.3, -2.4, 2}}, ControlType -> None},
 		{{va, 30. Degree}, ControlType -> None},
 		{{vv, {0, 0, 1}}, ControlType -> None},
-		
+
 		{charts, ControlType -> None},
 		{{viewvec, {0, 0}}, ControlType -> None},
 		{{ctype, 1}, ControlType -> None},
-		
+
 		(*Manipulate settings*)
 		ContentSize -> {450, 510},
 		SaveDefinitions -> True,
@@ -1068,7 +1068,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 				FrameStyle -> Thick, Axes -> True, AxesStyle -> Thick, FrameTicks -> {{(Thread[{Round@coors[[1, All, 2]], ranY}][[1 ;; ;; 3]]), None}, {ranX, None}}, FrameLabel -> lab
 				]
 			],
-			
+
 			charts = MakeChart /@ {1, 2, 3},
 			SpherePlot[size_, op_] := If[size == 0 || size == 0.,
 				Graphics3D[{}, Lighting -> "Neutral",  PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv],  ViewAngle -> Dynamic[va], SphericalRegion -> True],
@@ -1096,7 +1096,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 		AppearanceElements -> None,
 		AutorunSequencing -> {1}
 	];
-	
+
 	NotebookClose[gradwindow];
 	If[popup,
 		gradwindow = CreateWindow[DialogNotebook[{CancelButton["Close", DialogReturn[]],pan},WindowSize->All, WindowTitle->"Generate gradients"]];,
@@ -1138,29 +1138,29 @@ ConvertGrads[gradi_, bv_] := ConvertGrads[gradi, bv, 0]
 ConvertGrads[gradi_, bv_, bi_] := Block[{depth, norm, gradu, grad, bval, bvalstr, gradstr, grad0str, list, list0, part, listout, bvs, gr, name, nb},
 	depth = ArrayDepth[gradi] /. 1 -> 3;
 	norm = Map[Norm, gradi, {depth - 1}];
-	
+
 	gradu = DeleteDuplicates[Normalize /@ Flatten[gradi, depth - 2]];
 	grad = Map[Normalize, gradi, {depth - 1}];
 	bval = If[Length[bv] == 1, bv[[1]]*(norm/Max[norm])^2, (norm/Max[norm])^2*bv];
-	
+
 	bvalstr = Flatten@Map[(
 		bvs = ToString[NumberForm[Round[Clip[#, {0, 35000}], 0.1], {7, 1}]];
 		StringJoin[ConstantArray[" ", 10 - StringLength[bvs]]] <> bvs
 	) &, bval, {depth - 1}];
-	
+
 	gradstr = Flatten[Map[(
 		gr = ToString[NumberForm[Round[#, 0.00001], {6, 5}]];
 		If[StringTake[gr, 1] == "-", gr, " " <> gr]
 	) &, grad, {depth}], depth - 2];
-	
+
 	grad0str = Map[(
 		gr = ToString[NumberForm[Round[#, 0.00001], {6, 5}]];
 		If[StringTake[gr, 1] == "-", gr, " " <> gr]
 	) &, gradu, {2}];
-	
+
 	list = MapThread[StringJoin[Riffle[#1, "   "]] <> #2 &, {gradstr, bvalstr}];
 	list0 = Map[StringJoin[Riffle[#1, "   "]] <> "       "<>ToString[Round[bi,0.1]] &, grad0str];
-	
+
 	nb = ToString[Round[Max[Flatten[bval]]]];
 	{list, list0, nb}
 ]
@@ -1360,7 +1360,7 @@ BmatrixInv[bm_, bvi___] := Module[{bv, sigb, sign, gr},
 			{1, 1, 1},
 			SignNoZero[bm[[{1, 3, 4}]] sigb]], SignNoZero[bm[[{4, 2, 5}]] sigb]], SignNoZero[bm[[{5, 6, 3}]] sigb]
 		];
-		
+
 		gr = sign*Sqrt[sigb bm[[1 ;; 3]]/(bv /. 0. -> Infinity)];
 		{bv, gr}
 	]
@@ -1511,7 +1511,7 @@ ImportGradObj[folder_] := Block[{files, imp, obj, name},
 			obj = StringSplit[StringDrop[StringTrim[#], -1], " = "];
 			obj[[1]] -> ToExpression[obj[[2]]] // N
 		) & /@ imp[[2 ;;]];
-	
+
 		name -> obj
 	) & /@ files
 ]
@@ -1532,7 +1532,7 @@ ImportGradObj[{base_, xbase_}] := Module[{objectNames, objects, name, vals, prop
 		"\"GR`s_ex1\"", "\"GR`s_ex2\"", "\"GR`s_diff_echo\"",
 		"\"GR`TM_crush\""
 	};
-	
+
 	objects = Flatten[Partition[SplitBy[Import[#, "Lines"], (StringTake[#, 1] === "$" &)],2] & /@ {base, xbase}, 1];
 	objects = Sort@DeleteCases[(
 		name = Last[StringSplit[First@First@#]];
@@ -1561,51 +1561,51 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Block[{
 	grepi1, grepi2, gr180, grdiff, grex, unit, func, name, str, seqt,
 	startRep, orVec, t180, te, hw, i, usegrad, grflow, g1, g2, g3, t1,
 	t2, t3, t4, t901, t902, t1801, t1802, flipg, AP, Gd},
-	
+
 	unit = OptionValue[UnitMulti];
 	Clear[t];
-	
+
 	AP = If[OptionValue[PhaseEncoding] == "A"||OptionValue[PhaseEncoding] == "R", 1, -1];
-	
+
 	flipg = If[MemberQ[pars[[All, 1]], "s_diff_echo"],
 		{"s_echo", "d_echo", "r_echo"},
 		{"s_echo", "d_echo", "r_echo", "s_ex1", "s_ex2", "diff_crush_1", "diff_crush_0"}
 	];
-	
+
 	grepi1 = {"mc_0", "md"};
 	grepi2 = {"blip", "m_0", "py"};
-	
+
 	gr180 = {"d_echo", "r_echo", "s_echo", "diff_crush_0", "diff_crush_1", "s_diff_echo", "s_ex1", "s_ex2",	"TM_crush"};
-	
+
 	grex = {"r_ex", "s_ex"};
-	
+
 	grflow = {"sf_base_0", "sf_base_1", "mf_base_0", "mf_base_1", "pf_0", "pf_1" };
-	
+
 	grdiff = {"diff_2", "diff_2nd_2"};
-	
+
 	Gd = Norm[Max[Abs[{"gr_str", ("gr_str_step"*"gr_str_factor_max")} /. #]] & /@ Select[({"diff_0", "diff_1", "diff_2"} /. pars), ! StringQ[#] &]];
-	
+
 	usegrad = OptionValue[UseGrad];
-	
+
 	(*{grex, gr180, {grepi1, grepi2}, grdiff, grflow}*)
 	If[Length[usegrad] == 4, AppendTo[usegrad, 0]];
-	
+
 	seqt = Transpose[DeleteCases[(
-		
+
 		name = #[[1]];
 		If[MemberQ[Flatten[usegrad {grex, gr180, {grepi1, grepi2}, grdiff, grflow}], name], 
-			
+
 			rule = #[[2]];
-			
+
 			G = unit If[name === "diff_2" || name === "diff_2nd_2",
 				Gd,
 				str = If[("gr_str" /. rule) != 0,"gr_str" /. rule,("gr_str_step"*"gr_str_factor_max") /. rule];
 				If[("gr_lenc" /. rule) >= 0.,str,((str/"gr_slope")*("gr_slope" + "gr_lenc")) /. rule]
 			];
-			
+
 			G = If[MemberQ[flipg, name] && OptionValue[FlipGrad], -G, G];
 			G = If[MemberQ[Join[grepi1, grepi2], name], AP*G, G];
-			
+
 			slope = If[("gr_lenc" /. rule) >= 0.,"gr_slope" /. rule,("gr_slope" + "gr_lenc") /. rule] unit;
 			leng = Abs[("gr_lenc" /. rule)] unit;
 			dur = ("gr_dur" /. rule) unit;
@@ -1614,9 +1614,9 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Block[{
 			repf = "gr_rep_alt_factor" /. rule;
 			repi = ("gr_interval" /. rule) unit;
 			ori = "gr_ori" /. rule;
-			
+
 			orVec = RotateLeft[If[MemberQ[grdiff, name], grad // N, {0, 0, 1} // N],Abs[ori - 2]];
-			
+
 			func = Transpose[Table[
 				flip = repf^(i + 1);
 				startRep = start + (i - 1) (dur + repi);
@@ -1627,42 +1627,42 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Block[{
 				g1 = (G/slope) (t - t1);
 				g2 = G;
 				g3 = G - ((G/slope) (t - t3));
-				
+
 				orVec*Piecewise[{
 					{flip g1, t1 <= t <= t2}, 
 					{flip g2, t2 <= t <= t3}, 
 					{flip g3, t3 <= t <= t4}
 				}]
 			, {i, 1, repn}]];
-			
+
 			func = If[MemberQ[grdiff, name],
 				(OptionValue[FlipAxes][[1]])*func[[OptionValue[SwitchAxes][[1]]]], 
 				Total[#]&/@(OptionValue[FlipAxes][[2]]*func[[OptionValue[SwitchAxes][[2]]]])
 			]
 		]
 	) & /@ pars, Null]];
-	
+
 	seq = Total[Flatten[#]] & /@ seqt;
-	
+
 	te = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "m_0"][[1]]][[1, 2]]) unit;
-	
+
 	If[!StringQ["s_echo" /. pars] && StringQ["s_diff_echo" /. pars], 
 		t180 = ("gr_time" /.Take[pars, Position[pars[[All, 1]], "s_echo"][[1]]][[1,2]]) unit;
 		hw = Piecewise[{{1, 0 <= t <= t180}, {-1, t180 <= t (*<= te*)}}];
 	];
-	
+
 	If[!StringQ["s_echo" /. pars] && !StringQ["s_diff_echo" /. pars],
 		t1801 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "s_echo"][[1]]][[1,2]]) unit;
 		t1802 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "s_diff_echo"][[1]]][[1, 2]]) unit;
 		hw = Piecewise[{{1, 0 <= t <= t1801}, {-1, t1801 <= t <= t1802}, {1, t1802 <= t (*<= te*)}}];
 	];
-	
+
 	If[!StringQ["s_ex1" /. pars] && !StringQ["s_ex2" /. pars],
 		t901 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "s_ex1"][[1]]][[1, 2]]) unit;
 		t902 = ("gr_time" /. Take[pars, Position[pars[[All, 1]], "s_ex2"][[1]]][[1, 2]]) unit;
 		hw = Piecewise[{{1, 0 <= t <= t901}, {-1, t902 <= t (*<= te*)}}];
 	];
-		
+
 	{PiecewiseExpand/@seq, PiecewiseExpand@hw, te}
 ]
 
@@ -1684,14 +1684,14 @@ GradBmatrix[gti_, hw_, te_, t_, OptionsPattern[]] := Block[{Ft, Ft2, Ft2i, s = 2
 		Ft2 = N[PiecewiseExpand[#]] & /@ {Ft[[1]] Ft[[1]], Ft[[2]] Ft[[2]], Ft[[3]] Ft[[3]], 2 Ft[[1]] Ft[[2]], 2 Ft[[1]] Ft[[3]], 2 Ft[[2]] Ft[[3]]};
 		Ft2i = Map[Integrate[#, t] &, Ft2];
 		bmat = ((Ft2i /. t -> te) - (Ft2i /. t -> 0));,
-		
+
 		"Numerical",
 		Gtfn = Transpose[Table[s hw gt 10^-3, {t, 0, te, OptionValue[StepSizeI]/1000}]];
 		Ft = Integrate[ListInterpolation[#, {0, te}][t], t] & /@ Gtfn;
 		Ft2 = {Ft[[1]] Ft[[1]], Ft[[2]] Ft[[2]], Ft[[3]] Ft[[3]], 2 Ft[[1]] Ft[[2]], 2 Ft[[1]] Ft[[3]], 2 Ft[[2]] Ft[[3]]};
 		bmat = Quiet[(NIntegrate[#, {t, 0, te}]) & /@ Ft2];
 	];
-	
+
 	If[OptionValue[OutputPlot],
 		plot = GraphicsGrid[Partition[
 			Plot[#1, {t, 0, te}, PlotRange -> {{-.1 te, 1.1 te}, Full}, PlotPoints -> 500, Exclusions -> None, PlotRange -> Full, AspectRatio -> .2,
@@ -1721,7 +1721,7 @@ GetSliceNormal[folder_String,part_Integer] := Module[{or,files,grads,norm,gradRo
 			grad
 		];
 	)&/@ meta,.00001];
-	
+
 	or = "ImageOrientation" /. meta[[1]];
 	gradRotmat=Transpose[{or[[1 ;; 3]], or[[4 ;; 6]],Cross[or[[1 ;; 3]], or[[4 ;; 6]]]}];
 	norm={0, 0, 1}.gradRotmat;
@@ -1745,7 +1745,7 @@ GetSliceNormalDir[dFile_String] := Module[{meta, directions, slice, groups, orie
 		];
 	orientation = "ImageOrientation" /. ("(0020,9116)" /. groups[[1]]);
 	gradRotmat = {v1 = {-1, 1, -1} orientation[[{5, 4, 6}]], v2 = {1, -1, 1} orientation[[{2, 1, 3}]],-Cross[v1, v2]} // Transpose;
-	
+
 	(*gradRotmat = Transpose[{orientation[[1 ;; 3]], orientation[[4 ;; 6]], Cross[orientation[[1 ;; 3]], orientation[[4 ;; 6]]]}];*)
 	grads = If[("(0018,9075)" /. #) == "NONE" || ("(0018,9075)" /. #) == "ISOTROPIC", {0, 0, 0},("(0018,9089)" /. ("(0018,9076)" /. #))] & /@ (("(0018,9117)" /. #) & /@ groups);
 	norm={0., 0, 1}.gradRotmat;
@@ -1761,14 +1761,14 @@ SyntaxInformation[CalculateMoments] = {"ArgumentsPattern" -> {_, _}};
 
 CalculateMoments[{gt_, hw_, te_}, t_] := Module[{fun, m0, m1, m2, m3, vals},
 	fun = N@PiecewiseExpand[#*hw] & /@ gt;
-	
+
 	m0 = hw Integrate[PiecewiseExpand[# ]    , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
 	m1 = hw Integrate[PiecewiseExpand[# t]   , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
 	m2 = hw Integrate[PiecewiseExpand[# t^2 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
 	m3 = hw Integrate[PiecewiseExpand[# t^3 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
-	
+
 	vals = {m0, m1, m2, m3} /. t -> te;
-	
+
 	{{PiecewiseExpand/@gt, m0, m1, m2, m3}, vals}
 ]
 
@@ -1793,7 +1793,7 @@ CorrectBmatrix[bmati_, w_,OptionsPattern[]] := Block[{bmat, trans, bmi, rot, bm,
 		rot = ParametersToTransform[trans, OptionValue[MethodReg]];
 		bm = TensMat[(bmi/{1, 1, 1, 2, 2, 2})[[{2, 1, 3, 4, 6, 5}]]];
 		bmnew = rot.bm.Transpose[rot];
-		
+
 		(*Print[MatrixForm/@Round[{bm,bmnew,rot},.00001]];*)
 		bminew = ({1, 1, 1, 2, 2, 2} TensVec[bmnew])[[{2, 1, 3, 4, 6, 5}]]
 	) &, {w, bmat}]
@@ -1864,15 +1864,15 @@ ParametersToTransform[w_, opt_] := Block[{
 		{0, sy, 0, 0},
 		{0, 0, sz, 0},
 		{0, 0, 0, 1}};
-	
+
 	mat = Switch[opt,
 		"Full", T.R.G.S,
 		"Rotation", R,
 		_, R
 	];
-	
+
 	mats = mat[[1 ;; 3, 1 ;; 3]];
-	
+
 	(MatrixPower[mats.Transpose[mats], -(1/2)].mats)
 	]
 

@@ -221,10 +221,10 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	ph1i, ph0i, norm, i, itt, l, hl, sw, sw1, sw0, f0, f1, normN, UF, ni, n, t2s, r2s, Ac,
 	unwrapF, cr, dm, t1 ,t2, t3, sl, bp
 	},
-		
+
 	(*initial phase 10.1016/J.MRI.2010.08.011*)
 	(*bipolar phase 10.1002/mrm.24657*)
-	
+
 	(*define the water and fat frequencies and amplitudes*)
 	freqs = OptionValue[DixonPrecessions] OptionValue[DixonFieldStrength] OptionValue[DixonFrequencies] GyromagneticRatio[OptionValue[DixonNucleus]];
 	amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
@@ -234,7 +234,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	A = (Total /@ (amps Exp[(2 Pi freqs #) I ])) & /@ echos;
 	Ah = ConjugateTranspose[A];
 	Ai = Inverse[Re[Ah . A]];
-	
+
 	(*make the time matrix*)
 	bip = (-1)^Range[Length[echos]];
 	mat = -I Transpose[{echos, Abs[bip], bip}];
@@ -245,7 +245,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	de = e2 - e1;
 	dt = (echos[[e2]] - echos[[e1]]);
 	hz = {Abs[1/dt], 0.5, 0.25};
-	
+
 	(*prepare signals for*)
 	comp = Transpose[N@Chop@real + N@Chop@imag I];
 	msk = Unitize@Total@Abs@comp;
@@ -255,7 +255,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	dm = Dimensions[msk];
 	comp = compi = ApplyCrop[#, cr] & /@ comp;
 	msk = Round@ApplyCrop[msk, cr];
-	
+
 	(*prepare iterative optimization*)
 	itt = OptionValue[MaxIterations];
 	ph = ph1 = ph0 = phi = ph1i = ph0i = ToPackedArray[0. Re@First@compi];
@@ -272,12 +272,12 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		"2D", msk(UnwrapDCT/@(msk #))&,
 		"3D", msk(UnwrapDCT[msk #, 0. msk + 1.])&
 	];
-	
+
 	(*start optimization*)
 	t1=t2=t3=0.;
 	If[OptionValue[MonitorCalc], PrintTemporary[Dynamic[{i, normNor[norm], {t1,t2,t3}}]]];
 	Do[If[i =!= 0, AppendTo[norm, norm[[-1]]]];i++;
-		
+
 		(*b0 phase*)
 		t1 = First@AbsoluteTiming[
 			phi = Mean[unwrapF/@Arg[compi[[sl + de]] Conjugate[compi[[sl]]]]];
@@ -285,7 +285,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 			ph += phi;
 			normN = normNor[norm];
 		];
-		
+
 		(*biplolar phase*)
 		t2 = First@AbsoluteTiming[
 			If[normN[[2]] >= 1,
@@ -444,7 +444,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero, ls, amp, ipi,
 		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop, modApply, fitphase
 	},
-	
+
 
 	(*---- algorithem is base on: ----*)	
 
@@ -461,14 +461,14 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*---- all the options and bookkeeping for what is needed ----*)
 
 	mon = OptionValue[MonitorCalc];
-	
+
 	(*optimization settings*)
 	{eta, maxItt, thresh} = OptionValue[{DixonTolerance, DixonIterations, DixonMaskThreshold}];
 
 	(*define filter for input and output*)
 	{filti, filto, fitphase} = OptionValue[{DixonFilterInput, DixonFilterOutput, DixonFitPhase}];
 	filtFunc = Switch[OptionValue[DixonFilterType],"Median", MedFilter, "Laplacian",LapFilter][#, OptionValue[DixonFilterSize]]&;
-	
+
 	(*Get the T1 correction Factor*)
 	t1c = If[OptionValue[DixonCorrectT1]===False, 1,
 		{tr, fa} = OptionValue[DixonCorrectT1];
@@ -516,7 +516,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	max = 2 Max[Abs[complex]];
 	scale = 1000./max;
 	zero = 0. Re[First@complex];
-	
+
 	(*define data and complex field map and background phase for fitting*)
 	complex = RotateDimensionsLeft@MaskData[complex, mask];
 	r2 = If[t2i === 0, 0, DivideNoZero[1., Clip[t2i, {0., 0.25}, {0., 0.25}]]];
@@ -553,7 +553,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*filter and contrain the output phase maps if needed and then recalculate the water fat fractions*)
 	If[filto,
 		If[mon, PrintTemporary["Filtering field estimation and recalculating signal fractions"]];
-		
+
 		(*Constrain R2*)
 		If[First[sel]===1, phi[[1]] = mask (-(Ramp[-(Ramp[phi[[1]] - 1] + 1) + 200] - 200))];
 		(*Correct initial phase, only when initial phase is fitted and initial phase is not constrained*)
@@ -590,7 +590,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	iop = {0, 0.5} / Abs[Total[Flatten[(amps[[2 ;;]]^2) freqs[[2 ;;]]]] / Total[Flatten[amps[[2 ;;]]]^2]];
 	matA = (Total /@ (amps Exp[sig #])) & /@ iop;
 	iop = Clip[Chop[RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]]], {0., max}];
-	
+
 	(*correct the signals if a fat model is used to get cl db idb*)
 	If[mout[[2]] =!= None,
 		ls = Range[3, Length@signal];
@@ -629,7 +629,7 @@ DixonFitC = Compile[{
 		{matC, _Complex, 2}, {matA, _Real, 2}, {matAi, _Real, 2}, {mat, _Real, 2},
 		{eta, _Real, 0}, {maxItt, _Integer, 0}, {sel, _Integer, 1}
 	}, Block[{i, continue, phiEst, dPhi, sig, rho, sol, res, solR, Bi, w, rms, l},
-	
+
 	(*initialize variables such that compile does not complain*)
 	l = Length[ydat];
 	phiEst = phi[[sel]];
@@ -640,20 +640,20 @@ DixonFitC = Compile[{
 	rms = 0.;
 	i = 0;
 	continue = True;
-	
+
 	(*The IDEAL algorhithm, itterative linear fitting, skip if in background mask*)
 	If[mask > 0, 
 		While[continue,	i++;
 			(*define complex field map P(-phi) or (E D)^-1 and phase demodulate signal*)
 			sig = Exp[-matC . phiEst] ydat;
 			sig = Chop[Re[Join[Re@sig, Im@sig]]];
-			
+
 			(*perform A.2 form 10.1002/jmri.21090, the water fat fraction, force Re valued results*)
 			(*A.rho is needed for Matrix B eq A.4 and eq A.5, calculat the fitted demodulated signal*)
 			rho = Re[matAi . sig];
 			sol = Re[matA . rho];
 			res = Re[sig - sol];
-			
+
 			(*Define the matrix B including bipolar 10.1002/mrm.24657 and initial phase 10.1016/J.MRI.2010.08.011*)
 			(*Obtain the error terms eq A.5, again force results to be Re*)
 			solR = Join[sol[[l + 1 ;; -1]], sol[[1 ;; l]]];
@@ -671,7 +671,7 @@ DixonFitC = Compile[{
 
 	(*output*)
 	Re[Join[rho, {rms, i}, phiEst]]
-	
+
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
@@ -695,7 +695,7 @@ DixonFitFC = Compile[{
 			sig = Exp[-matC . phi] ydat;
 			sig = Re[Join[Re@sig, Im@sig]];
 			rho = Re[matAi . sig];
-			
+
 			(*calculate the residuals*)
 			res = Re[sig - (matA . rho)];
 			rms = Sqrt[Mean[Abs[res[[1 ;; l]] + res[[l + 1 ;; -1]] I]^2]];
@@ -769,12 +769,12 @@ DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{
 	atot = Abs[water + fat];
 	waterMap = Chop[DivideNoZero[Abs[water], atot]];
 	fatMap = Chop[DivideNoZero[Abs[fat], atot]];
-	
+
 	(*find where water > fat*)
 	wMask = Mask[waterMap, .5, MaskSmoothing->False];
 	fMask = (1 - wMask) Mask[fatMap, .5, MaskSmoothing->False];
 	tMask= wMask + fMask;
-	
+
 	(*magnitude discrimination noise bias correction doi:10.1002/mrm.21301*)
 	If[clip,
 		fatMap = fMask (1 - waterMap) + wMask fatMap;
@@ -809,11 +809,11 @@ SimulateDixonSignal[echo_, fr_, b0_, t2_, OptionsPattern[]] := Block[{precession
 	field = OptionValue[DixonFieldStrength];
 	freqs = precession field GyromagneticRatio[OptionValue[DixonNucleus]] OptionValue[DixonFrequencies];
 	amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
-	
+
 	Amat = (Total /@ (amps Exp[freqs (2 Pi I) #])) & /@ echo;
 	phi = N@2 Pi b0 I - 1./t2;
 	sig = Exp[If[Length[t2] === 2, Transpose[echo # & /@ phi], phi echo]] Amat;
-	
+
 	sig = sig . {fr, 1 - fr};
 	{Re[sig], Im[sig]}
 ]
@@ -836,7 +836,7 @@ FindInPhaseEchos[echos_, iop_, OptionsPattern[]]:=Block[{phase, bip, sel, list},
 		Min[echos[[{i, j}]]]
 		,{i, j}
 	}, {i, 1, Length@echos}, {j, i + 1, Length@echos}], 1];
-	
+
 	bip = OptionValue[DixonBipolar];
 	(*step 1 select all echos pairs where first is more inphase then out phase*)
 	sel = Select[phase, (#[[1, 1]] < 0.5 Pi && #[[1, 2]] < 0.75 Pi) &];
@@ -844,7 +844,7 @@ FindInPhaseEchos[echos_, iop_, OptionsPattern[]]:=Block[{phase, bip, sel, list},
 	sel = Select[sel, (#[[2]] < 0.5 Pi) &];
 	(*step 3 If bipolar only select pairs with even difference*)
 	If[bip, sel = Select[sel, EvenQ[#[[3]]] &]];
-	
+
 	If[sel=!={},
 		(*get ranking for each of the values, smallest phase, phase diff, echo diff, first echo*)
 		list = Range[Length@sel];
@@ -852,7 +852,7 @@ FindInPhaseEchos[echos_, iop_, OptionsPattern[]]:=Block[{phase, bip, sel, list},
 		sel[[1, -1]],
 		{1,Length@echos}
 	]
-	
+
 	(*phase=If[#>0.5 ,#-1,#]&/@FractionalPart[echos/iop];
 	ord=Flatten[Position[phase,#]&/@Nearest[phase,0,Length[phase]]];
 	Sort[If[OptionValue[DixonBipolar],
@@ -901,15 +901,15 @@ Unwrap[dat_,OptionsPattern[]]:= Block[{data, ind, undim, out, mon, thresh, len},
 	(* Phase unwrapping algorithem based on *)
 	(*M.A. Herraez et al 2002 - 2D phase unwrapping using noncontinuous path -  DOI: 10.1364/ao.41.007437*)
 	(*Abdul-Rahman 2007. - 3D phase unwrapping usiong noncontinuous path- DOI: 10.1364/AO.46.006623*)
-	
+
 	(*get options*)
 	undim = OptionValue[UnwrapDimension];
 	mon = OptionValue[MonitorUnwrap];
 	thresh = Clip[OptionValue[UnwrapThresh],{0.3, 0.9}];
-	
+
 	(*swithc between 2D and 3D methods*)
 	Switch[undim,
-		
+
 		(*2D using noncontinuous path*)
 		"2D",
 		data = ToPackedArray@Wrap[N[dat]];
@@ -924,7 +924,7 @@ Unwrap[dat_,OptionsPattern[]]:= Block[{data, ind, undim, out, mon, thresh, len},
 			out = Map[Unwrapi[#1, thresh]&, data, {ArrayDepth[data]-2}];
 			out = UnwrapZi[out, thresh];
 		],
-		
+
 		(*3D using noncontinuous path*)
 		"3D",
 		data = ToPackedArray@ArrayPad[Wrap[N[dat]], 1, 0.];
@@ -934,12 +934,12 @@ Unwrap[dat_,OptionsPattern[]]:= Block[{data, ind, undim, out, mon, thresh, len},
 			,
 			Message[Unwrap::data3D,ArrayDepth[data]]
 		],
-		
+
 		(*Unknown option*)
 		_,
 		Message[Unwrap::dim,undim]
 	];
-		
+
 	(*center around 0*)
 	ToPackedArray@N@out
 ]
@@ -970,15 +970,15 @@ UnwrapZi[data_, thresh_]:= Block[{mask,slice,diff,meandiff,steps,off,unwrap,dat,
 		num2=#-Ceiling[#]; If[-1<num2<-thresh,Floor[#],Ceiling[#]],
 		num2=#-Floor[#]; If[1>num2>thresh,Ceiling[#],Floor[#]]
 	]&;
-	
+
 	mask = Unitize[data];
 	slice = Round[0.5Length[data]];
 	diff = (#[[1]]-#[[2]]&/@ Partition[data/(2Pi),2,1]);
-	
+
 	meandiff = Median[#]&/@ Map[DeleteCases[Flatten[N[#]],0.]&,diff];
 	steps = FoldList[Plus,0,Map[Roundi[#]&,meandiff]];
 	off = Round[Median[DeleteCases[Flatten[N[data[[slice]]/(2Pi)]],0.]]];
-	
+
 	unwrap = steps-(steps[[slice]]+off);
 	dat = (2Pi unwrap+data)mask//N;
 	(dat - mask Round[MeanNoZero[Flatten[dat]],2Pi])
@@ -992,30 +992,30 @@ UnwrapZi[data_, thresh_]:= Block[{mask,slice,diff,meandiff,steps,off,unwrap,dat,
 Unwrapi[dat_, thresh_] := Block[{data, mask, crp, dimi, sorted, groups, groupsize, groupnr, task},
 	If[MinMax[dat]==={0.,0.},
 		dat,
-		
+
 		(*rescale the data to 2Pi = 1, makes it easyer to process, removes needs for 2 PI checks*)
 		data = dat / (2. Pi);
 		dimi = Dimensions[data];
-		
+
 		(*remove zeros in back ground to reduce datasize in 3D*)
 		data = If[ArrayDepth[data] == 3, crp = FindCrop[data]; ApplyCrop[data, crp], data];
-		
+
 		(*make mask to pervent unwrapping in 0 values*)
 		mask = Mask[Ceiling[Abs@data], 1, MaskSmoothing ->False];
-		
+
 		(*Get the edges sotrted for reliability and precluster groups*)
 		sorted = GetEdgeList[data, True, mask];
 		{groups, groupsize} = MakeGroups[data, mask];
-	
+
 		(*make 2D data 3D and define shifts in add*)
 		If[ArrayDepth[data] == 2,
 			groups = {groups}; data = {data};
 			sorted = Transpose[{#[[1]] + 1, 0 #[[1]] + 1, #[[2]], #[[3]]} &[Transpose[sorted]]];
 		];
-		
+
 		(*Unwrap the data*)
 		data = UnWrapC[sorted, data, groups, groupsize, thresh];
-		
+
 		(*make output in rad*)	
 		If[ArrayDepth[dat] == 2, 
 			(*output the 2D in rad*)
@@ -1030,20 +1030,20 @@ Unwrapi[dat_, thresh_] := Block[{data, mask, crp, dimi, sorted, groups, groupsiz
 
 UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer, 3}, {groupsizei, _Integer, 1}, {thresh,_Real,0}},
 	Block[{data, const, dir, dim, groups, group1, group2, groupsize, groupnr, z1, z2, x1, x2, y1, y2, wrap, wrapT, pos, g1, g2, out, adds,add, diff},
-		
+
 		data = datai;
 		groups = groupsi;
 		groupsize = groupsizei;
-		
+
 		(*initialize parameters*)
 		dim = Dimensions[data];
 		groupnr = Length[groupsize];
 		adds = {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}};
 		z1=x1=y1=z2=x2=y2=group1=group2=g1=g2=0;
-		
+
 		(*loop over all edges*)
 		out = Map[(
-			
+
 			(*Get the voxel corrdinates and the neighbour, contrain to dimensions*)
 			add = adds[[#[[1]]]];
 			z1=#[[2]]; z2 = If[z1==dim[[1]], dim[[1]], z1+add[[1]]];
@@ -1053,19 +1053,19 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 			(*Get the group numbers*)
 			group1 = groups[[z1, x1, y1]];
 			group2 = groups[[z2, x2, y2]];
-			
+
 			(*Unwrapping logic*)
 			(*0. Only process if both are not in background*)
 			If[group1 > 0 && group2 > 0,
-				
+
 				(*1. Only process if both are not in same group or no group*)
 				If[group1 != group2 || group1 == group2 == 1,
-					
+
 				(*Determine the wrap of the edge*)
 				diff = data[[z1, x1, y1]] - data[[z2, x2, y2]];
 				wrap = Sign[diff] Ceiling[Abs[diff] - thresh];
 				wrapT = (wrap != 0);
-				
+
 				(*2. both already in a group*)
 				If[group1 > 1 && group2 > 1,
 					g1 = groupsize[[group1]];
@@ -1085,7 +1085,7 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 						groupsize[[group2]] = g1 + g2;
 						If[wrapT, data -= wrap pos];
 					],
-					
+
 					(*3. one of two pixels not in group*)
 					Which[
 						(*3A. only group 1 existst, add group 2 to group 1*)
@@ -1112,7 +1112,7 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 		];
 		(*close the map fucntion*)
 		1) &, sorted];
-		
+
 	(*output the unwraped data*)
 	data],
 RuntimeOptions -> "Speed", Parallelization -> True];
@@ -1129,14 +1129,14 @@ GetEdgeList[data_, met_, maski_] := Block[{dep, diff, ker, mask, edge, coor, fed
 	dep = ArrayDepth[data];
 	(*maske a mask if needed*)
 	mask = If[maski === 1, Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False], maski];
-	
+
 	(*calculate the second order diff*)
 	ker = Switch[dep,
 		2, {{0, 1}, {1, 0}, {1, 1}, {1, -1}}[[If[met, {1, 2}, All]]],
 		3, {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {1, 1, 0}, {-1, 1, 0}, {1, 0, 1}, {-1, 0, 1}, {0, 1, 1}, {0, -1, 1}, {1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}}
 	][[If[met, Range[dep], All]]];
 	diff = Total[(DiffU[(data - RotateLeft[data, #]) & /@ ker] + DiffU[(data - RotateLeft[data, -#]) & /@ ker])^2];
-	
+
 	(*get the edge reliability*)
 	edge = (RotateLeft[diff, #] + diff) & /@ Switch[dep, 2, {{0, 1}, {1, 0}}, 3, {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}}];
 	edge = MaskData[edge, mask];
@@ -1147,7 +1147,7 @@ GetEdgeList[data_, met_, maski_] := Block[{dep, diff, ker, mask, edge, coor, fed
 	ord = Ordering[fedge];
 	pos = Position[Unitize[fedge[[ord]]], 1, 1, 1];
 	pos=If[pos==={},1,pos[[1,1]]];
-	
+
 	Flatten[coor, dep][[ord]][[pos ;;]]
 ]
 
@@ -1168,19 +1168,19 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus
 	(*maske a mask if needed*)
 	mask = If[maski === 1, Mask[Ceiling[Abs@data], 1, MaskSmoothing -> False], maski];
 	dat = (mask data) - 2 (1 - mask);
-		
+
 	(*find mask ranges*)
 	{min,max} = MinMax[data];
 	part = {#[[1]] + 0.001, #[[2]] - 0.001} & /@ Partition[Range[-1, 1, 0.2] // N, 2, 1];
-		
+
 	(*make groups from masks*)
 	clus = DeleteSmallComponents[MorphologicalComponents[
 		Mask[dat, #, MaskSmoothing -> False], CornerNeighbors -> False], 
 		If[ArrayDepth[data]===3, 15, 3], CornerNeighbors -> False] & /@ part;
-		
+
 	nclus = Prepend[Drop[Accumulate[Max /@ clus], -1], 0];
 	groups = Total[MapThread[#2 Unitize[#1] + #1 &, {clus, nclus}]] + mask;
-	
+
 	(*create outputs, the size vector and group nrs*)
 	groupsize = ConstantArray[0, Max[groups]];
 	(groupsize[[#[[1]]]] = #[[2]]) & /@ Sort[Tally[Flatten[groups]]][[2 ;;]];
@@ -1204,66 +1204,66 @@ UnwrapDCT[psii_, wi_]:=Block[{
 		psi, a, d, itt, w, alpha, rhoi,  norm, normi, phi, phii, 
 		Qphii, maxi , i, soli, num, dena, denb
 	},
-	
+
 	(*Phase unwrapping algorithem based on Ghiglia,Dennis C.,and Louis A.Romero. 10.1364/JOSAA.11.000107.*)
-	
+
 	(*prepare data*)
 	psi = ToPackedArray@N@psii;
 	a = ArrayDepth[psi];
 	d = Dimensions[psi];
-	
+
 	(*make weights, w is min of weights in each direction eq 36 paper*)
 	itt = If[wi===None, True, False];
 	w = MakeWeights[psi, wi, d, a];
-	
+
 	(*initialize values*)
 	rhoi = GetDifference[psi, w, True];(*should not be w*)
-	
+
 	(*no weigths do instant solve has weigts defined to itterative solver*)
 	If[itt,
 		(*instan solve*)
 		SolvePoisson[rhoi],
-		
+
 		(*step 1: initialize parameters for loop*)
 		i = 0;
 		phi = 0.psi;
 		norm = 10^-6 Norm@Flatten@rhoi;
 		maxi = 5 (*Round[0.1 Times@@d]*);
-		
+
 		(*run loop*)
 		(*If[a===3, PrintTemporary[Dynamic[i]," / ", maxi, "   ", norm, " < ", Dynamic[normi]]];*)
-		
+
 		While[True,(*should check for rhoi is all zero*)
-			
+
 			(*step 2: find solution calculate the phi update*)
 			soli = SolvePoisson[rhoi];
-			
+
 			(*step 3: update k*)
 			i += 1;
-			
+
 			(*step 4 or 5: define initial phi or update phi*)
 			num = Total[rhoi soli, -1];
 			phii = If[i===1, soli, soli + (num/denb) phii];
-			
+
 			(*store current value as i-1 value*)
 			denb = num; If[denb===0., Break[]];
-			
+
 			(*step 6: perform one scalar and two vectors update*)
 			Qphii = GetDifference[phii, w, False];
 			dena = Total[phii Qphii, -1]; If[dena===0., Break[]];
 			alpha = num/dena;
 			rhoi -= alpha Qphii;
 			phi += alpha phii;
-						
+
 			(*step 7: check for continue*)
 			(*calculate norm*)
 			normi = Norm@Flatten@rhoi;
-			
+
 			If[i > maxi || normi < norm, Break[]]
 		];
-		
+
 		(*Print[i," / ",maxi,"   ", norm," < ",normi,"   "];*)
-		
+
 		phi
 	]
 ]
@@ -1280,7 +1280,7 @@ MakeWeights[psi_, wi_, d_, a_]:=Block[{w},
 		Automatic, 1. - Rescale[MedianFilter[N[StandardDeviationFilter[Sin[psi], 1] + StandardDeviationFilter[Cos[psi], 1]], 1]],
 		_, If[d===Dimensions[wi], wi, Return[Message[UnwrapDCT::dim, d, Dimensions[w]]]]
 	];
-	
+
 	(*calculates the min of w of paired voxels in all dimensions*)
 	MinAt[w(*^2*), #]& /@ Range[a]
 ]
@@ -1370,13 +1370,13 @@ OptimizeDixonEcho[ops:OptionsPattern[]]:=With[{
 	Manipulate[
 		tes=makeEcho[tei,dte,ne];
 		time=Range[0,1.1Max[tes],0.05/1000];
-		
+
 		sigA=makeA[tes];
 		sigF=makeA[time];
-		
+
 		pt=Clip[pt,{0,fr},{0,fr}];
 		{tei,dte}=pt;
-		
+
 		Grid[{{
 			Column[{
 				Style["Condition Nr.: "<>ToString[ToString[ConditionNumberCalc[makeA[makeEcho[tei,dte,ne]]]]],Black,Bold,24,FontFamily->"Helvetica"],
@@ -1385,69 +1385,69 @@ OptimizeDixonEcho[ops:OptionsPattern[]]:=With[{
 			plotSignal[{time,sigF[[All,2]]},{tes,sigA[[All,2]]}]},
 			{SpanFromAbove,plotPhase[Normalize[Reverse[#]]&/@Transpose[Through[{Re,Im}[sigA[[All,2]]]]]]}
 		}, Alignment->{Center,Center}]
-		
+
 		,
 		{{nech,10,"number of echos"},2,15,1},
 		{{ran,1,"number of rotations"},{1,2}},
 		{{fld,3,"field strength"},{0.5,1,1.5,3,7,9.4},ControlType->Setter},
-		
+
 		Delimiter,
 		Button["Set experiment",
 			gyro=(fld GyromagneticRatio[OptionValue[DixonNucleus]]);
-			
+
 			(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
 			freqs=OptionValue[DixonFrequencies] gyro;
 			amp=OptionValue[DixonAmplitudes];
 			amps=If[VectorQ[amps]&&Length[amp]===3,GenerateAmps[amp][[1]],#/Total[#]&/@amp];
 			makeA=(Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
 			makeEcho=(#1+#2 Range[0,#3-1])/1000.&;
-			
+
 			ne=nech;
 			fr=ran Ceiling[297.466/gyro,.1];
 			cond=Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},{iecho,0,fr,fr/50},{decho,0,fr,fr/50}];
 			condPl=plotContour[cond,fr,ne,fld];
 		, Method->"Queued"],
-		
+
 		
 		{tes,ControlType->None},
 		{time,ControlType->None},
 		{sigA,ControlType->None},
 		{sigF,ControlType->None},
-				
+
 		{tei,0,fr,0.01,ControlType->None},
 		{dte,0,fr,0.01,ControlType->None},
-		
+
 		{pt,ControlType->None},
 		{ne,ControlType->None},
 		{fr,ControlType->None},
 		{gyro,ControlType->None},
 		{cond,ControlType->None},
 		{condPl,ControlType->None},
-		
+
 		{freqs,ControlType->None},
 		{amp,ControlType->None},
 		{amps,ControlType->None},
 		{makeA,ControlType->None},
 		{makeEcho,ControlType->None},
-		
+
 		Initialization:>(
 			pt={1.237,1.237};
 			gyro=(3 GyromagneticRatio[OptionValue[DixonNucleus]]);
-			
+
 			(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
 			freqs=OptionValue[DixonFrequencies] gyro;
 			amp=OptionValue[DixonAmplitudes];
 			amps=If[VectorQ[amps]&&Length[amp]===3,GenerateAmps[amp][[1]],#/Total[#]&/@amp];
 			makeA=(Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
 			makeEcho=(#1+#2 Range[0,#3-1])/1000.&;
-			
+
 			ne=10;
 			fr=Ceiling[297.466/gyro,.1];
-			
+
 			cond=Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},{iecho,0,fr,0.05},{decho,0,fr,0.05}];
 			condPl=plotContour[cond,fr,ne,fld];
 		),
-		
+
 		SaveDefinitions->True
 	]
 ]

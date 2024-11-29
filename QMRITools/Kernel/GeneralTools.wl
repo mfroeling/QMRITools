@@ -457,10 +457,10 @@ ConvertExtension[fileIn_?StringQ, ext_?StringQ] := Block[{extOld, file, extNew},
 	(*get filename and extension*)
 	file = StringReplace[fileIn,".gz"->""];
 	extOld = "." <> FileExtension[file];
-	
+
 	(*make new extension*)
 	extNew = If[StringTake[ext, 1] === ".", ext, "." <> ext];
-	
+
 	(*add or replace *)
 	If[extOld === ".",
 		file <> extNew,
@@ -544,17 +544,17 @@ SaveImage[exp_, opts : OptionsPattern[]] := Module[{input, type},
 SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type},
 	type = OptionValue[FileType];
 	type = If[StringTake[type, 2] === "*.", StringDrop[type,1], If[StringTake[type, 1] === ".",type, "."<>type]];
-	
+
 	file=If[StringTake[filei,-4]===type||StringTake[filei,-5]===type,filei,filei<>type];
-	
+
 	imsize=OptionValue[ImageSize];
 	res=OptionValue[ImageResolution];
-	
+
 	If[OptionValue[FileType]===".tiff"||OptionValue[FileType]===".tif",
 		Export[file, exp , ImageSize->imsize, ImageResolution -> res,"ImageEncoding"->"LZW"],
 		Export[file, exp , ImageSize->imsize, ImageResolution -> res]
 	];
-	
+
 	Print["File was saved to: " <> file];
 ]
 
@@ -626,7 +626,7 @@ Options[RescaleDatai] = {InterpolationOrder -> 3};
 RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[{type, dim, int, dataOut},
 	dim = Dimensions[data];
 	int = OptionValue[InterpolationOrder];
-	
+
 	dataOut = Switch[ArrayDepth[data],
 		(*rescale an image*)
 		2,
@@ -648,7 +648,7 @@ RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[
 		_,
 		Return[Message[RescaleData::data]];
 	];
-	
+
 	ToPackedArray[N@Chop[Clip[dataOut,MinMax[data]]]]
 ]
 
@@ -675,7 +675,7 @@ GridData[dati_, opts:OptionsPattern[]]:=GridData[dati, Ceiling[Sqrt[Length@dati]
 
 GridData[dati_, part_, opts:OptionsPattern[]] := Block[{dim, data, adepth, pad, val},
 	adepth = ArrayDepth[dati[[1]]];
-	
+
 	(*pad the images with zeros*)
 	pad = OptionValue[Padding];
 	data = If[pad =!= None,
@@ -685,12 +685,12 @@ GridData[dati_, part_, opts:OptionsPattern[]] := Block[{dim, data, adepth, pad, 
 		,
 		ToPackedArray@N@dati
 	];
-	
+
 	(*make the first dimension such that it is dividable by part*)	
 	dim = Dimensions[data];
 	dim[[1]] = dim[[1]] + (part - (Mod[dim[[1]], part] /. 0 -> part));
 	data = Transpose[Partition[PadRight[data, dim], part]];
-	
+
 	(*make the grid*)
 	data = MapThread[Join, #, adepth - 2] & /@ data;
 	data = MapThread[Join, data, adepth - 1];
@@ -726,26 +726,26 @@ DataToVector[datai_] := DataToVector[datai, 1]
 DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm, dimd},
 	depthd = ArrayDepth[datai];
 	If[! (depthd == 2 || depthd == 3 || depthd == 4), Return@Message[DataToVector::dim, "Data", depthd]];
-	
+
 	data = N[datai];	
 	mask = Round[If[maski === 1, Unitize[If[depthd == 4, Mean@Transpose@data, data]], maski]];
-	
+
 	depthm = ArrayDepth[mask];
 	depth = depthd - depthm;
-	
+
 	(*data dimensions are not correct, mask must be 2D or 3D*)
 	If[! (depthm == 2 || depthm == 3), Message[DataToVector::dim, "Mask", depthm]];
-	
+
 	dimm = Dimensions[mask];
 	dimd = Dimensions[data];
-	
+
 	dimd = If[depth == 0, 
 		(*mask and data are same dimensions*)
 		dimd,
 		(*data is one dimensions larger than mask either 2D and 3D or 3D and 4D*)
 		If[depth == 1 && depthd == 3, Drop[dimd, 1], Drop[dimd, {2}]]
 	];
-	
+
 	(*Dimensions must be equal*)
 	If[ dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
 
@@ -856,35 +856,35 @@ CropData[data_, opts:OptionsPattern[]] := CropData[data, {1,1,1}, opts]
 
 CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Block[
 	{a, b, c, d, e, f, clipall, dd, dataout, output, init},
-	
+
 	NotebookClose[cropwindow];
 	dd = ArrayDepth[data];
 
 	DynamicModule[{dat, zd, xd, yd, outp, size,  r1, r2, r3},
-		
+
 		dat = Switch[dd, 4,  Mean@Transpose@data, 3, dat = data, _, Return[]];
 		{zd, xd, yd} = Dimensions[dat];
-		
+
 		clipall = Ceiling[{0.5, zd - 0.5, 0.5, xd - .5, 0.5, yd - .5}];
-	
+
 		r1 = (vox[[2]]*xd)/(vox[[3]]*yd);
 		r2 = (vox[[1]]*zd)/(vox[[3]]*yd);
 		r3 = (vox[[1]]*zd)/(vox[[2]]*xd);
-	
+
 		size = Min[{r1, r2, r3}] 400;
-		
+
 		init = OptionValue[CropInit];
 		init = If[ListQ[init] && Length[init]==6,
 			{0, 0, xd+1, xd+1, 0, 0} + {1, 1, -1, -1, 1, 1} init[[{1,2,4,3,5,6}]],
 			{1,zd,1,xd,1,yd}
 		];
-	
+
 		cropwindow = DialogInput[{
 			DefaultButton[],
 
 			Manipulate[
 				outp = Ceiling[{zmin, zmax, xd - xmax, xd - xmin, ymin, ymax}];
-				
+
 				Grid[{
 					{Dynamic[Row[{"size: ", Ceiling[{zmax-zmin,xmax-xmin,ymax-ymin}]},"   "]]},
 					{
@@ -936,7 +936,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 				{{zmin, init[[1]] - 0.5}, 1, zmax - 1, ControlType -> None},
 				{{zmax, init[[2]] - 0.5}, zmin + 1, zd, ControlType -> None},
 				SynchronousUpdating->True
-			
+
 			]
 		}, WindowTitle -> "Crop the data and press done", WindowFloating -> True, Modal -> True
 	];
@@ -947,13 +947,13 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 		data[[a ;; b, c ;; d, e ;; f]], 
 		data[[a ;; b, All, c ;; d, e ;; f]]]
 	];
-	
+
 	output=Switch[OptionValue[CropOutput],
 		"All",{dataout, outp},
 		"Data",dataout,
 		"Crop",outp];
 	];
-	
+
 	Return[output]
 ]
 
@@ -968,7 +968,7 @@ SyntaxInformation[FindCrop] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 FindCrop[dat_, OptionsPattern[]] := Block[{add, data, dim, d1, d2, unit, crp},
 	add = {-1, 1} OptionValue[CropPadding];
-	
+
 	data = Unitize@Switch[ArrayDepth[dat],
 		3, dat,
 		4, dat[[All, 1]],
@@ -1040,11 +1040,11 @@ SyntaxInformation[ApplyCrop] = {"ArgumentsPattern" -> {_, _, _.,OptionsPattern[]
 ApplyCrop[data_, crop_?VectorQ, opts:OptionsPattern[]] := ApplyCrop[data, crop, {{1,1,1}, {1,1,1}}, opts]
 
 ApplyCrop[data_, crop_?VectorQ , {v1_,v2_}, opts:OptionsPattern[]] := Module[{z1, z2, x1, x2, y1, y2, dim, out},
-	
+
 	out = ToPackedArray@data;
 	dim = Dimensions[out];
 	dim = If[Length[dim]==4, dim[[{1,3,4}]], dim];
-	
+
 	(*get crops coors*)
 	{z1, z2, x1, x2, y1, y2} = Round[crop Flatten[{#, #} & /@ (v1/v2)]];
 
@@ -1055,7 +1055,7 @@ ApplyCrop[data_, crop_?VectorQ , {v1_,v2_}, opts:OptionsPattern[]] := Module[{z1
 		,
 		If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]], Return[Message[ApplyCrop::dim]]]
 	];
-	
+
 	ToPackedArray@Switch[ArrayDepth[out],
 		4, out[[z1 ;; z2, All, x1 ;; x2, y1 ;; y2]],
 		3, out[[z1 ;; z2, x1 ;; x2, y1 ;; y2]],
@@ -1095,7 +1095,7 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 	dat = max dat/Max[dat];
 	mask = UnitStep[dat - .1 len];
 	ran = Flatten[Position[mask, 1][[{1, -1}]]];
-	
+
 	peaks = {};
 	blur = 20;
 	i = 0;
@@ -1109,7 +1109,7 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 		blur += 10;
 		i++;
 	];
-	
+
 	If[peaks==={},
 		Print["could not find the center."];
 		$Failed,
@@ -1117,7 +1117,7 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 		mid = Round[Length[dat]/2];
 		center = {mid, .75 max};
 		peak = Nearest[peaks, center];
-		
+
 		If[print,Print[Show[
 			ListLinePlot[{max-dat,datf}, PlotStyle->{Black,Orange}],
 			ListPlot[{peaks,{center},peak},PlotStyle->(Directive[{PointSize[Large],#}]&/@{Blue,Gray,Green})]
@@ -1155,21 +1155,21 @@ MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{dim,
 	range = Thread[{vox, vox dim}] - If[OptionValue[CenterVoxel], 0.5, 0] vox - If[OptionValue[CenterRange], 0.5, 0] dim;
 	def = 0. dat[[1,1,1]];
 	def =If[ListQ[def], Flatten@def, def];
-	
+
 	With[{
 			ex = def,
 			fdat = Flatten[dat, 3]
 		},
 		InterpolatingFunction[
 			range,
-			{5,If[ArrayDepth[dat]===3, 6, 2],0, dim,
+			{5, If[ArrayDepth[dat]===3, 6, 2], 0, dim,
 			{int, int, int} + 1, 0, 0, 0, 0, ex&, {}, {}, False},
 			Range[range[[#, 1]], range[[#, 2]], vox[[#]]]& /@ {1, 2, 3},
 			If[ArrayDepth[dat] === 3 && $VersionNumber >= 13.3, 
 				{PackedArrayForm, Range[0,Length[fdat]], fdat}, 
-				ToPackedArray@N@dat
-			],
-			{Automatic, Automatic, Automatic}]
+				ToPackedArray@N@dat],
+			{Automatic, Automatic, Automatic}
+		]
 	]
 ]
 
@@ -1217,7 +1217,7 @@ QMRIToolsFunctions[toolb : {_?StringQ ..} | {"All"}, p_?IntegerQ] := Block[{
 		func = Complement[names, opts];
 		{func, opts}
 	) & /@ allNames];
-	
+
 	out = If[ind,
 		Transpose[{pack, func, opts}],
 		{{"QMRITools", Sort@DeleteDuplicates@Flatten@func, Sort@DeleteDuplicates@Flatten@opts}}
@@ -1236,13 +1236,13 @@ PrintFuncList[{toolbox_, functions_, options_}, p_] := Block[{i, func, opt},
 		Transpose@Partition[functions, i, i, 1, ""],
 		functions
 	];
-	
+
 	opt = If[Length[options] > 0,
 		i = Ceiling[Length[options]/p];
 		Transpose@Partition[options, i, i, 1, ""],
 		options
 	];
-	
+
 	Print@Column[{
 		"",
 		Style[toolbox, Bold, 24],
@@ -1288,7 +1288,7 @@ CompilableFunctions[]:=Block[{list1, list2, grids},
 	ClearAttributes[Internal`CompileValues, ReadProtected];
 
 	list1 = Select[Compile`CompilerFunctions[], ! StringContainsQ[ToString[#], "`"] &];
-	
+
 	list2 = DownValues[Internal`CompileValues] /. HoldPattern[Verbatim[HoldPattern][Internal`CompileValues[sym_]] :> _] :> sym;
 	list2 = Select[Complement[list2, list1], ! StringContainsQ[ToString[#], "`"] &];
 
@@ -1459,11 +1459,11 @@ MemoryUsage[size_: 1] := (
 				TableHeadings -> {None, {"Name", "Size (MB)", "Dimensions", "Head"}}]
 			]
 			,
-			
+
 			{{msize, size, "minimum size [MB]"}, {1, 10, 100, 1000}},
 			Button["Update", listing = MakeListing[msize]],
 			{listing, ControlType -> None},
-			
+
 			ContentSize -> {500, 600},
 			Paneled -> False,
 			AppearanceElements -> None,
@@ -1519,7 +1519,7 @@ SyntaxInformation[SumOfSquares] = {"ArgumentsPattern" -> {_,OptionsPattern[]}};
 SumOfSquares[data_, OptionsPattern[]] := Block[{sos, weights, dataf},
 	dataf = RotateDimensionsLeft[data];
 	sos = SumOfSquaresi[dataf];
-	
+
 	If[OptionValue[OutputWeights],
 		weights = DivideNoZero[dataf, sos];
 		{sos, RotateDimensionsRight[weights]},
@@ -1573,15 +1573,15 @@ SyntaxInformation[NNLeastSquares] = {"ArgumentsPattern" -> {_, _}};
 NNLeastSquares[a_, y_] := Block[{at, x, zeroed, w, zerow, pos, sp, xp, neg, xi, si, alpha, i, j ,l},
 	(*Initialze values*)
 	at = Transpose[a];(*already define Transpose A for speed up CalcW*)
-	
+
 	(*initialize values*)
 	x = 0. a[[1]];
 	l = Length[x];
 	zeroed = x + 1.;
-	
+
 	(*initial vector w*)
 	w = CalcW[a, at, y, x];
-	
+
 	(*first while loop: select highest positive solution in the zero set as long as the zero set is not empty*)
 	j = 1; 
 	While[j < l && Total[zeroed] > 0. && Max[zerow = zeroed w] > 0,
@@ -1591,7 +1591,7 @@ NNLeastSquares[a_, y_] := Block[{at, x, zeroed, w, zerow, pos, sp, xp, neg, xi, 
 		(*Calculate the LLS solution of the positive set*)
 		pos = PosInd[zeroed];
 		sp = LLSC[at[[pos]], y];
-		
+
 		(*recalculate the solutions of sp untill all values of sp are positive*)
 		i = 1;
 		While[i < l && Min[sp] < 0.,
@@ -1603,14 +1603,14 @@ NNLeastSquares[a_, y_] := Block[{at, x, zeroed, w, zerow, pos, sp, xp, neg, xi, 
 			xi = Pick[xp, neg, 1];
 			si = Pick[sp, neg, 1];
 			alpha = Min[xi/(xi - si)];
-			
+
 			(*removed the lowest value of sp from the posetive set*)
 			zeroed[[Pick[pos, Unitize[Chop[(xp + alpha (sp - xp))]], 0]]] = 1.;
 			(*recalculate the solution sp*)
 			pos = PosInd[zeroed];
 			sp = LLSC[at[[pos]], y];
 		];
-		
+
 		(*set xp to sp and recalculate w*)
 		x = 0. x; x[[pos]] = sp;
 		w = CalcW[a, at, y, x];
@@ -1703,7 +1703,7 @@ SyntaxInformation[BSplineCurveFit] = {"ArgumentsPattern" -> {_, OptionsPattern[]
 BSplineCurveFit[pts_, opts : OptionsPattern[]] := Block[{paras, knots, coeffMat, ctrlpts, cpn, sd, reg, len, Amat, ptsP},
 	len = Length[pts];
 	cpn = Min[{len - 2, OptionValue[SplineKnotsNumber]}];
-	
+
 	{coeffMat, Amat} = BSplineBasisFunctions[len, opts];
 	ptsP = PadRight[pts, Length[Amat]];
 	ctrlpts = LLeastSquares[Amat, ptsP];
@@ -1724,15 +1724,15 @@ BSplineBasisFunctions[nPts_, opts : OptionsPattern[]] := BSplineBasisFunctions[n
 	cpn = OptionValue[SplineKnotsNumber];
 	sd = OptionValue[SplineDegree];
 	reg = OptionValue[SplineRegularization];
-	
+
 	(*define the bpline points x = [0,1]*)
 	paras = Range[0, 1, 1/(nPts - 1 + 2)] // N;
 	(*define the knots for order sd and cpn degrees of freedome*)
 	knots = Join[ConstantArray[0., sd], N@Range[0, 1, 1/(cpn - sd)], ConstantArray[1., sd]];
-	
+
 	(*generate the coefficient matrix*)
 	coeffMat = Basis[sd, knots, paras];
-	
+
 	(*maker reg coefficient matirx*)
 	coeffMatDD = ListConvolve[{1, -2, 1}, #] & /@ coeffMat;
 	coeffMat = Transpose[coeffMat[[All, 2 ;; -2]]];
@@ -1852,7 +1852,7 @@ RotationMatrixToQuaternion[{
 	{r11_?NumericQ, r12_?NumericQ, r13_?NumericQ}, 
 	{r21_?NumericQ, r22_?NumericQ, r23_?NumericQ}, 
 	{r31_?NumericQ, r32_?NumericQ, r33_?NumericQ}}] := Block[{trace, a, b, c, d, x, y, z},
-		
+
 	trace = 1. + r11 + r22 + r33;
 	If[trace > .5,
 		a = .5 Sqrt[trace];
@@ -1863,27 +1863,27 @@ RotationMatrixToQuaternion[{
 		x = 1. + r11 - (r22 + r33);
 		y = 1. + r22 - (r11 + r33);
 		z = 1. + r33 - (r11 + r22);
-		
+
 		Which[
 			x > 1.,
 			b = .5 Sqrt[x];
 			a = .25 (r32 - r23)/b;
 			c = .25 (r12 + r21)/b;
 			d = .25 (r13 + r31)/b,
-			
+
 			y > 1.,
 			c = .5 Sqrt[y];
 			a = .25 (r13 - r31)/c;
 			b = .25 (r12 + r21)/c;
 			d = .25 (r23 + r32)/c,
-			
+
 			True,
 			d = .5 Sqrt[z];
 			a = .25 (r21 - r12)/d;
 			b = .25 (r13 + r31)/d;
 			c = .25 (r23 + r32)/d;
 		];
-		
+
 		If[a < 0., {a, b, c, d} *= -1.]
 	];
 	N@{a, b, c, d}

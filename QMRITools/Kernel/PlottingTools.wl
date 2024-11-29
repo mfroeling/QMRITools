@@ -322,14 +322,14 @@ ManPannel[name_, cont_, depl_:True]:= Module[{controls = DeleteCases[cont, Null]
 LabLeg[im_, {fnts_,legs_}, label_, {legend_, color_, {min_,max_}}] := Block[{lab, bar},	
 	(*generate label if needed*)
 	lab = If[StringQ[label], Style[label, labStyle, TextAlignment -> Center, FontSize -> fnts]];
-	
+
 	(*generate legend if needed*)
 	bar = If[legend,
 		BarLegend[{(ColSel @@ color)[(# - min)/(max - min)] &, {min, max}}, 
 			LabelStyle -> Directive[Bold, FontFamily -> "Helvetica", fnts, Black],
 			LegendMarkerSize -> legs, LegendLayout -> "Column"]
 	];
-	
+
 	(*make the image grid*)
 	Grid[Which[
 		StringQ[label] && legend, {{lab, ""}, {im, bar}},
@@ -484,7 +484,7 @@ MultiFileSave[plot_,label_,range_,type_,size_]:=
 Module[{input,lab},
 	input=SystemDialogInput["Directory", Directory[]];
 	If[input===$Canceled,Return[Print["Export multiple files was canceled!"]]];
-	
+
 	Switch[Length[range],
 		2,(* one 3D datasest *)
 		Table[
@@ -512,7 +512,7 @@ MovieSave[plot_,dur_,loop_,size_,range_]:=
 Module[{input,movie},
 	input=SystemDialogInput["FileSave", Directory[] <> $PathnameSeparator<>"*.gif"];
 	If[input===$Canceled,Return[Print["Export movie was canceled!"]]];
-	
+
 	movie=Flatten[Switch[Length[range],
 		2,(* one 3D datasest *)
 		Table[Rasterize[ReleaseHold[plot],RasterSize->size],{xs,range[[1]],range[[2]]}],
@@ -534,7 +534,7 @@ Module[{input,movie},
 
 Ploti[data_, ran_, label_, ps_, color_, legend_, frame_, ccolor_, aspect_] := Block[
 	{size, ratio, tks, im},
-	
+
 	(*get range and sizes*)
 	{size, ratio} = PlotSize[data, ps, aspect];
 	tks = PlotTicks@@Dimensions[data];
@@ -553,7 +553,7 @@ Ploti[data_, ran_, label_, ps_, color_, legend_, frame_, ccolor_, aspect_] := Bl
 
 Plot2i[data_, minmax_, label_, ps_, color_, legend_, frame_, join_, ccolor_, aspect_, leg_]:=Block[
 	{plot,fnts,legs},
-	
+
 	Switch[join[[1]],
 		1,(*Normal side by side*)
 		{fnts, legs} = Min/@Transpose[LabSize@@PlotSize[#, ps, aspect]&/@data];
@@ -579,17 +579,17 @@ Plot2i[data_, minmax_, label_, ps_, color_, legend_, frame_, join_, ccolor_, asp
 
 CheckPlot[data_, ran_, label_, ps_, color_, frame_, size_, flip_, ccolor_, aspect_]:= Block[
 	{a, b, pdata, pdatb, psize, ratio, ima, imb, im, check, tks},
-	
+
 	{a,b}=If[flip,{2,1},{1,2}];
 	{pdata,pdatb}=JoinResc[data[[a]],data[[b]]];
-	
+
 	{psize,ratio}=PlotSize[pdata, ps,aspect];
 	tks = PlotTicks@@Dimensions[pdata];
-			
+
 	ima = MakeImage[pdata, color[[a]], ccolor[[a]], ran[[a]]];
 	imb = MakeImage[pdatb, color[[b]], ccolor[[b]], ran[[b]]];
 	check = CheckBoard[Dimensions[pdata], size];
-	
+
 	(*make the image*)
 	im = ImageCompose[ima,SetAlphaChannel[imb, check AlphaChannel[imb]]];
 	(*add label and legend*)
@@ -617,18 +617,18 @@ CheckBoard[dim_, check_] := Image[Table[If[
 
 OpacityPlot[data_, ran_, label_, ps_, color_, legend_, frame_, flip_, op_, ccolor_, aspect_, leg_]:=Block[
 	{a, b, pdata, pdatb, psize, ratio, ima, imb, im, lc, lr, tks},
-	
+
 	{a,b}=If[flip,{2,1},{1,2}];
 	{pdata,pdatb} = JoinResc[data[[a]],data[[b]]];
-	
+
 	{psize,ratio} = PlotSize[pdata, ps,aspect];
 	tks = PlotTicks@@Dimensions[pdata];
-	
+
 	{rana, ranb} = ran;
-		
+
 	ima = MakeImage[pdata, color[[a]], ccolor[[a]], ran[[a]]];
 	imb = MakeImage[pdatb, color[[b]], ccolor[[b]], ran[[b]]];
-		
+
 	(*make the image*)
 	im = ImageCompose[ima,SetAlphaChannel[imb, op AlphaChannel[imb]]];
 	(*add label and legend*)
@@ -646,13 +646,13 @@ OpacityPlot[data_, ran_, label_, ps_, color_, legend_, frame_, flip_, op_, ccolo
 
 DifferencePlot[data_,minmax_,label_,ps_,color_,legend_,frame_,flip_,range_,ccolor_,aspect_]:=Block[
 	{pdat,a,b,min1,max1,min2,max2},
-	
+
 	{a,b} = If[flip,{2,1},{1,2}];
 	{min1,max1} = minmax[[a,1;;2]];
 	{min2,max2} = minmax[[b,1;;2]];
-	
+
 	pdat=(Subtract@@(JoinResc[data[[a]],data[[b]]]));
-	
+
 	(*make plot*)
 	Ploti[pdat, {-1,1}range, LabelJoin[label], ps, color[[a]], legend, frame, ccolor[[a]], aspect]
 ]
@@ -668,19 +668,19 @@ DifferencePlot[data_,minmax_,label_,ps_,color_,legend_,frame_,flip_,range_,ccolo
 
 PlotDefi[data_,shift_,{dim_,dir_},{min_,max_},lab_,ps_,color_,clip_,{gs_,gf_,ncol_,dcol_,lcol_,acol_},{def_,norm_,defl_,arr_,pl_}]:=
 Module[{normGrid,deffGrid,pos,dcor,ncor,points,lines,arrows,head,plot},
-	
+
 	normGrid=Table[{j-0.5,-(i-dim[[2]])+0.5},{i,1,dim[[2]],gs},{j,1,dim[[3]],gs}];
-	
+
 	deffGrid=Table[
 		If[dir=="ROW",{j-shift[[i,j]]-0.5,-(i-dim[[2]])+0.25},
 		If[dir=="COL",{j-0.5,-(i-shift[[i,j]]-dim[[2]])+0.25}]]
 		,{i,1,dim[[2]],gs},{j,1,dim[[3]],gs}];
-	
+
 	pos=Ceiling[DeleteCases[Flatten[Table[If[shift[[i,j]]==0.,{i,j},Null],{i,1,dim[[2]],gs},{j,1,dim[[3]],gs}],1],Null]/gs];
-	
+
 	dcor=Flatten[Delete[deffGrid,pos],1];
 	ncor=Flatten[Delete[normGrid,pos],1];
-	
+
 	points=
 	If[def&&norm,Graphics[{{PointSize[gf[[2]]],ncol,Point[ncor]},{PointSize[gf[[2]]],dcol,Point[dcor]}}],
 		If[def,Graphics[{PointSize[gf[[2]]],dcol,Point[dcor]}],
@@ -689,24 +689,24 @@ Module[{normGrid,deffGrid,pos,dcor,ncor,points,lines,arrows,head,plot},
 				]
 			]
 		];
-	
+
 	lines=If[defl,
 		If[dir=="COL",Graphics[{Thickness[gf[[1]]],lcol,Map[BSplineCurve[#]&,deffGrid]}],
 			If[dir=="ROW",Graphics[{Thickness[gf[[1]]],lcol,Map[BSplineCurve[#]&,Transpose[deffGrid]]}]]
 			],
 		Graphics[]
 		];
-	
+
 	arrows=If[arr,
 		head=Graphics[Line[{{-1/2,1/4},{0,0},{-1/2,-1/4}}]];
 		Graphics[{Thickness[gf[[1]]],acol,Arrowheads[{{0.008,Automatic,head}}],Arrow[#]&/@ Transpose[{dcor,ncor}]}],
 		Graphics[]
 		];
-	
+
 	plot=If[pl,
 		Ploti[data, {min, max}, None, ps, {1, color}, False, False, clip, {1, 1}],Graphics[]
 		];
-	
+
 	Show[plot,lines,points,arrows,ImageSize->ps,PlotLabel->Style[lab,Bold,FontFamily->"Arial",FontSize->Round[ps/20]]]
 	]
 
@@ -726,7 +726,7 @@ Module[{input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def,norm,
 		color=settings[[5]];
 		{gs,gf,ncol,dcol,lcol,acol}=settings[[6]];
 		{def,norm,defl,arr,pl}=settings[[7]];
-		
+
 		Table[
 			lab=If[!StringQ[label],"",label<>" - "]<>"Slice - "<>ToString[x];
 			exp=PlotDefi[data[[x]],shift[[x]],{dim,dir},{min,max},lab,ps,color,{gs,gf,ncol,dcol,lcol,acol},{def,norm,defl,arr,pl}];
@@ -754,13 +754,13 @@ Module[{movie,input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def
 		color=settings[[5]];
 		{gs,gf,ncol,dcol,lcol,acol}=settings[[6]];
 		{def,norm,defl,arr,pl}=settings[[7]];
-		
+
 		movie=Flatten[Table[
 			lab=If[!StringQ[label],"",label<>" - "]<>"Slice - "<>ToString[x];
 			PlotDefi[data[[x]],shift[[x]],{dim,dir},{min,max},lab,ps,color,{gs,gf,ncol,dcol,lcol,acol},{def,norm,defl,arr,pl}]
 			,{x,range[[1]],range[[2]]}
 			]];
-		
+
 		Export[input,movie,"DisplayDurations"->dur,"AnimationRepetitions"->loop,ImageSize->size];
 		Print["Movi was saved to: "<>input];
 		]
@@ -789,20 +789,20 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		x,xp,yp,min,max,minclip,maxclip,label,ps,color,lstyle,legend,fileType,size,pannel,aspect,or,rangex,rangey,frame,
 		mind,maxd,plab,plot,pdata,cfs,lab,pcol,ccol, ran
 	},
-	
+
 	NotebookClose[plotwindow];
-	
+
 	(*Check if data is numeric array, if not exit*)
 	data = ToPackedArray[N[Normal[dat]]];
 	If[!ArrayQ[data, _, RealValuedNumericQ],Return[Message[PlotData::data]]];
-	
+
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
 	If[(depth = ArrayDepth[data])>4, Return[Message[PlotData::set]], n = depth-1];
-		
+
 	(*Determine data dimensions en make string displaying data dimensions*)
 	dim = Dimensions[data];
 	str = "Displaying "<>DataString[dim];
-	
+
 	(*Initialize slice ranges and data range*)
 	rangex = dim[[1]];
 	rangey = dim[[2]];
@@ -810,9 +810,9 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 	(*Define the initial plot range*)
 	{mind,maxd} = If[ListQ[OptionValue[PlotRange]] && Length[OptionValue[PlotRange]]==2, OptionValue[PlotRange], MinMax[data]];
 	If[mind === maxd, maxd = mind + 0.01];
-	
+
 	pcol = If[MemberQ[colorFunctions[[All,1]],OptionValue[ColorFunction]], OptionValue[ColorFunction] , "BlackToWhite"];
-	
+
 	(*Define the tabs of the control pannel*)
 	(*T1: first tabs, plotting controls*)
 	tab1 = Column[{
@@ -870,7 +870,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 				"  Label:",Control@{{lab, False, ""}, {True, False}}}}
 		}]
 	}];
-	
+
 	(*T2: second tab, exporting controls*)
 	tab2 = Column[{
 		(*Export parameters controls*)
@@ -909,24 +909,24 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			}]
 		}[[Unitize[n-1]+1]](*outputt 0 or 1 thus showing menu or not*)
 	}];
-		
+
 	(*Build the control pannel, allows for easy addition of more tabs*)
 	control = {str,Delimiter,
 		{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter
 		,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
-	
+
 	(*Deploy plot window*)
 	pan = Manipulate[
 		If[!ListQ[data],Return[];];
-		
+
 		(*updata slice range for 3D and 4D plots when switching between axial and sagital*)
 		rangex={dim[[1]],dim[[n]],dim[[n+1]]}[[or]];
-	
+
 		(*reverse slices if needed and constrain ranges*)
 		x=If[NumericQ[x],Clip[x,{1,rangex}],1];
 		xp=If[reverse,(-x+rangex)+1,x];
 		yp=If[NumericQ[yp],Clip[yp,{1,rangey}],1];
-		
+
 		(*determine the aspect ration based on the voxelsize and dimensions*)
 		aspect=Drop[vox,{or}];
 
@@ -936,19 +936,19 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			{data[[#1]]&,Reverse[data[[All,#1]]]&,Reverse[data[[All,All,#1]]]&}[[or]],
 			{data[[#1,#2]]&,Reverse[data[[All,#2,#1]]]&,Reverse[data[[All,#2,All,#1]]]&}[[or]]
 		}[[n]];
-		
+
 		(*Make plot label*)
 		plab=If[#3,
 			LabelFunc[label,{{},{#1},{#1,#2}}[[n]]],
 			LabelFunc[label,{}]
 		]&;
-		
+
 		(*fix the plot range*)
 		ran = PlotRangeVals[cfs, pdata[xp, yp], {min, max}];
-		
+
 		(*make the clipping colors*)
 		ccol = ClipColor[{clipMin, clipMax}, {minclip, maxclip}, {lstyle, color}];	
-	
+
 		(*create Plot, is on hold so it can be used for exporting multiple files and movie*)
 		plot = Ploti[
 			pdata[#1, #2],		(*the data*)
@@ -961,11 +961,11 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			ccol,				(*the plot clip color*)
 			aspect				(*the aspect ratio*)
 		]&;
-			
+
 		(*insert data in plot and show*)
 		(*Make sure that the x an y slice selection indices cant exceed the data dimensions*)
 		exp=plot[xp,yp,x]
-		
+
 		,##(*Insertion of control pannel*),
 		(*Manipulate function options*)
 		ControlPlacement->Right,
@@ -973,7 +973,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		Deployed->False, 
 		SynchronousInitialization -> False
 		]&@@control;
-		
+
 		NotebookClose[plotwindow];
 		plotwindow=CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, 
 			WindowSize -> All, WindowTitle -> "Plot data window"]];
@@ -991,9 +991,9 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 		pannel,pdata1,pdata2,flip,overlay,checksize,opac,diffr,fileType,size,leftright,lab,mpdim,leg, ran,
 		start1,end1,start2,end2,dur,loop,exp,dim1,dim2,prange,frame,adep1,adep2,maxabs,pcol,pcol1,pcol2
 	},
-	
+
 	NotebookClose[plotwindow];
-		
+
 	(*Check if data is numeric array, if not exit*)
 	data1 = ToPackedArray[N@Normal@dat1];
 	data2 = ToPackedArray[N@Normal@dat2];
@@ -1005,7 +1005,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 	adep2=ArrayDepth[data2];
 	dim1=Dimensions[data1];
 	dim2=Dimensions[data2];
-	
+
 	mpdim=Max[Join[Take[dim1,-2],Take[dim2,-2]]];
 
 	If[!(2<=adep1<=4 || 2<=adep2<=4), Return[Message[PlotData::set]]];
@@ -1033,7 +1033,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 	If[mind2===maxd2,maxd2=mind2+0.01];
 
 	maxabs=Max[Abs[{mind1,maxd1,mind2,maxd2}]];
-	
+
 	pcol = OptionValue[ColorFunction];
 	If[Length[OptionValue[ColorFunction]]==2 && MemberQ[colorFunctions[[All,1]],pcol[[1]]] && MemberQ[colorFunctions[[All,1]],pcol[[2]]],
 		{pcol1,pcol2} = OptionValue[ColorFunction],
@@ -1073,7 +1073,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				1->Control@{{max1,maxd1,""},(maxd1-mind1)/250+ min1,maxd1,(maxd1-mind1)/250, Appearance -> "Labeled"},
 				2->Control@{{max2,maxd2,""},(maxd2-mind2)/250+ min2,maxd2,(maxd2-mind2)/250, Appearance -> "Labeled"}
 			},Dynamic[leftright]]},
-			
+
 			{"Min Clipping", PaneSelector[{
 				1->Row[{
 					Control@{{clipMin1,"Custom",""}, {"Auto", "Transparent", "Custom"->"Custom: "}}," ",
@@ -1151,7 +1151,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 					4 -> Control@{{diffr, .5*maxabs, ""}, Dynamic[0.00001*maxabs], Dynamic[2*maxabs] /. 0. -> 1., Dynamic[(1.5*maxabs /. 0. -> 1.)/1000]}
 				}, Dynamic[overlay]]
 			}},False]}];
-	
+
 	(*second tab, exporting controls*)
 	tab2 = Column[{
 		ManPannel["Export plot",{
@@ -1184,7 +1184,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				}]
 			}[[Unitize[n-1]+1]]
 		}];
-		
+
 	(*Build the control pannel, allows for easy addition of more tabs*)
 	control={
 		str,
@@ -1197,27 +1197,27 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 	(*Deploy plot window*)
 	pan = Manipulate[
 		If[!ListQ[data1]||!ListQ[data2],Return[]];
-		
+
 		(*updata slice range for 3D and 4D plots when switching between axial and sagital*)
 		If[(Take[dim1,-2] == Take[dim2,-2] && ArrayDepth[data1] >= 3 && ArrayDepth[data2] >= 3),
 			rangex={dim1[[1]],Take[dim1,{-2}][[1]],Take[dim1,{-1}][[1]]}[[or]]
 		];
-		
+
 		(*reverse slices if needed*)
 		x=If[NumericQ[x],Clip[x,{1,rangex}],1];
 		xp=If[reverse,(-x+rangex)+1,x];
 		yp=If[NumericQ[yp],Clip[yp,{1,rangey}],1];
-		
+
 		(*determine the aspect ration based on the voxelsize and dimensions*)
 		aspect=Drop[vox,{or}];
-		
+
 		(*based on the data dimensions or how the data is showed determine how the data selection looks*)
 		pdata1={
 			data1&,
 			{data1[[#1]]&,Reverse[data1[[All,#1]]]&,Reverse[data1[[All,All,#1]]]&}[[or]],
 			{data1[[#1,#2]]&,Reverse[data1[[All,#2,#1]]]&,Reverse[data1[[All,#2,All,#1]]]&}[[or]]
 			}[[ArrayDepth[data1]-1]];		
-		
+
 		pdata2={data2&,
 			{data2[[#1]]&,Reverse[data2[[All,#1]]]&,Reverse[data2[[All,All,#1]]]&}[[or]],
 			{data2[[#1,#2]]&,Reverse[data2[[All,#2,#1]]]&,Reverse[data2[[All,#2,All,#1]]]&}[[or]]
@@ -1241,19 +1241,19 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				If[label==="",None,label]
 			}
 			]&;
-		
+
 		(*get the plot ranges*)
 		ran = {
 			PlotRangeVals[cfs1, pdata1[xp, yp], {min1,max1}],
 			PlotRangeVals[cfs2, pdata2[xp, yp], {min2,max2}]
 		};
-		
+
 		(*get the clip colors*)
 		ccol = {
 			ClipColor[{clipMin1, clipMax1}, {minclip1, maxclip1}, {lstyle1, color1}],
 			ClipColor[{clipMin2, clipMax2}, {minclip2, maxclip2}, {lstyle2, color2}]
 		};
-		
+
 		plot = Plot2i[
 			{pdata1[#1,#2],pdata2[#1,#2]},			(*the data*)
 			ran,									(*the plot range*)
@@ -1267,17 +1267,17 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			aspect,									(*the aspect ratio*)
 			leg										(*chose the legend bar*)
 			]&;
-			
+
 		(* Create and show plot*)
 		exp=plot[xp,yp,x]
-	
+
 		,##,
 		Initialization:>{or=1,reverse=False,legend=False,leftright->1},
 		ControlPlacement->Right,
 		(*Deployed->True,*) 
 		SynchronousInitialization -> False
 		]&@@control;
-		
+
 		NotebookClose[plotwindow];
 		plotwindow=CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data1,data2];DialogReturn[]], pan}, 
 			WindowSize -> All, WindowTitle -> "Plot data window"]];
@@ -1293,16 +1293,16 @@ SyntaxInformation[PlotData3D] = {"ArgumentsPattern" -> {_, _.}};
 PlotData3D[dat_?ArrayQ, v:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1}] := Module[{},
 DynamicModule[{data, vox, dep},
 	NotebookClose[plotwindow];
-	
+
 	(*get data to dynamic*)
 	data = ToPackedArray[N[Normal[dat]]];
 	If[!ArrayQ[data, _, RealValuedNumericQ], Return[Message[PlotData::data]]];
 	If[(dep = ArrayDepth[data])>4, Return[Message[PlotData::set]], n = dep-1];
 	vox = v;
-	
+
 	(*start the manipulation*)
 	pan = Manipulate[
-			
+
 		(*first part is data management, pdat is the data to be plotted*)
 		t1 = (
 			(*determine scaling and dimensions*)
@@ -1310,27 +1310,27 @@ DynamicModule[{data, vox, dep},
 			dim = {size1, size2, size3};
 			size = Reverse[vox*dim];
 			ratio = size/Max[size];
-			
+
 			(*correctly clip the slice numbers and mirror slices if needed*)
 			set = If[NumericQ[set], Clip[set, {1, sets}], 1];
 			slice = If[NumericQ[slice], Clip[slice, {1, size1}], 1];
 			column = If[NumericQ[column], Clip[column, {1, size2}], 1];
 			row = If[NumericQ[row], Clip[row, {1, size3}], 1];
-			
+
 			(*reverse dimenion index for correct data selection*)
 			{slicep, columnp, rowp} = {size1 - slice + 1, size2 - column + 1, row};
-			
+
 			(*determine to draw lines and adjust pot scaling for all pannels*)
 			scal = If[show != 4, scale, 0.6 scale];
-			
+
 			(*rescale 3D values for 3D image and select correct dataset*)
 			dats = If[depth == 4, If[trans, data[[set]], data[[All, set]]], data];
 			pdat = If[reverse, dats, Reverse[dats]];
-			
+
 			(*Check which 3D view to use*)
 			If[MemberQ[views[[All, 1]], vp], vv = {0, 0, 1}; va = 25. Degree];
 		) // AbsoluteTiming // First;
-		
+
 		(*get datarange and clip colors*)
 		t2 = (
 			(*get the plotrange*)
@@ -1338,7 +1338,7 @@ DynamicModule[{data, vox, dep},
 			(*make the clipping colors*)
 			ccol = ClipColor[{clipMin, clipMax}, {minclip, maxclip}, {lstyle, color}];
 		) // AbsoluteTiming // First;
-		
+
 		(*create the lices for the pannel all view*)
 		t3 = (
 			{linax, lincor, linsag} = If[show == 4 && lines,{
@@ -1349,7 +1349,7 @@ DynamicModule[{data, vox, dep},
 				{Graphics[], Graphics[], Graphics[]}
 			];
 		) // AbsoluteTiming // First;
-		
+
 		(*create the axial coronal and sagital images*)
 		t4 = (
 			If[MemberQ[If[planez, {1, 4, 5, 7}, {1, 4}], show],
@@ -1365,7 +1365,7 @@ DynamicModule[{data, vox, dep},
 				plsag = Show[imsag, linsag, ImageSize -> scal {ratio[[2]], ratio[[3]]}, AspectRatio -> Full];
 			];
 		) // AbsoluteTiming // First;
-		
+
 		(*create the pannel all view with event handles to click and select*)
 		t5 = (
 			If[show == 4, 
@@ -1377,7 +1377,7 @@ DynamicModule[{data, vox, dep},
 				}},	Background -> White, Spacings -> {0, 0}, Frame -> All, FrameStyle -> Directive[{Thickness[6], White}]]
 			];
 		) // AbsoluteTiming // First;
-		
+
 		(*create the 3d slice view*)
 		t6 = (
 			If[show == 5 || show == 7,
@@ -1394,7 +1394,7 @@ DynamicModule[{data, vox, dep},
 						VertexTextureCoordinates -> {{0.025, 0.025}, {0.975, 0.025}, {0.975, 0.975}, {0.025, 0.975}}]
 					} & /@ sel
 				];
-				
+
 				plsl3D = Show[Graphics3D[{EdgeForm[None], slices3D},
 					BoxRatios -> ratio, ImageSize -> scale, RotationAction -> "Clip", SphericalRegion -> True, 
 					Background -> back, Lighting -> "Neutral", ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv],  ViewAngle -> Dynamic[va],
@@ -1402,7 +1402,7 @@ DynamicModule[{data, vox, dep},
 				], PlotRange -> {{-1, size3 + 1}, {-1, size2 + 1}, {-1, size1 + 1}}, PerformanceGoal -> "Quality"]
 			];
 		) // AbsoluteTiming // First;
-		
+
 		(*Create the 3D image using Image3D*)
 		t7 = (
 			If[show == 6 || show == 7,
@@ -1412,7 +1412,7 @@ DynamicModule[{data, vox, dep},
 				]
 			];
 		) // AbsoluteTiming // First;
-		
+
 		(*If the Hybrid 3D slice and image3D veiuw is selected join the two images*)
 		If[show == 7,
 			merge = Show[Graphics3D[{EdgeForm[None], slices3D}], plim3D,
@@ -1422,13 +1422,13 @@ DynamicModule[{data, vox, dep},
 				PlotRange -> {{-1, size3 + 1}, {-1, size2 + 1}, {-1, size1 + 1}}, PerformanceGoal -> "Quality"
 			]
 		];
-		
+
 		(*select the correct plot*)
 		Column[{
 			(*{t1,t2,t3,t4,t5,t6,t7},*)
 			Switch[show, 1, plax, 2, plcor, 3, plsag, 4, imall, 5, plsl3D, 6, plim3D, 7, merge]
 		}]
-		
+
 		(*start control pannel*)
 		,
 		(*--------------clean from here---------------------*)
@@ -1530,7 +1530,7 @@ DynamicModule[{data, vox, dep},
 		{dim, ControlType -> None}, {size, ControlType -> None}, {scal, ControlType -> None}, {ratio, ControlType -> None},
 
 		{dats, ControlType -> None}, {pdat, ControlType -> None},
-			
+
 		{linax, ControlType -> None}, {lincor, ControlType -> None}, {linsag, ControlType -> None},
 		{plax, ControlType -> None}, {plcor, ControlType -> None}, {plsag, ControlType -> None},
 		{imax, ControlType -> None}, {imcor, ControlType -> None}, {imsag, ControlType -> None}, {imall, ControlType -> None},
@@ -1554,7 +1554,7 @@ DynamicModule[{data, vox, dep},
 		AutorunSequencing -> {1},
 		SynchronousInitialization -> False
 	];
-	
+
 	NotebookClose[plotwindow];
 	plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, 
 		WindowSize -> All, WindowTitle -> "Plot data window"]];
@@ -1572,20 +1572,20 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 	dim=Dimensions[data];
 	shift=N[phase]*shiftpar[[1]];
 	dir=shiftpar[[2]];
-	
+
 	(*Check if data is numeric array, if not exit*)
 	data=dat//N;
 	If[!ArrayQ[data,_,NumericQ],Return[Message[PlotData::data]]];
-	
+
 	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
 	depth=ArrayDepth[data];
 	If[depth>4, Return[Message[PlotData::set]]];
 	n=depth-1;
-		
+
 	(*Determine data dimensions en make string displaying data dimensions*)
 	dim=Dimensions[data];
 	str="Displaying "<>DataString[dim];
-	
+
 	(*Initialize slice ranges and data range*)
 	rangex = dim[[1]];
 	rangey = dim[[2]];
@@ -1594,7 +1594,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 	{mind,maxd}=If[ListQ[OptionValue[PlotRange]] && Length[OptionValue[PlotRange]]==2,OptionValue[PlotRange],{Min[data],Max[data]}];
 	If[mind==maxd,maxd=mind+0.01];
 	(*data=(##[data,{mind,maxd}])&@@{{ToByte2,ToByte3,ToByte4}[[n]]};*)
-	
+
 	tab1=Column[{
 		ManPannel["Slice Selection",{
 			{"Slice (1-"<>ToString[dim[[1]]]<>")",Control@{{z,Round[dim[[1]]/2],""},1,dim[[1]],1}}
@@ -1628,7 +1628,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 			{"Arrow color",Control@{{acol,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}}
 			}]
 		}];
-	
+
 	tab2=Column[{
 		ManPannel["Export plot",{
 			{"File Type",Control@{{fileType,".jpg",""},files}},
@@ -1636,12 +1636,12 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 			{"Export",Button["Save Plot",SaveImage[Dynamic[exp],FileType->fileType,ImageSize -> size],Method->"Queued",ImageSize->150]}
 			}]
 		}];
-	
+
 	control={{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
-	
+
 	Manipulate[
 		If[!ListQ[data],Return[]];
-		
+
 		settings={{dim,dir},{min,max},label,ps,color,{gs,gf,ncol,dcol,lcol,acol},{def,norm,defl,arr,pl}};
 		exp=PlotDefi[data[[z]],shift[[z]],{dim,dir},{mind,maxd,min,max},LabelFunc[label,{z}],ps,color,If[transclip,Transparent,{minclip,maxclip}],{gs,gf,ncol,dcol,lcol,acol},{def,norm,defl,arr,pl}]
 		,##,
@@ -1666,7 +1666,7 @@ LegendImage[colf_, w_, lab_] := Block[{rast, lc, mc, rc},
 	rast = Raster[{Range[256]/256.}, {{0, 0}, {1, 1}}, ColorFunction -> colf];
 	{lc, mc, rc} = If[ColorDistance[ColorData[colf][#], White] > ColorDistance[ColorData[colf][#], Black], 
 		White, Black] & /@ {0, 0.5, 1};
-	
+
 	ImagePad[Rasterize[Graphics[{rast,
 		Inset[Style[lab[[1]], lc, Bold, 20], {0.05, 0.5}],
 		Inset[Style[lab[[2]], rc, Bold, 20], {0.95, 0.5}],
@@ -1703,7 +1703,7 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2, 
 	dim, dim1, dim2, d1, d2, pl ,ml, sz, n, imSize, clip
 	},
-	
+
 	colo = OptionValue[ColorFunction];
 	{colo, cols}	= If[StringQ[colo], {colo, "DarkRainbow"}, colo];
 	colF = If[MemberQ[colorFunctions[[All,1]], colo], colo, "GrayTones"]/.colorFunctions;
@@ -1717,14 +1717,14 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 		(*get the data*)
 		pdat = N@selData[[n]];
 		mdat = N@If[selMask =!= 0, N[selMask[[n]]] /. rule, 0 pdat];
-		
+
 		(*find the range*)
 		datf = DeleteCases[Flatten[pdat][[;;;;10]], 0.];
 		ran = If[OptionValue[PlotRange] === Automatic, If[datf==={}, {0, 1}, {0, Quantile[datf, .99]}], OptionValue[PlotRange]];
-		
+
 		size = vox[[{{2,3}, {1,2}, {1,3}}[[n]]]];
 		bar = BarLegend[{colF/@Range[0, 1, .01], ran}, LabelStyle->Directive[{Black, Bold, 12}]];
-		
+
 		imSize = OptionValue[ImageSize];
 
 		(*loop over the slices, 1 axial, 2 cor, 3 sag*)
@@ -1741,7 +1741,7 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 				_,
 				If[d1 <= d2, {#1, #2, ratio, {imSize, Automatic}}, {#1, #2, ratio, {Automatic, imSize}}] 
 			];
-			
+
 			pl1 = ArrayPlot[pl, AspectRatio->ratio, Frame->False, ImageSize->sz, PlotRangePadding->1, 
 				PlotRange->ran, ColorFunction->colF, ClippingStyle->clip];
 			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.6], ColorData[cols][#]}]&), 
@@ -1784,27 +1784,27 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
 	(*get the max intensity slice*)
 	pers={{2,3},{1,3},{1,2}};
 	{s1,s2,s3}=OptionValue[DropSlices];
-	
+
 	(*find slice positions*)
 	result=(
 		(*get the range and max number of locations*)
 		ran=OptionValue[DropSlices][[#]];
 		num=OptionValue[PeakNumber][[#]];
-		
+
 		(*remove slices if needed*)
 		dat=Switch[#,
 			1,data[[All,s2;;-s2,s3;;-s3]],
 			2,data[[s1;;-s1,All,s3;;-s3]],
 			3,data[[s1;;-s1,s2;;-s2,All]]
 		];
-		
+
 		(*get the data profile*)
 		(*dat=MeanNoZero@Flatten[dat,pers[[#,1;;2]]];*)
-		
+
 		mn = MeanNoZero@Flatten[dat, pers[[#,1;;2]]];
 		tot = Total@Flatten[dat, pers[[#,1;;2]]];
 		dat = Rescale[mn] + 0.5 Rescale[tot];
-		
+
 		(*constrain and filter data*)
 		len = Length[dat];
 		dat[[;;ran]] = 0;
@@ -1815,7 +1815,7 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
 		(*find the peak locations and select the ones above treshhold*)
 		peaks = FindPeaks[dat, fil];
 		peaks = Select[peaks, #[[2]]>0.5&];
-		
+
 		(*select peaks closes to center*)
 		mid = {len,1}/2.;
 		num=Min[{Length[peaks],num}];
@@ -1826,7 +1826,7 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
 			]
 		]
 	)&/@{1,2,3};
-	
+
 	(*make chekc plot if needed*)
 	If[OptionValue[MakeCheckPlot],Print[Row[Show[
 		ListLinePlot[#[[1]],PlotStyle->Black],ListPlot[#[[2]],PlotStyle->Directive[{PointSize[Large],Red}]],
@@ -1834,7 +1834,7 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
 		ListPlot[{#[[3]]},PlotStyle->Directive[{PointSize[Large],Blue}]]
 	,Axes->True,ImageSize->200
 	]&/@result]]];
-	
+
 	(*give te location in mm*)
 	vox result[[All,-1]]
 ]
@@ -1875,7 +1875,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 
 		If[N[Max[dati]] === 0., 
 			Graphics3D[],
-			
+
 			dim = Dimensions@dati;
 			pad = 2 (smooth + 1);
 
@@ -1884,7 +1884,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 
 			If[IntegerQ[smooth], If[smooth>0, data = GaussianFilter[data, smooth]]];
 			data = SparseArray[data];
-			
+
 			col = If[ColorQ[color], color, If[color==="Random", RandomColor[], GrayLevel[1.]]];
 			style = Directive[{Opacity[opac], col, Specularity[Lighter@col, spec]}];
 
@@ -1919,10 +1919,10 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 				Contours -> {0.7}, Lighting -> "ThreePoint",
 				Mesh -> False, BoundaryStyle -> None, Axes -> True, 
 				SphericalRegion -> True,ColorFunctionScaling -> False, 
-				
+
 				ColorFunction -> colfunc, 
 				ContourStyle -> style, 
-				
+
 				MaxPlotPoints -> reso,
 				ImageSize -> 300,
 				DataRange -> scale range,
@@ -2057,7 +2057,7 @@ PlotCorrection[w_]:=Module[{sel},
 		,
 		12,
 		sel=If[Mean[w][[7;;12]]==={1.,1.,1.,0.,0.,0.},2,4];
-		
+
 		Grid[Partition[
 			MapThread[
 				ListLinePlot[#1, PlotLabel -> Style[#2, Bold], PlotLegends -> #3,
@@ -2152,7 +2152,7 @@ SyntaxInformation[GradientPlot] = {"ArgumentsPattern" -> {_, _., OptionsPattern[
 	GradientPlot[vec,val,opts]]*)
 
 GradientPlot[veci_, val_, OptionsPattern[]] := Block[{pts, range, norm, mnorm, cnorm, col, pcol, vec}, 
-	
+
 	vec = If[OptionValue[PositiveZ],
 		SignNoZero[#[[3]]]#&/@veci,
 		veci

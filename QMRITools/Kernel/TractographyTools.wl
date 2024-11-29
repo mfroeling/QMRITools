@@ -583,8 +583,8 @@ FiberTractography[tensor_, voxi_, opts : OptionsPattern[]] := FiberTractography[
 FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FiberTractography[tensor, voxi, {{par, {min, max}}}, opts]
 
 FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
-		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, trFunc, ran,
-		tens, tensMask, inpTr, treshs, stop, coors, intE, intS, ones, dim, crp,
+		lmin, lmax, amax, maxSeed, flip, per, int, stopT, step, tracF, vecF, trFunc, ran,
+		tens, tensMask, inpTr, treshs, stop, coors, vecInt, stopInt, ones, dim, crp,
 		seedN, seedI, seedT, seeds, t1, tracts, iii, drop, smax, len, sel, mon
 	},
 
@@ -596,12 +596,18 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	step = N@If[NumberQ[step],step, Min[0.5 vox]];
 	smax = Ceiling[(lmax/step)];
 	tracF = Switch[OptionValue[Method], "RungeKutta" | "RK" | "RK2", RK2, "RungeKutta4" | "RK4", RK4, _, Euler];
-
+	
 	(*prepare tensor and stop data, remove background for performance and make int functions*)
 	dim = Rest@Dimensions@tensor;
 	{stop, crp} = AutoCropData[Unitize[First@tensor] Mask[inp], CropPadding -> 0];
 	stop = ToPackedArray@N@Normal@stop;
-	tens = ToPackedArray@N@RotateDimensionsLeft[{ApplyCrop[#, crp]& /@ FlipTensorOrientation[tensor, per, flip]}, 2];
+
+	(*for 0th order interpolation tensor interpolation is not needed, vector field can be precalculated*)
+	tens = ApplyCrop[#, crp]& /@ FlipTensorOrientation[tensor, per, flip];
+	{vecF, tens} = If[int>=1, 
+		{EigVec, ToPackedArray@N@RotateDimensionsLeft[{tens}, 2]},
+		{Vec, ToPackedArray@N@RotateDimensionsLeft[{RotateDimensionsRight[EigVec[RotateDimensionsLeft@tens, {1, 0, 0}]]}, 2]}
+	];
 
 	(*make the random seed points*)
 	SeedRandom[1234];
@@ -616,13 +622,13 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	(*random seedpoint selection until maxSeed is found*)
 	seeds = {};
 	seedI = SparseArray[stop]["NonzeroPositions"];
-	intS = MakeIntFunction[stop, vox, int];
+	stopInt = MakeIntFunction[stop, vox, int];
 	While[Length[seeds] < maxSeed,
 		seedT = Flatten[RandomSample[seedI, #] & /@ Block[{i = maxSeed},
 			First@Last@Reap[While[i > 0, Sow[If[i > seedN, seedN, i]];
 			i = i - seedN;]]], 1];
 		seedT = # vox & /@ (seedT + RandomReal[{-0.999, 0}, {maxSeed, 3}]);
-		seedT = Pick[seedT, intS @@@ seedT, 1.];		
+		seedT = Pick[seedT, stopInt @@@ seedT, 1.];		
 		seeds = Join[seeds, seedT];
 		seeds = seeds[[;; Min[{Length@seeds, maxSeed}]]]
 	];
@@ -642,26 +648,26 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		If[mon, Echo["Starting parallel preparation"]];
 		ran = Thread[{vox/2, vox Dimensions[stop] - vox/2}];
 		t2 = First@AbsoluteTiming[
-			DistributeDefinitions[step, amax, smax, stopT, tracF, seeds, tens, stop, vox, int, ran,
-				TractFunc, TractFuncI, EigVec, VecAng, Euler, RK2, RK4];
+			DistributeDefinitions[step, amax, smax, stopT, tracF, vecF, seeds, tens, stop, vox, int, ran,
+				TractFunc, TractFuncI, EigVec, Vec, VecAng, Euler, RK2, RK4];
 			ParallelEvaluate[
-				intE = ListInterpolation[tens, ran, InterpolationOrder -> int, 
-					"ExtrapolationHandler" -> {({0., 0., 0., 0., 0., 0.} &), "WarningMessage" -> False}];
-				intS = ListInterpolation[stop, ran, InterpolationOrder -> int, 
+				vecInt = ListInterpolation[tens, ran, InterpolationOrder -> int, 
+					"ExtrapolationHandler" -> {(0. tens[[1, 1, 1, 1]] &), "WarningMessage" -> False}];
+				stopInt = ListInterpolation[stop, ran, InterpolationOrder -> int, 
 					"ExtrapolationHandler" -> {(0. &), "WarningMessage" -> False}];
-				trFunc = TractFunc[#, step, {amax, smax, stopT}, {intE, intS, tracF}]&;
+				trFunc = TractFunc[#, step, {amax, smax, stopT}, {vecInt, stopInt, tracF, vecF}]&;
 			, DistributedContexts -> None]];
 		If[mon, Echo["Parallel preparation time: "<>ToString[Round[t2,.1]]<>" seconds"]];
 		(*actual tracto for parallel with memory clear*)
 		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, 
 			Method -> "EvaluationsPerKernel" -> 10, ProgressReporting -> mon];
-		ParallelEvaluate[Clear[intE, intS, trFunc, tens, stop]];
+		ParallelEvaluate[Clear[vecInt, stopInt, trFunc, tens, stop]];
 		ClearDistributedDefinitions[];
 		,
 		(*normal tractography with monitoring*)
-		intE = MakeIntFunction[tens, vox, int];
-		intS = MakeIntFunction[stop, vox, int];
-		trFunc = TractFunc[#, step, {amax, smax, stopT}, {intE, intS, tracF}]&;
+		vecInt = MakeIntFunction[tens, vox, int];
+		stopInt = MakeIntFunction[stop, vox, int];
+		trFunc = TractFunc[#, step, {amax, smax, stopT}, {vecInt, stopInt, tracF, vecF}]&;
 		{t1, tracts} = AbsoluteTiming@If[mon,
 			Monitor[Table[trFunc@seeds[[iii]], {iii, 1, seedN}], ProgressIndicator[iii, {0, seedN}]],
 			Table[trFunc@seeds[[iii]], {iii, 1, seedN}]
@@ -690,7 +696,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 
 TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0, mh = 0.75 h, out},
 	(*startpoint*)
-	dir0 = h EigVec[First[fun]@@loc0, {0,0,1}];
+	dir0 = h Last[fun][First[fun]@@loc0, {0,0,1}];
 	(*only tract if step is actuall step size*)
 	If[Norm[dir0] <= mh, {loc0},
 		(*tracts go bi-directional from start with half step offset*)
@@ -702,20 +708,20 @@ TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0, mh = 0.75 h, out},
 ]
 
 
-TractFuncI[{loci_?VectorQ, stepi_?VectorQ}, {h_, mh_}, {amax_, smax_, stoptr_}, {intE_, intS_, tracF_}] := Block[{loc1, step0, step1, loc2},
+TractFuncI[{loci_?VectorQ, stepi_?VectorQ}, {h_, mh_}, {amax_, smax_, stoptr_}, {vecInt_, stopInt_, tracF_, vecF_}] := Block[{loc1, step0, step1, loc2},
 	loc1 = loci;(*current point*)
 	step0 = stepi;(*incomming direction*)
 	(*break if start point is not valid*)
-	If[intS @@ loc1 < stoptr, Return[{}]];
+	If[stopInt @@ loc1 < stoptr, Return[{}]];
 
 	(*perform the tractography while conditions are valid*)
 	Flatten[Last[Reap[Do[
 		(*sow the location and update steps*)
 		Sow[loc1];
-		step1 = tracF[loc1, step0, h, intE];
+		step1 = tracF[loc1, step0, h, vecInt, vecF];
 		loc2 = loc1 + step1;
 		(*check for stop*)
-		If[Norm[step1] < mh || VecAng[step0, step1] > amax || (intS @@ loc2) < stoptr, Break[]];
+		If[Norm[step1] < mh || VecAng[step0, step1] > amax || (stopInt @@ loc2) < stoptr, Break[]];
 		(*update points for next step*)
 		loc1 = loc2;
 		step0 = step1;
@@ -789,12 +795,16 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
+Vec = Compile[{{vec, _Real, 1}, {vdir, _Real, 1}},
+	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+
 (* ::Subsubsection::Closed:: *)
 (*Euler*)
 
 
-Euler[y_, v_, h_, func_] := Block[{k1},
-	k1 = h EigVec[func@@(y), v];
+Euler[y_, v_, h_, int_, vec_] := Block[{k1},
+	k1 = h vec[int@@(y), v];
 	k1
 ]
 
@@ -803,9 +813,9 @@ Euler[y_, v_, h_, func_] := Block[{k1},
 (*RK2*)
 
 
-RK2[y_, v_, h_, func_] := Block[{k1, k2},
-	k1 = h EigVec[func@@(y), v];
-	k2 = h EigVec[func@@(y + k1/2), v];
+RK2[y_, v_, h_, int_, vec_] := Block[{k1, k2},
+	k1 = h vec[int@@(y), v];
+	k2 = h vec[int@@(y + k1/2), v];
 	k2	
 ]
 
@@ -814,11 +824,11 @@ RK2[y_, v_, h_, func_] := Block[{k1, k2},
 (*RK4*)
 
 
-RK4[y_, v_, h_, func_] := Block[{k1, k2, k3, k4},
-	k1 = h EigVec[func@@(y), v];
-	k2 = h EigVec[func@@(y + k1/2), v];
-	k3 = h EigVec[func@@(y + k2/2), v];
-	k4 = h EigVec[func@@(y + k3), v];
+RK4[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3, k4},
+	k1 = h vec[int@@(y), v];
+	k2 = h vec[int@@(y + k1/2), v];
+	k3 = h vec[int@@(y + k2/2), v];
+	k4 = h vec[int@@(y + k3), v];
 	k1/6 + k2/3 + k3/3 + k4/6
 ]
 
