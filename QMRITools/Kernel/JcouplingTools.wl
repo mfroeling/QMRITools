@@ -164,35 +164,35 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 	iden, zero, set, HbasisA, HbasisB, states, statesi, st, bas, Hix, Hiy, Hiz, 
 	di, Hfx, Hfy, Hfz, wIxy, Ixy, Fxy, wFxy, dn, weight, weighti, Hcs, Hjs, Hjw, 
 	ham, hamJ, valD, matU, valDJ, matUJ, hstruc, bField, gyro},
-	
+
 	bField = OptionValue[FieldStrength];
 	nuc = OptionValue[SimNucleus];
 	gyro = GyromagneticRatio[nuc];
-	
+
 	sys = If[StringQ[sysi],GetSpinSystem[sysi, CenterFrequency -> OptionValue[CenterFrequency]], sysi];
-	
+
 	(*define frequencys*)
 	{sysJ,sysS,scale,sysSi,names,it,name} = sys;
 	Hj = 2 Pi sysJ;
 	Hres = sysS (-2.*Pi*bField*gyro)(*omega at ppm*);
-	
+
 	(*standard matrixes and sizes*)
 	nSpins = Length[sysS];
 	nSpins2=2^nSpins;
-	
+
 	iden = SparseArray[IdentityMatrix[nSpins2]];
 	zero = SparseArray[ConstantArray[0,{nSpins2,nSpins2}]];
-	
+
 	(*make spin basis set*)
 	set = Permutations[-Sort@Flatten[ConstantArray[{1,-1},nSpins]],{nSpins}];
 	HbasisA = Transpose[.5ConstantArray[set,nSpins2],{2,3,1}];
 	HbasisB = Transpose/@HbasisA;
-	
+
 	(*make states*)
 	statesi = Round@Abs[HbasisB-HbasisA];(*see where both are equal \[Rule] 0 equal, 1 different*)
 	states = SparseArray[1-Unitize[Total[statesi]-1]];(*find where only one is different, thus sum of states = 1*)
 	statesi = states #&/@statesi; (*get the individual spin states, thus find *)
-	
+
 	(*Create All the angular momentum opperators Iix, Iiy and Iiz*)
 	{Hix,Hiy,Hiz,di} = Transpose[Table[
 		st = statesi[[i]];
@@ -201,13 +201,13 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 		,{i,1,nSpins}]
 	];
 	{Hfx,Hfy,Hfz,dn} = Total/@{Hix,Hiy,Hiz,di};
-	
+
 	(*create the readout angular momentum opperators*)
 	Ixy = (Hix-Hiy I);
 	Fxy = (Hfx-Hfy I);(*unweighted versions*)
 	wIxy = scale Ixy;
 	wFxy = Total[wIxy];(*weighted for spin occurence*)
-	
+
 	(*construct the hamiltonian Sum of Ii.Ij for j>i*)
 	Hcs = Hjs = Hjw = zero;
 	MatrixForm@Table[Hcs-=Hres[[j]]Hiz[[j]] ;(* izj *)
@@ -217,17 +217,17 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 			Hjw-=Hj[[j,k]](Hiy[[j]] . Hiy[[k]]);(* ixj, ixk*)
 		,{k,j+1,nSpins}]
 	,{j,nSpins}];
-	
+
 	(*make the hamiltonian with and without chemical shift*)
 	ham = Hcs + Hjs + Hjw;
 	hamJ = Hjs + Hjw;
-	
+
 	(*get eigensystem of the hamiltonian*)
 	{valD,matU} = Eigensystem[Normal[ham]];
 	matU = SparseArray[Chop[matU]];
 	{valDJ,matUJ} = Eigensystem[Normal[hamJ]];
 	matUJ = SparseArray[Chop[matUJ]];
-	
+
 	(*make hstructure and output*)
 	hstruc = {
 		"J"->Hj,
@@ -262,7 +262,7 @@ SimHamiltonian[sysi_,OptionsPattern[]]:=Block[{
 		"nucleus"->nuc,
 		"gyro"->gyro
 		};
-		
+
 	(*output*)
 	{dn,hstruc}
 ]
@@ -446,7 +446,7 @@ SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
 	nsamp, bandwidth, linewidth, output, phase, shape, shift, dt, devolve, di, time, decay, val, fids, samp, 
 	valD, matU, nSpins2, Fxy, Ixy, met, delay, te
 	},
-	
+
 	nsamp = OptionValue[ReadoutSamples];
 	bandwidth = OptionValue[ReadoutBandwidth];
 	linewidth = OptionValue[Linewidth];
@@ -455,7 +455,7 @@ SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
 	phase = OptionValue[ReadoutPhase];
 	shape = OptionValue[LinewidthShape];
 	shift = OptionValue[CenterFrequency];
-	
+
 	(*Get hamiltonian info*)
 	{valD, matU, nSpins2, Fxy, Ixy} = {"Hval","Hvec","nSpins2","wFxy","wIxy"}/.ham;
 	(*evlolve matrix*)
@@ -463,12 +463,12 @@ SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
 	devolve = SimEvolveM[matU, valD, dt];
 	(*initial signal and spin state*)
 	di = din;
-	
+
 	(*get the time*)
 	time = dt (Range[nsamp]-1);	
 	{met, delay, te} = If[StringQ[met], {met, 0, Max[time]}, If[Length[met] == 2, {met[[1]], met[[2]], Max[time]}, met]];
 	time = If[met === "Echo", Abs[0.5te - (time + delay)], time + delay];
-	
+
 	(*shape and signal definition*)
 	decay = If[linewidth===0, 1, 
 		Switch[shape,
@@ -476,16 +476,16 @@ SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
 		"Gaussian", Exp[-(time linewidth)^2],
 		"Voigt", Exp[-(time linewidth) -(time linewidth)^2]
 	]];
-	
+
 	val = (1./nSpins2) decay Exp[I phase Degree];
-	
+
 	(*perform readout and evolve spin states by dt*)
 	fids = val Table[
 		samp = If[output === "all", Tr[(di . Fxy)], (Tr[di . #])&/@Ixy];
 		di = Chop[devolve . di . ConjugateTranspose[devolve]];
 		samp
 	,{i,1,nsamp}];
-	
+
 	(*output*)
 	If[output === "each", {Transpose[fids], di}, {fids, di}]
 ]
@@ -559,7 +559,7 @@ SyntaxInformation[GetSpinSystem]={"ArgumentsPattern" -> {_, OptionsPattern[]}};
 GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, scale, j, j1, j2, cf},
 
 	cf = OptionValue[CenterFrequency];
-	
+
 	Switch[name,
 		"PPA",
 		(*single spin system*)
@@ -626,7 +626,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={1};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		
+
 		"PE",
 		(*single spin system*)
 		names={"A"};
@@ -715,8 +715,6 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={1,1};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		
-		
 		"glu",
 		(*single spin system*)
 		names={"A","B","C","D","E"};
@@ -780,8 +778,8 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={1,1,1,1,1,1};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		
-		
+
+
 		"fatAll",
 		(*single spin system*)
 		names={"A","B","C","D","E","J"};
@@ -799,8 +797,8 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={9,66,6,12,6,6};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		
-		
+
+
 		"fatGly",
 		(*single spin system*)
 		names={"G","G","ham","ham","I"};
@@ -895,7 +893,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		sysJ=SysToMat[sysJ,n];
 		scale=3 2 6{1}(*3 chains with 6 normal met with 2 ham*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
-		
+
 		,
 		"water",
 		names={"A"};
@@ -907,7 +905,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		sysJ=SysToMat[sysJ,n];
 		scale=1(*3 chains with 6 normal met with 2 ham*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
-		
+
 		,
 		"HDO",
 		names={"A"};

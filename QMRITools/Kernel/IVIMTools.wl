@@ -235,52 +235,52 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 		depthD,dirD,dirB,func,dat,dat0,datn,rl,rr,ivim, mdat, sol, fitd, start, funcf,
 		s0s, frin1, frin2, dcin, pdcin1, pdcin2, funcin, fixrule,cons,dccon,pdccon, fpars, mapfun, out
 	},
-	
+
 	Clear[bm, bm1, bm2, bm3, bm4, bm5, bm6, s0, f1, f2, dc, pdc1, pdc2];
-	
+
 	(*data checks*)
 	depthD = ArrayDepth[data];
 	dirD = If[depthD == 4, Length[data[[1]]], Length[data]];
 	dirB = Length[binp];
-	
+
 	(*check if data is 4D,3D,2D or 1D*)
 	If[depthD > 4, Return[Message[IVIMCalc::data, ArrayDepth[data]]]];
 	(*check if bmat is the same length as data*)
 	If[dirB != dirD, Return[Message[IVIMCalc::bvec, dirD, dirB]]];
-	
+
 	(*perform tensor fit*)
 	tensFit = OptionValue[IVIMTensFit];
 	components = Clip[OptionValue[IVIMComponents], {1, 3}];
 	fixed = OptionValue[IVIMFixed];
 	constrained = OptionValue[IVIMConstrained];
 	method = OptionValue[Method];
-	
+
 	{{s0min, s0max}, {fmin, fmax}, {dcmin, dcmax}, {pdc1min, pdc1max}, {pdc2min, pdc2max}} = OptionValue[IVIMConstrains];
-	
+
 	(*running parameters*)
 	bmdc = If[tensFit, 
 		bm = bm1 + bm2 + bm3; {bm1, bm2, bm3, bm4, bm5, bm6}.{xx, yy, zz, xy, xz, yz}, 
 		Clear[bm]; bm* dc
 	];
-	
+
 	dat = N[If[depthD == 4, Transpose[data], data]];
 	dat0 = DeleteCases[Flatten[dat[[{1}]]], 0.];
 	mdat=Mean[dat0];
 	datn = If[dat0 === {}, dat, dat/mdat];
-	
+
 	rl = RotateRight[Range[depthD]];
 	rr = RotateLeft[Range[depthD]];
-	
+
 	(*contruct bvals for fit*)
 	bin = If[!tensFit, If[VectorQ[binp], binp, Abs[Total[#[[1 ;; 3]]]] & /@ binp], binp];
-	
+
 	(*initial values for fit*)
 	Switch[components,
 		1, f1 = f2 = 0; {s0s,dcin} = init;,
 		2, f2 = 0; {s0s, frin1, dcin, pdcin1} = init;,
 		3, Clear[f2]; {s0s, frin1, frin2, dcin, pdcin1, pdcin2} = init;
 	];
-	
+
 	(*initial fit values*)
 	funcin = Join[
 		(*initialization for fractions*)
@@ -297,7 +297,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 			]
 		] 
 	];
-	
+
 	(*fix the fixed parameters*)
 	fixrule = If[components==1,
 		{}(*no fixed parameters if one component*),
@@ -305,10 +305,10 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 			True,{pdc1 -> pdcin1, pdc2 -> pdcin2}[[1 ;; components - 1]](*fix all components*),
 			"One", {pdc2 -> pdcin2}(*only fix 2nd component*),
 			_, {}(*fix no components*)]];
-	
+
 	(*generate fix fuctions*)
 	func =Chop[Simplify[(s0*((((1 - f1 - f2)*Exp[-bmdc]) + (f1* Exp[-bm pdc1]) + (f2* Exp[-bm pdc2]))))]] /. fixrule;
-	
+
 	(*constrains for fit*)
 	cons = If[constrained,
 		(*constrains dc and tens*)
@@ -326,42 +326,42 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 		(*if 3 components pdc1 and/or pdc2 also need to be constrained dc < pdc1 < pdc(in)2*)
 		If[components == 3 && (fixed === False), AppendTo[pdccon, pdc1 < pdc2]];
 		If[components == 3 && (fixed === "One"), AppendTo[pdccon, pdc1 < pdcin2]];
-		
+
 		fcon=If[components==1,{},{fmin < f1 < fmax, fmin < f2 < fmax}[[1 ;; components - 1]]];
 		(*all constrains together*)
 		Join[{(f1 + f2) < 1}, fcon, dccon, pdccon],
-		
+
 		(*no constrains*)
 		{}
 	];
-	
+
 	(*running parameters*)
 	fpars = If[tensFit, {bm1, bm2, bm3, bm4, bm5, bm6}, {bm}];
-	
+
 	(*fit function with of without constrains*)
 	funcf = If[constrained,{func,cons},func];
-	
+
 	(*define output*)
 	out=Join[
 		{s0, f1, f2}[[1 ;; components]],
 		If[tensFit, {{xx, yy, zz, xy, xz, yz}}, {dc}], 
 		If[components==1,{},{pdc1, pdc2}[[1 ;; components - 1]]]
 		] /. fixrule;
-	
+
 	(*perform fit*)
 	j=i=0;
-	
+
 	mapfun=If[OptionValue[Parallelize]&&depthD>1,
 		ParallelEvaluate[j=0];
 		SetSharedVariable[i];
 		DistributeDefinitions[bin, funcin, fitd, funcf, start, fpars, method, out];
 		ParallelMap,
 		Map];
-	
+
 	If[OptionValue[MonitorIVIMCalc]&&depthD>1,
 		PrintTemporary[ProgressIndicator[Dynamic[i],{0,Total@Flatten@Unitize[dat0]-1000}]]
 		];
-	
+
 	ivim = Quiet@Transpose[mapfun[(
 			s0s = #[[1]];
 			If[N[#] == #*0. || s0s == 0.,
@@ -376,7 +376,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 				out /. sol
 			]
 		)&,Transpose[datn, rl], {depthD - 1}], rr];
-		
+
 	ivim[[1]]=ivim[[1]]*mdat;
 	ivim
 ]
@@ -401,7 +401,7 @@ IVIMFunction[pars_, fun_] := Block[{
 		"Exp", ff1 = Exp[Global`f1]/(1 + Exp[Global`f1]); ff2 = Exp[Global`f2]/(1 + Exp[Global`f2]); 
 		fdc = Exp[Global`dc]; fpdc1 = Exp[Global`pdc1]; fpdc2 = Exp[Global`pdc2];
 	];
-	
+
 	func = Switch[pars,
 		2, Simplify[Global`s0*(((1 - ff1)*Exp[-Global`bm fdc]) + (ff1*Exp[-Global`bm fpdc1]))],
 		3, Simplify[
@@ -430,67 +430,67 @@ BayesianIVIMFit2[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Mod
 	useDat, thetai, fix, ynf, fixSD, out1, out2, h1, solution,mask,
 	fitpar, deviation, con2, con2e, mui, covi, mmu, mcov,post, dep
 	},
-  
-  con2 = OptionValue[FitConstrains];
-  con2e = ThetaConvi[con2];
-  fix = OptionValue[FixPseudoDiff];
-  fixSD = OptionValue[FixPseudoDiffSD];
-  
-  dep=ArrayDepth[data];
-  
-  mask = Mask[Switch[dep,3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
 
-  fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con2}]];
-  fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con2e, mask], fitpar];
-	 	
-  useDat = MaskData[data, mask];
-  
-  {thetai,post} = DataToVector[fitpar,mask];
-  thetai=Transpose@thetai;
-  
-  ynf = First@DataToVector[Switch[dep,3,data,4,Transpose@data],mask];
-  
-  If[fix, 
-  	thetai[[3]] = RandomVariate[NormalDistribution[Mean[thetai[[3]]], fixSD], Length[thetai[[3]]]]
-  	];
-  
-  {mui, covi} = MeanCov[thetai];
-  
-  (*show the pre fit distribution*)
-  Print[Dimensions[ynf],Dimensions[thetai]];
-  Print[h1 = HistogramPar[thetai, {con2e, 75, mui, covi}, 3, Gray, {0.1, 0.1, 0.1}]];    
+	con2 = OptionValue[FitConstrains];
+	con2e = ThetaConvi[con2];
+	fix = OptionValue[FixPseudoDiff];
+	fixSD = OptionValue[FixPseudoDiffSD];
 
-  out2 = BayesianIVIMFitI2[thetai, bval, ynf, FilterRules[{opts}, Options[BayesianIVIMFitI2]]];
-  solution = out2[[2]];
-  deviation = out2[[3]];
-  out1 = Chop[VectorToData[Transpose@ThetaConv[solution], post]];
-  
-  {mmu, mcov} = MeanCov[solution];
-  Print[Column[{
-	  (*h1,*)
-	  HistogramPar[solution, {con2e, 75, mmu, mcov}, 3, Blue, {0.1, 0.2, 0.2}],
-	  UncertainPlot[solution, deviation, con2e, 5 Median[#] & /@ deviation]
-	  }]
-	];
-  
-  If[OptionValue[OutputSamples],{out1, out2},out1]
-  ]
+	dep=ArrayDepth[data];
+
+	mask = Mask[Switch[dep,3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
+
+	fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con2}]];
+	fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con2e, mask], fitpar];
+
+	useDat = MaskData[data, mask];
+
+	{thetai,post} = DataToVector[fitpar,mask];
+	thetai=Transpose@thetai;
+
+	ynf = First@DataToVector[Switch[dep,3,data,4,Transpose@data],mask];
+
+	If[fix, 
+		thetai[[3]] = RandomVariate[NormalDistribution[Mean[thetai[[3]]], fixSD], Length[thetai[[3]]]]
+		];
+
+	{mui, covi} = MeanCov[thetai];
+
+	(*show the pre fit distribution*)
+	Print[Dimensions[ynf],Dimensions[thetai]];
+	Print[h1 = HistogramPar[thetai, {con2e, 75, mui, covi}, 3, Gray, {0.1, 0.1, 0.1}]];    
+
+	out2 = BayesianIVIMFitI2[thetai, bval, ynf, FilterRules[{opts}, Options[BayesianIVIMFitI2]]];
+	solution = out2[[2]];
+	deviation = out2[[3]];
+	out1 = Chop[VectorToData[Transpose@ThetaConv[solution], post]];
+
+	{mmu, mcov} = MeanCov[solution];
+	Print[Column[{
+		(*h1,*)
+		HistogramPar[solution, {con2e, 75, mmu, mcov}, 3, Blue, {0.1, 0.2, 0.2}],
+		UncertainPlot[solution, deviation, con2e, 5 Median[#] & /@ deviation]
+		}]
+		];
+
+	If[OptionValue[OutputSamples],{out1, out2},out1]
+	]
 
 Options[BayesianIVIMFitI2] = {ChainSteps -> {20000, 1000, 10}, UpdateStep -> {0.5, 0.1, 0.5}};
 
 BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
-	 j, w, w1, w2, w3, wup1, wup2, wup3, yty, t1, t2, mu, cov, theta, nvox, nbval,
-	 t2s, ttot, t2m, fj, fjt, dj, djt, pdj, pdjt, muj, covj, icovj, gj, gjt, 
-	 bool1, bool2, bool3, boolf, rU, steps, wstart, nit, burn, sow
-	 },
-	
+		j, w, w1, w2, w3, wup1, wup2, wup3, yty, t1, t2, mu, cov, theta, nvox, nbval,
+		t2s, ttot, t2m, fj, fjt, dj, djt, pdj, pdjt, muj, covj, icovj, gj, gjt, 
+		bool1, bool2, bool3, boolf, rU, steps, wstart, nit, burn, sow
+	},
+
 	{nit, burn, sow} = OptionValue[ChainSteps];
 	steps = nit + burn;
 	wstart = OptionValue[UpdateStep];
 	nvox = Length[thetai[[1]]];
 	nbval = Length[bval];
 	ttot={};   
-	
+
 	t1 = First[Timing[
 		j = 0;
 		(*number of voxels and bvals*)
@@ -498,7 +498,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 		(*define yn*)
 		yty = Dotc1[yn];
 		(*rU := RandomReal[1, nvox];*)
-		
+
 		(*step 2 - initialize mu(j) and cov(j) for j=1 - thetaj={fj,dj,pdj}*)
 		{fj, dj, pdj} = thetai;
 		{muj, covj} = MeanCov[thetai];
@@ -508,21 +508,21 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 		Npdc(i) needed to update w in first 500 burn steps*)
 		{w1, w2, w3} = Transpose[ConstantArray[wstart, {nvox}]];
 		wup1 = wup2 = wup3 = ConstantArray[0, {nvox}];
-		
+
 		(*step 3 - further steps of the MCMC j= 2, 3, ... *)
 		Monitor[
-		 {mu, cov, theta, t2s} = Last[Reap[
-			  Do[t2 = First[Timing[
+		{mu, cov, theta, t2s} = Last[Reap[
+			Do[t2 = First[Timing[
 					j++;
-					
+
 					(*step 3a - Sampel mu(j) [A2] for j=2*)
 					(*step 3b - Sampel covu(j) [A3] for j=2*)
 					{muj, covj, icovj} = RandomGibsSample[{fj, dj, pdj}, covj, nvox];
 										
 					(*steps 3c "loop" over the voxels i, perform as vector for each of the parameters *)
-					
+
 					(*step 3c-i - define theta(j) - {fj,dj,pdj}=thetaj;*)
-					
+
 					(*step 3c-ii - ramom sample frtmp*)
 					(*comp 1*)
 					fjt = RandomNormalCf[fj, w1];
@@ -537,7 +537,7 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 					bool2 = Quiet@AlphaC[{fj, dj, pdj}, {fj, djt, pdj}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
 					gj = BoolAdd[bool2, gj, gjt];
 					dj = BoolAdd[bool2, dj, djt];
-					
+
 					(*step 3c-iv - ramom sample pdctmp *)
 					pdjt = RandomNormalCd[pdj, w3];
 					gjt = Transpose@FunceC2l[fj, dj, pdjt, bval];
@@ -548,53 +548,50 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 					(*flip and clip if dc>pdc1 *)
 					boolf = BooleC[dj, pdj];
 					{fj, dj, pdj} = {(-2 boolf + 1) fj, BoolAdd[boolf, dj, pdj], BoolAdd[boolf, pdj, dj]};
-					
+
 					(*check update wup*)
 					If[j < 500, 
 						wup1 += bool1; wup2 += bool2; wup3 += bool3;
-					 (*each 100th step reset wup*)
-					 If[MemberQ[{100, 200, 300, 400, 500}, j],
-					  w = {w1, w2, w3} = {w1, w2, w3} 101/(2(101 - {wup1, wup2, wup3}));
-					  wup1 = wup2 = wup3 = ConstantArray[0, {nvox}];
-					  ]];
+					(*each 100th step reset wup*)
+					If[MemberQ[{100, 200, 300, 400, 500}, j],
+						w = {w1, w2, w3} = {w1, w2, w3} 101/(2(101 - {wup1, wup2, wup3}));
+						wup1 = wup2 = wup3 = ConstantArray[0, {nvox}];
+					]];
 					]];(*close timing2*)
-					
+
 				(*sow solution every x steps*)
 				If[Mod[j - 1, sow] == 0 && j > burn,
-				 Sow[muj, 1]; 
-				 Sow[covj, 2]; 
-				 Sow[{fj, dj, pdj}, 3]; 
-				 Sow[t2, 4];
-				 ];
-				 
+				Sow[muj, 1]; 
+				Sow[covj, 2]; 
+				Sow[{fj, dj, pdj}, 3]; 
+				Sow[t2, 4];
+				];
+
 				t2m = If[j < 20, Mean[AppendTo[ttot, t2]], Mean[Drop[AppendTo[ttot, t2], 1]]];
-				 
+
 				, {steps}];(*close Do loop*)
-			  ]];(*close Reap*)
-		 
-		 (*monitor stuff*)
-		 
-		 
-		 , Row[{
+			]];(*close Reap*)
+
+		(*monitor stuff*)
+		, Row[{
 			{(steps) - j, NumberForm[t2, {4, 3}], 
-			 NumberForm[Round[(((steps) - j) t2m)/60, .1], {4, 1}]},
+			NumberForm[Round[(((steps) - j) t2m)/60, .1], {4, 1}]},
 			"     mu:  ", NumberForm[#, {5, 2}] & /@ muj // MatrixForm, 
 			",", 
 			NumberForm[#, {5, 2}] & /@ ({100, 1000, 1000} ThetaConv[muj]) // MatrixForm,
 			"     cov:  ", NumberForm[#, {5, 2}] & /@ # & /@ covj // MatrixForm
 			}]
-		 ](*close monitor*)
+		](*close monitor*)
 		]];(*close Timing1*)
-	
+
 	Print[PlotPerformance[{steps, nvox}, {t1, t2s}, {w, wstart}]];
-	
+
 	{
-	 theta,
-	 Table[Mean[theta[[All, i]]], {i, Length[theta[[1]]]}],
-	 Table[StandardDeviation[theta[[All, i]]], {i, Length[theta[[1]]]}],
-	 cov, mu, Length[theta]}
-	
-	];
+	theta,
+	Table[Mean[theta[[All, i]]], {i, Length[theta[[1]]]}],
+	Table[StandardDeviation[theta[[All, i]]], {i, Length[theta[[1]]]}],
+	cov, mu, Length[theta]}
+];
 
 
 
@@ -609,73 +606,73 @@ Options[BayesianIVIMFit3] = {ChainSteps -> {20000, 1000, 10},
 
 SyntaxInformation[BayesianIVIMFit3] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := 
- Module[{fitpar,con3,mask,
-	useDat, thetai, ynf, fix, fixSD, out1, out2, h1, dep,
-	solution, deviation, con3e, mui, covi, mmu, mcov,post},
-  
-  con3 = OptionValue[FitConstrains];
-  con3e = ThetaConvi[con3];
-  fix = OptionValue[FixPseudoDiff];
-  fixSD = OptionValue[FixPseudoDiffSD];
-  
-  dep=ArrayDepth[data];
-  
-  mask = Mask[Switch[dep,3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
-  
-  fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con3}]];
-  fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con3e, mask], fitpar];
-  
-  useDat = MaskData[data, mask];
-  
-  {thetai,post} = DataToVector[fitpar,mask];
-  thetai=Transpose@thetai;
-  
-  ynf = First@DataToVector[Switch[dep,3,data,4,Transpose@data],mask];
-	 
-  If[fix,
-	thetai[[4]] = RandomVariate[NormalDistribution[Mean[thetai[[4]]], fixSD], Length[thetai[[4]]]];
-	thetai[[5]] = RandomVariate[NormalDistribution[Mean[thetai[[5]]], fixSD], Length[thetai[[5]]]];
-	];
-  
-  {mui, covi} = MeanCov[thetai];
-  
-  (*show the pre fit distribution*)
-  Print[Dimensions[ynf],Dimensions[thetai]];
-  Print[h1 = HistogramPar[thetai, {con3e, 75, mui, covi}, 3, Gray, {0.1, 0.1, 0.1, 0.1, 0.1}]];
-	 
-  out2 = BayesianIVIMFitI3[thetai, bval, ynf, FilterRules[{opts}, Options[BayesianIVIMFitI3]]];
-  solution = out2[[2]];
-  deviation = out2[[3]];
-  out1 = Chop[VectorToData[Transpose@ThetaConv[solution], post]];
+BayesianIVIMFit3[data_, bval_, fitpari_, maski_, opts : OptionsPattern[]] := Module[{fitpar,con3,mask,
+		useDat, thetai, ynf, fix, fixSD, out1, out2, h1, dep,
+		solution, deviation, con3e, mui, covi, mmu, mcov,post
+	},
 
-  {mmu, mcov} = MeanCov[solution];
-  Print[Column[{
-	  (*h1,*)
-	  HistogramPar[solution, {con3e, 75, mmu, mcov}, 3, Blue, {0.1, 0.1, 0.1, 0.1, 0.1}],
-	  UncertainPlot[solution, deviation, con3e, 5 Median[#] & /@ deviation]
-	  }]
+	con3 = OptionValue[FitConstrains];
+	con3e = ThetaConvi[con3];
+	fix = OptionValue[FixPseudoDiff];
+	fixSD = OptionValue[FixPseudoDiffSD];
+
+	dep=ArrayDepth[data];
+
+	mask = Mask[Switch[dep,3,Mean[data],4,Mean@Transpose@data], 0.000001]maski;
+
+	fitpar=ThetaConvi[MapThread[N[mask Clip[#1, #2]] &, {fitpari, con3}]];
+	fitpar=If[OptionValue[CorrectPar], CorrectParMap[fitpar, con3e, mask], fitpar];
+
+	useDat = MaskData[data, mask];
+
+	{thetai,post} = DataToVector[fitpar,mask];
+	thetai=Transpose@thetai;
+
+	ynf = First@DataToVector[Switch[dep,3,data,4,Transpose@data],mask];
+
+	If[fix,
+		thetai[[4]] = RandomVariate[NormalDistribution[Mean[thetai[[4]]], fixSD], Length[thetai[[4]]]];
+		thetai[[5]] = RandomVariate[NormalDistribution[Mean[thetai[[5]]], fixSD], Length[thetai[[5]]]];
 	];
-	
-  If[OptionValue[OutputSamples],{out1, out2},out1]
-  ]
+
+	{mui, covi} = MeanCov[thetai];
+
+	(*show the pre fit distribution*)
+	Print[Dimensions[ynf],Dimensions[thetai]];
+	Print[h1 = HistogramPar[thetai, {con3e, 75, mui, covi}, 3, Gray, {0.1, 0.1, 0.1, 0.1, 0.1}]];
+
+	out2 = BayesianIVIMFitI3[thetai, bval, ynf, FilterRules[{opts}, Options[BayesianIVIMFitI3]]];
+	solution = out2[[2]];
+	deviation = out2[[3]];
+	out1 = Chop[VectorToData[Transpose@ThetaConv[solution], post]];
+
+	{mmu, mcov} = MeanCov[solution];
+	Print[Column[{
+		(*h1,*)
+		HistogramPar[solution, {con3e, 75, mmu, mcov}, 3, Blue, {0.1, 0.1, 0.1, 0.1, 0.1}],
+		UncertainPlot[solution, deviation, con3e, 5 Median[#] & /@ deviation]
+		}]
+	];
+
+	If[OptionValue[OutputSamples],{out1, out2},out1]
+	]
 
 Options[BayesianIVIMFitI3] = {ChainSteps -> {20000, 1000, 10}, UpdateStep -> {0.5, 0.5, 0.2, 0.5, 0.5}};
-	
+
 BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 		j, w, w1, w2, w3, w4, w5, wup1, wup2, wup3, wup4, wup5, yty, 
 		t1, t2, ttot, t2m, mu, cov, muj, covj, icovj, theta, rU, t2s, nvox, nbval,
 		f1jc, f2jc, f1j, f2j, f1jt, f2jt, dj, djt, pd1j, pd2j, pd1jt, pd2jt, gj, 
 		gjt, bool1, bool2, bool3, bool4, bool5, boolf, steps, wstart, nit, burn, sow
 	},
-	
+
 	{nit, burn, sow} = OptionValue[ChainSteps];
 	steps = nit + burn;
 	wstart = OptionValue[UpdateStep];
 	nvox = Length[thetai[[1]]];
 	nbval = Length[bval];
 	ttot={};
-	
+
 	t1 = First[Timing[
 		j = 0;
 		(*number of voxels and bvals*)
@@ -683,7 +680,7 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 		(*define yn*)
 		yty = Dotc1[yn];
 		(*rU := RandomReal[1, nvox];*)
-		
+
 		(*step 2 - initialize mu(j) and cov(j) for j=1 - thetaj={fj,dj,pdj}*)
 		{f1j, f2j, dj, pd1j, pd2j} = thetai;
 		{muj, covj} = MeanCov[thetai];
@@ -693,19 +690,19 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 		Npdc(i) needed to update w in first 500 burn steps*)
 		{w1, w2, w3, w4, w5} = Transpose[ConstantArray[wstart, {nvox}]];
 		wup1 = wup2 = wup3 = wup4 = wup5 = ConstantArray[0, {nvox}];
-		
+
 		(*step 3 - further steps of the MCMC j= 2, 3, ... *)
 		Monitor[
 			{mu, cov, theta, t2s} = Last[Reap[
 				Do[t2 = First[Timing[
 					j++;
-					
+
 					(*step 3a - Sampel mu(j) [A2] for j=2*)
 					(*step 3b - Sampel covu(j) [A3] for j=2*)
 					{muj, covj, icovj} = RandomGibsSample[{f1j, f2j, dj, pd1j, pd2j}, covj, nvox];
-					
+
 					(*steps 3c "loop" over the voxels i, perform as vector for each of the parameters *)
-					
+
 					(*step 3c-i - define theta(j) - {fj,dj,pdj}=thetaj;*)
 
 					(*step 3c-ii - ramom sample frtmp*)
@@ -715,21 +712,21 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 					bool1 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1jt, f2j, dj,  pd1j, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
 					gj = BoolAdd[bool1, gj, gjt];
 					f1j = BoolAdd[bool1, f1j, f1jt];
-					
+
 					(*comp 2*)
 					f2jt = RandomNormalCf[f2j, w2];
 					gjt = Transpose@FunceC3l[f1j, f2jt, dj, pd1j, pd2j, bval];
 					bool2 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1j, f2jt, dj, pd1j, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
 					gj = BoolAdd[bool2, gj, gjt];
 					f2j = BoolAdd[bool2, f2j, f2jt];
-					
+
 					(*step 3c-iii - ramom sample dctmp*)
 					djt = RandomNormalCd[dj, w3];
 					gjt = Transpose@FunceC3l[f1j, f2j, djt, pd1j, pd2j, bval];
 					bool3 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1j, f2j, djt, pd1j, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
 					gj = BoolAdd[bool3, gj, gjt];
 					dj = BoolAdd[bool3, dj, djt];
-					
+
 					(*step 3c-iv - ramom sample pdctmp *)
 					(*comp 1*)
 					pd1jt = RandomNormalCd[pd1j, w4];
@@ -737,14 +734,14 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 					bool4 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1j, f2j, dj, pd1jt, pd2j}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
 					gj = BoolAdd[bool4, gj, gjt];
 					pd1j = BoolAdd[bool4, pd1j, pd1jt];
-					
+
 					(*comp 2*)
 					pd2jt = RandomNormalCd[pd2j, w5];
 					gjt = Transpose@FunceC3l[f1j, f2j, dj, pd1j, pd2jt, bval];
 					bool5 = AlphaC[{f1j, f2j, dj, pd1j, pd2j}, {f1j, f2j, dj, pd1j, pd2jt}, muj, icovj, yn, yty, gj, gjt, nbval, nvox];
 					gj = BoolAdd[bool5, gj, gjt];
 					pd2j = BoolAdd[bool5, pd2j, pd2jt];
-					
+
 					(*flip if dc>pdc1 and if pdc1>pdc2*)
 					boolf = BooleC[dj, pd1j];
 					f1jc = FConvf[f1j];
@@ -764,7 +761,7 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 						]
 					];
 				]];(*close Timing2*)
-				
+
 				(*sow solution every x steps*)
 				If[Mod[j - 1, sow] == 0 && j > burn, 
 					Sow[muj, 1]; 
@@ -772,12 +769,12 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 					Sow[{f1j, f2j, dj, pd1j, pd2j}, 3]; 
 					Sow[t2, 4];
 				];
-				
+
 				t2m = If[j < 20, Mean[AppendTo[ttot, t2]], Mean[Drop[AppendTo[ttot, t2], 1]]];
-				
+
 				, {steps}];(*close Do loop*)
 			]];(*close Reap*)
-		
+
 			(*monitor stuff*)
 			, Row[{
 				{steps - j, NumberForm[t2, {4, 3}], 
@@ -789,9 +786,9 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 			}]
 		](*close monitor*)
 	]];(*close Timing*)
-		
+
 	Print[PlotPerformance[{steps, nvox}, {t1, t2s}, {w, wstart}]];
-	
+
 	{
 		theta,
 		Table[Mean[theta[[All, i]]], {i, Length[theta[[1]]]}],
@@ -836,7 +833,7 @@ ClipC = Compile[{{theta, _Real, 2}, {trans, _Integer, 0}}, Block[{chk1, out},
 		(*chk1=chk1*(1-BooleC1[theta[[5]],-0.0001]);*)
 		out = DeleteCases[chk1*Transpose[theta], {0., 0., 0., 0., 0.}];
 	];
-	
+
 	If[trans == 1, Transpose[out], out]
 ], Parallelization -> True, RuntimeOptions -> "Speed"];
 
@@ -916,7 +913,7 @@ Dotc1 = Compile[{{vec, _Real, 1}}, vec.vec,
 	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
 MatDot2 = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}, {mat, _Real, 2}}, (vec1.mat.vec1) - (vec2.mat.vec2),
 	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
-	
+
 AlphaC = Compile[{
 		{theta, _Real, 2}, {thetat, _Real, 2}, {mu, _Real, 1},
 		{icov, _Real, 2}, {y, _Real, 2}, {yty, _Real, 1}, {g, _Real, 2}, 
@@ -1038,57 +1035,56 @@ HistogramPar[dat_, {con_, bin_}, sel_, col_, ran_: .5] :=Block[{mu,cov},
 	HistogramPar[dat, {con, bin, mu, cov}, sel, col, ran]
 	];
 
-HistogramPar[dat_, {con_, bin_, mu_, cov_}, sel_, col_, ran_: .5] := 
- Module[{label, data, ticks, tickst, tickste, len, ss, hist, pdf, binsize,x},
-  If[Length[dat] != Length[con], Return[]];
-  
-  binsize = (-Subtract @@ #/bin) & /@ con;
-  
-  tickst = {{0.001, 0.01, 0.1, 0.5, 0.9, 0.99, 0.999}, {0.1, 0.2, 0.5,
-		1, 2, 3}, {0.5, 1, 2, 5, 10, 20, 50, 100, 500}};
-  tickste = ThetaConvi[{1., .001, .001} tickst];
-  
-  data = DeleteCases[Flatten[#], 0.] & /@ dat;
-  (*If[sel == 1, 
-  	DeleteCases[Flatten[#], 0.] & /@ dat, 
-	 DeleteCases[Flatten[#], 0.(*Indeterminate*)] & /@ dat
-	 ];*)
-  
-  label = {{"f", "D", "pD"}, {"f", "d", "pd"}, {"f  (no units)", 
-		"D  (\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \
-\!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s)", 
-		"pD  (\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \
-\!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s)"}}[[sel]];
-  len = Length[data];
-  
-  hist = (
-		ss = If[len == 5, {1, 1, 2, 3, 3}[[#]], #];
-		
-		ticks = (If[sel == 3, Thread[{tickste[[ss]], tickst[[ss]]}], 
-			Automatic]);
-		
-		Histogram[
-		 data[[#]],
-		 HistRange[con[[#]], bin], "Probability",
-		 AxesOrigin -> {con[[#, 1]], 0},
-		 Frame -> {{True, False}, {True, False}}, 
-		 FrameLabel -> {label[[ss]], "Probability"},
-		 FrameTicks -> {{Automatic, Automatic}, {ticks, Automatic}}, 
-		 PlotRange -> {0, ran[[#]]},
-		 ChartStyle -> Directive[{col, EdgeForm[None], Opacity[0.9]}], 
-		 LabelStyle -> Directive[{Bold, 12, FontFamily -> "Helvetica"}],
-		 PerformanceGoal -> "Speed", ImageSize -> 300
-		 ]
-		) & /@ Range[len];
-  
-  pdf = If[mu === 0 && cov === 0, 
-  	ConstantArray[Graphics[{}], {len}],
-	 Plot[PDF[NormalDistribution[mu[[#]], Sqrt[cov[[#, #]]]], x]* binsize[[#]], {x, con[[#, 1]], con[[#, 2]]}, PlotStyle -> {Thick, Red}, PlotRange -> Full] & /@ Range[len]
-	 ];
-  
-  GraphicsRow[MapThread[Show[#1, #2] &, {hist, pdf}], 
-	ImageSize -> len*300, Spacings -> 0]
-  ]
+HistogramPar[dat_, {con_, bin_, mu_, cov_}, sel_, col_, ran_: .5] := Module[{label, data, ticks, tickst, tickste, len, ss, hist, pdf, binsize,x},
+	If[Length[dat] != Length[con], Return[]];
+
+	binsize = (-Subtract @@ #/bin) & /@ con;
+
+	tickst = {{0.001, 0.01, 0.1, 0.5, 0.9, 0.99, 0.999}, {0.1, 0.2, 0.5,
+			1, 2, 3}, {0.5, 1, 2, 5, 10, 20, 50, 100, 500}};
+	tickste = ThetaConvi[{1., .001, .001} tickst];
+
+	data = DeleteCases[Flatten[#], 0.] & /@ dat;
+	(*If[sel == 1, 
+		DeleteCases[Flatten[#], 0.] & /@ dat, 
+		DeleteCases[Flatten[#], 0.(*Indeterminate*)] & /@ dat
+		];*)
+
+	label = {{"f", "D", "pD"}, {"f", "d", "pd"}, {"f  (no units)", 
+			"D  (\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \
+	\!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s)", 
+			"pD  (\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \
+	\!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s)"}}[[sel]];
+	len = Length[data];
+
+	hist = (
+			ss = If[len == 5, {1, 1, 2, 3, 3}[[#]], #];
+
+			ticks = (If[sel == 3, Thread[{tickste[[ss]], tickst[[ss]]}], 
+				Automatic]);
+
+			Histogram[
+			data[[#]],
+			HistRange[con[[#]], bin], "Probability",
+			AxesOrigin -> {con[[#, 1]], 0},
+			Frame -> {{True, False}, {True, False}}, 
+			FrameLabel -> {label[[ss]], "Probability"},
+			FrameTicks -> {{Automatic, Automatic}, {ticks, Automatic}}, 
+			PlotRange -> {0, ran[[#]]},
+			ChartStyle -> Directive[{col, EdgeForm[None], Opacity[0.9]}], 
+			LabelStyle -> Directive[{Bold, 12, FontFamily -> "Helvetica"}],
+			PerformanceGoal -> "Speed", ImageSize -> 300
+			]
+			) & /@ Range[len];
+
+	pdf = If[mu === 0 && cov === 0, 
+		ConstantArray[Graphics[{}], {len}],
+		Plot[PDF[NormalDistribution[mu[[#]], Sqrt[cov[[#, #]]]], x]* binsize[[#]], {x, con[[#, 1]], con[[#, 2]]}, PlotStyle -> {Thick, Red}, PlotRange -> Full] & /@ Range[len]
+		];
+
+	GraphicsRow[MapThread[Show[#1, #2] &, {hist, pdf}], 
+		ImageSize -> len*300, Spacings -> 0]
+	]
 
 HistRange[rri_, n_] := Module[{rr}, rr = If[rri[[2]] > 0, {1, 1} rri, {1, 1} rri]; {rr[[1]], rr[[2]], (rr[[2]] - rr[[1]])/n}];
 
@@ -1101,28 +1097,29 @@ SyntaxInformation[PlotPerformance] = {"ArgumentsPattern" -> {_, _, _}};
 
 PlotPerformance[{nit_, nvox_}, {t1_, t2s_}, {w_, wstart_}] := Column[{
 	Row[{nit, " steps: ", Round[t1/60, .1], 
-	  " min - each step takes: ", Round[t1/nit, .001], 
-	  " s - full chain (21000) takes: ", 
-	  Round[(21000/nit) (t1/60), .1], " min"}]
+		" min - each step takes: ", Round[t1/nit, .001], 
+		" s - full chain (21000) takes: ", 
+		Round[(21000/nit) (t1/60), .1], " min"}]
 	,
 	(*GraphicsRow[MapThread[Show[
-		 ListPlot[#1, AspectRatio -> .1 Length[wstart], 
-		  PlotRange -> All, PlotStyle -> {Black}],
-		 Plot[#2, {x, 0, nvox}, PlotStyle -> {Red, Thick}]
-		 ] &, {w, wstart}], ImageSize -> 1000]
+			ListPlot[#1, AspectRatio -> .1 Length[wstart], 
+			PlotRange -> All, PlotStyle -> {Black}],
+			Plot[#2, {x, 0, nvox}, PlotStyle -> {Red, Thick}]
+			] &, {w, wstart}], ImageSize -> 1000]
 	,*)
-	 {w, wstart,nvox};
+		{w, wstart,nvox};
 	Show[
-	 ListPlot[t2s, AspectRatio -> 0.075, ImageSize -> 1000, 
-	  PlotStyle -> {Black, PointSize[Medium]}],
-	 ListLinePlot[{
+		ListPlot[t2s, AspectRatio -> 0.075, ImageSize -> 1000, 
+		PlotStyle -> {Black, PointSize[Medium]}],
+		ListLinePlot[{
 		GaussianFilter[t2s, 20, Padding -> "Reversed"],
 		GaussianFilter[t2s, Length[t2s], Padding -> "Reversed"]
 		}, AspectRatio -> 0.075, ImageSize -> 1000, 
-	  PlotStyle -> {Directive[{Red, Thick}], 
-		 Directive[{Red, Dashed, Thick}]}, PlotRange -> Full
-	  ]]
-	}]
+		PlotStyle -> {Directive[{Red, Thick}], 
+			Directive[{Red, Dashed, Thick}]}, PlotRange -> Full
+		]
+	]
+}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1131,37 +1128,35 @@ PlotPerformance[{nit_, nvox_}, {t1_, t2s_}, {w_, wstart_}] := Column[{
 
 SyntaxInformation[UncertainPlot] = {"ArgumentsPattern" -> {_, _, _, _.}};
 
-UncertainPlot[mn_, sig_, con_, ran_:.1] := 
- Module[{tickst, tickste, label, ticks, len, ss},
-  tickst = {{0.001, 0.01, 0.1, 0.5, 0.9, 0.99, 0.999}, {0.1, 0.2, 0.5,
-		1, 2, 3}, {0.5, 1, 2, 5, 10, 20, 50, 100, 500}};
-  tickste = ThetaConvi[{1., .001, .001} tickst];
-  
-  label = {{"f  (no units)", 
-	  "\!\(\*SubscriptBox[\(\[Sigma]\), \(f\)]\)"}, {"D  \
-(\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \!\(\*SuperscriptBox[\(mm\), \
-\(2\)]\)/s)", 
-	  "\!\(\*SubscriptBox[\(\[Sigma]\), \(d\)]\)"}, {"pD  \
-(\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \!\(\*SuperscriptBox[\(mm\), \
-\(2\)]\)/s)", "\!\(\*SubscriptBox[\(\[Sigma]\), \(pd\)]\)"}};
-  len = Length[mn];
-  
-  GraphicsRow[(
+UncertainPlot[mn_, sig_, con_, ran_:.1] := Module[{tickst, tickste, label, ticks, len, ss},
+	tickst = {{0.001, 0.01, 0.1, 0.5, 0.9, 0.99, 0.999}, {0.1, 0.2, 0.5, 1, 2, 3}, {0.5, 1, 2, 5, 10, 20, 50, 100, 500}};
+	tickste = ThetaConvi[{1., .001, .001} tickst];
+
+	label = {{"f  (no units)", 
+		"\!\(\*SubscriptBox[\(\[Sigma]\), \(f\)]\)"}, {"D  \
+	(\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \!\(\*SuperscriptBox[\(mm\), \
+	\(2\)]\)/s)", 
+		"\!\(\*SubscriptBox[\(\[Sigma]\), \(d\)]\)"}, {"pD  \
+	(\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \!\(\*SuperscriptBox[\(mm\), \
+	\(2\)]\)/s)", "\!\(\*SubscriptBox[\(\[Sigma]\), \(pd\)]\)"}};
+	len = Length[mn];
+
+	GraphicsRow[(
 		ss = If[len == 5, {1, 1, 2, 3, 3}[[#]], #];
-		
+
 		ticks = Thread[{tickste[[ss]], tickst[[ss]]}];
-		
+
 		ListPlot[{mn[[#]], sig[[#]]} // Transpose,
-		 Frame -> {{True, False}, {True, False}}, 
-		 FrameLabel -> label[[ss]], PlotStyle -> Red,
-		 FrameTicks -> {{Automatic, Automatic}, {ticks, Automatic}}, 
-		 Axes -> False,
-		 PlotRange -> {con[[#]], {0, ran[[#]]}}, ImageSize -> 300,
-		 LabelStyle -> Directive[{Bold, 12, FontFamily -> "Helvetica"}]
-		 ]
+			Frame -> {{True, False}, {True, False}}, 
+			FrameLabel -> label[[ss]], PlotStyle -> Red,
+			FrameTicks -> {{Automatic, Automatic}, {ticks, Automatic}}, 
+			Axes -> False,
+			PlotRange -> {con[[#]], {0, ran[[#]]}}, ImageSize -> 300,
+			LabelStyle -> Directive[{Bold, 12, FontFamily -> "Helvetica"}]
+		]
 		) & /@ Range[len]
 	, ImageSize -> len*300, Spacings -> 0]
-  ]
+]
 
 
 
@@ -1174,23 +1169,22 @@ Options[IVIMCorrectData] = {FilterMaps -> True, FilterType -> "Median", FilterSi
 SyntaxInformation[IVIMCorrectData] = {"ArgumentsPattern" -> {_, {_, _,_} , _ , OptionsPattern[]}};
 
 IVIMCorrectData[data_, {s0_, f_, pdc_}, bval_, OptionsPattern[]] := Module[{ff, pdcf, filt, dataSyn, dataCor},
-	 
-  {ff, pdcf} = If[OptionValue[FilterMaps],
-	 filt = Switch[OptionValue[FilterType],
-	 	"Median", MedianFilter,
-	 	"Laplacian", LapFilt, 
-	 	_, GaussianFilter
-	 	];
-	 {filt[f, OptionValue[FilterSize]],filt[pdc, OptionValue[FilterSize]]}
-	 ,
-	 {f, pdc}
-	 ];
-  
-  dataSyn = Round@Clip[SynDatai[s0, ff, pdcf, bval], {0, Infinity}];
-  dataCor = Clip[data - dataSyn, {0, 1.1 Max[data]}];
-  
-  {dataCor, dataSyn}
-  ]
+	{ff, pdcf} = If[OptionValue[FilterMaps],
+		filt = Switch[OptionValue[FilterType],
+			"Median", MedianFilter,
+			"Laplacian", LapFilt, 
+			_, GaussianFilter
+		];
+		{filt[f, OptionValue[FilterSize]],filt[pdc, OptionValue[FilterSize]]}
+		,
+		{f, pdc}
+	];
+
+	dataSyn = Round@Clip[SynDatai[s0, ff, pdcf, bval], {0, Infinity}];
+	dataCor = Clip[data - dataSyn, {0, 1.1 Max[data]}];
+
+	{dataCor, dataSyn}
+]
 
 SynDatai = Compile[{{s0, _Real, 3}, {f, _Real, 3}, {pdc, _Real, 3}, {bval, _Real, 1}}, 
 	Transpose[Map[(f s0 Exp[-# pdc]) &, bval]]];

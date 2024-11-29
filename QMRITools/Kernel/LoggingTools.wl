@@ -267,13 +267,13 @@ StyleTree[tree_, {preFix_, level_, notlast_}, rule_]:=Block[{
 		prefix, hasFiles, pre, notl, nfiles, fileNr, fileList
 	},
 	(*make prefix list editable*)
-	prefix=preFix;
-	
+	prefix = preFix;
+
 	(*change prefix base on if folder has files*)
 	hasFiles=Unitize[Length[tree[[3]]]];
 	prefix[[level+1]]=hasFiles;
 	prefix[[level+2;;]]=0;
-	
+
 	(*style the directory with prefix*)
 	pre=prefix[[;;level]];
 	pre[[-1]]+=2;
@@ -281,13 +281,13 @@ StyleTree[tree_, {preFix_, level_, notlast_}, rule_]:=Block[{
 	If[notlast,prefix[[level]]=1];
 	pre=pre/.rule;
 	Sow[StringJoin[pre]<>tree[[1]]<>"/"];
-	
+
 	(*go into sub dirs if not empty*)
 	If[tree[[2]]=!={},Table[
 		notl=i=!=Length[tree[[2]]];
 		StyleTree[tree[[2,i]],{prefix,level+1,notl},rule]
-	,{i,1,Length[tree[[2]]]}];];
-	
+	, {i,1,Length[tree[[2]]]}];];
+
 	(*style the files but not all*)
 	pre=prefix[[;;level+1]];
 	nfiles=Length[tree[[3]]];
@@ -295,7 +295,7 @@ StyleTree[tree_, {preFix_, level_, notlast_}, rule_]:=Block[{
 	fileNr=Range[nfiles];
 	(*select first and last 3 else number string with left out*)
 	fileList=If[nfiles>10, Flatten[{fileNr[[1;;3]],ToString[nfiles-6],fileNr[[-3;;]]}], fileNr];
-	
+
 	(*loop over selected files*)
 	Table[If[StringQ[i],
 		(*if string sow how many left lout*)
@@ -303,7 +303,7 @@ StyleTree[tree_, {preFix_, level_, notlast_}, rule_]:=Block[{
 		(*Else sow filename*)
 		If[i===nfiles,pre[[-1]]=2];
 		Sow[StringJoin[pre/.rule]<>tree[[3,i]]]
-	],{i,fileList}];
+	], {i,fileList}];
 ]
 
 
@@ -344,7 +344,8 @@ MakeCheckFile[nam_?StringQ, stat_?ListQ] := Export[
 	Join[stat, {
 		"ProcessingSoftware" -> "QMRITools.com",
 		"Version" -> QMRITools`$InstalledVersion, 
-		"Date" -> DateString[]}]
+		"Date" -> DateString[]
+	}]
 ]
 
 

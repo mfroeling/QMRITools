@@ -924,7 +924,42 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 				"megre",
 
 				(*if echo time exists assume 4D nii without correct echo times*)
-				If[KeyExistsQ[datType["Process"], "EchoTime"],
+				Switch[datType["Process", "Method"],
+					"Dixon-S",
+
+					{sufd, types}=Transpose@datType["Process","Types"];
+
+					infoExtra = <|
+						If[class==="Repetitions"||class ==="Acquisitions", "Repetition"->namei, Nothing],
+						If[class==="Stacks"||class=="Mixed", "Stack"->namei, Nothing],
+						If[class==="Stacks"||class=="Mixed", "OverLap"->datType["Overlap"], Nothing]
+					|>;
+
+					Table[
+						pos = GetJSONPosition[json, {{"SeriesDescription", namei<>"_"<>types[[i]]}}];
+						If[pos=!={},
+						debugBids[{"Dixon-S", namei<>"_"<>types[[i]], pos}];
+						(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", namei}, 4];
+						(*get the json and data*)
+						info = json[[First@pos]];
+						{data, vox} = ImportNii[ConvertExtension[files[[First@pos]],".nii"], NiiScaling->False];
+
+						(*export to the correct folder*)
+						outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, namei], "suf"->Flatten@{datType["Suffix"], sufd[[i]]}|>];
+						(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
+						ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+						Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
+
+						Quiet@If[del,
+							DeleteFile[ConvertExtension[files[[pos]],".nii"]];
+							DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
+							DeleteFile[ConvertExtension[files[[pos]],".json"]]
+						];
+						]
+					, {i, Length@types}];
+
+					,
+					"Dixon-B",
 					(*non default with data with 4D nii, where data correction is needed*)
 					pos = GetJSONPosition[json, {{"ProtocolName", namei}}];
 					debugBids["Converting Dix data, json position: ", pos];
@@ -978,9 +1013,8 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 						DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
 						DeleteFile[ConvertExtension[files[[pos]],".json"]]
 					];
-
 					,
-
+					"Dixon",
 					(*default script with bids standard of each echo in one file*)
 					(*get the position of the files needed*)
 					(*loop over dixon data types*)
@@ -1249,11 +1283,59 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 			Switch[process["Method"],
 
-				"Dixon"|"Dixon-B",
 				(*-------------------------------------------*)
 				(*-------- Dixon processing scripts ---------*)
 				(*-------------------------------------------*)
 
+				"Dixon-S",
+				{sufd, types} = Transpose@datType["Process","Types"];
+				dfiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@sufd;
+				jfile = ConvertExtension[First@dfiles, ".json"];
+				nfiles = ConvertExtension[dfiles, ".nii"];
+
+				(*ouput file names*)
+				outfile = GenerateBidsFileName[folo, set];
+				(*check if files are already done*)
+				If[CheckFile[outfile, "done", verCheck],
+					(*if checkfile has label done and version is recent skip*)
+					(*----*)AddToLog["Processing already done for: ", True, 3];
+					(*----*)AddToLog[outfile, 4],
+					(*----*)AddToLog["Starting processing for data:", 3, True];
+					(*----*)AddToLog[First@dfiles, 4];
+
+					If[!AllTrue[nfiles, NiiFileExistQ],
+						(*----*)AddToLog[{"Could not find all the ", First@dfiles}, 4],
+						(*----*)AddToLog["Importing the data", 4];
+						{data, dvox} = Transpose[ImportNii/@nfiles];
+						If[MemberQ[sufd, "t2star"],
+							t2star = data[[Position[sufd,"t2star"][[1,1]]]] / 10000.;
+							r2star = DivideNoZero[1, t2star];
+							AppendTo[sufd, "r2star"]];
+						If[MemberQ[sufd, "fatfr"],
+							fatfr = data[[Position[sufd,"fatfr"][[1,1]]]] / 100.;
+							watfr = 1 - fatfr;
+							AppendTo[sufd, "watfr"]];
+						If[MemberQ[sufd, "wat"], wat = data[[Position[sufd,"wat"][[1,1]]]]];
+						If[MemberQ[sufd, "fat"], fat = data[[Position[sufd,"fat"][[1,1]]]]];
+						If[MemberQ[sufd, "inph"], inph = data[[Position[sufd,"inph"][[1,1]]]]];
+						If[MemberQ[sufd, "outph"], outph = data[[Position[sufd,"outph"][[1,1]]]]];
+					];
+
+					(*export all the calculated data*)
+					(*----*)AddToLog["Exporting the calculated data to:", 4];
+					(*----*)AddToLog[outfile,5];
+					outTypes = sufd;
+					ExportNii[ToExpression[con<>#], First@dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+
+					(*export the checkfile*)
+					MakeCheckFile[outfile, Sort@Join[
+						{"Check"->"done", "Outputs" -> outTypes, "SetProperteis"->set}
+					]];
+				];
+				(*----*)AddToLog["Finished processing", 3, True];
+
+				,
+				"Dixon"|"Dixon-B",
 				(*input file names*)
 				dfiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"real", "imag"};
 				jfile = ConvertExtension[First@dfiles, ".json"];

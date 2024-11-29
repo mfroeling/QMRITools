@@ -266,13 +266,13 @@ Mask[{dat_?ArrayQ, tr_?NumberQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
 Mask[{dat_?ArrayQ, tr_?VectorQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
 
 Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, dataD, datN, data, dil},
-	
+
 	(*perform data checks*)
 	data = ToPackedArray@N@Normal@dat;
 	dataD = ArrayDepth[data];
 	If[Length[tr] =!= 2, Return@Message[Mask::tresh, tr]];
 	If[ArrayDepth[data] > 3, Return@Message[Mask::dep, dataD]];
-	
+
 	(*perform the masking*)		
 	mask = If[tr === {0, 0},
 		(*no Threshold*)
@@ -280,7 +280,7 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, data
 		(*Threshold*)
 		UnitStep[data - tr[[1]]] - UnitStep[data - tr[[2]]]
 	];
-	
+
 	(*smooth the mask if needed*)
 	Round@Normal@If[OptionValue[MaskSmoothing], SmoothMask[mask, FilterRules[{opts, Options[Mask]}, Options[SmoothMask]]], mask]
 ]
@@ -295,9 +295,9 @@ Options[SmoothMask] = {MaskComponents->1, MaskClosing->True, MaskFiltKernel->2, 
 SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, dim, crp},
-	
+
 	(*get the options*)
-	
+
 	dil = OptionValue[MaskDilation];(*how much the mask is eroded or dilated*)
 	dil = If[NumberQ[dil],  Round@dil];
 	obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
@@ -383,7 +383,7 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 	maskD = ArrayDepth[mask];
 	dimD = Dimensions[data];
 	dimM = Dimensions[mask];
-	
+
 	(*determine how to mask the data*)
 	out = Switch[{dataD, maskD},
 		{2,2}, If[dimD == dimM, mask data, 1],
@@ -395,7 +395,7 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 			True, Return[Message[MaskData::dim, dimD, dimM];$Failed]],
 		_, Return[Message[MaskData::dep, dataD, maskD];,$Failed]
 	];
-	
+
 	(*make the output*)
 	ToPackedArray@N@Normal@out
 ]
@@ -443,9 +443,9 @@ SplitSegmentations[segI_, sparse_] := Block[{seg, dim, exVals, exPos, vals},
 	exVals = seg["ExplicitValues"];
 	exPos = seg["ExplicitPositions"];
 	vals = Sort@DeleteDuplicates@exVals;
-	
+
 	seg = Transpose[SparseArray[Pick[exPos, Unitize[exVals - #], 0] -> 1, dim] & /@ vals];
-	
+
 	{If[sparse, seg, Normal@seg], vals}
 ]
 
@@ -491,7 +491,7 @@ SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, s
 	split = If[Length[segm] == 2, False, True];
 
 	{seg, lab} = If[split,  SplitSegmentations[segm], segm];
-	
+
 	sel = MemberQ[labSel, #] & /@ lab;
 
 	If[AllTrue[sel, # === False &],
@@ -521,7 +521,7 @@ SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := Block[{smooth,obj, 
 	(*split segmentations and make sparse if needed*)
 	If[md===3, {masks, labs} = SplitSegmentations[maskIn], masks = maskIn];
 	masks = Transpose[If[!SparseArrayQ@masks, SparseArray@Round@masks, masks]];
-	
+
 	(*Get smoothed segmentations of the given labels and merge*)
 	masks[[what]] = SmoothMask[#, Sequence@@FilterRules[{opts}, Options[SmoothMask]]]&/@masks[[what]];
 	If[md===3, MergeSegmentations[Transpose[masks], labs], masks]
@@ -553,7 +553,7 @@ RemoveMaskOverlapsI[masks_] := Block[{maskOver, posOver, maskInp, maskOut, z, x,
 	maskOver = SparseArray[Mask[Total[masks], 1.5]];
 	posOver = maskOver["ExplicitPositions"];
 	maskOut = SparseArray[SparseArray[(1 - maskOver) #] & /@ masks];
-	
+
 	maskInp = maskOver Transpose[masks, {4, 1, 2, 3}];
 	p = ({z, x, y} = #; {First@First[maskInp[[z, x, y]]["ExplicitPositions"]], z, x, y}) & /@posOver;
 	maskOut + SparseArray[p -> 1, Dimensions[maskOut]]
@@ -568,20 +568,20 @@ SyntaxInformation[GetCommonSegmentation] = {"ArgumentsPattern" -> {_, _, _}};
 
 GetCommonSegmentation[dat:{_?ArrayQ ..}, seg:{_?ArrayQ ..}, vox:{_?ListQ ..}] := Block[
 	{dims, datC, cr, len, segs, labs, labAll, labSel, l, gr, segR},
-	
+
 	(*auto crop all the datasets*)
 	dims = Dimensions /@ dat;
 	{datC, cr} = Transpose[AutoCropData /@ dat];
 	len = Length[datC];
-	
+
 	(*split and smooth all the segmentations*)
 	{segs, labs} = Transpose[SplitSegmentations[ApplyCrop[#[[1]], #[[2]]]] & /@ Thread[{seg, cr}]];
 	segs = SmoothSegmentation[#, MaskComponents -> 1, SmoothIterations -> 2] & /@ segs;
-	
+
 	(*find common labels*)
 	labAll = Intersection @@ labs;
 	labSel = (l = #; Flatten[Position[l, #] & /@ labAll]) & /@ labs;
-	
+
 	gr = 5 Mean@vox;
 	(*find the common segmentation for each dataset*)
 	Table[
@@ -596,7 +596,7 @@ GetCommonSegmentation[dat:{_?ArrayQ ..}, seg:{_?ArrayQ ..}, vox:{_?ListQ ..}] :=
 				]
 			]
 		, {mov, 1, len}];
-		
+
 		MergeSegmentations[ReverseCrop[RemoveMaskOverlaps[segR], dims[[tar]], cr[[tar]]], labAll[[labSel[[tar]]]]]
 	, {tar, 1, len}]
 ]
