@@ -1026,7 +1026,6 @@ ImportBvalvec[___,opts:OptionsPattern[]] := Block[{valf, vecf},
 ]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*ImportBmat*)
 
@@ -1347,7 +1346,6 @@ GetNiiOrientationQ[hdr_] := Block[{qcode, qoff, qrot},
 	qrot = N@Append[PadRight[#, 4] & /@ qrot, {0, 0, 0, 1}];
 	{qcode, qoff, qrot}
 ]
-
 
 
 

@@ -2325,7 +2325,6 @@ ActivationLayer[actType_] := If[StringQ[actType],
 *)
 
 
-
 (* ::Subsection::Closed:: *)
 (*ROIMask*)
 

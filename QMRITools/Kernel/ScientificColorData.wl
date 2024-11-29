@@ -151,7 +151,6 @@ ExtractColorData[dir_] := Block[{file},
 ]
 
 
-
 (* ::Section:: *)
 (*End Package*)
 

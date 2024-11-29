@@ -26,7 +26,7 @@ BeginPackage["QMRITools`IVIMTools`", Join[{"Developer`"}, Complement[QMRITools`$
 
 IVIMCalc::usage =
 "IVIMCalc[data, binp, init] calculates the IVIM fit.
- 
+
 data should be 1D ,2D, 3D or 4D. 
 binp should be full bmatrix which can be calculated from the bvecs en bvals using Bmatrix with the bvalues in s/mm^2. 
 init should are the initialization parameters for 2 components this is {s0, f, D, Dp} for 3 components this is {s0, f1, f2, D, Dp1, Dp2}.
@@ -594,7 +594,6 @@ BayesianIVIMFitI2[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 ];
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*BayesianIVIMFit3*)
 
@@ -796,7 +795,6 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 		cov, mu, Length[theta]
 	}
 ];
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1159,7 +1157,6 @@ UncertainPlot[mn_, sig_, con_, ran_:.1] := Module[{tickst, tickste, label, ticks
 ]
 
 
-
 (* ::Subsection::Closed:: *)
 (*IVIMCorrectData*)
 
@@ -1246,7 +1243,6 @@ IVIMResCalcC = Block[{s0, f1, f2, dc, pdc1, pdc2, out},
 		RuntimeOptions -> "Speed"
 	]
 ];
-
 
 
 (* ::Section:: *)

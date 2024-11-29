@@ -79,7 +79,6 @@ CheckFile::usage =
 SaveLogFile::usage = "SaveLogFile is an option for AddToLog. If True the log is saved to the log file each time something is added."
 
 
-
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 

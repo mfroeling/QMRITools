@@ -147,7 +147,6 @@ FatFieldStrength::usage =
 The shift is in SliceRangeSamples steps."
 
 
-
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 

@@ -39,7 +39,7 @@ AddToJson::usage =
 AddToJson[json, \"QMRITools\"] adds the QMRITools software version to the JSON."
 
 ExtractFromJSON::usage = 
-"ExtractFromJSON[keys] if the keys exist they are extracted from the JSON."
+"ExtractFromJSON[json,keys] if the keys exist they are extracted from the JSON."
 
 
 SelectSubjects::usage = 
@@ -206,7 +206,7 @@ SyntaxInformation[PartitionBidsName] = {"ArgumentsPattern" -> {_}};
 
 PartitionBidsName[list_?ListQ]:=PartitionBidsName/@list
 
-PartitionBidsName[string_?StringQ]:=Block[{parts, entity, suffix},
+PartitionBidsName[string_?StringQ]:=Block[{parts, entity, suffix, suf},
 	(*first split on "_" then on "-"*)
 	parts = StringSplit[#,"-"]& /@ StringSplit[string, "_"];
 	(*if length is 2 its entity else it is suffix*)
@@ -368,23 +368,25 @@ ViewConfig[config_?AssociationQ]:=TabView[# -> Which[
 ]& /@ Keys[config]]
 
 
-MakeTable[dat_] := Block[{d},
-	Grid[{#, d = dat[#];
+MakeTable[association_] := Block[{value},
+	Grid[{#, 
+		value = association[#];
 		Which[
-			AssociationQ[d], MakeTable[d],
-			ListQ[d] && Length[d] > 0, If[AssociationQ[First[d]],
-				Column[MakeTable /@ d],
-				If[ListQ[d],
+			AssociationQ[value], MakeTable[value],
+			ListQ[value] && Length[value] > 0, If[AssociationQ[First[value]],
+				Column[MakeTable /@ value],
+				If[ListQ[value],
 					Which[
-						Length[d] > 15, Grid[d],
-						Length[d] > 6, Column[Row[#, ", "]&/@Partition[d, 6, 6, 1,{}]],
-						VectorQ[d], Row[d, ", "], 
-						True, Column[d]],
-					d]
+						Length[value] > 15, Grid[value],
+						Length[value] > 6, Column[Row[#, ", "]&/@Partition[value, 6, 6, 1,{}]],
+						VectorQ[value], Row[value, ", "], 
+						True, Column[value]],
+					value]
 				], 
-			True, d
+			True, value
 		]
-	} & /@ Keys[dat], Frame -> All, Alignment -> Left, Background -> {{Gray, {White}}, White}, Spacings -> {1, 0.5}]
+	} & /@ Keys[association], Frame -> All, Alignment -> Left, 
+	Background -> {{Gray, {White}}, White}, Spacings -> {1, 0.5}]
 ]
 
 
@@ -480,12 +482,7 @@ GetJSONPosition[json_, selection_]:=GetJSONPosition[json, selection, ""]
 GetJSONPosition[json_, selection_, sort_]:=Block[{seli, self, list, key, val, inds, pos},
 	(*selection functions*)
 	seli = StringReplace[ToLowerCase[Last[Flatten[{#1 /. #3}]]], {"wip " -> "", "wip_"->""}] === ToLowerCase[#2] &;
-	self = (
-		list=#1;
-		key=#2[[1]]; 
-		val=#2[[2]]; 
-		Select[list, seli[key,val,json[[#]]]&]
-	)&;
+	self = (list=#1; key=#2[[1]]; val=#2[[2]]; Select[list, seli[key,val,json[[#]]]&])&;
 
 	(*get the file positions*)
 	pos = Fold[self, Range[Length[json]], selection];
@@ -510,18 +507,17 @@ MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
 (*ExtractFromJSON*)
 
 
-ExtractFromJSON[keys_] := ((# -> json[#]) & /@ keys) /. {(_ -> Missing[___]) -> Nothing};
+ExtractFromJSON[json_, keys_] := If[KeyExistsQ[json, #], # -> json[#], Nothing]& /@ keys;
 
 
 (* ::Subsubsection::Closed:: *)
 (*AddToJson*)
 
 
-AddToJson[json_, add_]:=MergeJSON[{json,
-	Switch[add,
-		"QMRITools",<|"ConversionSoftware"->"QMRITools.com", "ConversionSoftwareVersion"->QMRITools`$InstalledVersion|>,
-		_,add]}
-]
+AddToJson[json_, add_]:=MergeJSON[{json, Switch[add,
+	"QMRITools", <|"ConversionSoftware"->"QMRITools.com", "ConversionSoftwareVersion"->QMRITools`$InstalledVersion|>,
+	_, add
+]}]
 
 
 (* ::Subsection:: *)
@@ -735,7 +731,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:Opti
 		Switch[met,
 			"BidsDcmToNii", 
 			{custConf, datDis} = CheckConfig[fol, out],
-			"MuscleBidsAnalysis" ,
+			"MuscleBidsAnalysis",
 			custConf = False;
 			datDis = If[KeyExistsQ[datDisIn, "Analysis"],
 				{datDisIn}, 
@@ -759,6 +755,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:Opti
 		];
 		If[met=!= "BidsDcmToNii", ImportLog[]]; 
 		ShowLog[];
+		
 		(*----*)AddToLog[{"Starting "<>met<>" for directory: ", fol}, True, 0];
 		(*----*)If[custConf, AddToLog["**********   -----   Using custom config   -----   **********", 0]];
 		If[met === "BidsDcmToNii",
@@ -822,7 +819,7 @@ BidsDcmToNii[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Bl
 	BidsDcmToNii[
 		config["folders"]["dicomData"],(*the input folder of the dcm data*)
 		config["folders"]["rawData"],(*the output folder for conversion*)
-		If[KeyExistsQ[config, "conversion"], config["conversion"], <|"Version"->"23"|>],(*the conversion settings*)
+		Lookup[config, "conversion", <|"Version"->"23"|>],(*the conversion settings*)
 		opts];
 	SetDirectory[dir];
 ]
@@ -866,6 +863,7 @@ SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _., OptionsPat
 
 MuscleBidsConvert[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsConvert[folder, GetConfig[folder], opts];
 
+
 MuscleBidsConvert[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
 	debugBids["starting MuscleBidsConvert"];
 	dir = Directory[]; SetDirectory[folder];
@@ -876,6 +874,7 @@ MuscleBidsConvert[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:
 		opts];
 	SetDirectory[dir];
 ]
+
 
 MuscleBidsConvert[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsConvert", opts]
 
@@ -1139,8 +1138,8 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 						{data, fit, vox} = ImportNiiT2[ConvertExtension[files[[First@pos]],".nii"]]
 					];
 					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
-					echo = If[KeyExistsQ[info, "EchoTime"],	info["EchoTime"], datType["Process", "EchoTime"]/1000.];
-					nEch = If[KeyExistsQ[info, "EchoTrainLength"], info["EchoTrainLength"], Length[data[[1]]]];
+					echo = Lookup[info, "EchoTime", datType["Process", "EchoTime"]/1000.];
+					nEch = Lookup[info, "EchoTrainLength", Length[data[[1]]]];
 					info = KeyDrop[info, "EchoTime"];
 					echo = <|
 						"EchoNumber" -> Range[nEch], 
@@ -1390,7 +1389,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 								(*calculated field maps*)
 								(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
 								{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
-								(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
+								(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000 echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
 
 								(*perform the IDEAL dixon fit*)
 								(*-----*)AddToLog["Starting Dixon reconstruction", 4];
@@ -1438,7 +1437,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "EchoTimes"->echos, "Outputs" -> outTypes, "SetProperteis"->set}, pos,
-								ExtractFromJSON[keys]
+								ExtractFromJSON[json, keys]
 							]];
 							(*----*)AddToLog["Finished processing", 3, True];
 						]
@@ -1493,13 +1492,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 						{data, grad, val, diffvox} = ImportNiiDiff[nfile, FlipBvec->False];
 						{data, grad, val} = SortDiffusionData[NormalizeData[data], grad, val];
 
-						(*Denoise*)
+						(*Denoise and SNR*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
-						tr = If[KeyExistsQ[process, "Masking"], process["Masksing"], 5];
-						mask = Mask[NormalizeMeanData[data], tr, MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
+						mask = Mask[NormalizeMeanData[data],  Lookup[process, "Masking", 5], MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
 						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
-
-						(*calculate SNR*)
 						snr = SNRCalc[den, sig];
 						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, 2}];
 
@@ -1522,7 +1518,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 						(*export the checkfile*)
 						MakeCheckFile[outfile<>"_prep", Sort@Join[
 							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
-							ExtractFromJSON[keys]
+							ExtractFromJSON[json,keys]
 						]];
 						(*----*)AddToLog["Finished pre-processing", 3, True];
 
@@ -1562,8 +1558,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*import the data*)
 							json = ImportJSON[jfile];
 							{data, grad, val, diffvox} = ImportNiiDiff[nfilep, FlipBvec->False];
-							tr = If[KeyExistsQ[process, "Masking"], process["Masking"], 5];
-							mask = Mask[NormalizeMeanData[data], tr, MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
+							mask = Mask[NormalizeMeanData[data], Lookup[process, "Masking", 5], MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
 							data = MaskData[data, mask];
 							(*get bvalues and mean data*)
 							{mean, valU} = MeanBvalueSignal[data, val];
@@ -1597,7 +1592,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
-								ExtractFromJSON[keys]
+								ExtractFromJSON[json,keys]
 							]];
 							(*----*)AddToLog["Finished processing", 3, True];				
 						]
@@ -1681,7 +1676,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperteis"->set},
-								ExtractFromJSON[keys]
+								ExtractFromJSON[json,keys]
 							]];
 							(*----*)AddToLog["Finished processing", 3, True];
 						]
@@ -1734,6 +1729,7 @@ MuscleBidsMerge[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=B
 		opts];
 	SetDirectory[dir];	
 ]
+
 
 MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?AssociationQ, ops:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"MuscleBidsMerge", ops]
 
@@ -1805,7 +1801,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 	(*get the settings for the merging*) 
 	overT = merge["Overlap"];
 	{overT, overM} = If[IntegerQ[overT], {overT, overT}, overT];
-	pad = If[KeyExistsQ[merge, "Padding"], merge["Padding"], 0];
+	pad = Lookup[merge, "Padding", 0];
 
 	(*check if the target file exists*)
 	debugBids[{overT, pad}];
@@ -2052,7 +2048,6 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 	(*Get the segmentation targets and its names*)
 	segType = segment["Target"];
 	segLocation = segment["Location"];
-	device = If[KeyExistsQ[segment, "Device"], segment["Device"], "GPU"];
 	If[ArrayDepth[segType]===1, segType = {segType}];
 	segTypeLab = StringRiffle[#, "_"]&/@segType;
 
@@ -2080,7 +2075,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 			AddToLog[{"The segment file does not exist", segfile}, 4];
 			,
 			{out, vox} = ImportNii[segfile];
-			seg = SegmentData[out, segLocation, TargetDevice -> device, Monitor -> False];
+			seg = SegmentData[out, segLocation, TargetDevice -> Lookup[segment, "Device", "GPU"], Monitor -> False];
 			ExportNii[seg, vox, outfile];
 		];
 		, {segi, segType}			
@@ -2130,7 +2125,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 		tracto, tractType, tractSeg, tractStopLab, tractStopVal, tractStopLabNam, trkFile,
 		tractTypeLab, fol, parts, checkFile, outfile, seed, lenS, segBone, tractSegLab,
 		datfile, stopfile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
-		segfile, muscles, mlabs, mus, bones, con, leng, dens, flip, per, duplicate, key
+		segfile, muscles, mlabs, mus, bones, con, leng, dens, flip, per, duplicate, key, keyS
 	}, 
 
 	debugBids["Starting MuscleBidsTractographyI"];
@@ -2155,10 +2150,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 	];
 
 	(* Extract flip and permutation *)
-	{flip, per} = If[KeyExistsQ[tracto, "FlipPermute"], 
-		tracto["FlipPermute"],
-		{{1, -1, 1}, {"z", "y", "x"}}
-	];
+	{flip, per} = Lookup[tracto, "FlipPermute", {{1, -1, 1}, {"z", "y", "x"}}];
 
 	(* Extract tractography target, segmentation and stopping criteria *)
 	tractType = tracto["Target"];
@@ -2166,8 +2158,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 	{tractStopLab, tractStopVal} = Transpose@tracto["Stopping"];
 
 	(* Ensure tractStopLab and tractStopVal are lists *)
-	If[ArrayDepth[tractStopLab]===1,tractStopLab={tractStopLab}];
-	If[ArrayDepth[tractStopVal]===1,tractStopVal={tractStopVal}];
+	If[ArrayDepth[tractStopLab]===1, tractStopLab = {tractStopLab}];
+	If[ArrayDepth[tractStopVal]===1, tractStopVal = {tractStopVal}];
 
 	(* Generate labels for tractStopLab and tractType *)
 	tractStopLabNam = StringRiffle[#, "_"]&/@tractStopLab;
@@ -2237,7 +2229,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			(*-----*)AddToLog[{"Exporting the whole volume tractography"}, 4];
 			ExportTracts[trkFile[".trk"], tracts, vox, dim, seeds];
 
-			MakeCheckFile[checkFile, Sort@Join[{"Check"->"track"}, Normal@datType]];
+			MakeCheckFile[checkFile, Sort@Join[{"Check" -> "track"}, Normal@datType]];
 			(*----*)AddToLog["Finished the tractograpy", 3, True];
 		];
 	];
@@ -2295,7 +2287,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			(*----*)AddToLog[{"Exporting the results and maps"}, 4];
 			(*export stuff*)
 			con = Context[con];
-			ExportNii[ToExpression[con<>#], vox, trkFile["_"<>#<>".nii.gz"]]&/@{"dens", "leng", "ang", "seed","curv"};
+			ExportNii[ToExpression[con<>#], vox, trkFile["_"<>#<>".nii.gz"]]& /@ {"dens", "leng", "ang", "seed","curv"};
 			ExportTracts[trkFile["_seg.trk"], tracts, vox, dim, seeds];
 
 			(*export plot scene*)
@@ -2363,10 +2355,11 @@ MuscleBidsAnalysis[datFol_?StringQ, anFol_?StringQ, datDis_?AssociationQ, ops:Op
 
 MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		maskErosion, tractWeighting, anaSeg, fol, parts, segfile, fileName, partsO, fileNameO, checkFileX, checkFileI,
-		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, 
-		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType,
+		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, str,
+		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType, hasKey,
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
-		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxs, segPl, imTrk, trkfile
+		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxs, segPl, imTrk, trkfile, reffile,
+		addLabel, img, lab
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];

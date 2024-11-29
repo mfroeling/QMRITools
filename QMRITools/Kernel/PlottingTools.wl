@@ -2185,7 +2185,6 @@ GradientPlot[veci_, val_, OptionsPattern[]] := Block[{pts, range, norm, mnorm, c
 ]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*PlotMoments*)
 

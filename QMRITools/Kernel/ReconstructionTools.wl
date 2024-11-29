@@ -675,7 +675,6 @@ MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, scale, dim, low, sense}
 ]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*RSS*)
 

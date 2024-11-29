@@ -320,7 +320,6 @@ DistanceRange::usage =
 Values can be Automatic, All, or a integer value. If All the distance map is calculated for the whole image. If 0 the distance map is only calculated inside the segmentation."
 
 
-
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
@@ -1074,7 +1073,6 @@ FocalLossLayer[g_, a_] := NetFlatten[
 			{NetPort["Input"], NetPort["Target"]} -> "flatPr" -> "focal" -> NetPort["Loss"]
 	}, "Loss" -> "Real"]
 ]
-
 
 
 (* ::Subsection:: *)
@@ -2286,7 +2284,6 @@ MakeChannelClassGrid[dat_, lab_, ni_] := Block[{len, n1, n2},
 		ImagePad[MakeChannelClassImage[dat[[{1}, #]], labp[[#]], ran], 4, White
 	] & /@ (Round[Range[1., len, (len - 1)/(n1 n2 - 1)]]), n1]
 ]
-
 
 
 (* ::Subsubsection::Closed:: *)
