@@ -54,7 +54,7 @@ labels should be the label numbers used in the original segmentation (to allow c
 MakeSliceImages[imgData, {labData, labels},vox] generates images from the imgData which is obtained form GetSliceData with an overlay of the segmentations in labData, which can also be obtained using GetSliceData on the segmentations, vox is used for the correct aspect ratio of the images."
 
 LegendImage::usage =
-"LengendImage[colf, w, lab] generates a legend image for the color function colf with a width of w and labels lab."
+"LegendImage[colf, w, lab] generates a legend image for the color function colf with a width of w and labels lab."
 
 
 PlotContour::usage = 
@@ -1700,12 +1700,12 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, opts:OptionsPattern[]]:=MakeS
 MakeSliceImages[selData_, vox:{_, _, _}, opts:OptionsPattern[]]:=MakeSliceImages[selData, {0, {}}, vox, opts]
 
 MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]]:=Block[{
-	colo, pdat,ran,ratio,datf,size,colF,mdat,rule,bar,pl1,pl2, 
+	colo, pdat, ran, ratio, datf, size, colF, mdat, rule, bar, pl1, pl2, 
 	dim, dim1, dim2, d1, d2, pl ,ml, sz, n, imSize, clip
 	},
 
 	colo = OptionValue[ColorFunction];
-	{colo, cols}	= If[StringQ[colo], {colo, "DarkRainbow"}, colo];
+	{colo, cols} = If[StringQ[colo], {colo, "DarkRainbow"}, colo];
 	colF = If[MemberQ[colorFunctions[[All,1]], colo], colo, "GrayTones"]/.colorFunctions;
 	SeedRandom[1234];
 	rule = N@Thread[vals -> RandomSample@Rescale[Range[0,Length@vals]][[2;;]]];
@@ -1744,7 +1744,7 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 
 			pl1 = ArrayPlot[pl, AspectRatio->ratio, Frame->False, ImageSize->sz, PlotRangePadding->1, 
 				PlotRange->ran, ColorFunction->colF, ClippingStyle->clip];
-			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[0.6], ColorData[cols][#]}]&), 
+			pl2 = ArrayPlot[ml, ColorFunction->(Directive[{Opacity[OptionValue[MaskOpacity]], ColorData[cols][#]}]&), 
 				ColorFunctionScaling->False, ColorRules->{0.->Transparent}];
 			If[OptionValue[ImageLegend], Legended[Show[pl1, pl2], bar], Show[pl1, pl2]]
 		)&, {pdat, mdat}]
@@ -1912,11 +1912,11 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 
 			scale = Switch[scale, "World", Reverse[vox], _, {1,1,1}];
 
-			range = Reverse[Partition[crp, 2]] + {{-pad - 1, pad}, {-pad - 1, pad}, {-pad - 1, pad}};
+			range = Reverse[Partition[crp, 2]] + {{-pad-1, pad}, {-pad-1, pad}, {-pad-1, pad}};
 			dim = Reverse[dim];
 
 			ListContourPlot3D[data,
-				Contours -> {0.7}, Lighting -> "ThreePoint",
+				Contours -> {0.5}, Lighting -> "ThreePoint",
 				Mesh -> False, BoundaryStyle -> None, Axes -> True, 
 				SphericalRegion -> True,ColorFunctionScaling -> False, 
 

@@ -1152,7 +1152,7 @@ MakeIntFunction[dat_, int_?IntegerQ, opts:OptionsPattern[]] := MakeIntFunction[d
 
 MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{dim, def, range},
 	dim = Dimensions[dat][[;;3]];
-	range = Thread[{vox, vox dim}] - If[OptionValue[CenterVoxel], 0.5, 0] vox - If[OptionValue[CenterRange], 0.5, 0] dim;
+	range = Thread[{vox, vox dim}] - If[OptionValue[CenterVoxel]&&int>0, 0.5, 0] vox - If[OptionValue[CenterRange], 0.5, 0] dim;
 	def = 0. dat[[1,1,1]];
 	def =If[ListQ[def], Flatten@def, def];
 
