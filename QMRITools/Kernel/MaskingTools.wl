@@ -290,14 +290,18 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, data
 (*SmoothMask*)
 
 
-Options[SmoothMask] = {MaskComponents->1, MaskClosing->True, MaskFiltKernel->2, MaskDilation -> 0, SmoothIterations -> 3}
+Options[SmoothMask] = {
+	MaskComponents->1, 
+	MaskClosing->True, 
+	MaskFiltKernel->2, 
+	MaskDilation -> 0, 
+	SmoothIterations -> 3
+}
 
 SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, dim, crp},
-
 	(*get the options*)
-
 	dil = OptionValue[MaskDilation];(*how much the mask is eroded or dilated*)
 	dil = If[NumberQ[dil],  Round@dil];
 	obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
@@ -325,10 +329,10 @@ SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, 
 	];
 
 	(*Filter the segmentation*)
-	Which[
-		itt === 1, maskI = Erosion[Round[GaussianFilter[Dilation[maskI,1], ker]],1],
+	If[ker > 0, Which[
+		itt === 1, maskI = Erosion[Round[GaussianFilter[Dilation[maskI, 1], ker]], 1],
 		itt > 1, maskI = Nest[Erosion[Round[GaussianFilter[Dilation[#, 1], ker] + 0.05], 1] &, maskI, itt]
-	];
+	]];
 
 	(*reverse cropping and return the mask*)
 	ReverseCrop[SparseArray@ImageData@Round@maskI, dim, crp]
