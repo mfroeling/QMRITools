@@ -2221,7 +2221,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			(* Perform tractography *)
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
 				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", MaxSeedPoints -> seed, 
-				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> False,
+				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> True,
 				TensorFlips -> flip, TensorPermutations -> per, Parallelization -> True
 			];
 
@@ -2559,9 +2559,10 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			crp = FindCrop[ref, CropPadding -> 10];
 			refC = ApplyCrop[ref, crp];
 			size = Dimensions[refC] vox;
+
 			pos = GetSlicePositions[GaussianFilter[refC, 15], vox, MakeCheckPlot -> False, 
 				DropSlices -> {1, 1, 1}, PeakNumber -> {0, 1, 2}];
-			pos[[1]] = Reverse[Range[0., 1., 1/(Round[Divide @@ size[[;; 2]]] + 1)][[2 ;; -2]] size[[1]]];
+			pos[[1]] = Reverse[Range[0., 1., 1/(Ceiling[Divide @@ size[[;; 2]]] + 1)][[2 ;; -2]] size[[1]]];
 
 			(*Function to extract slice data for 2D images*)
 			sliceData = Block[{slDat},
@@ -2584,14 +2585,15 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		]&;
 
 		(*2D image function*)
-		make2DImage = ImagePad[ImageAssemble[ImageResize[#, {Automatic, 600}] & /@ Join[
-			{ImageAssemble[Transpose@{ImagePad[#, -3] & /@ #[[1]]}, Spacings -> 20, Background -> White]},
-			ImagePad[#, -3] & /@ #[[2]]], Spacings -> 20, Background -> White, 
-			ImageSize -> {Automatic, 1200}, ImageResolution -> 300], 20, White
-		]&;
+		make2DImage = With[{di = Max[ImageDimensions[#][[2]]&/@#[[2]]]/4},
+		ImagePad[ImageAssemble[ImageResize[#, {Automatic, di}] & /@ Join[
+			{ImageAssemble[Transpose@{ImagePad[#, -5] & /@ #[[1]]}, Spacings -> 20, Background -> White]},
+			ImagePad[#, -5] & /@ #[[2]]], Spacings -> 20, Background -> White, 
+			ImageResolution -> 300], 20, White
+		]]&;
 
 		addLabel = ImageAssemble[{
-			{ImageCrop[#2,ImageDimensions[#2] - {0, 20}, {Left, Bottom}]}, 
+			{ImageCrop[#2, ImageDimensions[#2] - {0, 20}, {Left, Bottom}]}, 
 			{LegendImage[#1, First[ImageDimensions@#2], #3]}}
 		]&;
 
@@ -2624,7 +2626,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 					(*import data and make image and export*)
 					{imDat, voxi} = ImportNii[imFile];
 					img = make2DImage@MakeSliceImages[sliceData@imDat, voxi, 
-							ColorFunction -> cFun, PlotRange -> ran, ClippingStyle -> clip, ImageSize -> 600];
+							ColorFunction -> cFun, PlotRange -> ran, ClippingStyle -> clip, ImageSize -> 1200];
 					img = If[lab =!= None, addLabel[cFun, img, lab], img];
 					Export[fileNameO[partsO]<>".jpg", img, ImageResolution -> 300];
 				]
@@ -2653,7 +2655,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			partsO["suf"] = If[hasKey, anaSeg[[2;;4]], anaSeg[[;;3]] ];
 			Export[fileNameO[partsO]<>".jpg", 
 				make2DImage@MakeSliceImages[sliceData@ref, {sliceData@seg, GetSegmentationLabels[seg]}, vox,
-					ColorFunction -> {"BlackToWhite","RomaO"}, PlotRange -> Automatic, ClippingStyle -> Automatic, ImageSize -> 600]
+					ColorFunction -> {"BlackToWhite","RomaO"}, PlotRange -> Automatic, ClippingStyle -> Automatic, ImageSize -> 1200]
 			, ImageResolution -> 300];
 
 			(*make the 3D segmentation image*)
