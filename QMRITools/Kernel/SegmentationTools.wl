@@ -712,7 +712,7 @@ ConvBlock[block_, feat_?IntegerQ, {act_, dim_, dil_}] := ConvBlock[block, {feat,
 ConvBlock[block_, {featOut_, featInt_}, {act_, dim_}] := ConvBlock[block, {featOut, featInt}, {act, dim, 1}]
 
 ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
-		blockType, type, blockSet, repBlock, dep, rep, nam, dilf, sclf, cons
+		blockType, type, blockSet, repBlock, dep, rep, nam, scaleF, cons
 	},
 
 	(*short notation for naming layers*)
@@ -767,13 +767,12 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 
 		"U2Net",
 		{dep, type} = If[IntegerQ[blockSet], {blockSet, True}, blockSet];
-		dilf = If[! #1, 2^(#2 - 1), #3] &;
-		sclf = If[! #1, 1, 2] &;
+		scaleF = If[! #1, 1, 2] &;
 		NetGraph[
 			Join[
 				Table[debugUnet[nam["U2enc_", i]]; nam["U2enc_", i] -> MakeNode[
 					(*scale up -> never, scale down*)
-					{1, If[i==dep, 1, sclf[type]]}, 
+					{1, If[i==dep, 1, scaleF[type]]}, 
 					(*skip in -> only input from above, skip out -> always for enc*)
 					{0, True}, 
 					(*config*)
@@ -781,7 +780,7 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 				], {i, 1, dep}],
 				Table[debugUnet[nam["U2dec_", i]]; nam["U2dec_", i] -> MakeNode[
 					(*scale up -> always, scale down -> never*)
-					{sclf[type], 1}, 
+					{scaleF[type], 1}, 
 					(*skip in -> accepts one skip, skip out -> never for dec*)
 					{1, False}, 
 					(*config*)
@@ -2053,9 +2052,9 @@ Options[GetTrainData] = {
 
 SyntaxInformation[GetTrainData] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
-GetTrainData[datas_, nBatch_, patch_, opts:OptionsPattern[]]:=GetTrainData[datas, nBatch, patch, False, opts]
+GetTrainData[dataSets_, nBatch_, patch_, opts:OptionsPattern[]]:=GetTrainData[dataSets, nBatch, patch, False, opts]
 
-GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
+GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad
 	},
 
@@ -2068,13 +2067,13 @@ GetTrainData[datas_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 	(*get the correct number of sets*)
 	itt = Ceiling[nBatch/nSet];
 	Do[
-		dat = RandomChoice[datas];
+		dat = RandomChoice[dataSets];
 		If[StringQ[dat], 
 			(*data is wxf file format*)
 			{dat, seg, vox} = Import[dat];
 			,
 			If[Length[dat]===2, 
-				(*datas is list of nii files {dat.nii, seg.nii}*)
+				(*dataSets is list of nii files {dat.nii, seg.nii}*)
 				{seg, vox} = ImportNii[dat[[2]]];
 				{dat, vox} = ImportNii[dat[[1]]];
 				,
@@ -2211,7 +2210,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 		]
 	, {sf, segFiles}];
 
-	(*export the overview of what has happend*)
+	(*export the overview of what has happened*)
 	legend = Grid[{{}, Join[{""}, Item[Style[#[[1]], White, Bold], Background -> #[[2]]] & /@ {{"hole & n > 1", Red}, {"n > 1", Purple}, {"hole", Blue}}, {""}], {}}, Spacings -> {1, 0.5}];
 	head = Style[#, Bold] & /@ {"#", "Name", "Labels"};
 

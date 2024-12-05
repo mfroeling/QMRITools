@@ -577,13 +577,14 @@ FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, o
 FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		minLength, maxLength, maxAng, maxSeed, flip, per, int, stopT, step, tractF, vecF, trFunc, ran,
 		tens, tensMask, inpTr, stop, coors, vecInt, stopInt, ones, dim, crp, t2,
-		seedN, seedI, seedT, seeds, t1, tracts, iii, drop, maxStep, len, sel, mon
+		seedN, seedI, seeds, t1, tracts, iii, drop, maxStep, len, sel, mon
 	},
 
 	(*get the options*)
 	{{minLength, maxLength}, maxAng, maxSeed, flip, per, int, stopT, step, mon} = OptionValue[{
 		FiberLengthRange, FiberAngle, MaxSeedPoints, TensorFlips, TensorPermutations, 
 		InterpolationOrder, StopThreshold, StepSize, TractMonitor}];
+	SeedRandom[1234];
 
 	step = N@If[NumberQ[step],step, Min[0.5 vox]];
 	maxStep = Ceiling[(maxLength/step)];
@@ -602,66 +603,40 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	];
 
 	(*make the random seed points*)
-	SeedRandom[1234];
-	seedN = Total@Flatten@stop;
 	maxSeed = Round@Which[
-		NumberQ[maxSeed], maxSeed, 
+		Head[maxSeed]===Scaled, First[maxSeed] seedN,
 		maxSeed === Automatic, 0.3 seedN,
-		maxSeed === All, seedN,
-		Head[maxSeed]===Scaled, First[maxSeed] seedN
-	];
-
-	(*random seed point selection until maxSeed is found*)
-	seeds = {};
-	seedI = SparseArray[stop]["NonzeroPositions"];
-	stopInt = MakeInt[stop, vox, int];
-	While[Length[seeds] < maxSeed,
-		seedT = Flatten[RandomSample[seedI, #] & /@ Block[{i = maxSeed},
-			First@Last@Reap[While[i > 0, Sow[If[i > seedN, seedN, i]];
-			i = i - seedN;]]], 1];
-		seedT = # vox & /@ (seedT + RandomReal[{-0.999, 0}, {maxSeed, 3}]);
-		seedT = Pick[seedT, stopInt @@@ seedT, 1.];		
-		seeds = Join[seeds, seedT];
-		seeds = seeds[[;; Min[{Length@seeds, maxSeed}]]]
-	];
-
-	(*finalize seed points*)
-	seeds = ToPackedArray@N@seeds;
+		NumberQ[maxSeed], maxSeed, 
+		maxSeed === All, seedN];
+	seeds = SparseArray[stop]["NonzeroPositions"];
+	seedN = Length@seeds;
+	(*for randomization where maxSeeds > seeds be sure to fill homogeniously*)
+	seeds = Flatten[RandomSample[seeds, #] & /@ Join[ConstantArray[seedN, Quotient[maxSeed, seedN]], {Mod[maxSeed, seedN]}], 1];
+	seeds = # vox & /@ ToPackedArray@N[seeds + RandomReal[{-0.999, 0}, {maxSeed, 3}]];
 	seedN = Length@seeds;
 
 	(*start the tractography*)
-	If[mon,
-		Echo["Starting with "<>ToString[seedN]<>" seed points and step size "<>ToString[step]<>" mm"];
-	];
+	If[mon,	Echo["Starting with "<>ToString[seedN]<>" seed points and step size "<>ToString[step]<>" mm"]];
+
+	vecInt = MakeInt[tens, vox, int];
+	stopInt = MakeInt[stop, vox, int];
+	trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&;
 
 	(*check if parallel or normal computing is needed*)
-	If[OptionValue[Parallelization],
-		(*parallel tractography preparation*)
+	If[!OptionValue[Parallelization],
+		(*normal tractography*)
+		{t1, tracts} = AbsoluteTiming@If[mon,
+			ind = 0; Monitor[(ind++; trFunc[#]) & /@ seeds, ProgressIndicator[ind, {0, seedN}]],
+			trFunc/@seeds];
+		, (*parallel tractography*)
 		If[mon, Echo["Starting parallel preparation"]];
-		ran = Thread[{vox/2, vox Dimensions[stop] - If[int>0, vox/2, 0]}];
-		t2 = First@AbsoluteTiming[
-			DistributeDefinitions[step, maxAng, maxStep, stopT, tractF, vecF, seeds, tens, stop, vox, int, ran,
-				TractFunc, TractFuncI, MakeInt, EigVec, AlignVec, VecAng, Euler, RK2, RK4];
-			ParallelEvaluate[
-				vecInt = MakeInt[tens, vox, int];
-				stopInt = MakeInt[stop, vox, int];
-				trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&;
-			, DistributedContexts -> None]];
-		If[mon, Echo["Parallel preparation time: "<>ToString[Round[t2, .1]]<>" seconds"]];
-		(*actual tractography for parallel with memory clear*)
-		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, 
-			Method -> "EvaluationsPerKernel" -> 10, ProgressReporting -> mon];
+		DistributeDefinitions[tens, stop, vox, int, step, maxAng, maxStep, stopT, tractF, vecF, seeds, 
+			trFunc, TractFunc, TractFuncI, MakeInt, EigVec, AlignVec, VecAng, Euler, RK2, RK4];
+		(*Redifine int function on parallel kernels, see help distributeDefinitions*)
+		ParallelEvaluate[vecInt = MakeInt[tens, vox, int]; stopInt = MakeInt[stop, vox, int];];
+		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, ProgressReporting -> mon];
 		ParallelEvaluate[Clear[vecInt, stopInt, trFunc, tens, stop]];
 		ClearDistributedDefinitions[];
-		,
-		(*normal tractography with monitoring*)
-		vecInt = MakeInt[tens, vox, int];
-		stopInt = MakeInt[stop, vox, int];
-		trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&;
-		{t1, tracts} = AbsoluteTiming@If[mon,
-			Monitor[Table[trFunc@seeds[[iii]], {iii, 1, seedN}], ProgressIndicator[iii, {0, seedN}]],
-			Table[trFunc@seeds[[iii]], {iii, 1, seedN}]
-		];
 	];
 
 	(*select only tracts within correct range and clip tracts that are longer*)
@@ -676,7 +651,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	];
 
 	(*output tracts move them to coordinates before cropping*)
-	MoveTracts[#, vox (crp[[;; ;; 2]]-1)]&/@{tracts, seeds}
+	MoveTracts[#, vox (crp[[;; ;; 2]] - 1)]& /@ {tracts, seeds}
 ]
 
 
@@ -723,17 +698,15 @@ TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0, out},
 TractFuncI[{loci_, stepi_, h_}, {maxAng_, maxStep_, stop_}, {vecInt_, stopInt_, tractF_, vecF_}] := Block[{
 		loc1 = loci, step0 = stepi, step1
 	},
-	(*perform the tractography*)
-	Flatten[Last[Reap[Do[
-		(*direction at current location*)
-		step1 = tractF[loc1, step0, h, vecInt, vecF];
+	step1 = tractF[loc1, step0, h, vecInt, vecF];
+	Flatten[Last@Reap[Do[
 		(*check for stop*)
-		If[stopInt @@ loc1 < stop || VecAng[step0, step1] > maxAng || Norm[step1] < 0.8 h, Break[]];
-		(*sow valid point and update for next location*)
-		Sow[loc1];
+		If[stopInt @@ loc1 < stop || VecAng[step0, step1] > maxAng || Norm[step1] < 0.8 h, Break[], Sow[loc1]];
+		(*Update location*)
 		loc1 = loc1 + step1;
 		step0 = step1;
-	, maxStep]]], 1]
+		step1 = tractF[loc1, step0, h, vecInt, vecF];
+	, maxStep]], 1]
 ];
 
 
@@ -790,7 +763,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, 
 		i1, i2, i3, i, v, s, v2, vv2, l1, a, b, c, norm, vec
 	},
-	(*tens = 1000 t;*)
+
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
 	vec = If[Total[Abs[tens]]<10.^-15, {0., 0., 0.},
 
@@ -860,7 +833,7 @@ FindTensorPermutation[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : Optio
 FindTensorPermutation[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {{par, {min, max}}}, opts]
 
 FindTensorPermutation[tens_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, stop_, opts : OptionsPattern[]] := Block[{
-	step, tracts, perms, flips, lengths, i, j, pl, ind
+		step, tracts, perms, flips, lengths, i, j, pl, ind
 	},
 
 	perms = {{"x", "y", "z"}, {"x", "z", "y"}, {"y", "x", "z"}, {"y","z", "x"}, {"z", "x", "y"}, {"z", "y", "x"}};
@@ -1237,7 +1210,7 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 		colListT = colListC = Reverse[ColorData[colFunc] /@ Rescale[ran]][[RandomSample[ran]]];
 	];
 
-	(*reference environement*)
+	(*reference environment*)
 	If[mon, Echo["Making muscle iso volumes"]];
 	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
 	ref[[1]] = {};
