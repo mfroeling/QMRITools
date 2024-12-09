@@ -765,40 +765,35 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 	},
 
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
-	vec = If[Total[Abs[tens]]<10.^-15, {0., 0., 0.},
+	(*Extract tensor components*)
+	{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
+	If[Total[{dxx, dyy, dzz}] < 10.^-15, Return[{0., 0., 0.}]];
+	
+	(*method fails if any of the eigenvectors are identity, use slow method*)
+	{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
+	If[dxy2 dxz2 dyz2 < 10.^-15, Return[First@Eigenvectors[{{dxx, dxy, dxz}, {dxy, dyy, dyz}, {dxz, dyz, dzz}}, 1]]];
 
-		(* Extract tensor components *)
-		{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
-		{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
+	(*tensor invariants*)
+	i1 = dxx + dyy + dzz;
+	i2 = dxx dyy + dxx dzz + dyy dzz - dxy2 - dxz2 - dyz2;
+	i3 = dxx dyy dzz + 2 dxy dxz dyz - dzz dxy2 - dyy dxz2 - dxx dyz2;
 
-		(* First and second invariants *)
-		i1 = dxx + dyy + dzz;
-		i2 = dxx dyy + dxx dzz + dyy dzz - dxy2 - dxz2 - dyz2;
-		i3 = dxx dyy dzz + 2 dxy dxz dyz - dzz dxy2 - dyy dxz2 - dxx dyz2;
+	(*Use trigonometric solution for the largest eigenvalue only if v > 0*)
+	i = i1/3;
+	v = i^2 - i2/3;
+	If[v <= 0., Return[{0., 0., 0.}]];
+	v2 = Sqrt[v];
+	s = i^3 - (i1 i2)/6 + i3/2;
+	l1 = i + 2 v2 Cos[ArcCos[Min[1., Max[-1., s/(v v2)]]]/3];
 
-		(* Calculate the first eigenvalue using an approximation *)
-		i = i1/3;
-		v = i^2 - i2/3;
-		(*for v<=0 l1 does not make sense for DTI*)
-		If[v <= 0., {0., 0., 0.},
-			(* Use trigonometric solution for the largest eigenvalue *)
-			v2 = Sqrt[v];
-			s = i^3 - (i1 i2)/6 + i3/2;
-			l1 = i + 2 v2 Cos[ArcCos[Min[1., Max[-1., s/(v v2)]]]/3];
+	(*Calculate the corresponding eigenvector components*)
+	{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
+	vec = {b c, a c, a b};
 
-			(* Calculate the corresponding eigenvector components*)
-			{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
-			vec = {b c, a c, a b};
-
-			(*normalize the vector*)
-			norm = Norm[vec];
-			If[norm < 10.^-30 || l1 < 0., {0., 0., 0.}, 
-				vec / norm
-			]
-		]
-	];
-
-	(*align the vector with the tracts*)
+	(*normalize and align the vector with the incomming direction*)
+	norm = Norm[vec];
+	If[norm < 10.^-15 || l1 < 0., Return[{0., 0., 0.}]];
+	vec = vec/norm;
 	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
