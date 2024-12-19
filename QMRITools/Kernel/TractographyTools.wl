@@ -785,6 +785,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 	v2 = Sqrt[v];
 	s = i^3 - (i1 i2)/6 + i3/2;
 	l1 = i + 2 v2 Cos[ArcCos[Min[1., Max[-1., s/(v v2)]]]/3];
+	If[l1 < 0, Return[{0., 0., 0.}]];
 
 	(*Calculate the corresponding eigenvector components*)
 	{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
@@ -792,7 +793,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 
 	(*normalize and align the vector with the incomming direction*)
 	norm = Norm[vec];
-	If[norm < 10.^-15 || l1 < 0., Return[{0., 0., 0.}]];
+	If[norm < 10.^-15, Return[{0., 0., 0.}]];
 	vec = vec/norm;
 	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]

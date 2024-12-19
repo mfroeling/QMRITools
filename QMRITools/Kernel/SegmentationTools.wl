@@ -269,12 +269,15 @@ MonitorInterval::usage =
 L2Regularization::usage =
 "L2Regularization is an option for TrainSegmentationNetwork. It defines the L2 regularization factor."
 
-
 PatchesPerSet::usage =
 "PatchesPerSet is an option for GetTrainData. Defines how many random patches per dataset are created within the batch."
 
 AugmentData::usage = 
 "AugmentData is an option for GetTrainData and TrainSegmentationNetwork. If set True the training data is augmented."
+
+PadData::usage =
+"PadData is an option for GetTrainData and TrainSegmentationNetwork.. If set to an integers the that number of slices on the top and bottom of the 
+data can be made 0. This is done to learn cut of datasets."
 
 PatchSize::usage =
 "PatchSize is an option for TrainSegmentationNetwork. Defines the patch size used in the network training."
@@ -373,12 +376,11 @@ GetNeuralNet["Clear"] := (
 	GetNeuralNetI[name_] := GetNeuralNetI[name] = NeuralNetFunc[name]
 )
 
-GetNeuralNet[name_?StringQ]:= GetNeuralNetI[name]
-
+GetNeuralNet[name_?StringQ] := GetNeuralNetI[name]
 
 GetNeuralNetI[name_] := GetNeuralNetI[name] = NeuralNetFunc[name]
 
-NeuralNetFunc[name_]:=GetNeuralNetI[name]=Which[
+NeuralNetFunc[name_] := GetNeuralNetI[name] = Which[
 	FileExistsQ[name], Import[name],
 	FileExistsQ[GetAssetLocation[name]], Import[GetAssetLocation[name]],
 	True, $Failed
@@ -963,7 +965,7 @@ AddLossLayer[net_]:=NetGraph[<|
 	"Dice" -> DiceLossLayer[2],
 	"Jaccard" -> JaccardLossLayer[2],
 	"Tversky" -> TverskyLossLayer[0.7],
-	"Focal" -> FocalLossLayer[2 ,0.25],
+	"Focal" ->  NetGraph[NetChain[{FocalLossLayer[2 ,0.25], ElementwiseLayer[10 #&]}]],
 	"SquaredDiff" -> NetGraph[NetChain[{MeanSquaredLossLayer[], ElementwiseLayer[50 #&]}]],
 	"CrossEntropy" -> NetGraph[NetChain[{CrossEntropyLossLayer["Probabilities"]}]]
 |>,{
@@ -984,17 +986,16 @@ SyntaxInformation[DiceLossLayer] = {"ArgumentsPattern" -> {_.}};
 
 DiceLossLayer[] := DiceLossLayer[2]
 
-DiceLossLayer[n_] := Block[{smooth},
+DiceLossLayer[n_] := NetFlatten[
 	(*10.48550/arXiv.1911.02855 and 10.48550/arXiv.1606.04797 for squared dice loss look at v-net*)
-	smooth =1;
-	NetFlatten@NetGraph[<|
+	NetGraph[<|
 		(*flatten input and target; function layer allows to switch to L2 norm if #^2*)
 		"input" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; -2]},
 		"target" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; -2]},
 		(*intersection or TP*)
 		"intersection" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; -2]},
-		(*the loss function 2*intersection / (input + target)*)
-		"dice" -> {ThreadingLayer[1. - ((2. #1 + smooth) / (#2 + #3 + smooth)) &], AggregationLayer[Mean, 1]}
+		(*the loss function 2*intersection / (input + target), +1 is for numerical stability*)
+		"dice" -> {ThreadingLayer[1. - ((2. #1 + 1) / (#2 + #3 + 1)) &], AggregationLayer[Mean, 1]}
 	|>, {
 		NetPort["Input"] -> "input",
 		NetPort["Target"] -> "target",
@@ -1012,17 +1013,16 @@ SyntaxInformation[JaccardLossLayer] = {"ArgumentsPattern" -> {_.}};
 
 JaccardLossLayer[] := JaccardLossLayer[2]
 
-JaccardLossLayer[n_]:= Block[{smooth},
+JaccardLossLayer[n_]:= 	NetFlatten[
 	(*https://arxiv.org/pdf/1906.11600 for the definition of squared jaccard loss*)
-	smooth = 1;
-	NetFlatten@NetGraph[<|
+	NetGraph[<|
 		(*flatten input and target; function layer allows to switch to L2 norm if #^2*)
 		"input" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; -2]},
 		"target" -> {FunctionLayer[#^n &], AggregationLayer[Total, ;; -2]},
 		(*intersection or TP*)
 		"intersection" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; -2]},
-		(*the loss function intersection / union with union = (input + target - intersection)*)
-		"Jaccard" -> {ThreadingLayer[1. - ((#1 + smooth) / ((#2 + #3) - #1 + smooth)) &], AggregationLayer[Mean, 1]}
+		(*the loss function intersection / union with union = (input + target - intersection), +1 is for numerical stability*)
+		"Jaccard" -> {ThreadingLayer[1. - ((#1 + 1) / ((#2 + #3) - #1 + 1)) &], AggregationLayer[Mean, 1]}
 	|>, {
 		NetPort["Input"] -> "input",
 		NetPort["Target"] -> "target",
@@ -1040,17 +1040,15 @@ SyntaxInformation[TverskyLossLayer] = {"ArgumentsPattern" -> {_.}};
 
 TverskyLossLayer[] := TverskyLossLayer[0.7]
 
-TverskyLossLayer[beta_?NumberQ] := Block[{smooth, alpha},
-	(* https://doi.org/10.48550/arXiv.1706.05721 *)
-	smooth = 1;
-	alpha = 1 - beta;
-	NetFlatten@NetGraph[<|
+TverskyLossLayer[beta_?NumberQ] := NetFlatten[
+	(* https://doi.org/10.48550/arXiv.1706.05721 Tversky loss function for 3D segmentation*)
+	NetGraph[<|
 		(*intersection or TP*)
 		"truePos" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; -2]},
 		"falsePos" -> {ThreadingLayer[(1 - #1) #2 &], AggregationLayer[Total, ;; -2]},
 		"falseNeg" -> {ThreadingLayer[#1 (1 - #2) &], AggregationLayer[Total, ;; -2]},
-		(*the loss function TP / (TP + a FP + b FN)*)
-		"Tversky" -> {ThreadingLayer[1. - (#1 + smooth) / (#1 + alpha #2 + beta #3 + smooth) &], 
+		(*the loss function TP / (TP + a FP + b FN), +1 is for numerical stability, alpha = 1 - beta *)
+		"Tversky" -> {ThreadingLayer[1. - (#1 + 1) / (#1 + (1 - beta) #2 + beta #3 + 1) &], 
 			AggregationLayer[Mean, 1]}
 	|>, {
 		{NetPort["Target"], NetPort["Input"]} -> "truePos",
@@ -1072,10 +1070,10 @@ FocalLossLayer[] := FocalLossLayer[2, 0.25]
 FocalLossLayer[g_] := FocalLossLayer[g, 0.25]
 
 FocalLossLayer[g_, a_] := NetFlatten[
-	(*https://arxiv.org/abs/1708.02002v2*)
+	(*https://arxiv.org/abs/1708.02002v2 for definition of focal loss, 10^-15 is for numerical stability*)
 	NetGraph[{
 		"flatPr" -> {ThreadingLayer[#1  #2 &], AggregationLayer[Total, {-1}], FlattenLayer[]},
-		"focal" -> {ThreadingLayer[-a  Log[#1 + 10^-20](1 - #1)^g &], AggregationLayer[Mean, 1], FunctionLayer[4 # &]}
+		"focal" -> {ThreadingLayer[-a  Log[#1 + 10^-15](1 - #1)^g &], AggregationLayer[Mean, 1]}
 		}, {
 			{NetPort["Input"], NetPort["Target"]} -> "flatPr" -> "focal" -> NetPort["Loss"]
 	}, "Loss" -> "Real"]
@@ -1126,64 +1124,62 @@ RuntimeAttributes -> {Listable}]
 
 SyntaxInformation[PatchesToData] = {"ArgumentsPattern" -> {_, _, _., _.}};
 
-PatchesToData[patches_, ran_] := PatchesToData[patches, ran, Max /@ Transpose[ran[[All, All, 2]]], {}]
+PatchesToData[patches_, location_] := PatchesToData[patches, location, Max /@ Transpose[location[[All, All, 2]]], {}]
 
-PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}] := PatchesToData[patches, ran, dim, {}]
+PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}] := PatchesToData[patches, location, dim, {}]
 
-PatchesToData[patches_, ran_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?ListQ] := Block[{
+PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?ListQ] := Block[{
 		sel, zero, a1, a2, b1, b2, c1, c2, dat, wt,
 		seg, lab, pos, si, pi, overlap
 	},
-	zero = SparseArray[{}, dim];
 
-	Normal@If[Length@patches === 1,
-		(*only one patch, return it*)
-		dat = zero;
-		{{a1, a2}, {b1, b2}, {c1, c2}} = ran[[1]];
-		dat[[a1 ;; a2, b1 ;; b2, c1 ;; c2]] = patches[[1, 1 ;; a2 - a1 + 1, 1 ;; b2 - b1 + 1, 1 ;; c2 - c1 + 1]];
-		If[labs === {}, dat,
-			SmoothSegmentation[dat, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0]
-		]
+	If[labs === {},
+		(*no labs given, assuming normal data*)
+		sparceData[patches, location, dim]
 		,
-		(*multiple patches, need to merge*)
-		If[labs === {},
-			(*no labs given, assuming normal data*)
-			{dat, wt} = Total /@ Transpose@MapThread[(
-				dat = zero;
-				{{a1, a2}, {b1, b2}, {c1, c2}} = #2;
-				dat[[a1 ;; a2, b1 ;; b2, c1 ;; c2]] = #1[[1 ;; a2 - a1 + 1, 1 ;; b2 - b1 + 1, 1 ;; c2 - c1 + 1]];
-				{dat, SparseArray[Unitize[dat]]}
-			) &, {patches, ran}];
-			SparseArray[dat["ExplicitPositions"] -> dat["ExplicitValues"] / wt["ExplicitValues"], dim]
-			,
-			(*labs given, assuming segmentations*)
-			{seg, lab} = Transpose[SplitSegmentations /@ patches];
-			seg = Transpose /@ seg;
+		(*labs given, assuming segmentations*)
+		{seg, lab} = Transpose[SplitSegmentations /@ patches];
+		seg = Transpose /@ seg;
+		zero = SparseArray[{}, dim];
 
-			seg = (
-				pos = Position[lab, #];
-				If[pos === {},
-					zero,
-					si = seg[[##]] & @@ # & /@ pos;
-					pi = ran[[#[[1]]]] & /@ pos;
-					Ceiling[PatchesToData[si, pi, dim]]
-				]
-			) & /@ labs;
+		(*get the positions for each expected label*)
+		pos = Position[lab, #]& /@ labs;
 
-			(*only keep the largest connected segmentation*)
-			seg = SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0] &/@ seg;
+		(*make the segmentation for each expected label*)
+		seg = Table[If[p === {}, zero,
+			si = seg[[##]] & @@ # & /@ p;
+			pi = location[[#]] & /@ p[[All,1]];
+			Unitize[sparceData[si, pi, dim]]
+		], {p, pos}];
 
-			(*set overlapping to zero and then add to background label*)
-			overlap = SparseArray[1 - UnitStep[Total[seg] - 2]];
-			If[Min[overlap]===1, 
-				seg = SmoothMask[overlap #, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0]&/@ seg
-			];
-
-			MergeSegmentations[Transpose[seg], labs]
-		]
+		(*only keep the largest connected segmentation remove the overlap and merge*)
+		seg = SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0] &/@ seg;
+		MergeSegmentations[RemoveMaskOverlaps@Transpose[seg], labs]
 	]
 ]
 
+
+sparceData[data_, loc_?MatrixQ, dim_] := Block[{dat}, 
+	dat = SparseArray[{}, dim];
+	(*with patch creation data can be padded with 0s on right side therefore clip here to bounds*)
+	dat[[loc[[1, 1]] ;; loc[[1, 2]], loc[[2, 1]] ;; loc[[2, 2]], loc[[3, 1]] ;; loc[[3, 2]]]] = 
+		data[[
+			1 ;; loc[[1, 2]] - loc[[1, 1]] + 1, 
+			1 ;; loc[[2, 2]] - loc[[2, 1]] + 1, 
+			1 ;; loc[[3, 2]] - loc[[3, 1]] + 1
+		]]; 
+	dat
+]
+
+sparceData[data_, loc_?ArrayQ, dim_] := Block[{dat, wt},
+	If[Length@patches === 1,
+		sparceData[patches[[1]], location[[1]], dim],
+		dat = MapThread[sparceData[#1, #2, dim] &, {data, loc}];
+		wt = N@Total@Unitize@dat;
+		dat = N@Total@dat;
+		SparseArray[dat["ExplicitPositions"] -> dat["ExplicitValues"]/wt["ExplicitValues"], dim]
+	]
+]
 
 (* ::Subsubsection::Closed:: *)
 (*DataToPatches*)
@@ -1679,8 +1675,8 @@ FindPatchDim[net_, dims_, lim_] := Block[{
 
 	(*needed scaling*)
 	sc = inp/out;
-	(*dimM = sc  Ceiling[dim/sc];*)
-	dimM = sc ({Floor[#[[1]]], Ceiling[#[[2]]], Ceiling[#[[3]]]} & [dim/sc]);
+	dimM = sc  Ceiling[dim/sc];
+	(*dimM = sc ({Floor[#[[1]]], Ceiling[#[[2]]], Ceiling[#[[3]]]} & [dim/sc]);*)
 
 	(*if memory limit is given find patch that fits*)
 	If[!(lim === 1000 || lim === Automatic),
@@ -1697,7 +1693,7 @@ FindPatchDim[net_, dims_, lim_] := Block[{
 	];
 
 	(*output the patch dim*)
-	{Min@#[[1]], Max@#[[2]], Max@#[[3]]} & [Thread[{dimN, inp}]]
+	{Min@#[[1]], Max@#[[2]], Max@#[[3]]} & [Thread[{dimN, {2, 1, 1} inp}]]
 ]
 
 
@@ -1735,7 +1731,7 @@ Options[TrainSegmentationNetwork] = {
 	LearningRate -> 0.001,
 	L2Regularization -> 0.0001,
 
-	MonitorCalc->False
+	MonitorCalc -> False
 }
 
 
@@ -1759,6 +1755,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	{batch, roundLength, rounds, augment, pad, patches, loss, rep, learningRate, l2reg} = OptionValue[
 		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PadData, PatchesPerSet, 
 			LossFunction, MonitorInterval, LearningRate, L2Regularization}];
+	pad = If[NumberQ[pad], Round[pad], False];
 
 	(*import all the train data*)
 	files = FileNames["*.wxf", inFol];
@@ -1867,7 +1864,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*import all train data or train out of memory*)
 	data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
 	(*prepare a validation set*)
-	validation = DeleteDuplicates[GetTrainData[data, Round[0.1 roundLength], patch, nClass, AugmentData -> augment]];
+	validation = GetTrainData[data, Round[0.1 roundLength], patch, nClass, 
+		PatchesPerSet -> patches, AugmentData -> augment, PadData -> pad];
 	Echo[{Length@data, Length@validation}, "data / validation: "];
 
 	(*---------- Train the network ----------------*)
@@ -1881,8 +1879,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*train the network*)
 	trained = NetTrain[
 		netIn, {
-			GetTrainData[data, #BatchSize, patch, nClass, AugmentData -> augment, 
-				PatchesPerSet -> patches, PadData -> Round[pad]] &, 
+			GetTrainData[data, #BatchSize, patch, nClass, 
+				PatchesPerSet -> patches, AugmentData -> augment, PadData -> pad] &, 
 			"RoundLength" -> roundLength
 		}, 
 		All, 
@@ -2047,7 +2045,7 @@ AugmentImageData[im_, {rot_, flip_}]:=Block[{rt, fl, tr},
 Options[GetTrainData] = {
 	PatchesPerSet -> 1, 
 	AugmentData -> True,
-	PadData-> False
+	PadData -> False
 };
 
 SyntaxInformation[GetTrainData] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
@@ -2090,24 +2088,26 @@ GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 
 	(*make the output*)
 	datO = datO[[;; nBatch]];
-	segO = If[IntegerQ[nClass], ClassEncoder[segO[[;; nBatch]], nClass], segO[[;; nBatch]] + 1];
-	If[IntegerQ[pad], {datO, segO} = AddPadding[pad, datO, segO]];
+	segO = segO[[;; nBatch]];
+	If[IntegerQ[pad], {datO, segO} = AddPadding[datO, segO, pad]];
+	segO = If[IntegerQ[nClass], ClassEncoder[segO, nClass], segO + 1];
 	Thread[Transpose[{ToPackedArray@N@datO}] -> ToPackedArray@Round@segO]
 ];
 
 
-AddPadding[p_, dat_, seg_]:=Block[{datp, segp, pad},
+AddPadding[dat_, seg_, p_]:=Block[{datp, segp, pad},
 	Transpose@MapThread[(
 		datp = #1;
 		segp = #2;
-		If[RandomChoice[{0.3, 0.7}->{True, False}], pad = RandomInteger[{-p, p}];
+		If[RandomChoice[{0.3, 0.7} -> {True, False}], 
+			pad = RandomInteger[{-p, p}];
 			Which[
-				pad < 0, datp[[pad ;;]] = 0. datp[[pad ;;]]; segp[[pad ;;]] = 0. segp[[pad ;;]];,
-				pad > 0, datp[[;; pad]] = 0. datp[[;; pad]]; segp[[;; pad]] = 0. segp[[;; pad]];
+				pad < 0, datp[[pad ;;, All, All]] = segp[[pad ;;, All, All]] = 0.,
+				pad > 0, datp[[;; pad, All, All]] = segp[[;; pad, All, All]] = 0.
 			]
 		];
 		{datp, segp}
-	)& ,{dat,seg}]
+	)& ,{dat, seg}]
 ]
 
 
@@ -2146,7 +2146,7 @@ PrepareTrainingData[labFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]]:=Pre
 
 PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, OptionsPattern[]] := Block[{
 		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, 
-		seg, err, vox, voxd, dat, im, nl, outf, out, gr, clean
+		seg, err, vox, voxd, dat, im, nl, outf, gr, clean, legend, head
 	},
 
 	{labT, datT, inLab, outLab, test, clean} = OptionValue[{LabelTag, DataTag, InputLabels, OutputLabels, TestRun, 
@@ -2158,10 +2158,13 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 	datFiles = FileNames["*" <> datT <> ".nii.gz", datFol];
 
 	(*prepare stuff for monitoring*)
-	i = 1; out = ""; im = Image[{{0}}];
+	i = 1; 
+	out = {i, "", ""};
+	im = Image[{{0}}];
+	
 	PrintTemporary["Number of segmentation files: ", Length@segFiles];
 	PrintTemporary[Dynamic[out]];
-	If[! test, PrintTemporary[Dynamic[Show[im, ImageSize -> 300]]]];
+	If[!test, PrintTemporary[Dynamic[Show[im, ImageSize -> 300]]]];
 
 	(*loop over segmentation files check for data and validate*)
 	out = Table[

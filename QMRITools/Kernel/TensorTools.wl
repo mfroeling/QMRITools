@@ -373,7 +373,7 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 
 
 FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}}, Block[{
-	sol, ittA, contA, solA, itt, cont, soli, res, mad, wts, wmat, fitE, LS2, bmat2, out},
+	sol, solA, soli, res, mad, wts, wmat, fitE, LS2, bmat2, out},
 
 	(*based on DOI: 10.1002/mrm.25165*)
 	(*initialize some values*)
@@ -389,15 +389,10 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 		If[Last[sol] > 0,
 
 			(*Start outer loop*)
-			ittA = 0; contA = 1;
-			While[contA == 1,
-				(*init the solution*)
+			Do[
 				solA = sol;
-				ittA++;
-
 				(*Step2: Compute a robust estimate for homoscedastic regression using IRLS.*)
-				itt = 0; cont = 1;
-				While[cont == 1, itt++;
+				Do[
 					(*init the solution*)
 					soli = sol;
 					(*a. Calculate the residuals e* in the linear domain*)
@@ -405,16 +400,16 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 					(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
 					mad = 1.4826 MedianDeviation[res];
 					(*prevent calculation with 0*)
-					If[mad === 0., cont = 0,
+					If[mad === 0., Break[],
 						(*c. Recompute the weights according to Eq. [13].*)
-						wts = Normalize[1 / (1 + (res/mad)^2)^2];
+						wts = 1 / (1 + (res/mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
 						wmat = Transpose[bmat] . DiagonalMatrix[wts];
 						sol = PseudoInverse[wmat . bmat] . wmat . ls;
 						(*e. Check convergence*)
-						If[Total[UnitStep[Abs[sol - soli] - con Abs[soli]]] === 0 || itt === 3, cont = 0];
+						If[Total[UnitStep[Abs[sol - soli] - con Abs[soli]]] === 0, Break[]];
 					];
-				];(*end first while*)
+				, 3];(*end first while*)
 
 				(*Step 3: Transform variables for heteroscedasticity*)
 				fitE = Exp[-bmat . Chop[sol]] + 10^-10;
@@ -425,31 +420,28 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 				sol = PseudoInverse[bmat2] . LS2;
 
 				(*Step 5: Compute a robust estimate for homoscedastic regression using IRLS.*)
-				itt = 0; cont = 1;
-				While[cont == 1, 
+				Do[
 					(*init the solution*)
 					soli = sol;
-					itt++;
 					(*a. Calculate the residuals e* in the linear domain*)
 					res = LS2 - bmat2 . sol;
 					(*b. Obtain an estimate of the dispersion of the residuals by calculating the median absolute deviation (MAD).*)
 					mad = 1.4826 MedianDeviation[res];
 					(*prevent calculation with 0*)
-					If[mad === 0., 
-						cont = 0,
+					If[mad === 0., Break[],
 						(*c. Recompute the weights according to Eq. [13].*)
-						wts = Normalize[1 / (1 + (res/mad)^2)^2];
+						wts = 1 / (1 + (res/mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
 						wmat = Transpose[bmat2] . DiagonalMatrix[wts];
 						sol = PseudoInverse[wmat . bmat2] . wmat . LS2;
 						(*e. Check convergence*)
-						If[Total[UnitStep[Abs[sol - soli] - con Abs[soli]]] === 0 || itt === 3, cont = 0];
+						If[Total[UnitStep[Abs[sol - soli] - con Abs[soli]]] === 0, Break[]];
 					];
-				];(*end second while*)
+				, 3];(*end second while*)
 
 				(*Step 6: Check convergence overall loop*)
-				If[Total[UnitStep[Abs[sol - solA] - con Abs[solA]]] === 0 || ittA === 5, contA = 0];
-			];(*end main while*)
+				If[Total[UnitStep[Abs[sol - solA] - con Abs[solA]]] === 0 , Break[]];
+			, 5];(*end main while*)
 
 			(*Step 7: Identify and exclude outliers*)
 			res = LS2 - bmat2 . sol;

@@ -1617,7 +1617,7 @@ RegisterCardiacData[{data_?ArrayQ, mask_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?Numb
 		(i++;RegisterData[{data[[#]],ConstantArray[maskr[[#]],size],vox},
 			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices
 		]
-		,ProgressIndicator[i,{0,Length[data]}]
+		,ProgressIndicator[i, {0,Length[data]}]
 	];
 	datar
 ]

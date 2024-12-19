@@ -672,7 +672,7 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 
 		(*switch methods: 10.1016/j.csda.2007.11.008*)
 		(*IQR-inter quantile range, SIQR-skewed iql, aIQR-adjusted iqr using medcouple for skewness*)
-		{low, up} = Switch[OptionValue[OutlierMethod],
+		{low, up} = Switch[OptionValue[OutlierMethod], 
 			"SD",
 			sd = StandardDeviation[dataQ];
 			mn = Mean[dataQ];
@@ -685,10 +685,10 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 			{q1, q3} = Quantile[dataQ, {.25, .75}];
 			iqr = (q3 - q1);
 			{q1 - sc iqr, q3 + sc iqr},
-			"sIQR", 
+			"sIQR"|"SIQR", 
 			{q1, q2, q3} = Quantile[dataQ, {.25, 0.5, .75}];
 			{q1 - sc 2 (q2 - q1), q3 + sc 2 (q3 - q2)},
-			"aIQR", 
+			"aIQR"|"aIQR", 
 			{q1, q2, q3} = Quantile[dataQ, {.25, 0.5, .75}];
 			iqr = (q3 - q1);
 			mc = MedCouple[dataQ, q2];
