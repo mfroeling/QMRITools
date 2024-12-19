@@ -55,7 +55,7 @@ The mask is 3D, seg is 4D."
 
 
 SplitSegmentations::usage = 
-"SplitSegmentations[segmentation] splits a lable mask from ITKsnap or slicer3D in seperate masks and label numbers.
+"SplitSegmentations[segmentation] splits a lable mask from ITKsnap or slicer3D in separate masks and label numbers.
 Output is masks and label numbers, {mask, labs}."
 
 GetSegmentationLabels::usage = 
@@ -74,7 +74,7 @@ SelectSegmentations::usage =
 "SelectSegmentations[seg, labs] selects only the segmentations from seg with label number labs."
 
 ReplaceSegmentations::usage =
-"ReplaceSegmentations[seg, labs, new] relapaces the labels labs form the segmentation seg for labels new. Both labs and new should
+"ReplaceSegmentations[seg, labs, new] replaces the labels labs form the segmentation seg for labels new. Both labs and new should
 be lists of integers of the same size. If seg contains more labels then given in labs these will be replaced by 0." 
 
 SmoothSegmentation::usage =
@@ -118,7 +118,7 @@ MaskSmoothing::usage =
 "MaskSmoothing is an options for Mask, SmoothMask and SmoothSegmentation, if set to True it smooths the mask, by closing holse and smoothing the contours."
 
 MaskComponents::usage =
-"MaskComponents is an option for Mask, SmoothMask and SmoothSegmentation. Determinse the amount of largest clusters used as mask." 
+"MaskComponents is an option for Mask, SmoothMask and SmoothSegmentation. Determines the amount of largest clusters used as mask." 
 
 MaskClosing::usage =
 "MaskClosing  is an option for Mask, SmoothMask and SmoothSegmentation. The size of the holes in the mask that will be closed." 
@@ -137,7 +137,7 @@ SmoothIterations::usage =
 (*Error Messages*)
 
 
-Mask::tresh = "Given treshhold `1` value is not a valid input, must be a number for min treshhold only or a vector {min tresh, max tresh}."
+Mask::tresh = "Given threshold `1` value is not a valid input, must be a number for min threshold only or a vector {min tresh, max tresh}."
 
 MaskData::dim = "Dimensions are not equal, data: `1`, mask `2`." 
 
@@ -520,7 +520,7 @@ SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPa
 
 SmoothSegmentation[maskIn_,  opts:OptionsPattern[]] :=SmoothSegmentation[maskIn, All, opts]
 
-SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := Block[{smooth,obj, md, masks, labs},
+SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := Block[{smooth, obj, md, masks, labs},
 	md = ArrayDepth[maskIn];
 	(*split segmentations and make sparse if needed*)
 	If[md===3, {masks, labs} = SplitSegmentations[maskIn], masks = maskIn];

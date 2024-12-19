@@ -116,6 +116,8 @@ Options[FindActivations] = Options[FindActivationsI] = {
 
 SyntaxInformation[FindActivations] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
+FindActivations[data_?MatrixQ, ops : OptionsPattern[]]:= FindActivationsI[data, ops]
+
 FindActivations[data_, ops : OptionsPattern[]] := FindActivationsI[NormalizeData[data, NormalizeMethod -> "Volumes"],  ops]
 
 FindActivations[data_, mask_, ops : OptionsPattern[]] := FindActivationsI[
@@ -123,36 +125,37 @@ FindActivations[data_, mask_, ops : OptionsPattern[]] := FindActivationsI[
 
 FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, dat, act, mn ,tr, itt, back},
 
-	(*Get and check options*)
-	met = OptionValue[ThresholdMethod];
-	{sc, fr} = OptionValue[ActivationThreshold];
-	If[sc < 0 || fr > 1, Return[Message[FindActivations::tresh, sc, fr]]];
-	{start, stop} = OptionValue[IgnoreSlices];
-	itt = OptionValue[ActivationIterations];
-	back = OptionValue[ActivationBackground];
-
+	(*Get the options*)
+	{met, {sc, fr}, {start, stop}, itt, back ,output} = OptionValue[{ThresholdMethod, ActivationThreshold, 
+		IgnoreSlices, ActivationIterations, ActivationBackground, ActivationOutput}];
+		
 	(*set the threshold*)
+	If[sc < 0 || fr > 1, Return[Message[FindActivations::tresh, sc, fr]]];
 	{sc, fr} = Switch[met,
 		"Both", {sc, fr},
 		"Fraction", {0, fr},
 		"StandardDeviation", {sc, 1}
 	];
 
-	(*perform the activation finding in the selected slices*)
-	dat = RotateDimensionsLeft[Transpose[data[[start + 1 ;; -stop - 1]]]];	
-	act = FindActC[dat, sc, fr, itt, back];
+	If[MatrixQ[data],
+		FindActC[data, sc, fr, itt, back],
 
-	(*create extra output if needed*)
-	If[OptionValue[ActivationOutput]=!="Activation",
-		{mn, tr, sc, fr} = RotateDimensionsRight[MeanThresh[dat, act, sc, fr, back]];
-		mn = ToPackedArray@ArrayPad[mn, {{start, stop}, {0, 0}, {0, 0}}, 0.];
-		tr = ToPackedArray@ArrayPad[Transpose[{tr, sc, fr}], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}, 0.];
-	];
+		(*perform the activation finding in the selected slices*)
+		dat = RotateDimensionsLeft[Transpose[data[[start + 1 ;; -stop - 1]]]];	
+		act = FindActC[dat, sc, fr, itt, back];
 
-	(*give output*)
-	act = SparseArray[ArrayPad[Round[Transpose[RotateDimensionsRight[act]]], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}]];
+		(*create extra output if needed*)
+		If[output=!="Activation",
+			{mn, tr, sc, fr} = RotateDimensionsRight[MeanThresh[dat, act, sc, fr, back]];
+			mn = ToPackedArray@ArrayPad[mn, {{start, stop}, {0, 0}, {0, 0}}, 0.];
+			tr = ToPackedArray@ArrayPad[Transpose[{tr, sc, fr}], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}, 0.];
+		];
 
-	If[OptionValue[ActivationOutput]==="Activation", {act, data}, {act, data, mn ,tr}] 
+		(*give output*)
+		act = SparseArray[ArrayPad[Round[Transpose[RotateDimensionsRight[act]]], {{start, stop}, {0, 0}, {0, 0}, {0, 0}}]];
+
+		If[output==="Activation", {act, data}, {act, data, mn ,tr}] 
+	]
 ]
 
 

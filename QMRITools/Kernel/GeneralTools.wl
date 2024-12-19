@@ -810,7 +810,7 @@ FitGradientMap[{data_, msk_}, ord_, smp_] := Block[{val, dim, coor, fit, x, y, z
 
 SyntaxInformation[MakeCoordinates] = {"ArgumentsPattern" -> {_, _}};
 
-MakeCoordinates[dim_?VectorQ,vox_]:=vox RotateDimensionsRight@Array[{##}&,dim]
+MakeCoordinates[dim_?VectorQ,vox_]:=vox RotateDimensionsRight@Array[{##}&, dim]
 
 MakeCoordinates[dat_?ArrayQ,vox_]:=MakeCoordinates[Dimensions@dat,vox]
 
@@ -1148,9 +1148,11 @@ SyntaxInformation[MakeIntFunction] = {"ArgumentsPattern" -> {_,_.,_.,OptionsPatt
 
 MakeIntFunction[dat_, opts:OptionsPattern[]] := MakeIntFunction[dat, {1,1,1}, 1, opts]
 
+MakeIntFunction[dat_, vox_?VectorQ, opts:OptionsPattern[]] := MakeIntFunction[dat, vox, 1, opts]
+
 MakeIntFunction[dat_, int_?IntegerQ, opts:OptionsPattern[]] := MakeIntFunction[dat, {1,1,1}, int, opts]
 
-MakeIntFunction[dat_, vox_, int_?IntegerQ, opts:OptionsPattern[]] := Block[{dim, def, range},
+MakeIntFunction[dat_, vox_?VectorQ, int_?IntegerQ, opts:OptionsPattern[]] := Block[{dim, def, range},
 	dim = Dimensions[dat][[;;3]];
 	range = Thread[{vox, vox dim}] - If[OptionValue[CenterVoxel]&&int>0, 0.5, 0] vox - If[OptionValue[CenterRange], 0.5, 0] dim;
 	def = 0. dat[[1,1,1]];
