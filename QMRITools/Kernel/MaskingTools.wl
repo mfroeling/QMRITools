@@ -171,7 +171,7 @@ NormalizeData[data_, opts : OptionsPattern[]] := Block[{ndat, mask},
 		mask = Mask[NormDat[ndat - Min@ndat, 0.]];
 		NormalizeData[data, mask, opts]
 		,
-		NormDatC[data]
+		Quiet@NormDatC[data]
 	]
 ]
 
@@ -194,7 +194,7 @@ NormDatC = Compile[{{dat, _Real, 3}}, Block[{fl, min, max, bins, cdf, n, tot},
 	n = 1024;
 	fl = Flatten[dat];
 	{min, max} = MinMax[fl];
-	If[min == max, dat,
+	If[min === max, dat,
 		bins = BinCounts[fl, {min, max, (max - min)/n}];
 		bins[[1]] = 0.;
 		tot = Total[bins];

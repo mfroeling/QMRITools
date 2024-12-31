@@ -588,7 +588,11 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 
 	step = N@If[NumberQ[step],step, Min[0.5 vox]];
 	maxStep = Ceiling[(maxLength/step)];
-	tractF = Switch[OptionValue[Method], "RungeKutta" | "RK" | "RK2", RK2, "RungeKutta4" | "RK4", RK4, _, Euler];
+	tractF = Switch[OptionValue[Method], 
+		"RungeKutta" | "RK" | "RK2", RK2, 
+		"RungeKutta4" | "RK4", RK4, 
+		_, Euler
+	];
 	
 	(*prepare tensor and stop data, remove background for performance and make int functions*)
 	dim = Rest@Dimensions@tensor;
