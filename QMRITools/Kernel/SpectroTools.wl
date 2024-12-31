@@ -2191,8 +2191,8 @@ SyntaxInformation[ImportSparSdat] = {"ArgumentsPattern" -> {_, _}};
 
 ImportSparSdat[fspar_,fsdat_]:=Block[{nums,head,depth,row,nsamp,x,y,z,bw,te,nuc,gyro,field,fids,specs},
 	(*read raw data and header*)
-	nums=FromVaxD[bin=BinaryReadList[fsdat,"UnsignedInteger32"]];
-	head=ParseSpar[Import[fspar,"Lines"]];
+	nums=FromVaxD[BinaryReadList[fsdat, "UnsignedInteger32"]];
+	head=ParseSpar[Import[fspar, "Lines"]];
 
 	(*get header infor*)
 	{bw,te,nuc,gyro}={"sample_frequency","spectrum_echo_time","nucleus","synthesizer_frequency"}/.head;
