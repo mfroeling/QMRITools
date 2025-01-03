@@ -29,12 +29,12 @@ TensorCalc::usage =
 Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the unweighted gradient direction.
 bvalue is a singe number indicating the b-value used.
 TensorCalc[data, gradients, bvec] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues.
-allows for differnt tensor fitting methods. gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}.
-bvec the bvector, with a bvalue defined for each gradient direction. b value for unweighted images is 0.
-TensorCalc[data, bmatix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues.
-bmat is the bmatrix which can be generated usiong Bmatrix.
+allows for different tensor fitting methods. gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}.
+bvec the b-vector, with a bvalue defined for each gradient direction. b value for unweighted images is 0.
+TensorCalc[data, bmatrix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues.
+bmat is the bmatrix which can be generated using Bmatrix.
 
-The bvalue assumed to be is in s/mm^2 and therfore the output is in mm^2/2.
+The bvalue assumed to be is in s/mm^2 and therefore the output is in mm^2/2.
 
 TensorCalc[] is based on DOI: 10.1016/j.neuroimage.2013.05.028 and 10.1002/mrm.25165."
 
@@ -42,14 +42,14 @@ TensorCalc[] is based on DOI: 10.1016/j.neuroimage.2013.05.028 and 10.1002/mrm.2
 FlipTensorOrientation::usage = 
 "FlipTensorOrientation[tens, perm] permutes the internal orientation of the tensor, perm can be any permutation of {\"x\",\"y\",\"z\"}.
 FlipTensorOrientation[tens, flip] flips the internal orientation of the tensor, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
-FlipTensorOrientation[tens, flip, perm] flips and permuter the internal orientation of the tensor.
-FlipTensorOrientation[tens, perm, flip]flips and permuter the internal orientation of the tensor."
+FlipTensorOrientation[tens, flip, perm] flips and permutes the internal orientation of the tensor.
+FlipTensorOrientation[tens, perm, flip]flips and permutes the internal orientation of the tensor."
 
 FlipGradientOrientation::usage = 
 "FlipGradientOrientation[grad, perm] permutes the internal orientation of the gradients, perm can be any permutation of {\"x\",\"y\",\"z\"}.
 FlipGradientOrientation[grad, flip] flips the internal orientation of the gradients, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
-FlipGradientOrientation[grad, flip, perm] flips and permuter the internal orientation of the gradients.
-FlipGradientOrientation[grad, perm, flip]flips and permuter the internal orientation of the gradients."
+FlipGradientOrientation[grad, flip, perm] flips and permutes the internal orientation of the gradients.
+FlipGradientOrientation[grad, perm, flip]flips and permutes the internal orientation of the gradients."
 
 
 EigenvalCalc::usage = 
@@ -78,26 +78,26 @@ ParameterCalc::usage =
 
 
 LogTensor::usage = 
-"LogTensor[tensor] transforms the tensor to LogEuclidian space.
+"LogTensor[tensor] transforms the tensor to LogEuclidean space.
 
 LogTensor[] is based on DOI: 10.1109/42.963816."
 
 ExpTensor::usage = 
-"ExpTensor[tensor] transforms the tensor from LogEuclidian space.
+"ExpTensor[tensor] transforms the tensor from LogEuclidean space.
 
 ExpTensor[] is based on DOI: 10.1109/42.963816."
 
 
 AngleCalc::usage = 
-"AngleCalc[data, vector] calculates the angel between the vector and the data. Data shoud be an array of dimensions {xxx,3}."
+"AngleCalc[data, vector] calculates the angel between the vector and the data. Data should be an array of dimensions {xxx,3}."
 
 AngleMap::usage = 
 "AngleMap[data] calculates the zennith and azimuth angles of a 3D dataset (z,x,y,3) containing vectors relative to the slice direction."
 
 
 DriftCorrect::usage = 
-"DriftCorrect[data, bval] dirft corrects the data using the signals of the lowest bvalue that has 6 or more unique volumes.
-For the function to work optimal it is best to have these volumes evenly spread throughout thet data and for the first and last volume to have this low bvalue.
+"DriftCorrect[data, bval] drift corrects the data using the signals of the lowest bvalue that has 6 or more unique volumes.
+For the function to work optimal it is best to have these volumes evenly spread throughout the data and for the first and last volume to have this low bvalue.
 
 DriftCorrect[] is based on DOI: 10.1002/mrm.26124."
 
@@ -109,7 +109,7 @@ SortDiffusionData::usage =
 "SortDiffusionData[data, grad, bval] sorts the diffusion datasets grad and bval for magnitude of bvalue."
 
 RemoveIsoImages::usage = 
-"RemoveIsoImages[data, grad, bval] Romoves the ISO images from the philips scanner from the data. ISO images have g={0,0,0} and b>0."
+"RemoveIsoImages[data, grad, bval] Removes the ISO images from the philips scanner from the data. ISO images have g={0,0,0} and b>0."
 
 
 ResidualCalc::usage =
@@ -125,8 +125,8 @@ ResidualCalc[dti,tensor,outlier,bmat] calculates the tensor residuals for the gi
 SigmaCalc::usage = 
 "SigmaCalc[dti,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 10.
 SigmaCalc[dti,tens,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 10.
-SigmaCalc[dti,grad,bvec,blur] calculates the noise sigma based on the tensor residual, If blur is 1 ther is no blurring.
-SigmaCalc[dti,tens,grad,bvec,blur] calculates the noise sigma based on the tensor residual. If blur is 1 ther is no blurring."
+SigmaCalc[dti,grad,bvec,blur] calculates the noise sigma based on the tensor residual, If blur is 1 there is no blurring.
+SigmaCalc[dti,tens,grad,bvec,blur] calculates the noise sigma based on the tensor residual. If blur is 1 there is no blurring."
 
 
 TransformTensor::usage = 
@@ -137,15 +137,15 @@ TransformTensor[] is based on DOI: 10.1109/42.963816."
 
 
 Correct::usage =
-"Correct[data, phase, shiftpar] corrects the dataset data using the phasemap and the shiftpar and interpolation order 1.
-Correct[data, phase, shiftpar, int] corrects the dataset data using the phasemap and the shiftpar and interpolation order int."
+"Correct[data, phase, shiftpar] corrects the dataset data using the phase map and the shiftpar and interpolation order 1.
+Correct[data, phase, shiftpar, int] corrects the dataset data using the phase map and the shiftpar and interpolation order int."
 
 TensorCorrect::usage=
 "TensorCorrect[tensor, phase, shift, vox] corrects the tensor based on B0 field map. Can perform both translation and rotation of tensor."
 
 Deriv::usage = 
 "Deriv[disp, vox] calculates the derivative of the displacement along the three main axes. disp is the displacement field, vox is the voxel size.
-Deriv[disp, vox, mask] calculates the derivative of the displacement along the three main axes. Sharp edges between the background en disp are solved by the mask. mask is a mask delining the edge of the displacement field.";
+Deriv[disp, vox, mask] calculates the derivative of the displacement along the three main axes. Sharp edges between the background en disp are solved by the mask. mask is a mask defining the edge of the displacement field.";
 
 
 (* ::Subsection::Closed:: *)
@@ -157,21 +157,21 @@ NormalizeSignal::usage =
 
 
 FullOutput::usage = 
-"FullOutput is an option for TensorCalc when using bvector. When True also the s0 is given as output."
+"FullOutput is an option for TensorCalc when using b-vector. When True also the s0 is given as output."
 
 RobustFit::usage = 
 "RobustFit is an option for TensorCalc. If true outliers will be rejected in the fit, only works with WLLS.
 If FullOutput is given the outlier map is given.";
 
 RobustFitParameters::usage =
-"RobustFitParameters is an option for TensorCalc. gives the threshold for stopping the iterations and the kappa for the outlier marging, {tr,kappa}."
+"RobustFitParameters is an option for TensorCalc. gives the threshold for stopping the iterations and the kappa for the outlier margin, {tr,kappa}."
 
 
 FilterShape::usage = 
 "FilterShape is an option for SigmaCalc. Can be \"Gaussian\" of \"Median\"."
 
 RejectMap::usage = 
-"RejectMap is an option for EigenvalCalc. If Reject is True and RejectMap is True both the eigenvalues aswel as a map showing je rejected values is returned."
+"RejectMap is an option for EigenvalCalc. If Reject is True and RejectMap is True both the eigenvalues as well as a map showing je rejected values is returned."
 
 Reject::usage = 
 "Reject is an option for EigenvalCalc. It True then voxels with negative eigenvalues are rejected and set to 0."
@@ -195,7 +195,7 @@ TensorCalc::grad =
 "The `2` gradient directions defined do not match the `1` gradients directions in the data set."
 
 TensorCalc::data =
-"Data set dimensions (`1`D) unknown, posibilities:
+"Data set dimensions (`1`D) unknown, possibilities:
 - Multiple slices (4D)-> {slices, directions, x,y}
 - Single slice (3D)-> {directions, x, y}
 - Multiple voxels (2D)-> {directions, voxels}
@@ -266,7 +266,7 @@ Block[{depthD,dirD,dirG,grad,bvec},
 ]
 
 
-(*bvector*)
+(*b-vector*)
 TensorCalc[data_, grad_?MatrixQ, bvec:{_?NumberQ ..}, opts:OptionsPattern[]]:=
 Block[{depthD,dirD,dirG,dirB},
 
@@ -289,11 +289,11 @@ Block[{depthD,dirD,dirG,dirB},
 ]
 
 
-(*bmatrix*)
+(*b-matrix*)
 TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
-		dirD, dirB, tensor, rl, rr, TensMin, out, tenscalc, x, data, depthD, bmat, 
+		dirD, dirB, tensor, rl, rr, TensMin, out, x, data, depthD, bmat, 
 		fout, method, output, robust, func, con, kappa, result, dataL, outliers, parallel, 
-		mon, fitFun, outFit, fitresult, residual, dataFit, s0, outFun
+		mon, fitFun, outFit, fitResult, residual, dataFit, s0, outFun
 	},
 
 	(*get output form*)
@@ -340,7 +340,7 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 	outFit = ToPackedArray@N@(1. - outliers);
 
 	If[mon, PrintTemporary["Fitting tensor"]];
-	fitresult = If[method === "LLS", 
+	fitResult = If[method === "LLS", 
 		RotateDimensionsLeft[PseudoInverse[bmat].RotateDimensionsRight[dataL]],
 		If[depthD == 1,
 			(*single voxel fit*)
@@ -353,16 +353,16 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 
 	If[mon, PrintTemporary["Finalizing output tensor"]]; 
 
-	fitresult = RotateDimensionsRight[fitresult];
+	fitResult = RotateDimensionsRight[fitResult];
 	outliers = RotateDimensionsRight[outliers];
 	If[depthD == 4,	outliers = Transpose[outliers]];
 
 	If[OptionValue[FullOutput], 
-		residual = ResidualCalc[dat, fitresult, outliers, bmat, MeanRes->"RMSE"]
+		residual = ResidualCalc[dat, fitResult, outliers, bmat, MeanRes->"RMSE"]
 	];
 
-	s0 = N@Clip[ExpNoZero[N@Chop[Last[fitresult]]],{0., 1.5 Max[data]}];
-	tensor = N@Clip[Drop[fitresult, -1],{-0.1,0.1}];
+	s0 = N@Clip[ExpNoZero[N@Chop[Last[fitResult]]],{0., 1.5 Max[data]}];
+	tensor = N@Clip[Drop[fitResult, -1],{-0.1,0.1}];
 
 	If[OptionValue[FullOutput],If[robust,{tensor, s0, outliers, residual}, {tensor, s0, residual}], {tensor, s0}]
 ]
@@ -385,7 +385,7 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 	If[Total[ls] >1 ,
 		(*Step1: initial LLS fit*)
 		sol = PseudoInverse[bmat] . ls;
-		(*check if LLS fit is plausable, i.e. s0 > 0*)
+		(*check if LLS fit is plausible, i.e. s0 > 0*)
 		If[Last[sol] > 0,
 
 			(*Start outer loop*)
@@ -409,7 +409,7 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 						(*e. Check convergence*)
 						If[Total[UnitStep[Abs[sol - soli] - con Abs[soli]]] === 0, Break[]];
 					];
-				, 3];(*end first while*)
+				, 3];(*end first Do*)
 
 				(*Step 3: Transform variables for heteroscedasticity*)
 				fitE = Exp[-bmat . Chop[sol]] + 10^-10;
@@ -437,11 +437,11 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 						(*e. Check convergence*)
 						If[Total[UnitStep[Abs[sol - soli] - con Abs[soli]]] === 0, Break[]];
 					];
-				, 3];(*end second while*)
+				, 3];(*end second Do*)
 
 				(*Step 6: Check convergence overall loop*)
 				If[Total[UnitStep[Abs[sol - solA] - con Abs[solA]]] === 0 , Break[]];
-			, 5];(*end main while*)
+			, 5];(*end main Do*)
 
 			(*Step 7: Identify and exclude outliers*)
 			res = LS2 - bmat2 . sol;
@@ -504,11 +504,11 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 			cont = 1.;
 			(*initialize using LLS*)
 			sol = PseudoInverse[bmat] . ls;
-			(*check for implausabole solution (negative s0 or high s0)*)
+			(*check for implausible solution (negative s0 or high s0)*)
 			If[Last[sol] >= max || Last[sol] <= 0.,
 				sol = sol0;
 				,
-				(*itterative reweighting*)
+				(*iterative reweighing*)
 				While[cont == 1,
 					(*init iteration values*)
 					itt++;

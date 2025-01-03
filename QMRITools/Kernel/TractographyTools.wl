@@ -614,7 +614,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		maxSeed === All, seedN];
 	seeds = SparseArray[stop]["NonzeroPositions"];
 	seedN = Length@seeds;
-	(*for randomization where maxSeeds > seeds be sure to fill homogeniously*)
+	(*for randomization where maxSeeds > seeds be sure to fill homogeneously*)
 	seeds = Flatten[RandomSample[seeds, #] & /@ Join[ConstantArray[seedN, Quotient[maxSeed, seedN]], {Mod[maxSeed, seedN]}], 1];
 	seeds = # vox & /@ ToPackedArray@N[seeds + RandomReal[{-0.999, 0}, {maxSeed, 3}]];
 	seedN = Length@seeds;
@@ -636,7 +636,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		If[mon, Echo["Starting parallel preparation"]];
 		DistributeDefinitions[tens, stop, vox, int, step, maxAng, maxStep, stopT, tractF, vecF, seeds, 
 			trFunc, TractFunc, TractFuncI, MakeInt, EigVec, AlignVec, VecAng, Euler, RK2, RK4];
-		(*Redifine int function on parallel kernels, see help distributeDefinitions*)
+		(*Redefine int function on parallel kernels, see help distributeDefinitions*)
 		ParallelEvaluate[vecInt = MakeInt[tens, vox, int]; stopInt = MakeInt[stop, vox, int];];
 		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, ProgressReporting -> mon];
 		ParallelEvaluate[Clear[vecInt, stopInt, trFunc, tens, stop]];
@@ -795,7 +795,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 	{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
 	vec = {b c, a c, a b};
 
-	(*normalize and align the vector with the incomming direction*)
+	(*normalize and align the vector with the incoming direction*)
 	norm = Norm[vec];
 	If[norm < 10.^-15, Return[{0., 0., 0.}]];
 	vec = vec/norm;

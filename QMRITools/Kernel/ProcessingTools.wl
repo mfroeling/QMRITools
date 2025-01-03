@@ -936,34 +936,39 @@ DatTotXLS[data_,name_,vox_]:= Module[{fitdat},
 (*TransformData*)
 
 
-Options[DataTransformation]={InterpolationOrder->1, PadOutputDimensions->False}
+Options[DataTransformation] = {
+	InterpolationOrder -> 1, 
+	PadOutputDimensions -> False
+}
 
-SyntaxInformation[DataTransformation]={"ArgumentsPattern"->{_, _, _, _., OptionsPattern[]}};
+SyntaxInformation[DataTransformation] = {"ArgumentsPattern"->{_, _, _, _., OptionsPattern[]}};
 
-DataTransformation[data_, vox_, wi_, opts:OptionsPattern[]]:=DataTransformation[data, vox, wi, "Real32", opts]
+DataTransformation[data_, vox_, wi_, opts:OptionsPattern[]] := DataTransformation[data, vox, wi, "Real32", opts]
 
-DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, dat,int, dim, idim, ran, aff, pad},
+DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, func, int, dim, ran, aff, pad},
 
-	w = Which[Length[wi] == 3, Join[wi, {0, 0, 0, 1, 1, 1, 0, 0, 0}], Length[wi] == 12, wi, True, Return[$Failed]];
-	dat = If[ArrayDepth[data] === 4, Transpose[data], {data}];
+	w = Which[
+		Length[wi] == 3, Join[wi, {0, 0, 0, 1, 1, 1, 0, 0, 0}], 
+		Length[wi] == 12, wi, 
+		True, Return[$Failed]
+	];
+
 	int = Round@OptionValue[InterpolationOrder];
-	int = Which[int===0, "Nearest", 0 < int <=9, {"Spline", int}, True, {"Spline", 1}];
+	int = Which[int === 0, "Nearest", 0 < int <=9, {"Spline", int}, True, {"Spline", 1}];
 
-	dim = Dimensions[dat][[-3 ;;]];
-	idim = Reverse[vox  dim]/2.;
-	ran = Thread[{-idim, idim}];
+	dim = Dimensions[If[ArrayDepth[data] === 4, data[[All, 1]], data]];
+	ran = {-1, 1} # / 2. & /@ Reverse[vox  dim];
 
 	aff = ParametersToTransformFull[w, "Inverse"];
-	n = Max@Ceiling@Abs@aff[[1,1;;3,4]];
 
 	pad = If[OptionValue[PadOutputDimensions]===True, All, Automatic];
 
-	dat = ImageData[ImageTransformation[Image3D[#, type], aff, Automatic,
+	func = ImageData[ImageTransformation[Image3D[#, type], aff, Automatic,
 		Resampling -> int, DataRange -> ran, PlotRange->pad,
 		Padding -> 0., Background -> 0., Masking -> Full
-	]] & /@ dat;
+	]]&;
 
-	If[ArrayDepth[data] === 4, Transpose[dat], First@dat]
+	If[ArrayDepth[data] === 4, Transpose[func/@Transpose[data]], func@data]
 ]
 
 
@@ -974,24 +979,22 @@ DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, n, da
 ParametersToTransformFull[w_] :=  ParametersToTransformFull[w, "Normal"]
 
 ParametersToTransformFull[w_, opt_] := Block[{
-		rz, rx, ry, tz, tx, ty, sz, sx, sy, gz, gx, gy, rotM, transM, 
-		skewM, scaleM, mat, rMat, tMat, rr
+		rz, rx, ry, tz, tx, ty, sz, sx, sy, gz, gx, gy, 
+		rotM, transM, skewM, scaleM, mat
 	},
 
 	(*parameters for transformation*)
 	{rz, rx, ry, tz, tx, ty, sz, sx, sy, gz, gx, gy} = N@w;
 	(*rotation*)
-	rotM = Dot @@ MapThread[RotationTransform[#1 , #2] &, {{-ry, rx, rz} Degree, N@IdentityMatrix[3]}];
+	rotM = Dot @@ MapThread[RotationTransform[#1, #2] &, {{-ry, rx, rz} Degree, N@IdentityMatrix[3]}];
 	(*translation*)
-	rr = rotM[[1, 1 ;; 3, 1 ;; 3]];
-	rr = Switch[opt, "Normal", rr, "Inverse", Inverse@rr];
-	transM = TranslationTransform[rr . {ty, -tx, -tz}];
+	transM = TranslationTransform[{ty, -tx, -tz}];
 	(*scaling*)
 	scaleM = ScalingTransform[{sy, sx, sz} /. {0. -> 1}];
 	(*skew*)
 	skewM = AffineTransform[{{1, gy, gz}, {0, 1, gx}, {0, 0, 1}}];
-	(*final*)
-	mat = skewM . scaleM . rotM . transM;
+	(*combine*)
+	mat = Dot[transM, rotM, scaleM, skewM];
 
 	Switch[opt,
 		"Normal", mat,
