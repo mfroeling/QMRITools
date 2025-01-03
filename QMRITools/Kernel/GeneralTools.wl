@@ -723,43 +723,47 @@ SyntaxInformation[DataToVector] = {"ArgumentsPattern" -> {_, _.}};
 
 DataToVector[datai_] := DataToVector[datai, 1]
 
-DataToVector[datai_, maski_] := Module[{data, mask, depthd, depthm, depth, dimm, dimd},
-	depthd = ArrayDepth[datai];
-	If[! (depthd == 2 || depthd == 3 || depthd == 4), Return@Message[DataToVector::dim, "Data", depthd]];
-
-	data = N[datai];	
-	mask = Round[If[maski === 1, Unitize[If[depthd == 4, Mean@Transpose@data, data]], maski]];
-
-	depthm = ArrayDepth[mask];
-	depth = depthd - depthm;
+DataToVector[datai_, maski_] := Module[{data, sp, mask, depthd, depthm, depth, dimm, dimd},
+	data = ToPackedArray[N[datai]];
+	dimd = Dimensions[data];
+	depthd = ArrayDepth[data];
 
 	(*data dimensions are not correct, mask must be 2D or 3D*)
-	If[! (depthm == 2 || depthm == 3), Message[DataToVector::dim, "Mask", depthm]];
-
-	dimm = Dimensions[mask];
-	dimd = Dimensions[data];
-
-	dimd = If[depth == 0, 
-		(*mask and data are same dimensions*)
-		dimd,
-		(*data is one dimensions larger than mask either 2D and 3D or 3D and 4D*)
-		If[depth == 1 && depthd == 3, Drop[dimd, 1], Drop[dimd, {2}]]
+	If[! (depthd == 2 || depthd == 3 || depthd == 4), 
+	Return@Message[DataToVector::dim, "Data", depthd]];
+	If[maski =!= 1,
+		(*masks is given*)
+		mask = maski;
+		dimm = Dimensions[mask];
+		depthm = ArrayDepth[mask];
+		
+		(*check mask*)
+		depth = depthd - depthm;
+		If[! (depthm == 2 || depthm == 3), Message[DataToVector::dim, "Mask", depthm]];
+		dimd = If[depth == 0,
+			(*mask and data are same dimensions*)
+			dimd,
+			(*data is one dimensions larger than mask either 2D and 3D or 3D and 4D*)
+			If[depth == 1 && depthd == 3, Drop[dimd, 1], Drop[dimd, {2}]]
+		];
+		(*Dimensions must be equal*)
+		If[dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
+		,
+		(*mask is not given make mask*)
+		mask = If[depthd == 4, Unitize[Mean@Transpose@data], 1]
 	];
 
-	(*Dimensions must be equal*)
-	If[ dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
-
-	(*Flatten the data*)
-	data = If[depthd == 4,
-		Flatten[RotateDimensionsLeft[Transpose[data]], 2],
-		If[depthd == 3 && depth == 1,
-			Flatten[RotateDimensionsLeft[data], 1],
-			Flatten[data]
-		]
-	];
-
-	(*get the data and positions there mask is 1*)
-	{Pick[data, Round[Flatten[mask]], 1] , {dimd, Position[mask, 1]}}
+	If[mask === 1,
+		sp = SparseArray[data];
+		{sp["ExplicitValues"], {dimd, sp["ExplicitPositions"]}}
+		,
+		(*Flatten the data*)
+		data = If[depthd == 4, 
+		Flatten[RotateDimensionsLeft[Transpose[data]], 2], 
+		If[depthd == 3 && depth == 1, Flatten[RotateDimensionsLeft[data], 1], Flatten[data]]];
+		(*get the data and positions there mask is 1*)
+		{Pick[data, Round[Flatten[mask]], 1], {dimd, Position[mask, 1]}}
+	]
 ]
 
 
@@ -976,8 +980,8 @@ FindCrop[dat_, OptionsPattern[]] := Block[{add, data, dim, d1, d2, unit, crp},
 	];
 	dim = Dimensions[data];
 
-	d1 = Unitize@Total[data];
-	d2 = Unitize@Total[data, {2}];
+	d1 = Total[data];
+	d2 = Total[data, {2}];
 	unit = Unitize[{Total[d2, {2}], Total[d1, {2}], Total[d1]}];
 
 	crp = MinMax[DeleteCases[# Range[Length[#]], 0]] + add & /@ unit;
@@ -1043,15 +1047,15 @@ ApplyCrop[data_, crop_?VectorQ , {v1_,v2_}, opts:OptionsPattern[]] := Module[{z1
 
 	out = ToPackedArray@data;
 	dim = Dimensions[out];
-	dim = If[Length[dim]==4, dim[[{1,3,4}]], dim];
+	dim = If[Length[dim]==4, dim[[{1, 3, 4}]], dim];
 
 	(*get crops coors*)
 	{z1, z2, x1, x2, y1, y2} = Round[crop Flatten[{#, #} & /@ (v1/v2)]];
 
 	If[OptionValue[CropAlways],
-		{z1,z2} = Clip[{z1, z2},{1, dim[[1]]}];
-		{x1,x2} = Clip[{x1, x2},{1, dim[[2]]}];
-		{y1,y2} = Clip[{y1, y2},{1, dim[[3]]}];
+		{z1,z2} = Clip[{z1, z2}, {1, dim[[1]]}];
+		{x1,x2} = Clip[{x1, x2}, {1, dim[[2]]}];
+		{y1,y2} = Clip[{y1, y2}, {1, dim[[3]]}];
 		,
 		If[z1<1||z2>dim[[1]]||x1<1||x2>dim[[2]]||y1<1||y2>dim[[3]], Return[Message[ApplyCrop::dim]]]
 	];

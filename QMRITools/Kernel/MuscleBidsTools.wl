@@ -1242,7 +1242,7 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, ops:Op
 
 MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 		con, fol, parts, type, files, sets, diffFile, nfile, process, keys, dixFiles, jfile, nFiles, phbpt, dbond,
-		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, phasediff, hz, b0i,
+		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, hz, b0i,
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
 		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
 		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk, 
@@ -1295,7 +1295,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 				outfile = GenerateBidsFileName[folo, set];
 				(*check if files are already done*)
 				If[CheckFile[outfile, "done", verCheck],
-					(*if checkfile has label done and version is recent skip*)
+					(*if check file has label done and version is recent skip*)
 					(*----*)AddToLog["Processing already done for: ", True, 3];
 					(*----*)AddToLog[outfile, 4],
 					(*----*)AddToLog["Starting processing for data:", 3, True];
@@ -1335,7 +1335,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 					outTypes = suffix;
 					ExportNii[ToExpression[con<>#], First@dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 
-					(*export the checkfile*)
+					(*export the check file*)
 					MakeCheckFile[outfile, Sort@Join[
 						{"Check"->"done", "Outputs" -> outTypes, "SetProperties"->set}
 					]];
@@ -1354,7 +1354,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 				(*check if files are already done*)
 				If[CheckFile[outfile, "done", verCheck],
-					(*if checkfile has label done and version is recent skip*)
+					(*if check file has label done and version is recent skip*)
 					(*----*)AddToLog["Processing already done for: ", True, 3];
 					(*----*)AddToLog[outfile, 4],
 					(*----*)AddToLog["Starting processing for data:", 3, True];
