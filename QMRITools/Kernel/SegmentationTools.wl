@@ -223,8 +223,6 @@ AnalyzeNetworkFeatures::usage =
 "AnalyzeNetworkFeatures[net, data] gives overview of the information density of the network features by analyzing them with SVD."
 
 
-AddSaltAndRice::usage = ""
-
 (* ::Subsection::Closed:: *)
 (*Options*)
 

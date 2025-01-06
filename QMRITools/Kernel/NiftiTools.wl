@@ -213,9 +213,9 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 
 	(*generate a popup to select the file or folder*)
 	filfolin = If[infol=="", FileSelect["Directory", WindowTitle->"Select direcotry containig the dcm files"], infol];
-	If[filfolin == Null || folout == Null, Return[$Failed]];
-	folout=If[outfol == "", FileSelect["Directory", WindowTitle->"Select directory to put nii files in"], outfol];
-	If[filfolin == Null || folout == Null, Return[$Failed]];
+	If[filfolin == Null || filfolin == Null || filfolin === $Canceled, Return[$Failed]];
+	folout = If[outfol == "", FileSelect["Directory", WindowTitle->"Select directory to put nii files in"], outfol];
+	If[filfolin == Null || folout == Null || folout === $Canceled, Return[$Failed]];
 
 	If[OptionValue[UseSubfolders],
 		(*find all subfolders and loop over them for the conversion*)
@@ -240,7 +240,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 			dcm2niif = DirectoryName[dcm2nii];
 		];
 
-		If[OptionValue[MonitorCalc],Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
+		If[OptionValue[MonitorCalc], Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
 
 		If[DirectoryQ[folout],
 			delete = If[OptionValue[DeleteOutputFolder], 
@@ -253,7 +253,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 
 		Quiet[CreateDirectory[folout]];
 
-		If[OptionValue[MonitorCalc],Print[{filfolin,folout}]];
+		If[OptionValue[MonitorCalc], Print[{filfolin,folout}]];
 
 		(*create the cmd window command to run dcm2niix*)
 		log = FileNameJoin[{folout,"DcmToNiiLog.txt"}];

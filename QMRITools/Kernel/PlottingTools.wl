@@ -1998,17 +1998,25 @@ SyntaxInformation[PlotSegmentations] = {"ArgumentsPattern" -> {_, _, _., Options
 
 PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
 
-PlotSegmentations[seg_, bone_, vox_, opts : OptionsPattern[]] := Block[{
+PlotSegmentations[segI_, boneI_, vox_, opts : OptionsPattern[]] := Block[{
+		seg, bone,
 		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op, res, spec
 	},
 	{smooth, cols, size, ranCol, op, res, spec} = OptionValue[{ContourSmoothRadius, ColorFunction, ImageSize, 
 		RandomizeColor, ContourOpacity, ContourResolution, ContourSpecularity}];
 
-	plotb = If[bone === None, Graphics3D[],
+	{seg, bone} = If[IntegerQ[boneI],
+		{SelectSegmentations[segI, Range[1, boneI]], SelectSegmentations[segI, Range[boneI+1, Max[segI]]]},
+		{segI, boneI}
+	];
+
+	plotb = Which[
+		ArrayQ[bone],
 		PlotContour[If[ArrayDepth[bone]===3, Unitize@bone, Unitize@Total@Transpose@bone], vox, 
 			ContourColor -> Lighter@Gray, ContourOpacity -> 1, ContourSmoothRadius -> smooth, 
 			ContourResolution -> res
-		]
+		],
+		True, Graphics3D[]
 	];
 
 	plotm = If[N[Max[seg]] === 0., 
