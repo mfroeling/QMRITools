@@ -1,9 +1,10 @@
 #!/usr/bin/env wolframscript
 (* ::Package:: *)
 
-inst = PacletInstall[Last@$ScriptCommandLine];
-
-Print[inst];
+inst = If[Length[$ScriptCommandLine]===1,
+	ResourceFunction["GitHubInstall"]["mfroeling", "QMRITools"],
+	PacletInstall[Last@$ScriptCommandLine]
+];
 
 If[inst === $Failed,
 	Print["Installation Failed"]
