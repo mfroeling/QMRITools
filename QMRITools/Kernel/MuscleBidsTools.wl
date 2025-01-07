@@ -2657,7 +2657,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			debugBids["Making segment images:"];
 
 			(*import the segmation*)
-			{seg, voxs} = ImportNii[segfile];
+			{seg, voxi} = ImportNii[segfile];
 
 			(*make the 2D segmentation image*)
 			(*----*)AddToLog[{"Making 2D Segment image"}, 5]; 
@@ -2671,7 +2671,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			(*----*)AddToLog[{"Making 3D Segment image"}, 5];
 			partsO["suf"] = Join[partsO["suf"], {"vol"}];
 			segPl = PlotSegmentations[SelectSegmentations[seg, Range[n]], SelectSegmentations[seg, Range[n+1,n+30]], 
-				voxs, ContourResolution -> 2 voxs];
+				voxi, ContourResolution -> 2 voxi];
 			Export[fileNameO[partsO]<>".jpg", make3DImage@segPl, ImageResolution -> 300];
 		];
 

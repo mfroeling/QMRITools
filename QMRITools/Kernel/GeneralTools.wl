@@ -733,7 +733,7 @@ DataToVector[datai_, maski_] := Module[{data, sp, mask, depthd, depthm, depth, d
 	Return@Message[DataToVector::dim, "Data", depthd]];
 	If[maski =!= 1,
 		(*masks is given*)
-		mask = maski;
+		mask = ToPackedArray@Round@maski;
 		dimm = Dimensions[mask];
 		depthm = ArrayDepth[mask];
 		

@@ -362,7 +362,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 		(*get positions of similar signals but in random batches such that nearest has speed*)
 		np = 30000;
-		np = Floor[leng/Floor[leng/np]];
+		np = If[leng < np, leng, Floor[leng/Floor[leng/np]]];
 
 		If[mon, PrintTemporary["Preparing data similarity"]];
 		pos = If[leng <= 2 np, 
