@@ -66,6 +66,8 @@ SegmentTracts::usage =
 SeedDensityMap::usage = 
 "SeedDensityMap[seeds, vox, dim] makes a seed density map based on the seed locations."
 
+EndpointDensityMap::usage = ""
+
 TractDensityMap::usage = 
 "TractDensityMap[tracts, vox, dim] makes a tract density map based on the tracts vertices."
 
@@ -397,6 +399,22 @@ TractDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPatt
 ]
 
 
+
+(* ::Subsubsection::Closed:: *)
+(*TractDensityMap*)
+
+
+SyntaxInformation[EndpointDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+
+EndpointDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPattern[]] := Block[{dens},
+	Normal@SparseArray[Select[
+		Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTractsC[tracts[[All,{1, -1}]], vox], 1]],
+		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
+		dim
+	]
+]
+
+
 (* ::Subsubsection::Closed:: *)
 (*TractLengthMap*)
 
@@ -590,6 +608,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	maxStep = Ceiling[(maxLength/step)];
 	tractF = Switch[OptionValue[Method], 
 		"RungeKutta" | "RK" | "RK2", RK2, 
+		"RungeKutta3" | "RK3", SSPRK3, 
 		"RungeKutta4" | "RK4", RK4, 
 		_, Euler
 	];
@@ -740,7 +759,38 @@ Euler[y_, v_, h_, int_, vec_] := Block[{k1},
 RK2[y_, v_, h_, int_, vec_] := Block[{k1, k2},
 	k1 = h vec[int@@(y), v];
 	k2 = h vec[int@@(y + k1/2), v];
-	k2	
+	k2
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RK2T*)
+
+
+RK2T[y_, v_, h_, int_, vec_] := Block[{k1, k2},
+	k1 = h vec[int@@(y), v];
+	k2 = h vec[int@@(y + k1), v];
+	k1/2 + k2/2
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RK3*)
+
+
+RK3[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3},
+	k1 = h vec[int@@(y), v];
+	k2 = h vec[int@@(y + k1/3), v];
+	k3 = h vec[int@@(y + 2/3 k2), v];
+	k1/4 + 3/4 k3
+]
+
+
+SSPRK3[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3},
+    k1 = h vec[int @@ (y), v];
+    k2 = h vec[int @@ (y + k1), v];
+    k3 = h vec[int @@ (y + k1/4 + k2/4), v];
+    k1/6 + k2/6 + 2/3 k3
 ]
 
 
