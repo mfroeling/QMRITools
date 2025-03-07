@@ -875,12 +875,14 @@ FourierRescaleData[data_, factor_:2] := Block[{dim, pad, scale, fac, new},
 	fac = N@Clip[If[NumberQ[factor], (0 dim + 1) factor, factor/dim], {0.0001, Infinity}];
 	scale = Times@@fac;
 	new = Round[dim fac] /. 0 -> 1;
-	
-	pad = If[#[[1]] < 1, 
-		{Floor[#[[2]]], Ceiling[#[[2]]]}, 
-		{Ceiling[#[[2]]], Floor[#[[2]]]}
-	] & /@ Thread[{fac, N[(new - dim)/2]}];
-		
+
+	(*pad = If[#[[1]] < 1, 
+		{Ceiling[#[[3]]], Floor[#[[3]]]},
+		{Floor[#[[3]]], Ceiling[#[[3]]]}
+	] & /@ Thread[{fac, dim, N[(new - dim)/2]}];*)
+
+	pad = {Ceiling[#], Floor[#]}&/@N[(new - dim)/2];
+
 	Switch[ArrayDepth[data],
 		2, scale FourierShifted[ArrayPad[InverseFourierShifted[data], pad]],
 		3, scale FourierShifted[ArrayPad[InverseFourierShifted[data], pad]],

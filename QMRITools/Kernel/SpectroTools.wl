@@ -80,6 +80,9 @@ PhaseShiftSpectra[spec, ppm, gyro, {phi0, phi1}] aplies the 0th and 1st order ph
 
 The 0th order phase phi0 is in radians and the 1st order phase phi1 is in ms."
 
+PhaseShiftFid::usage = 
+"PhaseShiftFid[spectra, phi0] aplies the 0th order phase phi0 to the FID."
+
 TimeShiftFidV::usage = 
 "TimeShiftFidV[fid, time, gam] aplies a line broadening with linewidth gam and a Voigt line shape to the fid. The time can be obtained using GetTimeRange.
 TimeShiftFidV[fid, time, {gamL, gamG}] aplies a line broadening with linewidth gamG \"Gaussian\" and gamL \"Lorentzian\".
@@ -200,8 +203,8 @@ BasisSequence::usage =
 SpectraSamples::usage =
 "SpectraSamples is an option for GetSpectraBasisFunctions and sets the number of samples in the spectra."
 
-Spectrabandwidth::usage =
-"Spectrabandwidth is an option for GetSpectraBasisFunctions and sets the bandwidth of the spectra." 
+SpectraBandwidth::usage =
+"SpectraBandwidth is an option for GetSpectraBasisFunctions and sets the bandwidth of the spectra." 
 
 SpectraNucleus::usage =
 "SpectraNucleus is an option for GetSpectraBasisFunctions and FitSpectra and specifies which nucleus to Simulate or fit, see GyromagneticRatio."
@@ -496,7 +499,7 @@ ApodizeFun[length_, apM_:"Hanning", type_ : "Fid"] := ApodizeFun[length, apM, ty
 		"Voigt", 0.5 Exp[-(3./xmax) xdat] + 0.5 Exp[-(2./xmax)^2 xdat^2]
 	];
 	app = app/Max[app];
-	(length/Total[app]) app
+	(*(length/Total[app]) *)app
 ]
 
 
@@ -651,6 +654,27 @@ PhaseShiftSpectraC = Compile[{{spec, _Complex, 1}, {ppm, _Real, 1}, {gyro, _Real
 
 
 (* ::Subsubsection::Closed:: *)
+(*PhaseShiftFid*)
+
+
+SyntaxInformation[PhaseShiftFid] = {"ArgumentsPattern" -> {_, _, _., _.}};
+
+PhaseShiftFid[fid_, phi0_] := PhaseShiftFidC0[fid, phi0];
+
+PhaseShiftFid[fid_, time_, phi1_] := PhaseShiftFidC[fid, time, 0., phi1];
+
+PhaseShiftFid[fid_, time_, {phi0_, phi1_}] := PhaseShiftFidC[fid, time, phi0, phi1];
+
+PhaseShiftFidC0 = Compile[{{fid, _Complex, 1}, {phi0, _Real, 0}}, 
+	Exp[-I phi0] fid, 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+PhaseShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {phi0, _Real, 0}, {phi1, _Real, 0}}, 
+	Exp[-I (phi0 + 2 Pi phi1 time)] fid, 
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
 (*TimeShiftFid*)
 
 
@@ -665,7 +689,7 @@ TimeShiftFid[fid_, time_, gyro_, {gam_, eps_}] := TimeShiftFidC[fid, time, gyro,
 TimeShiftFid[fid_, time_, gyro_, {gam_, eps_, f_}] := TimeShiftFidC[fid, time, gyro, gam, eps, f];
 
 TimeShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {gam, _Real, 0}, {eps, _Real, 0}, {f, _Real, 0}},
-	(f Exp[-gam time] + (1 - f) Exp[- gam^2 time^2]) Exp[2 Pi eps gyro I time] fid, 
+	Exp[-(f gam time + (1 - f) gam^2 time^2) + 2 Pi eps gyro I time] fid, 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ]
 
@@ -784,7 +808,7 @@ ChangeDwellTimeFid[time_, dwOrig_, dwTar_] := Block[{NsampOrig, timeOrig, NsampT
 Options[GetSpectraBasisFunctions] = {
 	BasisSequence -> {"PulseAcquire", 0},
 	SpectraSamples -> 2046,
-	Spectrabandwidth -> 2000,
+	SpectraBandwidth -> 2000,
 	SpectraNucleus -> "1H",
 	SpectraPpmShift -> 4.65,
 	SpectraFieldStrength -> 3
@@ -803,7 +827,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 	readout = Switch[seq, "PulseAcquire"|"STEAM","Fid", "SpaceEcho","Echo"];
 
 	nsamp = OptionValue[SpectraSamples];
-	bw = OptionValue[Spectrabandwidth];
+	bw = OptionValue[SpectraBandwidth];
 	cf = OptionValue[SpectraPpmShift];
 	field = OptionValue[SpectraFieldStrength];
 	nuc = OptionValue[SpectraNucleus];
@@ -841,7 +865,7 @@ GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
 			];
 
 			(*simulate readout*)
-			fids = First@SimReadout[dr, struct, ReadoutSamples -> nsamp, Readoutbandwidth -> bw, CenterFrequency -> cf, Linewidth -> 0, ReadoutOutput -> read];
+			fids = 4 First@SimReadout[dr, struct, ReadoutSamples -> nsamp, ReadoutBandwidth -> bw, CenterFrequency -> cf, Linewidth -> 0, ReadoutOutput -> read];
 
 			(*check if multiple fids for metabolite and act acordingly*)
 			If[VectorQ[fids],
@@ -1433,7 +1457,10 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		(*plot single spectra*)
 		plot = Transpose[{ppm + shift, #}] & /@ (#@spec & /@ fun);
 		(*get the plot color*)
-		col = If[OptionValue[PlotColor] === Automatic, ({Gray, {Red, Thin}, {Thick, Black}}[[-Length[fun] ;;]]), OptionValue[PlotColor]];
+		col = If[OptionValue[PlotColor] === Automatic, 
+			({{Gray, Thin}, {Red, Thin}, {Black}}[[-Length[fun] ;;]]), 
+			OptionValue[PlotColor]
+		];
 
 		(*Make the plot*)
 		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0}}, AspectRatio -> OptionValue[AspectRatio],
@@ -1524,7 +1551,7 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 		{_, Full}, rr[[2]] = {-Max[Abs[fid]], Max[Abs[fid]]},
 		Full, rr = {Full, {-Max[Abs[fid]], Max[Abs[fid]]}}
 	];
-	col = If[OptionValue[PlotColor] === Automatic, ({Gray, {Red, Thin}, {Thick, Black}}[[-Length[fun] ;;]]), OptionValue[PlotColor]];
+	col = If[OptionValue[PlotColor] === Automatic, ({{Gray, Thin}, {Red, Thin}, {Black}}[[-Length[fun] ;;]]), OptionValue[PlotColor]];
 
 	ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0.}}, AspectRatio -> OptionValue[AspectRatio],
 		ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], Frame -> {{False, False}, {True, False}},
@@ -1626,7 +1653,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, {{n, Ceiling[Length[data]/2], "Slice"}, 1, Dynamic[nmax], 1}
 			, Delimiter
 			, {{funs, "ReIm", "Function vox"}, {"Re", "Im", "ReIm", "Abs", "All"}}
-			, {{app, False, "Appodize and Pad"}, {True,False}}
+			, {{app, False, "Apodize and Pad"}, {True,False}}
 			, {{fun, Abs, "Function CSI"}, {Abs -> "Absolute", Re -> "Real", Im -> "Imaginary"}}
 			, {{size, 40, "Plot size"}, {20 -> "Small", 40 -> "Medium", 60 -> "Large", 80 -> "Extra large"}}
 			, Delimiter
@@ -2043,7 +2070,7 @@ CSIInterface[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := M
 			(*basis spectra*)
 			status = "Generating basis spectra"; statusP = True;
 			{names, fids, specs, table} = GetSpectraBasisFunctions[metSel, {"ATP"}, BasisSequence -> {"PulseAcquire", teu}, 
-				SpectraSamples -> nsamp, Spectrabandwidth -> bw, SpectraPpmShift -> 0, SpectraFieldStrength -> field, SpectraNucleus -> nuc];
+				SpectraSamples -> nsamp, SpectraBandwidth -> bw, SpectraPpmShift -> 0, SpectraFieldStrength -> field, SpectraNucleus -> nuc];
 			status = "Done generating basis spectra!"; statusP = False;
 
 			(*fitting*)

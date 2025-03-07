@@ -62,6 +62,9 @@ Any number of select criteria can be listed."
 SegmentTracts::usage = 
 "SegmentTracts[tracts, segments, vox, dim] segments the tracts based on segments."
 
+FilterTractLength::usage =
+"FilterTractLength[tracts, {min, max}] filters the tracts based on the length of the tracts."
+
 
 SeedDensityMap::usage = 
 "SeedDensityMap[seeds, vox, dim] makes a seed density map based on the seed locations."
@@ -350,20 +353,40 @@ SelectTractValD = Compile[{{roi, _Real, 3}, {tract, _Integer, 2}},
 Options[SegmentTracts] = {
 	FiberLengthRange -> {15, 500}, 
 	OutputForm -> "Joined", 
-	FitTractSegments -> False
+	FitTractSegments -> False,
+	Method->"Fast"
 }
 
 SyntaxInformation[SegmentTracts] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-SegmentTracts[tracts_, segments_, vox_, dim_, OptionsPattern[]] := Block[{tractsI},
-	tractsI = RescaleTractsC[tracts, vox];
-	tractsI = FilterTracts[tracts, tractsI, {{"and", {"partwithin", #}}}, FiberLengthRange -> OptionValue[FiberLengthRange]] & /@ Transpose[segments];
+SegmentTracts[tracts_, segments_, vox_, dim_, OptionsPattern[]] := Block[{tractsI, tractsOut, ord, rev, sel, out},
+	If[OptionValue[Method]==="Fast",
+		(*fast is intended for large datasets with many tracts and volumes*)
+		ord = Reverse[Ordering[Total[Flatten[#]] & /@ Transpose[segments]]];
+		rev = Ordering[ord];
+		tractsI = tracts;
+		tractsOut = ((
+			sel = SelectTractPartInVol[tractsI, #, vox];
+			out = FilterTractLength[SelectTracts[tractsI, sel], OptionValue[FiberLengthRange]];
+			tractsI = DeleteCases[Pick[tractsI, sel, 0], {}];
+			out
+			) & /@ Transpose[segments][[ord]]
+			)[[rev]]
+		,
+		(*normals way is slightly faster for small datasets*)
+		tractsOut = RescaleTractsC[tracts, vox];
+		tractsOut = FilterTracts[
+			tracts, tractsOut, {{"and", {"partwithin", #}}}, FiberLengthRange -> OptionValue[FiberLengthRange]
+			] & /@ Transpose[segments]
+	];
 
-	If[OptionValue[FitTractSegments] === True, tractsI = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> 3], #] & /@ tractsI];
+	If[OptionValue[FitTractSegments] === True, 
+		tractsOut = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> 3], #] & /@ tractsOut
+	];
 
 	Switch[OptionValue[OutputForm],
-		"Joined", Flatten[tractsI, 1],
-		"Individual", tractsI
+		"Joined", Flatten[tractsOut, 1],
+		"Individual", tractsOut
 	]
 ]
 
@@ -540,7 +563,9 @@ GatherThread[coor_?ListQ, val_?ListQ, dim_?VectorQ] := Block[{len, ran, list, ou
 		GatherThread[coor, val],
 		ran = DeleteDuplicates[Append[Range[0, len, 50000], len]];
 		list = Thread[{ran[[;; -2]] + 1, ran[[2 ;;]]}];
-		GatherThread[Table[GatherThread[coor[[i[[1]] ;; i[[2]]]], val[[i[[1]] ;; i[[2]]]]], {i, list}]]
+		GatherThread[
+			Table[GatherThread[coor[[i[[1]] ;; i[[2]]]], val[[i[[1]] ;; i[[2]]]]], {i, list}]
+		]
 	];
 
 	(*clip coordinates and calculate median*)
@@ -622,6 +647,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	tens = ApplyCrop[#, crp]& /@ FlipTensorOrientation[tensor, per, flip];
 	{vecF, tens} = If[int>=1, 
 		{EigVec, ToPackedArray@N@RotateDimensionsLeft[{tens}, 2]},
+		If[mon, Echo["Interpolation order 0, precalculating vector field"]];
 		{AlignVec, ToPackedArray@N@RotateDimensionsLeft[{RotateDimensionsRight[EigVec[RotateDimensionsLeft@tens, {1, 0, 0}]]}, 2]}
 	];
 
@@ -641,39 +667,51 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	(*start the tractography*)
 	If[mon,	Echo["Starting with "<>ToString[seedN]<>" seed points and step size "<>ToString[step]<>" mm"]];
 
-	vecInt = MakeInt[tens, vox, int];
-	stopInt = MakeInt[stop, vox, int];
-	trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&;
-
 	(*check if parallel or normal computing is needed*)
 	If[!OptionValue[Parallelization],
 		(*normal tractography*)
+
+		vecInt = MakeInt[tens, vox, int];
+		stopInt = MakeInt[stop, vox, int];
+		trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&;
+
 		{t1, tracts} = AbsoluteTiming@If[mon,
 			ind = 0; Monitor[(ind++; trFunc[#]) & /@ seeds, ProgressIndicator[ind, {0, seedN}]],
 			trFunc/@seeds];
+		
 		, (*parallel tractography*)
 		If[mon, Echo["Starting parallel preparation"]];
-		DistributeDefinitions[tens, stop, vox, int, step, maxAng, maxStep, stopT, tractF, vecF, seeds, 
-			trFunc, TractFunc, TractFuncI, MakeInt, EigVec, AlignVec, VecAng, Euler, RK2, RK4];
-		(*Redefine int function on parallel kernels, see help distributeDefinitions*)
-		ParallelEvaluate[vecInt = MakeInt[tens, vox, int]; stopInt = MakeInt[stop, vox, int];];
+		tp = First@AbsoluteTiming[
+			tens = RotateDimensionsRight[tens[[All, All, All, 1]]];
+			DistributeDefinitions[tens, stop, vox, int, step, maxAng, maxStep, stopT, tractF, vecF]; 
+			DistributeDefinitions[TractFunc, TractFuncI, MakeInt, EigVec, AlignVec, VecAng, Euler, RK2, RK4];
+
+			(*Define int function on parallel kernels, see help distributeDefinitions*)
+			(*vecInt = MakeInt[tens, vox, int];*)
+			ParallelEvaluate[vecIntI = MakeInt[#, vox, int] & /@ tens];
+			ParallelEvaluate[vecInt = Through[vecIntI[##]] &];
+			ParallelEvaluate[stopInt = MakeInt[stop, vox, int]];
+			ParallelEvaluate[trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&];
+		];
+		If[mon, Echo["Parallel preparation took "<>ToString[Round[tp,.1]]]];
+
 		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, ProgressReporting -> mon];
 		ParallelEvaluate[Clear[vecInt, stopInt, trFunc, tens, stop]];
 		ClearDistributedDefinitions[];
 	];
+	If[mon,
+		Echo["Tractography took "<>ToString[Round[t1,.1]]<>" seconds ("<>ToString[Round[seedN/t1]]<>" tracts/s)"];
+		Echo["Checking tract lengths"];
+	];
 
 	(*select only tracts within correct range and clip tracts that are longer*)
-	If[mon, Echo["Checking tract lengths"]];
 	{tracts, sel} = FilterTractLength[tracts, {minLength, maxLength}, "both"];
 	seeds = Pick[seeds, sel, 1];
 
-	(*report timing an results*)
-	If[mon,
-		Echo["Tractography took "<>ToString[Round[t1,.1]]<>" seconds ("<>ToString[Round[seedN/t1]]<>" tracts/s)"];
-		Echo[ToString[Length[tracts]]<>" valid tracts with length "<>ToString[Round[step Mean[Length /@ tracts], 0.1]]<>"\[PlusMinus]"<>ToString[Round[step StandardDeviation[Length /@ tracts], 0.1]]<>" mm"];	
-	];
-
 	(*output tracts move them to coordinates before cropping*)
+	If[mon,
+		Echo[ToString[Length[tracts]]<>" valid tracts with length "<>ToString[Round[step Mean[Length /@ tracts], 0.1]]<>"\[PlusMinus]"<>ToString[Round[step StandardDeviation[Length /@ tracts], 0.1]]<>" mm"]
+	];	
 	MoveTracts[#, vox (crp[[;; ;; 2]] - 1)]& /@ {tracts, seeds}
 ]
 
@@ -1034,6 +1072,8 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 (*SelectTractPartInVol*)
 
 
+SelectTractPartInVol[tracts_, roi_]:= SelectTractPartInVolC[Normal@roi, tracts]
+
 SelectTractPartInVol[tracts_, roi_, None]:= SelectTractPartInVolC[Normal@roi, tracts]
 
 SelectTractPartInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractPartInVolV[Normal@roi, tracts, vox]
@@ -1053,7 +1093,7 @@ SelectTractPartInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _R
 (*PlotTracts*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*PlotTracts*)
 
 
@@ -1112,7 +1152,7 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 		"Direction", MakeDirectionColor[select],
 		"Length", MakeLengthColor[select, {pran, colf}],
 		"Angle", MakeAngleColor[select, {pran, colf}],
-		"Array", MakeArrayColor[select, {pran, colf}, colArray, voxi],
+		"Array", MakeArrayColor[select, {pran, colf}, {colArray, voxi}],
 		"Color", MakeConstantColor[select, pran],
 		"Material",	None,
 		_, White
@@ -1177,11 +1217,11 @@ MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
 ];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MakeArrayColor*)
 
 
-MakeArrayColor[tract_, {pran_, colf_}, dat_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}] := Block[{vals, col},
+MakeArrayColor[tract_, {pran_, colf_}, {dat_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}}] := Block[{vals, col},
 	vals = GetTractValues[tract, dat, vox, InterpolationOrder -> 0];
 	vals = Rescale[vals, If[pran === Automatic, Quantile[Flatten[vals], {.05, 0.95}], pran]];
 	col = ColorData[colf];
@@ -1244,7 +1284,6 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	If[mon, Echo["Fitting tracts"]];
 	SeedRandom[1234];
 	tractsF = RandomSample[tracts, Min[{5 ntr, Length@tracts}]];
-	tractsFI = RescaleTractsC[tractsF, vox];
 
 	(*make colors*)
 	SeedRandom[1234];
@@ -1273,6 +1312,7 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 
 	If[mon, Echo["Making per muscle tracts"]];
 	(*select the tracts per muscle and make fiber plots*)
+	tractsFI = RescaleTractsC[tractsF, vox];
 	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segments;
 	tracksSel = If[#=!={}, FitTracts[#, vox, dim, FittingOrder -> 3], {}]& /@ tracksSel;
 

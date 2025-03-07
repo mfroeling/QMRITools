@@ -270,7 +270,7 @@ Block[{depthD,dirD,dirG,grad,bvec},
 TensorCalc[data_, grad_?MatrixQ, bvec:{_?NumberQ ..}, opts:OptionsPattern[]]:=
 Block[{depthD,dirD,dirG,dirB},
 
-	depthD=ArrayDepth[data];
+	depthD = ArrayDepth[data];
 	dirD = Length[If[depthD==4, data[[1]], data]];
 	dirG = Length[grad];
 	dirB = Length[bvec];
