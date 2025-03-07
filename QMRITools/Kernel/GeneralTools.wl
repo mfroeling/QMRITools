@@ -564,7 +564,7 @@ SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type}
 
 
 (* ::Subsubsection::Closed:: *)
-(*PadToDimensions*)
+(*FindMaxDimensions*)
 
 
 SyntaxInformation[FindMaxDimensions] = {"ArgumentsPattern" -> {_}};

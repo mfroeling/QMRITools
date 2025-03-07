@@ -817,7 +817,7 @@ BidsDcmToNii[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Bl
 	BidsDcmToNii[
 		config["folders"]["dicomData"],(*the input folder of the dcm data*)
 		config["folders"]["rawData"],(*the output folder for conversion*)
-		Lookup[config, "conversion", <|"Version"->"23"|>],(*the conversion settings*)
+		Lookup[config, "conversion", <|"Version"->1|>],(*the conversion settings*)
 		opts];
 	SetDirectory[dir];
 ]
@@ -1071,7 +1071,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 
 				(*get the position of the files needed*)
 				pos = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
-				debugBids["Converting DWI data, json position: ", pos];
+				debugBids["Converting DWI data, json position: ", pos, nameIn];
 
 				(*get the json and data*)
 				(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
@@ -1510,7 +1510,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 						(*register data - each leg seperate*)
 						(*-----*)AddToLog["Starting dwi motion and eddy correction", 4];
-						reg = RegisterDiffusionDataSplit[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, PrintTempDirectory->False];
+						regF = If[Lookup[process, "SplitRegistration" ,True], RegisterDiffusionDataSplit, RegisterDiffusionData];
+						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, PrintTempDirectory->False];
 
 						(*anisotropic filtering*)
 						(*-----*)AddToLog["Starting anisotrpic data smoothing", 4];
@@ -1567,24 +1568,35 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*import the data*)
 							json = ImportJSON[jfile];
 							{data, grad, val, diffvox} = ImportNiiDiff[nfilep, FlipBvec->False];
-							mask = Mask[NormalizeMeanData[data], Lookup[process, "Masking", 5], MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
+							mask = Mask[NormalizeMeanData[data], Lookup[process, "Masking", 5], MaskSmoothing->True, 
+								MaskComponents->2, MaskClosing->2];
 							data = MaskData[data, mask];
 							(*get bvalues and mean data*)
 							{mean, valU} = MeanBvalueSignal[data, val];
-
+							
 							(*initialize IVIM fit*)
-							(*-----*)AddToLog["Starting ivim calculation", 4];
-							fiti = IVIMCalc[MeanSignal[mean], valU, {1,.05,.003,.015}, IVIMFixed->True];
-							(*perform IVIM correction*)
-							{s0i, fri, adci, pD}= Quiet@IVIMCalc[mean, valU, fiti, IVIMConstrained->False, Parallelize->True, MonitorIVIMCalc->False, IVIMFixed->True];
-							fri = Clip[fri, {0,1}, {0,1}];
-							adci = 1000 adci;
-							resi = Quiet@IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
+							If[!Lookup[process, "IVIMCorection" ,True],
+								(*-----*)AddToLog["Skipping IVIM correction", 4];
+								ivimpar = {};
+								,
+								(*-----*)AddToLog["Starting ivim calculation", 4];
+
+								(*estimatie inti values*)
+								fiti = IVIMCalc[MeanSignal[mean], valU, {1,.05,.003,.015}, IVIMFixed->True];
+								(*perform IVIM correction*)
+								{s0i, fri, adci, pD}= Quiet@IVIMCalc[mean, valU, fiti, IVIMConstrained->False, Parallelize->True, 
+									MonitorIVIMCalc->False, IVIMFixed->True];
+								fri = Clip[fri, {0,1}, {0,1}];
+								adci = 1000 adci;
+								resi = Quiet@IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
+								data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
+								ivimpar = {"adci", "fri", "s0i"} 
+							];
 
 							(*calculate tensor from corrected data*)
 							(*-----*)AddToLog["Starting tensor calculation", 4];
-							data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
-							{tens, s0, out, res} = Quiet@TensorCalc[data, grad, val, FullOutput->True, Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
+							{tens, s0, out, res} = Quiet@TensorCalc[data, grad, val, FullOutput->True, Method->"iWLLS", 
+								RobustFit->True, Parallelize->True, MonitorCalc->False];
 							out = Total@Transpose@out;
 							(*calculate tensor parameters*)
 							{l1, l2, l3, md, fa} = ParameterCalc[tens];
@@ -1594,8 +1606,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:", 4];
 							(*----*)AddToLog[outfile, 5];					
-							outTypes = {"data", "mean", "tens", "res", "out", "s0", 
-								"l1", "l2", "l3", "md",	"fa", "rd", "adci", "fri", "s0i"};
+							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
+								"l1", "l2", "l3", "md",	"fa", "rd"}, ivimpar];
 							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 													
 							(*export the checkfile*)
@@ -2589,8 +2601,8 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 					BoxRatios -> {sc  4, 1, 1} Options[gc, BoxRatios][[1, 2]], 
 					PlotRange -> {sc  4, 1, 1} Options[gc, PlotRange][[1, 2]], 
 					Options@gc
-					}], ImageSize -> {Automatic, 1200}, ImageResolution -> 300], 
-			{{60, 60}, {60, 60}}, Lighter@Gray], {Automatic, 1000}]
+					}], ImageSize -> {Automatic, 2400}, ImageResolution -> 300], 
+			{{60, 60}, {60, 60}}, Lighter@Gray], {Automatic, 2000}]
 		]&;
 
 		(*2D image function*)
@@ -2635,7 +2647,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 					(*import data and make image and export*)
 					{imDat, voxi} = ImportNii[imFile];
 					img = make2DImage@MakeSliceImages[sliceData@imDat, voxi, 
-							ColorFunction -> cFun, PlotRange -> ran, ClippingStyle -> clip, ImageSize -> 1200];
+							ColorFunction -> cFun, PlotRange -> ran, ClippingStyle -> clip, ImageSize -> 2400];
 					img = If[lab =!= None, addLabel[cFun, img, lab], img];
 					Export[fileNameO[partsO]<>".jpg", img, ImageResolution -> 300];
 				]
@@ -2664,7 +2676,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			partsO["suf"] = If[hasKey, anaSeg[[2;;4]], anaSeg[[;;3]] ];
 			Export[fileNameO[partsO]<>".jpg", 
 				make2DImage@MakeSliceImages[sliceData@ref, {sliceData@seg, GetSegmentationLabels[seg]}, vox,
-					ColorFunction -> {"BlackToWhite","RomaO"}, PlotRange -> Automatic, ClippingStyle -> Automatic, ImageSize -> 1200]
+					ColorFunction -> {"BlackToWhite","RomaO"}, PlotRange -> Automatic, ClippingStyle -> Automatic, ImageSize -> 2400]
 			, ImageResolution -> 300];
 
 			(*make the 3D segmentation image*)
