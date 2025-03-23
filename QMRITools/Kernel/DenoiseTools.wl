@@ -892,11 +892,12 @@ Options[HarmonicDenoiseTensor] = {
 
 SyntaxInformation[HarmonicDenoiseTensor] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
-HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HarmonicDenoise[tensI, seg, vox, 0, opts]
+HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=
+	HarmonicDenoiseTensor[tensI, seg, vox, 0, opts]
 
 HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, labs_, OptionsPattern[]]:=Block[{
-		sigma, flip, per, itt, step, tol, rFA, rMD, seg, pos, lab, mon, pi,
-		tensO, tensL, dimT, conO, dimC, ampO, dimO, mus, crp
+		sigma, flip, per, itt, step, tol, rFA, rMD, seg, pos, lab, mon, pi, t,
+		tensO, tensL, dimT, conO, dimC, ampO, dimA, mus, crp, tens, con, amp
 	},
 
 	(*get options*)
@@ -926,26 +927,30 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 	tensO = SparseArray[0. tensI];
 	tensL = Transpose[FlipTensorOrientation[tensI, per, flip]];
 	dimT = Dimensions@tensL;
-	conO = Transpose[SparseArray[0., tensI[[1;;3]]]];
+	conO = Transpose[SparseArray[0. tensI[[1;;3]]]];
 	dimC = Dimensions@conO;
-	ampO = SparseArray[0., First@tensI];
-	dimO = Dimensions@ampO;
+	ampO = SparseArray[0. First@tensI];
+	dimA = Dimensions@ampO;
 
-	pi=0;
-	If[mon, PrintTemporary[ProgressIndicator[Dynamic[pi],{0,Length@pos}]]];
+	pi = t = 0;
+	If[mon, PrintTemporary[
+		Row[{ProgressIndicator[Dynamic[pi], {0,Length@pos}],"  time: ",Dynamic[Round[t,.1]],"s"}]
+	]];
 
 	Table[
+		t = First@AbsoluteTiming[
+			(*select muscle and perform denoising*)
+			mus = seg[[All,p]];
+			crp = FindCrop[mus,CropPadding->12];
+			{tens, con, amp} = HarmonicDenoiseTensorI[Transpose[ApplyCrop[tensL, crp]], ApplyCrop[mus,crp], vox,
+				RadialBasisKernel->sigma, MaxIterations->itt, GradientStepSize->step, Tolerance->tol,
+			RangeFA->rFA,RangeMD->rMD];
+		];
 		pi++;
-		(*select muscle and perform denoising*)
-		mus=seg[[All,p]];
-		crp=FindCrop[mus,CropPadding->12];
-		{tens, con, amp} = HarmonicDenoiseTensorI[Transpose[ApplyCrop[tensL, crp]], ApplyCrop[mus,crp], vox,
-			RadialBasisKernel->sigma, MaxIterations->itt, GradientStepSize->step, Tolerance->tol,
-		RangeFA->rFA,RangeMD->rMD];
 
 		(*add result to output*)
 		conO += ReverseCrop[con, dimC, crp];
-		ampO += ReverseCrop[con, dimO, crp];
+		ampO += ReverseCrop[amp, dimA, crp];
 		tensO += Transpose[ReverseCrop[Transpose[tens], dimT, crp]];
 	,{p, pos}];
 
@@ -960,28 +965,25 @@ HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 		sigma,md,fa,msel,rFA, rMD, G,L,R,coor,sel,map,vecN,vecH,sol,tensN,maps,itt,step,tol
 	},
 	
-	{sigma,itt,step,tol,rFA,rMD} = OptionValue[{RadialBasisKernel,MaxIterations,
-		GradientStepSize,Tolerance,RangeFA,RangeMD}];
+	{sigma, itt, step, tol, rFA, rMD} = OptionValue[{RadialBasisKernel, MaxIterations,
+		GradientStepSize, Tolerance, RangeFA, RangeMD}];
+
+	(*make gradien,laplace and RBF matrix functions*)
+	{{G, L}, coor, sel, map} = MakeGradientLaplacian[mask, vox, sigma];
+	R = MakeRBF[coor, sigma, vox];
 	
 	(*becouse of the implementation coordiante system the tensor needs to be reversed*)
-	tensN=FlipTensorOrientation[tens,{"z","y","x"}];
-	
+	tensN = FlipTensorOrientation[tens, {"z", "y", "x"}];
 	(*remove unreliable voxel*)
-	{md,fa}=ParameterCalc[MaskData[tensN,mask]][[4;;5]];
-	msel=Mask@{{fa,rFA},{md,rMD}};
-	
-	(*make gradien,laplace and RBF matrix functions*)
-	{{G,L},coor,sel,map}=MakeGradientLaplacian[mask,vox,sigma];
-	R=MakeRBF[coor,sigma,vox];
-	
+	{md, fa} = ParameterCalc[MaskData[tensN, mask]][[4;;5]];
+	msel = Mask[{{fa, rFA}, {md, rMD}}];
 	(*perform the recon*)
-	{vecN,vecH,sol}=FitHarmonicBasis[MaskData[tensN,msel],sel,{G,L,R},MaxIterations->itt,GradientStepSize->step,Tolerance->tol];
+	{vecN, vecH, sol} = FitHarmonicBasis[MaskData[tensN, msel], sel, {G, L, R},
+		MaxIterations->itt, GradientStepSize->step, Tolerance->tol];
 	
 	(*generate output*)
-	maps=MakeSolutionMaps[sol,map];
-	tensN=FlipTensorOrientation[ReconstrucTensor[vecN,tensN,sel,coor],{"z","y","x"}];
-	
-	(*give the outpu*)
+	maps = MakeSolutionMaps[sol, map];
+	tensN = FlipTensorOrientation[ReconstrucTensor[vecN, tensN, sel, coor], {"z", "y", "x"}];
 	{tensN, Transpose[maps[[1;;3]]], maps[[4]]}
 ]
 
@@ -1118,8 +1120,6 @@ MakeGradientLaplacian[mask_,vox_?VectorQ,sig_?NumberQ]:=Block[{aDepth,dim,const,
 MakeRBF[{coor_, sel_}, rad_, vox_]:=MakeRBF[{coor, sel}, rad, 1]
 
 MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{mr, r2, seed, target, n, nr, pg, p, g, rbFunc},
-
-
 	mr = (2.5 rad)^2;
 	r2 = 1 / rad^2;
 
