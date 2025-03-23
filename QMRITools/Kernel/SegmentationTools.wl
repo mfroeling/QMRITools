@@ -1666,7 +1666,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]]:=Block[{
 
 	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
 	If[lim === Automatic, lim = If[dev==="GPU", 200, 224]];
-	prec = If[dev==="GPU", "Mixed", "Real32"];
+	prec = If[(dev==="GPU") && ($OperatingSystem === "Windows"), "Mixed", "Real32"];
 
 	data = Which[
 		StringQ[dat], First@ImportNii[dat], 

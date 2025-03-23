@@ -1261,7 +1261,8 @@ Options[PlotSegmentedTracts] := {
 	TractSize -> 1,
 	ColorFunction -> "RomaO",
 	PerformanceGoal -> "Quality",
-	ContourOpacity -> 0.3
+	ContourOpacity -> 0.3,
+	FittingOrder -> 3
 }
 
 SyntaxInformation[PlotSegmentedTracts] = {"ArgumentsPattern" -> {_, _, _, _, _., OptionsPattern[]}};
@@ -1271,13 +1272,13 @@ PlotSegmentedTracts[tracts_, segments_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ
 PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := Block[{
 		ntr, fran, type, segments, tractsF, tractsFI, ran, rand, colListT, colListC, showF,
 		ref, bon, musc, tract, tracksSel, lengths, nTracts, sel, mon, size, output, colFunc,
-		sizeT, qual, opa
+		sizeT, qual, opa, ord
 	},
 
 	(*get options*)
-	{ntr, fran, type, mon, size, output, colFunc, sizeT, qual, opa} = OptionValue[{
+	{ntr, fran, type, mon, size, output, colFunc, sizeT, qual, opa, ord} = OptionValue[{
 		MaxTracts, FiberLengthRange, Method, Monitor, ImageSize, OutputForm, 
-		ColorFunction, TractSize, PerformanceGoal, ContourOpacity}];
+		ColorFunction, TractSize, PerformanceGoal, ContourOpacity, FittingOrder}];
 
 	(*prepare data*)
 	segments = Transpose@segmentIn;
@@ -1314,7 +1315,8 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	(*select the tracts per muscle and make fiber plots*)
 	tractsFI = RescaleTractsC[tractsF, vox];
 	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segments;
-	tracksSel = If[#=!={}, FitTracts[#, vox, dim, FittingOrder -> 3], {}]& /@ tracksSel;
+	(*only fit if order is greater than 1*)
+	If[ord > 0, tracksSel = If[#=!={} && ord>0, FitTracts[#, vox, dim, FittingOrder -> ord], {}]& /@ tracksSel];
 
 	lengths = Length /@ tracksSel;
 	nTracts = Round[ntr lengths/Total[lengths]];

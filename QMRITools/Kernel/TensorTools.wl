@@ -241,59 +241,13 @@ Options[TensorCalc]= {
 	RobustFitParameters->{10.^-1, 5}
 };
 
-SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
-(*bvalue, only one number, gr does not have b=0*)
-TensorCalc[data_, gr_, bvalue:_?NumberQ, opts:OptionsPattern[]]:=
-Block[{depthD,dirD,dirG,grad,bvec},
+TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, opts:OptionsPattern[]]:= TensorCalc[dat, grad, bvec, False, opts]
 
-	depthD = ArrayDepth[data];
-	dirD = Length[If[depthD==4, data[[1]], data]];
-	dirG = Length[gr];
-
-	(*check if data is 4D, 3D, 2D or 1D*)
-	If[depthD > 4, Return[Message[TensorCalc::data, ArrayDepth[data]]]];
-	(*check if gradient dimensions are the same in the data and grad vector*)
-	If[(dirD-1) != dirG,Return[Message[TensorCalc::grad,dirD,dirG]]];
-
-	bvec = Prepend[ConstantArray[bvalue,{dirG}],0];
-	grad = N[Prepend[gr,{0,0,0}]];
-
-	If[OptionValue[Method]!="DKI",
-		TensorCalc[data, Bmatrix[bvec, grad], opts],
-		TensorCalc[data, Bmatrix[bvec, grad, Method->"DKI"], opts]
-	]
-]
-
-
-(*b-vector*)
-TensorCalc[data_, grad_?MatrixQ, bvec:{_?NumberQ ..}, opts:OptionsPattern[]]:=
-Block[{depthD,dirD,dirG,dirB},
-
-	depthD = ArrayDepth[data];
-	dirD = Length[If[depthD==4, data[[1]], data]];
-	dirG = Length[grad];
-	dirB = Length[bvec];
-
-	(*check if data is 4D, 3D, 2D or 1D*)
-	If[depthD>4,Return[Message[TensorCalc::data,ArrayDepth[data]]]];
-	(*check if gradient dimensions are the same in the data and grad vector*)
-	If[dirD!=dirG,Return[Message[TensorCalc::grad,dirD,dirG]]];
-	(*check if bvec is the same length as gradient vec*)
-	If[dirB!=dirG,Return[Message[TensorCalc::bvec,dirG,dirB]]];
-
-	If[OptionValue[Method]!="DKI",
-		TensorCalc[data,Bmatrix[bvec, grad], opts],
-		TensorCalc[data,Bmatrix[bvec, grad, Method->"DKI"],opts]
-	]
-]
-
-
-(*b-matrix*)
-TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
-		dirD, dirB, tensor, rl, rr, TensMin, out, x, data, depthD, bmat, 
-		fout, method, output, robust, func, con, kappa, result, dataL, outliers, parallel, 
-		mon, fitFun, outFit, fitResult, residual, dataFit, s0, outFun
+TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
+		output, robust, con, kappa, parallel, mon, method, func, outliers, outFit, dataFit, residual, ctens,
+		bmat, bmatV, data, dataL, depthD, dirD, dirB, mask, coor, dim, vox, start, dint, fitFun, fitResult, s0, tensor
 	},
 
 	(*get output form*)
@@ -305,64 +259,84 @@ TensorCalc[dat_, bmati_?MatrixQ, OptionsPattern[]]:=Block[{
 		Return[Message[TensorCalc::met, method];$Failed]
 	];
 
-	bmat = bmati;
-	fitFun = Switch[method, "LLS", TensMinLLS, "WLLS", TensMinWLLS, "iWLLS", TensMiniWLLS];
-	outFun = FindTensOutliers[#, bmat, con, kappa]&;
+	bmat = Bmatrix[bvec, grad];
+	data = ToPackedArray@Ramp@N@Round[dat, .000001];
 
 	(*get the data dimensions*)	
 	depthD = ArrayDepth[dat];
 	dirD = Length[If[depthD==4, dat[[1]], dat]];
 	dirB = Length[bmat];
-
-	(*make diff direction last dimension*)
-	data = ToPackedArray@Ramp@N@Round[dat, .000001];
-	data = RotateDimensionsLeft@If[depthD==4, Transpose@data, data];
-	dataL = ToPackedArray@N@LogNoZero[data];
-
+	
 	(*check if data is 4D, 3D, 2D or 1D*)
 	If[depthD>4, Return[Message[TensorCalc::data, depthD];$Failed]];
 	(*check if bmat is the same length as data*)
 	If[dirB!=dirD, Return[Message[TensorCalc::bvec, dirD, dirB];$Failed]];
 
+	(*convert data to vector if data is 2D or 3D*)
+	mask = Unitize@Mean@If[depthD==4, Transpose@data, data];
+	If[depthD>=3, {data, coor} = DataToVector[data, mask]];
+	(*make data vector for 1D*)
+	If[depthD==1, data = {data}];
+	dataL = ToPackedArray@N@LogNoZero[data];
+	
+	(*calculate the bmatrix using coil tensor if needed*)
+	ctens = If[coil=!= False && depthD>=3,
+		If[mon, PrintTemporary["Making coil tensor"]];
+		(*get the coil tensor*)
+		{vox, start, dint} = coil;
+		bmatV = Bmatrix[bvec, grad, GradientCoilTensor[mask, vox, start, dint]];
+		True, False
+	];
+
+	If[mon, PrintTemporary["Preparing for parallel computing"]]; 	
 	(*prepare for parallel computing if needed*)
-	func = If[parallel && method =!= "LLS",
-		DistributeDefinitions[bmat, con, kappa, fitFun, outFun,
+	fitFun = Switch[method, "LLS", TensMinLLS, "WLLS", TensMinWLLS, "iWLLS", TensMiniWLLS];
+	func = If[parallel, DistributeDefinitions[bmat, con, kappa, fitFun, 
 			FindTensOutliers, TensMinLLS, TensMinWLLS, TensMiniWLLS];
-		ParallelMap, 
-		Map];	
+		ParallelMap, Map];
 
 	(*define outliers if needed*)	
 	outliers = If[robust && method =!= "LLS",
-		If[mon, PrintTemporary["Finding tensor outliers"]]; 
-		If[depthD == 1,	outFun[dataL], func[outFun, dataL]],
+		If[mon, PrintTemporary["Finding tensor outliers"]];
+		If[ctens, 
+			func[FindTensOutliers[#[[1]], #[[2]], con, kappa]&, Thread[{dataL, bmatV}]],
+			func[FindTensOutliers[#, bmat, con, kappa]&, dataL]
+		],
 		SparseArray[{}, Dimensions@data, 0.]
 	];
 	outFit = ToPackedArray@N@(1. - outliers);
 
-	If[mon, PrintTemporary["Fitting tensor"]];
-	fitResult = If[method === "LLS", 
-		RotateDimensionsLeft[PseudoInverse[bmat].RotateDimensionsRight[dataL]],
-		If[depthD == 1,
-			(*single voxel fit*)
-			fitFun[outFit data, outFit dataL, bmat],
-			(*2-4D data fit*)
-			dataFit = RotateDimensionsLeft[{RotateDimensionsRight[outFit data], RotateDimensionsRight[outFit dataL]}, 2];
-			func[fitFun[#, bmat]&, dataFit]
-		]
+	(*fit the data*)
+	If[mon, PrintTemporary["Fitting Data"]]; 
+	dataFit = Transpose[{outFit data, outFit dataL}];
+	fitResult = Which[
+		(*LLS without coil tensor*)
+		method === "LLS" && ctens===False, Transpose[PseudoInverse[bmat].Transpose[dataL]],
+		ctens===False, func[fitFun[#, bmat]&, dataFit],
+		ctens===True, func[fitFun[#[[1]], #[[2]]]&, Thread[{dataFit, bmatV}]]
 	];
 
+	(*finalize output tensor*)
 	If[mon, PrintTemporary["Finalizing output tensor"]]; 
-
-	fitResult = RotateDimensionsRight[fitResult];
-	outliers = RotateDimensionsRight[outliers];
-	If[depthD == 4,	outliers = Transpose[outliers]];
-
-	If[OptionValue[FullOutput], 
-		residual = ResidualCalc[dat, fitResult, outliers, bmat, MeanRes->"RMSE"]
+	residual = If[OptionValue[FullOutput], (*needs to incorporate the correct bmatrix*)
+		ResidualCalc[Transpose@data, Transpose@fitResult, Transpose@outliers, 
+			If[ctens,bmatV,bmat], MeanRes->"RMSE"],
+		SparseArray[{}, Length@data, 0.]
 	];
 
-	s0 = N@Clip[ExpNoZero[N@Chop[Last[fitResult]]],{0., 1.5 Max[data]}];
-	tensor = N@Clip[Drop[fitResult, -1],{-0.1,0.1}];
+	If[depthD>=3, 
+		fitResult = Transpose[VectorToData[fitResult, coor]];	
+		outliers = VectorToData[outliers, coor];
+		residual = VectorToData[residual, coor];
+	];
+	If[depthD==1, 
+		fitResult = First@fitResult; 
+		outliers = First@outliers;
+		residual = First@residual;
+	];
+
+	s0 = N@Clip[ExpNoZero[N@Chop[Last@fitResult]], {0., 1.5 Max[data]}];
+	tensor = N@Clip[Most@fitResult,{-0.1,0.1}];
 
 	If[OptionValue[FullOutput],If[robust,{tensor, s0, outliers, residual}, {tensor, s0, residual}], {tensor, s0}]
 ]
@@ -461,8 +435,8 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 (*LLS*)
 
 
-TensMinLLS = Compile[{{dat, _Real, 2}, {bmatI, _Real, 2}},
-	bmatI . dat[[2]]
+TensMinLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
+	PseudoInverse[bmat] . dat[[2]]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
@@ -1199,19 +1173,19 @@ ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, bmat_?ArrayQ, opts : OptionsPattern[]
 ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, grad : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, bval_, opts : OptionsPattern[]] :=
 	ResidualCalc[data, tensor, outlier, Bmatrix[bval, grad], opts]
 
-ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_?ArrayQ, OptionsPattern[]] := Block[{
+ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_, OptionsPattern[]] := Block[{
 		fit, dat, err, dimD,dimT
 	},
 	dat = N[data];
 	(*check data and tensor dimensions*)
-	dimD = Dimensions[If[ArrayDepth[dat] == 4,dat[[All,1]],dat[[1]]]];
+	dimD = Dimensions[If[ArrayDepth[dat] == 4, dat[[All,1]], dat[[1]]]];
 	dimT = Dimensions[tensor[[1]]];
 
 	If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datdim, Dimensions[data], Dimensions[tensor]]]];
 
 	(*remove ouliers*)
-	fit = Clip[ExpNoZero[bmat . tensor], {-1.5, 1.5} Max[dat], {0., 0.}];
-
+	fit = If[MatrixQ[bmat], bmat.tensor, Transpose@MapThread[Dot, {bmat, Transpose@tensor}]];
+	fit = Clip[ExpNoZero[fit], {-1.5, 1.5} Max[dat], {0., 0.}];
 	err = If[ArrayDepth[dat] == 4,
 		Transpose[(1 - outlier)] (Transpose[dat] - fit),
 		(1 - outlier) (dat - fit)

@@ -117,6 +117,16 @@ CalculateMoments::usage =
 "CalculateMoments[{gt, hw, te}, t] calculates the 0th to 3th order moments of the sequence created by GradSeq. Output is {{gt, M0, M1, M2, M3}, vals}."
 
 
+GradientCoilTensor::useage = 
+"GradientCoilTensor[mask_?ArrayQ, vox_?VectorQ, off_?VectorQ, dint_] ..."
+
+MakeGradientDerivatives::usage =
+"MakeGradientDerivatives[vox_, type_] ..."
+
+MakeGradientMaps::usage =
+"MakeGradientMaps[{int_, dint_}, fov_, vox_, start_]... "
+
+
 CorrectGradients::usage = 
 "CorrectGradients[grad, transformation] corrects the gradient directions grad with the transformation parameters from RegisterData or RegisterDiffusionData.
 
@@ -1286,7 +1296,7 @@ Options[Bmatrix]={Method->"DTI"};
 
 SyntaxInformation[Bmatrix] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-Bmatrix[{bvec_,grad_}, OptionsPattern[]]:=Switch[
+Bmatrix[{bvec_?VectorQ, grad_?MatrixQ}, OptionsPattern[]]:=Switch[
 	OptionValue[Method],
 	"DTI",
 	bvec*GradVecConv[grad,1],
@@ -1300,10 +1310,10 @@ Bmatrix[{bvec_,grad_}, OptionsPattern[]]:=Switch[
 	]
 ]
 
-Bmatrix[bvec_,grad_,OptionsPattern[]]:=Switch[
+Bmatrix[bvec_?VectorQ, grad_?MatrixQ, OptionsPattern[]]:=Switch[
 	OptionValue[Method],
 	"DTI",
-	Append[#,1]&/@(-bvec*GradVecConv[grad,1]),
+	Append[#,1]&/@(-bvec*GradVecConv[grad, 1]),
 	"DKI",
 	If[(Length[grad]==Length[bvec])||(Length[bvec]==0),
 		Append[#,1]&/@(MapThread[Join[#1,#2]&,{-bvec*GradVecConv[grad,1], (1/6)*bvec^2*GradVecConv[grad,2]}]),
@@ -1314,8 +1324,17 @@ Bmatrix[bvec_,grad_,OptionsPattern[]]:=Switch[
 	]
 ]
 
-GradVecConv[grad_,type_]:=Block[{gx,gy,gz},
-		{gx,gy,gz}=Transpose[grad];
+Bmatrix[bvec_?VectorQ, grad_?MatrixQ, coilTens_?ArrayQ, OptionsPattern[]]:=BmatrixC[bvec, Transpose[grad], coilTens]
+
+
+BmatrixC = Compile[{{bv, _Real, 1}, {gt, _Real, 2}, {lmat, _Real, 2}}, Block[{gx, gy, gz},
+	{gx, gy, gz} = lmat . gt;
+	Transpose[-{bv gx^2, bv gy^2, bv gz^2, bv 2 gx gy, bv 2 gx gz, bv 2 gy gz, 0 gx - 1}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+GradVecConv[grad_, type_]:=Block[{gx,gy,gz},
+		{gx,gy,gz} = Transpose[grad];
 		Transpose@Switch[type,
 			1,{gx^2,gy^2,gz^2,2 gx gy,2 gx gz,2 gy gz},
 			2,{gx^4, gy^4, gz^4, 4 gx^3 gy, 4 gx^3 gz, 6 gx^2 gy^2, 12 gx^2 gy gz, 6 gx^2 gz^2, 4 gx gy^3, 12 gx gy^2 gz, 12 gx gy gz^2, 4 gx gz^3, 4 gy^3 gz, 6 gy^2 gz^2, 4 gy gz^3}
@@ -1769,6 +1788,166 @@ CalculateMoments[{gt_, hw_, te_}, t_] := Module[{fun, m0, m1, m2, m3, vals},
 	vals = {m0, m1, m2, m3} /. t -> te;
 
 	{{PiecewiseExpand/@gt, m0, m1, m2, m3}, vals}
+]
+
+
+(* ::Subsection:: *)
+(*GradientCoilTensor*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*GradientCoilTensor*)
+
+
+SyntaxInformation[GradientCoilTensor] = {"ArgumentsPattern" -> {_, _, _, _}};
+
+GradientCoilTensor[mask_?ArrayQ, vox_?VectorQ, off_?VectorQ, dint_] := Block[{coor},
+	coor = DataToVector[mask][[2, 2]];
+	coor = Transpose[vox Transpose[coor - 1] + off];
+	GetMapValues[coor, dint]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GradientCoilTensor*)
+
+
+GetMapValues[coor : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}, int_] := Map[GetMapValues[#, int] &, coor]
+
+GetMapValues[{x_?NumberQ, y_?NumberQ, z_?NumberQ}, int_?MatrixQ] := Through[#[x, y, z]] & /@ int;
+
+GetMapValues[{x_?NumberQ, y_?NumberQ, z_?NumberQ}, int_?ListQ] := Through[int[x, y, z]];
+
+
+(* ::Subsection:: *)
+(*MakeGradientDerivatives*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeGradientDerivatives*)
+
+
+SyntaxInformation[MakeGradientDerivatives] = {"ArgumentsPattern" -> {_, _}};
+
+MakeGradientDerivatives[vox_, type_] := MakeGradientDerivativesI[vox, type]
+
+MakeGradientDerivativesI[vox_, type_] := MakeGradientDerivativesI[vox, type] = Block[{
+		vx, vy, vz, ordxy, ordz, lenxy, lenz, ref, dx, dy, dz, gxc, gys, gzc, gxin, gyin, gzin,
+		bx, by, bz, location, locationSphere, fieldV, gx, gy, gz, int, dint
+    },
+
+	{vz, vx, vy} = N@vox 2.;
+
+	(*Define only odd-order spherical harmonics up to l=9, 
+	for z only 0 or x and y only odd*)
+	ordxy = Flatten[Table[{l, m}, {l, 1, 11, 2}, {m, 1, l, 2}], 1];
+	ordz = Table[{l, 0}, {l, 1, 11, 2}];
+	lenxy = Length@ordxy;
+	lenz = Length@ordz;
+
+	(*from mpghw_gr.res amplifier gradient combination*)
+	Switch[type,
+		"WA1",
+		ref = {dx, dy, dz} = {300., 300., 300.};
+		gxc = PadRight[{3000.0, -246.62, 0.0, -146.52, 0.0, 0.0, 55.55, 0.0, 0.0, 0.0, -6.87,
+			0.0, 0.0, 0.0, 0.0, -0.9}, lenxy];
+		gys = PadRight[{3000.0, -254.95, 0.0, -140.86, 0.0, 0.0, 54.13, 0.0, 0.0, 0.0, -7.03,
+			0.0, 0.0, 0.0, 0.0, -0.72}, lenxy];
+		gzc = PadRight[{3000.0, -278.9, -459.5, 186.1, -24.6, 8.1, -18.3, 17.2}, lenz];
+		{bx, by, bz} = {"C", "S", "C"}
+		, "WA2",
+		ref = {dx, dy, dz} = {300., 300., 300.};
+		gxc = PadRight[{3000.0, -253.40, 0.0, -140.95, 0.0, 0.0, 48.18, 0.0, 0.0, 0.0, -2.13,
+			0.0, 0.0, 0.0, 0.0, -3.98, 0.0, 0.0, 0.0, 0.0, 0.0, 2.15, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.72}, lenxy];
+		gys = PadRight[{3000.0, -255.83, 0.0, -137.98, 0.0, 0.0, 46.50, 0.0, 0.0, 0.0, -2.41,
+			0.0, 0.0, 0.0, 0.0, -3.14, 0.0, 0.0, 0.0, 0.0, 0.0, 1.71, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.68}, lenxy];
+		gzc = PadRight[{3000.0, -333.88, -340.95, 166.54, -32.61, -3.65, 1.55, 5.07}, lenz];
+		{bx, by, bz} = {"C", "S", "C"}
+	];
+	{gxc, gys, gzc} = #[[1]]/Abs[#[[1, 1]]/#[[2]]] & /@ Thread[{{gxc, gys, gzc}, ref}];
+
+	(*define the spherical harmonics and the coeeficents*)
+	gxin = {bx, Select[Thread[{ordxy, -gxc}], #[[2]] =!= 0. &]};
+	gyin = {by, Select[Thread[{ordxy, -gys}], #[[2]] =!= 0. &]};
+	gzin = {bz, Select[Thread[{ordz, gzc}], #[[2]] =!= 0. &]};
+
+	location = Flatten[Table[{z, y, x}, {z, -dz, dz, vz}, {y, -dy, dy, vy}, {x, -dx, dx, vx}], 2]; 
+	locationSphere = ToSphericalCoordinatesC[location, ref];
+
+	fieldV = {
+		CoordinatesToLegendreP[gzin, locationSphere],
+		CoordinatesToLegendreP[gyin, locationSphere],
+		CoordinatesToLegendreP[gxin, locationSphere]
+	};
+
+	{gz, gy, gx} = Interpolation[Thread[{location, #}], InterpolationOrder -> 1,
+		"ExtrapolationHandler" -> {(0.0 &), "WarningMessage" -> False}] & /@ fieldV;
+	{dz, dy, dx} = {Derivative[1, 0, 0], Derivative[0, 0, 1], Derivative[0, 1, 0]};
+	int = {gx, gy, gz};
+	dint = {{dz[gz], dz[gx], dz[gy]}, {dx[gz], dx[gx], dx[gy]}, {dy[gz], dy[gx], dy[gy]}};
+
+	{int, dint}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ToSphericalCoordinatesC*)
+
+
+ToSphericalCoordinatesC = Compile[{{coor, _Real, 1}, {range, _Real, 1}}, Block[{x, y, z},
+	{z, x, y} = coor/range;
+	{Sqrt[x^2 + y^2 + z^2], ArcTan[z, Sqrt[x^2 + y^2]], ArcTan[x, y]}
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed" ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*CoordinatesToLegendreP*)
+
+
+CoordinatesToLegendreP[{met_, vals_}, coor : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{
+		r, t, p, c, cos, val, fun, amp, lm
+	},
+
+	{r, t, p} = Transpose[coor];
+	fun = Switch[met, "C", Cos, "S", Sin];
+	cos = Cos[t];
+	Total[vals[[All, 2]] (r^#[[1]] fun[#[[2]] p] LegendreP[#[[1]], #[[2]], cos] & /@ vals[[All, 1]])]
+];
+
+
+(* ::Subsection:: *)
+(*MakeGradientMaps*)
+
+
+SyntaxInformation[MakeGradientMaps] = {"ArgumentsPattern" -> {_, _, _, _}};
+
+MakeGradientMaps[{int_, dint_}, fov_, vox_, start_] := Block[{
+		xyzPointsM, dimxyz, xyzPoints, map, derivatives, fovz, fovy, fovx, vz, vy, vx, sz, sy, sx
+	},
+
+	(*get the information of the FOV*)
+	{fovz, fovy, fovx} = fov;
+	{vz, vy, vx} = vox;
+	{sz, sy, sx} = start;
+
+	(*Generate a 3D grid where to calculate the gradients*)
+	xyzPointsM = Table[{z, y, x},
+		{z, sz, sz + fovz - vz, vz},
+		{y, sy, sy + fovy - vy, vy},
+		{x, sx, sx + fovx - vx, vx}
+	];
+	
+	dimxyz = Dimensions[xyzPointsM][[1 ;; 3]];
+	xyzPoints = Flatten[xyzPointsM, 2];
+
+	map = ArrayReshape[GetMapValues[xyzPoints, int], Join[dimxyz, {3}]];
+	map = RotateDimensionsRight[map];
+
+	derivatives = ArrayReshape[GetMapValues[xyzPoints, dint], Join[dimxyz, {3, 3}]];
+	derivatives = Flatten[RotateDimensionsRight[derivatives, 2], 1];
+	derivatives = Clip[derivatives, {-2, 2}, {0., 0.}];
+
+	{map, derivatives}
 ]
 
 
