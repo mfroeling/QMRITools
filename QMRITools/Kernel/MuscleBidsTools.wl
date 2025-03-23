@@ -182,7 +182,7 @@ bidsTypes = <|
 |>;
 
 
-bidsName = {"sub", "ses", "stk", "chunk", "rep", "acq" ,"part", "type", "suf"};
+bidsName = {"sub", "ses", "vol", "stk", "chunk", "rep", "acq" ,"part", "type", "suf"};
 
 
 bidsClass = {"Volume", "Stacks", "Repetitions", "Chunks", "Acquisitions", "Mixed"};
@@ -247,7 +247,7 @@ SyntaxInformation[GenerateBidsName] = {"ArgumentsPattern" -> {_}};
 GenerateBidsName[list_?ListQ]:=GenerateBidsName/@list
 
 GenerateBidsName[parts_?AssociationQ]:=StringJoin[Riffle[Select[Join[
-	BidsString[parts, {"sub", "ses", "stk", "rep", "chunk", "acq", "part"}], BidsValue[parts, {"type", "suf"}
+	BidsString[parts, {"sub", "ses", "vol", "stk", "rep", "chunk", "acq", "part"}], BidsValue[parts, {"type", "suf"}
 ]],#=!=""&],"_"]]
 
 
@@ -576,9 +576,9 @@ SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name
 
 
 GetClassName[class_, nameIn_]:=Switch[class,
-	"Volume", Nothing,
-	"Stacks"|"Repetitions"|"Acquisitions",
+	"Volume"|"Stacks"|"Repetitions"|"Acquisitions",
 	Switch[class, 
+		"Volume", "vol",
 		"Stacks", "stk",
 		"Repetitions", "rep", 
 		"Chunks", "chunk", 
@@ -883,7 +883,8 @@ MuscleBidsConvert[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 
 MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox, 
-		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types
+		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types,
+		vx, vy, vz, dx, dy, dz, sx, sy, sz, off
 	},
 
 	debugBids["Starting MuscleBidsConvertI"];
@@ -944,6 +945,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 
 						(*export to the correct folder*)
 						outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], "suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
+						debugBids[{outFile, GetClassName[class, nameIn]}];
 						(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 						ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
 						Export[ConvertExtension[outFile, ".json"], AddToJson[AddToJson[info, "QMRITools"], infoExtra]];
@@ -1078,11 +1080,19 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 
 				(*get the json and data*)
 				info = json[[First@pos]];
+				{data, vox, hdr} = ImportNii[ConvertExtension[files[[First@pos]],".nii"], NiiMethod -> "header"];
 				{data, grad, val, vox} = ImportNiiDiff[ConvertExtension[files[[First@pos]],".nii"], FlipBvec->False];
 				(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 
+				(*get the offset to add to header*)
+				{vz, vy, vx} = vox;
+				{sz, sy, sx} = vox Dimensions@data[[All, 1]];
+				{dz, dy, dx} = {"qOffsetZ", "qOffsetY", "qOffsetX"} /. hdr;
+				off = -{(sz - vz)/2, dx, (dy + sy) - vy};
+
 				(*make the additional mandatory bids json values*)
 				infoExtra=<|
+					"Offset"->off,
 					"ForthDimension"->"Diffusion",
 					"DataClass"->class,
 					If[class==="Repetitions", "Repetition"->nameIn, Nothing],
@@ -1260,6 +1270,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 	type = datType["Type"];
 	process = datType["Process"];
 	keys = {"EchoTime", "ForthDimension", "DataClass", "Stack", "OverLap", "SliceThickness", "SpacingBetweenSlices"};
+
+
 
 	(*see what needs to be processed*)
 	files = Flatten[FileNames["*"<>StringReplace[#, notAllowed]<>"*.json", foli]& /@ Flatten[{datType["Label"]}]];

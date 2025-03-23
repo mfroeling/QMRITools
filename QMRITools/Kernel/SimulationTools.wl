@@ -251,7 +251,7 @@ Tensor[l_, vec_, OptionsPattern[]]:= Block[{e,tens},
 			]
 		];
 		
-	tens = If[NumberQ[l],
+	tens = N@If[NumberQ[l],
 		Transpose[e].{{l,0,0},{0,l,0},{0,0,l}}.e,
 		If[VectorQ[l]&&Length[l]==3,
 			Transpose[e].{{l[[1]],0,0},{0,l[[2]],0},{0,0,l[[3]]}}.e,
@@ -302,23 +302,27 @@ Signal[par_,tr_,te_]:=par[[1]](1-Exp[-tr/par[[2]]])Exp[-te/par[[3]]]
 (*CreateDiffData*)
 
 
-SyntaxInformation[CreateDiffData] = {"ArgumentsPattern" -> {_, _, _, _, _.}};
+SyntaxInformation[CreateDiffData] = {"ArgumentsPattern" -> {_, _, _, _., _.}};
 
-CreateDiffData[s0_,eig_,bval_?NumberQ,grad_,dim_]:= CreateDiffData[s0,eig,Prepend[ConstantArray[bval,Length[grad]],0],Prepend[grad,{0,0,0}],dim]
+CreateDiffData[s0_, eig_, bval_?NumberQ, grad_?MatrixQ, dim_]:= CreateDiffData[s0,eig,Prepend[ConstantArray[bval,Length[grad]],0],Prepend[grad,{0,0,0}],dim]
 
-CreateDiffData[s0_,eig_,bvec:{_?NumberQ..},grad_,dim_]:= CreateDiffData[s0,eig,Bmatrix[bvec,grad],dim]
+CreateDiffData[s0_, eig_, bvec:{_?NumberQ..},grad_?MatrixQ, dim_]:= CreateDiffData[s0,eig,Bmatrix[bvec,grad],dim]
 
-CreateDiffData[s0_,eig_,bmat_?ArrayQ,dim_]:= Block[{diff},
+CreateDiffData[s0_, eig_, bmat_?MatrixQ, dim_]:= Block[{diff},
 	
-	diff=If[Dimensions[eig]=={3},
+	diff=Which[
+		Dimensions[eig]=={3},
 		ConstantArray[SignalTensor[s0,bmat,Tensor[eig]],dim],
-		If[Dimensions[eig]=={2,3}&&Dimensions[eig[[2]]]=={3,3},
-			ConstantArray[SignalTensor[s0,bmat,Tensor[eig[[1]],eig[[2]]]],dim],
-			If[eig[[2]]==="Random"||eig[[2]]==="RandomZ"||eig[[2]]==="OrtRandom",
-			Array[SignalTensor[s0,bmat,Tensor[eig[[1]],eig[[2]]]]&,dim],
-			Return[Message[CreateDiffData::eig,eig]]]
-			]
-		];
+		
+		Dimensions[eig]=={2,3}&&Dimensions[eig[[2]]]=={3,3},
+		ConstantArray[SignalTensor[s0,bmat,Tensor[eig[[1]],eig[[2]]]],dim],
+		
+		eig[[2]]==="Random"||eig[[2]]==="RandomZ"||eig[[2]]==="OrtRandom",
+		Array[SignalTensor[s0,bmat,Tensor[eig[[1]],eig[[2]]]]&,dim],
+
+		True,
+		Return[Message[CreateDiffData::eig,eig]]
+	];
 	
 	Switch[Length[dim],
 		1,Transpose[diff],
@@ -327,6 +331,20 @@ CreateDiffData[s0_,eig_,bmat_?ArrayQ,dim_]:= Block[{diff},
 		]
 	]
 
+CreateDiffData[s0_, eig_, bmat_?ArrayQ]:= Block[{diff, tens},
+	tens = Which[
+		Dimensions[eig]=={3}, Tensor[eig],
+		Dimensions[eig]=={2,3}&&Dimensions[eig[[2]]]=={3,3}, Tensor[eig[[1]],eig[[2]]]
+	];
+
+	diff = Map[SignalTensor[s0, #, tens]&, bmat, {ArrayDepth[bmat]-2}];
+
+	Switch[ArrayDepth[diff],
+		2,Transpose[diff],
+		3,Transpose[diff,{2,3,1}],
+		4,Transpose[diff,{1,3,4,2}]
+	]
+]
 
 (* ::Subsubsection::Closed:: *)
 (*SignalTensor*)
