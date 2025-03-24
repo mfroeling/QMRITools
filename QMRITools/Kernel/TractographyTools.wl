@@ -69,7 +69,8 @@ FilterTractLength::usage =
 SeedDensityMap::usage = 
 "SeedDensityMap[seeds, vox, dim] makes a seed density map based on the seed locations."
 
-EndpointDensityMap::usage = ""
+EndpointDensityMap::usage = 
+"EndpointDensityMap[tracts, vox, dim] makes an endpoint density map based on the tracts endpoints."
 
 TractDensityMap::usage = 
 "TractDensityMap[tracts, vox, dim] makes a tract density map based on the tracts vertices."
