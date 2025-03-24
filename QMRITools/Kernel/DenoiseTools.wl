@@ -42,7 +42,7 @@ PCADeNoise[] is based on DOI: 10.1016/j.neuroimage.2016.08.016 and 10.1002/mrm.2
 
 NNDeNoise::usage = 
 "NNDeNoise[data] removes rician noise from the data using self supersized neural net.
-NNDeNoise[data, mask] removes rician noise from the data with PCA  using self supersized neural net withing the mask.
+NNDeNoise[data, mask] removes rician noise from the data with PCA using self supersized neural net withing the mask.
 
 PCADeNoise[] is based on DOI:10.48550/arXiv.2011.01355."
 
@@ -64,7 +64,7 @@ Output is the smoothed tensor.
 
 AnisoFilterTensor[] is based on DOI: 10.1109/ISBI.2006.1624856."
 
-WeightMapCalc::usage =  
+WeightMapCalc::usage = 
 "WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterTensor.
 
 Output is a weight map of the diffdata which is high in isotropic regions and low at edges."
@@ -79,16 +79,12 @@ AnisoFilterData[] is based on DOI: 10.1016/j.jbiomech.2021.110540 and 10.1016/j.
 
 
 HarmonicDenoiseTensor::usage =
-"HarmonicDenoiseTensor[tens, vox, mask] uses the harmonic denoising method to denoise the tensor within the mask.
+"HarmonicDenoiseTensor[tens, mask, vox] uses the harmonic denoising method to denoise the tensor within the mask.
 Values for which the tensor is not defined but are within the mask will be filled in.
+HarmonicDenoiseTensor[tens, seg, vox] will do the same for each segmentation label in seg.
+HarmonicDenoiseTensor[tens, seg, vox, labs] will do the same for each segmentation label in seg that is specified in labs.
 
 HarmonicDenoiseTensor[] is based on 10.1016/j.media.2011.01.005."
-
-
-MakeGradientLaplacian::usage = "";
-MakeRBF::usage = "";
-FitHarmonicBasis::usage = "";
-
 
 
 (* ::Subsection::Closed:: *)
@@ -723,7 +719,7 @@ AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
 
 Options[WeightMapCalc]={AnisoWeightType->2, AnisoKappa->10.};
 
-SyntaxInformation[WeightMapCalc] = {"ArgumentsPattern" -> {_,  OptionsPattern[]}};
+SyntaxInformation[WeightMapCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 WeightMapCalc[data_,OptionsPattern[]]:=Block[{
 	kers,wts,weights,finDiff,dat,dim,len, kappa, type
@@ -761,17 +757,18 @@ WeightMapCalc[data_,OptionsPattern[]]:=Block[{
 (*KernelWeights*)
 
 
-KernelWeights[]:=Block[{cent,ker,keri,wtsi},
-	ker=ConstantArray[0,{3,3,3}];
-	ker[[2,2,2]]=-1;
-	cent={2,2,2};
+KernelWeights[]:=Block[{cent, ker, keri, wtsi},
+	ker = ConstantArray[0, {3, 3, 3}];
+	ker[[2, 2, 2]] = -1;
+	cent = {2, 2, 2};
 	Transpose[Flatten[Table[
-	If[{i,j,k}==cent,
-	Nothing,
-	keri=ker;keri[[i,j,k]]=1;
-	wtsi=N@Norm[cent-{i,j,k}];
-	{keri,1/wtsi^2}
-	],{i,1,3},{j,1,3},{k,1,3}],2]]
+		If[{i, j, k}==cent,
+			Nothing,
+			keri = ker; keri[[i, j, k]] = 1;
+			wtsi = N@Norm[cent - {i, j, k}];
+			{keri, 1/wtsi^2}
+		]
+	, {i, 1, 3}, {j, 1, 3}, {k, 1, 3}], 2]]
 ];
 
 
@@ -906,19 +903,19 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 
 	(*figure out how to loop over the masks*)
 	Which[
-		ArrayDepth[segI]==3 && labs==0,
+		ArrayDepth[segI]==3 && labs===0,
 		seg = Transpose[{segI}];
 		pos = {1};
 		,
 		ArrayDepth[segI]==3 && ListQ[labs],
 		{seg, lab} = SplitSegmentations[segI];
-		pos = Flatten[Position[lab,#]&/@labs];
+		pos = Flatten[Position[lab, #] & /@ labs];
 		,
-		ArrayDepth[segI]==4 && labs==0,
+		ArrayDepth[segI]==4 && labs===0,
 		seg = segI;
 		pos = Range[1, Length@First@segI];
 		,
-		ArrayDepth[segI]==4 && labs==ListQ[segI],
+		ArrayDepth[segI]==4 && ListQ[segI],
 		seg = segI;
 		pos = labs;
 	];
@@ -934,7 +931,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 
 	pi = t = 0;
 	If[mon, PrintTemporary[
-		Row[{ProgressIndicator[Dynamic[pi], {0,Length@pos}],"  time: ",Dynamic[Round[t,.1]],"s"}]
+		Row[{ProgressIndicator[Dynamic[pi], {0,Length@pos}]," time: ",Dynamic[Round[t,.1]],"s"}]
 	]];
 
 	Table[
@@ -964,14 +961,14 @@ Options[HarmonicDenoiseTensorI]=Options[HarmonicDenoiseTensor]
 HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 		sigma,md,fa,msel,rFA, rMD, G,L,R,coor,sel,map,vecN,vecH,sol,tensN,maps,itt,step,tol
 	},
-	
+
 	{sigma, itt, step, tol, rFA, rMD} = OptionValue[{RadialBasisKernel, MaxIterations,
 		GradientStepSize, Tolerance, RangeFA, RangeMD}];
 
 	(*make gradien,laplace and RBF matrix functions*)
 	{{G, L}, coor, sel, map} = MakeGradientLaplacian[mask, vox, sigma];
 	R = MakeRBF[coor, sigma, vox];
-	
+
 	(*becouse of the implementation coordiante system the tensor needs to be reversed*)
 	tensN = FlipTensorOrientation[tens, {"z", "y", "x"}];
 	(*remove unreliable voxel*)
@@ -980,7 +977,7 @@ HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 	(*perform the recon*)
 	{vecN, vecH, sol} = FitHarmonicBasis[MaskData[tensN, msel], sel, {G, L, R},
 		MaxIterations->itt, GradientStepSize->step, Tolerance->tol];
-	
+
 	(*generate output*)
 	maps = MakeSolutionMaps[sol, map];
 	tensN = FlipTensorOrientation[ReconstrucTensor[vecN, tensN, sel, coor], {"z", "y", "x"}];
@@ -1004,112 +1001,112 @@ MakeGradientLaplacian[mask_,vox_?VectorQ,sig_?NumberQ]:=Block[{aDepth,dim,const,
 	},
 
 	(*get mask properties*)
-	aDepth=ArrayDepth@mask;
-	dim=Dimensions@mask;
-	const=ConstantArray[0,aDepth];
-	matI=IdentityMatrix[aDepth];
+	aDepth = ArrayDepth@mask;
+	dim = Dimensions@mask;
+	const = ConstantArray[0, aDepth];
+	matI = IdentityMatrix[aDepth];
 
 	(*dilate the mask if needed*)
-	maskDilated=If[sig===0,mask,Dilation[mask,BoxMatrix[Round[sig/vox]]]];
+	maskDilated = If[sig === 0,mask, Dilation[mask, BoxMatrix[Round[sig/vox]]]];
 	(*extend matrix in all directions and dilate mask in each direction*)
-	maskPadded=(di=ArrayPad[ArrayPad[maskDilated,Thread[{const,#}]],1];
-	Unitize[di+RotateRight[di,#]])&/@Reverse[matI];
+	maskPadded = (di = ArrayPad[ArrayPad[maskDilated, Thread[{const, #}]], 1];
+	Unitize[di + RotateRight[di,#]])& /@ Reverse[matI];
 
 	(*define which points can be selected for which application*)
-	selMask=Flatten[mask];(*where the data is*)
-	selCent=Flatten[maskDilated];(*where the padded centers are*)
-	selMaskC=Pick[selMask,selCent,1];
-	selGrad=Flatten[ArrayPad[#,-1]]&/@maskPadded; (*where the concentrations for the gradients are*)
-	selLap=Table[Flatten[ArrayPad[Times@@(RotateRight[di,#]&/@Join[matI,-matI]),-1]],{di,maskPadded}];
+	selMask = Flatten[mask];(*where the data is*)
+	selCent = Flatten[maskDilated];(*where the padded centers are*)
+	selMaskC = Pick[selMask, selCent,1];
+	selGrad = Flatten[ArrayPad[#, -1]]& /@ maskPadded; (*where the concentrations for the gradients are*)
+	selLap = Table[Flatten[ArrayPad[Times@@(RotateRight[di, #]&/@Join[matI, -matI]),-1]], {di, maskPadded}];
 
 	(*make the coordinates for the centers, the x shifted and y shifted cells*)
 	Switch[aDepth,
 		2,
-		{y,x}=dim;
-		coors=Flatten[Table[{j,i},{j,1,y},{i,1,x}],1];
-		cx=Flatten[Table[{j,i},{j,1,y},{i,1/2,x+1/2}],1];
-		cy=Flatten[Table[{j,i},{j,1/2,y+1/2},{i,1,x}],1];
-		coorsPad={cx,cy};,
+		{y, x} = dim;
+		coors = Flatten[Table[{j, i }, {j, 1, y}, {i, 1, x}], 1];
+		cx = Flatten[Table[{j, i }, {j, 1, y}, {i, 1/2, x+1/2}], 1];
+		cy = Flatten[Table[{j, i }, {j, 1/2, y+1/2}, {i, 1, x}], 1];
+		coorsPad = {cx, cy};,
 		3,
-		{z,y,x}=dim;
-		coors=Flatten[Table[{k,j,i},{k,1,z},{j,1,y},{i,1,x}],2];
-		cx=Flatten[Table[{k,j,i},{k,1,z},{j,1,y},{i,1/2,x+1/2}],2];
-		cy=Flatten[Table[{k,j,i},{k,1,z},{j,1/2,y+1/2},{i,1,x}],2];
-		cz=Flatten[Table[{k,j,i},{k,1/2,z+1/2},{j,1,y},{i,1,x}],2];
-		coorsPad={cx,cy,cz};
+		{z, y, x} = dim;
+		coors = Flatten[Table[{k, j, i}, {k, 1, z}, {j, 1, y}, {i, 1, x}], 2];
+		cx = Flatten[Table[{k, j, i}, {k, 1, z},{j, 1, y},{i, 1/2, x+1/2}], 2];
+		cy = Flatten[Table[{k, j, i}, {k, 1, z},{j, 1/2, y+1/2},{i, 1, x}], 2];
+		cz = Flatten[Table[{k, j, i}, {k, 1/2, z+1/2},{j, 1, y},{i, 1, x}], 2];
+		coorsPad = {cx, cy, cz};
 	];
 
 	(*selecet the correct coordinates for visualization*)
-	coorMask=Pick[coors,selMask];
-	coorCent=Pick[coors,selCent,1];
-	coorGrad=Pick[#[[1]],#[[2]],1]&/@Transpose[{coorsPad,selGrad}];
-	coorLap=Pick[#[[1]],#[[2]],1]&/@Transpose[{coorsPad,selLap}];
+	coorMask = Pick[coors, selMask];
+	coorCent = Pick[coors, selCent, 1];
+	coorGrad = Pick[#[[1]], #[[2]], 1]&/@Transpose[{coorsPad, selGrad}];
+	coorLap = Pick[#[[1]], #[[2]], 1]&/@Transpose[{coorsPad, selLap}];
 
 	(*make the Gradient and Laplacien matrix for 2D and 3D*)
 	Switch[aDepth
 
 		(*----2D case----*)
-		,2,
+		, 2,
 		(*band and identiy matrixes for gradient and laplacian matrixes*)
-		{ix0,iy0}=SparseArray[IdentityMatrix[#]]&/@{x,y};
-		{ix1,iy1}=SparseArray[IdentityMatrix[#+1]]&/@{x,y};
-		{gx,gy}=SparseArray[{Band[{1,1}]->-1.,Band[{1,2}]->1.},{#,#+1}]&/@{x,y};
-		{lx1,ly1}=SparseArray[{Band[{1,1}]->-2.,Band[{1,2}]->1.,Band[{2,1}]->1.},{#+1,#+1}]&/@{x,y};
-		{lx0,ly0}=SparseArray[{Band[{1,1}]->-2.,Band[{1,2}]->1.,Band[{2,1}]->1.},{#,#}]&/@{x,y};
+		{ix0, iy0} = SparseArray[IdentityMatrix[#]]&/@{x, y};
+		{ix1, iy1} = SparseArray[IdentityMatrix[#+1]]&/@{x, y};
+		{gx, gy} = SparseArray[{Band[{1, 1}]->-1., Band[{1, 2}]->1.}, {#, #+1}]&/@{x, y};
+		{lx1, ly1} = SparseArray[{Band[{1, 1}]->-2., Band[{1, 2}]->1., Band[{2, 1}]->1.}, {#+1, #+1}]&/@{x, y};
+		{lx0, ly0} = SparseArray[{Band[{1, 1}]->-2., Band[{1, 2}]->1., Band[{2, 1}]->1.}, {#, #}]&/@{x, y};
 
 		(*make the matrix for calculating gradient of concentrations for x, y, and z shifted cells*)
-		g=Table[
-			g=KroneckerProduct[If[i==2,gy,iy0],If[i==1,gx,ix0]];
-			Pick[Transpose[Pick[Transpose[g],selGrad[[i]],1]],selMask,1]
-		, {i,1,2}];
+		g = Table[
+			g = KroneckerProduct[If[i == 2, gy, iy0], If[i == 1, gx, ix0]];
+			Pick[Transpose[Pick[Transpose[g], selGrad[[i]], 1]], selMask, 1]
+		, {i, 1, 2}];
 
 		(*combine into one matrix, rows are xyz... for easyer vector calculation later*)
-		{{xx,xy},{yx,yy}}=Dimensions/@g;
-		G=Flatten[Transpose[SparseArray[ArrayPad[#[[1]],{{0,0},#[[2]]}]&/@Transpose[{g,{{0,yy},{xy,0}}}]]],1];
+		{{xx, xy}, {yx, yy}} = Dimensions/@g;
+		G = Flatten[Transpose[SparseArray[ArrayPad[#[[1]], {{0, 0}, #[[2]]}]&/@Transpose[{g, {{0, yy}, {xy, 0}}}]]], 1];
 
 		(*make the laplacian matrixes for all directions of the shifted cells*)
-		{lx,ly}=Table[
-			{ly,iy,lx,ix}={{ly0,iy0,lx1,ix1},{ly1,iy1,lx0,ix0}}[[j]];
-			l=Total[Table[KroneckerProduct[If[i==2,ly,iy],If[i==1,lx,ix]],{i,1,2}]];
-			Pick[Transpose[Pick[Transpose[l],selGrad[[j]],1]],selLap[[j]],1]
-		, {j,1,2}];
+		{lx, ly} = Table[
+			{ly, iy, lx, ix} = {{ly0, iy0, lx1, ix1}, {ly1, iy1, lx0, ix0}}[[j]];
+			l = Total[Table[KroneckerProduct[If[i == 2, ly, iy], If[i == 1, lx, ix]], {i, 1, 2}]];
+			Pick[Transpose[Pick[Transpose[l], selGrad[[j]], 1]], selLap[[j]], 1]
+		, {j, 1, 2}];
 
 		(*join all the Laplacians *)
-		{{xx,xy},{yx,yy}}=Dimensions/@{lx,ly};
-		L=ArrayPad[lx,{{0,yx},{0,yy}}]+ArrayPad[ly,{{xx,0},{xy,0}}];
+		{{xx, xy}, {yx, yy}} = Dimensions/@{lx, ly};
+		L = ArrayPad[lx, {{0, yx}, {0, yy}}]+ArrayPad[ly, {{xx, 0}, {xy, 0}}];
 
 		(*----3D case----*)
-		,3,
+		, 3,
 		(*band and identiy matrixes for gradient and laplacian matrixes*)
-		{ix0,iy0,iz0}=SparseArray[IdentityMatrix[#]]&/@{x,y,z};
-		{ix1,iy1,iz1}=SparseArray[IdentityMatrix[#+1]]&/@{x,y,z};
-		{gx,gy,gz}=SparseArray[{Band[{1,1}]->-1.,Band[{1,2}]->1.},{#,#+1}]&/@{x,y,z};
-		{lx1,ly1,lz1}=SparseArray[{Band[{1,1}]->-2.,Band[{1,2}]->1.,Band[{2,1}]->1.},{#+1,#+1}]&/@{x,y,z};
-		{lx0,ly0,lz0}=SparseArray[{Band[{1,1}]->-2.,Band[{1,2}]->1.,Band[{2,1}]->1.},{#,#}]&/@{x,y,z};
+		{ix0, iy0, iz0} = SparseArray[IdentityMatrix[#]]&/@{x, y, z};
+		{ix1, iy1, iz1} = SparseArray[IdentityMatrix[#+1]]&/@{x, y, z};
+		{gx, gy, gz} = SparseArray[{Band[{1, 1}]->-1., Band[{1, 2}]->1.}, {#, #+1}]&/@{x, y, z};
+		{lx1, ly1, lz1} = SparseArray[{Band[{1, 1}]->-2., Band[{1, 2}]->1., Band[{2, 1}]->1.}, {#+1, #+1}]&/@{x, y, z};
+		{lx0, ly0, lz0} = SparseArray[{Band[{1, 1}]->-2., Band[{1, 2}]->1., Band[{2, 1}]->1.}, {#, #}]&/@{x, y, z};
 
 		(*make the matrix for calculating gradient of concentrations for x, y, and z shifted cells*)
-		g=Table[
-			g=KroneckerProduct[If[i==3,gz,iz0],KroneckerProduct[If[i==2,gy,iy0],If[i==1,gx,ix0]]];
-			Pick[Transpose[Pick[Transpose[g],selGrad[[i]],1]],selMask,1]
-		,	{i,1,3}];
+		g = Table[
+			g = KroneckerProduct[If[i == 3, gz, iz0], KroneckerProduct[If[i == 2, gy, iy0], If[i == 1, gx, ix0]]];
+			Pick[Transpose[Pick[Transpose[g], selGrad[[i]], 1]], selMask, 1]
+		, 	{i, 1, 3}];
 
 		(*combine into one matrix, rows are xyz... for easyer vector calculation later*)
-		{{xx,xy},{yx,yy},{zx,zy}}=Dimensions/@g;
-		G=Flatten[Transpose[SparseArray[ArrayPad[#[[1]],{{0,0},#[[2]]}]&/@Transpose[{g,{{0,yy+zy},{xy,zy},{xy+yy,0}}}]]],1];
+		{{xx, xy}, {yx, yy}, {zx, zy}} = Dimensions/@g;
+		G = Flatten[Transpose[SparseArray[ArrayPad[#[[1]], {{0, 0}, #[[2]]}]&/@Transpose[{g, {{0, yy+zy}, {xy, zy}, {xy+yy, 0}}}]]], 1];
 
 		(*make the laplacian matrixes for all directions of the shifted cells*)
-		{lx,ly,lz}=Table[
-			{lz,iz,ly,iy,lx,ix}={{lz0,iz0,ly0,iy0,lx1,ix1},{lz0,iz0,ly1,iy1,lx0,ix0},{lz1,iz1,ly0,iy0,lx0,ix0}}[[j]];
-			l=Total[Table[KroneckerProduct[If[i==3,lz,iz],KroneckerProduct[If[i==2,ly,iy],If[i==1,lx,ix]]],{i,1,3}]];
-			Pick[Transpose[Pick[Transpose[l],selGrad[[j]],1]],selLap[[j]],1]
-		, {j,1,3}];
+		{lx, ly, lz} = Table[
+			{lz, iz, ly, iy, lx, ix} = {{lz0, iz0, ly0, iy0, lx1, ix1}, {lz0, iz0, ly1, iy1, lx0, ix0}, {lz1, iz1, ly0, iy0, lx0, ix0}}[[j]];
+			l = Total[Table[KroneckerProduct[If[i == 3, lz, iz], KroneckerProduct[If[i == 2, ly, iy], If[i == 1, lx, ix]]], {i, 1, 3}]];
+			Pick[Transpose[Pick[Transpose[l], selGrad[[j]], 1]], selLap[[j]], 1]
+		, {j, 1, 3}];
 
 		(*join all the Laplacians *)
-		{{xx,xy},{yx,yy},{zx,zy}}=Dimensions/@{lx,ly,lz};
-		L=ArrayPad[lx,{{0,yx+zx},{0,yy+zy}}]+ArrayPad[ly,{{xx,zx},{xy,zy}}]+ArrayPad[lz,{{xx+yx,0},{xy+yy,0}}];
+		{{xx, xy}, {yx, yy}, {zx, zy}} = Dimensions/@{lx, ly, lz};
+		L=ArrayPad[lx, {{0, yx+zx}, {0, yy+zy}}]+ArrayPad[ly, {{xx, zx}, {xy, zy}}]+ArrayPad[lz, {{xx+yx, 0}, {xy+yy, 0}}];
 	];
 
-	{{G,L},{coorCent,selMaskC},selMask,{coorCent,coorGrad,dim}}
+	{{G, L}, {coorCent, selMaskC} ,selMask, {coorCent, coorGrad, dim}}
 ]
 
 
@@ -1155,10 +1152,10 @@ gaussianRBFGradientC = Compile[{{center,_Real,1}, {points,_Real,2}, {mr,_Real,0}
 (*FitHarmonicBasis*)
 
 
-Options[FitHarmonicBasis]={
-	MaxIterations->250,
-	GradientStepSize->{0.5,0.5},
-	Tolerance->10.^-5
+Options[FitHarmonicBasis] = {
+	MaxIterations -> 250,
+	GradientStepSize -> {0.5,0.5},
+	Tolerance -> 10.^-5
 };
 
 FitHarmonicBasis[tv_, sel_, {G_ ,L_, R_}, opts:OptionsPattern[]]:=Block[{
@@ -1175,10 +1172,10 @@ FitHarmonicBasis[tv_, sel_, {G_ ,L_, R_}, opts:OptionsPattern[]]:=Block[{
 	Switch[Length[tv],
 		2,
 		{tens, vec} = tv;
-		dim = Drop[Dimensions@vec,-1];
+		dim = Drop[Dimensions@vec, -1];
 		d = Length@dim;
-		tens = SelectVector[tens,sel,d];
-		vec = SelectVector[vec,sel,d];,
+		tens = SelectVector[tens, sel, d];
+		vec = SelectVector[vec, sel, d];,
 
 		_,
 		dim = Dimensions@tv[[1]];
@@ -1263,8 +1260,8 @@ FitHarmonicBasis[tv_, sel_, {G_ ,L_, R_}, opts:OptionsPattern[]]:=Block[{
 ]
 
 
-SelectVector[data_,sel_]:=SelectVector[data,sel,3]
-SelectVector[data_,sel_,d_]:=Pick[Flatten[data,d-1],sel,1]
+SelectVector[data_, sel_]:=SelectVector[data, sel, 3]
+SelectVector[data_, sel_, d_]:=Pick[Flatten[data, d-1], sel, 1]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1275,8 +1272,8 @@ GetDiffusionValues[tens_,vec_]:=Mean[GetDiffC[tens,vec]]
 
 
 GetDiffC=Compile[{{t,_Real,2},{v,_Real,1}},Block[{vv},
-	vv=Dot[v . v];
-	If[vv==0.,0.,v . t . v/vv]
+	vv = Dot[v, v];
+	If[vv == 0., 0., v.t.v/vv]
 ],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
 
 
@@ -1284,13 +1281,13 @@ GetDiffC=Compile[{{t,_Real,2},{v,_Real,1}},Block[{vv},
 (*GetObjectiveGradient*)
 
 
-GetObjectiveGradient[tens_,vec_,obj_] := -obj . Flatten[GetGradC[tens,vec]]
+GetObjectiveGradient[tens_, vec_, obj_] := -obj . Flatten[GetGradC[tens, vec]]
 
 
-GetGradC=Compile[{{t,_Real,2},{v,_Real,1}}, Block[{vv, tv},
-	vv=Dot[v,v];
-	tv=Dot[t,v];
-	If[vv==0.,v,((v . tv)v-(vv)(tv))/(vv)^2]
+GetGradC=Compile[{{t, _Real, 2}, {v, _Real, 1}}, Block[{vv, tv},
+	vv = Dot[v, v];
+	tv = Dot[t, v];
+	If[vv == 0., v, ((v.tv)v - (vv tv))/vv^2]
 ],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
 
 
@@ -1309,29 +1306,32 @@ MakeSolver[L_] := LinearSolve[L . Transpose[L],Method->"Pardiso"];
 (*MakeSolutionMaps*)
 
 
-MakeSolutionMaps[{con_,amp_},{coorCent_,coorGrad_,dim_}]:=Block[{cc,ca,l1,l2,l3,z,y,x,c1,c2,c3,amap},
-	cc=Quantile[Abs[con],.7];
-	ca=Quantile[Abs[amp],.7];
+MakeSolutionMaps[{con_, amp_}, {coorCent_, coorGrad_, dim_}]:=Block[{
+		cc, ca, l1, l2, l3, z, y, x, c1, c2, c3, amap
+	},
+
+	cc = Quantile[Abs[con], .75];
+	ca = Quantile[Abs[amp], .75];
 
 	Switch[Length@coorGrad,
-		
+		(*reconstruct for 2D maps*)
 		2,
-		{l1,l2}=Length/@coorGrad;
-		{y,x}=dim;
-		c1=PadRight[SparseArray[Thread[Ceiling[coorGrad[[1]]]->con[[;;l1]]/cc],{y,x+1}],{y,x}];
-		c2=PadRight[SparseArray[Thread[Ceiling[coorGrad[[2]]]->con[[l1+1;;]]/cc],{y+1,x}],{y,x}];
-		amap=SparseArray[Thread[coorCent->amp/ca],{y,x}];
+		{l1, l2} = Length/@coorGrad;
+		{y, x} = dim;
+		c1 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[1]]]->con[[;;l1]]/cc], {y, x+1}], {y, x}];
+		c2 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[2]]]->con[[l1+1;;]]/cc], {y+1, x}], {y, x}];
+		amap = SparseArray[Thread[coorCent->amp/ca], {y, x}];
 		{c1,c2,amap}
-		
+		(*reconstruct for 3D maps *)
 		,3,
-		{l1,l2,l3}=Length/@coorGrad;
-		{z,y,x}=dim;
-		c1=PadRight[SparseArray[Thread[Ceiling[coorGrad[[1]]]->con[[;;l1]]/cc],{z,y,x+1}],{z,y,x}];
-		c2=PadRight[SparseArray[Thread[Ceiling[coorGrad[[2]]]->con[[l1+1;;l1+l2]]/cc],{z,y+1,x}],{z,y,x}];
-		c3=PadRight[SparseArray[Thread[Ceiling[coorGrad[[3]]]->con[[l1+l2+1;;l1+l2+l3]]/cc],{z+1,y,x}],{z,y,x}];
-		amap=SparseArray[Thread[coorCent->amp/ca],{z,y,x}];
+		{l1, l2, l3}=Length/@coorGrad;
+		{z, y, x}=dim;
+		c1 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[1]]]->con[[;;l1]]/cc], {z, y, x+1}], {z, y, x}];
+		c2 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[2]]]->con[[l1+1;;l1+l2]]/cc], {z, y+1, x}], {z, y, x}];
+		c3 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[3]]]->con[[l1+l2+1;;l1+l2+l3]]/cc], {z+1, y, x}], {z, y, x}];
+		amap = SparseArray[Thread[coorCent->amp/ca], {z, y, x}];
 
-		{c1,c2,c3,amap}
+		{c1, c2, c3, amap}
 	]
 ]
 
@@ -1340,30 +1340,30 @@ MakeSolutionMaps[{con_,amp_},{coorCent_,coorGrad_,dim_}]:=Block[{cc,ca,l1,l2,l3,
 (*ReconstrucTensor*)
 
 
-ReconstrucTensor[vecN1_,tens_,sel_,coor_]:=Block[{cors, dim, vecO,vecN2,vecN3,vecN,tensN},
-	cors=Pick[coor[[1]],coor[[2]],1];
-	dim=Dimensions@First@tens;
+ReconstrucTensor[vecN1_, tens_, sel_, coor_]:=Block[{cors, dim, vecO, vecN2, vecN3, vecN, tensN},
+	cors = Pick[coor[[1]], coor[[2]],1];
+	dim = Dimensions@First@tens;
 
-	vecO=Transpose@EigenvecCalc[RotateDimensionsRight[SelectVector[RotateDimensionsLeft[tens],sel]]];
+	vecO = Transpose@EigenvecCalc[RotateDimensionsRight[SelectVector[RotateDimensionsLeft[tens], sel]]];
 
-	vecN2=MakePerpendicular[vecN1,vecO[[2]]];
-	vecN3=CrossC[vecN1,vecN2];
-	tensN=TensVec@MakeTens[Transpose[{vecN1,vecN2,vecN3}],DiagonalMatrix[{2.5,1.75,1}/1000]];
-	Normal[SparseArray[Thread[cors->#],dim,0.]&/@tensN]
+	vecN2 = MakePerpendicular[vecN1, vecO[[2]]];
+	vecN3 = CrossC[vecN1, vecN2];
+	tensN = TensVec@MakeTens[Transpose[{vecN1, vecN2, vecN3}],DiagonalMatrix[{2.5, 1.75, 1}/1000]];
+	Normal[SparseArray[Thread[cors->#],dim,0.]& /@ tensN]
 ]
 
 
-MakePerpendicular = Compile[{{vec1,_Real,1},{vec2,_Real,1}},
+MakePerpendicular = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}},
 	Normalize[vec2-(vec2 . vec1) vec1]
-,RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+,RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
-CrossC = Compile[{{vec1,_Real,1},{vec2,_Real,1}},
-	Cross[vec1,vec2]
-,RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}},
+	Cross[vec1, vec2]
+,RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
-MakeTens=Compile[{{vec,_Real,2},{val,_Real,2}},
+MakeTens = Compile[{{vec, _Real, 2},{val, _Real, 2}},
 	Transpose[vec] . val . vec
-, RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+, RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
 
 (* ::Section:: *)
