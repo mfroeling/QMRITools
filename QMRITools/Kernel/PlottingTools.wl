@@ -295,13 +295,17 @@ LookUpTable[{lstyle_, color_}, {minclip_, maxclip_}] := With[{
 
 Attributes[Col2List] = {Listable};
 
-Col2List[RGBColor[c___]] := Round[255 PadRight[List[c], 4, 1.]]
+Col2List[RGBColor[c___]] := Round[(256 - 1) PadRight[List[c], 4, 1.]]
 Col2List[c_] := Col2List[RGBColor[c]]
 
 
 (*converts numbers to integers for color lookup*)
-ColorRound = ncol + 2 - Ramp[ncol + 1 - Ramp[Round[(ncol - 1) Rescale[#1, #2]] + 1]] &
-
+(*ColorRound = ncol + 2 - Ramp[(ncol + 1) - Ramp[Round[(ncol - 1) Rescale[#1, #2]] + 1]] &*)
+ColorRound = With[{
+		greater = UnitStep[#2[[2]] - #1], 
+    	lower = UnitStep[#1 - #2[[1]]],
+		scale = Round[Rescale[#1, #2, {2, ncol + 1}]]
+	}, (1 - lower) + lower greater scale + (ncol + 2) (1 - greater)] &
 
 (* ::Subsubsection::Closed:: *)
 (*ManPannel*)
@@ -311,7 +315,7 @@ ManPannel[name_, cont_, depl_:True]:= Module[{controls = DeleteCases[cont, Null]
 	OpenerView[{Style[name, Bold, Medium],
 		Grid[If[ArrayDepth[controls] == 1, {controls}, controls],
 			Alignment -> {{Right, Left}, Center}, ItemSize -> {{13, 30}}]
-	},depl]
+	}, depl]
 ]
 
 

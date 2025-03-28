@@ -1247,16 +1247,16 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 
 	(*perform the motion correction*)
 	Table[
-		i=n;
+		i = n;
 		(*get the seconds overlap stac*)
 		d1 = sets[[n, ;; overp,1]];
-		maskd1 = Dilation[#, 3] &/@ Mask[d1,2];
+		maskd1 = Dilation[#, 3] &/@ Unitize[d1];
 		(*pad to allow motion*)
 		d1 = PadLeft[d1, dim];
 		maskd1 = PadLeft[maskd1, dim];
 		(*get the seconds overlap stac*)
 		d2 = sets[[n + 1, -overp ;;,1]];
-		maskd2 = Dilation[#, 3] &/@ Mask[d2,2];
+		maskd2 = Dilation[#, 3] &/@ Unitize[d2];
 		(*pad to allow motion*)
 		d2 = PadLeft[d2, dim];
 		maskd2 = PadLeft[maskd2, dim];
@@ -1265,7 +1265,7 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 		samp = Round[((Total@Flatten@maskd1)+(Total@Flatten@maskd2))/20];
 		(*perform the registration*)
 		sets[[n + 1]] = Last@regFunc[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
-				MethodReg -> "rigid", Iterations -> 300, NumberSamples -> samp, 
+				MethodReg -> "translation", Iterations -> 300, NumberSamples -> samp, 
 				PrintTempDirectory -> False, InterpolationOrderReg -> 1];
 		sets[[n+1]] = MaskData[sets[[n+1]], Dilation[Mask[NormalizeMeanData[sets[[n+1]]], .5], 2]];
 	, {n, 1, nmax - 1}];
