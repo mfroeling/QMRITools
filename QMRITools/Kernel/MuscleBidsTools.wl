@@ -925,6 +925,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 				(*if echo time exists assume 4D nii without correct echo times*)
 				Switch[datType["Process", "Method"],
 					"Dixon-S",
+					(*simens data with online recon*)
 
 					{suffix, types}=Transpose@datType["Process", "Types"];
 
@@ -1088,7 +1089,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 				{vz, vy, vx} = vox;
 				{sz, sy, sx} = vox Dimensions@data[[All, 1]];
 				{dz, dy, dx} = {"qOffsetZ", "qOffsetY", "qOffsetX"} /. hdr;
-				off = -{(sz - vz)/2, dx, (dy + sy) - vy};
+				off = -{(sz - vz)/2, (dy + sy) - vy, dx};
 
 				(*make the additional mandatory bids json values*)
 				infoExtra=<|
@@ -1254,9 +1255,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 		con, fol, parts, type, files, sets, diffFile, nfile, process, keys, dixFiles, jfile, nFiles, phbpt, dbond,
 		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, hz, b0i,
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
-		nfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
+		nfilep, jfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
 		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk, 
-		phii, phbpi, phbp, ta, filt, field
+		phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, ivimpar, int, dint, suffix, types,
+		flip, per
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -1270,8 +1272,6 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 	type = datType["Type"];
 	process = datType["Process"];
 	keys = {"EchoTime", "ForthDimension", "DataClass", "Stack", "OverLap", "SliceThickness", "SpacingBetweenSlices"};
-
-
 
 	(*see what needs to be processed*)
 	files = Flatten[FileNames["*"<>StringReplace[#, notAllowed]<>"*.json", foli]& /@ Flatten[{datType["Label"]}]];
@@ -1298,7 +1298,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 				(*-------------------------------------------*)
 
 				"Dixon-S",
-				{suffix, types} = Transpose@datType["Process","Types"];
+				(*siemens data with online reconstruction*)
+				{suffix, types} = Transpose@datType["Process", "Types"];
 				dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@suffix;
 				jfile = ConvertExtension[First@dixFiles, ".json"];
 				nFiles = ConvertExtension[dixFiles, ".nii"];
@@ -1356,6 +1357,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 				,
 				"Dixon"|"Dixon-B",
+				(*philips data with offline reconstruction*)
 				(*input file names*)
 				dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"real", "imag"};
 				jfile = ConvertExtension[First@dixFiles, ".json"];
@@ -1400,6 +1402,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							{mag, ph} = Through[{Abs, Arg}[real + I imag]];
 
 							Switch[process["Method"],
+								(*Dixon process scrip for multi echo gradient echo complex data as used in motion study*)
 								"Dixon",
 
 								(*see if there are dixon flips*)
@@ -1426,6 +1429,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 								outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
 
 								,
+								(*Dixon process scrip for multi echo gradient echo complex data as used in Bochum cohort*)
 								"Dixon-B"
 								,
 
@@ -1454,6 +1458,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", "b0", "t2star", "r2star", 
 								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
 							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
 
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
@@ -1488,6 +1493,16 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 			(*ouput file names*)
 			outfile = GenerateBidsFileName[folo, set];
 
+			(*default settings*)
+			settingPre = <|
+				"SplitRegistration" -> True,
+				"FlipPermute"->{{1, -1, 1}, {"z", "y", "x"}}
+			|>;
+			settingPro = <|
+				"IVIMCorrection" -> True,
+				"GradientCorrection" -> False
+			|>;
+
 			(*-------------------------------------------*)
 			(*------- dwi pre -processing script --------*)
 			(*-------------------------------------------*)
@@ -1505,24 +1520,37 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 					(*----*)AddToLog["Could not find the needed JSON file",4],
 					(*Check if needed nii Exist*)
 					If[!(NiiFileExistQ[nfile]&&FileExistsQ[ConvertExtension[nfile,".bval"]]&&FileExistsQ[ConvertExtension[nfile,".bvec"]]),
-						(*----*)AddToLog[{"Skipping, could not find .nii, .bval and .bvec"},4],
+						(*----*)AddToLog[{"Skipping, could not find .nii, .bval and .bvec"}, 4],
 						(*----*)AddToLog["Importing the data", 4];
 
 						(*import the data*)
 						json = ImportJSON[jfile];
 						{data, grad, val, diffvox} = ImportNiiDiff[nfile, FlipBvec->False];
 						{data, grad, val} = SortDiffusionData[NormalizeData[data], grad, val];
+						debugBids[{"Raw data dimensions", Dimensions[data]}];
+
+						(*gradient flip correction*)
+						{flip, per} = Lookup[process, "FlipPermute", settingPre["FlipPermute"]];
+						(*----*)AddToLog[{"Gradient flips used: ", flip, per}, 4];
+						grad = FlipGradientOrientation[grad, flip, per];
+						settingPre = MergeConfig[settingPre, <|"FlipPermute"->{flip, per}|>];
 
 						(*Denoise and SNR*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
 						mask = Mask[NormalizeMeanData[data],  Lookup[process, "Masking", 5], MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
 						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
 						snr = SNRCalc[den, sig];
-						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, 2}];
+						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, Max[{2, Min[val]}]}];
+						debugBids[{"denoised data dimensions", Dimensions[den]}];
 
 						(*register data - each leg seperate*)
 						(*-----*)AddToLog["Starting dwi motion and eddy correction", 4];
-						regF = If[Lookup[process, "SplitRegistration" ,True], RegisterDiffusionDataSplit, RegisterDiffusionData];
+						regF = If[Lookup[process, "SplitRegistration", settingPre["SplitRegistration"]], 
+							RegisterDiffusionDataSplit, 
+							settingPre = MergeConfig[settingPre, <|"SplitRegistration"->False|>];
+							RegisterDiffusionData
+						];
+						debugBids[{"Resgistration function", regF}];
 						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, PrintTempDirectory->False];
 
 						(*anisotropic filtering*)
@@ -1530,17 +1558,22 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 						filt = AnisoFilterData[reg, diffvox];
 
 						(*export all the calculated data*)
-						(*----*)AddToLog["Exporting the calculated data to:",4];
+						(*----*)AddToLog["Exporting the calculated data to:", 4];
 						(*----*)AddToLog[outfile, 5];
 						outTypes = {"den", "reg", "sig", "snr0", "snr", "filt"};
-						ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
-						ExportBval[val, ConvertExtension[outfile <> "_"<>#, ".bval"]]&/@{"reg","filt"};
-						ExportBvec[grad, ConvertExtension[outfile <> "_"<>#, ".bvec"]]&/@{"reg","filt"};
+						(
+							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"];
+							Export[ConvertExtension[outfile <> "_"<>#, ".json"], AddToJson[json, settingPre]];
+						) &/@ outTypes;
+						(
+							ExportBval[val, ConvertExtension[outfile <> "_"<>#, ".bval"]];
+							ExportBvec[grad, ConvertExtension[outfile <> "_"<>#, ".bvec"]];
+						)&/@{"reg", "filt"};
 
 						(*export the checkfile*)
 						MakeCheckFile[outfile<>"_prep", Sort@Join[
 							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
-							ExtractFromJSON[json,keys]
+							ExtractFromJSON[json, keys]
 						]];
 						(*----*)AddToLog["Finished pre-processing", 3, True];
 
@@ -1560,6 +1593,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 				(*input file for processing*)
 				nfilep = ConvertExtension[GenerateBidsFileName[folo, <|set, "suf"->{datType["Suffix"], "filt"}|>],".nii"];
+				jfilep = ConvertExtension[nfilep,".json"];
 
 				(*check if processin is already done, redo is prep is done*)					
 				If[If[!preProc, CheckFile[outfile, "done", verCheck], False],
@@ -1569,7 +1603,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 					(*----*)AddToLog["Starting processing for data:", 3, True];
 					(*----*)AddToLog[nfilep, 4];				
 
-					If[!FileExistsQ[jfile],
+					If[!FileExistsQ[jfilep],
 						(*----*)AddToLog["Could not find the needed JSON file", 4];,
 
 						(*Check if needed nii Exist*)
@@ -1578,7 +1612,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*----*)AddToLog["Importing the data", 4];
 
 							(*import the data*)
-							json = ImportJSON[jfile];
+							json = ImportJSON[jfilep];
 							{data, grad, val, diffvox} = ImportNiiDiff[nfilep, FlipBvec->False];
 							mask = Mask[NormalizeMeanData[data], Lookup[process, "Masking", 5], MaskSmoothing->True, 
 								MaskComponents->2, MaskClosing->2];
@@ -1587,14 +1621,14 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							{mean, valU} = MeanBvalueSignal[data, val];
 							
 							(*initialize IVIM fit*)
-							If[!Lookup[process, "IVIMCorection" ,True],
+							If[!Lookup[process, "IVIMCorection", settingPro["IVIMCorrection"]],
 								(*-----*)AddToLog["Skipping IVIM correction", 4];
+								settingPro = MergeConfig[settingPro, <|"IVIMCorection"->False|>];
 								ivimpar = {};
 								,
 								(*-----*)AddToLog["Starting ivim calculation", 4];
-
 								(*estimatie inti values*)
-								fiti = IVIMCalc[MeanSignal[mean], valU, {1,.05,.003,.015}, IVIMFixed->True];
+								fiti = IVIMCalc[MeanSignal[mean], valU, {1, .05, .003, .015}, IVIMFixed->True];
 								(*perform IVIM correction*)
 								{s0i, fri, adci, pD}= Quiet@IVIMCalc[mean, valU, fiti, IVIMConstrained->False, Parallelize->True, 
 									MonitorIVIMCalc->False, IVIMFixed->True];
@@ -1607,7 +1641,21 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 							(*calculate tensor from corrected data*)
 							(*-----*)AddToLog["Starting tensor calculation", 4];
-							{tens, s0, out, res} = Quiet@TensorCalc[data, grad, val, FullOutput->True, Method->"iWLLS", 
+							coil = Lookup[process, "GradientCorrection", settingPro["GradientCorrection"]];
+							off = Lookup[json, "Offset", False];
+							coil = If[!StringQ[coil], 
+								False,
+								(*-----*)AddToLog[{"Using Gradient correction: ", coil}, 4];
+								If[!VectorQ[off], 
+									(*-----*)AddToLog["No offset defined in json, skipping grad correction" , 5];
+									False,
+									settingPro = MergeConfig[settingPro, <|"GradientCorrection"->coil|>];
+									{int, dint} = MakeGradientDerivatives[diffvox, coil];
+									{diffvox, off, dint}
+								]
+							];
+
+							{tens, s0, out, res} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, Method->"iWLLS", 
 								RobustFit->True, Parallelize->True, MonitorCalc->False];
 							out = Total@Transpose@out;
 							(*calculate tensor parameters*)
@@ -1620,8 +1668,11 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*----*)AddToLog[outfile, 5];					
 							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
 								"l1", "l2", "l3", "md",	"fa", "rd"}, ivimpar];
-							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
-													
+							(
+								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"];
+								Export[ConvertExtension[outfile <> "_"<>#, ".json"], AddToJson[json, settingPro]];
+							) &/@ outTypes;
+
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
@@ -1705,6 +1756,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*----*)AddToLog[outfile, 5];					
 							outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
 							ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
 													
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
@@ -1895,7 +1947,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 		];
 	];
 
-	debugBids["target dimensions: ",Dimensions/@target];
+	debugBids["target dimensions: ", Dimensions/@target];
 
 	(*-----*)AddToLog[{"Importing and processing the moving data"}, 4];
 	(*import the moving data, only import multi dim if present*)
@@ -1954,7 +2006,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 				func = If[i===If[reverse, nStac, 1], RegisterData, RegisterDataSplit];
 				reg = ToPackedArray@N@Chop@func[
 					{movingA[[im, i]], mskm, voxm[[i]]}, {target[[i]], voxt}, 
-					Iterations->300, BsplineSpacing->40 voxt, InterpolationOrderReg->1, NumberSamples -> 10000,
+					Iterations->300, BsplineSpacing->20 voxt, InterpolationOrderReg->1, NumberSamples -> 10000,
 					PrintTempDirectory->False, MethodReg->metReg];
 
 				(*if padding enlarge the moving files*)
@@ -1971,7 +2023,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 				func = If[i===If[reverse, nStac, 1], RegisterDataTransform, RegisterDataTransformSplit];
 				ToPackedArray@N@Chop@Last@func[
 					{target[[i]], mskt, voxt}, {reg, voxm[[i]]}, {movp, voxm[[i]]},
-					Iterations->300,  BsplineSpacing->40 voxt, InterpolationOrderReg->1, NumberSamples -> 10000, 
+					Iterations->300,  BsplineSpacing->20 voxt, InterpolationOrderReg->1, NumberSamples -> 10000, 
 					PrintTempDirectory->False, DeleteTempDirectory->False,
 					MethodReg->metReg]
 			]
@@ -2057,7 +2109,7 @@ MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, ops:Op
 
 MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 		segment, segType, segTypeLab, checkFile, fol, segLocation, device,
-		parts, outfile, segfile, out, vox, seg
+		parts, outfile, segfile, out, vox, seg, duplicate, key
 	},
 
 	debugBids["Starting MuscleBidsSegmentI"];
@@ -2183,7 +2235,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 	];
 
 	(* Extract flip and permutation *)
-	{flip, per} = Lookup[tracto, "FlipPermute", {{1, -1, 1}, {"z", "y", "x"}}];
+	{flip, per} = Lookup[tracto, "FlipPermute", {{1, 1, 1}, {"x", "y", "z"}}];
 
 	(* Extract tractography target, segmentation and stopping criteria *)
 	tractType = tracto["Target"];

@@ -1804,13 +1804,31 @@ CalculateMoments[{gt_, hw_, te_}, t_] := Module[{fun, m0, m1, m2, m3, vals},
 (* ::Subsubsection::Closed:: *)
 (*GradientCoilTensor*)
 
+Options[GradientCoilTensor] = {
+		Method->"Vector"
+	};
 
-SyntaxInformation[GradientCoilTensor] = {"ArgumentsPattern" -> {_, _, _, _}};
+SyntaxInformation[GradientCoilTensor] = {"ArgumentsPattern" -> {_, _, _, _, OptionsPattern[]}};
 
-GradientCoilTensor[mask_?ArrayQ, vox_?VectorQ, off_?VectorQ, dint_] := Block[{coor},
-	coor = DataToVector[mask][[2, 2]];
-	coor = Transpose[vox Transpose[coor - 1] + off];
-	GetMapValues[coor, dint]
+GradientCoilTensor[mask_?ArrayQ, vox_?VectorQ, off_?VectorQ, intI_, OptionsPattern[]] := Block[{
+		coor, coors, dm, int, dint, tens
+	},
+	(*convert mask to coordinate list*)
+	{dm, coor} = DataToVector[mask][[2]];
+	coors = Transpose[vox Transpose[coor - 1] + off];
+	
+	(*make the coil tensor*)
+	If[StringQ[intI],
+		{int, dint} = MakeGradientDerivatives[vox, intI];,
+		dint = intI;
+	];
+	tens = GetMapValues[coors, dint];
+
+	(*output coil tensor as vector (for TensorCalc) or matrix for visualization*)
+	Switch[OptionValue[Method],
+		"Vector", tens,
+		"Array", Transpose[VectorToData[Transpose[Flatten[tens, {2, 3}]], {dm, coor}]]
+	]
 ]
 
 

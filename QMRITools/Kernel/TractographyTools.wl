@@ -434,7 +434,7 @@ EndpointDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsP
 	Normal@SparseArray[Select[
 		Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTractsC[tracts[[All,{1, -1}]], vox], 1]],
 		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
-		dim
+		dim,-1.
 	]
 ]
 
@@ -578,7 +578,7 @@ GatherThread[coor_?ListQ, val_?ListQ, dim_?VectorQ] := Block[{len, ran, list, ou
 	out[[All, 2]] = N[Median /@ out[[All, 2]]];
 
 	(*matrix from coordinate rule*)
-	ToPackedArray@Normal@SparseArray[out, dim, 0.]
+	ToPackedArray@Normal@SparseArray[out, dim, -1.]
 ]
 
 

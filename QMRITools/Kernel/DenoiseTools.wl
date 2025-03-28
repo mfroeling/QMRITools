@@ -86,6 +86,11 @@ HarmonicDenoiseTensor[tens, seg, vox, labs] will do the same for each segmentati
 
 HarmonicDenoiseTensor[] is based on 10.1016/j.media.2011.01.005."
 
+MakeRBF::usage = "..."
+MakeGradientLaplacian::usage = "..."
+FitHarmonicBasis::usage = "..."
+SelectVector::usage = "..."
+MakeSolutionMaps::usage = "..."
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -875,14 +880,14 @@ StrucTensCalc = Compile[{{eval, _Real, 1}, {evec, _Real, 2}, {tr, _Real, 0}},
 
 
 Options[HarmonicDenoiseTensor] = {
-	RadialBasisKernel -> 9,
+	RadialBasisKernel -> 12,
 	TensorFlips -> {1, 1, 1},
 	TensorPermutations -> {"x", "y", "z"},
 	MaxIterations -> 150,
 	GradientStepSize -> {0.5,0.5},
 	Tolerance -> 10.^-5,
-	RangeFA -> {0.05, 0.35},
-	RangeMD -> {1.25, 2.5},
+	RangeFA -> {0.05, 0.4},
+	RangeMD -> {1., 2.5},
 	Monitor -> False
 };
 
@@ -893,7 +898,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?
 	HarmonicDenoiseTensor[tensI, seg, vox, 0, opts]
 
 HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, labs_, OptionsPattern[]]:=Block[{
-		sigma, flip, per, itt, step, tol, rFA, rMD, seg, pos, lab, mon, pi, t,
+		sigma, flip, per, itt, step, tol, rFA, rMD, seg, pos, lab, mon, pi, t, tensC, musC,
 		tensO, tensL, dimT, conO, dimC, ampO, dimA, mus, crp, tens, con, amp
 	},
 
@@ -937,11 +942,13 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 	Table[
 		t = First@AbsoluteTiming[
 			(*select muscle and perform denoising*)
-			mus = seg[[All,p]];
-			crp = FindCrop[mus,CropPadding->12];
-			{tens, con, amp} = HarmonicDenoiseTensorI[Transpose[ApplyCrop[tensL, crp]], ApplyCrop[mus,crp], vox,
+			mus = seg[[All, p]];
+			crp = FindCrop[mus, CropPadding->sigma];
+			tensC = Normal@Transpose[ApplyCrop[tensL, crp]];
+			musC = Normal@ApplyCrop[mus, crp];
+			{tens, con, amp} = HarmonicDenoiseTensorI[tensC, musC, vox,
 				RadialBasisKernel->sigma, MaxIterations->itt, GradientStepSize->step, Tolerance->tol,
-			RangeFA->rFA,RangeMD->rMD];
+			RangeFA->rFA, RangeMD->rMD];
 		];
 		pi++;
 
@@ -962,18 +969,24 @@ HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 		sigma,md,fa,msel,rFA, rMD, G,L,R,coor,sel,map,vecN,vecH,sol,tensN,maps,itt,step,tol
 	},
 
+	mon = False;
+
 	{sigma, itt, step, tol, rFA, rMD} = OptionValue[{RadialBasisKernel, MaxIterations,
 		GradientStepSize, Tolerance, RangeFA, RangeMD}];
+	If[mon, Print[{sigma, itt, step, tol, rFA, rMD}]];
 
 	(*make gradien,laplace and RBF matrix functions*)
+	If[mon, Print["Making G, L matrix"]];
 	{{G, L}, coor, sel, map} = MakeGradientLaplacian[mask, vox, sigma];
+	If[mon, Print["Making R matrix"]];
 	R = MakeRBF[coor, sigma, vox];
 
 	(*becouse of the implementation coordiante system the tensor needs to be reversed*)
-	tensN = FlipTensorOrientation[tens, {"z", "y", "x"}];
+	tensN = FlipTensorOrientation[MaskData[tens, mask], {"z", "y", "x"}];
 	(*remove unreliable voxel*)
-	{md, fa} = ParameterCalc[MaskData[tensN, mask]][[4;;5]];
+	{md, fa} = ParameterCalc[tensN][[4;;5]];
 	msel = Mask[{{fa, rFA}, {md, rMD}}];
+	If[mon, Print["starting fitting"]];
 	(*perform the recon*)
 	{vecN, vecH, sol} = FitHarmonicBasis[MaskData[tensN, msel], sel, {G, L, R},
 		MaxIterations->itt, GradientStepSize->step, Tolerance->tol];
@@ -1007,7 +1020,7 @@ MakeGradientLaplacian[mask_,vox_?VectorQ,sig_?NumberQ]:=Block[{aDepth,dim,const,
 	matI = IdentityMatrix[aDepth];
 
 	(*dilate the mask if needed*)
-	maskDilated = If[sig === 0,mask, Dilation[mask, BoxMatrix[Round[sig/vox]]]];
+	maskDilated = If[sig === 0, mask, Dilation[mask, BoxMatrix[Round[sig/vox]]]];
 	(*extend matrix in all directions and dilate mask in each direction*)
 	maskPadded = (di = ArrayPad[ArrayPad[maskDilated, Thread[{const, #}]], 1];
 	Unitize[di + RotateRight[di,#]])& /@ Reverse[matI];
@@ -1103,7 +1116,7 @@ MakeGradientLaplacian[mask_,vox_?VectorQ,sig_?NumberQ]:=Block[{aDepth,dim,const,
 
 		(*join all the Laplacians *)
 		{{xx, xy}, {yx, yy}, {zx, zy}} = Dimensions/@{lx, ly, lz};
-		L=ArrayPad[lx, {{0, yx+zx}, {0, yy+zy}}]+ArrayPad[ly, {{xx, zx}, {xy, zy}}]+ArrayPad[lz, {{xx+yx, 0}, {xy+yy, 0}}];
+		L = ArrayPad[lx, {{0, yx+zx}, {0, yy+zy}}]+ArrayPad[ly, {{xx, zx}, {xy, zy}}]+ArrayPad[lz, {{xx+yx, 0}, {xy+yy, 0}}];
 	];
 
 	{{G, L}, {coorCent, selMaskC} ,selMask, {coorCent, coorGrad, dim}}
@@ -1114,7 +1127,7 @@ MakeGradientLaplacian[mask_,vox_?VectorQ,sig_?NumberQ]:=Block[{aDepth,dim,const,
 (*MakeRBF*)
 
 
-MakeRBF[{coor_, sel_}, rad_, vox_]:=MakeRBF[{coor, sel}, rad, 1]
+MakeRBF[{coor_, sel_}, rad_]:=MakeRBF[{coor, sel}, rad, 1]
 
 MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{mr, r2, seed, target, n, nr, pg, p, g, rbFunc},
 	mr = (2.5 rad)^2;
@@ -1137,7 +1150,7 @@ MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{mr, r2, seed, target, n, nr, pg, p, g
 
 
 gaussianRBFGradientC = Compile[{{center,_Real,1}, {points,_Real,2}, {mr,_Real,0}, {r2,_Real,0}, {dm,_Real,0}}, Module[{c,d,p,sel},
-	c = points -center;
+	c = points - center;
 	d = Total[c^2];
 	sel = UnitStep[mr-d];
 	p = Flatten[Position[sel,1]];
