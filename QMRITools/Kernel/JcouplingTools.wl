@@ -900,7 +900,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale=1(*3 chains with 6 normal met with 2 ham*);
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		"HDO",
+		"H2"|"HDO",
 		names={"A"};
 		n=Length[names];
 		it=Range[n];
@@ -911,7 +911,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale=1;
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		"GlucoseD",
+		"GlcD"|"GlucD"|"GlucoseD",
 		names={"A"};
 		n=Length[names];
 		it=Range[n];
@@ -922,22 +922,33 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale=1;
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		"GlutamateD",
+		"GlxD"|"GlutamateD",
 		names={"A"};
 		n=Length[names];
 		it=Range[n];
-		sysSi={2.25};
+		sysSi={2.4};
 		sysS=sysSi-cf;
 		sysJ={};
 		sysJ=SysToMat[sysJ,n];
 		scale=1;
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		"LactateD",
+		"LacD"|"LactateD",
 		names={"A"};
 		n=Length[names];
 		it=Range[n];
 		sysSi={1.3};
+		sysS=sysSi-cf;
+		sysJ={};
+		sysJ=SysToMat[sysJ,n];
+		scale=1;
+		{sysJ,sysS,scale,sysSi,names,it,name}
+		,
+		"Na",
+		names={"A"};
+		n=Length[names];
+		it=Range[n];
+		sysSi={0};
 		sysS=sysSi-cf;
 		sysJ={};
 		sysJ=SysToMat[sysJ,n];
