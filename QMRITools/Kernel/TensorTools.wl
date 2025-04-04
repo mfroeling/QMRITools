@@ -247,7 +247,8 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, opts:OptionsPattern[]]:= TensorCa
 
 TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
 		output, robust, con, kappa, parallel, mon, method, func, outliers, outFit, dataFit, residual, ctens,
-		bmat, bmatV, data, dataL, depthD, dirD, dirB, mask, coor, dim, vox, start, dint, fitFun, fitResult, s0, tensor
+		bmat, bmatV, data, dataL, depthD, dirD, dirB, mask, coor, dim, vox, start, dint, fitFun, fitResult, 
+		s0, tensor, gradField
 	},
 
 	(*get output form*)
@@ -284,7 +285,8 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
 		If[mon, PrintTemporary["Making coil tensor"]];
 		(*get the coil tensor*)
 		{vox, start, dint} = coil;
-		bmatV = Bmatrix[bvec, grad, GradientCoilTensor[mask, vox, start, dint]];
+		gradField = GradientCoilTensor[mask, vox, start, dint];
+		bmatV = Bmatrix[bvec, grad, gradField];
 		True, False
 	];
 
@@ -320,7 +322,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
 	If[mon, PrintTemporary["Finalizing output tensor"]]; 
 	residual = If[OptionValue[FullOutput], (*needs to incorporate the correct bmatrix*)
 		ResidualCalc[Transpose@data, Transpose@fitResult, Transpose@outliers, 
-			If[ctens,bmatV,bmat], MeanRes->"RMSE"],
+			If[ctens, bmatV, bmat], MeanRes->"RMSE"],
 		SparseArray[{}, Length@data, 0.]
 	];
 
@@ -328,7 +330,9 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
 		fitResult = Transpose[VectorToData[fitResult, coor]];	
 		outliers = VectorToData[outliers, coor];
 		residual = VectorToData[residual, coor];
+		gradField = VectorToData[Transpose[Flatten[gradField,{2,3}]], coor];
 	];
+
 	If[depthD==1, 
 		fitResult = First@fitResult; 
 		outliers = First@outliers;
@@ -338,7 +342,12 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
 	s0 = N@Clip[ExpNoZero[N@Chop[Last@fitResult]], {0., 1.5 Max[data]}];
 	tensor = N@Clip[Most@fitResult,{-0.1,0.1}];
 
-	If[OptionValue[FullOutput],If[robust,{tensor, s0, outliers, residual}, {tensor, s0, residual}], {tensor, s0}]
+	(*the output depending on the settings*)
+	{tensor, s0, If[OptionValue[FullOutput],
+		{outliers, If[robust, residual, Nothing], If[ctens, gradField, Nothing]}
+		(*If[robust, {tensor, s0, outliers, residual}, {tensor, s0, residual}], {tensor, s0}*)
+		, Nothing]
+	}
 ]
 
 

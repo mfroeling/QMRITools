@@ -270,7 +270,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	(*unwrapping function*)
 	unwrapF = Switch[OptionValue[UnwrapDimension],
 		"2D", msk(UnwrapDCT/@(msk #))&,
-		"3D", msk(UnwrapDCT[msk #, 0. msk + 1.])&
+		"3D", msk(UnwrapDCT[msk #])&
 	];
 
 	(*start optimization*)
@@ -441,7 +441,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_}, opts : OptionsPatte
 DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPattern[]] := Block[{
 		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n, mout, con, sig,
 		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, r2, phi, mod, cl, db, idb, fF,
-		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero, ls, amp, ipi,
+		matA, matAi, vec, matC, mat, complex, mask, max, scale, zero, ls, amp, ipi, masks, ph,
 		result, wat, fat, watc, fatc, itt, res, fraction, signal, iop, modApply, fitphase
 	},
 

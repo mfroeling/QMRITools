@@ -355,6 +355,7 @@ Options[SegmentTracts] = {
 	FiberLengthRange -> {15, 500}, 
 	OutputForm -> "Joined", 
 	FitTractSegments -> False,
+	FittingOrder -> 3,
 	Method->"Fast"
 }
 
@@ -382,7 +383,7 @@ SegmentTracts[tracts_, segments_, vox_, dim_, OptionsPattern[]] := Block[{tracts
 	];
 
 	If[OptionValue[FitTractSegments] === True, 
-		tractsOut = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> 3], #] & /@ tractsOut
+		tractsOut = If[Length[#] > 0, FitTracts[#, vox, dim, FittingOrder -> OptionValue[FittingOrder]], #] & /@ tractsOut
 	];
 
 	Switch[OptionValue[OutputForm],
@@ -630,7 +631,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		InterpolationOrder, StopThreshold, StepSize, TractMonitor}];
 	SeedRandom[1234];
 
-	step = N@If[NumberQ[step],step, Min[0.5 vox]];
+	step = N@If[NumberQ[step], step, Min[0.75 vox]];
 	maxStep = Ceiling[(maxLength/step)];
 	tractF = Switch[OptionValue[Method], 
 		"RungeKutta" | "RK" | "RK2", RK2, 
