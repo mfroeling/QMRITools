@@ -126,7 +126,7 @@ FindActivations[data_, mask_, ops : OptionsPattern[]] := FindActivationsI[
 FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, dat, act, mn ,tr, itt, back},
 
 	(*Get the options*)
-	{met, {sc, fr}, {start, stop}, itt, back ,output} = OptionValue[{ThresholdMethod, ActivationThreshold, 
+	{met, {sc, fr}, {start, stop}, itt, back, output} = OptionValue[{ThresholdMethod, ActivationThreshold, 
 		IgnoreSlices, ActivationIterations, ActivationBackground, ActivationOutput}];
 		
 	(*set the threshold*)
@@ -237,7 +237,10 @@ MeanThresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0
 (*SelectActivations*)
 
 
-Options[SelectActivations] = {ActivationSize->4, IgnoreSlices->{0,0}};
+Options[SelectActivations] = {
+	ActivationSize->4, 
+	IgnoreSlices->{0,0}
+};
 
 SyntaxInformation[EvaluateActivation2]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 

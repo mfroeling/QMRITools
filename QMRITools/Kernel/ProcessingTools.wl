@@ -228,6 +228,10 @@ OutlierRange::usage =
 OutlierIncludeZero::usage = 
 "OutlierIncludeZero is an option for FindOutliers. If set to True all values that are zero are ignored and considered outliers."
 
+OutlierCheckNormality::usage = 
+"OutlierCheckNormality is an option for FindOutliers. If set to True the data is checked for normality using the DistributionFitTest function. 
+If the data is not normal the data is log transformed before outlier detection."
+
 
 ColorValue::usage = 
 "ColorValue is an option for Hist and ErrorPlot. Default {Black, Red}."
@@ -636,37 +640,45 @@ MeanSignal[data_, posi_, OptionsPattern[]] := Block[{pos, dat, mask},
 (*FindOutliers*)
 
 
-Options[FindOutliers] = {OutlierMethod -> "IQR", OutlierOutput -> "Mask", OutlierIterations -> 1, OutlierRange -> 1.5, OutlierIncludeZero -> True}
+Options[FindOutliers] = {
+	OutlierMethod -> "IQR", 
+	OutlierOutput -> "Mask", 
+	OutlierIterations -> 1, 
+	OutlierRange -> 1.5, 
+	OutlierIncludeZero -> True,
+	OutlierCheckNormality -> False
+}
 
 SyntaxInformation[FindOutliers] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-FindOutliers[datai_?VectorQ, opts:OptionsPattern[]]:=FindOutliers[datai,1,opts]
+FindOutliers[datai_?VectorQ, opts:OptionsPattern[]]:=FindOutliers[datai, 1, opts]
 
 FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 		data, maxIt, diff, it, out, outI, outNew, q1, q2, q3, sc, iqr, dataQ, up, low, mc, met, incZero, output,
-		sd, mn, mad, med
+		sd, mn, mad, med, norm, dataL, min
 	},
 
 	(*make numeric*)
 	data = N@datai;
+	min = Min[data];
 
 	(*get options*)
-	met = OptionValue[OutlierMethod];
-	output = OptionValue[OutlierOutput];
-	maxIt = OptionValue[OutlierIterations];
-	sc = OptionValue[OutlierRange];
-	incZero = OptionValue[OutlierIncludeZero];
-
+	{met, output, maxIt, sc, incZero, norm} = OptionValue[{OutlierMethod, OutlierOutput, OutlierIterations, 
+		OutlierRange, OutlierIncludeZero, OutlierCheckNormality}];
+	
 	(*initialize*)
 	diff = it = 1;
 	outI = out = N@If[incZero, 0 data + 1, Unitize[data]];
 
+	(*Log transpose data if not normal distribution*)
+	norm = norm && DistributionFitTest[Pick[data, ignore out, 1.]] < 0.05;
+	dataL = If[norm, Log[data + 1 - min], data];
+
 	(*perform iterative outlier detection*)
 	While[(diff != 0.) && it <= maxIt,
 		(*get the data quantile and iqr*)
-		dataQ = Pick[data, ignore out, 1.];
+		dataQ = Pick[dataL, ignore out, 1.];
 
-		
 		{q1, q2, q3} = Quantile[dataQ, {.25, .50, .75}];
 		iqr = (q3 - q1);
 
@@ -699,7 +711,7 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 		];
 
 		(*make the oulier mask*)
-		outNew = N[outI (If[(# < low || # > up), 0, 1] & /@ N[data])];
+		outNew = N[outI (If[(# < low || # > up), 0, 1] & /@ N[dataL])];
 
 		(*update ouliers and iteration*)
 		diff = Total[out - outNew];

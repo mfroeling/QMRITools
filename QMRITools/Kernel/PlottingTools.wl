@@ -96,6 +96,9 @@ PlotSequence::usage =
 "PlotSequence[seq,var] where seq is the output from GradSeq."
 
 
+LoessPlot::usage =
+"LoessPlot[data] plots the data with a loess fit."
+
 ColorFAPlot::usage = 
 "ColorFAPlot[tenor] create a color coded FA map from the tensor for l1, l2 and l3."
 
@@ -203,6 +206,11 @@ Begin["`Private`"]
 (* ::Subsubsection::Closed:: *)
 (*Definitions*)
 
+
+$plotOptions = Sequence[
+	Axes -> False, Frame -> {{True, False}, {True, False}}, PlotHighlighting -> None, 
+	FrameStyle -> Directive[Thick, Black], LabelStyle -> Directive[Black, Bold, 14]
+]
 
 (*plot menu options*)
 sizes    = {200,300,400,500,750,1000,1500,2000,2500,3000};
@@ -2406,6 +2414,107 @@ ColorFAPlot[tens_] := DynamicModule[{FA, eig, eigv, mid, eigFA, mask},
 		Initialization :> (all = {eigv, FA eigv}; j = Round[Length[all[[1]]]/2])
 	]
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*LoessPlot*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*LoessPlot*)
+
+
+Options[LoessPlot] = {
+	Bandwidth -> 0.25,
+	FitOrder -> 2,
+	FitKernel -> "Tricube",
+	ConfidenceLevel -> 0.95,
+	Bootstrap ->False,
+	PlotStyle -> {},
+	PlotRange -> All,
+	PredictionInterval -> True
+};
+
+LoessPlot[data_, opts : OptionsPattern[]] := Block[{
+		bw, deg, ker, confLevel, xdat, xMin, xMax, xdatF, xGrid, yFit, 
+		error, z, yLow, yHigh, n, bootstrap, alpha, pred, predError
+	},
+
+	{bw, deg, ker, confLevel, bootstrap, pred} = OptionValue[{Bandwidth, FitOrder, FitKernel, ConfidenceLevel, 
+		Bootstrap, PredictionInterval}];
+	ker = ker /. {"Gaussian" -> 1, _ -> 2};
+	alpha = (1 - confLevel)/2;
+
+	xdat = data[[All, 1]];
+	{xMin, xMax} = MinMax[xdat];
+	xGrid = Subdivide[xMin, xMax, 25];
+	bw = bw (xMax - xMin);
+	xdatF = N@Chop[Transpose[Table[(xdat + $MachineEpsilon)^i, {i, 0, deg}]]];
+
+	If[IntegerQ[bootstrap],
+		n = Length[data];
+		yFit = Table[
+			First@Transpose[LoessFitC[RandomChoice[data, n], xdatF, xGrid, bw, deg, ker, 0]]
+		, {i, bootstrap}];
+		{yLow, yHigh} = Transpose[Quantile[yFit, {alpha, 1 - alpha}]];
+		yFit = Median[yFit];
+		,
+		{yFit, error, predError} = Transpose[LoessFitC[data, xdatF, xGrid, bw, deg, ker, 1]];
+		z = InverseCDF[NormalDistribution[], 1 - alpha];
+		z = If[pred, z predError, z error];
+		{yLow, yHigh} = {yFit - z, yFit + z};
+	];
+
+	Show[
+		ListLinePlot[{Transpose[{xGrid, yLow}], Transpose[{xGrid, yHigh}]},
+			PlotStyle -> {Directive[Dashed, Gray], Directive[Dashed, Gray]},
+			Filling -> {1 -> {2}}, FillingStyle -> {LightBlue, Opacity[0.5]},
+			Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 
+			PlotHighlighting -> None],
+		ListLinePlot[Transpose[{xGrid, yFit}], Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}],
+			PlotStyle -> Directive[Thick], PlotHighlighting -> None]
+	]
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*LoessFitC*)
+
+
+LoessFitC = Compile[{{data, _Real, 2}, {xdatF, _Real, 2}, {x0, _Real, 0}, {bw, _Real, 0}, 
+	{deg, _Integer, 0}, {ker, _Integer, 0}, {err,_Integer, 0}}, Block[{
+		xdist, xdat, ydat, wVec, wMat, fit, xVec, yhat, residuals, df, sigma, error, wMati, pred, obs
+	},
+
+	{xdat, ydat} = Transpose@data;
+	xdist = Abs[xdat - x0]/bw;
+	xVec = (x0 + $MachineEpsilon)^Range[0., deg];
+
+	wVec = Switch[ker,
+		1(*"Gaussian"*), Exp[-2 xdist^2],
+		_(*Tricube*), If[# <= 1, (1 - #^3)^3, 0] & /@ xdist
+	];
+
+	wMatd = DiagonalMatrix[wVec, TargetStructure -> "Dense"];
+	wMat = Transpose[xdatF].wMatd;
+	wMati = PseudoInverse[wMat . xdatF];
+
+	If[Total[wVec] == 0.,
+		{Mean[ydat], If[err===0, 0., StandardDeviation[ydat]]},
+		fit = wMati . wMat . ydat;
+		yhat = xVec . fit;
+
+		{error, pred} = If[err == 0, {0., 0.},
+			residuals = ydat - xdatF . fit;
+			df = Total[wVec] - (deg + 1);
+			sigma = If[df > 0, (residuals^2 . wVec) / df, 0];
+			(*the plus one is to show prediction band instead of confidance band*)
+			obs = sigma (xVec . wMati . xVec);
+			{Sqrt[obs], Sqrt[obs + sigma]}
+		];
+		{yhat, error, pred}
+	]
+], {{wMatd, _Real, 2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Section:: *)
