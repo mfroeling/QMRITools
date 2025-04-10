@@ -129,6 +129,33 @@ SigmaCalc[dti,grad,bvec,blur] calculates the noise sigma based on the tensor res
 SigmaCalc[dti,tens,grad,bvec,blur] calculates the noise sigma based on the tensor residual. If blur is 1 there is no blurring."
 
 
+RPBMFunction::usage = 
+"RPBMFunction[tm, {d0, tau, zeta}] generates the RPBM function for the given mixing times tm, with d0, tau and zeta.
+RPBMFunction[tm, {tau, zeta}] generates the RPBM function for the given mixing times tm, assuming a d0 of 1.
+RPBMFunction[tm, {{d0, tau, zeta}, ..}] generates the RPBM function for the given mixing times tm, for a list of d0, tau and zeta.
+"
+
+GetRPBMValues::usage = 
+"GetRPBMValues[{d0, tau, zeta}] derives parameters from RPBM function. d0, tau and zeta are the parameters of the RPBM function.
+Ouput is a list containing {d0, tau, zeta, dinf, td, tr, I, sv, a, kappa}."
+
+FitRPBMDictionary::usage=
+"FitRPBMDictionary[sig, {pars, sim}, snr] fits the RPBM function to the simulated data sig using the parameters pars and the simulated data sim.
+The needed dictionary {pars, sim} is generated using CreateRPBMDictionary. The snr is the estimated snr values of the data.
+FitRPBMDictionary[sig, {pars, sim}, snr, d0]  does the same but fixes the initial diffusion to the given d0.
+"
+
+CreateRPBMDictionary::usage = 
+"CreateRPBMDictionary[tm] creates a dictionary of RPBM functions for the given mixing times tm.
+Options are the used parameters in the dictionary and the simulated RD values, {pars, sim}."
+
+FitRPBMFunction::usage = 
+"FitRPBMFunction[tms, dat] fits the RPBM function to the data dat using the mixing times tms using FindMinimum. 
+The output is a rule of the fitted parameters {d0->val, tau-> tau, zeta ->zeta}.
+FitRPBMFunction[tms, dat, init] does the same but uses init as inital guess values.
+FitRPBMFunction[tms, dat, init, fix] does the same but uses init as inital guess values and fixes the parameters in fix."
+
+
 TransformTensor::usage = 
 "TransformTensor[tensor, disp, vox] corrects the tensor with voxel size vox based on the displacement field disp. The displacement field is te displacement in mm
 for each voxel location in x, y and z.
@@ -182,6 +209,16 @@ Distribution::usage =
 MeanRes::usage = 
 "MeanRes is an option for ResidualCalc. When True the root mean square of the residual is calculated."
 
+
+RPBMRangeTau::usage =
+"RPBMRangeTau is an option for CreateRPBMDictionary. Default is {100, 2000}. The range of the tau values used in the RPBM function."
+
+RPBMRangeZeta::usage =
+"RPBMRangeZeta is an option for CreateRPBMDictionary. Default is {0.1, 3}. The range of the zeta values used in the RPBM function."
+
+RPBMDictionarySize::usage =
+"RPBMDictionarySize is an option for CreateRPBMDictionary. Default is {100, 1000}. 
+	The number of dictionaries and number of points in the dictionary."
 
 RotationCorrect::usage =
 "RotationCorrect is an option for TensorCorrect. Default is False. Is a tensor is deformed setting to True also the shear is accounted for by local rotation of the tensor."
@@ -313,7 +350,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
 	dataFit = Transpose[{outFit data, outFit dataL}];
 	fitResult = Which[
 		(*LLS without coil tensor*)
-		method === "LLS" && ctens===False, Transpose[PseudoInverse[bmat].Transpose[dataL]],
+		method === "LLS" && ctens===False, Transpose[PseudoInverse[bmat] . Transpose[dataL]],
 		ctens===False, func[fitFun[#, bmat]&, dataFit],
 		ctens===True, func[fitFun[#[[1]], #[[2]]]&, Thread[{dataFit, bmatV}]]
 	];
@@ -330,7 +367,9 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
 		fitResult = Transpose[VectorToData[fitResult, coor]];	
 		outliers = VectorToData[outliers, coor];
 		residual = VectorToData[residual, coor];
-		gradField = VectorToData[Transpose[Flatten[gradField,{2,3}]], coor];
+		If[ctens,
+			gradField = VectorToData[Transpose[Flatten[gradField,{2,3}]], coor]
+		];
 	];
 
 	If[depthD==1, 
@@ -727,7 +766,7 @@ SyntaxInformation[EigenvecCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 EigenvecCalc[tens_,opts:OptionsPattern[]]:=EigenSys[tens,"vec",opts]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*EigenSys*)
 
 
@@ -1193,7 +1232,7 @@ ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_, OptionsPatter
 	If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datdim, Dimensions[data], Dimensions[tensor]]]];
 
 	(*remove ouliers*)
-	fit = If[MatrixQ[bmat], bmat.tensor, Transpose@MapThread[Dot, {bmat, Transpose@tensor}]];
+	fit = If[MatrixQ[bmat], bmat . tensor, Transpose@MapThread[Dot, {bmat, Transpose@tensor}]];
 	fit = Clip[ExpNoZero[fit], {-1.5, 1.5} Max[dat], {0., 0.}];
 	err = If[ArrayDepth[dat] == 4,
 		Transpose[(1 - outlier)] (Transpose[dat] - fit),
@@ -1245,6 +1284,207 @@ SigmaCalc[dti_?ArrayQ, tens_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, O
 		MedianFilter[sig, blur]
 	]
 ]
+
+
+(* ::Subsection:: *)
+(*RPBM*)
+
+
+(* ::Subsubsection:: *)
+(*RPBMFunction*)
+
+
+SyntaxInformation[RPBMFunction] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
+RPBMFunction[x___]:=RPBMFunctionI[x]
+
+
+RPBMFunctionI[tm_, pars_?MatrixQ] := Transpose[RPBMFunctionI[tm, #] & /@ pars]
+
+RPBMFunctionI[tm_, {tau_?NumberQ, zeta_?NumberQ}] := RPBMFunctionI[tm, {1., tau, zeta}]
+
+RPBMFunctionI[tm_, {d0_?NumberQ, tau_?NumberQ, zeta_?NumberQ}] := Block[{
+		l, x,  a, b, c, fun, y, sy, int, const, nt, out
+	},
+	(*Fieremans E,Lemberskiy, et al. NMR in Biomedicine 2017; doi.wiley.com/10.1002/nbm.3612*)
+
+	x = tm/tau; (*normalized mixing time*)
+	l = 1. + zeta ;(*tortuosity*)
+
+	(*constants for integral derived from zeta*)
+	a = 2 (Sqrt[l] - 1)/l^2;
+	b = (4 - 6 Sqrt[l] + 2 l)/l^3;
+	c = (8 + 8 l + Sqrt[l] (-16 - zeta))/l^4;
+
+	(*constant factor*)
+	const = 1/l + 2 a/Sqrt[Pi x] + b/x - c x^(-3/2)/Sqrt[Pi];
+	
+	(*time dependant integral*)
+	int = NIntegrate[
+		Re[(Sqrt[y] (a + c y) + Im[1/(1 + zeta + 2 (I Sqrt[y] + y) (-1 + Sqrt[1 - zeta/(I + Sqrt[y])^2]))]
+			)/(Exp[x y] y^2)]
+	, {y, 0., Infinity}, AccuracyGoal -> 5];
+
+	(*signal scaled for d0*)
+	d0 (int/(Pi x) + const)
+]
+
+
+(* ::Subsubsection:: *)
+(*GetRPBMValues*)
+
+
+SyntaxInformation[GetRPBMValues] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
+GetRPBMValues[sol_] := GetRPBMValues[sol, {"none", 0}]
+
+GetRPBMValues[sol_, par_] := Block[{
+		con, d0, zeta, tau, dinf, td, tr, i, sv, a, kappa
+	},
+
+	(*get the values from the solution*)
+	Switch[First@par, "d0", d0 = par[[2, 1]], "tau", tau = par[[2, 2]], "zeta", zeta = par[[2, 3]]];
+
+	vec = {d0, tau, zeta} /. sol;
+	GetRPBMValues[vec]
+]
+
+GetRPBMValues[fit_?MatrixQ] := GetRPBMValues /@ fit
+
+GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}] := Block[{
+		dinf, td, tr, i, sv, a, kappa
+	},
+	(*https://github.com/NYU-DiffusionMRI/RPBM*)
+
+	(*diffusion at infinity time*)
+	dinf = RPBMFunction[Infinity, {d0, tau, zeta}];
+	(*td the diffusion time to traverse a typical cell*) 
+	td = (2*tau)/zeta^2(* a^2/(2 d0)*);
+	(*tr the residence time*)
+	tr = 2 tau/zeta(*a/(2 kappa)*);
+	(*The effective thickness*)
+	i = Sqrt[d0 tau](*d0/(2 kappa)*);
+	(*surface to volume ratio*)
+	sv = (2*zeta)/(Sqrt[d0]*Sqrt[tau])(*d zeta/i*);
+	(*cell size*)
+	a = (2*Sqrt[d0]*Sqrt[tau])/zeta(*4/sv*);
+	(*membrane permiability*)
+	kappa = Sqrt[d0]/(2*Sqrt[tau]);
+
+	(*output all parameters as vector*)
+	{d0, tau, zeta,	dinf, Clip[td, {0., 5000.}], Clip[tr, {0., 5000.}],	i, sv, a, kappa}
+]
+
+
+(* ::Subsubsection:: *)
+(*FitRPBMFunction*)
+
+
+SyntaxInformation[FitRPBMFunction] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern[]}};
+
+FitRPBMFunction[tms_, dat_] := FitRPBMFunction[tms, dat, {}, ""];
+
+FitRPBMFunction[tms_, dat_, fix_] := FitRPBMFunction[tms, dat, fix, ""];
+
+FitRPBMFunction[tms_, dat_, fix_, fs_] := Block[{
+		f, vars, d0, tau, zeta, ran, fixr, init, cons, sel
+	},
+	(*see which variables need to be fitted and define ranges*)
+	f = First@First[Position[{"d0", "tau", "zeta"}, fs] /. {} -> {{0}}];
+	vars = {d0, tau, zeta};
+	ran = {{0.5, 2.5}, {100., 1000.}, {0.25, 2.5}};
+	cons = #[[2, 1]] < #[[1]] < #[[2, 2]] & /@ Transpose[{vars, ran}];
+	
+	(*check if there are fixed variables*)
+	If[fix === {}, init = vars,
+		(*if there is a fix variable drop it from the fit input*)
+		fixr = Thread[vars -> fix];
+		init = Thread[{vars, vars /. fixr}];
+		If[0 < f < 4,
+			sel = Drop[{1, 2, 3}, {f}];
+			vars = vars /. fixr[[f]];
+			init = init[[sel]];
+			cons = cons[[sel]];
+		]
+	];
+	
+	(*perform the fitting*)
+	Last@Quiet@FindMinimum[{ErrorRPBM[tms, dat, vars], cons}, init, 
+		AccuracyGoal -> 6, PrecisionGoal -> 6, MaxIterations -> 15]
+]
+
+
+(*the error function needed for the non linear model*)
+ErrorRPBM[tms_, vals_, {d0_?NumberQ, tau_?NumberQ, zeta_?NumberQ}] := Total[(RPBMFunction[tms, Abs[{d0, tau, zeta}]] - vals)^2]
+
+
+(* ::Subsubsection:: *)
+(*CreateRPBMDictionary*)
+
+
+Options[CreateRPBMDictionary] = {
+	RPBMRangeTau -> {100, 2000},
+	RPBMRangeZeta -> {0.1, 3},
+	RPBMDictionarySize -> {100, 1000}
+};
+
+SyntaxInformation[CreateRPBMDictionary] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+CreateRPBMDictionary[tms_, OptionsPattern[]] := RPBMDict[tms, OptionValue[{RPBMRangeTau, RPBMRangeZeta, RPBMDictionarySize}]]
+
+(*the actual function to create a dictionary*)
+RPBMDict[tms_, {rTau_, rZeta_, {nDic_, nPars_}}] := (*RPBMDict[tms, {rTau, rZeta, {nDic, nPars}}] = *)Block[{
+		pars, sim
+	},
+	(*generate random dictionary, with seedrandom its reproducible*)
+	pars = RotateDimensionsLeft[{
+		SeedRandom[12345]; RandomReal[rTau, {nDic, nPars}],
+		SeedRandom[54321]; RandomReal[rZeta, {nDic, nPars}]
+	}];
+
+	(*simulate the signals*)
+	DistributeDefinitions[RPBMFunctionI, tms];
+	sim = ParallelMap[RPBMFunctionI[tms, #] &, pars];
+	(*give the output*)
+	{pars, sim}
+]
+
+
+(* ::Subsubsection:: *)
+(*FitRPBMDictionary*)
+
+
+(*fitting signal to dictionary*)
+FitRPBMDictionary[sig_, {pars_, sim_}, snr_] := FitRPBMDictionary[sig, {pars, sim}, snr, 0.]
+
+FitRPBMDictionary[sig_, {pars_, sim_}, snr_, d0i_] := Block[{
+		simN
+	},
+	(*generate random noise in a repeatable way and add to dictionary*)
+	SeedRandom[12345];
+	simN = sim + RandomVariate[NormalDistribution[0, 1./snr], Dimensions@sim];
+	
+	(*look for minimal RMS error in each dictionary and get the corresponding parameter*)
+	Median[RPBMsolFunc[sig, If[d0i > 0., d0i,
+	Clip[Quiet@First@FindArgMin[RPBMminFunc[sig, d0/100, #[[2]]], {d0}, AccuracyGoal -> 6]/100, 
+		{0.5, 2.5}, {0.5, 1.5}]], #] & /@ Transpose[{pars, simN}]]
+]
+
+
+(*finding the minimal root mean square value of dictinary*)
+RPBMminFunc[sig_?ListQ, d0_Real, sim_] := RPBMMinErrorC[sig, d0, sim];
+
+RPBMMinErrorC = Compile[{{sig, _Real, 1}, {d0, _Real, 0}, {sim, _Real, 2}}, 
+	Min[Total[((sig/d0) - sim)^2]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(*get the position of the minimal root mean square value*)
+RPBMsolFunc[sig_?ListQ, d0_Real, {pars_, sim_}] := Flatten[{d0, pars[[TakeSmallest[RPBMErrorC[sig, d0, sim] -> "Index", 1]]]}];
+
+RPBMErrorC = Compile[{{sig, _Real, 1}, {d0, _Real, 0}, {sim, _Real, 2}}, 
+	Total[((sig/d0) - sim)^2]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)

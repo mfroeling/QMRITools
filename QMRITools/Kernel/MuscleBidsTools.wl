@@ -2251,7 +2251,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 		tracto, tractType, tractSeg, tractStopLab, tractStopVal, tractStopLabNam, trkFile,
 		tractTypeLab, fol, parts, checkFile, outfile, seed, lenS, segBone, tractSegLab,
 		datfile, stopfile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
-		segfile, muscles, mlabs, mus, bones, con, leng, dens, flip, per, duplicate, key, keyS
+		segfile, muscles, mlabs, mus, bones, con, leng, dens, flip, per, duplicate, key, keyS,
+		voxs, dims
 	}, 
 
 	debugBids["Starting MuscleBidsTractographyI"];
@@ -2351,7 +2352,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			(* Perform tractography *)
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
 				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", MaxSeedPoints -> seed, 
-				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> True,
+				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> False,
 				TensorFlips -> flip, TensorPermutations -> per, Parallelization -> True
 			];
 
@@ -2423,7 +2424,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			(*export plot scene*)
 			(*----*)AddToLog[{"Exporting the scene"}, 4];
 			Export[trkFile["_plot.wxf"],
-				PlotSegmentedTracts[tracts, muscles, bones, dims, voxs, OutputForm -> "All", Method -> "tube", MaxTracts -> 10000]
+				PlotSegmentedTracts[tracts, muscles, bones, dims, voxs, 
+					OutputForm -> "All", Method -> "tube", MaxTracts -> 10000]
 			];
 
 			MakeCheckFile[checkFile, Sort@Join[{"Check"->"seg"}, Normal@datType]];

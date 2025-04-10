@@ -371,7 +371,7 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 				j++;If[j>1000,i+=j;j=0;];
 				(*data voxel*)
 				fitd = Flatten /@ ({bin, #} // Transpose);
-				start=Prepend[funcin,{s0,s0s}];
+				start=Prepend[funcin,{s0, s0s}];
 				sol = Quiet[FindFit[fitd, funcf, start , fpars, Method -> method, MaxIterations -> 150]];
 				out /. sol
 			]
