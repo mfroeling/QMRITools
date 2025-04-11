@@ -124,7 +124,7 @@ NiiMethod::usage =
 "NiiMethod is an option for ImportNIi. Values can be \"data\", \"dataTR\", \"header\", \"scaling\", \"headerMat\", \"rotation\", \"all\"."
 
 NiiScaling::usage =
- "NiiScaling is an option for ImportNii. It scales the nii values with scale slope and offset for quantitative data."
+"NiiScaling is an option for ImportNii. It scales the nii values with scale slope and offset for quantitative data."
 
 NiiLegacy::usage = 
 "NiiLegacy is an option for ExportNii, if set True default orientations are set instead of unknown."
@@ -137,6 +137,9 @@ CompressNii::usage =
 
 UseSubfolders::usage = 
 "UseSubfolders is an option for DcmToNii. If set True the nii conversion is done for each folder in the selected input folder."
+
+MergeEchos::usage = 
+"MergeEchos is an option for DcmToNii. If set True the echos are merged into one file."
 
 NiiDataType::usage =
 "NiiDataType is an option of ExportNii. The number type of Nii file can be \"Integer\", \"Real\", \"Complex\", or \"Automatic\"."
@@ -198,7 +201,7 @@ Begin["`Private`"]
 (*DcmToNii*)
 
 
-Options[DcmToNii]={
+Options[DcmToNii] = {
 	CompressNii -> True, 
 	Method -> Automatic, 
 	UseVersion -> 1, 
@@ -216,7 +219,7 @@ DcmToNii[infol_?StringQ, outfol_?StringQ, opt:OptionsPattern[]] := DcmToNii[{inf
 
 DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 		filfolin, folout, log, command, compress, dcm2niix, dcm2niif, delete,
-		folsin, fols, folsout, dcm2nii
+		folsin, fols, folsout, dcm2nii, merge
 	},
 
 	(*generate a popup to select the file or folder*)

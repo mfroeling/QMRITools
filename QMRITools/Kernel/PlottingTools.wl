@@ -151,6 +151,19 @@ MaskOpacity::usage =
 "MaskOpacity is an option for MakeSliceImages. It specifies the opacity of the mask."
 
 
+Bandwidth::usage =
+"Bandwidth is an option for LoessPlot. It specifies the bandwidth of the loess fit. Its a number between 0 and 1 and specifies which % of the data to include for the local regression."
+
+PredictionInterval::usage =
+"PredictionInterval is an option for LoessPlot. It specifies the prediction interval of the loess fit. If True it uses the prediction confidence bands if False it uses the standard error of the local mean."
+
+FitKernel::usage =
+"FitKernel is an option for LoessPlot. It specifies the kernel used for the loess fit. Can be \"Triangular\" or \"Gaussian\"."
+
+Bootstrap::usage =
+"Bootstrap is an option for LoessPlot. If True it uses the bootstrap method to calculate the confidence bands."
+
+
 PlotSpace::usage = 
 "PlotSpace is an option for GradientPlot can be \"bspace\" or \"qspace\"."
 
@@ -207,10 +220,10 @@ Begin["`Private`"]
 (*Definitions*)
 
 
-$plotOptions = Sequence[
+$plotOptions = {
 	Axes -> False, Frame -> {{True, False}, {True, False}}, PlotHighlighting -> None, 
 	FrameStyle -> Directive[Thick, Black], LabelStyle -> Directive[Black, Bold, 14]
-]
+};
 
 (*plot menu options*)
 sizes    = {200,300,400,500,750,1000,1500,2000,2500,3000};

@@ -132,8 +132,7 @@ SigmaCalc[dti,tens,grad,bvec,blur] calculates the noise sigma based on the tenso
 RPBMFunction::usage = 
 "RPBMFunction[tm, {d0, tau, zeta}] generates the RPBM function for the given mixing times tm, with d0, tau and zeta.
 RPBMFunction[tm, {tau, zeta}] generates the RPBM function for the given mixing times tm, assuming a d0 of 1.
-RPBMFunction[tm, {{d0, tau, zeta}, ..}] generates the RPBM function for the given mixing times tm, for a list of d0, tau and zeta.
-"
+RPBMFunction[tm, {{d0, tau, zeta}, ..}] generates the RPBM function for the given mixing times tm, for a list of d0, tau and zeta."
 
 GetRPBMValues::usage = 
 "GetRPBMValues[{d0, tau, zeta}] derives parameters from RPBM function. d0, tau and zeta are the parameters of the RPBM function.
@@ -142,8 +141,7 @@ Ouput is a list containing {d0, tau, zeta, dinf, td, tr, I, sv, a, kappa}."
 FitRPBMDictionary::usage=
 "FitRPBMDictionary[sig, {pars, sim}, snr] fits the RPBM function to the simulated data sig using the parameters pars and the simulated data sim.
 The needed dictionary {pars, sim} is generated using CreateRPBMDictionary. The snr is the estimated snr values of the data.
-FitRPBMDictionary[sig, {pars, sim}, snr, d0]  does the same but fixes the initial diffusion to the given d0.
-"
+FitRPBMDictionary[sig, {pars, sim}, snr, d0]  does the same but fixes the initial diffusion to the given d0."
 
 CreateRPBMDictionary::usage = 
 "CreateRPBMDictionary[tm] creates a dictionary of RPBM functions for the given mixing times tm.
@@ -1294,7 +1292,7 @@ SigmaCalc[dti_?ArrayQ, tens_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, O
 (*RPBMFunction*)
 
 
-SyntaxInformation[RPBMFunction] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+SyntaxInformation[RPBMFunction] = {"ArgumentsPattern" -> {_, _.}};
 
 RPBMFunction[x___]:=RPBMFunctionI[x]
 
@@ -1334,7 +1332,7 @@ RPBMFunctionI[tm_, {d0_?NumberQ, tau_?NumberQ, zeta_?NumberQ}] := Block[{
 (*GetRPBMValues*)
 
 
-SyntaxInformation[GetRPBMValues] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+SyntaxInformation[GetRPBMValues] = {"ArgumentsPattern" -> {_, _.}};
 
 GetRPBMValues[sol_] := GetRPBMValues[sol, {"none", 0}]
 
@@ -1380,7 +1378,7 @@ GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}] := Block[{
 (*FitRPBMFunction*)
 
 
-SyntaxInformation[FitRPBMFunction] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern[]}};
+SyntaxInformation[FitRPBMFunction] = {"ArgumentsPattern" -> {_, _, _., _.}};
 
 FitRPBMFunction[tms_, dat_] := FitRPBMFunction[tms, dat, {}, ""];
 
@@ -1454,7 +1452,8 @@ RPBMDict[tms_, {rTau_, rZeta_, {nDic_, nPars_}}] := (*RPBMDict[tms, {rTau, rZeta
 (*FitRPBMDictionary*)
 
 
-(*fitting signal to dictionary*)
+SyntaxInformation[CreateRPBMDictionary] = {"ArgumentsPattern" -> {_, _, _, _.}};
+
 FitRPBMDictionary[sig_, {pars_, sim_}, snr_] := FitRPBMDictionary[sig, {pars, sim}, snr, 0.]
 
 FitRPBMDictionary[sig_, {pars_, sim_}, snr_, d0i_] := Block[{
