@@ -1219,7 +1219,7 @@ QMRIToolsFunctions[toolb : {_?StringQ ..} | {"All"}, p_?IntegerQ] := Block[{
 
 	{func, opts} = Transpose[(
 		names = #;
-		opts = ToString /@ Sort[DeleteDuplicates[Flatten[Options[ToExpression[#]][[All, 1]] & /@ names]]];
+		opts = ToString /@ Sort[DeleteDuplicates[Flatten[Quiet@Options[ToExpression[#]][[All, 1]] & /@ names]]];
 		func = Complement[names, opts];
 		{func, opts}
 	) & /@ allNames];

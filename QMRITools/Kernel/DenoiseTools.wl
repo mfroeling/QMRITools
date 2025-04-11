@@ -86,11 +86,6 @@ HarmonicDenoiseTensor[tens, seg, vox, labs] will do the same for each segmentati
 
 HarmonicDenoiseTensor[] is based on 10.1016/j.media.2011.01.005."
 
-MakeRBF::usage = "..."
-MakeGradientLaplacian::usage = "..."
-FitHarmonicBasis::usage = "..."
-SelectVector::usage = "..."
-MakeSolutionMaps::usage = "..."
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -1274,6 +1269,7 @@ FitHarmonicBasis[tv_, sel_, {G_ ,L_, R_}, opts:OptionsPattern[]]:=Block[{
 
 
 SelectVector[data_, sel_]:=SelectVector[data, sel, 3]
+
 SelectVector[data_, sel_, d_]:=Pick[Flatten[data, d-1], sel, 1]
 
 
