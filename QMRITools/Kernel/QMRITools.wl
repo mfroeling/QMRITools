@@ -40,7 +40,7 @@ QMRITools`$InstalledVersion::usage = "The version number of the installed packag
 QMRITools`ElastixTools`$debugElastix::usage = "$debugElastix is a debug flag for Elastix functionality.";
 QMRITools`SegmentationTools`$debugUnet::usage = "$debugUnet is a debug flag for Unet functionality."; 
 QMRITools`MuscleBidsTools`$debugBids::usage = "$debugBids is a debug flag for Bids functionality.";
-QMRITools`MuscleBidsTools`$plotOptions::usage = "$plotOptions is a list of options for plotting.";
+QMRITools`PlottingTools`$plotOptions::usage = "$plotOptions is a list of options for plotting.";
 
 
 (* ::Section:: *)
