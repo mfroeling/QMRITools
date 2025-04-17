@@ -101,6 +101,9 @@ NormalizeSpectra::usage =
 MakeSense::usage = 
 "MakeSense[coils, cov] makes a sense map for coils. Each coil signal is devided by the RSS reconstuction of the coils."
 
+NoisePrewhitening::usage = 
+"NoisePrewhitening[sig, cov] prewhitens the signal sig using the noise covariance matrix cov. The signal and covariance matrix can be any dimension."
+
 
 MakeHammingFilter::usage = 
 "MakeHammingFilter[xdim] makes a 1D HammingKernel for filtering k-space.
@@ -162,8 +165,8 @@ OutputSense::usage =
 RescaleRecon::usage = 
 "RescaleRecon is an option for CoilWeightedRecon. If set true the data will be scaled to the range 0-1000."
 
-SenseRescale::usage = 
-"SenseRescale is an option for MakeSense. If set True the data is first downscaled by a factor 2 before making the sense map."
+SenseSmoothing::usage = 
+"SenseSmoothing is an option for MakeSense. If set True the data and sense maps are smoothed using hamming filters."
 
 ReconFilter::usage = 
 "ReconFilter is an option for CoilWeighted recon. If true the reconstruction gets a hamming filter."
@@ -596,6 +599,21 @@ SyntaxInformation[NoiseCovariance]={"ArgumentsPattern" -> {_}}
 NoiseCovariance[noise_] := Covariance[Transpose[noise]]
 
 
+(* ::Subsection::Closed:: *)
+(*NoisePrewhitening*)
+
+
+NoisePrewhitening[sig_, cov_]:= Block[{w, p},
+	w = CovToWeight[cov];
+	(*figure out if to map over signal*)
+	p = First@Flatten@Position[Dimensions@sig, First@Dimensions@cov];
+	Switch[p, 1, w.sig, 2, w.#&/@sig, _, $Failed]
+]
+
+
+CovToWeight[cov_] := Inverse[ConjugateTranspose[CholeskyDecomposition[cov]]];
+
+
 (* ::Subsection:: *)
 (*CoilCombine*)
 
@@ -604,51 +622,54 @@ NoiseCovariance[noise_] := Covariance[Transpose[noise]]
 (*CoilCombine*)
 
 
-Options[CoilCombine] = {Method -> "RoemerEqualNoise", SenseRescale -> False};
+Options[CoilCombine] = {
+	Method -> "RoemerEqualNoise", 
+	SenseSmoothing -> True
+};
 
 SyntaxInformation[CoilCombine] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
 CoilCombine[sig_, opts : OptionsPattern[]] := CoilCombine[sig, 1, 1, opts]
 
-CoilCombine[sig_, cov_, opts : OptionsPattern[]] := CoilCombine[sig, cov, 1, opts]
+CoilCombine[sig_, 1, opts : OptionsPattern[]] := CoilCombine[sig, 1, 1, opts]
+
+CoilCombine[sig_, cov_?MatrixQ, opts : OptionsPattern[]] := CoilCombine[sig, cov, 1, opts]
+
+CoilCombine[sig_, sen_, opts : OptionsPattern[]] := CoilCombine[sig, IdentityMatrix[Length@sen], sen, opts]
 
 CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sent, covi, rec},
-	met = OptionValue[Method];
-	
-	(*prewighten noise if snr recon*)
-	weight = If[StringTake[met, -3] === "SNR", CovToWeight[cov], IdentityMatrix[Length[sig]]];
-	
-	(*put ncoils as last dimensions signal*)
-	sigt = If[ArrayDepth[sig] > 1,
-		If[met === "WSVD",
-			If[ArrayDepth[sig] == 2, sig, RotateDimensionsLeft[Transpose[sig], 2]],
-			RotateDimensionsLeft[weight.sig]
-		], weight.sig
-	];
-	
-	(*inverse noise cov*)
-	covi = If[cov =!= 1 && met=!="WSVD", Inverse[Chop[weight.cov.ConjugateTranspose[weight]]], cov];
 
-	(*Make sensitivitymap if needed*)
-	sent = If[met=!="WSVD",	If[StringTake[met, 6] === "Roemer" && sen === 1, 
-			MakeSense[sig, cov, SenseRescale -> OptionValue[SenseRescale]],sen],sen];
-	
-	(*put ncoils as last diemsnions sensitivity*)
-	If[sent =!= 1, sent = weight.sent];
-	sent = If[ArrayDepth[sent] > 1, RotateDimensionsLeft[sent], sent];
-		
+	met = OptionValue[Method];
+
+	(*coils are first index but not for WSVD wich is only called by CSI recon*)
+	(*prewighten noise and put ncoils as last dimensions signal*)
+	sigt = If[cov =!= 1, NoisePrewhitening[sig, cov], sig];
+	sigt = RotateDimensionsLeft@If[met === "WSVD", Transpose[sigt], sigt];
+
+	(*make sure the covariance matrix is in the right order*)
+	weight = If[cov =!= 1, CovToWeight[cov], IdentityMatrix[Length@sig]];
+	covi = If[cov =!= 1, Inverse[Chop[weight.cov.ConjugateTranspose[weight]]], cov];
+
+	(*Make sensitivitymap if needed put ncoils as last diemsnions sensitivity*)
+	sent = If[met=!="WSVD" && (StringTake[met, 6] === "Roemer" && sen === 1), 
+		MakeSense[sig, SenseSmoothing -> OptionValue[SenseSmoothing]], 
+		sen];
+	sent = If[ArrayDepth[sent] > 1, RotateDimensionsLeft[weight.sent], sent];
+
 	(*perform ND reconstruction for (coils,ND)*)
-	rec = Switch[OptionValue[Method],
+	If[met =!="Average" && met =!= "RootSumSquares" && covi === 1, Return[$Failed]];
+	rec = Switch[met,
 		"Average", MeanCombine[sig],
-		"RootSumSquares", If[covi === 1, RSSCombine[sigt], RSSCovCombine[sigt, covi]],
-		"RootSumSquaresSNR", If[covi === 1, $Failed, Abs@RSSCovCombineSNR[sigt, covi]],
-		"RoemerEqualNoise", If[covi === 1, $Failed, RoemerNCombine[sigt, sent, covi]],
-		"RoemerEqualNoiseSNR", If[covi === 1, $Failed, Abs@RoemerNCombineSNR[sigt, sent, covi]],
-		"RoemerEqualSignal", If[covi === 1, $Failed, RoemerSCombine[sigt, sent, covi]],
-		"RoemerEqualSignalSNR", If[covi === 1, $Failed, Abs@RoemerSCombineSNR[sigt, sent, covi]],
-		"WSVD", If[covi === 1, $Failed, WSVDCombine[sigt, cov]],
+		"RootSumSquares", If[cov === 1, RSSCombine[sigt], RSSCovCombine[sigt, covi]],
+		"RootSumSquaresSNR", Sqrt[2] Abs@RSSCovCombine[sigt, covi],
+		"RoemerEqualNoise", RoemerNCombine[sigt, sent, covi],
+		"RoemerEqualNoiseSNR", Sqrt[2] Abs@RoemerNCombine[sigt, sent, covi],
+		"RoemerEqualSignal", RoemerSCombine[sigt, sent, covi],
+		"RoemerEqualSignalSNR", Sqrt[2] Abs@RoemerSCombine[sigt, sent, covi],
+		"WSVD", WSVDCombine[sigt],
 		_, Return[$Failed]
 	];
+
 	rec
 ]
 
@@ -657,20 +678,23 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 (*MakeSense*)
 
 
-Options[MakeSense] = {SenseRescale -> True}
+Options[MakeSense] = {
+	SenseSmoothing -> True
+}
 
-SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, scale, dim, low, sense},
-	If[OptionValue[SenseRescale],
+MakeSense[coils_, opts:OptionsPattern[]] := MakeSense[coils, 1, opts]
+
+MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, smooth},
+	smooth = OptionValue[SenseSmoothing];
+	If[smooth,
+		coilsF = HammingFilterData[coils];
+		sos = CoilCombine[coilsF, cov, Method -> "RootSumSquares"];
+		HammingFilterData[DivideNoZero[#1, sos, "Comp"] & /@ coilsF]
+		,
 		sos = CoilCombine[coils, cov, Method -> "RootSumSquares"];
 		DivideNoZero[#1, sos, "Comp"] & /@ coils
-		,
-		dim = Dimensions[coils][[2 ;;]];
-		low = HammingFilterData[FourierRescaleData[coils, 0.5]];
-		sos = CoilCombine[low, cov, Method -> "RootSumSquares"];
-		sense = HammingFilterData[DivideNoZero[#1, sos, "Comp"] & /@ low];
-		FourierRescaleData[sense, dim]
 	]
 ]
 
@@ -683,17 +707,12 @@ MeanCombine[sig_] := Mean[sig];
 
 
 RSSCombine = Compile[{{sig, _Complex, 1}}, 
-	Abs@Sqrt[sig.Conjugate[sig]],
+	Abs@Sqrt[Conjugate[sig].sig],
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
 RSSCovCombine = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}}, 
-	Abs@Sqrt[sig.cov.Conjugate[sig]],
-	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
-
-
-RSSCovCombineSNR = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}}, 
-	Sqrt[2] Abs@Sqrt[Conjugate[sig].cov.sig],
+	Abs@Sqrt[Conjugate[sig].cov.sig],
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
@@ -702,12 +721,7 @@ RSSCovCombineSNR = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}},
 
 
 RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
-	(sig.cov.Conjugate[sen])/Sqrt[sen.cov.Conjugate[sen]],
-	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
-
-
-RoemerNCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
-	Sqrt[2] Abs[(Conjugate[sen].cov.sig)]/Sqrt[Conjugate[sen].cov.sen], 
+	(Conjugate[sen].cov.sig)/Sqrt[Conjugate[sen].cov.sen],
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
@@ -716,12 +730,7 @@ RoemerNCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Comp
 
 
 RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
-	(sig.cov.Conjugate[sen])/(sen.cov.Conjugate[sen]),
-	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
-
-
-RoemerSCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
-	Sqrt[2] Abs[(Conjugate[sen].cov.sig)]/(Conjugate[sen].cov.sen),
+	(Conjugate[sen].cov.sig)/(Conjugate[sen].cov.sen),
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
 
@@ -729,18 +738,14 @@ RoemerSCombineSNR = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Comp
 (*WSVD*)
 
 
-WSVDCombine[sig_, cov_] := Block[{weight},
-	weight = CovToWeight[cov];
-	Map[WSVDCombineT[#, weight] &, sig, {-3}]
+WSVDCombine[sig_] := Block[{weight},
+	Map[WSVDCombineT, sig, {-3}]
 ];
 
 
-CovToWeight[cov_] := Conjugate[DiagonalMatrix[Sqrt[1./#[[1]]]].#[[2]] &[Eigensystem[cov]]];
-
-
-WSVDCombineT[sig_, weight_] := Block[{u, s, v, scale},
-	{u, s, v} = SingularValueDecomposition[weight.sig,1];
-	scale = -Norm[#] Normalize[First@#] &[weight.u[[All, 1]]];
+WSVDCombineT[sig_] := Block[{u, s, v, scale},
+	{u, s, v} = SingularValueDecomposition[sig, 1];
+	scale = -Norm[#] Normalize[First@#] &[u[[All, 1]]];
 	scale Conjugate[v[[All, 1]]] s[[1, 1]] 
 ];
 
@@ -944,8 +949,6 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 	];
 	
 	(*perform the recon*)
-Print[{cDim,arrD,Dimensions@coilData,Dimensions@sens}];
-
 	recon = If[cDim === arrD,
 		CoilCombine[coilData, cov, sens, Method -> OptionValue[Method]],
 		CoilCombine[#, cov, sens, Method -> OptionValue[Method]] & /@ coilData
@@ -955,7 +958,7 @@ Print[{cDim,arrD,Dimensions@coilData,Dimensions@sens}];
 	If[OptionValue[RescaleRecon],recon = 1000. recon/Max[Abs[recon]]];
 	
 	If[OptionValue[OutputSense],
-		{#[recon] & /@ {Abs, Arg, Re, Im},sens},
+		{#[recon] & /@ {Abs, Arg, Re, Im}, sens},
 		#[recon] & /@ {Abs, Arg, Re, Im}
 	]
 ]
@@ -965,7 +968,13 @@ Print[{cDim,arrD,Dimensions@coilData,Dimensions@sens}];
 (*Coil weighted recon CSI*)
 
 
-Options[CoilWeightedReconCSI] = {HammingFilter -> False, CoilSamples -> 5, Method -> "WSVD", NormalizeOutputSpectra->True, AcquisitionMethod->"Fid"};
+Options[CoilWeightedReconCSI] = {
+	HammingFilter -> False, 
+	CoilSamples -> 5, 
+	Method -> "WSVD", 
+	NormalizeOutputSpectra->True, 
+	AcquisitionMethod->"Fid"
+};
 
 SyntaxInformation[CoilWeightedReconCSI]={"ArgumentsPattern"->{_, _, _, _., OptionsPattern[]}}
 
@@ -981,27 +990,31 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 	noCoils = ArrayDepth[kspace] =!= nenc + 1;
 	
 	spectra = If[noCoils,
+
 		(*no coil combination for 2D or 3D CSI*)
 		fids = RotateDimensionsLeft[FourierKspaceCSI[kspace, head, met]];
 		Map[ShiftedFourier[#, readout] &, fids, {-2}]
 		,
+
 		(*coil combination for 2D or 3D CSI*)
 		fids = Transpose[FourierKspaceCSI[#, head, met] & /@ kspace];
 		spectra = RotateDimensionsRight[Map[ShiftedFourier[#, readout] &, RotateDimensionsLeft[fids], {-2}]];
 		
 		(*noise correlation, inverse and withening matrix*)
 		cov = NoiseCovariance[noise];
-		Switch[OptionValue[Method],
+		
+		(*calculate sense map if needed*)
+		met = OptionValue[Method];
+		If[met=!="WSVD" && sense === 0 ,
+			sens = MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]], cov],
+			sens = sense];
+
+		(*Perform the coil combination*)
+		Switch[met,
 			"Roemer",
-			(*make coil sensitivity using the first 5 samples of the fid*)
-			(*sens = MakeSense[HammingFilterCSI[Mean[fids[[1 ;; OptionValue[CoilSamples]]]]],cov];*)
-			sens = If[sense === 0,
-				MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]],cov, SenseRescale -> False],
-				sense
-			];
-			(*perform the recon*)
-			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra]
-			,
+			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra], 
+			"RoemerS",
+			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualSignal"] & /@ spectra], 
 			"WSVD",
 			CoilCombine[spectra, cov, Method -> "WSVD"]
 		]

@@ -1272,9 +1272,9 @@ CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
 		(*pad to allow motion*)
 		d2 = PadLeft[d2, dim];
 		maskd2 = PadLeft[maskd2, dim];
-		maskd1 = maskd2 = Dilation[maskd1 maskd2, 1];
+		maskd1 = maskd2 = Dilation[maskd1 maskd2, 5];
 		(*get the number of samples for the registration*)
-		samp = Round[((Total@Flatten@maskd1)+(Total@Flatten@maskd2))/20];
+		samp = Round[((Total@Flatten@maskd1)+(Total@Flatten@maskd2))/10];
 		(*perform the registration*)
 		sets[[n + 1]] = Last@regFunc[{d1, maskd1, vox}, {d2, maskd2, vox}, {sets[[n + 1]], vox},
 				MethodReg -> "translation", Iterations -> 300, NumberSamples -> samp, 

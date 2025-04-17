@@ -1946,7 +1946,6 @@ CSIInterface[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := M
 				kspace = OrderKspace[MeanType[kspace, type, {"N_aver"}], {"N_chan", "N_samp", "N_kz", "N_ky", "N_kx"}][[1]];
 				ham = MakeHammingFilter[Dimensions[kspace][[-3;;]]];
 				kspace = Map[ham #&,kspace,{2}];
-
 			];
 			coils = ncoils = Range[Length[kspace]];
 			kload = True;

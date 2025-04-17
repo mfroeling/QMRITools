@@ -160,9 +160,6 @@ PredictionInterval::usage =
 FitKernel::usage =
 "FitKernel is an option for LoessPlot. It specifies the kernel used for the loess fit. Can be \"Triangular\" or \"Gaussian\"."
 
-Bootstrap::usage =
-"Bootstrap is an option for LoessPlot. If True it uses the bootstrap method to calculate the confidence bands."
-
 
 PlotSpace::usage = 
 "PlotSpace is an option for GradientPlot can be \"bspace\" or \"qspace\"."
@@ -324,7 +321,7 @@ Col2List[c_] := Col2List[RGBColor[c]]
 (*ColorRound = ncol + 2 - Ramp[(ncol + 1) - Ramp[Round[(ncol - 1) Rescale[#1, #2]] + 1]] &*)
 ColorRound = With[{
 		greater = UnitStep[#2[[2]] - #1], 
-    	lower = UnitStep[#1 - #2[[1]]],
+		lower = UnitStep[#1 - #2[[1]]],
 		scale = Round[Rescale[#1, #2, {2, ncol + 1}]]
 	}, (1 - lower) + lower greater scale + (ncol + 2) (1 - greater)] &
 
@@ -392,7 +389,7 @@ labout=If[x===Null&&y===Null,
 		]
 	];
 	If[labout==="",None,labout]
-	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2019,6 +2016,7 @@ Options[PlotSegmentations] = {
 	ContourResolution -> Automatic
 };
 
+
 SyntaxInformation[PlotSegmentations] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
 PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg, None, vox, opts]
@@ -2091,23 +2089,23 @@ PlotCorrection[w_]:=Module[{sel},
 		12,
 		sel=If[Mean[w][[7;;12]]==={1.,1.,1.,0.,0.,0.},2,4];
 
-		Grid[Partition[
-			MapThread[
-				ListLinePlot[#1, PlotLabel -> Style[#2, Bold], PlotLegends -> #3,
-					PlotRange -> {{1,Length[#1[[1]]]},Full},AxesOrigin->{1,Mean[#4]}, AspectRatio -> .5, PlotStyle -> (Directive[{Thick,#}]&/@{Red,Green,Blue}),
-					AxesStyle->Directive[{Thick,Black}],LabelStyle->Directive[{Bold,Black,FontFamily->"Helvetica"}],
-					ImageSize -> 400, AxesOrigin -> #5
-					] &, {
-						({1, 1, 1, 1}*Partition[Transpose[w], 3]) + {0, 0, 0, 0},
-						{"Rotation [Degree]", "Translation [mm]", "Scale", "Scew "},
-						{{"Coronal axis (roll)", "Sagittal axis (pitch)","Axial axis (yaw)"},
-						{"Coronal direction", "Sagittal direction", "Axial direction"},
-						{"Coronal direction", "Sagittal direction", "Axial direction"},
-						{"Coronal direction", "Sagittal direction", "Axial direction"}},
-						{{-3, 3}, {-4, 4}, {.95, 1.05}, {-.05, .05}},
-						{{0, 0}, {0, 0}, {0, 1}, {0, 0}}
-					}[[All,;;sel]]], 2]]
-		]
+		Grid[Partition[MapThread[
+			ListLinePlot[#1, PlotLabel -> Style[#2, Bold], PlotLegends -> #3,
+				PlotRange -> {{1,Length[#1[[1]]]},Full},AxesOrigin->{1,Mean[#4]}, AspectRatio -> .5, PlotStyle -> (Directive[{Thick,#}]&/@{Red,Green,Blue}),
+				AxesStyle->Directive[{Thick,Black}],LabelStyle->Directive[{Bold,Black,FontFamily->"Helvetica"}],
+				ImageSize -> 400, AxesOrigin -> #5
+			] &, {
+				({1, 1, 1, 1}*Partition[Transpose[w], 3]) + {0, 0, 0, 0},
+				{"Rotation [Degree]", "Translation [mm]", "Scale", "Scew "},
+				{{"Coronal axis (roll)", "Sagittal axis (pitch)","Axial axis (yaw)"},
+				{"Coronal direction", "Sagittal direction", "Axial direction"},
+				{"Coronal direction", "Sagittal direction", "Axial direction"},
+				{"Coronal direction", "Sagittal direction", "Axial direction"}},
+				{{-3, 3}, {-4, 4}, {.95, 1.05}, {-.05, .05}},
+				{{0, 0}, {0, 0}, {0, 1}, {0, 0}}
+			}[[All,;;sel]]
+		], 2]]
+	]
 ]
 
 
@@ -2438,54 +2436,51 @@ ColorFAPlot[tens_] := DynamicModule[{FA, eig, eigv, mid, eigFA, mask},
 
 
 Options[LoessPlot] = {
-	Bandwidth -> 0.25,
+	Bandwidth -> Scaled[0.25],
 	FitOrder -> 2,
 	FitKernel -> "Tricube",
 	ConfidenceLevel -> 0.95,
-	Bootstrap ->False,
+	MaxPlotPoints -> 25,
 	PlotStyle -> {},
 	PlotRange -> All,
-	PredictionInterval -> True
+	PredictionInterval -> True,
+	PerformanceGoal -> "Speed"
 };
 
 LoessPlot[data_, opts : OptionsPattern[]] := Block[{
-		bw, deg, ker, confLevel, xdat, xMin, xMax, xdatF, xGrid, yFit, 
-		error, z, yLow, yHigh, n, bootstrap, alpha, pred, predError
+		bw, deg, ker, confLevel, pred, pPoints, perf, xMin, xMax,
+		xGrid, n, max, yFit, error, predError, boot , sel, z
 	},
 
-	{bw, deg, ker, confLevel, bootstrap, pred} = OptionValue[{Bandwidth, FitOrder, FitKernel, ConfidenceLevel, 
-		Bootstrap, PredictionInterval}];
+	{bw, deg, ker, z, pred, pPoints, perf} = OptionValue[{Bandwidth, FitOrder, FitKernel, ConfidenceLevel,
+		PredictionInterval, MaxPlotPoints, PerformanceGoal}];
 	ker = ker /. {"Gaussian" -> 1, _ -> 2};
-	alpha = (1 - confLevel)/2;
+	z = InverseCDF[NormalDistribution[], 1 - (1 - z)/2];
 
-	xdat = data[[All, 1]];
-	{xMin, xMax} = MinMax[xdat];
-	xGrid = Subdivide[xMin, xMax, 25];
-	bw = bw (xMax - xMin);
-	xdatF = N@Chop[Transpose[Table[(xdat + $MachineEpsilon)^i, {i, 0, deg}]]];
+	{xMin, xMax} = MinMax[data[[All, 1]]];
+	xGrid = Subdivide[xMin, xMax, pPoints];
+	bw = If[Head[bw] === Scaled, bw[[1]] (xMax - xMin), bw];
 
-	If[IntegerQ[bootstrap],
-		n = Length[data];
-		yFit = Table[
-			First@Transpose[LoessFitC[RandomChoice[data, n], xdatF, xGrid, bw, deg, ker, 0]]
-		, {i, bootstrap}];
-		{yLow, yHigh} = Transpose[Quantile[yFit, {alpha, 1 - alpha}]];
-		yFit = Median[yFit];
-		,
-		{yFit, error, predError} = Transpose[LoessFitC[data, xdatF, xGrid, bw, deg, ker, 1]];
-		z = InverseCDF[NormalDistribution[], 1 - alpha];
-		z = If[pred, z predError, z error];
-		{yLow, yHigh} = {yFit - z, yFit + z};
-	];
+	n = Length[data];
+	max = Switch[perf, "Speed", 1500, "Quality", 5000];
+	boot = Min[{10, Ceiling[n / max]}];
+	sel = Min[{n, max}];
 
+	{yFit, error, predError} = Median@Table[
+			Transpose[LoessFitC[data[[RandomSample[Range[n], sel]]], xGrid, bw, deg, ker]]
+		, {i, boot}] //. {0. -> Missing[]};
+
+	z = If[pred, z predError, z error];
 	Show[
-		ListLinePlot[{Transpose[{xGrid, yLow}], Transpose[{xGrid, yHigh}]},
-			PlotStyle -> {Directive[Dashed, Gray], Directive[Dashed, Gray]},
-			Filling -> {1 -> {2}}, FillingStyle -> {LightBlue, Opacity[0.5]},
-			Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 
-			PlotHighlighting -> None],
-		ListLinePlot[Transpose[{xGrid, yFit}], Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}],
-			PlotStyle -> Directive[Thick], PlotHighlighting -> None]
+		ListLinePlot[
+		{Transpose[{xGrid, yFit - z}], Transpose[{xGrid, yFit + z}]}, 
+		PlotStyle -> {Directive[Dashed, Gray], Directive[Dashed, Gray]}, 
+		Filling -> {1 -> {2}}, FillingStyle -> {LightBlue, Opacity[0.5]}, 
+		Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 
+		PlotHighlighting -> None],
+		ListLinePlot[Transpose[{xGrid, yFit}], 
+		Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 
+		PlotStyle -> Directive[Thick], PlotHighlighting -> None]
 	]
 ];
 
@@ -2494,40 +2489,50 @@ LoessPlot[data_, opts : OptionsPattern[]] := Block[{
 (*LoessFitC*)
 
 
-LoessFitC = Compile[{{data, _Real, 2}, {xdatF, _Real, 2}, {x0, _Real, 0}, {bw, _Real, 0}, 
-	{deg, _Integer, 0}, {ker, _Integer, 0}, {err,_Integer, 0}}, Block[{
-		xdist, xdat, ydat, wVec, wMat, fit, xVec, yhat, residuals, df, sigma, error, wMati, pred, obs
+LoessFitC = Block[{wMatd}, Compile[{{data, _Real, 2}, {x0, _Real, 0}, {bw, _Real, 0}, {deg, _Integer, 0}, {ker, _Integer, 0}}, Block[{
+		xdist, wVec, pick, xdat, ydat, xdatFit, xVec,
+		wMat, wMati, yhat, fit, residuals, df, sigma, obs, error, pred
 	},
 
-	{xdat, ydat} = Transpose@data;
-	xdist = Abs[xdat - x0]/bw;
-	xVec = (x0 + $MachineEpsilon)^Range[0., deg];
-
-	wVec = Switch[ker,
-		1(*"Gaussian"*), Exp[-2 xdist^2],
+	xdist = Abs[data[[All, 1]] - x0]/bw;
+	wVec = Switch[ker, 
+		1(*"Gaussian"*), Exp[-2 xdist^2], 
 		_(*Tricube*), If[# <= 1, (1 - #^3)^3, 0] & /@ xdist
 	];
+	pick = UnitStep[wVec - 0.1];
 
-	wMatd = DiagonalMatrix[wVec, TargetStructure -> "Dense"];
-	wMat = Transpose[xdatF].wMatd;
-	wMati = PseudoInverse[wMat . xdatF];
+	If[Total[pick] < 3, {0., 0., 0.},
+		
+		(*condens data for faster calculation*)
+		{xdat, ydat} = Transpose@Pick[data, pick, 1];
+		xdatFit = Transpose[Table[(xdat + $MachineEpsilon)^i, {i, 0, deg}]];
+		xVec = (x0 + $MachineEpsilon)^Range[0., deg];
+		wVec = Pick[wVec, pick, 1];
 
-	If[Total[wVec] == 0.,
-		{Mean[ydat], If[err===0, 0., StandardDeviation[ydat]]},
+		(*calculate the matrixes needed*)
+		wMatd = DiagonalMatrix[wVec, TargetStructure -> "Dense"];
+		wMat = Transpose[xdatFit] . wMatd;
+		wMati = PseudoInverse[wMat . xdatFit];
+		
+		(*perform the Loess regression*)
 		fit = wMati . wMat . ydat;
 		yhat = xVec . fit;
+		
+		(*calculate the residuals*)
+		residuals = ydat - xdatFit . fit;
+		df = Total[wVec] - (deg + 1);
+		sigma = If[df > 0, (residuals^2 . wVec)/df, 0];
 
-		{error, pred} = If[err == 0, {0., 0.},
-			residuals = ydat - xdatF . fit;
-			df = Total[wVec] - (deg + 1);
-			sigma = If[df > 0, (residuals^2 . wVec) / df, 0];
-			(*the plus one is to show prediction band instead of confidance band*)
-			obs = sigma (xVec . wMati . xVec);
-			{Sqrt[obs], Sqrt[obs + sigma]}
-		];
+		(*the plus one is to show prediction band instead of confidance band*)
+		obs = sigma (xVec . wMati . xVec);
+		{error, pred} = {Sqrt[obs], Sqrt[obs + sigma]};
 		{yhat, error, pred}
 	]
-], {{wMatd, _Real, 2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], {{wMatd, _Real, 2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+
+
+(* ::Subsubsection::Closed:: *)
+(*LoessFit*)
 
 
 (* ::Section:: *)
