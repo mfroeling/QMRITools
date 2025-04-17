@@ -779,6 +779,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, ops:Opti
 					rfol = SelectBidsFolders[fol, type["InFolder"]];
 					(*method specific scripts: loop over all folders in subject/session folder*)
 					Table[
+						Print[foli];
 						Switch[met,
 							"MuscleBidsConvert", MuscleBidsConvertI[foli, type, delete],
 							"MuscleBidsProcess", MuscleBidsProcessI[foli, outFol, type, versCheck],
@@ -2052,7 +2053,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 					If[#[[1]]==={}, {},
 						Transpose@ToPackedArray@N@Chop@Last@func[
 							#[[2]], {reg, voxm[[i]]}, {movp[[All, #[[1]]]], voxm[[i]]},
-							Iterations->300,  BsplineSpacing->20 voxt, InterpolationOrderReg->1, NumberSamples -> 10000, 
+							Iterations->300,  BsplineSpacing->30 voxt, InterpolationOrderReg->1, NumberSamples -> 10000, 
 							PrintTempDirectory->False, DeleteTempDirectory->False, MethodReg->metReg
 							, BsplineDirections -> {1, 1, 0}
 						]
