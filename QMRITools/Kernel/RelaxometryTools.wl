@@ -342,21 +342,22 @@ TriExponentialT2Fit[datan_, times_,OptionsPattern[]] := Block[{
 	Switch[ad,
 		3,(*single slice*)
 		(*make mask an normalize data to first echo*)
-		maskT2 = Mask[Mean[datan], {2}, MaskSmoothing ->True, MaskComponents -> 2, MaskClosing -> 1];
+		maskT2 = Mask[Mean[datan], 2, MaskSmoothing ->True, MaskComponents -> 2, MaskClosing -> 1];
 		dataT2 = MaskData[datan, maskT2];
 		dataT2 = dataT2/MeanNoZero[Flatten[dataT2]];
 		(*create mask selecting fat*)
-		fmask = Mask[dataT2[[-1]], {0.4}];
+		fmask = Mask[dataT2[[-1]], 0.5];
 		fmask = ImageData[SelectComponents[Image[fmask], "Count", -2]];
 		(*data for calibration fit*)
 		fitData = Transpose[{times, Mean[Flatten[GetMaskData[#, fmask]]] & /@ dataT2}];
 		datal = Transpose[dataT2, {3, 1, 2}],
 		4,(*mulit slice*)
+		dataT2 = NormalizeData[datan];
 		(*make mask an normalize data to first echo*)
-		maskT2 = Mask[Mean[Transpose[datan]], {2}, MaskSmoothing->True, MaskComponents -> 2, MaskClosing -> 1]; 
-		dataT2 = NormalizeData[MaskData[datan, maskT2]];
+		maskT2 = Mask[NormalizeMeanData[dataT2], 2, MaskSmoothing->True, MaskComponents -> 2, MaskClosing -> 1]; 
+		dataT2 = MaskData[dataT2, maskT2];
 		(*create mask selecting fat*)
-		fmask = Mask[dataT2[[All, -1]], {0.4}];
+		fmask = Mask[dataT2[[All, -1]], 25];
 		fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
 		(*data for calibration fit*)
 		fitData = Transpose[{times, Mean[Flatten[GetMaskData[#, fmask]]] & /@ Transpose[dataT2]}];
@@ -368,7 +369,7 @@ TriExponentialT2Fit[datan_, times_,OptionsPattern[]] := Block[{
 	(*perform callibration fit*)
 	{Afi, Ami, csi, T2mi, T2fi, T2si} = {Af, Am, cs, t2m, t2f, T2s} /. 
 	FindFit[fitData, {model, 
-		{0.1 <= cs <= 0.9, 30 < t2m < 50, t2m < t2f, t2f < T2s, 0 <= Am, Am < Af}},
+		{0.1 <= cs <= 0.9, 20 < t2m < 50, t2m < t2f, t2f < T2s, 0 <= Am, Am < Af}},
 		{{Af, 1 fitData[[1, 2]]}, {Am, 0.25 fitData[[1, 2]]},{cs, 0.33}, {t2m, 35}, {t2f, 81}, {T2s, 250}}, 
 		x, Method -> "NMinimize"];
 	(*normalize signal fractions*)  	
@@ -443,10 +444,13 @@ EPGSignali[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_?ListQ, ref_?ListQ}, b1_, f_:0
 	sig = Mean@Join[sig, sig[[2 ;;]]]
 ]
 
-EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, f_:0.] := Block[
-	{tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, t2r1, t2r2, states, w, funRot, funMove},
+EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, f_:0.] := Block[{
+		tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, t2r1, t2r2, states, w, funRot, funMove
+	},
+	
 	(*define internal paramters*)
 	states = Round[If[nEcho >= 10, Max[{nEcho/2, 10}], nEcho]];
+	
 	(*convert to Rad*)
 	ex = N[b1 exi Degree];
 	ref = N[b1 refi Degree];
@@ -459,6 +463,7 @@ EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, f_:0.] := Block
 	(*Selection matrix to move all traverse states up one coherence Level*)
 	Smat = MixMatrix[states];
 	svec = Rvec = ConstantArray[0., Length[Smat]];
+	
 	(*define relaxation*)
 	If[w==0.,
 		t2r1 = t2r2 = Chop[Exp[-tau/t2]];
@@ -467,13 +472,17 @@ EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, f_:0.] := Block
 		t2r2 = Chop[Exp[-tau/t2 + w I]];
 	];
 	t1r = Chop[Exp[-tau/t1]];
+	
 	(*Relaxation matrix*)
 	Rmat = MakeDiagMat[DiagonalMatrix[{t2r1, t2r2, t1r}], states];
 	Rvec[[3]] = (1. - t1r);
+	
 	(*RF mixing matrix*)
 	Tmat = MakeDiagMat[funRot[ref, 0], states];
+	
 	(*Create Initial state*)
 	svec[[1 ;; 3]] = funRot[ex, 90].{0., 0., 1.};
+	
 	(*combined relax and gradient and create output*)
 	Abs[funMove[Rmat, Rvec, Smat, Tmat, svec, Round@nEcho][[2 ;;, 1]]]
 ]
@@ -667,7 +676,7 @@ LeastSquaresError2CS = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, S
 
 SyntaxInformation[NonLinearEPGFit]= {"ArgumentsPattern" -> {_, _}}
 
-NonLinearEPGFit[{valsf_,cons_}, yi_] := NonLinearEPGFiti[{valsf, cons}, N[yi]]
+NonLinearEPGFit[{valsf_, cons_}, yi_] := NonLinearEPGFiti[{valsf, cons}, N[yi]]
 
 NonLinearEPGFiti[{_,_}, {0. ..}] = {0., 0., 0., 0., 0.};
 
@@ -835,19 +844,19 @@ Options[EPGT2Fit]= {
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 
 EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
-	mon, echo, T1m, T1f, t2f, ad, datal, sol, wat, fat, fatMap, T2map, B1Map, clip, fatc,
-	B1i, T2i, T2s, B1s, soli, error, dictf, valsf, ydat, fwf, residualError, T2mc, B1c, cal,
-	ran,dict,vals,cons,start, b1ran, b1step, t2ran, t2step, points, dim, size,
-	b1rule, B1Int, dataf, b1, b1vals, b1len, t2rule, t2Int, t2, t2vals, t2len,
-	sig, dictMat, dictfMat, t2fran, S0c, met, val, out, T2fmap, wMat, fval, t2fval,
-	clipf, t2fdic, t2fpos, dictMatW, inp, consi, vals2, inpf, inp2, smoothing, optDic,
-	shift, B1mask
+		mon, echo, T1m, T1f, t2f, ad, datal, sol, wat, fat, fatMap, T2map, B1Map, clip, fatc,
+		B1i, T2i, T2s, B1s, soli, error, dictf, valsf, ydat, fwf, residualError, T2mc, B1c, cal,
+		ran,dict,vals,cons,start, b1ran, b1step, t2ran, t2step, points, dim, size,
+		b1rule, B1Int, dataf, b1, b1vals, b1len, t2rule, t2Int, t2, t2vals, t2len,
+		sig, dictMat, dictfMat, t2fran, S0c, met, val, out, T2fmap, wMat, fval, t2fval,
+		clipf, t2fdic, t2fpos, dictMatW, inp, consi, vals2, inpf, inp2, smoothing, optDic,
+		shift, B1mask
 	},
 
 	mon = OptionValue[MonitorCalc];
 
 	(*Get Input*)
-	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
+	echo = If[Length[echoi]===2, echoi, {Length[echoi], First[echoi]}];
 	ad = ArrayDepth[datan];
 	datal = N@Switch[ad, 1, datan, 3, RotateDimensionsLeft@datan, 4, RotateDimensionsLeft@Transpose[datan]];
 
@@ -1058,10 +1067,10 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	shift = OptionValue[WaterFatShift];
 	If[shift=!=0., 
 		w = Switch[OptionValue[WaterFatShiftDirection],
-			"left",{0,0,0,0,-shift,0,1,1,1,0,0,0},
-			"rigth",{0,0,0,0,shift,0,1,1,1,0,0,0},
-			"up",{0,0,0,0,0,-shift,1,1,1,0,0,0},
-			"down",{0,0,0,0,0,shift,1,1,1,0,0,0}		
+			"left", {0,0,0,0,-shift,0,1,1,1,0,0,0},
+			"rigth", {0,0,0,0,shift,0,1,1,1,0,0,0},
+			"up", {0,0,0,0,0,-shift,1,1,1,0,0,0},
+			"down", {0,0,0,0,0,shift,1,1,1,0,0,0}		
 		];
 		fat = Clip[DataTransformation[fat, {1,1,1}, w, InterpolationOrder -> 2],MinMax[fat]];
 	];
@@ -1092,9 +1101,9 @@ Options[CalibrateEPGT2Fit] = {
 SyntaxInformation[CalibrateEPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
-	ad, nEcho, echoSpace, maskT2, dataT2, fmask, fitData, step, T2mmin, T2mmax, T2fmin, T2fmax, 
-	T1m, T1f, fat, wat, cons, valsf, wcons, soli, fits, residualError, echo, 
-	shift, ang, angS},
+		ad, nEcho, echoSpace, maskT2, dataT2, fmask, fitData, step, T2mmin, T2mmax, T2fmin, T2fmax, 
+		T1m, T1f, fat, wat, cons, valsf, wcons, soli, fits, residualError, echo, shift, ang, angS
+	},
 
 	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
 	ad = ArrayDepth[datan];
@@ -1252,6 +1261,7 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 
 		(*2D dictionary*)
 		If[mon, PrintTemporary["Creating new dictionary with fixed t2 fat value"]];
+
 		(*fixed t2 value*)
 		time = AbsoluteTiming[
 			watSig = ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1], {b1, b1vals}, {t2m, t2Mvals}];
@@ -1279,9 +1289,9 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 
 			If[incW,
 				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, b1], {b1, b1vals}];
-				fatSigW = Transpose@ConstantArray[fatSigW,Length[t2Fvals]];
+				fatSigW = Transpose@ConstantArray[fatSigW, Length[t2Fvals]];
 				fatSig = 0.1 fatSigW + 0.9 fatSig
-				];
+			];
 
 			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i, t2fi]]}, 
 				{t2mi, 1, t2Mlen}, {t2fi, 1, t2Flen}, {b1i, 1, b1len}];
