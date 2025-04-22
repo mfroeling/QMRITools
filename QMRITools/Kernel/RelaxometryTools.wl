@@ -838,7 +838,7 @@ Options[EPGT2Fit]= {
 
 	EPGFatShift -> 0.,
 	DictT2IncludeWater -> False,
-	EPGMethodCal -> "2comp"
+	EPGMethodCal -> "2compF"
 }
 
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
@@ -871,7 +871,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 
 	(*clibrate the fat signal from the real data*)
 	If[OptionValue[EPGCalibrate]&&!VectorQ[datan],
-		If[mon, Print["Callibrating EPG fat t2."]];
+		If[mon, Print["Callibrating EPG fat t2 using: ", OptionValue[EPGMethodCal]]];
 		cal = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, clipf, {T1m, T1f}}, 
 		EPGFitPoints -> OptionValue[EPGFitPoints], EPGFatShift->OptionValue[EPGFatShift], 
 		EPGMethodCal -> OptionValue[EPGMethodCal]];
@@ -884,7 +884,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 
 		(*make whole 5 ms such that it is more likely for same values, needs less libraries, round up higher is better then lower*)
 		t2fval = N@Ceiling[t2fval,5];
-		If[mon, Print["EPG fat callibration:  ", t2fval, " ms"]];
+		If[mon, Print["EPG fat callibration:  ", cal, " ms"]];
 	];
 
 	(*find the correct method*)
@@ -1064,7 +1064,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	T2fmap = If[val==3, sol[[2]], t2fval Unitize[T2map]];
 	{wat, fat} = N@Clip[{sol[[val+1]], sol[[val+2]]}, {0., Infinity}];
 
-	shift = OptionValue[WaterFatShift];
+	(*shift = OptionValue[WaterFatShift];
 	If[shift=!=0., 
 		w = Switch[OptionValue[WaterFatShiftDirection],
 			"left", {0,0,0,0,-shift,0,1,1,1,0,0,0},
@@ -1073,9 +1073,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			"down", {0,0,0,0,0,shift,1,1,1,0,0,0}		
 		];
 		fat = Clip[DataTransformation[fat, {1,1,1}, w, InterpolationOrder -> 2],MinMax[fat]];
-	];
-
-	(*If[OptionValue[DictT2IncludeWater], wat = wat + 0.1fat; fat = .9 fat;];*)
+	];*)
+	If[OptionValue[DictT2IncludeWater], wat = wat + .1 fat; fat = .9 fat;];
 
 	fatMap = ToPackedArray@DivideNoZero[fat, (wat + fat)];
 	error = ToPackedArray@Sqrt[sol[[val+3]]];
@@ -1094,7 +1093,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 Options[CalibrateEPGT2Fit] = {
 	EPGRelaxPars -> {{0, 100}, {20, 300}, {1400., 365.}}, 
 	EPGFitPoints -> 50,
-	EPGMethodCal -> "2comp",
+	EPGMethodCal -> "2compF",
 	EPGFatShift -> 0.
 	};
 
@@ -1123,26 +1122,35 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 		fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ (dataT2 + 10.^-10)] echo- 10.^-10;
 
 		,4,
+
 		(*mulit slice*)
 		(*make mask an normalize data to first echo*)
 		maskT2 = Mask[Mean[Transpose[datan]]];
 		dataT2 = NormalizeData[MaskData[datan, maskT2]];
 		(*create mask selecting fat*)
-		fmask = Mask[dataT2[[All, -1]], 50];
+		(*fmask = Mask[dataT2[[All, -1]], 50];
 		fmask = Dilation[Erosion[fmask, 1], 2] fmask;
+		fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];*)
+
+		fmask = Mask[NormalizeData[dataT2][[All, -1]], 50] (1 - Erosion[Mask[NormalizeData[dataT2][[All, 1]], 5, MaskSmoothing -> True], 3]);
 		fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
+		Print[MinMax[fmask]];
+
 		(*data for calibration fit*)
 		fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose[dataT2 + 10.^-10]] - 10.^-10;
 	];
 
 	(*select random fit points to calibrate fat signal and get the boundries*)
 	step = Ceiling[Length[fitData]/OptionValue[EPGFitPoints]];
+	fitData = fitData[[ ;; ;; step]];
 	{{T2mmin, T2mmax}, {T2fmin, T2fmax}, {T1m, T1f}} = OptionValue[EPGRelaxPars];
+
+If[Length[fitData]<5, err=True; Print["error: not enough data points for calibration!"]];
 
 	(*shift the slice profile*)	
 	shift = OptionValue[EPGFatShift];
 	If[shift > 0,
-		{ang,angS} = ShiftPulseProfile[angle,shift],
+		{ang, angS} = ShiftPulseProfile[angle,shift],
 		ang = angS = angle
 		];
 
@@ -1164,7 +1172,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 				}, {{T2fi, 50.}, {B1i, 1}, {S0i, 5 s0}}, MaxIterations -> 25];
 			out = {T2fif, B1if, S0if} = soli[[All, 2]];
 			out
-			) &, fitData[[1 ;; ;; step]]];
+			) &, fitData];
 
 		,"2comp", (*fit both water and fat compartment*)
 		valsf = {echo, {T1m, T1f}, ang, angS};
@@ -1177,7 +1185,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 				}, {{T2mi, 20.}, {T2fi, 150.}, {B1i, 1}}, MaxIterations -> 25];
 			out = {T2mif, T2fif, B1if} = soli[[All, 2]];
 			out
-			) &, fitData[[1 ;; ;; step]]];
+			) &, fitData];
 
 		,"2compF", (*fit only fat compartment but include water with fixed t2*)
 		valsf = {echo, {T1m, 20, T1f}, ang, angS};
@@ -1190,10 +1198,22 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 				}, {{T2fi, 150.}, {B1i, 1}}, MaxIterations -> 25];
 			out = {T2fif, B1if} = soli[[All, 2]];
 			out
-			) &, fitData[[1 ;; ;; step]]];
+			) &, fitData];
 		];
 
-	out = {Median[fits],StandardDeviation[fits]};
+	(*iff error return default*)
+	out = If[err,
+		Switch[OptionValue[EPGMethodCal],
+			"1comp", {{150,1,1},{0,0,0}},
+			"2comp", {{20,150,1},{0,0,0}},
+			"2compF", {{150,1},{0,0}}
+		]
+		,
+		(*get the values*)
+		{Median[fits], StandardDeviation[fits]};
+	];
+	
+	Print[out];
 	out
 ]
 

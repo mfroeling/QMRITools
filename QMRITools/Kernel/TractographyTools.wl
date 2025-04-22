@@ -1036,9 +1036,9 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 (*SelectTractTroughVol*)
 
 
-SelectTractTroughVol[tracts_, roi_, None]:= SelectTractTroughVolC[Normal@roi, tracts]
+SelectTractTroughVol[tracts_, roi_, None]:= SelectTractTroughVolC[PadROI[roi], tracts]
 
-SelectTractTroughVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractTroughVolV[Normal@roi, tracts, vox]
+SelectTractTroughVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractTroughVolV[PadROI[roi], tracts, vox]
 
 
 SelectTractTroughVolC = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
@@ -1055,9 +1055,9 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 (*SelectTractInVol*)
 
 
-SelectTractInVol[tracts_, roi_, None]:= SelectTractInVolC[Normal@roi, tracts]
+SelectTractInVol[tracts_, roi_, None]:= SelectTractInVolC[PadROI[roi], tracts]
 
-SelectTractInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractInVolV[Normal@roi, tracts, vox]
+SelectTractInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractInVolV[PadROI[roi], tracts, vox]
 
 
 SelectTractInVolC = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
@@ -1074,11 +1074,11 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 (*SelectTractPartInVol*)
 
 
-SelectTractPartInVol[tracts_, roi_]:= SelectTractPartInVolC[Normal@roi, tracts]
+SelectTractPartInVol[tracts_, roi_]:= SelectTractPartInVolC[PadROI[roi], tracts]
 
-SelectTractPartInVol[tracts_, roi_, None]:= SelectTractPartInVolC[Normal@roi, tracts]
+SelectTractPartInVol[tracts_, roi_, None]:= SelectTractPartInVolC[PadROI[roi], tracts]
 
-SelectTractPartInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractPartInVolV[Normal@roi, tracts, vox]
+SelectTractPartInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTractPartInVolV[PadROI[roi], tracts, vox]
 
 
 SelectTractPartInVolC = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
@@ -1090,6 +1090,13 @@ SelectTractPartInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _R
 	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
+
+(* ::Subsubsection::Closed:: *)
+(*PadROI*)
+
+
+(*make sure trackts always fall withing roi			*)
+PadROI[roi_] := Normal@PadRight[roi, Dimensions[roi] + 1, 0]
 
 (* ::Subsection:: *)
 (*PlotTracts*)

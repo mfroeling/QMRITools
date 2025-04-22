@@ -1748,14 +1748,18 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							{ex, ref} = datType["Process", "Settings"];
 							angle = If[NumberQ[ex]&&NumberQ[ref],
 								{ex, ref},							
-								thk = 2 json["SliceThickness"];
-								GetPulseProfile[ex, ref, SliceRange -> thk, SliceRangeSamples -> thk][[1;;2]]
+								thk = json["SliceThickness"];
+								GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]]
 							];
+							shift = datType["Process", "Shift"];
+							shift = If[NumberQ[shift], shift, 0.];
 
 							(*caculate the water t2 map*)
 							(*-----*)AddToLog["Starting EPG T2 calculation", 4];
 							{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
-								MonitorCalc -> False, DictT2IncludeWater -> True, DictT2fValue -> 200, DictT2fRange -> {150, 250, 5}, 
+								MonitorCalc -> False, DictT2IncludeWater -> True, 
+								EPGFitFat -> False, EPGCalibrate -> True, WaterFatShift -> shift,
+								DictT2fValue -> 150, DictT2fRange -> {150, 250, 5}, 
 								DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}];
 
 							(*export all the calculated data*)
@@ -2399,6 +2403,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Bloc
 			{seg, voxs} = ImportNii[segfile];
 			dims = Dimensions@seg;
 
+			debugBids[{{dims,voxs, dims voxs}, {dim, vox, dim vox}}];
+
 			(*----*)AddToLog[{"Analyzing the segmentation"}, 4];
 			(*split the segmentations in bones and muscles*)
 			{muscles, mlabs} = SplitSegmentations[SelectSegmentations[seg, Range[segBone]]];
@@ -2610,7 +2616,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		segT = If[trMask=!=1, MaskSegmentation[seg, trMask], seg];
 
 		(*loop over all datatypes and perform the mask analysis*)
-		data = Table[
+		data = Flatten[Table[
 			datfile = fileName[datType]<>".nii";
 			Which[
 				(*data does not exist so skip*)
@@ -2629,12 +2635,13 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 				(*----*)AddToLog[{"Processing file "<>If[tract,"with","without"]<>" tract weighting:", StringRiffle[StringStrip@datType, "_"]}, 4];
 
 				(*mask based analysis*)
-				StringRiffle[datType[[-2;;]], "_"]-> scale GetMaskData[data, If[tract, segT, seg], 
-					GetMaskOutput->If[meanType, "Mean", "Median"],
+				label = StringRiffle[datType[[-2;;]], "_"];
+				Thread[{label, label<>"_IQR"} -> Transpose[scale GetMaskData[data, If[tract, segT, seg], 
+					GetMaskOutput->If[meanType, "MeanSTD", "MedianIQR"],
 					GetMaskOnly -> If[meanType, True, False]
-				]
+				]]]
 			]
-		, {datType, anaType}];
+		, {datType, anaType}], 1];
 
 		(*merge the data and export*)
 		partsO["suf"] = {};

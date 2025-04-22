@@ -597,10 +597,13 @@ GetMaskData[data_?ArrayQ, mask_, opts:OptionsPattern[]] := Block[{out},
 			];
 			(*select only non zero values if mask only to false*)
 			out = If[OptionValue[GetMaskOnly], out, Pick[out, Unitize[out], 1]];
+			lout = Length[out]<2;
 			(*Check what to output*)
 			out = Switch[OptionValue[GetMaskOutput],
-				"Mean", If[out==={}, 0., Mean[out]],
-				"Median", If[out==={}, 0., Median[out]],
+				"Mean", If[lout, 0., Mean[out]],
+				"MeanSTD", If[lout, {0., 0.}, {Mean[out], StandardDeviation[out]}],
+				"Median", If[lout, 0., Median[out]],
+				"MedianIQR", If[lout, {0., 0}, {Median[out], InterquartileRange[out]}],
 				_, out			
 			];
 			out
@@ -796,7 +799,7 @@ MeanStd[inp_]:=MeanStd[inp, 2]
 
 MeanStd[inp_, n_?IntegerQ] := Block[{dat}, 
 	dat = inp /. {Mean[{}] -> Nothing, 0. -> Nothing};
-	Quiet@Row[{NumberForm[Round[Mean[dat], .001], {3, n}], NumberForm[Round[StandardDeviation[dat], .001], {7, n}]}, "\[PlusMinus]"]
+	Quiet@Row[{NumberForm[Round[Mean[dat], .001], {7, n}], NumberForm[Round[StandardDeviation[dat], .001], {7, n}]}, "\[PlusMinus]"]
 ]
 
 
