@@ -1503,7 +1503,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 			(*default settings*)
 			settingPre = <|
 				"SplitRegistration" -> True,
-				"FlipPermute"->{{1, -1, 1}, {"z", "y", "x"}}
+				"FlipPermute"->{{1, -1, 1}, {"z", "y", "x"}}(*TODO change default to not flip*)
 			|>;
 			settingPro = <|
 				"IVIMCorrection" -> True,
@@ -1544,7 +1544,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 						(*Denoise and SNR*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
-						mask = Mask[NormalizeMeanData[data],  Lookup[process, "Masking", 5], MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
+						mask = Mask[NormalizeMeanData[data],  Lookup[process, "Masking", 5], 
+							MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
 						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
 						snr = SNRCalc[den, sig];
 						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, Max[{2, Min[val]}]}];
@@ -1558,7 +1559,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							RegisterDiffusionData
 						];
 						debugBids[{"Resgistration function", regF}];
-						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, PrintTempDirectory->False];
+						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, 
+							PrintTempDirectory->False];
 
 						(*anisotropic filtering*)
 						(*-----*)AddToLog["Starting anisotrpic data smoothing", 4];
@@ -1579,7 +1581,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 						(*export the checkfile*)
 						MakeCheckFile[outfile<>"_prep", Sort@Join[
-							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
+							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, 
+								"SetProperteis"->set},
 							ExtractFromJSON[json, keys]
 						]];
 						(*----*)AddToLog["Finished pre-processing", 3, True];
@@ -1741,24 +1744,29 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 							(*mask the background*)		
 							mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
-							data = MaskData[data, mask];
+							data = NormalizeData@MaskData[data, mask];
 
 							(*determine the pulse profiles*)
-							(*-----*)AddToLog["Calculating the slice profiles", 4];							
+							(*-----*)AddToLog["Calculating the slice profiles", 4];	
 							{ex, ref} = datType["Process", "Settings"];
 							angle = If[NumberQ[ex]&&NumberQ[ref],
-								{ex, ref},							
+								{ex, ref},
 								thk = json["SliceThickness"];
-								GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]]
+								angle = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]];
+								shift = datType["Process", "Shift"];
+								shift = If[shift=!=True, 0.,
+									shift = (1/ref[[3, 1]] - 1/ex[[3, 1]]) (3(*filed times ppm*) 3.4);
+									(*-----*)AddToLog[{"Shifting fat profile with: ", shift}, 4];
+									Round[shift/((3 thk/2)/(6 thk))]
+								];
+								angle
 							];
-							shift = datType["Process", "Shift"];
-							shift = If[NumberQ[shift], shift, 0.];
 
 							(*caculate the water t2 map*)
 							(*-----*)AddToLog["Starting EPG T2 calculation", 4];
 							{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
 								MonitorCalc -> False, DictT2IncludeWater -> True, 
-								EPGFitFat -> False, EPGCalibrate -> True, WaterFatShift -> shift,
+								EPGFitFat -> False, EPGCalibrate -> True, EPGFatShift -> shift,
 								DictT2fValue -> 150, DictT2fRange -> {150, 250, 5}, 
 								DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}];
 
