@@ -2470,14 +2470,19 @@ LoessPlot[data_, opts : OptionsPattern[]] := Block[{
 			Transpose[LoessFitC[data[[RandomSample[Range[n], sel]]], xGrid, bw, deg, ker]]
 		, {i, boot}] //. {0. -> Missing[]};
 
-	z = If[pred, z predError, z error];
+	z = Switch[pred,
+		True, z predError,
+		False, z error,
+		None, 0
+	];
 	Show[
-		ListLinePlot[
-		{Transpose[{xGrid, yFit - z}], Transpose[{xGrid, yFit + z}]}, 
-		PlotStyle -> {Directive[Dashed, Gray], Directive[Dashed, Gray]}, 
-		Filling -> {1 -> {2}}, FillingStyle -> {LightBlue, Opacity[0.5]}, 
-		Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 
-		PlotHighlighting -> None],
+		If[z===0, Graphics[{}],ListLinePlot[
+			{Transpose[{xGrid, yFit - z}], Transpose[{xGrid, yFit + z}]}, 
+			PlotStyle -> {Directive[Dashed, Gray], Directive[Dashed, Gray]}, 
+			Filling -> {1 -> {2}}, FillingStyle -> {LightBlue, Opacity[0.5]}, 
+			Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 
+			PlotHighlighting -> None]
+		],
 		ListLinePlot[Transpose[{xGrid, yFit}], 
 		Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 
 		PlotStyle -> Directive[Thick], PlotHighlighting -> None]

@@ -2247,6 +2247,7 @@ Options[PrepareTrainingData] = {
 	DataTag -> "data",
 	InputLabels -> Automatic,
 	OutputLabels -> Automatic,
+	TrainVoxelSize -> Automatic,
 	CleanUpSegmentations -> True,
 	TestRun -> False
 }
@@ -2256,12 +2257,12 @@ SyntaxInformation[PrepareTrainingData] = {"ArgumentsPattern" -> {_, _,OptionsPat
 PrepareTrainingData[labFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]]:=PrepareTrainingData[{labFol, labFol}, outFol, opt]
 
 PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, OptionsPattern[]] := Block[{
-		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, 
+		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, voxOut, 
 		seg, err, vox, voxd, dat, im, nl, outf, gr, clean, legend, head, out
 	},
 
-	{labT, datT, inLab, outLab, test, clean} = OptionValue[{LabelTag, DataTag, InputLabels, OutputLabels, TestRun, 
-		CleanUpSegmentations}];
+	{labT, datT, inLab, outLab, test, clean, voxOut} = OptionValue[{LabelTag, DataTag, InputLabels, OutputLabels, 
+		TestRun, CleanUpSegmentations,TrainVoxelSize}];
 	{inLab, outLab} = {inLab, outLab} /. Automatic -> {0};
 
 	(*look for the files in the given folder*)
@@ -2289,6 +2290,9 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 			(*import data and label*)
 			{seg, vox} = ImportNii@sf;
 			{dat, voxd} = ImportNii@First@df;
+			If[voxOut === Automatic, voxOut = vox];
+
+			(*check if data file exist*)
 
 			(*check dimensions and voxel size*)
 			If[vox =!= voxd,
@@ -2297,7 +2301,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 					out = {i++, name, "Data and segmentation have different dimensions size."},
 
 					(*Prepare and analyze the training data and segmentation*)
-					{dat, seg} = PrepTrainData[dat, seg, {inLab, outLab}];
+					{dat, seg} = PrepTrainData[{dat, seg}, {inLab, outLab}, {vox, voxOut}];
 
 					(*output label check*)
 					err = CheckSegmentation[seg];
@@ -2312,10 +2316,10 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 					If[!test,
 						im = MakeChannelClassGrid[{dat}, seg, 5];
 						outf = FileNameJoin[{outFol, name}];
-						ExportNii[dat, vox, outf <> "_data.nii"];
-						ExportNii[seg, vox, outf <> "_label.nii"];
+						ExportNii[dat, voxOut, outf <> "_data.nii"];
+						ExportNii[seg, voxOut, outf <> "_label.nii"];
 						Export[outf <> ".png", im, "ColorMapLength" -> 256];
-						Export[outf <> ".wxf", {dat, seg, vox}, PerformanceGoal -> "Size", Method -> {"PackedArrayRealType" -> "Real32"}];
+						Export[outf <> ".wxf", {dat, seg, voxOut}, PerformanceGoal -> "Size", Method -> {"PackedArrayRealType" -> "Real32"}];
 					];
 
 					out
@@ -2342,16 +2346,24 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 
 SyntaxInformation[PrepTrainData] = {"ArgumentsPattern" -> {_, _, _.}};
 
-PrepTrainData[dat_, seg_] := PrepTrainData[dat, seg, {0}]
+PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}] := PrepTrainData[{dat, seg}, {{0}, {0}}, {{1,1,1}, {1,1,1}}]
 
-PrepTrainData[dat_, seg_, labi_?VectorQ] := PrepTrainData[dat, seg, {labi, labi}]
+PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}, {labi_?VectorQ, labo_?VectorQ}] := PrepTrainData[{dat, seg}, {labi, labo}, {{1,1,1}, {1,1,1}}]
 
-PrepTrainData[dat_, seg_, {labi_?VectorQ, labo_?VectorQ}] := Block[{cr},
-	cr = FindCrop[dat  Mask[NormalizeData[dat], 5, MaskDilation -> 1]];
+PrepTrainData[{daI_?ArrayQ, segI_?ArrayQ}, {labi_?VectorQ, labo_?VectorQ}, {voxi_?VectorQ, voxo_?VectorQ}] := Block[{
+		cr, dat, seg
+	},
+	(*rescale if needed*)
+	{dat, seg}=If[voxi===voxo, {daI, segI}, 
+		{RescaleData[daI, {voxi, voxo}], RescaleSegmentation[segI, {voxi, voxo}]}
+	];
+
+	(*remove background and normalize data*)
+	cr = FindCrop[dat Mask[NormalizeData[dat], 5, MaskDilation -> 1]];
 	{
 		NormalizeData[ApplyCrop[dat, cr], NormalizeMethod -> "Uniform"], 
 		If[labi==={0},
-			ApplyCrop[seg,cr],
+			ApplyCrop[seg, cr],
 			ReplaceSegmentations[ApplyCrop[seg, cr], labi, labo]
 		]
 	}
