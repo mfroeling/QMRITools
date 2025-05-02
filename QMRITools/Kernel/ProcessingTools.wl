@@ -121,6 +121,12 @@ MeanStd::usage =
 MeanRange::usage = 
 "MeanRange[Range] calculates the median (50%) and standard deviation (14% and 86%) range and reports it as a string."
 
+MinMaxRange::usage =
+"MinMaxRange[Range] calculates the min and max range and reports it as a string."
+
+MeanStdRange::usage =
+"MeanStdRange[Range] calculates the mean and standard deviation and the min max range and reports it as a string."
+
 
 FindOutliers::usage =
 "FindOutliers[data] finds the outliers of a list of data."
@@ -795,11 +801,9 @@ NumberTableForm[dat_, depth_, opts : OptionsPattern[]] := Block[{opt, met},
 (*MeanStd*)
 
 
-MeanStd[inp_]:=MeanStd[inp, 2]
-
-MeanStd[inp_, n_?IntegerQ] := Block[{dat}, 
-	dat = inp /. {Mean[{}] -> Nothing, 0. -> Nothing};
-	Quiet@Row[{NumberForm[Round[Mean[dat], .001], {7, n}], NumberForm[Round[StandardDeviation[dat], .001], {7, n}]}, "\[PlusMinus]"]
+MeanStd[inp_] := MeanStd[inp, 1]
+MeanStd[inp_, n_?IntegerQ] := Block[{dat = selectDat[inp]},
+	toNumString[dat, n, Mean] <> " \[PlusMinus] " <> toNumString[dat, n, StandardDeviation]
 ]
 
 
@@ -807,15 +811,31 @@ MeanStd[inp_, n_?IntegerQ] := Block[{dat},
 (*MeanRange*)
 
 
-MeanRange[inp_] := MeanRange[inp, {.14, .86}, 2]
-
+MeanRange[inp_] := MeanRange[inp, {.14, .86}, 1]
 MeanRange[inp_, n_?IntegerQ] := MeanRange[inp, {.14, .86}, n]
+MeanRange[inp_, q_?ListQ] := MeanRange[inp, q, 1]
+MeanRange[inp_, q_?ListQ, n_?IntegerQ] := Block[{dat = selectDat[inp]},
+	toNumString[dat, n, Median] <> " (" <> toNumString[dat, n, Quantile[#, q[[1]]] &] <> " - " <> toNumString[dat, n, Quantile[#, q[[2]]] &] <> ")"
+]
 
-MeanRange[inp_, q_?ListQ] := MeanRange[inp, q, 2]
 
-MeanRange[inp_, q_?ListQ, n_?IntegerQ]:= Block[{q1, q2, q3},
-	{q1, q2, q3} = Quantile[inp /. {Mean[{}] -> Nothing, 0. -> Nothing},  {q[[1]], .5, q[[2]]}];
-	Quiet@Row[{NumberForm[Round[q2, .0001], {7, n}], "  (", NumberForm[Round[q1, .0001], {7, n}], " - ", NumberForm[Round[q3, .001], {7, n}], ")"}]
+MinMaxRange[inp_] := MinMaxRange[inp, 1]
+MinMaxRange[inp_, n_] := Block[{dat = selectDat[inp]},
+	toNumString[dat, n, Min] <> " to " <> toNumString[dat, n, Max]
+]
+
+MeanStdRange[inp_] := MeanStdRange[inp, 2]
+MeanStdRange[inp_, n_] := MeanStd[inp, n] <> " (" <> MinMaxRange[inp, n] <> ")"
+
+
+selectDat[dat_] := Select[N@ToExpression[Normal@dat] /. {Mean[{}] -> Nothing}, NumberQ]
+
+toNumString[dat_] := toNumString[dat, 2, Mean]
+toNumString[dat_, n_] := toNumString[dat, n, Mean]
+toNumString[dat_, n_, func_] := Block[{data, num},
+	data = N@ToExpression[Normal@dat];
+	num = Which[NumberQ[data], data, ListQ[data], func[data], True, Nothing];
+	If[num === Nothing, "-", ToString[NumberForm[If[n > 0, Round[num, 10.^-n], Round[num]], {Infinity, n}]]]
 ]
 
 

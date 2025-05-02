@@ -1062,8 +1062,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	(*get the outputs*)
 	T2map = sol[[1]];
 	T2fmap = If[val==3, sol[[2]], t2fval Unitize[T2map]];
-	{wat, fat} = N@Clip[{sol[[val+1]], sol[[val+2]]}, {0., Infinity}];
-
+	{wat, fat} = N@{sol[[val+1]], sol[[val+2]]};
 	(*shift = OptionValue[WaterFatShift];
 	If[shift=!=0., 
 		w = Switch[OptionValue[WaterFatShiftDirection],
@@ -1074,9 +1073,11 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		];
 		fat = Clip[DataTransformation[fat, {1,1,1}, w, InterpolationOrder -> 2],MinMax[fat]];
 	];*)
-	If[OptionValue[DictT2IncludeWater], wat = wat + .1 fat; fat = .9 fat;];
+	(*If[OptionValue[DictT2IncludeWater], wat = wat + .1 fat; fat = .9 fat;];*)
 
-	fatMap = ToPackedArray@DivideNoZero[fat, (wat + fat)];
+	fatMap = Clip[ToPackedArray@DivideNoZero[fat, (wat + fat)], {-0.1, 1.1}];
+	{wat, fat} = Clip[{wat, fat}, {-0.1, 1.5} Max[datal]];
+
 	error = ToPackedArray@Sqrt[sol[[val+3]]];
 
 	(*if needed also output callibaration*)
@@ -1095,7 +1096,7 @@ Options[CalibrateEPGT2Fit] = {
 	EPGFitPoints -> 50,
 	EPGMethodCal -> "2compF",
 	EPGFatShift -> 0.
-	};
+};
 
 SyntaxInformation[CalibrateEPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
@@ -1128,14 +1129,8 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 		maskT2 = Mask[Mean[Transpose[datan]]];
 		dataT2 = NormalizeData[MaskData[datan, maskT2]];
 		(*create mask selecting fat*)
-		(*fmask = Mask[dataT2[[All, -1]], 50];
-		fmask = Dilation[Erosion[fmask, 1], 2] fmask;
-		fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];*)
-
 		fmask = Mask[NormalizeData[dataT2][[All, -1]], 50] (1 - Erosion[Mask[NormalizeData[dataT2][[All, 1]], 5, MaskSmoothing -> True], 3]);
 		fmask = ImageData[SelectComponents[Image3D[fmask], "Count", -2]];
-		Print[MinMax[fmask]];
-
 		(*data for calibration fit*)
 		fitData = Transpose[Flatten[GetMaskData[#, fmask]] & /@ Transpose[dataT2 + 10.^-10]] - 10.^-10;
 	];
@@ -1145,7 +1140,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	fitData = fitData[[ ;; ;; step]];
 	{{T2mmin, T2mmax}, {T2fmin, T2fmax}, {T1m, T1f}} = OptionValue[EPGRelaxPars];
 
-If[Length[fitData]<5, err=True; Print["error: not enough data points for calibration!"]];
+err = If[Length[fitData]<5, True; Print["error: not enough data points for calibration!"], False];
 
 	(*shift the slice profile*)	
 	shift = OptionValue[EPGFatShift];
@@ -1204,16 +1199,15 @@ If[Length[fitData]<5, err=True; Print["error: not enough data points for calibra
 	(*iff error return default*)
 	out = If[err,
 		Switch[OptionValue[EPGMethodCal],
-			"1comp", {{150,1,1},{0,0,0}},
-			"2comp", {{20,150,1},{0,0,0}},
-			"2compF", {{150,1},{0,0}}
+			"1comp", {{150, 1, 1}, {0, 0, 0}},
+			"2comp", {{20, 150, 1}, {0, 0, 0}},
+			"2compF", {{150, 1}, {0, 0}}
 		]
 		,
 		(*get the values*)
-		{Median[fits], StandardDeviation[fits]};
+		{Median[fits], StandardDeviation[fits]}
 	];
-	
-	Print[out];
+
 	out
 ]
 
@@ -1290,7 +1284,7 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 			If[incW,
 				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, b1], {b1, b1vals}];
 				fatSig = 0.1 fatSigW + 0.9 fatSig
-				];
+			];
 
 			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i]]}, {t2mi, 1, t2Mlen}, {b1i, 1, b1len}];
 			vals = Table[{t2m, b1}, {t2m, t2Mvals}, {b1, b1vals}];
