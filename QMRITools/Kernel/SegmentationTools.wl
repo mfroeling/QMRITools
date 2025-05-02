@@ -321,6 +321,9 @@ TestRun::usage =
 CleanUpSegmentations::usage = 
 "CleanUpSegmentations is an option for PrepareTrainingData. If set to True the segmentations are cleaned up by removing holes reducing to one volume and smoothing."
 
+TrainVoxelSize::usage =
+"TrainVoxelSize is an option for PrepareTrainingData. It defines the voxel size of the training data. When set to Automatic the voxel size is that of the data."
+
 DistanceRange::usage =
 "DistanceRange is an option for MakeDistanceMap. It defines the range of the distance map outside the segmentation in voxels.
 Values can be Automatic, All, or a integer value. If All the distance map is calculated for the whole image. If 0 the distance map is only calculated inside the segmentation."
@@ -2262,7 +2265,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 	},
 
 	{labT, datT, inLab, outLab, test, clean, voxOut} = OptionValue[{LabelTag, DataTag, InputLabels, OutputLabels, 
-		TestRun, CleanUpSegmentations,TrainVoxelSize}];
+		TestRun, CleanUpSegmentations, TrainVoxelSize}];
 	{inLab, outLab} = {inLab, outLab} /. Automatic -> {0};
 
 	(*look for the files in the given folder*)
@@ -2482,12 +2485,13 @@ SyntaxInformation[MakeChannelImage]={"ArgumentsPattern"->{_, _., _.}};
 MakeChannelImage[data_]:=MakeChannelImage[data, {1, 1, 1}]
 
 MakeChannelImage[data_, vox_]:=Block[{dat, imdat, rat},
-	dat = Rescale[data];
+	dat=Clip[Rescale[data, Quantile[Flatten[data], {0.01, 0.99}]], {0., 1.}];
+	(*dat = Rescale[data];*)
 	rat = vox[[{2, 3}]] / Min[vox[[{2, 3}]]];
 	(
 		imdat = #;
 		imdat = If[ArrayDepth[#]===3, imdat[[Round[Length@imdat/2]]], imdat];
-		ImageResize[Image[Clip[imdat, {0,1}]], Round@Reverse[rat Dimensions[imdat]], Resampling->"Nearest"]
+		ImageResize[Image[imdat], Round@Reverse[rat Dimensions[imdat]], Resampling->"Nearest"]
 	) &/@ dat
 ]
 

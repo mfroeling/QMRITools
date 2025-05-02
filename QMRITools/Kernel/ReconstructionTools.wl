@@ -168,6 +168,9 @@ RescaleRecon::usage =
 SenseSmoothing::usage = 
 "SenseSmoothing is an option for MakeSense. If set True the data and sense maps are smoothed using hamming filters."
 
+SenseWeight::usage = 
+"SenseWeight is an option for MakeSense. Is a integer between 0 and Infinity and defince the amount of SOS weigthing in the sensemap."
+
 ReconFilter::usage = 
 "ReconFilter is an option for CoilWeighted recon. If true the reconstruction gets a hamming filter."
 
@@ -679,21 +682,23 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 
 
 Options[MakeSense] = {
-	SenseSmoothing -> True
+	SenseSmoothing -> True,
+	SenseWeight -> 1
 }
 
 SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 MakeSense[coils_, opts:OptionsPattern[]] := MakeSense[coils, 1, opts]
 
-MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, smooth},
+MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, smooth, w},
 	smooth = OptionValue[SenseSmoothing];
+	w = (1./(1 + OptionValue[SenseWeight]));
 	If[smooth,
 		coilsF = HammingFilterData[coils];
-		sos = CoilCombine[coilsF, cov, Method -> "RootSumSquares"];
+		sos = CoilCombine[coilsF, cov, Method -> "RootSumSquares"]^w;
 		HammingFilterData[DivideNoZero[#1, sos, "Comp"] & /@ coilsF]
 		,
-		sos = CoilCombine[coils, cov, Method -> "RootSumSquares"];
+		sos = Sqrt@CoilCombine[coils, cov, Method -> "RootSumSquares"]^w;
 		DivideNoZero[#1, sos, "Comp"] & /@ coils
 	]
 ]
@@ -732,7 +737,6 @@ RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex
 RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
 	(Conjugate[sen].cov.sig)/(Conjugate[sen].cov.sen),
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
-
 
 (* ::Subsubsection::Closed:: *)
 (*WSVD*)
@@ -906,7 +910,6 @@ FourierRescaleData[data_, factor_:2] := Block[{dim, pad, scale, fac, new},
 
 Options[CoilWeightedRecon] = {
 	EchoShiftData -> 0, 
-	CoilSamples -> 2, 
 	Method -> "RoemerEqualSignal", 
 	OutputSense->False,
 	RescaleRecon->True,
@@ -942,12 +945,10 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 	
 	If[sensi===0,
 		(*make coil sensitivity*)
-		sens = Map[HammingFilterData, Nest[Mean, coilData, ArrayDepth[coilData] - (encDim + 1)], {-(encDim + 1)}];
-		sens = MakeSense[sens, cov];
-		,
+		sens = MakeSense[coilData, cov],
 		sens = sensi
 	];
-	
+
 	(*perform the recon*)
 	recon = If[cDim === arrD,
 		CoilCombine[coilData, cov, sens, Method -> OptionValue[Method]],
