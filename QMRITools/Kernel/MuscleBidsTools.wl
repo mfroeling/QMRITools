@@ -1665,9 +1665,15 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 								]
 							];
 
-							{tens, s0, {out, res, field}} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
+							(*check if field map is needed in output*)
+							{tens, s0, out} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
 								Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
+							coil = If[coil===False, 
+								{out, res} = out; {},
+								{out, res, field} = out; {"field"}
+							];
 							out = Total@Transpose@out;
+
 							(*calculate tensor parameters*)
 							{l1, l2, l3, md, fa} = ParameterCalc[tens];
 							rd = Mean[{l2, l3}];
@@ -1676,8 +1682,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:", 4];
 							(*----*)AddToLog[outfile, 5];					
-							outTypes = Join[{"data", "mean", "tens", "field", "res", "out", "s0", 
-								"l1", "l2", "l3", "md",	"fa", "rd"}, ivimpar];
+							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
+								"l1", "l2", "l3", "md",	"fa", "rd"}, coil, ivimpar];
 							(
 								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"];
 								Export[ConvertExtension[outfile <> "_"<>#, ".json"], AddToJSON[json, settingPro]];
@@ -2809,9 +2815,23 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			(*make the 3D segmentation image*)
 			(*----*)AddToLog[{"Making 3D Segment image"}, 5];
 			partsO["suf"] = Join[partsO["suf"], {"vol"}];
-			segPl = PlotSegmentations[SelectSegmentations[seg, Range[n]], SelectSegmentations[seg, Range[n+1,n+30]], 
+			segPl = PlotSegmentations[SelectSegmentations[seg, Range[n]], SelectSegmentations[seg, Range[n+1, n+30]], 
 				voxi, ContourResolution -> 2 voxi];
 			Export[fileNameO[partsO]<>".jpg", make3DImage@segPl, ImageResolution -> 300];
+
+			(*make the grid segmentation image*)
+			(*----*)AddToLog[{"Making 2D Segment grid image"}, 5];
+			partsO["suf"] = If[hasKey, anaSeg[[2;;4]], anaSeg[[;;3]] ];
+			partsO["suf"] = Join[partsO["suf"], {"grid"}];
+			{ref, crp} = AutoCropData[ref];
+			{segPl, lab} = SplitSegmentations[ApplyCrop[seg, crp]];
+			SeedRandom[12345];
+			segPl = MergeSegmentations[segPl, Join[RandomSample[Select[lab, # <= n &]], Select[lab, # > n &]]];
+			Export[fileNameO[partsO]<>".jpg", 
+				MakeChannelClassGrid[{ref}, segPl,
+					Which[Length[ref] > 32, {4, 8}, Length[ref] > 18, {3, 6}, Length[ref] > 8, {2, 4}, True, {1, 3}]
+				]
+			, ImageResolution -> 300, ImageSize->{Automatic, 2000}];
 		];
 
 		(*------------ tractography images ------------*)
@@ -2830,12 +2850,14 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			(*----*)AddToLog[{"Start making tractography images:"}, 4]; 
 
 			(*import the tractography, make the image and export*)
+			(*----*)AddToLog[{"Making 3D tract image"}, 5];
 			debugBids["Making tract images:"];
 			partsO["suf"] = Join[If[hasKey, imTrk[[2;;4]], imTrk[[;;3]]], {"vol"}];
 			Export[fileNameO[partsO]<>".jpg", make3DImage@Import@trkfile, ImageResolution -> 300];
 		];
 
 		(*finalize image making*)
+		(*----*)AddToLog[{"Finished making the images"}, 3, True];
 		MakeCheckFile[checkFileI, Sort@Join[{"Check"->"done"}, Normal@datDis]];
 	]
 ];

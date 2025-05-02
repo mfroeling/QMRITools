@@ -372,7 +372,7 @@ BlochSeriesi = Compile[{{mi, _Real, 1}, {dt, _Real, 0}, {w, _Real, 0}, {p, _Real
 	{Mx, My, Mz} = M;
 	Mt = Norm[{Mx, My}];
 	(*give output {w,MT,Mz,Mx,My,ang,phase}*)
-	{w, Mt, Mz, Mx, My, ArcTan[Mz, Mt]/Degree, ArcTan[Mx, My]}]
+	{w, Mt, Mz, Mx, My, ArcTan[Mz, Mt]/Degree, Arg[Mx+ My I]}]
 ,RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -581,17 +581,17 @@ GetPulseProfileI[{name, flipAnglei, {gradStrengthi, durationi, bandwidthi}}, ops
 	slice = 1000 thickness/2;
 
 	(*make plot grid*)
-	opts = {Frame -> True, AxesOrigin -> {0, 0}, FrameStyle -> Thick, Mesh -> False, PlotTheme -> "Monochrome"};
+	opts = {Frame -> True, AxesOrigin -> {0, 0}, FrameStyle -> Thick, PlotMarkers -> None, Mesh -> False, PlotTheme -> "Monochrome"};
 	plot = GraphicsGrid[Transpose@{
 		{
-			ListLinePlot[Transpose@{time, power pulse 10^6}, PlotRange -> {{-maxt,maxt},({-0.2,.2} + MinMax[pulse]) power 10^6}, PlotLabel -> "RF pulse", Sequence @@ opts],
-			ListLinePlot[out[[All, {1, 6}]], PlotRange -> {-25, 190}, GridLines -> {{-slice, slice}, {flipAngle}}, PlotLabel -> "FlipAngle", Sequence @@ opts]
+			ListLinePlot[Transpose@{time, power pulse 10^6}, PlotRange -> {{-maxt,maxt},({-0.2,.2} + MinMax[pulse]) power 10^6}, PlotLabel -> "RF pulse", opts],
+			ListLinePlot[out[[All, {1, 6}]], PlotRange -> {-25, 190}, GridLines -> {{-slice, slice}, {flipAngle}}, PlotLabel -> "FlipAngle", opts]
 		},{
-			ListLinePlot[out[[All, {1, 2}]], PlotRange -> {-.2, 1.1}, GridLines -> {{-slice, slice}, {-1, 1}}, PlotLabel -> "Mt", Sequence @@ opts],
-			ListLinePlot[out[[All, {1, 7}]], PlotRange -> {- Pi, Pi}, GridLines -> {{-slice, slice}, {-Pi, Pi}}, PlotLabel -> "Phase", Sequence @@ opts]
+			ListLinePlot[out[[All, {1, 2}]], PlotRange -> {-.2, 1.1}, GridLines -> {{-slice, slice}, {-1, 1}}, PlotLabel -> "Mt", opts],
+			ListLinePlot[out[[All, {1, 7}]], PlotRange -> {- Pi, Pi}, GridLines -> {{-slice, slice}, {-Pi, Pi}}, PlotLabel -> "Phase", opts]
 		},{
-			ListLinePlot[out[[All, {1, 3}]], PlotRange -> {-1.1, 1.1}, GridLines -> {{-slice, slice}, {-1, 0, 1}}, PlotLabel -> "Mz", Sequence @@ opts],
-			ListLinePlot[{out[[All, {1, 4}]], out[[All, {1, 5}]]}, PlotRange -> {-1.1, 1.1}, GridLines -> {{-slice, slice}, {-1, 1}}, PlotLabel -> "Mx / My", Sequence @@ opts]
+			ListLinePlot[out[[All, {1, 3}]], PlotRange -> {-1.1, 1.1}, GridLines -> {{-slice, slice}, {-1, 0, 1}}, PlotLabel -> "Mz", opts],
+			ListLinePlot[{out[[All, {1, 4}]], out[[All, {1, 5}]]}, PlotRange -> {-1.1, 1.1}, GridLines -> {{-slice, slice}, {-1, 1}}, PlotLabel -> "Mx / My", opts]
 		}
 	}, ImageSize -> 800, PlotLabel -> info, LabelStyle -> Black];
 	
