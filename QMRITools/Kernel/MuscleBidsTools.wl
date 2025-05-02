@@ -1503,7 +1503,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 			(*default settings*)
 			settingPre = <|
 				"SplitRegistration" -> True,
-				"FlipPermute"->{{1, -1, 1}, {"z", "y", "x"}}
+				"FlipPermute"->{{1, -1, 1}, {"z", "y", "x"}}(*TODO change default to not flip*)
 			|>;
 			settingPro = <|
 				"IVIMCorrection" -> True,
@@ -1544,7 +1544,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 						(*Denoise and SNR*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
-						mask = Mask[NormalizeMeanData[data],  Lookup[process, "Masking", 5], MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
+						mask = Mask[NormalizeMeanData[data],  Lookup[process, "Masking", 5], 
+							MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
 						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
 						snr = SNRCalc[den, sig];
 						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, Max[{2, Min[val]}]}];
@@ -1558,7 +1559,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							RegisterDiffusionData
 						];
 						debugBids[{"Resgistration function", regF}];
-						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, PrintTempDirectory->False];
+						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, 
+							PrintTempDirectory->False];
 
 						(*anisotropic filtering*)
 						(*-----*)AddToLog["Starting anisotrpic data smoothing", 4];
@@ -1579,7 +1581,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 						(*export the checkfile*)
 						MakeCheckFile[outfile<>"_prep", Sort@Join[
-							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperteis"->set},
+							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, 
+								"SetProperteis"->set},
 							ExtractFromJSON[json, keys]
 						]];
 						(*----*)AddToLog["Finished pre-processing", 3, True];
@@ -1662,9 +1665,15 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 								]
 							];
 
-							{tens, s0, {out, res, field}} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
+							(*check if field map is needed in output*)
+							{tens, s0, out} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
 								Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
+							coil = If[coil===False, 
+								{out, res} = out; {},
+								{out, res, field} = out; {"field"}
+							];
 							out = Total@Transpose@out;
+
 							(*calculate tensor parameters*)
 							{l1, l2, l3, md, fa} = ParameterCalc[tens];
 							rd = Mean[{l2, l3}];
@@ -1673,8 +1682,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:", 4];
 							(*----*)AddToLog[outfile, 5];					
-							outTypes = Join[{"data", "mean", "tens", "field", "res", "out", "s0", 
-								"l1", "l2", "l3", "md",	"fa", "rd"}, ivimpar];
+							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
+								"l1", "l2", "l3", "md",	"fa", "rd"}, coil, ivimpar];
 							(
 								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"];
 								Export[ConvertExtension[outfile <> "_"<>#, ".json"], AddToJSON[json, settingPro]];
@@ -1741,24 +1750,29 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 							(*mask the background*)		
 							mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
-							data = MaskData[data, mask];
+							data = NormalizeData@MaskData[data, mask];
 
 							(*determine the pulse profiles*)
-							(*-----*)AddToLog["Calculating the slice profiles", 4];							
+							(*-----*)AddToLog["Calculating the slice profiles", 4];	
 							{ex, ref} = datType["Process", "Settings"];
 							angle = If[NumberQ[ex]&&NumberQ[ref],
-								{ex, ref},							
+								{ex, ref},
 								thk = json["SliceThickness"];
-								GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]]
+								angle = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]];
+								shift = datType["Process", "Shift"];
+								shift = If[shift=!=True, 0.,
+									shift = (1/ref[[3, 1]] - 1/ex[[3, 1]]) (3(*filed times ppm*) 3.4);
+									(*-----*)AddToLog[{"Shifting fat profile with: ", shift}, 4];
+									Round[shift/((3 thk/2)/(6 thk))]
+								];
+								angle
 							];
-							shift = datType["Process", "Shift"];
-							shift = If[NumberQ[shift], shift, 0.];
 
 							(*caculate the water t2 map*)
 							(*-----*)AddToLog["Starting EPG T2 calculation", 4];
 							{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
 								MonitorCalc -> False, DictT2IncludeWater -> True, 
-								EPGFitFat -> False, EPGCalibrate -> True, WaterFatShift -> shift,
+								EPGFitFat -> False, EPGCalibrate -> True, EPGFatShift -> shift,
 								DictT2fValue -> 150, DictT2fRange -> {150, 250, 5}, 
 								DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}];
 
@@ -2801,9 +2815,23 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			(*make the 3D segmentation image*)
 			(*----*)AddToLog[{"Making 3D Segment image"}, 5];
 			partsO["suf"] = Join[partsO["suf"], {"vol"}];
-			segPl = PlotSegmentations[SelectSegmentations[seg, Range[n]], SelectSegmentations[seg, Range[n+1,n+30]], 
+			segPl = PlotSegmentations[SelectSegmentations[seg, Range[n]], SelectSegmentations[seg, Range[n+1, n+30]], 
 				voxi, ContourResolution -> 2 voxi];
 			Export[fileNameO[partsO]<>".jpg", make3DImage@segPl, ImageResolution -> 300];
+
+			(*make the grid segmentation image*)
+			(*----*)AddToLog[{"Making 2D Segment grid image"}, 5];
+			partsO["suf"] = If[hasKey, anaSeg[[2;;4]], anaSeg[[;;3]] ];
+			partsO["suf"] = Join[partsO["suf"], {"grid"}];
+			{ref, crp} = AutoCropData[ref];
+			{segPl, lab} = SplitSegmentations[ApplyCrop[seg, crp]];
+			SeedRandom[12345];
+			segPl = MergeSegmentations[segPl, Join[RandomSample[Select[lab, # <= n &]], Select[lab, # > n &]]];
+			Export[fileNameO[partsO]<>".jpg", 
+				MakeChannelClassGrid[{ref}, segPl,
+					Which[Length[ref] > 32, {4, 8}, Length[ref] > 18, {3, 6}, Length[ref] > 8, {2, 4}, True, {1, 3}]
+				]
+			, ImageResolution -> 300, ImageSize->{Automatic, 2000}];
 		];
 
 		(*------------ tractography images ------------*)
@@ -2822,12 +2850,14 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 			(*----*)AddToLog[{"Start making tractography images:"}, 4]; 
 
 			(*import the tractography, make the image and export*)
+			(*----*)AddToLog[{"Making 3D tract image"}, 5];
 			debugBids["Making tract images:"];
 			partsO["suf"] = Join[If[hasKey, imTrk[[2;;4]], imTrk[[;;3]]], {"vol"}];
 			Export[fileNameO[partsO]<>".jpg", make3DImage@Import@trkfile, ImageResolution -> 300];
 		];
 
 		(*finalize image making*)
+		(*----*)AddToLog[{"Finished making the images"}, 3, True];
 		MakeCheckFile[checkFileI, Sort@Join[{"Check"->"done"}, Normal@datDis]];
 	]
 ];
