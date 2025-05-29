@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "4.2.6",
+	"Version" -> "4.2.7",
 	"WolframVersion" -> "14.2+",
 	"SystemID" -> All, 
 	

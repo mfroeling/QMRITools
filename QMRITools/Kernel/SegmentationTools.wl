@@ -1472,7 +1472,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		(*split the data in upper and lower legs and left and right*)
 		If[mon, Echo[Dimensions@data, "Analyzing the data with dimensions:"]];
 		time = First@AbsoluteTiming[
-			{{patch, pts, dim}, loc, set} = SplitDataForSegmentation[data, Monitor -> mon, TargetDevice -> dev]
+			{{patch, pts, dim}, loc, set} = SplitDataForSegmentation[data, what, Monitor -> mon, TargetDevice -> dev]
 		];
 		If[mon, Echo[Round[time, .1], "Total time for analysis [s]: "]];
 		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"]];
@@ -1480,7 +1480,7 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		(*get the network name and data type*)
 		{net, type} = Switch[what,
 			"LegBones", {"SegLegBones"&, "Bones"},
-			"Legs",	{(#[[1]] /. {"Upper" -> "SegThighMuscle", "Lower" -> "SegLegMuscle"})&, "Muscle"},
+			"Legs"|"UpperLegs"|"LowerLegs",	{(#[[1]] /. {"Upper" -> "SegThighMuscle", "Lower" -> "SegLegMuscle"})&, "Muscle"},
 			_, Return[]
 		];
 
@@ -1522,7 +1522,6 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 		"Bones", "BonesLegLabels"];
 	labNam = # <> "_" <> side & /@ MuscleLabelToName[labIn, file];
 	labOut = MuscleNameToLabel[labNam, GetAssetLocation["MusclesLegLabels"]];
-
 	ReplaceSegmentations[seg, labIn, labOut]
 ]
 
@@ -1538,69 +1537,88 @@ Options[SplitDataForSegmentation] = {
 
 SyntaxInformation[SplitDataForSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, opt:OptionsPattern[]]:=Block[{dat,pts,dim,loc,set, segp},
-	{{dat, pts, dim}, loc, set} = SplitDataForSegmentation[data, opt];
+
+SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, opt:OptionsPattern[]]:=SplitDataForSegmentation[data, seg, "Legs", opt]
+
+SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPattern[]]:=Block[{dat,pts,dim,loc,set, segp},
+	{{dat, pts, dim}, loc, set} = SplitDataForSegmentation[data, what, opt];
 	segp = GetPatch[seg, pts];
 	{{dat, pts, dim}, {segp, pts, dim}, loc, set}
 ]
 
-SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]]:=Block[{
+
+SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]]:=SplitDataForSegmentation[data, "Legs", opt]
+
+SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]]:=Block[{
 		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, mon, dev
 	},
 	dim = Dimensions[data];
 	{mon, dev} = OptionValue[{Monitor, TargetDevice}];
 
-	(*find which side using NN*)
-	time= First@AbsoluteTiming[whatSide = ClassifyData[data, "LegSide", TargetDevice -> dev]];
-	If[mon, Echo[whatSide, "Data contains sides: "]];
-	If[mon, Echo[Round[time, .1], "Time for side estimation [s]:"]];
+	Switch[what,
+		"Legs"|"UpperLegs"|"LowerLegs",
+		(*split the data in upper and lower legs and left and right*)
 
-	(*based on side cut data or propagate*)
-	dat = Switch[whatSide,
-		(*both sides which need to be split*)
-		"Both",
-		{right, left, cut} = CutData[data];
-		{
-			{right, {"Right", {1, cut}}}, 
-			{left, {"Left", {cut+1, dim[[3]]}}}
-		},
-		_,
-		(*only one side, no split*)
-		cut=0; 
-		{
-			{data, {whatSide, {1, dim[[3]]}}}
-		}
-	];
+		(*find which side using NN*)
+		time= First@AbsoluteTiming[whatSide = ClassifyData[data, "LegSide", TargetDevice -> dev]];
+		If[mon, Echo[whatSide, "Data contains sides: "]];
+		If[mon, Echo[Round[time, .1], "Time for side estimation [s]:"]];
 
-	(*loop over data to find upper or lower*)
-	time= First@AbsoluteTiming[dat = Flatten[(
-		{dat, side} = #;
-		{whatPos, pos} = ClassifyData[dat, "LegPosition", TargetDevice -> dev];
-
-		Switch[whatPos,
-			(*if upper and lower split upper and lower*)
-			"Both", {
-				{dat[[pos[[1]];;]], {"Upper", {pos[[1]],dim[[1]]}}, side}, 
-				{dat[[;;pos[[2]]]], {"Lower", {1,pos[[2]]}}, side}
+		(*based on side cut data or propagate*)
+		dat = Switch[whatSide,
+			(*both sides which need to be split*)
+			"Both",
+			{right, left, cut} = CutData[data];
+			{
+				{right, {"Right", {1, cut}}}, 
+				{left, {"Left", {cut+1, dim[[3]]}}}
 			},
-			(*if only knee data duplicate for both networks*)
-			"Knee", {
-				{dat, {"Upper",{1,dim[[1]]}}, side}, 
-				{dat, {"Lower", {1,dim[[1]]}}, side}
-			},
-			(*if only upper or only lower return what it is*)
-			_, {
-				{dat, {whatPos, {1, dim[[1]]}}, side}
+			_,
+			(*only one side, no split*)
+			cut=0; 
+			{
+				{data, {whatSide, {1, dim[[3]]}}}
 			}
-		]
-	)&/@dat, 1]];
+		];
 
-	If[mon, Echo[whatPos, "Data contains positions: "]];
-	If[mon, Echo[Round[time, .1], "Time for position estimation [s]:"]];
+		(*loop over data to find upper or lower*)
+		time= First@AbsoluteTiming[dat = Flatten[(
+			{dat, side} = #;
+			{whatPos, pos} = Switch[what,
+				"Legs", ClassifyData[dat, "LegPosition", TargetDevice -> dev],
+				"UpperLegs", {"Upper", dim[[1]]},
+				"LowerLegs", {"Lower", dim[[1]]}
+			];
 
-	(*output the selected data with the correct label and coordinates*)
-	{dat, pts, loc} = Transpose[CropPart/@dat];
-	{{dat, pts, dim}, loc, {{whatSide, cut}, {whatPos, pos}}}
+			Switch[whatPos,
+				(*if upper and lower split upper and lower*)
+				"Both", {
+					{dat[[pos[[1]];;]], {"Upper", {pos[[1]],dim[[1]]}}, side}, 
+					{dat[[;;pos[[2]]]], {"Lower", {1,pos[[2]]}}, side}
+				},
+				(*if only knee data duplicate for both networks*)
+				"Knee", {
+					{dat, {"Upper",{1,dim[[1]]}}, side}, 
+					{dat, {"Lower", {1,dim[[1]]}}, side}
+				},
+				(*if only upper or only lower return what it is*)
+				_, {
+					{dat, {whatPos, {1, dim[[1]]}}, side}
+				}
+			]
+		)&/@dat, 1]];
+
+		If[mon, Echo[whatPos, "Data contains positions: "]];
+		If[mon, Echo[Round[time, .1], "Time for position estimation [s]:"]];
+
+		(*output the selected data with the correct label and coordinates*)
+		{dat, pts, loc} = Transpose[CropPart/@dat];
+		{{dat, pts, dim}, loc, {{whatSide, cut}, {whatPos, pos}}}
+
+		,
+		_,
+		$Failed		
+	]
 ]
 
 

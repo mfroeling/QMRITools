@@ -70,6 +70,11 @@ MergeSegmentations::usage =
 Output is a labled segmentation.
 MergeSegmentations[masks] does the same but automatically numbers the segmentations."
 
+JoinSegmentations::usage =
+"JoinSegmentations[seg, joinRules] joins the segmentations in seg according to the rules in joinRules.
+JoinRules is a list of rules {{join, new}..} where join is a list of labels to be joined and new is the new label number.
+For example {{1, 2}, 3} joins the labels 1 and 2 to label 3."
+
 SelectSegmentations::usage =
 "SelectSegmentations[seg, labs] selects only the segmentations from seg with label number labs."
 
@@ -470,6 +475,33 @@ MergeSegmentations[seg_, lab_] := Block[{mt, nv},
 
 
 (* ::Subsubsection::Closed:: *)
+(*JoinSegmentations*)
+
+
+JoinSegmentations[segI_, joinRules : {_?ListQ, _?IntegerQ}] := JoinSegmentations[segI, {joinRules}]
+
+JoinSegmentations[segI_, joinRules : {{_?ListQ, _?IntegerQ} ..}] := Block[{seg, lab, keep, keepL, join, new, newL},
+	{seg, lab} = SplitSegmentations[segI];
+
+	{keep, keepL} = SelectSegmentations[{seg, lab}, Complement[lab, Flatten[joinRules[[All, 1]]]]];
+
+	{new, newL} = Transpose[(
+		{join, newL} = #;
+		If[MemberQ[lab, newL] && ! MemberQ[join, newL],	
+			Echo[{join, new}, "Skipping, new label is not uniuqe or part of replaced: "]; 0,
+			new = Total@Transpose@First@SelectSegmentations[{seg, lab}, #[[1]]];
+			{new, newL}
+		]
+	) & /@ joinRules];
+
+	If[keepL==={},
+		MergeSegmentations[Transpose@new,newL],
+		MergeSegmentations[Transpose[Join[Transpose@keep, new]], Join[keepL, newL]]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*SelectSegmentations*)
 
 
@@ -492,8 +524,7 @@ ReplaceSegmentations[segm_, labSel_, labNew_] := SelectReplaceSegmentations[segm
 
 
 SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, sel},
-	split = If[Length[segm] == 2, False, True];
-
+	split = If[Length[segm] == 2, If[VectorQ[segm[[2]]], False, True], True];
 	{seg, lab} = If[split,  SplitSegmentations[segm], segm];
 
 	sel = MemberQ[labSel, #] & /@ lab;

@@ -625,7 +625,7 @@ Options[RescaleDatai] = {InterpolationOrder -> 3};
 
 RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[{type, dim, int, dataOut},
 	dim = Dimensions[data];
-	int = OptionValue[InterpolationOrder];
+	int = Round[OptionValue[InterpolationOrder]];
 
 	dataOut = Switch[ArrayDepth[data],
 		(*rescale an image*)
@@ -653,13 +653,14 @@ RescaleDatai[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[
 ]
 
 
-RescaleImgi[dat_, {sc_, met_}, n_] := Block[{type, im, dim},
+RescaleImgi[dat_, {sc_, met_}, n_] := Block[{type, im, dim, int},
+	int = If[n>=1, {"Spline", n}, "NearestLeft"];
 	(*data type*)
 	type = If[ArrayQ[dat, _, IntegerQ], "Bit16", "Real32"];
 	dim = If[met == "v", Round[sc Dimensions[dat]], sc];
 	(*convert to 2D or 3D image*)
 	im = Switch[ArrayDepth[dat], 2, Image[dat, type], 3, Image3D[dat, type]];
-	ImageData[ImageResize[im, Reverse[dim], Resampling ->{"Spline", n}], type]
+	ImageData[ImageResize[im, Reverse[dim], Resampling ->int], type]
 ]
 
 
@@ -1108,7 +1109,7 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 		datf = max - GaussianFilter[mask dat, len/blur];
 		(*find the peaks*)
 		peaks = FindPeaks[datf];
-		peaks = If[Length[peaks] >= 3, peaks[[2 ;; -2]], peaks];
+		peaks = If[Length[peaks] >= 5, peaks[[2 ;; -2]], peaks];
 		peaks = Select[peaks, (ran[[1]] < #[[1]] < ran[[2]]) &];
 		blur += 10;
 		i++;
