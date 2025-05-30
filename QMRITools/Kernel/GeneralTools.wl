@@ -100,20 +100,20 @@ PadToDimensions::usage =
 PadToDimensions[data, dim] pads the data to dimensions dim." 
 
 RescaleData::usage = 
-"RescaleData[data,dim] rescales image/data to given dimensions.
-RescaleData[data,{vox1, vox2}] rescales image/data from size vox1 to size vox2."
+"RescaleData[data, dim] rescales the data to given dimensions.
+RescaleData[data, {vox1, vox2}] rescales the data from size vox1 to size vox2."
 
 
 DataToVector::usage = 
 "DataToVector[data] converts the non zero data to vector.
 DataToVector[data, mask] converts the data within the mask to vector.
 
-the data can be reconstructed using VectorToData.
+The data can be reconstructed using VectorToData.
 
-output is the vectorized data and a list containing the original data dimensions and a list with the data coordinates. {vec, {dim,pos}}."
+Output is the vectorized data and a list containing the original data dimensions and a list with the data coordinates. {vec, {dim,pos}}."
 
 VectorToData::usage = 
-"VectorToData[vec, {dim,pos}] converts the vectorized data from DataToVector back to its original Dimensions."
+"VectorToData[vec, {dim, pos}] converts the vectorized data from DataToVector back to its original Dimensions."
 
 MakeCoordinates::usage = 
 "MakeCoordinates[data, vox] gives the coordinates of every voxel.
@@ -132,7 +132,7 @@ TensVec::usage=
 
 CropData::usage =
 "CropData[data] creates a dialog window to crop the data (assumes voxel size (1,1,1)).
-CropData[data,vox] creates a dialog window to crop the data."
+CropData[data, vox] creates a dialog window to crop the data."
 
 FindCrop::usage = 
 "FindCrop[data] finds the crop values of the data by removing all zeros surrounding the data."
@@ -145,8 +145,8 @@ ReverseCrop::usage =
 ReverseCrop[data, dim, crop, {voxorig, voxnew}] reverses the crop on the cropped data with crop values crop to the original size dim."
 
 ApplyCrop::usage =
-"ApplyCrop[data,crop] applies the cropped region obtained form CropData to the data.
-ApplyCrop[data,crop,{voxorig,voxnew}] applies the cropped region obtained form CropData to the data." 
+"ApplyCrop[data, crop] applies the cropped region obtained form CropData to the data.
+ApplyCrop[data, crop, {voxorig, voxnew}] applies the cropped region obtained form CropData to the data." 
 
 
 CutData::usage = 
@@ -187,6 +187,7 @@ SumOfSquares::usage =
 "SumOfSquares[{data1, data2, .... datan}] calculates the sum of squares of the datasets.
 Output is the SoS and the weights, or just the SoS."
 
+
 LLeastSquares::usage = 
 "LLeastSquares[A, y] = performs a Linear Linear Least Squares fit.
 It uses a compiled version of the Pseudo inverse of A."
@@ -196,6 +197,7 @@ NNLeastSquares::usage =
 finds an x that solves the linear least-squares problem for the matrix equation A.x==y.
 
 output is the solution x."
+
 
 BSplineCurveFit::usage = 
 "BSplineCurveFit[points] fits a b-spline to the points. Output is a list of same size as points."
@@ -815,9 +817,13 @@ FitGradientMap[{data_, msk_}, ord_, smp_] := Block[{val, dim, coor, fit, x, y, z
 
 SyntaxInformation[MakeCoordinates] = {"ArgumentsPattern" -> {_, _}};
 
-MakeCoordinates[dim_?VectorQ,vox_]:=vox RotateDimensionsRight@Array[{##}&, dim]
+MakeCoordinates[dim_?VectorQ]:= MakeCoordinates[dim, {1, 1, 1}]
 
-MakeCoordinates[dat_?ArrayQ,vox_]:=MakeCoordinates[Dimensions@dat,vox]
+MakeCoordinates[dim_?VectorQ, vox_]:= vox RotateDimensionsRight@Array[{##}&, dim]
+
+MakeCoordinates[dat_?ArrayQ]:=MakeCoordinates[dat, {1, 1, 1}]
+
+MakeCoordinates[dat_?ArrayQ, vox_]:=MakeCoordinates[Dimensions@dat, vox]
 
 
 (* ::Subsubsection::Closed:: *)

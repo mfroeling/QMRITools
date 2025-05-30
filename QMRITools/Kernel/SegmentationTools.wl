@@ -272,6 +272,10 @@ MonitorInterval::usage =
 L2Regularization::usage =
 "L2Regularization is an option for TrainSegmentationNetwork. It defines the L2 regularization factor."
 
+MultiChannel::usage = 
+"MultiChannel ..."
+
+
 PatchesPerSet::usage =
 "PatchesPerSet is an option for GetTrainData. Defines how many random patches per dataset are created within the batch."
 
@@ -1261,6 +1265,8 @@ DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, opts:OptionsPatt
 
 DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, pts:{{{_,_},{_,_},{_,_}}..}]:={GetPatch[dat, patch, pts], pts}
 
+DataToPatches[dat_, pts:{{{_,_},{_,_},{_,_}}..}]:={GetPatch[dat, pts], pts}
+
 DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, nPatch_, OptionsPattern[]]:=Block[{
 		ptch, pts, nRan, pad
 	},
@@ -1828,6 +1834,8 @@ Options[TrainSegmentationNetwork] = {
 	FeatureSchedule -> 32,
 	NetworkDepth -> 5,
 
+	MultiChannel -> False,
+
 	AugmentData -> True,
 	PadData-> False,
 
@@ -1845,7 +1853,7 @@ SyntaxInformation[TrainSegmentationNetwork] = {"ArgumentsPattern" -> {{_, _}, _.
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPattern[]] := TrainSegmentationNetwork[{inFol, outFol}, "Start", opts]
 
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
-		netOpts, batch, roundLength, rounds, data, dDim, nChan, nClass, outName, ittString,
+		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
 		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction,
 		validation, files, loss, rep, learningRate, schedule
@@ -1858,19 +1866,21 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	netOpts = Join[FilterRules[{opts}, Options@MakeUnet], FilterRules[Options@TrainSegmentationNetwork, 
 		Options@MakeUnet]];
 
-	{batch, roundLength, rounds, augment, pad, patch, patches, loss, rep, learningRate, l2reg} = OptionValue[
+	{batch, roundLength, rounds, augment, pad, patch, patches, 
+		loss, rep, learningRate, l2reg, multi} = OptionValue[
 		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PadData, PatchSize, PatchesPerSet, 
-			LossFunction, MonitorInterval, LearningRate, L2Regularization}];
+			LossFunction, MonitorInterval, LearningRate, L2Regularization, MultiChannel}];
 	pad = If[NumberQ[pad], Round[pad], False];
 
-	(*import all the train data*)
+	(*get the train data files*)
 	files = FileNames["*.wxf", inFol];
 
 	(*figure out network properties from train data*)
-	(*background is 0 but for network its 1 so class +1*)
 	testData = Import@First@files;
-	dDim = Dimensions@testData[[1]][[1]];
-	nChan = If[Length@dDim === 2, 1, dDim[[2]]];
+	(*figure out how to treat multi channel data*)	
+	depth = ArrayDepth@testData;
+	nChan = If[depth === 4 && multi, Length@First@testData, 1];
+	(*background is 0 but for network its 1 so class +1*)
 	nClass = Round[Max@testData[[2]] + 1];
 
 
@@ -2029,12 +2039,17 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
 	testData = data[[1]];
+	(*figure out how to treat multi channel data - for now just take the first volume*)
+	If[ArrayDepth@testData === 4, testData = testData[[All, 1]]];
+
+	(*crop the test data*)
 	len = Length@testData;
 	If[len > First@patch,
 		sel = Range @@ Clip[Round[(Clip[Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, n First@patch})], 
 			{1, len}, {1, len}];
 		testData = First@AutoCropData[testData[[sel]]]
 	];
+
 	{{NormalizeData[PadToDimensions[testData, patch], NormalizeMethod -> "Uniform"]}, data[[3]]}
 ];
 
@@ -2210,6 +2225,9 @@ GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 			True, dat
 		];
 
+		(*figure out how to treat multichannel - for now take a random volume*)
+		dat = If[ArrayDepth[dat] === 4, RandomChoice@Transpose@dat, dat];
+
 		(*perform augmentation on full data and get the defined number of patches*)
 		{dat, seg} = AugmentTrainingData[{dat, seg}, vox, aug];
 		{dat, seg} = PatchTrainingData[{dat, seg}, patch, nSet];
@@ -2278,7 +2296,7 @@ SyntaxInformation[PrepareTrainingData] = {"ArgumentsPattern" -> {_, _,OptionsPat
 PrepareTrainingData[labFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]]:=PrepareTrainingData[{labFol, labFol}, outFol, opt]
 
 PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, OptionsPattern[]] := Block[{
-		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, voxOut, 
+		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, voxOut, dimSeg, dimDat,
 		seg, err, vox, voxd, dat, im, nl, outf, gr, clean, legend, head, out
 	},
 
@@ -2313,12 +2331,15 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 			{dat, voxd} = ImportNii@First@df;
 			If[voxOut === Automatic, voxOut = vox];
 
+			dimSeg = Dimensions[seg]; 
+			dimDat = If[ArrayDepth[dat] === 4, Dimensions[dat[[All,1]]], Dimensions[dat]];
+
 			(*check if data file exist*)
 
 			(*check dimensions and voxel size*)
 			If[vox =!= voxd,
 				out = {i++, name, "Data and segmentation have different voxel size."},
-				If[Dimensions[dat] =!= Dimensions[seg],
+				If[dimSeg =!= dimDat,
 					out = {i++, name, "Data and segmentation have different dimensions size."},
 
 					(*Prepare and analyze the training data and segmentation*)
@@ -2375,15 +2396,16 @@ PrepTrainData[{daI_?ArrayQ, segI_?ArrayQ}, {labi_?VectorQ, labo_?VectorQ}, {voxi
 		cr, dat, seg
 	},
 	(*rescale if needed*)
-	{dat, seg}=If[voxi===voxo, {daI, segI}, 
+	{dat, seg} = If[voxi===voxo, 
+		{daI, segI}, 
 		{RescaleData[daI, {voxi, voxo}], RescaleSegmentation[segI, {voxi, voxo}]}
 	];
 
-	(*remove background and normalize data*)
-	cr = FindCrop[dat Mask[NormalizeData[dat], 5, MaskDilation -> 1]];
+	(*remove background and normalize data and figure out what to do with multi channel data*)
+	cr = FindCrop[Mask[If[ArrayDepth[dat] === 3, NoramlizeData, NormalizeMeanData][dat], 5, MaskDilation -> 1]];
 	{
-		NormalizeData[ApplyCrop[dat, cr], NormalizeMethod -> "Uniform"], 
-		If[labi==={0},
+		ApplyCrop[dat, cr],
+		If[labi === {0},
 			ApplyCrop[seg, cr],
 			ReplaceSegmentations[ApplyCrop[seg, cr], labi, labo]
 		]
