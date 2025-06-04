@@ -61,6 +61,10 @@ NetDimensions::usage =
 ChangeNetDimensions::usage =
 "ChangeNetDimensions[netIn] changes input channels, output classes, the input patch dimension of the input network netIn."
 
+GetNetNodes::usage = 
+"GetNetNodes[net] returns a list of all the nodes in the network net."
+
+
 
 AddLossLayer::usage = 
 "AddLossLayer[net] adds three loss layers to a NetGraph, a DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MeanSquaredLossLayer and a CrossEntropyLossLayer are added."
@@ -122,7 +126,8 @@ SegmentData::usage =
 It currently allows for \"LegBones\" for the bones or \"Legs\" for the muscles."
 
 ApplySegmentationNetwork::usage = 
-"ApplySegmentationNetwork[data, net] segments the data using the pre trained net."
+"ApplySegmentationNetwork[data, net] segments the data using the pre trained net.
+ApplySegmentationNetwork[data, net, node] segments the data using the pre trained net but only use the network upto node."
 
 ClassifyData::usage = 
 "ClassifyData[data, method] classifies the input data using the given method. The data is converted to images using MakeClassifyImages.
@@ -979,6 +984,15 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 (*LossLayers*)
 
 
+SyntaxInformation[GetNetNodes] = {"ArgumentsPattern" -> {_}};
+
+GetNetNodes[net_]:=DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]]
+
+
+(* ::Subsection:: *)
+(*LossLayers*)
+
+
 (* ::Subsubsection::Closed:: *)
 (*AddLossLayer*)
 
@@ -1483,10 +1497,13 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 		If[mon, Echo[Round[time, .1], "Total time for analysis [s]: "]];
 		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"]];
 
+		
 		(*get the network name and data type*)
 		{net, type} = Switch[what,
 			"LegBones", {"SegLegBones"&, "Bones"},
-			"Legs"|"UpperLegs"|"LowerLegs",	{(#[[1]] /. {"Upper" -> "SegThighMuscle", "Lower" -> "SegLegMuscle"})&, "Muscle"},
+			"Legs"|"UpperLegs"|"LowerLegs",	{
+				(#[[1]] /. {"Upper" -> "SegThighMuscle", "Lower" -> "SegLegMuscle"})&, "Muscle"
+			},
 			_, Return[]
 		];
 
@@ -1599,13 +1616,13 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]]:=Blo
 			Switch[whatPos,
 				(*if upper and lower split upper and lower*)
 				"Both", {
-					{dat[[pos[[1]];;]], {"Upper", {pos[[1]],dim[[1]]}}, side}, 
-					{dat[[;;pos[[2]]]], {"Lower", {1,pos[[2]]}}, side}
+					{dat[[pos[[1]];;]], {"Upper", {pos[[1]], dim[[1]]}}, side}, 
+					{dat[[;;pos[[2]]]], {"Lower", {1, pos[[2]]}}, side}
 				},
 				(*if only knee data duplicate for both networks*)
 				"Knee", {
-					{dat, {"Upper",{1,dim[[1]]}}, side}, 
-					{dat, {"Lower", {1,dim[[1]]}}, side}
+					{dat, {"Upper", {1, dim[[1]]}}, side}, 
+					{dat, {"Lower", {1, dim[[1]]}}, side}
 				},
 				(*if only upper or only lower return what it is*)
 				_, {
@@ -2862,7 +2879,7 @@ AnalyzeNetworkFeatures[net_, data_, met_] := Block[{
 	netP = ChangeNetDimensions[net, "Dimensions" -> dim];
 
 	(*extract the network nodes*)
-	nodes = DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]];
+	nodes = GetNetworkNodes[netP];
 	nodes = nodes[[2;;-2]];
 
 	col = ColorData["SolarColors"] /@Rescale[Range[Ceiling[Length[nodes]/2]]];
@@ -2899,7 +2916,7 @@ AnalyzeNetworkFeatures[net_, data_, met_] := Block[{
 
 	(*output based on method*)
 	If[met === "",
-		Echo[Thread{nodes, nfeat}];
+		Echo[Thread[{nodes, nfeat}]];
 		Echo[n];
 
 		(*dynamic plot output*)
