@@ -25,7 +25,9 @@ If[load === $Failed,
 	If[!in,
 		Print["\nCould not find input file."];
 		,
+		Print["\nImporting and masking data"];
 		{dat, vox} = ImportNii[infile];
+		dat = MaskData[dat, Mask[NormalizeData[dat], 10, MaskSmoothing -> True, MaskClosing->True, MaskDilation->1]];
 	
 		Print["\nPerforming segmentation"];
 		seg = SegmentData[dat, "Legs", TargetDevice->"CPU", Monitor->True];
