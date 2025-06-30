@@ -36,7 +36,7 @@ QMRITools`$ContextsFunctions::usage = "The package contexts with the list of fun
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
 
-
+QMRITools`ElastixTools`$lastElastixTemp::usage = "$lastElastixTemp is the last temporary directory used by Elastix.";
 QMRITools`ElastixTools`$debugElastix::usage = "$debugElastix is a debug flag for Elastix functionality.";
 QMRITools`SegmentationTools`$debugUnet::usage = "$debugUnet is a debug flag for Unet functionality."; 
 QMRITools`MuscleBidsTools`$debugBids::usage = "$debugBids is a debug flag for Bids functionality.";
@@ -74,7 +74,7 @@ QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
 QMRITools`$LoadedColor = If[QMRITools`$LoadedColor===True, True, False];
 QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Version"];
 
-
+QMRITools`ElastixTools`$lastElastixTemp = "";
 QMRITools`ElastixTools`$debugElastix = False;
 QMRITools`SegmentationTools`$debugUnet = False;
 QMRITools`MuscleBidsTools`$debugBids = False;
@@ -164,6 +164,7 @@ Get["Developer`"];
 (*Protect definitions*)
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
 Unprotect/@{
+	"QMRITools`ElastixTools`$lastElastixTemp",
 	"QMRITools`ElastixTools`$debugElastix", 
 	"QMRITools`SegmentationTools`$debugUnet", 
 	"QMRITools`MuscleBidsTools`$debugBids",

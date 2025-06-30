@@ -1350,11 +1350,17 @@ MakeClassifyNetwork[classes_, OptionsPattern[]]:=Block[{enc, dec, net,imSize},
 	dec = NetDecoder[{"Class", classes}];
 
 	net = NetChain[{
-		ConvolutionLayer[16, 7, "Stride"->1, PaddingSize->3], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[4,4],
-		ConvolutionLayer[32, 5, "Stride"->1, PaddingSize->2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[4,4],
+		ConvolutionLayer[16, 7, "Stride"->1, PaddingSize->3], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2,2],
+		ConvolutionLayer[32, 5, "Stride"->1, PaddingSize->2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2,2],
+		ConvolutionLayer[32, 5, "Stride"->1, PaddingSize->2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2,2],
+		ConvolutionLayer[64, 3, "Stride"->1, PaddingSize->1], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2,2],
 		ConvolutionLayer[64, 3, "Stride"->1, PaddingSize->1], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[4,4],
-		FlattenLayer[], LinearLayer[128], BatchNormalizationLayer[], ElementwiseLayer["GELU"], LinearLayer[64],
-		BatchNormalizationLayer[], ElementwiseLayer["GELU"], LinearLayer[Length@classes], SoftmaxLayer[]
+		FlattenLayer[], 
+		LinearLayer[256], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
+		LinearLayer[128], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
+		LinearLayer[64], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
+		LinearLayer[32], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
+		LinearLayer[Length@classes], SoftmaxLayer[]
 	}, "Input" -> Prepend[imSize, 1]];
 
 	NetFlatten@NetChain[{net}, "Input"->NetEncoder[{"Image", imSize, ColorSpace->"Grayscale"}], "Output"->dec]
@@ -1381,7 +1387,7 @@ MakeClassifyImage[dat_?MatrixQ, OptionsPattern[]]:=Block[{imSize},
 	imSize = OptionValue[ImageSize];
 	If[Total[Flatten[dat]]<10,
 		Image@ConstantArray[0., imSize],
-		ImageResize[Image[Rescale[First[AutoCropData[{dat}, CropPadding -> 0][[1]]]]], imSize]
+		ImageResize[Image[Rescale[First[AutoCropData[{dat}, CropPadding -> 5][[1]]]]], imSize]
 	]
 ];
 
@@ -2192,7 +2198,7 @@ AugmentImageData[im_?ListQ, {rot_, flip_}]:=AugmentImageData[#, {rot, flip}]&/@i
 
 AugmentImageData[im_, {rot_, flip_}]:=Block[{rt, fl, tr},
 	rt = If[rot, RotationTransform[RandomReal[{-90, 90}]Degree], TranslationTransform[{0, 0}]];
-	fl = If[flip&&RandomChoice[{True, False}], ReflectionTransform[{1, 0}], TranslationTransform[{0, 0}]];
+	fl = If[flip && RandomChoice[{True, False}], ReflectionTransform[{1, 0}], TranslationTransform[{0, 0}]];
 	tr = rt . fl;
 	If[Head[im]===Rule,
 		ImageTransformation[im[[1]], tr, DataRange->{{-.5, .5}, {-.5, .5}}]->im[[2]],
