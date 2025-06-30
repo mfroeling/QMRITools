@@ -257,7 +257,6 @@ RegisterData::fatal="Fatal error encountered."
 (* ::Section:: *)
 (*Functions*)
 
-
 Begin["`Private`"]
 
 
@@ -656,6 +655,38 @@ SplitRegInput[input_] := Which[
 (*RegisterData/Split*)
 
 
+CreateTempDirectory[tdirI_] := CreateTempDirectory[tdirI, False, False]
+CreateTempDirectory[tdirI_, print_] := CreateTempDirectory[tdirI, print, False]
+CreateTempDirectory[tdirI_, print_, make_] := Block[{tdir, add, str, f},
+	(*define temp directory forder name*)
+	{tdir, add} = If[ListQ[tdirI], tdirI, {tdirI, ""}];
+	DeleteFile[f = CreateFile[]];
+	str = StringSplit[f, "-"][[-2]];
+
+	tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory});
+	tdir = If[StringContainsQ[Last[FileNameSplit[tdir]], "QMRIToolsReg"] || Last[FileNameSplit[tdir]] === "anat",
+		FileNameJoin[{tdir, add}],
+		FileNameJoin[{tdir, "QMRIToolsReg-" <> str, add}]
+	];
+
+	(*delete and create if needed*)
+	If[make, If[DirectoryQ[tdir], DeleteDirectory[tdir, DeleteContents -> True]]; CreateDirectory[tdir]];
+	tdir = If[! DirectoryQ[tdir], CreateDirectory[tdir], tdir];
+	tdir = AbsoluteFileName[tdir];
+
+	(*print if needed*)
+	If[print, PrintTemporary["using as temp directory: " <> tdir]];
+	$lastElastixTemp = If[add =!= "" || Last[FileNameSplit[tdir]] === "anat", DirectoryName[tdir], tdir];
+
+	If[$debugElastix, 
+		Print["using as temp directory: " <> tdir];
+		Print["$lastElastixTemp: " <> $lastElastixTemp];
+	];
+
+	(*return temp directory*)
+	tdir
+]
+
 (* ::Subsubsection::Closed:: *)
 (*RegisterData*)
 
@@ -864,7 +895,6 @@ RegisterDatai[
 	w = {{0,0,0,0,0,0,1,1,1,0,0,0}};
 
 	(*get option values*)
-	tdir=OptionValue[TempDirectory];
 	outputImg=ToLowerCase[ToString[OptionValue[OutputImage]]];
 
 	method = OptionValue[MethodReg];
@@ -906,22 +936,13 @@ RegisterDatai[
 		]&/@method; 
 	lenMeth = Length[method];
 
-	(*create temp directory*)
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory});
-	tdir=If[Last[FileNameSplit[tdir]] === "QMRIToolsReg" || Last[FileNameSplit[tdir]] === "anat", tdir,	tdir<>$PathnameSeparator<>"QMRIToolsReg"];
-
-	If[DirectoryQ[tdir],DeleteDirectory[tdir,DeleteContents->True]];
-	tempdir=CreateDirectory[tdir]<>$PathnameSeparator;
-	If[!DirectoryQ[tempdir],Message[RegisterData::dir];Return[Message[RegisterData::fatal]]];
+	tdir = CreateTempDirectory[OptionValue[TempDirectory], OptionValue[PrintTempDirectory], True];
+	tempdir = tdir<>$PathnameSeparator;
 
 	(*create parameter list*)
 	regpars = If[NumberQ[#],ConstantArray[#,lenMeth],
-		If[Length[#]==lenMeth,#,Message[RegisterData::par,#,lenMeth];Return[Message[RegisterData::fatal]];
+		If[Length[#]==lenMeth, #, Message[RegisterData::par,#,lenMeth]; Return[Message[RegisterData::fatal]];
 	]]&/@regpars;
-
-
-	(*start the registration process*)
-	If[OptionValue[PrintTempDirectory], PrintTemporary["using as temp directory: "<>tdir]];
 
 	(*get all data dimensions*)
 	dimmov = Dimensions[moving];
@@ -1115,7 +1136,7 @@ TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command
 	If[OptionValue[Method]=="Loop",
 		(*Loop over multi dimensions when set by user*)
 		dat = If[ArrayDepth[data]===4,Transpose@data, data];
-		dat = TransformData[{#,vox}, Method->"Default", DeleteTempDirectory->False, ops]&/@dat;
+		dat = TransformData[{#, vox}, Method->"Default", DeleteTempDirectory->False, ops]&/@dat;
 
 		(*Delete temp directory*)
 		Switch[OptionValue[DeleteTempDirectory],
@@ -1127,14 +1148,15 @@ TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command
 		,
 		(*perform normal tranform for single volume*)
 		(*define the directory*)
-		tdir = OptionValue[TempDirectory];
-		tdir = FileNameJoin[{(If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory}),
-			"QMRIToolsReg", "transform"}];
 
-		(*create and print the directory*)
-		If[OptionValue[PrintTempDirectory], PrintTemporary["using as temp directory: "<>tdir]];
-		If[DirectoryQ[tdir], DeleteDirectory[tdir,DeleteContents->True]];
-		CreateDirectory[tdir];
+		(*check if transform is given*)
+		tdir = If[OptionValue[TempDirectory] === "Default", $lastElastixTemp, OptionValue[TempDirectory]];
+		tdir = CreateTempDirectory[{tdir, "transform"}, OptionValue[PrintTempDirectory], True];
+
+		If[$debugElastix, 
+			Print["transform using as temp directory: " <> tdir];
+			Print["transform $lastElastixTemp: " <> $lastElastixTemp];
+		];
 
 		(*Export and transform*)
 		ExportNii[data, vox, FileNameJoin[{tdir,"trans.nii"}]];
@@ -1194,11 +1216,13 @@ RegisterDataTransform[target_, moving_, moving2_, opts : OptionsPattern[]]:=Regi
 RegisterDataTransform[_, _, $Failed, opts : OptionsPattern[]]:=Return[Message[RegisterData::inp]; $Failed]
 
 RegisterDataTransform[target_, moving_, {moving2_, _, vox_}, opts : OptionsPattern[]] := Block[{reg, mov, met, fun, lab, tdir},
-	reg = RegisterData[target, moving, DeleteTempDirectory -> False, Sequence@@FilterRules[{opts}, Options[RegisterData]]];
 
-	tdir = OptionValue[TempDirectory];
+	tdir= CreateTempDirectory[OptionValue[TempDirectory], OptionValue[PrintTempDirectory]];
 
-	met=OptionValue[TransformMethod];
+	reg = RegisterData[target, moving, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory -> tdir,
+		Sequence@@FilterRules[{opts}, Options[RegisterData]]];
+
+	met = OptionValue[TransformMethod];
 	fun = Switch[met,
 		"Mask"|"Segmentation", SparseArray[Round[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir]]]&,
 		_, TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir]&
@@ -1216,9 +1240,7 @@ RegisterDataTransform[target_, moving_, {moving2_, _, vox_}, opts : OptionsPatte
 	];
 	If[met==="Segmentation", mov = MergeSegmentations[RemoveMaskOverlaps[mov], lab]];
 
-	tdir = (If[StringQ[tdir], tdir, "Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
-
-	If[OptionValue[DeleteTempDirectory],DeleteDirectory[tdir,DeleteContents->True]];		
+	If[OptionValue[DeleteTempDirectory], DeleteDirectory[tdir, DeleteContents->True]];		
 
 	{reg, mov}
 ]
@@ -1330,9 +1352,7 @@ RegisterDiffusionData[
 		dtidatar, tempDir, tempDira, volDirs, w,tFilesA, tFilesD, dtidatarA, cmd, target, movingdata, vdir
 	},
 
-	(*get the current temp dir and define the anat tempdir*)
-	tempDir = OptionValue[TempDirectory];
-	tempDir = (If[StringQ[tempDir], tempDir, "Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
+	tempDir = CreateTempDirectory[OptionValue[TempDirectory], OptionValue[PrintTempDirectory], True];
 	tempDira = tempDir <> $PathnameSeparator <> "anat";
 
 	(*perform DTI registration*)
@@ -1340,6 +1360,7 @@ RegisterDiffusionData[
 	dtidatar = RegisterData[{dtidata, dtimask, vox},
 		TempDirectory -> tempDir, 
 		DeleteTempDirectory -> False, 
+		PrintTempDirectory -> False,
 		OutputTransformation->OptionValue[OutputTransformation], 
 		MethodReg-> (OptionValue[MethodReg] /. {"affine" -> "affineDTI", "rigid" -> "rigidDTI"}),
 		(*AffineDirections -> {1, 1, 1},*)
@@ -1586,39 +1607,38 @@ RegisterCardiacData[{data_?ArrayQ ,mask_?ArrayQ}, opts:OptionsPattern[]]:=Regist
 RegisterCardiacData[{data_?ArrayQ, mask_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}}, opts:OptionsPattern[]]:=Block[
 	{tdir, datar, slices, maskr, i, size, target},
 
-	tdir=OptionValue[TempDirectory];
-	tdir=(If[StringQ[tdir],tdir,"Default"]/. {"Default"->$TemporaryDirectory})<>$PathnameSeparator<>"QMRIToolsReg";
+	tdir = CreateTempDirectory[OptionValue[TempDirectory], OptionValue[PrintTempDirectory], True];
 
-	If[OptionValue[PrintTempDirectory],PrintTemporary["using as temp directory: "<>tdir]];
-
-	slices=Range[Length[data]];
-	size=Length[data[[1]]];
-	maskr=If[mask=={1},ConstantArray[1,Dimensions[data[[All,1]]]],mask];
+	(*check if data is 3D or 4D*)
+	slices = Range[Length[data]];
+	size = Length[data[[1]]];
+	maskr = If[mask=={1}, ConstantArray[1,Dimensions[data[[All,1]]]],mask];
 
 	target=If[OptionValue[MethodReg]==="PCAtranslation"||OptionValue[MethodReg]==="PCArigid"||OptionValue[MethodReg]==="PCAaffine"||OptionValue[MethodReg]==="PCAbspline",
 		"stack",
-		OptionValue[RegistrationTarget]];
+		OptionValue[RegistrationTarget]
+	];
 
 	(*monitro over slices*)
 	Monitor[
 		i=0;
-		datar=Switch[
-		target,
-		"Mean",
-		(i++;RegisterData[{N[Mean@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
-			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-		"Median",
-		(i++;RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
-			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-		"First",
-		(i++;RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
-			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices,
-		"stack",
-		(i++;RegisterData[{data[[#]],ConstantArray[maskr[[#]],size],vox},
-			OutputTransformation->False, PrintTempDirectory->False,FilterRules[{opts},Options[RegisterData]]])&/@slices
+		datar = Switch[target,
+			"Mean",
+			(i++; RegisterData[{N[Mean@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
+				OutputTransformation->False, PrintTempDirectory->False, TempDirectory->tdir, FilterRules[{opts},Options[RegisterData]]])&/@slices,
+			"Median",
+			(i++; RegisterData[{N[Median@data[[#]]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
+				OutputTransformation->False, PrintTempDirectory->False, TempDirectory->tdir, FilterRules[{opts},Options[RegisterData]]])&/@slices,
+			"First",
+			(i++; RegisterData[{data[[#,1]],maskr[[#]],vox},{data[[#]],maskr[[#]],vox},
+				OutputTransformation->False, PrintTempDirectory->False, TempDirectory->tdir, FilterRules[{opts},Options[RegisterData]]])&/@slices,
+			"stack",
+			(i++; RegisterData[{data[[#]],ConstantArray[maskr[[#]],size],vox},
+				OutputTransformation->False, PrintTempDirectory->False, TempDirectory->tdir, FilterRules[{opts},Options[RegisterData]]])&/@slices
 		]
 		,ProgressIndicator[i, {0,Length[data]}]
 	];
+
 	datar
 ]
 
