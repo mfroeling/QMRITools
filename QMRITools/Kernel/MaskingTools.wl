@@ -488,14 +488,14 @@ JoinSegmentations[segI_, joinRules : {{_?ListQ, _?IntegerQ} ..}] := Block[{seg, 
 	{new, newL} = Transpose[(
 		{join, newL} = #;
 		If[MemberQ[lab, newL] && ! MemberQ[join, newL],	
-			Echo[{join, new}, "Skipping, new label is not uniuqe or part of replaced: "]; 0,
+			Echo[{join, newL}, "Skipping, new label is not uniuqe or part of replaced: "]; 0,
 			new = Total@Transpose@First@SelectSegmentations[{seg, lab}, #[[1]]];
 			{new, newL}
 		]
 	) & /@ joinRules];
 
 	If[keepL==={},
-		MergeSegmentations[Transpose@new,newL],
+		MergeSegmentations[Transpose@new, newL],
 		MergeSegmentations[Transpose[Join[Transpose@keep, new]], Join[keepL, newL]]
 	]
 ]
