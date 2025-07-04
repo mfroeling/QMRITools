@@ -1084,24 +1084,32 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 	(*reverse the order of the sets if needed*)
 	dat = If[reverseS, Reverse[dat], dat];
 
-	If[motion, Switch[depth,
-		5,
-		motion = False;
-		If[mon, Print["Motion correct is only for 3D volues"]],
-		4,
-		If[mon,PrintTemporary["Motion correcting data"]];
-		dat = CorrectJoinSetMotion[dat, vox, over, PadOverlap->pad, JoinSetSplit->split, MonitorCalc->mon];
-	]];
 
-	(*reverse the order of the slices if needed*)
-	dat = N@If[reverseD, Reverse[dat, 2], dat];
 
-	If[mon, PrintTemporary["Joining data"]];	
-	overlap = overlap + 2*pad;
-	dat = Switch[depth,
-		5, Transpose[(JoinSetsi[dat[[All, All, #]], overlap, normover]) & /@ Range[Length[dat[[1, 1]]]]],
-		4, JoinSetsi[dat, overlap, normover],
-		_,$Failed
+	If[overlap===0,
+		(*reverse the order of the slices if needed*)
+		dat = N@If[reverseD, Reverse[dat, 2], dat];
+		dat = Flatten[dat, 1];
+		,
+		If[motion, Switch[depth,
+			5,
+			motion = False;
+			If[mon, Print["Motion correct is only for 3D volues"]],
+			4,
+			If[mon, PrintTemporary["Motion correcting data"]];
+			dat = CorrectJoinSetMotion[dat, vox, over, PadOverlap->pad, JoinSetSplit->split, MonitorCalc->mon];
+		]];
+
+		(*reverse the order of the slices if needed*)
+		dat = N@If[reverseD, Reverse[dat, 2], dat];
+
+		If[mon, PrintTemporary["Joining data"]];	
+		overlap = overlap + 2*pad;
+		dat = Switch[depth,
+			5, Transpose[(JoinSetsi[dat[[All, All, #]], overlap, normover]) & /@ Range[Length[dat[[1, 1]]]]],
+			4, JoinSetsi[dat, overlap, normover],
+			_,$Failed
+		];
 	];
 
 	(*give output*)	
@@ -1149,7 +1157,7 @@ JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False]:= Block[{
 ];
 
 
-JoinSetsi[data_?ArrayQ,overlap_?ListQ,OptionsPattern[]]:=
+JoinSetsi[data_?ArrayQ, overlap_?ListQ, OptionsPattern[]]:=
 Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1,drop2,overl},
 
 	sets=Length[data];
