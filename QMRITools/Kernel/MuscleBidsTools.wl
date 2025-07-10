@@ -48,6 +48,11 @@ SelectSubjects::usage =
 ViewConfig::usage = 
 "ViewConfig[config] shows a config file for Muscle Bids processing."
 
+ViewProtocolNames::usage = 
+"ViewProtocolNames[folder] shows the protocol names in the radData folder specified by the config file with the series number and protocol name from 
+the json files in the raw folders for each subject and session."
+
+
 GetConfig::usage = 
 "GetConfig[folder] imports a Muscle Bids config file from the given folder."
 
@@ -388,6 +393,30 @@ MakeTable[association_] := Block[{value},
 	} & /@ Keys[association], Frame -> All, Alignment -> Left, 
 	Background -> {{Gray, {White}}, White}, Spacings -> {1, 0.5}]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ViewProtocolNames*)
+
+
+SyntaxInformation[ViewProtocolNames] = {"ArgumentsPattern" -> {_}};
+
+ViewProtocolNames[folder_?StringQ] := ViewProtocolNames[GetConfig[folder]]
+
+ViewProtocolNames[config_?AssociationQ] := Block[{dataFols, fold, list, duplicates, json},
+	dataFols = SelectBidsSessions[SelectBidsSubjects[config["folders", "rawData"]]];
+	MenuView[(
+		fold = #;
+		list = Sort@DeleteDuplicates[(
+			json = ImportJSON[#];
+			{json["SeriesNumber"], json["ProtocolName"]}
+		) & /@ FileNames["*.json", fold, 2]];
+		duplicates = Keys[Select[Counts[list[[All, 2]]], # > 1 &]];
+		list = If[MemberQ[duplicates, #[[2]]], {#[[1]], Style[#[[2]], Bold, Red]}, #] & /@ list;
+		fold -> Grid[list, Alignment -> Left, Frame -> All, Spacings -> {1, 1.2}]
+	) & /@ dataFols, ControlPlacement -> Top]
+]
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1109,8 +1138,14 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 					(*get the json and data*)
 					(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
 					info = json[[First@pos]];
-					{data, vox, hdr} = ImportNii[ConvertExtension[files[[First@pos]],".nii"], NiiMethod -> "header"];
-					{data, grad, val, vox} = ImportNiiDiff[ConvertExtension[files[[First@pos]],".nii"], FlipBvec->False];
+					dfile = ConvertExtension[files[[First@pos]],".nii"];
+					{data, vox, hdr} = ImportNii[dfile, NiiMethod -> "header"];
+					
+					hasb = FileExistsQ[ConvertExtension[dfile,".bval"]]&&FileExistsQ[ConvertExtension[dfile,".bvec"]];
+					If[hasb, 
+						{data, grad, val, vox} = ImportNiiDiff[dfile, FlipBvec->False],
+						(*-----*)AddToLog[{"!!!!!!!!!!!!!!! WARNING NO BVAL OR BVEC FILE !!!!!!!!!!!!!!!!!!!"}, 4];
+					];
 					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 				];
 
@@ -1142,8 +1177,10 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 				debugBids[{parts, type, GetClassName[class, nameIn], datType["Suffix"]}];
 				outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], "suf"->{datType["Suffix"]}|>];
 				(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
-				ExportBval[val, ConvertExtension[outFile, ".bval"]];
-				ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
+				If[hasb,
+					ExportBval[val, ConvertExtension[outFile, ".bval"]];
+					ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
+				];
 				ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
 				Export[ConvertExtension[outFile, ".json"], AddToJSON[AddToJSON[info, "QMRITools"], infoExtra]];
 
@@ -1152,8 +1189,10 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 					DeleteFile[ConvertExtension[files[[pos]],".nii"]];
 					DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
 					DeleteFile[ConvertExtension[files[[pos]],".json"]];
-					DeleteFile[ConvertExtension[files[[pos]],".bval"]];
-					DeleteFile[ConvertExtension[files[[pos]],".bvec"]];
+					If[hasb,
+						DeleteFile[ConvertExtension[files[[pos]],".bval"]];
+						DeleteFile[ConvertExtension[files[[pos]],".bvec"]];
+					];
 				],
 
 				(*-------------------------------------------*)
@@ -1162,7 +1201,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 				"mese",
 
 				(*if echo time exists assume 4D nii without correct echo times*)
-				If[KeyExistsQ[datType["Process"], "EchoTime"],
+				If[KeyExistsQ[Lookup[datType,"Process",<||>], "EchoTime"],
 					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
 
 					(*get the json and data*)
@@ -1197,13 +1236,19 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 
 					(*get the position of the files needed*)
 					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}, "EchoTime"];
+					debugBids["Converting MESE data, json position: ", pos, nameIn];
+
+					(*if echo time does not exist select the first file*)
 					(*select only echos*)
+					len = MergeJSON[json]["AcquisitionNumber"];
+					len = If[ListQ[len], Max[len], Lookup[info, "EchoTrainLength", Length[pos]]];
+					pos = pos[[;; len]];
 					info = MergeJSON[json[[pos]]];
-					pos = pos[[;; info["EchoTrainLength"]]];
+
 					(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
 
 					(*get the json and data*)
-					AssociateTo[info, "EchoNumber" -> Range@info["EchoTrainLength"]];
+					AssociateTo[info, "EchoNumber" -> Range@len];
 					{data, vox} = Transpose[ImportNii /@ ConvertExtension[files[[pos]],".nii"]];
 					data = Transpose[data];
 					vox = First@vox;
@@ -1767,7 +1812,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 			Switch[process["Method"],				
 
-				"EPGT2",
+				"EPGT2"|"Exp",
 				(*-------------------------------------------*)
 				(*---------- EPG processing script ----------*)
 				(*-------------------------------------------*)
@@ -1802,37 +1847,51 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							{data, t2vox} = ImportNii[nfile];
 
 							(*mask the background*)		
-							mask = Mask[NormalizeMeanData[data], 2, MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
+							mask = Mask[NormalizeMeanData[data], Lookup[process, "Masking", 5], MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
 							data = NormalizeData@MaskData[data, mask];
 
-							(*determine the pulse profiles*)
-							(*-----*)AddToLog["Calculating the slice profiles", 4];	
-							{ex, ref} = datType["Process", "Settings"];
-							angle = If[NumberQ[ex]&&NumberQ[ref],
-								{ex, ref},
-								thk = json["SliceThickness"];
-								angle = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]];
-								shift = datType["Process", "Shift"];
-								shift = If[shift=!=True, 0.,
-									shift = (1/ref[[3, 1]] - 1/ex[[3, 1]]) (3(*filed times ppm*) 3.4);
-									(*-----*)AddToLog[{"Shifting fat profile with: ", shift}, 4];
-									Round[shift/((3 thk/2)/(6 thk))]
-								];
-								angle
-							];
+							Switch[process["Method"],
 
-							(*caculate the water t2 map*)
-							(*-----*)AddToLog["Starting EPG T2 calculation", 4];
-							{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
-								MonitorCalc -> False, DictT2IncludeWater -> True, 
-								EPGFitFat -> False, EPGCalibrate -> True, EPGFatShift -> shift,
-								DictT2fValue -> 150, DictT2fRange -> {150, 250, 5}, 
-								DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}];
+								"EPGT2",
+
+								(*determine the pulse profiles*)
+								(*-----*)AddToLog["Calculating the slice profiles", 4];	
+								{ex, ref} = datType["Process", "Settings"];
+								angle = If[NumberQ[ex]&&NumberQ[ref],
+									{ex, ref},
+									thk = json["SliceThickness"];
+									angle = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]];
+									shift = datType["Process", "Shift"];
+									shift = If[shift=!=True, 0.,
+										shift = (1/ref[[3, 1]] - 1/ex[[3, 1]]) (3(*filed times ppm*) 3.4);
+										(*-----*)AddToLog[{"Shifting fat profile with: ", shift}, 4];
+										Round[shift/((3 thk/2)/(6 thk))]
+									];
+									angle
+								];
+
+								(*caculate the water t2 map*)
+								(*-----*)AddToLog["Starting EPG T2 calculation", 4];
+								{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
+									MonitorCalc -> False, DictT2IncludeWater -> True, 
+									EPGFitFat -> False, EPGCalibrate -> True, EPGFatShift -> shift,
+									DictT2fValue -> 150, DictT2fRange -> {150, 250, 5}, 
+									DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}];
+
+								outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
+
+								,
+								"Exp",
+								(*-----*)AddToLog["Starting exponential T2 fitting", 4];
+								{s0, t2} = T2Fit[data, 1000 echos];
+
+								outTypes = {"data", "t2", "s0"};
+							];
 
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:", 4];
-							(*----*)AddToLog[outfile, 5];					
-							outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
+							(*----*)AddToLog[outfile, 5];		
+
 							ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
 							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
 													
@@ -2233,7 +2292,7 @@ MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, ops:Op
 
 MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 		segment, segType, segTypeLab, checkFile, fol, segLocation, device,
-		parts, outfile, segfile, out, vox, seg, duplicate, key
+		parts, outfile, segfile, out, vox, seg, duplicate, key, dupKey, status, segiu
 	},
 
 	status = "done";
