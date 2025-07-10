@@ -1488,12 +1488,14 @@ SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]
 
 SegmentData[data_, opts:OptionsPattern[]]:=SegmentData[data, "Legs", opts]
 
-SegmentData[data_, what_, OptionsPattern[]] := Block[{
+SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 		dev, max, mon, patch, pts, dim ,loc, set, net, type, segs, all, time, timeAll
 	},
 
 	timeAll = First@AbsoluteTiming[
 		{dev, max, mon} = OptionValue[{TargetDevice, MaxPatchSize, Monitor}];
+
+		custom = If[ListQ[whati], {what, netFile} = whati; True, what = whati; False];
 
 		(*split the data in upper and lower legs and left and right*)
 		If[mon, Echo[Dimensions@data, "Analyzing the data with dimensions:"]];
@@ -1512,6 +1514,9 @@ SegmentData[data_, what_, OptionsPattern[]] := Block[{
 			},
 			_, Return[]
 		];
+		If[custom, net = If[ListQ[netFile],
+			(#[[1]] /. {"Upper" -> netFile[[1]], "Lower" -> netFile[[2]]})&
+			netFile&]];
 
 		(*Perform the segmentation*)
 		time = First@AbsoluteTiming[segs = MapThread[(
@@ -2425,7 +2430,7 @@ PrepTrainData[{daI_?ArrayQ, segI_?ArrayQ}, {labi_?VectorQ, labo_?VectorQ}, {voxi
 	];
 
 	(*remove background and normalize data and figure out what to do with multi channel data*)
-	cr = FindCrop[Mask[If[ArrayDepth[dat] === 3, NoramlizeData, NormalizeMeanData][dat], 5, MaskDilation -> 1]];
+	cr = FindCrop[Mask[If[ArrayDepth[dat] === 3, NormalizeData, NormalizeMeanData][dat], 5, MaskDilation -> 1]];
 	{
 		ApplyCrop[dat, cr],
 		If[labi === {0},
