@@ -42,6 +42,8 @@ PacletObject[<|
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegHipLabels", "Muscles_leg_hip.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegLowerLabels", "Muscles_leg_lower.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegUpperLabels", "Muscles_leg_upper.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesShoulderAllLabels", "Muscles_shoulder_full.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesShoulderLabels", "Muscles_shoulder_single.txt"}}},
 
 		(* ---- OS dependant assest ---- *)
 

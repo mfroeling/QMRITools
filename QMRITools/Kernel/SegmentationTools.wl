@@ -1489,7 +1489,8 @@ SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]
 SegmentData[data_, opts:OptionsPattern[]]:=SegmentData[data, "Legs", opts]
 
 SegmentData[data_, whati_, OptionsPattern[]] := Block[{
-		dev, max, mon, patch, pts, dim ,loc, set, net, type, segs, all, time, timeAll
+		dev, max, mon, patch, pts, dim ,loc, set, net, type, segs, all, time, timeAll,
+		what, netFile, custom
 	},
 
 	timeAll = First@AbsoluteTiming[
@@ -1512,10 +1513,11 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 			"Legs"|"UpperLegs"|"LowerLegs",	{
 				(#[[1]] /. {"Upper" -> "SegThighMuscle", "Lower" -> "SegLegMuscle"})&, "Muscle"
 			},
+			"Shoulder", {"SegShoulder"&, "Muscle"},
 			_, Return[]
 		];
 		If[custom, net = If[ListQ[netFile],
-			(#[[1]] /. {"Upper" -> netFile[[1]], "Lower" -> netFile[[2]]})&
+			(#[[1]] /. {"Upper" -> netFile[[1]], "Lower" -> netFile[[2]]})&,
 			netFile&]];
 
 		(*Perform the segmentation*)
@@ -1544,7 +1546,7 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 (*ReplaceLabels*)
 
 
-ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, file},
+ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, file, fileOut},
 	{what, side} = loc;
 	labIn = GetSegmentationLabels[seg];
 
@@ -1552,10 +1554,17 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 	file = GetAssetLocation@Switch[type,
 		"Muscle", Switch[what, 
 			"Upper", "MusclesLegUpperLabels",
-			"Lower", "MusclesLegLowerLabels"],
+			"Lower", "MusclesLegLowerLabels",
+			"Shouler", "MusclesShoulderLabels"],
 		"Bones", "BonesLegLabels"];
 	labNam = # <> "_" <> side & /@ MuscleLabelToName[labIn, file];
-	labOut = MuscleNameToLabel[labNam, GetAssetLocation["MusclesLegLabels"]];
+	fileOut = GetAssetLocation@Switch[type,
+		"Muscle", Switch[what, 
+			"Upper", "MusclesLegLabels",
+			"Lower", "MusclesLegLabels",
+			"Shouler", "MusclesShoulderAllLabels"],
+		"Bones", "MusclesLegLabels"];
+	labOut = MuscleNameToLabel[labNam, fileOut];
 	ReplaceSegmentations[seg, labIn, labOut]
 ]
 
@@ -1648,6 +1657,12 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]]:=Blo
 		(*output the selected data with the correct label and coordinates*)
 		{dat, pts, loc} = Transpose[CropPart/@dat];
 		{{dat, pts, dim}, loc, {{whatSide, cut}, {whatPos, pos}}}
+
+		,
+		"Shoulder",
+		dat = {{data, {"Both", {1, dim[[1]]}}, {"Left", {1, dim[[3]]}}}};
+		{dat, pts, loc} = Transpose[CropPart/@dat];
+		{{dat, pts, dim}, loc, {{whatSide, 0}, {whatPos, 0}}}
 
 		,
 		_,
@@ -1884,7 +1899,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
 		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction,
-		validation, files, loss, rep, learningRate, schedule
+		validation, files, loss, rep, learningRate, schedule, dims
 	},
 
 
@@ -2022,6 +2037,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	Echo[DateString[], "Preparing the data"];
 	(*import all train data or train out of memory*)
 	data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
+	dims = MeanRange[#, 0] & /@ Transpose[Dimensions /@ data[[All, 1]]];
+	Echo[dims, "Data Dimensions: "];
 
 	(*prepare a validation set which is 10% of round*)
 	validation = batchFunction[<|"BatchSize" -> Round[0.1 roundLength]|>];
@@ -2230,7 +2247,7 @@ SyntaxInformation[GetTrainData] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPa
 GetTrainData[dataSets_, nBatch_, patch_, opts:OptionsPattern[]]:=GetTrainData[dataSets, nBatch, patch, False, opts]
 
 GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
-		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad
+		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad, sel
 	},
 
 	itt = 0;
@@ -2239,9 +2256,8 @@ GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 	{augI, nSet, pad} = OptionValue[{AugmentData, PatchesPerSet, PadData}];
 	aug = If[BooleanQ[augI], augI, True];
 
-	(*get the correct number of sets*)
-	itt = Ceiling[nBatch/nSet];
-	Do[
+	(*generate sets untill batch size is reached*)
+	While[Length@datO < nBatch,
 		(*get random dataset*)
 		dat = RandomChoice[dataSets];
 		{dat, seg, vox} = Which[
@@ -2261,11 +2277,14 @@ GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 		{dat, seg} = PatchTrainingData[{dat, seg}, patch, nSet];
 		datO = Join[datO, dat];
 		segO = Join[segO, seg];
-	, itt];
+	];
 
-	(*make the output*)
-	datO = datO[[;; nBatch]];
-	segO = segO[[;; nBatch]];
+	(*randomly sample the batch to correct length*)
+	sel = RandomSample[Range[Length@datO]][[;; nBatch]];
+	datO = datO[[sel]];
+	segO = segO[[sel]];
+
+	(*padd the data with extra background if needed*)
 	If[IntegerQ[pad], {datO, segO} = AddPadding[datO, segO, pad]];
 	datO = NormalizeData[#, NormalizeMethod -> "Uniform"]& /@ datO;
 	segO = If[IntegerQ[nClass], ClassEncoder[segO, nClass], segO + 1];
@@ -2296,7 +2315,7 @@ AddPadding[dat_, seg_, p_]:=Block[{datp, segp, pad},
 PatchTrainingData[{dat_, seg_}, patch_, n_]:=Block[{pts,datP,segP},
 	(*by overlapping patches with PatchNumber more random patches per data are created*)
 	{datP, pts} = DataToPatches[dat, patch, n, PatchNumber->2];
-	segP = DataToPatches[seg, patch, pts][[1]];
+	segP = First@DataToPatches[seg, patch, pts];
 	{ToPackedArray[N[#]]&/@datP, ToPackedArray[Round[#]]&/@segP}
 ]
 
@@ -2612,11 +2631,11 @@ MuscleLabelToName[num_, file_] := Block[{muscleNames, muscleLabels},
 
 SyntaxInformation[MuscleNameToLabel] = {"ArgumentsPattern"->{_, _.}};
 
-MuscleNameToLabel[num_] := num /. Thread[#[[1]] -> #[[2]]] &[ImportITKLabels[GetAssetLocation["MusclesLegLabels"]]]
+MuscleNameToLabel[name_] := name /. Thread[#[[1]] -> #[[2]]] &[ImportITKLabels[GetAssetLocation["MusclesLegLabels"]]]
 
-MuscleNameToLabel[num_, file_] := Block[{muscleNames, muscleLabels},
+MuscleNameToLabel[name_, file_] := Block[{muscleNames, muscleLabels},
 	{muscleNames, muscleLabels} = ImportITKLabels[file];
-	num /. Thread[muscleNames -> muscleLabels]
+	name /. Thread[muscleNames -> muscleLabels]
 ]
 
 
