@@ -20,7 +20,7 @@ BeginPackage["QMRITools`MuscleBidsTools`", Join[{"Developer`"}, Complement[QMRIT
 (*Usage Notes*)
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Functions*)
 
 
@@ -329,9 +329,9 @@ BidsString[parts_, val_?StringQ]:=Block[{str},
 (*SelectBids*)
 
 
-SelectBids[folder_?ListQ,entity_?StringQ]:=Flatten[SelectBids[#,entity]&/@folder]
+SelectBids[folder_?ListQ, entity_?StringQ]:=Flatten[SelectBids[#,entity]&/@folder]
 
-SelectBids[folder_?StringQ,entity_?StringQ]:=Block[{
+SelectBids[folder_?StringQ, entity_?StringQ]:=Block[{
 		baseName, start, end, what
 	},
 	baseName = StringStartsQ[FileNameTake[folder], #]&;
@@ -406,10 +406,9 @@ defaultConfig = <|
 	|>,
 	"Segment" -><|
 		"Device" -> "GPU"
-
 	|>,
 	"Tractography" -><|
-		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}},(*TODO change default to not flip*)
+		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}}
 	|>
 |>
 
@@ -605,12 +604,23 @@ MakeTable[association_] := Block[{value},
 (*ViewProtocolNames*)
 
 
-SyntaxInformation[ViewProtocolNames] = {"ArgumentsPattern" -> {_}};
+Options[ViewProtocolNames] = {
+	ProcessSubjects->All
+}
 
-ViewProtocolNames[folder_?StringQ] := ViewProtocolNames[GetConfig[folder]]
+SyntaxInformation[ViewProtocolNames] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-ViewProtocolNames[config_?AssociationQ] := Block[{dataFols, fold, list, duplicates, json},
+ViewProtocolNames[folder_?StringQ, ops:OptionsPattern[]] := ViewProtocolNames[GetConfig[folder], ops]
+
+ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{subs, dataFols, fold, list, duplicates, json},
+	
+	subs = OptionValue[ProcessSubjects];
 	dataFols = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
+
+	subs = If[subs===All||subs==="All", dataFols, 
+		Select[dataFols, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#]]&]
+	];
+
 	MenuView[(
 		fold = #;
 		list = Sort@DeleteDuplicates[(
@@ -620,7 +630,7 @@ ViewProtocolNames[config_?AssociationQ] := Block[{dataFols, fold, list, duplicat
 		duplicates = Keys[Select[Counts[list[[All, 2]]], # > 1 &]];
 		list = If[MemberQ[duplicates, #[[2]]], {#[[1]], Style[#[[2]], Bold, Red]}, #] & /@ list;
 		fold -> Grid[list, Alignment -> Left, Frame -> All, Spacings -> {1, 1.2}]
-	) & /@ dataFols, ControlPlacement -> Top]
+	) & /@ subs, ControlPlacement -> Top]
 ]
 
 
@@ -652,11 +662,19 @@ SelectSubjects[dir_?StringQ] := DynamicModule[{fol, selectedSubjects, list},
 
 Options[SubNameToBids] = {BidsIncludeSession -> True};
 
+SubNameToBids[nameIn_?ListQ, opts : OptionsPattern[]] := SubNameToBids[#, "", opts] & /@ nameIn
+
 SubNameToBids[nameIn_?ListQ, met_, opts : OptionsPattern[]] := SubNameToBids[#, met, opts] & /@ nameIn
+
+SubNameToBids[nameIn_?StringQ, opts : OptionsPattern[]]:= SubNameToBids[nameIn, "", opts]
 
 SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name, ses},
 	(*get the names*)
-	ass = Switch[met, "Sub", PartitionBidsName, "BidsDcmToNii", PartitionBidsName[FileNameTake[#, {2, -1}]] &, _, PartitionBidsFolderName[#][[-1]] &]@nameIn;
+	ass = Switch[met, 
+		"Sub", PartitionBidsName, 
+		"BidsDcmToNii", PartitionBidsName[FileNameTake[#, {2, -1}]]&, 
+		_, PartitionBidsFolderName[#][[-1]]&
+	]@nameIn;
 	keys = Keys[ass];
 
 	(*if bids take sub key else assume first suf is name*)
