@@ -1825,8 +1825,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							{mean, valU} = MeanBvalueSignal[data, val];
 							
 							(*initialize IVIM fit*)
-							ivim = ConfigLookup[datType, "Process", "IVIMCorection"];
-							MergeConfig[settingPro, <|"IVIMCorection"->ivim|>];
+							ivim = ConfigLookup[datType, "Process", "IVIMCorrection"];
+							MergeConfig[settingPro, <|"IVIMCorrection"->ivim|>];
 							If[ivim,
 								(*-----*)AddToLog["Starting ivim calculation", 4];
 								(*estimatie inti values*)
