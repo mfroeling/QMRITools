@@ -51,6 +51,9 @@ StringPadInteger[{num, len}, post] the same but with postfix post.
 StringPadInteger[pre, num, post] the same but with pre and postfix pre and post.
 StringPadInteger[post, {num, len}, post] the same but with pre and postfix pre and post."
 
+RandomString::usage =
+"RandomString[n] generates a random string of length n with letters and numbers."
+
 DateName::usage =
 "DateName[] gives the current date and time in the format \"YYYYMMDD-HH\"."
 
@@ -395,6 +398,8 @@ SetDemoDirectory[]:=SetDirectory[FileNameJoin[{DirectoryName[GetAssetLocation["D
 (*StringPad*)
 
 
+SyntaxInformation[StringPadInteger] = {"ArgumentsPattern" -> {_, _., _.}};
+
 StringPadInteger[x_?IntegerQ]:=StringPadInteger["", {x, 3}, ""]
 
 StringPadInteger[{x_?IntegerQ, n_?IntegerQ}]:=StringPadInteger["", {x, n}, ""]
@@ -408,6 +413,15 @@ StringPadInteger[x_?IntegerQ, post_?StringQ]:=StringPadInteger["", {x, 3}, post]
 StringPadInteger[{x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=StringPadInteger["", {x, n}, post]
 
 StringPadInteger[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=pre<>StringPadLeft[ToString[x], n, "0"]<>post
+
+
+(* ::Subsubsection::Closed:: *)
+(*RandomString*)
+
+
+SyntaxInformation[RandomString] = {"ArgumentsPattern" -> {_}};
+
+RandomString[n_] := StringJoin[RandomChoice[Join[Alphabet["English"], ToString /@ Range[0, 9]], n]]
 
 
 (* ::Subsubsection::Closed:: *)
