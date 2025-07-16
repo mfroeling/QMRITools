@@ -657,11 +657,10 @@ SplitRegInput[input_] := Which[
 
 CreateTempDirectory[tdirI_] := CreateTempDirectory[tdirI, False, False]
 CreateTempDirectory[tdirI_, print_] := CreateTempDirectory[tdirI, print, False]
-CreateTempDirectory[tdirI_, print_, make_] := Block[{tdir, add, str, f},
+CreateTempDirectory[tdirI_, print_, make_] := Block[{tdir, add, str},
 	(*define temp directory forder name*)
 	{tdir, add} = If[ListQ[tdirI], tdirI, {tdirI, ""}];
-	DeleteFile[f = CreateFile[]];
-	str = StringSplit[f, "-"][[-2]];
+	str = RandomString[6];
 
 	tdir = (If[StringQ[tdir], tdir, "Default"] /. {"Default" -> $TemporaryDirectory});
 	tdir = If[StringContainsQ[Last[FileNameSplit[tdir]], "QMRIToolsReg"] || Last[FileNameSplit[tdir]] === "anat",

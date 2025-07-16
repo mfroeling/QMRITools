@@ -395,7 +395,8 @@ defaultConfig = <|
 		"FlipPermute" -> {{1, -1, 1}, {"z", "y", "x"}},(*TODO change default to not flip*)
 		"SplitRegistration" -> True,
 		"IVIMCorrection" -> True,
-		"GradientCorrection" -> False
+		"GradientCorrection" -> False,
+		"FaciculationDetection" -> False
 	|>,
 	"Merging" -> <|
 		"Overlap" -> 0,
@@ -404,11 +405,15 @@ defaultConfig = <|
 		"Reverse" -> False,
 		"SplitRegistration" -> True
 	|>,
-	"Segment" -><|
+	"Segment" -> <|
 		"Device" -> "GPU"
 	|>,
 	"Tractography" -><|
 		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}}
+	|>,
+	"Options" -> <|
+		"MaskErosion" -> True,
+		"TractWeigthing" -> False
 	|>
 |>
 
@@ -2076,25 +2081,26 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 	(*get the outfile names*)
 	{fol, parts} = PartitionBidsFolderName[foli];
 	merge = datType["Merging"];
+	tarMer = merge["Target"];
 	dupKey = If[datType["Class"]==="Stacks", "stk", "chunk"];
 	outfile = GenerateBidsFileName[folo, <|parts, If[duplicate, dupKey->StringStrip@datType["Key"], Nothing], 
 		"type"->datType["Type"], "suf"->datType["Suffix"]|>];
 
 	debugBids[{parts, outfile}];
-	debugBids["duplicates: ", {duplicate, Length[merge["Target"]], duplicate && Length[merge["Target"]] ===3}];
+	debugBids["duplicates: ", {duplicate, Length[tarMer], duplicate && Length[tarMer] ===3}];
 
 	(*------------------ perform all check and figure out settings ------------------*)
 
 	(*get the settings for the target data if there are duplicates the target needs to be 4 else 3*)
-	If[duplicate && Length[merge["Target"]] ===3,
+	If[duplicate && Length[tarMer] ===3,
 		(*-----*)AddToLog[{"Skipping merging since there are duplicate data and the targerts are unclear"}, 3];
 		Return[]];
-	If[duplicate,
-		{tarDat, tarType, tarSuf, tarCon} = merge["Target"];
+	If[duplicate || Length[tarMer] === 4,
+		{tarDat, tarType, tarSuf, tarCon} = tarMer;
 		tarFile = GenerateBidsFileName[folo, <|parts, dupKey->tarDat, "type"->tarType, "suf"->{tarSuf, tarCon}|>]<>".nii";
 		tarStacs = StringStrip /@ Flatten[{First[Select[allType, #["Key"] === tarDat &]]["Label"]}];
 		,
-		{tarType, tarSuf, tarCon} = merge["Target"];
+		{tarType, tarSuf, tarCon} = tarMer;
 		tarFile = GenerateBidsFileName[folo, <|parts, "type"->tarType, "suf"->{tarSuf, tarCon}|>]<>".nii";
 		tarStacs = StringStrip /@ Flatten[{First[Select[allType, #["InFolder"] === tarSuf &]]["Label"]}];
 	];
