@@ -208,7 +208,7 @@ Options[DcmToNii] = {
 	UseSubfolders -> False, 
 	DeleteOutputFolder -> False, 
 	MonitorCalc -> True,
-	MergeEchos -> False
+	MergeEchos -> True
 }
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
