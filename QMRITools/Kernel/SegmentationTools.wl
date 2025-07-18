@@ -1401,7 +1401,7 @@ MakeClassifyImage[dat_?MatrixQ, OptionsPattern[]]:=Block[{imSize},
 
 
 Options[ClassifyData] = {
-	TargetDevice -> "GPU"
+	TargetDevice -> "CPU"
 };
 
 SyntaxInformation[ClassifyData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
@@ -1479,7 +1479,7 @@ PosFunc = Compile[{{a, _Integer, 0},{b, _Integer, 0},{l, _Integer, 0},{x, _Integ
 
 
 Options[SegmentData] = {
-	TargetDevice -> "GPU", 
+	TargetDevice -> "CPU", 
 	MaxPatchSize->Automatic, 
 	Monitor->False
 };
@@ -1496,7 +1496,10 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 	timeAll = First@AbsoluteTiming[
 		{dev, max, mon} = OptionValue[{TargetDevice, MaxPatchSize, Monitor}];
 
-		custom = If[ListQ[whati], {what, netFile} = whati; True, what = whati; False];
+		custom = If[ListQ[whati], 
+			{what, netFile} = whati; True, 
+			what = whati; False
+		];
 
 		(*split the data in upper and lower legs and left and right*)
 		If[mon, Echo[Dimensions@data, "Analyzing the data with dimensions:"]];
@@ -1506,7 +1509,6 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 		If[mon, Echo[Round[time, .1], "Total time for analysis [s]: "]];
 		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"]];
 
-		
 		(*get the network name and data type*)
 		{net, type} = Switch[what,
 			"LegBones", {"SegLegBones"&, "Bones"},
@@ -1514,17 +1516,20 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 				(#[[1]] /. {"Upper" -> "SegThighMuscle", "Lower" -> "SegLegMuscle"})&, "Muscle"
 			},
 			"Shoulder", {"SegShoulder"&, "Muscle"},
+			"Back", {"SegBack"&, "Muscle"},
 			_, Return[]
 		];
 		If[custom, net = If[ListQ[netFile],
 			(#[[1]] /. {"Upper" -> netFile[[1]], "Lower" -> netFile[[2]]})&,
-			netFile&]];
+			netFile&]
+		];
 
 		(*Perform the segmentation*)
-		time = First@AbsoluteTiming[segs = MapThread[(
-			If[mon, Echo[{#2, net[#2]}, "Performing segmentation for: "]];
-			segs = ApplySegmentationNetwork[#1, net[#2], TargetDevice -> dev, MaxPatchSize->max, Monitor->mon];
-			ReplaceLabels[segs, #2, type]
+		time = First@AbsoluteTiming[
+			segs = MapThread[(
+				If[mon, Echo[{#2, net[#2]}, "Performing segmentation for: "]];
+				segs = ApplySegmentationNetwork[#1, net[#2], TargetDevice -> dev, MaxPatchSize->max, Monitor->mon];
+				If[custom, segs, ReplaceLabels[segs, #2, type]]
 		) &, {patch, loc}]];
 		If[mon, Echo[Round[time, .1], "Total time for segmentations [s]: "]];
 
@@ -1555,14 +1560,14 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 		"Muscle", Switch[what, 
 			"Upper", "MusclesLegUpperLabels",
 			"Lower", "MusclesLegLowerLabels",
-			"Shouler", "MusclesShoulderLabels"],
+			"Shoulder", "MusclesShoulderLabels"],
 		"Bones", "BonesLegLabels"];
 	labNam = # <> "_" <> side & /@ MuscleLabelToName[labIn, file];
 	fileOut = GetAssetLocation@Switch[type,
 		"Muscle", Switch[what, 
 			"Upper", "MusclesLegLabels",
 			"Lower", "MusclesLegLabels",
-			"Shouler", "MusclesShoulderAllLabels"],
+			"Shoulder", "MusclesShoulderAllLabels"],
 		"Bones", "MusclesLegLabels"];
 	labOut = MuscleNameToLabel[labNam, fileOut];
 	ReplaceSegmentations[seg, labIn, labOut]
@@ -1575,7 +1580,7 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 
 Options[SplitDataForSegmentation] = {
 	Monitor -> False,
-	TargetDevice -> "GPU"
+	TargetDevice -> "CPU"
 };
 
 SyntaxInformation[SplitDataForSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
@@ -1660,7 +1665,13 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]]:=Blo
 
 		,
 		"Shoulder",
-		dat = {{data, {"Both", {1, dim[[1]]}}, {"Left", {1, dim[[3]]}}}};
+		dat = {{data, {"Both", {1, dim[[1]]}}, {"Both", {1, dim[[3]]}}}};
+		{dat, pts, loc} = Transpose[CropPart/@dat];
+		{{dat, pts, dim}, loc, {{whatSide, 0}, {whatPos, 0}}}
+
+		,
+		"Back",
+		dat = {{data, {"Both", {1, dim[[1]]}}, {"Both", {1, dim[[3]]}}}};
 		{dat, pts, loc} = Transpose[CropPart/@dat];
 		{{dat, pts, dim}, loc, {{whatSide, 0}, {whatPos, 0}}}
 
@@ -1686,7 +1697,7 @@ CropPart[{dat_, {up_, {upStart_, upEnd_}}, {side_, {sideStart_, sideEnd_}}}]:= B
 
 
 Options[ApplySegmentationNetwork] = {
-	TargetDevice->"GPU", 
+	TargetDevice->"CPU", 
 	DataPadding->0, 
 	MaxPatchSize->Automatic, 
 	Monitor->False
@@ -1735,7 +1746,8 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]]:=Block[{
 	},
 
 	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
-	If[lim === Automatic, lim = If[dev==="GPU", 200, 224]];
+	If[lim === Automatic, lim = If[dev==="GPU", 200, 150]];
+
 	prec = If[(dev==="GPU") && ($OperatingSystem === "Windows"), "Mixed", "Real32"];
 
 	data = Which[
@@ -1834,17 +1846,23 @@ FindPatchDim[net_, dims_, lim_] := Block[{
 
 	(*if memory limit is given find patch that fits*)
 	If[!(lim === 1000 || lim === Automatic),
-		If[CubeRoot[N[Times @@ dimM]] < lim, 
-			dimN = dimM, 
+		If[CubeRoot[N[Times @@ dimM]] < lim,
+			(*N[Sqrt[Times@@Rest[dimM]]]<lim,*)
+			dimN = dimM
+			,
 			u = 1;
 			cont = True;
+
 			While[cont, u++;
-				dimN = u  sc;
+				dimN = u sc;
 				dimN = Min /@ Transpose[{dimN, dimM}];
-				cont = CubeRoot[Times @@ dimN] < lim && Min [dimN] < Min[dim]]
+				cont = ((CubeRoot[N[Times @@ dimN]] < lim && dimN =!= dimM) && u < 20)
+			]
 		],
 		dimN = dimM
 	];
+
+	(*if no memory limit is given use the smallest patch that fits the network*)
 
 	(*output the patch dim*)
 	{Min@#[[1]], Max@#[[2]], Max@#[[3]]} & [Thread[{dimN, {2, 1, 1} inp}]]

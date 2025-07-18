@@ -24,6 +24,9 @@ BeginPackage["QMRITools`ElastixTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Functions*)
 
 
+ClearQMRIToolsTemp::usage =
+"ClearQMRIToolsTemp[] clears the temporary directory used by QMRITools for registration."
+
 RegisterData::usage =
 "RegisterData[data] registers the data series. If data is 3D it performs multiple 2D registration, if data is 4D it performs multipe 3D registration.
 The input data can be in the forms: data, {data, vox}, {data, mask} or {data, mask, vox}.
@@ -272,6 +275,15 @@ operatingSystem = $OperatingSystem;
 
 (* ::Subsection:: *)
 (*Support Functions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*ClearQMRIToolsTemp*)
+
+
+SyntaxInformation[ClearQMRIToolsTemp] = {"ArgumentsPattern"->{}};
+
+ClearQMRIToolsTemp[] := DeleteDirectory[FileNames["*QMRIToolsReg*", $TemporaryDirectory], DeleteContents -> True]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -705,7 +717,7 @@ Options[RegisterData] = {
 	DeleteTempDirectory->True,
 	PrintTempDirectory->True,
 	OutputTransformation->False,
-	UseGPU->{False,Automatic},
+	UseGPU->{False, Automatic},
 	PCAComponents->1,
 	ShowMetric->False
 };
@@ -738,7 +750,7 @@ RegisterData[
 	(*check for cyclic*)
 	cyc = AnyTrue[Flatten[{OptionValue[MethodReg]}], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
 	cyclyc = AllTrue[Flatten[{OptionValue[MethodReg]}], (# === "PCAtranslation" || # === "PCArigid" || # === "PCAaffine" || # === "PCAbspline") &];
-	If[cyc =!= cyclyc, Message[RegisterData::cyc];Return[Message[RegisterData::fatal]]];
+	If[cyc =!= cyclyc, Message[RegisterData::cyc]; Return[Message[RegisterData::fatal]]];
 
 
 	(*get data properties*)
@@ -835,12 +847,19 @@ RegisterData[
 	voxtL = Length[voxt];
 	voxmL = Length[voxm];
 
+	debugElastix[{multi, depthM, depthT, depthM == depthT + 1}];
+
 	(*check dimensions and determine type*)
 	type = Which[
 		multi && depthM == depthT, "multi",
 		depthT == depthM, "vol", (*2D-2D, 3D-3D*)
 		(depthT == 2 || depthT == 3) && depthM == depthT + 1, "series", (*2D-3D, 3D-4D*)
-		True,Message[RegisterData::dim,depthT,depthM];Return[Message[RegisterData::fatal]] (*error*)];
+		True, Message[RegisterData::dim,depthT,depthM];Return[Message[RegisterData::fatal]] (*error*)];
+
+	debugElastix["Type for registration: "<>type];
+
+	(*check dimensions*)
+	(*target and moving must be 2D or 3D*)
 
 	(*check voxel sies*)
 	If[voxtL!=3||voxmL!=3||!(NumberQ@Total@voxt)||!(NumberQ@Total@voxm),Message[RegisterData::vox,voxt,voxm];Return[Message[RegisterData::fatal]]];
