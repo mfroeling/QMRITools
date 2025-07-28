@@ -1410,7 +1410,13 @@ Inverse3Di[data_] := Block[{out},
 labStyle=Directive[Bold,FontFamily->"Helvetica",14,Black];
 
 
-Options[Hist] = {ColorValue -> {{Black,White}, Red, Green, Blue}, Method -> "SkewNormal", PlotLabel -> "", AxesLabel -> "", ImageSize -> 300}
+Options[Hist] = {
+	ColorValue -> {{Black,White}, Red, Green, Blue}, 
+	Method -> "SkewNormal", 
+	PlotLabel -> "", 
+	AxesLabel -> "", 
+	ImageSize -> 300
+}
 
 SyntaxInformation[Hist] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -1473,7 +1479,7 @@ Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, cole
 		"ProbabilityDensity",
 		PerformanceGoal -> "Speed", PlotRange -> {{r1, r2}, All},
 		PlotLabel -> title, LabelStyle -> labStyle, Axes -> False, 
-		FrameStyle -> Thick,
+		FrameStyle -> Directive[Thick, Black],
 		FrameLabel -> {label, "Probability Density"}, 
 		Frame -> {True, True, False, False}, 
 		ChartBaseStyle -> EdgeForm[coledge], ChartStyle -> colbar];
