@@ -278,6 +278,8 @@ Options[TensorCalc]= {
 
 SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
+TensorCalc[dat_, mat_?MatrixQ, opts:OptionsPattern[]]:= TensorCalc[dat, mat, {}, False, opts]
+
 TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, opts:OptionsPattern[]]:= TensorCalc[dat, grad, bvec, False, opts]
 
 TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
@@ -295,7 +297,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
 		Return[Message[TensorCalc::met, method];$Failed]
 	];
 
-	bmat = Bmatrix[bvec, grad];
+	bmat = If[bvec==={}, grad, Bmatrix[bvec, grad]];
 	data = ToPackedArray@Ramp@N@Round[dat, .000001];
 
 	(*get the data dimensions*)	
@@ -1332,30 +1334,22 @@ RPBMFunctionI[tm_, {d0_?NumberQ, tau_?NumberQ, zeta_?NumberQ}] := Block[{
 (*GetRPBMValues*)
 
 
-SyntaxInformation[GetRPBMValues] = {"ArgumentsPattern" -> {_, _.}};
+SyntaxInformation[GetRPBMValues] = {"ArgumentsPattern" -> {_, _., _.}};
 
-GetRPBMValues[sol_] := GetRPBMValues[sol, {"none", 0}]
 
-GetRPBMValues[sol_, par_] := Block[{
-		con, d0, zeta, tau, dinf, td, tr, i, sv, a, kappa
-	},
+GetRPBMValues[fit_?MatrixQ]:=GetRPBMValues[fit, True]
 
-	(*get the values from the solution*)
-	Switch[First@par, "d0", d0 = par[[2, 1]], "tau", tau = par[[2, 2]], "zeta", zeta = par[[2, 3]]];
+GetRPBMValues[fit_?MatrixQ, inf_?BooleanQ] := GetRPBMValues[#, inf]& /@ fit
 
-	vec = {d0, tau, zeta} /. sol;
-	GetRPBMValues[vec]
-]
+GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}]:=GetRPBMValues[{d0, tau, zeta}, True]
 
-GetRPBMValues[fit_?MatrixQ] := GetRPBMValues /@ fit
-
-GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}] := Block[{
+GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}, inf__?BooleanQ] := Block[{
 		dinf, td, tr, i, sv, a, kappa
 	},
 	(*https://github.com/NYU-DiffusionMRI/RPBM*)
 
 	(*diffusion at infinity time*)
-	dinf = RPBMFunction[Infinity, {d0, tau, zeta}];
+	dinf = If[inf, RPBMFunction[Infinity, {d0, tau, zeta}], 0.];
 	(*td the diffusion time to traverse a typical cell*) 
 	td = (2*tau)/zeta^2(* a^2/(2 d0)*);
 	(*tr the residence time*)
@@ -1373,6 +1367,23 @@ GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}] := Block[{
 	{d0, tau, zeta,	dinf, Clip[td, {0., 5000.}], Clip[tr, {0., 5000.}],	i, sv, a, kappa}
 ]
 
+
+GetRPBMValues[sol_]:=GetRPBMValues[sol, True]
+
+GetRPBMValues[sol_, inf_?BooleanQ] := GetRPBMValues[sol, {"none", 0}, inf]
+
+GetRPBMValues[sol_, par_]:=GetRPBMValues[sol, par, True]
+
+GetRPBMValues[sol_, par_, inf_?BooleanQ] := Block[{
+		con, d0, zeta, tau, dinf, td, tr, i, sv, a, kappa
+	},
+
+	(*get the values from the solution*)
+	Switch[First@par, "d0", d0 = par[[2, 1]], "tau", tau = par[[2, 2]], "zeta", zeta = par[[2, 3]]];
+
+	vec = {d0, tau, zeta} /. sol;
+	GetRPBMValues[vec, inf]
+]
 
 (* ::Subsubsection:: *)
 (*FitRPBMFunction*)
@@ -1464,9 +1475,12 @@ FitRPBMDictionary[sig_, {pars_, sim_}, snr_, d0i_] := Block[{
 	simN = sim + RandomVariate[NormalDistribution[0, 1./snr], Dimensions@sim];
 	
 	(*look for minimal RMS error in each dictionary and get the corresponding parameter*)
-	Median[RPBMsolFunc[sig, If[d0i > 0., d0i,
-	Clip[Quiet@First@FindArgMin[RPBMminFunc[sig, d0/100, #[[2]]], {d0}, AccuracyGoal -> 6]/100, 
-		{0.5, 2.5}, {0.5, 1.5}]], #] & /@ Transpose[{pars, simN}]]
+	Median[RPBMsolFunc[sig, If[d0i > 0., 
+		d0i,
+		Clip[
+			Quiet@First@FindArgMin[RPBMminFunc[sig, d0/100, #[[2]]], {d0}, AccuracyGoal -> 6]/100, 
+		{0.5, 2.5}, {0.5, 1.5}]
+		], #] & /@ Transpose[{pars, simN}]]
 ]
 
 

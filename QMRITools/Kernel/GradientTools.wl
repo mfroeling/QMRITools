@@ -1428,14 +1428,16 @@ BmatrixToggle[bmat_, axes_, flip_] := Block[{tmpa, tmpf, bmati, bmatn, outp, rul
 		Return[Message[BmatrixToggle::flip, flip]],
 
 		(*make bmat vecs of input*)
-		tmpa = axes /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
-		tmpf = flip /. {x_, y_, z_} -> {x*x, y*y, z*z, x y, x z, y z};
+		tmpa = axes /. {x_, y_, z_} :> {x*x, y*y, z*z, x y, x z, y z};
+		tmpf = flip /. {x_, y_, z_} :> {x*x, y*y, z*z, x y, x z, y z};
 
 		(*check shape of bmat*)
 		bmati = If[Length[bmat[[1]]] == 7, -bmat[[All, 1 ;; 6]], bmat];
 
 		(*Toggle bmat*)
-		bmatn = (rule = Thread[{("x")^2, ("y")^2, ("z")^2, "x" "y", "x" "z", "y" "z"} -> #]; tmpf (tmpa /. rule)) & /@ bmati;
+		bmatn = (rule = Thread[
+			{("x")^2, ("y")^2, ("z")^2, "x" "y", "x" "z", "y" "z"} -> #
+		]; tmpf (tmpa /. rule)) & /@ bmati;
 
 		(*output bmat*)
 		outp = If[Length[bmat[[1]]] == 7, Append[-#, 1] & /@ bmatn, bmatn]
@@ -1526,21 +1528,50 @@ GetGradientScanOrder[file_?StringQ, grd_?ListQ, bval_?ListQ,OptionsPattern[]] :=
 
 SyntaxInformation[ImportGradObj] = {"ArgumentsPattern" -> {_}};
 
-ImportGradObj[folder_] := Block[{files, imp, obj, name},
-	files = FileNames["GR*.acq", folder];
-	(
-		imp = Import[#, "Lines"];
-		name = StringTrim[StringTrim[StringReplace[imp[[1]], {"$ modify_object " -> "", "GR`" -> "", "[" -> "_", "]" -> "_"}], "\""], "_"];
-		obj = (
-			obj = StringSplit[StringDrop[StringTrim[#], -1], " = "];
-			obj[[1]] -> ToExpression[obj[[2]]] // N
-		) & /@ imp[[2 ;;]];
+ImportGradObj[folder_?DirectoryQ] := Block[{grad, files, imp, obj, name},
+	grad = {};
 
-		name -> obj
-	) & /@ files
+	files = FileNames["*`SQ.acqx", folder];
+	If[files =!= {}, grad = Select[Flatten[GetGradFromACQXFile /@ files], ! StringContainsQ[#[[1]], "ecc"] &]];
+
+	files = FileNames["GR*.acq", folder];
+	If[files =!= {}, grad = (
+			imp = Import[#, "Lines"];
+			name = StringTrim[StringTrim[StringReplace[imp[[1]], {
+				"$ modify_object " -> "", "GR`" -> "", "[" -> "_", "]" -> "_"
+			}], "\""], "_"];
+			obj = (
+				obj = StringSplit[StringDrop[StringTrim[#], -1], " = "];
+				obj[[1]] -> ToExpression[obj[[2]]] // N
+			) & /@ imp[[2 ;;]];
+
+			name -> obj
+		) & /@ files
+	];
+
+	Sort@grad
 ]
 
+
+GetGradFromACQXFile[file_] := Block[{xml, grads, nam, out, getVals, getNames},
+	getVals[list_] := N@ToExpression[Cases[list[[All, 3]], XMLElement[class_, id_, children_] :> ("Values" /. id), 2]];
+	getNames[list_] := "Name" /. list[[All, 2]];
+
+	xml = Import[file, "XML"];
+	grads = First[Flatten[Cases[xml[[2]], XMLElement[class_, id_, children_] :> If[("Name" /. id) === "GR", children, Nothing], Infinity]]][[3]];
+
+	grads = Cases[grads, XMLElement[class_, id_, children_] :> (
+		nam = StringTrim["Name" /. id, "_"];
+		out = children[[1, 3, All]];
+		nam -> Thread[getNames[out] -> getVals[out]]
+	)];
+
+	grads
+];
+
+
 ImportGradObj[{base_, xbase_}] := Module[{objectNames, objects, name, vals, props},
+Print[aaa];
 	objectNames = {
 		"\"GR`blip\"", "\"GR`d_echo\"",
 		"\"GR`diff[0]\"", "\"GR`diff[1]\"", "\"GR`diff[2]\"",
@@ -1607,7 +1638,9 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Block[{
 
 	grdiff = {"diff_2", "diff_2nd_2"};
 
-	Gd = Norm[Max[Abs[{"gr_str", ("gr_str_step"*"gr_str_factor_max")} /. #]] & /@ Select[({"diff_0", "diff_1", "diff_2"} /. pars), ! StringQ[#] &]];
+	Gd = Norm[Max[
+		Abs[{"gr_str", ("gr_str_step"*"gr_str_factor_max")} /. #]
+	] & /@ Select[({"diff_0", "diff_1", "diff_2"} /. pars), ! StringQ[#] &]];
 
 	usegrad = OptionValue[UseGrad];
 
