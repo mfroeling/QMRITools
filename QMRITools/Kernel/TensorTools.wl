@@ -1304,29 +1304,30 @@ RPBMFunctionI[tm_, pars_?MatrixQ] := Transpose[RPBMFunctionI[tm, #] & /@ pars]
 RPBMFunctionI[tm_, {tau_?NumberQ, zeta_?NumberQ}] := RPBMFunctionI[tm, {1., tau, zeta}]
 
 RPBMFunctionI[tm_, {d0_?NumberQ, tau_?NumberQ, zeta_?NumberQ}] := Block[{
-		l, x,  a, b, c, fun, y, sy, int, const, nt, out
+		z, x,  a, b, c, fun, y, sy, int, const, nt, out
 	},
-	(*Fieremans E,Lemberskiy, et al. NMR in Biomedicine 2017; doi.wiley.com/10.1002/nbm.3612*)
+	(*Fieremans E, Lemberskiy, et al. NMR in Biomedicine 2017; doi.wiley.com/10.1002/nbm.3612*)
 
-	x = tm/tau; (*normalized mixing time*)
-	l = 1. + zeta ;(*tortuosity*)
+	x = tm / tau; (*normalized mixing time - s*)
+	z = 1. + zeta ;(*tortuosity - alpha*)
 
 	(*constants for integral derived from zeta*)
-	a = 2 (Sqrt[l] - 1)/l^2;
-	b = (4 - 6 Sqrt[l] + 2 l)/l^3;
-	c = (8 + 8 l + Sqrt[l] (-16 - zeta))/l^4;
+	a = (-2 + 2 Sqrt[z]) / z^2;
+	b = (4 - 6 Sqrt[z] + 2 z) / z^3;
+	c = (8 - 15 Sqrt[z] + 8 z - z^(3/2)) / z^4;
+
+	(*time dependant integral*)
+	int = NIntegrate[Re[
+		(Exp[-x y] / y^2) (
+			Im[1. / (z + 2 (I Sqrt[y] + y) (Sqrt[1 + ((1 - z) / (I + Sqrt[y])^2)] - 1))] + Sqrt[y] (a + c y)
+		) 
+	], {y, 0., Infinity}, AccuracyGoal -> 5];
 
 	(*constant factor*)
-	const = 1/l + 2 a/Sqrt[Pi x] + b/x - c x^(-3/2)/Sqrt[Pi];
-	
-	(*time dependant integral*)
-	int = NIntegrate[
-		Re[(Sqrt[y] (a + c y) + Im[1/(1 + zeta + 2 (I Sqrt[y] + y) (-1 + Sqrt[1 - zeta/(I + Sqrt[y])^2]))]
-			)/(Exp[x y] y^2)]
-	, {y, 0., Infinity}, AccuracyGoal -> 5];
+	const = 1 / z + 2 a / Sqrt[Pi x] + b / x - c x^(-3/2) / Sqrt[Pi];
 
 	(*signal scaled for d0*)
-	d0 (int/(Pi x) + const)
+	d0 ((1 / (Pi x)) int + const)
 ]
 
 
@@ -1350,21 +1351,24 @@ GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}, inf__?BooleanQ] := 
 
 	(*diffusion at infinity time*)
 	dinf = If[inf, RPBMFunction[Infinity, {d0, tau, zeta}], 0.];
+
 	(*td the diffusion time to traverse a typical cell*) 
-	td = (2*tau)/zeta^2(* a^2/(2 d0)*);
+	td = Clip[2 tau / zeta^2, {0, 5000}] (* a^2 / (2 d0)*);
 	(*tr the residence time*)
-	tr = 2 tau/zeta(*a/(2 kappa)*);
+	tr = Clip[2 tau / zeta , {0, 5000}] (*a / (2 kappa)*);
+
 	(*The effective thickness*)
-	i = Sqrt[d0 tau](*d0/(2 kappa)*);
+	i = Sqrt[d0 tau] (*d0 / (2 kappa)*);
 	(*surface to volume ratio*)
-	sv = (2*zeta)/(Sqrt[d0]*Sqrt[tau])(*d zeta/i*);
+	sv = 2 zeta / (Sqrt[d0] Sqrt[tau]) (*d zeta/i*);
+	
 	(*cell size*)
-	a = (2*Sqrt[d0]*Sqrt[tau])/zeta(*4/sv*);
+	a = 2 Sqrt[d0] Sqrt[tau] / zeta (*4 / sv*);
 	(*membrane permiability*)
-	kappa = Sqrt[d0]/(2*Sqrt[tau]);
+	kappa = Sqrt[d0] / (2 Sqrt[tau]);
 
 	(*output all parameters as vector*)
-	{d0, tau, zeta,	dinf, Clip[td, {0., 5000.}], Clip[tr, {0., 5000.}],	i, sv, a, kappa}
+	{d0, tau, zeta,	dinf, td, tr, i, sv, a, kappa}
 ]
 
 
@@ -1445,6 +1449,9 @@ CreateRPBMDictionary[tms_, OptionsPattern[]] := RPBMDict[tms, OptionValue[{RPBMR
 RPBMDict[tms_, {rTau_, rZeta_, {nDic_, nPars_}}] := (*RPBMDict[tms, {rTau, rZeta, {nDic, nPars}}] = *)Block[{
 		pars, sim
 	},
+
+	(* Lemberskiy G. et al. https://doi.org/10.1002/nbm.4534 *)
+
 	(*generate random dictionary, with seedrandom its reproducible*)
 	pars = RotateDimensionsLeft[{
 		SeedRandom[12345]; RandomReal[rTau, {nDic, nPars}],
