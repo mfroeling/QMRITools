@@ -1120,6 +1120,7 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 	dat = max dat/Max[dat];
 	mask = UnitStep[dat - .1 len];
 	ran = Flatten[Position[mask, 1][[{1, -1}]]];
+	mid = Round[Length[dat]/2];
 
 	peaks = {};
 	blur = 20;
@@ -1137,13 +1138,13 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 
 	If[peaks==={},
 		Print["could not find the center."];
-		$Failed,
+		(*$Failed*)mid
+		,
 		(*find the most middle peak*)
-		mid = Round[Length[dat]/2];
 		center = {mid, .75 max};
 		peak = Nearest[peaks, center];
 
-		If[print,Print[Show[
+		If[print, Print[Show[
 			ListLinePlot[{max-dat,datf}, PlotStyle->{Black,Orange}],
 			ListPlot[{peaks,{center},peak},PlotStyle->(Directive[{PointSize[Large],#}]&/@{Blue,Gray,Green})]
 			,ImageSize->75, Ticks -> None]

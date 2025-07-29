@@ -34,9 +34,6 @@ GetJSONPosition[{json..}, {{key, value}..}, sortkey] same but finally sorts the 
 MergeJSON::usage = 
 "MergeJSON[{json..}] merges a list of JSON association lists where duplicate keys with the same values are removed and duplicate keys with different values are merged."
 
-ExtractFromJSON::usage = 
-"ExtractFromJSON[json,keys] if the keys exist they are extracted from the JSON."
-
 
 SelectSubjects::usage = 
 "SelectSubjects[dir] selects the subjects in the given data directory which has a config file."
@@ -552,13 +549,6 @@ MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
 ]
 
 
-(* ::Subsubsection::Closed:: *)
-(*ExtractFromJSON*)
-
-
-ExtractFromJSON[json_, keys_] := If[KeyExistsQ[json, #], # -> json[#], Nothing]& /@ keys;
-
-
 (* ::Subsection:: *)
 (*BidsSupport*)
 
@@ -638,12 +628,20 @@ ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{subs, dataFo
 GetProtocolNames[fold_?ListQ] := GetProtocolNames /@ fold
 
 GetProtocolNames[fold_?StringQ] := Block[{},
-	list = Sort@DeleteDuplicates[(Quiet[json = ImportJSON[#]];
-	{
-		json["SeriesNumber"], 
-		n = json["ProtocolName"]; If[StringQ[n], StringTrim[StringReplace[n, "WIP"->""]], n]
-	}) & /@ FileNames["*.json", fold, 2]]; 
-	Select[list, Head[#[[1]]] =!= Missing && Head[#[[1]]] =!= $Failed && !StringContainsQ[#[[2]], RegularExpression["_\\d{6}\\.\\d{3}"]] &]
+	list = Sort@DeleteDuplicates[(
+		Quiet[json = ImportJSON[#]];
+		{
+			json["SeriesNumber"], 
+			n = json["ProtocolName"]; If[StringQ[n], StringTrim[StringReplace[n, "WIP"->""]], n]
+		}
+	) & /@ FileNames["*.json", fold, 2]]; 
+	Print[list];
+	list=Select[list, 
+		Head[#[[1]]] =!= Missing && Head[#[[1]]] =!= $Failed && 
+		!StringContainsQ[#[[2]], RegularExpression["_\\d{6}\\.\\d{3}"]] &
+	];
+		Print[list];
+	list
 ]
 
 
@@ -1804,8 +1802,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
-								{"Check"->"done", "EchoTimes"->echos, "Outputs" -> outTypes, "SetProperties"->set}, pos,
-								ExtractFromJSON[json, keys]
+								{"Check"->"done", "EchoTimes"->echos, "Outputs" -> outTypes, "SetProperties"->set}, 
+								pos, Normal@KeyTake[json, keys]
 							]];
 							(*----*)AddToLog["Finished processing", 3, True];
 						]
@@ -1908,9 +1906,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 						(*export the checkfile*)
 						MakeCheckFile[outfile<>"_prep", Sort@Join[
-							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, 
-								"SetProperties"->set},
-							ExtractFromJSON[json, keys]
+							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperties"->set},
+							Normal@KeyTake[json, keys]
 						]];
 						(*----*)AddToLog["Finished pre-processing", 3, True];
 
@@ -2024,7 +2021,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperties"->set},
-								ExtractFromJSON[json,keys]
+								Normal@KeyTake[json,keys]
 							]];
 							(*----*)AddToLog["Finished processing", 3, True];				
 						]
@@ -2138,7 +2135,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperties"->set},
-								ExtractFromJSON[json,keys]
+								Normal@KeyTake[json, keys]
 							]];
 							(*----*)AddToLog["Finished processing", 3, True];
 						]
