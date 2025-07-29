@@ -1315,7 +1315,8 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	ref[[1]] = {};
 
 	(*make the muscle contours*)
-	musc = If[colListC =!= None, Table[PlotContour[segments[[i]], vox, ContourOpacity -> opa, ContourColor -> If[ColorQ[colListC],colListC,colListC[[i]]], 
+	musc = If[colListC =!= None, Table[PlotContour[segments[[i]], vox, ContourOpacity -> opa, 
+		ContourColor -> If[ColorQ[colListC],colListC,colListC[[i]]], 
 		ContourSmoothRadius -> 2, ContourResolution -> 2], {i, ran}], Graphics3D[]];
 	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Lighter@Gray, 
 		ContourSmoothRadius -> 2, ContourResolution -> 2], Graphics3D[]];
