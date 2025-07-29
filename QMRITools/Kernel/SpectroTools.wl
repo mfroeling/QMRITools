@@ -20,7 +20,7 @@ BeginPackage["QMRITools`SpectroTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Usage Notes*)
 
 
-(* ::Subsection::Closed:: *)
+(* ::Subsection:: *)
 (*Functions*)
 
 
@@ -168,6 +168,10 @@ CompareFidFitPlot::usage =
 
 MakeSpectraResultPlot::usage = 
 "MakeSpectraResultPlot[ppmF, specF, {fit, basisFit}, names, sc, met] function not done."
+
+
+SpectraSimulator::usage = 
+"SpectraSimulator[] opens a interactive spectra simulator."
 
 
 CSIInterface::usage = 
@@ -478,11 +482,11 @@ Options[ApodizeEcho] = {ApodizationFunction -> "Hanning"}
 
 SyntaxInformation[ApodizeEcho] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-ApodizeEcho[echo_, OptionsPattern[]] := ApodizeFun[Length[echo], OptionValue[ApodizationFunction],"Echo"] echo
+ApodizeEcho[echo_, OptionsPattern[]] := ApodizeFun[Length[echo], OptionValue[ApodizationFunction], "Echo"] echo
 
 
 (* ::Subsubsection::Closed:: *)
-(*ApodizeFunSpectra*)
+(*ApodizeFun*)
 
 
 ApodizeFun[length_, apM_:"Hanning", type_ : "Fid"] := ApodizeFun[length, apM, type] = Block[{app, xdat, xmax},
@@ -499,7 +503,7 @@ ApodizeFun[length_, apM_:"Hanning", type_ : "Fid"] := ApodizeFun[length, apM, ty
 		"Voigt", 0.5 Exp[-(3./xmax) xdat] + 0.5 Exp[-(2./xmax)^2 xdat^2]
 	];
 	app = app/Max[app];
-	(*(length/Total[app]) *)app
+	app
 ]
 
 
@@ -1705,6 +1709,237 @@ col = If[new === $Canceled, col, new]
 		plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
 	]
 ]
+
+
+(* ::Subsection:: *)
+(*SpectraSimulator*)
+
+
+ SpectraSimulator[]:=DynamicModule[{
+use,vals,names, nsamp,bwS,fieldS,nuc,peakSel,dw,gyro,field,fidsT,time,ppm,grids
+},
+
+vals={{100,50,20,10},{20,30,40,100,0,75,500,250,40,60},{100}};
+names={{"HDO","GlucoseD","GlutamateD","LactateD"},{"PE","PC","Piex","Piin","GPE","GPC","PCr","ATP","NAD","UDPG"},{"Na"}};
+use=(0{{100,50,20,10},{20,30,40,100,0,75,500,250,40,60},{100}}+1)True;
+
+grids={
+{
+{Row[{names[[1,1]]<>": ",InputField[Dynamic[vals[[1,1]]],FieldSize->3],Checkbox[Dynamic[use[[1,1]]]]}],Row[{names[[2,2]]<>": ",InputField[Dynamic[vals[[2,2]]],FieldSize->3],Checkbox[Dynamic[use[[1,2]]]]}],
+Row[{names[[1,3]]<>": ",InputField[Dynamic[vals[[1,3]]],FieldSize->3],Checkbox[Dynamic[use[[1,3]]]]}],Row[{names[[2,4]]<>": ",InputField[Dynamic[vals[[2,4]]],FieldSize->3],Checkbox[Dynamic[use[[1,4]]]]}]
+},{}},
+{
+{Row[{names[[2,1]]<>": ",InputField[Dynamic[vals[[2,1]]],FieldSize->3],Checkbox[Dynamic[use[[2,1]]]]}],Row[{names[[2,2]]<>": ",InputField[Dynamic[vals[[2,2]]],FieldSize->3],Checkbox[Dynamic[use[[2,2]]]]}],
+Row[{names[[2,3]]<>": ",InputField[Dynamic[vals[[2,3]]],FieldSize->3],Checkbox[Dynamic[use[[2,3]]]]}],Row[{names[[2,4]]<>": ",InputField[Dynamic[vals[[2,4]]],FieldSize->3],Checkbox[Dynamic[use[[2,4]]]]}],
+Row[{names[[2,5]]<>": ",InputField[Dynamic[vals[[2,5]]],FieldSize->3],Checkbox[Dynamic[use[[2,5]]]]}]},
+{Row[{names[[2,6]]<>": ",InputField[Dynamic[vals[[2,6]]],FieldSize->3],Checkbox[Dynamic[use[[2,6]]]]}],
+Row[{names[[2,7]]<>": ",InputField[Dynamic[vals[[2,7]]],FieldSize->3],Checkbox[Dynamic[use[[2,7]]]]}],Row[{names[[2,8]]<>": ",InputField[Dynamic[vals[[2,8]]],FieldSize->3],Checkbox[Dynamic[use[[2,8]]]]}],
+Row[{names[[2,9]]<>": ",InputField[Dynamic[vals[[2,9]]],FieldSize->3],Checkbox[Dynamic[use[[2,9]]]]}],Row[{names[[2,10]]<>": ",InputField[Dynamic[vals[[2,10]]],FieldSize->3],Checkbox[Dynamic[use[[2,10]]]]}]}
+},
+{{Row[{names[[3,1]]<>": ",InputField[Dynamic[vals[[3,1]]],FieldSize->3],Checkbox[Dynamic[use[[3,1]]]]}]},{""}}
+};
+
+{nsamp,bwS,fieldS,nuc}={4096,10000,7,"31P"};
+
+peakSel=Pick[Thread[names[[2]]->vals[[2]]],use[[2]]];
+{dw,gyro,field,fidsT}=simulatedFid[{nsamp,bwS,fieldS,nuc},peakSel];
+
+man = Manipulate[
+simTrigger;
+
+(*resample fid and generate noise*)
+dw2=1./bw;
+ni=Round[(te/1000)/dw];
+ns=Round[Min[{ns,nsamp dw/dw2-ni}]];
+
+fid1=ChangeDwellTimeFid[fidsT[[ni+1;;]],dw,dw2][[;;ns]];
+sig=(Max[Abs[fid1]]/snr)/Sqrt[2];
+
+If[lfid=!=Length[fid1]||sigi=!=sig,
+lfid=Length[fid1];
+sigi=sig;
+noise1=Complex@@@RandomReal[NormalDistribution[0.,sig],{lfid,2}]
+];
+
+{timei,ppmi}=GetTimePpmRange[fid1,{dw2,field,nuc}];
+tpi=timei+te/1000;
+
+(*add shift and linewidth*)
+fid2=If[timeshift,PhaseShiftFid[TimeShiftFid[fid1,tpi,gyro,{gam,eps,f}],ph0],fid1];
+
+(*add phase to spectra*)
+fid3=ShiftedInverseFourier[PhaseShiftSpectra[ShiftedFourier[fid2],ppmi,gyro,{ph0s,ph1s}]];
+
+(*apply apodization and padding and figure out time of spectra to plot*)
+{fid4,noise4}=If[ap==="None",{fid3,noise1}, ApodizeFid[#,ApodizationFunction->ap]&/@{fid3,noise1}];
+{fid5,noise5}=If[pad===1,{fid4,noise4},PadFid[#,PaddingFactor->pad]&/@{fid4,noise4}];
+
+(*prepare for plotting*)
+fidTot=fid5+noise5;
+noiseF=ShiftedFourier[noise5];
+specF=ShiftedFourier[fid5];
+specTot=noiseF+specF;
+
+maxFid=Max[Abs[fidTot]];
+maxSpec=Max[Abs[specTot]];
+
+fidP=Switch[show,"both",fidTot,"signal",fid5,"noise",noise5];
+specP=Switch[show,"both",specTot,"signal",specF,"noise",noiseF];
+
+{time,ppm}=GetTimePpmRange[fidP,{dw2,field,nuc}];
+timep=time+(te-ph1s)/1000;
+{pmin,pmax}={Min[{pmin,Max[ppm]}],Max[{pmax,Min[ppm]}]};
+
+Column[{
+(*{Total@Re@fidP,Re@First@fidP,Total@Abs@ShiftedFourier@fidP,sig,simTrigger},
+peakSel,*)
+Show[
+PlotFid[timep,fidP,Method->met,PlotRange->{{Min[{0,Min[timep]}],Max[timep]},{-1.5,1.5}maxFid},
+	GridLineSpacing->0.05,ImageSize->psize],
+If[!timeshift,Graphics[],ListLinePlot[Transpose@{timep,maxFid shiftFun[timep,eps,gyro]},PlotStyle->{Darker@Blue,Thin}]],
+If[!timeshift,Graphics[],ListLinePlot[Transpose@{timep,maxFid relaxFun[timep,{gam,gam},f]},PlotStyle->{Darker@Orange,Dashed},PlotRange->Full]],
+If[ap==="None",Graphics[],ListLinePlot[Transpose@{timei,maxFid apodizeFun[timei,ap]},PlotStyle->{Darker@Green,Dashed}]]
+],
+PlotSpectra[ppm,specP,PlotRange->{If[pran==="Automatic",Full,{pmin,pmax}],{-0.2,1.2}maxSpec},GridLineSpacing->5,AspectRatio->.5,Method->met, ImageSize->psize]
+}]
+
+,Style["Spectra simulation",14,Bold]
+,{{nucs,2,"Nucleus"},{1->"2H",2->"31P",3->"23Na"}}
+,{{fieldS,7,"Field"},{1,1.5,3,7}}
+,Dynamic[Grid[grids[[nucs]]]]
+,Button["Simulate fid",
+simTrigger=False;
+peakSel=Pick[Thread[names[[nucs]]->vals[[nucs]]],use[[nucs]]];
+If[
+AllTrue[use,#===False&],
+Print["Select at least one peak"],
+nuc={"2H","31P","23Na"}[[nucs]];
+{dw,gyro,field,fidsT}=simulatedFid[{nsamp,bwS,fieldS,nuc},peakSel];
+{time,ppm}=GetTimePpmRange[fidsT,{dw,field,nuc}];
+simTrigger=True;
+];,Method->"Queued"],
+
+Delimiter,
+OpenerView[{Style["acquisition parameters",12,Bold],Column[{
+Control[{{bw,5000.,"bandwidth"},500,10000}],
+Control[{{ns,512,"n samples"},64,1024,16}],
+Control[{{te,0.,"echo time"},0,5}],
+Control[{{snr,40.,"snr"},2,100}]
+}]}],
+{{bw,5000.},ControlType->None},
+{{ns,512},ControlType->None},
+{{te,0.},ControlType->None},
+{{snr,40.},ControlType->None},
+
+Delimiter,
+OpenerView[{Style["linewidth, shift and phase",12,Bold],Column[{
+Control[{{timeshift,True,"apply linewidth and shift"},{False,True}}],
+Control[{{ph0,0,"phase [rad]"},-Pi,Pi}],
+Control[{{eps,0,"shift [ppm]"},-5,5}],
+Control[{{gam,40,"linewidth [Hz]"},0,200}],
+Control[{{f,0.5,"lineshape"},0,1}],
+Style["spectra phase",10,Bold],
+Control[{{ph0s,0.,"0th order phase [rad]"},-Pi,Pi}],
+Control[{{ph1s,0.,"1st order phase [ms]"},-10.,10.}]
+}]}],
+{{timeshift,True},ControlType->None},
+{{ph0,0},ControlType->None},
+{{eps,0},ControlType->None},
+{{gam,40},ControlType->None},
+{{f,0.5},ControlType->None},
+{{ph0s,0.},ControlType->None},
+{{ph1s,0.},ControlType->None},
+
+Delimiter,
+OpenerView[{Style["plotting options",12,Bold],Column[{
+Control[{{pad,1,"padding"},1,4,0.5}]"",
+Control[{{ap,"None","apodization"},{"None","Hanning","Hamming","Gaussian","Lorentzian","Voigt"},ControlType->SetterBar}],
+Style["what to plot",10,Bold],
+Control[{{show,"both","signal and noise"},{"both","signal","noise"}}],
+Control[{{met,"ReIm","plot method"},{"All","Abs","Re","Im","ReIm"}}],
+Style["options",10,Bold],
+Control[{{pran,"Manual","ppm plot range"},{"Automatic","Manual"}}],
+Control[{{pmin,8,"ppm min"},Dynamic[pmax],Dynamic[Max[ppm]]}],
+Control[{{pmax,-18, "ppm max"},Dynamic[Min[ppm]],Dynamic[pmin]}],
+Button["reset ppm range",{pmin,pmax}={8,-18}],
+Control[{{psize,400,"plot size"},{200,300,400,500,600,700}}]
+}]}],
+{{pad,1},ControlType->None},
+{{ap,"None"},ControlType->None},
+{{show,"both"},ControlType->None},
+{{pran,"Manual"},ControlType->None},
+{{pmin,8},ControlType->None},
+{{pmax,-18},ControlType->None},
+{{met,"ReIm"},ControlType->None},
+{{psize,400},ControlType->None},
+
+(*hidden dynamic parameters*)
+{dw2,ControlType->None},
+{ni,ControlType->None},
+{fid1,ControlType->None},
+{fid2,ControlType->None},
+{fid3,ControlType->None},
+{fid4,ControlType->None},
+{fid5,ControlType->None},
+{noise1,ControlType->None},
+{noise4,ControlType->None},
+{noise5,ControlType->None},
+{noiseF,ControlType->None},
+{fidTot,ControlType->None},
+{fidP,ControlType->None},
+{specF,ControlType->None},
+{specTot,ControlType->None},
+{specP,ControlType->None},
+{sig,ControlType->None},
+{n1,ControlType->None},
+{timei,ControlType->None},
+{ppmi,ControlType->None},
+{tpi,ControlType->None},
+{timep,ControlType->None},
+{maxFid,ControlType->None},
+{maxSpec,ControlType->None},
+{lfid,ControlType->None},
+{sigi,ControlType->None},
+
+{simTrigger,ControlType->None},
+
+ControlPlacement->Left,
+SaveDefinitions->True,
+TrackedSymbols:>{bw,ns,te,timeshift,eps,gam,f,ph0,ph0s,ph1s,snr,pad,ap,show,pran,pmin,pmax,met,simTrigger}
+];
+
+NotebookClose[specsim];
+specsim=CreateWindow[DialogNotebook[{CancelButton["Close",DialogReturn[]],man},
+WindowSize->All,WindowTitle->"Spectra simulator"]];
+
+];
+
+simulatedFid[{nsamp_,bw_,field_,nuc_},peaks_]:=Block[{dw,gyro,names,fids,specs,table},
+dw=1./bw;
+gyro=GetGyro[field,nuc];
+{names,fids,specs,table}=GetSpectraBasisFunctions[peaks[[All,1]],
+BasisSequence->{"PulseAcquire",0},SpectraSamples->nsamp,SpectraBandwidth->bw,
+SpectraPpmShift->0,SpectraFieldStrength->field,SpectraNucleus->nuc];
+{dw,gyro,field,(names/.peaks) . fids}
+]
+
+apodizeFun[time_,apM_:"Hanning"]:=Block[{length,app,xdat,xmax},
+xdat=time;
+length=Length@time;
+xmax=Max[Abs[xdat]];
+app=Switch[apM,
+"Hanning",0.5+0.5 Cos[xdat Pi/xmax],
+"Hamming",0.54+0.46 Cos[xdat Pi/xmax],
+"Gaussian",Exp[-(3./xmax) xdat],
+"Lorentzian",Exp[-(2./xmax)^2 xdat^2],
+"Voigt",0.5 Exp[-(3./xmax) xdat]+0.5 Exp[-(2./xmax)^2 xdat^2]
+];
+app=app/Max[app];
+app
+]
+
+relaxFun[time_,{gam1_,gam2_},f_]:=Exp[-(f gam1 time + (1-f)gam2^2 time^2)]
+shiftFun[time_,eps_,gyro_]:=Re@Exp[2 Pi eps gyro I time] 
 
 
 (* ::Subsection::Closed:: *)

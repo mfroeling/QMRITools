@@ -199,7 +199,7 @@ ReadListData[file_,print_]:=Block[{
 	sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead},
 	
 	fl=StringReplace[file,{".list"->"",".data"->""}];
-	If[!FileExistsQ[fl<>".list"]||!FileExistsQ[fl<>".data"],Print["files not found"]];
+	If[!FileExistsQ[fl<>".list"]||!FileExistsQ[fl<>".data"], Print["files not found"]];
 	
 	(*read the data - longest part*)
 	list=ReadList[fl<>".list",String];
@@ -555,6 +555,8 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 SyntaxInformation[FourierKspaceCSI] = {"ArgumentsPattern" -> {_, _, _.}}
 
+FourierKspaceCSI[kspace_, 4, "3D"]:= (ShiftedInverseFourier /@ kspace)
+
 FourierKspaceCSI[kspace_, head_]:= FourierKspaceCSI[kspace, head, "3D"]
 
 FourierKspaceCSI[kspace_, head_, "3D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
@@ -567,7 +569,7 @@ FourierKspaceCSI[kspace_, head_, "3D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imD
 	(*get the image padding and image shift*)
 	shift = Total[#]&/@({"Z_range","Y_range","X_range"}/.head);
 	(*perform the fourie transform*)
-	imData = RotateRight[FourierShift[FourierShifted[#]],shift]&/@kspaceP
+	imData = RotateRight[InverseFourierShifted[#], shift]&/@kspaceP
 ]
 
 FourierKspaceCSI[kspace_, head_, "2D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
@@ -580,7 +582,7 @@ FourierKspaceCSI[kspace_, head_, "2D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imD
 	(*get the image padding and image shift*)
 	shift = Total[#]&/@({"Y_range","X_range"}/.head);
 	(*perform the fourie transform*)
-	imData = RotateRight[FourierShift[FourierShifted[#]],shift]&/@kspaceP
+	imData = RotateRight[InverseFourierShifted[#],shift]&/@kspaceP
 ]
 
 
@@ -647,8 +649,8 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 	(*coils are first index but not for WSVD wich is only called by CSI recon*)
 	(*prewighten noise and put ncoils as last dimensions signal*)
 	sigt = If[cov =!= 1, NoisePrewhitening[sig, cov], sig];
-	sigt = RotateDimensionsLeft@If[met === "WSVD", Transpose[sigt], sigt];
-
+	sigt = RotateDimensionsLeft@If[met === "WSVD", RotateDimensionsLeft[Transpose[sigt]], sigt];
+	
 	(*make sure the covariance matrix is in the right order*)
 	weight = If[cov =!= 1, CovToWeight[cov], IdentityMatrix[Length@sig]];
 	covi = If[cov =!= 1, Inverse[Chop[weight.cov.ConjugateTranspose[weight]]], cov];
@@ -682,25 +684,28 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 
 
 Options[MakeSense] = {
-	SenseSmoothing -> True,
-	SenseWeight -> 1
+	SenseSmoothing -> False,
+	SenseWeight -> 0
 }
 
 SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 MakeSense[coils_, opts:OptionsPattern[]] := MakeSense[coils, 1, opts]
 
-MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, smooth, w},
+MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, smooth, w, coilsF},
 	smooth = OptionValue[SenseSmoothing];
 	w = (1./(1 + OptionValue[SenseWeight]));
-	If[smooth,
-		coilsF = HammingFilterData[coils];
-		sos = CoilCombine[coilsF, cov, Method -> "RootSumSquares"]^w;
-		HammingFilterData[DivideNoZero[#1, sos, "Comp"] & /@ coilsF]
-		,
-		sos = Sqrt@CoilCombine[coils, cov, Method -> "RootSumSquares"]^w;
-		DivideNoZero[#1, sos, "Comp"] & /@ coils
-	]
+	coilsF = Which[
+		smooth===True||smooth==="Hamming", 
+		HammingFilterData[coils],
+		smooth==="Gaussian",
+		GaussianFilter[#, 2] & /@ coils,
+		True,
+		coils
+	];
+
+	sos = CoilCombine[Abs@coilsF, cov, Method -> "RootSumSquares"]^w;
+	DivideNoZero[#1, sos, "Comp"] & /@ coilsF
 ]
 
 
@@ -750,7 +755,7 @@ WSVDCombine[sig_] := Block[{weight},
 WSVDCombineT[sig_] := Block[{u, s, v, scale},
 	{u, s, v} = SingularValueDecomposition[sig, 1];
 	scale = -Norm[#] Normalize[First@#] &[u[[All, 1]]];
-	scale Conjugate[v[[All, 1]]] s[[1, 1]] 
+	scale Conjugate[v[[All, 1]]] s[[1, 1]]
 ];
 
 
@@ -811,9 +816,8 @@ SyntaxInformation[HammingFilterData] = {"ArgumentsPattern"->{_}}
 HammingFilterData[data_]:= Block[{ham},
 	If[ArrayDepth[data]===4,
 		ham = MakeHammingFilter[Dimensions[data[[1]]]];
-		FourierShifted[ham InverseFourierShifted[#]]&/@data
-		,
-		FourierShifted[MakeHammingFilter[Dimensions[data]] InverseFourierShifted[data]]
+		ShiftedInverseFourier[ham ShiftedFourier[#]]&/@data,
+		ShiftedInverseFourier[MakeHammingFilter[Dimensions[data]] ShiftedFourier[data]]
 	]
 ]
 
@@ -986,7 +990,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 		nenc, met, noCoils
 	},
 	readout = OptionValue[AcquisitionMethod];
-	nenc = "number_of_encoding_dimensions" /. head;
+	nenc = If[IntegerQ[head], head, "number_of_encoding_dimensions" /. head];
 	met = Switch[nenc, 3, "2D", 4, "3D"];
 	noCoils = ArrayDepth[kspace] =!= nenc + 1;
 	

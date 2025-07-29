@@ -34,10 +34,6 @@ GetJSONPosition[{json..}, {{key, value}..}, sortkey] same but finally sorts the 
 MergeJSON::usage = 
 "MergeJSON[{json..}] merges a list of JSON association lists where duplicate keys with the same values are removed and duplicate keys with different values are merged."
 
-AddToJSON::usage = 
-"AddToJSON[json, <|key->value..|>] adds new keys and values to the JSON list where duplicate keys are either removed or joined.
-AddToJSON[json, \"QMRITools\"] adds the QMRITools software version to the JSON."
-
 ExtractFromJSON::usage = 
 "ExtractFromJSON[json,keys] if the keys exist they are extracted from the JSON."
 
@@ -523,7 +519,7 @@ MergeConfig[assoc_?AssociationQ, replace_?AssociationQ] := Block[{assocNew },
 (*ImportJSON*)
 
 
-ImportJSON[file_]:=Import[file,"RawJSON"]
+ImportJSON[file_]:=Import[file, "RawJSON"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -561,16 +557,6 @@ MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
 
 
 ExtractFromJSON[json_, keys_] := If[KeyExistsQ[json, #], # -> json[#], Nothing]& /@ keys;
-
-
-(* ::Subsubsection::Closed:: *)
-(*AddToJSON*)
-
-
-AddToJSON[json_, add_]:=MergeJSON[{json, Switch[add,
-	"QMRITools", <|"ConversionSoftware"->"QMRITools.com", "ConversionSoftwareVersion"->QMRITools`$InstalledVersion|>,
-	_, add
-]}]
 
 
 (* ::Subsection:: *)
@@ -649,14 +635,6 @@ ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{subs, dataFo
 (*ViewProtocolNames*)
 
 
-GetProtocolNames[dir_, sub_] := Block[{config, dataFols, subs},
-	config = If[AssociationQ[dir], dir, GetConfig[dir]];
-	dataFols = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
-	subs = If[sub === All || sub === "All",	dataFols,
-		Select[dataFols, MemberQ[SubNameToBids[Flatten[{sub}], "Sub"], SubNameToBids[#]] &]];
-	GetProtocolNames[subs][[If[StringQ[sub], 1, All]]]
-]
-
 GetProtocolNames[fold_?ListQ] := GetProtocolNames /@ fold
 
 GetProtocolNames[fold_?StringQ] := Block[{},
@@ -668,6 +646,14 @@ GetProtocolNames[fold_?StringQ] := Block[{},
 	Select[list, Head[#[[1]]] =!= Missing && Head[#[[1]]] =!= $Failed && !StringContainsQ[#[[2]], RegularExpression["_\\d{6}\\.\\d{3}"]] &]
 ]
 
+
+GetProtocolNames[dir_, sub_] := Block[{config, dataFols, subs},
+	config = If[AssociationQ[dir], dir, GetConfig[dir]];
+	dataFols = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
+	subs = If[sub === All || sub === "All",	dataFols,
+		Select[dataFols, MemberQ[SubNameToBids[Flatten[{sub}], "Sub"], SubNameToBids[#]] &]];
+	GetProtocolNames[subs][[If[StringQ[sub], 1, All]]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -689,7 +675,6 @@ SelectSubjects[dir_?StringQ] := DynamicModule[{fol, selectedSubjects, list},
 		}]
 	}]
 ];
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1092,6 +1077,8 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 
 		(*add settings to output json*)
 		infoExtra = <|
+			"ConversionSoftware"->"QMRITools.com", 
+			"ConversionSoftwareVersion"->QMRITools`$InstalledVersion,
 			If[class==="Volume", "Volume"->nameIn, Nothing],
 			If[class==="Volumes", "Volumes"->nameIn, Nothing],
 			If[class==="Repetitions", "Repetition"->nameIn, Nothing],
@@ -1143,7 +1130,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 								"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
 							(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 							ExportNii[data[[All, i]], vox, ConvertExtension[outFile, ".nii"]];
-							Export[ConvertExtension[outFile, ".json"], AddToJSON[AddToJSON[info, "QMRITools"], infoExtra]];
+							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 						,{i, 1, Length[suffix]}];
 
 						(*export used files*)
@@ -1180,7 +1167,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 								{data, vox} = ImportNii[ConvertExtension[files[[pos]],".nii"], NiiScaling->False];
 								(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 								ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
-								Export[ConvertExtension[outFile, ".json"], AddToJSON[AddToJSON[info, "QMRITools"], infoExtra]];
+								Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 								(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 								pos
 							]
@@ -1217,7 +1204,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 							debugBids[{outFile, GetClassName[class, nameIn]}];
 							(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 							ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
-							Export[ConvertExtension[outFile, ".json"], AddToJSON[AddToJSON[info, "QMRITools"], infoExtra]];
+							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 							Quiet@If[del,
 								DeleteFile[ConvertExtension[files[[pos]],".nii"]];
@@ -1252,14 +1239,9 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 					data = {1000. data[[1]]/2047., 1000. (data[[2]] - 2047.)/2047., 1000. (data[[3]] - 2047.)/2047., Pi (data[[4]] - 2047.)/2047.};
 
 					echo = datType["Process", "EchoTime"];
-					echo = <|
-						"EchoNumber" -> Range[nEch], 
-						"EchoTime" -> (echo[[1]] + Range[0, nEch - 1] echo[[2]])/1000.
-					|>;
-					debugBids[echo];
-
-					(*make the additional mandatory bids json values*)
 					infoExtra = Join[infoExtra, <|
+						"EchoNumber" -> Range[nEch], 
+						"EchoTime" -> (echo[[1]] + Range[0, nEch - 1] echo[[2]])/1000.,
 						"ForthDimension"->"EchoTime",
 						"DataClass"->class
 					|>];
@@ -1271,7 +1253,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 							"suf"->Flatten@{datType["Suffix"], suffix}|>];
 						(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 						ExportNii[data[[i]], vox, ConvertExtension[outFile, ".nii"]];
-						Export[ConvertExtension[outFile, ".json"], AddToJSON[AddToJSON[AddToJSON[info, "QMRITools"], infoExtra], echo]];
+						Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 					, {dixType, {"Mixed", "Phase", "Real", "Imaginary"}}];
 
@@ -1320,7 +1302,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 								"suf"->Flatten@{datType["Suffix"], suffix}|>];
 							(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 							ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
-							Export[ConvertExtension[outFile, ".json"], AddToJSON[AddToJSON[info, "QMRITools"], infoExtra]];
+							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 							(*Delete used files*)
 							Quiet@If[del,
@@ -1344,7 +1326,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 					"Volumes",
 					(*if volumes get the position of the files needed*)
 					pos = GetJSONPosition[json, {{"ProtocolName", #}}] & /@ nameIn;
-					debugBids["Converting DWI data, json position: ", pos, nameIn];
+					debugBids["Converting DWI data ", nameIn, ", json position: ", pos];
 					
 					If[pos==={}, 
 						noFiles = True;
@@ -1370,7 +1352,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 					,_ ,
 					(*get the position of the files needed*)
 					pos = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
-					debugBids["Converting DWI data, json position: ", pos, nameIn];
+					debugBids["Converting DWI data ", nameIn, ", json position: ", pos];
 
 					If[pos==={}, 
 						noFiles = True;
@@ -1422,7 +1404,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 						ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
 					];
 					ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
-					Export[ConvertExtension[outFile, ".json"], AddToJSON[AddToJSON[info, "QMRITools"], infoExtra]];
+					Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 					Quiet@If[del,
 						(*-----*)AddToLog[{"Deleting", Length[pos], type, "dataset with properties: ", nameIn}, 4];
@@ -1482,14 +1464,13 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 
 					(*get the position of the files needed*)
 					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}, "EchoTime"];
-					debugBids["Converting MESE data, json position: ", pos, nameIn];
+					debugBids["Converting MESE data ", nameIn, ", json position: ", pos];
 					info = MergeJSON[json[[pos]]];
 
 					(*select only echos*)
 					len = info["AcquisitionNumber"];
 					len = If[ListQ[len], Max[len], Lookup[info, "EchoTrainLength", Length[pos]]];
 					pos = pos[[;; len]];
-
 					info = MergeJSON[json[[pos]]];
 
 					(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
@@ -1515,7 +1496,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 					"suf"->{datType["Suffix"]}|>];
 				(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
 				ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
-				Export[ConvertExtension[outFile, ".json"], AddToJSON[AddToJSON[info, "QMRITools"], infoExtra]];
+				Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 				(*Delete used files*)
 				Quiet@If[del,
@@ -1595,8 +1576,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 	(*get the information needed for processing, e.g. session|repetition*)
 	{fol, parts} = PartitionBidsFolderName[foli];
 	type = datType["Type"];
-	keys = {"EchoTime", "ForthDimension", "DataClass", "Stack", "OverLap", 
-		"SliceThickness", "SpacingBetweenSlices"};
+	keys = {"EchoTime", "ForthDimension", "DataClass", "Stack", 
+		"OverLap", "SliceThickness", "SpacingBetweenSlices"};
 
 	(*see what needs to be processed*)
 	files = Flatten[FileNames["*"<>StringStrip[#]<>"*.json", foli]& /@ Flatten[{datType["Label"]}]];
@@ -1918,7 +1899,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 						outTypes = {"den", "reg", "sig", "snr0", "snr", "filt"};
 						(
 							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"];
-							Export[ConvertExtension[outfile <> "_"<>#, ".json"], AddToJSON[json, settingPre]];
+							Export[ConvertExtension[outfile <> "_"<>#, ".json"], MergeJSON[{json, settingPre}]];
 						) &/@ outTypes;
 						(
 							ExportBval[val, ConvertExtension[outfile <> "_"<>#, ".bval"]];
@@ -1949,7 +1930,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 				(*input file for processing*)
 				nfilep = ConvertExtension[GenerateBidsFileName[folo, <|set, "suf"->{datType["Suffix"], "filt"}|>],".nii"];
-				jfilep = ConvertExtension[nfilep,".json"];
+				jfilep = ConvertExtension[nfilep, ".json"];
 
 				(*check if processin is already done, redo is prep is done*)					
 				If[If[!preProc, CheckFile[outfile, "done", verCheck], False],
@@ -1978,7 +1959,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							
 							(*initialize IVIM fit*)
 							ivim = ConfigLookup[datType, "Process", "IVIMCorrection"];
-							settingPro = MergeConfig[settingPro, <|"IVIMCorrection"->ivim|>];
+							settingPro = Join[settingPro, <|"IVIMCorrection"->ivim|>];
 
 							If[ivim,
 								(*-----*)AddToLog["Starting ivim calculation", 4];
@@ -2000,7 +1981,9 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							(*calculate tensor from corrected data*)
 							(*-----*)AddToLog["Starting tensor calculation", 4];
 							coil = ConfigLookup[datType, "Process", "GradientCorrection"];
+							settingPro = Join[settingPro, <|"GradientCorrection"->coil|>];
 							off = Lookup[json, "Offset", False];
+
 							coil = If[!StringQ[coil], 
 								False,
 								(*-----*)AddToLog[{"Using Gradient correction: ", coil}, 4];
@@ -2011,7 +1994,6 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 									{diffvox, off, dint}
 								]
 							];
-							settingPro = MergeConfig[settingPro, <|"GradientCorrection"->coil|>];
 
 							(*check if field map is needed in output*)
 							{tens, s0, out} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
@@ -2029,12 +2011,14 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 							(*export all the calculated data*)
 							(*----*)AddToLog["Exporting the calculated data to:", 4];
-							(*----*)AddToLog[outfile, 5];					
+							(*----*)AddToLog[outfile, 5];
+							debugBids[Column[{json, settingPro}]];
+
 							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
 								"l1", "l2", "l3", "md",	"fa", "rd"}, coil, ivimpar];
 							(
 								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"];
-								Export[ConvertExtension[outfile <> "_"<>#, ".json"], AddToJSON[json, settingPro]];
+								Export[ConvertExtension[outfile <> "_"<>#, ".json"], MergeJSON[{json, settingPro}]];
 							) &/@ outTypes;
 
 							(*export the checkfile*)
@@ -2526,7 +2510,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 	(
 		debugBids["Exporting: ", {movsAll[[#]], voxF[#]}];
 		ExportNii[movingA[[#]], voxF[#], outfile<>"_"<>movsAll[[#]]<>".nii"];
-		Export[outfile<>"_"<>movsAll[[#]]<>".json", AddToJSON[jsonAll[[#]], settings]];
+		Export[outfile<>"_"<>movsAll[[#]]<>".json", MergeJSON[{jsonAll[[#]], settings}]];
 	)&/@ Range[nSet];
 
 	(*make the checkfile*)
