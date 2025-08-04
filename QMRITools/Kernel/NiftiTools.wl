@@ -219,12 +219,14 @@ DcmToNii[infol_?StringQ, outfol_?StringQ, opt:OptionsPattern[]] := DcmToNii[{inf
 
 DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 		filfolin, folout, log, command, compress, dcm2niix, dcm2niif, delete,
-		folsin, fols, folsout, dcm2nii, merge
+		folsin, fols, folsout, dcm2nii, merge, mon
 	},
+
+	mon = OptionValue[MonitorCalc];
 
 	(*generate a popup to select the file or folder*)
 	filfolin = If[infol=="", FileSelect["Directory", WindowTitle->"Select direcotry containig the dcm files"], infol];
-	If[filfolin == Null || filfolin == Null || filfolin === $Canceled, Return[$Failed]];
+	If[filfolin == Null || filfolin === $Canceled, Return[$Failed]];
 	folout = If[outfol == "", FileSelect["Directory", WindowTitle->"Select directory to put nii files in"], outfol];
 	If[filfolin == Null || folout == Null || folout === $Canceled, Return[$Failed]];
 
@@ -251,7 +253,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 			dcm2niif = DirectoryName[dcm2nii];
 		];
 
-		If[OptionValue[MonitorCalc], Print["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
+		If[mon, Echo["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
 
 		If[DirectoryQ[folout],
 			delete = If[OptionValue[DeleteOutputFolder], 
@@ -264,7 +266,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 
 		Quiet[CreateDirectory[folout]];
 
-		If[OptionValue[MonitorCalc], Print[{filfolin,folout}]];
+		If[mon, Echo[Column@{filfolin,folout}, "Input and output folder: "]];
 
 		merge = If[OptionValue[MergeEchos], "y", "n"];
 
@@ -570,18 +572,6 @@ ArrangeData[data_] := ArrangeData[data, ArrayDepth[data]]
 ArrangeData[data_, depth_] := Flatten[If[depth == 4, 
 	Transpose[Reverse[Reverse[data, depth], depth - 1]], 
 	Reverse[Reverse[data, depth], depth - 1]]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RemoveExtention*)
-
-
-RemoveExtention[fil_] := Block[{file},
-	file = FileNameSplit[fil];
-	file[[-1]] = FileBaseName[file[[-1]]];
-	Print[file[[-1]]];
-	FileNameJoin[file]
 ]
 
 

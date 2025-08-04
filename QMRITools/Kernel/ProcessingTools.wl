@@ -329,7 +329,10 @@ SyntaxInformation[ParameterFit] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 ParameterFit[dat : {_?ListQ ..}, opts : OptionsPattern[]] := ParameterFit[Flatten[#], opts] & /@ dat
 
-ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, mdat, sdat, fdat, sol ,par, fun},
+ParameterFit[dat_List, OptionsPattern[]] := Module[{
+		noFit, mod, out, met, data, nodat, mdat, sdat, fdat, sol ,par, fun
+	},
+
 	(*get option values*)
 	mod = OptionValue[FitFunction];
 	out = OptionValue[FitOutput];
@@ -378,14 +381,14 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{mod, out, met, data, nodat, 
 	Switch[out,
 		"Parameters",
 		Which[
-			nodat, {0.,0.},
-			noFit, {mdat,0.},
+			nodat, {0., 0.},
+			noFit, {mdat, 0.},
 			True, {Mean[fun], StandardDeviation[fun]}
 		],
 		"ParametersExtra",
 		Which[
-			nodat, {0.,0.,0.,0.,0.},
-			noFit, {mdat,0.,mdat,0.,0.},
+			nodat, {0., 0., 0., 0., 0.},
+			noFit, {mdat, 0., mdat, 0., 0.},
 			True, Flatten[{Mean[fun], StandardDeviation[fun], Quantile[fun, {.5, .05, .95}]}]
 		],
 		"Function",
@@ -507,7 +510,7 @@ GetMaskMeans[dat_, mask_, lab_, OptionsPattern[]] := Block[{labels, out, fl},
 			"SkewNormalDist",
 			ParameterFit[fl, FitOutput -> "ParametersExtra", FitFunction -> "SkewNormal"],
 			"Mean",
-			labels={""};
+			labels = {""};
 			{Mean[fl]},
 			_,
 			Flatten[{Mean[fl], StandardDeviation[fl], Quantile[fl, {.5, .05, .95}]}]
@@ -576,44 +579,60 @@ Chop[(2/omega)(1/(E^(((x-xi)/omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((alpha (x-xi)/om
 (*GetMaskData*)
 
 
-Options[GetMaskData] = {GetMaskOutput -> "All", GetMaskOnly->False}
+Options[GetMaskData] = Options[GetMaskDatai] = {GetMaskOutput -> "All", GetMaskOnly -> False}
 
 SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-GetMaskData[data_?ArrayQ, mask_, opts:OptionsPattern[]] := Block[{out},
+GetMaskData[data_?ArrayQ, mask_, opts : OptionsPattern[]] := Block[{
+		out, msk, cr, lout
+	},
 	Which[
-		ArrayDepth[data]===4&&ArrayDepth[mask]===3, 
-		GetMaskData[#, mask, opts]&/@Transpose[data]
+		(*Apply same maks to multiple datasets with cropping*)
+		ArrayDepth[data] === 4 && ArrayDepth[mask] === 3,
+		{msk, cr} = AutoCropData[mask];
+		GetMaskData[#, msk, opts] & /@ Transpose[ApplyCrop[data, cr]]
 		,
-		ArrayDepth[data]===3&&ArrayDepth[mask]===4, 
+		(*Apply multiple masks to one or multiple datasets with cropping *)
+		(ArrayDepth[data] === 3 || ArrayDepth[data] === 4) && ArrayDepth[mask] === 4,
 		(
 			{msk, cr} = AutoCropData[#];
 			GetMaskData[ApplyCrop[data, cr], msk, opts]
-		)&/@Transpose[mask]
+		) & /@ Transpose[mask]
 		,
 		True,
-		If[!(Dimensions[data]=!=Dimensions[mask] || Drop[Dimensions[data], {2}]=!=Dimensions[mask]),
-			Retrun[Message[GetMaskData::dim,Dimensions[data],Dimensions[mask]];$Failed]
-			,
-			(*select the correct method*)
-			out = Switch[OptionValue[GetMaskOutput],
-				"Slices", MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[Normal@#2]], 1]&, {data, mask}, ArrayDepth[data]-2],
-				"Sparse", (data mask)["ExplicitValues"],
-				_, If[Max[mask]===0, {}, Pick[Flatten[N[data]], Unitize[Flatten[Normal@mask]], 1]]
-			];
-			(*select only non zero values if mask only to false*)
-			out = If[OptionValue[GetMaskOnly], out, Pick[out, Unitize[out], 1]];
-			lout = Length[out]<2;
-			(*Check what to output*)
-			out = Switch[OptionValue[GetMaskOutput],
-				"Mean", If[lout, 0., Mean[out]],
-				"MeanSTD", If[lout, {0., 0.}, {Mean[out], StandardDeviation[out]}],
-				"Median", If[lout, 0., Median[out]],
-				"MedianIQR", If[lout, {0., 0}, {Median[out], InterquartileRange[out]}],
-				_, out			
-			];
-			out
+		If[(Dimensions[data] =!= Dimensions[mask]) || ArrayDepth[data] < 3,
+			Return[Message[GetMaskData::dim, Dimensions[data], Dimensions[mask]]; $Failed],
+			GetMaskDatai[data, mask, opts]
 		]
+	]
+];
+
+
+GetMaskDatai[data_, mask_, OptionsPattern[]] := Block[{
+		out, lout, met
+	},
+	met = OptionValue[GetMaskOutput];
+	(*select the correct method for selection of data*)
+	out = Switch[
+	met,
+		"Slices", 
+		MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[Normal@#2]], 1] &, {data, mask}, ArrayDepth[data] - 2],
+		"Sparse", 
+		(data mask)["ExplicitValues"],
+		_,
+		If[Max[mask] === 0, {}, Pick[Flatten[N[data]], Unitize[Flatten[Normal@mask]], 1]]
+	];
+	(*select only non zero values if mask only to false*)
+	out = If[OptionValue[GetMaskOnly], out, Pick[out, Unitize[out], 1]];
+
+	(*Check if to output means or not*)
+	lout = Length[out] < 2;
+	Switch[met,
+		"Mean", If[lout, 0., Mean[out]],
+		"MeanSTD", If[lout, {0., 0.}, {Mean[out], StandardDeviation[out]}],
+		"Median", If[lout, 0., Median[out]],
+		"MedianIQR", If[lout, {0., 0}, {Median[out], InterquartileRange[out]}],
+		_, out
 	]
 ]
 
@@ -709,7 +728,7 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 			"sIQR"|"SIQR", 
 			{q1, q2, q3} = Quantile[dataQ, {.25, 0.5, .75}];
 			{q1 - sc 2 (q2 - q1), q3 + sc 2 (q3 - q2)},
-			"aIQR"|"aIQR", 
+			"aIQR"|"AIQR", 
 			{q1, q2, q3} = Quantile[dataQ, {.25, 0.5, .75}];
 			iqr = (q3 - q1);
 			mc = MedCouple[dataQ, q2];
@@ -1084,8 +1103,6 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 	(*reverse the order of the sets if needed*)
 	dat = If[reverseS, Reverse[dat], dat];
 
-
-
 	If[overlap===0,
 		(*reverse the order of the slices if needed*)
 		dat = N@If[reverseD, Reverse[dat, 2], dat];
@@ -1094,7 +1111,7 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 		If[motion, Switch[depth,
 			5,
 			motion = False;
-			If[mon, Print["Motion correct is only for 3D volues"]],
+			If[mon, Print["Motion correct is only for 3D volumes"]],
 			4,
 			If[mon, PrintTemporary["Motion correcting data"]];
 			dat = CorrectJoinSetMotion[dat, vox, over, PadOverlap->pad, JoinSetSplit->split, MonitorCalc->mon];

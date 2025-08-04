@@ -331,7 +331,7 @@ Options[TriExponentialT2Fit]={OutputCalibration->False}
 
 SyntaxInformation[TriExponentialT2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
-TriExponentialT2Fit[datan_, times_,OptionsPattern[]] := Block[{
+TriExponentialT2Fit[datan_, times_, OptionsPattern[]] := Block[{
 		result, fdat, offset, T1r, off, t1rho, t, ad, datal, model, cs, cf, 
 		T2s, t2f, Af, Am, t2m, x, Aff, Amm, T2mf, s0, ffr, mfr, t2, model2,cal,
 		maskT2, dataT2, fmask, fitData, Afi, Ami, csi, T2mi, T2fi, T2si, sci
@@ -435,56 +435,76 @@ TriExponentialT2Fit[datan_, times_,OptionsPattern[]] := Block[{
 (*EPGSignal*)
 
 
-SyntaxInformation[EPGSignal] = {"ArgumentsPattern" -> {_, _, _, _, _.}};
+Options[EPGSignal] = Options[EPGSignali] = {
+	EPGOutput->"Magnitude"
+}
 
-EPGSignal[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_, ref_}, b1_, f_: 0] := EPGSignali[{nEchoi, echoSpace}, {t1, t2}, {ex, ref}, b1, f]
+SyntaxInformation[EPGSignal] = {"ArgumentsPattern" -> {_, _, _, _, _., OptionsPattern[]}};
 
-EPGSignali[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_?ListQ, ref_?ListQ}, b1_, f_:0.] := Block[{sig},
-	sig = Map[EPGSignali[{nEchoi, echoSpace}, {t1, t2}, #, b1, f] &, Transpose[{ex, ref}]];
+EPGSignal[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_, ref_}, b1_, opts:OptionsPattern[]] := EPGSignali[{nEchoi, echoSpace}, {t1, t2}, {ex, ref}, b1, {0, 0}, opts]
+
+EPGSignal[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_, ref_}, b1_, fp_, opts:OptionsPattern[]] := EPGSignali[{nEchoi, echoSpace}, {t1, t2}, {ex, ref}, b1, fp, opts]
+
+EPGSignali[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_?ListQ, ref_?ListQ}, b1_, fp_, opts:OptionsPattern[]] := Block[{sig},
+	sig = Map[EPGSignali[{nEchoi, echoSpace}, {t1, t2}, #, b1, fp, opts] &, Transpose[{ex, ref}]];
 	sig = Mean@Join[sig, sig[[2 ;;]]]
 ]
 
-EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, f_:0.] := Block[{
-		tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, t2r1, t2r2, states, w, funRot, funMove
+EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, fp_, OptionsPattern[]] := Block[{
+		tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, t2r1, t2r2, states, w, funRot, funMove,
+		freq, phase, pex, pref, sig
 	},
-	
+
 	(*define internal paramters*)
-	states = Round[If[nEcho >= 10, Max[{nEcho/2, 10}], nEcho]];
-	
+	states = Round[If[nEcho >= 20, Max[{nEcho/2, 20}], nEcho]];
+
 	(*convert to Rad*)
 	ex = N[b1 exi Degree];
 	ref = N[b1 refi Degree];
 	tau = echoSpace/2.;
 
 	(*if use off ressonance then use complex matrix*)
-	w = -tau/1000. 2. Pi f;
-	{funRot, funMove} = If[w==0., {RotMatrixT, MoveStates}, {RotMatrixTI, MoveStatesI}];
+	{freq, phase} = N@If[NumberQ[fp], {fp, 0.}, fp];
+	w = -tau/1000. 2. Pi freq;
+	{pex, pref} = If[NumberQ[phase], {0., phase Degree}, {0., 0.}];
+	{funRot, funMove} = If[pref =!= 0. || w =!= 0., 
+		{RotMatrixTI, MoveStatesI}, {RotMatrixT, MoveStates}
+	];
+
+	(*define relaxation*)
+	t1r = Exp[-tau/t1];
+	If[w =!= 0.,
+		t2r1 = Exp[-tau/t2 - w I];
+		t2r2 = Exp[-tau/t2 + w I];
+		,
+		t2r1 = t2r2 = Exp[-tau/t2];
+	];
 
 	(*Selection matrix to move all traverse states up one coherence Level*)
 	Smat = MixMatrix[states];
 	svec = Rvec = ConstantArray[0., Length[Smat]];
-	
-	(*define relaxation*)
-	If[w==0.,
-		t2r1 = t2r2 = Chop[Exp[-tau/t2]];
-		,
-		t2r1 = Chop[Exp[-tau/t2 - w I]];
-		t2r2 = Chop[Exp[-tau/t2 + w I]];
-	];
-	t1r = Chop[Exp[-tau/t1]];
-	
+
 	(*Relaxation matrix*)
 	Rmat = MakeDiagMat[DiagonalMatrix[{t2r1, t2r2, t1r}], states];
 	Rvec[[3]] = (1. - t1r);
-	
+
 	(*RF mixing matrix*)
-	Tmat = MakeDiagMat[funRot[ref, 0], states];
-	
+	Tmat = MakeDiagMat[funRot[ref, pref], states];
+
 	(*Create Initial state*)
-	svec[[1 ;; 3]] = funRot[ex, 90].{0., 0., 1.};
-	
+	svec[[1 ;; 3]] = funRot[ex, pex].{0., 0., 1.};
+
 	(*combined relax and gradient and create output*)
-	Abs[funMove[Rmat, Rvec, Smat, Tmat, svec, Round@nEcho][[2 ;;, 1]]]
+	sig = funMove[Rmat, Rvec, Smat, Tmat, svec, Round@nEcho][[2 ;;, 1]];
+
+	Switch[OptionValue[EPGOutput],
+		"Complex", sig,
+		"Real"|"Re", Re[sig],
+		"Imaginary"|"Im", Im[sig],
+		"ReIm", Transpose[ReIm[sig]],
+		"Phase", Arg[sig],
+		_, Abs[sig]
+	]
 ]
 
 
@@ -529,7 +549,7 @@ RotMatrixTC = Compile[{{alpha, _Real, 0}}, Chop[{
 	{-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
 }], RuntimeOptions -> "Speed"];
 
-RotMatrixTI[alpha_, phi_: 90] := RotMatrixTCI[alpha, phi];
+RotMatrixTI[alpha_, phi_] := RotMatrixTCI[alpha, phi];
 
 (*Specify angle and phase*)
 RotMatrixTCI = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
@@ -838,7 +858,8 @@ Options[EPGT2Fit]= {
 
 	EPGFatShift -> 0.,
 	DictT2IncludeWater -> False,
-	EPGMethodCal -> "2compF"
+	EPGMethodCal -> "2compF", 
+	EPGRefocussingPhase -> 0.
 }
 
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
@@ -913,7 +934,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 
 	(*create the dictionary*)
 	If[OptionValue[EPGMethod]=!="NLLS",
-		optDic = {OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater]};
+		optDic = {OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater], OptionValue[EPGRefocussingPhase]};
 		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f}, echo, angle, {t2ran, b1ran, t2fdic}, optDic ,mon];
 		cons = Dimensions[vals][[;; -2]];
 		dictMat = PseudoInverseC[dict];
@@ -1223,20 +1244,21 @@ Options[CreateT2Dictionary] = {
 
 	DictT2IncludeWater->False, 
 	EPGFatShift -> 0.,
-	MonitorCalc ->True
+	MonitorCalc ->True,
+	EPGRefocussingPhase -> 0.
 };
 
 SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 CreateT2Dictionary[relax_, echo_, ang_, OptionsPattern[]] := CreateT2Dictionaryi[relax, echo, ang, 
 	{OptionValue[DictT2Range], OptionValue[DictB1Range], OptionValue[DictT2fRange]}, 
-	{OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater]}, 
+	{OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater], OptionValue[EPGRefocussingPhase]}, 
 	OptionValue[MonitorCalc]
 ]
 
 (*save each unique dictionary*)
-CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shift_, incW_}, mon_] := 
-CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, incW}, mon] = Block[{
+CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shift_, incW_, phase_}, mon_] := 
+CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, incW, phase}, mon] = Block[{
 		T1m, T1f, t2Mvals, t2Mlen, b1vals, b1len, t2val, t2Fvals, t2Flen, time, fatSig, watSig, 
 		dict, vals, fatSigW, ang, angS
 	},
@@ -1278,11 +1300,11 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 
 		(*fixed t2 value*)
 		time = AbsoluteTiming[
-			watSig = ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1], {b1, b1vals}, {t2m, t2Mvals}];
-			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2val}, angS, b1], {b1, b1vals}];
+			watSig = ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1, {0, phase}], {b1, b1vals}, {t2m, t2Mvals}];
+			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2val}, angS, b1, {0, phase}], {b1, b1vals}];
 
 			If[incW,
-				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, b1], {b1, b1vals}];
+				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, b1, {0, phase}], {b1, b1vals}];
 				fatSig = 0.1 fatSigW + 0.9 fatSig
 			];
 
@@ -1298,11 +1320,11 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 		If[mon, PrintTemporary["Creating new dictionary with range of t2 fat values"]];
 		(*range of t2 values*)
 		time = AbsoluteTiming[
-			watSig = ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1], {b1, b1vals}, {t2m, t2Mvals}];
-			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2f}, angS, b1], {b1, b1vals}, {t2f, t2Fvals}];
+			watSig = ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1, {0, phase}], {b1, b1vals}, {t2m, t2Mvals}];
+			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2f}, angS, b1, {0, phase}], {b1, b1vals}, {t2f, t2Fvals}];
 
 			If[incW,
-				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, b1], {b1, b1vals}];
+				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, b1, {0, phase}], {b1, b1vals}];
 				fatSigW = Transpose@ConstantArray[fatSigW, Length[t2Fvals]];
 				fatSig = 0.1 fatSigW + 0.9 fatSig
 			];
