@@ -689,10 +689,8 @@ CreateTempDirectory[tdirI_, print_, make_] := Block[{tdir, add, str},
 	If[print, PrintTemporary["using as temp directory: " <> tdir]];
 	$lastElastixTemp = If[add =!= "" || Last[FileNameSplit[tdir]] === "anat", DirectoryName[tdir], tdir];
 
-	If[$debugElastix, 
-		Print["using as temp directory: " <> tdir];
-		Print["$lastElastixTemp: " <> $lastElastixTemp];
-	];
+	debugElastix["using as temp directory: " <> tdir];
+	debugElastix["$lastElastixTemp: " <> $lastElastixTemp];
 
 	(*return temp directory*)
 	tdir
@@ -1171,10 +1169,8 @@ TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command
 		tdir = If[OptionValue[TempDirectory] === "Default", $lastElastixTemp, OptionValue[TempDirectory]];
 		tdir = CreateTempDirectory[{tdir, "transform"}, OptionValue[PrintTempDirectory], True];
 
-		If[$debugElastix, 
-			Print["transform using as temp directory: " <> tdir];
-			Print["transform $lastElastixTemp: " <> $lastElastixTemp];
-		];
+		debugElastix["transform using as temp directory: " <> tdir];
+		debugElastix["transform $lastElastixTemp: " <> $lastElastixTemp];
 
 		(*Export and transform*)
 		ExportNii[data, vox, FileNameJoin[{tdir,"trans.nii"}]];

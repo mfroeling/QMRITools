@@ -1920,7 +1920,6 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		validation, files, loss, rep, learningRate, schedule, dims
 	},
 
-
 	(*------------ Get all the configuration stuff -----------------*)
 
 	(*getting all the options*)

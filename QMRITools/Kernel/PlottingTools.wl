@@ -2479,7 +2479,7 @@ LoessPlot[data_, opts : OptionsPattern[]] := Block[{
 		If[z===0, Graphics[{}],ListLinePlot[
 			{Transpose[{xGrid, yFit - z}], Transpose[{xGrid, yFit + z}]}, 
 			PlotStyle -> {Directive[Dashed, Gray], Directive[Dashed, Gray]}, 
-			Filling -> {1 -> {2}}, FillingStyle -> {LightBlue, Opacity[0.5]}, 
+			Filling -> {1 -> {2}}, FillingStyle -> {LightGray, Opacity[0.5]}, 
 			Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 
 			PlotHighlighting -> None]
 		],

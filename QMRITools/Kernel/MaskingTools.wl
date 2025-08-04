@@ -101,11 +101,13 @@ SelectMaskComponents::usage=
 "SelectMaskComponents[mask] selects the largest connected component in the mask.
 SelectMaskComponents[mask,n] selects the n largest connected components in the mask."
 
+
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
 
 SegmentationVolume::usage = 
-"SegmentationVolume[seg] calculates the volume of each label in the segmentation."
+"SegmentationVolume[seg] calculates the volume of each label in the segmentation in voxels.
+SegmentationVolume[seg, vox] calculates the volume of each label in the segmentation in cm^3 where vox is in mm."
 
 
 (* ::Subsection::Closed:: *)
@@ -643,15 +645,27 @@ GetCommonSegmentation[dat:{_?ArrayQ ..}, seg:{_?ArrayQ ..}, vox:{_?ListQ ..}] :=
 
 SyntaxInformation[SegmentMask] = {"ArgumentsPattern" -> {_, _, _.}};
 
-SegmentMask[mask_, seg_?IntegerQ] := Block[{pos, f, l, sel, out},
-	pos = Flatten@Position[Unitize[Total[Flatten[#]]] & /@ mask, 1];
-	{f, l} = {First[pos], Last[pos]};
-	sel = Partition[Round[Range[f, l, ((l - f)/seg)]], 2, 1] + Append[ConstantArray[{0, -1}, seg - 1], {0, 0}];
-	out = ConstantArray[0*mask, seg];
-	Table[out[[i, sel[[i, 1]] ;; sel[[i, 2]]]] = mask[[sel[[i, 1]] ;; sel[[i, 2]]]], {i, 1, seg}];
-	out
-]
+SegmentMask[mask_, seg_?NumberQ] := SegmentMask[mask, seg, 0]
 
+SegmentMask[mask_, segI_?NumberQ, overI_?NumberQ] := Block[{
+		seg, over, min, max, len, pad, sec, out, per
+	},
+	seg = Max[1, Floor[segI]];
+	over = Max[0, overI];
+
+	{min, max} = MinMax[Flatten@Position[Unitize[Total[Flatten[#]]] & /@ mask, 1]];
+	len = max + 1 - min;
+
+	pad = {-1, 1} Through[{Floor, Ceiling}[Clip[over, {0, Infinity}]/2]] - {0, 1};
+	sec = Clip[MinMax[Round[# + pad]] & /@ Partition[Range[min, max + 1, (len)/seg], 2, 1], {min, max}];
+
+	out = SparseArray[ConstantArray[0*mask, seg]];
+	Table[out[[i, sec[[i, 1]] ;; sec[[i, 2]]]] = mask[[sec[[i, 1]] ;; sec[[i, 2]]]], {i, 1, seg}];
+
+	per = N@Rescale[Mean /@ (sec - 1), {min - 1, max - 1}];
+
+	{per, Transpose[out]}
+]
 
 (* ::Subsection::Closed:: *)
 (*SegmentationVolume*)

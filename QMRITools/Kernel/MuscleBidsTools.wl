@@ -392,7 +392,7 @@ defaultConfig = <|
 	|>,
 	"Process" -> <|
 		"Masking" -> 5,
-		"FlipPermute" -> {{1, -1, 1}, {"z", "y", "x"}},
+		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}},
 		"SplitRegistration" -> True,
 		"IVIMCorrection" -> True,
 		"GradientCorrection" -> False,
@@ -627,7 +627,7 @@ ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{subs, dataFo
 
 GetProtocolNames[fold_?ListQ] := GetProtocolNames /@ fold
 
-GetProtocolNames[fold_?StringQ] := Block[{},
+GetProtocolNames[fold_?StringQ] := Block[{list},
 	list = Sort@DeleteDuplicates[(
 		Quiet[json = ImportJSON[#]];
 		{
@@ -635,12 +635,10 @@ GetProtocolNames[fold_?StringQ] := Block[{},
 			n = json["ProtocolName"]; If[StringQ[n], StringTrim[StringReplace[n, "WIP"->""]], n]
 		}
 	) & /@ FileNames["*.json", fold, 2]]; 
-	Print[list];
-	list=Select[list, 
+	list = Select[list, 
 		Head[#[[1]]] =!= Missing && Head[#[[1]]] =!= $Failed && 
 		!StringContainsQ[#[[2]], RegularExpression["_\\d{6}\\.\\d{3}"]] &
 	];
-		Print[list];
 	list
 ]
 
@@ -1088,7 +1086,7 @@ MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
 		(*check if ther are files to do something with*)
 		If[Length@Flatten[files]===0,
 			(*no json files found*)
-			{"!!!!!!!!! No json files found !!!!!!!!!!"}
+			debugBids["!!!!!!!!! No json files found !!!!!!!!!!"];
 			(*-----*)AddToLog[{"No json files found with label ", nameIn , " skipping conversion"}, 4],
 
 			(*if json files found import them*)
@@ -1758,15 +1756,29 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 								(*perform the IDEAL dixon fit*)
 								(*-----*)AddToLog["Starting Dixon reconstruction", 4];
 
-								(*fit with DB fat model*)
-								{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-									{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-									DixonPhases -> {True, True, True, True, True}, 
-									DixonFixT2 -> False, DixonFieldStrength -> field, 
-									DixonAmplitudes -> "CallDB", DixonTolerance->1];
-
-								pos = {"DixonFlips" -> pos, "DixonBipolar" -> True};
-								outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
+								If[Length[echos] > 6,
+									(*fit with DB fat model*)
+									{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, 
+										{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+											{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
+											DixonPhases -> {True, True, True, True, True}, 
+											DixonFixT2 -> False, DixonFieldStrength -> field, 
+											DixonAmplitudes -> "CallDB", DixonTolerance->1
+										];
+									pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DioxonDoubleBonds"->True};
+									outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
+									,
+									(*fit with fixed fat model*)
+									{{watfr, fatfr}, {wat, fat}, {inph, outph}, 
+										{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+											{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
+											DixonPhases -> {True, True, True, True, True}, 
+											DixonFixT2 -> False, DixonFieldStrength -> field, 
+											DixonAmplitudes -> "Fixed", DixonTolerance->1
+										];
+									pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DioxonDoubleBonds"->False};
+									outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
+								];
 
 								,
 								(*Dixon processing scrip for multi echo gradient echo complex data as used in Bochum cohort*)
@@ -1785,7 +1797,9 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 								(*perform the IDEAL dixon fit*)
 								(*-----*)AddToLog["Starting Dixon reconstruction", 4];
-								{{watfr, fatfr}, {wat, fat}, {inph, outph}, {{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
+								{{watfr, fatfr}, {wat, fat}, {inph, outph}, 
+									{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+										{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
 
 								outTypes = {};
 							];
