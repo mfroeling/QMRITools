@@ -22,23 +22,27 @@ If[load === $Failed,
 		Print["Usage:"];
 		Print["  script.wls -i <input> -o <output> [-g Y|N] [-l \"Legs\"|\"Upperleg\"|\"Lowerlegs\"]"];
 		Print["Flags:"];
-		Print["  -i    Input NIfTI file (required)"];
-		Print["  -o    Output NIfTI file (required)"];
-		Print["  -g    Use GPU? (Y/N, default: N)"];
-		Print["  -l    Region to segment: Legs (default), Upperleg, or Lowerlegs"];
-		Print["  -h, --help  Show this help message"];
+		Print["  --i    Input NIfTI file (required)"];
+		Print["  --o    Output NIfTI file (required)"];
+		Print["  --g    Use GPU? (Y/N, default: N)"];
+		Print["  --l    Region to segment: Legs (default), Upperleg, or Lowerlegs"];
+		Print["  --h, --help  Show this help message"];
 	];
 	
 	If[Keys[args] === {"-h"} || Keys[args] === {"--help"}, Quit[]];
 	
-	infile = Lookup[args, "-i", Missing[]];
-	outfile = Lookup[args, "-o", Missing[]];
-	gpuUse = Lookup[args, "-g", "N"];
-	region = Lookup[args, "-l", "Legs"];
+	infile = Lookup[args, "--i", Missing[]];
+	outfile = Lookup[args, "--o", Missing[]];
+	gpuUse = Lookup[args, "--g", "N"];
+	region = Lookup[args, "--l", "Legs"];
 	
 	gpu = Switch[gpuUse, "Y"|"y"|"True"|"true"|"Yes"|"yes", "GPU", _, "CPU"];
 	If[infile===Missing[], Print["\nNo input file given."];Quit[1]];
-	If[outfile===Missing[], outfile = StringReplace[infile,{".nii.gz"->"_seg.nii.gz",".nii"->"_seg.nii"}]];
+	If[outfile===Missing[], 
+		outfile = StringReplace[infile,{".nii.gz"->"_seg.nii.gz",".nii"->"_seg.nii"}];
+		Print["\nSaving output to "];
+		Echo[outfile];
+	];
 	
 	Print["\nLoading input data "];
 	Echo[infile];
