@@ -181,7 +181,7 @@ SmoothSNR::usage =
 
 
 MeanMethod::usage = 
-"MeanMethod is an option for GetMaskMeans. The option can be  \"NormalDist\", \"SkewNormalDist\", or \"Mean\"."
+"MeanMethod is an option for GetMaskMeans. The option can be \"NormalDist\", \"SkewNormalDist\", or \"Mean\"."
 
 UseMask::usage = 
 "UseMask is a function for MeanSignal and DriftCorrect."
@@ -409,7 +409,7 @@ Options[ParameterFit2]={FitOutput->"BestFitParameters"}
 
 SyntaxInformation[ParameterFit2] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-ParameterFit2[dat_List, OptionsPattern[]]:=
+ParameterFit2[dat_List, OptionsPattern[]] := 
 Module[{i,datf,init,out,sol,par,
 	omega1i,omega2i,alpha1i,alpha2i,xi1i,xi2i,
 	omega1,xi1,alpha1,omega2,xi2,alpha2},
@@ -467,7 +467,7 @@ Module[{i,datf,init,out,sol,par,
 
 SyntaxInformation[FitData] = {"ArgumentsPattern" -> {_, _.}};
 
-FitData[dat_, sdr_:2]:=
+FitData[dat_, sdr_:2] := 
 Module[{m, s, min, max, range, step, xdat, data, out},
 	If[dat == {} || Length[dat] == 1, {}, 
 		m = Mean[dat];
@@ -527,7 +527,7 @@ GetMaskMeans[dat_, mask_, lab_, OptionsPattern[]] := Block[{labels, out, fl},
 
 Options[GetTractMeans] = {MeanMethod -> "SkewNormalDist", InterpolationOrder -> 0}
 
-SyntaxInformation[GetTractMeans] = {"ArgumentsPattern" -> {_, _, _, _.,  OptionsPattern[]}};
+SyntaxInformation[GetTractMeans] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
 GetTractMeans[dat_, tracts_, vox_, opts : OptionsPattern[]] := GetTractMeans[dat, tracts, vox, "", opts]
 
@@ -556,19 +556,19 @@ GetTractMeans[dat_, tracts_, vox_, lab_, OptionsPattern[]] := Block[{labels, fl,
 (*RegNorm*)
 
 
-RegNorm[x_,mu_,sigma_]:=1/(E^((x - mu)^2/(2*sigma^2))*(Sqrt[2*Pi]*sigma));
+RegNorm[x_,mu_,sigma_] := 1/(E^((x - mu)^2/(2*sigma^2))*(Sqrt[2*Pi]*sigma));
 
 
 (* ::Subsubsection::Closed:: *)
 (*SkewNorm*)
 
 
-Phi[x_]:=1/(E^(x^2/2)*Sqrt[2*Pi]);
-CapitalPhi[x_]:=.5(1+Erf[(x)/Sqrt[2]]);
-SkewNorm[x_,omega_,xi_,alpha_]:=(2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
-Delta[a_]:=a/Sqrt[1+a^2];
-Mn[w_,e_,a_]:=e+w Delta[a] Sqrt[2/Pi];
-Var[w_,a_]:=w^2(1-(2Delta[a]^2/Pi));
+Phi[x_] := 1/(E^(x^2/2)*Sqrt[2*Pi]);
+CapitalPhi[x_] := .5(1+Erf[(x)/Sqrt[2]]);
+SkewNorm[x_,omega_,xi_,alpha_] := (2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
+Delta[a_] := a/Sqrt[1+a^2];
+Mn[w_,e_,a_] := e+w Delta[a] Sqrt[2/Pi];
+Var[w_,a_] := w^2(1-(2Delta[a]^2/Pi));
 
 SkewNormC=Compile[{{x, _Real},{omega, _Real},{xi, _Real},{alpha, _Real}},
 Chop[(2/omega)(1/(E^(((x-xi)/omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((alpha (x-xi)/omega))/Sqrt[2]]))]
@@ -606,6 +606,24 @@ GetMaskData[data_?ArrayQ, mask_, opts : OptionsPattern[]] := Block[{
 		]
 	]
 ];
+
+
+GetMaskData[data_?ArrayQ, mask_, n_?NumberQ, opts : OptionsPattern[]] := GetMaskData[data, mask, {n, 0.}, opts]
+
+GetMaskData[data_?ArrayQ, mask_, {n_?NumberQ, o_?NumberQ}, opts : OptionsPattern[]] := Block[{
+		p, msk, out
+	},
+	Which[
+		ArrayDepth[mask] === 4,
+		GetMaskData[data, #, {n, o}, opts] & /@ Transpose[mask],
+		ArrayDepth[mask] === 3,
+		{p, msk} = SegmentMask[mask, n, o];
+		out = GetMaskData[data, msk, opts];
+		Flatten /@ Thread[{p, out}],
+		True,
+		$Failed
+	]
+]
 
 
 GetMaskDatai[data_, mask_, OptionsPattern[]] := Block[{
@@ -679,9 +697,9 @@ Options[FindOutliers] = {
 
 SyntaxInformation[FindOutliers] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-FindOutliers[datai_?VectorQ, opts:OptionsPattern[]]:=FindOutliers[datai, 1, opts]
+FindOutliers[datai_?VectorQ, opts:OptionsPattern[]] := FindOutliers[datai, 1, opts]
 
-FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
+FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] := Block[{
 		data, maxIt, diff, it, out, outI, outNew, q1, q2, q3, sc, iqr, dataQ, up, low, mc, met, incZero, output,
 		sd, mn, mad, med, norm, dataL, min
 	},
@@ -758,7 +776,7 @@ FindOutliers[datai_?VectorQ, ignore_, OptionsPattern[]] :=  Block[{
 (* ::Subsubsection::Closed:: *)
 (*MedCouple*)
 
-MedCouple[data_]:= MedCouple[data, Median@Flatten@data]
+MedCouple[data_] := MedCouple[data, Median@Flatten@data]
 
 MedCouple[data_, q2_] := Block[{dat, diff, larger, smaller, equal, xi, xid, xj, xjd, xk, xkd, lk},
 	(*doi.org/10.1198/106186004X12632*)
@@ -864,7 +882,7 @@ toNumString[dat_, n_, func_] := Block[{data, num},
 
 SyntaxInformation[SNRCalc] = {"ArgumentsPattern" -> {_, _}};
 
-SNRCalc[data_?ArrayQ, sig_?ArrayQ]:= Block[{sigma, snr},
+SNRCalc[data_?ArrayQ, sig_?ArrayQ] := Block[{sigma, snr},
 	sigma = MedianFilter[ToPackedArray@N@Chop[sig, 10^-3], 2];
 	Which[
 		ArrayDepth[data] === 4 && ArrayDepth[sigma] === 3,
@@ -965,7 +983,7 @@ SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] := Module[{signa
 
 SyntaxInformation[DatTot] = {"ArgumentsPattern" -> {_, _, _}};
 
-DatTot[data_,name_,vox_]:= Module[{fitdat},
+DatTot[data_,name_,vox_] := Module[{fitdat},
 fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
 		With[{quant=Function[dat,{dat[[1]],dat[[2]],100dat[[2]]/dat[[1]]}]},
 			Flatten[{name,vox[[1]],vox[[2]],quant[fitdat[[1]]],quant[fitdat[[2]]],quant[fitdat[[3]]],quant[fitdat[[4]]],quant[fitdat[[5]]]}]
@@ -974,7 +992,7 @@ fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
 
 SyntaxInformation[DatTotXLS] = {"ArgumentsPattern" -> {_, _, _}};
 
-DatTotXLS[data_,name_,vox_]:= Module[{fitdat},
+DatTotXLS[data_,name_,vox_] := Module[{fitdat},
 	fitdat=ParameterFit[DeleteCases[Flatten[#],Null]&/@data];
 	With[{quant=Function[dat,ToString[Round[dat[[1]],.01]]<>" \[PlusMinus] "<>ToString[Round[dat[[2]],.01]]]},
 		Flatten[{name,vox[[1]],vox[[2]],quant[fitdat[[1]]],quant[fitdat[[2]]],quant[fitdat[[3]]],quant[fitdat[[4]]],quant[fitdat[[5]]]}]
@@ -1011,7 +1029,7 @@ DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, func,
 	int = Which[int === 0, "Nearest", 0 < int <=9, {"Spline", int}, True, {"Spline", 1}];
 
 	dim = Dimensions[If[ArrayDepth[data] === 4, data[[All, 1]], data]];
-	ran = {-1, 1} # / 2. & /@ Reverse[vox  dim];
+	ran = {-1, 1} # / 2. & /@ Reverse[vox dim];
 
 	aff = ParametersToTransformFull[w, "Inverse"];
 
@@ -1030,7 +1048,7 @@ DataTransformation[data_, vox_, wi_, type_, OptionsPattern[]] := Block[{w, func,
 (*ParametersToTransformFull*)
 
 
-ParametersToTransformFull[w_] :=  ParametersToTransformFull[w, "Normal"]
+ParametersToTransformFull[w_] := ParametersToTransformFull[w, "Normal"]
 
 ParametersToTransformFull[w_, opt_] := Block[{
 		rz, rx, ry, tz, tx, ty, sz, sx, sy, gz, gx, gy, 
@@ -1078,9 +1096,9 @@ Options[JoinSets]={
 
 SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-JoinSets[data: {_?ArrayQ ..}, over_, opts:OptionsPattern[]]:=JoinSets[data, over, {1,1,1}, opts]
+JoinSets[data: {_?ArrayQ ..}, over_, opts:OptionsPattern[]] := JoinSets[data, over, {1,1,1}, opts]
 
-JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
+JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]] := Block[{
 		dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran,
 		reverseS, reverseD, split
 	},
@@ -1137,7 +1155,7 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]]:=Block[{
 ]
 
 
-JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False]:= Block[{
+JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False] := Block[{
 		sets,set1,set2,step,set1over,set2over,joined,mn1,mn2
 	},
 
@@ -1174,7 +1192,7 @@ JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False]:= Block[{
 ];
 
 
-JoinSetsi[data_?ArrayQ, overlap_?ListQ, OptionsPattern[]]:=
+JoinSetsi[data_?ArrayQ, overlap_?ListQ, OptionsPattern[]] := 
 Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1,drop2,overl},
 
 	sets=Length[data];
@@ -1351,7 +1369,7 @@ SplitSets[data_, sets_, overlap_, OptionsPattern[]] := Module[{lengthSet, sels, 
 
 	dat = If[OptionValue[ReverseData], Reverse[data], data];
 
-	pad = OptionValue[PadOverlap];  
+	pad = OptionValue[PadOverlap]; 
 	dat = ArrayPad[dat, {{pad, pad}, {0,0}, {0,0}}];
 	over = overlap + 2 pad;
 
@@ -1513,7 +1531,7 @@ Options[Hist2]={Scaling->False}
 
 SyntaxInformation[Hist2] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-Hist2[dat_?ArrayQ,range:{{_,_}..},label:{_String..},OptionsPattern[]]:=
+Hist2[dat_?ArrayQ,range:{{_,_}..},label:{_String..},OptionsPattern[]] := 
 Module[{data,line,line1,line2,hist,x,f,omega1,omega2,xi1,xi2,alpha1,alpha2,r1,r2,sol},
 
 	If[!(Length[range]==Length[dat]==Length[label]==5),Return[Message[Hist2::size,Length[dat],Length[range],Length[label]]]];
@@ -1547,17 +1565,17 @@ Module[{data,line,line1,line2,hist,x,f,omega1,omega2,xi1,xi2,alpha1,alpha2,r1,r2
 	]
 
 
-Phi[x_]:=1/(E^(x^2/2)*Sqrt[2*Pi]);
+Phi[x_] := 1/(E^(x^2/2)*Sqrt[2*Pi]);
 
-CapitalPhi[x_]:=.5(1+Erf[(x)/Sqrt[2]]);
+CapitalPhi[x_] := .5(1+Erf[(x)/Sqrt[2]]);
 
-Delta[a_]:=a/Sqrt[1+a^2];
+Delta[a_] := a/Sqrt[1+a^2];
 
-Mn[w_,e_,a_]:=e+w Delta[a] Sqrt[2/Pi];
+Mn[w_,e_,a_] := e+w Delta[a] Sqrt[2/Pi];
 
-Var[w_,a_]:=w^2(1-(2Delta[a]^2/Pi));
+Var[w_,a_] := w^2(1-(2Delta[a]^2/Pi));
 
-SkewNorm[x_,omega_,xi_,alpha_]:=(2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
+SkewNorm[x_,omega_,xi_,alpha_] := (2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
 
 
 (* ::Subsection::Closed:: *)
@@ -1624,9 +1642,9 @@ Options[SmartMask]={Strictness->0.50, MaskCompartment->"Muscle", SmartMethod->"C
 
 SyntaxInformation[SmartMask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SmartMask[input_,ops:OptionsPattern[]]:=SmartMask[input, 0, ops]
+SmartMask[input_,ops:OptionsPattern[]] := SmartMask[input, 0, ops]
 
-SmartMask[input_,maski_,OptionsPattern[]]:=Module[{
+SmartMask[input_,maski_,OptionsPattern[]] := Module[{
 	sol,func,range,map,mask,pmask,pars
 	},
 

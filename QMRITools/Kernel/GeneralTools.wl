@@ -387,7 +387,35 @@ OpenDemonstrationNotebook[] := NotebookOpen[GetAssetLocation["Demo"]];
 OpenQMRIToolsLocation[] := SystemOpen[First[PacletFind["QMRITools"]]["Location"]];
 
 
-SetDemoDirectory[]:=SetDirectory[FileNameJoin[{DirectoryName[GetAssetLocation["DemoData"]], "DemoData"}]];
+SetDemoDirectory[] := SetDirectory[FileNameJoin[{DirectoryName[GetAssetLocation["DemoData"]], "DemoData"}]];
+
+
+(* ::Subsection::Closed:: *)
+(*ParseCommandLine*)
+
+
+ParseCommandLine[args_] := Block[{flagPos, n, assoc, i, key, valList, val}, 
+	assoc = <||>;
+	(*Skip script name*)n = Length[args];
+	(*Find positions of arguments that are flags (start with "-")*)
+	flagPos = Quiet[Flatten@Position[args, _?(StringStartsQ[#, "-"] &), 2]];
+	(*Add artificial endpoint to handle last flag group cleanly*)
+	AppendTo[flagPos, n + 1];
+	(*Parse each flag and its corresponding values*)
+	Do[
+		key = args[[flagPos[[i]]]];
+		valList = args[[flagPos[[i]] + 1 ;; flagPos[[i + 1]] - 1]];
+		val = Which[
+			valList === {} || StringStartsQ[First[valList], "-"],
+			Print["Warning: No value for flag ", key]; "",
+			True, 
+			StringRiffle[valList, " "]
+		];
+		assoc[key] = val;
+	, {i, Length[flagPos] - 1}];
+	(*return the list*)
+	assoc
+]
 
 
 (* ::Subsection:: *)
@@ -400,19 +428,19 @@ SetDemoDirectory[]:=SetDirectory[FileNameJoin[{DirectoryName[GetAssetLocation["D
 
 SyntaxInformation[StringPadInteger] = {"ArgumentsPattern" -> {_, _., _.}};
 
-StringPadInteger[x_?IntegerQ]:=StringPadInteger["", {x, 3}, ""]
+StringPadInteger[x_?IntegerQ] := StringPadInteger["", {x, 3}, ""]
 
-StringPadInteger[{x_?IntegerQ, n_?IntegerQ}]:=StringPadInteger["", {x, n}, ""]
+StringPadInteger[{x_?IntegerQ, n_?IntegerQ}] := StringPadInteger["", {x, n}, ""]
 
-StringPadInteger[pre_?StringQ, x_?IntegerQ]:=StringPadInteger[pre, {x, 3}, ""]
+StringPadInteger[pre_?StringQ, x_?IntegerQ] := StringPadInteger[pre, {x, 3}, ""]
 
-StringPadInteger[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}]:=StringPadInteger[pre, {x, n}, ""]
+StringPadInteger[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}] := StringPadInteger[pre, {x, n}, ""]
 
-StringPadInteger[x_?IntegerQ, post_?StringQ]:=StringPadInteger["", {x, 3}, post]
+StringPadInteger[x_?IntegerQ, post_?StringQ] := StringPadInteger["", {x, 3}, post]
 
-StringPadInteger[{x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=StringPadInteger["", {x, n}, post]
+StringPadInteger[{x_?IntegerQ, n_?IntegerQ}, post_?StringQ] := StringPadInteger["", {x, n}, post]
 
-StringPadInteger[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}, post_?StringQ]:=pre<>StringPadLeft[ToString[x], n, "0"]<>post
+StringPadInteger[pre_?StringQ, {x_?IntegerQ, n_?IntegerQ}, post_?StringQ] := pre<>StringPadLeft[ToString[x], n, "0"]<>post
 
 
 (* ::Subsubsection::Closed:: *)
@@ -428,7 +456,7 @@ RandomString[n_] := StringJoin[RandomChoice[Join[Alphabet["English"], ToString /
 (*DateName*)
 
 
-DateName[]:=StringReplace[DateString[{"YearShort", "Month", "Day", "-", "Hour"}], ":" -> ""]
+DateName[] := StringReplace[DateString[{"YearShort", "Month", "Day", "-", "Hour"}], ":" -> ""]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -596,7 +624,7 @@ Options[PadToDimensions]={PadValue->0., PadDirection -> "Center"}
 
 SyntaxInformation[PadToDimensions] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-PadToDimensions[data_, opts:OptionsPattern[]]:=PadToDimensions[data, FindMaxDimensions[data], opts]
+PadToDimensions[data_, opts:OptionsPattern[]] := PadToDimensions[data, FindMaxDimensions[data], opts]
 
 PadToDimensions[data_, dim_, opts:OptionsPattern[]] := Block[{diffDim, padval, pad,dir,zer},
 	If[Length[Dimensions[First[data]]]===Length[dim],
@@ -688,7 +716,7 @@ Options[GridData] = {Padding-> None}
 
 SyntaxInformation[GridData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-GridData[dati_, opts:OptionsPattern[]]:=GridData[dati, Ceiling[Sqrt[Length@dati]], opts]
+GridData[dati_, opts:OptionsPattern[]] := GridData[dati, Ceiling[Sqrt[Length@dati]], opts]
 
 GridData[dati_, part_, opts:OptionsPattern[]] := Block[{dim, data, adepth, pad, val},
 	adepth = ArrayDepth[dati[[1]]];
@@ -805,11 +833,11 @@ VectorToData[vec_, {dim_, pos_}] := ToPackedArray@N@If[VectorQ[vec],
 
 SyntaxInformation[FitGradientMap] = {"ArgumentsPattern" -> {_, _., _.}};
 
-FitGradientMap[data_]:=FitGradientMap[data, 2, 1]
+FitGradientMap[data_] := FitGradientMap[data, 2, 1]
 
-FitGradientMap[data_, ord_]:=FitGradientMap[data, ord, 1]
+FitGradientMap[data_, ord_] := FitGradientMap[data, ord, 1]
 
-FitGradientMap[data_, ord_, smp_]:=FitGradientMap[{data, 1}, ord, smp]
+FitGradientMap[data_, ord_, smp_] := FitGradientMap[{data, 1}, ord, smp]
 
 FitGradientMap[{data_, msk_}, ord_, smp_] := Block[{val, dim, coor, fit, x, y, z},
 	Clear[x, y, z];
@@ -831,13 +859,13 @@ FitGradientMap[{data_, msk_}, ord_, smp_] := Block[{val, dim, coor, fit, x, y, z
 
 SyntaxInformation[MakeCoordinates] = {"ArgumentsPattern" -> {_, _}};
 
-MakeCoordinates[dim_?VectorQ]:= MakeCoordinates[dim, {1, 1, 1}]
+MakeCoordinates[dim_?VectorQ] := MakeCoordinates[dim, {1, 1, 1}]
 
-MakeCoordinates[dim_?VectorQ, vox_]:= vox RotateDimensionsRight@Array[{##}&, dim]
+MakeCoordinates[dim_?VectorQ, vox_] := vox RotateDimensionsRight@Array[{##}&, dim]
 
-MakeCoordinates[dat_?ArrayQ]:=MakeCoordinates[dat, {1, 1, 1}]
+MakeCoordinates[dat_?ArrayQ] := MakeCoordinates[dat, {1, 1, 1}]
 
-MakeCoordinates[dat_?ArrayQ, vox_]:=MakeCoordinates[Dimensions@dat, vox]
+MakeCoordinates[dat_?ArrayQ, vox_] := MakeCoordinates[Dimensions@dat, vox]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -885,9 +913,9 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 	NotebookClose[cropwindow];
 	dd = ArrayDepth[data];
 
-	DynamicModule[{dat, zd, xd, yd, outp, size,  r1, r2, r3},
+	DynamicModule[{dat, zd, xd, yd, outp, size, r1, r2, r3},
 
-		dat = Switch[dd, 4,  Mean@Transpose@data, 3, dat = data, _, Return[]];
+		dat = Switch[dd, 4, Mean@Transpose@data, 3, dat = data, _, Return[]];
 		{zd, xd, yd} = Dimensions[dat];
 
 		clipall = Ceiling[{0.5, zd - 0.5, 0.5, xd - .5, 0.5, yd - .5}];
@@ -911,7 +939,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 				outp = Ceiling[{zmin, zmax, xd - xmax, xd - xmin, ymin, ymax}];
 
 				Grid[{
-					{Dynamic[Row[{"size: ", Ceiling[{zmax-zmin,xmax-xmin,ymax-ymin}]},"   "]]},
+					{Dynamic[Row[{"size: ", Ceiling[{zmax-zmin,xmax-xmin,ymax-ymin}]},"  "]]},
 					{
 						LocatorPane[Dynamic[{{ymin, xmax}, {ymax, xmin}}],
 							Show[ArrayPlot[dat[[z]], ColorFunction -> "GrayTones", Frame -> False, AspectRatio -> r1, ImageSize -> size/r2],
@@ -931,7 +959,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 									Blue, Thick, Dynamic[Line[{{ymin, zmin}, {ymin, zmax}, {ymax, zmax}, {ymax, zmin}, {ymin, zmin}}]], 
 									Green, Line[{{y - 0.5, -10}, {y - 0.5, zd + 10}}], 
 									Red, Line[{{-10, z - 0.5}, {yd + 10, z - 0.5}}], 
-									Blue,  Dynamic[Circle[Mean[{{ymin, zmin}, {ymax, zmax}}], 2]]
+									Blue, Dynamic[Circle[Mean[{{ymin, zmin}, {ymax, zmax}}], 2]]
 								}], 
 								PlotRange -> {{0, yd}, {0, zd}}
 							], {{0.5, 0.5}, {yd - 0.5, zd - 0.5}}, Appearance -> Graphics[{Blue, Disk[]}, ImageSize -> 10]
@@ -1291,11 +1319,11 @@ PrintFuncList[{toolbox_, functions_, options_}, p_] := Block[{i, func, opt},
 
 SyntaxInformation[QMRIToolsFuncPrint] = {"ArgumentsPattern" -> {_.}};
 
-QMRIToolsFuncPrint[]:=QMRIToolsFuncPrint[""]
+QMRIToolsFuncPrint[] := QMRIToolsFuncPrint[""]
 
-QMRIToolsFuncPrint[toolb_String]:=If[toolb=="",PrintAll/@QMRIToolsFunctions[];,PrintAll[QMRIToolsFunctions[toolb]];]
+QMRIToolsFuncPrint[toolb_String] := If[toolb=="",PrintAll/@QMRIToolsFunctions[];,PrintAll[QMRIToolsFunctions[toolb]];]
 
-PrintAll[{name_, functions_, options_}]:=(
+PrintAll[{name_, functions_, options_}] := (
 	Print[Style[name, Bold, 24]];
 	Print[Style["Functions", {Bold, 16}]];
 	Print[Information[#]]& /@ functions;
@@ -1310,7 +1338,7 @@ PrintAll[{name_, functions_, options_}]:=(
 
 SyntaxInformation[CompilableFunctions] = {"ArgumentsPattern" -> {}};
 
-CompilableFunctions[]:=Block[{list1, list2, grids},
+CompilableFunctions[] := Block[{list1, list2, grids},
 	(*based on https://mathematica.stackexchange.com/questions/1096/list-of-compilable-functions*)
 	Internal`CompileValues[]; (*to trigger auto-load*)
 	ClearAttributes[Internal`CompileValues, ReadProtected];
@@ -1562,7 +1590,7 @@ SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes
 
 SyntaxInformation[LLeastSquares] = {"ArgumentsPattern" -> {_, _}};
 
-LLeastSquares[ai_, y_]:=Block[{a},
+LLeastSquares[ai_, y_] := Block[{a},
 	a = If[Length[y] == Length[ai], ai, Transpose[ai]];
 	If[RealValuedNumberQ[Total[Flatten[y]]], 
 		LLeastSquaresC[a, y], 
@@ -1684,7 +1712,7 @@ StdFilter[data_, ker_:2] := Abs[Sqrt[GaussianFilter[data^2, ker] - GaussianFilte
 (*GyromagneticRatio*)
 
 
-GyromagneticRatio[nuc_]:=(nuc/.{"1H"->42.57747892,"2H"-> 6.536,"3He"-> -32.434,"7Li"->16.546,"13C"->10.7084,"14N"->3.077,"15N"-> -4.316,"17O"-> -5.772,
+GyromagneticRatio[nuc_] := (nuc/.{"1H"->42.57747892,"2H"-> 6.536,"3He"-> -32.434,"7Li"->16.546,"13C"->10.7084,"14N"->3.077,"15N"-> -4.316,"17O"-> -5.772,
 "19F"->40.052,"23Na"->11.262,"27Al"->11.103,"29Si"-> -8.465,"31P"->17.235,"57Fe"->1.382,"63Cu"->11.319,"67Zn"->2.669,"129Xe"-> 11.777})
 
 

@@ -141,7 +141,7 @@ Ouput is a list containing {d0, tau, zeta, dinf, td, tr, I, sv, a, kappa}."
 FitRPBMDictionary::usage=
 "FitRPBMDictionary[sig, {pars, sim}, snr] fits the RPBM function to the simulated data sig using the parameters pars and the simulated data sim.
 The needed dictionary {pars, sim} is generated using CreateRPBMDictionary. The snr is the estimated snr values of the data.
-FitRPBMDictionary[sig, {pars, sim}, snr, d0]  does the same but fixes the initial diffusion to the given d0."
+FitRPBMDictionary[sig, {pars, sim}, snr, d0] does the same but fixes the initial diffusion to the given d0."
 
 CreateRPBMDictionary::usage = 
 "CreateRPBMDictionary[tm] creates a dictionary of RPBM functions for the given mixing times tm.
@@ -249,7 +249,7 @@ AngleCalc::dist =
 "Unknown option (`1`), options can be. \"0-180\", \"0-90\" or \"-90-90\"."
 
 ConcatenateDiffusionData::dim = 
-"data, grad and bval should be the same length:  data `1` / grad `2` / bval `2`."
+"data, grad and bval should be the same length: data `1` / grad `2` / bval `2`."
 
 
 (* ::Section:: *)
@@ -278,11 +278,11 @@ Options[TensorCalc]= {
 
 SyntaxInformation[TensorCalc] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
-TensorCalc[dat_, mat_?MatrixQ, opts:OptionsPattern[]]:= TensorCalc[dat, mat, {}, False, opts]
+TensorCalc[dat_, mat_?MatrixQ, opts:OptionsPattern[]] := TensorCalc[dat, mat, {}, False, opts]
 
-TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, opts:OptionsPattern[]]:= TensorCalc[dat, grad, bvec, False, opts]
+TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, opts:OptionsPattern[]] := TensorCalc[dat, grad, bvec, False, opts]
 
-TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]]:=Block[{
+TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block[{
 		output, robust, con, kappa, parallel, mon, method, func, outliers, outFit, dataFit, residual, ctens,
 		bmat, bmatV, data, dataL, depthD, dirD, dirB, mask, coor, dim, vox, start, dint, fitFun, fitResult, 
 		s0, tensor, gradField
@@ -560,7 +560,7 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 (*DKI*)
 
 
-(*TensMinDKI[s_,ls_,bmat_,bmatI_]:=bmatI.ls*)
+(*TensMinDKI[s_,ls_,bmat_,bmatI_] := bmatI.ls*)
 TensMinDKI = Compile[{{s, _Real, 1}, {bmatI, _Real, 2}},
 	If[Total[s]==0.,
 		{0.,0.,0.,0.,0.,0.,0.},
@@ -572,7 +572,7 @@ TensMinDKI = Compile[{{s, _Real, 1}, {bmatI, _Real, 2}},
 (*NLS*)
 
 
-TensMinNLS[s_,ls_,bmat_,bmatI_]:=
+TensMinNLS[s_,ls_,bmat_,bmatI_] := 
 Module[{v,xx,yy,zz,xy,xz,yz,init,tens,sol},
 	tens=bmatI . ls;
 	If[tens=={0.,0.,0.,0.,0.,0.,0.},
@@ -589,7 +589,7 @@ Module[{v,xx,yy,zz,xy,xz,yz,init,tens,sol},
 (*NLS*)
 
 
-TensMinGMM[s_,ls_,bmat_,bmatI_]:=
+TensMinGMM[s_,ls_,bmat_,bmatI_] := 
 Module[{v,xx,yy,zz,xy,xz,yz,init,tens,res,w},
 	s;
 	tens=bmatI . ls;
@@ -610,7 +610,7 @@ Module[{v,xx,yy,zz,xy,xz,yz,init,tens,res,w},
 (*CLLS*)
 
 
-TensMinCLLS[s_,ls_,bmat_,bmatI_]:=
+TensMinCLLS[s_,ls_,bmat_,bmatI_] := 
 Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
 	s;
 	tens=bmatI . ls;
@@ -626,7 +626,7 @@ Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
 (*CWLLS*)
 
 
-TensMinCWLLS[s_,ls_,bmat_,bmatI_]:=
+TensMinCWLLS[s_,ls_,bmat_,bmatI_] := 
 Module[{v,r0,r1,r2,r3,r4,r5,init,tens,std=1,wmat},
 	bmatI;
 	wmat=Transpose[bmat] . DiagonalMatrix[s^2/std^2];
@@ -643,7 +643,7 @@ Module[{v,r0,r1,r2,r3,r4,r5,init,tens,std=1,wmat},
 (*CNLS*)
 
 
-TensMinCNLS[s_,ls_,bmat_,bmatI_]:=
+TensMinCNLS[s_,ls_,bmat_,bmatI_] := 
 Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
 	tens=bmatI . ls;
 	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
@@ -658,7 +658,7 @@ Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
 (*ExtendeCholeskyDecomposition*)
 
 
-ExtendedCholeskyDecomposition[tm_]:= Block[{n,beta,theta,cm,lm,dm,em,j},
+ExtendedCholeskyDecomposition[tm_] := Block[{n,beta,theta,cm,lm,dm,em,j},
 	n=Length[tm];
 	beta=Max[{Max[Diagonal[tm]],Max[UpperTriangularize[tm,1]]/Sqrt[n^2-1],10^-15}];
 	cm=DiagonalMatrix[Diagonal[tm]];
@@ -746,7 +746,7 @@ Options[EigensysCalc]={RejectMap->False,Reject->True, PerformanceGoal->"Quality"
 
 SyntaxInformation[EigensysCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-EigensysCalc[tens_,opts:OptionsPattern[]]:=EigenSys[tens,"all",opts]
+EigensysCalc[tens_,opts:OptionsPattern[]] := EigenSys[tens,"all",opts]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -757,7 +757,7 @@ Options[EigenvalCalc]=Options[EigensysCalc];
 
 SyntaxInformation[EigenvalCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-EigenvalCalc[tens_,opts:OptionsPattern[]]:=EigenSys[tens,"val",opts]
+EigenvalCalc[tens_,opts:OptionsPattern[]] := EigenSys[tens,"val",opts]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -768,7 +768,7 @@ Options[EigenvecCalc]=Options[EigensysCalc];
 
 SyntaxInformation[EigenvecCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-EigenvecCalc[tens_,opts:OptionsPattern[]]:=EigenSys[tens,"vec",opts]
+EigenvecCalc[tens_,opts:OptionsPattern[]] := EigenSys[tens,"vec",opts]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -777,7 +777,7 @@ EigenvecCalc[tens_,opts:OptionsPattern[]]:=EigenSys[tens,"vec",opts]
 
 Options[EigenSys]=Options[EigensysCalc];
 
-EigenSys[tens_,out_,OptionsPattern[]]:=Block[{t, met, val, vec,reject, sel},
+EigenSys[tens_,out_,OptionsPattern[]] := Block[{t, met, val, vec,reject, sel},
 	met = OptionValue[PerformanceGoal];
 
 	t=Which[
@@ -818,7 +818,7 @@ SelectEig=Compile[{{eig,_Real,1}},1-UnitStep[Last[eig]],RuntimeAttributes->{List
 
 
 (*slow precice method*)
-EigenSysQ[tens_,out_]:=Block[{val,vec},
+EigenSysQ[tens_,out_] := Block[{val,vec},
 	If[out=!="val",
 		If[VectorQ[tens],
 			(*tensor is just one value*)
@@ -839,12 +839,12 @@ EigenSysQ[tens_,out_]:=Block[{val,vec},
 ];
 
 
-EigenSysi[{0.,0.,0.,0.,0.,0.}]:={{0.,0.,0.},{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}}}
-EigenSysi[tensor_?VectorQ]:=Eigensystem[TensMat[tensor]]
+EigenSysi[{0.,0.,0.,0.,0.,0.}] := {{0.,0.,0.},{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}}}
+EigenSysi[tensor_?VectorQ] := Eigensystem[TensMat[tensor]]
 
 
-EigenVali[{0.,0.,0.,0.,0.,0.}]:={0.,0.,0.}
-EigenVali[tensor_?VectorQ]:=Eigenvalues[TensMat[tensor]]
+EigenVali[{0.,0.,0.,0.,0.,0.}] := {0.,0.,0.}
+EigenVali[tensor_?VectorQ] := Eigenvalues[TensMat[tensor]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -852,7 +852,7 @@ EigenVali[tensor_?VectorQ]:=Eigenvalues[TensMat[tensor]]
 
 
 (*fast direct method*)
-EigenSysC[tens_, out_]:=Block[{val},
+EigenSysC[tens_, out_] := Block[{val},
 	val=EigenValC[tens];
 	If[out=!="val",{val,EigenVecC[tens,val]},{val,0}]
 ]
@@ -941,7 +941,7 @@ Options[ECalc]= {MonitorCalc->True};
 
 SyntaxInformation[ECalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-ECalc[eigen_,OptionsPattern[]]:=
+ECalc[eigen_,OptionsPattern[]] := 
 Module[{output,slices,x},
 	slices=Length[eigen];
 	If[ArrayQ[eigen,4],
@@ -957,7 +957,7 @@ Module[{output,slices,x},
 	]
 
 
-ECalci[eigen_]:= Block[{ec},
+ECalci[eigen_] := Block[{ec},
 	ec=Compile[{l1,l3},Sqrt[1-(l3/l1)]];
 	Map[If[#[[3]]!=0, ec[#[[1]],#[[3]]], 0]&,eigen,{ArrayDepth[eigen]-1}]
 ]
@@ -967,7 +967,7 @@ ECalci[eigen_]:= Block[{ec},
 (*WestinMeasures*)
 
 
-WestinMeasures[eig_]:=Block[{l1, l2, l3},
+WestinMeasures[eig_] := Block[{l1, l2, l3},
 	{l1,l2,l3} = RotateDimensionsRight[eig];
 	{DivideNoZero[l1-l2,l1], DivideNoZero[l2-l3,l1], DivideNoZero[l3,l1]}
 ]
@@ -981,7 +981,7 @@ Options[ParameterCalc] = {Reject->False, PerformanceGoal -> "Quality"}
 
 SyntaxInformation[ParameterCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-ParameterCalc[tensor_,OptionsPattern[]]:= Block[{eig,adc,fa},
+ParameterCalc[tensor_,OptionsPattern[]] := Block[{eig,adc,fa},
 	eig = 1000 EigenvalCalc[tensor, Reject->OptionValue[Reject], RejectMap->False, PerformanceGoal->OptionValue[PerformanceGoal]];
 	adc = ADCCalc[eig];
 	fa = FACalc[eig];
@@ -999,7 +999,7 @@ ParameterCalc[tensor_,OptionsPattern[]]:= Block[{eig,adc,fa},
 
 SyntaxInformation[LogTensor]={"ArgumentsPattern"->{_}};
 
-LogTensor[tens_]:=Block[{t,v,e},
+LogTensor[tens_] := Block[{t,v,e},
 	t=TensMat[tens];
 	t=Map[(
 		If[Total[Flatten[#]]===0.,#,{v,e}=Eigensystem[#];
@@ -1016,7 +1016,7 @@ LogTensor[tens_]:=Block[{t,v,e},
 
 SyntaxInformation[ExpTensor]={"ArgumentsPattern"->{_}};
 
-ExpTensor[tens_]:=Block[{t,e,v},
+ExpTensor[tens_] := Block[{t,e,v},
 	t=TensMat[{1.,1.,1.,1./Sqrt[2.],1./Sqrt[2.],1./Sqrt[2.]}tens];
 	t=Map[(
 		If[Total[Flatten[#]]===0.,#,{v,e}=Eigensystem[#];
@@ -1039,7 +1039,7 @@ Options[AngleCalc]={Distribution->"0-180"};
 SyntaxInformation[AngleCalc] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 
-AngleCalc[data_?ArrayQ,vec_?VectorQ,OptionsPattern[]]:=
+AngleCalc[data_?ArrayQ,vec_?VectorQ,OptionsPattern[]] := 
 Module[{angles},
 	angles=Map[If[Re[#]==#,ArcCos[# . vec],"no"]&,data,{Depth[data]-2}];
 
@@ -1057,7 +1057,7 @@ Module[{angles},
 	]
 
 
-AngleCalc[data_?ArrayQ,vec_?ArrayQ,OptionsPattern[]]:=
+AngleCalc[data_?ArrayQ,vec_?ArrayQ,OptionsPattern[]] := 
 Module[{angles},
 	If[Dimensions[data]!=Dimensions[vec],
 		Print["Error"],
@@ -1085,7 +1085,7 @@ Module[{angles},
 
 SyntaxInformation[AngleMap] = {"ArgumentsPattern" -> {_}};
 
-AngleMap[vec_]:=
+AngleMap[vec_] := 
 Module[{az,zen},
 	Transpose[Map[If[#=={0,0,1},
 		{0,0},
@@ -1301,7 +1301,7 @@ SigmaCalc[dti_?ArrayQ, tens_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, O
 
 SyntaxInformation[RPBMFunction] = {"ArgumentsPattern" -> {_, _.}};
 
-RPBMFunction[x___]:=RPBMFunctionI[x]
+RPBMFunction[x___] := RPBMFunctionI[x]
 
 
 RPBMFunctionI[tm_, pars_?MatrixQ] := Transpose[RPBMFunctionI[tm, #] & /@ pars]
@@ -1309,7 +1309,7 @@ RPBMFunctionI[tm_, pars_?MatrixQ] := Transpose[RPBMFunctionI[tm, #] & /@ pars]
 RPBMFunctionI[tm_, {tau_?NumberQ, zeta_?NumberQ}] := RPBMFunctionI[tm, {1., tau, zeta}]
 
 RPBMFunctionI[tm_, {d0_?NumberQ, tau_?NumberQ, zeta_?NumberQ}] := Block[{
-		z, x,  a, b, c, fun, y, sy, int, const, nt, out
+		z, x, a, b, c, fun, y, sy, int, const, nt, out
 	},
 	(*Fieremans E, Lemberskiy, et al. NMR in Biomedicine 2017; doi.wiley.com/10.1002/nbm.3612*)
 
@@ -1343,11 +1343,11 @@ RPBMFunctionI[tm_, {d0_?NumberQ, tau_?NumberQ, zeta_?NumberQ}] := Block[{
 SyntaxInformation[GetRPBMValues] = {"ArgumentsPattern" -> {_, _., _.}};
 
 
-GetRPBMValues[fit_?MatrixQ]:=GetRPBMValues[fit, True]
+GetRPBMValues[fit_?MatrixQ] := GetRPBMValues[fit, True]
 
 GetRPBMValues[fit_?MatrixQ, inf_?BooleanQ] := GetRPBMValues[#, inf]& /@ fit
 
-GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}]:=GetRPBMValues[{d0, tau, zeta}, True]
+GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}] := GetRPBMValues[{d0, tau, zeta}, True]
 
 GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}, inf__?BooleanQ] := Block[{
 		dinf, td, tr, i, sv, a, kappa
@@ -1377,11 +1377,11 @@ GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}, inf__?BooleanQ] := 
 ]
 
 
-GetRPBMValues[sol_]:=GetRPBMValues[sol, True]
+GetRPBMValues[sol_] := GetRPBMValues[sol, True]
 
 GetRPBMValues[sol_, inf_?BooleanQ] := GetRPBMValues[sol, {"none", 0}, inf]
 
-GetRPBMValues[sol_, par_]:=GetRPBMValues[sol, par, True]
+GetRPBMValues[sol_, par_] := GetRPBMValues[sol, par, True]
 
 GetRPBMValues[sol_, par_, inf_?BooleanQ] := Block[{
 		con, d0, zeta, tau, dinf, td, tr, i, sv, a, kappa
@@ -1522,7 +1522,7 @@ RPBMErrorC = Compile[{{sig, _Real, 1}, {d0, _Real, 0}, {sim, _Real, 2}},
 
 SyntaxInformation[TransformTensor] = {"ArgumentsPattern" -> {_, _, _}};
 
-TransformTensor[tens_, disp_, vox_]:=Block[{imat, jac},
+TransformTensor[tens_, disp_, vox_] := Block[{imat, jac},
 	imat=IdentityMatrix[3];
 	jac=Chop[imat+Table[GaussianFilter[disp[[i]],1,imat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
 
@@ -1534,7 +1534,7 @@ TransformTensor[tens_, disp_, vox_]:=Block[{imat, jac},
 (*TensorRotate*)
 
 
-TensorRotate[tens_,f_]:=Block[{val,e1,e2,e3,n1,n2,n3,nMat,fMat},
+TensorRotate[tens_,f_] := Block[{val,e1,e2,e3,n1,n2,n3,nMat,fMat},
 	If[tens[[1,1]]==0.,
 		tens,
 		{val, {e1,e2,e3}}=Eigensystem[tens];
@@ -1558,22 +1558,22 @@ TensorRotate[tens_,f_]:=Block[{val,e1,e2,e3,n1,n2,n3,nMat,fMat},
 
 SyntaxInformation[Correct] = {"ArgumentsPattern" -> {_, _, _, _.}};
 
-Correct[data_?MatrixQ,phase_?MatrixQ,shift_]:=
+Correct[data_?MatrixQ,phase_?MatrixQ,shift_] := 
 Correcti[data,phase,shift,1]
 
-Correct[data_?MatrixQ,phase_?MatrixQ,shift_,int_]:=
+Correct[data_?MatrixQ,phase_?MatrixQ,shift_,int_] := 
 Correcti[data,phase,shift,int]
 
-Correct[data:{_?MatrixQ..},phase:{_?MatrixQ..},shift_]:=
+Correct[data:{_?MatrixQ..},phase:{_?MatrixQ..},shift_] := 
 MapThread[Correcti[#1,#2,shift,1]&,{data,phase}]
 
-Correct[data:{_?MatrixQ..},phase:{_?MatrixQ..},shift_,int_]:=
+Correct[data:{_?MatrixQ..},phase:{_?MatrixQ..},shift_,int_] := 
 MapThread[Correcti[#1,#2,shift,int]&,{data,phase}]
 
-Correct[data:{{_?MatrixQ..}..},phase:{_?MatrixQ..},shift_]:=
+Correct[data:{{_?MatrixQ..}..},phase:{_?MatrixQ..},shift_] := 
 Transpose[Map[MapThread[Correcti[#1,#2,shift,1]&,{#,phase}]&,Transpose[data,{2,1}]],{2,1}]
 
-Correct[data:{{_?MatrixQ..}..},phase:{_?MatrixQ..},shift_,int_]:=
+Correct[data:{{_?MatrixQ..}..},phase:{_?MatrixQ..},shift_,int_] := 
 Transpose[Map[MapThread[Correcti[#1,#2,shift,int]&,{#,phase}]&,Transpose[data,{2,1}]],{2,1}]
 
 
@@ -1581,7 +1581,7 @@ Transpose[Map[MapThread[Correcti[#1,#2,shift,int]&,{#,phase}]&,Transpose[data,{2
 (*Correcti*)
 
 
-Correcti[dat_,ph_,shift_,int_]:= Module[{pos,acpos,shiftpx,data,phase,output},
+Correcti[dat_,ph_,shift_,int_] := Module[{pos,acpos,shiftpx,data,phase,output},
 	If[shift[[2]]=="COL",
 		data=Transpose[dat];phase=Transpose[ph];,
 		data=dat;phase=ph;
@@ -1609,11 +1609,11 @@ Options[TensorCorrect]={RotationCorrect->False};
 SyntaxInformation[TensorCorrect] = {"ArgumentsPattern" -> {_, _, _, _, _., OptionsPattern[]}};
 
 (* zonder masker, dus met sprongen in de afgeleide by grens tussen deformatie veld en achtergrond *)
-TensorCorrect[tens_,phase_,shift_,vox_,OptionsPattern[]]:=
+TensorCorrect[tens_,phase_,shift_,vox_,OptionsPattern[]] := 
 TensorCorrect[tens,phase,0,shift,vox];
 
 (* met masker, dus zonder sprongen in de afgeleide by grens tussen deformatie veld en achtergrond *)
-TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]]:=
+TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]] := 
 	Module[{dim,pxshift,der,f,tensM,tensC,tensCV,tensT},
 
 	dim=Dimensions[phase];
@@ -1652,7 +1652,7 @@ TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]]:=
 
 
 (* Translation correct one slice*)
-TransCorrect[dat_,sh_,dir_,int_]:=
+TransCorrect[dat_,sh_,dir_,int_] := 
 Module[{data,shift,pos,acpos,out},
 	(*Transpose the data zo the deformation is always in the "ROW" direction*)
 	If[dir=="COL",
@@ -1677,7 +1677,7 @@ Module[{data,shift,pos,acpos,out},
 (*FMat*)
 
 
-Fmat[der_,shift_]:=
+Fmat[der_,shift_] := 
 Module[{dx,dy,dz,dim,zero,ones,f},
 	{dx,dy,dz}=der;
 	dim=Dimensions[dx];
@@ -1697,7 +1697,7 @@ Module[{dx,dy,dz,dim,zero,ones,f},
 (*Drot*)
 
 
-DRot[tens_,f_]:=Module[{val,e1,e2,e3,n1,n2,n3,nn},
+DRot[tens_,f_] := Module[{val,e1,e2,e3,n1,n2,n3,nn},
 	{val,{e1,e2,e3}}=Eigensystem[tens];
 	n1=Normalize[f . e1];
 	n2=Normalize[f . e2-(n1 . (f . e2))*n1]//N;
@@ -1717,7 +1717,7 @@ Chop[nn . (IdentityMatrix[3]val) . Transpose[nn]]
 
 SyntaxInformation[Deriv] = {"ArgumentsPattern" -> {_, _, _}};
 
-Deriv[disp_,vox_]:=
+Deriv[disp_,vox_] := 
 Module[{dim,dx,dy,dz},
 	dim=Dimensions[disp];
 	dx=Transpose[DerivFunc[Transpose[disp,{1,3,2}],dim[[2]],vox[[2]]],{1,3,2}];
@@ -1726,7 +1726,7 @@ Module[{dim,dx,dy,dz},
 	{dx,dy,dz}
 	];
 
-Deriv[disp_,vox_,mask_]:=
+Deriv[disp_,vox_,mask_] := 
 Module[{dim,dx,dy,dz},
 	dim=Dimensions[disp];
 	dx=Transpose[DerivFunc[Transpose[disp,{1,3,2}],Transpose[mask,{1,3,2}],dim[[2]],vox[[2]]],{1,3,2}];
@@ -1740,7 +1740,7 @@ Module[{dim,dx,dy,dz},
 (*DerivFunc*)
 
 
-DerivFunc[disp_,length_,step_]:=
+DerivFunc[disp_,length_,step_] := 
 Module[{coor,f},
 	coor=Range[length]*step;
 	Map[(
@@ -1749,7 +1749,7 @@ Module[{coor,f},
 		)&,disp,{2}]
 	];
 
-DerivFunc[disp_,mask_,length_,step_]:=
+DerivFunc[disp_,mask_,length_,step_] := 
 Module[{coor,f,fr,df,dfr},
 	coor=Range[length]*step;
 	MapThread[(
