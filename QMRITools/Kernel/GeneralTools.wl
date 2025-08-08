@@ -40,6 +40,9 @@ OpenQMRIToolsLocation::usage =
 SetDemoDirectory::usage =
 "SetDemoDirectory[] Sets the directory to the demo data directory."
 
+ParseCommandLine::usage = 
+"..."
+
 
 StringPadInteger::usage = 
 "StringPadInteger[num] converts the integer num to a string and pads it with zeros to length 3.
@@ -396,9 +399,10 @@ SetDemoDirectory[] := SetDirectory[FileNameJoin[{DirectoryName[GetAssetLocation[
 
 ParseCommandLine[args_] := Block[{flagPos, n, assoc, i, key, valList, val}, 
 	assoc = <||>;
-	(*Skip script name*)n = Length[args];
+	(*Skip script name*)
+	n = Length[args];
 	(*Find positions of arguments that are flags (start with "-")*)
-	flagPos = Quiet[Flatten@Position[args, _?(StringStartsQ[#, "-"] &), 2]];
+	flagPos = Quiet[Flatten@Position[args, _?(StringStartsQ[#, "--"] &), 2]];
 	(*Add artificial endpoint to handle last flag group cleanly*)
 	AppendTo[flagPos, n + 1];
 	(*Parse each flag and its corresponding values*)
@@ -406,7 +410,7 @@ ParseCommandLine[args_] := Block[{flagPos, n, assoc, i, key, valList, val},
 		key = args[[flagPos[[i]]]];
 		valList = args[[flagPos[[i]] + 1 ;; flagPos[[i + 1]] - 1]];
 		val = Which[
-			valList === {} || StringStartsQ[First[valList], "-"],
+			valList === {} || StringStartsQ[First[valList], "--"],
 			Print["Warning: No value for flag ", key]; "",
 			True, 
 			StringRiffle[valList, " "]
