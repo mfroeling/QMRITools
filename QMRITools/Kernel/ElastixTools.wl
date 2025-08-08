@@ -236,7 +236,7 @@ RegisterData::vox="voxel size should be {z,x,y} and numeric, current sizes are `
 
 RegisterData::voxs="voxel size should be {z,x,y} and numeric, current size is `1`."
 
-RegisterData::met="MethodReg should be \"translation\", \"rigid\", \"affine\", \"bspline\", \"rigidDTI\", \"affineDTI\", 
+RegisterData::met="MethodReg should be \"translation\", \"rigid\", \"similarity\", \"affine\", \"bspline\", \"rigidDTI\", \"affineDTI\", 
 \"PCAtranslation\", \"PCArigid\", \"PCAaffine\", or \"PCAbspline\", \"rigidMulti\", \"affineMulti\", 
 \"bsplineMulti\", current method is `1`."
 
@@ -397,6 +397,8 @@ ParString[{iterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outpu
 "(Transform \"TranslationTransform\")",
 "rigid" | "rigidMulti",
 "(Transform \"EulerTransform\")",
+"similarity",
+"(Transform \"SimilarityTransform\")",
 "affine" | "affineMulti",
 "(Transform \"AffineTransform\")
 (MovingImageDerivativeScales "<>DerivativePar[N@Clip[derscA], dtar]<>")",
@@ -942,7 +944,7 @@ RegisterDatai[
 
 	(*check registration method*)
 	If[!MemberQ[{
-			"translation", "rigid", "affine", "bspline", (*traditional*)
+			"translation", "rigid", "similarity", "affine", "bspline", (*traditional*)
 			"rigidDTI", "affineDTI", (*DTI specific*)
 			"PCAtranslation", "PCArigid", "PCAaffine", "PCAbspline", (*PCA cyclyc*)
 			"rigidMulti", "affineMulti", "bsplineMulti" (*multi contrast*)

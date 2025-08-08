@@ -535,7 +535,7 @@ GradOptimize2C = Compile[{{points, _Real, 2}, {nf, _Real, 0}, {half, _Integer, 0
 	If[half == 1, 
 		pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
 	pointsnew[[;; n]]],
-	{{rang, _Real, 1}}  
+	{{rang, _Real, 1}} 
 , RuntimeOptions -> "Speed"];
 
 (*optimize singe shell Overplus*)
@@ -730,13 +730,13 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 		
 		(*Controls*)
 		(*set Name*)
-		Row[{"  Set Name ", InputField[Dynamic[names[[mult]]], String]}],
+		Row[{" Set Name ", InputField[Dynamic[names[[mult]]], String]}],
 		Delimiter,
 
 		(*display controls*)
 		{{disp, 1, "display gradients"}, {1 -> "graphics", 2 -> "chart", 3 -> "text", 4 -> "G load"}},
 		{{opacity, 0.5, "sphere opacity"}, 0, 1, .1, ControlType -> Slider},
-		Row[{" sticks: ", Checkbox[Dynamic[sticks]],"   mirror grad.: ", Checkbox[Dynamic[mirror]], "   project grad. on half: ", Checkbox[Dynamic[proj]]}],
+		Row[{" sticks: ", Checkbox[Dynamic[sticks]],"  mirror grad.: ", Checkbox[Dynamic[mirror]], "  project grad. on half: ", Checkbox[Dynamic[proj]]}],
 		Grid[{{
 			Button["top", vp = {0, 0, 3.38}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
 			Button["right", vp = {3.38, 0, 0}, ImageSize -> {50, 20}, FrameMargins -> 0,FontSize->10],
@@ -778,24 +778,24 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 				Control[{{gridf, True, "full even grid"}, {False -> "no (in between odd grid)", True -> "yes"}}]
 			}],
 			(*DWI pannel*)
-			4 -> Control[{{typed, "normal", "           type"}, {"normal", "over-plus"}, ControlType -> SetterBar}]
+			4 -> Control[{{typed, "normal", "      type"}, {"normal", "over-plus"}, ControlType -> SetterBar}]
 		}, Dynamic[mult]],
 		Delimiter,
 
 		(*input bvals*)
 		PaneSelector[{
-			1 -> Row[{"  b-value:   ", InputField[Dynamic[bvall], Expression, Background -> Dynamic[If[((AllTrue[bvall, NumberQ] && ListQ[bvall]) || NumberQ[bvall]), None, Lighter[Lighter[Red]]]]]}],
+			1 -> Row[{" b-value:  ", InputField[Dynamic[bvall], Expression, Background -> Dynamic[If[((AllTrue[bvall, NumberQ] && ListQ[bvall]) || NumberQ[bvall]), None, Lighter[Lighter[Red]]]]]}],
 			2 -> Dynamic[Grid[Partition[PadRight[Row[{"b-val" <> ToString[#] <> ":", InputField[Dynamic[bvals[[#]]], Number, FieldSize -> 5]}] & /@ Range[1, nshels], 6, ""], 3]]],
-			3 -> Row[{"max b (corner):   ", InputField[Dynamic[bvalc], Number]}],
-			4 -> Row[{"      b-value:   ", InputField[Dynamic[bvald], Expression, Background ->Dynamic[If[((AllTrue[bvald, NumberQ] && ListQ[bvald]) || NumberQ[bvald]), None, Lighter[Lighter[Red]]]]]}]
+			3 -> Row[{"max b (corner):  ", InputField[Dynamic[bvalc], Number]}],
+			4 -> Row[{"   b-value:  ", InputField[Dynamic[bvald], Expression, Background ->Dynamic[If[((AllTrue[bvald, NumberQ] && ListQ[bvald]) || NumberQ[bvald]), None, Lighter[Lighter[Red]]]]]}]
 		}, Dynamic[mult]],
 		Delimiter,
 
 		(*interleave b=0 and optimize gradient load*)
 		Dynamic[Grid[{
-			{"  interleave b: ", Checkbox[Dynamic[inter]], "Optimize G load: ", Checkbox[Dynamic[random]]},
+			{" interleave b: ", Checkbox[Dynamic[inter]], "Optimize G load: ", Checkbox[Dynamic[random]]},
 			If[inter,
-				{"  interleave b-value: ",InputField[Dynamic[bi], Number, FieldSize->3], "interleave b every: ", PopupMenu[Dynamic[int],Range[3,20]]},
+				{" interleave b-value: ",InputField[Dynamic[bi], Number, FieldSize->3], "interleave b every: ", PopupMenu[Dynamic[int],Range[3,20]]},
 				{}
 			]
 		}, Alignment->Left]],
@@ -901,58 +901,58 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 					outd[[2]] = Join[
 						If[typed == "normal",
 							{
-							" 1.00000    0.00000    0.00000       "<>ToString[Round[bi,.1]],
-							" 0.00000    1.00000    0.00000       "<>ToString[Round[bi,.1]],
-							" 0.00000    0.00000    1.00000       "<>ToString[Round[bi,.1]]
+							" 1.00000  0.00000  0.00000    "<>ToString[Round[bi,.1]],
+							" 0.00000  1.00000  0.00000    "<>ToString[Round[bi,.1]],
+							" 0.00000  0.00000  1.00000    "<>ToString[Round[bi,.1]]
 							}
 							,
 							{
-							"-0.70711   -0.50000    0.50000       "<>ToString[Round[bi,.1]],
-							" 0.70711   -0.50000    0.50000       "<>ToString[Round[bi,.1]],
-							" 0.00000    0.70711    0.70711       "<>ToString[Round[bi,.1]]
+							"-0.70711  -0.50000  0.50000    "<>ToString[Round[bi,.1]],
+							" 0.70711  -0.50000  0.50000    "<>ToString[Round[bi,.1]],
+							" 0.00000  0.70711  0.70711    "<>ToString[Round[bi,.1]]
 							}
 						],
 						{
-							" 0.02704    0.79706    0.60330       "<>ToString[Round[bi,.1]], 
-							"-0.09999   -0.59783    0.79536       "<>ToString[Round[bi,.1]], 
-							" 0.23191   -0.77261    0.59101       "<>ToString[Round[bi,.1]], 
-							" 0.52867   -0.79903    0.28646       "<>ToString[Round[bi,.1]], 
-							"-0.18297   -0.98140    0.05818       "<>ToString[Round[bi,.1]], 
-							"-0.86286    0.19578    0.46599       "<>ToString[Round[bi,.1]], 
-							" 0.05126    0.20181    0.97808       "<>ToString[Round[bi,.1]], 
-							"-0.66047    0.01890    0.75062       "<>ToString[Round[bi,.1]], 
-							" 0.65426   -0.18818    0.73249       "<>ToString[Round[bi,.1]], 
-							"-0.33052    0.11752    0.93646       "<>ToString[Round[bi,.1]], 
-							"-0.95407   -0.14465    0.26236       "<>ToString[Round[bi,.1]], 
-							"-0.14402   -0.86963    0.47224       "<>ToString[Round[bi,.1]], 
-							"-0.78028   -0.56460    0.26904       "<>ToString[Round[bi,.1]], 
-							"-0.75319   -0.31631    0.57675       "<>ToString[Round[bi,.1]], 
-							"-0.41392   -0.31357    0.85460       "<>ToString[Round[bi,.1]], 
-							" 0.56536    0.27275    0.77845       "<>ToString[Round[bi,.1]], 
-							"-0.73743    0.58153    0.34354       "<>ToString[Round[bi,.1]], 
-							" 0.29639   -0.44648    0.84428       "<>ToString[Round[bi,.1]], 
-							"-0.38689    0.75986    0.52243       "<>ToString[Round[bi,.1]], 
-							"-0.20081    0.52214    0.82888       "<>ToString[Round[bi,.1]], 
-							" 0.79424   -0.60284    0.07593       "<>ToString[Round[bi,.1]], 
-							" 0.98777    0.03678    0.15153       "<>ToString[Round[bi,.1]], 
-							" 0.29973    0.90469    0.30281       "<>ToString[Round[bi,.1]], 
-							"-0.95633    0.27860    0.08835       "<>ToString[Round[bi,.1]], 
-							"-0.49976   -0.83556    0.22819       "<>ToString[Round[bi,.1]], 
-							" 0.90574    0.41773    0.07170       "<>ToString[Round[bi,.1]], 
-							" 0.77284    0.45698    0.44032       "<>ToString[Round[bi,.1]], 
-							" 0.35339   -0.03796    0.93471       "<>ToString[Round[bi,.1]], 
-							" 0.84918    0.07921    0.52213       "<>ToString[Round[bi,.1]], 
-							"-0.50085    0.85590    0.12880       "<>ToString[Round[bi,.1]], 
-							" 0.47526    0.67317    0.56654       "<>ToString[Round[bi,.1]], 
-							" 0.87597   -0.32192    0.35923       "<>ToString[Round[bi,.1]], 
-							" 0.64492    0.75075    0.14303       "<>ToString[Round[bi,.1]], 
-							"-0.12687    0.96109    0.24536       "<>ToString[Round[bi,.1]], 
-							" 0.60869   -0.54852    0.57325       "<>ToString[Round[bi,.1]], 
-							"-0.03797   -0.21873    0.97505       "<>ToString[Round[bi,.1]], 
-							"-0.47780   -0.64010    0.60165       "<>ToString[Round[bi,.1]], 
-							"-0.57319    0.42677    0.69952       "<>ToString[Round[bi,.1]], 
-							" 0.18760   -0.96394    0.18874       "<>ToString[Round[bi,.1]], 
-							" 0.23342    0.50887    0.28591       "<>ToString[Round[bi,.1]]
+							" 0.02704  0.79706  0.60330    "<>ToString[Round[bi,.1]], 
+							"-0.09999  -0.59783  0.79536    "<>ToString[Round[bi,.1]], 
+							" 0.23191  -0.77261  0.59101    "<>ToString[Round[bi,.1]], 
+							" 0.52867  -0.79903  0.28646    "<>ToString[Round[bi,.1]], 
+							"-0.18297  -0.98140  0.05818    "<>ToString[Round[bi,.1]], 
+							"-0.86286  0.19578  0.46599    "<>ToString[Round[bi,.1]], 
+							" 0.05126  0.20181  0.97808    "<>ToString[Round[bi,.1]], 
+							"-0.66047  0.01890  0.75062    "<>ToString[Round[bi,.1]], 
+							" 0.65426  -0.18818  0.73249    "<>ToString[Round[bi,.1]], 
+							"-0.33052  0.11752  0.93646    "<>ToString[Round[bi,.1]], 
+							"-0.95407  -0.14465  0.26236    "<>ToString[Round[bi,.1]], 
+							"-0.14402  -0.86963  0.47224    "<>ToString[Round[bi,.1]], 
+							"-0.78028  -0.56460  0.26904    "<>ToString[Round[bi,.1]], 
+							"-0.75319  -0.31631  0.57675    "<>ToString[Round[bi,.1]], 
+							"-0.41392  -0.31357  0.85460    "<>ToString[Round[bi,.1]], 
+							" 0.56536  0.27275  0.77845    "<>ToString[Round[bi,.1]], 
+							"-0.73743  0.58153  0.34354    "<>ToString[Round[bi,.1]], 
+							" 0.29639  -0.44648  0.84428    "<>ToString[Round[bi,.1]], 
+							"-0.38689  0.75986  0.52243    "<>ToString[Round[bi,.1]], 
+							"-0.20081  0.52214  0.82888    "<>ToString[Round[bi,.1]], 
+							" 0.79424  -0.60284  0.07593    "<>ToString[Round[bi,.1]], 
+							" 0.98777  0.03678  0.15153    "<>ToString[Round[bi,.1]], 
+							" 0.29973  0.90469  0.30281    "<>ToString[Round[bi,.1]], 
+							"-0.95633  0.27860  0.08835    "<>ToString[Round[bi,.1]], 
+							"-0.49976  -0.83556  0.22819    "<>ToString[Round[bi,.1]], 
+							" 0.90574  0.41773  0.07170    "<>ToString[Round[bi,.1]], 
+							" 0.77284  0.45698  0.44032    "<>ToString[Round[bi,.1]], 
+							" 0.35339  -0.03796  0.93471    "<>ToString[Round[bi,.1]], 
+							" 0.84918  0.07921  0.52213    "<>ToString[Round[bi,.1]], 
+							"-0.50085  0.85590  0.12880    "<>ToString[Round[bi,.1]], 
+							" 0.47526  0.67317  0.56654    "<>ToString[Round[bi,.1]], 
+							" 0.87597  -0.32192  0.35923    "<>ToString[Round[bi,.1]], 
+							" 0.64492  0.75075  0.14303    "<>ToString[Round[bi,.1]], 
+							"-0.12687  0.96109  0.24536    "<>ToString[Round[bi,.1]], 
+							" 0.60869  -0.54852  0.57325    "<>ToString[Round[bi,.1]], 
+							"-0.03797  -0.21873  0.97505    "<>ToString[Round[bi,.1]], 
+							"-0.47780  -0.64010  0.60165    "<>ToString[Round[bi,.1]], 
+							"-0.57319  0.42677  0.69952    "<>ToString[Round[bi,.1]], 
+							" 0.18760  -0.96394  0.18874    "<>ToString[Round[bi,.1]], 
+							" 0.23342  0.50887  0.28591    "<>ToString[Round[bi,.1]]
 						}
 					];
 					orderd = FindOrder[ConstantArray[gradd, Length[bvald]], bvald];
@@ -1087,8 +1087,8 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 
 			charts = MakeChart /@ {1, 2, 3},
 			SpherePlot[size_, op_] := If[size == 0 || size == 0.,
-				Graphics3D[{}, Lighting -> "Neutral",  PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv],  ViewAngle -> Dynamic[va], SphericalRegion -> True],
-				Graphics3D[{White, Opacity[op], Sphere[{0, 0, 0}, 0.95 size]}, Lighting -> "Neutral", PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv],  ViewAngle -> Dynamic[va], SphericalRegion -> True]
+				Graphics3D[{}, Lighting -> "Neutral", PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], ViewAngle -> Dynamic[va], SphericalRegion -> True],
+				Graphics3D[{White, Opacity[op], Sphere[{0, 0, 0}, 0.95 size]}, Lighting -> "Neutral", PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> Dynamic[vp], ViewVertical -> Dynamic[vv], ViewAngle -> Dynamic[va], SphericalRegion -> True]
 			],
 			PlotChartPoints[grad_, {mirr_, col_}] := Block[{style},
 				style = If[ListQ[col], (Directive[#, PointSize[Large]] & /@ col), Directive[col, PointSize[Large]]];
@@ -1174,8 +1174,8 @@ ConvertGrads[gradi_, bv_, bi_] := Block[{depth, norm, gradu, grad, bval, bvalstr
 		If[StringTake[gr, 1] == "-", gr, " " <> gr]
 	) &, gradu, {2}];
 
-	list = MapThread[StringJoin[Riffle[#1, "   "]] <> #2 &, {gradstr, bvalstr}];
-	list0 = Map[StringJoin[Riffle[#1, "   "]] <> "       "<>ToString[Round[bi,0.1]] &, grad0str];
+	list = MapThread[StringJoin[Riffle[#1, "  "]] <> #2 &, {gradstr, bvalstr}];
+	list0 = Map[StringJoin[Riffle[#1, "  "]] <> "    "<>ToString[Round[bi,0.1]] &, grad0str];
 
 	nb = ToString[Round[Max[Flatten[bval]]]];
 	{list, list0, nb}
@@ -1199,7 +1199,7 @@ FinalGrads[{listi_, list0_, nb_}, {inter_, int_, bi_}, {random_, ordr_}] := Bloc
 			,
 			list
 		]
-		, " 0.00000    0.00000    1.00000       0.0"
+		, " 0.00000  0.00000  1.00000    0.0"
 	];
 	name = " (" <> ToString[Length[listout]] <> ", " <> nb <> ")\n";
 	name <> StringJoin[# <> "\n" & /@ listout]
@@ -1278,7 +1278,7 @@ ConditionNumberCalc[mat_] := (Max[#]/Min[#])&@SingularValueList[mat];
 
 SyntaxInformation[EnergyCalc] = {"ArgumentsPattern" -> {_}};
 
-EnergyCalc[grad_]:=Total@Flatten[Table[grad[[i]].grad[[j]],{i,2,Length[grad]},{j,1,i-1}]]
+EnergyCalc[grad_] := Total@Flatten[Table[grad[[i]].grad[[j]],{i,2,Length[grad]},{j,1,i-1}]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1287,7 +1287,7 @@ EnergyCalc[grad_]:=Total@Flatten[Table[grad[[i]].grad[[j]],{i,2,Length[grad]},{j
 
 SyntaxInformation[OverPlusCalc] = {"ArgumentsPattern" -> {_}};
 
-OverPlusCalc[pts_]:=Module[{pt},pt=DeleteCases[pts//N,{0.,0.,0.}];Min[Norm/@((1/Max[pt])pt)]]
+OverPlusCalc[pts_] := Module[{pt},pt=DeleteCases[pts//N,{0.,0.,0.}];Min[Norm/@((1/Max[pt])pt)]]
 
 
 (* ::Subsection:: *)
@@ -1302,7 +1302,7 @@ Options[Bmatrix]={Method->"DTI"};
 
 SyntaxInformation[Bmatrix] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-Bmatrix[{bvec_?VectorQ, grad_?MatrixQ}, OptionsPattern[]]:=Switch[
+Bmatrix[{bvec_?VectorQ, grad_?MatrixQ}, OptionsPattern[]] := Switch[
 	OptionValue[Method],
 	"DTI",
 	bvec*GradVecConv[grad,1],
@@ -1316,7 +1316,7 @@ Bmatrix[{bvec_?VectorQ, grad_?MatrixQ}, OptionsPattern[]]:=Switch[
 	]
 ]
 
-Bmatrix[bvec_?VectorQ, grad_?MatrixQ, OptionsPattern[]]:=Switch[
+Bmatrix[bvec_?VectorQ, grad_?MatrixQ, OptionsPattern[]] := Switch[
 	OptionValue[Method],
 	"DTI",
 	Append[#,1]&/@(-bvec*GradVecConv[grad, 1]),
@@ -1330,7 +1330,7 @@ Bmatrix[bvec_?VectorQ, grad_?MatrixQ, OptionsPattern[]]:=Switch[
 	]
 ]
 
-Bmatrix[bvec_?VectorQ, grad_?MatrixQ, coilTens_?ArrayQ, OptionsPattern[]]:=BmatrixC[bvec, Transpose[grad], coilTens]
+Bmatrix[bvec_?VectorQ, grad_?MatrixQ, coilTens_?ArrayQ, OptionsPattern[]] := BmatrixC[bvec, Transpose[grad], coilTens]
 
 
 BmatrixC = Compile[{{bv, _Real, 1}, {gt, _Real, 2}, {lmat, _Real, 2}}, Block[{gx, gy, gz},
@@ -1339,7 +1339,7 @@ BmatrixC = Compile[{{bv, _Real, 1}, {gt, _Real, 2}, {lmat, _Real, 2}}, Block[{gx
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-GradVecConv[grad_, type_]:=Block[{gx,gy,gz},
+GradVecConv[grad_, type_] := Block[{gx,gy,gz},
 		{gx,gy,gz} = Transpose[grad];
 		Transpose@Switch[type,
 			1,{gx^2,gy^2,gz^2,2 gx gy,2 gx gz,2 gy gz},
@@ -1488,7 +1488,7 @@ GetGradientScanOrder[grad_?ListQ, bval_?ListQ] := Module[{file},
 	GetGradientScanOrder[file, grad, bval]
 ]
 
-GetGradientScanOrder[file_?StringQ, grd_?ListQ, bval_?ListQ,OptionsPattern[]] :=  Module[{
+GetGradientScanOrder[file_?StringQ, grd_?ListQ, bval_?ListQ,OptionsPattern[]] := Module[{
 		input, bvali, gradi, order1, p1, p2, int, order2,grad
 	},
 	input = Import[file, "Lines"];
@@ -1500,7 +1500,7 @@ GetGradientScanOrder[file_?StringQ, grd_?ListQ, bval_?ListQ,OptionsPattern[]] :=
 
 	grad = Sign[Sign[grd[[All, 3]]] + 0.00001] grd;
 
-	order1 = Flatten[MapThread[     (
+	order1 = Flatten[MapThread[   (
 		p1 = Position[Round[bval, .1], #1]; 
 		p2 = Position[Round[grad, .1], #2]; 
 		int = Intersection[p1, p2]
@@ -1819,8 +1819,8 @@ SyntaxInformation[CalculateMoments] = {"ArgumentsPattern" -> {_, _}};
 CalculateMoments[{gt_, hw_, te_}, t_] := Module[{fun, m0, m1, m2, m3, vals},
 	fun = N@PiecewiseExpand[#*hw] & /@ gt;
 
-	m0 = hw Integrate[PiecewiseExpand[# ]    , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
-	m1 = hw Integrate[PiecewiseExpand[# t]   , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	m0 = hw Integrate[PiecewiseExpand[# ]  , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
+	m1 = hw Integrate[PiecewiseExpand[# t]  , t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
 	m2 = hw Integrate[PiecewiseExpand[# t^2 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
 	m3 = hw Integrate[PiecewiseExpand[# t^3 ], t, Assumptions -> t >= 0 && t <= te && t \[Element] Reals, GenerateConditions -> False] & /@ fun;
 
@@ -1891,7 +1891,7 @@ MakeGradientDerivatives[vox_, type_] := MakeGradientDerivativesI[vox, type]
 MakeGradientDerivativesI[vox_, type_] := MakeGradientDerivativesI[vox, type] = Block[{
 		vx, vy, vz, ordxy, ordz, lenxy, lenz, ref, dx, dy, dz, gxc, gys, gzc, gxin, gyin, gzin,
 		bx, by, bz, location, locationSphere, fieldV, gx, gy, gz, int, dint
-    },
+  },
 
 	{vz, vx, vy} = N@vox 2.;
 

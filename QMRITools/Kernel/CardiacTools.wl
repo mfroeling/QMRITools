@@ -1171,7 +1171,7 @@ MaskToLines[mask_?ArrayQ, wall_?ArrayQ, cent_?ListQ] := Block[{
 						];
 						ptsi = offi + ((ii - 1) step) vec;
 						
-						(*Then find the first position for which point is outside the																																	 																mask again*)
+						(*Then find the first position for which point is outside the mask again*)
 						While[(1 + step <= y <= dimy - step - 1 && 1 + step <= x <= dimx - step - 1 && val > 0.), 
 							{x, y} = offi + (ii step) vec; 
 							val = int[x, y]; ii++;

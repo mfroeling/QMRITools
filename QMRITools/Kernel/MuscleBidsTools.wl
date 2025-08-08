@@ -161,7 +161,7 @@ GetConfig::conf = "Could not find config file in given folder."
 Begin["`Private`"] 
 
 
-debugBids[x___]:=If[$debugBids, Print[x]];
+debugBids[x___] := If[$debugBids, Print[x]];
 
 
 (* ::Subsection:: *)
@@ -209,9 +209,9 @@ StringStrip = StringReplace[#, notAllowed]&;
 
 SyntaxInformation[PartitionBidsName] = {"ArgumentsPattern" -> {_}};
 
-PartitionBidsName[list_?ListQ]:=PartitionBidsName/@list
+PartitionBidsName[list_?ListQ] := PartitionBidsName/@list
 
-PartitionBidsName[string_?StringQ]:=Block[{parts, entity, suffix, suf},
+PartitionBidsName[string_?StringQ] := Block[{parts, entity, suffix, suf},
 	(*first split on "_" then on "-"*)
 	parts = StringSplit[#,"-"]& /@ StringSplit[string, "_"];
 	(*if length is 2 its entity else it is suffix*)
@@ -236,9 +236,9 @@ PartitionBidsName[string_?StringQ]:=Block[{parts, entity, suffix, suf},
 
 SyntaxInformation[PartitionBidsFolderName] = {"ArgumentsPattern" -> {_}};
 
-PartitionBidsFolderName[fol_?ListQ]:=PartitionBidsFolderName/@fol
+PartitionBidsFolderName[fol_?ListQ] := PartitionBidsFolderName/@fol
 
-PartitionBidsFolderName[fol_?StringQ]:={
+PartitionBidsFolderName[fol_?StringQ] := {
 	First@StringSplit[fol, "sub-"], 
 	PartitionBidsName@StringJoin@Riffle[Select[FileNameSplit[fol],StringContainsQ[#,"-"]&],"_"]
 }
@@ -250,9 +250,9 @@ PartitionBidsFolderName[fol_?StringQ]:={
 
 SyntaxInformation[GenerateBidsName] = {"ArgumentsPattern" -> {_}};
 
-GenerateBidsName[list_?ListQ]:=GenerateBidsName/@list
+GenerateBidsName[list_?ListQ] := GenerateBidsName/@list
 
-GenerateBidsName[parts_?AssociationQ]:=StringJoin[Riffle[Select[Join[
+GenerateBidsName[parts_?AssociationQ] := StringJoin[Riffle[Select[Join[
 	BidsString[parts, {"sub", "ses", "vol", "stk", "rep", "chunk", "acq", "part"}], 
 	BidsValue[parts, {"type", "suf"}]
 ], # =!= ""&], "_"]]
@@ -264,9 +264,9 @@ GenerateBidsName[parts_?AssociationQ]:=StringJoin[Riffle[Select[Join[
 
 SyntaxInformation[GenerateBidsFolderName] = {"ArgumentsPattern" -> {_, _.}};
 
-GenerateBidsFolderName[fol_?StringQ, list_?ListQ]:=GenerateBidsFolderName[fol,#]& /@ list
+GenerateBidsFolderName[fol_?StringQ, list_?ListQ] := GenerateBidsFolderName[fol,#]& /@ list
 
-GenerateBidsFolderName[fol_?StringQ, parts_?AssociationQ]:=FileNameJoin[Select[{
+GenerateBidsFolderName[fol_?StringQ, parts_?AssociationQ] := FileNameJoin[Select[{
 	fol, BidsString[parts, "sub"], BidsString[parts, "ses"]
 }, # =!= ""&]]
 
@@ -277,13 +277,13 @@ GenerateBidsFolderName[fol_?StringQ, parts_?AssociationQ]:=FileNameJoin[Select[{
 
 SyntaxInformation[GenerateBidsFileName] = {"ArgumentsPattern" -> {_, _.}};
 
-GenerateBidsFileName[list_?ListQ]:=GenerateBidsFileName["", #]& /@ list
+GenerateBidsFileName[list_?ListQ] := GenerateBidsFileName["", #]& /@ list
 
-GenerateBidsFileName[fol_?StringQ, list_?ListQ]:=GenerateBidsFileName[fol, #]& /@ list
+GenerateBidsFileName[fol_?StringQ, list_?ListQ] := GenerateBidsFileName[fol, #]& /@ list
 
-GenerateBidsFileName[parts_?AssociationQ]:=GenerateBidsFileName["", parts]
+GenerateBidsFileName[parts_?AssociationQ] := GenerateBidsFileName["", parts]
 
-GenerateBidsFileName[fol_?StringQ, parts_?AssociationQ]:=FileNameJoin[Select[{
+GenerateBidsFileName[fol_?StringQ, parts_?AssociationQ] := FileNameJoin[Select[{
 	(*folders*)
 	GenerateBidsFolderName[fol, parts], BidsType[parts], 
 	(*filename*)
@@ -295,27 +295,27 @@ GenerateBidsFileName[fol_?StringQ, parts_?AssociationQ]:=FileNameJoin[Select[{
 (*BidsType*)
 
 
-BidsType[type_?StringQ]:= bidsTypes[type] /. {Missing[___]->"miss"} 
+BidsType[type_?StringQ] := bidsTypes[type] /. {Missing[___]->"miss"} 
 
-BidsType[parts_?AssociationQ]:= bidsTypes[parts["type"]] /. {Missing[___]->"miss"} 
+BidsType[parts_?AssociationQ] := bidsTypes[parts["type"]] /. {Missing[___]->"miss"} 
 
 
 (* ::Subsubsection::Closed:: *)
 (*BidsValue*)
 
 
-BidsValue[parts_, val_?ListQ]:=Flatten[BidsValue[parts, #] &/@ val]
+BidsValue[parts_, val_?ListQ] := Flatten[BidsValue[parts, #] &/@ val]
 
-BidsValue[parts_, val_?StringQ]:= parts[val]/. {Missing[___] -> ""} 
+BidsValue[parts_, val_?StringQ] := parts[val]/. {Missing[___] -> ""} 
 
 
 (* ::Subsubsection::Closed:: *)
 (*BidsString*)
 
 
-BidsString[parts_, val_?ListQ]:=BidsString[parts, #] &/@ val
+BidsString[parts_, val_?ListQ] := BidsString[parts, #] &/@ val
 
-BidsString[parts_, val_?StringQ]:=Block[{str},
+BidsString[parts_, val_?StringQ] := Block[{str},
 	str = BidsValue[parts, val];
 	If[str==="", "", val<>"-"<>str]
 ]
@@ -329,9 +329,9 @@ BidsString[parts_, val_?StringQ]:=Block[{str},
 (*SelectBids*)
 
 
-SelectBids[folder_?ListQ, entity_?StringQ]:=Flatten[SelectBids[#,entity]&/@folder]
+SelectBids[folder_?ListQ, entity_?StringQ] := Flatten[SelectBids[#,entity]&/@folder]
 
-SelectBids[folder_?StringQ, entity_?StringQ]:=Block[{
+SelectBids[folder_?StringQ, entity_?StringQ] := Block[{
 		baseName, start, end, what
 	},
 	baseName = StringStartsQ[FileNameTake[folder], #]&;
@@ -341,7 +341,7 @@ SelectBids[folder_?StringQ, entity_?StringQ]:=Block[{
 	Fold[SelectBidsI, folder, what]
 ]
 
-SelectBidsI[fol_, what_]:=Select[FileNames[All, fol], DirectoryQ[#] && StringStartsQ[FileNameTake[#], what]&]
+SelectBidsI[fol_, what_] := Select[FileNames[All, fol], DirectoryQ[#] && StringStartsQ[FileNameTake[#], what]&]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -368,7 +368,7 @@ SelectBidsSubjects[fol_] := SelectBids[fol, "sub"]
 
 SyntaxInformation[SelectBidsSessions] = {"ArgumentsPattern" -> {_}};
 
-SelectBidsSessions[fol_?ListQ]:=SelectBids[fol, "ses"]
+SelectBidsSessions[fol_?ListQ] := SelectBids[fol, "ses"]
 
 
 (* ::Subsection:: *)
@@ -437,7 +437,7 @@ ConfigLookup[config_?AssociationQ, key_?StringQ] := Lookup[config, key, defaultC
 (*CheckConfig*)
 
 
-CheckConfig[infol_?StringQ, outfol_?StringQ]:=Block[{conf, nam},
+CheckConfig[infol_?StringQ, outfol_?StringQ] := Block[{conf, nam},
 	nam = GenerateBidsName[PartitionBidsFolderName[outfol][[-1]]];
 	conf = Quiet@GetConfig[infol, nam];
 	debugBids[FileNameJoin[{outfol, nam<>"_config.json"}]];
@@ -454,9 +454,9 @@ CheckConfig[infol_?StringQ, outfol_?StringQ]:=Block[{conf, nam},
 (*GetConfig*)
 
 
-GetConfig[folder_?StringQ]:=GetConfig[folder, ""]
+GetConfig[folder_?StringQ] := GetConfig[folder, ""]
 
-GetConfig[folder_?StringQ, nam_?StringQ]:=Block[{file},
+GetConfig[folder_?StringQ, nam_?StringQ] := Block[{file},
 	(*normal config*)
 	If[DirectoryQ[folder],
 		(*normal config*)
@@ -516,16 +516,16 @@ MergeConfig[assoc_?AssociationQ, replace_?AssociationQ] := Block[{assocNew },
 (*ImportJSON*)
 
 
-ImportJSON[file_]:=Import[file, "RawJSON"]
+ImportJSON[file_] := Import[file, "RawJSON"]
 
 
 (* ::Subsubsection::Closed:: *)
 (*GetJSONPosition*)
 
 
-GetJSONPosition[json_, selection_]:=GetJSONPosition[json, selection, ""]
+GetJSONPosition[json_, selection_] := GetJSONPosition[json, selection, ""]
 
-GetJSONPosition[json_, selection_, sort_]:=Block[{selIndex, selFunc, list, key, val, inds, pos},
+GetJSONPosition[json_, selection_, sort_] := Block[{selIndex, selFunc, list, key, val, inds, pos},
 	(*selection functions*)
 	selIndex = StringReplace[ToLowerCase[Last[Flatten[{#1 /. #3}]]], {"wip " -> "", "wip_"->""}] === ToLowerCase[#2] &;
 	selFunc = (list=#1; key=#2[[1]]; val=#2[[2]]; Select[list, selIndex[key, val, json[[#]]]&])&;
@@ -541,7 +541,7 @@ GetJSONPosition[json_, selection_, sort_]:=Block[{selIndex, selFunc, list, key, 
 (*MergeJSON*)
 
 
-MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
+MergeJSON[json:{_?AssociationQ..}] := Block[{keys},
 	keys = DeleteDuplicates[Flatten[Keys /@ json]];
 	Association[If[#[[2]]==={}, Nothing, #]& /@ Thread[
 		keys->(If[Length[#]===1,First@#,#]& /@ ((DeleteDuplicates /@ Transpose[(# /@ keys)& /@ json]) /. Missing[___]->Nothing))
@@ -559,9 +559,9 @@ MergeJSON[json:{_?AssociationQ..}]:=Block[{keys},
 
 SyntaxInformation[ViewConfig] = {"ArgumentsPattern" -> {_}};
 
-ViewConfig[folder_?StringQ]:=ViewConfig[GetConfig[folder]]
+ViewConfig[folder_?StringQ] := ViewConfig[GetConfig[folder]]
 
-ViewConfig[config_?AssociationQ]:=TabView[# -> Which[
+ViewConfig[config_?AssociationQ] := TabView[# -> Which[
 	# === "datasets", ViewConfig[config[#]],
 	# === "analysis", If[KeyExistsQ[config["analysis"], "Analysis"], MakeTable[config[#]], ViewConfig[config[#]]], 
 	True, MakeTable[config[#]]
@@ -696,7 +696,7 @@ SubNameToBids[nameIn_?ListQ, opts : OptionsPattern[]] := SubNameToBids[#, "", op
 
 SubNameToBids[nameIn_?ListQ, met_, opts : OptionsPattern[]] := SubNameToBids[#, met, opts] & /@ nameIn
 
-SubNameToBids[nameIn_?StringQ, opts : OptionsPattern[]]:= SubNameToBids[nameIn, "", opts]
+SubNameToBids[nameIn_?StringQ, opts : OptionsPattern[]] := SubNameToBids[nameIn, "", opts]
 
 SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name, ses},
 	(*get the names*)
@@ -726,7 +726,7 @@ SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name
 (*GetClassName*)
 
 
-GetClassName[class_, nameIn_]:=Switch[class,
+GetClassName[class_, nameIn_] := Switch[class,
 	"Volume"|"Volumes"|"Stacks"|"Repetitions"|"Acquisitions"|"Chunks",
 	Switch[class, 
 		"Volume"|"Volumes", "vol",
@@ -762,7 +762,7 @@ CheckDataDescription[dis_Association, met_] := Block[{duplicate, disK},
 	]
 ]
 
-CheckDataDescription[dis:{_Rule..}, met_]:=Block[{ass, key, man, cls, typ, fail},
+CheckDataDescription[dis:{_Rule..}, met_] := Block[{ass, key, man, cls, typ, fail},
 	(*Get the data Description keys*)
 	ass = Association[dis];
 	key = Keys[ass];
@@ -908,7 +908,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 		ShowLog[];
 		
 		(*----*)AddToLog[{"Starting "<>met<>" for directory: ", fol}, True, 0];
-		(*----*)If[custConf, AddToLog["**********   -----   Using custom config   -----   **********", 0]];
+		(*----*)If[custConf, AddToLog["********** ----- Using custom config ----- **********", 0]];
 		If[met === "BidsDcmToNii",
 			(*----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)", 1];
 		];
@@ -986,7 +986,7 @@ BidsDcmToNii[inFol_?StringQ, outFol_?StringQ, settings_, opts:OptionsPattern[]] 
 (*BidsDcmToNiiI*)
 
 
-BidsDcmToNiiI[fol_, outI_, settings_]:=Block[{out},
+BidsDcmToNiiI[fol_, outI_, settings_] := Block[{out},
 	(*define the out folder*)
 	out = FileNameJoin[{outI, "raw"}];
 	(*----*)AddToLog[{"Output folder: ", out}, 1];
@@ -1019,7 +1019,7 @@ SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _., OptionsPat
 MuscleBidsConvert[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsConvert[folder, GetConfig[folder], opts];
 
 
-MuscleBidsConvert[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
+MuscleBidsConvert[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
 	debugBids["starting MuscleBidsConvert"];
 	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsConvert[
@@ -1031,14 +1031,14 @@ MuscleBidsConvert[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:
 ]
 
 
-MuscleBidsConvert[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsConvert", opts]
+MuscleBidsConvert[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsConvert", opts]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MuscleBidsConvertI*)
 
 
-MuscleBidsConvertI[foli_, datType_, del_]:=Block[{
+MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox, 
 		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types,
 		vx, vy, vz, dx, dy, dz, sx, sy, sz, off, dfile, hasb, hdr, nSl, len,
@@ -1534,7 +1534,7 @@ SyntaxInformation[MuscleBidsProcess] = {"ArgumentsPattern" -> {_, _., _., Option
 MuscleBidsProcess[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsProcess[folder, GetConfig[folder], opts];
 
 
-MuscleBidsProcess[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
+MuscleBidsProcess[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
 	debugBids["starting MuscleBidsProcess"];
 	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsProcess[
@@ -1546,14 +1546,14 @@ MuscleBidsProcess[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:
 ]
 
 
-MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]]:= BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsProcess", opts]
+MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsProcess", opts]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MuscleBidsProcessI*)
 
 
-MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
+MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 		con, fol, parts, type, files, sets, diffFile, nfile, keys, dixFiles, jfile, nFiles, phbpt, dbond,
 		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, hz, b0i,
 		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
@@ -1788,7 +1788,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 								(*uwrap and convert B0 to hz*)
 								(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
 								b0i = UnwrapSplit[ph[[All, -1]] - ph[[All, 1]], mag, UnwrapDimension -> "3D", MonitorUnwrap -> False];
-								b0i = b0i/(2 Pi Length[echos]  (echos[[2]] - echos[[1]]));
+								b0i = b0i/(2 Pi Length[echos] (echos[[2]] - echos[[1]]));
 								(*calculate the t2 star from the two in phase images*)
 								t2stari = T2Fit[mag, echos][[2]];
 
@@ -1849,7 +1849,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 			debugBids[outfile];
 
 			(*default settings*)
-			settingPre = settingPro =  <||>;
+			settingPre = settingPro = <||>;
 
 			(*-------------------------------------------*)
 			(*------- dwi pre -processing script --------*)
@@ -1885,7 +1885,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 
 						(*Denoise and SNR*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
-						mask = Mask[NormalizeMeanData[data],  ConfigLookup[datType, "Process", "Masking"], 
+						mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], 
 							MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
 						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
 						snr = SNRCalc[den, sig];
@@ -2093,7 +2093,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_]:=Block[{
 							{data, t2vox} = ImportNii[nfile];
 
 							(*mask the background*)		
-							mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process",  "Masking"], MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
+							mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
 							data = NormalizeData@MaskData[data, mask];
 
 							Switch[datType["Process", "Method"],
@@ -2192,7 +2192,7 @@ SyntaxInformation[MuscleBidsMerge] = {"ArgumentsPattern" -> {_, _., _., OptionsP
 MuscleBidsMerge[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsMerge[folder, GetConfig[folder], opts];
 
 
-MuscleBidsMerge[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+MuscleBidsMerge[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir}, 
 	debugBids["starting MuscleBidsMerge"];
 	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsMerge[
@@ -2204,14 +2204,14 @@ MuscleBidsMerge[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=B
 ]
 
 
-MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]]:= BidsFolderLoop[datFol, merFol, datDis, Method->"MuscleBidsMerge", opts]
+MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[datFol, merFol, datDis, Method->"MuscleBidsMerge", opts]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MuscleBidsMergeI*)
 
 
-MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
+MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 		nonQuant, motion, reverse, fol, parts, merge, outfile, tarType, tarSuf, tarCon, tarFile, n,
 		movs, movStacs, tarStacs, overT, overM, targets, movings, mov, nStac, nCheck, nSet, target, voxt, moving, 
 		voxm, files, im, func, reg, mskm, mskt, vox, sameType, metReg, pad, movp, duplicate, tarDat,
@@ -2373,7 +2373,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 	voxm = First@vox; (*voxel size per stack*)
 	(*check voxel sizes of moving*)
 	If[!Equal@@voxm,
-		(*-----*)AddToLog[{"**********  The voxel size is not the same for all stacks **********"}, 0];
+		(*-----*)AddToLog[{"********** The voxel size is not the same for all stacks **********"}, 0];
 		(*-----*)AddToLog[{"Voxel size per stack: ", voxm}, 4];
 		(*-----*)AddToLog[{"", (Dimensions /@ First@moving) voxm}, 4];
 	];
@@ -2468,7 +2468,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
 					If[#[[1]]==={}, {},
 						Transpose@ToPackedArray@N@Chop@Last@func[
 							#[[2]], {reg, voxm[[i]]}, {movp[[All, #[[1]]]], voxm[[i]]},
-							Iterations->300,  BsplineSpacing->30 voxt, InterpolationOrderReg->1, NumberSamples -> 10000, 
+							Iterations->300, BsplineSpacing->30 voxt, InterpolationOrderReg->1, NumberSamples -> 10000, 
 							PrintTempDirectory->False, DeleteTempDirectory->False, MethodReg->metReg
 							, BsplineDirections -> {1, 1, 0}
 						]
@@ -2545,7 +2545,7 @@ SyntaxInformation[MuscleBidsSegment] = {"ArgumentsPattern" -> {_, _., _., Option
 MuscleBidsSegment[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsSegment[folder, GetConfig[folder], opts];
 
 
-MuscleBidsSegment[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
+MuscleBidsSegment[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
 	debugBids["starting MuscleBidsSegment"]; 
 	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsSegment[
@@ -2557,14 +2557,14 @@ MuscleBidsSegment[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:
 ]
 
 
-MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]]:= BidsFolderLoop[datFol, outFol, datDis, Method->"MuscleBidsSegment", opts]
+MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[datFol, outFol, datDis, Method->"MuscleBidsSegment", opts]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MuscleBidsSegmentI*)
 
 
-MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_]:=Block[{
+MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 		segment, segType, segTypeLab, checkFile, fol, segLocation, device,
 		parts, outfile, segfile, out, vox, seg, duplicate, key, dupKey, status, segiu,
 		voxS, tari, movi, segi, tar, mov, dim
@@ -2709,7 +2709,7 @@ SyntaxInformation[MuscleBidsTractography] = {"ArgumentsPattern" -> {_, _., _., O
 MuscleBidsTractography[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsTractography[folder, GetConfig[folder], opts];
 
 
-MuscleBidsTractography[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir},
+MuscleBidsTractography[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
 	debugBids["starting MuscleBidsTractography"];
 	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsTractography[
@@ -2721,14 +2721,14 @@ MuscleBidsTractography[folder_?StringQ, config_?AssociationQ, opts:OptionsPatter
 ]
 
 
-MuscleBidsTractography[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]]:= BidsFolderLoop[datFol, outFol, datDis, Method->"MuscleBidsTractography", opts]
+MuscleBidsTractography[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[datFol, outFol, datDis, Method->"MuscleBidsTractography", opts]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MuscleBidsTractographyI*)
 
 
-MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_]:=Block[{
+MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Block[{
 		tracto, tractType, tractSeg, tractStopLab, tractStopVal, tractStopLabNam, trkFile,
 		tractTypeLab, fol, parts, checkFile, outfile, seed, lenS, segBone, tractSegLab,
 		datfile, stopfile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
@@ -2937,7 +2937,7 @@ SyntaxInformation[MuscleBidsAnalysis] = {"ArgumentsPattern" -> {_, _., _., Optio
 MuscleBidsAnalysis[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsAnalysis[folder, GetConfig[folder], opts];
 
 
-MuscleBidsAnalysis[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]:=Block[{dir}, 
+MuscleBidsAnalysis[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir}, 
 	debugBids["starting MuscleBidsAnalysis"];
 	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsAnalysis[
@@ -3048,8 +3048,6 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 				]) & /@ musName];
 			sideNr = sideName /. Thread[{"Left", "Right", "Both"} -> {1, 2, 3}];
 			musNr = MuscleNameToLabel[musName, GetAssetLocation["MusclesLegAllLabels"]];
-
-
 			,
 			_,(*unknown label type*)
 			(*----*)AddToLog[{"Unknown Label type: ", what}, 4];
@@ -3196,8 +3194,8 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 				Translate[Rotate[(First@gc), -i 90 Degree, {0, 0, 1}, 0.5 Options[gc, PlotRange][[1, 2, All, 2]]], 
 					{sc i Options[gc, PlotRange][[1, 2, 1, 2]], 0, 0}], 
 				{i, 0, 3}], Background -> Lighter@Gray, ViewPoint -> {0, -2, .1}, ##] & @@ Join[{
-					BoxRatios -> {sc  4, 1, 1} Options[gc, BoxRatios][[1, 2]], 
-					PlotRange -> {sc  4, 1, 1} Options[gc, PlotRange][[1, 2]], 
+					BoxRatios -> {sc 4, 1, 1} Options[gc, BoxRatios][[1, 2]], 
+					PlotRange -> {sc 4, 1, 1} Options[gc, PlotRange][[1, 2]], 
 					Options@gc
 					}], ImageSize -> {Automatic, 2400}, ImageResolution -> 300], 
 			{{60, 60}, {60, 60}}, Lighter@Gray], {Automatic, 2000}]

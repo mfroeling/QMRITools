@@ -128,7 +128,7 @@ MaskComponents::usage =
 "MaskComponents is an option for Mask, SmoothMask and SmoothSegmentation. Determines the amount of largest clusters used as mask." 
 
 MaskClosing::usage =
-"MaskClosing  is an option for Mask, SmoothMask and SmoothSegmentation. The size of the holes in the mask that will be closed." 
+"MaskClosing is an option for Mask, SmoothMask and SmoothSegmentation. The size of the holes in the mask that will be closed." 
 
 MaskDilation::usage = 
 "MaskDilation is an option for Mask, SmoothMask and SmoothSegmentation. If the value is greater than 0 it will dilate the mask, if the value is smaller than 0 it will erode the mask."
@@ -310,7 +310,7 @@ SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, dim, crp},
 	(*get the options*)
 	dil = OptionValue[MaskDilation];(*how much the mask is eroded or dilated*)
-	dil = If[NumberQ[dil],  Round@dil];
+	dil = If[NumberQ[dil], Round@dil];
 	obj = OptionValue[MaskComponents];(*number of objects that are maintained*)
 	obj = If[NumberQ[obj], Round[obj]];
 	close = OptionValue[MaskClosing];(*close holes in mask*)
@@ -527,7 +527,7 @@ ReplaceSegmentations[segm_, labSel_, labNew_] := SelectReplaceSegmentations[segm
 
 SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, sel},
 	split = If[Length[segm] == 2, If[VectorQ[segm[[2]]], False, True], True];
-	{seg, lab} = If[split,  SplitSegmentations[segm], segm];
+	{seg, lab} = If[split, SplitSegmentations[segm], segm];
 
 	sel = MemberQ[labSel, #] & /@ lab;
 
@@ -551,7 +551,7 @@ Options[SmoothSegmentation] = {MaskComponents -> 1, MaskClosing -> 1, MaskFiltKe
 
 SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SmoothSegmentation[maskIn_,  opts:OptionsPattern[]] :=SmoothSegmentation[maskIn, All, opts]
+SmoothSegmentation[maskIn_, opts:OptionsPattern[]] :=SmoothSegmentation[maskIn, All, opts]
 
 SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := Block[{smooth, obj, md, masks, labs},
 	md = ArrayDepth[maskIn];
@@ -657,14 +657,14 @@ SegmentMask[mask_, segI_?NumberQ, overI_?NumberQ] := Block[{
 	len = max + 1 - min;
 
 	pad = {-1, 1} Through[{Floor, Ceiling}[Clip[over, {0, Infinity}]/2]] - {0, 1};
-	sec = Clip[MinMax[Round[# + pad]] & /@ Partition[Range[min, max + 1, (len)/seg], 2, 1], {min, max}];
+	sec = Clip[MinMax[Round[#] + pad] & /@ Partition[Range[min, max + 1, (len)/seg], 2, 1], {min, max}];
 
 	out = SparseArray[ConstantArray[0*mask, seg]];
 	Table[out[[i, sec[[i, 1]] ;; sec[[i, 2]]]] = mask[[sec[[i, 1]] ;; sec[[i, 2]]]], {i, 1, seg}];
 
 	per = N@Rescale[Mean /@ (sec - 1), {min - 1, max - 1}];
 
-	{per, Transpose[out]}
+	{100 per, Transpose[out]}
 ]
 
 (* ::Subsection::Closed:: *)
@@ -677,7 +677,7 @@ SegmentationVolume[seg_] := SegmentationVolume[seg, {0, 0, 0}]
 
 SegmentationVolume[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := Block[{vol},
 	vol = If[vox === {0, 0, 0}, 1, N@((Times @@ vox)/1000)];
-	vol  Total[Flatten[#]] & /@ Switch[ArrayDepth[seg],
+	vol Total[Flatten[#]] & /@ Switch[ArrayDepth[seg],
 		3, Transpose[First@SplitSegmentations[seg]],
 		4, Transpose[seg],
 		_, Return[$Failed]

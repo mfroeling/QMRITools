@@ -341,17 +341,19 @@ AnalyzeActivations[act_,msk_,lab_]:=Block[{aDepth,aDim,mDepth,mDim,labs},
 (*AnalyzeActivationsI*)
 
 
-AnalyzeActivationsI[act_,msk_,lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVols,nObs,mSd,quants,chance,chanceO,chanceV,vals,out},
-	sizes=N@Flatten[Map[If[Total[Flatten[#]]<=1,{},ComponentMeasurements[Image[#,"Bit"],"Count"][[All,2]]]&,act,{2}]];
+AnalyzeActivationsI[act_, msk_, lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVols,nObs,mSd,quants,chance,chanceO,chanceV,vals,out},
+	
+	sizes = N@Flatten[Map[If[Total[Flatten[#]]<=1,{},ComponentMeasurements[Image[#,"Bit"],"Count"][[All,2]]]&,act,{2}]];
 
-	nActs=Length@sizes;
+	nActs = Length@sizes;
 
-	mSize=Map[Total[Flatten[#]]&,msk];
-	mSizeT=Total@mSize;
+	mSize = Map[Total[Flatten[#]]&,msk];
+	
+	mSizeT = Total@mSize;
 
-	nSlices=Total@Unitize@mSize;
-	nVols=Length@act[[1]];
-	nObs=nSlices nVols;
+	nSlices = Total@Unitize@mSize;
+	nVols = Length@act[[1]];
+	nObs = nSlices nVols;
 
 	(*mSd=If[nActs>2,{Mean[sizes],StandardDeviation[sizes]},{0,0}];
 	quants=If[nActs>2,Quantile[sizes, {0.5,0.05,0.95}],{0,0,0}];*)
@@ -362,13 +364,16 @@ AnalyzeActivationsI[act_,msk_,lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVo
 		True, {0., 0.}];
 	quants = If[0 < nActs, Quantile[sizes, {0.5, 0.05, 0.95}], {0. ,0. ,0.}];
 
-	chance=100. nActs/nVols;
-	chanceO=100. nActs/nObs;
-	chanceV = 1000. 100. nActs/nObs / mSizeT;
+	chance = 100. nActs / nVols;
+	chanceO = 100. nActs / nObs (* nVols nSlices*);
+	chanceV = 1000. chanceO / mSizeT;
 
-	vals=Flatten@{mSizeT,nActs,nObs,chance,chanceO,chanceV,mSd,quants};
+	vals=Flatten@{mSizeT, nActs, nObs, chance, chanceO, chanceV, mSd, quants};
 
-	out=Association[Thread[{"ROI vol","Amount","Observed","Chance/Vol","Chance/Obs","Chance/Vox","Mean Size","StDv Size","Median Size","5% Size","95% Size"}->vals]];
+	out=Association[Thread[{
+		"ROI vol", "Amount", "Observed", "Chance/Vol", "Chance/Obs", 
+		"Chance/Vox", "Mean Size", "StDv Size", 
+		"Median Size", "5% Size", "95% Size"}->vals]];
 	If[lab==="",out, Association[lab->out]]
 ]
 
