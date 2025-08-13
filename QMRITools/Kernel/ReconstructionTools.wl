@@ -153,6 +153,9 @@ CoilSamples::usage =
 NormalizeOutputSpectra::usage = 
 "NormalizeOutputSpectra is an option for CoilWeightedReconCSI."
 
+NoisePrewhiten::usage = 
+"NoisePrewhiten is an option for CoilWeightedReconCSI. Specifies if noise pre whitening is done for Roemer."
+
 AcquisitionMethod::usage = 
 "AcquisitionMethod is an option for CoilWeightedReconCSI. Values can be \"Fid\" or \"Echo\"."
 
@@ -987,10 +990,10 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 Options[CoilWeightedReconCSI] = {
 	HammingFilter -> False, 
 	CoilSamples -> 5, 
-	Method -> "WSVD", 
+	Method -> "RoemerS", 
 	NormalizeOutputSpectra->True, 
 	AcquisitionMethod->"Fid",
-	NoisePrewhiten ->False
+	NoisePrewhiten ->True
 };
 
 SyntaxInformation[CoilWeightedReconCSI]={"ArgumentsPattern"->{_, _, _, _., OptionsPattern[]}}
@@ -998,7 +1001,7 @@ SyntaxInformation[CoilWeightedReconCSI]={"ArgumentsPattern"->{_, _, _, _., Optio
 CoilWeightedReconCSI[kspace_, noise_, head_, ops:OptionsPattern[]]:=CoilWeightedReconCSI[kspace, noise, head, 0, ops]
 
 CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Block[{
-		fids, spectra, cov, coils, sosCoils, sens,readout, 
+		fids, spectra, cov, coils, sosCoils, sens, readout, 
 		nenc, met, noCoils, white
 	},
 	readout = OptionValue[AcquisitionMethod];
@@ -1007,7 +1010,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 	nenc = If[IntegerQ[head], head, "number_of_encoding_dimensions" /. head];
 	met = Switch[nenc, 3, "2D", 4, "3D"];
 	noCoils = ArrayDepth[kspace] =!= nenc + 1;
-	
+
 	spectra = If[noCoils,
 
 		(*no coil combination for 2D or 3D CSI*)
@@ -1016,6 +1019,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 		,
 
 		(*coil combination for 2D or 3D CSI*)
+		
 		fids = Transpose[FourierKspaceCSI[#, head, met] & /@ kspace];
 		spectra = RotateDimensionsRight[Map[ShiftedFourier[#, readout] &, RotateDimensionsLeft[fids], {-2}]];
 		

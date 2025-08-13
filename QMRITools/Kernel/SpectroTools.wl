@@ -1663,7 +1663,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, {{funs, "ReIm", "Function vox"}, {"Re", "Im", "ReIm", "Abs", "All"}}
 			, {{app, False, "Apodize and Pad"}, {True,False}}
 			, {{fun, Abs, "Function CSI"}, {Abs -> "Absolute", Re -> "Real", Im -> "Imaginary"}}
-			, {{size, 40, "Plot size"}, {20 -> "Small", 40 -> "Medium", 60 -> "Large", 80 -> "Extra large"}}
+			, {{size, 20, "Plot size"}, {10 -> "Small", 20 -> "Medium", 30 -> "Large", 40 -> "Extra large"}}
 			, Delimiter
 			, {{pmin, xmin, "Min pmm"}, xmin, Dynamic[pmax - 1]}
 			, {{pmax, xmax, "Min pmm"}, Dynamic[pmin + 1], xmax}
@@ -1672,12 +1672,13 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, {{backScale, "Max", "Background"}, {"Max", "Total"}}
 			, {{back, True, "Magnitude background"}, {True,False}}
 			, {{col, Black, "Grid Color"}, (*ColorSlider*)
-Button[
-Dynamic[Graphics[{col, Rectangle[]}, ImageSize -> {20, 20}]],
-new = SystemDialogInput["Color", #];
-col = If[new === $Canceled, col, new]
-, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"]&
-}
+				Button[
+					Dynamic[Graphics[{col, Rectangle[]}, ImageSize -> {20, 20}]],
+					new = SystemDialogInput["Color", #];
+					col = If[new === $Canceled, col, new]
+					, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"
+				]&
+			}
 
 			(* hidden manipulate paramterrs *)
 			, {{coor, {0, 0}}, ControlType -> None}
