@@ -203,6 +203,9 @@ notAllowed = {"-"->"", "_"->"", "."->"", " "->""};
 StringStrip = StringReplace[#, notAllowed]&;
 
 
+compress = $OperatingSystem === "Windows";
+
+
 (* ::Subsubsection::Closed:: *)
 (*PartitionBidsName*)
 
@@ -612,7 +615,7 @@ ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{subs, dataFo
 	];
 
 	MenuView[(
-		GetProtocolNames[fold = #];
+		list = GetProtocolNames[fold = #];
 		duplicates = Keys[Select[Counts[list[[All, 2]]], # > 1 &]];
 		list = If[MemberQ[duplicates, #[[2]]], {#[[1]], Style[#[[2]], Bold, Red]}, #] & /@ list;
 		(*make output*)
@@ -930,9 +933,9 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 					(*----*)AddToLog[dataToLog@type, 2, True];
 					rfol = SelectBids[fol, type["InFolder"]];
 					(*method specific scripts: loop over all folders in subject/session folder*)
+					(*loop needs feedback to show where bugs are.*)
+					Echo[DateString[], foli];
 					Table[
-						(*loop needs feedback to show where bugs are.*)
-						Echo[DateString[], foli];
 						Switch[met,
 							"MuscleBidsConvert", MuscleBidsConvertI[foli, type, delete],
 							"MuscleBidsProcess", MuscleBidsProcessI[foli, outFol, type, versCheck],
@@ -1125,7 +1128,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 							outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
 								"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
 							(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
-							ExportNii[data[[All, i]], vox, ConvertExtension[outFile, ".nii"]];
+							ExportNii[data[[All, i]], vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 						,{i, 1, Length[suffix]}];
 
@@ -1162,7 +1165,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 								info = json[[pos]];
 								{data, vox} = ImportNii[ConvertExtension[files[[pos]],".nii"], NiiScaling->False];
 								(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
-								ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+								ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 								Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 								(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 								pos
@@ -1199,7 +1202,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 								"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
 							debugBids[{outFile, GetClassName[class, nameIn]}];
 							(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
-							ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+							ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 							Quiet@If[del,
@@ -1248,7 +1251,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 						outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
 							"suf"->Flatten@{datType["Suffix"], suffix}|>];
 						(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
-						ExportNii[data[[i]], vox, ConvertExtension[outFile, ".nii"]];
+						ExportNii[data[[i]], vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 						Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 					, {dixType, {"Mixed", "Phase", "Real", "Imaginary"}}];
@@ -1297,7 +1300,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 							outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
 								"suf"->Flatten@{datType["Suffix"], suffix}|>];
 							(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
-							ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+							ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 							(*Delete used files*)
@@ -1399,7 +1402,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 						ExportBval[val, ConvertExtension[outFile, ".bval"]];
 						ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
 					];
-					ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+					ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 					Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 					Quiet@If[del,
@@ -1491,7 +1494,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 				outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
 					"suf"->{datType["Suffix"]}|>];
 				(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
-				ExportNii[data, vox, ConvertExtension[outFile, ".nii"]];
+				ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 				Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 				(*Delete used files*)
@@ -1516,6 +1519,9 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 		];
 	(*close loop over stac names*)
 	,{nameIn, labels}];
+
+	(*compress the nii files if compression during ExportNii -> False*)
+	If[!compress, CompressNiiFiles[fol]];
 ] 
 
 
@@ -1664,7 +1670,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 					(*----*)AddToLog[outfile,5];
 					outTypes = suffix;
 					(
-						ExportNii[ToExpression[con<>#], First@dvox, outfile<>"_"<>#<>".nii"];
+						ExportNii[ToExpression[con<>#], First@dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 						Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]
 					)&/@ outTypes;
 					
@@ -1673,6 +1679,9 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 					MakeCheckFile[outfile, Sort@Join[
 						{"Check"->"done", "Outputs" -> outTypes, "SetProperties"->set}
 					]];
+
+					(*compress the nii files if compression during ExportNii -> False*)
+					If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
 				];
 				(*----*)AddToLog["Finished processing", 3, True];
 
@@ -1811,7 +1820,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							(*----*)AddToLog[outfile,5];
 							outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", "b0", "t2star", "r2star", 
 								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
-							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress] &/@ outTypes;
 							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
 
 							(*export the checkfile*)
@@ -1819,6 +1828,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 								{"Check"->"done", "EchoTimes"->echos, "Outputs" -> outTypes, "SetProperties"->set}, 
 								pos, Normal@KeyTake[json, keys]
 							]];
+
+							(*compress the nii files if compression during ExportNii -> False*)
+							If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+
 							(*----*)AddToLog["Finished processing", 3, True];
 						]
 					]
@@ -1910,7 +1923,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 						(*----*)AddToLog[outfile, 5];
 						outTypes = {"den", "reg", "sig", "snr0", "snr", "filt"};
 						(
-							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"];
+							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 							Export[ConvertExtension[outfile <> "_"<>#, ".json"], MergeJSON[{json, settingPre}]];
 						) &/@ outTypes;
 						(
@@ -1923,6 +1936,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperties"->set},
 							Normal@KeyTake[json, keys]
 						]];
+
+						(*compress the nii files if compression during ExportNii -> False*)
+						If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+
 						(*----*)AddToLog["Finished pre-processing", 3, True];
 
 						(*Set preproc true, overrules checkfile for processing*)
@@ -2028,7 +2045,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
 								"l1", "l2", "l3", "md",	"fa", "rd"}, coil, ivimpar];
 							(
-								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii"];
+								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 								Export[ConvertExtension[outfile <> "_"<>#, ".json"], MergeJSON[{json, settingPro}]];
 							) &/@ outTypes;
 
@@ -2037,6 +2054,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperties"->set},
 								Normal@KeyTake[json,keys]
 							]];
+
+							(*compress the nii files if compression during ExportNii -> False*)
+							If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+
 							(*----*)AddToLog["Finished processing", 3, True];				
 						]
 					]
@@ -2143,7 +2164,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							(*----*)AddToLog["Exporting the calculated data to:", 4];
 							(*----*)AddToLog[outfile, 5];		
 
-							ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii"] &/@ outTypes;
+							ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii", CompressNii -> compress] &/@ outTypes;
 							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
 													
 							(*export the checkfile*)
@@ -2151,6 +2172,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 								{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperties"->set},
 								Normal@KeyTake[json, keys]
 							]];
+
+							(*compress the nii files if compression during ExportNii -> False*)
+							If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+
 							(*----*)AddToLog["Finished processing", 3, True];
 						]
 					]
@@ -2520,12 +2545,16 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 	(*----*)AddToLog[outfile, 5];
 	(
 		debugBids["Exporting: ", {movsAll[[#]], voxF[#]}];
-		ExportNii[movingA[[#]], voxF[#], outfile<>"_"<>movsAll[[#]]<>".nii"];
+		ExportNii[movingA[[#]], voxF[#], outfile<>"_"<>movsAll[[#]]<>".nii", CompressNii -> compress];
 		Export[outfile<>"_"<>movsAll[[#]]<>".json", MergeJSON[{jsonAll[[#]], settings}]];
 	)&/@ Range[nSet];
 
 	(*make the checkfile*)
 	MakeCheckFile[outfile, Sort@Join[{"Check"->"done"}, Normal@datType]];
+
+	(*compress the nii files if compression during ExportNii -> False*)
+	If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+
 	(*----*)AddToLog["Finished merging", 3, True];
 ]
 
@@ -2597,7 +2626,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 	segType = segment["Target"];	
 	If[ArrayDepth[segType]===1, segType = {segType}];
 	segTypeLab = StringRiffle[#, "_"]&/@segType;
-	
+
 	debugBids[segType];
 	debugBids[segTypeLab];
 
@@ -2639,7 +2668,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 
 				seg = SegmentData[out, segLocation, TargetDevice -> ConfigLookup[datType, "Segment", "Device"], Monitor -> False];
 				If[voxS =!= Automatic, seg = RescaleSegmentation[seg, dim]];
-				ExportNii[seg, vox, outfile];
+				ExportNii[seg, vox, outfile, CompressNii -> compress];
 			];
 			, {segi, segType}			
 		],
@@ -2675,11 +2704,15 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 			Resolutions -> 1, Iterations -> 200, DeleteTempDirectory -> False, TransformMethod -> "Segmentation"
 		][[2]], {i, 1, 3}];
 
-		ExportNii[seg, voxt, outfile];
+		ExportNii[seg, voxt, outfile, CompressNii -> compress];
 
 	];
 	(*make the checkfile*)
 	MakeCheckFile[checkFile, Sort@Join[{"Check" -> status}, Normal@datType]];
+
+	(*compress the nii files if compression during ExportNii -> False*)
+	If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+
 	(*----*)AddToLog["Finished the segmentation", 3, True];
 ]
 
@@ -2842,6 +2875,10 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 			ExportTracts[trkFile[".trk"], tracts, vox, dim, seeds];
 
 			MakeCheckFile[checkFile, Sort@Join[{"Check" -> "track"}, Normal@datType]];
+
+			(*compress the nii files if compression during ExportNii -> False*)
+			If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+
 			(*----*)AddToLog["Finished the tractograpy", 3, True];
 		];
 	];
@@ -2901,7 +2938,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 			(*----*)AddToLog[{"Exporting the results and maps"}, 4];
 			(*export stuff*)
 			con = Context[con];
-			ExportNii[ToExpression[con<>#], voxs, trkFile["_"<>#<>".nii.gz"]]& /@ {"dens", "leng", "ang", "seed","curv"};
+			ExportNii[ToExpression[con<>#], voxs, 
+				trkFile["_"<>#<>".nii.gz"], CompressNii -> compress]& /@ {"dens", "leng", "ang", "seed","curv"};
 			ExportTracts[trkFile["_seg.trk"], tracts, voxs, dims, seeds];
 
 			(*export plot scene*)
@@ -2912,12 +2950,19 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 			];
 
 			MakeCheckFile[checkFile, Sort@Join[{"Check"->"seg"}, Normal@datType]];
+
+			(*compress the nii files if compression during ExportNii -> False*)
+			If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+
 			(*----*)AddToLog["Finished the tractograpy segmentation", 3, True];
 		];
 	];
 
 	If[CheckFile[checkFile, "seg", verCheck],
-		MakeCheckFile[checkFile, Sort@Join[{"Check"->"done"}, Normal@datType]]
+		MakeCheckFile[checkFile, Sort@Join[{"Check"->"done"}, Normal@datType]];
+
+		(*compress the nii files if compression during ExportNii -> False*)
+		If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
 	];
 ]
 
@@ -3130,6 +3175,9 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		Export[outFile<>".wxf", data];
 
 		MakeCheckFile[checkFileX, Sort@Join[{"Check"->"done"}, Normal@datDis]];
+
+		(*compress the nii files if compression during ExportNii -> False*)
+		If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
 	];
 
 
@@ -3322,6 +3370,9 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		(*finalize image making*)
 		(*----*)AddToLog[{"Finished making the images"}, 3, True];
 		MakeCheckFile[checkFileI, Sort@Join[{"Check"->"done"}, Normal@datDis]];
+
+		(*compress the nii files if compression during ExportNii -> False*)
+		If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
 	]
 ];
 

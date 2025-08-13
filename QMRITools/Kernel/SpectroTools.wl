@@ -1445,7 +1445,8 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 
 	(*get gridline options*)
 	gridS = OptionValue[GridLineSpacing];
-	{min,max} = If[rr[[1]]===Full,Round[MinMax[ppm]],MinMax[rr[[1]]]];
+	{min, max} = If[rr[[1]]===Full, MinMax[ppm], MinMax[rr[[1]]]];
+
 	grid = Sort@DeleteDuplicates@Join[
 		If[gridS === 0, {}, Range[0, Round[max], gridS]],
 		If[gridS === 0, {}, -Range[0, -Round[min], gridS]],
@@ -1459,7 +1460,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		(*get the plot functions*)
 		fun = Switch[OptionValue[Method], "Abs", {Abs}, "Re", {Re}, "Im", {Im}, "ReIm", {Im, Re}, "All", {Im, Re, Abs}];
 		(*plot single spectra*)
-		plot = Transpose[{ppm + shift, #}] & /@ (#@spec & /@ fun);
+		plot = Transpose[{Reverse[ppm + shift], #}] & /@ (#@spec & /@ fun);
 		(*get the plot color*)
 		col = If[OptionValue[PlotColor] === Automatic, 
 			({{Gray, Thin}, {Red, Thin}, {Black}}[[-Length[fun] ;;]]), 
@@ -1467,10 +1468,13 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		];
 
 		(*Make the plot*)
-		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0}}, AspectRatio -> OptionValue[AspectRatio],
-			ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], ScalingFunctions -> {"Reverse", Automatic},
+		{min, max} = {Ceiling@min, Floor@max};
+		tck = Reverse@Range[min, max, Round[(max - min)/5]];
+		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0.}}, AspectRatio -> OptionValue[AspectRatio],
+			ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], (*ScalingFunctions -> {"Reverse", Automatic},*)
 			Frame -> {{False, False}, {True, False}}, FrameStyle -> Directive[{Thick, Black}], FrameLabel -> {"PPM", None},
-			LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Filling->OptionValue[Filling]
+			LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Filling->OptionValue[Filling],
+			FrameTicks -> {Thread[{-tck, tck}], None}
 		]
 
 		,
