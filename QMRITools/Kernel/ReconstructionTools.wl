@@ -191,73 +191,75 @@ Begin["`Private`"]
 
 SyntaxInformation[ReadListData]={"ArgumentsPattern"->{_,_.}}
 
-ReadListData[file_]:=ReadListData[file,True]
+ReadListData[file_]:=ReadListData[file, True]
 
 ReadListData[file_,print_]:=Block[{
-	fl,head,list,data,lab,dataIndex,dataVals,dataValsN,ruleKx,ruleKy,ruleKz,ruleCoil,
-	typ,pos,dataSplit,indexSplit, echo, scale, locs,cp,cn,cd,
-	sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead},
-	
-	fl=StringReplace[file,{".list"->"",".data"->""}];
+		fl,head,list,data,lab,dataIndex,dataVals,dataValsN,ruleKx,ruleKy,ruleKz,ruleCoil,
+		typ,pos,dataSplit,indexSplit, echo, scale, locs,cp,cn,cd,
+		sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead
+	},
+
+	fl = StringReplace[file,{".list"->"",".data"->""}];
 	If[!FileExistsQ[fl<>".list"]||!FileExistsQ[fl<>".data"], Print["files not found"]];
-	
+
 	(*read the data - longest part*)
-	list=ReadList[fl<>".list",String];
-	data=BinaryReadList[fl<>".data","Complex64"];
+	list = ReadList[fl<>".list",String];
+	data = BinaryReadList[fl<>".data","Complex64"];
 
 	(*Get the header*)
-	head=StringSplit/@Select[list,StringTake[#,1]==="."&];
+	head = StringSplit/@Select[list,StringTake[#,1]==="."&];
 	head = (p = Position[#, ":"][[1, 1]]; 
 		StringRiffle[#[[5 ;; (p - 1)]]] -> 
 		ToExpression[#[[(p + 1) ;;]]]
 	) & /@ head;
 	head[[All,2]]=If[Length[#]==1,#[[1]],#]&/@head[[All,2]];
 	(*get the labels*)
-	lab=StringSplit[list[[StringPosition[StringJoin[StringTake[#,1]&/@list],"# "][[1,1]]-2]]][[2;;-2]];
-	
+	lab = StringSplit[list[[StringPosition[StringJoin[StringTake[#,1]&/@list],"# "][[1,1]]-2]]][[2;;-2]];
+
 	(*parse text table*)
-	dataIndex=Transpose[StringSplitExp[Select[list,StringTake[#,1]===" "&]]];(*longest part*)
-	
+	dataIndex = Transpose[StringSplitExp[Select[list,StringTake[#,1]===" "&]]];(*longest part*)
+
 	(*fix non matching noise and data coil numbers*)
 	cp = Position[lab, "chan"][[1, 1]];
 	{cn, cd} = {"NOI", "STD"} /. Thread[DeleteDuplicates[dataIndex[[1]]] -> (DeleteDuplicates[#[[All, 2]]] & /@ GatherBy[Transpose[{dataIndex[[1]], dataIndex[[cp]]}], First])];
-	If[cn=!=cd,dataIndex[[cp]] = dataIndex[[cp]] /. Thread[cn -> cd]];
-	
+	If[cn =!= cd, dataIndex[[cp]] = dataIndex[[cp]] /. Thread[cn -> cd]];
+
 	(*create header values*)
-	dataVals=Thread[lab->(Sort[DeleteDuplicates[#]]&/@dataIndex)];
-	dataValsN=Thread["N_"<>#&/@dataVals[[All,1]]->Length/@dataVals[[All,2]] ];
+	dataVals = Thread[lab->(Sort[DeleteDuplicates[#]]&/@dataIndex)];
+	dataValsN = Thread["N_"<>#&/@dataVals[[All,1]]->Length/@dataVals[[All,2]] ];
 	dataVals[[All, 2]] = If[Length[#] == 1, If[StringQ[#[[1]]], #, #[[1]]], #] & /@ dataVals[[All, 2]];
-	
+
 	(*Create rules for values that are not a normal range. eg kspace index or coil numbers*)
 	If[MemberQ[lab,"kx"],ruleKx=Thread[("kx"/.dataVals)->(Range["N_kx"/.dataValsN]-1)]];
-	ruleKy=Thread[("ky"/.dataVals)->(Range["N_ky"/.dataValsN]-1)];
-	ruleKz=Thread[("kz"/.dataVals)->(Range["N_kz"/.dataValsN]-1)];
-	ruleCoil=Thread[("chan"/.dataVals)->(Range["N_chan"/.dataValsN]-1)];
-	
+	ruleKy = Thread[("ky"/.dataVals)->(Range["N_ky"/.dataValsN]-1)];
+	ruleKz = Thread[("kz"/.dataVals)->(Range["N_kz"/.dataValsN]-1)];
+	ruleCoil = Thread[("chan"/.dataVals)->(Range["N_chan"/.dataValsN]-1)];
+
 	(*partition raw data per k-line*)
-	data=DynamicPartition[data,dataIndex[[-1]]/8];(*longest part*)
-	
+	data = DynamicPartition[data,dataIndex[[-1]]/8];(*longest part*)
+
 	(*split the data and index for data type*)
-	typ=("typ"/.dataVals[[1]]);
-	pos=Flatten@Position[dataIndex[[1]],#]&/@typ;
-	dataSplit=Thread[typ->(data[[#]]&/@pos)];
-	indexSplit=Thread[typ->(dataIndex[[All,#]]&/@pos)];
-	
+	typ = ("typ"/.dataVals[[1]]);
+	pos = Flatten@Position[dataIndex[[1]],#]&/@typ;
+	dataSplit = Thread[typ->(data[[#]]&/@pos)];
+	indexSplit = Thread[typ->(dataIndex[[All,#]]&/@pos)];
+
 	(*get the number of sample in the data data*)
-	nSamp=("STD"/.indexSplit)[[-1,1]]/8;
-	AppendTo[dataValsN,"N_samp"->nSamp];
-	
+	nSamp = ("STD"/.indexSplit)[[-1,1]]/8;
+	AppendTo[dataValsN, "N_samp"->nSamp];
+
 	(*get the data size*)
-	sizeInd={"N_kx","N_ky","N_kz","N_chan","N_dyn","N_card","N_echo","N_loca","N_mix","N_extr1","N_extr2","N_aver","N_samp"};
-	sizeInd=Select[sizeInd,MemberQ[dataValsN[[All,1]],#]&];
-	size=sizeInd/.dataValsN;
+	sizeInd = {"N_kx", "N_ky", "N_kz", "N_chan", "N_dyn", "N_card", "N_echo",
+		"N_loca", "N_mix", "N_extr1", "N_extr2", "N_aver", "N_samp"};
+	sizeInd = Select[sizeInd,MemberQ[dataValsN[[All,1]],#]&];
+	size = sizeInd/.dataValsN;
 	(*get the types with dimensions > 1*)
-	types=Pick[sizeInd,Unitize[size-1],1];
-	
+	types = Pick[sizeInd,Unitize[size-1],1];
+
 	(*process noise data *)
 	noise = "NOI"/.dataSplit;
 	data = "STD"/.dataSplit;
-	
+
 	If[noise=!="NOI",
 		scale = 1000/Max[Abs[noise]];
 		noise = scale noise;
@@ -265,42 +267,42 @@ ReadListData[file_,print_]:=Block[{
 		scale = 1000/Mean[Abs[Flatten[data]]];
 		noise = 0.;
 	];
-		
+
 	(*get acepterd sample data and index*)
 	data = scale data;
-	
+
 	ind = sizeInd[[;;-2]]/.Thread["N_"<>#&/@lab->Range[Length[lab]]];
 	indData = ("STD"/.indexSplit)[[ind]];
-	
+
 	(*reverse even echo*)
 	echo = 1-Mod[indData[[Position[sizeInd,"N_echo"][[1,1]]]],2];
 	data = MapThread[If[#2==0,Reverse@#,#]&,{data,echo}];
-	
+
 	(*convert the index values to array values*)
 	off = If[MemberQ[lab,"kx"],1,0];
 	If[MemberQ[lab,"kx"],indData[[1]]=indData[[1]]/.ruleKx;];
 	indData[[1+off]] = indData[[1+off]]/.ruleKy;
 	indData[[2+off]] = indData[[2+off]]/.ruleKz;
 	indData[[3+off]] = indData[[3+off]]/.ruleCoil;
-	indData=Transpose[indData+1];
-	
+	indData = Transpose[indData+1];
+
 	(*get the locations of non zero index*)
 	locs = Flatten[Position[Unitize[size[[;; -2]] - 1], 1]];
-	
+
 	(*create squeezed k-space*)
 	Clear[line];
 	kspace = ToPackedArray@ReplacePart[ConstantArray[line, size[[locs]]], Thread[indData[[All, locs]] -> data]];(*longest part*)
 	line = ConstantArray[0. + 0. I, nSamp];
 	size = Dimensions[kspace];
-	
+
 	(*print output*)
 	If[print,
 		Print["Datatypes in data: ",("typ"/.dataVals[[1]])];
 		Print[Column[Prepend[StringJoin/@Thread[{"  - ",types,": ",ToString/@size}],"The data contains: "]]];
 	];
-	
+
 	Clear[data, indData];
-	
+
 	(*output*)
 	{{ToPackedArray@kspace,noise},{Join[dataVals,dataValsN,head],types}}
 ]
@@ -361,7 +363,7 @@ SyntaxInformation[MeanAt]={"ArgumentsPattern"->{_,_}}
 (*calculate mean at specific level*)
 MeanAt[list_,level_]:=Block[{tot,wgth},
 	tot = Total[list, {level}];
-	wgth= Total[Unitize[Abs[list]],{level}];
+	wgth= Total[Unitize[Abs[list]], {level}];
 	ToPackedArray[DivideNoZero[Re@tot, wgth, "Comp"] + I DivideNoZero[Im@tot, wgth, "Comp"]]
 ]
 
@@ -475,14 +477,14 @@ FourierKspace2D[kspace_, head_, filt_:False] := Block[{ksize, data, kspacef, dim
 	over = {"ky_oversample_factor", "kx_oversample_factor"} /. head;
 	(*get the image padding and image shift*)
 	shift = Round[Total[#] & /@ ({"Y_range", "X_range"} /. head)/2];
-	
+
 	(*to what size to pad the images*)
 	kfull = Round[dim over];
 	(*padding after zero filling and fourier*)
 	ksPad = Transpose[{Floor[#], Ceiling[#]} &[(kfull - ksize)/2]];
 	(*the amount of data that needs to be removed to come to correct dimensions*)
 	clip = Transpose[{Floor[#] + 1, -Ceiling[#] - 1} &[(kfull - dim)/2]];
-	
+
 	(*Reconstruct and Hammingfilter the data if needed*)
 	kspacef = If[filt === "Raw", Map[MakeHammingFilter[Dimensions[#]]#&, kspace, {-2}], kspace];
 	data = FourierKspace2DI[kspacef, ksPad, shift, clip];
@@ -519,7 +521,7 @@ FourierKspace3D[kspace_, head_, filt_:False] := Block[{ksize, kspacef, dim, over
 	over = {"kz_oversample_factor", "ky_oversample_factor", "kx_oversample_factor"} /. head;
 	(*get the image padding and image shift*)
 	shift = Round[Total[#] & /@ ({"Z_range", "Y_range", "X_range"} /. head)];
-	
+
 	(*to what size to pad the images*)
 	kfull = Round[dim over];
 	(*padding after zero filling and fourier*)
@@ -601,7 +603,10 @@ NoiseCorrelation[noise_] := Correlation[Transpose[noise]]
 
 SyntaxInformation[NoiseCovariance]={"ArgumentsPattern" -> {_}}
 
-NoiseCovariance[noise_] := Covariance[Transpose[noise]]
+NoiseCovariance[noise_] := If[Max[Abs[noise]] < 10 $MachineEpsilon,
+	N@IdentityMatrix[Length@noise],
+	Covariance[Transpose[noise]]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -629,7 +634,8 @@ CovToWeight[cov_] := Inverse[ConjugateTranspose[CholeskyDecomposition[cov]]];
 
 Options[CoilCombine] = {
 	Method -> "RoemerEqualNoise", 
-	SenseSmoothing -> True
+	SenseSmoothing -> True,
+	NoisePrewhiten ->False
 };
 
 SyntaxInformation[CoilCombine] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
@@ -642,28 +648,30 @@ CoilCombine[sig_, cov_?MatrixQ, opts : OptionsPattern[]] := CoilCombine[sig, cov
 
 CoilCombine[sig_, sen_, opts : OptionsPattern[]] := CoilCombine[sig, IdentityMatrix[Length@sen], sen, opts]
 
-CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sent, covi, rec},
+CoilCombine[sig_, cov_, sen_, opts : OptionsPattern[]] := Block[{met, weight, sigt, sent, covi, white},
 
 	met = OptionValue[Method];
+	white = OptionValue[NoisePrewhiten];
+
+	(*prewighten signal and noise*)
+	white = cov =!= 1 && If[met==="WSVD", True, white];
+	sigt = If[white, NoisePrewhitening[sig, cov], sig];
+	covi = If[white, IdentityMatrix[Length@cov], cov];
 
 	(*coils are first index but not for WSVD wich is only called by CSI recon*)
-	(*prewighten noise and put ncoils as last dimensions signal*)
-	sigt = If[cov =!= 1, NoisePrewhitening[sig, cov], sig];
-	sigt = RotateDimensionsLeft@If[met === "WSVD", RotateDimensionsLeft[Transpose[sigt]], sigt];
-	
-	(*make sure the covariance matrix is in the right order*)
-	weight = If[cov =!= 1, CovToWeight[cov], IdentityMatrix[Length@sig]];
-	covi = If[cov =!= 1, Inverse[Chop[weight.cov.ConjugateTranspose[weight]]], cov];
+	sigt = RotateDimensionsLeft@If[met === "WSVD", RotateDimensionsLeft[Transpose[sigt]], sigt];	
 
-	(*Make sensitivitymap if needed put ncoils as last diemsnions sensitivity*)
-	sent = If[met=!="WSVD" && (StringTake[met, 6] === "Roemer" && sen === 1), 
-		MakeSense[sig, SenseSmoothing -> OptionValue[SenseSmoothing]], 
-		sen];
-	sent = If[ArrayDepth[sent] > 1, RotateDimensionsLeft[weight.sent], sent];
+	(*Make sensitivitymap if needed put ncoils as last dimensions sensitivity*)
+	sent = If[met=!="WSVD" && (StringTake[met, 6] === "Roemer"), 
+		sent = If[sen === 1, MakeSense[sig, SenseSmoothing -> OptionValue[SenseSmoothing]], sen];
+		RotateDimensionsLeft[If[white, NoisePrewhitening[sent, cov], sent]]
+		,
+		sen
+	];
 
 	(*perform ND reconstruction for (coils,ND)*)
 	If[met =!="Average" && met =!= "RootSumSquares" && covi === 1, Return[$Failed]];
-	rec = Switch[met,
+	Switch[met,
 		"Average", MeanCombine[sig],
 		"RootSumSquares", If[cov === 1, RSSCombine[sigt], RSSCovCombine[sigt, covi]],
 		"RootSumSquaresSNR", Sqrt[2] Abs@RSSCovCombine[sigt, covi],
@@ -673,9 +681,7 @@ CoilCombine[sig_, cov_, sen_, OptionsPattern[]] := Block[{met, weight, sigt, sen
 		"RoemerEqualSignalSNR", Sqrt[2] Abs@RoemerSCombine[sigt, sent, covi],
 		"WSVD", WSVDCombine[sigt],
 		_, Return[$Failed]
-	];
-
-	rec
+	]
 ]
 
 
@@ -693,19 +699,23 @@ SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}}
 MakeSense[coils_, opts:OptionsPattern[]] := MakeSense[coils, 1, opts]
 
 MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, smooth, w, coilsF},
-	smooth = OptionValue[SenseSmoothing];
-	w = (1./(1 + OptionValue[SenseWeight]));
+	
+	{smooth, w} = OptionValue[{SenseSmoothing, SenseWeight}];
+
+	(*See if and how data needs to bee smoothed*)
 	coilsF = Which[
-		smooth===True||smooth==="Hamming", 
+		smooth === True || smooth === "Hamming", 
 		HammingFilterData[coils],
-		smooth==="Gaussian",
+		smooth === "Gaussian",
 		GaussianFilter[#, 2] & /@ coils,
 		True,
 		coils
 	];
 
-	sos = CoilCombine[Abs@coilsF, cov, Method -> "RootSumSquares"]^w;
-	DivideNoZero[#1, sos, "Comp"] & /@ coilsF
+	(*normalize the coil signal with sos, if w is negative sos=1*)
+	sos = CoilCombine[Abs[coilsF], cov, Method -> "RootSumSquares"];
+	w = If[w < 0, 0., (1. / (1 + w))];
+	DivideNoZero[#1, sos^w, "Comp"] & /@ coilsF
 ]
 
 
@@ -743,6 +753,7 @@ RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex
 	(Conjugate[sen].cov.sig)/(Conjugate[sen].cov.sen),
 	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
+
 (* ::Subsubsection::Closed:: *)
 (*WSVD*)
 
@@ -752,10 +763,15 @@ WSVDCombine[sig_] := Block[{weight},
 ];
 
 
-WSVDCombineT[sig_] := Block[{u, s, v, scale},
+WSVDCombineT[sig_?MatrixQ] := Block[{u, s, v, i, phi},
 	{u, s, v} = SingularValueDecomposition[sig, 1];
-	scale = -Norm[#] Normalize[First@#] &[u[[All, 1]]];
-	scale Conjugate[v[[All, 1]]] s[[1, 1]]
+	(*scaling*)
+	i = First[Ordering[Abs[u[[All, 1]]], -1]];
+	phi = Norm[u[[All, 1]]] (u[[i, 1]]/Abs[u[[i, 1]]]);
+	(*recon*)
+	spec = First[s . ConjugateTranspose[v]];
+	(*output*)
+	phi spec
 ];
 
 
@@ -843,18 +859,18 @@ DeconvolveCSIdata[spectra_, opts:OptionsPattern[]] := DeconvolveCSIdata[spectra,
 
 DeconvolveCSIdata[spectra_, hami_,OptionsPattern[]] := Block[{dim, filt, spectraOut, ham, reg},
 	reg = OptionValue[WienerRegularization];
-	
+
 	(*make tha hamming filter*)
 	dim = Dimensions[spectra][[;; -2]];
 	ham = If[hami===1,MakeHammingFilter[dim],hami];
-	
+
 	(*make the complex hamming filter point spread function and take the real part*)
 	filt = Abs@FourierShift[ShiftedInverseFourier[ArrayPad[ham, Transpose[{Floor[dim/2], Ceiling[dim/2]}]]]];
 	filt = DivideNoZero[filt, Total[Flatten[filt]], "Comp"];
-	
+
 	(*zero pad the spectra by factor two*)
 	spectraOut = FourierRescaleData[RotateDimensionsRight[spectra]];
-	
+
 	(*perform the deconvolution*)
 	Switch[OptionValue[DeconvolutionMethod],
 		"Wiener",
@@ -865,7 +881,7 @@ DeconvolveCSIdata[spectra_, hami_,OptionsPattern[]] := Block[{dim, filt, spectra
 				Padding -> "Periodic", Method -> {"SteepestDescent", "Preconditioned" -> False}, MaxIterations -> 10]
 			) &, spectraOut];
 	];
-	
+
 	(*rescale to original dimensions*)
 	RotateDimensionsLeft[FourierRescaleData[#, dim] & /@ spectraOut]
 ]
@@ -884,15 +900,10 @@ FourierRescaleData[data_, factor_:2] := Block[{dim, pad, scale, fac, new},
 		3, Dimensions[data],
 		4, Dimensions[data][[2 ;;]]
 	];
-	
+
 	fac = N@Clip[If[NumberQ[factor], (0 dim + 1) factor, factor/dim], {0.0001, Infinity}];
 	scale = Times@@fac;
 	new = Round[dim fac] /. 0 -> 1;
-
-	(*pad = If[#[[1]] < 1, 
-		{Ceiling[#[[3]]], Floor[#[[3]]]},
-		{Floor[#[[3]]], Ceiling[#[[3]]]}
-	] & /@ Thread[{fac, dim, N[(new - dim)/2]}];*)
 
 	pad = {Ceiling[#], Floor[#]}&/@N[(new - dim)/2];
 
@@ -946,7 +957,7 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 			RotateLeft[coilData[[i]], {0, 0, 0, shift[[2]]}]
 		], {i, 1, Length[coilData]}]
 	];
-	
+
 	If[sensi===0,
 		(*make coil sensitivity*)
 		sens = MakeSense[coilData, cov],
@@ -958,10 +969,10 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 		CoilCombine[coilData, cov, sens, Method -> OptionValue[Method]],
 		CoilCombine[#, cov, sens, Method -> OptionValue[Method]] & /@ coilData
 	];
-	
+
 	(*scale to proper values*)
 	If[OptionValue[RescaleRecon],recon = 1000. recon/Max[Abs[recon]]];
-	
+
 	If[OptionValue[OutputSense],
 		{#[recon] & /@ {Abs, Arg, Re, Im}, sens},
 		#[recon] & /@ {Abs, Arg, Re, Im}
@@ -978,7 +989,8 @@ Options[CoilWeightedReconCSI] = {
 	CoilSamples -> 5, 
 	Method -> "WSVD", 
 	NormalizeOutputSpectra->True, 
-	AcquisitionMethod->"Fid"
+	AcquisitionMethod->"Fid",
+	NoisePrewhiten ->False
 };
 
 SyntaxInformation[CoilWeightedReconCSI]={"ArgumentsPattern"->{_, _, _, _., OptionsPattern[]}}
@@ -987,9 +999,11 @@ CoilWeightedReconCSI[kspace_, noise_, head_, ops:OptionsPattern[]]:=CoilWeighted
 
 CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Block[{
 		fids, spectra, cov, coils, sosCoils, sens,readout, 
-		nenc, met, noCoils
+		nenc, met, noCoils, white
 	},
 	readout = OptionValue[AcquisitionMethod];
+	white = OptionValue[NoisePrewhiten];
+
 	nenc = If[IntegerQ[head], head, "number_of_encoding_dimensions" /. head];
 	met = Switch[nenc, 3, "2D", 4, "3D"];
 	noCoils = ArrayDepth[kspace] =!= nenc + 1;
@@ -1010,21 +1024,22 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 		
 		(*calculate sense map if needed*)
 		met = OptionValue[Method];
-		If[met=!="WSVD" && sense === 0 ,
-			sens = MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]], cov],
-			sens = sense];
+		sens = If[met=!="WSVD" && sense === 0 ,
+			MakeSense[Mean[fids[[1 ;; OptionValue[CoilSamples]]]], cov],
+			sense
+		];
 
 		(*Perform the coil combination*)
 		Switch[met,
 			"Roemer",
-			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise"] & /@ spectra], 
+			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualNoise", NoisePrewhiten->white] & /@ spectra], 
 			"RoemerS",
-			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualSignal"] & /@ spectra], 
+			RotateDimensionsLeft[CoilCombine[#, cov, sens, Method -> "RoemerEqualSignal", NoisePrewhiten->white] & /@ spectra], 
 			"WSVD",
-			CoilCombine[spectra, cov, Method -> "WSVD"]
+			CoilCombine[spectra, cov, Method -> "WSVD", NoisePrewhiten->white]
 		]
 	];
-	
+
 	(*Normalize spectra*)
 	If[OptionValue[NormalizeOutputSpectra],	spectra = NormalizeSpectra[spectra]];
 	If[OptionValue[HammingFilter], spectra = HammingFilterCSI[spectra]];

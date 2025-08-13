@@ -41,7 +41,7 @@ SetDemoDirectory::usage =
 "SetDemoDirectory[] Sets the directory to the demo data directory."
 
 ParseCommandLine::usage = 
-"..."
+"ParseCommandLine[] ..."
 
 
 StringPadInteger::usage = 
