@@ -308,13 +308,15 @@ PhaseCorrectErrorC = Compile[{{speci, _Complex, 1}, {phi0, _Real, 0}},Block[{spe
 ],RuntimeOptions -> "Speed", Parallelization -> True];
 
 
-PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, out_:True] := PhaseCorrectSpectra[spec, dw, 0, 0, Full, out]
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ] := PhaseCorrectSpectra[spec, dw, 0., 0., Full]
 
-PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, out_:True] := PhaseCorrectSpectra[spec, dw, te, 0, Full, out]
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ] := PhaseCorrectSpectra[spec, dw, te, 0., Full]
 
-PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, gyro_?NumberQ, ppmRan_, out_:True] := PhaseCorrectSpectra[spec, dw, 0, gyro, ppmRan, out]
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, gyro_?NumberQ, ppmRan_?ListQ] := PhaseCorrectSpectra[spec, dw, 0., gyro, ppmRan]
 
-PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, gyro_?NumberQ, ppmRan_, out_:True] := Module[{fid, specOut, missing, full, henkelSpec, phi, phi0},
+PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, gyro_?NumberQ, ppmRan_] := Block[{
+		fid, specOut, missing, full, henkelSpec, phi, phi0
+	},
 	(*create the fid*)
 	fid = ShiftedInverseFourier[spec];
 
@@ -326,16 +328,15 @@ PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ, te_?NumberQ, gyro_?NumberQ, ppmRan
 
 	(*create the Henkle spectra*)
 	henkelSpec = ShiftedFourier[full];
-	If[ppmRan =!= Full, henkelSpec = Pick[henkelSpec, Unitize[Clip[GetPpmRange[henkelSpec, dw, gyro], Sort[ppmRan], {0, 0}]], 1]];
+	If[ppmRan =!= Full, 
+		henkelSpec = Pick[henkelSpec, Unitize[Clip[GetPpmRange[henkelSpec, dw, gyro], Sort[ppmRan], {0, 0}]], 1]
+	];
 
 	(*find the first order phase*)
 	Clear[phi0];
 	phi = Quiet[Last[FindMaximum[PhaseErrorH[henkelSpec, phi0], phi0]][[1,2]]];
 	phi = If[NumberQ[phi], phi, phi[[2]]];
-	If[out,
-		specOut Exp[-I phi],
-		phi
-	]
+	specOut Exp[-I phi]
 ]
 
 
@@ -1445,7 +1446,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 
 	(*get gridline options*)
 	gridS = OptionValue[GridLineSpacing];
-	{min, max} = If[rr[[1]]===Full, MinMax[ppm], MinMax[rr[[1]]]];
+	{min,max} = If[rr[[1]]===Full,Round[MinMax[ppm]],MinMax[rr[[1]]]];
 
 	grid = Sort@DeleteDuplicates@Join[
 		If[gridS === 0, {}, Range[0, Round[max], gridS]],
@@ -1460,7 +1461,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		(*get the plot functions*)
 		fun = Switch[OptionValue[Method], "Abs", {Abs}, "Re", {Re}, "Im", {Im}, "ReIm", {Im, Re}, "All", {Im, Re, Abs}];
 		(*plot single spectra*)
-		plot = Transpose[{Reverse[ppm + shift], #}] & /@ (#@spec & /@ fun);
+		plot = Transpose[{ppm + shift, #}] & /@ (#@spec & /@ fun);
 		(*get the plot color*)
 		col = If[OptionValue[PlotColor] === Automatic, 
 			({{Gray, Thin}, {Red, Thin}, {Black}}[[-Length[fun] ;;]]), 
@@ -1468,13 +1469,11 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		];
 
 		(*Make the plot*)
-		{min, max} = {Ceiling@min, Floor@max};
-		tck = Reverse@Range[min, max, Round[(max - min)/5]];
-		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0.}}, AspectRatio -> OptionValue[AspectRatio],
-			ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], (*ScalingFunctions -> {"Reverse", Automatic},*)
+		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0}}, AspectRatio -> OptionValue[AspectRatio],
+			ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], ScalingFunctions -> {"Reverse", Automatic},
 			Frame -> {{False, False}, {True, False}}, FrameStyle -> Directive[{Thick, Black}], FrameLabel -> {"PPM", None},
 			LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Filling->OptionValue[Filling],
-			FrameTicks -> {Thread[{-tck, tck}], None}
+			PlotHighlighting -> False
 		]
 
 		,
@@ -1503,7 +1502,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 			PlotRange -> rr, PlotRangeClipping -> True, PlotStyle -> cols, ScalingFunctions -> {"Reverse", Automatic}, PlotLabel -> OptionValue[PlotLabel], 
 			PlotLabels ->If[(OptionValue[Method] === "ReIm") || (lables === None), None, (Style[#, Black, Bold, 14] & /@ Append[lables, "All"])],
 			GridLines -> {grid, None}, AspectRatio -> .5, ImageSize -> 1000, FrameLabel -> {"PPM", None}, LabelStyle -> {Bold, 14, Black}, 
-			PerformanceGoal->"Speed", MaxPlotPoints->Infinity
+			PerformanceGoal->"Speed", MaxPlotPoints->Infinity, PlotHighlighting -> False
 		];
 
 		(*make Im plot if needed*)
@@ -1516,7 +1515,7 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 				PlotLabels -> (Style[#, Black, Bold, 14] & /@ Append[OptionValue[PlotLabels], "All"]), PlotLabel -> OptionValue[PlotLabel],
 				GridLines -> {grid, None}, PlotRange -> rr, AspectRatio -> .5, 
 				ImageSize -> 1000, FrameLabel -> {"PPM", None}, MaxPlotPoints->Infinity,
-				LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed"
+				LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed", PlotHighlighting -> False
 			];
 
 			Show[pl2, pl1]
@@ -1561,9 +1560,11 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 	];
 	col = If[OptionValue[PlotColor] === Automatic, ({{Gray, Thin}, {Red, Thin}, {Black}}[[-Length[fun] ;;]]), OptionValue[PlotColor]];
 
-	ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0.}}, AspectRatio -> OptionValue[AspectRatio],
-		ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], Frame -> {{False, False}, {True, False}},
-		FrameStyle -> Directive[{Thick, Black}], FrameLabel -> {"time [s]", None}, LabelStyle -> {Bold, 14, Black}
+	ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0.}}, 
+		AspectRatio -> OptionValue[AspectRatio], ImageSize -> OptionValue[ImageSize], 
+		PlotLabel -> OptionValue[PlotLabel], Frame -> {{False, False}, {True, False}},
+		FrameStyle -> Directive[{Thick, Black}], FrameLabel -> {"time [s]", None}, 
+		LabelStyle -> {Bold, 14, Black}, PlotHighlighting -> False
 	]
 ]
 
@@ -1582,9 +1583,9 @@ PlotCSIData[datainp_, {dw_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts:OptionsP
 
 PlotCSIData[datainp_, dw_?NumberQ, gyro_?NumberQ, opts:OptionsPattern[]] := PlotCSIData[datainp, {dw, gyro}, opts]
 
-PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[{
+PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := DynamicModule[{
 	data,datai,fun,nmax,dim,or,n,yran,dataPlot,maxPlot,maxAll,totAll,yrans,totPlot,colp,back,
-	col,spec,coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax,backScale, funs, c1, c2, lab},
+	col,spec, specp, coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax,backScale, funs, c1, c2, lab},
 
 	NotebookClose[plotwindow];
 
@@ -1613,17 +1614,27 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			yrans = {Min[{-0.5 Max[dataPlot], Min[dataPlot]}], 1.5 Max[dataPlot]};
 
 			Column[{
+				coor,
+
 				Dynamic[
 					spec = If[coor === {0, 0}, 
 						0. data[[1, 1, 1]], 
 						coor = {Clip[coor[[1]],{1,c1}], Clip[coor[[2]],{1,c2}]};
 						Switch[or, 1, data[[n, coor[[1]], coor[[2]]]], 2, data[[coor[[1]], n, coor[[2]]]], 3, data[[coor[[1]], coor[[2]], n]]]
 					];
+					specp = If[te > 0 && Max[Abs@spec] > 0., CorrectTESpec[spec, dw, te/1000], spec];
 					lab = Switch[or, 1, {n, coor[[1]], coor[[2]]}, 2, {coor[[1]], n, coor[[2]]}, 3, {coor[[1]], coor[[2]], n}];
 
 					FlipView[{
-						PlotSpectra[If[app,ApodizePadSpectra[spec],spec], {dw,gyro}, PlotRange -> {{pmin, pmax}, Full}, Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size],
-						PlotFid[tdat, ShiftedInverseFourier[spec], Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size]
+						PlotSpectra[
+							Exp[-I ph] If[app, ApodizePadSpectra[specp], specp], {dw, gyro}, 
+							PlotRange -> {{pmin, pmax}, Full}, 
+							Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size, AspectRatio -> 0.4
+						],
+						PlotFid[
+							tdat, ShiftedInverseFourier[specp], 
+							Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size, AspectRatio -> 0.4
+						]
 					}]
 				]
 				,
@@ -1634,24 +1645,25 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 						Item[
 							EventHandler[
 								(*Tooltip[*)
-							(*the images*)
-							Graphics[{Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], Line[Thread[{xdat(*[[;; ;; 2]]*), #1[[1]](*[[1, ;; ;; 2]]*)}]]},
-								AspectRatio -> 1, ImageSize -> size, 
-								Background -> If[back, Switch[backScale,"Max",GrayLevel[#[[2]]],"Total",GrayLevel[#[[3]]]], White],
-								PlotRange -> {-{pmin, pmax}, Switch[scale, "Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, "Full", yran, "Slice", yrans]}
+								(*the images*)
+								Graphics[{
+										Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], 
+										Line[Thread[{xdat[[;; ;; 4]], #1[[1]][[;; ;; 4]]}]]
+									}, AspectRatio -> 1, ImageSize -> size,
+									Background -> If[back, Switch[backScale,"Max",GrayLevel[#[[2]]],"Total",GrayLevel[#[[3]]]], White],
+									PlotRange -> {-{pmin, pmax}, Switch[scale, "Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, "Full", yran, "Slice", yrans]}
+								],
+								"MouseClicked" :> (coor = #2)
 							],
-							(*(*the coordinate tooltip*)
-							Switch[or, 1, {n, #2[[1]], #2[[2]]}, 2, {#2[[1]], n, #2[[2]]}, 3, {#2[[1]], #2[[2]], n}], 
-							TooltipStyle -> {Directive[Black, Bold, Medium], Background -> White, CellFrameColor -> None, CellFrame -> None}],*)
-							(*create the popup window*)
-							"MouseClicked" :> (coor = #2)],
 							(*highlight selected plot*)
-							Background -> Dynamic[If[#2 == coor, Red, col]], Frame -> True, FrameStyle -> Dynamic[If[#2 == coor, Red, col]]
+							Background -> Dynamic[If[#2 == coor, Red, col]], Frame -> True, 
+							FrameStyle -> Dynamic[If[#2 == coor, Red, col]]
 						]
 
 					(*loop over all voxesl*)
 					) &, RotateDimensionsLeft[{dataPlot, maxPlot, totPlot}], {2}]
-					, Spacings -> {0.3,0.35}, Alignment -> Center, Background -> If[back, col, White], ItemSize -> Full, Frame -> All, FrameStyle -> If[back, col, White]
+					, Spacings -> {0.3,0.35}, Alignment -> Center, Background -> If[back, col, White], 
+					ItemSize -> Full, Frame -> All, FrameStyle -> If[back, col, White]
 				],
 				leg
 			}, Alignment -> Center]
@@ -1662,6 +1674,8 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, Delimiter
 			, {{funs, "ReIm", "Function vox"}, {"Re", "Im", "ReIm", "Abs", "All"}}
 			, {{app, False, "Apodize and Pad"}, {True,False}}
+			, {{ph, 0, "Phase spectra"}, -Pi, Pi}
+			, {{te, 0, "EchoTime"}, 0, 1, .1}
 			, {{fun, Abs, "Function CSI"}, {Abs -> "Absolute", Re -> "Real", Im -> "Imaginary"}}
 			, {{size, 20, "Plot size"}, {10 -> "Small", 20 -> "Medium", 30 -> "Large", 40 -> "Extra large"}}
 			, Delimiter
@@ -1687,7 +1701,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 			, {yran, ControlType -> None}, {totAll, ControlType -> None}, {maxAll, ControlType -> None}, {ymax, ControlType -> None}, {xdat, ControlType -> None}, {tdat, ControlType -> None}
 			, {xmin, ControlType -> None}, {xmax, ControlType -> None}, {spec, ControlType -> None}, {colp, ControlType -> None}
 
-			, TrackedSymbols :> {or, n, fun, size, pmin, pmax, scale, col, back}
+			, TrackedSymbols :> {or, n, fun, size, pmin, pmax, scale, col, back, te, ph}
 			, Initialization :> (
 				dim = Dimensions[data];
 				or = 1;
@@ -1720,7 +1734,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Module[
 (*SpectraSimulator*)
 
 
- SpectraSimulator[]:=DynamicModule[{
+SpectraSimulator[]:=DynamicModule[{
 use,vals,names, nsamp,bwS,fieldS,nuc,peakSel,dw,gyro,field,fidsT,time,ppm,grids
 },
 

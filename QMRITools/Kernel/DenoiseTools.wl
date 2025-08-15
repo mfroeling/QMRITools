@@ -585,7 +585,7 @@ NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{
 (*DenoiseCSIdata*)
 
 
-Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Corners"}
+Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Automatic"}
 
 SyntaxInformation[DenoiseCSIdata]={"ArgumentsPattern"->{_, OptionsPattern[]}}
 

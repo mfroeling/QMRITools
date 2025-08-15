@@ -933,9 +933,9 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 					(*----*)AddToLog[dataToLog@type, 2, True];
 					rfol = SelectBids[fol, type["InFolder"]];
 					(*method specific scripts: loop over all folders in subject/session folder*)
-					(*loop needs feedback to show where bugs are.*)
-					Echo[DateString[], foli];
 					Table[
+						(*loop needs feedback to show where bugs are.*)
+						Echo[DateString[], foli];
 						Switch[met,
 							"MuscleBidsConvert", MuscleBidsConvertI[foli, type, delete],
 							"MuscleBidsProcess", MuscleBidsProcessI[foli, outFol, type, versCheck],

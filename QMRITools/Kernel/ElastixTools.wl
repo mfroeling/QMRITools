@@ -648,6 +648,24 @@ RunBatfile[tempdir_, command_, f_]:=Block[{file, batfile, com, quote},
 
 
 (* ::Subsubsection::Closed:: *)
+(*RunCommands*)
+
+
+RunCommands[cmds_] := RunCommands[cmds, "E"]
+
+RunCommands[cmds_, f_] := Block[{list},
+	list = Flatten@{cmds};
+	debugElastix["Command list:\n" <> First[list]];
+
+	Export[
+		FileNameJoin[{$lastElastixTemp, Switch[f,"E", "elastix", "T", "transformix"]<>"_commands.txt"}],
+		StringRiffle[list, "\n"], "Text"
+	];
+	
+	RunProcess[$SystemShell, "StandardOutput", #] & /@ list
+]
+
+(* ::Subsubsection::Closed:: *)
 (*SplitRegInput*)
 
 
@@ -1007,7 +1025,7 @@ RegisterDatai[
 
 		(*Create command and run elastix*)
 		command = ElastixCommand[elastix, tempdir, parF, {inpfol, movfol, outfol}, {fixedF, movingF, outF}, {fmaskF, mmaskF}][[1]];
-		RunCommand[command];
+		RunCommands[command];
 
 		(*Import Results*)
 		{data,vox}=ImportNii[tempdir<>outfol<>outF];
@@ -1041,7 +1059,7 @@ RegisterDatai[
 		)&/@Range[lengM]);
 
 		(*Create and run batch*)
-		RunBatfile[tempdir, command];
+		RunCommands[command];
 
 		(*Import results*)
 		data=(First@ImportNii[#])&/@outfile;
@@ -1069,7 +1087,7 @@ RegisterDatai[
 
 		(*Create command and run elastix*)
 		command = ElastixCommand[elastix, tempdir, parF, {inpfol, movfol, outfol}, {fixedF, movingF, outF}, {fmaskF, mmaskF}, lengM][[1]];
-		RunCommand[command];
+		RunCommands[command];
 
 		(*perform translation on all files *)
 		debugElastix["TransformData: making multi output"];
@@ -1178,7 +1196,7 @@ TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command
 		ExportNii[data, vox, FileNameJoin[{tdir,"trans.nii"}]];
 		command = TransformixCommand[tdir, True];
 
-		RunCommand[command];
+		RunCommands[command];
 		output = ToPackedArray[ImportNii[FileNameJoin[{tdir,"result.nii"}]][[1]]];
 
 		(*Delete temp directory*)
@@ -1433,7 +1451,7 @@ RegisterDiffusionData[
 	(*call transformix*)
 	cmd = TransformixCommand[tempDir, False];
 	PrintTemporary["Combining transformations"];
-	RunBatfile[tempDir, cmd, "T"];
+	RunCommands[cmd, "T"];
 
 	(*import dti data in anat space*)
 	dtidatarA = Transpose[ImportNii[#][[1]] & /@ FileNames["resultA*", tempDir, 2]];
