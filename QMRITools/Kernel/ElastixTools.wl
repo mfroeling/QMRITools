@@ -533,8 +533,8 @@ TransformixCommand[tempDir_, ind_] := Block[{
 	trans = GetAssetLocation["Transformix"];
 
 	(*operating specific settings *)
-	quote = Switch[operatingSystem,"Windows","\"",_,"'"];
-	cp = Switch[operatingSystem,"Windows","@ copy ",_,"cp "];
+	quote = Switch[operatingSystem, "Windows", "\"", _, "'"];
+	cp = Switch[operatingSystem, "Windows","@ copy ", _, "cp "];
 
 	(*transformix command*)
 	transformix = quote<>trans<>quote;
@@ -614,49 +614,15 @@ ConcatenateTransformFiles[files_, outDir_] := Block[{len, filesi, tfile, f, p},
 
 
 (* ::Subsubsection::Closed:: *)
-(*RunCommand*)
-
-
-RunCommand[com_]:=(debugElastix["Command line: \n"<>com]; RunProcess[$SystemShell, "StandardOutput", com])
-
-
-(* ::Subsubsection::Closed:: *)
-(*RunBatfile*)
-
-
-RunBatfile[tempdir_, command_]:=RunBatfile[tempdir, command, "E"]
-
-RunBatfile[tempdir_, command_, f_]:=Block[{file, batfile, com, quote},
-	debugElastix["Command line: \n"<>First[command]];
-
-	quote = Switch[operatingSystem,"Windows","\"",_,"'"];
-
-	(*make elastix/transformix sh/bat based on operating system*)
-	file = Switch[f,"E","elastix","T","transformix"]<>"-batch."<>Switch[operatingSystem,"Windows","bat",_,"sh"];
-	batfile = FileNameJoin[{tempdir, file}];
-	Export[batfile,StringJoin[StringReplace[command,"exit \n"->""]],"TEXT"];
-	batfile = quote<>batfile<>quote;
-
-	(*make command*)
-	com = Switch[operatingSystem,
-		"Windows",batfile<>" \nexit \n",
-		_,"chmod 700 "<>batfile<>"\n"<>batfile<>" \nexit \n"];
-
-	(*perform sh/bat on system shell*)
-	RunCommand[com];
-]
-
-
-(* ::Subsubsection::Closed:: *)
 (*RunCommands*)
 
 
 RunCommands[cmds_] := RunCommands[cmds, "E"]
 
 RunCommands[cmds_, f_] := Block[{list},
-	list = Flatten@{cmds};
-	debugElastix["Command list:\n" <> First[list]];
+	list = Flatten[{cmds}];
 
+	debugElastix["Command list:\n" <> First[list]];
 	Export[
 		FileNameJoin[{$lastElastixTemp, Switch[f,"E", "elastix", "T", "transformix"]<>"_commands.txt"}],
 		StringRiffle[list, "\n"], "Text"
@@ -664,6 +630,7 @@ RunCommands[cmds_, f_] := Block[{list},
 	
 	RunProcess[$SystemShell, "StandardOutput", #] & /@ list
 ]
+
 
 (* ::Subsubsection::Closed:: *)
 (*SplitRegInput*)

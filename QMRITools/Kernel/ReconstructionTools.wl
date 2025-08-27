@@ -725,7 +725,7 @@ CoilCombine[sig_, cov_, sen_, opts : OptionsPattern[]] := Block[{met, weight, si
 
 	(*Make sensitivitymap if needed put ncoils as last dimensions sensitivity*)
 	sent = If[met=!="WSVD" && (StringTake[met, 6] === "Roemer"), 
-		sent = If[sen === 1, MakeSense[sig, SenseSmoothing -> OptionValue[SenseSmoothing]], sen];
+		sent = If[sen === 1, MakeSense[sigt, SenseSmoothing -> OptionValue[SenseSmoothing]], sen];
 		RotateDimensionsLeft[If[white, NoisePrewhitening[sent, cov], sent]]
 		,
 		sen
@@ -1057,7 +1057,7 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 
 
 Options[CoilWeightedReconCSI] = {
-	HammingFilter -> False, 
+	HammingFilter -> True, 
 	CoilSamples -> 5, 
 	Method -> "RoemerEqualSignal", 
 	NormalizeOutputSpectra->True, 
@@ -1094,7 +1094,6 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 		(*prewhiten noise if needed*)
 		If[white,
 			fids = Chop@NoisePrewhitening[fids, cov];
-			If[met=!="WSVD", sens = Chop@NoisePrewhitening[sens, cov]];
 			cov = Chop@NoiseCovariance[NoisePrewhitening[noise, cov]];
 		];
 
@@ -1114,7 +1113,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 
 	(*Make spectra and denoise, normalize and filter spectra if needed*)
 	spectra = Map[ShiftedFourier[#, readout] &, fids, {-2}];
-	If[denoise === "Spectra", spectra = DenoiseCSIdata[spectra]];
+	If[denoise === "Spectra" || denoise ===True, spectra = DenoiseCSIdata[spectra]];
 	If[normalize, spectra = NormalizeSpectra[spectra]];
 	If[filter, spectra = HammingFilterCSI[spectra]];
 
