@@ -2113,70 +2113,76 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							debugBids["importing: ", nfile];
 							{data, t2vox} = ImportNii[nfile];
 
-							(*mask the background*)		
-							mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
-							data = NormalizeData@MaskData[data, mask];
+							If[ArrayDepth[data]=!=4,
+								(*-----*)AddToLog["!!!!!!!!!!!!!!! SKIPPING - WRONG DATA DIMENSIONS !!!!!!!!!!!!!!!!!!!", 4];	
+								debugBids["!!!!!!!!!!!!! Wrong data dimensions: ", Dimensions@data];
+								,
 
-							Switch[datType["Process", "Method"],
+								(*mask the background*)		
+								mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
+								data = NormalizeData@MaskData[data, mask];
 
-								"EPGT2",
+								Switch[datType["Process", "Method"],
 
-								(*determine the pulse profiles*)
-								(*-----*)AddToLog["Calculating the slice profiles", 4];	
-								{ex, ref} = ConfigLookup[datType, "Process", "Settings"];
-								debugBids[{ex, ref, echos}];
-								(*check if the profiles are given as numbers or as files*)
-								angle = If[NumberQ[ex] && NumberQ[ref],
-									shift = 0.;
-									{ex, ref},
-									thk = json["SliceThickness"];
-									angle = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]];
-									shift = ConfigLookup[datType, "Process", "Shift"];
-									shift = If[shift=!=True, 0.,
-										shift = (1/ref[[3, 1]] - 1/ex[[3, 1]]) (3(*filed times ppm*) 3.4);
-										(*-----*)AddToLog[{"Shifting fat profile with: ", shift}, 4];
-										Round[shift/((3 thk/2)/(6 thk))]
+									"EPGT2",
+
+									(*determine the pulse profiles*)
+									(*-----*)AddToLog["Calculating the slice profiles", 4];	
+									{ex, ref} = ConfigLookup[datType, "Process", "Settings"];
+									debugBids[{ex, ref, echos}];
+									(*check if the profiles are given as numbers or as files*)
+									angle = If[NumberQ[ex] && NumberQ[ref],
+										shift = 0.;
+										{ex, ref},
+										thk = json["SliceThickness"];
+										angle = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]];
+										shift = ConfigLookup[datType, "Process", "Shift"];
+										shift = If[shift=!=True, 0.,
+											shift = (1/ref[[3, 1]] - 1/ex[[3, 1]]) (3(*filed times ppm*) 3.4);
+											(*-----*)AddToLog[{"Shifting fat profile with: ", shift}, 4];
+											Round[shift/((3 thk/2)/(6 thk))]
+										];
+										angle
 									];
-									angle
+
+									debugBids[Dimensions/@{data, t2vox}];
+
+									(*caculate the water t2 map*)
+									(*-----*)AddToLog["Starting EPG T2 calculation", 4];
+									{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
+										MonitorCalc -> False, DictT2IncludeWater -> True, 
+										EPGFitFat -> False, EPGCalibrate -> True, EPGFatShift -> shift,
+										DictT2fValue -> 150, DictT2fRange -> {150, 250, 5}, 
+										DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}];
+
+									outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
+
+									,
+									"Exp",
+									(*-----*)AddToLog["Starting exponential T2 fitting", 4];
+									{s0, t2} = T2Fit[data, 1000 echos];
+
+									outTypes = {"data", "t2", "s0"};
 								];
 
-								debugBids[Dimensions/@{data, t2vox}];
+								(*export all the calculated data*)
+								(*----*)AddToLog["Exporting the calculated data to:", 4];
+								(*----*)AddToLog[outfile, 5];		
 
-								(*caculate the water t2 map*)
-								(*-----*)AddToLog["Starting EPG T2 calculation", 4];
-								{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
-									MonitorCalc -> False, DictT2IncludeWater -> True, 
-									EPGFitFat -> False, EPGCalibrate -> True, EPGFatShift -> shift,
-									DictT2fValue -> 150, DictT2fRange -> {150, 250, 5}, 
-									DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}];
+								ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii", CompressNii -> compress] &/@ outTypes;
+								Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
+														
+								(*export the checkfile*)
+								MakeCheckFile[outfile, Sort@Join[
+									{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperties"->set},
+									Normal@KeyTake[json, keys]
+								]];
 
-								outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
+								(*compress the nii files if compression during ExportNii -> False*)
+								If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
 
-								,
-								"Exp",
-								(*-----*)AddToLog["Starting exponential T2 fitting", 4];
-								{s0, t2} = T2Fit[data, 1000 echos];
-
-								outTypes = {"data", "t2", "s0"};
-							];
-
-							(*export all the calculated data*)
-							(*----*)AddToLog["Exporting the calculated data to:", 4];
-							(*----*)AddToLog[outfile, 5];		
-
-							ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii", CompressNii -> compress] &/@ outTypes;
-							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
-													
-							(*export the checkfile*)
-							MakeCheckFile[outfile, Sort@Join[
-								{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperties"->set},
-								Normal@KeyTake[json, keys]
-							]];
-
-							(*compress the nii files if compression during ExportNii -> False*)
-							If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
-
-							(*----*)AddToLog["Finished processing", 3, True];
+								(*----*)AddToLog["Finished processing", 3, True];
+							]
 						]
 					]
 				(*close t2 processing*)
