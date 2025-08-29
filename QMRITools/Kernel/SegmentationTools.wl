@@ -1755,6 +1755,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		TensorQ[{dat}, NumericQ], If[First@Dimensions@dat===1, First@dat, dat],
 		True, Return[$Failed]
 	];
+	If[ArrayDepth[data] === 4, data = data[[All, 1]]];
 
 	dimi = Dimensions@data;
 	{data, crp} = AutoCropData[data, CropPadding->0];
@@ -1905,7 +1906,8 @@ Options[TrainSegmentationNetwork] = {
 	LearningRate -> 0.001,
 	L2Regularization -> 0.0001,
 
-	MonitorCalc -> False
+	MonitorCalc -> False,
+	TargetDevice -> "GPU"
 }
 
 
@@ -1917,7 +1919,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
 		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction,
-		validation, files, loss, rep, learningRate, schedule, dims
+		validation, files, loss, rep, learningRate, schedule, dims, tar
 	},
 
 	(*------------ Get all the configuration stuff -----------------*)
@@ -1927,9 +1929,9 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		Options@MakeUnet]];
 
 	{batch, roundLength, rounds, augment, pad, patch, patches, 
-		loss, rep, learningRate, l2reg, multi} = OptionValue[
+		loss, rep, learningRate, l2reg, multi, tar} = OptionValue[
 		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PadData, PatchSize, PatchesPerSet, 
-			LossFunction, MonitorInterval, LearningRate, L2Regularization, MultiChannel}];
+			LossFunction, MonitorInterval, LearningRate, L2Regularization, MultiChannel, TargetDevice}];
 	pad = If[NumberQ[pad], Round[pad], False];
 
 	(*get the train data files*)
@@ -2018,7 +2020,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		ittTrain++;
 		(*perform segmentation and export*)
 		netMon = NetExtract[#Net, "net"];
-		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "GPU", WorkingPrecision -> "Mixed"]]];
+		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "CPU" (*tar, WorkingPrecision -> "Mixed"*)]]];
 		ExportNii[testSeg, testVox, outName[ittString[ittTrain]<>".nii"]];
 		(*make and export test image*)
 		im = MakeChannelClassGrid[testData, {testSeg, {0, nClass-1}}, 3];
@@ -2054,7 +2056,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	Echo[DateString[], "Preparing the data"];
 	(*import all train data or train out of memory*)
 	data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
-	dims = MeanRange[#, 0] & /@ Transpose[Dimensions /@ data[[All, 1]]];
+	dims = MeanRange[#, 0] & /@ Transpose[If[ArrayDepth[#] === 3, 
+		Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]]];
 	Echo[dims, "Data Dimensions: "];
 
 	(*prepare a validation set which is 10% of round*)
@@ -2076,7 +2079,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 		ValidationSet -> validation,
 		LossFunction -> loss,
-		TargetDevice -> "GPU", WorkingPrecision -> "Mixed",
+		TargetDevice -> tar, WorkingPrecision -> "Real32",
 
 		MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch, LearningRate -> learningRate, 
 		Method -> {"ADAM", "Beta1" -> 0.9, "Beta2" -> 0.999, "Epsilon" -> 10^-5, 

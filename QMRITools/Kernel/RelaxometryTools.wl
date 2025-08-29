@@ -441,9 +441,11 @@ Options[EPGSignal] = Options[EPGSignali] = {
 
 SyntaxInformation[EPGSignal] = {"ArgumentsPattern" -> {_, _, _, _, _., OptionsPattern[]}};
 
-EPGSignal[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_, ref_}, b1_, opts:OptionsPattern[]] := EPGSignali[{nEchoi, echoSpace}, {t1, t2}, {ex, ref}, b1, {0, 0}, opts]
+EPGSignal[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_, ref_}, b1_, opts:OptionsPattern[]] := EPGSignali[{nEchoi, echoSpace}, {t1, t2}, {ex, ref}, b1, {0., 0.}, opts]
 
 EPGSignal[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_, ref_}, b1_, fp_, opts:OptionsPattern[]] := EPGSignali[{nEchoi, echoSpace}, {t1, t2}, {ex, ref}, b1, fp, opts]
+
+EPGSignali[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_, ref_}, b1_, opts:OptionsPattern[]] :=EPGSignali[{nEchoi, echoSpace}, {t1, t2}, {ex, ref}, b1, {0., 0.}, opts] 
 
 EPGSignali[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_?ListQ, ref_?ListQ}, b1_, fp_, opts:OptionsPattern[]] := Block[{sig},
 	sig = Map[EPGSignali[{nEchoi, echoSpace}, {t1, t2}, #, b1, fp, opts] &, Transpose[{ex, ref}]];
@@ -1161,7 +1163,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	fitData = fitData[[ ;; ;; step]];
 	{{T2mmin, T2mmax}, {T2fmin, T2fmax}, {T1m, T1f}} = OptionValue[EPGRelaxPars];
 
-err = If[Length[fitData]<5, True; Print["error: not enough data points for calibration!"], False];
+	err = If[Length[fitData]<5, True; Print["error: not enough data points for calibration!"], False];
 
 	(*shift the slice profile*)	
 	shift = OptionValue[EPGFatShift];
