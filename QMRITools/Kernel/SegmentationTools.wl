@@ -2814,7 +2814,9 @@ MakeDistanceMap[data_, vox_, OptionsPattern[]] := Block[{
 
 	dat = Unitize@Round@Normal@data;
 	dim = Dimensions[dat];
-	If[outRange === Automatic, outRange = Round[Max[1 /. DeleteCases[ComponentMeasurements[#, "Length"] & /@ dat, {}]]/3]];
+	If[outRange === Automatic, 
+		outRange = Round[Max[1 /. DeleteCases[ComponentMeasurements[#, "Length"] & /@ dat, {}]]/3]
+	];
 
 	datDil = Switch[outRange,
 		0, SparseArray@dat,
@@ -2832,9 +2834,9 @@ MakeDistanceMap[data_, vox_, OptionsPattern[]] := Block[{
 
 	nearFun = Nearest[edge];
 	din = DistFun[nearFun, vox # & /@ inner];
-	If[outer === {}, {}, dout = -DistFun[nearFun, vox # & /@ outer]];
+	dout = If[outer === {}, {}, -DistFun[nearFun, vox # & /@ outer]];
 
-	ReverseCrop[SparseArray[Join[Thread[inner -> din], Thread[outer -> dout]], dimC,0.], dim, cr]
+	ReverseCrop[SparseArray[Join[Thread[inner -> din], Thread[outer -> dout]], dimC, 0.], dim, cr]
 ]
 
 DistFun[fun_, pts_] := Sqrt[Total[(Flatten[fun[#, 1] & /@ pts, 1] - pts)^2, {2}]];
