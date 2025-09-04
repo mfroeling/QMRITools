@@ -289,6 +289,10 @@ B1EqualPower::usage =
 "B1EqualPower is an option for B1shimming. If true equal power for both channels is used."
 
 
+MonitorCalc::usage = 
+"MonitorCalc is an option for many processing functions. When true the process of the calculation is shown."
+
+
 (* ::Subsection:: *)
 (*Error Messages*)
 

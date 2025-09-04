@@ -330,10 +330,6 @@ CenterRange::usage =
 "CenterRange is an option for MakeIntFunction. If set True the centers of the dataset is the origin else its the corner."
 
 
-MonitorCalc::usage = 
-"MonitorCalc is an option for many processing functions. When true the process of the calculation is shown."
-
-
 LabelPlacement::usage =
 "LabelPlacement is an option for MakeFunctionGraph. Defines where to place the label of the function graph. Accepts values that can be used in Placed."
 

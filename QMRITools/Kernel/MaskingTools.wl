@@ -43,8 +43,21 @@ Mask::usage =
 Mask[data, min]creates a mask which selects only data above the min value.
 Mask[data,{min,max}] creates a mask which selects data between the min and max value."
 
+
 SmoothMask::usage = 
 "SmoothMask[mask] generates one clean masked volume form a noisy mask."
+
+SmoothSegmentation::usage =
+"SmoothSegmentation[segmentation] smooths segmentations and removes the overlaps between multiple segmentations.
+SmoothSegmentation[segmentation, labs] only smooths the selected label number labs." 
+
+DilateMask::usage=
+"DilateMask[mask,size] if size > 0 the mask is dilated and if size < 0 the mask is eroded."
+
+SelectMaskComponents::usage=
+"SelectMaskComponents[mask] selects the largest connected component in the mask.
+SelectMaskComponents[mask,n] selects the n largest connected components in the mask."
+
 
 MaskData::usage = 
 "MaskData[data, mask] applies a mask to data. mask can be 2D or 3D, data can be 2D, 3D or 4D."
@@ -82,9 +95,6 @@ ReplaceSegmentations::usage =
 "ReplaceSegmentations[seg, labs, new] replaces the labels labs form the segmentation seg for labels new. Both labs and new should
 be lists of integers of the same size. If seg contains more labels then given in labs these will be replaced by 0." 
 
-SmoothSegmentation::usage =
-"SmoothSegmentation[segmentation] smooths segmentations and removes the overlaps between multiple segmentations.
-SmoothSegmentation[segmentation, labs] only smooths the selected label number labs." 
 
 RemoveMaskOverlaps::usage = 
 "RemoveMaskOverlaps[mask] removes the overlaps between multiple masks. Mask is a 4D dataset with {z, masks, x, y}."
@@ -92,15 +102,6 @@ RemoveMaskOverlaps::usage =
 GetCommonSegmentation::usage = 
 "GetCommonSegmentation[dat, seg, vox] For a list of multiple datasets dat the common segmentations from the list seg are determined.
 Output is a list of segmentations where for each region only the part present in all datasets is selected."
-
-
-DilateMask::usage=
-"DilateMask[mask,size] if size > 0 the mask is dilated and if size < 0 the mask is eroded."
-
-SelectMaskComponents::usage=
-"SelectMaskComponents[mask] selects the largest connected component in the mask.
-SelectMaskComponents[mask,n] selects the n largest connected components in the mask."
-
 
 SegmentMask::usage = 
 "SegmentMask[mask, n] divides a mask in n segments along the slice direction, n must be an integer. The mask is divided in n equal parts where each parts has the same number of slices."
