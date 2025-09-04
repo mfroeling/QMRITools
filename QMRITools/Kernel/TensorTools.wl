@@ -39,6 +39,17 @@ The bvalue assumed to be is in s/mm^2 and therefore the output is in mm^2/2.
 TensorCalc[] is based on DOI: 10.1016/j.neuroimage.2013.05.028 and 10.1002/mrm.25165."
 
 
+ConcatenateDiffusionData::usage =
+"ConcatenateDiffusionData[{{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}}] concatenates the diffusion data sets.
+ConcatenateDiffusionData[{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}] concatenates the diffusion data sets."
+
+SortDiffusionData::usage = 
+"SortDiffusionData[data, grad, bval] sorts the diffusion datasets grad and bval for magnitude of bvalue."
+
+RemoveIsoImages::usage = 
+"RemoveIsoImages[data, grad, bval] Removes the ISO images from the philips scanner from the data. ISO images have g={0,0,0} and b>0."
+
+
 FlipTensorOrientation::usage = 
 "FlipTensorOrientation[tens, perm] permutes the internal orientation of the tensor, perm can be any permutation of {\"x\",\"y\",\"z\"}.
 FlipTensorOrientation[tens, flip] flips the internal orientation of the tensor, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
@@ -50,6 +61,12 @@ FlipGradientOrientation::usage =
 FlipGradientOrientation[grad, flip] flips the internal orientation of the gradients, flip can be {1,1,1}, {-1,1,1}, {1,-1,1} or {1,1,-1}.
 FlipGradientOrientation[grad, flip, perm] flips and permutes the internal orientation of the gradients.
 FlipGradientOrientation[grad, perm, flip]flips and permutes the internal orientation of the gradients."
+
+TransformTensor::usage = 
+"TransformTensor[tensor, disp, vox] corrects the tensor with voxel size vox based on the displacement field disp. The displacement field is te displacement in mm
+for each voxel location in x, y and z.
+
+TransformTensor[] is based on DOI: 10.1109/42.963816."
 
 
 EigenvalCalc::usage = 
@@ -101,16 +118,6 @@ For the function to work optimal it is best to have these volumes evenly spread 
 
 DriftCorrect[] is based on DOI: 10.1002/mrm.26124."
 
-ConcatenateDiffusionData::usage =
-"ConcatenateDiffusionData[{{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}}] concatenates the diffusion data sets.
-ConcatenateDiffusionData[{data1, .., dataN}, {grad1, .., gradN}, {bval, .., bvalN}, {vox, .., voxN}] concatenates the diffusion data sets."
-
-SortDiffusionData::usage = 
-"SortDiffusionData[data, grad, bval] sorts the diffusion datasets grad and bval for magnitude of bvalue."
-
-RemoveIsoImages::usage = 
-"RemoveIsoImages[data, grad, bval] Removes the ISO images from the philips scanner from the data. ISO images have g={0,0,0} and b>0."
-
 
 ResidualCalc::usage =
 "ResidualCalc[dti,{tensor,s0},gradients,bvector] calculates the tensor residuals for the given dataset.
@@ -152,13 +159,6 @@ FitRPBMFunction::usage =
 The output is a rule of the fitted parameters {d0->val, tau-> tau, zeta ->zeta}.
 FitRPBMFunction[tms, dat, init] does the same but uses init as inital guess values.
 FitRPBMFunction[tms, dat, init, fix] does the same but uses init as inital guess values and fixes the parameters in fix."
-
-
-TransformTensor::usage = 
-"TransformTensor[tensor, disp, vox] corrects the tensor with voxel size vox based on the displacement field disp. The displacement field is te displacement in mm
-for each voxel location in x, y and z.
-
-TransformTensor[] is based on DOI: 10.1109/42.963816."
 
 
 Correct::usage =
@@ -301,7 +301,6 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	(*get data for fitting*)
 	bmat = If[bvec==={}, grad, Bmatrix[bvec, grad]];
 	data = ToPackedArray@Ramp@N@Round[dat, .000001];
-	mask = Unitize@Mean@If[depthD==4, Transpose@data, data];
 
 	(*get the data dimensions*)	
 	depthD = ArrayDepth[dat];
@@ -314,6 +313,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	If[dirB!=dirD, Return[Message[TensorCalc::bvec, dirD, dirB];$Failed]];
 
 	(*convert data to vector if data is 2D or 3D or make data vector for 1D*)
+	mask = Unitize@Mean@If[depthD==4, Transpose@data, data];
 	If[depthD>=3, {data, coor} = DataToVector[data, mask]];
 	If[depthD==1, data = {data}];
 

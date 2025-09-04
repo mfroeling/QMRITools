@@ -150,6 +150,12 @@ EPGFitPoints::usage =
 EPGMethodCal::usage = 
 "EPGMethodCal is an option for CalibrateEPGT2Fit and EPGT2Fit. The calibration can be done using \"1comp\", \"2comp\", \"2compF\"."
 
+EPGOutput::usage = 
+"EPGOutput is an option for EPGSignal. It specifies how to format the output, as magnitude or complex."
+
+EPGRefocussingPhase::usage = 
+"EPGRefocussingPhase is an option for EPGT2Fit and CreateT2Dictionary. It specifies the phase of the refocussing pulse."
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
