@@ -579,14 +579,14 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		net = NetGraph[
 			Join[
 				(*Make all the nodes*)
-				Flatten@Table[debugUnet[nam[i, j]];nam[i, j] -> MakeNode[
+				Flatten@Table[debugUnet[nam[i, j]]; nam[i, j] -> MakeNode[
 					(*upscale for all nodes accept backbone -1, downscale only for backbone*)
 					{If[j > 1, scaling[[i]], 1], If[j =!= 1 || i == depth, 1, scaling[[i]]]}, 
 					(*skip in for all accept backbone, for UNET++ name the skips, skip out for all except right most upscale*)
 					{If[j > 1, If[architecture==="UNet++", j - 1, 1], 0], If[j < depthj - i, True, False]}, 
 					(*config*)
-					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},	DropoutRate -> drop, RescaleMethod -> metSc
-				], {i, 1, 5}, {j, 1, depthj - i}],
+					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},	DropoutRate -> drop[[i]], RescaleMethod -> metSc
+				], {i, 1, depth}, {j, 1, depthj - i}],
 				(*start and mapping*)
 				{"start" -> UNetStart[nChan, fStart, dimIn, actType],
 				"map" -> UNetMap[ndim, nClass, mapCon]}
@@ -610,7 +610,8 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 				(*attach the start and map layers*)
 				{"start" -> "node_1_1", Table[NetPort["node_1_"<>ToString[n], If[n=!=depth, "Skip", "Up"]], {n, depthj - mapCon, depth}] -> "map"}
 			];
-			debugUnet["The node connection list: ", cons]; cons, 
+			debugUnet["The node connection list: ", cons]; 
+			cons, 
 
 			(*network settings and options*)
 			"Input" -> Join[{nChan}, dimIn]		
@@ -2924,11 +2925,14 @@ NetSummary[net_, rep_?StringQ] := Block[{
 (*AnalyzeNetworkFeatures*)
 
 
-AnalyzeNetworkFeatures[net_, data_] := AnalyzeNetworkFeatures[net, data, ""]
+AnalyzeNetworkFeatures[net_, datI_] := AnalyzeNetworkFeatures[net, datI, ""]
 
-AnalyzeNetworkFeatures[net_, data_, met_] := Block[{
-		dim, dataP, netP, nodes, vals, cutoff, table, plot, feat, nfeat, ttt, n, col
+AnalyzeNetworkFeatures[net_, datI_, met_] := Block[{
+		data, dim, dataP, netP, nodes, vals, cutoff, table, plot, feat, nfeat, ttt, n, col
 	},
+
+	data = datI;
+	If[ArrayDepth[data] === 4, data = data[[All, 1]]];
 
 	(*find the patch dimensions and adjust data and network*)
 	dim = FindPatchDim[net, Dimensions@data];
@@ -2936,7 +2940,7 @@ AnalyzeNetworkFeatures[net_, data_, met_] := Block[{
 	netP = ChangeNetDimensions[net, "Dimensions" -> dim];
 
 	(*extract the network nodes*)
-	nodes = GetNetworkNodes[netP];
+	nodes = GetNetNodes[netP];
 	nodes = nodes[[2;;-2]];
 
 	col = ColorData["SolarColors"] /@Rescale[Range[Ceiling[Length[nodes]/2]]];
