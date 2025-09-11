@@ -371,6 +371,11 @@ MakeUnet::block = "The block type input is not valid. It can be \"Conv\", \"UNet
 
 SurfaceDistance::met = "Method `1` not recognized";
 
+ActivationLayer::type = "Not a correct activation layer `1`";
+
+
+ApplySegmentationNetwork::node = "The node ``` is not part of the network"
+
 
 (* ::Section:: *)
 (*Functions*)
@@ -448,6 +453,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		OptionValue[{DropoutRate, BlockType, ActivationType, NetworkDepth, 
 			DownsampleSchedule, FeatureSchedule, SettingSchedule, MonitorCalc, 
 			RescaleMethod, NetworkArchitecture}];
+	mon = If[mon, MonitorFunction, List];
 
 	(*check the input*)
 	{architecture, mapCon} = If[StringQ[architecture], {architecture, Automatic}, 
@@ -460,10 +466,8 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 	(*is the network 2D or 3D*)
 	ndim = Length@dimIn;
 
-	If[mon, 
-		Echo[{architecture, blockType, actType}, "Network block type: "];
-		Echo[{dimIn, ndim}, "Network dimension order: "];
-	];
+	mon[{architecture, blockType, actType}, "Network block type: "];
+	mon[{dimIn, ndim}, "Network dimension order: "];
 
 	drop = Which[
 		drop === False || drop === None, ConstantArray[0., depth],
@@ -484,7 +488,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 	];
 
 	boolSc = (Times @@ If[IntegerQ[#], ConstantArray[#, ndim], #])=!=1&/@scaling;
-	If[mon, Echo[scaling, "Network scaling schedule: "]];
+	mon[scaling, "Network scaling schedule: "];
 
 	(*define the setting, can be Automatic, number or {set}, or list of settings*)
 	setting = Which[
@@ -499,7 +503,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 			True, Return[Message[MakeUnet::sett]; $Failed]
 		]
 	];
-	If[mon, Echo[setting, "Network setting schedule: "]];
+	mon[setting, "Network setting schedule: "];
 
 	(*define the number of features per layer*)
 	feature = Round[Which[
@@ -517,7 +521,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 	]];
 	If[VectorQ[feature], feature = Round[Transpose[{feature, feature/2}]]];
 	fStart = Last@Flatten@{First@feature};
-	If[mon, Echo[feature, "Network feature schedule: "]];
+	mon[feature, "Network feature schedule: "];
 
 	(*make the network*)
 	nam = If[StringQ[#1], #1<>ToString[#2], "node_"<>ToString[#1]<>"_"<>ToString[#2]]&;
@@ -613,7 +617,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		]
 	];
 	(*Monitor network properties*)
-	If[mon, Echo[NetSummary[net], "Network description: "]];
+	mon[NetSummary[net], "Network description: "];
 
 	(*return network*)
 	net
@@ -863,7 +867,7 @@ ActivationLayer[actType_] := If[Head[actType]===ParametricRampLayer||Head[actTyp
 	Switch[actType, 
 	"LeakyRELU", ParametricRampLayer[], 
 	"None" | "", Nothing,
-	_, If[StringQ[actType],ElementwiseLayer[actType], Echo["not a correct activation"];Nothing]
+	_, If[StringQ[actType],ElementwiseLayer[actType], Message[ActivationLayer::type, actType];Nothing]
 ]]
 
 
@@ -1490,11 +1494,13 @@ SegmentData[data_, opts:OptionsPattern[]] := SegmentData[data, "Legs", opts]
 
 SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 		dev, max, mon, patch, pts, dim ,loc, set, net, type, segs, all, time, timeAll,
-		what, netFile, custom
+		what, netFile, custom, monO
 	},
 
 	timeAll = First@AbsoluteTiming[
 		{dev, max, mon} = OptionValue[{TargetDevice, MaxPatchSize, Monitor}];
+		monO = mon;
+		mon = If[mon, MonitorFunction, List];
 
 		custom = If[ListQ[whati], 
 			{what, netFile} = whati; True, 
@@ -1502,12 +1508,12 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 		];
 
 		(*split the data in upper and lower legs and left and right*)
-		If[mon, Echo[Dimensions@data, "Analyzing the data with dimensions:"]];
+		mon[Dimensions@data, "Analyzing the data with dimensions:"];
 		time = First@AbsoluteTiming[
-			{{patch, pts, dim}, loc, set} = SplitDataForSegmentation[data, what, Monitor -> mon, TargetDevice -> dev]
+			{{patch, pts, dim}, loc, set} = SplitDataForSegmentation[data, what, Monitor -> monO, TargetDevice -> dev]
 		];
-		If[mon, Echo[Round[time, .1], "Total time for analysis [s]: "]];
-		If[mon, Echo[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"]];
+		mon[Round[time, .1], "Total time for analysis [s]: "];
+		mon[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"];
 
 		(*get the network name and data type*)
 		{net, type} = Switch[what,
@@ -1527,21 +1533,21 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 		(*Perform the segmentation*)
 		time = First@AbsoluteTiming[
 			segs = MapThread[(
-				If[mon, Echo[{#2, net[#2]}, "Performing segmentation for: "]];
-				segs = ApplySegmentationNetwork[#1, net[#2], TargetDevice -> dev, MaxPatchSize->max, Monitor->mon];
+				mon[{#2, net[#2]}, "Performing segmentation for: "];
+				segs = ApplySegmentationNetwork[#1, net[#2], TargetDevice -> dev, MaxPatchSize->max, Monitor->monO];
 				If[custom, segs, ReplaceLabels[segs, #2, type]]
 		) &, {patch, loc}]];
-		If[mon, Echo[Round[time, .1], "Total time for segmentations [s]: "]];
+		mon[Round[time, .1], "Total time for segmentations [s]: "];
 
 		(*Merge all segmentations for all expected labels*)
 		all = Select[DeleteDuplicates[Sort[Flatten[GetSegmentationLabels/@segs]]], IntegerQ];
-		If[mon, Echo[all, "Putting together the segmentations with labels"]];
+		mon[all, "Putting together the segmentations with labels"];
 
 		(*after this only one cluster per label remains*)
 		time = First@AbsoluteTiming[segs = PatchesToData[segs, pts, dim, all]];
-		If[mon, Echo[Round[time, .1], "Total time for final evaluation [s]: "]];
+		mon[Round[time, .1], "Total time for final evaluation [s]: "];
 	];
-	If[mon, Echo[Round[timeAll, .1], "Total evaluation time [s]: "]];
+	mon[Round[timeAll, .1], "Total evaluation time [s]: "];
 
 	segs
 ]
@@ -1602,6 +1608,7 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 	},
 	dim = Dimensions[data];
 	{mon, dev} = OptionValue[{Monitor, TargetDevice}];
+	mon = If[mon, MonitorFunction, List];
 
 	Switch[what,
 		"Legs"|"UpperLegs"|"LowerLegs",
@@ -1609,8 +1616,8 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 
 		(*find which side using NN*)
 		time= First@AbsoluteTiming[whatSide = ClassifyData[data, "LegSide", TargetDevice -> dev]];
-		If[mon, Echo[whatSide, "Data contains sides: "]];
-		If[mon, Echo[Round[time, .1], "Time for side estimation [s]:"]];
+		mon[whatSide, "Data contains sides: "];
+		mon[Round[time, .1], "Time for side estimation [s]:"];
 
 		(*based on side cut data or propagate*)
 		dat = Switch[whatSide,
@@ -1656,8 +1663,8 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 			]
 		)&/@dat, 1]];
 
-		If[mon, Echo[whatPos, "Data contains positions: "]];
-		If[mon, Echo[Round[time, .1], "Time for position estimation [s]:"]];
+		mon[whatPos, "Data contains positions: "];
+		mon[Round[time, .1], "Time for position estimation [s]:"];
 
 		(*output the selected data with the correct label and coordinates*)
 		{dat, pts, loc} = Transpose[CropPart/@dat];
@@ -1747,6 +1754,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 
 	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
 	If[lim === Automatic, lim = If[dev==="GPU", 200, 150]];
+	mon = If[mon, MonitorFunction, List];
 
 	prec = If[(dev==="GPU") && ($OperatingSystem === "Windows"), "Mixed", "Real32"];
 
@@ -1763,7 +1771,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 	data = N@ArrayPad[data, pad, 0.];
 	dim = Dimensions[data];
 
-	If[mon, Echo[{"in", dimi, "crop", dimc, "pad", dim}, "Data dimensions before and after cropping and padding are: "]];
+	mon[{"in", dimi, "crop", dimc, "pad", dim}, "Data dimensions before and after cropping and padding are: "];
 
 	net = If[StringQ[netI], GetNeuralNet[netI], netI];
 
@@ -1773,7 +1781,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 
 		(*create the patches*)
 		{patch, pts} = DataToPatches[data, ptch, PatchNumber -> 0, PatchPadding->pad];
-		If[mon, Echo[{ptch, Length@patch}, "Patch size and created number of patches is:"]];
+		mon[{ptch, Length@patch}, "Patch size and created number of patches is:"];
 
 		(*create the network*)
 		net = ChangeNetDimensions[net, "Dimensions" ->ptch];
@@ -1793,18 +1801,15 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 							dim, Range[nClass]]
 					, -pad], dimi, crp];
 			];
-			If[mon, 
-				Echo[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Output segmentations dimensions and labels:"];
-				Echo[Round[time, .1], "Time for segmentation [s]: "]
-			];
+			mon[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Output segmentations dimensions and labels:"];
+			mon[Round[time, .1], "Time for segmentation [s]: "];
 
 			,
 			(*perform the segmentation on a specific node*)
 			(*check if node is part of the network*)
 			nodes = DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]];
 			If[!MemberQ[nodes, node],
-				Echo["The node "<>node<>" is not part of the network"];
-				Echo[nodes];
+				Message[ApplySegmentationNetwork::node, node];
 				Return[$Failed]
 				,
 				seg = NetTake[net, node][{normF[First@patch]}, TargetDevice->dev, WorkingPrecision ->prec];
@@ -1948,7 +1953,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*------------ Define the network -----------------*)
 
-	Echo[DateString[], "Preparing the network"];
+	MonitorFunction[DateString[], "Preparing the network"];
 
 	(*make or import network, netCont can be a network or a previous train folder*)
 	{netIn, ittTrain} = Which[
@@ -2002,11 +2007,11 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*if the network already exists make the dimensions, classes en channels match the input*)
 	netIn = NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
-	Echo[NetSummary[netIn, "Mem"], "Network summary: "];
+	MonitorFunction[NetSummary[netIn, "Mem"], "Network summary: "];
 
 	(*define the network for training*)
 	netIn = AddLossLayer@netIn;
-	Echo[netIn, "Network is ready"];
+	MonitorFunction[netIn, "Network is ready"];
 
 
 	(*---------- Training functions ----------------*)
@@ -2053,22 +2058,22 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	ittTrain--;
 	monitorFunction[<|"Net"->netIn|>];
 	
-	Echo[DateString[], "Preparing the data"];
+	MonitorFunction[DateString[], "Preparing the data"];
 	(*import all train data or train out of memory*)
 	data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
 	dims = MeanRange[#, 0] & /@ Transpose[If[ArrayDepth[#] === 3, 
 		Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]]];
-	Echo[dims, "Data Dimensions: "];
+	MonitorFunction[dims, "Data Dimensions: "];
 
 	(*prepare a validation set which is 10% of round*)
 	validation = batchFunction[<|"BatchSize" -> Round[0.1 roundLength]|>];
-	Echo[{Length@data, Length@validation}, "data / validation: "];
+	MonitorFunction[{Length@data, Length@validation}, "data / validation: "];
 
 
 	(*---------- Train the network ----------------*)
 
 	(*Print progress function*)
-	Echo[{DateString[], loss}, "Starting training"];
+	MonitorFunction[{DateString[], loss}, "Starting training"];
 	PrintTemporary[Dynamic[Column[{
 		Style["Training Round: " <> ToString[ittTrain], Bold, Large], 
 		Image[im, ImageSize->400]
@@ -2222,9 +2227,9 @@ AddSaltAndRice[data_, snr_, p_] := Block[{dims, sp, sigma, noise, coors},
 
 
 SaltAndRiceC = Compile[{{data, _Real, 3}, {noise, _Real, 3}, {coors, _Integer, 2}}, Block[{newData, num},
-  newData = Unitize[data] Sqrt[(data + noise)^2. + RandomSample[noise]^2.];
-  num = Round[Length[coors]/2];
-  Do[
+	newData = Unitize[data] Sqrt[(data + noise)^2. + RandomSample[noise]^2.];
+	num = Round[Length[coors]/2];
+	Do[
 		newData[[coors[[i, 1]], coors[[i, 2]], coors[[i, 3]]]] = 1.;
 		newData[[coors[[i + num, 1]], coors[[i + num, 2]], coors[[i + num, 3]]]] = 0.;
 	, {i, 1, num}];
@@ -2968,8 +2973,8 @@ AnalyzeNetworkFeatures[net_, data_, met_] := Block[{
 
 	(*output based on method*)
 	If[met === "",
-		Echo[Thread[{nodes, nfeat}]];
-		Echo[n];
+		MonitorFunction[Thread[{nodes, nfeat}]];
+		MonitorFunction[n];
 
 		(*dynamic plot output*)
 		DynamicModule[{cols, tab = table, pl = plot, nods = nodes, clist = col, ln, pcol},

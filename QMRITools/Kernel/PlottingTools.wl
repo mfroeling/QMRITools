@@ -1780,13 +1780,14 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 
 SyntaxInformation[GetSliceData]={"ArgumentsPattern"->{_,_,_.}};
 
-GetSliceData[data_,offsets_]:=GetSliceData[data,offsets,{1,1,1}]
+GetSliceData[data_, offsets_]:=GetSliceData[data, offsets, {1,1,1}]
 
-GetSliceData[data_,offsets_,vox_]:=Block[{off},
-	off=Round[offsets/vox];
-	{data[[off[[1]]]],
-	Reverse/@Transpose@data[[All,off[[2]]]],
-	Reverse/@Transpose[data[[All,All,off[[3]]]],{2,3,1}]
+GetSliceData[data_, offsets_, vox_]:=Block[{off},
+	off = Round[offsets/vox];
+	{
+		data[[off[[1]]]],
+		Reverse /@ Transpose@data[[All, off[[2]]]],
+		Reverse /@ Transpose[data[[All, All, off[[3]]]], {2, 3, 1}]
 	}
 ]
 
@@ -2436,24 +2437,26 @@ ColorFAPlot[tens_] := DynamicModule[{FA, eig, eigv, mid, eigFA, mask},
 
 
 Options[LoessPlot] = {
-	Bandwidth -> Scaled[0.25],
+	Bandwidth -> Scaled[0.50],
 	FitOrder -> 2,
 	FitKernel -> "Tricube",
 	ConfidenceLevel -> 0.95,
-	MaxPlotPoints -> 25,
+	MaxPlotPoints -> 100,
 	PlotStyle -> {},
 	PlotRange -> All,
 	PredictionInterval -> True,
-	PerformanceGoal -> "Speed"
+	PerformanceGoal -> "Quality",
+	Method -> "LocalModelFit"
 };
 
 LoessPlot[data_, opts : OptionsPattern[]] := Block[{
-		bw, deg, ker, confLevel, pred, pPoints, perf, xMin, xMax,
-		xGrid, n, max, yFit, error, predError, boot , sel, z
+		bw, deg, ker, confLevel, pred, pPoints, perf, xMin, xMax, yMin, yMax,
+		xGrid, n, max, yFit, error, predError, boot , sel, z, met
 	},
 
-	{bw, deg, ker, z, pred, pPoints, perf} = OptionValue[{Bandwidth, FitOrder, FitKernel, ConfidenceLevel,
-		PredictionInterval, MaxPlotPoints, PerformanceGoal}];
+	{bw, deg, ker, z, pred, pPoints, perf, met} = OptionValue[{Bandwidth, FitOrder, FitKernel, ConfidenceLevel,
+		PredictionInterval, MaxPlotPoints, PerformanceGoal, Method}];
+	met = If[$VersionNumber < 14.3, "", met];
 	ker = ker /. {"Gaussian" -> 1, _ -> 2};
 	z = InverseCDF[NormalDistribution[], 1 - (1 - z)/2];
 
@@ -2466,18 +2469,28 @@ LoessPlot[data_, opts : OptionsPattern[]] := Block[{
 	boot = Min[{10, Ceiling[n / max]}];
 	sel = Min[{n, max}];
 
-	{yFit, error, predError} = Median@Table[
-			Transpose[LoessFitC[data[[RandomSample[Range[n], sel]]], xGrid, bw, deg, ker]]
-		, {i, boot}] //. {0. -> Missing[]};
+	SeedRandom[1234];
+	Switch[met,
+		"LocalModelFit",
+		yFit = LocalModelFit[data[[RandomSample[Range[n], sel]]], bw, FitDegree -> deg];
+		{yFit, yMin, yMax} = Quiet@Transpose[Table[Join[
+			{yFit[{"BestFit", x}]},
+			yFit[{If[pred === True, "SinglePredictionBands", "MeanPredictionBands"], x}]
+		], {x, xGrid}]];
+		z = If[pred === None, 0, 1];
 
-	z = Switch[pred,
-		True, z predError,
-		False, z error,
-		None, 0
+		,_,
+		{yFit, error, predError} = Median@Table[
+				Transpose[LoessFitC[data[[RandomSample[Range[n], sel]]], xGrid, bw, deg, ker]]
+			, {i, boot}] //. {0. -> Missing[]};
+		z = Switch[pred, True, z predError, False, z error, None, 0];
+		{yMin, yMax} = {yFit - z, yFit + z};
 	];
+
 	Show[
-		If[z===0, Graphics[{}],ListLinePlot[
-			{Transpose[{xGrid, yFit - z}], Transpose[{xGrid, yFit + z}]}, 
+		If[z===0, Graphics[{}],
+		ListLinePlot[
+			{Transpose[{xGrid, yMin}], Transpose[{xGrid, yMax}]}, 
 			PlotStyle -> {Directive[Dashed, Gray], Directive[Dashed, Gray]}, 
 			Filling -> {1 -> {2}}, FillingStyle -> Directive[LightGray, Opacity[0.15]], 
 			Evaluate@Join[FilterRules[{opts}, Options[ListLinePlot]], {}], 

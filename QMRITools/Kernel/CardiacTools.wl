@@ -985,7 +985,7 @@ GetMaskSegmentPoints[maski_]:=Block[{mask, lab, m1, m2, points},
 (*PointCenter*)
 
 
-PointCenter = (1 /. ComponentMeasurements[SelectComponents[Image[Reverse[#]], "Count", -1], "Centroid"]) /. {1 -> None, {x_, y_} -> {y, x}}&
+PointCenter = (1 /. ComponentMeasurements[SelectComponents[Image[Reverse[#]], "Count", -1], "Centroid"]) /. {1 -> None, {x_, y_} :> {y, x}}&
 
 
 (* ::Subsubsection::Closed:: *)

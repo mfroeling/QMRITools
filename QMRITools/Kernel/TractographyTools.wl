@@ -630,6 +630,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		FiberLengthRange, FiberAngle, MaxSeedPoints, TensorFlips, TensorPermutations, 
 		InterpolationOrder, StopThreshold, StepSize, TractMonitor}];
 	SeedRandom[1234];
+	mon = If[mon, MonitorFunction, List];
 
 	step = N@If[NumberQ[step], step, Min[0.75 vox]];
 	maxStep = Ceiling[(maxLength/step)];
@@ -649,7 +650,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	tens = ApplyCrop[#, crp]& /@ FlipTensorOrientation[tensor, per, flip];
 	{vecF, tens} = If[int>=1, 
 		{EigVec, ToPackedArray@N@RotateDimensionsLeft[{tens}, 2]},
-		If[mon, Echo["Interpolation order 0, precalculating vector field"]];
+		mon["Interpolation order 0, precalculating vector field"];
 		{AlignVec, ToPackedArray@N@RotateDimensionsLeft[{RotateDimensionsRight[EigVec[RotateDimensionsLeft@tens, {1, 0, 0}]]}, 2]}
 	];
 
@@ -667,7 +668,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	seedN = Length@seeds;
 
 	(*start the tractography*)
-	If[mon,	Echo["Starting with "<>ToString[seedN]<>" seed points and step size "<>ToString[step]<>" mm"]];
+	mon["Starting with "<>ToString[seedN]<>" seed points and step size "<>ToString[step]<>" mm"];
 
 	(*check if parallel or normal computing is needed*)
 	If[!OptionValue[Parallelization],
@@ -682,7 +683,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 			trFunc/@seeds];
 		
 		, (*parallel tractography*)
-		If[mon, Echo["Starting parallel preparation"]];
+		mon["Starting parallel preparation"];
 		tp = First@AbsoluteTiming[
 			tens = RotateDimensionsRight[tens[[All, All, All, 1]]];
 			DistributeDefinitions[tens, stop, vox, int, step, maxAng, maxStep, stopT, tractF, vecF]; 
@@ -695,25 +696,21 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 			ParallelEvaluate[stopInt = MakeInt[stop, vox, int]];
 			ParallelEvaluate[trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&];
 		];
-		If[mon, Echo["Parallel preparation took "<>ToString[Round[tp,.1]]]];
+		mon["Parallel preparation took "<>ToString[Round[tp,.1]]];
 
 		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, ProgressReporting -> mon];
 		ParallelEvaluate[Clear[vecInt, stopInt, trFunc, tens, stop]];
 		ClearDistributedDefinitions[];
 	];
-	If[mon,
-		Echo["Tractography took "<>ToString[Round[t1,.1]]<>" seconds ("<>ToString[Round[seedN/t1]]<>" tracts/s)"];
-		Echo["Checking tract lengths"];
-	];
+	mon["Tractography took "<>ToString[Round[t1,.1]]<>" seconds ("<>ToString[Round[seedN/t1]]<>" tracts/s)"];
+	mon["Checking tract lengths"];
 
 	(*select only tracts within correct range and clip tracts that are longer*)
 	{tracts, sel} = FilterTractLength[tracts, {minLength, maxLength}, "both"];
 	seeds = Pick[seeds, sel, 1];
 
 	(*output tracts move them to coordinates before cropping*)
-	If[mon,
-		Echo[ToString[Length[tracts]]<>" valid tracts with length "<>ToString[Round[step Mean[Length /@ tracts], 0.1]]<>"\[PlusMinus]"<>ToString[Round[step StandardDeviation[Length /@ tracts], 0.1]]<>" mm"]
-	];	
+	mon[ToString[Length[tracts]]<>" valid tracts with length "<>ToString[Round[step Mean[Length /@ tracts], 0.1]]<>"\[PlusMinus]"<>ToString[Round[step StandardDeviation[Length /@ tracts], 0.1]]<>" mm"];	
 	MoveTracts[#, vox (crp[[;; ;; 2]] - 1)]& /@ {tracts, seeds}
 ]
 
@@ -933,7 +930,7 @@ FindTensorPermutation[tens_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, stop_, opts : 
 	PrintTemporary[Dynamic[{ind, flips[[ind[[1]]]], perms[[ind[[2]]]]}]];
 	lengths = Table[
 		ind = {i, j};
-		tracts = First@FiberTractography[tens, vox, stop, TractMonitor -> False,TensorFlips -> flips[[i]], TensorPermutations -> perms[[j]], Parallelization -> False,
+		tracts = First@FiberTractography[tens, vox, stop, TractMonitor -> False, TensorFlips -> flips[[i]], TensorPermutations -> perms[[j]], Parallelization -> False,
 			(Sequence[# -> OptionValue[#] & /@ FilterRules[Options[FiberTractography], Options[FindTensorPermutation]][[All, 1]]])
 		];
 		N@Mean[Length /@ tracts]
@@ -1288,10 +1285,11 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	{ntr, fran, type, mon, size, output, colFunc, sizeT, qual, opa, ord} = OptionValue[{
 		MaxTracts, FiberLengthRange, Method, Monitor, ImageSize, OutputForm, 
 		ColorFunction, TractSize, PerformanceGoal, ContourOpacity, FittingOrder}];
+	mon = If[mon, MonitorFunction, List];
 
 	(*prepare data*)
 	segments = Transpose@segmentIn;
-	If[mon, Echo["Fitting tracts"]];
+	mon["Fitting tracts"];
 	SeedRandom[1234];
 	tractsF = RandomSample[tracts, Min[{5 ntr, Length@tracts}]];
 
@@ -1310,7 +1308,7 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	];
 
 	(*reference environment*)
-	If[mon, Echo["Making muscle iso volumes"]];
+	mon["Making muscle iso volumes"];
 	ref = PlotTracts[tractsF, vox, dim, MaxTracts -> 1, Method -> "line", TractColoring -> RGBColor[0, 0, 0, 0]];
 	ref[[1]] = {};
 
@@ -1321,7 +1319,7 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Lighter@Gray, 
 		ContourSmoothRadius -> 2, ContourResolution -> 2], Graphics3D[]];
 
-	If[mon, Echo["Making per muscle tracts"]];
+	mon["Making per muscle tracts"];
 	(*select the tracts per muscle and make fiber plots*)
 	tractsFI = RescaleTractsC[tractsF, vox];
 	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segments;
@@ -1336,7 +1334,7 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 		TractReduction -> 5, PerformanceGoal -> "Speed"]
 	] &, {tracksSel, nTracts, colListT, sel}];
 
-	If[mon, Echo["Finalizing scenes"]];
+	mon["Finalizing scenes"];
 	showF = Show[ref, ##, ImageSize -> size, Axes -> False, Boxed -> False, ViewPoint -> {0., -1.5, 0.5}, 
 		BaseStyle -> RenderingOptions -> {"3DRenderingMethod" -> If[qual==="Speed",  "HardwareDepthBuffer", Automatic]}
 	] & @@ # &;

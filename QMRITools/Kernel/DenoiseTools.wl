@@ -193,6 +193,9 @@ DeNoise::sig =
 Begin["`Private`"]
 
 
+debugDenoise[x___] := If[$debugDenoise, MonitorFunction[x]];
+
+
 (* ::Subsection:: *)
 (*Denoise*)
 
@@ -950,16 +953,14 @@ HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 		vecH, sol, tensN, maps, itt, step, tol
 	},
 
-	mon = False;
-
 	{sigma, itt, step, tol, rFA, rMD} = OptionValue[{RadialBasisKernel, MaxIterations,
 		GradientStepSize, Tolerance, RangeFA, RangeMD}];
-	If[mon, Echo[{sigma, itt, step, tol, rFA, rMD}]];
+	debugDenoise[{sigma, itt, step, tol, rFA, rMD}, "Settings"];
 
 	(*make gradien,laplace and RBF matrix functions*)
-	If[mon, Echo["Making G, L matrix"]];
+	debugDenoise["Making G, L matrix"];
 	{{G, L}, coor, sel, map} = MakeGradientLaplacian[mask, vox, sigma];
-	If[mon, Echo["Making R matrix"]];
+	debugDenoise["Making R matrix"];
 	R = MakeRBF[coor, sigma, vox];
 
 	(*becouse of the implementation coordiante system the tensor needs to be reversed*)
@@ -967,8 +968,9 @@ HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 	(*remove unreliable voxel*)
 	{md, fa} = ParameterCalc[tensN][[4;;5]];
 	msel = Mask[{{fa, rFA}, {md, rMD}}];
-	If[mon, Echo["starting fitting"]];
+
 	(*perform the recon*)
+	debugDenoise["starting fitting"];
 	{vecN, vecH, sol} = FitHarmonicBasis[MaskData[tensN, msel], sel, {G, L, R},
 		MaxIterations->itt, GradientStepSize->step, Tolerance->tol];
 
@@ -1152,12 +1154,10 @@ Options[FitHarmonicBasis] = {
 	Tolerance -> 10.^-5
 };
 
-FitHarmonicBasis[tv_, sel_, {G_ ,L_, R_}, opts:OptionsPattern[]]:=Block[{
-		itt, step, Gt, Rf, h0, vec0, v0, solver, dvh, dvg, i, j, thp, th, tgp, tg, vsh, vsg,
+FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block[{
+		itt, step, matGt, h0, vec0, v0, solver, dvh, dvg, i, j, thp, th, tgp, tg, vsh, vsg,
 		h1, vec1, v1, vh, a0, a1, vha, d, dim, tens, vec, val, sth, stg, tol, diff, mon
 	},
-
-	mon = False;
 
 	(*get the options*)
 	{itt, step, tol} = OptionValue[{MaxIterations, GradientStepSize, Tolerance}];
@@ -1185,71 +1185,71 @@ FitHarmonicBasis[tv_, sel_, {G_ ,L_, R_}, opts:OptionsPattern[]]:=Block[{
 
 	thp = First@AbsoluteTiming[
 	(*initialize the h phase*)
-		Gt = Transpose[G];
-		solver = MakeSolver[L];
-		h0 = LinearSolve[Gt . G, Gt . Flatten[vec]];
-		h0 = NullSpaceProjection[L, h0, solver];
-		vec0 = Partition[G . h0, d];
+		matGt = Transpose[matG];
+		solver = MakeSolver[matL];
+		h0 = LinearSolve[matGt . matG, matGt . Flatten[vec]];
+		h0 = NullSpaceProjection[matL, h0, solver];
+		vec0 = Partition[matG . h0, d];
 		v0 = GetDiffusionValues[tens, vec0];
 		sth = Norm[GetObjectiveGradient[tens, vec0, Gt]]
 	];
-	If[mon, Echo[thp, "Prep time h-phase: "]];
+	debugDenoise[thp, "Prep time h-phase: "];
 
 	(*h phase loop*)
 	dvh = v0; i = 0;
-	If[mon, Echo[Dynamic[{i, dvh/tol, sth}]], "Start h-phase: "];
+	debugDenoise[Dynamic[{i, dvh/tol, sth}], "Start h-phase: "];
+
 	th = First@AbsoluteTiming[
 		vsh = Reap[While[dvh>tol && i<itt,
 			i++; Sow[{v0, dvh}];
-			h1 = h0 + (100 step[[1]] / sth) GetObjectiveGradient[tens, vec0, Gt];
+			h1 = h0 + (100 step[[1]] / sth) GetObjectiveGradient[tens, vec0, matGt];
 			h1 = NullSpaceProjection[L, h1, solver];
-			vec1 = Partition[G . h1, d];
+			vec1 = Partition[matG . h1, d];
 			v1 = GetDiffusionValues[tens, vec1];
 			dvh = Abs[v0 - v1];
 			h0 = h1; v0 = v1;
 			vec0 = vec1;
 		]]
 	];
-	If[mon, Echo[th, "Fit time h-phase: "]];
+	debugDenoise[th, "Fit time h-phase: "];
 
 	(*normalize h0 to max h0 for g phase*)
 	vh = vec1 / Median[(Norm /@ vec1)];
 
 	tgp = First@AbsoluteTiming[
 		(*initialize the g phase*)
-		a0 = ConstantArray[0.,Length@R];
-		vec0 = vh + Partition[a0 . R, d];
+		a0 = ConstantArray[0.,Length@matR];
+		vec0 = vh + Partition[a0 . matR, d];
 		v0 = GetDiffusionValues[tens, vh];
-		stg = Norm[GetObjectiveGradient[tens, vec0, R]];
+		stg = Norm[GetObjectiveGradient[tens, vec0, matR]];
 	];
-	If[mon, Echo[tgp, "Prep time g-phase: "]];
+	debugDenoise[tgp, "Prep time g-phase: "];
 
 	(*g phase loop*)
 	dvg = v0; j = 0;
-	If[mon, Echo[Dynamic[{j,dvg/tol,stg}]], "Start g-phase: "];
+	debugDenoise[Dynamic[{j,dvg/tol,stg}], "Start g-phase: "];
 	tg = First@AbsoluteTiming[
 		vsg = Reap[While[dvg>tol && j<Round[itt],
 			j++; Sow[{v0, dvg}];
-			a1 = a0 + (0.05 step[[2]]/stg) GetObjectiveGradient[tens, vec0, R];
-			vec1 = vh + Partition[a1 . R, d];
+			a1 = a0 + (0.05 step[[2]]/stg) GetObjectiveGradient[tens, vec0, matR];
+			vec1 = vh + Partition[a1 . matR, d];
 			v1 = GetDiffusionValues[tens, vec1];
 			dvg = Abs[v1 - v0];
 			a0 = a1; v0 = v1;
 			vec0 = vec1;
 		]]
 	];
-	If[mon, Echo[tg, "Fit time g-phase: "]];
+	debugDenoise[tg, "Fit time g-phase: "];
 
 	(*normalize vectors after g phase*)
 	vha = Normalize/@vec1;
 
-	If[mon, Echo[thp+th+tgp+tg, "Total fit time: "]];
+	debugDenoise[thp+th+tgp+tg, "Total fit time: "];
 
-	If[mon, Echo[Grid[{{
+	debugDenoise[Grid[{{
 		ListLinePlot[{vsh[[2,1,All,1]], vsg[[2,1,All,1]]} / diff, ImageSize->200, PlotRange->Full],
 		ListLinePlot[{vsh[[2,1,All,2]], vsg[[2,1,All,2]]} / tol, ImageSize->200]
-	}}], "Gradient functions: "]
-	];
+	}}], "Gradient functions: "];
 
 	{vha, Normalize/@vh, {h1,a1}}
 ]
@@ -1291,11 +1291,11 @@ GetGradC=Compile[{{t, _Real, 2}, {v, _Real, 1}}, Block[{vv, tv},
 (*NullSpaceProjection*)
 
 
-NullSpaceProjection[L_, x_] := x - Transpose[L] . LinearSolve[L . Transpose[L], L . x, Method->"Pardiso"];
-NullSpaceProjection[L_, x_, sol_] := x - Transpose[L] . sol[L . x];
+NullSpaceProjection[matL_, x_] := x - Transpose[matL] . LinearSolve[matL . Transpose[matL], matL . x, Method->"Pardiso"];
+NullSpaceProjection[matL_, x_, sol_] := x - Transpose[matL] . sol[matL . x];
 
 
-MakeSolver[L_] := LinearSolve[L . Transpose[L], Method->"Pardiso"];
+MakeSolver[matL_] := LinearSolve[matL . Transpose[matL], Method->"Pardiso"];
 
 
 (* ::Subsubsection::Closed:: *)
