@@ -289,6 +289,10 @@ ClearTemporaryVariables::usage =
 "ClearTemporaryVariables[] Clear temporary variables."
 
 
+MonitorFunction::usage = 
+"MonitorFunction[] either prints or echos its input."
+
+
 (* ::Subsection::Closed:: *)
 (*General Options*)
 
@@ -353,12 +357,24 @@ DataToVector::mask = "Data and mask should have the same dimensions: data `1` an
 
 ApplyCrop::dim = "Crop region lies outside data range."
 
+ExtractDemoData::dat = "DemoData archive does not exist."
+
+ParseCommandLine::flag = "Warning: No value for flag `1`";
+
+FileSelect::can = "Canceled!";
+
+FindMiddle::mid = "could not find the center.";
 
 (* ::Section:: *)
 (*Functions*)
 
 
 Begin["`Private`"]
+
+
+MonitorFunction[x_] := Echo[x];
+MonitorFunction[x_, y_?StringQ] := Echo[x, y];
+MonitorFunction[x___] := Print[{x}];
 
 
 (* ::Subsection::Closed:: *)
@@ -374,8 +390,10 @@ GetAssetLocation[name_] := Block[{file},
 ExtractDemoData[] := Block[{file},
 	file = GetAssetLocation["DemoData"];
 	If[! DirectoryQ[FileNameJoin[{DirectoryName[file], "DemoData"}]],
-		If[FileExistsQ[file], Quiet@ExtractArchive[file, DirectoryName[file]],
-		Print["DemoData archive does not exist"]]
+		If[FileExistsQ[file], 
+			Quiet@ExtractArchive[file, DirectoryName[file]],
+			Message[ExtractDemoData::dat]
+		]
 	];
 ]
 
@@ -407,7 +425,7 @@ ParseCommandLine[args_] := Block[{flagPos, n, assoc, i, key, valList, val},
 		valList = args[[flagPos[[i]] + 1 ;; flagPos[[i + 1]] - 1]];
 		val = Which[
 			valList === {} || StringStartsQ[First[valList], "--"],
-			Print["Warning: No value for flag ", key]; "",
+			Message[ParseCommandLine::flag, key]; "",
 			True, 
 			StringRiffle[valList, " "]
 		];
@@ -478,7 +496,7 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 		SystemDialogInput["Directory", Directory[],opts]
 	];
 	If[input === $Canceled,
-		Print["Canceled!"];$Canceled
+		Message[FileSelect::can];$Canceled
 		,
 		If[action == "Directory",
 			StringDrop[input,-1],
@@ -599,7 +617,7 @@ SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type}
 		Export[file, exp , ImageSize->imsize, ImageResolution -> res]
 	];
 
-	Print["File was saved to: " <> file];
+	"File was saved to: " <> file
 ]
 
 
@@ -1165,14 +1183,14 @@ FindMiddle[dati_, print_] := Module[{dat, fdat, len, datf,peaks,mid,peak,center,
 	];
 
 	If[peaks==={},
-		Print["could not find the center."];
+		Message[FindMiddle::mid];
 		(*$Failed*)mid
 		,
 		(*find the most middle peak*)
 		center = {mid, .75 max};
 		peak = Nearest[peaks, center];
 
-		If[print, Print[Show[
+		If[print, MonitorFunction[Show[
 			ListLinePlot[{max-dat,datf}, PlotStyle->{Black,Orange}],
 			ListPlot[{peaks,{center},peak},PlotStyle->(Directive[{PointSize[Large],#}]&/@{Blue,Gray,Green})]
 			,ImageSize->75, Ticks -> None]

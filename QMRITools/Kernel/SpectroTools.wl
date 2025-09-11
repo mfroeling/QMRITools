@@ -1871,7 +1871,7 @@ Control[{{ph1s,0.,"1st order phase [ms]"},-10.,10.}]
 
 Delimiter,
 OpenerView[{Style["plotting options",12,Bold],Column[{
-Control[{{pad,1,"padding"},1,4,0.5}]"",
+Control[{{pad,1,"padding"},1,4,0.5}],
 Control[{{ap,"None","apodization"},{"None","Hanning","Hamming","Gaussian","Lorentzian","Voigt"},ControlType->SetterBar}],
 Style["what to plot",10,Bold],
 Control[{{show,"both","signal and noise"},{"both","signal","noise"}}],

@@ -191,6 +191,11 @@ ReconFilter::usage =
 (*Error Messages*)
 
 
+ReadListData::file = "files not found: `1`"
+
+OrderKspace::mis = "the types `1` are missing"
+
+
 (* ::Section:: *)
 (*Functions*)
 
@@ -213,7 +218,9 @@ ReadListData[file_,print_]:=Block[{
 	},
 
 	fl = StringReplace[file,{".list"->"",".data"->""}];
-	If[!FileExistsQ[fl<>".list"]||!FileExistsQ[fl<>".data"], Print["files not found"]];
+	If[!FileExistsQ[fl<>".list"]||!FileExistsQ[fl<>".data"], 
+		Message[ReadListData::file, fl]; Return[$Failed]
+	];
 
 	(*read the data - longest part*)
 	list = ReadList[fl<>".list",String];
@@ -310,8 +317,8 @@ ReadListData[file_,print_]:=Block[{
 
 	(*print output*)
 	If[print,
-		Print["Datatypes in data: ",("typ"/.dataVals[[1]])];
-		Print[Column[Prepend[StringJoin/@Thread[{"  - ",types,": ",ToString/@size}],"The data contains: "]]];
+		Print["Datatypes in data: ", ("typ"/.dataVals[[1]])];
+		Print[Column[Prepend[StringJoin/@Thread[{"  - ",types,": ",ToString/@size}], "The data contains: "]]];
 	];
 
 	Clear[data, indData];
@@ -427,9 +434,9 @@ SyntaxInformation[OrderKspace]={"ArgumentsPattern"->{_,_,_.}}
 (*put kspace in requested order*)
 OrderKspace[kspace_,type_,order_]:=OrderKspace[{kspace,type},order]
 OrderKspace[{kspace_,type_},order_]:=Block[{mis,sel,typeOut},
-mis=If[!MemberQ[type,#],#,Nothing]&/@order;
+	mis = If[!MemberQ[type,#],#,Nothing]&/@order;
 	If[mis=!={},
-		Print["the types ",mis," are missing"]
+		Message[OrderKspace::mis, mis]; Return[$Failed]
 		,		
 		sel = If[MemberQ[order, #], 1, 0] & /@ type;
 		typeOut = Pick[type, sel, 1];

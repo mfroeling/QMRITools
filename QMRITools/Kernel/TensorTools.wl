@@ -937,30 +937,15 @@ FACalci = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3, teig},
 (*ECalc*)
 
 
-Options[ECalc]= {MonitorCalc->True};
+SyntaxInformation[ECalc] = {"ArgumentsPattern" -> {_}};
 
-SyntaxInformation[ECalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+ECalc[eig_] := ECalci[eig]
 
-ECalc[eigen_,OptionsPattern[]] := 
-Module[{output,slices,x},
-	slices=Length[eigen];
-	If[ArrayQ[eigen,4],
-		Monitor[output=Table[ECalci[eigen[[x]]],{x,1,slices,1}];,If[OptionValue[MonitorCalc],Column[{"Calculation E for Multiple slices",ProgressIndicator[x,{0,slices}]}],""]];
-		If[OptionValue[MonitorCalc], Print["Done calculating e for "<>ToString[slices]<>" slices!"]];
-		,
-		output=ECalci[eigen];
-		If[ArrayQ[eigen,3],If[OptionValue[MonitorCalc], Print["Done calculating e for 1 slice!"]],
-			If[VectorQ[eigen],If[OptionValue[MonitorCalc], Print["Done calculating e for 1 voxel!"]]]
-			]
-		];
-	Return[output];
-	]
+ECalci = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3},
+	l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
+	Sqrt[1 - (l3 / l1)]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
-
-ECalci[eigen_] := Block[{ec},
-	ec=Compile[{l1,l3},Sqrt[1-(l3/l1)]];
-	Map[If[#[[3]]!=0, ec[#[[1]],#[[3]]], 0]&,eigen,{ArrayDepth[eigen]-1}]
-]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -968,8 +953,8 @@ ECalci[eigen_] := Block[{ec},
 
 
 WestinMeasures[eig_] := Block[{l1, l2, l3},
-	{l1,l2,l3} = RotateDimensionsRight[eig];
-	{DivideNoZero[l1-l2,l1], DivideNoZero[l2-l3,l1], DivideNoZero[l3,l1]}
+	{l1, l2, l3} = RotateDimensionsRight[eig];
+	{DivideNoZero[l1-l2, l1], DivideNoZero[l2-l3, l1], DivideNoZero[l3, l1]}
 ]
 
 
@@ -1060,7 +1045,7 @@ Module[{angles},
 AngleCalc[data_?ArrayQ,vec_?ArrayQ,OptionsPattern[]] := 
 Module[{angles},
 	If[Dimensions[data]!=Dimensions[vec],
-		Print["Error"],
+		$Failed,
 
 		angles=MapThread[If[Re[#1]==#1,ArcCos[#1 . #2],"no"]&,{data,vec},ArrayDepth[vec]-1];
 
@@ -1688,7 +1673,7 @@ Module[{dx,dy,dz,dim,zero,ones,f},
 		If[shift=="ROW",
 			f=Transpose[{{dx+1,dy,dz},{zero,ones,zero},{zero,zero,ones}},{4,5,1,2,3}]
 			],
-		Print["error, unknown direction"]
+		$Failed
 		]
 	];
 

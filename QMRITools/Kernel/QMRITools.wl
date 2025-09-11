@@ -40,6 +40,8 @@ QMRITools`ElastixTools`$lastElastixTemp::usage = "$lastElastixTemp is the last t
 QMRITools`ElastixTools`$debugElastix::usage = "$debugElastix is a debug flag for Elastix functionality.";
 QMRITools`SegmentationTools`$debugUnet::usage = "$debugUnet is a debug flag for Unet functionality."; 
 QMRITools`MuscleBidsTools`$debugBids::usage = "$debugBids is a debug flag for Bids functionality.";
+QMRITools`DenoiseTools`$debugDenoise::usage = "$debugBids is a debug flag for Denoise functionality.";
+
 QMRITools`PlottingTools`$plotOptions::usage = "$plotOptions is a list of options for plotting.";
 
 
@@ -78,6 +80,7 @@ QMRITools`ElastixTools`$lastElastixTemp = "";
 QMRITools`ElastixTools`$debugElastix = False;
 QMRITools`SegmentationTools`$debugUnet = False;
 QMRITools`MuscleBidsTools`$debugBids = False;
+QMRITools`DenoiseTools`$debugDenoise = False;
 
 (*load all the packages without error reporting such we can find the names of all the functions and options*)
 Quiet[Get/@QMRITools`$Contexts];
@@ -168,6 +171,7 @@ Unprotect/@{
 	"QMRITools`ElastixTools`$debugElastix", 
 	"QMRITools`SegmentationTools`$debugUnet", 
 	"QMRITools`MuscleBidsTools`$debugBids",
+	"QMRITools`DenoiseTools`$debugDenoise",
 	"QMRITools`$Log",
 	"QMRITools`$LogFile"
 };

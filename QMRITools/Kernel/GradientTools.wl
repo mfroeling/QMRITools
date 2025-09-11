@@ -1420,29 +1420,19 @@ BmatrixRot[bmat_, rotmat_] := Module[{sc1 = {1, 1, 1, 0.5, 0.5, 0.5}, sc2 = {1, 
 
 SyntaxInformation[BmatrixToggle] = {"ArgumentsPattern" -> {_, _, _}};
 
-BmatrixToggle[bmat_, axes_, flip_] := Block[{tmpa, tmpf, bmati, bmatn, outp, rule},
+BmatrixToggle[bmat_, axes_, flip_] := Block[{mat},
 	(*error checking*)
-	If[Sort[axes] != {"x", "y", "z"},
-	Return[Message[BmatrixToggle::axes, axes]],
-	If[!MemberQ[{{1, 1, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}}, flip],
-		Return[Message[BmatrixToggle::flip, flip]],
+	If[Sort[axes] != {"x", "y", "z"}, Message[BmatrixToggle::axes, axes]; Return[$Failed]];
+	If[! MemberQ[{{1, 1, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}}, flip], Message[BmatrixToggle::flip, flip]; Return[$Failed]];
 
-		(*make bmat vecs of input*)
-		tmpa = axes /. {x_, y_, z_} :> {x*x, y*y, z*z, x y, x z, y z};
-		tmpf = flip /. {x_, y_, z_} :> {x*x, y*y, z*z, x y, x z, y z};
-
-		(*check shape of bmat*)
-		bmati = If[Length[bmat[[1]]] == 7, -bmat[[All, 1 ;; 6]], bmat];
-
-		(*Toggle bmat*)
-		bmatn = (rule = Thread[
-			{("x")^2, ("y")^2, ("z")^2, "x" "y", "x" "z", "y" "z"} -> #
-		]; tmpf (tmpa /. rule)) & /@ bmati;
-
-		(*output bmat*)
-		outp = If[Length[bmat[[1]]] == 7, Append[-#, 1] & /@ bmatn, bmatn]
-	]
-	]
+	(*mat to tensor*)
+	mat = If[VectorQ[bmat], {bmat}, bmat];
+	mat = If[Length[First[bmat]] === 7, -mat[[All, 1 ;; 6]], mat];
+	(*flip orientations*)
+	mat = Transpose[FlipTensorOrientation[Transpose[mat], axes, flip]];
+	(*tensor back to mat*)
+	mat = If[Length[bmat[[1]]] === 7, Append[-#, 1] & /@ mat, mat];
+	If[VectorQ[bmat], First@mat, mat]
 ]
 
 
@@ -1571,7 +1561,7 @@ GetGradFromACQXFile[file_] := Block[{xml, grads, nam, out, getVals, getNames},
 
 
 ImportGradObj[{base_, xbase_}] := Module[{objectNames, objects, name, vals, props},
-Print[aaa];
+
 	objectNames = {
 		"\"GR`blip\"", "\"GR`d_echo\"",
 		"\"GR`diff[0]\"", "\"GR`diff[1]\"", "\"GR`diff[2]\"",
@@ -1639,7 +1629,7 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Block[{
 	grdiff = {"diff_2", "diff_2nd_2"};
 
 	Gd = Norm[Max[
-		Abs[{"gr_str", ("gr_str_step"*"gr_str_factor_max")} /. #]
+		Abs[{"gr_str", (("gr_str_step")*("gr_str_factor_max"))} /. #]
 	] & /@ Select[({"diff_0", "diff_1", "diff_2"} /. pars), ! StringQ[#] &]];
 
 	usegrad = OptionValue[UseGrad];
@@ -1656,14 +1646,14 @@ GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Block[{
 
 			G = unit If[name === "diff_2" || name === "diff_2nd_2",
 				Gd,
-				str = If[("gr_str" /. rule) != 0,"gr_str" /. rule,("gr_str_step"*"gr_str_factor_max") /. rule];
-				If[("gr_lenc" /. rule) >= 0.,str,((str/"gr_slope")*("gr_slope" + "gr_lenc")) /. rule]
+				str = If[("gr_str" /. rule) != 0, "gr_str" /. rule,(("gr_str_step")*("gr_str_factor_max")) /. rule];
+				If[("gr_lenc" /. rule) >= 0.,str,((str/"gr_slope")*(("gr_slope") + ("gr_lenc"))) /. rule]
 			];
 
 			G = If[MemberQ[flipg, name] && OptionValue[FlipGrad], -G, G];
 			G = If[MemberQ[Join[grepi1, grepi2], name], AP*G, G];
 
-			slope = If[("gr_lenc" /. rule) >= 0.,"gr_slope" /. rule,("gr_slope" + "gr_lenc") /. rule] unit;
+			slope = If[("gr_lenc" /. rule) >= 0.,"gr_slope" /. rule,(("gr_slope") + ("gr_lenc")) /. rule] unit;
 			leng = Abs[("gr_lenc" /. rule)] unit;
 			dur = ("gr_dur" /. rule) unit;
 			start = (("gr_time" - "gr_ref") /. rule) unit;
