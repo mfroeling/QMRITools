@@ -241,6 +241,9 @@ DropoutRate::usage =
 RescaleMethod::usage =
 "RescaleMethod is an option for MakeUnet. It specifies how the network rescales. It can be \"Conv\" or \"Pool\"."
 
+CatenateMethod::usage =
+"CatenateMethod is an option for MakeUnet. It specifies how the network catenates the skip and upscale channesl. It can be \"Tot\", or \"Cat\""
+
 NetworkDepth::usage = 
 "NetworkDepth is an option for MakeUnet. It specifies how deep the UNET will be."
 
@@ -267,6 +270,10 @@ For \"UNet+\" or \"UNet++\" it can also be {arch, i} where i specifies how many 
 ActivationType::usage = 
 "ActivationType is an option for MakeUnet. It specifies which activation layer is used in the network. It can be \"LeakyRELU\" or any type allowed 
 by a \"name\" definition in ElementwiseLayer."
+
+NormalizationType::usage = 
+"NormalizationType is an option for MakeUnet. It specifies which nomalization layer is used in the network. It can be \"Batch\" or \"Instance\" for 
+either BatchNormalization or NormalizationLayer which is instance normalization."
 
 LoadTrainingData::usage =
 "LoadTrainingData is an option for TrainSegmentationNetwork. If set to True the training data is loaded from the disk."
@@ -418,7 +425,7 @@ NeuralNetFunc[name_] := GetNeuralNetI[name] = Which[
 (*Settings*)
 
 
-netDefaults={"Conv"->1,"UNet"->2,"ResNet"->2,"DenseNet"->{4,2},"Inception"->{4,2},"U2Net"->{3,True},"Map"->1};
+netDefaults={"Conv"->1, "UNet"->2, "ResNet"->2, "ResNetL"->2, "DenseNet"->{4,2}, "Inception"->{4,2}, "U2Net"->{3,True}, "Map"->1};
 
 
 (* ::Subsubsection::Closed:: *)
@@ -429,7 +436,9 @@ Options[MakeUnet] = {
 	NetworkArchitecture -> "UNet",
 	BlockType -> "ResNet", 
 	ActivationType -> "GELU",
+	NormalizationType -> "Instance",
 	RescaleMethod -> "Conv",
+	CatenateMethod -> "Cat",
 	NetworkDepth -> 5,
 
 	DownsampleSchedule -> Automatic,
@@ -445,12 +454,12 @@ SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]
 MakeUnet[nClass_?IntegerQ, dimIn_, opts : OptionsPattern[]] := MakeUnet[1, nClass, dimIn, opts]
 
 MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
-		ndim, depth, nam, drop, blockType, actType, scaling, feature, setting, mon, net, boolSc, metSc,
+		ndim, depth, nam, drop, blockType, actType, normType, conf, scaling, feature, setting, mon, net, boolSc, metSc,
 		architecture, cons, depthj, fStart, mapCon
 	},
 
-	{drop, blockType, actType, depth, scaling, feature, setting, mon, metSc, architecture} = 
-		OptionValue[{DropoutRate, BlockType, ActivationType, NetworkDepth, 
+	{drop, blockType, actType, normType, depth, scaling, feature, setting, mon, metSc, architecture} = 
+		OptionValue[{DropoutRate, BlockType, ActivationType, NormalizationType, NetworkDepth, 
 			DownsampleSchedule, FeatureSchedule, SettingSchedule, MonitorCalc, 
 			RescaleMethod, NetworkArchitecture}];
 	mon = If[mon, MonitorFunction, List];
@@ -460,13 +469,14 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		If[Length[architecture]===2, architecture, Return[Message[MakeUnet::arch]; $Failed]]];
 	If[!MemberQ[{"UNet", "UNet+", "UNet++"}, architecture], 
 		Return[Message[MakeUnet::arch]; $Failed]];
-	If[!MemberQ[{"Conv", "UNet", "ResNet", "DenseNet", "Inception", "U2Net"}, blockType], 
+	If[!MemberQ[{"Conv", "UNet", "ResNet", "ResNetL", "DenseNet", "Inception", "U2Net"}, blockType], 
 		Return[Message[MakeUnet::block]; $Failed]];
+	conf = {actType, normType};
 
 	(*is the network 2D or 3D*)
 	ndim = Length@dimIn;
 
-	mon[{architecture, blockType, actType}, "Network block type: "];
+	mon[{architecture, blockType, actType, normType}, "Network block type: "];
 	mon[{dimIn, ndim}, "Network dimension order: "];
 
 	drop = Which[
@@ -508,7 +518,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 	(*define the number of features per layer*)
 	feature = Round[Which[
 		IntegerQ[feature], feature Switch[blockType,
-			"UNet" | "ResNet", 2^Range[0, depth - 1],
+			"UNet" | "ResNet" | "ResNetL", 2^Range[0, depth - 1],
 			"DenseNet" | "Inception", 0.5 Range[2, depth + 1],
 			"U2Net", ConstantArray[1, depth]
 		],
@@ -537,7 +547,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					(*skip in -> only input from above, skip out -> always for enc*)
 					{0, True}, 
 					(*config*)
-					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},	DropoutRate -> drop[[i]], RescaleMethod -> metSc
+					{{blockType, setting[[i]]}, feature[[i]], {conf, ndim}},	DropoutRate -> drop[[i]], RescaleMethod -> metSc
 				], {i, 1, depth}],
 				(*decoding layers*)
 				Table[debugUnet[nam["dec_", i]]; nam["dec_", i] -> MakeNode[
@@ -546,10 +556,10 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					(*skip in -> accepts one skip, skip out -> never for dec*)
 					{1, False}, 
 					(*config*)
-					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}}, DropoutRate -> drop[[i]], RescaleMethod -> metSc
+					{{blockType, setting[[i]]}, feature[[i]], {conf, ndim}}, DropoutRate -> drop[[i]], RescaleMethod -> metSc
 				], {i, 1, depth - 1}],
 				(*start and mapping*)
-				{"start" -> UNetStart[nChan, fStart, dimIn, actType],
+				{"start" -> UNetStart[nChan, fStart, dimIn, conf],
 				"map" -> UNetMap[ndim, nClass]}
 			],
 
@@ -585,10 +595,10 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					(*skip in for all accept backbone, for UNET++ name the skips, skip out for all except right most upscale*)
 					{If[j > 1, If[architecture==="UNet++", j - 1, 1], 0], If[j < depthj - i, True, False]}, 
 					(*config*)
-					{{blockType, setting[[i]]}, feature[[i]], {actType, ndim}},	DropoutRate -> drop[[i]], RescaleMethod -> metSc
+					{{blockType, setting[[i]]}, feature[[i]], {conf, ndim}}, DropoutRate -> drop[[i]], RescaleMethod -> metSc
 				], {i, 1, depth}, {j, 1, depthj - i}],
 				(*start and mapping*)
-				{"start" -> UNetStart[nChan, fStart, dimIn, actType],
+				{"start" -> UNetStart[nChan, fStart, dimIn, conf],
 				"map" -> UNetMap[ndim, nClass, mapCon]}
 			],
 			cons = Join[
@@ -629,8 +639,8 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 (*UNetStart*)
 
 
-UNetStart[nChan_, feat_, dimIn_, actType_] := NetGraph[
-	NetChain[Conv[feat , {Length@dimIn, 1}, actType], 
+UNetStart[nChan_, feat_, dimIn_, conf_] := NetGraph[
+	NetChain[Conv[feat , {Length@dimIn, 1}, conf], 
 		"Input" -> Prepend[dimIn, nChan]]
 ]
 
@@ -647,7 +657,7 @@ UNetMap[dim_, nClass_, n_] := Block[{map},
 			{TransposeLayer[Which[dim === 2, {3, 1, 2}, dim === 3, {4, 1, 2, 3}]], SoftmaxLayer[]}, 
 			{LogisticSigmoid, FlattenLayer[1]}
 		]}];
-	map = If[n>1,Prepend[map, CatenateLayer[]], map];
+	map = If[n>1, Prepend[map, CatenateLayer[]], map];
 	NetGraph@NetChain@map
 ]
 
@@ -658,7 +668,8 @@ UNetMap[dim_, nClass_, n_] := Block[{map},
 
 Options[MakeNode] = {
 	DropoutRate -> 0,
-	RescaleMethod -> "Pool"
+	RescaleMethod -> "Conv",
+	CatenateMethod -> "Cat"
 }
 
 SyntaxInformation[MakeNode] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
@@ -668,7 +679,7 @@ MakeNode[{scUp_ ,scDown_}, {skIn_, skOut_}, blockConfig_, OptionsPattern[]] := B
 		boolDr, con, boolCat, cat, catIn, skip, node
 	},
 	(*get the node parameters*)
-	{drop, metSc} = OptionValue[{DropoutRate, RescaleMethod}];
+	{drop, metSc, metCat} = OptionValue[{DropoutRate, RescaleMethod, CatenateMethod}];
 	chan = First@Flatten@{blockConfig[[2]]};
 	dim = blockConfig[[3, 2]];
 
@@ -697,9 +708,18 @@ MakeNode[{scUp_ ,scDown_}, {skIn_, skOut_}, blockConfig_, OptionsPattern[]] := B
 
 	(*define the skip connections*)
 	boolCat = skIn > 0 (*&& boolScUp*);
-	cat = If[boolCat, "cat" -> CatenateLayer[], Nothing];
-	catIn = If[boolCat, Append[If[skIn>1, Table[NetPort["Skip"<>ToString[i]], {i, skIn}], {NetPort["Skip"]}], scale], Nothing];
-	skip = If[skOut=!=False, con -> NetPort["Skip"<>If[IntegerQ[skOut], ToString[skOut], ""]], Nothing];
+	cat = If[boolCat, 
+		"cat" -> If[metSc ==="Conv" && metCat ==="Tot", TotalLayer[], CatenateLayer[]], 
+		Nothing
+	];
+	catIn = If[boolCat, 
+		Append[If[skIn>1, Table[NetPort["Skip"<>ToString[i]], {i, skIn}], {NetPort["Skip"]}], scale], 
+		Nothing
+	];
+	skip = If[skOut=!=False, 
+		con -> NetPort["Skip"<>If[IntegerQ[skOut], ToString[skOut], ""]], 
+		Nothing
+	];
 
 	(*return the node*)
 	node = NetGraph@NetFlatten[NetGraph[{block, drop, scaleUp, scaleDown, cat
@@ -721,13 +741,13 @@ MakeNode[{scUp_ ,scDown_}, {skIn_, skOut_}, blockConfig_, OptionsPattern[]] := B
 
 
 ConvScale[type_, scaleVec_, chan_] := Switch[type,
-	{"Encode","Pool"}, 
+	{"Encode", "Pool"}, 
 	{PoolingLayer[scaleVec, scaleVec]},
-	{"Encode","Conv"}, 
+	{"Encode", "Conv"}, 
 	{ConvolutionLayer[chan, scaleVec, "Stride" -> scaleVec]},
-	{"Decode","Pool"}, 
+	{"Decode", "Pool"}, 
 	{ResizeLayer[Scaled /@ scaleVec, Resampling -> "Nearest"]},
-	{"Decode","Conv"}, 
+	{"Decode", "Conv"}, 
 	{ResizeLayer[Scaled /@ scaleVec, Resampling -> "Nearest"], ConvolutionLayer[chan, scaleVec, 
 		"Stride" -> 0 scaleVec + 1, 
 		"PaddingSize" -> (If[OddQ[#], {(Ceiling[#/2] - 1), (Ceiling[#/2] - 1)}, {0, #/2}] & /@ scaleVec)]}
@@ -738,7 +758,7 @@ ConvScale[type_, scaleVec_, chan_] := Switch[type,
 (*ConvBlock*)
 
 
-ConvBlock[block_, feat_?IntegerQ, dim_?IntegerQ] := ConvBlock[block, {feat, Round[feat/2]}, {"None", dim, 1}]
+ConvBlock[block_, feat_?IntegerQ, dim_?IntegerQ] := ConvBlock[block, {feat, Round[feat/2]}, {{"None", "Batch"}, dim, 1}]
 
 ConvBlock[block_, feat_?IntegerQ, {act_, dim_}] := ConvBlock[block, {feat, Round[feat/2]}, {act, dim, 1}]
 
@@ -770,9 +790,18 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 		"ResNet",
 		dep = blockSet;
 		NetGraph@NetFlatten@NetGraph[{
-			"con" -> Flatten[Table[If[i =!= dep, Conv[featInt, {dim, 3}, act], Conv[featOut, {dim, 3}]], {i, 1, dep}]],
-			"skip" -> Conv[featOut, {dim, 1}],
-			"tot" -> {TotalLayer[], ActivationLayer[act]}
+			"con" -> Flatten[Table[If[i =!= dep, Conv[featInt, {dim, 3}, act], Conv[featOut, {dim, 3}, {"None", Last@Flatten[{act}]}]], {i, 1, dep}]],
+			"skip" -> Conv[featOut, {dim, 1}, {"None", Last@Flatten[{act}]}],
+			"tot" -> {TotalLayer[], ActivationLayer[First[Flatten[{act}]]]}
+			}, {{"con", "skip"} -> "tot"}
+		],
+
+		"ResNetL",
+		dep = blockSet;
+		NetGraph@NetFlatten@NetGraph[{
+			"con" -> Flatten[Table[If[i =!= dep, Conv[featInt, {dim, 1}, act], Conv[featOut, {dim, 3}, {"None", Last@Flatten[{act}]}]], {i, 1, dep}]],
+			"skip" -> Conv[featOut, {dim, 1}, {"None", Last@Flatten[{act}]}],
+			"tot" -> {TotalLayer[], ActivationLayer[First[Flatten[{act}]]]}
 			}, {{"con", "skip"} -> "tot"}
 		],
 
@@ -841,19 +870,27 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_, dil_}] := Block[{
 (*Conv*)
 
 
-Conv[featOut_, {dim_, kern_}] := Conv[featOut, {dim, kern, 1}, "None"]
+Conv[featOut_, {dim_, kern_}] := Conv[featOut, {dim, kern, 1}, {"None", "Batch"}]
 
-Conv[featOut_, {dim_, kern_}, act_] := Conv[featOut, {dim, kern, 1}, act]
+Conv[featOut_, {dim_, kern_}, act_?StringQ] := Conv[featOut, {dim, kern, 1}, {act, "Batch"}]
 
-Conv[featOut_, {dim_, kern_, dil_}] := Conv[featOut, {dim, kern, dil}, "None"]
+Conv[featOut_, {dim_, kern_}, act_?ListQ] := Conv[featOut, {dim, kern, 1}, act]
 
-Conv[featOut_, {dim_, kern_, dil_}, act_] := {
+Conv[featOut_, {dim_, kern_, dil_}] := Conv[featOut, {dim, kern, dil}, {"None", "Batch"}]
+
+Conv[featOut_, {dim_, kern_, dil_}, act_?StringQ] := Conv[featOut, {dim, kern, dil}, {act, "Batch"}]
+
+Conv[featOut_, {dim_, kern_, dil_}, {act_?StringQ, bat_?StringQ}] := {
 	(*The most basic conv block CON>BN>ACT used in each of the advanced conv blocks*)
 	ConvolutionLayer[featOut, ConstantArray[kern, dim], 
 		"PaddingSize" -> (Ceiling[kern/2] - 1) dil, 
 		"Stride" -> 1, 
 		"Dilation" -> dil],	
-	BatchNormalizationLayer[], 
+	Switch[bat, 
+		"Group", NormalizationLayer[All, 1, "GroupNumber" -> {8, 1, 1, 1}], 
+		"Instance", NormalizationLayer[],
+		_, BatchNormalizationLayer[]
+	], 
 	ActivationLayer[act]
 }
 
@@ -864,12 +901,14 @@ Conv[featOut_, {dim_, kern_, dil_}, act_] := {
 
 ActivationLayer[] := ActivationLayer["GELU"]
 
-ActivationLayer[actType_] := If[Head[actType]===ParametricRampLayer||Head[actType]===ElementwiseLayer,actType,
+ActivationLayer[actType_] := If[Head[actType]===ParametricRampLayer||Head[actType]===ElementwiseLayer,
+	actType,
 	Switch[actType, 
-	"LeakyRELU", ParametricRampLayer[], 
-	"None" | "", Nothing,
-	_, If[StringQ[actType],ElementwiseLayer[actType], Message[ActivationLayer::type, actType];Nothing]
-]]
+		"LeakyRELU", ParametricRampLayer[], 
+		"None" | "", Nothing,
+		_, If[StringQ[actType],ElementwiseLayer[actType], Message[ActivationLayer::type, actType];Nothing]
+	]
+]
 
 
 (* ::Subsection:: *)
@@ -1384,7 +1423,7 @@ SyntaxInformation[MakeClassifyImage] = {"ArgumentsPattern" -> {_, OptionsPattern
 
 MakeClassifyImage[dat_, opts:OptionsPattern[]] := Switch[ArrayDepth[dat],
 	2, MakeClassifyImage[dat, opts],
-	3, MakeClassifyImage[#, opts]&/@dat,
+	3, MakeClassifyImage[#, opts]&/@First[AutorCropData[dat]],
 	_, $Failed
 ]
 
@@ -1558,7 +1597,7 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 (*ReplaceLabels*)
 
 
-ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, file, fileOut},
+ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labNamS, labIn, labOut, labOutS,file, fileOut},
 	{what, side} = loc;
 	labIn = GetSegmentationLabels[seg];
 
@@ -1569,14 +1608,22 @@ ReplaceLabels[seg_, loc_, type_] := Block[{what, side, labNam, labIn, labOut, fi
 			"Lower", "MusclesLegLowerLabels",
 			"Shoulder", "MusclesShoulderLabels"],
 		"Bones", "BonesLegLabels"];
-	labNam = # <> "_" <> side & /@ MuscleLabelToName[labIn, file];
+
+	labNam = MuscleLabelToName[labIn, file];
+	labNamS = # <> "_" <> side & /@ labNam;
+	
 	fileOut = GetAssetLocation@Switch[type,
 		"Muscle", Switch[what, 
 			"Upper", "MusclesLegLabels",
 			"Lower", "MusclesLegLabels",
 			"Shoulder", "MusclesShoulderAllLabels"],
 		"Bones", "MusclesLegLabels"];
+
 	labOut = MuscleNameToLabel[labNam, fileOut];
+	labOutS = MuscleNameToLabel[labNamS, fileOut];
+
+	labOut = Cases[Transpose[{labOut, labOutS}], _Integer, 2];
+
 	ReplaceSegmentations[seg, labIn, labOut]
 ]
 
@@ -1673,7 +1720,10 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 
 		,
 		"Shoulder",
+		(*add cut function*)
 		dat = {{data, {"Both", {1, dim[[1]]}}, {"Both", {1, dim[[3]]}}}};
+
+
 		{dat, pts, loc} = Transpose[CropPart/@dat];
 		{{dat, pts, dim}, loc, {{whatSide, 0}, {whatPos, 0}}}
 
@@ -1897,10 +1947,14 @@ Options[TrainSegmentationNetwork] = {
 	BlockType -> "ResNet",
 	NetworkArchitecture -> "UNet",
 	ActivationType -> "GELU",
+	NormalizationType -> "Batch",
+	RescaleMethod -> "Conv",
+	CatenateMethod -> "Cat",
+
+	NetworkDepth -> 5,
 	DownsampleSchedule -> 2,
 	SettingSchedule -> Automatic,
 	FeatureSchedule -> 32,
-	NetworkDepth -> 5,
 
 	MultiChannel -> False,
 
@@ -2879,7 +2933,7 @@ NetSummary[net_, rep_?StringQ] := Block[{
 	count[[All, 3]] = toK /@ count[[All, 3]];
 	count[[All, 4]] = toK /@ count[[All, 4]];
 
-	norm = Select[lays, Head[#] === BatchNormalizationLayer &];
+	norm = Select[lays, (Head[#] === BatchNormalizationLayer || Head[#] === NormalizationLayer )&];
 	normWeights = First@Total[Total[Information[#, "ArraysDimensions"] /@ Keys[Information[norm[[1]], "ArraysDimensions"]]] & /@ norm];
 
 	nelem = Information[net, "ArraysTotalElementCount"];

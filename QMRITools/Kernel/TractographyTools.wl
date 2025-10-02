@@ -258,7 +258,6 @@ ResampleTracts[tracts_, len_?ListQ] := Block[{int, r},
 ]
 
 
-
 (* ::Subsubsection::Closed:: *)
 (*MoveTracts*)
 
@@ -654,6 +653,8 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		{AlignVec, ToPackedArray@N@RotateDimensionsLeft[{RotateDimensionsRight[EigVec[RotateDimensionsLeft@tens, {1, 0, 0}]]}, 2]}
 	];
 
+	mon[Dimensions@tens];
+
 	(*make the random seed points*)
 	maxSeed = Round@Which[
 		Head[maxSeed]===Scaled, First[maxSeed] seedN,
@@ -696,7 +697,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 			ParallelEvaluate[stopInt = MakeInt[stop, vox, int]];
 			ParallelEvaluate[trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&];
 		];
-		mon["Parallel preparation took "<>ToString[Round[tp,.1]]];
+		mon["Parallel preparation took "<>ToString[Round[tp, .1]]];
 
 		{t1, tracts} = AbsoluteTiming@ParallelMap[trFunc, seeds, ProgressReporting -> mon];
 		ParallelEvaluate[Clear[vecInt, stopInt, trFunc, tens, stop]];
@@ -844,7 +845,7 @@ RK4[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3, k4},
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*EigVec*)
 
 
@@ -887,16 +888,16 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 	If[norm < 10.^-15, Return[{0., 0., 0.}]];
 	vec = vec/norm;
 	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*AlignVec*)
 
 
 AlignVec = Compile[{{vec, _Real, 1}, {vdir, _Real, 1}},
 	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection::Closed:: *)
@@ -1095,11 +1096,13 @@ SelectTractPartInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _R
 (*make sure trackts always fall withing roi			*)
 PadROI[roi_] := Normal@PadRight[roi, Dimensions[roi] + 1, 0]
 
+
+
 (* ::Subsection:: *)
 (*PlotTracts*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PlotTracts*)
 
 
@@ -1223,7 +1226,7 @@ MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
 ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MakeArrayColor*)
 
 
