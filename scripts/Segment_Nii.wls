@@ -20,12 +20,12 @@ If[load === $Failed,
 	(* Help flag detection *)
 	If[MemberQ[Keys[args], "-h"] || MemberQ[Keys[args], "--help"],
 		Print["Usage:"];
-		Print["  script.wls -i <input> -o <output> [-g Y|N] [-l \"Legs\"|\"Upperleg\"|\"Lowerlegs\"]"];
+		Print["  script.wls -i <input> -o <output> [-g Y|N] [-l \"Legs\"|\"UpperLeg\"|\"LowerLegs\"]"];
 		Print["Flags:"];
 		Print["  --i    Input NIfTI file (required)"];
 		Print["  --o    Output NIfTI file (required)"];
 		Print["  --g    Use GPU? (Y/N, default: N)"];
-		Print["  --l    Region to segment: Legs (default), Upperleg, or Lowerlegs"];
+		Print["  --l    Region to segment: Legs (default), UpperLeg, or LowerLegs"];
 		Print["  --h, --help  Show this help message"];
 	];
 	

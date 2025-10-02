@@ -86,6 +86,8 @@ HarmonicDenoiseTensor[tens, seg, vox, labs] will do the same for each segmentati
 
 HarmonicDenoiseTensor[] is based on 10.1016/j.media.2011.01.005."
 
+HarmonicDenoiseTensorI::usage = ""
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -302,7 +304,7 @@ NoiseAppCN = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3},
 		K = (1 - top/div);
 		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
 	]];
-	
+
 NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, {sig, _Real, 3}},
 	Block[{top, div, K, deb},
 		top = (4 sig^2 (secmod - sig^2));
@@ -950,7 +952,7 @@ Options[HarmonicDenoiseTensorI]=Options[HarmonicDenoiseTensor]
 
 HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 		mon, sigma, md, fa, msel, rFA, rMD, G, L, R,coor, sel, map, vecN, 
-		vecH, sol, tensN, maps, itt, step, tol
+		vecH, sol, tensN, maps, itt, step, tol, tgl, tr, tt
 	},
 
 	{sigma, itt, step, tol, rFA, rMD} = OptionValue[{RadialBasisKernel, MaxIterations,
@@ -958,21 +960,30 @@ HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 	debugDenoise[{sigma, itt, step, tol, rFA, rMD}, "Settings"];
 
 	(*make gradien,laplace and RBF matrix functions*)
-	debugDenoise["Making G, L matrix"];
-	{{G, L}, coor, sel, map} = MakeGradientLaplacian[mask, vox, sigma];
-	debugDenoise["Making R matrix"];
-	R = MakeRBF[coor, sigma, vox];
+	tt = First@AbsoluteTiming[
+		tgl = First@AbsoluteTiming[
+			{{G, L}, coor, sel, map} = MakeGradientLaplacian[mask, vox, sigma];
+		];
+		debugDenoise[tgl, "Making G, L matrix"];
+		
+		tr = First@AbsoluteTiming[
+			R = MakeRBF[coor, sigma, vox];
+		];
+		debugDenoise[tr, "Making R matrix"];
 
-	(*becouse of the implementation coordiante system the tensor needs to be reversed*)
-	tensN = FlipTensorOrientation[MaskData[tens, mask], {"z", "y", "x"}];
-	(*remove unreliable voxel*)
-	{md, fa} = ParameterCalc[tensN][[4;;5]];
-	msel = Mask[{{fa, rFA}, {md, rMD}}];
+		(*becouse of the implementation coordiante system the tensor needs to be reversed*)
+		tensN = FlipTensorOrientation[MaskData[tens, mask], {"z", "y", "x"}];
+		(*remove unreliable voxel*)
+		{md, fa} = ParameterCalc[tensN][[4;;5]];
+		msel = Mask[{{fa, rFA}, {md, rMD}}];
 
-	(*perform the recon*)
-	debugDenoise["starting fitting"];
-	{vecN, vecH, sol} = FitHarmonicBasis[MaskData[tensN, msel], sel, {G, L, R},
-		MaxIterations->itt, GradientStepSize->step, Tolerance->tol];
+		(*perform the recon*)
+		debugDenoise["starting fitting"];
+		{vecN, vecH, sol} = FitHarmonicBasis[MaskData[tensN, msel], sel, {G, L, R},
+			MaxIterations->itt, GradientStepSize->step, Tolerance->tol];
+	];
+
+	debugDenoise[tt, "Total denoise time"];
 
 	(*generate output*)
 	maps = MakeSolutionMaps[sol, map];
@@ -1002,9 +1013,8 @@ MakeGradientLaplacian[mask_,vox_?VectorQ,sig_?NumberQ]:=Block[{aDepth,dim,const,
 	const = ConstantArray[0, aDepth];
 	matI = IdentityMatrix[aDepth];
 
-	(*dilate the mask if needed*)
+	(*extend matrix in all directions and dilate mask in each direction if needed*)
 	maskDilated = If[sig === 0, mask, Dilation[mask, BoxMatrix[Round[sig/vox]]]];
-	(*extend matrix in all directions and dilate mask in each direction*)
 	maskPadded = (di = ArrayPad[ArrayPad[maskDilated, Thread[{const, #}]], 1];
 	Unitize[di + RotateRight[di,#]])& /@ Reverse[matI];
 
@@ -1112,36 +1122,36 @@ MakeGradientLaplacian[mask_,vox_?VectorQ,sig_?NumberQ]:=Block[{aDepth,dim,const,
 
 MakeRBF[{coor_, sel_}, rad_]:=MakeRBF[{coor, sel}, rad, 1]
 
-MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{mr, r2, seed, target, n, nr, pg, p, g, rbFunc},
-	mr = (2.5 rad)^2;
-	r2 = 1 / rad^2;
-
+MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{seed, target, n, m, nr, index, indexFinal, rbf, rows, cols, vals},
 	seed = Transpose[Reverse[vox Transpose[ToPackedArray@N@coor]]];
-	target = Transpose[Pick[seed, sel, 1]];
-	n = Length[target];
+	target = Pick[seed, sel, 1];
+
+	n = Length[First@target];
+	m = Length@seed;
 	nr = n Total@sel;
 
-	pg = gaussianRBFGradientC[seed, target, mr, r2, n];
-	p = Round[pg[[All, 1]]];
-	g = pg[[All, 2]];
+	index = Nearest[target -> "Index", seed, {All, 2.5 rad}, 
+	DistanceFunction -> EuclideanDistance];
+	indexFinal = IndexSwitch[index, n];
+	rbf = gaussianRBFGradientC[seed, target, index, 1./rad^2];
 
-	rbFunc = SparseArray[#[[1]] -> #[[2]], nr, 0.]&;
-	DistributeDefinitions[nr, rbFunc];
+	rows = ToPackedArray@Join @@ MapThread[ConstantArray, {Range[Length@indexFinal], Length /@ indexFinal}];
+	cols = ToPackedArray@Join @@ indexFinal;
+	vals = ToPackedArray@Join @@ rbf;
 
-	SparseArray[ParallelMap[rbFunc, Transpose[{p,g}], ProgressReporting->False]]
+	SparseArray[Transpose[{rows, cols}] -> vals, {m, nr}, 0.]
 ]
 
 
-gaussianRBFGradientC = Compile[{{center,_Real,1}, {points,_Real,2}, {mr,_Real,0}, {r2,_Real,0}, {dm,_Real,0}}, Module[{c,d,p,sel},
-	c = points - center;
-	d = Total[c^2];
-	sel = UnitStep[mr-d];
-	p = Flatten[Position[sel,1]];
-	{
-		If[dm===2, Flatten[Transpose[{2p-1,2p}]], Flatten[Transpose[{3p-2, 3p-1, 3p}]]],
-		Flatten[2 r2 Exp[-d[[p]] r2] Transpose[c][[p]]]
-	}
-], RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+gaussianRBFGradientC = Compile[{{center, _Real, 1}, {points, _Real, 2}, {ind, _Integer, 1}, {r2, _Real, 0}}, Block[{c},
+    c = Transpose[points[[ind]]] - center;
+    Flatten[2 r2 Exp[-Total[c^2] r2] Transpose[c], 1]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+IndexSwitch = Compile[{{i, _Integer, 1}, {dm, _Integer, 0}}, 
+	Flatten[If[dm === 2, Transpose[{2 i - 1, 2 i}], Transpose[{3 i - 2, 3 i - 1, 3 i}]], 1]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1151,7 +1161,7 @@ gaussianRBFGradientC = Compile[{{center,_Real,1}, {points,_Real,2}, {mr,_Real,0}
 Options[FitHarmonicBasis] = {
 	MaxIterations -> 250,
 	GradientStepSize -> {0.5,0.5},
-	Tolerance -> 10.^-5
+	Tolerance -> 10.^-4
 };
 
 FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block[{
@@ -1191,7 +1201,7 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block
 		h0 = NullSpaceProjection[matL, h0, solver];
 		vec0 = Partition[matG . h0, d];
 		v0 = GetDiffusionValues[tens, vec0];
-		sth = Norm[GetObjectiveGradient[tens, vec0, Gt]]
+		sth = Norm[GetObjectiveGradient[tens, vec0, matGt]]
 	];
 	debugDenoise[thp, "Prep time h-phase: "];
 
@@ -1203,7 +1213,7 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block
 		vsh = Reap[While[dvh>tol && i<itt,
 			i++; Sow[{v0, dvh}];
 			h1 = h0 + (100 step[[1]] / sth) GetObjectiveGradient[tens, vec0, matGt];
-			h1 = NullSpaceProjection[L, h1, solver];
+			h1 = NullSpaceProjection[matL, h1, solver];
 			vec1 = Partition[matG . h1, d];
 			v1 = GetDiffusionValues[tens, vec1];
 			dvh = Abs[v0 - v1];
@@ -1247,8 +1257,8 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block
 	debugDenoise[thp+th+tgp+tg, "Total fit time: "];
 
 	debugDenoise[Grid[{{
-		ListLinePlot[{vsh[[2,1,All,1]], vsg[[2,1,All,1]]} / diff, ImageSize->200, PlotRange->Full],
-		ListLinePlot[{vsh[[2,1,All,2]], vsg[[2,1,All,2]]} / tol, ImageSize->200]
+		ListLinePlot[{vsh[[2,1,All,1]], vsg[[2,1,All,1]]} / diff, ImageSize->200, PlotRange->Full,PlotLabel->"Difference"],
+		ListLinePlot[{vsh[[2,1,All,2]], vsg[[2,1,All,2]]} / tol, ImageSize->200,PlotLabel->"Tollerance"]
 	}}], "Gradient functions: "];
 
 	{vha, Normalize/@vh, {h1,a1}}

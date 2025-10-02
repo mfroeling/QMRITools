@@ -1836,6 +1836,8 @@ SyntaxInformation[GradientCoilTensor] = {"ArgumentsPattern" -> {_, _, _, _, Opti
 GradientCoilTensor[mask_?ArrayQ, vox_?VectorQ, off_?VectorQ, intI_, OptionsPattern[]] := Block[{
 		coor, coors, dm, int, dint, tens
 	},
+	(* based on Bammer et al. 2003 DOI: 10.1002/mrm.10545*)
+
 	(*convert mask to coordinate list*)
 	{dm, coor} = DataToVector[mask][[2]];
 	coors = Transpose[vox Transpose[coor - 1] + off];
@@ -1881,7 +1883,9 @@ MakeGradientDerivatives[vox_, type_] := MakeGradientDerivativesI[vox, type]
 MakeGradientDerivativesI[vox_, type_] := MakeGradientDerivativesI[vox, type] = Block[{
 		vx, vy, vz, ordxy, ordz, lenxy, lenz, ref, dx, dy, dz, gxc, gys, gzc, gxin, gyin, gzin,
 		bx, by, bz, location, locationSphere, fieldV, gx, gy, gz, int, dint
-  },
+	},
+
+	(* based on Bammer et al. 2003 DOI: 10.1002/mrm.10545*)
 
 	{vz, vx, vy} = N@vox 2.;
 
@@ -1983,7 +1987,7 @@ MakeGradientMaps[{int_, dint_}, fov_, vox_, start_] := Block[{
 		{y, sy, sy + fovy - vy, vy},
 		{x, sx, sx + fovx - vx, vx}
 	];
-	
+
 	dimxyz = Dimensions[xyzPointsM][[1 ;; 3]];
 	xyzPoints = Flatten[xyzPointsM, 2];
 
