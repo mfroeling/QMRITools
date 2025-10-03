@@ -344,7 +344,7 @@ DistanceRange::usage =
 "DistanceRange is an option for MakeDistanceMap. It defines the range of the distance map outside the segmentation in voxels.
 Values can be Automatic, All, or a integer value. If All the distance map is calculated for the whole image. If 0 the distance map is only calculated inside the segmentation."
 
-
+ReplaceLabels::usage = "..."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -1416,7 +1416,7 @@ MakeClassifyNetwork[classes_, OptionsPattern[]] := Block[{enc, dec, net,imSize},
 
 
 Options[MakeClassifyImage]={
-	ImageSize->{128, 128}
+	ImageSize -> {128, 128}
 };
 
 SyntaxInformation[MakeClassifyImage] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
@@ -1424,6 +1424,7 @@ SyntaxInformation[MakeClassifyImage] = {"ArgumentsPattern" -> {_, OptionsPattern
 MakeClassifyImage[dat_, opts:OptionsPattern[]] := Switch[ArrayDepth[dat],
 	2, MakeClassifyImage[dat, opts],
 	3, MakeClassifyImage[#, opts]&/@First[AutorCropData[dat]],
+	4, MakeClassifyImage[#, opts]&/@First[AutorCropData[dat[[All, 1]]]],
 	_, $Failed
 ]
 
@@ -1451,32 +1452,53 @@ Options[ClassifyData] = {
 SyntaxInformation[ClassifyData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
-		data, dev, len, ran, datF, kneeStart, kneeEnd, pos
+		dev, net, imSize, ims
 	},
-	data = MakeClassifyImage[dat];
+
 	dev = OptionValue[TargetDevice];
-	Which[
+
+	(*get the network*)
+	net = Which[
 		FileExistsQ[met] && FileExtension[met]==="wlnet", Import[met][data],
-		StringQ[met], Switch[met,
-			"LegSide", FindLegSide[data, dev],
-			"LegPosition", FindLegPos[data ,dev]],
-		Head[met]===NetChain || Head[met]===NetGraph, met[data]
+		StringQ[met], net = GetNeuralNet[met],
+		Head[met]===NetChain || Head[met]===NetGraph, met,
+		True, $Failed
+	];
+	If[net === $Failed, Return[$Failed]];
+
+	(*convert data *)
+	imSize = NetDimensions[NetReplacePart[net, "Input"->None], "Input"][[2;;]];
+	ims = MakeClassifyImage[dat, ImageSize -> imSize];
+
+	Switch[met,
+		"LegSide"|"ShoulderSide", FindSideClass[ims, net, dev],
+		"LegPosition", FindLegPos[ims, net, dev],
+		"ShoulderPosition", FindShoulderPos[dat, ims, net, dev]
 	]
 ]
 
 
 (* ::Subsubsection::Closed:: *)
-(*FindLegSide*)
+(*FindSideClass*)
 
 
-FindLegSide[data_, dev_] := Block[{net, imSize},
-	net = GetNeuralNet["LegSide"];
-	If[net === $Failed, $Failed,
-		imSize = NetDimensions[NetReplacePart[net, "Input"->None], "Input"][[2;;]];
-		If[!AllTrue[ImageDimensions/@data, #===imSize&], $Failed,
-			Last@Keys@Sort@Counts[net[data, TargetDevice -> dev]]
-		]
-	]
+FindSideClass[data_, net_, dev_] := Last@Keys@Sort@Counts@net[data, TargetDevice -> dev]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindSidePos*)
+
+
+FindSidePos[data_, net_, dev_] := First@Mean@net[data, TargetDevice -> dev]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindShoulderPos*)
+
+
+FindShoulderPos[data_, ims_, net_, dev_] := Block[{pos},
+	pos = FindSidePos[ims, net, dev];
+	Round[Dimensions[data][[-2]]{pos, 0.1}]
 ]
 
 
@@ -1484,34 +1506,31 @@ FindLegSide[data_, dev_] := Block[{net, imSize},
 (*FindLegPos*)
 
 
-FindLegPos[data_, dev_] := Block[{
-		net, len, ran, datF, kneeStart, kneeEnd, pos, imSize
+FindLegPos[data_, net_, dev_] := Block[{
+		len, ran, datF, kneeStart, kneeEnd, pos, imSize
 	},
-	net = GetNeuralNet["LegPosition"];
-	If[net === $Failed, $Failed,
-		imSize = NetDimensions[NetReplacePart[net,"Input"->None],"Input"][[2;;]];
-		If[!AllTrue[ImageDimensions/@data,#===imSize&],	$Failed,
-			len = Length[data];
-			ran = Range[1, len];
-			(*find loc per slice*)
-			datF = MedianFilter[net[data, TargetDevice -> dev]/.Thread[{"Lower","Knee","Upper"}->{1.,2.,3.}], 1];
-			{kneeStart, kneeEnd} = First[SortBy[Flatten[
-					Table[{a, b, PosFunc[a, b, len, ran, datF]}, {a, 0, len}, {b, a+1, len}]
-				, 1],Last]][[1;;2]];
-			pos = Which[
-				kneeStart == 0. && kneeEnd == len, "Knee",
-				kneeStart > 0 && kneeEnd >= len, "Lower",
-				kneeStart == 0. && kneeEnd =!= len, "Upper",
-				kneeStart =!= 0. && kneeEnd =!= len, "Both"
-			];
-			{pos, {kneeStart + 1, kneeEnd}}
-		]
-	]
+
+	len = Length[data];
+	ran = Range[1, len];
+	(*find loc per slice*)
+	datF = MedianFilter[net[data, TargetDevice -> dev]/.Thread[{"Lower","Knee","Upper"}->{1.,2.,3.}], 1];
+
+	{kneeStart, kneeEnd} = First[SortBy[Flatten[
+			Table[{a, b, PosFunc[a, b, len, ran, datF]}, {a, 0, len}, {b, a+1, len}]
+		, 1],Last]][[1;;2]];
+	pos = Which[
+		kneeStart == 0. && kneeEnd == len, "Knee",
+		kneeStart > 0 && kneeEnd >= len, "Lower",
+		kneeStart == 0. && kneeEnd =!= len, "Upper",
+		kneeStart =!= 0. && kneeEnd =!= len, "Both"
+	];
+	{pos, {kneeStart + 1, kneeEnd}}
 ]
 
 
-PosFunc = Compile[{{a, _Integer, 0},{b, _Integer, 0},{l, _Integer, 0},{x, _Integer, 1},{d, _Real, 1}},
-	Total[((Which[1<=#<=a, 1., a<=#<=b, 2., b<=#<=l, 3., True, 0] &/@ x) - d)^2]];
+PosFunc = Compile[{{a, _Integer, 0}, {b, _Integer, 0}, {l, _Integer, 0}, {x, _Integer, 1}, {d, _Real, 1}},
+	Total[((Which[1<=#<=a, 1., a<=#<=b, 2., b<=#<=l, 3., True, 0] &/@ x) - d)^2]
+];
 
 
 (* ::Subsection:: *)
@@ -1530,11 +1549,11 @@ Options[SegmentData] = {
 
 SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SegmentData[data_, opts:OptionsPattern[]] := SegmentData[data, "Legs", opts]
+SegmentData[datI_, opts:OptionsPattern[]] := SegmentData[datI, "Legs", opts]
 
-SegmentData[data_, whati_, OptionsPattern[]] := Block[{
-		dev, max, mon, patch, pts, dim ,loc, set, net, type, segs, all, time, timeAll,
-		what, netFile, custom, monO
+SegmentData[datI_, whati_, OptionsPattern[]] := Block[{
+		dev, max, mon, patch, pts, dim ,loc, set, net, type, segs, all, data,
+		time, timeAll, what, netFile, custom, monO
 	},
 
 	timeAll = First@AbsoluteTiming[
@@ -1548,12 +1567,14 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 		];
 
 		(*split the data in upper and lower legs and left and right*)
-		mon[Dimensions@data, "Analyzing the data with dimensions:"];
+		mon[Dimensions@datI, "Analyzing the data with dimensions:"];
+		data = Switch[ArrayDepth[datI], 4, datI[[All,1]], _, datI];
 		time = First@AbsoluteTiming[
 			{{patch, pts, dim}, loc, set} = SplitDataForSegmentation[data, what, Monitor -> monO, TargetDevice -> dev]
 		];
 		mon[Round[time, .1], "Total time for analysis [s]: "];
-		mon[Column@Thread[{loc,Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"];
+		mon[set, "Settings: "];
+		mon[Column@Thread[{loc, Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"];
 
 		(*get the network name and data type*)
 		{net, type} = Switch[what,
@@ -1561,8 +1582,8 @@ SegmentData[data_, whati_, OptionsPattern[]] := Block[{
 			"Legs"|"UpperLegs"|"LowerLegs",	{
 				(#[[1]] /. {"Upper" -> "SegThighMuscle", "Lower" -> "SegLegMuscle"})&, "Muscle"
 			},
-			"Shoulder", {"SegShoulder"&, "Muscle"},
-			"Back", {"SegBack"&, "Muscle"},
+			"Shoulder", {"SegShoulderMuscle"&, "Muscle"},
+			"Back", {"SegBackMuscle"&, "Muscle"},
 			_, Return[]
 		];
 		If[custom, net = If[ListQ[netFile],
@@ -1720,12 +1741,34 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 
 		,
 		"Shoulder",
-		(*add cut function*)
-		dat = {{data, {"Both", {1, dim[[1]]}}, {"Both", {1, dim[[3]]}}}};
+		(*find which side using NN*)
+		time= First@AbsoluteTiming[
+			whatSide = ClassifyData[data, "ShoulderSide", TargetDevice -> dev];
 
+			(*based on side cut data or propagate*)
+			dat = Switch[whatSide,
+				(*both sides which need to be split*)
+				"Both",
+				{cut, over} = ClassifyData[data, "ShoulderPosition"];
+				{right, left, cut} = CutData[data, {cut, over}];
+				{
+					{right, {"Shoulder", {1, dim[[1]]}}, {"Right", {1, cut + over}}}, 
+					{left, {"Shoulder", {1, dim[[1]]}}, {"Left", {cut - over + 1, dim[[3]]}}}
+				},
+				_,
+				(*only one side, no split*)
+				cut = over = 0;
+				{
+					{data, {"Shoulder", {1, dim[[1]]}}, {whatSide, {1, dim[[3]]}}}
+				}
+			];
+		];
+
+		mon[whatSide, "Data contains sides: "];
+		mon[Round[time, .1], "Time for side estimation [s]:"];
 
 		{dat, pts, loc} = Transpose[CropPart/@dat];
-		{{dat, pts, dim}, loc, {{whatSide, 0}, {whatPos, 0}}}
+		{{dat, pts, dim}, loc, {{whatSide, {cut, over}}, {"Shoulder", 0}}}
 
 		,
 		"Back",

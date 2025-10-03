@@ -28,14 +28,19 @@ PacletObject[<|
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"ColorData", "SCMv8txt.zip"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"GradientTool", "GradientGUI-v14.cdf"}}},
 		
-		(*Neural Networks*)
+		(*Neural Networks segmentation*)
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "Muscles_leg_upper.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "Muscles_leg_lower.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegBones", "Bones_leg_full.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle", "Muscles_shoulder.wlnet"}}},
+
+		(*Neural Networks clasification*)
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Leg_side_full.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Leg_pos_full.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderSide", "Shoulder_side.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderPosition", "Shoulder_cut.wlnet"}}},
 
-		(*muscle segmentation labels*)
+		(*Segmentation labels*)
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"BonesLegLabels", "Bones_leg.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegLabels", "Muscles_leg.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegAllLabels", "Muscles_leg_all.txt"}}},
