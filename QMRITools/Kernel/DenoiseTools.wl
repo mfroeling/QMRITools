@@ -86,8 +86,6 @@ HarmonicDenoiseTensor[tens, seg, vox, labs] will do the same for each segmentati
 
 HarmonicDenoiseTensor[] is based on 10.1016/j.media.2011.01.005."
 
-HarmonicDenoiseTensorI::usage = ""
-
 
 (* ::Subsection::Closed:: *)
 (*Options*)

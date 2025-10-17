@@ -85,7 +85,6 @@ QMRITools`DenoiseTools`$debugDenoise = False;
 (*load all the packages without error reporting such we can find the names of all the functions and options*)
 Quiet[Get/@QMRITools`$Contexts];
 QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
-tempDir = StringDrop[GetAssetLocation["ColorData"], -4];
 
 
 Begin["`Private`"];
@@ -134,6 +133,7 @@ With[{
 ] &/@ QMRITools`$ContextsFunctions
 
 
+tempDir = StringDrop[GetAssetLocation["ColorData"], -4];
 (*getting the color functions, prevents from reloading if kernel is not restarted*)
 If[!QMRITools`$LoadedColor, 
 	If[QMRITools`$Verbose, 
