@@ -145,7 +145,7 @@ ShowLog[win_] := Block[{pane},
 	pane = Dynamic@Pane[Style[StringRiffle[QMRITools`$Log, "\n"], Bold, White]];
 	If[! win, pane,
 		NotebookClose[logWindow];
-		logWindow = CreateWindow@DialogNotebook[pane, Background -> Black,
+		logWindow = CreateWindow@DialogNotebook[pane, Background ->Darker@Darker@Gray,
 			WindowSize -> Automatic, WindowTitle -> "Logging window",
 			WindowFrameElements -> {"CloseBox", "ZoomBox", "MinimizeBox", "ResizeArea"},
 			WindowElements -> {"VerticalScrollBar", "HorizontalScrollBar"}

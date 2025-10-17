@@ -698,8 +698,8 @@ CreateTempDirectory[tdirI_, print_, make_] := Block[{tdir, add, str},
 Options[RegisterData] = {
 	Iterations -> 250,
 	Resolutions -> 1,
-	HistogramBins -> 32,
-	NumberSamples -> 5000,
+	HistogramBins -> 64,
+	NumberSamples -> 10000,
 	InterpolationOrderReg -> 3,
 	BsplineSpacing -> 30,
 	BsplineDirections -> {1,1,1},
@@ -1072,7 +1072,8 @@ RegisterDatai[
 
 		(*perform translation on all files *)
 		debugElastix["TransformData: making multi output"];
-		data = TransformData[{#, voxm}, TempDirectory->DirectoryName[tdir], DeleteTempDirectory->False, PrintTempDirectory->False]&/@moving;
+		data = TransformData[{#, voxm}, TempDirectory->DirectoryName[tdir], 
+			DeleteTempDirectory->False, PrintTempDirectory->False]&/@moving;
 	];
 
 	(*do some cleanup*)
@@ -1174,15 +1175,15 @@ TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command
 		debugElastix["transform $lastElastixTemp: " <> $lastElastixTemp];
 
 		(*Export and transform*)
-		ExportNii[data, vox, FileNameJoin[{tdir,"trans.nii"}]];
+		ExportNii[data, vox, FileNameJoin[{tdir, "trans.nii"}]];
 		command = TransformixCommand[tdir, True];
 
 		RunCommands[command];
-		output = ToPackedArray[ImportNii[FileNameJoin[{tdir,"result.nii"}]][[1]]];
+		output = ToPackedArray[ImportNii[FileNameJoin[{tdir, "result.nii"}]][[1]]];
 
 		(*Delete temp directory*)
 		Switch[OptionValue[DeleteTempDirectory],
-			"All", DeleteDirectory[FileNameTake[tdir, {1, -2}],DeleteContents -> True],
+			"All", DeleteDirectory[FileNameTake[tdir, {1, -2}], DeleteContents -> True],
 			"Trans", DeleteDirectory[tdir, DeleteContents -> True],
 			_, Null];
 
@@ -1239,8 +1240,10 @@ RegisterDataTransform[target_, moving_, {moving2_, _, vox_}, opts : OptionsPatte
 
 	met = OptionValue[TransformMethod];
 	fun = Switch[met,
-		"Mask"|"Segmentation", SparseArray[Round[TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir]]]&,
-		_, TransformData[{#, vox}, DeleteTempDirectory -> False, PrintTempDirectory -> False, TempDirectory->tdir]&
+		"Mask"|"Segmentation", SparseArray[Round[TransformData[{#, vox}, DeleteTempDirectory -> False, 
+			PrintTempDirectory -> False, TempDirectory->tdir]]]&,
+		_, TransformData[{#, vox}, DeleteTempDirectory -> False, 
+			PrintTempDirectory -> False, TempDirectory->tdir]&
 	];
 
 	mov = If[met==="Segmentation", {mov, lab} = SplitSegmentations[moving2]; mov, moving2];
