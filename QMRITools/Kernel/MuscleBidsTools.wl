@@ -2289,13 +2289,14 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 		tarFile = GenerateBidsFileName[folo, <|parts, dupKey->tarDat, "type"->tarType, 
 			"suf"->{tarSuf, tarCon}|>]<>".nii";
 		tarStacs = StringStrip /@ Flatten[{First[Select[allType, #["Key"] === tarDat &]]["Label"]}];
+		debugBids[{tarDat, tarType, tarSuf, tarCon}];
 		,
 		{tarType, tarSuf, tarCon} = tarMer;
 		tarFile = GenerateBidsFileName[folo, <|parts, "type"->tarType, 
 			"suf"->{tarSuf, tarCon}|>]<>".nii";
 		tarStacs = StringStrip /@ Flatten[{First[Select[allType, #["InFolder"] === tarSuf &]]["Label"]}];
+		debugBids[{tarType, tarSuf, tarCon}];
 	];
-	debugBids[{tarDat, tarType, tarSuf, tarCon}];
 
 	(*get the settings for the moving data*)
 	movStacs = StringStrip /@ Flatten[{datType["Label"]}];
@@ -2445,7 +2446,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 	If[!(!motion && sameType), 
 		(*-----*)AddToLog[{"Performing the registration for the all the datasets"}, 4];
 		im = First@First@Position[movs, merge["Moving"]];
-		debugBids["location moting contrast: ", im];
+		debugBids["location moving contrast: ", im];
 
 		movingA = Table[
 			(*-----*)AddToLog[{"Stack: ", i}, 5];
@@ -2480,8 +2481,8 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 					RegisterData, RegisterDataSplit];
 				reg = ToPackedArray@N@Chop@func[
 					{movingA[[im, i]], mskm, voxm[[i]]}, {target[[i]], voxt}, 
-					Iterations->300, BsplineSpacing->20 voxt, InterpolationOrderReg->1, NumberSamples -> 10000,
-					PrintTempDirectory->False, MethodReg->metReg];
+					Iterations->300, BsplineSpacing->20 voxt, InterpolationOrderReg->1, NumberSamples -> 20000,
+					PrintTempDirectory->False, MethodReg->metReg, HistogramBins -> 128];
 
 				(*if padding enlarge the moving files*)
 				If[pad > 0,					
@@ -2499,9 +2500,9 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 					If[#[[1]]==={}, {},
 						Transpose@ToPackedArray@N@Chop@Last@func[
 							#[[2]], {reg, voxm[[i]]}, {movp[[All, #[[1]]]], voxm[[i]]},
-							Iterations->300, BsplineSpacing->30 voxt, InterpolationOrderReg->1, NumberSamples -> 10000, 
-							PrintTempDirectory->False, DeleteTempDirectory->False, MethodReg->metReg
-							, BsplineDirections -> {1, 1, 0}
+							Iterations->300, BsplineSpacing->30 voxt, InterpolationOrderReg->1, 
+							NumberSamples -> 20000, PrintTempDirectory->False, DeleteTempDirectory->False, 
+							MethodReg->metReg, BsplineDirections -> {1, 1, 0}, HistogramBins -> 128
 						]
 					])& /@ {{posScale, {target[[i]], mskt, voxt}}, {posNat, {targetR, msktR, voxtR}}}
 				, 1][[Ordering[Join[posScale, posNat]]]];
@@ -2526,7 +2527,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 	movingA = If[nStac===1,
 		movingA[[All, 1]],
 		debugBids["joining: ", posAll];
-		JoinSets[movingA[[#]], overT, voxF[#], 
+		JoinSets[movingA[[#]], If[MemberQ[posNat, #], overM, overT], voxF[#], 
 			MonitorCalc->False, MotionCorrectSets->False, 
 			PadOverlap->pad, ReverseSets->reverse, 
 			NormalizeSets->MemberQ[nonQuant, movsName[[#]]], NormalizeOverlap->MemberQ[nonQuant, movsName[[#]]]
@@ -2776,7 +2777,7 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 	}, 
 
 	debugBids["Starting MuscleBidsTractographyI"];
-	debugBids[foli, folo];
+	debugBids[{foli, folo}];
 	debugBids[datType];
 
 	(*!!options!!*)
@@ -2862,9 +2863,10 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 			(* Import stop files *)
 			stop = (
 				{stop, voxs } =ImportNii[#];
+				debugBids[{voxs, vox}];
 				If[voxs=!=vox, RescaleData[stop, {voxs, vox}], stop]
 			)&/@stopfile;
-			debugBids[Dimensions@stop];
+			debugBids[Dimensions/@{stop, tens}];
 			stop = Transpose[{stop, tractStopVal}];
 
 			(*----*)AddToLog[{"Starting the whole volume tractography"}, 4];
