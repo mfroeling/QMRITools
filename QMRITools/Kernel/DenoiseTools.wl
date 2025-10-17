@@ -590,7 +590,7 @@ NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{
 (*DenoiseCSIdata*)
 
 
-Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Automatic"}
+Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Corners"}
 
 SyntaxInformation[DenoiseCSIdata]={"ArgumentsPattern"->{_, OptionsPattern[]}}
 
@@ -602,7 +602,7 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 
 	sig = Switch[OptionValue[PCANoiseSigma],
 		"Corners2",
-		StandardDeviation[Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]]],
+		0.9 StandardDeviation[Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]]],
 		"Corners", 
 		nn = Flatten[spectra[[{1, -1}, {1, -1}, {1, -1}]]];
 		sel = FindOutliers[Re@nn, OutlierRange -> 5] FindOutliers[Im@nn, OutlierRange -> 5];
