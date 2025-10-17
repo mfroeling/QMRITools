@@ -290,7 +290,12 @@ ClearQMRIToolsTemp[] := DeleteDirectory[FileNames["*QMRIToolsReg*", $TemporaryDi
 (*ParString*)
 
 
-ParString[{iterations_, resolutions_, bins_, samples_, intOrder_}, {type_, output_}, {{dtar_, n_}, grid_, derscB_, derscA_, eig_}, {openCL_, gpu_}]:=Block[
+ParString[
+	{iterations_, resolutions_, bins_, samples_, intOrder_}, 
+	{type_, output_}, 
+	{{dtar_, n_}, grid_, derscB_, derscA_, eig_}, 
+	{openCL_, gpu_}
+]:=Block[
 	{pca, mul},
 	pca = (type === "PCAtranslation" || type === "PCArigid" || type === "PCAaffine" || type==="PCAbspline");
 	mul = (type === "rigidMulti" || type === "affineMulti" || type === "bsplineMulti");
@@ -317,7 +322,7 @@ ParString[{iterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outpu
 
 (Registration "<>If[!mul, "\"MultiResolutionRegistration\"", "\"MultiMetricMultiResolutionRegistration\""]<>")
 
-(ImageSampler "<>StringRep["\"RandomCoordinate\"",n]<>")
+(ImageSampler "<>StringRep["\"RandomCoordinate\"", n]<>")
 (CheckNumberOfSamples \"true\")
 (NewSamplesEveryIteration \"true\")
 (MaximumNumberOfSamplingAttempts 5)
@@ -335,15 +340,15 @@ ParString[{iterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outpu
 "(OpenCLDeviceID \""<>ToString[gpu]<>"\")
 (Resampler \"OpenCLResampler\")
 (OpenCLResamplerUseOpenCL \"true\")
-(FixedImagePyramid "<>StringRep["\"OpenCLFixedGenericImagePyramid\"",n]<>")
+(FixedImagePyramid "<>StringRep["\"OpenCLFixedGenericImagePyramid\"", n]<>")
 (OpenCLFixedGenericImagePyramidUseOpenCL \"true\")
-(MovingImagePyramid "<>StringRep["\"OpenCLMovingGenericImagePyramid\"",n]<>")
+(MovingImagePyramid "<>StringRep["\"OpenCLMovingGenericImagePyramid\"", n]<>")
 (OpenCLMovingGenericImagePyramidUseOpenCL \"true\")"
 ,
 
 "(Resampler \"DefaultResampler\")
-(FixedImagePyramid "<>StringRep["\"FixedGenericImagePyramid\"",n]<>")
-(MovingImagePyramid "<>StringRep["\"MovingGenericImagePyramid\"",n]<>")"
+(FixedImagePyramid "<>StringRep["\"FixedGenericImagePyramid\"", n]<>")
+(MovingImagePyramid "<>StringRep["\"MovingGenericImagePyramid\"", n]<>")"
 ]<>"
 // ***************************************************************
 
@@ -351,19 +356,21 @@ ParString[{iterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outpu
 // ** Metric settings **
 // ***************************************************************
 "<>Which[(*if PCA uses stack transform*)
-	(*PCA based methods*)
-	pca,
+(*PCA based methods*)
+pca,
 "(Metric \"PCAMetric2\")
 (NumEigenValues "<>ToString[eig]<>")
 (SubtractMean \"true\")
 
 (Interpolator \"ReducedDimensionBSplineInterpolator\")
 (ResampleInterpolator \"FinalReducedDimensionBSplineInterpolator\")",
-	True,
-	(*Non PCA based methods*)
-"(Metric "<>StringRep["\"AdvancedMattesMutualInformation\"",n]<>")
-
-(Interpolator "<>StringRep["\"BSplineInterpolator\"",n]<>")
+True,
+(*Non PCA based methods*)
+If[StringContainsQ[type, "Mask"],
+"(Metric "<>StringRep["\"AdvancedMeanSquares\"", n]<>")",
+"(Metric "<>StringRep["\"AdvancedMattesMutualInformation\"", n]<>")"
+]<>"
+(Interpolator "<>StringRep["\"BSplineInterpolator\"", n]<>")
 (ResampleInterpolator \"FinalBSplineInterpolator\")"
 ]<>"
 // ***************************************************************
@@ -375,9 +382,9 @@ ParString[{iterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outpu
 
 (NumberOfResolutions "<>ToString[resolutions]<>")
 "<>Which[(*if multi resolution PCA imagePyramidSchedule has to be defined*)
-	pca,
-	"(ImagePyramidSchedule "<>SchedulePar[resolutions, dtar]<>")",
-	True,""
+pca,
+"(ImagePyramidSchedule "<>SchedulePar[resolutions, dtar]<>")",
+True,""
 ]<>"
 (BSplineInterpolationOrder "<>ToString[Clip[intOrder,{1,3},{1,3}]]<>")
 (FinalBSplineInterpolationOrder "<>ToString[intOrder]<>")
@@ -393,16 +400,16 @@ ParString[{iterations_, resolutions_, bins_, samples_, intOrder_}, {type_, outpu
 // ***************************************************************
 "<>Switch[type, (*switch beteen registration types*)
 (*normal or multi methods*)	
-"translation",
+"translation" | "translationMask",
 "(Transform \"TranslationTransform\")",
-"rigid" | "rigidMulti",
+"rigid" | "rigidMulti" | "rigidMask",
 "(Transform \"EulerTransform\")",
-"similarity",
+"similarity" | "similarityMask",
 "(Transform \"SimilarityTransform\")",
-"affine" | "affineMulti",
+"affine" | "affineMulti" | "affineMask",
 "(Transform \"AffineTransform\")
 (MovingImageDerivativeScales "<>DerivativePar[N@Clip[derscA], dtar]<>")",
-"bspline" | "bsplineMulti",
+"bspline" | "bsplineMulti" | "bsplineMask",
 "(Transform \"RecursiveBSplineTransform\")
 (FinalGridSpacingInPhysicalUnits "<>DerivativePar[N@Round[grid], dtar]<>")
 (MovingImageDerivativeScales "<>DerivativePar[N@Clip[derscB], dtar]<>")",
@@ -628,7 +635,7 @@ RunCommands[cmds_, f_] := Block[{list},
 		StringRiffle[list, "\n"], "Text"
 	];
 	
-	RunProcess[$SystemShell, "StandardOutput", #] & /@ list
+	If[Length[list] > 4, ParallelMap, Map][RunProcess[$SystemShell, "StandardOutput", #] &, list]
 ]
 
 
@@ -673,7 +680,8 @@ CreateTempDirectory[tdirI_, print_, make_] := Block[{tdir, add, str},
 	tdir = AbsoluteFileName[tdir];
 
 	(*print if needed*)
-	If[print, PrintTemporary["using as temp directory: " <> tdir]];
+	If[print, PrintTemporary["using as temp directory: ", Hyperlink[tdir, "file:///" <> StringReplace[tdir, "\\" -> "/"]]]];
+
 	$lastElastixTemp = If[add =!= "" || Last[FileNameSplit[tdir]] === "anat", DirectoryName[tdir], tdir];
 
 	debugElastix["using as temp directory: " <> tdir];
@@ -688,23 +696,23 @@ CreateTempDirectory[tdirI_, print_, make_] := Block[{tdir, add, str},
 
 
 Options[RegisterData] = {
-	Iterations->250,
-	Resolutions->1,
-	HistogramBins->32,
-	NumberSamples->5000,
-	InterpolationOrderReg->3,
-	BsplineSpacing->30,
-	BsplineDirections->{1,1,1},
-	AffineDirections->{1,1,1},
-	MethodReg->"affine",
-	OutputImage->True,
-	TempDirectory->"Default",
-	DeleteTempDirectory->True,
-	PrintTempDirectory->True,
-	OutputTransformation->False,
-	UseGPU->{False, Automatic},
-	PCAComponents->1,
-	ShowMetric->False
+	Iterations -> 250,
+	Resolutions -> 1,
+	HistogramBins -> 32,
+	NumberSamples -> 5000,
+	InterpolationOrderReg -> 3,
+	BsplineSpacing -> 30,
+	BsplineDirections -> {1,1,1},
+	AffineDirections -> {1,1,1},
+	MethodReg -> "affine",
+	OutputImage -> True,
+	TempDirectory -> "Default",
+	DeleteTempDirectory -> True,
+	PrintTempDirectory -> True,
+	OutputTransformation -> False,
+	UseGPU -> {False, Automatic},
+	PCAComponents -> 1,
+	ShowMetric -> False
 };
 
 SyntaxInformation[RegisterData] = {"ArgumentsPattern"->{_,_.,OptionsPattern[]}};
@@ -904,22 +912,22 @@ RegisterDatai[
 	method = If[StringQ[method], {method}, method];
 	debugElastix["RegisterDatai: "<>StringJoin[Riffle[method," - "]]<>" / "<>type];
 
-	bsplineSpacing=OptionValue[BsplineSpacing];
-	bsplineSpacing=If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
-	derivativeScaleB=OptionValue[BsplineDirections];
-	derivativeScaleA=OptionValue[AffineDirections];
+	bsplineSpacing = OptionValue[BsplineSpacing];
+	bsplineSpacing = If[!ListQ[bsplineSpacing],ConstantArray[bsplineSpacing,3],bsplineSpacing];
+	derivativeScaleB = OptionValue[BsplineDirections];
+	derivativeScaleA = OptionValue[AffineDirections];
 
 	openCL = OptionValue[UseGPU];
 	If[ListQ[openCL], {openCL, gpu} = openCL; gpu = If[gpu===Automatic, 0, gpu];, gpu = 0;];
 	If[openCL, method = method /. {"rigidDTI"->"rigid", "affineDTI"->"affine"} ];
-	pca=OptionValue[PCAComponents];
+	pca = OptionValue[PCAComponents];
 
-	iterations=OptionValue[Iterations];
-	resolutions=OptionValue[Resolutions];
-	histogramBins=OptionValue[HistogramBins];
-	numberSamples=OptionValue[NumberSamples];
-	interpolationOrder=OptionValue[InterpolationOrderReg];
-	regpars={iterations,resolutions,histogramBins,numberSamples,interpolationOrder};
+	iterations = OptionValue[Iterations];
+	resolutions = OptionValue[Resolutions];
+	histogramBins = OptionValue[HistogramBins];
+	numberSamples = OptionValue[NumberSamples];
+	interpolationOrder = OptionValue[InterpolationOrderReg];
+	regpars = {iterations, resolutions, histogramBins, numberSamples, interpolationOrder};
 
 	(*error sensative checks*)
 
@@ -931,6 +939,7 @@ RegisterDatai[
 	If[!MemberQ[{
 			"translation", "rigid", "similarity", "affine", "bspline", (*traditional*)
 			"rigidDTI", "affineDTI", (*DTI specific*)
+			"translationMask", "rigidMask", "similarityMask","affineMask","bsplineMask", (*Mask distance map*)
 			"PCAtranslation", "PCArigid", "PCAaffine", "PCAbspline", (*PCA cyclyc*)
 			"rigidMulti", "affineMulti", "bsplineMulti" (*multi contrast*)
 		},#],
@@ -943,9 +952,10 @@ RegisterDatai[
 	tempdir = tdir<>$PathnameSeparator;
 
 	(*create parameter list*)
-	regpars = If[NumberQ[#],ConstantArray[#,lenMeth],
-		If[Length[#]==lenMeth, #, Message[RegisterData::par,#,lenMeth]; Return[Message[RegisterData::fatal]];
-	]]&/@regpars;
+	regpars = If[NumberQ[#], ConstantArray[#,lenMeth],
+		If[Length[#]==lenMeth, #, Message[RegisterData::par,#,lenMeth]; Return[Message[RegisterData::fatal]]]
+	]& /@ regpars;
+	regpars = Transpose[regpars];
 
 	(*get all data dimensions*)
 	dimmov = Dimensions[moving];
@@ -956,18 +966,22 @@ RegisterDatai[
 
 	dimmovm = Dimensions[maskm];
 	dimtarm = Dimensions[maskt];
+	
 	depth = Switch[type,
 		"PCA", ToString[dtar-1]<>"D-t", 
 		"multi", ToString[dtar-1]<>"D",
 		_,ToString[dtar]<>"D"];
+	dtar = If[type === "multi", {dtar-1, lengM}, {dtar, 1}];
 
 	(*create parameter files*)
 	parF = MapThread[(
-		parstring = ParString[#2, {#1, outputImg}, {If[type === "multi", {dtar-1, lengM}, {dtar, 1}], bsplineSpacing, derivativeScaleB, derivativeScaleA, pca}, {openCL, gpu}];
-		parF = "parameters-"<>#1<>".txt";
+		parstring = ParString[#1, {#2, outputImg}, 
+			{dtar, bsplineSpacing, derivativeScaleB, derivativeScaleA, pca}, 
+			{openCL, gpu}];
+		parF = "parameters-"<>#2<>".txt";
 		Export[tempdir<>parF,parstring];
 		parF
-	)&, {method, Transpose[regpars]}];
+	)&, {regpars, method}];
 
 
 	(*perform registration which is either: "vol"|"PCA", "series" or "multi" based method  *)
@@ -1138,16 +1152,16 @@ SyntaxInformation[TransformData] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 TransformData[{data_, vox_}, ops:OptionsPattern[]] := Module[{tdir, dat, command, output},
 	If[OptionValue[Method]=="Loop",
 		(*Loop over multi dimensions when set by user*)
-		dat = If[ArrayDepth[data]===4,Transpose@data, data];
+		dat = If[ArrayDepth[data]===4, Transpose@data, data];
 		dat = TransformData[{#, vox}, Method->"Default", DeleteTempDirectory->False, ops]&/@dat;
 
 		(*Delete temp directory*)
 		Switch[OptionValue[DeleteTempDirectory],
-			"All", DeleteDirectory[FileNameTake[tdir, {1, -2}],DeleteContents -> True],
+			"All", DeleteDirectory[FileNameTake[tdir, {1, -2}], DeleteContents -> True],
 			"Trans", DeleteDirectory[tdir, DeleteContents -> True],
 			_, Null];
 
-		If[ArrayDepth[data]===4,Transpose@dat, dat];
+		If[ArrayDepth[data]===4, Transpose@dat, dat];
 		,
 		(*perform normal tranform for single volume*)
 		(*define the directory*)

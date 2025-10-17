@@ -124,6 +124,14 @@ ExportTracts::usage =
 "ExportTracts[file, tracts, vox, dim, seeds] exports the tracts, vox, dim and seeds to *.trk file."
 
 
+ExportTCK::usage = 
+"ExportTCK[file, tracts, vox, dim] exports the tracts to the given *.tck file and automatically generates the header. 
+ExportTCK[file, tracts, header] exports the tracts to the given *.tck file. The header can be the header string or the header association as given by ImportTCK."
+
+ImportTCK::usage = 
+"ImportTCK[file] imports a *.tck file. the output is {tracts, vox, header}."
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -1488,6 +1496,113 @@ ExportTractsDefault[file_, rule_, ___] := Block[{
 	(*close the stream*)
 	Close[strm];
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*ExportTCK*)
+
+
+SyntaxInformation[ExportTCK] = {"ArgumentsPattern" -> {_, _, _, _.}};
+
+ExportTCK[file_, tractsI_, vox_, dim_] := Block[{wlType, bo, count, hdr, off, header, offi, tractsOut, stream},
+	{wlType, bo} = {"Real32", -1};
+
+	count = Length@tractsI;
+
+	hdr = StringJoin[
+		"mrtrix tracks\n",
+		"count: ", ToString[count], "\n",
+		"datatype: ", ToTCKDatatype[wlType, bo], "\n",
+		"voxel_sizes: (" <> StringRiffle[ToString /@ vox, " "] <> ")\n",
+		"voxel_order: RAS\n",
+		"dimensions: [" <> StringRiffle[ToString /@ dim, " "] <> "]\n",
+		"file: . ", ToString[#], "\n",
+		"END\n"
+	] &;
+
+	off = 0;
+	While[True,
+		header = hdr[off];
+		offi = StringLength[header];
+		If[offi === off, Break[], off = offi]
+	];
+
+	ExportTCK[file, tractsI, header]
+]
+
+
+ExportTCK[file_, tractsI_, headerI_?AssociationQ] := Block[{header},
+	header = StringJoin["mrtrix tracks\n", StringRiffle[
+		StringRiffle[{#[[1]], #[[2]]}, ": "] & /@ Thread[{Keys[headerI], Values[headerI]}], "\n"
+	], "\nEND\n"];
+
+	ExportTCK[file, tractsI, header]
+]
+
+
+ExportTCK[file_, tractsI_, header_?StringQ] := Block[{tractsOut, wlType, bo, stream},
+	tractsOut = Reverse/@Flatten[Append[Riffle[tractsI, ConstantArray[{{Indeterminate, Indeterminate, Indeterminate}}, Length[tractsI] - 1]],
+		{{Indeterminate, Indeterminate, Indeterminate}, {Infinity, Infinity, Infinity}}], 1];
+
+	{wlType, bo} = FromTCKDatatype@Last@StringSplit[First@StringCases[header, "datatype: " ~~ WordCharacter ..]];
+	stream = OpenWrite[file, BinaryFormat -> True];
+	WriteString[stream, header];
+	BinaryWrite[stream, N@Flatten@tractsOut, wlType, ByteOrdering -> bo];
+	Close[stream];
+]
+
+
+(* ::Subsection::Closed:: *)
+(*ImportTCK*)
+
+
+SyntaxInformation[ImportTCK] = {"ArgumentsPattern" -> {_, _, _, _.}};
+
+ImportTCK[file_] := Block[{stream, header, type, bo, tracts, parts, vox},
+
+	(*read the file*)
+	stream = OpenRead[file, BinaryFormat -> True];
+	
+	(*import header*)
+	header = NestWhile[StringJoin[#, Read[stream, Character]] &, "", StringFreeQ[#, "END\n"] &];
+	header = StringSplit[#, ": "] & /@ StringSplit[header, "\n"][[2 ;; -2]];
+	header = Association[#[[1]] -> #[[2]] & /@ header];
+	
+	(*get data type and read binary*)
+	{type, bo} = FromTCKDatatype[header["datatype"]];
+	tracts = BinaryReadList[stream, type, ByteOrdering -> bo];
+	Close[stream];
+
+	(*partition data into tracts*)
+	tracts = Partition[tracts, 3];
+	parts = Flatten[Position[tracts, {Indeterminate, Indeterminate, Indeterminate}]];
+	tracts = Drop[Reverse /@ #, -1] & /@ DynamicPartition[tracts, Prepend[Differences[parts], First@parts]];
+
+	(*parse header information*)
+	vox = ToExpression[StringReplace[header["voxel_sizes"], {"[" -> "{", "]" -> "}", " " -> ",", "(" -> "{", ")" -> "}"}]];
+
+	{tracts, vox, header}
+]
+
+
+FromTCKDatatype[str_String] := Block[{s = ToLowerCase[str]}, 
+	Which[
+		StringContainsQ[s, "float32"] && StringContainsQ[s, "le"], {"Real32", -1}, 
+		StringContainsQ[s, "float32"] && StringContainsQ[s, "be"], {"Real32", 1}, 
+		StringContainsQ[s, "float64"] && StringContainsQ[s, "le"], {"Real64", -1}, 
+		StringContainsQ[s, "float64"] && StringContainsQ[s, "be"], {"Real64", 1}, 
+		True, {"Real32", -1}
+	]
+];
+
+
+ToTCKDatatype[type_String, byteOrder_Integer : -1] := Which[
+	type === "Real32" && byteOrder == -1, "Float32LE", 
+	type === "Real32" && byteOrder == 1, "Float32BE", 
+	type === "Real64" && byteOrder == -1, "Float64LE", 
+	type === "Real64" && byteOrder == 1, "Float64BE", 
+	True, "Float32LE"
+];
 
 
 (* ::Section:: *)

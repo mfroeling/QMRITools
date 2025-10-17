@@ -483,11 +483,11 @@ InverseFourierShift[data_]:=RotateLeft[data,Floor[Dimensions[data]/2]];
 
 SyntaxInformation[ShiftedFourier]={"ArgumentsPattern"->{_,_.}}
 
-ShiftedFourier[time_] := FourierShift[Fourier[time,FourierParameters->{-1,1}]];
+ShiftedFourier[time_] := FourierShift[Fourier[time, FourierParameters->{-1,1}]];
 
-ShiftedFourier[time_,"Fid"] := FourierShift[Fourier[time,FourierParameters->{-1,1}]];
+ShiftedFourier[time_,"Fid"] := FourierShift[Fourier[time, FourierParameters->{-1,1}]];
 
-ShiftedFourier[time_,"Echo"] := FourierShift[Fourier[FourierShift[time],FourierParameters->{-1,1}]];
+ShiftedFourier[time_,"Echo"] := FourierShift[Fourier[FourierShift[time], FourierParameters->{-1,1}]];
 
 
 SyntaxInformation[ShiftedInverseFourier]={"ArgumentsPattern"->{_,_.}}
@@ -501,12 +501,12 @@ ShiftedInverseFourier[spec_,"Echo"] := FourierShift[InverseFourier[InverseFourie
 
 SyntaxInformation[FourierShifted]={"ArgumentsPattern"->{_}}
 
-FourierShifted[time_] := Fourier[FourierShift[time],FourierParameters->{-1,1}];
+FourierShifted[time_] := Fourier[FourierShift[time], FourierParameters->{-1,1}];
 
 
 SyntaxInformation[InverseFourierShifted]={"ArgumentsPattern"->{_}}
 
-InverseFourierShifted[spec_] := InverseFourierShift[InverseFourier[spec,FourierParameters->{-1,1}]];
+InverseFourierShifted[spec_] := InverseFourierShift[InverseFourier[spec, FourierParameters->{-1,1}]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -618,7 +618,7 @@ FourierKspaceCSI[kspace_, head_, "3D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imD
 	(*get the image padding and image shift*)
 	shift = Total[#]&/@({"Z_range","Y_range","X_range"}/.head);
 	(*perform the fourie transform*)
-	imData = RotateRight[InverseFourierShifted[#], shift]&/@kspaceP
+	imData = RotateRight[FourierShift[InverseFourier[FourierShift[#], FourierParameters->{-1,1}]], shift]&/@kspaceP
 ]
 
 FourierKspaceCSI[kspace_, head_, "2D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
@@ -631,7 +631,7 @@ FourierKspaceCSI[kspace_, head_, "2D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imD
 	(*get the image padding and image shift*)
 	shift = Total[#]&/@({"Y_range","X_range"}/.head);
 	(*perform the fourie transform*)
-	imData = RotateRight[InverseFourierShifted[#],shift]&/@kspaceP
+	imData = RotateRight[FourierShift[InverseFourier[FourierShift[#], FourierParameters->{-1,1}]], shift]&/@kspaceP
 ]
 
 
@@ -760,7 +760,7 @@ CoilCombine[sig_, cov_, sen_, opts : OptionsPattern[]] := Block[{met, weight, si
 
 Options[MakeSense] = {
 	SenseSmoothing -> "Hamming",
-	SenseWeight -> 0
+	SenseWeight -> 1
 }
 
 SyntaxInformation[MakeSense] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
@@ -1064,12 +1064,12 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 
 
 Options[CoilWeightedReconCSI] = {
-	HammingFilter -> True, 
+	HammingFilter -> False, 
 	CoilSamples -> 5, 
 	Method -> "RoemerEqualSignal", 
 	NormalizeOutputSpectra->True, 
 	AcquisitionMethod->"Fid",
-	NoisePrewhiten ->True,
+	NoisePrewhiten -> True,
 	DenoiseCSI -> "Spectra"
 };
 
@@ -1105,10 +1105,15 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 		];
 
 		(*denoise coils if needed*)
-		If[denoise==="Coils", fids = RotateDimensionsRight[DenoiseCSIdata /@ RotateDimensionsLeft[fids]]];
+		If[denoise==="Coils",
+			DistributeDefinitions[DenoiseCSIdata] ;
+			fids = RotateDimensionsRight[ParallelMap[DenoiseCSIdata, RotateDimensionsLeft[fids]]]
+		];
 
 		(*calculate sense map if needed*)
-		sens = If[met=!="WSVD" && sense === 0 , MakeSense[Mean[fids[[1 ;; ncoil]]]], sense];
+		sens = If[met=!="WSVD" && sense === 0 , 
+			MakeSense[Mean[fids[[1 ;; ncoil]]], SenseWeight ->1, SenseSmoothing -> True], 
+			sense];
 
 		(*Perform the coil combination*)
 		Switch[met,
