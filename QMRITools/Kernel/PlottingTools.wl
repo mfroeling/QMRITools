@@ -2126,7 +2126,10 @@ ListSpherePlot[ptsi_, OptionsPattern[]] := Module[{cols, graphics, pt, pc, ran, 
 	ran = RandomSampleFix[len];
 	cols = If[coli === Automatic,
 		(ColorData[1] /@ N[Range[1, len]])[[ran]],
-		ConstantArray[coli, len]
+		If[Length[coli]===len,
+			coli,
+			ConstantArray[coli, len]
+		]
 	];
 
 	graphics = MapThread[(
