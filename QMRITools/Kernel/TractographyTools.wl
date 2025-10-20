@@ -687,7 +687,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		stopInt = MakeInt[stop, vox, int];
 		trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&;
 
-		{t1, tracts} = AbsoluteTiming@If[mon,
+		{t1, tracts} = AbsoluteTiming@If[mon=!=List,
 			ind = 0; Monitor[(ind++; trFunc[#]) & /@ seeds, ProgressIndicator[ind, {0, seedN}]],
 			trFunc/@seeds];
 		
