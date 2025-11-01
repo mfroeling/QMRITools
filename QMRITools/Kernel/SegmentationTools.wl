@@ -3165,8 +3165,8 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, leng, plots},
 			Delimiter,
 			{{filt, False, "Filter"}, {True, False}},
 			{{fsize, 5, "FilterSize"}, 1, 10, 1},
-			{{grid, False, "Grid"}, {True, False}},
-			{{logp, False, "Log"}, {True, False}},
+			{{grid, True, "Grid"}, {True, False}},
+			{{logp, True, "Log"}, {True, False}},
 
 			Delimiter,
 			(*Control[{{key, {}, ""}, klist, ControlType -> TogglerBar, Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],*)
@@ -3185,8 +3185,8 @@ ShowTrainLog[fol_, max_] := Block[{files, log, keys, leng, plots},
 				Control[{{xmax,Length[pdat],"X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
 			}],
 			Row[{
-				Control[{{ymin, 0, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
-				Control[{{ymax, 1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxv]}]
+				Control[{{ymin, 0.01, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
+				Control[{{ymax, 1.1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxv]}]
 			}],
 			Row[{
 				Button["Autoscale X", {xmax, xmax} = {1, Length[pdat]}], "  ",

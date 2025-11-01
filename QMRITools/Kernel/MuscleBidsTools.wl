@@ -396,7 +396,7 @@ defaultConfig = <|
 	"Process" -> <|
 		"Masking" -> 5,
 		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}},
-		"SplitRegistration" -> True,
+		"SplitRegistration" -> False,
 		"IVIMCorrection" -> True,
 		"GradientCorrection" -> False,
 		"FaciculationDetection" -> False
@@ -1522,7 +1522,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 
 	(*compress the nii files if compression during ExportNii -> False*)
 	If[!compress, CompressNiiFiles[fol]];
-] 
+]
 
 
 (* ::Subsection:: *)
@@ -1654,7 +1654,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							r2star = DivideNoZero[1, t2star];
 							AppendTo[suffix, "r2star"]];
 						If[MemberQ[suffix, "fatfr"],
-							fatfr = mask data[[Position[suffix, "fatfr"][[1,1]]]] / 100.;
+							fatfr = mask data[[Position[suffix, "fatfr"][[1,1]]]] / 1000.;
 							If[!MemberQ[suffix, "watfr"], watfr = mask - fatfr; AppendTo[suffix, "watfr"]];
 						];
 
@@ -1912,7 +1912,9 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 						settingPre = MergeConfig[settingPre, <|"SplitRegistration"->split|>];
 						debugBids[{"Registration function", regF}];
 						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, 
-							PrintTempDirectory->False];
+							PrintTempDirectory->False, MethodReg -> "bspline", 
+							BsplineDirections -> {1, 1, 1}, AffineDirections -> {1, 1, 1}
+						];
 
 						(*anisotropic filtering*)
 						(*-----*)AddToLog["Starting anisotropic data smoothing", 4];
@@ -2530,7 +2532,8 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 		JoinSets[movingA[[#]], If[MemberQ[posNat, #], overM, overT], voxF[#], 
 			MonitorCalc->False, MotionCorrectSets->False, 
 			PadOverlap->pad, ReverseSets->reverse, 
-			NormalizeSets->MemberQ[nonQuant, movsName[[#]]], NormalizeOverlap->MemberQ[nonQuant, movsName[[#]]]
+			NormalizeSets->MemberQ[nonQuant, movsName[[#]]], 
+			NormalizeOverlap->MemberQ[nonQuant, movsName[[#]]]
 		]&/@posAll
 	];
 
@@ -2603,7 +2606,7 @@ MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 		segment, segType, segTypeLab, checkFile, fol, segLocation, device,
 		parts, outfile, segfile, out, vox, seg, duplicate, key, dupKey, status, segiu,
-		voxS, tari, movi, segi, tar, mov, dim
+		voxS, tari, movi, segi, tar, mov, dim, voxt, voxm, voxs, mask
 	},
 
 	status = "done";
@@ -3027,7 +3030,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType, hasKey,
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxs, segPl, imTrk, trkfile, reffile,
-		addLabel, img, lab
+		addLabel, img, lab, label
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
@@ -3160,14 +3163,14 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 
 				(*figure out how to handle this type *)
 				tract = MemberQ[trType, datType];
-				scale = Switch[datType, {"megre","dix","fatfr"}|{"mese","t2","fatfr"}, 100, {"megre","dix","t2star"}, 1000, _, 1];
-				meanType = (datType==={"dwi", "dti", "trk", "seed"} || datType==={"dwi", "dti", "trk", "dens"});
-				(*----*)AddToLog[{"Processing file "<>If[tract,"with","without"]<>" tract weighting:", StringRiffle[StringStrip@datType, "_"]}, 4];
+				scale = Switch[datType[[-2;;]], {"dix", "fatfr"} | {"t2", "fatfr"}, 100, {"dix", "t2star"}, 1000, _, 1];
+				meanType = (datType[[-2;;]] === {"trk", "seed"} || datType[[-2;;]] === {"trk", "dens"});
+				(*----*)AddToLog[{"Processing file "<>If[tract, "with", "without"]<>" tract weighting:", StringRiffle[StringStrip@datType, "_"]}, 4];
 
 				(*mask based analysis*)
 				label = StringRiffle[datType[[-2;;]], "_"];
 				Thread[{label, label<>"_IQR"} -> Transpose[scale GetMaskData[data, If[tract, segT, seg], 
-					GetMaskOutput->If[meanType, "MeanSTD", "MedianIQR"],
+					GetMaskOutput -> If[meanType, "MeanSTD", "MedianIQR"],
 					GetMaskOnly -> If[meanType, True, False]
 				]]]
 			]
