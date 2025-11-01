@@ -661,8 +661,6 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		{AlignVec, ToPackedArray@N@RotateDimensionsLeft[{RotateDimensionsRight[EigVec[RotateDimensionsLeft@tens, {1, 0, 0}]]}, 2]}
 	];
 
-	mon[Dimensions@tens];
-
 	(*make the random seed points*)
 	maxSeed = Round@Which[
 		Head[maxSeed]===Scaled, First[maxSeed] seedN,

@@ -316,7 +316,7 @@ NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, 
 (*PCADenoise*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*PCADeNoise*)
 
 
@@ -324,11 +324,12 @@ Options[PCADeNoise] = {
 	PCAKernel -> 5, 
 	PCAOutput -> False,
 	PCATolerance -> 0, 
-	PCAWeighting -> True, 
+	PCAWeighting -> False, 
 	PCAClipping -> True,
 	PCAComplex->False,
 	Method -> "Similarity",
-	MonitorCalc -> False
+	MonitorCalc -> False,
+	Parallelize -> True
 };
 
 SyntaxInformation[PCADeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
@@ -340,13 +341,15 @@ PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		weight, ker, tol, mon, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, 
 		k, m, n, off, datao, weights, sigmat, start, sigmati, nmati, clip, comp, len,
-		totalItt, output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
-		weightFun, posV, leng, nearPos, p, pi, pos, np, met, trans, comps
+		output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
+		weightFun, posV, leng, nearPos, p, pi, pos, np, met, trans, comps,
+		mid, pad, fun, par, dimv, coors
 	},
 
 	(*tollerane if>0 more noise components are kept*)
-	{met, mon, weight, tol, ker, clip, comp} = OptionValue[{Method, MonitorCalc, PCAWeighting, 
-		PCATolerance, PCAKernel, PCAClipping, PCAComplex}];
+	{met, mon, weight, tol, ker, clip, comp, par} = OptionValue[{Method, MonitorCalc, PCAWeighting, 
+		PCATolerance, PCAKernel, PCAClipping, PCAComplex, Parallelize}];
+	If[par, weight = False];
 
 	(*concatinate complex data and make everything numerical to speed up*)
 	comps = False;
@@ -368,13 +371,21 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	ker = If[EvenQ[ker] && met =!= "Similarity", ker - 1, ker];
 	k = Round[ker^3];
 	{trans, m, n} = If[ddim < k, {False, ddim, k}, {True, k, ddim}];
+	mid = Ceiling[ker^3/2];
 
 	(*define sigma*)
 	sigm = If[NumberQ[sigm], ConstantArray[sigm, {zdim, ydim, xdim}], sigm];
 
 	(*define weighting function*)
 	weightFun = If[weight, 1./(m - #)&, 1.&];
-
+	
+	(*padd the data with kernel offset*)
+	off = Round[(ker - 1)/2];
+	pad = (off + 1){{1, 1}, {1, 1}, {1, 1}};
+	data = ArrayPad[data, Insert[pad, {0, 0}, 2], 0.];
+	mask = ArrayPad[mask, pad, 0.];
+	sigm = ArrayPad[sigm, pad, 0.];
+	
 	Switch[met,
 
 		(*--------------use similar signals--------------*)
@@ -387,101 +398,151 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		leng = Length[data];
 		pos = Range@leng;
 
-		(*ouput data*)
-		datao = 0. data;
-		weights = sigmat = sigmati = nmati = datao[[All, 1]];
-
 		(*get positions of similar signals but in random batches such that nearest has speed*)
 		SeedRandom[1234];
-		np = 30000;
-		pos = If[leng <= np, {pos}, Partition[RandomSample[pos], np, np, {1, 1}]];
-
+		np = 50000;
+		pos = If[leng <= np, {pos}, 
+			np = Ceiling[leng/Ceiling[leng/np]];
+			Partition[RandomSample[pos], np, np, {1, 1}, {}]
+		];
+		
 		(*for each random batch find the nearest voxels and make pos array*)
 		If[mon, PrintTemporary["Preparing data similarity"]];
 		nearPos = Flatten[Nearest[data[[#]] -> #, data[[#]], 2 k, 
 			DistanceFunction -> EuclideanDistance, Method -> "Scan", 
 			WorkingPrecision -> MachinePrecision] & /@ pos, 1];
-		nearPos = Prepend[RandomSample[Rest@#, k - 1], First@#] & /@ nearPos;
+		nearPos[[All, 1]] = Flatten[pos];
+		nearPos = Prepend[RandomSample[Rest@#, k - 1], First@#] & /@ Sort[nearPos];
 
 		(*perform denoising*)
 		j = 0;
 		If[mon, PrintTemporary["Performing the denoising"]];
-		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
+		If[mon&&!par, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
+		
+		If[weight,
+			(*--------------use weighting---------------*)
+			
+			(*ouput data*)
+			datao = 0. data;
+			weights = sigmat = sigmati = nmati = datao[[All, 1]];
+		
+			Map[(
+				If[!par,j++];
+				p = #;
+				pi = First@p;
+	
+				(*perform the fit and reconstruct the noise free data*)
+				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigm[[pi]], {trans, m, n},  tol];
+				weight = weightFun[Nes];
+	
+				(*sum data and sigma and weight for numer of components*)
+				datao[[p]] += weight datn;
+				sigmat[[p]] += weight sigo;
+				weights[[p]] += weight;
+	
+				(*output sig, Nest and iterations*)
+				sigmati[[pi]] = sigo;
+				nmati[[pi]] = Nes;
+			) &, nearPos];
+			
+			(*make everything in arrays*)
+			datao = VectorToData[DivideNoZero[datao, weights], posV];
+			sigmat = VectorToData[DivideNoZero[sigmat, weights], posV];
+			output = {VectorToData[sigmati, posV], VectorToData[nmati, posV]};
+			
+			,
+			
+			(*--------------no weighting allows parallel ---------------*)
 
-		Map[(j++;
-			p = #;
-			pi = First@p;
+			fun = If[par, DistributeDefinitions[data, sigm, trans, m, n, tol, par, PCADeNoiseFit]; ParallelMap, Map];
+			{datao, sigmat, sigmati, nmati} = Transpose@fun[(If[!par, j++];
+				p = #;
+				pi = First@p;
+				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigm[[pi]], {trans, m, n}, tol];
+				{First@datn, sigo, sigo, Nes}
+			) &, nearPos];
 
-			(*perform the fit and reconstruct the noise free data*)
-			{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigm[[pi]], {trans, m, n},  tol];
-			weight = weightFun[Nes];
-
-			(*sum data and sigma and weight for numer of components*)
-			datao[[p]] += weight datn;
-			sigmat[[p]] += weight sigo;
-			weights[[p]] += weight;
-
-			(*output sig, Nest and iterations*)
-			sigmati[[pi]] = sigo;
-			nmati[[pi]] = Nes;
-		) &, nearPos];
-
-		(*make everything in arrays*)
-		datao = VectorToData[DivideNoZero[datao, weights], posV];
-		sigmat = VectorToData[DivideNoZero[sigmat, weights], posV];
-		output = {VectorToData[sigmati, posV], VectorToData[nmati, posV]};
+			(*make everything in arrays*)
+			datao = VectorToData[datao, posV];
+			sigmat = VectorToData[sigmat, posV];
+			output = {VectorToData[sigmati, posV], VectorToData[nmati, posV]};
+		];
 
 		,
 		(*--------------use patch---------------*)
 
 		_,
+		(*vectorize problem*)
+		{dimv, coors} = DataToVector[data, mask][[2]];
+		
 		(*define runtime parameters and data*)
+		pad = off + 1;
+		data[[;;pad]] = Reverse[data[[-2 pad;;-pad-1]]];
+		data[[-pad;;]] = Reverse[data[[pad+1;;2 pad]]];
 		data = RotateDimensionsLeft[Transpose[data]];
-		off = Round[(ker - 1)/2];
-		start = 1 + off;
-		{zdim, ydim, xdim} = {zdim, ydim, xdim} - off;
-
-		(*ouput data*)
-		datao = 0. data;
-		weights = sigmat = datao[[All, All, All, 1]];
-
+		
 		(*parameters for monitor*)
 		j = 0;
-		totalItt = Total[Flatten[mask[[start ;; zdim, start ;; ydim, start ;; xdim]]]];
-
-		(*perform denoising*)
-		If[mon, PrintTemporary[ProgressIndicator[Dynamic[j], {0, totalItt}]]];
-		output = Table[
-			(*Check if masked voxel*)
-			If[mask[[z, y, x]] === 0., {0., 0.},
-				j++;
-				(*define initial sigma and get pixel range and data*)
+		leng = Length@coors;
+		If[mon&&!par, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
+		
+		If[weight,
+		
+			(*ouput data*)
+			datao = 0. data;
+			weights = sigmat = datao[[All, All, All, 1]];
+	
+			(*perform denoising*)
+			output = Transpose@Map[(j++;
+					{z, y, x} = #;
+					
+					(*define initial sigma and get pixel range and data*)
+					{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
+					fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, ddim}];
+					sigi = sigm[[z, y, x]];
+	
+					(*perform the fit and reconstruct the noise free data*)
+					{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigi, {trans, m, n}, tol];
+	
+					(*reshape the vector into kernel box and get the weightes*)
+					datn = Fold[Partition, datn, {ker, ker}];
+					weight = weightFun[Nes];
+	
+					(*sum data and sigma and weight for numer of components*)
+					datao[[zm ;; zp, ym ;; yp, xm ;; xp, All]] += (weight datn);
+					sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight sigo;
+					weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight;
+	
+					(*output sig, Nest and iterations*)
+					{sigo, Nes}
+				)&, coors];
+	
+			(*correct output data for weightings*)
+			datao = Transpose@RotateDimensionsRight[Re@DivideNoZero[datao, weights]];
+			sigmat = DivideNoZero[sigmat, weights];
+			output = VectorToData[#, {dimv, coors}] & /@ output;
+			
+			,
+			
+			fun = If[par, DistributeDefinitions[data, sigm, trans, m, n, tol, par, k, ddim, mid, off, pad, PCADeNoiseFit];ParallelMap, Map];
+			{datao, sigmat, sigmati, nmati} = Transpose@fun[(If[!par, j++];
+				{z, y, x} = #;
 				{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
-				fitdata = Flatten[data[[zm ;; zp, ym ;; yp, xm ;; xp]], 2];
-				sigi = sigm[[z, y, x]];
-
-				(*perform the fit and reconstruct the noise free data*)
-				{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigi, {trans, m, n},  tol];
-
-				(*reshape the vector into kernel box and get the weightes*)
-				datn = Fold[Partition, datn, {ker, ker}];
-				weight = weightFun[Nes];
-
-				(*sum data and sigma and weight for numer of components*)
-				datao[[zm ;; zp, ym ;; yp, xm ;; xp, All]] += (weight datn);
-				sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight sigo;
-				weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight;
-
-				(*output sig, Nest and iterations*)
-				{sigo, Nes}
-			], 
-		{z, start, zdim}, {y, start, ydim}, {x, start, xdim}];
-
-		(*correct output data for weightings*)
-		datao = Transpose@RotateDimensionsRight[Re@DivideNoZero[datao, weights]];
-		sigmat = DivideNoZero[sigmat, weights];
-		output = ArrayPad[#, off] & /@ RotateDimensionsRight[output];
+				fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, ddim}];
+				{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigm[[z, y, x]], {trans, m, n}, tol];
+				{datn[[mid]], sigo, sigo, Nes}
+			)&, coors];
+			
+			datao = VectorToData[datao, {dimv, coors}];
+			sigmat = VectorToData[sigmat, {dimv, coors}];
+			output = {VectorToData[sigmati, {dimv, coors}], VectorToData[nmati, {dimv, coors}]};
+		];
 	];
+	
+	pad = off + 2;
+	datao = datao[[pad;;-pad, All, pad;;-pad, pad;;-pad]];
+	sigmat = sigmat[[pad;;-pad, pad;;-pad, pad;;-pad]];
+	output = output[[All, pad;;-pad, pad;;-pad, pad;;-pad]];
 
 	(*define output, split it if data is complex*)
 	datao = Which[
@@ -500,7 +561,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 ]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*PCADeNoiseFit*)
 
 
@@ -508,7 +569,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 PCADeNoiseFit[data_, sigi_?NumberQ, {trans_, m_, n_}, toli_] := Block[{
 		xmat, xmatT, val, mat, pi, sig, xmatN, tol, out
 	},
-
+	
 	(*perform decomp*)
 	{xmat, xmatT} = If[trans, {data, Transpose@data}, {Transpose@data, data}];
 	{val, mat} = Reverse /@ Eigensystem[xmat . xmatT];
@@ -521,7 +582,9 @@ PCADeNoiseFit[data_, sigi_?NumberQ, {trans_, m_, n_}, toli_] := Block[{
 
 	(*give output,simga,number of noise comp,and denoised matrix*)
 	out = Transpose[mat[[tol ;;]]] . (mat[[tol ;;]] . xmat);
-	{sig, tol, If[trans, out, Transpose@out]}
+	out = If[trans, out, Transpose@out];
+	
+	{sig, tol, out}
 ]
 
 
@@ -1277,7 +1340,7 @@ GetDiffusionValues[tens_,vec_]:=Mean[GetDiffC[tens,vec]]
 
 GetDiffC=Compile[{{t,_Real,2},{v,_Real,1}},Block[{vv},
 	vv = Dot[v, v];
-	If[vv == 0., 0., v.t.v/vv]
+	If[vv == 0., 0., v . t . v/vv]
 ],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
 
 
@@ -1291,7 +1354,7 @@ GetObjectiveGradient[tens_, vec_, obj_] := -obj . Flatten[GetGradC[tens, vec]]
 GetGradC=Compile[{{t, _Real, 2}, {v, _Real, 1}}, Block[{vv, tv},
 	vv = Dot[v, v];
 	tv = Dot[t, v];
-	If[vv == 0., v, ((v.tv)v - (vv tv))/vv^2]
+	If[vv == 0., v, ((v . tv)v - (vv tv))/vv^2]
 ],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
 
 

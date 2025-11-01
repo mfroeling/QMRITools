@@ -1174,7 +1174,8 @@ JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False] := Block[{
 			,
 			set1=Drop[joined,{-overlap,-1}];
 			set1over=Take[joined,{-overlap,-1}];
-			];
+		];
+
 		set2=Drop[data[[i+1]],{1,overlap}];
 		set2over=Take[data[[i+1]],{1,overlap}];
 
@@ -1182,8 +1183,8 @@ JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False] := Block[{
 			mn1 = MeanNoZero[Flatten[#]] & /@ set1over;
 			mn2 = MeanNoZero[Flatten[#]] & /@ set2over;
 
-			mn1 = DivideNoZero[mn1[[1]],mn1];
-			mn2 = DivideNoZero[mn2[[-1]],mn2];
+			mn1 = DivideNoZero[mn1[[1]], mn1];
+			mn2 = DivideNoZero[mn2[[-1]], mn2];
 
 			set1over = mn1 set1over;
 			set2over = mn2 set2over;

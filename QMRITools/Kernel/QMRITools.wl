@@ -64,7 +64,8 @@ QMRITools`$SubPackages = {
 	"JcouplingTools`", "SpectroTools`", "ReconstructionTools`",
 	(*general processing tools with lots of dependency's*)
 	"TractographyTools`", "ProcessingTools`", "FasciculationTools`",
-	"SimulationTools`", "CoilTools`", "TaggingTools`", "SegmentationTools`"
+	"SimulationTools`", "CoilTools`", "TaggingTools`", "SegmentationTools`" ,
+	"ShapeTools`"
 	(*legacy functions*)
 	,"Legacy`"
 };
