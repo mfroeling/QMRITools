@@ -850,8 +850,9 @@ RegisterData[
 	type = Which[
 		multi && depthM == depthT, "multi",
 		depthT == depthM, "vol", (*2D-2D, 3D-3D*)
-		(depthT == 2 || depthT == 3) && depthM == depthT + 1, "series", (*2D-3D, 3D-4D*)
-		True, Message[RegisterData::dim,depthT,depthM];Return[Message[RegisterData::fatal]] (*error*)];
+		(depthT == 2 || depthT == 3) && depthM == depthT + 1, "series", (*2D-3D, 3D-4D multile volumes to single target*)
+		(depthM == 2 || depthM == 3) && depthT == depthM + 1, "seriesI", (*3D-2D, 4D-3D one volume to mulitple targets*)
+		True, Message[RegisterData::dim, depthT, depthM]; Return[Message[RegisterData::fatal]] (*error*)];
 
 	debugElastix["Type for registration: "<>type];
 
@@ -865,13 +866,13 @@ RegisterData[
 	(*define moving and target voluems*)
 	output = RegisterDatai[
 		{If[depthT==4, Transpose@target, target], maskt, voxt},
-		{If[depthM==4,Transpose@moving, moving], maskm, voxm}, 
+		{If[depthM==4, Transpose@moving, moving], maskm, voxm}, 
 		type, opts];
 
 	(*generate output*)
 	If[OptionValue[OutputTransformation],
-		{If[depthM==4, Transpose@output[[1]], output[[1]]], Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}]},
-		If[depthM==4, Transpose@output, output]
+		{If[depthM==4||depthT===4, Transpose@output[[1]], output[[1]]], Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}]},
+		If[depthM==4||depthT===4, Transpose@output, output]
 	]
 ]
 
@@ -904,7 +905,7 @@ RegisterDatai[
 		histogramBins, numberSamples, derivativeScaleA, derivativeScaleB, interpolationOrder,
 		method, bsplineSpacing, data, vox, dimmov, dimtar, dimmovm, dimtarm, inpfol, movfol, outfol,
 		fixedF, movingF, outF, parF, depth, index, regpars, lenMeth, command, outfile,
-		fmaskF, mmaskF, w, openCL, gpu, pca, dtar, lengM
+		fmaskF, mmaskF, w, openCL, gpu, pca, dtar, lengM, lengT, dmov
 	},
 
 	w = {{0,0,0,0,0,0,1,1,1,0,0,0}};
@@ -962,20 +963,30 @@ RegisterDatai[
 	regpars = Transpose[regpars];
 
 	(*get all data dimensions*)
-	dimmov = Dimensions[moving];
 	dimtar = Dimensions[target];
-
 	dtar = ArrayDepth[target];
+	lengT = Length[target];
+
+	dimmov = Dimensions[moving];
+	dmov = ArrayDepth[moving];
 	lengM = Length[moving];
+	
+	debugElastix["Moving: ", {dimmov, dmov, lengM}];
+	debugElastix["Target: ", {dimtar, dtar, lengT}];
 
 	dimmovm = Dimensions[maskm];
 	dimtarm = Dimensions[maskt];
 	
 	depth = Switch[type,
 		"PCA", ToString[dtar-1]<>"D-t", 
-		"multi", ToString[dtar-1]<>"D",
+		"multi"|"seriesI", ToString[dtar-1]<>"D",
 		_,ToString[dtar]<>"D"];
-	dtar = If[type === "multi", {dtar-1, lengM}, {dtar, 1}];
+	dtar = Which[
+			type === "multi", {dtar-1, lengM}, 
+			type === "seriesI", {dtar-1, 1},
+			True, {dtar, 1}];
+
+	debugElastix[dtar];
 
 	(*create parameter files*)
 	parF = MapThread[(
@@ -983,10 +994,11 @@ RegisterDatai[
 			{dtar, bsplineSpacing, derivativeScaleB, derivativeScaleA, pca}, 
 			{openCL, gpu}];
 		parF = "parameters-"<>#2<>".txt";
-		Export[tempdir<>parF,parstring];
+		Export[tempdir<>parF, parstring];
 		parF
 	)&, {regpars, method}];
 
+	debugElastix["Parfiles: \n  - "<>StringRiffle[parF, "\n  - "]];
 
 	(*perform registration which is either: "vol"|"PCA", "series" or "multi" based method  *)
 	Switch[type,
@@ -1000,8 +1012,10 @@ RegisterDatai[
 
 		(*Check if masks are needed*)
 		{fmaskF, mmaskF} = {"", ""};
-		If[dimtarm == dimtar && maskt!={1}, fmaskF="targetMask.nii"; ExportNii[maskt,voxt,tempdir<>fmaskF]];
-		If[dimmovm == dimmov && maskm!={1}, mmaskF="moveMask.nii"; ExportNii[maskm,voxm,tempdir<>mmaskF]];
+		If[dimtarm == dimtar && maskt!={1}, fmaskF="targetMask.nii"; 
+			ExportNii[maskt,voxt,tempdir<>fmaskF]];
+		If[dimmovm == dimmov && maskm!={1}, mmaskF="moveMask.nii"; 
+			ExportNii[maskm,voxm,tempdir<>mmaskF]];
 
 		(*Export target and moving data*)
 		{fixedF, movingF, outF} = {"target-"<>depth<>".nii", "moving-"<>depth<>".nii", "result-"<>depth<>".nii.gz"};
@@ -1020,11 +1034,14 @@ RegisterDatai[
 		"series", 
 
 		(*define folders*)
-		{inpfol, movfol, outfol} = {"", "", ""};		
+		{inpfol, movfol, outfol} = {"", "", ""};
+
 		(*Check if masks are needed*)
 		{fmaskF, mmaskF} = {"", ""};
-		If[dimtarm == dimtar && maskt!={1},	fmaskF="targetMask.nii"; ExportNii[maskt, voxt, tempdir<>fmaskF]];
-		(*Export target and moving data*)
+		If[dimtarm == dimtar && maskt!={1},	fmaskF="targetMask.nii"; 
+			ExportNii[maskt, voxt, tempdir<>fmaskF]];
+
+		(*Export target Data*)
 		{fixedF, movingF, outF} = {"target-"<>depth<>".nii", "moving-"<>depth<>".nii", "result-"<>depth<>".nii.gz"};
 		ExportNii[target, voxt, tempdir<>fixedF];
 
@@ -1035,13 +1052,57 @@ RegisterDatai[
 			(*define folders*)
 			movfol = outfol = "vol"<>index; CreateDirectory[tempdir<>outfol];
 			(*Check if masks are needed*)
-			If[(dimmovm == dimmov || dimmovm == Drop[dimmov,1]) && maskm!={1}, mmaskF = movfol<>$PathnameSeparator<>"moveMask.nii"; ExportNii[If[dimmovm == dimmov, maskm[[#]], maskm], voxm, tempdir<>mmaskF]];
+			If[(dimmovm == dimmov || dimmovm == Drop[dimmov,1]) && maskm!={1}, 
+				mmaskF = movfol<>$PathnameSeparator<>"moveMask.nii"; 
+				ExportNii[If[dimmovm == dimmov, maskm[[#]], maskm], voxm, tempdir<>mmaskF]
+			];
 			(*export moving*)
 			ExportNii[moving[[#]], voxm, tempdir<>movfol<>$PathnameSeparator<>movingF];
 
 			(*create command*)
 			ElastixCommand[elastix, tempdir, parF, {inpfol, movfol, outfol}, {fixedF, movingF, outF}, {fmaskF, mmaskF}]
 		)&/@Range[lengM]);
+
+		(*Create and run batch*)
+		RunCommands[command];
+
+		(*Import results*)
+		data = (First@ImportNii[#])&/@outfile;
+		If[OptionValue[OutputTransformation], w = ReadTransformParameters[tempdir]];
+		,
+
+		(*series to volume registration (3D-4D, 4D-3D)*)
+		"seriesI", 
+
+		(*define folders*)
+		{inpfol, movfol, outfol} = {"", "", ""};		
+		{fmaskF, mmaskF} = {"", ""};
+		{fixedF, movingF, outF} = {"target-"<>depth<>".nii", "moving-"<>depth<>".nii", "result-"<>depth<>".nii.gz"};
+
+		(*export target data, loop over series*)
+		{command, outfile}=Transpose@(
+		(
+			index = StringPadInteger[#];
+			(*define folders*)
+			inpfol = movfol = outfol = "vol"<>index; CreateDirectory[tempdir<>outfol];
+
+			(*Check if masks are needed*)
+			If[(dimmovm == dimmov || dimmovm == Drop[dimmov,1]) && maskm!={1}, 
+				mmaskF = movfol<>$PathnameSeparator<>"moveMask.nii"; 
+				ExportNii[If[dimmovm == dimmov, maskm[[#]], maskm], voxm, tempdir<>mmaskF]
+			];
+			If[(dimtarm == dimtar || dimtarm == Drop[dimtar,1]) && maskm!={1}, 
+				fmaskF = inpfol<>$PathnameSeparator<>"targetMask.nii"; 
+				ExportNii[If[dimtarm == dimtar, maskt[[#]], maskt], voxt, tempdir<>fmaskF]
+			];
+			(*Export moving data*)
+			ExportNii[moving, voxm, tempdir<>movfol<>$PathnameSeparator<>movingF];
+			(*export target data*)
+			ExportNii[target[[#]], voxt, tempdir<>inpfol<>$PathnameSeparator<>fixedF];
+
+			(*create command*)
+			ElastixCommand[elastix, tempdir, parF, {inpfol, movfol, outfol}, {fixedF, movingF, outF}, {fmaskF, mmaskF}]
+		)&/@Range[lengT]);
 
 		(*Create and run batch*)
 		RunCommands[command];
@@ -1311,9 +1372,10 @@ RegisterDataTransform[target_, moving_, {mov_, _, vox_}, opts : OptionsPattern[]
 	debugElastix["Dimensions reg/mov", {regd, movd}];
 
 	trans = Which[
-		movd == 3 && movd == 3, TransformData[{mov, vox}, opt],
+		regd == 3 && movd == 3, TransformData[{mov, vox}, opt],
 		regd == 3 && movd == 4, TransformData[{mov, vox}, opt, Method->"multi"],
 		regd == 4 && movd == 4, TransformData[{mov, vox}, opt, Method->"vols"],
+		regd == 4 && movd == 3, TransformData[{Transpose[ConstantArray[mov, Length[reg[[1]]]]], vox}, opt, Method->"vols"],
 		movd === regd && movd === 4, TransformData[{mov, vox}, opt, Method->"vols"],
 		movd === regd, TransformData[{mov, vox}, opt],
 		True, TransformData[{mov, vox}, opt]
@@ -1741,3 +1803,4 @@ RegisterCardiacData[{data_?ArrayQ, mask_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?Numb
 End[]
 
 EndPackage[]
+

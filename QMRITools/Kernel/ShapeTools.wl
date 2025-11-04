@@ -25,39 +25,78 @@ BeginPackage["QMRITools`ShapeTools`", Join[{"Developer`"}, Complement[QMRITools`
 
 
 MakeRegionMesh::usage = 
-"MakeRegionMesh..."
+"MakeRegionMesh[data]
+MakeRegionMesh[data, n]
+MakeRegionMesh[data, vox]
+MakeRegionMesh[data, vox, n]
+MakeRegionMesh[data, vox, {n, l}]..."
+
+SplitRegionMesh::usage =
+"SplitRegionMesh..."
 
 MaskToDistanceMap::usage = 
-"MaskToDistanceMap..."
+"MaskToDistanceMap[mask]
+MaskToDistanceMap[mask, method]..."
 
 MaskFromDistanceMap::usage =
-"MaskFromDistanceMap..."
-
-MaskFromDistanceMap::usage =
-"MaskFromDistanceMap..."
+"MaskFromDistanceMap[dist]
+MaskFromDistanceMap[dist, method]..."
 
 PlotMesh::usage =
-"PlotMesh..."
+"PlotMesh[mesh]
+PlotMesh[points, cells]..."
+
+ScaleToVolume::usage =
+"ScaleToVolume[data, vox]
+ScaleToVolume[data, vox, vol]..."
+
+MakeMuscleTemplate::usage =
+"MakeMuscleTemplate[masks, vox]..."
+
+TemplateToVolume::usage =
+"TemplateToVolume[{masks, voxM}, {tempI, voxT}]..."
+
+MakeTemplatePlot::usage = 
+"MakeTemplatePlot[meshes, points]..."
 
 
 (* ::Subsection:: *)
 (*Options*)
 
 
-MeshOpacity ::usage =
-"MeshOpacity is an option for PlotMes..."
+MeshOutput::usage = 
+"MeshOutput is an option for MakeRegionMesh. Values can be \"Mesh\", \"Points\", \"Cells\", \"PointsCells\", \"All\"."
 
-MeshColor ::usage =
-"MeshColor is an option for PlotMes..."
+MeshOpacity::usage =
+"MeshOpacity is an option for PlotMesh..."
 
-MeshEdgeColor ::usage = 
-"MeshEdgeColor is an option for PlotMes..."
+MeshColor::usage =
+"MeshColor is an option for PlotMesh..."
 
-MeshPointColor ::usage =
-"MeshPointColor is an option for PlotMes..."
+MeshEdgeColor::usage = 
+"MeshEdgeColor is an option for PlotMesh..."
 
-MeshPointSize ::usage =
-"MeshPointSize is an option for PlotMes..."
+MeshPointColor::usage =
+"MeshPointColor is an option for PlotMesh..."
+
+MeshPointSize::usage =
+"MeshPointSize is an option for PlotMesh..."
+
+
+MeshPoints::usage =
+"MeshPoints is an option for TemplateToVolume..."
+
+TemplatePadding ::usage =
+"TemplatePadding is an option for TemplateToVolume..."
+
+TemplateDilation ::usage =
+"TemplateDilation is an option for TemplateToVolume..."
+
+VolumeRescale ::usage =
+"VolumeRescale is an option for TemplateToVolume..."
+
+SplineSpacing ::usage =
+"SplineSpacing is an option for TemplateToVolume..."
 
 
 (* ::Subsection:: *)
@@ -75,7 +114,7 @@ Begin["`Private`"]
 (*MaskToDistanceMap*)
 
 
-SyntaxInformation[MaskToDistanceMap] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+SyntaxInformation[MaskToDistanceMap] = {"ArgumentsPattern" -> {_, _.}};
 
 MaskToDistanceMap[mask_] := MaskToDistanceMap[mask, "both"]
 
@@ -89,7 +128,7 @@ MaskToDistanceMap[mask_, met_] := Block[{im},
 			"out", -ImageData[DistanceTransform[1 - im]],
 			_, ImageData[DistanceTransform[im]]
 		],
-	Transpose[ParallelMap[MaskToDistanceMap, Transpose[mask]]]
+	Transpose[ParallelMap[MaskToDistanceMap, Normal@Transpose[mask]]]
 	]
 ];
 
@@ -98,7 +137,7 @@ MaskToDistanceMap[mask_, met_] := Block[{im},
 (*MaskFromDistanceMap*)
 
 
-SyntaxInformation[MaskFromDistanceMap] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+SyntaxInformation[MaskFromDistanceMap] = {"ArgumentsPattern" -> {_, _.}};
 
 MaskFromDistanceMap[dist_] := MaskFromDistanceMap[dist, "both"]
 
@@ -109,7 +148,7 @@ MaskFromDistanceMap[distI_, met_] := Block[{dist},
 		"out", UnitStep[-Ramp[-dist]],
 		_, 1 - UnitStep[-Ramp[dist]]
 	];
-	SparseArray@If[ArrayDepth[dist] === 3,
+	If[ArrayDepth[dist] === 3,
 		SparseArray@ImageData@SelectComponents[Image3D[dist, "Bit"], "Count", -1],
 		Transpose[ParallelMap[SparseArray@ImageData[SelectComponents[Image3D[#, "Bit"], "Count", -1]] &, Transpose[dist]]]
 	]
@@ -120,17 +159,24 @@ MaskFromDistanceMap[distI_, met_] := Block[{dist},
 (*MakeRegionMesh*)
 
 
-SyntaxInformation[MaskFromDistanceMap] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+Options[MakeRegionMesh] ={
+	MeshOutput->"Mesh"
+}
 
-MakeRegionMesh[data_]:=MakeRegionMesh[data, {1, 1, 1}, 1000]
 
-MakeRegionMesh[data_, n_?IntegerQ]:=MakeRegionMesh[data, {1, 1, 1}, n]
+SyntaxInformation[MakeRegionMesh] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-MakeRegionMesh[data_, vox_?VectorQ]:=MakeRegionMesh[data, vox, 1000]
+MakeRegionMesh[data_, opts : OptionsPattern[]]:=MakeRegionMesh[data, {1, 1, 1}, 1000, opts]
 
-MakeRegionMesh[data_, vox_?VectorQ, n_?IntegerQ] := MakeRegionMesh[data, vox, {n, 0}]
+MakeRegionMesh[data_, n_?IntegerQ, opts : OptionsPattern[]]:=MakeRegionMesh[data, {1, 1, 1}, n, opts]
 
-MakeRegionMesh[data_, vox_?VectorQ, {n_?IntegerQ, l_?IntegerQ}] := Block[{mesh, meshS, length, lengthMax, meshOut},
+MakeRegionMesh[data_, vox_?VectorQ, opts : OptionsPattern[]]:=MakeRegionMesh[data, vox, 1000, opts]
+
+MakeRegionMesh[data_, vox_?VectorQ, n_?IntegerQ, opts : OptionsPattern[]] := MakeRegionMesh[data, vox, {n, 0}, opts]
+
+MakeRegionMesh[data_, vox_?VectorQ, {n_?IntegerQ, l_?IntegerQ}, opts : OptionsPattern[]] := Block[{mesh, meshS, length, lengthMax, meshOut},
+	
+	
 	(*create initial mesh and smooth out the pixilation*)
 	mesh = DiscretizeGraphics[PlotContour[data, vox, ContourSmoothRadius -> 2, ContourResolution -> vox]];
 	(*remesch to aproximately 2x needed cells *)
@@ -145,7 +191,18 @@ MakeRegionMesh[data_, vox_?VectorQ, {n_?IntegerQ, l_?IntegerQ}] := Block[{mesh, 
 		If[Length[MeshCoordinates[meshOut]] === n, Break[]]
 	];
 
-	MeshRegion[meshOut, SphericalRegion -> True, PlotTheme -> "Default"]
+	mesh = MeshRegion[meshOut, SphericalRegion -> True, PlotTheme -> "Default"];
+
+	Switch[OptionValue[MeshOutput], 
+		"Mesh", mesh,
+		"Points", First@SplitRegionMesh[mesh],
+		"Cells", Last@SplitRegionMesh[mesh],
+		"PointsCells", SplitRegionMesh[mesh],
+		"All", Join[{mesh}, SplitRegionMesh[mesh]],
+		_, mesh
+	]
+
+	
 ]
 
 
@@ -163,6 +220,15 @@ MeshEdgeLength[mesh_MeshRegion] := Block[{edges, pts},
 
 
 (* ::Subsection:: *)
+(*SplitRegionMesh*)
+
+
+SyntaxInformation[SplitRegionMesh] = {"ArgumentsPattern" -> {_}};
+
+SplitRegionMesh[mesh_]:={MeshCoordinates@mesh, MeshCells[mesh, 2]}
+
+
+(* ::Subsection:: *)
 (*PlotMesh*)
 
 
@@ -176,15 +242,20 @@ Options[PlotMesh] = {
 }
 
 
-PlotMesh[region_MeshRegion, opts : OptionsPattern[]] := PlotMesh[MeshCoordinates@region, MeshCells[region, 2], opts]
+SyntaxInformation[PlotMesh] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-PlotMesh[pts_, cell_, opts : OptionsPattern[]] := Block[{
+PlotMesh[region_MeshRegion, opts : OptionsPattern[]] := PlotMesh[SplitRegionMesh[region], opts]
+
+PlotMesh[pts_?MatrixQ, cell_, opts : OptionsPattern[]]:=PlotMesh[{pts, cell}, opts]
+
+PlotMesh[{pts_?MatrixQ, cell_}, opts : OptionsPattern[]] := Block[{
 		meshCol, pointCol, edgeCol, ptSize, npts, opacity
 	},
 	npts = Length[pts];
 
-	{meshCol, pointCol, edgeCol, ptSize, opacity} = OptionValue[{MeshColor, MeshPointColor, 
-		MeshEdgeColor, MeshPointSize, MeshOpacity}];
+	{meshCol, pointCol, edgeCol, ptSize, opacity} = OptionValue[{
+			MeshColor, MeshPointColor, MeshEdgeColor, MeshPointSize, MeshOpacity
+		}];
 
 	(*figure out the mesh color*)
 	meshCol = Which[
@@ -237,6 +308,232 @@ MakeVertexNormals[p_List, cells_] := Block[{t0, t1, t2, P, ux, uy, uz, vx, vy, v
 	{vx, vy, vz} = Transpose[p[[t2]] - p[[t0]]];
 	Normalize /@ (P . Transpose@{uy vz - uz vy, uz vx - ux vz, ux vy - uy vx})
 ]
+
+
+(* ::Subsection:: *)
+(*ScaleToVolume*)
+
+
+SyntaxInformation[ScaleToVolume] = {"ArgumentsPattern" -> {_, _, _.}};
+
+ScaleToVolume[dat_, vox_]:=ScaleToVolume[dat, {vox, vox}, 0.]
+
+ScaleToVolume[dat_, vox_, vol_?NumberQ]:=ScaleToVolume[dat, {vox, vox}, vol]
+
+ScaleToVolume[dat_, {vox_, voxT_}]:=ScaleToVolume[dat, {vox, voxT}, 0.]
+
+ScaleToVolume[dat_, {vox_, voxT_}, volI_?NumberQ] := Block[{data, vol},
+	Switch[ArrayDepth[dat],
+		3, 
+		If[volI===0., $Failed, ScaleToVolumeI[dat, {vox, voxT}, volI]],
+		4,
+		data = Transpose[dat];
+		vol = If[volI===0., MaskVolume[data, vox], volI];
+		data = Transpose[PadToDimensions[ScaleToVolumeI[#, {vox, voxT}, vol]& /@ data]];
+		First[AutoCropData[data]],
+		_,$Failed
+	]
+]
+
+
+ScaleToVolumeI[dat_, {vox_, voxT_}, vol_] := Block[{scale},
+	scale = N[MaskVolume[dat, vox] / vol]^(1/3);
+	Round[RescaleData[GaussianFilter[dat, 1], {vox, voxT scale}, InterpolationOrder -> 1]]
+]
+
+
+(* ::Subsection:: *)
+(*ScaleToVolume*)
+
+
+SyntaxInformation[MakeMuscleTemplate] = {"ArgumentsPattern" -> {_, _}};
+
+MakeMuscleTemplate[masks_, vox_] := MakeMuscleTemplate[masks, {vox, vox}]
+
+MakeMuscleTemplate[masksI_, {vox_, voxT_}] := Block[{masks, sel, vol, mean, reg},
+	(*rescale all muscles to same volume*)
+	masks = ScaleToVolume[masksI, {vox, voxT}];
+	vol = MaskVolume[Transpose@masks, voxT];
+	
+	(*make the distance maps for each mask*)
+	sel = MaskToDistanceMap[masks];
+	
+	(*Make the muscle template*)
+	(*register all individual volumes to mean template *)
+	mean = MaskToDistanceMap[ScaleToVolume[Round@Mean@Transpose@masks, voxT, vol]];
+	reg = RegisterData[{mean, voxT}, {sel, voxT}, MethodReg -> {"rigid"}, 
+		NumberSamples -> 10000, HistogramBins -> 128, InterpolationOrderReg -> 1, 
+		Iterations -> 250, DeleteTempDirectory -> True, PrintTempDirectory -> False];
+
+	(*refine registration with affine transform*)
+	mean = MaskToDistanceMap[ScaleToVolume[MaskFromDistanceMap@Mean@Transpose@reg, voxT, vol]];
+	reg = RegisterData[{mean, voxT}, {sel, voxT}, MethodReg -> {"affineMask"}, 
+		NumberSamples -> 10000, HistogramBins -> 128, InterpolationOrderReg -> 1, 
+		Iterations -> 250, DeleteTempDirectory -> True, PrintTempDirectory -> False];
+
+	(*make and rescale mean template to original mean volume*)
+	mean = MaskFromDistanceMap@Mean@Transpose@reg;
+	First@AutoCropData[ScaleToVolume[mean, voxT, vol]]
+]
+
+
+(* ::Subsection:: *)
+(*TemplateToVolume*)
+
+
+Options[TemplateToVolume] = {
+	MeshPoints -> {500, 4000},
+	TemplatePadding -> 20,
+	TemplateDilation -> 2,
+	VolumeRescale -> True,
+	SplineSpacing -> 5
+}
+
+
+SyntaxInformation[TemplateToVolume] = {"ArgumentsPattern" -> {{_, _}, {_, _}, OptionsPattern[]}};
+
+TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
+		nLow, nHigh, padData, padReg, volRescale, space, volume,
+		dim, template, vol, templateMesh, templatePoints, templateCells,
+		moving, templateDist, movingDist, movingRigid, templateReg, 
+		deformation,
+		movingMesh, pointsTemp, pointsLocal, meshes, points,
+		meshTemplate, meshTemplateReg, meshMoving, meshMovingRigid
+	},
+
+	(*get options*)
+	{{nLow, nHigh}, padData, padReg, volRescale, space} = OptionValue[{MeshPoints, TemplatePadding, 
+		TemplateDilation, VolumeRescale, SplineSpacing}];
+
+	(*single or multiple volumes*)
+	volume = ArrayDepth[masks] === 3;
+	If[! 3 <= volume <= 4, Return[$Failed]];
+
+	(*Prepare template*)
+	dim = Dimensions[tempI] + 2 padData;
+	template = PadToDimensions[tempI, dim];
+	vol = MaskVolume[template, voxT];
+	{templateMesh, templatePoints, templateCells} = MakeRegionMesh[template, voxT, nLow, MeshOutput -> "All"];
+
+	(*choose to rescle or volume scale to target resolution and pad to t\
+	emplate dimensions*)
+	moving = If[volRescale, 
+		ScaleToVolume[masks, {voxM, voxT}, MaskVolume[template, voxT]],
+		RescaleData[masks, {voxM, voxT}, InterpolationOrder -> 0]
+	];
+	moving = If[volume,
+		PadToDimensions[moving, dim],
+		Transpose[PadToDimensions[Transpose[moving], dim]]
+	];
+
+	(*make distance map*)
+	templateDist = MaskToDistanceMap@template;
+	movingDist = MaskToDistanceMap@moving;
+
+	(*rigid alig moving Volume to template space*)
+	movingRigid = MaskFromDistanceMap@RegisterData[{templateDist, voxT}, {movingDist, voxT}, 
+		Resolutions -> 1, MethodReg -> {"rigid"}, Iterations -> 250, NumberSamples -> 10000, 
+		HistogramBins -> 128, InterpolationOrderReg -> 1, DeleteTempDirectory -> True, 
+		PrintTempDirectory -> False];
+
+	(*warp template to local aligned muscle and get displacement*)
+	{templateReg, deformation} = Last@RegisterDataTransform[
+		{MaskToDistanceMap[movingRigid] + padReg, voxT}, {templateDist, voxT}, {template, voxT}, 
+		Resolutions -> 1, MethodReg -> {"affine", "bsplineMask"}, Iterations -> 250, NumberSamples -> 10000, 
+		HistogramBins -> 128, InterpolationOrderReg -> 1, PrintTempDirectory -> False, 
+		DeleteTempDirectory -> True, BsplineSpacing -> space voxT, ImportDeformation -> True];
+	templateReg = Round@templateReg;
+
+	(*define the mesh with template points in local space*)
+	{meshMovingRigid, pointsTemp, pointsLocal} = If[volume,
+		MovePoints[{movingRigid, voxT, nHigh}, Transpose[deformation, {1, 4, 2, 3}], templatePoints],
+		Transpose[Map[
+			MovePoints[{#[[1]], voxT, nHigh}, #[[2]], templatePoints] &, 
+			Transpose[{Transpose[movingRigid], Transpose[deformation, {2, 1, 5, 3, 4}]}]
+		]]
+	];
+
+	meshTemplate = MakeRegionMesh[template, voxT, nHigh];
+	If[volume,
+		meshTemplateReg = MakeRegionMesh[templateReg, voxT, nHigh];
+		meshMoving = MakeRegionMesh[moving, voxT, nHigh];
+		,
+		{meshTemplateReg, meshMoving} = Transpose@Table[{
+			MakeRegionMesh[templateReg[[All, ni]], voxT, nHigh],
+			MakeRegionMesh[moving[[All, ni]], voxT, nHigh]
+		}, {ni, 1, Length[pointsTemp], 3}];
+	];
+
+	meshes = {meshTemplate, meshTemplateReg, meshMoving, meshMovingRigid};
+	points = {pointsTemp, pointsLocal, templatePoints, templateCells};
+
+	{meshes, points}
+]
+
+MovePoints[{mask_, vox_, nHigh_}, delta_, points_] := Block[{meshH, temp, local},
+	meshH = MakeRegionMesh[mask, vox, nHigh];
+	temp = points - (delta[[#[[3]], #[[2]], #[[1]]]] & /@ Round[#/vox & /@ points]);
+	local = RegionNearest[meshH, temp];
+	{meshH, temp, local}
+]
+
+
+(* ::Subsection:: *)
+(*MakeTemplatePlot*)
+
+
+SyntaxInformation[MakeTemplatePlot] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+MakeTemplatePlot[meshes_, points_] := Block[{
+		meshTemplate, meshTemplateReg, meshMoving, meshMovingRigid,
+		pointsTemp, pointsLocal, templatePoints, templateCells
+	},
+	{meshTemplate, meshTemplateReg, meshMoving, meshMovingRigid} = 
+	meshes;
+	{pointsTemp, pointsLocal, templatePoints, templateCells} = points;
+	If[Length[meshTemplateReg] > 0,
+		Table[MakeTemplatePlot[{meshTemplate, meshTemplateReg[[ni]], meshMoving[[ni]], meshMovingRigid[[ni]], 
+			pointsTemp[[ni]], pointsLocal[[ni]], templatePoints}], {ni, 1, Length@meshTemplateReg}],
+		MakeTemplatePlot[{meshTemplate, meshTemplateReg, meshMoving, 
+			meshMovingRigid, pointsTemp, pointsLocal, templatePoints}]
+	]
+]
+
+MakeTemplatePlot[{meshTemplate_, meshTemplateReg_, meshMoving_, meshMovingRigid_, pointsTemp_, pointsLocal_, templatePoints_}] := Block[{
+		range, templateRegPlot, movingRigPlot, templatePlot, movingPlot, col
+	},
+
+	(*data range in mm after padding*)
+	range = MinMax[#] + {-40, 40} & /@ Transpose[Flatten[{pointsTemp, pointsLocal, templatePoints}, 1]];
+
+	(*make the mesh plots*)
+	templateRegPlot = PlotMesh[meshTemplateReg, MeshOpacity -> 0.5, MeshColor -> StandardGreen];
+	movingRigPlot = PlotMesh[meshMovingRigid, MeshOpacity -> 0.5, MeshColor -> Gray];
+	templatePlot = PlotMesh[meshTemplate, MeshOpacity -> 0.5, MeshColor -> StandardGreen];
+	movingPlot = PlotMesh[meshMoving, MeshOpacity -> 0.5, MeshColor -> Gray];
+
+	(*generate stadard random colors*)
+	SeedRandom[1234];
+	col = RandomColor[Length@templatePoints];
+
+	(*Make plot grid*)
+	Grid[{{
+		Link3DGraphic@Show[templatePlot, movingPlot, ImageSize -> 300, 
+			PlotLabel -> "Before template alignment", PlotRange -> range],
+		Link3DGraphic@Show[templatePlot, movingRigPlot, ImageSize -> 300, 
+			PlotLabel -> "After rigid template alignment", PlotRange -> range], 
+		Link3DGraphic@Show[templateRegPlot, movingRigPlot, ImageSize -> 300, 
+			PlotLabel -> "After bspline template alignment", PlotRange -> range]
+	}, {
+		Link3DGraphic@Show[movingRigPlot, ListSpherePlot[templatePoints, SphereColor -> col], 
+			ImageSize -> 300, PlotLabel -> "Template points", PlotRange -> range],
+		Link3DGraphic@Show[movingRigPlot, ListSpherePlot[pointsTemp, SphereColor -> col], 
+			ImageSize -> 300, PlotLabel -> "Registered template points", PlotRange -> range],
+		Link3DGraphic@Show[movingRigPlot, ListSpherePlot[pointsLocal, SphereColor -> col], 
+			ImageSize -> 300, PlotLabel -> "Registered template points on mesh", PlotRange -> range]
+	}}]
+]
+
 
 
 (* ::Section:: *)

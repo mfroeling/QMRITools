@@ -110,6 +110,12 @@ SegmentationVolume::usage =
 "SegmentationVolume[seg] calculates the volume of each label in the segmentation in voxels.
 SegmentationVolume[seg, vox] calculates the volume of each label in the segmentation in cm^3 where vox is in mm."
 
+MaskVolume::usage = 
+"SegmentationVolume[mask] calculates the volume of the mask.
+SegmentationVolume[{mask, ..}] calculates the Median volume of the List of masks.
+SegmentationVolume[mask, vox] calculates the volume of the mask in cm^3 where vox is in mm.
+SegmentationVolume[{mask, ..}, vox] calculates the Median volume of the List of masks in cm^3 where vox is in mm."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -681,6 +687,24 @@ SegmentationVolume[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := Block[{vol}
 	vol Total[Flatten[#]] & /@ Switch[ArrayDepth[seg],
 		3, Transpose[First@SplitSegmentations[seg]],
 		4, Transpose[seg],
+		_, Return[$Failed]
+	]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*SegmentationVolume*)
+
+
+SyntaxInformation[MaskVolume] = {"ArgumentsPattern" -> {_, _.}};
+
+MaskVolume[mask_] := MaskVolume[mask, {0, 0, 0}]
+
+MaskVolume[mask_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := Block[{vol},
+	vol = If[vox === {0, 0, 0}, 1, N@((Times @@ vox)/1000)];
+	Switch[ArrayDepth[mask],
+		3, vol Total@Flatten@mask,
+		4, Median[vol Total[Flatten[#]] & /@ mask],
 		_, Return[$Failed]
 	]
 ]
