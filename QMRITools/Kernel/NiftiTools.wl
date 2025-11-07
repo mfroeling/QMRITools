@@ -648,9 +648,9 @@ ImportNii[fil_String: "", OptionsPattern[]] := Block[{file,what, out,output,opt}
 	];
 
 	(*remove temp files for gz format*)
-	Quiet[DeleteFile[FileNames["*" <> FileBaseName[Last[FileNameSplit[file]]], $TemporaryDirectory]]];
+	(*Quiet[DeleteFile[FileNames["*" <> FileBaseName[Last[FileNameSplit[file]]], $TemporaryDirectory]]];*)
 
-	ToPackedArray@N@output
+	N@output
 ]
 
 
@@ -743,12 +743,10 @@ ImportNiiData[file_, {type_, size_, dim_, off_}, byteorder_, OptionsPattern[Impo
 
 	strm = OpenRead[datafile, BinaryFormat -> True];
 	SetStreamPosition[strm, off];
-	data = BinaryReadList[strm, type, size, ByteOrdering -> byteorder];
+	data = ToPackedArray@N@BinaryReadList[strm, type, size, ByteOrdering -> byteorder];
 	Close[strm];
 
-	data = ArrayReshape[data, Reverse@dim];
-
-	ToPackedArray[N@data]
+	ArrayReshape[data, Reverse@dim]
 ]
 
 
