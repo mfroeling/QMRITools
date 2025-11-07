@@ -219,7 +219,7 @@ Begin["`Private`"]
 
 $plotOptions = {
 	Axes -> False, Frame -> {{True, False}, {True, False}}, PlotHighlighting -> None, 
-	FrameStyle -> Directive[Thick, Black], LabelStyle -> Directive[Black, Bold, 14]
+	FrameStyle -> Directive[Thick, LightDarkSwitched[Black, White]], LabelStyle -> Directive[LightDarkSwitched[Black, White], Bold, 14]
 };
 
 (*plot menu options*)
@@ -227,7 +227,7 @@ sizes  = {200,300,400,500,750,1000,1500,2000,2500,3000};
 psizes  = {100,200,300,400,500,600,700,800,900,1000};
 files  = {".pdf",".jpg",".gif",".tif",".png"};
 colfuncs = {"Normal","Reverse","Symmetric","Reverse Symmetric"};
-labStyle = Directive[Bold,FontFamily->"Helvetica",14,Black];
+labStyle = Directive[Bold,FontFamily->"Helvetica",14,LightDarkSwitched[Black, White]];
 ncol   = 512;
 
 
@@ -348,7 +348,7 @@ LabLeg[im_, {fnts_,legs_}, label_, {legend_, color_, {min_,max_}}] := Block[{lab
 	(*generate legend if needed*)
 	bar = If[legend,
 		BarLegend[{(ColSel @@ color)[(# - min)/(max - min)] &, {min, max}}, 
-			LabelStyle -> Directive[Bold, FontFamily -> "Helvetica", fnts, Black],
+			LabelStyle -> Directive[Bold, FontFamily -> "Helvetica", fnts, LightDarkSwitched[Black, White]],
 			LegendMarkerSize -> legs, LegendLayout -> "Column"]
 	];
 
@@ -1745,7 +1745,7 @@ MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]
 		ran = If[OptionValue[PlotRange] === Automatic, If[datf==={}, {0, 1}, {0, Quantile[datf, .99]}], OptionValue[PlotRange]];
 
 		size = vox[[{{2,3}, {1,2}, {1,3}}[[n]]]];
-		bar = BarLegend[{colF/@Range[0, 1, .01], ran}, LabelStyle->Directive[{Black, Bold, 12}]];
+		bar = BarLegend[{colF/@Range[0, 1, .01], ran}, LabelStyle->Directive[{LightDarkSwitched[Black, White], Bold, 12}]];
 
 		imSize = OptionValue[ImageSize];
 
