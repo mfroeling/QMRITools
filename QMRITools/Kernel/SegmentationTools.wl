@@ -42,6 +42,9 @@ The input scale defines the input and output scaling, is either an integer or a 
 The input conn defines the connections, is a list of two integer values defining the number of input and output ports.
 The blockConfig is defined as {{blockType, settings}, {features,..}, {act, dim}}."
 
+ActivationLayer::usage=
+"ActivationLayer[type] is a wrapper around ElementwiseLayer needed in MakeNode."
+
 MakeClassifyNetwork::usage = 
 "MakeClassifyNetwork[classes] makes a classify network with three convolution layers and 3 fully connected layers. 
 The input classes should be a list of strings. The input image dimensions should not be smaller than 64x64."
@@ -242,7 +245,7 @@ RescaleMethod::usage =
 "RescaleMethod is an option for MakeUnet. It specifies how the network rescales. It can be \"Conv\" or \"Pool\"."
 
 CatenateMethod::usage =
-"CatenateMethod is an option for MakeUnet. It specifies how the network catenates the skip and upscale channesl. It can be \"Tot\", or \"Cat\""
+"CatenateMethod is an option for MakeUnet. It specifies how the network catenates the skip and upscale channel. It can be \"Tot\", or \"Cat\"."
 
 NetworkDepth::usage = 
 "NetworkDepth is an option for MakeUnet. It specifies how deep the UNET will be."
@@ -344,7 +347,6 @@ DistanceRange::usage =
 "DistanceRange is an option for MakeDistanceMap. It defines the range of the distance map outside the segmentation in voxels.
 Values can be Automatic, All, or a integer value. If All the distance map is calculated for the whole image. If 0 the distance map is only calculated inside the segmentation."
 
-ReplaceLabels::usage = "..."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
