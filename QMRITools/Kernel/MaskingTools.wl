@@ -111,10 +111,10 @@ SegmentationVolume::usage =
 SegmentationVolume[seg, vox] calculates the volume of each label in the segmentation in cm^3 where vox is in mm."
 
 MaskVolume::usage = 
-"SegmentationVolume[mask] calculates the volume of the mask.
-SegmentationVolume[{mask, ..}] calculates the Median volume of the List of masks.
-SegmentationVolume[mask, vox] calculates the volume of the mask in cm^3 where vox is in mm.
-SegmentationVolume[{mask, ..}, vox] calculates the Median volume of the List of masks in cm^3 where vox is in mm."
+"MaskVolume[mask] calculates the volume of the mask.
+MaskVolume[{mask, ..}] calculates the Median volume of the List of masks.
+MaskVolume[mask, vox] calculates the volume of the mask in cm^3 where vox is in mm.
+MaskVolume[{mask, ..}, vox] calculates the Median volume of the List of masks in cm^3 where vox is in mm."
 
 
 (* ::Subsection::Closed:: *)

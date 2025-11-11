@@ -25,51 +25,69 @@ BeginPackage["QMRITools`ShapeTools`", Join[{"Developer`"}, Complement[QMRITools`
 
 
 MakeRegionMesh::usage = 
-"MakeRegionMesh[data]
-MakeRegionMesh[data, n]
-MakeRegionMesh[data, vox]
-MakeRegionMesh[data, vox, n]
-MakeRegionMesh[data, vox, {n, l}]..."
+"MakeRegionMesh[data] makes a MeshRegion from a binary mask assuming an 1x1x1mm isotropic voxel size and 1000 mesh coordinates.
+MakeRegionMesh[data, n] makes a MeshRegion with exactly n mesh coordinates. 
+MakeRegionMesh[data, vox] makes a MeshRegion taking in account the given voxel size vox with 1000 mesh coordinates.
+MakeRegionMesh[data, vox, n] makes a MeshRegion taking in account the given voxel size vox with exactly n mesh coordinates."
 
 SplitRegionMesh::usage =
-"SplitRegionMesh..."
+"SplitRegionMesh[mesh] splits the mesh in the MeshCoordinates and the mesh cells."
 
 MaskToDistanceMap::usage = 
-"MaskToDistanceMap[mask]
-MaskToDistanceMap[mask, method]..."
+"MaskToDistanceMap[mask] converts a binary mask into a mask distance map.
+MaskToDistanceMap[mask, method] converts a binary mask into a distance mask. The method can be \"both\", \"out\" or \"in\"
+which calculates the mask distance inside and outside, outside, or inside the mask."
 
 MaskFromDistanceMap::usage =
-"MaskFromDistanceMap[dist]
-MaskFromDistanceMap[dist, method]..."
+"MaskFromDistanceMap[dist] converts a mask distance map created with MaskToDistanceMap back to a binary mask.
+MaskFromDistanceMap[dist, method] converts a mask distance map created with MaskToDistanceMap back to a binary mask. The method can be \"both\", \"out\" or \"in\"
+which calculates the mask distance inside and outside, outside, or inside the mask."
 
 PlotMesh::usage =
-"PlotMesh[mesh]
-PlotMesh[points, cells]..."
+"PlotMesh[mesh] Plots a MeshRegion as a GraphicsComplex. 
+PlotMesh[points, cells] plots a MeshRegion which has been split into the coordinates and cells using SplitRegionMesh."
+
 
 ScaleToVolume::usage =
-"ScaleToVolume[data, vox]
-ScaleToVolume[data, vox, vol]..."
+"ScaleToVolume[mask, vox] rescales a series of mask all to the same volume, which will be the median volume of all the masks.
+ScaleToVolume[data, vox, vol] does the same but then rescales to the target volume vol."
 
 MakeMuscleTemplate::usage =
-"MakeMuscleTemplate[masks, vox]..."
+"MakeMuscleTemplate[masks, vox] makes a muscle template form a series of masks. The output is the mean template muscle mask as a binary volume."
+
 
 TemplateToVolume::usage =
-"TemplateToVolume[{masks, voxM}, {tempI, voxT}]..."
-
-MakeTemplatePlot::usage = 
-"MakeTemplatePlot[meshes, points]..."
+"TemplateToVolume[{masks, voxM}, {template, voxT}] registers a mask or a series of masks to the given muscle template.
+The default output are the mesh points per mask volume and the cell needed to generate the mesh as {points, mesh}."
 
 MakeShapeModel::usage = 
-"MakeShapeModel[points]..."
+"MakeShapeModel[points] makes the statistical shape model for the points given. The points per muscle must have the same number of coordinates.
+The points can be obtained form TemplateToVolume. The output is {meanPoints, model} which are needed in FitShapeModel."
 
 FitShapeModel::usage = 
-"FitShapeModel[{mean_, mat_}, points_, n_] fit the eigensystem to points using n eigenvectors and make mesh points..."
+"FitShapeModel[{meanPoints, model}, points] fits the shape model to the points, the shape model is defined by meanPoints and model which are obtained form MakeShapeModel.
+FitShapeModel[{meanPoints, model}, points, n] fits the model using the first n shape vectors from the model."
+
+
+MakeTemplatePlot::usage = 
+"MakeTemplatePlot[meshes, points] visualizes the template alignment. The input meshes and points are made by TemplateToVolume with
+the TemplateOutput set to \"Meshes\"."
 
 EvaluateModel::usage = 
-"EvaluateModel[points_, cells_]..."
+"EvaluateModel[points, mesh] return a dynamic plot showing an evaluation of the shape model. 
+The points and mesh are obtained from TemplateToVolume.
+EvaluateModel[{mean, mat}, points, cells] does the same but for a explicit shape model given by mean and mat. 
+the shape model can be obtained from MakeShapeModel."
 
 MeshGridPlot::usage = 
-"MeshGridPlot[]..."
+"MeshGridPlot[meshes, points] gives a grid of shape meshes defined by meshes and points. These can be obtained from
+with the TemplateOutput set to \"Meshes\"."
+
+PlotShapeVariation::usage =
+"PlotShapeVariation[points, mesh] plots the template mesh which shows where the model has variation for each principal
+component. The needed points and mesh are obtained from TemplateToVolume.
+PlotShapeVariation[points, mesh, n] does the same but only shows the first n principal components."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -79,41 +97,49 @@ MeshOutput::usage =
 "MeshOutput is an option for MakeRegionMesh. Values can be \"Mesh\", \"Points\", \"Cells\", \"PointsCells\", \"All\"."
 
 MeshOpacity::usage =
-"MeshOpacity is an option for PlotMesh..."
+"MeshOpacity is an option for PlotMesh. It specifies how much opacity the mesh has."
 
 MeshColor::usage =
-"MeshColor is an option for PlotMesh..."
+"MeshColor is an option for PlotMesh. It specifies the color of the mesh. The color can be a single color or a list of colors
+with the same length as the mesh coordinates."
 
 MeshEdgeColor::usage = 
-"MeshEdgeColor is an option for PlotMesh..."
+"MeshEdgeColor is an option for PlotMesh. It specifies the color for the border of the mesh vertices."
 
 MeshPointColor::usage =
-"MeshPointColor is an option for PlotMesh..."
+"MeshPointColor is an option for PlotMesh. It specifies the color of the mesh coordinates. The points need to be one and the points are 
+shown as spheres."
 
 MeshPointSize::usage =
-"MeshPointSize is an option for PlotMesh..."
+"MeshPointSize is an option for PlotMesh. It specifies how large the points will be, its defined in mm."
 
 
 MeshPoints::usage =
-"MeshPoints is an option for TemplateToVolume..."
+"MeshPoints is an option for TemplateToVolume. It specifies how many mesh coordinates will be used in the template."
 
 TemplatePadding ::usage =
-"TemplatePadding is an option for TemplateToVolume..."
+"TemplatePadding is an option for TemplateToVolume. It specifies how much the template will be padded to prevent cut off of 
+larger muscles."
 
 TemplateDilation ::usage =
-"TemplateDilation is an option for TemplateToVolume..."
+"TemplateDilation is an option for TemplateToVolume. It specifies how much the template is dilated during registration.
+The value is specified in mm and it helps to properly align the points."
 
 VolumeRescale ::usage =
-"VolumeRescale is an option for TemplateToVolume..."
+"VolumeRescale is an option for TemplateToVolume. If this option is set to True the volume of each muscle will be normalized 
+to the mean volume of the template volumes or the template volume."
 
 SplineSpacing ::usage =
-"SplineSpacing is an option for TemplateToVolume..."
+"SplineSpacing is an option for TemplateToVolume. It defines how big the b-splines are during the registration process. Its value
+is multiplied with the voxel size which then becomes the spline spacing."
 
 TemplateOutput::usage =
-"TemplateOutput is an option for TemplateToVolume..."
+"TemplateOutput is an option for TemplateToVolume. The value can be \"Meshes\" \"PointsCells\" or \"Points\". The \"Meshes\" \"PointsCells\" outputs
+are needed for template and model visualization. The \"Points\" is the only thing needed for model fitting."
 
 MeshesPerRow::usage = 
-"MeshesPerRow is and option for MeshGridPlot..."
+"MeshesPerRow is and option for MeshGridPlot and PlotShapeVariation. It specifies how many volumes are shown per row."
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -197,25 +223,22 @@ MakeRegionMesh[data_, n_?IntegerQ, opts : OptionsPattern[]]:=MakeRegionMesh[data
 
 MakeRegionMesh[data_, vox_?VectorQ, opts : OptionsPattern[]]:=MakeRegionMesh[data, vox, 1000, opts]
 
-MakeRegionMesh[data_, vox_?VectorQ, n_?IntegerQ, opts : OptionsPattern[]] := MakeRegionMesh[data, vox, {n, 0}, opts]
 
-MakeRegionMesh[data_, vox_?VectorQ, {n_?IntegerQ, l_?IntegerQ}, opts : OptionsPattern[]]:=MakeRegionMeshI[data, vox, {n, l}, opts]
-
-MakeRegionMeshI[data_, vox_?VectorQ, n_?IntegerQ, opts : OptionsPattern[]]:=MakeRegionMeshI[data, vox, {n, 1}, opts]
-
-MakeRegionMeshI[data_, vox_?VectorQ, {n_?IntegerQ, l_?IntegerQ}, opts : OptionsPattern[]] := Block[{dim, size, mesh, meshS, length, lengthMax, meshOut},
+MakeRegionMeshI[data_, vox_?VectorQ, n_?IntegerQ, opts : OptionsPattern[]]:=Block[{
+		dim, size, mesh, meshS, length, lengthMax, meshOut
+	},
 	(*create initial mesh and smooth out the pixilation*)
 	dim = Dimensions@data;
 	size = Reverse[vox dim];
 	mesh = DiscretizeGraphics[ListContourPlot3D[GaussianFilter[data, 2], Contours -> {0.5}, MaxPlotPoints -> Reverse[dim],
 		BoxRatios -> size, DataRange -> Thread[{0, size}], PlotRange -> Thread[{0, size}], Mesh -> False]];
 	(*mesh = DiscretizeGraphics[PlotContour[data, vox, ContourSmoothRadius -> 2, ContourResolution -> vox]];*)
-	(*remesch to aproximately 2x needed cells *)
+	(*re-mesh to approximately 2x needed cells *)
 	mesh = meshOut = Remesh[mesh, Method -> {"Adaptive", "MinEdgeLength" -> EstimateEdgeLength[mesh, 2 n]}];
 	(*initialize exact mesh count loop*)
 	length = EstimateEdgeLength[mesh, 0.8 n];
 	lengthMax = 2 length;
-	(*increase min edgelength till exact count is reached*)
+	(*increase min edge length till exact count is reached*)
 	While[length < lengthMax, length++;
 		meshOut = SimplifyMesh[mesh, {{"TriangleQuality", 4}, {"MinEdgeLength", length}, 
 		{"MaxVertexCount", n}, {"MinTriangleArea", 0.5 (length^2)}}];
@@ -278,9 +301,9 @@ PlotMesh[region_MeshRegion, opts : OptionsPattern[]] := PlotMesh[SplitRegionMesh
 PlotMesh[pts_?MatrixQ, cell_, opts : OptionsPattern[]]:=PlotMesh[{pts, cell}, opts]
 
 PlotMesh[{pts_?MatrixQ, cell_}, opts : OptionsPattern[]] := Block[{
-		meshCol, pointCol, edgeCol, ptSize, npts, opacity
+		meshCol, pointCol, edgeCol, ptSize, nPoints, opacity
 	},
-	npts = Length[pts];
+	nPoints = Length[pts];
 
 	{meshCol, pointCol, edgeCol, ptSize, opacity} = OptionValue[{
 			MeshColor, MeshPointColor, MeshEdgeColor, MeshPointSize, MeshOpacity
@@ -289,15 +312,15 @@ PlotMesh[{pts_?MatrixQ, cell_}, opts : OptionsPattern[]] := Block[{
 	(*figure out the mesh color*)
 	meshCol = Which[
 		meshCol === None, None,
-		ColorQ[meshCol], ConstantArray[meshCol, npts],
+		ColorQ[meshCol], ConstantArray[meshCol, nPoints],
 		VectorQ[meshCol], meshCol,
-		True, ConstantArray[meshCol, npts]
+		True, ConstantArray[meshCol, nPoints]
 	];
 
 	(*figure out the point color*)
 	pointCol = Which[
 		pointCol === None, False,
-		pointCol === RandomColor, SeedRandom[1234]; RandomColor[npts],
+		pointCol === RandomColor, SeedRandom[1234]; RandomColor[nPoints],
 		ColorQ[pointCol], Darker@pointCol,
 		VectorQ[pointCol], pointCol,
 		True, Darker@StandardRed
@@ -316,7 +339,8 @@ PlotMesh[{pts_?MatrixQ, cell_}, opts : OptionsPattern[]] := Block[{
 				If[meshCol === None,
 					{edgeCol, GraphicsComplex[pts, cell /. Polygon -> Line]},
 					{Opacity[opacity], EdgeForm[edgeCol], 
-						GraphicsComplex[pts, cell, VertexNormals -> MakeVertexNormals[pts, cell], VertexColors -> meshCol]}
+						GraphicsComplex[pts, cell, VertexNormals -> MakeVertexNormals[pts, cell], 
+							VertexColors -> meshCol]}
 				]
 			}], 
 			Graphics3D[]
@@ -424,9 +448,9 @@ Options[TemplateToVolume] = {
 SyntaxInformation[TemplateToVolume] = {"ArgumentsPattern" -> {{_, _}, {_, _}, OptionsPattern[]}};
 
 TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
-		nLow, nHigh, padData, padReg, volRescale, space, output, volume,
-		dim, template, vol, templateMesh, (*templatePoints,*) templateCells,
-		moving, templateDist, movingDist, (*movingRigid,*) templateReg, (*deformation,*)
+		nLow, nHigh, padData, padReg, volRescale, space, output, volume, mon, 
+		dim, template, vol, templateMesh, templatePoints, templateCells,
+		moving, templateDist, movingDist, movingRigid, templateReg, deformation,
 		movingMesh, pointsTemp, pointsLocal, meshes, points, 
 		meshTemplate, meshTemplateReg, meshMoving, meshMovingRigid
 	},
@@ -446,8 +470,8 @@ TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
 	template = PadToDimensions[tempI, dim];
 	{templateMesh, templatePoints, templateCells} = MakeRegionMesh[template, voxT, nLow, MeshOutput -> "All"];
 
-	mon[DateString[], "Rescalling moving data: "];
-	(*choose to rescle or volume scale to target resolution and pad to template dimensions*)
+	mon[DateString[], "Rescaling moving data: "];
+	(*choose to rescale or volume scale to target resolution and pad to template dimensions*)
 	moving = If[volRescale, 
 		ScaleToVolume[masks, {voxM, voxT}],
 		RescaleData[masks, {voxM, voxT}, InterpolationOrder -> 0]
@@ -462,7 +486,7 @@ TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
 	templateDist = MaskToDistanceMap@template;
 	movingDist = MaskToDistanceMap@moving;
 
-	(*rigid alig moving Volume to template space*)
+	(*rigid align moving Volume to template space*)
 	mon[DateString[], "Rigid alignment: "];
 	movingRigid = RegisterData[{templateDist, voxT}, {movingDist, voxT}, 
 		Resolutions -> 1, MethodReg -> {"rigid"}, Iterations -> 250, NumberSamples -> 10000, 
@@ -486,9 +510,7 @@ TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
 		MovePoints[{movingRigid, voxT, nHigh}, Transpose[deformation, {1, 4, 2, 3}], templatePoints],
 		DistributeDefinitions[MovePoints, MakeRegionMeshI, SplitRegionMesh, EstimateEdgeLength, MeshEdgeLength,
 			voxT, nHigh, templatePoints];
-		i=0;
-		Transpose[(*Parallel*)Map[(
-			Print[i++];
+		Transpose[ParallelMap[(
 			MovePoints[{#[[1]], voxT, nHigh}, #[[2]], templatePoints]
 			)&, Transpose[{Transpose[movingRigid], Transpose[deformation, {2, 1, 5, 3, 4}]}]
 		]]
@@ -496,19 +518,19 @@ TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
 
 	Switch[output,
 		"Meshes",
-		
 		mon[DateString[], "Making meshes: "];
 		meshTemplate = MakeRegionMesh[template, voxT, nHigh];
-		If[volume,
-			meshTemplateReg = MakeRegionMesh[templateReg, voxT, nHigh];
-			meshMoving = MakeRegionMesh[moving, voxT, nHigh];
-			,
-			DistributeDefinitions[MakeRegionMeshI, SplitRegionMesh, EstimateEdgeLength, MeshEdgeLength,
-				voxT, nHigh];
-			meshTemplateReg = Transpose[ParallelMap[MakeRegionMeshI[#, voxT, nHigh]&,Transpose[templateReg]]];
-			meshMoving = Transpose[ParallelMap[MakeRegionMeshI[#, voxT, nHigh]&,Transpose[moving]]];
+		{meshTemplateReg, meshMoving} = If[volume,
+			{
+				MakeRegionMesh[templateReg, voxT, nHigh],
+				MakeRegionMesh[moving, voxT, nHigh]
+			},
+			DistributeDefinitions[MakeRegionMeshI, SplitRegionMesh, EstimateEdgeLength, MeshEdgeLength, voxT, nHigh];
+			{
+				Transpose[ParallelMap[MakeRegionMeshI[#, voxT, nHigh]&,Transpose[templateReg]]],
+				Transpose[ParallelMap[MakeRegionMeshI[#, voxT, nHigh]&,Transpose[moving]]]
+			}
 		];
-
 		{
 			{meshTemplate, meshTemplateReg, meshMoving, meshMovingRigid},
 			{pointsTemp, pointsLocal, templatePoints, templateCells}
@@ -564,7 +586,7 @@ MakeTemplatePlot[{meshTemplate_, meshTemplateReg_, meshMoving_, meshMovingRigid_
 	templatePlot = PlotMesh[meshTemplate, MeshOpacity -> 0.5, MeshColor -> StandardGreen];
 	movingPlot = PlotMesh[meshMoving, MeshOpacity -> 0.5, MeshColor -> Gray];
 
-	(*generate stadard random colors*)
+	(*generate standard random colors*)
 	SeedRandom[1234];
 	col = RandomColor[Length@templatePoints];
 
@@ -598,25 +620,25 @@ MakeTemplatePlot[{meshTemplate_, meshTemplateReg_, meshMoving_, meshMovingRigid_
 MakeShapeModel[points_] := MakeShapeModel[points, False]
 
 MakeShapeModel[points_, mon_] := Block[{
-		meanPoints, variation, val, vec, nvec, vecMat, std, model, plot
+		meanPoints, variation, val, vec, nVec, vecMat, std, model, plot
 	},
 
 	(*calculate the mean muscle shape*)
 	meanPoints = Mean[points];
-	(*subtract the mean coordinates to get the variation per point and v	ectorize*)
+	(*subtract the mean coordinates to get the variation per point and vectorize*)
 	variation = Transpose@Flatten[# - meanPoints & /@ points, {2, 3}];
-	(*get shape covariance eigensystem*)
+	(*get shape covariance Eigensystem*)
 	{val, vec} = Eigensystem[Covariance[variation]];
 	(*find the maximum number of relevant vectors*)
-	nvec = First@Last@Position[UnitStep[(Accumulate[val]/Total[val]) - 0.99], 0];
+	nVec = First@Last@Position[UnitStep[(Accumulate[val]/Total[val]) - 0.99], 0];
 
 	(*make the model*)
-	vecMat = vec[[;; nvec]];
-	std = StandardDeviation /@ Transpose[(FitVariationVec[variation, vecMat, nvec])];
+	vecMat = vec[[;; nVec]];
+	std = StandardDeviation /@ Transpose[(FitVariationVec[variation, vecMat, nVec])];
 	model = std vecMat;
 
 	plot = ListLinePlot[
-		Transpose[{Range[0, nvec], (Prepend[Accumulate[val[[;; nvec]]], 0]/Total[val])}], Mesh -> Full, 
+		Transpose[{Range[0, nVec], (Prepend[Accumulate[val[[;; nVec]]], 0]/Total[val])}], Mesh -> Full, 
 		PlotRange -> {0, 1.1}, PlotLabel -> "Number of PCs for 99%", ImageSize->300, 
 		GridLines -> {None, Range[0, 1.1, 0.1]}, $plotOptions];
 
@@ -648,7 +670,7 @@ FitShapeModel[{mean_, mat_}, points_, ni_] := Block[{n, var, fit, fitPoints},
 (*FitVariationVec*)
 
 
-(*fit the eigensystem to points using n eigenvectors*)
+(*fit the Eigensystem to points using n Eigenvectors*)
 FitVariationVec[var_, mat_] := FitVariationVec[var, mat, All]
 
 FitVariationVec[var_, mat_, n_] := var . PseudoInverse[mat[[;; n]]]
@@ -668,23 +690,23 @@ EvaluateModel[{mean_, mat_}, points_, cells_] := EvaluateModel[{mean, mat, None}
 
 EvaluateModel[{mean_, mat_, pc_}, points_, cells_] := Manipulate[
 	range = MinMax[#] + {-40, 40} & /@ Transpose[Flatten[points, 1]];
-	{fit, pointsFit} = FitShapeModel[{mean, mat}, points, nvecs];
+	{fit, pointsFit} = FitShapeModel[{mean, mat}, points, nVec];
 	plot = FindClusters[DimensionReduce[fit, 2], 3, Method -> "KMeans"];
 	row = If[srow, 
 		Grid[{{
 			If[pc =!= None, pc, Nothing],
 			ListPlot[plot, ImageSize -> 210, PlotRange -> {{-5, 5}, {-5, 5}}, Axes -> True, ImageSize -> 300,
-				AspectRatio -> 1, PlotStyle -> PointSize[Large], PlotLabel -> "2D projection of " <> ToString[nvecs] <> " PCs", 
+				AspectRatio -> 1, PlotStyle -> PointSize[Large], PlotLabel -> "2D projection of " <> ToString[nVec] <> " PCs", 
 				$plotOptions],
 			SmoothHistogram[Transpose[fit], PlotRange -> {{-5, 5}, {0, .7}}, ImageSize -> 300, AspectRatio -> 0.7, 
-				PlotLegends -> ("PC: " <> ToString[#] & /@ Range[nvecs]), PlotLabel -> "Distribution of PCs", $plotOptions]
+				PlotLegends -> ("PC: " <> ToString[#] & /@ Range[nVec]), PlotLabel -> "Distribution of PCs", $plotOptions]
 		}}, Spacings -> {3, 3}]
 		, Nothing
 	];
 
 	MakeEvalPlot[nvecs, row, {mean, std, mat, cells}, range, part]
 	,
-	{{nvecs, 8, "PC"}, 1, 12, 1, ControlType -> SetterBar},
+	{{nVec, 8, "PC"}, 1, 12, 1, ControlType -> SetterBar},
 	{{part, 4, "plots per row"}, 2, 6, 1, ControlType -> SetterBar},
 	{{std, 0, "range"}, -5, 5},
 	{{srow, False, "show pcs"}, {True, False}},
@@ -692,7 +714,7 @@ EvaluateModel[{mean_, mat_, pc_}, points_, cells_] := Manipulate[
 	Button["Make animation",
 		fl = FileSelect["FileSave", {"*.gif"}];
 		If[fl =!= $Canceled,
-			anim = Table[MakeEvalPlot[nvecs, row, {mean, stdi, mat, cells}, range, part], {stdi, -5, 5, 1}];
+			anim = Table[MakeEvalPlot[nVec, row, {mean, std, mat, cells}, range, part], {std, -5, 5, 1}];
 			anim = Map[Rasterize[#, ImageSize -> 1000, ImageResolution -> 150, LightDark -> dark] &, Join[anim, Reverse@anim[[2 ;; -2]]]];
 			Export[ConvertExtension[fl, "gif"], anim, "DisplayDuration" -> 0.1, AnimationRepetitions -> Infinity]
 		], Method -> "Queued"],
@@ -710,7 +732,7 @@ EvaluateModel[{mean_, mat_, pc_}, points_, cells_] := Manipulate[
 (*MakeEvalPlot*)
 
 
-MakeEvalPlot[nvevs_, row_, {mean_, std_, mat_, cells_}, range_, part_] := Grid[{
+MakeEvalPlot[nVec_, row_, {mean_, std_, mat_, cells_}, range_, part_] := Grid[{
 	{
 		row
 	}, {
@@ -721,14 +743,13 @@ MakeEvalPlot[nvevs_, row_, {mean_, std_, mat_, cells_}, range_, part_] := Grid[{
 				If[std===0,Graphics3D[], PlotMesh[mean, cells, MeshOpacity -> 0.2, MeshColor -> Gray]], 
 			PlotLabel -> Style["PC: " <> ToString[j], LightDarkSwitched[Black, White], Bold, 20],
 				ImageSize -> Round[1000/part], PlotRange->range]]
-		, {j, 1, nvevs, 1}]	, part, part, 1, {}]]
+		, {j, 1, nVec, 1}]	, part, part, 1, {}]]
 	}
 }, Spacings -> {3, 3}, Alignment -> Center]
 
 
 (* ::Subsubsection::Closed:: *)
 (*MakeEvalPlot*)
-
 
 
 Options[MeshGridPlot] = {
@@ -753,11 +774,38 @@ MeshGridPlot[meshesP_, pointsP_, selI_, OptionsPattern[]] := Block[{col, range, 
 
 	Grid[Partition[Table[Link3DGraphic@Show[
 		PlotMesh[meshesP[[4, i]], MeshOpacity -> 0.5, MeshColor -> Gray],
-		ListSpherePlot[pointsP[[2, i]], SphereColor -> col], ImageSize -> Round[(1500/part)], PlotRange -> range
+		ListSpherePlot[pointsP[[2, i]], SphereColor -> col], ImageSize -> Round[(1000/part)], PlotRange -> range
 	], {i, sel}], part, part, 1, {}], Spacings -> {0, 0}]
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*PlotShapeVariation*)
+
+
+Options[PlotShapeVariation] = {
+	MeshesPerRow -> 5
+};
+
+PlotShapeVariation[points_, cells_, opts : OptionsPattern[]] := PlotShapeVariation[points, cells, 10, opts]
+
+PlotShapeVariation[points_, cells_, nVec_, OptionsPattern[]] := Block[{
+		mean, mat, plot, part, std1, std2, pt1, pt2, diff, col
+	},
+
+	{mean, mat, plot} = MakeShapeModel[points, True];
+	part = OptionValue[MeshesPerRow];
+	
+	Grid[Partition[Table[
+		{std1, std2} = {-1, 1} 2;
+		{pt1, pt2} = {mean + Partition[std1 mat[[j]], 3], 
+		mean + Partition[std2 mat[[j]], 3]};
+		diff = Norm /@ (pt1 - pt2);
+		col = ColorData["Lipari"] /@ (diff/Ceiling[Max[diff], 5]);
+		Link3DGraphic@Show[PlotMesh[mean, cells, MeshColor -> col], ImageSize -> 200, 
+			PlotLabel -> Style["PC: " <> ToString[j], LightDarkSwitched[Black, White], Bold, 20]]
+	, {j, 1, nVec, 1}], part, part, 1, {}], Spacings -> {0, 0}, Alignment -> Center]
+]
 
 
 (* ::Section:: *)
