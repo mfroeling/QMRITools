@@ -1,0 +1,482 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     18654,        474]
+NotebookOptionsPosition[     14381,        381]
+NotebookOutlinePosition[     15235,        405]
+CellTagsIndexPosition[     15192,        402]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["ShapeTools", "GuideTitle",
+ CellChangeTimes->{{3.9718539704315224`*^9, 3.971853971526268*^9}},
+ CellID->147359197,ExpressionUUID->"fdfee24c-f2c7-4b86-8ee8-195caae38eb4"],
+
+Cell[TextData[{
+ ButtonBox["QMRITools",
+  BaseStyle->"Link",
+  ButtonData->"paclet:QMRITools/guide/QMRITools"],
+ " package: Functions statistical shape modeling of volumes, muscles and \
+segmentation. "
+}], "GuideAbstract",
+ CellChangeTimes->{{3.8521220765064907`*^9, 3.8521221196175165`*^9}, {
+  3.9718539783032074`*^9, 3.9718539972905025`*^9}},
+ CellID->69434082,ExpressionUUID->"687754be-f9c0-4a54-94e5-f9f98cdd9213"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["", "GuideFunctionsSection",
+ CellID->37611892,ExpressionUUID->"06e7f10d-fc0e-4710-8fde-e43db8b632c0"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["MakeMuscleTemplate",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/MakeMuscleTemplate"]], 
+  "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"7846d426-40ba-409d-bd6b-bc3f65f4caee",ExpressionUUID->
+  "de0abc79-89ba-0e4a-afe8-3e64b8c15ce2"],
+ " \[LongDash] Makes a template muscle from a series of muscle segmentations."
+}], "GuideText",
+ CellChangeTimes->{{3.971854135580204*^9, 3.971854135580204*^9}, {
+  3.971854350124769*^9, 3.971854350124769*^9}, {3.9718543946348057`*^9, 
+  3.971854408635746*^9}},
+ CellID->88373909,ExpressionUUID->"4f5db6de-cde5-5d42-b4e9-d5d4e292f1bb"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["TemplateToVolume",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/TemplateToVolume"]], 
+  "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"7846d426-40ba-409d-bd6b-bc3f65f4caee",ExpressionUUID->
+  "5bc5502c-ae97-1344-9e43-19d1c4841e1a"],
+ " \[LongDash] Aligns a muscle template to a single or series of muscle \
+volumes."
+}], "GuideText",
+ CellChangeTimes->{{3.9718541501720448`*^9, 3.9718541501720448`*^9}, {
+  3.971854354955574*^9, 3.971854354955574*^9}, {3.971854412121296*^9, 
+  3.971854432910961*^9}},
+ CellID->258425196,ExpressionUUID->"2a481e87-f0ab-2140-a13a-0c79fe86bab9"],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->379473320,ExpressionUUID->"1b61ad63-dcf3-4ec8-a2b3-6024169b95ff"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["MakeShapeModel",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/MakeShapeModel"]], "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"2c14343a-446e-4edd-90d7-b15b6ca54190",ExpressionUUID->
+  "26ce776b-748b-d549-b4c1-2c52b9950b6c"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["FitShapeModel",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/FitShapeModel"]], "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"9f6d1771-7a3c-45ad-8965-469539c72c0a",ExpressionUUID->
+  "78adb885-e07e-5f40-8a55-e769d9556c52"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["EvaluateModel",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/EvaluateModel"]], "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"a93234e9-e4bd-4f8a-8cac-1a749ef787b7",ExpressionUUID->
+  "b5ac71e6-d6ea-6e48-acb7-f5cbddf2a978"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["ScaleToVolume",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/ScaleToVolume"]], "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"2a396247-8747-452e-920a-4f30065a446f",ExpressionUUID->
+  "acd6ae0d-c05c-b34c-9f38-820c7bbb7a88"],
+ Cell[BoxData[
+  RowBox[{
+  Cell[TextData[StyleBox[
+   " \[FilledVerySmallSquare] ", "InlineSeparator"]],ExpressionUUID->
+    "15eab0ad-0c51-544f-902c-57b542d2b4ad"], 
+   DynamicModuleBox[{$CellContext`nbobj$$ = NotebookObject[
+    "621fa4ce-6441-4cb1-a559-da5719242cc8", 
+     "47abb2d4-cc99-7a45-8439-d5d31473500a"], $CellContext`cellobj$$ = 
+    CellObject[
+    "10701b04-0294-5c42-b3a4-893a9725c15e", 
+     "4f27af76-3a22-624d-ab1a-b7955229c1da"]}, 
+    TemplateBox[{
+      GraphicsBox[{{
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         CircleBox[{0, 0}]}, {
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         LineBox[{{0, 0.62}, {0, -0.62}}]}, {
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         LineBox[{{-0.62, 0}, {0.62, 0}}]}}, 
+       ImagePadding -> {{1., 1.}, {2.4, 1.}}, ImageSize -> 16, 
+       PlotRange -> {{-1.06, 1.06}, {-1.06, 1.06}}, 
+       BaselinePosition -> (Center -> 
+        Center)], $CellContext`nbobj$$, $CellContext`cellobj$$},
+     "InlineListingAddButton"],
+    Initialization:>($CellContext`nbobj$$ = 
+      EvaluationNotebook[]; $CellContext`cellobj$$ = EvaluationCell[])]}]], 
+  "InlineListingAddButton",ExpressionUUID->
+  "10701b04-0294-5c42-b3a4-893a9725c15e"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{{3.9333254102016773`*^9, 3.933325425290579*^9}, {
+  3.9333254844340115`*^9, 3.933325488995838*^9}, {3.97185401415695*^9, 
+  3.971854022923546*^9}, {3.9718541597399654`*^9, 3.971854160859913*^9}, {
+  3.971854258512169*^9, 3.971854272984871*^9}, {3.971854358663067*^9, 
+  3.9718543675110474`*^9}},
+ CellID->115705116,ExpressionUUID->"800bbb71-1230-d340-9e8d-d329d8a0b19c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->143023863,ExpressionUUID->"b64ddc18-4fd5-4fe5-a501-c9618e1dee6b"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["MakeRegionMesh",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/MakeRegionMesh"]], "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"358daa08-1b3d-48f8-bf15-b2fa2486adab",ExpressionUUID->
+  "bf403d98-622a-3a4c-93f3-08824be93c31"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["SplitRegionMesh",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/SplitRegionMesh"]], "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"c28d998d-d1a2-470b-88cb-5199cca83f90",ExpressionUUID->
+  "066cb69f-4d0f-a74e-bb35-e93b28f6be45"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["MaskFromDistanceMap",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/MaskFromDistanceMap"]], 
+  "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"1c27f05f-91eb-42f5-ab0a-76ff87231c24",ExpressionUUID->
+  "612fcffc-09cc-6e4e-b247-8377a63f4b86"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["MaskToDistanceMap",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/MaskToDistanceMap"]], 
+  "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"563999f1-c36f-4916-8549-dc5a504c367c",ExpressionUUID->
+  "e45f7ea5-e447-1945-9cd0-21de35ba3b90"],
+ Cell[BoxData[
+  RowBox[{
+  Cell[TextData[StyleBox[
+   " \[FilledVerySmallSquare] ", "InlineSeparator"]],ExpressionUUID->
+    "708f733b-42d4-764e-b165-e653f6e4246b"], 
+   DynamicModuleBox[{$CellContext`nbobj$$ = NotebookObject[
+    "621fa4ce-6441-4cb1-a559-da5719242cc8", 
+     "47abb2d4-cc99-7a45-8439-d5d31473500a"], $CellContext`cellobj$$ = 
+    CellObject[
+    "bdf2e5ee-a9cf-4a44-b9bb-855f81a1bba5", 
+     "d65fd30d-0c34-db41-9247-b716c546b8dd"]}, 
+    TemplateBox[{
+      GraphicsBox[{{
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         CircleBox[{0, 0}]}, {
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         LineBox[{{0, 0.62}, {0, -0.62}}]}, {
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         LineBox[{{-0.62, 0}, {0.62, 0}}]}}, 
+       ImagePadding -> {{1., 1.}, {2.4, 1.}}, ImageSize -> 16, 
+       PlotRange -> {{-1.06, 1.06}, {-1.06, 1.06}}, 
+       BaselinePosition -> (Center -> 
+        Center)], $CellContext`nbobj$$, $CellContext`cellobj$$},
+     "InlineListingAddButton"],
+    Initialization:>($CellContext`nbobj$$ = 
+      EvaluationNotebook[]; $CellContext`cellobj$$ = EvaluationCell[])]}]], 
+  "InlineListingAddButton",ExpressionUUID->
+  "bdf2e5ee-a9cf-4a44-b9bb-855f81a1bba5"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{{3.933325470823063*^9, 3.9333254800908184`*^9}, {
+  3.933325815005869*^9, 3.93332581939369*^9}, {3.971854026687174*^9, 
+  3.9718540305150414`*^9}, {3.97185427453866*^9, 3.971854293926422*^9}, {
+  3.971854370666605*^9, 3.9718543802296066`*^9}},
+ CellID->567549859,ExpressionUUID->"a8b244ed-a421-db4b-91a2-72985b45a92d"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\t", "GuideDelimiter",
+ CellID->421199806,ExpressionUUID->"aaf0c283-4cfc-644f-b6fb-d99abb880bc1"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["PlotMesh",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/PlotMesh"]], "InlineGuideFunction",
+  ExpressionUUID->"e0715dad-95ee-a640-b28e-44cd4cc68b6a"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["MakeTemplatePlot",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/MakeTemplatePlot"]], 
+  "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"8ad5bf5d-be3a-4fac-a58b-6222174881c4",ExpressionUUID->
+  "b739b85a-c546-9544-98f5-c2f33c775c5a"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["MeshGridPlot",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/MeshGridPlot"]], "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"d17caac9-f95d-458a-9db2-3950edec584f",ExpressionUUID->
+  "224a1721-e1e0-f14e-8ea4-e666414b9e91"],
+ StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"],
+ Cell[BoxData[
+  ButtonBox["PlotShapeVariation",
+   BaseStyle->"Link",
+   ButtonData->"paclet:QMRITools/ref/PlotShapeVariation"]], 
+  "InlineGuideFunction",
+  TaggingRules->{"PageType" -> "Function"},
+  CellTags->"ed2f9d56-302a-4a23-a0c1-8f3a33e88852",ExpressionUUID->
+  "a2012822-9889-1441-90a2-234bf9d17f16"],
+ Cell[BoxData[
+  RowBox[{
+  Cell[TextData[StyleBox[
+   " \[FilledVerySmallSquare] ", "InlineSeparator"]],ExpressionUUID->
+    "f9ff7b9b-1072-894f-94bd-3eded4015157"], 
+   DynamicModuleBox[{$CellContext`nbobj$$ = NotebookObject[
+    "621fa4ce-6441-4cb1-a559-da5719242cc8", 
+     "47abb2d4-cc99-7a45-8439-d5d31473500a"], $CellContext`cellobj$$ = 
+    CellObject[
+    "a59d523b-d074-9440-800f-08c8d35fb625", 
+     "c958fe59-3efb-f84b-a491-74d413529b0f"]}, 
+    TemplateBox[{
+      GraphicsBox[{{
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         CircleBox[{0, 0}]}, {
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         LineBox[{{0, 0.62}, {0, -0.62}}]}, {
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         LineBox[{{-0.62, 0}, {0.62, 0}}]}}, 
+       ImagePadding -> {{1., 1.}, {2.4, 1.}}, ImageSize -> 16, 
+       PlotRange -> {{-1.06, 1.06}, {-1.06, 1.06}}, 
+       BaselinePosition -> (Center -> 
+        Center)], $CellContext`nbobj$$, $CellContext`cellobj$$},
+     "InlineListingAddButton"],
+    Initialization:>($CellContext`nbobj$$ = 
+      EvaluationNotebook[]; $CellContext`cellobj$$ = EvaluationCell[])]}]], 
+  "InlineListingAddButton",ExpressionUUID->
+  "a59d523b-d074-9440-800f-08c8d35fb625"]
+}], "InlineGuideFunctionListing",
+ CellChangeTimes->{{3.9718543059959087`*^9, 3.971854323158209*^9}, {
+  3.971854383015108*^9, 3.9718543914728336`*^9}},
+ CellID->368293262,ExpressionUUID->"2e8e2639-1f7d-0242-87a9-846921d6719d"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tech Notes", "GuideTutorialsSection",
+ CellID->595273082,ExpressionUUID->"1a8eb23a-8f07-4fc8-ab01-90d390778231"],
+
+Cell["XXXX", "GuideTutorial",
+ CellID->16233121,ExpressionUUID->"9944cbb5-7d87-4dfc-a77f-196bed0420ca"],
+
+Cell["XXXX", "GuideTutorial",
+ CellID->189740226,ExpressionUUID->"be93782a-9216-4788-984c-16626845e509"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "GuideMoreAboutSection",
+ CellChangeTimes->{{3.8430423939366693`*^9, 3.843042395176153*^9}},
+ CellID->103266599,ExpressionUUID->"6453f33f-17dd-444a-bf62-20fcf19a0420"],
+
+Cell["XXXX", "GuideMoreAbout",
+ CellID->294169139,ExpressionUUID->"00abf942-7b60-4ffe-a002-ae63e42fd0c4"],
+
+Cell["XXXX", "GuideMoreAbout",
+ CellID->101011271,ExpressionUUID->"26ea5969-b395-4a35-966d-a02e55830f2c"]
+}, Open  ]],
+
+Cell["Related Links", "GuideRelatedLinksSection",
+ CellID->888397797,ExpressionUUID->"aebfa8b8-dc19-48fc-b3ae-79b829aca88d"],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection",
+ CellID->165166452,ExpressionUUID->"2530425d-5509-4d6b-95d2-6427d54b5dad"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->294951414,ExpressionUUID->"37d661ad-fc74-4e32-a369-3ee2dd9e00ce"],
+
+Cell["Guide", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->206209739,ExpressionUUID->"cd74e4e1-e83e-4c37-b708-84cd069ebd9b"],
+
+Cell["QMRITools", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->46038171,ExpressionUUID->"0c6a1419-45b2-45e8-835d-81f9cce48b22"],
+
+Cell["QMRITools`", "Categorization",
+ CellLabel->"Context",
+ CellID->17049747,ExpressionUUID->"e1509e88-cbe6-4567-87b3-b201c7cc2f37"],
+
+Cell["QMRITools/guide/ShapeTools", "Categorization",
+ CellChangeTimes->{{3.971854040475012*^9, 3.9718540425639095`*^9}},
+ CellLabel->"URI",
+ CellID->68430647,ExpressionUUID->"b6d60a01-12d9-405c-bc97-ea3e97ab79fe"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->93467392,ExpressionUUID->"707838c0-9ea9-4364-81fb-65a71fee79c2"],
+
+Cell["XXXX", "Keywords",
+ CellID->229191384,ExpressionUUID->"fff4cc32-aefd-4ff4-8968-0374d9d1f648"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{718.5, 825},
+WindowMargins->{{-5.25, Automatic}, {Automatic, 0}},
+TaggingRules->{
+ "DocuToolsSettings" -> {
+   "$ApplicationName" -> "QMRITools", "$LinkBase" -> "QMRITools", 
+    "$DocumentationDirectory" -> 
+    "D:\\werk\\workspace\\QMRITools\\QMRITools\\Documentation\\English\\", 
+    "$ApplicationDirectory" -> "D:\\werk\\workspace\\QMRITools\\QMRITools"}, 
+  "WelcomeScreenSettings" -> {"FEStarting" -> False}, "Paclet" -> "QMRITools"},
+FrontEndVersion->"14.3 for Microsoft Windows (64-bit) (July 8, 2025)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "GuidePageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"],
+ExpressionUUID->"621fa4ce-6441-4cb1-a559-da5719242cc8"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 175, 2, 65, "GuideTitle",ExpressionUUID->"fdfee24c-f2c7-4b86-8ee8-195caae38eb4",
+ CellID->147359197],
+Cell[758, 26, 420, 9, 21, "GuideAbstract",ExpressionUUID->"687754be-f9c0-4a54-94e5-f9f98cdd9213",
+ CellID->69434082]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1215, 40, 107, 1, 53, "GuideFunctionsSection",ExpressionUUID->"06e7f10d-fc0e-4710-8fde-e43db8b632c0",
+ CellID->37611892],
+Cell[1325, 43, 663, 14, 17, "GuideText",ExpressionUUID->"4f5db6de-cde5-5d42-b4e9-d5d4e292f1bb",
+ CellID->88373909],
+Cell[1991, 59, 667, 15, 17, "GuideText",ExpressionUUID->"2a481e87-f0ab-2140-a13a-0c79fe86bab9",
+ CellID->258425196],
+Cell[CellGroupData[{
+Cell[2683, 78, 103, 1, 22, "GuideDelimiter",ExpressionUUID->"1b61ad63-dcf3-4ec8-a2b3-6024169b95ff",
+ CellID->379473320],
+Cell[2789, 81, 3155, 72, 18, "InlineGuideFunctionListing",ExpressionUUID->"800bbb71-1230-d340-9e8d-d329d8a0b19c",
+ CellID->115705116]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5981, 158, 103, 1, 22, "GuideDelimiter",ExpressionUUID->"b64ddc18-4fd5-4fe5-a501-c9618e1dee6b",
+ CellID->143023863],
+Cell[6087, 161, 3133, 73, 30, "InlineGuideFunctionListing",ExpressionUUID->"a8b244ed-a421-db4b-91a2-72985b45a92d",
+ CellID->567549859]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9257, 239, 103, 1, 22, "GuideDelimiter",ExpressionUUID->"aaf0c283-4cfc-644f-b6fb-d99abb880bc1",
+ CellID->421199806],
+Cell[9363, 242, 2871, 69, 18, "InlineGuideFunctionListing",ExpressionUUID->"2e8e2639-1f7d-0242-87a9-846921d6719d",
+ CellID->368293262]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[12283, 317, 118, 1, 55, "GuideTutorialsSection",ExpressionUUID->"1a8eb23a-8f07-4fc8-ab01-90d390778231",
+ CellID->595273082],
+Cell[12404, 320, 103, 1, 17, "GuideTutorial",ExpressionUUID->"9944cbb5-7d87-4dfc-a77f-196bed0420ca",
+ CellID->16233121],
+Cell[12510, 323, 104, 1, 17, "GuideTutorial",ExpressionUUID->"be93782a-9216-4788-984c-16626845e509",
+ CellID->189740226]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[12651, 329, 190, 2, 55, "GuideMoreAboutSection",ExpressionUUID->"6453f33f-17dd-444a-bf62-20fcf19a0420",
+ CellID->103266599],
+Cell[12844, 333, 105, 1, 17, "GuideMoreAbout",ExpressionUUID->"00abf942-7b60-4ffe-a002-ae63e42fd0c4",
+ CellID->294169139],
+Cell[12952, 336, 105, 1, 17, "GuideMoreAbout",ExpressionUUID->"26ea5969-b395-4a35-966d-a02e55830f2c",
+ CellID->101011271]
+}, Open  ]],
+Cell[13072, 340, 124, 1, 55, "GuideRelatedLinksSection",ExpressionUUID->"aebfa8b8-dc19-48fc-b3ae-79b829aca88d",
+ CellID->888397797],
+Cell[CellGroupData[{
+Cell[13221, 345, 110, 1, 53, "MetadataSection",ExpressionUUID->"2530425d-5509-4d6b-95d2-6427d54b5dad",
+ CellID->165166452],
+Cell[CellGroupData[{
+Cell[13356, 350, 122, 1, 15, "CategorizationSection",ExpressionUUID->"37d661ad-fc74-4e32-a369-3ee2dd9e00ce",
+ CellID->294951414],
+Cell[13481, 353, 133, 2, 25, "Categorization",ExpressionUUID->"cd74e4e1-e83e-4c37-b708-84cd069ebd9b",
+ CellID->206209739],
+Cell[13617, 357, 136, 2, 25, "Categorization",ExpressionUUID->"0c6a1419-45b2-45e8-835d-81f9cce48b22",
+ CellID->46038171],
+Cell[13756, 361, 133, 2, 25, "Categorization",ExpressionUUID->"e1509e88-cbe6-4567-87b3-b201c7cc2f37",
+ CellID->17049747],
+Cell[13892, 365, 213, 3, 25, "Categorization",ExpressionUUID->"b6d60a01-12d9-405c-bc97-ea3e97ab79fe",
+ CellID->68430647]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[14142, 373, 109, 1, 22, "KeywordsSection",ExpressionUUID->"707838c0-9ea9-4364-81fb-65a71fee79c2",
+ CellID->93467392],
+Cell[14254, 376, 99, 1, 15, "Keywords",ExpressionUUID->"fff4cc32-aefd-4ff4-8968-0374d9d1f648",
+ CellID->229191384]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
