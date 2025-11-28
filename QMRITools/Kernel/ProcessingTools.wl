@@ -1117,9 +1117,10 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]] := Block[{
 	overlap = If[ListQ[over], First@over, over];
 
 	(*normalize the data*)
+	dat = ToPackedArray@N@data;
 	dat = If[normalize, 
 		If[mon, PrintTemporary["Normalizing data"]]; 
-		NormalizeData/@data, data];
+		NormalizeData/@dat, dat];
 	ran = MinMax[dat];
 
 	(*reverse the order of the sets if needed*)
@@ -1127,7 +1128,7 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]] := Block[{
 
 	If[overlap===0,
 		(*reverse the order of the slices if needed*)
-		dat = N@If[reverseD, Reverse[dat, 2], dat];
+		dat = If[reverseD, Reverse[dat, 2], dat];
 		dat = Flatten[dat, 1];
 		,
 		If[motion, Switch[depth,
@@ -1140,7 +1141,7 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]] := Block[{
 		]];
 
 		(*reverse the order of the slices if needed*)
-		dat = N@If[reverseD, Reverse[dat, 2], dat];
+		dat = If[reverseD, Reverse[dat, 2], dat];
 
 		If[mon, PrintTemporary["Joining data"]];	
 		overlap = overlap + 2*pad;
@@ -1152,32 +1153,32 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]] := Block[{
 	];
 
 	(*give output*)	
-	dat = ArrayPad[dat, Prepend[ConstantArray[{0, 0}, ArrayDepth[dat] - 1], {-pad, -pad}]];
-	dat = ToPackedArray@N@Clip[dat, 1.1 ran, 1.1 ran];
+	dat = ArrayPad[dat, Prepend[ConstantArray[{0, 0}, ArrayDepth[dat] - 1], {-pad, -pad}], 0.];
+	dat = Clip[dat, 1.1 ran, 1.1 ran];
 
 	Return[If[reverseD, Reverse[dat], dat]]
 ]
 
 
 JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False] := Block[{
-		sets,set1,set2,step,set1over,set2over,joined,mn1,mn2
+		sets, set1, set2, step, set1over, set2over, joined, mn1, mn2
 	},
 
-	sets=Length[data];
-	step=1/(overlap+1);
+	sets = Length[data];
+	step = 1/(overlap+1);
 
 	(*perform the join*)
 	Table[
 		If[i==1,
-			set1=Drop[data[[i]],{-overlap,-1}];
-			set1over=Take[data[[i]],{-overlap,-1}];
+			set1 = Drop[data[[i]], {-overlap, -1}];
+			set1over = Take[data[[i]], {-overlap, -1}];
 			,
-			set1=Drop[joined,{-overlap,-1}];
-			set1over=Take[joined,{-overlap,-1}];
+			set1 = Drop[joined, {-overlap, -1}];
+			set1over = Take[joined, {-overlap, -1}];
 		];
 
-		set2=Drop[data[[i+1]],{1,overlap}];
-		set2over=Take[data[[i+1]],{1,overlap}];
+		set2 = Drop[data[[i+1]], {1, overlap}];
+		set2over = Take[data[[i+1]], {1, overlap}];
 
 		If[norm,
 			mn1 = MeanNoZero[Flatten[#]] & /@ set1over;
@@ -1197,71 +1198,31 @@ JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False] := Block[{
 ];
 
 
-JoinSetsi[data_?ArrayQ, overlap_?ListQ, OptionsPattern[]] := 
-Module[{sets,set1,set2,i,step,set1over,set2over,joined,overSet,data1,data2,drop1,drop2,overl},
-
-	sets=Length[data];
-
-	(*perform the join*)
-	Table[
-		overSet=overlap[[i]];
-		If[i==1,
-			data1=data[[i]];,
-			data1=joined;
-			];
-		If[Length[overSet]!=3&&!IntegerQ[overSet],
-			Return[Message[JoinSets::over,overSet]];
-			,
-			If[IntegerQ[overSet],
-				step=1/(overSet+1);
-				data2=data[[i+1]];
-				overl=overSet;
-				,
-				If[Length[overSet]==3,
-					overl=overSet[[1]];
-					step=1/(overl+1);
-					drop1=overSet[[2]];
-					drop2=overSet[[3]];
-					If[drop1!=0,data1=Drop[data1,{-drop1,-1}]];
-					If[drop2!=0,data2=Drop[data[[i+1]],{1,drop2}];,data2=data[[i+1]];];
-					]
-				]
-			];
-		set1=Drop[data1,{-overl,-1}];
-		set1over=Take[data1,{-overl,-1}];
-		set2=Drop[data2,{1,overl}];
-		set2over=Take[data2,{1,overl}];
-
-		joined=Joini[{set1,set2},{set1over,set2over},overl];
-	,{i, 1, sets-1}];
-
-	joined
-];
-
-
 (* ::Subsubsection::Closed:: *)
 (*Joini*)
 
 
-Joini[sets_, setover_, step_] := Module[{over,dato,unit,noZero,tot},
+Joini[sets_, setover_, step_] := Block[{
+		over, dato, unit, noZero, tot
+	},
 	(*define the overlapping voxels*)
-	unit = Unitize[setover];
-	noZero = Times @@ unit;
+	noZero = Times @@ Unitize[setover];
 	tot = Total[noZero];
-	(*prepare the data for listable compliled function*)
-	noZero = RotateDimensionsLeft[noZero];
-	dato = RotateDimensionsLeft[setover, 2];
+
 	(*merge the overlapping data*)
-	over = RotateDimensionsRight[JoinFuncC[dato, noZero, tot, step]];
+	over = RotateDimensionsRight[JoinFuncC[
+		RotateDimensionsLeft[setover, 2], RotateDimensionsLeft[noZero], 
+		tot, step]];
+
 	(*merge the non ovelap with the overlap*)
-	Chop[Join[sets[[1]], over, sets[[2]]]]
+	Join[sets[[1]], over, sets[[2]]]
 ]
 
 
 JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0}, {steps, _Integer, 0}}, Block[{
 		ran, unit, tot1, out
 	},
-
+	(*better for compile to predefine the output vector*)
 	out = First@dat;
 
 	If[tot === 0,
@@ -1287,6 +1248,7 @@ JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0},
 			out = Total[unit dat]
 		]
 	];
+
 	(*give the output*)
 	out
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
