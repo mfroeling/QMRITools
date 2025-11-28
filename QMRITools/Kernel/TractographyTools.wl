@@ -831,9 +831,9 @@ RK3[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3},
 
 
 SSPRK3[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3},
-    k1 = h vec[int @@ (y), v];
-    k2 = h vec[int @@ (y + k1), v];
-    k3 = h vec[int @@ (y + k1/4 + k2/4), v];
+    k1 = h vec[int@@(y), v];
+    k2 = h vec[int@@(y + k1), v];
+    k3 = h vec[int@@(y + k1/4 + k2/4), v];
     k1/6 + k2/6 + 2/3 k3
 ]
 

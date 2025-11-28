@@ -2037,15 +2037,14 @@ MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
 
 	(*make graph properties*)
 	vertCol = Thread[names -> (Directive[#, EdgeForm[None]] & /@ (contexts /. Thread[
-		{"Internal_Global", "Internal_Private", "External_Global", "External_Private"} -> 
-		{RGBColor[{52, 168, 83}/256], RGBColor[{66, 133, 244}/256],RGBColor[{251, 188, 5}/256], RGBColor[{235, 67, 53}/256]}]))
-	];
+			{"Internal_Global", "Internal_Private", "External_Global", "External_Private"} -> {StandardGreen, StandardBlue, StandardYellow, StandardRed}
+		]))];
 	vertFunc = Thread[names -> types /. {"SetDelayed" -> "Circle", "Function" -> "Triangle", "Compiled" -> "Star"}];
 	vertLab = Thread[names -> (Placed[#, lab] & /@ names)];
 
 	Graph[edges, 
 		VertexLabels -> vertLab, VertexShapeFunction -> vertFunc, VertexStyle -> vertCol,
-		VertexLabelStyle -> Directive[Black, Bold, Automatic], EdgeStyle -> Directive[Black, Thick], 
+		VertexLabelStyle -> Directive[LightDarkSwitched[Black, White], Bold, Automatic], EdgeStyle -> Directive[LightDarkSwitched[Black, White], Thick], 
 		VertexSize -> Automatic, ImageSize -> {Automatic, 600}]
 ]
 

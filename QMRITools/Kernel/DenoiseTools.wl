@@ -651,7 +651,7 @@ NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{
 (*DenoiseCSIdata*)
 
 
-Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Corners"}
+Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Corners", PCAWeighting ->True, Method->"Patch"}
 
 SyntaxInformation[DenoiseCSIdata]={"ArgumentsPattern"->{_, OptionsPattern[]}}
 
@@ -675,7 +675,9 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 
 	(*Denoise the spectra data*)
 	{spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, 
-		PCAClipping -> False, PCAKernel -> OptionValue[PCAKernel], MonitorCalc->False, Method -> "Patch"];
+		PCAClipping -> False, MonitorCalc->False, Parallelize -> False, 
+		PCAKernel -> OptionValue[PCAKernel], PCAWeighting ->OptionValue[PCAWeighting], Method->OptionValue[Method]
+	];
 
 	ToPackedArray@N@RotateDimensionsLeft[Transpose[spectraDen][[1 ;; len]] + Transpose[spectraDen][[len + 1 ;;]] I]
 ]
@@ -944,8 +946,8 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?
 	HarmonicDenoiseTensor[tensI, seg, vox, 0, opts]
 
 HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, labs_, OptionsPattern[]]:=Block[{
-		sigma, flip, per, itt, step, tol, rFA, rMD, seg, pos, lab, mon, pi, t, tensC, musC,
-		tensO, tensL, dimT, conO, dimC, ampO, dimA, mus, crp, tens, con, amp
+		sigma, flip, per, itt, step, tol, rFA, rMD, seg, pos, lab, mon, tensL, crops, denoise,
+		tensO, dimT, conO, dimC, ampO, dimA, mus, crp, tens, con, amp
 	},
 
 	(*get options*)
@@ -971,38 +973,38 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 		pos = labs;
 	];
 
-	(*prepare the output*)
-	tensO = SparseArray[0. tensI];
+	(*make cropped data for each muscle*)
+	If[mon, MonitorFunction["Making cropped muscles"]];
 	tensL = Transpose[FlipTensorOrientation[tensI, per, flip]];
-	dimT = Dimensions@tensL;
+	crops = Table[crp = FindCrop[vol, CropPadding -> sigma];
+		{Normal@Transpose[ApplyCrop[tensL, crp]], Normal@ApplyCrop[vol, crp], crp}
+	, {vol, Transpose[seg[[All, pos]]]}];
+
+	(*paralell map over all muscles and denoise*)
+	If[mon, MonitorFunction["Starting parallel denoising"]];
+	DistributeDefinitions[HarmonicDenoiseTensorI, sigma, itt, step, tol, rFA, rMD, vox];
+	denoise = ParallelMap[HarmonicDenoiseTensorI[#[[1]], #[[2]], vox,
+		RadialBasisKernel->sigma, MaxIterations->itt, GradientStepSize->step, 
+		Tolerance->tol,	RangeFA->rFA, RangeMD->rMD
+	]&, crops, ProgressReporting -> mon];
+
+	(*prepare the output*)
+	If[mon, MonitorFunction["Reasembling data"]];
+	tensO = Transpose[SparseArray[0. tensI]];
+	dimT = Dimensions@tensO;
 	conO = Transpose[SparseArray[0. tensI[[1;;3]]]];
 	dimC = Dimensions@conO;
 	ampO = SparseArray[0. First@tensI];
 	dimA = Dimensions@ampO;
 
-	pi = t = 0;
-	If[mon, PrintTemporary[
-		Row[{ProgressIndicator[Dynamic[pi], {0,Length@pos}]," time: ",Dynamic[Round[t,.1]],"s"}]
-	]];
-
-	Table[
-		t = First@AbsoluteTiming[
-			(*select muscle and perform denoising*)
-			mus = seg[[All, p]];
-			crp = FindCrop[mus, CropPadding->sigma];
-			tensC = Normal@Transpose[ApplyCrop[tensL, crp]];
-			musC = Normal@ApplyCrop[mus, crp];
-			{tens, con, amp} = HarmonicDenoiseTensorI[tensC, musC, vox,
-				RadialBasisKernel->sigma, MaxIterations->itt, GradientStepSize->step, Tolerance->tol,
-			RangeFA->rFA, RangeMD->rMD];
-		];
-		pi++;
-
-		(*add result to output*)
+	(*add result to output*)
+	Map[(
+		{{tens, con, amp}, crp} = #;
 		conO += ReverseCrop[con, dimC, crp];
 		ampO += ReverseCrop[amp, dimA, crp];
-		tensO += Transpose[ReverseCrop[Transpose[tens], dimT, crp]];
-	,{p, pos}];
+		tensO += ReverseCrop[Transpose[tens], dimT, crp];
+    ) &, Thread[{denoise, crops[[All, 3]]}]];
+	tensO = Transpose[tensO];
 
 	(*give the output*)
 	{tensO, conO, ampO}

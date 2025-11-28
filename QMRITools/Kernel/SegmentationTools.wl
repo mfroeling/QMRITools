@@ -1048,12 +1048,12 @@ SyntaxInformation[AddLossLayer] = {"ArgumentsPattern" -> {_}};
 (*http://arxiv.org/abs/2312.05391*)
 AddLossLayer[net_] := NetGraph[<|
 	"net"->net,
-	"Dice" -> DiceLossLayer[2], 
-	"Jaccard" -> JaccardLossLayer[2],
-	"Tversky" -> TverskyLossLayer[0.7], 
-	"Focal" -> NetGraph[NetChain[{FocalLossLayer[2, 0.25], ElementwiseLayer[5 #&]}]],
-	"SquaredDiff" -> NetGraph[NetChain[{MeanSquaredLossLayer[], ElementwiseLayer[50 #&]}]],
-	"CrossEntropy" -> NetGraph[NetChain[{CrossEntropyLossLayer["Probabilities"]}]]
+	"Dice" -> NetFlatten@NetGraph@NetChain@{DiceLossLayer[2]}, 
+	"Jaccard" -> NetFlatten@NetGraph@NetChain@{JaccardLossLayer[2]},
+	"Tversky" -> NetFlatten@NetGraph@NetChain@{TverskyLossLayer[0.7]}, 
+	"SquaredDiff" -> NetFlatten@NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[50 #&]},
+	"Focal" -> NetFlatten@NetGraph@NetChain@{FocalLossLayer[2, 0.25], ElementwiseLayer[5 #&]},
+	"CrossEntropy" -> NetFlatten@NetGraph@NetChain@{CrossEntropyLossLayer["Probabilities"]}
 |>,{
 	{"net", NetPort["Target"]} -> "Dice" -> NetPort["Dice"], (*using squared dice, F1score*)
 	{"net", NetPort["Target"]} -> "Jaccard" -> NetPort["Jaccard"],(*using squared Intersection over union*)
@@ -3000,7 +3000,7 @@ NetSummary[net_, rep_?StringQ] := Block[{
 		{""},
 		{st@"Total Weight Memory", quantStr@elemSize},
 		{st@"Total Network Memory", quantStr@netSize}
-	}, Alignment -> {{Left, Right}}, Spacings -> {1, 1}, Background -> GrayLevel[.95]];
+	}, Alignment -> {{Left, Right}}, Spacings -> {1, 1}, Background -> LightDarkSwitched[GrayLevel[.95], GrayLevel[.2]]];
 
 	Switch[rep,
 		"Full",

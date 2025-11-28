@@ -414,7 +414,13 @@ defaultConfig = <|
 		"Method" -> Automatic
 	|>,
 	"Tractography" -><|
-		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}}
+		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}},
+		"TractLength"-> {15, 500},
+		"TractAngle" -> 25,
+		"TractSeed" -> 0.66,
+		"TractStep" -> "Automatic",
+		"SegmentLength" -> {15, 500},
+		"BoneLabel" -> 100
 	|>,
 	"Options" -> <|
 		"MaskErosion" -> True,
@@ -536,7 +542,7 @@ GetJSONPosition[json_, selection_, sort_] := Block[{selIndex, selFunc, list, key
 	(*get the file positions*)
 	pos = Fold[selFunc, Range[Length[json]], selection];
 	(*if sort is empty return the positions or if pos is empty return {}*)
-	If[sort===""||pos==={}, pos, pos[[Ordering[sort /. json[[pos]]]]]]
+	pos = If[sort===""||pos==={}, pos, pos[[Ordering[sort /. json[[pos]]]]]]
 ]
 
 
@@ -571,7 +577,10 @@ ViewConfig[config_?AssociationQ] := TabView[# -> Which[
 ]& /@ Keys[config], ControlPlacement -> Left]
 
 
-MakeTable[association_] := Block[{value},
+MakeTable[association_] := Block[{value, bcol},
+	bcol = If[$VersionNumber < 14.3, White,
+		LigthDarkSwitched[White, Darker@Gray]
+	];
 	Grid[{#, 
 		value = association[#];
 		Which[
@@ -589,7 +598,7 @@ MakeTable[association_] := Block[{value},
 			True, value
 		]
 	} & /@ Keys[association], Frame -> All, Alignment -> Left, 
-	Background -> {{Gray, {White}}, White}, Spacings -> {1, 0.5}]
+	Background -> {{Gray, {bcol}}, bcol}, Spacings -> {1, 0.5}]
 ]
 
 
@@ -1424,6 +1433,10 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 
 				
 				Which[
+(*TODO
+I have to properly implement the logic that figures out if its siemens of Philips and if its individual files of 4D and if the correct 
+echo time is in the json. and then spit out warnings and skip when things are going wrong
+*)
 					(*if echo time exists assume 4D nii without correct echo times*)
 					KeyExistsQ[Lookup[datType, "Process", <||>], "EchoTime"],
 
@@ -1444,8 +1457,9 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 					info = json[[First@pos]];
 
 					If[KeyExistsQ[info, "EchoTime"] && KeyExistsQ[info, "EchoTrainLength"] || info["Manufacturer"]==="Siemens",
-						{data, vox} = ImportNii[ConvertExtension[files[[First@pos]],".nii"]],
-						{data, fit, vox} = ImportNiiT2[ConvertExtension[files[[First@pos]],".nii"]]
+						{data, vox} = ImportNii[ConvertExtension[files[[First@pos]],".nii"]];
+						,
+						{data, fit, vox} = ImportNiiT2[ConvertExtension[files[[First@pos]],".nii"]];
 					];
 					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 					echo = Lookup[info, "EchoTime", datType["Process", "EchoTime"]/1000.];
@@ -2783,10 +2797,6 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 	debugBids[{foli, folo}];
 	debugBids[datType];
 
-	(*!!options!!*)
-	{len, ang, step, seed} = {{15, 500}, 25, Automatic (*1.5*), Scaled[0.66]};
-	{lenS, segBone} = {{15, 500}, 100};
-
 	(*figure out if duplicate handeling is needed.*)
 	duplicate = KeyExistsQ[datType, "Key"];
 	key = If[duplicate, "stk"->StringStrip@datType["Key"], Nothing];
@@ -2802,6 +2812,12 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 
 	(* Extract flip and permutation settings*)
 	{flip, per} = ConfigLookup[datType, "Tractography", "FlipPermute"];
+	len = ConfigLookup[datType, "Tractography", "TractLength"];
+	ang = ConfigLookup[datType, "Tractography", "TractAngle"];
+	step = ConfigLookup[datType, "Tractography", "TractStep"];
+	seed = ConfigLookup[datType, "Tractography", "TractSeed"];
+	lenS = ConfigLookup[datType, "Tractography", "SegmentLength"];
+	segBone = ConfigLookup[datType, "Tractography", "BoneLabel"];
 
 	(* Extract tractography target, segmentation and stopping criteria *)
 	tractType = tracto["Target"];
@@ -2876,7 +2892,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 
 			(* Perform tractography *)
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
-				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", MaxSeedPoints -> seed, 
+				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", 
+				MaxSeedPoints -> If[seed<1, Scaled[seed], seed], 
 				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> False,
 				TensorFlips -> flip, TensorPermutations -> per, Parallelization -> True
 			];

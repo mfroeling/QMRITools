@@ -55,10 +55,10 @@ ScaleToVolume[data, vox, vol] does the same but then rescales to the target volu
 MakeMuscleTemplate::usage =
 "MakeMuscleTemplate[masks, vox] makes a muscle template form a series of masks. The output is the mean template muscle mask as a binary volume."
 
-
 TemplateToVolume::usage =
 "TemplateToVolume[{masks, voxM}, {template, voxT}] registers a mask or a series of masks to the given muscle template.
 The default output are the mesh points per mask volume and the cell needed to generate the mesh as {points, mesh}."
+
 
 MakeShapeModel::usage = 
 "MakeShapeModel[points] makes the statistical shape model for the points given. The points per muscle must have the same number of coordinates.
@@ -67,6 +67,11 @@ The points can be obtained form TemplateToVolume. The output is {meanPoints, mod
 FitShapeModel::usage = 
 "FitShapeModel[{meanPoints, model}, points] fits the shape model to the points, the shape model is defined by meanPoints and model which are obtained form MakeShapeModel.
 FitShapeModel[{meanPoints, model}, points, n] fits the model using the first n shape vectors from the model."
+
+ApplyShapeModel::usage = 
+"ApplyShapeModel[model, std] applies the std to the shape model to create the points. The model is made by MakeShapeModel, the std is 
+obtained by FitShapeModel. The std can be a number, vector or matrix. 
+ApplyShapeModel[model, std, n] does the same but std is a number and n the integer indicating which vector to be used."
 
 
 MakeTemplatePlot::usage = 
@@ -232,7 +237,7 @@ MakeRegionMeshI[data_, vox_?VectorQ, n_?IntegerQ, opts : OptionsPattern[]]:=Bloc
 	size = Reverse[vox dim];
 	mesh = DiscretizeGraphics[ListContourPlot3D[GaussianFilter[data, 2], Contours -> {0.5}, MaxPlotPoints -> Reverse[dim],
 		BoxRatios -> size, DataRange -> Thread[{0, size}], PlotRange -> Thread[{0, size}], Mesh -> False]];
-	(*mesh = DiscretizeGraphics[PlotContour[data, vox, ContourSmoothRadius -> 2, ContourResolution -> vox]];*)
+
 	(*re-mesh to approximately 2x needed cells *)
 	mesh = meshOut = Remesh[mesh, Method -> {"Adaptive", "MinEdgeLength" -> EstimateEdgeLength[mesh, 2 n]}];
 	(*initialize exact mesh count loop*)
@@ -244,8 +249,9 @@ MakeRegionMeshI[data_, vox_?VectorQ, n_?IntegerQ, opts : OptionsPattern[]]:=Bloc
 		{"MaxVertexCount", n}, {"MinTriangleArea", 0.5 (length^2)}}];
 		If[Length[MeshCoordinates[meshOut]] === n, Break[]]
 	];
-	mesh = MeshRegion[meshOut, SphericalRegion -> True, PlotTheme -> "Default"];
 
+	(*make the correct output*)
+	mesh = MeshRegion[meshOut, SphericalRegion -> True, PlotTheme -> "Default"];
 	Switch[OptionValue[MeshOutput], 
 		"Mesh", mesh,
 		"Points", First@SplitRegionMesh[mesh],
@@ -257,17 +263,11 @@ MakeRegionMeshI[data_, vox_?VectorQ, n_?IntegerQ, opts : OptionsPattern[]]:=Bloc
 ]
 
 
-EstimateEdgeLength[mesh_, n_] := Block[{length, coors},
-	length = Mean[MeshEdgeLength[mesh]];
-	coors = Length[MeshCoordinates[mesh]];
-	length N[Sqrt[coors/n]]
-]
-
-
-MeshEdgeLength[mesh_MeshRegion] := Block[{edges, pts},
+EstimateEdgeLength[mesh_, n_] := Block[{length, edges, pts},
 	edges = MeshCells[mesh, 1][[All, 1]];
 	pts = MeshCoordinates[mesh];
-	If[edges === {}, {}, Norm /@ Subtract @@@ (pts[[#1]] &) /@ edges]
+	length = If[edges === {}, {}, Norm /@ Subtract @@@ (pts[[#1]] &) /@ edges];
+	Mean[length] N[Sqrt[Length[pts]/n]]
 ]
 
 
@@ -463,15 +463,15 @@ TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
 	(*single or multiple volumes*)
 	volume = ArrayDepth[masks] === 3;
 	If[! 3 <= volume <= 4, Return[$Failed]];
-
-	mon[DateString[], "Making template: "];
+	
 	(*Prepare template*)
+	mon[DateString[], "Making template: "];
 	dim = Dimensions[tempI] + 2 padData;
 	template = PadToDimensions[tempI, dim];
 	{templateMesh, templatePoints, templateCells} = MakeRegionMesh[template, voxT, nLow, MeshOutput -> "All"];
 
-	mon[DateString[], "Rescaling moving data: "];
 	(*choose to rescale or volume scale to target resolution and pad to template dimensions*)
+	mon[DateString[], "Rescaling moving data: "];
 	moving = If[volRescale, 
 		ScaleToVolume[masks, {voxM, voxT}],
 		RescaleData[masks, {voxM, voxT}, InterpolationOrder -> 0]
@@ -481,8 +481,8 @@ TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
 		Transpose[PadToDimensions[Transpose[moving], dim]]
 	];
 
-	mon[DateString[], "Making distance maps: "];
 	(*make distance map*)
+	mon[DateString[], "Making distance maps: "];
 	templateDist = MaskToDistanceMap@template;
 	movingDist = MaskToDistanceMap@moving;
 
@@ -617,6 +617,8 @@ MakeTemplatePlot[{meshTemplate_, meshTemplateReg_, meshMoving_, meshMovingRigid_
 (*MakeShapeModel*)
 
 
+SyntaxInformation[MakeShapeModel] = {"ArgumentsPattern" -> {_, _.}};
+
 MakeShapeModel[points_] := MakeShapeModel[points, False]
 
 MakeShapeModel[points_, mon_] := Block[{
@@ -634,8 +636,8 @@ MakeShapeModel[points_, mon_] := Block[{
 
 	(*make the model*)
 	vecMat = vec[[;; nVec]];
-	std = StandardDeviation /@ Transpose[(FitVariationVec[variation, vecMat, nVec])];
-	model = std vecMat;
+	std = StandardDeviation /@ LeastSquares[Transpose[vecMat], Transpose[variation]];
+	model = Partition[#, 3] & /@ (std vecMat);
 
 	plot = ListLinePlot[
 		Transpose[{Range[0, nVec], (Prepend[Accumulate[val[[;; nVec]]], 0]/Total[val])}], Mesh -> Full, 
@@ -650,30 +652,37 @@ MakeShapeModel[points_, mon_] := Block[{
 (*FitShapeModel*)
 
 
+SyntaxInformation[FitShapeModel] = {"ArgumentsPattern" -> {_, _, _.}};
+
 FitShapeModel[{mean_, mat_}, points_] := FitShapeModel[{mean, mat}, points, All]
 
 FitShapeModel[{mean_, mat_}, points_, ni_] := Block[{n, var, fit, fitPoints},
 	n = If[ni===All, Length@mat, Min[{ni, Length@mat}]];
+
 	If[MatrixQ[points],
-		var = points - mean;
-		fit = FitVariationVec[var, mat, n];
-		fitPoints = mean + Partition[fit . mat[[;; n]], 3],
-		var = Transpose@Flatten[# - mean & /@ points, {2, 3}];
-		fit = FitVariationVec[var, mat, n];
-		fitPoints = (mean + Partition[#, 3]) & /@ (fit . mat[[;; n]])
+		fit = LeastSquares[Flatten[mat[[;; n]], {2,3}], Flatten[points - mean]];
+		fitPoints = mean + fit . mat[[;; n]]
+		,
+		fit = Transpose[LeastSquares[Flatten[mat[[;; n]], {2,3}], Transpose[Flatten[# - mean] & /@ points]]];
+		fitPoints = (mean + #) & /@ (fit . mat[[;; n]])
 	];
 	{fit, fitPoints}
 ]
 
 
 (* ::Subsubsection::Closed:: *)
-(*FitVariationVec*)
+(*ApplyShapeModel*)
 
 
-(*fit the Eigensystem to points using n Eigenvectors*)
-FitVariationVec[var_, mat_] := FitVariationVec[var, mat, All]
+SyntaxInformation[ApplyShapeModel] = {"ArgumentsPattern" -> {_, _, _.}};
 
-FitVariationVec[var_, mat_, n_] := var . PseudoInverse[mat[[;; n]]]
+ApplyShapeModel[{mean_, mat_}, std_] := ApplyShapeModel[{mean, mat}, std, 0]
+
+ApplyShapeModel[{mean_, mat_}, std_, n_] := Which[
+	NumberQ[std], mean + std If[IntegerQ[n] && n>0, mat[[n]], First[mat]],
+	VectorQ[std], mean + std . mat[[;;Length[std]]],
+	MatrixQ[std], (mean + # . mat[[;;Length[#]]])& /@ std
+]
 
 
 (* ::Subsection:: *)
@@ -704,20 +713,28 @@ EvaluateModel[{mean_, mat_, pc_}, points_, cells_] := Manipulate[
 		, Nothing
 	];
 
-	MakeEvalPlot[nvecs, row, {mean, std, mat, cells}, range, part]
+	(*make the plot*)
+	MakeEvalPlot[nVec, row, {{mean, mat}, std, cells}, range, part, {col, temp}]
 	,
-	{{nVec, 8, "PC"}, 1, 12, 1, ControlType -> SetterBar},
-	{{part, 4, "plots per row"}, 2, 6, 1, ControlType -> SetterBar},
+	(*configure the plot controls*)
+	{{nVec, 3, "PC"}, 1, 12, 1, ControlType -> SetterBar},
+	{{part, 3, "plots per row"}, 2, 6, 1, ControlType -> SetterBar},
 	{{std, 0, "range"}, -5, 5},
+	{{col, "No", "distance color"},{"No","Constant","Scaled"}},
+	{{temp, False, "show template"}, {True, False}},
 	{{srow, False, "show pcs"}, {True, False}},
 	{{dark, "Light", "export mode"}, {"Light", "Dark"}},
+
+	(*export button*)
 	Button["Make animation",
 		fl = FileSelect["FileSave", {"*.gif"}];
 		If[fl =!= $Canceled,
-			anim = Table[MakeEvalPlot[nVec, row, {mean, std, mat, cells}, range, part], {std, -5, 5, 1}];
+			anim = Table[MakeEvalPlot[nVec, row,  {{mean, mat}, std, cells}, range, part, {col, temp}], {std, -5, 5, 1}];
 			anim = Map[Rasterize[#, ImageSize -> 1000, ImageResolution -> 150, LightDark -> dark] &, Join[anim, Reverse@anim[[2 ;; -2]]]];
 			Export[ConvertExtension[fl, "gif"], anim, "DisplayDuration" -> 0.1, AnimationRepetitions -> Infinity]
 		], Method -> "Queued"],
+
+	(*hidden controls*)
 	{fit, ControlType -> None},
 	{pointsFit, ControlType -> None},
 	{plot, ControlType -> None},
@@ -732,20 +749,29 @@ EvaluateModel[{mean_, mat_, pc_}, points_, cells_] := Manipulate[
 (*MakeEvalPlot*)
 
 
-MakeEvalPlot[nVec_, row_, {mean_, std_, mat_, cells_}, range_, part_] := Grid[{
-	{
-		row
-	}, {
-		Grid[Partition[Table[
-			Link3DGraphic[Show[
-				PlotMesh[mean + Partition[std  mat[[j]], 3], cells, 
-					MeshColor->StandardRed, MeshPointColor -> Darker@StandardRed], 
-				If[std===0,Graphics3D[], PlotMesh[mean, cells, MeshOpacity -> 0.2, MeshColor -> Gray]], 
-			PlotLabel -> Style["PC: " <> ToString[j], LightDarkSwitched[Black, White], Bold, 20],
-				ImageSize -> Round[1000/part], PlotRange->range]]
-		, {j, 1, nVec, 1}]	, part, part, 1, {}]]
-	}
-}, Spacings -> {3, 3}, Alignment -> Center]
+MakeEvalPlot[nVec_, row_, {{mean_,mat_}, std_, cells_}, range_, part_, {col_, temp_}] := Block[{
+		pts, pcol, step
+	},
+	step = Rescale[Map[Norm, mat[[;;nVec]], {-2}]];
+	Grid[{
+		{
+			row
+		}, {
+			Grid[Partition[Table[
+				pcol = Switch[col, 
+					"No",StandardRed, 
+					"Constant",ColorData["Lipari"]/@step[[j]],
+					_,ColorData["Lipari"]/@Rescale[step[[j]]]
+				];
+				Link3DGraphic[Show[
+					PlotMesh[ApplyShapeModel[{mean,mat}, std, j], cells, MeshColor->pcol, MeshPointColor -> Darker@pcol], 
+					If[std===0||temp,Graphics3D[], PlotMesh[mean, cells, MeshOpacity -> 0.2, MeshColor -> Gray]], 
+				PlotLabel -> Style["PC: " <> ToString[j], LightDarkSwitched[Black, White], Bold, 20],
+					ImageSize -> Round[1000/part], PlotRange->range]]
+			, {j, 1, nVec, 1}]	, part, part, 1, {}]]
+		}
+	}, Spacings -> {3, 3}, Alignment -> Center]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -798,8 +824,7 @@ PlotShapeVariation[points_, cells_, nVec_, OptionsPattern[]] := Block[{
 	
 	Grid[Partition[Table[
 		{std1, std2} = {-1, 1} 2;
-		{pt1, pt2} = {mean + Partition[std1 mat[[j]], 3], 
-		mean + Partition[std2 mat[[j]], 3]};
+		{pt1, pt2} = {mean + std1 mat[[j]], mean + std2 mat[[j]]};
 		diff = Norm /@ (pt1 - pt2);
 		col = ColorData["Lipari"] /@ (diff/Ceiling[Max[diff], 5]);
 		Link3DGraphic@Show[PlotMesh[mean, cells, MeshColor -> col], ImageSize -> 200, 

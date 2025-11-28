@@ -1613,9 +1613,11 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 
 			yrans = {Min[{-0.5 Max[dataPlot], Min[dataPlot]}], 1.5 Max[dataPlot]};
 
-			Column[{
-				coor,
+			
 
+			Grid[{{
+					coor
+				},{
 				Dynamic[
 					spec = If[coor === {0, 0}, 
 						0. data[[1, 1, 1]], 
@@ -1628,7 +1630,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 					FlipView[{
 						PlotSpectra[
 							Exp[-I ph] If[app, ApodizePadSpectra[specp], specp], {dw, gyro}, 
-							PlotRange -> {{pmin, pmax}, Full}, 
+							PlotRange -> {{pmin, pmax}, Switch[scale, "Max", Full, "Full", yran, "Slice", yrans]}, 
 							Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size, AspectRatio -> 0.4
 						],
 						PlotFid[
@@ -1637,9 +1639,9 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 						]
 					}]
 				]
-				,
-				"", 
-				Style["Slice "<>ToString[n], Bold, Black, 24], 
+				},{
+				Style["Slice "<>ToString[n], Bold, Black, 24]
+				},{
 				gridPlot = Grid[
 					MapIndexed[(
 						Item[
@@ -1664,9 +1666,11 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 					) &, RotateDimensionsLeft[{dataPlot, maxPlot, totPlot}], {2}]
 					, Spacings -> {0.3,0.35}, Alignment -> Center, Background -> If[back, col, White], 
 					ItemSize -> Full, Frame -> All, FrameStyle -> If[back, col, White]
-				],
+				]
+				},{
 				leg
-			}, Alignment -> Center]
+				}
+			}, Alignment -> Center, Background->White, Spacings->{1,1}]
 
 			(*active manipulate parametes*)
 			, {{or, 1, "Orientation"}, {1 -> "Transversal", 2 -> "Coronal", 3 -> "Sagittal"}}
