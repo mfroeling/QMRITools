@@ -514,25 +514,27 @@ JoinSegmentations[segI_, joinRules : {{_?ListQ, _?IntegerQ} ..}] := Block[{seg, 
 (*SelectSegmentations*)
 
 
-SyntaxInformation[SelectSegmentations] = {"ArgumentsPattern" -> {_,_}};
+SyntaxInformation[SelectSegmentations] = {"ArgumentsPattern" -> {_, _, _.}};
 
-SelectSegmentations[seg_, labSel_] := SelectReplaceSegmentations[seg, labSel, labSel]
+SelectSegmentations[seg_, labSel_] := SelectSegmentations[seg, labSel, True]
+
+SelectSegmentations[seg_, labSel_, join_] := SelectReplaceSegmentations[seg, labSel, labSel, join]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ReplaceSegmentations*)
 
 
-SyntaxInformation[ReplaceSegmentations] = {"ArgumentsPattern" -> {_,_,_}};
+SyntaxInformation[ReplaceSegmentations] = {"ArgumentsPattern" -> {_, _, _}};
 
-ReplaceSegmentations[segm_, labSel_, labNew_] := SelectReplaceSegmentations[segm, labSel, labNew]
+ReplaceSegmentations[segm_, labSel_, labNew_] := SelectReplaceSegmentations[segm, labSel, labNew, True]
 
 
 (* ::Subsubsection::Closed:: *)
 (*SelectReplaceSegmentations*)
 
 
-SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, sel},
+SelectReplaceSegmentations[segm_, labSel_, labNew_, join_] := Block[{split, seg, lab, sel},
 	split = If[Length[segm] == 2, If[VectorQ[segm[[2]]], False, True], True];
 	{seg, lab} = If[split, SplitSegmentations[segm], segm];
 
@@ -545,7 +547,7 @@ SelectReplaceSegmentations[segm_, labSel_, labNew_] := Block[{split, seg, lab, s
 		lab = Pick[lab /. Thread[labSel->labNew], sel, True];
 		or = Ordering[lab];
 
-		If[split, MergeSegmentations[seg, lab], {seg[[All,or]], lab[[or]]}]
+		If[split && join, MergeSegmentations[seg, lab], {seg[[All, or]], lab[[or]]}]
 	]
 ]
 

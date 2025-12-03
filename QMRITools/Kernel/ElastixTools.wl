@@ -1354,15 +1354,15 @@ RegisterDataTransform[target_, moving_, moving2_, opts : OptionsPattern[]]:=Regi
 RegisterDataTransform[_, _, $Failed, opts : OptionsPattern[]]:=Return[Message[RegisterData::inp]; $Failed]
 
 RegisterDataTransform[target_, moving_, {mov_, _, vox_}, opts : OptionsPattern[]] := Block[{
-		tdir, opt, met, reg, movd, regd, trans
+		tdir, opt, reg, movd, regd, trans
 	},
 
 	tdir= CreateTempDirectory[OptionValue[TempDirectory], OptionValue[PrintTempDirectory]];
 	opt = Sequence[DeleteTempDirectory -> False, PrintTempDirectory -> False, 
 		TempDirectory -> tdir, ImportDeformation -> OptionValue[ImportDeformation]];
-	met = OptionValue[TransformMethod];
 
 	reg = RegisterData[target, moving, Sequence@@FilterRules[Join[{opt}, {opts}], Options[RegisterData]]];
+
 	(*for segmentations and masks you want the intorder to be 0*)
 	If[OptionValue[TransformMethod]=!="Data", ReplaceIntOrder[tdir]];
 

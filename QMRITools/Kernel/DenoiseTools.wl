@@ -675,7 +675,7 @@ DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectr
 
 	(*Denoise the spectra data*)
 	{spectraDen, sig} = PCADeNoise[Transpose[Join[Re@#, Im@#]]&[RotateDimensionsRight[spectra]], 1, sig, 
-		PCAClipping -> False, MonitorCalc->False, Parallelize -> False, 
+		PCAClipping -> False, MonitorCalc->False, Parallelize -> True, 
 		PCAKernel -> OptionValue[PCAKernel], PCAWeighting ->OptionValue[PCAWeighting], Method->OptionValue[Method]
 	];
 
@@ -946,7 +946,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?
 	HarmonicDenoiseTensor[tensI, seg, vox, 0, opts]
 
 HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, labs_, OptionsPattern[]]:=Block[{
-		sigma, flip, per, itt, step, tol, rFA, rMD, seg, pos, lab, mon, tensL, crops, denoise,
+		sigma, flip, per, itt, step, tol, rFA, rMD, seg, lab, mon, tensL, crops, denoise,
 		tensO, dimT, conO, dimC, ampO, dimA, mus, crp, tens, con, amp
 	},
 
@@ -954,23 +954,16 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 	{sigma, flip, per, itt, step, tol, rFA, rMD, mon}=OptionValue[{RadialBasisKernel, TensorFlips, TensorPermutations,
 		MaxIterations, GradientStepSize, Tolerance, RangeFA, RangeMD, Monitor}];
 
-	(*figure out how to loop over the masks*)
-	Which[
+	(*figure out how to loop over the masks, seg is 4D with first index the segmentations*)
+	seg = Which[
 		ArrayDepth[segI]==3 && labs===0,
-		seg = Transpose[{segI}];
-		pos = {1};
-		,
+		{segI},
 		ArrayDepth[segI]==3 && ListQ[labs],
-		{seg, lab} = SplitSegmentations[segI];
-		pos = Flatten[Position[lab, #] & /@ labs];
-		,
+		Transpose@First@SelectSegmentations[segI, labs, False],
 		ArrayDepth[segI]==4 && labs===0,
-		seg = segI;
-		pos = Range[1, Length@First@segI];
-		,
-		ArrayDepth[segI]==4 && ListQ[segI],
-		seg = segI;
-		pos = labs;
+		Transpose[segI],
+		ArrayDepth[segI]==4 && ListQ[labs],
+		Transpose[segI][[labs]]
 	];
 
 	(*make cropped data for each muscle*)

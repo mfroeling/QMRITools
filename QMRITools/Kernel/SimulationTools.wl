@@ -1240,7 +1240,7 @@ ErnstAngle[t1i_, tri_] := Manipulate[
 	loss = Round[100 (sge /. a -> act)/(sge /. a -> ang)];
 	
 	Show[
-		Plot[sge /. a -> x, {x, 0, 90}, GridLines -> {{ang}, {pt[[2]]}}, Ticks -> {Automatic, None}, PlotRange -> {All, {0, 1.4 top[[2]]}},
+		Plot[sge /. a -> x, {x, 0, 90}, GridLines -> {{ang}, {pt[[2]]}}, Ticks -> {Automatic, Automatic}, PlotRange -> {All, {0, 1.4 top[[2]]}},
 			PlotLabel -> "Actual flip angle: " <> ToString[act] <> " (" <> ToString[loss] <> " %)"],
 		ListPlot[{Callout[top, top[[1]]], pt}]
 	],

@@ -200,6 +200,7 @@ dataToLog =If[KeyExistsQ[#, $Failed],
 
 
 notAllowed = {"-"->"", "_"->"", "."->"", " "->""};
+wipRule = {"WIP"->"", "WIP_"->"", "wip"->"", "wip_"->""};
 StringStrip = StringReplace[#, notAllowed]&;
 
 
@@ -216,7 +217,7 @@ PartitionBidsName[list_?ListQ] := PartitionBidsName/@list
 
 PartitionBidsName[string_?StringQ] := Block[{parts, entity, suffix, suf},
 	(*first split on "_" then on "-"*)
-	parts = StringSplit[#,"-"]& /@ StringSplit[string, "_"];
+	parts = StringSplit[#, "-"]& /@ StringSplit[string, "_"];
 	(*if length is 2 its entity else it is suffix*)
 	entity = Rule@@#& /@ Select[parts, Length[#]===2&];
 	suf = Flatten[Select[parts, Length[#]=!=2&]];
@@ -536,7 +537,7 @@ GetJSONPosition[json_, selection_] := GetJSONPosition[json, selection, ""]
 
 GetJSONPosition[json_, selection_, sort_] := Block[{selIndex, selFunc, list, key, val, inds, pos},
 	(*selection functions*)
-	selIndex = StringReplace[ToLowerCase[Last[Flatten[{#1 /. #3}]]], {"wip " -> "", "wip_"->""}] === ToLowerCase[#2] &;
+	selIndex = StringReplace[ToLowerCase[Last[Flatten[{#1 /. #3}]]], wipRule] === ToLowerCase[#2] &;
 	selFunc = (list=#1; key=#2[[1]]; val=#2[[2]]; Select[list, selIndex[key, val, json[[#]]]&])&;
 
 	(*get the file positions*)
@@ -644,7 +645,7 @@ GetProtocolNames[fold_?StringQ] := Block[{list},
 		Quiet[json = ImportJSON[#]];
 		{
 			json["SeriesNumber"], 
-			n = json["ProtocolName"]; If[StringQ[n], StringTrim[StringReplace[n, "WIP"->""]], n]
+			n = json["ProtocolName"]; If[StringQ[n], StringTrim[StringReplace[n, wipRule]], n]
 		}
 	) & /@ FileNames["*.json", fold, 2]]; 
 	list = Select[list, 
@@ -2690,6 +2691,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 					dim = Dimensions[out]; out = RescaleData[out, {vox, voxS}]
 				];
 
+				debugBids[dim];
 				seg = SegmentData[out, segLocation, TargetDevice -> ConfigLookup[datType, "Segment", "Device"], Monitor -> False];
 				If[voxS =!= Automatic, seg = RescaleSegmentation[seg, dim]];
 				ExportNii[seg, vox, outfile, CompressNii -> compress];
@@ -3208,9 +3210,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
 	];
 
-
 	(*----------- make the images -------------*)
-
 
 	(*figure out which images to make based on setting*)
 	{quantIm, segIm, tractIm} = Switch[imOut, 
@@ -3291,6 +3291,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		]&;
 
 		(*------------ quantiatavite images ------------*)
+
 		If[!quantIm,
 			(*----*)AddToLog[{"Not making Quant images since setting is False."}, 4],
 			(*----*)AddToLog[{"Start making Quant images:"}, 4]; 
