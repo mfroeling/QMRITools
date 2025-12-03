@@ -482,8 +482,11 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	freqs = GyromagneticRatio[OptionValue[DixonNucleus]] Times@@OptionValue[{DixonPrecessions, DixonFieldStrength, DixonFrequencies}];
 	{amps, mout} = GenerateAmps[OptionValue[DixonAmplitudes]];
 	sig = If[OptionValue[DixonFixT2], -1000./OptionValue[DixonRelaxivity], 0.] + 2 Pi freqs I;
-	sig = Join[{sig[[1]]}, ConstantArray[sig[[2]], Length[amps] - 1]];
-	freqs = Join[{freqs[[1]]}, ConstantArray[freqs[[2]], Length[amps] - 1]];
+
+	If[Length[amps]=!=Length[freqs],
+		sig = Join[{sig[[1]]}, ConstantArray[sig[[2]], Length[amps] - 1]];
+		freqs = Join[{freqs[[1]]}, ConstantArray[freqs[[2]], Length[amps] - 1]];
+	];
 
 	(*define the water fat and phase matrixes*)
 	matA = (Total /@ (amps Exp[sig #])) & /@ echo;
@@ -591,7 +594,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	matA = (Total /@ (amps Exp[sig #])) & /@ iop;
 	iop = N@Chop@RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]];
 	iop = Transpose[NormalizeData[Transpose[iop]]];
-	
+
 	(*correct the signals if a fat model is used to get cl db idb*)
 	If[mout[[2]] =!= None,
 		ls = Range[3, Length@signal];
@@ -738,7 +741,7 @@ GenerateAmps[ampi_] := Block[{mout, modC, mod, amp, amps, cl, db, idb},
 	], ampi];
 
 	(*Either model based or traditional PD*)
-	amps = If[Length[amp] === 3,
+	amps = If[StringQ[ampi],
 		(*use the model but with specified {cl, ndb, nmidb}*)
 		modC = modApply[mod, amp];
 		mout = Sort[DeleteDuplicates[Flatten[Variables /@ modC]]];
@@ -1340,72 +1343,88 @@ GetDev[a_, d_] := GetDev[a, d] = a (Total@Cos[Pi RotateDimensionsRight[N[Array[{
 (*OptimizeDixonEcho*)
 
 
-Options[OptimizeDixonEcho]={DixonNucleus->"1H",DixonFrequencies->dixFreq,DixonAmplitudes->dixAmp};
+Options[OptimizeDixonEcho]={
+	DixonNucleus->"1H",
+	DixonFrequencies->dixFreq,
+	DixonAmplitudes->dixAmp
+};
 
 OptimizeDixonEcho[ops:OptionsPattern[]]:=With[{
-		plotContour = ListContourPlot[Flatten[#1,1],PlotRange->{{0.0,#2},{0.0,#2},{1.0,2.6}},Contours->Range[1.0,2.6,.1],
+		plotContour = Grid[{{ListContourPlot[Flatten[#1,1],PlotRange->{{0.0,#2},{0.0,#2},{1.0,2.6}},Contours->Range[1.0,2.6,.1],
 			Frame->{{True,True},{True,True}},FrameStyle->Directive[{Thick,Black}],LabelStyle->{Bold,16,Black},
 			PerformanceGoal->"Speed",MaxPlotPoints->Infinity,ClippingStyle->Automatic,ImageSize->500,
 			PlotLegends->Placed[Automatic,Right],ColorFunction->ColorData[{"RedGreenSplit","Reverse"}],
 			InterpolationOrder->2,MaxPlotPoints->50,ContourStyle->Thick,FrameLabel->{"initial TE [ms]","delta TE [ms]"},
-			PlotLabel->"Nr. echos: "<>ToString[#3]<>" - field: "<>ToString[ToString[#4]]]&
+			PlotLabel->"Nr. echos: "<>ToString[#3]<>" - field: "<>ToString[ToString[#4]]]
+			}}, Background -> White]&
 		,
-		plotSignal = Block[{time,sigF,tes,sigA},{time,sigF}=#1;{tes,sigA}=#2;
+		plotSignal = Block[{time,sigF,tes,sigA},
+			{time, sigF}=#1;
+			{tes, sigA}=#2;
 			Show[
-				ListLinePlot[Transpose[{1000time,#}]&/@{Re[sigF],Im[sigF]},PlotStyle->(Directive[Opacity[.4],Dashed,#]&/@{Red,Black}),PerformanceGoal->"Speed"],
-				ListLinePlot[Transpose[{1000tes,#}]&/@{Re[sigA],Im[sigA]},Mesh->All,PlotStyle->{Red,Black},PerformanceGoal->"Speed"],
+				ListLinePlot[Transpose[{1000 time, #}]& /@ {Re[sigF], Im[sigF]}, PlotStyle->(Directive[Opacity[.4],Dashed,#]&/@{Red,Black}),PerformanceGoal->"Speed"],
+				ListLinePlot[Transpose[{1000 tes, #}]& /@ {Re[sigA], Im[sigA]}, Mesh->All,PlotStyle->{Red,Black},PerformanceGoal->"Speed"],
 				PlotRange->{1000{0,1.1 Max[tes]},Full}, PlotLabel->"initial TE: "<>ToString[Round[First[1000tes],.01]]<>" / delta TE: "<>ToString[Round[First@Differences[1000tes[[1;;2]]],.01]],
-				ImageSize->500, AspectRatio->.6, Frame->{{True,False},{True,False}}, FrameStyle->Directive[{Thick,Black}], LabelStyle->{Bold,16,Black}, 
-				PerformanceGoal->"Speed",MaxPlotPoints->Infinity,ClippingStyle->Automatic,FrameLabel->{"echo time [ms]","signal"}]]&
+				ImageSize->400, AspectRatio->.6, Frame->{{True,False},{True,False}}, FrameStyle->Directive[{Thick,Black}], LabelStyle->{Bold,16,Black}, 
+				PerformanceGoal->"Speed",MaxPlotPoints->Infinity,ClippingStyle->Automatic,
+				FrameLabel->{"echo time [ms]","signal"}, Background -> White
+			]
+		]&
 		,
 		plotPhase = Block[{pts=#1},
 			Show[
 				Graphics[{Black,PointSize[.02],Point[pts]}, PlotRange->{{-1.5,1.5},{-1.5,1.5}}, AspectRatio->1, Axes->True, Ticks->None, ImageSize->250],
 				ListLinePlot[Table[Callout[pts[[i]],i,1.02pts[[i]], LabelStyle->{FontSize->20,Bold}, CalloutStyle->None], {i,Length[pts]}], PlotRange->{{-1.5,1.5},{-1.5,1.5}}, PlotStyle->Black, Mesh->All],
 				Graphics[{{Green,PointSize[.04],Point@First@pts},{Red,PointSize[.04],Point@Last@pts}}],
-				Graphics[{Gray,Dashed,Opacity[.75],Circle[],Line[{{0,0},RotationMatrix[# Degree] . {0,1}}]&/@Range[0,360,60]}]
-		]]&
+				Graphics[{Gray,Dashed,Opacity[.75],Circle[],Line[{{0,0},RotationMatrix[# Degree] . {0,1}}]&/@Range[0,360,60]}], 
+				Background -> White]]&
 	},
 
 	Manipulate[
-		tes=makeEcho[tei,dte,ne];
-		time=Range[0,1.1Max[tes],0.05/1000];
+		tes = makeEcho[tei, dte, ne];
+		time = Range[0, 1.1Max[tes], 0.05/(10 qual)];
 
-		sigA=makeA[tes];
-		sigF=makeA[time];
+		sigA = makeA[tes];
+		sigF = makeA[time];
 
-		pt=Clip[pt,{0,fr},{0,fr}];
-		{tei,dte}=pt;
+		pt = Clip[pt, {0, fr}, {0, fr}];
+		{tei, dte} = pt;
+		phases = Normalize[Reverse[#]] & /@ Transpose[Through[{Re, Im}[#]]] & /@ Transpose[sigA];
 
 		Grid[{{
-			Column[{
-				Style["Condition Nr.: "<>ToString[ToString[ConditionNumberCalc[makeA[makeEcho[tei,dte,ne]]]]],Black,Bold,24,FontFamily->"Helvetica"],
-				"", LocatorPane[Dynamic[pt],condPl,Appearance->Graphics[{Black,Disk[]},ImageSize->10]]
-			}, Alignment->Center],
-			plotSignal[{time,sigF[[All,2]]},{tes,sigA[[All,2]]}]},
-			{SpanFromAbove,plotPhase[Normalize[Reverse[#]]&/@Transpose[Through[{Re,Im}[sigA[[All,2]]]]]]}
-		}, Alignment->{Center,Center}]
+				Column[{
+					Style["Condition Nr.: "<>ToString[ToString[ConditionNumberCalc[makeA[makeEcho[tei,dte,ne]]]]],
+					Black, Bold, 24, FontFamily->"Helvetica"],
+					"", LocatorPane[Dynamic[pt], condPl, Appearance->Graphics[{Black,Disk[]},ImageSize->10]]
+				}, Alignment->Center],
+				plotSignal[{time, Mean[Transpose[sigF]]}, {tes, Mean[Transpose[sigA]]}]
+			},{
+				SpanFromAbove,
+				TabView[Table[i -> plotPhase[phases[[i]]], {i, 1, Length@phases}]]
+		}}, Alignment->{Center,Center}, Background->White]
 
 		,
-		{{nech,10,"number of echos"},2,15,1},
-		{{ran,1,"number of rotations"},{1,2}},
-		{{fld,3,"field strength"},{0.5,1,1.5,3,7,9.4},ControlType->Setter},
+		{{nech, 10, "number of echos"}, 2, 15, 1},
+		{{ran, 1, "number of rotations"},{1, 2}},
+		{{fld, 3, "field strength"}, {0.5, 1, 1.5, 3, 7, 9.4}, ControlType->Setter},
+		{{qual, 50, "plot quality"}, {50 -> "Low", 100 -> "Medium", 200 -> "High"}},
 
 		Delimiter,
 		Button["Set experiment",
-			gyro=(fld GyromagneticRatio[OptionValue[DixonNucleus]]);
+			gyro = (fld GyromagneticRatio[OptionValue[DixonNucleus]]);
 
 			(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
-			freqs=OptionValue[DixonFrequencies] gyro;
-			amp=OptionValue[DixonAmplitudes];
-			amps=If[VectorQ[amps]&&Length[amp]===3,GenerateAmps[amp][[1]],#/Total[#]&/@amp];
-			makeA=(Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
-			makeEcho=(#1+#2 Range[0,#3-1])/1000.&;
+			freqs = OptionValue[DixonFrequencies] gyro;
+			amp = OptionValue[DixonAmplitudes];
+			amps = GenerateAmps[amp][[1]];
+			makeA = (Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
+			makeEcho = (#1+#2 Range[0,#3-1])/1000.&;
 
-			ne=nech;
-			fr=ran Ceiling[297.466/gyro,.1];
-			cond=Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},{iecho,0,fr,fr/50},{decho,0,fr,fr/50}];
-			condPl=plotContour[cond,fr,ne,fld];
+			ne = nech;
+			fr = ran Ceiling[297.466/gyro,.1];
+			cond = Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},
+				{iecho, 0, fr, fr/qual}, {decho, 0, fr, fr/qual}];
+			condPl = plotContour[cond,fr,ne,fld];
 		, Method->"Queued"],
 
 		
@@ -1413,6 +1432,7 @@ OptimizeDixonEcho[ops:OptionsPattern[]]:=With[{
 		{time,ControlType->None},
 		{sigA,ControlType->None},
 		{sigF,ControlType->None},
+		{phases,ControlType->None},
 
 		{tei,0,fr,0.01,ControlType->None},
 		{dte,0,fr,0.01,ControlType->None},
@@ -1431,24 +1451,26 @@ OptimizeDixonEcho[ops:OptionsPattern[]]:=With[{
 		{makeEcho,ControlType->None},
 
 		Initialization:>(
-			pt={1.237,1.237};
+			pt={1.237, 1.237};
 			gyro=(3 GyromagneticRatio[OptionValue[DixonNucleus]]);
 
 			(*define the water and fat frequencies and amplitudes to calcluate the condition number*)
-			freqs=OptionValue[DixonFrequencies] gyro;
-			amp=OptionValue[DixonAmplitudes];
-			amps=If[VectorQ[amps]&&Length[amp]===3,GenerateAmps[amp][[1]],#/Total[#]&/@amp];
-			makeA=(Total/@(amps Exp[freqs (2 Pi I) #]))&/@#&;
-			makeEcho=(#1+#2 Range[0,#3-1])/1000.&;
+			freqs = OptionValue[DixonFrequencies] gyro;
+			amp = OptionValue[DixonAmplitudes];
+			amps = If[VectorQ[amp]&&Length[amp]===3, GenerateAmps[amp][[1]], # / Total[#]& /@ amp];
+			makeA = (Total /@ (amps Exp[freqs (2 Pi I) #]))& /@ #&;
+			makeEcho = (#1 + #2 Range[0, #3-1]) / 1000.&;
 
-			ne=10;
-			fr=Ceiling[297.466/gyro,.1];
+			ne = 10;
+			fr = Ceiling[297.466/gyro,.1];
 
-			cond=Table[{iecho,decho,ConditionNumberCalc[makeA[makeEcho[iecho,decho,ne]]]},{iecho,0,fr,0.05},{decho,0,fr,0.05}];
-			condPl=plotContour[cond,fr,ne,fld];
+			cond = Table[{iecho, decho, ConditionNumberCalc[makeA[makeEcho[iecho, decho, ne]]]},
+				{iecho, 0, fr, fr/50}, {decho, 0, fr, fr/50}];
+			condPl = plotContour[cond, fr, ne, fld];
 		),
 
-		SaveDefinitions->True
+		SaveDefinitions->True,
+		SynchronousInitialization -> False
 	]
 ]
 
