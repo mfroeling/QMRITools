@@ -95,16 +95,20 @@ MakeNiiOrientationQ::usage =
 
 
 ExportBval::usage = 
-"ExportBval[bvals] exports the diffusion bvalues to exploreDTI format.
-ExportBval[bvals, \"file\"] exports the diffusion bvalues to \"file\" in the exploreDTI format."
+"ExportBval[bvals] exports the diffusion bvalues to a *.bval format.
+ExportBval[bvals, \"file\"] exports the diffusion bvalues to \"file\" *.bval format."
 
 ExportBvec::usage = 
-"ExportBvec[grad] exports the diffusion gradients to exploreDTI format.
-ExportBvec[grad, \"file\"] exports the diffusion gradients to \"file\" in the exploreDTI format."
+"ExportBvec[grad] exports the diffusion gradients to a *.bvec format.
+ExportBvec[grad, \"file\"] exports the diffusion gradients to \"file\" *.bvec format."
 
 ExportBmat::usage = 
-"ExportBmat[bmat] exports the diffusion bmatrix to exploreDTI format.
-ExportBmat[bmat, \"file\"] exports the diffusion bmatrix to \"file\" in the exploreDTI format."
+"ExportBmat[bmat] exports the diffusion bmatrix to a bmat file in *.txt format.
+ExportBmat[bmat, \"file\"] exports the diffusion bmatrix to \"file\" in *.txt format."
+
+ExportBvalvec::usage = 
+"ExportBvalvec[{bvals, grad}] exports the diffusion values and gradients to a *.bval and *.bvec format.
+ExportBvalvec[{bvals, grad}, \"file\"] exports the diffusion values and gradients to \"file\" to a *.bval and *.bvec format."
 
 
 ExtractNiiFiles::usage =
@@ -1384,7 +1388,7 @@ ExportBval[bv_,fil_String] := Block[{file,bve},
 
 	file = If[fil == "", FileSelect["FileSave", {"*.bval"}, "bval file", WindowTitle -> "Select the destination file"], fil];
 	If[file === Null, Return[]];
-	file = If[StringTake[file, -5] == ".bval", file, file <> ".bval"];
+	file = ConvertExtension[file, ".bval"];
 
 	bve = StringJoin[ToString[#] <> " " & /@ bv];
 	Export[file, bve, "Text"]
@@ -1395,7 +1399,10 @@ ExportBval[bv_,fil_String] := Block[{file,bve},
 (*ExportBvec*)
 
 
-Options[ExportBvec]={FlipBvec->False, PositiveZ->False};
+Options[ExportBvec] = {
+	FlipBvec -> False, 
+	PositiveZ -> False
+};
 
 SyntaxInformation[ExportBvec] = {"ArgumentsPattern" -> {_,_.,OptionsPattern[]}};
 
@@ -1404,7 +1411,7 @@ ExportBvec[grad_, opts:OptionsPattern[]] := ExportBvec[grad, "", opts]
 ExportBvec[grad_, fil_String, OptionsPattern[]] := Block[{file,grade,grads},
 	file = If[fil == "", FileSelect["FileSave", {"*.bvec"}, "bvec file", WindowTitle -> "Select the destination file"], fil];
 	If[file === Null, Return[]];
-	file = If[StringTake[file, -5] == ".bvec", file, file <> ".bvec"];
+	file = ConvertExtention[file, ".bvec"];
 
 	grads = grad;
 	grads = If[OptionValue[FlipBvec], {1, 1, -1}RotateLeft[#]&/@grads, grads];
@@ -1432,6 +1439,22 @@ ExportBmat[bmat_, fil_String] := Block[{bmate, file},
 		StringReplace[ToString[{1,1,1,1,1,1}#&/@Round[bmat[[All, {2,4,6,1,5,3}]], 0.0001]], {"{{" -> "","}}" -> "", "}, {" -> "\n", ", " -> "\t\t"}]
 	];
 	Export[file, bmate]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ExportBvalvec*)
+
+
+SyntaxInformation[ExportBvalvec] = {"ArgumentsPattern" -> {_,_.,OptionsPattern[]}};
+
+Options[ExportBvalvec] = Options[ExportBvec]
+
+ExportBvalvec[{bv_, grad_}, opts:OptionsPattern[]] := ExportBvec[{bv, grad}, "", opts]
+
+ExportBvalvec[{bv_, grad_}, fil_String, opts:OptionsPattern[]] := Block[{},
+	ExportBval[bv, fil];
+	ExportBvec[grad, fil, opts];
 ]
 
 

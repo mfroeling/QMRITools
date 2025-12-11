@@ -193,9 +193,6 @@ DeNoise::sig =
 Begin["`Private`"]
 
 
-debugDenoise[x___] := If[$debugDenoise, MonitorFunction[x]];
-
-
 (* ::Subsection:: *)
 (*Denoise*)
 
@@ -936,7 +933,8 @@ Options[HarmonicDenoiseTensor] = {
 	Tolerance -> 10.^-5,
 	RangeFA -> {0.05, 0.4},
 	RangeMD -> {1., 2.5},
-	Monitor -> False
+	Monitor -> False,
+	Parallelize -> True
 };
 
 
@@ -946,13 +944,14 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?
 	HarmonicDenoiseTensor[tensI, seg, vox, 0, opts]
 
 HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, labs_, OptionsPattern[]]:=Block[{
-		sigma, flip, per, itt, step, tol, rFA, rMD, seg, lab, mon, tensL, crops, denoise,
-		tensO, dimT, conO, dimC, ampO, dimA, mus, crp, tens, con, amp
+		sigma, flip, per, itt, step, tol, rFA, rMD, seg, lab, mon, tensC, denoise,
+		tensO, dimT, conO, dimC, ampO, dimA, mus, crop, tens, con, amp, 
+		mask, vecN, sel, coor, val, vec, tm
 	},
 
 	(*get options*)
-	{sigma, flip, per, itt, step, tol, rFA, rMD, mon}=OptionValue[{RadialBasisKernel, TensorFlips, TensorPermutations,
-		MaxIterations, GradientStepSize, Tolerance, RangeFA, RangeMD, Monitor}];
+	{sigma, flip, per, itt, step, tol, rFA, rMD, mon}=OptionValue[{RadialBasisKernel, TensorFlips, 
+		TensorPermutations,	MaxIterations, GradientStepSize, Tolerance, RangeFA, RangeMD, Monitor}];
 
 	(*figure out how to loop over the masks, seg is 4D with first index the segmentations*)
 	seg = Which[
@@ -966,20 +965,45 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 		Transpose[segI][[labs]]
 	];
 
+	If[mon, MonitorFunction["Preparing tensor and masks"]];
+	tensO = Transpose[FlipTensorOrientation[tensI, per, flip]];
 	(*make cropped data for each muscle*)
-	If[mon, MonitorFunction["Making cropped muscles"]];
-	tensL = Transpose[FlipTensorOrientation[tensI, per, flip]];
-	crops = Table[crp = FindCrop[vol, CropPadding -> sigma];
-		{Normal@Transpose[ApplyCrop[tensL, crp]], Normal@ApplyCrop[vol, crp], crp}
-	, {vol, Transpose[seg[[All, pos]]]}];
+	tm = First@AbsoluteTiming[{tensC, val, vec, mask, crop} = Transpose@Table[
+		(*crop to maks to speed up*)
+		crop = FindCrop[vol, CropPadding -> sigma];
+		mask = Normal@ApplyCrop[vol, crop];
+		tensC = Normal@Transpose[ApplyCrop[tensO, crop]];
+		(*tensorflip is needed because the way the method is implemented*)
+		tensC = FlipTensorOrientation[MaskData[tensC, mask], {"z", "y", "x"}];
+		{val, vec} = EigensysCalc[tensC];
+		(*mask out bad voxels in the tensor based on MD and FA*)
+		tensC = TensMat@MaskData[tensC, Mask[{{FACalc[val], rFA}, {1000 ADCCalc[val], rMD}}]];
+		{tensC, val, vec, mask, crop}
+	, {vol, seg}]];
+	If[mon, MonitorFunction[tm, "Preparation time:"]];
 
 	(*paralell map over all muscles and denoise*)
-	If[mon, MonitorFunction["Starting parallel denoising"]];
-	DistributeDefinitions[HarmonicDenoiseTensorI, sigma, itt, step, tol, rFA, rMD, vox];
-	denoise = ParallelMap[HarmonicDenoiseTensorI[#[[1]], #[[2]], vox,
-		RadialBasisKernel->sigma, MaxIterations->itt, GradientStepSize->step, 
-		Tolerance->tol,	RangeFA->rFA, RangeMD->rMD
-	]&, crops, ProgressReporting -> mon];
+	If[mon, MonitorFunction["Starting denoising"]];
+	tm = First@AbsoluteTiming[denoise = If[OptionValue[Parallelize],
+		debugDenoise[x___] := 1;
+		DistributeDefinitions[HarmonicDenoiseTensorI, MakeGradientLaplacian, debugDenoise,
+			MakeRBF, IndexSwitch, gaussianRBFGradientC, ToPackedArray,
+			FitHarmonicBasis, SelectVector, MakeSolver, NullSpaceProjection, 
+			GetDiffusionValues, GetDiffC, GetObjectiveGradient, GetGradC,  MakeSolutionMaps,
+			sigma, itt, step, tol, vox];
+		(*distribute the sizes of the masks to prevent memory problems*)
+		n = $KernelCount;
+		or = DeleteCases[Flatten[Transpose[Partition[Ordering[Total[Flatten[#]] & /@ mask], n, n, 1, ""]]], ""];
+		(*perform the parallel denoise*)
+		ParallelMap[HarmonicDenoiseTensorI[{#[[1]], #[[2]]}, #[[3]], vox, {sigma, itt, step, tol}]&
+			, Thread[{tensC, vec[[All, All, All, All, 1]], mask}][[or]]
+			, ProgressReporting -> mon, Method -> "FinestGrained"][[Ordering[or]]]
+		,
+		debugDenoise[x___] := If[$debugDenoise, MonitorFunction[x]];
+		Map[HarmonicDenoiseTensorI[{#[[1]], #[[2]]}, #[[3]], vox, {sigma, itt, step, tol}]&
+			, Thread[{tensC, vec[[All, All, All, All, 1]], mask}]]
+	]];
+	If[mon, MonitorFunction[tm, "Denoise time:"]];
 
 	(*prepare the output*)
 	If[mon, MonitorFunction["Reasembling data"]];
@@ -991,60 +1015,41 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 	dimA = Dimensions@ampO;
 
 	(*add result to output*)
-	Map[(
-		{{tens, con, amp}, crp} = #;
-		conO += ReverseCrop[con, dimC, crp];
-		ampO += ReverseCrop[amp, dimA, crp];
-		tensO += ReverseCrop[Transpose[tens], dimT, crp];
-    ) &, Thread[{denoise, crops[[All, 3]]}]];
-	tensO = Transpose[tensO];
+	tm = First@AbsoluteTiming[Map[(
+		{{{con, amp}, {vecN, sel, coor}}, crop, val, vec} = #;
+		tens = ReconstrucTensor[vecN, {val, vec}, sel, coor];
+		tensO += ReverseCrop[Transpose[FlipTensorOrientation[tens, {"z", "y", "x"}]], dimT, crop];
+		conO += ReverseCrop[con, dimC, crop];
+		ampO += ReverseCrop[amp, dimA, crop];
+    ) &, Thread[{denoise, crop, val, vec}]]];
+	If[mon, MonitorFunction[tm, "Reasemble time:"]];
 
 	(*give the output*)
-	{tensO, conO, ampO}
+	{Normal@Transpose[tensO], conO, ampO}
 ]
 
 
-Options[HarmonicDenoiseTensorI]=Options[HarmonicDenoiseTensor]
-
-HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
-		mon, sigma, md, fa, msel, rFA, rMD, G, L, R,coor, sel, map, vecN, 
-		vecH, sol, tensN, maps, itt, step, tol, tgl, tr, tt
+HarmonicDenoiseTensorI[{tens_, vec_}, mask_, vox_, {sigma_, itt_, step_, tol_}]:=Block[{
+		mon, G, L, R, coor, sel, map, vecN, 
+		vecH, sol, tensN, maps, tgl, tr, tt
 	},
 
-	{sigma, itt, step, tol, rFA, rMD} = OptionValue[{RadialBasisKernel, MaxIterations,
-		GradientStepSize, Tolerance, RangeFA, RangeMD}];
-	debugDenoise[{sigma, itt, step, tol, rFA, rMD}, "Settings"];
-
 	(*make gradien,laplace and RBF matrix functions*)
+	debugDenoise[{sigma, itt, step, tol}, "Settings"];
 	tt = First@AbsoluteTiming[
-		tgl = First@AbsoluteTiming[
-			{{G, L}, coor, sel, map} = MakeGradientLaplacian[mask, vox, sigma];
-		];
+		tgl = First@AbsoluteTiming[{{G, L}, coor, sel, map} = MakeGradientLaplacian[mask, vox, sigma]];
 		debugDenoise[tgl, "Making G, L matrix"];
-		
-		tr = First@AbsoluteTiming[
-			R = MakeRBF[coor, sigma, vox];
-		];
+		tr = First@AbsoluteTiming[R = MakeRBF[coor, sigma, vox]];
 		debugDenoise[tr, "Making R matrix"];
-
-		(*becouse of the implementation coordiante system the tensor needs to be reversed*)
-		tensN = FlipTensorOrientation[MaskData[tens, mask], {"z", "y", "x"}];
-		(*remove unreliable voxel*)
-		{md, fa} = ParameterCalc[tensN][[4;;5]];
-		msel = Mask[{{fa, rFA}, {md, rMD}}];
-
 		(*perform the recon*)
 		debugDenoise["starting fitting"];
-		{vecN, vecH, sol} = FitHarmonicBasis[MaskData[tensN, msel], sel, {G, L, R},
-			MaxIterations->itt, GradientStepSize->step, Tolerance->tol];
+		{vecN, vecH, sol} = FitHarmonicBasis[{tens, vec}, sel, {G, L, R}, {itt, step, tol}];
 	];
-
 	debugDenoise[tt, "Total denoise time"];
 
 	(*generate output*)
 	maps = MakeSolutionMaps[sol, map];
-	tensN = FlipTensorOrientation[ReconstrucTensor[vecN, tensN, sel, coor], {"z", "y", "x"}];
-	{tensN, Transpose[maps[[1;;3]]], maps[[4]]}
+	{{Transpose[maps[[1;;3]]], maps[[4]]}, {vecN, sel, coor}}
 ]
 
 
@@ -1052,15 +1057,17 @@ HarmonicDenoiseTensorI[tens_, mask_, vox_, OptionsPattern[]]:=Block[{
 (*MakeGradientLaplacian*)
 
 
-MakeGradientLaplacian[maski_]:=MakeGradientLaplacian[maski,{1,1,1},0]
+MakeGradientLaplacian[maski_]:=MakeGradientLaplacian[maski, {1, 1, 1}, 0]
 
-MakeGradientLaplacian[maski_,vox_?VectorQ]:=MakeGradientLaplacian[maski,vox,0]
+MakeGradientLaplacian[maski_, vox_?VectorQ]:=MakeGradientLaplacian[maski, vox, 0]
 
-MakeGradientLaplacian[maski_,sig_?NumberQ]:=MakeGradientLaplacian[maski,{1,1,1},sig]
+MakeGradientLaplacian[maski_, sig_?NumberQ]:=MakeGradientLaplacian[maski, {1, 1, 1}, sig]
 
-MakeGradientLaplacian[mask_,vox_?VectorQ,sig_?NumberQ]:=Block[{aDepth,dim,const,matI,maskDilated,maskPadded,di,
-		z, y, x, coors, cx, cy, cz, coorsPad, selMask, selMaskC, selCent, selGrad, selLap, coorMask, coorCent, coorGrad, coorLap,
-		ix0, ix1, iy0, iy1, iz0, iz1, gx, gy, gz, lx1, lx0, ly1, ly0, lz1, lz0, xx, xy, yx, yy, zx, zy, g, l, lx, ly, lz, ix, iy, iz, G, L
+MakeGradientLaplacian[mask_, vox_?VectorQ, sig_?NumberQ]:=Block[{
+		aDepth, dim, const, matI, maskDilated, maskPadded, di, z, y, x, coors, cx, cy, cz, 
+		coorsPad, selMask, selMaskC, selCent, selGrad, selLap, coorMask, coorCent, coorGrad, coorLap,
+		ix0, ix1, iy0, iy1, iz0, iz1, gx, gy, gz, lx1, lx0, ly1, ly0, lz1, lz0, xx, xy, yx, yy, zx, zy, 
+		g, l, lx, ly, lz, ix, iy, iz, G, L
 	},
 
 	(*get mask properties*)
@@ -1191,9 +1198,9 @@ MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{seed, target, n, m, nr, index, indexF
 	indexFinal = IndexSwitch[index, n];
 	rbf = gaussianRBFGradientC[seed, target, index, 1./rad^2];
 
-	rows = ToPackedArray@Join @@ MapThread[ConstantArray, {Range[Length@indexFinal], Length /@ indexFinal}];
-	cols = ToPackedArray@Join @@ indexFinal;
-	vals = ToPackedArray@Join @@ rbf;
+	rows = ToPackedArray[Join @@ MapThread[ConstantArray, {Range[Length@indexFinal], Length /@ indexFinal}]];
+	cols = ToPackedArray[Join @@ indexFinal];
+	vals = ToPackedArray[Join @@ rbf];
 
 	SparseArray[Transpose[{rows, cols}] -> vals, {m, nr}, 0.]
 ]
@@ -1214,40 +1221,20 @@ IndexSwitch = Compile[{{i, _Integer, 1}, {dm, _Integer, 0}},
 (*FitHarmonicBasis*)
 
 
-Options[FitHarmonicBasis] = {
-	MaxIterations -> 250,
-	GradientStepSize -> {0.5,0.5},
-	Tolerance -> 10.^-4
-};
-
-FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block[{
-		itt, step, matGt, h0, vec0, v0, solver, dvh, dvg, i, j, thp, th, tgp, tg, vsh, vsg,
-		h1, vec1, v1, vh, a0, a1, vha, d, dim, tens, vec, val, sth, stg, tol, diff, mon
+FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, {itt_, step_, tolI_}]:=Block[{
+		tol, matGt, h0, vec0, v0, solver, dvh, dvg, i, j, thp, th, tgp, tg, vsh, vsg,
+		h1, vec1, v1, vh, a0, a1, vha, d, dim, tens, vec, val, sth, stg, diff, mon
 	},
 
-	(*get the options*)
-	{itt, step, tol} = OptionValue[{MaxIterations, GradientStepSize, Tolerance}];
-
 	(*vectorize the data*)
-	Switch[Length[tv],
-		2,
-		{tens, vec} = tv;
-		dim = Drop[Dimensions@vec, -1];
-		d = Length@dim;
-		tens = SelectVector[tens, sel, d];
-		vec = SelectVector[vec, sel, d];,
-
-		_,
-		dim = Dimensions@tv[[1]];
-		d = Length@dim;
-		tens = SelectVector[#, sel]& /@ tv;
-		{val, vec} = EigensysCalc[tens][[All,All,1]];
-		vec = Unitize[val] vec;
-		tens = TensMat[tens];
-	];
+	{tens, vec} = tv;
+	dim = Drop[Dimensions@vec, -1];
+	d = Length@dim;
+	tens = SelectVector[tens, sel, d];
+	vec = SelectVector[vec, sel, d];
 
 	diff = Max@Abs[tens];
-	tol = diff tol;
+	tol = diff tolI;	
 
 	thp = First@AbsoluteTiming[
 	(*initialize the h phase*)
@@ -1264,7 +1251,6 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block
 	(*h phase loop*)
 	dvh = v0; i = 0;
 	debugDenoise[Dynamic[{i, dvh/tol, sth}], "Start h-phase: "];
-
 	th = First@AbsoluteTiming[
 		vsh = Reap[While[dvh>tol && i<itt,
 			i++; Sow[{v0, dvh}];
@@ -1281,7 +1267,6 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block
 
 	(*normalize h0 to max h0 for g phase*)
 	vh = vec1 / Median[(Norm /@ vec1)];
-
 	tgp = First@AbsoluteTiming[
 		(*initialize the g phase*)
 		a0 = ConstantArray[0.,Length@matR];
@@ -1303,12 +1288,11 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block
 			dvg = Abs[v1 - v0];
 			a0 = a1; v0 = v1;
 			vec0 = vec1;
-		]]
+		]];
+		(*normalize vectors after g phase*)
+		vha = Normalize/@vec1;
 	];
 	debugDenoise[tg, "Fit time g-phase: "];
-
-	(*normalize vectors after g phase*)
-	vha = Normalize/@vec1;
 
 	debugDenoise[thp+th+tgp+tg, "Total fit time: "];
 
@@ -1321,9 +1305,28 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, opts:OptionsPattern[]]:=Block
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*SelectVector*)
+
+
 SelectVector[data_, sel_]:=SelectVector[data, sel, 3]
 
 SelectVector[data_, sel_, d_]:=Pick[Flatten[data, d-1], sel, 1]
+
+
+(* ::Subsubsection::Closed:: *)
+(*NullSpaceProjection*)
+
+
+NullSpaceProjection[matL_, x_] := x - Transpose[matL] . LinearSolve[matL . Transpose[matL], matL . x, Method->"Pardiso"];
+NullSpaceProjection[matL_, x_, sol_] := x - Transpose[matL] . sol[matL . x];
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeSolver*)
+
+
+MakeSolver[matL_] := LinearSolve[matL . Transpose[matL], Method->"Pardiso"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1333,7 +1336,7 @@ SelectVector[data_, sel_, d_]:=Pick[Flatten[data, d-1], sel, 1]
 GetDiffusionValues[tens_,vec_]:=Mean[GetDiffC[tens,vec]]
 
 
-GetDiffC=Compile[{{t,_Real,2},{v,_Real,1}},Block[{vv},
+GetDiffC = Compile[{{t,_Real,2},{v,_Real,1}},Block[{vv},
 	vv = Dot[v, v];
 	If[vv == 0., 0., v . t . v/vv]
 ],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
@@ -1351,17 +1354,6 @@ GetGradC=Compile[{{t, _Real, 2}, {v, _Real, 1}}, Block[{vv, tv},
 	tv = Dot[t, v];
 	If[vv == 0., v, ((v . tv)v - (vv tv))/vv^2]
 ],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
-
-
-(* ::Subsubsection::Closed:: *)
-(*NullSpaceProjection*)
-
-
-NullSpaceProjection[matL_, x_] := x - Transpose[matL] . LinearSolve[matL . Transpose[matL], matL . x, Method->"Pardiso"];
-NullSpaceProjection[matL_, x_, sol_] := x - Transpose[matL] . sol[matL . x];
-
-
-MakeSolver[matL_] := LinearSolve[matL . Transpose[matL], Method->"Pardiso"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1402,30 +1394,31 @@ MakeSolutionMaps[{con_, amp_}, {coorCent_, coorGrad_, dim_}]:=Block[{
 (*ReconstrucTensor*)
 
 
-ReconstrucTensor[vecN1_, tens_, sel_, coor_]:=Block[{cors, dim, vecO, vecN2, vecN3, vecN, tensN},
-	cors = Pick[coor[[1]], coor[[2]],1];
-	dim = Dimensions@First@tens;
+ReconstrucTensor[vecN1_, {valI_, vecI_}, sel_, coor_] := Block[{
+		cors, dim, vec, vecN2, vecN3, vecN, tensN, val
+	},
 
-	vecO = Transpose@EigenvecCalc[RotateDimensionsRight[SelectVector[RotateDimensionsLeft[tens], sel]]];
-
-	vecN2 = MakePerpendicular[vecN1, vecO[[2]]];
-	vecN3 = CrossC[vecN1, vecN2];
-	tensN = TensVec@MakeTens[Transpose[{vecN1, vecN2, vecN3}],DiagonalMatrix[{2.5, 1.75, 1}/1000]];
-	Normal[SparseArray[Thread[cors->#],dim,0.]& /@ tensN]
+	vec = SelectVector[vecI, sel][[All, 2]];
+	val = SelectVector[valI, sel];
+	tensN = TensVec@MakeTens[vecN1, vec, val];
+	
+	cors = Pick[coor[[1]], coor[[2]], 1];
+	dim = Drop[Dimensions@valI, -1];
+	SparseArray[SparseArray[Thread[cors -> #], dim, 0.]& /@ tensN]
 ]
 
 
-MakePerpendicular = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}},
-	Normalize[vec2-(vec2 . vec1) vec1]
-,RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
-
-CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}},
-	Cross[vec1, vec2]
-,RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
-
-MakeTens = Compile[{{vec, _Real, 2},{val, _Real, 2}},
-	Transpose[vec] . val . vec
-, RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
+MakeTens= Compile[{{vecN1, _Real, 1}, {vec2, _Real, 1}, {val, _Real, 1}}, Block[{
+		vecN2, vecN3, matE, matL
+	},
+	(*make vec 2 perpendicualr and find vec 3*)
+	vecN2 = Normalize[vec2 - (vec2 . vecN1) vecN1];
+	vecN3 = Cross[vecN1, vecN2];
+	(*reconstruct the tensor*)
+	matE = {vecN1, vecN2, vecN3};
+	matL = {{val[[1]], 0., 0.}, {0., val[[2]], 0.}, {0., 0., val[[3]]}};
+	Transpose[matE] . matL . matE
+], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
 
 (* ::Section:: *)

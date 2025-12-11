@@ -766,7 +766,7 @@ MakeEvalPlot[nVec_, row_, {{mean_,mat_}, std_, cells_}, range_, part_, {col_, te
 				Link3DGraphic[Show[
 					PlotMesh[ApplyShapeModel[{mean,mat}, std, j], cells, MeshColor->pcol, MeshPointColor -> Darker@pcol], 
 					If[std===0||temp,Graphics3D[], PlotMesh[mean, cells, MeshOpacity -> 0.2, MeshColor -> Gray]], 
-				PlotLabel -> Style["PC: " <> ToString[j], LightDarkSwitched[Black, White], Bold, 20],
+				PlotLabel -> Style["PC: " <> ToString[j], LightDarkV[], Bold, 20],
 					ImageSize -> Round[1000/part], PlotRange->range]]
 			, {j, 1, nVec, 1}]	, part, part, 1, {}]]
 		}
@@ -828,7 +828,7 @@ PlotShapeVariation[points_, cells_, nVec_, OptionsPattern[]] := Block[{
 		diff = Norm /@ (pt1 - pt2);
 		col = ColorData["Lipari"] /@ (diff/Ceiling[Max[diff], 5]);
 		Link3DGraphic@Show[PlotMesh[mean, cells, MeshColor -> col], ImageSize -> 200, 
-			PlotLabel -> Style["PC: " <> ToString[j], LightDarkSwitched[Black, White], Bold, 20]]
+			PlotLabel -> Style["PC: " <> ToString[j], LightDarkV[], Bold, 20]]
 	, {j, 1, nVec, 1}], part, part, 1, {}], Spacings -> {0, 0}, Alignment -> Center]
 ]
 
