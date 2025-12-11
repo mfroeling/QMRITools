@@ -3000,7 +3000,7 @@ NetSummary[net_, rep_?StringQ] := Block[{
 		{""},
 		{st@"Total Weight Memory", quantStr@elemSize},
 		{st@"Total Network Memory", quantStr@netSize}
-	}, Alignment -> {{Left, Right}}, Spacings -> {1, 1}, Background -> LightDarkSwitched[GrayLevel[.95], GrayLevel[.2]]];
+	}, Alignment -> {{Left, Right}}, Spacings -> {1, 1}, Background -> LightDarkV[GrayLevel[.95], GrayLevel[.2]]];
 
 	Switch[rep,
 		"Full",

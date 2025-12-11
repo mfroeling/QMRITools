@@ -157,6 +157,7 @@ MaskData::dim = "Dimensions are not equal, data: `1`, mask `2`."
 
 MaskData::dep = "Data dimensions should be 2D, 3D or 4D. Mask dimensions should be 2D or 3D. Data is `1`D and Mask is `2`D."
 
+JoinSegmentations::skip = "Skipping, new label is not uniuqe or part of replaced: {`1`, `2`}"
 
 (* ::Section:: *)
 (*Functions*)
@@ -497,7 +498,7 @@ JoinSegmentations[segI_, joinRules : {{_?ListQ, _?IntegerQ} ..}] := Block[{seg, 
 	{new, newL} = Transpose[(
 		{join, newL} = #;
 		If[MemberQ[lab, newL] && ! MemberQ[join, newL],	
-			Echo[{join, newL}, "Skipping, new label is not uniuqe or part of replaced: "]; 0,
+			Message[JoinSegmentations::skip, join, newL]; 0,
 			new = Total@Transpose@First@SelectSegmentations[{seg, lab}, #[[1]]];
 			{new, newL}
 		]

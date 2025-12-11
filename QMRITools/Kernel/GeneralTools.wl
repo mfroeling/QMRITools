@@ -297,6 +297,10 @@ ClearTemporaryVariables::usage =
 MonitorFunction::usage = 
 "MonitorFunction[] either prints or echos its input."
 
+LightDarkV::usage = 
+"LightDarkV[] gives Black for light mode and White for Darkmode in version 14.3+ else it gives White.
+LightDarkV[light, dark] does the same as LighhDarkSwitched but only for version 14.3 or higher."
+
 
 (* ::Subsection::Closed:: *)
 (*General Options*)
@@ -380,6 +384,11 @@ Begin["`Private`"]
 MonitorFunction[x_] := Echo[x];
 MonitorFunction[x_, y_?StringQ] := Echo[x, y];
 MonitorFunction[x___] := Print[{x}];
+
+
+LightDarkV[] := LightDarkV[Black, White]
+
+LightDarkV[light_, dark_] := If[$VersionNumber >= 14.3, LightDarkSwitched[light, dark], light]
 
 
 (* ::Subsection::Closed:: *)
@@ -2044,7 +2053,7 @@ MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
 
 	Graph[edges, 
 		VertexLabels -> vertLab, VertexShapeFunction -> vertFunc, VertexStyle -> vertCol,
-		VertexLabelStyle -> Directive[LightDarkSwitched[Black, White], Bold, Automatic], EdgeStyle -> Directive[LightDarkSwitched[Black, White], Thick], 
+		VertexLabelStyle -> Directive[LightDarkV[], Bold, Automatic], EdgeStyle -> Directive[LightDarkV[], Thick], 
 		VertexSize -> Automatic, ImageSize -> {Automatic, 600}]
 ]
 

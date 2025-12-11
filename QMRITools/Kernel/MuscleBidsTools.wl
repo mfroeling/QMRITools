@@ -199,9 +199,8 @@ dataToLog =If[KeyExistsQ[#, $Failed],
 ]&;
 
 
-notAllowed = {"-"->"", "_"->"", "."->"", " "->""};
-wipRule = {"WIP"->"", "WIP_"->"", "wip"->"", "wip_"->""};
-StringStrip = StringReplace[#, notAllowed]&;
+WipStrip = StringReplace[#, {"WIP "->"", "WIP_"->"", "wip "->"", "wip_"->""}]&;
+StringStrip = StringReplace[#, {"-"->"", "_"->"", "."->"", " "->""}]&;
 
 
 compress = $OperatingSystem === "Windows";
@@ -537,7 +536,7 @@ GetJSONPosition[json_, selection_] := GetJSONPosition[json, selection, ""]
 
 GetJSONPosition[json_, selection_, sort_] := Block[{selIndex, selFunc, list, key, val, inds, pos},
 	(*selection functions*)
-	selIndex = StringReplace[ToLowerCase[Last[Flatten[{#1 /. #3}]]], wipRule] === ToLowerCase[#2] &;
+	selIndex = WipStrip[ToLowerCase[Last[Flatten[{#1 /. #3}]]]] === ToLowerCase[#2] &;
 	selFunc = (list=#1; key=#2[[1]]; val=#2[[2]]; Select[list, selIndex[key, val, json[[#]]]&])&;
 
 	(*get the file positions*)
@@ -569,10 +568,12 @@ MergeJSON[json:{_?AssociationQ..}] := Block[{keys},
 
 SyntaxInformation[ViewConfig] = {"ArgumentsPattern" -> {_}};
 
-ViewConfig[folder_?StringQ] := ViewConfig[GetConfig[folder]]
+ViewConfig["default"] := ViewConfig[defaultConfig]
 
-ViewConfig[config_?AssociationQ] := TabView[# -> Which[
-	# === "datasets", ViewConfig[config[#]],
+ViewConfig[folder_?StringQ] := ViewConfig[Join[GetConfig[folder],<|"default"->defaultConfig|>]]
+
+ViewConfig[config_?AssociationQ] := If[Length[config]>10, MenuView, TabView][# -> Which[
+	# === "datasets"||# === "default", ViewConfig[config[#]],
 	# === "analysis", If[KeyExistsQ[config["analysis"], "Analysis"], MakeTable[config[#]], ViewConfig[config[#]]], 
 	True, MakeTable[config[#]]
 ]& /@ Keys[config], ControlPlacement -> Left]
@@ -645,7 +646,8 @@ GetProtocolNames[fold_?StringQ] := Block[{list},
 		Quiet[json = ImportJSON[#]];
 		{
 			json["SeriesNumber"], 
-			n = json["ProtocolName"]; If[StringQ[n], StringTrim[StringReplace[n, wipRule]], n]
+			n = json["ProtocolName"]; 
+			If[StringQ[n], StringTrim[WipStrip@n], n]
 		}
 	) & /@ FileNames["*.json", fold, 2]]; 
 	list = Select[list, 
@@ -690,11 +692,19 @@ SelectSubjects[dir_?StringQ] := DynamicModule[{fol, selectedSubjects, list},
 (*CheckConfigLabels*)
 
 
-CheckConfigLabels[dir_, sub_?ListQ] := CheckConfigLabels[dir, #] & /@ sub
+CheckConfigLabels[dir_, All] := Block[{fol},
+	fol = FileNameJoin[{dir, ConfigLookup[dir, "folders", "dicomData"]}];
+	CheckConfigLabels[dir, Sort[FileBaseName/@ Select[FileNames["*", fol], DirectoryQ]]] 
+]
 
-CheckConfigLabels[dir_, sub_?StringQ] := Block[{names, labels},
+CheckConfigLabels[dir_, sub_?ListQ] := Column[CheckConfigLabels[dir, #] & /@ sub]
+
+CheckConfigLabels[dir_, sub_?StringQ] := Block[{names, config, labels, custom, lab},
 	names = GetProtocolNames[dir, sub][[All, 2]];
-	labels = Flatten[#["Label"] & /@ Values[GetConfig[dir]["datasets"]]];
+	config = GetConfig[dir];
+	custom = Quiet@GetConfig[FileNameJoin[{dir, ConfigLookup[dir, "folders", "dicomData"], sub}]];
+	config = If[custom =!= $Failed, MergeConfig[config["datasets"], custom], config["datasets"]];
+	labels = Flatten[#["Label"] & /@ Values[config]];
 	sub -> Select[labels, ! MemberQ[names, #] &]
 ]
 
@@ -1103,9 +1113,11 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 			(*-----*)AddToLog[{"No json files found with label ", nameIn , " skipping conversion"}, 4],
 
 			(*if json files found import them*)
+			debugBids[files];
 			json = ImportJSON/@files;
 
 			(*see which data type is expected*)
+			debugBids["Converting ",datType["Type"], " as ", datType["Process", "Method"]];
 			Switch[datType["Type"],
 
 				(*-------------------------------------------------*)
@@ -1117,36 +1129,34 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 					"Dixon-P",
 					(*philips data with online recon*)
 					suffix = datType["Process", "Types"];
-					debugBids[types];
+					debugBids[suffix];
 
 					If[ListQ[suffix]&&!MatrixQ[suffix],
 						(*data is a 4D dataset and the order is in types*)
 
-						pos = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
+						pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
 						debugBids["Converting Dix data, json position: ", pos];
-						(*get the json and data*)
-						(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
 
-						(*get the json and data*)
-						pos = First@pos;
-						info = json[[pos]];
-						{data, vox} = ImportNii[ConvertExtension[files[[pos]],".nii"], NiiScaling->False];
-						(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+						If[pos=!={},
+							pos = CheckPos[pos];
+							
+							(*get the json and data*)
+							(*-----*)AddToLog[{"Importing dataset with properties: ", nameIn}, 4];
+							info = json[[pos]];
+							{data, vox} = ImportNii[ConvertExtension[files[[pos]],".nii"], NiiScaling->False];
+							(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 
-						(*loop over types and export them*)
-						Table[(*export to the correct folder*)
-							outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
-								"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
-							(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
-							ExportNii[data[[All, i]], vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
-							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
-						,{i, 1, Length[suffix]}];
+							(*loop over types and export them*)
+							Table[(*export to the correct folder*)
+								outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
+									"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
+								(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
+								ExportNii[data[[All, i]], vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
+								Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
+							,{i, 1, Length[suffix]}];
 
-						(*export used files*)
-						Quiet@If[del,
-							DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-							DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
-							DeleteFile[ConvertExtension[files[[pos]],".json"]]
+							(*export used files*)
+							DelFiles[files[[posIn]], del];
 						];
 					];
 
@@ -1154,21 +1164,20 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 						(*data is multiple files and the order and extention is in types*)
 						{suffix, types} = Transpose[suffix];
 						
-						debugBids[suffix, types];
-						pos = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
+						pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
 						debugBids["Converting Dix data, json position: ", pos];
 						(*get the json and data*)
 						(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
 
 						labs = Last[StringSplit[FileBaseName[#], "_"]] & /@files;
-						debugBids["file labels: ", labs];
+						debugBids["File labels: ", labs];
 
 						(*loop over types and export them*)
-						pos = Table[(*export to the correct folder*)
-							pos = Position[labs, types[[i]]];
+						Table[(*export to the correct folder*)
+							pos = Flatten[Position[labs, types[[i]]]];
 
 							If[pos=!={},
-								pos = pos[[1,1]];
+								pos = CheckPos[pos];
 								outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
 									"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
 								(*-----*)AddToLog[{"Importing:", files[[pos]]}, 4];
@@ -1178,18 +1187,11 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 								ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 								Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 								(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
-								pos
 							]
 						, {i, 1, Length[suffix]}];
 
-						debugBids[pos];
-
 						(*export used files*)
-						Quiet@If[del,
-							DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-							DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
-							DeleteFile[ConvertExtension[files[[pos]],".json"]]
-						];
+						DelFiles[files[[posIn]], del];
 					];
 
 					,
@@ -1199,13 +1201,14 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 					{suffix, types} = Transpose@datType["Process", "Types"];
 
 					Table[
-						pos = GetJSONPosition[json, {{"SeriesDescription", nameIn<>"_"<>types[[i]]}}];
+						pos = posIn = GetJSONPosition[json, {{"SeriesDescription", nameIn<>"_"<>types[[i]]}}];
 						If[pos=!={},
 							debugBids[{"Dixon-S", nameIn<>"_"<>types[[i]], pos}];
-							(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
+							(*-----*)AddToLog[{"Importing dataset with properties: ", {nameIn, i}}, 4];
 							(*get the json and data*)
-							info = json[[First@pos]];
-							{data, vox} = ImportNii[ConvertExtension[files[[First@pos]],".nii"], NiiScaling->False];
+							pos = CheckPos[pos];
+							info = json[[pos]];
+							{data, vox} = ImportNii[ConvertExtension[files[[pos]],".nii"], NiiScaling->False];
 
 							(*export to the correct folder*)
 							outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
@@ -1214,12 +1217,9 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 							(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
 							ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
-
-							Quiet@If[del,
-								DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-								DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
-								DeleteFile[ConvertExtension[files[[pos]],".json"]]
-							];
+							
+							(*export used files*)
+							DelFiles[files[[posIn]], del];
 						]
 					, {i, Length@types}];
 
@@ -1227,14 +1227,15 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 					"Dixon-B",
 
 					(*non default with data with 4D nii, where data correction is needed*)
-					pos = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
+					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
 					debugBids["Converting Dix data, json position: ", pos];
 					(*get the json and data*)
-					(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
+					(*-----*)AddToLog[{"Importing dataset with properties: ", nameIn}, 4];
 
 					(*get the json and data*)
-					info = json[[First@pos]];
-					{data, vox} = ImportNii[ConvertExtension[files[[First@pos]],".nii"], NiiScaling->False];
+					pos = CheckPos[pos];
+					info = json[[pos]];
+					{data, vox} = ImportNii[ConvertExtension[files[[pos]],".nii"], NiiScaling->False];
 					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 
 					(*assuming data has source and echos figure out the echos and slices*)
@@ -1267,11 +1268,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 					, {dixType, {"Mixed", "Phase", "Real", "Imaginary"}}];
 
 					(*Delete used files*)
-					Quiet@If[del,
-						DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-						DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
-						DeleteFile[ConvertExtension[files[[pos]],".json"]]
-					];
+					DelFiles[files[[posIn]], del];
 					,
 					"Dixon",
 					(*default script with bids standard of each echo in one file*)
@@ -1282,6 +1279,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 						pos = GetJSONPosition[json, {{"ProtocolName", nameIn}, {"ImageType", dixType}}, "EchoNumber"];
 
 						(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {nameIn, dixType}}, 4];
+						debugBids["Converting Dix data of type ", dixType, ", json position: ", pos];
 						
 						If[pos==={},
 							(*-----*)AddToLog[{"No json files found with label ", nameIn , " and type ", dixType, " skipping conversion"}, 4],
@@ -1314,11 +1312,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 							Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 							(*Delete used files*)
-							Quiet@If[del,
-								DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-								DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
-								DeleteFile[ConvertExtension[files[[pos]],".json"]]
-							];
+							DelFiles[files[[pos]], del];
 						]
 					(*Close loop over dixon data types*)
 					, {dixType, {"Mixed", "Phase", "Real", "Imaginary"}}]
@@ -1334,18 +1328,20 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 				Switch[class,
 					"Volumes",
 					(*if volumes get the position of the files needed*)
-					pos = GetJSONPosition[json, {{"ProtocolName", #}}] & /@ nameIn;
+					pos = posIn = GetJSONPosition[json, {{"ProtocolName", #}}] & /@ nameIn;
 					debugBids["Converting DWI data ", nameIn, ", json position: ", pos];
 					
-					If[pos==={}, 
+					If[Flatten[pos]==={}, 
 						noFiles = True;
 						(*-----*)AddToLog[{"No json files found with label ", nameIn , " skipping conversion"}, 4],
 
 						(*get the json and data*)
-						(*-----*)AddToLog[{"Importing ", Length/@pos, "dataset with properties: ", nameIn}, 4];
-						info = json[[First@First@pos]];
-						dfile = ConvertExtension[files[[First@#]],".nii"]&/@pos;
-						{data, vox, hdr} = ImportNii[First@dfile, NiiMethod -> "header"];
+						(*-----*)AddToLog[{"Importing datasets with properties: ", nameIn}, 4];
+						posIn = Flatten[posIn];
+						pos = CheckPos/@pos;
+						info = json[[First@pos]];
+						dfile = ConvertExtension[files[[#]],".nii"]&/@pos;
+						hdr = Last@ImportNii[First@dfile, NiiMethod -> "header"];
 
 						hasb = (FileExistsQ[ConvertExtension[#,".bval"]]&&FileExistsQ[ConvertExtension[#,".bvec"]])&/@dfile;
 						hasb = AllTrue[hasb, # === True &];
@@ -1360,7 +1356,7 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 
 					,_ ,
 					(*get the position of the files needed*)
-					pos = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
+					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
 					debugBids["Converting DWI data ", nameIn, ", json position: ", pos];
 
 					If[pos==={}, 
@@ -1368,10 +1364,11 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 						(*-----*)AddToLog[{"No json files found with label ", nameIn , " skipping conversion"}, 4],
 
 						(*get the json and data*)
-						(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
-						info = json[[First@pos]];
-						dfile = ConvertExtension[files[[First@pos]],".nii"];
-						{data, vox, hdr} = ImportNii[dfile, NiiMethod -> "header"];
+						(*-----*)AddToLog[{"Importing dataset with properties: ", nameIn}, 4];
+						pos = CheckPos[pos];
+						info = json[[pos]];
+						dfile = ConvertExtension[files[[pos]],".nii"];
+						hdr = Last@ImportNii[dfile, NiiMethod -> "header"];
 						
 						hasb = FileExistsQ[ConvertExtension[dfile,".bval"]]&&FileExistsQ[ConvertExtension[dfile,".bvec"]];
 
@@ -1415,16 +1412,8 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 					ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
 					Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
-					Quiet@If[del,
-						(*-----*)AddToLog[{"Deleting", Length[pos], type, "dataset with properties: ", nameIn}, 4];
-						DeleteFile[ConvertExtension[files[[pos]],".nii"]];
-						DeleteFile[ConvertExtension[files[[pos]],".nii.gz"]];
-						DeleteFile[ConvertExtension[files[[pos]],".json"]];
-						If[hasb,
-							DeleteFile[ConvertExtension[files[[pos]],".bval"]];
-							DeleteFile[ConvertExtension[files[[pos]],".bvec"]];
-						];
-					]
+					(*Delete used files*)
+					DelFiles[files[[posIn]], del];
 				],
 
 				(*-------------------------------------------*)
@@ -1432,35 +1421,27 @@ MuscleBidsConvertI[foli_, datType_, del_] := Block[{
 				(*-------------------------------------------*)
 				"mese",
 
-				
 				Which[
 (*TODO
 I have to properly implement the logic that figures out if its siemens of Philips and if its individual files of 4D and if the correct 
-echo time is in the json. and then spit out warnings and skip when things are going wrong
+echo time is in the json. and then spit out warnings and skip when things are going wrong
 *)
 					(*if echo time exists assume 4D nii without correct echo times*)
 					KeyExistsQ[Lookup[datType, "Process", <||>], "EchoTime"],
 
 					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
-
-					(*get the json and data*)
-					If[Length[pos] > 1,
-						pos = pos[[{-1}]];
-						AddToLog[{"!!!!!Multiple files found, taking last file"}, 4];
-						debugBids["!!!!!Multiple files found, taking last file: "];
-					];
-
 					debugBids["Converting MESE data, json position: ", pos];
-					(*get the json and data*)
-					(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
 
+					(*get the json and data*)
+					(*-----*)AddToLog[{"Importing dataset with properties: ", nameIn}, 4];
+					pos = CheckPos[pos];
 					(*echo times - get the echo time from the data json if present*)
-					info = json[[First@pos]];
+					info = json[[pos]];
 
 					If[KeyExistsQ[info, "EchoTime"] && KeyExistsQ[info, "EchoTrainLength"] || info["Manufacturer"]==="Siemens",
-						{data, vox} = ImportNii[ConvertExtension[files[[First@pos]],".nii"]];
+						{data, vox} = ImportNii[ConvertExtension[files[[pos]],".nii"]];
 						,
-						{data, fit, vox} = ImportNiiT2[ConvertExtension[files[[First@pos]],".nii"]];
+						{data, fit, vox} = ImportNiiT2[ConvertExtension[files[[pos]],".nii"]];
 					];
 					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 					echo = Lookup[info, "EchoTime", datType["Process", "EchoTime"]/1000.];
@@ -1513,12 +1494,7 @@ echo time is in the json. and then spit out warnings and skip when things are 
 				Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
 				(*Delete used files*)
-				Quiet@If[del,
-					(*-----*)AddToLog[{"Deleting", Length[posIn], type, "datasets with properties: ", nameIn},4];
-					DeleteFile[ConvertExtension[files[[posIn]],".nii"]];
-					DeleteFile[ConvertExtension[files[[posIn]],".nii.gz"]];
-					DeleteFile[ConvertExtension[files[[posIn]],".json"]]
-				]
+				DelFiles[files[[posIn]], del];
 
 				,
 
@@ -1538,6 +1514,20 @@ echo time is in the json. and then spit out warnings and skip when things are 
 	(*compress the nii files if compression during ExportNii -> False*)
 	If[!compress, CompressNiiFiles[fol]];
 ]
+
+
+CheckPos[pos_] := Block[{posOut},
+	posOut = Last[pos];
+	If[Length[pos] > 1,
+		AddToLog[{"!!!!!!!!!!!!!!! More than one file found using last !!!!!!!!!!!!!!!!!!!"}, 4];
+		debugBids["!!!!!!!!!!!!!!! More than one file found using last: ", posOut];
+	];
+	posOut
+]
+
+
+DelFiles[files_, del_]:=Quiet@If[del, 
+	DeleteFile[ConvertExtension[files,#]]&/@{".nii", ".nii.gz", ".json", ".bval", ".bvec"}];
 
 
 (* ::Subsection:: *)
@@ -1835,6 +1825,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							(*----*)AddToLog[outfile,5];
 							outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", "b0", "t2star", "r2star", 
 								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
+
 							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress] &/@ outTypes;
 							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
 
@@ -1869,8 +1860,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 
 			(*input file names*)
 			diffFile = GenerateBidsFileName[fol, set];
-			jfile = ConvertExtension[diffFile,".json"];
-			nfile = ConvertExtension[diffFile,".nii"];
+			jfile = ConvertExtension[diffFile, ".json"];
+			nfile = ConvertExtension[diffFile, ".nii"];
 
 			(*ouput file names*)
 			outfile = GenerateBidsFileName[folo, set];
@@ -1927,7 +1918,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 						settingPre = MergeConfig[settingPre, <|"SplitRegistration"->split|>];
 						debugBids[{"Registration function", regF}];
 						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, 
-							PrintTempDirectory->False, MethodReg -> "bspline", 
+							PrintTempDirectory->False, MethodReg -> "bspline", BsplineSpacing -> {30, 30, 30},
 							BsplineDirections -> {1, 1, 1}, AffineDirections -> {1, 1, 1}
 						];
 
@@ -1939,14 +1930,12 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 						(*----*)AddToLog["Exporting the calculated data to:", 4];
 						(*----*)AddToLog[outfile, 5];
 						outTypes = {"den", "reg", "sig", "snr0", "snr", "filt"};
+						
 						(
 							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
-							Export[ConvertExtension[outfile <> "_"<>#, ".json"], MergeJSON[{json, settingPre}]];
-						) &/@ outTypes;
-						(
-							ExportBval[val, ConvertExtension[outfile <> "_"<>#, ".bval"]];
-							ExportBvec[grad, ConvertExtension[outfile <> "_"<>#, ".bvec"]];
-						)&/@{"reg", "filt"};
+							Export[ConvertExtension[outfile<>"_"<>#, ".json"], MergeJSON[{json, settingPre}]];
+						)& /@ outTypes;
+						ExportBvalvec[{val, grad}, outfile <> "_"<>#]& /@ {"reg", "filt"};
 
 						(*export the checkfile*)
 						MakeCheckFile[outfile<>"_prep", Sort@Join[
@@ -2061,15 +2050,16 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 
 							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
 								"l1", "l2", "l3", "md",	"fa", "rd"}, coil, ivimpar];
+
 							(
 								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
-								Export[ConvertExtension[outfile <> "_"<>#, ".json"], MergeJSON[{json, settingPro}]];
+								Export[ConvertExtension[outfile<>"_"<>#, ".json"], MergeJSON[{json, settingPro}]];
 							) &/@ outTypes;
 
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperties"->set},
-								Normal@KeyTake[json,keys]
+								Normal@KeyTake[json, keys]
 							]];
 
 							(*compress the nii files if compression during ExportNii -> False*)
@@ -2102,8 +2092,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 
 				(*input file names*)
 				diffFile = GenerateBidsFileName[fol, set];
-				jfile = ConvertExtension[diffFile,".json"];
-				nfile = ConvertExtension[diffFile,".nii"];
+				jfile = ConvertExtension[diffFile, ".json"];
+				nfile = ConvertExtension[diffFile, ".nii"];
 
 				(*ouput file names*)
 				outfile = GenerateBidsFileName[folo, set];
@@ -2186,8 +2176,10 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 								(*----*)AddToLog["Exporting the calculated data to:", 4];
 								(*----*)AddToLog[outfile, 5];		
 
-								ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii", CompressNii -> compress] &/@ outTypes;
-								Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
+								(
+									ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
+									Export[ConvertExtension[outfile<>"_"<>#, ".json"], json];
+								) &/@ outTypes;
 														
 								(*export the checkfile*)
 								MakeCheckFile[outfile, Sort@Join[
@@ -2716,7 +2708,9 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 		debugBids[Column[{out, seg, tar, mov}]];
 
 		{tar, voxt} = ImportNii[tar];
+		tar = NormalizeData[Clip[tar, {0, Infinity}]];
 		{mov, voxm} = ImportNii[mov];
+		mov = NormalizeData[Clip[tar, {0, Infinity}]];
 		{seg, voxs} = ImportNii[seg];
 
 		mask = Mask[NormalizeData[tar], 5, MaskSmoothing -> True, MaskDilation -> 5];
@@ -2726,8 +2720,9 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 
 		seg = Table[RegisterDataTransform[
 			{tar[[{i}]], mask[[{i}]], voxt}, {mov, voxm}, {seg, voxs},
-			MethodReg -> {"rigid", "affine", "bspline"}, BsplineSpacing -> {30, 15, 15}, NumberSamples -> 20000, 
-			Resolutions -> 1, Iterations -> 200, DeleteTempDirectory -> False, TransformMethod -> "Segmentation"
+			MethodReg -> {"rigid", "affine"}, NumberSamples -> 50000, HistogramBins->128, PrintTempDirectory->False,
+			Resolutions -> 1, Iterations -> 200, DeleteTempDirectory -> True, 
+			TransformMethod -> "Segmentation"
 		][[2]], {i, 1, 3}];
 
 		ExportNii[seg, voxt, outfile, CompressNii -> compress];
@@ -2746,8 +2741,7 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 MakeFileNameI[{dup_, dupKey_}, {fol_, parts_}, tags_, {type_, lab_}] := Block[{key, typ, tagsu, dupl},
 	dupl = dup || Length[tags] === 4;
 	{key, tagsu} = If[dupl, {First[tags], Rest[tags]}, {Nothing, tags}];
-	{typ, tagsu} = 
-	If[type === "", {First@tagsu, Rest@tagsu}, {type, tagsu}];
+	{typ, tagsu} = If[type === "", {First@tagsu, Rest@tagsu}, {type, tagsu}];
 	key = If[dupl, dupKey -> StringStrip[key], Nothing];
 	GenerateBidsFileName[fol, <|parts, key, "type" -> typ, "suf" -> Join[lab, tagsu]|>] <>".nii"
 ]
@@ -3064,6 +3058,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 	(*get the segmentation settings*)
 	hasKey = KeyExistsQ[datDis, "Key"];
 	{fol, parts} = PartitionBidsFolderName[foli];
+	
 	partsO = If[hasKey, Join[<|"stk"->StringStrip@datDis["Key"]|>, parts], parts];
 	debugBids[{parts, partsO, hasKey}];
 
