@@ -222,10 +222,16 @@ Begin["`Private`"]
 (*IVIMCalc*)
 
 
-Options[IVIMCalc] = {Method -> Automatic, Parallelize->True, MonitorIVIMCalc -> True, 
-	IVIMFixed -> False, IVIMConstrained -> True, IVIMTensFit -> False, IVIMComponents -> 2,
+Options[IVIMCalc] = {
+	Method -> Automatic, 
+	Parallelize->True, 
+	MonitorIVIMCalc -> True, 
+	IVIMFixed -> False, 
+	IVIMConstrained -> True, 
+	IVIMTensFit -> False, 
+	IVIMComponents -> 2,
 	IVIMConstrains -> {{0.8, 1.2}, {0, 1}, {0.0005, 0.0035}, {0.001, 0.5}, {0.001, 0.5}}
-	};
+};
 
 SyntaxInformation[IVIMCalc] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
@@ -265,14 +271,20 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 
 	dat = N[If[depthD == 4, Transpose[data], data]];
 	dat0 = DeleteCases[Flatten[dat[[{1}]]], 0.];
-	mdat=Mean[dat0];
+	mdat = Mean[dat0];
 	datn = If[dat0 === {}, dat, dat/mdat];
 
 	rl = RotateRight[Range[depthD]];
 	rr = RotateLeft[Range[depthD]];
 
 	(*contruct bvals for fit*)
-	bin = If[!tensFit, If[VectorQ[binp], binp, Abs[Total[#[[1 ;; 3]]]] & /@ binp], binp];
+	bin = If[tensFit, binp, 
+		Which[
+			VectorQ[binp], binp, 
+			MatrixQ[binp] && Length[binp] <100, Abs[Total[#[[1 ;; 3]]]] & /@ binp,
+			True, binp
+		] 
+	];
 
 	(*initial values for fit*)
 	Switch[components,
@@ -352,8 +364,6 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 	j=i=0;
 
 	mapfun=If[OptionValue[Parallelize]&&depthD>1,
-		ParallelEvaluate[j=0];
-		SetSharedVariable[i];
 		DistributeDefinitions[bin, funcin, fitd, funcf, start, fpars, method, out];
 		ParallelMap,
 		Map];
@@ -362,13 +372,30 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 		PrintTemporary[ProgressIndicator[Dynamic[i],{0,Total@Flatten@Unitize[dat0]-1000}]]
 		];
 
-	ivim = Quiet@Transpose[mapfun[(
+(*TODO fix and cleanup IVIM fitting to modern approach*)
+
+	If[Dimensions[bin]===Dimensions[datn] && MatrixQ[bin],
+		ivim = Quiet@Transpose@mapfun[(
+			{dd, bb} = #;
+			s0s = dd[[1]];
+			If[N[dd] == dd*0. || s0s == 0.,
+				(*masked voxel*)
+				0. out
+				,
+				(*data voxel*)
+				fitd = Flatten /@ ({bb, dd} // Transpose);
+				start = Prepend[funcin, {s0, s0s}];
+				sol = Quiet[FindFit[fitd, funcf, start , fpars, Method -> method, MaxIterations -> 150]];
+				out /. sol
+			]
+		)&, Thread[{datn, bin}]];
+		,
+		ivim = Quiet@Transpose[mapfun[(
 			s0s = #[[1]];
 			If[N[#] == #*0. || s0s == 0.,
 				(*masked voxel*)
 				0. out
 				,
-				j++;If[j>1000,i+=j;j=0;];
 				(*data voxel*)
 				fitd = Flatten /@ ({bin, #} // Transpose);
 				start=Prepend[funcin,{s0, s0s}];
@@ -376,8 +403,9 @@ IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
 				out /. sol
 			]
 		)&,Transpose[datn, rl], {depthD - 1}], rr];
+	];
 
-	ivim[[1]]=ivim[[1]]*mdat;
+	ivim[[1]] = ivim[[1]]*mdat;
 	ivim
 ]
 

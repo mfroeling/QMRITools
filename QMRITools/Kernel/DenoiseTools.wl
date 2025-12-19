@@ -40,9 +40,9 @@ Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitt
 
 PCADeNoise[] is based on DOI: 10.1016/j.neuroimage.2016.08.016 and 10.1002/mrm.26059."
 
-NNDeNoise::usage = 
-"NNDeNoise[data] removes rician noise from the data using self supersized neural net.
-NNDeNoise[data, mask] removes rician noise from the data with PCA using self supersized neural net withing the mask.
+P2SDenoise::usage = 
+"P2SDenoise[data] removes rician noise from the data using self supersized neural net.
+P2SDenoise[data, mask] removes rician noise from the data with PCA using self supersized neural net withing the mask.
 
 PCADeNoise[] is based on DOI:10.48550/arXiv.2011.01355."
 
@@ -125,7 +125,7 @@ PCAComplex::usage =
 
 
 NNThreshold::usage = 
-"NNThreshold is an options for NNDeNoise and specifies the automated back ground masking value."
+"NNThreshold is an options for P2SDenoise and specifies the automated back ground masking value."
 
 
 AnisoStepTime::usage =
@@ -313,7 +313,7 @@ NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, 
 (*PCADenoise*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PCADeNoise*)
 
 
@@ -375,14 +375,14 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 	(*define weighting function*)
 	weightFun = If[weight, 1./(m - #)&, 1.&];
-	
+
 	(*padd the data with kernel offset*)
 	off = Round[(ker - 1)/2];
 	pad = (off + 1){{1, 1}, {1, 1}, {1, 1}};
 	data = ArrayPad[data, Insert[pad, {0, 0}, 2], 0.];
 	mask = ArrayPad[mask, pad, 0.];
 	sigm = ArrayPad[sigm, pad, 0.];
-	
+
 	Switch[met,
 
 		(*--------------use similar signals--------------*)
@@ -402,7 +402,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 			np = Ceiling[leng/Ceiling[leng/np]];
 			Partition[RandomSample[pos], np, np, {1, 1}, {}]
 		];
-		
+
 		(*for each random batch find the nearest voxels and make pos array*)
 		If[mon, PrintTemporary["Preparing data similarity"]];
 		nearPos = Flatten[Nearest[data[[#]] -> #, data[[#]], 2 k, 
@@ -415,33 +415,33 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		j = 0;
 		If[mon, PrintTemporary["Performing the denoising"]];
 		If[mon&&!par, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
-		
+
 		If[weight,
 			(*--------------use weighting---------------*)
-			
+
 			(*ouput data*)
 			datao = 0. data;
 			weights = sigmat = sigmati = nmati = datao[[All, 1]];
-		
+
 			Map[(
 				If[!par,j++];
 				p = #;
 				pi = First@p;
-	
+
 				(*perform the fit and reconstruct the noise free data*)
 				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigm[[pi]], {trans, m, n},  tol];
 				weight = weightFun[Nes];
-	
+
 				(*sum data and sigma and weight for numer of components*)
 				datao[[p]] += weight datn;
 				sigmat[[p]] += weight sigo;
 				weights[[p]] += weight;
-	
+
 				(*output sig, Nest and iterations*)
 				sigmati[[pi]] = sigo;
 				nmati[[pi]] = Nes;
 			) &, nearPos];
-			
+
 			(*make everything in arrays*)
 			datao = VectorToData[DivideNoZero[datao, weights], posV];
 			sigmat = VectorToData[DivideNoZero[sigmat, weights], posV];
@@ -471,24 +471,24 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		_,
 		(*vectorize problem*)
 		{dimv, coors} = DataToVector[data, mask][[2]];
-		
+
 		(*define runtime parameters and data*)
 		pad = off + 1;
 		data[[;;pad]] = Reverse[data[[-2 pad;;-pad-1]]];
 		data[[-pad;;]] = Reverse[data[[pad+1;;2 pad]]];
 		data = RotateDimensionsLeft[Transpose[data]];
-		
+
 		(*parameters for monitor*)
 		j = 0;
 		leng = Length@coors;
 		If[mon&&!par, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
-		
+
 		If[weight,
-		
+
 			(*ouput data*)
 			datao = 0. data;
 			weights = sigmat = datao[[All, All, All, 1]];
-	
+
 			(*perform denoising*)
 			output = Transpose@Map[(j++;
 					{z, y, x} = #;
@@ -497,30 +497,30 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 					{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
 					fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, ddim}];
 					sigi = sigm[[z, y, x]];
-	
+
 					(*perform the fit and reconstruct the noise free data*)
 					{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigi, {trans, m, n}, tol];
-	
+
 					(*reshape the vector into kernel box and get the weightes*)
 					datn = Fold[Partition, datn, {ker, ker}];
 					weight = weightFun[Nes];
-	
+
 					(*sum data and sigma and weight for numer of components*)
 					datao[[zm ;; zp, ym ;; yp, xm ;; xp, All]] += (weight datn);
 					sigmat[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight sigo;
 					weights[[zm ;; zp, ym ;; yp, xm ;; xp]] += weight;
-	
+
 					(*output sig, Nest and iterations*)
 					{sigo, Nes}
 				)&, coors];
-	
+
 			(*correct output data for weightings*)
 			datao = Transpose@RotateDimensionsRight[Re@DivideNoZero[datao, weights]];
 			sigmat = DivideNoZero[sigmat, weights];
 			output = VectorToData[#, {dimv, coors}] & /@ output;
-			
+
 			,
-			
+
 			fun = If[par, DistributeDefinitions[data, sigm, trans, m, n, tol, par, k, ddim, mid, off, pad, PCADeNoiseFit];ParallelMap, Map];
 			{datao, sigmat, sigmati, nmati} = Transpose@fun[(If[!par, j++];
 				{z, y, x} = #;
@@ -535,7 +535,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 			output = {VectorToData[sigmati, {dimv, coors}], VectorToData[nmati, {dimv, coors}]};
 		];
 	];
-	
+
 	pad = off + 2;
 	datao = datao[[pad;;-pad, All, pad;;-pad, pad;;-pad]];
 	sigmat = sigmat[[pad;;-pad, pad;;-pad, pad;;-pad]];
@@ -558,7 +558,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 ]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*PCADeNoiseFit*)
 
 
@@ -566,7 +566,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 PCADeNoiseFit[data_, sigi_?NumberQ, {trans_, m_, n_}, toli_] := Block[{
 		xmat, xmatT, val, mat, pi, sig, xmatN, tol, out
 	},
-	
+
 	(*perform decomp*)
 	{xmat, xmatT} = If[trans, {data, Transpose@data}, {Transpose@data, data}];
 	{val, mat} = Reverse /@ Eigensystem[xmat . xmatT];
@@ -607,40 +607,66 @@ GridSearch = Compile[{{val, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig,
 
 
 (* ::Subsubsection::Closed:: *)
-(*NNDeNoise*)
+(*P2SDenoise*)
 
 
-Options[NNDeNoise] = {NNThreshold -> 2};
+Options[P2SDenoise] = {Threshold -> 2, Iterations -> 10};
 
-SyntaxInformation[NNDeNoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
+SyntaxInformation[	P2SDenoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
-NNDeNoise[data_, opts : OptionsPattern[]] := NNDeNoise[data, 1, opts];
+P2SDenoise[data_, opts : OptionsPattern[]] := P2SDenoise[data, 1, opts];
 
-NNDeNoise[data_, mask_, opts : OptionsPattern[]] := Block[{
-		back, dat, coor, n, ran, dati, train, i
+P2SDenoise[data_, mask_, opts : OptionsPattern[]] := Block[{
+		back, dat, coor, msk, ran, n, d, di, s, matS
 	},
 	(*make selection mask and vectorize data*)
-	back = Round[mask Mask[NormalizeMeanData[data], OptionValue[NNThreshold]]];
+	back = Round[mask Mask[NormalizeMeanData[data], OptionValue[Threshold]]];
 	{dat, coor} = DataToVector[data, back];
 	dat = ToPackedArray@N@dat;
+	msk = N@Unitize[dat];
+	ran = {0., 1.1 Max[dat]};
 
-	(*Get dimensions, training sample and define network*)
-	n = Range@Length@First@dat;
-	ran = 1.1 MinMax[dat];
+	(*subsample data*)
+	{n, d} = Dimensions@dat;
+	di = Range[d];
+	matS = LeverageSketch[dat, Round[0.1 n], OptionValue[Iterations]];
 
-	(*trian network per volume and generate denoised data*)
-	(*DistributeDefinitions[dat, n];*)
-	dat = Monitor[Table[
-		train = Thread[(dati = dat[[All, Complement[n, {i}]]]) -> dat[[All, i]]];
-		trained = Predict[train, ValidationSet -> RandomSample[train, Round[.1 Length[dat]]],
-			Method -> {"LinearRegression", "OptimizationMethod" -> "StochasticGradientDescent","L2Regularization"->0.01},
-			PerformanceGoal -> {"DirectTraining"},
-			AnomalyDetector -> None, TrainingProgressReporting -> None, MissingValueSynthesis -> None
-		];
-		trained[dati]
-	, {i, n}], ProgressIndicator[Dynamic[i], {0, Max[n]}]];
+	ToPackedArray@N@Clip[VectorToData[msk Transpose[Table[Mean[(
+		dat[[All, Complement[di, {i}]]] . LeastSquares[#[[All, Complement[di, {i}]]], #[[All, i]]]
+	) & /@ matS], {i, d}]], coor], ran]
+]
 
-	ToPackedArray@N@Clip[Transpose[VectorToData[#, coor] & /@ dat], ran]
+
+CountSketch[mat_?MatrixQ, s_Integer] := CountSketch[mat, s, 1]
+
+CountSketch[mat_?MatrixQ, s_Integer, ns_Integer] := Block[{n, d, S},
+	{n, d} = Dimensions@mat;
+	SeedRandom[1234];
+	Table[
+		S = SparseArray[Thread[{RandomInteger[{1, s}, n], Range[n]}] -> RandomChoice[{-1, 1}, n], {s, n}];
+		S . mat
+	, {ns}]
+]
+
+
+LeverageSketch[mat_?MatrixQ, s_Integer] := LeverageSketch[mat, s, 1]
+
+LeverageSketch[mat_?MatrixQ, s_Integer, ns_Integer] := Block[{
+		n, d, S, u, probs, index
+	},
+	{n, d} = Dimensions@mat;
+
+	(*Leverage scores which are squared row norms of U*)
+	probs = Total[SingularValueDecomposition[mat, d][[1]]^2, {2}];
+	probs = probs / Total[probs];
+
+	(*Sampling and rescaling matrix based on probabilities*)
+	SeedRandom[1234];
+	Table[
+		index = RandomSample[probs -> Range[n], s];
+		S = SparseArray[Thread[{Range[s], index}] -> 1 / Sqrt[s probs[[index]]], {s, n}];
+		S . mat
+	, {ns}]
 ]
 
 
@@ -905,9 +931,8 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 ]
 
 
-DivDot = Compile[{{t, _Real, 2}, {gr, _Real, 2}}, 
-	gr . t, 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+DivDot = Compile[{{t, _Real, 2}, {gr, _Real, 2}}, gr . t
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 StrucTensCalc = Compile[{{eval, _Real, 1}, {evec, _Real, 2}, {tr, _Real, 0}},
@@ -920,7 +945,7 @@ StrucTensCalc = Compile[{{eval, _Real, 1}, {evec, _Real, 2}, {tr, _Real, 0}},
 (*HarmonicDenoiseTensor*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*HarmonicDenoiseTensor*)
 
 
@@ -946,7 +971,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?
 HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, labs_, OptionsPattern[]]:=Block[{
 		sigma, flip, per, itt, step, tol, rFA, rMD, seg, lab, mon, tensC, denoise,
 		tensO, dimT, conO, dimC, ampO, dimA, mus, crop, tens, con, amp, 
-		mask, vecN, sel, coor, val, vec, tm
+		mask, vecN, sel, coor, val, vec, tm, n, or
 	},
 
 	(*get options*)
@@ -966,13 +991,13 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 	];
 
 	If[mon, MonitorFunction["Preparing tensor and masks"]];
-	tensO = Transpose[FlipTensorOrientation[tensI, per, flip]];
+	tensF = Transpose[FlipTensorOrientation[tensI, per, flip]];
 	(*make cropped data for each muscle*)
 	tm = First@AbsoluteTiming[{tensC, val, vec, mask, crop} = Transpose@Table[
 		(*crop to maks to speed up*)
 		crop = FindCrop[vol, CropPadding -> sigma];
 		mask = Normal@ApplyCrop[vol, crop];
-		tensC = Normal@Transpose[ApplyCrop[tensO, crop]];
+		tensC = Normal@Transpose[ApplyCrop[tensF, crop]];
 		(*tensorflip is needed because the way the method is implemented*)
 		tensC = FlipTensorOrientation[MaskData[tensC, mask], {"z", "y", "x"}];
 		{val, vec} = EigensysCalc[tensC];
@@ -997,7 +1022,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 		(*perform the parallel denoise*)
 		ParallelMap[HarmonicDenoiseTensorI[{#[[1]], #[[2]]}, #[[3]], vox, {sigma, itt, step, tol}]&
 			, Thread[{tensC, vec[[All, All, All, All, 1]], mask}][[or]]
-			, ProgressReporting -> mon, Method -> "FinestGrained"][[Ordering[or]]]
+			, ProgressReporting -> True, Method -> "FinestGrained"][[Ordering[or]]]
 		,
 		debugDenoise[x___] := If[$debugDenoise, MonitorFunction[x]];
 		Map[HarmonicDenoiseTensorI[{#[[1]], #[[2]]}, #[[3]], vox, {sigma, itt, step, tol}]&
@@ -1007,25 +1032,28 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 
 	(*prepare the output*)
 	If[mon, MonitorFunction["Reasembling data"]];
-	tensO = Transpose[SparseArray[0. tensI]];
-	dimT = Dimensions@tensO;
-	conO = Transpose[SparseArray[0. tensI[[1;;3]]]];
-	dimC = Dimensions@conO;
-	ampO = SparseArray[0. First@tensI];
-	dimA = Dimensions@ampO;
+	tm = First@AbsoluteTiming[
+		tensO = Transpose[SparseArray[0. tensI]];
+		dimT = Dimensions@tensO;
+		conO = Transpose[SparseArray[0. tensI[[1;;3]]]];
+		dimC = Dimensions@conO;
+		ampO = SparseArray[0. First@tensI];
+		dimA = Dimensions@ampO;
 
-	(*add result to output*)
-	tm = First@AbsoluteTiming[Map[(
-		{{{con, amp}, {vecN, sel, coor}}, crop, val, vec} = #;
-		tens = ReconstrucTensor[vecN, {val, vec}, sel, coor];
-		tensO += ReverseCrop[Transpose[FlipTensorOrientation[tens, {"z", "y", "x"}]], dimT, crop];
-		conO += ReverseCrop[con, dimC, crop];
-		ampO += ReverseCrop[amp, dimA, crop];
-    ) &, Thread[{denoise, crop, val, vec}]]];
+		(*add result to output*)
+		Map[(
+			{{{con, amp}, {vecN, sel, coor}}, crop, val, vec} = #;
+			tens = ReconstrucTensor[vecN, {val, vec}, sel, coor];
+			tensO += ReverseCrop[Transpose[FlipTensorOrientation[tens, {"z", "y", "x"}]], dimT, crop];
+			conO += ReverseCrop[con, dimC, crop];
+			ampO += ReverseCrop[amp, dimA, crop];
+		) &, Thread[{denoise, crop, val, vec}]]
+	];
+	tensO += MaskData[tensF, 1 - Total[seg]];
 	If[mon, MonitorFunction[tm, "Reasemble time:"]];
 
 	(*give the output*)
-	{Normal@Transpose[tensO], conO, ampO}
+	{Transpose[tensO], conO, ampO}
 ]
 
 
@@ -1196,7 +1224,7 @@ MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{seed, target, n, m, nr, index, indexF
 	index = Nearest[target -> "Index", seed, {All, 2.5 rad}, 
 	DistanceFunction -> EuclideanDistance];
 	indexFinal = IndexSwitch[index, n];
-	rbf = gaussianRBFGradientC[seed, target, index, 1./rad^2];
+	rbf = GaussianRBFGradientC[seed, target, index, 1./rad^2];
 
 	rows = ToPackedArray[Join @@ MapThread[ConstantArray, {Range[Length@indexFinal], Length /@ indexFinal}]];
 	cols = ToPackedArray[Join @@ indexFinal];
@@ -1206,10 +1234,18 @@ MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{seed, target, n, m, nr, index, indexF
 ]
 
 
-gaussianRBFGradientC = Compile[{{center, _Real, 1}, {points, _Real, 2}, {ind, _Integer, 1}, {r2, _Real, 0}}, Block[{c},
+(* ::Subsubsection::Closed:: *)
+(*GaussianRBFGradientC*)
+
+
+GaussianRBFGradientC = Compile[{{center, _Real, 1}, {points, _Real, 2}, {ind, _Integer, 1}, {r2, _Real, 0}}, Block[{c},
     c = Transpose[points[[ind]]] - center;
     Flatten[2 r2 Exp[-Total[c^2] r2] Transpose[c], 1]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+
+
+(* ::Subsubsection::Closed:: *)
+(*IndexSwitch*)
 
 
 IndexSwitch = Compile[{{i, _Integer, 1}, {dm, _Integer, 0}}, 
@@ -1269,7 +1305,7 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, {itt_, step_, tolI_}]:=Block[
 	vh = vec1 / Median[(Norm /@ vec1)];
 	tgp = First@AbsoluteTiming[
 		(*initialize the g phase*)
-		a0 = ConstantArray[0.,Length@matR];
+		a0 = ConstantArray[0., Length@matR];
 		vec0 = vh + Partition[a0 . matR, d];
 		v0 = GetDiffusionValues[tens, vh];
 		stg = Norm[GetObjectiveGradient[tens, vec0, matR]];
@@ -1278,7 +1314,7 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, {itt_, step_, tolI_}]:=Block[
 
 	(*g phase loop*)
 	dvg = v0; j = 0;
-	debugDenoise[Dynamic[{j,dvg/tol,stg}], "Start g-phase: "];
+	debugDenoise[Dynamic[{j, dvg/tol, stg}], "Start g-phase: "];
 	tg = First@AbsoluteTiming[
 		vsg = Reap[While[dvg>tol && j<Round[itt],
 			j++; Sow[{v0, dvg}];
@@ -1294,11 +1330,13 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, {itt_, step_, tolI_}]:=Block[
 	];
 	debugDenoise[tg, "Fit time g-phase: "];
 
-	debugDenoise[thp+th+tgp+tg, "Total fit time: "];
+	debugDenoise[thp + th + tgp + tg, "Total fit time: "];
 
 	debugDenoise[Grid[{{
-		ListLinePlot[{vsh[[2,1,All,1]], vsg[[2,1,All,1]]} / diff, ImageSize->200, PlotRange->Full,PlotLabel->"Difference"],
-		ListLinePlot[{vsh[[2,1,All,2]], vsg[[2,1,All,2]]} / tol, ImageSize->200,PlotLabel->"Tollerance"]
+		ListLinePlot[{vsh[[2, 1, All, 1]], vsg[[2, 1, All, 1]]} / diff, 
+			ImageSize -> 200, PlotRange -> Full, PlotLabel -> "Difference"],
+		ListLinePlot[{vsh[[2, 1, All, 2]], vsg[[2, 1, All, 2]]} / tol, 
+			ImageSize -> 200, PlotLabel -> "Tollerance"]
 	}}], "Gradient functions: "];
 
 	{vha, Normalize/@vh, {h1,a1}}
@@ -1319,6 +1357,7 @@ SelectVector[data_, sel_, d_]:=Pick[Flatten[data, d-1], sel, 1]
 
 
 NullSpaceProjection[matL_, x_] := x - Transpose[matL] . LinearSolve[matL . Transpose[matL], matL . x, Method->"Pardiso"];
+
 NullSpaceProjection[matL_, x_, sol_] := x - Transpose[matL] . sol[matL . x];
 
 
@@ -1333,13 +1372,13 @@ MakeSolver[matL_] := LinearSolve[matL . Transpose[matL], Method->"Pardiso"];
 (*GetDiffusionValues*)
 
 
-GetDiffusionValues[tens_,vec_]:=Mean[GetDiffC[tens,vec]]
+GetDiffusionValues[tens_,vec_]:=Mean[GetDiffC[tens, vec]]
 
 
-GetDiffC = Compile[{{t,_Real,2},{v,_Real,1}},Block[{vv},
+GetDiffC = Compile[{{t,_Real,2}, {v,_Real,1}}, Block[{vv},
 	vv = Dot[v, v];
 	If[vv == 0., 0., v . t . v/vv]
-],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1349,11 +1388,11 @@ GetDiffC = Compile[{{t,_Real,2},{v,_Real,1}},Block[{vv},
 GetObjectiveGradient[tens_, vec_, obj_] := -obj . Flatten[GetGradC[tens, vec]]
 
 
-GetGradC=Compile[{{t, _Real, 2}, {v, _Real, 1}}, Block[{vv, tv},
+GetGradC = Compile[{{t, _Real, 2}, {v, _Real, 1}}, Block[{vv, tv},
 	vv = Dot[v, v];
 	tv = Dot[t, v];
 	If[vv == 0., v, ((v . tv)v - (vv tv))/vv^2]
-],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1376,15 +1415,15 @@ MakeSolutionMaps[{con_, amp_}, {coorCent_, coorGrad_, dim_}]:=Block[{
 		c2 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[2]]]->con[[l1+1;;]]/cc], {y+1, x}], {y, x}];
 		amap = SparseArray[Thread[coorCent->amp/ca], {y, x}];
 		{c1,c2,amap}
+		,
 		(*reconstruct for 3D maps *)
-		,3,
+		3,
 		{l1, l2, l3}=Length/@coorGrad;
 		{z, y, x}=dim;
 		c1 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[1]]]->con[[;;l1]]/cc], {z, y, x+1}], {z, y, x}];
 		c2 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[2]]]->con[[l1+1;;l1+l2]]/cc], {z, y+1, x}], {z, y, x}];
 		c3 = PadRight[SparseArray[Thread[Ceiling[coorGrad[[3]]]->con[[l1+l2+1;;l1+l2+l3]]/cc], {z+1, y, x}], {z, y, x}];
 		amap = SparseArray[Thread[coorCent->amp/ca], {z, y, x}];
-
 		{c1, c2, c3, amap}
 	]
 ]
@@ -1401,23 +1440,30 @@ ReconstrucTensor[vecN1_, {valI_, vecI_}, sel_, coor_] := Block[{
 	vec = SelectVector[vecI, sel][[All, 2]];
 	val = SelectVector[valI, sel];
 	tensN = TensVec@MakeTens[vecN1, vec, val];
-	
+
 	cors = Pick[coor[[1]], coor[[2]], 1];
 	dim = Drop[Dimensions@valI, -1];
 	SparseArray[SparseArray[Thread[cors -> #], dim, 0.]& /@ tensN]
 ]
 
 
-MakeTens= Compile[{{vecN1, _Real, 1}, {vec2, _Real, 1}, {val, _Real, 1}}, Block[{
+(* ::Subsubsection::Closed:: *)
+(*MakeTens*)
+
+
+MakeTens = Compile[{{vecN1, _Real, 1}, {vec2, _Real, 1}, {val, _Real, 1}}, Block[{
 		vecN2, vecN3, matE, matL
 	},
+
 	(*make vec 2 perpendicualr and find vec 3*)
 	vecN2 = Normalize[vec2 - (vec2 . vecN1) vecN1];
 	vecN3 = Cross[vecN1, vecN2];
+
 	(*reconstruct the tensor*)
 	matE = {vecN1, vecN2, vecN3};
 	matL = {{val[[1]], 0., 0.}, {0., val[[2]], 0.}, {0., 0., val[[3]]}};
 	Transpose[matE] . matL . matE
+
 ], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
 

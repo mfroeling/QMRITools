@@ -1351,7 +1351,7 @@ GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}, inf__?BooleanQ] := 
 	i = Sqrt[d0 tau] (*d0 / (2 kappa)*);
 	(*surface to volume ratio*)
 	sv = 2 zeta / (Sqrt[d0] Sqrt[tau]) (*d zeta/i*);
-	
+
 	(*cell size*)
 	a = 2 Sqrt[d0] Sqrt[tau] / zeta (*4 / sv*);
 	(*membrane permiability*)
@@ -1397,7 +1397,7 @@ FitRPBMFunction[tms_, dat_, fix_, fs_] := Block[{
 	vars = {d0, tau, zeta};
 	ran = {{0.5, 2.5}, {100., 1000.}, {0.25, 2.5}};
 	cons = #[[2, 1]] < #[[1]] < #[[2, 2]] & /@ Transpose[{vars, ran}];
-	
+
 	(*check if there are fixed variables*)
 	If[fix === {}, init = vars,
 		(*if there is a fix variable drop it from the fit input*)
@@ -1410,7 +1410,7 @@ FitRPBMFunction[tms_, dat_, fix_, fs_] := Block[{
 			cons = cons[[sel]];
 		]
 	];
-	
+
 	(*perform the fitting*)
 	Last@Quiet@FindMinimum[{ErrorRPBM[tms, dat, vars], cons}, init, 
 		AccuracyGoal -> 6, PrecisionGoal -> 6, MaxIterations -> 15]
@@ -1470,7 +1470,7 @@ FitRPBMDictionary[sig_, {pars_, sim_}, snr_, d0i_] := Block[{
 	(*generate random noise in a repeatable way and add to dictionary*)
 	SeedRandom[12345];
 	simN = sim + RandomVariate[NormalDistribution[0, 1./snr], Dimensions@sim];
-	
+
 	(*look for minimal RMS error in each dictionary and get the corresponding parameter*)
 	Median[RPBMsolFunc[sig, If[d0i > 0., 
 		d0i,
@@ -1637,13 +1637,12 @@ TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]] :=
 
 
 (* Translation correct one slice*)
-TransCorrect[dat_,sh_,dir_,int_] := 
-Module[{data,shift,pos,acpos,out},
+TransCorrect[dat_,sh_,dir_,int_] := Module[{data,shift,pos,acpos,out},
 	(*Transpose the data zo the deformation is always in the "ROW" direction*)
 	If[dir=="COL",
 		data=Transpose[dat];shift=Transpose[sh];,
 		data=dat;shift=sh;
-		];
+	];
 	(*{dims,dimx,dimy}=Dimensions[data];*)
 	(*deformation Correction*)
 	out=MapThread[(
@@ -1651,19 +1650,18 @@ Module[{data,shift,pos,acpos,out},
 		acpos=pos-#1;
 		ListInterpolation[#2,InterpolationOrder->int][Clip[acpos,{1,Length[acpos]}]]
 		(*[{Clip[acpos[[1]],{1,dimx}],Clip[acpos[[2]],{1,dimy}]}]*)
-		)&,{shift,data}];
+	)&,{shift,data}];
 
 	(*If deformation was in the "COL" direction rotate back*)
 	If[dir=="COL",Return[Transpose[Chop[out]]],Return[Chop[out]]]
-	];
+];
 
 
 (* ::Subsubsection::Closed:: *)
 (*FMat*)
 
 
-Fmat[der_,shift_] := 
-Module[{dx,dy,dz,dim,zero,ones,f},
+Fmat[der_,shift_] := Module[{dx,dy,dz,dim,zero,ones,f},
 	{dx,dy,dz}=der;
 	dim=Dimensions[dx];
 	zero=ConstantArray[0,dim];
@@ -1674,8 +1672,8 @@ Module[{dx,dy,dz,dim,zero,ones,f},
 			f=Transpose[{{dx+1,dy,dz},{zero,ones,zero},{zero,zero,ones}},{4,5,1,2,3}]
 			],
 		$Failed
-		]
-	];
+	]
+];
 
 
 (* ::Subsubsection::Closed:: *)
