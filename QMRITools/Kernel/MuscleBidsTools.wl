@@ -193,14 +193,15 @@ bidsName = {"sub", "ses", "vol", "stk", "chunk", "rep", "acq" ,"part", "type", "
 bidsClass = {"Volume", "Volumes", "Stacks", "Repetitions", "Chunks", "Acquisitions", "Mixed"};
 
 
-dataToLog =If[KeyExistsQ[#, $Failed], 
-	"Wrong data description: " <> #[$Failed], 
-	StringJoin[ToString[#[[1]]] <> ": " <> ToString[#[[2]]] <> "; " & /@ Normal[KeyDrop[#, {"Process", "Merging", "Segment", "Tractography"}]]]
-]&;
+dataToLog[data_] := If[KeyExistsQ[data, $Failed], 
+    "Wrong data description: " <> data[$Failed], 
+    StringRiffle[KeyValueMap[ToString[#1] <> ": " <> ToString[#2] &, 
+        KeyDrop[data, {"Process", "Merging", "Segment", "Tractography"}]], "; "]
+]
 
 
-WipStrip = StringReplace[#, {"WIP "->"", "WIP_"->"", "wip "->"", "wip_"->""}]&;
-StringStrip = StringReplace[#, {"-"->"", "_"->"", "."->"", " "->""}]&;
+WipStrip = StringDelete[#, {"WIP ", "WIP_", "wip ", "wip_"}, IgnoreCase -> True] &;
+StringStrip = StringDelete[#, {"-", "_", ".", " "}] &;
 
 
 compress = $OperatingSystem === "Windows";
@@ -212,18 +213,17 @@ compress = $OperatingSystem === "Windows";
 
 SyntaxInformation[PartitionBidsName] = {"ArgumentsPattern" -> {_}};
 
-PartitionBidsName[list_?ListQ] := PartitionBidsName/@list
+PartitionBidsName[list:{_?StringQ ..}] := PartitionBidsName/@list
 
 PartitionBidsName[string_?StringQ] := Block[{parts, entity, suffix, suf},
-	(*first split on "_" then on "-"*)
-	parts = StringSplit[#, "-"]& /@ StringSplit[string, "_"];
-	(*if length is 2 its entity else it is suffix*)
-	entity = Rule@@#& /@ Select[parts, Length[#]===2&];
-	suf = Flatten[Select[parts, Length[#]=!=2&]];
+	(*split entities and suffixes*)
+	parts = StringSplit[string, "_"];
+	entity = StringCases[#, k__ ~~ "-" ~~ v__ :> k -> v] & /@ parts;
+	suf = Select[parts, ! StringContainsQ[#, Flatten@Keys@entity] &];
 
 	(*see if type is part of suffixes*)
 	suf = Which[
-		suf==={}, {"suf"->{}},
+		suf==={}, {"parts"->{}},
 		MemberQ[Keys[bidsTypes], First@suf], {"type"->First@suf,"suf"->Rest@suf},
 		True, {"suf"->suf}
 	];
@@ -239,7 +239,7 @@ PartitionBidsName[string_?StringQ] := Block[{parts, entity, suffix, suf},
 
 SyntaxInformation[PartitionBidsFolderName] = {"ArgumentsPattern" -> {_}};
 
-PartitionBidsFolderName[fol_?ListQ] := PartitionBidsFolderName/@fol
+PartitionBidsFolderName[fol:{_?StringQ ..}] := PartitionBidsFolderName/@fol
 
 PartitionBidsFolderName[fol_?StringQ] := {
 	First@StringSplit[fol, "sub-"], 
@@ -253,12 +253,12 @@ PartitionBidsFolderName[fol_?StringQ] := {
 
 SyntaxInformation[GenerateBidsName] = {"ArgumentsPattern" -> {_}};
 
-GenerateBidsName[list_?ListQ] := GenerateBidsName/@list
+GenerateBidsName[list:{_?AssociationQ ..}] := GenerateBidsName/@list
 
-GenerateBidsName[parts_?AssociationQ] := StringJoin[Riffle[Select[Join[
+GenerateBidsName[parts_?AssociationQ] := StringRiffle[Join[
 	BidsString[parts, {"sub", "ses", "vol", "stk", "rep", "chunk", "acq", "part"}], 
 	BidsValue[parts, {"type", "suf"}]
-], # =!= ""&], "_"]]
+], "_"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -267,11 +267,15 @@ GenerateBidsName[parts_?AssociationQ] := StringJoin[Riffle[Select[Join[
 
 SyntaxInformation[GenerateBidsFolderName] = {"ArgumentsPattern" -> {_, _.}};
 
-GenerateBidsFolderName[fol_?StringQ, list_?ListQ] := GenerateBidsFolderName[fol,#]& /@ list
+GenerateBidsFolderName[parts_?AssociationQ]:=GenerateBidsFolderName["", parts]
 
-GenerateBidsFolderName[fol_?StringQ, parts_?AssociationQ] := FileNameJoin[Select[{
+GenerateBidsFolderName[fol_?StringQ, list:{_?AssociationQ ..}] := GenerateBidsFolderName[fol,#]& /@ list
+
+GenerateBidsFolderName[{fol_?StringQ, parts_?AssociationQ}] := GenerateBidsFolderName[fol, parts]
+
+GenerateBidsFolderName[fol_?StringQ, parts_?AssociationQ] := FileNameJoin[{
 	fol, BidsString[parts, "sub"], BidsString[parts, "ses"]
-}, # =!= ""&]]
+}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -280,27 +284,26 @@ GenerateBidsFolderName[fol_?StringQ, parts_?AssociationQ] := FileNameJoin[Select
 
 SyntaxInformation[GenerateBidsFileName] = {"ArgumentsPattern" -> {_, _.}};
 
-GenerateBidsFileName[list_?ListQ] := GenerateBidsFileName["", #]& /@ list
+GenerateBidsFileName[list:{_?AssociationQ ..}] := GenerateBidsFileName["", #]& /@ list
 
-GenerateBidsFileName[fol_?StringQ, list_?ListQ] := GenerateBidsFileName[fol, #]& /@ list
+GenerateBidsFileName[fol_?StringQ, list:{_?AssociationQ ..}] := GenerateBidsFileName[fol, #]& /@ list
 
 GenerateBidsFileName[parts_?AssociationQ] := GenerateBidsFileName["", parts]
 
-GenerateBidsFileName[fol_?StringQ, parts_?AssociationQ] := FileNameJoin[Select[{
-	(*folders*)
-	GenerateBidsFolderName[fol, parts], BidsType[parts], 
-	(*filename*)
-	GenerateBidsName[parts]
-}, # =!= ""&]]
+GenerateBidsFileName[{fol_?StringQ, parts_?AssociationQ}] := GenerateBidsFileName[fol, parts]
+
+GenerateBidsFileName[fol_?StringQ, parts_?AssociationQ] := FileNameJoin[{
+	GenerateBidsFolderName[fol, parts], BidsType[parts], GenerateBidsName[parts]
+}]
 
 
 (* ::Subsubsection::Closed:: *)
 (*BidsType*)
 
 
-BidsType[type_?StringQ] := bidsTypes[type] /. {Missing[___]->"miss"} 
+BidsType[type_?StringQ] := Lookup[bidsTypes, type, "miss"]
 
-BidsType[parts_?AssociationQ] := bidsTypes[parts["type"]] /. {Missing[___]->"miss"} 
+BidsType[parts_?AssociationQ] := Lookup[bidsTypes, parts["type"], "miss"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -309,7 +312,7 @@ BidsType[parts_?AssociationQ] := bidsTypes[parts["type"]] /. {Missing[___]->"mis
 
 BidsValue[parts_, val_?ListQ] := Flatten[BidsValue[parts, #] &/@ val]
 
-BidsValue[parts_, val_?StringQ] := parts[val]/. {Missing[___] -> ""} 
+BidsValue[parts_, val_?StringQ] := Lookup[parts, val, Nothing]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -320,7 +323,7 @@ BidsString[parts_, val_?ListQ] := BidsString[parts, #] &/@ val
 
 BidsString[parts_, val_?StringQ] := Block[{str},
 	str = BidsValue[parts, val];
-	If[str==="", "", val<>"-"<>str]
+	If[StringQ[str], val<>"-"<>str, str]
 ]
 
 
@@ -332,19 +335,19 @@ BidsString[parts_, val_?StringQ] := Block[{str},
 (*SelectBids*)
 
 
-SelectBids[folder_?ListQ, entity_?StringQ] := Flatten[SelectBids[#,entity]&/@folder]
+SelectBids[folder_?ListQ, entity_?StringQ] := Catenate[SelectBids[#, entity]& /@ folder]
 
 SelectBids[folder_?StringQ, entity_?StringQ] := Block[{
 		baseName, start, end, what
 	},
 	baseName = StringStartsQ[FileNameTake[folder], #]&;
+	
 	start = Which[baseName["ses-"], 3, baseName["sub-"], 2, True, 1];
 	end = Switch[entity, "sub", 1, "ses", 2, _, 3];
 	what = {"sub-", "ses-", entity}[[start;;end]];
-	Fold[SelectBidsI, folder, what]
-]
 
-SelectBidsI[fol_, what_] := Select[FileNames[All, fol], DirectoryQ[#] && StringStartsQ[FileNameTake[#], what]&]
+	Select[Catenate[{Fold[FileNames[#2 <> "*", #1, {1}] &, folder, what]}], DirectoryQ]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -353,7 +356,7 @@ SelectBidsI[fol_, what_] := Select[FileNames[All, fol], DirectoryQ[#] && StringS
 
 SyntaxInformation[SelectBidsFolders] = {"ArgumentsPattern" -> {_, _}};
 
-SelectBidsFolders[fol_?ListQ, tag_] := SelectBids[fol, tag]
+SelectBidsFolders[fol_, tag_] := SelectBids[fol, tag]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -371,7 +374,7 @@ SelectBidsSubjects[fol_] := SelectBids[fol, "sub"]
 
 SyntaxInformation[SelectBidsSessions] = {"ArgumentsPattern" -> {_}};
 
-SelectBidsSessions[fol_?ListQ] := SelectBids[fol, "ses"]
+SelectBidsSessions[fol_] := SelectBids[fol, "ses"]
 
 
 (* ::Subsection:: *)
@@ -420,7 +423,8 @@ defaultConfig = <|
 		"TractSeed" -> 0.66,
 		"TractStep" -> "Automatic",
 		"SegmentLength" -> {15, 500},
-		"BoneLabel" -> 100
+		"BoneLabel" -> 100,
+		"HarmonicDenoise" -> False
 	|>,
 	"Options" -> <|
 		"MaskErosion" -> True,
@@ -433,27 +437,28 @@ defaultConfig = <|
 (*ConfigLookup*)
 
 
+ConfigLookup[config_?StringQ, key_?StringQ] := ConfigLookup[GetConfig[config], key]
+
+ConfigLookup[config_?AssociationQ, key_?StringQ] := Lookup[config, key, defaultConfig[key]]
+
 ConfigLookup[config_?StringQ, key_?StringQ, def_?StringQ] := ConfigLookup[GetConfig[config], key, def]
 
 ConfigLookup[config_?AssociationQ, key_?StringQ, def_?StringQ] := Lookup[ConfigLookup[config, key], def, defaultConfig[key, def]];
-
-ConfigLookup[config_?StringQ, key_?StringQ] := GetConfig[GetConfig, key]
-
-ConfigLookup[config_?AssociationQ, key_?StringQ] := Lookup[config, key, defaultConfig[key]]
 
 
 (* ::Subsubsection::Closed:: *)
 (*CheckConfig*)
 
 
-CheckConfig[infol_?StringQ, outfol_?StringQ] := Block[{conf, nam},
-	nam = GenerateBidsName[PartitionBidsFolderName[outfol][[-1]]];
+CheckConfig[infol_?StringQ, outfol_?StringQ] := Block[{conf, nam, path},
+	nam = GenerateBidsName[Last@PartitionBidsFolderName[outfol]];
+	path = FileNameJoin[{outfol, nam<>"_config.json"}];
 	conf = Quiet@GetConfig[infol, nam];
-	debugBids[FileNameJoin[{outfol, nam<>"_config.json"}]];
+	
+	debugBids[path];
 
 	If[conf =!= $Failed,
-		Export[FileNameJoin[{outfol, nam<>"_config.json"}], conf];
-		{True, conf}, 
+		Export[path, conf];	{True, conf}, 
 		{False, <||>}
 	]
 ]
@@ -465,32 +470,17 @@ CheckConfig[infol_?StringQ, outfol_?StringQ] := Block[{conf, nam},
 
 GetConfig[folder_?StringQ] := GetConfig[folder, ""]
 
-GetConfig[folder_?StringQ, nam_?StringQ] := Block[{file},
-	(*normal config*)
-	If[DirectoryQ[folder],
-		(*normal config*)
-		file = FileNameJoin[{folder,"config.json"}];
-		If[FileExistsQ[file],
-			Import[file, "RawJSON"],
-			(*subject name config*)
-			file = FileNameJoin[{folder, nam<>"_config.json"}];
-			If[FileExistsQ[file],
-				Import[file, "RawJSON"],
-				Message[GetConfig::conf];
-				Return[$Failed]
-			]
-		],
-		If[FileExistsQ[folder], 
-			Import[folder, "RawJSON"],
-			Return[$Failed]
-		]
+GetConfig[folder_?StringQ, name_?StringQ] := Block[{file},
+	file = SelectFirst[{
+		folder,
+		FileNameJoin[{folder, "config.json"}],
+		FileNameJoin[{folder, name <> "_config.json"}]
+    }, FileExistsQ[#] && ! DirectoryQ[#] &];
+	If[!MissingQ[file], 
+		Import[file, "RawJSON"],
+		Message[GetConfig::conf]; $Failed
 	]
 ]
-
-(*
-{"Merging", {Process, Moveing, Target}, {Overlap, Split, Reverse, Motion}}
-*)
-
 
 
 (* ::Subsubsection::Closed:: *)
@@ -501,19 +491,10 @@ MergeConfig[assoc_?ListQ, replace_?AssociationQ] := Normal@MergeConfig[Associati
 
 MergeConfig[assoc_?AssociationQ, replace_?ListQ] := MergeConfig[assoc, Association@replace]
 
-MergeConfig[assoc_?AssociationQ, replace_?AssociationQ] := Block[{assocNew }, 
-	assocNew = Association[assoc];
-	KeyValueMap[Function[{key, subAssoc},
-		assocNew = If[AssociationQ[subAssoc],
-			If[KeyExistsQ[assocNew, key],
-				ReplacePart[assocNew, key -> MergeConfig[assocNew[key], subAssoc]],
-				Append[assocNew, key -> subAssoc]],
-			If[KeyExistsQ[assocNew, key],
-				ReplacePart[assocNew, key -> subAssoc],
-				Append[assocNew, key -> subAssoc]]
-		]
-	], replace];
-	assocNew
+MergeConfig[assoc_?AssociationQ, replace_?AssociationQ] := Merge[{assoc, replace}, Replace[{
+	{b_Association, p_Association} :> MergeConfig[b, p],(*Both are Association, go deeper*)
+	{_, p_} :> p,(*Overwrite with patch if not both Associations*)
+	{v_} :> v (*Key exists in only one Association*)}]
 ]
 
 
@@ -579,29 +560,33 @@ ViewConfig[config_?AssociationQ] := If[Length[config]>10, MenuView, TabView][# -
 ]& /@ Keys[config], ControlPlacement -> Left]
 
 
-MakeTable[association_] := Block[{value, bcol},
+MakeTable[association_] := Block[{key, value, bcol},
 	bcol = If[$VersionNumber < 14.3, White,
 		LigthDarkSwitched[White, Darker@Gray]
 	];
-	Grid[{#, 
-		value = association[#];
+	Grid[KeyValueMap[{
+		Style[key = #1,Bold], 
+		value = #2;
 		Which[
 			AssociationQ[value], MakeTable[value],
-			ListQ[value] && Length[value] > 0, If[AssociationQ[First[value]],
-				Column[MakeTable /@ value],
-				If[ListQ[value],
-					Which[
-						Length[value] && ArrayDepth == 2 > 10, Grid[value],
-						Length[value] > 6, Column[Row[#, ", "]&/@Partition[value, 6, 6, 1,{}]],
-						VectorQ[value], Row[value, ", "], 
-						True, Column[value]],
-					value]
-				], 
+			ListQ[value] && Length[value] > 0, Which[
+				AssociationQ[First[value]], Column[MakeTable /@ value],
+				MatchQ[value, {__String}] && Length[value] > 6, Column[Row[#, ", "]&/@Partition[value, 6, 6, 1,{}]],
+				VectorQ[value], Row[value, ", "], 
+				key==="QuantImages", TabView[#[[1]] -> MakeTable[Association[#[[2]]]] & /@ ProcessImage[value], ControlPlacement -> Left],
+				True, Column@value
+			], 
 			True, value
 		]
-	} & /@ Keys[association], Frame -> All, Alignment -> Left, 
-	Background -> {{Gray, {bcol}}, bcol}, Spacings -> {1, 0.5}]
+	} &, association], 
+	Frame -> All, Alignment -> Left, Background -> {{Gray, {bcol}}, bcol}, Spacings -> {1, 0.5}]
 ]
+
+
+ProcessImage[an_] := Normal[GroupBy[an, Most[#[[1]]] &, <|#[[1, -1]] -> <|
+	"Colormap [Range]" -> StringRiffle@Flatten@{If[Length[#] >= 2, #[[2]], "Automatic"], "[", If[Length[#] >= 3, #[[3]], "Automatic"], "]"},
+	"Label" -> StringRiffle@Flatten@If[Length[#] >= 4, {#[[4, 1]], "  ",#[[4, -1]], "  ", #[[4, 2]]}, {"Automatic"}]|>
+|> & /@ # &]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -880,6 +865,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 		"BidsDcmToNii", ResetLog[]; Select[FileNames[All, inFol], DirectoryQ],
 		_, SelectBids[inFol, "ses"]
 	];
+
 	subs = If[subs===All||subs==="All", fols, 
 		Select[fols, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#, met]]&]
 	];
@@ -1560,7 +1546,7 @@ MuscleBidsProcess[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] 
 MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsProcess", opts]
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*MuscleBidsProcessI*)
 
 
@@ -1571,7 +1557,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 		nfilep, jfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
 		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk, 
 		phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, ivimpar, int, dint, suffix, types,
-		flip, per, bmat, magph, split, ivim, shift, t2
+		flip, per, bmat, magph, split, ivim, shift, t2, gradField, meanV, coor, valV
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -1919,12 +1905,12 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 						debugBids[{"Registration function", regF}];
 						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, 
 							PrintTempDirectory->False, MethodReg -> "bspline", BsplineSpacing -> {30, 30, 30},
-							BsplineDirections -> {1, 1, 1}, AffineDirections -> {1, 1, 1}
+							BsplineDirections -> {0.5, 1, 1}, InterpolationOrderReg ->1
 						];
 
 						(*anisotropic filtering*)
 						(*-----*)AddToLog["Starting anisotropic data smoothing", 4];
-						filt = AnisoFilterData[reg, diffvox];
+						filt = Unitize[reg] P2SDenoise[reg, mask];
 
 						(*export all the calculated data*)
 						(*----*)AddToLog["Exporting the calculated data to:", 4];
@@ -1939,7 +1925,8 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 
 						(*export the checkfile*)
 						MakeCheckFile[outfile<>"_prep", Sort@Join[
-							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperties"->set},
+							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, 
+							"Outputs" -> outTypes, "SetProperties"->set},
 							Normal@KeyTake[json, keys]
 						]];
 
@@ -1990,34 +1977,11 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							data = MaskData[data, mask];
 							(*get bvalues and mean data*)
 							{mean, valU} = MeanBvalueSignal[data, val];
-							
-							(*initialize IVIM fit*)
-							ivim = ConfigLookup[datType, "Process", "IVIMCorrection"];
-							settingPro = Join[settingPro, <|"IVIMCorrection"->ivim|>];
-
-							If[ivim,
-								(*-----*)AddToLog["Starting ivim calculation", 4];
-								(*estimatie inti values*)
-								fiti = IVIMCalc[MeanSignal[mean], valU, {1, .05, .003, .015}, IVIMFixed->True];
-								(*perform IVIM correction*)
-								{s0i, fri, adci, pD} = Quiet@IVIMCalc[mean, valU, fiti, IVIMConstrained->False, Parallelize->True, 
-									MonitorIVIMCalc->False, IVIMFixed->True];
-								fri = Clip[fri, {0,1}, {0,1}];
-								adci = 1000 adci;
-								resi = Quiet@IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
-								data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
-								ivimpar = {"adci", "fri", "s0i"}
-								,
-								(*-----*)AddToLog["Skipping IVIM correction", 4];
-								ivimpar = {}; 
-							];
 
 							(*calculate tensor from corrected data*)
-							(*-----*)AddToLog["Starting tensor calculation", 4];
 							coil = ConfigLookup[datType, "Process", "GradientCorrection"];
 							settingPro = Join[settingPro, <|"GradientCorrection"->coil|>];
 							off = Lookup[json, "Offset", False];
-
 							coil = If[!StringQ[coil], 
 								False,
 								(*-----*)AddToLog[{"Using Gradient correction: ", coil}, 4];
@@ -2029,6 +1993,40 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 								]
 							];
 
+							(*initialize IVIM fit*)
+							ivim = ConfigLookup[datType, "Process", "IVIMCorrection"];
+							settingPro = Join[settingPro, <|"IVIMCorrection"->ivim|>];
+
+							If[ivim,
+								(*-----*)AddToLog["Starting ivim calculation", 4];
+								If[coil===False,
+									(*use normal b-value*)
+									fiti = IVIMCalc[MeanSignal[mean], valU, {1, .05, .003, .015}, IVIMFixed->True];
+									{s0i, fri, adci, pD} = Quiet@IVIMCalc[mean, valU, fiti, IVIMConstrained->False, 
+										Parallelize->True, MonitorIVIMCalc->False, IVIMFixed->True];
+									,
+									(*use gradient field corrected b-value*)
+									gradField = GradientCoilTensor[mask, diffvox, off, dint];
+									{meanV, coor} = DataToVector[mean, mask];
+									valV = BVector[val, grad, gradField];
+									valV = Transpose[Mean[Transpose[valV[[All, #]]]] & /@ UniqueBvalPosition[val][[2]]];
+									fiti = IVIMCalc[Mean[meanV], Mean[valV], {1, .05, .003, .015}, IVIMFixed -> True];
+									{s0i, fri, adci, pD} = Quiet@IVIMCalc[meanV, valV, fiti, IVIMConstrained -> False, 
+										Parallelize -> True, MonitorIVIMCalc -> False, IVIMFixed -> True];
+									{s0i, fri, adci, pD} = VectorToData[#, coor] & /@ {s0i, fri, adci, pD};
+								];
+
+								fri = Clip[fri, {0,1}, {0,1}];
+								adci = 1000 adci;
+								resi = Quiet@IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
+								data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
+								ivimpar = {"adci", "fri", "s0i"}
+								,
+								(*-----*)AddToLog["Skipping IVIM correction", 4];
+								ivimpar = {}; 
+							];
+
+							(*-----*)AddToLog["Starting tensor calculation", 4];
 							(*check if field map is needed in output*)
 							{tens, s0, out} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
 								Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
@@ -2049,7 +2047,7 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 							debugBids[Column[{json, settingPro}]];
 
 							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
-								"l1", "l2", "l3", "md",	"fa", "rd"}, coil, ivimpar];
+								"l1", "l2", "l3", "md", "fa", "rd"}, coil, ivimpar];
 
 							(
 								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
@@ -2782,11 +2780,11 @@ MuscleBidsTractography[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, o
 
 
 MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Block[{
-		tracto, tractType, tractSeg, tractStopLab, tractStopVal, tractStopLabNam, trkFile,
+		tracto, tractType, tractSeg, tractStopLab, tractStopVal, trkFile,
 		tractTypeLab, fol, parts, checkFile, outfile, seed, lenS, segBone, tractSegLab,
 		datfile, stopfile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
-		segfile, muscles, mlabs, mus, bones, con, leng, dens, flip, per, duplicate, key, keyS,
-		voxs, dims
+		segfile, muscles, mlabs, mus, bones, context, leng, dens, flip, per, duplicate, key, keyS,
+		voxs, dims, harm, tensh, con, amp, trkFileF
 	}, 
 
 	debugBids["Starting MuscleBidsTractographyI"];
@@ -2797,16 +2795,22 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 	duplicate = KeyExistsQ[datType, "Key"];
 	key = If[duplicate, "stk"->StringStrip@datType["Key"], Nothing];
 
-	(* Extract tractography data *)
+	(* Extract tractography settings*)
 	tracto = datType["Tractography"]; 
-
-	(* Check if tractography is specified *)
 	If[tracto===Missing["KeyAbsent", "Tractography"],
 		(*-----*)AddToLog[{"No tractography defined for this data"}, 3];
 		Return[];
 	];
 
-	(* Extract flip and permutation settings*)
+	(* Extract tractography target, segmentation and stopping criteria *)
+	tractType = tracto["Target"];
+	tractSeg = tracto["Segmentation"];
+	{tractStopLab, tractStopVal} = Transpose@tracto["Stopping"];
+	(* Ensure tractStopLab and tractStopVal are lists *)
+	If[ArrayDepth[tractStopLab]===1, tractStopLab = {tractStopLab}];
+	If[ArrayDepth[tractStopVal]===1, tractStopVal = {tractStopVal}];
+
+	(* Extract tractography settings*)
 	{flip, per} = ConfigLookup[datType, "Tractography", "FlipPermute"];
 	len = ConfigLookup[datType, "Tractography", "TractLength"];
 	ang = ConfigLookup[datType, "Tractography", "TractAngle"];
@@ -2814,28 +2818,20 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 	seed = ConfigLookup[datType, "Tractography", "TractSeed"];
 	lenS = ConfigLookup[datType, "Tractography", "SegmentLength"];
 	segBone = ConfigLookup[datType, "Tractography", "BoneLabel"];
+	harm = ConfigLookup[datType, "Tractography", "HarmonicDenoise"];
 
-	(* Extract tractography target, segmentation and stopping criteria *)
-	tractType = tracto["Target"];
-	tractSeg = tracto["Segmentation"];
-	{tractStopLab, tractStopVal} = Transpose@tracto["Stopping"];
-
-	(* Ensure tractStopLab and tractStopVal are lists *)
-	If[ArrayDepth[tractStopLab]===1, tractStopLab = {tractStopLab}];
-	If[ArrayDepth[tractStopVal]===1, tractStopVal = {tractStopVal}];
-
-	(* Generate labels for tractStopLab and tractType *)
-	tractStopLabNam = StringRiffle[#, "_"]&/@tractStopLab;
-	tractTypeLab = StringRiffle[tractType, "_"];
-	tractSegLab = StringRiffle[tractSeg, "_"];
-
-	(* Partition the input folder name *)
+	(* Make the naming function and files*)
 	{fol, parts} = PartitionBidsFolderName[foli];
-
+	If[duplicate, keyS = "stk"->StringStrip@First[tractSeg]; tractSeg = Rest[tractSeg];, keyS = Nothing;];
 	trkFile = GenerateBidsFileName[folo, <|parts, key, "type" -> First[tractType], "suf" -> Join[tractType[[2;;2]], {"trk"}]|>]<># &;
+	datfile = GenerateBidsFileName[fol, <|parts, key, "type" -> First[tractType], "suf" -> Rest[tractType]|>]<>".nii";
+	stopfile = GenerateBidsFileName[fol, <|parts, key, "type" -> First[#], "suf" -> Rest[#]|>]<>".nii"&/@tractStopLab;
+	segfile = GenerateBidsFileName[fol, <|parts, keyS, "type" -> First[tractSeg], "suf" -> Rest[tractSeg]|>]<>".nii";
 	checkFile = trkFile[""];
+	debugBids[Column@{trkFile[".trk"], datfile, stopfile, segfile, checkFile}];
 
 	(* If tractography and segmentation is already done, log the event *)
+	tractTypeLab = StringRiffle[tractType, "_"];
 	If[CheckFile[checkFile, "done", verCheck],
 		(*----*)AddToLog[{"Tractography and segmentation already done for:", tractTypeLab}, 3];
 		Return[]
@@ -2855,10 +2851,6 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 		(*----*)AddToLog[{"Starting the whole volume tractography"}, 3, True];
 		(*----*)AddToLog[{"The type that will be tracted is: ", tractTypeLab}, 4];
 
-		(* Generate stop and data file names *)
-		datfile = GenerateBidsFileName[fol, <|parts, key, "type" -> First[tractType], "suf" -> Rest[tractType]|>]<>".nii";
-		stopfile = GenerateBidsFileName[fol, <|parts, key, "type" -> First[#], "suf" -> Rest[#]|>]<>".nii"&/@tractStopLab;
-
 		(* Check if the tensor file and stop files exist *)
 		Which[
 			!NiiFileExistQ[datfile],
@@ -2866,27 +2858,27 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 			,
 			!And@@(NiiFileExistQ/@stopfile),
 			(*----*)AddToLog[{"Not all stop files exist not exist", stopfile}, 4];
+			
 			,
 			True,
 			(* If all files exist, proceed with the tractography processing*)
 
 			(*----*)AddToLog[{"Importing the needed data"}, 4];
 			{tens, vox} = ImportNii[datfile];
-			tens = Transpose@ToPackedArray@N@Chop@tens;
+			tens = Transpose@ToPackedArray@N@tens;
 			dim = Rest@Dimensions@tens;
 
 			(* Import stop files *)
 			stop = (
-				{stop, voxs } =ImportNii[#];
+				{stop, voxs} =ImportNii[#];
 				debugBids[{voxs, vox}];
 				If[voxs=!=vox, RescaleData[stop, {voxs, vox}], stop]
-			)&/@stopfile;
-			debugBids[Dimensions/@{stop, tens}];
+			)& /@ stopfile;
 			stop = Transpose[{stop, tractStopVal}];
-
-			(*----*)AddToLog[{"Starting the whole volume tractography"}, 4];
+			debugBids[Dimensions/@{stop, tens}];
 
 			(* Perform tractography *)
+			(*----*)AddToLog[{"Starting the whole volume tractography"}, 4];
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
 				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", 
 				MaxSeedPoints -> If[seed<1, Scaled[seed], seed], 
@@ -2898,6 +2890,42 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 			(*-----*)AddToLog[{"Exporting the whole volume tractography"}, 4];
 			ExportTracts[trkFile[".trk"], tracts, vox, dim, seeds];
 
+			(*perform harmonic denoising if needed*)
+			Which[
+				!NiiFileExistQ[segfile] && harm,
+				(*----*)AddToLog[{"The segmentation file does not exist which is needed for harmonic denoise: ", segfile}, 4];
+				,
+				harm,
+				(*-----*)AddToLog[{"Performing harmonic tensor denoising"}, 4];
+				(* get the segmentation data *)			
+				{seg, voxs} = ImportNii[segfile];
+				seg = RescaleSegmentation[seg, {voxs, vox}];
+
+				{muscles, mlabs} = SelectSegmentations[seg, Range[segBone], False];
+				{tensh, con, amp} = HarmonicDenoiseTensor[tens, seg, vox, mlabs, 
+					MaxIterations -> 250, GradientStepSize -> {2, 1}, Monitor -> False, 
+					RadialBasisKernel -> 12, Parallelize -> True,
+					TensorFlips -> flip, TensorPermutations -> per
+				];
+
+				(*----*)AddToLog[{"Starting the whole volume tractography"}, 4];
+				stop = {{Dilation[Normal@Total@Transpose@muscles, 1], {0.9, 1.1}}};
+				{tracts, seeds} = FiberTractography[tensh, vox, stop,
+					InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", 
+					MaxSeedPoints -> If[seed<1, Scaled[seed], seed], Parallelization -> True,
+					FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> False
+				];
+
+				(* Export the tractography results *)
+				(*-----*)AddToLog[{"Exporting the whole volume tractography"}, 4];
+				(*export stuff*)
+				context = Context[context];
+				tensh = Transpose@tensh;
+				ExportNii[ToExpression[context<>#], vox, 
+					trkFile["_"<>#<>".nii.gz"], CompressNii -> compress]& /@ {"con", "amp", "tensh"};
+				ExportTracts[trkFile["_har.trk"], tracts, vox, dim, seeds];
+			];
+
 			MakeCheckFile[checkFile, Sort@Join[{"Check" -> "track"}, Normal@datType]];
 
 			(*compress the nii files if compression during ExportNii -> False*)
@@ -2908,6 +2936,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 	];
 
 	(* Check if segmentation needs to be performed *)
+	tractSegLab = StringRiffle[tractSeg, "_"];
+	trkFileF = If[harm, trkFile["_har.trk"], trkFile[".trk"]];
 	Which[
 		CheckFile[checkFile, "seg", verCheck],
 		(* If segmentation or tractography is already done, log the event *)
@@ -2921,37 +2951,32 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 		(*----*)AddToLog[{"Starting the tractography segmentation"}, 3, True];
 		(*----*)AddToLog[{"The tractography will be segmented using: ", tractSegLab}, 4];
 
-		If[duplicate, keyS = "stk"->StringStrip@First[tractSeg]; tractSeg = Rest[tractSeg];, keyS = Nothing;];
-		segfile = GenerateBidsFileName[fol, <|parts, keyS, "type" -> First[tractSeg], "suf" -> Rest[tractSeg]|>]<>".nii";
-		debugBids[Column@{trkFile[".trk"], segfile}];
-
 		Which[
 			!NiiFileExistQ[segfile],
 			(*----*)AddToLog[{"The segmentation file does not exist: ", segfile}, 4];
 			,
-			!FileExistsQ[trkFile[".trk"]],
-			(*----*)AddToLog[{"The tracts file does not exist: ", trkFile[".trk"]}, 4];
+			!FileExistsQ[trkFileF],
+			(*----*)AddToLog[{"The tracts file does not exist: ", trkFileF}, 4];
 			,
 			True,
 
 			(*----*)AddToLog[{"Importing the needed data"}, 4];
 			(*import trk file if needed, if processing was done in same run this is skipped*)
-			If[Dimensions[tracts] === {}, {tracts, vox, dim, seeds} = ImportTracts[trkFile[".trk"]]];
+			If[Dimensions[tracts] === {}, {tracts, vox, dim, seeds} = ImportTracts[trkFileF]];
+			(* get the segmentation data *)			
 			{seg, voxs} = ImportNii[segfile];
+			{muscles, mlabs} = SelectSegmentations[seg, Range[segBone], False];
+			bones = Unitize[SelectSegmentations[seg, Range[segBone + 1, segBone + 30]]];
 			dims = Dimensions@seg;
 
 			debugBids[{{dims,voxs, dims voxs}, {dim, vox, dim vox}}];
 
-			(*----*)AddToLog[{"Analyzing the segmentation"}, 4];
-			(*split the segmentations in bones and muscles*)
-			{muscles, mlabs} = SplitSegmentations[SelectSegmentations[seg, Range[segBone]]];
-			mus = Dilation[Normal@Total@Transpose@muscles, 3];
-			bones = Unitize[SelectSegmentations[seg, Range[segBone + 1, segBone + 30]]];
-
-			(*----*)AddToLog[{"Analyzing the tracts"}, 4];
+			(*----*)AddToLog[{"Segmenting the tracts"}, 4];
 			(*perform fitting and segmentations of the tracts*)
-			tracts = SegmentTracts[tracts, muscles, voxs, dims, FiberLengthRange -> lenS, FitTractSegments->True];
+			tracts = SegmentTracts[tracts, muscles, voxs, dims, 
+				FiberLengthRange -> lenS, FitTractSegments->True];
 
+			(*----*)AddToLog[{"Annalyzing the tracts"}, 4];
 			(*Calculate tract parameters*)
 			seed = SeedDensityMap[seeds, voxs, dims];
 			dens = TractDensityMap[tracts, voxs, dims];
@@ -2961,8 +2986,8 @@ MuscleBidsTractographyI[foli_, folo_, datType_, allType_, verCheck_, met_] := Bl
 
 			(*----*)AddToLog[{"Exporting the results and maps"}, 4];
 			(*export stuff*)
-			con = Context[con];
-			ExportNii[ToExpression[con<>#], voxs, 
+			context = Context[context];
+			ExportNii[ToExpression[context<>#], voxs, 
 				trkFile["_"<>#<>".nii.gz"], CompressNii -> compress]& /@ {"dens", "leng", "ang", "seed","curv"};
 			ExportTracts[trkFile["_seg.trk"], tracts, voxs, dims, seeds];
 
@@ -3101,7 +3126,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		True,
 		(*----*)AddToLog[{"Importing and processing the needed segmentation"}, 4];
 		{seg, vox} = ImportNii[segfile];
-		{seg, musNr} = SelectSegmentations[SplitSegmentations[seg], Range[n]];
+		{seg, musNr} = SelectSegmentations[seg, Range[n], False];
 
 		(*----*)AddToLog[{"Calculating the volume of the segmentation"}, 4];
 		vol = SegmentationVolume[seg, vox];
@@ -3142,7 +3167,7 @@ MuscleBidsAnalysisI[foli_, folo_, datDis_, verCheck_, imOut_] := Block[{
 		(*Figure out the tract analysis*)
 		debugBids["tract mask"];
 		If[KeyExistsQ[datDis["Analysis"], "TractBased"],
-			densLab = {If[hasKey, StringStrip@datDis["Analysis", "TractBased"][[1,1]], Nothing], "dwi", "dti", "trk","dens"};
+			densLab = {If[hasKey, StringStrip@datDis["Analysis", "TractBased"][[1,1]], Nothing], "dwi", "dti", "trk", "dens"};
 			densFile = fileName[densLab]<>".nii";
 			trType = Flatten[Thread /@ datDis["Analysis", "TractBased"], 1];
 			trType = Select[trType, MemberQ[anaType, #] &];

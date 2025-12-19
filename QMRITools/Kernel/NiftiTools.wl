@@ -1411,7 +1411,7 @@ ExportBvec[grad_, opts:OptionsPattern[]] := ExportBvec[grad, "", opts]
 ExportBvec[grad_, fil_String, OptionsPattern[]] := Block[{file,grade,grads},
 	file = If[fil == "", FileSelect["FileSave", {"*.bvec"}, "bvec file", WindowTitle -> "Select the destination file"], fil];
 	If[file === Null, Return[]];
-	file = ConvertExtention[file, ".bvec"];
+	file = ConvertExtension[file, ".bvec"];
 
 	grads = grad;
 	grads = If[OptionValue[FlipBvec], {1, 1, -1}RotateLeft[#]&/@grads, grads];

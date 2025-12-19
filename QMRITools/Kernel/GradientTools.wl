@@ -66,6 +66,10 @@ Bmatrix::usage =
 "Bmatrix[bvec, grad] creates bmatrix form grad and bvec in form {-bxx, -byy, -bzz, -bxy, -bxz, -byz ,1}.
 Bmatrix[{bvec, grad}] creates bmatrix form grad and bvec in form {bxx, byy, bzz, bxy, bxz, byz}."
 
+BVector::usage=
+"BVector[bvec, grad, gradField] Calculates the actual b-value based on the gradField. Ghis field is calculated
+by the GradientCoilTensor functions."
+
 BmatrixInv::usage = 
 "BmatrixInv[bm] generates a bvecotr and gradient directions form a given bmatrx.
 BmatrixInv[bm, bvi] generates a bvecotr and gradient directions form a given bmatrx using the given bvalues bvi."
@@ -1330,6 +1334,16 @@ Bmatrix[bvec_?VectorQ, grad_?MatrixQ, OptionsPattern[]] := Switch[
 	]
 ]
 
+
+GradVecConv[grad_, type_] := Block[{gx,gy,gz},
+		{gx,gy,gz} = Transpose[grad];
+		Transpose@Switch[type,
+			1, {gx^2, gy^2, gz^2, 2 gx gy, 2 gx gz, 2 gy gz},
+			2, {gx^4, gy^4, gz^4, 4 gx^3 gy, 4 gx^3 gz, 6 gx^2 gy^2, 12 gx^2 gy gz, 6 gx^2 gz^2, 4 gx gy^3, 12 gx gy^2 gz, 12 gx gy gz^2, 4 gx gz^3, 4 gy^3 gz, 6 gy^2 gz^2, 4 gy gz^3}
+	]
+]
+
+
 Bmatrix[bvec_?VectorQ, grad_?MatrixQ, coilTens_?ArrayQ, OptionsPattern[]] := BmatrixC[bvec, Transpose[grad], coilTens]
 
 
@@ -1339,13 +1353,16 @@ BmatrixC = Compile[{{bv, _Real, 1}, {gt, _Real, 2}, {lmat, _Real, 2}}, Block[{gx
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
-GradVecConv[grad_, type_] := Block[{gx,gy,gz},
-		{gx,gy,gz} = Transpose[grad];
-		Transpose@Switch[type,
-			1,{gx^2,gy^2,gz^2,2 gx gy,2 gx gz,2 gy gz},
-			2,{gx^4, gy^4, gz^4, 4 gx^3 gy, 4 gx^3 gz, 6 gx^2 gy^2, 12 gx^2 gy gz, 6 gx^2 gz^2, 4 gx gy^3, 12 gx gy^2 gz, 12 gx gy gz^2, 4 gx gz^3, 4 gy^3 gz, 6 gy^2 gz^2, 4 gy gz^3}
-	]
-]
+(* ::Subsubsection::Closed:: *)
+(*B-vector*)
+
+
+BVector[bvec_?VectorQ, grad_?MatrixQ, coilTens_?ArrayQ, OptionsPattern[]] := BVectorC[bvec, Transpose[grad], coilTens]
+
+BVectorC = Compile[{{bv, _Real, 1}, {gt, _Real, 2}, {lmat, _Real, 2}}, Block[{gx, gy, gz}, 
+	{gx, gy, gz} = lmat . gt;
+    bv gx^2 + bv gy^2 + bv gz^2
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)

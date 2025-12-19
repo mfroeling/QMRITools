@@ -257,7 +257,6 @@ ResampleTracts[tracts_, len_?IntegerQ] := Block[{int, r},
 ]
 
 ResampleTracts[tracts_, len_?ListQ] := Block[{int, r},
-
 	ToPackedArray@MapThread[(
 		int = ListInterpolation[Transpose[{#1}], {{0, 1}}, InterpolationOrder -> 1];
 		r = Rescale[N@Range[#2]];
@@ -629,7 +628,7 @@ FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, o
 FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		minLength, maxLength, maxAng, maxSeed, flip, per, int, stopT, step, tractF, vecF, trFunc, ran,
 		tens, tensMask, inpTr, stop, coors, vecInt, stopInt, ones, dim, crp, t2,
-		seedN, seedI, seeds, t1, tracts, iii, drop, maxStep, len, sel, mon
+		seedN, seedI, seeds, t1, tracts, iii, drop, maxStep, len, sel, mon, tp
 	},
 
 	(*get the options*)
@@ -688,7 +687,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		{t1, tracts} = AbsoluteTiming@If[mon=!=List,
 			ind = 0; Monitor[(ind++; trFunc[#]) & /@ seeds, ProgressIndicator[ind, {0, seedN}]],
 			trFunc/@seeds];
-		
+
 		, (*parallel tractography*)
 		mon["Starting parallel preparation"];
 		tp = First@AbsoluteTiming[
@@ -1103,7 +1102,6 @@ SelectTractPartInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _R
 PadROI[roi_] := Normal@PadRight[roi, Dimensions[roi] + 1, 0]
 
 
-
 (* ::Subsection:: *)
 (*PlotTracts*)
 
@@ -1303,9 +1301,9 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	tractsF = RandomSample[tracts, Min[{5 ntr, Length@tracts}]];
 
 	(*make colors*)
-	SeedRandom[1234];
 	ran = Range[Length@segments];
-	If[Head[colFunc] === MaterialShading,
+	Which[
+		Head[colFunc] === MaterialShading,
 		colListC = White;
 		colListT = If[ListQ[colFunc[[1]]]&&AllTrue[colFunc[[1]], StringQ], 
 			MaterialShading/@RandomChoice[colFunc[[1]], Length@segments], 
@@ -1313,6 +1311,12 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 		];
 		qual = "Speed";
 		,
+		Head[colFunc]===Function,
+		SeedRandom[46578];
+		colListT = colListC = Reverse[colFunc /@ Rescale[ran]][[RandomSample[ran]]];
+		,
+		True,
+		SeedRandom[1234];
 		colListT = colListC = Reverse[ColorData[colFunc] /@ Rescale[ran]][[RandomSample[ran]]];
 	];
 
@@ -1323,7 +1327,7 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 
 	(*make the muscle contours*)
 	musc = If[colListC =!= None, Table[PlotContour[segments[[i]], vox, ContourOpacity -> opa, 
-		ContourColor -> If[ColorQ[colListC],colListC,colListC[[i]]], 
+		ContourColor -> If[ColorQ[colListC], colListC, colListC[[i]]], 
 		ContourSmoothRadius -> 2, ContourResolution -> 2], {i, ran}], Graphics3D[]];
 	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Lighter@Gray, 
 		ContourSmoothRadius -> 2, ContourResolution -> 2], Graphics3D[]];
@@ -1560,12 +1564,12 @@ ImportTCK[file_] := Block[{stream, header, type, bo, tracts, parts, vox},
 
 	(*read the file*)
 	stream = OpenRead[file, BinaryFormat -> True];
-	
+
 	(*import header*)
 	header = NestWhile[StringJoin[#, Read[stream, Character]] &, "", StringFreeQ[#, "END\n"] &];
 	header = StringSplit[#, ": "] & /@ StringSplit[header, "\n"][[2 ;; -2]];
 	header = Association[#[[1]] -> #[[2]] & /@ header];
-	
+
 	(*get data type and read binary*)
 	{type, bo} = FromTCKDatatype[header["datatype"]];
 	tracts = BinaryReadList[stream, type, ByteOrdering -> bo];
