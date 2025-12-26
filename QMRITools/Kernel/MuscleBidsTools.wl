@@ -2001,25 +2001,16 @@ MuscleBidsProcessI[foli_, folo_, datType_, verCheck_] := Block[{
 								(*-----*)AddToLog["Starting ivim calculation", 4];
 								If[coil===False,
 									(*use normal b-value*)
-									fiti = IVIMCalc[MeanSignal[mean], valU, {1, .05, .003, .015}, IVIMFixed->True];
-									{s0i, fri, adci, pD} = Quiet@IVIMCalc[mean, valU, fiti, IVIMConstrained->False, 
-										Parallelize->True, MonitorIVIMCalc->False, IVIMFixed->True];
+									{s0i, fri, adci, pD} = IVIMCalc[mean, valU, {1, .05, .003, .015}, 
+										IVIMConstrained->False, Parallelize->True, IVIMFixed->True];
 									,
 									(*use gradient field corrected b-value*)
-									gradField = GradientCoilTensor[mask, diffvox, off, dint];
-									{meanV, coor} = DataToVector[mean, mask];
-									valV = BVector[val, grad, gradField];
-									valV = Transpose[Mean[Transpose[valV[[All, #]]]] & /@ UniqueBvalPosition[val][[2]]];
-									fiti = IVIMCalc[Mean[meanV], Mean[valV], {1, .05, .003, .015}, IVIMFixed -> True];
-									{s0i, fri, adci, pD} = Quiet@IVIMCalc[meanV, valV, fiti, IVIMConstrained -> False, 
-										Parallelize -> True, MonitorIVIMCalc -> False, IVIMFixed -> True];
-									{s0i, fri, adci, pD} = VectorToData[#, coor] & /@ {s0i, fri, adci, pD};
+									{s0i, fri, adci, pD} = IVIMCalc[data, {val, grad}, {1, .05, .003, .015}, coil,
+										IVIMConstrained -> False, Parallelize -> True, IVIMFixed -> True];
 								];
 
-								fri = Clip[fri, {0,1}, {0,1}];
-								adci = 1000 adci;
-								resi = Quiet@IVIMResiduals[mean, valU, {s0i, fri, adci, pD}];
 								data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
+								adci = 1000 adci;
 								ivimpar = {"adci", "fri", "s0i"}
 								,
 								(*-----*)AddToLog["Skipping IVIM correction", 4];
@@ -2508,7 +2499,7 @@ MuscleBidsMergeI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 						Transpose@ToPackedArray@N@Chop@Last@func[
 							#[[2]], {reg, voxm[[i]]}, {movp[[All, #[[1]]]], voxm[[i]]},
 							Iterations->300, BsplineSpacing->30 voxt, InterpolationOrderReg->1, 
-							NumberSamples -> 20000, PrintTempDirectory->False, DeleteTempDirectory->False, 
+							NumberSamples -> 20000, PrintTempDirectory->False, DeleteTempDirectory->True, 
 							MethodReg->metReg, BsplineDirections -> {1, 1, 0}, HistogramBins -> 128
 						]
 					])& /@ {{posScale, {target[[i]], mskt, voxt}}, {posNat, {targetR, msktR, voxtR}}}
@@ -2718,9 +2709,9 @@ MuscleBidsSegmentI[foli_, folo_, datType_, allType_, verCheck_] := Block[{
 
 		seg = Table[RegisterDataTransform[
 			{tar[[{i}]], mask[[{i}]], voxt}, {mov, voxm}, {seg, voxs},
-			MethodReg -> {"rigid", "affine"}, NumberSamples -> 50000, HistogramBins->128, PrintTempDirectory->False,
-			Resolutions -> 1, Iterations -> 200, DeleteTempDirectory -> True, 
-			TransformMethod -> "Segmentation"
+			MethodReg -> {"rigid", "affine"}, NumberSamples -> 50000, HistogramBins->128, 
+			PrintTempDirectory->False, DeleteTempDirectory -> True, 
+			Resolutions -> 1, Iterations -> 200, TransformMethod -> "Segmentation"
 		][[2]], {i, 1, 3}];
 
 		ExportNii[seg, voxt, outfile, CompressNii -> compress];

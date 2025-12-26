@@ -971,7 +971,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?
 HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, labs_, OptionsPattern[]]:=Block[{
 		sigma, flip, per, itt, step, tol, rFA, rMD, seg, lab, mon, tensC, denoise,
 		tensO, dimT, conO, dimC, ampO, dimA, mus, crop, tens, con, amp, 
-		mask, vecN, sel, coor, val, vec, tm, n, or
+		mask, vecN, sel, coor, val, vec, tm, n, or, tensF
 	},
 
 	(*get options*)
@@ -1059,7 +1059,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 
 HarmonicDenoiseTensorI[{tens_, vec_}, mask_, vox_, {sigma_, itt_, step_, tol_}]:=Block[{
 		mon, G, L, R, coor, sel, map, vecN, 
-		vecH, sol, tensN, maps, tgl, tr, tt
+		vecH, tensN, maps, tgl, tr, tt
 	},
 
 	(*make gradien,laplace and RBF matrix functions*)
@@ -1071,12 +1071,11 @@ HarmonicDenoiseTensorI[{tens_, vec_}, mask_, vox_, {sigma_, itt_, step_, tol_}]:
 		debugDenoise[tr, "Making R matrix"];
 		(*perform the recon*)
 		debugDenoise["starting fitting"];
-		{vecN, vecH, sol} = FitHarmonicBasis[{tens, vec}, sel, {G, L, R}, {itt, step, tol}];
+		{vecN, vecH, maps} = FitHarmonicBasis[{tens, vec}, sel, {G, L, R}, {itt, step, tol}];
+		maps = MakeSolutionMaps[maps, map];
 	];
 	debugDenoise[tt, "Total denoise time"];
 
-	(*generate output*)
-	maps = MakeSolutionMaps[sol, map];
 	{{Transpose[maps[[1;;3]]], maps[[4]]}, {vecN, sel, coor}}
 ]
 
@@ -1269,77 +1268,80 @@ FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, {itt_, step_, tolI_}]:=Block[
 	tens = SelectVector[tens, sel, d];
 	vec = SelectVector[vec, sel, d];
 
-	diff = Max@Abs[tens];
-	tol = diff tolI;	
+	If[Total[Flatten@Unitize@tens] === 0,
+		(*If tensor only contains 0. retrun original vectors*)
+		{vec, vec, {ConstantArray[0., Length@First@matG], ConstantArray[0., Length@matR]}}
+		,
+		diff = Max@Abs[tens];
+		tol = diff tolI;	
 
-	thp = First@AbsoluteTiming[
-	(*initialize the h phase*)
-		matGt = Transpose[matG];
-		solver = MakeSolver[matL];
-		h0 = LinearSolve[matGt . matG, matGt . Flatten[vec]];
-		h0 = NullSpaceProjection[matL, h0, solver];
-		vec0 = Partition[matG . h0, d];
-		v0 = GetDiffusionValues[tens, vec0];
-		sth = Norm[GetObjectiveGradient[tens, vec0, matGt]]
-	];
-	debugDenoise[thp, "Prep time h-phase: "];
+		thp = First@AbsoluteTiming[
+		(*initialize the h phase*)
+			matGt = Transpose[matG];
+			solver = MakeSolver[matL];
+			h0 = LinearSolve[matGt . matG, matGt . Flatten[vec]];
+			h0 = NullSpaceProjection[matL, h0, solver];
+			vec0 = Partition[matG . h0, d];
+			v0 = GetDiffusionValues[tens, vec0];
+			sth = Norm[GetObjectiveGradient[tens, vec0, matGt]]
+		];
+		debugDenoise[thp, "Prep time h-phase: "];
 
-	(*h phase loop*)
-	dvh = v0; i = 0;
-	debugDenoise[Dynamic[{i, dvh/tol, sth}], "Start h-phase: "];
-	th = First@AbsoluteTiming[
-		vsh = Reap[While[dvh>tol && i<itt,
-			i++; Sow[{v0, dvh}];
-			h1 = h0 + (100 step[[1]] / sth) GetObjectiveGradient[tens, vec0, matGt];
-			h1 = NullSpaceProjection[matL, h1, solver];
-			vec1 = Partition[matG . h1, d];
-			v1 = GetDiffusionValues[tens, vec1];
-			dvh = Abs[v0 - v1];
-			h0 = h1; v0 = v1;
-			vec0 = vec1;
-		]]
-	];
-	debugDenoise[th, "Fit time h-phase: "];
+		(*h phase loop*)
+		dvh = v0; i = 0;
+		debugDenoise[Dynamic[{i, dvh/tol, sth}], "Start h-phase: "];
+		th = First@AbsoluteTiming[
+			vsh = Reap[While[dvh>tol && i<itt,
+				i++; Sow[{v0, dvh}];
+				h1 = h0 + (100 step[[1]] / sth) GetObjectiveGradient[tens, vec0, matGt];
+				h1 = NullSpaceProjection[matL, h1, solver];
+				vec1 = Partition[matG . h1, d];
+				v1 = GetDiffusionValues[tens, vec1];
+				dvh = Abs[v0 - v1];
+				h0 = h1; v0 = v1;
+				vec0 = vec1;
+			]]
+		];
+		debugDenoise[th, "Fit time h-phase: "];
 
-	(*normalize h0 to max h0 for g phase*)
-	vh = vec1 / Median[(Norm /@ vec1)];
-	tgp = First@AbsoluteTiming[
-		(*initialize the g phase*)
-		a0 = ConstantArray[0., Length@matR];
-		vec0 = vh + Partition[a0 . matR, d];
-		v0 = GetDiffusionValues[tens, vh];
-		stg = Norm[GetObjectiveGradient[tens, vec0, matR]];
-	];
-	debugDenoise[tgp, "Prep time g-phase: "];
+		(*normalize h0 to max h0 for g phase*)
+		vh = vec1 / Median[(Norm /@ vec1)];
+		tgp = First@AbsoluteTiming[
+			(*initialize the g phase*)
+			a0 = ConstantArray[0., Length@matR];
+			vec0 = vh + Partition[a0 . matR, d];
+			v0 = GetDiffusionValues[tens, vh];
+			stg = Norm[GetObjectiveGradient[tens, vec0, matR]];
+		];
+		debugDenoise[tgp, "Prep time g-phase: "];
 
-	(*g phase loop*)
-	dvg = v0; j = 0;
-	debugDenoise[Dynamic[{j, dvg/tol, stg}], "Start g-phase: "];
-	tg = First@AbsoluteTiming[
-		vsg = Reap[While[dvg>tol && j<Round[itt],
-			j++; Sow[{v0, dvg}];
-			a1 = a0 + (0.05 step[[2]]/stg) GetObjectiveGradient[tens, vec0, matR];
-			vec1 = vh + Partition[a1 . matR, d];
-			v1 = GetDiffusionValues[tens, vec1];
-			dvg = Abs[v1 - v0];
-			a0 = a1; v0 = v1;
-			vec0 = vec1;
-		]];
-		(*normalize vectors after g phase*)
-		vha = Normalize/@vec1;
-	];
-	debugDenoise[tg, "Fit time g-phase: "];
+		(*g phase loop*)
+		dvg = v0; j = 0;
+		debugDenoise[Dynamic[{j, dvg/tol, stg}], "Start g-phase: "];
+		tg = First@AbsoluteTiming[
+			vsg = Reap[While[dvg>tol && j<Round[itt],
+				j++; Sow[{v0, dvg}];
+				a1 = a0 + (0.05 step[[2]]/stg) GetObjectiveGradient[tens, vec0, matR];
+				vec1 = vh + Partition[a1 . matR, d];
+				v1 = GetDiffusionValues[tens, vec1];
+				dvg = Abs[v1 - v0];
+				a0 = a1; v0 = v1;
+				vec0 = vec1;
+			]];
+		];
+		debugDenoise[tg, "Fit time g-phase: "];
 
-	debugDenoise[thp + th + tgp + tg, "Total fit time: "];
+		debugDenoise[thp + th + tgp + tg, "Total fit time: "];
 
-	debugDenoise[Grid[{{
-		ListLinePlot[{vsh[[2, 1, All, 1]], vsg[[2, 1, All, 1]]} / diff, 
-			ImageSize -> 200, PlotRange -> Full, PlotLabel -> "Difference"],
-		ListLinePlot[{vsh[[2, 1, All, 2]], vsg[[2, 1, All, 2]]} / tol, 
-			ImageSize -> 200, PlotLabel -> "Tollerance"]
-	}}], "Gradient functions: "];
+		debugDenoise[Grid[{{
+			ListLinePlot[{vsh[[2, 1, All, 1]], vsg[[2, 1, All, 1]]} / diff, 
+				ImageSize -> 200, PlotRange -> Full, PlotLabel -> "Difference"],
+			ListLinePlot[{vsh[[2, 1, All, 2]], vsg[[2, 1, All, 2]]} / tol, 
+				ImageSize -> 200, PlotLabel -> "Tollerance"]
+		}}], "Gradient functions: "];
 
-	{vha, Normalize/@vh, {h1,a1}}
+		{Normalize/@vec1, Normalize/@vh, {h1, a1}}
+	]
 ]
 
 
@@ -1403,8 +1405,8 @@ MakeSolutionMaps[{con_, amp_}, {coorCent_, coorGrad_, dim_}]:=Block[{
 		cc, ca, l1, l2, l3, z, y, x, c1, c2, c3, amap
 	},
 
-	cc = Quantile[Abs[con], .75];
-	ca = Quantile[Abs[amp], .75];
+	cc = Quantile[Abs[con], .75] /. 0.->1.;
+	ca = Quantile[Abs[amp], .75] /. 0.->1.;
 
 	Switch[Length@coorGrad,
 		(*reconstruct for 2D maps*)
