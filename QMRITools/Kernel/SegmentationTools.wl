@@ -1849,7 +1849,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 	},
 
 	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
-	If[lim === Automatic, lim = If[dev==="GPU", 200, 150]];
+	(*If[lim === Automatic, lim = If[dev==="GPU", 600, 150]];*)
 	mon = If[mon, MonitorFunction, List];
 
 	prec = If[(dev==="GPU") && ($OperatingSystem === "Windows"), "Mixed", "Real32"];

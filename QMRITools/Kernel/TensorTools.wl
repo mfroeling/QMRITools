@@ -321,7 +321,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	dataL = ToPackedArray@N@LogNoZero[data];
 	
 	(*calculate the bmatrix using coil tensor if needed*)
-	ctens = If[coil=!= False && depthD>=3,
+	ctens = If[coil=!= False && depthD >= 3,
 		If[mon, PrintTemporary["Making coil tensor"]];
 		(*get the coil tensor*)
 		{vox, start, dint} = coil;

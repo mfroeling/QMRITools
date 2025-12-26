@@ -160,9 +160,6 @@ IVIMFixed::usage =
 When set True the pseudo diffusion wil be fixed to the parameter given as init.
 When set to \"One\" only the fast component of a 3 compartment fit is fixed."
 
-MonitorIVIMCalc::usage = 
-"MonitorIVIMCalc is an option for IVIMCalc. When true the proceses of the calculation is shown."
-
 
 ChainSteps::usage = 
 "ChainSteps is an option for BayesianIVIMFit2 and BayesianIVIMFit3. It determines how long the algorithm runs.
@@ -225,188 +222,128 @@ Begin["`Private`"]
 Options[IVIMCalc] = {
 	Method -> Automatic, 
 	Parallelize->True, 
-	MonitorIVIMCalc -> True, 
-	IVIMFixed -> False, 
-	IVIMConstrained -> True, 
-	IVIMTensFit -> False, 
+	IVIMFixed -> True, 
+	IVIMConstrained -> False, 
 	IVIMComponents -> 2,
 	IVIMConstrains -> {{0.8, 1.2}, {0, 1}, {0.0005, 0.0035}, {0.001, 0.5}, {0.001, 0.5}}
 };
 
 SyntaxInformation[IVIMCalc] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
-IVIMCalc[data_, binp_, init_, OptionsPattern[]] := Block[{
-		tensFit, components, fixed, constrained, method, bmdc, bin,fcon,
-		s0min, s0max, fmin, fmax, dcmin, dcmax, pdc1min, pdc1max, pdc2min, pdc2max,
-		depthD,dirD,dirB,func,dat,dat0,datn,rl,rr,ivim, mdat, sol, fitd, start, funcf,
-		s0s, frin1, frin2, dcin, pdcin1, pdcin2, funcin, fixrule,cons,dccon,pdccon, fpars, mapfun, out
-	},
+IVIMCalc[data_, binp_, init_, opts:OptionsPattern[]]:=IVIMCalc[data, binp, init, False, opts]
 
-	Clear[bm, bm1, bm2, bm3, bm4, bm5, bm6, s0, f1, f2, dc, pdc1, pdc2];
+IVIMCalc[data_, binp_, init_, coil_, OptionsPattern[]] := Block[{
+		depthD, dirD, mask, dat, coor, mdat, datn, cfit, vox, start, dint, gradField, 
+		bvec, grad, bvecV, bvecf, components, fixed, constrained, method,
+		s0min, s0max, fmin, fmax, dcmin, dcmax, pdc1min, pdc1max, pdc2min, pdc2max,
+		fVars, pdcVars, fixValues, fixRule, pdcmin, pdcmax, activePdc, func, cons,
+		vars, funcf, fpars, out, mapfun, ivim, s0s, frin1, frin2, dcin, pdcin1, pdcin2
+	},
 
 	(*data checks*)
 	depthD = ArrayDepth[data];
-	dirD = If[depthD == 4, Length[data[[1]]], Length[data]];
-	dirB = Length[binp];
-
-	(*check if data is 4D,3D,2D or 1D*)
 	If[depthD > 4, Return[Message[IVIMCalc::data, ArrayDepth[data]]]];
-	(*check if bmat is the same length as data*)
-	If[dirB != dirD, Return[Message[IVIMCalc::bvec, dirD, dirB]]];
 
-	(*perform tensor fit*)
-	tensFit = OptionValue[IVIMTensFit];
-	components = Clip[OptionValue[IVIMComponents], {1, 3}];
-	fixed = OptionValue[IVIMFixed];
-	constrained = OptionValue[IVIMConstrained];
-	method = OptionValue[Method];
+	(*convert data to vector if data is 2D or 3D or make data vector for 1D*)
+	mask = Unitize@Mean@If[depthD==4, Transpose@data, data];
+	Which[
+		depthD >= 3, {dat, coor} = DataToVector[data, mask],
+		depthD == 1, dat = {data},
+		True, dat = data
+	];
+	mdat = First[Mean@dat];
+	datn = dat/mdat;
 
+	(*calculate the bmatrix using coil tensor if needed*)
+	cfit = If[coil =!= False && depthD >= 3,
+		(*get the coil tensor*)
+		{vox, start, dint} = coil;
+		gradField = GradientCoilTensor[mask, vox, start, dint];
+		{bvec, grad} = binp;
+		bvecV = BVector[bvec, grad, gradField];
+		True
+		,
+		bvec = binp;
+		False
+	];
+
+	(*generate the signal vector and bvector per b-value*)
+	{datn, bvecf} = MeanBvalueSignal[datn, bvec];
+	bvecf = If[cfit,
+		First[MeanBvalueSignal[bvecV, bvec]],
+		ConstantArray[bvecf, Length@datn]
+	];
+	If[Dimensions[datn]=!=Dimensions[bvecf], Return[Message[IVIMCalc::data, Dimensions@datn, Dimensions@bvecf]]];
+
+	(*get the options*)
+	{components, fixed, constrained, method} = OptionValue[{IVIMComponents, IVIMFixed, IVIMConstrained, Method}];
+	components = Clip[components, {1, 3}];
 	{{s0min, s0max}, {fmin, fmax}, {dcmin, dcmax}, {pdc1min, pdc1max}, {pdc2min, pdc2max}} = OptionValue[IVIMConstrains];
 
-	(*running parameters*)
-	bmdc = If[tensFit, 
-		bm = bm1 + bm2 + bm3; {bm1, bm2, bm3, bm4, bm5, bm6}.{xx, yy, zz, xy, xz, yz}, 
-		Clear[bm]; bm* dc
-	];
+	Clear[bm, f1, f2, s0, dc, pdc1, pdc2];
 
-	dat = N[If[depthD == 4, Transpose[data], data]];
-	dat0 = DeleteCases[Flatten[dat[[{1}]]], 0.];
-	mdat = Mean[dat0];
-	datn = If[dat0 === {}, dat, dat/mdat];
+	(*Indices for pdc and f based on components*)
+	fVars = If[components > 1, {f1, f2}[[;; components - 1]], {}];
+	pdcVars = If[components > 1, {pdc1, pdc2}[[;; components - 1]], {}];
 
-	rl = RotateRight[Range[depthD]];
-	rr = RotateLeft[Range[depthD]];
-
-	(*contruct bvals for fit*)
-	bin = If[tensFit, binp, 
-		Which[
-			VectorQ[binp], binp, 
-			MatrixQ[binp] && Length[binp] <100, Abs[Total[#[[1 ;; 3]]]] & /@ binp,
-			True, binp
-		] 
-	];
-
-	(*initial values for fit*)
 	Switch[components,
-		1, f1 = f2 = 0; {s0s,dcin} = init;,
+		1, f1 = f2 = 0; {s0s, dcin} = init;,
 		2, f2 = 0; {s0s, frin1, dcin, pdcin1} = init;,
-		3, Clear[f2]; {s0s, frin1, frin2, dcin, pdcin1, pdcin2} = init;
+		3, {s0s, frin1, frin2, dcin, pdcin1, pdcin2} = init;
 	];
 
-	(*initial fit values*)
-	funcin = Join[
-		(*initialization for fractions*)
-		If[components==1,{},{{f1, frin1}, {f2, frin2}}[[1 ;; components-1]]],
-		(*initialzation for tens/D*)
-		If[tensFit, Thread[{{xx, yy, zz, xy, xz, yz}, dcin}], {{dc, dcin}}],
-		(*if not fixed give fit start parameters for pdc values*)
-		If[components==1,
-			{},
-			Switch[fixed,
-				False, {{pdc1, pdcin1}, {pdc2, pdcin2}}[[1 ;; components - 1]](*none fixed*),
-				"One", {{pdc1, pdcin1}}(*only fix 2nd component*),
-				_, {}
-			]
-		] 
-	];
+	(*Fixed values for pdc*)
+	fixValues = {pdc1 -> pdcin1, pdc2 -> pdcin2};
+	fixRule = Switch[fixed,
+		True, Take[fixValues, components - 1],
+		"One", {pdc2 -> pdcin2},
+		_, {}];
+	{pdcmin, pdcmax} = Switch[fixed,
+		False, {Take[{pdc1min, pdc2min}, components - 1], Take[{pdc1max, pdc2max}, components - 1]},
+		"One", {pdc1min, pdc1max},
+		_, {{}, {}}];
+	activePdc = Complement[pdcVars, fixRule[[All, 1]]];
 
-	(*fix the fixed parameters*)
-	fixrule = If[components==1,
-		{}(*no fixed parameters if one component*),
-		Switch[fixed, 
-			True,{pdc1 -> pdcin1, pdc2 -> pdcin2}[[1 ;; components - 1]](*fix all components*),
-			"One", {pdc2 -> pdcin2}(*only fix 2nd component*),
-			_, {}(*fix no components*)]];
+	(*Generalized IVIM model*)
+	func = s0*((1 - Total[fVars])*Exp[-bm*dc] + Total[fVars*Exp[-bm*pdcVars]]) // Simplify // ReplaceAll[fixRule];
 
-	(*generate fix fuctions*)
-	func =Chop[Simplify[(s0*((((1 - f1 - f2)*Exp[-bmdc]) + (f1* Exp[-bm pdc1]) + (f2* Exp[-bm pdc2]))))]] /. fixrule;
-
-	(*constrains for fit*)
+	(*fitting contrains if needed*)
 	cons = If[constrained,
-		(*constrains dc and tens*)
-		dccon = If[tensFit, {dcmin < xx < dcmax, dcmin < yy < dcmax, dcmin < zz < dcmax, dcmin < (xx + yy + zz)/3 < dcmax}, {dcmin < dc < dcmax}];
-		(*if not fixed dc and pdc need to be constrained*)
-		pdccon = If[components==1,
-			{},
-			Switch[fixed,
-				False,{dc < pdc1, pdc1min < pdc1 < pdc1max, pdc2min < pdc2 < pdc2max}[[1 ;; components]],
-				"One",{dc < pdc1, pdc1min < pdc1 < pdc1max},
-				_, {}
-			]
-		];
+	Flatten[{
+		{s0 > 0, dcmin < dc < dcmax},
+		If[components > 1, Total[fVars] <= 1, {}],
+		If[components > 1, Thread[fmin < fVars < fmax], {}],
+		{Less @@ Flatten[{dc, pdcVars /. fixRule}]},
+		If[fixed === True, {}, Thread[pdcmin < activePdc < pdcmax]]
+	}], {}];
 
-		(*if 3 components pdc1 and/or pdc2 also need to be constrained dc < pdc1 < pdc(in)2*)
-		If[components == 3 && (fixed === False), AppendTo[pdccon, pdc1 < pdc2]];
-		If[components == 3 && (fixed === "One"), AppendTo[pdccon, pdc1 < pdcin2]];
-
-		fcon=If[components==1,{},{fmin < f1 < fmax, fmin < f2 < fmax}[[1 ;; components - 1]]];
-		(*all constrains together*)
-		Join[{(f1 + f2) < 1}, fcon, dccon, pdccon],
-
-		(*no constrains*)
-		{}
-	];
-
-	(*running parameters*)
-	fpars = If[tensFit, {bm1, bm2, bm3, bm4, bm5, bm6}, {bm}];
-
-	(*fit function with of without constrains*)
-	funcf = If[constrained,{func,cons},func];
+	(*fitting variables and function*)
+	vars = Flatten[{s0, fVars, dc, activePdc}];
+	vars = Thread[{vars, vars /. Thread[{s0, f1, f2, dc, pdc1, pdc2} -> {s0s, frin1, frin2, dcin, pdcin1, pdcin2}]}];
+	funcf = If[constrained, {func, cons}, func];
+	fpars = {bm};
 
 	(*define output*)
-	out=Join[
-		{s0, f1, f2}[[1 ;; components]],
-		If[tensFit, {{xx, yy, zz, xy, xz, yz}}, {dc}], 
-		If[components==1,{},{pdc1, pdc2}[[1 ;; components - 1]]]
-		] /. fixrule;
+	out = Join[
+		{s0, f1, f2}[[1 ;; components]], {dc}, 
+		If[components == 1, {}, {pdc1, pdc2}[[1 ;; components - 1]]]
+	] /. fixRule;
 
-	(*perform fit*)
-	j=i=0;
-
-	mapfun=If[OptionValue[Parallelize]&&depthD>1,
-		DistributeDefinitions[bin, funcin, fitd, funcf, start, fpars, method, out];
+	mapfun = If[OptionValue[Parallelize] && depthD>1,
+		DistributeDefinitions[out, funcf, vars, fpars];
 		ParallelMap,
 		Map];
 
-	If[OptionValue[MonitorIVIMCalc]&&depthD>1,
-		PrintTemporary[ProgressIndicator[Dynamic[i],{0,Total@Flatten@Unitize[dat0]-1000}]]
-		];
+	ivim = mapfun[Quiet[
+		out /. FindFit[Thread[#], funcf, vars, fpars, MaxIterations -> 150]
+	] &,Thread[{bvecf, datn}]];
 
-(*TODO fix and cleanup IVIM fitting to modern approach*)
-
-	If[Dimensions[bin]===Dimensions[datn] && MatrixQ[bin],
-		ivim = Quiet@Transpose@mapfun[(
-			{dd, bb} = #;
-			s0s = dd[[1]];
-			If[N[dd] == dd*0. || s0s == 0.,
-				(*masked voxel*)
-				0. out
-				,
-				(*data voxel*)
-				fitd = Flatten /@ ({bb, dd} // Transpose);
-				start = Prepend[funcin, {s0, s0s}];
-				sol = Quiet[FindFit[fitd, funcf, start , fpars, Method -> method, MaxIterations -> 150]];
-				out /. sol
-			]
-		)&, Thread[{datn, bin}]];
-		,
-		ivim = Quiet@Transpose[mapfun[(
-			s0s = #[[1]];
-			If[N[#] == #*0. || s0s == 0.,
-				(*masked voxel*)
-				0. out
-				,
-				(*data voxel*)
-				fitd = Flatten /@ ({bin, #} // Transpose);
-				start=Prepend[funcin,{s0, s0s}];
-				sol = Quiet[FindFit[fitd, funcf, start , fpars, Method -> method, MaxIterations -> 150]];
-				out /. sol
-			]
-		)&,Transpose[datn, rl], {depthD - 1}], rr];
-	];
-
-	ivim[[1]] = ivim[[1]]*mdat;
-	ivim
+	ivim[[All, 1]] = ivim[[All, 1]] mdat;
+	ivim[[All, 2 ;; components]] = Clip[ivim[[All, 2 ;; components]], {0., 1.}];
+	ivim[[All, components + 1]] = Clip[ivim[[All, components + 1]], {0., 4./1000}];
+	
+	If[depthD >= 3, ivim = VectorToData[ivim, coor]];
+	If[depthD==4 || depthD ===2, Transpose@ivim, ivim]
 ]
 
 
