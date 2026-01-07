@@ -451,11 +451,11 @@ CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?Numbe
 		sp = Ceiling[Dimensions[mask]/{12, 24, 24}];
 		{spz, spxy} = {sp[[1]], Min[sp[[2 ;; 3]]]};
 		maskCont = PlotContour[Reverse[Clip[mask + maskp,{0,1},{0,1}],2], vox, ContourColor->Gray];
-		n = (spz 0.6 vox[[1]]) {1, -1, 1}/vox;
+		n = (spz 0.6 vox[[1]]) {1, -1, 1}(*/vox*);
 		vectorField = Table[
 			If[mask[[z, y, x]] == 0,
 				{None, None, None},
-				coo = {x, -y + dim[[2]] + 1, z};
+				coo = {x, -y + dim[[2]] + 1, z} Reverse[vox];
 				rav = Reverse[n radvecn[[z, y, x]]];
 				nov = Reverse[n norvecc[[z, y, x]]];
 				rov = Reverse[n cirvec[[z, y, x]]];
@@ -771,12 +771,21 @@ Ellipse3D[{{x0_, y0_, z0_}, {a_, b_, alpha_}}, theta_] := {
 (*PlotSegmentation*)
 
 
-PlotSegmentation[mask_, inner_, outer_, {off_, offi_, offo_}, vox_] := Block[{voxl, offp, offip, offop},
+PlotSegmentation[mask_, inI_, outI_, {off_, offi_, offo_}, vox_] := Block[{inner, outer, voxl, offp, offip, offop},
 	voxl = Reverse[vox];
 	
-	offp = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[off, {}];
-	offip = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[offi, {}];
-	offop = {.5, .5, 0} + {1, 1, 1} # & /@ DeleteCases[offo, {}];
+	offp = ({.5, .5, 0} + {1, 1, 1} #) voxl & /@ DeleteCases[off, {}];
+	offip = ({.5, .5, 0} + {1, 1, 1} #) voxl & /@ DeleteCases[offi, {}];
+	offop = ({.5, .5, 0} + {1, 1, 1} #) voxl & /@ DeleteCases[offo, {}];
+
+	inner = inI;
+	outer = outI;
+
+	inner[[1]] = If[#=={}, #, # voxl]& /@ inner[[1]];
+	outer[[1]] = If[#=={}, #, # voxl]& /@ outer[[1]];
+
+	inner[[2]] = If[#=={}, #, # {vox[[3]], vox[[2]], 1}]& /@ inner[[2]];
+	outer[[2]] = If[#=={}, #, # {vox[[3]], vox[[2]], 1}]& /@ outer[[2]];
 	
 	Show[
 		PlotContour[Reverse[mask,2], vox],
@@ -992,9 +1001,10 @@ PointCenter = (1 /. ComponentMeasurements[SelectComponents[Image[Reverse[#]], "C
 (*RemovePoint*)
 
 
-RemovePoint[m_, msk_] := Block[{v}, 
+RemovePoint[m_, msk_] := Block[{mm, v}, 
 	MapThread[(
-		v = GetMaskData[#2, Dilation[#1, 1] - #1, GetMaskOnly -> True];
+		mm = Dilation[#1, 1] - #1;
+		v = Pick[Flatten[N[#2]], Unitize[Flatten[Normal@mm]], 1];
 		v = If[v === {}, 0, Round[Mean[v]]];
 		If[v === 1, #2 + #1, #2]
 	) &, {m, msk}]
@@ -1410,16 +1420,17 @@ SyntaxInformation[SegmentLinesToMask] = {"ArgumentsPattern" -> {_, _}};
 
 SegmentLinesToMask[smsk_, segLines_]:=Block[{out,ran,segMask,sl,ln,pol,msk},
 	out=0 smsk;
-	ran=Reverse@Dimensions[smsk][[2;;]];
+	ran = Reverse@Dimensions[smsk][[2;;]];
 	
 	segMask=Table[
-		out=0 smsk;
+		out = 0 smsk;
 		(
 			{sl,ln}=#;
 			If[ln=!=None,
-				pol=Polygon@Join[DeleteDuplicates[RevRound/@ln[[All,2]]],
-				Reverse@DeleteDuplicates[RevRound/@ln[[All,1]]]];
-				msk=Reverse@Closing[ImageData@Binarize[1-Rasterize[Graphics[pol,PlotRange->Thread@{1,ran}],RasterSize->ran]],1];
+				pol = Polygon@Join[DeleteDuplicates[RevRound/@ln[[All,2]]],	
+					Reverse@DeleteDuplicates[RevRound/@ln[[All,1]]]];
+				msk = Reverse@Closing[ImageData@Binarize[1-Rasterize[
+					Graphics[pol,PlotRange->Thread@{1,ran}],RasterSize->ran, LightDark -> "Light"]], 1];
 				out[[sl]]=Round[smsk[[sl]] msk];
 			]
 		)&/@segment;
@@ -1449,7 +1460,9 @@ MakeLineImage[back_,segLines_,pts_]:=Block[{colRule,pos,slines,p1,p2},
 			{p1,p2}=Switch[Length@pos,4,{2,3},6,{2,4}+1,_,{None,None}];
 			slines=segLines[[First@#,Last@#,2]]&/@pos;
 			Show[
-				ArrayPlot[N[Reverse@back[[i]]],ColorRules->{0.->White,1.->Gray,2.->Lighter@Lighter@Red,3.->Lighter@Lighter@Green},ImageSize->300,PlotLabel->Style[i,Large],Frame->False],
+				ArrayPlot[N[Reverse@back[[i]]], Background->White,
+					ColorRules->{0.->White,1.->Gray,2.->Lighter@Lighter@Red,3.->Lighter@Lighter@Green},ImageSize->300,
+					PlotLabel->Style[i,Black,Bold,Large],Frame->False],
 				Graphics[{PointSize[Large],Red,Point@Reverse@pts[[i,1]],Green,Point@Reverse@pts[[i,2]]}],
 				If[AnyTrue[slines,#===None&],
 					Graphics[],
@@ -1479,11 +1492,15 @@ MakeMaskImage[back_,mask_]:=ImageCollage[Table[
 	If[DeleteDuplicates[Flatten[mask[[i]]]]==={0},
 		Nothing,
 		Show[
-			ArrayPlot[N[Reverse@back[[i]]],ColorRules->{0.->White,1.->Gray,2.->Lighter@Lighter@Red,3.->Lighter@Lighter@Green},ImageSize->300,PlotLabel->Style[i,Black,Large],Frame->False],
-			ArrayPlot[Reverse@mask[[i]],ColorRules->Join[{0->Transparent},Thread[Range[17]->(SeedRandom[113];RandomSample[Ncol[17]])]]]
+			ArrayPlot[N[Reverse@back[[i]]],
+				ColorRules->{0.->White,1.->Gray,2.->Lighter@Lighter@Red,3.->Lighter@Lighter@Green},
+				ImageSize->300,PlotLabel->Style[i,Black,Bold,Large],Frame->False, Background->White],
+			ArrayPlot[Reverse@mask[[i]], Background->White,
+				ColorRules->Join[{0->Transparent},
+			Thread[Range[17]->(SeedRandom[113];RandomSample[Ncol[17]])]]]
 		]
 	]
-,{i,1,Length[mask]}],Background->White]
+,{i,1,Length[mask]}], Background->White]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1512,8 +1529,6 @@ CardiacSegment[mask_?ArrayQ, back_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, 
 CardiacSegmenti[mask_?ArrayQ, back_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, pts_, seg_, OptionsPattern[]]:=Block[{
 		lines, ptIndex, segIndex, lineIndex, segLines, segMask, plotLines, plotMask
 	},
-	
-	Print[seg];
 	
 	lines = MaskToLines[mask, vox];
 	{ptIndex, segIndex, lineIndex} = LinesToSegmentIndex[lines, pts, seg, 
