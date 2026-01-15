@@ -23,6 +23,8 @@ BeginPackage["QMRITools`FasciculationTools`", Join[{"Developer`"}, Complement[QM
 (* ::Subsection::Closed:: *)
 (*Functions*)
 
+NormalizeFascData::usage = 
+"NormalizeFascData[data_, mask, {tens, grad, val}] ..."
 
 FindActivations::usage = 
 "FindActivations[data] Finds the activation in MUMRI or DTI data after data normalization. 
@@ -99,13 +101,31 @@ Begin["`Private`"]
 (* ::Subsection:: *)
 (*FindActivations*)
 
+NormalizeFascData[data_, mask_] := NormalizeData[data, mask, NormalizeMethod -> "Volumes"];
+
+NormalizeFascData[data_, mask_, {tens_, grad_, val_}] := Block[{
+		ran, tensV, coor, scale, bmat
+	},
+	ran = {0, 1.5 Max[data]};
+	(*vecotrize the tensor*)
+	{tensV, coor} = DataToVector[Transpose@tens, mask];
+	bmat = Bmatrix[{val, grad}];
+	(*find diffuison weighting scaling*)
+	scale = ExpNoZero[-bmat . Transpose[tensV]];
+	(*make the output*)
+	NormalizeData[Clip[DivideNoZero[data, VectorToData[Transpose[scale], coor]], ran], mask]
+]
+
+(* ::Subsection:: *)
+(*FindActivations*)
+
 
 (* ::Subsubsection::Closed:: *)
 (*FindActivations*)
 
 
 Options[FindActivations] = Options[FindActivationsI] = {
-	ActivationThreshold -> {3.0, 0.6}, 
+	ActivationThreshold -> {3.0, 0.75}, 
 	ThresholdMethod -> "Both", 
 	ActivationOutput -> "Activation",
 	MaskDilation -> 0, 
@@ -163,52 +183,46 @@ FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, da
 (*FindActC*)
 
 
-FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0}, {back, _Real, 0}}, Block[
-	{tSelect, ti, cont, err, i, mn, tr, out},
+FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0}, {back, _Real, 0}}, Block[{
+		ti, mn, sd, tr, i, len, mask, cont
+	},
+	mn = Mean[t];
+	(*Check background threshold*)
+	If[mn <= back, Return[0.0*t]];
 
-	If[Mean[t] <= back,
-		(*if background do nothing*)
-		0 t,
+	ti = t;
+	i = 0;
+	cont = True;
 
-		(*find activation function*)
-		tSelect = ti = t;
-		cont = True;
-		err = False;
-		i = 0;
+	While[cont && i < it,
+		i++;
+		len = Length[ti];
 
-		(*keep find activation till convergence*)
-		While[cont && i <= it, 
-			i++;
-			(*select on fr only*)
-			mn = Mean[ti];
-			tSelect = Select[t, # > fr mn &];
-			If[Length[tSelect] <= 5, 
-				err = True; 
-				cont = False;
-				,			
-				(*perform selection on sd and fr*)
-				tr = Max[{0.1, Min[{1 - (sc/mn) StandardDeviation[tSelect], fr}]}];
-				tSelect = Select[t, # > tr mn &];
-				If[Length[tSelect] <= 5, 
-					err = True;
-					cont = False;
-					,
-					cont = (tSelect =!= ti);
-					ti = tSelect;
-				];
-			];
+		If[len <= 5,
+		(*Trigger error state*)
+		cont = False;
+		ti = {}; 
+		,
+		(*Calculate threshold factor*)
+		mn = Mean[ti];
+		sd = Ramp[1.0 - (sc/mn)*StandardDeviation[ti]];
+		tr = Min[{sd, fr}];
+		(*Vectorized selection*)
+		mask = UnitStep[tr*mn - t];
+		ti = Pick[t, mask, 0];
+		(*Convergence check:compare lengths or use a small tolerance*)
+		If[Length[ti] == len, cont = False];
 		];
+	];
 
-		If[err,
-			(*if while get into error do nothing*)
-			0 t,
-			(*based on data vector without dropouts find correct threshold*)
-			mn = Mean[ti];
-			tr = Min[{1 - (sc/mn) StandardDeviation[ti], fr}];
-			UnitStep[-t + tr mn]
-		]
+	(*Final thresholding*)
+	If[Length[ti] <= 5,
+		0.0*t,
+		mn = Mean[ti];
+		tr = Min[1.0 - (sc/mn)*StandardDeviation[ti], fr];
+		UnitStep[tr*mn - t]
 	]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization->True]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -216,17 +230,20 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 
 
 MeanThresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {back, _Real, 0}}, Block[
-	{ti, mn, sd, tr},
-	If[Mean[t] <= back,
-		(*if background do nothing*)
-		{0, 0, 0, 0}, 
-		ti = Select[(1-s) t, #>0.&];
-		mn = Mean[ti];
-		sd = Ramp[1 - (sc/mn) StandardDeviation[ti]];
-		tr = Min[{sd, fr}];
-		mn {1, tr, sd, fr}
+	{ti, mn, sd, tr, mask},
+	mn = Mean[t];
+	If[mn <= back,
+		{0., 0., 0., 0.},
+		ti = Pick[t, s, 0.0];
+		If[Length[ti] < 5,
+			{0., 0., 0., 0.},
+			mn = Mean[ti];
+			sd = Ramp[1.0 - (sc/mn)*StandardDeviation[ti]];
+			tr = Min[{sd, fr}];
+			mn*{1.0, tr, sd, fr}
+		]
 	]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization->True]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
 (* ::Subsection:: *)
@@ -242,7 +259,7 @@ Options[SelectActivations] = {
 	IgnoreSlices->{0,0}
 };
 
-SyntaxInformation[EvaluateActivation2]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
+SyntaxInformation[SelectActivations]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
 SelectActivations[act_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{1,1},{1,1,1}]
 
@@ -438,40 +455,40 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 		tresh = trD[[z,All,y,x]];
 
 		Row[{Show[
-			ListLinePlot[Thread[{ddat,sig}],PlotStyle->Black,PlotMarkers->Automatic,PlotRange->{0,1.1 Max@sig},ImageSize->500,
-				GridLines->If[grid,{
-					{{dyn,Directive[Black,Thick]}},
-					{{mean,Directive[Black,Thick]},
-						{tresh[[1]],Directive[Red,Thick]},
-						{tresh[[2]],Directive[Thick,RGBColor[0.812807, 0.518694, 0.303459], Dashed]},
-						{tresh[[3]],Directive[Thick,RGBColor[0.253651, 0.344893, 0.558151], Dashed]}}},
-						None
-					]
+			ListLinePlot[Thread[{ddat,sig}],PlotStyle->LightDarkV[],PlotMarkers->Automatic,PlotRange->{0,1.1 Max@sig},ImageSize->500,
+				GridLines->If[grid, {
+					{{dyn, Directive[LightDarkV[], Thick]}},
+					{{mean, Directive[LightDarkV[], Thick]},
+						{tresh[[1]], Directive[Red,Thick]},
+						{tresh[[2]], Directive[Thick,RGBColor[0.812807, 0.518694, 0.303459], Dashed]},
+						{tresh[[3]], Directive[Thick,RGBColor[0.253651, 0.344893, 0.558151], Dashed]}}
+					}, None
+				], $plotOptions
 			],
 			Graphics[{
-				RGBColor[0.812807, 0.518694, 0.303459],Line[{{0,tresh[[2]]},{Length@sig,tresh[[2]]}}],
-				RGBColor[0.253651, 0.344893, 0.558151],Line[{{0,tresh[[2]]},{Length@sig,tresh[[2]]}}]
+				RGBColor[0.812807, 0.518694, 0.303459], Line[{{0, tresh[[1]]}, {Length@sig, tresh[[1]]}}],
+				RGBColor[0.253651, 0.344893, 0.558151], Line[{{0, tresh[[1]]}, {Length@sig, tresh[[1]]}}]
 			}],
 			ListPlot[Pick[Thread[{ddat,sig}],actt,1],PlotStyle->Red,PlotMarkers->{Automatic,10}],
 			ListPlot[Pick[Thread[{ddat,sig}],actSt,1],PlotStyle->Green,PlotMarkers->{Automatic,10}]]
 			,
 			LocatorPane[Dynamic[c],ImageCompose[
 				Image[dim[[sl,dyn]],ColorSpace->"Grayscale",ImageSize->400],{Image[aim[[sl,dyn]],ColorSpace->"RGB"], alpha}
-			], Appearance->Style[If[crs,"+"," "], Blue,FontSize->40]
+			], Appearance->Style[If[crs, "+", " "], Blue, FontSize->60, Bold]
 		]}]
 
-		,{{sel,False,"Use Locator"},{True,False}}
+		,{{sel, False, "Use Locator"},{True,False}}
 		,Delimiter
-		,{{m,1,"Number of act."},max,ControlType->SetterBar}
-		,{{n,1,"Position number"}, 1, Dynamic[l], 1}
+		,{{m, 1, "Number of act."},max,ControlType->SetterBar}
+		,{{n, 1, "Position number"}, 1, Dynamic[l], 1}
 		,Delimiter
 		,{{sl, 1, "Slice"}, 1, Dynamic[zz], 1}
 		,{{dyn, 1, "Dynamic"}, 1, Dynamic[dd], 1}
 		,Delimiter
 		,{{alpha, 0.5, "Opacity"},0,1}
-		,{{crs, True,"Show cross"},{True,False}}
+		,{{crs, True, "Show cross"},{True,False}}
 		,Delimiter
-		,{{grid,False},{True,False}}
+		,{{grid, False, "Show grid"},{True,False}}
 		,Row[{Dynamic[{z,y,x}]}]
 		,
 		{zz,ControlType->None},{dd,ControlType->None},{xx,ControlType->None},{yy,ControlType->None},
