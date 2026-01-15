@@ -632,15 +632,15 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	},
 
 	(*get the options*)
-	{{minLength, maxLength}, maxAng, maxSeed, flip, per, int, stopT, step, mon} = OptionValue[{
+	{{minLength, maxLength}, maxAng, maxSeed, flip, per, int, stopT, step, mon, met} = OptionValue[{
 		FiberLengthRange, FiberAngle, MaxSeedPoints, TensorFlips, TensorPermutations, 
-		InterpolationOrder, StopThreshold, StepSize, TractMonitor}];
+		InterpolationOrder, StopThreshold, StepSize, TractMonitor, Method}];
 	SeedRandom[1234];
 	mon = If[mon, MonitorFunction, List];
 
 	step = N@If[NumberQ[step], step, Min[0.75 vox]];
 	maxStep = Ceiling[(maxLength/step)];
-	tractF = Switch[OptionValue[Method], 
+	tractF = Switch[met, 
 		"RungeKutta" | "RK" | "RK2", RK2, 
 		"RungeKutta3" | "RK3", SSPRK3, 
 		"RungeKutta4" | "RK4", RK4, 
@@ -738,7 +738,7 @@ MakeInt[dati_, vox_, int_?IntegerQ] := Block[{dim, def, range, p, dat},
 			dim, {int, int, int} + 1, 0, 0, 0, 0, ex &, {}, {}, False}, 
 			Range[range[[#, 1]], range[[#, 2]], vox[[#]]] & /@ {1, 2, 3}, 
 			If[ArrayDepth[dat] === 3 && $VersionNumber >= 13.3, {PackedArrayForm, Range[0, Length[fdat]], fdat}, ToPackedArray@N@dat],
-			{Automatic,	Automatic, Automatic}
+			{Automatic, Automatic, Automatic}
 		]
 	]
 ]
@@ -863,14 +863,18 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
 	(*Extract tensor components*)
-	{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
-	If[Total[{dxx, dyy, dzz}] < 10.^-15, Return[{0., 0., 0.}]];
+	{dxx, dyy, dzz, dxy, dxz, dyz} = 1000. tens;
+	(*only negative eigenvalues or zero tensor*)
+	If[Total[{dxx, dyy, dzz}] < 10.^-16, Return[{0., 0., 0.}]];
 	
-	(*method fails if any of the eigenvectors are identity, use slow method*)
-	{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
-	If[dxy2 dxz2 dyz2 < 10.^-15, Return[First@Eigenvectors[{{dxx, dxy, dxz}, {dxy, dyy, dyz}, {dxz, dyz, dzz}}, 1]]];
-
+	(*one or more vectors aling wiht primary axis use normal method*)
+	If[ Abs[dxy dxz dyz] < 10.^-16,
+		vec = First@Eigenvectors[{{dxx, dxy, dxz}, {dxy, dyy, dyz}, {dxz, dyz, dzz}}, 1];
+		Return[Sign[Sign[Dot[vdir, vec]] + 0.1] vec]
+	];
+	
 	(*tensor invariants*)
+	{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
 	i1 = dxx + dyy + dzz;
 	i2 = dxx dyy + dxx dzz + dyy dzz - dxy2 - dxz2 - dyz2;
 	i3 = dxx dyy dzz + 2 dxy dxz dyz - dzz dxy2 - dyy dxz2 - dxx dyz2;
@@ -878,19 +882,18 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 	(*Use trigonometric solution for the largest eigenvalue only if v > 0*)
 	i = i1/3;
 	v = i^2 - i2/3;
-	If[v <= 0., Return[{0., 0., 0.}]];
+	If[v <= 10.^-16, Return[{0., 0., 0.}]];
 	v2 = Sqrt[v];
 	s = i^3 - (i1 i2)/6 + i3/2;
 	l1 = i + 2 v2 Cos[ArcCos[Min[1., Max[-1., s/(v v2)]]]/3];
-	If[l1 < 0, Return[{0., 0., 0.}]];
 
 	(*Calculate the corresponding eigenvector components*)
 	{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
 	vec = {b c, a c, a b};
 
-	(*normalize and align the vector with the incoming direction*)
+	(*normalize the vector and align with the incoming direction*)
 	norm = Norm[vec];
-	If[norm < 10.^-15, Return[{0., 0., 0.}]];
+	If[norm < 2 10.^-16, Return[{0., 0., 0.}]];
 	vec = vec/norm;
 	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
@@ -1124,6 +1127,8 @@ Options[PlotTracts] = {
 }
 
 SyntaxInformation[PlotTracts] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
+PlotTracts[file_String, opts : OptionsPattern[]] := PlotTracts[##, opts] & @@ ImportTracts[file][[1 ;; 3]]
 
 PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
 
