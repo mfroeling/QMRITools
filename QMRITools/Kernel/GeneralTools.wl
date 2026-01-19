@@ -298,7 +298,7 @@ MonitorFunction::usage =
 "MonitorFunction[] either prints or echos its input."
 
 LightDarkV::usage = 
-"LightDarkV[] gives Black for light mode and White for Darkmode in version 14.3+ else it gives White.
+"LightDarkV[] gives Black for light mode and White for dark mode in version 14.3+ else it gives White.
 LightDarkV[light, dark] does the same as LighhDarkSwitched but only for version 14.3 or higher."
 
 
@@ -524,23 +524,28 @@ FileSelect[action_String, type : {_String ..}, name_String, opts:OptionsPattern[
 (*CheckExtension*)
 
 
-SyntaxInformation[ConvertExtension] = {"ArgumentsPattern" -> {_, _}};
+SyntaxInformation[ConvertExtension] = {"ArgumentsPattern" -> {_, _.}};
 
+ConvertExtension[fileIn_]:= ConvertExtension[fileIn, ""]
 
 ConvertExtension[fileIn : {_?StringQ ..}, ext_?StringQ] := ConvertExtension[#, ext] & /@ fileIn
 
 ConvertExtension[fileIn_?StringQ, ext_?StringQ] := Block[{extOld, file, extNew},
 	(*get filename and extension*)
 	file = StringReplace[fileIn,".gz"->""];
-	extOld = "." <> FileExtension[file];
+	extOld = FileExtension[file];
 
 	(*make new extension*)
-	extNew = If[StringTake[ext, 1] === ".", ext, "." <> ext];
+	extNew = Which[
+		ext ==="", ext, 
+		StringTake[ext, 1] === ".", ext, 
+		True, "." <> ext
+	];
 
 	(*add or replace *)
-	If[extOld === ".",
+	If[extOld==="",
 		file <> extNew,
-		StringReplace[file, extOld -> extNew]
+		StringReplace[file, "."<>extOld -> extNew]
 	]
 ]
 

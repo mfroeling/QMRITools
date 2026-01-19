@@ -1126,7 +1126,7 @@ Options[PlotTracts] = {
 	PerformanceGoal -> "Speed"
 }
 
-SyntaxInformation[PlotTracts] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+SyntaxInformation[PlotTracts] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
 PlotTracts[file_String, opts : OptionsPattern[]] := PlotTracts[##, opts] & @@ ImportTracts[file][[1 ;; 3]]
 

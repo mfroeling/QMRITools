@@ -354,9 +354,9 @@ MakeCheckFile[nam_?StringQ, stat_?ListQ] := Export[
 
 SyntaxInformation[CheckFile] = {"ArgumentsPattern" -> {{_, _, _},_ ,_}};
 
-CheckFile[{fol_,name_,tag_}, stat_, ver_]:=CheckFile[FileNameJoin[{fol,name<>"_"<>tag}], stat, ver]
+CheckFile[{fol_, name_, tag_}, stat_, ver_] := CheckFile[FileNameJoin[{fol, name<>"_"<>tag}], stat, ver]
 
-CheckFile[nam_?StringQ, stat_, ver_]:=Block[{file, check},
+CheckFile[nam_?StringQ, stat_, ver_] := Block[{file, check},
 	file = nam <> "_check.json";
 	If[!FileExistsQ[file], False,
 		check=Import[file,"RawJSON"];
