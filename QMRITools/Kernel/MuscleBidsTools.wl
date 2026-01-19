@@ -161,15 +161,29 @@ GetConfig::conf = "Could not find config file in given folder."
 Begin["`Private`"] 
 
 
-debugBids[x___] := If[$debugBids, Print[x]];
-
-
 (* ::Subsection:: *)
-(*BIDS name and select*)
+(*General Definitions*)
 
 
 (* ::Subsubsection::Closed:: *)
-(*General Definitions*)
+(*Debug and logging*)
+
+
+debugBids[x___] := If[$debugBids, Print[x]];
+
+
+dataToLog[data_] := If[KeyExistsQ[data, $Failed], 
+    "Wrong data description: " <> data[$Failed], 
+    StringRiffle[KeyValueMap[ToString[#1] <> ": " <> ToString[#2] &, 
+        KeyDrop[data, {"Process", "Merging", "Segment", "Tractography"}]], "; "]
+]
+
+
+compress = ($OperatingSystem === "Windows");
+
+
+(* ::Subsubsection::Closed:: *)
+(*Bids Definitions*)
 
 
 bidsTypes = <|
@@ -193,18 +207,100 @@ bidsName = {"sub", "ses", "vol", "stk", "chunk", "rep", "acq" ,"part", "type", "
 bidsClass = {"Volume", "Volumes", "Stacks", "Repetitions", "Chunks", "Acquisitions", "Mixed"};
 
 
-dataToLog[data_] := If[KeyExistsQ[data, $Failed], 
-    "Wrong data description: " <> data[$Failed], 
-    StringRiffle[KeyValueMap[ToString[#1] <> ": " <> ToString[#2] &, 
-        KeyDrop[data, {"Process", "Merging", "Segment", "Tractography"}]], "; "]
-]
+(* ::Subsubsection::Closed:: *)
+(*Helper Functions*)
 
 
 WipStrip = StringDelete[#, {"WIP ", "WIP_", "wip ", "wip_"}, IgnoreCase -> True] &;
+
+
 StringStrip = StringDelete[#, {"-", "_", ".", " "}] &;
 
 
-compress = $OperatingSystem === "Windows";
+(* ::Subsubsection::Closed:: *)
+(*BidsType*)
+
+
+BidsType[type_?StringQ] := Lookup[bidsTypes, type, "miss"]
+
+BidsType[parts_?AssociationQ] := Lookup[bidsTypes, parts["type"], "miss"]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BidsValue*)
+
+
+BidsValue[parts_, val_?ListQ] := Flatten[BidsValue[parts, #] &/@ val]
+
+BidsValue[parts_, val_?StringQ] := Lookup[parts, val, Nothing]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BidsString*)
+
+
+BidsString[parts_, val_?ListQ] := BidsString[parts, #] &/@ val
+
+BidsString[parts_, val_?StringQ] := Block[{str},
+	str = BidsValue[parts, val];
+	If[StringQ[str], val<>"-"<>str, str]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetClassName*)
+
+
+GetClassName[class_, nameIn_] := Switch[class,
+	"Volume"|"Volumes"|"Stacks"|"Repetitions"|"Acquisitions"|"Chunks",
+	Switch[class, 
+		"Volume"|"Volumes", "vol",
+		"Stacks", "stk",
+		"Chunks", "chunk", 
+		"Repetitions", "rep", 
+		"Acquisitions", "acq"
+	] -> StringStrip[nameIn]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SubNameToBids*)
+
+
+Options[SubNameToBids] = {BidsIncludeSession -> True};
+
+SubNameToBids[nameIn_?ListQ, opts : OptionsPattern[]] := SubNameToBids[#, "", opts] & /@ nameIn
+
+SubNameToBids[nameIn_?ListQ, met_, opts : OptionsPattern[]] := SubNameToBids[#, met, opts] & /@ nameIn
+
+SubNameToBids[nameIn_?StringQ, opts : OptionsPattern[]] := SubNameToBids[nameIn, "", opts]
+
+SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name, ses},
+	(*get the names*)
+	ass = Switch[met, 
+		"Sub", PartitionBidsName, 
+		"BidsDcmToNii", PartitionBidsName[FileNameTake[#, {2, -1}]]&, 
+		_, PartitionBidsFolderName[#][[-1]]&
+	]@nameIn;
+	keys = Keys[ass];
+
+	(*if bids take sub key else assume first suf is name*)
+	name = "sub" -> If[MemberQ[keys, "sub"], ass["sub"], First[ass["suf"]]];
+
+	(*if bids take ses key else assume last suf is session*)
+	ses = "ses" -> If[MemberQ[keys, "ses"],
+		(*session is present take session*)
+		ass["ses"],
+		(*more than one suf last is session*)
+		If[Length[ass["suf"]] > 1, Last[ass["suf"]],
+			(*no session,see if need to be forced*)
+			If[OptionValue[BidsIncludeSession], "001", ""]]];
+	Association[{name, ses, "suf" -> {}}]
+]
+
+
+(* ::Subsection:: *)
+(*BIDS name and select*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -295,36 +391,6 @@ GenerateBidsFileName[{fol_?StringQ, parts_?AssociationQ}] := GenerateBidsFileNam
 GenerateBidsFileName[fol_?StringQ, parts_?AssociationQ] := FileNameJoin[{
 	GenerateBidsFolderName[fol, parts], BidsType[parts], GenerateBidsName[parts]
 }]
-
-
-(* ::Subsubsection::Closed:: *)
-(*BidsType*)
-
-
-BidsType[type_?StringQ] := Lookup[bidsTypes, type, "miss"]
-
-BidsType[parts_?AssociationQ] := Lookup[bidsTypes, parts["type"], "miss"]
-
-
-(* ::Subsubsection::Closed:: *)
-(*BidsValue*)
-
-
-BidsValue[parts_, val_?ListQ] := Flatten[BidsValue[parts, #] &/@ val]
-
-BidsValue[parts_, val_?StringQ] := Lookup[parts, val, Nothing]
-
-
-(* ::Subsubsection::Closed:: *)
-(*BidsString*)
-
-
-BidsString[parts_, val_?ListQ] := BidsString[parts, #] &/@ val
-
-BidsString[parts_, val_?StringQ] := Block[{str},
-	str = BidsValue[parts, val];
-	If[StringQ[str], val<>"-"<>str, str]
-]
 
 
 (* ::Subsection:: *)
@@ -504,6 +570,69 @@ MergeConfig[assoc_?AssociationQ, replace_?AssociationQ] := Merge[{assoc, replace
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*BuildBidsNameFromConfig*)
+
+
+BuildBidsNameFromConfig[{fol_, parts_}, datType_] := BuildBidsNameFromConfig[{fol, parts}, datType, ""]
+
+BuildBidsNameFromConfig[{fol_, parts_}, datType_, con_] := Block[{key, movStacks},
+	(*Filename for the dataType it self*)
+	
+	If[con ==="",
+		(*If no contrast generate generic output file name*)
+		key = If[!datType["HasDuplicate"], Nothing,
+			If[datType["Class"] === "Stacks", "stk", "chunk"] -> StringStrip@datType["Key"]];
+		GenerateBidsFileName[fol, <|
+			parts, key, "type" -> datType["Type"], "suf" -> datType["Suffix"]
+		|>],
+
+		(*if contrast specified generate the input file stack*)
+		movStacks = StringStrip /@ Flatten[{datType["Label"]}];
+		If[datType["Class"] === "Volumes", movStacks = movStacks[[{1}]]];
+		(*output the stack file names*)
+		GenerateBidsFileName[fol, <|parts, 
+			GetClassName[datType["Class"], StringStrip[#]], 
+			"type" -> datType["Type"], "suf" -> {datType["Suffix"], con}|>
+		] <> ".nii" & /@ movStacks
+	]
+]
+
+
+BuildBidsNameFromConfig[{folOut_, parts_}, {datType_, all_}, target_?ListQ] := BuildBidsNameFromConfig[{folOut, "", parts}, {datType, all}, target]
+
+BuildBidsNameFromConfig[{folOut_, folIn_, parts_}, {datType_, all_}, tar_?ListQ] := Block[{
+		target, isKey, key, type, suf, datTar, needKey, keyOut, tarType
+	},
+	(*Filename for remote target specified as list*)
+	target = DeleteDuplicates[tar];
+
+	(*see if target description has key and split target*)
+	isKey = MemberQ[all[[All, "Key"]], First[target]];
+	{key, type} = If[isKey, {First[target], Rest[target]}, {datType["Key"], target}];
+	{type, suf} = {First[type], Rest[type]};
+
+	(*make correct output key, quits if key is needed but not present*)
+	keyOut = If[!datType["HasDuplicate"], Nothing,
+		If[datType["Class"] === "Stacks", "stk", "chunk"] -> StringStrip@key];
+
+	(*If folder in is not specified only the output file is needed*)
+	If[folIn === "", Return[GenerateBidsFileName[folOut, 
+		<|parts, keyOut, "type" -> type, "suf" -> suf|>]<>".nii"]];
+
+	(*if folIn is defined look for input stack file names*)
+	tarType = First@If[isKey,
+		Select[all, #["Key"] === key &],
+		Select[all, #["InFolder"] === First[suf] &]
+	];
+
+	(*output the stack file names*)
+	GenerateBidsFileName[folIn, <|parts, 
+		GetClassName[tarType["Class"], StringStrip[#]], "type" -> type, "suf" -> suf|>
+	] <> ".nii" & /@ Flatten[{tarType["Label"]}]
+]
+
+
 (* ::Subsection:: *)
 (*JSON*)
 
@@ -546,7 +675,7 @@ MergeJSON[json:{_?AssociationQ..}] := Block[{keys},
 
 
 (* ::Subsection:: *)
-(*BidsSupport*)
+(*Bids Support Functions*)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -625,7 +754,7 @@ ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{subs, dataFo
 
 
 (* ::Subsubsection::Closed:: *)
-(*ViewProtocolNames*)
+(*GetProtocolNames*)
 
 
 GetProtocolNames[fold_?ListQ] := GetProtocolNames /@ fold
@@ -688,6 +817,7 @@ CheckConfigLabels[dir_, All] := Block[{fol},
 
 CheckConfigLabels[dir_, sub_?ListQ] := Column[CheckConfigLabels[dir, #] & /@ sub]
 
+
 CheckConfigLabels[dir_, sub_?StringQ] := Block[{names, config, labels, custom, lab},
 	names = GetProtocolNames[dir, sub][[All, 2]];
 	config = GetConfig[dir];
@@ -695,58 +825,6 @@ CheckConfigLabels[dir_, sub_?StringQ] := Block[{names, config, labels, custom, l
 	config = If[custom =!= $Failed, MergeConfig[config["datasets"], custom], config["datasets"]];
 	labels = Flatten[#["Label"] & /@ Values[config]];
 	sub -> Select[labels, ! MemberQ[names, #] &]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*SubNameToBids*)
-
-
-Options[SubNameToBids] = {BidsIncludeSession -> True};
-
-SubNameToBids[nameIn_?ListQ, opts : OptionsPattern[]] := SubNameToBids[#, "", opts] & /@ nameIn
-
-SubNameToBids[nameIn_?ListQ, met_, opts : OptionsPattern[]] := SubNameToBids[#, met, opts] & /@ nameIn
-
-SubNameToBids[nameIn_?StringQ, opts : OptionsPattern[]] := SubNameToBids[nameIn, "", opts]
-
-SubNameToBids[nameIn_?StringQ, met_, OptionsPattern[]] := Block[{ass, keys, name, ses},
-	(*get the names*)
-	ass = Switch[met, 
-		"Sub", PartitionBidsName, 
-		"BidsDcmToNii", PartitionBidsName[FileNameTake[#, {2, -1}]]&, 
-		_, PartitionBidsFolderName[#][[-1]]&
-	]@nameIn;
-	keys = Keys[ass];
-
-	(*if bids take sub key else assume first suf is name*)
-	name = "sub" -> If[MemberQ[keys, "sub"], ass["sub"], First[ass["suf"]]];
-
-	(*if bids take ses key else assume last suf is session*)
-	ses = "ses" -> If[MemberQ[keys, "ses"],
-		(*session is present take session*)
-		ass["ses"],
-		(*more than one suf last is session*)
-		If[Length[ass["suf"]] > 1, Last[ass["suf"]],
-			(*no session,see if need to be forced*)
-			If[OptionValue[BidsIncludeSession], "001", ""]]];
-	Association[{name, ses, "suf" -> {}}]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetClassName*)
-
-
-GetClassName[class_, nameIn_] := Switch[class,
-	"Volume"|"Volumes"|"Stacks"|"Repetitions"|"Acquisitions"|"Chunks",
-	Switch[class, 
-		"Volume"|"Volumes", "vol",
-		"Stacks", "stk",
-		"Chunks", "chunk", 
-		"Repetitions", "rep", 
-		"Acquisitions", "acq"
-	] -> StringStrip[nameIn]
 ]
 
 
@@ -841,69 +919,6 @@ CheckDataDescription[dis:{_Rule..}, met_] := Block[{
 		(*output the completed data Description*)
 		{KeySort@ass}
 	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*CheckDataDescription*)
-
-
-BuildBidsNameFromConfig[{fol_, parts_}, datType_] := BuildBidsNameFromConfig[{fol, parts}, datType, ""]
-
-BuildBidsNameFromConfig[{fol_, parts_}, datType_, con_] := Block[{key, movStacks},
-	(*Filename for the dataType it self*)
-	
-	If[con ==="",
-		(*If no contrast generate generic output file name*)
-		key = If[!datType["HasDuplicate"], Nothing,
-			If[datType["Class"] === "Stacks", "stk", "chunk"] -> StringStrip@datType["Key"]];
-		GenerateBidsFileName[fol, <|
-			parts, key, "type" -> datType["Type"], "suf" -> datType["Suffix"]
-		|>],
-
-		(*if contrast specified generate the input file stack*)
-		movStacks = StringStrip /@ Flatten[{datType["Label"]}];
-		If[datType["Class"] === "Volumes", movStacks = movStacks[[{1}]]];
-		(*output the stack file names*)
-		GenerateBidsFileName[fol, <|parts, 
-			GetClassName[datType["Class"], StringStrip[#]], 
-			"type" -> datType["Type"], "suf" -> {datType["Suffix"], con}|>
-		] <> ".nii" & /@ movStacks
-	]
-]
-
-
-BuildBidsNameFromConfig[{folOut_, parts_}, {datType_, all_}, target_?ListQ] := BuildBidsNameFromConfig[{folOut, "", parts}, {datType, all}, target]
-
-BuildBidsNameFromConfig[{folOut_, folIn_, parts_}, {datType_, all_}, tar_?ListQ] := Block[{
-		target, isKey, key, type, suf, datTar, needKey, keyOut, tarType
-	},
-	(*Filename for remote target specified as list*)
-	target = DeleteDuplicates[tar];
-
-	(*see if target description has key and split target*)
-	isKey = MemberQ[all[[All, "Key"]], First[target]];
-	{key, type} = If[isKey, {First[target], Rest[target]}, {datType["Key"], target}];
-	{type, suf} = {First[type], Rest[type]};
-
-	(*make correct output key, quits if key is needed but not present*)
-	keyOut = If[!datType["HasDuplicate"], Nothing,
-		If[datType["Class"] === "Stacks", "stk", "chunk"] -> StringStrip@key];
-
-	(*If folder in is not specified only the output file is needed*)
-	If[folIn === "", Return[GenerateBidsFileName[folOut, 
-		<|parts, keyOut, "type" -> type, "suf" -> suf|>]<>".nii"]];
-
-	(*if folIn is defined look for input stack file names*)
-	tarType = First@If[isKey,
-		Select[all, #["Key"] === key &],
-		Select[all, #["InFolder"] === First[suf] &]
-	];
-
-	(*output the stack file names*)
-	GenerateBidsFileName[folIn, <|parts, 
-		GetClassName[tarType["Class"], StringStrip[#]], "type" -> type, "suf" -> suf|>
-	] <> ".nii" & /@ Flatten[{tarType["Label"]}]
 ]
 
 
@@ -1154,7 +1169,7 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 		(*import the json belonging to name*)
 		(*-----*)AddToLog[{"Converting", nameIn, "as", type,":"}, True, 3];
 		files = Flatten@If[class === "Volumes",
-			FileNames["*"<>StringReplace[#," "->"_"]<>"*.json", folIn]&/@nameIn,
+			FileNames["*"<>StringReplace[#," "->"_"]<>"*.json", folIn]& /@ nameIn,
 			FileNames["*"<>StringReplace[nameIn," "->"_"]<>"*.json", folIn]
 		];
 
@@ -1624,7 +1639,7 @@ MuscleBidsProcess[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] 
 MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[niiFol, outFol, datDis, Method->"MuscleBidsProcess", opts]
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsProcessI*)
 
 
@@ -2123,13 +2138,13 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 								(*normalize the diffusion data based on the tensor and select b>200*)
 								reg = First@ImportNii[StringReplace[nfilep, "filt" -> "reg"]];
-								sel = First@SelectBvalueData[reg, val, 200];
+								sel = First@SelectBvalueData[reg, val, 1];
 								norm = NormalizeFascData[sel, mask, {tens, grad, val}];
 
 								(*perform activation analysis*)
 								fasc = First@FindActivations[norm, IgnoreSlices -> {0, 0}, 
 									ActivationThreshold -> {3., .65}, ActivationOutput -> All, MaskDilation -> 2, 
-									ActivationIterations -> 10, ActivationBackground -> 20];
+									ActivationIterations -> 10, ActivationBackground -> 10];
 								{fasc, fascm} = SelectActivations[fasc];
 
 								fascpar = {"fasc", "fascm", "norm"};
