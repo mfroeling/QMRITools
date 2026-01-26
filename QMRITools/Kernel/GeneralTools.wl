@@ -323,7 +323,7 @@ CropPadding::usage =
 "CropPadding is an option for AutoCropData or FindCrop. It specifies how much padding to use around the data."
 
 CropAlways::usage = 
-"CropAlways is an optin for ApplyCrop. If set True is will always crop even if outside the data."
+"CropAlways is an option for ApplyCrop. If set True is will always crop even if outside the data."
 
 OutputWeights::usage = 
 "OutputWeights is an option for SumOfSquares. If True it also output the SoS weights."
@@ -2011,55 +2011,84 @@ RotationMatrixToQuaternionVector[r : {{_?NumericQ, _?NumericQ, _?NumericQ}, {_?N
 
 Options[MakeFunctionGraph] = {
 	LabelPlacement -> Tooltip,
-	AllowSelfDependencies -> False
+	AllowSelfDependencies -> False,
+	FilterInternal -> False
 }
 
 SyntaxInformation[MakeFunctionGraph] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
 MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
-		fName, lab, self, in, cont, flist, names, types, contexts, edges, 
-		vertCol, vertFunc, vertLab
+		fName, lab, self, in, cont, flist, names, types, contexts, edges, legend, filter,
+		vertCol, vertFunc, vertLab, colorLab, typeLab, legendColor, ims, legendShape
 	},
 
+	{lab, self, filter} = OptionValue[{LabelPlacement, AllowSelfDependencies, FilterInternal}];
+
 	fName = StringSplit[ToString[#], "`"][[-1]] &;
+	fCont = StringSplit[ToString[Context[#]], "`"][[2]]&;
+	filt = If[# =!= Nothing, If[filter, Select[#, fCont[#] === fCont[func] &], #], Nothing]&;
 
 	(*get options*)
-	{lab, self} = OptionValue[{LabelPlacement, AllowSelfDependencies}];
+	colorLab = {
+		"Internal_Global" -> StandardGreen, 
+		"Internal_Private" -> StandardRed, 
+		"External_Global" -> StandardCyan, 
+		"External_Private" -> StandardYellow
+	}[[If[filter, {1, 2}, All]]];
+	typeLab = {
+		"SetDelayed" -> "Circle", 
+		"Function" -> "Triangle",
+		"Compiled" -> "Star"
+	};
 
 	(*get list of all dependant functions*)
 	in = {ToString@func};
 	cont = True;
-	While[cont, flist = DeleteDuplicates[Flatten[{in, GetDependencies /@ in}]];
-		cont = If[in === flist, False, in = flist; True]];
+	While[cont, 
+		flist = filt@DeleteDuplicates[Flatten[{in, GetDependencies /@ in}]];
+		cont = If[in === flist, False, in = flist; True]
+	];
 
 	(*get properties of function list*)
-	names = fName /@flist;
+	names = fName /@ flist;
 
 	types = Which[
 		Head[ToExpression@#] === CompiledFunction, "Compiled",
 		Head[ToExpression@#] === Function, "Function",
 		True, "SetDelayed"
-	]& /@flist;
+	]& /@ flist;
+	types[[1]] = "Square";
 
-	contexts = 	(cont = ToString[Context[#]];
-		If[StringSplit[cont, "`"][[2]] === StringSplit[Context[func], "`"][[2]], "Internal", "External"] <> "_" <> If[StringContainsQ[cont, "Private"], "Private", "Global"]
-	)& /@ flist;
+	contexts = 	StringRiffle[{
+		If[fCont[#] === fCont[func], "Internal", "External"],
+		If[StringContainsQ[ToString[Context[#]], "Private"], "Private", "Global"]
+	}, "_"]& /@ flist;
+	contexts[[1]] = StandardYellow;
 
-	edges = DeleteDuplicates[Flatten[(f = #; DirectedEdge[fName[f], fName[#]] & /@ GetDependencies[f]) & /@ flist]];
+	edges = DeleteDuplicates[Flatten[(f = #; DirectedEdge[fName[f], fName[#]] & /@ filt[GetDependencies[f]]) & /@ flist]];
 
 	If[!self, edges = Select[edges, #[[1]] =!= #[[2]] &]];
 
 	(*make graph properties*)
-	vertCol = Thread[names -> (Directive[#, EdgeForm[None]] & /@ (contexts /. Thread[
-			{"Internal_Global", "Internal_Private", "External_Global", "External_Private"} -> {StandardGreen, StandardBlue, StandardYellow, StandardRed}
-		]))];
-	vertFunc = Thread[names -> types /. {"SetDelayed" -> "Circle", "Function" -> "Triangle", "Compiled" -> "Star"}];
+	vertCol = Thread[names -> (Directive[#, EdgeForm[None]] & /@ (contexts /. colorLab))];
+	vertFunc = Thread[names -> types /. typeLab];
 	vertLab = Thread[names -> (Placed[#, lab] & /@ names)];
+	vertLab[[1]] = names[[1]] -> Placed[Style[names[[1]], 16], lab];
 
-	Graph[edges, 
-		VertexLabels -> vertLab, VertexShapeFunction -> vertFunc, VertexStyle -> vertCol,
-		VertexLabelStyle -> Directive[LightDarkV[], Bold, Automatic], EdgeStyle -> Directive[LightDarkV[], Thick], 
-		VertexSize -> Automatic, ImageSize -> {Automatic, 600}]
+	legendColor = SwatchLegend[Values[colorLab], Keys[colorLab], LegendLabel -> Style["Context", 15, Bold], LegendLayout -> "Row"];
+	ims = Rasterize[Graph[{1}, {}, VertexShapeFunction -> #[[1]], ImagePadding -> 0, PlotRangePadding -> 0, 
+		ImageSize -> #[[2]]]] & /@ Thread[{typeLab[[All, 2]], {15, 12, 20}}];
+	legendShape = SwatchLegend[ConstantArray[StandardBlue, 3], Keys[typeLab], LegendMarkers -> ims, 
+		LegendLabel -> Style["Type", 15, Bold], LegendLayout -> "Row"];
+	legend = Grid[{{legendColor, legendShape}}, Alignment -> Top, Spacings -> {3, 1}];
+
+	Legended[
+		Graph[edges, 
+			VertexLabels -> vertLab, VertexShapeFunction -> vertFunc, VertexStyle -> vertCol,
+			VertexLabelStyle -> Directive[LightDarkV[], Bold, Automatic], EdgeStyle -> Directive[LightDarkV[], Thick], 
+			VertexSize -> Automatic, ImageSize -> {Automatic,600}],
+		Placed[legend, Below]
+	]
 ]
 
 

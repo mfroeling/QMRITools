@@ -93,7 +93,7 @@ DataTransformation::usage =
 "DataTransformation[data, vox, w] transforms a 3D dataset according to the affine transformation vector w."
 
 InvertDataset::usage = 
-"InvertDataset[data] inverts the data along the x y and z axes. In other words it is rotated aroud the origin such that (x,y,z)=(-x,-y,-z) and (0,0,0)=(0,0,0)."
+"InvertDataset[data] inverts the data along the x y and z axes. In other words it is rotated around the origin such that (x,y,z)=(-x,-y,-z) and (0,0,0)=(0,0,0)."
 
 
 Hist::usage = 
@@ -197,10 +197,10 @@ PadOutputDimensions::usage =
 "PadOutputDimensions is an options for DataTransformation. If False the data is the same dimensions as the input else the data is padded."
 
 ReverseData::usage =
-"ReverseData is an option for JoinSets. Reverses each individual datset given as input for the JoinSets function. True by default."
+"ReverseData is an option for JoinSets. Reverses each individual dataset given as input for the JoinSets function. True by default."
 
 ReverseSets::usage =
-"ReverseSets is an option for JoinSets. Reverses the order of the datsets, False by default."
+"ReverseSets is an option for JoinSets. Reverses the order of the datasets, False by default."
 
 NormalizeSets::usage = 
 "NormalizeSets is an option for JoinSets. True normalizes the individual stacks before joining."
@@ -591,7 +591,7 @@ GetMaskData[data_?ArrayQ, mask_, opts : OptionsPattern[]] := Block[{
 		out, msk, cr, lout
 	},
 	Which[
-		(*Apply same maks to multiple datasets with cropping*)
+		(*Apply same masks to multiple datasets with cropping*)
 		ArrayDepth[data] === 4 && ArrayDepth[mask] === 3,
 		{msk, cr} = AutoCropData[mask];
 		GetMaskData[#, msk, opts] & /@ Transpose[ApplyCrop[data, cr]]

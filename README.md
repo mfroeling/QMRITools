@@ -3,7 +3,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.595302.svg)](https://zenodo.org/doi/10.5281/zenodo.595302)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.01204/status.svg)](https://doi.org/10.21105/joss.01204)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
-[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fmfroeling%2FQMRITools&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
+[![Hits](https://hits.sh/github.com/mfroeling/QMRITools.svg)](https://hits.sh/github.com/mfroeling/QMRITools/)
 
 [![MR-Hub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/MR-Hub.png)](https://ismrm.github.io/mrhub/)
 [![MRSHub](https://github.com/mfroeling/QMRITools/blob/master/docs/images/MRSHub.png)](https://mrshub.org/software_analysis/#QMRITools)
@@ -20,13 +20,16 @@
 
 ## Content
 
-- [Introduction](#introduction)
-- [Installation](#installation)
-- [Citing](#citing)
-- [Documentation](#documentation)
-- [External dependencies](#external-dependencies)
-- [Toolboxes](#toolboxes)
-- [License](#license)
+- [Welcome to QRMITools](#welcome-to-qrmitools)
+  - [Content](#content)
+  - [Introduction](#introduction)
+  - [Installation](#installation)
+  - [Citing](#citing)
+  - [Media and awards](#media-and-awards)
+  - [Documentation](#documentation)
+  - [External dependencies](#external-dependencies)
+  - [Toolboxes](#toolboxes)
+  - [License](#license)
 
 ------------------------------------------------------------------------
 

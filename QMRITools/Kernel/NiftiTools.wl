@@ -25,20 +25,20 @@ BeginPackage["QMRITools`NiftiTools`", Join[{"Developer`"}, Complement[QMRITools`
 
 
 DcmToNii::usage =
-"DcmToNii[] converts a dicom folder to nii, you will be prometed for the location of the folders. 
-DcmToNii[{\"input\",\"ouput\"}] converts the \"input\" dicom folder to nii files which are place in the \"output\" folder.
-For this function to work the dcm2niix.exe file should be present in the QMRITools aplication folder."
+"DcmToNii[] converts a dicom folder to nii, you will be prompted for the location of the folders. 
+DcmToNii[{\"input\",\"output\"}] converts the \"input\" dicom folder to nii files which are place in the \"output\" folder.
+For this function to work the dcm2niix.exe file should be present in the QMRITools application folder."
 
 
 ImportNii::usage = 
-"ImportNii[] promts to select the nii file to import.
+"ImportNii[] prompts to select the nii file to import.
 ImportNii[\"file\"] imports the nii file. 
 The default output is {data, vox}, however using NiiMethod various outputs can be given.
-The Nii import is also suported using the native Import function from Mathematica."
+The Nii import is also supported using the native Import function from Mathematica."
 
 
 ImportNiiDiff::usage = 
-"ImportNiiDiff[] will promt for the *.nii, *.bvec and *.bval file to import.
+"ImportNiiDiff[] will prompt for the *.nii, *.bvec and *.bval file to import.
 ImportNiiDiff[*.nii] will import the *.nii file and automatically also imports the *.bvec and *.bval is they have the same name.
 ImportNiiDiff[*.nii,*.bvec,*.bval] will import the given files.
 The output will be {data,grad,bvec,vox}."
@@ -57,25 +57,25 @@ ImportExploreDTItens::usage =
 
 
 ImportBvalvec::usage =
-"ImportBvalvec[] will promt to select the *.bval and *.bvec files.
+"ImportBvalvec[] will prompt to select the *.bval and *.bvec files.
 ImportBvalvec[file] if file is either a *.bval or *.bvec it will automatically import the *.bval and *.bvec files.
 ImportBvalvec[*.bvec,*.bval] imports the given *.bval and *.bvec files." 
 
 ImportBval::usage = 
-"ImportBval[] will promt to select the *.bval file.
+"ImportBval[] will prompt to select the *.bval file.
 ImportBval[*.bval] imports the given *.bval file." 
 
 ImportBvec::usage = 
-"ImportBvec[] will promt to select the *.bvec file.
+"ImportBvec[] will prompt to select the *.bvec file.
 ImportBvec[*.bvec] imports the given *.bvec file." 
 
 ImportBmat::usage =
-"ImportBmat[] will promt to select the *.txt file containing the bmatrix.
+"ImportBmat[] will prompt to select the *.txt file containing the bmatrix.
 ImportBmat[*.txt] imports the given *.txt file containing the bmatrix." 
 
 
 ExportNii::usage = 
-"ExportNii[data, vox] exports the nii file and will promt for a file name.
+"ExportNii[data, vox] exports the nii file and will prompt for a file name.
 ExportNii[data, vox, \"file\"] exports the nii file to the location \"file\"."
 
 
@@ -112,11 +112,11 @@ ExportBvalvec[{bvals, grad}, \"file\"] exports the diffusion values and gradient
 
 
 ExtractNiiFiles::usage =
-"ExtractNiiFiles[] promts for a folder. It then extracts all nii.gz files to .nii files in the selected folder.
+"ExtractNiiFiles[] prompts for a folder. It then extracts all nii.gz files to .nii files in the selected folder.
 ExtractNiiFiles[folder] extracts all nii.gz files to .nii files in folder."
 
 CompressNiiFiles::usage =
-"CompressNiiFiles[] promts for a folder. It then compresses all nii files to .nii.gz files in the selected folder.
+"CompressNiiFiles[] prompts for a folder. It then compresses all nii files to .nii.gz files in the selected folder.
 CompressNiiFiles[folder] compresses all nii files to .nii.gz files in folder."
 
 
@@ -164,7 +164,7 @@ UseVersion::usage =
 "UseVersion is an option for DcmToNii. For windows it allows to switch between different versions of dcm2niix.exe."
 
 DeleteOutputFolder::usage = 
-"DeleteOutputFolder is an option of DcmToNii. If the ouput folder already exists it will be deleted."
+"DeleteOutputFolder is an option of DcmToNii. If the output folder already exists it will be deleted."
 
 
 (* ::Subsection::Closed:: *)
@@ -229,7 +229,7 @@ DcmToNii[{infol_?StringQ, outfol_?StringQ}, opt:OptionsPattern[]] := Block[{
 	mon = OptionValue[MonitorCalc];
 
 	(*generate a popup to select the file or folder*)
-	filfolin = If[infol=="", FileSelect["Directory", WindowTitle->"Select direcotry containig the dcm files"], infol];
+	filfolin = If[infol=="", FileSelect["Directory", WindowTitle->"Select directory containing the dcm files"], infol];
 	If[filfolin == Null || filfolin === $Canceled, Return[$Failed]];
 	folout = If[outfol == "", FileSelect["Directory", WindowTitle->"Select directory to put nii files in"], outfol];
 	If[filfolin == Null || folout == Null || folout === $Canceled, Return[$Failed]];
@@ -1468,7 +1468,7 @@ ExportBvalvec[{bv_, grad_}, fil_String, opts:OptionsPattern[]] := Block[{},
 
 SyntaxInformation[ExtractNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
 
-ExtractNiiFiles[lim_:Infinity] := ExtractNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
+ExtractNiiFiles[lim_:Infinity] := ExtractNiiFiles[FileSelect["Directory", WindowTitle -> "Select directory containing the nii files"],lim]
 
 ExtractNiiFiles[folder_,lim_:Infinity] := Block[{files},
 	files = FileNames["*.nii.gz", folder,lim];
@@ -1490,7 +1490,7 @@ CompressNiiFiles[]:=CompressNiiFiles[Infinity]
 
 CompressNiiFiles[folder_?StringQ]:=CompressNiiFiles[folder, Infinity]
 
-CompressNiiFiles[lim_] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select direcotry containig the nii files"],lim]
+CompressNiiFiles[lim_] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select directory containing the nii files"],lim]
 
 CompressNiiFiles[folder_?StringQ,lim_] := Block[{files,file},
 	files = FileNames["*.nii", folder,lim];

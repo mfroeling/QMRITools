@@ -23,8 +23,8 @@ BeginPackage["QMRITools`FasciculationTools`", Join[{"Developer`"}, Complement[QM
 (* ::Subsection::Closed:: *)
 (*Functions*)
 
-NormalizeFascData::usage = 
-"NormalizeFascData[data_, mask, {tens, grad, val}] ..."
+NormalizeFasciculationData::usage = 
+"NormalizeFasciculationData[data_, mask, {tens, grad, val}] ..."
 
 FindActivations::usage = 
 "FindActivations[data] Finds the activation in MUMRI or DTI data after data normalization. 
@@ -59,7 +59,7 @@ ThresholdMethod::usage =
 "ThresholdMethod is an option for FindActivations. Values can be \"StandardDeviation\", \"Fraction\" or \"Both\"."
 
 IgnoreSlices::usage =
-"IgnoreSlices is an option for FindActivations and SelectActivations. Determins how many slices of the start and end of the dataset are ignored."
+"IgnoreSlices is an option for FindActivations and SelectActivations. determines how many slices of the start and end of the dataset are ignored."
 
 ActivationBackground::usage = 
 "ActivationBackground is an option for FindActivations. If all normalized signals, which range between 0-150, are below this value the algorithm does nothing."
@@ -101,9 +101,9 @@ Begin["`Private`"]
 (* ::Subsection:: *)
 (*FindActivations*)
 
-NormalizeFascData[data_, mask_] := NormalizeData[data, mask, NormalizeMethod -> "Volumes"];
+NormalizeFasciculationData[data_, mask_] := NormalizeData[data, mask, NormalizeMethod -> "Volumes"];
 
-NormalizeFascData[data_, mask_, {tens_, grad_, val_}] := Block[{
+NormalizeFasciculationData[data_, mask_, {tens_, grad_, val_}] := Block[{
 		ran, tensV, coor, scale, bmat
 	},
 	ran = {0, 1.5 Max[data]};

@@ -47,7 +47,7 @@ DixonToPercent::usage =
 "DixonToPercent[water, fat] converts the dixon water and fat data to percent maps.
 
 Output is {waterFraction, fatFraction}.
-The values of water and fat are arbitraty units and the ouput fractions are between 0 and 1.
+The values of water and fat are arbitrary units and the output fractions are between 0 and 1.
 
 DixonToPercent[] is based on DOI: 10.1002/mrm.21301."
 
@@ -61,8 +61,8 @@ SimulateDixonSignal::usage =
 Echotimes echo in ms, fat fraction fr between 0 and 1, field of resonance B0 in Hz and relaxation T2 in ms."
 
 OptimizeDixonEcho::usage = 
-"OptimizeDixonEcho[] shows a manipulate pannel which allos to optimize the dixon echos.
-OptimizeDixonEcho[echos] shows a manipulate pannel which allos to optimize the predifined dixon echos."
+"OptimizeDixonEcho[] shows a manipulate panel which allows to optimize the dixon echos.
+OptimizeDixonEcho[echos] shows a manipulate panel which allows to optimize the predefined dixon echos."
 
 
 FindInPhaseEchos::usage = 
@@ -76,7 +76,7 @@ Unwrap::usage =
 Unwrap[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 
 UnwrapSplit::usage = 
-"UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData based in the data and performs the unwrapping seperately. The data should be between -Pi and Pi.
+"UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData based in the data and performs the unwrapping separately. The data should be between -Pi and Pi.
 UnwrapSplit[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 
 UnwrapList::usage = 
@@ -114,7 +114,7 @@ DixonTolerance::usage =
 "DixonTolerance is an option for DixonReconstruct. Defines at which change per iteration of b0 and R2star the itarative methods stops. Default value is 0.1."
 
 DixonMaskThreshold::usage = 
-"DixonMaskThreshold is an option for DixonReconstruct. Defines at which Threshold the dixon reconstruction considers a voxel to be background noise. Defualt values is 0.05."
+"DixonMaskThreshold is an option for DixonReconstruct. Defines at which Threshold the dixon reconstruction considers a voxel to be background noise. default values is 0.05."
 
 DixonFilterInput::usage = 
 "DixonFilterInput is an option for DixonReconstruct. If True the input b0 and T2star values are smoothed using a gaussian kernel."
@@ -133,7 +133,7 @@ DixonPhases::usage =
 The order is {T2*, B0, bipolar, initial, bipolar}."
 
 DixonFitPhase::usage =
-"DixonFitPhase is an option for DixonReconstruct. If set to True the phase maps are fitted using polinomial functions."
+"DixonFitPhase is an option for DixonReconstruct. If set to True the phase maps are fitted using polynomial functions."
 
 PhaseEchos::usage = 
 "PhaseEchos is an option for DixonPhase. Can be Automatic or a list of two integers."
@@ -446,7 +446,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	},
 
 
-	(*---- algorithem is base on: ----*)	
+	(*---- algorithm is base on: ----*)	
 
 	(*Triplett WT et.al. 10.1002/mrm.23917 - fat peaks*)
 	(*Reeder et.al. 10.1002/mrm.20624 - iDEAL*)
@@ -553,7 +553,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	itt = Round@itt;
 	phi = result[[n+3 ;;]];
 
-	(*filter and contrain the output phase maps if needed and then recalculate the water fat fractions*)
+	(*filter and constrain the output phase maps if needed and then recalculate the water fat fractions*)
 	If[filto,
 		If[mon, PrintTemporary["Filtering field estimation and recalculating signal fractions"]];
 
@@ -880,12 +880,12 @@ Wrap[dat_]:= Mod[dat + Pi, 2 Pi] - Pi
 
 SyntaxInformation[UnwrapList] = {"ArgumentsPattern" -> {_}};
 
-UnwrapList[list_]:=Block[{jumps,lst,diff,out},
-	lst=If[Head[First@list]===Complex,Arg@list,list]/Pi;
-	diff=Differences[lst];
-	jumps=2 Prepend[Accumulate[(-Sign[diff]) Round[Chop[Abs[diff], 1.25]/2]],0];
-	out=jumps+lst;
-	Pi(Round[Subtract[Mean[list],Mean[out]],2]+out)
+UnwrapList[list_]:=Block[{jumps, lst, diff, out},
+	lst = If[Head[First@list] === Complex, Arg@list, list] / Pi;
+	diff = Differences[lst];
+	jumps = 2 Prepend[Accumulate[(-Sign[diff]) Round[Chop[Abs[diff], 1.25]/2]], 0];
+	out = jumps + lst;
+	Pi (Round[Subtract[Mean[list],Mean[out]],2] + out)
 ]
 
 
@@ -902,7 +902,7 @@ Options[Unwrap]={MonitorUnwrap->False, UnwrapDimension->"2D", UnwrapThresh->0.5}
 SyntaxInformation[Unwrap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 Unwrap[dat_,OptionsPattern[]]:= Block[{data, ind, undim, out, mon, thresh, len},
-	(* Phase unwrapping algorithem based on *)
+	(* Phase unwrapping algorithm based on *)
 	(*M.A. Herraez et al 2002 - 2D phase unwrapping using noncontinuous path -  DOI: 10.1364/ao.41.007437*)
 	(*Abdul-Rahman 2007. - 3D phase unwrapping usiong noncontinuous path- DOI: 10.1364/AO.46.006623*)
 
@@ -957,7 +957,7 @@ Options[UnwrapSplit] = Options[Unwrap]
 
 SyntaxInformation[UnwrapSplit] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-UnwrapSplit[phase_, mag_,opts:OptionsPattern[]] := Block[{cutVal, phaseSplit, B0split},
+UnwrapSplit[phase_, mag_, opts:OptionsPattern[]] := Block[{cutVal, phaseSplit, B0split},
 	cutVal = CutData[mag][[3]];
 	phaseSplit = CutData[phase, cutVal][[1 ;; 2]];
 	B0split = Unwrap[#, opts] & /@ phaseSplit;
@@ -1048,7 +1048,7 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 		(*loop over all edges*)
 		out = Map[(
 
-			(*Get the voxel corrdinates and the neighbour, contrain to dimensions*)
+			(*Get the voxel corrdinates and the neighbour, constrain to dimensions*)
 			add = adds[[#[[1]]]];
 			z1=#[[2]]; z2 = If[z1==dim[[1]], dim[[1]], z1+add[[1]]];
 			x1=#[[3]]; x2 = If[x1==dim[[2]], dim[[2]], x1+add[[2]]];
@@ -1208,7 +1208,7 @@ UnwrapDCT[psii_, wi_]:=Block[{
 		Qphii, maxi , i, soli, num, dena, denb
 	},
 
-	(*Phase unwrapping algorithem based on Ghiglia,Dennis C.,and Louis A.Romero. 10.1364/JOSAA.11.000107.*)
+	(*Phase unwrapping algorithm based on Ghiglia,Dennis C.,and Louis A.Romero. 10.1364/JOSAA.11.000107.*)
 
 	(*prepare data*)
 	psi = ToPackedArray@N@psii;

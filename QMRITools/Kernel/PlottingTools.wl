@@ -126,10 +126,10 @@ ContourSmoothRadius::usage =
 "ContourSmoothRadius is and option for PlotContour. It defines the smoothing radius with an integer, None or 0 does not smooth."
 
 ContourResolution::usage = 
-"ContourResolution is an option for PlotContour. It defines the mesh resolution used, can be a singel number or a list of 3 numbers."
+"ContourResolution is an option for PlotContour. It defines the mesh resolution used, can be a single number or a list of 3 numbers."
 
 RandomizeColor::usage = 
-"RandomizeColor is an option for PlotSegmentations. If True the colors are randomly assigened to each segmentation."
+"RandomizeColor is an option for PlotSegmentations. If True the colors are randomly assigned to each segmentation."
 
 
 MakeCheckPlot::usage = 
@@ -139,7 +139,7 @@ DropSlices::usage =
 "DropSlices is an option for GetSlicePositions and specifies how many slices from the beginning and and should be ignored."
 
 PeakNumber::usage = 
-"PeakNumber is an option of GetSlicePostitions and specifies how many slices per direction need to be found."
+"PeakNumber is an option of GetSlicePositions and specifies how many slices per direction need to be found."
 
 ImageLegend::usage = 
 "ImageLegend is an option for MakeSliceImages, if set true a barlegend is added to the image."
@@ -189,7 +189,7 @@ PlotData::data = "Error: Data must be a 2D, 3D or 4D numeric array."
 PlotData::size = "Datasets must have the same number of slices. dataset1: `1` slices, dataset2: `2` slices. (Image dimensions may vary)."
 
 PlotData::set = 
-"Error: Not two valied datasest, posibilities:
+"Error: Not two valid datasets, possibilities:
 - 2D and 2D
 - 3D and 3D
 - 4D and 4D
@@ -301,8 +301,8 @@ With[{ran = Range[0, 1., 1./(ncol - 1)]},
 	Table[ColorLookup[j, i] = Col2List[ColSel[j, i][#] & /@ ran], {j, colfuncs}, {i, colorFunctions[[All, 1]]}]
 ];
 
-(*color lookup function, presersing clipping and transparency. It converts integers to color values*)
-(*returs the color function*)
+(*color lookup function, preserving clipping and transparency. It converts integers to color values*)
+(*returns the color function*)
 LookUpTable[{lstyle_, color_}, {minclip_, maxclip_}] := With[{
 		(*generate color lookup table with correct clipping colors for min and max,add opacity for Image function*)
 		collist = Join[{Col2List[minclip]},(ColorLookup[lstyle, color]),{Col2List[maxclip]}]
@@ -326,10 +326,10 @@ ColorRound = With[{
 	}, (1 - lower) + lower greater scale + (ncol + 2) (1 - greater)] &
 
 (* ::Subsubsection::Closed:: *)
-(*ManPannel*)
+(*ManPanel*)
 
 
-ManPannel[name_, cont_, depl_:True]:= Module[{controls = DeleteCases[cont, Null]},
+ManPanel[name_, cont_, depl_:True]:= Module[{controls = DeleteCases[cont, Null]},
 	OpenerView[{Style[name, Bold, Medium],
 		Grid[If[ArrayDepth[controls] == 1, {controls}, controls],
 			Alignment -> {{Right, Left}, Center}, ItemSize -> {{13, 30}}]
@@ -508,13 +508,13 @@ Module[{input,lab},
 	If[input===$Canceled,Return[Print["Export multiple files was canceled!"]]];
 
 	Switch[Length[range],
-		2,(* one 3D datasest *)
+		2,(* one 3D datasets *)
 		Table[
 			lab=ReleaseHold[label]/. None->"";
 			pl=ReleaseHold[plot];
 			SaveImage[pl,input<>lab<>type,FileType->type,ImageSize -> size];
 			,{xs,range[[1]],range[[2]]}];,
-		4,(* one 4D datasest *)
+		4,(* one 4D datasets *)
 		Table[
 			lab=ReleaseHold[label]/. None->"";
 			pl=ReleaseHold[plot];
@@ -536,9 +536,9 @@ Module[{input,movie},
 	If[input===$Canceled,Return[Print["Export movie was canceled!"]]];
 
 	movie=Flatten[Switch[Length[range],
-		2,(* one 3D datasest *)
+		2,(* one 3D datasets *)
 		Table[Rasterize[ReleaseHold[plot],RasterSize->size],{xs,range[[1]],range[[2]]}],
-		4,(* one 4D datasest *)
+		4,(* one 4D datasets *)
 		Table[Rasterize[ReleaseHold[plot],RasterSize->size],{xs,range[[1]],range[[2]]},{ys,range[[3]],range[[4]]}]
 		]];
 	Export[input,movie,"DisplayDurations"->dur,"AnimationRepetitions"->loop,RasterSize->size, ImageResolution->150];
@@ -840,12 +840,12 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 	tab1 = Column[{
 		(*Slice selction controls, depends on data dimensions*)
 		{"",
-		ManPannel["Slice Selection",{
+		ManPanel["Slice Selection",{
 			{Dynamic["Slice (1-"<>ToString[rangex]<>")"],Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Orientation",Control@{{or,1,""},{1->"Transversal",2->"Sagittal",3->"Coronal"}}},
 			{"Reverse Slice Order",Control@{{reverse,False,""},{True,False}}}
 		}],
-		ManPannel["Slice Selection",{
+		ManPanel["Slice Selection",{
 			{Dynamic["Slice 1 (1-"<>ToString[rangex]<>")"],Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Slice 2 (1-"<>ToString[rangey]<>")",Control@{{yp,1,""},1,rangey,1, Appearance -> "Labeled"}},
 			{"Orientation",Control@{{or,1,""},{1->"Transversal",2->"Sagittal",3->"Coronal"}}},
@@ -853,7 +853,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			}]
 		}[[n]]
 		,(*Plot range controls*)
-		ManPannel["Plot Range",{
+		ManPanel["Plot Range",{
 			{"Auto Scaling", Control@{{cfs,False,""},{True -> "On", False -> "Off"}}},
 			{"Min value",Control@{{min,mind,""},mind,max-(maxd-mind)/250,(maxd-mind)/250, Appearance -> "Labeled"}},
 			{"Max value",Control@{{max,maxd,""},min+(maxd-min)/250,maxd,(maxd-mind)/250, Appearance -> "Labeled"}},
@@ -881,7 +881,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 			}]}
 		}]
 		,(*Plot style controls*)
-		ManPannel["Plot Style",{
+		ManPanel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
 			{"Plot Size",Control@{{ps,300,""},psizes,ControlType->PopupMenu}},
 			{"Color function",Control@{{color,pcol,""},colors,ControlType->PopupMenu}},
@@ -896,21 +896,21 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 	(*T2: second tab, exporting controls*)
 	tab2 = Column[{
 		(*Export parameters controls*)
-		ManPannel["Export plot",{
+		ManPanel["Export plot",{
 			{"File Type",Control@{{fileType,".jpg",""},files}},
 			{"Export Size",Control@{{size,400,""},sizes,ControlType->PopupMenu}},
 			{"Export",Button["Save Plot", SaveImage[Dynamic[exp], FileType->fileType, ImageSize -> size],Method->"Queued",ImageSize->150]}
 		}]
 		,(*Multiple image export controls, depends on data dimensions 2D-off, 3D-on 2 sliders, 4D-on 4 sliders*)
 		{"",
-		ManPannel["Export multiple plots as files",{
+		ManPanel["Export multiple plots as files",{
 			{"Start slice",Control@{{start1,1,""},1,Dynamic[end1],1, Appearance -> "Labeled"}},
 			{"End slice",Control@{{end1,Length[data],""},Dynamic[start1],Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Export Files",
 				Button["Save Plots",MultiFileSave[Hold[plot[xs,ys,xs]],Hold[plab[xs,ys,True]],{start1,end1},fileType,size],
 				Method->"Queued",ImageSize->150]}
 		}],
-		ManPannel["Export multiple plots as files",{
+		ManPanel["Export multiple plots as files",{
 			{"Start slice 1",Control@{{start1,1,""},1,Dynamic[end1],1, Appearance -> "Labeled"}},
 			{"End slice 1",Control@{{end1,1,""},Dynamic[start1],Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Start slice 2",Control@{{start2,1,""},1,Dynamic[end2],1, Appearance -> "Labeled"}},
@@ -922,7 +922,7 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 		}[[n]]
 		,(*Animated gif export controls, depends on data dimensions 2D-off, 3D/4D-on*)
 		{"",
-		ManPannel["Export multiple plots as animated gif",{
+		ManPanel["Export multiple plots as animated gif",{
 			{"Display Duration (s)",Control@{{dur,.5,""},0.1,2,0.1, Appearance -> "Labeled"}},
 			{"Animation Repetitions",Control@{{loop,Infinity,""},{Infinity,1,2,3,4,5},ControlType->PopupMenu}},
 			{"Export Movie",
@@ -1066,12 +1066,12 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 	(*first tabs, plotting controls*)
 	tab1 = Column[{
 		{"",
-		ManPannel["Slice Selection",{
+		ManPanel["Slice Selection",{
 			{"Slice",Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Reverse Slice Order", Control@{{reverse, False, ""}, {True, False}}},
 			{##} & @@ If[dim1 == dim2, {"Orientation",Control@{{or, 1, ""}, {1->"Transversal",2->"Sagittal",3->"Coronal"}}},or=1; Null]
 			}],
-		ManPannel["Slice Selection",{
+		ManPanel["Slice Selection",{
 			{"Slice 1",Control@{{x,Round[rangex/2],""},1,Dynamic[rangex],1, Appearance -> "Labeled"}},
 			{"Slice 2",Control@{{yp,1,""},1,rangey,1, Appearance -> "Labeled"}},
 			{"Reverse Slice Order", Control@{{reverse, False, ""}, {True, False}}},
@@ -1080,7 +1080,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 			}]
 			}[[n]]
 		,
-		ManPannel["Plot Range",{
+		ManPanel["Plot Range",{
 			{"Data set",Control@{{leftright,1,""},{1->"Left",2->"Right"}}},
 			{Style[Dynamic[{"Left dataset","Right dataset"}[[leftright]]],Bold],""},
 			{"Auto Scaling",PaneSelector[{
@@ -1141,7 +1141,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				}]
 			},Dynamic[leftright]]}
 		}, False],
-		ManPannel["Plot Style",{
+		ManPanel["Plot Style",{
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}},
 			{"Plot Size",Control@{{ps,300,""},psizes,ControlType->PopupMenu}},
 			{"Layout",Row@{
@@ -1160,7 +1160,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				1->Control@{{lstyle1,"Normal",""},colfuncs},
 				2->Control@{{lstyle2,"Normal",""},colfuncs}},Dynamic[leftright]]}
 			},True],
-		ManPannel["Overlay/Checkboard Plot Options",{
+		ManPanel["Overlay/Checkboard Plot Options",{
 			{"Merge Plots",Control@{{overlay,1,""},{1->"None",2->"Checkboard",3->"Overlay",4->"Difference"}}},
 			{"Flip",Control@{{flip,False,""},{True,False}}},
 			{"Legend",Control@{{leg,1,""},{1->"First","Second"}}},
@@ -1176,20 +1176,20 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 
 	(*second tab, exporting controls*)
 	tab2 = Column[{
-		ManPannel["Export plot",{
+		ManPanel["Export plot",{
 			{"File Type",Control@{{fileType,".jpg",""},files}},
 			{"Export Size",Control@{{size,400,""},sizes,ControlType->PopupMenu}},
 			{"Export",Button["Save Plot",SaveImage[Dynamic[exp],FileType->fileType,ImageSize -> size],Method->"Queued",ImageSize->150]}
 			}]
 		,
 		{"",
-			ManPannel["Export multiple plots as files",{
+			ManPanel["Export multiple plots as files",{
 				{"Start slice",Control@{{start1,1,""},1,Dynamic[end1],1, Appearance -> "Labeled"}},
 				{"End slice",Control@{{end1,rangex,""},Dynamic[start1],rangex,1, Appearance -> "Labeled"}},
 				{"Export Files",Button["Save Plots",MultiFileSave[Hold[plot[xs,ys,xs]],Hold[plab[xs,ys,True]],{start1,end1},fileType,size],
 					Method->"Queued",ImageSize->150]}
 				}],
-			ManPannel["Export multiple plots as files",{
+			ManPanel["Export multiple plots as files",{
 				{"Start slice 1",Control@{{start1,1,""},1,Dynamic[end1],1, Appearance -> "Labeled"}},
 				{"End slice 1",Control@{{end1,rangex,""},Dynamic[start1],rangex,1, Appearance -> "Labeled"}},
 				{"Start slice 2",Control@{{start2,1,""},1,Dynamic[end2],1, Appearance -> "Labeled"}},
@@ -1199,7 +1199,7 @@ Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1
 				}]
 			}[[n]],
 		{"",
-			ManPannel["Export multiple plots as animated gif",{
+			ManPanel["Export multiple plots as animated gif",{
 				{"Display Duration (s)",Control@{{dur,.5,""},0.1,2,0.1, Appearance -> "Labeled"}},
 				{"Animation Repetitions",Control@{{loop,Infinity,""},{Infinity,1,2,3,4,5},ControlType->PopupMenu}},
 				{"Export Movie",Button["Save Movie",MovieSave[Hold[plot[xs,ys,xs]],dur,loop,size,{start1,end1,start2,end2}[[1;;2(n-1)]]], Method->"Queued",ImageSize->150]}
@@ -1461,7 +1461,7 @@ DynamicModule[{data, vox, dep},
 		(*slice selection menu and *)
 		Delimiter,
 		Column[{
-			ManPannel["Slice Selection", {
+			ManPanel["Slice Selection", {
 				{Dynamic["Axial (1-" <> ToString[size1] <> ")"], Control@{{slice, Round[size1/2], ""}, 1, size1, 1}},
 				{Dynamic[ "Coronal (1-" <> ToString[size2] <> ")"], Control@{{column, Round[size2/2], ""}, 1, size2, 1}},
 				{Dynamic["Sagittal (1-" <> ToString[size3] <> ")"], Control@{{row, Round[size3/2], ""}, 1, size3, 1}},
@@ -1475,7 +1475,7 @@ DynamicModule[{data, vox, dep},
 		}],
 		Delimiter,
 		Column[{
-			ManPannel["Plot Range", {
+			ManPanel["Plot Range", {
 				{"Auto Scaling", Control@{{cfs, False, ""}, {True -> "On", False -> "Off"}}},
 				{"Min value", Control@{{min, mind, ""}, mind, Dynamic[0.9 max]}},
 				{"Max value", Control@{{max, maxd, ""}, Dynamic[1.1 min], maxd}},
@@ -1492,7 +1492,7 @@ DynamicModule[{data, vox, dep},
 		Delimiter,
 		(*menu for plot style*)
 		Column[{
-			ManPannel["Plot Style", {
+			ManPanel["Plot Style", {
 				{"Plot Title", Control@{{label, "", ""}, InputField[#, String] &}},
 				{"Plot Size", Control@{{scale, 500, "" }, psizes}},
 				{"Color function", Control@{{color, "BlackToWhite", ""}, colors, ControlType -> PopupMenu}},
@@ -1508,7 +1508,7 @@ DynamicModule[{data, vox, dep},
 		(* menu for 3D plot options*)
 		Delimiter,
 		Column[{
-			ManPannel["3D options", {
+			ManPanel["3D options", {
 				{ "Colorfunction 3D", Control@{{col3D, "WhiteBlackOpacity", ""}, colors3D}},
 				{"Viewpoint", Control@{{vp, 3.5 {0.384, 0.709, 0.591}, ""}, views, ControlType -> SetterBar}},
 				{"Show Planes", Row[{
@@ -1618,11 +1618,11 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 	(*data=(##[data,{mind,maxd}])&@@{{ToByte2,ToByte3,ToByte4}[[n]]};*)
 
 	tab1=Column[{
-		ManPannel["Slice Selection",{
+		ManPanel["Slice Selection",{
 			{"Slice (1-"<>ToString[dim[[1]]]<>")",Control@{{z,Round[dim[[1]]/2],""},1,dim[[1]],1}}
 			}]
 		,
-		ManPannel["Plot Range",{
+		ManPanel["Plot Range",{
 			{"Show background image",Control@{{pl,True,""},{True,False}}},
 			{"Min value",Control@{{min,mind,""},mind,max-0.0001,(max-mind)/100, Appearance -> "Labeled"}},
 			{"Max value",Control@{{max,maxd,""},min+0.0001,maxd,(maxd-min)/100, Appearance -> "Labeled"}},
@@ -1631,7 +1631,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 			{"Transparent Clipping",Control@{{transclip,False,""},{True,False}}}
 			}]
 		,
-		ManPannel["Plot Options",{
+		ManPanel["Plot Options",{
 			{"Grid spacing",Control@{{gs,3,""},1,10,1}},
 			{"Grid size",Control@{{gf,{0.003,Medium},""},{{0.001,Tiny}->"Thin",{0.003,Medium}->"Normal",{0.005,Large}->"Thick"}}},
 			{"Plot Size",Control@{{ps,400,""},psizes,ControlType->PopupMenu}},
@@ -1639,7 +1639,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}}
 			}]
 		,
-		ManPannel["Grid Options",{
+		ManPanel["Grid Options",{
 			{"Normal grid",Control@{{norm,False,""},{True,False}}},
 			{"Normal grid color",Control@{{ncol,Blue,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
 			{"Deformed grid",Control@{{def,False,""},{True,False}}},
@@ -1652,7 +1652,7 @@ Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileTyp
 		}];
 
 	tab2=Column[{
-		ManPannel["Export plot",{
+		ManPanel["Export plot",{
 			{"File Type",Control@{{fileType,".jpg",""},files}},
 			{"Export Size",Control@{{size,400,""},sizes,ControlType->PopupMenu}},
 			{"Export",Button["Save Plot",SaveImage[Dynamic[exp],FileType->fileType,ImageSize -> size],Method->"Queued",ImageSize->150]}
