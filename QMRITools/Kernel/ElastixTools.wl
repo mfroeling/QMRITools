@@ -28,7 +28,7 @@ ClearQMRIToolsTemp::usage =
 "ClearQMRIToolsTemp[] clears the temporary directory used by QMRITools for registration."
 
 RegisterData::usage =
-"RegisterData[data] registers the data series. If data is 3D it performs multiple 2D registration, if data is 4D it performs multipe 3D registration.
+"RegisterData[data] registers the data series. If data is 3D it performs multiple 2D registration, if data is 4D it performs multiple 3D registration.
 The input data can be in the forms: data, {data, vox}, {data, mask} or {data, mask, vox}.
 
 RegisterData[target, moving] registers the moving data to the target data. target can be 2D or 3D. moving can be the same of one dimension higher than the target.
@@ -40,7 +40,7 @@ If OutputTransformation is True it also outputs the translation, rotation scale 
 RegisterData[] is based on DOI: 10.1109/TMI.2009.2035616 and 10.3389/fninf.2013.00050."
 
 RegisterDataSplit::usage = 
-"RegisterDataSplit[target, moving] is identical to RegisterData data however left and right side of the data are registered seperately.
+"RegisterDataSplit[target, moving] is identical to RegisterData data however left and right side of the data are registered separately.
 
 Splitting the data is done using the function CutData and merged wit Stich data.
 Output is the registered data."
@@ -58,7 +58,7 @@ Output is the affine transformation vector per volume."
 
 RegisterDataTransform::usage = 
 "RegisterDataTransform[target, moving, {moving2nd, vox}] performs the registration exactly as RegisterData. target and moving are the inputs for Registerdata, which can be {data,mask,vox}.
-After the registeration is done the moving2nd data is deformed according to the output of the registrtion of moving.
+After the registration is done the moving2nd data is deformed according to the output of the registrtion of moving.
 
 moving2nd can have the same dimensions of moving or one dimension higher (e.g. 3D and 3D or 3D and 4D). 
 
@@ -82,16 +82,16 @@ RegisterDiffusionData[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] regis
 Output is the registered dtidata and, if anatdata is given, the registered dtidata in anatomical space. If OutputTransformation is True it also outputs the translation, rotation scale and skew of all images or volumes."
 
 RegisterDiffusionDataSplit::usage = 
-"RegisterDiffusionDataSplit[dtidata, vox] is identical to Register diffusion data however left and right side of the data are registered seperately.
-RegisterDiffusionDataSplit[{dtidata, vox}, {anatdata, voxa}] is identical to Register diffusion data however left and right side of the data are registered seperately.
-RegisterDiffusionDataSplit[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] is identical to Register diffusion data however left and right side of the data are registered seperately.
+"RegisterDiffusionDataSplit[dtidata, vox] is identical to Register diffusion data however left and right side of the data are registered separately.
+RegisterDiffusionDataSplit[{dtidata, vox}, {anatdata, voxa}] is identical to Register diffusion data however left and right side of the data are registered separately.
+RegisterDiffusionDataSplit[{dtidata, dtimask, vox}, {anatdata, anatmask, voxa}] is identical to Register diffusion data however left and right side of the data are registered separately.
 
 Splitting the data is done using the function CutData and merged wit Stich data.
 Output is the registered data."
 
 
 RegisterTensorData::usage =
-"RegisterTensorData[target, moving] registers the moving tensor to the target tensor. After registration the tensor is reorientated apropriately. 
+"RegisterTensorData[target, moving] registers the moving tensor to the target tensor. After registration the tensor is reorientated appropriately. 
 The inputs target and moving can be in the forms: tensor, {tensor, vox}, {tensor, mask} or {tensor, mask, vox}.
 RegisterTensorData[target, moving, tensor] registers the moving data to the target data and applies the deformation to the tensor. 
 The inputs target and moving can be in the form: data, {data, vox}, {data, mask} or {data, mask, vox}.
@@ -131,7 +131,7 @@ It specifies the number of random samples that are taken each iteration used by 
 
 OutputImage::usage =
 "OutputImage is an options for RegisterData, RegisterDiffusionData, and RegisterDataTransform. 
-It specifies if the result image should be writen in the TempDirectory as nii file."
+It specifies if the result image should be written in the TempDirectory as nii file."
 
 InterpolationOrderReg::usage =
 "InterpolationOrderReg is an options for RegisterData, RegisterDiffusionData, and RegisterDataTransform. 
@@ -152,7 +152,7 @@ It specifies the temporary directory used to perform and output the registration
 
 DeleteTempDirectory::usage =
 "DeleteTempDirectory an options for RegisterData, RegisterDiffusionData, RegisterCardiacData and RegisterDataTransform. 
-It specifies if the temp directory should be deleted after the registration is finisched."
+It specifies if the temp directory should be deleted after the registration is finished."
 
 PrintTempDirectory::usage = 
 "PrintTempDirectory is an options for RegisterData, RegisterDiffusionData, RegisterCardiacData and RegisterDataTransform. 
@@ -173,7 +173,7 @@ It gives the directions in which data can be moved when registering diffusion da
 
 OutputTransformation::usage =
 "OutputTransformation is an option for RegisterData ad RegisterDiffusionData.
-It specifies if the transformation paramters (translation, rotation, scale and skew) should be given as output in the registration functions."
+It specifies if the transformation parameters (translation, rotation, scale and skew) should be given as output in the registration functions."
 
 IterationsA::usage = 
 "IterationsA is an option for RegisterDiffusionData. 
@@ -402,7 +402,7 @@ True,""
 
 // ** Transform type specific settings **
 // ***************************************************************
-"<>Switch[type, (*switch beteen registration types*)
+"<>Switch[type, (*switch between registration types*)
 (*normal or multi methods*)	
 "translation" | "translationMask",
 "(Transform \"TranslationTransform\")",

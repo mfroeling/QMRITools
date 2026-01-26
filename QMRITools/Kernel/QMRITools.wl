@@ -57,7 +57,7 @@ QMRITools`$SubPackages = {
 	"ScientificColorData`",
 	(*core packages that contain many functions for other toolboxes*)
 	"LoggingTools`", "GeneralTools`", "MaskingTools`", "NiftiTools`",
-	"ElastixTools`", "PlottingTools`", "MuscleBidsTools`",
+	"ElastixTools`", "PlottingTools`", "MuscleBidsTools`", "NeuralNetworkTools`", 
 	(*toolboxes for processing specific data types*)
 	"DixonTools`", "IVIMTools`", "DenoiseTools`", "CardiacTools`",
 	"RelaxometryTools`", "GradientTools`", "TensorTools`", 

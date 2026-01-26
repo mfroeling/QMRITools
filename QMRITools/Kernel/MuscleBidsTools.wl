@@ -734,8 +734,10 @@ SyntaxInformation[ViewProtocolNames] = {"ArgumentsPattern" -> {_, OptionsPattern
 
 ViewProtocolNames[folder_?StringQ, opts:OptionsPattern[]] := ViewProtocolNames[GetConfig[folder], opts]
 
-ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{subs, dataFols, fold, list, duplicates, json},
-	
+ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{
+		subs, dataFols, fold, list, duplicates, json
+	},
+
 	subs = OptionValue[ProcessSubjects];
 	dataFols = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
 
@@ -768,11 +770,11 @@ GetProtocolNames[fold_?StringQ] := Block[{list, json, name},
 			If[StringQ[name], StringTrim[WipStrip@name], name]
 		}
 	) & /@ FileNames["*.json", fold, 2]]; 
-	list = Select[list, 
+	
+	Select[list, 
 		Head[#[[1]]] =!= Missing && Head[#[[1]]] =!= $Failed && 
 		!StringContainsQ[#[[2]], RegularExpression["_\\d{6}\\.\\d{3}"]] &
-	];
-	list
+	]
 ]
 
 
@@ -1606,7 +1608,8 @@ CheckPos[pos_] := Block[{posOut},
 
 
 DelFiles[files_, del_]:=Quiet@If[del, 
-	DeleteFile[ConvertExtension[files,#]]&/@{".nii", ".nii.gz", ".json", ".bval", ".bvec"}];
+	DeleteFile[ConvertExtension[files,#]]&/@{".nii", ".nii.gz", ".json", ".bval", ".bvec"}
+];
 
 
 (* ::Subsection:: *)
@@ -1646,11 +1649,12 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		con, fol, parts, type, files, sets, diffFile, nfile, keys, dixFiles, jfile, nFiles, phbpt, dbond,
 		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, hz, b0i,
-		t2stari, watfr, fatfr, wat, fat , inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
-		nfilep, jfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, fiti, s0i, fri, 
-		adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, angle, ex, ref, thk, 
-		phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, ivimpar, int, dint, suffix, types,
-		flip, per, bmat, magph, split, ivim, shift, t2, gradField, meanV, coor, valV, fasc, fascm, sel, norm, fascpar, rdim
+		t2stari, watfr, fatfr, wat, fat, inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
+		nfilep, jfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, 
+		fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
+		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
+		int, dint, suffix, types, flip, per, bmat, magph, split, ivim, shift, t2, gradField, 
+		meanV, coor, valV, fasc, fascm, sel, norm, rdim
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -1658,6 +1662,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 	(*get the context for exporting*)
 	con = Context[con];
+	outTypes = {};
 
 	(*get the information needed for processing, e.g. session|repetition*)
 	{fol, parts} = PartitionBidsFolderName[folIn];
@@ -1727,12 +1732,12 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2, MaskDilation -> 1]
 						];
 						debugBids[{Dimensions@mask, Dimensions@data}];
-						
+
 						If[MemberQ[suffix, "wat"], wat = mask data[[Position[suffix,"wat"][[1,1]]]]];
 						If[MemberQ[suffix, "fat"], fat = mask data[[Position[suffix,"fat"][[1,1]]]]];
 						If[MemberQ[suffix, "inph"], inph = mask data[[Position[suffix,"inph"][[1,1]]]]];
 						If[MemberQ[suffix, "outph"], outph = mask data[[Position[suffix,"outph"][[1,1]]]]];
-						
+
 						If[MemberQ[suffix, "t2star"],
 							t2star = mask data[[Position[suffix,"t2star"][[1,1]]]] / 10000.;
 							r2star = DivideNoZero[1, t2star];
@@ -1788,7 +1793,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					jfile = ConvertExtension[First@dixFiles, ".json"];
 					nFiles = ConvertExtension[dixFiles, ".nii"];
 					magph = False;
-					
+
 					(*if not real imag check for mag phase*)
 					If[!FileExistsQ[jfile],
 						dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"", "ph"};
@@ -1893,8 +1898,6 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								{{watfr, fatfr}, {wat, fat}, {inph, outph}, 
 									{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 										{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
-
-								outTypes = {};
 							];
 
 							{wat, fat} = Abs[{wat, fat}];
@@ -1981,7 +1984,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						settingPre = MergeConfig[settingPre, <| "FlipPermute" -> {flip, per} |>];
 						(*-----*)AddToLog[{"Gradient flips used: ", flip, per}, 4];
 						grad = FlipGradientOrientation[grad, flip, per];
-						
+
 						(*Denoise and SNR*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
 						mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], 
@@ -2003,7 +2006,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						debugBids[{"Registration function", regF}];
 						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, 
 							PrintTempDirectory->False, MethodReg -> "bspline", InterpolationOrderReg ->1, 
-							BsplineSpacing -> {30, 30, 30},	BsplineDirections -> {0.5, 1, 1}
+							BsplineSpacing -> {30, 30, 30}, BsplineDirections -> {0.5, 1, 1}
 						];
 
 						(*anisotropic filtering*)
@@ -2014,7 +2017,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						(*-----*)AddToLog["Exporting the calculated data to:", 4];
 						(*-----*)AddToLog[outfile, 5];
 						outTypes = {"den", "reg", "sig", "snr0", "snr", "filt"};
-						
+
 						(
 							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 							Export[ConvertExtension[outfile<>"_"<>#, ".json"], MergeJSON[{json, settingPre}]];
@@ -2062,7 +2065,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					If[!FileExistsQ[jfilep],
 						(*-----*)AddToLog["Could not find the needed JSON file", 4];,
 
-						(*Check if needed nii Exist*)
+						(*Check if the needed nii files exist*)
 						If[!(NiiFileExistQ[nfilep]&&FileExistsQ[ConvertExtension[nfilep,".bval"]]&&FileExistsQ[ConvertExtension[nfilep,".bvec"]]),
 							(*-----*)AddToLog[{"Skipping, could not find .nii, .bval and .bvec"}, 4],
 							(*-----*)AddToLog["Importing the data", 4];
@@ -2070,61 +2073,50 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							(*import the data*)
 							json = ImportJSON[jfilep];
 							{data, grad, val, diffvox} = ImportNiiDiff[nfilep, FlipBvec->False];
-							mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], MaskSmoothing->True, 
-								MaskComponents->2, MaskClosing->2];
+							mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], 
+								MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
 							data = MaskData[data, mask];
-							(*get bvalues and mean data*)
-							{mean, valU} = MeanBvalueSignal[data, val];
 
-							(*calculate tensor from corrected data*)
+							(*perform gradient nonlinearity correction*)
 							coil = ConfigLookup[datType, "Process", "GradientCorrection"];
 							settingPro = Join[settingPro, <|"GradientCorrection"->coil|>];
 							off = Lookup[json, "Offset", False];
-							coil = If[!StringQ[coil], 
-								False,
+							coilpar = {};
+							If[!StringQ[coil], coil = False,
 								(*-----*)AddToLog[{"Using Gradient correction: ", coil}, 4];
-								If[!VectorQ[off], 
-									(*-----*)AddToLog["No offset defined in json, skipping grad correction" , 5];
-									False,
+								If[!VectorQ[off], coil = False;
+									(*-----*)AddToLog["No offset defined in json, skipping grad correction" , 5],
 									{int, dint} = MakeGradientDerivatives[diffvox, coil];
-									{diffvox, off, dint}
-								]
+									coil = {diffvox, off, dint};
+									outTypes = Join[{"field"}, outTypes];
+								];
 							];
 
-							(*initialize IVIM fit*)
+							(*perform ivim correction*)
 							ivim = ConfigLookup[datType, "Process", "IVIMCorrection"];
 							settingPro = Join[settingPro, <|"IVIMCorrection"->ivim|>];
-
+							{mean, valU} = MeanBvalueSignal[data, val];
 							If[ivim,
 								(*-----*)AddToLog["Starting ivim calculation", 4];
-								If[coil===False,
+								{s0i, fri, adci, pD} = If[coil === False,
 									(*use normal b-value*)
-									{s0i, fri, adci, pD} = IVIMCalc[mean, valU, {1, .05, .003, .015}, 
-										IVIMConstrained->False, Parallelize->True, IVIMFixed->True];
-									,
+									IVIMCalc[mean, valU, {1, .05, .003, .015}, 
+										IVIMConstrained->False, Parallelize->True, IVIMFixed->True],
 									(*use gradient field corrected b-value*)
-									{s0i, fri, adci, pD} = IVIMCalc[data, {val, grad}, {1, .05, .003, .015}, coil,
-										IVIMConstrained -> False, Parallelize -> True, IVIMFixed -> True];
+									IVIMCalc[data, {val, grad}, {1, .05, .003, .015}, coil,
+										IVIMConstrained -> False, Parallelize -> True, IVIMFixed -> True]
 								];
-
 								data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
 								adci = 1000 adci;
-								ivimpar = {"adci", "fri", "s0i"}
-								,
-								(*-----*)AddToLog["Skipping IVIM correction", 4];
-								ivimpar = {}; 
+								outTypes = Join[{"adci", "fri", "s0i"}, outTypes];
 							];
-
+							
+							(*perform the actual tensor calculation*)
 							(*-----*)AddToLog["Starting tensor calculation", 4];
-							(*check if field map is needed in output*)
 							{tens, s0, out} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
 								Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
-							coil = If[coil===False, 
-								{out, res} = out; {},
-								{out, res, field} = out; {"field"}
-							];
+							If[coil === False, {out, res} = out, {out, res, field} = out];
 							out = Total@Transpose@out;
-
 							(*calculate tensor parameters*)
 							{l1, l2, l3, md, fa} = ParameterCalc[tens];
 							rd = Mean[{l2, l3}];
@@ -2132,25 +2124,18 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							(*perform fasciculation analysis*)
 							fasc = ConfigLookup[datType, "Process", "FasciculationDetection"];
 							settingPro = Join[settingPro, <|"FasciculationDetection"->fasc|>];
-
 							If[fasc,
 								(*-----*)AddToLog["Starting faciculation analysis", 4];
-
 								(*normalize the diffusion data based on the tensor and select b>200*)
 								reg = First@ImportNii[StringReplace[nfilep, "filt" -> "reg"]];
 								sel = First@SelectBvalueData[reg, val, 1];
-								norm = NormalizeFascData[sel, mask, {tens, grad, val}];
-
+								norm = NormalizeFasciculationData[sel, mask, {tens, grad, val}];
 								(*perform activation analysis*)
 								fasc = First@FindActivations[norm, IgnoreSlices -> {0, 0}, 
 									ActivationThreshold -> {3., .65}, ActivationOutput -> All, MaskDilation -> 2, 
 									ActivationIterations -> 10, ActivationBackground -> 10];
 								{fasc, fascm} = SelectActivations[fasc];
-
-								fascpar = {"fasc", "fascm", "norm"};
-								,
-								(*-----*)AddToLog["Skipping faciculation analysis", 4];
-								fascpar = {}; 
+								outTypes = Join[{"fasc", "fascm", "norm"}, outTypes];
 							];
 
 							(*export all the calculated data*)
@@ -2160,7 +2145,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							
 							tens = Transpose[tens];
 							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
-								"l1", "l2", "l3", "md", "fa", "rd"}, coil, ivimpar, fascpar];
+								"l1", "l2", "l3", "md", "fa", "rd"}, outTypes];
 
 							(
 								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
@@ -2169,7 +2154,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
-								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, "Outputs" -> outTypes, "SetProperties"->set},
+								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, 
+									"Outputs" -> outTypes, "SetProperties"->set},
 								Normal@KeyTake[json, keys]
 							]];
 
@@ -2277,6 +2263,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 									,
 									"Exp",
+
 									(*-----*)AddToLog["Starting exponential T2 fitting", 4];
 									{s0, t2} = T2Fit[data, 1000 echos];
 
@@ -2291,7 +2278,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 									Export[ConvertExtension[outfile<>"_"<>#, ".json"], json];
 								) &/@ outTypes;
-														
+
 								(*export the checkfile*)
 								MakeCheckFile[outfile, Sort@Join[
 									{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperties"->set},
@@ -2437,7 +2424,6 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	If[CheckFile[outfile, "done", verCheck],
 		(*-----*)AddToLog[{"Processing already done."}, 3];
 		Return[]];
-
 
 	(*------------------ figure out settings ------------------*)
 
@@ -2619,7 +2605,6 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 		moving = Transpose[moving];
 	];(*clolse motion moving*)
 
-
 	(*------------------ actually join the data and reorder for multi dim ------------------*)
 
 	debugBids["after dimensions: ", Dimensions@moving];
@@ -2738,7 +2723,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 	segType = segment["Target"];	
 	If[ArrayDepth[segType]===1, segType = {segType}];
 	Switch[ConfigLookup[datType, "Segment", "Method"],
-		
+
 		(*Automatic segmentations using NN*)
 		Automatic,
 
