@@ -1059,7 +1059,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPatter
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
 		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
-		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction,
+		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, n, it, br, cosineLR,
 		validation, files, loss, rep, learningRate, schedule, dims, tar
 	},
 
@@ -1142,7 +1142,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		Return[Message[TrainSegmentationNetwork::loss]; $Failed]];
 
 	(*if the network already exists make the dimensions, classes en channels match the input*)
-	netIn = NetInitialize@ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass];
+	netIn = NetInitialize[ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass],
+		Method -> {"Kaiming", "Distribution" -> "Normal"}];
 	MonitorFunction[NetSummary[netIn, "Mem"], "Network summary: "];
 
 	(*define the network for training*)
@@ -1176,12 +1177,15 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		PatchesPerSet -> patches, AugmentData -> augment, PadData -> pad] &;
 
 	(*oneCycle learning rate schedual*)
-	schedule = With[{n1 = 0.2 #2, n2 = 0.25 #2, n3 = 0.9 #2, sc = 0.3},	((1 - sc) Which[
-			#1 < n1, Cos[Pi (#1 - n1)/n1], 
-			#1 < n2, 1, 
-			#1 < n3, Cos[Pi (#1 - n2)/(n3 - n2)], 
-			True, -1] + 1 + sc
-		)/2 ] &;	
+	cosineLR[{t_, T_, o_}, a_, b_] := a + 0.5 (b - a) (1 - Cos[Pi (t - o)/(T - o)]);
+	br = roundLength / batch;
+	n = {0.1, 0.15, 0.5} rounds br;
+	it = ittTrain br;
+	schedule = Which[
+		#1 + it < n[[1]], cosineLR[{#1 + it, n[[1]], 0}, 1/10, 1],
+		#1 + it < n[[2]], 1.,
+		#1 + it < n[[3]], cosineLR[{#1 + it, n[[3]], n[[2]]}, 1, 1/100],
+		True, 1./100]&;
 
 
 	(*---------- Prepare the data ----------------*)
@@ -1220,10 +1224,10 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 		ValidationSet -> validation,
 		LossFunction -> loss,
-		TargetDevice -> tar, WorkingPrecision -> "Real32",
+		TargetDevice -> tar, WorkingPrecision -> "Mixed",
 
 		MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch, LearningRate -> learningRate, 
-		Method -> {"ADAM", "Beta1" -> 0.9, "Beta2" -> 0.999, "Epsilon" -> 10^-5, 
+		Method -> {"ADAM", "Beta1" -> 10^-5, "Beta2" -> 10^-5, "Epsilon" -> 10^-5, 
 			"L2Regularization" -> l2reg, "LearningRateSchedule" -> schedule},
 
 		TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
