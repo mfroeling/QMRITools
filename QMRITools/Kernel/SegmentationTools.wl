@@ -1086,7 +1086,6 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*background is 0 but for network its 1 so class +1*)
 	nClass = Round[Max@testData[[2]] + 1];
 
-
 	(*------------ Define the network -----------------*)
 
 	MonitorFunction[DateString[], "Preparing the network"];
@@ -1150,7 +1149,6 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	netIn = AddLossLayer@netIn;
 	MonitorFunction[netIn, "Network is ready"];
 
-
 	(*---------- Training functions ----------------*)
 
 	(*Local functions*)
@@ -1179,17 +1177,17 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*oneCycle learning rate schedual*)
 	cosineLR[{t_, T_, o_}, a_, b_] := a + 0.5 (b - a) (1 - Cos[Pi (t - o)/(T - o)]);
 	br = roundLength / batch;
-	n = {0.1, 0.15, 0.5} rounds br;
+	n = {0.25, 0.3, 0.80} rounds br;
 	it = ittTrain br;
 	schedule = Which[
-		#1 + it < n[[1]], cosineLR[{#1 + it, n[[1]], 0}, 1/10, 1],
+		#1 + it < n[[1]], cosineLR[{#1 + it, n[[1]], 0}, 1/5, 1],
 		#1 + it < n[[2]], 1.,
-		#1 + it < n[[3]], cosineLR[{#1 + it, n[[3]], n[[2]]}, 1, 1/100],
-		True, 1./100]&;
-
+		#1 + it < n[[3]], cosineLR[{#1 + it, n[[3]], n[[2]]}, 1, 1/10],
+		True, 1./10
+	]&;
 
 	(*---------- Prepare the data ----------------*)
-	
+
 	(*Make and export test data*)
 	{testData, testVox} = MakeTestData[testData, 2, patch];
 	ExportNii[First@testData, testVox, outName["testSet.nii"]];
@@ -1209,7 +1207,6 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	validation = batchFunction[<|"BatchSize" -> Round[0.1 roundLength]|>];
 	MonitorFunction[{Length@data, Length@validation}, "data / validation: "];
 
-
 	(*---------- Train the network ----------------*)
 
 	(*Print progress function*)
@@ -1225,10 +1222,9 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		ValidationSet -> validation,
 		LossFunction -> loss,
 		TargetDevice -> tar, WorkingPrecision -> "Mixed",
-
 		MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch, LearningRate -> learningRate, 
-		Method -> {"ADAM", "Beta1" -> 10^-5, "Beta2" -> 10^-5, "Epsilon" -> 10^-5, 
-			"L2Regularization" -> l2reg, "LearningRateSchedule" -> schedule},
+		Method -> {"ADAM", "L2Regularization" -> l2reg, "LearningRateSchedule" -> schedule, 
+			"Beta1" -> 0.9, "Beta2" -> 0.99, "Epsilon" -> 10^-5, "GradientClipping" -> 1},
 
 		TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
 		TrainingProgressReporting -> File[outName[StringReplace[DateString["ISODateTime"], ":" | "-" -> ""] <> ".json"]]
@@ -1545,8 +1541,6 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 
 			dimSeg = Dimensions[seg]; 
 			dimDat = If[ArrayDepth[dat] === 4, Dimensions[dat[[All,1]]], Dimensions[dat]];
-
-			(*check if data file exist*)
 
 			(*check dimensions and voxel size*)
 			If[vox =!= voxd,
@@ -1941,83 +1935,86 @@ DistFun[fun_, pts_] := Sqrt[Total[(Flatten[fun[#, 1] & /@ pts, 1] - pts)^2, {2}]
 
 ShowTrainLog[fol_] := ShowTrainLog[fol, 5]
 
-ShowTrainLog[fol_, max_] := Block[{files, log, keys, leng, plots},
-	{keys, log, leng} = LoadLog[fol, max];
-	log = log[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+ShowTrainLog[fol_, max_] := DynamicModule[{
+		pdat, klist, folder = fol, len, plot, plotf, ymaxv,
+		xmin, xmax, ymin, ymax, temp, key, key0, key1, key2, filt, fsize, 
+		grid, logp
+	},
 
-	(* Create a dynamic module to display the interactive plot *)
-	DynamicModule[{pdat = log, klist = keys, folder = fol, len = leng, plot, ymaxv, xmin, xmax, key, ymin, ymax, temp, plots},
-		key1 = Select[klist, ! StringContainsQ[#, "Current"] &];
-		key2 = Select[Select[key1, StringContainsQ[#, "Loss"] &], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
-		key1 = Select[Complement[key1, key2], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
-		key0 = {"RoundLoss", "ValidationLoss"};
+	{klist, pdat, len} =LoadLog[fol, max];
+	pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
 
-		Manipulate[
+	key1 = Select[klist, ! StringContainsQ[#, "Current"] &];
+	key2 = Select[Select[key1, StringContainsQ[#, "Loss"] &], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
+	key1 = Select[Complement[key1, key2], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
+	key0 = {"RoundLoss", "ValidationLoss"};
+
+	Manipulate[
+		plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
+		plotf = If[filt, GaussianFilter[#, fsize]&/@plot, plot];
+
+		ymaxv = Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}];
+		ymax = Min[{ymax, ymaxv}];
+
+		(* Plot the selected metrics *)
+		If[logp, ListLogPlot, ListLinePlot][If[key === {}, {}, plotf], Joined -> True, 
+			PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{ymin,ymax}},
+			If[grid, GridLines -> {len, Automatic}, GridLines -> {len, None}], 
+			PlotHighlighting -> "Dropline"],
+
+		(*the controls*)
+		Row[{
+			InputField[Dynamic[folder], String, Enabled -> True, FieldSize -> 50], 
+			Button["Browse", 
+				temp = SystemDialogInput["Directory", folder];
+				If[StringQ[temp], folder = temp; 
+					{klist, pdat, len} = LoadLog[folder, max];
+					pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+					xmax = Length[pdat];
+				];
+				, ImageSize -> {60, Automatic}, Method->"Queued"]}
+		],
+		Button["Reload", 
+			{klist, pdat, len} = LoadLog[folder, max]; xmax = Length[pdat];
+			pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+		],
+
+		Delimiter,
+		{{filt, False, "Filter"}, {True, False}},
+		{{fsize, 5, "FilterSize"}, 1, 10, 1},
+		{{grid, True, "Grid"}, {True, False}},
+		{{logp, True, "Log"}, {True, False}},
+
+		Delimiter,
+		(*Control[{{key, {}, ""}, klist, ControlType -> TogglerBar, Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],*)
+		Control[{{key, {}, ""}, key0, ControlType -> TogglerBar, 
+		Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
+		Delimiter,
+		Control[{{key, {}, ""}, key2, ControlType -> TogglerBar, 
+		Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
+		Delimiter,
+		Control[{{key, {}, ""}, key1, ControlType -> TogglerBar, 
+		Appearance -> "Vertical" -> {2, Automatic}, BaseStyle -> Medium}],
+		Delimiter,
+
+		Row[{
+			Control[{{xmin, 1,"X min"},1, Dynamic[xmax-1], 1}], "  ", 
+			Control[{{xmax,Length[pdat],"X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
+		}],
+		Row[{
+			Control[{{ymin, 0.01, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
+			Control[{{ymax, 1.1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxv]}]
+		}],
+		Row[{
+			Button["Autoscale X", {xmax, xmax} = {1, Length[pdat]}], "  ",
+			Button["Autoscale Y", {ymin, ymax} = {0, Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}]}]
+		}],
+		{{key, {}}, ControlType -> None},
+		Initialization :> (
+			key = {};
 			plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
-			plotf = If[filt, GaussianFilter[#, fsize]&/@plot, plot];
-
-			ymaxv = Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}];
-			ymax = Min[{ymax, ymaxv}];
-
-			(* Plot the selected metrics *)
-			If[logp, ListLogPlot, ListLinePlot][If[key === {}, {}, plotf], Joined -> True, 
-				PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{ymin,ymax}},
-				If[grid, GridLines -> {len, Automatic}, GridLines -> {len, None}], PlotHighlighting -> "YSlice"],
-
-			(*the controls*)
-			Row[{
-				InputField[Dynamic[folder], String, Enabled -> True, FieldSize -> 50], 
-				Button["Browse", 
-					temp = SystemDialogInput["Directory", folder];
-					If[StringQ[temp], folder = temp; 
-						{klist, pdat, len} = LoadLog[folder, max];
-						pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
-						xmax = Length[pdat];
-					];
-					, ImageSize -> {60, Automatic}, Method->"Queued"]}
-			],
-			Button["Reload", 
-				{klist, pdat, len} = LoadLog[folder, max]; xmax = Length[pdat];
-				pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
-			],
-
-			Delimiter,
-			{{filt, False, "Filter"}, {True, False}},
-			{{fsize, 5, "FilterSize"}, 1, 10, 1},
-			{{grid, True, "Grid"}, {True, False}},
-			{{logp, True, "Log"}, {True, False}},
-
-			Delimiter,
-			(*Control[{{key, {}, ""}, klist, ControlType -> TogglerBar, Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],*)
-			Control[{{key, {}, ""}, key0, ControlType -> TogglerBar, 
-			Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
-			Delimiter,
-			Control[{{key, {}, ""}, key2, ControlType -> TogglerBar, 
-			Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
-			Delimiter,
-			Control[{{key, {}, ""}, key1, ControlType -> TogglerBar, 
-			Appearance -> "Vertical" -> {2, Automatic}, BaseStyle -> Medium}],
-			Delimiter,
-
-			Row[{
-				Control[{{xmin, 1,"X min"},1, Dynamic[xmax-1], 1}], "  ", 
-				Control[{{xmax,Length[pdat],"X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
-			}],
-			Row[{
-				Control[{{ymin, 0.01, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
-				Control[{{ymax, 1.1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxv]}]
-			}],
-			Row[{
-				Button["Autoscale X", {xmax, xmax} = {1, Length[pdat]}], "  ",
-				Button["Autoscale Y", {ymin, ymax} = {0, Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}]}]
-			}],
-			{{key, {}}, ControlType -> None},
-			Initialization :> (
-				key = {};
-				plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
-				xmin = 1; xmax = Length@pdat; ymax = ymaxv = 1;
-			)
-		]
+			xmin = 1; xmax = Length@pdat; ymax = ymaxv = 1;
+		)
 	]
 ]
 
@@ -2065,13 +2062,15 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 				TextCell["Input File: "],
 				InputField[Dynamic[inputFile], String, 
 				FieldHint -> "Enter input file path", FieldSize -> {25, 1}],
-				Button["Browse", inputFile = SystemDialogInput["FileOpen"], Method -> "Queued"]
+				Button["Browse", inputFile = SystemDialogInput["FileOpen"], 
+					Method -> "Queued"]
 			}, {
 				TextCell["Output File: "], 
 				InputField[Dynamic[outputFile], String, 
 				FieldHint -> "Enter output file path", 
 				FieldSize -> {25, 1}],
-				Button["Browse", outputFile = SystemDialogInput["FileSave"], Method -> "Queued"]
+				Button["Browse", outputFile = SystemDialogInput["FileSave"], 
+					Method -> "Queued"]
 			}, {
 				TextCell["Segmentation type"], 
 				PopupMenu[Dynamic[option], {"Legs", "LegBones"}]
