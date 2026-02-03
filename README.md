@@ -1,6 +1,6 @@
 # Welcome to QRMITools
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.595302.svg)](https://zenodo.org/doi/10.5281/zenodo.595302)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.595302.svg)](https://doi.org/10.5281/zenodo.595302)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.01204/status.svg)](https://doi.org/10.21105/joss.01204)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 [![Hits](https://hits.sh/github.com/mfroeling/QMRITools.svg)](https://hits.sh/github.com/mfroeling/QMRITools/)
@@ -11,10 +11,9 @@
 [![OpenSourceImaging](https://github.com/mfroeling/QMRITools/blob/master/docs/images/open_source_images.png)](https://www.opensourceimaging.org/project/qmritools-mathematica-toolbox-for-quantitative-mri-data/)
 
 [![wolfram language](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_language.png)](https://www.wolfram.com/language/)
-[![wolfram workbench](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_workbench.png)](https://www.wolfram.com/workbench/)
-[![Visual studio code](https://github.com/mfroeling/QMRITools/blob/master/docs/images/visual-studio-code.png)](https://marketplace.visualstudio.com/items?itemName=WolframResearch.wolfram)
 [![Wolfram Mathematica](https://github.com/mfroeling/QMRITools/blob/master/docs/images/wolfram_mathematica.png)](http://www.wolfram.com/mathematica/)
 [![Wolfram Community](https://github.com/mfroeling/QMRITools/blob/master/docs/images/community.png)](https://community.wolfram.com/groups/-/m/t/1661539)
+[![Visual studio code](https://github.com/mfroeling/QMRITools/blob/master/docs/images/visual-studio-code.png)](https://marketplace.visualstudio.com/items?itemName=WolframResearch.wolfram)
 
 ------------------------------------------------------------------------
 

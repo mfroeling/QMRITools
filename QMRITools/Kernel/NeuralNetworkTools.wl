@@ -64,7 +64,7 @@ GetNetNodes::usage =
 
 
 AddLossLayer::usage = 
-"AddLossLayer[net] adds three loss layers to a NetGraph, a DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MeanSquaredLossLayer and a CrossEntropyLossLayer are added."
+"AddLossLayer[net] adds loss layers to a NetGraph. The DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MSDLossLayer, TopK, and CELossLayer are added."
 
 DiceLossLayer::usage = 
 "DiceLossLayer[] represents a net layer that computes the Dice loss by comparing input class probability vectors with the target class vector.
@@ -85,6 +85,10 @@ FocalLossLayer::usage =
 "FocalLossLayer[] represents a net layer that computes the Focal loss by comparing input class probability vectors with the target class vector.
 FocalLossLayer[g] does the same but uses g as the tunable focusing parameter gamma which needs to be larger than one.
 FocalLossLayer[g, a] does the same but uses as the balancing factor alpha."
+
+TopKLossLayer::usage =
+"TopKLossLayer[net] represents a net layer that computes the topK 10% loss.
+TopKLossLayer[net, k] does the same but k defines the topK between 0 and 1."
 
 
 ClassEncoder::usage = 
@@ -420,7 +424,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 
 
 UNetStart[nChan_, feat_, dimIn_, conf_] := NetGraph[
-	NetChain[Conv[feat , {Length@dimIn, 1}, conf], 
+	NetChain[Conv[feat , {Length@dimIn, 1}, (*conf*){"None", "None"}], 
 		"Input" -> Prepend[dimIn, nChan]]
 ]
 
@@ -541,11 +545,17 @@ ConvScale[type_, scaleVec_, chan_] := Switch[type,
 		"PaddingSize"-> 1, "Dilation"-> 1]},
 	{"Decode", "Pool"}, 
 	{ResizeLayer[Scaled /@ scaleVec, Resampling -> "Nearest"]},
-	{"Decode", "Conv"} | {"Decode", "ConvS"}, 
+	{"Decode", "Conv"}, 
 	{
 		ResizeLayer[Scaled /@ scaleVec, Resampling -> "Nearest"], 
 		ConvolutionLayer[chan, 0 scaleVec + 3, "Stride" -> 1, 
-		"PaddingSize" -> 1, "Dilation" -> 1]
+			"PaddingSize" -> 1, "Dilation" -> 1]
+	},
+	{"Decode", "ConvS"}, 
+	{
+		ConvolutionLayer[chan, 0 scaleVec + 1, "Stride" -> 1, 
+			"PaddingSize" -> 0, "Dilation" -> 1],
+		ResizeLayer[Scaled /@ scaleVec, Resampling -> "Linear"]
 	}
 ]
 
@@ -592,11 +602,8 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_}, scale_:1] := Block[{
 		"ResNetS",
 		dep = blockSet;
 		NetGraph@NetFlatten@NetGraph[{
-			"con" -> Flatten[Table[If[i =!= dep, 
-					Conv[Round[featOut/2], {dim, 3}, act, "Stride"-> If[i===1, scale, 1]], 
-					Conv[featOut, {dim, 3}, act,  "Stride"-> If[i===1, scale, 1]]
-				], {i, 1, dep}]],
-			"skip" -> Conv[featOut, {dim, 3}, {"None", Last@Flatten[{act}]}, "Stride" -> scale],
+			"con" -> Flatten[Table[Conv[If[i =!= dep, Round[featOut/2], featOut], {dim, 3}, act, "Stride"-> If[i===1, scale, 1]], {i, 1, dep}]],
+			"skip" -> Conv[featOut, {dim, scale}, {"None", Last@Flatten[{act}]}, "Stride" -> scale],
 			"tot" -> {TotalLayer[]}
 			}, {{"con", "skip"} -> "tot"}
 		],
@@ -674,7 +681,7 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_}, scale_:1] := Block[{
 (* ::Subsubsection::Closed:: *)
 (*Conv*)
 
-Options[Conv] = {"Dilation" -> 1, "Stride"->1}
+Options[Conv] = {"Dilation" -> 1, "Stride"->1, "ChannelGroups"->1}
 
 Conv[featOut_?IntegerQ, {dim_, kern_}, opts:OptionsPattern[]] := Conv[featOut, {dim, kern}, {"None", "Instance", opts}]
 
@@ -686,12 +693,14 @@ Conv[featOut_?IntegerQ, {dim_, kern_}, {act_?StringQ, bat_?StringQ}, OptionsPatt
 
 	dil = OptionValue["Dilation"];
 	str = OptionValue["Stride"];
+	gr = OptionValue["ChannelGroups"];
+	ker = If[Length[kern]===dim, kern, ConstantArray[kern, dim]];
+
 	{
 		(*The most basic conv block CON>BN>ACT used in each of the advanced conv blocks*)
-		ConvolutionLayer[featOut, ConstantArray[kern, dim], 
-			"PaddingSize" -> (Ceiling[kern/2] - 1) dil, 
-			"Stride" -> str, 
-			"Dilation" -> dil],	
+		ConvolutionLayer[featOut, ker, 
+			"PaddingSize" -> (Ceiling[ker/2] - 1) dil, 
+			"Stride" -> str, "Dilation" -> dil, "ChannelGroups" -> gr],	
 		Switch[bat, 
 			"Group", NormalizationLayer[All, 1, "GroupNumber" -> {8, 1, 1, 1}], 
 			"Instance", NormalizationLayer[],
@@ -761,6 +770,9 @@ NetDimensions[net_, port_] := Block[{block, neti},Switch[port,
 
 	"AllEncodingOut",
 	Max[Values[Information[NetTake[net, {#}], "OutputPorts"]][[All, 1]]] & /@ Keys[net[[All, 1]]],
+
+	"AllMaxChannels",
+	Max[Values[Information[#, "OutputPorts"] & /@ Select[Information[NetTake[net, {#, #}], "LayersList"], Head[#] === ConvolutionLayer &]][[All, 1, 1]]] & /@ Keys[net[[All, 1]]],
 
 	"U2Encoding",
 	block = Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"|("node_" ~~ __ ~~ "_1")] &];
@@ -857,16 +869,18 @@ AddLossLayer[net_] := NetGraph[<|
 	"Dice" -> NetFlatten@NetGraph@NetChain@{DiceLossLayer[2]}, 
 	"Jaccard" -> NetFlatten@NetGraph@NetChain@{JaccardLossLayer[2]},
 	"Tversky" -> NetFlatten@NetGraph@NetChain@{TverskyLossLayer[0.7]}, 
-	"SquaredDiff" -> NetFlatten@NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[50 #&]},
+	"MSD" -> NetFlatten@NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[50 #&]},
 	"Focal" -> NetFlatten@NetGraph@NetChain@{FocalLossLayer[2, 0.25], ElementwiseLayer[5 #&]},
-	"CrossEntropy" -> NetFlatten@NetGraph@NetChain@{CrossEntropyLossLayer["Probabilities"]}
-|>,{
+	"TopK" -> NetFlatten@NetGraph@NetChain@{TopKLossLayer[net, 0.1]},
+	"CE" -> NetFlatten@NetGraph@NetChain@{CrossEntropyLossLayer["Probabilities"]}
+|>, {
 	{"net", NetPort["Target"]} -> "Dice" -> NetPort["Dice"], (*using squared dice, F1score*)
 	{"net", NetPort["Target"]} -> "Jaccard" -> NetPort["Jaccard"],(*using squared Intersection over union*)
 	{"net", NetPort["Target"]} -> "Tversky" -> NetPort["Tversky"], (*recall more than precision, 0.5 is dice*)
-	{"net", NetPort["Target"]} -> "SquaredDiff" -> NetPort["SquaredDiff"], (*Brier Score*)
+	{"net", NetPort["Target"]} -> "MSD" -> NetPort["MSD"], (*Brier Score*)
 	{"net", NetPort["Target"]} -> "Focal" -> NetPort["Focal"], (*scaled cross entropy for hard examples*)
-	{"net", NetPort["Target"]} -> "CrossEntropy" -> NetPort["CrossEntropy"]
+	{"net", NetPort["Target"]} -> "TopK" -> NetPort["TopK"], (*scaled cross entropy for hard examples*)
+	{"net", NetPort["Target"]} -> "CE" -> NetPort["CE"]
 }]
 
 
@@ -1014,6 +1028,29 @@ FocalLossLayer[g_, a_] := NetFlatten[
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*TopKLossLayer*)
+
+
+SyntaxInformation[TopKLossLayer] = {"ArgumentsPattern" -> {_.}};
+
+TopKLossLayer[net_] := TopKLossLayer[net, 0.1]
+
+TopKLossLayer[net_, k_] := Block[{
+		i = Round[k Times @@ NetDimensions[net, "Input"]]
+	},
+	NetFlatten[
+		(*10.48550/arXiv.1512.00486 for definition of top k losses, 10^-15 is for numerical stability*)
+		NetGraph[{
+			"flatPr" -> {ThreadingLayer[#1 #2 &], AggregationLayer[Total, {-1}], FlattenLayer[]},
+			"topK" -> {NetChain[{FunctionLayer[Sort[-Log[# + 10^-15]] &],PartLayer[-i;;-1], AggregationLayer[Mean, 1]}]}
+			}, {
+				{NetPort["Input"], NetPort["Target"]} -> "flatPr" -> "topK" -> NetPort["Loss"]
+		}, "Loss" -> "Real"]
+	]
+]
+
+
 (* ::Subsection:: *)
 (*Encoders*)
 
@@ -1062,11 +1099,11 @@ NetSummary[net_, rep_?StringQ] := Block[{
 	},
 
 	toK = Which[
-		# > 1000000, ToString[NumberForm[#/1000000., {Infinity, 2}]] <> " M",
-		# > 1000, ToString[NumberForm[#/1000., {Infinity, 2}]] <> " K",
+		# > 1000000, ToString[NumberForm[#/1000000., {Infinity, 1}]] <> " M",
+		# > 1000, ToString[NumberForm[Round[#/1000.], {Infinity, 0}]] <> " K",
 		True, #] &;
 	st = Style[#1, Bold] & ;
-	quantStr = ToString[Round[QuantityMagnitude[#], .01]] <> " " <> (QuantityUnit[#] /. {"Megabytes" -> "MB", "Gigabytes" -> "GB"}) &;
+	quantStr = ToString[Round[QuantityMagnitude[#], .1]] <> " " <> (QuantityUnit[#] /. {"Megabytes" -> "MB", "Gigabytes" -> "GB"}) &;
 	quantStrG = ToString[Round[QuantityMagnitude[UnitConvert[#, "Gigabytes"]], .1]] <> " GB" &;
 
 	lays = Information[net, "LayersList"];
@@ -1090,11 +1127,11 @@ NetSummary[net_, rep_?StringQ] := Block[{
 	netSize = UnitConvert[elemSize + arrSize, "GB"];
 
 	table = Grid[{{ Grid[{
-			{st@"Number of batch norm. Layers: ", st@Length@norm},
+			{st@"Number of Norm. Layers: ", st@Length@norm},
 			{st@" - Number of Weights: ", toK@normWeights},
-			{st@"Number of convolution Layers: ", st@Length@convs},
+			{st@"Number of Conv. Layers: ", st@Length@convs},
 			{st@" - Number of Kernels: ", toK@nKern},
-			{st@" - Number of weights: ", toK@kernWeights},
+			{st@" - Number of Weights: ", toK@kernWeights},
 			{""},
 			{st@"Convolution Kernel Distribution:", SpanFromLeft},
 			{Item[Grid[Join[{Style[#, Bold] & /@ {"Count", "Size", "Kernels", "Weights"}}, count], 
@@ -1109,7 +1146,9 @@ NetSummary[net_, rep_?StringQ] := Block[{
 
 	Switch[rep,
 		"Full",
-		makeNetIm = With[{im = Information[#, "SummaryGraphic"]}, Show[im, AspectRatio -> 0.5, ImageSize -> Max[AbsoluteOptions[im, ImageSize][[1, 2]]]]] &;
+		makeNetIm = With[{im = Information[#, "SummaryGraphic"]}, 
+			Show[im, AspectRatio -> 0.5, ImageSize -> Max[AbsoluteOptions[im, ImageSize][[1, 2]]]]
+		]&;
 		nodes = DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]];
 		netIm = makeNetIm @ net;
 		nodeIm = Information[NetTake[net, {#, #}][[1]], "SummaryGraphic"] & /@ nodes;
