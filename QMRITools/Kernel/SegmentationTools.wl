@@ -73,7 +73,7 @@ TrainSegmentationNetwork::usage =
 "TrainSegmentationNetwork[{inFol, outFol}] trains a segmentation network. The correctly prepared training data should be stored in inFol. The progress each round will be saved in outFol.
 TrainSegmentationNetwork[{inFol, outFol}, netCont] does the same but defines how to continue with netCont. If netCont is \"Start\" training will be restarted.
 If netCont is a initialized network or network file (wlnet) this will be used. If netCont is a a outFol the last saved network will be used.
-Possible loss functions are {\"SoftDice\", \"SquaredDiff\", \"Tversky\" , \"CrossEntropy\", \"Jaccard\"}."
+Possible loss functions are {\"SoftDice\", \"MSD\", \"Tversky\" , \"CE\", \"Jaccard\"}."
 
 GetTrainData::usage =
 "GetTrainData[data, batch size, patch] creates a training batch of size batch size with patch size patch. 
@@ -1134,10 +1134,10 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*define and check the training loss function*)
 	loss = Which[
-		loss === All, {"Dice", "SquaredDiff", "Tversky" , "CrossEntropy", "Jaccard", "Focal"},
+		loss === All, {"Dice", "MSD", "Tversky" , "CE", "Jaccard", "Focal"},
 		StringQ[loss], {loss},
 		True, loss];
-	If[!And @@ (MemberQ[{"Dice", "SquaredDiff", "Tversky", "CrossEntropy", "Jaccard", "Focal"}, #] & /@ loss), 
+	If[!And @@ (MemberQ[{"Dice", "MSD", "Tversky", "CE", "Jaccard", "Focal", "TopK"}, #] & /@ loss), 
 		Return[Message[TrainSegmentationNetwork::loss]; $Failed]];
 
 	(*if the network already exists make the dimensions, classes en channels match the input*)
@@ -1160,7 +1160,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		ittTrain++;
 		(*perform segmentation and export*)
 		netMon = NetExtract[#Net, "net"];
-		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "CPU" (*tar, WorkingPrecision -> "Mixed"*)]]];
+		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "CPU"]]];
 		ExportNii[testSeg, testVox, outName[ittString[ittTrain]<>".nii"]];
 		(*make and export test image*)
 		im = MakeChannelClassGrid[testData, {testSeg, {0, nClass-1}}, 3];
