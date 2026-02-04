@@ -99,7 +99,10 @@ Begin["`Private`"]
 
 
 (* ::Subsection:: *)
-(*FindActivations*)
+(*NormalizeFasciculationData*)
+
+
+SyntaxInformation[NormalizeFasciculationData] = {"ArgumentsPattern" -> {_, _, _.}};
 
 NormalizeFasciculationData[data_, mask_] := NormalizeData[data, mask, NormalizeMethod -> "Volumes"];
 
