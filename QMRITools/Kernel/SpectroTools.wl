@@ -1779,7 +1779,12 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 		ns = Round[Min[{ns,nsamp dw/dw2-ni}]];
 
 		fid1 = ChangeDwellTimeFid[fidsT[[ni+1;;]],dw,dw2][[;;ns]];
-		sig = (Max[Abs[fid1]]/snr)/Sqrt[2];
+		(* Define reference values *)
+		bwRef = 5000.;
+		nRef = 512.;
+		(* Calculate scaled sigma *)
+		(* We use the Max of the original fidsT to keep the SNR relative to the source signal *)
+		sig = (Max[Abs[fid1]] / snr) * Sqrt[bw / bwRef] * Sqrt[nRef / ns] / Sqrt[2];
 
 		If[lfid=!=Length[fid1]||sigi=!=sig,
 			lfid = Length[fid1];
@@ -1816,7 +1821,9 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 		timep = time + (te-ph1s) / 1000;
 		{pmin, pmax} = {Min[{pmin, Max[ppm]}], Max[{pmax, Min[ppm]}]};
 
-		Grid[{{
+		Grid[{
+			{Style[{sig, StandardDeviation[noise1], StandardDeviation[noise5]},Black]},
+			{
 			(*{Total@Re@fidP,Re@First@fidP,Total@Abs@ShiftedFourier@fidP,sig,simTrigger},
 			peakSel,*)
 			Show[
@@ -1829,7 +1836,8 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 				If[ap==="None", Graphics[], ListLinePlot[Transpose@{timei,maxFid apodizeFun[timei,ap]}, PlotStyle->{Darker@Green, Dashed}]]
 			]
 		},{
-			PlotSpectra[ppm, specP, PlotRange -> {If[pran==="Automatic", Full, {pmin, pmax}], {-0.2, 1.2} maxSpec},
+			PlotSpectra[ppm, 
+			ShiftSpectra[specP, {dw, gyro}, off] (*specP*), PlotRange -> {If[pran==="Automatic", Full, {pmin, pmax}], {-0.2, 1.2} maxSpec},
 				GridLineSpacing -> 5, AspectRatio -> .5, Method -> met, ImageSize -> psize]
 		}}, Background -> White]
 		
@@ -1943,7 +1951,7 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 
 		ControlPlacement->Left,
 		SaveDefinitions->True,
-		TrackedSymbols:>{bw, ns, te, timeshift, eps, gam, f, ph0, ph0s, ph1s, off,
+		TrackedSymbols:>{bw, ns, te, timeshift, eps, gam, f, ph0, ph0s, ph1s, off, psize,
 			snr, pad, ap, show, pran, pmin, pmax, met, simTrigger}
 	];
 

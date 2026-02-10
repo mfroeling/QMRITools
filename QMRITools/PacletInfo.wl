@@ -2,10 +2,10 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "4.6.0",
+	"Version" -> "4.6.1",
 	"WolframVersion" -> "14.0+",
 	"SystemID" -> All, 
-	
+
 	"Description" -> "Toolbox for Quantitative MRI.",
 	"Creator" -> "Martijn Froeling <m.froeling@gmail.com>",
 	"Support" -> "https://github.com/mfroeling/QMRITools",
@@ -17,7 +17,7 @@ PacletObject[<|
 		{"Kernel", "Root" -> "Kernel", "Context" -> "QMRITools`"}, 
 		{"Documentation", "Language" -> "English", "MainPage" -> "Guides/QMRITools"},
 
-		(* ---- OS independent assest ---- *)
+		(* ---- OS independent assets ---- *)
 
 		(*files that need to be included in the build*)
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"Logo", "icon.png"}}},
@@ -29,28 +29,26 @@ PacletObject[<|
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"GradientTool", "GradientGUI-v14.cdf"}}},
 		
 		(*Neural Networks segmentation*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "Muscles_leg_upper.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "Muscles_leg_lower.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegBones", "Bones_leg_full.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle", "Muscles_shoulder.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle", "N2_Shoulder.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "N5_UpperLeg.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "N6_LowerLeg.wlnet"}}},
 
-		(*Neural Networks clasification*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Leg_side_full.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Leg_pos_full.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderSide", "Shoulder_side.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderPosition", "Shoulder_cut.wlnet"}}},
+		(*Neural Networks classification*)
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Side_Leg.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Pos_Leg.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderSide", "Side_Shoulder.wlnet"}}},
 
 		(*Segmentation labels*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"BonesLegLabels", "Bones_leg.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesShoulderLabels", "N2_Shoulder.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesHipLabels", "N4_Hip.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegUpperLabels", "N5_UpperLeg.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegLowerLabels", "N6_LowerLeg.txt"}}},
+
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegLabels", "Muscles_leg.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegAllLabels", "Muscles_leg_all.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegHipLabels", "Muscles_leg_hip.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegLowerLabels", "Muscles_leg_lower.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegUpperLabels", "Muscles_leg_upper.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesShoulderAllLabels", "Muscles_shoulder_full.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesShoulderLabels", "Muscles_shoulder_single.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesShoulderAllLabels", "Muscles_shoulder.txt"}}},
 
-		(* ---- OS dependant assest ---- *)
+		(* ---- OS dependant assets ---- *)
 
 		(*Windows*)
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},

@@ -2110,7 +2110,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								adci = 1000 adci;
 								outTypes = Join[{"adci", "fri", "s0i"}, outTypes];
 							];
-							
+
 							(*perform the actual tensor calculation*)
 							(*-----*)AddToLog["Starting tensor calculation", 4];
 							{tens, s0, out} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
@@ -2928,18 +2928,19 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 			(* Import stop files *)
 			stop = (
 				{stop, voxs} = ImportNii[#];
-				debugBids["Voxel sizes: ", {voxs, vox}];
-				If[voxs=!=vox, RescaleData[stop, {voxs, vox}], stop]
+				debugBids["Voxel sizes: ", {voxs, vox , Dimensions@stop}];
+				If[voxs===vox, stop, PadToDimensions[RescaleData[stop, {voxs, vox}], dim]]
 			)& /@ stopfile;
-			stop = Transpose[{stop, tractStopVal}];
 			debugBids["Data dimensions: ", Dimensions/@Join[stop, {tens}]];
+			stop = Transpose[{stop, tractStopVal}];
+			
 
 			(* Perform tractography *)
 			(*-----*)AddToLog[{"Starting the whole volume tractography"}, 4];
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
 				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", 
 				MaxSeedPoints -> If[seed<1, Scaled[seed], seed], 
-				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> False,
+				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> True,
 				TensorFlips -> flip, TensorPermutations -> per, Parallelization -> True
 			];
 
