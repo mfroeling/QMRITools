@@ -711,7 +711,7 @@ SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPa
 SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]] := SplitDataForSegmentation[data, "Legs", opt]
 
 SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := Block[{
-		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, mon, dev
+		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, mon, dev, over
 	},
 	dim = Dimensions[data];
 	{mon, dev} = OptionValue[{Monitor, TargetDevice}];
@@ -787,7 +787,8 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 			dat = Switch[whatSide,
 				(*both sides which need to be split*)
 				"Both",
-				{cut, over} = ClassifyData[data, "ShoulderPosition"];
+				(*{cut, over} = ClassifyData[data, "ShoulderPosition"];*)
+				{cut, over} = Round[{0.5, 0.1} Last@Dimensions[data]];
 				{right, left, cut} = CutData[data, {cut, over}];
 				{
 					{right, {"Shoulder", {1, dim[[1]]}}, {"Right", {1, cut + over}}}, 
