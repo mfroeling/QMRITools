@@ -1161,7 +1161,8 @@ NetSummary[net_, rep_?StringQ] := Block[{
 			{st["Net mem: "], quantStr[netSize]},
 			{st["Train mem: "], "n * " <> quantStrG[2 * (arrSize + elemSize)]}
 		}, Alignment -> Left],
-
+		"MemVal",
+		netSize,
 		_, 
 		table
 	]
