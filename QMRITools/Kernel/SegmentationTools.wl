@@ -175,7 +175,8 @@ PatchesPerSet::usage =
 "PatchesPerSet is an option for GetTrainData. Defines how many random patches per dataset are created within the batch."
 
 AugmentData::usage = 
-"AugmentData is an option for GetTrainData and TrainSegmentationNetwork. If set True the training data is augmented."
+"AugmentData is an option for GetTrainData and TrainSegmentationNetwork. If set True the training data is augmented.
+It can also be set to \"2D\" or \"3D\" to control if augmentation is done trought plane or only inplane."
 
 PadData::usage =
 "PadData is an option for GetTrainData and TrainSegmentationNetwork.. If set to an integers the that number of slices on the top and bottom of the 
@@ -1059,8 +1060,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPatter
 
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
 		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
-		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches,
-		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, n, it, br, cosineLR,
+		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches, pLen, is2D,
+		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, n, it, ti, br,
 		validation, files, loss, rep, learningRate, schedule, dims, tar
 	},
 
@@ -1074,7 +1075,9 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		loss, rep, learningRate, l2reg, multi, tar} = OptionValue[
 		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PadData, PatchSize, PatchesPerSet, 
 			LossFunction, MonitorInterval, LearningRate, L2Regularization, MultiChannel, TargetDevice}];
-	pad = If[NumberQ[pad], Round[pad], False];
+	pLen = Length@patch;
+	is2D = pLen===2;
+	pad = If[NumberQ[pad] && !is2D, Round[pad], False];
 
 	(*get the train data files*)
 	files = FileNames["*.wxf", inFol];
@@ -1164,7 +1167,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "CPU"]]];
 		ExportNii[testSeg, testVox, outName[ittString[ittTrain]<>".nii"]];
 		(*make and export test image*)
-		im = MakeChannelClassGrid[testData, {testSeg, {0, nClass-1}}, 3];
+		im = MakeChannelClassGrid[If[is2D, Transpose@testData, testData], {testSeg, {0, nClass-1}}, 3];
 		Export[outName[ittString[ittTrain] <> ".png"], im , "ColorMapLength" -> 256];
 		(*export the network and delete the one from the last iteration*)
 		Export[outName[ittString[ittTrain] <> ".wlnet"], netMon];
@@ -1175,43 +1178,46 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	batchFunction = GetTrainData[data, #BatchSize, patch, nClass, 
 		PatchesPerSet -> patches, AugmentData -> augment, PadData -> pad] &;
 
-	(*oneCycle learning rate schedual*)
-	cosineLR[{t_, T_, o_}, a_, b_] := a + 0.5 (b - a) (1 - Cos[Pi (t - o)/(T - o)]);
+	(*oneCycle learning rate schedual function*)
 	br = roundLength / batch;
 	n = {0.25, 0.3, 0.80} rounds br;
 	it = ittTrain br;
-	schedule = Which[
-		#1 + it < n[[1]], cosineLR[{#1 + it, n[[1]], 0}, 1/5, 1],
-		#1 + it < n[[2]], 1.,
-		#1 + it < n[[3]], cosineLR[{#1 + it, n[[3]], n[[2]]}, 1, 1/10],
+	schedule = (ti = #1 + it; Which[
+		ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1/5, 1}],
+		ti < n[[2]], 1.,
+		ti < n[[3]],Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1/10, 1}],
 		True, 1./10
-	]&;
+	])&;
 
 	(*---------- Prepare the data ----------------*)
 
-	(*Make and export test data*)
-	{testData, testVox} = MakeTestData[testData, 2, patch];
-	ExportNii[First@testData, testVox, outName["testSet.nii"]];
-
-	(*export first itt*)
-	ittTrain--;
-	monitorFunction[<|"Net"->netIn|>];
-	
 	MonitorFunction[DateString[], "Preparing the data"];
+
 	(*import all train data or train out of memory*)
 	data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
 	dims = MeanRange[#, 0] & /@ Transpose[If[ArrayDepth[#] === 3, 
 		Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]]];
 	MonitorFunction[dims, "Data Dimensions: "];
 
+	(*Make and export test data*)
+	{testData, testVox} = MakeTestData[testData, 2, patch];
+	ExportNii[If[is2D, testData[[All,1]], First@testData], testVox, outName["testSet.nii"]];
+
 	(*prepare a validation set which is 10% of round*)
 	validation = batchFunction[<|"BatchSize" -> Round[0.1 roundLength]|>];
+	Export[outName["validation.wxf"], validation];
 	MonitorFunction[{Length@data, Length@validation}, "data / validation: "];
 
 	(*---------- Train the network ----------------*)
 
-	(*Print progress function*)
 	MonitorFunction[{DateString[], loss}, "Starting training"];
+
+	(*export first itt*)
+	ittTrain--;
+	monitorFunction[<|"Net"->netIn|>];
+	logFile = File[outName[StringReplace[DateString["ISODateTime"], ":" | "-" -> ""] <> ".json"]];
+
+	(*Print progress function*)
 	PrintTemporary[Dynamic[Column[{
 		Style["Training Round: " <> ToString[ittTrain], Bold, Large], 
 		Image[im, ImageSize->400]
@@ -1219,24 +1225,22 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*train the network*)
 	trained = NetTrain[netIn, {batchFunction, "RoundLength" -> roundLength}, All, 
-
-		ValidationSet -> validation,
-		LossFunction -> loss,
+		ValidationSet -> validation, LossFunction -> loss,
 		TargetDevice -> tar, WorkingPrecision -> "Mixed",
-		MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch, LearningRate -> learningRate, 
-		Method -> {"ADAM", "L2Regularization" -> l2reg, "LearningRateSchedule" -> schedule, 
-			"Beta1" -> 0.9, "Beta2" -> 0.99, "Epsilon" -> 10^-5, "GradientClipping" -> 1},
-
+		MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch, 
+		LearningRate -> learningRate, Method -> {"ADAM", "L2Regularization" -> l2reg, 
+			"LearningRateSchedule" -> schedule, "Beta1" -> 0.9, "Beta2" -> 0.99, 
+			"Epsilon" -> 10^-5, "GradientClipping" -> 1},
 		TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
-		TrainingProgressReporting -> File[outName[StringReplace[DateString["ISODateTime"], ":" | "-" -> ""] <> ".json"]]
+		TrainingProgressReporting -> logFile
 	];
 
 	(*---------- Export the network ----------------*)
 
 	netOut = NetExtract[trained["TrainedNet"], "net"];
-	Export[outName["trained" <> ".wxf"], trained];
-	Export[outName["final" <> ".wlnet"], netOut];
-	Export[outName["final" <> ".onnx"], netOut];
+	Export[outName["trained.wxf"], trained];
+	Export[outName["final.wlnet"], netOut];
+	Export[outName["final.onnx"], netOut];
 ]
 
 
@@ -1251,13 +1255,18 @@ MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
 
 	(*crop the test data*)
 	len = Length@testData;
-	If[len > First@patch,
+	If[len > First@patch && Length@patch===3,
 		sel = Range @@ Clip[Round[(Clip[Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, n First@patch})], 
 			{1, len}, {1, len}];
 		testData = First@AutoCropData[testData[[sel]]]
 	];
 
-	{{NormalizeData[PadToDimensions[testData, patch], NormalizeMethod -> "Uniform"]}, data[[3]]}
+	testData = If[Length@patch===2,
+		{NormalizeData[PadToDimensions[#, patch], NormalizeMethod -> "Uniform"]}&/@testData[[;;Min[{len, 9}]]],
+		{NormalizeData[PadToDimensions[testData, patch], NormalizeMethod -> "Uniform"]}
+	];
+
+	{testData, data[[3]]}
 ];
 
 
@@ -1268,29 +1277,39 @@ MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
 (* ::Subsubsection::Closed:: *)
 (*AugmentTrainingData*)
 
+Options[AugmentTrainingData] = Options[AugmentTrainingDataI] ={
+	"Augment2D" -> False
+}
 
-SyntaxInformation[AugmentTrainingData] = {"ArgumentsPattern" -> {_, _, _.}};
+SyntaxInformation[AugmentTrainingData] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-AugmentTrainingData[{dat_?ArrayQ, seg_?ArrayQ}, vox_] := AugmentTrainingDataI[{dat, seg}, vox, {True, True, True, True, True}]
+AugmentTrainingData[{dat_?ArrayQ, seg_?ArrayQ}, vox_, opts:OptionsPattern[]] := 
+	AugmentTrainingDataI[{dat, seg}, vox, {True, True, True, True, True}, opts]
 
-AugmentTrainingData[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?BooleanQ] := AugmentTrainingDataI[{dat, seg}, vox, {aug, aug, aug, aug, aug}]
+AugmentTrainingData[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?BooleanQ, opts:OptionsPattern[]] := 
+	AugmentTrainingDataI[{dat, seg}, vox, {aug, aug, aug, aug, aug}, opts]
 
-AugmentTrainingData[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ] := AugmentTrainingDataI[{dat, seg}, vox, aug]
+AugmentTrainingData[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ, opts:OptionsPattern[]] := 
+	AugmentTrainingDataI[{dat, seg}, vox, aug, opts]
 
-AugmentTrainingData[dat_?ArrayQ, vox_] := First@AugmentTrainingDataI[{dat, dat}, vox, {True, True, True, True, True}]
+AugmentTrainingData[dat_?ArrayQ, vox_, opts:OptionsPattern[]] := 
+	First@AugmentTrainingDataI[{dat, dat}, vox, {True, True, True, True, True}, opts]
 
-AugmentTrainingData[dat_?ArrayQ, vox_, aug_?BooleanQ] := First@AugmentTrainingDataI[{dat, dat}, vox, {aug, aug, aug, aug, aug}]
+AugmentTrainingData[dat_?ArrayQ, vox_, aug_?BooleanQ, opts:OptionsPattern[]] := 
+	First@AugmentTrainingDataI[{dat, dat}, vox, {aug, aug, aug, aug, aug}, opts]
 
-AugmentTrainingData[dat_?ArrayQ, vox_, aug_?ListQ] := First@AugmentTrainingDataI[{dat, dat}, vox, aug]
+AugmentTrainingData[dat_?ArrayQ, vox_, aug_?ListQ, opts:OptionsPattern[]] := 
+	First@AugmentTrainingDataI[{dat, dat}, vox, aug, opts]
 
 
-AugmentTrainingDataI[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ] := Block[{
-	datT, segT, cr, w, r, t, s, flip, rot, trans, scale, noise, blur},
+AugmentTrainingDataI[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ, OptionsPattern[]] := Block[{
+	datT, segT, cr, w, r, t, s, flip, rot, trans, scale, noise, blur, isNot2D},
 
 	(*prep data*)
 	{flip, rot, scale, noise, blur} = aug;
 	datT = ToPackedArray[N[dat]];
 	segT = ToPackedArray[N[seg]];
+	isNot2D = !OptionValue["Augment2D"];
 
 	(*Augmentations sharpness*)
 	If[blur && Coin[], datT = GaussianFilter[datT, RandomReal[{0, 2}]]];
@@ -1303,12 +1322,12 @@ AugmentTrainingDataI[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ] := Block[{
 		w = {
 			(*rotation around z, y and x axis, z is in-plane for axial*)	
 			If[rot && Coin[], RandomReal[{-30, 30}], 0.],
-			If[rot && Coin[], RandomReal[{-15, 15}], 0.], 
-			If[rot && Coin[], RandomReal[{-15, 15}], 0.],
+			If[rot && Coin[] && isNot2D, RandomReal[{-15, 15}], 0.], 
+			If[rot && Coin[] && isNot2D, RandomReal[{-15, 15}], 0.],
 			(*no Translation, never needed since how data is padded and cropped its always centered*)
 			0., 0., 0.,
 			(*Scaling*)
-			If[scale && Coin[], RandomReal[{0.6, 1.6}], 1.],
+			If[scale && Coin[] && isNot2D, RandomReal[{0.6, 1.6}], 1.],
 			If[scale && Coin[], RandomReal[{0.6, 1.6}], 1.],
 			If[scale && Coin[], RandomReal[{0.6, 1.6}], 1.],
 			(*no skewing*)
@@ -1321,7 +1340,7 @@ AugmentTrainingDataI[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ] := Block[{
 		cr = FindCrop[datT, CropPadding -> 0];
 		{datT, segT} = ApplyCrop[#, cr]& /@ {datT, segT};
 	];
-	
+
 	(*output augmented data*)
 	{ToPackedArray[N[datT]], ToPackedArray[Round[segT]]}
 ]
@@ -1409,14 +1428,21 @@ SyntaxInformation[GetTrainData] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPa
 GetTrainData[dataSets_, nBatch_, patch_, opts:OptionsPattern[]] := GetTrainData[dataSets, nBatch, patch, False, opts]
 
 GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
-		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad, sel
+		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad, sel, is2D
 	},
 
 	itt = 0;
 	datO = segO = {};
 
+	(*figure out how to augment the data*)
+	is2D = Length[patch]===2;
 	{augI, nSet, pad} = OptionValue[{AugmentData, PatchesPerSet, PadData}];
-	aug = If[BooleanQ[augI], augI, True];
+	{aug, is2D} = Which[
+		BooleanQ[augI], {augI, is2D}, 
+		augI==="2D", {True, True}, 
+		augI==="3D", {True, False}, 
+		True, {True, is2D}
+	];
 
 	(*generate sets untill batch size is reached*)
 	While[Length@datO < nBatch,
@@ -1435,7 +1461,7 @@ GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 		dat = If[ArrayDepth[dat] === 4, RandomChoice@Transpose@dat, dat];
 
 		(*perform augmentation on full data and get the defined number of patches*)
-		{dat, seg} = AugmentTrainingData[{dat, seg}, vox, aug];
+		{dat, seg} = AugmentTrainingData[{dat, seg}, vox, aug, "Augment2D" -> is2D];
 		{dat, seg} = PatchTrainingData[{dat, seg}, patch, nSet];
 		datO = Join[datO, dat];
 		segO = Join[segO, seg];
@@ -1446,7 +1472,7 @@ GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 	datO = datO[[sel]];
 	segO = segO[[sel]];
 
-	(*padd the data with extra background if needed*)
+	(*pad the data with extra background if needed*)
 	If[IntegerQ[pad], {datO, segO} = AddPadding[datO, segO, pad]];
 	datO = NormalizeData[#, NormalizeMethod -> "Uniform"]& /@ datO;
 	segO = If[IntegerQ[nClass], ClassEncoder[segO, nClass], segO + 1];
@@ -1474,11 +1500,29 @@ AddPadding[dat_, seg_, p_] := Block[{datp, segp, pad},
 (*PatchTrainingData*)
 
 
-PatchTrainingData[{dat_, seg_}, patch_, n_] := Block[{pts,datP,segP},
+PatchTrainingData[{dat_, seg_}, patch_, n_] := Block[{
+		pLen, dLen, patchI, nI, pts, datP, segP, slice, sel
+	},
+	pLen = Length@patch;
+	dLen = Length@dat;
+	{patchI, nI} = If[pLen === 2, {Prepend[patch, dLen], 1}, {patch, n}];
+
 	(*by overlapping patches with PatchNumber more random patches per data are created*)
-	{datP, pts} = DataToPatches[dat, patch, n, PatchNumber->2];
-	segP = First@DataToPatches[seg, patch, pts];
-	{ToPackedArray[N[#]]&/@datP, ToPackedArray[Round[#]]&/@segP}
+	{datP, pts} = DataToPatches[dat, patchI, nI, PatchNumber -> 2];
+	segP = First@DataToPatches[seg, patchI, pts];
+
+	(*for 2D patches randomly select slices from single patch*)
+	{datP, segP} = Switch[pLen,
+		2,
+		slice = RandomSample[Range[1, dLen], Min[{n, dLen}]];
+		{ToPackedArray[N[#]] & /@ datP[[1, slice]], ToPackedArray[Round[#]] & /@ segP[[1, slice]]},
+		3,
+		{ToPackedArray[N[#]] & /@ datP, ToPackedArray[Round[#]] & /@ segP}
+	];
+
+	(*only select patches where the data is not 0.*)
+	sel = Unitize[Mean[Flatten[#]]& /@ datP];
+	{Pick[datP, sel, 1], Pick[segP, sel, 1]}
 ]
 
 
