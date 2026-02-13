@@ -2940,7 +2940,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 			{tracts, seeds} = FiberTractography[tens, vox, stop,
 				InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", 
 				MaxSeedPoints -> If[seed<1, Scaled[seed], seed], 
-				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> True,
+				FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> False,
 				TensorFlips -> flip, TensorPermutations -> per, Parallelization -> True
 			];
 
