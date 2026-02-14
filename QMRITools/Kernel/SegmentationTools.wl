@@ -1179,9 +1179,9 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	n = {0.25, 0.3, 0.80} rounds br;
 	it = ittTrain br;
 	schedule = (ti = #1 + it; Which[
-		ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1/5, 1}],
+		ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1./5, 1.}],
 		ti < n[[2]], 1.,
-		ti < n[[3]],Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1/10, 1}],
+		ti < n[[3]],Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1., 1./10}],
 		True, 1./10
 	])&;
 
