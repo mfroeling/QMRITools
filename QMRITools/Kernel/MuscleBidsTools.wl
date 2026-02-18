@@ -481,6 +481,7 @@ defaultConfig = <|
 	"Segment" -> <|
 		"Device" -> "GPU",
 		"VoxSize" -> Automatic,
+		"Dimensions" -> "3D",
 		"Method" -> Automatic
 	|>,
 	"Tractography" -><|
@@ -2738,7 +2739,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 
 			(*check if target file exists if so perform the segmentation*)
 			If[!NiiFileExistQ[segfile],
-				AddToLog[{"The segmentation file does not exist", segfile}, 4];
+				AddToLog[{"The segmentation file does not exist: ", segfile}, 4];
 				status = "error"
 				,
 				segLocation = segment["Location"];
@@ -2746,13 +2747,17 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 				voxS = ConfigLookup[datType, "Segment", "VoxSize"];
 
 				If[voxS =!= Automatic, 
-					AddToLog[{"Using specified reduced voxel size", voxS}, 4];
+					AddToLog[{"Using specified reduced voxel size: ", voxS}, 4];
 					dim = Dimensions[out]; 
 					out = RescaleData[out, {vox, voxS}];
 					debugBids[{{vox, dim}, {voxS, Dimensions@out}}];
 				];
+				segDim = ConfigLookup[datType, "Segment", "Dimensions"];
+				If[segDim=!="2D"||segDim=!="3D", segDim="3D";];
+				AddToLog[{"Segmenting data using nework dimensions: ", voxS}, 4];
 				seg = SegmentData[out, segLocation, 
-					TargetDevice -> ConfigLookup[datType, "Segment", "Device"], Monitor -> False];
+					TargetDevice -> ConfigLookup[datType, "Segment", "Device"], 
+					Monitor -> False, SegmentationDimension -> segDim];
 				If[voxS =!= Automatic, 
 					seg = RescaleSegmentation[seg, dim]
 				];
