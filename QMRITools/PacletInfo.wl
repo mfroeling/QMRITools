@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "4.6.1",
+	"Version" -> "4.7.0",
 	"WolframVersion" -> "14.0+",
 	"SystemID" -> All, 
 
@@ -27,18 +27,22 @@ PacletObject[<|
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"DemoData", "DemoData.zip"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"ColorData", "SCMv8txt.zip"}}},
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"GradientTool", "GradientGUI-v14.cdf"}}},
-		
-		(*Neural Networks segmentation*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle", "N2_Shoulder.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "N5_UpperLeg.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "N6_LowerLeg.wlnet"}}},
 
 		(*Neural Networks classification*)
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Side_Leg.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Pos_Leg.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"Body", "Body.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderSide", "Side_Shoulder.wlnet"}}},
 
-		(*Segmentation labels*)
+		(*Neural Networks segmentation*)
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle", "N2_Shoulder.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle2D", "N2_Shoulder_2D.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "N5_UpperLeg.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle2D", "N5_UpperLeg_2D.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "N6_LowerLeg.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle2D", "N6_LowerLeg_2D.wlnet"}}},
+
+		(*Segmentation train labels*)
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"HeadNeckTrainLabels", "N1_HeadNeck.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderTrainLabels", "N2_Shoulder.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"TorsoTrainLabels", "N3_Torso.txt"}}},
@@ -47,6 +51,7 @@ PacletObject[<|
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegLowerTrainLabels", "N6_LowerLeg.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ArmTrainLabels", "N7_Arm.txt"}}},
 
+		(*Segmentation output labels*)
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLabels", "N0_Body.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLegLabels", "Muscles_leg.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleShoulderLabels", "Muscles_shoulder.txt"}}},
