@@ -29,17 +29,15 @@ PacletObject[<|
 		{"Asset", "Root" -> "Resources", "Assets" -> {{"GradientTool", "GradientGUI-v14.cdf"}}},
 
 		(*Neural Networks classification*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegSide", "Side_Leg.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"LegPosition", "Pos_Leg.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"Body", "Body.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"Body", "Body_Pos_Side.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderSide", "Side_Shoulder.wlnet"}}},
 
 		(*Neural Networks segmentation*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle", "N2_Shoulder.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle3D", "N2_Shoulder_3D.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle2D", "N2_Shoulder_2D.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle", "N5_UpperLeg.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle3D", "N5_UpperLeg_3D.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle2D", "N5_UpperLeg_2D.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle", "N6_LowerLeg.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle3D", "N6_LowerLeg_3D.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle2D", "N6_LowerLeg_2D.wlnet"}}},
 
 		(*Segmentation train labels*)

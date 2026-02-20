@@ -2007,7 +2007,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						debugBids[{"Registration function", regF}];
 						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, 
 							PrintTempDirectory->False, MethodReg -> "bspline", InterpolationOrderReg ->1, 
-							BsplineSpacing -> {30, 30, 30}, BsplineDirections -> {0.5, 1, 1}
+							BsplineSpacing -> {30, 30, 30}, BsplineDirections -> {0, 1, 1}
 						];
 
 						(*anisotropic filtering*)
