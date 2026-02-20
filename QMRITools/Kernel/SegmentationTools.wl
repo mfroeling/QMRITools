@@ -334,7 +334,7 @@ ImportITKLabelsI[file_, outType_] := ImportITKLabelsI[file, outType] = Block[{fi
 
 SyntaxInformation[MuscleLabelToName] = {"ArgumentsPattern"->{_, _.}};
 
-MuscleLabelToName[num_] := MuscleLabelToName[num, "MusclesLegLabels"]
+MuscleLabelToName[num_] := MuscleLabelToName[num, "MuscleLegLabels"]
 
 MuscleLabelToName[num_, file_] := num /. ImportITKLabels[file, "Labels"]
 
@@ -345,7 +345,7 @@ MuscleLabelToName[num_, file_] := num /. ImportITKLabels[file, "Labels"]
 
 SyntaxInformation[MuscleNameToLabel] = {"ArgumentsPattern"->{_, _.}};
 
-MuscleNameToLabel[name_] := MuscleNameToLabel[name, "MusclesLegLabels"]
+MuscleNameToLabel[name_] := MuscleNameToLabel[name, "MuscleLegLabels"]
 
 MuscleNameToLabel[name_, file_] := name /. ImportITKLabels[file, "Names"]
 
@@ -363,6 +363,7 @@ Options[ClassifyData] = {
 	Monitor -> False
 };
 
+
 SyntaxInformation[ClassifyData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
@@ -373,20 +374,19 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 	mon = OptionValue[Monitor];
 
 	(*get the network*)
-	net = GetNeuralNet[met];
+	net = GetNeuralNet["Body"];
 	If[net === $Failed, Return[$Failed]];
 
 	(*convert data *)
 	imSize = NetDimensions[NetReplacePart[net, "Input"->None], "Input"][[2;;]];
-	ims = MakeClassifyImage[dat, ImageSize -> imSize];
-	class = net[ims, TargetDevice -> dev];
+	class = net[MakeClassifyImage[dat, ImageSize -> imSize], TargetDevice -> dev];
 
 	Switch[met,
-		"LegSide"|"ShoulderSide", Last@Keys@Sort@Counts@class,
-		"LegPosition", FindBodyPos[class, mon],
+		"LegSide"|"ShoulderSide", Last@Keys@Sort@Counts@class["Side"],
+		"LegPosition", Select[FindBodyPos[class["Position"], mon], MemberQ[{"LowerLegs","UpperLegs"}, #[[1]]]&],
 		"Body", {
-			Last@Keys@Sort@Counts@StringSplit[class,"_"][[All, 2]],
-			FindBodyPos[StringSplit[class,"_"][[All, 1]], mon]
+			Last@Keys@Sort@Counts@class["Side"],
+			FindBodyPos[class["Position"], mon]
 		},
 		_, class
 	]
@@ -421,11 +421,10 @@ FindBodyPos[class_, mon_] := Block[{selection, locations, classN,  classF, len, 
 		{lab, pos}
 	) & /@ selection, #[[2]] =!= {} &];
 
-	Echo[Row[{ DeleteDuplicates[classF] /. locations, Column@what}, " | "], "Found locations:"];
+	If[mon, MonitorFunction[Row[{ DeleteDuplicates[classF] /. locations, Column@what}, " | "], "Found locations:"]];
 
 	what
 ]
-
 
 
 (* ::Subsection:: *)
@@ -579,13 +578,14 @@ Options[SegmentData] = {
 	Monitor->False
 };
 
+
 SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 SegmentData[datI_, opts:OptionsPattern[]] := SegmentData[datI, "Legs", opts]
 
 SegmentData[datI_, whati_?StringQ, OptionsPattern[]] := Block[{
 		dev, max, mon, patch, pts, dim ,loc, net, segs, all, data,
-		time, timeAll, what, netFile, custom, monO, sDim, add, dimI, rescale
+		time, timeAll, what, netFile, custom, monO, sDim, dimI, rescale
 	},
 
 	timeAll = First@AbsoluteTiming[
@@ -603,7 +603,7 @@ SegmentData[datI_, whati_?StringQ, OptionsPattern[]] := Block[{
 		data = Switch[ArrayDepth[datI], 4, datI[[All,1]], _, datI];
 		dimI = Dimensions@data;
 
-		(*figure out if the data needs rescaleing*)
+		(*figure out if the data needs rescaling*)
 		If[rescale =!= Automatic, data = RescaleData[data, rescale]];
 
 		(*split the data in anatomical based patches for segmentation*)
@@ -616,18 +616,17 @@ SegmentData[datI_, whati_?StringQ, OptionsPattern[]] := Block[{
 		mon[Column@Thread[{loc, Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"];
 
 		(*get the network name and data type*)
-		add = Replace[sDim, {"2D"->"2D", "3D"->"", _->""}];
 		net = Switch[what,
-			"HeadNeck", "SegHeadNeckMuscle"&,
-			"Shoulder", "SegShoulderMuscle"<>add&,
-			"Torso", "SegTorsoMuscle"&,
-			"Hip", "SegHipMuscle"&,
-			"Arm", "SegArmMuscle"&,
-			"UpperLegs", "SegThighMuscle"<>add&,
-			"LowerLegs", "SegLegMuscle"<>add&,
+			"HeadNeck", "SegHeadNeckMuscle"<>sDim&,
+			"Shoulder", "SegShoulderMuscle"<>sDim&,
+			"Torso", "SegTorsoMuscle"<>sDim&,
+			"Hip", "SegHipMuscle"<>sDim&,
+			"Arm", "SegArmMuscle"<>sDim&,
+			"UpperLegs", "SegThighMuscle"<>sDim&,
+			"LowerLegs", "SegLegMuscle"<>sDim&,
 
 			"Legs",	
-				(#[[1]] /. {"UpperLegs" -> "SegThighMuscle"<>add, "LowerLegs" -> "SegLegMuscle"<>add})&,
+				(#[[1]] /. {"UpperLegs" -> "SegThighMuscle"<>sDim, "LowerLegs" -> "SegLegMuscle"<>sDim})&,
 			
 			_, Return[$Failed]
 		];
@@ -701,6 +700,7 @@ Options[SplitDataForSegmentation] = {
 	TargetDevice -> "CPU"
 };
 
+
 SyntaxInformation[SplitDataForSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 
@@ -740,7 +740,6 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 			{{right, {"Right", {1, cut}}}, {left, {"Left", {cut+1, dim[[3]]}}}},
 			_,
 			(*only one side, no split*)
-			cut=0; 
 			{{data, {whatSide, {1, dim[[3]]}}}}
 		];
 
@@ -751,11 +750,11 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 			{dat[[#[[2,1]];;#[[2,2]]]], #, side} & /@ whatPos
 		)&/@dat, 1]];
 
-		mon[whatPos[[All, 1]], "Data contains positions: "];
+		mon[whatPos[[All, 1]], "Selected positions: "];
 		mon[Round[time, .1], "Time for position estimation [s]:"];
 
 		(*output the selected data with the correct label and coordinates*)
-		{dat, pts, loc} = Transpose[CropPart/@dat];
+		{dat, pts, loc} = Transpose[CropPart /@ dat];
 		{{dat, pts, dim}, loc}
 
 		,
@@ -763,8 +762,8 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		(*find which side using NN*)
 		time= First@AbsoluteTiming[
 			(*TODO replace for single network*)
-			whatS = (what /. {"UpperLegs" -> "Leg", "LowerLegs" -> "Leg"})<>"Side";
-			whatSide = ClassifyData[data, whatS, TargetDevice -> dev, Monitor -> monO];
+			whatSide = (what /. {"UpperLegs" -> "Leg", "LowerLegs" -> "Leg"})<>"Side";
+			whatSide = ClassifyData[data, whatSide, TargetDevice -> dev, Monitor -> monO];
 
 			(*based on side cut data or propagate*)
 			dat = Switch[whatSide,
@@ -778,23 +777,20 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 				},
 				_,
 				(*only one side, no split*)
-				cut = over = 0;
-				{
-					{data, {what, {1, dim[[1]]}}, {whatSide, {1, dim[[3]]}}}
-				}
+				{{data, {what, {1, dim[[1]]}}, {whatSide, {1, dim[[3]]}}}}
 			];
 		];
 
 		mon[whatSide, "Data contains sides: "];
 		mon[Round[time, .1], "Time for side estimation [s]:"];
 
-		{dat, pts, loc} = Transpose[CropPart/@dat];
+		{dat, pts, loc} = Transpose[CropPart /@ dat];
 		{{dat, pts, dim}, loc}
 
 		,
 		"Back",
 		dat = {{data, {"Both", {1, dim[[1]]}}, {"Both", {1, dim[[3]]}}}};
-		{dat, pts, loc} = Transpose[CropPart/@dat];
+		{dat, pts, loc} = Transpose[CropPart /@ dat];
 		{{dat, pts, dim}, loc}
 
 		,
@@ -905,7 +901,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		(*create the patches*)
 		{patch, pts} = DataToPatches[data, size, PatchNumber -> 0, PatchPadding->pad];
 		mon[{size, Length@patch}, "Patch size and created number of patches is:"];
-		mon[Quantity[mem, "Gb"], "Estimated memory need is:"];
+		mon[If[mem < 1, Quantity[Round[1000 mem], "MB"], Quantity[Round[mem,.1], "GB"]], "Estimated memory need is:"];
 		patch = If[is2D, ({#}& /@ normF[#])& /@ patch, {normF[#]}&/@patch];
 
 		(*perform the segmentation*)
@@ -986,7 +982,7 @@ FindPatchDim[net_, dim_, lim_] := Block[{
 				(*y <= z (sy/sz), x <= z (sx/sz),*)
 				(*Step and Dimensions must integer*)
 				Element[{x, y, z, nZ, nY, nX}, Integers],
-				(*min and max allowd data dimensions*)
+				(*min and max allowed data dimensions*)
 				sz <= z <= Ceiling[dim[[1]], sz], sy <= y <= Ceiling[dim[[2]], sy], sx <= x <= Ceiling[dim[[3]], sx],
 				(*set dims to multiple of steps*)
 				z == dz + nZ sz, y == dy + nY sy, x == dx + nX sx
@@ -1270,11 +1266,13 @@ MakeTestData[data_, n_, patch_] := Block[{testData, len, sel, testDat},
 (* ::Subsubsection::Closed:: *)
 (*AugmentTrainingData*)
 
+
 Options[AugmentTrainingData] = Options[AugmentTrainingDataI] ={
 	"Augment2D" -> False
 }
 
 SyntaxInformation[AugmentTrainingData] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
+
 
 AugmentTrainingData[{dat_?ArrayQ, seg_?ArrayQ}, vox_, opts:OptionsPattern[]] := 
 	AugmentTrainingDataI[{dat, seg}, vox, {True, True, True, True, True}, opts]
@@ -1345,6 +1343,7 @@ AugmentTrainingDataI[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ, OptionsPatter
 
 Coin[] := Coin[0.5];
 Coin[t_] := RandomChoice[{t, 1 - t} -> {True, False}]
+
 
 CoinN[] := CoinN[0.5];
 CoinN[t_] := RandomChoice[{t, 1 - t} -> {1, 0}]
@@ -1417,6 +1416,7 @@ Options[GetTrainData] = {
 };
 
 SyntaxInformation[GetTrainData] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
+
 
 GetTrainData[dataSets_, nBatch_, patch_, opts:OptionsPattern[]] := GetTrainData[dataSets, nBatch, patch, False, opts]
 
@@ -1540,6 +1540,7 @@ Options[PrepareTrainingData] = {
 
 SyntaxInformation[PrepareTrainingData] = {"ArgumentsPattern" -> {_, _,OptionsPattern[]}};
 
+
 PrepareTrainingData[labFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]] := PrepareTrainingData[{labFol, labFol}, outFol, opt]
 
 PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, OptionsPattern[]] := Block[{
@@ -1621,7 +1622,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 
 	out = Grid[{{Grid[Append[Prepend[out, head], {"", legend, SpanFromLeft}], 
 		Spacings -> {2, 1}, Background -> {None, {{None, LightDarkV[Lighter@LightGray, Darker@Gray]}}}, Alignment -> Center]
-		}}, Spacings -> {2, 2}, Background-> LigthDarkV[White,GrayLevel[0.1]]];
+		}}, Spacings -> {2, 2}, Background-> LightDarkV[White,GrayLevel[0.1]]];
 	Export[FileNameJoin[{outFol, "summary.png"}], ImagePad[Rasterize[out], 6, White]];
 
 	out
@@ -1893,10 +1894,10 @@ SurfaceDistance[ref_, pred_, class_?IntegerQ, vox : {_?NumberQ, _?NumberQ, _?Num
 SufDistFunc[dist_, met_] := Switch[met,
 	"Mean", Mean@dist,
 	"Median", Median@dist,
-	"RootMeanSquare"|"RMS", Sqrt[Mean[dist^2]],
-	"Max"|"Hausdorff"|"HD", Max@dist,
-	"Hausdorff95"|"HD95", Quantile[dist,.95],
-	"Std"|"StandardDeviation", StandardDeviation@dist,
+	"RootMeanSquare" | "RMS", Sqrt[Mean[dist^2]],
+	"Max" | "Hausdorff" | "HD", Max@dist,
+	"Hausdorff95" | "HD95", Quantile[dist,.95],
+	"Std" | "StandardDeviation", StandardDeviation@dist,
 	_ , Message[SurfaceDistance::met, met]; $Failed
 ]
 
@@ -1961,6 +1962,7 @@ MakeDistanceMap[data_, vox_, OptionsPattern[]] := Block[{
 
 	ReverseCrop[SparseArray[Join[Thread[inner -> din], Thread[outer -> dout]], dimC, 0.], dim, cr]
 ]
+
 
 DistFun[fun_, pts_] := Sqrt[Total[(Flatten[fun[#, 1] & /@ pts, 1] - pts)^2, {2}]];
 
@@ -2086,10 +2088,10 @@ LoadLog[fol_, max_] := Block[{files, keys, log, leng},
 (*SegmentDataGUI*)
 
 
-SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg, status, diag, option},
+SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg, status, diag, what},
 	NotebookClose[segwindow];
 
-	option = "Legs";
+	what = "Legs";
 
 	diag = DialogNotebook[
 		status = TextCell@"";
@@ -2113,7 +2115,7 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 					Method -> "Queued"]
 			}, {
 				TextCell["Segmentation type"], 
-				PopupMenu[Dynamic[option], {"Legs", "LegBones"}]
+				PopupMenu[Dynamic[what], {"Legs", "UpperLegs", "LowerLegs", "Shoulder"}]
 			},{
 				Button["Start Segmentation, please be patient", 
 					If[! NiiFileExistQ[inputFile], 
@@ -2122,7 +2124,7 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 						status = TextCell@"Importing";
 						{dat, vox} = ImportNii[inputFile];
 						status = TextCell@"Segmenting Data";
-						seg = SegmentData[dat, option, TargetDevice -> "CPU"];
+						seg = SegmentData[dat, what, TargetDevice -> "CPU"];
 						status = TextCell@"Exporting";
 
 						CopyFile[GetAssetLocation["MusclesLegLabels"], 

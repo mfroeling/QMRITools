@@ -1273,27 +1273,46 @@ Options[MakeClassifyNetwork] = {
 
 SyntaxInformation[MakeClassifyNetwork] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-MakeClassifyNetwork[classes_, OptionsPattern[]] := Block[{enc, dec, net,imSize},
+MakeClassifyNetwork[classes_, OptionsPattern[]] := Block[{imSize, enc, dec, conv, head, heads, nodes, connection},
+	
+	(*make the image enoder*)
 	imSize = OptionValue[ImageSize];
+	enc = NetEncoder[{"Image", imSize, ColorSpace -> "Grayscale"}];
 
-	enc = NetEncoder[{"Class", classes, "IndicatorVector"}];
-	dec = NetDecoder[{"Class", classes}];
+	(*make the decoders: switch between single list of classes or named association of classes*)
+	dec = If[ListQ[classes],
+		Thread[{"Output"} -> {NetDecoder[{"Class", classes}]}]		,
+		Thread[Keys[classes] -> (NetDecoder[{"Class", #}] & /@ Values[classes])]
+	];
 
-	net = NetChain[{
-		ConvolutionLayer[16, 7, "Stride"->1, PaddingSize->3], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2,2],
-		ConvolutionLayer[32, 5, "Stride"->1, PaddingSize->2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2,2],
-		ConvolutionLayer[32, 5, "Stride"->1, PaddingSize->2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2,2],
-		ConvolutionLayer[64, 3, "Stride"->1, PaddingSize->1], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2,2],
-		ConvolutionLayer[64, 3, "Stride"->1, PaddingSize->1], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[4,4],
-		FlattenLayer[], 
+	(*general convolution layer*)
+	conv = NetChain[{
+		ConvolutionLayer[16, 7, "Stride" -> 1, PaddingSize -> 3], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2, 2],
+		ConvolutionLayer[32, 5, "Stride" -> 1, PaddingSize -> 2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2, 2],
+		ConvolutionLayer[32, 5, "Stride" -> 1, PaddingSize -> 2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2, 2],
+		ConvolutionLayer[64, 3, "Stride" -> 1, PaddingSize -> 1], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2, 2],
+		ConvolutionLayer[64, 3, "Stride" -> 1, PaddingSize -> 1], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[4, 4], 
+		FlattenLayer[]
+	}];
+
+	(*class specific head function*)
+	head = NetChain[{
 		LinearLayer[256], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
 		LinearLayer[128], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
 		LinearLayer[64], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
 		LinearLayer[32], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
-		LinearLayer[Length@classes], SoftmaxLayer[]
-	}, "Input" -> Prepend[imSize, 1]];
+		LinearLayer[Length[#]], SoftmaxLayer[]}
+	] &;
 
-	NetFlatten@NetChain[{net}, "Input"->NetEncoder[{"Image", imSize, ColorSpace->"Grayscale"}], "Output"->dec]
+	(*make the heads and the convolution layers and the connections*)
+	;
+	
+	(*make the network*)
+	NetGraph[
+		Association[Join[{"Conv" -> conv},  Thread[Keys[classes] -> (head /@ Values[classes])]]], 
+		("Conv" -> # -> NetPort[#] & /@ Keys[classes]),
+		"Input" -> enc, ##
+	] & @@ dec
 ]
 
 

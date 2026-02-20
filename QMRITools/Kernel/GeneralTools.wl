@@ -2073,7 +2073,7 @@ MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
 	vertCol = Thread[names -> (Directive[#, EdgeForm[None]] & /@ (contexts /. colorLab))];
 	vertFunc = Thread[names -> types /. typeLab];
 	vertLab = Thread[names -> (Placed[#, lab] & /@ names)];
-	vertLab[[1]] = names[[1]] -> Placed[Style[names[[1]], 16], lab];
+	vertLab[[1]] = names[[1]] -> Placed[Style[names[[1]], 16], Above];
 
 	legendColor = SwatchLegend[Values[colorLab], Keys[colorLab], LegendLabel -> Style["Context", 15, Bold], LegendLayout -> "Row"];
 	ims = Rasterize[Graph[{1}, {}, VertexShapeFunction -> #[[1]], ImagePadding -> 0, PlotRangePadding -> 0, 
