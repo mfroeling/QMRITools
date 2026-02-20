@@ -61,8 +61,8 @@ PacletObject[<|
 		(*Windows*)
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"Elastix", "elastix.exe"}}},
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"Transformix", "transformix.exe"}}},
-		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"ElastixLib", "ANNlib-5.2.dll"}}},
-		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"DcmToNii", "dcm2niix-20241211.exe"}}},
+		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"ElastixLib", "elxANNlib.dll"}}},
+		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"DcmToNii", "dcm2niix-20250506.exe"}}},
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"pigz", "pigz.exe"}}},
 
 		(*windows olf dcm2nii versions*)
@@ -74,24 +74,17 @@ PacletObject[<|
 		{"Asset", "SystemID" -> "Windows-x86-64", "Root" -> "Applications/Windows-x86-64", "Assets" -> {{"DcmToNii-17", "dcm2niix-20171204.exe"}}},
 
 		(*Mac-x86*)
-		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},
-		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
-		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.dylib"}}},
-		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.1.dylib"}}},
-		{"Asset", "SystemID" -> "MacOSX-x86-64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}},
-
-		(*Mac-x86*)
 		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},
 		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
-		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.dylib"}}},
-		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.1.dylib"}}},
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libelxANNlib.dylib"}}},
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libelxANNlib.1.dylib"}}},
 		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}},
 
-		(*Linux-x86*)
-		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},
-		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
-		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.so"}}},
-		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"ElastixLib", "lib/libANNlib-5.2.so.1"}}},
-		{"Asset", "SystemID" -> "Linux-x86-64", "Root" -> "Applications/Linux-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}}
+		(*Mac-ARM*)
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Elastix", "bin/elastix"}}},
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"Transformix", "bin/transformix"}}},
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libelxANNlib.dylib"}}},
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"ElastixLib", "lib/libelxANNlib.1.dylib"}}},
+		{"Asset", "SystemID" -> "MacOSX-ARM64", "Root" -> "Applications/MacOSX-x86-64", "Assets" -> {{"DcmToNii", "bin/dcm2niix"}}}
 	}
 |>]
