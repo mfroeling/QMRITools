@@ -176,3 +176,16 @@ this program, make sure that you have permission to do so not merely in
 terms of copyright, but also in terms of patent law.
 
 Some code in the NiiTools packages was based on `https://github.com/tomdelahaije/nifti-converter`
+QMRITools includes the latest version of `https://github.com/SuperElastix/elastix`
+QMRITools includes the latest version of `https://github.com/rordenlab/dcm2niix`
+
+------------------------------------------------------------------------
+
+Number of Functions: 591
+Total lines: 42432
+Total non-empty lines: 31905
+Total lines of help text: 3032
+Total lines off comments: 5993
+Total lines of code: 22880
+Total characters: 1425166
+Average characters per line: 45
