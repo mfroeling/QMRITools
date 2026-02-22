@@ -306,7 +306,7 @@ ImportITKLabels[x___]:=ImportITKLabelsI[x]
 
 ImportITKLabelsI[] := ImportITKLabelsI["MusclesLegLabels"];
 
-ImportITKLabels[file_I]:=ImportITKLabelsI[file, "List"]
+ImportITKLabels[file_]:=ImportITKLabelsI[file, "List"]
 
 ImportITKLabelsI[file_, outType_] := ImportITKLabelsI[file, outType] = Block[{fileL, lines, muscleNames, muscleLabels},
 	fileL = If[FileExistsQ[file], file, GetAssetLocation[file]]; 
@@ -367,7 +367,7 @@ Options[ClassifyData] = {
 SyntaxInformation[ClassifyData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
-		dev, mon, net, imSize, ims, class
+		dev, mask, mon, net, imSize, ims, class, pos
 	},
 
 	dev = OptionValue[TargetDevice];
@@ -379,11 +379,16 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 
 	(*convert data *)
 	imSize = NetDimensions[NetReplacePart[net, "Input"->None], "Input"][[2;;]];
-	class = net[MakeClassifyImage[dat, ImageSize -> imSize], TargetDevice -> dev];
+	mask = Mask[NormalizeData[dat], 10, MaskSmoothing -> True, MaskClosing -> 5];
+	class = net[MakeClassifyImage[MaskData[dat, mask], ImageSize -> imSize], TargetDevice -> dev];
+
 
 	Switch[met,
 		"LegSide"|"ShoulderSide", Last@Keys@Sort@Counts@class["Side"],
-		"LegPosition", Select[FindBodyPos[class["Position"], mon], MemberQ[{"LowerLegs","UpperLegs"}, #[[1]]]&],
+		"LegPosition", 
+			pos = FindBodyPos[class["Position"], mon];
+			Select[pos, MemberQ[{"LowerLegs", "UpperLegs"}, #[[1]]]&]
+		,
 		"Body", {
 			Last@Keys@Sort@Counts@class["Side"],
 			FindBodyPos[class["Position"], mon]
@@ -583,8 +588,8 @@ SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]
 
 SegmentData[datI_, opts:OptionsPattern[]] := SegmentData[datI, "Legs", opts]
 
-SegmentData[datI_, whati_?StringQ, OptionsPattern[]] := Block[{
-		dev, max, mon, patch, pts, dim ,loc, net, segs, all, data,
+SegmentData[datI_, whati_, OptionsPattern[]] := Block[{
+		dev, max, mon, patch, pts, dim ,loc, net, segs, all, data, mask, 
 		time, timeAll, what, netFile, custom, monO, sDim, dimI, rescale
 	},
 
@@ -605,6 +610,8 @@ SegmentData[datI_, whati_?StringQ, OptionsPattern[]] := Block[{
 
 		(*figure out if the data needs rescaling*)
 		If[rescale =!= Automatic, data = RescaleData[data, rescale]];
+		mask = Mask[NormalizeData[data], 10, MaskSmoothing -> True, MaskClosing -> 5];
+		data = MaskData[data, mask];
 
 		(*split the data in anatomical based patches for segmentation*)
 		time = First@AbsoluteTiming[
@@ -628,12 +635,14 @@ SegmentData[datI_, whati_?StringQ, OptionsPattern[]] := Block[{
 			"Legs",	
 				(#[[1]] /. {"UpperLegs" -> "SegThighMuscle"<>sDim, "LowerLegs" -> "SegLegMuscle"<>sDim})&,
 			
-			_, Return[$Failed]
+			_, $Failed
 		];
 		If[custom, net = If[ListQ[netFile],
 			(#[[1]] /. {"UpperLegs" -> netFile[[1]], "LowerLegs" -> netFile[[2]]})&,
-			netFile&]
+			netFile&
+			]
 		];
+		If[net===$Failed, Return[$Failed]];
 
 		(*Perform the segmentation*)
 		time = First@AbsoluteTiming[
@@ -669,25 +678,29 @@ SegmentData[datI_, whati_?StringQ, OptionsPattern[]] := Block[{
 ReplaceLabels[seg_, loc_] := Block[{
 		what, side, labIn, fIn, fOut, labNam, labOut, labOutS
 	},
+	If[MemberQ[{"UpperLegs", "LowerLegs", "Shoulder"}, loc],
 
-	{what, side} = loc;
-	labIn = GetSegmentationLabels[seg];
+		{what, side} = loc;
+		labIn = GetSegmentationLabels[seg];
 
-	{fIn, fOut} = Switch[what, 
-		"UpperLegs", {"LegUpperTrainLabels", "MuscleLegLabels"},
-		"LowerLegs", {"LegLowerTrainLabels", "MuscleLegLabels"},
-		"Shoulder", {"ShoulderTrainLabels", "MuscleShoulderLabels"}
-		(*TODO - add new cases when done*)
-	];
+		{fIn, fOut} = Switch[what, 
+			"UpperLegs", {"LegUpperTrainLabels", "MuscleLegLabels"},
+			"LowerLegs", {"LegLowerTrainLabels", "MuscleLegLabels"},
+			"Shoulder", {"ShoulderTrainLabels", "MuscleShoulderLabels"}
+			(*TODO - add new cases when done*)
+		];
 
-	(*some labels have side encoding some dont*)
-	labNam = MuscleLabelToName[labIn, fIn];
-	labOut = MuscleNameToLabel[labNam, fOut];
-	labOutS = MuscleNameToLabel[(# <> "_" <> side & /@ labNam), fOut];
-	labOut = Cases[Transpose[{labOut, labOutS}], _Integer, 2];
+		(*some labels have side encoding some dont*)
+		labNam = MuscleLabelToName[labIn, fIn];
+		labOut = MuscleNameToLabel[labNam, fOut];
+		labOutS = MuscleNameToLabel[(# <> "_" <> side & /@ labNam), fOut];
+		labOut = Cases[Transpose[{labOut, labOutS}], _Integer, 2];
 
-	(*Replace train labels with final labels*)
-	ReplaceSegmentations[seg, labIn, labOut]
+		(*Replace train labels with final labels*)
+		ReplaceSegmentations[seg, labIn, labOut]
+		,
+		seg
+	]
 ]
 
 
@@ -727,10 +740,8 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		(*split the data in upper and lower legs and left and right*)
 
 		(*find which side using NN*)
-		time = First@AbsoluteTiming[whatSide = ClassifyData[data, "LegSide", TargetDevice -> dev, Monitor -> monO]];
+		{whatSide, whatPos} = ClassifyData[data, "Body", TargetDevice -> dev, Monitor -> monO];
 		mon[whatSide, "Data contains sides: "];
-		mon[Round[time, .1], "Time for side estimation [s]:"];
-		mon["--------------------"];
 
 		(*based on side cut data or propagate*)
 		dat = Switch[whatSide,
@@ -744,14 +755,14 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		];
 
 		(*loop over data to find upper or lower*)
-		time= First@AbsoluteTiming[dat = Flatten[(
-			{dat, side} = #;
-			whatPos = ClassifyData[dat, "LegPosition", TargetDevice -> dev, Monitor -> monO];
-			{dat[[#[[2,1]];;#[[2,2]]]], #, side} & /@ whatPos
-		)&/@dat, 1]];
-
+		whatPos = Select[whatPos, MemberQ[{"LowerLegs", "UpperLegs"}, #[[1]]]&];
 		mon[whatPos[[All, 1]], "Selected positions: "];
-		mon[Round[time, .1], "Time for position estimation [s]:"];
+		dat = Flatten[(
+			{dat, side} = #;
+			{dat[[#[[2,1]];;#[[2,2]]]], #, side} & /@ whatPos
+		)&/@dat, 1];
+
+		
 
 		(*output the selected data with the correct label and coordinates*)
 		{dat, pts, loc} = Transpose[CropPart /@ dat];
@@ -782,7 +793,6 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		];
 
 		mon[whatSide, "Data contains sides: "];
-		mon[Round[time, .1], "Time for side estimation [s]:"];
 
 		{dat, pts, loc} = Transpose[CropPart /@ dat];
 		{{dat, pts, dim}, loc}
@@ -909,7 +919,6 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 			time = First@AbsoluteTiming[
 				(*actually perform the segmentation with the NN*)
 				seg = ClassDecoder[net[#, TargetDevice->dev, WorkingPrecision ->precision]]& /@ patch;
-				(*seg = ClassDecoder /@ seg;*)
 				(*reverse all the padding and cropping and merged the patches if needed*)
 				seg = PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[nClass]];
 				seg = ReverseCrop[ArrayPad[seg, -pad], dimO, crp];
@@ -944,8 +953,8 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 FindPatchDim[net_, dim_] := FindPatchDim[net, dim, 8]
 
 FindPatchDim[net_, dim_, lim_] := Block[{
-		dz, dy, dx, inp, sz, sy, sx, base, mdx, mdy, mdz,
-		max, out, netMem, x, y, z, nX, nY, nZ
+		dz, dy, dx, inp, sz, sy, sx, base,
+		max, out, rat, netMem, x, y, z, nX, nY, nZ
 	},
 	
 	netMem = QuantityMagnitude[UnitConvert[Quantity[16. (
@@ -968,27 +977,28 @@ FindPatchDim[net_, dim_, lim_] := Block[{
 		(*figure out net dimensions and allowed steps*)
 		{dz, dy, dx} = inp;
 		{sz, sy, sx} = inp / Rest[NetDimensions[net, "MinEncodingOut"]];
+		out = {Ceiling[dim[[1]], sz], Ceiling[dim[[2]], sy], Ceiling[dim[[3]], sx]};
+		rat = out[[2]]/out[[3]];
 		
 		(*figure out net memory and memory steps*)
 		base = netMem[net];
-		{mdx, mdy, mdz} = netMem[ChangeNetDimensions[net, "Dimensions" -> inp + #]] - base & /@	DiagonalMatrix[{sz, sy, sx}];
 
 		Clear[x, y, z, nX, nY, nZ];
-		(*Maximize total volume/resolution *)
-		max = NMaximize[{z*y*x, {
+		(*Maximize total volume/resolution while keeping close to the in plane ratio*)
+		max = NMaximize[{x y z (1 - (y - rat x)^2/(rat x)^2), 
+			{
 				(*VRAM Constraint 95% of true limit*)
-				base + mdz nZ + mdy nY + mdx nX <= 0.9 lim,
-				(*Aspect Ratio:In-plane (y,x) no more than 4x Z*)
-				(*y <= z (sy/sz), x <= z (sx/sz),*)
+				base (x y z / (dx dy dz)) <= 0.9 lim,
 				(*Step and Dimensions must integer*)
 				Element[{x, y, z, nZ, nY, nX}, Integers],
 				(*min and max allowed data dimensions*)
-				sz <= z <= Ceiling[dim[[1]], sz], sy <= y <= Ceiling[dim[[2]], sy], sx <= x <= Ceiling[dim[[3]], sx],
+				sz <= z <= out[[1]], sy <= y <= out[[2]], sx <= x <= out[[3]],
 				(*set dims to multiple of steps*)
 				z == dz + nZ sz, y == dy + nY sy, x == dx + nX sx
 			}}, {z, y, x, nZ, nY, nX}];
 
-		{Round[base + mdz nZ + mdy nY + mdx nX, .1], {z, y, x}} /. Last[max]
+		out = {z, y, x} /. Last[max];
+		{Round[netMem[ChangeNetDimensions[net, "Dimensions" -> out]], .1], out}
 	]
 ]
 
@@ -1164,7 +1174,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*oneCycle learning rate schedule function*)
 	br = roundLength / batch;
-	n = {0.25, 0.3, 0.80} rounds br;
+	n = {0.25, 0.4, 0.95} rounds br;
 	it = ittTrain br;
 	schedule = (ti = #1 + it; Which[
 		ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1./5, 1.}],
@@ -2012,7 +2022,7 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 				If[StringQ[temp], folder = temp; 
 					{klist, pdat, len} = LoadLog[folder, max];
 					pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
-					xmax = Length[pdat];
+					xmin = 1;
 				];
 				, ImageSize -> {60, Automatic}, Method->"Queued"]}
 		],
@@ -2044,18 +2054,18 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 			Control[{{xmax,Length[pdat],"X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
 		}],
 		Row[{
-			Control[{{ymin, 0.01, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
-			Control[{{ymax, 1.1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxv]}]
+			Control[{{ymin, 0.05, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
+			Control[{{ymax, 5.1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxv]}]
 		}],
 		Row[{
 			Button["Autoscale X", {xmax, xmax} = {1, Length[pdat]}], "  ",
 			Button["Autoscale Y", {ymin, ymax} = {0, Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}]}]
 		}],
 		{{key, {}}, ControlType -> None},
+		{{pdat, {}}, ControlType -> None},
 		Initialization :> (
-			key = {};
 			plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
-			xmin = 1; xmax = Length@pdat; ymax = ymaxv = 1;
+			xmin = 1; xmax = Length@pdat; ymax = ymaxv = 5;
 		)
 	]
 ]

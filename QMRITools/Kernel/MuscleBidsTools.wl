@@ -2754,7 +2754,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 				];
 				segDim = ConfigLookup[datType, "Segment", "Dimensions"];
 				If[segDim=!="2D"||segDim=!="3D", segDim="3D";];
-				AddToLog[{"Segmenting data using nework dimensions: ", voxS}, 4];
+				AddToLog[{"Segmenting data using nework dimensions: ", segDim}, 4];
 				seg = SegmentData[out, segLocation, 
 					TargetDevice -> ConfigLookup[datType, "Segment", "Device"], 
 					Monitor -> False, SegmentationDimension -> segDim];
