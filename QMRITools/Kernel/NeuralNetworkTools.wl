@@ -84,7 +84,7 @@ OverlapLossFunction::usage =
 FocalLossLayer::usage =
 "FocalLossLayer[] represents a net layer that computes the Focal loss by comparing input class probability vectors with the target class vector.
 FocalLossLayer[g] does the same but uses g as the tunable focusing parameter gamma which needs to be larger than one.
-FocalLossLayer[g, a] does the same but uses as the balancing factor alpha."
+FocalLossLayer[g, a] does the same but uses a as the balancing factor alpha."
 
 TopKLossLayer::usage =
 "TopKLossLayer[net] represents a net layer that computes the topK 10% loss.
@@ -688,7 +688,7 @@ Conv[featOut_?IntegerQ, {dim_, kern_}, opts:OptionsPattern[]] := Conv[featOut, {
 Conv[featOut_?IntegerQ, {dim_, kern_}, act_?StringQ, opts:OptionsPattern[]] := Conv[featOut, {dim, kern}, {act, "Instance"}, opts]
 
 Conv[featOut_?IntegerQ, {dim_, kern_}, {act_?StringQ, bat_?StringQ}, OptionsPattern[]] := Block[{
-		dil, str
+		dil, str, gr, ker
 	},
 
 	dil = OptionValue["Dilation"];
@@ -890,7 +890,7 @@ AddLossLayer[net_] := NetGraph[<|
 
 SyntaxInformation[DiceLossLayer] = {"ArgumentsPattern" -> {_., _.}};
 
-DiceLossLayer[] := DiceLossLayer[]
+DiceLossLayer[] := DiceLossLayer[2]
 
 DiceLossLayer[n_?IntegerQ] := NetFlatten[
 	(*10.48550/arXiv.1911.02855 and https://doi.org/10.48550/arXiv.1606.04797 for squared dice loss look at v-net*)
@@ -997,7 +997,6 @@ OverlapLossFunction[{alpha_?NumberQ, beta_?NumberQ}, n_?IntegerQ] := NetFlatten[
 	"FNn" -> {ThreadingLayer[#1 (1. - #2) &], AggregationLayer[Total, ;; -2]},
 	(*the loss function TP / (TP + a FP + b FN), + 1 is for numerical stability, form of laplace smoothing*)
 	"loss" -> {ThreadingLayer[1. - (#1 + 1)/(#2 + alpha #3 + beta #4 + 1) &], AggregationLayer[Mean, 1]}
-	(*"weight"->If[w>0.,{FunctionLayer[If[#<1.,#,0.]&/@(1./(#^w+1.))&],FunctionLayer[#/Mean[#]&]},{FunctionLayer[0. #+1.&]}]*)
 	|>, {
 		{NetPort["Target"], NetPort["Input"]} -> "TP",
 		If[n > 1, NetPort["Input"] -> "input", Nothing], 
@@ -1094,7 +1093,7 @@ NetSummary[net_] := NetSummary[net, ""]
 NetSummary[net_?ListQ, rep_?StringQ] := NetSummary[#, rep]&/@net
 
 NetSummary[net_, rep_?StringQ] := Block[{
-		toK, st, quantStr, quantStrG, lays, convs, kerns, count, nKern, kernWeights,
+		toK, st, quantStr, quantStrG, lays, convs, kerns, count, nKern, kernWeights, makeNetIm, im, 
 		norm, normWeights, nelem, elems, elemSize, arrSize, netSize, table, nodes, netIm, nodeIm
 	},
 
@@ -1140,7 +1139,7 @@ NetSummary[net_, rep_?StringQ] := Block[{
 			{st@"Estimated Memory:", SpanFromLeft},
 			{st@" - Total Weight Memory", quantStr@elemSize},
 			{st@" - Total Network Memory", quantStr@netSize},
-			{st@" - Estimaged Train Memory", "n * " <> quantStrG[2 * (arrSize + elemSize)]}
+			{st@" - Estimated Train Memory", "n * " <> quantStrG[2 * (arrSize + elemSize)]}
 		}, Alignment -> {{Left, Right}}, Spacings -> {1, 1}(*, Background -> LightDarkV[GrayLevel[.95], GrayLevel[.2]]]*)]
 	}}, Frame -> All, Spacings -> {2, 2}, Background -> LightDarkV[GrayLevel[.95], GrayLevel[.2]]];
 
