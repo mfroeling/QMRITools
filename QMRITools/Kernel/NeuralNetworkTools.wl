@@ -869,10 +869,10 @@ AddLossLayer[net_] := NetGraph[<|
 	"Dice" -> NetFlatten@NetGraph@NetChain@{DiceLossLayer[2]}, 
 	"Jaccard" -> NetFlatten@NetGraph@NetChain@{JaccardLossLayer[2]},
 	"Tversky" -> NetFlatten@NetGraph@NetChain@{TverskyLossLayer[0.7]}, 
-	"MSD" -> NetFlatten@NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[50 #&]},
-	"Focal" -> NetFlatten@NetGraph@NetChain@{FocalLossLayer[2, 0.25], ElementwiseLayer[5 #&]},
+	"MSD" -> NetFlatten@NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[(1.5) 50 #&]},
+	"Focal" -> NetFlatten@NetGraph@NetChain@{FocalLossLayer[2, 0.25], ElementwiseLayer[(3) 5 #&]},
 	"TopK" -> NetFlatten@NetGraph@NetChain@{TopKLossLayer[net, 0.1]},
-	"CE" -> NetFlatten@NetGraph@NetChain@{CrossEntropyLossLayer["Probabilities"]}
+	"CE" -> NetFlatten@NetGraph@NetChain@{CrossEntropyLossLayer["Probabilities"], ElementwiseLayer[(2.25) #&]}
 |>, {
 	{"net", NetPort["Target"]} -> "Dice" -> NetPort["Dice"], (*using squared dice, F1score*)
 	{"net", NetPort["Target"]} -> "Jaccard" -> NetPort["Jaccard"],(*using squared Intersection over union*)
@@ -888,28 +888,12 @@ AddLossLayer[net_] := NetGraph[<|
 (*DiceLossLayer*)
 
 
-SyntaxInformation[DiceLossLayer] = {"ArgumentsPattern" -> {_., _.}};
+SyntaxInformation[DiceLossLayer] = {"ArgumentsPattern" -> {_.}};
 
-DiceLossLayer[] := DiceLossLayer[2]
+DiceLossLayer[] := DiceLossLayer[2](* default squared per V-Net arXiv:1606.04797 *)
 
-DiceLossLayer[n_?IntegerQ] := NetFlatten[
-	(*10.48550/arXiv.1911.02855 and https://doi.org/10.48550/arXiv.1606.04797 for squared dice loss look at v-net*)
-	(*https://arxiv.org/abs/1707.03237 for the generalized with class weighting*)
-	NetGraph[<|
-		(*flatten input and target; function layer allows to switch to L2 norm if n = 2*)
-		"input" -> {If[n > 1, FunctionLayer[#^n &], Nothing], AggregationLayer[Total, ;; -2]},
-		"target" -> {AggregationLayer[Total, ;; -2]},
-		(*intersection or TP*)
-		"intersection" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; -2]},
-		(*2*intersection / (input + target), +1 is for numerical stability*)
-		"dice" -> {ThreadingLayer[1. - (2. #1 + 1.) / (#2 + #3 + 1.) &], AggregationLayer[Mean, 1]}
-	|>, {
-		{NetPort["Target"], NetPort["Input"]} -> "intersection",
-		NetPort["Input"] -> "input",
-		NetPort["Target"] -> "target",
-		{"intersection", "target", "input"} -> "dice" -> NetPort["Loss"]
-	}, "Loss" -> "Real"]
-]
+DiceLossLayer[n_?IntegerQ] := OverlapLossFunction[{0.5, 0.5}, n];
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -918,56 +902,26 @@ DiceLossLayer[n_?IntegerQ] := NetFlatten[
 
 SyntaxInformation[JaccardLossLayer] = {"ArgumentsPattern" -> {_., _.}};
 
-JaccardLossLayer[] := JaccardLossLayer[2]
+JaccardLossLayer[] := JaccardLossLayer[2](* default squared arxiv.org/pdf/1906.11600*)
 
-JaccardLossLayer[n_?IntegerQ] := NetFlatten[
-	(*https://arxiv.org/pdf/1906.11600 for the definition of squared jaccard loss*)
-	(*https://arxiv.org/html/2302.05666v5 soft jaccard*)
-	NetGraph[<|
-		(*flatten input and target; function layer allows to switch to L2 norm if n = 1*)
-		"input" -> {If[n > 1, FunctionLayer[#^n &], Nothing], AggregationLayer[Total, ;; -2]},
-		"target" -> {AggregationLayer[Total, ;; -2]},
-		(*intersection or TP*)
-		"intersection" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; -2]},
-		(*intersection / union with union = (input + target - intersection), +1 is for numerical stability*)
-		"Jaccard" -> {ThreadingLayer[1. - (#1 + 1.) / (#3 + #2 - #1 + 1.) &], AggregationLayer[Mean, 1]}
-	|>, {
-		NetPort["Input"] -> "input",
-		NetPort["Target"] -> "target",
-		{NetPort["Target"], NetPort["Input"]} -> "intersection",
-		{"intersection", "target", "input"} -> "Jaccard" -> NetPort["Loss"]
-	}, "Loss" -> "Real"]
-]
+JaccardLossLayer[n_?IntegerQ] := OverlapLossFunction[{1, 1}, n];
 
 
 (* ::Subsubsection::Closed:: *)
 (*TverskyLossLayer*)
 
 
-SyntaxInformation[TverskyLossLayer] = {"ArgumentsPattern" -> {_.}};
+SyntaxInformation[TverskyLossLayer] = {"ArgumentsPattern" -> {_., _.}};
 
-TverskyLossLayer[] := TverskyLossLayer[0.7]
+TverskyLossLayer[] := TverskyLossLayer[0.7] (*default doi.org/10.48550/arXiv.1706.05721*)
 
-TverskyLossLayer[beta_?NumberQ] := TverskyLossLayer[1- beta, beta]
+TverskyLossLayer[beta_?NumberQ] := TverskyLossLayer[{1- beta, beta}, 1]
 
-TverskyLossLayer[alpha_?NumberQ, beta_?NumberQ] := NetFlatten[
-	(*https://doi.org/10.48550/arXiv.1706.05721 Tversky loss function for 3D segmentation*)
-	(*generalization of dice and jaccard, alpha = beta = 0.5 means dice, alpha = beta = 1 means jaccard*)
-	NetGraph[<|
-		(*intersection or TP, first input is Target, second is Input*)
-		"truePos" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; -2]},
-		"falsePos" -> {ThreadingLayer[(1 - #1) #2 &], AggregationLayer[Total, ;; -2]},
-		"falseNeg" -> {ThreadingLayer[#1 (1 - #2) &], AggregationLayer[Total, ;; -2]},
-		(*TP / (TP + a FP + b FN), +1 is for numerical stability, alpha = 1 - beta *)
-		"Tversky" -> {ThreadingLayer[1. - (#1 + 1) / (#1 + alpha #2 + beta #3 + 1) &], 
-			AggregationLayer[Mean, 1]}
-	|>, {
-		{NetPort["Target"], NetPort["Input"]} -> "truePos",
-		{NetPort["Target"], NetPort["Input"]} -> "falsePos",
-		{NetPort["Target"], NetPort["Input"]} -> "falseNeg",
-		{"truePos", "falsePos", "falseNeg"} -> "Tversky" -> NetPort["Loss"]
-	}, "Loss" -> "Real"]
-]
+TverskyLossLayer[beta_?NumberQ, n_?IntegerQ] := TverskyLossLayer[{1- beta, beta}, n]
+
+TverskyLossLayer[{alpha_?NumberQ, beta_?NumberQ}] := OverlapLossFunction[{alpha, beta}, 1];
+
+TverskyLossLayer[{alpha_?NumberQ, beta_?NumberQ}, n_] := OverlapLossFunction[{alpha, beta}, n];
 
 
 SyntaxInformation[
@@ -982,25 +936,22 @@ OverlapLossFunction[beta_?NumberQ, n_?IntegerQ] := OverlapLossFunction[{1 - beta
 OverlapLossFunction[{alpha_?NumberQ, beta_?NumberQ}] := OverlapLossFunction[{alpha, beta}, 1]
 
 OverlapLossFunction[{alpha_?NumberQ, beta_?NumberQ}, n_?IntegerQ] := NetFlatten[
-(*https://doi.org/10.48550/ arXiv.1706.05721 Tversky loss function for 3D segmentation*)
-(*https://arxiv.org/pdf/1906.11600 for the definition of squared jaccard loss*)
-(*https://arxiv.org/abs/ 1707.03237 for the generalized with class weighting*)
-(*10.48550/arXiv.1911.02855 and 10.48550/arXiv.1606.04797 for squared dice loss look at v-net*)
-(*https://arxiv.org/abs/1707.03237 for the generalized with class weighting*)
-(*tversky generalization of dice and jaccard,alpha=beta=0.5 means dice,alpha=beta=1 means jaccard*)
+	(*https://arxiv.org/abs/1911.02855 and https://doi.org/10.48550/arXiv.1606.04797 for squared dice loss look at v-net*)
+	(*https://doi.org/10.48550/arXiv.1706.05721 Tversky loss function for 3D segmentation*)
+	(*https://arxiv.org/pdf/1906.11600 for the definition of squared jaccard loss*)
+	(*https://arxiv.org/html/2302.05666v5 soft jaccard*)
+	(*https://arxiv.org/abs/1707.03237 for the generalized with class weighting*)
+	(*Tversky generalization of dice and jaccard, alpha=beta=0.5 Dice,alpha=beta=1 Jaccard*)
 	NetGraph[<|
-	If[n > 1, "input" -> FunctionLayer[#^n &], Nothing],
 	(*intersection or TP,first input is Target,second is Input*)
-	"TP" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; -2]},
-	"TPn" -> {ThreadingLayer[Times], AggregationLayer[Total, ;; -2]},
-	"FPn" -> {ThreadingLayer[(1. - #1) #2 &], AggregationLayer[Total, ;; -2]},
-	"FNn" -> {ThreadingLayer[#1 (1. - #2) &], AggregationLayer[Total, ;; -2]},
+	"TP" -> {ThreadingLayer[#1 #2 &], AggregationLayer[Total, ;; -2]},
+	"TPn" -> {ThreadingLayer[#1 #2^n &], AggregationLayer[Total, ;; -2]},
+	"FPn" -> {ThreadingLayer[(1. - #1) #2^n&], AggregationLayer[Total, ;; -2]},
+	"FNn" -> {ThreadingLayer[#1 (1. - #2^n) &], AggregationLayer[Total, ;; -2]},
 	(*the loss function TP / (TP + a FP + b FN), + 1 is for numerical stability, form of laplace smoothing*)
 	"loss" -> {ThreadingLayer[1. - (#1 + 1)/(#2 + alpha #3 + beta #4 + 1) &], AggregationLayer[Mean, 1]}
 	|>, {
-		{NetPort["Target"], NetPort["Input"]} -> "TP",
-		If[n > 1, NetPort["Input"] -> "input", Nothing], 
-		{NetPort["Target"], If[n > 1, "input", NetPort["Input"]]} -> {"TPn", "FPn", "FNn"},
+		{NetPort["Target"], NetPort["Input"]} -> {"TP", "TPn", "FNn", "FPn"},
 		{"TP", "TPn", "FPn", "FNn"} -> "loss" -> NetPort["Loss"]
 	}, "Loss" -> "Real"]
 ]

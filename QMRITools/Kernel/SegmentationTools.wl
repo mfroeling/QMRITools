@@ -1056,19 +1056,20 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches, pLen, is2D,
 		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, n, it, ti, br,
-		validation, files, loss, rep, learningRate, schedule, dims, tar
+		validation, files, loss, rep, learningRate, schedule, dims, tar, logFile
 	},
 
 	(*------------ Get all the configuration stuff -----------------*)
 
 	(*getting all the options*)
-	netOpts = Join[FilterRules[{opts}, Options@MakeUnet], FilterRules[Options@TrainSegmentationNetwork, 
-		Options@MakeUnet]];
+	netOpts = Join[FilterRules[{opts}, Options@MakeUnet], 
+		FilterRules[Options@TrainSegmentationNetwork, Options@MakeUnet]];
 
 	{batch, roundLength, rounds, augment, pad, patch, patches, 
 		loss, rep, learningRate, l2reg, multi, tar} = OptionValue[
 		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PadData, PatchSize, PatchesPerSet, 
 			LossFunction, MonitorInterval, LearningRate, L2Regularization, MultiChannel, TargetDevice}];
+
 	pLen = Length@patch;
 	is2D = pLen===2;
 	pad = If[NumberQ[pad] && !is2D, Round[pad], False];
@@ -1086,7 +1087,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*------------ Define the network -----------------*)
 
-	MonitorFunction[DateString[], "Preparing the network"];
+	MonitorFunction[DateString[], "Preparing the network: "];
 
 	(*make or import network, netCont can be a network or a previous train folder*)
 	{netIn, ittTrain} = Which[
@@ -1146,6 +1147,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*define the network for training*)
 	netIn = AddLossLayer@netIn;
 	MonitorFunction[netIn, "Network is ready"];
+	MonitorFunction["--------------------"];
 
 	(*---------- Training functions ----------------*)
 
@@ -1185,7 +1187,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*---------- Prepare the data ----------------*)
 
-	MonitorFunction[DateString[], "Preparing the data"];
+	MonitorFunction[DateString[], "Preparing the data: "];
 
 	(*import all train data or train out of memory*)
 	data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
@@ -1196,19 +1198,28 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*Make and export test data*)
 	{testData, testVox} = MakeTestData[testData, 2, patch];
 	ExportNii[If[is2D, testData[[All,1]], First@testData], testVox, outName["testSet.nii"]];
+	
+	(*prepare or load a validation set which is 10% of round*)
+	If[ittTrain > 0 && FileExistsQ[outName["validation.wxf"]],
+		validation = Import[outName["validation.wxf"]];
+		If[Dimensions[validation[[1, 1, 1]]] =!= patch,
+			validation = batchFunction[<|"BatchSize" -> Round[0.1 roundLength]|>];
+			Export[outName["validation.wxf"], validation]
+		],
+		validation = batchFunction[<|"BatchSize" -> Round[0.1 roundLength]|>];
+		Export[outName["validation.wxf"], validation];
+	];
 
-	(*prepare a validation set which is 10% of round*)
-	validation = batchFunction[<|"BatchSize" -> Round[0.1 roundLength]|>];
-	Export[outName["validation.wxf"], validation];
-	MonitorFunction[{Length@data, Length@validation}, "data / validation: "];
+	MonitorFunction[{Length@data, Length@validation}, "Data / Validation: "];
+	MonitorFunction["--------------------"];
 
 	(*---------- Train the network ----------------*)
 
-	MonitorFunction[{DateString[], loss}, "Starting training"];
+	MonitorFunction[DateString[], "Starting training: "];
+	MonitorFunction[loss, "Using loss functions: "];
 
 	(*export first itt*)
-	ittTrain--;
-	monitorFunction[<|"Net"->netIn|>];
+	ittTrain--; monitorFunction[<|"Net"->netIn|>];
 	logFile = File[outName[StringReplace[DateString["ISODateTime"], ":" | "-" -> ""] <> ".json"]];
 
 	(*Print progress function*)
@@ -1993,7 +2004,7 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 		grid, logp
 	},
 
-	{klist, pdat, len} =LoadLog[fol, max];
+	{klist, pdat, len} = LoadLog[fol, max];
 	pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
 
 	key1 = Select[klist, ! StringContainsQ[#, "Current"] &];
@@ -2005,7 +2016,7 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 		plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
 		plotf = If[filt, GaussianFilter[#, fsize]&/@plot, plot];
 
-		ymaxv = Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}];
+		ymaxv = Max[{1.1, 1.1 If[plot==={}, 5, Max[Select[Flatten@plot,NumberQ]]]}];
 		ymax = Min[{ymax, ymaxv}];
 
 		(* Plot the selected metrics *)
@@ -2061,12 +2072,7 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 			Button["Autoscale X", {xmax, xmax} = {1, Length[pdat]}], "  ",
 			Button["Autoscale Y", {ymin, ymax} = {0, Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}]}]
 		}],
-		{{key, {}}, ControlType -> None},
-		{{pdat, {}}, ControlType -> None},
-		Initialization :> (
-			plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
-			xmin = 1; xmax = Length@pdat; ymax = ymaxv = 5;
-		)
+		{{key, {}}, ControlType -> None}
 	]
 ]
 
