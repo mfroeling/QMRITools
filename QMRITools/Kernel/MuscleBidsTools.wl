@@ -494,9 +494,10 @@ defaultConfig = <|
 		"BoneLabel" -> 100,
 		"HarmonicDenoise" -> False
 	|>,
-	"Options" -> <|
+	"Analysis" -> <|
 		"MaskErosion" -> True,
-		"TractWeighting" -> False
+		"TractWeighting" -> False,
+		"UseFilter" -> "None"
 	|>
 |>;
 
@@ -860,8 +861,10 @@ CheckDataDescription[disIn_Association, met_] := Block[{
 		(*Add the data key and if it has duplicates*)
 		disOut = MapThread[Join[#1, <|"Key" -> StringStrip[#2], "HasDuplicate" -> duplicate|>] &
 			, {vals, keys}];
-
-		Flatten[CheckDataDescription[Normal[#], met]& /@ disOut]
+		If[met === "MuscleBidsAnalysis",
+			disOut,
+			Flatten[CheckDataDescription[Normal[#], met]& /@ disOut]
+		]
 	]
 ]
 
@@ -986,17 +989,14 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 		(*check for custom config - merge if config exists in input folder and copy it to output folder*)
 		debugBids[datDisIn];
 		(* Load config: use local/subject config for all but Analysis *)
-		{custConf, datDis} = If[met === "MuscleBidsAnalysis", 
+		{custConf, datDis} = If[met === "MuscleBidsAnalysis",
 			{False, datDisIn}, 
 			CheckConfig[fol, out]
 		];
 		debugBids[{custConf, datDis}];
 
 		(* Merge global/local and inject Keys/Duplicate logic*)
-		datDis = CheckDataDescription[
-			If[met === "MuscleBidsAnalysis", datDis, MergeConfig[datDisIn, datDis]], 
-			met
-		];
+		datDis = CheckDataDescription[If[met === "MuscleBidsAnalysis", datDis, MergeConfig[datDisIn, datDis]], met];
 
 		(*-------------- Logging --------------*)
 		debugBids[{"starting logging: ", met}];
@@ -1022,7 +1022,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 		debugBids[{"starting method: ", met}];
 		Switch[met,
 			"BidsDcmToNii", BidsDcmToNiiI[fol, out, datDisIn],
-			"MuscleBidsAnalysis", MuscleBidsAnalysisI[fol, outFol, #, versCheck, imOut]&/@datDis
+			"MuscleBidsAnalysis", MuscleBidsAnalysisI[{fol, outFol}, #, versCheck, imOut]& /@ datDis
 			,
 			_,
 			(*loop over the data Descriptions*)
@@ -3130,24 +3130,28 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType, hasKey,
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxs, segPl, imTrk, trkfile, reffile,
-		addLabel, img, lab, label
+		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
 	debugBids[{folIn, folOut}];
 
 	(*Options*)
-	maskErosion = True;
+	maskErosion = ConfigLookup[datDis, "Analysis", "MaskErosion"];
 	tractWeighting = False;
 
 	(*----------- make the xls files -------------*)
 
 	(*get the segmentation settings*)
+
+	debugBids[datDis];
+
 	hasKey = KeyExistsQ[datDis, "Key"];
 	{fol, parts} = PartitionBidsFolderName[folIn];
+	typeSuf = If[datDis["Analsys","Class"] === "Stacks", "stk", "chunk"];
 	
-	partsO = If[hasKey, Join[<|"stk"->StringStrip@datDis["Key"]|>, parts], parts];
-	debugBids[{parts, partsO, hasKey}];
+	partsO = If[hasKey, Join[<|typeSuf->StringStrip@datDis["Key"]|>, parts], parts];
+	debugBids[{parts, partsO, hasKey, typeSuf}];
 
 	If[hasKey,
 		(*-----*)AddToLog[{"Multiple analysis - starting:", datDis["Key"]}, 2, True];
@@ -3155,8 +3159,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 	(*file name functions*)
 	fileName = If[hasKey,
-		GenerateBidsFileName[fol, <|parts, "stk" -> StringStrip@#[[1]], 
-			"type" -> StringStrip@#[[2]], "suf" -> #[[3;;]]|>]&,
+		GenerateBidsFileName[fol, <|parts, typeSuf -> StringStrip@#[[1]], "type" -> StringStrip@#[[2]], "suf" -> #[[3;;]]|>]&,
 		GenerateBidsFileName[fol, <|parts, "type" -> First[#], "suf" -> Rest[#]|>]&
 	];
 	fileNameO = FileNameJoin[{GenerateBidsFolderName[folOut, #], GenerateBidsName[#]}]&;
@@ -3188,14 +3191,35 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		True,
 		(*-----*)AddToLog[{"Importing and processing the needed segmentation"}, 4];
 		{seg, vox} = ImportNii[segfile];
+		seg = If[ArrayDepth[seg]===4, seg[[All,1]],seg];
 		{seg, musNr} = SelectSegmentations[seg, Range[n], False];
+
+		debugBids["Use Filter"];
+		filt = ConfigLookup[datDis, "Analysis", "UseFilter"];
+		If[filt =!= False,
+			(*-----*)AddToLog[{"Using filtering for parameter calculation"}, 4];
+			{ran, filt} = filt;
+			{filt, vox} = ImportNii[fileName[filt]<>".nii"];
+			filtMask = Mask[filt, ran];
+			segF = MaskSegmentation[seg, filtMask];
+			filt = True;
+			,
+			filtMask = 1;
+			filt = False;
+		];
 
 		(*-----*)AddToLog[{"Calculating the volume of the segmentation"}, 4];
 		vol = SegmentationVolume[seg, vox];
+		cross = SegmentationCrossSection[seg, vox];
+
+		If[filt, 
+			volF = SegmentationVolume[segF, vox];
+			crossF = SegmentationCrossSection[segF, vox];
+		];
 
 		(*switch to the correct segmentation label*)
-		Switch[what,
-			"Legs",
+		Which[
+			what==="Legs",
 			(*-----*)AddToLog[{"Using the Legs for muscle labeling"}, 4];
 			musName = MuscleLabelToName[musNr, GetAssetLocation["MusclesLegLabels"]];
 			{musName, sideName} = Transpose[(str = StringSplit[#, "_"];
@@ -3206,7 +3230,16 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			sideNr = sideName /. Thread[{"Left", "Right", "Both"} -> {1, 2, 3}];
 			musNr = MuscleNameToLabel[musName, GetAssetLocation["MusclesLegAllLabels"]];
 			,
-			_,(*unknown label type*)
+			FileExistsQ[what],
+			musName = MuscleLabelToName[musNr, what];
+			{musName, sideName} = Transpose[(str = StringSplit[#, "_"];
+				If[Last[str] == "Left" || Last[str] == "Right",
+					{StringRiffle[Most@str, "_"], Last@str},
+					{StringRiffle[str, "_"], "Both"}
+				]) & /@ musName];
+			sideNr = sideName /. Thread[{"Left", "Right", "Both"} -> {1, 2, 3}];
+			,
+			True,(*unknown label type*)
 			(*-----*)AddToLog[{"Unknown Label type: ", what}, 4];
 		];
 
@@ -3216,7 +3249,12 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 				parts["sub"], ToExpression[Last@StringCases[parts["sub"], NumberString]],
 				parts["ses"], ToExpression[Last@StringCases[parts["ses"], NumberString]]}, Length[musNr]
 			]],
-			{"muscle"->musName, "muscleID"->musNr, "side"->sideName, "sideID"->sideNr, "volume"->vol}
+			If[hasKey, {"type" -> ConstantArray[datDis["Key"], Length[musNr]]}, {}],
+			{
+				"muscle" -> musName, "muscleID" -> musNr, "side" -> sideName, "sideID" -> sideNr, 
+				"volume" -> vol, "cross" -> cross
+			},
+			If[filt, {"volume_F" -> volF, "cross_F" -> crossF}, {}]
 		];
 
 		(*get the labels for analysis, see if and which need to be done using tract based analysis*)
@@ -3244,7 +3282,6 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 		(*perform the actual data analysis *)
 		(*-----*)AddToLog[{"Starting the data analysis:"}, 3, True];
-		debugBids[{"tract mask", Dimensions@seg, Dimensions@trMask}];
 		(*make the correcet masks*)
 		If[maskErosion,	seg = DilateMask[seg, -1]];
 		segT = If[trMask=!=1, MaskSegmentation[seg, trMask], seg];
@@ -3252,6 +3289,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		(*loop over all datatypes and perform the mask analysis*)
 		data = Flatten[Table[
 			datfile = fileName[datType]<>".nii";
+			debugBids["data file: ",datfile];
 			Which[
 				(*data does not exist so skip*)
 				!NiiFileExistQ[datfile],
@@ -3261,7 +3299,6 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 				True,
 				debugBids[datType];
 				{data, vox} = ImportNii[datfile];
-
 				(*figure out how to handle this type *)
 				tract = MemberQ[trType, datType];
 				scale = Switch[datType[[-2;;]], {"dix", "fatfr"} | {"t2", "fatfr"}, 100, {"dix", "t2star"}, 1000, _, 1];
@@ -3270,10 +3307,20 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 				(*mask based analysis*)
 				label = StringRiffle[datType[[-2;;]], "_"];
-				Thread[{label, label<>"_IQR"} -> Transpose[scale GetMaskData[data, If[tract, segT, seg], 
-					GetMaskOutput -> If[meanType, "MeanSTD", "MedianIQR"],
-					GetMaskOnly -> If[meanType, True, False]
-				]]]
+				Join[
+					Thread[{label, label<>"_IQR"} -> Transpose[scale GetMaskData[data, If[tract, segT, seg], 
+						GetMaskOutput -> If[meanType, "MeanSTD", "MedianIQR"],
+						GetMaskOnly -> If[meanType, True, False]
+					]]]
+					,
+					If[filtMask===1, {},
+						Thread[{label<>"_F", label<>"_F_IQR"} -> Transpose[scale GetMaskData[data, If[tract, segT, segF], 
+							GetMaskOutput -> If[meanType, "MeanSTD", "MedianIQR"],
+							GetMaskOnly -> If[meanType, True, False]
+						]]]
+					]
+				]
+
 			]
 		, {datType, anaType}], 1];
 

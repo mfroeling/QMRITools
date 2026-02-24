@@ -636,7 +636,7 @@ GetMaskDatai[data_, mask_, OptionsPattern[]] := Block[{
 	met = OptionValue[GetMaskOutput];
 	(*select the correct method for selection of data*)
 	out = Switch[
-	met,
+		met,
 		"Slices", 
 		MapThread[Pick[Chop[Flatten[N[#1]]], Unitize[Flatten[Normal@#2]], 1] &, {data, mask}, ArrayDepth[data] - 2],
 		"Sparse", 
