@@ -110,6 +110,11 @@ SegmentationVolume::usage =
 "SegmentationVolume[seg] calculates the volume of each label in the segmentation in voxels.
 SegmentationVolume[seg, vox] calculates the volume of each label in the segmentation in cm^3 where vox is in mm."
 
+SegmentationCrossSection::usage = 
+"SegmentationCrossSection[seg] calculates the maximum cross section of each label in the segmentation in voxels.
+SegmentationCrossSection[seg, vox] calculates the maximum cross section of each label in the segmentation in cm^3 where vox is in mm."
+
+
 MaskVolume::usage = 
 "MaskVolume[mask] calculates the volume of the mask.
 MaskVolume[{mask, ..}] calculates the Median volume of the List of masks.
@@ -639,7 +644,8 @@ GetCommonSegmentation[dat:{_?ArrayQ ..}, seg:{_?ArrayQ ..}, vox:{_?ListQ ..}] :=
 					{datC[[tar]], vox[[tar]]},
 					{datC[[mov]], vox[[mov]]},
 					{segs[[mov, All, labSel[[mov]]]], vox[[mov]]},
-					MethodReg -> {"rigid", "affine", "bspline"}, Resolutions -> 3, NumberSamples -> 5000, BsplineSpacing -> gr
+					MethodReg -> {"rigid", "affine", "bspline"}, Resolutions -> 3, 
+					NumberSamples -> 5000, BsplineSpacing -> gr
 				]
 			]
 		, {mov, 1, len}];
@@ -677,6 +683,7 @@ SegmentMask[mask_, segI_?NumberQ, overI_?NumberQ] := Block[{
 	{100 per, Transpose[out]}
 ]
 
+
 (* ::Subsection::Closed:: *)
 (*SegmentationVolume*)
 
@@ -688,6 +695,24 @@ SegmentationVolume[seg_] := SegmentationVolume[seg, {0, 0, 0}]
 SegmentationVolume[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := Block[{vol},
 	vol = If[vox === {0, 0, 0}, 1, N@((Times @@ vox)/1000)];
 	vol Total[Flatten[#]] & /@ Switch[ArrayDepth[seg],
+		3, Transpose[First@SplitSegmentations[seg]],
+		4, Transpose[seg],
+		_, Return[$Failed]
+	]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*SegmentationCrossSection*)
+
+
+SyntaxInformation[SegmentationCrossSection] = {"ArgumentsPattern" -> {_, _.}};
+
+SegmentationCrossSection[seg_] := SegmentationCrossSection[seg, {0, 0, 0}]
+
+SegmentationCrossSection[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := Block[{area, m},
+	area = If[vox === {0, 0, 0}, 1, N@((Times @@ vox[[2;;]])/100)];
+	area (m = #;	Max[Total[Flatten[#]] & /@ m]) & /@ Switch[ArrayDepth[seg],
 		3, Transpose[First@SplitSegmentations[seg]],
 		4, Transpose[seg],
 		_, Return[$Failed]

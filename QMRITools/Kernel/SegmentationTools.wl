@@ -780,11 +780,17 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 			dat = Switch[whatSide,
 				(*both sides which need to be split*)
 				"Both",
-				{cut, over} = Round[{0.5, 0.15} Last@Dimensions[data]];
-				{right, left, cut} = CutData[data, {cut, over}];
+				Switch[what,
+					"UpperLegs" | "LowerLegs",
+					{right, left, cut} = CutData[data];
+					over = 0;,
+					_,
+					{cut, over} = Round[{0.5, 0.15} Last@Dimensions[data]];
+					{right, left, cut} = CutData[data, {cut, over}];
+				];
 				{
 					{right, {what, {1, dim[[1]]}}, {"Right", {1, cut + over}}}, 
-					{left, {what, {1, dim[[1]]}}, {"Left", {cut - over + 1, dim[[3]]}}}
+					{left, {what, {1, dim[[1]]}}, {"Left", {cut + 1 - over, dim[[3]]}}}
 				},
 				_,
 				(*only one side, no split*)
@@ -2026,23 +2032,6 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 			PlotHighlighting -> "Dropline"],
 
 		(*the controls*)
-		Row[{
-			InputField[Dynamic[folder], String, Enabled -> True, FieldSize -> 50], 
-			Button["Browse", 
-				temp = SystemDialogInput["Directory", folder];
-				If[StringQ[temp], folder = temp; 
-					{klist, pdat, len} = LoadLog[folder, max];
-					pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
-					xmin = 1;
-				];
-				, ImageSize -> {60, Automatic}, Method->"Queued"]}
-		],
-		Button["Reload", 
-			{klist, pdat, len} = LoadLog[folder, max]; xmax = Length[pdat];
-			pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
-		],
-
-		Delimiter,
 		{{filt, False, "Filter"}, {True, False}},
 		{{fsize, 5, "FilterSize"}, 1, 10, 1},
 		{{grid, True, "Grid"}, {True, False}},
@@ -2061,8 +2050,8 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 		Delimiter,
 
 		Row[{
-			Control[{{xmin, 1,"X min"},1, Dynamic[xmax-1], 1}], "  ", 
-			Control[{{xmax,Length[pdat],"X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
+			Control[{{xmin, 1, "X min"},1, Dynamic[xmax-1], 1}], "  ", 
+			Control[{{xmax, Length[pdat], "X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
 		}],
 		Row[{
 			Control[{{ymin, 0.05, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
@@ -2072,6 +2061,24 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 			Button["Autoscale X", {xmax, xmax} = {1, Length[pdat]}], "  ",
 			Button["Autoscale Y", {ymin, ymax} = {0, Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}]}]
 		}],
+
+		Delimiter,
+		Row[{
+			InputField[Dynamic[folder], String, Enabled -> True, FieldSize -> 50], 
+			Button["Browse", 
+				temp = SystemDialogInput["Directory", folder];
+				If[StringQ[temp], folder = temp; 
+					{klist, pdat, len} = LoadLog[folder, max];
+					pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+					xmin = 1;
+				];
+				, ImageSize -> {60, Automatic}, Method->"Queued"]}
+		],
+		Button["Reload", 
+			{klist, pdat, len} = LoadLog[folder, max]; xmax = xmax;
+			pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+		, ImageSize -> {60, Automatic}, Method->"Queued"],
+
 		{{key, {}}, ControlType -> None}
 	]
 ]
