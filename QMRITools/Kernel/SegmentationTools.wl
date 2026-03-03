@@ -678,9 +678,11 @@ SegmentData[datI_, whati_, OptionsPattern[]] := Block[{
 ReplaceLabels[seg_, loc_] := Block[{
 		what, side, labIn, fIn, fOut, labNam, labOut, labOutS
 	},
-	If[MemberQ[{"UpperLegs", "LowerLegs", "Shoulder"}, loc],
 
-		{what, side} = loc;
+	{what, side} = loc;
+
+	If[MemberQ[{"UpperLegs", "LowerLegs", "Shoulder"}, what],
+
 		labIn = GetSegmentationLabels[seg];
 
 		{fIn, fOut} = Switch[what, 
@@ -1204,7 +1206,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*Make and export test data*)
 	{testData, testVox} = MakeTestData[testData, 2, patch];
 	ExportNii[If[is2D, testData[[All,1]], First@testData], testVox, outName["testSet.nii"]];
-	
+
 	(*prepare or load a validation set which is 10% of round*)
 	If[ittTrain > 0 && FileExistsQ[outName["validation.wxf"]],
 		validation = Import[outName["validation.wxf"]];
@@ -1329,10 +1331,7 @@ AugmentTrainingDataI[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ, OptionsPatter
 	segT = ToPackedArray[N[seg]];
 	isNot2D = !OptionValue["Augment2D"];
 
-	(*Augmentations sharpness*)
-	If[blur && Coin[], datT = GaussianFilter[datT, RandomReal[{0, 2}]]];
-	(*Augmentation of noise*)
-	If[noise && Coin[], datT = AddSaltAndRice[datT, RandomReal[{5, 50}], CoinN[] RandomReal[{0.001, 0.01}]]];
+	
 	(*Augmentation of mirroring*)
 	If[flip && Coin[], {datT, segT} = ReverseC[{datT, segT}]];
 	(*Augmentation of orientation and scale*)
@@ -1358,6 +1357,10 @@ AugmentTrainingDataI[{dat_?ArrayQ, seg_?ArrayQ}, vox_, aug_?ListQ, OptionsPatter
 		cr = FindCrop[datT, CropPadding -> 0];
 		{datT, segT} = ApplyCrop[#, cr]& /@ {datT, segT};
 	];
+	(*Augmentations sharpness*)
+	If[blur && Coin[], datT = GaussianFilter[datT, RandomReal[{0, 2}]]];
+	(*Augmentation of noise*)
+	If[noise && Coin[], datT = AddSaltAndRice[datT, RandomReal[{5, 50}], CoinN[] RandomReal[{0.001, 0.01}]]];
 
 	(*output augmented data*)
 	{ToPackedArray[N[datT]], ToPackedArray[Round[segT]]}
