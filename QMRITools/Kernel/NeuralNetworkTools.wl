@@ -79,7 +79,11 @@ TverskyLossLayer::usage =
 TverskyLossLayer[b] does the same but b defines the Tversky beta factor. With beta = 0.5 its is the Dice coefficient. Here alpha + beta = 1."
 
 OverlapLossFunction::usage =
-"OverlapLossFunction[] is a generalization of TverskyLossLayer that can also generate Jaccard and Dice."
+"OverlapLossFunction[] is a generalization for overlap loss layers like TverskyLossLayer, JaccardLossLayer and DiceLossLayer."
+
+CELossLayer::usage = 
+"CELossLayer[] represents a net layer that computes the Focal loss by comparing input class probability vectors with the target class vector.
+Identical to CrossEntropyLossLayer[\"Probability\"]."
 
 FocalLossLayer::usage =
 "FocalLossLayer[] represents a net layer that computes the Focal loss by comparing input class probability vectors with the target class vector.
@@ -89,6 +93,10 @@ FocalLossLayer[g, a] does the same but uses a as the balancing factor alpha."
 TopKLossLayer::usage =
 "TopKLossLayer[net] represents a net layer that computes the topK 10% loss.
 TopKLossLayer[net, k] does the same but k defines the topK between 0 and 1."
+
+CELossFunction::usage = 
+"CELossFunction[] is a generalization for pixel based loss layers like CELossLayer, FocalLossLayer and TopKLossLayer."
+
 
 
 ClassEncoder::usage = 
@@ -681,7 +689,11 @@ ConvBlock[block_, {featOut_, featInt_}, {act_, dim_}, scale_:1] := Block[{
 (* ::Subsubsection::Closed:: *)
 (*Conv*)
 
-Options[Conv] = {"Dilation" -> 1, "Stride"->1, "ChannelGroups"->1}
+Options[Conv] = {
+	"Dilation" -> 1, 
+	"Stride"->1, 
+	"ChannelGroups"->1
+}
 
 Conv[featOut_?IntegerQ, {dim_, kern_}, opts:OptionsPattern[]] := Conv[featOut, {dim, kern}, {"None", "Instance", opts}]
 
@@ -863,25 +875,25 @@ GetNetNodes[net_] := DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]
 
 SyntaxInformation[AddLossLayer] = {"ArgumentsPattern" -> {_}};
 
-(*http://arxiv.org/abs/2312.05391*)
-AddLossLayer[net_] := NetGraph[<|
-	"net"->net,
-	"Dice" -> NetFlatten@NetGraph@NetChain@{DiceLossLayer[2]}, 
-	"Jaccard" -> NetFlatten@NetGraph@NetChain@{JaccardLossLayer[2]},
-	"Tversky" -> NetFlatten@NetGraph@NetChain@{TverskyLossLayer[0.7]}, 
-	"MSD" -> NetFlatten@NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[(1.5) 50 #&]},
-	"Focal" -> NetFlatten@NetGraph@NetChain@{FocalLossLayer[2, 0.25], ElementwiseLayer[(3) 5 #&]},
-	"TopK" -> NetFlatten@NetGraph@NetChain@{TopKLossLayer[net, 0.1]},
-	"CE" -> NetFlatten@NetGraph@NetChain@{CrossEntropyLossLayer["Probabilities"], ElementwiseLayer[(2.25) #&]}
-|>, {
-	{"net", NetPort["Target"]} -> "Dice" -> NetPort["Dice"], (*using squared dice, F1score*)
-	{"net", NetPort["Target"]} -> "Jaccard" -> NetPort["Jaccard"],(*using squared Intersection over union*)
-	{"net", NetPort["Target"]} -> "Tversky" -> NetPort["Tversky"], (*recall more than precision, 0.5 is dice*)
-	{"net", NetPort["Target"]} -> "MSD" -> NetPort["MSD"], (*Brier Score*)
-	{"net", NetPort["Target"]} -> "Focal" -> NetPort["Focal"], (*scaled cross entropy for hard examples*)
-	{"net", NetPort["Target"]} -> "TopK" -> NetPort["TopK"], (*scaled cross entropy for hard examples*)
-	{"net", NetPort["Target"]} -> "CE" -> NetPort["CE"]
-}]
+
+AddLossLayer[net_] := NetGraph[
+	(*http://arxiv.org/abs/2312.05391 and https://doi.org/10.1016/j.media.2021.102035 for loss reviews*)
+	<|
+		"net"->net,
+		(*overlap losses, jaccard is very similar to squared dice*)
+		"Dice" -> DiceLossLayer[2], (*using squared dice, F1score*)
+		"Jaccard" -> JaccardLossLayer[2], (*using squared Intersection over union*)
+		"Tversky" -> TverskyLossLayer[0.7], (*0.7 recall more than precision, 0.5 is dice, dont square TV*)
+		(*pixel based loss functions based on CE, focal very similar to CE*)
+		"CE" -> CELossLayer[],
+		"Focal" -> FocalLossLayer[2], (*scaled squared for confidence*)
+		"TopK" -> TopKLossLayer[net, 0.1], (*only evaluate hard examples very similar to Focal with high g*)
+		(*The normal L2 regression, also known as brier score*)
+		"MSD" -> NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[75 #&]}
+	|>, 
+	({"net", NetPort["Target"]} -> # -> NetPort[#]) &/@{"Dice", "Jaccard", "Tversky", "CE", "Focal", "TopK", "MSD"}
+]
+
 
 
 (* ::Subsubsection::Closed:: *)
@@ -924,8 +936,11 @@ TverskyLossLayer[{alpha_?NumberQ, beta_?NumberQ}] := OverlapLossFunction[{alpha,
 TverskyLossLayer[{alpha_?NumberQ, beta_?NumberQ}, n_] := OverlapLossFunction[{alpha, beta}, n];
 
 
-SyntaxInformation[
-OverlapLossFunction] = {"ArgumentsPattern" -> {_., _.}};
+(* ::Subsubsection::Closed:: *)
+(*OverlapLossFunction*)
+
+
+SyntaxInformation[OverlapLossFunction] = {"ArgumentsPattern" -> {_., _.}};
 
 OverlapLossFunction[] := OverlapLossFunction[0.7, 1]
 
@@ -943,13 +958,13 @@ OverlapLossFunction[{alpha_?NumberQ, beta_?NumberQ}, n_?IntegerQ] := NetFlatten[
 	(*https://arxiv.org/abs/1707.03237 for the generalized with class weighting*)
 	(*Tversky generalization of dice and jaccard, alpha=beta=0.5 Dice,alpha=beta=1 Jaccard*)
 	NetGraph[<|
-	(*intersection or TP,first input is Target,second is Input*)
-	"TP" -> {ThreadingLayer[#1 #2 &], AggregationLayer[Total, ;; -2]},
-	"TPn" -> {ThreadingLayer[#1 #2^n &], AggregationLayer[Total, ;; -2]},
-	"FPn" -> {ThreadingLayer[(1. - #1) #2^n&], AggregationLayer[Total, ;; -2]},
-	"FNn" -> {ThreadingLayer[#1 (1. - #2^n) &], AggregationLayer[Total, ;; -2]},
-	(*the loss function TP / (TP + a FP + b FN), + 1 is for numerical stability, form of laplace smoothing*)
-	"loss" -> {ThreadingLayer[1. - (#1 + 1)/(#2 + alpha #3 + beta #4 + 1) &], AggregationLayer[Mean, 1]}
+		(*intersection or TP,first input is Target,second is Input*)
+		"TP" -> {ThreadingLayer[#1 #2 &], AggregationLayer[Total, ;; -2]},
+		"TPn" -> {ThreadingLayer[#1 #2^n &], AggregationLayer[Total, ;; -2]},
+		"FPn" -> {ThreadingLayer[(1. - #1) #2^n&], AggregationLayer[Total, ;; -2]},
+		"FNn" -> {ThreadingLayer[#1 (1. - #2^n) &], AggregationLayer[Total, ;; -2]},
+		(*the loss function TP / (TP + a FP + b FN); + 1 is for numerical stability, form of laplace smoothing*)
+		"loss" -> {ThreadingLayer[1. - (#1 + 1)/(#2 + alpha #3 + beta #4 + 1) &], AggregationLayer[Mean, 1]}
 	|>, {
 		{NetPort["Target"], NetPort["Input"]} -> {"TP", "TPn", "FNn", "FPn"},
 		{"TP", "TPn", "FPn", "FNn"} -> "loss" -> NetPort["Loss"]
@@ -958,46 +973,62 @@ OverlapLossFunction[{alpha_?NumberQ, beta_?NumberQ}, n_?IntegerQ] := NetFlatten[
 
 
 (* ::Subsubsection::Closed:: *)
+(*CELossLayer*)
+
+
+SyntaxInformation[CELossLayer] = {"ArgumentsPattern" -> {}};
+
+CELossLayer[] := CELossFunction[0, 0]
+
+
+(* ::Subsubsection::Closed:: *)
 (*FocalLossLayer*)
 
 
-SyntaxInformation[FocalLossLayer] = {"ArgumentsPattern" -> {_., _.}};
+SyntaxInformation[FocalLossLayer] = {"ArgumentsPattern" -> {_.}};
 
-FocalLossLayer[] := FocalLossLayer[2, 0.25]
+FocalLossLayer[] := FocalLossLayer[2]
 
-FocalLossLayer[g_] := FocalLossLayer[g, 0.25]
-
-FocalLossLayer[g_, a_] := NetFlatten[
-	(*https://arxiv.org/abs/1708.02002v2 for definition of focal loss, 10^-15 is for numerical stability*)
-	NetGraph[{
-		"flatPr" -> {ThreadingLayer[#1 #2 &], AggregationLayer[Total, {-1}], FlattenLayer[]},
-		"focal" -> {ThreadingLayer[-a Log[#1 + 10^-15](1 - #1)^g &], AggregationLayer[Mean, 1]}
-		}, {
-			{NetPort["Input"], NetPort["Target"]} -> "flatPr" -> "focal" -> NetPort["Loss"]
-	}, "Loss" -> "Real"]
-]
+FocalLossLayer[g_] := CELossFunction[g, 0]
 
 
 (* ::Subsubsection::Closed:: *)
 (*TopKLossLayer*)
 
 
-SyntaxInformation[TopKLossLayer] = {"ArgumentsPattern" -> {_.}};
+SyntaxInformation[TopKLossLayer] = {"ArgumentsPattern" -> {_, _.}};
 
 TopKLossLayer[net_] := TopKLossLayer[net, 0.1]
 
-TopKLossLayer[net_, k_] := Block[{
-		i = Round[k Times @@ NetDimensions[net, "Input"]]
-	},
-	NetFlatten[
-		(*10.48550/arXiv.1512.00486 for definition of top k losses, 10^-15 is for numerical stability*)
-		NetGraph[{
-			"flatPr" -> {ThreadingLayer[#1 #2 &], AggregationLayer[Total, {-1}], FlattenLayer[]},
-			"topK" -> {NetChain[{FunctionLayer[Sort[-Log[# + 10^-15]] &],PartLayer[-i;;-1], AggregationLayer[Mean, 1]}]}
-			}, {
-				{NetPort["Input"], NetPort["Target"]} -> "flatPr" -> "topK" -> NetPort["Loss"]
-		}, "Loss" -> "Real"]
-	]
+TopKLossLayer[net_, k_] := CELossFunction[0, Round[k Times @@ NetDimensions[net, "Input"]]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CELossFunction*)
+
+
+SyntaxInformation[CELossFunction] = {"ArgumentsPattern" -> {_., _.}};
+
+CELossFunction[] := CELossFunction[0, 0] (* pure CE *)
+
+CELossFunction[g_] := CELossFunction[g, 0] (* Focal *)
+
+CELossFunction[g_, k_] := NetFlatten[
+	(*https://arxiv.org/abs/1512.00486 for definition of top k losses*)
+	(*https://arxiv.org/abs/1708.02002v2 for definition of focal loss*)
+	NetGraph[<|
+		"prob" -> ThreadingLayer[#1 #2 &],
+		"tot" -> AggregationLayer[Total, {-1}],
+		(*focal if g > 0, else it is same as CE; 10^-15 is for numerical stability*)
+		"ce" -> ThreadingLayer[-Log[#1 + 10^-15] If[g > 0, (1 - #1)^g, 1] &],
+		(* take top-k, k is number of samples depends on network patch size*)
+		If[k > 0, "topK" -> FunctionLayer[Sort[Flatten[#]][[-k;;]] &], Nothing], 
+		"agg" -> AggregationLayer[Mean, 1;;-1],
+		"scale" -> ElementwiseLayer[(If[g<2, 1, g] 2.5) #&]
+	|>, {
+		{NetPort["Input"], NetPort["Target"]} -> "prob" -> "tot" -> "ce",
+		If[k > 0, "ce" -> "topK", "ce"] -> "agg" -> "scale" -> NetPort["Loss"]
+	}, "Loss" -> "Real"]
 ]
 
 
@@ -1015,6 +1046,7 @@ ClassEncoder[data_] := ClassEncoder[data, Round[Max@data]+1]
 
 ClassEncoder[data_, nClass_] := ToPackedArray@Round@If[nClass === 1, data, ClassEncoderC[data, UnitVector[nClass, 1]]]
 
+
 ClassEncoderC = Compile[{{class, _Integer, 0}, {vec, _Integer, 1}}, 
 	RotateRight[vec, class], 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
@@ -1029,6 +1061,7 @@ SyntaxInformation[ClassDecoder] = {"ArgumentsPattern" -> {_, _.}};
 ClassDecoder[data_] := ClassDecoder[data, Last@Dimensions@data]
 
 ClassDecoder[data_, nClass_] := ToPackedArray@Round@ClassDecoderC[data, Range[nClass]]
+
 
 ClassDecoderC = Compile[{{prob, _Real, 1}, {classes, _Integer, 1}}, 
 	Max[classes (1 - Unitize[Chop[(prob/Max[prob]) - 1]])] - 1, 
@@ -1107,12 +1140,14 @@ NetSummary[net_, rep_?StringQ] := Block[{
 
 		"Mem",
 		Grid[{
-			{st["Weight mem: "], quantStr[elemSize]}, 
-			{st["Net mem: "], quantStr[netSize]},
-			{st["Train mem: "], "n * " <> quantStrG[2 * (arrSize + elemSize)]}
+			{st@"Weight mem: ", quantStr[elemSize]}, 
+			{st@"Net mem: ", quantStr[netSize]},
+			{st@"Train mem: ", "n * " <> quantStrG[2 * (arrSize + elemSize)]}
 		}, Alignment -> Left],
+
 		"MemVal",
 		netSize,
+
 		_, 
 		table
 	]

@@ -339,20 +339,22 @@ SelectActivationI[im_?MatrixQ,size_?IntegerQ]:=If[Total[Flatten[im]]<size,
 (*AnalyzeActivations*)
 
 
-AnalyzeActivations[act_,msk_]:=AnalyzeActivations[act,msk,""]
+AnalyzeActivations[act_, msk_]:=AnalyzeActivations[act, msk, ""]
 
-AnalyzeActivations[act_,msk_,lab_]:=Block[{aDepth,aDim,mDepth,mDim,labs},
-	aDepth=ArrayDepth[act];
-	aDim=Dimensions[If[aDepth===4,act[[All,1]],act[[1,All,1]]]];
-	mDepth=ArrayDepth[msk];
-	mDim=Dimensions[If[mDepth==3,msk,msk[[All,1]]]];
+AnalyzeActivations[act_, msk_, lab_]:=Block[{aDepth, aDim, mDepth, mDim, labs},
+	aDepth = ArrayDepth[act];
+	aDim = Dimensions[If[aDepth===4,act[[All,1]],act[[1,All,1]]]];
+	mDepth = ArrayDepth[msk];
+	mDim = Dimensions[If[mDepth==3,msk,msk[[All,1]]]];
 
-	If[aDepth=!=(mDepth+1)||aDim=!=mDim, Return[Message[AnalyzeActivations::size]]];
+	If[aDepth =!= (mDepth+1) || aDim =!= mDim, Return[Message[AnalyzeActivations::size]]];
 
-	If[mDepth===3,
-		AnalyzeActivationsI[act,msk,lab],
-		labs=If[lab===""||Length[lab]=!=Length[act],"Vol_"<>StringPadLeft[ToString[#],3,"0"]&/@Range[Length[act]],lab];
-		Association[MapThread[AnalyzeActivationsI[#1,#2,#3]&,{act,Transpose@msk,labs}]]
+	If[mDepth === 3,
+		AnalyzeActivationsI[act, msk, lab],
+		labs=If[lab===""||Length[lab]=!=Length[act],
+			"Vol_"<>StringPadLeft[ToString[#],3,"0"]&/@Range[Length[act]],
+			lab];
+		Association[MapThread[AnalyzeActivationsI[#1,#2,#3]&,{act, Transpose@msk, labs}]]
 	]
 ]
 

@@ -28,6 +28,7 @@
   - [Documentation](#documentation)
   - [External dependencies](#external-dependencies)
   - [Toolboxes](#toolboxes)
+  - [Muscle Segmentation](#muscle-segmentation)
   - [License](#license)
 
 ------------------------------------------------------------------------
@@ -104,7 +105,7 @@ When using the toolbox please cite one of the following references:
 <img src="https://github.com/mfroeling/QMRITools/raw/master/docs/images/ToolAward.png"
 alt="Best Open Source Tool Award for quantitative MRI."
 title="Best Open Source Tool Award for quantitative MRI."
-width="70%" />
+width="30%" />
 </p>
 
 ## Documentation
@@ -155,6 +156,16 @@ QMRITools contains the following [toolboxes](https://www.qmritools.com/tool/):
 - TaggingTools
 - TensorTools
 - TractographyTools
+
+## Muscle Segmentation
+
+<p align="center">
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/network-generations.png" alt="QMRITools package add on"  width="70%" />
+</p>
+
+<p align="center">
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/segment.gif" alt="QMRITools package add on"  width="70%" />
+</p>
 
 ------------------------------------------------------------------------
 
