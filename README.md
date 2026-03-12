@@ -145,12 +145,14 @@ QMRITools contains the following [toolboxes](https://www.qmritools.com/tool/):
 - LoggingTools
 - MaskingTools
 - MuscleBidsTools
+- NeuralNetworkTools
 - NiftiTools
 - PlottingTools
 - ProcessingTools
 - ReconstructionTools
 - RelaxometryTools
 - SegmentationTools
+- ShapeTools
 - SimulationTools
 - SpectroTools
 - TaggingTools
