@@ -18,7 +18,7 @@ If[load === $Failed,
 	args = ParseCommandLine[Rest @ $ScriptCommandLine];
 	
 	(* Help flag detection *)
-	If[MemberQ[Keys[args], "-h"] || MemberQ[Keys[args], "--help"],
+	If[MemberQ[Keys[args], "--h"] || MemberQ[Keys[args], "--help"],
 		Print["Usage:"];
 		Print["  script.wls -i <input> -o <output> [-g Y|N] [-l \"Legs\"|\"UpperLeg\"|\"LowerLegs\"]"];
 		Print["Flags:"];
@@ -29,7 +29,7 @@ If[load === $Failed,
 		Print["  --h, --help  Show this help message"];
 	];
 	
-	If[Keys[args] === {"-h"} || Keys[args] === {"--help"}, Quit[]];
+	If[Keys[args] === {"--h"} || Keys[args] === {"--help"}, Quit[]];
 	
 	infile = Lookup[args, "--i", Missing[]];
 	outfile = Lookup[args, "--o", Missing[]];
@@ -54,13 +54,14 @@ If[load === $Failed,
 		,
 		Print["\nImporting and masking data"];
 		{dat, vox} = ImportNii[infile];
+		dat = Clip[dat, {0, Ceiling[Quantile[Flatten[dat], .999]]}];
 		dat = MaskData[dat, Mask[NormalizeData[dat], 10, MaskSmoothing -> True, 
 			MaskClosing->True, MaskDilation->1]];
 	
 		Print["\nPerforming segmentation"];
 		seg = SegmentData[dat, region, TargetDevice->gpu, Monitor->True];
 			
-		Print["\nExporting segmentation to "]
+		Print["\nExporting segmentation to "];
 		Echo[outfile];
 		
 		CopyFile[GetAssetLocation["MusclesLegLabels"], 
