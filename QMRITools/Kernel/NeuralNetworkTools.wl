@@ -1024,7 +1024,7 @@ CELossFunction[g_, k_] := NetFlatten[
 		(* take top-k, k is number of samples depends on network patch size*)
 		If[k > 0, "topK" -> FunctionLayer[Sort[Flatten[#]][[-k;;]] &], Nothing], 
 		"agg" -> AggregationLayer[Mean, 1;;-1],
-		"scale" -> ElementwiseLayer[(If[g<2, 1, g] 2.5) #&]
+		"scale" -> ElementwiseLayer[(If[g<2, 1, g]) #&]
 	|>, {
 		{NetPort["Input"], NetPort["Target"]} -> "prob" -> "tot" -> "ce",
 		If[k > 0, "ce" -> "topK", "ce"] -> "agg" -> "scale" -> NetPort["Loss"]

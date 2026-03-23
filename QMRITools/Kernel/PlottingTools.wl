@@ -2415,6 +2415,7 @@ ColorFAPlot[tens_] := DynamicModule[{FA, eig, eigv, mid, eigFA, mask},
 
 	FA = Clip[2 FACalc[eig], {0,1}];
 	eigv = mask Abs[eigv];
+	all = {eigv, FA eigv};
 
 	Manipulate[
 		im = Image[all[[i, j, All, All, sel, {3,2,1}]], ColorSpace -> "RGB", ImageSize->size],

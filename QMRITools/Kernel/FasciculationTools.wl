@@ -133,8 +133,8 @@ Options[FindActivations] = Options[FindActivationsI] = {
 	ActivationOutput -> "Activation",
 	MaskDilation -> 0, 
 	IgnoreSlices -> {0, 0},
-	ActivationBackground ->10,
-	ActivationIterations-> 10
+	ActivationBackground -> 10,
+	ActivationIterations -> 10
 };
 
 SyntaxInformation[FindActivations] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
@@ -264,13 +264,13 @@ Options[SelectActivations] = {
 
 SyntaxInformation[SelectActivations]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
-SelectActivations[act_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{1,1},{1,1,1}]
+SelectActivations[act_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{1,1},{1,1,1}, ops]
 
-SelectActivations[act_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, ops:OptionsPattern[]]:=SelectActivations[act,{1,1},vox]
+SelectActivations[act_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, ops:OptionsPattern[]]:=SelectActivations[act,{1,1},vox, ops]
 
-SelectActivations[act_ ?ArrayQ, mask_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{mask,1},{1,1,1}]
+SelectActivations[act_ ?ArrayQ, mask_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{mask,1},{1,1,1}, ops]
 
-SelectActivations[act_ ?ArrayQ, {mask_?ArrayQ, bmask_?ArrayQ}, ops:OptionsPattern[]]:=SelectActivations[act,{mask,bmask},{1,1,1}]
+SelectActivations[act_ ?ArrayQ, {mask_?ArrayQ, bmask_?ArrayQ}, ops:OptionsPattern[]]:=SelectActivations[act,{mask,bmask},{1,1,1}, ops]
 
 SelectActivations[act_?ArrayQ, {mask_,bmask_}, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, ops:OptionsPattern[]]:=Block[{
 	aDepth,mDepth,bDepth,size, aDim,nVol, mDim, bDim, start, stop,back, masks,out,sel
@@ -289,25 +289,25 @@ SelectActivations[act_?ArrayQ, {mask_,bmask_}, vox:{_?NumberQ,_?NumberQ,_?Number
 	If[aDim=!=mDim || aDim=!=bDim, Return[Message[SelectActivations::size,aDim,mDim,bDim]]];
 
 	(*get detection size of fasc*)
-	size=Round[OptionValue[ActivationSize]/(Times@@vox )];
+	size = Round[OptionValue[ActivationSize] / (Times@@vox )];
 
 	(*create the selection mask*)
-	sel=If[mask===1, 0act[[All,1]]+1, mask ];
+	sel = If[mask===1, 0act[[All,1]]+1, mask ];
 
 	(*create background mask*)
-	{start,stop}=OptionValue[IgnoreSlices];
-	back=If[bmask===1,If[mDepth===4,Total@Transpose@sel,sel],bmask ];
-	back[[start+1;;-stop-1]]=back[[start+1;;-stop-1]]+1;
+	{start, stop} = OptionValue[IgnoreSlices];
+	back = If[bmask===1,If[mDepth===4, Total@Transpose@sel,sel], bmask];
+	back[[start+1;;-stop-1]] = back[[start+1;;-stop-1]]+1;
 
 	(*find the masks for which to perform the segmentation*)
-	masks=If[mDepth===4,Transpose[MaskData[sel, back]],{sel back}];
+	masks = If[mDepth===4, Transpose[MaskData[sel, back]], {sel back}];
 
 	(*make the activation masks per dataset*)
-	out=SelectActivationI[act,masks,size];
+	out = SelectActivationI[act, masks, size];
 
 	If[mDepth===4,
-		{{out,Total@out},{Transpose[Total[Transpose[#]]&/@out],Total@Transpose[Total[out]]}},
-		{First@out,Total@Transpose@First@out}
+		{{out, Total@out}, {Transpose[Total[Transpose[#]]&/@out], Total@Transpose[Total[out]]}},
+		{First@out, Total@Transpose@First@out}
 	]
 ]
 
@@ -316,19 +316,22 @@ SelectActivations[act_?ArrayQ, {mask_,bmask_}, vox:{_?NumberQ,_?NumberQ,_?Number
 (*SelectActivationI*)
 
 
-SelectActivationI[act_?ArrayQ,masks_?ArrayQ,size_?IntegerQ]:=Block[{msk,dat},
+SelectActivationI[act_?ArrayQ, masks_?ArrayQ, size_]:=Block[{msk, dat},
 	SparseArray[(
 	(*loop over masks for analysis*)
-	msk=#;
-	dat=SparseArray[Transpose[msk #&/@Transpose[act]]];
-	SparseArray[Round[Map[SelectActivationI[#,size]&,dat,{2}]]]
-)&/@masks]];
+		msk = #;
+		dat=SparseArray[Transpose[msk #&/@Transpose[act]]];
+		SparseArray[Round[Map[SelectActivationI[#, size]&, dat, {2}]]]
+	)& /@ masks]
+];
+
 
 (*actual selection function*)
-SelectActivationI[im_?MatrixQ,size_?IntegerQ]:=If[Total[Flatten[im]]<size,
-	0im,
-	ImageData[SelectComponents[Image[im,"Bit"], #Count>=size&]]
-]; 
+SelectActivationI[im_?MatrixQ, size_?IntegerQ] := SelectActivationI[im , {size, Infinity}]
+
+SelectActivationI[im_?MatrixQ, size_?VectorQ] := If[Total[Flatten[im]] < First[size], 0 im,
+	ImageData[SelectComponents[Image[im,"Bit"], Last[size] >= #Count >= First[size]&]]
+];
 
 
 (* ::Subsection:: *)

@@ -705,14 +705,19 @@ SegmentationVolume[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := Block[{vol}
 (* ::Subsection::Closed:: *)
 (*SegmentationCrossSection*)
 
+Options[SegmentationCrossSection] = {Method->"Max"}
 
-SyntaxInformation[SegmentationCrossSection] = {"ArgumentsPattern" -> {_, _.}};
+SyntaxInformation[SegmentationCrossSection] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SegmentationCrossSection[seg_] := SegmentationCrossSection[seg, {0, 0, 0}]
+SegmentationCrossSection[seg_, opts:OptionsPattern[]] := SegmentationCrossSection[seg, {0, 0, 0}, opts]
 
-SegmentationCrossSection[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}] := Block[{area, m},
+SegmentationCrossSection[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Block[{area, m},
 	area = If[vox === {0, 0, 0}, 1, N@((Times @@ vox[[2;;]])/100)];
-	area (m = #;	Max[Total[Flatten[#]] & /@ m]) & /@ Switch[ArrayDepth[seg],
+	area (m = #; Swtich[OptionValue[Method],
+		"Max", Max[Total[Flatten[#]] & /@ m],
+		"Mean", Mean[Total[Flatten[#]] & /@ m], 
+		_, Total[Flatten[#]] & /@ m
+	]) & /@ Switch[ArrayDepth[seg],
 		3, Transpose[First@SplitSegmentations[seg]],
 		4, Transpose[seg],
 		_, Return[$Failed]
