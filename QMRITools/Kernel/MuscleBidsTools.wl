@@ -353,7 +353,7 @@ GenerateBidsName[list:{_?AssociationQ ..}] := GenerateBidsName/@list
 
 GenerateBidsName[parts_?AssociationQ] := StringRiffle[Join[
 	BidsString[parts, {"sub", "ses", "vol", "stk", "rep", "chunk", "acq", "part"}], 
-	BidsValue[parts, {"type", "suf"}]
+	DeleteCases[BidsValue[parts, {"type", "suf"}],""]
 ], "_"]
 
 
@@ -1655,7 +1655,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
 		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
 		int, dint, suffix, types, flip, per, bmat, magph, split, ivim, shift, t2, gradField, 
-		meanV, coor, valV, fasc, fascm, sel, norm, rdim
+		meanV, coor, valV, fasc, fascm, sel, norm, rdim, raw
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -1976,9 +1976,9 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 						(*import the data*)
 						json = ImportJSON[jfile];
-						{data, grad, val, diffvox} = ImportNiiDiff[nfile, FlipBvec->False];
-						{data, grad, val} = SortDiffusionData[NormalizeData[data], grad, val];
-						debugBids[{"Raw data dimensions", Dimensions[data]}];
+						{raw, grad, val, diffvox} = ImportNiiDiff[nfile, FlipBvec->False];
+						{raw, grad, val} = SortDiffusionData[NormalizeData[raw], grad, val];
+						debugBids[{"Raw data dimensions", Dimensions[raw]}];
 
 						(*gradient flip correction*)
 						{flip, per} = ConfigLookup[datType, "Process", "FlipPermute"];
@@ -1988,9 +1988,9 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 						(*Denoise and SNR*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
-						mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], 
+						mask = Mask[NormalizeMeanData[raw], ConfigLookup[datType, "Process", "Masking"], 
 							MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
-						{den, sig} = PCADeNoise[data, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
+						{den, sig} = PCADeNoise[raw, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
 						snr = SNRCalc[den, sig];
 						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, Max[{2, Min[val]}]}];
 						debugBids[{"denoised data dimensions", Dimensions[den]}];
@@ -2017,7 +2017,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						(*export all the calculated data*)
 						(*-----*)AddToLog["Exporting the calculated data to:", 4];
 						(*-----*)AddToLog[outfile, 5];
-						outTypes = {"den", "reg", "sig", "snr0", "snr", "filt"};
+						outTypes = {"raw", "den", "reg", "filt", "sig", "snr0", "snr"};
 
 						(
 							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];

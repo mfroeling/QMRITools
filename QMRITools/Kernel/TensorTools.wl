@@ -384,7 +384,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 
 	(*the output depending on the settings*)
 	{tensor, s0, 
-		If[output, {outliers, If[robust, residual, Nothing], If[ctens, gradField, Nothing]}, Nothing]}
+		If[output, {If[robust, outliers, Nothing],  residual, If[ctens, gradField, Nothing]}, Nothing]}
 ]
 
 

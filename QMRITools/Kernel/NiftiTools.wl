@@ -692,6 +692,7 @@ Options[ImportNiiDefault] = {"Channel" -> Null, "ExtensionParsing" -> False, Nii
 
 ImportNiiDefault[file_, opts : OptionsPattern[]] := Block[{hdr, data, byteOrder, dataInfo, info, scaling},
 	hdr = ImportNiiHeader[file, opts];
+
 	byteOrder = "ByteOrder" /. hdr;
 	hdr = "Header" /. hdr;
 
@@ -699,6 +700,7 @@ ImportNiiDefault[file_, opts : OptionsPattern[]] := Block[{hdr, data, byteOrder,
 
 	(*get all the data and info*)
 	{dataInfo, info} = GetNiiInformation[hdr];
+
 	data = ImportNiiData[file, dataInfo, byteOrder, opts];
 
 	(*flip dimensions*)
@@ -1064,7 +1066,7 @@ ImportExport`RegisterExport["Nii",
 	"Options" -> {
 		NiiDataType,
 		NiiVersion
-		}
+	}
 ];
 
 
@@ -1105,8 +1107,8 @@ ExportNii[dato_, voxi_, fil_, OptionsPattern[]] := Block[{fileo, data, type, off
 		,
 		If[OptionValue[CompressNii],
 			fileo=fileo<>".gz";
-			Export[fileo, {data, voxi, off}, {"GZIP", "Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type, NiiLegacy->leg, NiiSliceCode->sl],
-			Export[fileo, {data, voxi, off}, {"Nii", {"Data", "VoxelSize","Offset"}}, NiiDataType->type, NiiLegacy->leg, NiiSliceCode->sl]
+			Export[fileo, {data, voxi, off}, {"GZIP", "Nii", {"Data", "VoxelSize", "Offset"}}, NiiDataType->type, NiiLegacy->leg, NiiSliceCode->sl],
+			Export[fileo, {data, voxi, off}, {"Nii", {"Data", "VoxelSize", "Offset"}}, NiiDataType->type, NiiLegacy->leg, NiiSliceCode->sl]
 		]
 	]; 
 ]
@@ -1184,10 +1186,9 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Block[{
 
 	(*chekc if a offset is given*)
 	off = "Offset" /. rule;
-	offInp = ListQ[off];
-	If[offInp,
+	If[ListQ[off] && !VectorQ[off],
 		(*offsets are given*)
-		If[Length[off]===4,
+		If[Length[off]===3,
 			(*one off for s and q form*)
 			{code, off, rot} = off;
 			scode = qcode = code /. Reverse[coordinateNii, 2];
@@ -1204,7 +1205,7 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Block[{
 			{sx, sy, sz} = MakeNiiOrientationS[offs, vox, rotS]
 		],
 		(*no offsets are given use default values*)
-		offs = {dim[[-1]], dim[[-2]], dim[[1]]}/2;
+		offs = If[VectorQ[off] && Length[off]===3, off, {dim[[-1]], dim[[-2]], dim[[1]]}/2];
 		{xoffq ,yoffq, zoffq} = N[Reverse[vox] offs];
 		{qb, qc, qd} = {0., 0., 0.};
 		{sx, sy, sz} = MakeNiiOrientationS[offs, vox];
@@ -1216,6 +1217,7 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Block[{
 			scode = qcode = "None" /. Reverse[coordinateNii, 2];
 		];
 	];
+
 	headerDef = {
 		"size" -> Switch[ver, 1, 348, 2, 540],
 		"data_Type" -> StringPadRight["", 10],
