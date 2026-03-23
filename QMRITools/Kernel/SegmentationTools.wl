@@ -308,7 +308,7 @@ ImportITKLabelsI[] := ImportITKLabelsI["MusclesLegLabels"];
 
 ImportITKLabels[file_]:=ImportITKLabelsI[file, "List"]
 
-ImportITKLabelsI[file_, outType_] := ImportITKLabelsI[file, outType] = Block[{fileL, lines, muscleNames, muscleLabels},
+ImportITKLabelsI[file_, outType_] := (*ImportITKLabelsI[file, outType] =*) Block[{fileL, lines, muscleNames, muscleLabels},
 	fileL = If[FileExistsQ[file], file, GetAssetLocation[file]]; 
 	If[fileL === $Failed, Return["specified name is not file or asset"]];
 	(*import*)
