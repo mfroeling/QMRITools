@@ -1033,7 +1033,8 @@ Unwrapi[dat_, thresh_] := Block[{data, mask, crp, dimi, sorted, groups, groupsiz
 
 
 UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer, 3}, {groupsizei, _Integer, 1}, {thresh,_Real,0}},
-	Block[{data, const, dir, dim, groups, group1, group2, groupsize, groupnr, z1, z2, x1, x2, y1, y2, wrap, wrapT, pos, g1, g2, out, adds,add, diff},
+	Block[{data, const, dir, dim, groups, group1, group2, groupsize, groupnr, len, 
+		z1, z2, x1, x2, y1, y2, wrap, wrapT, pos, g1, g2, out, adds,add, diff},
 
 		data = datai;
 		groups = groupsi;
@@ -1041,8 +1042,9 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 
 		(*initialize parameters*)
 		dim = Dimensions[data];
-		groupnr = Length[groupsize];
+		groupnr = Max[groups];
 		adds = {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}};
+		len = Length[groupsize];
 		z1=x1=y1=z2=x2=y2=group1=group2=g1=g2=0;
 
 		(*loop over all edges*)
@@ -1107,8 +1109,12 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 						(*3C. both belong to no group, make new group*)
 						True,
 						groupnr++;
+						If[groupnr > len,
+							len = 2 len;
+							groupsize = PadRight[groupsize, len, 0]
+						];
 						groups[[z1, x1, y1]] = groups[[z2, x2, y2]] = groupnr;
-						AppendTo[groupsize,2];
+						groupsize[[groupnr]] = 2;
 						If[wrapT, data[[z2, x2, y2]] += wrap];
 					]
 				]
@@ -1119,6 +1125,7 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 
 	(*output the unwraped data*)
 	data],
+
 RuntimeOptions -> "Speed", Parallelization -> True];
 
 
@@ -1173,20 +1180,20 @@ MakeGroups[data_, maski_]:=Block[{dep,dim,fun,min,max,part,dat,masks,small,nclus
 	dat = (mask data) - 2 (1 - mask);
 
 	(*find mask ranges*)
-	{min,max} = MinMax[data];
-	part = {#[[1]] + 0.001, #[[2]] - 0.001} & /@ Partition[Range[-1, 1, 0.2] // N, 2, 1];
+	{min, max} = MinMax[data];
+	part = {#[[1]] + 0.001, #[[2]] - 0.001} & /@ Partition[Range[min, max, (max - min) / 5.], 2, 1];
 
 	(*make groups from masks*)
-	clus = DeleteSmallComponents[MorphologicalComponents[
-		Mask[dat, #, MaskSmoothing -> False], CornerNeighbors -> False], 
-		If[ArrayDepth[data]===3, 15, 3], CornerNeighbors -> False] & /@ part;
+	clus = MorphologicalComponents[DeleteSmallComponents[
+		If[ArrayDepth[data] === 3, Image3D, Image][Mask[dat, #, MaskSmoothing -> False], "Bit"],
+		If[ArrayDepth[data] === 3, 15, 3], CornerNeighbors -> False]
+	] & /@ part;
 
 	nclus = Prepend[Drop[Accumulate[Max /@ clus], -1], 0];
 	groups = Total[MapThread[#2 Unitize[#1] + #1 &, {clus, nclus}]] + mask;
 
 	(*create outputs, the size vector and group nrs*)
-	groupsize = ConstantArray[0, Max[groups]];
-	(groupsize[[#[[1]]]] = #[[2]]) & /@ Sort[Tally[Flatten[groups]]][[2 ;;]];
+	groupsize = PadRight[Sort[Tally[Flatten[groups]]][[All, 2]], 2 Max[groups], 0];
 	{groups, groupsize}
 ]
 
@@ -1230,8 +1237,8 @@ UnwrapDCT[psii_, wi_]:=Block[{
 		(*step 1: initialize parameters for loop*)
 		i = 0;
 		phi = 0.psi;
-		norm = 10^-6 Norm@Flatten@rhoi;
-		maxi = 5 (*Round[0.1 Times@@d]*);
+		norm = 10^-6 Norm[rhoi, "Frobenius"];
+		maxi = 20 (*Round[0.1 Times@@d]*);
 
 		(*run loop*)
 		(*If[a===3, PrintTemporary[Dynamic[i]," / ", maxi, "   ", norm, " < ", Dynamic[normi]]];*)
@@ -1245,7 +1252,7 @@ UnwrapDCT[psii_, wi_]:=Block[{
 			i += 1;
 
 			(*step 4 or 5: define initial phi or update phi*)
-			num = Total[rhoi soli, -1];
+			num = Flatten[rhoi] . Flatten[soli];(*Total[rhoi soli, -1];*)
 			phii = If[i===1, soli, soli + (num/denb) phii];
 
 			(*store current value as i-1 value*)
@@ -1253,14 +1260,15 @@ UnwrapDCT[psii_, wi_]:=Block[{
 
 			(*step 6: perform one scalar and two vectors update*)
 			Qphii = GetDifference[phii, w, False];
-			dena = Total[phii Qphii, -1]; If[dena===0., Break[]];
+			dena = Flatten[phii] . Flatten[Qphii]; If[dena===0., Break[]];
+			(*dena = Total[phii Qphii, -1];*) 
 			alpha = num/dena;
 			rhoi -= alpha Qphii;
 			phi += alpha phii;
 
 			(*step 7: check for continue*)
 			(*calculate norm*)
-			normi = Norm@Flatten@rhoi;
+			normi = Norm[rhoi, "Frobenius"](*Norm@Flatten@rhoi*);
 
 			If[i > maxi || normi < norm, Break[]]
 		];
@@ -1276,11 +1284,11 @@ UnwrapDCT[psii_, wi_]:=Block[{
 (*MakeWeights*)
 
 
-MakeWeights[psi_, wi_, d_, a_]:=Block[{w},
+MakeWeights[psi_, wi_, d_, a_]:=Block[{w, q},
 	(*weighting for unwrapping which can be None, Automatic or predifined*)
 	w = ToPackedArray@N@Switch[wi,
 		None, ConstantArray[1., d],
-		Automatic, 1. - Rescale[MedianFilter[N[StandardDeviationFilter[Sin[psi], 1] + StandardDeviationFilter[Cos[psi], 1]], 1]],
+		Automatic, Clip[Sqrt[GaussianFilter[Sin[psi], 2]^2 + GaussianFilter[Cos[psi], 2]^2], {0.01, 1.}],
 		_, If[d===Dimensions[wi], wi, Return[Message[UnwrapDCT::dim, d, Dimensions[w]]]]
 	];
 
