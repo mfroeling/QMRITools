@@ -284,8 +284,8 @@ SelectActivations[act_?ArrayQ, {mask_,bmask_}, vox:{_?NumberQ,_?NumberQ,_?Number
 	(*check data sizes*)
 	aDim = Dimensions@act[[All,1]];
 	nVol = Length@act[[1]];
-	mDim = If[mask=!=1,Dimensions@If[mDepth===4,mask[[All,1]],mask],aDim];
-	bDim = If[bmask=!=1,Dimensions[bmask],aDim];
+	mDim = If[mask=!=1, Dimensions@If[mDepth===4, mask[[All,1]], mask], aDim];
+	bDim = If[bmask=!=1, Dimensions[bmask], aDim];
 	If[aDim=!=mDim || aDim=!=bDim, Return[Message[SelectActivations::size,aDim,mDim,bDim]]];
 
 	(*get detection size of fasc*)

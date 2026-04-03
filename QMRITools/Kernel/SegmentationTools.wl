@@ -25,8 +25,10 @@ BeginPackage["QMRITools`SegmentationTools`", Join[{"Developer`"}, Complement[QMR
 
 
 GetNeuralNet::usage = 
-"GetNeuralNet[name] loads a pre trained neural net that come with the toolbox. Current named nets 
-are \"LegSide\", \"LegSide\", \"SegThighMuscle\", \"SegLegMuscle\", and \"SegLegBones\". The loading is cashed within a session."
+"GetNeuralNet[name] loads a pre-trained neural net by asset name. The net is cached within a session.
+GetNeuralNet[file] loads a net from a file path directly.
+GetNeuralNet[net] passes through an existing NetGraph or NetChain unchanged.
+GetNeuralNet[\"Clear\"] clears the session cache."
 
 
 DiceSimilarity::usage = 
@@ -40,11 +42,12 @@ JaccardSimilarity[x, y, class] gives the Jaccard Similarity of segmentations ref
 JaccardSimilarity[x, y, {class, ..}] gives the Jaccard Similarity of segmentations ref and pred for the list of gives classes."
 
 SurfaceDistance::usage = 
-"SurfaceDistance[ref, pred] gives the mean surface distance of segmentations ref and pred for class equals 1 in voxels.
-SurfaceDistance[x, y, class] gives the mean surface distance of segmentations ref and pred for class in voxels.
-SurfaceDistance[x, y, {class, ..}] gives the mean surface distance of segmentations ref and pred for the list of gives classes in voxels.
-SurfaceDistance[x, y, class , vox] gives the mean surface distance of segmentations ref and pred for class in millimeter.
-SurfaceDistance[x, y, {class, ..}, vox] gives the mean surface distance of segmentations ref and pred for the list of gives classes in millimeters."
+"SurfaceDistance[ref, pred] gives the surface distance of segmentations ref and pred for class 1, assuming isotropic unit voxels. Use the vox argument for correct physical distances.
+SurfaceDistance[ref, pred, class] gives the surface distance for the given integer class.
+SurfaceDistance[ref, pred, {class, ..}] gives the surface distance for each class in the list.
+SurfaceDistance[ref, pred, class, vox] gives the surface distance in millimeters using voxel size vox.
+SurfaceDistance[ref, pred, {class, ..}, vox] does the same for a list of classes.
+The Method option controls the distance metric: \"Mean\", \"Median\", \"RMS\", \"HD\", \"HD95\" (default), or \"Std\". A list of methods can be given to return multiple metrics at once."
 
 MakeDistanceMap::usage = 
 "MakeDistanceMap[mask] makes a distance map of the given mask in voxels. The distance map is negative inside the mask and positive outside the mask.
@@ -52,28 +55,32 @@ MakeDistanceMap[mask, vox] makes a distance map of the given mask in the same un
 
 
 SegmentData::usage = 
-"SegmentData[data, what] segments the data. The what specifies the segmentation to be done.
-It currently allows for \"LegBones\" for the bones or \"Legs\" for the muscles."
+"SegmentData[data] segments the data using the default \"Legs\" method.
+SegmentData[data, what] segments using the specified anatomical region. What can be \"Legs\", \"LegsHip\", \"UpperLegs\", \"LowerLegs\", \"Shoulder\", \"Hip\", or \"Body\".
+SegmentData[data, {what, netFile}] uses a custom network file instead of the built-in net."
 
 ApplySegmentationNetwork::usage = 
-"ApplySegmentationNetwork[data, net] segments the data using the pre trained net.
-ApplySegmentationNetwork[data, net, node] segments the data using the pre trained net but only use the network up to node."
+"ApplySegmentationNetwork[data, net] segments data using net. Data can be an array or a nii file path. Net can be a network name, file, or NetGraph.
+ApplySegmentationNetwork[data, net, node] returns the network output at the specified intermediate node rather than the final segmentation.
+ApplySegmentationNetwork[{datFol, outFol}, net] processes all nii files in datFol and saves results to outFol.
+ApplySegmentationNetwork[{{datFol, outFol}, {inTag, outTag}}, net] uses custom file tags to find input and name output files."
 
 ClassifyData::usage = 
-"ClassifyData[data, method] classifies the input data using the given method. The data is converted to images using MakeClassifyImages.
-The input method can be a filename of a classify network or a classify network. 
-Additionally the input method can be one of the predefined methods \"LegPosition\" or \"LegSide\"."
+"ClassifyData[data, method] classifies the input data using the Body classification network. 
+Method \"Body\" returns {side, positions}. Any method containing \"Side\" returns the detected side only. 
+Any other method returns the raw network output."
 
 
 ShowTrainLog::usage =
-"ShowTrainLog[log] shows the training log of a network training."
+"ShowTrainLog[folder] shows an interactive plot of the training log stored in folder as JSON files.
+ShowTrainLog[folder, min] filters rounds with fewer than min progress entries. Default is 5.
+The interface allows selecting metrics, toggling log scale, Gaussian filtering, and live folder reloading."
 
 
 TrainSegmentationNetwork::usage =
-"TrainSegmentationNetwork[{inFol, outFol}] trains a segmentation network. The correctly prepared training data should be stored in inFol. The progress each round will be saved in outFol.
-TrainSegmentationNetwork[{inFol, outFol}, netCont] does the same but defines how to continue with netCont. If netCont is \"Start\" training will be restarted.
-If netCont is a initialized network or network file (wlnet) this will be used. If netCont is a a outFol the last saved network will be used.
-Possible loss functions are {\"SoftDice\", \"MSD\", \"Tversky\" , \"CE\", \"Jaccard\"}."
+"TrainSegmentationNetwork[{inFol, outFol}] trains a segmentation network from scratch. Training data should be wxf files in inFol. Progress is saved each round to outFol.
+TrainSegmentationNetwork[{inFol, outFol}, netCont] continues training. netCont can be \"Start\" to restart, a NetGraph, a wlnet file, or a previous outFol to continue from the last saved network.
+Loss functions can be All or a subset of {\"Dice\", \"Jaccard\", \"Tversky\", \"MSD\", \"CE\", \"Focal\", \"TopK\"}."
 
 GetTrainData::usage =
 "GetTrainData[data, batch size, patch] creates a training batch of size batch size with patch size patch. 
@@ -90,20 +97,22 @@ CheckSegmentation::usage=
 "CheckSegmentation[seg] checks the segmentation for errors and returns a vector of two numbers, the first indicates if the segmentation has more than one region, the second indicates if it has holes."
 
 DataToPatches::usage =
-"DataToPatches[data, patchSize] creates the maximal number of patches with patchSize from data, where the patches have minimal overlap.
-DataToPatches[data, patchSize, n] gives n random patches from the maximal number of patches with patchSize from data, where the patches have minimal overlap."
+"DataToPatches[data, patchSize] creates non-overlapping patches covering data with minimal overlap.
+DataToPatches[data, patchSize, n] creates patches with n additional overlap steps per dimension.
+DataToPatches[data, patchSize, pts] extracts patches at the given pre-computed ranges pts.
+DataToPatches[data, pts] extracts patches at ranges pts without resizing.
+Output is {patches, ranges} where ranges can be passed to PatchesToData."
 
 PatchesToData::usage = 
-"PatchesToData[patches, ran] creates a continuous dataset from the patches. For each patch the range in the data needs to be specified in ran.
-The patches are have dimensions {x, y, z} each and ran is specified as {{xmin, xmax}, {ymin, ymax}, {zmin, zmax}}.
-PatchesToData[patches, ran, dim] creates a continuous dataset from the patches with dimensions dim."
+"PatchesToData[patches, ranges] reconstructs data from patches at the given ranges.
+PatchesToData[patches, ranges, dim] reconstructs into an array of dimensions dim. Overlapping patches are averaged.
+PatchesToData[patches, ranges, dim, labels] reconstructs segmentation patches. For each label only the largest connected component is kept and overlapping labels are resolved. Returns a merged integer segmentation."
 
 
 AugmentTrainingData::usage = 
-"AugmentTrainingData[{data, segmentation}, vox] augments the data and segmentation in the same way.
-AugmentTrainingData[{data, segmentation}, vox, aug] by setting aug to True or False the augmentation can be turned on or off.
-The value aug can also be a list of boolean values controlling various augmentation parameters {flip, rotate, translate, scale, noise, blur, brightness}.
-The default settings are {True, True, True, True, False, False, False}."
+"AugmentTrainingData[{data, seg}, vox] augments data and segmentation consistently. 
+AugmentTrainingData[{data, seg}, vox, aug] controls augmentation. aug can be True/False for all, or a list {flip, rotate, scale, noise, blur}. Default is all True.
+AugmentTrainingData[data, vox] augments data only, returning the data without segmentation."
 
 AugmentImageData::usage = 
 "AugmentImageData[image, {rotate, flip}] augments the input image by rotating between -180 and 180 degrees and flipping. The inputs rotate and flip
@@ -116,10 +125,10 @@ MakeChannelImage::usage =
 MakeChannelImage[data, vox] same but with the aspect ratio determined by vox."
 
 MakeClassImage::usage = 
-"MakeClassImage[label ] makes a cross-sectional image of the classes label of a training dataset generated by GetTrainData
-MakeChannelImage[label, {b, n}] same but with explicit definition of background value b and number of classes n. 
+"MakeClassImage[label] makes a cross-sectional image of the classes label of a training dataset generated by GetTrainData
+MakeClassImage[label, {b, n}] same but with explicit definition of background value b and number of classes n. 
 MakeClassImage[data, vox] same but with the aspect ratio determined by vox.
-MakeChannelImage[label, {b, n}, vox] same with explicit definition and aspect ratio definition."
+MakeClassImage[label, {b, n}, vox] same with explicit definition and aspect ratio definition."
 
 MakeChannelClassImage::usage = 
 "MakeChannelClassImage[data, label] makes a cross-sectional image of the channels data overlaid with a cross-sectional image of the classes label of a training dataset generated
@@ -134,8 +143,11 @@ MakeChannelClassGrid[data, label, {n, m}] makes a n x m."
 
 
 SplitDataForSegmentation::usage = 
-"SplitDataForSegmentation[data] is a specific function for leg data to prepare data for segmentation. It detects the side and location and will split and label the data accordingly.
-SplitDataForSegmentation[data ,seg] does the same but is rather used when preparing training data. Here the seg is split in exactly the same way as the data."
+"SplitDataForSegmentation[data] splits data for \"Legs\" segmentation, detecting left/right side and upper/lower leg position automatically using a classification network.
+SplitDataForSegmentation[data, what] splits for the specified region. What can be \"Legs\", \"LegsHip\", \"UpperLegs\", \"LowerLegs\", \"Shoulder\", \"Hip\", or \"Body\".
+SplitDataForSegmentation[data, seg] splits both data and segmentation identically for \"Legs\".
+SplitDataForSegmentation[data, seg, what] does the same for the specified region.
+Output is {{patches, ranges, dim}, locations}."
 
 
 MuscleLabelToName::usage =
@@ -147,7 +159,11 @@ MuscleNameToLabel::usage =
 MuscleNameToLabel[{name, ..}, file] does the same but uses a user defined ITKSnap label definition file."
 
 ImportITKLabels::usage = 
-"ImportITKLabels[file] imports the ITKSnap label file."
+"ImportITKLabels[] loads the default MusclesLegLabels asset.
+ImportITKLabels[file] imports an ITKSnap label file by path or asset name.
+ImportITKLabels[file, \"Labels\"] returns label integer -> name replacement rules.
+ImportITKLabels[file, \"Names\"] returns name -> label integer replacement rules.
+ImportITKLabels[file, \"List\"] returns {names, labels} as separate lists."
 
 SegmentDataGUI::usage = 
 "SegmentDataGUI[] is a function that creates a graphical user interface (GUI) for segmenting data. 
@@ -250,8 +266,7 @@ TrainSegmentationNetwork::inp = "The string input given is not a network file or
 
 TrainSegmentationNetwork::itt = "Not enough iterations specified for training. Remaining iterations are less than 5."
 
-
-GetTrainData::aug = "The augmentation input is not a number or a boolean value. Using False by default."
+TrainSegmentationNetwork::loss = "Unknown loss function should be one of {\"Dice\", \"MSD\", \"Tversky\", \"CE\", \"Jaccard\", \"Focal\", \"TopK\"."
 
 
 SurfaceDistance::met = "Method `1` not recognized";
@@ -306,7 +321,7 @@ ImportITKLabels[x___]:=ImportITKLabelsI[x]
 
 ImportITKLabelsI[] := ImportITKLabelsI["MusclesLegLabels"];
 
-ImportITKLabels[file_]:=ImportITKLabelsI[file, "List"]
+ImportITKLabelsI[file_]:=ImportITKLabelsI[file, "List"]
 
 ImportITKLabelsI[file_, outType_] := (*ImportITKLabelsI[file, outType] =*) Block[{fileL, lines, muscleNames, muscleLabels},
 	fileL = If[FileExistsQ[file], file, GetAssetLocation[file]]; 
@@ -382,18 +397,13 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 	mask = Mask[NormalizeData[dat], 10, MaskSmoothing -> True, MaskClosing -> 5];
 	class = net[MakeClassifyImage[MaskData[dat, mask], ImageSize -> imSize], TargetDevice -> dev];
 
-
-	Switch[met,
-		"LegSide"|"ShoulderSide", Last@Keys@Sort@Counts@class["Side"],
-		"LegPosition", 
-			pos = FindBodyPos[class["Position"], mon];
-			Select[pos, MemberQ[{"LowerLegs", "UpperLegs"}, #[[1]]]&]
-		,
-		"Body", {
+	Which[
+		StringContainsQ[met, "Side"], Last@Keys@Sort@Counts@class["Side"],
+		met === "Body", {
 			Last@Keys@Sort@Counts@class["Side"],
 			FindBodyPos[class["Position"], mon]
 		},
-		_, class
+		True, class
 	]
 ]
 
@@ -466,7 +476,7 @@ PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, l
 		(*make the segmentation for each expected label*)
 		seg = Table[If[p === {}, zero,
 			si = seg[[##]] & @@ # & /@ p;
-			pi = location[[#]] & /@ p[[All,1]];
+			pi = location[[#]] & /@ p[[All, 1]];
 			Unitize[PatchesToDataI[si, pi, dim]]
 		], {p, pos}];
 
@@ -588,20 +598,16 @@ SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]
 
 SegmentData[datI_, opts:OptionsPattern[]] := SegmentData[datI, "Legs", opts]
 
-SegmentData[datI_, whati_, OptionsPattern[]] := Block[{
-		dev, max, mon, patch, pts, dim ,loc, net, segs, all, data, mask, 
-		time, timeAll, what, netFile, custom, monO, sDim, dimI, rescale
+SegmentData[datI_, what_, OptionsPattern[]] := Block[{
+		dev, max, mon, patch, pts, dim ,loc, net, seg, all, data, mask, 
+		time, timeAll, netFile, monO, sDim, dimI, rescale, labs
 	},
 
 	timeAll = First@AbsoluteTiming[
-		{dev, max, mon, sDim, rescale} = OptionValue[{TargetDevice, MaxPatchSize, Monitor, SegmentationDimension, SegmentationResolution}];
+		{dev, max, mon, sDim, rescale} = OptionValue[{TargetDevice, MaxPatchSize, Monitor, 
+			SegmentationDimension, SegmentationResolution}];
 		monO = mon;
 		mon = If[mon, MonitorFunction, List];
-
-		custom = If[ListQ[whati], 
-			{what, netFile} = whati; True, 
-			what = whati; False
-		];
 
 		mon["--------------------"];
 		mon[Dimensions@datI, "Analyzing the data with dimensions:"];
@@ -623,51 +629,45 @@ SegmentData[datI_, whati_, OptionsPattern[]] := Block[{
 		mon[Column@Thread[{loc, Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"];
 
 		(*get the network name and data type*)
-		net = Switch[what,
-			"HeadNeck", "SegHeadNeckMuscle"<>sDim&,
-			"Shoulder", "SegShoulderMuscle"<>sDim&,
-			"Torso", "SegTorsoMuscle"<>sDim&,
-			"Hip", "SegHipMuscle"<>sDim&,
-			"Arm", "SegArmMuscle"<>sDim&,
-			"UpperLegs", "SegThighMuscle"<>sDim&,
-			"LowerLegs", "SegLegMuscle"<>sDim&,
-
-			"Legs",	
-				(#[[1]] /. {"UpperLegs" -> "SegThighMuscle"<>sDim, "LowerLegs" -> "SegLegMuscle"<>sDim})&,
-			
-			_, $Failed
-		];
-		If[custom, net = If[ListQ[netFile],
-			(#[[1]] /. {"UpperLegs" -> netFile[[1]], "LowerLegs" -> netFile[[2]]})&,
-			netFile&
-			]
-		];
-		If[net===$Failed, Return[$Failed]];
+		net = (#[[1]] /. {
+			(*"Arm" -> "SegArmMuscle"<>sDim,*)
+			(*"HeadNeck" -> "SegHeadNeckMuscle"<>sDim,*)
+			(*"Torso" -> "SegTorsoMuscle"<>sDim,*)
+			"Shoulder" -> "SegShoulderMuscle"<>sDim,
+			"Hip" -> "SegHipMuscle"<>sDim,
+			"UpperLegs" -> "SegThighMuscle"<>sDim,
+			"LowerLegs" -> "SegLegMuscle"<>sDim,
+			_ -> $Failed
+		})&;
+		If[MemberQ[net /@ loc, $Failed], Return[$Failed]];
 
 		(*Perform the segmentation*)
 		time = First@AbsoluteTiming[
-			segs = MapThread[(
+			seg = MapThread[(
 				mon["--------------------"];
 				mon[{#2, net[#2]}, "Performing segmentation for: "];
-				ReplaceLabels[ApplySegmentationNetwork[#1, net[#2], TargetDevice -> dev, MaxPatchSize -> max, Monitor -> monO], #2]
+				seg = ApplySegmentationNetwork[#1, net[#2], TargetDevice -> dev, 
+					MaxPatchSize -> max, Monitor -> monO];
+				ReplaceLabels[seg, #2, what]
 			) &, {patch, loc}]];
 		mon["--------------------"];
 		mon[Round[time, .1], "Total time for segmentations [s]: "];
 		mon["--------------------"];
 
 		(*Merge all segmentations for all expected labels*)
-		all = Select[DeleteDuplicates[Sort[Flatten[GetSegmentationLabels /@ segs]]], IntegerQ];
-		mon[all, "Putting together the segmentations with labels"];
+		labs = GetSegmentationLabels /@ seg;
+		all = Select[Sort[DeleteDuplicates[Flatten[labs]]], IntegerQ];
+		mon[Column[labs], "Putting together the segmentations with labels: "];
 
 		(*after this only one cluster per label remains*)
-		time = First@AbsoluteTiming[segs = PatchesToData[segs, pts, dim, all]];
+		time = First@AbsoluteTiming[seg = PatchesToData[seg, pts, dim, all]];
 		mon[Round[time, .1], "Total time for final evaluation [s]: "];
 		mon["--------------------"];
 	];
 	mon[Round[timeAll, .1], "Total evaluation time [s]: "];
 	mon["--------------------"];
 
-	If[rescale === Automatic, segs, RescaleSegmentation[segs, dimI]]
+	If[rescale === Automatic, seg, RescaleSegmentation[seg, dimI]]
 ]
 
 
@@ -675,21 +675,27 @@ SegmentData[datI_, whati_, OptionsPattern[]] := Block[{
 (*ReplaceLabels*)
 
 
-ReplaceLabels[seg_, loc_] := Block[{
-		what, side, labIn, fIn, fOut, labNam, labOut, labOutS
+ReplaceLabels[seg_, locI_, what_] := Block[{
+		loc, side, labIn, fIn, fOut, labNam, labOut, labOutS
 	},
 
-	{what, side} = loc;
+	{loc, side} = locI;
 
-	If[MemberQ[{"UpperLegs", "LowerLegs", "Shoulder"}, what],
+	If[MemberQ[{"UpperLegs", "LowerLegs", "Shoulder", "Hip"}, loc],
 
 		labIn = GetSegmentationLabels[seg];
 
-		{fIn, fOut} = Switch[what, 
-			"UpperLegs", {"LegUpperTrainLabels", "MuscleLegLabels"},
-			"LowerLegs", {"LegLowerTrainLabels", "MuscleLegLabels"},
-			"Shoulder", {"ShoulderTrainLabels", "MuscleShoulderLabels"}
-			(*TODO - add new cases when done*)
+		fOut = Switch[what,
+			"Body", "MuscleLabels",
+			"Legs" | "LegsHip" | "UpperLegs" | "LowerLegs", "MuscleLegLabels",
+			"Shoulder", "MuscleShoulderLabels"
+		];
+
+		fIn = Switch[loc, 
+			"UpperLegs", "LegUpperTrainLabels",
+			"LowerLegs", "LegLowerTrainLabels",
+			"Hip", "HipTrainLabels",
+			"Shoulder", "ShoulderTrainLabels"
 		];
 
 		(*some labels have side encoding some dont*)
@@ -731,90 +737,64 @@ SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPa
 SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]] := SplitDataForSegmentation[data, "Legs", opt]
 
 SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := Block[{
-		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, monO, mon, dev, over
+		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, monO, mon, dev, over, locs
 	},
 	dim = Dimensions[data];
 	{monO, dev} = OptionValue[{Monitor, TargetDevice}];
 	mon = If[monO, MonitorFunction, List];
 
 	Switch[what,
-		"Legs",
+		"Legs" | "LegsHip"| "Body",
 		(*split the data in upper and lower legs and left and right*)
 
 		(*find which side using NN*)
 		{whatSide, whatPos} = ClassifyData[data, "Body", TargetDevice -> dev, Monitor -> monO];
-		mon[whatSide, "Data contains sides: "];
-
-		(*based on side cut data or propagate*)
-		dat = Switch[whatSide,
-			(*both sides which need to be split*)
-			"Both",
-			{right, left, cut} = CutData[data];
-			{{right, {"Right", {1, cut}}}, {left, {"Left", {cut+1, dim[[3]]}}}},
-			_,
-			(*only one side, no split*)
-			{{data, {whatSide, {1, dim[[3]]}}}}
-		];
-
-		(*loop over data to find upper or lower*)
-		whatPos = Select[whatPos, MemberQ[{"LowerLegs", "UpperLegs"}, #[[1]]]&];
-		mon[whatPos[[All, 1]], "Selected positions: "];
-		dat = Flatten[(
-			{dat, side} = #;
-			{dat[[#[[2,1]];;#[[2,2]]]], #, side} & /@ whatPos
-		)&/@dat, 1];
-
-		
-
-		(*output the selected data with the correct label and coordinates*)
-		{dat, pts, loc} = Transpose[CropPart /@ dat];
-		{{dat, pts, dim}, loc}
-
 		,
 		"Shoulder" | "Torso" | "Hip" | "UpperLegs" | "LowerLegs",
-		(*find which side using NN*)
-		time= First@AbsoluteTiming[
-			(*TODO replace for single network*)
-			whatSide = (what /. {"UpperLegs" -> "Leg", "LowerLegs" -> "Leg"})<>"Side";
-			whatSide = ClassifyData[data, whatSide, TargetDevice -> dev, Monitor -> monO];
+		(*TODO replace for single network*)
+		whatSide = ClassifyData[data, what<>"Side", TargetDevice -> dev, Monitor -> monO];
+		whatPos = {{what, {1, dim[[1]]}}};
+		,_,
+		Return[$Failed];
+	];
+	mon[whatSide, "Data contains sides: "];
 
-			(*based on side cut data or propagate*)
-			dat = Switch[whatSide,
-				(*both sides which need to be split*)
-				"Both",
-				Switch[what,
-					"UpperLegs" | "LowerLegs",
-					{right, left, cut} = CutData[data];
-					over = 0;,
-					_,
-					{cut, over} = Round[{0.5, 0.15} Last@Dimensions[data]];
-					{right, left, cut} = CutData[data, {cut, over}];
-				];
-				{
-					{right, {what, {1, dim[[1]]}}, {"Right", {1, cut + over}}}, 
-					{left, {what, {1, dim[[1]]}}, {"Left", {cut + 1 - over, dim[[3]]}}}
-				},
-				_,
-				(*only one side, no split*)
-				{{data, {what, {1, dim[[1]]}}, {whatSide, {1, dim[[3]]}}}}
-			];
+	(*based on side cut data or propagate*)
+	dat = Switch[whatSide,
+		(*both sides which need to be split*)
+		"Both",
+		{cut, over} = Switch[what,
+			"Legs" | "LegsHip" | "UpperLegs" | "LowerLegs", 
+			{FindMiddle[data], Round[0.1 Last@Dimensions[data]]},
+			_, 
+			Round[{0.5, 0.1} Last@Dimensions[data]]
 		];
+		{right, left, cut} = CutData[data, {cut, over}];
+		{{right, {"Right", {1, cut + over}}}, {left, {"Left", {cut + 1 - over, dim[[3]]}}}},
 
-		mon[whatSide, "Data contains sides: "];
-
-		{dat, pts, loc} = Transpose[CropPart /@ dat];
-		{{dat, pts, dim}, loc}
-
-		,
-		"Back",
-		dat = {{data, {"Both", {1, dim[[1]]}}, {"Both", {1, dim[[3]]}}}};
-		{dat, pts, loc} = Transpose[CropPart /@ dat];
-		{{dat, pts, dim}, loc}
-
-		,
 		_,
-		$Failed		
-	]
+		(*only one side, no split*)
+		{{data, {whatSide, {1, dim[[3]]}}}}
+	];
+
+	(*Select the correct locations*)
+	locs = Switch[what, 
+		"Legs", {"LowerLegs", "UpperLegs"},
+		"LegsHip", {"LowerLegs", "UpperLegs", "Hip"},
+		"Body", {"LowerLegs", "UpperLegs", "Hip", "Shoulder"},
+		_, {what}
+	];
+	whatPos = Select[whatPos, MemberQ[locs, #[[1]]]&];
+	mon[whatPos[[All, 1]], "Selected positions: "];
+
+	(*loop over the locations and select the correct data*)
+	dat = Flatten[({dat, side} = #;
+		{dat[[#[[2,1]];;#[[2,2]]]], #, side} & /@ whatPos
+	) & /@ dat, 1];
+
+	(*output the selected data with the correct label and coordinates*)
+	{dat, pts, loc} = Transpose[CropPart /@ dat];
+	{{dat, pts, dim}, loc}
 ]
 
 
@@ -908,6 +888,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		(*calculate the patch size for the data *)
 		is2D = Length[Rest[NetDimensions[net, "Input"]]] === 2;
 		{mem, size} = FindPatchDim[net, dim, lim];
+		mem = If[mem < 1, ToString[Round[1000 mem]] <> " MB", ToString[Round[mem, .1]] <> " GB"];
 
 		(*create the network*)
 		net = ChangeNetDimensions[net, "Dimensions" ->If[is2D, Rest@size, size]];
@@ -919,7 +900,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		(*create the patches*)
 		{patch, pts} = DataToPatches[data, size, PatchNumber -> 0, PatchPadding->pad];
 		mon[{size, Length@patch}, "Patch size and created number of patches is:"];
-		mon[If[mem < 1, Quantity[Round[1000 mem], "MB"], Quantity[Round[mem,.1], "GB"]], "Estimated memory need is:"];
+		mon[mem, "Estimated memory need is:"];
 		patch = If[is2D, ({#}& /@ normF[#])& /@ patch, {normF[#]}&/@patch];
 
 		(*perform the segmentation*)
@@ -931,7 +912,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 				seg = PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[nClass]];
 				seg = ReverseCrop[ArrayPad[seg, -pad], dimO, crp];
 			];
-			mon[{Dimensions[seg], Sort@Round@DeleteDuplicates[Flatten[seg]]}, "Output segmentations dimensions and labels:"];
+			mon[{Dimensions[seg], MinMax[GetSegmentationLabels[seg]]}, "Output segmentations dimensions and labels: "];
 			mon[Round[time, .1], "Time for segmentation [s]: "];
 
 			,
@@ -1691,7 +1672,7 @@ PrepTrainData[{daI_?ArrayQ, segI_?ArrayQ}, {labi_?VectorQ, labo_?VectorQ}, {voxi
 
 
 (* ::Subsubsection::Closed:: *)
-(*SplitSegmentations*)
+(*CheckSegmentation*)
 
 
 SyntaxInformation[CheckSegmentation] = {"ArgumentsPattern" -> {_, _.}};
@@ -1734,7 +1715,7 @@ MakeChannelClassGrid[dat_, lab_, ni_] := Block[{len, n1, n2, labp, ran},
 	If[IntegerQ[ni],
 		n1 = n2 = Min[{Floor[Sqrt[len]], ni}],
 		{n1, n2} = ni;
-		While[n1 n2 > l, n1--; n2--;]
+		While[n1 n2 > len, n1--; n2--;]
 	];
 
 	{labp, ran} = If[TensorQ[lab], {lab, MinMax@lab}, lab];

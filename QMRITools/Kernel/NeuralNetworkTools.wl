@@ -1266,7 +1266,7 @@ MakeClassifyNetwork[classes_, OptionsPattern[]] := Block[{imSize, enc, dec, conv
 
 	(*make the decoders: switch between single list of classes or named association of classes*)
 	dec = If[ListQ[classes],
-		Thread[{"Output"} -> {NetDecoder[{"Class", classes}]}]		,
+		Thread[{"Output"} -> {NetDecoder[{"Class", classes}]}],
 		Thread[Keys[classes] -> (NetDecoder[{"Class", #}] & /@ Values[classes])]
 	];
 
@@ -1290,14 +1290,15 @@ MakeClassifyNetwork[classes_, OptionsPattern[]] := Block[{imSize, enc, dec, conv
 	] &;
 
 	(*make the heads and the convolution layers and the connections*)
-	;
+	heads = If[ListQ[classes],
+		{"Output" -> head[classes]},
+		Thread[dec[[All, 1]] -> (head[#] & /@ Values[classes])]
+	];
+	nodes = Association[Join[{"Conv" -> conv}, heads]];
+	connection = "Conv" -> # -> NetPort[#] & /@ heads[[All, 1]];
 	
 	(*make the network*)
-	NetGraph[
-		Association[Join[{"Conv" -> conv},  Thread[Keys[classes] -> (head /@ Values[classes])]]], 
-		("Conv" -> # -> NetPort[#] & /@ Keys[classes]),
-		"Input" -> enc, ##
-	] & @@ dec
+	NetGraph[nodes, connection, "Input" -> enc, ##] & @@ dec
 ]
 
 

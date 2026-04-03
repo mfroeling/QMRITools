@@ -30,11 +30,12 @@ PacletObject[<|
 
 		(*Neural Networks classification*)
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"Body", "Body_Pos_Side.wlnet"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ShoulderSide", "Side_Shoulder.wlnet"}}},
 
 		(*Neural Networks segmentation*)
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle3D", "N2_Shoulder_3D.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegShoulderMuscle2D", "N2_Shoulder_2D.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegHipMuscle3D", "N4_Hip_3D.wlnet"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegHipMuscle2D", "N4_Hip_2D.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle3D", "N5_UpperLeg_3D.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegThighMuscle2D", "N5_UpperLeg_2D.wlnet"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"SegLegMuscle3D", "N6_LowerLeg_3D.wlnet"}}},
