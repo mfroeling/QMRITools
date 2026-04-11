@@ -321,6 +321,9 @@ Options[SmoothMask] = {
 SyntaxInformation[SmoothMask] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, dim, crp},
+	(*if mask only contains 0 return mask*)
+	If[Max[mask]<1, Return[mask]];
+
 	(*get the options*)
 	dil = OptionValue[MaskDilation];(*how much the mask is eroded or dilated*)
 	dil = If[NumberQ[dil], Round@dil];
@@ -355,7 +358,7 @@ SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, 
 	]];
 
 	(*reverse cropping and return the mask*)
-	ReverseCrop[SparseArray@ImageData@Round@maskI, dim, crp]
+	ReverseCrop[Round@SparseArray@ImageData@maskI, dim, crp]
 ]
 
 
