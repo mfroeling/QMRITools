@@ -481,8 +481,10 @@ PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, l
 		], {p, pos}];
 
 		(*only keep the largest connected segmentation remove the overlap and merge*)
-		seg = SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0] &/@ seg;
-		MergeSegmentations[RemoveMaskOverlaps@Transpose[seg], labs]
+		seg = Transpose[SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0] &/@ seg];
+		If[MinMax[seg] =!= {0, 0}, seg = RemoveMaskOverlaps@seg];
+	
+		MergeSegmentations[seg, labs]
 	]
 ]
 
@@ -630,13 +632,13 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 
 		(*get the network name and data type*)
 		net = (#[[1]] /. {
-			(*"Arm" -> "SegArmMuscle"<>sDim,*)
 			(*"HeadNeck" -> "SegHeadNeckMuscle"<>sDim,*)
 			(*"Torso" -> "SegTorsoMuscle"<>sDim,*)
 			"Shoulder" -> "SegShoulderMuscle"<>sDim,
 			"Hip" -> "SegHipMuscle"<>sDim,
 			"UpperLegs" -> "SegThighMuscle"<>sDim,
 			"LowerLegs" -> "SegLegMuscle"<>sDim,
+			"Arm" -> "SegArmMuscle"<>sDim,
 			_ -> $Failed
 		})&;
 		If[MemberQ[net /@ loc, $Failed], Return[$Failed]];
@@ -681,21 +683,23 @@ ReplaceLabels[seg_, locI_, what_] := Block[{
 
 	{loc, side} = locI;
 
-	If[MemberQ[{"UpperLegs", "LowerLegs", "Shoulder", "Hip"}, loc],
+	If[MemberQ[{"UpperLegs", "LowerLegs", "Shoulder", "Hip", "Arm"}, loc] && Max[seg] > 1,
 
 		labIn = GetSegmentationLabels[seg];
 
 		fOut = Switch[what,
 			"Body", "MuscleLabels",
-			"Legs" | "LegsHip" | "UpperLegs" | "LowerLegs", "MuscleLegLabels",
-			"Shoulder", "MuscleShoulderLabels"
+			"Legs" | "LegsHip" | "UpperLegs" | "LowerLegs" | "Hip", "MuscleLegLabels",
+			"Shoulder", "MuscleShoulderLabels",
+			"Arm", "MuscleArmLabels"
 		];
 
 		fIn = Switch[loc, 
 			"UpperLegs", "LegUpperTrainLabels",
 			"LowerLegs", "LegLowerTrainLabels",
 			"Hip", "HipTrainLabels",
-			"Shoulder", "ShoulderTrainLabels"
+			"Shoulder", "ShoulderTrainLabels",
+			"Arm", "ArmTrainLabels"
 		];
 
 		(*some labels have side encoding some dont*)
@@ -754,6 +758,10 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		(*TODO replace for single network*)
 		whatSide = ClassifyData[data, what<>"Side", TargetDevice -> dev, Monitor -> monO];
 		whatPos = {{what, {1, dim[[1]]}}};
+		,
+		"Arm",
+		whatSide = "Both";
+		whatPos = {{what, {1, dim[[1]]}}};
 		,_,
 		Return[$Failed];
 	];
@@ -765,9 +773,9 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		"Both",
 		{cut, over} = Switch[what,
 			"Legs" | "LegsHip" | "UpperLegs" | "LowerLegs", 
-			{FindMiddle[data], Round[0.1 Last@Dimensions[data]]},
+			{FindMiddle[data], Round[0.1 Last@dim]},
 			_, 
-			Round[{0.5, 0.1} Last@Dimensions[data]]
+			Round[{0.5, 0.1} Last@dim]
 		];
 		{right, left, cut} = CutData[data, {cut, over}];
 		{{right, {"Right", {1, cut + over}}}, {left, {"Left", {cut + 1 - over, dim[[3]]}}}},
@@ -907,12 +915,13 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		If[node==="",
 			time = First@AbsoluteTiming[
 				(*actually perform the segmentation with the NN*)
-				seg = ClassDecoder[net[#, TargetDevice->dev, WorkingPrecision ->precision]]& /@ patch;
+				seg = net[#, TargetDevice->dev, WorkingPrecision ->precision]& /@ patch;
+				seg = ClassDecoder /@ seg;
 				(*reverse all the padding and cropping and merged the patches if needed*)
 				seg = PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[nClass]];
 				seg = ReverseCrop[ArrayPad[seg, -pad], dimO, crp];
 			];
-			mon[{Dimensions[seg], MinMax[GetSegmentationLabels[seg]]}, "Output segmentations dimensions and labels: "];
+			mon[{Dimensions[seg], If[Max[seg]<1,{},MinMax[GetSegmentationLabels[seg]]]}, "Output segmentations dimensions and labels: "];
 			mon[Round[time, .1], "Time for segmentation [s]: "];
 
 			,

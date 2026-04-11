@@ -482,6 +482,7 @@ defaultConfig = <|
 		"Device" -> "GPU",
 		"VoxSize" -> Automatic,
 		"Dimensions" -> "3D",
+		"Location" -> "Body",
 		"Method" -> Automatic
 	|>,
 	"Tractography" -><|
@@ -1526,7 +1527,8 @@ echo time is in the json. and then spit out warnings and skip when things are go
 						{data, fit, vox} = ImportNiiT2[ConvertExtension[files[[pos]],".nii"]];
 					];
 					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
-					echo = Lookup[info, "EchoTime", datType["Process", "EchoTime"]/1000.];
+					(*echo = Lookup[info, "EchoTime", datType["Process", "EchoTime"]/1000.];*)
+					echo = datType["Process", "EchoTime"]/1000.;
 					nEch = Lookup[info, "EchoTrainLength", Length[data[[1]]]];
 					info = KeyDrop[info, "EchoTime"];
 					echo = <|
@@ -1673,6 +1675,12 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 	(*see what needs to be processed*)
 	files = Flatten[FileNames["*"<>StringStrip[#]<>"*.json", folIn]& /@ Flatten[{datType["Label"]}]];
+	If[files === {},
+		(*-----*)AddToLog[{"!!!!!!!!!!!!!!! SKIPPING - NO FILES FOUND !!!!!!!!!!!!!!!!!!!"}, 2];
+		debugBids["No files found"];
+		Return[];	
+	];
+
 	sets = If[type==="megre"||type==="tse",
 		DeleteDuplicates[(ta = #;AssociateTo[ta, "suf"->{First[ta["suf"]]}])&/@PartitionBidsName[FileBaseName/@files]],
 		DeleteDuplicates[PartitionBidsName[FileBaseName/@files]]];
@@ -1899,6 +1907,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								{{watfr, fatfr}, {wat, fat}, {inph, outph}, 
 									{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 										{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
+								pos = {"DixonFlips" -> {}, "DixonBipolar" -> True, "DioxonDoubleBonds"->False};
 							];
 
 							{wat, fat} = Abs[{wat, fat}];
@@ -1911,7 +1920,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress] &/@ outTypes;
 							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
-
+							
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
 								{"Check"->"done", "EchoTimes"->echos, "Outputs" -> outTypes, "SetProperties"->set}, 
@@ -2690,8 +2699,8 @@ MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 
 
 MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
-		segment, segType, segTypeLab, checkFile, fol, segLocation, device,
-		parts, outfile, segfile, out, vox, seg, status, 
+		segType, segTypeLab, checkFile, fol, device, location, segmment,
+		parts, outfile, segfile, out, vox, seg, status, segDim, 
 		voxS, tari, movi, segi, tar, mov, dim, voxt, voxm, voxs, mask
 	},
 
@@ -2703,11 +2712,10 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 	debugBids[folIn, folOut];
 	debugBids[{fol, parts}];
 
-	(*get the segment data type*)
-	segment = datType["Segment"];
-	debugBids[segment];
-	If[segment === Missing["KeyAbsent", "Segment"],	
+	(*Check if segmentation is defined*)
+	If[datType["Segment"] === Missing["KeyAbsent", "Segment"],	
 		(*-----*)AddToLog[{"No Segmentations defined for this data"}, 3];
+		debugBids["No segmentation defined"];
 		Return[]
 	];
 
@@ -2721,7 +2729,9 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 	];
 
 	(*Get the segmentation targets and its names*)
-	segType = segment["Target"];	
+	segType = ConfigLookup[datType, "Segment", "Target"];
+	debugBids[segType];
+
 	If[ArrayDepth[segType]===1, segType = {segType}];
 	Switch[ConfigLookup[datType, "Segment", "Method"],
 
@@ -2739,27 +2749,24 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 
 			(*check if target file exists if so perform the segmentation*)
 			If[!NiiFileExistQ[segfile],
-				AddToLog[{"The segmentation file does not exist: ", segfile}, 4];
+				(*-----*)AddToLog[{"The segmentation file does not exist: ", segfile}, 4];
 				status = "error"
 				,
-				segLocation = segment["Location"];
 				{out, vox} = ImportNii[segfile];
-				voxS = ConfigLookup[datType, "Segment", "VoxSize"];
 
+				voxS = ConfigLookup[datType, "Segment", "VoxSize"];
 				If[voxS =!= Automatic, 
-					AddToLog[{"Using specified reduced voxel size: ", voxS}, 4];
-					dim = Dimensions[out]; 
-					out = RescaleData[out, {vox, voxS}];
-					debugBids[{{vox, dim}, {voxS, Dimensions@out}}];
-				];
+					(*-----*)AddToLog[{"Using specified reduced voxel size: ", voxS}, 4];
+					voxS = {vox, voxS}];
 				segDim = ConfigLookup[datType, "Segment", "Dimensions"];
-				If[segDim=!="2D"||segDim=!="3D", segDim="3D";];
-				AddToLog[{"Segmenting data using nework dimensions: ", segDim}, 4];
-				seg = SegmentData[out, segLocation, 
-					TargetDevice -> ConfigLookup[datType, "Segment", "Device"], 
-					Monitor -> False, SegmentationDimension -> segDim];
-				If[voxS =!= Automatic, 
-					seg = RescaleSegmentation[seg, dim]
+				If[segDim=!="2D" && segDim=!="3D", segDim="3D";];
+				location = ConfigLookup[datType, "Segment", "Location"];
+				(*-----*)AddToLog[{"Segmenting location using dimensions: ", location, " - ", segDim}, 4];
+
+				seg = SegmentData[out, location, Monitor -> False, 
+					SegmentationDimension -> segDim, 
+					TargetDevice -> ConfigLookup[datType, "Segment", "Device"],
+					SegmentationResolution -> voxS
 				];
 
 				ExportNii[seg, vox, outfile, CompressNii -> compress];
@@ -2771,6 +2778,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 		"Registration",
 
 		(*figure out if duplicate handeling is needed.*)
+		segmment = datType["Segment"];
 		outfile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
 				Join[{datType["Key"], "seg", "reg"}, segment["Target"]]];
 		tar = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Target"]];
