@@ -850,7 +850,7 @@ CheckDataDescription[disIn_Association, met_] := Block[{
 		,
 		dis = If[met === "MuscleBidsAnalysis",
         	(* If nested like, grab all sub-keys; if flat, use the block directly *)
-			If[KeyExistsQ[disIn, "Analysis"], {disIn}, disIn], 
+			If[KeyExistsQ[disIn, "Analysis"], {"Default"->disIn}, disIn], 
 			disIn
 		];
 		keys = Keys[dis];
@@ -988,7 +988,6 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 		debugBids["output folder:", out];
 
 		(*check for custom config - merge if config exists in input folder and copy it to output folder*)
-		debugBids[datDisIn];
 		(* Load config: use local/subject config for all but Analysis *)
 		{custConf, datDis} = If[met === "MuscleBidsAnalysis",
 			{False, datDisIn}, 
@@ -1369,7 +1368,9 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 							(*if json files found import them*)
 							info = MergeJSON[json[[pos]]];
 							{data, vox} = Transpose[ImportNii[#]&/@ConvertExtension[files[[pos]], ".nii"]];
-							data = Transpose[data];
+							data = If[ToExpression[First@StringSplit[info["SoftwareVersions"], "\\" | "."]] >= 12,
+								Partition[Flatten[data, 1], Length[data]], (*philips release 12*)
+								Transpose[data](*philips older release*)];
 							vox = First@vox;
 							(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 
@@ -1542,7 +1543,7 @@ echo time is in the json. and then spit out warnings and skip when things are go
 					True,
 
 					(*get the position of the files needed*)
-					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}, "EchoTime"];
+					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}, "EchoNumber"];
 					debugBids["Converting MESE data ", nameIn, ", json position: ", pos];
 					info = MergeJSON[json[[pos]]];
 
@@ -1555,9 +1556,12 @@ echo time is in the json. and then spit out warnings and skip when things are go
 					(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
 
 					(*get the json and data*)
-					AssociateTo[info, "EchoNumber" -> Range@len];
 					{data, vox} = Transpose[ImportNii /@ ConvertExtension[files[[pos]],".nii"]];
-					data = Transpose[data];
+
+					data = If[ToExpression[First@StringSplit[info["SoftwareVersions"], "\\" | "."]] >= 12,
+						AssociateTo[info, "EchoTime" -> Sort[info["EchoTime"]]];
+						Partition[Flatten[data, 1], Length@data],(*philips release 12*)
+						Transpose[data](*philips older release*)];
 					vox = First@vox;
 					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 
@@ -1770,7 +1774,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					(
 						ExportNii[ToExpression[con<>#], First@dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 						Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]
-					)&/@ outTypes;
+					) & /@ outTypes;
 					
 
 					(*export the check file*)
@@ -1918,8 +1922,10 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", "b0", "t2star", "r2star", 
 								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
 
-							ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress] &/@ outTypes;
-							Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]&/@ outTypes;
+							(
+								ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
+								Export[ConvertExtension[outfile <> "_"<>#, ".json"], json];
+							) & /@ outTypes;
 							
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
@@ -2031,7 +2037,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						(
 							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 							Export[ConvertExtension[outfile<>"_"<>#, ".json"], MergeJSON[{json, settingPre}]];
-						)& /@ outTypes;
+						) & /@ outTypes;
 						ExportBvalvec[{val, grad}, outfile <> "_"<>#]& /@ {"reg", "filt"};
 
 						(*export the checkfile*)
@@ -2160,7 +2166,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							(
 								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 								Export[ConvertExtension[outfile<>"_"<>#, ".json"], MergeJSON[{json, settingPro}]];
-							) &/@ outTypes;
+							) & /@ outTypes;
 
 							(*export the checkfile*)
 							MakeCheckFile[outfile, Sort@Join[
@@ -2287,7 +2293,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								(
 									ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
 									Export[ConvertExtension[outfile<>"_"<>#, ".json"], json];
-								) &/@ outTypes;
+								) & /@ outTypes;
 
 								(*export the checkfile*)
 								MakeCheckFile[outfile, Sort@Join[
@@ -2762,6 +2768,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 				If[segDim=!="2D" && segDim=!="3D", segDim="3D";];
 				location = ConfigLookup[datType, "Segment", "Location"];
 				(*-----*)AddToLog[{"Segmenting location using dimensions: ", location, " - ", segDim}, 4];
+				debugBids[{segDim, location, voxS}];
 
 				seg = SegmentData[out, location, Monitor -> False, 
 					SegmentationDimension -> segDim, 
@@ -3138,7 +3145,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType, hasKey,
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxs, segPl, imTrk, trkfile, reffile,
-		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF
+		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF, typeSuf
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
@@ -3154,11 +3161,11 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 	debugBids[datDis];
 
-	hasKey = KeyExistsQ[datDis, "Key"];
+	hasKey = !(datDis["Key"]==="Default");
 	{fol, parts} = PartitionBidsFolderName[folIn];
-	typeSuf = If[datDis["Analsys","Class"] === "Stacks", "stk", "chunk"];
+	typeSuf = If[datDis["Analsys", "Class"] === "Stacks", "stk", "chunk"];
 	
-	partsO = If[hasKey, Join[<|typeSuf->StringStrip@datDis["Key"]|>, parts], parts];
+	partsO = If[hasKey, Join[<|typeSuf -> StringStrip@datDis["Key"]|>, parts], parts];
 	debugBids[{parts, partsO, hasKey, typeSuf}];
 
 	If[hasKey,
@@ -3199,12 +3206,12 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		True,
 		(*-----*)AddToLog[{"Importing and processing the needed segmentation"}, 4];
 		{seg, vox} = ImportNii[segfile];
-		seg = If[ArrayDepth[seg]===4, seg[[All,1]],seg];
+		seg = If[ArrayDepth[seg]===4, seg[[All, 1]], seg];
 		{seg, musNr} = SelectSegmentations[seg, Range[n], False];
 
 		debugBids["Use Filter"];
 		filt = ConfigLookup[datDis, "Analysis", "UseFilter"];
-		If[filt =!= False,
+		If[filt =!= "None",
 			(*-----*)AddToLog[{"Using filtering for parameter calculation"}, 4];
 			{ran, filt} = filt;
 			{filt, vox} = ImportNii[fileName[filt]<>".nii"];
@@ -3216,6 +3223,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			filt = False;
 		];
 
+		debugBids["Volumes and cross"];
 		(*-----*)AddToLog[{"Calculating the volume of the segmentation"}, 4];
 		vol = SegmentationVolume[seg, vox];
 		cross = SegmentationCrossSection[seg, vox];
@@ -3225,11 +3233,12 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			crossF = SegmentationCrossSection[segF, vox];
 		];
 
+		debugBids["names and labels"];
 		(*switch to the correct segmentation label*)
 		Which[
 			what==="Legs",
 			(*-----*)AddToLog[{"Using the Legs for muscle labeling"}, 4];
-			musName = MuscleLabelToName[musNr, GetAssetLocation["MusclesLegLabels"]];
+			musName = MuscleLabelToName[musNr, GetAssetLocation["MuscleLegLabels"]];
 			{musName, sideName} = Transpose[(str = StringSplit[#, "_"];
 				If[Last[str] == "Left" || Last[str] == "Right",
 					{StringRiffle[Most@str, "_"], Last@str},

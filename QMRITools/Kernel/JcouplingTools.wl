@@ -674,7 +674,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		scale={1};
 		{sysJ,sysS,scale,sysSi,names,it,name}
 		,
-		"PtdC",
+		"PtdC" | "PTDC",
 		(*single spin system*)
 		names={"A"};
 		n=Length[names];
