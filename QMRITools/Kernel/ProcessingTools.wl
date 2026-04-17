@@ -1658,7 +1658,7 @@ SmartMask[input_,maski_,OptionsPattern[]] := Module[{
 (*B1MapCalc*)
 
 
-Options[B1MapCalc] = {B1Output -> "Map", B1Masking->True, B1FilterData->True, ReferenceB1 -> None};
+Options[B1MapCalc] = {B1Output -> "Map", B1Masking -> False, B1FilterData -> True, ReferenceB1 -> None};
 
 SyntaxInformation[B1MapCalc] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 

@@ -1555,7 +1555,8 @@ Options[PrepareTrainingData] = {
 	OutputLabels -> Automatic,
 	TrainVoxelSize -> Automatic,
 	CleanUpSegmentations -> True,
-	TestRun -> False
+	TestRun -> False,
+	SegmentationsPerSlice -> All
 }
 
 SyntaxInformation[PrepareTrainingData] = {"ArgumentsPattern" -> {_, _,OptionsPattern[]}};
@@ -1568,9 +1569,11 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 		seg, err, vox, voxd, dat, im, nl, outf, gr, clean, legend, head, out
 	},
 
-	{labT, datT, outT, inLab, outLab, test, clean, voxOut} = OptionValue[{LabelTag, DataTag, OutTag, 
-		InputLabels, OutputLabels, TestRun, CleanUpSegmentations, TrainVoxelSize}];
+	{labT, datT, outT, inLab, outLab, test, clean, voxOut, segSl} = OptionValue[{LabelTag, DataTag, OutTag, 
+		InputLabels, OutputLabels, TestRun, CleanUpSegmentations, TrainVoxelSize,
+		SegmentationsPerSlice}];
 	{inLab, outLab} = {inLab, outLab} /. Automatic -> {0};
+	segSl = segSl /. All ->0;
 
 	(*look for the files in the given folder*)
 	segFiles = FileNames["*" <> labT <> ".nii.gz", labFol];
@@ -1611,6 +1614,9 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 					(*Prepare and analyze the training data and segmentation*)
 					{dat, seg} = PrepTrainData[{dat, seg}, {inLab, outLab}, {vox, voxOut}];
 
+					(*Select slice range*)
+					{dat, seg} = SelectTrainData[{dat, seg}, segSl];
+
 					(*output label check*)
 					err = CheckSegmentation[seg];
 					out = {i++, name, err};
@@ -1646,6 +1652,13 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 	Export[FileNameJoin[{outFol, "summary.png"}], ImagePad[Rasterize[out], 6, White]];
 
 	out
+]
+
+
+SelectTrainData[{dat_, seg_}, n_]:=Block[{segPerSlice, min ,max},
+	segPerSlice = Total[Max[#] & /@ #] & /@ First[SplitSegmentations[seg]];
+	{min, max} = MinMax[Position[UnitStep[segPerSlice - n], 1]];
+	{dat[[min;;max]], seg[[min;;max]]}
 ]
 
 

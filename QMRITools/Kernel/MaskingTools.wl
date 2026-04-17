@@ -716,7 +716,7 @@ SegmentationCrossSection[seg_, opts:OptionsPattern[]] := SegmentationCrossSectio
 
 SegmentationCrossSection[seg_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Block[{area, m},
 	area = If[vox === {0, 0, 0}, 1, N@((Times @@ vox[[2;;]])/100)];
-	area (m = #; Swtich[OptionValue[Method],
+	area (m = #; Switch[OptionValue[Method],
 		"Max", Max[Total[Flatten[#]] & /@ m],
 		"Mean", Mean[Total[Flatten[#]] & /@ m], 
 		_, Total[Flatten[#]] & /@ m
