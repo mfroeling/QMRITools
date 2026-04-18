@@ -1440,7 +1440,11 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 
 					,_ ,
 					(*get the position of the files needed*)
-					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
+					sel = If[First[json]["Manufacturer"]==="Siemens",
+						{{"SeriesDescription", nameIn}},
+						{{"ProtocolName", nameIn}}
+					];
+					pos = posIn = GetJSONPosition[json, sel];
 					debugBids["Converting DWI data ", nameIn, ", json position: ", pos];
 
 					If[pos==={}, 
@@ -1454,7 +1458,7 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 						dfile = ConvertExtension[files[[pos]],".nii"];
 						hdr = Last@ImportNii[dfile, NiiMethod -> "header"];
 						
-						hasb = FileExistsQ[ConvertExtension[dfile,".bval"]]&&FileExistsQ[ConvertExtension[dfile,".bvec"]];
+						hasb = FileExistsQ[ConvertExtension[dfile,".bval"]] && FileExistsQ[ConvertExtension[dfile,".bvec"]];
 
 						If[hasb, 
 							{data, grad, val, vox} = ImportNiiDiff[dfile, FlipBvec->False],

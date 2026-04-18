@@ -199,7 +199,7 @@ NormalizeData[data_, msk_, opts : OptionsPattern[]] := Block[{dat, mn, min, dato
 	mask = Normal@msk;
 	dato = data - Min[data];
 	mn = Switch[ArrayDepth[data],
-		3, MeanNoZero[Flatten[mask dato]],
+		3, MedianNoZero[Flatten[mask dato]],
 		4, Switch[OptionValue[NormalizeMethod],
 			"Volumes", MedianNoZero[Flatten[mask #]] & /@ Transpose[dato],
 			_, MedianNoZero[Flatten[mask dato[[All, 1]]]]
@@ -296,7 +296,9 @@ Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, data
 	(*perform the masking*)		
 	mask = If[tr === {0, 0},
 		(*no Threshold*)
-		ImageData[Binarize[If[dataD == 2, Image, Image3D][Rescale[data, {1, 0.95} MinMax[data]]]]],
+		ImageData[Binarize[If[dataD == 2, Image, Image3D][
+			Clip[Rescale[data, Quantile[Flatten[data], {0.0, 0.99}]]]
+		]]],
 		(*Threshold*)
 		UnitStep[data - tr[[1]]] - UnitStep[data - tr[[2]]]
 	];
