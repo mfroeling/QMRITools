@@ -24,7 +24,8 @@ BeginPackage["QMRITools`FasciculationTools`", Join[{"Developer`"}, Complement[QM
 (*Functions*)
 
 NormalizeFasciculationData::usage = 
-"NormalizeFasciculationData[data_, mask, {tens, grad, val}] ..."
+"NormalizeFasciculationData[data_, mask, {tens, grad, val}] will normalize DWI data based on the tensor fit. 
+For each diffusion direction and b-value the estimated unweighted image is calculated."
 
 FindActivations::usage = 
 "FindActivations[data] Finds the activation in MUMRI or DTI data after data normalization. 
