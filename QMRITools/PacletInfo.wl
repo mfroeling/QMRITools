@@ -52,11 +52,12 @@ PacletObject[<|
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ArmTrainLabels", "N7_Arm_Up.txt"}}},
 
 		(*Segmentation output labels*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLabels", "N0_Body.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLabels", "Muscles_body.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLegLabels", "Muscles_leg.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleShoulderLabels", "Muscles_shoulder.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleArmLabels", "Muscles_arm_upper.txt"}}},
 
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesAllLabels", "Muscles_body_all.txt"}}},
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegAllLabels", "Muscles_leg_all.txt"}}},
 
 		(* ---- OS dependant assets ---- *)
