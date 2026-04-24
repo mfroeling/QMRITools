@@ -613,11 +613,16 @@ BuildBidsNameFromConfig[{folOut_, folIn_, parts_}, {datType_, all_}, tar_?ListQ]
 	(*see if target description has key and split target*)
 	isKey = MemberQ[all[[All, "Key"]], First[target]];
 	{key, type} = If[isKey, {First[target], Rest[target]}, {datType["Key"], target}];
+	
 	{type, suf} = {First[type], Rest[type]};
 
 	(*make correct output key, quits if key is needed but not present*)
 	keyOut = If[!datType["HasDuplicate"], Nothing,
-		If[datType["Class"] === "Stacks", "stk", "chunk"] -> StringStrip@key];
+		Switch[datType["Class"],
+			"Stacks", "stk", 
+			"Volume", "vol",
+			_, "chunk"
+		] -> StringStrip@key];
 
 	(*If folder in is not specified only the output file is needed*)
 	If[folIn === "", Return[GenerateBidsFileName[folOut, 
@@ -3149,7 +3154,8 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType, hasKey,
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxs, segPl, imTrk, trkfile, reffile,
-		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF, typeSuf
+		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF, typeSuf,
+		whatName, whatNr
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
@@ -3191,6 +3197,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 	anaSeg = datDis["Segmentation", "Type"];
 	{n, what} = datDis["Segmentation", "Labels"];
+	debugBids[{anaSeg, n, what}];
 	(*-----*)AddToLog[{"Segmentation file used for analysis is:", StringRiffle[StringStrip/@anaSeg, "_"]}, 3];
 
 	(*Perform the segmentation analysis, what are the label names and volumes*)
@@ -3238,30 +3245,42 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		];
 
 		debugBids["names and labels"];
+
 		(*switch to the correct segmentation label*)
 		Which[
-			what==="Legs",
-			(*-----*)AddToLog[{"Using the Legs for muscle labeling"}, 4];
-			musName = MuscleLabelToName[musNr, GetAssetLocation["MuscleLegLabels"]];
+			what === "Legs", 
+				(*-----*)AddToLog[{"Using the Legs for muscle labeling"}, 4];
+				whatName = GetAssetLocation["MuscleLegLabels"];
+				whatNr = GetAssetLocation["MusclesLegAllLabels"],
+			what === "Arm", 
+				(*-----*)AddToLog[{"Using the Arms for muscle labeling"}, 4];
+				whatName = GetAssetLocation["MuscleArmLabels"];
+				whatNr = GetAssetLocation["MusclesAllLabels"],
+			FileExistsQ[what], 
+				(*-----*)AddToLog[{"Using custom file for muscle labeling"}, 4];
+				whatName = what;
+				whatNr = None,
+			True, 
+				(*-----*)AddToLog[{"Unknown Label type: ", what}, 4];
+				whatName = whatNr = None
+		];
+
+		(*convert segmentation nr to names, sides and label numbers*)
+		If[whatName =!= None,
+			musName = MuscleLabelToName[musNr, whatName];
 			{musName, sideName} = Transpose[(str = StringSplit[#, "_"];
 				If[Last[str] == "Left" || Last[str] == "Right",
 					{StringRiffle[Most@str, "_"], Last@str},
 					{StringRiffle[str, "_"], "Both"}
 				]) & /@ musName];
 			sideNr = sideName /. Thread[{"Left", "Right", "Both"} -> {1, 2, 3}];
-			musNr = MuscleNameToLabel[musName, GetAssetLocation["MusclesLegAllLabels"]];
 			,
-			FileExistsQ[what],
-			musName = MuscleLabelToName[musNr, what];
-			{musName, sideName} = Transpose[(str = StringSplit[#, "_"];
-				If[Last[str] == "Left" || Last[str] == "Right",
-					{StringRiffle[Most@str, "_"], Last@str},
-					{StringRiffle[str, "_"], "Both"}
-				]) & /@ musName];
-			sideNr = sideName /. Thread[{"Left", "Right", "Both"} -> {1, 2, 3}];
-			,
-			True,(*unknown label type*)
-			(*-----*)AddToLog[{"Unknown Label type: ", what}, 4];
+			musName = ConstantArray["Unknown", Length[musNr]];
+			sideName = ConstantArray["Unknown", Length[musNr]];
+			sideNr = ConstantArray[0, Length[musNr]];
+		];
+		If[whatNr =!= None,
+			musNr = MuscleNameToLabel[musName, whatNr];
 		];
 
 		(*summarize the data labels for export later*)
@@ -3314,7 +3333,8 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			Which[
 				(*data does not exist so skip*)
 				!NiiFileExistQ[datfile],
-				(*-----*)AddToLog[{"The data does not exist: ", StringRiffle[datType, "_"]}, 4],
+				(*-----*)AddToLog[{"The data does not exist: ", StringRiffle[datType, "_"]}, 4];
+				Nothing,
 
 				(*data exists so perform the analysis*)
 				True,
@@ -3405,7 +3425,10 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 			pos = GetSlicePositions[GaussianFilter[refC, 15], vox, MakeCheckPlot -> False, 
 				DropSlices -> {1, 1, 1}, PeakNumber -> {0, 1, 2}];
+			debugBids[pos];
 			pos[[1]] = Reverse[Range[0., 1., 1/(Ceiling[Divide @@ size[[;; 2]]] + 1)][[2 ;; -2]] size[[1]]];
+			If[Length[pos[[3]]]===1, pos[[3]] = {1./3, 2/3} size[[3]]];
+			debugBids[pos];
 
 			(*Function to extract slice data for 2D images*)
 			sliceData = Block[{slDat},

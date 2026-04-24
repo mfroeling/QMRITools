@@ -2464,12 +2464,12 @@ LoessPlot[data_, opts : OptionsPattern[]] := Block[{
 	ker = ker /. {"Gaussian" -> 1, _ -> 2};
 	z = InverseCDF[NormalDistribution[], 1 - (1 - z)/2];
 
-	{xMin, xMax} = MinMax[data[[All, 1]]];
+	{xMin, xMax} = Quantile[data[[All, 1]], {0.002, 0.998}];
 	xGrid = Subdivide[xMin, xMax, pPoints];
 	bw = If[Head[bw] === Scaled, bw[[1]] (xMax - xMin), bw];
 
 	n = Length[data];
-	max = Switch[perf, "Speed", 1500, "Quality", 5000];
+	max = Switch[perf, "Speed", 1500, "Quality", 5000, "All", All];
 	boot = Min[{10, Ceiling[n / max]}];
 	sel = Min[{n, max}];
 
