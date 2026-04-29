@@ -620,7 +620,7 @@ BuildBidsNameFromConfig[{folOut_, folIn_, parts_}, {datType_, all_}, tar_?ListQ]
 	keyOut = If[!datType["HasDuplicate"], Nothing,
 		Switch[datType["Class"],
 			"Stacks", "stk", 
-			"Volume", "vol",
+			(*"Volume", "vol",*)
 			_, "chunk"
 		] -> StringStrip@key];
 
