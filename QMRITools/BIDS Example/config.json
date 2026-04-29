@@ -1,0 +1,144 @@
+{
+	"folders":{
+		"dicomData":"01_sourcedata", 
+		"rawData":"02_rawdata", 
+		"derivedData":"03_derivatives", 
+		"mergeData":"04_merged", 
+		"analysis":"05_analysis"
+	}, 
+	"datasets":{
+		"Dixon":{
+			"Label":["DIXON-1", "DIXON-2", "DIXON-3", "DIXON-4", "DIXON-5", "DIXON-6"], 
+			"Class":"Stacks", 
+			"Type":"megre", 
+			"Suffix":"dix", 
+			"Process":{
+				"Method":"Dixon"
+			}, 
+			"Merging":{
+				"Overlap":5, 
+				"Target":["megre", "dix", "outph"], 
+				"Moving":"wat", 
+				"Process":[ "t2star", "r2star", "inph", "outph", "wat", 
+					"fat", "watfr", "fatfr", "snr", "dbond"]
+			}, 
+			"Segment":{
+				"Target":["megre", "dix", "outph"], 
+				"Location":"Legs"
+			}
+		}, 
+		"DTI":{
+			"Label":["DTI-1", "DTI-2", "DTI-3", "DTI-4", "DTI-5", "DTI-6"], 
+			"Class":"Stacks", 
+			"Type":"dwi", 
+			"Suffix":"dti", 
+			"Process":{
+				"Method":"DTI", 
+				"FlipPermute": [[1, -1, 1], ["z", "y", "x"]], 
+				"GradientCorrection":"WA1",
+				"FasciculationDetection": true
+			}, 
+			"Merging":{
+				"Overlap":5, 
+				"Target":["megre", "dix", "wat"], 
+				"Moving":"s0", 
+				"Process":["s0", "snr0", "l1", "l2", "l3", "md", 
+					"fa", "rd", "adci", "fri", "tens"]
+			}, 
+			"Tractography":{
+				"Target":["dwi", "dti", "tens"], 
+				"Segmentation":["seg", "auto", "megre", "dix", "outph"], 
+				"Stopping":[
+					[["dwi", "dti", "fa"], [0.05, 0.65]], 
+					[["dwi", "dti", "md"], [0.5, 2.5]]
+				],
+				"HarmonicDenoise": true
+			}
+		}, 
+		"EPGT2":{
+			"Label":["T2-1", "T2-2", "T2-3", "T2-4", "T2-5", "T2-6"], 
+			"Class":"Stacks", 
+			"Type":"mese", 
+			"Suffix":"t2", 
+			"Process":{
+				"Method":"EPGT2", 
+				"Settings":[
+					["sg_150_100_167", 90, [1.5991, 5.661, 538]], 
+					["sinc_centre", 180, [1.3326, 2.9376, 340]]
+				], 
+				"Shift": true 
+			}, 
+			"Merging":{
+				"Overlap":[5, 3], 
+				"Target":["megre", "dix", "wat"], 
+				"Moving":"wat", 
+				"Process":["t2w", "t2f", "wat", "fat", "fatfr"]
+			}
+		},
+		"TSE":{
+			"Label":["TSE-1", "TSE-2", "TSE-3", "TSE-4", "TSE-5", "TSE-6"],
+			"Class":"Stacks",
+			"Type":"tse",
+			"Suffix":"dix",
+			"Process":{
+				"Method":"Dixon-P",
+				"Types":["wat", "inph", "outph", "fat"]
+			},
+			"Merging":{
+				"Overlap":3, 
+				"Target":["TSE", "tse", "dix", "outph"],
+				"Moving":"wat",
+				"Motion": false,
+				"Process":["wat", "fat", "inph", "outph", "watfr", "fatfr"]
+			}
+		}
+	}, 
+	"analysis":{
+		"Segmentation":{
+			"Type":["seg", "auto", "megre", "dix", "outph"], 
+			"Labels":[90, "Legs"]
+		}, 
+		"Analysis":{
+			"Types":[
+				["dwi", "dti", "trk", ["leng", "ang", "seed", "dens"]], 
+				["dwi", "dti", ["l1", "l2", "l3", "md", "rd", "fa", "adci", "fri", "snr0"]], 
+				["megre", "dix", ["watfr", "fatfr", "t2star", "r2star", "snr", "dbond"]], 
+				["mese", "t2", ["fatfr", "t2w", "t2f"]]
+			], 
+			"TractBased":[
+				["dwi", "dti", ["l1", "l2", "l3", "md", "rd", "fa", "adci", "fri", "snr0"]], 
+				["dwi", "dti", "trk", ["leng", "ang"]]
+			], 
+			"Options":{
+				"MaskErosion":true, 
+				"TractWeigthing":false
+			}
+		}, 
+		"Images":{
+			"Reference": ["megre", "dix", "wat"], 
+			"TractImages": ["dwi", "dti", "trk", "plot"], 
+			"QuantImages":[
+				[["megre", "dix", "watfr"], "Lajolla", [0.001, 0.999], ["0", "100", "Wat Frac. [%]"]], 
+				[["megre", "dix", "fatfr"], "Lajolla", [0.001, 0.999], ["0", "100", "Fat Frac. [%]"]], 
+				[["megre", "dix", "t2star"], "Navia", [0.0001, 0.1], ["0", "100", "T2* [ms]"]], 
+				[["megre", "dix", "r2star"], "Navia", [0.1, 50], ["0", "50", "R2* [1/s]"]], 
+				[["megre", "dix", "inph"]], 
+				[["megre", "dix", "outph"]], 
+				[["megre", "dix", "dbond"], "Turku", [0.01, 5], ["0", "5", "Doub. bond [-]"]], 
+				[["megre", "dix", "snr"], "Batlow", [1, 100], ["0", "100", "SNR [-]"]], 
+				[["dwi", "dti", "fa"], "Devon", [0.001, 0.75], ["0", "1", "FA [-]"]], 
+				[["dwi", "dti", "md"], "Lapaz", [0.5, 2.0], ["0.5", "2", "MD 10^-3 mm^2/s"]], 
+				[["dwi", "dti", "rd"], "Lapaz", [0.5, 2.0], ["0.5", "2", "RD 10^-3 mm^2/s"]], 
+				[["dwi", "dti", "snr0"], "Batlow", [1, 50], ["0", "50", "SNR [-]"]], 
+				[["dwi", "dti", "s0"]], 
+				[["dwi", "dti", "trk", "seed"], "BlackToWhite", [0, 2]], 
+				[["dwi", "dti", "trk", "dens"], "CherryTones", [0.01, 5], ["0", "5", "Tract dens. [-]"]], 
+				[["dwi", "dti", "trk", "leng"], "Roma", [1, 250], ["0", "250", "Tract length [mm]"]], 
+				[["dwi", "dti", "trk", "curv"], "Bilbao", [0.1, 30], ["0", "30", "Tract curvature [1/m]"]], 
+				[["dwi", "dti", "trk", "ang"], "Vik", [0.1, 90], ["0", "90", "Tract angle [Degree]"]], 
+				[["mese", "t2", "t2w"], "Navia", [5, 45], ["5", "45", "T2 water [ms]"]], 
+				[["mese", "t2", "wat"]]
+			]
+		}
+	}
+}
