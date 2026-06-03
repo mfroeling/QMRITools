@@ -865,6 +865,7 @@ MinMaxRange[inp_, n_] := Block[{dat = selectDat[inp]},
 	toNumString[dat, n, Min] <> " to " <> toNumString[dat, n, Max]
 ]
 
+
 MeanStdRange[inp_] := MeanStdRange[inp, 2]
 MeanStdRange[inp_, n_] := MeanStd[inp, n] <> " (" <> MinMaxRange[inp, n] <> ")"
 
@@ -1413,7 +1414,7 @@ labStyle=Directive[Bold,FontFamily->"Helvetica",14,Black];
 
 
 Options[Hist] = {
-	ColorValue -> {{Black,White}, Red, Green, Blue}, 
+	ColorValue -> {{LightDarkV[Black, Gray], LightDarkV[Gray, Black]}, Red, Green, Blue}, 
 	Method -> "SkewNormal", 
 	PlotLabel -> "", 
 	AxesLabel -> "", 
@@ -1426,7 +1427,7 @@ Hist[dat_, ops : OptionsPattern[]] := Hist[dat, 0, ops]
 
 Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, coledge, color2, color3, color4, data, r1, r2, sdr, m, s, title, label,mn,std ,fdat},
 
-	{{colbar,coledge}, color2, color3, color4} = OptionValue[ColorValue];
+	{{colbar, coledge}, color2, color3, color4} = OptionValue[ColorValue];
 
 	title = OptionValue[PlotLabel];
 	title = If[title === "", None, title];
@@ -1473,7 +1474,8 @@ Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, cole
 		mn = Mean[data];
 		std = StandardDeviation[data];
 		line = Plot[{sol[[1]][x], sol[[2]][x], PDF[NormalDistribution[mn, std], x]}, {x, r1, r2}, 
-			PlotStyle -> {Directive[Thick, color2], Directive[Thick, color3], Directive[Thick, color4]}, PlotRange -> Full, PlotHighlighting -> None]
+			PlotStyle -> {Directive[Thick, color2], Directive[Thick, color3], 
+				Directive[Thick, color4]}, PlotRange -> Full, PlotHighlighting -> None]
 	];
 
 	hist = Histogram[
@@ -1481,7 +1483,7 @@ Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, cole
 		"ProbabilityDensity",
 		PerformanceGoal -> "Speed", PlotRange -> {{r1, r2}, All},
 		PlotLabel -> title, LabelStyle -> labStyle, Axes -> False, 
-		FrameStyle -> Directive[Thick, Black],
+		FrameStyle -> Directive[Thick, LightDarkV[]],
 		FrameLabel -> {label, "Probability Density"}, 
 		Frame -> {True, True, False, False}, 
 		ChartBaseStyle -> EdgeForm[coledge], ChartStyle -> colbar];

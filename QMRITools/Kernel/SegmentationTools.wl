@@ -219,6 +219,11 @@ DataPadding::usage =
 "DataPadding is an option for ApplySegmentationNetwork. Defines how much to pad the data patches in all directions."
 
 
+SplitOverlap::usage = 
+"SplitOverlap is an option of SplitDataForSegmentation. Has to be a value between 0 and 0.2 and defines how much the left
+and right side overlap."
+
+
 PatchNumber::usage = 
 "PatchNumber is an option for DataToPatches. Can be an integer value >= 0. The larger the number the more overlap the patches have.
 The minimal number of patches in each direction is calculated, and then for each dimension the given number is added."
@@ -232,6 +237,9 @@ LabelTag::usage =
 
 DataTag::usage = 
 "DataTag is an option for PrepareTrainingData. It defines the tag used in the filenames of the data."
+
+OutputTag::usage = 
+"OutputTag is an option for PrepareTrainingData. It defines the tag that will be added to the output training data."
 
 InputLabels::usage = 
 "InputLabels is an option for PrepareTrainingData. Can be set to a list of integers corresponding to the labels to be used from the given segmentation."
@@ -247,6 +255,10 @@ CleanUpSegmentations::usage =
 
 TrainVoxelSize::usage =
 "TrainVoxelSize is an option for PrepareTrainingData. It defines the voxel size of the training data. When set to Automatic the voxel size is that of the data."
+
+SegmentationsPerSlice::usage = 
+"SegmentationsPerSlice is an option for PrepareTrainingData. It defines how many segmentations should be present in a slice 
+for it to be used in the training data."
 
 
 DistanceRange::usage =
@@ -424,6 +436,12 @@ FindBodyPos[class_, mon_] := Block[{selection, locations, classN,  classF, len, 
 
 	(*filter data such that only integers exist and they increase*)
 	classF = ArrayPad[ArrayPad[classN, {10, 0}, 0], {0, 10}, 9];
+	classF = Flatten@SequenceReplace[classF, {
+		{2, Shortest[x__], 2} :> Sequence[ConstantArray[2, Length[{2, x, 2}]]],
+		{4, Shortest[x__], 4} :> Sequence[ConstantArray[4, Length[{4, x, 4}]]],
+		x : {3 .., 2} :> ConstantArray[2, Length[x]]
+    }];
+
 	classF = Clip[Round[TotalVariationFilter[MedianFilter[classF, 1], 1.5, Method -> "Laplacian"]], {1, 8}, {1, 8}];
 	classF = Sort@ArrayPad[classF, {-10, -10}];
 
@@ -722,7 +740,8 @@ ReplaceLabels[seg_, locI_, what_] := Block[{
 
 Options[SplitDataForSegmentation] = {
 	Monitor -> False,
-	TargetDevice -> "CPU"
+	TargetDevice -> "CPU",
+	SplitOverlap -> 0.1
 };
 
 
@@ -744,7 +763,7 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, monO, mon, dev, over, locs
 	},
 	dim = Dimensions[data];
-	{monO, dev} = OptionValue[{Monitor, TargetDevice}];
+	{monO, dev, overP} = OptionValue[{Monitor, TargetDevice, SplitOverlap}];
 	mon = If[monO, MonitorFunction, List];
 
 	Switch[what,
@@ -773,9 +792,9 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		"Both",
 		{cut, over} = Switch[what,
 			"Legs" | "LegsHip" | "UpperLegs" | "LowerLegs", 
-			{FindMiddle[data], Round[0.1 Last@dim]},
+			{FindMiddle[data], Round[overP Last@dim]},
 			_, 
-			Round[{0.5, 0.1} Last@dim]
+			Round[{0.5, overP} Last@dim]
 		];
 		{right, left, cut} = CutData[data, {cut, over}];
 		{{right, {"Right", {1, cut + over}}}, {left, {"Left", {cut + 1 - over, dim[[3]]}}}},
@@ -1550,7 +1569,7 @@ PatchTrainingData[{dat_, seg_}, patch_, n_] := Block[{
 Options[PrepareTrainingData] = {
 	LabelTag -> "label",
 	DataTag -> "data",
-	OutTag -> "",
+	OutputTag -> "",
 	InputLabels -> Automatic,
 	OutputLabels -> Automatic,
 	TrainVoxelSize -> Automatic,
@@ -1566,14 +1585,14 @@ PrepareTrainingData[labFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]] := P
 
 PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, OptionsPattern[]] := Block[{
 		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, voxOut, dimSeg, dimDat,
-		seg, err, vox, voxd, dat, im, nl, outf, gr, clean, legend, head, out
+		seg, err, vox, voxd, dat, im, nl, outf, gr, clean, legend, head, out, segSl, outT
 	},
 
-	{labT, datT, outT, inLab, outLab, test, clean, voxOut, segSl} = OptionValue[{LabelTag, DataTag, OutTag, 
+	{labT, datT, outT, inLab, outLab, test, clean, voxOut, segSl} = OptionValue[{LabelTag, DataTag, OutputTag, 
 		InputLabels, OutputLabels, TestRun, CleanUpSegmentations, TrainVoxelSize,
 		SegmentationsPerSlice}];
 	{inLab, outLab} = {inLab, outLab} /. Automatic -> {0};
-	segSl = segSl /. All ->0;
+	segSl = segSl /. All -> 0;
 
 	(*look for the files in the given folder*)
 	segFiles = FileNames["*" <> labT <> ".nii.gz", labFol];
@@ -1629,7 +1648,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 					(*export*)
 					If[!test,
 						im = MakeChannelClassGrid[{dat}, seg, 5];
-						outf = FileNameJoin[{outFol, name, If[outT === "", "", "_"<>outT]}];
+						outf = FileNameJoin[{outFol, name<>If[outT === "", "", "_"<>outT]}];
 						ExportNii[dat, voxOut, outf <> "_data.nii"];
 						ExportNii[seg, voxOut, outf <> "_label.nii"];
 						Export[outf <> ".png", im, "ColorMapLength" -> 256];

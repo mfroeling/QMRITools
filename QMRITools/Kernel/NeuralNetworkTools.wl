@@ -1168,7 +1168,7 @@ AnalyzeNetworkFeatures[net_, datI_, met_] := Block[{
 	If[ArrayDepth[data] === 4, data = data[[All, 1]]];
 
 	(*find the patch dimensions and adjust data and network*)
-	dim = QMRITools`SegmentationTools`Private`FindPatchDim[net, Dimensions@data];
+	dim = Last[QMRITools`SegmentationTools`Private`FindPatchDim[net, Dimensions@data]];
 	dataP = NormalizeData[PadToDimensions[data, dim], NormalizeMethod -> "Uniform"];
 	netP = ChangeNetDimensions[net, "Dimensions" -> dim];
 

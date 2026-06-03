@@ -575,6 +575,7 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		,
 		"ATP",
 		(*single spin system*)
+		(*https://doi.org/10.1006/jmrb.1996.0005*)
 		names={"\[Gamma]","\[Alpha]","\[Beta]"};
 		n=Length[names];
 		it=Range[n];

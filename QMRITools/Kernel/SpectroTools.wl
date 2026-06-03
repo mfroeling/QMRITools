@@ -710,7 +710,7 @@ TimeShiftFidV[fid_, time_, gyro_, {gam_, eps_}] := TimeShiftFidC2[fid, time, gyr
 TimeShiftFidV[fid_, time_, gyro_, {{gamL_, gamG_}, eps_}] := TimeShiftFidC2[fid, time, gyro, gamL, gamG, eps];
 
 TimeShiftFidC2 = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {gamL, _Real, 0}, {gamG, _Real, 0}, {eps, _Real, 0}},
-	Exp[-(gamL time + (gamG time)^2)] Exp[2 Pi eps gyro I time] fid, 
+	Exp[-(Pi gamL time + (Pi gamG time)^2)] Exp[2 Pi eps gyro I time] fid, 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ]
 
@@ -1464,15 +1464,15 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		plot = Transpose[{ppm + shift, #}] & /@ (#@spec & /@ fun);
 		(*get the plot color*)
 		col = If[OptionValue[PlotColor] === Automatic, 
-			({{Gray, Thin}, {Red, Thin}, {Black}}[[-Length[fun] ;;]]), 
+			({{LightDarkV[Gray, White], Thin}, {Red, Thin}, {LightDarkV[]}}[[-Length[fun] ;;]]), 
 			OptionValue[PlotColor]
 		];
 
 		(*Make the plot*)
 		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0}}, AspectRatio -> OptionValue[AspectRatio],
 			ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], ScalingFunctions -> {"Reverse", Automatic},
-			Frame -> {{False, False}, {True, False}}, FrameStyle -> Directive[{Thick, Black}], FrameLabel -> {"PPM", None},
-			LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Filling->OptionValue[Filling],
+			Frame -> {{False, False}, {True, False}}, FrameStyle -> Directive[{Thick, LightDarkV[]}], FrameLabel -> {"PPM", None},
+			LabelStyle -> {Bold, 14, LightDarkV[]}, PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Filling->OptionValue[Filling],
 			PlotHighlighting -> False
 		]
 
@@ -1494,14 +1494,14 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		If[rr[[1]]=!=Full, plot=Select[#,(Min[rr[[1]]]<=#[[1]]<=Max[rr[[1]]])&]&/@plot];
 
 		(*get the plot colors*)
-		cols = Thread[{Append[ConstantArray[Black, Length[plot] - 1], Red], Thick}];
+		cols = Thread[{Append[ConstantArray[LightDarkV[], Length[plot] - 1], Red], Thick}];
 		lables = OptionValue[PlotLabels];
 
 		(*make the plot*)
 		pl1 = ListLinePlot[plot, Frame -> {{False, False}, {True, False}}, FrameStyle -> Thickness[.003], FrameTicksStyle -> Thickness[.003],
 			PlotRange -> rr, PlotRangeClipping -> True, PlotStyle -> cols, ScalingFunctions -> {"Reverse", Automatic}, PlotLabel -> OptionValue[PlotLabel], 
-			PlotLabels ->If[(OptionValue[Method] === "ReIm") || (lables === None), None, (Style[#, Black, Bold, 14] & /@ Append[lables, "All"])],
-			GridLines -> {grid, None}, AspectRatio -> .5, ImageSize -> 1000, FrameLabel -> {"PPM", None}, LabelStyle -> {Bold, 14, Black}, 
+			PlotLabels ->If[(OptionValue[Method] === "ReIm") || (lables === None), None, (Style[#, LightDarkV[], Bold, 14] & /@ Append[lables, "All"])],
+			GridLines -> {grid, None}, AspectRatio -> .5, ImageSize -> 1000, FrameLabel -> {"PPM", None}, LabelStyle -> {Bold, 14, LightDarkV[]}, 
 			PerformanceGoal->"Speed", MaxPlotPoints->Infinity, PlotHighlighting -> False
 		];
 
@@ -1512,10 +1512,10 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 
 			pl2 = ListLinePlot[plot2, Frame -> {{False, False}, {True, False}}, FrameStyle -> Thickness[.003], FrameTicksStyle -> Thickness[.003], 
 				PlotRange -> rr, PlotRangeClipping -> True, PlotStyle -> cols2, ScalingFunctions -> {"Reverse", Automatic},
-				PlotLabels -> (Style[#, Black, Bold, 14] & /@ Append[OptionValue[PlotLabels], "All"]), PlotLabel -> OptionValue[PlotLabel],
+				PlotLabels -> (Style[#, LightDarkV[], Bold, 14] & /@ Append[OptionValue[PlotLabels], "All"]), PlotLabel -> OptionValue[PlotLabel],
 				GridLines -> {grid, None}, PlotRange -> rr, AspectRatio -> .5, 
 				ImageSize -> 1000, FrameLabel -> {"PPM", None}, MaxPlotPoints->Infinity,
-				LabelStyle -> {Bold, 14, Black}, PerformanceGoal->"Speed", PlotHighlighting -> False
+				LabelStyle -> {Bold, 14, LightDarkV[]}, PerformanceGoal->"Speed", PlotHighlighting -> False
 			];
 
 			Show[pl2, pl1]
@@ -1558,13 +1558,19 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 		{_, Full}, rr[[2]] = {-Max[Abs[fid]], Max[Abs[fid]]},
 		Full, rr = {Full, {-Max[Abs[fid]], Max[Abs[fid]]}}
 	];
-	col = If[OptionValue[PlotColor] === Automatic, ({{Gray, Thin}, {Red, Thin}, {Black}}[[-Length[fun] ;;]]), OptionValue[PlotColor]];
+	col = If[OptionValue[PlotColor] === Automatic, 
+		{
+			{LightDarkV[Gray, White], Thin}, 
+			{Red, Thin}, 
+			{LightDarkV[]}
+		}[[-Length[fun] ;;]], 
+		OptionValue[PlotColor]];
 
 	ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0.}}, 
 		AspectRatio -> OptionValue[AspectRatio], ImageSize -> OptionValue[ImageSize], 
 		PlotLabel -> OptionValue[PlotLabel], Frame -> {{False, False}, {True, False}},
-		FrameStyle -> Directive[{Thick, Black}], FrameLabel -> {"time [s]", None}, 
-		LabelStyle -> {Bold, 14, Black}, PlotHighlighting -> False
+		FrameStyle -> Directive[{Thick, LightDarkV[]}], FrameLabel -> {"time [s]", None}, 
+		LabelStyle -> {Bold, 14, LightDarkV[]}, PlotHighlighting -> False
 	]
 ]
 

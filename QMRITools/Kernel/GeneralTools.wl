@@ -347,8 +347,10 @@ LabelPlacement::usage =
 "LabelPlacement is an option for MakeFunctionGraph. Defines where to place the label of the function graph. Accepts values that can be used in Placed."
 
 AllowSelfDependencies::usage = 
-"AllowSelfDependencies is and option for MakeFunctionGraph. Can be True or False. If True a function that calls itself is also shown."
+"AllowSelfDependencies is an option for MakeFunctionGraph. Can be True or False. If True a function that calls itself is also shown."
 
+FilterInternal::usage = 
+"FilterInternal is an option for MakeFunctionGraph. If set to True it will filter out all internal functions."
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -1197,12 +1199,12 @@ FindMiddle[dati_, "Legs", opts:OptionsPattern[]] := Block[{
 	fdat = Flatten[dat];
 	dat = Clip[dat, {0, Quantile[Pick[fdat, Unitize[fdat], 1], .75]}];
 	dat = N@Nest[Mean, dat, ArrayDepth[dat] - 1];
-	max = 0.85 len;
 	len = Length[dat];
+	max = 0.85 len;
 	dat = max dat/Max[dat];
 	mask = UnitStep[dat - .1 len];
 	ran = Flatten[Position[mask, 1][[{1, -1}]]];
-	mid = Round[Length[dat]/2];
+	mid = Round[len/2];
 
 	peaks = {};
 	blur = 20;
@@ -1214,7 +1216,7 @@ FindMiddle[dati_, "Legs", opts:OptionsPattern[]] := Block[{
 		(*find the peaks*)
 		peaks = FindPeaks[datf];
 		peaks = If[Length[peaks] >= 5, peaks[[2 ;; -2]], peaks];
-		peaks = Select[peaks, (ran[[1]] < #[[1]] < ran[[2]]) &];
+		peaks = Select[peaks, (0.5 mid < #[[1]] < 1.5 mid) &];
 		blur += 10;
 		i++;
 	];
@@ -2019,7 +2021,8 @@ SyntaxInformation[MakeFunctionGraph] = {"ArgumentsPattern" -> {_, OptionsPattern
 
 MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
 		fName, lab, self, in, cont, flist, names, types, contexts, edges, legend, filter,
-		vertCol, vertFunc, vertLab, colorLab, typeLab, legendColor, ims, legendShape
+		vertCol, vertFunc, vertLab, colorLab, typeLab, legendColor, ims, legendShape,
+		fCont, filt
 	},
 
 	{lab, self, filter} = OptionValue[{LabelPlacement, AllowSelfDependencies, FilterInternal}];
