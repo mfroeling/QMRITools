@@ -680,7 +680,7 @@ GetNiiInformation[hdr_] := Block[{type, size, dim, ddim, offSet, vox, voxU, tr, 
 
 	{voxU, trU} = "xyztUnits" /. hdr;
 
-	{{type, size, dim, offSet},{vox, voxU, tr, trU, slope, intercept, rotmat, ddim}}
+	{{type, size, dim, offSet}, {vox, voxU, tr, trU, slope, intercept, rotmat, ddim}}
 ]
 
 
@@ -1195,7 +1195,7 @@ MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Block[{
 
 			{xoffq ,yoffq, zoffq} = off;
 			{qb, qc, qd} = MakeNiiOrientationQ[rot];
-			{sx, sy, sz} = MakeNiiOrientationS[off, vox, rot]
+			{sx, sy, sz} = MakeNiiOrientationS[off, vox, rot];
 			,
 			(*seperate off for s and q form*)
 			{{scode, offs, rotS} , {qcode, {xoffq ,yoffq, zoffq}, rotQ}} = off;
@@ -1365,10 +1365,13 @@ MakeNiiOrientationS[soff_, vox_] := MakeNiiOrientationS[soff, vox, IdentityMatri
 MakeNiiOrientationS[soff_, vox_, rot_, q_] := MakeNiiOrientationS[soff, vox, rot . q]
 
 MakeNiiOrientationS[soff_, vox_, rq_] := Block[{t, s},
-	t = N@IdentityMatrix[4];
-	t[[1 ;; 3, 4]] = soff;
+	(*t = N@IdentityMatrix[4];
+	t[[1 ;; 3, 4]] = soff;*)
 	s = N@DiagonalMatrix[Append[Reverse[vox], 1]];
-	N@Chop[rq . s . t][[1;;3]]
+	t = (rq . s);
+	t[[1 ;; 3, 4]] = soff;
+
+	N@Chop[t][[1;;3]]
 ]
 
 MakeNiiOrientationQ[qrot_] := RotationMatrixToQuaternionVector[qrot[[1 ;; 3, 1 ;; 3]]]
