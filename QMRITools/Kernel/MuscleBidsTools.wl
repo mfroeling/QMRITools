@@ -1304,6 +1304,8 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 
 					{suffix, types} = Transpose@datType["Process", "Types"];
 
+					debugBids[types];
+
 					Table[
 						pos = posIn = GetJSONPosition[json, {{"SeriesDescription", nameIn<>"_"<>types[[i]]}}];
 						If[pos=!={},
@@ -1384,24 +1386,55 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 
 						(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {nameIn, dixType}}, 4];
 						debugBids["Converting Dix data of type ", dixType, ", json position: ", pos];
-						
+
 						If[pos==={},
 							(*-----*)AddToLog[{"No json files found with label ", nameIn , " and type ", dixType, " skipping conversion"}, 4],
 							(*if json files found import them*)
 							info = MergeJSON[json[[pos]]];
 							{data, vox} = Transpose[ImportNii[#]&/@ConvertExtension[files[[pos]], ".nii"]];
-							data = If[ToExpression[First@StringSplit[info["SoftwareVersions"], "\\" | "."]] >= 12,
-								Partition[Flatten[data, 1], Length[data]], (*philips release 12*)
-								Transpose[data](*philips older release*)];
+
+							If[ToExpression[First@StringSplit[info["SoftwareVersions"], "\\" | "."]] >= 12,
+								(*philips release 12*)
+								Which[
+									(*data export of GE echo data (MOTION)*)
+									First[info["ImageType"]] === "ORIGINAL",
+									data = Partition[Flatten[data, 1], Length[data]];
+									,
+									(*data export of DIXON echo data (MOTOR/TWITCH)*)
+									First[info["ImageType"]] === "DERIVED",
+									{e, s} = info /@ {"EchoTrainLength", "PhaseEncodingStepsOutOfPlane"};
+
+									debugBids["!!!!!! 12.3 Derived: data dimensions:", Dimensions@data];
+									debugBids["Echo / Slices:", {e, s, e/2, s/2}];
+									
+									Switch[dixType, 
+										"Mixed",
+										data = Partition[Flatten[data, 1], e];
+										Table[data[[i]] = RotateRight[data[[i]]], {i, 1, s, e/2}];
+										info["EchoTime"] = Sort[info["EchoTime"]];
+										,
+										"Phase",
+										phase1 = Partition[Flatten[Flatten[data, {1, e/2}][[Range[1, e, 2]]], 1], e];
+										Table[phase1[[i]] = RotateRight[phase1[[i]]], {i, 2, s/2, e/2}];
+										phase2 = Partition[Flatten[Flatten[data, {1, e/2}][[Range[2, e, 2]]], 1], e];
+										Table[phase2[[i]] = RotateRight[phase2[[i]]], {i, 2, s/2, e/2}];
+										data = Join[phase1, phase2];
+									]
+								];
+								, 
+								(*philips older release*)
+								data = Transpose[data]
+							];
+
 							vox = First@vox;
 							(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 
 							(*correct data for different types*)
 							{data, suffix} = Switch[dixType,
-								"Mixed", {1000.data/2047.,""},
-								"Phase", {Pi (data-2047.)/2047,"ph"},
-								"Real", {1000.(data-2047.)/2047.,"real"},
-								"Imaginary", {1000.(data-2047.)/2047.,"imag"}
+								"Mixed", {1000. data / 2047.,""},
+								"Phase", {Pi (data - 2047.) / 2047.,"ph"},
+								"Real", {1000.(data - 2047.) / 2047.,"real"},
+								"Imaginary", {1000. (data - 2047.) / 2047.,"imag"}
 							];
 
 							(*make the additional mandatory bids json values*)

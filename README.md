@@ -30,6 +30,7 @@
   - [Toolboxes](#toolboxes)
   - [Muscle Segmentation](#muscle-segmentation)
   - [License](#license)
+  - [Number of Functions: 	594](#number-of-functions-594)
 
 ------------------------------------------------------------------------
 
@@ -194,11 +195,12 @@ QMRITools includes the latest version of `https://github.com/rordenlab/dcm2niix`
 
 ------------------------------------------------------------------------
 
-Number of Functions: 591
-Total lines: 42432
-Total non-empty lines: 31905
-Total lines of help text: 3032
-Total lines off comments: 5993
-Total lines of code: 22880
-Total characters: 1425166
-Average characters per line: 45
+Number of Functions: 	594
+------------------------------------
+Total lines: 	42763
+Total non-empty lines: 	32168
+Total lines of help text: 	3079
+Total lines off comments: 	6024
+Total lines of code: 	23065
+Total characters: 	1433153
+Average characters per line: 	45

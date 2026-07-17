@@ -426,24 +426,44 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 
 FindBodyPos[class_] := FindBodyPos[class, False]
 
-FindBodyPos[class_, mon_] := Block[{selection, locations, classN,  classF, len, offset, lab, pos, what},
+FindBodyPos[class_, mon_] := Block[{selection, locations, len, classN, n, xvars, evars, dvars, 
+	pad, x, e, d, cons, sol, classF, offset, what, lab, pos},
 
-	selection = {{"LowerLegs", {1, 2}}, {"UpperLegs", {2, 3, 4}}, {"Hip", {4}}, {"Torso", {5, 6, 7}}, {"Shoulder", {6, 7}}, {"HeadNeck", {7, 8}}};
+	selection = {{"LowerLegs", {1, 2}}, {"UpperLegs", {2, 3, 4}}, {"Hip", {4}}, {"Torso", {5, 6, 7}}, {"Shoulder", {5, 6, 7}}, {"HeadNeck", {7, 8}}};
 	locations = {1 -> "Lower", 2 -> "Knee", 3 -> "Upper", 4 -> "Hip", 5 -> "Torso", 6 -> "Shoulder", 7 -> "Neck", 8 -> "Head"};
 
 	len = Length@class;
+	pad = Max[{5, Round[0.05 len]}];
+
+	(*create a smoothed and padded list of lable numbers*)
 	classN = class /. (Reverse/@locations);
+	classN = MedianFilter[ArrayPad[ArrayPad[classN, {pad, 0}, Min[classN] - 1], {0, pad}, Max[classN + 1]],	2];
+	n = Length[classN];
 
-	(*filter data such that only integers exist and they increase*)
-	classF = ArrayPad[ArrayPad[classN, {10, 0}, 0], {0, 10}, 9];
-	classF = Flatten@SequenceReplace[classF, {
-		{2, Shortest[x__], 2} :> Sequence[ConstantArray[2, Length[{2, x, 2}]]],
-		{4, Shortest[x__], 4} :> Sequence[ConstantArray[4, Length[{4, x, 4}]]],
-		x : {3 .., 2} :> ConstantArray[2, Length[x]]
-    }];
+	(*define the model parameters*)
+	xvars = Table[x[i], {i, n}];(*solution at each position*)
+	dvars = Table[d[i], {i, n - 1}]; (*jump indicators*)
+	evars = Table[e[i], {i, n}];(*error between data and solution*)
 
-	classF = Clip[Round[TotalVariationFilter[MedianFilter[classF, 1], 1.5, Method -> "Laplacian"]], {1, 8}, {1, 8}];
-	classF = Sort@ArrayPad[classF, {-10, -10}];
+	(*define the fit constrains*)
+	cons = Join[
+		(*define start and end and keep all x larger than 0*)
+		{x[1] == Min[classN], x[n] == Max[classN]},
+		Table[x[i] >= 0, {i, n - 1}],
+		
+		(*define jumps and force them between 0 and 1, and no jump can happen within 10 slices*)
+		Table[x[i + 1] - x[i] == d[i], {i, n - 1}],
+		Table[0 <= d[i] <= 1, {i, n - 1}],
+		Table[Total[dvars[[i ;; i + 5]]] <= 1, {i, n - 1 - 5}],
+
+		(*define the minimization error (L1) at each point*)
+		Table[x[i] - classN[[i]] <= e[i], {i, n}],
+		Table[classN[[i]] - x[i] <= e[i], {i, n}]
+	];
+
+	(*perfomr the fitting where everything should be integers*)
+	sol = LinearOptimization[Total[evars], cons, (Join[xvars, evars, dvars] \[Element] Integers)];
+	classF = ArrayPad[xvars /. sol, {-pad, -pad}];
 
 	(*figure out which slices belong to which body pos*)
 	offset = Switch[#, "Hip", {-20, 10}, "Torso", {-20, 0}, "Shoulder" | "HeadNeck", {-10, 0}, _, {0, 0}]&;
@@ -811,7 +831,9 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		"Body", {"LowerLegs", "UpperLegs", "Hip", "Shoulder"},
 		_, {what}
 	];
-	whatPos = Select[whatPos, MemberQ[locs, #[[1]]]&];
+
+	Print[whatPos];
+	whatPos = Select[whatPos, MemberQ[locs, #[[1]]]&& #[[2,1]]=!=#[[2,2]]&];
 	mon[whatPos[[All, 1]], "Selected positions: "];
 
 	(*loop over the locations and select the correct data*)
