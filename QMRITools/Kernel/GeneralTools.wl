@@ -1769,8 +1769,25 @@ StdFilter[data_, ker_:2] := Abs[Sqrt[GaussianFilter[data^2, ker] - GaussianFilte
 (*GyromagneticRatio*)
 
 
-GyromagneticRatio[nuc_] := (nuc/.{"1H"->42.57747892,"2H"-> 6.536,"3He"-> -32.434,"7Li"->16.546,"13C"->10.7084,"14N"->3.077,"15N"-> -4.316,"17O"-> -5.772,
-"19F"->40.052,"23Na"->11.262,"27Al"->11.103,"29Si"-> -8.465,"31P"->17.235,"57Fe"->1.382,"63Cu"->11.319,"67Zn"->2.669,"129Xe"-> 11.777})
+GyromagneticRatio[nuc_] := (nuc/.{
+	"1H"->42.57747892,
+	"2H"-> 6.536,
+	"3He"-> -32.434,
+	"7Li"->16.546,
+	"13C"->10.7084,
+	"14N"->3.077,
+	"15N"-> -4.316,
+	"17O"-> -5.772,
+	"19F"->40.052,
+	"23Na"->11.262,
+	"27Al"->11.103,
+	"29Si"-> -8.465,
+	"31P"->17.235,
+	"57Fe"->1.382,
+	"63Cu"->11.319,
+	"67Zn"->2.669,
+	"129Xe"-> 11.777
+})
 
 
 (* ::Subsection::Closed:: *)
@@ -1898,7 +1915,7 @@ SyntaxInformation[DecomposeAffineMatrix] = {"ArgumentsPattern" -> {_}}
 
 DecomposeAffineMatrix[mat_] := Block[{T, L, R, S, Q},
 	{T, L} = GetTranslation[mat];
-	{R, S} = PolarDecomposition[L];
+	{R, S} = PolarDecompositionI[L];
 	{S, Q} = GetScaleSkew[S];
 	N@{T, R, S, Q}
 ]
@@ -1910,7 +1927,7 @@ GetTranslation[mat_] := Block[{out = IdentityMatrix[4]},
 ]
 
 
-PolarDecomposition[mat_] := Block[{R, S},
+PolarDecompositionI[mat_] := Block[{R, S},
 	{R, S} = {# . ConjugateTranspose[#3], #3 . #2 . ConjugateTranspose[#3]} & @@ SingularValueDecomposition[mat];
 	If[Det[R] < 0, 
 		R[[;; 3, ;; 3]] = -R[[;; 3, ;; 3]];

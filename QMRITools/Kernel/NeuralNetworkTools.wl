@@ -956,7 +956,7 @@ OverlapLossFunction[{alpha_?NumberQ, beta_?NumberQ}, n_?IntegerQ] := NetFlatten[
 	(*https://arxiv.org/pdf/1906.11600 for the definition of squared jaccard loss*)
 	(*https://arxiv.org/html/2302.05666v5 soft jaccard*)
 	(*https://arxiv.org/abs/1707.03237 for the generalized with class weighting*)
-	(*Tversky generalization of dice and jaccard, alpha=beta=0.5 Dice,alpha=beta=1 Jaccard*)
+	(*Tversky alpha=0.3 beta=0.7 generalization of dice and jaccard, alpha=beta=0.5 Dice, alpha=beta=1 Jaccard*)
 	NetGraph[<|
 		(*intersection or TP,first input is Target,second is Input*)
 		"TP" -> {ThreadingLayer[#1 #2 &], AggregationLayer[Total, ;; -2]},

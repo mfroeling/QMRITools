@@ -484,7 +484,7 @@ SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
 		samp = If[output === "all", Tr[(di . Fxy)], (Tr[di . #])&/@Ixy];
 		di = Chop[devolve . di . ConjugateTranspose[devolve]];
 		samp
-	,{i,1,nsamp}];
+	, {i, 1, nsamp}];
 
 	(*output*)
 	If[output === "each", {Transpose[fids], di}, {fids, di}]
@@ -582,9 +582,13 @@ GetSpinSystem[name_, OptionsPattern[]]:=Block[{names, n, it, sysS, sysSi, sysJ, 
 		(*sysSi={-2.52,-7.56,-16.15};*)
 		sysSi={-2.45,-7.5,-16.0};
 		sysS=sysSi-cf;
-		sysJ={
+		(*sysJ={
 			{{1,3},17.31},
 			{{2,3},16.12}
+		};*)
+		sysJ={
+			{{1,3},16.},
+			{{2,3},16.}
 		};
 		sysJ=SysToMat[sysJ,n];
 		scale={1,1,1};

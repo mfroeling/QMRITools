@@ -1410,7 +1410,7 @@ Inverse3Di[data_] := Block[{out},
 (*Hist*)
 
 
-labStyle=Directive[Bold,FontFamily->"Helvetica",14,Black];
+labStyle=Directive[Bold, FontFamily->"Helvetica", 14, LightDarkV[]];
 
 
 Options[Hist] = {

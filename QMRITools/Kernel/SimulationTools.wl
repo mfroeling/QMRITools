@@ -107,6 +107,10 @@ ErnstAngle::usage =
 ErnstAngle[t1] shows Ernst angle plot for t1 and tr = 15 ms.
 ErnstAngle[t1, tr] shows Ernst angle plot for t1 and tr." 
 
+PlotSincProfile::usage = 
+"PlotSincProfile[] shows the SincProfile for a block pulse for f0 = GetGyro[7, \"31P\"]. 
+PlotSincProfile[f0] does the same but for f0."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -1254,6 +1258,37 @@ ErnstAngle[t1i_, tri_] := Manipulate[
 	{ang, ControlType -> None},
 	{sge, ControlType -> None},
 	{top, ControlType -> None}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PlotSincProfile*)
+
+
+PlotSincProfile[]:=PlotSincProfile[GetGyro[7, "31P"]] 
+
+PlotSincProfile[f0_ ] := Manipulate[
+	PlotSincProfileI[dur, f0, {fa, {tr, t1s}}, pr],
+	{{dur, 0.33, "block pulse duration [ms]"}, 0.05, 0.5},
+	{{fa, 12, "flip angle [degree]"}, 5, 30},
+	{{tr, 60, "repetition time"}, 30, 120},
+	{{t1s, 2000, "metabolite t1"}, 200, 6000},
+	{{pr, 22, "ppm plot range"}, 10, 50, 1}
+]
+
+
+PlotSincProfileI[tau_ , f0_ , {fa_, {tr_, t1_}}, pr_] := Block[{e1, s0, s02},
+	e1 = Exp[-tr / t1];
+	s0 = (1 - e1) Sin[fa Degree]/ (1 - e1 Cos[fa Degree]);
+
+	Plot[Evaluate[With[{fa2 = Sinc[Pi (ppm f0) (tau / 1000.)] fa Degree},
+				((1 - e1) Sin[fa2 ] / (1 - e1 Cos[fa2 ])) / s0
+			]], 
+		{ppm, -pr, pr},
+		GridLines -> Automatic, PlotStyle -> Thick, 
+		PlotRange -> {{-pr, pr}, {-0.5, 1.5}},
+		ScalingFunctions -> {"Reverse", None}
+	]
 ]
 
 
