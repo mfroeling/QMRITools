@@ -331,7 +331,7 @@ SyntaxInformation[ImportITKLabels] = {"ArgumentsPattern"->{_., _.}};
 
 ImportITKLabels[x___]:=ImportITKLabelsI[x]
 
-ImportITKLabelsI[] := ImportITKLabelsI["MusclesLegLabels"];
+ImportITKLabelsI[] := ImportITKLabelsI["MuscleLegLabels"];
 
 ImportITKLabelsI[file_]:=ImportITKLabelsI[file, "List"]
 
