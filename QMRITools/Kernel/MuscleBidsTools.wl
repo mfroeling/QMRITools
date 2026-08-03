@@ -1169,7 +1169,7 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox, 
 		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types,
 		vx, vy, vz, dx, dy, dz, sx, sy, sz, off, dfile, hasb, hdr, nSl, len,
-		labs, noFiles
+		labs, noFiles, sel
 	},
 
 	debugBids["Starting MuscleBidsConvertI"];
@@ -1346,13 +1346,24 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 
 					(*assuming data has source and echos figure out the echos and slices*)
 					{nSl, nEch} = Dimensions[data][[1 ;; 2]];
-					nEch = (nEch - 5)/4;
-					(*-----*)AddToLog[{"Slices:", nSl, "; Echos:", nEch}, 4];
-
+					
+					debugBids[Last[info["ImageType"]]];
 					(*extract and convert the relevant data*)
-					data = Partition[#, nEch] & /@ Partition[Flatten[Transpose[data], 1][[;; 4 (nSl*nEch)]], nSl nEch];
-					(*mag, real, imag, phase*)
-					data = {1000. data[[1]]/2047., 1000. (data[[2]] - 2047.)/2047., 1000. (data[[3]] - 2047.)/2047., Pi (data[[4]] - 2047.)/2047.};
+					(*check for data with only B0 (SMA AMC)*)
+					If[Last[info["ImageType"]] === "FFE",
+						(*-----*)AddToLog[{"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"}, 4];
+						nEch = (nEch - 1)/4;
+						data = Partition[#, nEch] & /@ Partition[Flatten[data, 1][[;; 4 (nSl*nEch)]], nSl nEch];
+						vox = vox / {4, 1, 1};
+						data[[4]] = data[[4]]/1000.;
+						info = KeyDrop[info, "EchoTime"];
+						,
+						nEch = (nEch - 5)/4;
+						data = Partition[#, nEch] & /@ Partition[Flatten[Transpose[data], 1][[;; 4 (nSl*nEch)]], nSl nEch];
+						(*mag, real, imag, phase*)
+						data = {1000. data[[1]]/2047., 1000. (data[[2]] - 2047.)/2047., 1000. (data[[3]] - 2047.)/2047., Pi (data[[4]] - 2047.)/2047.};
+					];
+					(*-----*)AddToLog[{"Slices:", nSl, "; Echos:", nEch}, 4];
 
 					echo = datType["Process", "EchoTime"];
 					infoExtra = Join[infoExtra, <|

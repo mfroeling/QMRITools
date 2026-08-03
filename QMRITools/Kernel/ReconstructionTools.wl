@@ -1066,7 +1066,7 @@ CoilWeightedRecon[kspace_, noise_, head_, sensi_, OptionsPattern[]] := Block[{sh
 Options[CoilWeightedReconCSI] = {
 	HammingFilter -> False, 
 	CoilSamples -> 5, 
-	Method -> "RoemerEqualSignal", 
+	Method -> "RoemerEqualNoise", 
 	NormalizeOutputSpectra->True, 
 	AcquisitionMethod->"Fid",
 	NoisePrewhiten -> True,
@@ -1096,9 +1096,9 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 
 		(*Reconstruc fid per coil*)
 		fids = Transpose[FourierKspaceCSI[#, head, dim] & /@ kspace];
-		cov = NoiseCovariance[noise];
 
 		(*prewhiten noise if needed*)
+		cov = NoiseCovariance[noise];
 		If[white,
 			fids = Chop@NoisePrewhitening[fids, cov];
 			cov = Chop@NoiseCovariance[NoisePrewhitening[noise, cov]];
@@ -1106,13 +1106,13 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 
 		(*denoise coils if needed*)
 		If[denoise==="Coils",
-			DistributeDefinitions[DenoiseCSIdata] ;
-			fids = RotateDimensionsRight[ParallelMap[DenoiseCSIdata, RotateDimensionsLeft[fids]]]
+			DistributeDefinitions[DenoiseCSIdata];
+			fids = RotateDimensionsRight[Quiet@ParallelMap[Quiet[DenoiseCSIdata[#]]&, RotateDimensionsLeft[fids]]]
 		];
 
 		(*calculate sense map if needed*)
 		sens = If[met=!="WSVD" && sense === 0 , 
-			MakeSense[Mean[fids[[1 ;; ncoil]]], SenseWeight ->1, SenseSmoothing -> True], 
+			MakeSense[Mean[fids[[2 ;; ncoil]]], SenseWeight ->1, SenseSmoothing -> True], 
 			sense];
 
 		(*Perform the coil combination*)
@@ -1124,10 +1124,10 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 	];
 
 	(*Make spectra and denoise, normalize and filter spectra if needed*)
-	spectra = Map[ShiftedFourier[#, readout] &, fids, {-2}];
+	spectra = Map[ShiftedFourier[#, readout] &, Exp[-I Pi] fids, {-2}];
 	If[denoise === "Spectra" || denoise ===True, spectra = DenoiseCSIdata[spectra]];
-	If[normalize, spectra = NormalizeSpectra[spectra]];
 	If[filter, spectra = HammingFilterCSI[spectra]];
+	If[normalize, spectra = NormalizeSpectra[spectra]];
 
 	(*make 2D 3D*)
 	If[nenc===3, {spectra}, spectra]

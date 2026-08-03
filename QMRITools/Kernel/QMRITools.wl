@@ -65,9 +65,9 @@ QMRITools`$SubPackages = {
 	(*general processing tools with lots of dependency's*)
 	"TractographyTools`", "ProcessingTools`", "FasciculationTools`",
 	"SimulationTools`", "CoilTools`", "TaggingTools`", "SegmentationTools`" ,
-	"ShapeTools`"
+	"ShapeTools`", "AmaresTools`",
 	(*legacy functions*)
-	,"Legacy`"
+	"Legacy`"
 };
 
 

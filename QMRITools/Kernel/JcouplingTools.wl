@@ -442,7 +442,7 @@ Options[SimReadout] = {
 
 SyntaxInformation[SimReadout]={"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-SimReadout[din_,ham_,OptionsPattern[]]:=Block[{
+SimReadout[din_, ham_, OptionsPattern[]]:=Block[{
 	nsamp, bandwidth, linewidth, output, phase, shape, shift, dt, devolve, di, time, decay, val, fids, samp, 
 	valD, matU, nSpins2, Fxy, Ixy, met, delay, te
 	},

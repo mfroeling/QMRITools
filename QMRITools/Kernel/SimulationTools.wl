@@ -1268,20 +1268,22 @@ ErnstAngle[t1i_, tri_] := Manipulate[
 PlotSincProfile[]:=PlotSincProfile[GetGyro[7, "31P"]] 
 
 PlotSincProfile[f0_ ] := Manipulate[
-	PlotSincProfileI[dur, f0, {fa, {tr, t1s}}, pr],
+	PlotSincProfileI[dur, f0, {fa, b1, {tr, t1s}}, pr],
 	{{dur, 0.33, "block pulse duration [ms]"}, 0.05, 0.5},
 	{{fa, 12, "flip angle [degree]"}, 5, 30},
+	{{b1, 1, "b1 "}, 0.5, 1.5},
 	{{tr, 60, "repetition time"}, 30, 120},
 	{{t1s, 2000, "metabolite t1"}, 200, 6000},
 	{{pr, 22, "ppm plot range"}, 10, 50, 1}
 ]
 
 
-PlotSincProfileI[tau_ , f0_ , {fa_, {tr_, t1_}}, pr_] := Block[{e1, s0, s02},
+PlotSincProfileI[tau_ , f0_ , {fa_, b1_, {tr_, t1_}}, pr_] := Block[{e1, s0, s02},
 	e1 = Exp[-tr / t1];
 	s0 = (1 - e1) Sin[fa Degree]/ (1 - e1 Cos[fa Degree]);
 
-	Plot[Evaluate[With[{fa2 = Sinc[Pi (ppm f0) (tau / 1000.)] fa Degree},
+	Plot[Evaluate[With[{
+		fa2 = Sinc[Pi (ppm f0) (tau / 1000.)] b1 fa Degree},
 				((1 - e1) Sin[fa2 ] / (1 - e1 Cos[fa2 ])) / s0
 			]], 
 		{ppm, -pr, pr},

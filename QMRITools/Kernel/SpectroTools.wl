@@ -692,7 +692,7 @@ TimeShiftFid[fid_, time_, gyro_, {gam_, eps_}] := TimeShiftFidC[fid, time, gyro,
 TimeShiftFid[fid_, time_, gyro_, {{gamL_, gamG_}, eps_}] := TimeShiftFidC[fid, time, gyro, gamL, gamG, eps];
 
 TimeShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {gamL, _Real, 0}, {gamG, _Real, 0}, {eps, _Real, 0}},
-	Exp[-Pi( gamL time + (gamG time)^2) + 2 Pi eps gyro I time] fid, 
+	Exp[-Pi(gamL time + (gamG time)^2) + 2 Pi eps gyro I time] fid, 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
 ]
 
@@ -1456,11 +1456,14 @@ PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
 		];
 
 		(*Make the plot*)
-		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0}}, AspectRatio -> OptionValue[AspectRatio],
-			ImageSize -> OptionValue[ImageSize], PlotLabel -> OptionValue[PlotLabel], ScalingFunctions -> {"Reverse", Automatic},
-			Frame -> {{False, False}, {True, False}}, FrameStyle -> Directive[{Thick, LightDarkV[]}], FrameLabel -> {"PPM", None},
-			LabelStyle -> {Bold, 14, LightDarkV[]}, PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Filling->OptionValue[Filling],
-			PlotHighlighting -> False
+		ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0}}, 
+			AspectRatio -> OptionValue[AspectRatio], ImageSize -> OptionValue[ImageSize], 
+			PlotLabel -> OptionValue[PlotLabel], Frame -> {{False, False}, {True, False}}, 
+			FrameStyle -> Directive[{Thick, LightDarkV[]}], FrameLabel -> {"PPM", None},
+			LabelStyle -> {Bold, 14, LightDarkV[]}, PlotHighlighting -> False,
+			PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Background->None, 
+			Filling->OptionValue[Filling],
+			ScalingFunctions -> {"Reverse", Automatic}
 		]
 
 		,
@@ -1530,7 +1533,8 @@ Options[PlotFid] = {
 
 SyntaxInformation[PlotFid] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
-PlotFid[fid_?VectorQ, dwell_?NumberQ, opts : OptionsPattern[]] := PlotFid[GetTimeRange[fid, dwell], fid, opts]
+PlotFid[fid_?VectorQ, dwell_?NumberQ, opts : OptionsPattern[]] := PlotFid[
+	GetTimeRange[fid, dwell], fid, opts]
 
 PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid, gridS, rr, col},
 	gridS = OptionValue[GridLineSpacing];
@@ -1556,8 +1560,9 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 	ListLinePlot[plot, PlotStyle -> col, PlotRange -> rr, GridLines -> {grid, {0.}}, 
 		AspectRatio -> OptionValue[AspectRatio], ImageSize -> OptionValue[ImageSize], 
 		PlotLabel -> OptionValue[PlotLabel], Frame -> {{False, False}, {True, False}},
-		FrameStyle -> Directive[{Thick, LightDarkV[]}], FrameLabel -> {"time [s]", None}, 
-		LabelStyle -> {Bold, 14, LightDarkV[]}, PlotHighlighting -> False
+		FrameStyle -> Directive[{Thick, LightDarkV[]}], FrameLabel -> {"time [s]", None},
+		LabelStyle -> {Bold, 14, LightDarkV[]}, PlotHighlighting -> False,
+		PerformanceGoal->"Speed", MaxPlotPoints->Infinity, Background->None
 	]
 ]
 
@@ -1578,7 +1583,7 @@ PlotCSIData[datainp_, dw_?NumberQ, gyro_?NumberQ, opts:OptionsPattern[]] := Plot
 
 PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := DynamicModule[{
 	data,datai,fun,nmax,dim,or,n,yran,dataPlot,maxPlot,maxAll,totAll,yrans,totPlot,colp,back,
-	col,spec, specp, coor,xdat,pmin,pmax,tdat,size,scale,leg,xmin,xmax,ymax,backScale, funs, c1, c2, lab},
+	col,spec, specp, coor,xdat,pmin,pmax,size,scale,leg,xmin,xmax,ymax,backScale, funs, c1, c2, lab},
 
 	NotebookClose[plotwindow];
 
@@ -1590,13 +1595,15 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 		,
 
 		pan = Manipulate[
+			If[!ListQ[data], Return[];];
+
 			(*prepare the data*)
 			datai = fun@data;
 
 			(*clip the range*)
 			nmax = dim[[or]];
 			n = Round[Clip[n, {1, nmax}]];
-			{c1,c2} = Drop[dim[[;;-2]],{or}];
+			{c1, c2} = Drop[dim[[;;-2]], {or}];
 
 			(*get the correct data and ranges*)
 			yran = {Min[{-0.5 Max[datai], Min[datai]}], 1.5 Max[datai]};
@@ -1605,8 +1612,6 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 			totPlot = Switch[or, 1, totAll[[n]], 2, totAll[[All, n]], 3, totAll[[All, All, n]]];
 
 			yrans = {Min[{-0.5 Max[dataPlot], Min[dataPlot]}], 1.5 Max[dataPlot]};
-
-			
 
 			Grid[{{
 					coor
@@ -1617,25 +1622,23 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 						coor = {Clip[coor[[1]],{1,c1}], Clip[coor[[2]],{1,c2}]};
 						Switch[or, 1, data[[n, coor[[1]], coor[[2]]]], 2, data[[coor[[1]], n, coor[[2]]]], 3, data[[coor[[1]], coor[[2]], n]]]
 					];
-					specp = If[te > 0 && Max[Abs@spec] > 0., CorrectTESpec[spec, dw, te/1000], spec];
+					specp = If[te > 0 && Max[Abs@spec] > 0., PhaseShiftSpectra[spec, xdat, gyro, {ph, te}], spec];
 					lab = Switch[or, 1, {n, coor[[1]], coor[[2]]}, 2, {coor[[1]], n, coor[[2]]}, 3, {coor[[1]], coor[[2]], n}];
 
 					FlipView[{
-						PlotSpectra[
-							Exp[-I ph] If[app, ApodizePadSpectra[specp], specp], {dw, gyro}, 
-							PlotColor->{Black, Red, Gray},
+						PlotSpectra[If[app, ApodizePadSpectra[specp], specp], {gyro, dw},
 							PlotRange -> {{pmin, pmax}, Switch[scale, "Max", Full, "Full", yran, "Slice", yrans]}, 
 							Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size, AspectRatio -> 0.4
 						],
 						PlotFid[
-							tdat, ShiftedInverseFourier[specp], 
-							PlotColor->{Black, Red, Gray},
-							Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size, AspectRatio -> 0.4
+							ShiftedInverseFourier[specp], dw,
+							Method -> funs, PlotLabel->lab, 
+							ImageSize->Length[First[dataPlot]] size, AspectRatio -> 0.4
 						]
 					}]
 				]
 				},{
-				Style["Slice "<>ToString[n], Bold, Black, 24]
+				Style["Slice "<>ToString[n], Bold, LightDarkV[], 24]
 				},{
 				gridPlot = Grid[
 					MapIndexed[(
@@ -1645,7 +1648,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 								(*the images*)
 								Graphics[{
 										Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], 
-										Line[Thread[{xdat[[;; ;; 4]], #1[[1]][[;; ;; 4]]}]]
+										Line[Thread[{-xdat[[;; ;; 4]], #1[[1]][[;; ;; 4]]}]]
 									}, AspectRatio -> 1, ImageSize -> size,
 									Background -> If[back, Switch[backScale,"Max",GrayLevel[#[[2]]],"Total",GrayLevel[#[[3]]]], White],
 									PlotRange -> {-{pmin, pmax}, Switch[scale, "Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, "Full", yran, "Slice", yrans]}
@@ -1665,7 +1668,7 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 				},{
 				leg
 				}
-			}, Alignment -> Center, Background->White, Spacings->{1,1}]
+			}, Alignment -> Center, Background->LigthDarkV[White,Dark@Gray], Spacings->{1,1}]
 
 			(*active manipulate parametes*)
 			, {{or, 1, "Orientation"}, {1 -> "Transversal", 2 -> "Coronal", 3 -> "Sagittal"}}
@@ -1713,12 +1716,12 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 				totAll = Map[Total, Abs[data], {-2}];
 				totAll = totAll/Max[totAll];
 
-				xdat = -GetPpmRange[data[[1, 1, 1]], dw, gyro];
-				tdat = GetTimeRange[data[[1, 1, 1]], dw];
+				xdat = GetPpmRange[data[[1, 1, 1]], dw, gyro];
 
-				{pmin,pmax} = {xmin, xmax} = If[OptionValue[PlotRange]===Full, MinMax[xdat], OptionValue[PlotRange]];
+				{pmin,pmax} = {xmin, xmax} = If[OptionValue[PlotRange]===Full, MinMax[-xdat], OptionValue[PlotRange]];
 
-				leg = BarLegend[{{"DarkRainbow", "Reverse"}, {0, 100}}, LegendLayout -> "Row", LegendMarkerSize -> 400, LabelStyle -> Directive[Large, Black, Bold]];
+				leg = BarLegend[{{"DarkRainbow", "Reverse"}, {0, 100}}, LegendLayout -> "Row", 
+					LegendMarkerSize -> 400, LabelStyle -> Directive[Large, Gray, Bold]];
 			)
 
 			, ControlPlacement -> Right
