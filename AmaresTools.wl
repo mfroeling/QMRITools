@@ -78,20 +78,14 @@ Begin["`Private`"]
 
 
 ShowParameterMatrix[fit_, mets_] := Block[{fiti=fit},
-	fiti[[1]] = Round[100 fiti[[1]]/fiti[[1, 8]], .1];
-	MatrixForm[Transpose@Prepend[Transpose[Prepend[Round[fiti, .01], mets]], 
-	{"met", "amp", "sigma", "gamma", "eps", "phi", "B1"}[[;; Length[fiti] + 1]]]]
-]
-
-ShowParameterMatrix[fit_, ref_, mets_] := Block[{fiti},
-	fiti = fit - ref;
-	fiti[[1]] = Round[100 fiti[[1]]/ref[[1]], .1];
+	fiti[[1]] = fiti[[1]]/fiti[[1, 8]];
 	MatrixForm[Transpose@Prepend[Transpose[Prepend[Round[fiti, .01], mets]], 
 	{"met", "amp", "sigma", "gamma", "eps", "phi", "B1"}[[;; Length[fiti] + 1]]]]
 ]
 
 
 ComplexToVector = Join @@ Through[{Re, Im}[#]] &;
+
 
 VectorToComplex = {1, I} . Partition[#, Length[#]/2] &;
 
@@ -126,7 +120,7 @@ AmaresBasis[settings_, {metabolites_?ListQ, split_?ListQ}] := Block[{
 (*AmaresFitMatrix*)
 
 
-fitMatrixDefaults = <|"amp" -> -1, "sigma" -> 0, "gamma" -> -1, "shift" -> -1, "phase" -> 0, "B1" -> False, "init" -> False|>;
+fitMatrixDefaults = <|"amp" -> -1, "sigma" -> 0, "gamma" -> 0, "shift" -> -1, "phase" -> 0, "B1" -> False, "init" -> False|>;
 fitMatrixParams = Keys[fitMatrixDefaults];
 
 
@@ -193,7 +187,7 @@ AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}] := AmaresInitial
 
 AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}, pl_] := Block[{
 		fids, base, gsm, ep, sig, bspec, spec, corr, wgth, pos, eps, model, 
-		a, g, t, s, p, e, fit, fun ,gm, sm, aa, ph, ppm, datf,
+		a, g, t, s, p, e, fit, fun ,gm, sm, aa, ph, ppm,
 		modelC, objC, decay, amps, init,pEps, pGam, pPh, pAmp, plots
 	},
 
@@ -201,7 +195,7 @@ AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}, pl_] := Block[{
 	fids = Values[basis];
 	base = Total[Pick[Values[basis], Table[matrix[name, "init"], {name, Keys[basis]}]]];
 	(*fit contraints for linewdith and shift and blur kernel*)
-	{gsm, ep, sig} = {100, 0.2, 5};
+	{gsm, ep, sig} = {10000, 0.2, 5};
 
 	(*find initial shift using autocorrelation*)
 	bspec = Rescale@Abs@ShiftedFourier[base];
@@ -210,29 +204,29 @@ AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}, pl_] := Block[{
 
 	(*find max peak closest to 0*)
 	ppm = GetPpmRange[dat, dw, gyro];
-	wgth = 1 / (Exp[(ppm^2 / (2 sig^2))] (Sqrt[2 Pi] sig));
+	wgth = 1 / (Exp[(ppm^2 /(2 sig^2))] (Sqrt[2 Pi] sig));
 	pos = Position[wgth corr, Max[wgth corr]][[1, 1]];
 	eps = ppm[[pos]];
 
 	(*fit the signal appodization*)
-	model = a Exp[-Pi (g t + (s t)^2)];
-	datf = Abs[Exp[- 2 Pi eps gyro I time] dat];
+	model = a Exp[-s ((1 - g) + g t) t];
+	datf = Abs[Exp[-2 Pi eps gyro I time] dat];
 	fit = FindFit[Transpose[{time, datf}],
-		{model, 0 <= g <= gsm, 0 <= s <= gsm}, {a, g, s}, t];
+		{model, 0 <= g <= 1, 0 <= s <= gsm}, {a, g, s}, t];
 	fun = Function[{t}, Evaluate[model /. fit]];
 	{gm, sm} = {g, s} /. fit;
 
 	(*fit the phase using the basis function that are shifted and apodized*)
-	modelC[a_, p_, e_, g_, s_, t_, b_] := a Exp[-p I] (Exp[-Pi (g t + (s t)^2)] Exp[2 Pi e gyro I t]) b; 
+	modelC[a_, p_, e_, g_, s_, t_, b_] := a Exp[-p I] (Exp[-s ((1 - g) + g t) t] Exp[2 Pi e gyro I t]) b; 
 	objC[dd_, a_?NumericQ, p_, e_, g_, s_, t_, b_] := Total[Abs[dd - modelC[a, p, e, g, s, t, b]]^2];
 	fit = FindMinimum[{objC[dat, a, p, e, g, s, time, base],
-		-2 Pi <= p <= 2 Pi, 2 <= g <= gsm, 2 <= s < gsm, 
+		-2 Pi <= p <= 2 Pi, 0 <= g <= 1, 1 <= s < gsm, 
 		eps - ep < e < eps + ep},
 	{a, {p, 0}, {e, eps}, {g, gm}, {s, sm}}, MaxIterations -> 100];
 	{aa, sm, gm, eps, ph} = {a, s, g, e, p} /. Last[fit];
 
 	(*guess the amps with least squares fitting*)
-	decay = Exp[-ph I] (Exp[-Pi (gm time + (sm time)^2) + 2 Pi eps gyro I time]);
+	decay = Exp[-ph I] (Exp[-sm ((1 - gm) + gm time) time + 2 Pi eps gyro I time]);
 	amps = Abs[LeastSquares[Transpose[fids] decay, dat]];
 
 	(*generate parameter matrix*)
@@ -293,9 +287,9 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, cons_?MatrixQ] :
 
 AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {cons_?MatrixQ, init_?MatrixQ}] := AmaresFitFidI[dat, time, gyro, basis, matrix, {1, 1, 1}, {cons, init}]
 
-AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}, cons_?MatrixQ] := AmaresFitFidI[dat, time, gyro, basis, matrix, {tau, fa, tr}, {cons, 1}]
+AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, tr_, fa_}, cons_?MatrixQ] := AmaresFitFidI[dat, time, gyro, basis, matrix, {tau, tr, fa}, {cons, 1}]
 
-AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}, {cons_?MatrixQ, init_?MatrixQ}] := Block[{
+AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, tr_, fa_}, {cons_?MatrixQ, init_?MatrixQ}] := Block[{
 		fids, names, nb, sc, datF, groups, parsV, parsM, con, int, parsFit,
 		jacobian, residual, sigma, cov, se, t1Model, atp, conA
 	},
@@ -307,6 +301,11 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}
 
 	(*make the t1model for b1 correction, if B1 is False wil be 1,0,.. and then tau tr and fa dont matter*)
 	t1Model = MakeT1Model[names, matrix];
+	t1Model = {
+		GetSpinResonance /@ names,
+		t1Values /@ names,
+		Boole[matrix[#, "B1"] & /@ names]
+	};
 
 	(*determine data scaling for normalized data range*)
 	sc = 10 / Max@Abs@dat; (*force all amplitudes between 0 and 10*)
@@ -327,15 +326,15 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}
 
 	(*perform the minimization*)
 	parsFit = parsV /. Last[Quiet@FindMinimum[
-		{ObjectiveFunc[datF, fids, time, gyro, {tau, fa, tr}, t1Model, parsM], con}, int,
-		Gradient -> GradientFunc[datF, fids, time, gyro, {tau, fa, tr}, t1Model, parsM, groups],
-		MaxIterations -> 250 (*, AccuracyGoal -> 10, PrecisionGoal -> 10*)]];
+		{ObjectiveFunc[datF, fids, time, gyro, {fa, tr, tau}, t1Model, parsM], con}, int,
+		Gradient -> GradientFunc[datF, fids, time, gyro, {fa, tr, tau}, t1Model, parsM, groups],
+		MaxIterations -> 100, AccuracyGoal -> 10, PrecisionGoal -> 10]];
 	parsFit = ParVecToMat[parsFit, groups, 1.];(*always 6 inc B1*)
 	parsFit[[-2]] = Wrap[parsFit[[-2]]]; (*make phase as small as possible*)
 
 	(*calculate the SE and noise sigma (CRLB)*)
-	jacobian = JacobianFunc[datF, fids, time, gyro, {tau, fa, tr}, t1Model, parsFit, groups];
-	residual = ResidualFunc[datF, fids, time, gyro, {tau, fa, tr}, t1Model, parsFit];
+	jacobian = JacobianFunc[datF, fids, time, gyro, {fa, tr, tau}, t1Model, parsFit, groups];
+	residual = ResidualFunc[datF, fids, time, gyro, {fa, tr, tau}, t1Model, parsFit];
 	sigma = Total[residual^2] / (Length[datF] - Length@parsV);
 	cov = sigma PseudoInverse[jacobian . Transpose[jacobian]];
 	se = ParVecToMat[Sqrt[Diagonal[cov]], groups, 0.];
@@ -393,9 +392,9 @@ AmaresSignalCalc[basis_, matrix_, time_, pars_, b1Par_?VectorQ, gyro_?NumberQ]:=
 
 SignalCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2}, 
 	{t1b1, _Real, 2}, {b1Par, _Real, 1}, {gyro, _Real}}, Block[{
-		bRe, bIm, bt, as, sm, gm ,ep, ph, b1, epR, t1, b1Mask, fab1, fSyncE,
-		fa, tr, tau, trt1, decay, theta, cosT, sinT, epTau, b1Amp, s0, s0Loc,
-		abRe, abIm, mAmp
+		bRe, bIm, bt, as, sm, gm ,ep, ph, b1, epR, t1, b1Mask, fab1,
+		fa, tr, tau, trt1, decay, theta, cosT, sinT, epTau, b1Amp,
+		abRe, abIm
 	},
 
 	(*split the complex signal of the basis vectors*)
@@ -408,29 +407,25 @@ SignalCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 	(*Split parameter vector and b1 model parameters*)
 	{as, sm, gm, ep, ph, b1} = pars;
 	{epR, t1, b1Mask} = t1b1; (*reference ppm, t1 and b1 correction mask*)
-	{tau, fa, tr} = b1Par;
+	{fa, tr, tau} = b1Par;
 	fa = fa Degree;
+	fab1 = fa b1;
 	tau = tau / 1000;
+	trt1 = Exp[-tr / t1];
 
 	(*generate the parts of the signal equation.*)
 	(*the line widths or the decay function*)
-	decay = Exp[-Pi (gm bt + (sm bt)^2)];
+	decay = Exp[-sm ((1 - gm) bt + gm bt^2)];
 	(*the phase rotation is complex rotation can be written as Sin Cos*)
 	theta = -ph + 2 Pi gyro ep bt;
 	cosT = decay Cos[theta];
 	sinT = decay Sin[theta];
-
-	(*The ernst angle b1 model*)
-	epTau = (epR - ep) gyro Pi tau;
-	trt1 = Exp[-tr / t1];
-	s0 = (1 - trt1) Sin[fa] / (1 - trt1 Cos[fa]);(*amp normalization*)
-	fab1 = fa b1;
-	fSyncE = fab1 Sinc[epTau];
-	s0Loc = (1 - trt1) Sin[fSyncE] / (1 - trt1 Cos[fSyncE]); 
-	
 	(*the amplitudes with or without b1 correction*)
-	mAmp = (1 - b1Mask) + b1Mask (s0Loc / s0);
-	b1Amp = as mAmp;
+	epTau = (epR - ep) gyro Pi tau;
+	b1Amp = (1 - b1Mask) as + b1Mask as (
+		((-1 + trt1 Cos[fab1]) Csc[fab1] Sin[fab1 Sinc[epTau]] 
+			) / (-1 + trt1 Cos[fab1 Sinc[epTau]])
+	);
 
 	(*complex splitted basis signals with decay and phase*)
 	abRe = b1Amp . (bRe cosT - bIm sinT);
@@ -450,10 +445,10 @@ AmaresSignalJacobianCalc[bs_, time_, pars_, t1b1_, b1Par_, gyro_]:=VectorToCompl
 
 SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2}, 
 	{t1b1, _Real, 2}, {b1Par, _Real, 1}, {gyro, _Real, 0}}, Block[{
-		bRe, bIm, bt, as, sm, gm ,ep, ph, b1, epR, t1, b1Mask, fa, tr, tau, trt1, decay, theta, s0, s0Loc,
-		cosT, sinT, epTau, b1Amp, mAmp, sigRe, sigIm, abRe, abIm, b1Dep, b1Db1, daRe, daIm, fab1,
-		dsmRe, dsmIm, dgmRe, dgmIm, depRe, depIm, dphRe, dphIm, db1Re, db1Im, dRe, dIm, fSyncE,
-		sig, jac, dsLocDep, dsLocDb1
+		bRe, bIm, bt, as, sm, gm ,ep, ph, b1, epR, t1, b1Mask, fa, tr, tau, trt1, decay, theta, 
+		cosT, sinT, epTau, b1Amp, sigRe, sigIm, abRe, abIm, b1Dep, b1Db1, daRe, daIm, fab1,
+		dsmRe, dsmIm, dgmRe, dgmIm, depRe, depIm, dphRe, dphIm, db1Re, db1Im, dRe, dIm, 
+		sig, jac
 	},
 	(*split the complex signal of the basis vectors*)
 	bRe = Re[bs];
@@ -465,29 +460,25 @@ SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 	(*Split parameter vector and b1 model parameters*)
 	{as, sm, gm, ep, ph, b1} = pars;
 	{epR, t1, b1Mask} = t1b1; (*reference ppm, t1 and b1 correction mask*)
-	{tau, fa, tr} = b1Par;
+	{fa, tr, tau} = b1Par;
 	fa = fa Degree;
 	tau = tau / 1000;
+	trt1 = Exp[-tr / t1];
 
 	(*generate the parts of the signal equation.*)
 	(*the line widths or the decay function*)
-	decay = Exp[-Pi (gm bt + (sm bt)^2)];
+	decay = Exp[-sm ((1 - gm) bt + gm bt^2)];
 	(*the phase rotation is complex rotation can be written as Sin Cos*)
 	theta = -ph + 2 Pi gyro ep bt;
 	cosT = decay Cos[theta];
 	sinT = decay Sin[theta];
-	
-	(*The ernst angle b1 model*)
-	epTau = (epR - ep) gyro Pi tau;
-	trt1 = Exp[-tr / t1];
-	s0 = (1 - trt1) Sin[fa] / (1 - trt1 Cos[fa]);(*amp normalization*)
-	fab1 = fa b1;
-	fSyncE = fab1 Sinc[epTau];
-	s0Loc = (1 - trt1) Sin[fSyncE] / (1 - trt1 Cos[fSyncE]); 
-
 	(*the amplitudes with or without b1 correction*)
-	mAmp = (1 - b1Mask) + b1Mask (s0Loc / s0);
-	b1Amp = as mAmp;
+	epTau = (epR - ep) gyro Pi tau;
+	fab1 = fa b1;
+	b1Amp = (1 - b1Mask) as + b1Mask as (
+		((-1 + trt1 Cos[fab1]) Csc[fab1] Sin[fab1 Sinc[epTau]] 
+			) / (-1 + trt1 Cos[fab1 Sinc[epTau]])
+	);
 
 	(*complex splitted basis signals with decay and phase*)
 	sigRe = bRe cosT - bIm sinT;
@@ -497,30 +488,32 @@ SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 	abIm = b1Amp sigIm;
 
 	(*start derivatives for jacobian*)
-
 	(*derivatives of the b1 dependancy to ep and b1*)
-	dsLocDep = (fab1 (-1 + trt1)*(trt1 - Cos[fSyncE]) ((ep - epR) gyro Pi tau Cos[epTau] + Sin[epTau])
-			) / ((ep - epR)^2 gyro Pi tau (-1 + trt1 Cos[fSyncE])^2);
-	b1Dep = as b1Mask (dsLocDep / s0);
-	dsLocDb1 = (fa (-1 + trt1) (trt1 - Cos[fSyncE]) Sinc[epTau]) / (-1 + trt1 Cos[fSyncE])^2;
-	b1Db1 = as b1Mask (dsLocDb1 / s0);
+	b1Dep = b1Mask (fab1 (-1 + trt1 Cos[fab1]) (trt1 - Cos[fab1 Sinc[epTau]]) Csc[fab1] (
+		(ep - epR) gyro Pi tau Cos[epTau] + Sin[epTau])) / (
+			(ep - epR)^2 gyro Pi tau (-1 + trt1 Cos[fab1 Sinc[epTau]])^2);
+	
+	b1Db1 = b1Mask (fa Csc[fab1] ((-trt1 + Cos[fab1]) (-1 + trt1 Cos[fab1 Sinc[epTau]]
+		) Csc[fab1] Sin[fab1 Sinc[epTau]] + (-1 + trt1 Cos[fab1]) (trt1 - Cos[fab1 Sinc[epTau]]) Sinc[epTau])
+			) / (-1 + trt1 Cos[fab1 Sinc[epTau]])^2;
+	
 	(* derivatives to amplitudes*)
-	daRe = mAmp sigRe;
-	daIm = mAmp sigIm;
+	daRe = sigRe;
+	daIm = sigIm;
 	(*real derivatives parameters for gausiang and laurentzian decay parameters*)
-	dsmRe = -2 Pi sm bt^2 abRe ;
-	dsmIm = -2 Pi sm bt^2 abIm ;
-	dgmRe = -Pi bt abRe;
-	dgmIm = -Pi bt abIm;
+	dsmRe = (-bt + gm bt - gm bt^2) abRe ;
+	dsmIm = (-bt + gm bt - gm bt^2) abIm ;
+	dgmRe = (sm bt - sm bt^2) abRe;
+	dgmIm = (sm bt - sm bt^2) abIm;
 	(*complex derivatives for the shift including b1part*)
-	depRe = -2 Pi gyro bt abIm + b1Dep sigRe;
-	depIm = 2 Pi gyro bt abRe + b1Dep sigIm;
+	depRe = -2 Pi gyro bt abIm + as b1Dep daRe;
+	depIm = 2 Pi gyro bt abRe + as b1Dep daIm;
 	(*complex derivatives for the phase*)
 	dphRe = abIm;
 	dphIm = -abRe;
 	(*derivative to b1*)
-	db1Re = b1Db1 sigRe;
-	db1Im = b1Db1 sigIm;
+	db1Re = as b1Db1 daRe;
+	db1Im = as b1Db1 daIm;
 
 	(*combining all derivatives into the full jacobian*)
 	dRe = Join[daRe, dsmRe, dgmRe, depRe, dphRe, db1Re];
@@ -651,6 +644,85 @@ CollapseJacMat[jac_, groupsId_] := Block[{np, pp, jacMat},
 		(Total[jacMat[[i, Flatten[Position[groupsId[[i]], #]]]]]) & /@ Range[Max[groupsId[[i]]]]
 	, {i, 1, np}], 1]
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*FitB1FromATP*)
+
+
+FitB1FromATP[fit_, matrix_, {tau_, fa_, tr_, gyro_}] := FitB1FromATP[fit, matrix, {tau, fa, tr, gyro}, False]
+
+FitB1FromATP[fit_, matrix_, {tau_, fa_, tr_, gyro_}, plot_] := Block[{
+		tp, pos, sig, amp, b1f, b1, par, cor, b1fit, res, t1s, p1, p2, pl, atp, met
+	},
+	met = Keys[matrix];
+	{res, t1s} = MakeT1Model[met, matrix][[1 ;; 2]];
+	atp = {"ATP-\[Gamma]", "ATP-\[Alpha]", "ATP-\[Beta]"};
+	pos = Flatten[Position[met, #] & /@ atp];
+	sig = Thread[{
+		fit[[1, pos]],
+		fit[[-3, pos]] + res[[pos]],
+		t1s[[pos]]}
+		];
+
+	b1fit = 
+	Last@FindMinimum[{errorB1[sig, {tau, fa, tr, gyro}, {amp, b1f}], 
+		0.5 < b1f < 2.5}, {{amp, sig[[1, 1]]}, {b1f, 1}}, MaxIterations -> 100];
+
+	b1 = b1f /. b1fit;
+	par = Thread[{met, fit[[-2]] + res, t1s}];
+	cor = 
+	Association[#[[1]] -> 
+		CalcSaturationProfile[tau, {#[[2]], gyro}, {fa, {tr, #[[3]]}},
+			b1] & /@ par];
+
+	If[plot,
+	p1 = ListPlot[Thread[{
+		Join[sig[[All, 2]], -sig[[All, 2]]],
+		Join[sig[[All, 1]], sig[[All, 1]]]}],
+		PlotRange -> {{-25, 25}, {0, 1.2 Max@sig[[All, 1]]}}, 
+		PlotHighlighting -> None, ScalingFunctions -> {"Reverse", None}, Ticks -> None, 
+		PlotStyle -> Directive[Red, PointSize[Large]]
+		];
+	p2 = 
+		Plot[Evaluate[(amp CalcSaturationProfile[
+				tau, {pp, gyro}, {fa, {tr, #}}, b1f] & /@ 
+			sig[[All, 3]]) /. b1fit], {pp, -25, 25},
+		ScalingFunctions -> {"Reverse", None}, PlotHighlighting -> None];
+	pl = Show[p1, p2, PlotLabel -> Round[b1f /. b1fit, .01]];
+	{b1, cor, pl},
+	{b1, cor}
+	]
+	];
+
+errorB1[sig_, {tau_, fa_, tr_, gyro_}, {a_?NumericQ, b1_?NumericQ}] := Block[{amp, eps, t1, err},
+	err = 
+		({amp, eps, t1} = #; amp - a CalcSaturationProfile[tau, {eps, gyro}, {fa, {tr, t1}}, b1]
+	) & /@ sig;
+	Total[err^2]
+]
+
+CalcSaturationProfile[tau_, {eps_, gyro_}, {fa_, {tr_, t1_}}, b1_] := Block[{e1, s0, faAct, loc, sLoc},
+	faAct = b1*fa;
+	e1 = Exp[-tr/t1];
+	loc = Sinc[Pi (eps gyro) (tau/1000.)] ;
+	sLoc = ((1 - e1) Sin[loc faAct Degree]/(1 - e1 Cos[loc faAct Degree]));
+	s0 = (1 - e1) Sin[faAct Degree]/(1 - e1 Cos[faAct Degree]);
+	sLoc/s0
+];
+
+SaturationProfileCorrection[fa_, tr_, t1_?MatrixQ, b1_] := SaturationProfileCorrection[fa, tr, t1[[2]], b1]
+SaturationProfileCorrection[fa_, tr_, t1_?VectorQ, b1_] := Block[{e1, s0Act, s0, faAct, fa2, s},
+	If[b1 === 0., ConstantArray[0., Length@t1],
+		faAct = b1*fa;
+		e1 = Exp[-tr/t1];
+		s0 = (1 - e1) Sin[fa Degree]/(1 - e1 Cos[fa Degree]);
+		s0Act = (1 - e1) Sin[faAct Degree]/(1 - e1 Cos[faAct Degree]);
+		s0/s0Act
+	]
+];
+
+
 
 
 (* ::Section:: *)
