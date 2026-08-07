@@ -123,6 +123,9 @@ CheckDataDescription::usage =
 MuscleBidsConvert, MuscleBidsProcess, and MuscleBidsMerge."
 
 
+$debugBids::usage = "$debugBids is a debug flag for Bids functionality within MuscleBidsTools.";
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -186,6 +189,9 @@ Begin["`Private`"]
 
 
 debugBids[x___] := If[$debugBids, Print[x]];
+
+
+$debugBids = False;
 
 
 dataToLog[data_] := If[KeyExistsQ[data, $Failed], 

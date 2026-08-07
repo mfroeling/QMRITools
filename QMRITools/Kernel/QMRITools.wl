@@ -23,7 +23,7 @@ BeginPackage["QMRITools`"];
 (*check mathematica version*)
 If[$VersionNumber < 13.3, CreateDialog[Column[{Style[
 "Current Mathematica version is "<>ToString[$VersionNumber]<>"
-The toolbox is tested developed in 13.3+.
+The toolbox is tested developed in 15.0+.
 Some functions might not work in older versions"
 	, TextAlignment -> Center], DefaultButton[], ""}, Alignment -> Center], WindowTitle -> "Update!"];
 ];
@@ -35,14 +35,6 @@ QMRITools`$Contexts::usage = "The package contexts needed for loading.";
 QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions for each context.";
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
-
-QMRITools`ElastixTools`$lastElastixTemp::usage = "$lastElastixTemp is the last temporary directory used by Elastix.";
-QMRITools`ElastixTools`$debugElastix::usage = "$debugElastix is a debug flag for Elastix functionality.";
-QMRITools`SegmentationTools`$debugUnet::usage = "$debugUnet is a debug flag for Unet functionality."; 
-QMRITools`MuscleBidsTools`$debugBids::usage = "$debugBids is a debug flag for Bids functionality.";
-QMRITools`DenoiseTools`$debugDenoise::usage = "$debugBids is a debug flag for Denoise functionality.";
-
-QMRITools`PlottingTools`$plotOptions::usage = "$plotOptions is a list of options for plotting.";
 
 
 (* ::Section:: *)
@@ -77,11 +69,6 @@ QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
 QMRITools`$LoadedColor = If[QMRITools`$LoadedColor===True, True, False];
 QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Version"];
 
-QMRITools`ElastixTools`$lastElastixTemp = "";
-QMRITools`ElastixTools`$debugElastix = False;
-QMRITools`SegmentationTools`$debugUnet = False;
-QMRITools`MuscleBidsTools`$debugBids = False;
-QMRITools`DenoiseTools`$debugDenoise = False;
 
 (*load all the packages without error reporting such we can find the names of all the functions and options*)
 Quiet[Get/@QMRITools`$Contexts];
@@ -169,9 +156,16 @@ Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contex
 Unprotect/@{
 	"QMRITools`ElastixTools`$lastElastixTemp",
 	"QMRITools`ElastixTools`$debugElastix", 
+
 	"QMRITools`SegmentationTools`$debugUnet", 
+
 	"QMRITools`MuscleBidsTools`$debugBids",
+
 	"QMRITools`DenoiseTools`$debugDenoise",
+	
+	"QMRITools`AmaresTools`$AmaresB1Regularization",
+	"QMRITools`AmaresTools`$AmaresT1Values",
+
 	"QMRITools`$Log",
 	"QMRITools`$LogFile"
 };

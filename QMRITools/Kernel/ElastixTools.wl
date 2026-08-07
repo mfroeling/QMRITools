@@ -109,6 +109,11 @@ RegisterCardiacData[{data,mask,vox}] registers the data series using the given v
 Output is the registered data."
 
 
+$lastElastixTemp::usage = "$lastElastixTemp is the last temporary directory used by Elastix.";
+
+$debugElastix::usage = "$debugElastix is a debug flag for Elastix functionality.";
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -272,6 +277,10 @@ debugElastix[x___] := If[$debugElastix, Print[x]];
 
 (* ::Subsection::Closed:: *)
 (*Definitions*)
+
+
+$lastElastixTemp = "";
+$debugElastix = False;
 
 
 operatingSystem = $OperatingSystem;

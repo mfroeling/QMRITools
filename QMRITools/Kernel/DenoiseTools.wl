@@ -87,6 +87,9 @@ HarmonicDenoiseTensor[tens, seg, vox, labs] will do the same for each segmentati
 HarmonicDenoiseTensor[] is based on 10.1016/j.media.2011.01.005."
 
 
+$debugDenoise::usage = "$debugDenoise is a debug flag for Denoise functionality within DenoiseTools currently only for HarmonicDenoiseTensor.";
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -191,6 +194,9 @@ DeNoise::sig =
 
 
 Begin["`Private`"]
+
+
+$debugDenoise = False;
 
 
 (* ::Subsection:: *)

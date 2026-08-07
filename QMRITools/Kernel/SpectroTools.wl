@@ -1571,164 +1571,121 @@ PlotFid[time_?VectorQ, fid_?VectorQ, OptionsPattern[]] := Block[{fun, plot, grid
 (*PlotCSIData*)
 
 
-Options[PlotCSIData]={PlotRange->Full}
+Options[PlotCSIData] = {PlotRange -> Full};
 
-SyntaxInformation[PlotCSIData] = {"ArgumentsPattern" -> {_, _, _., _.,OptionsPattern[]}}
+SyntaxInformation[PlotCSIData] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern[]}};
 
-PlotCSIData[datainp_, dw_?NumberQ, field_?NumberQ, nuc_?StringQ, opts:OptionsPattern[]] := PlotCSIData[datainp, {dw, GetGyro[nuc, field]}, opts]
+PlotCSIData[datainp_, dw_?NumberQ, field_?NumberQ, nuc_?StringQ, opts : OptionsPattern[]] := PlotCSIData[datainp, {dw, GetGyro[nuc, field]}, opts];
 
-PlotCSIData[datainp_, {dw_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts:OptionsPattern[]] := PlotCSIData[datainp, {dw, GetGyro[nuc, field]}, opts]
+PlotCSIData[datainp_, {dw_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts : OptionsPattern[]] := PlotCSIData[datainp, {dw, GetGyro[nuc, field]}, opts];
 
-PlotCSIData[datainp_, dw_?NumberQ, gyro_?NumberQ, opts:OptionsPattern[]] := PlotCSIData[datainp, {dw, gyro}, opts]
+PlotCSIData[datainp_, dw_?NumberQ, gyro_?NumberQ, opts : OptionsPattern[]] := PlotCSIData[datainp, {dw, gyro}, opts];
 
 PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := DynamicModule[{
-	data,datai,fun,nmax,dim,or,n,yran,dataPlot,maxPlot,maxAll,totAll,yrans,totPlot,colp,back,
-	col,spec, specp, coor,xdat,pmin,pmax,size,scale,leg,xmin,xmax,ymax,backScale, funs, c1, c2, lab},
+		data, dim, nmax, xdat, xmin, xmax, xdatR, datN, sp, coors, maxCol, totCol, 
+		lab, specp, size, ccs, dataPlot, backColM, backColT
+	},
 
 	NotebookClose[plotwindow];
-
 	data = N@datainp;
 
-	If[! NumberQ[dw] && ! NumberQ[gyro],
-		(*error dw and gyro are not OK*)
-		$Failed
-		,
+	If[! ListQ[data], Return[];];
 
-		pan = Manipulate[
-			If[!ListQ[data], Return[];];
+	dim = Dimensions[data];
+	nmax = dim[[1]];
 
-			(*prepare the data*)
-			datai = fun@data;
+	xdat = GetPpmRange[data[[1, 1, 1]], dw, gyro];
+	{xmin, xmax} = MinMax[xdat];
+	xdatR = Reverse[Rescale[xdat[[;; ;; 4]], {xmin, xmax}, {0.1, 0.9}]];
 
-			(*clip the range*)
-			nmax = dim[[or]];
-			n = Round[Clip[n, {1, nmax}]];
-			{c1, c2} = Drop[dim[[;;-2]], {or}];
+	datN = Map[(sp = Abs[#1[[;; ;; 4]]]; {xdatR, Rescale[sp, MinMax[sp], {0.1, .9}] 1}) &, data, {-2}];
 
-			(*get the correct data and ranges*)
-			yran = {Min[{-0.5 Max[datai], Min[datai]}], 1.5 Max[datai]};
-			dataPlot = Switch[or, 1, datai[[n]], 2, datai[[All, n]], 3, datai[[All, All, n]]];
-			maxPlot = Switch[or, 1, maxAll[[n]], 2, maxAll[[All, n]], 3, maxAll[[All, All, n]]];
-			totPlot = Switch[or, 1, totAll[[n]], 2, totAll[[All, n]], 3, totAll[[All, All, n]]];
+	coors = {
+		Table[{j, i}, {i, dim[[2]]}, {j, dim[[3]]}],
+		Table[{j, i}, {i, dim[[1]]}, {j, dim[[3]]}],
+		Table[{j, i}, {i, dim[[1]]}, {j, dim[[2]]}]
+	};
 
-			yrans = {Min[{-0.5 Max[dataPlot], Min[dataPlot]}], 1.5 Max[dataPlot]};
+	maxCol = Map[GrayLevel, Rescale[Map[Max, Abs[data], {-2}]], {3}];
+	totCol = Map[GrayLevel, Rescale[Map[Total, Abs[data], {-2}]], {3}];
 
-			Grid[{{
-					coor
-				},{
-				Dynamic[
-					spec = If[coor === {0, 0}, 
-						0. data[[1, 1, 1]], 
-						coor = {Clip[coor[[1]],{1,c1}], Clip[coor[[2]],{1,c2}]};
-						Switch[or, 1, data[[n, coor[[1]], coor[[2]]]], 2, data[[coor[[1]], n, coor[[2]]]], 3, data[[coor[[1]], coor[[2]], n]]]
-					];
-					specp = If[te > 0 && Max[Abs@spec] > 0., PhaseShiftSpectra[spec, xdat, gyro, {ph, te}], spec];
-					lab = Switch[or, 1, {n, coor[[1]], coor[[2]]}, 2, {coor[[1]], n, coor[[2]]}, 3, {coor[[1]], coor[[2]], n}];
+	pan = Manipulate[
+		nmax = dim[[or]];
+		sz = {dx, dy} = Most[Drop[dim, {or}]];
 
-					FlipView[{
-						PlotSpectra[If[app, ApodizePadSpectra[specp], specp], {gyro, dw},
-							PlotRange -> {{pmin, pmax}, Switch[scale, "Max", Full, "Full", yran, "Slice", yrans]}, 
-							Method -> funs, PlotLabel->lab, ImageSize->Length[First[dataPlot]] size, AspectRatio -> 0.4
-						],
-						PlotFid[
-							ShiftedInverseFourier[specp], dw,
-							Method -> funs, PlotLabel->lab, 
-							ImageSize->Length[First[dataPlot]] size, AspectRatio -> 0.4
-						]
-					}]
-				]
-				},{
-				Style["Slice "<>ToString[n], Bold, LightDarkV[], 24]
-				},{
-				gridPlot = Grid[
-					MapIndexed[(
-						Item[
-							EventHandler[
-								(*Tooltip[*)
-								(*the images*)
-								Graphics[{
-										Directive[{Thick, ColorData[{"DarkRainbow", "Reverse"}][#[[2]]]}], 
-										Line[Thread[{-xdat[[;; ;; 4]], #1[[1]][[;; ;; 4]]}]]
-									}, AspectRatio -> 1, ImageSize -> size,
-									Background -> If[back, Switch[backScale,"Max",GrayLevel[#[[2]]],"Total",GrayLevel[#[[3]]]], White],
-									PlotRange -> {-{pmin, pmax}, Switch[scale, "Max", {Min[{-0.5 Max[#1[[1]]], 1.5 Min[#1[[1]]]}], 1.5 Max[#1[[1]]]}, "Full", yran, "Slice", yrans]}
-								],
-								"MouseClicked" :> (coor = #2)
+		size = Reverse[sz 25];
+
+		Column[{
+			Dynamic[
+				lab = Switch[or, 1, {n, -coor[[1]] + dx + 1, coor[[2]]}, 2, {coor[[1]], n, coor[[2]]}, 3, {coor[[1]], coor[[2]], n}];
+				specp = PhaseShiftSpectra[
+						Switch[or, 1, Reverse[data][[n, coor[[1]], coor[[2]]]], 2, data[[coor[[1]], n, coor[[2]]]], 3, data[[coor[[1]], coor[[2]], n]]]
+					, xdat, gyro, {ph, te}];
+				
+				FlipView[{PlotSpectra[If[app, ApodizePadSpectra[specp], specp], {gyro, dw},
+						PlotRange -> {{pmin, pmax}, Full}, Method -> funs, 
+						PlotLabel -> lab,ImageSize -> .5 First@size, AspectRatio -> 0.5
+					],
+					PlotFid[ShiftedInverseFourier[specp], dw, Method -> funs, 
+						PlotLabel -> lab, ImageSize -> .5 First@size, AspectRatio -> 0.5]
+				}]
+			, TrackedSymbols :> {n, or, ph, te, app, pmin, pmax, funs, coor}]
+			,
+			Dynamic[
+				ccs = Flatten[coors[[or]], 1];
+				dataPlot = 
+				Flatten[Switch[or, 1, Reverse@datN[[n]], 2, datN[[All, n]], 3, 
+					datN[[All, All, n]]], 1];
+				backColM = 
+				Flatten[Switch[or, 1, Reverse@maxCol[[n]], 2, maxCol[[All, n]], 
+					3, maxCol[[All, All, n]]], 1];
+				backColT = 
+				Flatten[Switch[or, 1, Reverse@totCol[[n]], 2, totCol[[All, n]], 
+					3, totCol[[All, All, n]]], 1];
+				
+				EventHandler[
+					Deploy@Graphics[{
+							Flatten[
+								With[{idx = Reverse[#[[1]]]}, {
+									EdgeForm[If[coor == idx, Directive[Thick, Red], None]],
+									#[[2]], Rectangle[#[[1]] + 0.05, #[[1]] + 0.95]
+									}
+								] & /@ Thread[{ccs, Switch[backScale, "Max", backColM, "Total", backColT]}]
 							],
-							(*highlight selected plot*)
-							Background -> Dynamic[If[#2 == coor, Red, col]], Frame -> True, 
-							FrameStyle -> Dynamic[If[#2 == coor, Red, col]]
-						]
-
-					(*loop over all voxesl*)
-					) &, RotateDimensionsLeft[{dataPlot, maxPlot, totPlot}], {2}]
-					, Spacings -> {0.3,0.35}, Alignment -> Center, Background -> If[back, col, White], 
-					ItemSize -> Full, Frame -> All, FrameStyle -> If[back, col, White]
+							{StandardBlue, Line[Transpose /@ (dataPlot + ccs)]}
+						},
+						ImageSize -> size, Axes -> True, AxesOrigin -> {0, 0}
+					],
+					{"MouseDown" :> With[{p = MousePosition["Graphics"]}, If[p =!= None, coor = Reverse[Floor[p]]]]}
 				]
-				},{
-				leg
-				}
-			}, Alignment -> Center, Background->LigthDarkV[White,Dark@Gray], Spacings->{1,1}]
+			, TrackedSymbols :> {n, or, backScale, coor}]
+			}, Alignment -> Center]
 
-			(*active manipulate parametes*)
-			, {{or, 1, "Orientation"}, {1 -> "Transversal", 2 -> "Coronal", 3 -> "Sagittal"}}
-			, {{n, Ceiling[Length[data]/2], "Slice"}, 1, Dynamic[nmax], 1}
-			, Delimiter
-			, {{funs, "ReIm", "Function vox"}, {"Re", "Im", "ReIm", "Abs", "All"}}
-			, {{app, False, "Apodize and Pad"}, {True,False}}
-			, {{ph, 0, "Phase spectra"}, -Pi, Pi}
-			, {{te, 0, "EchoTime"}, 0, 1, .1}
-			, {{fun, Abs, "Function CSI"}, {Abs -> "Absolute", Re -> "Real", Im -> "Imaginary"}}
-			, {{size, 20, "Plot size"}, {10 -> "Small", 20 -> "Medium", 30 -> "Large", 40 -> "Extra large"}}
-			, Delimiter
-			, {{pmin, xmin, "Min pmm"}, xmin, Dynamic[pmax - 1]}
-			, {{pmax, xmax, "Min pmm"}, Dynamic[pmin + 1], xmax}
-			, {{scale, "Max", "Plot scale"}, {"Max", "Full","Slice"}}
-			, Delimiter
-			, {{backScale, "Max", "Background"}, {"Max", "Total"}}
-			, {{back, True, "Magnitude background"}, {True,False}}
-			, {{col, Black, "Grid Color"}, (*ColorSlider*)
-				Button[
-					Dynamic[Graphics[{col, Rectangle[]}, ImageSize -> {20, 20}]],
-					new = SystemDialogInput["Color", #];
-					col = If[new === $Canceled, col, new]
-					, Background -> White, Method -> "Queued", FrameMargins -> 0, Appearance -> "Frameless"
-				]&
-			}
+		, {{or, 1, "Orientation"},
+			{1 -> "Transversal", 2 -> "Coronal", 3 -> "Sagittal"},
+			ControlType -> SetterBar,
+			TrackingFunction -> (With[{o = #},
+				or = o;
+				n = Min[n, dim[[o]]];
+				
+				coor = MapThread[
+				Min, {coor, {dim[[{2, 3}]], dim[[{1, 3}]], 
+					dim[[{1, 2}]]}[[o]]}];
+				] &)}
+		, {{n, Ceiling[Length[data]/2], "Slice"}, 1, Dynamic[nmax], 1}
+		, {{backScale, "Max", "Background"}, {"Max", "Total"}}
+		, {{app, True, "Apodize and Pad"}, {True, False}}
+		, {{ph, 0, "Phase spectra"}, -Pi, Pi}
+		, {{te, 0, "EchoTime"}, 0, 1, .1}
+		, Delimiter
+		, {{funs, "ReIm", "Spectra function"}, {"Re", "Im", "ReIm", "Abs", "All"}}
+		, {{pmin, xmin, "Min pmm"}, xmin, Dynamic[pmax - 1]}
+		, {{pmax, xmax, "Min pmm"}, Dynamic[pmin + 1], xmax}
 
-			(* hidden manipulate paramterrs *)
-			, {{coor, {0, 0}}, ControlType -> None}
-							
-			, {datai, ControlType -> None}, {dim, ControlType -> None}, {nmax, ControlType -> None}, {dataPlot, ControlType -> None} , {maxPlot, ControlType -> None}, {totPlot, ControlType -> None}
-			, {yran, ControlType -> None}, {totAll, ControlType -> None}, {maxAll, ControlType -> None}, {ymax, ControlType -> None}, {xdat, ControlType -> None}, {tdat, ControlType -> None}
-			, {xmin, ControlType -> None}, {xmax, ControlType -> None}, {spec, ControlType -> None}, {colp, ControlType -> None}
+		, {{coor, {1, 1}}, ControlType -> None}
+	];
 
-			, TrackedSymbols :> {or, n, fun, size, pmin, pmax, scale, col, back, te, ph}
-			, Initialization :> (
-				dim = Dimensions[data];
-				or = 1;
-				nmax = dim[[1]];
-
-				maxAll = Map[Max, Abs[data], {-2}];
-				ymax = Max[maxAll];
-				maxAll = maxAll/Max[maxAll];
-
-				totAll = Map[Total, Abs[data], {-2}];
-				totAll = totAll/Max[totAll];
-
-				xdat = GetPpmRange[data[[1, 1, 1]], dw, gyro];
-
-				{pmin,pmax} = {xmin, xmax} = If[OptionValue[PlotRange]===Full, MinMax[-xdat], OptionValue[PlotRange]];
-
-				leg = BarLegend[{{"DarkRainbow", "Reverse"}, {0, 100}}, LegendLayout -> "Row", 
-					LegendMarkerSize -> 400, LabelStyle -> Directive[Large, Gray, Bold]];
-			)
-
-			, ControlPlacement -> Right
-		];
-
-		plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
-	]
+	plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, WindowSize -> All, WindowTitle -> "Plot data window"]];
 ]
 
 
@@ -1736,7 +1693,8 @@ PlotCSIData[datainp_, {dw_?NumberQ, gyro_?NumberQ}, OptionsPattern[]] := Dynamic
 (*SpectraSimulator*)
 
 
-SpectraSimulator[]:=Block[{},DynamicModule[{
+SpectraSimulator[]:=Block[{},
+	DynamicModule[{
 		use, vals, names, namD, nsamp, bwS, fieldS, nuc, peakSel, dw, gyro, field, fidsT, time, ppm, grids
 	},
 
@@ -1773,10 +1731,10 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 
 		(*resample fid and generate noise*)
 		dw2 = 1./bw;
-		ni = Round[(te/1000)/dw];
-		ns = Round[Min[{ns,nsamp dw/dw2-ni}]];
+		ni = Round[(te / 1000) / dw];
+		ns = Round[Min[{ns, nsamp dw / dw2 - ni}]];
+		fid1 = ChangeDwellTimeFid[fidsT[[ni+1;;]], dw, dw2][[;;ns]];
 
-		fid1 = ChangeDwellTimeFid[fidsT[[ni+1;;]],dw,dw2][[;;ns]];
 		(* Define reference values *)
 		bwRef = 5000.;
 		nRef = 512.;
@@ -1784,26 +1742,28 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 		(* We use the Max of the original fidsT to keep the SNR relative to the source signal *)
 		sig = (Max[Abs[fid1]] / snr) * Sqrt[bw / bwRef] * Sqrt[nRef / ns] / Sqrt[2];
 
-		If[lfid=!=Length[fid1]||sigi=!=sig,
+		(*recalculate noise only if needed*)
+		If[lfid =!= Length[fid1] || sigi =!= sig,
 			lfid = Length[fid1];
 			sigi = sig;
-			noise1 = Complex@@@RandomReal[NormalDistribution[0.,sig],{lfid,2}]
+			noise1 = Complex@@@RandomReal[NormalDistribution[0., sig], {lfid, 2}]
 		];
+		
+		(*get the time of the acquired signal for manipulations*)
+		{timei, ppmi} = GetTimePpmRange[fid1, {dw2, field, nuc}];
+		tpi = timei + te / 1000;
 
-		{timei, ppmi} = GetTimePpmRange[fid1,{dw2,field,nuc}];
-		tpi = timei + te/1000;
-
-		(*add shift and linewidth*)
-		fid2 = If[timeshift, PhaseShiftFid[
-				TimeShiftFid[fid1, tpi, gyro, {{gamma, sigma}, eps}]
-			, ph0]
-		, fid1];
+		(*add shift and linewidth fo the FID*)
+		fid2 = If[timeshift, 
+			PhaseShiftFid[TimeShiftFid[fid1, tpi, gyro, {{gamma, sigma}, eps}], ph0], 
+			fid1
+		];
 		lw = effectiveLinewidth[gamma, sigma, gyro];
 
-		(*add phase to spectra*)
+		(*add phase to spectra as post processing and visualization*)
 		fid3 = ShiftedInverseFourier[PhaseShiftSpectra[ShiftedFourier[fid2], ppmi, gyro, {ph0s, ph1s}]];
 
-		(*apply apodization and padding and figure out time of spectra to plot*)
+		(*apply apodization and padding and figure out time of spectra to plot for visualization*)
 		{fid4, noise4} = If[ap==="None", {fid3, noise1}, ApodizeFid[#, ApodizationFunction->ap]& /@ {fid3, noise1}];
 		{fid5, noise5} = If[pad===1, {fid4, noise4}, PadFid[#, PaddingFactor->pad]& /@ {fid4, noise4}];
 
@@ -1812,26 +1772,22 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 		noiseF = ShiftedFourier[noise5];
 		specF = ShiftedFourier[fid5];
 		specTot = noiseF + specF;
-
-		maxFid = Max[Abs[fidTot]];
-		maxSpec = Max[Abs[specTot]];
-
 		fidP = Switch[show, "both", fidTot, "signal", fid5, "noise", noise5];
 		specP = Switch[show, "both", specTot, "signal", specF, "noise", noiseF];
 
-		{time,ppm} = GetTimePpmRange[fidP, {dw2, field, nuc}];
-		timep = time + (te-ph1s) / 1000;
-		{pmin, pmax} = {Min[{pmin, Max[ppm]}], Max[{pmax, Min[ppm]}]};
+		(*get ranges for consistant plotting*)
+		maxFid = Max[Abs[fidTot]];
+		maxSpec = Max[Abs[specTot]];
+		{time, ppm} = GetTimePpmRange[fidP, {dw2, field, nuc}];
+		timep = time + (te - ph1s) / 1000;
 
 		Grid[{
 			{Style[{sig, StandardDeviation[noise1], StandardDeviation[noise5], lw}, LightDarkV[]]},
 			{
-				(*{Total@Re@fidP,Re@First@fidP,Total@Abs@ShiftedFourier@fidP,sig,simTrigger},
-				peakSel,*)
 				Show[
 					PlotFid[timep, TimeShiftFid[fidP, timep, gyro, {0, off}], 
-						Method->met,PlotRange->{{Min[{0, Min[timep]}], Max[timep]}, {-1.5,1.5} maxFid},
-						GridLineSpacing->0.05, ImageSize->psize
+						Method -> met, PlotRange -> {{-0.001, Max[timep] + 0.001}, {-1.2, 1.2} maxFid}, 
+						GridLineSpacing -> 0.05, ImageSize -> psize
 					],
 					If[!timeshift, Graphics[], ListLinePlot[Transpose@{timep, maxFid shiftFun[timep, eps, gyro]}, PlotStyle->{Darker@Blue, Thin}]],
 					If[!timeshift, Graphics[], ListLinePlot[Transpose@{timep, maxFid relaxFun[timep, {gamma, sigma}]}, PlotStyle->{Darker@Orange, Dashed}, PlotRange->Full]],
@@ -1839,7 +1795,7 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 				]
 			},{
 				PlotSpectra[ppm, 
-					ShiftSpectra[specP, {dw, gyro}, off] (*specP*), PlotRange -> {If[pran==="Automatic", Full, {pmin, pmax}], {-0.2, 1.2} maxSpec},
+					ShiftSpectra[specP, {dw, gyro}, off], PlotRange -> {If[pran==="Automatic", Full, {pmin, pmax}], {-0.3, 1.2} maxSpec},
 					GridLineSpacing -> 5, AspectRatio -> .5, Method -> met, ImageSize -> psize]
 			}
 		}]
@@ -1866,38 +1822,37 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 
 		Delimiter,
 		TabView[{
-			Style["acquisition", 12, Bold] -> Column[{
+			Style["acquisition and signal", 12, Bold] -> Column[{
+				Style["acquistion settings", 10, Bold],
+				Control[{{off, 0., "F0 [ppm]"}, -10, 10}],
 				Control[{{bw, 5000., "bandwidth [Hz]"}, 500, 10000}],
 				Control[{{ns, 512, "n samples"}, 32, 1024, 16}],
 				Control[{{te, 0., "echo time [ms]"}, 0,5}],
+				Style["FID properties", 10, Bold],
 				Control[{{snr, 40., "snr"}, 2, 100}],
-				Control[{{off, 0., "F0 [ppm]"}, -10, 10}]
-			}]
-			,
-			Style["signal", 12, Bold] -> Column[{
-				Control[{{timeshift, True, "apply linewidth and shift"}, {False, True}}],
 				Control[{{ph0, 0, "phase [rad]"}, -Pi, Pi}],
 				Control[{{eps, 0, "shift [ppm]"}, -5, 5}],
+				Control[{{timeshift, True, "apply linewidth and shift"}, {False, True}}],
 				Control[{{gamma , 10, "Lorentzian linewidth [Hz]"}, 0, 100}],
-				Control[{{sigma, 0, "Gaussian linewidth [Hz]"}, 0, 100}],
-				
-				Style["spectra phase",10,Bold],
-				Control[{{ph0s, 0., "0th order phase [rad]"}, -Pi, Pi}],
-				Control[{{ph1s, 0., "1st order phase [ms]"}, -10., 10.}]
+				Control[{{sigma, 0, "Gaussian linewidth [Hz]"}, 0, 100}]
 			}]
 			,
 			Style["plotting",12,Bold] -> Column[{
-				Control[{{pad,1,"padding"},1,4,0.5}],
-				Control[{{ap,"None","apodization"},{"None","Hanning","Hamming","Gaussian","Lorentzian","Voigt"},ControlType->SetterBar}],
-				Style["what to plot",10,Bold],
+				Style["spectra phasing", 10, Bold],
+				Control[{{ph0s, 0., "0th order phase [rad]"}, -Pi, Pi}],
+				Control[{{ph1s, 0., "1st order phase [ms]"}, -1., 1.}],
+				Style["padding and apodization", 10, Bold],
+				Control[{{pad,1,"padding factor"}, 1,4, 0.5}],
+				Control[{{ap,"None","apodization kernel"}, {"None","Hanning","Hamming","Gaussian","Lorentzian","Voigt"},ControlType->SetterBar}],
+				Style["what to plot", 10, Bold],
 				Control[{{show,"both","signal and noise"},{"both","signal","noise"}}],
 				Control[{{met,"ReIm","plot method"},{"All","Abs","Re","Im","ReIm"}}],
-				Style["options",10,Bold],
-				Control[{{pran,"Manual","ppm plot range"},{"Automatic","Manual"}}],
-				Control[{{pmin,8,"ppm min"},Dynamic[pmax],Dynamic[Max[ppm]]}],
-				Control[{{pmax,-18, "ppm max"},Dynamic[Min[ppm]],Dynamic[pmin]}],
-				Button["reset ppm range",{pmin,pmax}={{7.5,2.5},{8,-18},{-10,10}}[[nucs]]],
-				Control[{{psize,500,"plot size"},{200,300,400,500,600,700}}]
+				Style["options", 10, Bold],
+				Control[{{pran, "Manual", "ppm plot range"}, {"Automatic","Manual"}}],
+				Control[{{pmin, 10, "ppm min"}, Dynamic[pmax], Dynamic[Max[ppm]]}],
+				Control[{{pmax, -20, "ppm max"}, Dynamic[Min[ppm]], Dynamic[pmin]}],
+				Button["reset ppm range", {pmin, pmax} = {{7.5, 2.5}, {10, -20}, {-10,10}}[[nucs]]],
+				Control[{{psize, 500, "plot size"}, {200, 300, 400, 500, 600, 700}}]
 			}]
 		}],
 
@@ -1966,6 +1921,7 @@ SpectraSimulator[]:=Block[{},DynamicModule[{
 		WindowSize -> All, WindowTitle -> "Spectra simulator"]];
 ]];
 
+
 simulatedFid[{nsamp_, bw_, field_, nuc_},peaks_]:=Block[{dw, gyro, names, fids, specs, table},
 	dw = 1. / bw;
 	gyro = GetGyro[field, nuc];
@@ -1974,6 +1930,7 @@ simulatedFid[{nsamp_, bw_, field_, nuc_},peaks_]:=Block[{dw, gyro, names, fids, 
 		SpectraPpmShift->0, SpectraFieldStrength->field, SpectraNucleus->nuc];
 	{dw, gyro, field, (names/.peaks).fids}
 ]
+
 
 apodizeFun[time_,apM_:"Hanning"]:=Block[{length,app,xdat,xmax},
 	xdat = time;
@@ -1990,14 +1947,17 @@ apodizeFun[time_,apM_:"Hanning"]:=Block[{length,app,xdat,xmax},
 	app
 ]
 
+
 relaxFun[time_, {gamma_, sigma_}] := Exp[- Pi (gamma time + (sigma time)^2)]
 shiftFun[time_, eps_, gyro_] := Re@Exp[2 Pi eps gyro I time] 
+
 
 effectiveLinewidth[gamma_, sigma_, gyro_] := Block[{fwhmHz},
 	(* Olivero Voigt Approximation *)
 	fwhmHz = 0.5346 * gamma + Sqrt[0.2166 * gamma^2 + sigma^2];
 	{fwhmHz, fwhmHz / gyro}
 ]
+
 
 (* ::Subsection::Closed:: *)
 (*FitSpectraResultTable*)
