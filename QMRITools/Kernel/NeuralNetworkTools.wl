@@ -112,6 +112,9 @@ AnalyzeNetworkFeatures::usage =
 "AnalyzeNetworkFeatures[net, data] gives overview of the information density of the network features by analyzing them with SVD."
 
 
+$debugUnet::usage = "$debugUnet is a debug flag for Unet functionality with in te NeuralNetworksTools."; 
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -191,6 +194,9 @@ Begin["`Private`"]
 
 
 debugUnet[x___] := If[$debugUnet, Print[x]];
+
+
+QMRITools`SegmentationTools`$debugUnet = False;
 
 
 (* ::Subsection:: *)

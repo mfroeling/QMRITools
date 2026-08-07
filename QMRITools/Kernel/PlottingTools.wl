@@ -103,6 +103,9 @@ ColorFAPlot::usage =
 "ColorFAPlot[tenor] create a color coded FA map from the tensor for l1, l2 and l3."
 
 
+$plotOptions::usage = "$plotOptions is a list of options for plotting.";
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
