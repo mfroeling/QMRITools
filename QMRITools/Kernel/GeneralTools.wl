@@ -299,7 +299,7 @@ MonitorFunction::usage =
 
 LightDarkV::usage = 
 "LightDarkV[] gives Black for light mode and White for dark mode in version 14.3+ else it gives White.
-LightDarkV[light, dark] does the same as LighhDarkSwitched but only for version 14.3 or higher."
+LightDarkV[light, dark] does the same as tighhDarkSwitched but only for version 14.3 or higher."
 
 
 (* ::Subsection::Closed:: *)
@@ -624,18 +624,18 @@ SaveImage[exp_, opts : OptionsPattern[]] := Module[{input, type},
 	];
 ]
 
-SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imsize,res,type},
+SaveImage[exp_, filei_String, OptionsPattern[]] := Module[{file,imSize,res,type},
 	type = OptionValue[FileType];
 	type = If[StringTake[type, 2] === "*.", StringDrop[type,1], If[StringTake[type, 1] === ".",type, "."<>type]];
 
 	file=If[StringTake[filei,-4]===type||StringTake[filei,-5]===type,filei,filei<>type];
 
-	imsize=OptionValue[ImageSize];
+	imSize=OptionValue[ImageSize];
 	res=OptionValue[ImageResolution];
 
 	If[OptionValue[FileType]===".tiff"||OptionValue[FileType]===".tif",
-		Export[file, exp , ImageSize->imsize, ImageResolution -> res,"ImageEncoding"->"LZW"],
-		Export[file, exp , ImageSize->imsize, ImageResolution -> res]
+		Export[file, exp , ImageSize->imSize, ImageResolution -> res,"ImageEncoding"->"LZW"],
+		Export[file, exp , ImageSize->imSize, ImageResolution -> res]
 	];
 
 	"File was saved to: " <> file

@@ -143,7 +143,7 @@ RPBMFunction[tm, {{d0, tau, zeta}, ..}] generates the RPBM function for the give
 
 GetRPBMValues::usage = 
 "GetRPBMValues[{d0, tau, zeta}] derives parameters from RPBM function. d0, tau and zeta are the parameters of the RPBM function.
-Ouput is a list containing {d0, tau, zeta, dinf, td, tr, I, sv, a, kappa}."
+output is a list containing {d0, tau, zeta, dinf, td, tr, I, sv, a, kappa}."
 
 FitRPBMDictionary::usage=
 "FitRPBMDictionary[sig, {pars, sim}, snr] fits the RPBM function to the simulated data sig using the parameters pars and the simulated data sim.
@@ -157,13 +157,13 @@ Options are the used parameters in the dictionary and the simulated RD values, {
 FitRPBMFunction::usage = 
 "FitRPBMFunction[tms, dat] fits the RPBM function to the data dat using the mixing times tms using FindMinimum. 
 The output is a rule of the fitted parameters {d0->val, tau-> tau, zeta ->zeta}.
-FitRPBMFunction[tms, dat, init] does the same but uses init as inital guess values.
-FitRPBMFunction[tms, dat, init, fix] does the same but uses init as inital guess values and fixes the parameters in fix."
+FitRPBMFunction[tms, dat, init] does the same but uses init as initial guess values.
+FitRPBMFunction[tms, dat, init, fix] does the same but uses init as initial guess values and fixes the parameters in fix."
 
 
 Correct::usage =
-"Correct[data, phase, shiftpar] corrects the dataset data using the phase map and the shiftpar and interpolation order 1.
-Correct[data, phase, shiftpar, int] corrects the dataset data using the phase map and the shiftpar and interpolation order int."
+"Correct[data, phase, shiftPar] corrects the dataset data using the phase map and the shiftPar and interpolation order 1.
+Correct[data, phase, shiftPar, int] corrects the dataset data using the phase map and the shiftPar and interpolation order int."
 
 TensorCorrect::usage=
 "TensorCorrect[tensor, phase, shift, vox] corrects the tensor based on B0 field map. Can perform both translation and rotation of tensor."
@@ -369,7 +369,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 		SparseArray[{}, Length@data, 0.]
 	];
 
-	(*convert everyting back to input dimensions*)
+	(*convert everything back to input dimensions*)
 	If[depthD==1, {fitResult, outliers, residual} = First/@{fitResult, outliers, residual}];
 	If[depthD>=3, 
 		fitResult = Transpose[VectorToData[fitResult, coor]];	

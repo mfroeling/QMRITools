@@ -1009,8 +1009,8 @@ PlotData[dat_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPatter
 (*PlotData 2 datasets*)
 
 
-PlotData[dat1_?ArrayQ, dat2_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPattern[]]:=
-Module[{data1=N[dat1],data2=N[dat2],label,label1,label2,str,n,rangex,rangey,tab1,tab2,ccol,
+PlotData[dat1_?ArrayQ, dat2_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1},OptionsPattern[]]:= Module[{
+		data1 ,data2, label,label1,label2,str,n,rangex,rangey,tab1,tab2,ccol,
 		x,xp,yp,min1,max1,min2,max2,mind1,maxd1,mind2,maxd2,reverse,or,plabs,plab,plot,aspect,cfs1,cfs2,
 		minclip1,maxclip1,minclip2,maxclip2,clipMax1,clipMin1,clipMax2,clipMin2,ps,legend,color1,color2,lstyle1,lstyle2,control,
 		pannel,pdata1,pdata2,flip,overlay,checksize,opac,diffr,fileType,size,leftright,lab,mpdim,leg, ran,

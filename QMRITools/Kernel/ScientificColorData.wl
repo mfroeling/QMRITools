@@ -25,10 +25,10 @@ BeginPackage["QMRITools`ScientificColorData`"];
 
 
 AddScientificColors::usage = 
-"AddScientificColors[dir] adds the scientific colour data (https://zenodo.org/records/8409685) from the specified folder."
+"AddScientificColors[dir] adds the scientific color data (https://zenodo.org/records/8409685) from the specified folder."
 
 ExtractColorData::usage = 
-"ExtractColorData[] Extracts the scientific colordata archive (https://zenodo.org/records/8409685)."
+"ExtractColorData[] Extracts the scientific color data archive (https://zenodo.org/records/8409685)."
 
 
 (* ::Subsection:: *)
@@ -62,21 +62,22 @@ AddScientificColors[dir_]:=Block[{
 	(*activated ColorDataDump*)
 	ColorData[];
 	
-	(*skip if either the files are not there or the colors have been difined already*)
+	(*skip if either the files are not there or the colors have been defined already*)
 	If[Quiet[Head[ColorData["ScientificColorMapsGroups"]]===ColorData]&&DirectoryQ[dir],
 		
-		(*color functions defined in scientific colour maps v8*)
-		grads={"acton","bamako","batlow","batlowK","batlowW","bilbao","buda","davos","devon","glasgow","grayC","hawaii","imola","lajolla","lapaz","lipari","navia","nuuk","oslo","tokyo","turku"};
-		gradDiv={"bam","berlin","broc","cork","lisbon","managua","roma","tofino","vanimo","vik"};
-		gradMulti={"fes","bukavu","oleron"};
-		cyclic={"bamO","brocO","corkO","romaO","vikO"};
+		(*color functions defined in scientific color maps v8*)
+		grads = {"acton","bamako","batlow","batlowK","batlowW","bilbao","buda","davos","devon","glasgow","grayC",
+			"hawaii","imola", "lajolla","lapaz","lipari","navia","nuuk","oslo","tokyo","turku"};
+		gradDiv = {"bam","berlin","broc","cork","lisbon","managua","roma","tofino","vanimo","vik"};
+		gradMulti = {"fes","bukavu","oleron"};
+		cyclic = {"bamO","brocO","corkO","romaO","vikO"};
 		
 		all=Join[grads,gradDiv,gradMulti,cyclic];
 		
 		(*number of swatches for each*)
 		swatches={"10","25","50","100"};
 		
-		(*functions that generate the information needed for the named colorfunctions*)
+		(*functions that generate the information needed for the named color functions*)
 		colName=Switch[#2,
 			1, {Capitalize[#1],#1,{}},
 			2, {Capitalize[#1]<>"Discrete"<>#3,#1<>" discrete "<>#3,{}},
