@@ -56,7 +56,7 @@ The \"how\" parameter can be:
 	- \"x\", \"y\", or \"z\" for slice selection, here criteria is a slice number
 	- \"through\" for selecting tract that go through a roi, here criteria is a 3D mask.
 	- \"within\" for selecting tract that fit fully within the roi, here criteria is a 3D mask.
-	- \"partwithin\" for selecting the part of the tracts that fall within the roi, here criteria is a 3D mask.
+	- \"partWithin\" for selecting the part of the tracts that fall within the roi, here criteria is a 3D mask.
 Any number of select criteria can be listed."
 
 SegmentTracts::usage = 
@@ -384,7 +384,7 @@ SegmentTracts[tracts_, segments_, vox_, dim_, OptionsPattern[]] := Block[{tracts
 		(*normals way is slightly faster for small datasets*)
 		tractsOut = RescaleTractsC[tracts, vox];
 		tractsOut = FilterTracts[
-			tracts, tractsOut, {{"and", {"partwithin", #}}}, FiberLengthRange -> OptionValue[FiberLengthRange]
+			tracts, tractsOut, {{"and", {"partWithin", #}}}, FiberLengthRange -> OptionValue[FiberLengthRange]
 			] & /@ Transpose[segments]
 	];
 
@@ -514,17 +514,17 @@ VecAngC = Compile[{{tr, _Real, 2}, {v1, _Real, 1}}, Block[{angles},
 	(180./Pi) angles
 	], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
 
-VecAngC2 = Compile[{{tr, _Real, 2}, {v1, _Real, 1}, {v2, _Real, 1}}, Block[{vec, dotv, proj, dotp, nr, angles},
+VecAngC2 = Compile[{{tr, _Real, 2}, {v1, _Real, 1}, {v2, _Real, 1}}, Block[{vec, dotV, proj, dotP, nr, angles},
 	angles = (
 		(*normalize and align with plane normal*)
 		vec = #/Norm[#];
-		dotv = Dot[vec, v1];
+		dotV = Dot[vec, v1];
 		(*project, normalize and align with v2*)
-		proj = vec - dotv v1;
+		proj = vec - dotV v1;
 		nr = Norm[proj];
-		dotp = Dot[If[nr <= 0., v2, proj/nr], v2];
+		dotP = Dot[If[nr <= 0., v2, proj/nr], v2];
 		(*calculate angles*)
-		{ArcSin[Abs[dotv]], ArcCos[Abs[dotp]]}
+		{ArcSin[Abs[dotV]], ArcCos[Abs[dotP]]}
 	) & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]);
 	Transpose[(180./Pi) angles]
 ], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
@@ -548,10 +548,10 @@ TractCurvatureMap[tracts_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim_] := Gat
 
 SyntaxInformation[TractCurvature] = {"ArgumentsPattern" -> {_}};
 
-TractCurvature[tracts_]:= CurvC[tracts]
+TractCurvature[tracts_]:= CurvatureC[tracts]
 
 
-CurvC = Compile[{{tract, _Real, 2}}, Block[{diff, ds, d1, d2},
+CurvatureC = Compile[{{tract, _Real, 2}}, Block[{diff, ds, d1, d2},
 	diff = tract[[2 ;; -1]] - tract[[1 ;; -2]];
 	ds = Norm /@ diff;
 	d1 = diff / ds;
@@ -621,9 +621,9 @@ Options[FiberTractography] = {
 
 SyntaxInformation[FiberTractography] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
-FiberTractography[tensor_, voxi_, opts : OptionsPattern[]] := FiberTractography[tensor, voxi, {0. First@tensor, {0., 1.}}, opts]
+FiberTractography[tensor_, voxI_, opts : OptionsPattern[]] := FiberTractography[tensor, voxI, {0. First@tensor, {0., 1.}}, opts]
 
-FiberTractography[tensor_, voxi_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FiberTractography[tensor, voxi, {{par, {min, max}}}, opts]
+FiberTractography[tensor_, voxI_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FiberTractography[tensor, voxI, {{par, {min, max}}}, opts]
 
 FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		minLength, maxLength, maxAng, maxSeed, flip, per, int, stopT, step, tractF, vecF, trFunc, ran,
@@ -725,19 +725,19 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 (*MakeInt*)
 
 
-MakeInt[dati_, vox_, int_?IntegerQ] := Block[{dim, def, range, p, dat},
+MakeInt[datI_, vox_, int_?IntegerQ] := Block[{dim, def, range, p, dat},
 	p = {Floor[int/2] + 1, Ceiling[int/2]};
-	dat = ArrayPad[dati, PadRight[{p, p, p}, ArrayDepth[dati], {0, 0}], 0];
+	dat = ArrayPad[datI, PadRight[{p, p, p}, ArrayDepth[datI], {0, 0}], 0];
 	dim = Dimensions[dat][[;; 3]];
 	range = Thread[{vox, vox (dim)}] - If[int === 0, 1, p[[1]] + .5] vox;
 	def = 0. dat[[1, 1, 1]];
 	def = If[ListQ[def], Flatten@def, def];
-	With[{ex = def, fdat = Flatten[dat, 3]}, 
+	With[{ex = def, flatDat = Flatten[dat, 3]}, 
 		InterpolatingFunction[
 			range, {5, If[ArrayDepth[dat] === 3, 6, 2], 0, 
 			dim, {int, int, int} + 1, 0, 0, 0, 0, ex &, {}, {}, False}, 
 			Range[range[[#, 1]], range[[#, 2]], vox[[#]]] & /@ {1, 2, 3}, 
-			If[ArrayDepth[dat] === 3 && $VersionNumber >= 13.3, {PackedArrayForm, Range[0, Length[fdat]], fdat}, ToPackedArray@N@dat],
+			If[ArrayDepth[dat] === 3 && $VersionNumber >= 13.3, {PackedArrayForm, Range[0, Length[flatDat]], flatDat}, ToPackedArray@N@dat],
 			{Automatic, Automatic, Automatic}
 		]
 	]
@@ -761,8 +761,8 @@ TractFunc[loc0_?VectorQ, h_, stp_, fun_] := Block[{dir0, out},
 ]
 
 
-TractFuncI[{loci_, stepi_, h_}, {maxAng_, maxStep_, stop_}, {vecInt_, stopInt_, tractF_, vecF_}] := Block[{
-		loc1 = loci, step0 = stepi, step1
+TractFuncI[{loci_, stepI_, h_}, {maxAng_, maxStep_, stop_}, {vecInt_, stopInt_, tractF_, vecF_}] := Block[{
+		loc1 = loci, step0 = stepI, step1
 	},
 	step1 = tractF[loc1, step0, h, vecInt, vecF];
 	Flatten[Last@Reap[Do[
@@ -856,7 +856,7 @@ RK4[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3, k4},
 
 (*Solves the cubic equation analytically using the characteristic polynomial. This is an exact method.*)
 (*other possible methods could have been power iterations or newtons methods, both are iterative and are not faster than the analytical*)
-EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
+EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, 
 		i1, i2, i3, i, v, s, v2, vv2, l1, a, b, c, norm, vec
 	},
@@ -867,10 +867,10 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 	(*only negative eigenvalues or zero tensor*)
 	If[Total[{dxx, dyy, dzz}] < 10.^-16, Return[{0., 0., 0.}]];
 	
-	(*one or more vectors aling wiht primary axis use normal method*)
+	(*one or more vectors aline with primary axis use normal method*)
 	If[ Abs[dxy dxz dyz] < 10.^-16,
 		vec = First@Eigenvectors[{{dxx, dxy, dxz}, {dxy, dyy, dyz}, {dxz, dyz, dzz}}, 1];
-		Return[Sign[Sign[Dot[vdir, vec]] + 0.1] vec]
+		Return[Sign[Sign[Dot[vDir, vec]] + 0.1] vec]
 	];
 	
 	(*tensor invariants*)
@@ -895,7 +895,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 	norm = Norm[vec];
 	If[norm < 2 10.^-16, Return[{0., 0., 0.}]];
 	vec = vec/norm;
-	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
+	Sign[Sign[Dot[vDir, vec]] + 0.1] vec
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -903,8 +903,8 @@ EigVec = Compile[{{tens, _Real, 1}, {vdir, _Real, 1}}, Block[{
 (*AlignVec*)
 
 
-AlignVec = Compile[{{vec, _Real, 1}, {vdir, _Real, 1}},
-	Sign[Sign[Dot[vdir, vec]] + 0.1] vec
+AlignVec = Compile[{{vec, _Real, 1}, {vDir, _Real, 1}},
+	Sign[Sign[Dot[vDir, vec]] + 0.1] vec
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -974,7 +974,7 @@ FilterTracts[tracts_, tractsI_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}|None, select
 		CombineROIs[{#[[1]], Switch[ToLowerCase[#[[2, 1]]],
 			"through", SelectTractTroughVol,
 			"within", SelectTractInVol,
-			"partwithin", SelectTractPartInVol,
+			"partWithin", SelectTractPartInVol,
 			"x" | "y" | "z", SelectTractTroughPlane
 		][tractsI, If[StringLength[#[[2, 1]]] == 1, #[[2]], #[[2, 2]]], vox]} & /@ select]
 	]
@@ -1101,7 +1101,7 @@ SelectTractPartInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _R
 (*PadROI*)
 
 
-(*make sure trackts always fall withing roi			*)
+(*make sure tracts always fall withing roi			*)
 PadROI[roi_] := Normal@PadRight[roi, Dimensions[roi] + 1, 0]
 
 
@@ -1130,11 +1130,11 @@ SyntaxInformation[PlotTracts] = {"ArgumentsPattern" -> {_, _., _., OptionsPatter
 
 PlotTracts[file_String, opts : OptionsPattern[]] := PlotTracts[##, opts] & @@ ImportTracts[file][[1 ;; 3]]
 
-PlotTracts[tracts_, voxi_, opts : OptionsPattern[]] := PlotTracts[tracts, voxi, 0, opts]
+PlotTracts[tracts_, voxI_, opts : OptionsPattern[]] := PlotTracts[tracts, voxI, 0, opts]
 
-PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
+PlotTracts[tracts_, voxI_, dimI_, OptionsPattern[]] := Block[{
 		range, vox, size, select, opts, col, tube, line, plot, colOpt, 
-		met, pran, max, colf, colArray, sc, n, scale, red, qual, scaleF
+		met, plotRange, max, colFunction, colArray, sc, n, scale, red, qual, scaleF
 	},
 
 	(*Graphics`RenderTiming*)
@@ -1148,15 +1148,15 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 
 	(*calculated needed sizes ranges and scales*)
 	scale = OptionValue[TractScaling];
-	vox = Switch[scale, "World", {1,1,1}, _, Reverse@voxi];
-	range = If[dimi === 0,
+	vox = Switch[scale, "World", {1,1,1}, _, Reverse@voxI];
+	range = If[dimI === 0,
 		Round[Reverse[MinMax /@ Transpose@Flatten[tracts, 1]]/vox],
-		Reverse@Thread[{{0, 0, 0}, Switch[scale, "World", voxi dimi, _, dimi]}]];
+		Reverse@Thread[{{0, 0, 0}, Switch[scale, "World", voxI dimI, _, dimI]}]];
 	size = vox Flatten[Differences /@ range];
 
 	(*get the tract vertex colors based on color function*)
 	colOpt = OptionValue[TractColoring];
-	{met, pran} = Which[
+	{met, plotRange} = Which[
 		Head[colOpt]===MaterialShading, {"Material", colOpt},
 		StringQ[colOpt]||ArrayQ[colOpt], {colOpt, Automatic}, 
 		Length[colOpt]===2, colOpt, 
@@ -1165,13 +1165,13 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	];
 	If[ArrayQ[met], colArray=met; met="Array"];
 
-	colf = OptionValue[ColorFunction];
+	colFunction = OptionValue[ColorFunction];
 	col = Switch[met,
 		"Direction", MakeDirectionColor[select],
-		"Length", MakeLengthColor[select, {pran, colf}],
-		"Angle", MakeAngleColor[select, {pran, colf}],
-		"Array", MakeArrayColor[select, {pran, colf}, {colArray, voxi}],
-		"Color", MakeConstantColor[select, pran],
+		"Length", MakeLengthColor[select, {plotRange, colFunction}],
+		"Angle", MakeAngleColor[select, {plotRange, colFunction}],
+		"Array", MakeArrayColor[select, {plotRange, colFunction}, {colArray, voxI}],
+		"Color", MakeConstantColor[select, plotRange],
 		"Material",	None,
 		_, White
 	];
@@ -1189,7 +1189,7 @@ PlotTracts[tracts_, voxi_, dimi_, OptionsPattern[]] := Block[{
 	select = Reverse[select, 3];
 	scaleF = Switch[scale, "World", # &, _, Scale[#, 1/vox, {0, 0, 0}] &];
 	plot = Graphics3D[Switch[OptionValue[Method],
-		"tube", {If[met==="Material", pran, Nothing], CapForm["Butt"], JoinForm["Miter"], 
+		"tube", {If[met==="Material", plotRange, Nothing], CapForm["Butt"], JoinForm["Miter"], 
 			scaleF@Tube[select, OptionValue[TractSize], VertexColors -> col]},
 		"line", scaleF@Line[select, VertexColors -> col],
 		_, $Failed
@@ -1213,10 +1213,10 @@ MakeDirectionColor[tracts : {_?ListQ ..}] := ToPackedArray[MakeDirectionColor /@
 (*MakeLengthColor*)
 
 
-MakeLengthColor[tracts_, {pran_, colf_}]:=Block[{len, col},
+MakeLengthColor[tracts_, {plotRange_, colFunction_}]:=Block[{len, col},
 	len = FLengthC[tracts];
-	len = Rescale[len, If[pran === Automatic, Quantile[len, {.05, 0.95}], pran]];
-	col = ColorData[colf];
+	len = Rescale[len, If[plotRange === Automatic, Quantile[len, {.05, 0.95}], plotRange]];
+	col = ColorData[colFunction];
 
 	ToPackedArray@MapThread[ToPackedArray[ConstantArray[#2 /. RGBColor -> List, Length@#1]]&, {tracts, col /@ len}]
 ];
@@ -1226,10 +1226,10 @@ MakeLengthColor[tracts_, {pran_, colf_}]:=Block[{len, col},
 (*MakeAngleColor*)
 
 
-MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
+MakeAngleColor[tracts_, {plotRange_, colFunction_}] := Block[{ang, col},
 	ang = (Mean[{Prepend[#, #[[1]]], Append[#, #[[-1]]]}]) & /@TractAngle[tracts];
-	ang = Rescale[ang, If[pran === Automatic, {0, 90}, pran]];
-	col = ColorData[colf];
+	ang = Rescale[ang, If[plotRange === Automatic, {0, 90}, plotRange]];
+	col = ColorData[colFunction];
 
 	ToPackedArray[ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ ang]
 ];
@@ -1239,10 +1239,10 @@ MakeAngleColor[tracts_, {pran_, colf_}] := Block[{ang, col},
 (*MakeArrayColor*)
 
 
-MakeArrayColor[tract_, {pran_, colf_}, {dat_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}}] := Block[{vals, col},
+MakeArrayColor[tract_, {plotRange_, colFunction_}, {dat_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}}] := Block[{vals, col},
 	vals = GetTractValues[tract, dat, vox, InterpolationOrder -> 0];
-	vals = Rescale[vals, If[pran === Automatic, Quantile[Flatten[vals], {.05, 0.95}], pran]];
-	col = ColorData[colf];
+	vals = Rescale[vals, If[plotRange === Automatic, Quantile[Flatten[vals], {.05, 0.95}], plotRange]];
+	col = ColorData[colFunction];
 
 	ToPackedArray[ToPackedArray[(col /@ #) /. RGBColor -> List] & /@ vals]
 ]
@@ -1252,14 +1252,14 @@ MakeArrayColor[tract_, {pran_, colf_}, {dat_, vox:{_?NumberQ,_?NumberQ,_?NumberQ
 (*MakeConstantColor*)
 
 
-MakeConstantColor[tract_, pran_] := MakeConstantColor[tract, pran, True]
+MakeConstantColor[tract_, plotRange_] := MakeConstantColor[tract, plotRange, True]
 
-MakeConstantColor[tract_, pran_, rand_] := Block[{vals, col},
+MakeConstantColor[tract_, plotRange_, rand_] := Block[{vals, col},
 	ToPackedArray[If[rand,
-		col = Table[Blend[{Darker[pran,.2], pran, Lighter[pran,.2]}, x], {x, 0., 1., 1./10}] /. RGBColor -> List;
+		col = Table[Blend[{Darker[plotRange,.2], plotRange, Lighter[plotRange,.2]}, x], {x, 0., 1., 1./10}] /. RGBColor -> List;
 		ToPackedArray[ConstantArray[RandomChoice[col], Length@#1]] & /@ tract
 		,
-		col = pran /. RGBColor -> List;
+		col = plotRange /. RGBColor -> List;
 		ToPackedArray[ConstantArray[col, Length@#1]] & /@ tract
 	]]
 ]
@@ -1287,9 +1287,9 @@ SyntaxInformation[PlotSegmentedTracts] = {"ArgumentsPattern" -> {_, _, _, _, _.,
 
 PlotSegmentedTracts[tracts_, segments_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := PlotSegmentedTracts[tracts, segments, None, dim, vox, opts]
 
-PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := Block[{
+PlotSegmentedTracts[tracts_, segmentIn_, bonesN_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := Block[{
 		ntr, fran, type, segments, tractsF, tractsFI, ran, rand, colListT, colListC, showF,
-		ref, bon, musc, tract, tracksSel, lengths, nTracts, sel, mon, size, output, colFunc,
+		ref, bone, muscle, tract, tracksSel, lengths, nTracts, sel, mon, size, output, colFunc,
 		sizeT, qual, opa, ord
 	},
 
@@ -1331,16 +1331,16 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	ref[[1]] = {};
 
 	(*make the muscle contours*)
-	musc = If[colListC =!= None, Table[PlotContour[segments[[i]], vox, ContourOpacity -> opa, 
+	muscle = If[colListC =!= None, Table[PlotContour[segments[[i]], vox, ContourOpacity -> opa, 
 		ContourColor -> If[ColorQ[colListC], colListC, colListC[[i]]], 
 		ContourSmoothRadius -> 2, ContourResolution -> 2], {i, ran}], Graphics3D[]];
-	bon = If[bones =!= None, PlotContour[bones, vox, ContourOpacity -> 1, ContourColor -> Lighter@Gray, 
+	bone = If[bonesN =!= None, PlotContour[bonesN, vox, ContourOpacity -> 1, ContourColor -> Lighter@Gray, 
 		ContourSmoothRadius -> 2, ContourResolution -> 2], Graphics3D[]];
 
 	mon["Making per muscle tracts"];
 	(*select the tracts per muscle and make fiber plots*)
 	tractsFI = RescaleTractsC[tractsF, vox];
-	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segments;
+	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partWithin", #}}}, FiberLengthRange -> fran] & /@ segments;
 	(*only fit if order is greater than 1*)
 	If[ord > 0, tracksSel = If[#=!={} && ord>0, FitTracts[#, vox, dim, FittingOrder -> ord], {}]& /@ tracksSel];
 
@@ -1358,10 +1358,10 @@ PlotSegmentedTracts[tracts_, segmentIn_, bones_, dim_, vox:{_?NumberQ,_?NumberQ,
 	] & @@ # &;
 
 	Switch[output,
-		"All", showF[{bon, tract, musc}],
-		"Groups", showF[{#}] & /@ {bon, tract, musc},
-		"Joined", showF[{bon, #}] & /@ Thread[{tract, musc}],
-		"Individual", {showF[{bon}], showF[{#}] & /@ tract, showF[{#}] & /@ musc}
+		"All", showF[{bone, tract, muscle}],
+		"Groups", showF[{#}] & /@ {bone, tract, muscle},
+		"Joined", showF[{bone, #}] & /@ Thread[{tract, muscle}],
+		"Individual", {showF[{bone}], showF[{#}] & /@ tract, showF[{#}] & /@ muscle}
 	]
 ]
 
@@ -1402,24 +1402,24 @@ ImportTracts[file_] := Block[{fileI},
 (*ImportTractsDefault*)
 
 
-ImportTractsDefault[file_, ___] := Block[{strm, all, nTr, nTrLeng, dim, vox, seeds, tracts},
+ImportTractsDefault[file_, ___] := Block[{stream, all, nTr, nTrLength, dim, vox, seeds, tracts},
 
-	strm = OpenRead[file, BinaryFormat -> True];
+	stream = OpenRead[file, BinaryFormat -> True];
 
 	(*nDim, nVox, nSeed, nTrCoor*)
-	all = BinaryReadList[strm, "Integer32", 4];
+	all = BinaryReadList[stream, "Integer32", 4];
 
 	(*the number of tracts and each tracts length*)
-	nTr = First@BinaryReadList[strm, "Integer32", 1];
-	nTrLeng = BinaryReadList[strm, "Integer32", nTr];
+	nTr = First@BinaryReadList[stream, "Integer32", 1];
+	nTrLength = BinaryReadList[stream, "Integer32", nTr];
 
 	(*read the data*)
-	{dim, vox, seeds, tracts} = DynamicPartition[BinaryReadList[strm, "Real32", Total[all]], all];
+	{dim, vox, seeds, tracts} = DynamicPartition[BinaryReadList[stream, "Real32", Total[all]], all];
 
 	(*partition the seeds*)
 	seeds = Partition[seeds, 3];
-	tracts = DynamicPartition[Partition[tracts, 3], nTrLeng];
-	Close[strm];
+	tracts = DynamicPartition[Partition[tracts, 3], nTrLength];
+	Close[stream];
 
 	(*give the output*)
 	{tracts, vox, Round[dim], seeds}
@@ -1464,13 +1464,13 @@ ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, 
 
 ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim : {_?NumberQ, _?NumberQ, _?NumberQ}] := ExportTracts[file, tracts, vox, dim, {}]
 
-ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim : {_?NumberQ, _?NumberQ, _?NumberQ}, seeds_?ListQ] := Block[{fileo},
-	fileo = If[file == "",
+ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim : {_?NumberQ, _?NumberQ, _?NumberQ}, seeds_?ListQ] := Block[{fileOut},
+	fileOut = If[file == "",
 		FileSelect["FileSave", {"*.trk"}, "trk", WindowTitle -> "Select the destination file"],
 		ConvertExtension[file, ".trk"]
 	];
 
-	Export[fileo, {tracts, vox, dim, seeds}, {"trk", {"Tracts", "VoxelSize", "Dimensions", "Seeds"}}]
+	Export[fileOut, {tracts, vox, dim, seeds}, {"trk", {"Tracts", "VoxelSize", "Dimensions", "Seeds"}}]
 ]
 
 
@@ -1479,7 +1479,7 @@ ExportTracts[file_?StringQ, tracts : {_?ListQ ..}, vox : {_?NumberQ, _?NumberQ, 
 
 
 ExportTractsDefault[file_, rule_, ___] := Block[{
-		tracts, vox, dim, seeds, strm, nDim, nVox, nSeed, nTr, nTrCoor, nTrLeng
+		tracts, vox, dim, seeds, stream, nDim, nVox, nSeed, nTr, nTrCoor, nTrLength
 	},
 
 	{tracts, vox, dim, seeds} = {"Tracts", "VoxelSize", "Dimensions", "Seeds"} /. rule;
@@ -1489,19 +1489,19 @@ ExportTractsDefault[file_, rule_, ___] := Block[{
 	nVox = If[vox =!= {0, 0, 0}, 3, 0];
 	(*Number of seed coordinates*)
 	nSeed = 3 Length[seeds];
-	(*number of tracts tracts coordinates and tract lenghts*)
+	(*number of tracts tracts coordinates and tract lengths*)
 	nTr = Length[tracts];
-	nTrLeng = Length /@ tracts;
-	nTrCoor = 3 Total[nTrLeng];
+	nTrLength = Length /@ tracts;
+	nTrCoor = 3 Total[nTrLength];
 
 	(*open the stream*)
-	strm = OpenWrite[file, BinaryFormat -> True];
+	stream = OpenWrite[file, BinaryFormat -> True];
 	(*how to partition the stream*)
-	BinaryWrite[strm, Flatten@{nDim, nVox, nSeed, nTrCoor, nTr, nTrLeng}, "Integer32"];
+	BinaryWrite[stream, Flatten@{nDim, nVox, nSeed, nTrCoor, nTr, nTrLength}, "Integer32"];
 	(*Write the data*)
-	BinaryWrite[strm, Flatten@{dim, vox, seeds, tracts}, "Real32"];
+	BinaryWrite[stream, Flatten@{dim, vox, seeds, tracts}, "Real32"];
 	(*close the stream*)
-	Close[strm];
+	Close[stream];
 ]
 
 
@@ -1511,7 +1511,7 @@ ExportTractsDefault[file_, rule_, ___] := Block[{
 
 SyntaxInformation[ExportTCK] = {"ArgumentsPattern" -> {_, _, _, _.}};
 
-ExportTCK[file_, tractsI_, vox_, dim_] := Block[{wlType, bo, count, hdr, off, header, offi, tractsOut, stream},
+ExportTCK[file_, tractsI_, vox_, dim_] := Block[{wlType, bo, count, hdr, off, header, offI, tractsOut, stream},
 	{wlType, bo} = {"Real32", -1};
 
 	count = Length@tractsI;
@@ -1530,8 +1530,8 @@ ExportTCK[file_, tractsI_, vox_, dim_] := Block[{wlType, bo, count, hdr, off, he
 	off = 0;
 	While[True,
 		header = hdr[off];
-		offi = StringLength[header];
-		If[offi === off, Break[], off = offi]
+		offI = StringLength[header];
+		If[offI === off, Break[], off = offI]
 	];
 
 	ExportTCK[file, tractsI, header]

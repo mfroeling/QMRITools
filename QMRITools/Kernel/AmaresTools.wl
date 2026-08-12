@@ -26,7 +26,7 @@ BeginPackage["QMRITools`AmaresTools`", Join[{"Developer`"}, Complement[QMRITools
 
 EditAmaresMatrix::usage = 
 "EditAmaresMatrix[matrix] is used to edit the Amares fitting matrix which can be compressed or extended using
-ToFullAmeresMatrix or FromFullAmaresMatrix. 
+ToFullAmaresMatrix or FromFullAmaresMatrix. 
 The default properties are \"amp\": -1, \"sigma\": 0, \"gamma\": 0, \"shift\": -1, \"phase\": 0, \"B1\": False, \"init\": False.
 
 EditAmaresMatrix[matrix, names] will do the same but will only do it for the values in the list names. If values are not in matrix
@@ -41,8 +41,8 @@ FromFullAmaresMatrix::usage =
 To edit the matrix the function EditAmaresMatrix can be used and to extend it ToFullAmaresMatrix can be used."
 
 AmaresBasis::usage = 
-"AmaresBasis[settings, {metabolites, split}] generates basis function needed for amaris fitting.
-The settings are defined as {nsamp, bw, field, nuc, te, f0} and the metabolites are a memmber of
+"AmaresBasis[settings, {metabolites, split}] generates basis function needed for Amares fitting.
+The settings are defined as {nSamp, bw, field, nuc, te, f0} and the metabolites are a member of
 \"PE\", \"PC\", \"Piin\", \"Piex\", \"GPE\", \"GPC\", \"PTDC\", \"PCr\", \"ATP\", \"NAD\" and \"UDPG\".
 When \"ATP\" is defined in split the 3 ATP peaks will be separate spectra to fit. 
 The output is {basisFunc, {time, ppm, gyro}} where basisFunc is an Association."
@@ -61,11 +61,11 @@ AmaresFitFidI[fid, time, gyro, basis, matrix, b1pars, {cons, init}] fits using i
 
 The time, basis and gyro can be obtained from AmaresBasis and the matrix can be obtained form EditMaresMatrix.
 The cons have to be defined for {\"amp\", \"sigma\", \"gamma\", \"shift\", \"phase\", \"B1\"} as {min, max} for each.
-Output is the {fitted parameters, the SE, the SE in %, the standarddeviation of the residuals.}."
+Output is the {fitted parameters, the SE, the SE in %, the standard deviation of the residuals.}."
 
 ShowParameterMatrix::usage = 
-"ShowParameterMatrix[fit, meatabolites] shows the fitted or initial fit parameter matrix from AmaresFitFidI and AmaresInitialValues using met as labels.
-ShowParameterMatrix[fit, true, metabolits] shows the relative difference between the true and fitted parameters."
+"ShowParameterMatrix[fit, metabolites] shows the fitted or initial fit parameter matrix from AmaresFitFidI and AmaresInitialValues using met as labels.
+ShowParameterMatrix[fit, true, metabolites] shows the relative difference between the true and fitted parameters."
 
 AmaresSignalCalc::usage = 
 "AmaresSignalCalc[basis, matrix, pars, gyro] generates a fid from the basis functions according to matrix and pars.
@@ -84,6 +84,8 @@ $AmaresB1Regularization::usage =
 $AmaresT1Values::usage = 
 "$AmaresT1Values is an association that holds the T1 values of the metabolites used in Amares fitting."
 
+$AmaresMatrixDefaults::usage = 
+"$AmaresMatrixDefaults is an association that holds the default values for the Amares fit matrix."
 
 (* ::Subsection:: *)
 (*Options*)
@@ -106,7 +108,10 @@ $AmaresT1Values = <|
 |>;
 
 
-$AmaresB1Regularization = .02;
+$AmaresB1Regularization = 0.000;
+
+
+$AmaresMatrixDefaults = <|"amp" -> -1, "sigma" -> 0, "gamma" -> -1, "shift" -> -1, "phase" -> 0, "B1" -> False, "init" -> False|>;
 
 
 ComplexToVector = Join @@ Through[{Re, Im}[#]] &;
@@ -120,14 +125,16 @@ VectorToComplex = {1, I} . Partition[#, Length[#]/2] &;
 
 
 ShowParameterMatrix[fit_, mets_] := Block[{fiti=fit},
-	fiti[[1]] = Round[100 fiti[[1]]/fiti[[1, 8]], .1];
+	fiti[[1]] = Round[100 fiti[[1]] / fiti[[1, 8]], .1];
 	ShowMat[fiti, mets]
 ]
 
 
-ShowParameterMatrix[fit_, ref_, mets_] := Block[{fiti},
-	fiti = fit - ref;
-	fiti[[1]] = Round[100 fiti[[1]]/ref[[1]], .1];
+ShowParameterMatrix[fit_, ref_, mets_] := Block[{fiti, refi},
+	fiti= fit; refi = ref;
+	fiti[[1]] = Round[100 fit[[1]] / fit[[1, 8]], .1];
+	refi[[1]] = Round[100 ref[[1]] / ref[[1, 8]], .1];
+	fiti = fiti - refi;
 	ShowMat[fiti, mets]
 ]
 
@@ -145,17 +152,17 @@ ShowMat[fiti_, mets_]:=MatrixForm[
 AmaresBasis[settings_, metabolites_?VectorQ] := AmaresBasis[settings, {metabolites, {}}]
 
 AmaresBasis[settings_, {metabolites_?ListQ, split_?ListQ}] := Block[{
-		nsamp, bw, field, nuc, te, f0, dw, gyro, time, ppm, names, fids, basisFunc, sp, spin
+		nSamp, bw, field, nuc, te, f0, dw, gyro, time, ppm, names, fids, basisFunc, sp, spin
 	},
 
-	{nsamp, bw, field, nuc, te, f0} = settings;
+	{nSamp, bw, field, nuc, te, f0} = settings;
 	dw = 1./bw;
 	gyro = GetGyro[field, nuc];
 
-	{time, ppm} = GetTimePpmRange[nsamp, dw, gyro] + {te, 0};
+	{time, ppm} = GetTimePpmRange[nSamp, dw, gyro] + {te, 0};
 	{names, fids, sp, spin} = GetSpectraBasisFunctions[metabolites, split,
 		BasisSequence -> {"PulseAcquire", te},
-		SpectraSamples -> nsamp, SpectraBandwidth -> bw,
+		SpectraSamples -> nSamp, SpectraBandwidth -> bw,
 		SpectraPpmShift -> f0, SpectraFieldStrength -> field,
 		SpectraNucleus -> nuc];
 	basisFunc = Association[Thread[names -> fids]];
@@ -169,22 +176,14 @@ AmaresBasis[settings_, {metabolites_?ListQ, split_?ListQ}] := Block[{
 
 
 (* ::Subsubsection::Closed:: *)
-(*Fixed parameters*)
-
-
-fitMatrixDefaults = <|"amp" -> -1, "sigma" -> 0, "gamma" -> 0, "shift" -> -1, "phase" -> 0, "B1" -> False, "init" -> False|>;
-fitMatrixParams = Keys[fitMatrixDefaults];
-
-
-(* ::Subsubsection::Closed:: *)
 (*ToFullAmaresMatrix*)
 
 
-ToFullAmaresMatrix[names_List] := Association[# -> fitMatrixDefaults & /@ names];
+ToFullAmaresMatrix[names_List] := Association[# -> $AmaresMatrixDefaults & /@ names];
 
-ToFullAmaresMatrix[matrix_Association] := Association[# -> Join[fitMatrixDefaults, matrix[#]] & /@ Keys[matrix]];
+ToFullAmaresMatrix[matrix_Association] := Association[# -> Join[$AmaresMatrixDefaults, matrix[#]] & /@ Keys[matrix]];
 
-ToFullAmaresMatrix[matrix_Association, names_List] := Association[# -> Join[fitMatrixDefaults, Lookup[matrix, #, <||>]] & /@ names];
+ToFullAmaresMatrix[matrix_Association, names_List] := Association[# -> Join[$AmaresMatrixDefaults, Lookup[matrix, #, <||>]] & /@ names];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -193,7 +192,7 @@ ToFullAmaresMatrix[matrix_Association, names_List] := Association[# -> Join[fitM
 
 FromFullAmaresMatrix[matrix_Association] := Select[
 	Association[# -> Association[
-		KeyValueMap[Function[{k, v}, If[v === fitMatrixDefaults[k], Nothing, k -> v]], matrix[#]]
+		KeyValueMap[Function[{k, v}, If[v === $AmaresMatrixDefaults[k], Nothing, k -> v]], matrix[#]]
 		] & /@ Keys[matrix]],
 	# =!= <||> &]
 
@@ -207,7 +206,7 @@ EditAmaresMatrix[names_List] := EditAmaresMatrix[<||>, names];
 EditAmaresMatrix[matrix_Association] := EditAmaresMatrix[matrix, Keys[matrix]];
 
 EditAmaresMatrix[matrix_Association, names_List] := Block[{start, return, list, nn, np, cellVars, cellStart, fitPar},
-	fitPar = fitMatrixParams;
+	fitPar = Keys[$AmaresMatrixDefaults];
 	list = Join[{-1 -> "unique", 0 -> "same"}, # -> "group-" <> IntegerString[#, 10, 2] & /@ Range[1, Length[names]]];
 	start = ToFullAmaresMatrix[matrix, names];
 	{nn, np} = {Length[names], Length[fitPar]};
@@ -255,7 +254,7 @@ GetGroupIds[matrix_, names_] := Table[
 		],
 		ResolveGroupIds[matrix[#, lab] & /@ names]
 	]
-, {lab, Most[fitMatrixParams]}]
+, {lab, Most[Keys[$AmaresMatrixDefaults]]}]
 
 
 ResolveGroupIds[codes_List] := Module[{result, nextId, pos},
@@ -287,18 +286,18 @@ ResolveGroupIds[codes_List] := Module[{result, nextId, pos},
 
 
 MakeParVec[groupsId_] := Flatten[Table[Unique[#[[1]]], {#[[2]]}] & /@ Thread[
-	{Most[fitMatrixParams][[;; Length@groupsId]], Max /@ groupsId}]]
+	{Most[Keys[$AmaresMatrixDefaults]][[;; Length@groupsId]], Max /@ groupsId}]]
 
 
 (* ::Subsubsection::Closed:: *)
 (*ParVecToMat*)
 
 
-ParVecToMat[pvec_, groupsId_] := #[[1]][[#[[2]]]] & /@ Thread[{TakeList[pvec, Max /@ groupsId], groupsId}]
+ParVecToMat[pVec_, groupsId_] := #[[1]][[#[[2]]]] & /@ Thread[{TakeList[pVec, Max /@ groupsId], groupsId}]
 
 
-ParVecToMat[pvec_, groupsId_, fixedB1_] := Block[{expanded, nRows},
-	expanded = ParVecToMat[pvec, groupsId];(*however many rows groupsId actually has*)
+ParVecToMat[pVec_, groupsId_, fixedB1_] := Block[{expanded, nRows},
+	expanded = ParVecToMat[pVec, groupsId];(*however many rows groupsId actually has*)
 	nRows = Length[groupsId];
 	(*full matrix always contains 6*)
 	If[nRows < 6, Append[expanded, ConstantArray[fixedB1, Length[First[expanded]]]], expanded]
@@ -357,7 +356,7 @@ GetSpinResonance[nn_?StringQ] := Block[{res, tags},
 AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}] := AmaresInitialValues[dat, time, basis, matrix, {gyro, dw}, False]
 
 AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}, pl_] := Block[{
-		sc, datf, model, rf, a, p, e, g, s, t, am, gm, sm, eps, ph, epi, ami, gmi,
+		sc, datf, model, rf, a, p, e, g, s, am, gm, sm, eps, ph, epi, ami, gmi,
 		fids, base, sig, corr, ppm, wght, fit, datA, obj,
 		decay, amp, opts, pEps, pGam, pPh, pAmp, plots, init
 	},
@@ -366,65 +365,70 @@ AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}, pl_] := Block[{
 	sc = 1. / Max[Abs@dat];
 	datf = sc dat;
 	
-	(*the signal model*)
-	model[{a_, p_, e_, g_, s_}, t_] := a Exp[-Pi (g t + s^2 t^2) + (-p + 2 Pi e gyro t) I];
-	obj[a_?NumericQ, p_, e_, g_, s_] := Total[Abs[datf - base model[{a, p, e, g, s}, time]]^2];
+	(*the signal model for linewidth*)
+	model[a_?NumberQ, g_] := a Exp[-Pi (g time + 2 Pi g^2 time^2)];
+	model[a_?NumberQ, p_, e_, g_, s_] := a Exp[-Pi (g time + 2 Pi s^2 time^2) + (-p + 2 Pi e gyro time) I];
+	model[a_?VectorQ, p_, e_, g_, s_] := model[#, p, e, g, s] & /@ a;
 	rf = Rescale[Abs[ShiftedFourier[#]]]&;
 
 	(*get basis functions and base for calibration*)
 	fids = Values[basis];
 	base = Total[Pick[fids, Table[matrix[name, "init"], {name, Keys[basis]}]]];
 
-	(*find initial shift using autocorrelation*)
+	(*Step 1. find initial shift using autocorrelation*)
 	corr = ListCorrelate[rf[base], rf[datf], Round[Length[base]/2], 0];
-
-	(*find max peak closest to 0*)
+	(*find max peak closest to 0 after smoothing auto correlation*)
 	ppm = GetPpmRange[datf, dw, gyro];
-	sig = 5;
+	sig = 5 (*ppm*);
 	wght = 1 / (Exp[(ppm^2 / (2 sig^2))] (Sqrt[2 Pi] sig));
 	epi = ppm[[Position[wght corr, Max[wght corr]][[1, 1]]]];
 	
-	(*fit the absolute signal to estimate the linewidth*)	
-	fit = FindFit[Transpose[{time, Abs[datf]}], {Abs[model[{a, 0, epi, g, g}, t]], 0 <= g <= 100}, {a, g}, t];
+	(*Step 2. find initial linewidth using the absolute signal*)
+	obj[a_?NumberQ, g_?NumericQ] := Total[(Abs[datf] - model[a, g])^2];
+	fit = Last[Quiet@FindMinimum[{obj[a, g], g > 1}, 
+		{{a, 1}, {g, 10}}, MaxIterations -> 50]];
 	{ami, gmi} = {a, g} /. fit;
 
-	(*fit the phase using the basis function that are shifted and apodized*)
-	fit = Last[FindMinimum[{obj[a, p, epi, gmi, gmi], -2 Pi < p < 2 Pi, gmi - 5 <= g <= gmi + 5, epi - 0.2 < e < epi + 0.2}, 
-		{{a, ami}, {p, 0}, {e, epi}, {g, gmi}}], 
-		MaxIterations -> 100];
-	{am, ph, eps, gm, sm} = {a, p, e, g, g} /. fit;
-	
-	(*guess the amps with least squares fitting*)
-	decay = model[{1, ph, eps, gm, sm}, time];
+	(*Step 3. guess the amplitudes*)
+	am = Abs[LeastSquares[Transpose[fids] model[1, 0, epi, gmi, gmi], datf]];
+
+	(*Step 4. find the phase and fine-tune the shift, lw*)
+	obj[a_?VectorQ, p_?NumericQ, e_?NumericQ, g_?NumericQ, s_?NumericQ] := Total[Abs[datf - Total[fids model[a, p, e, g, s]]]^2];
+	fit = Last[Quiet@FindMinimum[{obj[am, p, epi, gmi, gmi], 
+			-2 Pi < p < 2 Pi, Max[{1, gmi - 5}] <= g <= gmi + 5, epi - 0.2 < e < epi + 0.2}, 
+		{{p, 0}, {e, epi}, {g, gmi}}], MaxIterations -> 50];
+	{ph, eps, gm, sm} = {p, e, g, g} /. fit;
+
+	(*Step 5. fine-tune the amplitudes*)
+	decay = model[1, ph, eps, gm, sm];
 	amp = Abs[LeastSquares[Transpose[fids] decay, datf]];
 
-	(*generate parameter matrix*)
+	(*Finalize by generating parameter matrix*)
 	init = Join[{amp / sc}, ConstantArray[#, Length@amp] & /@ {sm, gm, eps, ph, 1}];
 
+	(*Make the plots if needed*)
 	If[pl,
 		opts = Sequence[ImageSize -> 200, Frame -> True, Axes -> True, PlotHighlighting -> None,
 			FrameTicks -> {{False, False}, {True, False}}];
-		(*make autocorrelation test plot*)
+		(*Step 1. make autocorrelation test plot*)
 		pEps = ListLinePlot[
-			Transpose[{ppm, #}] & /@ {rf[datf], rf[base model[{1, 0, epi, 0, 0}, time]], Rescale[wght corr]}, 
+			Transpose[{ppm, #}] & /@ {rf[datf], rf[base model[1, 0, epi, 0, 0]], Rescale[wght corr]}, 
 			ScalingFunctions -> {"Reverse", None}, PlotRange -> {Full, {0, 1.2}}, PlotLabel -> "1. Estimation of shift", opts];
-		(*make the Linewidht test plot*)
+		(*Step 2. make the Linewidth test plot*)
 		pGam = ListLinePlot[
-			Transpose[{1000 time, Abs[#]}] & /@ {datf, model[{ami, 0, epi, gmi, gmi}, time]},
+			Transpose[{1000 time, Abs[#]}] & /@ {datf, model[ami, gmi]},
 			PlotRange -> Full, PlotLabel -> "2. Estimation of linewidth", opts];
-		(*make the phase test plot*)
+		(*Step 3. make the phase test plot*)
 		pPh = ListLinePlot[
-			Transpose[{1000 time, Re[#]}] & /@ {datf, base model[{am, ph, eps, gm, sm}, time]},
-			PlotRange -> Full, PlotLabel -> "2. Estimation of phase", opts];
-		(*make the linear amplitude fit test plot*)
+			Transpose[{1000 time, Re[#]}] & /@ {datf, decay (am . fids)},
+			PlotRange -> Full, PlotLabel -> "3. Estimation of phase", opts];
+		(*Step 4. make the linear amplitude fit test plot*)
 		pAmp = ListLinePlot[
 			Transpose[{ppm, rf[#]}] & /@ {datf, decay (amp . fids)}, 
-			ScalingFunctions -> {"Reverse", None}, PlotRange -> {Full, {0, 1.2}}, PlotLabel -> "4. Estimation of amplitudes", opts];
-		(*make the plot row*)
-		plots = Grid[{{pEps, pGam, pPh, pAmp}}, Spacings -> {2, 1}];
+			ScalingFunctions -> {"Reverse", None}, PlotRange -> {Full, {0, 1.2}}, PlotLabel -> "4. Fine-tune estimations", opts];
 		
 		(*output including plots*)
-		{init, plots}
+		{init, Grid[{{pEps, pGam, pPh, pAmp}}, Spacings -> {2, 1}]}
 		,
 		(*output without plots*)
 		init
@@ -456,7 +460,7 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}
 	names = Keys[basis];
 	nb = Length@fids;
 
-	(*make the t1model for b1 correction, if B1 is False wil be 1,0,.. and then tau tr and fa dont matter*)
+	(*make the t1model for b1 correction, if B1 is False wil be 1,0,.. and then tau tr and fa does not matter*)
 	t1Model = MakeT1Model[names, matrix];
 
 	(*determine data scaling for normalized data range*)
@@ -541,7 +545,7 @@ SignalCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 	(*generate the parts of the signal equation.*)
 	
 	(*the line widths or the decay function*)
-	decay = Exp[-Pi (gm bt + sm^2 bt^2)];
+	decay = Exp[-Pi (gm bt + 2 Pi sm^2 bt^2)];
 	(*the phase rotation is complex rotation can be written as Sin[] Cos[]*)
 	theta = -ph + 2 Pi gyro ep bt;
 	cosT = decay Cos[theta];
@@ -604,7 +608,7 @@ SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 	(*generate the parts of the signal equation.*)
 	
 	(*the line widths or the decay function*)
-	decay = Exp[-Pi (gm bt + sm^2 bt^2)];
+	decay = Exp[-Pi (gm bt + 2 Pi sm^2 bt^2)];
 	(*the phase rotation is complex rotation can be written as Sin Cos*)
 	theta = -ph + 2 Pi gyro ep bt;
 	cosT = decay Cos[theta];
@@ -642,11 +646,11 @@ SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 	(* derivatives to amplitudes*)
 	daRe = mAmp sigRe;
 	daIm = mAmp sigIm;
-	(*real derivatives parameters for gausiang and laurentzian decay parameters*)
-	dsmRe = -2 Pi sm bt^2 abRe;
-	dsmIm = -2 Pi sm bt^2 abIm;
+	(*real derivatives parameters for Gaussian and Lorentzian decay parameters*)
+	dsmRe = -4 Pi^2 sm bt^2 abRe;
+	dsmIm = -4 Pi^2 sm bt^2 abIm;
 	dgmRe = -Pi bt abRe;
-	dgmIm = -Pi bt  abIm;
+	dgmIm = -Pi bt abIm;
 	(*complex derivatives for the shift including b1 part*)
 	depRe = -2 Pi gyro bt abIm + b1Dep sigRe;
 	depIm = 2 Pi gyro bt abRe + b1Dep sigIm;

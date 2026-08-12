@@ -426,7 +426,7 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 
 FindBodyPos[class_] := FindBodyPos[class, False]
 
-FindBodyPos[class_, mon_] := Block[{selection, locations, len, classN, n, xvars, evars, dvars, 
+FindBodyPos[class_, mon_] := Block[{selection, locations, len, classN, n, xVars, eVars, dVars, 
 	pad, x, e, d, cons, sol, classF, offset, what, lab, pos},
 
 	selection = {{"LowerLegs", {1, 2}}, {"UpperLegs", {2, 3, 4}}, {"Hip", {4}}, {"Torso", {5, 6, 7}}, {"Shoulder", {5, 6, 7}}, {"HeadNeck", {7, 8}}};
@@ -435,15 +435,15 @@ FindBodyPos[class_, mon_] := Block[{selection, locations, len, classN, n, xvars,
 	len = Length@class;
 	pad = Max[{5, Round[0.05 len]}];
 
-	(*create a smoothed and padded list of lable numbers*)
+	(*create a smoothed and padded list of label numbers*)
 	classN = class /. (Reverse/@locations);
 	classN = MedianFilter[ArrayPad[ArrayPad[classN, {pad, 0}, Min[classN] - 1], {0, pad}, Max[classN + 1]],	2];
 	n = Length[classN];
 
 	(*define the model parameters*)
-	xvars = Table[x[i], {i, n}];(*solution at each position*)
-	dvars = Table[d[i], {i, n - 1}]; (*jump indicators*)
-	evars = Table[e[i], {i, n}];(*error between data and solution*)
+	xVars = Table[x[i], {i, n}];(*solution at each position*)
+	dVars = Table[d[i], {i, n - 1}]; (*jump indicators*)
+	eVars = Table[e[i], {i, n}];(*error between data and solution*)
 
 	(*define the fit constrains*)
 	cons = Join[
@@ -454,16 +454,16 @@ FindBodyPos[class_, mon_] := Block[{selection, locations, len, classN, n, xvars,
 		(*define jumps and force them between 0 and 1, and no jump can happen within 10 slices*)
 		Table[x[i + 1] - x[i] == d[i], {i, n - 1}],
 		Table[0 <= d[i] <= 1, {i, n - 1}],
-		Table[Total[dvars[[i ;; i + 5]]] <= 1, {i, n - 1 - 5}],
+		Table[Total[dVars[[i ;; i + 5]]] <= 1, {i, n - 1 - 5}],
 
 		(*define the minimization error (L1) at each point*)
 		Table[x[i] - classN[[i]] <= e[i], {i, n}],
 		Table[classN[[i]] - x[i] <= e[i], {i, n}]
 	];
 
-	(*perfomr the fitting where everything should be integers*)
-	sol = LinearOptimization[Total[evars], cons, (Join[xvars, evars, dvars] \[Element] Integers)];
-	classF = ArrayPad[xvars /. sol, {-pad, -pad}];
+	(*perform the fitting where everything should be integers*)
+	sol = LinearOptimization[Total[eVars], cons, (Join[xVars, eVars, dVars] \[Element] Integers)];
+	classF = ArrayPad[xVars /. sol, {-pad, -pad}];
 
 	(*figure out which slices belong to which body pos*)
 	offset = Switch[#, "Hip", {-20, 10}, "Torso", {-20, 0}, "Shoulder" | "HeadNeck", {-10, 0}, _, {0, 0}]&;
@@ -570,14 +570,14 @@ DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, pts:{{{_,_},{_,_
 DataToPatches[dat_, pts:{{{_,_},{_,_},{_,_}}..}] := {GetPatch[dat, pts], pts}
 
 DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, nPatch_, OptionsPattern[]] := Block[{
-		ptch, pts, nRan, pad
+		patchOut, pts, nRan, pad
 	},
 	{nRan, pad} = OptionValue[{PatchNumber, PatchPadding}];
 	If[Or @@ (#<=2 pad &/@ patch),
 		$Failed,
 		pts = GetPatchRanges[dat, patch, If[IntegerQ[nPatch], nPatch, "All"], {nRan, pad}];
-		ptch = GetPatch[dat, patch, pts];
-		{ptch, pts}
+		patchOut = GetPatch[dat, patch, pts];
+		{patchOut, pts}
 	]
 ] 
 
@@ -740,7 +740,7 @@ ReplaceLabels[seg_, locI_, what_] := Block[{
 			"Arm", "ArmTrainLabels"
 		];
 
-		(*some labels have side encoding some dont*)
+		(*some labels have side encoding some don't*)
 		labNam = MuscleLabelToName[labIn, fIn];
 		labOut = MuscleNameToLabel[labNam, fOut];
 		labOutS = MuscleNameToLabel[(# <> "_" <> side & /@ labNam), fOut];
@@ -770,10 +770,10 @@ SyntaxInformation[SplitDataForSegmentation] = {"ArgumentsPattern" -> {_, _., Opt
 
 SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, opt:OptionsPattern[]] := SplitDataForSegmentation[data, seg, "Legs", opt]
 
-SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := Block[{dat,pts,dim,loc, segp},
+SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := Block[{dat,pts,dim,loc, segPatch},
 	{{dat, pts, dim}, loc} = SplitDataForSegmentation[data, what, opt];
-	segp = GetPatch[seg, pts];
-	{{dat, pts, dim}, {segp, pts, dim}, loc}
+	segPatch = GetPatch[seg, pts];
+	{{dat, pts, dim}, {segPatch, pts, dim}, loc}
 ]
 
 
@@ -927,9 +927,6 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 	{data, crp} = AutoCropData[data, CropPadding->0];
 	data = N@ArrayPad[data, pad, 0.];
 	dim = Dimensions[data];
-
-	(*mon[{"in", dimi, "crop", dimc, "pad", dim}, 
-		"Data dimensions before and after cropping and padding are: "];*)
 
 	net = GetNeuralNet[netI];
 
@@ -1534,18 +1531,18 @@ GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 ];
 
 
-AddPadding[dat_, seg_, p_] := Block[{datp, segp, pad},
+AddPadding[dat_, seg_, p_] := Block[{datPatch, segPatch, pad},
 	Transpose@MapThread[(
-		datp = #1;
-		segp = #2;
+		datPatch = #1;
+		segPatch = #2;
 		If[RandomChoice[{0.3, 0.7} -> {True, False}], 
 			pad = RandomInteger[{-p, p}];
 			Which[
-				pad < 0, datp[[pad ;;, All, All]] = segp[[pad ;;, All, All]] = 0.,
-				pad > 0, datp[[;; pad, All, All]] = segp[[;; pad, All, All]] = 0.
+				pad < 0, datPatch[[pad ;;, All, All]] = segPatch[[pad ;;, All, All]] = 0.,
+				pad > 0, datPatch[[;; pad, All, All]] = segPatch[[;; pad, All, All]] = 0.
 			]
 		];
-		{datp, segp}
+		{datPatch, segPatch}
 	)& ,{dat, seg}]
 ]
 
@@ -1607,7 +1604,7 @@ PrepareTrainingData[labFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]] := P
 
 PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, OptionsPattern[]] := Block[{
 		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, voxOut, dimSeg, dimDat,
-		seg, err, vox, voxd, dat, im, nl, outf, gr, clean, legend, head, out, segSl, outT
+		seg, err, vox, voxD, dat, im, nl, outFile, gr, clean, legend, head, out, segSl, outT
 	},
 
 	{labT, datT, outT, inLab, outLab, test, clean, voxOut, segSl} = OptionValue[{LabelTag, DataTag, OutputTag, 
@@ -1640,14 +1637,14 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 
 			(*import data and label*)
 			{seg, vox} = ImportNii@sf;
-			{dat, voxd} = ImportNii@First@df;
+			{dat, voxD} = ImportNii@First@df;
 			If[voxOut === Automatic, voxOut = vox];
 
 			dimSeg = Dimensions[seg]; 
 			dimDat = If[ArrayDepth[dat] === 4, Dimensions[dat[[All,1]]], Dimensions[dat]];
 
 			(*check dimensions and voxel size*)
-			If[vox =!= voxd,
+			If[vox =!= voxD,
 				out = {i++, name, "Data and segmentation have different voxel size."},
 				If[dimSeg =!= dimDat,
 					out = {i++, name, "Data and segmentation have different dimensions size."},
@@ -1670,11 +1667,11 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 					(*export*)
 					If[!test,
 						im = MakeChannelClassGrid[{dat}, seg, 5];
-						outf = FileNameJoin[{outFol, name<>If[outT === "", "", "_"<>outT]}];
-						ExportNii[dat, voxOut, outf <> "_data.nii"];
-						ExportNii[seg, voxOut, outf <> "_label.nii"];
-						Export[outf <> ".png", im, "ColorMapLength" -> 256];
-						Export[outf <> ".wxf", {dat, seg, voxOut}, PerformanceGoal -> "Size", Method -> {"PackedArrayRealType" -> "Real32"}];
+						outFile = FileNameJoin[{outFol, name<>If[outT === "", "", "_"<>outT]}];
+						ExportNii[dat, voxOut, outFile <> "_data.nii"];
+						ExportNii[seg, voxOut, outFile <> "_label.nii"];
+						Export[outFile <> ".png", im, "ColorMapLength" -> 256];
+						Export[outFile <> ".wxf", {dat, seg, voxOut}, PerformanceGoal -> "Size", Method -> {"PackedArrayRealType" -> "Real32"}];
 					];
 
 					out
@@ -1711,24 +1708,24 @@ SyntaxInformation[PrepTrainData] = {"ArgumentsPattern" -> {_, _, _.}};
 
 PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}] := PrepTrainData[{dat, seg}, {{0}, {0}}, {{1,1,1}, {1,1,1}}]
 
-PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}, {labi_?VectorQ, labo_?VectorQ}] := PrepTrainData[{dat, seg}, {labi, labo}, {{1,1,1}, {1,1,1}}]
+PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}, {labI_?VectorQ, labO_?VectorQ}] := PrepTrainData[{dat, seg}, {labI, labO}, {{1,1,1}, {1,1,1}}]
 
-PrepTrainData[{daI_?ArrayQ, segI_?ArrayQ}, {labi_?VectorQ, labo_?VectorQ}, {voxi_?VectorQ, voxo_?VectorQ}] := Block[{
+PrepTrainData[{daI_?ArrayQ, segI_?ArrayQ}, {labI_?VectorQ, labO_?VectorQ}, {voxI_?VectorQ, voxO_?VectorQ}] := Block[{
 		cr, dat, seg
 	},
 	(*rescale if needed*)
-	{dat, seg} = If[voxi===voxo, 
+	{dat, seg} = If[voxI===voxO, 
 		{daI, segI}, 
-		{RescaleData[daI, {voxi, voxo}], RescaleSegmentation[segI, {voxi, voxo}]}
+		{RescaleData[daI, {voxI, voxO}], RescaleSegmentation[segI, {voxI, voxO}]}
 	];
 
 	(*remove background and normalize data and figure out what to do with multi channel data*)
 	cr = FindCrop[Mask[If[ArrayDepth[dat] === 3, NormalizeData, NormalizeMeanData][dat], 5, MaskDilation -> 1]];
 	{
 		ApplyCrop[dat, cr],
-		If[labi === {0},
+		If[labI === {0},
 			ApplyCrop[seg, cr],
-			ReplaceSegmentations[ApplyCrop[seg, cr], labi, labo]
+			ReplaceSegmentations[ApplyCrop[seg, cr], labI, labO]
 		]
 	}
 ]
@@ -1773,7 +1770,7 @@ SyntaxInformation[MakeChannelClassGrid] = {"ArgumentsPattern"->{_, _, _.}};
 
 MakeChannelClassGrid[dat_, lab_] := MakeChannelClassGrid[dat, lab, 3]
 
-MakeChannelClassGrid[dat_, lab_, ni_] := Block[{len, n1, n2, labp, ran},
+MakeChannelClassGrid[dat_, lab_, ni_] := Block[{len, n1, n2, labP, ran},
 	len = Length@First@dat;
 	If[IntegerQ[ni],
 		n1 = n2 = Min[{Floor[Sqrt[len]], ni}],
@@ -1781,11 +1778,11 @@ MakeChannelClassGrid[dat_, lab_, ni_] := Block[{len, n1, n2, labp, ran},
 		While[n1 n2 > len, n1--; n2--;]
 	];
 
-	{labp, ran} = If[TensorQ[lab], {lab, MinMax@lab}, lab];
+	{labP, ran} = If[TensorQ[lab], {lab, MinMax@lab}, lab];
 	If[IntegerQ[Round[ran]], ran = {0, ran}];
 
 	RemoveAlphaChannel@ImageAssemble@Partition[
-		ImagePad[MakeChannelClassImage[dat[[{1}, #]], labp[[#]], ran], 4, White
+		ImagePad[MakeChannelClassImage[dat[[{1}, #]], labP[[#]], ran], 4, White
 	] & /@ (Round[Range[1., len, (len - 1)/(n1 n2 - 1)]]), n1]
 ]
 
@@ -1821,7 +1818,7 @@ MakeClassImage[label_, {off_?NumberQ, max_?NumberQ}] := MakeClassImage[label, {o
 
 MakeClassImage[label_, vox_?VectorQ] := MakeClassImage[label, Round@MinMax[label], vox]
 
-MakeClassImage[labelI_,{offI_?NumberQ, maxI_?NumberQ}, vox_?VectorQ] := Block[{max, cols, imlab, rat, label, off},
+MakeClassImage[labelI_,{offI_?NumberQ, maxI_?NumberQ}, vox_?VectorQ] := Block[{max, cols, imLab, rat, label, off},
 	(*SeedRandom[1345];
 		cols = Prepend[ColorData["DarkRainbow"][#]&/@RandomSample[Rescale[Range[off+1, max]]],Transparent];
 		cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Range[off+1, max]],Transparent];
@@ -1831,9 +1828,9 @@ MakeClassImage[labelI_,{offI_?NumberQ, maxI_?NumberQ}, vox_?VectorQ] := Block[{m
 	cols = Prepend[ColorData["RomaO"][#]&/@Rescale[
 			Join[Select[Range[off + 1, max], EvenQ], Select[Range[off + 1, max], OddQ]]
 		],Transparent];
-	imlab = Round@Clip[If[ArrayDepth[label] === 3, label[[Round[Length@label/2]]], label] - off + 1, {1, max + 1}, {1, 1}];
+	imLab = Round@Clip[If[ArrayDepth[label] === 3, label[[Round[Length@label/2]]], label] - off + 1, {1, max + 1}, {1, 1}];
 	rat = vox[[{2,3}]]/Min[vox[[{2,3}]]];
-	ImageResize[Image[cols[[#]]&/@imlab], Round@Reverse[rat Dimensions[imlab]], Resampling->"Nearest"]
+	ImageResize[Image[cols[[#]]&/@imLab], Round@Reverse[rat Dimensions[imLab]], Resampling->"Nearest"]
 ]
 
 
@@ -1845,14 +1842,14 @@ SyntaxInformation[MakeChannelImage]={"ArgumentsPattern"->{_, _., _.}};
 
 MakeChannelImage[data_] := MakeChannelImage[data, {1, 1, 1}]
 
-MakeChannelImage[data_, vox_] := Block[{dat, imdat, rat},
+MakeChannelImage[data_, vox_] := Block[{dat, imDat, rat},
 	dat=Clip[Rescale[data, Quantile[Flatten[data], {0.01, 0.99}]], {0., 1.}];
 	(*dat = Rescale[data];*)
 	rat = vox[[{2, 3}]] / Min[vox[[{2, 3}]]];
 	(
-		imdat = #;
-		imdat = If[ArrayDepth[#]===3, imdat[[Round[Length@imdat/2]]], imdat];
-		ImageResize[Image[imdat], Round@Reverse[rat Dimensions[imdat]], Resampling->"Nearest"]
+		imDat = #;
+		imDat = If[ArrayDepth[#]===3, imDat[[Round[Length@imDat/2]]], imDat];
+		ImageResize[Image[imDat], Round@Reverse[rat Dimensions[imDat]], Resampling->"Nearest"]
 	) &/@ dat
 ]
 
@@ -1878,11 +1875,11 @@ DiceSimilarity[ref_, pred_] := DiceSimilarityC[flatRound@ref, flatRound@pred, 1]
 DiceSimilarity[ref_, pred_, class_?IntegerQ] := DiceSimilarityC[flatRound@ref, flatRound@pred, class]
 
 
-DiceSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{refv, predv, inter},
-	refv = 1 - Unitize[ref - class];
-	predv = 1 - Unitize[pred - class];
-	inter = Total[refv predv];
-	N[(2 inter + 1) / (Total[refv] + Total[predv] + 1)]]
+DiceSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{referenceVector, predictionVector, inter},
+	referenceVector = 1 - Unitize[ref - class];
+	predictionVector = 1 - Unitize[pred - class];
+	inter = Total[referenceVector predictionVector];
+	N[(2 inter + 1) / (Total[referenceVector] + Total[predictionVector] + 1)]]
 , RuntimeOptions -> "Speed", Parallelization -> True];
 
 
@@ -1906,11 +1903,11 @@ JaccardSimilarity[ref_, pred_] := JaccardSimilarityC[flatRound@ref, flatRound@pr
 JaccardSimilarity[ref_, pred_, class_?IntegerQ] := JaccardSimilarityC[flatRound@ref, flatRound@pred, class]
 
 
-JaccardSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{refv, predv, inter},
-	refv = 1 - Unitize[ref - class];
-	predv = 1 - Unitize[pred - class];
-	inter = Total[refv predv];
-	N[(inter + 1) / (Total[refv] + Total[predv] - inter + 1)]]
+JaccardSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Integer, 0}}, Block[{referenceVector, predictionVector, inter},
+	referenceVector = 1 - Unitize[ref - class];
+	predictionVector = 1 - Unitize[pred - class];
+	inter = Total[referenceVector predictionVector];
+	N[(inter + 1) / (Total[referenceVector] + Total[predictionVector] - inter + 1)]]
 , RuntimeOptions -> "Speed"];
 
 
@@ -2006,7 +2003,7 @@ SyntaxInformation[MakeDistanceMap] = {"ArgumentsPattern" -> {_, _., OptionsPatte
 MakeDistanceMap[data_, opt:OptionsPattern[]] := MakeDistanceMap[data, {1., 1., 1.}, opt]
 
 MakeDistanceMap[data_, vox_, OptionsPattern[]] := Block[{
-		dat, dim, datDil, datc, dimC, edge, inner, outer, nearFun, din, dout, cr, outRange
+		dat, dim, datDil, dataCrop, dimC, edge, inner, outer, nearFun, din, dOut, cr, outRange
 	},
 	outRange = OptionValue[DistanceRange];
 
@@ -2023,18 +2020,18 @@ MakeDistanceMap[data_, vox_, OptionsPattern[]] := Block[{
 	];
 	{datDil, cr} = AutoCropData[datDil, CropPadding -> 0];
 
-	datc = ApplyCrop[SparseArray@dat, cr];
-	dimC = Dimensions[datc];
+	dataCrop = ApplyCrop[SparseArray@dat, cr];
+	dimC = Dimensions[dataCrop];
 
-	edge = GetEdge[datc, vox];
-	inner = datc["ExplicitPositions"];
-	outer = (datDil - datc)["ExplicitPositions"];
+	edge = GetEdge[dataCrop, vox];
+	inner = dataCrop["ExplicitPositions"];
+	outer = (datDil - dataCrop)["ExplicitPositions"];
 
 	nearFun = Nearest[edge];
 	din = DistFun[nearFun, vox # & /@ inner];
-	dout = If[outer === {}, {}, -DistFun[nearFun, vox # & /@ outer]];
+	dOut = If[outer === {}, {}, -DistFun[nearFun, vox # & /@ outer]];
 
-	ReverseCrop[SparseArray[Join[Thread[inner -> din], Thread[outer -> dout]], dimC, 0.], dim, cr]
+	ReverseCrop[SparseArray[Join[Thread[inner -> din], Thread[outer -> dOut]], dimC, 0.], dim, cr]
 ]
 
 
@@ -2052,40 +2049,40 @@ DistFun[fun_, pts_] := Sqrt[Total[(Flatten[fun[#, 1] & /@ pts, 1] - pts)^2, {2}]
 ShowTrainLog[fol_] := ShowTrainLog[fol, 5]
 
 ShowTrainLog[fol_, max_] := DynamicModule[{
-		pdat, klist, folder = fol, len, plot, plotf, ymaxv,
-		xmin, xmax, ymin, ymax, temp, key, key0, key1, key2, filt, fsize, 
-		grid, logp
+		plotDat, keyList, folder = fol, len, plot, plotFilter, ymaxMax,
+		xmin, xmax, ymin, ymax, temp, key, key0, key1, key2, filt, filtSize, 
+		grid, logFunc
 	},
 
-	{klist, pdat, len} = LoadLog[fol, max];
-	pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+	{keyList, plotDat, len} = LoadLog[fol, max];
+	plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
 
-	key1 = Select[klist, ! StringContainsQ[#, "Current"] &];
+	key1 = Select[keyList, ! StringContainsQ[#, "Current"] &];
 	key2 = Select[Select[key1, StringContainsQ[#, "Loss"] &], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
 	key1 = Select[Complement[key1, key2], # =!= "RoundLoss" && # =!= "ValidationLoss" &];
 	key0 = {"RoundLoss", "ValidationLoss"};
 
 	Manipulate[
-		plot = Transpose[Values /@ Normal[pdat[All, key]][[All, All]]];
-		plotf = If[filt, GaussianFilter[#, fsize]&/@plot, plot];
+		plot = Transpose[Values /@ Normal[plotDat[All, key]][[All, All]]];
+		plotFilter = If[filt, GaussianFilter[#, filtSize]&/@plot, plot];
 
-		ymaxv = Max[{1.1, 1.1 If[plot==={}, 5, Max[Select[Flatten@plot,NumberQ]]]}];
-		ymax = Min[{ymax, ymaxv}];
+		ymaxMax = Max[{1.1, 1.1 If[plot==={}, 5, Max[Select[Flatten@plot,NumberQ]]]}];
+		ymax = Min[{ymax, ymaxMax}];
 
 		(* Plot the selected metrics *)
-		If[logp, ListLogPlot, ListLinePlot][If[key === {}, {}, plotf], Joined -> True, 
+		If[logFunc, ListLogPlot, ListLinePlot][If[key === {}, {}, plotFilter], Joined -> True, 
 			PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{ymin,ymax}},
 			If[grid, GridLines -> {len, Automatic}, GridLines -> {len, None}], 
 			PlotHighlighting -> "Dropline"],
 
 		(*the controls*)
 		{{filt, False, "Filter"}, {True, False}},
-		{{fsize, 5, "FilterSize"}, 1, 10, 1},
+		{{filtSize, 5, "FilterSize"}, 1, 10, 1},
 		{{grid, True, "Grid"}, {True, False}},
-		{{logp, True, "Log"}, {True, False}},
+		{{logFunc, True, "Log"}, {True, False}},
 
 		Delimiter,
-		(*Control[{{key, {}, ""}, klist, ControlType -> TogglerBar, Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],*)
+		(*Control[{{key, {}, ""}, keyList, ControlType -> TogglerBar, Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],*)
 		Control[{{key, {}, ""}, key0, ControlType -> TogglerBar, 
 		Appearance -> "Vertical" -> {Automatic, 4}, BaseStyle -> Medium}],
 		Delimiter,
@@ -2098,14 +2095,14 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 
 		Row[{
 			Control[{{xmin, 1, "X min"},1, Dynamic[xmax-1], 1}], "  ", 
-			Control[{{xmax, Length[pdat], "X max"}, Dynamic[xmin+1], Dynamic[Length[pdat]], 1}]
+			Control[{{xmax, Length[plotDat], "X max"}, Dynamic[xmin+1], Dynamic[Length[plotDat]], 1}]
 		}],
 		Row[{
 			Control[{{ymin, 0.05, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
-			Control[{{ymax, 5.1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxv]}]
+			Control[{{ymax, 5.1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxMax]}]
 		}],
 		Row[{
-			Button["Autoscale X", {xmax, xmax} = {1, Length[pdat]}], "  ",
+			Button["Autoscale X", {xmax, xmax} = {1, Length[plotDat]}], "  ",
 			Button["Autoscale Y", {ymin, ymax} = {0, Max[{1.1, 1.1 If[plot==={}, 1, Max[Select[Flatten@plot,NumberQ]]]}]}]
 		}],
 
@@ -2115,15 +2112,15 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 			Button["Browse", 
 				temp = SystemDialogInput["Directory", folder];
 				If[StringQ[temp], folder = temp; 
-					{klist, pdat, len} = LoadLog[folder, max];
-					pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+					{keyList, plotDat, len} = LoadLog[folder, max];
+					plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
 					xmin = 1;
 				];
 				, ImageSize -> {60, Automatic}, Method->"Queued"]}
 		],
 		Button["Reload", 
-			{klist, pdat, len} = LoadLog[folder, max]; xmax = xmax;
-			pdat = pdat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+			{keyList, plotDat, len} = LoadLog[folder, max]; xmax = xmax;
+			plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
 		, ImageSize -> {60, Automatic}, Method->"Queued"],
 
 		{{key, {}}, ControlType -> None}
@@ -2135,13 +2132,13 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 (*LoadLog*)
 
 
-LoadLog[fol_, max_] := Block[{files, keys, log, leng},
+LoadLog[fol_, max_] := Block[{files, keys, log, length},
 	(* Get a list of log files in the specified folder *)
 	files = Sort[FileNames["*.json", fol]];
 
 	(* Read the log files and extract the relevant information *)
 	log = Select[(Select[Import[#, "Lines"], StringContainsQ[#, "ProgressFraction"] &] & /@ files), Length[#] > max &];
-	leng = Accumulate[Length /@ log];
+	length = Accumulate[Length /@ log];
 
 	(* Convert the log data into a dataset *)
 	log = "[\n" <> StringDrop[StringRiffle[If[StringTake[#, -1] === "}", # <> ",", #] & /@ Flatten[log, 1], "\n"], -1] <> "\n]";
@@ -2150,7 +2147,7 @@ LoadLog[fol_, max_] := Block[{files, keys, log, leng},
 	(* Get the unique keys (metrics) in the log data *)
 	keys = Sort@DeleteDuplicates[Flatten[Normal@log[All, Keys]]];
 
-	{keys, log, leng}
+	{keys, log, length}
 ]
 
 
@@ -2159,7 +2156,7 @@ LoadLog[fol_, max_] := Block[{files, keys, log, leng},
 
 
 SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg, status, diag, what},
-	NotebookClose[segwindow];
+	NotebookClose[segmentWindow];
 
 	what = "Legs";
 
@@ -2189,7 +2186,7 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 			},{
 				Button["Start Segmentation, please be patient", 
 					If[! NiiFileExistQ[inputFile], 
-						MessageDialog["Input file could not be foud."]
+						MessageDialog["Input file could not be found."]
 						,
 						status = TextCell@"Importing";
 						{dat, vox} = ImportNii[inputFile];
@@ -2213,7 +2210,7 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 		}
 	];
 
-	segwindow = CreateWindow[diag, WindowTitle -> "Muscle segmentation", WindowSize -> All];
+	segmentWindow = CreateWindow[diag, WindowTitle -> "Muscle segmentation", WindowSize -> All];
 ];];
 
 

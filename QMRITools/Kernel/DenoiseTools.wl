@@ -25,37 +25,37 @@ BeginPackage["QMRITools`DenoiseTools`", Join[{"Developer`"}, Complement[QMRITool
 
 
 DeNoise::usage = 
-"DeNoise[data,sigma,filtersize] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filtersize\" a gaussian kernel.
+"DeNoise[data, sigma, filterSize] removes Rician noise with standard deviation \"sigma\" from the given dataset using a kernel with size \"filterSize\" a gaussian kernel.
 
 Output is data denoised.
 
 DeNoise[] is based on DOI: 10.1109/TMI.2008.920609."
 
 PCADeNoise::usage = 
-"PCADeNoise[data] removes rician noise from the data with PCA.
-PCADeNoise[data, mask] removes rician noise from the data with PCA only withing the mask.
-PCADeNoise[data, mask, sig] removes rician noise from the data with PCA only withing the mask using sig as prior knowledge or fixed value.
+"PCADeNoise[data] removes Rician noise from the data with PCA.
+PCADeNoise[data, mask] removes Rician noise from the data with PCA only withing the mask.
+PCADeNoise[data, mask, sig] removes Rician noise from the data with PCA only withing the mask using sig as prior knowledge or fixed value.
 
-Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data dnoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}.
+Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data denoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}.
 
 PCADeNoise[] is based on DOI: 10.1016/j.neuroimage.2016.08.016 and 10.1002/mrm.26059."
 
 P2SDenoise::usage = 
-"P2SDenoise[data] removes rician noise from the data using self supersized neural net.
-P2SDenoise[data, mask] removes rician noise from the data with PCA using self supersized neural net withing the mask.
+"P2SDenoise[data] removes Rician noise from the data using self supersized neural net.
+P2SDenoise[data, mask] removes Rician noise from the data with PCA using self supersized neural net withing the mask.
 
 PCADeNoise[] is based on DOI:10.48550/arXiv.2011.01355."
 
 DenoiseCSIdata::usage = 
-"DenoiseCSIdata[spectra] perfroms PCA denoising of the complex values spectra, data has to be 3D and the spectral dimensions is last, {x,y,z,spectra}."
+"DenoiseCSIdata[spectra] performs PCA denoising of the complex values spectra, data has to be 3D and the spectral dimensions is last, {x,y,z,spectra}."
 
 DenoiseDynamicSpectraData::usage = 
-"DenoiseDynamicSpectraData[spectra] perfroms PCA denoising of the complex values spectra, The data is given as a list of dynamicly acquired spectra {dynamic ,spectra}."
+"DenoiseDynamicSpectraData[spectra] performs PCA denoising of the complex values spectra, The data is given as a list of dynamically acquired spectra {dynamic ,spectra}."
 
 
 AnisoFilterTensor::usage = 
-"AnisoFilterTensor[tens, diffdata] Filter the tensor tens using an anisotropic diffusion filter (Perona-Malik). 
-It uses the diffusion weighted data diffdata to find edges that are not visible in the tensor.
+"AnisoFilterTensor[tens, data] Filter the tensor tens using an anisotropic diffusion filter (Perona-Malik). 
+It uses the diffusion weighted data data to find edges that are not visible in the tensor.
 Edge weights based on the diffusion data are averaged over all normalized diffusion direction.
 
 AnisoFilterTensor[tens] Same but does not use the data for edge identification.
@@ -65,13 +65,13 @@ Output is the smoothed tensor.
 AnisoFilterTensor[] is based on DOI: 10.1109/ISBI.2006.1624856."
 
 WeightMapCalc::usage = 
-"WeightMapCalc[diffdata] calculates a weight map which is used in AnisoFilterTensor.
+"WeightMapCalc[data] calculates a weight map which is used in AnisoFilterTensor.
 
-Output is a weight map of the diffdata which is high in isotropic regions and low at edges."
+Output is a weight map of the data which is high in isotropic regions and low at edges."
 
 
 AnisoFilterData::usage = 
-"AnisoFilterData[data] Filter the diffusion tensor data using an anisotropic filter based on the strucure tensor of the data. 
+"AnisoFilterData[data] Filter the diffusion tensor data using an anisotropic filter based on the structure tensor of the data. 
 
 Output is the smoothed data.
 
@@ -98,7 +98,7 @@ DeNoiseKernel::usage =
 "DeNoiseKernel is and option for DeNoise. Values can be \"Disk\", \"Box\" or \"Gaussian\"."
 
 DeNoiseMonitor::usage = 
-"DeNoiseMonitor is and option for DeNoise. Monitor the denoising progres."
+"DeNoiseMonitor is and option for DeNoise. Monitor the denoising progress."
 
 DeNoiseIterations::usage = 
 "DeNoiseIterations is and option for DeNoise. Specifies the number of the denoising iterations."
@@ -112,7 +112,7 @@ PCAOutput::usage =
 Else the output is {datao, sigmat}."
 
 PCATolerance::usage = 
-"PCATolerance is an option of PCADeNoise and shuld be an integer > 0. Default value is 0. When increased the denoise method removes less noise."
+"PCATolerance is an option of PCADeNoise and should be an integer > 0. Default value is 0. When increased the denoise method removes less noise."
 
 PCAWeighting::usage = 
 "PCAWeighting is an option of PCADeNoise and can be True of False. Default value is False. When True the weights of the per voxel result are calculated based on the number of non noise components."
@@ -124,7 +124,7 @@ PCANoiseSigma::usage =
 "PCANoiseSigma is an option of DenoiseCSIdata and can be \"Corners\" or \"Automatic\"."
 
 PCAComplex::usage = 
-"PCAComplex is an option of PCADeNoise and can be True of False. If set true the input data is expexted to be {real, imag}."
+"PCAComplex is an option of PCADeNoise and can be True of False. If set true the input data is expected to be {real, imag}."
 
 
 NNThreshold::usage = 
@@ -135,13 +135,13 @@ AnisoStepTime::usage =
 "AnisoStepTime is an option for AnisoFilterTensor and defines the diffusion time, when small more step are needed."
 
 AnisoFilterSteps::usage =
-"AnisoFilterSteps is an option for AnisoFilterTensor and defines the amoutn of diffusin steps taken. Higher is more smoothing."
+"AnisoFilterSteps is an option for AnisoFilterTensor and defines the amount of diffusin steps taken. Higher is more smoothing."
 
 AnisoWeightType::usage =
 "AnisoWeightType is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting, eigher 1, the exponent of (-g/kappa) or 2, 1/(1+g/kappa)."
 
 AnisoKappa::usage =
-"AnisoKappa is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting strenght, all data is normalize to 100 before filetering."
+"AnisoKappa is an option for AnisoFilterTensor and WeightMapCalc and defines the weighting strength, all data is normalize to 100 before filetering."
 
 AnisoIterations::usage = 
 "AnisoIterations is an options for AnisoFilterData. It specifies the amount of denoising iterations."
@@ -157,10 +157,10 @@ GradientStepSize::usage =
 "GradientStepSize is an option for HarmonicDenoiseTensor. It defines the step size of the gradient descent for the harmonic and radial parts."
 
 RangeFA::usage =
-"RangeFA is an option for HarmonicDenoiseTensor. It defines the range of the FA values of voxels to include in the minization."
+"RangeFA is an option for HarmonicDenoiseTensor. It defines the range of the FA values of voxels to include in the minimization."
 
 RangeMD::usage =
-"RangeMD is an option for HarmonicDenoiseTensor. It defines the range of the MD values of voxels to include in the minization."
+"RangeMD is an option for HarmonicDenoiseTensor. It defines the range of the MD values of voxels to include in the minimization."
 
 
 
@@ -169,7 +169,7 @@ RangeMD::usage =
 
 
 DeNoise::data =
-"Error: not able to proces the combination of this data set (Dimensions `2` ) with the given size kernel `1`, posibilities:
+"Error: not able to process the combination of this data set (Dimensions `2` ) with the given size kernel `1`, possibilities:
 - 2D data, 2D kernel, sigma = single value
 - 3D data, 2D kernel, sigma = single value or list with value specified for each slice
 - 3D data, 3D kernel, sigma = single value
@@ -186,7 +186,7 @@ DeNoise::kern =
 "Error: Unknown kernel type:`1`, use \"Gaussian\", \"Box\" or \"Disk\"."
 
 DeNoise::sig =
-"Data and simga are of unequal dimensions. Data: `1`, Sigma: `2`."
+"Data and sigma are of unequal dimensions. Data: `1`, Sigma: `2`."
 
 
 (* ::Section:: *)
@@ -247,25 +247,25 @@ DeNoise[dat_, sigi_, filt_, OptionsPattern[]] := Module[{kern, out, type, dimsig
 (*DeNoisei*)
 
 
-(*Appling 2D kernel on 2D dataset*)
+(*Applying 2D kernel on 2D dataset*)
 DeNoisei[data_?MatrixQ,sig_,filt_,kern_?MatrixQ]:=DeNoiseApp[data,sig,filt,kern]
 
-(*Appling 3D kernel on 3D dataset*)
+(*Applying 3D kernel on 3D dataset*)
 DeNoisei[data:{_?MatrixQ..},sig_,filt_,kern:{_?MatrixQ..}]:=DeNoiseApp[data,sig,filt,kern]
 
-(*Appling 2D kernel on 3D dataset, Using one sigma value for all slices*)
+(*Applying 2D kernel on 3D dataset, Using one sigma value for all slices*)
 DeNoisei[data:{_?MatrixQ..},sig_,filt_,kern_?MatrixQ]:=If[NumberQ[sig],
 	Map[DeNoiseApp[#,sig,filt,kern]&,data],
 	MapThread[DeNoiseApp[#1,#2,filt,kern]&,{data,sig}]
 ]
 
-(*Appling 2D kernel on 4D dataset, Using one sigma value for all slices and directions.*)
+(*Applying 2D kernel on 4D dataset, Using one sigma value for all slices and directions.*)
 DeNoisei[data:{{_?MatrixQ..}..},sig_,filt_,kern_?MatrixQ]:=If[NumberQ[sig],
 	Map[DeNoiseApp[#,sig,filt,kern]&,data,{2}],
 	Transpose[Map[MapThread[DeNoiseApp[#1,#2,filt,kern]&,{#,sig}]&,Transpose[data]]]
 ]
 
-(*Appling 3D kernel on 4D dataset, Using one sigma value for all diffusion directions*)
+(*Applying 3D kernel on 4D dataset, Using one sigma value for all diffusion directions*)
 DeNoisei[data:{{_?MatrixQ..}..},sig_,filt_,kern:{_?MatrixQ..}]:=Transpose[Map[DeNoiseApp[#1,sig,filt,kern]&,Transpose[data]]]
 
 
@@ -273,45 +273,45 @@ DeNoisei[data:{{_?MatrixQ..}..},sig_,filt_,kern:{_?MatrixQ..}]:=Transpose[Map[De
 (*DeNoiseApp*)
 
 
-DeNoiseApp[data_, sig_, filt_, kern_] := Module[{secmod, quadmod},
-	secmod = ListConvolve[kern, data^2, Transpose[{filt + 1, -(filt + 1)}], 0.];
-	quadmod = ListConvolve[kern, data^4, Transpose[{filt + 1, -(filt + 1)}], 0.];
+DeNoiseApp[data_, sig_, filt_, kern_] := Module[{secMod, quadMod},
+	secMod = ListConvolve[kern, data^2, Transpose[{filt + 1, -(filt + 1)}], 0.];
+	quadMod = ListConvolve[kern, data^4, Transpose[{filt + 1, -(filt + 1)}], 0.];
 	If[NumberQ[sig],
-		NoiseAppCN[secmod, quadmod, data, sig],
-		NoiseAppC[secmod, quadmod, data, sig]
+		NoiseAppCN[secMod, quadMod, data, sig],
+		NoiseAppC[secMod, quadMod, data, sig]
 	]
 ]
 
-NoiseAppCN = Compile[{{secmod, _Real, 2}, {quadmod, _Real, 2}, {data, _Real, 2}, {sig, _Real, 0}},
+NoiseAppCN = Compile[{{secMod, _Real, 2}, {quadMod, _Real, 2}, {data, _Real, 2}, {sig, _Real, 0}},
 	Block[{top, div, K, deb},
-		top = (4 sig^2 (secmod - sig^2));
-		div = (quadmod - secmod^2) + 10^-10;
+		top = (4 sig^2 (secMod - sig^2));
+		div = (quadMod - secMod^2) + 10^-10;
 		K = (1 - top/div);
-		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
+		deb = Sqrt[Clip[(secMod - 2 sig^2) + (K (data^2 - secMod)), {0., Infinity}]]
 	]];
 
-NoiseAppC = Compile[{{secmod, _Real, 2}, {quadmod, _Real, 2}, {data, _Real, 2}, {sig, _Real, 2}},
+NoiseAppC = Compile[{{secMod, _Real, 2}, {quadMod, _Real, 2}, {data, _Real, 2}, {sig, _Real, 2}},
 	Block[{top, div, K, deb},
-		top = (4 sig^2 (secmod - sig^2));
-		div = (quadmod - secmod^2) + 10^-10;
+		top = (4 sig^2 (secMod - sig^2));
+		div = (quadMod - secMod^2) + 10^-10;
 		K = (1 - top/div);
-		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
+		deb = Sqrt[Clip[(secMod - 2 sig^2) + (K (data^2 - secMod)), {0., Infinity}]]
 	]];
 
-NoiseAppCN = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, {sig, _Real, 0}},
+NoiseAppCN = Compile[{{secMod, _Real, 3}, {quadMod, _Real, 3}, {data, _Real, 3}, {sig, _Real, 0}},
 	Block[{top, div, K, deb},
-		top = (4 sig^2 (secmod - sig^2));
-		div = (quadmod - secmod^2) + 10^-10;
+		top = (4 sig^2 (secMod - sig^2));
+		div = (quadMod - secMod^2) + 10^-10;
 		K = (1 - top/div);
-		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
+		deb = Sqrt[Clip[(secMod - 2 sig^2) + (K (data^2 - secMod)), {0., Infinity}]]
 	]];
 
-NoiseAppC = Compile[{{secmod, _Real, 3}, {quadmod, _Real, 3}, {data, _Real, 3}, {sig, _Real, 3}},
+NoiseAppC = Compile[{{secMod, _Real, 3}, {quadMod, _Real, 3}, {data, _Real, 3}, {sig, _Real, 3}},
 	Block[{top, div, K, deb},
-		top = (4 sig^2 (secmod - sig^2));
-		div = (quadmod - secmod^2) + 10^-10;
+		top = (4 sig^2 (secMod - sig^2));
+		div = (quadMod - secMod^2) + 10^-10;
 		K = (1 - top/div);
-		deb = Sqrt[Clip[(secmod - 2 sig^2) + (K (data^2 - secmod)), {0., Infinity}]]
+		deb = Sqrt[Clip[(secMod - 2 sig^2) + (K (data^2 - secMod)), {0., Infinity}]]
 	]];
 
 
@@ -342,10 +342,10 @@ PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, 0., opts];
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
-		weight, ker, tol, mon, data, min, max, maskd, mask, sigm, dim, zdim, ydim, xdim, ddim, 
+		weight, ker, tol, mon, data, min, max, maskd, mask, sigma, dim, zdim, ydim, xdim, ddim, 
 		k, m, n, off, datao, weights, sigmat, start, sigmati, nmati, clip, comp, len,
 		output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
-		weightFun, posV, leng, nearPos, p, pi, pos, np, met, trans, comps,
+		weightFun, posV, length, nearPos, p, pi, pos, np, met, trans, comps,
 		mid, pad, fun, par, dimv, coors
 	},
 
@@ -354,7 +354,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		PCATolerance, PCAKernel, PCAClipping, PCAComplex, Parallelize}];
 	If[par, weight = False];
 
-	(*concatinate complex data and make everything numerical to speed up*)
+	(*concatenate complex data and make everything numerical to speed up*)
 	comps = False;
 	data = ToPackedArray@N@If[comp, 
 		clip = False;
@@ -367,7 +367,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	{min, max} = 1.1 MinMax[Abs[data]];
 	maskd = Unitize@Total@Transpose[data];
 	mask = ToPackedArray[N@(maski maskd)];
-	sigm = ToPackedArray[N@sigmai];
+	sigma = ToPackedArray[N@sigmai];
 
 	(*get data dimensions*)
 	dim = {zdim, ddim, ydim, xdim} = Dimensions[data];
@@ -377,17 +377,17 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	mid = Ceiling[ker^3/2];
 
 	(*define sigma*)
-	sigm = If[NumberQ[sigm], ConstantArray[sigm, {zdim, ydim, xdim}], sigm];
+	sigma = If[NumberQ[sigma], ConstantArray[sigma, {zdim, ydim, xdim}], sigma];
 
 	(*define weighting function*)
 	weightFun = If[weight, 1./(m - #)&, 1.&];
 
-	(*padd the data with kernel offset*)
+	(*pad the data with kernel offset*)
 	off = Round[(ker - 1)/2];
 	pad = (off + 1){{1, 1}, {1, 1}, {1, 1}};
 	data = ArrayPad[data, Insert[pad, {0, 0}, 2], 0.];
 	mask = ArrayPad[mask, pad, 0.];
-	sigm = ArrayPad[sigm, pad, 0.];
+	sigma = ArrayPad[sigma, pad, 0.];
 
 	Switch[met,
 
@@ -395,17 +395,17 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		"Similarity",
 		(*vectorize data*)
 		{data, posV} = DataToVector[data, mask];
-		sigm = First@DataToVector[sigm, mask];
+		sigma = First@DataToVector[sigma, mask];
 
 		(*parameters for monitor*)
-		leng = Length[data];
-		pos = Range@leng;
+		length = Length[data];
+		pos = Range@length;
 
 		(*get positions of similar signals but in random batches such that nearest has speed*)
 		SeedRandom[1234];
 		np = 50000;
-		pos = If[leng <= np, {pos}, 
-			np = Ceiling[leng/Ceiling[leng/np]];
+		pos = If[length <= np, {pos}, 
+			np = Ceiling[length/Ceiling[length/np]];
 			Partition[RandomSample[pos], np, np, {1, 1}, {}]
 		];
 
@@ -420,12 +420,12 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		(*perform denoising*)
 		j = 0;
 		If[mon, PrintTemporary["Performing the denoising"]];
-		If[mon&&!par, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
+		If[mon&&!par, PrintTemporary[ProgressIndicator[Dynamic[j], {0, length}]]];
 
 		If[weight,
 			(*--------------use weighting---------------*)
 
-			(*ouput data*)
+			(*output data*)
 			datao = 0. data;
 			weights = sigmat = sigmati = nmati = datao[[All, 1]];
 
@@ -435,10 +435,10 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 				pi = First@p;
 
 				(*perform the fit and reconstruct the noise free data*)
-				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigm[[pi]], {trans, m, n},  tol];
+				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigma[[pi]], {trans, m, n},  tol];
 				weight = weightFun[Nes];
 
-				(*sum data and sigma and weight for numer of components*)
+				(*sum data and sigma and weight for number of components*)
 				datao[[p]] += weight datn;
 				sigmat[[p]] += weight sigo;
 				weights[[p]] += weight;
@@ -457,11 +457,11 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 			
 			(*--------------no weighting allows parallel ---------------*)
 
-			fun = If[par, DistributeDefinitions[data, sigm, trans, m, n, tol, par, PCADeNoiseFit]; ParallelMap, Map];
+			fun = If[par, DistributeDefinitions[data, sigma, trans, m, n, tol, par, PCADeNoiseFit]; ParallelMap, Map];
 			{datao, sigmat, sigmati, nmati} = Transpose@fun[(If[!par, j++];
 				p = #;
 				pi = First@p;
-				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigm[[pi]], {trans, m, n}, tol];
+				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigma[[pi]], {trans, m, n}, tol];
 				{First@datn, sigo, sigo, Nes}
 			) &, nearPos];
 
@@ -486,8 +486,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 		(*parameters for monitor*)
 		j = 0;
-		leng = Length@coors;
-		If[mon&&!par, PrintTemporary[ProgressIndicator[Dynamic[j], {0, leng}]]];
+		length = Length@coors;
+		If[mon&&!par, PrintTemporary[ProgressIndicator[Dynamic[j], {0, length}]]];
 
 		If[weight,
 
@@ -502,7 +502,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 					(*define initial sigma and get pixel range and data*)
 					{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
 					fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, ddim}];
-					sigi = sigm[[z, y, x]];
+					sigi = sigma[[z, y, x]];
 
 					(*perform the fit and reconstruct the noise free data*)
 					{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigi, {trans, m, n}, tol];
@@ -527,12 +527,12 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 			,
 
-			fun = If[par, DistributeDefinitions[data, sigm, trans, m, n, tol, par, k, ddim, mid, off, pad, PCADeNoiseFit];ParallelMap, Map];
+			fun = If[par, DistributeDefinitions[data, sigma, trans, m, n, tol, par, k, ddim, mid, off, pad, PCADeNoiseFit];ParallelMap, Map];
 			{datao, sigmat, sigmati, nmati} = Transpose@fun[(If[!par, j++];
 				{z, y, x} = #;
 				{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
 				fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, ddim}];
-				{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigm[[z, y, x]], {trans, m, n}, tol];
+				{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigma[[z, y, x]], {trans, m, n}, tol];
 				{datn[[mid]], sigo, sigo, Nes}
 			)&, coors];
 			

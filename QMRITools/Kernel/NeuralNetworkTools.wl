@@ -247,7 +247,7 @@ MakeUnet[nClass_?IntegerQ, dimIn_, opts : OptionsPattern[]] := MakeUnet[1, nClas
 MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		architecture, blockType, actType, normType, metSc, metCat,
 		drop, depth, scaling, feature, setting, mon,
-		ndim, nam, conf, net, boolSc, cons, depthj, fStart, mapCon
+		nDim, nam, conf, net, boolSc, cons, depthJ, fStart, mapCon
 	},
 
 	{architecture, blockType, actType, normType, metSc, metCat} = OptionValue[{
@@ -266,10 +266,10 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 	conf = {actType, normType};
 
 	(*is the network 2D or 3D*)
-	ndim = Length@dimIn;
+	nDim = Length@dimIn;
 
 	mon[{architecture, blockType, actType, normType}, "Network block type: "];
-	mon[{dimIn, ndim}, "Network dimension order: "];
+	mon[{dimIn, nDim}, "Network dimension order: "];
 
 	drop = Which[
 		drop === False || drop === None, ConstantArray[0., depth],
@@ -289,7 +289,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		True, Return[Message[MakeUnet::scale]; $Failed]
 	];
 
-	boolSc = (Times @@ If[IntegerQ[#], ConstantArray[#, ndim], #])=!=1&/@scaling;
+	boolSc = (Times @@ If[IntegerQ[#], ConstantArray[#, nDim], #])=!=1&/@scaling;
 	mon[scaling, "Network scaling schedule: "];
 
 	(*define the setting, can be Automatic, number or {set}, or list of settings*)
@@ -341,7 +341,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					(*skip in -> only input from above, skip out -> always for enc*)
 					{0, i=!=depth}, 
 					(*config*)
-					{{blockType, setting[[i]]}, feature[[i]], {conf, ndim}, scaling[[i]]},
+					{{blockType, setting[[i]]}, feature[[i]], {conf, nDim}, scaling[[i]]},
 					DropoutRate -> drop[[i]], RescaleMethod -> metSc, CatenateMethod -> metCat
 				], {i, 1, depth}],
 				(*decoding layers*)
@@ -351,12 +351,12 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					(*skip in -> accepts one skip, skip out -> never for dec*)
 					{1, False}, 
 					(*config*)
-					{{blockType, setting[[i]]}, feature[[i]], {conf, ndim}}, 
+					{{blockType, setting[[i]]}, feature[[i]], {conf, nDim}}, 
 					DropoutRate -> drop[[i]], RescaleMethod -> metSc, CatenateMethod -> metCat
 				], {i, 1, depth - 1}],
 				(*start and mapping*)
 				{"start" -> UNetStart[nChan, fStart, dimIn, conf],
-				"map" -> UNetMap[ndim, nClass]}
+				"map" -> UNetMap[nDim, nClass]}
 			],
 
 			(*define the connections*)
@@ -382,7 +382,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 		,
 		"UNet+"|"UNet++",
 		mapCon = If[mapCon === Automatic, depth -1, If[IntegerQ[mapCon] && mapCon<depth, mapCon, 1]];
-		depthj = depth + 1;
+		depthJ = depth + 1;
 		net = NetGraph[
 			Join[
 				(*Make all the nodes*)
@@ -390,33 +390,33 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					(*upscale for all nodes accept backbone -1, downscale only for backbone*)
 					{If[j > 1, scaling[[i]], 1], If[j =!= 1 || i == depth, 1, scaling[[i]]]}, 
 					(*skip in for all accept backbone, for UNET++ name the skips, skip out for all except right most upscale*)
-					{If[j > 1, If[architecture==="UNet++", j - 1, 1], 0], If[j < depthj - i, True, False]}, 
+					{If[j > 1, If[architecture==="UNet++", j - 1, 1], 0], If[j < depthJ - i, True, False]}, 
 					(*config*)
-					{{blockType, setting[[i]]}, feature[[i]], {conf, ndim}}, 
+					{{blockType, setting[[i]]}, feature[[i]], {conf, nDim}}, 
 					DropoutRate -> drop[[i]], RescaleMethod -> metSc, CatenateMethod -> metCat
-				], {i, 1, depth}, {j, 1, depthj - i}],
+				], {i, 1, depth}, {j, 1, depthJ - i}],
 				(*start and mapping*)
 				{"start" -> UNetStart[nChan, fStart, dimIn, conf],
-				"map" -> UNetMap[ndim, nClass, mapCon]}
+				"map" -> UNetMap[nDim, nClass, mapCon]}
 			],
 			cons = Join[
 				Flatten@Table[{
 					(*connect the backbone, the downscaling*)
 					If[j === 1 && i=!= depth, NetPort[nam[i, j], If[boolSc[[i]], "Down", "Skip"]] -> nam[i + 1, j], Nothing],
 					(*connect the nodes with up scaling*)
-					If[1 < i <= depth, If[i=== depth, nam[i, j], NetPort[nam[i, j], If[j==depthj-i, "Up", "Skip"]]] -> NetPort[nam[i-1, j+1], "Scale"], Nothing],
+					If[1 < i <= depth, If[i=== depth, nam[i, j], NetPort[nam[i, j], If[j==depthJ-i, "Up", "Skip"]]] -> NetPort[nam[i-1, j+1], "Scale"], Nothing],
 					(*connect the node skip connection, for UNet++ its a dense connection.*)
 					Switch[architecture,
 						"UNet+",
-						If[j < depthj - i && i=!= depth, NetPort[nam[i, j], "Skip"] -> NetPort[nam[i, j + 1], "Skip"], Nothing],
+						If[j < depthJ - i && i=!= depth, NetPort[nam[i, j], "Skip"] -> NetPort[nam[i, j + 1], "Skip"], Nothing],
 						"UNet++",
-						If[j < depthj - i && i=!= depth, 
-							NetPort[nam[i, j], "Skip"] -> Table[NetPort[nam[i, ji], If[ji===2, "Skip", nam["Skip",j]]], {ji, j + 1, depthj - i}]
+						If[j < depthJ - i && i=!= depth, 
+							NetPort[nam[i, j], "Skip"] -> Table[NetPort[nam[i, ji], If[ji===2, "Skip", nam["Skip",j]]], {ji, j + 1, depthJ - i}]
 						, Nothing]
 					]
-				}, {i, 1, depth}, {j, 1, depthj - i}],
+				}, {i, 1, depth}, {j, 1, depthJ - i}],
 				(*attach the start and map layers*)
-				{"start" -> "node_1_1", Table[NetPort["node_1_"<>ToString[n], If[n=!=depth, "Skip", "Up"]], {n, depthj - mapCon, depth}] -> "map"}
+				{"start" -> "node_1_1", Table[NetPort["node_1_"<>ToString[n], If[n=!=depth, "Skip", "Up"]], {n, depthJ - mapCon, depth}] -> "map"}
 			];
 			debugUnet["The node connection list: ", cons]; 
 			cons, 
@@ -756,7 +756,7 @@ ActivationLayer[actType_] := If[Head[actType]===ParametricRampLayer||Head[actTyp
 
 NetDimensions[net_] := NetDimensions[net, ""]
 
-NetDimensions[net_, port_] := Block[{block, neti},Switch[port,
+NetDimensions[net_, port_] := Block[{block, netI},Switch[port,
 	"Input", 
 	Information[net,"InputPorts"]["Input"],
 
@@ -796,11 +796,11 @@ NetDimensions[net_, port_] := Block[{block, neti},Switch[port,
 	block = Select[Keys[net[[All, 1]]], StringContainsQ[#, "enc_"|("node_" ~~ __ ~~ "_1")] &];
 	If[block==={}, Return[$Failed],
 		block = First[block];
-		neti = NetFlatten[NetTake[net, {block, block}], 1];
-		block = Select[Keys[Normal[neti]], StringContainsQ[#, "block/U2enc_"] &];
+		netI = NetFlatten[NetTake[net, {block, block}], 1];
+		block = Select[Keys[Normal[netI]], StringContainsQ[#, "block/U2enc_"] &];
 		If[block === {}, Return[$Failed],
 			block = Last[block];
-			Last@Values@Information[NetTake[neti, {block, block}], "OutputPorts"]
+			Last@Values@Information[NetTake[netI, {block, block}], "OutputPorts"]
 	]],
 
 	_, 
@@ -889,7 +889,7 @@ AddLossLayer[net_] := NetGraph[
 		(*overlap losses, jaccard is very similar to squared dice*)
 		"Dice" -> DiceLossLayer[2], (*using squared dice, F1score*)
 		"Jaccard" -> JaccardLossLayer[2], (*using squared Intersection over union*)
-		"Tversky" -> TverskyLossLayer[0.7], (*0.7 recall more than precision, 0.5 is dice, dont square TV*)
+		"Tversky" -> TverskyLossLayer[0.7], (*0.7 recall more than precision, 0.5 is dice, don't square TV*)
 		(*pixel based loss functions based on CE, focal very similar to CE*)
 		"CE" -> CELossLayer[],
 		"Focal" -> FocalLossLayer[2], (*scaled squared for confidence*)
@@ -1083,8 +1083,8 @@ NetSummary[net_] := NetSummary[net, ""]
 NetSummary[net_?ListQ, rep_?StringQ] := NetSummary[#, rep]&/@net
 
 NetSummary[net_, rep_?StringQ] := Block[{
-		toK, st, quantStr, quantStrG, lays, convs, kerns, count, nKern, kernWeights, makeNetIm, im, 
-		norm, normWeights, nelem, elems, elemSize, arrSize, netSize, table, nodes, netIm, nodeIm
+		toK, st, quantStr, quantStrG, lays, convLayers, kerns, count, nKern, kernWeights, makeNetIm, im, 
+		norm, normWeights, nElements, elements, elemSize, arrSize, netSize, table, nodes, netIm, nodeIm
 	},
 
 	toK = Which[
@@ -1096,8 +1096,8 @@ NetSummary[net_, rep_?StringQ] := Block[{
 	quantStrG = ToString[Round[QuantityMagnitude[UnitConvert[#, "Gigabytes"]], .1]] <> " GB" &;
 
 	lays = Information[net, "LayersList"];
-	convs = Select[lays, Head[#] === ConvolutionLayer &];
-	kerns = Information[#, "ArraysDimensions"][{"Weights"}] & /@ convs;
+	convLayers = Select[lays, Head[#] === ConvolutionLayer &];
+	kerns = Information[#, "ArraysDimensions"][{"Weights"}] & /@ convLayers;
 	kerns = GatherBy[{#[[3 ;;]], Times @@ #[[1 ;; 2]], Times @@ #[[1 ;;]]} & /@	kerns, First];
 
 	count = Sort[{Length[#], #[[1, 1]], Total[#[[All, 2]]], Total[#[[All, 3]]]} & /@ kerns];
@@ -1109,16 +1109,16 @@ NetSummary[net_, rep_?StringQ] := Block[{
 	norm = Select[lays, (Head[#] === BatchNormalizationLayer || Head[#] === NormalizationLayer )&];
 	normWeights = If[norm==={}, 0, First@Total[Total[Information[#, "ArraysDimensions"] /@ Keys[Information[norm[[1]], "ArraysDimensions"]]] & /@ norm]];
 
-	nelem = Information[net, "ArraysTotalElementCount"];
-	elems = Round[nelem/1000000, .01];
-	elemSize = UnitConvert[Quantity[32. nelem, "Bits"], "MB"];
+	nElements = Information[net, "ArraysTotalElementCount"];
+	elements = Round[nElements/1000000, .01];
+	elemSize = UnitConvert[Quantity[32. nElements, "Bits"], "MB"];
 	arrSize = UnitConvert[Quantity[32. Total[Times @@@ Values[(Information[#, "OutputPorts"]["Output"]) & /@ Information[net, "Layers"]]], "Bits"], "MB"];
 	netSize = UnitConvert[elemSize + arrSize, "GB"];
 
 	table = Grid[{{ Grid[{
 			{st@"Number of Norm. Layers: ", st@Length@norm},
 			{st@" - Number of Weights: ", toK@normWeights},
-			{st@"Number of Conv. Layers: ", st@Length@convs},
+			{st@"Number of Conv. Layers: ", st@Length@convLayers},
 			{st@" - Number of Kernels: ", toK@nKern},
 			{st@" - Number of Weights: ", toK@kernWeights},
 			{""},
@@ -1167,7 +1167,7 @@ NetSummary[net_, rep_?StringQ] := Block[{
 AnalyzeNetworkFeatures[net_, datI_] := AnalyzeNetworkFeatures[net, datI, ""]
 
 AnalyzeNetworkFeatures[net_, datI_, met_] := Block[{
-		data, dim, dataP, netP, nodes, vals, cutoff, table, plot, feat, nfeat, ttt, n, col
+		data, dim, dataP, netP, nodes, vals, cutoff, table, plot, feat, nFeatures, ttt, n, col
 	},
 
 	data = datI;
@@ -1186,25 +1186,25 @@ AnalyzeNetworkFeatures[net_, datI_, met_] := Block[{
 	col = Join[col , Reverse[col][[2;;]]];
 
 	(*calculate the singular values for plotting and reporting*)
-	{nfeat, table, plot} = Transpose[(
+	{nFeatures, table, plot} = Transpose[(
 		(*get the features*)
 		feat = NetTake[netP, #][{dataP}, TargetDevice -> "CPU"];
 		If[Head[feat] === Association, feat = Last@feat];
 		feat = Map[Flatten, feat];
 
 		(*calculate the singular values of the features*)
-		nfeat = Length@feat;
-		vals = Diagonal[SingularValueDecomposition[feat, UpTo[nfeat]][[2]]];
+		nFeatures = Length@feat;
+		vals = Diagonal[SingularValueDecomposition[feat, UpTo[nFeatures]][[2]]];
 		vals = 100 Rescale[Accumulate[vals]];
 
-		(*find cuoff index and percentage*)
+		(*find cutoff index and percentage*)
 		cutoff = First[Position[UnitStep[vals - 99], 1]] - 1;
 
 		(*give the output*)
 		{
-			nfeat, 
-			Flatten[{Style[#, 14, Bold], cutoff, Round[100 cutoff/nfeat, .1]}], 
-			Transpose[{100 Rescale[Range[1., nfeat]], vals}]
+			nFeatures, 
+			Flatten[{Style[#, 14, Bold], cutoff, Round[100 cutoff/nFeatures, .1]}], 
+			Transpose[{100 Rescale[Range[1., nFeatures]], vals}]
 		}
 	) & /@ nodes];
 
@@ -1215,26 +1215,26 @@ AnalyzeNetworkFeatures[net_, datI_, met_] := Block[{
 
 	(*output based on method*)
 	If[met === "",
-		MonitorFunction[Thread[{nodes, nfeat}]];
+		MonitorFunction[Thread[{nodes, nFeatures}]];
 		MonitorFunction[n];
 
 		(*dynamic plot output*)
-		DynamicModule[{cols, tab = table, pl = plot, nods = nodes, clist = col, ln, pcol},
+		DynamicModule[{cols, tab = table, pl = plot, nods = nodes, colList = col, ln, plotCol},
 
 			(*define colors for plotting*)
-			cols = Table[Directive[{clist[[i]], Dashed, Thick}], {i, Length@nodes}];
+			cols = Table[Directive[{colList[[i]], Dashed, Thick}], {i, Length@nodes}];
 			ln = Range@Length@nods;
 
 			(*define the plots within a manipulate that allows to select the nodes of the network*)
 			Manipulate[
-				pcol = cols;
-				pcol[[k]] = Directive[{(*Black*)clist[[k]], Dashing[None], Thickness[.01]}];
+				plotCol = cols;
+				plotCol[[k]] = Directive[{(*Black*)colList[[k]], Dashing[None], Thickness[.01]}];
 
 				Column[{
 				Grid[Transpose@tab, Frame -> All, Background -> {{k -> Gray}, None, 
-					Thread[Thread[{1, ln}] -> (Lighter/@clist)]}, Spacings -> {1.2, 1.2}],
+					Thread[Thread[{1, ln}] -> (Lighter/@colList)]}, Spacings -> {1.2, 1.2}],
 				Show[
-					ListLinePlot[pl, PlotStyle -> pcol(*RotateRight[cols, k - 1]*), GridLines -> {{tab[[k, 3]]}, {99}}, 
+					ListLinePlot[pl, PlotStyle -> plotCol(*RotateRight[cols, k - 1]*), GridLines -> {{tab[[k, 3]]}, {99}}, 
 						ImageSize -> 500, AspectRatio -> 1, $plotOptions
 					],
 					Plot[x, {x, 0, 100}, PlotStyle -> Directive[{Thick, Gray, Dotted}]]
@@ -1266,7 +1266,7 @@ SyntaxInformation[MakeClassifyNetwork] = {"ArgumentsPattern" -> {_, OptionsPatte
 
 MakeClassifyNetwork[classes_, OptionsPattern[]] := Block[{imSize, enc, dec, conv, head, heads, nodes, connection},
 	
-	(*make the image enoder*)
+	(*make the image encoder*)
 	imSize = OptionValue[ImageSize];
 	enc = NetEncoder[{"Image", imSize, ColorSpace -> "Grayscale"}];
 
