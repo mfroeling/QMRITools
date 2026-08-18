@@ -805,7 +805,7 @@ RegisterData[
 		If[OptionValue[OutputTransformation],
 			(*output data with transformation parameters*)
 			dataout = Prepend[output[[1]],target];
-			{If[depthS==4,Transpose@dataout,dataout],Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}]}
+			{If[depthS==4,Transpose@dataout,dataout],Prepend[output[[2]],{0,0,0,0,0,0,1,1,1,0,0,0}[[;;Length[output[[2,1]]]]]]}
 			,
 			(*output dat without transformation parameters*)
 			dataout = Prepend[output,target];
@@ -1223,9 +1223,13 @@ ReadTransformParameters[dir_] := Block[{files, filenum, cor, pars},
 	pars = (((First[#] -> ToExpression[Rest[#]]) &[StringSplit[StringTake[#, {2, -2}]]]) & /@ Select[DeleteCases[Import[#, "Lines"], ""], StringTake[#, 2] =!= "//" &]) & /@ files;
 
 	(*extract the trans*)
-	cor = Partition[#, 3][[{1, 4, 3, 2}, {3, 2, 1}]] & /@ ("TransformParameters" /. pars);
-	cor[[All, 1]] = cor[[All, 1]]/Degree;
-	Flatten /@ cor
+	cor = Partition[#, 3] & /@ ("TransformParameters" /. pars);
+	If[Length[cor]===4,
+		cor = cor[[{1, 4, 3, 2}, {3, 2, 1}]];
+		cor[[All, 1]] = cor[[All, 1]] / Degree;
+		Flatten /@ cor,
+		First/@cor
+	]
 ]
 
 
