@@ -27,7 +27,7 @@ BeginPackage["QMRITools`AmaresTools`", Join[{"Developer`"}, Complement[QMRITools
 EditAmaresMatrix::usage = 
 "EditAmaresMatrix[matrix] is used to edit the Amares fitting matrix which can be compressed or extended using
 ToFullAmaresMatrix or FromFullAmaresMatrix. 
-The default properties are \"amp\": -1, \"sigma\": 0, \"gamma\": 0, \"shift\": -1, \"phase\": 0, \"B1\": False, \"init\": False.
+The default properties are \"amp\": -1, \"sigma\": 0, \"gamma\": -1, \"shift\": -1, \"phase\": 0, \"B1\": False, \"init\": False.
 
 EditAmaresMatrix[matrix, names] will do the same but will only do it for the values in the list names. If values are not in matrix
 they will be added, if values are names but not in matrix they will be removed from matrix."
@@ -37,7 +37,7 @@ ToFullAmaresMatrix::usage =
 To edit the matrix the function EditAmaresMatrix can be used and to compress it FromFullAmaresMatrix can be used."
 
 FromFullAmaresMatrix::usage = 
-"FromFullAmaresMatrix[matrix] compresses the Amares fitting matrix to its full form by removing all defaults from the defined.
+"FromFullAmaresMatrix[matrix] compresses the Amares fitting matrix from its full form by removing all defaults from the defined.
 To edit the matrix the function EditAmaresMatrix can be used and to extend it ToFullAmaresMatrix can be used."
 
 AmaresBasis::usage = 
@@ -48,8 +48,9 @@ When \"ATP\" is defined in split the 3 ATP peaks will be separate spectra to fit
 The output is {basisFunc, {time, ppm, gyro}} where basisFunc is an Association."
 
 AmaresInitialValues::usage = 
-"AmaresInitialValues[fid, time, basis, matrix, {gyro, dw}] makes a guess for the initial fit values to initialize AmaresFitFidI.
-The time, basis and gyro can be obtained from AmaresBasis and the matrix can be obtained form EditMaresMatrix."
+"AmaresInitialValues[fid, time, {gyro, dw}, basis, matrix] makes a guess for the initial fit values to initialize AmaresFitFidI.
+The time, basis and gyro can be obtained from AmaresBasis and the matrix can be obtained form EditMaresMatrix.
+AmaresInitialValues[fid, time, {gyro, dw}, basis, matrix, plot] also exports the calibration plots if plot is set to True."
 
 AmaresFitFidI::usage = 
 "AmaresFitFidI[fid, time, gyro, basis, matrix, cons] fits the fid with using the basis spectra.
@@ -68,13 +69,13 @@ ShowParameterMatrix::usage =
 ShowParameterMatrix[fit, true, metabolites] shows the relative difference between the true and fitted parameters."
 
 AmaresSignalCalc::usage = 
-"AmaresSignalCalc[basis, matrix, pars, gyro] generates a fid from the basis functions according to matrix and pars.
-AmaresSignalCalc[basis, matrix, pars, b1Pars, gyro] also generates a fid but also using the B1 effect if set True in matrix.
+"AmaresSignalCalc[basis, matrix, time, pars, gyro] generates a fid from the basis functions according to matrix and pars.
+AmaresSignalCalc[basis, matrix, time, pars, b1Pars, gyro] also generates a fid but also using the B1 effect if set True in matrix.
 The values of b1Pars are {tau, fa, TR}  with tau and TR in ms and fa in degrees."
 
 AmaresSignalJacobianCalc::usage = 
-"AmaresSignalJacobianCalc[basis, matrix, pars, gyro] generates a fid and the Jacobian from the basis functions according to matrix and pars.
-AmaresSignalJacobianCalc[basis, matrix, pars, b1Pars, gyro] also generates a fid but also using the B1 effect if set True in matrix.
+"AmaresSignalJacobianCalc[basis, matrix, time, pars, gyro] generates a fid and the Jacobian from the basis functions according to matrix and pars.
+AmaresSignalJacobianCalc[basis, matrix, time, pars, b1Pars, gyro] also generates a fid but also using the B1 effect if set True in matrix.
 The values of b1Pars are {tau, fa, TR}  with tau and TR in ms and fa in degrees."
 
 
@@ -89,6 +90,12 @@ $AmaresMatrixDefaults::usage =
 
 (* ::Subsection:: *)
 (*Options*)
+
+
+AmaresUseB1::usage =
+"AmaresUseB1 is an option for AmaresFitFidI. When True, the B1 value supplied through init is used to apply 
+the Ernst-angle amplitude correction even if the fitting matrix has \"B1\"->False for all metabolites 
+(i.e. B1 is applied but not fitted). Default is False."
 
 
 (* ::Subsection:: *)
@@ -108,7 +115,7 @@ $AmaresT1Values = <|
 |>;
 
 
-$AmaresB1Regularization = 0.000;
+$AmaresB1Regularization = 0.005;
 
 
 $AmaresMatrixDefaults = <|"amp" -> -1, "sigma" -> 0, "gamma" -> -1, "shift" -> -1, "phase" -> 0, "B1" -> False, "init" -> False|>;
@@ -124,24 +131,24 @@ VectorToComplex = {1, I} . Partition[#, Length[#]/2] &;
 (*ShowParameterMatrix*)
 
 
-ShowParameterMatrix[fit_, mets_] := Block[{fiti=fit},
-	fiti[[1]] = Round[100 fiti[[1]] / fiti[[1, 8]], .1];
-	ShowMat[fiti, mets]
+ShowParameterMatrix[fit_, mets_] := Block[{fitI=fit},
+	fitI[[1]] = Round[100 fitI[[1]] / fitI[[1, 8]], .1];
+	ShowMat[fitI, mets]
 ]
 
 
-ShowParameterMatrix[fit_, ref_, mets_] := Block[{fiti, refi},
-	fiti= fit; refi = ref;
-	fiti[[1]] = Round[100 fit[[1]] / fit[[1, 8]], .1];
-	refi[[1]] = Round[100 ref[[1]] / ref[[1, 8]], .1];
-	fiti = fiti - refi;
-	ShowMat[fiti, mets]
+ShowParameterMatrix[fit_, ref_, mets_] := Block[{fitI, refI},
+	fitI= fit; refI = ref;
+	fitI[[1]] = Round[100 fit[[1]] / fit[[1, 8]], .1];
+	refI[[1]] = Round[100 ref[[1]] / ref[[1, 8]], .1];
+	fitI = fitI - refI;
+	ShowMat[fitI, mets]
 ]
 
 
-ShowMat[fiti_, mets_]:=MatrixForm[
-	Transpose@Prepend[Transpose[Prepend[Round[fiti, .01], mets]], 
-	{"met", "amp", "sigma", "gamma", "eps", "phi", "B1"}[[;; Length[fiti] + 1]]]
+ShowMat[fitI_, mets_]:=MatrixForm[
+	Transpose@Prepend[Transpose[Prepend[Round[fitI, .01], mets]], 
+	{"met", "amp", "sigma", "gamma", "shift", "phase", "B1"}[[;; Length[fitI] + 1]]]
 ]
 
 
@@ -212,7 +219,7 @@ EditAmaresMatrix[matrix_Association, names_List] := Block[{start, return, list, 
 	{nn, np} = {Length[names], Length[fitPar]};
 	cellStart = Table[start[names[[i]], fitPar[[j]]], {i, nn}, {j, np}];
 
-	return = DialogInput[DynamicModule[{data = cellStart, datai = cellStart},
+	return = DialogInput[DynamicModule[{data = cellStart, dataI = cellStart},
 		Column[{
 			Grid[Prepend[Table[Prepend[Table[
 				With[{i = i, j = j, param = fitPar[[j]]},
@@ -227,7 +234,7 @@ EditAmaresMatrix[matrix_Association, names_List] := Block[{start, return, list, 
 			Row[{
 				Button["Save", DialogReturn[data], ImageSize -> 80],
 				Spacer[10],
-				Button["Cancel", DialogReturn[datai], ImageSize -> 80]
+				Button["Cancel", DialogReturn[dataI], ImageSize -> 80]
 			}]
 		}]
 	]];
@@ -353,9 +360,9 @@ GetSpinResonance[nn_?StringQ] := Block[{res, tags},
 (*AmaresInitialValues*)
 
 
-AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}] := AmaresInitialValues[dat, time, basis, matrix, {gyro, dw}, False]
+AmaresInitialValues[dat_, time_, {gyro_, dw_}, basis_, matrix_] := AmaresInitialValues[dat, time, {gyro, dw}, basis, matrix, False]
 
-AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}, pl_] := Block[{
+AmaresInitialValues[dat_, time_, {gyro_, dw_}, basis_, matrix_, pl_] := Block[{
 		sc, datf, model, rf, a, p, e, g, s, am, gm, sm, eps, ph, epi, ami, gmi,
 		fids, base, sig, corr, ppm, wght, fit, datA, obj,
 		decay, amp, opts, pEps, pGam, pPh, pAmp, plots, init
@@ -443,16 +450,23 @@ AmaresInitialValues[dat_, time_, basis_, matrix_, {gyro_, dw_}, pl_] := Block[{
 (* ::Subsubsection::Closed:: *)
 (*AmaresFitFidI*)
 
+Options[AmaresFitFidI] = {
+	AmaresUseB1 -> False
+};
 
-AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, cons_?MatrixQ] := AmaresFitFidI[dat, time, gyro, basis, matrix, {1, 1, 1}, {cons, 1}]
 
-AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {cons_?MatrixQ, init_?MatrixQ}] := AmaresFitFidI[dat, time, gyro, basis, matrix, {1, 1, 1}, {cons, init}]
+AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, cons_?MatrixQ, opts:OptionsPattern[]] := AmaresFitFidI[
+		dat, time, gyro, basis, matrix, {1, 1, 1}, {cons, 1}, opts]
 
-AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}, cons_?MatrixQ] := AmaresFitFidI[dat, time, gyro, basis, matrix, {tau, fa, tr}, {cons, 1}]
+AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {cons_?MatrixQ, init_}, opts:OptionsPattern[]] := AmaresFitFidI[
+		dat, time, gyro, basis, matrix, {1, 1, 1}, {cons, init}, opts]
 
-AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}, {cons_?MatrixQ, init_?MatrixQ}] := Block[{
+AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, b1Par_, cons_?MatrixQ, opts:OptionsPattern[]] := AmaresFitFidI[
+		dat, time, gyro, basis, matrix, b1Par, {cons, 1}, opts]
+
+AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, b1Par_, {cons_?MatrixQ, init_}, opts:OptionsPattern[]] := Block[{
 		fids, names, nb, sc, datF, groups, parsV, parsM, con, int, parsFit,
-		jacobian, residual, sigma, cov, se, t1Model, atp, conA
+		jacobian, residual, sigma, cov, se, t1Model, atp, conA, b1Val
 	},
 
 	(*define fit parameters and constrains*)
@@ -462,6 +476,9 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}
 
 	(*make the t1model for b1 correction, if B1 is False wil be 1,0,.. and then tau tr and fa does not matter*)
 	t1Model = MakeT1Model[names, matrix];
+	(*Use given b1 and excitation profile even if b1 fitting is off by matrix*)
+	b1Val = N[If[Length[init]==6, init[[6, 1]], 1.]];
+	If[OptionValue[AmaresUseB1], t1Model[[3]] = 0.t1Model[[3]] + 1];
 
 	(*determine data scaling for normalized data range*)
 	sc = 1. / Max[Abs@dat]; (*force all amplitudes between 0 and 1*)
@@ -470,7 +487,7 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}
 	(*see how the parameters are grouped and make cons and inits accordingly*)
 	groups = GetGroupIds[matrix, names];
 	parsV = MakeParVec[groups];
-	parsM = ParVecToMat[parsV, groups, 1.];(*always 6 inc B1*)
+	parsM = ParVecToMat[parsV, groups, b1Val];(*always 6 inc B1*)
 
 	(*create the initial fit values vector with scaled amplitudes*)
 	int = init;
@@ -483,16 +500,16 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}
 
 	(*perform the minimization*)
 	parsFit = parsV /. Last[Quiet@FindMinimum[
-		{ObjectiveFunc[datF, fids, time, gyro, {tau, fa, tr}, t1Model, parsM], con}, int,
-		Gradient -> GradientFunc[datF, fids, time, gyro, {tau, fa, tr}, t1Model, parsM, groups]],
+		{ObjectiveFunc[datF, fids, time, gyro, parsM, b1Par, t1Model], con}, int,
+		Gradient -> GradientFunc[datF, fids, time, gyro, parsM, b1Par, t1Model, groups]],
 		MaxIterations -> 100];
-	parsFit = ParVecToMat[parsFit, groups, 1.];(*always 6 inc B1*)
+	parsFit = ParVecToMat[parsFit, groups, b1Val];(*always 6 inc B1*)
 	parsFit[[-2]] = Wrap[parsFit[[-2]]]; (*wrap the phase to [-Pi, PI]*)
 
 	(*calculate the SE and noise sigma (CRLB)*)
-	residual = ResidualFunc[datF, fids, time, gyro, {tau, fa, tr}, t1Model, parsFit];
-	sigma = Total[residual^2] / (Length[datF] - Length@parsV);
-	jacobian = JacobianFunc[datF, fids, time, gyro, {tau, fa, tr}, t1Model, parsFit, groups];
+	residual = ResidualFunc[datF, fids, time, gyro, parsFit, b1Par, t1Model];
+	sigma = residual / (Length[datF] - Length@parsV);
+	jacobian = JacobianFunc[datF, fids, time, gyro, parsFit, b1Par, t1Model, groups];
 	cov = sigma PseudoInverse[jacobian . Transpose[jacobian]];
 	se = ParVecToMat[Sqrt[Diagonal[cov]], groups, 0.];
 
@@ -513,16 +530,16 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, {tau_, fa_, tr_}
 
 
 AmaresSignalCalc[basis_, matrix_, time_, pars_, gyro_?NumberQ]:=VectorToComplex[
-	SignalCalcC[Values[basis], time, pars, MakeT1Model[basis, matrix], {1., 1. ,1.}, gyro]
+	SignalCalcC[Values[basis], time, gyro, pars, {1., 1. ,1.}, MakeT1Model[basis, matrix]]
 ]
 
 AmaresSignalCalc[basis_, matrix_, time_, pars_, b1Par_?VectorQ, gyro_?NumberQ]:=VectorToComplex[
-	SignalCalcC[Values[basis], time, pars, MakeT1Model[basis, matrix], b1Par, gyro]
+	SignalCalcC[Values[basis], time, gyro, pars, b1Par, MakeT1Model[basis, matrix]]
 ]
 
 
-SignalCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2}, 
-	{t1b1, _Real, 2}, {b1Par, _Real, 1}, {gyro, _Real}}, Block[{
+SignalCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {gyro, _Real}, 
+	{pars, _Real, 2}, {b1Par, _Real, 1}, {t1b1, _Real, 2}}, Block[{
 		bRe, bIm, bt, as, sm, gm ,ep, ph, b1, epR, t1, b1Mask, fab1, fSyncE,
 		fa, tr, tau, trt1, decay, theta, cosT, sinT, epTau, b1Amp, s0, s0Loc,
 		abRe, abIm, mAmp
@@ -537,8 +554,8 @@ SignalCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 
 	(*Split parameter vector and b1 model parameters*)
 	{as, sm, gm, ep, ph, b1} = pars;
-	{epR, t1, b1Mask} = t1b1; (*reference ppm, t1 and b1 correction mask*)
 	{tau, fa, tr} = b1Par;
+	{epR, t1, b1Mask} = t1b1; (*reference ppm, t1 and b1 correction mask*)
 	fa = fa Degree;
 	tau = tau / 1000;
 
@@ -578,19 +595,20 @@ SignalCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 
 
 AmaresSignalJacobianCalc[basis_, matrix_, time_, pars_, gyro_?NumberQ]:= SignalJacCalcC[
-	Values[basis], time, pars, MakeT1Model[basis, matrix], {1., 1. ,1.}, gyro]
+	Values[basis], time, gyro, pars, {1., 1. ,1.}, MakeT1Model[basis, matrix]]
 
 AmaresSignalJacobianCalc[basis_, matrix_, time_, pars_, b1Par_?VectorQ, gyro_?NumberQ]:= SignalJacCalcC[
-	Values[basis], time, pars, MakeT1Model[basis, matrix], b1Par, gyro]
+	Values[basis], time, gyro, pars, b1Par, MakeT1Model[basis, matrix]]
 
 
-SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2}, 
-	{t1b1, _Real, 2}, {b1Par, _Real, 1}, {gyro, _Real, 0}}, Block[{
-		bRe, bIm, bt, as, sm, gm ,ep, ph, b1, epR, t1, b1Mask, fa, tr, tau, trt1, decay, theta, s0, s0Loc,
+SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {gyro, _Real, 0}, 
+	{pars, _Real, 2}, {b1Par, _Real, 1}, {t1b1, _Real, 2}}, Block[{
+		bRe, bIm, bt, as, sm, gm ,ep, ph, b1, epR, ep2, t1, b1Mask, fa, tr, tau, trt1, decay, theta, s0, s0Loc,
 		cosT, sinT, epTau, b1Amp, mAmp, sigRe, sigIm, abRe, abIm, b1Dep, b1Db1, daRe, daIm, fab1,
 		dsmRe, dsmIm, dgmRe, dgmIm, depRe, depIm, dphRe, dphIm, db1Re, db1Im, dRe, dIm, fSyncE,
 		sig, jac, dsLocDep, dsLocDb1
 	},
+
 	(*split the complex signal of the basis vectors*)
 	bRe = Re[bs];
 	bIm = Im[bs];
@@ -634,21 +652,23 @@ SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 	abIm = b1Amp sigIm;
 
 	(*start derivatives for jacobian*)
-	
 	(*derivatives of the b1 dependency to ep and b1*)
+	ep2 = (ep - epR)^2 + 10^-50;
 	dsLocDep = (fab1 (-1 + trt1) (trt1 - Cos[fSyncE]) (
 			(ep - epR) gyro Pi tau Cos[epTau] + Sin[epTau])
-				) / ((ep - epR)^2 gyro Pi tau (-1 + trt1 Cos[fSyncE])^2);
+				) / (ep2 gyro Pi tau (-1 + trt1 Cos[fSyncE])^2);
 	b1Dep = as b1Mask (dsLocDep / s0);
 	dsLocDb1 = (fa (-1 + trt1) (trt1 - Cos[fSyncE]) Sinc[epTau]
 			) / (-1 + trt1 Cos[fSyncE])^2;
 	b1Db1 = as b1Mask (dsLocDb1 / s0);
+
 	(* derivatives to amplitudes*)
 	daRe = mAmp sigRe;
 	daIm = mAmp sigIm;
-	(*real derivatives parameters for Gaussian and Lorentzian decay parameters*)
+	(*derivatives Gaussian decay*)
 	dsmRe = -4 Pi^2 sm bt^2 abRe;
 	dsmIm = -4 Pi^2 sm bt^2 abIm;
+	(*derivatives Lorentzian decay*)
 	dgmRe = -Pi bt abRe;
 	dgmIm = -Pi bt abIm;
 	(*complex derivatives for the shift including b1 part*)
@@ -678,35 +698,33 @@ SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {pars, _Real, 2},
 (*ObjectiveFunc*)
 
 
-ObjectiveFunc[data_, fids_, time_, gyro_, b1par_, b1Model_, p_?(MatrixQ[#, NumericQ] &)] := 
-	Total[(ResidualFunc[data, fids, time, gyro, b1par, b1Model, p])^2] + 
-		$AmaresB1Regularization (p[[-1, 1]] - 1.)^2
+ObjectiveFunc[data_, fids_, time_, gyro_, pars_?(MatrixQ[#, NumericQ]&), b1par_, b1Model_] := 
+	ResidualFunc[data, fids, time, gyro, pars, b1par, b1Model] + $AmaresB1Regularization (pars[[-1, 1]] - 1.)^2
 
 
 (* ::Subsubsection::Closed:: *)
 (*ResidualFunc*)
 
 
-ResidualFunc[data_, fids_, time_, gyro_, b1par_, b1Model_, p_?(MatrixQ[#, NumericQ] &)] := 
-	data - SignalCalcC[fids, time, p, b1Model, b1par, gyro]
+ResidualFunc[data_, fids_, time_, gyro_, pars_?(MatrixQ[#, NumericQ] &), b1par_, b1Model_] := 
+	Total[(data - SignalCalcC[fids, time, gyro, pars, b1par, b1Model])^2]
 
 
 (* ::Subsubsection::Closed:: *)
 (*JacobianFunc*)
 
 
-JacobianFunc[data_, fids_, time_, gyro_, b1par_, b1Model_, p_?(MatrixQ[#, NumericQ] &), grp_] := 
-	CollapseJacMat[Rest@SignalJacCalcC[fids, time, p, b1Model, b1par, gyro], grp]
+JacobianFunc[data_, fids_, time_, gyro_, pars_?(MatrixQ[#, NumericQ] &), b1par_, b1Model_, grp_] := 
+	CollapseJacMat[Rest@SignalJacCalcC[fids, time, gyro, pars, b1par, b1Model], grp]
 
 
 (* ::Subsubsection::Closed:: *)
 (*GradientFunc*)
 
-
-GradientFunc[data_, fids_, time_, gyro_, b1par_, b1Model_, p_?(MatrixQ[#, NumericQ] &), grp_] := Block[{sigjac, gradVec},
-	sigjac = SignalJacCalcC[fids, time, p, b1Model, b1par, gyro];
-	gradVec = -2 CollapseJacMat[Rest@sigjac, grp] . (data - First@sigjac);
-	If[Length[grp] == 6, gradVec[[-1]] += 2 $AmaresB1Regularization (p[[-1, 1]] - 1.)];
+GradientFunc[data_, fids_, time_, gyro_, pars_?(MatrixQ[#, NumericQ] &), b1par_, b1Model_, grp_] := Block[{sigJac, gradVec},
+	sigJac = SignalJacCalcC[fids, time, gyro, pars, b1par, b1Model];
+	gradVec = -2 CollapseJacMat[Rest@sigJac, grp] . (data - First@sigJac);
+	If[Length[grp] == 6, gradVec[[-1]] += $AmaresB1Regularization 2 (pars[[-1, 1]] - 1.)];
 	gradVec
 ]
 
