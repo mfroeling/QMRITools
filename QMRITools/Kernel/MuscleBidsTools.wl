@@ -766,14 +766,14 @@ SyntaxInformation[ViewProtocolNames] = {"ArgumentsPattern" -> {_, OptionsPattern
 ViewProtocolNames[folder_?StringQ, opts:OptionsPattern[]] := ViewProtocolNames[GetConfig[folder], opts]
 
 ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{
-		subs, dataFols, fold, list, duplicates, json
+		subs, dataFolders, fold, list, duplicates, json
 	},
 
 	subs = OptionValue[ProcessSubjects];
-	dataFols = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
+	dataFolders = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
 
-	subs = If[subs===All||subs==="All", dataFols, 
-		Select[dataFols, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#]]&]
+	subs = If[subs===All||subs==="All", dataFolders, 
+		Select[dataFolders, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#]]&]
 	];
 
 	MenuView[(
@@ -809,11 +809,11 @@ GetProtocolNames[fold_?StringQ] := Block[{list, json, name},
 ]
 
 
-GetProtocolNames[dir_, sub_] := Block[{config, dataFols, subs},
+GetProtocolNames[dir_, sub_] := Block[{config, dataFolders, subs},
 	config = If[AssociationQ[dir], dir, GetConfig[dir]];
-	dataFols = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
-	subs = If[sub === All || sub === "All",	dataFols,
-		Select[dataFols, MemberQ[SubNameToBids[Flatten[{sub}], "Sub"], SubNameToBids[#]] &]];
+	dataFolders = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
+	subs = If[sub === All || sub === "All",	dataFolders,
+		Select[dataFolders, MemberQ[SubNameToBids[Flatten[{sub}], "Sub"], SubNameToBids[#]] &]];
 	GetProtocolNames[subs][[If[StringQ[sub], 1, All]]]
 ]
 
@@ -980,8 +980,8 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, opts:OptionsPattern[]] := BidsFo
 BidsFolderLoop[inFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[inFol, inFol, datDis, opts]
 
 BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsPattern[]] := Block[{
-		met, datType, fols, subs, logFile, ass, nam, filesSl, jsons, versCheck, delete, tractMet,
-		files, nTyp, pat, inFols, custConf, out, datDis, imOut
+		met, datType, folders, subs, logFile, ass, nam, filesSl, versCheck, delete, tractMet,
+		files, nTyp, pat, inputFolders, customConfig, out, datDis, imOut
 	},
 
 	{met, subs, versCheck, delete, tractMet, imOut} = OptionValue[{
@@ -991,13 +991,13 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 	debugBids[inFol];
 
 	(*select the subjects and folders to be processed*)
-	fols =Switch[met,
+	folders =Switch[met,
 		"BidsDcmToNii", ResetLog[]; Select[FileNames[All, inFol], DirectoryQ],
 		_, SelectBids[inFol, "ses"]
 	];
 
-	subs = If[subs===All||subs==="All", fols, 
-		Select[fols, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#, met]]&]
+	subs = If[subs===All||subs==="All", folders, 
+		Select[folders, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#, met]]&]
 	];
 
 	debugBids[Column@subs];
@@ -1017,11 +1017,11 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 
 		(*check for custom config - merge if config exists in input folder and copy it to output folder*)
 		(* Load config: use local/subject config for all but Analysis *)
-		{custConf, datDis} = If[met === "MuscleBidsAnalysis",
+		{customConfig, datDis} = If[met === "MuscleBidsAnalysis",
 			{False, datDisIn}, 
 			CheckConfig[fol, out]
 		];
-		debugBids[{custConf, datDis}];
+		debugBids[{customConfig, datDis}];
 
 		(* Merge global/local and inject Keys/Duplicate logic*)
 		datDis = CheckDataDescription[If[met === "MuscleBidsAnalysis", datDis, MergeConfig[datDisIn, datDis]], met];
@@ -1041,7 +1041,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 		ShowLog[];
 		
 		(*-----*)AddToLog[{"Starting "<>met<>" for directory: ", fol}, True, 0];
-		(*-----*)If[custConf, AddToLog["********** ----- Using custom config ----- **********", 0]];
+		(*-----*)If[customConfig, AddToLog["********** ----- Using custom config ----- **********", 0]];
 		If[met === "BidsDcmToNii",
 			(*-----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)", 1];
 		];
@@ -1061,7 +1061,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 					(*-----*)AddToLog["Skipping", 3],
 					(*if valid perform conversion*)
 					(*-----*)AddToLog[dataToLog@type, 2, True];
-					inFols = SelectBids[fol, type["InFolder"]];
+					inputFolders = SelectBids[fol, type["InFolder"]];
 					(*method specific scripts: loop over all folders in subject/session folder*)
 					Table[
 						(*loop needs feedback to show where bugs are.*)
@@ -1073,7 +1073,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 							"MuscleBidsSegment", MuscleBidsSegmentI[{folIn, outFol}, {type, datDis}, versCheck],
 							"MuscleBidsTractography", MuscleBidsTractographyI[{folIn, outFol}, {type, datDis}, versCheck, tractMet]
 						];(*close method switch*)
-					, {folIn, inFols}];(*Close sub folders loop*)		
+					, {folIn, inputFolders}];(*Close sub folders loop*)		
 				];(*close type check*)
 			, {type, datDis}];(*close datatype loop*)
 		]; (*close method switch*)
@@ -1174,7 +1174,7 @@ MuscleBidsConvert[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox, 
 		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types,
-		vx, vy, vz, dx, dy, dz, sx, sy, sz, off, dfile, hasb, hdr, nSl, len,
+		vx, vy, vz, dx, dy, dz, sx, sy, sz, off, diffFile, hasBval, hdr, nSl, len,
 		labs, noFiles, sel
 	},
 
@@ -1496,14 +1496,14 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 						posIn = Flatten[posIn];
 						pos = CheckPos/@pos;
 						info = json[[First@pos]];
-						dfile = ConvertExtension[files[[#]],".nii"]&/@pos;
-						hdr = Last@ImportNii[First@dfile, NiiMethod -> "header"];
+						diffFile = ConvertExtension[files[[#]],".nii"]&/@pos;
+						hdr = Last@ImportNii[First@diffFile, NiiMethod -> "header"];
 
-						hasb = (FileExistsQ[ConvertExtension[#,".bval"]]&&FileExistsQ[ConvertExtension[#,".bvec"]])&/@dfile;
-						hasb = AllTrue[hasb, # === True &];
+						hasBval = (FileExistsQ[ConvertExtension[#,".bval"]]&&FileExistsQ[ConvertExtension[#,".bvec"]])&/@diffFile;
+						hasBval = AllTrue[hasBval, # === True &];
 
-						If[hasb, 
-							{data, grad, val, vox} = Transpose[ImportNiiDiff[#, FlipBvec->False]&/@ dfile];
+						If[hasBval, 
+							{data, grad, val, vox} = Transpose[ImportNiiDiff[#, FlipBvec->False]&/@ diffFile];
 							{data, grad, val, vox} = ConcatenateDiffusionData[data, grad, val, vox];
 							,
 							(*-----*)AddToLog[{"!!!!!!!!!!!!!!! WARNING NO BVAL OR BVEC FILE !!!!!!!!!!!!!!!!!!!"}, 4];
@@ -1527,13 +1527,13 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 						(*-----*)AddToLog[{"Importing dataset with properties: ", nameIn}, 4];
 						pos = CheckPos[pos];
 						info = json[[pos]];
-						dfile = ConvertExtension[files[[pos]],".nii"];
-						hdr = Last@ImportNii[dfile, NiiMethod -> "header"];
+						diffFile = ConvertExtension[files[[pos]],".nii"];
+						hdr = Last@ImportNii[diffFile, NiiMethod -> "header"];
 						
-						hasb = FileExistsQ[ConvertExtension[dfile,".bval"]] && FileExistsQ[ConvertExtension[dfile,".bvec"]];
+						hasBval = FileExistsQ[ConvertExtension[diffFile,".bval"]] && FileExistsQ[ConvertExtension[diffFile,".bvec"]];
 
-						If[hasb, 
-							{data, grad, val, vox} = ImportNiiDiff[dfile, FlipBvec->False],
+						If[hasBval, 
+							{data, grad, val, vox} = ImportNiiDiff[diffFile, FlipBvec->False],
 							(*-----*)AddToLog[{"!!!!!!!!!!!!!!! WARNING NO BVAL OR BVEC FILE !!!!!!!!!!!!!!!!!!!"}, 4];
 						];
 						(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
@@ -1565,7 +1565,7 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 					outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn], 
 						"suf"->{datType["Suffix"]}|>];
 					(*-----*)AddToLog[{"Exporting to file:", outFile}, 5];
-					If[hasb,
+					If[hasBval,
 						ExportBval[val, ConvertExtension[outFile, ".bval"]];
 						ExportBvec[grad, ConvertExtension[outFile, ".bvec"]];
 					];
@@ -1730,10 +1730,10 @@ MuscleBidsProcess[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 
 
 MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
-		con, fol, parts, type, files, sets, diffFile, nfile, keys, dixFiles, jfile, nFiles, phbpt, dbond,
-		outfile, json, echos, mag, ph, real, imag, dvox, magM, B0mask, ph0i, pos, e1, e2, hz, b0i,
+		con, fol, parts, type, files, sets, diffFile, nfile, keys, dixFiles, jsonFile, nFiles, phbpt, dbond,
+		outFile, json, echos, mag, ph, real, imag, dixVox, magM, B0mask, ph0i, pos, e1, e2, hz, b0i,
 		t2stari, watfr, fatfr, wat, fat, inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
-		nfilep, jfilep, resi, data, grad, val, diffvox, mask, den, sig, snr, snr0, reg, valU, mean, 
+		niiFileP, jsonFileP, resi, data, grad, val, diffVox, mask, den, sig, snr, snr0, reg, valU, mean, 
 		fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
 		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
 		int, dint, suffix, types, flip, per, bmat, magph, split, ivim, shift, t2, gradField, 
@@ -1793,25 +1793,25 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 				If[MatrixQ[suffix], {suffix, types} = Transpose@suffix];
 
 				dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@suffix;
-				jfile = ConvertExtension[First@dixFiles, ".json"];
+				jsonFile = ConvertExtension[First@dixFiles, ".json"];
 				nFiles = ConvertExtension[dixFiles, ".nii"];
 
 				(*output file names*)
-				outfile = GenerateBidsFileName[folOut, set];
-				debugBids[outfile];
+				outFile = GenerateBidsFileName[folOut, set];
+				debugBids[outFile];
 
 				(*check if files are already done*)
-				If[CheckFile[outfile, "done", verCheck],
+				If[CheckFile[outFile, "done", verCheck],
 					(*if check file has label done and version is recent skip*)
 					(*-----*)AddToLog["Processing already done for: ", True, 3];
-					(*-----*)AddToLog[outfile, 4],
+					(*-----*)AddToLog[outFile, 4],
 					(*-----*)AddToLog["Starting processing for data:", 3, True];
 					(*-----*)AddToLog[First@dixFiles, 4];
 
 					If[!AllTrue[nFiles, NiiFileExistQ],
 						(*-----*)AddToLog[{"Could not find all the ", First@dixFiles}, 4],
 						(*-----*)AddToLog["Importing the data", 4];
-						{data, dvox} = Transpose[ImportNii/@nFiles];
+						{data, dixVox} = Transpose[ImportNii/@nFiles];
 						json = ImportJSON[ConvertExtension[First[nFiles], ".json"]];
 
 						pos = Flatten[Position[suffix, #] & /@ {"inph", "outph", "fat", "wat"}];
@@ -1845,21 +1845,21 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 					(*export all the calculated data*)
 					(*-----*)AddToLog["Exporting the calculated data to:", 4];
-					(*-----*)AddToLog[outfile,5];
+					(*-----*)AddToLog[outFile,5];
 					outTypes = suffix;
 					(
-						ExportNii[ToExpression[con<>#], First@dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
-						Export[ConvertExtension[outfile <> "_"<>#, ".json"], json]
+						ExportNii[ToExpression[con<>#], First@dixVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
+						Export[ConvertExtension[outFile <> "_"<>#, ".json"], json]
 					) & /@ outTypes;
 					
 
 					(*export the check file*)
-					MakeCheckFile[outfile, Sort@Join[
+					MakeCheckFile[outFile, Sort@Join[
 						{"Check"->"done", "Outputs" -> outTypes, "SetProperties"->set}
 					]];
 
 					(*compress the nii files if compression during ExportNii -> False*)
-					If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+					If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 				];
 				(*-----*)AddToLog["Finished processing", 3, True];
 
@@ -1868,25 +1868,25 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 				(*philips data with offline reconstruction*)
 
 				(*output file names*)
-				outfile = GenerateBidsFileName[folOut, set];
-				debugBids[outfile];
+				outFile = GenerateBidsFileName[folOut, set];
+				debugBids[outFile];
 
 				(*check if files are already done*)
-				If[CheckFile[outfile, "done", verCheck],
+				If[CheckFile[outFile, "done", verCheck],
 					(*if check file has label done and version is recent skip*)
 					(*-----*)AddToLog["Processing already done for: ", True, 3];
-					(*-----*)AddToLog[outfile, 4],
+					(*-----*)AddToLog[outFile, 4],
 
 					(*input file names*)
 					dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"real", "imag"};
-					jfile = ConvertExtension[First@dixFiles, ".json"];
+					jsonFile = ConvertExtension[First@dixFiles, ".json"];
 					nFiles = ConvertExtension[dixFiles, ".nii"];
 					magph = False;
 
 					(*if not real imag check for mag phase*)
-					If[!FileExistsQ[jfile],
+					If[!FileExistsQ[jsonFile],
 						dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"", "ph"};
-						jfile = ConvertExtension[First@dixFiles, ".json"];
+						jsonFile = ConvertExtension[First@dixFiles, ".json"];
 						nFiles = ConvertExtension[dixFiles, ".nii"];
 						magph = True;
 					];
@@ -1895,7 +1895,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					(*-----*)AddToLog[First@dixFiles, 4];
 
 					(*Check if needed json Exist*)
-					If[!FileExistsQ[jfile],
+					If[!FileExistsQ[jsonFile],
 						(*-----*)AddToLog["Could not find the needed JSON file", 4];,
 						(*Check if needed nii Exist*)
 						If[!AllTrue[nFiles, NiiFileExistQ],
@@ -1903,18 +1903,18 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							(*-----*)AddToLog["Importing the data", 4];
 
 							(*import the data*)
-							json = ImportJSON[jfile];
+							json = ImportJSON[jsonFile];
 							{echos, field} = json /@ {"EchoTime", "MagneticFieldStrength"};
 
 							If[magph,
-								{{mag, ph}, dvox} = Transpose[ImportNii/@nFiles];
+								{{mag, ph}, dixVox} = Transpose[ImportNii/@nFiles];
 								real = mag Cos[ph];
 								imag = mag Sin[ph];
 								,
-								{{real, imag}, dvox} = Transpose[ImportNii/@nFiles];
+								{{real, imag}, dixVox} = Transpose[ImportNii/@nFiles];
 								{mag, ph} = Through[{Abs, Arg}[real + I imag]];
 							];
-							dvox = First@dvox;
+							dixVox = First@dixVox;
 
 							(*Apply background mask*)
 							magM = NormalizeMeanData@mag;
@@ -1952,7 +1952,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 											DixonFixT2 -> False, DixonFieldStrength -> field, 
 											DixonAmplitudes -> "CallDB", DixonTolerance->1
 										];
-									pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DioxonDoubleBonds"->True};
+									pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->True};
 									outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
 									,
 									(*fit with fixed fat model*)
@@ -1963,7 +1963,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 											DixonFixT2 -> False, DixonFieldStrength -> field, 
 											DixonAmplitudes -> "Fixed", DixonTolerance->1
 										];
-									pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DioxonDoubleBonds"->False};
+									pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
 									outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
 								];
 
@@ -1973,7 +1973,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								,
 
 								(*uwrap and convert B0 to hz*)
-								(*-----*)AddToLog[{"Starting field map calcualtion"}, 4];
+								(*-----*)AddToLog[{"Starting field map calculation"}, 4];
 								b0i = UnwrapSplit[ph[[All, -1]] - ph[[All, 1]], mag, UnwrapDimension -> "3D", MonitorUnwrap -> False];
 								b0i = b0i/(2 Pi Length[echos] (echos[[2]] - echos[[1]]));
 								(*calculate the t2 star from the two in phase images*)
@@ -1987,30 +1987,30 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								{{watfr, fatfr}, {wat, fat}, {inph, outph}, 
 									{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 										{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
-								pos = {"DixonFlips" -> {}, "DixonBipolar" -> True, "DioxonDoubleBonds"->False};
+								pos = {"DixonFlips" -> {}, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
 							];
 
 							{wat, fat} = Abs[{wat, fat}];
 
 							(*export all the calculated data*)
 							(*-----*)AddToLog["Exporting the calculated data to:", 4];
-							(*-----*)AddToLog[outfile,5];
+							(*-----*)AddToLog[outFile,5];
 							outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", "b0", "t2star", "r2star", 
 								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
 
 							(
-								ExportNii[ToExpression[con<>#], dvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
-								Export[ConvertExtension[outfile <> "_"<>#, ".json"], json];
+								ExportNii[ToExpression[con<>#], dixVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
+								Export[ConvertExtension[outFile <> "_"<>#, ".json"], json];
 							) & /@ outTypes;
 							
-							(*export the checkfile*)
-							MakeCheckFile[outfile, Sort@Join[
+							(*export the check file*)
+							MakeCheckFile[outFile, Sort@Join[
 								{"Check"->"done", "EchoTimes"->echos, "Outputs" -> outTypes, "SetProperties"->set}, 
 								pos, Normal@KeyTake[json, keys]
 							]];
 
 							(*compress the nii files if compression during ExportNii -> False*)
-							If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+							If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 
 							(*-----*)AddToLog["Finished processing", 3, True];
 						]
@@ -2034,12 +2034,12 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 			(*input file names*)
 			diffFile = GenerateBidsFileName[fol, set];
-			jfile = ConvertExtension[diffFile, ".json"];
+			jsonFile = ConvertExtension[diffFile, ".json"];
 			nfile = ConvertExtension[diffFile, ".nii"];
 
-			(*ouput file names*)
-			outfile = GenerateBidsFileName[folOut, set];
-			debugBids[outfile];
+			(*output file names*)
+			outFile = GenerateBidsFileName[folOut, set];
+			debugBids[outFile];
 
 			(*default settings*)
 			settingPre = settingPro = <||>;
@@ -2048,16 +2048,16 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 			(*------- dwi pre -processing script --------*)
 			(*-------------------------------------------*)
 
-			(*check if pre-processin is already done*)
+			(*check if pre-processing is already done*)
 			preProc = False;
-			If[CheckFile[outfile<>"_prep", "done", verCheck],
-				(*if checkfile has label done and version is recent skip*)
+			If[CheckFile[outFile<>"_prep", "done", verCheck],
+				(*if check file has label done and version is recent skip*)
 				(*-----*)AddToLog["Pre-processing already done for: ", True, 3];
-				(*-----*)AddToLog[outfile, 4],
+				(*-----*)AddToLog[outFile, 4],
 				(*-----*)AddToLog["Starting pre-processing for data:", 3, True];
 				(*-----*)AddToLog[diffFile, 4];
 
-				If[!FileExistsQ[jfile],
+				If[!FileExistsQ[jsonFile],
 					(*-----*)AddToLog["Could not find the needed JSON file",4],
 					(*Check if needed nii Exist*)
 					If[!(NiiFileExistQ[nfile] && FileExistsQ[ConvertExtension[nfile,".bval"]] && 
@@ -2066,8 +2066,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						(*-----*)AddToLog["Importing the data", 4];
 
 						(*import the data*)
-						json = ImportJSON[jfile];
-						{raw, grad, val, diffvox} = ImportNiiDiff[nfile, FlipBvec->False];
+						json = ImportJSON[jsonFile];
+						{raw, grad, val, diffVox} = ImportNiiDiff[nfile, FlipBvec->False];
 						{raw, grad, val} = SortDiffusionData[NormalizeData[raw], grad, val];
 						debugBids[{"Raw data dimensions", Dimensions[raw]}];
 
@@ -2084,9 +2084,9 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						{den, sig} = PCADeNoise[raw, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
 						snr = SNRCalc[den, sig];
 						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, Max[{2, Min[val]}]}];
-						debugBids[{"denoised data dimensions", Dimensions[den]}];
+						debugBids[{"de-noised data dimensions", Dimensions[den]}];
 
-						(*register data - 2D or 3D - each side seperate*)
+						(*register data - 2D or 3D - each side separate*)
 						(*-----*)AddToLog["Starting dwi motion and eddy correction", 4];
 						rdim = ConfigLookup[datType, "Process", "RegistrationDimension"];
 						rmet = ConfigLookup[datType, "Process", "RegistrationMethod"];
@@ -2103,7 +2103,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						
 
 						debugBids[{"Registration function", regF}];
-						reg = regF[{den, mask, diffvox}, Iterations->300, NumberSamples->5000, 
+						reg = regF[{den, mask, diffVox}, Iterations->300, NumberSamples->5000, 
 							PrintTempDirectory->False, MethodReg -> rmet, InterpolationOrderReg ->1, 
 							BsplineSpacing -> {30, 30, 30}, BsplineDirections -> {0, 1, 1}
 						];
@@ -2114,28 +2114,28 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 						(*export all the calculated data*)
 						(*-----*)AddToLog["Exporting the calculated data to:", 4];
-						(*-----*)AddToLog[outfile, 5];
+						(*-----*)AddToLog[outFile, 5];
 						outTypes = {"raw", "den", "reg", "filt", "sig", "snr0", "snr"};
 
 						(
-							ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
-							Export[ConvertExtension[outfile<>"_"<>#, ".json"], MergeJSON[{json, settingPre}]];
+							ExportNii[ToExpression[con<>#], diffVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
+							Export[ConvertExtension[outFile<>"_"<>#, ".json"], MergeJSON[{json, settingPre}]];
 						) & /@ outTypes;
-						ExportBvalvec[{val, grad}, outfile <> "_"<>#]& /@ {"reg", "filt"};
+						ExportBvalvec[{val, grad}, outFile <> "_"<>#]& /@ {"reg", "filt"};
 
-						(*export the checkfile*)
-						MakeCheckFile[outfile<>"_prep", Sort@Join[
+						(*export the check file*)
+						MakeCheckFile[outFile<>"_prep", Sort@Join[
 							{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, 
 							"Outputs" -> outTypes, "SetProperties"->set},
 							Normal@KeyTake[json, keys]
 						]];
 
 						(*compress the nii files if compression during ExportNii -> False*)
-						If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+						If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 
 						(*-----*)AddToLog["Finished pre-processing", 3, True];
 
-						(*Set preproc true, overrules checkfile for processing*)
+						(*Set pre processing true, overrules check file for processing*)
 						preProc = True;
 					]
 				]
@@ -2150,28 +2150,28 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 				(*-------------------------------------------*)
 
 				(*input file for processing*)
-				nfilep = ConvertExtension[GenerateBidsFileName[folOut, <|set, "suf"->{datType["Suffix"], "filt"}|>],".nii"];
-				jfilep = ConvertExtension[nfilep, ".json"];
+				niiFileP = ConvertExtension[GenerateBidsFileName[folOut, <|set, "suf"->{datType["Suffix"], "filt"}|>],".nii"];
+				jsonFileP = ConvertExtension[niiFileP, ".json"];
 
-				(*check if processin is already done, redo is prep is done*)					
-				If[If[!preProc, CheckFile[outfile, "done", verCheck], False],
-					(*if checkfile has label done and version is recent skip*)
+				(*check if processing is already done, redo is prep is done*)					
+				If[If[!preProc, CheckFile[outFile, "done", verCheck], False],
+					(*if check file has label done and version is recent skip*)
 					(*-----*)AddToLog["Processing already done for: ", True, 3];
-					(*-----*)AddToLog[outfile, 4],
+					(*-----*)AddToLog[outFile, 4],
 					(*-----*)AddToLog["Starting processing for data:", 3, True];
-					(*-----*)AddToLog[nfilep, 4];				
+					(*-----*)AddToLog[niiFileP, 4];				
 
-					If[!FileExistsQ[jfilep],
+					If[!FileExistsQ[jsonFileP],
 						(*-----*)AddToLog["Could not find the needed JSON file", 4];,
 
 						(*Check if the needed nii files exist*)
-						If[!(NiiFileExistQ[nfilep]&&FileExistsQ[ConvertExtension[nfilep,".bval"]]&&FileExistsQ[ConvertExtension[nfilep,".bvec"]]),
+						If[!(NiiFileExistQ[niiFileP]&&FileExistsQ[ConvertExtension[niiFileP,".bval"]]&&FileExistsQ[ConvertExtension[niiFileP,".bvec"]]),
 							(*-----*)AddToLog[{"Skipping, could not find .nii, .bval and .bvec"}, 4],
 							(*-----*)AddToLog["Importing the data", 4];
 
 							(*import the data*)
-							json = ImportJSON[jfilep];
-							{data, grad, val, diffvox} = ImportNiiDiff[nfilep, FlipBvec->False];
+							json = ImportJSON[jsonFileP];
+							{data, grad, val, diffVox} = ImportNiiDiff[niiFileP, FlipBvec->False];
 							mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], 
 								MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
 							data = MaskData[data, mask];
@@ -2185,8 +2185,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								(*-----*)AddToLog[{"Using Gradient correction: ", coil}, 4];
 								If[!VectorQ[off], coil = False;
 									(*-----*)AddToLog["No offset defined in json, skipping grad correction" , 5],
-									{int, dint} = MakeGradientDerivatives[diffvox, coil];
-									coil = {diffvox, off, dint};
+									{int, dint} = MakeGradientDerivatives[diffVox, coil];
+									coil = {diffVox, off, dint};
 									outTypes = Join[{"field"}, outTypes];
 								];
 							];
@@ -2224,9 +2224,9 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							fasc = ConfigLookup[datType, "Process", "FasciculationDetection"];
 							settingPro = Join[settingPro, <|"FasciculationDetection"->fasc|>];
 							If[fasc,
-								(*-----*)AddToLog["Starting faciculation analysis", 4];
+								(*-----*)AddToLog["Starting fasciculation analysis", 4];
 								(*normalize the diffusion data based on the tensor and select b>200*)
-								reg = First@ImportNii[StringReplace[nfilep, "filt" -> "reg"]];
+								reg = First@ImportNii[StringReplace[niiFileP, "filt" -> "reg"]];
 								sel = First@SelectBvalueData[reg, val, 1];
 								norm = NormalizeFasciculationData[sel, mask, {tens, grad, val}];
 								(*perform activation analysis*)
@@ -2239,7 +2239,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 							(*export all the calculated data*)
 							(*-----*)AddToLog["Exporting the calculated data to:", 4];
-							(*-----*)AddToLog[outfile, 5];
+							(*-----*)AddToLog[outFile, 5];
 							debugBids[Column[{json, settingPro}]];
 							
 							tens = Transpose[tens];
@@ -2247,19 +2247,19 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								"l1", "l2", "l3", "md", "fa", "rd"}, outTypes];
 
 							(
-								ExportNii[ToExpression[con<>#], diffvox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
-								Export[ConvertExtension[outfile<>"_"<>#, ".json"], MergeJSON[{json, settingPro}]];
+								ExportNii[ToExpression[con<>#], diffVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
+								Export[ConvertExtension[outFile<>"_"<>#, ".json"], MergeJSON[{json, settingPro}]];
 							) & /@ outTypes;
 
-							(*export the checkfile*)
-							MakeCheckFile[outfile, Sort@Join[
+							(*export the check file*)
+							MakeCheckFile[outFile, Sort@Join[
 								{"Check"->"done", "Bvalue" -> val, "Gradient" -> grad, 
 									"Outputs" -> outTypes, "SetProperties"->set},
 								Normal@KeyTake[json, keys]
 							]];
 
 							(*compress the nii files if compression during ExportNii -> False*)
-							If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+							If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 
 							(*-----*)AddToLog["Finished processing", 3, True];				
 						]
@@ -2271,7 +2271,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 				(*-------------------------------------------*)
 				(*--------------- Unknown dti ---------------*)
 				(*-------------------------------------------*)
-				(*-----*)AddToLog[{"Unkonwn processing ", datType["Process"], "for datatype", type}, True, 3];
+				(*-----*)AddToLog[{"Unknown processing ", datType["Process"], "for datatype", type}, True, 3];
 			],
 
 			"mese",
@@ -2288,30 +2288,30 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 				(*input file names*)
 				diffFile = GenerateBidsFileName[fol, set];
-				jfile = ConvertExtension[diffFile, ".json"];
+				jsonFile = ConvertExtension[diffFile, ".json"];
 				nfile = ConvertExtension[diffFile, ".nii"];
 
-				(*ouput file names*)
-				outfile = GenerateBidsFileName[folOut, set];
+				(*output file names*)
+				outFile = GenerateBidsFileName[folOut, set];
 
 				(*check if files are already done*)
-				If[CheckFile[outfile, "done", verCheck],
-					(*if checkfile has label done and version is recent skip*)
+				If[CheckFile[outFile, "done", verCheck],
+					(*if check file has label done and version is recent skip*)
 					(*-----*)AddToLog["Processing already done for: ", True, 3];
-					(*-----*)AddToLog[outfile, 4],
+					(*-----*)AddToLog[outFile, 4],
 					(*-----*)AddToLog["Starting processing for data:", 3, True];
 					(*-----*)AddToLog[diffFile, 4];
 
 					(*Check if needed json Exist*)
-					If[!FileExistsQ[jfile],
-						(*-----*)AddToLog[{"Could not find the needed JSON file of", jfile}, 4];,
+					If[!FileExistsQ[jsonFile],
+						(*-----*)AddToLog[{"Could not find the needed JSON file of", jsonFile}, 4];,
 						(*Check if needed nii Exist*)
 						If[!NiiFileExistQ[nfile],
 							(*-----*)AddToLog[{"Could not find the data of", diffFile}, 4],
 							(*-----*)AddToLog["Importing the data", 4];
 
 							(*import the data*)
-							json = ImportJSON[jfile];
+							json = ImportJSON[jsonFile];
 							echos = json["EchoTime"];
 							debugBids["importing: ", nfile];
 							{data, t2vox} = ImportNii[nfile];
@@ -2350,7 +2350,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 									debugBids[Dimensions/@{data, t2vox}];
 
-									(*caculate the water t2 map*)
+									(*calculate the water t2 map*)
 									(*-----*)AddToLog["Starting EPG T2 calculation", 4];
 									{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, 
 										MonitorCalc -> False, DictT2IncludeWater -> True, 
@@ -2371,21 +2371,21 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 								(*export all the calculated data*)
 								(*-----*)AddToLog["Exporting the calculated data to:", 4];
-								(*-----*)AddToLog[outfile, 5];		
+								(*-----*)AddToLog[outFile, 5];		
 
 								(
-									ExportNii[ToExpression[con<>#], t2vox, outfile<>"_"<>#<>".nii", CompressNii -> compress];
-									Export[ConvertExtension[outfile<>"_"<>#, ".json"], json];
+									ExportNii[ToExpression[con<>#], t2vox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
+									Export[ConvertExtension[outFile<>"_"<>#, ".json"], json];
 								) & /@ outTypes;
 
-								(*export the checkfile*)
-								MakeCheckFile[outfile, Sort@Join[
+								(*export the check file*)
+								MakeCheckFile[outFile, Sort@Join[
 									{"Check"->"done", "EchoTimes" -> echos, "Outputs" -> outTypes, "SetProperties"->set},
 									Normal@KeyTake[json, keys]
 								]];
 
 								(*compress the nii files if compression during ExportNii -> False*)
-								If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+								If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 
 								(*-----*)AddToLog["Finished processing", 3, True];
 							]
@@ -2398,7 +2398,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 				(*-------------------------------------------*)
 				(*--------------- Unknown mese ---------------*)
 				(*-------------------------------------------*)
-				(*-----*)AddToLog[{"Unkonwn processing ", datType["Process"], "for datatype", type}, True, 3];
+				(*-----*)AddToLog[{"Unknown processing ", datType["Process"], "for datatype", type}, True, 3];
 			],
 			(*-------------------------------------------*)
 			(*------------------ Other ------------------*)
@@ -2450,11 +2450,11 @@ MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?AssociationQ, opts:Opt
 
 MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 		nonQuant, multDim, native, fol, parts, merge, fileCheck, 
-		outfile, tarFile, tarStack, movStack, nStack, files, sameType,
-		process, processMD, processAll, nSet, processStacs,
+		outFile, tarFile, tarStack, movStack, nStack, files, sameType,
+		process, processMD, processAll, nSet, processStacks,
 		overT, overM, pad, motion, reverse, split, metReg, settings,
-		target, vox, voxt, moving, movingMD, leng, lengMD, voxm, names,
-		posAll, posNat, posScale, voxtR, voxF, json, 
+		target, vox, voxTar, moving, movingMD, length, lengthMD, voxMov, names,
+		posAll, posNat, posScale, voxTarR, voxF, json, 
 		im, targetR, mskm, mskt, msktR, func, reg, movp
 	},
 
@@ -2468,14 +2468,14 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	multDim = {"tens", "data", "filt", "fasc", "data", "reg"};
 	native = {"tens", "fasc"};
 
-	(*get the outfile names*)
+	(*get the outFile names*)
 	{fol, parts} = PartitionBidsFolderName[folIn];
 	merge = datType["Merging"];
 
 	(*------------------ figure out the file names and check them ------------------*)
 
-	outfile = BuildBidsNameFromConfig[{folOut, parts}, datType];
-	debugBids[{parts, outfile}];
+	outFile = BuildBidsNameFromConfig[{folOut, parts}, datType];
+	debugBids[{parts, outFile}];
 
 	(*target out file and input stack*)
 	tarFile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType}, merge["Target"]];
@@ -2502,25 +2502,25 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	(*process stack*)
 	process = Select[merge["Process"], !MemberQ[multDim, #] &];
 	processMD = Select[merge["Process"], MemberQ[multDim, #] &];
-	leng = Length @ process;
+	length = Length @ process;
 	processAll = Join[process, processMD];
 	nSet = Length[processAll];
-	processStacs = BuildBidsNameFromConfig[{fol, parts}, datType, #]& /@ processAll;
-	fileCheck = (files = #; AllTrue[NiiFileExistQ /@ files, # &])& /@ processStacs;
-	debugBids["process stack: ", Column[Column/@processStacs]];
+	processStacks = BuildBidsNameFromConfig[{fol, parts}, datType, #]& /@ processAll;
+	fileCheck = (files = #; AllTrue[NiiFileExistQ /@ files, # &])& /@ processStacks;
+	debugBids["process stack: ", Column[Column/@processStacks]];
 	debugBids[fileCheck];
 
-	(*check if number of stacks are consistant*)
+	(*check if number of stacks are consistent*)
 	If[!AllTrue[fileCheck, #&],
 		(*-----*)AddToLog[{"Not all process files exist:", StringRiffle[ToString/@fileCheck, ", "]}, 3];
 		Return[]
 	];
 
-	(*start the merging, if checkfile has label done and version is recent skip*)
+	(*start the merging, if check file has label done and version is recent skip*)
 	(*-----*)AddToLog[{"Start joining ", nStack, "stacs for", nSet, "dataypes"}, 3];
 	(*-----*)AddToLog[{"The types that will be merged are: "}, 3];
 	(*-----*)AddToLog[{StringJoin@Riffle[processAll,", "]}, 4];
-	If[CheckFile[outfile, "done", verCheck],
+	If[CheckFile[outFile, "done", verCheck],
 		(*-----*)AddToLog[{"Processing already done."}, 3];
 		Return[]];
 
@@ -2539,7 +2539,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	{overT, overM} = If[IntegerQ[overT], {overT, overT}, overT];
 	If[overT === 0, pad = 0; motion = False];
 
-	(*Registation settings*)
+	(*registration settings*)
 	metReg = Switch[datType["InFolder"], 
 		"dix", "rigid", 
 		"quant", {"rigid", "affine"}, 
@@ -2565,7 +2565,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	(*if target is same as moving never load target from disk*)
 	sameType = tarStack === movStack;
 	If[NiiFileExistQ[tarFile] && !sameType,
-		{target, voxt} = ImportNii[tarFile];
+		{target, voxTar} = ImportNii[tarFile];
 		(*-----*)AddToLog[{"Splitting the primary datatype that already existed"}, 4];
 		If[nStack=!=1, 
 			target = SplitSets[target, nStack, overT, ReverseSets->reverse, PadOverlap->pad], 
@@ -2574,14 +2574,14 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 		,
 		(*remake target*)
 		{target, vox} = Transpose[ImportNii /@ tarStack];
-		voxt = First@vox;
-		debugBids["voxel size per stack: ", {vox, voxt}];
+		voxTar = First@vox;
+		debugBids["voxel size per stack: ", {vox, voxTar}];
 		(* make data real valued*)
 		target = If[RealValuedNumberQ[target[[1, 1, 1, 1]]], target, Abs[target]];
 
 		(*-----*)AddToLog[{"Joining the primary datatype", If[motion,"with","without"], "motion correction"}, 4];
 		If[nStack=!=1,
-			target = JoinSets[target, overT, voxt, ReverseSets->reverse, MotionCorrectSets->motion, 
+			target = JoinSets[target, overT, voxTar, ReverseSets->reverse, MotionCorrectSets->motion, 
 				NormalizeSets->True, NormalizeOverlap->True, MonitorCalc->False];
 			debugBids["target dimensions: ", Dimensions@target];
 			target = SplitSets[target, nStack, overT, ReverseSets->reverse, PadOverlap->pad];
@@ -2589,50 +2589,50 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	];
 	debugBids["target dimensions: ", Dimensions/@target];
 
-	(*import the Moving data, import the mulit dimm seperately*)
+	(*import the Moving data, import the multi dimm separately*)
 	(*-----*)AddToLog[{"Importing and processing the moving data"}, 4];
 
 	(*import the 3D moving data *)
-	{moving, vox} = Transpose[(files=#; Transpose[ImportNii /@ files]) &/@ processStacs];
-	voxm = First@vox; (*voxel size per stack*)
+	{moving, vox} = Transpose[(files=#; Transpose[ImportNii /@ files]) &/@ processStacks];
+	voxMov = First@vox; (*voxel size per stack*)
 	(*check voxel sizes of moving*)
-	If[!Equal@@voxm,
+	If[!Equal@@voxMov,
 		(*-----*)AddToLog[{"********** The voxel size is not the same for all stacks **********"}, 0];
-		(*-----*)AddToLog[{"Voxel size per stack: ", voxm}, 4];
-		(*-----*)AddToLog[{"", (Dimensions /@ First@moving) voxm}, 4];
+		(*-----*)AddToLog[{"Voxel size per stack: ", voxMov}, 4];
+		(*-----*)AddToLog[{"", (Dimensions /@ First@moving) voxMov}, 4];
 	];
 
 	(*multi dim data has to be flattened*)
-	movingMD = If[processMD==={}, lengMD=0; {},	
-		movingMD = moving[[leng+1;;]];
-		lengMD = Length /@ movingMD[[All, 1, 1]]; (*4th dimensions of the mulit dims*)
+	movingMD = If[processMD==={}, lengthMD=0; {},	
+		movingMD = moving[[length+1;;]];
+		lengthMD = Length /@ movingMD[[All, 1, 1]]; (*4th dimensions of the multi dims*)
 		Flatten[movingMD, {1, 4}]
 	];
-	names = Flatten[{process, ConstantArray[#[[1]], #[[2]]] & /@ Thread[{processMD, lengMD}]}];
+	names = Flatten[{process, ConstantArray[#[[1]], #[[2]]] & /@ Thread[{processMD, lengthMD}]}];
 
-	(*redifine moving - make data real valued to prevent errors*)
-	moving = Join[moving[[;;leng]], movingMD];
+	(*redefine moving - make data real valued to prevent errors*)
+	moving = Join[moving[[;;length]], movingMD];
 	moving = If[RealValuedNumberQ[N@#[[1,1,1,1]]], #, Abs[#]] &/@ moving;
 
-	debugBids["moving dimensions: ", Dimensions/@{moving, moving[[;;leng]], movingMD}];
-	debugBids["number of sets: ", {leng, lengMD}];
+	debugBids["moving dimensions: ", Dimensions/@{moving, moving[[;;length]], movingMD}];
+	debugBids["number of sets: ", {length, lengthMD}];
 	debugBids["names: ", names];
 
 	(*figure out the scaling of each contrast*)
 	posAll = Range[Length[names]];
 	posNat = Flatten[Position[names, _?(MemberQ[native, #] &), {1}]];
 	posScale = Complement[posAll, posNat];
-	voxtR = First@voxm;
-	voxF = If[MemberQ[native, names[[#]]], voxtR, voxt]&;
+	voxTarR = First@voxMov;
+	voxF = If[MemberQ[native, names[[#]]], voxTarR, voxTar]&;
 
 	debugBids["moving before registr: ", Column[Dimensions /@ # & /@ moving]];
 	debugBids["positions: ", {posScale, posNat}];
 
 	(*import the json information*)
-	json = (files=#; MergeJSON[ImportJSON[ConvertExtension[#, ".json"]]&/@files]) &/@ processStacs;
+	json = (files=#; MergeJSON[ImportJSON[ConvertExtension[#, ".json"]]&/@files]) &/@ processStacks;
 	debugBids["json dimensions: ", Dimensions@json];
 
-	(*------------------ performing registration to target for all constrasts ------------------*)
+	(*------------------ performing registration to target for all contrasts ------------------*)
 
 	(*perform motion correction after target merging*)
 	(*If motion correction for joning is False and target is of same type no need for motion correction*)
@@ -2648,7 +2648,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 			debugBids["start registration: ", i];
 
 			(*make target in native space*)
-			targetR = RescaleData[target[[i]], {voxt, voxtR}];
+			targetR = RescaleData[target[[i]], {voxTar, voxTarR}];
 			debugBids[Dimensions/@{moving[[im, i]], target[[i]], targetR}];
 
 			(*make masks*)
@@ -2668,8 +2668,8 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 				func = If[i===If[reverse, nStack, 1] || split===False, 
 					RegisterData, RegisterDataSplit];
 				reg = ToPackedArray@N@Chop@func[
-					{moving[[im, i]], mskm, voxm[[i]]}, {target[[i]], voxt}, 
-					Iterations->300, BsplineSpacing->20 voxt, InterpolationOrderReg->1, NumberSamples -> 20000,
+					{moving[[im, i]], mskm, voxMov[[i]]}, {target[[i]], voxTar}, 
+					Iterations->300, BsplineSpacing->20 voxTar, InterpolationOrderReg->1, NumberSamples -> 20000,
 					PrintTempDirectory->False, MethodReg->metReg, HistogramBins -> 128];
 
 				(*if padding enlarge the moving files*)
@@ -2680,29 +2680,29 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 				];
 				debugBids["Dimension before registration: ", Dimensions@movp, Dimensions/@Transpose[movp]];
 
-				(*register back the target from native space to anatomy and tranfrom the rest*)
+				(*register back the target from native space to anatomy and transform the rest*)
 				func = If[i===If[reverse, nStack, 1] || split===False, 
 					RegisterDataTransform, RegisterDataTransformSplit];
 				movp = Flatten[(
 					debugBids["registering: ", #[[1]]];
 					If[#[[1]]==={}, {},
 						Transpose@ToPackedArray@N@Chop@Last@func[
-							#[[2]], {reg, voxm[[i]]}, {movp[[All, #[[1]]]], voxm[[i]]},
-							Iterations->300, BsplineSpacing->30 voxt, InterpolationOrderReg->1, 
+							#[[2]], {reg, voxMov[[i]]}, {movp[[All, #[[1]]]], voxMov[[i]]},
+							Iterations->300, BsplineSpacing->30 voxTar, InterpolationOrderReg->1, 
 							NumberSamples -> 20000, PrintTempDirectory->False, DeleteTempDirectory->True, 
 							MethodReg->metReg, BsplineDirections -> {1, 1, 0}, HistogramBins -> 128
 						]
-					])& /@ {{posScale, {target[[i]], mskt, voxt}}, {posNat, {targetR, msktR, voxtR}}}
+					])& /@ {{posScale, {target[[i]], mskt, voxTar}}, {posNat, {targetR, msktR, voxTarR}}}
 				, 1][[Ordering[Join[posScale, posNat]]]];
-				debugBids["Dimensions after registraion: ", Dimensions@movp, Dimensions/@movp];
+				debugBids["Dimensions after registration: ", Dimensions@movp, Dimensions/@movp];
 				movp
 			]
 		, {i, 1, nStack}];
 
 		(*extract all parameters after registration*)
-		debugBids["after dimensions befor transpose: ", Dimensions/@moving];
+		debugBids["after dimensions before transpose: ", Dimensions/@moving];
 		moving = Transpose[moving];
-	];(*clolse motion moving*)
+	];(*close motion moving*)
 
 	(*------------------ actually join the data and reorder for multi dim ------------------*)
 
@@ -2726,28 +2726,28 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 
 	(*collect the multi dim data and unflatten them*)
 	If[movingMD =!= {},
-		movingMD = moving[[leng+1;;]];
+		movingMD = moving[[length+1;;]];
 		movingMD = Transpose[movingMD[[#[[1]];;#[[2]]]]] & /@ (
-			{1, 0} + # & /@ Partition[Prepend[Accumulate[lengMD], 0], 2, 1]);
-		moving = Join[moving[[1;;leng]], movingMD];
+			{1, 0} + # & /@ Partition[Prepend[Accumulate[lengthMD], 0], 2, 1]);
+		moving = Join[moving[[1;;length]], movingMD];
 	];
 
 	(*------------------ exporting the data ------------------*)
 
 	(*export the joined data with the merged json*)
 	(*-----*)AddToLog["Exporting the calculated data to:", 4];
-	(*-----*)AddToLog[outfile, 5];
+	(*-----*)AddToLog[outFile, 5];
 	(
 		debugBids["Exporting: ", {processAll[[#]], voxF[#]}];
-		ExportNii[moving[[#]], voxF[#], outfile<>"_"<>processAll[[#]]<>".nii", CompressNii -> compress];
-		Export[outfile<>"_"<>processAll[[#]]<>".json", MergeJSON[{json[[#]], settings}]];
+		ExportNii[moving[[#]], voxF[#], outFile<>"_"<>processAll[[#]]<>".nii", CompressNii -> compress];
+		Export[outFile<>"_"<>processAll[[#]]<>".json", MergeJSON[{json[[#]], settings}]];
 	)&/@ Range[nSet];
 
-	(*make the checkfile*)
-	MakeCheckFile[outfile, Sort@Join[{"Check"->"done"}, Normal@datType]];
+	(*make the check file*)
+	MakeCheckFile[outFile, Sort@Join[{"Check"->"done"}, Normal@datType]];
 
 	(*compress the nii files if compression during ExportNii -> False*)
-	If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+	If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 
 	(*-----*)AddToLog["Finished merging", 3, True];
 ]
@@ -2788,9 +2788,9 @@ MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 
 
 MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
-		segType, segTypeLab, checkFile, fol, device, location, segmment,
-		parts, outfile, segfile, out, vox, seg, status, segDim, 
-		voxS, tari, movi, segi, tar, mov, dim, voxt, voxm, voxs, mask
+		segType, segTypeLab, checkFile, fol, device, location, segment,
+		parts, outFile, segFile, out, vox, seg, status, segDim, 
+		voxS, tarI, movI, segI, tar, mov, dim, voxTar, voxMov, voxSeg, mask
 	},
 
 	status = "done";
@@ -2829,19 +2829,19 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 
 		(*Loop over the segmentation types if more are specified*)
 		Table[
-			(*-----*)AddToLog[{"Performing segmentation for ", StringRiffle[segi, "_"]}, 3];
+			(*-----*)AddToLog[{"Performing segmentation for ", StringRiffle[segI, "_"]}, 3];
 
 			(*get the correct filenames*)
-			outfile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
-				Join[{datType["Key"], "seg", "auto"}, segi]];
-			segfile = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segi];
+			outFile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
+				Join[{datType["Key"], "seg", "auto"}, segI]];
+			segFile = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segI];
 
 			(*check if target file exists if so perform the segmentation*)
-			If[!NiiFileExistQ[segfile],
-				(*-----*)AddToLog[{"The segmentation file does not exist: ", segfile}, 4];
+			If[!NiiFileExistQ[segFile],
+				(*-----*)AddToLog[{"The segmentation file does not exist: ", segFile}, 4];
 				status = "error"
 				,
-				{out, vox} = ImportNii[segfile];
+				{out, vox} = ImportNii[segFile];
 
 				voxS = ConfigLookup[datType, "Segment", "VoxSize"];
 				If[voxS =!= Automatic, 
@@ -2859,50 +2859,50 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 					SegmentationResolution -> voxS
 				];
 
-				ExportNii[seg, vox, outfile, CompressNii -> compress];
+				ExportNii[seg, vox, outFile, CompressNii -> compress];
 			];
-			, {segi, segType}			
+			, {segI, segType}			
 		],
 
 		(*Register existing segmentation*)
 		"Registration",
 
-		(*figure out if duplicate handeling is needed.*)
-		segmment = datType["Segment"];
-		outfile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
+		(*figure out if duplicate handling is needed.*)
+		segment = datType["Segment"];
+		outFile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
 				Join[{datType["Key"], "seg", "reg"}, segment["Target"]]];
 		tar = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Target"]];
 		mov = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Moving"]];
 		seg = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Segmentation"]];
-		debugBids[Column[{outfile, seg, tar, mov}]];
+		debugBids[Column[{outFile, seg, tar, mov}]];
 
 		(*Import and prepare the data*)
-		{tar, voxt} = ImportNii[tar];
+		{tar, voxTar} = ImportNii[tar];
 		tar = NormalizeData[Clip[tar, {0, Infinity}]];
-		{mov, voxm} = ImportNii[mov];
+		{mov, voxMov} = ImportNii[mov];
 		mov = NormalizeData[Clip[mov, {0, Infinity}]];
-		{seg, voxs} = ImportNii[seg];
+		{seg, voxSeg} = ImportNii[seg];
 		mask = Mask[NormalizeData[tar], 5, MaskSmoothing -> True, MaskDilation -> 5];
 		voxS = ConfigLookup[datType, "Segment", "VoxSize"];
-		If[voxS =!= Automatic, mov = RescaleData[mov, {voxm, voxS}]; voxm = voxS;];
+		If[voxS =!= Automatic, mov = RescaleData[mov, {voxMov, voxS}]; voxMov = voxS;];
 		debugBids[Column[Dimensions/@{seg, tar, mov}]];
 
 		(*perform the segmentation registration*)
 		seg = Table[RegisterDataTransform[
-			{tar[[{i}]], mask[[{i}]], voxt}, {mov, voxm}, {seg, voxs},
+			{tar[[{i}]], mask[[{i}]], voxTar}, {mov, voxMov}, {seg, voxSeg},
 			MethodReg -> {"rigid", "affine"}, NumberSamples -> 50000, HistogramBins->128, 
 			PrintTempDirectory->False, DeleteTempDirectory -> True, 
 			Resolutions -> 1, Iterations -> 200, TransformMethod -> "Segmentation"
 		][[2]], {i, 1, 3}];
 
-		ExportNii[seg, voxt, outfile, CompressNii -> compress];
+		ExportNii[seg, voxTar, outFile, CompressNii -> compress];
 	];
 
-	(*make the checkfile*)
+	(*make the check file*)
 	MakeCheckFile[checkFile, Sort@Join[{"Check" -> status}, Normal@datType]];
 
 	(*compress the nii files if compression during ExportNii -> False*)
-	If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+	If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 
 	(*-----*)AddToLog["Finished the segmentation", 3, True];
 ]
@@ -2944,10 +2944,10 @@ MuscleBidsTractography[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, o
 
 MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_] := Block[{
 		tracto, tractType, tractSeg, tractStopLab, tractStopVal, outFile,
-		tractTypeLab, fol, parts, checkFile, outfile, seed, lenS, segBone, tractSegLab,
-		datfile, stopfile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
-		segfile, muscles, mlabs, mus, bones, context, leng, dens, flip, per, 
-		voxs, dims, harm, tensh, con, amp, trkFileF
+		tractTypeLab, fol, parts, checkFile, seed, lenS, segBone, tractSegLab,
+		datfile, stopFile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
+		segFile, muscles, muscLabs, mus, bones, context, leng, dens, flip, per, 
+		voxSeg, dims, harm, tensH, con, amp, trkFileF
 	}, 
 
 	debugBids["Starting MuscleBidsTractographyI"];
@@ -2985,16 +2985,16 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 	{tractStopLab, tractStopVal} = Transpose@tracto["Stopping"];
 	If[ArrayDepth[tractStopLab]===1, tractStopLab = {tractStopLab}];
 	If[ArrayDepth[tractStopVal]===1, tractStopVal = {tractStopVal}];
-	stopfile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType}, #]& /@ tractStopLab;
+	stopFile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType}, #]& /@ tractStopLab;
 
 	(*optional segmentation file*)
 	tractSeg = tracto["Segmentation"];
-	segfile = If[!ListQ[tractSeg], "No Seg File",
+	segFile = If[!ListQ[tractSeg], "No Seg File",
 		tractSegLab = StringRiffle[tractSeg, "_"];
 		BuildBidsNameFromConfig[{folOut, parts}, {datType, allType}, tractSeg]];
 
 	(* If tractography and segmentation is already done, log the event *)
-	debugBids[Column@{outFile, datfile, Column@stopfile, segfile}];
+	debugBids[Column@{outFile, datfile, Column@stopFile, segFile}];
 	If[CheckFile[checkFile, "done", verCheck],
 		(*-----*)AddToLog[{"Tractography and segmentation already done for:", tractTypeLab}, 3];
 		Return[]];
@@ -3018,8 +3018,8 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 			!NiiFileExistQ[datfile],
 			(*-----*)AddToLog[{"The tensor file does not exist", datfile}, 4];
 			,
-			!And@@(NiiFileExistQ/@stopfile),
-			(*-----*)AddToLog[{"Not all stop files exist not exist", stopfile}, 4];
+			!And@@(NiiFileExistQ/@stopFile),
+			(*-----*)AddToLog[{"Not all stop files exist not exist", stopFile}, 4];
 			,
 			True,
 			(* If all files exist, proceed with the tractography processing*)
@@ -3030,10 +3030,10 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 
 			(* Import stop files *)
 			stop = (
-				{stop, voxs} = ImportNii[#];
-				debugBids["Voxel sizes: ", {voxs, vox , Dimensions@stop}];
-				If[voxs===vox, stop, PadToDimensions[RescaleData[stop, {voxs, vox}], dim]]
-			)& /@ stopfile;
+				{stop, voxSeg} = ImportNii[#];
+				debugBids["Voxel sizes: ", {voxSeg, vox , Dimensions@stop}];
+				If[voxSeg===vox, stop, PadToDimensions[RescaleData[stop, {voxSeg, vox}], dim]]
+			)& /@ stopFile;
 			debugBids["Data dimensions: ", Dimensions/@Join[stop, {tens}]];
 			stop = Transpose[{stop, tractStopVal}];
 			
@@ -3053,25 +3053,25 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 
 			(*perform harmonic denoising if needed*)
 			Which[
-				!NiiFileExistQ[segfile] && harm,
-				(*-----*)AddToLog[{"The segmentation file does not exist which is needed for harmonic denoise: ", segfile}, 4];
+				!NiiFileExistQ[segFile] && harm,
+				(*-----*)AddToLog[{"The segmentation file does not exist which is needed for harmonic denoise: ", segFile}, 4];
 				,
 				harm,
 				(*-----*)AddToLog[{"Performing harmonic tensor denoising"}, 4];
 				(* get the segmentation data *)			
-				{seg, voxs} = ImportNii[segfile];
-				seg = RescaleSegmentation[seg, {voxs, vox}];
+				{seg, voxSeg} = ImportNii[segFile];
+				seg = RescaleSegmentation[seg, {voxSeg, vox}];
 
-				{muscles, mlabs} = SelectSegmentations[seg, Range[segBone], False];
-				{tensh, con, amp} = HarmonicDenoiseTensor[tens, seg, vox, mlabs, 
+				{muscles, muscLabs} = SelectSegmentations[seg, Range[segBone], False];
+				{tensH, con, amp} = HarmonicDenoiseTensor[tens, seg, vox, muscLabs, 
 					MaxIterations -> 250, GradientStepSize -> {2, 1}, Monitor -> False, 
 					RadialBasisKernel -> 12, Parallelize -> True,
 					TensorFlips -> flip, TensorPermutations -> per
 				];
 
-				(*-----*)AddToLog[{"Starting the whole volume tractography on harmonic denoised data"}, 4];
+				(*-----*)AddToLog[{"Starting the whole volume tractography on harmonic de-noised data"}, 4];
 				stop = {{Dilation[Normal@Total@Transpose@muscles, 1], {0.9, 1.1}}};
-				{tracts, seeds} = FiberTractography[tensh, vox, stop,
+				{tracts, seeds} = FiberTractography[tensH, vox, stop,
 					InterpolationOrder -> 0, StepSize -> step, Method -> "RK4", 
 					MaxSeedPoints -> If[seed<1, Scaled[seed], seed], Parallelization -> True,
 					FiberLengthRange -> len, FiberAngle -> ang, TractMonitor -> False
@@ -3081,18 +3081,18 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 				(*-----*)AddToLog[{"Exporting the whole volume tractography"}, 4];
 				(*export stuff*)
 				context = Context[context];
-				tensh = Transpose@tensh;
+				tensH = Transpose@tensH;
 				ExportNii[ToExpression[context<>#], vox, 
-					outFile<>"_"<>#<>".nii.gz", CompressNii -> compress]& /@ {"con", "amp", "tensh"};
+					outFile<>"_"<>#<>".nii.gz", CompressNii -> compress]& /@ {"con", "amp", "tensH"};
 				ExportTracts[outFile<>"_har.trk", tracts, vox, dim, seeds];
 			];
 
 			MakeCheckFile[checkFile, Sort@Join[{"Check" -> "track"}, Normal@datType]];
 
 			(*compress the nii files if compression during ExportNii -> False*)
-			If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+			If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 
-			(*-----*)AddToLog["Finished the tractograpy", 3, True];
+			(*-----*)AddToLog["Finished the tractography", 3, True];
 		];
 	];
 
@@ -3112,8 +3112,8 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 		(*-----*)AddToLog[{"The tractography will be segmented using: ", tractSegLab}, 4];
 
 		Which[
-			!NiiFileExistQ[segfile],
-			(*-----*)AddToLog[{"The segmentation file does not exist: ", segfile}, 4];
+			!NiiFileExistQ[segFile],
+			(*-----*)AddToLog[{"The segmentation file does not exist: ", segFile}, 4];
 			,
 			!FileExistsQ[trkFileF],
 			(*-----*)AddToLog[{"The tracts file does not exist: ", trkFileF}, 4];
@@ -3124,46 +3124,46 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 			(*import trk file if needed, if processing was done in same run this is skipped*)
 			If[Dimensions[tracts] === {}, {tracts, vox, dim, seeds} = ImportTracts[trkFileF]];
 			(* get the segmentation data *)			
-			{seg, voxs} = ImportNii[segfile];
-			{muscles, mlabs} = SelectSegmentations[seg, Range[segBone], False];
+			{seg, voxSeg} = ImportNii[segFile];
+			{muscles, muscLabs} = SelectSegmentations[seg, Range[segBone], False];
 			bones = Unitize[SelectSegmentations[seg, Range[segBone + 1, segBone + 30]]];
 			dims = Dimensions@seg;
 
-			debugBids[{{dims,voxs, dims voxs}, {dim, vox, dim vox}}];
+			debugBids[{{dims,voxSeg, dims voxSeg}, {dim, vox, dim vox}}];
 
 			(*-----*)AddToLog[{"Segmenting the tracts"}, 4];
 			(*perform fitting and segmentations of the tracts*)
-			tracts = SegmentTracts[tracts, muscles, voxs, dims, 
+			tracts = SegmentTracts[tracts, muscles, voxSeg, dims, 
 				FiberLengthRange -> lenS, FitTractSegments->True];
 
-			(*-----*)AddToLog[{"Annalyzing the tracts"}, 4];
+			(*-----*)AddToLog[{"Analyzing the tracts"}, 4];
 			(*Calculate tract parameters*)
-			seed = SeedDensityMap[seeds, voxs, dims];
-			dens = TractDensityMap[tracts, voxs, dims];
-			leng = TractLengthMap[tracts, voxs, dims];
-			ang = TractAngleMap[tracts, voxs, dims];
-			curv = TractCurvatureMap[tracts, voxs, dims];
+			seed = SeedDensityMap[seeds, voxSeg, dims];
+			dens = TractDensityMap[tracts, voxSeg, dims];
+			leng = TractLengthMap[tracts, voxSeg, dims];
+			ang = TractAngleMap[tracts, voxSeg, dims];
+			curv = TractCurvatureMap[tracts, voxSeg, dims];
 
 			(*-----*)AddToLog[{"Exporting the results and maps"}, 4];
 			(*export stuff*)
 			context = Context[context];
-			ExportNii[ToExpression[context<>#], voxs, 
+			ExportNii[ToExpression[context<>#], voxSeg, 
 				outFile<>"_"<>#<>".nii.gz", CompressNii -> compress]& /@ {"dens", "leng", "ang", "seed","curv"};
-			ExportTracts[outFile<>"_seg.trk", tracts, voxs, dims, seeds];
+			ExportTracts[outFile<>"_seg.trk", tracts, voxSeg, dims, seeds];
 
 			(*export plot scene*)
 			(*-----*)AddToLog[{"Exporting the scene"}, 4];
 			Export[outFile<>"_plot.wxf",
-				PlotSegmentedTracts[tracts, muscles, bones, dims, voxs, 
+				PlotSegmentedTracts[tracts, muscles, bones, dims, voxSeg, 
 					OutputForm -> "All", Method -> "tube", MaxTracts -> 10000]
 			];
 
 			MakeCheckFile[checkFile, Sort@Join[{"Check"->"seg"}, Normal@datType]];
 
 			(*compress the nii files if compression during ExportNii -> False*)
-			If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+			If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 
-			(*-----*)AddToLog["Finished the tractograpy segmentation", 3, True];
+			(*-----*)AddToLog["Finished the tractography segmentation", 3, True];
 		];
 	];
 
@@ -3171,7 +3171,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 		MakeCheckFile[checkFile, Sort@Join[{"Check"->"done"}, Normal@datType]];
 
 		(*compress the nii files if compression during ExportNii -> False*)
-		If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+		If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 	];
 ]
 
@@ -3196,7 +3196,7 @@ MuscleBidsAnalysis[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]]
 	dir = Directory[]; SetDirectory[folder];
 	MuscleBidsAnalysis[
 		ConfigLookup[config, "folders", "mergeData"],(*the input folder for the data*)
-		ConfigLookup[config, "folders", "analysis"],(*the output folder for analsys*)
+		ConfigLookup[config, "folders", "analysis"],(*the output folder for analysis*)
 		config["analysis"],(*what data for analysis*)
 		opts];
 	SetDirectory[dir];	
@@ -3223,11 +3223,11 @@ MuscleBidsAnalysis[datFol_?StringQ, anFol_?StringQ, datDis_?AssociationQ, opts:O
 
 
 MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
-		maskErosion, tractWeighting, anaSeg, fol, parts, segfile, fileName, partsO, fileNameO, checkFileX, checkFileI,
+		maskErosion, tractWeighting, anaSeg, fol, parts, segFile, fileName, partsO, fileNameO, checkFileX, checkFileI,
 		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, str,
 		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType, hasKey,
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
-		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxs, segPl, imTrk, trkfile, reffile,
+		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxSeg, segPl, imTrk, trkfile, reffile,
 		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF, typeSuf,
 		whatName, whatNr
 	},
@@ -3247,7 +3247,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 	hasKey = !(datDis["Key"]==="Default");
 	{fol, parts} = PartitionBidsFolderName[folIn];
-	typeSuf = If[datDis["Analsys", "Class"] === "Stacks", "stk", "chunk"];
+	typeSuf = If[datDis["Analysis", "Class"] === "Stacks", "stk", "chunk"];
 	
 	partsO = If[hasKey, Join[<|typeSuf -> StringStrip@datDis["Key"]|>, parts], parts];
 	debugBids[{parts, partsO, hasKey, typeSuf}];
@@ -3276,7 +3276,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 	(*Perform the segmentation analysis, what are the label names and volumes*)
 	debugBids[{"Segmentation to xls analysis", parts}];
-	segfile = fileName[anaSeg]<>".nii";
+	segFile = fileName[anaSeg]<>".nii";
 
 	Which[
 		(*segmentation is already done*)
@@ -3284,13 +3284,13 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		(*-----*)AddToLog[{"Skipping: the segmentation to xls analysis is already done "}, 4],
 
 		(*no segmentation file exists*)
-		!NiiFileExistQ[segfile],
-		(*-----*)AddToLog[{"The segmentation file does not exist: ", segfile}, 4],
+		!NiiFileExistQ[segFile],
+		(*-----*)AddToLog[{"The segmentation file does not exist: ", segFile}, 4],
 
 		(*segmentation file existes perform the analysis*)
 		True,
 		(*-----*)AddToLog[{"Importing and processing the needed segmentation"}, 4];
-		{seg, vox} = ImportNii[segfile];
+		{seg, vox} = ImportNii[segFile];
 		seg = If[ArrayDepth[seg]===4, seg[[All, 1]], seg];
 		{seg, musNr} = SelectSegmentations[seg, Range[n], False];
 
@@ -3451,7 +3451,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		MakeCheckFile[checkFileX, Sort@Join[{"Check"->"done"}, Normal@datDis]];
 
 		(*compress the nii files if compression during ExportNii -> False*)
-		If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+		If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 	];
 
 	(*----------- make the images -------------*)
@@ -3577,8 +3577,8 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		(*------------ segmentation images ------------*)
 
 		(*check if segmentation can be done*)
-		debugBids[{segfile, NiiFileExistQ[segfile]}];
-		If[!NiiFileExistQ[segfile], 
+		debugBids[{segFile, NiiFileExistQ[segFile]}];
+		If[!NiiFileExistQ[segFile], 
 			(*-----*)AddToLog[{"Segmentation file does not exist."}, 4];
 			segIm = False
 		];
@@ -3589,7 +3589,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			debugBids["Making segment images:"];
 
 			(*import the segmation*)
-			{seg, voxi} = ImportNii[segfile];
+			{seg, voxi} = ImportNii[segFile];
 
 			(*make the 2D segmentation image*)
 			(*-----*)AddToLog[{"Making 2D Segment image"}, 5]; 
@@ -3648,7 +3648,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		MakeCheckFile[checkFileI, Sort@Join[{"Check"->"done"}, Normal@datDis]];
 
 		(*compress the nii files if compression during ExportNii -> False*)
-		If[!compress, CompressNiiFiles[DirectoryName[outfile]]];
+		If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
 	]
 ];
 

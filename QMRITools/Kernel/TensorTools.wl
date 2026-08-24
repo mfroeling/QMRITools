@@ -109,7 +109,7 @@ AngleCalc::usage =
 "AngleCalc[data, vector] calculates the angel between the vector and the data. Data should be an array of dimensions {xxx,3}."
 
 AngleMap::usage = 
-"AngleMap[data] calculates the zennith and azimuth angles of a 3D dataset (z,x,y,3) containing vectors relative to the slice direction."
+"AngleMap[data] calculates the zenith and azimuth angles of a 3D dataset (z,x,y,3) containing vectors relative to the slice direction."
 
 
 DriftCorrect::usage = 
@@ -143,7 +143,7 @@ RPBMFunction[tm, {{d0, tau, zeta}, ..}] generates the RPBM function for the give
 
 GetRPBMValues::usage = 
 "GetRPBMValues[{d0, tau, zeta}] derives parameters from RPBM function. d0, tau and zeta are the parameters of the RPBM function.
-output is a list containing {d0, tau, zeta, dinf, td, tr, I, sv, a, kappa}."
+output is a list containing {d0, tau, zeta, dInf, td, tr, I, sv, a, kappa}."
 
 FitRPBMDictionary::usage=
 "FitRPBMDictionary[sig, {pars, sim}, snr] fits the RPBM function to the simulated data sig using the parameters pars and the simulated data sim.
@@ -242,7 +242,7 @@ TensorCalc::bvec =
 TensorCalc::met = 
 "The method specified (`1`) is not a valid method, please use: \"LLS\",\"WLLS\",\"NLS\"."
 
-ResidualCalc::datdim = 
+ResidualCalc::datDim = 
 "DTIdata (`1`) and tensor data (`2`) are not the same dimensions."
 
 AngleCalc::dist = 
@@ -283,7 +283,7 @@ TensorCalc[dat_, mat_?MatrixQ, opts:OptionsPattern[]] := TensorCalc[dat, mat, {}
 TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, opts:OptionsPattern[]] := TensorCalc[dat, grad, bvec, False, opts]
 
 TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block[{
-		output, robust, con, kappa, parallel, mon, method, func, outliers, outFit, dataFit, residual, ctens,
+		output, robust, con, kappa, parallel, mon, method, func, outliers, outFit, dataFit, residual, cTens,
 		bmat, bmatV, data, dataL, depthD, dirD, dirB, mask, coor, dim, vox, start, dint, fitFun, fitResult, 
 		s0, tensor, gradField
 	},
@@ -321,7 +321,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	dataL = ToPackedArray@N@LogNoZero[data];
 	
 	(*calculate the bmatrix using coil tensor if needed*)
-	ctens = If[coil=!= False && depthD >= 3,
+	cTens = If[coil=!= False && depthD >= 3,
 		If[mon, PrintTemporary["Making coil tensor"]];
 		(*get the coil tensor*)
 		{vox, start, dint} = coil;
@@ -341,7 +341,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	(*compute the outliers*)	
 	outliers = If[robust && method =!= "LLS",
 		If[mon, PrintTemporary["Finding tensor outliers"]];
-		If[ctens, 
+		If[cTens, 
 			func[FindTensOutliers[#[[1]], #[[2]], con, kappa]&, Thread[{dataL, bmatV}]],
 			func[FindTensOutliers[#, bmat, con, kappa]&, dataL]
 		],
@@ -354,9 +354,9 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	dataFit = Transpose[{outFit data, outFit dataL}];
 	fitResult = Which[
 		(*LLS without coil tensor*)
-		method === "LLS" && ctens===False, Transpose@LinearSolve[Transpose[bmat].bmat, Transpose[bmat].Transpose[dataL]],
-		ctens === False, func[fitFun[#, bmat]&, dataFit],
-		ctens === True, func[fitFun[#[[1]], #[[2]]]&, Thread[{dataFit, bmatV}]]
+		method === "LLS" && cTens===False, Transpose@LinearSolve[Transpose[bmat].bmat, Transpose[bmat].Transpose[dataL]],
+		cTens === False, func[fitFun[#, bmat]&, dataFit],
+		cTens === True, func[fitFun[#[[1]], #[[2]]]&, Thread[{dataFit, bmatV}]]
 	];
 	On[General::luc];
 	If[parallel, ParallelEvaluate[On[General::luc]]];
@@ -365,7 +365,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	If[mon, PrintTemporary["Finalizing output tensor"]]; 
 	residual = If[OptionValue[FullOutput], (*needs to incorporate the correct bmatrix*)
 		ResidualCalc[Transpose@data, Transpose@fitResult, Transpose@outliers, 
-			If[ctens, bmatV, bmat], MeanRes->"RMSE"],
+			If[cTens, bmatV, bmat], MeanRes->"RMSE"],
 		SparseArray[{}, Length@data, 0.]
 	];
 
@@ -375,7 +375,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 		fitResult = Transpose[VectorToData[fitResult, coor]];	
 		outliers = VectorToData[outliers, coor];
 		residual = VectorToData[residual, coor];
-		If[ctens, gradField = VectorToData[Transpose[Flatten[gradField, {2,3}]], coor]];
+		If[cTens, gradField = VectorToData[Transpose[Flatten[gradField, {2,3}]], coor]];
 	];
 
 	(*split tensor and S0*)
@@ -384,7 +384,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 
 	(*the output depending on the settings*)
 	{tensor, s0, 
-		If[output, {If[robust, outliers, Nothing],  residual, If[ctens, gradField, Nothing]}, Nothing]}
+		If[output, {If[robust, outliers, Nothing],  residual, If[cTens, gradField, Nothing]}, Nothing]}
 ]
 
 
@@ -393,7 +393,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 
 
 FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}}, Block[{
-	sol, solA, soli, res, mad, wts, wmat, fitE, ls2, bmat2, out, bmatT, bmat2T, eps},
+	sol, solA, soli, res, mad, wts, wMat, fitE, ls2, bmat2, out, bmatT, bmat2T, eps},
 
 	(*based on DOI: 10.1002/mrm.25165*)
 	(*initialize some values*)
@@ -428,8 +428,8 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 						(*c. Recompute the weights according to Eq. [13].*)
 						wts = 1 / (1 + (res/mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
-						wmat = bmatT . DiagonalMatrix[wts];
-						sol = LinearSolve[wmat . bmat, wmat . ls];
+						wMat = bmatT . DiagonalMatrix[wts];
+						sol = LinearSolve[wMat . bmat, wMat . ls];
 						(*e. Check convergence*)
 						If[Max[Abs[sol - soli]/(Abs[soli] + eps)] <= con , Break[]];
 					];
@@ -457,8 +457,8 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 						(*c. Recompute the weights according to Eq. [13].*)
 						wts = 1 / (1 + (res/mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
-						wmat = bmat2T . DiagonalMatrix[wts];
-						sol = LinearSolve[wmat . bmat2, wmat . ls2];
+						wMat = bmat2T . DiagonalMatrix[wts];
+						sol = LinearSolve[wMat . bmat2, wMat . ls2];
 						(*e. Check convergence*)
 						If[Max[Abs[sol - soli]/(Abs[soli] + eps)] <= con , Break[]];
 					];
@@ -497,15 +497,15 @@ TensMinLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 
 
 TensMinWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}}, 
-	Block[{eps, wmat, mvec, sol, s, ls},
+	Block[{eps, wMat, mVec, sol, s, ls},
 		eps = 10^-12;
 		{s, ls} = dat;
-		mvec = UnitStep[s] Unitize[s];
+		mVec = UnitStep[s] Unitize[s];
 		sol = First[bmat];
-		wmat = 0. bmat;
-		If[Norm[ls] > eps || Total[mvec] > 7,
-			wmat = Transpose[bmat] . DiagonalMatrix[mvec s^2];
-			sol = LinearSolve[wmat . bmat, wmat . ls];
+		wMat = 0. bmat;
+		If[Norm[ls] > eps || Total[mVec] > 7,
+			wMat = Transpose[bmat] . DiagonalMatrix[mVec s^2];
+			sol = LinearSolve[wMat . bmat, wMat . ls];
 		];
 	sol]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
@@ -516,20 +516,20 @@ TensMinWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 
 
 TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}}, 
-	Block[{s, ls, bmatT, eps, wmat, mat, cont, itt, mvec, soli, sol0, max, sol, w},
+	Block[{s, ls, bmatT, eps, wMat, mat, cont, itt, mVec, soli, sol0, max, sol, w},
 		eps = 10^-12;
 		{s, ls} = dat;
-		mvec = UnitStep[s] Unitize[s];
+		mVec = UnitStep[s] Unitize[s];
 
 		(*for compile to work*)
-		max = 3. Max[mvec s];
+		max = 3. Max[mVec s];
 		sol0 = 0. First[bmat];
 		sol = sol0;
-		wmat = 0. bmat;
+		wMat = 0. bmat;
 		bmatT = Transpose[bmat];
 
 		(*skip background or not enough data for fit*)
-		If[Norm[ls] > eps || Total[mvec] > 7,
+		If[Norm[ls] > eps || Total[mVec] > 7,
 			(*initialize*)
 			itt = 0;
 			cont = 1.;
@@ -542,8 +542,8 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 					(*init iteration values*)
 					soli = sol;
 					(*perform WLLS*)
-					wmat = bmatT . DiagonalMatrix[mvec Exp[2 bmat . sol]];
-					sol = LinearSolve[wmat . bmat, wmat . ls];
+					wMat = bmatT . DiagonalMatrix[mVec Exp[2 bmat . sol]];
+					sol = LinearSolve[wMat . bmat, wMat . ls];
 					(*update weight*)
 					(*see if to quit loop*)
 					If[(Last[sol] >= max || Last[sol] <= 0), cont = 0.;	sol = sol0];
@@ -627,10 +627,10 @@ Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
 
 
 TensMinCWLLS[s_,ls_,bmat_,bmatI_] := 
-Module[{v,r0,r1,r2,r3,r4,r5,init,tens,std=1,wmat},
+Module[{v,r0,r1,r2,r3,r4,r5,init,tens,std=1,wMat},
 	bmatI;
-	wmat=Transpose[bmat] . DiagonalMatrix[s^2/std^2];
-	tens = LinearSolve[wmat . bmat, wmat . ls];
+	wMat=Transpose[bmat] . DiagonalMatrix[s^2/std^2];
+	tens = LinearSolve[wMat . bmat, wMat . ls];
 	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
 		v={r0^2,r1^2+r3^2,r2^2+r4^2+r5^2,r0 r3,r0 r4,r3 r4+r1 r5,tens[[7]]};
 		init=Thread[{{r0,r1,r2,r3,r4,r5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
@@ -655,7 +655,7 @@ Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
 
 
 (* ::Subsubsection::Closed:: *)
-(*ExtendeCholeskyDecomposition*)
+(*ExtendedCholeskyDecomposition*)
 
 
 ExtendedCholeskyDecomposition[tm_] := Block[{n,beta,theta,cm,lm,dm,em,j},
@@ -663,12 +663,12 @@ ExtendedCholeskyDecomposition[tm_] := Block[{n,beta,theta,cm,lm,dm,em,j},
 	beta=Max[{Max[Diagonal[tm]],Max[UpperTriangularize[tm,1]]/Sqrt[n^2-1],10^-15}];
 	cm=DiagonalMatrix[Diagonal[tm]];
 	lm=dm=em=ConstantArray[0,{n,n}];
-	Tabel[
+	Table[
 		If[j==1,
-			(*j=1 maak eerste colom cm gelijk aan tm*)
+			(*j=1 make first column cm equal to tm*)
 			cm[[j+1;;,j]]=tm[[j+1;;,j]];
 			,
-			(*j>1 vul lm matrix*)
+			(*j>1 fill lm matrix*)
 			lm[[j,;;j-1]]=cm[[j,;;j-1]]/(Diagonal[dm][[;;j-1]]/.(0.->Infinity));
 			If[j<n,
 				cm[[j+1;;,j]]=tm[[j+1;;,j]]-lm[[j,j-1;;]] . Transpose[cm[[j+1;;,j-1;;]]]
@@ -817,34 +817,34 @@ SelectEig=Compile[{{eig,_Real,1}},1-UnitStep[Last[eig]],RuntimeAttributes->{List
 (*EigenSysQ*)
 
 
-(*slow precice method*)
+(*slow precise method*)
 EigenSysQ[tens_,out_] := Block[{val,vec},
 	If[out=!="val",
 		If[VectorQ[tens],
 			(*tensor is just one value*)
-			EigenSysi[tens],
+			EigenSysI[tens],
 			(*calculate the eigensystem*)
-			val=Map[EigenSysi,tens,{-2}];
+			val=Map[EigenSysI,tens,{-2}];
 			vec=Switch[ArrayDepth[tens]-1,1,val[[All,2]],2,val[[All,All,2]],3,val[[All,All,All,2]]];
 			val=Switch[ArrayDepth[tens]-1,1,val[[All,1]],2,val[[All,All,1]],3,val[[All,All,All,1]]];
 			{val,vec}
 		],
 		If[VectorQ[tens],
 			(*tensor is just one value*)
-			{EigenVali[tens], 0},
+			{EigenValI[tens], 0},
 			(*calculate the eigensystem*)
-			{Map[EigenVali, tens, {-2}], 0}
+			{Map[EigenValI, tens, {-2}], 0}
 		]
 	]
 ];
 
 
-EigenSysi[{0.,0.,0.,0.,0.,0.}] := {{0.,0.,0.},{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}}}
-EigenSysi[tensor_?VectorQ] := Eigensystem[TensMat[tensor]]
+EigenSysI[{0.,0.,0.,0.,0.,0.}] := {{0.,0.,0.},{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}}}
+EigenSysI[tensor_?VectorQ] := Eigensystem[TensMat[tensor]]
 
 
-EigenVali[{0.,0.,0.,0.,0.,0.}] := {0.,0.,0.}
-EigenVali[tensor_?VectorQ] := Eigenvalues[TensMat[tensor]]
+EigenValI[{0.,0.,0.,0.,0.,0.}] := {0.,0.,0.}
+EigenValI[tensor_?VectorQ] := Eigenvalues[TensMat[tensor]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -913,9 +913,9 @@ EigenVecC=Compile[{{tens,_Real,1},{eig,_Real,1}},Block[{dxx,dyy,dzz,dxy,dxz,dyz,
 
 SyntaxInformation[ADCCalc] = {"ArgumentsPattern" -> {_}};
 
-ADCCalc[eig_] := ADCCalci[eig]
+ADCCalc[eig_] := ADCCalcI[eig]
 
-ADCCalci = Compile[{{eig, _Real, 1}}, Mean[eig], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+ADCCalcI = Compile[{{eig, _Real, 1}}, Mean[eig], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -924,12 +924,12 @@ ADCCalci = Compile[{{eig, _Real, 1}}, Mean[eig], RuntimeAttributes -> {Listable}
 
 SyntaxInformation[FACalc] = {"ArgumentsPattern" -> {_}};
 
-FACalc[eig_] := FACalci[eig]
+FACalc[eig_] := FACalcI[eig]
 
-FACalci = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3, teig},
+FACalcI = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3, eigNorm},
 	l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
-	teig = Sqrt[2.*Total[eig^2]];
-	If[teig == 0., 0. ,Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2]/teig]
+	eigNorm = Sqrt[2.*Total[eig^2]];
+	If[eigNorm == 0., 0. ,Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2]/eigNorm]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
@@ -939,9 +939,9 @@ FACalci = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3, teig},
 
 SyntaxInformation[ECalc] = {"ArgumentsPattern" -> {_}};
 
-ECalc[eig_] := ECalci[eig]
+ECalc[eig_] := ECalcI[eig]
 
-ECalci = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3},
+ECalcI = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3},
 	l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
 	Sqrt[1 - (l3 / l1)]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
@@ -975,7 +975,7 @@ ParameterCalc[tensor_,OptionsPattern[]] := Block[{eig,adc,fa},
 
 
 (* ::Subsection:: *)
-(*LogEuclidian *)
+(*LogEuclidean *)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1103,7 +1103,7 @@ DriftCorrect[data_, bi_, opts:OptionsPattern[]] := Block[{bval,pos},
 ];
 
 DriftCorrect[data_, bi_, pos_, OptionsPattern[]] := Block[{
-	sig, cor, bval, sol1, sol2, sol3, a, b, c, x, outp, dat
+	sig, cor, bval, sol1, sol2, sol3, a, b, c, x, output, dat
 	},
 	bval = If[ArrayDepth[bi] == 2, BmatrixInv[bi][[1]], bi];
 	sig = MeanSignal[data, pos, UseMask->OptionValue[UseMask]];
@@ -1112,9 +1112,9 @@ DriftCorrect[data_, bi_, pos_, OptionsPattern[]] := Block[{
 	{sol1, sol2, sol3} = {a, b, c} /. FindFit[dat, {c + b x + a x^2}, {a, b, c}, x];
 	cor = sol3/Table[sol3 + sol2 x + sol1 x^2, {x, 1, Length[bi]}];
 
-	outp = ConstantArray[cor, Length[data]] data;
+	output = ConstantArray[cor, Length[data]] data;
 
-	If[OptionValue[NormalizeSignal], 100 outp / (sig[[1]] cor[[1]]) , outp]
+	If[OptionValue[NormalizeSignal], 100 output / (sig[[1]] cor[[1]]) , output]
 ];
 
 
@@ -1126,21 +1126,21 @@ SyntaxInformation[ConcatenateDiffusionData] = {"ArgumentsPattern" -> {_, _., _.,
 
 ConcatenateDiffusionData[data_?ListQ] :=If[Length[data] == 4,ConcatenateDiffusionData[data[[1]], data[[2]], data[[3]], data[[4]]]]
 
-ConcatenateDiffusionData[data_, grad_, val_, vox_] := Module[{dataout, gradout, valout, voxout},
+ConcatenateDiffusionData[data_, grad_, val_, vox_] := Module[{dataout, gradOut, valOut, voxOut},
 	If[Length[data] == Length[grad] == Length[val],
 		dataout = Transpose@Flatten[Transpose[NormalizeData[#]] & /@ data, 1];
-		gradout = Flatten[grad, 1];
-		valout = Flatten[val];
+		gradOut = Flatten[grad, 1];
+		valOut = Flatten[val];
 
-		{dataout, gradout, valout} = RemoveIsoImages[dataout, gradout, valout];
-		{dataout, gradout, valout} = SortDiffusionData[dataout, gradout, valout];
+		{dataout, gradOut, valOut} = RemoveIsoImages[dataout, gradOut, valOut];
+		{dataout, gradOut, valOut} = SortDiffusionData[dataout, gradOut, valOut];
 		,
 		Return[Message[ConcatenateDiffusionData::dim, Length[data],Length[grad], Length[val]]];
 	];
 
-	voxout = If[ListQ[vox] && ! ListQ[vox[[1]]], vox, vox[[1]]];
+	voxOut = If[ListQ[vox] && ! ListQ[vox[[1]]], vox, vox[[1]]];
 
-	{ToPackedArray@N@dataout, gradout, valout, voxout}
+	{ToPackedArray@N@dataout, gradOut, valOut, voxOut}
 ];
 
 
@@ -1150,8 +1150,8 @@ ConcatenateDiffusionData[data_, grad_, val_, vox_] := Module[{dataout, gradout, 
 
 SyntaxInformation[SortDiffusionData] = {"ArgumentsPattern" -> {_, _, _}};
 
-SortDiffusionData[data_, grad_, val_] := Module[{pos, valu, sel},
-	{valu, pos} = UniqueBvalPosition[val];
+SortDiffusionData[data_, grad_, val_] := Module[{pos, valUnique, sel},
+	{valUnique, pos} = UniqueBvalPosition[val];
 	sel = Flatten[pos];
 	{ToPackedArray@N@data[[All, sel]], grad[[sel]], val[[sel]]}
 ]
@@ -1219,9 +1219,9 @@ ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_, OptionsPatter
 	dimD = Dimensions[If[ArrayDepth[dat] == 4, dat[[All,1]], dat[[1]]]];
 	dimT = Dimensions[tensor[[1]]];
 
-	If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datdim, Dimensions[data], Dimensions[tensor]]]];
+	If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datDim, Dimensions[data], Dimensions[tensor]]]];
 
-	(*remove ouliers*)
+	(*remove outliers*)
 	fit = If[MatrixQ[bmat], bmat . tensor, Transpose@MapThread[Dot, {bmat, Transpose@tensor}]];
 	fit = Clip[ExpNoZero[fit], {-1.5, 1.5} Max[dat], {0., 0.}];
 	err = If[ArrayDepth[dat] == 4,
@@ -1251,7 +1251,7 @@ SigmaCalc[dti_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, OptionsPattern[
 	res = ResidualCalc[dti, tens, grad, bvalue, MeanRes -> "MAD"];
 	len = Length[grad];
 	sig = Sqrt[len/(len - 7)]*res;
-	PrintTemporary["Filtering noisemap"];
+	PrintTemporary["Filtering noise map"];
 	Switch[OptionValue[FilterShape],
 		"Gaussian",
 		GaussianFilter[sig, blur],
@@ -1266,7 +1266,7 @@ SigmaCalc[dti_?ArrayQ, tens_?ArrayQ, grad : {{_, _, _} ..}, bvalue_, blur_: 2, O
 	res = ResidualCalc[dti, tens, grad, bvalue, MeanRes -> "MAD"];
 	len = Length[grad];
 	sig = Sqrt[len/(len - 7)]*res;
-	PrintTemporary["Filtering noisemap"];
+	PrintTemporary["Filtering noise map"];
 	Switch[OptionValue[FilterShape],
 		"Gaussian",
 		GaussianFilter[sig, blur],
@@ -1335,12 +1335,12 @@ GetRPBMValues[fit_?MatrixQ, inf_?BooleanQ] := GetRPBMValues[#, inf]& /@ fit
 GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}] := GetRPBMValues[{d0, tau, zeta}, True]
 
 GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}, inf__?BooleanQ] := Block[{
-		dinf, td, tr, i, sv, a, kappa
+		dInf, td, tr, i, sv, a, kappa
 	},
 	(*https://github.com/NYU-DiffusionMRI/RPBM*)
 
 	(*diffusion at infinity time*)
-	dinf = If[inf, RPBMFunction[Infinity, {d0, tau, zeta}], 0.];
+	dInf = If[inf, RPBMFunction[Infinity, {d0, tau, zeta}], 0.];
 
 	(*td the diffusion time to traverse a typical cell*) 
 	td = Clip[2 tau / zeta^2, {0, 5000}] (* a^2 / (2 d0)*);
@@ -1354,11 +1354,11 @@ GetRPBMValues[{d0_?NumericQ, tau_?NumericQ, zeta_?NumericQ}, inf__?BooleanQ] := 
 
 	(*cell size*)
 	a = 2 Sqrt[d0] Sqrt[tau] / zeta (*4 / sv*);
-	(*membrane permiability*)
+	(*membrane permeability*)
 	kappa = Sqrt[d0] / (2 Sqrt[tau]);
 
 	(*output all parameters as vector*)
-	{d0, tau, zeta,	dinf, td, tr, i, sv, a, kappa}
+	{d0, tau, zeta,	dInf, td, tr, i, sv, a, kappa}
 ]
 
 
@@ -1369,7 +1369,7 @@ GetRPBMValues[sol_, inf_?BooleanQ] := GetRPBMValues[sol, {"none", 0}, inf]
 GetRPBMValues[sol_, par_] := GetRPBMValues[sol, par, True]
 
 GetRPBMValues[sol_, par_, inf_?BooleanQ] := Block[{
-		con, d0, zeta, tau, dinf, td, tr, i, sv, a, kappa
+		con, d0, zeta, tau, dInf, td, tr, i, sv, a, kappa
 	},
 
 	(*get the values from the solution*)
@@ -1390,7 +1390,7 @@ FitRPBMFunction[tms_, dat_] := FitRPBMFunction[tms, dat, {}, ""];
 FitRPBMFunction[tms_, dat_, fix_] := FitRPBMFunction[tms, dat, fix, ""];
 
 FitRPBMFunction[tms_, dat_, fix_, fs_] := Block[{
-		f, vars, d0, tau, zeta, ran, fixr, init, cons, sel
+		f, vars, d0, tau, zeta, ran, fixRule, init, cons, sel
 	},
 	(*see which variables need to be fitted and define ranges*)
 	f = First@First[Position[{"d0", "tau", "zeta"}, fs] /. {} -> {{0}}];
@@ -1401,11 +1401,11 @@ FitRPBMFunction[tms_, dat_, fix_, fs_] := Block[{
 	(*check if there are fixed variables*)
 	If[fix === {}, init = vars,
 		(*if there is a fix variable drop it from the fit input*)
-		fixr = Thread[vars -> fix];
-		init = Thread[{vars, vars /. fixr}];
+		fixRule = Thread[vars -> fix];
+		init = Thread[{vars, vars /. fixRule}];
 		If[0 < f < 4,
 			sel = Drop[{1, 2, 3}, {f}];
-			vars = vars /. fixr[[f]];
+			vars = vars /. fixRule[[f]];
 			init = init[[sel]];
 			cons = cons[[sel]];
 		]
@@ -1442,7 +1442,7 @@ RPBMDict[tms_, {rTau_, rZeta_, {nDic_, nPars_}}] := (*RPBMDict[tms, {rTau, rZeta
 
 	(* Lemberskiy G. et al. https://doi.org/10.1002/nbm.4534 *)
 
-	(*generate random dictionary, with seedrandom its reproducible*)
+	(*generate random dictionary, with seed random its reproducible*)
 	pars = RotateDimensionsLeft[{
 		SeedRandom[12345]; RandomReal[rTau, {nDic, nPars}],
 		SeedRandom[54321]; RandomReal[rZeta, {nDic, nPars}]
@@ -1481,7 +1481,7 @@ FitRPBMDictionary[sig_, {pars_, sim_}, snr_, d0i_] := Block[{
 ]
 
 
-(*finding the minimal root mean square value of dictinary*)
+(*finding the minimal root mean square value of dictionary*)
 RPBMminFunc[sig_?ListQ, d0_Real, sim_] := RPBMMinErrorC[sig, d0, sim];
 
 RPBMMinErrorC = Compile[{{sig, _Real, 1}, {d0, _Real, 0}, {sim, _Real, 2}}, 
@@ -1507,9 +1507,9 @@ RPBMErrorC = Compile[{{sig, _Real, 1}, {d0, _Real, 0}, {sim, _Real, 2}},
 
 SyntaxInformation[TransformTensor] = {"ArgumentsPattern" -> {_, _, _}};
 
-TransformTensor[tens_, disp_, vox_] := Block[{imat, jac},
-	imat=IdentityMatrix[3];
-	jac=Chop[imat+Table[GaussianFilter[disp[[i]],1,imat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
+TransformTensor[tens_, disp_, vox_] := Block[{iMat, jac},
+	iMat=IdentityMatrix[3];
+	jac=Chop[iMat+Table[GaussianFilter[disp[[i]],1,iMat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
 
 	TensVec[Apply[TensorRotate,RotateDimensionsLeft[{RotateDimensionsRight[TensMat[tens],2],jac},3],{-4}]]
 ]
@@ -1544,39 +1544,39 @@ TensorRotate[tens_,f_] := Block[{val,e1,e2,e3,n1,n2,n3,nMat,fMat},
 SyntaxInformation[Correct] = {"ArgumentsPattern" -> {_, _, _, _.}};
 
 Correct[data_?MatrixQ,phase_?MatrixQ,shift_] := 
-Correcti[data,phase,shift,1]
+CorrectI[data,phase,shift,1]
 
 Correct[data_?MatrixQ,phase_?MatrixQ,shift_,int_] := 
-Correcti[data,phase,shift,int]
+CorrectI[data,phase,shift,int]
 
 Correct[data:{_?MatrixQ..},phase:{_?MatrixQ..},shift_] := 
-MapThread[Correcti[#1,#2,shift,1]&,{data,phase}]
+MapThread[CorrectI[#1,#2,shift,1]&,{data,phase}]
 
 Correct[data:{_?MatrixQ..},phase:{_?MatrixQ..},shift_,int_] := 
-MapThread[Correcti[#1,#2,shift,int]&,{data,phase}]
+MapThread[CorrectI[#1,#2,shift,int]&,{data,phase}]
 
 Correct[data:{{_?MatrixQ..}..},phase:{_?MatrixQ..},shift_] := 
-Transpose[Map[MapThread[Correcti[#1,#2,shift,1]&,{#,phase}]&,Transpose[data,{2,1}]],{2,1}]
+Transpose[Map[MapThread[CorrectI[#1,#2,shift,1]&,{#,phase}]&,Transpose[data,{2,1}]],{2,1}]
 
 Correct[data:{{_?MatrixQ..}..},phase:{_?MatrixQ..},shift_,int_] := 
-Transpose[Map[MapThread[Correcti[#1,#2,shift,int]&,{#,phase}]&,Transpose[data,{2,1}]],{2,1}]
+Transpose[Map[MapThread[CorrectI[#1,#2,shift,int]&,{#,phase}]&,Transpose[data,{2,1}]],{2,1}]
 
 
 (* ::Subsubsection::Closed:: *)
-(*Correcti*)
+(*CorrectI*)
 
 
-Correcti[dat_,ph_,shift_,int_] := Module[{pos,acpos,shiftpx,data,phase,output},
+CorrectI[dat_,ph_,shift_,int_] := Module[{pos,acPos,shiftPix,data,phase,output},
 	If[shift[[2]]=="COL",
 		data=Transpose[dat];phase=Transpose[ph];,
 		data=dat;phase=ph;
 		];
-	shiftpx=phase*shift[[1]];
+	shiftPix=phase*shift[[1]];
 	output=Round[MapThread[(
 		pos=Range[Length[#1]];
-		acpos=pos-#1;
-		ListInterpolation[#2,InterpolationOrder->int][acpos]
-		)&,{shiftpx,data}]];
+		acPos=pos-#1;
+		ListInterpolation[#2,InterpolationOrder->int][acPos]
+		)&,{shiftPix,data}]];
 	If[shift[[2]]=="COL",Return[Transpose[output]],Return[output]]
 	]
 
@@ -1593,30 +1593,28 @@ Options[TensorCorrect]={RotationCorrect->False};
 
 SyntaxInformation[TensorCorrect] = {"ArgumentsPattern" -> {_, _, _, _, _., OptionsPattern[]}};
 
-(* zonder masker, dus met sprongen in de afgeleide by grens tussen deformatie veld en achtergrond *)
 TensorCorrect[tens_,phase_,shift_,vox_,OptionsPattern[]] := 
 TensorCorrect[tens,phase,0,shift,vox];
 
-(* met masker, dus zonder sprongen in de afgeleide by grens tussen deformatie veld en achtergrond *)
 TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]] := 
-	Module[{dim,pxshift,der,f,tensM,tensC,tensCV,tensT},
+	Module[{dim,pixShift,der,f,tensM,tensC,tensCV,tensT},
 
 	dim=Dimensions[phase];
-	(*deformation expessed in pixels*)
-	pxshift=phase*shift[[1]];
+	(*deformation expressed in pixels*)
+	pixShift=phase*shift[[1]];
 
 	If[OptionValue[RotationCorrect]==True,
-		PrintTemporary["Cacluating Derivative"];
+		PrintTemporary["Calculating Derivative"];
 		(*local derivative of the displacement in the slice direction*)
 		der=If[!ArrayQ[mask],
-			Deriv[pxshift,vox],
-			Deriv[pxshift,vox,mask]
+			Deriv[pixShift,vox],
+			Deriv[pixShift,vox,mask]
 		];
-		f=Fmat[der,shift[[2]]];
+		f=FMat[der,shift[[2]]];
 
 		PrintTemporary["Rotation Correction"];
 		(*rotation correction of matrix*)
-		(*tensor to matrixform*)
+		(*tensor to matrix form*)
 		tensM=TensMat[tens];
 		(*rotation correct tensor matrix*)
 		tensC=MapThread[DRot[#1,#2]&,{tensM,f},3];
@@ -1628,7 +1626,7 @@ TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]] :=
 
 	PrintTemporary["Translation Correction"];
 	(*Translation correction of the rotation corrected Tensor*)
-	tensT=Map[(MapThread[TransCorrect[#1,#2,shift[[2]],1]&, {#,pxshift}])&,tensCV]
+	tensT=Map[(MapThread[TransCorrect[#1,#2,shift[[2]],1]&, {#,pixShift}])&,tensCV]
 ];
 
 
@@ -1637,19 +1635,17 @@ TensorCorrect[tens_,phase_,mask_,shift_,vox_,OptionsPattern[]] :=
 
 
 (* Translation correct one slice*)
-TransCorrect[dat_,sh_,dir_,int_] := Module[{data,shift,pos,acpos,out},
+TransCorrect[dat_,sh_,dir_,int_] := Module[{data,shift,pos,acPos,out},
 	(*Transpose the data zo the deformation is always in the "ROW" direction*)
 	If[dir=="COL",
 		data=Transpose[dat];shift=Transpose[sh];,
 		data=dat;shift=sh;
 	];
-	(*{dims,dimx,dimy}=Dimensions[data];*)
 	(*deformation Correction*)
 	out=MapThread[(
 		pos=Range[Length[#1]];
-		acpos=pos-#1;
-		ListInterpolation[#2,InterpolationOrder->int][Clip[acpos,{1,Length[acpos]}]]
-		(*[{Clip[acpos[[1]],{1,dimx}],Clip[acpos[[2]],{1,dimy}]}]*)
+		acPos=pos-#1;
+		ListInterpolation[#2,InterpolationOrder->int][Clip[acPos,{1,Length[acPos]}]]
 	)&,{shift,data}];
 
 	(*If deformation was in the "COL" direction rotate back*)
@@ -1661,7 +1657,7 @@ TransCorrect[dat_,sh_,dir_,int_] := Module[{data,shift,pos,acpos,out},
 (*FMat*)
 
 
-Fmat[der_,shift_] := Module[{dx,dy,dz,dim,zero,ones,f},
+FMat[der_,shift_] := Module[{dx,dy,dz,dim,zero,ones,f},
 	{dx,dy,dz}=der;
 	dim=Dimensions[dx];
 	zero=ConstantArray[0,dim];
@@ -1677,7 +1673,7 @@ Fmat[der_,shift_] := Module[{dx,dy,dz,dim,zero,ones,f},
 
 
 (* ::Subsubsection::Closed:: *)
-(*Drot*)
+(*DRot*)
 
 
 DRot[tens_,f_] := Module[{val,e1,e2,e3,n1,n2,n3,nn},

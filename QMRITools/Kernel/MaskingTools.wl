@@ -63,12 +63,12 @@ MaskData::usage =
 "MaskData[data, mask] applies a mask to data. mask can be 2D or 3D, data can be 2D, 3D or 4D."
 
 MaskSegmentation::usage = 
-"MaskSegmentation[seg, mask] applies a mask to a splited segmentation seg from SplitSegmentations. 
+"MaskSegmentation[seg, mask] applies a mask to a spited segmentation seg from SplitSegmentations. 
 The mask is 3D, seg is 4D."
 
 
 SplitSegmentations::usage = 
-"SplitSegmentations[segmentation] splits a lable mask from ITKsnap or slicer3D in separate masks and label numbers.
+"SplitSegmentations[segmentation] splits a label mask from ITKSnap or slicer3D in separate masks and label numbers.
 Output is masks and label numbers, {mask, labs}."
 
 GetSegmentationLabels::usage = 
@@ -76,11 +76,11 @@ GetSegmentationLabels::usage =
 
 RescaleSegmentation::usage = 
 "RescaleSegmentation[data, dim] rescales segmentations to given dimensions.
-RescaleSegmentation[data, {vox1, vox2}] rescales segmentations from voxelsize vox1 to voxelsize vox2."
+RescaleSegmentation[data, {vox1, vox2}] rescales segmentations from voxel size vox1 to voxel size vox2."
 
 MergeSegmentations::usage = 
 "MergeSegmentations[masks, labels] generates an ITKsnap or slices3D compatible segmentation from individual masks and label numbers.
-Output is a labled segmentation.
+Output is a labeled segmentation.
 MergeSegmentations[masks] does the same but automatically numbers the segmentations."
 
 JoinSegmentations::usage =
@@ -127,14 +127,14 @@ MaskVolume[{mask, ..}, vox] calculates the Median volume of the List of masks in
 
 
 NormalizeMethod::usage = 
-"NormalizeMethod is an option for NormalizeData. Can be \"Set\" or \"Volumes\" wich normalizes to the first volume or normalizes each volume individually, respectively.
+"NormalizeMethod is an option for NormalizeData. Can be \"Set\" or \"Volumes\" which normalizes to the first volume or normalizes each volume individually, respectively.
 If \"Uniform\" normalizes the histogram of the data to have a uniform distribution between 0 and 1 where 0 is treated as background of the data."
 
 FitOrder::usage = 
 "FitOrder is an option for HomogenizeData. It specifies the order of harmonics to be used for the homogenization."
 
 MaskSmoothing::usage = 
-"MaskSmoothing is an options for Mask, SmoothMask and SmoothSegmentation, if set to True it smooths the mask, by closing holse and smoothing the contours."
+"MaskSmoothing is an options for Mask, SmoothMask and SmoothSegmentation, if set to True it smooths the mask, by closing holes and smoothing the contours."
 
 MaskComponents::usage =
 "MaskComponents is an option for Mask, SmoothMask and SmoothSegmentation. Determines the amount of largest clusters used as mask." 
@@ -146,7 +146,7 @@ MaskDilation::usage =
 "MaskDilation is an option for Mask, SmoothMask and SmoothSegmentation. If the value is greater than 0 it will dilate the mask, if the value is smaller than 0 it will erode the mask."
 
 MaskFiltKernel::usage =
-"MaskFiltKernel is an option for Mask, SmoothMask and SmoothSegmentation. How mucht the contours are smoothed." 
+"MaskFiltKernel is an option for Mask, SmoothMask and SmoothSegmentation. How much the contours are smoothed." 
 
 SmoothIterations::usage =
 "SmoothIterations is an option for Mask, SmoothMask and SmoothSegmentation and defines how often the smoothing is repeated."
@@ -162,7 +162,7 @@ MaskData::dim = "Dimensions are not equal, data: `1`, mask `2`."
 
 MaskData::dep = "Data dimensions should be 2D, 3D or 4D. Mask dimensions should be 2D or 3D. Data is `1`D and Mask is `2`D."
 
-JoinSegmentations::skip = "Skipping, new label is not uniuqe or part of replaced: {`1`, `2`}"
+JoinSegmentations::skip = "Skipping, new label is not unique or part of replaced: {`1`, `2`}"
 
 (* ::Section:: *)
 (*Functions*)
@@ -185,10 +185,10 @@ Options[NormalizeData] = {NormalizeMethod -> "Set"}
 
 SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-NormalizeData[data_, opts : OptionsPattern[]] := Block[{ndat, mask},
+NormalizeData[data_, opts : OptionsPattern[]] := Block[{dataM, mask},
 	If[OptionValue[NormalizeMethod]=!="Uniform",
-		ndat = Switch[ArrayDepth[data], 3, data, 4, Mean@Transpose@data];
-		mask = Mask[NormDat[ndat - Min@ndat, 0.]];
+		dataM = Switch[ArrayDepth[data], 3, data, 4, Mean@Transpose@data];
+		mask = Mask[NormDat[dataM - Min@dataM, 0.]];
 		NormalizeData[data, mask, opts]
 		,
 		Quiet@NormDatC[data]
@@ -407,7 +407,7 @@ SelectMaskComponents[mask_, n_] := SmoothMask[mask, MaskComponents -> n,
 
 SyntaxInformation[MaskData] = {"ArgumentsPattern" -> {_, _}};
 
-MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
+MaskData[data_, mask_]:=Block[{dataD, maskD, dimD, dimM, out},
 	(*get the data properties*)
 	dataD = ArrayDepth[data];
 	maskD = ArrayDepth[mask];
@@ -427,7 +427,10 @@ MaskData[data_, mask_]:=Block[{dataD, maskD,dimD,dimM,out},
 	];
 
 	(*make the output*)
-	ToPackedArray@N@Normal@out
+	If[Head[data]===SparseArray,
+		SparseArray[out],
+		ToPackedArray@N@Normal@out
+	]
 ]
 
 
@@ -539,16 +542,16 @@ SelectSegmentations[seg_, labSel_, join_] := SelectReplaceSegmentations[seg, lab
 
 SyntaxInformation[ReplaceSegmentations] = {"ArgumentsPattern" -> {_, _, _}};
 
-ReplaceSegmentations[segm_, labSel_, labNew_] := SelectReplaceSegmentations[segm, labSel, labNew, True]
+ReplaceSegmentations[seg_, labSel_, labNew_] := SelectReplaceSegmentations[seg, labSel, labNew, True]
 
 
 (* ::Subsubsection::Closed:: *)
 (*SelectReplaceSegmentations*)
 
 
-SelectReplaceSegmentations[segm_, labSel_, labNew_, join_] := Block[{split, seg, lab, sel},
-	split = If[Length[segm] == 2, If[VectorQ[segm[[2]]], False, True], True];
-	{seg, lab} = If[split, SplitSegmentations[segm], segm];
+SelectReplaceSegmentations[segI_, labSel_, labNew_, join_] := Block[{split, seg, lab, sel, or},
+	split = If[Length[segI] == 2, If[VectorQ[segI[[2]]], False, True], True];
+	{seg, lab} = If[split, SplitSegmentations[segI], segI];
 
 	sel = MemberQ[labSel, #] & /@ lab;
 

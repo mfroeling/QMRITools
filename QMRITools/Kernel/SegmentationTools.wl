@@ -170,6 +170,11 @@ SegmentDataGUI::usage =
 It prompts the user to enter the paths for the input and output files, and allows them to select the segmentation type." 
 
 
+RunMuscleMap::usage = 
+"RunMuscleMap[file] will run MuscleMap segmentation on the selected nii file. 
+RunMuscleMap[{data, vox}] will run MuscleMap segmentation of the data."
+
+
 (* ::Subsection::Closed:: *)
 (*Options*)
 
@@ -266,6 +271,13 @@ DistanceRange::usage =
 Values can be Automatic, All, or a integer value. If All the distance map is calculated for the whole image. If 0 the distance map is only calculated inside the segmentation."
 
 
+MuscleMapPythonEnvironment::usage =
+"MuscleMapPythonEnvironment is the path to the conda environment of the MuscleMap installation. Fhe folder should contain the python.exe file."
+
+MuscleMapPath::usage = 
+"MuscleMapPath is the path to the MuscleMap code that is cloned from github and installed according to the muscle map readme."
+
+
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
 
@@ -287,11 +299,82 @@ SurfaceDistance::met = "Method `1` not recognized";
 ApplySegmentationNetwork::node = "The node ``` is not part of the network"
 
 
+RunMuscleMap::noEnv = "Could not automatically locate the MuscleMap conda environment in the usual conda locations. Specify \"PythonEnv\" explicitly.";
+
+RunMuscleMap::noScript = "Could not automatically locate mm_segment.py via pip. Specify \"ScriptPath\" explicitly.";
+
+RunMuscleMap::badEnv = "Python environment `1` does not exist.";
+
+RunMuscleMap::badScript = "Script path `1` does not exist.";
+
+RunMuscleMap::noOutFol = "Could not create output folder `1`.";
+
+RunMuscleMap::runFail = "MuscleMap process failed with exit code `1`. See log: `2`.";
+
+RunMuscleMap::noOutput = "MuscleMap ran successfully but expected output file `1` was not found.";
+
 (* ::Section:: *)
 (*Functions*)
 
 
 Begin["`Private`"] 
+
+
+(* ::Subsection::Closed:: *)
+(*Locations and grouping*)
+
+
+$BodyPositionClasses = {"Lower", "Knee", "Upper", "Hip", "Torso", "Shoulder", "Neck", "Head"};
+
+
+$SegmentationLocations = <|
+	"Shoulder" -> <|"Net2D" -> "SegShoulderMuscle2D", "Net3D" -> "SegShoulderMuscle3D",
+		"TrainLabels" -> "ShoulderTrainLabels", "PositionClasses" -> {"Neck", "Head"}, "Offset" -> {-5, 0}|>,
+	"Hip" -> <|"Net2D" -> "SegHipMuscle2D", "Net3D" -> "SegHipMuscle3D",
+		"TrainLabels" -> "HipTrainLabels", "PositionClasses" -> {"Hip"}, "Offset" -> {-5, 5}|>,
+	"UpperLegs" -> <|"Net2D" -> "SegThighMuscle2D", "Net3D" -> "SegThighMuscle3D",
+		"TrainLabels" -> "LegUpperTrainLabels", "PositionClasses" -> {"Knee", "Upper", "Hip"}, "Offset" -> {0, 0}|>,
+	"LowerLegs" -> <|"Net2D" -> "SegLegMuscle2D", "Net3D" -> "SegLegMuscle3D",
+		"TrainLabels" -> "LegLowerTrainLabels", "PositionClasses" -> {"Lower", "Knee"}, "Offset" -> {0, 0}|>,
+	"Arm" -> <|"Net2D" -> Missing["NotImplemented"], "Net3D" -> "SegArmMuscle3D",
+		"TrainLabels" -> "ArmTrainLabels" (*no PositionClasses/Offset*)|>,
+	"Torso" -> <|"Net2D" -> Missing["NotImplemented"], "Net3D" -> Missing["NotImplemented"],
+		"TrainLabels" -> "TorsoTrainLabels", "PositionClasses" -> {"Torso", "Shoulder", "Neck"}, "Offset" -> {-5, 0}|>,
+	"HeadNeck" -> <|"Net2D" -> Missing["NotImplemented"], "Net3D" -> Missing["NotImplemented"],
+		"TrainLabels" -> "HeadNeckTrainLabels", "PositionClasses" -> {"Neck", "Head"}, "Offset" -> {-5, 0}|>
+|>;
+
+
+$SegmentationGroups = <|
+	(*output to full body labels*)
+	"Body" -> <|"Locations" -> {"LowerLegs", "UpperLegs", "Hip", "Shoulder"}, "Split" -> "Auto",
+		"Classify" -> "Position", "OutputLabels" -> "MuscleLabels"|>,
+	"LegsBody" -> <|"Locations" -> {"LowerLegs", "UpperLegs"}, "Split" -> "Find",
+		"Classify" -> "Position", "OutputLabels" -> "MuscleLabels"|>,
+	"HipBody" -> <|"Locations" -> {"UpperLegs", "Hip"}, "Split" -> "Auto",
+		"Classify" -> "Position", "OutputLabels" -> "MuscleLabels"|>,
+	"UpperLegsBody" -> <|"Locations" -> {"UpperLegs"}, "Split" -> "Find",
+		"Classify" -> "Side",  "OutputLabels" -> "MuscleLabels"|>,
+	"LowerLegsBody" -> <|"Locations" -> {"LowerLegs"}, "Split" -> "Find",
+		"Classify" -> "Side",  "OutputLabels" -> "MuscleLabels"|>,
+	(*Output to legacy leg labels*)
+	"Legs" -> <|"Locations" -> {"LowerLegs","UpperLegs"}, "Split" -> "Find",
+		"Classify" -> "Position", "OutputLabels" -> "MuscleLegLabels"|>,
+	"LegsHip" -> <|"Locations" -> {"LowerLegs", "UpperLegs", "Hip"}, "Split" -> "Find",
+		"Classify" -> "Position", "OutputLabels" -> "MuscleLegLabels"|>,
+	"UpperLegs" -> <|"Locations" -> {"UpperLegs"}, "Split" -> "Find",
+		"Classify" -> "Side",  "OutputLabels" -> "MuscleLegLabels"|>,
+	"LowerLegs" -> <|"Locations" -> {"LowerLegs"}, "Split" -> "Find",
+		"Classify" -> "Side",  "OutputLabels" -> "MuscleLegLabels"|>,
+	"Hip" -> <|"Locations" -> {"Hip"}, "Split" -> "Auto",
+		"Classify" -> "Side",  "OutputLabels" -> "MuscleLegLabels"|>,
+	(*Output to legacy shoulder labels*)
+	"Shoulder" -> <|"Locations" -> {"Shoulder"}, "Split" -> "Auto",
+		"Classify" -> "Side",  "OutputLabels" -> "MuscleShoulderLabels"|>,
+	(*Output to arm labels*)
+	"Arm" -> <|"Locations" -> {"Arm"}, "Split" -> "Auto",
+		"Classify" -> "None", "OutputLabels" -> "MuscleArmLabels"|>
+|>;
 
 
 (* ::Subsection::Closed:: *)
@@ -426,18 +509,21 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 
 FindBodyPos[class_] := FindBodyPos[class, False]
 
-FindBodyPos[class_, mon_] := Block[{selection, locations, len, classN, n, xVars, eVars, dVars, 
+FindBodyPos[class_, mon_] := Block[{selection, locations, locationsR, len, classI, classN, n, xVars, eVars, dVars, 
 	pad, x, e, d, cons, sol, classF, offset, what, lab, pos},
 
-	selection = {{"LowerLegs", {1, 2}}, {"UpperLegs", {2, 3, 4}}, {"Hip", {4}}, {"Torso", {5, 6, 7}}, {"Shoulder", {5, 6, 7}}, {"HeadNeck", {7, 8}}};
-	locations = {1 -> "Lower", 2 -> "Knee", 3 -> "Upper", 4 -> "Hip", 5 -> "Torso", 6 -> "Shoulder", 7 -> "Neck", 8 -> "Head"};
+(*pull per-location classifier ranges and offsets from the central location table*)
+	selection = Select[{#, $SegmentationLocations[#, "PositionClasses"]} & /@ Keys[$SegmentationLocations], ListQ[Last[#]] &];
+	offset = $SegmentationLocations[#, "Offset"] &;
+	locations = Thread[Range[Length[$BodyPositionClasses]] -> $BodyPositionClasses];
+	locationsR = Reverse /@ locations;
 
 	len = Length@class;
 	pad = Max[{5, Round[0.05 len]}];
 
 	(*create a smoothed and padded list of label numbers*)
-	classN = class /. (Reverse/@locations);
-	classN = MedianFilter[ArrayPad[ArrayPad[classN, {pad, 0}, Min[classN] - 1], {0, pad}, Max[classN + 1]],	2];
+	classI = Round@MedianFilter[class /. locationsR, 1];
+	classN = Round@MedianFilter[ArrayPad[ArrayPad[classI, {pad, 0}, Min[classI]], {0, pad}, Max[classI]], 1];
 	n = Length[classN];
 
 	(*define the model parameters*)
@@ -451,10 +537,10 @@ FindBodyPos[class_, mon_] := Block[{selection, locations, len, classN, n, xVars,
 		{x[1] == Min[classN], x[n] == Max[classN]},
 		Table[x[i] >= 0, {i, n - 1}],
 		
-		(*define jumps and force them between 0 and 1, and no jump can happen within 10 slices*)
+		(*define jumps and force them between 0 and 1, and no jump can happen within 6 slices*)
 		Table[x[i + 1] - x[i] == d[i], {i, n - 1}],
 		Table[0 <= d[i] <= 1, {i, n - 1}],
-		Table[Total[dVars[[i ;; i + 5]]] <= 1, {i, n - 1 - 5}],
+		Table[Total[dVars[[i ;; i + 3]]] <= 1, {i, n - 1 - 3}],
 
 		(*define the minimization error (L1) at each point*)
 		Table[x[i] - classN[[i]] <= e[i], {i, n}],
@@ -466,9 +552,9 @@ FindBodyPos[class_, mon_] := Block[{selection, locations, len, classN, n, xVars,
 	classF = ArrayPad[xVars /. sol, {-pad, -pad}];
 
 	(*figure out which slices belong to which body pos*)
-	offset = Switch[#, "Hip", {-20, 10}, "Torso", {-20, 0}, "Shoulder" | "HeadNeck", {-10, 0}, _, {0, 0}]&;
 	what = Select[(
 		{lab, pos} = #;
+		pos = pos /. locationsR;
 		pos = Flatten[Position[classF /. Append[Thread[pos -> 1], _Integer -> 0], 1]];
 		pos =If[pos =!= {}, Clip[pos[[{1,-1}]] + offset[lab], {1, len}], {}];
 		{lab, pos}
@@ -518,10 +604,15 @@ PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, l
 			Unitize[PatchesToDataI[si, pi, dim]]
 		], {p, pos}];
 
-		(*only keep the largest connected segmentation remove the overlap and merge*)
+		(*only keep the largest connected segmentation*) 
 		seg = Transpose[SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0] &/@ seg];
-		If[MinMax[seg] =!= {0, 0}, seg = RemoveMaskOverlaps@seg];
-	
+		(*if needed remove the overlap*)
+		If[MinMax[seg] =!= {0, 0}, 
+			over = 1 - Unitize[Ramp[Total[Transpose@seg] - 1]];
+			seg = MaskData[seg, over];
+		];
+
+		(*merge the segmentations*)	
 		MergeSegmentations[seg, labs]
 	]
 ]
@@ -646,6 +737,7 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 	timeAll = First@AbsoluteTiming[
 		{dev, max, mon, sDim, rescale} = OptionValue[{TargetDevice, MaxPatchSize, Monitor, 
 			SegmentationDimension, SegmentationResolution}];
+		sDim = If[MemberQ[{"2D", "3D"}, sDim], sDim, "2D"];
 		monO = mon;
 		mon = If[mon, MonitorFunction, List];
 
@@ -655,7 +747,11 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		dimI = Dimensions@data;
 
 		(*figure out if the data needs rescaling*)
-		If[rescale =!= Automatic, data = RescaleData[data, rescale]];
+		If[rescale =!= Automatic, 
+			data = RescaleData[data, rescale, InterpolationOrder -> 1];
+			mon[Dimensions@data, "Data is rescaled to:"];
+		];
+
 		mask = Mask[NormalizeData[data], 10, MaskSmoothing -> True, MaskClosing -> 5];
 		data = MaskData[data, mask];
 
@@ -668,25 +764,17 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		mon["--------------------"];
 		mon[Column@Thread[{loc, Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"];
 
-		(*get the network name and data type*)
-		net = (#[[1]] /. {
-			(*"HeadNeck" -> "SegHeadNeckMuscle"<>sDim,*)
-			(*"Torso" -> "SegTorsoMuscle"<>sDim,*)
-			"Shoulder" -> "SegShoulderMuscle"<>sDim,
-			"Hip" -> "SegHipMuscle"<>sDim,
-			"UpperLegs" -> "SegThighMuscle"<>sDim,
-			"LowerLegs" -> "SegLegMuscle"<>sDim,
-			"Arm" -> "SegArmMuscle"<>sDim,
-			_ -> $Failed
-		})&;
-		If[MemberQ[net /@ loc, $Failed], Return[$Failed]];
+		(*check if the network is correct*)
+		GetNetwork[loc_, sDim_] := Lookup[$SegmentationLocations[loc], "Net"<>sDim, $Failed];
+		If[MemberQ[GetNetwork[#[[1]], sDim]& /@ loc, $Failed], Return[$Failed]];
 
 		(*Perform the segmentation*)
 		time = First@AbsoluteTiming[
 			seg = MapThread[(
+				net = GetNetwork[#2[[1]], sDim];
 				mon["--------------------"];
-				mon[{#2, net[#2]}, "Performing segmentation for: "];
-				seg = ApplySegmentationNetwork[#1, net[#2], TargetDevice -> dev, 
+				mon[{#2, net}, "Performing segmentation for: "];
+				seg = ApplySegmentationNetwork[#1, net, TargetDevice -> dev, 
 					MaxPatchSize -> max, Monitor -> monO];
 				ReplaceLabels[seg, #2, what]
 			) &, {patch, loc}]];
@@ -721,26 +809,14 @@ ReplaceLabels[seg_, locI_, what_] := Block[{
 
 	{loc, side} = locI;
 
-	If[MemberQ[{"UpperLegs", "LowerLegs", "Shoulder", "Hip", "Arm"}, loc] && Max[seg] > 1,
+	If[KeyExistsQ[$SegmentationLocations, loc] && Max[seg] > 1,
 
+		(*which labels were used for training and output*)
 		labIn = GetSegmentationLabels[seg];
+		fIn = $SegmentationLocations[loc, "TrainLabels"];
+		fOut = $SegmentationGroups[what, "OutputLabels"];
 
-		fOut = Switch[what,
-			"Body", "MuscleLabels",
-			"Legs" | "LegsHip" | "UpperLegs" | "LowerLegs" | "Hip", "MuscleLegLabels",
-			"Shoulder", "MuscleShoulderLabels",
-			"Arm", "MuscleArmLabels"
-		];
-
-		fIn = Switch[loc, 
-			"UpperLegs", "LegUpperTrainLabels",
-			"LowerLegs", "LegLowerTrainLabels",
-			"Hip", "HipTrainLabels",
-			"Shoulder", "ShoulderTrainLabels",
-			"Arm", "ArmTrainLabels"
-		];
-
-		(*some labels have side encoding some don't*)
+		(*some labels have side encoding some don't that is figured out here*)
 		labNam = MuscleLabelToName[labIn, fIn];
 		labOut = MuscleNameToLabel[labNam, fOut];
 		labOutS = MuscleNameToLabel[(# <> "_" <> side & /@ labNam), fOut];
@@ -780,29 +856,18 @@ SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPa
 SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]] := SplitDataForSegmentation[data, "Legs", opt]
 
 SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := Block[{
-		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, monO, mon, dev, over, locs
+		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, monO, mon, overP, dev, over, locs
 	},
 	dim = Dimensions[data];
 	{monO, dev, overP} = OptionValue[{Monitor, TargetDevice, SplitOverlap}];
 	mon = If[monO, MonitorFunction, List];
 
-	Switch[what,
-		"Legs" | "LegsHip"| "Body",
-		(*split the data in upper and lower legs and left and right*)
-
-		(*find which side using NN*)
-		{whatSide, whatPos} = ClassifyData[data, "Body", TargetDevice -> dev, Monitor -> monO];
-		,
-		"Shoulder" | "Torso" | "Hip" | "UpperLegs" | "LowerLegs",
-		(*TODO replace for single network*)
-		whatSide = ClassifyData[data, what<>"Side", TargetDevice -> dev, Monitor -> monO];
-		whatPos = {{what, {1, dim[[1]]}}};
-		,
-		"Arm",
-		whatSide = "Both";
-		whatPos = {{what, {1, dim[[1]]}}};
-		,_,
-		Return[$Failed];
+	(*Based on the body location tag deside what to do with the classification*)
+	{whatSide, whatPos} = Switch[$SegmentationGroups[what, "Classify"],
+		"Position", ClassifyData[data, "Body", TargetDevice -> dev, Monitor -> monO],
+		"Side", {ClassifyData[data, what<>"Side", TargetDevice -> dev, Monitor -> monO], {{what, {1, dim[[1]]}}}},
+		"None", {"Both", {{what, {1, dim[[1]]}}}},
+		_, Return[$Failed];
 	];
 	mon[whatSide, "Data contains sides: "];
 
@@ -810,30 +875,23 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 	dat = Switch[whatSide,
 		(*both sides which need to be split*)
 		"Both",
-		{cut, over} = Switch[what,
-			"Legs" | "LegsHip" | "UpperLegs" | "LowerLegs", 
-			{FindMiddle[data], Round[overP Last@dim]},
-			_, 
-			Round[{0.5, overP} Last@dim]
+		{cut, over} = Switch[$SegmentationGroups[what, "Split"],
+			"Find", {FindMiddle[data], Round[overP Last@dim]},
+			"Auto", Round[{0.5, overP} Last@dim],
+			_, {$Failed, $Failed}
 		];
+		(*cut the data*)
 		{right, left, cut} = CutData[data, {cut, over}];
 		{{right, {"Right", {1, cut + over}}}, {left, {"Left", {cut + 1 - over, dim[[3]]}}}},
 
-		_,
 		(*only one side, no split*)
-		{{data, {whatSide, {1, dim[[3]]}}}}
+		_, {{data, {whatSide, {1, dim[[3]]}}}}
 	];
 
-	(*Select the correct locations*)
-	locs = Switch[what, 
-		"Legs", {"LowerLegs", "UpperLegs"},
-		"LegsHip", {"LowerLegs", "UpperLegs", "Hip"},
-		"Body", {"LowerLegs", "UpperLegs", "Hip", "Shoulder"},
-		_, {what}
-	];
-
-	Print[whatPos];
+	(*Select only the locations in that region and the correct poisition to be segmented*)
+	locs = $SegmentationGroups[what, "Locations"];
 	whatPos = Select[whatPos, MemberQ[locs, #[[1]]]&& #[[2,1]]=!=#[[2,2]]&];
+	Print[whatPos];
 	mon[whatPos[[All, 1]], "Selected positions: "];
 
 	(*loop over the locations and select the correct data*)
@@ -989,14 +1047,15 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 FindPatchDim[net_, dim_] := FindPatchDim[net, dim, 8]
 
 FindPatchDim[net_, dim_, lim_] := Block[{
-		dz, dy, dx, inp, sz, sy, sx, base,
-		max, out, rat, netMem, x, y, z, nX, nY, nZ
+		dz, dy, dx, inp, sz, sy, sx, base, max, out, rat, netMem, x, y, z,
+		budget, zMin, zC, yMin, yC, xC, zMax, yMax, xMax
 	},
-	
-	netMem = QuantityMagnitude[UnitConvert[Quantity[16. (
-		Information[#, "ArraysTotalElementCount"] + Total[Times @@@ Values[(Information[#, "OutputPorts"]["Output"]) & /@ Information[#, "Layers"]]]
-	), "Bits"], "GB"]] &;
 
+	(*network memory and dimensions*)
+	netMem = QuantityMagnitude[UnitConvert[Quantity[16. (
+			Information[#, "ArraysTotalElementCount"] + 
+			Total[Times @@@ Values[(Information[#, "OutputPorts"]["Output"]) & /@ Information[#, "Layers"]]]
+		), "Bits"], "GB"]] &;
 	inp = Rest[NetDimensions[net, "Input"]];
 
 	If[Length[inp]===2,
@@ -1014,26 +1073,36 @@ FindPatchDim[net_, dim_, lim_] := Block[{
 		{dz, dy, dx} = inp;
 		{sz, sy, sx} = inp / Rest[NetDimensions[net, "MinEncodingOut"]];
 		out = {Ceiling[dim[[1]], sz], Ceiling[dim[[2]], sy], Ceiling[dim[[3]], sx]};
-		rat = out[[2]]/out[[3]];
+		rat = N[out[[2]] / out[[3]]];
 		
 		(*figure out net memory and memory steps*)
 		base = netMem[net];
+		budget = 0.9 lim;
+		z = zMax = out[[1]];
+		(*make sure largest of yx dims is used first*)
+		{y, x} = {yMax, xMax} = If[rat > 1, out[[{2, 3}]], 
+			{dy, dx} = {dx, dy}; {sy, sx} = {sx, sy}; out[[{3, 2}]]];
 
-		Clear[x, y, z, nX, nY, nZ];
-		(*Maximize total volume/resolution while keeping close to the in plane ratio*)
-		max = NMaximize[{x y z (1 - (y - rat x)^2/(rat x)^2), 
-			{
-				(*VRAM Constraint 95% of true limit*)
-				base (x y z / (dx dy dz)) <= 0.9 lim,
-				(*Step and Dimensions must integer*)
-				Element[{x, y, z, nZ, nY, nX}, Integers],
-				(*min and max allowed data dimensions*)
-				sz <= z <= out[[1]], sy <= y <= out[[2]], sx <= x <= out[[3]],
-				(*set dims to multiple of steps*)
-				z == dz + nZ sz, y == dy + nY sy, x == dx + nX sx
-			}}, {z, y, x, nZ, nY, nX}];
+		(*first shrink z then y then x until fit in memory budget*)
+		If[base (z y x) / (dz dy dx) > budget,
+			(* stage 1: shrink z until it hits the thin limit *)
+			zMin = Mean[{y, x}] / 4;
+			zC = budget (dz dy dx) / (base y x);
+			z = Clip[dz + sz Floor[(If[zC > zMin, Min[zC, zMax], zMin] - dz) / sz], {dz, zMax}];
+			(* stage 2: if z was not enough shrink y until y / x hits 75% of initial ratio*)
+			If[zC <= zMin,
+				yMin = 0.75 x;
+				yC = budget dz dy dx/(base z x);
+				y = Clip[dy + sy Floor[(If[yC > yMin, Min[yC, yMax], yMin] - dy) / sy], {dy, yMax}];
+				(* stage 3: shrink x as a last resort *)
+				If[yC <= yMin,
+					xC = budget dz dy dx/(base z y);
+					x = Clip[dx + sx Floor[(xC - dx) / sx], {dx, xMax}];
+				];
+			];
+		];
 
-		out = {z, y, x} /. Last[max];
+		out = If[rat > 1, {z, y, x}, {z, x, y}];
 		{Round[netMem[ChangeNetDimensions[net, "Dimensions" -> out]], .1], out}
 	]
 ]
@@ -1227,6 +1296,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*import all train data or train out of memory*)
 	data = If[OptionValue[LoadTrainingData] === True, Import /@ files, files];
+	MonitorFunction[Length@data, "Number of datasets: "];
 	dims = MeanRange[#, 0] & /@ Transpose[If[ArrayDepth[#] === 3, 
 		Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]]];
 	MonitorFunction[dims, "Data Dimensions: "];
@@ -1449,8 +1519,9 @@ SaltAndRiceC = Compile[{{data, _Real, 3}, {noise, _Real, 3}, {coors, _Integer, 2
 
 AugmentImageData[im_?ListQ, {rot_, flip_}] := AugmentImageData[#, {rot, flip}]&/@im
 
-AugmentImageData[im_, {rot_, flip_}] := Block[{rt, fl, tr},
-	rt = If[rot, RotationTransform[RandomReal[{-90, 90}]Degree], TranslationTransform[{0, 0}]];
+AugmentImageData[im_, {rotI_, flip_}] := Block[{rot, ang, rt, fl, tr},
+	{rot, ang} = If[NumberQ[rotI], {True, rotI}, {rotI, 90}];
+	rt = If[rot, RotationTransform[RandomReal[{-ang, ang}]Degree], TranslationTransform[{0, 0}]];
 	fl = If[flip && RandomChoice[{True, False}], ReflectionTransform[{1, 0}], TranslationTransform[{0, 0}]];
 	tr = rt . fl;
 	If[Head[im]===Rule,
@@ -1639,6 +1710,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 			{seg, vox} = ImportNii@sf;
 			{dat, voxD} = ImportNii@First@df;
 			If[voxOut === Automatic, voxOut = vox];
+			(*Print[{vox, voxD, voxOut}];*)
 
 			dimSeg = Dimensions[seg]; 
 			dimDat = If[ArrayDepth[dat] === 4, Dimensions[dat[[All,1]]], Dimensions[dat]];
@@ -1854,6 +1926,28 @@ MakeChannelImage[data_, vox_] := Block[{dat, imDat, rat},
 ]
 
 
+
+(* ::Subsection:: *)
+(*Train data preparation*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*MakeTrainData*)
+
+
+NormDat[dat_] :=  Block[{q = Quantile[Flatten[dat], 0.9], m = Max[dat]}, 
+	If[q <= 0.5 m, If[m === 0., dat, dat/m], If[q === 0., dat, 0.75 dat/q]]];
+
+MakeTrainData[{dat1_?ArrayQ, dat2_?ArrayQ, i_?IntegerQ}] := MakeTrainData[{{dat1, dat2, i}}]
+
+MakeTrainData[datI : {{_?ArrayQ, _?ArrayQ, _?IntegerQ} ..}] := Block[{d1, d2, i, dat, mask},
+	dat =  Join @@ (({d1, d2, i} = #;	NormDat[(1 - #) d1 + # d2] & /@ Range[0, 1, 1/(i - 1)]) & /@ datI);
+	mask = Mask[NormalizeData[Total@dat], 10, MaskSmoothing -> True, 
+		MaskComponents -> 1, MaskClosing -> 50, MaskDilation -> 3];
+	MaskData[Transpose@dat, mask]
+]
+
+
 (* ::Subsection:: *)
 (*Distance measures*)
 
@@ -2046,6 +2140,8 @@ DistFun[fun_, pts_] := Sqrt[Total[(Flatten[fun[#, 1] & /@ pts, 1] - pts)^2, {2}]
 (*ShowTrainLog*)
 
 
+SyntaxInformation[ShowTrainLog] = {"ArgumentsPattern" -> {_, _.}};
+
 ShowTrainLog[fol_] := ShowTrainLog[fol, 5]
 
 ShowTrainLog[fol_, max_] := DynamicModule[{
@@ -2212,6 +2308,118 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 
 	segmentWindow = CreateWindow[diag, WindowTitle -> "Muscle segmentation", WindowSize -> All];
 ];];
+
+
+(* ::Subsection::Closed:: *)
+(*RunMuscleMap*)
+
+
+Options[RunMuscleMap] = {
+	MuscleMapPythonEnvironment -> Automatic,
+	MuscleMapPath -> Automatic
+};
+
+SyntaxInformation[RunMuscleMap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+RunMuscleMap[input_, OptionsPattern[]] := Block[{
+		pyEnvironment, scriptMuscleMap, inFile, outFolder, logFile,
+		args, result, out, outMM, suffix, version, gpu, json
+	},
+
+	(*resolve python environment*)
+	pyEnvironment = OptionValue["PythonEnv"];
+	If[pyEnvironment === Automatic, pyEnvironment = FindMuscleMapEnv[]];
+	If[pyEnvironment === $Failed, Message[RunMuscleMap::noEnv];
+	Return[$Failed]];
+	If[! FileExistsQ[pyEnvironment], 
+	Message[RunMuscleMap::badEnv, pyEnvironment];
+	Return[$Failed]];
+
+	(*resolve mm_segment.py script location*)
+	scriptMuscleMap = OptionValue["ScriptPath"];
+	If[scriptMuscleMap === Automatic, 
+	scriptMuscleMap = FindMuscleMap[pyEnvironment]];
+	If[scriptMuscleMap === $Failed, Message[RunMuscleMap::noScript];
+	Return[$Failed]];
+	If[! FileExistsQ[scriptMuscleMap], 
+	Message[RunMuscleMap::badScript, scriptMuscleMap];
+	Return[$Failed]];
+
+	(*fixed settings for this first version*)
+	suffix = "MMap";
+	version = "1.4";
+	gpu = "Y";
+
+	(*output folder+log file setup*)
+	outFolder = FileNameJoin[{$TemporaryDirectory, "QMRIToolsMM"}];
+	If[! DirectoryQ[outFolder], CreateDirectory[outFolder]];
+	If[! DirectoryQ[outFolder], Message[RunMuscleMap::noOutFol, outFolder]; 
+	Return[$Failed]];
+	logFile = FileNameJoin[{outFolder, "MuscleMap.log"}];
+
+	Print[outFolder];
+
+	(*prepare input file:
+	either use path directly or export from Mathematica data*)
+	If[StringQ[input],
+		inFile = input,
+		inFile = FileNameJoin[{outFolder, "MuscleMap.nii.gz"}];
+		ExportNii[input[[1]], input[[2]], inFile];
+	];
+
+	(*expected output paths based on MuscleMap's naming convention*)
+	outMM = FileNameJoin[{outFolder, StringReplace[FileNameTake[inFile], ".nii.gz" -> "_" <> suffix <> ".nii.gz"]}];
+	(*build and run the command*)
+	args = {pyEnvironment, scriptMuscleMap, "-i", inFile, "-o", outFolder, 
+		"-g", gpu, "-v", version, "-x", suffix};
+	result = RunProcess[args, All];
+	
+	(*always write the log,regardless of success/failure*)
+	Export[logFile,
+	StringJoin["=== ", DateString[], " ===\n",
+		"Command: ", StringRiffle[args, " "], "\n\n",
+		"--- STDOUT ---\n", result["StandardOutput"], "\n\n",
+		"--- STDERR ---\n", result["StandardError"], "\n"],
+		"Text", "OverwriteTarget" -> True];
+
+	(*check exit code before trusting any output files exist*)
+	If[result["ExitCode"] != 0, 
+	Message[RunMuscleMap::runFail, result["ExitCode"], logFile]; 
+	Return[$Failed]];
+
+	(*sanity check the expected output actually exists before importing*)
+	If[! FileExistsQ[outMM], Message[RunMuscleMap::noOutput, outMM]; 
+	Return[$Failed]];
+
+	(*import the nii and json give the output*)
+	out = First@ImportNii[outMM];
+	json = Import[StringReplace[outMM, ".nii.gz" -> ".json"], "RawJSON"];
+	{out, json}
+]
+
+(*locate mm_segment.py via pip's editable-install metadata*)
+FindMuscleMap[pyEnvironment_] := Block[{pipShow, editableLine, repoRoot},
+	pipShow = RunProcess[{pyEnvironment, "-m", "pip", "show", "scripts"}, "StandardOutput"];
+	editableLine = SelectFirst[StringSplit[pipShow, "\n"], StringStartsQ[#, "Editable project location:"] &];
+
+	If[MissingQ[editableLine] || editableLine === Missing["NotFound"], Return[$Failed]];
+
+	repoRoot = StringTrim[StringDrop[editableLine, StringLength["Editable project location:"]]];
+	FileNameJoin[{repoRoot, "scripts", "mm_segment.py"}]
+]
+
+(*locate the MuscleMap conda environment in common install locations*)
+FindMuscleMapEnv[] := Block[{possibleCondaRoots, envDir},
+	possibleCondaRoots = {
+		FileNameJoin[{$HomeDirectory, ".conda", "envs"}],
+		FileNameJoin[{$HomeDirectory, "miniconda3", "envs"}],
+		FileNameJoin[{$HomeDirectory, "anaconda3", "envs"}]
+	};
+	envDir = SelectFirst[FileNameJoin[{#, "MuscleMap"}] & /@ possibleCondaRoots, DirectoryQ];
+
+	If[MissingQ[envDir], Return[$Failed]];
+	FileNameJoin[{envDir, "python.exe"}]
+]
 
 
 (* ::Section:: *)

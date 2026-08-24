@@ -52,13 +52,13 @@ PacletObject[<|
 		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"ArmTrainLabels", "N7_Arm_Up.txt"}}},
 
 		(*Segmentation output labels*)
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLabels", "Muscles_body.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLegLabels", "Muscles_leg.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleShoulderLabels", "Muscles_shoulder.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleArmLabels", "Muscles_arm_upper.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLabels", "S1_Muscles_body_side.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleLegLabels", "S2_Muscles_leg_side.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleShoulderLabels", "S3_Muscles_shoulder_side.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MuscleArmLabels", "S4_Muscles_arm_upper_side.txt"}}},
 
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesAllLabels", "Muscles_body_all.txt"}}},
-		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegAllLabels", "Muscles_leg_all.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesAllLabels", "T1_Muscles_body.txt"}}},
+		{"Asset", "Root" -> "NeuralNetworks", "Assets" -> {{"MusclesLegAllLabels", "T2_Muscles_leg.txt"}}},
 
 		(* ---- OS dependant assets ---- *)
 

@@ -8,10 +8,10 @@ Next steps will be muscle segentation and per muscle analysis of quantitative va
 
 ## Upcomming code projects
 
-### Muscle faciculation analsyis
+### Muscle fasciculation analsyis
 
-- Optimize faciculation detection
-- Optimize faciculation analysis
+- Optimize fasciculation detection
+- Optimize fasciculation analysis
 
 ### Create common tensor space
 
