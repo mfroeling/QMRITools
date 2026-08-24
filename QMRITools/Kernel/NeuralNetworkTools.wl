@@ -1278,20 +1278,23 @@ MakeClassifyNetwork[classes_, OptionsPattern[]] := Block[{imSize, enc, dec, conv
 
 	(*general convolution layer*)
 	conv = NetChain[{
-		ConvolutionLayer[16, 7, "Stride" -> 1, PaddingSize -> 3], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2, 2],
-		ConvolutionLayer[32, 5, "Stride" -> 1, PaddingSize -> 2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2, 2],
-		ConvolutionLayer[32, 5, "Stride" -> 1, PaddingSize -> 2], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2, 2],
-		ConvolutionLayer[64, 3, "Stride" -> 1, PaddingSize -> 1], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[2, 2],
-		ConvolutionLayer[64, 3, "Stride" -> 1, PaddingSize -> 1], BatchNormalizationLayer[], ElementwiseLayer["GELU"], PoolingLayer[4, 4], 
-		FlattenLayer[]
+		ConvolutionLayer[16, 7, "Stride" -> 2, PaddingSize -> 3], BatchNormalizationLayer[], 
+		ElementwiseLayer["GELU"], DropoutLayer[0.1],
+		ConvolutionLayer[32, 5, "Stride" -> 2, PaddingSize -> 2], BatchNormalizationLayer[], 
+		ElementwiseLayer["GELU"], DropoutLayer[0.1],
+		ConvolutionLayer[32, 3, "Stride" -> 2, PaddingSize -> 1], BatchNormalizationLayer[], 
+		ElementwiseLayer["GELU"], DropoutLayer[0.1],
+		ConvolutionLayer[64, 3, "Stride" -> 2, PaddingSize -> 1], BatchNormalizationLayer[], 
+		ElementwiseLayer["GELU"], DropoutLayer[0.1], 
+		ConvolutionLayer[64, 3, "Stride" -> 2, PaddingSize -> 1], BatchNormalizationLayer[], 
+		ElementwiseLayer["GELU"], DropoutLayer[0.1],
+		AggregationLayer[Mean, {2, 3}], FlattenLayer[]
 	}];
 
 	(*class specific head function*)
 	head = NetChain[{
-		LinearLayer[256], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
-		LinearLayer[128], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
-		LinearLayer[64], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
-		LinearLayer[32], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
+		LinearLayer[16], BatchNormalizationLayer[], ElementwiseLayer["GELU"],
+		DropoutLayer[0.2],
 		LinearLayer[Length[#]], SoftmaxLayer[]}
 	] &;
 
@@ -1300,6 +1303,7 @@ MakeClassifyNetwork[classes_, OptionsPattern[]] := Block[{imSize, enc, dec, conv
 		{"Output" -> head[classes]},
 		Thread[dec[[All, 1]] -> (head[#] & /@ Values[classes])]
 	];
+
 	nodes = Association[Join[{"Conv" -> conv}, heads]];
 	connection = "Conv" -> # -> NetPort[#] & /@ heads[[All, 1]];
 	
