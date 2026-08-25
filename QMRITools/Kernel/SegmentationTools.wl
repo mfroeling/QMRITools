@@ -328,20 +328,20 @@ $BodyPositionClasses = {"Lower", "Knee", "Upper", "Hip", "Torso", "Shoulder", "N
 
 
 $SegmentationLocations = <|
-	"Shoulder" -> <|"Net2D" -> "SegShoulderMuscle2D", "Net3D" -> "SegShoulderMuscle3D",
-		"TrainLabels" -> "ShoulderTrainLabels", "PositionClasses" -> {"Neck", "Head"}, "Offset" -> {-5, 0}|>,
-	"Hip" -> <|"Net2D" -> "SegHipMuscle2D", "Net3D" -> "SegHipMuscle3D",
-		"TrainLabels" -> "HipTrainLabels", "PositionClasses" -> {"Hip"}, "Offset" -> {-5, 5}|>,
-	"UpperLegs" -> <|"Net2D" -> "SegThighMuscle2D", "Net3D" -> "SegThighMuscle3D",
-		"TrainLabels" -> "LegUpperTrainLabels", "PositionClasses" -> {"Knee", "Upper", "Hip"}, "Offset" -> {0, 0}|>,
 	"LowerLegs" -> <|"Net2D" -> "SegLegMuscle2D", "Net3D" -> "SegLegMuscle3D",
 		"TrainLabels" -> "LegLowerTrainLabels", "PositionClasses" -> {"Lower", "Knee"}, "Offset" -> {0, 0}|>,
-	"Arm" -> <|"Net2D" -> Missing["NotImplemented"], "Net3D" -> "SegArmMuscle3D",
-		"TrainLabels" -> "ArmTrainLabels" (*no PositionClasses/Offset*)|>,
+	"UpperLegs" -> <|"Net2D" -> "SegThighMuscle2D", "Net3D" -> "SegThighMuscle3D",
+		"TrainLabels" -> "LegUpperTrainLabels", "PositionClasses" -> {"Knee", "Upper", "Hip"}, "Offset" -> {0, 0}|>,
+	"Hip" -> <|"Net2D" -> "SegHipMuscle2D", "Net3D" -> "SegHipMuscle3D",
+		"TrainLabels" -> "HipTrainLabels", "PositionClasses" -> {"Hip"}, "Offset" -> {-5, 5}|>,
 	"Torso" -> <|"Net2D" -> Missing["NotImplemented"], "Net3D" -> Missing["NotImplemented"],
 		"TrainLabels" -> "TorsoTrainLabels", "PositionClasses" -> {"Torso", "Shoulder", "Neck"}, "Offset" -> {-5, 0}|>,
+	"Shoulder" -> <|"Net2D" -> "SegShoulderMuscle2D", "Net3D" -> "SegShoulderMuscle3D",
+		"TrainLabels" -> "ShoulderTrainLabels", "PositionClasses" ->{"Torso", "Shoulder", "Neck"}, "Offset" -> {-5, 0}|>,
 	"HeadNeck" -> <|"Net2D" -> Missing["NotImplemented"], "Net3D" -> Missing["NotImplemented"],
-		"TrainLabels" -> "HeadNeckTrainLabels", "PositionClasses" -> {"Neck", "Head"}, "Offset" -> {-5, 0}|>
+		"TrainLabels" -> "HeadNeckTrainLabels", "PositionClasses" -> {"Neck", "Head"}, "Offset" -> {-5, 0}|>,
+	"Arm" -> <|"Net2D" -> Missing["NotImplemented"], "Net3D" -> "SegArmMuscle3D",
+		"TrainLabels" -> "ArmTrainLabels" (*no PositionClasses/Offset*)|>
 |>;
 
 
@@ -507,14 +507,14 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 (*FindLegPos*)
 
 
-FindBodyPos[class_] := FindBodyPos[class, False]
+FindBodyPos[class_] := FindBodyPos[class, False, False]
 
-FindBodyPos[class_, mon_] := Block[{selection, locations, locationsR, len, classI, classN, n, xVars, eVars, dVars, 
+FindBodyPos[class_, mon_]:=FindBodyPos[class, mon, False]
+
+FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, len, classI, classN, n, xVars, eVars, dVars, 
 	pad, x, e, d, cons, sol, classF, offset, what, lab, pos},
 
-(*pull per-location classifier ranges and offsets from the central location table*)
-	selection = Select[{#, $SegmentationLocations[#, "PositionClasses"]} & /@ Keys[$SegmentationLocations], ListQ[Last[#]] &];
-	offset = $SegmentationLocations[#, "Offset"] &;
+	(*pull per-location classifier ranges and offsets from the central location table*)
 	locations = Thread[Range[Length[$BodyPositionClasses]] -> $BodyPositionClasses];
 	locationsR = Reverse /@ locations;
 
@@ -551,16 +551,23 @@ FindBodyPos[class_, mon_] := Block[{selection, locations, locationsR, len, class
 	sol = LinearOptimization[Total[eVars], cons, (Join[xVars, eVars, dVars] \[Element] Integers)];
 	classF = ArrayPad[xVars /. sol, {-pad, -pad}];
 
+	If[debug, 
+		plot = Show[ListPlot[classI, PlotStyle->PointSize[Large]],ListLinePlot[classF, PlotStyle->Red]];
+		MonitorFunction[plot, "Fit"];
+	];
+
 	(*figure out which slices belong to which body pos*)
+	selection = Select[{#, $SegmentationLocations[#, "PositionClasses"]}& /@ Keys[$SegmentationLocations], ListQ[Last[#]] &];
+	offset = $SegmentationLocations[#, "Offset"]&;
 	what = Select[(
 		{lab, pos} = #;
 		pos = pos /. locationsR;
 		pos = Flatten[Position[classF /. Append[Thread[pos -> 1], _Integer -> 0], 1]];
-		pos =If[pos =!= {}, Clip[pos[[{1,-1}]] + offset[lab], {1, len}], {}];
+		pos =If[pos =!= {}, Clip[pos[[{1, -1}]] + offset[lab], {1, len}], {}];
 		{lab, pos}
 	) & /@ selection, #[[2]] =!= {} &];
 
-	If[mon, MonitorFunction[Row[{ DeleteDuplicates[classF] /. locations, Column@what}, " | "], "Found locations:"]];
+	If[mon, MonitorFunction[Row[{DeleteDuplicates[classF] /. locations, Column@what}, " | "], "Found locations:"]];
 
 	what
 ]
@@ -747,18 +754,22 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		dimI = Dimensions@data;
 
 		(*figure out if the data needs rescaling*)
-		If[rescale =!= Automatic, 
+		If[rescale =!= Automatic, If[rescale[[1]]=!=rescale[[2]],
 			data = RescaleData[data, rescale, InterpolationOrder -> 1];
 			mon[Dimensions@data, "Data is rescaled to:"];
-		];
+		]];
 
 		mask = Mask[NormalizeData[data], 10, MaskSmoothing -> True, MaskClosing -> 5];
 		data = MaskData[data, mask];
 
 		(*split the data in anatomical based patches for segmentation*)
 		time = First@AbsoluteTiming[
-			{{patch, pts, dim}, loc} = SplitDataForSegmentation[data, what, Monitor -> monO, TargetDevice -> dev]
+			{{patch, pts, dim}, loc} = SplitDataForSegmentation[data, what, Monitor -> monO, TargetDevice -> dev];
 		];
+
+		
+
+
 		mon["--------------------"];
 		mon[Round[time, .1], "Total time for analysis [s]: "];
 		mon["--------------------"];
@@ -856,13 +867,14 @@ SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPa
 SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]] := SplitDataForSegmentation[data, "Legs", opt]
 
 SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := Block[{
-		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, time, monO, mon, overP, dev, over, locs
+		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, 
+		time, monO, mon, overP, dev, over, locs
 	},
 	dim = Dimensions[data];
 	{monO, dev, overP} = OptionValue[{Monitor, TargetDevice, SplitOverlap}];
 	mon = If[monO, MonitorFunction, List];
 
-	(*Based on the body location tag deside what to do with the classification*)
+	(*Based on the body location tag decide what to do with the classification*)
 	{whatSide, whatPos} = Switch[$SegmentationGroups[what, "Classify"],
 		"Position", ClassifyData[data, "Body", TargetDevice -> dev, Monitor -> monO],
 		"Side", {ClassifyData[data, what<>"Side", TargetDevice -> dev, Monitor -> monO], {{what, {1, dim[[1]]}}}},
@@ -888,16 +900,16 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		_, {{data, {whatSide, {1, dim[[3]]}}}}
 	];
 
-	(*Select only the locations in that region and the correct poisition to be segmented*)
+	(*Select only the locations in that region and the correct position to be segmented*)
 	locs = $SegmentationGroups[what, "Locations"];
 	whatPos = Select[whatPos, MemberQ[locs, #[[1]]]&& #[[2,1]]=!=#[[2,2]]&];
-	Print[whatPos];
 	mon[whatPos[[All, 1]], "Selected positions: "];
 
 	(*loop over the locations and select the correct data*)
-	dat = Flatten[({dat, side} = #;
+	dat = Flatten[Transpose[(
+		{dat, side} = #;
 		{dat[[#[[2,1]];;#[[2,2]]]], #, side} & /@ whatPos
-	) & /@ dat, 1];
+	) & /@ dat], 1];
 
 	(*output the selected data with the correct label and coordinates*)
 	{dat, pts, loc} = Transpose[CropPart /@ dat];
@@ -909,9 +921,9 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 (*CropPart*)
 
 
-CropPart[{dat_, {up_, {upStart_, upEnd_}}, {side_, {sideStart_, sideEnd_}}}] := Block[{data, crp},
+CropPart[{dat_, {loc_, {locStart_, locEnd_}}, {side_, {sideStart_, sideEnd_}}}] := Block[{data, crp},
 	{data, crp} = AutoCropData[dat, CropPadding->0];
-	{data, Partition[crp, 2] + {upStart-1, 0, sideStart-1}, {up, side}}
+	{data, Partition[crp, 2] + {locStart-1, 0, sideStart-1}, {loc, side}}
 ]
 
 
@@ -1679,8 +1691,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 	},
 
 	{labT, datT, outT, inLab, outLab, test, clean, voxOut, segSl} = OptionValue[{LabelTag, DataTag, OutputTag, 
-		InputLabels, OutputLabels, TestRun, CleanUpSegmentations, TrainVoxelSize,
-		SegmentationsPerSlice}];
+		InputLabels, OutputLabels, TestRun, CleanUpSegmentations, TrainVoxelSize, SegmentationsPerSlice}];
 	{inLab, outLab} = {inLab, outLab} /. Automatic -> {0};
 	segSl = segSl /. All -> 0;
 
@@ -2215,7 +2226,7 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 				, ImageSize -> {60, Automatic}, Method->"Queued"]}
 		],
 		Button["Reload", 
-			{keyList, plotDat, len} = LoadLog[folder, max]; xmax = xmax;
+			{keyList, plotDat, len} = LoadLog[folder, max];
 			plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
 		, ImageSize -> {60, Automatic}, Method->"Queued"],
 
@@ -2316,18 +2327,20 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 
 Options[RunMuscleMap] = {
 	MuscleMapPythonEnvironment -> Automatic,
-	MuscleMapPath -> Automatic
+	MuscleMapPath -> Automatic,
+	MuscleMapLabels -> False
 };
 
 SyntaxInformation[RunMuscleMap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 RunMuscleMap[input_, OptionsPattern[]] := Block[{
 		pyEnvironment, scriptMuscleMap, inFile, outFolder, logFile,
-		args, result, out, outMM, suffix, version, gpu, json
+		args, result, out, outMM, suffix, version, gpu, json,
+		namMM, numMM, nam, num, lab
 	},
 
 	(*resolve python environment*)
-	pyEnvironment = OptionValue["PythonEnv"];
+	pyEnvironment = OptionValue[MuscleMapPythonEnvironment];
 	If[pyEnvironment === Automatic, pyEnvironment = FindMuscleMapEnv[]];
 	If[pyEnvironment === $Failed, Message[RunMuscleMap::noEnv];
 	Return[$Failed]];
@@ -2336,7 +2349,7 @@ RunMuscleMap[input_, OptionsPattern[]] := Block[{
 	Return[$Failed]];
 
 	(*resolve mm_segment.py script location*)
-	scriptMuscleMap = OptionValue["ScriptPath"];
+	scriptMuscleMap = OptionValue[MuscleMapPath];
 	If[scriptMuscleMap === Automatic, 
 	scriptMuscleMap = FindMuscleMap[pyEnvironment]];
 	If[scriptMuscleMap === $Failed, Message[RunMuscleMap::noScript];
@@ -2356,8 +2369,6 @@ RunMuscleMap[input_, OptionsPattern[]] := Block[{
 	If[! DirectoryQ[outFolder], Message[RunMuscleMap::noOutFol, outFolder]; 
 	Return[$Failed]];
 	logFile = FileNameJoin[{outFolder, "MuscleMap.log"}];
-
-	Print[outFolder];
 
 	(*prepare input file:
 	either use path directly or export from Mathematica data*)
@@ -2393,6 +2404,13 @@ RunMuscleMap[input_, OptionsPattern[]] := Block[{
 
 	(*import the nii and json give the output*)
 	out = First@ImportNii[outMM];
+
+	If[!OptionValue[MuscleMapLabels],
+		{namMM, numMM} = ImportMMLabels[ Last@FileNames["*contrast_agnostic_wholebody_model.json", DirectoryName[scriptMuscleMap], Infinity]];
+		{nam, num} = ImportITKLabels["MuscleLabels"];
+		lab = GetSegmentationLabels[out];
+		out = ReplaceSegmentations[out, lab, (lab /. Thread[numMM -> namMM]) /. Thread[nam -> num]];
+	];
 	json = Import[StringReplace[outMM, ".nii.gz" -> ".json"], "RawJSON"];
 	{out, json}
 ]
@@ -2419,6 +2437,31 @@ FindMuscleMapEnv[] := Block[{possibleCondaRoots, envDir},
 
 	If[MissingQ[envDir], Return[$Failed]];
 	FileNameJoin[{envDir, "python.exe"}]
+]
+
+
+ImportMMLabels[file_] := Block[{alt, labMM, anatMM, sideMM, numMM, nameMM},
+	alt = {
+		"gemelli and quadratus femoris" -> "quadratus femoris",
+		"biceps femoris long head" -> "biceps femoris long",
+		"biceps femoris short head" -> "biceps femoris short",
+		"thoracolumbar multifidus" -> "transversospinalis",
+		"extensor digitorum / hallucis longus" -> 
+		"extensor digitorum longus",
+		"peroneus longus" -> "fibularis longus",
+		"semispinalis cervicis and multifidus" -> "semispinalis cervicis"
+		};
+	
+	labMM = Tabular[Import[file, "RawJSON"]["labels"]];
+	anatMM = Normal[labMM[[All, "anatomy"]]] /. alt;
+	sideMM = Normal[labMM[[All, "side"]]];
+	numMM = Normal[labMM[[All, "value"]]];
+	nameMM = (StringReplace[
+		StringReplace[StringRiffle[#, " "], " " -> "_"], 
+		"_No_side" -> ""] & /@ 
+		Transpose[{Capitalize[anatMM, "AllWords"], Capitalize[sideMM]}]);
+	
+	{nameMM, numMM}
 ]
 
 

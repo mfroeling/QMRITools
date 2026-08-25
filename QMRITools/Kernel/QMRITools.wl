@@ -157,7 +157,7 @@ Unprotect/@{
 	"QMRITools`ElastixTools`$lastElastixTemp",
 	"QMRITools`ElastixTools`$debugElastix", 
 
-	"QMRITools`SegmentationTools`$debugUnet", 
+	"QMRITools`NeuralNetworkTools`$debugUnet", 
 
 	"QMRITools`MuscleBidsTools`$debugBids",
 

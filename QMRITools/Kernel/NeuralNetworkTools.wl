@@ -196,7 +196,7 @@ Begin["`Private`"]
 debugUnet[x___] := If[$debugUnet, Print[x]];
 
 
-QMRITools`SegmentationTools`$debugUnet = False;
+$debugUnet = False;
 
 
 (* ::Subsection:: *)
@@ -368,7 +368,6 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 					NetPort[nam["enc_", i], "Skip"] -> NetPort[nam["dec_", i], "Skip"],
 					(*connect decoding layers*)
 					NetPort[If[i === depth - 1, nam["enc_", i + 1], nam["dec_", i + 1]], "Up"] -> NetPort[nam["dec_", i], "Scale"]
-					
 				}, {i, 1, depth - 1}],
 				(*attach the start and map layers*)
 				{"start" -> "enc_1", "dec_1" -> "map"}
