@@ -627,8 +627,8 @@ FiberTractography[tensor_, voxI_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, o
 
 FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
 		minLength, maxLength, maxAng, maxSeed, flip, per, int, stopT, step, tractF, vecF, trFunc, ran,
-		tens, tensMask, inpTr, stop, coors, vecInt, stopInt, ones, dim, crp, t2,
-		seedN, seedI, seeds, t1, tracts, iii, drop, maxStep, len, sel, mon, tp
+		tens, tensMask, inpTr, stop, coors, vecInt, stopInt, ones, dim, crp, t2, vecIntI,
+		seedN, seedI, seeds, t1, tracts, iii, drop, maxStep, len, sel, mon, tp, met, ind
 	},
 
 	(*get the options*)
@@ -648,7 +648,6 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	];
 	
 	(*prepare tensor and stop data, remove background for performance and make int functions*)
-	dim = Rest@Dimensions@tensor;
 	{stop, crp} = AutoCropData[Unitize[First@tensor] Mask[inp], CropPadding -> 0];
 	stop = ToPackedArray@N@Normal@stop;
 
@@ -679,7 +678,6 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	(*check if parallel or normal computing is needed*)
 	If[!OptionValue[Parallelization],
 		(*normal tractography*)
-
 		vecInt = MakeInt[tens, vox, int];
 		stopInt = MakeInt[stop, vox, int];
 		trFunc = TractFunc[#, step, {maxAng, maxStep, stopT}, {vecInt, stopInt, tractF, vecF}]&;
@@ -737,7 +735,10 @@ MakeInt[datI_, vox_, int_?IntegerQ] := Block[{dim, def, range, p, dat},
 			range, {5, If[ArrayDepth[dat] === 3, 6, 2], 0, 
 			dim, {int, int, int} + 1, 0, 0, 0, 0, ex &, {}, {}, False}, 
 			Range[range[[#, 1]], range[[#, 2]], vox[[#]]] & /@ {1, 2, 3}, 
-			If[ArrayDepth[dat] === 3 && $VersionNumber >= 13.3, {PackedArrayForm, Range[0, Length[flatDat]], flatDat}, ToPackedArray@N@dat],
+			If[ArrayDepth[dat] === 3 && $VersionNumber >= 13.3, 
+				{PackedArrayForm, Range[0, Length[flatDat]], flatDat}, 
+				ToPackedArray@N@dat
+			],
 			{Automatic, Automatic, Automatic}
 		]
 	]
@@ -767,7 +768,8 @@ TractFuncI[{loci_, stepI_, h_}, {maxAng_, maxStep_, stop_}, {vecInt_, stopInt_, 
 	step1 = tractF[loc1, step0, h, vecInt, vecF];
 	Flatten[Last@Reap[Do[
 		(*check for stop*)
-		If[stopInt @@ loc1 < stop || VecAng[step0, step1] > maxAng || Norm[step1] < 0.8 h, Break[], Sow[loc1]];
+		If[stopInt @@ loc1 < stop || VecAng[step0, step1] > maxAng || Norm[step1] < 0.8 h, 
+			Break[], Sow[loc1]];
 		(*Update location*)
 		loc1 = loc1 + step1;
 		step0 = step1;
@@ -781,7 +783,7 @@ TractFuncI[{loci_, stepI_, h_}, {maxAng_, maxStep_, stop_}, {vecInt_, stopInt_, 
 
 
 VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 = Norm[v1], n2 = Norm[v2]},
-	If[n1 === 0. || n2 === 0.,90., 180./Pi ArcCos[Min[1., Max[-1., Dot[v1, v2]/(n1 n2)]]]]
+	If[n1 === 0. || n2 === 0.,90., 180./Pi ArcCos[Min[1., Max[-1., Dot[v1, v2] / (n1 n2)]]]]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -858,7 +860,9 @@ RK4[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3, k4},
 (*other possible methods could have been power iterations or newtons methods, both are iterative and are not faster than the analytical*)
 EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, 
-		i1, i2, i3, i, v, s, v2, vv2, l1, a, b, c, norm, vec
+		i1, i2, i3, i, v, s, v2, vv2, l1, m11, 
+		m22, m33, c12, c13, c23, n12, n13, n23, 
+		norm, vec
 	},
 
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
@@ -866,12 +870,6 @@ EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 	{dxx, dyy, dzz, dxy, dxz, dyz} = 1000. tens;
 	(*only negative eigenvalues or zero tensor*)
 	If[Total[{dxx, dyy, dzz}] < 10.^-16, Return[{0., 0., 0.}]];
-	
-	(*one or more vectors aline with primary axis use normal method*)
-	If[ Abs[dxy dxz dyz] < 10.^-16,
-		vec = First@Eigenvectors[{{dxx, dxy, dxz}, {dxy, dyy, dyz}, {dxz, dyz, dzz}}, 1];
-		Return[Sign[Sign[Dot[vDir, vec]] + 0.1] vec]
-	];
 	
 	(*tensor invariants*)
 	{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
@@ -887,14 +885,20 @@ EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 	s = i^3 - (i1 i2)/6 + i3/2;
 	l1 = i + 2 v2 Cos[ArcCos[Min[1., Max[-1., s/(v v2)]]]/3];
 
-	(*Calculate the corresponding eigenvector components*)
-	{a, b, c} = {dxz dxy, dxy dyz, dxz dyz} - {dyz, dxz, dxy} ({dxx, dyy, dzz} - l1);
-	vec = {b c, a c, a b};
+	(*rows of (tensor-l1 I):{m11,dxy,dxz},{dxy,m22,dyz},{dxz,dyz,m33}*)
+	{m11, m22, m33} = {dxx, dyy, dzz} - l1;
+	(*cross products of each row pair;pick the largest-\
+	norm one for robustness*)
+	c12 = {dxy dyz - dxz m22, dxz dxy - m11 dyz, m11 m22 - dxy2};
+	c13 = {dxy m33 - dxz dyz, dxz2 - m11 m33, m11 dyz - dxy dxz};
+	c23 = {m22 m33 - dyz2, dyz dxz - dxy m33, dxy dyz - m22 dxz};
+	n12 = c12 . c12; n13 = c13 . c13; n23 = c23 . c23;
+	vec = Which[n12 >= n13 && n12 >= n23, c12, n13 >= n23, c13, True, c23];
 
 	(*normalize the vector and align with the incoming direction*)
 	norm = Norm[vec];
 	If[norm < 2 10.^-16, Return[{0., 0., 0.}]];
-	vec = vec/norm;
+	vec = vec / norm;
 	Sign[Sign[Dot[vDir, vec]] + 0.1] vec
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
