@@ -34,15 +34,17 @@ QMRITools`$SubPackages::usage = "List of the sub packages in the toolbox.";
 QMRITools`$Contexts::usage = "The package contexts needed for loading.";
 QMRITools`$ContextsFunctions::usage = "The package contexts with the list of functions for each context.";
 QMRITools`$Verbose::usage = "When set True, verbose loading is used.";
+QMRITools`$Legacy::usage = "When set True, legacy functions are also loaded.";
 QMRITools`$InstalledVersion::usage = "The version number of the installed package.";
 
 
 (* ::Section:: *)
 (*Package Variables*)
 
-
-(*set the toolbox name*)
-
+(*See what and how to load*)
+QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
+QMRITools`$Legacy = If[QMRITools`$Legacy===True, True, False];
+QMRITools`$LoadedColor = If[QMRITools`$LoadedColor===True, True, False];
 
 (*sub packages names*)
 QMRITools`$SubPackages = {
@@ -59,16 +61,12 @@ QMRITools`$SubPackages = {
 	"SimulationTools`", "CoilTools`", "TaggingTools`", "SegmentationTools`" ,
 	"ShapeTools`", "AmaresTools`",
 	(*legacy functions*)
-	"Legacy`"
+	If[QMRITools`$Verbose, "Legacy`", Nothing]
 };
 
-
-(*define context and verbose*)
+(*define context*)
 QMRITools`$Contexts = (Context[] <> # & /@ QMRITools`$SubPackages);
-QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
-QMRITools`$LoadedColor = If[QMRITools`$LoadedColor===True, True, False];
 QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Version"];
-
 
 (*load all the packages without error reporting such we can find the names of all the functions and options*)
 Quiet[Get/@QMRITools`$Contexts];
