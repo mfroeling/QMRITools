@@ -676,7 +676,7 @@ GetNiiInformation[hdr_] := Block[{type, size, dim, dDim, offSet, vox, voxU, tr, 
 	{slope, intercept} = {"scaleSlope", "scaleInteger"} /. hdr;
 
 	rotMat = ({1, 1, -1} {"sRowx", "sRowy", "sRowz"} /. hdr)[[All, 1 ;; 3]]/ConstantArray[Reverse[vox], 3];
-	rotMat = DiagonalMatrix[{1, -1, 1}] . ConstantArray[Diagonal[Sign[Sign[rotMat] + 0.0000001]], 3] rotMat;
+	rotMat = DiagonalMatrix[{1, -1, 1}] . ConstantArray[Diagonal[SignNoZero[rotMat]], 3] rotMat;
 
 	{voxU, trU} = "xyztUnits" /. hdr;
 

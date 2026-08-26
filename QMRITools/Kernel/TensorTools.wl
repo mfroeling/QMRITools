@@ -330,10 +330,12 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 		True, False
 	];
 
-	If[mon, PrintTemporary["Preparing for parallel computing"]]; 	
+	
 	(*prepare for parallel computing if needed*)
 	Off[General::luc];
-	func = If[parallel, DistributeDefinitions[bmat, con, kappa, fitFun, 
+	func = If[parallel, 
+		If[mon, PrintTemporary["Preparing for parallel computing"]]; 	
+		DistributeDefinitions[bmat, con, kappa, fitFun, 
 			FindTensOutliers, TensMinLLS, TensMinWLLS, TensMiniWLLS];
 			ParallelEvaluate[Off[General::luc]];
 		ParallelMap, Map];
@@ -350,7 +352,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	outFit = ToPackedArray@N@(1. - outliers);
 
 	(*fit the data*)
-	If[mon, PrintTemporary["Fitting Data"]]; 
+	If[mon, PrintTemporary["Fitting Data"]];
 	dataFit = Transpose[{outFit data, outFit dataL}];
 	fitResult = Which[
 		(*LLS without coil tensor*)
@@ -373,7 +375,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	If[depthD==1, {fitResult, outliers, residual} = First/@{fitResult, outliers, residual}];
 	If[depthD>=3, 
 		fitResult = Transpose[VectorToData[fitResult, coor]];	
-		outliers = VectorToData[outliers, coor];
+		If[robust, outliers = VectorToData[outliers, coor]];
 		residual = VectorToData[residual, coor];
 		If[cTens, gradField = VectorToData[Transpose[Flatten[gradField, {2,3}]], coor]];
 	];
@@ -389,25 +391,57 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 
 
 (* ::Subsubsection::Closed:: *)
+(*TensCholeskySolve*)
+
+
+(*Solve for the tensor fit:(bmat^T.(w bmat)).x=bmat^T.(w ls).w via Cholesky decomposition instead of LinearSolve*)
+TensCholeskySolve = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {w, _Real, 1}}, Block[{bmatT, a, b, n, l, y, x, piv},
+	bmatT = Transpose[bmat];
+	(*weighted normal equations:a.x=b*)
+	a = bmatT . (w bmat);
+	b = bmatT . (w ls);
+	n = Length[b];
+	l = 0. a;
+	(*Cholesky-Banachiewicz decomposition:a==l.Transpose[l], l lower triangular*)
+	Do[Do[
+		piv = a[[i, j]] - Sum[l[[i, k]] l[[j, k]], {k, 1, j - 1}];
+		(*clamp a non-positive pivot instead of letting Sqrt produce a complex*)
+		If[i == j,
+			l[[i, i]] = Sqrt[Max[piv, 10^-12]],
+			l[[i, j]] = piv /l[[j, j]]
+		]
+		, {j, 1, i}], {i, 1, n}];
+	(*forward substitution:solve l.y==b*)
+	y = 0. b;
+	Do[y[[i]] = (b[[i]] - Sum[l[[i, k]] y[[k]], {k, 1, i - 1}]) / l[[i, i]], {i, 1, n}];
+	(*back substitution:solve Transpose[l].x==y*)
+	x = 0. b;
+	Do[x[[i]] = (y[[i]] - Sum[l[[k, i]] x[[k]], {k, i + 1, n}]) / l[[i, i]], {i, n, 1, -1}];
+	(*give output*)
+	x
+]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+
+
+(* ::Subsubsection::Closed:: *)
 (*FindOutliers*)
 
 
-FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}}, Block[{
-	sol, solA, soli, res, mad, wts, wMat, fitE, ls2, bmat2, out, bmatT, bmat2T, eps},
+FindTensOutliers = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {kappa, _Real, 0}}, Block[{
+	sol, solA, soli, res, mad, wts, fitE, ls2, bmat2, out, eps},
 
 	(*based on DOI: 10.1002/mrm.25165*)
 	(*initialize some values*)
 	out = (0. ls); 
 	ls2 = ls; 
 	bmat2 = bmat;
-	bmatT = Transpose[bmat];
 	eps = 10^-12;
 
 	(*If not background find the outliers*)
 	If[Total[ls] >1 ,
 
 		(*Step1: initial LLS fit*)
-		sol = LinearSolve[bmatT . bmat, bmatT . ls];
+		sol = TensCholeskySolve[ls, bmat, 0. ls +1];
 
 		(*check if LLS fit is plausible, i.e. s0 > 0*)
 		If[Last[sol] > eps,
@@ -426,10 +460,9 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 					(*prevent calculation with 0*)
 					If[mad <= eps, Break[],
 						(*c. Recompute the weights according to Eq. [13].*)
-						wts = 1 / (1 + (res/mad)^2)^2;
+						wts = 1 / (1 + (res / mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
-						wMat = bmatT . DiagonalMatrix[wts];
-						sol = LinearSolve[wMat . bmat, wMat . ls];
+						sol = TensCholeskySolve[ls, bmat,  wts];
 						(*e. Check convergence*)
 						If[Max[Abs[sol - soli]/(Abs[soli] + eps)] <= con , Break[]];
 					];
@@ -439,11 +472,10 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 				fitE = Exp[ -bmat . sol] + eps;
 				ls2 = ls / fitE;
 				bmat2 = bmat / fitE;
-				bmat2T = Transpose[bmat2];
 
 				(*Step 4: Initial LLS fit in * domain*)
-				sol = LinearSolve[bmat2T . bmat2, bmat2T . ls2];
-
+				sol = TensCholeskySolve[ls2, bmat2, 0. ls2 +1];
+				
 				(*Step 5: Compute a robust estimate for homoscedastic regression using IRLS.*)
 				Do[
 					(*init the solution*)
@@ -455,10 +487,9 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 					(*prevent calculation with 0*)
 					If[mad <= eps, Break[],
 						(*c. Recompute the weights according to Eq. [13].*)
-						wts = 1 / (1 + (res/mad)^2)^2;
+						wts = 1 / (1 + (res / mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
-						wMat = bmat2T . DiagonalMatrix[wts];
-						sol = LinearSolve[wMat . bmat2, wMat . ls2];
+						sol = TensCholeskySolve[ls2, bmat2, wts];
 						(*e. Check convergence*)
 						If[Max[Abs[sol - soli]/(Abs[soli] + eps)] <= con , Break[]];
 					];
@@ -478,17 +509,15 @@ FindTensOutliers = Quiet@Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real,
 
 		out
 	],
-	RuntimeAttributes -> {Listable}, 
-	RuntimeOptions -> {"Speed", "WarningMessages" -> False}
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}
 ]
 
 
 (* ::Subsubsection::Closed:: *)
 (*LLS*)
 
-
-TensMinLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
-	LinearSolve[Transpose[bmat] . bmat, Transpose[bmat] . dat[[2]]];
+TensMinLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}}, 
+	TensCholeskySolve[dat[[2]], bmat, 1. + 0. dat[[2]]]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
@@ -496,16 +525,14 @@ TensMinLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 (*WLLS*)
 
 
-TensMinWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}}, 
-	Block[{eps, wMat, mVec, sol, s, ls},
+TensMinWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
+	Block[{eps, mVec, sol, s, ls},
 		eps = 10^-12;
 		{s, ls} = dat;
 		mVec = UnitStep[s] Unitize[s];
 		sol = First[bmat];
-		wMat = 0. bmat;
-		If[Norm[ls] > eps || Total[mVec] > 7,
-			wMat = Transpose[bmat] . DiagonalMatrix[mVec s^2];
-			sol = LinearSolve[wMat . bmat, wMat . ls];
+		If[Norm[ls] > eps && Total[mVec] > 7,
+			sol = TensCholeskySolve[ls, bmat, mVec s^2];
 		];
 	sol]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
@@ -516,7 +543,8 @@ TensMinWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 
 
 TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}}, 
-	Block[{s, ls, bmatT, eps, wMat, mat, cont, itt, mVec, soli, sol0, max, sol, w},
+	Block[{s, ls, eps, mat, cont, itt, mVec, soli, sol0, max, sol, w
+	},
 		eps = 10^-12;
 		{s, ls} = dat;
 		mVec = UnitStep[s] Unitize[s];
@@ -525,25 +553,22 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 		max = 3. Max[mVec s];
 		sol0 = 0. First[bmat];
 		sol = sol0;
-		wMat = 0. bmat;
-		bmatT = Transpose[bmat];
 
 		(*skip background or not enough data for fit*)
-		If[Norm[ls] > eps || Total[mVec] > 7,
+		If[Norm[ls] > eps && Total[mVec] > 7,
 			(*initialize*)
 			itt = 0;
 			cont = 1.;
-			(*initialize using LLS*)
-			sol = LinearSolve[bmatT . bmat, bmatT . ls];
+			(*initialize using WLLS*)
+			sol = TensCholeskySolve[ls, bmat, 0 s + 1.];
 			(*check for implausible solution (negative s0 or high s0)*)
-			If[Last[sol] >= max || Last[sol] <= 0., sol = sol0,
+			If[!(0 <= Last[sol] <= max), sol = sol0,
 				(*iterative reweighing*)
 				While[cont == 1, itt++;
 					(*init iteration values*)
 					soli = sol;
 					(*perform WLLS*)
-					wMat = bmatT . DiagonalMatrix[mVec Exp[2 bmat . sol]];
-					sol = LinearSolve[wMat . bmat, wMat . ls];
+					sol = TensCholeskySolve[ls, bmat, mVec Exp[2 (bmat . sol)]];
 					(*update weight*)
 					(*see if to quit loop*)
 					If[(Last[sol] >= max || Last[sol] <= 0), cont = 0.;	sol = sol0];
@@ -551,6 +576,7 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 				]
 			]
 		];
+		(*Print[Column@{aa, sol}];*)
 		sol
 	]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}]
@@ -565,7 +591,8 @@ TensMinDKI = Compile[{{s, _Real, 1}, {bmatI, _Real, 2}},
 	If[Total[s]==0.,
 		{0.,0.,0.,0.,0.,0.,0.},
 		bmatI . s
-	],RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
+	]
+,RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -600,7 +627,6 @@ Module[{v,xx,yy,zz,xy,xz,yz,init,tens,res,w},
 			res=ls-bmat . v;
 			w=1/(res^2+Mean[res]^2);
 			.5 Total[(w/Mean[w])*(res)^2]
-		(*w=1/(res^2+(1.4826*Median[Abs[res-Median[res]]])^2);*)
 		),init][[2]]
 		]
 	]
@@ -742,7 +768,7 @@ FlipGradientOrientation[grad_, v_, p_] /; (AllTrue[v, StringQ] && AllTrue[p, Num
 (*EigensysCalc*)
 
 
-Options[EigensysCalc]={RejectMap->False,Reject->True, PerformanceGoal->"Quality"};
+Options[EigensysCalc]={RejectMap->False, Reject->True, PerformanceGoal->"Speed"};
 
 SyntaxInformation[EigensysCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
@@ -768,49 +794,53 @@ Options[EigenvecCalc]=Options[EigensysCalc];
 
 SyntaxInformation[EigenvecCalc]={"ArgumentsPattern"->{_,OptionsPattern[]}};
 
-EigenvecCalc[tens_,opts:OptionsPattern[]] := EigenSys[tens,"vec",opts]
+EigenvecCalc[tens_,opts:OptionsPattern[]] := EigenSys[tens, "vec", opts]
 
 
 (* ::Subsubsection::Closed:: *)
 (*EigenSys*)
 
 
-Options[EigenSys]=Options[EigensysCalc];
+Options[EigenSys] = Options[EigensysCalc];
 
 EigenSys[tens_,out_,OptionsPattern[]] := Block[{t, met, val, vec,reject, sel},
 	met = OptionValue[PerformanceGoal];
 
 	t=Which[
 		VectorQ[tens], tens,
-		MatrixQ[tens]&&Dimensions[tens]==={3,3}, TensVec[tens],
+		MatrixQ[tens]&&Dimensions[tens]==={3, 3}, TensVec[tens],
 		(*ArrayQ[tens]*)True, RotateDimensionsLeft[tens]
 	];
 
-	{val,vec} = If[met==="Speed", EigenSysC[t,out], EigenSysQ[t,out]];
+	{val, vec} = If[met==="Speed", EigenSysC[t ,out], EigenSysQ[t, out]];
+
+	If[out =!= "val",
+		vec = RotateDimensionsLeft[SignNoZero[RotateDimensionsRight[vec, 2][[All, 3]]]] vec
+	];
 
 	If[OptionValue[Reject],
-		reject = SelectEig[val];
-		sel = 1-reject;
+		sel = Times@@UnitStep[RotateDimensionsRight@val];
+		reject = 1 - sel;
 		val = sel val;
-		If[vec=!=0,vec=sel vec+reject ConstantArray[{{0.,0.,1.},{0.,1.,0.},{1.,0.,0.}},Dimensions[reject]]];
+		If[vec=!=0,
+			vec = sel vec + reject ConstantArray[{{0.,0.,1.}, {0.,1.,0.}, {1.,0.,0.}},
+			Dimensions[reject]]
+		];
 	];
 
 	If[OptionValue[RejectMap]&&OptionValue[Reject],
 		Switch[out,
-			"val",{val,reject},
-			"vec",{vec,reject},
-			"all",{val,vec,reject}
+			"val", {val, reject},
+			"vec", {vec, reject},
+			"all", {val, vec, reject}
 		],
 		Switch[out,
-			"val",val,
-			"vec",vec,
-			"all",{val,vec}
+			"val", val,
+			"vec", vec,
+			"all", {val, vec}
 		]
 	]
 ]
-
-
-SelectEig=Compile[{{eig,_Real,1}},1-UnitStep[Last[eig]],RuntimeAttributes->{Listable},RuntimeOptions->"Speed",Parallelization->True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -824,7 +854,7 @@ EigenSysQ[tens_,out_] := Block[{val,vec},
 			(*tensor is just one value*)
 			EigenSysI[tens],
 			(*calculate the eigensystem*)
-			val=Map[EigenSysI,tens,{-2}];
+			val=Map[EigenSysI, tens, {-2}];
 			vec=Switch[ArrayDepth[tens]-1,1,val[[All,2]],2,val[[All,All,2]],3,val[[All,All,All,2]]];
 			val=Switch[ArrayDepth[tens]-1,1,val[[All,1]],2,val[[All,All,1]],3,val[[All,All,All,1]]];
 			{val,vec}
@@ -853,8 +883,8 @@ EigenValI[tensor_?VectorQ] := Eigenvalues[TensMat[tensor]]
 
 (*fast direct method*)
 EigenSysC[tens_, out_] := Block[{val},
-	val=EigenValC[tens];
-	If[out=!="val",{val,EigenVecC[tens,val]},{val,0}]
+	val = EigenValC[tens];
+	If[out=!="val", {val, EigenVecC[tens, val]}, {val, 0}]
 ]
 
 
@@ -863,27 +893,29 @@ EigenSysC[tens_, out_] := Block[{val},
 
 
 EigenValC = Compile[{{tens,_Real,1}},Block[{
-		dxx,dyy,dzz,dxy,dxz,dyz,dxy2,dxz2,dyz2,i1,i2,i3,i,v,s,p3,v2,phi
+		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2,
+		i1, i2, i3, i, v, s, p3, v2, phi
 	},
 	(*method https://doi.org/10.1016/j.mri.2009.10.001*)
-	If[Total[Abs[tens]]<10.^-15,
+	If[Total[Abs[tens]] < 10.^-15,
 		{0.,0.,0.},
 
-		{dxx,dyy,dzz,dxy,dxz,dyz}=tens;
-		{dxy2,dxz2,dyz2}={dxy,dxz,dyz}^2;
+		{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
+		
+		{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
+		i1 = dxx + dyy + dzz;
+		i2 = dxx dyy + dxx dzz + dyy dzz - dxy2 - dxz2 - dyz2;
+		i3 = dxx dyy dzz + 2 dxy dxz dyz - dzz dxy2 - dyy dxz2 - dxx dyz2;
 
-		i1=dxx+dyy+dzz;
-		i2=dxx dyy+dxx dzz+dyy dzz-dxy2-dxz2-dyz2;
-		i3=dxx dyy dzz+2 dxy dxz dyz-dzz dxy2-dyy dxz2-dxx dyz2;
+		i = i1 / 3;
+		v = i^2 - i2 / 3;
+		If[v <= 10.^-16, Return[{i, i, i}]];
+		v2 = Sqrt[v];
+		s = i^3 - (i1 i2) / 6 + i3 / 2;
+		p3 = Pi / 3;
 
-		i=i1/3;
-		v=i^2-i2/3;
-		s=i^3-(i1 i2)/6+i3/2;
-		p3=Pi/3;
-		v2=Sqrt[v];
-
-		phi=Re[ArcCos[If[(v v2)===0,0,s/(v v2)]]/3];
-		{i+2 v2 Cos[phi],i-2 v2 Cos[p3+phi],i-2 v2 Cos[p3-phi]}
+		phi = ArcCos[Min[1., Max[-1., s / (v v2)]]] / 3;
+		{i + 2 v2 Cos[phi], i - 2 v2 Cos[p3 + phi], i - 2 v2 Cos[p3 - phi]}
 	]
 ], RuntimeAttributes->{Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}];
 
@@ -892,18 +924,39 @@ EigenValC = Compile[{{tens,_Real,1}},Block[{
 (*EigenVecC*)
 
 
-EigenVecC=Compile[{{tens,_Real,1},{eig,_Real,1}},Block[{dxx,dyy,dzz,dxy,dxz,dyz,a,b,c,norm},
-	If[Total[Abs[tens]]<10.^-15,
-		{{0,0,1},{0,1,0},{1,0,0}},
+EigenVecC = Compile[{{tens, _Real, 1}, {eig, _Real, 1}}, Block[{
+		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2,
+		m11, m22, m33, c12, c13, c23, n12, n13, n23, vec, norm,
+		dxyDyz, dxyDxz, dxzDyz, m11Dyz, m22Dxz, m33Dxy
+	},
+	If[Total[Abs[tens]] < 10.^-15, 
+		{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}
+		,
+		(*precalculate some stuff for speed saves 3x recomputation*)
+		{dxx, dyy, dzz, dxy, dxz, dyz} = tens;
+		{dxy2, dxz2, dyz2} = {dxy, dxz, dyz}^2;
+		{dxyDyz, dxyDxz, dxzDyz} = {dxy dyz, dxy dxz, dxz dyz};
 
-		{dxx,dyy,dzz,dxy,dxz,dyz}=tens;
-		(
-			{a,b,c}={dxz dxy,dxy dyz,dxz dyz}-{dyz,dxz,dxy} ({dxx,dyy,dzz}-#);
-			{a,b,c}={b c,a c,a b};
-			norm = Sqrt[Abs[a]^2 + Abs[b]^2 + Abs[c]^2];
-			If[norm===0,{a,b,c}/norm,{0.,0.,0.}]
-		)&/@eig
+		Table[
+			(*rows of (tensor - l I) = {m11, dxy, dxz}, {dxy, m22, dyz}, {dxz, dyz, m33}*)
+			{m11, m22, m33} = {dxx, dyy, dzz} - l;
+			{m11Dyz, m22Dxz, m33Dxy} = {m11 dyz, m22 dxz, m33 dxy};
+
+			(*cross products of each row pair; pick the largest norm one for robustness*)
+			c12 = {dxyDyz - m22Dxz, dxyDxz - m11Dyz, m11 m22 - dxy2};
+			c13 = {m33Dxy - dxzDyz, dxz2 - m11 m33, m11Dyz - dxyDxz};
+			c23 = {m22 m33 - dyz2, dxzDyz - m33Dxy, dxyDyz - m22Dxz};
+			n12 = c12 . c12; n13 = c13 . c13; n23 = c23 . c23;
+
+			(*pick the larges*)
+			vec = Which[n12 >= n13 && n12 >= n23, c12, n13 >= n23, c13, True, c23];
+
+			(*normalize*)
+			norm = Sqrt[Max[{n12, n13, n23}]];
+			If[norm < 10.^-15, {0., 0., 0.}, vec / norm]
+		, {l, eig}]
 	]
+
 ], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
 
 
@@ -929,7 +982,7 @@ FACalc[eig_] := FACalcI[eig]
 FACalcI = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3, eigNorm},
 	l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
 	eigNorm = Sqrt[2.*Total[eig^2]];
-	If[eigNorm == 0., 0. ,Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2]/eigNorm]
+	If[eigNorm == 0., 0. , Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2] / eigNorm]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
 
 
@@ -962,7 +1015,7 @@ WestinMeasures[eig_] := Block[{l1, l2, l3},
 (*ParameterCalc*)
 
 
-Options[ParameterCalc] = {Reject->False, PerformanceGoal -> "Quality"}
+Options[ParameterCalc] = {Reject->False, PerformanceGoal -> "Speed"}
 
 SyntaxInformation[ParameterCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 

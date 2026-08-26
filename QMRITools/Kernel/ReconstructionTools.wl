@@ -416,7 +416,7 @@ SyntaxInformation[MeanAt]={"ArgumentsPattern"->{_,_}}
 MeanAt[list_,level_]:=Block[{tot, weight},
 	tot = Total[list, {level}];
 	weight= Total[Unitize[Abs[list]], {level}];
-	ToPackedArray[DivideNoZero[Re@tot, weight, "Comp"] + I DivideNoZero[Im@tot, weight, "Comp"]]
+	ToPackedArray[DivideNoZero[Re@tot, weight] + I DivideNoZero[Im@tot, weight]]
 ]
 
 
@@ -826,7 +826,7 @@ MakeSense[coils_, cov_, OptionsPattern[]] := Block[{sos, smooth, w, coilsF},
 	(*normalize the coil signal with sos, if w is negative sos=1*)
 	sos = CoilCombine[Abs[coilsF], cov, Method -> "RootSumSquares"];
 	w = If[w < 0, 0., (1. / (1 + w))];
-	DivideNoZero[#1, sos^w, "Comp"] & /@ coilsF
+	DivideNoZero[#1, sos^w] & /@ coilsF
 ]
 
 
@@ -987,7 +987,7 @@ DeconvolveCSIdata[spectra_, hamI_,OptionsPattern[]] := Block[{dim, filt, spectra
 
 	(*make the complex hamming filter point spread function and take the real part*)
 	filt = Abs@FourierShift[ShiftedInverseFourier[ArrayPad[ham, Transpose[{Floor[dim/2], Ceiling[dim/2]}]]]];
-	filt = DivideNoZero[filt, Total[Flatten[filt]], "Comp"];
+	filt = DivideNoZero[filt, Total[Flatten[filt]]];
 
 	(*zero pad the spectra by factor two*)
 	spectraOut = FourierRescaleData[RotateDimensionsRight[spectra]];

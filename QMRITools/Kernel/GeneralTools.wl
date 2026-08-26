@@ -41,7 +41,7 @@ SetDemoDirectory::usage =
 "SetDemoDirectory[] Sets the directory to the demo data directory."
 
 ParseCommandLine::usage = 
-"ParseCommandLine[arguments] parses command line arguments and in qmritools is used for using arguments given with command line scripts for processing."
+"ParseCommandLine[arguments] parses command line arguments and in QmriTools is used for using arguments given with command line scripts for processing."
 
 
 StringPadInteger::usage = 
@@ -828,13 +828,13 @@ DataToVector[datai_, maski_] := Module[{data, sp, mask, depthd, depthm, depth, d
 			(*mask and data are same dimensions*)
 			dimd,
 			(*data is one dimensions larger than mask either 2D and 3D or 3D and 4D*)
-			If[depth == 1 && depthd == 3, Drop[dimd, 1], Drop[dimd, {2}]]
+			dimd = If[depth == 1 && depthd == 3, Drop[dimd, 1], Drop[dimd, {2}]]
 		];
 		(*Dimensions must be equal*)
 		If[dimd =!= dimm, Return@Message[DataToVector::mask, dimd, dimm]];
 		,
 		(*mask is not given make mask*)
-		mask = If[depthd == 4, Unitize[Mean@Transpose@data], 1]
+		mask = If[depthd == 4, Unitize[Total@Transpose@data], 1]
 	];
 
 	If[mask === 1,
@@ -843,10 +843,14 @@ DataToVector[datai_, maski_] := Module[{data, sp, mask, depthd, depthm, depth, d
 		,
 		(*Flatten the data*)
 		data = If[depthd == 4, 
-		Flatten[RotateDimensionsLeft[Transpose[data]], 2], 
-		If[depthd == 3 && depth == 1, Flatten[RotateDimensionsLeft[data], 1], Flatten[data]]];
+			Flatten[Transpose[data, {1, 4, 2, 3}], 2], 
+			If[depthd == 3 && depth == 1, 
+				Flatten[RotateDimensionsLeft[data], 1], 
+				Flatten[data]
+			]
+		];
 		(*get the data and positions there mask is 1*)
-		{Pick[data, Round[Flatten[mask]], 1], {dimd, Position[mask, 1]}}
+		{Pick[data, Flatten[mask], 1], {dimd, Position[mask, 1]}}
 	]
 ]
 
@@ -857,13 +861,22 @@ DataToVector[datai_, maski_] := Module[{data, sp, mask, depthd, depthm, depth, d
 
 SyntaxInformation[VectorToData] = {"ArgumentsPattern" -> {_, {_, _}}};
 
-VectorToData[vec_, {dim_, pos_}] := ToPackedArray@N@If[VectorQ[vec],
-	Normal[SparseArray[pos -> vec, dim]],
-	If[Length[dim] == 2,
-		Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec],
-		Transpose[Normal[SparseArray[pos -> #, dim]] & /@ Transpose[vec]]
+VectorToData[vec_, {dim_, pos_}] := Block[{nSp, idx, flat, nVol, out},
+	nSp = Times @@ dim;
+	idx = Extract[ArrayReshape[Range[nSp], dim], pos];
+	If[VectorQ[vec],
+		(*2D or 3D to 2D or 3D*)
+		flat = ConstantArray[0., nSp];
+		flat[[idx]] = vec;
+		ArrayReshape[flat, dim],
+		(*2D or 3D to 3D or 4D*)
+		nVol = Last[Dimensions[vec]];
+		flat = ConstantArray[0., {nSp, nVol}];
+		flat[[idx]] = vec;
+		out = ArrayReshape[flat, Append[dim, nVol]];
+		If[Length[dim] == 2, Transpose[out, {2, 3, 1}], Transpose[out, {1, 3, 4, 2}]]
 	]
-]
+ ]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1429,12 +1442,12 @@ CompilableFunctions[] := Block[{list1, list2, grids},
 
 SyntaxInformation[DivideNoZero] = {"ArgumentsPattern" -> {_,_,_.}};
 
-DivideNoZero[numi_, deni_, "Comp"] := N@DivideNoZeroi[numi, deni]
-
-DivideNoZero[numi_, deni_] := Re@N@DivideNoZeroi[numi, deni]
-
-DivideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[Abs[den] == 0., 0., num/den], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+DivideNoZero[numi_, deni_] := Block[{d, n, m},
+	d = N@ToPackedArray[deni];
+	n = N@ToPackedArray[numi];
+	m = Unitize[d];
+	N@ToPackedArray[m (n / ((1 - m) + d))]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1443,10 +1456,11 @@ DivideNoZeroi = Compile[{{num, _Complex, 0}, {den, _Complex, 0}}, If[Abs[den] ==
 
 SyntaxInformation[LogNoZero] = {"ArgumentsPattern" -> {_}};
 
-LogNoZero[val_] := N[LogNoZeroi[val]]
-
-LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
+LogNoZero[val_] := Block[{v, m},
+	v = N@ToPackedArray[val];
+	m = Unitize[v];
+	N@ToPackedArray[m Log[(1 - m) + v]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1455,10 +1469,11 @@ LogNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Log[val]],
 
 SyntaxInformation[ExpNoZero] = {"ArgumentsPattern" -> {_}};
 
-ExpNoZero[val_] := N[ExpNoZeroi[val]]
-
-ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
+ExpNoZero[val_] := Block[{v, m},
+	v = N@ToPackedArray[val];
+	m = Unitize[v];
+	N@ToPackedArray[m Exp[(1 - m) + v]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1467,11 +1482,10 @@ ExpNoZeroi = Compile[{{val, _Real, 0}},If[val == 0., 0., Exp[val]],
 
 SyntaxInformation[SignNoZero] = {"ArgumentsPattern" -> {_}};
 
-SignNoZero[val_] := N[SignNoZeroi[val]]
-
-SignNoZeroi = Compile[{{val, _Real, 0}}, Sign[Sign[val] + 0.0001],
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> False]
-
+SignNoZero[val_] := Block[{v},
+	v = N@ToPackedArray[val];
+	Sign[v] + 1 - Unitize[v]
+]
 
 (* ::Subsubsection::Closed:: *)
 (*MeanNoZero*)
@@ -1479,10 +1493,11 @@ SignNoZeroi = Compile[{{val, _Real, 0}}, Sign[Sign[val] + 0.0001],
 
 SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_}};
 
-MeanNoZero[vec_] := MeanNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
-
-MeanNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Mean[Pick[vec, Unitize[vec], 1]]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MeanNoZero[data_] := Block[{d, n},
+	d = N@ToPackedArray[data];
+	n = Total[Unitize[d]];
+	DivideNoZero[Total[d], n]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1491,10 +1506,13 @@ MeanNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Mean[P
 
 SyntaxInformation[StandardDeviationNoZero] = {"ArgumentsPattern" -> {_}};
 
-StandardDeviationNoZero[vec_] := StandardDeviationNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
-
-StandardDeviationNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., StandardDeviation[Pick[vec, Unitize[vec], 1]]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+StandardDeviationNoZero[data_] := Block[{d, n, mean, var},
+	d = N@ToPackedArray[data];
+	n = Total[Unitize[d]];
+	mean = DivideNoZero[Total[d], n];
+	var = DivideNoZero[Total[d^2] - n mean^2, n - 1];
+	Sqrt[var]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1505,8 +1523,17 @@ SyntaxInformation[MedianNoZero] = {"ArgumentsPattern" -> {_}};
 
 MedianNoZero[vec_] := MedianNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
 
-MedianNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Median[Pick[vec, Unitize[vec], 1]]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MedianNoZeroi = Compile[{{vec, _Real, 1}},
+	Block[{mask, n, sorted, lo, hi},
+		mask = Unitize[vec];
+		n = Round[Total[mask]];
+		If[n == 0, 0.,
+			sorted = Sort[vec + (1. - mask)*10.^300];
+			lo = Quotient[n + 1, 2];
+			hi = Quotient[n, 2] + 1;
+			(sorted[[lo]] + sorted[[hi]])/2.
+		]
+	], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1515,11 +1542,11 @@ MedianNoZeroi = Compile[{{vec, _Real, 1}}, If[AllTrue[vec, # === 0. &], 0., Medi
 
 SyntaxInformation[RMSNoZero] = {"ArgumentsPattern" -> {_}};
 
-RMSNoZero[vec_] := RMSNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
-
-RMSNoZeroi = Compile[{{vec, _Real, 1}}, If[Total[vec] === 0., 0.,
-	Sqrt[Mean[Pick[vec, Unitize[vec], 1]^2]]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RMSNoZero[data_] := Block[{d, n},
+	d = N@ToPackedArray[data];
+	n = Total[Unitize[d]];
+	Sqrt[DivideNoZero[Total[d^2], n]]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1530,10 +1557,20 @@ SyntaxInformation[MADNoZero] = {"ArgumentsPattern" -> {_}};
 
 MADNoZero[vec_] := MADNoZeroi[If[ArrayDepth[vec] > 1, RotateDimensionsLeft[vec], vec]]
 
-MADNoZeroi = Compile[{{vec, _Real, 1}}, Block[{vec2}, If[Total[vec] === 0.,	0.,
-	vec2 = Pick[vec, Unitize[vec], 1];
-	Median[Abs[vec2 - Median[vec2]]]
-]],	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+MADNoZeroi = Compile[{{vec, _Real, 1}},
+	Block[{mask, n, sorted, lo, hi, med, absdev, sortedAbs},
+		mask = Unitize[vec];
+		n = Round[Total[mask]];
+		If[n == 0, 0.,
+			sorted = Sort[vec + (1. - mask)*10.^300];
+			lo = Quotient[n + 1, 2];
+			hi = Quotient[n, 2] + 1;
+			med = (sorted[[lo]] + sorted[[hi]])/2.;
+			absdev = Abs[vec - med] mask + (1. - mask)*10.^300;
+			sortedAbs = Sort[absdev];
+			(sortedAbs[[lo]] + sortedAbs[[hi]])/2.
+		]
+	], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
 (* ::Subsection:: *)
@@ -1638,7 +1675,9 @@ SumOfSquares[data_, OptionsPattern[]] := Block[{sos, weights, dataf},
 ]
 
 
-SumOfSquaresi = Compile[{{sig, _Real, 1}}, Sqrt[Total[sig^2]], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+SumOfSquaresi = Compile[{{sig, _Real, 1}}, 
+	Sqrt[Total[sig^2]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
 
 
 (* ::Subsection::Closed:: *)

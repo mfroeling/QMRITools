@@ -1505,7 +1505,7 @@ GetGradientScanOrder[file_?StringQ, grd_?ListQ, bval_?ListQ,OptionsPattern[]] :=
 	bvali=input[[All,4]];
 	gradi=Normalize /@input[[All,1;;3]];
 
-	grad = Sign[Sign[grd[[All, 3]]] + 0.00001] grd;
+	grad = SignNoZero[grd[[All, 3]]] grd;
 
 	order1 = Flatten[MapThread[   (
 		p1 = Position[Round[bval, .1], #1]; 

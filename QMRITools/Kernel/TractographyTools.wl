@@ -887,8 +887,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 
 	(*rows of (tensor-l1 I):{m11,dxy,dxz},{dxy,m22,dyz},{dxz,dyz,m33}*)
 	{m11, m22, m33} = {dxx, dyy, dzz} - l1;
-	(*cross products of each row pair;pick the largest-\
-	norm one for robustness*)
+	(*cross products of each row pair; pick the largest norm one for robustness*)
 	c12 = {dxy dyz - dxz m22, dxz dxy - m11 dyz, m11 m22 - dxy2};
 	c13 = {dxy m33 - dxz dyz, dxz2 - m11 m33, m11 dyz - dxy dxz};
 	c23 = {m22 m33 - dyz2, dyz dxz - dxy m33, dxy dyz - m22 dxz};
@@ -899,7 +898,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 	norm = Norm[vec];
 	If[norm < 2 10.^-16, Return[{0., 0., 0.}]];
 	vec = vec / norm;
-	Sign[Sign[Dot[vDir, vec]] + 0.1] vec
+	Sign[Sign[Dot[vDir, vec]] + 0.01] vec
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
@@ -908,7 +907,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 
 
 AlignVec = Compile[{{vec, _Real, 1}, {vDir, _Real, 1}},
-	Sign[Sign[Dot[vDir, vec]] + 0.1] vec
+	Sign[Sign[Dot[vDir, vec]] + 0.01] vec
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 
