@@ -111,10 +111,10 @@ NormalizeFasciculationData[data_, mask_, {tens_, grad_, val_}] := Block[{
 		ran, tensV, coor, scale, bmat
 	},
 	ran = {0, 1.5 Max[data]};
-	(*vecotrize the tensor*)
+	(*vectorize the tensor*)
 	{tensV, coor} = DataToVector[Transpose@tens, mask];
 	bmat = Bmatrix[{val, grad}];
-	(*find diffuison weighting scaling*)
+	(*find diffusion weighting scaling*)
 	scale = ExpNoZero[-bmat . Transpose[tensV]];
 	(*make the output*)
 	NormalizeData[Clip[DivideNoZero[data, VectorToData[Transpose[scale], coor]], ran], mask]
@@ -209,24 +209,24 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 		,
 		(*Calculate threshold factor*)
 		mn = Mean[ti];
-		sd = Ramp[1.0 - (sc/mn)*StandardDeviation[ti]];
+		sd = Ramp[1.0 - (sc / mn) StandardDeviation[ti]];
 		tr = Min[{sd, fr}];
 		(*Vectorized selection*)
-		mask = UnitStep[tr*mn - t];
+		mask = UnitStep[tr mn - t];
 		ti = Pick[t, mask, 0];
 		(*Convergence check:compare lengths or use a small tolerance*)
 		If[Length[ti] == len, cont = False];
 		];
 	];
 
-	(*Final thresholding*)
+	(*Final threshold*)
 	If[Length[ti] <= 5,
-		0.0*t,
+		0.0 t,
 		mn = Mean[ti];
 		tr = Min[1.0 - (sc/mn)*StandardDeviation[ti], fr];
 		UnitStep[tr*mn - t]
 	]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -247,7 +247,7 @@ MeanThresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0
 			mn*{1.0, tr, sd, fr}
 		]
 	]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsection:: *)
@@ -271,22 +271,22 @@ SelectActivations[act_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, ops:OptionsP
 
 SelectActivations[act_ ?ArrayQ, mask_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{mask,1},{1,1,1}, ops]
 
-SelectActivations[act_ ?ArrayQ, {mask_?ArrayQ, bmask_?ArrayQ}, ops:OptionsPattern[]]:=SelectActivations[act,{mask,bmask},{1,1,1}, ops]
+SelectActivations[act_ ?ArrayQ, {mask_?ArrayQ, bMask_?ArrayQ}, ops:OptionsPattern[]]:=SelectActivations[act,{mask,bMask},{1,1,1}, ops]
 
-SelectActivations[act_?ArrayQ, {mask_,bmask_}, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, ops:OptionsPattern[]]:=Block[{
+SelectActivations[act_?ArrayQ, {mask_,bMask_}, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, ops:OptionsPattern[]]:=Block[{
 	aDepth,mDepth,bDepth,size, aDim,nVol, mDim, bDim, start, stop,back, masks,out,sel
 	},
 	(*check data dimensions*)
 	aDepth = ArrayDepth[act];
 	mDepth = If[mask=!=1,ArrayDepth[mask],aDepth-1];
-	bDepth = If[bmask=!=1,ArrayDepth[bmask],aDepth-1];
+	bDepth = If[bMask=!=1,ArrayDepth[bMask],aDepth-1];
 	If[aDepth=!=4||4<mDepth<3||bDepth=!=3, Return[Message[SelectActivations::dim,aDepth,mDepth,bDepth]]];
 
 	(*check data sizes*)
 	aDim = Dimensions@act[[All,1]];
 	nVol = Length@act[[1]];
 	mDim = If[mask=!=1, Dimensions@If[mDepth===4, mask[[All,1]], mask], aDim];
-	bDim = If[bmask=!=1, Dimensions[bmask], aDim];
+	bDim = If[bMask=!=1, Dimensions[bMask], aDim];
 	If[aDim=!=mDim || aDim=!=bDim, Return[Message[SelectActivations::size,aDim,mDim,bDim]]];
 
 	(*get detection size of fasc*)
@@ -297,7 +297,7 @@ SelectActivations[act_?ArrayQ, {mask_,bmask_}, vox:{_?NumberQ,_?NumberQ,_?Number
 
 	(*create background mask*)
 	{start, stop} = OptionValue[IgnoreSlices];
-	back = If[bmask===1,If[mDepth===4, Total@Transpose@sel,sel], bmask];
+	back = If[bMask===1,If[mDepth===4, Total@Transpose@sel,sel], bMask];
 	back[[start+1;;-stop-1]] = back[[start+1;;-stop-1]]+1;
 
 	(*find the masks for which to perform the segmentation*)
@@ -417,7 +417,7 @@ EvaluateActivation[{act_,dat_,mn_,tr_}]:=EvaluateActivation[act,dat,mn,tr,act]
 EvaluateActivation[{act_,dat_,mn_,tr_},actS_]:=EvaluateActivation[act,dat,mn,tr,actS]
 
 EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,dim,aim
-	(*ddim, zz, dd, yy ,xx, sl, dyn*)},
+	(*dDim, zz, dd, yy ,xx, sl, dyn*)},
 	NotebookClose[plotWindow];
 
 	actD=Normal[act];
@@ -428,8 +428,8 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 	dim = N@Clip[Rescale[datD,sc],{0,1}];
 	aim = RotateDimensionsLeft[N@{actD-actSD, actSD, 0.actD, Clip[actD+actSD,{0,1}]}];
 
-	ddim = Dimensions[datD];
-	{zz, dd, yy, xx} = ddim;
+	dDim = Dimensions[datD];
+	{zz, dd, yy, xx} = dDim;
 	{sl,dyn} = Ceiling[{zz,dd}/2];
 
 	PrintTemporary["Prepping Manipulate window"];
@@ -454,9 +454,9 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 		];
 
 		(*get the signals*)
-		ddat = Range[dd];
+		dDat = Range[dd];
 		sig = datD[[z,All,y,x]];
-		actt = actD[[z,All,y,x]];
+		actT = actD[[z,All,y,x]];
 		actSt = actSD[[z,All,y,x]];
 
 		(*get the line values*)
@@ -464,7 +464,7 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 		tresh = trD[[z,All,y,x]];
 
 		Row[{Show[
-			ListLinePlot[Thread[{ddat,sig}],PlotStyle->LightDarkV[],PlotMarkers->Automatic,PlotRange->{0,1.1 Max@sig},ImageSize->500,
+			ListLinePlot[Thread[{dDat,sig}],PlotStyle->LightDarkV[],PlotMarkers->Automatic,PlotRange->{0,1.1 Max@sig},ImageSize->500,
 				GridLines->If[grid, {
 					{{dyn, Directive[LightDarkV[], Thick]}},
 					{{mean, Directive[LightDarkV[], Thick]},
@@ -478,8 +478,8 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 				RGBColor[0.812807, 0.518694, 0.303459], Line[{{0, tresh[[1]]}, {Length@sig, tresh[[1]]}}],
 				RGBColor[0.253651, 0.344893, 0.558151], Line[{{0, tresh[[1]]}, {Length@sig, tresh[[1]]}}]
 			}],
-			ListPlot[Pick[Thread[{ddat,sig}],actt,1],PlotStyle->Red,PlotMarkers->{Automatic,10}],
-			ListPlot[Pick[Thread[{ddat,sig}],actSt,1],PlotStyle->Green,PlotMarkers->{Automatic,10}]]
+			ListPlot[Pick[Thread[{dDat,sig}],actT,1],PlotStyle->Red,PlotMarkers->{Automatic,10}],
+			ListPlot[Pick[Thread[{dDat,sig}],actSt,1],PlotStyle->Green,PlotMarkers->{Automatic,10}]]
 			,
 			LocatorPane[Dynamic[c],ImageCompose[
 				Image[dim[[sl,dyn]],ColorSpace->"Grayscale",ImageSize->400],{Image[aim[[sl,dyn]],ColorSpace->"RGB"], alpha}
@@ -505,12 +505,12 @@ EvaluateActivation[act_,dat_,mn_,tr_,actS_]:=Module[{datD,actD,actSD,mnD,trD,sc,
 
 		{z,ControlType->None},{y,ControlType->None},{x,ControlType->None},
 		{c,ControlType->None},{cor,ControlType->None},
-		{ddat,ControlType->None},{sig,ControlType->None},
-		{actt,ControlType->None},{actSt,ControlType->None},
+		{dDat,ControlType->None},{sig,ControlType->None},
+		{actT,ControlType->None},{actSt,ControlType->None},
 		{mean,ControlType->None},{tresh,ControlType->None},
 
 		Initialization:>{
-			{zz, dd, yy, xx} = ddim,
+			{zz, dd, yy, xx} = dDim,
 			{sl,dyn} = Ceiling[{zz,dd}/2],
 			max = Select[Sort[DeleteDuplicates[Flatten@Total@Transpose@actSD]],#>0&],
 			pos = Position[Round@Total@Transpose@actSD,#]&/@max

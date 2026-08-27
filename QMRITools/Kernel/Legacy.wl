@@ -653,7 +653,7 @@ FiberDensityMap[fibers_, dim_, vox_, OptionsPattern[]] :=
 
 GetFiberCoor = Compile[{{fibcor, _Real, 1}, {vox, _Real, 1}},
    Round[Reverse[fibcor + vox]/vox],
-   RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", 
+   RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, 
    Parallelization -> True];
 
 CountVoxels = Compile[{{const, _Integer, 3}, {pix, _Integer, 2}}, Block[{out = const},
@@ -1783,7 +1783,7 @@ PlotData3D[data_, vox : {_, _, _} : {1, 1, 1}] :=
   If[(! ArrayQ[data, _, NumericQ]) || (! ArrayDepth[data] == 3), Return[Message[PlotData3D::data]]];
   
   dim = {dz, dy, dx} = Dimensions[data];
-  size = Round[Sqrt[Total[#^2 & /@ Drop[Sort[dim], 1]]] // N];
+  size = Round[Norm[#^2 & /@ Drop[Sort[dim], 1]] // N];
   
   tab1 = Column[{ManPannel[
       "Planes", {
@@ -2951,15 +2951,15 @@ BayesianIVIMFitI3[thetai_, bval_, yn_, OptionsPattern[]] := Block[{
 
 BooleC = Compile[{{val, _Real, 1}, {ru, _Real, 1}}, 
 	UnitStep[val - ru]
-, Parallelization -> True, RuntimeOptions -> "Speed"];
+, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 BooleC1 = Compile[{{val, _Real, 1}, {ru, _Real, 0}}, 
 	UnitStep[val - ru]
-, Parallelization -> True, RuntimeOptions -> "Speed"];
+, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 BooleC2 = Compile[{{val, _Real, 1}, {min, _Real, 0}, {max, _Real, 0}}, 
 	UnitStep[val - min] (1. - UnitStep[val - max])
-, Parallelization -> True, RuntimeOptions -> "Speed"];
+, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 BoolAdd = N[#2 - #1 #2 + #1 #3] &;
 
@@ -2981,7 +2981,7 @@ ClipC = Compile[{{theta, _Real, 2}, {trans, _Integer, 0}}, Block[{chk1, out},
 	];
 
 	If[trans == 1, Transpose[out], out]
-], Parallelization -> True, RuntimeOptions -> "Speed"];
+], Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 MeanCov = Block[{inp = ClipC[#, 0]}, {Mean[inp], Covariance[inp]}] &;
 
@@ -3015,22 +3015,22 @@ RandomGibsSample[theta_, cov_, m_] := Block[{munew, tm, icov, mat,tmt,mi},
 (*random Normal Samplers*)
 RandomNormalC = Compile[{{m, _Real, 1}, {s, _Real, 1}},
 	Chop[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}]]
-, Parallelization -> True, RuntimeOptions -> "Speed"];
+, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 RandomNormalCf = Compile[{{m, _Real, 1}, {s, _Real, 1}},
 	Chop[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}]]
-, Parallelization -> True, RuntimeOptions -> "Speed"];
+, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 RandomNormalCd = Compile[{{m, _Real, 1}, {s, _Real, 1}},
 	Chop[Clip[MapThread[RandomVariate[NormalDistribution[#1, #2^2]] &, {m, s}],{-15.,0.4}]]
-, Parallelization -> True, RuntimeOptions -> "Speed"];
+, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*calulated fitted points g(fr, dc, pdc)*)
 FunceC2 = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 1}},Block[{fre=Exp[fr]},
 	Chop[Transpose[Map[((Exp[Exp[dc] #] + fre Exp[Exp[pdc] #])/(1 + fre)) &, -bm]]]
-], Parallelization -> True, RuntimeOptions -> "Speed"];
+], Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 FunceC2l = Compile[{{fr, _Real, 1}, {dc, _Real, 1}, {pdc, _Real, 1}, {bm, _Real, 0}}, 
 	Chop[((Exp[-bm Exp[dc]] + Exp[fr] Exp[-bm Exp[pdc]])/(1 + Exp[fr]))]
-, Parallelization -> True, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+, Parallelization -> True, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*calulated fitted points g(fr1, fr2, dc, pdc1, pdc2)*)
 FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Real, 1}, {pdc2, _Real, 1}, {bm, _Real, 1}},
@@ -3041,7 +3041,7 @@ FunceC3 = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Rea
 			(Exp[Exp[dc] #] (-1 + fr1e fr2e))/((1 + fr1e) (1 + fr2e))
 			)) &, -bm]]
 		]
-], Parallelization -> True, RuntimeOptions -> "Speed"];
+], Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 FunceC3l = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Real, 1}, {pdc2, _Real, 1}, {bm, _Real, 0}},
 	Block[{fr1e = Exp[fr1], fr2e = Exp[fr2]},
@@ -3050,15 +3050,15 @@ FunceC3l = Compile[{{fr1, _Real, 1}, {fr2, _Real, 1}, {dc, _Real, 1}, {pdc1, _Re
 			(Exp[-bm Exp[pdc2]] fr2e)/(1 + fr2e) -
 			(Exp[-bm Exp[dc]] (-1 + fr1e fr2e))/((1 + fr1e) (1 + fr2e))
 		)]
-], Parallelization -> True, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+], Parallelization -> True, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*calculate probability*)
 DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, ((vec1 . vec2)^2)/(vec2 . vec2),
-	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 Dotc1 = Compile[{{vec, _Real, 1}}, vec . vec,
-	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 MatDot2 = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}, {mat, _Real, 2}}, (vec1 . mat . vec1) - (vec2 . mat . vec2),
-	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 AlphaC = Compile[{
 		{theta, _Real, 2}, {thetat, _Real, 2}, {mu, _Real, 1},
@@ -3072,7 +3072,7 @@ AlphaC = Compile[{
 		(*bool=alpha-RU*)
 		rand = RandomReal[1, nvox];
 		UnitStep[(pd*pt) - rand]
-],	Parallelization -> True, RuntimeOptions -> "Speed"];
+],	Parallelization -> True, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection:: *)
@@ -3664,19 +3664,51 @@ FitSpectraError[{ppmFull_, spec_}, {timeFull_, timeBasis_}, {indSt_, indEnd_}, {
 
 ConFuncSC = Compile[{{par, _Real, 0}, {ref, _Real, 0}, {nor, _Real, 0}, {sc, _Real, 0}}, 
 	10^sc ((par-ref)/nor)^2
-, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 ConFuncUC = Compile[{{par, _Real, 0}, {min, _Real, 0}, {sc, _Real, 0}}, Block[{off = -par + min},
 	10^sc (UnitStep[off] (off))^2
-], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 ConFuncLC = Compile[{{par, _Real, 0}, {max, _Real, 0}, {sc, _Real, 0}}, Block[{off = par - max},
 	10^sc (UnitStep[off] (off))^2
-], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 ConFuncC = Compile[{{par, _Real, 0}, {min, _Real, 0}, {max, _Real, 0}, {sc, _Real, 0}}, Block[{off1 = -par + min, off2 = par - max},
 	10^sc (UnitStep[off1] (off1)^2 + UnitStep[off2] (off2)^2)
-], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*FindSpectraPpmShift*)
+
+
+FindSpectraPpmShift[spec_, {dw_, gyro_}, peaks_] := FindSpectraPpmShift[spec, {dw, gyro}, {peaks, 0}]
+
+FindSpectraPpmShift[spec_, {dw_, gyro_}, {peaks_, amp_}] := Block[{ppm, dPpm, tar, amps, weight, s, corrF, maxPos, sft},
+	ppm = GetPpmRange[spec, dw, gyro];
+	dPpm = (ppm[[1]] - ppm[[2]]);
+
+	tar = If[Length[spec] === Length[peaks],
+		Abs[peaks],
+		amps = If[amp === 0, 0. peaks + 1, amp];
+		tar = 0 ppm;
+		tar[[Flatten[Position[ppm, First@Nearest[ppm, #]] & /@ peaks]]] = amps/Max[amps];
+		tar
+	];
+
+	(*perform correlation of spectra with delta function*)
+	s = Max[ppm]/4;
+	weight = 1/(Exp[(ppm^2/(2*s^2))]*(Sqrt[2*Pi]*s));
+	weight = 1;
+	corrF = ListCorrelate[tar, Abs[spec], Round[Length[tar]/2], 0];
+	corrF = weight DivideNoZero[corrF, Max[corrF]];
+	maxPos = Position[corrF, Max[corrF]][[1, 1]];
+
+	(*constrain shift to 5ppm*)
+	sft = -dPpm (maxPos - (Length[ppm]/2.));
+	If[-5 < sft < 5, sft, 0]
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -3821,7 +3853,7 @@ PhaseError[ppm_,specI_,specT_,{phi0_?NumericQ,phi1_?NumericQ},gyro_]:=PhaseError
 PhaseErrorC=Compile[{{ppm,_Real,1},{specI,_Complex,1},{specT,_Complex,1},{phi0,_Real,0},{phi1,_Real,0},{gyro,_Real,0}},Block[{spec},
 	spec=Exp[-I(phi0+2Pi (phi1/1000) gyro ppm)]specI;
 	Total[(Re[specT]-Re[spec])^2] + Total[(Im[specT]-Im[spec])^2]
-],RuntimeOptions->"Speed"];
+],RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection::Closed:: *)
@@ -4039,6 +4071,135 @@ MakeLogging[log_] := Block[{tmp},
 	tmp = DeleteCases[Flatten[{If[StringQ[#], StringSplit[#, "  "], #]}], ""] & /@ log;
 	tmp = If[Length[#] == 1 && Head[#[[1]]] === String, Prepend[#, ""], #] & /@ tmp;
 	Grid[{{Grid[tmp[[1 ;; 22]], Alignment -> Left], Grid[tmp[[23 ;;]], Alignment -> Left]}}, Alignment -> Top, Spacings -> 4]
+]
+
+
+
+(* ::Subsubsection::Closed:: *)
+(*DKI*)
+
+
+(*TensMinDKI[s_,ls_,bmat_,bmatI_] := bmatI.ls*)
+TensMinDKI = Compile[{{s, _Real, 1}, {bmatI, _Real, 2}},
+	If[Total[s]==0.,
+		{0.,0.,0.,0.,0.,0.,0.},
+		bmatI . s
+	]
+,RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
+
+
+(* ::Subsubsection::Closed:: *)
+(*NLS*)
+
+
+TensMinNLS[s_,ls_,bmat_,bmatI_] := 
+Module[{v,xx,yy,zz,xy,xz,yz,init,tens,sol},
+	tens=bmatI . ls;
+	If[tens=={0.,0.,0.,0.,0.,0.,0.},
+		tens,
+		v={xx,yy,zz,xy,xz,yz,tens[[7]]};
+		init=Thread[{v[[1;;6]],tens[[1;;6]]}];
+		sol=FindMinimum[.5 Total[(s-Exp[bmat . v])^2],init][[2]];
+		v/.sol
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*NLS*)
+
+
+TensMinGMM[s_,ls_,bmat_,bmatI_] := 
+Module[{v,xx,yy,zz,xy,xz,yz,init,tens,res,w},
+	s;
+	tens=bmatI . ls;
+	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
+		v={xx,yy,zz,xy,xz,yz,tens[[7]]};
+		init=Thread[{v[[1;;6]],tens[[1;;6]]}];
+		v/.FindMinimum[(
+			res=ls-bmat . v;
+			w=1/(res^2+Mean[res]^2);
+			.5 Total[(w/Mean[w])*(res)^2]
+		),init][[2]]
+		]
+	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CLLS*)
+
+
+TensMinCLLS[s_,ls_,bmat_,bmatI_] := 
+Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
+	s;
+	tens=bmatI . ls;
+	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
+		v={r0^2,r1^2+r3^2,r2^2+r4^2+r5^2,r0 r3,r0 r4,r3 r4+r1 r5,tens[[7]]};
+		init=Thread[{{r0,r1,r2,r3,r4,r5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
+		v/.FindMinimum[.5Total[(ls-bmat . v)^2],init][[2]]
+		]
+	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CWLLS*)
+
+
+TensMinCWLLS[s_,ls_,bmat_,bmatI_] := 
+Module[{v,r0,r1,r2,r3,r4,r5,init,tens,std=1,wMat},
+	bmatI;
+	wMat=Transpose[bmat] . DiagonalMatrix[s^2/std^2];
+	tens = LinearSolve[wMat . bmat, wMat . ls];
+	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
+		v={r0^2,r1^2+r3^2,r2^2+r4^2+r5^2,r0 r3,r0 r4,r3 r4+r1 r5,tens[[7]]};
+		init=Thread[{{r0,r1,r2,r3,r4,r5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
+		v/.FindMinimum[.5Total[(s^2/std^2)*(ls-bmat . v)^2],init][[2]]
+		]
+	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CNLS*)
+
+
+TensMinCNLS[s_,ls_,bmat_,bmatI_] := 
+Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
+	tens=bmatI . ls;
+	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
+		v={r0^2,r1^2+r3^2,r2^2+r4^2+r5^2,r0 r3,r0 r4,r3 r4+r1 r5,tens[[7]]};
+		init=Thread[{{r0,r1,r2,r3,r4,r5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
+		v/.FindMinimum[.5Total[(s-Exp[bmat . v])^2],init][[2]]
+		]
+	]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ExtendedCholeskyDecomposition*)
+
+
+ExtendedCholeskyDecomposition[tm_] := Block[{n,beta,theta,cm,lm,dm,em,j},
+	n=Length[tm];
+	beta=Max[{Max[Diagonal[tm]],Max[UpperTriangularize[tm,1]]/Sqrt[n^2-1],10^-15}];
+	cm=DiagonalMatrix[Diagonal[tm]];
+	lm=dm=em=ConstantArray[0,{n,n}];
+	Table[
+		If[j==1,
+			(*j=1 make first column cm equal to tm*)
+			cm[[j+1;;,j]]=tm[[j+1;;,j]];
+			,
+			(*j>1 fill lm matrix*)
+			lm[[j,;;j-1]]=cm[[j,;;j-1]]/(Diagonal[dm][[;;j-1]]/.(0.->Infinity));
+			If[j<n,
+				cm[[j+1;;,j]]=tm[[j+1;;,j]]-lm[[j,j-1;;]] . Transpose[cm[[j+1;;,j-1;;]]]
+				];
+			];
+		theta=If[j==n,0,Max[Abs[cm[[j+1;;,j]]]]];
+		dm[[j,j]]=Max[{Abs[cm[[j,j]]],theta^2/beta}];
+		em[[j,j]]=dm[[j,j]]-cm[[j,j]];
+		cm=cm-DiagonalMatrix[PadLeft[(1/(dm[[j,j]]/.(0.->Infinity)))*cm[[j+1;;,j]]^2,n]];
+	,{j,1,3}];
+	lm=lm+IdentityMatrix[n];
+	Transpose[lm . MatrixPower[dm,.5]]
 ]
 
 

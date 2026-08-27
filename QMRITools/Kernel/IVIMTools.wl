@@ -308,7 +308,8 @@ IVIMCorrectData[data_, {s0_, f_, pdc_}, bval_, OptionsPattern[]] := Module[{ff, 
 ]
 
 SynDatai = Compile[{{s0, _Real, 3}, {f, _Real, 3}, {pdc, _Real, 3}, {bval, _Real, 1}}, 
-	Transpose[Map[(f s0 Exp[-# pdc]) &, bval]]];
+	Transpose[Map[(f s0 Exp[-# pdc]) &, bval]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 LapFilt[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@data, "Real"], fil, 
 	Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
@@ -348,25 +349,22 @@ IVIMResiduals[data_, binp_, pars_] := Block[{depthD,depthP,dat,par,res},
 	Sqrt[Mean[Drop[res, 1]^2]] // N
 ];
 
-IVIMResCalcC = Block[{s0, f1, f2, dc, pdc1, pdc2, out}, 
-	Compile[{{dat, _Real, 1}, {binp, _Real, 1}, {pars, _Real, 1}},
-		out = Switch[Length[pars],
+
+IVIMResCalcC = Compile[{{dat, _Real, 1}, {binp, _Real, 1}, {pars, _Real, 1}}, Block[{s0, f1, f2, dc, pdc1, pdc2, out}, 
+	out = 0. dat;
+	out = Switch[Length[pars],
 		2,
 		{s0, dc} = pars;
 		(s0*(((Exp[-binp dc])))),
 		4,
 		{s0, f1, dc, pdc1} = pars;
-		(s0*((((1 - f1)*Exp[-binp dc]) + (f1*Exp[-binp pdc1])))),
+		(s0*((((1 - f1) Exp[-binp dc]) + (f1 Exp[-binp pdc1])))),
 		6,
 		{s0, f1, f2, dc, pdc1, pdc2} = pars;
-		(s0*((((1 - f1 - f2)*Exp[-binp dc]) + (f1*
-					Exp[-binp pdc1]) + (f2*Exp[-binp pdc2]))))
-		];
-		dat - out
-		, {{out, _Real, 1}}, RuntimeAttributes -> {Listable}, 
-		RuntimeOptions -> "Speed"
-	]
-];
+		(s0*((((1 - f1 - f2) Exp[-binp dc]) + (f1 Exp[-binp pdc1]) + (f2*Exp[-binp pdc2]))))
+	];
+	dat - out
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Section:: *)

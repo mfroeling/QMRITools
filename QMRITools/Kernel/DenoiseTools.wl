@@ -342,7 +342,7 @@ PCADeNoise[data_, opts : OptionsPattern[]] := PCADeNoise[data, 1, 0., opts];
 PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., opts];
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
-		weight, ker, tol, mon, data, min, max, maskd, mask, sigma, dim, zdim, ydim, xdim, ddim, 
+		weight, ker, tol, mon, data, min, max, maskd, mask, sigma, dim, zdim, ydim, xdim, dDim, 
 		k, m, n, off, datao, weights, sigmat, start, sigmati, nmati, clip, comp, len,
 		output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
 		weightFun, posV, length, nearPos, p, pi, pos, np, met, trans, comps,
@@ -370,10 +370,10 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	sigma = ToPackedArray[N@sigmai];
 
 	(*get data dimensions*)
-	dim = {zdim, ddim, ydim, xdim} = Dimensions[data];
+	dim = {zdim, dDim, ydim, xdim} = Dimensions[data];
 	ker = If[EvenQ[ker] && met =!= "Similarity", ker - 1, ker];
 	k = Round[ker^3];
-	{trans, m, n} = If[ddim < k, {False, ddim, k}, {True, k, ddim}];
+	{trans, m, n} = If[dDim < k, {False, dDim, k}, {True, k, dDim}];
 	mid = Ceiling[ker^3/2];
 
 	(*define sigma*)
@@ -501,7 +501,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 					
 					(*define initial sigma and get pixel range and data*)
 					{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
-					fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, ddim}];
+					fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, dDim}];
 					sigi = sigma[[z, y, x]];
 
 					(*perform the fit and reconstruct the noise free data*)
@@ -527,11 +527,11 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 			,
 
-			fun = If[par, DistributeDefinitions[data, sigma, trans, m, n, tol, par, k, ddim, mid, off, pad, PCADeNoiseFit];ParallelMap, Map];
+			fun = If[par, DistributeDefinitions[data, sigma, trans, m, n, tol, par, k, dDim, mid, off, pad, PCADeNoiseFit];ParallelMap, Map];
 			{datao, sigmat, sigmati, nmati} = Transpose@fun[(If[!par, j++];
 				{z, y, x} = #;
 				{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
-				fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, ddim}];
+				fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, dDim}];
 				{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigma[[z, y, x]], {trans, m, n}, tol];
 				{datn[[mid]], sigo, sigo, Nes}
 			)&, coors];
@@ -609,7 +609,7 @@ GridSearch = Compile[{{val, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig,
 
 	(*give output*)
 	{pi, si}
-], RuntimeOptions -> "Speed", Parallelization -> True];
+], RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -938,13 +938,13 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 
 
 DivDot = Compile[{{t, _Real, 2}, {gr, _Real, 2}}, gr . t
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 StrucTensCalc = Compile[{{eval, _Real, 1}, {evec, _Real, 2}, {tr, _Real, 0}},
 	If[Max[eval] < tr, {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}},
 		Transpose[evec] . DiagonalMatrix[3 eval/Total[eval]] . evec
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsection:: *)
@@ -1246,7 +1246,7 @@ MakeRBF[{coor_, sel_}, rad_, vox_]:=Block[{seed, target, n, m, nr, index, indexF
 GaussianRBFGradientC = Compile[{{center, _Real, 1}, {points, _Real, 2}, {ind, _Integer, 1}, {r2, _Real, 0}}, Block[{c},
     c = Transpose[points[[ind]]] - center;
     Flatten[2 r2 Exp[-Total[c^2] r2] Transpose[c], 1]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1255,7 +1255,7 @@ GaussianRBFGradientC = Compile[{{center, _Real, 1}, {points, _Real, 2}, {ind, _I
 
 IndexSwitch = Compile[{{i, _Integer, 1}, {dm, _Integer, 0}}, 
 	Flatten[If[dm === 2, Transpose[{2 i - 1, 2 i}], Transpose[{3 i - 2, 3 i - 1, 3 i}]], 1]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1386,7 +1386,7 @@ GetDiffusionValues[tens_,vec_]:=Mean[GetDiffC[tens, vec]]
 GetDiffC = Compile[{{t,_Real,2}, {v,_Real,1}}, Block[{vv},
 	vv = Dot[v, v];
 	If[vv == 0., 0., v . t . v/vv]
-], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
+], RuntimeAttributes->{Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1400,7 +1400,7 @@ GetGradC = Compile[{{t, _Real, 2}, {v, _Real, 1}}, Block[{vv, tv},
 	vv = Dot[v, v];
 	tv = Dot[t, v];
 	If[vv == 0., v, ((v . tv)v - (vv tv))/vv^2]
-], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
+], RuntimeAttributes->{Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1472,7 +1472,7 @@ MakeTens = Compile[{{vecN1, _Real, 1}, {vec2, _Real, 1}, {val, _Real, 1}}, Block
 	matL = {{val[[1]], 0., 0.}, {0., val[[2]], 0.}, {0., 0., val[[3]]}};
 	Transpose[matE] . matL . matE
 
-], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
+], RuntimeAttributes->{Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Section:: *)

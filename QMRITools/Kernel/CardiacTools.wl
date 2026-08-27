@@ -303,7 +303,7 @@ Begin["`Private`"]
 
 DotC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
 	vec1 . vec2, 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -312,7 +312,7 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 MakePerpendicular = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
 	Normalize[vec1 - (vec1 . vec2) vec2], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -321,7 +321,7 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 NormalizeC = Compile[{{vec, _Real, 1}}, 
 	Normalize[vec], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -330,7 +330,7 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
 
 CrossC = Compile[{{vec1, _Real, 1}, {vec2, _Real, 1}}, 
 	Cross[vec1, vec2], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -487,7 +487,7 @@ CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?Numbe
 
 RadVecC = Compile[{{dim, _Real, 1}, {off, _Real, 2}}, 
 	Table[Normalize[{i, j, k}-off[[i]]], {i, dim[[1]]}, {j, dim[[2]]}, {k, dim[[3]]}], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -499,7 +499,7 @@ NorVecR = Compile[{{angmap, _Real, 0}, {rotvec, _Real, 1}, {norvec, _Real, 1}}, 
 	iden = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 	W = -{{0, -v3, v2}, {v3, 0, -v1}, {-v2, v1, 0}};
 	(iden + Sin[angmap] W + (2 Sin[angmap/2]^2 MatrixPower[W, 2])) . norvec], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -953,7 +953,7 @@ FillFun = Compile[{{v, _Integer, 1}}, Block[{out, in, i, m},
 			out = out + m 2 Prepend[UnitStep[Abs[Differences[out]] - 2], 0]
 		];
 	out, out]]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection:: *)
@@ -1231,7 +1231,7 @@ FindPoint[pmid_, step_, fun_] := Block[
 	(*define line perpendicular to wall and find nearest wall point*)
 	ptar = pmid + step;
 	pnear = First @ fun[ptar, 1];
-	ni = nd = Sqrt[Total[(pnear - ptar) ^ 2]];
+	ni = nd = Norm[(pnear - ptar)];
 	j = 0;
 	(*project point on line and find the new point closest to new line*)
 		
@@ -1241,7 +1241,7 @@ FindPoint[pmid_, step_, fun_] := Block[
 		u = pnear - pmid; 
 		p = (v . u / v . v) v; 
 		ptar = pmid + Sign[p . step] p; 
-		pnear = First @ fun[ptar, 1]; n = Sqrt[Total[(pnear - ptar) ^ 2]]; 
+		pnear = First @ fun[ptar, 1]; n = Norm[(pnear - ptar)]; 
 		nd = Abs[n - ni]; 
 		ni = n;
 	];
@@ -1955,7 +1955,7 @@ PointRangeC = Compile[{{pts, _Real, 2}, {steps, _Integer, 0}, {drop, _Integer, 0
 	n = steps - 1;
 	step = (pts[[2]] - pts[[1]])/n;
 	pts[[1]] + # step & /@ Range[0 + drop, n - drop]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection::Closed:: *)

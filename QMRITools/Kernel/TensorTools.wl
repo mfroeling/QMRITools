@@ -395,31 +395,32 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 
 
 (*Solve for the tensor fit:(bmat^T.(w bmat)).x=bmat^T.(w ls).w via Cholesky decomposition instead of LinearSolve*)
-TensCholeskySolve = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {w, _Real, 1}}, Block[{bmatT, a, b, n, l, y, x, piv},
-	bmatT = Transpose[bmat];
-	(*weighted normal equations:a.x=b*)
-	a = bmatT . (w bmat);
-	b = bmatT . (w ls);
-	n = Length[b];
-	l = 0. a;
-	(*Cholesky-Banachiewicz decomposition:a==l.Transpose[l], l lower triangular*)
-	Do[Do[
-		piv = a[[i, j]] - Sum[l[[i, k]] l[[j, k]], {k, 1, j - 1}];
-		(*clamp a non-positive pivot instead of letting Sqrt produce a complex*)
-		If[i == j,
-			l[[i, i]] = Sqrt[Max[piv, 10^-12]],
-			l[[i, j]] = piv /l[[j, j]]
-		]
-		, {j, 1, i}], {i, 1, n}];
-	(*forward substitution:solve l.y==b*)
-	y = 0. b;
-	Do[y[[i]] = (b[[i]] - Sum[l[[i, k]] y[[k]], {k, 1, i - 1}]) / l[[i, i]], {i, 1, n}];
-	(*back substitution:solve Transpose[l].x==y*)
-	x = 0. b;
-	Do[x[[i]] = (y[[i]] - Sum[l[[k, i]] x[[k]], {k, i + 1, n}]) / l[[i, i]], {i, n, 1, -1}];
-	(*give output*)
-	x
-]
+TensCholeskySolve = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {w, _Real, 1}}, 
+	Block[{bmatT, a, b, n, l, y, x, piv},
+		bmatT = Transpose[bmat];
+		(*weighted normal equations:a.x=b*)
+		a = bmatT . (w bmat);
+		b = bmatT . (w ls);
+		n = Length[b];
+		l = 0. a;
+		(*Cholesky-Banachiewicz decomposition:a==l.Transpose[l], l lower triangular*)
+		Do[Do[
+			piv = a[[i, j]] - Sum[l[[i, k]] l[[j, k]], {k, 1, j - 1}];
+			(*clamp a non-positive pivot instead of letting Sqrt produce a complex*)
+			If[i == j,
+				l[[i, i]] = Sqrt[Max[piv, 10^-12]],
+				l[[i, j]] = piv /l[[j, j]]
+			]
+			, {j, 1, i}], {i, 1, n}];
+		(*forward substitution:solve l.y==b*)
+		y = 0. b;
+		Do[y[[i]] = (b[[i]] - Sum[l[[i, k]] y[[k]], {k, 1, i - 1}]) / l[[i, i]], {i, 1, n}];
+		(*back substitution:solve Transpose[l].x==y*)
+		x = 0. b;
+		Do[x[[i]] = (y[[i]] - Sum[l[[k, i]] x[[k]], {k, i + 1, n}]) / l[[i, i]], {i, n, 1, -1}];
+		(*give output*)
+		x
+	]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
@@ -508,9 +509,8 @@ FindTensOutliers = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {
 		];(*close if background*)
 
 		out
-	],
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}
-]
+	]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -580,134 +580,6 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 		sol
 	]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}]
-
-
-(* ::Subsubsection::Closed:: *)
-(*DKI*)
-
-
-(*TensMinDKI[s_,ls_,bmat_,bmatI_] := bmatI.ls*)
-TensMinDKI = Compile[{{s, _Real, 1}, {bmatI, _Real, 2}},
-	If[Total[s]==0.,
-		{0.,0.,0.,0.,0.,0.,0.},
-		bmatI . s
-	]
-,RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
-
-
-(* ::Subsubsection::Closed:: *)
-(*NLS*)
-
-
-TensMinNLS[s_,ls_,bmat_,bmatI_] := 
-Module[{v,xx,yy,zz,xy,xz,yz,init,tens,sol},
-	tens=bmatI . ls;
-	If[tens=={0.,0.,0.,0.,0.,0.,0.},
-		tens,
-		v={xx,yy,zz,xy,xz,yz,tens[[7]]};
-		init=Thread[{v[[1;;6]],tens[[1;;6]]}];
-		sol=FindMinimum[.5 Total[(s-Exp[bmat . v])^2],init][[2]];
-		v/.sol
-	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*NLS*)
-
-
-TensMinGMM[s_,ls_,bmat_,bmatI_] := 
-Module[{v,xx,yy,zz,xy,xz,yz,init,tens,res,w},
-	s;
-	tens=bmatI . ls;
-	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
-		v={xx,yy,zz,xy,xz,yz,tens[[7]]};
-		init=Thread[{v[[1;;6]],tens[[1;;6]]}];
-		v/.FindMinimum[(
-			res=ls-bmat . v;
-			w=1/(res^2+Mean[res]^2);
-			.5 Total[(w/Mean[w])*(res)^2]
-		),init][[2]]
-		]
-	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*CLLS*)
-
-
-TensMinCLLS[s_,ls_,bmat_,bmatI_] := 
-Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
-	s;
-	tens=bmatI . ls;
-	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
-		v={r0^2,r1^2+r3^2,r2^2+r4^2+r5^2,r0 r3,r0 r4,r3 r4+r1 r5,tens[[7]]};
-		init=Thread[{{r0,r1,r2,r3,r4,r5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
-		v/.FindMinimum[.5Total[(ls-bmat . v)^2],init][[2]]
-		]
-	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*CWLLS*)
-
-
-TensMinCWLLS[s_,ls_,bmat_,bmatI_] := 
-Module[{v,r0,r1,r2,r3,r4,r5,init,tens,std=1,wMat},
-	bmatI;
-	wMat=Transpose[bmat] . DiagonalMatrix[s^2/std^2];
-	tens = LinearSolve[wMat . bmat, wMat . ls];
-	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
-		v={r0^2,r1^2+r3^2,r2^2+r4^2+r5^2,r0 r3,r0 r4,r3 r4+r1 r5,tens[[7]]};
-		init=Thread[{{r0,r1,r2,r3,r4,r5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
-		v/.FindMinimum[.5Total[(s^2/std^2)*(ls-bmat . v)^2],init][[2]]
-		]
-	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*CNLS*)
-
-
-TensMinCNLS[s_,ls_,bmat_,bmatI_] := 
-Module[{v,r0,r1,r2,r3,r4,r5,init,tens},
-	tens=bmatI . ls;
-	If[tens=={0.,0.,0.,0.,0.,0.,0.},tens,
-		v={r0^2,r1^2+r3^2,r2^2+r4^2+r5^2,r0 r3,r0 r4,r3 r4+r1 r5,tens[[7]]};
-		init=Thread[{{r0,r1,r2,r3,r4,r5},TensVec[ExtendedCholeskyDecomposition[TensMat[tens]]]}];
-		v/.FindMinimum[.5Total[(s-Exp[bmat . v])^2],init][[2]]
-		]
-	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*ExtendedCholeskyDecomposition*)
-
-
-ExtendedCholeskyDecomposition[tm_] := Block[{n,beta,theta,cm,lm,dm,em,j},
-	n=Length[tm];
-	beta=Max[{Max[Diagonal[tm]],Max[UpperTriangularize[tm,1]]/Sqrt[n^2-1],10^-15}];
-	cm=DiagonalMatrix[Diagonal[tm]];
-	lm=dm=em=ConstantArray[0,{n,n}];
-	Table[
-		If[j==1,
-			(*j=1 make first column cm equal to tm*)
-			cm[[j+1;;,j]]=tm[[j+1;;,j]];
-			,
-			(*j>1 fill lm matrix*)
-			lm[[j,;;j-1]]=cm[[j,;;j-1]]/(Diagonal[dm][[;;j-1]]/.(0.->Infinity));
-			If[j<n,
-				cm[[j+1;;,j]]=tm[[j+1;;,j]]-lm[[j,j-1;;]] . Transpose[cm[[j+1;;,j-1;;]]]
-				];
-			];
-		theta=If[j==n,0,Max[Abs[cm[[j+1;;,j]]]]];
-		dm[[j,j]]=Max[{Abs[cm[[j,j]]],theta^2/beta}];
-		em[[j,j]]=dm[[j,j]]-cm[[j,j]];
-		cm=cm-DiagonalMatrix[PadLeft[(1/(dm[[j,j]]/.(0.->Infinity)))*cm[[j+1;;,j]]^2,n]];
-	,{j,1,3}];
-	lm=lm+IdentityMatrix[n];
-	Transpose[lm . MatrixPower[dm,.5]]
-]
 
 
 (* ::Subsection:: *)
@@ -957,7 +829,7 @@ EigenVecC = Compile[{{tens, _Real, 1}, {eig, _Real, 1}}, Block[{
 		, {l, eig}]
 	]
 
-], RuntimeAttributes->{Listable}, RuntimeOptions->"Speed"];
+], RuntimeAttributes->{Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -968,7 +840,9 @@ SyntaxInformation[ADCCalc] = {"ArgumentsPattern" -> {_}};
 
 ADCCalc[eig_] := ADCCalcI[eig]
 
-ADCCalcI = Compile[{{eig, _Real, 1}}, Mean[eig], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+ADCCalcI = Compile[{{eig, _Real, 1}}, 
+	Mean[eig]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -983,7 +857,7 @@ FACalcI = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3, eigNorm},
 	l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
 	eigNorm = Sqrt[2.*Total[eig^2]];
 	If[eigNorm == 0., 0. , Sqrt[(l1 - l2)^2 + (l2 - l3)^2 + (l1 - l3)^2] / eigNorm]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -997,7 +871,7 @@ ECalc[eig_] := ECalcI[eig]
 ECalcI = Compile[{{eig, _Real, 1}}, Block[{l1, l2, l3},
 	l1 = eig[[1]]; l2 = eig[[2]]; l3 = eig[[3]];
 	Sqrt[1 - (l3 / l1)]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 
@@ -1538,16 +1412,16 @@ FitRPBMDictionary[sig_, {pars_, sim_}, snr_, d0i_] := Block[{
 RPBMminFunc[sig_?ListQ, d0_Real, sim_] := RPBMMinErrorC[sig, d0, sim];
 
 RPBMMinErrorC = Compile[{{sig, _Real, 1}, {d0, _Real, 0}, {sim, _Real, 2}}, 
-	Min[Total[((sig/d0) - sim)^2]]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	Min[Total[((sig / d0) - sim)^2]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (*get the position of the minimal root mean square value*)
 RPBMsolFunc[sig_?ListQ, d0_Real, {pars_, sim_}] := Flatten[{d0, pars[[TakeSmallest[RPBMErrorC[sig, d0, sim] -> "Index", 1]]]}];
 
 RPBMErrorC = Compile[{{sig, _Real, 1}, {d0, _Real, 0}, {sim, _Real, 2}}, 
-	Total[((sig/d0) - sim)^2]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	Total[((sig / d0) - sim)^2]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection:: *)

@@ -219,12 +219,14 @@ AddNoise[dat_,noise_,OptionsPattern[]]:=Block[{sig,data,mDat,fDat},
 
 
 RicianDistribution = Compile[{{Mu, _Real, 0}, {Sigma, _Real, 0}},
-	Sqrt[RandomReal[NormalDistribution[Mu, Sigma]]^2 + RandomReal[NormalDistribution[0, Sigma]]^2],
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+	Sqrt[RandomReal[NormalDistribution[Mu, Sigma]]^2 + RandomReal[NormalDistribution[0, Sigma]]^2]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+
 
 ComplexDistribution = Compile[{{Mu, _Complex, 0}, {Sigma, _Complex, 0}},
-	RandomReal[NormalDistribution[Re@Mu, Sigma]] + I RandomReal[NormalDistribution[Im@Mu, Sigma]],
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+	RandomReal[NormalDistribution[Re@Mu, Sigma]] + I RandomReal[NormalDistribution[Im@Mu, Sigma]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+
 
 (* ::Subsection:: *)
 (*Tensor*)
@@ -376,8 +378,8 @@ BlochSeriesI = Compile[{{mi, _Real, 1}, {dt, _Real, 0}, {w, _Real, 0}, {p, _Real
 	{Mx, My, Mz} = M;
 	Mt = Norm[{Mx, My}];
 	(*give output {w,MT,Mz,Mx,My,ang,phase}*)
-	{w, Mt, Mz, Mx, My, ArcTan[Mz, Mt]/Degree, Arg[Mx+ My I]}]
-,RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	{w, Mt, Mz, Mx, My, ArcTan[Mz, Mt] / Degree, Arg[Mx+ My I]}]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

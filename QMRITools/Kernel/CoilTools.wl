@@ -172,7 +172,7 @@ CoilSNRCalc[coils_, noise_] := Block[{
 
 WeightedSNR[signal_, noise_, weights_] := Block[{sigmap, sigtot, snr},
 	sigtot = Total[signal weights];
-	sigmap = Sqrt[Total[weights^2 (Sqrt[2./Pi] GaussianFilter[noise, 3])^2]];
+	sigmap = Norm[weights (Sqrt[2./Pi] GaussianFilter[noise, 3])];
 	snr = DivideNoZero[sigtot, sigmap];
 	{snr, sigmap}
 ]

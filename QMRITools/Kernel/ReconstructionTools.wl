@@ -592,7 +592,7 @@ FourierKspace2DI = Compile[{{data, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _
 		(*clip the data to the correct dimensions*)
 		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]]]]]
 	], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -637,7 +637,7 @@ FourierKspace3DI = Compile[{{data, _Complex, 3}, {ksPad, _Integer, 2}, {shift, _
 		(*clip the data to the correct dimensions*)
 		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]], clip[[3, 1]] ;; clip[[3, 2]]]]]
 	], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -838,13 +838,13 @@ MeanCombine[sig_] := Mean[sig];
 
 
 RSSCombine = Compile[{{sig, _Complex, 1}}, 
-	Abs@Sqrt[Conjugate[sig].sig],
-	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+	Abs@Sqrt[Conjugate[sig].sig]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 RSSCovCombine = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}}, 
-	Abs@Sqrt[Conjugate[sig].cov.sig],
-	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+	Abs@Sqrt[Conjugate[sig].cov.sig]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -852,8 +852,8 @@ RSSCovCombine = Compile[{{sig, _Complex, 1}, {cov, _Complex, 2}},
 
 
 RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
-	(Conjugate[sen].cov.sig)/Sqrt[Conjugate[sen].cov.sen],
-	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+	(Conjugate[sen].cov.sig) / Sqrt[Conjugate[sen].cov.sen]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -861,8 +861,8 @@ RoemerNCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex
 
 
 RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex, 2}}, 
-	(Conjugate[sen].cov.sig)/(Conjugate[sen].cov.sen),
-	RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+	(Conjugate[sen].cov.sig) / (Conjugate[sen].cov.sen)
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

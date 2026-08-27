@@ -555,7 +555,7 @@ RotMatrixTC = Compile[{{alpha, _Real, 0}}, Chop[{
 	{Cos[alpha/2]^2, Sin[alpha/2]^2, Sin[alpha]},
 	{Sin[alpha/2]^2, Cos[alpha/2]^2, -Sin[alpha]},
 	{-0.5 Sin[alpha], 0.5 Sin[alpha], Cos[alpha]}
-}], RuntimeOptions -> "Speed"];
+}], RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 RotMatrixTI[alpha_, phi_] := RotMatrixTCI[alpha, phi];
 
@@ -564,7 +564,7 @@ RotMatrixTCI = Compile[{{alpha, _Real, 0}, {phi, _Real, 0}}, Chop[{
 	{Cos[alpha/2]^2, Exp [2 phi I] Sin[alpha/2]^2, -I Exp [phi I] Sin[alpha]},
 	{Exp [-2 phi I] Sin[alpha/2]^2, Cos[alpha/2]^2, I Exp [-phi I] Sin[alpha]},
 	{-0.5 I Exp [-phi I] Sin[alpha], 0.5 I Exp [phi I] Sin[alpha], Cos[alpha]}
-}], RuntimeOptions -> "Speed"];
+}], RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -575,13 +575,13 @@ MoveStates = Compile[{{Rmat, _Real, 2}, {Rvec, _Real, 1}, {Smat, _Real, 2}, {Tma
 	(*Rmat = relaxation; Rvec = Mz recovery; Tmat = Rf pulse;*)
 	(*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
 	NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, nEcho]
-, RuntimeOptions -> "Speed"];
+, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 MoveStatesI = Compile[{{Rmat, _Complex, 2}, {Rvec, _Complex, 1}, {Smat, _Integer, 2}, {Tmat, _Complex, 2}, {svec, _Complex, 1}, {nEcho, _Integer, 0}},
 	(*Rmat = relaxation; Rvec = Mz recovery; Tmat = Rf pulse;*)
 	(*1. Relaxation - 2. Mz-rec - 3. Change states - 4. RF pulse - 5. Relaxation - 6. Mz-rec - 7. Change states*)
 	NestList[Chop[Smat.(Rmat.(Tmat.(Smat.((Rmat.#) + Rvec))) + Rvec)] &, svec, nEcho]
-, RuntimeOptions -> "Speed"];
+, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection:: *)
@@ -663,39 +663,39 @@ ErrorFunc2MFS[y_, t2m_Real, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, 
 
 (*calculate the pseudoinverse Ai*)
 PseudoInverseC = Compile[{{A, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.A].T)], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 PseudoInverseWC = Compile[{{A, _Real, 2}, {W, _Real, 2}}, Block[{T = Transpose[A]}, (Inverse[T.W.A].T.W)], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 LeastSquaresC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, (Inverse[T.A].T).y], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*Ai is Inverse[T.A].T*)   
 LeastSquares2C = Compile[{{Ai, _Real, 2}, {y, _Real, 1}},  Ai.y, 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*f is Ai.y*)
 ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Total[((y - A.f))^2], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 ErrorCS = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Sqrt[Mean[((y - A.f))^2]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 LeastSquaresErrorC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, 
 	Total[(y - A.(Inverse[T.A].T).y)^2]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 LeastSquaresErrorCS = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, 
 	Sqrt[Mean[(y - A.(Inverse[T.A].T).y)^2]]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*Ai is Inverse[T.A].T*)	
 LeastSquaresError2C = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Total[(y - A.Ai.y)^2], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 LeastSquaresError2CS = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Sqrt[Mean[(y - A.Ai.y)^2]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

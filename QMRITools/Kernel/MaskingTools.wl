@@ -220,10 +220,10 @@ NormDatC = Compile[{{dat, _Real, 3}}, Block[{fl, min, max, bins, cdf, n, tot},
 		tot = Total[bins];
 		If[tot == 0., dat,
 			cdf = Accumulate[bins]/tot;
-			Map[cdf[[#]] &, Clip[Floor[(n - 1) (dat - min)/(max - min) + 1], {1, n}, {1, n}], {-2}]]
+			Map[cdf[[#]] &, Clip[Floor[(n - 1) (dat - min)/(max - min) + 1], {1, n}, {1, n}], {-2}]
 		]
-	],
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True]
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True]
 
 
 (*normalization towards median of given value*)

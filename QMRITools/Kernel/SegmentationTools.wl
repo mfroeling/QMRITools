@@ -1493,7 +1493,9 @@ CoinN[t_] := RandomChoice[{t, 1 - t} -> {1, 0}]
 (*ReverseC*)
 
 
-ReverseC = Compile[{{dat, _Real, 1}}, Reverse[dat], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+ReverseC = Compile[{{dat, _Real, 1}}, 
+	Reverse[dat]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1985,7 +1987,7 @@ DiceSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Int
 	predictionVector = 1 - Unitize[pred - class];
 	inter = Total[referenceVector predictionVector];
 	N[(2 inter + 1) / (Total[referenceVector] + Total[predictionVector] + 1)]]
-, RuntimeOptions -> "Speed", Parallelization -> True];
+, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
 
 flatRound=Flatten@Round@ToPackedArray@#&
@@ -2013,7 +2015,7 @@ JaccardSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _
 	predictionVector = 1 - Unitize[pred - class];
 	inter = Total[referenceVector predictionVector];
 	N[(inter + 1) / (Total[referenceVector] + Total[predictionVector] - inter + 1)]]
-, RuntimeOptions -> "Speed"];
+, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

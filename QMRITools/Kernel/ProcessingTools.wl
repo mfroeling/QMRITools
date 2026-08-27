@@ -574,9 +574,9 @@ Delta[a_] := a/Sqrt[1+a^2];
 Mn[w_,e_,a_] := e+w Delta[a] Sqrt[2/Pi];
 Var[w_,a_] := w^2(1-(2Delta[a]^2/Pi));
 
-SkewNormC=Compile[{{x, _Real},{omega, _Real},{xi, _Real},{alpha, _Real}},
-Chop[(2/omega)(1/(E^(((x-xi)/omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((alpha (x-xi)/omega))/Sqrt[2]]))]
-];
+SkewNormC = Compile[{{x, _Real},{omega, _Real},{xi, _Real},{alpha, _Real}},
+	Chop[(2/omega)(1/(E^(((x-xi)/omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((alpha (x-xi)/omega))/Sqrt[2]]))]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection::Closed:: *)
@@ -1252,7 +1252,7 @@ JoinFuncC = Compile[{{dat, _Real, 2}, {noZero, _Integer, 1}, {tot, _Integer, 0},
 
 	(*give the output*)
 	out
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
