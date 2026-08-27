@@ -258,7 +258,7 @@ PhaseCorrectError[specI_, phi0_?NumericQ] := PhaseCorrectErrorC[specI, phi0]
 PhaseCorrectErrorC = Compile[{{specI, _Complex, 1}, {phi0, _Real, 0}},Block[{specR},
 	specR = Re[Exp[-I phi0] specI];
 	Total[(Abs[specI] - specR)^2] - Total[specR]
-],RuntimeOptions -> "Speed", Parallelization -> True];
+],RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
 
 PhaseCorrectSpectra[spec_?ListQ, dw_?NumberQ] := PhaseCorrectSpectra[spec, dw, 0., 0., Full]
@@ -297,7 +297,7 @@ PhaseErrorH[specI_, phi0_?NumericQ] := PhaseErrorHC[specI, phi0]
 
 PhaseErrorHC = Compile[{{specI, _Complex, 1}, {phi0, _Real, 0}}, 
 	Total[Re[Exp[-I phi0] specI]], 
-	RuntimeOptions -> "Speed", Parallelization -> True
+	RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True
 ];
 
 
@@ -393,7 +393,7 @@ HankelSVDFid[fid_, dw_, gyro_, ppmRan_] := Block[{
 
 HankelSVDBasisC = Compile[{{time, _Real, 1}, {hankel, _Real, 2}}, 
 	Transpose[Exp[# time] & /@ (hankel[[1]] + 2 Pi I hankel[[2]])], 
-	RuntimeOptions -> "Speed"
+	RuntimeOptions -> {"Speed", "WarningMessages" -> False}
 ];
 
 
@@ -614,12 +614,12 @@ PhaseShiftSpectra[spec_, ppm_, gyro_, {phi0_, phi1_}] := PhaseShiftSpectraC[spec
 
 PhaseShiftSpectraC0 = Compile[{{spec, _Complex, 1}, {phi0, _Real, 0}},
 	Exp[-I phi0] spec,
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}
 ]
 
 PhaseShiftSpectraC = Compile[{{spec, _Complex, 1}, {ppm, _Real, 1}, {gyro, _Real, 0}, {phi0, _Real, 0}, {phi1, _Real, 0}},
 	Exp[-I (phi0 + 2 Pi (phi1 / 1000) gyro ppm)] spec,
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}
 ]
 
 
@@ -637,11 +637,11 @@ PhaseShiftFid[fid_, time_, {phi0_, phi1_}] := PhaseShiftFidC[fid, time, phi0, ph
 
 PhaseShiftFidC0 = Compile[{{fid, _Complex, 1}, {phi0, _Real, 0}}, 
 	Exp[-I phi0] fid, 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 PhaseShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {phi0, _Real, 0}, {phi1, _Real, 0}}, 
 	Exp[-I (phi0 + 2 Pi phi1 time)] fid, 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -660,7 +660,7 @@ TimeShiftFid[fid_, time_, gyro_, {{gamL_, gamG_}, eps_}] := TimeShiftFidC[fid, t
 
 TimeShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {gamL, _Real, 0}, {gamG, _Real, 0}, {eps, _Real, 0}},
 	Exp[- Pi (gamL time + 2 Pi gamG^2 time^2) + 2 Pi eps gyro I time] fid, 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}
 ]
 
 
@@ -681,7 +681,7 @@ TimeShiftEcho[fid_, time_, gyro_, {gam_, eps_, f_}] := TimeShiftEchoC[fid, time,
 TimeShiftEchoC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {gam, _Real, 0}, {eps, _Real, 0}, {f, _Real, 0}},Block[{timeNew},
 		timeNew = time - (time[[-1]]/2);
 		Exp[- Pi (gamL time + 2 Pi gamG^2 time^2) + 2 Pi eps gyro I time] fid
-	],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+	],RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}
 ]
 
 
@@ -701,41 +701,13 @@ ShiftSpectra[spec_, {dw_, gyro_}, shift_, OptionsPattern[]] := Block[{readout, f
 
 ShiftFidC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {eps, _Real, 0}}, 
 	Exp[2 Pi eps gyro I time] fid,
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
+	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}
 ]
 
 ShiftEchoC = Compile[{{fid, _Complex, 1}, {time, _Real, 1}, {gyro, _Real, 0}, {eps, _Real, 0}}, Block[{timeNew},
 	timeNew = time - (time[[-1]]/2);
 	Exp[2 Pi eps gyro I timeNew] fid
-	],RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"
-]
-
-
-FindSpectraPpmShift[spec_, {dw_, gyro_}, peaks_] := FindSpectraPpmShift[spec, {dw, gyro}, {peaks, 0}]
-
-FindSpectraPpmShift[spec_, {dw_, gyro_}, {peaks_, amp_}] := Block[{ppm, dPpm, tar, amps, weight, s, corrF, maxPos, sft},
-	ppm = GetPpmRange[spec, dw, gyro];
-	dPpm = (ppm[[1]] - ppm[[2]]);
-
-	tar = If[Length[spec] === Length[peaks],
-		Abs[peaks],
-		amps = If[amp === 0, 0. peaks + 1, amp];
-		tar = 0 ppm;
-		tar[[Flatten[Position[ppm, First@Nearest[ppm, #]] & /@ peaks]]] = amps/Max[amps];
-		tar
-	];
-
-	(*perform correlation of spectra with delta function*)
-	s = Max[ppm]/4;
-	weight = 1/(Exp[(ppm^2/(2*s^2))]*(Sqrt[2*Pi]*s));
-	weight = 1;
-	corrF = ListCorrelate[tar, Abs[spec], Round[Length[tar]/2], 0];
-	corrF = weight DivideNoZero[corrF, Max[corrF]];
-	maxPos = Position[corrF, Max[corrF]][[1, 1]];
-
-	(*constrain shift to 5ppm*)
-	sft = -dPpm (maxPos - (Length[ppm]/2.));
-	If[-5 < sft < 5, sft, 0]
+	],RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}
 ]
 
 
@@ -1554,7 +1526,7 @@ CSIInterface[file_?StringQ, {tei_?NumberQ, bwi_?NumberQ}, OptionsPattern[]] := M
 
 			(*find shift*)
 			spec = Mean@Flatten[spectra, 2];
-			shift = FindSpectraPpmShift[spec,{1./bw,gyro}, {{0, -2.52, -7.56, -16.15}, {2, 1, 1, 1}}]; 
+			shift = 0(*new find shift function to be added*); 
 			status = "Done reconstructing!"; statusP = False;
 			,
 			Background -> Dynamic[If[rec, RGBColor[0.86, 0.97, 0.77], Automatic]], Enabled -> Dynamic[kLoad && bw =!= 0], Method -> "Queued", ImageSize -> 175
@@ -1786,7 +1758,7 @@ FromVaxD=Compile[{{int,_Integer,0}},Block[{bin,sign ,fraction, exponent},
 	exponent=2.^(FromDigits[bin[[18;;25]],2]-128.);
 	(*create the number*)
 	sign fraction exponent
-],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+],RuntimeAttributes->{Listable},RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1832,7 +1804,7 @@ ToVaxD=Compile[{{num,_Real,0}},Block[{signBin,numA,exp,expBin,frac,fracBin},
 		(*output the integer*)
 		FromDigits[Join[fracBin[[8;;-1]],signBin,expBin,fracBin[[1;;7]]],2]
 	]
-],RuntimeAttributes->{Listable},RuntimeOptions->"Speed"];
+],RuntimeAttributes->{Listable},RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

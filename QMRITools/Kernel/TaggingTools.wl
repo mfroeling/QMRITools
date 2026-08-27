@@ -390,7 +390,7 @@ BandFilter[dim_,waveVecs_]:=BandFilter[dim,waveVecs]=Block[{
 	(*make fileters*)
 	Transpose[(
 		waveVec=#;
-		dgrid=Sqrt[Total[waveVec^2]];
+		dgrid=Norm[waveVec];
 		phi=ArcTan@@waveVec;
 		rw=1/dgrid;
 		lnrw=Log[rw];

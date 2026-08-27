@@ -1053,8 +1053,8 @@ ClassEncoder[data_, nClass_] := ToPackedArray@Round@If[nClass === 1, data, Class
 
 
 ClassEncoderC = Compile[{{class, _Integer, 0}, {vec, _Integer, 1}}, 
-	RotateRight[vec, class], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+	RotateRight[vec, class]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1069,8 +1069,8 @@ ClassDecoder[data_, nClass_] := ToPackedArray@Round@ClassDecoderC[data, Range[nC
 
 
 ClassDecoderC = Compile[{{prob, _Real, 1}, {classes, _Integer, 1}}, 
-	Max[classes (1 - Unitize[Chop[(prob/Max[prob]) - 1]])] - 1, 
-RuntimeAttributes -> {Listable}]
+	Max[classes (1 - Unitize[Chop[(prob/Max[prob]) - 1]])] - 1
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsection::Closed:: *)

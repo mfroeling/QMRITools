@@ -514,7 +514,7 @@ GradOptimize1C = Compile[{{points, _Real, 2}, {half, _Integer, 0}},	Block[{
 	If[half == 1, 
 		pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
 	pointsnew[[;; n]]]
-, RuntimeOptions -> "Speed"];
+, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*optimize singel shell with fixed gradients*)
 GradOptimize2C = Compile[{{points, _Real, 2}, {nf, _Real, 0}, {half, _Integer, 0}},	Block[{
@@ -540,7 +540,7 @@ GradOptimize2C = Compile[{{points, _Real, 2}, {nf, _Real, 0}, {half, _Integer, 0
 		pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
 	pointsnew[[;; n]]],
 	{{rang, _Real, 1}} 
-, RuntimeOptions -> "Speed"];
+, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*optimize singe shell Overplus*)
 GradOptimize3C = Compile[{{points, _Real, 2}, {char, _Real, 1}, {nf, _Real, 0}}, Block[{
@@ -562,7 +562,7 @@ GradOptimize3C = Compile[{{points, _Real, 2}, {char, _Real, 1}, {nf, _Real, 0}},
 			velocity));
 	pointsnew[[;; n]]],
 	{{rang, _Real, 1}}
-, RuntimeOptions -> "Speed"];
+, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 	(*optimize multi shell*)
 GradOptimize4C = Compile[{{points, _Real, 2}, {vel, _Real, 3}, {half, _Integer, 0}},
@@ -582,7 +582,7 @@ GradOptimize4C = Compile[{{points, _Real, 2}, {vel, _Real, 3}, {half, _Integer, 
 	If[half == 1, 
 		pointsnew = Sign[pointsnew[[All, 3]] + 10.^-16] pointsnew;];
 	pointsnew[[;; n]]]
-, RuntimeOptions -> "Speed"];
+, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection:: *)
@@ -1252,7 +1252,9 @@ FindOrder[grad_, bval_,OptionsPattern[]] := Block[{local, minval, orderout, n, m
 ]
 
 
-ValCalc = Compile[{{vec, _Real, 2}, {local, _Integer, 0}}, Max[Mean[Transpose[Partition[vec, local, 1]]]]];
+ValCalc = Compile[{{vec, _Real, 2}, {local, _Integer, 0}}, 
+	Max[Mean[Transpose[Partition[vec, local, 1]]]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 MakeAbsVec[grad_, bval_] := Partition[Flatten[Abs@(grad*Sqrt[bval])], 3];
@@ -1350,7 +1352,7 @@ Bmatrix[bvec_?VectorQ, grad_?MatrixQ, coilTens_?ArrayQ, OptionsPattern[]] := Bma
 BmatrixC = Compile[{{bv, _Real, 1}, {gt, _Real, 2}, {lmat, _Real, 2}}, Block[{gx, gy, gz},
 	{gx, gy, gz} = lmat . gt;
 	Transpose[-{bv gx^2, bv gy^2, bv gz^2, bv 2 gx gy, bv 2 gx gz, bv 2 gy gz, 0 gx - 1}]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1362,7 +1364,7 @@ BVector[bvec_?VectorQ, grad_?MatrixQ, coilTens_?ArrayQ, OptionsPattern[]] := BVe
 BVectorC = Compile[{{bv, _Real, 1}, {gt, _Real, 2}, {lmat, _Real, 2}}, Block[{gx, gy, gz}, 
 	{gx, gy, gz} = lmat . gt;
     bv gx^2 + bv gy^2 + bv gz^2
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1966,7 +1968,7 @@ MakeGradientDerivativesI[vox_, type_] := MakeGradientDerivativesI[vox, type] = B
 ToSphericalCoordinatesC = Compile[{{coor, _Real, 1}, {range, _Real, 1}}, Block[{x, y, z},
 	{z, x, y} = coor/range;
 	{Sqrt[x^2 + y^2 + z^2], ArcTan[z, Sqrt[x^2 + y^2]], ArcTan[x, y]}
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed" ];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

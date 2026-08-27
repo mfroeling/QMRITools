@@ -341,7 +341,7 @@ normNor[norm_] := 100 (Last[norm]/(Max /@ Transpose[norm]))
 
 ApplyPhase = Compile[{{comp, _Complex, 4}, {phase, _Complex, 4}, {mat, _Complex, 2}},
 	comp Exp[mat . phase],
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> True];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -350,7 +350,7 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed", Parallelization -> T
 
 DotAc = Compile[{{v1, _Complex, 1}, {v2, _Complex, 1}}, 
 	v1 . v2,
-RuntimeOptions -> "Speed", Parallelization -> True, RuntimeAttributes -> {Listable}];
+RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True, RuntimeAttributes -> {Listable}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -621,7 +621,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 
 InOutPhase = Compile[{{sig, _Complex, 1}, {matA, _Complex, 2}},
 	Abs[matA . sig]
-, RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -676,7 +676,7 @@ DixonFitC = Compile[{
 	(*output*)
 	Re[Join[rho, {rms, i}, phiEst]]
 
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -708,7 +708,7 @@ DixonFitFC = Compile[{
 		(*output*)
 		Join[rho, {rms}]
 	]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsection::Closed:: *)
@@ -1126,7 +1126,7 @@ UnWrapC = Compile[{{sorted, _Integer, 2}, {datai, _Real, 3}, {groupsi, _Integer,
 	(*output the unwraped data*)
 	data],
 
-RuntimeOptions -> "Speed", Parallelization -> True];
+RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1164,7 +1164,7 @@ GetEdgeList[data_, met_, maski_] := Block[{dep, diff, ker, mask, edge, coor, fed
 
 DiffU = Compile[{{diff, _Real, 0}}, 
 	If[-0.5 <= diff <= 0.5, diff, diff - Sign[diff] Ceiling[Abs[diff] - 0.5]]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

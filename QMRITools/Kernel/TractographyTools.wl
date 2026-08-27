@@ -219,7 +219,7 @@ FitTractsC = Compile[{{trf, _Real, 2}, {ord, _Real, 0}}, Block[{mat, r},
 	r = Range[Length[trf]];
 	mat = Transpose[r^# & /@ Range[0., ord]];
 	mat . (PseudoInverse[mat] . trf)]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -236,13 +236,13 @@ SelectValidCoor[trF_, vox_, dim_]:=Pick[trF, SelectValidCoorV[trF, vox, dim], 1]
 SelectValidCoorC = Compile[{{tr, _Real, 2}, {dim, _Integer, 1}}, Block[{x, y, z},
 	{x, y, z} = Transpose[tr];
 	UnitStep[x - 1] UnitStep[dim[[1]] - x] UnitStep[y - 1] UnitStep[dim[[2]] - y] UnitStep[z - 1] UnitStep[dim[[3]] - z]
-], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 SelectValidCoorV = Compile[{{tr, _Real, 2}, {vox, _Real, 1}, {dim, _Integer, 1}}, Block[{x, y, z},
 	{x, y, z} = Ceiling[Transpose[tr]/vox];
 	UnitStep[x - 1] UnitStep[dim[[1]] - x] UnitStep[y - 1] UnitStep[dim[[2]] - y] UnitStep[z - 1] UnitStep[dim[[3]] - z]
-], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -276,7 +276,7 @@ MoveTracts[tracts_, off:{_?NumberQ,_?NumberQ,_?NumberQ}]:=MoveTractsC[tracts, of
 
 MoveTractsC = Compile[{{tr, _Real, 2}, {off, _Real, 1}},
 	# + off & /@ tr
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -291,13 +291,13 @@ RescaleTracts[tracts_, sc:{_?NumberQ,_?NumberQ,_?NumberQ}]:=ToPackedArray[ToPack
 
 (*rescale to accurate values*)
 RescaleTractsI = Compile[{{tr, _Real, 2}, {sc, _Real, 1}},
-	Transpose[Transpose[tr]/sc]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+	Transpose[Transpose[tr] / sc]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 (*rescale to coordinates, for length*)
 RescaleTractsC = Compile[{{tr, _Real, 2}, {sc, _Real, 1}},
-	Transpose[Ceiling[Transpose[tr]/sc]]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+	Transpose[Ceiling[Transpose[tr] / sc]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -346,11 +346,11 @@ GetTractValues[tracts_, val_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, OptionsPatter
 
 SelectTractVal = Compile[{{roi, _Real, 3}, {tract, _Integer, 2}}, 
 	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ tract
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 SelectTractValD = Compile[{{roi, _Real, 3}, {tract, _Integer, 2}}, 
 	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ DeleteDuplicates[tract]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection::Closed:: *)
@@ -468,8 +468,8 @@ TractLength[tracts_]:=FLengthC[tracts]
 
 
 FLengthC = Compile[{{trc, _Real, 2}},
-	Total[Norm/@Differences[trc]]
-, RuntimeAttributes->{Listable},RuntimeOptions->"Speed"]
+	Total[Norm /@ Differences[trc]]
+, RuntimeAttributes->{Listable},RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -510,14 +510,14 @@ TractAngle[tracts_, {v1_?VectorQ, v2_?VectorQ, v3_?VectorQ}]:= VecAngC2[tracts, 
 
 
 VecAngC = Compile[{{tr, _Real, 2}, {v1, _Real, 1}}, Block[{angles},
-	angles = ArcSin[Abs[Dot[#, v1]/Norm[#]]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]);
+	angles = ArcSin[Abs[Dot[#, v1] / Norm[#]]] & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]);
 	(180./Pi) angles
-	], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+	], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 VecAngC2 = Compile[{{tr, _Real, 2}, {v1, _Real, 1}, {v2, _Real, 1}}, Block[{vec, dotV, proj, dotP, nr, angles},
 	angles = (
 		(*normalize and align with plane normal*)
-		vec = #/Norm[#];
+		vec = # / Norm[#];
 		dotV = Dot[vec, v1];
 		(*project, normalize and align with v2*)
 		proj = vec - dotV v1;
@@ -527,7 +527,7 @@ VecAngC2 = Compile[{{tr, _Real, 2}, {v1, _Real, 1}, {v2, _Real, 1}}, Block[{vec,
 		{ArcSin[Abs[dotV]], ArcCos[Abs[dotP]]}
 	) & /@ (tr[[2 ;; -1]] - tr[[1 ;; -2]]);
 	Transpose[(180./Pi) angles]
-], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -557,7 +557,7 @@ CurvatureC = Compile[{{tract, _Real, 2}}, Block[{diff, ds, d1, d2},
 	d1 = diff / ds;
 	d2 = (d1[[2 ;; -1]] - d1[[1 ;; -2]]) / Mean[{ds[[2 ;; -1]], ds[[1 ;; -2]]}];
 	1000. Norm[Cross[#[[1]], #[[2]]]] & /@ Transpose[{d1[[;; -2]], d2}]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -784,7 +784,7 @@ TractFuncI[{loci_, stepI_, h_}, {maxAng_, maxStep_, stop_}, {vecInt_, stopInt_, 
 
 VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 = Norm[v1], n2 = Norm[v2]},
 	If[n1 === 0. || n2 === 0.,90., 180./Pi ArcCos[Min[1., Max[-1., Dot[v1, v2] / (n1 n2)]]]]
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -899,7 +899,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 	If[norm < 2 10.^-16, Return[{0., 0., 0.}]];
 	vec = vec / norm;
 	Sign[Sign[Dot[vDir, vec]] + 0.01] vec
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection:: *)
@@ -908,7 +908,7 @@ EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 
 AlignVec = Compile[{{vec, _Real, 1}, {vDir, _Real, 1}},
 	Sign[Sign[Dot[vDir, vec]] + 0.01] vec
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection::Closed:: *)
@@ -1038,7 +1038,7 @@ SelectTractTroughPlane[tracts_, {dir_, slice_}, vox:{_?NumberQ,_?NumberQ,_?Numbe
 
 SelectTractTroughPlaneV = Compile[{{tract, _Real, 1}, {val, _Real, 0}},
 	Boole[0 < Total[UnitStep[tract - val]] < Length[tract]], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1052,12 +1052,12 @@ SelectTractTroughVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= Selec
 
 SelectTractTroughVolC = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
 	Max[Part[roi, #[[1]], #[[2]], #[[3]]] & /@ tract], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 SelectTractTroughVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
 	Max[Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]], 
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1071,12 +1071,12 @@ SelectTractInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= SelectTra
 
 SelectTractInVolC = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
 	Floor[Total[Part[roi, #[[1]], #[[2]], #[[3]]] & /@ tract] / Length[tract]],
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 SelectTractInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
 	Floor[Total[Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]]/Length[tract]],
-RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1092,12 +1092,12 @@ SelectTractPartInVol[tracts_, roi_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}]:= Selec
 
 SelectTractPartInVolC = Compile[{{roi, _Integer, 3}, {tract, _Integer, 2}},
 	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ tract
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 SelectTractPartInVolV = Compile[{{roi, _Integer, 3}, {tract, _Real, 2}, {vox, _Real, 1}},
 	Part[roi, #[[1]], #[[2]], #[[3]]] & /@ Transpose[Ceiling[Transpose[tract]/vox]]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

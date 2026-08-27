@@ -278,7 +278,9 @@ CustCol[colf_] := Graphics[Raster[{Range[100]/100.}, {{0, 0}, {1, 1}}, ColorFunc
 (*ToByte*)
 
 
-ToByte = Compile[{{data, _Real, 0}, {range, _Real, 1}},(data - range[[1]])/(range[[2]] - range[[1]]), RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+ToByte = Compile[{{data, _Real, 0}, {range, _Real, 1}},
+	(data - range[[1]]) / (range[[2]] - range[[1]])
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2553,7 +2555,7 @@ LoessFitC = Block[{wMatd}, Compile[{{data, _Real, 2}, {x0, _Real, 0}, {bw, _Real
 		{error, pred} = {Sqrt[obs], Sqrt[obs + sigma]};
 		{yhat, error, pred}
 	]
-], {{wMatd, _Real, 2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]];
+], {{wMatd, _Real, 2}}, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]];
 
 
 (* ::Subsubsection::Closed:: *)

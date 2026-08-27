@@ -587,7 +587,7 @@ SignalCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {gyro, _Real},
 	(*The final signal*)
 	Join[abRe, abIm]
 
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -691,7 +691,7 @@ SignalJacCalcC = Compile[{{bs, _Complex, 2}, {t, _Real, 1}, {gyro, _Real, 0},
 	(*First column is signal rest is jacobian*)
 	Join[sig, jac]
 
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"];
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)
