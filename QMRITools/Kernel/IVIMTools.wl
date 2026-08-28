@@ -25,11 +25,11 @@ BeginPackage["QMRITools`IVIMTools`", Join[{"Developer`"}, Complement[QMRITools`$
 
 
 IVIMCalc::usage =
-"IVIMCalc[data, binp, init] calculates the IVIM fit.
+"IVIMCalc[data, bInp, init] calculates the IVIM fit.
 
 data should be 1D ,2D, 3D or 4D. 
-binp should be full bmatrix which can be calculated from the bvecs en bvals using Bmatrix with the bvalues in s/mm^2. 
-init should are the initialization parameters for 2 components this is {s0, f, D, Dp} for 3 components this is {s0, f1, f2, D, Dp1, Dp2}.
+bInp should be full bmatrix which can be calculated from the bvecs en bvals using Bmatrix with the bvalues in s/mm^2. 
+init should are the initialization parameters for 2 comp this is {s0, f, D, Dp} for 3 comp this is {s0, f1, f2, D, Dp1, Dp2}.
 
 The fraction is defined between 0 and 1, the D, Dp, Dp1 and Dp2 is in mm^2/s.
 
@@ -37,11 +37,11 @@ output is {s0, f1, D, pD1} or {s0, f1, f2, D, pD1, pD2}."
 
 IVIMFunction::usage =
 "IVIMFunction[] gives the IVIM function with 2 comps.
-IVIMFunction[components] gives the IVIM function.
-IVIMFunction[components, type] gives the IVIM function. 
+IVIMFunction[comp] gives the IVIM function.
+IVIMFunction[comp, type] gives the IVIM function. 
 
 type can be \"Normal\" or \"Exp\".
-components can be 2 or 3.
+comp can be 2 or 3.
 
 output is the function with b, s0, f1, f2, D, pD1, pD2 as parameters. The fraction is defined between 0 and 1, the D, Dp, Dp1 and Dp2 is in mm^2/s."
 
@@ -59,7 +59,7 @@ output is the corrected data."
 
 
 IVIMResiduals::usage = 
-"IVIMResiduals[data, binp, pars] calculates the root mean square residuals of an IVIM fit using IVIMCalc, BayesianIVIMFit2 or BayesianIVIMFit3."
+"IVIMResiduals[data, bInp, pars] calculates the root mean square residuals of an IVIM fit using IVIMCalc, BayesianIVIMFit2 or BayesianIVIMFit3."
 
 MeanBvalueSignal::usage = 
 "MeanBvalueSignal[data, bval] calculates the geometric mean of the data for each unique bval. 
@@ -106,9 +106,9 @@ FilterSize::usage =
 
 IVIMCalc::init = "Number of initialization values is `1` and should be `2`."
 
-IVIMCalc::time = "Number of components is `1` but the number of relaxations times is `2`."
+IVIMCalc::time = "Number of comp is `1` but the number of relaxations times is `2`."
 
-IVIMCalc::comp = "Number of components should be 2 or 3 not `1`."
+IVIMCalc::comp = "Number of comp should be 2 or 3 not `1`."
 
 IVIMCalc::bvec = "The length of the data (`1`) should be the same as the length of the bmatrix (`2`)."
 
@@ -128,127 +128,128 @@ Options[IVIMCalc] = {
 	Method -> Automatic, 
 	Parallelize->True, 
 	IVIMFixed -> True, 
-	IVIMConstrained -> False, 
+	IVIMConstrained -> True, 
 	IVIMComponents -> 2,
-	IVIMConstrains -> {{0.8, 1.2}, {0, 1}, {0.0005, 0.0035}, {0.001, 0.5}, {0.001, 0.5}}
+	IVIMConstrains -> {{0.1, 20}, {0, 1}, {0.0005, 0.0035}, {0.001, 0.5}, {0.001, 0.5}}
 };
 
 SyntaxInformation[IVIMCalc] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
-IVIMCalc[data_, binp_, init_, opts:OptionsPattern[]]:=IVIMCalc[data, binp, init, False, opts]
+IVIMCalc[data_, bInp_, init_, opts:OptionsPattern[]]:=IVIMCalc[data, bInp, init, False, opts]
 
-IVIMCalc[data_, binp_, init_, coil_, OptionsPattern[]] := Block[{
-		depthD, dirD, mask, dat, coor, mdat, datn, cfit, vox, start, dint, gradField, 
-		bvec, grad, bvecV, bvecf, components, fixed, constrained, method,
-		s0min, s0max, fmin, fmax, dcmin, dcmax, pdc1min, pdc1max, pdc2min, pdc2max,
-		fVars, pdcVars, fixValues, fixRule, pdcmin, pdcmax, activePdc, func, cons,
-		vars, funcf, fpars, out, mapfun, ivim, s0s, frin1, frin2, dcin, pdcin1, pdcin2
+IVIMCalc[data_, bInp_, init_, coil_, OptionsPattern[]] := Block[{
+		comp, fix, con, method, s0Min, s0Max, fMin, fMax, dcMin, dcMax, pdc1Min, pdc1Max, pdc2Min, pdc2Max,
+		depthD, mask, dat, coor, scale, coilFit, vox, start, dint, gradField, bvec, grad, bvecV, datM, bvecM,
+		bound, invBound, allVars, selVars, startVals, s0e, f1e, f2e, dce, pdc1e, pdc2e,
+		s0In, f1In, f2In, dcIn, pdc1In, pdc2In, func, vars, outVars, mapFunc, ivim, noVars,
+		bm, s0, f1, f2, dc, pdc1, pdc2
 	},
 
+	(*get the options*)
+	{comp, fix, con, method} = OptionValue[{IVIMComponents, IVIMFixed, IVIMConstrained, Method}];
+	comp = Clip[comp, {1, 3}];
+	{{s0Min, s0Max}, {fMin, fMax}, {dcMin, dcMax}, {pdc1Min, pdc1Max}, {pdc2Min, pdc2Max}} = OptionValue[IVIMConstrains];
 	(*data checks*)
 	depthD = ArrayDepth[data];
 	If[depthD > 4, Return[Message[IVIMCalc::data, ArrayDepth[data]]]];
 
 	(*convert data to vector if data is 2D or 3D or make data vector for 1D*)
-	mask = Unitize@Mean@If[depthD==4, Transpose@data, data];
+	mask = Unitize@Mean@Ramp@Round[If[depthD==4, Transpose@data, data], .00001];
 	Which[
 		depthD >= 3, {dat, coor} = DataToVector[data, mask],
 		depthD == 1, dat = {data},
 		True, dat = data
 	];
-	mdat = First[Mean@dat];
-	datn = dat/mdat;
+
+	(*normalize the data to the mean of the first value*)
+	scale = Mean@dat[[All, 1]];
+	dat = dat / scale;
 
 	(*calculate the bmatrix using coil tensor if needed*)
-	cfit = If[coil =!= False && depthD >= 3,
+	coilFit = If[coil =!= False && depthD >= 3,
 		(*get the coil tensor*)
 		{vox, start, dint} = coil;
 		gradField = GradientCoilTensor[mask, vox, start, dint];
-		{bvec, grad} = binp;
+		{bvec, grad} = bInp;
 		bvecV = BVector[bvec, grad, gradField];
 		True
 		,
-		bvec = binp;
+		bvec = bInp;
 		False
 	];
 
 	(*generate the signal vector and bvector per b-value*)
-	{datn, bvecf} = MeanBvalueSignal[datn, bvec];
-	bvecf = If[cfit,
-		First[MeanBvalueSignal[bvecV, bvec]],
-		ConstantArray[bvecf, Length@datn]
-	];
-	If[Dimensions[datn]=!=Dimensions[bvecf], Return[Message[IVIMCalc::data, Dimensions@datn, Dimensions@bvecf]]];
+	{datM, bvecM} = MeanBvalueSignal[dat, bvec];
+	bvecM = If[coilFit, First[MeanBvalueSignal[bvecV, bvec]], ConstantArray[bvecM, Length@dat]];
+	If[Dimensions[datM]=!=Dimensions[bvecM], Return[Message[IVIMCalc::data, Dimensions@datM, Dimensions@bvecM]]];
+	dat = Transpose[{bvecM, datM}, {3, 1, 2}];
 
-	(*get the options*)
-	{components, fixed, constrained, method} = OptionValue[{IVIMComponents, IVIMFixed, IVIMConstrained, Method}];
-	components = Clip[components, {1, 3}];
-	{{s0min, s0max}, {fmin, fmax}, {dcmin, dcmax}, {pdc1min, pdc1max}, {pdc2min, pdc2max}} = OptionValue[IVIMConstrains];
+	(*clear fit parameters*)
+	Clear[bm, s0, f1, f2, dc, pdc1, pdc2];
+	(*define bounds for the constraints*)
+	bound[min_, max_, r_] := min + (max - min) LogisticSigmoid[r];
+	invBound[min_, max_, x_] := With[{y = Clip[(x - min) / (max - min), {10.^-2, 1 - 10.^-2}]},	Log[y / (1 - y)]];
 
-	Clear[bm, f1, f2, s0, dc, pdc1, pdc2];
-
-	(*Indices for pdc and f based on components*)
-	fVars = If[components > 1, {f1, f2}[[;; components - 1]], {}];
-	pdcVars = If[components > 1, {pdc1, pdc2}[[;; components - 1]], {}];
-
-	Switch[components,
-		1, f1 = f2 = 0; {s0s, dcin} = init;,
-		2, f2 = 0; {s0s, frin1, dcin, pdcin1} = init;,
-		3, {s0s, frin1, frin2, dcin, pdcin1, pdcin2} = init;
+	(*the fit parameters*)
+	allVars = {s0, f1, f2, dc, pdc1, pdc2};
+	selVars = Join[
+		{s0},
+		If[comp > 1, {f1}, {}],
+		If[comp > 2, {f2}, {}],
+		{dc},
+		If[comp > 1 && fix =!= True, {pdc1}, {}],
+		If[comp > 2 && fix =!= True && fix =!= "One", {pdc2}, {}]
 	];
 
-	(*Fixed values for pdc*)
-	fixValues = {pdc1 -> pdcin1, pdc2 -> pdcin2};
-	fixRule = Switch[fixed,
-		True, Take[fixValues, components - 1],
-		"One", {pdc2 -> pdcin2},
-		_, {}];
-	{pdcmin, pdcmax} = Switch[fixed,
-		False, {Take[{pdc1min, pdc2min}, components - 1], Take[{pdc1max, pdc2max}, components - 1]},
-		"One", {pdc1min, pdc1max},
-		_, {{}, {}}];
-	activePdc = Complement[pdcVars, fixRule[[All, 1]]];
+	(*Initial fit values*)
+	Switch[comp,
+		1, {s0In, dcIn} = init;,
+		2, {s0In, f1In, dcIn, pdc1In} = init;,
+		3, {s0In, f1In, f2In, dcIn, pdc1In, pdc2In} = init;
+	];
+	s0In = If[s0In < 1.5, s0In, s0In / scale];
 
-	(*Generalized IVIM model*)
-	func = s0*((1 - Total[fVars])*Exp[-bm*dc] + Total[fVars*Exp[-bm*pdcVars]]) // Simplify // ReplaceAll[fixRule];
+	startVals = selVars /. Thread[allVars -> {
+		If[con, invBound[s0Min, s0Max, s0In], s0In],
+		If[con, invBound[0, 1, f1In], f1In],
+		If[con, invBound[0, 1, f2In / (1 - f1In)], f2In],
+		If[con, invBound[dcMin, dcMax, dcIn], dcIn],
+		If[con, invBound[pdc1Min, pdc1Max, pdc1In], pdc1In],
+		If[con, invBound[pdc2Min, pdc2Max, pdc2In], pdc2In]
+	}];
 
-	(*fitting contrains if needed*)
-	cons = If[constrained,
-	Flatten[{
-		{s0 > 0, dcmin < dc < dcmax},
-		If[components > 1, Total[fVars] <= 1, {}],
-		If[components > 1, Thread[fmin < fVars < fmax], {}],
-		{Less @@ Flatten[{dc, pdcVars /. fixRule}]},
-		If[fixed === True, {}, Thread[pdcmin < activePdc < pdcmax]]
-	}], {}];
+	(*physical params as functions of raw (unconstrained) fit variables*)
+	s0e = If[con, bound[s0Min, s0Max, s0], s0];
+	f1e = If[comp > 1, If[con, LogisticSigmoid[f1], f1], 0];
+	f2e = If[comp > 2, If[con, (1 - f1e)*LogisticSigmoid[f2], f2], 0];
+	dce = If[con, bound[dcMin, dcMax, dc], dc];
+	pdc1e = If[comp > 1, If[fix === True, pdc1In, If[con, bound[pdc1Min, pdc1Max, pdc1], pdc1]], 0];
+	pdc2e = If[comp > 2, If[fix === True || fix === "One", pdc2In, If[con, bound[pdc2Min, pdc2Max, pdc2], pdc2]], 0];
 
-	(*fitting variables and function*)
-	vars = Flatten[{s0, fVars, dc, activePdc}];
-	vars = Thread[{vars, vars /. Thread[{s0, f1, f2, dc, pdc1, pdc2} -> {s0s, frin1, frin2, dcin, pdcin1, pdcin2}]}];
-	funcf = If[constrained, {func, cons}, func];
-	fpars = {bm};
+	(*generalized (constrained)IVIM model, expressed in raw vars*)
+	func = s0e ((1 - f1e - f2e) Exp[-bm dce] + f1e Exp[-bm pdc1e] + f2e*Exp[-bm pdc2e]);
+	vars = Thread[{selVars, startVals}];
+	outVars = Join[{s0e, f1e, f2e}[[1 ;; comp]], {dce},
+		If[comp == 1, {}, {pdc1e, pdc2e}[[1 ;; comp - 1]]]];
+	noVars = ConstantArray[0., Length@outVars];
 
-	(*define output*)
-	out = Join[
-		{s0, f1, f2}[[1 ;; components]], {dc}, 
-		If[components == 1, {}, {pdc1, pdc2}[[1 ;; components - 1]]]
-	] /. fixRule;
+	(*perform the fitting using parallel if needed*)
+	mapFunc = If[!(OptionValue[Parallelize] && depthD > 2), Map,
+		DistributeDefinitions[noVars, outVars, func, vars];	ParallelMap];
+	ivim = mapFunc[If[#[[1, 2]] < 0.1, noVars, Quiet[outVars /. FindFit[#, {func}, vars, bm]]] &, dat];
 
-	mapfun = If[OptionValue[Parallelize] && depthD>1,
-		DistributeDefinitions[out, funcf, vars, fpars];
-		ParallelMap,
-		Map];
-
-	ivim = mapfun[Quiet[
-		out /. FindFit[Thread[#], funcf, vars, fpars, MaxIterations -> 150]
-	] &,Thread[{bvecf, datn}]];
-
-	ivim[[All, 1]] = ivim[[All, 1]] mdat;
-	ivim[[All, 2 ;; components]] = Clip[ivim[[All, 2 ;; components]], {0., 1.}];
-	ivim[[All, components + 1]] = Clip[ivim[[All, components + 1]], {0., 4./1000}];
+	(*rescale the signal and clip the values to logical range*)
+	ivim[[All, 1]] = ivim[[All, 1]] scale;
+	ivim[[All, 2 ;; comp]] = Clip[ivim[[All, 2 ;; comp]], {0., 1.}];
+	ivim[[All, comp + 1]] = Clip[ivim[[All, comp + 1]], {0., 4./1000}];
 	
+	(*reconstruct the data*)
 	If[depthD >= 3, ivim = VectorToData[ivim, coor]];
-	If[depthD==4 || depthD ===2, Transpose@ivim, ivim]
+	Which[depthD==4 || depthD ===2, 
+		Transpose@ivim, depthD == 1, 
+		First@ivim, 
+		True, ivim
+	]
 ]
 
 
@@ -296,18 +297,18 @@ IVIMCorrectData[data_, {s0_, f_, pdc_}, bval_, OptionsPattern[]] := Module[{ff, 
 			"Laplacian", LapFilt, 
 			_, GaussianFilter
 		];
-		{filt[f, OptionValue[FilterSize]],filt[pdc, OptionValue[FilterSize]]}
+		{filt[f, OptionValue[FilterSize]], filt[pdc, OptionValue[FilterSize]]}
 		,
 		{f, pdc}
 	];
 
-	dataSyn = Round@Clip[SynDatai[s0, ff, pdcf, bval], {0, Infinity}];
+	dataSyn = Round@Clip[SynDataI[s0, ff, pdcf, bval], {0, Infinity}];
 	dataCor = Clip[data - dataSyn, {0, 1.1 Max[data]}];
 
 	{dataCor, dataSyn}
 ]
 
-SynDatai = Compile[{{s0, _Real, 3}, {f, _Real, 3}, {pdc, _Real, 3}, {bval, _Real, 1}}, 
+SynDataI = Compile[{{s0, _Real, 3}, {f, _Real, 3}, {pdc, _Real, 3}, {bval, _Real, 1}}, 
 	Transpose[Map[(f s0 Exp[-# pdc]) &, bval]]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
@@ -323,7 +324,8 @@ SyntaxInformation[MeanBvalueSignal] = {"ArgumentsPattern" -> {_, _}};
 
 MeanBvalueSignal[data_, val_] := Block[{valU, pos, mean},
 	{valU, pos} = UniqueBvalPosition[val];
-	mean = Transpose[GeometricMean[Transpose[data[[All, #]]]] & /@ pos];
+	(*mean = Transpose[GeometricMean[Transpose[data[[All, #]]]] & /@ pos];*)
+	mean = Transpose[Median[Transpose[data[[All, #]]]] & /@ pos];
 	{mean, valU}
 ]
 
@@ -333,7 +335,7 @@ MeanBvalueSignal[data_, val_] := Block[{valU, pos, mean},
 
 SyntaxInformation[IVIMResiduals] = {"ArgumentsPattern" -> {_, _, _}};
 
-IVIMResiduals[data_, binp_, pars_] := Block[{depthD,depthP,dat,par,res},
+IVIMResiduals[data_, bInp_, pars_] := Block[{depthD,depthP,dat,par,res},
 	(*data checks*)
 	depthD = ArrayDepth[data];
 	depthP = ArrayDepth[pars];
@@ -342,7 +344,7 @@ IVIMResiduals[data_, binp_, pars_] := Block[{depthD,depthP,dat,par,res},
 	dat = If[depthD > 1, RotateDimensionsLeft[dat], dat];
 	par = If[depthP > 1, RotateDimensionsLeft[pars], pars];
 
-	res = IVIMResCalcC[dat, binp, par];
+	res = IVIMResCalcC[dat, bInp, par];
 
 	res = If[depthD > 1, RotateDimensionsRight[res], res];
 
@@ -350,18 +352,16 @@ IVIMResiduals[data_, binp_, pars_] := Block[{depthD,depthP,dat,par,res},
 ];
 
 
-IVIMResCalcC = Compile[{{dat, _Real, 1}, {binp, _Real, 1}, {pars, _Real, 1}}, Block[{s0, f1, f2, dc, pdc1, pdc2, out}, 
+IVIMResCalcC = Compile[{{dat, _Real, 1}, {bInp, _Real, 1}, {pars, _Real, 1}}, Block[{l, s0, f1, f2, dc, pdc1, pdc2, out}, 
 	out = 0. dat;
-	out = Switch[Length[pars],
-		2,
-		{s0, dc} = pars;
-		(s0*(((Exp[-binp dc])))),
-		4,
-		{s0, f1, dc, pdc1} = pars;
-		(s0*((((1 - f1) Exp[-binp dc]) + (f1 Exp[-binp pdc1])))),
-		6,
-		{s0, f1, f2, dc, pdc1, pdc2} = pars;
-		(s0*((((1 - f1 - f2) Exp[-binp dc]) + (f1 Exp[-binp pdc1]) + (f2*Exp[-binp pdc2]))))
+	l = Length[pars];
+	Which[
+		l == 2,	{s0, dc} = pars;
+		out = (s0*(((Exp[-bInp dc])))),
+		l == 4,	{s0, f1, dc, pdc1} = pars;
+		out = (s0*((((1 - f1) Exp[-bInp dc]) + (f1 Exp[-bInp pdc1])))),
+		l == 6,	{s0, f1, f2, dc, pdc1, pdc2} = pars;
+		out = (s0*((((1 - f1 - f2) Exp[-bInp dc]) + (f1 Exp[-bInp pdc1]) + (f2*Exp[-bInp pdc2]))))
 	];
 	dat - out
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];

@@ -965,7 +965,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 	NotebookClose[cropWindow];
 	dd = ArrayDepth[data];
 
-	DynamicModule[{dat, zd, xd, yd, output, size, r1, r2, r3},
+	DynamicModule[{dat, zd, xd, yd, crop, size, r1, r2, r3},
 
 		dat = Switch[dd, 4, Mean@Transpose@data, 3, dat = data, _, Return[]];
 		{zd, xd, yd} = Dimensions[dat];
@@ -988,7 +988,7 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 			DefaultButton[],
 
 			Manipulate[
-				output = Ceiling[{zmin, zmax, xd - xmax, xd - xmin, ymin, ymax}];
+				crop = Ceiling[{zmin, zmax, xd - xmax, xd - xmin, ymin, ymax}];
 
 				Grid[{
 					{Dynamic[Row[{"size: ", Ceiling[{zmax-zmin,xmax-xmin,ymax-ymin}]},"  "]]},
@@ -1047,16 +1047,17 @@ CropData[data_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Bloc
 	];
 
 	dataout =If[!(OptionValue[CropOutput] === "Clip"),
-	{a, b, c, d, e, f} = output;
-	ToPackedArray@N@If[dd == 3, 
-		data[[a ;; b, c ;; d, e ;; f]], 
-		data[[a ;; b, All, c ;; d, e ;; f]]]
+		{a, b, c, d, e, f} = crop;
+		ToPackedArray@N@If[dd == 3, 
+			data[[a ;; b, c ;; d, e ;; f]], 
+			data[[a ;; b, All, c ;; d, e ;; f]]
+		]
 	];
 
-	output=Switch[OptionValue[CropOutput],
-		"All",{dataout, output},
-		"Data",dataout,
-		"Crop",output];
+	output = Switch[OptionValue[CropOutput],
+		"All",{dataout, crop},
+		"Data",crop,
+		"Crop",crop];
 	];
 
 	Return[output]
