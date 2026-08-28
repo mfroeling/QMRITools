@@ -357,6 +357,8 @@ $SegmentationGroups = <|
 		"Classify" -> "Side",  "OutputLabels" -> "MuscleLabels"|>,
 	"LowerLegsBody" -> <|"Locations" -> {"LowerLegs"}, "Split" -> "Find",
 		"Classify" -> "Side",  "OutputLabels" -> "MuscleLabels"|>,
+	"ShoulderBody" -> <|"Locations" -> {"Shoulder"}, "Split" -> "Auto",
+		"Classify" -> "Side",  "OutputLabels" -> "MuscleLabels"|>,
 	(*Output to legacy leg labels*)
 	"Legs" -> <|"Locations" -> {"LowerLegs","UpperLegs"}, "Split" -> "Find",
 		"Classify" -> "Position", "OutputLabels" -> "MuscleLegLabels"|>,

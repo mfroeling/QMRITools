@@ -61,7 +61,7 @@ QMRITools`$SubPackages = {
 	"SimulationTools`", "CoilTools`", "TaggingTools`", "SegmentationTools`" ,
 	"ShapeTools`", "AmaresTools`",
 	(*legacy functions*)
-	If[QMRITools`$Verbose, "Legacy`", Nothing]
+	If[QMRITools`$Legacy, "Legacy`", Nothing]
 };
 
 (*define context*)

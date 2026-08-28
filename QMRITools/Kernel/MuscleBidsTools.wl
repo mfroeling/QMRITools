@@ -1737,7 +1737,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
 		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
 		int, dint, suffix, types, flip, per, bmat, magph, split, ivim, shift, t2, gradField, 
-		meanV, coor, valV, fasc, fascm, sel, norm, rdim, raw, rmet
+		meanV, coor, valV, fasc, fascm, sel, norm, rdim, raw, rmet, sigI, bv, init
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -2119,9 +2119,9 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 						(
 							ExportNii[ToExpression[con<>#], diffVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
+							If[MemberQ[{"reg", "filt"}, #], ExportBvalvec[{val, grad}, outFile <> "_"<>#]];
 							Export[ConvertExtension[outFile<>"_"<>#, ".json"], MergeJSON[{json, settingPre}]];
 						) & /@ outTypes;
-						ExportBvalvec[{val, grad}, outFile <> "_"<>#]& /@ {"reg", "filt"};
 
 						(*export the check file*)
 						MakeCheckFile[outFile<>"_prep", Sort@Join[
@@ -2180,7 +2180,6 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							coil = ConfigLookup[datType, "Process", "GradientCorrection"];
 							settingPro = Join[settingPro, <|"GradientCorrection"->coil|>];
 							off = Lookup[json, "Offset", False];
-							coilpar = {};
 							If[!StringQ[coil], coil = False,
 								(*-----*)AddToLog[{"Using Gradient correction: ", coil}, 4];
 								If[!VectorQ[off], coil = False;
@@ -2194,20 +2193,23 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							(*perform ivim correction*)
 							ivim = ConfigLookup[datType, "Process", "IVIMCorrection"];
 							settingPro = Join[settingPro, <|"IVIMCorrection"->ivim|>];
-							{mean, valU} = MeanBvalueSignal[data, val];
-							If[ivim,
-								(*-----*)AddToLog["Starting ivim calculation", 4];
+							If[ivim, (*-----*)AddToLog["Starting ivim calculation", 4];
+								(*make initial guess for ivim*)
+								{mean, bv} = MeanBvalueSignal[data, val];
+								sigI = MeanSignal[mean];
+								init = IVIMCalc[sigI, bv, {1, .05, .0015, .015}, IVIMFixed -> False, IVIMConstrained -> False];
+								debugBids[{"IVIM Init", init}];
+								(*actual ivim fitting*)
 								{s0i, fri, adci, pD} = If[coil === False,
 									(*use normal b-value*)
-									IVIMCalc[mean, valU, {1, .05, .003, .015}, 
-										IVIMConstrained->False, Parallelize->True, IVIMFixed->True],
+									IVIMCalc[data, val, init, IVIMConstrained -> True, Parallelize -> True, IVIMFixed -> True],
 									(*use gradient field corrected b-value*)
-									IVIMCalc[data, {val, grad}, {1, .05, .003, .015}, coil,
-										IVIMConstrained -> False, Parallelize -> True, IVIMFixed -> True]
+									IVIMCalc[data, {val, grad}, init, coil, IVIMConstrained -> True, Parallelize -> True, IVIMFixed -> True]
 								];
+								debugBids[{"IVIM fit results", MinMax/@{s0i, fri, adci, pD}}];
 								data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
 								adci = 1000 adci;
-								outTypes = Join[{"adci", "fri", "s0i"}, outTypes];
+								outTypes = Join[{"mean", "adci", "fri", "s0i"}, outTypes];
 							];
 
 							(*perform the actual tensor calculation*)
@@ -2243,11 +2245,12 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							debugBids[Column[{json, settingPro}]];
 							
 							tens = Transpose[tens];
-							outTypes = Join[{"data", "mean", "tens", "res", "out", "s0", 
+							outTypes = Join[{"data", "tens", "res", "out", "s0", 
 								"l1", "l2", "l3", "md", "fa", "rd"}, outTypes];
 
 							(
 								ExportNii[ToExpression[con<>#], diffVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
+								If[MemberQ[{"data"}, #], ExportBvalvec[{val, grad}, outFile <> "_"<>#]];
 								Export[ConvertExtension[outFile<>"_"<>#, ".json"], MergeJSON[{json, settingPro}]];
 							) & /@ outTypes;
 

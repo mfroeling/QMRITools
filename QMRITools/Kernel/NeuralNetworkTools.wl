@@ -237,7 +237,7 @@ Options[MakeUnet] = {
 	FeatureSchedule -> 32,
 
 	DropoutRate -> 0.2, 
-	MonitorCalc -> False
+	Monitor -> False
 };
 
 SyntaxInformation[MakeUnet] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
@@ -253,7 +253,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 	{architecture, blockType, actType, normType, metSc, metCat} = OptionValue[{
 		NetworkArchitecture, BlockType, ActivationType, NormalizationType, RescaleMethod, CatenateMethod}];
 	{drop, depth, scaling, feature, setting, mon} = 
-		OptionValue[{DropoutRate, NetworkDepth, DownsampleSchedule, FeatureSchedule, SettingSchedule, MonitorCalc}];
+		OptionValue[{DropoutRate, NetworkDepth, DownsampleSchedule, FeatureSchedule, SettingSchedule, Monitor}];
 	mon = If[mon, MonitorFunction, List];
 
 	(*check the input*)
@@ -281,7 +281,7 @@ MakeUnet[nChan_?IntegerQ, nClass_?IntegerQ, dimIn_, OptionsPattern[]] := Block[{
 
 	(*define the scaling, automatic is 2 for all layers, integer is for all layers, list is padded with last value*)
 	scaling = Which[
-		scaling === Automatic, ConstantArray[2, depth],
+		scaling === Automatic, Prepend[ConstantArray[2, depth-1],1],
 		IntegerQ[scaling], ConstantArray[scaling, depth],
 		ListQ[scaling],	
 			If[Length@scaling =!= depth, Message[MakeUnet::scale]];
