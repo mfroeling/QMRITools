@@ -351,6 +351,8 @@ $SegmentationGroups = <|
 		"Classify" -> "Position", "OutputLabels" -> "MuscleLabels"|>,
 	"LegsBody" -> <|"Locations" -> {"LowerLegs", "UpperLegs"}, "Split" -> "Find",
 		"Classify" -> "Position", "OutputLabels" -> "MuscleLabels"|>,
+	"LegsHipBody" -> <|"Locations" -> {"LowerLegs", "UpperLegs", "Hip"}, "Split" -> "Find",
+		"Classify" -> "Position", "OutputLabels" -> "MuscleLabels"|>,
 	"HipBody" -> <|"Locations" -> {"UpperLegs", "Hip"}, "Split" -> "Auto",
 		"Classify" -> "Position", "OutputLabels" -> "MuscleLabels"|>,
 	"UpperLegsBody" -> <|"Locations" -> {"UpperLegs"}, "Split" -> "Find",
@@ -479,7 +481,7 @@ Options[ClassifyData] = {
 SyntaxInformation[ClassifyData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
-		dev, mask, mon, net, imSize, ims, class, pos
+		dev, mask, mon, net, imSize, ims, class, side
 	},
 
 	dev = OptionValue[TargetDevice];
@@ -490,17 +492,15 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 	If[net === $Failed, Return[$Failed]];
 
 	(*convert data *)
-	imSize = NetDimensions[NetReplacePart[net, "Input"->None], "Input"][[2;;]];
 	mask = Mask[NormalizeData[dat], 10, MaskSmoothing -> True, MaskClosing -> 5];
+	imSize = NetDimensions[NetReplacePart[net, "Input"->None], "Input"][[2;;]];
 	class = net[MakeClassifyImage[MaskData[dat, mask], ImageSize -> imSize], TargetDevice -> dev];
+	side = Last@Keys@Sort@Counts@class["Side"];
 
-	Which[
-		StringContainsQ[met, "Side"], Last@Keys@Sort@Counts@class["Side"],
-		met === "Body", {
-			Last@Keys@Sort@Counts@class["Side"],
-			FindBodyPos[class["Position"], mon]
-		},
-		True, class
+	Switch[met,
+		"Side", side,
+		"Body", {side, FindBodyPos[class["Position"], mon]},
+		_, class
 	]
 ]
 
@@ -736,7 +736,7 @@ Options[SegmentData] = {
 
 SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
-SegmentData[datI_, opts:OptionsPattern[]] := SegmentData[datI, "Legs", opts]
+SegmentData[datI_, opts:OptionsPattern[]] := SegmentData[datI, "Body", opts]
 
 SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		dev, max, mon, patch, pts, dim ,loc, net, seg, all, data, mask, 
@@ -751,6 +751,7 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		mon = If[mon, MonitorFunction, List];
 
 		mon["--------------------"];
+		mon[what, "Segmenting location:"];
 		mon[Dimensions@datI, "Analyzing the data with dimensions:"];
 		data = Switch[ArrayDepth[datI], 4, datI[[All,1]], _, datI];
 		dimI = Dimensions@data;
@@ -768,9 +769,6 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		time = First@AbsoluteTiming[
 			{{patch, pts, dim}, loc} = SplitDataForSegmentation[data, what, Monitor -> monO, TargetDevice -> dev];
 		];
-
-		
-
 
 		mon["--------------------"];
 		mon[Round[time, .1], "Total time for analysis [s]: "];
@@ -850,7 +848,7 @@ ReplaceLabels[seg_, locI_, what_] := Block[{
 Options[SplitDataForSegmentation] = {
 	Monitor -> False,
 	TargetDevice -> "CPU",
-	SplitOverlap -> 0.1
+	SplitOverlap -> 0.05
 };
 
 
@@ -879,8 +877,9 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 	(*Based on the body location tag decide what to do with the classification*)
 	{whatSide, whatPos} = Switch[$SegmentationGroups[what, "Classify"],
 		"Position", ClassifyData[data, "Body", TargetDevice -> dev, Monitor -> monO],
-		"Side", {ClassifyData[data, what<>"Side", TargetDevice -> dev, Monitor -> monO], {{what, {1, dim[[1]]}}}},
-		"None", {"Both", {{what, {1, dim[[1]]}}}},
+		"Side", {ClassifyData[data, "Side", TargetDevice -> dev, Monitor -> monO], 
+			{#, {1, dim[[1]]}}& /@ $SegmentationGroups[what, "Locations"]},
+		"None", {"Both", {#, {1, dim[[1]]}}& /@ $SegmentationGroups[what, "Locations"]},
 		_, Return[$Failed];
 	];
 	mon[whatSide, "Data contains sides: "];
@@ -890,7 +889,7 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 		(*both sides which need to be split*)
 		"Both",
 		{cut, over} = Switch[$SegmentationGroups[what, "Split"],
-			"Find", {FindMiddle[data], Round[overP Last@dim]},
+			"Find", {FindMiddle[data], Round[0.5 overP Last@dim]},
 			"Auto", Round[{0.5, overP} Last@dim],
 			_, {$Failed, $Failed}
 		];
@@ -905,7 +904,7 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 	(*Select only the locations in that region and the correct position to be segmented*)
 	locs = $SegmentationGroups[what, "Locations"];
 	whatPos = Select[whatPos, MemberQ[locs, #[[1]]]&& #[[2,1]]=!=#[[2,2]]&];
-	mon[whatPos[[All, 1]], "Selected positions: "];
+	mon[whatPos[[All, 1]], "Selected positions \""<>what<>"\": "];
 
 	(*loop over the locations and select the correct data*)
 	dat = Flatten[Transpose[(
@@ -1162,7 +1161,7 @@ Options[TrainSegmentationNetwork] = {
 	LearningRate -> 0.001,
 	L2Regularization -> 0.0001,
 
-	MonitorCalc -> False,
+	Monitor -> False,
 	TargetDevice -> "GPU"
 }
 
@@ -1175,7 +1174,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches, pLen, is2D,
 		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, n, it, ti, br,
-		validation, files, loss, rep, learningRate, schedule, dims, tar, logFile
+		validation, files, loss, rep, learningRate, schedule, dims, tar, logFile, allOpts
 	},
 
 	(*------------ Get all the configuration stuff -----------------*)
@@ -1188,6 +1187,12 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		loss, rep, learningRate, l2reg, multi, tar} = OptionValue[
 		{BatchSize, RoundLength, MaxTrainingRounds, AugmentData, PadData, PatchSize, PatchesPerSet, 
 			LossFunction, MonitorInterval, LearningRate, L2Regularization, MultiChannel, TargetDevice}];
+
+	(*export the training settings*)
+	allOpts = Options[TrainSegmentationNetwork][[All, 1]];
+	allOpts = Association[Thread[allOpts->OptionValue[allOpts]]];
+	Export[FileNameJoin[{outFol,FileBaseName[outFol]<>"_settings.txt"}], 
+		KeyValueMap[ToString[#1] <> " -> " <> ToString[#2] &, allOpts], "List"];
 
 	pLen = Length@patch;
 	is2D = pLen===2;
@@ -1212,7 +1217,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	{netIn, ittTrain} = Which[
 		(*start with a clean network*)
 		netCont === "Start",
-		{MakeUnet[nChan, nClass, patch, MonitorCalc->OptionValue[MonitorCalc], Sequence@netOpts], 0}
+		{MakeUnet[nChan, nClass, patch, Monitor->OptionValue[Monitor], Sequence@netOpts], 0}
 		,
 		(*continue with given network*)
 		Head@netCont === NetGraph,
