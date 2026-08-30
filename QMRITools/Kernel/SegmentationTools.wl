@@ -1160,7 +1160,7 @@ Options[TrainSegmentationNetwork] = {
 	AugmentData -> True,
 	PadData-> False,
 
-	LossFunction -> All,
+	LossFunction -> {"Dice","Focal"},
 	DropoutRate -> 0.2,
 	LearningRate -> 0.001,
 	L2Regularization -> 0.0001,
@@ -1177,11 +1177,11 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPatter
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
 		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches, pLen, is2D,
-		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, n, it, ti, br,
+		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, trainFunc,
 		validation, files, loss, rep, learningRate, schedule, dims, tar, logFile, allOpts, parallel,
-		nProducers, loadData, producerKernels, trainerKernel, maxQueue, stallTimeout,
-		queue, takenSoFar, trimmed, trueProduced, activeProducers, trainingDone, currentIndex, producerJob,
-		trainerJob, nVal, makeVal, maxProducers
+		nProducers, loadData, producerKernels, maxQueue, stallTimeout, queueVars,
+		takenSoFar, trimmed, trueProduced, activeProducers, trainingDone, currentIndex, producerJob,
+		trainerJob, nVal, makeVal, maxProducers, producerStatus, roundImage
 	},
 
 	(*------------ Get all the configuration stuff -----------------*)
@@ -1196,7 +1196,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 			PatchesPerSet, LossFunction, MonitorInterval, LearningRate, L2Regularization,
 			MultiChannel, TargetDevice}];
 
-	(*UseParallelKernels can be False, True (as many kernels as available), or {True, n} to cap producer count*)
+	(*False, True, or {True,n} to cap producer count*)
 	parallel = OptionValue[UseParallelKernels];
 	{parallel, maxProducers} = Which[
 		parallel === True, {True, Automatic},
@@ -1216,7 +1216,6 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	(*get the train data files*)
 	files = FileNames["*.wxf", inFol];
-	files = files[[;;32]];
 
 	(*figure out network properties from train data*)
 	testData = Normal/@Import[First@files];
@@ -1230,7 +1229,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 	MonitorFunction[DateString[], "Preparing the network: "];
 
-	(*make or import network, netCont can be a network or a previous train folder*)
+	(*netCont: a network, or a previous train folder*)
 	{netIn, ittTrain} = Which[
 		(*start with a clean network*)
 		netCont === "Start",
@@ -1280,8 +1279,9 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	If[!And @@ (MemberQ[{"Dice", "MSD", "Tversky", "CE", "Jaccard", "Focal", "TopK"}, #] & /@ loss), 
 		Return[Message[TrainSegmentationNetwork::loss]; $Failed]];
 
-	(*if the network already exists make the dimensions, classes en channels match the input*)
-	netIn = NetInitialize[ChangeNetDimensions[netIn, "Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass],
+	(*match dimensions, classes, and channels to the input*)
+	netIn = NetInitialize[ChangeNetDimensions[netIn, 
+		"Dimensions" -> patch, "Channels" -> nChan, "Classes" -> nClass],
 		Method -> {"Kaiming", "Distribution" -> "Normal"}];
 	MonitorFunction[NetSummary[netIn, "Mem"], "Network summary: "];
 
@@ -1295,6 +1295,10 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*Local functions*)
 	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
 	ittString = "itt_" <> StringPadLeft[ToString[#], 4, "0"]&;
+	roundImage[] := Column[{
+		Style["Training Round: " <> ToString[ittTrain], Bold, Large],
+		Image[im, ImageSize->400]
+	}, Alignment -> Center];
 
 	(*Monitor function*)
 	monitorFunction = (
@@ -1306,7 +1310,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		(*make and export test image*)
 		im = MakeChannelClassGrid[If[is2D, Transpose@testData, testData], {testSeg, {0, nClass-1}}, 3];
 		Export[outName[ittString[ittTrain] <> ".png"], im , "ColorMapLength" -> 256];
-		(*export the network and delete the one from the last iteration*)
+		(*export network, delete the previous itt*)
 		Export[outName[ittString[ittTrain] <> ".wlnet"], netMon];
 		Quiet@DeleteFile[outName[ittString[ittTrain - 1] <> ".wlnet"]];
 	)&;
@@ -1316,15 +1320,7 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 		PatchesPerSet -> patches, AugmentData -> augment, PadData -> pad] &;
 
 	(*oneCycle learning rate schedule function*)
-	br = roundLength / batch;
-	n = {0.25, 0.4, 0.95} rounds br;
-	it = ittTrain br;
-	schedule = (ti = #1 + it; Which[
-		ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1./5, 1.}],
-		ti < n[[2]], 1.,
-		ti < n[[3]],Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1., 1./10}],
-		True, 1./10
-	])&;
+	schedule = OneCycleSchedule[roundLength, batch, rounds, ittTrain];
 
 	(*---------- Prepare the data ----------------*)
 
@@ -1333,39 +1329,44 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	loadData = OptionValue[LoadTrainingData] === True;
 	MonitorFunction[Length@files, "Number of datasets: "];
 
-	If[parallel,
-		(*launch producer/trainer kernels, then shard and load the files across the producers*)
-		{nProducers, producerKernels, trainerKernel} = LaunchTrainingKernels[maxProducers];
-		MonitorFunction[nProducers, "Number of producer kernels: "];
-		dims = LoadProducerData[files, nProducers, loadData];
-		dims = If[loadData, MeanRange[#, 0] & /@ Transpose[dims], Missing["NotLoaded"]];
-		,
-		(*import all train data or train out of memory*)
-		data = If[loadData, Import /@ files, files];
-		dims = MeanRange[#, 0] & /@ Transpose[If[ArrayDepth[#] === 3,
-			Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]]];
-	];
-	MonitorFunction[dims, "Data Dimensions: "];
-
-	(*Make and export test data*)
+	(*test data is already loaded, export before the parallel/sequential branch*)
 	{testData, testVox} = MakeTestData[testData, 2, patch];
 	ExportNii[If[is2D, testData[[All,1]], First@testData], testVox, outName["testSet.nii"]];
 
-	(*prepare or load a validation set which is 10% of round, gathered from every producer kernel's own shard*)
+	(*check if validation can be loaded if not do later*)
 	nVal = Min[{50, Round[0.1 roundLength]}];
 	makeVal = True;
 	If[ittTrain > 0 && FileExistsQ[outName["validation.wxf"]],
 		validation = Import[outName["validation.wxf"]];
 		makeVal = Dimensions[validation[[1, 1, 1]]] =!= patch;
 	];
-	If[makeVal,
-		validation = If[parallel,
+
+	If[parallel,
+		(*launch kernels, then shard/load files across producers*)
+		{nProducers, producerKernels} = LaunchTrainingKernels[maxProducers];
+		MonitorFunction[nProducers, "Number of producer kernels: "];
+		dims = LoadProducerData[files, nProducers, loadData];
+		dims = If[loadData, MeanRange[#, 0] & /@ Transpose[dims], Missing["NotLoaded"]];
+
+		(*validation set: 10% of round, from every producer's shard*)
+		If[makeVal,
 			DistributeDefinitions[batchFunction, patch, nClass, patches, augment, pad, nVal, nProducers];
-			Join @@ ParallelEvaluate[batchFunction[<|"BatchSize" -> Round[nVal / nProducers]|>], producerKernels],
-			batchFunction[<|"BatchSize" -> nVal|>]];
-		Export[outName["validation.wxf"], validation];
+			validation = Join @@ ParallelEvaluate[batchFunction[<|"BatchSize" -> Round[nVal / nProducers]|>], producerKernels];
+		];
+		,
+		(*import all train data or train out of memory*)
+		data = If[loadData, Import /@ files, files];
+		dims = MeanRange[#, 0] & /@ Transpose[If[ArrayDepth[#] === 3,
+			Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]]];
+		(*validation set: 10% of round*)
+		If[makeVal, validation = batchFunction[<|"BatchSize" -> nVal|>]];
 	];
 
+	(*export the validation set*)
+	If[makeVal, Export[outName["validation.wxf"], validation]];
+
+	(*data logging*)
+	MonitorFunction[dims, "Data Dimensions: "];
 	MonitorFunction[{Length@files, Length@validation}, "Data / Validation: "];
 	MonitorFunction["--------------------"];
 
@@ -1379,60 +1380,67 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	logFile = File[outName[StringReplace[DateString["ISODateTime"], ":" | "-" -> ""] <> ".json"]];
 
 	(*Print progress function*)
-	PrintTemporary[Dynamic[Column[{
-		Style["Training Round: " <> ToString[ittTrain], Bold, Large],
-		Image[im, ImageSize->400]
-	}, Alignment -> Center]]];
+	PrintTemporary[Dynamic[roundImage[]]];
 
-	(*train the network*)
+	(*The training function without batch generator*)
+	trainFunc = NetTrain[netIn, {#, "RoundLength" -> roundLength}, All,
+		ValidationSet -> validation, LossFunction -> loss,
+		TargetDevice -> tar, WorkingPrecision -> "Mixed",
+		MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
+		LearningRate -> learningRate, Method -> {"ADAM", "L2Regularization" -> l2reg,
+			"LearningRateSchedule" -> schedule, "Beta1" -> 0.9, "Beta2" -> 0.99,
+			"Epsilon" -> 10^-5, "GradientClipping" -> 1},
+		TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
+		TrainingProgressReporting -> logFile
+	]&;
+
 	If[!parallel,
 		(*Normal branch without parallel evaluation*)
-		trained = NetTrain[netIn, {batchFunction, "RoundLength" -> roundLength}, All,
-			ValidationSet -> validation, LossFunction -> loss,
-			TargetDevice -> tar, WorkingPrecision -> "Mixed",
-			MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
-			LearningRate -> learningRate, Method -> {"ADAM", "L2Regularization" -> l2reg,
-				"LearningRateSchedule" -> schedule, "Beta1" -> 0.9, "Beta2" -> 0.99,
-				"Epsilon" -> 10^-5, "GradientClipping" -> 1},
-			TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
-			TrainingProgressReporting -> logFile
-		];
+		trained = trainFunc[batchFunction];
 		,
 		(*branch with parallel evaluation*)
-		(*shared queue state*)
-		maxQueue = 2 batch;
+		maxQueue = batch;
 		stallTimeout = 60;
-
-		queue = Table[{}, nProducers];
-		takenSoFar = trimmed = trueProduced = Table[0, nProducers];
-		activeProducers = nProducers;
 		trainingDone = False;
 		currentIndex = 1;
 
-		SetSharedVariable[queue, takenSoFar, trimmed, trueProduced, activeProducers, 
-			trainingDone, currentIndex, ittTrain, im];
-		DistributeDefinitions[nProducers, stallTimeout, testData, testVox, 
-			outName, ittString, nClass, is2D, n, it];
+		(*shared queue state*)
+		queueVars = Table[qSt[i], {i, nProducers}];
+		Clear /@ queueVars;
+		Table[queueSet[i, {}], {i, nProducers}];
+		takenSoFar = trimmed = trueProduced = Table[0, nProducers];
+		activeProducers = nProducers;
 
-		(*launch the producers*)
+		ToExpression["SetSharedVariable[" <> StringRiffle[queueVars, ","] <> "]"];
+		SetSharedVariable[takenSoFar, trimmed, trueProduced, activeProducers,
+			trainingDone, currentIndex, ittTrain, im];
+		DistributeDefinitions[qSt, queueGet, queueSet, nProducers, stallTimeout,
+			testData, testVox, outName, ittString, nClass, is2D];
+
+		producerStatus[] := Column[{
+			Style["Active producers: " <> ToString[activeProducers], Bold],
+			Style["Queue lengths: " <> ToString[Length /@ ToExpression[queueVars]], Bold],
+			Style["Chunks produced: " <> ToString[trueProduced], Bold]
+		}, Alignment -> Center];
+
+		(*live producer feedback*)
+		PrintTemporary[Dynamic[producerStatus[]]];
+
+		(*launch the producers and trainer*)
 		producerJob = Table[With[{qi = i},
 			RunProducerKernel[{qi, maxQueue}, data, {{batch, patch, nClass}, {augment, pad, patches}}]]
 		, {i, nProducers}];
+		trainerJob = RunTrainerKernel[trainFunc];
 
-		(*live producer feedback*)
-		PrintTemporary[Dynamic[Column[{
-			Style["Active producers: " <> ToString[activeProducers], Bold],
-			Style["Queue lengths: " <> ToString[Length /@ queue], Bold],
-			Style["Chunks produced: " <> ToString[trueProduced], Bold]
-		}, Alignment -> Center]]];
-
-		(*launch the trainer and wait for both*)
-		trainerJob = RunTrainerKernel[netIn, {roundLength, rounds, ittTrain, batch, loss, tar, learningRate, l2reg,
-			schedule, monitorFunction, rep, validation, logFile}];
-
-		(*Print[Append[producerJob, trainerJob]];*)
+		(*activate the producer and trainer*)
 		trained = Last[WaitAll[Append[producerJob, trainerJob]]];
+
+		(*Final producer feedback*)
+		MonitorFunction[producerStatus[]];
 	];
+
+	(*Final Image*)
+	MonitorFunction[roundImage[]];
 
 	(*---------- Export the network ----------------*)
 
@@ -1440,6 +1448,22 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	Export[outName["trained.wxf"], trained];
 	Export[outName["final.wlnet"], netOut];
 	Export[outName["final.onnx"], netOut];
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*OneCycleSchedule*)
+
+
+OneCycleSchedule[roundLength_, batch_, rounds_, ittTrain_] := With[{br = roundLength / batch},
+	With[{n = {0.25, 0.4, 0.95} rounds br, it = ittTrain br},
+		(ti = #1 + it; Which[
+			ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1./5, 1.}],
+			ti < n[[2]], 1.,
+			ti < n[[3]], Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1., 1./10}],
+			True, 1./10
+		])&
+	]
 ]
 
 
@@ -1456,7 +1480,7 @@ LaunchTrainingKernels[maxProducers_:Automatic] := Block[{n, kernels},
 	(*every kernel can end up running a producer job since ParallelSubmit isn't pinned, so none should multithread internally*)
 	ParallelEvaluate[Quiet@System`SetSystemOptions[
 		"ParallelOptions" -> {"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}], kernels];
-	{n, kernels[[;; n]], kernels[[-1]]}
+	{n, kernels[[;; n]]}
 ]
 
 
@@ -1477,12 +1501,22 @@ LoadProducerData[files_, n_, loadData_] := Block[{repFiles, fileShards, jobs, fi
 		If[loadData, If[ArrayDepth[#] === 3, Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}]
 	]], {i, n}];
 	fitterJob = ParallelSubmit[data = {}];
-	(*Print[Append[jobs, fitterJob]];*)
 	reports = Most[WaitAll[Append[jobs, fitterJob]]];
 
-	(*Print[reports];*)
 	Join @@ reports
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*Queue helpers*)
+
+
+qSt[i_] := "queue" <> ToString[i];
+queueGet[i_] := ToExpression[qSt[i]];
+queueSet[i_, val_] := (
+	tmp = val;
+	ToExpression[qSt[i] <> " = " <> Context[queueSet] <> "tmp"]
+);
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1490,13 +1524,12 @@ LoadProducerData[files_, n_, loadData_] := Block[{repFiles, fileShards, jobs, fi
 
 
 RunProducerKernel[{qi_, maxQueue_}, filesShard_, {{batch_, patch_, nClass_}, {augment_, pad_, patches_}}] := Block[{
-		q, toTrim, wouldFit, chunk, localCount, chunkTime
+		q, toTrim, wouldFit, chunk, localCount
 	},
 	ParallelSubmit[
 		localCount = 0;
-		MonitorFunction[{qi, Length[filesShard]}, "Producer started qi/nDatasets: "];
 		While[!trainingDone,
-			q = queue[[qi]];
+			q = queueGet[qi];
 			toTrim = takenSoFar[[qi]] - trimmed[[qi]];
 			wouldFit = Length[q] - toTrim < maxQueue;
 
@@ -1505,7 +1538,7 @@ RunProducerKernel[{qi_, maxQueue_}, filesShard_, {{batch_, patch_, nClass_}, {au
 				wouldFit,
 				chunk = GetTrainData[filesShard, batch, patch, nClass,
 					PatchesPerSet -> patches, AugmentData -> augment, PadData -> pad];
-				queue[[qi]] = Join[Drop[q, toTrim], chunk];
+				queueSet[qi, Join[Drop[q, toTrim], chunk]];
 
 				trimmed[[qi]] += toTrim;
 				localCount++;
@@ -1513,7 +1546,7 @@ RunProducerKernel[{qi_, maxQueue_}, filesShard_, {{batch_, patch_, nClass_}, {au
 
 				(*queue full, just trim what's already been consumed*)
 				toTrim > 0,
-				queue[[qi]] = Drop[q, toTrim];
+				queueSet[qi, Drop[q, toTrim]];
 				trimmed[[qi]] += toTrim;
 				Pause[0.5],
 
@@ -1524,20 +1557,19 @@ RunProducerKernel[{qi_, maxQueue_}, filesShard_, {{batch_, patch_, nClass_}, {au
 		];
 		trueProduced[[qi]] = localCount;
 		activeProducers--;
-		MonitorFunction[{qi, localCount}, "Producer stopped qi/count: "];
 	]
 ]
 
 
 (* ::Subsubsection::Closed:: *)
-(*RunProducPopBatchQueueerKernel*)
+(*PopBatchQueue*)
 
 
 PopBatchQueue[bs_] := Block[{q, offset, attempt, startTime},
 	startTime = AbsoluteTime[];
 	Catch[While[True,
 		Do[
-			q = queue[[currentIndex]];
+			q = queueGet[currentIndex];
 			offset = takenSoFar[[currentIndex]] - trimmed[[currentIndex]];
 			If[Length[q] >= offset + bs,
 				(*GetTrainData already returns a list of input->output rules, ready for NetTrain*)
@@ -1545,17 +1577,6 @@ PopBatchQueue[bs_] := Block[{q, offset, attempt, startTime},
 				If[attempt =!= $Failed,
 					takenSoFar[[currentIndex]] += bs;
 					currentIndex = Mod[currentIndex, nProducers] + 1;
-					If[!IntegerQ[popCounter], popCounter = 0];
-					(*popCounter++;
-					If[Mod[popCounter, 10] === 0,
-						MonitorFunction[{
-							popCounter, 
-							AbsoluteTime[] - startTime, Dimensions[attempt[[1, 1, 1]]],
-							Mean[Normal@Flatten@First@attempt[[1, 1, 1]]], 
-							Mean[Normal@Flatten@First@attempt[[1, 2]]]
-						},
-							"PopBatchQueue count/time/dims/meanIn/meanOut: "]
-					];*)
 					Throw[attempt]
 				]
 			];
@@ -1574,18 +1595,9 @@ PopBatchQueue[bs_] := Block[{q, offset, attempt, startTime},
 (*RunTrainerKernel*)
 
 
-RunTrainerKernel[netIn_, {roundLength_, rounds_, ittTrain_, batch_, loss_, tar_, learningRate_, l2reg_,	schedule_, monitorFunction_, rep_, validation_, logFile_}] := Block[{trained},
+RunTrainerKernel[trainFunc_] := Block[{trained},
 	ParallelSubmit[CheckAbort[
-			trained = NetTrain[netIn, {PopBatchQueue[#BatchSize]&, "RoundLength" -> roundLength}, All,
-				ValidationSet -> validation, LossFunction -> loss,
-				TargetDevice -> tar, WorkingPrecision -> "Mixed",
-				MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
-				LearningRate -> learningRate, Method -> {"ADAM", "L2Regularization" -> l2reg,
-					"LearningRateSchedule" -> schedule, "Beta1" -> 0.9, "Beta2" -> 0.99,
-					"Epsilon" -> 10^-5, "GradientClipping" -> 1},
-				TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
-				TrainingProgressReporting -> logFile
-			];
+			trained = trainFunc[PopBatchQueue[#BatchSize]&];
 			(*set even on success, so the producer kernels' While loops stop*)
 			trainingDone = True;
 			trained
