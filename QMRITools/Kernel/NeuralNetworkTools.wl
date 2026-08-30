@@ -1065,7 +1065,7 @@ SyntaxInformation[ClassDecoder] = {"ArgumentsPattern" -> {_, _.}};
 
 ClassDecoder[data_] := ClassDecoder[data, Last@Dimensions@data]
 
-ClassDecoder[data_, nClass_] := ToPackedArray@Round@ClassDecoderC[data, Range[nClass]]
+ClassDecoder[data_, nClass_] := ToPackedArray@Round@ClassDecoderC[Normal[data], Range[nClass]]
 
 
 ClassDecoderC = Compile[{{prob, _Real, 1}, {classes, _Integer, 1}}, 
