@@ -356,12 +356,14 @@ SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, 
 
 	(*Filter the segmentation*)
 	If[ker > 0, Which[
-		itt === 1, maskI = Erosion[Round[GaussianFilter[Dilation[maskI, 1], ker]], 1],
-		itt > 1, maskI = Nest[Erosion[Round[GaussianFilter[Dilation[#, 1], ker] + 0.05], 1] &, maskI, itt]
+		itt === 1, maskI = Erosion[Round[
+			GaussianFilter[Dilation[maskI, 1], ker]], 1],
+		itt > 1, maskI = Nest[Erosion[Round[
+			GaussianFilter[Dilation[#, 1], ker] + 0.05], 1] &, maskI, itt]
 	]];
 
 	(*reverse cropping and return the mask*)
-	ReverseCrop[Round@SparseArray@ImageData@maskI, dim, crp]
+	ReverseCrop[SparseArray@Round@ImageData@maskI, dim, crp]
 ]
 
 
@@ -372,8 +374,12 @@ SmoothMask[mask_, OptionsPattern[]] := Block[{dil ,obj, close, itt, ker, maskI, 
 TakeObject[maskI_, obj_] := Block[{morph, keys},
 	morph = MorphologicalComponents[maskI, CornerNeighbors -> False];
 	If[Max[morph] <= obj, maskI,
-		keys = Reverse[k=Keys[SortBy[ComponentMeasurements[morph, "Count", CornerNeighbors -> False], Last]]][[;; obj]];
-		Image3D[NumericArray[Total[SparseArray[1 - Unitize[morph - #]] & /@ keys], "Integer8"]]
+		keys = Reverse[Keys[
+			SortBy[ComponentMeasurements[morph, "Count", CornerNeighbors -> False], Last]
+		]][[;; obj]];
+		Image3D[NumericArray[
+			Total[SparseArray[1 - Unitize[morph - #]] & /@ keys]
+		, "Integer8"]]
 	]
 ];
 
@@ -597,7 +603,7 @@ SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
 
 RescaleSegmentation[seg_, vox_] := Block[{segs, val},
 	If[ArrayDepth[seg] == 3, {segs, val} = SplitSegmentations[seg], segs = seg];
-	segs = Transpose@RemoveMaskOverlapsI[SparseArray[SparseArray[Round[RescaleData[Normal[#], vox, InterpolationOrder -> 1]]] & /@Transpose[segs]]];
+	segs = RemoveMaskOverlaps[Transpose@SparseArray[SparseArray[Round[RescaleData[Normal[#], vox, InterpolationOrder -> 1]]] & /@Transpose[segs]]];
 	If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
 ]
 
@@ -608,16 +614,19 @@ RescaleSegmentation[seg_, vox_] := Block[{segs, val},
 
 SyntaxInformation[RemoveMaskOverlaps] = {"ArgumentsPattern" -> {_}};
 	
-RemoveMaskOverlaps[masks_] := Transpose@RemoveMaskOverlapsI[Transpose[SparseArray[Round@masks]]];
+RemoveMaskOverlaps[maskI_] := Block[{masks, tot, over, keep, size, coor},
+	masks = Transpose[maskI];
+	tot = Total[masks];
+	over = Unitize[Ramp[tot - 1]];
+	If[Max[over] < 1, Return[maskI]];
+	keep = Transpose[(Unitize[tot] (1 - over)) Transpose[masks, {4, 1, 2, 3}], {1, 3, 4, 2}];
 
-RemoveMaskOverlapsI[masks_] := Block[{maskOver, posOver, maskInp, maskOut, z, x, y, p},
-	maskOver = SparseArray[Mask[Total[masks], 1.5]];
-	posOver = maskOver["ExplicitPositions"];
-	maskOut = SparseArray[SparseArray[(1 - maskOver) #] & /@ masks];
+	size = Total[Flatten[#]] & /@ masks;
+	
+	{over, coor} = DataToVector[maskI, over];
+	over = VectorToData[1 - Unitize[size - Max[size #] & /@ Normal[over]], coor, "Mask"];
 
-	maskInp = maskOver Transpose[masks, {4, 1, 2, 3}];
-	p = ({z, x, y} = #; {First@First[maskInp[[z, x, y]]["ExplicitPositions"]], z, x, y}) & /@posOver;
-	maskOut + SparseArray[p -> 1, Dimensions[maskOut]]
+	keep + over
 ]
 
 

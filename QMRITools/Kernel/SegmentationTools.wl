@@ -23,6 +23,9 @@ BeginPackage["QMRITools`SegmentationTools`", Join[{"Developer`"}, Complement[QMR
 (* ::Subsection::Closed:: *)
 (*Functions*)
 
+CopyTrainedNetwork::usage = 
+"CopyTrainedNetwork[fileIn, loc, dim] copy a trained network to final location."
+
 
 GetNeuralNet::usage = 
 "GetNeuralNet[name] loads a pre-trained neural net by asset name. The net is cached within a session.
@@ -213,8 +216,8 @@ RoundLength::usage =
 "RoundLength is an option for TrainSegmentationNetwork. Defines how many batches will be seen during each training round."
 
 
-MaxPatchSize::usage = 
-"MaxPatchSize is an option for SegmentData and ApplySegmentationNetwork. Defines the maximum memory a patch can use in Gb. Higher is better."
+MaxMemorySize::usage = 
+"MaxMemorySize is an option for SegmentData and ApplySegmentationNetwork. Defines the maximum memory a patch can use in Gb. Higher is better."
 
 SegmentationDimension::usage = 
 "SegmentationDimension is an option for SegmentData. The default value is \"3D\" but can also be set to \"2D\" to used 2D slice by slice segmentation."
@@ -364,6 +367,7 @@ $SegmentationGroups = <|
 		"Classify" -> "Side",  "OutputLabels" -> "MuscleLabels"|>,
 	"ShoulderBody" -> <|"Locations" -> {"Shoulder"}, "Split" -> "Auto",
 		"Classify" -> "Side",  "OutputLabels" -> "MuscleLabels"|>,
+
 	(*Output to legacy leg labels*)
 	"Legs" -> <|"Locations" -> {"LowerLegs","UpperLegs"}, "Split" -> "Find",
 		"Classify" -> "Position", "OutputLabels" -> "MuscleLegLabels"|>,
@@ -375,13 +379,36 @@ $SegmentationGroups = <|
 		"Classify" -> "Side",  "OutputLabels" -> "MuscleLegLabels"|>,
 	"Hip" -> <|"Locations" -> {"Hip"}, "Split" -> "Auto",
 		"Classify" -> "Side",  "OutputLabels" -> "MuscleLegLabels"|>,
+
 	(*Output to legacy shoulder labels*)
 	"Shoulder" -> <|"Locations" -> {"Shoulder"}, "Split" -> "Auto",
 		"Classify" -> "Side",  "OutputLabels" -> "MuscleShoulderLabels"|>,
+
 	(*Output to arm labels*)
 	"Arm" -> <|"Locations" -> {"Arm"}, "Split" -> "Auto",
 		"Classify" -> "None", "OutputLabels" -> "MuscleArmLabels"|>
 |>;
+
+
+(* ::Subsection::Closed:: *)
+(*CopyTrainedNetwork*)
+
+
+CopyTrainedNetwork[file_, loc_, dim_] := Block[{fileIn, fileOut},
+	fileOut = FileNameJoin[{First[PacletFind["QMRITools"]]["Location"], "NeuralNetworks", Switch[loc,
+		"HeadNeck", "N1_HeadNeck_",
+		"Shoulder", "N2_Shoulder_",
+		"Torso", "N3_Torso_",
+		"Hip", "N4_Hip_",
+		"UpperLeg", "N5_UpperLeg_",
+		"LowerLeg", "N6_LowerLeg_",
+		"Arm", "N7_Arm_",
+		_, Return[$Failed]
+	] <> dim <> ".wlnet"}];
+	fileIn = If[DirectoryQ[file], Last[SortBy[FileNames["*.wlnet",file], FileDate]], If[
+		FileExtension[file]==="wlnet", file, Return[$Failed]]];
+	CopyFile[fileIn, fileOut, OverwriteTarget -> True]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -594,7 +621,7 @@ PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}] :
 
 PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?ListQ] := Block[{
 		sel, zero, a1, a2, b1, b2, c1, c2, dat, wt,
-		seg, lab, pos, si, pi, overlap
+		seg, lab, pos, si, pi, over
 	},
 
 	If[labs === {},
@@ -617,11 +644,14 @@ PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, l
 		], {p, pos}];
 
 		(*only keep the largest connected segmentation*) 
-		seg = Transpose[SmoothMask[#, MaskComponents -> 1, MaskClosing -> False, SmoothIterations -> 0] &/@ seg];
+		seg = Transpose[SmoothMask[#, MaskComponents -> 1, 
+			MaskClosing -> False, SmoothIterations -> 0] &/@ seg];
+
 		(*if needed remove the overlap*)
 		If[MinMax[seg] =!= {0, 0}, 
-			over = 1 - Unitize[Ramp[Total[Transpose@seg] - 1]];
-			seg = MaskData[seg, over];
+			seg = RemoveMaskOverlaps@seg;
+			(*over = 1 - Unitize[Ramp[Total[Transpose@seg] - 1]];
+			seg = MaskData[seg, over];*)
 		];
 
 		(*merge the segmentations*)	
@@ -730,7 +760,7 @@ GetPatchRangeI[dim_?IntegerQ, patch_?IntegerQ, {nr_, pad_}] := Block[{i,st},
 
 Options[SegmentData] = {
 	TargetDevice -> "CPU",
-	MaxPatchSize->Automatic,
+	MaxMemorySize->Automatic,
 	SegmentationDimension -> "3D",
 	SegmentationResolution -> Automatic,
 	Monitor->False
@@ -747,7 +777,7 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 	},
 
 	timeAll = First@AbsoluteTiming[
-		{dev, max, mon, sDim, rescale} = OptionValue[{TargetDevice, MaxPatchSize, Monitor, 
+		{dev, max, mon, sDim, rescale} = OptionValue[{TargetDevice, MaxMemorySize, Monitor, 
 			SegmentationDimension, SegmentationResolution}];
 		sDim = If[MemberQ[{"2D", "3D"}, sDim], sDim, "2D"];
 		monO = mon;
@@ -770,7 +800,8 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 
 		(*split the data in anatomical based patches for segmentation*)
 		time = First@AbsoluteTiming[
-			{{patch, pts, dim}, loc} = SplitDataForSegmentation[data, what, Monitor -> monO, TargetDevice -> dev];
+			{{patch, pts, dim}, loc} = SplitDataForSegmentation[data, what, 
+				Monitor -> monO, TargetDevice -> dev];
 		];
 
 		mon["--------------------"];
@@ -789,7 +820,7 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 				mon["--------------------"];
 				mon[{#2, net}, "Performing segmentation for: "];
 				seg = ApplySegmentationNetwork[#1, net, TargetDevice -> dev, 
-					MaxPatchSize -> max, Monitor -> monO];
+					MaxMemorySize -> max, Monitor -> monO];
 				ReplaceLabels[seg, #2, what]
 			) &, {patch, loc}]];
 		mon["--------------------"];
@@ -938,7 +969,7 @@ CropPart[{dat_, {loc_, {locStart_, locEnd_}}, {side_, {sideStart_, sideEnd_}}}] 
 Options[ApplySegmentationNetwork] = {
 	TargetDevice->"CPU", 
 	DataPadding->0, 
-	MaxPatchSize->Automatic, 
+	MaxMemorySize->Automatic, 
 	Monitor->False
 }
 
@@ -984,7 +1015,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		patch, pts, seg, mon, lab, nClass, precision, normF, is2D
 	},
 
-	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxPatchSize, Monitor}];
+	{dev, pad, lim, mon} = OptionValue[{TargetDevice, DataPadding, MaxMemorySize, Monitor}];
 	If[lim === Automatic, lim = If[dev==="CPU", 32, 8]];(*memory limit in GB*)
 	mon = If[mon, MonitorFunction, List];
 
@@ -1022,12 +1053,13 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		mon[{size, Length@patch}, "Patch size and created number of patches is:"];
 		mon[mem, "Estimated memory need is:"];
 		patch = If[is2D, ({#}& /@ normF[#])& /@ patch, {normF[#]}&/@patch];
+		patch = NumericArray[#, "Real32"]& /@ patch;
 
 		(*perform the segmentation*)
 		If[node==="",
 			time = First@AbsoluteTiming[
 				(*actually perform the segmentation with the NN*)
-				seg = net[#, TargetDevice->dev, WorkingPrecision ->precision]& /@ patch;
+				seg = net[patch, TargetDevice->dev, WorkingPrecision ->precision];
 				seg = ClassDecoder /@ seg;
 				(*reverse all the padding and cropping and merged the patches if needed*)
 				seg = PatchesToData[ArrayPad[#, -pad] & /@ seg, Map[# + {pad, -pad} &, pts, {2}], dim, Range[nClass]];
@@ -1160,7 +1192,7 @@ Options[TrainSegmentationNetwork] = {
 	AugmentData -> True,
 	PadData-> False,
 
-	LossFunction -> {"Dice","Focal"},
+	LossFunction -> All,
 	DropoutRate -> 0.2,
 	LearningRate -> 0.001,
 	L2Regularization -> 0.0001,
@@ -1177,10 +1209,10 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, opts : OptionsPatter
 TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
 		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches, pLen, is2D,
-		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, trainFunc,
+		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, trainFunc, trainOpts, base,
 		validation, files, loss, rep, learningRate, schedule, dims, tar, logFile, allOpts, parallel,
-		nProducers, loadData, producerKernels, maxQueue, stallTimeout, queueVars,
-		takenSoFar, trimmed, trueProduced, activeProducers, trainingDone, currentIndex, producerJob,
+		nProducers, loadData, producerKernels, stallTimeout, queueVars,
+		produced, used, ready, activeProducers, trainingDone, currentIndex, producerJob,
 		trainerJob, nVal, makeVal, maxProducers, producerStatus, roundImage
 	},
 
@@ -1303,16 +1335,18 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*Monitor function*)
 	monitorFunction = (
 		ittTrain++;
+		base = outName[ittString[#1]<>#2]&;
 		(*perform segmentation and export*)
 		netMon = NetExtract[#Net, "net"];
 		testSeg = Ramp[ClassDecoder[netMon[testData, TargetDevice -> "CPU"]]];
-		ExportNii[testSeg, testVox, outName[ittString[ittTrain]<>".nii"]];
+		ExportNii[testSeg, testVox, base[ittTrain,".nii"]];
 		(*make and export test image*)
-		im = MakeChannelClassGrid[If[is2D, Transpose@testData, testData], {testSeg, {0, nClass-1}}, 3];
-		Export[outName[ittString[ittTrain] <> ".png"], im , "ColorMapLength" -> 256];
+		im = MakeChannelClassGrid[If[is2D, Transpose@testData, testData], 
+			{testSeg, {0, nClass-1}}, 3];
+		Export[base[ittTrain,".png"], im, "ColorMapLength" -> 256];
 		(*export network, delete the previous itt*)
-		Export[outName[ittString[ittTrain] <> ".wlnet"], netMon];
-		Quiet@DeleteFile[outName[ittString[ittTrain - 1] <> ".wlnet"]];
+		Export[base[ittTrain,".wlnet"], netMon];
+		Quiet@DeleteFile[base[ittTrain-2,".wlnet"]];
 	)&;
 
 	(*batch function*)
@@ -1382,8 +1416,8 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 	(*Print progress function*)
 	PrintTemporary[Dynamic[roundImage[]]];
 
-	(*The training function without batch generator*)
-	trainFunc = NetTrain[netIn, {#, "RoundLength" -> roundLength}, All,
+	(*make the tainfunction*)
+	trainOpts = Sequence[
 		ValidationSet -> validation, LossFunction -> loss,
 		TargetDevice -> tar, WorkingPrecision -> "Mixed",
 		MaxTrainingRounds -> rounds - ittTrain, BatchSize -> batch,
@@ -1391,36 +1425,39 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 			"LearningRateSchedule" -> schedule, "Beta1" -> 0.9, "Beta2" -> 0.99,
 			"Epsilon" -> 10^-5, "GradientClipping" -> 1},
 		TrainingProgressFunction -> {monitorFunction, "Interval" -> Quantity[rep, "Rounds"]},
-		TrainingProgressReporting -> logFile
-	]&;
+		TrainingProgressReporting -> logFile];
+	trainFunc = With[{netIn = netIn, roundLength = roundLength, trainOpts = trainOpts},
+		NetTrain[netIn, {#, "RoundLength" -> roundLength}, All, trainOpts]&
+	];
 
 	If[!parallel,
 		(*Normal branch without parallel evaluation*)
 		trained = trainFunc[batchFunction];
 		,
 		(*branch with parallel evaluation*)
-		maxQueue = batch;
 		stallTimeout = 60;
 		trainingDone = False;
 		currentIndex = 1;
 
 		(*shared queue state*)
-		queueVars = Table[qSt[i], {i, nProducers}];
+		queueVars = Table["queue" <> ToString[i], {i, nProducers}];
 		Clear /@ queueVars;
-		Table[queueSet[i, {}], {i, nProducers}];
-		takenSoFar = trimmed = trueProduced = Table[0, nProducers];
+		Table[ToExpression[queueVars[[i]] <> " = {}"], {i, nProducers}];
+		produced = used = Table[0, nProducers];
+		ready = Table[False, nProducers];
 		activeProducers = nProducers;
 
 		ToExpression["SetSharedVariable[" <> StringRiffle[queueVars, ","] <> "]"];
-		SetSharedVariable[takenSoFar, trimmed, trueProduced, activeProducers,
+		SetSharedVariable[produced, used, ready, activeProducers,
 			trainingDone, currentIndex, ittTrain, im];
-		DistributeDefinitions[qSt, queueGet, queueSet, nProducers, stallTimeout,
+		DistributeDefinitions[nProducers, stallTimeout,
 			testData, testVox, outName, ittString, nClass, is2D];
 
-		producerStatus[] := Column[{
-			Style["Active producers: " <> ToString[activeProducers], Bold],
-			Style["Queue lengths: " <> ToString[Length /@ ToExpression[queueVars]], Bold],
-			Style["Chunks produced: " <> ToString[trueProduced], Bold]
+		producerStatus[] := Grid[{
+			{Style["Active producers: " <> ToString[activeProducers], Bold], SpanFromLeft},
+			Join[{Style["Produced:", Bold], Total[produced], " - "}, produced],
+			Join[{Style["Used:", Bold], Total[used], " - "}, used],
+			Join[{Style["Ready:", Bold], Count[ready, True], " - "}, Boole[ready]]
 		}, Alignment -> Center];
 
 		(*live producer feedback*)
@@ -1428,12 +1465,12 @@ TrainSegmentationNetwork[{inFol_?StringQ, outFol_?StringQ}, netCont_, opts : Opt
 
 		(*launch the producers and trainer*)
 		producerJob = Table[With[{qi = i},
-			RunProducerKernel[{qi, maxQueue}, data, {{batch, patch, nClass}, {augment, pad, patches}}]]
+			RunProducerKernel[qi, data, {{batch, patch, nClass}, {augment, pad, patches}}]]
 		, {i, nProducers}];
 		trainerJob = RunTrainerKernel[trainFunc];
 
 		(*activate the producer and trainer*)
-		trained = Last[WaitAll[Append[producerJob, trainerJob]]];
+		trained = Last[WaitAll[Append[producerJob, trainerJob], ProgressReporting -> False]];
 
 		(*Final producer feedback*)
 		MonitorFunction[producerStatus[]];
@@ -1478,8 +1515,8 @@ LaunchTrainingKernels[maxProducers_:Automatic] := Block[{n, kernels},
 	ParallelEvaluate[<<QMRIToolsDev`];
 	kernels = Kernels[];
 	(*every kernel can end up running a producer job since ParallelSubmit isn't pinned, so none should multithread internally*)
-	ParallelEvaluate[Quiet@System`SetSystemOptions[
-		"ParallelOptions" -> {"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}], kernels];
+	(*ParallelEvaluate[Quiet@System`SetSystemOptions[
+		"ParallelOptions" -> {"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}], kernels];*)
 	{n, kernels[[;; n]]}
 ]
 
@@ -1501,61 +1538,26 @@ LoadProducerData[files_, n_, loadData_] := Block[{repFiles, fileShards, jobs, fi
 		If[loadData, If[ArrayDepth[#] === 3, Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}]
 	]], {i, n}];
 	fitterJob = ParallelSubmit[data = {}];
-	reports = Most[WaitAll[Append[jobs, fitterJob]]];
+	reports = Most[WaitAll[Append[jobs, fitterJob], ProgressReporting -> False]];
 
 	Join @@ reports
 ]
 
 
 (* ::Subsubsection::Closed:: *)
-(*Queue helpers*)
-
-
-qSt[i_] := "queue" <> ToString[i];
-queueGet[i_] := ToExpression[qSt[i]];
-queueSet[i_, val_] := (
-	tmp = val;
-	ToExpression[qSt[i] <> " = " <> Context[queueSet] <> "tmp"]
-);
-
-
-(* ::Subsubsection::Closed:: *)
 (*RunProducerKernel*)
 
 
-RunProducerKernel[{qi_, maxQueue_}, filesShard_, {{batch_, patch_, nClass_}, {augment_, pad_, patches_}}] := Block[{
-		q, toTrim, wouldFit, chunk, localCount
-	},
+RunProducerKernel[qi_, filesShard_, {{batch_, patch_, nClass_}, {augment_, pad_, patches_}}] := Block[{},
 	ParallelSubmit[
-		localCount = 0;
-		While[!trainingDone,
-			q = queueGet[qi];
-			toTrim = takenSoFar[[qi]] - trimmed[[qi]];
-			wouldFit = Length[q] - toTrim < maxQueue;
-
-			Which[
-				(*produce a new chunk and append it, trimming what the trainer already consumed*)
-				wouldFit,
-				chunk = GetTrainData[filesShard, batch, patch, nClass,
-					PatchesPerSet -> patches, AugmentData -> augment, PadData -> pad];
-				queueSet[qi, Join[Drop[q, toTrim], chunk]];
-
-				trimmed[[qi]] += toTrim;
-				localCount++;
-				trueProduced[[qi]] = localCount,
-
-				(*queue full, just trim what's already been consumed*)
-				toTrim > 0,
-				queueSet[qi, Drop[q, toTrim]];
-				trimmed[[qi]] += toTrim;
-				Pause[0.5],
-
-				(*nothing to trim and no room to produce, wait*)
-				True,
-				Pause[0.5]
-			]
-		];
-		trueProduced[[qi]] = localCount;
+		While[!trainingDone, If[!ready[[qi]],
+			chunk = GetTrainData[filesShard, batch, patch, nClass,
+				PatchesPerSet -> patches, AugmentData -> augment, PadData -> pad];
+			ToExpression["queue" <> ToString[qi] <> " = QMRITools`SegmentationTools`Private`chunk"];
+			produced[[qi]]++;
+			ready[[qi]] = True,
+			Pause[0.5]
+		]];
 		activeProducers--;
 	]
 ]
@@ -1565,28 +1567,21 @@ RunProducerKernel[{qi_, maxQueue_}, filesShard_, {{batch_, patch_, nClass_}, {au
 (*PopBatchQueue*)
 
 
-PopBatchQueue[bs_] := Block[{q, offset, attempt, startTime},
+GetFromBatchQueue[_] := Block[{startTime, chunk},
 	startTime = AbsoluteTime[];
 	Catch[While[True,
 		Do[
-			q = queueGet[currentIndex];
-			offset = takenSoFar[[currentIndex]] - trimmed[[currentIndex]];
-			If[Length[q] >= offset + bs,
-				(*GetTrainData already returns a list of input->output rules, ready for NetTrain*)
-				attempt = Quiet[Check[q[[offset + 1 ;; offset + bs]], $Failed]];
-				If[attempt =!= $Failed,
-					takenSoFar[[currentIndex]] += bs;
-					currentIndex = Mod[currentIndex, nProducers] + 1;
-					Throw[attempt]
-				]
-			];
 			currentIndex = Mod[currentIndex, nProducers] + 1;
-			, {nProducers}
+			If[ready[[currentIndex]],
+					used[[currentIndex]]++;
+					ready[[currentIndex]] = False;
+					Throw[ToExpression["queue" <> ToString[currentIndex]]]
+			], {nProducers}
 		];
 		(*no producers left, or none delivered enough new data in time, give up*)
 		If[activeProducers <= 0, Abort[]];
 		If[AbsoluteTime[] - startTime > stallTimeout, Abort[]];
-		Pause[0.5]
+		Pause[0.01]
 	]]
 ]
 
@@ -1597,7 +1592,7 @@ PopBatchQueue[bs_] := Block[{q, offset, attempt, startTime},
 
 RunTrainerKernel[trainFunc_] := Block[{trained},
 	ParallelSubmit[CheckAbort[
-			trained = trainFunc[PopBatchQueue[#BatchSize]&];
+			trained = trainFunc[GetFromBatchQueue];
 			(*set even on success, so the producer kernels' While loops stop*)
 			trainingDone = True;
 			trained
@@ -1857,7 +1852,6 @@ GetTrainData[dataSets_, nBatch_, patch_, nClass_, OptionsPattern[]] := Block[{
 		(NumericArray[{#}, "Real32"] & /@ N[datO]) -> 
 		(NumericArray[#, "Byte"] & /@ Round[segO])
 	]
-	(*Thread[Transpose[{ToPackedArray@N@datO}] -> ToPackedArray@Round@segO]*)
 ];
 
 
@@ -2699,7 +2693,7 @@ ImportMMLabels[file_] := Block[{alt, labMM, anatMM, sideMM, numMM, nameMM},
 		"peroneus longus" -> "fibularis longus",
 		"semispinalis cervicis and multifidus" -> "semispinalis cervicis"
 		};
-	
+
 	labMM = Tabular[Import[file, "RawJSON"]["labels"]];
 	anatMM = Normal[labMM[[All, "anatomy"]]] /. alt;
 	sideMM = Normal[labMM[[All, "side"]]];
@@ -2708,7 +2702,7 @@ ImportMMLabels[file_] := Block[{alt, labMM, anatMM, sideMM, numMM, nameMM},
 		StringReplace[StringRiffle[#, " "], " " -> "_"], 
 		"_No_side" -> ""] & /@ 
 		Transpose[{Capitalize[anatMM, "AllWords"], Capitalize[sideMM]}]);
-	
+
 	{nameMM, numMM}
 ]
 

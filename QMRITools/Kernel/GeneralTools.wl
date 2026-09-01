@@ -849,8 +849,13 @@ DataToVector[dataIn_, maskIn_] := Module[{data, sp, mask, depthDat, depthMask, d
 				Flatten[data]
 			]
 		];
+
 		(*get the data and positions there mask is 1*)
-		{Pick[data, Flatten[mask], 1], {dimDat, Position[mask, 1]}}
+		{
+			Pick[data, Flatten[Normal@mask], 1], 
+			{dimDat, SparseArray[Round[mask]]["ExplicitPositions"]}
+		}
+		
 	]
 ]
 
@@ -859,7 +864,7 @@ DataToVector[dataIn_, maskIn_] := Module[{data, sp, mask, depthDat, depthMask, d
 (*VectorToData*)
 
 
-SyntaxInformation[VectorToData] = {"ArgumentsPattern" -> {_, {_, _}}};
+SyntaxInformation[VectorToData] = {"ArgumentsPattern" -> {_, {_, _}, _.}};
 
 VectorToData[vec_, {dim_, pos_}] := Block[{nSp, idx, flat, nVol, out},
 	nSp = Times @@ dim;
@@ -876,7 +881,15 @@ VectorToData[vec_, {dim_, pos_}] := Block[{nSp, idx, flat, nVol, out},
 		out = ArrayReshape[flat, Append[dim, nVol]];
 		If[Length[dim] == 2, Transpose[out, {2, 3, 1}], Transpose[out, {1, 3, 4, 2}]]
 	]
- ]
+]
+
+VectorToData[vec_, {dim_, pos_}, "Mask"] := If[VectorQ[vec],
+	SparseArray[pos -> vec, dim],
+	If[Length[dim] == 2,
+		SparseArray[pos -> #, dim] & /@ Transpose[vec],
+		Transpose[SparseArray[pos -> #, dim] & /@ Transpose[vec]]
+	]
+]
 
 
 (* ::Subsubsection::Closed:: *)
