@@ -601,10 +601,9 @@ SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := Block[{smooth, obj,
 
 SyntaxInformation[RescaleSegmentation] = {"ArgumentsPattern" -> {_, _}};
 
-RescaleSegmentation[seg_, vox_] := Block[{segs, val},
-	If[ArrayDepth[seg] == 3, {segs, val} = SplitSegmentations[seg], segs = seg];
-	segs = RemoveMaskOverlaps[Transpose@SparseArray[SparseArray[Round[RescaleData[Normal[#], vox, InterpolationOrder -> 1]]] & /@Transpose[segs]]];
-	If[ArrayDepth[seg] == 3, MergeSegmentations[segs, val], segs]
+RescaleSegmentation[seg_, vox_] := If[ArrayDepth[seg] === 3, 
+	Round[RescaleData[seg, vox, InterpolationOrder -> 0]],
+	Transpose@SparseArray[SparseArray[Round[RescaleData[Normal[#], vox, InterpolationOrder -> 0]]] & /@ Transpose[seg]]
 ]
 
 
