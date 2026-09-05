@@ -63,8 +63,9 @@ GetNetNodes::usage =
 "GetNetNodes[net] returns a list of all the nodes in the network net."
 
 
-AddLossLayer::usage = 
-"AddLossLayer[net] adds loss layers to a NetGraph. The DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MSDLossLayer, TopK, and CELossLayer are added."
+AddLossLayer::usage =
+"AddLossLayer[net] adds all loss layers to a NetGraph. The DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MSDLossLayer, TopK, and CELossLayer are added.
+AddLossLayer[net, loss] only adds the loss layers given in loss, loss can be a string or a list of strings chosen from {\"Dice\", \"Jaccard\", \"Tversky\", \"MSD\", \"MAE\", \"CE\", \"Focal\", \"TopK\"}."
 
 DiceLossLayer::usage = 
 "DiceLossLayer[] represents a net layer that computes the Dice loss by comparing input class probability vectors with the target class vector.
@@ -103,9 +104,14 @@ ClassEncoder::usage =
 "ClassEncoder[label] encodes Integer label data of 0 to max value of label into a nClass + 1 vector of 1 and 0 as the last dimension.
 ClassEncoder[label, nClass] encodes Integer label data of 0 to nClass into a nClass + 1 vector of 1 and 0 as the last dimension."
 
-ClassDecoder::usage = 
+ClassDecoder::usage =
 "ClassDecoder[probability] decodes a probability vector of 1 and 0 into Integers of 0 to the value of the last dimension of probability minus one.
 ClassDecoder[probability, nClass] decodes a probability vector of 1 and 0 into Integers of 0 to nClass - 1."
+
+ClassConfidence::usage =
+"ClassConfidence[probability] gives the confidence of a probability vector as produced by a network's softmax output, i.e. the same input ClassDecoder takes,
+without collapsing it to a class label. Confidence is 1 minus the normalized entropy of the vector, so it is 1 for a fully certain (one-hot) vector and 0
+for a maximally uncertain (uniform) vector."
 
 
 AnalyzeNetworkFeatures::usage = 
@@ -179,6 +185,8 @@ MakeUnet::arch = "The architecture input is not valid. It can be \"UNet\", \"UNe
 
 MakeUnet::block = "The block type input is not valid. It can be \"Conv\", \"UNet\", \"ResNet\", \"DenseNet\", \"Inception\", or \"U2Net\".";
 
+
+AddLossLayer::loss = "Unknown loss function should be one of {\"Dice\", \"MSD\", \"MAE\", \"Tversky\", \"CE\", \"Jaccard\", \"Focal\", \"TopK\"}.";
 
 ActivationLayer::type = "Not a correct activation layer `1`";
 
@@ -832,7 +840,10 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 	dimIn = NetDimensions[netIn, "Input"];
 	nChanIn = First@dimIn;
 	dimIn = Rest@dimIn;
-	nClassIn = Last@NetDimensions[netIn, "Output"];
+	(*a single output class has no trailing class dimension, the map layer squeezes it away*)
+	nClassIn = With[{dimOutIn = NetDimensions[netIn, "Output"]},
+		If[Length[dimOutIn] > Length[dimIn], Last[dimOutIn], 1]
+	];
 
 	(*Change network Dimensions if needed*)
 	If[dimOut =!= None && dimOut =!= dimIn, 
@@ -849,11 +860,11 @@ ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 		}]
 	];
 
-	(*Change output Classes if needed*)
+	(*Change output Classes if needed, a single class has no trailing class dimension*)
 	If[nClassOut =!= None && nClassOut=!=nClassIn,
 		netOut = NetReplacePart[netOut, {
-			"map" -> UNetMap[Length@dimIn, Round@nClassOut], 
-			"Output" -> Round@Append[dimOut, nClassOut]
+			"map" -> UNetMap[Length@dimIn, Round@nClassOut],
+			"Output" -> Round@If[nClassOut > 1, Append[dimOut, nClassOut], dimOut]
 		}]
 	];
 
@@ -878,13 +889,23 @@ GetNetNodes[net_] := DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]
 (*AddLossLayer*)
 
 
-SyntaxInformation[AddLossLayer] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[AddLossLayer] = {"ArgumentsPattern" -> {_, _.}};
 
 
-AddLossLayer[net_] := NetGraph[
+AddLossLayer[net_] := AddLossLayer[net, All]
+
+AddLossLayer[net_, lossI_] := Block[{loss, layers},
+	loss = Which[
+		lossI === All, {"Dice", "Jaccard", "Tversky", "CE", "Focal", "TopK", "MSD", "MAE"},
+		StringQ[lossI], {lossI},
+		True, lossI
+	];
+	If[!And @@ (MemberQ[{"Dice", "Jaccard", "Tversky", "CE", "Focal", "TopK", "MSD", "MAE"}, #] & /@ loss),
+		Return[Message[AddLossLayer::loss]; $Failed]
+	];
+
 	(*http://arxiv.org/abs/2312.05391 and https://doi.org/10.1016/j.media.2021.102035 for loss reviews*)
-	<|
-		"net"->net,
+	layers = KeyTake[<|
 		(*overlap losses, jaccard is very similar to squared dice*)
 		"Dice" -> DiceLossLayer[2], (*using squared dice, F1score*)
 		"Jaccard" -> JaccardLossLayer[2], (*using squared Intersection over union*)
@@ -894,9 +915,15 @@ AddLossLayer[net_] := NetGraph[
 		"Focal" -> FocalLossLayer[2], (*scaled squared for confidence*)
 		"TopK" -> TopKLossLayer[net, 0.1], (*only evaluate hard examples very similar to Focal with high g*)
 		(*The normal L2 regression, also known as brier score*)
-		"MSD" -> NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[75 #&]}
-	|>, 
-	({"net", NetPort["Target"]} -> # -> NetPort[#]) &/@{"Dice", "Jaccard", "Tversky", "CE", "Focal", "TopK", "MSD"}
+		"MSD" -> NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[75 #&]},
+		(*L1 regression, robust to the salt-noise outliers injected during masked pretraining*)
+		"MAE" -> NetGraph@NetChain@{MeanAbsoluteLossLayer[], ElementwiseLayer[10 #&]}
+	|>, loss];
+
+	NetGraph[
+		Prepend[layers, "net" -> net],
+		({"net", NetPort["Target"]} -> # -> NetPort[#]) & /@ loss
+	]
 ]
 
 
@@ -1068,8 +1095,22 @@ ClassDecoder[data_] := ClassDecoder[data, Last@Dimensions@data]
 ClassDecoder[data_, nClass_] := ToPackedArray@Round@ClassDecoderC[Normal[data], Range[nClass]]
 
 
-ClassDecoderC = Compile[{{prob, _Real, 1}, {classes, _Integer, 1}}, 
+ClassDecoderC = Compile[{{prob, _Real, 1}, {classes, _Integer, 1}},
 	Max[classes (1 - Unitize[Chop[(prob/Max[prob]) - 1]])] - 1
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ClassConfidence*)
+
+
+SyntaxInformation[ClassConfidence] = {"ArgumentsPattern" -> {_}};
+
+ClassConfidence[data_] := ToPackedArray@ClassConfidenceC[Normal[data]]
+
+(*confidence = 1 - normalized entropy, the epsilon avoids Log[0] for zero-probability classes*)
+ClassConfidenceC = Compile[{{prob, _Real, 1}},
+	1 + Total[prob Log[prob + 1.*^-12]]/Log[Length[prob]]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
