@@ -332,6 +332,9 @@ SurfaceDistance::met = "Method `1` not recognized";
 ApplySegmentationNetwork::node = "The node ``` is not part of the network"
 
 
+ShowTrainLog::nolog = "No log file in `1` has at least `2` progress entries."
+
+
 RunMuscleMap::noEnv = "Could not automatically locate the MuscleMap conda environment in the usual conda locations. Specify \"PythonEnv\" explicitly.";
 
 RunMuscleMap::noScript = "Could not automatically locate mm_segment.py via pip. Specify \"ScriptPath\" explicitly.";
@@ -1303,7 +1306,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 		validation, files, loss, rep, learningRate, schedule, dims, tar, logFile, allOpts, parallel,
 		nProducers, loadData, queueVars, produced, used, ready, activeProducers, trainingDone, index,
 		nVal, makeVal, maxProducers, producerStatus, roundImage, freezeDepth, chanIn, lrMult,
-		augMask, testDataRaw, dispDat
+		augMask, testDataRaw, dispDat, testFile
 	},
 
 	SetMXenvironment["StartTrain"];
@@ -1348,8 +1351,16 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 	nChan = If[depth === 4 && multi, Length@First@testDataRaw, 1];
 	(*background is 0 but for network its 1 so class +1, for self supervised pretraining there is a single output channel*)
 	nClass = If[augMask, 1, Round[Max@testDataRaw[[2]] + 1]];
-	(*for self supervised pretraining testData is corrupted directly, monitoring and export then use that*)
-	{testData, testVox} = MakeTestData[testDataRaw, 2, patch, augMask];
+
+	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
+	testFile = outName["testSet.nii"];
+	(*reuse the test set from a previous run if present, else make and export a new one*)
+	If[FileExistsQ[testFile] || FileExistsQ[testFile <> ".gz"],
+		{testData, testVox} = ImportNii[testFile, NiiMethod -> "dataTR"][[1 ;; 2]];
+		testData = If[is2D, {#}& /@ testData, {testData}],
+		{testData, testVox} = MakeTestData[testDataRaw, 2, patch, augMask];
+		ExportNii[If[is2D, testData[[All, 1]], First@testData], testVox, testFile];
+	];
 
 	(*------------ Define the network -----------------*)
 
@@ -1416,14 +1427,12 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 	(*---------- Training functions ----------------*)
 
 	(*Local functions*)
-	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
 	ittString = "itt_" <> StringPadLeft[ToString[#], 4, "0"]&;
 	roundImage[] := Column[{
 		Style["Training Round: " <> ToString[ittTrain], Bold, Large],
 		Image[im, ImageSize->{Automatic, 400}]
 	}, Alignment -> Center];
 
-	ExportNii[If[is2D, testData[[All, 1]], First@testData], testVox, outName["testSet.nii"]];
 	(*Monitor function*)
 	With[{mon = <|"outName" -> outName, "ittString" -> ittString, "testData" -> testData,
 			"testVox" -> testVox, "nClass" -> nClass, "is2D" -> is2D, "augMask" -> augMask|>},
@@ -2634,11 +2643,12 @@ ShowTrainLog[fol_] := ShowTrainLog[fol, 5]
 
 ShowTrainLog[fol_, max_] := DynamicModule[{
 		plotDat, keyList, folder = fol, len, plot, plotFilter, ymaxMax,
-		xmin, xmax, ymin, ymax, temp, key, key0, key1, key2, filt, filtSize, 
-		grid, logFunc
+		xmin, xmax, ymin, ymax, temp, key, key0, key1, key2, filt, filtSize,
+		grid, logFunc, loaded
 	},
 
 	{keyList, plotDat, len} = LoadLog[fol, max];
+	If[plotDat === $Failed, Return[$Failed]];
 	plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
 
 	key1 = Select[keyList, ! StringContainsQ[#, "Current"] &];
@@ -2685,7 +2695,7 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 			Control[{{xmax, Length[plotDat], "X max"}, Dynamic[xmin+1], Dynamic[Length[plotDat]], 1}]
 		}],
 		Row[{
-			Control[{{ymin, 0.05, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
+			Control[{{ymin, 0.01, "Y min"}, 0, Dynamic[ymax-0.01]}], "  ",
 			Control[{{ymax, 5.1, "Y max"}, Dynamic[ymin+0.01], Dynamic[ymaxMax]}]
 		}],
 		Row[{
@@ -2696,18 +2706,25 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 		Delimiter,
 		Row[{
 			InputField[Dynamic[folder], String, Enabled -> True, FieldSize -> 50], 
-			Button["Browse", 
+			Button["Browse",
 				temp = SystemDialogInput["Directory", folder];
-				If[StringQ[temp], folder = temp; 
-					{keyList, plotDat, len} = LoadLog[folder, max];
-					plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
-					xmin = 1;
+				If[StringQ[temp],
+					loaded = LoadLog[temp, max];
+					If[loaded =!= $Failed,
+						folder = temp;
+						{keyList, plotDat, len} = loaded;
+						plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+						xmin = 1;
+					];
 				];
 				, ImageSize -> {60, Automatic}, Method->"Queued"]}
 		],
-		Button["Reload", 
-			{keyList, plotDat, len} = LoadLog[folder, max];
-			plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+		Button["Reload",
+			loaded = LoadLog[folder, max];
+			If[loaded =!= $Failed,
+				{keyList, plotDat, len} = loaded;
+				plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+			];
 		, ImageSize -> {60, Automatic}, Method->"Queued"],
 
 		{{key, {}}, ControlType -> None}
@@ -2725,6 +2742,8 @@ LoadLog[fol_, max_] := Block[{files, keys, log, length},
 
 	(* Read the log files and extract the relevant information *)
 	log = Select[(Select[Import[#, "Lines"], StringContainsQ[#, "ProgressFraction"] &] & /@ files), Length[#] > max &];
+	If[log === {}, Message[ShowTrainLog::nolog, fol, max]; Return[$Failed, Block]];
+
 	length = Accumulate[Length /@ log];
 
 	(* Convert the log data into a dataset *)

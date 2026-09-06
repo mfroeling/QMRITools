@@ -53,11 +53,14 @@ NetSummary::usage =
 "NetSummary[net] gives a short summary of the convolution kernels and array elements in the network.
 NetSummary[net, what] does the same but what can be \"Full\" which also includes net and node images or \"Mem\" which only reports the memory."
 
-NetDimensions::usage = 
-"NetDimensions[net] extracts the input channels, output classes, the input patch dimension, and the number of input filters."
+NetDimensions::usage =
+"NetDimensions[net] extracts the input channels, output classes, the input patch dimension, and the number of input filters.
+NetDimensions[net, port] returns the dimensions at the given port instead. Port can be \"Input\", \"Output\", \"FirstEncodingIn\", \"FirstEncodingOut\",
+\"LastEncodingIn\", \"LastEncodingOut\", \"MinEncodingOut\", \"AllEncodingOut\", \"AllMaxChannels\", or \"U2Encoding\"."
 
 ChangeNetDimensions::usage =
-"ChangeNetDimensions[netIn] changes input channels, output classes, the input patch dimension of the input network netIn."
+"ChangeNetDimensions[netIn] returns netIn unchanged; use the \"Dimensions\", \"Channels\", and \"Classes\" options to actually change the input patch
+dimension, input channels, or output classes of netIn, e.g. ChangeNetDimensions[netIn, \"Dimensions\" -> dim, \"Channels\" -> nChan, \"Classes\" -> nClass]."
 
 GetNetNodes::usage = 
 "GetNetNodes[net] returns a list of all the nodes in the network net."
