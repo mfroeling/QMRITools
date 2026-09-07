@@ -24,10 +24,10 @@ BeginPackage["QMRITools`NeuralNetworkTools`", Join[{"Developer`"}, Complement[QM
 (*Functions*)
 
 
-MakeUnet::usage = 
-"MakeUnet[nClasses, dimIn] Generates a UNET with one channel as input and nClasses as output. 
-MakeUnet[nChannels, nClasses, dimIn] Generates a UNET with nChannels as input and nClasses as output. 
-he number of parameter of the first convolution layer can be set with dep. The data dimensions can be 2D or 3D and each 
+MakeUnet::usage =
+"MakeUnet[nClasses, dimIn] Generates a UNET with one channel as input and nClasses as output.
+MakeUnet[nChannels, nClasses, dimIn] Generates a UNET with nChannels as input and nClasses as output.
+The number of features of the first convolution layer is set with the FeatureSchedule option. The data dimensions can be 2D or 3D and each
 of the dimensions should be 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240 or 256. However dimensions can be different
 based on the network depth and the block type. The implemented block types are \"Conv\", \"UNet\", \"ResNet\", \"DenseNet\", \"Inception\", or \"U2Net\"."
 
@@ -68,7 +68,8 @@ GetNetNodes::usage =
 
 AddLossLayer::usage =
 "AddLossLayer[net] adds all loss layers to a NetGraph. The DiceLossLayer, JaccardLossLayer, TverskyLossLayer, MSDLossLayer, TopK, and CELossLayer are added.
-AddLossLayer[net, loss] only adds the loss layers given in loss, loss can be a string or a list of strings chosen from {\"Dice\", \"Jaccard\", \"Tversky\", \"MSD\", \"MAE\", \"CE\", \"Focal\", \"TopK\"}."
+AddLossLayer[net, loss] only adds the loss layers given in loss, loss can be a string or a list of strings chosen from {\"Dice\", \"Jaccard\", \"Tversky\", \"MSD\", \"MAE\", \"MSDM\", \"MAEM\", \"CE\", \"Focal\", \"TopK\"}.
+\"MSDM\" and \"MAEM\" are the masked versions of \"MSD\" and \"MAE\": the loss is only computed over the part of the target that is nonzero."
 
 DiceLossLayer::usage = 
 "DiceLossLayer[] represents a net layer that computes the Dice loss by comparing input class probability vectors with the target class vector.
@@ -85,14 +86,13 @@ TverskyLossLayer[b] does the same but b defines the Tversky beta factor. With be
 OverlapLossFunction::usage =
 "OverlapLossFunction[] is a generalization for overlap loss layers like TverskyLossLayer, JaccardLossLayer and DiceLossLayer."
 
-CELossLayer::usage = 
-"CELossLayer[] represents a net layer that computes the Focal loss by comparing input class probability vectors with the target class vector.
+CELossLayer::usage =
+"CELossLayer[] represents a net layer that computes the Cross Entropy loss by comparing input class probability vectors with the target class vector.
 Identical to CrossEntropyLossLayer[\"Probability\"]."
 
 FocalLossLayer::usage =
 "FocalLossLayer[] represents a net layer that computes the Focal loss by comparing input class probability vectors with the target class vector.
-FocalLossLayer[g] does the same but uses g as the tunable focusing parameter gamma which needs to be larger than one.
-FocalLossLayer[g, a] does the same but uses a as the balancing factor alpha."
+FocalLossLayer[g] does the same but uses g as the tunable focusing parameter gamma which needs to be larger than one."
 
 TopKLossLayer::usage =
 "TopKLossLayer[net] represents a net layer that computes the topK 10% loss.
@@ -189,7 +189,7 @@ MakeUnet::arch = "The architecture input is not valid. It can be \"UNet\", \"UNe
 MakeUnet::block = "The block type input is not valid. It can be \"Conv\", \"UNet\", \"ResNet\", \"DenseNet\", \"Inception\", or \"U2Net\".";
 
 
-AddLossLayer::loss = "Unknown loss function should be one of {\"Dice\", \"MSD\", \"MAE\", \"Tversky\", \"CE\", \"Jaccard\", \"Focal\", \"TopK\"}.";
+AddLossLayer::loss = "Unknown loss function should be one of {\"Dice\", \"MSD\", \"MAE\", \"MSDM\", \"MAEM\", \"Tversky\", \"CE\", \"Jaccard\", \"Focal\", \"TopK\"}.";
 
 ActivationLayer::type = "Not a correct activation layer `1`";
 
@@ -903,7 +903,7 @@ AddLossLayer[net_, lossI_] := Block[{loss, layers},
 		StringQ[lossI], {lossI},
 		True, lossI
 	];
-	If[!And @@ (MemberQ[{"Dice", "Jaccard", "Tversky", "CE", "Focal", "TopK", "MSD", "MAE"}, #] & /@ loss),
+	If[!And @@ (MemberQ[{"Dice", "Jaccard", "Tversky", "CE", "Focal", "TopK", "MSD", "MAE", "MSDM", "MAEM"}, #] & /@ loss),
 		Return[Message[AddLossLayer::loss]; $Failed]
 	];
 
@@ -920,7 +920,10 @@ AddLossLayer[net_, lossI_] := Block[{loss, layers},
 		(*The normal L2 regression, also known as brier score*)
 		"MSD" -> NetGraph@NetChain@{MeanSquaredLossLayer[], ElementwiseLayer[75 #&]},
 		(*L1 regression, robust to the salt-noise outliers injected during masked pretraining*)
-		"MAE" -> NetGraph@NetChain@{MeanAbsoluteLossLayer[], ElementwiseLayer[10 #&]}
+		"MAE" -> NetGraph@NetChain@{MeanAbsoluteLossLayer[], ElementwiseLayer[10 #&]},
+		(*masked versions of MSD and MAE, loss is only evaluated where the target is nonzero*)
+		"MSDM" -> MaskedRegressionLossFunction[(#1 - #2)^2 &, 75],
+		"MAEM" -> MaskedRegressionLossFunction[Abs[#1 - #2] &, 10]
 	|>, loss];
 
 	NetGraph[
@@ -1005,6 +1008,26 @@ OverlapLossFunction[{alpha_?NumberQ, beta_?NumberQ}, n_?IntegerQ] := NetFlatten[
 		{"TP", "TPn", "FPn", "FNn"} -> "loss" -> NetPort["Loss"]
 	}, "Loss" -> "Real"]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MaskedRegressionLossFunction*)
+
+
+(*generalization for MSDM and MAEM, err is the elementwise error function of {Input, Target}, only averaged over the voxels where Target is nonzero*)
+MaskedRegressionLossFunction[err_, scale_] := NetGraph[<|
+	"err" -> ThreadingLayer[err],
+	"mask" -> {FunctionLayer[Unitize[Abs[#]] &]},
+	"masked" -> {ThreadingLayer[#1 #2 &], AggregationLayer[Total, 1 ;; -1]},
+	"count" -> AggregationLayer[Total, 1 ;; -1],
+	"loss" -> ThreadingLayer[scale #1/(#2 + 10^-8.) &]
+|>, {
+	{NetPort["Input"], NetPort["Target"]} -> "err",
+	NetPort["Target"] -> "mask",
+	{"err", "mask"} -> "masked",
+	"mask" -> "count",
+	{"masked", "count"} -> "loss" -> NetPort["Loss"]
+}, "Loss" -> "Real"]
 
 
 (* ::Subsubsection::Closed:: *)

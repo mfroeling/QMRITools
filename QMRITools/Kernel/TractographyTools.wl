@@ -208,7 +208,7 @@ Begin["`Private`"]
 
 Options[FitTracts] = {FittingOrder -> 5};
 
-SyntaxInformation[FitTracts] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+SyntaxInformation[FitTracts] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
 FitTracts[tract_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_, OptionsPattern[]]:= SelectValidCoor[FitTractsC[tract, Round@OptionValue[FittingOrder]], vox, dim]
 
@@ -324,7 +324,7 @@ FilterTractLength[tractsI_, {minLength_, maxLength_}, what_] := Block[{len, sel,
 
 Options[GetTractValues]= {InterpolationOrder->1}
 
-SyntaxInformation[GetTractValues] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+SyntaxInformation[GetTractValues] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
 
 GetTractValues[tracts_, val_, opts : OptionsPattern[]] := GetTractValues[tracts, val, {1., 1., 1.}, opts]
 
@@ -498,7 +498,7 @@ TractAngleMap[tracts_, {v1_?VectorQ, v2_?VectorQ, v3_?VectorQ}, vox : {_?NumberQ
 (*TractAngle*)
 
 
-SyntaxInformation[TractAngle] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[TractAngle] = {"ArgumentsPattern" -> {_, _.}};
 
 TractAngle[tracts_]:= TractAngle[tracts, {1, 0, 0}]
 
@@ -534,7 +534,7 @@ VecAngC2 = Compile[{{tr, _Real, 2}, {v1, _Real, 1}, {v2, _Real, 1}}, Block[{vec,
 (*TractCurvatureMap*)
 
 
-SyntaxInformation[TractCurvatureMap] = {"ArgumentsPattern" -> {_, _, _, _.}};
+SyntaxInformation[TractCurvatureMap] = {"ArgumentsPattern" -> {_, _, _}};
 
 TractCurvatureMap[tracts_, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, dim_] := GatherThread[
 	RescaleTractsC[tracts[[All, 2 ;; -2]], vox],  
@@ -1566,7 +1566,7 @@ ExportTCK[file_, tractsI_, header_?StringQ] := Block[{tractsOut, wlType, bo, str
 (*ImportTCK*)
 
 
-SyntaxInformation[ImportTCK] = {"ArgumentsPattern" -> {_, _, _, _.}};
+SyntaxInformation[ImportTCK] = {"ArgumentsPattern" -> {_}};
 
 ImportTCK[file_] := Block[{stream, header, type, bo, tracts, parts, vox},
 

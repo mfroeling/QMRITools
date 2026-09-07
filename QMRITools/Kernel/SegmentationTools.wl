@@ -23,8 +23,10 @@ BeginPackage["QMRITools`SegmentationTools`", Join[{"Developer`"}, Complement[QMR
 (* ::Subsection::Closed:: *)
 (*Functions*)
 
-CopyTrainedNetwork::usage = 
-"CopyTrainedNetwork[fileIn, loc, dim] copy a trained network to final location."
+CopyTrainedNetwork::usage =
+"CopyTrainedNetwork[fileIn, loc] copy a trained network to final location.
+CopyTrainedNetwork[fileIn, loc, dim] does the same but appends dim to the network name, used for the \"2D\" or \"3D\" segmentation network variants.
+loc can be \"HeadNeck\", \"Shoulder\", \"Torso\", \"Hip\", \"UpperLeg\", \"LowerLeg\", \"Arm\", or \"PosSide\" to copy the body position/side classification network."
 
 
 GetNeuralNet::usage = 
@@ -430,6 +432,8 @@ $SegmentationGroups = <|
 (*CopyTrainedNetwork*)
 
 
+CopyTrainedNetwork[file_, loc_] := CopyTrainedNetwork[file, loc, ""]
+
 CopyTrainedNetwork[file_, loc_, dim_] := Block[{fileIn, fileOut},
 	fileOut = FileNameJoin[{First[PacletFind["QMRITools"]]["Location"], "NeuralNetworks", Switch[loc,
 		"HeadNeck", "N1_HeadNeck_",
@@ -439,6 +443,7 @@ CopyTrainedNetwork[file_, loc_, dim_] := Block[{fileIn, fileOut},
 		"UpperLeg", "N5_UpperLeg_",
 		"LowerLeg", "N6_LowerLeg_",
 		"Arm", "N7_Arm_",
+		"PosSide", "Body_Pos_Side",
 		_, Return[$Failed]
 	] <> dim <> ".wlnet"}];
 	fileIn = If[DirectoryQ[file], Last[SortBy[FileNames["*.wlnet",file], FileDate]], If[
@@ -2053,6 +2058,9 @@ GetTrainData[dataSets_, nBatch_, {patch_, nClass_}, OptionsPattern[]] := Block[{
 		datO = ToPackedArray[N[datO]];
 		datO = datO (1 - mask) + Unitize[datO] RandomReal[{0, Max[datO]}, Join[{nP}, patch]] mask;
 
+		(*target is the clean data restricted to the mask, dilated 1 voxel so the loss also covers the mask border*)
+		segO = ToPackedArray[N[segO]] mask;
+
 		Thread[
 			(NumericArray[{#}, "Real32"] & /@ N[datO]) ->
 			(NumericArray[#, "Real32"] & /@ N[segO])
@@ -2644,7 +2652,7 @@ ShowTrainLog[fol_] := ShowTrainLog[fol, 5]
 ShowTrainLog[fol_, max_] := DynamicModule[{
 		plotDat, keyList, folder = fol, len, plot, plotFilter, ymaxMax,
 		xmin, xmax, ymin, ymax, temp, key, key0, key1, key2, filt, filtSize,
-		grid, logFunc, loaded
+		grid, logFunc, loaded, graphic
 	},
 
 	{keyList, plotDat, len} = LoadLog[fol, max];
@@ -2664,9 +2672,9 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 		ymax = Min[{ymax, ymaxMax}];
 
 		(* Plot the selected metrics *)
-		If[logFunc, ListLogPlot, ListLinePlot][If[key === {}, {}, plotFilter], Joined -> True, 
+		graphic = If[logFunc, ListLogPlot, ListLinePlot][If[key === {}, {}, plotFilter], Joined -> True,
 			PlotLegends -> Placed[key, Right], ImageSize -> 600, PlotRange->{{xmin,xmax} ,{ymin,ymax}},
-			If[grid, GridLines -> {len, Automatic}, GridLines -> {len, None}], 
+			If[grid, GridLines -> {len, Automatic}, GridLines -> {len, None}],
 			PlotHighlighting -> "Dropline"],
 
 		(*the controls*)
@@ -2719,13 +2727,17 @@ ShowTrainLog[fol_, max_] := DynamicModule[{
 				];
 				, ImageSize -> {60, Automatic}, Method->"Queued"]}
 		],
-		Button["Reload",
-			loaded = LoadLog[folder, max];
-			If[loaded =!= $Failed,
-				{keyList, plotDat, len} = loaded;
-				plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
-			];
-		, ImageSize -> {60, Automatic}, Method->"Queued"],
+		Row[{
+			Button["Reload",
+				loaded = LoadLog[folder, max];
+				If[loaded =!= $Failed,
+					{keyList, plotDat, len} = loaded;
+					plotDat = plotDat[All, <|#, "LearningRate" -> #["LearningRate"]*1000|> &];
+				];
+			, ImageSize -> {60, Automatic}, Method->"Queued"], "  ",
+			Button["Export", Export[FileNameJoin[{folder, "TrainLogPlot.png"}], graphic]
+			, ImageSize -> {60, Automatic}, Method->"Queued"]
+		}],
 
 		{{key, {}}, ControlType -> None}
 	]

@@ -24,11 +24,8 @@ BeginPackage["QMRITools`TensorTools`", Join[{"Developer`"}, Complement[QMRITools
 (*Functions*)
 
 
-TensorCalc::usage = 
-"TensorCalc[data, gradients, bvalue] calculates the diffusion tensor for the given dataset. Allows for one unweighted image and one b value. 
-Gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} without the unweighted gradient direction.
-bvalue is a singe number indicating the b-value used.
-TensorCalc[data, gradients, bvec] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues.
+TensorCalc::usage =
+"TensorCalc[data, gradients, bvec] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues.
 allows for different tensor fitting methods. gradient directions must be in the form {{x1,y1,z1}, ..., {xn,yn,zn}} with the unweighted direction as {0,0,0}.
 bvec the b-vector, with a bvalue defined for each gradient direction. b value for unweighted images is 0.
 TensorCalc[data, bmatrix] calculates the diffusion tensor for the given dataset. allows for multiple unweighted images and multiple bvalues.
@@ -105,15 +102,16 @@ ExpTensor::usage =
 ExpTensor[] is based on DOI: 10.1109/42.963816."
 
 
-AngleCalc::usage = 
-"AngleCalc[data, vector] calculates the angel between the vector and the data. Data should be an array of dimensions {xxx,3}."
+AngleCalc::usage =
+"AngleCalc[data, vector] calculates the angle between the vector and the data. Data should be an array of dimensions {xxx,3}.
+AngleCalc[data, vectors] does the same but calculates the angle between each element of data and the corresponding element of vectors, data and vectors should have the same dimensions."
 
 AngleMap::usage = 
 "AngleMap[data] calculates the zenith and azimuth angles of a 3D dataset (z,x,y,3) containing vectors relative to the slice direction."
 
 
 DriftCorrect::usage = 
-"DriftCorrect[data, bval] drift corrects the data using the signals of the lowest bvalue that has 6 or more unique volumes.
+"DriftCorrect[data, bval] drift corrects the data using the signals of the lowest bvalue that has 5 or more unique volumes.
 For the function to work optimal it is best to have these volumes evenly spread throughout the data and for the first and last volume to have this low bvalue.
 
 DriftCorrect[] is based on DOI: 10.1002/mrm.26124."
@@ -130,8 +128,8 @@ ResidualCalc[dti,tensor,bmat] calculates the tensor residuals for the given data
 ResidualCalc[dti,tensor,outlier,bmat] calculates the tensor residuals for the given dataset taking in account the outliers. Tensor must contain Log[s0]."
 
 SigmaCalc::usage = 
-"SigmaCalc[dti,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 10.
-SigmaCalc[dti,tens,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 10.
+"SigmaCalc[dti,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 2.
+SigmaCalc[dti,tens,grad,bvec] calculates the noise sigma based on the tensor residual, using a blur factor of 2.
 SigmaCalc[dti,grad,bvec,blur] calculates the noise sigma based on the tensor residual, If blur is 1 there is no blurring.
 SigmaCalc[dti,tens,grad,bvec,blur] calculates the noise sigma based on the tensor residual. If blur is 1 there is no blurring."
 
@@ -170,7 +168,7 @@ TensorCorrect::usage=
 
 Deriv::usage = 
 "Deriv[disp, vox] calculates the derivative of the displacement along the three main axes. disp is the displacement field, vox is the voxel size.
-Deriv[disp, vox, mask] calculates the derivative of the displacement along the three main axes. Sharp edges between the background en disp are solved by the mask. mask is a mask defining the edge of the displacement field.";
+Deriv[disp, vox, mask] calculates the derivative of the displacement along the three main axes. Sharp edges between the background and disp are solved by the mask. mask is a mask defining the edge of the displacement field.";
 
 
 (* ::Subsection::Closed:: *)
@@ -193,10 +191,10 @@ RobustFitParameters::usage =
 
 
 FilterShape::usage = 
-"FilterShape is an option for SigmaCalc. Can be \"Gaussian\" of \"Median\"."
+"FilterShape is an option for SigmaCalc. Can be \"Gaussian\" or \"Median\"."
 
 RejectMap::usage = 
-"RejectMap is an option for EigenvalCalc. If Reject is True and RejectMap is True both the eigenvalues as well as a map showing je rejected values is returned."
+"RejectMap is an option for EigenvalCalc. If Reject is True and RejectMap is True both the eigenvalues as well as a map showing the rejected values is returned."
 
 Reject::usage = 
 "Reject is an option for EigenvalCalc. It True then voxels with negative eigenvalues are rejected and set to 0."
@@ -1387,7 +1385,7 @@ RPBMDict[tms_, {rTau_, rZeta_, {nDic_, nPars_}}] := (*RPBMDict[tms, {rTau, rZeta
 (*FitRPBMDictionary*)
 
 
-SyntaxInformation[CreateRPBMDictionary] = {"ArgumentsPattern" -> {_, _, _, _.}};
+SyntaxInformation[FitRPBMDictionary] = {"ArgumentsPattern" -> {_, _, _, _.}};
 
 FitRPBMDictionary[sig_, {pars_, sim_}, snr_] := FitRPBMDictionary[sig, {pars, sim}, snr, 0.]
 
