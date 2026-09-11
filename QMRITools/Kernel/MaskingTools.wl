@@ -546,7 +546,11 @@ SelectSegmentations[seg_, labSel_, join_] := SelectReplaceSegmentations[seg, lab
 (*ReplaceSegmentations*)
 
 
-SyntaxInformation[ReplaceSegmentations] = {"ArgumentsPattern" -> {_, _, _}};
+SyntaxInformation[ReplaceSegmentations] = {"ArgumentsPattern" -> {_, _., _.}};
+
+ReplaceSegmentations[seg_]:=ReplaceSegmentations[seg, GetSegmentationLabels[seg]];
+
+ReplaceSegmentations[seg_, labSel_]:=(SeedRandom[1234];ReplaceSegmentations[seg, labSel, RandomSample[Range[Length@labSel]]]);
 
 ReplaceSegmentations[seg_, labSel_, labNew_] := SelectReplaceSegmentations[seg, labSel, labNew, True]
 
@@ -619,12 +623,9 @@ RemoveMaskOverlaps[maskI_] := Block[{masks, tot, over, keep, size, coor},
 	over = Unitize[Ramp[tot - 1]];
 	If[Max[over] < 1, Return[maskI]];
 	keep = Transpose[(Unitize[tot] (1 - over)) Transpose[masks, {4, 1, 2, 3}], {1, 3, 4, 2}];
-
-	size = Total[Flatten[#]] & /@ masks;
-	
 	{over, coor} = DataToVector[maskI, over];
+	size = Total[Flatten[#]] & /@ masks;
 	over = VectorToData[1 - Unitize[size - Max[size #] & /@ Normal[over]], coor, "Mask"];
-
 	keep + over
 ]
 

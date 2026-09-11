@@ -59,10 +59,11 @@ MakeDistanceMap::usage =
 MakeDistanceMap[mask, vox] makes a distance map of the given mask in the same unit as vox. The distance map is negative inside the mask and positive outside the mask."
 
 
-SegmentData::usage = 
+SegmentData::usage =
 "SegmentData[data] segments the data using the default \"Legs\" method.
 SegmentData[data, what] segments using the specified anatomical region. What can be \"Legs\", \"LegsHip\", \"UpperLegs\", \"LowerLegs\", \"Shoulder\", \"Hip\", or \"Body\".
-SegmentData[data, {what, netFile}] uses a custom network file instead of the built-in net."
+SegmentData[data, {what, netFile}] uses a custom network file instead of the built-in net.
+If NetworkOutput -> \"Both\" returns {segmentation, confidence}, any other value always returns just the segmentation."
 
 ApplySegmentationNetwork::usage =
 "ApplySegmentationNetwork[data, net] segments data using net. Data can be an array or a nii file path. Net can be a network name, file, or NetGraph.
@@ -373,8 +374,8 @@ $SegmentationLocations = <|
 		"TrainLabels" -> "LegUpperTrainLabels", "PositionClasses" -> {"Knee", "UpperLegs", "Hip"}, 
 		"Offset" -> {0, 0}|>,
 	"Hip" -> <|"Net2D" -> "SegHipMuscle2D", "Net3D" -> "SegHipMuscle3D",
-		"TrainLabels" -> "HipTrainLabels", "PositionClasses" -> {"UpperLegs", "Hip", "Torso"}, 
-		"Offset" -> {-5, 5}|>,
+		"TrainLabels" -> "HipTrainLabels", "PositionClasses" -> {"Hip", "Torso"}, 
+		"Offset" -> {-25, 5}|>,
 	"Torso" -> <|"Net2D" -> Missing["NotImplemented"], "Net3D" -> Missing["NotImplemented"],
 		"TrainLabels" -> "TorsoTrainLabels", "PositionClasses" -> {"Hip", "Torso", "Shoulder"}, 
 		"Offset" -> {-5, 0}|>,
@@ -726,7 +727,7 @@ PatchesToDataI[data_, loc_?ArrayQ, dim_] := Block[{dat, wt},
 		dat = MapThread[PatchesToDataI[#1, #2, dim] &, {data, loc}];
 		wt = N@Total@Unitize@dat;
 		dat = N@Total@dat;
-		SparseArray[dat["ExplicitPositions"] -> dat["ExplicitValues"]/wt["ExplicitValues"], dim]
+		SparseArray[dat["ExplicitPositions"] -> dat["ExplicitValues"] / wt["ExplicitValues"], dim]
 	]
 ]
 
@@ -807,30 +808,32 @@ GetPatchRangeI[dim_?IntegerQ, patch_?IntegerQ, {nr_, pad_}] := Block[{i,st},
 SetMXenvironment[what_]:=SetEnvironment[Switch[what,
 	"StartSegment",
 	{
-		"MXNET_CUDNN_AUTOTUNE_DEFAULT" -> "0", 
-		"MXNET_GPU_MEM_POOL_TYPE" -> "Round", 
-		"MXNET_CUDA_ALLOW_TENSOR_CORE" -> "1", 
-		"MXNET_CUDA_TENSOR_OP_MATH_ALLOW_CONVERSION" -> "1", 
-		"MXNET_BACKWARD_DO_MIRROR" -> "0", 
-		"MXNET_EXEC_NUM_TEMP" -> "0"
+		"MXNET_CUDNN_AUTOTUNE_DEFAULT" -> "0",
+		"MXNET_GPU_MEM_POOL_TYPE" -> "Unpooled",
+		"MXNET_CUDA_ALLOW_TENSOR_CORE" -> "1",
+		"MXNET_CUDA_TENSOR_OP_MATH_ALLOW_CONVERSION" -> "0",
+		"MXNET_CPU_WORKER_NTHREADS" -> ToString[$ProcessorCount],
+		"OMP_NUM_THREADS" -> ToString[$ProcessorCount]
 	},
 	"StartTrain",
 	{
 		"MXNET_CUDNN_AUTOTUNE_DEFAULT" -> "0",
 		"MXNET_GPU_MEM_POOL_TYPE" -> "Round",
 		"MXNET_CUDA_ALLOW_TENSOR_CORE" -> "1",
-		"MXNET_CUDA_TENSOR_OP_MATH_ALLOW_CONVERSION" -> "1",
 		"MXNET_BACKWARD_DO_MIRROR" -> "1",
-		"MXNET_EXEC_NUM_TEMP" -> "1"
+		"MXNET_CUDA_TENSOR_OP_MATH_ALLOW_CONVERSION" -> "1",
+		"MXNET_CPU_WORKER_NTHREADS" -> ToString[$ProcessorCount],
+		"OMP_NUM_THREADS" -> ToString[$ProcessorCount]
+		(*"MXNET_EXEC_NUM_TEMP" -> "1"*)
 	},
 	"Reset",
 	{
 		"MXNET_CUDNN_AUTOTUNE_DEFAULT" -> "1",
-		"MXNET_GPU_MEM_POOL_TYPE" -> "Round",
+		"MXNET_GPU_MEM_POOL_TYPE" -> "Unpooled",
 		"MXNET_CUDA_ALLOW_TENSOR_CORE" -> "1",
 		"MXNET_CUDA_TENSOR_OP_MATH_ALLOW_CONVERSION" -> "0",
-		"MXNET_BACKWARD_DO_MIRROR" -> "0", 
-		"MXNET_EXEC_NUM_TEMP" -> "0"
+		"MXNET_CPU_WORKER_NTHREADS" -> "1",
+		"OMP_NUM_THREADS" -> "1"
 	}
 ]];
 
@@ -844,6 +847,7 @@ Options[SegmentData] = {
 	MaxMemorySize->Automatic,
 	SegmentationDimension -> "3D",
 	SegmentationResolution -> Automatic,
+	NetworkOutput -> "Segmentation",
 	Monitor->False
 };
 
@@ -853,16 +857,18 @@ SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]
 SegmentData[datI_, opts:OptionsPattern[]] := SegmentData[datI, "Body", opts]
 
 SegmentData[datI_, what_, OptionsPattern[]] := Block[{
-		dev, max, mon, patch, pts, dim ,loc, net, seg, all, data, mask, 
-		time, timeAll, netFile, monO, sDim, dimI, rescale, labs
+		dev, max, mon, patch, pts, dim ,loc, net, seg, all, data, mask, conf, dimR, crop,
+		time, timeAll, netFile, monO, sDim, dimI, rescale, labs, netOut, bothOut
 	},
 
 	SetMXenvironment["StartSegment"];
 
 	timeAll = First@AbsoluteTiming[
-		{dev, max, mon, sDim, rescale} = OptionValue[{TargetDevice, MaxMemorySize, Monitor, 
-			SegmentationDimension, SegmentationResolution}];
+		{dev, max, mon, sDim, rescale, netOut} = OptionValue[{TargetDevice, MaxMemorySize, Monitor,
+			SegmentationDimension, SegmentationResolution, NetworkOutput}];
 		sDim = If[MemberQ[{"2D", "3D"}, sDim], sDim, "2D"];
+		bothOut = netOut === "Both";
+		netOut = If[bothOut, "Both", "Segmentation"];
 		monO = mon;
 		mon = If[mon, MonitorFunction, List];
 
@@ -873,13 +879,14 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		dimI = Dimensions@data;
 
 		(*figure out if the data needs rescaling*)
-		If[rescale =!= Automatic, If[rescale[[1]]=!=rescale[[2]],
+		If[rescale =!= Automatic && rescale[[1]]=!=rescale[[2]],
 			data = RescaleData[data, rescale, InterpolationOrder -> 1];
-			mon[Dimensions@data, "Data is rescaled to:"];
-		]];
+			mon[Dimensions@data, "Data is rescaled to:"]];
+		dimR = Dimensions@data;
 
 		mask = Mask[NormalizeData[data], 10, MaskSmoothing -> True, MaskClosing -> 5];
 		data = MaskData[data, mask];
+		{data, crop} = AutoCropData[data];
 
 		(*split the data in anatomical based patches for segmentation*)
 		time = First@AbsoluteTiming[
@@ -888,7 +895,7 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		];
 
 		mon["--------------------"];
-		mon[Round[time, .1], "Total time for analysis [s]: "];
+		mon[Round[time, .1], "Total time for preparation [s]: "];
 		mon["--------------------"];
 		mon[Column@Thread[{loc, Dimensions/@ patch}], "Segmenting \""<>what<>"\" locations with dimensions:"];
 
@@ -898,14 +905,16 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 
 		(*Perform the segmentation*)
 		time = First@AbsoluteTiming[
-			seg = MapThread[(
+			{seg, conf} = Transpose[MapThread[(
 				net = GetNetwork[#2[[1]], sDim];
 				mon["--------------------"];
 				mon[{#2, net}, "Performing segmentation for: "];
-				seg = ApplySegmentationNetwork[#1, net, TargetDevice -> dev, 
-					MaxMemorySize -> max, Monitor -> monO];
-				ReplaceLabels[seg, #2, what]
-			) &, {patch, loc}]];
+				seg = ApplySegmentationNetwork[#1, net, TargetDevice -> dev,
+					MaxMemorySize -> max, Monitor -> monO, NetworkOutput -> netOut];
+				{seg, conf} = If[bothOut, seg, {seg, 0 seg}];
+				seg = ReplaceLabels[seg, #2, what];
+				{seg, conf}
+			) &, {patch, loc}]]];
 		mon["--------------------"];
 		mon[Round[time, .1], "Total time for segmentations [s]: "];
 		mon["--------------------"];
@@ -916,22 +925,25 @@ SegmentData[datI_, what_, OptionsPattern[]] := Block[{
 		mon[Column[labs], "Putting together the segmentations with labels: "];
 
 		(*after this only one cluster per label remains*)
-		time = First@AbsoluteTiming[seg = PatchesToData[seg, pts, dim, all]];
+		time = First@AbsoluteTiming[
+			seg = ReverseCrop[PatchesToData[seg, pts, dim, all], dimR, crop];
+			If[bothOut, conf = ReverseCrop[PatchesToData[conf, pts, dim], dimR, crop]];
+
+			If[rescale =!= Automatic && rescale[[1]] =!= rescale[[2]],
+				seg = RescaleSegmentation[seg, dimI];
+				If[bothOut, conf = RescaleData[conf, dimI, InterpolationOrder -> 1]];
+			];
+		];
+
 		mon[Round[time, .1], "Total time for final evaluation [s]: "];
 		mon["--------------------"];
-
-		time = First@AbsoluteTiming[If[rescale =!= Automatic, If[rescale[[1]]=!=rescale[[2]], 
-			seg = RescaleSegmentation[seg, dimI];
-			mon[Round[time, .1], "Total time for rescaling [s]: "];
-			mon["--------------------"];
-		]]];
 	];
 
 	SetMXenvironment["Reset"];
 	mon[Round[timeAll, .1], "Total evaluation time [s]: "];
 	mon["--------------------"];
 
-	seg
+	If[bothOut, {seg, conf}, seg]
 ]
 
 
@@ -1108,7 +1120,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 	},
 
 	{dev, pad, lim, mon, netOut} = OptionValue[{TargetDevice, DataPadding, MaxMemorySize, Monitor, NetworkOutput}];
-	If[lim === Automatic, lim = If[dev==="CPU", 32, 8]];(*memory limit in GB*)
+	If[lim === Automatic, lim = If[dev==="CPU", 32, 32]];(*memory limit in GB*)
 	mon = If[mon, MonitorFunction, List];
 
 	precision = If[(dev=!="CPU") && ($OperatingSystem === "Windows"), "Mixed", "Real32"];
@@ -1155,7 +1167,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 
 			time = First@AbsoluteTiming[
 				(*actually perform the segmentation with the NN*)
-				segRaw = net[#, TargetDevice->dev, WorkingPrecision ->precision]&/@patch;
+				segRaw = net[#, TargetDevice->dev, WorkingPrecision ->precision]& /@ patch;
 				If[MemberQ[{"Segmentation", "Both"}, netOut], seg = merge[ClassDecoder /@ segRaw, Range[nClass]]];
 				If[MemberQ[{"Confidence", "Both"}, netOut], conf = merge[ClassConfidence /@ segRaw]];
 			];
@@ -1262,21 +1274,21 @@ FindPatchDim[net_, dim_, lim_] := Block[{
 
 Options[TrainSegmentationNetwork] = {
 	LoadTrainingData -> True,
-	UseParallelKernels -> False,
-	MonitorInterval -> 1,
+	UseParallelKernels -> True,
+	MonitorInterval -> 2,
 
-	PatchSize -> {32, 112, 112},
+	PatchSize -> {32, 96, 96},
 	PatchesPerSet -> 1,
-	BatchSize -> 4,
-	RoundLength -> 512,
-	MaxTrainingRounds -> 150,
+	BatchSize -> 2,
+	RoundLength -> 256,
+	MaxTrainingRounds -> 350,
 
 	BlockType -> "ResNet",
 	NetworkArchitecture -> "UNet",
 	ActivationType -> "GELU",
-	NormalizationType -> "Batch",
-	RescaleMethod -> "Conv",
-	CatenateMethod -> "Cat",
+	NormalizationType -> "Instance",
+	RescaleMethod -> "ConvS",
+	CatenateMethod -> "Tot",
 
 	NetworkDepth -> 5,
 	DownsampleSchedule -> 2,
@@ -1359,12 +1371,17 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 
 	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
 	testFile = outName["testSet.nii"];
-	(*reuse the test set from a previous run if present, else make and export a new one*)
-	If[FileExistsQ[testFile] || FileExistsQ[testFile <> ".gz"],
-		{testData, testVox} = ImportNii[testFile, NiiMethod -> "dataTR"][[1 ;; 2]];
-		testData = If[is2D, {#}& /@ testData, {testData}],
+	makeTest[] := (
 		{testData, testVox} = MakeTestData[testDataRaw, 2, patch, augMask];
 		ExportNii[If[is2D, testData[[All, 1]], First@testData], testVox, testFile];
+	);
+
+	(*reuse the test set from a previous run if present and matching the current patch size, else make and export a new one*)
+	If[FileExistsQ[testFile] || FileExistsQ[testFile <> ".gz"],
+		{testData, testVox} = ImportNii[testFile, NiiMethod -> "dataTR"][[1 ;; 2]];
+		testData = If[is2D, {#}& /@ testData, {testData}];
+		If[(If[is2D, Dimensions[testData[[1, 1]]], Dimensions[testData[[1]]]]) =!= patch, makeTest[]],
+		makeTest[]
 	];
 
 	(*------------ Define the network -----------------*)
@@ -1442,7 +1459,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 	With[{mon = <|"outName" -> outName, "ittString" -> ittString, "testData" -> testData,
 			"testVox" -> testVox, "nClass" -> nClass, "is2D" -> is2D, "augMask" -> augMask|>},
 		monitorFunction = (
-			ittTrain++;
+			ittTrain += rep;
 			base = mon["outName"][mon["ittString"][#1]<>#2]&;
 			netMon = NetExtract[#Net, "net"];
 			(*for 2D testData is a list of independent slice examples, net auto-batches and returns a matching list*)
@@ -1459,7 +1476,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 			Export[base[ittTrain,".png"], im, "ColorMapLength" -> 256];
 			(*export network, delete the previous itt*)
 			Export[base[ittTrain,".wlnet"], netMon];
-			Quiet@DeleteFile[base[ittTrain-2,".wlnet"]];
+			Quiet@DeleteFile[base[ittTrain-2 rep,".wlnet"]];
 		)&;
 	];
 
@@ -1529,7 +1546,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 		NetTrain[netIn, {#, "RoundLength" -> roundLength}, All, trainOpts]&];
 
 	(*export first itt*)
-	ittTrain--; monitorFunction[<|"Net"->netIn|>];
+	ittTrain -= rep; monitorFunction[<|"Net"->netIn|>];
 	(*start training*)
 	If[!parallel,
 		(*sequential monitor and train*)
@@ -2241,6 +2258,7 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 SelectTrainData[{dat_, seg_}, n_]:=Block[{segPerSlice, min ,max},
 	segPerSlice = Total[Max[#] & /@ #] & /@ First[SplitSegmentations[seg]];
 	{min, max} = MinMax[Position[UnitStep[segPerSlice - n], 1]];
+	{min, max} = Clip[{min - 8, max + 8}, {1, Length[dat]}];
 	{dat[[min;;max]], seg[[min;;max]]}
 ]
 

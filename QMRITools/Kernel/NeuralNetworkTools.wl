@@ -1136,7 +1136,7 @@ ClassConfidence[data_] := ToPackedArray@ClassConfidenceC[Normal[data]]
 
 (*confidence = 1 - normalized entropy, the epsilon avoids Log[0] for zero-probability classes*)
 ClassConfidenceC = Compile[{{prob, _Real, 1}},
-	1 + Total[prob Log[prob + 1.*^-12]]/Log[Length[prob]]
+	Round[Abs[Total[prob Log[prob + 1.*^-12]]/Log[Length[prob]]],.001]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
 
