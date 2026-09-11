@@ -1650,10 +1650,8 @@ LaunchTrainingKernels[maxProducers_:Automatic] := With[{
 		LaunchKernels[], LaunchKernels[maxProducers + 1]]];
 	MonitorFunction[nKernels, "Starting parallel kernels: "];
 	Quiet@ParallelEvaluate[
-		Get[load];
-		setMX["StartTrain"];
-		Quiet@System`SetSystemOptions["ParallelOptions" -> 
-			{"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}]
+		Get[load]; setMX["StartTrain"];
+		Quiet@System`SetSystemOptions["ParallelOptions" -> {"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}]
 	, ProgressReporting -> False];
 	nKernels - 1
 ]]
