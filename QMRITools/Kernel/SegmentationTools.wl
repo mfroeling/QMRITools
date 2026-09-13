@@ -224,11 +224,11 @@ LoadTrainingData::usage =
 "LoadTrainingData is an option for TrainSegmentationNetwork. If set to True the training data is loaded from the disk."
 
 UseParallelKernels::usage =
-"UseParallelKernels is an option for TrainSegmentationNetwork. If set to True, data loading and batch augmentation run on 
-separate parallel kernels while NetTrain runs concurrently on its own kernel, which can substantially speed up training 
-when augmentation is the bottleneck. If set to \"Link\", producer kernels are launched as raw WSTP links instead, 
-which lowers batch-fetch latency further. If set to {True, n} or {\"Link\", n} at most n producer kernels are used, 
-useful for debugging on a small scale. If set to False (default) batches are generated in-process as before."
+"UseParallelKernels is an option for TrainSegmentationNetwork. If set to True (default), producer kernels are launched
+as raw WSTP links, data loading and batch augmentation run on these separate kernels while NetTrain runs concurrently
+on its own kernel, which can substantially speed up training when augmentation is the bottleneck. If set to \"Parallel\",
+the older shared-queue Parallel-framework kernel pool is used instead. If set to {True, n} or {\"Parallel\", n} at most
+n producer kernels are used, useful for debugging on a small scale. If set to False batches are generated in-process."
 
 MonitorInterval::usage =
 "MonitorInterval is an option for TrainSegmentationNetwork. It defines how often the training is monitored."
@@ -354,8 +354,6 @@ TrainSegmentationNetwork::inp = "The string input given is not a network file or
 TrainSegmentationNetwork::itt = "Not enough iterations specified for training. Remaining iterations are less than 5."
 
 TrainSegmentationNetwork::loss = "Unknown loss function should be one of {\"Dice\", \"MSD\", \"Tversky\", \"CE\", \"Jaccard\", \"Focal\", \"TopK\"."
-
-TrainSegmentationNetwork::nolink = "UseParallelKernels -> \"Link\" is not implemented yet."
 
 TrainSegmentationNetwork::nofiles = "No training data files found."
 
@@ -527,11 +525,11 @@ ImportITKLabelsI[] := ImportITKLabelsI["MuscleLegLabels"];
 
 ImportITKLabelsI[file_]:=ImportITKLabelsI[file, "List"]
 
-ImportITKLabelsI[file_, outType_] := (*ImportITKLabelsI[file, outType] =*) Block[{fileL, lines, muscleNames, muscleLabels},
+ImportITKLabelsI[file_, outType_] := Block[{fileL, lines, muscleNames, muscleLabels},
 	fileL = If[FileExistsQ[file], file, GetAssetLocation[file]]; 
 	If[fileL === $Failed, Return["specified name is not file or asset"]];
-	(*import*)
 	lines = Select[Import[fileL, "Lines"], StringTake[#, 1] =!= "#" &];
+
 	(*extract names and numbers*)
 	muscleNames = StringRiffle[Capitalize[ToLowerCase[Select[#, ! IntegerQ[ToExpression[#]] &]]], "_"] & /@ 
 		StringSplit[(Select[StringTrim[#], (# =!= "\t" && # =!= "") &] & /@ 
@@ -728,14 +726,8 @@ PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, l
 		seg = Transpose[SmoothMask[#, MaskComponents -> 1, 
 			MaskClosing -> False, SmoothIterations -> 0] &/@ seg];
 
-		(*if needed remove the overlap*)
-		If[MinMax[seg] =!= {0, 0}, 
-			seg = RemoveMaskOverlaps@seg;
-			(*over = 1 - Unitize[Ramp[Total[Transpose@seg] - 1]];
-			seg = MaskData[seg, over];*)
-		];
-
-		(*merge the segmentations*)	
+		(*if needed remove the overlap and merge*)
+		If[MinMax[seg] =!= {0, 0}, seg = RemoveMaskOverlaps@seg];
 		MergeSegmentations[seg, labs]
 	]
 ]
@@ -806,7 +798,8 @@ GetPatch[dat_, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}] := ToPackedArray@dat[[i1;;i2,j
 
 GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, pts:{{{_,_},{_,_},{_,_}}..}] := GetPatch[dat, patch, #]&/@pts
 
-GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}] := ToPackedArray@PadRight[dat[[i1;;i2,j1;;j2,k1;;k2]], patch, 0.]
+GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}] := ToPackedArray[
+	PadRight[dat[[i1;;i2,j1;;j2,k1;;k2]], patch, 0.]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -838,6 +831,7 @@ GetPatchRangeI[dim_?IntegerQ, patch_?IntegerQ, {nr_, pad_}] := Block[{i,st},
 (* ::Subsubsection::Closed:: *)
 (*SetMXenvironment*)
 
+
 SetMXenvironment[what_]:=SetEnvironment[Switch[what,
 	"StartSegment",
 	{
@@ -857,7 +851,6 @@ SetMXenvironment[what_]:=SetEnvironment[Switch[what,
 		"MXNET_CUDA_TENSOR_OP_MATH_ALLOW_CONVERSION" -> "1",
 		"MXNET_CPU_WORKER_NTHREADS" -> ToString[$ProcessorCount],
 		"OMP_NUM_THREADS" -> ToString[$ProcessorCount]
-		(*"MXNET_EXEC_NUM_TEMP" -> "1"*)
 	},
 	"Reset",
 	{
@@ -882,7 +875,6 @@ Options[SegmentData] = {
 	NetworkOutput -> "Segmentation",
 	Monitor->False
 };
-
 
 SyntaxInformation[SegmentData] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -1025,9 +1017,7 @@ Options[SplitDataForSegmentation] = {
 	SplitOverlap -> 0.05
 };
 
-
-SyntaxInformation[SplitDataForSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
-
+SyntaxInformation[SplitDataForSegmentation] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
 SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, opt:OptionsPattern[]] := SplitDataForSegmentation[data, seg, "Legs", opt]
 
@@ -1036,7 +1026,6 @@ SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPa
 	segPatch = GetPatch[seg, pts];
 	{{dat, pts, dim}, {segPatch, pts, dim}, loc}
 ]
-
 
 SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]] := SplitDataForSegmentation[data, "Legs", opt]
 
@@ -1115,7 +1104,6 @@ Options[ApplySegmentationNetwork] = {
 }
 
 SyntaxInformation[ApplySegmentationNetwork] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
-
 
 (*Apply segmentation network on folder of datasets*)
 ApplySegmentationNetwork[inp_?(!(TensorQ[#, NumericQ] || StringQ[#])&), rest___] := Block[{
@@ -1261,8 +1249,7 @@ FindPatchDim[net_, dim_, lim_] := Block[{
 		{Round[netMem[ChangeNetDimensions[net, "Dimensions" -> Rest@out]], .01], out}
 
 		,
-		(*3D network*)
-		(*figure out net dimensions and allowed steps*)
+		(*3D network figure out net dimensions and allowed steps*)
 		{dz, dy, dx} = inp;
 		{sz, sy, sx} = inp / Rest[NetDimensions[net, "MinEncodingOut"]];
 		out = {Ceiling[dim[[1]], sz], Ceiling[dim[[2]], sy], Ceiling[dim[[3]], sx]};
@@ -1361,7 +1348,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 		validation, files, loss, rep, learningRate, schedule, dims, tar, logFile, allOpts, parallel,
 		nProducers, loadData, queueVars, produced, used, ready, activeProducers, trainingDone, index, deadL, nullCount,
 		nVal, makeVal, maxProducers, links, patchNClass, batchOptsSeq, producerStatus, roundImage, freezeDepth, chanIn, lrMult,
-		augMask, testDataRaw, dispDat, testFile, restartCycle, cycleRounds, cycleItt
+		augMask, testDataRaw, dispDat, testFile, restartCycle, cycleRounds, cycleItt, valOut
 	},
 
 	SetMXenvironment["StartTrain"];
@@ -1378,11 +1365,11 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 			PatchesPerSet, LossFunction, MonitorInterval, LearningRate, L2Regularization,
 			MultiChannel, TargetDevice, FreezeEncoderDepth, AugmentMask, RestartLearningCycle}];
 
-	(*False, True, "Link", or {True|"Link",n} to cap producer count*)
+	(*False, True, "Parallel", or {True|"Parallel",n} to cap producer count*)
 	parallel = OptionValue[UseParallelKernels];
 	{parallel, maxProducers} = Which[
-		parallel === True || parallel === "Link", {parallel, Automatic},
-		MatchQ[parallel, {True | "Link", _Integer?Positive}], {First[parallel], Last[parallel]},
+		parallel === True || parallel === "Parallel", {parallel, Automatic},
+		MatchQ[parallel, {True | "Parallel", _Integer?Positive}], {First[parallel], Last[parallel]},
 		True, {False, Automatic}
 	];
 
@@ -1403,14 +1390,9 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 		MonitorFunction[Length@files, "Files for training: "];
 	];
 
-	(*figure out network properties from train data*)
-	testDataRaw = Normal/@Import[First@files];
-	(*figure out how to treat multi channel data*)
-	depth = ArrayDepth@testDataRaw;
-	nChan = If[depth === 4 && multi, Length@First@testDataRaw, 1];
-	(*background is 0 but for network its 1 so class +1, for self supervised pretraining there is a single output channel*)
-	nClass = If[augMask, 1, Round[Max@testDataRaw[[2]] + 1]];
+	(*------------ get the test data -----------------*)
 
+	testDataRaw = Normal/@Import[First@files];
 	outName = FileNameJoin[{outFol, Last[FileNameSplit[outFol]] <> "_" <> #}]&;
 	testFile = outName["testSet.nii"];
 	makeTest[] := (
@@ -1429,6 +1411,12 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 	(*------------ Define the network -----------------*)
 
 	MonitorFunction[DateString[], "Preparing the network: "];
+
+	(*figure out network properties from test data and how to treat multi channel data*)
+	depth = ArrayDepth@testDataRaw;
+	nChan = If[depth === 4 && multi, Length@First@testDataRaw, 1];
+	(*background is 0 but for network its 1 so class +1, for self supervised pretraining there is a single output channel*)
+	nClass = If[augMask, 1, Round[Max@testDataRaw[[2]] + 1]];
 
 	(*netCont: a network, or a previous train folder*)
 	{netIn, ittTrain} = Which[
@@ -1504,17 +1492,15 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 			ittTrain += rep;
 			base = mon["outName"][mon["ittString"][#1]<>#2]&;
 			netMon = NetExtract[#Net, "net"];
-			(*for 2D testData is a list of independent slice examples, net auto-batches and returns a matching list*)
+			(*net auto-batches the list of 2D slice examples*)
 			testSeg = netMon[mon["testData"], TargetDevice -> "CPU"];
 			If[!mon["augMask"], testSeg = Ramp[ClassDecoder[testSeg]]];
 			ExportNii[testSeg, mon["testVox"], base[ittTrain,".nii"]];
-			(*testData is a list of independent examples for 2D, transpose to the {channel, slice, ...} shape both grid functions expect*)
+			(*transpose 2D to the {channel, slice, ...} shape the grid functions expect*)
 			dispDat = If[mon["is2D"], Transpose@mon["testData"], mon["testData"]];
-			(*pretraining shows a grid of corrupted inputs next to their reconstructions, otherwise the usual class overlay grid*)
-			im = If[mon["augMask"],
-				ImageAssemble[{{MakeChannelGrid[dispDat, 3], MakeChannelGrid[{testSeg}, 3]}}],
-				MakeChannelClassGrid[dispDat, {testSeg, {0, mon["nClass"]-1}}, 3]
-			];
+			(*pretraining shows corrupted vs reconstructed, otherwise the class overlay grid*)
+			im = If[mon["augMask"], ImageAssemble[{{MakeChannelGrid[dispDat, 3], MakeChannelGrid[{testSeg}, 3]}}],
+				MakeChannelClassGrid[dispDat, {testSeg, {0, mon["nClass"]-1}}, 3]];
 			Export[base[ittTrain,".png"], im, "ColorMapLength" -> 256];
 			(*export network, delete the previous itt*)
 			Export[base[ittTrain,".wlnet"], netMon];
@@ -1530,8 +1516,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 		batchFunction[assoc_?AssociationQ] := GetTrainData[data, assoc["BatchSize"], patch, batchOpts];
 	];
 
-	(*oneCycle learning rate schedule function: RestartLearningCycle fits a fresh cycle (with warmup) to the remaining rounds
-	instead of resuming mid-cycle where the previous run left off*)
+	(*RestartLearningCycle fits a fresh cycle to the remaining rounds instead of resuming mid-cycle*)
 	{cycleRounds, cycleItt} = If[restartCycle, {rounds - ittTrain, 0}, {rounds, ittTrain}];
 	schedule = OneCycleSchedule[roundLength / batch, cycleRounds, cycleItt];
 
@@ -1548,28 +1533,19 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 		makeVal = Dimensions[validation[[1, 1, 1]]] =!= patch;
 	];
 
-	(*import all train data or train out of memory and create 20% of round as validation*)
-	Switch[parallel,
-		True,
-			nProducers = LaunchTrainingKernels[maxProducers];
-			dims = LoadProducerData[files, {nProducers, nVal}, {loadData, makeVal, batchFunction}];
-			If[makeVal, {dims, validation} = dims, dims = First@dims];
-		,
-		"Link",
-			links = LaunchTrainingKernelsL[maxProducers];
-			nProducers = Length[links];
-			dims = LoadProducerDataL[links, files, {nProducers, nVal}, {loadData, makeVal, patchNClass, {batchOptsSeq}}];
-			If[makeVal, {dims, validation} = dims, dims = First@dims];
-		,
-		False,
-			data = If[loadData, Import /@ files, files];
-			dims = If[loadData, If[ArrayDepth[#] === 3,
-				Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}];
-			If[makeVal, validation = batchFunction[nVal]];
+	(*spin up producer kernels if needed*)
+	If[parallel =!= False,
+		{links, nProducers} = LaunchTrainingKernels[parallel, maxProducers];
+		MonitorFunction[nProducers, "Producer kernels launched: "];
 	];
 
-	(*export the validation set*)
-	If[makeVal, Export[outName["validation.wxf"], validation]];
+	(*import all train data or train out of memory and create 20% of round as validation*)
+	{data, valOut, dims} = LoadTrainData[parallel, files,
+		{loadData, makeVal, nVal, batchFunction}, {links, nProducers, patchNClass, {batchOptsSeq}}];
+
+	(*keep the disk-loaded validation set when a fresh one wasn't needed*)
+	If[makeVal, validation = valOut; 
+		Export[outName["validation.wxf"], validation]];
 
 	(*data logging*)
 	dims = If[loadData, MeanRange[#, 0] & /@ Transpose[dims], Missing["NotLoaded"]];
@@ -1615,7 +1591,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 			PrintTemporary[Dynamic[roundImage[]]];
 			trained = trainFunc[batchFunction];
 		,
-		"Link",
+		True,
 			activeProducers = nProducers;
 			used = Table[0, nProducers];
 			deadL = Table[False, nProducers];
@@ -1639,7 +1615,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 			MonitorFunction[producerStatus[False]];
 			LinkClose /@ links;
 		,
-		True,
+		"Parallel",
 			(*branch with parallel evaluation, first set all shared variables*)
 			queueVars = Table["queue" <> ToString[i], {i, nProducers}];
 			Clear /@ queueVars;
@@ -1659,10 +1635,8 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 			PrintTemporary[Dynamic[roundImage[]]];
 
 			(*launch and activate the producer and trainer*)
-			trained = Last[WaitAll[Append[
-				RunProducerKernel[#, batch, batchFunction]& /@ Range[nProducers],
-				RunTrainerKernel[trainFunc, nProducers]
-			], ProgressReporting -> False]];
+			trained = Last[WaitAll[GetKernels[nProducers, batch, batchFunction, trainFunc], 
+				ProgressReporting -> False]];
 
 			(*Final producer feedback*)
 			MonitorFunction[producerStatus[]];
@@ -1679,297 +1653,6 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 	Export[outName["trained.wxf"], trained];
 	Export[outName["final.wlnet"], netOut];
 	Export[outName["final.onnx"], netOut];
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*FreezeEncoderLayers*)
-
-
-SyntaxInformation[FreezeEncoderLayers] = {"ArgumentsPattern" -> {_, _., _.}};
-
-FreezeEncoderLayers[net_] := FreezeEncoderLayers[net, 3]
-
-FreezeEncoderLayers[net_, n_Integer] := FreezeEncoderLayers[net, n, True]
-
-FreezeEncoderLayers[net_, n_Integer, includeStart_?BooleanQ] := Block[{nodes},
-	nodes = Select[Keys[net[[All, 1]]], StringMatchQ[#, "enc_" ~~ DigitCharacter ..] &];
-	nodes = Select[nodes, ToExpression[StringDelete[#, "enc_"]] <= n &];
-	If[includeStart, nodes = Prepend[nodes, "start"]];
-	Thread[nodes -> 0]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*OneCycleSchedule*)
-
-
-OneCycleSchedule[br_, rounds_, ittTrain_] := With[{
-		n = {0.25, 0.4, 0.95} rounds br, it = ittTrain br
-	}, (
-	ti = #1 + it; 
-	Which[
-		ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1./5, 1.}],
-		ti < n[[2]], 1.,
-		ti < n[[3]], Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1., 1./10}],
-		True, 1./10
-	]
-)& ]
-
-
-(* ::Subsubsection::Closed:: *)
-(*LaunchTrainingKernels*)
-
-
-LaunchTrainingKernels[maxProducers_:Automatic] := With[{
-		setMX = SetMXenvironment,
-		load = If[StringContainsQ[First[PacletFind["QMRITools"]]["Location"], "workspace"],
-			"QMRIToolsDev`", "QMRITools`"]
-	}, Block[{nKernels},
-	CloseKernels[];
-	nKernels = Length[If[maxProducers === Automatic, 
-		LaunchKernels[], LaunchKernels[maxProducers + 1]]];
-	MonitorFunction[nKernels, "Starting parallel kernels: "];
-	Quiet@ParallelEvaluate[
-		Get[load]; setMX["StartTrain"];
-		Quiet@System`SetSystemOptions["ParallelOptions" -> {"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}]
-	, ProgressReporting -> False];
-	nKernels - 1
-]]
-
-
-(* ::Subsubsection::Closed:: *)
-(*ReadLinkL*)
-
-
-(*reads the next ReturnPacket from a link, discarding other packets in between*)
-ReadLinkL[link_, timeout_:60] := Block[{pkt, t0, $IterationLimit},
-	$IterationLimit = Infinity; (*a 0.02s poll can pass 4096 iterations before a long timeout elapses*)
-	t0 = AbsoluteTime[];
-	While[True,
-		If[AbsoluteTime[] - t0 > timeout, Return[$Failed]];
-		If[LinkReadyQ[link],
-			pkt = Check[LinkRead[link], $Failed];
-			Switch[pkt,
-				$Failed, Return[$Failed],
-				_ReturnPacket, Return[First[pkt]],
-				_, Null
-			],
-			Pause[0.02]
-		]
-	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*LaunchTrainingKernelsL*)
-
-
-LaunchTrainingKernelsL[maxProducers_:Automatic] := Block[{
-		load, mx, context, nProducers, links, status, failed, dead
-	},
-	load = If[StringContainsQ[First[PacletFind["QMRITools"]]["Location"], "workspace"],
-		"QMRIToolsDev`", "QMRITools`"];
-	mx = QMRITools`SegmentationTools`Private`SetMXenvironment;
-	context = "QMRITools`SegmentationTools`";
-	nProducers = If[maxProducers === Automatic, $ProcessorCount, maxProducers];
-	links = Table[LinkLaunch[First[$CommandLine] <> " -wstp"], nProducers];
-
-	(*load the (slow) package/bootstrap per link, then drain that response before sending anything else*)
-	MonitorFunction[nProducers, "Starting link kernels: "];
-	With[{l = load, m = mx}, LinkWrite[#, Unevaluated[
-		Get[l];
-		m["StartTrain"];
-		SetSystemOptions["ParallelOptions" -> {"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}]
-	]]& /@ links];
-	ReadLinkL[#, 120]& /@ links;
-
-	(*confirm QMRITools is actually available*)
-	LinkWrite[#, Unevaluated[Context[GetTrainData]]]& /@ links;
-	status = AssociationThread[links -> (ReadLinkL[#] === context & /@ links)];
-
-	(*retry by waiting longer, not asking again - the original request may still be in flight*)
-	failed = Keys[Select[status, ! # &]];
-	If[failed =!= {},
-		AssociateTo[status, Thread[failed -> (ReadLinkL[#, 120] === context & /@ failed)]];
-		dead = Keys[Select[status, ! # &]];
-		LinkClose /@ dead;
-		status = KeyDrop[status, dead];
-	];
-
-	MonitorFunction[{Length@status, Values[status]}, "QMRITools context per link kernel: "];
-	links = Keys[status]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*PartitionProducerFiles*)
-
-
-(*repeats the files so every worker gets at least 3, partitions, and logs the split*)
-PartitionProducerFiles[files_, nP_] := Block[{pFiles},
-	pFiles = RandomSample[Flatten@Table[files, Ceiling[3 nP/Length[files]]]];
-	pFiles = Table[pFiles[[i ;; ;; nP]], {i, nP}];
-	MonitorFunction[Length /@ pFiles, "Files per kernel: "];
-	pFiles
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*LoadProducerData*)
-
-
-LoadProducerData[files_, {nP_,nV_}, {loadData_, makeVal_, batchFunction_}] := Block[{
-		pFiles, jobs, dims, validation
-	},
-	pFiles = PartitionProducerFiles[files, nP];
-	(*one submit per worker that loads its own part, plus one empty submit for the fitter kernel*)
-	DistributeDefinitions[pFiles, nP, nV, batchFunction];
-	jobs = ParallelSubmit[
-		data = If[loadData, Import /@ #, #];
-		dims = If[loadData, If[ArrayDepth[#] === 3,
-			Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}];
-		validation = If[makeVal, batchFunction[Round[nV / nP]], {}];
-		{dims, validation}
-	]& /@ pFiles;
-	{dims, validation} = Transpose[Most[WaitAll[Append[jobs, ParallelSubmit[{}]], ProgressReporting -> False]]];
-	{Join @@ dims, Join @@ validation}
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*DefineBatchFunctionL*)
-
-
-(*defines a reusable batch-producing function per link, patch/batchOpts baked in once - every later batch request is just batchFunctionL[n]*)
-DefineBatchFunctionL[links_, patch_, batchOpts_] := (
-	With[{p = patch, bo = batchOpts}, LinkWrite[#, Unevaluated[
-		batchFunctionL[n_] := GetTrainData[data, n, p, Sequence @@ bo]
-	]]& /@ links];
-	ReadLinkL /@ links;
-)
-
-
-(* ::Subsubsection::Closed:: *)
-(*LoadProducerDataL*)
-
-
-LoadProducerDataL[links_, files_, {nP_, nV_}, {loadData_, makeVal_, patch_, batchOpts_}] := Block[{
-		pFiles, dims, validation
-	},
-	pFiles = PartitionProducerFiles[files, nP];
-	(*import step: each link gets its own file list*)
-	With[{ld = loadData}, MapThread[LinkWrite[#1, Unevaluated[
-		data = If[ld, Import /@ #2, #2];
-	]]&, {links, pFiles}]];
-	ReadLinkL[#, 120]& /@ links;
-	DefineBatchFunctionL[links, patch, batchOpts];
-
-	(*dims step*)
-	With[{ld = loadData}, LinkWrite[#, Unevaluated[
-		If[ld, If[ArrayDepth[#] === 3, Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}]
-	]]& /@ links];
-	dims = ReadLinkL /@ links;
-
-	(*validation step - reuses batchFunctionL*)
-	With[{mv = makeVal, nv = Round[nV / nP]}, LinkWrite[#, Unevaluated[
-		If[mv, batchFunctionL[nv], {}]
-	]]& /@ links];
-	validation = ReadLinkL /@ links;
-
-	{Join @@ dims, Join @@ validation}
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*GetFromBatchQueueL*)
-
-
-GetFromBatchQueueL[links_, nP_, batch_] := Block[{startTime, link, result, reactivate},
-	reactivate[] := With[{b = batch}, LinkWrite[link, Unevaluated[batchFunctionL[b]]]];
-	startTime = AbsoluteTime[];
-	Catch[While[True,
-		Do[
-			index = Mod[index, nP] + 1;
-			If[deadL[[index]], Continue[]];
-			link = links[[index]];
-			If[LinkReadyQ[link],
-				result = ReadLinkL[link];
-				Which[
-					(*a Null batch means GetTrainData failed on this producer - skip it, close it after repeated failures*)
-					result === Null,
-						nullCount[[index]]++;
-						If[nullCount[[index]] >= 10,
-							Message[TrainSegmentationNetwork::nullbatch];
-							LinkClose[link]; deadL[[index]] = True; activeProducers--,
-							reactivate[]
-						],
-					result === $Failed,
-						deadL[[index]] = True; activeProducers--,
-					True,
-						used[[index]]++;
-						reactivate[];
-						produced[[index]]++;
-						Throw[result]
-				]
-			],
-			{nP}
-		];
-		(*no producers left, or none delivered in time, give up*)
-		If[activeProducers <= 0 || AbsoluteTime[] - startTime > 20, Abort[]];
-		Pause[0.05]
-	]]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RunProducerKernel*)
-
-
-RunProducerKernel[qi_, batch_, batchFunction_] := Block[{chunk},
-	ParallelSubmit[
-		While[!trainingDone, If[ready[[qi]], Pause[0.1],
-			chunk = batchFunction[batch];
-			ToExpression["queue" <> ToString[qi] <> " = QMRITools`SegmentationTools`Private`chunk"];
-			produced[[qi]]++;
-	(*If[produced[[qi]]===1, Print["run: ",Dimensions/@ #& /@ ToExpression["queue" <> ToString[qi]]]];*)
-			ready[[qi]] = True
-		]];
-		activeProducers--;
-	]
-]
-
-
-(* ::Subsubsection::Closed:: *)
-(*RunTrainerKernel*)
-
-
-RunTrainerKernel[trainFunc_, nProducers_] := ParallelSubmit[CheckAbort[
-	First@{trainFunc[GetFromBatchQueue[nProducers]&], trainingDone = True}, 
-	trainingDone = True; $Aborted
-]]
-
-
-(* ::Subsubsection::Closed:: *)
-(*PopBatchQueue*)
-
-
-GetFromBatchQueue[nProducers_] := Block[{startTime, chunk},
-	startTime = AbsoluteTime[];
-	Catch[While[True,
-		Do[
-			index = Mod[index, nProducers] + 1;
-			If[ready[[index]],
-					used[[index]]++;
-	(*If[used[[index]]===1, Print["Get: ",index," ",Dimensions/@ #& /@ ToExpression["queue" <> ToString[index]]]];*)
-					ready[[index]] = False;
-					Throw[ToExpression["queue" <> ToString[index]]]
-			], {nProducers}
-		];
-		(*no producers left, or none delivered enough new data in time, give up*)
-		If[activeProducers <= 0 || AbsoluteTime[] - startTime > 20, Abort[]];
-		Pause[0.1]
-	]]
 ]
 
 
@@ -1992,19 +1675,19 @@ MakeTestData[data_, n_, patch_, corrupt_?BooleanQ] := Block[{testData, len, sel,
 		testData = First@AutoCropData[testData[[sel]]]
 		,
 		If[len > First@patch && Length@patch===3,
-			sel = Range @@ Clip[Round[(Clip[Round[len/3 - (0.5 n) First@patch], {0, Infinity}] + {1, n First@patch})],
-				{1, len}, {1, len}];
+			sel = Range @@ Clip[Round[(Clip[Round[len/3 - (0.5 n) First@patch],
+				{0, Infinity}] + {1, n First@patch})], {1, len}, {1, len}];
 			testData = First@AutoCropData[testData[[sel]]]
 		]
 	];
 
+	(*pad and normalize same as batch selection*)
 	testData = If[is2D,
-		{NormalizeData[PadToDimensions[#, patch], NormalizeMethod -> "Uniform"]}&/@testData,
+		{NormalizeData[PadToDimensions[#, patch], NormalizeMethod -> "Uniform"]}& /@ testData,
 		{NormalizeData[PadToDimensions[testData, patch], NormalizeMethod -> "Uniform"]}
 	];
 
-	(*for self supervised pretraining monitoring, corrupt the test data with a noise filled block, the leading
-	dimension is treated as a pseudo z stack so the same 3D block mask works for both 2D and 3D test data*)
+	(*corrupt test data with a noise block for self-supervised pretraining monitoring*)
 	If[corrupt,
 		stack = ToPackedArray[N[If[is2D, testData[[All, 1]], First[testData]]]];
 		mask = First@MakeBlockMask[Prepend[patch[[-2 ;;]], Length[stack]], 1];
@@ -2016,6 +1699,284 @@ MakeTestData[data_, n_, patch_, corrupt_?BooleanQ] := Block[{testData, len, sel,
 ];
 
 
+(* ::Subsubsection::Closed:: *)
+(*FreezeEncoderLayers*)
+
+
+SyntaxInformation[FreezeEncoderLayers] = {"ArgumentsPattern" -> {_, _., _.}};
+
+FreezeEncoderLayers[net_] := FreezeEncoderLayers[net, 3]
+
+FreezeEncoderLayers[net_, n_Integer] := FreezeEncoderLayers[net, n, True]
+
+FreezeEncoderLayers[net_, n_Integer, includeStart_?BooleanQ] := Block[{nodes},
+	nodes = Select[Keys[net[[All, 1]]], StringMatchQ[#, "enc_" ~~ DigitCharacter ..] &];
+	(*keep only the first n encoder blocks*)
+	nodes = Select[nodes, ToExpression[StringDelete[#, "enc_"]] <= n &];
+	If[includeStart, nodes = Prepend[nodes, "start"]];
+	Thread[nodes -> 0]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*OneCycleSchedule*)
+
+
+OneCycleSchedule[br_, rounds_, ittTrain_] := With[{
+		n = {0.15, 0.65, 0.95} rounds br,
+		it = ittTrain br
+	}, (
+	ti = #1 + it;
+	(*warmup, plateau, then cosine decay*)
+	Which[
+		ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1./5, 1.}],
+		ti < n[[2]], 1.,
+		ti < n[[3]], Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1., 1./10}],
+		True, 1./10
+	]
+)& ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*LaunchTrainingKernels*)
+
+
+LaunchTrainingKernels[parallel_, maxProducers_:Automatic] := Switch[parallel,
+	True,
+	Block[{load, mx, context, nProducers, links, status, failed, dead},
+		(*start the links*)
+		nProducers = If[maxProducers === Automatic, $ProcessorCount, maxProducers];
+		links = Table[LinkLaunch[First[$CommandLine] <> " -wstp"], nProducers];
+
+		(*load the package/bootstrap per link, then drain that response before sending anything else*)
+		load = If[StringContainsQ[First[PacletFind["QMRITools"]]["Location"], "workspace"],
+			"QMRIToolsDev`", "QMRITools`"];
+		mx = QMRITools`SegmentationTools`Private`SetMXenvironment;
+		MonitorFunction[nProducers, "Starting link kernels: "];
+		With[{l = load, m = mx}, LinkWrite[#, Unevaluated[
+			Get[l];
+			m["StartTrain"];
+			SetSystemOptions["ParallelOptions" -> {"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}]
+		]]& /@ links];
+		ReadLinkL[#, 120]& /@ links;
+
+		(*confirm QMRITools is actually available*)
+		context = "QMRITools`SegmentationTools`";
+		LinkWrite[#, Unevaluated[Context[GetTrainData]]]& /@ links;
+		status = AssociationThread[links -> (ReadLinkL[#] === context & /@ links)];
+
+		(*retry by waiting longer, not asking again - the original request may still be in flight*)
+		failed = Keys[Select[status, ! # &]];
+		If[failed =!= {},
+			AssociateTo[status, Thread[failed -> (ReadLinkL[#, 120] === context & /@ failed)]];
+			dead = Keys[Select[status, ! # &]];
+			LinkClose /@ dead;
+			status = KeyDrop[status, dead];
+		];
+
+		MonitorFunction[{Length@status, Values[status]}, "QMRITools context per link kernel: "];
+		{Keys[status], Length[status]}
+	],
+	"Parallel",
+	With[{
+		setMX = SetMXenvironment,
+			load = If[StringContainsQ[First[PacletFind["QMRITools"]]["Location"], "workspace"],
+				"QMRIToolsDev`", "QMRITools`"]
+		}, Block[{nKernels},
+			(*restart the kernel pool clean, then load the package on every kernel*)
+			CloseKernels[];
+			nKernels = Length[If[maxProducers === Automatic,
+				LaunchKernels[], LaunchKernels[maxProducers + 1]]];
+			MonitorFunction[nKernels, "Starting parallel kernels: "];
+			Quiet@ParallelEvaluate[
+				Get[load]; setMX["StartTrain"];
+				Quiet@System`SetSystemOptions["ParallelOptions" -> {"MKLThreadNumber" -> 1, "ParallelThreadNumber" -> 1}]
+			, ProgressReporting -> False];
+			{{}, nKernels - 1}
+		]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ReadLinkL*)
+
+
+ReadLinkL[link_, timeout_:60] := Block[{pkt, t0, $IterationLimit},
+	$IterationLimit = Infinity; (*prevent recusrsion limit abort*)
+	t0 = AbsoluteTime[];
+	(*reads the next ReturnPacket from a link, discarding other packets in between*)
+	While[True,
+		If[AbsoluteTime[] - t0 > timeout, Return[$Failed]];
+		If[LinkReadyQ[link],
+			pkt = Check[LinkRead[link], $Failed];
+			Switch[pkt,
+				$Failed, Return[$Failed],
+				_ReturnPacket, Return[First[pkt]],
+				_, Null
+			],
+			Pause[0.02]
+		]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*LoadTrainData*)
+
+
+LoadTrainData[parallel_, files_, {loadData_, makeVal_, nVal_, batchFunction_}, {links_, nProducers_, patchNClass_, batchOptsSeq_}] := Switch[parallel,
+	(*normal sequential training*)
+	False, Block[{data, dims},
+		data = If[loadData, Import /@ files, files];
+		dims = If[loadData, If[ArrayDepth[#] === 3,
+			Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}];
+		{data, If[makeVal, batchFunction[nVal], {}], dims}
+	],
+
+	(*parallel training with link*)
+	True, Block[{pFiles, dims, validation},
+		pFiles = PartitionProducerFiles[files, nProducers];
+		(*each link imports its own file share*)
+		With[{ld = loadData}, MapThread[LinkWrite[#1, Unevaluated[
+			data = If[ld, Import /@ #2, #2];
+		]]&, {links, pFiles}]];
+		ReadLinkL[#, 120]& /@ links;
+		(*define the reusable batchFunctionL[n] per link, patch/batchOpts baked in once*)
+		With[{p = patchNClass, bo = batchOptsSeq}, LinkWrite[#, Unevaluated[
+			batchFunctionL[n_] := GetTrainData[data, n, p, Sequence @@ bo]
+		]]& /@ links];
+		ReadLinkL /@ links;
+
+		(*dims step*)
+		With[{ld = loadData}, LinkWrite[#, Unevaluated[
+			If[ld, If[ArrayDepth[#] === 3, Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}]
+		]]& /@ links];
+		dims = ReadLinkL /@ links;
+
+		(*validation step - reuses batchFunctionL*)
+		With[{mv = makeVal, nv = Round[nVal / nProducers]}, LinkWrite[#, Unevaluated[
+			If[mv, batchFunctionL[nv], {}]
+		]]& /@ links];
+		validation = ReadLinkL /@ links;
+
+		(*data stays on the links - only dims/validation come back*)
+		{{}, Join @@ validation, Join @@ dims}
+	],
+
+	(*parallel training with parallel kernels*)
+	"Parallel", Block[{pFiles, jobs, dims, validation},
+		pFiles = PartitionProducerFiles[files, nProducers];
+		DistributeDefinitions[pFiles, nProducers, nVal, batchFunction];
+		(*one submit per worker that loads its own file share, plus one empty submit for the fitter kernel*)
+		jobs = ParallelSubmit[
+			data = If[loadData, Import /@ #, #];
+			dims = If[loadData, If[ArrayDepth[#] === 3,
+				Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}];
+			validation = If[makeVal, batchFunction[Round[nVal / nProducers]], {}];
+			{dims, validation}
+		]& /@ pFiles;
+		(*wait for all workers, drop the empty fitter-kernel result*)
+		{dims, validation} = Transpose[Most[WaitAll[Append[jobs, ParallelSubmit[{}]], ProgressReporting -> False]]];
+		(*data stays on the workers - only dims/validation come back*)
+		{{}, Join @@ validation, Join @@ dims}
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*PartitionProducerFiles*)
+
+
+PartitionProducerFiles[files_, nP_] := Block[{pFiles},
+	(*repeats the files so every worker gets at least 3, partitions, and logs the split*)
+	pFiles = RandomSample[Flatten@Table[files, Ceiling[3 nP/Length[files]]]];
+	pFiles = Table[pFiles[[i ;; ;; nP]], {i, nP}];
+	MonitorFunction[Length /@ pFiles, "Files per kernel: "];
+	pFiles
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetFromBatchQueueL*)
+
+
+GetFromBatchQueueL[links_, nP_, batch_] := Block[{startTime, link, result, reactivate},
+	(*requests the next batch from the link just read*)
+	reactivate[] := With[{b = batch}, LinkWrite[link, Unevaluated[batchFunctionL[b]]]];
+	startTime = AbsoluteTime[];
+	(*round-robin poll the links until one throws a result*)
+	Catch[While[True, Do[
+		index = Mod[index, nP] + 1;
+		If[deadL[[index]], Continue[]];
+		link = links[[index]];
+		If[LinkReadyQ[link],
+			result = ReadLinkL[link];
+			Which[
+				(*Null means GetTrainData failed - close after repeated failures*)
+				result === Null,
+					nullCount[[index]]++;
+					If[nullCount[[index]] >= 10,
+						Message[TrainSegmentationNetwork::nullbatch];
+						LinkClose[link]; deadL[[index]] = True; activeProducers--,
+						reactivate[]
+					],
+				result === $Failed,
+					deadL[[index]] = True; activeProducers--,
+				True,
+					used[[index]]++;
+					reactivate[];
+					produced[[index]]++;
+					Throw[result]
+			]
+		], {nP}];
+		(*no producers left, or none delivered in time, give up*)
+		If[activeProducers <= 0 || AbsoluteTime[] - startTime > 20, Abort[]];
+		Pause[0.05]
+	]]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GetKernels*)
+
+
+GetKernels[nProducers_, batch_, batchFunction_, trainFunc_] := Append[
+	(*one producer kernel per queue slot, filling it whenever the trainer has consumed it*)
+	Block[{qi = #, chunk}, ParallelSubmit[
+		While[!trainingDone, If[ready[[qi]], Pause[0.1],
+			chunk = batchFunction[batch];
+			ToExpression["queue" <> ToString[qi] <> " = QMRITools`SegmentationTools`Private`chunk"];
+			produced[[qi]]++;
+(*If[produced[[qi]]===1, Print["run: ",Dimensions/@ #& /@ ToExpression["queue" <> ToString[qi]]]];*)
+			ready[[qi]] = True
+		]];
+		activeProducers--;
+	]]& /@ Range[nProducers]
+	,
+	(*the trainer kernel, sourcing batches by round-robin polling the queue slots*)
+	ParallelSubmit[CheckAbort[First@{trainFunc[
+		(*the batch function*)
+		Block[{startTime, chunk},
+			startTime = AbsoluteTime[];
+			Catch[While[True, Do[
+				index = Mod[index, nProducers] + 1;
+				If[ready[[index]],
+						used[[index]]++;
+(*If[used[[index]]===1, Print["Get: ",index," ",Dimensions/@ #& /@ ToExpression["queue" <> ToString[index]]]];*)
+						ready[[index]] = False;
+						Throw[ToExpression["queue" <> ToString[index]]]
+				], {nProducers}];
+				(*no producers left, or none delivered enough new data in time, give up*)
+				If[activeProducers <= 0 || AbsoluteTime[] - startTime > 20, Abort[]];
+				Pause[0.1]
+			]]
+		]&], trainingDone = True},
+		trainingDone = True; $Aborted
+	]]
+]
+
+
 (* ::Subsection:: *)
 (*AugmentTrainingData*)
 
@@ -2024,16 +1985,16 @@ MakeTestData[data_, n_, patch_, corrupt_?BooleanQ] := Block[{testData, len, sel,
 (*AugmentTrainingData*)
 
 
+(*named augmentation switches, in arbitrary order, default is all True*)
+AugmentationDefaults = <|"Flip" -> True, "Rotate" -> True, "Scale" -> True, "Noise" -> True, "Blur" -> True, "Bias" -> True|>;
+
+
 Options[AugmentTrainingData] = Options[AugmentTrainingDataI] ={
 	"Augment2D" -> False,
 	"AugmentMask" ->False
 }
 
 SyntaxInformation[AugmentTrainingData] = {"ArgumentsPattern" -> {_, _, _., OptionsPattern[]}};
-
-(*named augmentation switches, in arbitrary order, default is all True*)
-AugmentationDefaults = <|"Flip" -> True, "Rotate" -> True, "Scale" -> True, "Noise" -> True, "Blur" -> True, "Bias" -> True|>;
-
 
 AugmentTrainingData[{dat_?ArrayQ, seg_?ArrayQ}, vox_, opts:OptionsPattern[]] :=
 	AugmentTrainingDataI[{dat, seg}, vox, AugmentationDefaults, opts]
@@ -2209,6 +2170,7 @@ makeBoxC = Compile[{{dim, _Integer, 1}}, Block[{
 	];
 	out
 ], RuntimeOptions -> "Speed", RuntimeAttributes -> {Listable}];
+
 
 (* ::Subsubsection::Closed:: *)
 (*AugmentImageData*)
@@ -2505,7 +2467,7 @@ SelectTrainData[{dat_, seg_}, n_]:=Block[{segPerSlice, min ,max},
 (*PrepTrainData*)
 
 
-SyntaxInformation[PrepTrainData] = {"ArgumentsPattern" -> {_, _, _.}};
+SyntaxInformation[PrepTrainData] = {"ArgumentsPattern" -> {_, _., _.}};
 
 PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}] := PrepTrainData[{dat, seg}, {{0}, {0}}, {{1,1,1}, {1,1,1}}]
 
@@ -2668,7 +2630,7 @@ MakeClassImage[labelI_,{offI_?NumberQ, maxI_?NumberQ}, vox_?VectorQ] := Block[{m
 (*MakeChannelImage*)
 
 
-SyntaxInformation[MakeChannelImage]={"ArgumentsPattern"->{_, _., _.}};
+SyntaxInformation[MakeChannelImage]={"ArgumentsPattern"->{_, _.}};
 
 MakeChannelImage[data_] := MakeChannelImage[data, {1, 1, 1}]
 
@@ -2774,7 +2736,8 @@ Options[SurfaceDistance] = {
 	Method->"HD95"
 };
 
-SyntaxInformation[SurfaceDistance] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
+SyntaxInformation[SurfaceDistance] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern[]}};
+
 
 SurfaceDistance[ref_, pred_, opts : OptionsPattern[]] := SurfaceDistance[Round@ToPackedArray@ref, Round@ToPackedArray@pred, 1, {1, 1, 1}, opts]
 
@@ -2854,6 +2817,7 @@ Options[MakeDistanceMap] = {
 };
 
 SyntaxInformation[MakeDistanceMap] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
+
 
 MakeDistanceMap[data_, opt:OptionsPattern[]] := MakeDistanceMap[data, {1., 1., 1.}, opt]
 
@@ -3100,6 +3064,7 @@ Options[RunMuscleMap] = {
 
 SyntaxInformation[RunMuscleMap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
+
 RunMuscleMap[input_, OptionsPattern[]] := Block[{
 		pyEnvironment, scriptMuscleMap, inFile, outFolder, logFile,
 		args, result, out, outMM, suffix, version, gpu, json,
@@ -3182,6 +3147,7 @@ RunMuscleMap[input_, OptionsPattern[]] := Block[{
 	{out, json}
 ]
 
+
 (*locate mm_segment.py via pip's editable-install metadata*)
 FindMuscleMap[pyEnvironment_] := Block[{pipShow, editableLine, repoRoot},
 	pipShow = RunProcess[{pyEnvironment, "-m", "pip", "show", "scripts"}, "StandardOutput"];
@@ -3192,6 +3158,7 @@ FindMuscleMap[pyEnvironment_] := Block[{pipShow, editableLine, repoRoot},
 	repoRoot = StringTrim[StringDrop[editableLine, StringLength["Editable project location:"]]];
 	FileNameJoin[{repoRoot, "scripts", "mm_segment.py"}]
 ]
+
 
 (*locate the MuscleMap conda environment in common install locations*)
 FindMuscleMapEnv[] := Block[{possibleCondaRoots, envDir},
