@@ -2846,20 +2846,15 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 				,
 				{out, vox} = ImportNii[segFile];
 
-				voxS = ConfigLookup[datType, "Segment", "VoxSize"];
-				If[voxS =!= Automatic, 
-					(*-----*)AddToLog[{"Using specified reduced voxel size: ", voxS}, 4];
-					voxS = {vox, voxS}];
 				segDim = ConfigLookup[datType, "Segment", "Dimensions"];
 				If[segDim=!="2D" && segDim=!="3D", segDim="3D";];
 				location = ConfigLookup[datType, "Segment", "Location"];
 				(*-----*)AddToLog[{"Segmenting location using dimensions: ", location, " - ", segDim}, 4];
-				debugBids[{segDim, location, voxS}];
+				debugBids[{segDim, location, vox}];
 
-				seg = SegmentData[out, location, Monitor -> False, 
-					SegmentationDimension -> segDim, 
-					TargetDevice -> ConfigLookup[datType, "Segment", "Device"],
-					SegmentationResolution -> voxS
+				seg = SegmentData[{out, vox}, location, Monitor -> False,
+					SegmentationDimension -> segDim,
+					TargetDevice -> ConfigLookup[datType, "Segment", "Device"]
 				];
 
 				ExportNii[seg, vox, outFile, CompressNii -> compress];
