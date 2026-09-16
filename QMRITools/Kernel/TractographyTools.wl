@@ -1343,7 +1343,7 @@ PlotSegmentedTracts[tracts_, segmentIn_, bonesN_, dim_, vox:{_?NumberQ,_?NumberQ
 	mon["Making per muscle tracts"];
 	(*select the tracts per muscle and make fiber plots*)
 	tractsFI = RescaleTractsC[tractsF, vox];
-	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partWithin", #}}}, FiberLengthRange -> fran] & /@ segments;
+	tracksSel = FilterTracts[tractsF, tractsFI, {{"and", {"partwithin", #}}}, FiberLengthRange -> fran] & /@ segments;
 	(*only fit if order is greater than 1*)
 	If[ord > 0, tracksSel = If[#=!={} && ord>0, FitTracts[#, vox, dim, FittingOrder -> ord], {}]& /@ tracksSel];
 
