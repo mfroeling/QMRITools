@@ -261,17 +261,17 @@ custColors = {
 };
 
 
+CustCol[colf_] := Graphics[Raster[{Range[100]/100.}, {{0, 0}, {1, 1}}, ColorFunction -> colf],
+	AspectRatio -> 1/8, ContentSelectable -> False, ImageSize -> 100, PlotRange -> {{0, 1}, {0, 1}}]
+
 (*generate color list and functions*)
 colorFunctions = Join[# -> ColorData[#] & /@ colorNames, custColors];
-	
+
 colors = Sort@Join[
 	# -> Show[ColorData[#, "Image"], ImageSize -> 100] & /@ colorNames,
 	#[[1]] -> CustCol[#[[2]]] & /@ custColors
 ];
 colors = #[[1]] -> Tooltip[#[[2]], #[[1]]] & /@ colors;
-
-CustCol[colf_] := Graphics[Raster[{Range[100]/100.}, {{0, 0}, {1, 1}}, ColorFunction -> colf], 
-	AspectRatio -> 1/8, ContentSelectable -> False, ImageSize -> 100, PlotRange -> {{0, 1}, {0, 1}}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -298,12 +298,18 @@ ColSel[func_, cfunc_] := With[{
 	}, cfun[fun[#]]&
 ]
 
-
 (*generate all the color lookup tables*)
-ClearAll[ColorLookup]
-ColorLookup[___] = ConstantArray[Col2List[Darker[Red]], ncol];
-With[{ran = Range[0, 1., 1./(ncol - 1)]},
-	Table[ColorLookup[j, i] = Col2List[ColSel[j, i][#] & /@ ran], {j, colfuncs}, {i, colorFunctions[[All, 1]]}]
+ClearAll[ColorLookup];
+Block[{cacheFile},
+	cacheFile = FileNameJoin[{DirectoryName[StringDrop[QMRITools`GeneralTools`GetAssetLocation["ColorData"], -4]], "colorLookup.mx"}];
+	If[FileExistsQ[cacheFile],
+		Get[cacheFile],
+		ColorLookup[___] = ConstantArray[Col2List[Darker[Red]], ncol];
+		With[{ran = Range[0, 1., 1./(ncol - 1)]},
+			Table[ColorLookup[j, i] = Col2List[ColSel[j, i][#] & /@ ran], {j, colfuncs}, {i, colorFunctions[[All, 1]]}]
+		];
+		DumpSave[cacheFile, ColorLookup];
+	];
 ];
 
 (*color lookup function, preserving clipping and transparency. It converts integers to color values*)
@@ -329,6 +335,7 @@ ColorRound = With[{
 		lower = UnitStep[#1 - #2[[1]]],
 		scale = Round[Rescale[#1, #2, {2, ncol + 1}]]
 	}, (1 - lower) + lower greater scale + (ncol + 2) (1 - greater)] &
+
 
 (* ::Subsubsection::Closed:: *)
 (*ManPanel*)

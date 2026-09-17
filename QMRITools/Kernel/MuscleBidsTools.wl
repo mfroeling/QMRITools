@@ -2856,8 +2856,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 				(*-----*)AddToLog[{"Segmenting location using dimensions: ", location, " - ", segDim}, 4];
 				debugBids[{segDim, location, vox}];
 
-				seg = SegmentData[{out, vox}, location, Monitor -> False,
-					SegmentationDimension -> segDim,
+				seg = SegmentData[{out, vox}, location, Monitor -> True, SegmentationDimension -> segDim,
 					TargetDevice -> ConfigLookup[datType, "Segment", "Device"]
 				];
 

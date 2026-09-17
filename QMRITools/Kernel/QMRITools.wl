@@ -45,12 +45,13 @@ QMRITools`$InstalledVersion::usage = "The version number of the installed packag
 QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
 QMRITools`$Legacy = If[QMRITools`$Legacy===True, True, False];
 QMRITools`$LoadedColor = If[QMRITools`$LoadedColor===True, True, False];
+QMRITools`$Loaded = If[QMRITools`$Loaded===True, True, False];
 
 (*sub packages names*)
 QMRITools`$SubPackages = {
-	"ScientificColorData`",
+	"GeneralTools`", "ScientificColorData`",
 	(*core packages that contain many functions for other toolboxes*)
-	"LoggingTools`", "GeneralTools`", "MaskingTools`", "NiftiTools`",
+	"LoggingTools`", "MaskingTools`", "NiftiTools`",
 	"ElastixTools`", "PlottingTools`", "MuscleBidsTools`", "NeuralNetworkTools`", 
 	(*toolboxes for processing specific data types*)
 	"DixonTools`", "IVIMTools`", "DenoiseTools`", "CardiacTools`",
@@ -68,11 +69,6 @@ QMRITools`$SubPackages = {
 QMRITools`$Contexts = (Context[] <> # & /@ QMRITools`$SubPackages);
 QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Version"];
 
-(*load all the packages without error reporting such we can find the names of all the functions and options*)
-Quiet[Get/@QMRITools`$Contexts];
-QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
-tempDir = StringDrop[GetAssetLocation["ColorData"], -4];
-
 Begin["`Private`"];
 
 End[];
@@ -88,8 +84,73 @@ EndPackage[];
 If[QMRITools`$Verbose,
 	Echo["--------------------------------------"];
 	Echo["Version number "<>ToString[QMRITools`$InstalledVersion], "QMRITools"];
+];
+
+
+(*On a reload within the same kernel session (development, e.g. via QMRIToolsDev) all functions are already
+loaded and protected, so they first need to be unprotected/cleared before they can be redefined.
+On a first load in a fresh kernel (normal use) nothing is defined yet, so this whole step is skipped
+and there is no need to load everything twice.*)
+If[QMRITools`$Loaded,
+	If[QMRITools`$Verbose,
+		Echo["--------------------------------------"];
+		Echo["Removing all local and global definitions of:"];
+	];
+
+	(*load all the packages without error reporting such we can find the names of all the functions and options*)
+	Quiet[Get/@QMRITools`$Contexts];
+	(
+		With[{
+				functions = Names[# <> "*"],
+				global = Intersection[Names["Global`*"], "Global`" <> # & /@ Names[# <> "*"]]
+			},
+
+			If[QMRITools`$Verbose,
+				Echo["", #];
+				If[global=!={}, Echo[global]]
+			];
+
+			Unprotect @@ Join[functions, global];
+			ClearAll @@ Join[functions, global];
+			Remove @@ global;
+		]
+	) &/@ QMRITools`$Contexts;
+];
+
+(*Load and protect all the sub packages with error reporting*)
+If[QMRITools`$Verbose,
 	Echo["--------------------------------------"];
-	Echo["Defined packages and functions to be loaded are: "];
+	Echo["Loading and protecting all definitions of:"];
+];
+
+(
+	If[QMRITools`$Verbose, Echo["", #]];
+	Get[#];
+
+	(*getting the color functions, prevents from reloading if kernel is not restarted*)
+	If[# == "QMRITools`ScientificColorData`" && !QMRITools`$LoadedColor,
+		If[QMRITools`$Verbose,
+			Echo["--------------------------------------"];
+			Echo["Loading color data"];
+		];
+
+		With[{tempDir = StringDrop[QMRITools`GeneralTools`GetAssetLocation["ColorData"], -4]},
+			QMRITools`ScientificColorData`ExtractColorData[tempDir];
+			QMRITools`ScientificColorData`AddScientificColors[tempDir];
+		];
+		QMRITools`$LoadedColor = True;
+	];
+
+)& /@ QMRITools`$Contexts;
+
+QMRITools`$Loaded = True;
+
+QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
+(SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#])& /@ QMRITools`$ContextsFunctions;
+
+If[QMRITools`$Verbose,
+	Echo["--------------------------------------"];
+	Echo["Loaded packages and functions: "];
 	(
 		Echo["with exposed functions and options:", First@#];
 		Echo[Grid[Partition[Last@#, 4, 4 , 1, ""], Alignment->Left, ItemSize->18]];
@@ -97,59 +158,7 @@ If[QMRITools`$Verbose,
 ];
 
 
-(*Destroy all functions defined in the sub packages*)
-If[QMRITools`$Verbose, 
-	Echo["--------------------------------------"];
-	Echo["Removing all local and global definitions of:"];
-];
-
-
-With[{
-		global = Intersection[Names["Global`*"], "Global`" <> # & /@ Last[#]]
-	},
-		
-	If[QMRITools`$Verbose, 
-		Echo["", First@#];
-		If[global=!={}, Echo[global]]
-	];
-
-	Unprotect @@ Join[Last@#,global];
-	ClearAll @@ Join[Last@#,global];
-	Remove @@ global;
-] &/@ QMRITools`$ContextsFunctions
-
-
-(*getting the color functions, prevents from reloading if kernel is not restarted*)
-If[!QMRITools`$LoadedColor, 
-	If[QMRITools`$Verbose, 
-		Echo["--------------------------------------"];
-		Echo["Loading color data"];
-	];
-	Get["QMRITools`ScientificColorData`"];
-	QMRITools`ScientificColorData`ExtractColorData[tempDir];
-	QMRITools`ScientificColorData`AddScientificColors[tempDir];
-	ClearAll[tempDir];
-	Remove[tempDir];
-	QMRITools`$LoadedColor = True;
-]
-
-
-(*Reload and protect all the sub packages with error reporting*)
-If[QMRITools`$Verbose, 
-	Echo["--------------------------------------"];
-	Echo["Loading and protecting all definitions of:"];
-];
-
-
-Get["Developer`"];
-(
-	If[QMRITools`$Verbose, Echo["", First@#]];
-	Get[First@#];
-	SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#]
-)& /@ QMRITools`$ContextsFunctions;
-
-
-(*Protect definitions*)
+(*Protect all definitions, then release those that can be edited*)
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
 Unprotect/@{
 	"QMRITools`ElastixTools`$lastElastixTemp",

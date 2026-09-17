@@ -230,7 +230,7 @@ DirectoryTree[dir_]:=Block[{tree,rule,prefix},
 
 	(*get the directory tree*)
 	tree = DirTree[dir];
-	(*rule for acii render*)
+	(*rule for ascii render*)
 	rule = {0->"  ",1->"\[VerticalLine] ",2->"\:2514\[HorizontalLine]",3->"\:251c\[HorizontalLine]"};
 	prefix = ConstantArray[0,Depth[tree]];
 	(*generate the styled tree*)

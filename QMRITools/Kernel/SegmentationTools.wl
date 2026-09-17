@@ -882,7 +882,11 @@ SegmentData[datI_, opts:OptionsPattern[]] := SegmentData[{datI, {1, 1, 1}}, "Bod
 
 SegmentData[datI_, what_?StringQ, opts:OptionsPattern[]] := SegmentData[{datI, {1, 1, 1}}, what, opts] 
 
+SegmentData[datI_, vox_?VectorQ, opts:OptionsPattern[]] := SegmentData[{datI, vox}, "Body", opts]
+
 SegmentData[{datI_, vox_?VectorQ}, opts:OptionsPattern[]] := SegmentData[{datI, vox}, "Body", opts]
+
+SegmentData[datI_, vox_?VectorQ, what_?StringQ, opts:OptionsPattern[]] := SegmentData[{datI, vox}, what, opts]
 
 SegmentData[{datI_, vox_?VectorQ}, what_?StringQ, OptionsPattern[]] := Block[{
 		dev, max, mon, patch, pts, dim ,loc, net, seg, all, data, mask, conf, dimR, crop,
@@ -1453,11 +1457,11 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 
 	(*define and check the training loss function, self supervised pretraining only uses MSD and MAE*)
 	loss = Which[
-		pretrain, {"MSD", "MAE"},
+		pretrain, {"MSDM", "MAEM"},
 		loss === All, {"Dice", "MSD", "Tversky" , "CE", "Jaccard", "Focal"},
 		StringQ[loss], {loss},
 		True, loss];
-	If[!And @@ (MemberQ[{"Dice", "MSD", "MAE", "Tversky", "CE", "Jaccard", "Focal", "TopK"}, #] & /@ loss),
+	If[!And @@ (MemberQ[{"Dice", "MSD", "MAE", "MSDM", "MAEM", "Tversky", "CE", "Jaccard", "Focal", "TopK"}, #] & /@ loss),
 		Return[Message[TrainSegmentationNetwork::loss]; $Failed]];
 
 	(*match dimensions, classes, and channels to the input*)
@@ -2216,7 +2220,7 @@ GetTrainData[dataSets_, nBatch_, patch_, opts:OptionsPattern[]] := GetTrainData[
 GetTrainData[dataSets_, nBatch_, patch_, nClass_, opts:OptionsPattern[]]:= GetTrainData[dataSets, nBatch, {patch, nClass}, opts]
 
 GetTrainData[dataSets_, nBatch_, {patch_, nClass_}, OptionsPattern[]] := Block[{
-		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad, sel, is2D, pretrain, nP, mask
+		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad, sel, is2D, pretrain, nP, mask, fill
 	},
 
 	itt = 0;
@@ -2272,14 +2276,15 @@ GetTrainData[dataSets_, nBatch_, {patch_, nClass_}, OptionsPattern[]] := Block[{
 	If[pretrain,
 		segO = NormalizeData[#, NormalizeMethod -> "Uniform"]& /@ segO;
 
-		(*mask and noise fill the already normalized input right before building the output*)
+		(*mask and noise fill the already normalized input right before building the output, half the time filled with zeros instead*)
 		nP = Length[datO];
 		(*for 2D patches treat the whole batch as one pseudo 3D stack so the existing 3D mask can be reused directly*)
 		mask = If[Length[patch] === 2, First@MakeBlockMask[Prepend[patch, nP], 1], MakeBlockMask[patch, nP]];
 		datO = ToPackedArray[N[datO]];
-		datO = datO (1 - mask) + Unitize[datO] RandomReal[{0, Max[datO]}, Join[{nP}, patch]] mask;
+		fill = If[Coin[], RandomReal[{0, Max[datO]}, Join[{nP}, patch]], 0];
+		datO = datO (1 - mask) + Unitize[datO] fill mask;
 
-		(*target is the clean data restricted to the mask, dilated 1 voxel so the loss also covers the mask border*)
+		(*target is the clean data restricted to the mask*)
 		segO = ToPackedArray[N[segO]] mask;
 
 		Thread[

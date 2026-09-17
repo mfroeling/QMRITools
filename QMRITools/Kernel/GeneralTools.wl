@@ -13,8 +13,9 @@
 (*Begin Package*)
 
 
-BeginPackage["QMRITools`GeneralTools`", Join[{"Developer`"}, Complement[QMRITools`$Contexts, {"QMRITools`GeneralTools`"}]]];
+(*BeginPackage["QMRITools`GeneralTools`", Join[{"Developer`"}, Complement[QMRITools`$Contexts, {"QMRITools`GeneralTools`"}]]];*)
 
+BeginPackage["QMRITools`GeneralTools`", {"Developer`"}];
 
 (* ::Section:: *)
 (*Usage Notes*)
@@ -1234,9 +1235,10 @@ FindMiddle[dataIn_, "Legs", opts:OptionsPattern[]] := Block[{
 	},
 
 	(*flatten mean and normalize data*)
-	dat=dataIn;
+	dat = dataIn;
 	fDat = Flatten[dat];
-	dat = Clip[dat, {0, Quantile[Pick[fDat, Unitize[fDat], 1], .75]}];
+	(*dat = Clip[dat, {0, Quantile[Pick[fDat, Unitize[fDat], 1], .75]}];*)
+	dat = Clip[dat, {0, Quantile[Select[fDat, # != 0 &], .75]}];
 	dat = N@Nest[Mean, dat, ArrayDepth[dat] - 1];
 	len = Length[dat];
 	max = 0.85 len;
