@@ -794,7 +794,10 @@ NetDimensions[net_, port_] := Block[{block, netI},Switch[port,
 			block}], "OutputPorts"],
 
 	"MinEncodingOut",
-	Min /@ Transpose[Flatten[Values[Information[#, "OutputPorts"]] & /@ Information[net, "LayersList"], 1]],
+	Min /@ Transpose[Select[
+		Flatten[Values[Information[#, "OutputPorts"]] & /@ Information[net, "LayersList"], 1],
+		Length[#] === Length[Information[net, "InputPorts"]["Input"]] &
+	]],
 
 	"AllEncodingOut",
 	Max[Values[Information[NetTake[net, {#}], "OutputPorts"]][[All, 1]]] & /@ Keys[net[[All, 1]]],

@@ -80,7 +80,8 @@ ApplySegmentationNetwork[{{datFol, outFol}, {inTag, outTag}}, net] uses custom f
 
 NetworkOutput::usage =
 "NetworkOutput is an option for ApplySegmentationNetwork. Can be \"Segmentation\" (default) to return the segmentation, \"Confidence\" to return the
-per-voxel class confidence (see ClassConfidence), or \"Both\" to return {segmentation, confidence}."
+per-voxel class confidence (see ClassConfidence), \"Both\" to return {segmentation, confidence}, or \"Volume\" for a network that outputs a
+reconstructed volume rather than class probabilities (e.g. a self-supervised pretrained network), which merges patches without ClassDecoder."
 
 ClassifyData::usage = 
 "ClassifyData[data, method] classifies the input data using the Body classification network. 
@@ -635,9 +636,9 @@ FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, le
 	n = Length[classN];
 
 	(*define the model parameters*)
-	xVars = Table[x[i], {i, n}];(*solution at each position*)
+	xVars = Table[x[i], {i, n}]; (*solution at each position*)
 	dVars = Table[d[i], {i, n - 1}]; (*jump indicators*)
-	eVars = Table[e[i], {i, n}];(*error between data and solution*)
+	eVars = Table[e[i], {i, n}]; (*error between data and solution*)
 
 	(*define the fit constrains*)
 	cons = Join[
@@ -794,12 +795,12 @@ DataToPatches[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, nPatch_, Options
 
 GetPatch[dat_, pts:{{{_,_},{_,_},{_,_}}..}] := GetPatch[dat, #]&/@pts
 
-GetPatch[dat_, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}] := ToPackedArray@dat[[i1;;i2,j1;;j2,k1;;k2]]
+GetPatch[dat_, {{i1_, i2_}, {j1_, j2_}, {k1_, k2_}}] := ToPackedArray@dat[[i1;;i2, j1;;j2, k1;;k2]]
 
-GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, pts:{{{_,_},{_,_},{_,_}}..}] := GetPatch[dat, patch, #]&/@pts
+GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, pts:{{{_,_}, {_,_}, {_,_}}..}] := GetPatch[dat, patch, #]& /@ pts
 
-GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, {{i1_,i2_}, {j1_,j2_}, {k1_,k2_}}] := ToPackedArray[
-	PadRight[dat[[i1;;i2,j1;;j2,k1;;k2]], patch, 0.]]
+GetPatch[dat_, patch:{_?IntegerQ, _?IntegerQ, _?IntegerQ}, {{i1_, i2_}, {j1_, j2_}, {k1_, k2_}}] := ToPackedArray[
+	PadRight[dat[[i1;;i2, j1;;j2, k1;;k2]], patch, 0.]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1146,7 +1147,8 @@ ApplySegmentationNetwork[dat_, netI_, opt:OptionsPattern[]] := ApplySegmentation
 
 ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		dev, pad , lim, data, crp, net, dim, time, nodes, mem, dimO, size,
-		patch, pts, seg, mon, lab, nClass, precision, normF, is2D, netOut, segRaw, conf, merge
+		patch, pts, seg, mon, lab, nClass, precision, normF, 
+		is2D, netOut, segRaw, conf, merge
 	},
 
 	{dev, pad, lim, mon, netOut} = OptionValue[{TargetDevice, DataPadding, MaxMemorySize, Monitor, NetworkOutput}];
@@ -1198,17 +1200,17 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 			time = First@AbsoluteTiming[
 				(*actually perform the segmentation with the NN*)
 				segRaw = net[#, TargetDevice->dev, WorkingPrecision ->precision]& /@ patch;
+				If[netOut === "Volume", seg = merge[segRaw]];
 				If[MemberQ[{"Segmentation", "Both"}, netOut], seg = merge[ClassDecoder /@ segRaw, Range[nClass]]];
 				If[MemberQ[{"Confidence", "Both"}, netOut], conf = merge[ClassConfidence /@ segRaw]];
 			];
 			If[MemberQ[{"Segmentation", "Both"}, netOut],
-				mon[{Dimensions[seg], If[Max[seg]<1,{},MinMax[GetSegmentationLabels[seg]]]}, "Output segmentations dimensions and labels: "]
-			];
+				mon[{Dimensions[seg], If[Max[seg]<1, {}, MinMax[GetSegmentationLabels[seg]]]}, 
+					"Output segmentations dimensions and labels: "]];
 			mon[Round[time, .1], "Time for segmentation [s]: "];
 
 			,
-			(*perform the segmentation on a specific node*)
-			(*check if node is part of the network*)
+			(*perform the segmentation on a specific node, check if node is part of the network*)
 			nodes = DeleteDuplicates[Keys[Information[net, "Layers"]][[All, 1]]];
 			If[!MemberQ[nodes, node],
 				Message[ApplySegmentationNetwork::node, node];
@@ -1510,7 +1512,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 			Export[base[ittTrain,".png"], im, "ColorMapLength" -> 256];
 			(*export network, delete the previous itt*)
 			Export[base[ittTrain,".wlnet"], netMon];
-			Quiet@DeleteFile[base[ittTrain-2 rep,".wlnet"]];
+			Quiet@DeleteFile[base[ittTrain-2 rep, ".wlnet"]];
 		)&;
 	];
 
@@ -1609,8 +1611,8 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 
 			(*Monitor training and producing*)
 			Pause[5]; (*give everything time to settle*)
-			(*PrintTemporary[Dynamic[producerStatus[False], UpdateInterval -> 1]];*)
-			PrintTemporary[Dynamic[roundImage[], UpdateInterval -> 1]];
+			PrintTemporary[Dynamic[Column[{producerStatus[False], roundImage[]}
+				, Alignment -> Center], UpdateInterval -> 1]];
 
 			(*train using the links as the batch source, always close the links after - trained or aborted*)
 			CheckAbort[
@@ -1638,8 +1640,8 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 				trainingDone, index, ittTrain, im];
 
 			(*Monitor training and producing*)
-			(*PrintTemporary[Dynamic[producerStatus[], UpdateInterval -> 1]];*)
-			PrintTemporary[Dynamic[roundImage[], UpdateInterval -> 1]];
+			PrintTemporary[Dynamic[Column[{producerStatus[False], roundImage[]}
+				, Alignment -> Center], UpdateInterval -> 1]];
 
 			(*launch and activate the producer and trainer*)
 			trained = Last[WaitAll[GetKernels[nProducers, batch, batchFunction, trainFunc], 
@@ -1669,7 +1671,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 
 MakeTestData[data_, n_, patch_] := MakeTestData[data, n, patch, False]
 
-MakeTestData[data_, n_, patch_, corrupt_?BooleanQ] := Block[{testData, len, sel, is2D, stack, mask},
+MakeTestData[data_, n_, patch_, corrupt_?BooleanQ] := Block[{testData, len, sel, is2D, mask},
 	testData = data[[1]];
 	is2D = Length@patch===2;
 	(*figure out how to treat multi channel data - for now just take the first volume*)
@@ -1696,10 +1698,10 @@ MakeTestData[data_, n_, patch_, corrupt_?BooleanQ] := Block[{testData, len, sel,
 
 	(*corrupt test data with a noise block for self-supervised pretraining monitoring*)
 	If[corrupt,
-		stack = ToPackedArray[N[If[is2D, testData[[All, 1]], First[testData]]]];
-		mask = First@MakeBlockMask[Prepend[patch[[-2 ;;]], Length[stack]], 1];
-		stack = stack (1 - mask) + Unitize[stack] RandomReal[{0, Max[stack]}, Dimensions[stack]] mask;
-		testData = If[is2D, {#}& /@ stack, {stack}]
+		testData = If[is2D, testData[[All, 1]], First[testData]];
+		mask = First@MakeBlockMask[Join[{Length[testData]}, patch[[-2 ;;]]], 1];
+		testData = (1 - mask) testData + mask RandomReal[{0, 1}, Dimensions[testData]];
+		testData = If[is2D, {#}& /@ testData, {testData}]
 	];
 
 	{testData, data[[3]]}
@@ -1837,7 +1839,7 @@ LoadTrainData[parallel_, files_, {loadData_, makeVal_, nVal_, batchFunction_}, {
 	False, Block[{data, dims},
 		data = If[loadData, Import /@ files, files];
 		dims = If[loadData, If[ArrayDepth[#] === 3,
-			Dimensions[Transpose[{#}]], Dimensions[#]] & /@ data[[All, 1]], {}];
+			Dimensions[Transpose[{#}]], Dimensions[#]]& /@ data[[All, 1]], {}];
 		{data, If[makeVal, batchFunction[nVal], {}], dims}
 	],
 
@@ -1897,7 +1899,7 @@ LoadTrainData[parallel_, files_, {loadData_, makeVal_, nVal_, batchFunction_}, {
 
 PartitionProducerFiles[files_, nP_] := Block[{pFiles},
 	(*repeats the files so every worker gets at least 3, partitions, and logs the split*)
-	pFiles = RandomSample[Flatten@Table[files, Ceiling[3 nP/Length[files]]]];
+	pFiles = RandomSample[Flatten@Table[files, Ceiling[3 nP / Length[files]]]];
 	pFiles = Table[pFiles[[i ;; ;; nP]], {i, nP}];
 	MonitorFunction[Length /@ pFiles, "Files per kernel: "];
 	pFiles
@@ -1955,7 +1957,7 @@ GetKernels[nProducers_, batch_, batchFunction_, trainFunc_] := Append[
 			chunk = batchFunction[batch];
 			ToExpression["queue" <> ToString[qi] <> " = QMRITools`SegmentationTools`Private`chunk"];
 			produced[[qi]]++;
-(*If[produced[[qi]]===1, Print["run: ",Dimensions/@ #& /@ ToExpression["queue" <> ToString[qi]]]];*)
+			(*If[produced[[qi]]===1, Print["run: ",Dimensions/@ #& /@ ToExpression["queue" <> ToString[qi]]]];*)
 			ready[[qi]] = True
 		]];
 		activeProducers--;
@@ -1970,7 +1972,7 @@ GetKernels[nProducers_, batch_, batchFunction_, trainFunc_] := Append[
 				index = Mod[index, nProducers] + 1;
 				If[ready[[index]],
 						used[[index]]++;
-(*If[used[[index]]===1, Print["Get: ",index," ",Dimensions/@ #& /@ ToExpression["queue" <> ToString[index]]]];*)
+						(*If[used[[index]]===1, Print["Get: ",index," ",Dimensions/@ #& /@ ToExpression["queue" <> ToString[index]]]];*)
 						ready[[index]] = False;
 						Throw[ToExpression["queue" <> ToString[index]]]
 				], {nProducers}];
@@ -2075,7 +2077,8 @@ AugmentTrainingDataI[{dat_?ArrayQ, seg_}, vox_, aug_?AssociationQ, OptionsPatter
 	(*Augmentation of bias field, a smooth multiplicative field mimicking coil sensitivity variation, only on foreground*)
 	If[bias && Coin[], 
 		dim = Dimensions@datT;
-		datT = datT RescaleData[(1 + GaussianFilter[RandomReal[{-.5, .5}, Ceiling[dim/2]], Max[dim/2]/RandomReal[{3, 10}]]), dim];
+		datT = datT RescaleData[(1 + GaussianFilter[RandomReal[{-.5, .5}, 
+			Ceiling[dim/2]], Max[dim/2]/RandomReal[{3, 10}]]), dim];
 	];
 	(*Augmentation of noise*)
 	If[noise && Coin[], datT = AddSaltAndRice[datT, RandomReal[{5, 50}], CoinN[] RandomReal[{0.001, 0.01}]]];
@@ -2132,7 +2135,7 @@ AddSaltAndRice[data_, snr_, p_] := Block[{dims, sp, sigma, noise, coors},
 
 SaltAndRiceC = Compile[{{data, _Real, 3}, {noise, _Real, 3}, {coors, _Integer, 2}}, Block[{newData, num},
 	newData = Unitize[data] Sqrt[(data + noise)^2. + RandomSample[noise]^2.];
-	num = Round[Length[coors]/2];
+	num = Round[Length[coors] / 2];
 	Do[
 		newData[[coors[[i, 1]], coors[[i, 2]], coors[[i, 3]]]] = 1.;
 		newData[[coors[[i + num, 1]], coors[[i + num, 2]], coors[[i + num, 3]]]] = 0.;
@@ -2170,9 +2173,9 @@ makeBoxC = Compile[{{dim, _Integer, 1}}, Block[{
 		coor = Transpose[Flatten[Array[{##} &, {size[[1]], size[[2]], size[[3]]}], 2]] / 1.25;
 		
 		mc = 0.2 Max[coor];
-		center = RandomReal[{-mc, # + mc}] & /@ dim;
+		center = RandomReal[{-mc, # + mc}]& /@ dim;
 		box = Join[{{1, 1, 1}}, Transpose@Round[center + rot . coor]];
-		box = Select[box, ((1 <= #[[1]] <= dim[[1]]) && (1 <= #[[2]] <= dim[[2]]) && (1 <= #[[3]] <= dim[[3]])) &];
+		box = Select[box, ((1 <= #[[1]] <= dim[[1]]) && (1 <= #[[2]] <= dim[[2]]) && (1 <= #[[3]] <= dim[[3]]))&];
 		
 		out = Join[box, out, noise];
 	];
@@ -2188,7 +2191,7 @@ AugmentImageData[im_?ListQ, {rot_, flip_}] := AugmentImageData[#, {rot, flip}]&/
 
 AugmentImageData[im_, {rotI_, flip_}] := Block[{rot, ang, rt, fl, tr},
 	{rot, ang} = If[NumberQ[rotI], {True, rotI}, {rotI, 90}];
-	rt = If[rot, RotationTransform[RandomReal[{-ang, ang}]Degree], TranslationTransform[{0, 0}]];
+	rt = If[rot, RotationTransform[RandomReal[{-ang, ang}] Degree], TranslationTransform[{0, 0}]];
 	fl = If[flip && RandomChoice[{True, False}], ReflectionTransform[{1, 0}], TranslationTransform[{0, 0}]];
 	tr = rt . fl;
 	If[Head[im]===Rule,
@@ -2227,7 +2230,7 @@ GetTrainData[dataSets_, nBatch_, {patch_, nClass_}, OptionsPattern[]] := Block[{
 	datO = segO = {};
 
 	(*figure out how to augment the data*)
-	is2D = Length[patch]===2;
+	is2D = Length[patch] === 2;
 	{augI, nSet, pad, pretrain} = OptionValue[{AugmentData, PatchesPerSet, PadData, MaskedPretraining}];
 	{aug, is2D} = Which[
 		BooleanQ[augI], {augI, is2D},
@@ -2275,28 +2278,22 @@ GetTrainData[dataSets_, nBatch_, {patch_, nClass_}, OptionsPattern[]] := Block[{
 
 	If[pretrain,
 		segO = NormalizeData[#, NormalizeMethod -> "Uniform"]& /@ segO;
-
-		(*mask and noise fill the already normalized input right before building the output, half the time filled with zeros instead*)
-		nP = Length[datO];
-		(*for 2D patches treat the whole batch as one pseudo 3D stack so the existing 3D mask can be reused directly*)
-		mask = If[Length[patch] === 2, First@MakeBlockMask[Prepend[patch, nP], 1], MakeBlockMask[patch, nP]];
 		datO = ToPackedArray[N[datO]];
-		fill = If[Coin[], RandomReal[{0, Max[datO]}, Join[{nP}, patch]], 0];
-		datO = datO (1 - mask) + Unitize[datO] fill mask;
-
+		nP = Length[datO];
+		(*2D patches: treat the batch as one pseudo 3D stack to reuse the 3D mask*)
+		mask = If[Length[patch] === 2, First@MakeBlockMask[Join[{nP}, patch], 1], MakeBlockMask[patch, nP]];
+		(*noise fill the mask, zeros half the time*)
+		datO = (1 - mask) datO + mask If[Coin[], RandomReal[{0, 1}, Join[{nP}, patch]], 0] ;
 		(*target is the clean data restricted to the mask*)
-		segO = ToPackedArray[N[segO]] mask;
+		segO = mask segO;
 
-		Thread[
-			(NumericArray[{#}, "Real32"] & /@ N[datO]) ->
-			(NumericArray[#, "Real32"] & /@ N[segO])
-		],
+		Thread[(NumericArray[{#}, "Real32"] & /@ N[datO]) ->
+			(NumericArray[#, "Real32"] & /@ N[segO])]
+		,
 
 		segO = If[IntegerQ[nClass], ClassEncoder[segO, nClass], segO + 1];
-		Thread[
-			(NumericArray[{#}, "Real32"] & /@ N[datO]) ->
-			(NumericArray[#, "Byte"] & /@ Round[segO])
-		]
+		Thread[(NumericArray[{#}, "Real32"] & /@ N[datO]) ->
+			(NumericArray[#, "Byte"] & /@ Round[segO])]
 	]
 ];
 
@@ -2452,20 +2449,22 @@ PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, Options
 	, {sf, segFiles}];
 
 	(*export the overview of what has happened*)
-	legend = Grid[{{}, Join[{""}, Item[Style[#[[1]], White, Bold], Background -> #[[2]]] & /@ {{"hole & n > 1", Red}, {"n > 1", Purple}, {"hole", Blue}}, {""}], {}}, Spacings -> {1, 0.5}];
+	legend = Grid[{{}, Join[{""}, Item[Style[#[[1]], White, Bold], 
+			Background -> #[[2]]] & /@ {{"hole & n > 1", Red}, {"n > 1", Purple}, {"hole", Blue}}, {""}], {}
+		}, Spacings -> {1, 0.5}];
 	head = Style[#, Bold] & /@ {" # ", "Name", "Labels"};
 
 	out = Grid[{{Grid[Append[Prepend[out, head], {"", legend, SpanFromLeft}], 
-		Spacings -> {2, 1}, Background -> {None, {{None, LightDarkV[Lighter@LightGray, Darker@Gray]}}}, Alignment -> Center]
-		}}, Spacings -> {2, 2}, Background-> LightDarkV[White,GrayLevel[0.1]]];
+			Spacings -> {2, 1}, Background -> {None, {{None, LightDarkV[Lighter@LightGray, Darker@Gray]}}
+		}, Alignment -> Center]}}, Spacings -> {2, 2}, Background-> LightDarkV[White,GrayLevel[0.1]]];
 	Export[FileNameJoin[{outFol, "summary.png"}], ImagePad[Rasterize[out], 6, White]];
 
 	out
 ]
 
 
-SelectTrainData[{dat_, seg_}, n_]:=Block[{segPerSlice, min ,max},
-	segPerSlice = Total[Max[#] & /@ #] & /@ First[SplitSegmentations[seg]];
+SelectTrainData[{dat_, seg_}, n_] := Block[{segPerSlice, min ,max},
+	segPerSlice = Total[Max[#] & /@ #]& /@ First[SplitSegmentations[seg]];
 	{min, max} = MinMax[Position[UnitStep[segPerSlice - n], 1]];
 	{min, max} = Clip[{min - 8, max + 8}, {1, Length[dat]}];
 	{dat[[min;;max]], seg[[min;;max]]}
@@ -2478,18 +2477,16 @@ SelectTrainData[{dat_, seg_}, n_]:=Block[{segPerSlice, min ,max},
 
 SyntaxInformation[PrepTrainData] = {"ArgumentsPattern" -> {_, _., _.}};
 
-PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}] := PrepTrainData[{dat, seg}, {{0}, {0}}, {{1,1,1}, {1,1,1}}]
+PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}] := PrepTrainData[{dat, seg}, {{0}, {0}}, {{1, 1, 1}, {1, 1, 1}}]
 
-PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}, {labI_?VectorQ, labO_?VectorQ}] := PrepTrainData[{dat, seg}, {labI, labO}, {{1,1,1}, {1,1,1}}]
+PrepTrainData[{dat_?ArrayQ, seg_?ArrayQ}, {labI_?VectorQ, labO_?VectorQ}] := PrepTrainData[{dat, seg}, {labI, labO}, {{1, 1, 1}, {1, 1, 1}}]
 
 PrepTrainData[{daI_?ArrayQ, segI_?ArrayQ}, {labI_?VectorQ, labO_?VectorQ}, {voxI_?VectorQ, voxO_?VectorQ}] := Block[{
 		cr, dat, seg
 	},
 	(*rescale if needed*)
-	{dat, seg} = If[voxI===voxO, 
-		{daI, segI}, 
-		{RescaleData[daI, {voxI, voxO}], RescaleSegmentation[segI, {voxI, voxO}]}
-	];
+	{dat, seg} = If[voxI === voxO, {daI, segI}, 
+		{RescaleData[daI, {voxI, voxO}], RescaleSegmentation[segI, {voxI, voxO}]}];
 
 	(*remove background and normalize data and figure out what to do with multi channel data*)
 	cr = FindCrop[Mask[If[ArrayDepth[dat] === 3, NormalizeData, NormalizeMeanData][dat], 5, MaskDilation -> 1]];
@@ -2548,7 +2545,7 @@ GridLayout[len_, ni_] := Block[{n1, n2},
 		While[n1 n2 > len, n1--; n2--;]
 	];
 	(*n1 n2==1 makes the step (len-1)/(n1 n2-1) divide by zero, just take the first index*)
-	{n1, n2, If[n1 n2===1, {1}, Round[Range[1., len, (len - 1)/(n1 n2 - 1)]]]}
+	{n1, n2, If[n1 n2===1, {1}, Round[Range[1., len, (len - 1) / (n1 n2 - 1)]]]}
 ]
 
 MakeChannelClassGrid[dat_, lab_] := MakeChannelClassGrid[dat, lab, 3]
@@ -2612,13 +2609,13 @@ MakeChannelClassImage[data_, label_, {off_, max_}, vox_] := Block[{i1, i2},
 
 SyntaxInformation[MakeClassImage]={"ArgumentsPattern"->{_, _., _.}};
 
-MakeClassImage[label_] := MakeClassImage[label, Round@MinMax[label], {1,1,1}]
+MakeClassImage[label_] := MakeClassImage[label, Round@MinMax[label], {1, 1, 1}]
 
-MakeClassImage[label_, {off_?NumberQ, max_?NumberQ}] := MakeClassImage[label, {off, max}, {1,1,1}]
+MakeClassImage[label_, {off_?NumberQ, max_?NumberQ}] := MakeClassImage[label, {off, max}, {1, 1, 1}]
 
 MakeClassImage[label_, vox_?VectorQ] := MakeClassImage[label, Round@MinMax[label], vox]
 
-MakeClassImage[labelI_,{offI_?NumberQ, maxI_?NumberQ}, vox_?VectorQ] := Block[{max, cols, imLab, rat, label, off},
+MakeClassImage[labelI_, {offI_?NumberQ, maxI_?NumberQ}, vox_?VectorQ] := Block[{max, cols, imLab, rat, label, off},
 	(*SeedRandom[1345];
 		cols = Prepend[ColorData["DarkRainbow"][#]&/@RandomSample[Rescale[Range[off+1, max]]],Transparent];
 		cols = Prepend[ColorData["RomaO"][#]&/@Rescale[Range[off+1, max]],Transparent];
@@ -2648,11 +2645,10 @@ MakeChannelImage[data_, vox_] := Block[{dat, imDat, rat, ran},
 	ran = Quantile[Flatten[dat], {0.01, 0.99}];
 	(*flat/background patches give an equal-quantile range, Rescale would divide by zero*)
 	dat = Clip[If[ran[[1]]===ran[[2]], 0 dat, Rescale[dat, ran]], {0., 1.}];
-	(*dat = Rescale[data];*)
 	rat = vox[[{2, 3}]] / Min[vox[[{2, 3}]]];
 	(
 		imDat = #;
-		imDat = If[ArrayDepth[#]===3, imDat[[Round[Length@imDat/2]]], imDat];
+		imDat = If[ArrayDepth[#]===3, imDat[[Round[Length[imDat] / 2]]], imDat];
 		ImageResize[Image[imDat], Round@Reverse[rat Dimensions[imDat]], Resampling->"Nearest"]
 	) &/@ dat
 ]
