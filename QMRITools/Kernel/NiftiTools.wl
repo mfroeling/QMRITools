@@ -160,8 +160,10 @@ FlipBvec::usage =
 PositiveZ::usage = 
 "PositiveZ  is an option for ImportBvalvec."
 
-UseVersion::usage = 
-"UseVersion is an option for DcmToNii. For windows it allows to switch between different versions of dcm2niix.exe."
+UseVersion::usage =
+"UseVersion is an option for DcmToNii. For windows it allows to switch between different versions of dcm2niix.exe.
+Set to 1 for the default bundled version, an integer matching a dated \"DcmToNii-<version>\" asset (e.g. 25 for dcm2niix-20250506.exe),
+or \"Own\" for a custom dcm2niix-own.exe build registered as the \"DcmToNii-Own\" asset in PacletInfo.wl."
 
 DeleteOutputFolder::usage = 
 "DeleteOutputFolder is an option of DcmToNii. If the output folder already exists it will be deleted."

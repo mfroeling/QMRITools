@@ -594,16 +594,19 @@ ClassifyData[dat_, met_, OptionsPattern[]] := Block[{
 	(*get the network*)
 	net = GetNeuralNet["Body"];
 	If[net === $Failed, Return[$Failed]];
-
-	(*convert data *)
-	mask = Mask[NormalizeData[dat], 10, MaskSmoothing -> True, MaskClosing -> 5];
 	imSize = NetDimensions[NetReplacePart[net, "Input"->None], "Input"][[2;;]];
-	class = net[MakeClassifyImage[MaskData[dat, mask], ImageSize -> imSize], TargetDevice -> dev];
-	side = Last@Keys@Sort@Counts@class["Side"];
 
+	(*convert data*)
+	mask = Mask[NormalizeData[dat], 10, MaskSmoothing -> True, 
+		MaskClosing -> 5, SmoothIterations -> 1];
+	ims = MakeClassifyImage[MaskData[dat, mask], ImageSize -> imSize];
+
+	(*perform classification*)
+	class = net[ims, TargetDevice -> dev];
+	side = Last@Keys@Sort@Counts@class["Side"];
 	Switch[met,
 		"Side", side,
-		"Body", {side, FindBodyPos[class["Position"], mon]},
+		"Body", {side, FindBodyPos[class["Position"], mon, False]},
 		_, class
 	]
 ]
@@ -618,7 +621,7 @@ FindBodyPos[class_] := FindBodyPos[class, False, False]
 FindBodyPos[class_, mon_]:=FindBodyPos[class, mon, False]
 
 FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, len, classI, classN, n, xVars, eVars, dVars,
-	pad, x, e, d, cons, sol, classF, offset, what, lab, pos, found, classIn},
+	pad, x, e, d, cons, sol, classF, offset, what, lab, pos, found, classIn, best},
 
 	(*pull per-location classifier ranges and offsets from the central location table*)
 	locations = Thread[Range[Length[$BodyPositionClasses]] -> $BodyPositionClasses];
@@ -640,11 +643,14 @@ FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, le
 	dVars = Table[d[i], {i, n - 1}]; (*jump indicators*)
 	eVars = Table[e[i], {i, n}]; (*error between data and solution*)
 
+	(*largest gap-free run of observed labels; the fit is confined to it*)
+	best = MaximalBy[Split[Sort@DeleteDuplicates[classN], #2 - #1 == 1 &], Length][[1]];
+
 	(*define the fit constrains*)
 	cons = Join[
-		(*define start and end and keep all x larger than 0*)
-		{x[1] == Min[classN], x[n] == Max[classN]},
-		Table[x[i] >= 0, {i, n - 1}],
+		(*define start and end and keep all x within the trusted run*)
+		{x[1] == Min[best], x[n] == Max[best]},
+		Table[Min[best] <= x[i] <= Max[best], {i, n - 1}],
 		
 		(*define jumps and force them between 0 and 1, and no jump can happen within 6 slices*)
 		Table[x[i + 1] - x[i] == d[i], {i, n - 1}],
@@ -1045,8 +1051,8 @@ SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := B
 
 	(*Based on the body location tag decide what to do with the classification*)
 	{whatSide, whatPos} = Switch[$SegmentationGroups[what, "Classify"],
-		"Position", ClassifyData[data, "Body", TargetDevice -> dev, Monitor -> monO],
-		"Side", {ClassifyData[data, "Side", TargetDevice -> dev, Monitor -> monO], 
+		"Position", ClassifyData[data, "Body", TargetDevice -> "CPU", Monitor -> monO],
+		"Side", {ClassifyData[data, "Side", TargetDevice -> "CPU", Monitor -> monO], 
 			{#, {1, dim[[1]]}}& /@ $SegmentationGroups[what, "Locations"]},
 		"None", {"Both", {#, {1, dim[[1]]}}& /@ $SegmentationGroups[what, "Locations"]},
 		_, Return[$Failed];
@@ -1152,7 +1158,7 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 	},
 
 	{dev, pad, lim, mon, netOut} = OptionValue[{TargetDevice, DataPadding, MaxMemorySize, Monitor, NetworkOutput}];
-	If[lim === Automatic, lim = If[dev==="CPU", 32, 32]];(*memory limit in GB*)
+	If[lim === Automatic, lim = If[dev==="CPU", 32, 8]];(*memory limit in GB*)
 	mon = If[mon, MonitorFunction, List];
 
 	precision = If[(dev=!="CPU") && ($OperatingSystem === "Windows"), "Mixed", "Real32"];
@@ -1290,7 +1296,7 @@ FindPatchDim[net_, dim_, lim_] := Block[{
 		];
 
 		out = If[rat > 1, {z, y, x}, {z, x, y}];
-		{Round[netMem[ChangeNetDimensions[net, "Dimensions" -> out]], .1], out}
+		{Round[netMem[ChangeNetDimensions[net, "Dimensions" -> out]] / 4, .1], out}
 	]
 ]
 

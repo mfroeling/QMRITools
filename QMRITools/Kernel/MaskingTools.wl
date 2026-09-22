@@ -185,7 +185,7 @@ SyntaxInformation[NormalizeData] = {"ArgumentsPattern" -> {_, _., OptionsPattern
 NormalizeData[data_, opts : OptionsPattern[]] := Block[{dataM, mask},
 	If[OptionValue[NormalizeMethod]=!="Uniform",
 		dataM = Switch[ArrayDepth[data], 3, data, 4, Mean@Transpose@data];
-		mask = Mask[NormDat[dataM - Min@dataM, 0.]];
+		mask = Mask[NormDat[dataM - Min@dataM, 0.],MaskSmoothing -> False];
 		NormalizeData[data, mask, opts]
 		,
 		Quiet@NormDatC[data]
@@ -225,9 +225,9 @@ NormDatC = Compile[{{dat, _Real, 3}}, Block[{fl, min, max, bins, cdf, n, tot},
 
 (*normalization towards median of given value*)
 NormDat[dat_, mn_] := ToPackedArray[100. Which[
-	mn===0., dat/MedianNoZero[Flatten@dat],
-	ListQ[mn],Transpose[Transpose[dat]/mn],
-	True, dat/mn]
+	mn===0., dat / MedianNoZero[Flatten@dat],
+	ListQ[mn], Transpose[Transpose[dat] / mn],
+	True, dat / mn]
 ]
 
 
@@ -268,7 +268,14 @@ HomogenizeData[dat_, mask_, OptionsPattern[]] := Block[{fit},
 (*Mask*)
 
 
-Options[Mask] = {MaskSmoothing -> False, MaskComponents -> 2, MaskClosing -> False, MaskFiltKernel -> 2, MaskDilation -> 0, SmoothIterations->3};
+Options[Mask] = {
+	MaskSmoothing -> False, 
+	MaskComponents -> 2, 
+	MaskClosing -> False, 
+	MaskFiltKernel -> 2, 
+	MaskDilation -> 0, 
+	SmoothIterations->3
+};
 
 SyntaxInformation[Mask] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -387,7 +394,8 @@ TakeObject[maskI_, obj_] := Block[{morph, keys},
 SyntaxInformation[DilateMask] = {"ArgumentsPattern" -> {_, _}};
 
 DilateMask[mask_, size_] := If[ArrayDepth[mask]===3,
-	SmoothMask[mask, MaskDilation -> size, MaskComponents -> Infinity, MaskClosing -> False, SmoothIterations -> 0],
+	SmoothMask[mask, MaskDilation -> size, MaskComponents -> Infinity, 
+		MaskClosing -> False, SmoothIterations -> 0],
 	Transpose[DilateMask[#,size]&/@Transpose[mask]]
 ]
 

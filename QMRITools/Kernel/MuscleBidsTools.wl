@@ -2601,6 +2601,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 
 	(*import the 3D moving data *)
 	{moving, vox} = Transpose[(files=#; Transpose[ImportNii /@ files]) &/@ processStacks];
+
 	voxMov = First@vox; (*voxel size per stack*)
 	(*check voxel sizes of moving*)
 	If[!Equal@@voxMov,
@@ -2721,7 +2722,9 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	moving = If[nStack===1,
 		moving[[All, 1]],
 		debugBids["joining: ", posAll];
-		JoinSets[moving[[#]], If[MemberQ[posNat, #], overM, overT], voxF[#], 
+		JoinSets[
+			If[MemberQ[nonQuant, names[[#]]], Ramp[moving[[#]]], moving[[#]]], 
+			If[MemberQ[posNat, #], overM, overT], voxF[#], 
 			MonitorCalc->False, MotionCorrectSets->False, 
 			PadOverlap->pad, ReverseSets->reverse, 
 			NormalizeSets->MemberQ[nonQuant, names[[#]]], 
@@ -2856,7 +2859,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 				(*-----*)AddToLog[{"Segmenting location using dimensions: ", location, " - ", segDim}, 4];
 				debugBids[{segDim, location, vox}];
 
-				seg = SegmentData[{out, vox}, location, Monitor -> True, SegmentationDimension -> segDim,
+				seg = SegmentData[{out, vox}, location, Monitor -> False, SegmentationDimension -> segDim,
 					TargetDevice -> ConfigLookup[datType, "Segment", "Device"]
 				];
 

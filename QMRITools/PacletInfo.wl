@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "4.10.3",
+	"Version" -> "4.11.0",
 	"WolframVersion" -> "15.0+",
 	"SystemID" -> All,
 	"Description" -> "Toolbox for Quantitative MRI.",
@@ -61,6 +61,7 @@ PacletObject[<|
 			{"Transformix", "transformix.exe"},
 			{"ElastixLib", "elxANNlib.dll"},
 			{"DcmToNii", "dcm2niix-20260416.exe"},
+			{"DcmToNii-Own", "dcm2niix-own.exe"},
 			{"pigz", "pigz.exe"},
 			(*windows old dcm2nii versions*)
 			{"DcmToNii-25", "dcm2niix-20250506.exe"},
