@@ -5,7 +5,9 @@ and for how to work with the author (Martijn Froeling). They come from repeated 
 from a survey of the whole Kernel folder. **Match the surrounding code, and follow these rules even when your own
 default differs.**
 
-Related: [MuscleBidsTools.md](MuscleBidsTools.md) (map of the BIDS pipeline).
+Index of all agent docs: [AGENTS.md](../QMRITools/AGENTS.md). Related: [MuscleBidsTools.md](MuscleBidsTools.md)
+(BIDS pipeline map), [SegmentationTools.md](SegmentationTools.md) (segmentation map),
+[ToolboxStructure.md](ToolboxStructure.md) (loader, package graph, docs/build).
 
 ---
 

@@ -4,9 +4,10 @@ This is a map of [QMRITools/Kernel/MuscleBidsTools.wl](../QMRITools/Kernel/Muscl
 config-driven processing pipeline that goes from DICOM to per-muscle Excel sheets. Read it before you change
 anything in that file.
 
-- Code state: as of 2026-09-22, including the uncommitted `Dixon-A` work.
+- Code state: as of 2026-09-22, including the `Dixon-A` work.
 - Line numbers (`L123`) drift over time. Grep for the function name if a number no longer matches.
-- Code style for this repo: [CodeStyle.md](CodeStyle.md).
+- Index of all agent docs: [AGENTS.md](../QMRITools/AGENTS.md). Code style for this repo: [CodeStyle.md](CodeStyle.md).
+  The segmentation step (§6.5) calls `SegmentData`: [SegmentationTools.md](SegmentationTools.md).
 - `BIDS-config.docx` in the repo root is the user manual (v1.1, 2025-07). It is **outdated**. Section 9 lists how it
   differs from the code. When they disagree, the code wins.
 

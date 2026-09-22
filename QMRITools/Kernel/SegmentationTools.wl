@@ -122,6 +122,12 @@ PrepareTrainingData::usage =
 "PrepareTrainingData[inFolder, outFolder] prepares the data in de inFolder for training a neural network for segmentation and outputs in outFolder.
 PrepareTrainingData[{labFolder, datFolder}, outFolder] does the same but the labels are stored in labFolder and data is stored in datFolder."
 
+MakeTrainData::usage =
+"MakeTrainData[{data1, data2, n}] makes multi contrast training data by blending the co-registered 3D datasets data1 and data2 in n linear steps
+from data1 to data2. Each blend is normalized and the result is masked. The output is a 4D dataset where each blend is a channel.
+MakeTrainData[{{data1, data2, n}, ..}] does the same for multiple pairs and joins all blends as channels, e.g. {{outph, inph, 6}, {wat, fat, 5}}.
+The output can be used as data for PrepareTrainingData, during training a random channel is selected for each sample which acts as contrast augmentation."
+
 
 CheckSegmentation::usage=
 "CheckSegmentation[seg] checks the segmentation for errors and returns a vector of two numbers, the first indicates if the segmentation has 
@@ -2671,8 +2677,13 @@ MakeChannelImage[data_, vox_] := Block[{dat, imDat, rat, ran},
 (*MakeTrainData*)
 
 
-NormDat[dat_] :=  Block[{q = Quantile[Flatten[dat], 0.9], m = Max[dat]}, 
-	If[q <= 0.5 m, If[m === 0., dat, dat/m], If[q === 0., dat, 0.75 dat/q]]];
+NormDat[dat_] := Block[{q, m},
+	q = Quantile[Flatten[dat], 0.9];
+	m = Max[dat];
+	If[q <= 0.5 m, If[m === 0., dat, dat/m], If[q === 0., dat, 0.75 dat/q]]
+];
+
+SyntaxInformation[MakeTrainData] = {"ArgumentsPattern" -> {_}};
 
 MakeTrainData[{dat1_?ArrayQ, dat2_?ArrayQ, i_?IntegerQ}] := MakeTrainData[{{dat1, dat2, i}}]
 

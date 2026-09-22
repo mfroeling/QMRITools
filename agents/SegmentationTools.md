@@ -7,7 +7,7 @@ before changing that file.
 
 - Code state as of 2026-09-22. Line numbers (`L123`) drift over time; grep for the function name if one no longer
   matches.
-- House style: [CodeStyle.md](CodeStyle.md). The main consumer of `SegmentData` is the BIDS pipeline:
+- Index of all agent docs: [AGENTS.md](../QMRITools/AGENTS.md). House style: [CodeStyle.md](CodeStyle.md). The main consumer of `SegmentData` is the BIDS pipeline:
   [MuscleBidsTools.md](MuscleBidsTools.md) §6.5.
 - Network *construction* (`MakeUnet`, `AddLossLayer`, `ChangeNetDimensions`, `NetDimensions`, `ClassEncoder`/`ClassDecoder`/
   `ClassConfidence`, `MakeClassifyImage`, loss layers) lives in **NeuralNetworkTools.wl**. Segmentation label helpers
@@ -294,6 +294,9 @@ background too. Details are in CodeStyle.md §11.
 
 ## 8. Training data preparation and QC
 
+Optional first step, `MakeTrainData[{{d1, d2, n}..}]` (WIP): builds 4D contrast-blended data (for example Dixon
+outph→inph and wat→fat blends as channels). This is the intended input for the random-channel training (§6).
+
 `PrepareTrainingData[{labFol, datFol}, outFol]` (L2376):
 
 1. Finds `*<LabelTag>.nii.gz` files and matches each to a `*<DataTag>.nii.gz` file by replacing the tag in the name.
@@ -360,7 +363,7 @@ Gaussian smoothing, browse/reload, and export to `TrainLogPlot.png`.
 | Q8 | leaked private globals | **Fixed 2026-09-22:** `GetNetwork`, `makeTest`, `datC`, `plot` are now Block locals. `ti` is gone: `OneCycleSchedule` now returns `OneCycleValue[#1 + it, n]&` (checked identical on every batch). **Intentional globals (keep):** `segmentWindow` (lets the GUI close its previous window), `GetNeuralNetI` (session cache), `data`/`batchFunctionL` on producer link kernels, `data` and `queue1..n` on Parallel kernels (must persist between calls). |
 | Q9 | `SegmentData` L945 | `Return[$Failed]` for a missing net happens before `SetMXenvironment["Reset"]`, so the MXNet environment variables stay on the "StartSegment" settings. |
 | Q10 | `SplitDataForSegmentation` L1054 | `TargetDevice` is ignored for the classifier (hard-coded CPU). This may be intentional (a small net). |
-| Q11 | `MakeTrainData` / `NormDat` L2672 | Private, unused anywhere. `NormDat` also uses Block initialisers (old style). |
+| Q11 | `MakeTrainData` / `NormDat` | **Resolved 2026-09-22: needed, work in progress.** It came from `MakeTrainDat` in `D:\Werk\Research\MOTOR_shoulder_2\shoulder segment_V3.nb` and makes contrast-blended multi-channel **segmentation** training data (`{{outph,inph,6},{wat,fat,5}}` → 11 channels; checked identical to the notebook). It is now public with a usage string. `SyntaxInformation` was added, and the `NormDat` Block initialisers were moved into the body (checked identical). Remaining: `NormDat` shares its name with an unrelated private `NormDat` in MaskingTools.wl (no clash). |
 | Q12 | `CopyTrainedNetwork` without `dim` | Produces `N5_UpperLeg_.wlnet` (trailing underscore), which matches no asset. |
 | Q13 | `GetNeuralNet` | A failed load is memoised as `$Failed` until `GetNeuralNet["Clear"]`. |
 
@@ -425,7 +428,7 @@ producer-status grid (Produced/Used per link), and check `ReadLinkL` timeouts (1
 | `GetTrainData`, `AddPadding`, `PatchTrainingData` | L2227–2350 | batch generation |
 | `PrepareTrainingData`, `SelectTrainData`, `PrepTrainData`, `CheckSegmentation` | L2376–2533 | data prep and QC |
 | `GridLayout`, `MakeChannelClassGrid`, `MakeChannelGrid`, `MakeChannelClassImage`, `MakeClassImage`, `MakeChannelImage` | L2547–2660 | images |
-| `NormDat`, `MakeTrainData` | L2672 | unused |
+| `MakeTrainData`, `NormDat` | L2672 | contrast-blended multi-channel training data (WIP), input for `PrepareTrainingData` |
 | `DiceSimilarity(C)`, `JaccardSimilarity(C)`, `SurfaceDistance`, `SufDistFunc`, `GetEdge` | L2695–2819 | metrics |
 | `MakeDistanceMap`, `DistFun` | L2833, L2868 | signed distance |
 | `ShowTrainLog`, `LoadLog` | L2881, L2982 | training log viewer |
