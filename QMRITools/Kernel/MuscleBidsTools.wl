@@ -1176,10 +1176,10 @@ MuscleBidsConvert[niiFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 
 
 MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
-		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox, 
+		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox,
 		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types,
 		vx, vy, vz, dx, dy, dz, sx, sy, sz, off, diffFile, hasBval, hdr, nSl, len,
-		labs, noFiles, sel
+		labs, noFiles, sel, imgTags, recTags
 	},
 
 	debugBids["Starting MuscleBidsConvertI"];
@@ -1397,10 +1397,91 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 					(*Delete used files*)
 					DelFiles[files[[posIn]], del];
 					,
+					"Dixon-A",
+					(*philips data, auto detect online recon/tse vs raw source data from the ImageType tag*)
+					imgTags = ToLowerCase[Last[#["ImageType"]]]& /@ json;
+					recTags = Select[{"WATER", "FAT", "IN_PHASE", "OUT_OF_PHASE"}, MemberQ[imgTags, ToLowerCase[#]]&];
+					debugBids[recTags];
+
+					If[recTags=!={},
+						(*online recon/tse data: one file per dixon type*)
+						types = {"WATER", "FAT", "IN_PHASE", "OUT_OF_PHASE"};
+						suffix = {"wat", "fat", "inph", "outph"};
+						posIn = {};
+
+						(*loop over types and export them*)
+						Table[(*get the position of the files needed*)
+							pos = GetJSONPosition[json, {{"ProtocolName", nameIn}, {"ImageType", types[[i]]}}];
+
+							If[pos==={},
+								(*-----*)AddToLog[{"No json files found with label ", nameIn , " and type ", suffix[[i]], " skipping conversion"}, 4],
+
+								pos = CheckPos[pos];
+								posIn = Join[posIn, Flatten[{pos}]];
+
+								(*get the json and data*)
+								(*-----*)AddToLog[{"Importing dataset with properties: ", nameIn, suffix[[i]]}, 4];
+								info = json[[pos]];
+								{data, vox} = ImportNii[ConvertExtension[files[[pos]], ".nii"], NiiScaling -> False];
+								(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+
+								(*export to the correct folder*)
+								outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn],
+									"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
+								(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
+								ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
+								Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
+							]
+						, {i, 1, Length[suffix]}];
+
+						(*export used files*)
+						If[posIn=!={}, DelFiles[files[[posIn]], del]];
+						,
+						(*raw source data: magnitude, phase, real and imaginary per echo*)
+						types = {"MIXED", "PHASE", "REAL", "IMAGINARY"};
+						suffix = {"", "ph", "real", "imag"};
+
+						(*loop over types and export them*)
+						Table[(*get the position of the files needed*)
+							pos = GetJSONPosition[json, {{"ProtocolName", nameIn}, {"ImageType", types[[i]]}}, "EchoNumber"];
+
+							If[pos==={},
+								(*-----*)AddToLog[{"No json files found with label ", nameIn , " and type ", suffix[[i]], " skipping conversion"}, 4],
+
+								(*get the json and data*)
+								(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {nameIn, suffix[[i]]}}, 4];
+								info = MergeJSON[json[[pos]]];
+								{data, vox} = Transpose[ImportNii[#, NiiScaling -> False]& /@ ConvertExtension[files[[pos]], ".nii"]];
+								vox = First@vox;
+								data = Transpose[data];
+
+								(*correct data for different types*)
+								data = Switch[suffix[[i]],
+									"", 1000. data / 2047.,
+									"ph", Pi (data - 2047.) / 2047.,
+									"real" | "imag", 1000. (data - 2047.) / 2047.
+								];
+								(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+
+								(*make the additional mandatory bids json values*)
+								infoExtra = Join[infoExtra, <|"ForthDimension"->"EchoTime", "DataClass"->class|>];
+
+								(*export to the correct folder*)
+								outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, nameIn],
+									"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
+								(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
+								ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
+								Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
+
+								(*Delete used files*)
+								DelFiles[files[[pos]], del];
+							]
+						, {i, 1, Length[suffix]}]
+					];
+					,
 					"Dixon",
 					(*default script with bids standard of each echo in one file*)
-					(*get the position of the files needed*)
-					(*loop over dixon data types*)
+					(*get the position of the files needed loop over dixon data types*)
 					Table[
 						(*get the position of the files needed*)
 						pos = GetJSONPosition[json, {{"ProtocolName", nameIn}, {"ImageType", dixType}}, "EchoNumber"];
@@ -1740,8 +1821,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		niiFileP, jsonFileP, resi, data, grad, val, diffVox, mask, den, sig, snr, snr0, reg, valU, mean, 
 		fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
 		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
-		int, dint, suffix, types, flip, per, bmat, magph, split, ivim, shift, t2, gradField, 
-		meanV, coor, valV, fasc, fascm, sel, norm, rdim, raw, rmet, sigI, bv, init
+		int, dint, suffix, types, flip, per, bmat, magph, split, ivim, shift, t2, gradField,
+		meanV, coor, valV, fasc, fascm, sel, norm, rdim, raw, rmet, sigI, bv, init, exist
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -1781,26 +1862,14 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		Switch[type,
 
 			"megre" | "tse",
+
 			(*-------------------------------------------*)
-			(*-------- megre processing scripts ---------*)
+			(*-------- Dixon processing scripts ---------*)
 			(*-------------------------------------------*)
 
 			Switch[datType["Process", "Method"],
+				"Dixon-S" | "Dixon-P" | "Dixon" | "Dixon-B" | "Dixon-A",
 
-				(*-------------------------------------------*)
-				(*-------- Dixon processing scripts ---------*)
-				(*-------------------------------------------*)
-
-				"Dixon-S" | "Dixon-P",
-				(*siemens data with online reconstruction*)
-				suffix = datType["Process", "Types"];
-				If[MatrixQ[suffix], {suffix, types} = Transpose@suffix];
-
-				dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@suffix;
-				jsonFile = ConvertExtension[First@dixFiles, ".json"];
-				nFiles = ConvertExtension[dixFiles, ".nii"];
-
-				(*output file names*)
 				outFile = GenerateBidsFileName[folOut, set];
 				debugBids[outFile];
 
@@ -1809,226 +1878,222 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					(*if check file has label done and version is recent skip*)
 					(*-----*)AddToLog["Processing already done for: ", True, 3];
 					(*-----*)AddToLog[outFile, 4],
+
 					(*-----*)AddToLog["Starting processing for data:", 3, True];
-					(*-----*)AddToLog[First@dixFiles, 4];
+					outTypes = {};
+					echos = {};
 
-					If[!AllTrue[nFiles, NiiFileExistQ],
-						(*-----*)AddToLog[{"Could not find all the ", First@dixFiles}, 4],
-						(*-----*)AddToLog["Importing the data", 4];
-						{data, dixVox} = Transpose[ImportNii/@nFiles];
-						json = ImportJSON[ConvertExtension[First[nFiles], ".json"]];
+					(*branch 1: data with online reconstruction, default to the standard dixon types if not configured*)
+					(*results get overwritten by branch 2 if dixon processing is feasible.*)
+					If[MemberQ[{"Dixon-S", "Dixon-P", "Dixon-A"}, datType["Process", "Method"]],
+						suffix = Lookup[datType["Process"], "Types", {"wat", "fat", "inph", "outph"}];
+						If[MatrixQ[suffix], {suffix, types} = Transpose@suffix];
 
-						pos = Flatten[Position[suffix, #] & /@ {"inph", "outph", "fat", "wat"}];
-						debugBids[pos];
-						mask = If[pos==={}, 1, 
-							Mask[NormalizeMeanData[Transpose[NormalizeData /@ data[[pos]]]], 15,
-								MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2, MaskDilation -> 1]
+						dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@suffix;
+						nFiles = ConvertExtension[dixFiles, ".nii"];
+						(*-----*)AddToLog[First@dixFiles, 4];
+
+						exist = NiiFileExistQ /@ nFiles;
+						If[!Or@@exist,
+							(*-----*)AddToLog[{"Could not find any of the ", First@dixFiles}, 4],
+							If[!AllTrue[exist, TrueQ], (*-----*)AddToLog[{"Missing types for ", set, ": ", Pick[suffix, exist, False]}, 4]];
+							{suffix, nFiles} = {Pick[suffix, exist], Pick[nFiles, exist]};
+
+							(*-----*)AddToLog["Importing the data", 4];
+							{data, dixVox} = Transpose[ImportNii/@nFiles];
+							dixVox = First@dixVox;
+							json = ImportJSON[ConvertExtension[First[nFiles], ".json"]];
+
+							pos = Flatten[Position[suffix, #] & /@ {"inph", "outph", "fat", "wat"}];
+							debugBids[pos];
+							mask = If[pos==={}, 1,
+								Mask[NormalizeMeanData[Transpose[NormalizeData /@ data[[pos]]]], 15,
+									MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2, MaskDilation -> 1]
+							];
+							debugBids[{Dimensions@mask, Dimensions@data}];
+
+							If[MemberQ[suffix, "wat"], wat = mask data[[Position[suffix, "wat"][[1,1]]]]];
+							If[MemberQ[suffix, "fat"], fat = mask data[[Position[suffix, "fat"][[1,1]]]]];
+							If[MemberQ[suffix, "inph"], inph = mask data[[Position[suffix, "inph"][[1,1]]]]];
+							If[MemberQ[suffix, "outph"], outph = mask data[[Position[suffix, "outph"][[1,1]]]]];
+
+							If[MemberQ[suffix, "t2star"],
+								t2star = mask data[[Position[suffix, "t2star"][[1,1]]]] / 10000.;
+								r2star = DivideNoZero[1, t2star];
+								AppendTo[suffix, "r2star"]];
+							If[MemberQ[suffix, "fatfr"],
+								fatfr = mask data[[Position[suffix, "fatfr"][[1,1]]]] / 1000.;
+								If[!MemberQ[suffix, "watfr"], watfr = mask - fatfr; AppendTo[suffix, "watfr"]];
+							];
+
+							If[!MemberQ[suffix, "fatfr"] && MemberQ[suffix, "wat"] && MemberQ[suffix, "fat"],
+								{watfr, fatfr} = MaskData[DixonToPercent[wat, fat], mask];
+								AppendTo[suffix, "fatfr"];
+								If[!MemberQ[suffix, "watfr"], AppendTo[suffix, "watfr"]];
+							];
+
+							outTypes = suffix;
 						];
-						debugBids[{Dimensions@mask, Dimensions@data}];
-
-						If[MemberQ[suffix, "wat"], wat = mask data[[Position[suffix,"wat"][[1,1]]]]];
-						If[MemberQ[suffix, "fat"], fat = mask data[[Position[suffix,"fat"][[1,1]]]]];
-						If[MemberQ[suffix, "inph"], inph = mask data[[Position[suffix,"inph"][[1,1]]]]];
-						If[MemberQ[suffix, "outph"], outph = mask data[[Position[suffix,"outph"][[1,1]]]]];
-
-						If[MemberQ[suffix, "t2star"],
-							t2star = mask data[[Position[suffix,"t2star"][[1,1]]]] / 10000.;
-							r2star = DivideNoZero[1, t2star];
-							AppendTo[suffix, "r2star"]];
-						If[MemberQ[suffix, "fatfr"],
-							fatfr = mask data[[Position[suffix, "fatfr"][[1,1]]]] / 1000.;
-							If[!MemberQ[suffix, "watfr"], watfr = mask - fatfr; AppendTo[suffix, "watfr"]];
-						];
-
-						If[!MemberQ[suffix, "fatfr"] && MemberQ[suffix, "wat"] && MemberQ[suffix, "fat"],
-							{watfr, fatfr} = MaskData[DixonToPercent[wat, fat], mask];
-							AppendTo[suffix, "fatfr"];
-							If[!MemberQ[suffix, "watfr"], AppendTo[suffix, "watfr"]];
-						]
+					(*close branch 1*)
 					];
 
-					(*export all the calculated data*)
-					(*-----*)AddToLog["Exporting the calculated data to:", 4];
-					(*-----*)AddToLog[outFile,5];
-					outTypes = suffix;
-					(
-						ExportNii[ToExpression[con<>#], First@dixVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
-						Export[ConvertExtension[outFile <> "_"<>#, ".json"], json]
-					) & /@ outTypes;
-					
-
-					(*export the check file*)
-					MakeCheckFile[outFile, Sort@Join[
-						{"Check"->"done", "Outputs" -> outTypes, "SetProperties"->set}
-					]];
-
-					(*compress the nii files if compression during ExportNii -> False*)
-					If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
-				];
-				(*-----*)AddToLog["Finished processing", 3, True];
-
-				,
-				"Dixon" | "Dixon-B",
-				(*philips data with offline reconstruction*)
-
-				(*output file names*)
-				outFile = GenerateBidsFileName[folOut, set];
-				debugBids[outFile];
-
-				(*check if files are already done*)
-				If[CheckFile[outFile, "done", verCheck],
-					(*if check file has label done and version is recent skip*)
-					(*-----*)AddToLog["Processing already done for: ", True, 3];
-					(*-----*)AddToLog[outFile, 4],
-
-					(*input file names*)
-					dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"real", "imag"};
-					jsonFile = ConvertExtension[First@dixFiles, ".json"];
-					nFiles = ConvertExtension[dixFiles, ".nii"];
-					magph = False;
-
-					(*if not real imag check for mag phase*)
-					If[!FileExistsQ[jsonFile],
-						dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@{"", "ph"};
+					(*branch 2: philips data with offline reconstruction not tested for Siemens*)
+					If[MemberQ[{"Dixon", "Dixon-B", "Dixon-A"}, datType["Process", "Method"]],
+						(*input file names*)
+						dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]& /@ {"real", "imag"};
 						jsonFile = ConvertExtension[First@dixFiles, ".json"];
 						nFiles = ConvertExtension[dixFiles, ".nii"];
-						magph = True;
-					];
+						magph = False;
 
-					(*-----*)AddToLog["Starting processing for data:", 3, True];
-					(*-----*)AddToLog[First@dixFiles, 4];
+						(*if not real imag check for mag phase*)
+						If[!FileExistsQ[jsonFile],
+							dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]& /@ {"", "ph"};
+							jsonFile = ConvertExtension[First@dixFiles, ".json"];
+							nFiles = ConvertExtension[dixFiles, ".nii"];
+							magph = True;
+						];
 
-					(*Check if needed json Exist*)
-					If[!FileExistsQ[jsonFile],
-						(*-----*)AddToLog["Could not find the needed JSON file", 4];,
-						(*Check if needed nii Exist*)
-						If[!AllTrue[nFiles, NiiFileExistQ],
-							(*-----*)AddToLog[{"Could not find all the ", First@dixFiles}, 4],
-							(*-----*)AddToLog["Importing the data", 4];
+						(*-----*)AddToLog[First@dixFiles, 4];
 
-							(*import the data*)
-							json = ImportJSON[jsonFile];
-							{echos, field} = json /@ {"EchoTime", "MagneticFieldStrength"};
+						(*Check if needed json Exist*)
+						If[!FileExistsQ[jsonFile],
+							(*-----*)AddToLog["Could not find the needed JSON file", 4];,
+							(*Check if needed nii Exist*)
+							If[!AllTrue[nFiles, NiiFileExistQ],
+								(*-----*)AddToLog[{"Could not find all the ", First@dixFiles}, 4],
+								(*-----*)AddToLog["Importing the data", 4];
 
-							If[magph,
-								{{mag, ph}, dixVox} = Transpose[ImportNii/@nFiles];
-								real = mag Cos[ph];
-								imag = mag Sin[ph];
-								,
-								{{real, imag}, dixVox} = Transpose[ImportNii/@nFiles];
-								{mag, ph} = Through[{Abs, Arg}[real + I imag]];
-							];
-							dixVox = First@dixVox;
+								(*import the data*)
+								json = ImportJSON[jsonFile];
+								{echos, field} = json /@ {"EchoTime", "MagneticFieldStrength"};
 
-							(*Apply background mask*)
-							magM = NormalizeMeanData@mag;
-							B0mask = Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2, MaskDilation->1];
-							{real, imag} = MaskData[#, B0mask] &/@ {real, imag};
-
-							(*-----*)AddToLog["Starting denoising and SNR calculation", 4];
-							{{real, imag}, sig} = PCADeNoise[{real, imag}, PCAKernel -> 5, Method -> "Patch", PCAComplex -> True];
-							{mag, ph} = Through[{Abs, Arg}[real + I imag]];
-							snr = SNRCalc[Mean@Transpose@mag, sig];
-
-							Switch[datType["Process", "Method"],
-								(*Dixon processing scrip for multi echo gradient echo complex data as used in motion study*)
-								"Dixon",
-
-								(*see if there are dixon flips*)
-								(*{{mag, ph, real, imag}, pos} = FixDixonFlips[{mag, ph, real, imag}];
-								(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];*)
-								pos={};
-
-								(*calculated field maps*)
-								(*-----*)AddToLog[{"Starting field map calculation"}, 4];
-								{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
-								(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000 echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
-
-								(*perform the IDEAL dixon fit*)
-								(*-----*)AddToLog["Starting Dixon reconstruction", 4];
-
-								If[Length[echos] > 6,
-									(*fit with DB fat model*)
-									{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph}, 
-										{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-											{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-											DixonPhases -> {True, True, True, True, True}, 
-											DixonFixT2 -> False, DixonFieldStrength -> field, 
-											DixonAmplitudes -> "CallDB", DixonTolerance->1
-										];
-									pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->True};
-									outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
+								If[magph,
+									{{mag, ph}, dixVox} = Transpose[ImportNii/@nFiles];
+									real = mag Cos[ph];
+									imag = mag Sin[ph];
 									,
-									(*fit with fixed fat model*)
-									{{watfr, fatfr}, {wat, fat}, {inph, outph}, 
-										{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-											{real, imag}, echos, {b0i, t2stari, phii, phbpi}, 
-											DixonPhases -> {True, True, True, True, True}, 
-											DixonFixT2 -> False, DixonFieldStrength -> field, 
-											DixonAmplitudes -> "Fixed", DixonTolerance->1
-										];
-									pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
-									outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
+									{{real, imag}, dixVox} = Transpose[ImportNii/@nFiles];
+									{mag, ph} = Through[{Abs, Arg}[real + I imag]];
+								];
+								dixVox = First@dixVox;
+
+								(*Apply background mask*)
+								magM = NormalizeMeanData@mag;
+								B0mask = Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2, MaskDilation->1];
+								{real, imag} = MaskData[#, B0mask] &/@ {real, imag};
+
+								(*-----*)AddToLog["Starting denoising and SNR calculation", 4];
+								{{real, imag}, sig} = PCADeNoise[{real, imag}, PCAKernel -> 5, Method -> "Patch", PCAComplex -> True];
+								{mag, ph} = Through[{Abs, Arg}[real + I imag]];
+								snr = SNRCalc[Mean@Transpose@mag, sig];
+
+								Switch[datType["Process", "Method"],
+									(*Dixon processing scrip for multi echo gradient echo complex data as used in motion study*)
+									"Dixon" | "Dixon-A",
+
+									(*see if there are dixon flips*)
+									(*{{mag, ph, real, imag}, pos} = FixDixonFlips[{mag, ph, real, imag}];
+									(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];*)
+									pos={};
+
+									(*calculated field maps*)
+									(*-----*)AddToLog[{"Starting field map calculation"}, 4];
+									{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
+									(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000 echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
+
+									(*perform the IDEAL dixon fit*)
+									(*-----*)AddToLog["Starting Dixon reconstruction", 4];
+
+									If[Length[echos] > 6,
+										(*fit with DB fat model*)
+										{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph},
+											{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+												{real, imag}, echos, {b0i, t2stari, phii, phbpi},
+												DixonPhases -> {True, True, True, True, True},
+												DixonFixT2 -> False, DixonFieldStrength -> field,
+												DixonAmplitudes -> "CallDB", DixonTolerance->1
+											];
+										pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->True};
+										outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
+										,
+										(*fit with fixed fat model*)
+										{{watfr, fatfr}, {wat, fat}, {inph, outph},
+											{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+												{real, imag}, echos, {b0i, t2stari, phii, phbpi},
+												DixonPhases -> {True, True, True, True, True},
+												DixonFixT2 -> False, DixonFieldStrength -> field,
+												DixonAmplitudes -> "Fixed", DixonTolerance->1
+											];
+										pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
+										outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
+									];
+
+									,
+									(*Dixon processing scrip for multi echo gradient echo complex data as used in Bochum cohort*)
+									"Dixon-B"
+									,
+
+									(*uwrap and convert B0 to hz*)
+									(*-----*)AddToLog[{"Starting field map calculation"}, 4];
+									b0i = UnwrapSplit[ph[[All, -1]] - ph[[All, 1]], mag, UnwrapDimension -> "3D", MonitorUnwrap -> False];
+									b0i = b0i/(2 Pi Length[echos] (echos[[2]] - echos[[1]]));
+									(*calculate the t2 star from the two in phase images*)
+									t2stari = T2Fit[mag, echos][[2]];
+
+									debugBids[Dimensions/@{real,imag, b0i, t2stari}];
+									debugBids[echos];
+
+									(*perform the IDEAL dixon fit*)
+									(*-----*)AddToLog["Starting Dixon reconstruction", 4];
+									{{watfr, fatfr}, {wat, fat}, {inph, outph},
+										{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+											{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
+									pos = {"DixonFlips" -> {}, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
 								];
 
-								,
-								(*Dixon processing scrip for multi echo gradient echo complex data as used in Bochum cohort*)
-								"Dixon-B"
-								,
+								(*correct water and fat*)
+								{wat, fat} = Abs[{wat, fat}];
 
-								(*uwrap and convert B0 to hz*)
-								(*-----*)AddToLog[{"Starting field map calculation"}, 4];
-								b0i = UnwrapSplit[ph[[All, -1]] - ph[[All, 1]], mag, UnwrapDimension -> "3D", MonitorUnwrap -> False];
-								b0i = b0i/(2 Pi Length[echos] (echos[[2]] - echos[[1]]));
-								(*calculate the t2 star from the two in phase images*)
-								t2stari = T2Fit[mag, echos][[2]];
-
-								debugBids[Dimensions/@{real,imag, b0i, t2stari}];
-								debugBids[echos];
-
-								(*perform the IDEAL dixon fit*)
-								(*-----*)AddToLog["Starting Dixon reconstruction", 4];
-								{{watfr, fatfr}, {wat, fat}, {inph, outph}, 
-									{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-										{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
-								pos = {"DixonFlips" -> {}, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
-							];
-
-							{wat, fat} = Abs[{wat, fat}];
-
-							(*export all the calculated data*)
-							(*-----*)AddToLog["Exporting the calculated data to:", 4];
-							(*-----*)AddToLog[outFile,5];
-							outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", "b0", "t2star", "r2star", 
-								"inph", "outph", "wat", "fat", "watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
-
-							(
-								ExportNii[ToExpression[con<>#], dixVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
-								Export[ConvertExtension[outFile <> "_"<>#, ".json"], json];
-							) & /@ outTypes;
-							
-							(*export the check file*)
-							MakeCheckFile[outFile, Sort@Join[
-								{"Check"->"done", "EchoTimes"->echos, "Outputs" -> outTypes, "SetProperties"->set}, 
-								pos, Normal@KeyTake[json, keys]
-							]];
-
-							(*compress the nii files if compression during ExportNii -> False*)
-							If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
-
-							(*-----*)AddToLog["Finished processing", 3, True];
+								(*add outtypes present in both branches of dixon fitting*)
+								outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", 
+									"b0", "t2star", "r2star", "inph", "outph", "wat", "fat", 
+									"watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
+							]
 						]
-					]
+					(*close branch 2*)
+					];
+
+					(*export the calculated data, check file and compress once, for whichever branch(es) produced data*)
+					If[outTypes == {},
+						(*no data to process found*)
+						(*-----*)AddToLog[{"No data found for either branch, skipping: ", set}, 4]
+						,
+						(*data was found and processing done export what is needed *)
+						(*-----*)AddToLog["Exporting the calculated data to:", 4];
+						(*-----*)AddToLog[outFile,5];
+						(
+							ExportNii[ToExpression[con<>#], dixVox, outFile<>"_"<>#<>".nii", CompressNii -> compress];
+							Export[ConvertExtension[outFile <> "_"<>#, ".json"], json]
+						) & /@ outTypes;
+
+						MakeCheckFile[outFile, Sort@Join[
+							{"Check"->"done", "Outputs" -> outTypes, "SetProperties"->set},
+							If[echos=!={}, {"EchoTimes"->echos}, {}]
+						]];
+
+						If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
+					];
+
+					(*-----*)AddToLog["Finished processing", 3, True];
 				(*close dixon processing*)
-				],
+				];
+			,
 
 				_,
 				(*-------------------------------------------*)
 				(*-------------- Unknown megre --------------*)
 				(*-------------------------------------------*)
 				(*-----*)AddToLog[{"Unknown processing ", datType["Process"], "for datatype", type}, True, 3];
-
-			(*close megre processing*)
 			],
 
 			"dwi",

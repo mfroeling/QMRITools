@@ -865,7 +865,7 @@ DataToVector[dataIn_, maskIn_] := Module[{data, sp, mask, depthDat, depthMask, d
 			If[depth === 1,	Partition[vec, Last@Dimensions@data], vec] + min["ExplicitValues"]
 			,
 			(*normal data*)
-			EchoTiming[Extract[data, coor]]
+			Extract[data, coor]
 		];
 
 		{vec, {dimDat, coor}}

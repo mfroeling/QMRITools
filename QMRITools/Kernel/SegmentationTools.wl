@@ -58,16 +58,16 @@ The Method option controls the distance metric: \"Mean\", \"Median\", \"RMS\", \
 methods can be given to return multiple metrics at once."
 
 MakeDistanceMap::usage = 
-"MakeDistanceMap[mask] makes a distance map of the given mask in voxels. The distance map is negative inside the mask and positive outside the mask.
-MakeDistanceMap[mask, vox] makes a distance map of the given mask in the same unit as vox. The distance map is negative 
-inside the mask and positive outside the mask."
+"MakeDistanceMap[mask] makes a distance map of the given mask in voxels. The distance map is positive inside the mask and negative outside the mask.
+MakeDistanceMap[mask, vox] makes a distance map of the given mask in the same unit as vox. The distance map is positive
+inside the mask and negative outside the mask."
 
 
 SegmentData::usage =
-"SegmentData[data] segments the data using the default \"Legs\" method.
-SegmentData[data, what] segments using the specified anatomical region. What can be \"Legs\", \"LegsHip\", 
-\"UpperLegs\", \"LowerLegs\", \"Shoulder\", \"Hip\", or \"Body\".
-SegmentData[data, {what, netFile}] uses a custom network file instead of the built-in net.
+"SegmentData[data] segments the data using the default \"Body\" method.
+SegmentData[data, what] segments using the specified anatomical region. With full body output labels what can be \"Body\", \"LegsBody\",
+\"LegsHipBody\", \"HipBody\", \"UpperLegsBody\", \"LowerLegsBody\", or \"ShoulderBody\". With legacy output labels what can be \"Legs\",
+\"LegsHip\", \"UpperLegs\", \"LowerLegs\", \"Hip\", \"Shoulder\", or \"Arm\".
 SegmentData[{data, vox}] and SegmentData[{data, vox}, what] additionally give the voxel size of data. Unless vox is {1, 1, 1}, data is rescaled before 
 segmentation to {vox[[1]], 1.5, 1.5} for SegmentationDimension -> \"2D\" or to {6, 1.5, 1.5} for \"3D\".
 If NetworkOutput -> \"Both\" returns {segmentation, confidence}, any other value always returns just the segmentation."
@@ -185,8 +185,9 @@ MakeChannelGrid[data, {n, m}] makes a n x m."
 SplitDataForSegmentation::usage = 
 "SplitDataForSegmentation[data] splits data for \"Legs\" segmentation, detecting left/right side and upper/lower leg position 
 automatically using a classification network.
-SplitDataForSegmentation[data, what] splits for the specified region. What can be \"Legs\", \"LegsHip\", 
-\"UpperLegs\", \"LowerLegs\", \"Shoulder\", \"Hip\", or \"Body\".
+SplitDataForSegmentation[data, what] splits for the specified region. What can be any region accepted by SegmentData, i.e. \"Body\",
+\"LegsBody\", \"LegsHipBody\", \"HipBody\", \"UpperLegsBody\", \"LowerLegsBody\", \"ShoulderBody\", \"Legs\", \"LegsHip\", \"UpperLegs\",
+\"LowerLegs\", \"Hip\", \"Shoulder\", or \"Arm\".
 SplitDataForSegmentation[data, seg] splits both data and segmentation identically for \"Legs\".
 SplitDataForSegmentation[data, seg, what] does the same for the specified region.
 Output is {{patches, ranges, dim}, locations}."
@@ -238,8 +239,8 @@ L2Regularization::usage =
 "L2Regularization is an option for TrainSegmentationNetwork. It defines the L2 regularization factor."
 
 MultiChannel::usage =
-"MultiChannel is an option for TrainSegmentationNetwork, If set to True it will train on multi channel input data. 
-If set to False it will select a random channel."
+"MultiChannel is an option for TrainSegmentationNetwork. Multi channel training is not yet implemented and the option currently has no effect.
+Networks always have a single input channel, for 4D training data a random channel is selected for each sample."
 
 FreezeEncoderDepth::usage =
 "FreezeEncoderDepth is an option for TrainSegmentationNetwork. If set to an integer n, freezes the first n 
@@ -621,7 +622,7 @@ FindBodyPos[class_] := FindBodyPos[class, False, False]
 FindBodyPos[class_, mon_]:=FindBodyPos[class, mon, False]
 
 FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, len, classI, classN, n, xVars, eVars, dVars,
-	pad, x, e, d, cons, sol, classF, offset, what, lab, pos, found, classIn, best},
+	pad, x, e, d, cons, sol, classF, offset, what, lab, pos, found, classIn, best, plot},
 
 	(*pull per-location classifier ranges and offsets from the central location table*)
 	locations = Thread[Range[Length[$BodyPositionClasses]] -> $BodyPositionClasses];
@@ -652,7 +653,7 @@ FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, le
 		{x[1] == Min[best], x[n] == Max[best]},
 		Table[Min[best] <= x[i] <= Max[best], {i, n - 1}],
 		
-		(*define jumps and force them between 0 and 1, and no jump can happen within 6 slices*)
+		(*define jumps and force them between 0 and 1, and at most one jump within 4 slices*)
 		Table[x[i + 1] - x[i] == d[i], {i, n - 1}],
 		Table[0 <= d[i] <= 1, {i, n - 1}],
 		Table[Total[dVars[[i ;; i + 3]]] <= 1, {i, n - 1 - 3}],
@@ -897,7 +898,7 @@ SegmentData[datI_, vox_?VectorQ, what_?StringQ, opts:OptionsPattern[]] := Segmen
 
 SegmentData[{datI_, vox_?VectorQ}, what_?StringQ, OptionsPattern[]] := Block[{
 		dev, max, mon, patch, pts, dim ,loc, net, seg, all, data, mask, conf, dimR, crop,
-		time, timeAll, netFile, monO, sDim, dimI, rescale, labs, netOut, bothOut
+		time, timeAll, netFile, monO, sDim, dimI, rescale, labs, netOut, bothOut, GetNetwork
 	},
 
 	SetMXenvironment["StartSegment"];
@@ -1353,14 +1354,14 @@ SyntaxInformation[TrainSegmentationNetwork] = {"ArgumentsPattern" -> {{_, _}, _.
 TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, opts : OptionsPattern[]] := TrainSegmentationNetwork[{inFol, outFol}, "Start", opts]
 
 TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, netCont_, opts : OptionsPattern[]] := Block[{
-		netOpts, batch, roundLength, rounds, data, depth, nChan, nClass, outName, ittString, multi,
+		netOpts, batch, roundLength, rounds, data, nChan, nClass, outName, ittString,
 		patch, augment, netIn, ittTrain, testData, testVox, testSeg, im, patches, pLen, is2D,
 		monitorFunction, netMon, netOut, trained, l2reg, pad, batchFunction, trainFunc, trainOpts, base,
 		validation, files, loss, rep, learningRate, schedule, dims, tar, logFile, allOpts, parallel,
 		nProducers, loadData, queueVars, produced, used, ready, activeProducers, trainingDone, index, 
 		deadL, nullCount, nVal, makeVal, maxProducers, links, patchNClass, batchOptsSeq, producerStatus, 
 		roundImage, freezeDepth, chanIn, lrMult, pretrain, testDataRaw, dispDat, testFile, 
-		restartCycle, cycleRounds, cycleItt, valOut
+		restartCycle, cycleRounds, cycleItt, valOut, makeTest
 	},
 
 	SetMXenvironment["StartTrain"];
@@ -1374,7 +1375,7 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 	(*training settings*)
 	{patch, patches, batch, roundLength, rounds, restartCycle} = OptionValue[
 		{PatchSize, PatchesPerSet, BatchSize, RoundLength, MaxTrainingRounds, RestartLearningCycle}];
-	{multi, freezeDepth} = OptionValue[{MultiChannel, FreezeEncoderDepth}];
+	freezeDepth = OptionValue[FreezeEncoderDepth];
 	{loss, learningRate, l2reg} = OptionValue[{LossFunction, LearningRate, L2Regularization}];
 	{rep, tar} = OptionValue[{MonitorInterval, TargetDevice}];
 	{augment, pad, pretrain} = OptionValue[{AugmentData, PadData, MaskedPretraining}];
@@ -1426,9 +1427,8 @@ TrainSegmentationNetwork[{inFol : (_?StringQ | {__?StringQ}), outFol_?StringQ}, 
 
 	MonitorFunction[DateString[], "Preparing the network: "];
 
-	(*figure out network properties from test data and how to treat multi channel data*)
-	depth = ArrayDepth@testDataRaw;
-	nChan = If[depth === 4 && multi, Length@First@testDataRaw, 1];
+	(*network properties from test data, always single channel since 4D data trains on a random channel*)
+	nChan = 1;
 	(*background is 0 but for network its 1 so class +1, not self supervised pretraining*)
 	nClass = If[pretrain, 1, Round[Max@testDataRaw[[2]] + 1]];
 
@@ -1740,16 +1740,18 @@ FreezeEncoderLayers[net_, n_Integer, includeStart_?BooleanQ] := Block[{nodes},
 OneCycleSchedule[br_, rounds_, ittTrain_] := With[{
 		n = {0.15, 0.50, 0.95} rounds br,
 		it = ittTrain br
-	}, (
-	ti = #1 + it;
-	(*warmup, plateau, then cosine decay*)
-	Which[
-		ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1./5, 1.}],
-		ti < n[[2]], 1.,
-		ti < n[[3]], Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1., 1./10}],
-		True, 1./10
-	]
-)& ]
+	},
+	OneCycleValue[#1 + it, n]&
+]
+
+
+(*warmup, plateau, then cosine decay*)
+OneCycleValue[ti_, n_] := Which[
+	ti < n[[1]], Rescale[Cos[Pi ti / n[[1]]], {1, -1}, {1./5, 1.}],
+	ti < n[[2]], 1.,
+	ti < n[[3]], Rescale[Cos[Pi (ti - n[[2]]) / (n[[3]] - n[[2]])], {1, -1}, {1., 1./10}],
+	True, 1./10
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2031,7 +2033,7 @@ AugmentTrainingData[dat_?ArrayQ, vox_, aug_?AssociationQ, opts:OptionsPattern[]]
 
 
 AugmentTrainingDataI[{dat_?ArrayQ, seg_}, vox_, aug_?AssociationQ, OptionsPattern[]] := Block[{
-		datT, segT, cr, w, r, t, s, dim, flip, rot, trans, scale, noise, blur, bias, isNot2D, datOnly
+		datT, segT, cr, w, r, t, s, dim, flip, rot, trans, scale, noise, blur, bias, isNot2D, datOnly, datC
 	},
 
 	(*prep data*)
@@ -2228,7 +2230,7 @@ GetTrainData[dataSets_, nBatch_, patch_, opts:OptionsPattern[]] := GetTrainData[
 
 GetTrainData[dataSets_, nBatch_, patch_, nClass_, opts:OptionsPattern[]]:= GetTrainData[dataSets, nBatch, {patch, nClass}, opts]
 
-GetTrainData[dataSets_, nBatch_, {patch_, nClass_}, OptionsPattern[]] := Block[{
+GetTrainData[dataSets_, nBatch_, {patch:{__Integer}, nClass_}, OptionsPattern[]] := Block[{
 		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad, sel, is2D, pretrain, nP, mask, fill
 	},
 
@@ -3043,7 +3045,7 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 						seg = SegmentData[dat, what, TargetDevice -> "CPU"];
 						status = TextCell@"Exporting";
 
-						CopyFile[GetAssetLocation["MusclesLegLabels"], 
+						CopyFile[GetAssetLocation[$SegmentationGroups[what, "OutputLabels"]],
 						ConvertExtension[outputFile, ".txt"], 
 						OverwriteTarget -> True];
 						ExportNii[seg, vox, outputFile];
