@@ -33,16 +33,15 @@ Each guide's header links to the related guides. The shared topics are:
 
 ## Essentials
 
-- **Load the dev version**: `<< QMRIToolsDev`` in a notebook. In a script:
-  `PacletDirectoryLoad["D:\\werk\\workspace\\QMRITools\\QMRITools"]; Get["QMRITools`"]`.
-- **Verify semantics empirically** with wolframscript (`C:/Program Files/Wolfram Research/WolframScript/wolframscript.exe
-  -file test.wls`), keeping test scripts outside the repo. Private symbols need their full context,
-  e.g. `` QMRITools`SegmentationTools`Private`NormDat ``.
+- **Load the dev version**: `<< QMRIToolsDev`` in a notebook (a small local helper paclet, not in this repo). In a
+  script: `PacletDirectoryLoad["<repo>/QMRITools"]; Get["QMRITools`"]`, where `<repo>` is the local clone.
+- **Verify semantics empirically** with `wolframscript -file test.wls`, keeping test scripts outside the repo.
+  Private symbols need their full context, e.g. `` QMRITools`SegmentationTools`Private`NormDat ``.
 - **Public symbols** need a `::usage` in the front "Usage Notes" section, and `Options`/`SyntaxInformation`.
   Otherwise the function stays private.
-- **Research notebooks** that call the package are outside the repo, under `D:\Werk\Research\` (for example
-  `Segmentation`, `neural segment`, `MOTOR_shoulder_2`, and study folders with a `config.json`). Check them before
-  calling a function unused.
+- **Research notebooks** that call the package live outside the repo on the author's machine. A function with no
+  callers in the repo may still be used there. Ask the user before calling anything unused. Example BIDS configs
+  are in `QMRITools/BIDS Example/`.
 - Commit or push only when asked. The main branch is `master`.
 
 ## Keeping the guides current

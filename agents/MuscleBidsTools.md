@@ -18,7 +18,7 @@ anything in that file.
 The user runs everything from a notebook in the study folder (`dir`, the folder that holds `config.json`):
 
 ```wolfram
-<< QMRIToolsDev`                 (* loads the dev paclet from D:\werk\workspace\QMRITools\QMRITools *)
+<< QMRIToolsDev`                 (* loads the paclet from the local working tree *)
 SetDirectory[NotebookDirectory[]];
 
 ViewConfig[dir]                  (* tabbed view of config.json + defaults *)
@@ -38,14 +38,15 @@ MuscleBidsAnalysis[dir, ProcessSubjects -> subs, BidsOutputImages -> "None"](* 7
 Every step is **idempotent**: it skips work that a `*_check.json` file marks as done (section 7). The user reruns
 the whole chain repeatedly as new subjects arrive.
 
-Example configs (real studies, outside the repo):
+Example configs from real studies are in [`QMRITools/BIDS Example/`](../QMRITools/BIDS%20Example/), next to the
+basic `config.json`:
 
 | Config | What it exercises |
 | --- | --- |
-| `D:\Werk\Research\7_motion_long\config.json` | Classic: 6 `Stacks` per contrast, `Dixon` (raw complex echoes), DTI with tractography plus harmonic denoise, EPGT2. **No duplicate Type+Suffix**, so there are no keys in the Targets. Flat `analysis`. |
-| `D:\Werk\Research\MOTOR\config.json` | Many body regions (Head/Calf/Body/Shoulder). `Dixon-A` everywhere (both recon and raw source). `tse` type. `Chunks` and `Volumes` classes. Duplicates everywhere, so **every Target starts with a dataset key**. No `analysis` section. |
-| `D:\Werk\Research\TWITCH\config.json` | `Dixon-P` with `Types` vector (4D recon nii). Segment `Dimensions: "2D"` and `VoxSize`. Duplicates, so keys. |
-| `D:\Werk\Research\ext - Bochum\BIDS\config.json` | `Dixon-B` with `EchoTime`, mese with `EchoTime` (4D nii), `conversion.Version: "17"`, **nested `analysis`** (one block per key `OS`/`US`), and keys that contain `_` (see quirk Q1). |
+| `motion_config.json` | Classic: 6 `Stacks` per contrast, `Dixon` (raw complex echoes), DTI with tractography plus harmonic denoise, EPGT2. **No duplicate Type+Suffix**, so there are no keys in the Targets. Flat `analysis`. |
+| `motor_config.json` | Many body regions (Head/Calf/Body/Shoulder). `Dixon-A` everywhere (both recon and raw source). `tse` type. `Chunks` and `Volumes` classes. Duplicates everywhere, so **every Target starts with a dataset key**. No `analysis` section. |
+| `twitch_config.json` | `Dixon-P` with `Types` vector (4D recon nii). Segment `Dimensions: "2D"` and `VoxSize`. Duplicates, so keys. |
+| `boch_config.json` | `Dixon-B` with `EchoTime`, mese with `EchoTime` (4D nii), `conversion.Version: "17"`, **nested `analysis`** (one block per key `OS`/`US`), and keys that contain `_` (see quirk Q1). |
 
 ---
 
@@ -197,8 +198,8 @@ GetClassName["Chunks", "DIX-SRC-Body-1"] -> chunk -> DIXSRCBody1
 - `Key` = `StringStrip[datasetName]`, so `"DIX_OS"` becomes `"DIXOS"`.
 - `HasDuplicate` is **one global flag**. It is True for **every** dataset as soon as **any** two datasets share
   `{Type, Suffix}`. Then every merged file name carries the key, and every Target/Segmentation list in the config must
-  start with a dataset key (MOTOR, TWITCH, Bochum). Without duplicates there are no keys and Targets have none
-  (motion_long).
+  start with a dataset key (motor, twitch and boch configs). Without duplicates there are no keys and Targets have none
+  (motion config).
 
 ### `BuildBidsNameFromConfig` (L607–668): turning config lists into paths
 
@@ -275,7 +276,7 @@ associations merge.
 | `Overlap` | 0 | slices; int or `[overTarget, overNative]`. `0` → no motion correction, no padding |
 | `Padding` | 0 | pad the overlap |
 | `Motion` | True | `JoinSets[MotionCorrectSets->]`, and whether to register when target is same dataset |
-| `Reverse` | False | stack order reversed (Body Chunks in MOTOR/TWITCH) |
+| `Reverse` | False | stack order reversed (Body Chunks in the motor/twitch configs) |
 | `SplitRegistration` | **True** | `RegisterDataSplit` for stacks ≠ first. **Configs write `"Split"`, which is never read** (Q3) |
 
 ### `Segment`
@@ -287,7 +288,7 @@ associations merge.
 | `Device` | `"CPU"` | `TargetDevice` |
 | `Dimensions` | `"3D"` | `"2D"` or `"3D"` → `SegmentationDimension` |
 | `Method` | `Automatic` (symbol) | omit it for CNN. `"Registration"` registers an existing segmentation (`Target`, `Moving`, `Segmentation`, `VoxSize`). See Q9 |
-| `VoxSize` | Automatic | **only used by the Registration method** (TWITCH sets it for Automatic, where it has no effect) |
+| `VoxSize` | Automatic | **only used by the Registration method** (the twitch config sets it for Automatic, where it has no effect) |
 
 ### `Tractography`
 
@@ -350,7 +351,7 @@ files match, `CheckPos` takes the **last** one and logs a warning. Output goes t
 | | `Dixon-S` | Siemens, `SeriesDescription == label_tag` | `Types[[All,1]]` |
 | | `Dixon-B` | Philips single 4D (mag/real/imag/phase interleaved). Needs `EchoTime`. Special case when `ImageType` ends in `FFE` (B0-only) | `""`, `ph`, `real`, `imag` |
 | | `Dixon-A` | **auto**: if any json `ImageType` ends in WATER/FAT/IN_PHASE/OUT_OF_PHASE → recon path; otherwise raw MIXED/PHASE/REAL/IMAGINARY per echo, sorted by `EchoNumber`, scaled `1000/2047`, phase `π(x-2047)/2047` | `wat fat inph outph`, or `"" ph real imag` |
-| | `Dixon` | per-echo files per ImageType (Mixed/Phase/Real/Imaginary). Philips R12+: `ORIGINAL` (GE-like reorder) vs `DERIVED` (MOTOR/TWITCH reorder with RotateRight). Older: Transpose | `""`, `ph`, `real`, `imag` |
+| | `Dixon` | per-echo files per ImageType (Mixed/Phase/Real/Imaginary). Philips R12+: `ORIGINAL` (GE-like reorder) vs `DERIVED` (motor/twitch data reorder with RotateRight). Older: Transpose | `""`, `ph`, `real`, `imag` |
 | | other Method | **no default branch, silently nothing** | – |
 | dwi | Class `Volumes` | several labels joined (`ConcatenateDiffusionData`) into one file named after the first label | Suffix |
 | | other | Siemens → match `SeriesDescription`, else `ProtocolName` | Suffix (+ `.bval/.bvec`, `Offset` in json) |
@@ -504,11 +505,11 @@ These were verified by reading the code. The ones marked ✔ were also confirmed
 
 | # | Where | Issue |
 | --- | --- | --- |
-| Q1 ✔ | `BuildBidsNameFromConfig` L641 vs `CheckDataDescription` L895 | `Key` is `StringStrip`ped (`DIX_OS`→`DIXOS`), but `isKey` compares the **unstripped** `First[target]`. Dataset names containing `_ - . space` are therefore never recognised as keys in Merge/Segment/Tractography targets (the Bochum config). Analysis strips correctly. Both lines come from the same refactor commit (509747d6). |
+| Q1 ✔ | `BuildBidsNameFromConfig` L641 vs `CheckDataDescription` L895 | `Key` is `StringStrip`ped (`DIX_OS`→`DIXOS`), but `isKey` compares the **unstripped** `First[target]`. Dataset names containing `_ - . space` are therefore never recognised as keys in Merge/Segment/Tractography targets (the boch config). Analysis strips correctly. Both lines come from the same refactor commit (509747d6). |
 | Q2 | `BuildBidsNameFromConfig` L661 | Non-keyed targets resolve the target dataset through `InFolder === First[suf]`, which only works when Suffix == BIDS folder (`dix`). |
 | Q3 | Merge L2606 | Reads `Merging.SplitRegistration` (default True). All example configs write `"Split"`, so split registration is always on. |
 | Q4 | Analysis L3308 | `MaskErosion` is read from `Analysis`, not `Analysis.Options`, so the configs' `Options` block does nothing. `tractWeighting` is hard-coded False (L3309), and the config key is spelled `TractWeigthing`. |
-| Q5 | Analysis L3319 | Key entity is `stk` only if `Analysis.Class == "Stacks"`. Merge uses the **dataset** Class. With Stacks + duplicates (Bochum) and no `Analysis.Class`, the analysis looks for `chunk-KEY` while the files are named `stk-KEY`. |
+| Q5 | Analysis L3319 | Key entity is `stk` only if `Analysis.Class == "Stacks"`. Merge uses the **dataset** Class. With Stacks + duplicates (boch config) and no `Analysis.Class`, the analysis looks for `chunk-KEY` while the files are named `stk-KEY`. |
 | Q6 | `BidsDcmToNii` options | `BidsIncludeSession` is declared but never forwarded (`BidsFolderLoop` does not know it, and `SubNameToBids` always uses the default True). |
 | Q7 | Merge L2566 | The "moving files" existence check tests `tarStack` again instead of `movStack`. |
 | Q8 ✔ | `CheckDataDescription` L940–944 | Class `Chunks` is missing from the label/class `Switch`, so the result is unevaluated, `If[!cls,…]` does not fire, and it passes by accident. `ListQ[ass["Label"] && Length[ass]>1]` has a misplaced bracket and works only because `And[list, True]` reduces to `list`. |

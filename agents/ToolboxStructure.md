@@ -126,8 +126,8 @@ Consequences and rules:
 
 ## 4. Development loading
 
-- `D:\Werk\workspace\QMRIToolsDev` is a tiny paclet whose kernel file does
-  `PacletDirectoryLoad["D:\\werk\\workspace\\QMRITools\\QMRITools"]; PacletDataRebuild[]; Get["QMRITools`"]`.
+- `QMRIToolsDev` is a tiny local paclet (kept outside this repo) whose kernel file does
+  `PacletDirectoryLoad["<repo>/QMRITools"]; PacletDataRebuild[]; Get["QMRITools`"]`, with `<repo>` the local clone.
   `<< QMRIToolsDev`` therefore loads the working tree instead of the installed paclet.
 - In scripts, use the same two lines without the rebuild. Test scripts go outside the repo.
 - Code that starts sub-kernels must load the same version there. `LaunchTrainingKernels` (SegmentationTools) checks

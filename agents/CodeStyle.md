@@ -243,13 +243,13 @@ F[x_] := ...
   capture, and what a pattern matches. The user pushes back with "are you sure". Answer with a small test:
 
   ```powershell
-  & "C:/Program Files/Wolfram Research/WolframScript/wolframscript.exe" -file "<scratchpad>\test.wls"
+  wolframscript -file "<scratchpad>\test.wls"
   ```
 
-  To load the dev package in a script (this is what `<< QMRIToolsDev`` does):
+  To load the dev package in a script (this is what `<< QMRIToolsDev`` does), with `<repo>` the local clone:
 
   ```wolfram
-  PacletDirectoryLoad["D:\\werk\\workspace\\QMRITools\\QMRITools"];
+  PacletDirectoryLoad["<repo>/QMRITools"];
   Quiet@Get["QMRITools`"];
   ```
 

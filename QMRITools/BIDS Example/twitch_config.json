@@ -1,0 +1,181 @@
+{
+	"folders":{
+		"dicomData":"01_sourcedata",
+		"rawData":"02_rawdata",
+		"derivedData":"03_derivatives",
+		"mergeData":"04_merged",
+		"analysis":"05_analysis"
+	},
+	"datasets":{
+		"HeadTSE":{
+			"Label":"TSEDix-Head",
+			"Class":"Volume",
+			"Type":"tse",
+			"Suffix":"dix",
+			"Process":{
+				"Method":"Dixon-P",
+				"Types":["wat", "inph", "outph", "fat"]
+			},
+			"Merging":{
+				"Split":false,
+				"Target":["HeadTSE", "tse", "dix", "wat"],
+				"Moving":"wat",
+				"Process":["wat", "fat", "inph", "outph", "watfr", "fatfr"]
+			}
+		},
+		"HeadDTI":{
+			"Label":"DTI-Head",
+			"Class":"Volume",
+			"Type":"dwi",
+			"Suffix":"dti",
+			"Process":{
+				"Method":"DTI",
+				"SplitRegistration":false, 
+				"FlipPermute": [[1, -1, 1], ["z", "y", "x"]], 
+				"GradientCorrection":"WA1",
+				"RegistrationDimension": "2D",
+				"FasciculationDetection": true
+			},
+			"Merging":{
+				"Split":false,
+				"Target":["HeadTSE", "tse", "dix", "outph"],
+				"Moving":"s0",
+				"Process":["s0", "snr0", "l1", "l2", "l3", "md", "fa", "rd", "adci", "fri", "tens"]
+			}
+		},
+
+		"CalfTSE":{
+			"Label":"TSEDix-Calf",
+			"Class":"Volume",
+			"Type":"tse",
+			"Suffix":"dix",
+			"Process":{
+				"Method":"Dixon-P",
+				"Types":["wat", "inph", "outph", "fat"]
+			},
+			"Merging":{
+				"Split":true,
+				"Target":["CalfTSE", "tse", "dix", "wat"],
+				"Moving":"wat",
+				"Process":["wat", "fat", "inph", "outph", "watfr", "fatfr"]
+			},
+			"Segment":{
+				"Target":["CalfTSE", "tse", "dix", "wat"],
+				"Location":"LowerLegs",
+				"Device":"CPU",
+				"Dimensions":"2D",
+				"VoxSize":[16, 1.5, 1.5]
+			}
+		},
+		"CalfDTI":{
+			"Label":"DTI-Calf",
+			"Class":"Volume",
+			"Type":"dwi",
+			"Suffix":"dti",
+			"Process":{
+				"Method":"DTI",
+				"SplitRegistration":true, 
+				"FlipPermute": [[1, -1, 1], ["z", "y", "x"]], 
+				"GradientCorrection":"WA1",
+				"RegistrationDimension": "2D",
+				"FasciculationDetection": true
+			},
+			"Merging":{
+				"Split":true,
+				"Target":["CalfTSE", "tse", "dix", "outph"],
+				"Moving":"s0",
+				"Process":["s0", "snr0", "l1", "l2", "l3", "md", "fa", "rd", "adci", "fri", "tens"]
+			}
+		},
+
+		"BodyTSE":{
+			"Label":["TSEDix-Body-1","TSEDix-Body-2","TSEDix-Body-3"],
+			"Class":"Chunks",
+			"Type":"tse",
+			"Suffix":"dix",
+			"Process":{
+				"Method":"Dixon-P",
+				"Types":["wat", "inph", "outph", "fat"]
+			},
+			"Merging":{
+				"Split":false,
+				"Reverse":true,
+				"Target":["BodyTSE", "tse", "dix", "wat"],
+				"Moving":"wat",
+				"Process":["wat", "fat", "inph", "outph", "watfr", "fatfr"]
+			},
+			"Segment":{
+				"Target":["BodyTSE", "tse", "dix", "wat"],
+				"Location":"LegsHip",
+				"Device":"CPU",
+				"Dimensions":"2D",
+				"VoxSize":[16, 1.5, 1.5]
+			}
+		},
+		"BodyDTI":{
+			"Label":["DTI-Body-1","DTI-Body-2","DTI-Body-3"],
+			"Class":"Chunks",
+			"Type":"dwi",
+			"Suffix":"dti",
+			"Process":{
+				"Method":"DTI",
+				"SplitRegistration":false, 
+				"FlipPermute": [[1, -1, 1], ["z", "y", "x"]], 
+				"GradientCorrection":"WA1",
+				"RegistrationDimension": "2D",
+				"FasciculationDetection": true
+			},
+			"Merging":{
+				"Split":false,
+				"Reverse":true,
+				"Target":["BodyTSE", "tse", "dix", "outph"],
+				"Moving":"s0",
+				"Process":["s0", "snr0", "l1", "l2", "l3", "md", "fa", "rd", "adci", "fri", "tens"]
+			}
+		},
+
+		"ShoulderTSE":{
+			"Label":"TSEDix-Shoulder",
+			"Class":"Volume",
+			"Type":"tse",
+			"Suffix":"dix",
+			"Process":{
+				"Method":"Dixon-P",
+				"Types":["wat", "inph", "outph", "fat"]
+			},
+			"Merging":{
+				"Split":false,
+				"Target":["ShoulderTSE", "tse", "dix", "wat"],
+				"Moving":"wat",
+				"Process":["wat", "fat", "inph", "outph", "watfr", "fatfr"]
+			},
+			"Segment":{
+				"Target":["ShoulderTSE", "tse", "dix", "wat"],
+				"Location":"Shoulder",
+				"Device":"CPU",
+				"Dimensions":"2D",
+				"VoxSize":[16, 1.5, 1.5]
+			}
+		},
+		"ShoulderDTI":{
+			"Label":"DTI-Shoulder",
+			"Class":"Volume",
+			"Type":"dwi",
+			"Suffix":"dti",
+			"Process":{
+				"Method":"DTI",
+				"SplitRegistration":false, 
+				"FlipPermute": [[1, -1, 1], ["z", "y", "x"]], 
+				"GradientCorrection":"WA1",
+				"RegistrationDimension": "2D",
+				"FasciculationDetection": true
+			},
+			"Merging":{
+				"Split":false,
+				"Target":["ShoulderTSE", "tse", "dix", "outph"],
+				"Moving":"s0",
+				"Process":["s0", "snr0", "l1", "l2", "l3", "md", "fa", "rd", "adci", "fri", "tens"]
+			}
+		}
+	}
+}

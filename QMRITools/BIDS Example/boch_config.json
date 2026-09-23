@@ -1,0 +1,242 @@
+{
+	"folders":{
+		"dicomData":"01_sourcedata",
+		"rawData":"02_rawdata",
+		"derivedData":"03_derivatives",
+		"mergeData":"04_merged",
+		"analysis":"05_analysis"
+	},
+	"conversion":{
+		"Version": "17"
+	},
+	"datasets":{
+		"DIX_OS":{
+			"Label":["mDIXON_OS_1", "mDIXON_OS_2"],
+			"Class":"Stacks",
+			"Type":"megre",
+			"Suffix":"dix",
+			"Process":{
+				"Method":"Dixon-B",
+				"EchoTime":[2.535, 0.76]
+			},
+			"Merging":{
+				"Overlap":5,
+				"Target":["DIX_OS", "megre", "dix", "wat"],
+				"Moving":"wat",
+				"Process":[ "t2star", "r2star", "inph", "outph", "wat", 
+					"fat", "watfr", "fatfr", "snr"]
+			},
+			"Segment":{
+				"Target":["megre", "dix", "outph"],
+				"Location":"Legs",
+				"Device":"CPU"
+			}
+		},
+		"DIX_US":{
+			"Label":["mDIXON_US_1"],
+			"Class":"Stacks",
+			"Type":"megre",
+			"Suffix":"dix",
+			"Process":{
+				"Method":"Dixon-B",
+				"EchoTime":[2.535, 0.76]
+			},
+			"Merging":{
+				"Overlap":5,
+				"Target":["DIX_US", "megre", "dix", "wat"],
+				"Moving":"wat",
+				"Process":["t2star", "r2star", "inph", "outph", "wat", 
+					"fat", "watfr", "fatfr", "snr"]
+			},
+			"Segment":{
+				"Target":["megre", "dix", "outph"],
+				"Location":"Legs",
+				"Device":"CPU"
+			}
+		},
+		"T2_OS":{
+			"Label":["qT2-ME_OS_1","qT2-ME_OS_2"],
+			"Class":"Stacks",
+			"Type":"mese",
+			"Suffix":"t2",
+			"Process":{
+				"Method":"EPGT2",
+				"Settings":[
+					["sg_150_100_167",	90,	[2.2845, 3.9632, 768]],
+					["sinc_centre", 180, [1.9037, 2.0560, 486]]
+				],
+				"EchoTime":7.6
+			},
+			"Merging":{
+				"Overlap":[5, 3],
+				"Target":["DIX_OS", "megre", "dix", "wat"],
+				"Moving":"wat",
+				"Process":["t2w", "t2f", "wat", "fat", "fatfr"]
+			}
+		},
+		"T2_US":{
+			"Label":["qT2-ME_US_1"],
+			"Class":"Stacks",
+			"Type":"mese",
+			"Suffix":"t2",
+			"Process":{
+				"Method":"EPGT2",
+				"Settings":[
+					["sg_150_100_167",	90,	[2.2845, 3.9632, 768]],
+					["sinc_centre", 180, [1.9037, 2.0560, 486]]
+				],
+				"EchoTime":7.6
+			},
+			"Merging":{
+				"Overlap":[5, 3],
+				"Target":["DIX_US", "megre", "dix", "wat"],
+				"Moving":"wat",
+				"Process":["t2w", "t2f", "wat", "fat", "fatfr"]
+			}
+		},
+		"DTI_OS":{
+			"Label":["DTI_OS_1", "DTI_OS_2"],
+			"Class":"Stacks",
+			"Type":"dwi",
+			"Suffix":"dti",
+			"Process":{
+				"Method":"DTI"
+			},
+			"Merging":{
+				"Overlap":5,
+				"Target":["DIX_OS", "megre", "dix", "outph"],
+				"Moving":"s0",
+				"Process":["s0", "snr0", "l1", "l2", "l3", "md", 
+					"fa", "rd", "adci", "fri", "tens"]
+			},
+			"Tractography":{
+				"Target":["dwi", "dti",	"tens"],
+				"Segmentation":["DIX_OS", "seg", "auto", "megre", "dix", "outph"],
+				"Stopping":[
+					[["dwi", "dti",	"fa"], [0.05, 0.65]],
+					[["dwi", "dti",	"md"], [0.5, 2.5]]					
+				],
+				"FlipPermute":[[1, 1, 1], ["z", "y", "x"]]
+			}
+		},
+		"DTI_US":{
+			"Label":["DTI_US_1"],
+			"Class":"Stacks",
+			"Type":"dwi",
+			"Suffix":"dti",
+			"Process":{
+				"Method":"DTI"
+			},
+			"Merging":{
+				"Overlap":5,
+				"Target":["DIX_US", "megre", "dix", "outph"],
+				"Moving":"s0",
+				"Process":["s0", "snr0", "l1", "l2", "l3", "md", 
+					"fa", "rd", "adci", "fri", "tens"]
+			},
+			"Tractography":{
+				"Target":["dwi", "dti",	"tens"],
+				"Segmentation":["DIX_US", "seg", "auto", "megre", "dix", "outph"],
+				"Stopping":[
+					[["dwi", "dti",	"fa"], [0.05, 0.65]],
+					[["dwi", "dti",	"md"], [0.5, 2.5]]					
+				],
+				"FlipPermute":[[1, 1, 1], ["z", "y", "x"]]
+			}
+		}
+	},
+	"analysis":{
+		"OS":{
+			"Segmentation":{
+				"Type":["DIX_OS", "seg", "auto", "megre", "dix", "outph"],
+				"Labels":[90, "Legs"]
+			},
+			"Analysis":{
+				"Types":[
+					["DTI_OS", "dwi", "dti", ["l1", "l2", "l3", "md", "rd", "fa", "adci", "fri", "snr0"]],
+					["DTI_OS", "dwi", "dti", "trk", ["leng", "ang", "seed", "dens", "curv"]],
+					["DIX_OS", "megre", "dix", ["watfr", "fatfr", "t2star", "r2star", "snr"]],
+					["T2_OS", "mese", "t2", ["fatfr", "t2w", "t2f"]]
+				],
+				"TractBased":[
+					["DTI_OS", "dwi", "dti", ["l1", "l2", "l3", "md", "rd", "fa", "adci", "fri", "snr0"]],
+					["DTI_OS", "dwi", "dti", "trk", ["leng", "ang", "curv"]]
+				],
+				"Options":{
+					"MaskErosion":true,
+					"TractWeigthing":false
+				}
+			},
+			"Images":{
+				"Reference": ["DIX_OS", "megre", "dix", "wat"],
+				"TractImages": ["DTI_OS", "dwi", "dti", "trk", "plot"],
+				"QuantImages":[
+					[["DIX_OS", "megre", "dix", "watfr"], "Lajolla", [1.0e-3, 0.999]], 
+					[["DIX_OS", "megre", "dix", "fatfr"], "Lajolla", [1.0e-3, 0.999]],
+					[["DIX_OS", "megre", "dix", "t2star"], "Navia", [1.0e-4, 0.1]], 
+					[["DIX_OS", "megre", "dix", "r2star"], "Navia", [1.0e-4, 50]], 
+					[["DIX_OS", "megre", "dix", "inph"]], 
+					[["DIX_OS", "megre", "dix", "outph"]], 
+					[["DIX_OS", "megre", "dix", "snr"], "Batlow", [1, 100]], 
+					[["DTI_OS", "dwi", "dti", "fa"], "Devon", [1.0e-2, 0.75]], 
+					[["DTI_OS", "dwi", "dti", "md"], "Lapaz", [0.5, 2.0]], 
+					[["DTI_OS", "dwi", "dti", "rd"], "Lapaz", [0.5, 2.0]], 
+					[["DTI_OS", "dwi", "dti", "snr0"], "Batlow", [1, 50]], 
+					[["DTI_OS", "dwi", "dti", "s0"]],
+					[["DTI_OS", "dwi", "dti", "trk", "seed"], "BlackToWhite", [0, 1]], 
+					[["DTI_OS", "dwi", "dti", "trk", "dens"], "CherryTones", [0.1, 5]], 
+					[["DTI_OS", "dwi", "dti", "trk", "leng"], "SouthwestColors", [1, 250]], 
+					[["DTI_OS", "dwi", "dti", "trk", "ang"], "SolarColors", [1, 90]], 
+					[["T2_OS", "mese", "t2", "t2w"], "Navia", [5, 45]], 
+					[["T2_OS", "mese", "t2", "wat"]]
+				]
+			}
+		},
+		"US":{
+			"Segmentation":{
+				"Type":["DIX_US", "seg", "auto", "megre", "dix", "outph"],
+				"Labels":[90, "Legs"]
+			},
+			"Analysis":{
+				"Types":[
+					["DTI_US", "dwi", "dti", ["l1", "l2", "l3", "md", "rd", "fa", "adci", "fri", "snr0"]],
+					["DTI_US", "dwi", "dti", "trk", ["leng", "ang", "seed", "dens", "curv"]],
+					["DIX_US", "megre", "dix", ["watfr", "fatfr", "t2star", "r2star", "snr"]],
+					["T2_US", "mese", "t2", ["fatfr", "t2w", "t2f"]]
+				],
+				"TractBased":[
+					["DTI_US", "dwi", "dti", ["l1", "l2", "l3", "md", "rd", "fa", "adci", "fri", "snr0"]],
+					["DTI_US", "dwi", "dti", "trk", ["leng", "ang", "curv"]]
+				],
+				"Options":{
+					"MaskErosion":true,
+					"TractWeigthing":false
+				}
+			},
+			"Images":{
+				"Reference": ["DIX_US", "megre", "dix", "wat"],
+				"TractImages": ["DTI_US", "dwi", "dti", "trk", "plot"],
+				"QuantImages":[
+					[["DIX_US", "megre", "dix", "watfr"], "Lajolla", [1.0e-3, 0.999]], 
+					[["DIX_US", "megre", "dix", "fatfr"], "Lajolla", [1.0e-3, 0.999]],
+					[["DIX_US", "megre", "dix", "t2star"], "Navia", [1.0e-4, 0.1]], 
+					[["DIX_US", "megre", "dix", "r2star"], "Navia", [1.0e-4, 50]], 
+					[["DIX_US", "megre", "dix", "inph"]], 
+					[["DIX_US", "megre", "dix", "outph"]], 
+					[["DIX_US", "megre", "dix", "snr"], "Batlow", [1, 100]], 
+					[["DTI_US", "dwi", "dti", "fa"], "Devon", [1.0e-2, 0.75]], 
+					[["DTI_US", "dwi", "dti", "md"], "Lapaz", [0.5, 2.0]], 
+					[["DTI_US", "dwi", "dti", "rd"], "Lapaz", [0.5, 2.0]], 
+					[["DTI_US", "dwi", "dti", "snr0"], "Batlow", [1, 50]], 
+					[["DTI_US", "dwi", "dti", "s0"]],
+					[["DTI_US", "dwi", "dti", "trk", "seed"], "BlackToWhite", [0, 1]], 
+					[["DTI_US", "dwi", "dti", "trk", "dens"], "CherryTones", [0.1, 5]], 
+					[["DTI_US", "dwi", "dti", "trk", "leng"], "SouthwestColors", [1, 250]], 
+					[["DTI_US", "dwi", "dti", "trk", "ang"], "SolarColors", [1, 90]], 
+					[["T2_US", "mese", "t2", "t2w"], "Navia", [5, 45]], 
+					[["T2_US", "mese", "t2", "wat"]]
+				]
+			}
+		}
+	}
+}
