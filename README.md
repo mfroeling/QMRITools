@@ -1,6 +1,6 @@
-# Welcome to QRMITools
+# Welcome to QMRITools
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.595302.svg)](https://doi.org/10.5281/zenodo.595302)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.595302-blue.svg)](https://doi.org/10.5281/zenodo.595302)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.01204/status.svg)](https://doi.org/10.21105/joss.01204)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 [![Hits](https://hits.sh/github.com/mfroeling/QMRITools.svg)](https://hits.sh/github.com/mfroeling/QMRITools/)
@@ -19,10 +19,11 @@
 
 ## Content
 
-- [Welcome to QRMITools](#welcome-to-qrmitools)
+- [Welcome to QMRITools](#welcome-to-qmritools)
   - [Content](#content)
   - [Introduction](#introduction)
   - [Installation](#installation)
+  - [Version history](#version-history)
   - [Citing](#citing)
   - [Media and awards](#media-and-awards)
   - [Documentation](#documentation)
@@ -54,7 +55,7 @@ width="40%" />
 
 ## Installation
 
-The latest release can be found [here](https://github.com/mfroeling/QMRITools/releases).
+The latest release can be found on github [releases](https://github.com/mfroeling/QMRITools/releases).
 The toolbox is best installed via the Mathematica paclet system. For more information [visit the website](https://www.qmritools.com/doc/instal/).
 
 Automatic installation:
@@ -74,6 +75,11 @@ alt="Quantitative muscle MRI processing of diffusion tensor imaging, T2 mapping 
 title="Quantitative muscle MRI processing of diffusion tensor imaging, T2 mapping and water fat chemical shift imaging."
 width="70%" />
 </p>
+
+## Version history
+
+An overview of what each major version brought is given in the
+[changelog](CHANGELOG.md).
 
 ## Citing
 
@@ -96,10 +102,10 @@ When using the toolbox please cite one of the following references:
 
 ## Media and awards
 
-- During the 2023 ISMRM in Toronto QMRITools was awarded received the “Best Open Source Tool Award” from the Quantitative MRI study group.
+- During the 2023 ISMRM in Toronto QMRITools received the “Best Open Source Tool Award” from the Quantitative MRI study group.
 - If you want to learn more about the workings of QMRITools you can watch a live discussion with the Wolfram academic outreach team about <a href="https://www.youtube.com/live/wupxxiPJkxU?si=22BV_HSSa5u7Ds3D" target="_blank">QMRITools</a> and the role of computational Wolfram technology.
 - A more in depth explanation of <a href="https://www.youtube.com/live/LVUBupORthA?si=UjoNpM2szsrgB7xx" target="_blank">the paclet functionality</a> was presented to the Wolfram R&D Team.
-- QMRITools is build using Wolfram language for which it was awarded the <a href="https://www.wolfram.com/events/technology-conference/innovator-award/2023/martijn-froeling" target="_blank">Wolfram Innovator Award</a> in 2023 during the Wolfram Technology conference.
+- QMRITools is built using Wolfram language for which it was awarded the <a href="https://www.wolfram.com/events/technology-conference/innovator-award/2023/martijn-froeling" target="_blank">Wolfram Innovator Award</a> in 2023 during the Wolfram Technology conference.
 
 <p align="center">
 <img src="https://github.com/mfroeling/QMRITools/raw/master/docs/images/ToolAward.png"
@@ -110,7 +116,7 @@ width="30%" />
 
 ## Documentation
 
-An online version of the full documentation can be found [here](https://www.qmritools.com/assets/htmldoc/html/guide/qmritools).
+An online version of the full documentation can be found on the [qmritools webpage](https://www.qmritools.com/assets/htmldoc/html/guide/qmritools).
 
 <p align="center">
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/addons.PNG" alt="QMRITools package add on"  width="70%" />
@@ -128,10 +134,16 @@ their website.
 - [dcm2niix](https://github.com/rordenlab/dcm2niix/)
 - [Elastix](https://elastix.lumc.nl/)
 
+Optional, not included in the release:
+
+- [MuscleMap](https://github.com/MuscleMap/MuscleMap), used by `RunMuscleMap`. Install it following its readme, then
+  set `MuscleMapPath` and `MuscleMapPythonEnvironment` to the cloned code and its conda environment.
+
 ## Toolboxes
 
 QMRITools contains the following [toolboxes](https://www.qmritools.com/tool/):
 
+- AmaresTools
 - CardiacTools
 - CoilTools
 - DenoiseTools
@@ -188,17 +200,18 @@ you from committing patent infringement. So, before you do anything with
 this program, make sure that you have permission to do so not merely in
 terms of copyright, but also in terms of patent law.
 
-Some code in the NiiTools packages was based on `https://github.com/tomdelahaije/nifti-converter`
+Some code in the NiftiTools package was based on `https://github.com/tomdelahaije/nifti-converter`
 QMRITools includes the latest version of `https://github.com/SuperElastix/elastix`
 QMRITools includes the latest version of `https://github.com/rordenlab/dcm2niix`
 
 ------------------------------------------------------------------------
 
-Number of Functions: 594
-- Total lines: 42763
-- Total non-empty lines: 32168
-- Total lines of help text: 3079
-- Total lines off comments: 6024
-- Total lines of code: 23065
-- Total characters: 1433153
+Number of Functions: 566
+
+- Total lines: 44929
+- Total non-empty lines: 33857
+- Total lines of help text: 3242
+- Total lines of comments: 6334
+- Total lines of code: 24281
+- Total characters: 1519676
 - Average characters per line: 45

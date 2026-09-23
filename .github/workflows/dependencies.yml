@@ -1,0 +1,39 @@
+name: Submit dependencies
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > snapshot.json <<EOF
+          {
+            "version": 0,
+            "sha": "${{ github.sha }}",
+            "ref": "${{ github.ref }}",
+            "job": { "correlator": "qmritools-deps", "id": "${{ github.run_id }}" },
+            "detector": { "name": "qmritools-manual", "version": "1.0", "url": "https://github.com/${{ github.repository }}" },
+            "scanned": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "manifests": {
+              "PacletInfo.wl": {
+                "name": "PacletInfo.wl",
+                "file": { "source_location": "QMRITools/PacletInfo.wl" },
+                "resolved": {
+                  "dcm2niix":  { "package_url": "pkg:github/rordenlab/dcm2niix",   "relationship": "direct", "scope": "runtime" },
+                  "elastix":   { "package_url": "pkg:github/SuperElastix/elastix", "relationship": "direct", "scope": "runtime" },
+                  "MuscleMap": { "package_url": "pkg:github/MuscleMap/MuscleMap",  "relationship": "direct", "scope": "runtime" }
+                }
+              }
+            }
+          }
+          EOF
+          gh api repos/${{ github.repository }}/dependency-graph/snapshots --method POST --input snapshot.json
