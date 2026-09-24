@@ -486,7 +486,7 @@ defaultConfig = <|
 		"analysis" -> "05_analysis"
 	|>,
 	"conversion"-> <|
-		"Version"->1
+		"Version"-> "Own"
 	|>,
 	"Process" -> <|
 		"Masking" -> 5,
