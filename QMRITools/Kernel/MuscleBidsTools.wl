@@ -1883,6 +1883,10 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					outTypes = {};
 					echos = {};
 
+					(*----------------------------------------------*)
+					(*-------- TSE/GE online recon scripts ---------*)
+					(*----------------------------------------------*)
+
 					(*branch 1: data with online reconstruction, default to the standard dixon types if not configured*)
 					(*results get overwritten by branch 2 if dixon processing is feasible.*)
 					If[MemberQ[{"Dixon-S", "Dixon-P", "Dixon-A"}, datType["Process", "Method"]],
@@ -1937,6 +1941,10 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					(*close branch 1*)
 					];
 
+					(*-------------------------------------------*)
+					(*-------- GE offline recon scripts ---------*)
+					(*-------------------------------------------*)
+
 					(*branch 2: philips data with offline reconstruction not tested for Siemens*)
 					If[MemberQ[{"Dixon", "Dixon-B", "Dixon-A"}, datType["Process", "Method"]],
 						(*input file names*)
@@ -1957,10 +1965,12 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 						(*Check if needed json Exist*)
 						If[!FileExistsQ[jsonFile],
-							(*-----*)AddToLog["Could not find the needed JSON file", 4];,
+							(*-----*)AddToLog["Could not find the needed JSON file", 4];
+							,
 							(*Check if needed nii Exist*)
 							If[!AllTrue[nFiles, NiiFileExistQ],
-								(*-----*)AddToLog[{"Could not find all the ", First@dixFiles}, 4],
+								(*-----*)AddToLog[{"Could not find all the ", First@dixFiles}, 4];
+								,
 								(*-----*)AddToLog["Importing the data", 4];
 
 								(*import the data*)
@@ -1976,92 +1986,96 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									{mag, ph} = Through[{Abs, Arg}[real + I imag]];
 								];
 								dixVox = First@dixVox;
+								debugBids[{Length[echos], Dimensions[real]}];
 
-								(*Apply background mask*)
-								magM = NormalizeMeanData@mag;
-								B0mask = Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2, MaskDilation->1];
-								{real, imag} = MaskData[#, B0mask] &/@ {real, imag};
+								(*check if number of echos matches number of volumes*)
+								If[Length[echos] =!= Dimensions[real][[2]],
+									(*-----*)AddToLog[{"!!!!! Dimensions echos not match !!!!! echos:", Length[echos], "volumes:", Dimensions[real][[2]], "- skipping Dixon fit"}, 4],
 
-								(*-----*)AddToLog["Starting denoising and SNR calculation", 4];
-								{{real, imag}, sig} = PCADeNoise[{real, imag}, PCAKernel -> 5, Method -> "Patch", PCAComplex -> True];
-								{mag, ph} = Through[{Abs, Arg}[real + I imag]];
-								snr = SNRCalc[Mean@Transpose@mag, sig];
+									(*Apply background mask*)
+									magM = NormalizeMeanData@mag;
+									B0mask = Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2, MaskDilation->1];
+									{real, imag} = MaskData[#, B0mask] &/@ {real, imag};
 
-								Switch[datType["Process", "Method"],
-									(*Dixon processing scrip for multi echo gradient echo complex data as used in motion study*)
-									"Dixon" | "Dixon-A",
+									(*-----*)AddToLog["Starting denoising and SNR calculation", 4];
+									{{real, imag}, sig} = PCADeNoise[{real, imag}, PCAKernel -> 5, Method -> "Patch", PCAComplex -> True];
+									{mag, ph} = Through[{Abs, Arg}[real + I imag]];
+									snr = SNRCalc[Mean@Transpose@mag, sig];
 
-									(*see if there are dixon flips*)
-									(*{{mag, ph, real, imag}, pos} = FixDixonFlips[{mag, ph, real, imag}];
-									(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];*)
-									pos={};
+									Switch[datType["Process", "Method"],
+										(*Dixon processing scrip for multi echo gradient echo complex data as used in motion study*)
+										"Dixon" | "Dixon-A",
 
-									(*calculated field maps*)
-									(*-----*)AddToLog[{"Starting field map calculation"}, 4];
-									{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
-									(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000 echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
+										(*see if there are dixon flips*)
+										(*{{mag, ph, real, imag}, pos} = FixDixonFlips[{mag, ph, real, imag}];
+										(*-----*)If[pos=!={}, AddToLog[{"Found complex flips in volumes: ", pos}, 4]];*)
+										pos = {};
 
-									(*perform the IDEAL dixon fit*)
-									(*-----*)AddToLog["Starting Dixon reconstruction", 4];
+										(*calculated field maps*)
+										(*-----*)AddToLog[{"Starting field map calculation"}, 4];
+										{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
+										(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000 echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
 
-									If[Length[echos] > 6,
-										(*fit with DB fat model*)
-										{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph},
-											{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-												{real, imag}, echos, {b0i, t2stari, phii, phbpi},
-												DixonPhases -> {True, True, True, True, True},
-												DixonFixT2 -> False, DixonFieldStrength -> field,
-												DixonAmplitudes -> "CallDB", DixonTolerance->1
-											];
-										pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->True};
-										outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
+										(*perform the IDEAL dixon fit*)
+										(*-----*)AddToLog["Starting Dixon reconstruction", 4];
+
+										If[Length[echos] > 6,
+											(*fit with DB fat model*)
+											{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph},
+												{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+													{real, imag}, echos, {b0i, t2stari, phii, phbpi},
+													DixonPhases -> {True, True, True, True, True},
+													DixonFixT2 -> False, DixonFieldStrength -> field,
+													DixonAmplitudes -> "CallDB", DixonTolerance->1
+												];
+											pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->True};
+											outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
+											,
+											(*fit with fixed fat model*)
+											{{watfr, fatfr}, {wat, fat}, {inph, outph},
+												{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+													{real, imag}, echos, {b0i, t2stari, phii, phbpi},
+													DixonPhases -> {True, True, True, True, True},
+													DixonFixT2 -> False, DixonFieldStrength -> field,
+													DixonAmplitudes -> "Fixed", DixonTolerance->1
+												];
+											pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
+											outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
+										];
+
 										,
-										(*fit with fixed fat model*)
+										(*Dixon processing scrip for multi echo gradient echo complex data as used in Bochum cohort*)
+										"Dixon-B",
+
+										(*uwrap and convert B0 to hz*)
+										(*-----*)AddToLog[{"Starting field map calculation"}, 4];
+										b0i = UnwrapSplit[ph[[All, -1]] - ph[[All, 1]], mag, UnwrapDimension -> "3D", MonitorUnwrap -> False];
+										b0i = b0i/(2 Pi Length[echos] (echos[[2]] - echos[[1]]));
+										(*calculate the t2 star from the two in phase images*)
+										t2stari = T2Fit[mag, echos][[2]];
+
+										debugBids[Dimensions/@{real,imag, b0i, t2stari}];
+										debugBids[echos];
+
+										(*perform the IDEAL dixon fit*)
+										(*-----*)AddToLog["Starting Dixon reconstruction", 4];
 										{{watfr, fatfr}, {wat, fat}, {inph, outph},
-											{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-												{real, imag}, echos, {b0i, t2stari, phii, phbpi},
-												DixonPhases -> {True, True, True, True, True},
-												DixonFixT2 -> False, DixonFieldStrength -> field,
-												DixonAmplitudes -> "Fixed", DixonTolerance->1
-											];
-										pos = {"DixonFlips" -> pos, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
-										outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
+											{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
+												{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
+										pos = {"DixonFlips" -> {}, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
 									];
 
-									,
-									(*Dixon processing scrip for multi echo gradient echo complex data as used in Bochum cohort*)
-									"Dixon-B"
-									,
+									(*correct water and fat*)
+									{wat, fat} = Abs[{wat, fat}];
 
-									(*uwrap and convert B0 to hz*)
-									(*-----*)AddToLog[{"Starting field map calculation"}, 4];
-									b0i = UnwrapSplit[ph[[All, -1]] - ph[[All, 1]], mag, UnwrapDimension -> "3D", MonitorUnwrap -> False];
-									b0i = b0i/(2 Pi Length[echos] (echos[[2]] - echos[[1]]));
-									(*calculate the t2 star from the two in phase images*)
-									t2stari = T2Fit[mag, echos][[2]];
-
-									debugBids[Dimensions/@{real,imag, b0i, t2stari}];
-									debugBids[echos];
-
-									(*perform the IDEAL dixon fit*)
-									(*-----*)AddToLog["Starting Dixon reconstruction", 4];
-									{{watfr, fatfr}, {wat, fat}, {inph, outph},
-										{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-											{real, imag}, echos, {b0i, t2stari}, DixonClipFraction -> True];
-									pos = {"DixonFlips" -> {}, "DixonBipolar" -> True, "DixonDoubleBonds"->False};
-								];
-
-								(*correct water and fat*)
-								{wat, fat} = Abs[{wat, fat}];
-
-								(*add outtypes present in both branches of dixon fitting*)
-								outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", 
-									"b0", "t2star", "r2star", "inph", "outph", "wat", "fat", 
-									"watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
-							]
-						]
-					(*close branch 2*)
-					];
+									(*add outtypes present in both branches of dixon fitting*)
+									outTypes = Join[{"real", "imag", "mag", "ph", "b0i", "t2stari", 
+										"b0", "t2star", "r2star", "inph", "outph", "wat", "fat", 
+										"watfr", "fatfr", "itt", "res", "snr", "sig"}, outTypes];
+								] (*close echo check*)
+							] (*close nii check*)
+						] (*close json check*)
+					];(*close branch 2*)
 
 					(*export the calculated data, check file and compress once, for whichever branch(es) produced data*)
 					If[outTypes == {},
@@ -2085,8 +2099,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					];
 
 					(*-----*)AddToLog["Finished processing", 3, True];
-				(*close dixon processing*)
-				];
+				];(*close dixon processing*)
 			,
 
 				_,
@@ -2742,8 +2755,9 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 					RegisterData, RegisterDataSplit];
 				reg = ToPackedArray@N@Chop@func[
 					{moving[[im, i]], mskm, voxMov[[i]]}, {target[[i]], voxTar}, 
-					Iterations->300, BsplineSpacing->20 voxTar, InterpolationOrderReg->1, NumberSamples -> 20000,
-					PrintTempDirectory->False, MethodReg->metReg, HistogramBins -> 128];
+					Iterations->300, BsplineSpacing->20 voxTar, InterpolationOrderReg->1, 
+					NumberSamples -> 20000, PrintTempDirectory->False, 
+					MethodReg->metReg, HistogramBins -> 128];
 
 				(*if padding enlarge the moving files*)
 				If[pad > 0,					

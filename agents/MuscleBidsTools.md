@@ -384,6 +384,8 @@ output: declare the variable in the `Block` list, give it exactly the suffix nam
 The Dixon branches are **gated `If`s, not a `Switch`**. `Dixon-A` runs both. Branch 2 overwrites branch 1's values
 when raw data exists, and each branch's "files not found" guard makes it a no-op when its data is absent. This design
 is intentional (see CodeStyle.md, "avoid duplication"). Export and the check file run once after both branches.
+Branch 2 also skips the fit (logs `!!!!! Dimensions echos not match !!!!!`) when the JSON `EchoTime` count differs
+from the number of volumes, so branch 1 output and the remaining sets are still processed.
 
 DTI prep pipeline: `SortDiffusionData` → `FlipGradientOrientation` → `Mask` → `PCADeNoise` → `SNRCalc` →
 register (2D `RegisterCardiacData` / 3D `RegisterDiffusionData(Split)`) → `P2SDenoise` (`filt`).
