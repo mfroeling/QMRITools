@@ -1,1 +1,1 @@
-@QMRITools/AGENTS.md
+@AGENTS.md

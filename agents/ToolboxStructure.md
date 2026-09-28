@@ -183,7 +183,11 @@ Reading the graph:
 - **There are dependency cycles** (from the "Uses" column):
   - direct: MaskingTools ↔ ElastixTools, TensorTools ↔ ProcessingTools, GradientTools ↔ TensorTools;
   - longer: NiftiTools → ProcessingTools → ElastixTools → NiftiTools, and
-    TractographyTools → TensorTools → ProcessingTools → TractographyTools.
+    TractographyTools → TensorTools → ProcessingTools → TractographyTools;
+  - SegmentationTools ↔ NeuralNetworkTools, via the fully qualified private `FindPatchDim` call in
+    `AnalyzeNetworkFeatures`.
+
+  `agents/callgraph.wls` recomputes these as strongly connected groups.
 
   This is why the all-see-all
   `BeginPackage` plus two passes (§3) is needed. **No package order could load in a single pass.** Don't try to

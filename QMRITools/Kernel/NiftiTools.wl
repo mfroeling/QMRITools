@@ -221,7 +221,7 @@ SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
 DcmToNii[opt:OptionsPattern[]]:=DcmToNii[{"",""},opt];
 
-DcmToNii[inFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]] := DcmToNii[{inFol, outFol}, OptionsPattern[]]
+DcmToNii[inFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]] := DcmToNii[{inFol, outFol}, opt]
 
 DcmToNii[{inFol_?StringQ, outFol_?StringQ}, opt:OptionsPattern[]] := Block[{
 		fileFolIn, folOut, log, command, compress, dcm2niiExe, dcm2niiFol, delete,

@@ -78,19 +78,25 @@ RescaleSegmentation[data, {vox1, vox2}] rescales segmentations from voxel size v
 MergeSegmentations::usage = 
 "MergeSegmentations[masks, labels] generates an ITKsnap or slices3D compatible segmentation from individual masks and label numbers.
 Output is a labeled segmentation.
-MergeSegmentations[masks] does the same but automatically numbers the segmentations."
+MergeSegmentations[masks] does the same but automatically numbers the segmentations.
+The masks are {z, masks, y, x}. Voxels where masks overlap are set to 0."
 
 JoinSegmentations::usage =
 "JoinSegmentations[seg, joinRules] joins the segmentations in seg according to the rules in joinRules.
 JoinRules is a list of rules {{join, new}..} where join is a list of labels to be joined and new is the new label number.
-For example {{1, 2}, 3} joins the labels 1 and 2 to label 3."
+For example {{1, 2}, 3} joins the labels 1 and 2 to label 3. A single rule {join, new} can also be given."
 
 SelectSegmentations::usage =
-"SelectSegmentations[seg, labs] selects only the segmentations from seg with label number labs."
+"SelectSegmentations[seg, labs] selects only the segmentations from seg with label number labs and returns a labeled segmentation.
+SelectSegmentations[seg, labs, join] does the same but if join is False the output is split as {masks, labels}, see SplitSegmentations.
+The input seg can also be a split segmentation {masks, labels}, in which case the output is always {masks, labels} sorted by label."
 
 ReplaceSegmentations::usage =
-"ReplaceSegmentations[seg, labs, new] replaces the labels labs form the segmentation seg for labels new. Both labs and new should
-be lists of integers of the same size. If seg contains more labels then given in labs these will be replaced by 0." 
+"ReplaceSegmentations[seg, labs, new] replaces the labels labs from the segmentation seg for labels new. Both labs and new should
+be lists of integers of the same size. If seg contains more labels then given in labs these will be replaced by 0.
+ReplaceSegmentations[seg, labs] replaces the labels labs by a random permutation of Range[Length[labs]], using a fixed random seed.
+ReplaceSegmentations[seg] does the same for all labels in seg.
+When labs is given, the input seg can also be a split segmentation {masks, labels}, in which case the output is {masks, labels} sorted by label."
 
 
 RemoveMaskOverlaps::usage = 
@@ -512,6 +518,8 @@ MergeSegmentations[seg_, lab_] := Block[{mt, nv},
 (* ::Subsubsection::Closed:: *)
 (*JoinSegmentations*)
 
+
+SyntaxInformation[JoinSegmentations] = {"ArgumentsPattern" -> {_, _}};
 
 JoinSegmentations[segI_, joinRules : {_?ListQ, _?IntegerQ}] := JoinSegmentations[segI, {joinRules}]
 
