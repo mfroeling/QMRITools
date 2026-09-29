@@ -1471,10 +1471,10 @@ CompilableFunctions[] := Block[{list1, list2, grids},
 SyntaxInformation[DivideNoZero] = {"ArgumentsPattern" -> {_,_,_.}};
 
 DivideNoZero[numIn_, denIn_] := Block[{d, n, m},
-	d = N@ToPackedArray[denIn];
-	n = N@ToPackedArray[numIn];
+	d = ToPackedArray[N@denIn];
+	n = ToPackedArray[N@numIn];
 	m = Unitize[d];
-	N@ToPackedArray[m (n / ((1 - m) + d))]
+	ToPackedArray[N@m (n / ((1 - m) + d))]
 ]
 
 
@@ -1485,9 +1485,9 @@ DivideNoZero[numIn_, denIn_] := Block[{d, n, m},
 SyntaxInformation[LogNoZero] = {"ArgumentsPattern" -> {_}};
 
 LogNoZero[val_] := Block[{v, m},
-	v = N@ToPackedArray[val];
+	v = ToPackedArray[N@val];
 	m = Unitize[v];
-	N@ToPackedArray[m Log[(1 - m) + v]]
+	ToPackedArray[N@m Log[(1 - m) + v]]
 ]
 
 
@@ -1498,9 +1498,9 @@ LogNoZero[val_] := Block[{v, m},
 SyntaxInformation[ExpNoZero] = {"ArgumentsPattern" -> {_}};
 
 ExpNoZero[val_] := Block[{v, m},
-	v = N@ToPackedArray[val];
+	v = ToPackedArray[N@val];
 	m = Unitize[v];
-	N@ToPackedArray[m Exp[(1 - m) + v]]
+	ToPackedArray[N@m Exp[(1 - m) + v]]
 ]
 
 
@@ -1511,7 +1511,7 @@ ExpNoZero[val_] := Block[{v, m},
 SyntaxInformation[SignNoZero] = {"ArgumentsPattern" -> {_}};
 
 SignNoZero[val_] := Block[{v},
-	v = N@ToPackedArray[val];
+	v = ToPackedArray[N@val];
 	Sign[v] + 1 - Unitize[v]
 ]
 
@@ -1522,7 +1522,7 @@ SignNoZero[val_] := Block[{v},
 SyntaxInformation[MeanNoZero] = {"ArgumentsPattern" -> {_}};
 
 MeanNoZero[data_] := Block[{d, n},
-	d = N@ToPackedArray[data];
+	d = ToPackedArray[N@data];
 	n = Total[Unitize[d]];
 	DivideNoZero[Total[d], n]
 ]
@@ -1535,7 +1535,7 @@ MeanNoZero[data_] := Block[{d, n},
 SyntaxInformation[StandardDeviationNoZero] = {"ArgumentsPattern" -> {_}};
 
 StandardDeviationNoZero[data_] := Block[{d, n, mean, var},
-	d = N@ToPackedArray[data];
+	d = ToPackedArray[N@data];
 	n = Total[Unitize[d]];
 	mean = DivideNoZero[Total[d], n];
 	var = DivideNoZero[Total[d^2] - n mean^2, n - 1];
@@ -1571,7 +1571,7 @@ MedianNoZeroI = Compile[{{vec, _Real, 1}},
 SyntaxInformation[RMSNoZero] = {"ArgumentsPattern" -> {_}};
 
 RMSNoZero[data_] := Block[{d, n},
-	d = N@ToPackedArray[data];
+	d = ToPackedArray[N@data];
 	n = Total[Unitize[d]];
 	Sqrt[DivideNoZero[Total[d^2], n]]
 ]
@@ -1812,7 +1812,7 @@ LLSC = Compile[{{A, _Real, 2}, {y, _Real, 1}},
 (*LapFilter*)
 
 
-LapFilter[data_, fil_:0.5] := Clip[Chop[ImageData[TotalVariationFilter[
+LapFilter[data_, fil_:0.5] := ToPackedArray@N@Clip[Chop[ImageData[TotalVariationFilter[
 	If[ArrayDepth[data]===3, Image3D[N@data, "Real"], Image[N@data, "Real"]],
 	fil, Method -> "Laplacian", MaxIterations -> 30]]], MinMax[data]
 ]
@@ -1822,7 +1822,7 @@ LapFilter[data_, fil_:0.5] := Clip[Chop[ImageData[TotalVariationFilter[
 (*MedFilter*)
 
 
-MedFilter[data_, fil_:1] := Clip[Chop[ImageData[MedianFilter[
+MedFilter[data_, fil_:1] := ToPackedArray@N@Clip[Chop[ImageData[MedianFilter[
 	If[ArrayDepth[data]===3, Image3D[N@data, "Real"], Image[N@data, "Real"]],
 	Round[fil]]]], MinMax[data]
 ]

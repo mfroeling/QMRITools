@@ -963,7 +963,7 @@ SNRMapCalc[data : {_?ArrayQ ...}, opts:OptionsPattern[]] := SNRMapCalc[data, 2, 
 
 SNRMapCalc[data : {_?ArrayQ ...}, k_?NumberQ, OptionsPattern[]] := Module[{signal, sigma, snr,div},
 	signal = Mean[data];
-	sigma = Chop[StandardDeviation[data]]-10^-15;
+	sigma = ToPackedArray[N@Chop[StandardDeviation[data]]]-10^-15;
 	div=N@Clip[signal / sigma, {0, Infinity}];
 	div=Clip[div, {0., 100 Median[Cases[Flatten[div], Except[0.]]]}];
 	snr = GaussianFilter[div, k];

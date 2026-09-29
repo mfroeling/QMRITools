@@ -590,7 +590,7 @@ FourierKspace2DI = Compile[{{data, _Complex, 2}, {ksPad, _Integer, 2}, {shift, _
 		(*perform the correction for the k-space range*)
 		dat = RotateRight[dat, shift];
 		(*clip the data to the correct dimensions*)
-		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]]]]]
+		ToPackedArray[Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]]]]], Complex]
 	], 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
@@ -635,7 +635,7 @@ FourierKspace3DI = Compile[{{data, _Complex, 3}, {ksPad, _Integer, 2}, {shift, _
 		(*perform the correction for the k-space range*)
 		dat = RotateRight[dat, shift];
 		(*clip the data to the correct dimensions*)
-		Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]], clip[[3, 1]] ;; clip[[3, 2]]]]]
+		ToPackedArray[Chop[dat[[clip[[1, 1]] ;; clip[[1, 2]], clip[[2, 1]] ;; clip[[2, 2]], clip[[3, 1]] ;; clip[[3, 2]]]]], Complex]
 	], 
 RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
@@ -1142,7 +1142,7 @@ CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Bl
 		(*prewhiten noise if needed*)
 		cov = NoiseCovariance[noise];
 		If[white,
-			fids = Chop@NoisePrewhitening[fids, cov];
+			fids = ToPackedArray[Chop@NoisePrewhitening[fids, cov], Complex];
 			cov = Chop@NoiseCovariance[NoisePrewhitening[noise, cov]];
 		];
 

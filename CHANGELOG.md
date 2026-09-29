@@ -68,6 +68,7 @@ train-and-deploy workflow, and turns Muscle-BIDS into an end-to-end pipeline fro
 - Import and export of MRtrix `.tck` tract files (`ImportTCK`, `ExportTCK`).
 - Tract measures: length, curvature and curvature maps (`TractLength`, `TractCurvature`, `TractCurvatureMap`).
 - Endpoint density maps, filtering tracts by length, and fitting tract segments.
+- Choice of integration method for each tract step (`TractMethod`).
 
 ### Denoising and reconstruction
 
@@ -86,14 +87,12 @@ train-and-deploy workflow, and turns Muscle-BIDS into an end-to-end pipeline fro
 - Proper support for the notebook dark mode.
 - Log-file handling (`SetLogFile`, `SaveLogFile`), demo notebook helpers (`OpenDemonstrationNotebook`,
   `SetDemoDirectory`), and temporary file management (`ClearQMRIToolsTemp`).
+- Performance updates.
 
 ### Breaking changes
 
 - **Requires Wolfram Language 15.0 or newer.**
-- **Spelling of public names.** Many function and option names were corrected to consistent spelling. Old code that
-
-- **Replaced or removed functions:**
-
+- **Renamed and removed functions.** Several function and option names were corrected to consistent spelling and a few functions were replaced. Code that uses the old names must be updated.
 - **Muscle-BIDS config files.** Segmentation label handling and config merging changed. Check existing study configs
   against the examples in `QMRITools/BIDS Example/`.
 

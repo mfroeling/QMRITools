@@ -84,7 +84,9 @@ UnwrapList::usage =
 
 
 UnwrapDCT::usage = 
-"UnwrapDCT[data] unwraps the given dataset using DCT transform . The data should be between -Pi and Pi. 
+"UnwrapDCT[data] unwraps the given dataset using DCT transform . The data should be between -Pi and Pi.
+UnwrapDCT[data, weights] unwraps using weighted least squares, weights can be Automatic or an array with the dimensions of data.
+
 UnwrapDCT[] is based on DOI: 10.1364/JOSAA.11.000107."
 
 
@@ -160,7 +162,10 @@ UnwrapDimension::usage =
 "UnwrapDimension is an option for Unwrap. Can be \"2D\" or \"3D\". 2D is for unwarpping 2D images or unwrapping the individual images from a 3D dataset \
 (does not unwrap in the slice direction). 3D unwraps a 3D dataset in all dimensions."
 
-UnwrapThresh::usage = 
+UnwrapMask::usage =
+"UnwrapMask is an option for DixonPhase. If True the mask is used as weights in UnwrapDCT, which removes artefacts at the mask edges but is slower."
+
+UnwrapThresh::usage =
 "UnwrapThresh is an option for Unwrap. Is a value between 0.6 and 0.9, and defines when to unwrap, the higher the value the less unwrapping will be done."
 
 DixonBipolar::usage = 
@@ -175,6 +180,8 @@ Unwrap::data2D = "Unwrapping Dimensions is 2D and this can only be preformed on 
 Unwrap::data3D = "Unwrapping Dimensions is 3D and this can only be preformed on 3D data. This data is `1`D."
 
 Unwrap::dim = "Unwrapping Dimensions can be \"2D\" or \"3D\", current value is `1`."
+
+UnwrapDCT::dim = "The weights dimensions `2` do not match the data dimensions `1`."
 
 
 (* ::Section:: *)
@@ -210,6 +217,7 @@ Options[DixonPhase] = {
 	DixonAmplitudes -> dixAmp,
 	MonitorCalc->False,
 	UnwrapDimension->"3D",
+	UnwrapMask->True,
 	MaxIterations->15,
 	PhaseEchos -> Automatic
 };
@@ -219,7 +227,7 @@ SyntaxInformation[DixonPhase] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	freqs, amps, iop, A, Ah, Ai, e1, e2, de, dt, hz, bip, mat, msk, comp, compi, ph, ph1, ph0, phi, 
 	ph1i, ph0i, norm, i, itt, l, hl, sw, sw1, sw0, f0, f1, normN, UF, ni, n, t2s, r2s, Ac,
-	unwrapF, cr, dm, t1 ,t2, t3, sl, bp
+	unwrapF, um, cr, dm, t1 ,t2, t3, sl, bp
 	},
 
 	(*initial phase 10.1016/J.MRI.2010.08.011*)
@@ -247,7 +255,7 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	hz = {Abs[1/dt], 0.5, 0.25};
 
 	(*prepare signals for*)
-	comp = Transpose[N@Chop@real + N@Chop@imag I];
+	comp = Transpose[ToPackedArray[N@Chop@real] + ToPackedArray[N@Chop@imag] I];
 	msk = Unitize@Total@Abs@comp;
 
 	(*crop data to speed up processing*)
@@ -267,10 +275,11 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	bp = Range[2, l - 1, 2];
 	sw = sw1 = sw0 = f0 = f1 = False;
 
-	(*unwrapping function*)
+	(*unwrapping function, optionally with the mask as weights*)
+	um = OptionValue[UnwrapMask];
 	unwrapF = Switch[OptionValue[UnwrapDimension],
-		"2D", msk(UnwrapDCT/@(msk #))&,
-		"3D", msk(UnwrapDCT[msk #])&
+		"2D", With[{w = If[um, MaskWeights /@ msk, 1. & /@ msk]}, msk MapThread[UnwrapDCTi, {msk #, w}]&],
+		"3D", With[{w = If[um, MaskWeights[msk], 1.]}, msk UnwrapDCTi[msk #, w]&]
 	];
 
 	(*start optimization*)
@@ -498,7 +507,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 
 	(*create data for fit*)
 	If[mon, PrintTemporary["Prepairing data and field maps"]];
-	complex = ToPackedArray[N@Chop@real + N@Chop@imag I];
+	complex = ToPackedArray[N@Chop@real] + ToPackedArray[N@Chop@imag] I;
 	If[ArrayDepth[complex] === 4, complex = Transpose[complex]];
 	mask = Closing[UnitStep[Abs[First@complex] - thresh], 1] Unitize[Total[Abs[complex]]];
 	max = 2 Max[Abs[complex]];
@@ -531,7 +540,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		ParallelMap[DixonFitC[#[[1]], #[[2]], #[[3]], matC, matA, matAi, mat, eta, maxItt, sel]&, Transpose[{complex, phi, mask}]],
 		DixonFitC[complex, phi, mask, matC, matA, matAi, mat, eta, maxItt, sel]
 	];
-	result = RotateDimensionsRight@Chop@result;
+	result = RotateDimensionsRight@ToPackedArray@N@Chop@result;
 
 	(*get the residuals and iterations and phases*)
 	{res, itt} = result[[n+1 ;; n+2]];
@@ -557,11 +566,11 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		];
 
 		(*recalculate the signals and redefine the residuals and phases*)
-		result = RotateDimensionsRight@Chop@DixonFitFC[complex, phi, mask, matC, matA, matAi];
+		result = RotateDimensionsRight@ToPackedArray@N@Chop@DixonFitFC[complex, phi, mask, matC, matA, matAi];
 
 		(*get the residuals and phases*)
 		phi = RotateDimensionsRight[phi];
-		res = scale Clip[Chop[Abs[result[[-1]]]], {0., max}];
+		res = scale Clip[ToPackedArray@N@Chop[Abs[result[[-1]]]], {0., max}];
 	];
 
 	(*Fitted signals, make complex if not phase constrained*)
@@ -577,7 +586,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*in\out phase data*)
 	iop = {0, 0.5} / Abs[Total[Flatten[(amps[[2 ;;]]^2) freqs[[2 ;;]]]] / Total[Flatten[amps[[2 ;;]]]^2]];
 	matA = (Total /@ (amps Exp[sig #])) & /@ iop;
-	iop = N@Chop@RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]];
+	iop = ToPackedArray@N@Chop@RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]];
 	iop = Transpose[NormalizeData[Transpose[iop]]];
 
 	(*correct the signals if a fat model is used to get cl db idb*)
@@ -756,8 +765,8 @@ DixonToPercent[water_, fat_, clip_?BooleanQ] := Block[{
 
 	(*define water and fat fraction maps*)
 	atot = Abs[water + fat];
-	waterMap = Chop[DivideNoZero[Abs[water], atot]];
-	fatMap = Chop[DivideNoZero[Abs[fat], atot]];
+	waterMap = ToPackedArray@N@Chop[DivideNoZero[Abs[water], atot]];
+	fatMap = ToPackedArray@N@Chop[DivideNoZero[Abs[fat], atot]];
 
 	(*find where water > fat*)
 	wMask = Mask[waterMap, .5, MaskSmoothing->False];
@@ -1195,38 +1204,45 @@ SyntaxInformation[UnwrapDCT] = {"ArgumentsPattern" -> {_, _.}};
 
 UnwrapDCT[psi_]:=UnwrapDCT[psi, None]
 
-UnwrapDCT[psii_, wi_]:=Block[{
-		psi, a, d, itt, w, alpha, rhoi,  norm, normi, phi, phii, 
-		Qphii, maxi , i, soli, num, dena, denb
-	},
-
+UnwrapDCT[psii_, wi_]:=Block[{psi, d},
 	(*Phase unwrapping algorithm based on Ghiglia,Dennis C.,and Louis A.Romero. 10.1364/JOSAA.11.000107.*)
 
 	(*prepare data*)
 	psi = ToPackedArray@N@psii;
-	a = ArrayDepth[psi];
 	d = Dimensions[psi];
+	If[ArrayQ[wi] && Dimensions[wi] =!= d, Return[Message[UnwrapDCT::dim, d, Dimensions[wi]]; $Failed]];
 
 	(*make weights, w is min of weights in each direction eq 36 paper*)
-	itt = If[wi===None, True, False];
-	w = MakeWeights[psi, wi, d, a];
+	UnwrapDCTi[psi, If[wi===None, 1., MakeWeights[psi, wi, d, ArrayDepth[psi]]]]
+]
+
+
+UnwrapDCTi[psi_, w_]:=Block[{
+		alpha, rhoi, tol, res, phi, phii, Qphii, kmax, k, soli, num, dena, denb
+	},
+	(*core with precomputed weights, w = 1. is the unweighted direct solve*)
+
+	(*no wraps present, the least squares solution is the zero mean phase*)
+	If[Max[Max@Abs@DifferenceAt[psi, #]& /@ Range[ArrayDepth[psi]]] < Pi, 
+		Return[psi - Mean@Flatten@psi, Block]
+	];
 
 	(*initialize values*)
-	rhoi = GetDifference[psi, w, True];(*should not be w*)
+	rhoi = GetDifference[psi, w, True];
 
 	(*no weigths do instant solve has weigts defined to itterative solver*)
-	If[itt,
+	If[w === 1.,
 		(*instan solve*)
 		SolvePoisson[rhoi],
 
 		(*step 1: initialize parameters for loop*)
-		i = 0;
+		k = 0;
 		phi = 0.psi;
-		norm = 10^-6 Norm[rhoi, "Frobenius"];
-		maxi = 20 (*Round[0.1 Times@@d]*);
+		tol = 10^-2 Norm@Flatten@rhoi;(*converges in ~4 itterations, tighter tolerance diverges*)
+		kmax = 20 (*Round[0.1 Times@@d]*);
 
 		(*run loop*)
-		(*If[a===3, PrintTemporary[Dynamic[i]," / ", maxi, "   ", norm, " < ", Dynamic[normi]]];*)
+		(*If[a===3, PrintTemporary[Dynamic[k]," / ", kmax, "   ", tol, " < ", Dynamic[res]]];*)
 
 		While[True,(*should check for rhoi is all zero*)
 
@@ -1234,31 +1250,31 @@ UnwrapDCT[psii_, wi_]:=Block[{
 			soli = SolvePoisson[rhoi];
 
 			(*step 3: update k*)
-			i += 1;
+			k += 1;
 
 			(*step 4 or 5: define initial phi or update phi*)
 			num = Flatten[rhoi] . Flatten[soli];(*Total[rhoi soli, -1];*)
-			phii = If[i===1, soli, soli + (num/denb) phii];
+			phii = If[k===1, soli, soli + (num / denb) phii];
 
-			(*store current value as i-1 value*)
+			(*store current value as k-1 value*)
 			denb = num; If[denb===0., Break[]];
 
 			(*step 6: perform one scalar and two vectors update*)
 			Qphii = GetDifference[phii, w, False];
 			dena = Flatten[phii] . Flatten[Qphii]; If[dena===0., Break[]];
 			(*dena = Total[phii Qphii, -1];*) 
-			alpha = num/dena;
+			alpha = num / dena;
 			rhoi -= alpha Qphii;
 			phi += alpha phii;
 
 			(*step 7: check for continue*)
 			(*calculate norm*)
-			normi = Norm[rhoi, "Frobenius"](*Norm@Flatten@rhoi*);
+			res = Norm@Flatten@rhoi;
 
-			If[i > maxi || normi < norm, Break[]]
+			If[k > kmax || res < tol, Break[]]
 		];
 
-		(*Print[i," / ",maxi,"   ", norm," < ",normi,"   "];*)
+		(*Print[k," / ",kmax,"   ", tol," < ",res,"   "];*)
 
 		phi
 	]
@@ -1274,12 +1290,15 @@ MakeWeights[psi_, wi_, d_, a_]:=Block[{w, q},
 	w = ToPackedArray@N@Switch[wi,
 		None, ConstantArray[1., d],
 		Automatic, Clip[Sqrt[GaussianFilter[Sin[psi], 2]^2 + GaussianFilter[Cos[psi], 2]^2], {0.01, 1.}],
-		_, If[d===Dimensions[wi], wi, Return[Message[UnwrapDCT::dim, d, Dimensions[w]]]]
+		_, wi
 	];
 
 	(*calculates the min of w of paired voxels in all dimensions*)
-	MinAt[w(*^2*), #]& /@ Range[a]
+	MinAt[w^2, #]& /@ Range[a]
 ]
+
+
+MaskWeights[msk_]:=If[Min[msk] == 0, MakeWeights[msk, msk + 0.001 (1 - msk), Dimensions[msk], ArrayDepth[msk]], 1.](*full mask needs no weights*)
 
 
 MinAt[arr_, lev_]:=Block[{k},
@@ -1316,20 +1335,20 @@ DifferenceAt[arr_, lv_]:= -RotateDimensionsRight[Differences[RotateDimensionsLef
 (*SolvePoisson*)
 
 
-SolvePoisson[rho_]:=SolvePoisson[rho, ArrayDepth[rho], Dimensions[rho]]
-
-SolvePoisson[rho_, a_, d_]:=Block[{dctRho, dev, dctPhi},
-	(* solve the poisson equation using DCT cash the divisor and handle the /0 for first index*)
-	dctRho = FourierDCT[rho];
-	dev = GetDev[a, d];
-	Switch[a, 1, dev[[1]] = 1., 2, dev[[1,1]] = 1., 3, dev[[1,1,1]] = 1.];
-	dctPhi = dctRho / dev;
-	Switch[a, 1, dctPhi[[1]] = 0., 2, dctPhi[[1,1]] = 0., 3, dctPhi[[1,1,1]] = 0.];
-	FourierDCT[dctPhi, 3]
-]
+SolvePoisson[rho_]:=FourierDCT[FourierDCT[rho] GetDevInv[Dimensions[rho]], 3](*DCT, divide by eigenvalues, inverse DCT, eq 13 paper*)
 
 
-GetDev[a_, d_] := GetDev[a, d] = a (Total@Cos[Pi RotateDimensionsRight[N[Array[{##}&, d]] - 1.] / N[d]] - a);
+GetDevInv[d_]:=If[devDim === d, devInv, devDim = d; devInv = Block[{dev, dc},
+	(*laplacian eigenvalues of the DCT basis, eq 13 paper, only the last dimensions are cached*)
+	dev = ToPackedArray[2 (Outer[Plus, Sequence @@ (Cos[Pi Range[0., # - 1] / #]& /@ d)] - Length[d])];
+
+	(*constant term is undetermined, set to 0*)
+	dc = ConstantArray[1, Length[d]];
+	dev[[Sequence @@ dc]] = 1.;
+	dev = 1. / dev;
+	dev[[Sequence @@ dc]] = 0.;
+	dev
+]]
 
 
 (* ::Subsection:: *)

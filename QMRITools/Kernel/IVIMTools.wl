@@ -312,7 +312,7 @@ SynDataI = Compile[{{s0, _Real, 3}, {f, _Real, 3}, {pdc, _Real, 3}, {bval, _Real
 	Transpose[Map[(f s0 Exp[-# pdc]) &, bval]]
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
-LapFilt[data_, fil_:0.8] := Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@data, "Real"], fil, 
+LapFilt[data_, fil_:0.8] := ToPackedArray@N@Clip[Chop[ImageData[TotalVariationFilter[Image3D[N@data, "Real"], fil, 
 	Method -> "Laplacian", MaxIterations -> 15]]], MinMax[data]]
 
 

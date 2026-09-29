@@ -379,7 +379,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 	];
 
 	(*split tensor and S0*)
-	s0 = N@Clip[ExpNoZero[N@Chop[Last@fitResult]], {0., 1.5 Max[data]}];
+	s0 = N@Clip[ExpNoZero[ToPackedArray@N@Chop[Last@fitResult]], {0., 1.5 Max[data]}];
 	tensor = N@Clip[Most@fitResult,{-0.1,0.1}];
 
 	(*the output depending on the settings*)
@@ -1434,9 +1434,9 @@ SyntaxInformation[TransformTensor] = {"ArgumentsPattern" -> {_, _, _}};
 
 TransformTensor[tens_, disp_, vox_] := Block[{iMat, jac},
 	iMat=IdentityMatrix[3];
-	jac=Chop[iMat+Table[GaussianFilter[disp[[i]],1,iMat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
+	jac=ToPackedArray@N@Chop[iMat+Table[GaussianFilter[disp[[i]],1,iMat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
 
-	TensVec[Apply[TensorRotate,RotateDimensionsLeft[{RotateDimensionsRight[TensMat[tens],2],jac},3],{-4}]]
+	ToPackedArray@N@TensVec[Apply[TensorRotate,RotateDimensionsLeft[{RotateDimensionsRight[TensMat[tens],2],jac},3],{-4}]]
 ]
 
 
@@ -1574,7 +1574,7 @@ TransCorrect[dat_,sh_,dir_,int_] := Module[{data,shift,pos,acPos,out},
 	)&,{shift,data}];
 
 	(*If deformation was in the "COL" direction rotate back*)
-	If[dir=="COL",Return[Transpose[Chop[out]]],Return[Chop[out]]]
+	If[dir=="COL",Return[Transpose[ToPackedArray@N@Chop[out]]],Return[ToPackedArray@N@Chop[out]]]
 ];
 
 

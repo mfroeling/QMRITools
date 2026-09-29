@@ -217,6 +217,15 @@ F[x_] := ...
 - Numeric inner loops use typed `Compile[..., RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]`
   (sometimes `{"Speed", "WarningMessages" -> False}`). Copy the options of the neighbouring compiled functions.
 - Keep arrays packed: `ToPackedArray@N@...`, and avoid mixing Integer and Real.
+- Some functions return unpacked arrays without warning. `Chop` always unpacks, real or complex, even when nothing is
+  chopped, and `N`, `Clip`, `Abs` and arithmetic after it do not repack. Repack right after it:
+  `ToPackedArray[N@Chop@x]`, or `ToPackedArray[Chop@x, Complex]` for complex data (`N` does not unify the mixed
+  Integer/Real/Complex that `Chop` leaves). Pack after `N`, never before: `N@ToPackedArray[x]` silently fails on
+  mixed input and `N` does not pack. Everything downstream pays for an unpacked array, including every call to a compiled
+  function, which has to repack it. In `DixonPhase` one unpacked `Chop` took 45% of the runtime.
+- When optimizing, time each step first. A slow elementwise step (arithmetic, `Abs`, `Arg`) usually means unpacked
+  input, so check `Developer`PackedArrayQ` on its inputs. Test data needs to be packed too: `N@Array[Boole[...]&, d]`
+  is not packed, and timings on it are misleading.
 - The standard parallel idiom is `fun = If[par, DistributeDefinitions[...]; ParallelMap, Map]`. The link-based
   producer/consumer pool in `TrainSegmentationNetwork` is a bespoke exception, not a template.
 
