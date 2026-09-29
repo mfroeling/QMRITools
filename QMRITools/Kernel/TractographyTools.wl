@@ -160,8 +160,13 @@ TensorPermutations::usage =
 StopThreshold::usage = 
 "StopThreshold is an option for FiberTractography and defines the stop threshold which is a value between 0 and 1."
 
-StepSize::usage = 
+StepSize::usage =
 "StepSize is an option for FiberTractography and defines the tractography step size."
+
+TractMethod::usage =
+"TractMethod is an option for FiberTractography and FindTensorPermutation and defines the integration method of each tract step.
+Values can be \"Euler\", \"RK2\" (midpoint, also \"RK\" or \"RungeKutta\"), \"Heun\" (also \"RK2T\"), \"RK3\" (strong stability preserving,
+also \"SSPRK3\" or \"RungeKutta3\"), \"Heun3\" (also \"RK3Heun\") and \"RK4\" (also \"RungeKutta4\")."
 
 MaxSeedPoints::usage = 
 "MaxSeedPoints is an option for FiberTractography and defines the maximum number of seed points to be used."
@@ -613,7 +618,7 @@ Options[FiberTractography] = {
 	InterpolationOrder -> 0,
 	StopThreshold -> 0.5,
 	StepSize -> Automatic,
-	Method -> "RK4",
+	TractMethod -> "RK4",
 	MaxSeedPoints -> Automatic,
 	TractMonitor -> True,
 	Parallelization -> False
@@ -634,16 +639,18 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 	(*get the options*)
 	{{minLength, maxLength}, maxAng, maxSeed, flip, per, int, stopT, step, mon, met} = OptionValue[{
 		FiberLengthRange, FiberAngle, MaxSeedPoints, TensorFlips, TensorPermutations, 
-		InterpolationOrder, StopThreshold, StepSize, TractMonitor, Method}];
+		InterpolationOrder, StopThreshold, StepSize, TractMonitor, TractMethod}];
 	SeedRandom[1234];
 	mon = If[mon, MonitorFunction, List];
 
 	step = N@If[NumberQ[step], step, Min[0.75 vox]];
 	maxStep = Ceiling[(maxLength/step)];
 	tractF = Switch[met, 
-		"RungeKutta" | "RK" | "RK2", RK2, 
-		"RungeKutta3" | "RK3", SSPRK3, 
-		"RungeKutta4" | "RK4", RK4, 
+		"RungeKutta" | "RK" | "RK2", RK2,
+		"Heun" | "RK2T", RK2T,
+		"RungeKutta3" | "RK3" | "SSPRK3", SSPRK3,
+		"Heun3" | "RK3Heun", RK3,
+		"RungeKutta4" | "RK4", RK4,
 		_, Euler
 	];
 	
@@ -691,7 +698,7 @@ FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _
 		tp = First@AbsoluteTiming[
 			tens = RotateDimensionsRight[tens[[All, All, All, 1]]];
 			DistributeDefinitions[tens, stop, vox, int, step, maxAng, maxStep, stopT, tractF, vecF]; 
-			DistributeDefinitions[TractFunc, TractFuncI, MakeInt, EigVec, AlignVec, VecAng, Euler, RK2, RK4];
+			DistributeDefinitions[TractFunc, TractFuncI, MakeInt, EigVec, AlignVec, VecAng, Euler, RK2, RK2T, RK3, SSPRK3, RK4];
 
 			(*Define int function on parallel kernels, see help distributeDefinitions*)
 			(*vecInt = MakeInt[tens, vox, int];*)
@@ -921,7 +928,7 @@ Options[FindTensorPermutation] = {
 	InterpolationOrder -> 0,
 	StopThreshold -> 0.5,
 	StepSize -> Automatic,
-	Method -> "Euler",
+	TractMethod -> "Euler",
 	MaxSeedPoints -> 500
 };
 

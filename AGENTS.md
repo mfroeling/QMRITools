@@ -35,8 +35,15 @@ Each guide's header links to the related guides. The shared topics are:
 
 - **Load the dev version**: `<< QMRIToolsDev`` in a notebook (a small local helper paclet, not in this repo). In a
   script: `PacletDirectoryLoad["<repo>/QMRITools"]; Get["QMRITools`"]`, where `<repo>` is the local clone.
-- **Verify semantics empirically** with `wolframscript -file test.wls`, keeping test scripts outside the repo.
-  Private symbols need their full context, e.g. `` QMRITools`SegmentationTools`Private`NormDat ``.
+- **Verify semantics empirically.** Private symbols need their full context, e.g.
+  `` QMRITools`SegmentationTools`Private`NormDat ``. Two ways, pick what fits the check:
+  - The Wolfram MCP server, if connected: a persistent kernel (`WolframLanguageEvaluator`) for quick iterative checks
+    and inspecting intermediate values, `CodeInspector` for static issues in edited files, `SymbolDefinition` for
+    loaded definitions, and `ReadNotebook` for research notebooks (e.g. to check whether they call a private function).
+    After editing package files, don't trust a partial reload of an already loaded QMRITools (see the two-pass loader
+    in ToolboxStructure.md); reload in a fresh kernel.
+  - `wolframscript -file test.wls`, with test scripts outside the repo: always a fresh kernel and a clean load, so it is
+    the safe way to confirm a change before reporting it.
 - **Call graph**: `wolframscript -file agents/callgraph.wls` (~20 s, static, nothing evaluated) uses the CodeGraph
   paclet (installed, or cloned next to this repo as `../CodeGraph`) and writes `agents/callgraph/overview.md`,
   `defs.tsv` and `edges.tsv` (gitignored).

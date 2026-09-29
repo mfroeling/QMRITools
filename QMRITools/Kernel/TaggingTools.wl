@@ -24,11 +24,24 @@ BeginPackage["QMRITools`TaggingTools`", Join[{"Developer`"}, Complement[QMRITool
 (*Functions*)
 
 
-AnnalyzeTagging::usage = 
-"AnnalyzeTagging[gridC] work in progress...";
+AnnalyzeTagging::usage =
+"AnnalyzeTagging[gridC] tracks the motion in tagged cine data gridC, which is {slices, frames, y, x}.
+The wave vectors of the tag grid are estimated from the power spectrum of the first frames. Per slice the displacement between consecutive frames is estimated
+from the phase of the band pass filtered tag images for each tag direction and accumulated over the frames.
 
-CalculateDisplacementParameters::usage = 
-"CalculateDisplacementParameters[{motx, moty}, mask] work in progress...";
+Output is {{ux, uy}, {im0, im, w0, w}}, all {slices, frames, y, x}, where ux and uy are the accumulated displacements in pixels along the first and second image dimension,
+im0 are the reference images, im the motion corrected frames and w0 and w the corresponding tag grid weighting maps.";
+
+CalculateDisplacementParameters::usage =
+"CalculateDisplacementParameters[{motx, moty}, mask] calculates strain and rotation from the displacements motx and moty as given by AnnalyzeTagging, both {slices, frames, y, x}.
+The mask is {slices, y, x} and a circle fitted to the mask of each slice defines the center for the circumferential and radial directions.
+
+Output is {Exx, Eyy, Exy, Ecc, Ecr, rot}, all {slices, frames, y, x}, where Exx, Eyy and Exy are the Green-Lagrange strain components along the image axes,
+Ecc is the circumferential strain, Ecr the radial strain and rot the rotation around the center in degrees.";
+
+TaggingParPlot::usage =
+"TaggingParPlot[data, label] plots a tagging parameter over time with one line per slice, data is {time, slices}.
+TaggingParPlot[data, label, {min, max}] uses the given plot range, by default it is symmetric around zero with 1.2 times the maximal absolute value.";
 
 
 (* ::Subsection::Closed:: *)
@@ -36,10 +49,10 @@ CalculateDisplacementParameters::usage =
 
 
 HistoryWeighting::usage = 
-"HistoryWeighting is an options for AnnalyzeTagging."
+"HistoryWeighting is an options for AnnalyzeTagging. It is the weight of the new frame when updating the reference image, reference = (1 - w) reference + w frame."
 
 MonitorTagging::usage = 
-"MonitorTagging is an options for AnnalyzeTagging."
+"MonitorTagging is an options for AnnalyzeTagging. If True the intermediate images and displacements are shown during the calculation."
 
 
 (* ::Subsection:: *)
@@ -507,21 +520,22 @@ CalculateDisplacementParameters[{motx_,moty_},mask_]:=Block[{
 (*TaggingParPlot*)
 
 
-col[n_]:=Blend[{Darker[Darker[Red]],Blend[{Yellow,Darker[Yellow]},.5]},#]&/@(Range[0,n]/(n-1))
+(*n colors from dark red to yellow*)
+col[n_] := Blend[{Darker[Darker[Red]], Blend[{Yellow, Darker[Yellow]}, .5]}, #] & /@ ((Range[n] - 1)/Max[1, n - 1])
 
-TaggingParPlot[dati_,lab_,rani_:0]:=Block[{dat,l,d,style,leg,r,ran},
-	dat=Transpose@dati;
-	{l,d}=Dimensions@dat;
-	
-	style=Directive[{Thickness[.02],#}]&/@col[l];
-	leg="Slice "<>ToString[#]&/@Range[l];
-	
-	ran=If[rani===0,r=1.2Max@Abs[dat];{-r,r},rani];
-	
-	ListLinePlot[dat,PlotStyle->style,PlotRange->{{-3,d+2},ran},AxesOrigin->{1,0},Ticks->False,
-		Frame->{{True,False},{True,False}},FrameStyle->Directive[{Thick,Black}],
-		AspectRatio->0.5,PlotLegends->leg, ImageSize->300,
-		PlotLabel->Style[lab,Bold,12,Black]
+SyntaxInformation[TaggingParPlot] = {"ArgumentsPattern" -> {_, _, _.}};
+
+TaggingParPlot[dat_?MatrixQ, lab_] := TaggingParPlot[dat, lab, 1.2 Max[Abs[dat]] {-1, 1}]
+
+TaggingParPlot[dat_?MatrixQ, lab_, ran_] := Block[{l, d, style, leg},
+	{d, l} = Dimensions[dat];
+	style = Directive[{Thickness[.02], #}] & /@ col[l];
+	leg = "Slice " <> ToString[#] & /@ Range[l];
+
+	ListLinePlot[Transpose[dat], PlotStyle -> style, PlotRange -> {{-3, d + 2}, ran}, AxesOrigin -> {1, 0}, Ticks -> False,
+		Frame -> {{True, False}, {True, False}}, FrameStyle -> Directive[{Thick, Black}],
+		AspectRatio -> 0.5, PlotLegends -> leg, ImageSize -> 300,
+		PlotLabel -> Style[lab, Bold, 12, Black]
 	]
 ]
 

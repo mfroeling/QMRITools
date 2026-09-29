@@ -66,7 +66,8 @@ Exitation and refocus are the RF pulse angles e.g. 90,180. They can also be a ra
 The output is in units as defined by the detlaTE, e.g. if detlaTE is in ms the output is in ms.
 The exitation and refocus are defined in Degrees.
 
-Output is {{{T2map,B1Map},{wat, fat, fatMap}, residual},callibration} or {{T2map,B1Map},{wat, fat, fatMap}, residual}.
+Output is {{{T2map, T2fatMap, B1Map}, {wat, fat, fatMap}, residual}, callibration} or {{T2map, T2fatMap, B1Map}, {wat, fat, fatMap}, residual}.
+The residual is the root mean square error of the fit over the echoes, in signal units.
 
 EPGT2Fit[] is based on DOI: 10.1002/nbm.3459."
 
@@ -679,24 +680,13 @@ LeastSquares2C = Compile[{{Ai, _Real, 2}, {y, _Real, 1}},  Ai.y,
 ErrorC = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Total[((y - A.f))^2], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
-ErrorCS = Compile[{{y, _Real, 1}, {f, _Real, 1}, {A, _Real, 2}}, Sqrt[Mean[((y - A.f))^2]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
-
 LeastSquaresErrorC = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, 
 	Total[(y - A.(Inverse[T.A].T).y)^2]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
-
-LeastSquaresErrorCS = Compile[{{A, _Real, 2}, {y, _Real, 1}}, Block[{T = Transpose[A]}, 
-	Sqrt[Mean[(y - A.(Inverse[T.A].T).y)^2]]], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 (*Ai is Inverse[T.A].T*)	
 LeastSquaresError2C = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Total[(y - A.Ai.y)^2], 
 	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
-
-LeastSquaresError2CS = Compile[{{A, _Real, 2}, {Ai, _Real, 2}, {y, _Real, 1}}, Sqrt[Mean[(y - A.Ai.y)^2]], 
-	RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
-
 
 (* ::Subsubsection::Closed:: *)
 (*NonLinearEPGFit*)
@@ -1107,7 +1097,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	fatMap = Clip[ToPackedArray@DivideNoZero[fat, (wat + fat)], {-0.1, 1.1}];
 	{wat, fat} = Clip[{wat, fat}, {-0.1, 1.5} Max[datal]];
 
-	error = ToPackedArray@Sqrt[sol[[val+3]]];
+	(*root mean square residual over the echoes*)
+	error = ToPackedArray@Sqrt[sol[[val+3]] / Last[Dimensions[datal]]];
 
 	(*if needed also output callibaration*)
 	out = {{T2map, T2fmap, B1Map}, {wat, fat, fatMap}, error};

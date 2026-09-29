@@ -148,9 +148,6 @@ CenterFrequency::usage =
 Begin["`Private`"]
 
 
-verb = False;
-
-
 (* ::Subsection::Closed:: *)
 (*SimHamiltonian*)
 

@@ -156,7 +156,6 @@ names must not contain `-`, `_`, `.` or spaces.
 ### Entities and types
 
 ```wolfram
-bidsName  = {"sub","ses","vol","stk","chunk","rep","acq","part","type","suf"};   (* L230 *)
 bidsClass = {"Volume","Volumes","Stacks","Repetitions","Chunks","Acquisitions","Mixed"};
 bidsTypes = <|"T1w"|"T1w-FS"|"T2w"|"T2w-FS" -> "anat", "megre"|"tse" -> "dix",
               "mese"|"T1"|"T2"|"wT2" -> "quant", "dwi" -> "dwi", "seg" -> "seg"|>;  (* unknown -> "miss" *)

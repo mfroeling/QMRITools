@@ -33,9 +33,6 @@ PlotData[data1, data2, vox] plots data1 and data2 and for 3D and 4D data assumes
 PlotData3D::usage = 
 "PlotData3D[data,vox] is a 3D dataviewer, data is the 3D dataset and voxsize the size of the voxels in mm (z,x,y)."
 
-PlotDefGrid::usage =
-"PlotDefGrid[data, phasemap, shiftpar] plots the dataset on the background with on top the non deformed and the deformed grid, or arrows or lines."
-
 
 GetSlicePositions::usage =
 "GetSlicePositions[data] finds the position of slices with the maximal signal in voxel index.
@@ -202,7 +199,6 @@ PlotData::set =
 
 PlotData3D::data = "Data should be a 3D or 4D dataset."
 
-PlotDefGrid::dir = "direction must be \"COL\" or \"ROW\", unknown direction: `1`."
 
 
 (* ::Section:: *)
@@ -690,115 +686,6 @@ DifferencePlot[data_,minmax_,label_,ps_,color_,legend_,frame_,flip_,range_,ccolo
 	(*make plot*)
 	Ploti[pdat, {-1,1}range, LabelJoin[label], ps, color[[a]], legend, frame, ccolor[[a]], aspect]
 ]
-
-
-(* ::Subsection:: *)
-(*check and rewrite*)
-
-
-(* ::Subsubsection::Closed:: *)
-(*PlotDefi*)
-
-
-PlotDefi[data_,shift_,{dim_,dir_},{min_,max_},lab_,ps_,color_,clip_,{gs_,gf_,ncol_,dcol_,lcol_,acol_},{def_,norm_,defl_,arr_,pl_}]:=
-Module[{normGrid,deffGrid,pos,dcor,ncor,points,lines,arrows,head,plot},
-
-	normGrid=Table[{j-0.5,-(i-dim[[2]])+0.5},{i,1,dim[[2]],gs},{j,1,dim[[3]],gs}];
-
-	deffGrid=Table[
-		If[dir=="ROW",{j-shift[[i,j]]-0.5,-(i-dim[[2]])+0.25},
-		If[dir=="COL",{j-0.5,-(i-shift[[i,j]]-dim[[2]])+0.25}]]
-		,{i,1,dim[[2]],gs},{j,1,dim[[3]],gs}];
-
-	pos=Ceiling[DeleteCases[Flatten[Table[If[shift[[i,j]]==0.,{i,j},Null],{i,1,dim[[2]],gs},{j,1,dim[[3]],gs}],1],Null]/gs];
-
-	dcor=Flatten[Delete[deffGrid,pos],1];
-	ncor=Flatten[Delete[normGrid,pos],1];
-
-	points=
-	If[def&&norm,Graphics[{{PointSize[gf[[2]]],ncol,Point[ncor]},{PointSize[gf[[2]]],dcol,Point[dcor]}}],
-		If[def,Graphics[{PointSize[gf[[2]]],dcol,Point[dcor]}],
-			If[norm,Graphics[{PointSize[gf[[2]]],ncol,Point[ncor]}],
-				Graphics[]
-				]
-			]
-		];
-
-	lines=If[defl,
-		If[dir=="COL",Graphics[{Thickness[gf[[1]]],lcol,Map[BSplineCurve[#]&,deffGrid]}],
-			If[dir=="ROW",Graphics[{Thickness[gf[[1]]],lcol,Map[BSplineCurve[#]&,Transpose[deffGrid]]}]]
-			],
-		Graphics[]
-		];
-
-	arrows=If[arr,
-		head=Graphics[Line[{{-1/2,1/4},{0,0},{-1/2,-1/4}}]];
-		Graphics[{Thickness[gf[[1]]],acol,Arrowheads[{{0.008,Automatic,head}}],Arrow[#]&/@ Transpose[{dcor,ncor}]}],
-		Graphics[]
-		];
-
-	plot=If[pl,
-		Ploti[data, {min, max}, None, ps, {1, color}, False, False, clip, {1, 1}],Graphics[]
-		];
-
-	Show[plot,lines,points,arrows,ImageSize->ps,PlotLabel->Style[lab,Bold,FontFamily->"Arial",FontSize->Round[ps/20]]]
-	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*MultiFileSaveDef*)
-
-
-MultiFileSaveDef[data_,shift_,range_,type_,size_,settings_]:=
-Module[{input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def,norm,defl,arr,pl,lab,exp,name},
-	input=SystemDialogInput["Directory",Directory[]];
-	If[input===$Canceled,Print["Export multiple files was canceled!"],	
-		{dim,dir}=settings[[1]];
-		{min,max}=settings[[2]];
-		label=settings[[3]];
-		ps=settings[[4]];
-		color=settings[[5]];
-		{gs,gf,ncol,dcol,lcol,acol}=settings[[6]];
-		{def,norm,defl,arr,pl}=settings[[7]];
-
-		Table[
-			lab=If[!StringQ[label],"",label<>" - "]<>"Slice - "<>ToString[x];
-			exp=PlotDefi[data[[x]],shift[[x]],{dim,dir},{min,max},lab,ps,color,{gs,gf,ncol,dcol,lcol,acol},{def,norm,defl,arr,pl}];
-			name=input<>lab<>type;
-			Export[name,exp,ImageSize->size];
-			,{x,range[[1]],range[[2]]}
-			];
-		Print["Multiple fiels were saved to: "<>input<>" as "<>type<>" files."];
-		]
-	]
-
-
-(* ::Subsubsection::Closed:: *)
-(*MovieSaveDef*)
-
-
-MovieSaveDef[data_,shift_,dur_,loop_,size_,range_,settings_]:=
-Module[{movie,input,dim,dir,min,max,label,ps,color,gs,gf,ncol,dcol,lcol,acol,def,norm,defl,arr,pl,lab},
-	input=SystemDialogInput["FileSave", Directory[] <> $PathnameSeparator <>"*.gif"];
-	If[input===$Canceled,Print["Export multiple files was canceled!"],
-		{dim,dir}=settings[[1]];
-		{min,max}=settings[[2]];
-		label=settings[[3]];
-		ps=settings[[4]];
-		color=settings[[5]];
-		{gs,gf,ncol,dcol,lcol,acol}=settings[[6]];
-		{def,norm,defl,arr,pl}=settings[[7]];
-
-		movie=Flatten[Table[
-			lab=If[!StringQ[label],"",label<>" - "]<>"Slice - "<>ToString[x];
-			PlotDefi[data[[x]],shift[[x]],{dim,dir},{min,max},lab,ps,color,{gs,gf,ncol,dcol,lcol,acol},{def,norm,defl,arr,pl}]
-			,{x,range[[1]],range[[2]]}
-			]];
-
-		Export[input,movie,"DisplayDurations"->dur,"AnimationRepetitions"->loop,ImageSize->size];
-		Print["Movi was saved to: "<>input];
-		]
-	]
 
 
 (* ::Subsection:: *)
@@ -1593,97 +1480,6 @@ DynamicModule[{data, vox, dep},
 	plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, 
 		WindowSize -> All, WindowTitle -> "Plot data window"]];
 ]];
-
-
-(* ::Subsection::Closed:: *)
-(*Plot Deformed Grid*)
-
-
-PlotDefGrid[dat_?ArrayQ,phase_?ArrayQ,shiftpar_?ListQ]:=
-Module[{dim,exp,data,shift,dir,label,settings,z,min,max,ps,color,maxclip,fileType,size,depth,n,str,
-	minclip,transclip,gs,gf,ncol,dcol,lcol,acol,def,norm,defl,arr,pl,tab1,tab2,pannel,control,mind,maxd},
-	data=N[dat];
-	dim=Dimensions[data];
-	shift=N[phase]*shiftpar[[1]];
-	dir=shiftpar[[2]];
-
-	(*Check if data is numeric array, if not exit*)
-	data=dat//N;
-	If[!ArrayQ[data,_,NumericQ],Return[Message[PlotData::data]]];
-
-	(*See what kind of data: 2D,3D or 4D (n=1,2,3). If not one of those exit*)
-	depth=ArrayDepth[data];
-	If[depth>4, Return[Message[PlotData::set]]];
-	n=depth-1;
-
-	(*Determine data dimensions en make string displaying data dimensions*)
-	dim=Dimensions[data];
-	str="Displaying "<>DataString[dim];
-
-	(*Initialize slice ranges and data range*)
-	rangex = dim[[1]];
-	rangey = dim[[2]];
-
-	(*Rescale data between 0 and 1*)
-	{mind,maxd}=If[ListQ[OptionValue[PlotRange]] && Length[OptionValue[PlotRange]]==2,OptionValue[PlotRange],{Min[data],Max[data]}];
-	If[mind==maxd,maxd=mind+0.01];
-	(*data=(##[data,{mind,maxd}])&@@{{ToByte2,ToByte3,ToByte4}[[n]]};*)
-
-	tab1=Column[{
-		ManPanel["Slice Selection",{
-			{"Slice (1-"<>ToString[dim[[1]]]<>")",Control@{{z,Round[dim[[1]]/2],""},1,dim[[1]],1}}
-			}]
-		,
-		ManPanel["Plot Range",{
-			{"Show background image",Control@{{pl,True,""},{True,False}}},
-			{"Min value",Control@{{min,mind,""},mind,max-0.0001,(max-mind)/100, Appearance -> "Labeled"}},
-			{"Max value",Control@{{max,maxd,""},min+0.0001,maxd,(maxd-min)/100, Appearance -> "Labeled"}},
-			{"Min Clipping",Control@{{minclip,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
-			{"Max Clipping",Control@{{maxclip,White,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
-			{"Transparent Clipping",Control@{{transclip,False,""},{True,False}}}
-			}]
-		,
-		ManPanel["Plot Options",{
-			{"Grid spacing",Control@{{gs,3,""},1,10,1}},
-			{"Grid size",Control@{{gf,{0.003,Medium},""},{{0.001,Tiny}->"Thin",{0.003,Medium}->"Normal",{0.005,Large}->"Thick"}}},
-			{"Plot Size",Control@{{ps,400,""},psizes,ControlType->PopupMenu}},
-			{"Color function",Control@{{color,"BlackToWhite",""},colors,ControlType->PopupMenu}},
-			{"Plot Title",Control@{{label,"",""},InputField[#,String]&}}
-			}]
-		,
-		ManPanel["Grid Options",{
-			{"Normal grid",Control@{{norm,False,""},{True,False}}},
-			{"Normal grid color",Control@{{ncol,Blue,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
-			{"Deformed grid",Control@{{def,False,""},{True,False}}},
-			{"Deformed grid color",Control@{{dcol,Red,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
-			{"Deformation gridlines",Control@{{defl,True,""},{True,False}}},
-			{"Grid color",Control@{{lcol,Green,""},ColorSlider[#,ImageSize->{Automatic,15}]&}},
-			{"Deformation arrows",Control@{{arr,False,""},{True,False}}},
-			{"Arrow color",Control@{{acol,Black,""},ColorSlider[#,ImageSize->{Automatic,15}]&}}
-			}]
-		}];
-
-	tab2=Column[{
-		ManPanel["Export plot",{
-			{"File Type",Control@{{fileType,".jpg",""},files}},
-			{"Export Size",Control@{{size,400,""},sizes,ControlType->PopupMenu}},
-			{"Export",Button["Save Plot",SaveImage[Dynamic[exp],FileType->fileType,ImageSize -> size],Method->"Queued",ImageSize->150]}
-			}]
-		}];
-
-	control={{{pannel,1,""},{1->"Plotting options",2->"Exporting options"}},Delimiter,PaneSelector[{1->tab1,2->tab2},Dynamic[pannel]]};
-
-	Manipulate[
-		If[!ListQ[data],Return[]];
-
-		settings={{dim,dir},{min,max},label,ps,color,{gs,gf,ncol,dcol,lcol,acol},{def,norm,defl,arr,pl}};
-		exp=PlotDefi[data[[z]],shift[[z]],{dim,dir},{mind,maxd,min,max},LabelFunc[label,{z}],ps,color,If[transclip,Transparent,{minclip,maxclip}],{gs,gf,ncol,dcol,lcol,acol},{def,norm,defl,arr,pl}]
-		,##,
-		(*Manipulate function options*)
-		ControlPlacement->Right,
-		Deployed->True
-		]&@@control
-	]
 
 
 (* ::Subsection:: *)

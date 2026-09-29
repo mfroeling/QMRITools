@@ -557,26 +557,20 @@ GetTractMeans[dat_, tracts_, vox_, lab_, OptionsPattern[]] := Block[{labels, fl,
 
 
 (* ::Subsubsection::Closed:: *)
-(*RegNorm*)
-
-
-RegNorm[x_,mu_,sigma_] := 1/(E^((x - mu)^2/(2*sigma^2))*(Sqrt[2*Pi]*sigma));
-
-
-(* ::Subsubsection::Closed:: *)
 (*SkewNorm*)
 
 
-Phi[x_] := 1/(E^(x^2/2)*Sqrt[2*Pi]);
-CapitalPhi[x_] := .5(1+Erf[(x)/Sqrt[2]]);
-SkewNorm[x_,omega_,xi_,alpha_] := (2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
-Delta[a_] := a/Sqrt[1+a^2];
-Mn[w_,e_,a_] := e+w Delta[a] Sqrt[2/Pi];
-Var[w_,a_] := w^2(1-(2Delta[a]^2/Pi));
+Phi[x_] := Exp[-x^2 / 2] / Sqrt[2 Pi];
 
-SkewNormC = Compile[{{x, _Real},{omega, _Real},{xi, _Real},{alpha, _Real}},
-	Chop[(2/omega)(1/(E^(((x-xi)/omega)^2/2)*Sqrt[2*Pi]))(.5(1+Erf[((alpha (x-xi)/omega))/Sqrt[2]]))]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
+CapitalPhi[x_] := 0.5 (1 + Erf[x / Sqrt[2]]);
+
+SkewNorm[x_, omega_, xi_, alpha_] := (2 / omega) Phi[(x - xi) / omega] CapitalPhi[alpha (x - xi) / omega];
+
+Delta[a_] := a / Sqrt[1 + a^2];
+
+Mn[w_, e_, a_] := e + w Delta[a] Sqrt[2 / Pi];
+
+Var[w_, a_] := w^2 (1 - 2 Delta[a]^2 / Pi);
 
 
 (* ::Subsection::Closed:: *)
@@ -1532,19 +1526,6 @@ Module[{data,line,line1,line2,hist,x,f,omega1,omega2,xi1,xi2,alpha1,alpha2,r1,r2
 			Show[hist,line1,line2,line])&,Range[Length[range]]
 		]
 	]
-
-
-Phi[x_] := 1/(E^(x^2/2)*Sqrt[2*Pi]);
-
-CapitalPhi[x_] := .5(1+Erf[(x)/Sqrt[2]]);
-
-Delta[a_] := a/Sqrt[1+a^2];
-
-Mn[w_,e_,a_] := e+w Delta[a] Sqrt[2/Pi];
-
-Var[w_,a_] := w^2(1-(2Delta[a]^2/Pi));
-
-SkewNorm[x_,omega_,xi_,alpha_] := (2/omega)Phi[(x-xi)/omega]CapitalPhi[alpha (x-xi)/omega];
 
 
 (* ::Subsection::Closed:: *)

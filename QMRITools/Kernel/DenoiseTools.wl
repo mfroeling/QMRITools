@@ -41,10 +41,13 @@ Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitt
 PCADeNoise[] is based on DOI: 10.1016/j.neuroimage.2016.08.016 and 10.1002/mrm.26059."
 
 P2SDenoise::usage = 
-"P2SDenoise[data] removes Rician noise from the data using self supersized neural net.
-P2SDenoise[data, mask] removes Rician noise from the data with PCA using self supersized neural net withing the mask.
+"P2SDenoise[data] removes noise from the data using self-supervised linear regression, where each volume is predicted from all other volumes.
+P2SDenoise[data, mask] does the same but only within the mask.
 
-PCADeNoise[] is based on DOI:10.48550/arXiv.2011.01355."
+The regression is fitted on Iterations random row sketches of 10% of the voxels and the predictions are averaged.
+The option Method sets the sketch and can be \"Leverage\" (default, leverage score sampling) or \"Count\" (count sketch).
+
+P2SDenoise[] is based on DOI:10.48550/arXiv.2011.01355 (Patch2Self) and Patch2Self2 (CVPR 2024)."
 
 DenoiseCSIdata::usage = 
 "DenoiseCSIdata[spectra] performs PCA denoising of the complex values spectra, data has to be 3D and the spectral dimensions is last, {x,y,z,spectra}."
@@ -616,7 +619,11 @@ GridSearch = Compile[{{val, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig,
 (*P2SDenoise*)
 
 
-Options[P2SDenoise] = {Threshold -> 2, Iterations -> 10};
+Options[P2SDenoise] = {
+	Threshold -> 2, 
+	Iterations -> 10, 
+	Method -> "Leverage"
+};
 
 SyntaxInformation[	P2SDenoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -632,15 +639,20 @@ P2SDenoise[data_, mask_, opts : OptionsPattern[]] := Block[{
 	msk = N@Unitize[dat];
 	ran = {0., 1.1 Max[dat]};
 
-	(*subsample data*)
+	(*sketch the voxel rows down to 10%, one sketch per iteration*)
 	{n, d} = Dimensions@dat;
 	di = Range[d];
-	matS = LeverageSketch[dat, Round[0.1 n], OptionValue[Iterations]];
+	matS = If[OptionValue[Method] === "Count", CountSketch, LeverageSketch][dat, Round[0.1 n], OptionValue[Iterations]];
 
+	(*predict each volume from all others per sketch and average the predictions*)
 	ToPackedArray@N@Clip[VectorToData[msk Transpose[Table[Mean[(
 		dat[[All, Complement[di, {i}]]] . LeastSquares[#[[All, Complement[di, {i}]]], #[[All, i]]]
 	) & /@ matS], {i, d}]], coor], ran]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CountSketch*)
 
 
 CountSketch[mat_?MatrixQ, s_Integer] := CountSketch[mat, s, 1]
@@ -649,10 +661,15 @@ CountSketch[mat_?MatrixQ, s_Integer, ns_Integer] := Block[{n, d, S},
 	{n, d} = Dimensions@mat;
 	SeedRandom[1234];
 	Table[
+		(*hash each row to one of s output rows with a random sign*)
 		S = SparseArray[Thread[{RandomInteger[{1, s}, n], Range[n]}] -> RandomChoice[{-1, 1}, n], {s, n}];
 		S . mat
 	, {ns}]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*LeverageSketch*)
 
 
 LeverageSketch[mat_?MatrixQ, s_Integer] := LeverageSketch[mat, s, 1]
@@ -882,7 +899,7 @@ SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]
 AnisoFilterData[data_, opts:OptionsPattern[]] := AnisoFilterData[data, {1, 1, 1}, opts]
 
 AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
-	dd, grads, k, jacTot, tMat, eval, evec, div, dati,
+	dd, grads, k, jacTot, tMat, div, dati,
 	sig, rho , step, itt, sc, max, tr, cr, ind
 	},
 	(*for implementation see 10.1002/mrm.20339*)
@@ -910,19 +927,14 @@ AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
 		) & /@ dati];
 
 		(*calculate the jacobian (aka structure tensor) and smooth it*)
-		jacTot = ToPackedArray@N@TensMat[
+		jacTot = ToPackedArray@N@RotateDimensionsLeft[
 			GaussianFilter[#, {1, sc rho}] & /@ Total[
 				{#[[1]]^2, #[[2]]^2, #[[3]]^2, #[[1]] #[[2]], #[[1]] #[[3]], #[[2]] #[[3]]} &[Transpose[grads]]
 			, {2}]
 		];
 
 		(*get the step matrix*)
-		tMat = ToPackedArray@N@Map[If[Max[#] < tr, 
-			{{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}},
-			{eval, evec} = Eigensystem[#];
-			eval = eval = 1/(eval + 10.^-16);
-			Transpose[evec] . DiagonalMatrix[3 eval/Total[eval]] . evec
-		] &, jacTot, {3}];
+		tMat = StrucTensCalc[jacTot, tr];
 
 		(*get the time step and calculate divergence of vector field*)
 		div = Total[MapThread[GaussianFilter[#1, 1, #2] &, {#, ind}] & /@ 
@@ -941,10 +953,24 @@ DivDot = Compile[{{t, _Real, 2}, {gr, _Real, 2}}, gr . t
 , RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
-StrucTensCalc = Compile[{{eval, _Real, 1}, {evec, _Real, 2}, {tr, _Real, 0}},
-	If[Max[eval] < tr, {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}},
-		Transpose[evec] . DiagonalMatrix[3 eval/Total[eval]] . evec
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+(*step matrix 3 inv(J)/Tr[inv(J)] of structure tensor J {xx,yy,zz,xy,xz,yz}, via the adjugate so no eigenvectors are needed*)
+StrucTensCalc = Compile[{{jac, _Real, 1}, {tr, _Real, 0}}, Block[{xx, yy, zz, xy, xz, yz, i1, adj, ta},
+	If[Max[jac] < tr, {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}},
+		{xx, yy, zz, xy, xz, yz} = jac + {10.^-16, 10.^-16, 10.^-16, 0., 0., 0.};
+		adj = {
+			{yy zz - yz^2, xz yz - xy zz, xy yz - xz yy},
+			{xz yz - xy zz, xx zz - xz^2, xy xz - xx yz},
+			{xy yz - xz yy, xy xz - xx yz, xx yy - xy^2}
+		};
+		ta = adj[[1, 1]] + adj[[2, 2]] + adj[[3, 3]];
+		i1 = xx + yy + zz;
+		(*rank 1 structure tensor, smooth equally in the plane orthogonal to the gradient*)
+		If[ta <= 10.^-14 i1^2,
+			1.5 ({{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}} - {{xx, xy, xz}, {xy, yy, yz}, {xz, yz, zz}}/i1),
+			3 adj/ta
+		]
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsection:: *)

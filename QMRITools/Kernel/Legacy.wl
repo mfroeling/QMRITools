@@ -259,6 +259,10 @@ CSIInterface[te, bw] opens the CSI interface with known te and bw.
 CSIInterface[file] opens the CSI interface with the data from file loaded.
 CSIInterface[file, {tei, bwi}] opens the CSI interface with the data from file loaded with known te and bw."
 
+PlotDefGrid::usage =
+"PlotDefGrid[data, phasemap, shiftpar] plots the dataset on the background with on top the non deformed and the deformed grid, or arrows or lines.
+shiftpar is {scale, dir} where the phasemap is multiplied by scale to get the shift in voxels and dir is \"ROW\" or \"COL\"."
+
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -4490,6 +4494,111 @@ ExtendedCholeskyDecomposition[tm_] := Block[{n,beta,theta,cm,lm,dm,em,j},
 	,{j,1,3}];
 	lm=lm+IdentityMatrix[n];
 	Transpose[lm . MatrixPower[dm,.5]]
+]
+
+
+(* ::Subsection::Closed:: *)
+(*PlotDefGrid*)
+
+
+PlotDefGrid[dat_?ArrayQ, phase_?ArrayQ, shiftpar_?ListQ] := Module[{
+		dim, exp, data, shift, dir, label, z, min, max, ps, color, maxclip, fileType, size,
+		minclip, transclip, gs, gf, ncol, dcol, lcol, acol, def, norm, defl, arr, pl, tab1, tab2, pannel, control, mind, maxd
+	},
+	(*Check if data is numeric 3D array, if not exit*)
+	data = N[dat];
+	If[!ArrayQ[data, 3, NumericQ], Return[Message[PlotData::data]]];
+	dim = Dimensions[data];
+	shift = N[phase] shiftpar[[1]];
+	dir = shiftpar[[2]];
+
+	(*data range*)
+	{mind, maxd} = MinMax[data];
+	If[mind == maxd, maxd = mind + 0.01];
+
+	tab1 = Column[{
+		QMRITools`PlottingTools`Private`ManPanel["Slice Selection", {
+			{"Slice (1-" <> ToString[dim[[1]]] <> ")", Control@{{z, Round[dim[[1]]/2], ""}, 1, dim[[1]], 1}}
+		}],
+		QMRITools`PlottingTools`Private`ManPanel["Plot Range", {
+			{"Show background image", Control@{{pl, True, ""}, {True, False}}},
+			{"Min value", Control@{{min, mind, ""}, mind, max - 0.0001, (max - mind)/100, Appearance -> "Labeled"}},
+			{"Max value", Control@{{max, maxd, ""}, min + 0.0001, maxd, (maxd - min)/100, Appearance -> "Labeled"}},
+			{"Min Clipping", Control@{{minclip, Black, ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
+			{"Max Clipping", Control@{{maxclip, White, ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
+			{"Transparent Clipping", Control@{{transclip, False, ""}, {True, False}}}
+		}],
+		QMRITools`PlottingTools`Private`ManPanel["Plot Options", {
+			{"Grid spacing", Control@{{gs, 3, ""}, 1, 10, 1}},
+			{"Grid size", Control@{{gf, {0.003, Medium}, ""}, {{0.001, Tiny} -> "Thin", {0.003, Medium} -> "Normal", {0.005, Large} -> "Thick"}}},
+			{"Plot Size", Control@{{ps, 400, ""}, QMRITools`PlottingTools`Private`psizes, ControlType -> PopupMenu}},
+			{"Color function", Control@{{color, "BlackToWhite", ""}, QMRITools`PlottingTools`Private`colors, ControlType -> PopupMenu}},
+			{"Plot Title", Control@{{label, "", ""}, InputField[#, String] &}}
+		}],
+		QMRITools`PlottingTools`Private`ManPanel["Grid Options", {
+			{"Normal grid", Control@{{norm, False, ""}, {True, False}}},
+			{"Normal grid color", Control@{{ncol, Blue, ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
+			{"Deformed grid", Control@{{def, False, ""}, {True, False}}},
+			{"Deformed grid color", Control@{{dcol, Red, ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
+			{"Deformation gridlines", Control@{{defl, True, ""}, {True, False}}},
+			{"Grid color", Control@{{lcol, Green, ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}},
+			{"Deformation arrows", Control@{{arr, False, ""}, {True, False}}},
+			{"Arrow color", Control@{{acol, Black, ""}, ColorSlider[#, ImageSize -> {Automatic, 15}] &}}
+		}]
+	}];
+
+	tab2 = Column[{
+		QMRITools`PlottingTools`Private`ManPanel["Export plot", {
+			{"File Type", Control@{{fileType, ".jpg", ""}, QMRITools`PlottingTools`Private`files}},
+			{"Export Size", Control@{{size, 400, ""}, QMRITools`PlottingTools`Private`sizes, ControlType -> PopupMenu}},
+			{"Export", Button["Save Plot", SaveImage[Dynamic[exp], FileType -> fileType, ImageSize -> size], Method -> "Queued", ImageSize -> 150]}
+		}]
+	}];
+
+	control = {{{pannel, 1, ""}, {1 -> "Plotting options", 2 -> "Exporting options"}}, Delimiter, PaneSelector[{1 -> tab1, 2 -> tab2}, Dynamic[pannel]]};
+
+	Manipulate[
+		exp = PlotDefi[data[[z]], shift[[z]], {dim, dir}, {min, max}, QMRITools`PlottingTools`Private`LabelFunc[label, {z}], ps, color,
+			If[transclip, {Transparent, Transparent}, {minclip, maxclip}], {gs, gf, ncol, dcol, lcol, acol}, {def, norm, defl, arr, pl}]
+		, ##,
+		ControlPlacement -> Right,
+		Deployed -> True
+	] & @@ control
+]
+
+
+PlotDefi[data_, shift_, {dim_, dir_}, {min_, max_}, lab_, ps_, color_, clip_, {gs_, gf_, ncol_, dcol_, lcol_, acol_}, {def_, norm_, defl_, arr_, pl_}] := Module[{
+		normGrid, deffGrid, pos, dcor, ncor, points, lines, arrows, head, plot
+	},
+	normGrid = Table[{j - 0.5, -(i - dim[[2]]) + 0.5}, {i, 1, dim[[2]], gs}, {j, 1, dim[[3]], gs}];
+
+	deffGrid = Table[Switch[dir,
+		"ROW", {j - shift[[i, j]] - 0.5, -(i - dim[[2]]) + 0.25},
+		"COL", {j - 0.5, -(i - shift[[i, j]] - dim[[2]]) + 0.25}
+	], {i, 1, dim[[2]], gs}, {j, 1, dim[[3]], gs}];
+
+	(*grid points without shift are not drawn*)
+	pos = Ceiling[DeleteCases[Flatten[Table[If[shift[[i, j]] == 0., {i, j}, Null], {i, 1, dim[[2]], gs}, {j, 1, dim[[3]], gs}], 1], Null]/gs];
+	dcor = Flatten[Delete[deffGrid, pos], 1];
+	ncor = Flatten[Delete[normGrid, pos], 1];
+
+	points = Graphics[{PointSize[gf[[2]]], If[norm, {ncol, Point[ncor]}, {}], If[def, {dcol, Point[dcor]}, {}]}];
+
+	lines = If[defl,
+		Graphics[{Thickness[gf[[1]]], lcol, BSplineCurve /@ If[dir == "ROW", Transpose[deffGrid], deffGrid]}],
+		Graphics[]
+	];
+
+	arrows = If[arr,
+		head = Graphics[Line[{{-1/2, 1/4}, {0, 0}, {-1/2, -1/4}}]];
+		Graphics[{Thickness[gf[[1]]], acol, Arrowheads[{{0.008, Automatic, head}}], Arrow /@ Transpose[{dcor, ncor}]}],
+		Graphics[]
+	];
+
+	(*background image, keep only the raster so the image pixel size does not set the plot size*)
+	plot = Graphics[If[pl, First@Show[QMRITools`PlottingTools`Private`MakeImage[data, {"Normal", color}, clip, {min, max}], Graphics[]], {}]];
+
+	Show[plot, lines, points, arrows, ImageSize -> ps, PlotLabel -> Style[lab, Bold, FontFamily -> "Arial", FontSize -> Round[ps/20]]]
 ]
 
 

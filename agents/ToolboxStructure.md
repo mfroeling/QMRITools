@@ -57,7 +57,7 @@ with the released `.paclet`, or have to be copied in.
    15.0+.
 3. Flags (set them **before** `Get` to take effect):
    - `$Verbose`: echo every loading step and the full function list
-   - `$Legacy`: also load `Legacy.wl`, 68 public symbols
+   - `$Legacy`: also load `Legacy.wl`, 69 public symbols
    - `$Loaded`, `$LoadedColor`: internal state that marks a reload
 4. `$SubPackages` is the ordered package list. The grouping comments in it ("core", "specific data types", "lots of
    dependencies") are **not** a real dependency order (§3). `$Contexts` = `"QMRITools`" <> #`.
@@ -83,7 +83,7 @@ BeginPackage["QMRITools`X`", Join[{"Developer`"}, Complement[QMRITools`$Contexts
 so **every package sees every other package's public symbols**. Public symbols are exactly those that get a
 `::usage` in the front section. That rule held: 0 public symbols lack a usage string.
 
-Measured: a fresh load takes about 2 s; 953 public symbols (1021 with Legacy); 29 `QMRITools` contexts on
+Measured: a fresh load takes about 2 s; 953 public symbols (1022 with Legacy); 29 `QMRITools` contexts on
 `$ContextPath`; no public short name is defined in two packages.
 
 ---
@@ -173,7 +173,7 @@ symbols); and **used by** (how many packages reference it).
 | SegmentationTools | 2466 | 33/30 | CNN segmentation | General, Masking, NeuralNetwork, Nifti, Processing | 1 (MuscleBids) |
 | ShapeTools | 630 | 16/12 | shape models | Elastix, General, Masking, Plotting | 0 |
 | AmaresTools | 546 | 9/4 | AMARES MRS fitting | Dixon, Jcoupling, Reconstruction, Spectro | 0 |
-| Legacy (optional) | 3616 | 68 total | old functions, incl. a commented-out old `MakeUnet` | – | – |
+| Legacy (optional) | 3616 | 69 total | old functions, incl. a commented-out old `MakeUnet` | – | – |
 
 Reading the graph:
 
@@ -231,8 +231,9 @@ Reading the graph:
 - Stale reference pages for symbols that no longer exist: `AugmentMask` (renamed `MaskedPretraining`),
   `MaxPatchSize`, `SegmentationResolution`, `ZeropadData`, `tempDir`, and a page named
   ``QMRITools`NeuralNetworkTools`$debugUnet``.
-- Public symbols without a reference page: `MakeTrainData` (new), plus Legacy `PlotRespiract`, `ReadBrukerDiff`,
-  `ROIMask`, `ShiftPar`, `SpectraFitResult`.
+- Public symbols without a reference page: `MakeTrainData`, `TractMethod`, `TaggingParPlot` (new), plus Legacy
+  `PlotRespiract`, `ReadBrukerDiff`, `ROIMask`, `ShiftPar`, `SpectraFitResult`. `PlotDefGrid` moved from PlottingTools
+  to Legacy, so its page is now under Legacy.
 - Functions missing from their package guide:
   - AmaresTools guide lists **none** of its 9 functions.
   - SegmentationTools: `CopyTrainedNetwork`, `FreezeEncoderLayers`, `MakeChannelGrid`, `MakeTrainData`,

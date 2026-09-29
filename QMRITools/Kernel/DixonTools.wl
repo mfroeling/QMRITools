@@ -353,21 +353,6 @@ DotAc = Compile[{{v1, _Complex, 1}, {v2, _Complex, 1}},
 RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True, RuntimeAttributes -> {Listable}];
 
 
-(* ::Subsubsection::Closed:: *)
-(*FitBipolar*)
-
-
-FitBipolar[ph0_, msk_] := Block[{m, ydat, xdat, dat, fit, vals},
-	m = UnitStep[Rescale[Total@Total@msk] - 0.5];
-	ydat = MeanNoZero@MeanNoZero[ph0];
-	xdat = Range[Length[ydat]];
-	dat = Pick[Transpose[{xdat, ydat}], m, 1];
-	fit = Fit[dat, {1, x}, x];
-	vals = fit /. x -> xdat;
-	msk ConstantArray[vals, Dimensions[msk][[1 ;; 2]]]
-]
-
-
 (* ::Subsection:: *)
 (*DixonReconstruct*)
 
