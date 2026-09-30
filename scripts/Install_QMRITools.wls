@@ -6,10 +6,9 @@ inst = If[Length[$ScriptCommandLine]===1,
 	PacletInstall[Last@$ScriptCommandLine]
 ];
 
-If[inst === $Failed,
-	Print["Installation Failed"]
-	,
-	load = Get["QMRITools`"];
-	pack = Last@PacletFind["QMRITools"];
-	Print["Installed ", pack["Location"]];
-]
+If[!PacletObjectQ[inst], Print["Installation Failed"]; Exit[1]];
+
+Print["Installed versions: ", StringRiffle[#["Version"]& /@ PacletFind["QMRITools"], ", "]];
+Print["Just installed: ", inst["Version"], " at ", inst["Location"]];
+
+If[Get["QMRITools`"]===$Failed, Print["Installed but failed to load"]; Exit[1]];

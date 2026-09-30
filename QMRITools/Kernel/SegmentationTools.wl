@@ -72,6 +72,9 @@ SegmentData[{data, vox}] and SegmentData[{data, vox}, what] additionally give th
 segmentation to {vox[[1]], 1.5, 1.5} for SegmentationDimension -> \"2D\" or to {6, 1.5, 1.5} for \"3D\".
 If NetworkOutput -> \"Both\" returns {segmentation, confidence}, any other value always returns just the segmentation."
 
+$SegmentationLabels::usage =
+"$SegmentationLabels is an association of all valid values for what in SegmentData to the name of the labels asset of its output, see GetAssetLocation."
+
 ApplySegmentationNetwork::usage =
 "ApplySegmentationNetwork[data, net] segments data using net. Data can be an array or a nii file path. Net can be a network name, file, or NetGraph.
 ApplySegmentationNetwork[data, net, node] returns the network output at the specified intermediate node rather than the final segmentation.
@@ -466,6 +469,8 @@ $SegmentationGroups = <|
 	"Arm" -> <|"Locations" -> {"Arm"}, "Split" -> "Auto",
 		"Classify" -> "None", "OutputLabels" -> "MuscleArmLabels"|>
 |>;
+
+$SegmentationLabels = Association[# -> $SegmentationGroups[#, "OutputLabels"]& /@ Keys[$SegmentationGroups]];
 
 
 (* ::Subsection::Closed:: *)

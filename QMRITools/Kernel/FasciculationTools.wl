@@ -36,11 +36,16 @@ EvaluateActivation::usage =
 EvaluateActivation[out, actS] The same with the extra analysis of the SelectActivations function output given as actS."
 
 AnalyzeActivations::usage = 
-"AnalyzeActivations[actMap, mask] Analysis of the activation map generated from the mask."
+"AnalyzeActivations[actMap, mask] Analysis of the activation map generated from the mask.
+AnalyzeActivations[actMap, mask, lab] the same but the output is an association with the name lab, or one name per mask for a 4D mask.
+AnalyzeActivations[actMap, mask, vox] the same but with the voxel size vox = {z, y, x} in mm, which adds the columns \"ROI Vol [dm3]\", \"Chance [%/dm3]\", \"Chance Obs [%/dm3]\" and the sizes as area in cm^2 \"Mean Area [cm2]\", \"StDv Area [cm2]\", \"Median Area [cm2]\", \"5% Area [cm2]\" and \"95% Area [cm2]\".
+AnalyzeActivations[actMap, mask, lab, vox] the same with the name lab and the voxel size vox.
+
+\"Amount\" is the number of activations and \"Amount Obs\" the number of observations (a slice in one volume) that contain at least one activation."
 
 SelectActivations::usage = 
 "SelectActivations[act] selects the activations above the given ActivationSize.
-SelectActivations[act, vox] selects the activations above the given ActivationSize where the activation size is in mm^3.
+SelectActivations[act, vox] selects the activations above the given ActivationSize, the voxel size vox = {z, y, x} in mm is needed when SizeMethod is \"Area\".
 
 SelectActivations[act, mask] selects the activations above the given ActivationSize within the given mask or masks. The mask can be 3D or 4D.
 SelectActivations[act, {mask, back}] selects the activations above the given ActivationSize within the given mask or masks. All voxels outside the back are ignored.
@@ -72,7 +77,11 @@ ActivationOutput::usage =
 "ActivationOutput is an option for ActivationOutput. If set to All also the mn and threshold values are returned."
 
 ActivationSize::usage = 
-"ActivationSize is an option for SelectActivations. Its the size of the activations selected defined in number of voxels if no voxel size is given. If a voxel size is given its the volume.";
+"ActivationSize is an option for SelectActivations. Its the minimal size of the activations selected, in number of connected voxels within a slice if SizeMethod is \"Voxels\" and in mm^2 if SizeMethod is \"Area\".
+The default is Automatic which is 4 voxels for \"Voxels\" and 30 mm^2 for \"Area\". For \"Area\" the size is rounded up to whole voxels.";
+
+SizeMethod::usage =
+"SizeMethod is an option for SelectActivations. Values can be \"Voxels\" or \"Area\". With \"Voxels\" ActivationSize is the number of connected voxels within a slice, with \"Area\" it is the area in mm^2 for which the voxel size is needed.";
 
 
 (* ::Subsection::Closed:: *)
@@ -87,6 +96,9 @@ SelectActivations::dim =
 
 SelectActivations::size = 
 "The data and/or mask size are wrong. The activation should be the same size as the mask and the background mask. Current sizes are `1`, `2`, and `3` respectively.";
+
+SelectActivations::vox =
+"SizeMethod \"Area\" needs the voxel size. Give the voxel size {z, y, x} in mm or set SizeMethod to \"Voxels\".";
 
 AnalyzeActivations::size = 
 "The mask and activation map must have the same Dimensions.";
@@ -259,22 +271,23 @@ MeanThresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0
 
 
 Options[SelectActivations] = {
-	ActivationSize->4, 
+	ActivationSize->Automatic,
+	SizeMethod->"Voxels",
 	IgnoreSlices->{0,0}
 };
 
 SyntaxInformation[SelectActivations]={"ArgumentsPattern"->{_,_.,_.,OptionsPattern[]}};
 
-SelectActivations[act_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{1,1},{1,1,1}, ops]
+SelectActivations[act_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{1,1},None, ops]
 
 SelectActivations[act_?ArrayQ, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, ops:OptionsPattern[]]:=SelectActivations[act,{1,1},vox, ops]
 
-SelectActivations[act_ ?ArrayQ, mask_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{mask,1},{1,1,1}, ops]
+SelectActivations[act_ ?ArrayQ, mask_?ArrayQ, ops:OptionsPattern[]]:=SelectActivations[act,{mask,1},None, ops]
 
-SelectActivations[act_ ?ArrayQ, {mask_?ArrayQ, bMask_?ArrayQ}, ops:OptionsPattern[]]:=SelectActivations[act,{mask,bMask},{1,1,1}, ops]
+SelectActivations[act_ ?ArrayQ, {mask_?ArrayQ, bMask_?ArrayQ}, ops:OptionsPattern[]]:=SelectActivations[act,{mask,bMask},None, ops]
 
-SelectActivations[act_?ArrayQ, {mask_,bMask_}, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, ops:OptionsPattern[]]:=Block[{
-	aDepth,mDepth,bDepth,size, aDim,nVol, mDim, bDim, start, stop,back, masks,out,sel
+SelectActivations[act_?ArrayQ, {mask_,bMask_}, vox:(None|{_?NumberQ,_?NumberQ,_?NumberQ}), ops:OptionsPattern[]]:=Block[{
+	aDepth,mDepth,bDepth,size, met, aDim,nVol, mDim, bDim, start, stop,back, masks,out,sel
 	},
 	(*check data dimensions*)
 	aDepth = ArrayDepth[act];
@@ -289,8 +302,13 @@ SelectActivations[act_?ArrayQ, {mask_,bMask_}, vox:{_?NumberQ,_?NumberQ,_?Number
 	bDim = If[bMask=!=1, Dimensions[bMask], aDim];
 	If[aDim=!=mDim || aDim=!=bDim, Return[Message[SelectActivations::size,aDim,mDim,bDim]]];
 
-	(*get detection size of fasc*)
-	size = Round[OptionValue[ActivationSize] / (Times@@vox )];
+	(*get detection size of fasc in voxels, the area in mm^2 is rounded up to whole voxels*)
+	{met, size} = OptionValue[{SizeMethod, ActivationSize}];
+	If[met==="Area" && vox===None, Return[Message[SelectActivations::vox]; $Failed]];
+	size = Switch[met,
+		"Area", Ceiling[If[size===Automatic, 30, size] / (vox[[2]] vox[[3]])],
+		_, Round[If[size===Automatic, 4, size]]
+	];
 
 	(*create the selection mask*)
 	sel = If[mask===1, 0act[[All,1]]+1, mask ];
@@ -343,9 +361,13 @@ SelectActivationI[im_?MatrixQ, size_?VectorQ] := If[Total[Flatten[im]] < First[s
 (*AnalyzeActivations*)
 
 
-AnalyzeActivations[act_, msk_]:=AnalyzeActivations[act, msk, ""]
+AnalyzeActivations[act_, msk_]:=AnalyzeActivations[act, msk, "", None]
 
-AnalyzeActivations[act_, msk_, lab_]:=Block[{aDepth, aDim, mDepth, mDim, labs},
+AnalyzeActivations[act_, msk_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}]:=AnalyzeActivations[act, msk, "", vox]
+
+AnalyzeActivations[act_, msk_, lab_]:=AnalyzeActivations[act, msk, lab, None]
+
+AnalyzeActivations[act_, msk_, lab_, vox_]:=Block[{aDepth, aDim, mDepth, mDim, labs},
 	aDepth = ArrayDepth[act];
 	aDim = Dimensions[If[aDepth===4,act[[All,1]],act[[1,All,1]]]];
 	mDepth = ArrayDepth[msk];
@@ -354,11 +376,11 @@ AnalyzeActivations[act_, msk_, lab_]:=Block[{aDepth, aDim, mDepth, mDim, labs},
 	If[aDepth =!= (mDepth+1) || aDim =!= mDim, Return[Message[AnalyzeActivations::size]]];
 
 	If[mDepth === 3,
-		AnalyzeActivationsI[act, msk, lab],
+		AnalyzeActivationsI[act, msk, lab, vox],
 		labs=If[lab===""||Length[lab]=!=Length[act],
 			"Vol_"<>StringPadLeft[ToString[#],3,"0"]&/@Range[Length[act]],
 			lab];
-		Association[MapThread[AnalyzeActivationsI[#1,#2,#3]&,{act, Transpose@msk, labs}]]
+		Association[MapThread[AnalyzeActivationsI[#1,#2,#3,vox]&,{act, Transpose@msk, labs}]]
 	]
 ]
 
@@ -367,11 +389,15 @@ AnalyzeActivations[act_, msk_, lab_]:=Block[{aDepth, aDim, mDepth, mDim, labs},
 (*AnalyzeActivationsI*)
 
 
-AnalyzeActivationsI[act_, msk_, lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,nVols,nObs,mSd,quants,chance,chanceO,chanceV,vals,out},
+AnalyzeActivationsI[act_, msk_, lab_, vox_]:=Block[{sizes,sizesO,nActs,nActsO,mSize,mSizeT,nSlices,nVols,nObs,mSd,quants,chance,chanceO,chanceV,vals,out,vol,area},
 	
-	sizes = N@Flatten[Map[If[Total[Flatten[#]]<=1,{},ComponentMeasurements[Image[#,"Bit"],"Count"][[All,2]]]&,act,{2}]];
+	(*sizes of the activations per observation (slice in one volume)*)
+	sizesO = Map[If[Total[Flatten[#]]<=1,{},ComponentMeasurements[Image[#,"Bit"],"Count"][[All,2]]]&,act,{2}];
+	sizes = N@Flatten[sizesO];
 
 	nActs = Length@sizes;
+	(*number of observations with at least one activation*)
+	nActsO = Total[Boole[# =!= {}]& /@ Flatten[sizesO, 1]];
 
 	mSize = Map[Total[Flatten[#]]&,msk];
 	
@@ -394,12 +420,23 @@ AnalyzeActivationsI[act_, msk_, lab_]:=Block[{sizes,nActs,mSize,mSizeT,nSlices,n
 	chanceO = 100. nActs / nObs (* nVols nSlices*);
 	chanceV = 1000. chanceO / mSizeT;
 
-	vals=Flatten@{mSizeT, nActs, nObs, chance, chanceO, chanceV, mSd, quants};
+	vals=Flatten@{mSizeT, nActs, nObs, chance, chanceO, chanceV, mSd, quants, nActsO};
 
 	out=Association[Thread[{
 		"ROI vol", "Amount", "Observed", "Chance/Vol", "Chance/Obs", 
 		"Chance/Vox", "Mean Size", "StDv Size", 
-		"Median Size", "5% Size", "95% Size"}->vals]];
+		"Median Size", "5% Size", "95% Size", "Amount Obs"}->vals]];
+
+	(*with the voxel size add the volume in dm3, chance per dm3 and the sizes as area in cm2*)
+	If[vox =!= None,
+		vol = mSizeT Times@@vox/10.^6;
+		area = vox[[2]] vox[[3]]/100.;
+		out = Join[out, Association[Thread[{
+			"ROI Vol [dm3]", "Chance [%/dm3]", "Chance Obs [%/dm3]", "Mean Area [cm2]", "StDv Area [cm2]",
+			"Median Area [cm2]", "5% Area [cm2]", "95% Area [cm2]"}->
+			Flatten@{vol, If[vol > 0, {chanceO, 100. nActsO/nObs}/vol, {0., 0.}], area mSd, area quants}]]]
+	];
+
 	If[lab==="",out, Association[lab->out]]
 ]
 

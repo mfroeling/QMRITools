@@ -401,7 +401,7 @@ producer-status grid (Produced/Used per link), and check `ReadLinkL` timeouts (1
 
 | Function | Line | Role |
 | --- | --- | --- |
-| `$BodyPositionClasses`, `$SegmentationLocations`, `$SegmentationGroups` | L398–461 | anatomy tables |
+| `$BodyPositionClasses`, `$SegmentationLocations`, `$SegmentationGroups` | L398–461 | anatomy tables (`$SegmentationGroups` stays private; public `$SegmentationLabels` maps each valid `what` to its output labels asset, used by `scripts/Segment_Nii.wls`) |
 | `CopyTrainedNetwork` | L468 | install a trained net |
 | `GetNeuralNet` / `GetNeuralNetI` / `NeuralNetFunc` | L495–510 | cached net loading |
 | `ImportITKLabels`, `MuscleLabelToName`, `MuscleNameToLabel` | L523–568 | label files |

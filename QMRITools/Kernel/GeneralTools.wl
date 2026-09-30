@@ -42,7 +42,7 @@ SetDemoDirectory::usage =
 "SetDemoDirectory[] Sets the directory to the demo data directory."
 
 ParseCommandLine::usage = 
-"ParseCommandLine[arguments] parses command line arguments and in QmriTools is used for using arguments given with command line scripts for processing."
+"ParseCommandLine[arguments] parses command line arguments and in QmriTools is used for using arguments given with command line scripts for processing. Flags start with \"--\" and the result is an association with the flags as keys. Values following a flag are joined with spaces, a flag without a value gets the value True."
 
 
 StringPadInteger::usage = 
@@ -301,7 +301,9 @@ ClearTemporaryVariables::usage =
 
 
 MonitorFunction::usage = 
-"MonitorFunction[] either prints or echos its input."
+"MonitorFunction[x] echos x in a notebook, outside a notebook it prints x as text prefixed with \">> \".
+MonitorFunction[x, label] does the same and adds the string label before x.
+Any other input is printed as a list. MonitorFunction[x] and MonitorFunction[x, label] return x."
 
 LightDarkV::usage = 
 "LightDarkV[] gives Black for light mode and White for dark mode in version 14.3+ else it gives White.
@@ -376,8 +378,6 @@ ApplyCrop::dim = "Crop region lies outside data range."
 
 ExtractDemoData::dat = "DemoData archive does not exist."
 
-ParseCommandLine::flag = "Warning: No value for flag `1`";
-
 FileSelect::can = "Canceled!";
 
 FindMiddle::mid = "could not find the center.";
@@ -389,9 +389,9 @@ FindMiddle::mid = "could not find the center.";
 Begin["`Private`"]
 
 
-MonitorFunction[x_] := Echo[x];
-MonitorFunction[x_, y_?StringQ] := Echo[x, y];
-MonitorFunction[x___] := Print[{x}];
+MonitorFunction[x_] := If[$Notebooks, Echo[x], Print[">> ", ToString[x]]; x];
+MonitorFunction[x_, y_?StringQ] := If[$Notebooks, Echo[x, y], Print[">> ", y, " ", ToString[x]]; x];
+MonitorFunction[x___] := If[$Notebooks, Print[{x}], Print[">> ", ToString[{x}]]];
 
 
 LightDarkV[] := LightDarkV[Black, White]
@@ -437,7 +437,7 @@ ParseCommandLine[args_] := Block[{flagPos, n, assoc, i, key, valList, val},
 	assoc = <||>;
 	(*Skip script name*)
 	n = Length[args];
-	(*Find positions of arguments that are flags (start with "-")*)
+	(*Find positions of arguments that are flags (start with "--")*)
 	flagPos = Quiet[Flatten@Position[args, _?(StringStartsQ[#, "--"] &), 2]];
 	(*Add artificial endpoint to handle last flag group cleanly*)
 	AppendTo[flagPos, n + 1];
@@ -445,12 +445,7 @@ ParseCommandLine[args_] := Block[{flagPos, n, assoc, i, key, valList, val},
 	Do[
 		key = args[[flagPos[[i]]]];
 		valList = args[[flagPos[[i]] + 1 ;; flagPos[[i + 1]] - 1]];
-		val = Which[
-			valList === {} || StringStartsQ[First[valList], "--"],
-			Message[ParseCommandLine::flag, key]; "",
-			True, 
-			StringRiffle[valList, " "]
-		];
+		val = If[valList === {}, True, StringRiffle[valList, " "]];
 		assoc[key] = val;
 	, {i, Length[flagPos] - 1}];
 	(*return the list*)
