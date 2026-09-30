@@ -5,7 +5,7 @@ the [releases page](https://github.com/mfroeling/QMRITools/releases).
 
 | Version | Released | Requires | Public functions and options |
 | --- | --- | --- | --- |
-| 5.0 | 2026 | Wolfram Language 15.0+ | ~1000 |
+| 5.0 | September 2026 | Wolfram Language 15.0+ | ~1000 |
 | 4.0 | August 2024 | Wolfram Language 14.0+ | ~875 |
 | 3.0 | December 2022 | Wolfram Language 13.0+ | ~750 |
 | 2.0 | January 2019 | Mathematica 11.0+ | ~480 |
@@ -69,6 +69,11 @@ train-and-deploy workflow, and turns Muscle-BIDS into an end-to-end pipeline fro
 - Tract measures: length, curvature and curvature maps (`TractLength`, `TractCurvature`, `TractCurvatureMap`).
 - Endpoint density maps, filtering tracts by length, and fitting tract segments.
 - Choice of integration method for each tract step (`TractMethod`).
+
+### Fasciculation analysis
+
+- Activation size can be set in voxels or as an area in mm² (`SizeMethod`), and with a voxel size the analysis also
+  reports ROI volume, chance per dm³ and activation areas.
 
 ### Denoising and reconstruction
 

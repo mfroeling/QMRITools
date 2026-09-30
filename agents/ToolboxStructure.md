@@ -16,7 +16,7 @@ the docs, and whenever something "works on the second load only".
 ```text
 QMRITools/                         repo root
   QMRITools/                       the paclet (PacletDirectoryLoad points here)
-    PacletInfo.wl                  name, version (4.11.0), WolframVersion "15.0+", extensions + assets
+    PacletInfo.wl                  name, version (5.0.0), WolframVersion "15.0+", extensions + assets
     Kernel/                        QMRITools.wl (loader) + 29 subpackage .wl files
     Documentation/English/         Guides/ (28 .nb), ReferencePages/Symbols/ (1030 .nb), no Tutorials
     Resources/                     demo notebooks, All-Functions.nb/.pdf, DemoData.zip, SCMv8txt.zip (colour maps), GradientGUI
