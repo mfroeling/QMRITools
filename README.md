@@ -174,6 +174,10 @@ QMRITools contains the following [toolboxes](https://www.qmritools.com/tool/):
 ## Muscle Segmentation
 
 <p align="center">
+<img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/Muscle_segmentation.png" alt="Muscle segmentation"  width="70%" />
+</p>
+
+<p align="center">
 <img src="https://github.com/mfroeling/QMRITools/blob/master/docs/images/network-generations.png" alt="QMRITools package add on"  width="70%" />
 </p>
 
