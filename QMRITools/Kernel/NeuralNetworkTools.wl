@@ -1243,7 +1243,7 @@ AnalyzeNetworkFeatures[net_, datI_, met_] := Block[{
 	If[ArrayDepth[data] === 4, data = data[[All, 1]]];
 
 	(*find the patch dimensions and adjust data and network*)
-	dim = Last[QMRITools`SegmentationTools`Private`FindPatchDim[net, Dimensions@data]];
+	dim = Last[FindPatchDim[net, Dimensions@data]];
 	dataP = NormalizeData[PadToDimensions[data, dim], NormalizeMethod -> "Uniform"];
 	netP = ChangeNetDimensions[net, "Dimensions" -> dim];
 
@@ -1393,8 +1393,8 @@ SyntaxInformation[MakeClassifyImage] = {"ArgumentsPattern" -> {_, OptionsPattern
 
 MakeClassifyImage[dat_, opts:OptionsPattern[]] := Switch[ArrayDepth[dat],
 	2, MakeClassifyImage[dat, opts],
-	3, MakeClassifyImage[#, opts]&/@First[AutoCropData[dat]],
-	4, MakeClassifyImage[#, opts]&/@First[AutoCropData[dat[[All, 1]]]],
+	3, MakeClassifyImage[#, opts]& /@ dat,
+	4, MakeClassifyImage[#, opts]& /@ dat[[All, 1]],
 	_, $Failed
 ]
 

@@ -483,7 +483,7 @@ defaultConfig = <|
 		"analysis" -> "05_analysis"
 	|>,
 	"conversion"-> <|
-		"Version"-> "Own"
+		"Version"-> If[$OperatingSystem === "MacOSX", 1, "Own"]
 	|>,
 	"Process" -> <|
 		"Masking" -> 5,

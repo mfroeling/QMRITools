@@ -3,7 +3,7 @@
 (*** Wolfram CDF File ***)
 (* http://www.wolfram.com/cdf *)
 
-(* CreatedBy='Mathematica 13.1' *)
+(* CreatedBy='Wolfram 15.0' *)
 
 (***************************************************************************)
 (*                                                                         *)
@@ -22,11 +22,11 @@
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
-NotebookDataPosition[      1088,         20]
-NotebookDataLength[    177514,       3149]
-NotebookOptionsPosition[    178085,       3148]
-NotebookOutlinePosition[    178485,       3164]
-CellTagsIndexPosition[    178442,       3161]
+NotebookDataPosition[      1084,         20]
+NotebookDataLength[    149799,       2786]
+NotebookOptionsPosition[    150357,       2785]
+NotebookOutlinePosition[    150766,       2801]
+CellTagsIndexPosition[    150723,       2798]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -34,14 +34,11 @@ Notebook[{
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{QMRITools`GradientTools`Private`app$$ = GrayLevel[1], 
-    QMRITools`GradientTools`Private`bi$$ = 0, 
-    QMRITools`GradientTools`Private`bvalc$$ = 9000, 
-    QMRITools`GradientTools`Private`bvald$$ = {10, 20, 30, 40, 60, 80, 100, 
-    200, 300, 500, 700, 1000}, QMRITools`GradientTools`Private`bvall$$ = {
-    1000}, QMRITools`GradientTools`Private`bvals$$ = {1000, 2000, 3000, 4000, 
-    5000, 6000}, QMRITools`GradientTools`Private`charge$$ = Null, 
-    QMRITools`GradientTools`Private`charts$$ = {
+   DynamicModuleBox[{$CellContext`app$$ = GrayLevel[1], $CellContext`bi$$ = 
+    0, $CellContext`bvalc$$ = 9000, $CellContext`bvald$$ = {10, 20, 30, 40, 
+    60, 80, 100, 200, 300, 500, 700, 1000}, $CellContext`bvall$$ = {
+    1000}, $CellContext`bvals$$ = {1000, 2000, 3000, 4000, 5000, 
+    6000}, $CellContext`charge$$ = Null, $CellContext`charts$$ = {
      Graphics[{{
         RGBColor[0.8518518518518519, 0.8518518518518519, 0.8518518518518519], 
         Polygon[CompressedData["
@@ -730,151 +727,116 @@ H1U9kvug8g5o+h1Q1De4wflQ++F8qPvgfKj74Xyo/+B8qP/RzA9zAACLwFHZ
          78, 60}, {90, 90}}, None}, {{-180, -150, -120, -90, -60, -30, 0, 30, 
          60, 90, 120, 150, 180}, None}}, 
       FrameLabel -> {
-       "\[Phi] (\[Degree])", "\[Theta] Sin[\[Theta]] (\[Degree])"}]}, 
-    QMRITools`GradientTools`Private`ctype$$ = 1, 
-    QMRITools`GradientTools`Private`dirs1$$ = 30, 
-    QMRITools`GradientTools`Private`dirs2$$ = {15, 15}, 
-    QMRITools`GradientTools`Private`dirs21$$ = 15, 
-    QMRITools`GradientTools`Private`dirs22$$ = 15, 
-    QMRITools`GradientTools`Private`dirs23$$ = 15, 
-    QMRITools`GradientTools`Private`dirs24$$ = 15, 
-    QMRITools`GradientTools`Private`dirs25$$ = 15, 
-    QMRITools`GradientTools`Private`dirs26$$ = 15, 
-    QMRITools`GradientTools`Private`disp$$ = 1, 
-    QMRITools`GradientTools`Private`file$$ = "", 
-    QMRITools`GradientTools`Private`gradc$$ = "", 
-    QMRITools`GradientTools`Private`gradd$$ = "", 
-    QMRITools`GradientTools`Private`gradm$$ = "", 
-    QMRITools`GradientTools`Private`grads$$ = "", 
-    QMRITools`GradientTools`Private`grid$$ = 9, 
-    QMRITools`GradientTools`Private`gridf$$ = False, 
-    QMRITools`GradientTools`Private`half$$ = 1, 
-    QMRITools`GradientTools`Private`inter$$ = True, 
-    QMRITools`GradientTools`Private`len$$ = Null, 
-    QMRITools`GradientTools`Private`mirror$$ = True, 
-    QMRITools`GradientTools`Private`mpoints$$ = {}, 
-    QMRITools`GradientTools`Private`mult$$ = 1, 
-    QMRITools`GradientTools`Private`names$$ = {
-    "Set_Name", "Shells_Name", "Grid_Name", "DWI_Name"}, 
-    QMRITools`GradientTools`Private`nshels$$ = 2, 
-    QMRITools`GradientTools`Private`opacity$$ = 0.5, 
-    QMRITools`GradientTools`Private`orderc$$ = "", 
-    QMRITools`GradientTools`Private`orderd$$ = "", 
-    QMRITools`GradientTools`Private`orderm$$ = "", 
-    QMRITools`GradientTools`Private`orders$$ = "", 
-    QMRITools`GradientTools`Private`out$$ = "Set_Name", 
-    QMRITools`GradientTools`Private`outc$$ = "", 
-    QMRITools`GradientTools`Private`outd$$ = "", 
-    QMRITools`GradientTools`Private`outm$$ = "", 
-    QMRITools`GradientTools`Private`outs$$ = "", 
-    QMRITools`GradientTools`Private`part$$ = 1, 
-    QMRITools`GradientTools`Private`points$$ = {}, 
-    QMRITools`GradientTools`Private`pointsc$$ = {}, 
-    QMRITools`GradientTools`Private`pointspl$$ = {}, 
-    QMRITools`GradientTools`Private`ppoints$$ = {}, 
-    QMRITools`GradientTools`Private`ppointspl$$ = {}, 
-    QMRITools`GradientTools`Private`proj$$ = False, 
-    QMRITools`GradientTools`Private`random$$ = True, 
-    QMRITools`GradientTools`Private`rlen$$ = Null, 
-    QMRITools`GradientTools`Private`rlenc$$ = {}, 
-    QMRITools`GradientTools`Private`running$$ = False, 
-    QMRITools`GradientTools`Private`sc$$ = Null, 
-    QMRITools`GradientTools`Private`scc$$ = Null, 
-    QMRITools`GradientTools`Private`shel$$ = 1, 
-    QMRITools`GradientTools`Private`show$$ = {1, 2}, 
-    QMRITools`GradientTools`Private`showc$$ = All, 
-    QMRITools`GradientTools`Private`size$$ = 430, 
-    QMRITools`GradientTools`Private`steps$$ = 1000, 
-    QMRITools`GradientTools`Private`sticks$$ = False, 
-    QMRITools`GradientTools`Private`type$$ = "normal", 
-    QMRITools`GradientTools`Private`typed$$ = "normal", 
-    QMRITools`GradientTools`Private`va$$ = 0.5235987755982988, 
-    QMRITools`GradientTools`Private`vel$$ = 1, 
-    QMRITools`GradientTools`Private`viewvec$$ = {0, 0}, 
-    QMRITools`GradientTools`Private`vp$$ = {1.3, -2.4, 2}, 
-    QMRITools`GradientTools`Private`vv$$ = {0, 0, 1}, 
-    QMRITools`GradientTools`Private`weight$$ = 0.5, Typeset`show$$ = True, 
-    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
-    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
-    "\"untitled\"", Typeset`specs$$ = {{
+       "\[Phi] (\[Degree])", 
+        "\[Theta] Sin[\[Theta]] (\[Degree])"}]}, $CellContext`ctype$$ = 
+    1, $CellContext`dirs1$$ = 30, $CellContext`dirs2$$ = {15, 
+    15}, $CellContext`dirs21$$ = 15, $CellContext`dirs22$$ = 
+    15, $CellContext`dirs23$$ = 15, $CellContext`dirs24$$ = 
+    15, $CellContext`dirs25$$ = 15, $CellContext`dirs26$$ = 
+    15, $CellContext`disp$$ = 1, $CellContext`file$$ = 
+    "", $CellContext`gradc$$ = "", $CellContext`gradd$$ = 
+    "", $CellContext`gradm$$ = "", $CellContext`grads$$ = 
+    "", $CellContext`grid$$ = 9, $CellContext`gridf$$ = 
+    False, $CellContext`half$$ = 1, $CellContext`int$$ = 
+    10, $CellContext`inter$$ = True, $CellContext`len$$ = 
+    Null, $CellContext`mirror$$ = 
+    True, $CellContext`mpoints$$ = {}, $CellContext`mult$$ = 
+    1, $CellContext`names$$ = {
+    "Set_Name", "Shells_Name", "Grid_Name", 
+     "DWI_Name"}, $CellContext`nshels$$ = 2, $CellContext`opacity$$ = 
+    0.5, $CellContext`orderc$$ = "", $CellContext`orderd$$ = 
+    "", $CellContext`orderm$$ = "", $CellContext`orders$$ = 
+    "", $CellContext`out$$ = "Set_Name", $CellContext`outc$$ = 
+    "", $CellContext`outd$$ = "", $CellContext`outm$$ = 
+    "", $CellContext`outs$$ = "", $CellContext`part$$ = 
+    1, $CellContext`points$$ = {}, $CellContext`pointsc$$ = {}, \
+$CellContext`pointspl$$ = {}, $CellContext`ppoints$$ = {}, \
+$CellContext`ppointspl$$ = {}, $CellContext`proj$$ = 
+    False, $CellContext`random$$ = True, $CellContext`rlen$$ = 
+    Null, $CellContext`rlenc$$ = {}, $CellContext`running$$ = 
+    False, $CellContext`sc$$ = Null, $CellContext`scc$$ = 
+    Null, $CellContext`shel$$ = 1, $CellContext`show$$ = {1, 
+    2}, $CellContext`showc$$ = All, $CellContext`size$$ = 
+    430, $CellContext`steps$$ = 1000, $CellContext`sticks$$ = 
+    False, $CellContext`type$$ = "normal", $CellContext`typed$$ = 
+    "normal", $CellContext`va$$ = 0.5235987755982988, $CellContext`vel$$ = 
+    1, $CellContext`viewvec$$ = {0, 0}, $CellContext`vp$$ = {
+    1.3, -2.4, 2}, $CellContext`vv$$ = {0, 0, 1}, $CellContext`weight$$ = 0.5,
+     Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
+    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
+    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
       Hold[
        Row[{"  Set Name ", 
          InputField[
           Dynamic[
-           Part[
-           QMRITools`GradientTools`Private`names$$, 
-            QMRITools`GradientTools`Private`mult$$]], String]}]], 
-      Manipulate`Dump`ThisIsNotAControl}, {{
-       Hold[QMRITools`GradientTools`Private`disp$$], 1, 
-       "display gradients"}, {
-      1 -> "graphics", 2 -> "chart", 3 -> "text", 4 -> "G load"}}, {{
-       Hold[QMRITools`GradientTools`Private`opacity$$], 0.5, 
-       "sphere opacity"}, 0, 1, 0.1}, {
+           Part[$CellContext`names$$, $CellContext`mult$$]], String]}]], 
+      Manipulate`Dump`ThisIsNotAControl, ControlType -> None}, {{
+       Hold[$CellContext`disp$$], 1, "display gradients"}, {
+      1 -> "graphics", 2 -> "chart", 3 -> "text", 4 -> "G load"}, ControlType -> 
+      SetterBar}, {{
+       Hold[$CellContext`opacity$$], 0.5, "sphere opacity"}, 0, 1, 0.1, 
+      ControlType -> Slider}, {
       Hold[
        Row[{" sticks: ", 
          Checkbox[
-          Dynamic[QMRITools`GradientTools`Private`sticks$$]], 
-         "   mirror grad.: ", 
+          Dynamic[$CellContext`sticks$$]], "   mirror grad.: ", 
          Checkbox[
-          Dynamic[QMRITools`GradientTools`Private`mirror$$]], 
-         "   project grad. on half: ", 
+          Dynamic[$CellContext`mirror$$]], "   project grad. on half: ", 
          Checkbox[
-          Dynamic[QMRITools`GradientTools`Private`proj$$]]}]], 
-      Manipulate`Dump`ThisIsNotAControl}, {
+          Dynamic[$CellContext`proj$$]]}]], Manipulate`Dump`ThisIsNotAControl,
+       ControlType -> None}, {
       Hold[
        Grid[{{
           Button[
-          "top", QMRITools`GradientTools`Private`vp$$ = {0, 0, 3.38}, 
-           ImageSize -> {50, 20}, FrameMargins -> 0, FontSize -> 10], 
+          "top", $CellContext`vp$$ = {0, 0, 3.38}, ImageSize -> {50, 20}, 
+           FrameMargins -> 0], 
           Button[
-          "right", QMRITools`GradientTools`Private`vp$$ = {3.38, 0, 0}, 
-           ImageSize -> {50, 20}, FrameMargins -> 0, FontSize -> 10], 
+          "right", $CellContext`vp$$ = {3.38, 0, 0}, ImageSize -> {50, 20}, 
+           FrameMargins -> 0], 
           Button[
-          "front", QMRITools`GradientTools`Private`vp$$ = {0, 3.38, 0}, 
-           ImageSize -> {50, 20}, FrameMargins -> 0, FontSize -> 10], 
+          "front", $CellContext`vp$$ = {0, 3.38, 0}, ImageSize -> {50, 20}, 
+           FrameMargins -> 0], 
           Button[
-          "reset", {
-            QMRITools`GradientTools`Private`vp$$, 
-             QMRITools`GradientTools`Private`vv$$, 
-             QMRITools`GradientTools`Private`va$$} = {{1.3, -2.4, 2}, {0, 0, 
-             1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 0, 
-           FontSize -> 10]}}]], Manipulate`Dump`ThisIsNotAControl}, {{
-       Hold[QMRITools`GradientTools`Private`half$$], 1, 
-       "Full or half sphere"}, {1 -> "half sphere", 0 -> "full sphere"}}, {{
-       Hold[QMRITools`GradientTools`Private`mult$$], 1, "shells"}, {
-      1 -> "single shell", 2 -> "multi shell", 3 -> "cartesian", 4 -> 
-       "DWI"}}, {{
-       Hold[QMRITools`GradientTools`Private`type$$], "normal", "type"}, {
+          "reset", {$CellContext`vp$$, $CellContext`vv$$, $CellContext`va$$} = \
+{{1.3, -2.4, 2}, {0, 0, 1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 
+           0]}}]], Manipulate`Dump`ThisIsNotAControl, ControlType -> None}, {{
+       Hold[$CellContext`half$$], 1, "Full or half sphere"}, {
+      1 -> "half sphere", 0 -> "full sphere"}, ControlType -> SetterBar}, {{
+       Hold[$CellContext`mult$$], 1, "shells"}, {
+      1 -> "single shell", 2 -> "multi shell", 3 -> "cartesian", 4 -> "DWI"}, 
+      ControlType -> PopupMenu}, {{
+       Hold[$CellContext`type$$], "normal", "type"}, {
       "normal", "normal fixed z", "normal fixed x, y and z", "over-plus", 
-       "over-plus fixed z", "over-plus fixed x, y and z"}}, {{
-       Hold[QMRITools`GradientTools`Private`dirs1$$], 30, 
-       "number of gradients"}, 6, 128, 1}, {{
-       Hold[QMRITools`GradientTools`Private`nshels$$], 2, 
-       "number of shells"}, {2, 3, 4, 5, 6}}, {{
-       Hold[QMRITools`GradientTools`Private`shel$$], 1, " shell"}, 
+       "over-plus fixed z", "over-plus fixed x, y and z"}, ControlType -> 
+      PopupMenu}, {{
+       Hold[$CellContext`dirs1$$], 30, "number of gradients"}, 6, 128, 1, 
+      ControlType -> Manipulator}, {{
+       Hold[$CellContext`nshels$$], 2, "number of shells"}, {2, 3, 4, 5, 6}, 
+      ControlType -> SetterBar}, {{
+       Hold[$CellContext`shel$$], 1, " shell"}, 
       Dynamic[
-       Range[QMRITools`GradientTools`Private`nshels$$]]}, {{
-       Hold[QMRITools`GradientTools`Private`dirs21$$], 15, 
-       "number of gradients shell 1"}, 3, 128, 1}, {{
-       Hold[QMRITools`GradientTools`Private`dirs22$$], 15, 
-       "number of gradients shell 2"}, 3, 128, 1}, {{
-       Hold[QMRITools`GradientTools`Private`dirs23$$], 15, 
-       "number of gradients shell 3"}, 3, 128, 1}, {{
-       Hold[QMRITools`GradientTools`Private`dirs24$$], 15, 
-       "number of gradients shell 4"}, 3, 128, 1}, {{
-       Hold[QMRITools`GradientTools`Private`dirs25$$], 15, 
-       "number of gradients shell 5"}, 3, 128, 1}, {{
-       Hold[QMRITools`GradientTools`Private`dirs26$$], 15, 
-       "number of gradients shell 6"}, 3, 128, 1}, {{
-       Hold[QMRITools`GradientTools`Private`weight$$], 0.5, 
-       "shell weighting"}, 0, 1, 0.05}, {{
-       Hold[QMRITools`GradientTools`Private`grid$$], 9, 
-       "cartesian grid size"}, 5, 15, 1}, {{
-       Hold[QMRITools`GradientTools`Private`gridf$$], True, 
-       "full even grid"}, {
-      False -> "no (in between odd grid)", True -> "yes"}}, {{
-       Hold[QMRITools`GradientTools`Private`typed$$], "normal", 
-       "           type"}, {"normal", "over-plus"}}, {
+       Range[$CellContext`nshels$$]], ControlType -> Automatic}, {{
+       Hold[$CellContext`dirs21$$], 15, "number of gradients shell 1"}, 3, 
+      128, 1, ControlType -> Manipulator}, {{
+       Hold[$CellContext`dirs22$$], 15, "number of gradients shell 2"}, 3, 
+      128, 1, ControlType -> Manipulator}, {{
+       Hold[$CellContext`dirs23$$], 15, "number of gradients shell 3"}, 3, 
+      128, 1, ControlType -> Manipulator}, {{
+       Hold[$CellContext`dirs24$$], 15, "number of gradients shell 4"}, 3, 
+      128, 1, ControlType -> Manipulator}, {{
+       Hold[$CellContext`dirs25$$], 15, "number of gradients shell 5"}, 3, 
+      128, 1, ControlType -> Manipulator}, {{
+       Hold[$CellContext`dirs26$$], 15, "number of gradients shell 6"}, 3, 
+      128, 1, ControlType -> Manipulator}, {{
+       Hold[$CellContext`weight$$], 0.5, "shell weighting"}, 0, 1, 0.05, 
+      ControlType -> Slider}, {{
+       Hold[$CellContext`grid$$], 9, "cartesian grid size"}, 5, 15, 1, 
+      ControlType -> Manipulator}, {{
+       Hold[$CellContext`gridf$$], True, "full even grid"}, {
+      False -> "no (in between odd grid)", True -> "yes"}, ControlType -> 
+      SetterBar}, {{
+       Hold[$CellContext`typed$$], "normal", "           type"}, {
+      "normal", "over-plus"}, ControlType -> SetterBar}, {
       Hold[
        PaneSelector[{1 -> Column[{
             Manipulate`Place[1], 
@@ -889,23 +851,22 @@ H1U9kvug8g5o+h1Q1De4wflQ++F8qPvgfKj74Xyo/+B8qP/RzA9zAACLwFHZ
               Manipulate`Place[8], 
               Manipulate`Place[9], 
               Manipulate`Place[10]}, 
-             Dynamic[QMRITools`GradientTools`Private`shel$$]], 
+             Dynamic[$CellContext`shel$$]], 
             Manipulate`Place[11]}], 3 -> Column[{
             Manipulate`Place[12], 
             Manipulate`Place[13]}], 4 -> Manipulate`Place[14]}, 
-        Dynamic[QMRITools`GradientTools`Private`mult$$]]], 
-      Manipulate`Dump`ThisIsNotAControl}, {
+        Dynamic[$CellContext`mult$$]]], Manipulate`Dump`ThisIsNotAControl, 
+      ControlType -> None}, {
       Hold[
        PaneSelector[{1 -> Row[{"  b-value:   ", 
             InputField[
-             Dynamic[QMRITools`GradientTools`Private`bvall$$], Expression, 
-             Background -> Dynamic[
+             Dynamic[$CellContext`bvall$$], Expression, Background -> Dynamic[
                If[
                 Or[
                  And[
-                  AllTrue[QMRITools`GradientTools`Private`bvall$$, NumberQ], 
-                  ListQ[QMRITools`GradientTools`Private`bvall$$]], 
-                 NumberQ[QMRITools`GradientTools`Private`bvall$$]], None, 
+                  AllTrue[$CellContext`bvall$$, NumberQ], 
+                  ListQ[$CellContext`bvall$$]], 
+                 NumberQ[$CellContext`bvall$$]], None, 
                 Lighter[
                  Lighter[Red]]]]]}], 2 -> Dynamic[
            Grid[
@@ -914,905 +875,684 @@ H1U9kvug8g5o+h1Q1De4wflQ++F8qPvgfKj74Xyo/+B8qP/RzA9zAACLwFHZ
               Map[Row[{"b-val" <> ToString[#] <> ":", 
                  InputField[
                   Dynamic[
-                   Part[QMRITools`GradientTools`Private`bvals$$, #]], Number, 
-                  FieldSize -> 5]}]& , 
-               Range[1, QMRITools`GradientTools`Private`nshels$$]], 6, ""], 
-             3]]], 3 -> Row[{"max b (corner):   ", 
+                   Part[$CellContext`bvals$$, #]], Number, FieldSize -> 
+                  5]}]& , 
+               Range[1, $CellContext`nshels$$]], 6, ""], 3]]], 3 -> 
+         Row[{"max b (corner):   ", 
             InputField[
-             Dynamic[QMRITools`GradientTools`Private`bvalc$$], Number]}], 4 -> 
+             Dynamic[$CellContext`bvalc$$], Number]}], 4 -> 
          Row[{"      b-value:   ", 
             InputField[
-             Dynamic[QMRITools`GradientTools`Private`bvald$$], Expression, 
-             Background -> Dynamic[
+             Dynamic[$CellContext`bvald$$], Expression, Background -> Dynamic[
                If[
                 Or[
                  And[
-                  AllTrue[QMRITools`GradientTools`Private`bvald$$, NumberQ], 
-                  ListQ[QMRITools`GradientTools`Private`bvald$$]], 
-                 NumberQ[QMRITools`GradientTools`Private`bvald$$]], None, 
+                  AllTrue[$CellContext`bvald$$, NumberQ], 
+                  ListQ[$CellContext`bvald$$]], 
+                 NumberQ[$CellContext`bvald$$]], None, 
                 Lighter[
                  Lighter[Red]]]]]}]}, 
-        Dynamic[QMRITools`GradientTools`Private`mult$$]]], 
-      Manipulate`Dump`ThisIsNotAControl}, {
+        Dynamic[$CellContext`mult$$]]], Manipulate`Dump`ThisIsNotAControl, 
+      ControlType -> None}, {
       Hold[
        Dynamic[
         Grid[{{"  interleave b: ", 
            Checkbox[
-            Dynamic[QMRITools`GradientTools`Private`inter$$]], 
-           "Optimize G load: ", 
+            Dynamic[$CellContext`inter$$]], "Optimize G load: ", 
            Checkbox[
-            Dynamic[QMRITools`GradientTools`Private`random$$]]}, 
-          If[
-          QMRITools`GradientTools`Private`inter$$, {"  interleave b-value: ", 
+            Dynamic[$CellContext`random$$]]}, 
+          If[$CellContext`inter$$, {"  interleave b-value: ", 
             InputField[
-             Dynamic[QMRITools`GradientTools`Private`bi$$], Number, FieldSize -> 
-             3], "interleave b every: ", 
+             Dynamic[$CellContext`bi$$], Number, FieldSize -> 3], 
+            "interleave b every: ", 
             PopupMenu[
-             Dynamic[QMRITools`GradientTools`Private`int], 
+             Dynamic[$CellContext`int$$], 
              Range[3, 20]]}, {}]}, Alignment -> Left]]], 
-      Manipulate`Dump`ThisIsNotAControl}, {{
-       Hold[QMRITools`GradientTools`Private`steps$$], 1000, 
-       "quality (iterations)"}, {
+      Manipulate`Dump`ThisIsNotAControl, ControlType -> None}, {{
+       Hold[$CellContext`steps$$], 1000, "quality (iterations)"}, {
       500 -> "poor (500)", 1000 -> "normal (1000)", 2500 -> 
        "excellent (2500)", 5000 -> "perfect (5000)", 10000 -> 
-       "extreme (10000)"}}, {
+       "extreme (10000)"}, ControlType -> PopupMenu}, {
       Hold[
        Row[{
-         Button["generate", QMRITools`GradientTools`Private`app$$ = Lighter[
-             Lighter[LightGray]]; QMRITools`GradientTools`Private`disp$$ = 1; 
-          QMRITools`GradientTools`Private`running$$ = True; 
-          QMRITools`GradientTools`Private`mirror$$ = 
-           If[QMRITools`GradientTools`Private`half$$ == 0, False, True]; 
-          QMRITools`GradientTools`Private`proj$$ = False; Pause[0.2]; 
-          Switch[QMRITools`GradientTools`Private`mult$$, 4, 
-            QMRITools`GradientTools`Private`gradd$$ = 
-             If[QMRITools`GradientTools`Private`typed$$ == "normal", {{1, 0, 
-               0}, {0, 1, 0}, {0, 0, 1}}, {{-0.707107, -0.5, 0.5}, {
-               0.707107, -0.5, 0.5}, {0., 0.707107, 0.707107}}]; Null, 3, 
-            QMRITools`GradientTools`Private`gradc$$ = (
-              QMRITools`GradientTools`Private`pointsc$$ = 
-              QMRITools`GradientTools`Private`GradGrid[
-               QMRITools`GradientTools`Private`grid$$, 
-                QMRITools`GradientTools`Private`gridf$$]); Null, 
-            2, {QMRITools`GradientTools`Private`mpoints$$, 
-               QMRITools`GradientTools`Private`vel$$, 
-               QMRITools`GradientTools`Private`part$$} = 
-             QMRITools`GradientTools`Private`Prepare[
-              QMRITools`GradientTools`Private`dirs2$$, 
-               QMRITools`GradientTools`Private`half$$, {}, 
-               QMRITools`GradientTools`Private`weight$$]; Pause[0.5]; 
-            Do[QMRITools`GradientTools`Private`mpoints$$ = 
-               QMRITools`GradientTools`Private`GradOptimize4C[
-                QMRITools`GradientTools`Private`mpoints$$, 
-                 QMRITools`GradientTools`Private`vel$$, 
-                 QMRITools`GradientTools`Private`half$$]; 
-              QMRITools`GradientTools`Private`ppoints$$ = Map[Chop[
-                  Part[QMRITools`GradientTools`Private`mpoints$$, #]]& , 
-                 QMRITools`GradientTools`Private`part$$]; Null, {
-              QMRITools`GradientTools`Private`steps$$}]; 
-            QMRITools`GradientTools`Private`gradm$$ = Map[Chop[
-                Part[QMRITools`GradientTools`Private`mpoints$$, #]]& , 
-               QMRITools`GradientTools`Private`part$$]; Null, 1, 
-            QMRITools`GradientTools`Private`grads$$ = 
-             Switch[QMRITools`GradientTools`Private`type$$, "normal", 
-               QMRITools`GradientTools`Private`points$$ = 
-                QMRITools`GradientTools`Private`Prepare[{
-                  QMRITools`GradientTools`Private`dirs1$$}, 
-                  QMRITools`GradientTools`Private`half$$]; Pause[0.5]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize1C[
-                  QMRITools`GradientTools`Private`points$$, 
-                   QMRITools`GradientTools`Private`half$$], {
-                 QMRITools`GradientTools`Private`steps$$}]; 
-               Chop[QMRITools`GradientTools`Private`points$$], 
-               "normal fixed z", 
-               QMRITools`GradientTools`Private`points$$ = 
-                QMRITools`GradientTools`Private`Prepare[{
-                  QMRITools`GradientTools`Private`dirs1$$}, 
-                  QMRITools`GradientTools`Private`half$$, {{0, 0, 1}}]; 
-               Pause[0.5]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize2C[
-                  QMRITools`GradientTools`Private`points$$, 1, 
-                   QMRITools`GradientTools`Private`half$$], {
-                 QMRITools`GradientTools`Private`steps$$}]; 
-               Chop[QMRITools`GradientTools`Private`points$$], 
-               "normal fixed x, y and z", 
-               QMRITools`GradientTools`Private`points$$ = 
-                QMRITools`GradientTools`Private`Prepare[{
-                  QMRITools`GradientTools`Private`dirs1$$}, 
-                  QMRITools`GradientTools`Private`half$$, {{1, 0, 0}, {0, 1, 
-                  0}, {0, 0, 1}}]; Pause[0.5]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize2C[
-                  QMRITools`GradientTools`Private`points$$, 3, 
-                   QMRITools`GradientTools`Private`half$$], {
-                 QMRITools`GradientTools`Private`steps$$}]; 
-               Chop[QMRITools`GradientTools`Private`points$$], "over-plus", 
-               QMRITools`GradientTools`Private`half$$ = 1; 
-               QMRITools`GradientTools`Private`points$$ = 
-                QMRITools`GradientTools`Private`Prepare[{
-                  QMRITools`GradientTools`Private`dirs1$$}, 
-                  QMRITools`GradientTools`Private`half$$]; 
-               QMRITools`GradientTools`Private`points$$ = 
-                Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, 
-                  QMRITools`GradientTools`Private`points$$]; Pause[0.5]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize2C[
-                  QMRITools`GradientTools`Private`points$$, 3, 
-                   QMRITools`GradientTools`Private`half$$], {
-                  Round[QMRITools`GradientTools`Private`steps$$/10]}]; 
-               QMRITools`GradientTools`Private`charge$$ = Join[
-                  
-                  ConstantArray[(0.5 
-                    QMRITools`GradientTools`Private`dirs1$$)^1.2, 3], 
-                  ConstantArray[1, QMRITools`GradientTools`Private`dirs1$$]]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize3C[
-                  QMRITools`GradientTools`Private`points$$, 
-                   QMRITools`GradientTools`Private`charge$$, 3], {
-                 QMRITools`GradientTools`Private`steps$$}]; 
-               QMRITools`GradientTools`Private`points$$ = Chop[
-                  Drop[QMRITools`GradientTools`Private`points$$, 3]], 
-               "over-plus fixed z", 
-               QMRITools`GradientTools`Private`half$$ = 1; 
-               QMRITools`GradientTools`Private`points$$ = 
-                QMRITools`GradientTools`Private`Prepare[{
-                  QMRITools`GradientTools`Private`dirs1$$ - 1}, 
-                  QMRITools`GradientTools`Private`half$$]; 
-               QMRITools`GradientTools`Private`points$$ = 
+         Button["generate", $CellContext`app$$ = Lighter[
+             Lighter[LightGray]]; $CellContext`disp$$ = 
+           1; $CellContext`running$$ = True; $CellContext`mirror$$ = 
+           If[$CellContext`half$$ == 0, False, True]; $CellContext`proj$$ = 
+           False; Pause[0.2]; 
+          Switch[$CellContext`mult$$, 
+            4, $CellContext`gradd$$ = 
+             If[$CellContext`typed$$ == "normal", {{1, 0, 0}, {0, 1, 0}, {0, 
+               0, 1}}, {{-0.707107, -0.5, 0.5}, {0.707107, -0.5, 0.5}, {0., 
+               0.707107, 0.707107}}]; Null, 
+            3, $CellContext`gradc$$ = ($CellContext`pointsc$$ = \
+$CellContext`GradGrid[$CellContext`grid$$, $CellContext`gridf$$]); Null, 
+            2, {$CellContext`mpoints$$, $CellContext`vel$$, \
+$CellContext`part$$} = $CellContext`Prepare[$CellContext`dirs2$$, \
+$CellContext`half$$, {}, $CellContext`weight$$]; Pause[0.5]; 
+            Do[$CellContext`mpoints$$ = \
+$CellContext`GradOptimize4C[$CellContext`mpoints$$, $CellContext`vel$$, \
+$CellContext`half$$]; $CellContext`ppoints$$ = Map[Chop[
+                  Part[$CellContext`mpoints$$, #]]& , $CellContext`part$$]; 
+              Null, {$CellContext`steps$$}]; $CellContext`gradm$$ = Map[Chop[
+                Part[$CellContext`mpoints$$, #]]& , $CellContext`part$$]; 
+            Null, 1, $CellContext`grads$$ = 
+             Switch[$CellContext`type$$, 
+               "normal", $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$}, $CellContext`half$$]; Pause[0.5]; 
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize1C[$CellContext`points$$, $CellContext`half$$], \
+{$CellContext`steps$$}]; Chop[$CellContext`points$$], 
+               "normal fixed z", $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$}, $CellContext`half$$, {{0, 0, 
+                  1}}]; Pause[0.5]; 
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 
+                   1, $CellContext`half$$], {$CellContext`steps$$}]; 
+               Chop[$CellContext`points$$], 
+               "normal fixed x, y and z", $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$}, $CellContext`half$$, {{1, 0, 
+                  0}, {0, 1, 0}, {0, 0, 1}}]; Pause[0.5]; 
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 
+                   3, $CellContext`half$$], {$CellContext`steps$$}]; 
+               Chop[$CellContext`points$$], 
+               "over-plus", $CellContext`half$$ = 
+                1; $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$}, $CellContext`half$$]; \
+$CellContext`points$$ = 
+                Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 
+                  0}}, $CellContext`points$$]; Pause[0.5]; 
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 3, $CellContext`half$$], {
+                  Round[$CellContext`steps$$/10]}]; $CellContext`charge$$ = 
+                Join[
+                  ConstantArray[(0.5 $CellContext`dirs1$$)^1.2, 3], 
+                  ConstantArray[1, $CellContext`dirs1$$]]; 
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize3C[$CellContext`points$$, $CellContext`charge$$, 
+                   3], {$CellContext`steps$$}]; $CellContext`points$$ = Chop[
+                  Drop[$CellContext`points$$, 3]], 
+               "over-plus fixed z", $CellContext`half$$ = 
+                1; $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$ - 
+                   1}, $CellContext`half$$]; $CellContext`points$$ = 
                 Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0., 0.707107, 
-                   0.707107}}, QMRITools`GradientTools`Private`points$$]; 
-               Pause[0.5]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize2C[
-                  QMRITools`GradientTools`Private`points$$, 4, 
-                   QMRITools`GradientTools`Private`half$$], {
-                  Round[QMRITools`GradientTools`Private`steps$$/10]}]; 
-               QMRITools`GradientTools`Private`charge$$ = Join[
-                  
-                  ConstantArray[(0.5 
-                    QMRITools`GradientTools`Private`dirs1$$)^1.2, 3], 
-                  ConstantArray[1, QMRITools`GradientTools`Private`dirs1$$]]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize3C[
-                  QMRITools`GradientTools`Private`points$$, 
-                   QMRITools`GradientTools`Private`charge$$, 4], {
-                 QMRITools`GradientTools`Private`steps$$}]; 
-               QMRITools`GradientTools`Private`points$$ = Chop[
-                  Drop[QMRITools`GradientTools`Private`points$$, 3]], 
-               "over-plus fixed x, y and z", 
-               QMRITools`GradientTools`Private`half$$ = 1; 
-               QMRITools`GradientTools`Private`points$$ = 
-                QMRITools`GradientTools`Private`Prepare[{
-                  QMRITools`GradientTools`Private`dirs1$$ - 3}, 
-                  QMRITools`GradientTools`Private`half$$]; 
-               QMRITools`GradientTools`Private`points$$ = 
+                   0.707107}}, $CellContext`points$$]; Pause[0.5]; 
+               
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 4, $CellContext`half$$], {
+                  Round[$CellContext`steps$$/10]}]; $CellContext`charge$$ = 
+                Join[
+                  ConstantArray[(0.5 $CellContext`dirs1$$)^1.2, 3], 
+                  ConstantArray[1, $CellContext`dirs1$$]]; 
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize3C[$CellContext`points$$, $CellContext`charge$$, 
+                   4], {$CellContext`steps$$}]; $CellContext`points$$ = Chop[
+                  Drop[$CellContext`points$$, 3]], 
+               "over-plus fixed x, y and z", $CellContext`half$$ = 
+                1; $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$ - 
+                   3}, $CellContext`half$$]; $CellContext`points$$ = 
                 Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {-0.707107, -0.5, 
-                   0.5}, {0.707107, -0.5, 0.5}, {0., 0.707107, 0.707107}}, 
-                  QMRITools`GradientTools`Private`points$$]; Pause[0.5]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize2C[
-                  QMRITools`GradientTools`Private`points$$, 6, 
-                   QMRITools`GradientTools`Private`half$$], {
-                  Round[QMRITools`GradientTools`Private`steps$$/10]}]; 
-               QMRITools`GradientTools`Private`charge$$ = Join[
-                  
-                  ConstantArray[(0.5 
-                    QMRITools`GradientTools`Private`dirs1$$)^1.2, 3], 
-                  ConstantArray[1, QMRITools`GradientTools`Private`dirs1$$]]; 
-               Do[QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`GradOptimize3C[
-                  QMRITools`GradientTools`Private`points$$, 
-                   QMRITools`GradientTools`Private`charge$$, 6], {
-                 QMRITools`GradientTools`Private`steps$$}]; 
-               QMRITools`GradientTools`Private`points$$ = Chop[
-                  Drop[QMRITools`GradientTools`Private`points$$, 3]]]; Null]; 
-          Switch[QMRITools`GradientTools`Private`mult$$, 1, 
-            QMRITools`GradientTools`Private`outs$$ = 
-             QMRITools`GradientTools`ConvertGrads[
-               ConstantArray[QMRITools`GradientTools`Private`grads$$, 
-                Length[QMRITools`GradientTools`Private`bvall$$]], 
-               QMRITools`GradientTools`Private`bvall$$, 
-               QMRITools`GradientTools`Private`bi$$]; 
-            QMRITools`GradientTools`Private`orders$$ = 
-             QMRITools`GradientTools`FindOrder[
-               ConstantArray[QMRITools`GradientTools`Private`grads$$, 
-                Length[QMRITools`GradientTools`Private`bvall$$]], 
-               QMRITools`GradientTools`Private`bvall$$]; Null, 2, 
-            QMRITools`GradientTools`Private`outm$$ = 
-             QMRITools`GradientTools`ConvertGrads[
-              QMRITools`GradientTools`Private`gradm$$, 
-               Part[QMRITools`GradientTools`Private`bvals$$, 
-                Span[1, QMRITools`GradientTools`Private`nshels$$]], 
-               QMRITools`GradientTools`Private`bi$$]; 
-            QMRITools`GradientTools`Private`orderm$$ = 
-             QMRITools`GradientTools`FindOrder[
-              QMRITools`GradientTools`Private`gradm$$, 
-               Part[QMRITools`GradientTools`Private`bvals$$, 
-                Span[1, QMRITools`GradientTools`Private`nshels$$]]]; Null, 3, 
-            QMRITools`GradientTools`Private`outc$$ = 
-             QMRITools`GradientTools`ConvertGrads[
-              QMRITools`GradientTools`Private`gradc$$, {
-               QMRITools`GradientTools`Private`bvalc$$}, 
-               QMRITools`GradientTools`Private`bi$$]; 
-            QMRITools`GradientTools`Private`orderc$$ = 
-             QMRITools`GradientTools`FindOrder[
-              QMRITools`GradientTools`Private`gradc$$, 
-               QMRITools`GradientTools`Private`bvalc$$]; Null, 4, 
-            QMRITools`GradientTools`Private`outd$$ = 
-             QMRITools`GradientTools`ConvertGrads[
-               ConstantArray[QMRITools`GradientTools`Private`gradd$$, 
-                Length[QMRITools`GradientTools`Private`bvald$$]], 
-               QMRITools`GradientTools`Private`bvald$$, 
-               QMRITools`GradientTools`Private`bi$$]; 
-            Part[QMRITools`GradientTools`Private`outd$$, 2] = Join[
-               If[
-               QMRITools`GradientTools`Private`typed$$ == "normal", {
+                   0.5}, {0.707107, -0.5, 0.5}, {0., 0.707107, 
+                   0.707107}}, $CellContext`points$$]; Pause[0.5]; 
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 6, $CellContext`half$$], {
+                  Round[$CellContext`steps$$/10]}]; $CellContext`charge$$ = 
+                Join[
+                  ConstantArray[(0.5 $CellContext`dirs1$$)^1.2, 3], 
+                  ConstantArray[1, $CellContext`dirs1$$]]; 
+               Do[$CellContext`points$$ = \
+$CellContext`GradOptimize3C[$CellContext`points$$, $CellContext`charge$$, 
+                   6], {$CellContext`steps$$}]; $CellContext`points$$ = Chop[
+                  Drop[$CellContext`points$$, 3]]]; Null]; 
+          Switch[$CellContext`mult$$, 
+            1, $CellContext`outs$$ = $CellContext`ConvertGrads[
+               ConstantArray[$CellContext`grads$$, 
+                
+                Length[$CellContext`bvall$$]], $CellContext`bvall$$, \
+$CellContext`bi$$]; $CellContext`orders$$ = $CellContext`FindOrder[
+               ConstantArray[$CellContext`grads$$, 
+                Length[$CellContext`bvall$$]], $CellContext`bvall$$]; Null, 
+            2, $CellContext`outm$$ = \
+$CellContext`ConvertGrads[$CellContext`gradm$$, 
+               Part[$CellContext`bvals$$, 
+                Span[
+                1, $CellContext`nshels$$]], $CellContext`bi$$]; \
+$CellContext`orderm$$ = $CellContext`FindOrder[$CellContext`gradm$$, 
+               Part[$CellContext`bvals$$, 
+                Span[1, $CellContext`nshels$$]]]; Null, 
+            3, $CellContext`outc$$ = \
+$CellContext`ConvertGrads[$CellContext`gradc$$, {$CellContext`bvalc$$}, \
+$CellContext`bi$$]; $CellContext`orderc$$ = \
+$CellContext`FindOrder[$CellContext`gradc$$, $CellContext`bvalc$$]; Null, 
+            4, $CellContext`outd$$ = $CellContext`ConvertGrads[
+               ConstantArray[$CellContext`gradd$$, 
+                
+                Length[$CellContext`bvald$$]], $CellContext`bvald$$, \
+$CellContext`bi$$]; Part[$CellContext`outd$$, 2] = Join[
+               
+               If[$CellContext`typed$$ == "normal", {
                 " 1.00000    0.00000    0.00000       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.00000    1.00000    0.00000       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.00000    0.00000    1.00000       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]]}, {
+                   Round[$CellContext`bi$$, 0.1]]}, {
                 "-0.70711   -0.50000    0.50000       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.70711   -0.50000    0.50000       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.00000    0.70711    0.70711       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]]}], {
+                   Round[$CellContext`bi$$, 0.1]]}], {
                " 0.02704    0.79706    0.60330       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.09999   -0.59783    0.79536       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.23191   -0.77261    0.59101       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.52867   -0.79903    0.28646       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.18297   -0.98140    0.05818       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.86286    0.19578    0.46599       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.05126    0.20181    0.97808       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.66047    0.01890    0.75062       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.65426   -0.18818    0.73249       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.33052    0.11752    0.93646       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.95407   -0.14465    0.26236       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.14402   -0.86963    0.47224       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.78028   -0.56460    0.26904       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.75319   -0.31631    0.57675       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.41392   -0.31357    0.85460       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.56536    0.27275    0.77845       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.73743    0.58153    0.34354       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.29639   -0.44648    0.84428       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.38689    0.75986    0.52243       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.20081    0.52214    0.82888       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.79424   -0.60284    0.07593       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.98777    0.03678    0.15153       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.29973    0.90469    0.30281       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.95633    0.27860    0.08835       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.49976   -0.83556    0.22819       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.90574    0.41773    0.07170       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.77284    0.45698    0.44032       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.35339   -0.03796    0.93471       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.84918    0.07921    0.52213       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.50085    0.85590    0.12880       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.47526    0.67317    0.56654       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.87597   -0.32192    0.35923       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.64492    0.75075    0.14303       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.12687    0.96109    0.24536       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.60869   -0.54852    0.57325       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.03797   -0.21873    0.97505       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.47780   -0.64010    0.60165       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 "-0.57319    0.42677    0.69952       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.18760   -0.96394    0.18874       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                  Round[$CellContext`bi$$, 0.1]], 
                 " 0.23342    0.50887    0.28591       " <> ToString[
-                  Round[QMRITools`GradientTools`Private`bi$$, 0.1]]}]; 
-            QMRITools`GradientTools`Private`orderd$$ = 
-             QMRITools`GradientTools`FindOrder[
-               ConstantArray[QMRITools`GradientTools`Private`gradd$$, 
-                Length[QMRITools`GradientTools`Private`bvald$$]], 
-               QMRITools`GradientTools`Private`bvald$$]; Null]; Pause[0.1]; 
-          QMRITools`GradientTools`Private`running$$ = False; 
-          QMRITools`GradientTools`Private`app$$ = White; Null, Method -> 
-          "Queued", ImageSize -> {120, 23}, FontSize -> 10], 
+                  
+                  Round[$CellContext`bi$$, 
+                   0.1]]}]; $CellContext`orderd$$ = $CellContext`FindOrder[
+               ConstantArray[$CellContext`gradd$$, 
+                Length[$CellContext`bvald$$]], $CellContext`bvald$$]; Null]; 
+          Pause[0.1]; $CellContext`running$$ = False; $CellContext`app$$ = 
+           White; Null, Method -> "Queued", ImageSize -> {120, 23}], 
          Button["clipboard", 
-          CopyToClipboard[QMRITools`GradientTools`Private`out$$], 
-          ImageSize -> {100, 23}, FontSize -> 10], 
+          CopyToClipboard[$CellContext`out$$], ImageSize -> {100, 23}], 
          Button[
-         "file", QMRITools`GradientTools`Private`file$$ = 
+         "file", $CellContext`file$$ = 
            SystemDialogInput["FileSave", "dti_vectors_input.txt"]; If[
-            Not[QMRITools`GradientTools`Private`file$$ === $Canceled], 
-            Export[
-            QMRITools`GradientTools`Private`file$$, 
-             QMRITools`GradientTools`Private`out$$, "Text"]], 
-          ImageSize -> {100, 23}, Method -> "Queued", FontSize -> 10]}]], 
-      Manipulate`Dump`ThisIsNotAControl}, {
+            Not[$CellContext`file$$ === $Canceled], 
+            Export[$CellContext`file$$, $CellContext`out$$, "Text"]], 
+          ImageSize -> {100, 23}, Method -> "Queued"]}]], 
+      Manipulate`Dump`ThisIsNotAControl, ControlType -> None}, {
       Hold[
        Row[{
          Style[
          "Made by Martijn Froeling, Phd \nm.froeling@umcutrecht.nl", {Small, 
-           GrayLevel[0.5]}]}]], Manipulate`Dump`ThisIsNotAControl}, {{
-       Hold[QMRITools`GradientTools`Private`points$$], {}}}, {{
-       Hold[QMRITools`GradientTools`Private`pointspl$$], {}}}, {{
-       Hold[QMRITools`GradientTools`Private`pointsc$$], {}}}, {{
-       Hold[QMRITools`GradientTools`Private`ppoints$$], {}}}, {{
-       Hold[QMRITools`GradientTools`Private`ppointspl$$], {}}}, {{
-       Hold[QMRITools`GradientTools`Private`mpoints$$], {}}}, {{
-       Hold[QMRITools`GradientTools`Private`gradd$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`gradm$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`grads$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`gradc$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`outd$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`outc$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`outm$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`outs$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`orderd$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`orderc$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`orderm$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`orders$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`out$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`file$$], ""}}, {{
-       Hold[QMRITools`GradientTools`Private`show$$], {1, 2}}}, {{
-       Hold[QMRITools`GradientTools`Private`showc$$], All}}, {{
-       Hold[QMRITools`GradientTools`Private`weight$$], 0.5}}, {{
-       Hold[QMRITools`GradientTools`Private`grid$$], 9}}, {{
-       Hold[QMRITools`GradientTools`Private`gridf$$], False}}, {{
-       Hold[QMRITools`GradientTools`Private`running$$], False}}, {{
-       Hold[QMRITools`GradientTools`Private`app$$], 
-       GrayLevel[1]}}, {{
-       Hold[QMRITools`GradientTools`Private`size$$], 430}}, {{
-       Hold[QMRITools`GradientTools`Private`inter$$], True}}, {{
-       Hold[QMRITools`GradientTools`Private`bi$$], 0}}, {{
-       Hold[QMRITools`GradientTools`Private`random$$], True}}, {{
-       Hold[QMRITools`GradientTools`Private`sticks$$], False}}, {{
-       Hold[QMRITools`GradientTools`Private`mirror$$], True}}, {{
-       Hold[QMRITools`GradientTools`Private`proj$$], False}}, {{
-       Hold[QMRITools`GradientTools`Private`vel$$], 1}}, {{
-       Hold[QMRITools`GradientTools`Private`part$$], 1}}, {{
-       Hold[QMRITools`GradientTools`Private`dirs1$$], 30}}, {{
-       Hold[QMRITools`GradientTools`Private`dirs21$$], 15}}, {{
-       Hold[QMRITools`GradientTools`Private`dirs22$$], 15}}, {{
-       Hold[QMRITools`GradientTools`Private`dirs23$$], 15}}, {{
-       Hold[QMRITools`GradientTools`Private`dirs24$$], 15}}, {{
-       Hold[QMRITools`GradientTools`Private`dirs25$$], 15}}, {{
-       Hold[QMRITools`GradientTools`Private`dirs26$$], 15}}, {{
-       Hold[QMRITools`GradientTools`Private`bvald$$], {10, 20, 30, 40, 60, 80,
-        100, 200, 300, 500, 700, 1000}}}, {{
-       Hold[QMRITools`GradientTools`Private`bvall$$], {1000}}}, {{
-       Hold[QMRITools`GradientTools`Private`bvals$$], {1000, 2000, 3000, 4000,
-        5000, 6000}}}, {{
-       Hold[QMRITools`GradientTools`Private`bvalc$$], 9000}}, {
-      Hold[QMRITools`GradientTools`Private`dirs2$$]}, {
-      Hold[QMRITools`GradientTools`Private`type$$]}, {
-      Hold[QMRITools`GradientTools`Private`typed$$]}, {
-      Hold[QMRITools`GradientTools`Private`sc$$]}, {
-      Hold[QMRITools`GradientTools`Private`scc$$]}, {
-      Hold[QMRITools`GradientTools`Private`shel$$]}, {{
-       Hold[QMRITools`GradientTools`Private`nshels$$], 2}}, {
-      Hold[QMRITools`GradientTools`Private`len$$]}, {
-      Hold[QMRITools`GradientTools`Private`rlen$$]}, {{
-       Hold[QMRITools`GradientTools`Private`rlenc$$], {}}}, {
-      Hold[QMRITools`GradientTools`Private`charge$$]}, {{
-       Hold[QMRITools`GradientTools`Private`names$$], {
-       "Set_Name", "Shells_Name", "Grid_Name", "DWI_Name"}}}, {{
-       Hold[QMRITools`GradientTools`Private`vp$$], {1.3, -2.4, 2}}}, {{
-       Hold[QMRITools`GradientTools`Private`va$$], 0.5235987755982988}}, {{
-       Hold[QMRITools`GradientTools`Private`vv$$], {0, 0, 1}}}, {
-      Hold[QMRITools`GradientTools`Private`charts$$]}, {{
-       Hold[QMRITools`GradientTools`Private`viewvec$$], {0, 0}}}, {{
-       Hold[QMRITools`GradientTools`Private`ctype$$], 1}}}, Typeset`size$$ = {
-    430., {227.634033203125, 233.365966796875}}, Typeset`update$$ = 0, 
-    Typeset`initDone$$, Typeset`skipInitDone$$ = False}, 
+           GrayLevel[0.5]}]}]], Manipulate`Dump`ThisIsNotAControl, 
+      ControlType -> None}, {{
+       Hold[$CellContext`points$$], {}}, ControlType -> None}, {{
+       Hold[$CellContext`pointspl$$], {}}, ControlType -> None}, {{
+       Hold[$CellContext`pointsc$$], {}}, ControlType -> None}, {{
+       Hold[$CellContext`ppoints$$], {}}, ControlType -> None}, {{
+       Hold[$CellContext`ppointspl$$], {}}, ControlType -> None}, {{
+       Hold[$CellContext`mpoints$$], {}}, ControlType -> None}, {{
+       Hold[$CellContext`gradd$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`gradm$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`grads$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`gradc$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`outd$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`outc$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`outm$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`outs$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`orderd$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`orderc$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`orderm$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`orders$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`out$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`file$$], ""}, ControlType -> None}, {{
+       Hold[$CellContext`show$$], {1, 2}}, ControlType -> None}, {{
+       Hold[$CellContext`showc$$], All}, ControlType -> None}, {{
+       Hold[$CellContext`weight$$], 0.5}, ControlType -> None}, {{
+       Hold[$CellContext`grid$$], 9}, ControlType -> None}, {{
+       Hold[$CellContext`gridf$$], False}, ControlType -> None}, {{
+       Hold[$CellContext`running$$], False}, ControlType -> None}, {{
+       Hold[$CellContext`app$$], 
+       GrayLevel[1]}, ControlType -> None}, {{
+       Hold[$CellContext`size$$], 430}, ControlType -> None}, {{
+       Hold[$CellContext`inter$$], True}, ControlType -> None}, {{
+       Hold[$CellContext`bi$$], 0}, ControlType -> None}, {{
+       Hold[$CellContext`random$$], True}, ControlType -> None}, {{
+       Hold[$CellContext`sticks$$], False}, ControlType -> None}, {{
+       Hold[$CellContext`mirror$$], True}, ControlType -> None}, {{
+       Hold[$CellContext`proj$$], False}, ControlType -> None}, {{
+       Hold[$CellContext`int$$], 10}, ControlType -> None}, {{
+       Hold[$CellContext`vel$$], 1}, ControlType -> None}, {{
+       Hold[$CellContext`part$$], 1}, ControlType -> None}, {{
+       Hold[$CellContext`dirs1$$], 30}, ControlType -> None}, {{
+       Hold[$CellContext`dirs21$$], 15}, ControlType -> None}, {{
+       Hold[$CellContext`dirs22$$], 15}, ControlType -> None}, {{
+       Hold[$CellContext`dirs23$$], 15}, ControlType -> None}, {{
+       Hold[$CellContext`dirs24$$], 15}, ControlType -> None}, {{
+       Hold[$CellContext`dirs25$$], 15}, ControlType -> None}, {{
+       Hold[$CellContext`dirs26$$], 15}, ControlType -> None}, {{
+       Hold[$CellContext`bvald$$], {10, 20, 30, 40, 60, 80, 100, 200, 300, 
+       500, 700, 1000}}, ControlType -> None}, {{
+       Hold[$CellContext`bvall$$], {1000}}, ControlType -> None}, {{
+       Hold[$CellContext`bvals$$], {1000, 2000, 3000, 4000, 5000, 6000}}, 
+      ControlType -> None}, {{
+       Hold[$CellContext`bvalc$$], 9000}, ControlType -> None}, {
+      Hold[$CellContext`dirs2$$], ControlType -> None}, {
+      Hold[$CellContext`type$$], ControlType -> None}, {
+      Hold[$CellContext`typed$$], ControlType -> None}, {
+      Hold[$CellContext`sc$$], ControlType -> None}, {
+      Hold[$CellContext`scc$$], ControlType -> None}, {
+      Hold[$CellContext`shel$$], ControlType -> None}, {{
+       Hold[$CellContext`nshels$$], 2}, ControlType -> None}, {
+      Hold[$CellContext`len$$], ControlType -> None}, {
+      Hold[$CellContext`rlen$$], ControlType -> None}, {{
+       Hold[$CellContext`rlenc$$], {}}, ControlType -> None}, {
+      Hold[$CellContext`charge$$], ControlType -> None}, {{
+       Hold[$CellContext`names$$], {
+       "Set_Name", "Shells_Name", "Grid_Name", "DWI_Name"}}, ControlType -> 
+      None}, {{
+       Hold[$CellContext`vp$$], {1.3, -2.4, 2}}, ControlType -> None}, {{
+       Hold[$CellContext`va$$], 0.5235987755982988}, ControlType -> None}, {{
+       Hold[$CellContext`vv$$], {0, 0, 1}}, ControlType -> None}, {
+      Hold[$CellContext`charts$$], ControlType -> None}, {{
+       Hold[$CellContext`viewvec$$], {0, 0}}, ControlType -> None}, {{
+       Hold[$CellContext`ctype$$], 1}, ControlType -> None}}, Typeset`size$$ =
+     Automatic, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = False, Typeset`keyframeActionsQ$$ = False, 
+    Typeset`keyframeList$$ = {}}, 
     DynamicBox[Manipulate`ManipulateBoxes[
      2, StandardForm, 
-      "Variables" :> {
-       QMRITools`GradientTools`Private`app$$ = GrayLevel[1], 
-        QMRITools`GradientTools`Private`bi$$ = 0, 
-        QMRITools`GradientTools`Private`bvalc$$ = 9000, 
-        QMRITools`GradientTools`Private`bvald$$ = {10, 20, 30, 40, 60, 80, 
-         100, 200, 300, 500, 700, 1000}, 
-        QMRITools`GradientTools`Private`bvall$$ = {1000}, 
-        QMRITools`GradientTools`Private`bvals$$ = {1000, 2000, 3000, 4000, 
-         5000, 6000}, QMRITools`GradientTools`Private`charge$$ = Null, 
-        QMRITools`GradientTools`Private`charts$$ = Null, 
-        QMRITools`GradientTools`Private`ctype$$ = 1, 
-        QMRITools`GradientTools`Private`dirs1$$ = 30, 
-        QMRITools`GradientTools`Private`dirs2$$ = Null, 
-        QMRITools`GradientTools`Private`dirs21$$ = 15, 
-        QMRITools`GradientTools`Private`dirs22$$ = 15, 
-        QMRITools`GradientTools`Private`dirs23$$ = 15, 
-        QMRITools`GradientTools`Private`dirs24$$ = 15, 
-        QMRITools`GradientTools`Private`dirs25$$ = 15, 
-        QMRITools`GradientTools`Private`dirs26$$ = 15, 
-        QMRITools`GradientTools`Private`disp$$ = 1, 
-        QMRITools`GradientTools`Private`file$$ = "", 
-        QMRITools`GradientTools`Private`gradc$$ = "", 
-        QMRITools`GradientTools`Private`gradd$$ = "", 
-        QMRITools`GradientTools`Private`gradm$$ = "", 
-        QMRITools`GradientTools`Private`grads$$ = "", 
-        QMRITools`GradientTools`Private`grid$$ = 9, 
-        QMRITools`GradientTools`Private`gridf$$ = False, 
-        QMRITools`GradientTools`Private`half$$ = 1, 
-        QMRITools`GradientTools`Private`inter$$ = True, 
-        QMRITools`GradientTools`Private`len$$ = Null, 
-        QMRITools`GradientTools`Private`mirror$$ = True, 
-        QMRITools`GradientTools`Private`mpoints$$ = {}, 
-        QMRITools`GradientTools`Private`mult$$ = 1, 
-        QMRITools`GradientTools`Private`names$$ = {
-         "Set_Name", "Shells_Name", "Grid_Name", "DWI_Name"}, 
-        QMRITools`GradientTools`Private`nshels$$ = 2, 
-        QMRITools`GradientTools`Private`opacity$$ = 0.5, 
-        QMRITools`GradientTools`Private`orderc$$ = "", 
-        QMRITools`GradientTools`Private`orderd$$ = "", 
-        QMRITools`GradientTools`Private`orderm$$ = "", 
-        QMRITools`GradientTools`Private`orders$$ = "", 
-        QMRITools`GradientTools`Private`out$$ = "", 
-        QMRITools`GradientTools`Private`outc$$ = "", 
-        QMRITools`GradientTools`Private`outd$$ = "", 
-        QMRITools`GradientTools`Private`outm$$ = "", 
-        QMRITools`GradientTools`Private`outs$$ = "", 
-        QMRITools`GradientTools`Private`part$$ = 1, 
-        QMRITools`GradientTools`Private`points$$ = {}, 
-        QMRITools`GradientTools`Private`pointsc$$ = {}, 
-        QMRITools`GradientTools`Private`pointspl$$ = {}, 
-        QMRITools`GradientTools`Private`ppoints$$ = {}, 
-        QMRITools`GradientTools`Private`ppointspl$$ = {}, 
-        QMRITools`GradientTools`Private`proj$$ = False, 
-        QMRITools`GradientTools`Private`random$$ = True, 
-        QMRITools`GradientTools`Private`rlen$$ = Null, 
-        QMRITools`GradientTools`Private`rlenc$$ = {}, 
-        QMRITools`GradientTools`Private`running$$ = False, 
-        QMRITools`GradientTools`Private`sc$$ = Null, 
-        QMRITools`GradientTools`Private`scc$$ = Null, 
-        QMRITools`GradientTools`Private`shel$$ = 1, 
-        QMRITools`GradientTools`Private`show$$ = {1, 2}, 
-        QMRITools`GradientTools`Private`showc$$ = All, 
-        QMRITools`GradientTools`Private`size$$ = 430, 
-        QMRITools`GradientTools`Private`steps$$ = 1000, 
-        QMRITools`GradientTools`Private`sticks$$ = False, 
-        QMRITools`GradientTools`Private`type$$ = "normal", 
-        QMRITools`GradientTools`Private`typed$$ = "normal", 
-        QMRITools`GradientTools`Private`va$$ = 0.5235987755982988, 
-        QMRITools`GradientTools`Private`vel$$ = 1, 
-        QMRITools`GradientTools`Private`viewvec$$ = {0, 0}, 
-        QMRITools`GradientTools`Private`vp$$ = {1.3, -2.4, 2}, 
-        QMRITools`GradientTools`Private`vv$$ = {0, 0, 1}, 
-        QMRITools`GradientTools`Private`weight$$ = 0.5}, 
-      "ControllerVariables" :> {}, 
+      "Variables" :> {$CellContext`app$$ = GrayLevel[1], $CellContext`bi$$ = 
+        0, $CellContext`bvalc$$ = 
+        9000, $CellContext`bvald$$ = {10, 20, 30, 40, 60, 80, 100, 200, 300, 
+         500, 700, 1000}, $CellContext`bvall$$ = {
+         1000}, $CellContext`bvals$$ = {1000, 2000, 3000, 4000, 5000, 
+         6000}, $CellContext`charge$$ = Null, $CellContext`charts$$ = 
+        Null, $CellContext`ctype$$ = 1, $CellContext`dirs1$$ = 
+        30, $CellContext`dirs2$$ = Null, $CellContext`dirs21$$ = 
+        15, $CellContext`dirs22$$ = 15, $CellContext`dirs23$$ = 
+        15, $CellContext`dirs24$$ = 15, $CellContext`dirs25$$ = 
+        15, $CellContext`dirs26$$ = 15, $CellContext`disp$$ = 
+        1, $CellContext`file$$ = "", $CellContext`gradc$$ = 
+        "", $CellContext`gradd$$ = "", $CellContext`gradm$$ = 
+        "", $CellContext`grads$$ = "", $CellContext`grid$$ = 
+        9, $CellContext`gridf$$ = False, $CellContext`half$$ = 
+        1, $CellContext`int$$ = 10, $CellContext`inter$$ = 
+        True, $CellContext`len$$ = Null, $CellContext`mirror$$ = 
+        True, $CellContext`mpoints$$ = {}, $CellContext`mult$$ = 
+        1, $CellContext`names$$ = {
+         "Set_Name", "Shells_Name", "Grid_Name", 
+          "DWI_Name"}, $CellContext`nshels$$ = 2, $CellContext`opacity$$ = 
+        0.5, $CellContext`orderc$$ = "", $CellContext`orderd$$ = 
+        "", $CellContext`orderm$$ = "", $CellContext`orders$$ = 
+        "", $CellContext`out$$ = "", $CellContext`outc$$ = 
+        "", $CellContext`outd$$ = "", $CellContext`outm$$ = 
+        "", $CellContext`outs$$ = "", $CellContext`part$$ = 
+        1, $CellContext`points$$ = {}, $CellContext`pointsc$$ = {}, \
+$CellContext`pointspl$$ = {}, $CellContext`ppoints$$ = {}, \
+$CellContext`ppointspl$$ = {}, $CellContext`proj$$ = 
+        False, $CellContext`random$$ = True, $CellContext`rlen$$ = 
+        Null, $CellContext`rlenc$$ = {}, $CellContext`running$$ = 
+        False, $CellContext`sc$$ = Null, $CellContext`scc$$ = 
+        Null, $CellContext`shel$$ = 
+        1, $CellContext`show$$ = {1, 2}, $CellContext`showc$$ = 
+        All, $CellContext`size$$ = 430, $CellContext`steps$$ = 
+        1000, $CellContext`sticks$$ = False, $CellContext`type$$ = 
+        "normal", $CellContext`typed$$ = "normal", $CellContext`va$$ = 
+        0.5235987755982988, $CellContext`vel$$ = 
+        1, $CellContext`viewvec$$ = {0, 0}, $CellContext`vp$$ = {
+         1.3, -2.4, 2}, $CellContext`vv$$ = {0, 0, 1}, $CellContext`weight$$ = 
+        0.5}, "ControllerVariables" :> {}, 
       "OtherVariables" :> {
        Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
         Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
         Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
-         Typeset`skipInitDone$$}, 
-      "Body" :> (QMRITools`GradientTools`Private`bvall$$ = If[
-          NumberQ[QMRITools`GradientTools`Private`bvall$$], {
-          QMRITools`GradientTools`Private`bvall$$}, 
-          QMRITools`GradientTools`Private`bvall$$]; 
-       QMRITools`GradientTools`Private`names$$ = 
-        Map[StringReplace[#, " " -> "_"]& , 
-          QMRITools`GradientTools`Private`names$$]; 
-       QMRITools`GradientTools`Private`dirs1$$ = 
-        Clip[QMRITools`GradientTools`Private`dirs1$$, {3, 128}]; {
-         QMRITools`GradientTools`Private`dirs21$$, 
-          QMRITools`GradientTools`Private`dirs22$$, 
-          QMRITools`GradientTools`Private`dirs23$$, 
-          QMRITools`GradientTools`Private`dirs24$$, 
-          QMRITools`GradientTools`Private`dirs25$$, 
-          QMRITools`GradientTools`Private`dirs26$$} = 
-        Clip[{QMRITools`GradientTools`Private`dirs21$$, 
-           QMRITools`GradientTools`Private`dirs22$$, 
-           QMRITools`GradientTools`Private`dirs23$$, 
-           QMRITools`GradientTools`Private`dirs24$$, 
-           QMRITools`GradientTools`Private`dirs25$$, 
-           QMRITools`GradientTools`Private`dirs26$$}, {3, 128}]; 
-       QMRITools`GradientTools`Private`dirs2$$ = 
-        Part[{QMRITools`GradientTools`Private`dirs21$$, 
-           QMRITools`GradientTools`Private`dirs22$$, 
-           QMRITools`GradientTools`Private`dirs23$$, 
-           QMRITools`GradientTools`Private`dirs24$$, 
-           QMRITools`GradientTools`Private`dirs25$$, 
-           QMRITools`GradientTools`Private`dirs26$$}, 
-          Span[1, QMRITools`GradientTools`Private`nshels$$]]; 
-       QMRITools`GradientTools`Private`out$$ = 
-        Part[QMRITools`GradientTools`Private`names$$, 
-           QMRITools`GradientTools`Private`mult$$] <> 
-         Switch[QMRITools`GradientTools`Private`mult$$, 4, 
-           If[
-           QMRITools`GradientTools`Private`gradd$$ === "", 
-            QMRITools`GradientTools`Private`gradd$$, 
-            QMRITools`GradientTools`FinalGrads[
-            QMRITools`GradientTools`Private`outd$$, {
-             QMRITools`GradientTools`Private`inter$$, 
-              QMRITools`GradientTools`Private`int, 
-              QMRITools`GradientTools`Private`bi$$}, {
-             QMRITools`GradientTools`Private`random$$, 
-              QMRITools`GradientTools`Private`orderd$$}]], 3, 
-           If[
-           QMRITools`GradientTools`Private`gradc$$ === "", 
-            QMRITools`GradientTools`Private`gradc$$, 
-            QMRITools`GradientTools`FinalGrads[
-            QMRITools`GradientTools`Private`outc$$, {
-             QMRITools`GradientTools`Private`inter$$, 
-              QMRITools`GradientTools`Private`int, 
-              QMRITools`GradientTools`Private`bi$$}, {
-             QMRITools`GradientTools`Private`random$$, 
-              QMRITools`GradientTools`Private`orderc$$}]], 2, 
-           If[
-           QMRITools`GradientTools`Private`gradm$$ === "", 
-            QMRITools`GradientTools`Private`gradm$$, 
-            QMRITools`GradientTools`FinalGrads[
-            QMRITools`GradientTools`Private`outm$$, {
-             QMRITools`GradientTools`Private`inter$$, 
-              QMRITools`GradientTools`Private`int, 
-              QMRITools`GradientTools`Private`bi$$}, {
-             QMRITools`GradientTools`Private`random$$, 
-              QMRITools`GradientTools`Private`orderm$$}]], 1, 
-           If[
-           QMRITools`GradientTools`Private`grads$$ === "", 
-            QMRITools`GradientTools`Private`grads$$, 
-            QMRITools`GradientTools`FinalGrads[
-            QMRITools`GradientTools`Private`outs$$, {
-             QMRITools`GradientTools`Private`inter$$, 
-              QMRITools`GradientTools`Private`int, 
-              QMRITools`GradientTools`Private`bi$$}, {
-             QMRITools`GradientTools`Private`random$$, 
-              QMRITools`GradientTools`Private`orders$$}]]]; Dynamic[
-         Switch[QMRITools`GradientTools`Private`disp$$, 1, 
-          Switch[QMRITools`GradientTools`Private`mult$$, 1, 
-           If[QMRITools`GradientTools`Private`points$$ === {}, 
+         Typeset`skipInitDone$$, Typeset`keyframeActionsQ$$, 
+        Typeset`keyframeList$$}, "Body" :> ($CellContext`bvall$$ = If[
+          
+          NumberQ[$CellContext`bvall$$], {$CellContext`bvall$$}, \
+$CellContext`bvall$$]; $CellContext`names$$ = 
+        Map[StringReplace[#, " " -> 
+           "_"]& , $CellContext`names$$]; $CellContext`dirs1$$ = 
+        Clip[$CellContext`dirs1$$, {3, 
+          128}]; {$CellContext`dirs21$$, $CellContext`dirs22$$, \
+$CellContext`dirs23$$, $CellContext`dirs24$$, $CellContext`dirs25$$, \
+$CellContext`dirs26$$} = 
+        Clip[{$CellContext`dirs21$$, $CellContext`dirs22$$, \
+$CellContext`dirs23$$, $CellContext`dirs24$$, $CellContext`dirs25$$, \
+$CellContext`dirs26$$}, {3, 128}]; $CellContext`dirs2$$ = 
+        Part[{$CellContext`dirs21$$, $CellContext`dirs22$$, \
+$CellContext`dirs23$$, $CellContext`dirs24$$, $CellContext`dirs25$$, \
+$CellContext`dirs26$$}, 
+          Span[1, $CellContext`nshels$$]]; $CellContext`out$$ = 
+        Part[$CellContext`names$$, $CellContext`mult$$] <> 
+         Switch[$CellContext`mult$$, 4, 
+           If[$CellContext`gradd$$ === "", $CellContext`gradd$$, 
+            $CellContext`FinalGrads[$CellContext`outd$$, \
+{$CellContext`inter$$, $CellContext`int$$, $CellContext`bi$$}, \
+{$CellContext`random$$, $CellContext`orderd$$}]], 3, 
+           If[$CellContext`gradc$$ === "", $CellContext`gradc$$, 
+            $CellContext`FinalGrads[$CellContext`outc$$, \
+{$CellContext`inter$$, $CellContext`int$$, $CellContext`bi$$}, \
+{$CellContext`random$$, $CellContext`orderc$$}]], 2, 
+           If[$CellContext`gradm$$ === "", $CellContext`gradm$$, 
+            $CellContext`FinalGrads[$CellContext`outm$$, \
+{$CellContext`inter$$, $CellContext`int$$, $CellContext`bi$$}, \
+{$CellContext`random$$, $CellContext`orderm$$}]], 1, 
+           If[$CellContext`grads$$ === "", $CellContext`grads$$, 
+            $CellContext`FinalGrads[$CellContext`outs$$, \
+{$CellContext`inter$$, $CellContext`int$$, $CellContext`bi$$}, \
+{$CellContext`random$$, $CellContext`orders$$}]]]; Dynamic[
+         Switch[$CellContext`disp$$, 1, 
+          Switch[$CellContext`mult$$, 1, 
+           If[$CellContext`points$$ === {}, 
             Column[{"", 
               Show[
-               QMRITools`GradientTools`Private`SpherePlot[
-               1, QMRITools`GradientTools`Private`opacity$$], ImageSize -> 
-               QMRITools`GradientTools`Private`size$$, PlotLabel -> ""]}], 
-            QMRITools`GradientTools`Private`pointspl$$ = 
-             If[QMRITools`GradientTools`Private`proj$$, 
+               $CellContext`SpherePlot[1, $CellContext`opacity$$], 
+               ImageSize -> $CellContext`size$$, PlotLabel -> 
+               ""]}], $CellContext`pointspl$$ = If[$CellContext`proj$$, 
                Map[
-               Sign[Part[#, 3] + 10.^(-16)] Normalize[#]& , 
-                QMRITools`GradientTools`Private`points$$, {1}], 
-               QMRITools`GradientTools`Private`points$$]; Column[{"", 
+               Sign[Part[#, 3] + 10.^(-16)] 
+                Normalize[#]& , $CellContext`points$$, {
+                1}], $CellContext`points$$]; Column[{"", 
                Show[
-                QMRITools`GradientTools`Private`SpherePlot[
-                1, QMRITools`GradientTools`Private`opacity$$], 
-                QMRITools`GradientTools`Private`ListSpherePloti[
-                QMRITools`GradientTools`Private`pointspl$$, Red, 0.05], 
-                If[QMRITools`GradientTools`Private`mirror$$, 
-                 
-                 QMRITools`GradientTools`Private`ListSpherePloti[-
-                  QMRITools`GradientTools`Private`pointspl$$, Gray, 0.05], 
+                $CellContext`SpherePlot[1, $CellContext`opacity$$], 
+                $CellContext`ListSpherePloti[$CellContext`pointspl$$, Red, 
+                 0.05], 
+                If[$CellContext`mirror$$, 
+                 $CellContext`ListSpherePloti[-$CellContext`pointspl$$, Gray, 
+                  0.05], 
                  Graphics3D[{}]], 
-                If[QMRITools`GradientTools`Private`sticks$$, 
-                 QMRITools`GradientTools`Private`ListStickPlot[
-                 QMRITools`GradientTools`Private`pointspl$$, 0.01], 
-                 Graphics3D[{}]], ImageSize -> 
-                QMRITools`GradientTools`Private`size$$, PlotLabel -> "", 
-                Background -> QMRITools`GradientTools`Private`app$$]}, 
-              Alignment -> Center]], 2, 
-           If[QMRITools`GradientTools`Private`ppoints$$ === {}, 
+                If[$CellContext`sticks$$, 
+                 $CellContext`ListStickPlot[$CellContext`pointspl$$, 0.01], 
+                 Graphics3D[{}]], ImageSize -> $CellContext`size$$, PlotLabel -> 
+                "", Background -> $CellContext`app$$]}, Alignment -> Center]],
+            2, 
+           If[$CellContext`ppoints$$ === {}, 
             Column[{"", 
               Show[
-               QMRITools`GradientTools`Private`SpherePlot[
-               1, QMRITools`GradientTools`Private`opacity$$], ImageSize -> 
-               QMRITools`GradientTools`Private`size$$, PlotLabel -> ""]}], 
-            QMRITools`GradientTools`Private`ppointspl$$ = 
-             If[QMRITools`GradientTools`Private`proj$$, 
+               $CellContext`SpherePlot[1, $CellContext`opacity$$], 
+               ImageSize -> $CellContext`size$$, PlotLabel -> 
+               ""]}], $CellContext`ppointspl$$ = If[$CellContext`proj$$, 
                Map[
-               Sign[Part[#, 3] + 10.^(-16)] Normalize[#]& , 
-                QMRITools`GradientTools`Private`ppoints$$, {2}], 
-               QMRITools`GradientTools`Private`ppoints$$]; 
-            QMRITools`GradientTools`Private`len$$ = 
-             Length[QMRITools`GradientTools`Private`ppoints$$]; 
-            QMRITools`GradientTools`Private`rlen$$ = 
-             Range[QMRITools`GradientTools`Private`len$$]; 
-            If[QMRITools`GradientTools`Private`running$$, 
-              QMRITools`GradientTools`Private`show$$ = 
-              QMRITools`GradientTools`Private`rlen$$]; Column[{
+               Sign[Part[#, 3] + 10.^(-16)] 
+                Normalize[#]& , $CellContext`ppoints$$, {
+                2}], $CellContext`ppoints$$]; $CellContext`len$$ = 
+             Length[$CellContext`ppoints$$]; $CellContext`rlen$$ = 
+             Range[$CellContext`len$$]; 
+            If[$CellContext`running$$, $CellContext`show$$ = \
+$CellContext`rlen$$]; Column[{
                SetterBar[
-                Dynamic[QMRITools`GradientTools`Private`show$$], 
+                Dynamic[$CellContext`show$$], 
                 
-                Join[{0 -> "multi", QMRITools`GradientTools`Private`rlen$$ -> 
-                  "all"}, QMRITools`GradientTools`Private`rlen$$]], 
-               If[QMRITools`GradientTools`Private`show$$ === 0, 
+                Join[{0 -> "multi", $CellContext`rlen$$ -> 
+                  "all"}, $CellContext`rlen$$]], 
+               If[$CellContext`show$$ === 0, 
                 Show[
                  Flatten[
                   MapThread[{
-                    
-                    QMRITools`GradientTools`Private`SpherePlot[#3, 
-                    QMRITools`GradientTools`Private`opacity$$], 
-                    
-                    QMRITools`GradientTools`Private`ListSpherePloti[# #3, #2, 
-                    0.05]}& , {
-                    Reverse[QMRITools`GradientTools`Private`ppointspl$$], 
+                    $CellContext`SpherePlot[#3, $CellContext`opacity$$], 
+                    $CellContext`ListSpherePloti[# #3, #2, 0.05]}& , {
+                    Reverse[$CellContext`ppointspl$$], 
                     Reverse[
                     Part[{Red, Green, Blue, Yellow, Pink, Purple}, 
-                    Span[1, QMRITools`GradientTools`Private`len$$]]], 
-                    Range[
-                    1, 0.5, (-0.5)/(QMRITools`GradientTools`Private`len$$ - 
-                    1)]}]], 
-                 If[QMRITools`GradientTools`Private`mirror$$, 
-                  MapThread[
-                  QMRITools`GradientTools`Private`ListSpherePloti[(-#) #2, 
-                    Gray, 0.05]& , {
-                   QMRITools`GradientTools`Private`ppointspl$$, 
-                    Range[
-                    1, 0.5, (-0.5)/(QMRITools`GradientTools`Private`len$$ - 
-                    1)]}], 
-                  Graphics3D[{}]], ImageSize -> 
-                 QMRITools`GradientTools`Private`size$$, Background -> 
-                 QMRITools`GradientTools`Private`app$$], 
+                    Span[1, $CellContext`len$$]]], 
+                    Range[1, 0.5, (-0.5)/($CellContext`len$$ - 1)]}]], 
+                 If[$CellContext`mirror$$, 
+                  
+                  MapThread[$CellContext`ListSpherePloti[(-#) #2, Gray, 
+                    0.05]& , {$CellContext`ppointspl$$, 
+                    Range[1, 0.5, (-0.5)/($CellContext`len$$ - 1)]}], 
+                  Graphics3D[{}]], ImageSize -> $CellContext`size$$, 
+                 Background -> $CellContext`app$$], 
                 Show[
-                 QMRITools`GradientTools`Private`SpherePlot[
-                 1, QMRITools`GradientTools`Private`opacity$$], 
+                 $CellContext`SpherePlot[1, $CellContext`opacity$$], 
                  Part[
-                  MapThread[
-                  QMRITools`GradientTools`Private`ListSpherePloti[#, #2, 
-                    0.05]& , {QMRITools`GradientTools`Private`ppointspl$$, 
+                  
+                  MapThread[$CellContext`ListSpherePloti[#, #2, 
+                    0.05]& , {$CellContext`ppointspl$$, 
                     Part[{Red, Green, Blue, Yellow, Pink, Purple}, 
-                    Span[1, QMRITools`GradientTools`Private`len$$]]}], 
-                  Clip[
-                  QMRITools`GradientTools`Private`show$$, {
-                   1, QMRITools`GradientTools`Private`len$$}]], 
-                 If[QMRITools`GradientTools`Private`mirror$$, 
+                    Span[1, $CellContext`len$$]]}], 
+                  Clip[$CellContext`show$$, {1, $CellContext`len$$}]], 
+                 If[$CellContext`mirror$$, 
                   Part[
-                   Map[
-                   QMRITools`GradientTools`Private`ListSpherePloti[-#, Gray, 
-                    0.05]& , QMRITools`GradientTools`Private`ppointspl$$], 
-                   Clip[
-                   QMRITools`GradientTools`Private`show$$, {
-                    1, QMRITools`GradientTools`Private`len$$}]], 
+                   
+                   Map[$CellContext`ListSpherePloti[-#, Gray, 
+                    0.05]& , $CellContext`ppointspl$$], 
+                   Clip[$CellContext`show$$, {1, $CellContext`len$$}]], 
                   Graphics3D[{}]], 
-                 If[QMRITools`GradientTools`Private`sticks$$, 
+                 If[$CellContext`sticks$$, 
                   Part[
-                   Map[
-                   QMRITools`GradientTools`Private`ListStickPlot[#, 0.01]& , 
-                    QMRITools`GradientTools`Private`ppointspl$$], 
-                   Clip[
-                   QMRITools`GradientTools`Private`show$$, {
-                    1, QMRITools`GradientTools`Private`len$$}]], 
-                  Graphics3D[{}]], ImageSize -> 
-                 QMRITools`GradientTools`Private`size$$, Background -> 
-                 QMRITools`GradientTools`Private`app$$]]}, Alignment -> 
-              Center]], 3, 
+                   
+                   Map[$CellContext`ListStickPlot[#, 
+                    0.01]& , $CellContext`ppointspl$$], 
+                   Clip[$CellContext`show$$, {1, $CellContext`len$$}]], 
+                  Graphics3D[{}]], ImageSize -> $CellContext`size$$, 
+                 Background -> $CellContext`app$$]]}, Alignment -> Center]], 
+           3, 
            Column[{"", 
              Show[
-              QMRITools`GradientTools`Private`SpherePlot[
-              0, QMRITools`GradientTools`Private`opacity$$], 
-              QMRITools`GradientTools`Private`ListSpherePloti[
-              QMRITools`GradientTools`Private`pointsc$$, Red, 0.05], 
-              If[QMRITools`GradientTools`Private`mirror$$, 
-               
-               QMRITools`GradientTools`Private`ListSpherePloti[-
-                QMRITools`GradientTools`Private`pointsc$$, Gray, 0.05], 
-               Graphics3D[{}]], ImageSize -> 
-              QMRITools`GradientTools`Private`size$$, PlotLabel -> "", 
-              Background -> QMRITools`GradientTools`Private`app$$]}], 4, 
+              $CellContext`SpherePlot[0, $CellContext`opacity$$], 
+              $CellContext`ListSpherePloti[$CellContext`pointsc$$, Red, 0.05], 
+              If[$CellContext`mirror$$, 
+               $CellContext`ListSpherePloti[-$CellContext`pointsc$$, Gray, 
+                0.05], 
+               Graphics3D[{}]], ImageSize -> $CellContext`size$$, PlotLabel -> 
+              "", Background -> $CellContext`app$$]}], 4, 
            Show[
             ListLinePlot[
              Map[{{0, #}, {1, #}}& , 
-              Prepend[QMRITools`GradientTools`Private`bvald$$, 0]], PlotStyle -> 
+              Prepend[$CellContext`bvald$$, 0]], PlotStyle -> 
              Directive[{Gray, Thick}], PlotRange -> {{0, 2}, Full}, AxesStyle -> 
              Thick, Axes -> {False, True}, AspectRatio -> 1.4, 
              AxesLabel -> {None, 
                Style["b-value", Bold, Black]}], 
             ListPlot[
              Map[{1, #}& , 
-              Prepend[QMRITools`GradientTools`Private`bvald$$, 0]], PlotStyle -> 
-             Red]]], 2, 
+              Prepend[$CellContext`bvald$$, 0]], PlotStyle -> Red]]], 2, 
           Column[{
             Row[{
               Slider2D[
-               Dynamic[
-               QMRITools`GradientTools`Private`viewvec$$], {{-1, -1}, {1, 1}},
-                ContinuousAction -> True], 
+               Dynamic[$CellContext`viewvec$$], {{-1, -1}, {1, 1}}, 
+               ContinuousAction -> True], 
               SetterBar[
-               Dynamic[QMRITools`GradientTools`Private`ctype$$], {
+               Dynamic[$CellContext`ctype$$], {
                1 -> "polar", 2 -> "even grid", 3 -> "scaled grid"}]}, 
              ImageSize -> 400, Alignment -> Center], 
-            If[QMRITools`GradientTools`Private`mult$$ == 2, 
+            If[$CellContext`mult$$ == 2, 
              SetterBar[
-              Dynamic[QMRITools`GradientTools`Private`showc$$], 
-              Join[{All -> "all"}, QMRITools`GradientTools`Private`rlenc$$]], 
-             ""], 
+              Dynamic[$CellContext`showc$$], 
+              Join[{All -> "all"}, $CellContext`rlenc$$]], ""], 
             Dynamic[
              Show[
-              Part[
-              QMRITools`GradientTools`Private`charts$$, 
-               QMRITools`GradientTools`Private`ctype$$], 
-              Switch[QMRITools`GradientTools`Private`mult$$, 1, 
-               If[QMRITools`GradientTools`Private`points$$ === {}, 
-                Graphics[], 
-                QMRITools`GradientTools`Private`pointspl$$ = 
-                 If[QMRITools`GradientTools`Private`proj$$, 
+              Part[$CellContext`charts$$, $CellContext`ctype$$], 
+              Switch[$CellContext`mult$$, 1, 
+               If[$CellContext`points$$ === {}, 
+                Graphics[], $CellContext`pointspl$$ = If[$CellContext`proj$$, 
                    Map[
-                   Sign[Part[#, 3] + 10.^(-16)] Normalize[#]& , 
-                    QMRITools`GradientTools`Private`points$$, {1}], 
-                   QMRITools`GradientTools`Private`points$$]; 
-                QMRITools`GradientTools`Private`PlotChartPoints[
-                 QMRITools`GradientTools`Private`pointspl$$, {
-                  QMRITools`GradientTools`Private`mirror$$, Red}]], 2, 
-               If[QMRITools`GradientTools`Private`ppoints$$ === {}, 
-                Graphics[], 
-                QMRITools`GradientTools`Private`ppointspl$$ = 
-                 If[QMRITools`GradientTools`Private`proj$$, 
+                   Sign[Part[#, 3] + 10.^(-16)] 
+                    Normalize[#]& , $CellContext`points$$, {
+                    1}], $CellContext`points$$]; \
+$CellContext`PlotChartPoints[$CellContext`pointspl$$, {$CellContext`mirror$$, 
+                   Red}]], 2, 
+               If[$CellContext`ppoints$$ === {}, 
+                Graphics[], $CellContext`ppointspl$$ = If[$CellContext`proj$$, 
                    Map[
-                   Sign[Part[#, 3] + 10.^(-16)] Normalize[#]& , 
-                    QMRITools`GradientTools`Private`ppoints$$, {2}], 
-                   QMRITools`GradientTools`Private`ppoints$$]; 
-                QMRITools`GradientTools`Private`len$$ = 
-                 Length[QMRITools`GradientTools`Private`ppoints$$]; 
-                QMRITools`GradientTools`Private`rlenc$$ = 
-                 Range[QMRITools`GradientTools`Private`len$$]; 
-                QMRITools`GradientTools`Private`PlotChartPoints[
-                  Part[
-                  QMRITools`GradientTools`Private`ppointspl$$, 
-                   QMRITools`GradientTools`Private`showc$$], {
-                  QMRITools`GradientTools`Private`mirror$$, 
+                   Sign[Part[#, 3] + 10.^(-16)] 
+                    Normalize[#]& , $CellContext`ppoints$$, {
+                    2}], $CellContext`ppoints$$]; $CellContext`len$$ = 
+                 Length[$CellContext`ppoints$$]; $CellContext`rlenc$$ = 
+                 Range[$CellContext`len$$]; $CellContext`PlotChartPoints[
+                  
+                  Part[$CellContext`ppointspl$$, $CellContext`showc$$], \
+{$CellContext`mirror$$, 
                    
-                   Part[{Red, Green, Blue, Yellow, Pink, Purple}, 
-                    QMRITools`GradientTools`Private`showc$$]}]], 
+                   Part[{Red, Green, Blue, Yellow, Pink, 
+                    Purple}, $CellContext`showc$$]}]], 
                Blank[], 
-               Graphics[]]]]}, Alignment -> Center], 3, 
-          QMRITools`GradientTools`Private`out$$, 4, 
-          Switch[QMRITools`GradientTools`Private`mult$$, 1, 
-           If[QMRITools`GradientTools`Private`orders$$ === "", 
+               Graphics[]]]]}, Alignment -> Center], 3, $CellContext`out$$, 4, 
+          Switch[$CellContext`mult$$, 1, 
+           If[$CellContext`orders$$ === "", 
             Graphics[], 
-            QMRITools`PlottingTools`PlotDuty[{
-              ConstantArray[QMRITools`GradientTools`Private`grads$$, 
-               Length[QMRITools`GradientTools`Private`bvall$$]], 
-              QMRITools`GradientTools`Private`bvall$$, 
-              QMRITools`GradientTools`Private`orders$$}, 
-             QMRITools`GradientTools`Private`random$$]], 2, 
-           If[QMRITools`GradientTools`Private`orderm$$ === "", 
+            $CellContext`PlotDuty[{
+              ConstantArray[$CellContext`grads$$, 
+               
+               Length[$CellContext`bvall$$]], $CellContext`bvall$$, \
+$CellContext`orders$$}, $CellContext`random$$]], 2, 
+           If[$CellContext`orderm$$ === "", 
             Graphics[], 
-            
-            QMRITools`PlottingTools`PlotDuty[{
-             QMRITools`GradientTools`Private`gradm$$, 
-              Part[QMRITools`GradientTools`Private`bvals$$, 
-               Span[1, QMRITools`GradientTools`Private`nshels$$]], 
-              QMRITools`GradientTools`Private`orderm$$}, 
-             QMRITools`GradientTools`Private`random$$]], 3, 
-           If[QMRITools`GradientTools`Private`orderc$$ === "", 
+            $CellContext`PlotDuty[{$CellContext`gradm$$, 
+              Part[$CellContext`bvals$$, 
+               Span[
+               1, $CellContext`nshels$$]], $CellContext`orderm$$}, \
+$CellContext`random$$]], 3, 
+           If[$CellContext`orderc$$ === "", 
             Graphics[], 
-            
-            QMRITools`PlottingTools`PlotDuty[{
-             QMRITools`GradientTools`Private`gradc$$, 
-              QMRITools`GradientTools`Private`bvalc$$, 
-              QMRITools`GradientTools`Private`orderc$$}, 
-             QMRITools`GradientTools`Private`random$$]], 4, 
-           If[QMRITools`GradientTools`Private`orderd$$ === "", 
+            $CellContext`PlotDuty[{$CellContext`gradc$$, \
+$CellContext`bvalc$$, $CellContext`orderc$$}, $CellContext`random$$]], 4, 
+           If[$CellContext`orderd$$ === "", 
             Graphics[], 
-            QMRITools`PlottingTools`PlotDuty[{
-              ConstantArray[QMRITools`GradientTools`Private`gradd$$, 
-               Length[QMRITools`GradientTools`Private`bvald$$]], 
-              QMRITools`GradientTools`Private`bvald$$, 
-              QMRITools`GradientTools`Private`orderd$$}, 
-             QMRITools`GradientTools`Private`random$$]]]]]), "Specifications" :> {
+            $CellContext`PlotDuty[{
+              ConstantArray[$CellContext`gradd$$, 
+               
+               Length[$CellContext`bvald$$]], $CellContext`bvald$$, \
+$CellContext`orderd$$}, $CellContext`random$$]]]]]), "Specifications" :> {
         Row[{"  Set Name ", 
           InputField[
            Dynamic[
-            Part[
-            QMRITools`GradientTools`Private`names$$, 
-             QMRITools`GradientTools`Private`mult$$]], String]}], 
-        Delimiter, {{
-         QMRITools`GradientTools`Private`disp$$, 1, "display gradients"}, {
-         1 -> "graphics", 2 -> "chart", 3 -> "text", 4 -> "G load"}}, {{
-         QMRITools`GradientTools`Private`opacity$$, 0.5, "sphere opacity"}, 0,
-          1, 0.1, ControlType -> Slider}, 
+            Part[$CellContext`names$$, $CellContext`mult$$]], String]}], 
+        Delimiter, {{$CellContext`disp$$, 1, "display gradients"}, {
+         1 -> "graphics", 2 -> "chart", 3 -> "text", 4 -> 
+          "G load"}}, {{$CellContext`opacity$$, 0.5, "sphere opacity"}, 0, 1, 
+         0.1, ControlType -> Slider}, 
         Row[{" sticks: ", 
           Checkbox[
-           Dynamic[QMRITools`GradientTools`Private`sticks$$]], 
-          "   mirror grad.: ", 
+           Dynamic[$CellContext`sticks$$]], "   mirror grad.: ", 
           Checkbox[
-           Dynamic[QMRITools`GradientTools`Private`mirror$$]], 
-          "   project grad. on half: ", 
+           Dynamic[$CellContext`mirror$$]], "   project grad. on half: ", 
           Checkbox[
-           Dynamic[QMRITools`GradientTools`Private`proj$$]]}], 
+           Dynamic[$CellContext`proj$$]]}], 
         Grid[{{
            Button[
-           "top", QMRITools`GradientTools`Private`vp$$ = {0, 0, 3.38}, 
-            ImageSize -> {50, 20}, FrameMargins -> 0, FontSize -> 10], 
+           "top", $CellContext`vp$$ = {0, 0, 3.38}, ImageSize -> {50, 20}, 
+            FrameMargins -> 0], 
            Button[
-           "right", QMRITools`GradientTools`Private`vp$$ = {3.38, 0, 0}, 
-            ImageSize -> {50, 20}, FrameMargins -> 0, FontSize -> 10], 
+           "right", $CellContext`vp$$ = {3.38, 0, 0}, ImageSize -> {50, 20}, 
+            FrameMargins -> 0], 
            Button[
-           "front", QMRITools`GradientTools`Private`vp$$ = {0, 3.38, 0}, 
-            ImageSize -> {50, 20}, FrameMargins -> 0, FontSize -> 10], 
+           "front", $CellContext`vp$$ = {0, 3.38, 0}, ImageSize -> {50, 20}, 
+            FrameMargins -> 0], 
            Button[
-           "reset", {
-             QMRITools`GradientTools`Private`vp$$, 
-              QMRITools`GradientTools`Private`vv$$, 
-              QMRITools`GradientTools`Private`va$$} = {{1.3, -2.4, 2}, {0, 0, 
-              1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 0, 
-            FontSize -> 10]}}], 
-        Delimiter, {{
-         QMRITools`GradientTools`Private`half$$, 1, "Full or half sphere"}, {
-         1 -> "half sphere", 0 -> "full sphere"}}, {{
-         QMRITools`GradientTools`Private`mult$$, 1, "shells"}, {
+           "reset", {$CellContext`vp$$, $CellContext`vv$$, $CellContext`va$$} = \
+{{1.3, -2.4, 2}, {0, 0, 1}, 30. Degree}, ImageSize -> {100, 20}, FrameMargins -> 
+            0]}}], Delimiter, {{$CellContext`half$$, 1, 
+          "Full or half sphere"}, {
+         1 -> "half sphere", 0 -> "full sphere"}}, {{$CellContext`mult$$, 1, 
+          "shells"}, {
          1 -> "single shell", 2 -> "multi shell", 3 -> "cartesian", 4 -> 
-          "DWI"}, ControlType -> PopupMenu, FieldSize -> {13, 0.7}}, {{
-         QMRITools`GradientTools`Private`type$$, "normal", "type"}, {
+          "DWI"}, ControlType -> PopupMenu, 
+         FieldSize -> {13, 0.7}}, {{$CellContext`type$$, "normal", "type"}, {
          "normal", "normal fixed z", "normal fixed x, y and z", "over-plus", 
           "over-plus fixed z", "over-plus fixed x, y and z"}, ControlType -> 
-         PopupMenu, FieldSize -> {13, 0.7}, ControlPlacement -> 1}, {{
-         QMRITools`GradientTools`Private`dirs1$$, 30, "number of gradients"}, 
-         6, 128, 1, Appearance -> "Labeled", ImageSize -> Tiny, 
-         AppearanceElements -> {"InputField"}, ControlPlacement -> 2}, {{
-         QMRITools`GradientTools`Private`nshels$$, 2, "number of shells"}, {2,
-          3, 4, 5, 6}, ControlPlacement -> 3}, {{
-         QMRITools`GradientTools`Private`shel$$, 1, " shell"}, 
+         PopupMenu, FieldSize -> {13, 0.7}, ControlPlacement -> 
+         1}, {{$CellContext`dirs1$$, 30, "number of gradients"}, 6, 128, 1, 
+         Appearance -> "Labeled", ImageSize -> Tiny, 
+         AppearanceElements -> {"InputField"}, ControlPlacement -> 
+         2}, {{$CellContext`nshels$$, 2, "number of shells"}, {2, 3, 4, 5, 6},
+          ControlPlacement -> 3}, {{$CellContext`shel$$, 1, " shell"}, 
          Dynamic[
-          Range[QMRITools`GradientTools`Private`nshels$$]], ControlType -> 
-         SetterBar, ControlPlacement -> 4}, {{
-         QMRITools`GradientTools`Private`dirs21$$, 15, 
-          "number of gradients shell 1"}, 3, 128, 1, Appearance -> "Labeled", 
-         ImageSize -> Tiny, AppearanceElements -> {"InputField"}, 
-         ControlPlacement -> 5}, {{
-         QMRITools`GradientTools`Private`dirs22$$, 15, 
-          "number of gradients shell 2"}, 3, 128, 1, Appearance -> "Labeled", 
-         ImageSize -> Tiny, AppearanceElements -> {"InputField"}, 
-         ControlPlacement -> 6}, {{
-         QMRITools`GradientTools`Private`dirs23$$, 15, 
-          "number of gradients shell 3"}, 3, 128, 1, Appearance -> "Labeled", 
-         ImageSize -> Tiny, AppearanceElements -> {"InputField"}, 
-         ControlPlacement -> 7}, {{
-         QMRITools`GradientTools`Private`dirs24$$, 15, 
-          "number of gradients shell 4"}, 3, 128, 1, Appearance -> "Labeled", 
-         ImageSize -> Tiny, AppearanceElements -> {"InputField"}, 
-         ControlPlacement -> 8}, {{
-         QMRITools`GradientTools`Private`dirs25$$, 15, 
-          "number of gradients shell 5"}, 3, 128, 1, Appearance -> "Labeled", 
-         ImageSize -> Tiny, AppearanceElements -> {"InputField"}, 
-         ControlPlacement -> 9}, {{
-         QMRITools`GradientTools`Private`dirs26$$, 15, 
-          "number of gradients shell 6"}, 3, 128, 1, Appearance -> "Labeled", 
-         ImageSize -> Tiny, AppearanceElements -> {"InputField"}, 
-         ControlPlacement -> 10}, {{
-         QMRITools`GradientTools`Private`weight$$, 0.5, "shell weighting"}, 0,
-          1, 0.05, ControlType -> Slider, Appearance -> "Labeled", ImageSize -> 
-         Tiny, AppearanceElements -> {"InputField"}, ControlPlacement -> 
-         11}, {{QMRITools`GradientTools`Private`grid$$, 9, 
-          "cartesian grid size"}, 5, 15, 1, Appearance -> "Labeled", 
-         ImageSize -> Tiny, ControlPlacement -> 12}, {{
-         QMRITools`GradientTools`Private`gridf$$, True, "full even grid"}, {
+          Range[$CellContext`nshels$$]], ControlType -> SetterBar, 
+         ControlPlacement -> 
+         4}, {{$CellContext`dirs21$$, 15, "number of gradients shell 1"}, 3, 
+         128, 1, Appearance -> "Labeled", ImageSize -> Tiny, 
+         AppearanceElements -> {"InputField"}, ControlPlacement -> 
+         5}, {{$CellContext`dirs22$$, 15, "number of gradients shell 2"}, 3, 
+         128, 1, Appearance -> "Labeled", ImageSize -> Tiny, 
+         AppearanceElements -> {"InputField"}, ControlPlacement -> 
+         6}, {{$CellContext`dirs23$$, 15, "number of gradients shell 3"}, 3, 
+         128, 1, Appearance -> "Labeled", ImageSize -> Tiny, 
+         AppearanceElements -> {"InputField"}, ControlPlacement -> 
+         7}, {{$CellContext`dirs24$$, 15, "number of gradients shell 4"}, 3, 
+         128, 1, Appearance -> "Labeled", ImageSize -> Tiny, 
+         AppearanceElements -> {"InputField"}, ControlPlacement -> 
+         8}, {{$CellContext`dirs25$$, 15, "number of gradients shell 5"}, 3, 
+         128, 1, Appearance -> "Labeled", ImageSize -> Tiny, 
+         AppearanceElements -> {"InputField"}, ControlPlacement -> 
+         9}, {{$CellContext`dirs26$$, 15, "number of gradients shell 6"}, 3, 
+         128, 1, Appearance -> "Labeled", ImageSize -> Tiny, 
+         AppearanceElements -> {"InputField"}, ControlPlacement -> 
+         10}, {{$CellContext`weight$$, 0.5, "shell weighting"}, 0, 1, 0.05, 
+         ControlType -> Slider, Appearance -> "Labeled", ImageSize -> Tiny, 
+         AppearanceElements -> {"InputField"}, ControlPlacement -> 
+         11}, {{$CellContext`grid$$, 9, "cartesian grid size"}, 5, 15, 1, 
+         Appearance -> "Labeled", ImageSize -> Tiny, ControlPlacement -> 
+         12}, {{$CellContext`gridf$$, True, "full even grid"}, {
          False -> "no (in between odd grid)", True -> "yes"}, 
-         ControlPlacement -> 13}, {{
-         QMRITools`GradientTools`Private`typed$$, "normal", 
-          "           type"}, {"normal", "over-plus"}, ControlType -> 
-         SetterBar, ControlPlacement -> 14}, 
+         ControlPlacement -> 
+         13}, {{$CellContext`typed$$, "normal", "           type"}, {
+         "normal", "over-plus"}, ControlType -> SetterBar, ControlPlacement -> 
+         14}, 
         PaneSelector[{1 -> Column[{
              Manipulate`Place[1], 
              Manipulate`Place[2]}], 2 -> Column[{
@@ -1826,21 +1566,20 @@ H1U9kvug8g5o+h1Q1De4wflQ++F8qPvgfKj74Xyo/+B8qP/RzA9zAACLwFHZ
                Manipulate`Place[8], 
                Manipulate`Place[9], 
                Manipulate`Place[10]}, 
-              Dynamic[QMRITools`GradientTools`Private`shel$$]], 
+              Dynamic[$CellContext`shel$$]], 
              Manipulate`Place[11]}], 3 -> Column[{
              Manipulate`Place[12], 
              Manipulate`Place[13]}], 4 -> Manipulate`Place[14]}, 
-         Dynamic[QMRITools`GradientTools`Private`mult$$]], Delimiter, 
+         Dynamic[$CellContext`mult$$]], Delimiter, 
         PaneSelector[{1 -> Row[{"  b-value:   ", 
              InputField[
-              Dynamic[QMRITools`GradientTools`Private`bvall$$], Expression, 
-              Background -> Dynamic[
+              Dynamic[$CellContext`bvall$$], Expression, Background -> Dynamic[
                 If[
                  Or[
                   And[
-                   AllTrue[QMRITools`GradientTools`Private`bvall$$, NumberQ], 
-                   ListQ[QMRITools`GradientTools`Private`bvall$$]], 
-                  NumberQ[QMRITools`GradientTools`Private`bvall$$]], None, 
+                   AllTrue[$CellContext`bvall$$, NumberQ], 
+                   ListQ[$CellContext`bvall$$]], 
+                  NumberQ[$CellContext`bvall$$]], None, 
                  Lighter[
                   Lighter[Red]]]]]}], 2 -> Dynamic[
             Grid[
@@ -1849,932 +1588,804 @@ H1U9kvug8g5o+h1Q1De4wflQ++F8qPvgfKj74Xyo/+B8qP/RzA9zAACLwFHZ
                Map[Row[{"b-val" <> ToString[#] <> ":", 
                   InputField[
                    Dynamic[
-                    Part[QMRITools`GradientTools`Private`bvals$$, #]], Number,
-                    FieldSize -> 5]}]& , 
-                Range[1, QMRITools`GradientTools`Private`nshels$$]], 6, ""], 
-              3]]], 3 -> Row[{"max b (corner):   ", 
+                    Part[$CellContext`bvals$$, #]], Number, FieldSize -> 
+                   5]}]& , 
+                Range[1, $CellContext`nshels$$]], 6, ""], 3]]], 3 -> 
+          Row[{"max b (corner):   ", 
              InputField[
-              Dynamic[QMRITools`GradientTools`Private`bvalc$$], Number]}], 4 -> 
+              Dynamic[$CellContext`bvalc$$], Number]}], 4 -> 
           Row[{"      b-value:   ", 
              InputField[
-              Dynamic[QMRITools`GradientTools`Private`bvald$$], Expression, 
-              Background -> Dynamic[
+              Dynamic[$CellContext`bvald$$], Expression, Background -> Dynamic[
                 If[
                  Or[
                   And[
-                   AllTrue[QMRITools`GradientTools`Private`bvald$$, NumberQ], 
-                   ListQ[QMRITools`GradientTools`Private`bvald$$]], 
-                  NumberQ[QMRITools`GradientTools`Private`bvald$$]], None, 
+                   AllTrue[$CellContext`bvald$$, NumberQ], 
+                   ListQ[$CellContext`bvald$$]], 
+                  NumberQ[$CellContext`bvald$$]], None, 
                  Lighter[
                   Lighter[Red]]]]]}]}, 
-         Dynamic[QMRITools`GradientTools`Private`mult$$]], Delimiter, 
+         Dynamic[$CellContext`mult$$]], Delimiter, 
         Dynamic[
          Grid[{{"  interleave b: ", 
             Checkbox[
-             Dynamic[QMRITools`GradientTools`Private`inter$$]], 
-            "Optimize G load: ", 
+             Dynamic[$CellContext`inter$$]], "Optimize G load: ", 
             Checkbox[
-             Dynamic[QMRITools`GradientTools`Private`random$$]]}, 
-           If[
-           QMRITools`GradientTools`Private`inter$$, {"  interleave b-value: ", 
+             Dynamic[$CellContext`random$$]]}, 
+           If[$CellContext`inter$$, {"  interleave b-value: ", 
              InputField[
-              Dynamic[QMRITools`GradientTools`Private`bi$$], Number, 
-              FieldSize -> 3], "interleave b every: ", 
+              Dynamic[$CellContext`bi$$], Number, FieldSize -> 3], 
+             "interleave b every: ", 
              PopupMenu[
-              Dynamic[QMRITools`GradientTools`Private`int], 
+              Dynamic[$CellContext`int$$], 
               Range[3, 20]]}, {}]}, Alignment -> Left]], 
-        Delimiter, {{
-         QMRITools`GradientTools`Private`steps$$, 1000, 
-          "quality (iterations)"}, {
+        Delimiter, {{$CellContext`steps$$, 1000, "quality (iterations)"}, {
          500 -> "poor (500)", 1000 -> "normal (1000)", 2500 -> 
           "excellent (2500)", 5000 -> "perfect (5000)", 10000 -> 
           "extreme (10000)"}, ControlType -> PopupMenu, 
          FieldSize -> {9, 0.7}}, 
         Row[{
-          Button["generate", QMRITools`GradientTools`Private`app$$ = Lighter[
-              Lighter[LightGray]]; QMRITools`GradientTools`Private`disp$$ = 1; 
-           QMRITools`GradientTools`Private`running$$ = True; 
-           QMRITools`GradientTools`Private`mirror$$ = 
-            If[QMRITools`GradientTools`Private`half$$ == 0, False, True]; 
-           QMRITools`GradientTools`Private`proj$$ = False; Pause[0.2]; 
-           Switch[QMRITools`GradientTools`Private`mult$$, 4, 
-             QMRITools`GradientTools`Private`gradd$$ = 
-              If[QMRITools`GradientTools`Private`typed$$ == "normal", {{1, 0, 
-                0}, {0, 1, 0}, {0, 0, 1}}, {{-0.707107, -0.5, 0.5}, {
-                0.707107, -0.5, 0.5}, {0., 0.707107, 0.707107}}]; Null, 3, 
-             QMRITools`GradientTools`Private`gradc$$ = (
-               QMRITools`GradientTools`Private`pointsc$$ = 
-               QMRITools`GradientTools`Private`GradGrid[
-                QMRITools`GradientTools`Private`grid$$, 
-                 QMRITools`GradientTools`Private`gridf$$]); Null, 
-             2, {QMRITools`GradientTools`Private`mpoints$$, 
-                QMRITools`GradientTools`Private`vel$$, 
-                QMRITools`GradientTools`Private`part$$} = 
-              QMRITools`GradientTools`Private`Prepare[
-               QMRITools`GradientTools`Private`dirs2$$, 
-                QMRITools`GradientTools`Private`half$$, {}, 
-                QMRITools`GradientTools`Private`weight$$]; Pause[0.5]; 
-             Do[QMRITools`GradientTools`Private`mpoints$$ = 
-                QMRITools`GradientTools`Private`GradOptimize4C[
-                 QMRITools`GradientTools`Private`mpoints$$, 
-                  QMRITools`GradientTools`Private`vel$$, 
-                  QMRITools`GradientTools`Private`half$$]; 
-               QMRITools`GradientTools`Private`ppoints$$ = Map[Chop[
-                   Part[QMRITools`GradientTools`Private`mpoints$$, #]]& , 
-                  QMRITools`GradientTools`Private`part$$]; Null, {
-               QMRITools`GradientTools`Private`steps$$}]; 
-             QMRITools`GradientTools`Private`gradm$$ = Map[Chop[
-                 Part[QMRITools`GradientTools`Private`mpoints$$, #]]& , 
-                QMRITools`GradientTools`Private`part$$]; Null, 1, 
-             QMRITools`GradientTools`Private`grads$$ = 
-              Switch[QMRITools`GradientTools`Private`type$$, "normal", 
-                QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`Prepare[{
-                   QMRITools`GradientTools`Private`dirs1$$}, 
-                   QMRITools`GradientTools`Private`half$$]; Pause[0.5]; 
-                Do[QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize1C[
-                   QMRITools`GradientTools`Private`points$$, 
-                    QMRITools`GradientTools`Private`half$$], {
-                  QMRITools`GradientTools`Private`steps$$}]; 
-                Chop[QMRITools`GradientTools`Private`points$$], 
-                "normal fixed z", 
-                QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`Prepare[{
-                   QMRITools`GradientTools`Private`dirs1$$}, 
-                   QMRITools`GradientTools`Private`half$$, {{0, 0, 1}}]; 
-                Pause[0.5]; 
-                Do[QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize2C[
-                   QMRITools`GradientTools`Private`points$$, 1, 
-                    QMRITools`GradientTools`Private`half$$], {
-                  QMRITools`GradientTools`Private`steps$$}]; 
-                Chop[QMRITools`GradientTools`Private`points$$], 
-                "normal fixed x, y and z", 
-                QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`Prepare[{
-                   QMRITools`GradientTools`Private`dirs1$$}, 
-                   QMRITools`GradientTools`Private`half$$, {{1, 0, 0}, {0, 1, 
-                   0}, {0, 0, 1}}]; Pause[0.5]; 
-                Do[QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize2C[
-                   QMRITools`GradientTools`Private`points$$, 3, 
-                    QMRITools`GradientTools`Private`half$$], {
-                  QMRITools`GradientTools`Private`steps$$}]; 
-                Chop[QMRITools`GradientTools`Private`points$$], "over-plus", 
-                QMRITools`GradientTools`Private`half$$ = 1; 
-                QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`Prepare[{
-                   QMRITools`GradientTools`Private`dirs1$$}, 
-                   QMRITools`GradientTools`Private`half$$]; 
-                QMRITools`GradientTools`Private`points$$ = 
-                 Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, 
-                   QMRITools`GradientTools`Private`points$$]; Pause[0.5]; 
-                Do[QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize2C[
-                   QMRITools`GradientTools`Private`points$$, 3, 
-                    QMRITools`GradientTools`Private`half$$], {
-                   Round[QMRITools`GradientTools`Private`steps$$/10]}]; 
-                QMRITools`GradientTools`Private`charge$$ = Join[
-                   
-                   ConstantArray[(0.5 
-                    QMRITools`GradientTools`Private`dirs1$$)^1.2, 3], 
-                   ConstantArray[1, QMRITools`GradientTools`Private`dirs1$$]]; 
-                Do[QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize3C[
-                   QMRITools`GradientTools`Private`points$$, 
-                    QMRITools`GradientTools`Private`charge$$, 3], {
-                  QMRITools`GradientTools`Private`steps$$}]; 
-                QMRITools`GradientTools`Private`points$$ = Chop[
-                   Drop[QMRITools`GradientTools`Private`points$$, 3]], 
-                "over-plus fixed z", 
-                QMRITools`GradientTools`Private`half$$ = 1; 
-                QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`Prepare[{
-                   QMRITools`GradientTools`Private`dirs1$$ - 1}, 
-                   QMRITools`GradientTools`Private`half$$]; 
-                QMRITools`GradientTools`Private`points$$ = 
+          Button["generate", $CellContext`app$$ = Lighter[
+              Lighter[LightGray]]; $CellContext`disp$$ = 
+            1; $CellContext`running$$ = True; $CellContext`mirror$$ = 
+            If[$CellContext`half$$ == 0, False, True]; $CellContext`proj$$ = 
+            False; Pause[0.2]; 
+           Switch[$CellContext`mult$$, 
+             4, $CellContext`gradd$$ = 
+              If[$CellContext`typed$$ == "normal", {{1, 0, 0}, {0, 1, 0}, {0, 
+                0, 1}}, {{-0.707107, -0.5, 0.5}, {0.707107, -0.5, 0.5}, {0., 
+                0.707107, 0.707107}}]; Null, 
+             3, $CellContext`gradc$$ = ($CellContext`pointsc$$ = \
+$CellContext`GradGrid[$CellContext`grid$$, $CellContext`gridf$$]); Null, 
+             2, {$CellContext`mpoints$$, $CellContext`vel$$, \
+$CellContext`part$$} = $CellContext`Prepare[$CellContext`dirs2$$, \
+$CellContext`half$$, {}, $CellContext`weight$$]; Pause[0.5]; 
+             Do[$CellContext`mpoints$$ = \
+$CellContext`GradOptimize4C[$CellContext`mpoints$$, $CellContext`vel$$, \
+$CellContext`half$$]; $CellContext`ppoints$$ = Map[Chop[
+                   Part[$CellContext`mpoints$$, #]]& , $CellContext`part$$]; 
+               Null, {$CellContext`steps$$}]; $CellContext`gradm$$ = Map[Chop[
+                 Part[$CellContext`mpoints$$, #]]& , $CellContext`part$$]; 
+             Null, 1, $CellContext`grads$$ = 
+              Switch[$CellContext`type$$, 
+                "normal", $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$}, $CellContext`half$$]; Pause[0.5]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize1C[$CellContext`points$$, $CellContext`half$$], \
+{$CellContext`steps$$}]; Chop[$CellContext`points$$], 
+                "normal fixed z", $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$}, $CellContext`half$$, {{0, 0, 
+                   1}}]; Pause[0.5]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 
+                    1, $CellContext`half$$], {$CellContext`steps$$}]; 
+                Chop[$CellContext`points$$], 
+                "normal fixed x, y and z", $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$}, $CellContext`half$$, {{1, 0, 
+                   0}, {0, 1, 0}, {0, 0, 1}}]; Pause[0.5]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 
+                    3, $CellContext`half$$], {$CellContext`steps$$}]; 
+                Chop[$CellContext`points$$], 
+                "over-plus", $CellContext`half$$ = 
+                 1; $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$}, $CellContext`half$$]; \
+$CellContext`points$$ = 
+                 Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 
+                   0}}, $CellContext`points$$]; Pause[0.5]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 3, $CellContext`half$$], {
+                   Round[$CellContext`steps$$/10]}]; $CellContext`charge$$ = 
+                 Join[
+                   ConstantArray[(0.5 $CellContext`dirs1$$)^1.2, 3], 
+                   ConstantArray[1, $CellContext`dirs1$$]]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize3C[$CellContext`points$$, $CellContext`charge$$, 
+                    3], {$CellContext`steps$$}]; $CellContext`points$$ = Chop[
+                   Drop[$CellContext`points$$, 3]], 
+                "over-plus fixed z", $CellContext`half$$ = 
+                 1; $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$ - 
+                    1}, $CellContext`half$$]; $CellContext`points$$ = 
                  Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0., 0.707107, 
-                    0.707107}}, QMRITools`GradientTools`Private`points$$]; 
-                Pause[0.5]; 
-                Do[QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize2C[
-                   QMRITools`GradientTools`Private`points$$, 4, 
-                    QMRITools`GradientTools`Private`half$$], {
-                   Round[QMRITools`GradientTools`Private`steps$$/10]}]; 
-                QMRITools`GradientTools`Private`charge$$ = Join[
-                   
-                   ConstantArray[(0.5 
-                    QMRITools`GradientTools`Private`dirs1$$)^1.2, 3], 
-                   ConstantArray[1, QMRITools`GradientTools`Private`dirs1$$]]; 
-                Do[QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize3C[
-                   QMRITools`GradientTools`Private`points$$, 
-                    QMRITools`GradientTools`Private`charge$$, 4], {
-                  QMRITools`GradientTools`Private`steps$$}]; 
-                QMRITools`GradientTools`Private`points$$ = Chop[
-                   Drop[QMRITools`GradientTools`Private`points$$, 3]], 
-                "over-plus fixed x, y and z", 
-                QMRITools`GradientTools`Private`half$$ = 1; 
-                QMRITools`GradientTools`Private`points$$ = 
-                 QMRITools`GradientTools`Private`Prepare[{
-                   QMRITools`GradientTools`Private`dirs1$$ - 3}, 
-                   QMRITools`GradientTools`Private`half$$]; 
-                QMRITools`GradientTools`Private`points$$ = 
+                    0.707107}}, $CellContext`points$$]; Pause[0.5]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 4, $CellContext`half$$], {
+                   Round[$CellContext`steps$$/10]}]; $CellContext`charge$$ = 
+                 Join[
+                   ConstantArray[(0.5 $CellContext`dirs1$$)^1.2, 3], 
+                   ConstantArray[1, $CellContext`dirs1$$]]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize3C[$CellContext`points$$, $CellContext`charge$$, 
+                    4], {$CellContext`steps$$}]; $CellContext`points$$ = Chop[
+                   Drop[$CellContext`points$$, 3]], 
+                "over-plus fixed x, y and z", $CellContext`half$$ = 
+                 1; $CellContext`points$$ = \
+$CellContext`Prepare[{$CellContext`dirs1$$ - 
+                    3}, $CellContext`half$$]; $CellContext`points$$ = 
                  Join[{{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {-0.707107, -0.5, 
-                    0.5}, {0.707107, -0.5, 0.5}, {0., 0.707107, 0.707107}}, 
-                   QMRITools`GradientTools`Private`points$$]; Pause[0.5]; 
-                Do[QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize2C[
-                   QMRITools`GradientTools`Private`points$$, 6, 
-                    QMRITools`GradientTools`Private`half$$], {
-                   Round[QMRITools`GradientTools`Private`steps$$/10]}]; 
-                QMRITools`GradientTools`Private`charge$$ = Join[
-                   
-                   ConstantArray[(0.5 
-                    QMRITools`GradientTools`Private`dirs1$$)^1.2, 3], 
-                   ConstantArray[1, QMRITools`GradientTools`Private`dirs1$$]]; 
-                Do[
-                 QMRITools`GradientTools`Private`points$$ = 
-                  QMRITools`GradientTools`Private`GradOptimize3C[
-                   QMRITools`GradientTools`Private`points$$, 
-                    QMRITools`GradientTools`Private`charge$$, 6], {
-                  QMRITools`GradientTools`Private`steps$$}]; 
-                QMRITools`GradientTools`Private`points$$ = Chop[
-                   Drop[QMRITools`GradientTools`Private`points$$, 3]]]; Null]; 
-           Switch[QMRITools`GradientTools`Private`mult$$, 1, 
-             QMRITools`GradientTools`Private`outs$$ = 
-              QMRITools`GradientTools`ConvertGrads[
-                ConstantArray[QMRITools`GradientTools`Private`grads$$, 
-                 Length[QMRITools`GradientTools`Private`bvall$$]], 
-                QMRITools`GradientTools`Private`bvall$$, 
-                QMRITools`GradientTools`Private`bi$$]; 
-             QMRITools`GradientTools`Private`orders$$ = 
-              QMRITools`GradientTools`FindOrder[
-                ConstantArray[QMRITools`GradientTools`Private`grads$$, 
-                 Length[QMRITools`GradientTools`Private`bvall$$]], 
-                QMRITools`GradientTools`Private`bvall$$]; Null, 2, 
-             QMRITools`GradientTools`Private`outm$$ = 
-              QMRITools`GradientTools`ConvertGrads[
-               QMRITools`GradientTools`Private`gradm$$, 
-                Part[QMRITools`GradientTools`Private`bvals$$, 
-                 Span[1, QMRITools`GradientTools`Private`nshels$$]], 
-                QMRITools`GradientTools`Private`bi$$]; 
-             QMRITools`GradientTools`Private`orderm$$ = 
-              QMRITools`GradientTools`FindOrder[
-               QMRITools`GradientTools`Private`gradm$$, 
-                Part[QMRITools`GradientTools`Private`bvals$$, 
-                 Span[1, QMRITools`GradientTools`Private`nshels$$]]]; Null, 3,
-              QMRITools`GradientTools`Private`outc$$ = 
-              QMRITools`GradientTools`ConvertGrads[
-               QMRITools`GradientTools`Private`gradc$$, {
-                QMRITools`GradientTools`Private`bvalc$$}, 
-                QMRITools`GradientTools`Private`bi$$]; 
-             QMRITools`GradientTools`Private`orderc$$ = 
-              QMRITools`GradientTools`FindOrder[
-               QMRITools`GradientTools`Private`gradc$$, 
-                QMRITools`GradientTools`Private`bvalc$$]; Null, 4, 
-             QMRITools`GradientTools`Private`outd$$ = 
-              QMRITools`GradientTools`ConvertGrads[
-                ConstantArray[QMRITools`GradientTools`Private`gradd$$, 
-                 Length[QMRITools`GradientTools`Private`bvald$$]], 
-                QMRITools`GradientTools`Private`bvald$$, 
-                QMRITools`GradientTools`Private`bi$$]; 
-             Part[QMRITools`GradientTools`Private`outd$$, 2] = Join[
-                If[
-                QMRITools`GradientTools`Private`typed$$ == "normal", {
+                    0.5}, {0.707107, -0.5, 0.5}, {0., 0.707107, 
+                    0.707107}}, $CellContext`points$$]; Pause[0.5]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize2C[$CellContext`points$$, 6, $CellContext`half$$], {
+                   Round[$CellContext`steps$$/10]}]; $CellContext`charge$$ = 
+                 Join[
+                   ConstantArray[(0.5 $CellContext`dirs1$$)^1.2, 3], 
+                   ConstantArray[1, $CellContext`dirs1$$]]; 
+                Do[$CellContext`points$$ = \
+$CellContext`GradOptimize3C[$CellContext`points$$, $CellContext`charge$$, 
+                    6], {$CellContext`steps$$}]; $CellContext`points$$ = Chop[
+                   Drop[$CellContext`points$$, 3]]]; Null]; 
+           Switch[$CellContext`mult$$, 
+             1, $CellContext`outs$$ = $CellContext`ConvertGrads[
+                ConstantArray[$CellContext`grads$$, 
+                 
+                 Length[$CellContext`bvall$$]], $CellContext`bvall$$, \
+$CellContext`bi$$]; $CellContext`orders$$ = $CellContext`FindOrder[
+                ConstantArray[$CellContext`grads$$, 
+                 Length[$CellContext`bvall$$]], $CellContext`bvall$$]; Null, 
+             2, $CellContext`outm$$ = \
+$CellContext`ConvertGrads[$CellContext`gradm$$, 
+                Part[$CellContext`bvals$$, 
+                 Span[
+                 1, $CellContext`nshels$$]], $CellContext`bi$$]; \
+$CellContext`orderm$$ = $CellContext`FindOrder[$CellContext`gradm$$, 
+                Part[$CellContext`bvals$$, 
+                 Span[1, $CellContext`nshels$$]]]; Null, 
+             3, $CellContext`outc$$ = \
+$CellContext`ConvertGrads[$CellContext`gradc$$, {$CellContext`bvalc$$}, \
+$CellContext`bi$$]; $CellContext`orderc$$ = \
+$CellContext`FindOrder[$CellContext`gradc$$, $CellContext`bvalc$$]; Null, 
+             4, $CellContext`outd$$ = $CellContext`ConvertGrads[
+                ConstantArray[$CellContext`gradd$$, 
+                 
+                 Length[$CellContext`bvald$$]], $CellContext`bvald$$, \
+$CellContext`bi$$]; Part[$CellContext`outd$$, 2] = Join[
+                
+                If[$CellContext`typed$$ == "normal", {
                  " 1.00000    0.00000    0.00000       " <> ToString[
-                    Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                    Round[$CellContext`bi$$, 0.1]], 
                   " 0.00000    1.00000    0.00000       " <> ToString[
-                    Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                    Round[$CellContext`bi$$, 0.1]], 
                   " 0.00000    0.00000    1.00000       " <> ToString[
-                    Round[QMRITools`GradientTools`Private`bi$$, 0.1]]}, {
+                    Round[$CellContext`bi$$, 0.1]]}, {
                  "-0.70711   -0.50000    0.50000       " <> ToString[
-                    Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                    Round[$CellContext`bi$$, 0.1]], 
                   " 0.70711   -0.50000    0.50000       " <> ToString[
-                    Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                    Round[$CellContext`bi$$, 0.1]], 
                   " 0.00000    0.70711    0.70711       " <> ToString[
-                    Round[QMRITools`GradientTools`Private`bi$$, 0.1]]}], {
+                    Round[$CellContext`bi$$, 0.1]]}], {
                 " 0.02704    0.79706    0.60330       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.09999   -0.59783    0.79536       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.23191   -0.77261    0.59101       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.52867   -0.79903    0.28646       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.18297   -0.98140    0.05818       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.86286    0.19578    0.46599       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.05126    0.20181    0.97808       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.66047    0.01890    0.75062       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.65426   -0.18818    0.73249       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.33052    0.11752    0.93646       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.95407   -0.14465    0.26236       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.14402   -0.86963    0.47224       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.78028   -0.56460    0.26904       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.75319   -0.31631    0.57675       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.41392   -0.31357    0.85460       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.56536    0.27275    0.77845       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.73743    0.58153    0.34354       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.29639   -0.44648    0.84428       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.38689    0.75986    0.52243       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.20081    0.52214    0.82888       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.79424   -0.60284    0.07593       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.98777    0.03678    0.15153       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.29973    0.90469    0.30281       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.95633    0.27860    0.08835       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.49976   -0.83556    0.22819       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.90574    0.41773    0.07170       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.77284    0.45698    0.44032       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.35339   -0.03796    0.93471       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.84918    0.07921    0.52213       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.50085    0.85590    0.12880       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.47526    0.67317    0.56654       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.87597   -0.32192    0.35923       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.64492    0.75075    0.14303       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.12687    0.96109    0.24536       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.60869   -0.54852    0.57325       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.03797   -0.21873    0.97505       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.47780   -0.64010    0.60165       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  "-0.57319    0.42677    0.69952       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.18760   -0.96394    0.18874       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]], 
+                   Round[$CellContext`bi$$, 0.1]], 
                  " 0.23342    0.50887    0.28591       " <> ToString[
-                   Round[QMRITools`GradientTools`Private`bi$$, 0.1]]}]; 
-             QMRITools`GradientTools`Private`orderd$$ = 
-              QMRITools`GradientTools`FindOrder[
-                ConstantArray[QMRITools`GradientTools`Private`gradd$$, 
-                 Length[QMRITools`GradientTools`Private`bvald$$]], 
-                QMRITools`GradientTools`Private`bvald$$]; Null]; Pause[0.1]; 
-           QMRITools`GradientTools`Private`running$$ = False; 
-           QMRITools`GradientTools`Private`app$$ = White; Null, Method -> 
-           "Queued", ImageSize -> {120, 23}, FontSize -> 10], 
+                   
+                   Round[$CellContext`bi$$, 
+                    0.1]]}]; $CellContext`orderd$$ = $CellContext`FindOrder[
+                ConstantArray[$CellContext`gradd$$, 
+                 Length[$CellContext`bvald$$]], $CellContext`bvald$$]; Null]; 
+           Pause[0.1]; $CellContext`running$$ = False; $CellContext`app$$ = 
+            White; Null, Method -> "Queued", ImageSize -> {120, 23}], 
           Button["clipboard", 
-           CopyToClipboard[QMRITools`GradientTools`Private`out$$], 
-           ImageSize -> {100, 23}, FontSize -> 10], 
+           CopyToClipboard[$CellContext`out$$], ImageSize -> {100, 23}], 
           Button[
-          "file", QMRITools`GradientTools`Private`file$$ = 
+          "file", $CellContext`file$$ = 
             SystemDialogInput["FileSave", "dti_vectors_input.txt"]; If[
-             Not[QMRITools`GradientTools`Private`file$$ === $Canceled], 
-             Export[
-             QMRITools`GradientTools`Private`file$$, 
-              QMRITools`GradientTools`Private`out$$, "Text"]], 
-           ImageSize -> {100, 23}, Method -> "Queued", FontSize -> 10]}], 
-        Delimiter, 
+             Not[$CellContext`file$$ === $Canceled], 
+             Export[$CellContext`file$$, $CellContext`out$$, "Text"]], 
+           ImageSize -> {100, 23}, Method -> "Queued"]}], Delimiter, 
         Row[{
           Style[
           "Made by Martijn Froeling, Phd \nm.froeling@umcutrecht.nl", {Small, 
-            GrayLevel[0.5]}]}], {{
-         QMRITools`GradientTools`Private`points$$, {}}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`pointspl$$, {}}, 
-         ControlType -> None}, {{
-         QMRITools`GradientTools`Private`pointsc$$, {}}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`ppoints$$, {}}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`ppointspl$$, {}}, 
-         ControlType -> None}, {{
-         QMRITools`GradientTools`Private`mpoints$$, {}}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`gradd$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`gradm$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`grads$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`gradc$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`outd$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`outc$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`outm$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`outs$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`orderd$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`orderc$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`orderm$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`orders$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`out$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`file$$, ""}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`show$$, {1, 2}}, 
-         ControlType -> None}, {{
-         QMRITools`GradientTools`Private`showc$$, All}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`weight$$, 0.5}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`grid$$, 9}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`gridf$$, False}, 
-         ControlType -> None}, {{
-         QMRITools`GradientTools`Private`running$$, False}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`app$$, 
-          GrayLevel[1]}, ControlType -> None}, {{
-         QMRITools`GradientTools`Private`size$$, 430}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`inter$$, True}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`bi$$, 0}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`random$$, True}, 
-         ControlType -> None}, {{
-         QMRITools`GradientTools`Private`sticks$$, False}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`mirror$$, True}, 
-         ControlType -> None}, {{
-         QMRITools`GradientTools`Private`proj$$, False}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`vel$$, 1}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`part$$, 1}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`dirs1$$, 30}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`dirs21$$, 15}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`dirs22$$, 15}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`dirs23$$, 15}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`dirs24$$, 15}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`dirs25$$, 15}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`dirs26$$, 15}, ControlType -> 
-         None}, {{
-         QMRITools`GradientTools`Private`bvald$$, {10, 20, 30, 40, 60, 80, 
-          100, 200, 300, 500, 700, 1000}}, ControlType -> None}, {{
-         QMRITools`GradientTools`Private`bvall$$, {1000}}, ControlType -> 
-         None}, {{
-         QMRITools`GradientTools`Private`bvals$$, {1000, 2000, 3000, 4000, 
-          5000, 6000}}, ControlType -> None}, {{
-         QMRITools`GradientTools`Private`bvalc$$, 9000}, ControlType -> 
-         None}, {QMRITools`GradientTools`Private`dirs2$$, ControlType -> 
-         None}, {QMRITools`GradientTools`Private`type$$, ControlType -> 
-         None}, {QMRITools`GradientTools`Private`typed$$, ControlType -> 
-         None}, {QMRITools`GradientTools`Private`sc$$, ControlType -> None}, {
-        QMRITools`GradientTools`Private`scc$$, ControlType -> None}, {
-        QMRITools`GradientTools`Private`shel$$, ControlType -> None}, {{
-         QMRITools`GradientTools`Private`nshels$$, 2}, ControlType -> None}, {
-        QMRITools`GradientTools`Private`len$$, ControlType -> None}, {
-        QMRITools`GradientTools`Private`rlen$$, ControlType -> None}, {{
-         QMRITools`GradientTools`Private`rlenc$$, {}}, ControlType -> None}, {
-        QMRITools`GradientTools`Private`charge$$, ControlType -> None}, {{
-         QMRITools`GradientTools`Private`names$$, {
+            GrayLevel[0.5]}]}], {{$CellContext`points$$, {}}, ControlType -> 
+         None}, {{$CellContext`pointspl$$, {}}, ControlType -> 
+         None}, {{$CellContext`pointsc$$, {}}, ControlType -> 
+         None}, {{$CellContext`ppoints$$, {}}, ControlType -> 
+         None}, {{$CellContext`ppointspl$$, {}}, ControlType -> 
+         None}, {{$CellContext`mpoints$$, {}}, ControlType -> 
+         None}, {{$CellContext`gradd$$, ""}, ControlType -> 
+         None}, {{$CellContext`gradm$$, ""}, ControlType -> 
+         None}, {{$CellContext`grads$$, ""}, ControlType -> 
+         None}, {{$CellContext`gradc$$, ""}, ControlType -> 
+         None}, {{$CellContext`outd$$, ""}, ControlType -> 
+         None}, {{$CellContext`outc$$, ""}, ControlType -> 
+         None}, {{$CellContext`outm$$, ""}, ControlType -> 
+         None}, {{$CellContext`outs$$, ""}, ControlType -> 
+         None}, {{$CellContext`orderd$$, ""}, ControlType -> 
+         None}, {{$CellContext`orderc$$, ""}, ControlType -> 
+         None}, {{$CellContext`orderm$$, ""}, ControlType -> 
+         None}, {{$CellContext`orders$$, ""}, ControlType -> 
+         None}, {{$CellContext`out$$, ""}, ControlType -> 
+         None}, {{$CellContext`file$$, ""}, ControlType -> 
+         None}, {{$CellContext`show$$, {1, 2}}, ControlType -> 
+         None}, {{$CellContext`showc$$, All}, ControlType -> 
+         None}, {{$CellContext`weight$$, 0.5}, ControlType -> 
+         None}, {{$CellContext`grid$$, 9}, ControlType -> 
+         None}, {{$CellContext`gridf$$, False}, ControlType -> 
+         None}, {{$CellContext`running$$, False}, ControlType -> 
+         None}, {{$CellContext`app$$, 
+          GrayLevel[1]}, ControlType -> None}, {{$CellContext`size$$, 430}, 
+         ControlType -> None}, {{$CellContext`inter$$, True}, ControlType -> 
+         None}, {{$CellContext`bi$$, 0}, ControlType -> 
+         None}, {{$CellContext`random$$, True}, ControlType -> 
+         None}, {{$CellContext`sticks$$, False}, ControlType -> 
+         None}, {{$CellContext`mirror$$, True}, ControlType -> 
+         None}, {{$CellContext`proj$$, False}, ControlType -> 
+         None}, {{$CellContext`int$$, 10}, ControlType -> 
+         None}, {{$CellContext`vel$$, 1}, ControlType -> 
+         None}, {{$CellContext`part$$, 1}, ControlType -> 
+         None}, {{$CellContext`dirs1$$, 30}, ControlType -> 
+         None}, {{$CellContext`dirs21$$, 15}, ControlType -> 
+         None}, {{$CellContext`dirs22$$, 15}, ControlType -> 
+         None}, {{$CellContext`dirs23$$, 15}, ControlType -> 
+         None}, {{$CellContext`dirs24$$, 15}, ControlType -> 
+         None}, {{$CellContext`dirs25$$, 15}, ControlType -> 
+         None}, {{$CellContext`dirs26$$, 15}, ControlType -> 
+         None}, {{$CellContext`bvald$$, {10, 20, 30, 40, 60, 80, 100, 200, 
+          300, 500, 700, 1000}}, ControlType -> 
+         None}, {{$CellContext`bvall$$, {1000}}, ControlType -> 
+         None}, {{$CellContext`bvals$$, {1000, 2000, 3000, 4000, 5000, 6000}},
+          ControlType -> None}, {{$CellContext`bvalc$$, 9000}, ControlType -> 
+         None}, {$CellContext`dirs2$$, ControlType -> 
+         None}, {$CellContext`type$$, ControlType -> 
+         None}, {$CellContext`typed$$, ControlType -> 
+         None}, {$CellContext`sc$$, ControlType -> None}, {$CellContext`scc$$,
+          ControlType -> None}, {$CellContext`shel$$, ControlType -> 
+         None}, {{$CellContext`nshels$$, 2}, ControlType -> 
+         None}, {$CellContext`len$$, ControlType -> 
+         None}, {$CellContext`rlen$$, ControlType -> 
+         None}, {{$CellContext`rlenc$$, {}}, ControlType -> 
+         None}, {$CellContext`charge$$, ControlType -> 
+         None}, {{$CellContext`names$$, {
           "Set_Name", "Shells_Name", "Grid_Name", "DWI_Name"}}, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`vp$$, {1.3, -2.4, 2}}, 
-         ControlType -> None}, {{
-         QMRITools`GradientTools`Private`va$$, 0.5235987755982988}, 
-         ControlType -> None}, {{
-         QMRITools`GradientTools`Private`vv$$, {0, 0, 1}}, ControlType -> 
-         None}, {QMRITools`GradientTools`Private`charts$$, ControlType -> 
-         None}, {{QMRITools`GradientTools`Private`viewvec$$, {0, 0}}, 
-         ControlType -> None}, {{QMRITools`GradientTools`Private`ctype$$, 1}, 
-         ControlType -> None}}, 
+         None}, {{$CellContext`vp$$, {1.3, -2.4, 2}}, ControlType -> 
+         None}, {{$CellContext`va$$, 0.5235987755982988}, ControlType -> 
+         None}, {{$CellContext`vv$$, {0, 0, 1}}, ControlType -> 
+         None}, {$CellContext`charts$$, ControlType -> 
+         None}, {{$CellContext`viewvec$$, {0, 0}}, ControlType -> 
+         None}, {{$CellContext`ctype$$, 1}, ControlType -> None}}, 
       "Options" :> {
        ContentSize -> {450, 510}, ControlPlacement -> Left, ContinuousAction -> 
-        True, AppearanceElements -> None, AutorunSequencing -> {1}}, 
-      "DefaultOptions" :> {}],
-     ImageSizeCache->{802., {286., 291.}},
+        False, AppearanceElements -> None, AutorunSequencing -> {1}, 
+        SynchronousInitialization -> False}, "DefaultOptions" :> {}],
+     ImageSizeCache->{593.96, {211.2567626953125, 215.555712890625}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
-    Initialization:>({
-      QMRITools`GradientTools`Private`int = 3, 
-       QMRITools`GradientTools`Private`SpherePlot[
-         Pattern[QMRITools`GradientTools`Private`size$, 
+    Initialization:>({$CellContext`FinalGrads[{
+          Pattern[$CellContext`listi, 
+           Blank[]], 
+          Pattern[$CellContext`list0, 
+           Blank[]], 
+          Pattern[$CellContext`nb, 
+           Blank[]]}, {
+          Pattern[$CellContext`inter, 
+           Blank[]], 
+          Pattern[$CellContext`int, 
+           Blank[]]}, {
+          Pattern[$CellContext`random, 
+           Blank[]], 
+          Pattern[$CellContext`ordr, 
+           
+           Blank[]]}] := $CellContext`FinalGrads[{$CellContext`listi, \
+$CellContext`list0, $CellContext`nb}, {$CellContext`inter, $CellContext`int}, \
+{$CellContext`random, $CellContext`ordr}], $CellContext`FinalGrads[{
+          Pattern[$CellContext`listi$, 
+           Blank[]], 
+          Pattern[$CellContext`list0$, 
+           Blank[]], 
+          Pattern[$CellContext`nb$, 
+           Blank[]]}, {
+          Pattern[$CellContext`inter$, 
+           Blank[]], 
+          Pattern[$CellContext`int$, 
+           Blank[]], 
+          Pattern[$CellContext`bi$, 
+           Blank[]]}, {
+          Pattern[$CellContext`random$, 
+           Blank[]], 
+          Pattern[$CellContext`ordr$, 
+           Blank[]]}] := 
+       Block[{$CellContext`part$$, $CellContext`listout, $CellContext`name, \
+$CellContext`list}, $CellContext`list = If[$CellContext`random$, 
+            
+            Part[$CellContext`listi$, $CellContext`ordr$], \
+$CellContext`listi$]; $CellContext`listout = DeleteDuplicates[
+            Prepend[
+             
+             If[$CellContext`inter$, $CellContext`part$$ = 
+               Partition[$CellContext`list, $CellContext`int$, \
+$CellContext`int$, 1, {}]; Flatten[
+                Riffle[$CellContext`part$$, 
+                 Part[$CellContext`list0$, 
+                  Span[1, 
+                   Length[$CellContext`part$$]]]]], $CellContext`list], 
+             " 0.00000    0.00000    1.00000       0.0"]]; $CellContext`name = 
+          " (" <> ToString[
+             Length[$CellContext`listout]] <> ", " <> $CellContext`nb$ <> 
+           ")\n"; $CellContext`name <> StringJoin[
+            Map[# <> "\n"& , $CellContext`listout]]], 
+       SyntaxInformation[$CellContext`FinalGrads] = {"ArgumentsPattern" -> {
+           Blank[], {
+            Blank[], 
+            Blank[], 
+            Optional[
+             Blank[]]}, {
+            Blank[], 
+            Blank[]}}}, $CellContext`SpherePlot[
+         Pattern[$CellContext`size$, 
           Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`op$, 
+         Pattern[$CellContext`op$, 
           Blank[]]] := If[
-         Or[
-         QMRITools`GradientTools`Private`size$ == 0, 
-          QMRITools`GradientTools`Private`size$ == 0.], 
+         Or[$CellContext`size$ == 0, $CellContext`size$ == 0.], 
          Graphics3D[{}, Lighting -> "Neutral", 
           PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> 
-          Dynamic[FE`QMRITools`GradientTools`Private`vp$$368], ViewVertical -> 
-          Dynamic[FE`QMRITools`GradientTools`Private`vv$$368], ViewAngle -> 
-          Dynamic[FE`QMRITools`GradientTools`Private`va$$368], 
-          SphericalRegion -> True], 
+          Dynamic[FE`vp$$85], ViewVertical -> Dynamic[FE`vv$$85], ViewAngle -> 
+          Dynamic[FE`va$$85], SphericalRegion -> True], 
          Graphics3D[{White, 
-           Opacity[QMRITools`GradientTools`Private`op$], 
-           Sphere[{0, 0, 0}, 0.95 QMRITools`GradientTools`Private`size$]}, 
-          Lighting -> "Neutral", 
-          PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> 
-          Dynamic[FE`QMRITools`GradientTools`Private`vp$$368], ViewVertical -> 
-          Dynamic[FE`QMRITools`GradientTools`Private`vv$$368], ViewAngle -> 
-          Dynamic[FE`QMRITools`GradientTools`Private`va$$368], 
-          SphericalRegion -> True]], 
-       Attributes[QMRITools`GradientTools`Private`size$] = {Temporary}, 
-       Attributes[QMRITools`GradientTools`Private`op$] = {Temporary}, 
-       QMRITools`GradientTools`Private`ListSpherePloti[
-         Pattern[QMRITools`GradientTools`Private`pts, 
+           Opacity[$CellContext`op$], 
+           Sphere[{0, 0, 0}, 0.95 $CellContext`size$]}, Lighting -> "Neutral",
+           PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> 
+          Dynamic[FE`vp$$85], ViewVertical -> Dynamic[FE`vv$$85], ViewAngle -> 
+          Dynamic[FE`va$$85], SphericalRegion -> True]], 
+       Attributes[$CellContext`size$] = {Temporary}, 
+       Attributes[$CellContext`op$] = {
+        Temporary}, $CellContext`ListSpherePloti[
+         Pattern[$CellContext`pts, 
           Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`col, 
+         Pattern[$CellContext`col, 
           Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`size, 
-          Blank[]]] := Graphics3D[{QMRITools`GradientTools`Private`col, 
+         Pattern[$CellContext`size, 
+          Blank[]]] := Graphics3D[{$CellContext`col, 
           Map[
-          Sphere[#, QMRITools`GradientTools`Private`size]& , 
-           QMRITools`GradientTools`Private`pts]}], 
-       QMRITools`GradientTools`Private`ListStickPlot[
-         Pattern[QMRITools`GradientTools`Private`pts, 
+          Sphere[#, $CellContext`size]& , $CellContext`pts]}], \
+$CellContext`ListStickPlot[
+         Pattern[$CellContext`pts, 
           Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`size, 
+         Pattern[$CellContext`size, 
           Blank[]]] := Graphics3D[{Gray, 
           Map[
-          Tube[0.98 {#, -#}, QMRITools`GradientTools`Private`size]& , 
-           QMRITools`GradientTools`Private`pts]}], 
-       QMRITools`GradientTools`Private`PlotChartPoints[
-         Pattern[QMRITools`GradientTools`Private`grad$, 
+          Tube[0.98 {#, -#}, $CellContext`size]& , $CellContext`pts]}], \
+$CellContext`PlotChartPoints[
+         Pattern[$CellContext`grad$, 
           Blank[]], {
-          Pattern[QMRITools`GradientTools`Private`mirr$, 
+          Pattern[$CellContext`mirr$, 
            Blank[]], 
-          Pattern[QMRITools`GradientTools`Private`col$, 
-           Blank[]]}] := 
-       Block[{QMRITools`GradientTools`Private`style}, 
-         QMRITools`GradientTools`Private`style = If[
-            ListQ[QMRITools`GradientTools`Private`col$], 
+          Pattern[$CellContext`col$, 
+           Blank[]]}] := Block[{$CellContext`style}, $CellContext`style = If[
+            ListQ[$CellContext`col$], 
             Map[Directive[#, 
-              PointSize[Large]]& , QMRITools`GradientTools`Private`col$], 
-            Directive[QMRITools`GradientTools`Private`col$, 
+              PointSize[Large]]& , $CellContext`col$], 
+            Directive[$CellContext`col$, 
              PointSize[Large]]]; Show[
-           If[QMRITools`GradientTools`Private`grad$ === {}, 
+           If[$CellContext`grad$ === {}, 
             Graphics[], 
             Show[
              ListPlot[
-              If[ArrayDepth[QMRITools`GradientTools`Private`grad$] == 2, 
-               QMRITools`GradientTools`Private`CalcPolarPts[
-               QMRITools`GradientTools`Private`grad$, 
-                FE`QMRITools`GradientTools`Private`ctype$$368, 
-                FE`QMRITools`GradientTools`Private`viewvec$$368], 
-               Map[
-               QMRITools`GradientTools`Private`CalcPolarPts[#, 
-                 FE`QMRITools`GradientTools`Private`ctype$$368, 
-                 FE`QMRITools`GradientTools`Private`viewvec$$368]& , 
-                QMRITools`GradientTools`Private`grad$]], PlotStyle -> 
-              QMRITools`GradientTools`Private`style], 
+              If[ArrayDepth[$CellContext`grad$] == 2, 
+               $CellContext`CalcPolarPts[$CellContext`grad$, FE`ctype$$85, 
+                FE`viewvec$$85], 
+               
+               Map[$CellContext`CalcPolarPts[#, FE`ctype$$85, 
+                 FE`viewvec$$85]& , $CellContext`grad$]], 
+              PlotStyle -> $CellContext`style], 
              If[
-              Not[QMRITools`GradientTools`Private`mirr$], 
+              Not[$CellContext`mirr$], 
               Graphics[], 
               ListPlot[
-               If[ArrayDepth[QMRITools`GradientTools`Private`grad$] == 2, 
-                
-                QMRITools`GradientTools`Private`CalcPolarPts[-
-                 QMRITools`GradientTools`Private`grad$, 
-                 FE`QMRITools`GradientTools`Private`ctype$$368, 
-                 FE`QMRITools`GradientTools`Private`viewvec$$368], 
-                
-                QMRITools`GradientTools`Private`CalcPolarPts[-
-                 Flatten[QMRITools`GradientTools`Private`grad$, 1], 
-                 FE`QMRITools`GradientTools`Private`ctype$$368, 
-                 FE`QMRITools`GradientTools`Private`viewvec$$368]], PlotStyle -> {
+               If[ArrayDepth[$CellContext`grad$] == 2, 
+                $CellContext`CalcPolarPts[-$CellContext`grad$, FE`ctype$$85, 
+                 FE`viewvec$$85], 
+                $CellContext`CalcPolarPts[-Flatten[$CellContext`grad$, 1], 
+                 FE`ctype$$85, FE`viewvec$$85]], PlotStyle -> {
                  Darker[Gray], 
                  PointSize[Large]}]]]]]], 
-       Attributes[QMRITools`GradientTools`Private`grad$] = {Temporary}, 
-       Attributes[QMRITools`GradientTools`Private`mirr$] = {Temporary}, 
-       Attributes[QMRITools`GradientTools`Private`col$] = {Temporary}, 
-       QMRITools`GradientTools`Private`CalcPolarPts[
-         Pattern[QMRITools`GradientTools`Private`grad, 
+       Attributes[$CellContext`grad$] = {Temporary}, 
+       Attributes[$CellContext`mirr$] = {Temporary}, 
+       Attributes[$CellContext`col$] = {Temporary}, $CellContext`CalcPolarPts[
+         Pattern[$CellContext`grad, 
           Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`type, 
+         Pattern[$CellContext`type, 
+          
+          Blank[]]] := $CellContext`CalcPolarPts[$CellContext`grad, \
+$CellContext`type, {0., 0.}], $CellContext`CalcPolarPts[
+         Pattern[$CellContext`grad, 
+          Blank[]], 
+         Pattern[$CellContext`type, 
+          Blank[]], 
+         Pattern[$CellContext`vec, 
           Blank[]]] := 
-       QMRITools`GradientTools`Private`CalcPolarPts[
-        QMRITools`GradientTools`Private`grad, 
-         QMRITools`GradientTools`Private`type, {0., 0.}], 
-       QMRITools`GradientTools`Private`CalcPolarPts[
-         Pattern[QMRITools`GradientTools`Private`grad, 
-          Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`type, 
-          Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`vec, 
-          Blank[]]] := 
-       Block[{QMRITools`GradientTools`Private`sig, 
-          QMRITools`GradientTools`Private`phi, 
-          QMRITools`GradientTools`Private`gradp, 
-          QMRITools`GradientTools`Private`rot}, 
-         QMRITools`GradientTools`Private`rot = Dot[
+       Block[{$CellContext`sig, $CellContext`phi, $CellContext`gradp, \
+$CellContext`rot}, $CellContext`rot = Dot[
+            RotationMatrix[Part[$CellContext`vec, 1] 180 Degree, {0, 0, -1}], 
             RotationMatrix[
-            Part[QMRITools`GradientTools`Private`vec, 1] 180 Degree, {0, 
-             0, -1}], 
-            RotationMatrix[
-            Part[QMRITools`GradientTools`Private`vec, 2] 90 Degree, {0, 1, 
-             0}]]; {QMRITools`GradientTools`Private`sig, 
-            QMRITools`GradientTools`Private`phi} = Transpose[
+            Part[$CellContext`vec, 2] 90 Degree, {0, 1, 
+             0}]]; {$CellContext`sig, $CellContext`phi} = Transpose[
             ReplaceAll[
              Quiet[
               Map[{90, 0} + {-1, 1} (Part[
                    ToSphericalCoordinates[
-                    Dot[QMRITools`GradientTools`Private`rot, #]], 
-                   Span[2, All]]/Degree)& , 
-               QMRITools`GradientTools`Private`grad]], Indeterminate -> 0]]; 
-         Part[{
+                    Dot[$CellContext`rot, #]], 
+                   Span[2, All]]/Degree)& , $CellContext`grad]], 
+             Indeterminate -> 0]]; Part[{
             
-            Transpose[{
-             QMRITools`GradientTools`Private`phi 
-              Cos[QMRITools`GradientTools`Private`sig Degree], 90 
-              Sin[QMRITools`GradientTools`Private`sig Degree]}], 
+            Transpose[{$CellContext`phi Cos[$CellContext`sig Degree], 90 
+              Sin[$CellContext`sig Degree]}], 
+            Transpose[{$CellContext`phi, $CellContext`sig}], 
             
-            Transpose[{
-             QMRITools`GradientTools`Private`phi, 
-              QMRITools`GradientTools`Private`sig}], 
+            Transpose[{$CellContext`phi, 90 
+              Sin[$CellContext`sig 
+                Degree]}]}, $CellContext`type]], $CellContext`PlotDuty[{
+          Pattern[$CellContext`grad, 
+           Blank[]], 
+          Pattern[$CellContext`bval, 
+           Blank[]], 
+          Pattern[$CellContext`ord, 
+           Blank[]]}, 
+         Optional[
+          Pattern[$CellContext`mode, 
+           Blank[]], True]] := 
+       Module[{$CellContext`grads, $CellContext`order, $CellContext`testgr, \
+$CellContext`mn, $CellContext`ran}, $CellContext`grads = 
+          Abs[$CellContext`grad Sqrt[$CellContext`bval]]; $CellContext`grads = 
+          If[
+            NumberQ[$CellContext`bval], $CellContext`grads, 
             
-            Transpose[{
-             QMRITools`GradientTools`Private`phi, 90 
-              Sin[QMRITools`GradientTools`Private`sig Degree]}]}, 
-           QMRITools`GradientTools`Private`type]], 
-       QMRITools`GradientTools`Private`GradGrid[
-         Pattern[QMRITools`GradientTools`Private`n$, 
+            Flatten[$CellContext`grads, 
+             1]]; $CellContext`grads = ($CellContext`grads - 
+            Min[$CellContext`grads])/(Max[$CellContext`grads] - 
+           Min[$CellContext`grads]); $CellContext`ran = 
+          MinMax[$CellContext`grads]; $CellContext`order = If[
+            Not[$CellContext`mode], 
+            Range[
+             
+             Length[$CellContext`grads]], $CellContext`ord]; \
+$CellContext`testgr = Map[Mean[
+             Transpose[
+              Partition[#, 10, 1]]]& , 
+            Transpose[
+             Part[$CellContext`grads, $CellContext`order]]]; $CellContext`mn = 
+          Map[Max, 
+            Transpose[$CellContext`testgr]]; Show[
+           
+           ListLinePlot[$CellContext`testgr, PlotLabel -> 
+            "Average Gradient Load", AxesStyle -> Directive[{Thick, Black}], 
+            LabelStyle -> 
+            Directive[{Black, Bold, 12, FontFamily -> "Helvetica"}], 
+            Ticks -> {
+             Automatic, {{0.1, "Min G"}, {0.55, "Avrg. G"}, {1, "Max G"}}}, 
+            PlotRange -> {0, 1}, GridLines -> {None, {0.1, 0.55, 1, {
+                Max[$CellContext`mn], 
+                Directive[Red, Thick]}}}], 
+           
+           ListLinePlot[$CellContext`mn, PlotStyle -> 
+            Directive[Black, Dashed, Thick]]]], 
+       SyntaxInformation[$CellContext`PlotDuty] = {"ArgumentsPattern" -> {{
+            Blank[], 
+            Blank[], 
+            Blank[]}, 
+           Optional[
+            Blank[]]}}, $CellContext`GradGrid[
+         Pattern[$CellContext`n$, 
           Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`full$, 
+         Pattern[$CellContext`full$, 
           Blank[]]] := 
-       Block[{QMRITools`GradientTools`Private`points$$}, 
-         QMRITools`GradientTools`Private`points$$ = If[
-            EvenQ[QMRITools`GradientTools`Private`n$], 
-            If[QMRITools`GradientTools`Private`full$, 
+       Block[{$CellContext`points$$}, $CellContext`points$$ = If[
+            EvenQ[$CellContext`n$], 
+            If[$CellContext`full$, 
              N[
               Flatten[
                
-               Table[{QMRITools`GradientTools`Private`i, 
-                 QMRITools`GradientTools`Private`j, 
-                 QMRITools`GradientTools`Private`k}, {
-                QMRITools`GradientTools`Private`i, -1, 1, 2/(
-                 QMRITools`GradientTools`Private`n$ - 1)}, {
-                QMRITools`GradientTools`Private`j, -1, 1, 2/(
-                 QMRITools`GradientTools`Private`n$ - 1)}, {
-                QMRITools`GradientTools`Private`k, 1/(
-                 QMRITools`GradientTools`Private`n$ - 1), 1, 2/(
-                 QMRITools`GradientTools`Private`n$ - 1)}], 2]], 
+               Table[{$CellContext`i, $CellContext`j, $CellContext`k}, \
+{$CellContext`i, -1, 1, 2/($CellContext`n$ - 1)}, {$CellContext`j, -1, 1, 
+                 2/($CellContext`n$ - 1)}, {$CellContext`k, 
+                 1/($CellContext`n$ - 1), 1, 2/($CellContext`n$ - 1)}], 2]], 
              N[
               Flatten[
                
-               Table[{QMRITools`GradientTools`Private`i, 
-                 QMRITools`GradientTools`Private`j, 
-                 QMRITools`GradientTools`Private`k}, {
-                QMRITools`GradientTools`Private`i, -1 + 
-                 1/QMRITools`GradientTools`Private`n$, 1, 2/
-                 QMRITools`GradientTools`Private`n$}, {
-                QMRITools`GradientTools`Private`j, -1 + 
-                 1/QMRITools`GradientTools`Private`n$, 1, 2/
-                 QMRITools`GradientTools`Private`n$}, {
-                QMRITools`GradientTools`Private`k, 1/
-                 QMRITools`GradientTools`Private`n$, 1, 2/
-                 QMRITools`GradientTools`Private`n$}], 2]]], 
-            QMRITools`GradientTools`Private`points$$ = N[
+               Table[{$CellContext`i, $CellContext`j, $CellContext`k}, \
+{$CellContext`i, -1 + 1/$CellContext`n$, 1, 
+                 2/$CellContext`n$}, {$CellContext`j, -1 + 1/$CellContext`n$, 
+                 1, 2/$CellContext`n$}, {$CellContext`k, 1/$CellContext`n$, 1,
+                  2/$CellContext`n$}], 2]]], $CellContext`points$$ = N[
                Flatten[
                 
-                Table[{QMRITools`GradientTools`Private`i, 
-                  QMRITools`GradientTools`Private`j, 
-                  QMRITools`GradientTools`Private`k}, {
-                 QMRITools`GradientTools`Private`i, -1, 1, 2/(
-                  QMRITools`GradientTools`Private`n$ - 1)}, {
-                 QMRITools`GradientTools`Private`j, -1, 1, 2/(
-                  QMRITools`GradientTools`Private`n$ - 1)}, {
-                 QMRITools`GradientTools`Private`k, 0, 1, 2/(
-                  QMRITools`GradientTools`Private`n$ - 1)}], 2]]; DeleteCases[
+                Table[{$CellContext`i, $CellContext`j, $CellContext`k}, \
+{$CellContext`i, -1, 1, 2/($CellContext`n$ - 1)}, {$CellContext`j, -1, 1, 
+                  2/($CellContext`n$ - 1)}, {$CellContext`k, 0, 1, 
+                  2/($CellContext`n$ - 1)}], 2]]; DeleteCases[
               Map[If[
                 Or[
                  And[Part[#, 1] < 0., Part[
                     SlotSequence[1], 3] == 0.], 
                  And[Part[#, 1] == 0., Part[#, 2] < 0, Part[
-                    SlotSequence[1], 3] == 0.]], Null, #]& , 
-               QMRITools`GradientTools`Private`points$$], Null]]; 
-         QMRITools`GradientTools`Private`points$$ = N[
-            Sort[
-            QMRITools`GradientTools`Private`points$$, Norm[#] < Norm[#2]& ]]],
-        QMRITools`GradientTools`Private`Prepare[
-         Pattern[QMRITools`GradientTools`Private`numbs, 
+                    SlotSequence[1], 3] == 0.]], 
+                Null, #]& , $CellContext`points$$], 
+              Null]]; $CellContext`points$$ = N[
+            
+            Sort[$CellContext`points$$, Norm[#] < 
+             Norm[#2]& ]]], $CellContext`Prepare[
+         Pattern[$CellContext`numbs, 
           Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`half, 
+         Pattern[$CellContext`half, 
+          
+          Blank[]]] := $CellContext`Prepare[$CellContext`numbs, \
+$CellContext`half, {}, 0], $CellContext`Prepare[
+         Pattern[$CellContext`numbs, 
+          Blank[]], 
+         Pattern[$CellContext`half, 
+          Blank[]], 
+         Pattern[$CellContext`fixed, 
+          
+          Blank[]]] := $CellContext`Prepare[$CellContext`numbs, \
+$CellContext`half, $CellContext`fixed, 0], $CellContext`Prepare[
+         Pattern[$CellContext`numbs$, 
+          Blank[]], 
+         Pattern[$CellContext`half$, 
+          Blank[]], 
+         Pattern[$CellContext`fixed$, 
+          Blank[]], 
+         Pattern[$CellContext`alph$, 
           Blank[]]] := 
-       QMRITools`GradientTools`Private`Prepare[
-        QMRITools`GradientTools`Private`numbs, 
-         QMRITools`GradientTools`Private`half, {}, 0], 
-       QMRITools`GradientTools`Private`Prepare[
-         Pattern[QMRITools`GradientTools`Private`numbs, 
-          Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`half, 
-          Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`fixed, 
-          Blank[]]] := 
-       QMRITools`GradientTools`Private`Prepare[
-        QMRITools`GradientTools`Private`numbs, 
-         QMRITools`GradientTools`Private`half, 
-         QMRITools`GradientTools`Private`fixed, 0], 
-       QMRITools`GradientTools`Private`Prepare[
-         Pattern[QMRITools`GradientTools`Private`numbs$, 
-          Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`half$, 
-          Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`fixed$, 
-          Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`alph$, 
-          Blank[]]] := 
-       Block[{QMRITools`GradientTools`Private`nf, 
-          QMRITools`GradientTools`Private`ni, 
-          QMRITools`GradientTools`Private`ni2, 
-          QMRITools`GradientTools`Private`parti, 
-          QMRITools`GradientTools`Private`part$$, 
-          QMRITools`GradientTools`Private`velocity0, 
-          QMRITools`GradientTools`Private`velocity1, 
-          QMRITools`GradientTools`Private`vel$$}, 
-         QMRITools`GradientTools`Private`nf = 
-          Length[QMRITools`GradientTools`Private`fixed$]; 
-         QMRITools`GradientTools`Private`ni = 
-          Total[QMRITools`GradientTools`Private`numbs$] - 
-           QMRITools`GradientTools`Private`nf; 
-         If[Length[QMRITools`GradientTools`Private`numbs$] > 1, 
-           QMRITools`GradientTools`Private`parti = Map[{1, 0} + #& , 
+       Block[{$CellContext`nf, $CellContext`ni, $CellContext`ni2, \
+$CellContext`parti, $CellContext`part$$, $CellContext`velocity0, \
+$CellContext`velocity1, $CellContext`vel$$}, $CellContext`nf = 
+          Length[$CellContext`fixed$]; $CellContext`ni = 
+          Total[$CellContext`numbs$] - $CellContext`nf; 
+         If[Length[$CellContext`numbs$] > 
+           1, $CellContext`parti = Map[{1, 0} + #& , 
               Drop[
                Partition[
                 Prepend[
-                 Accumulate[QMRITools`GradientTools`Private`numbs$], 0], 2, 1,
-                 1], -1]]; QMRITools`GradientTools`Private`part$$ = Map[Range[
+                 Accumulate[$CellContext`numbs$], 0], 2, 1, 
+                1], -1]]; $CellContext`part$$ = Map[Range[
                Part[#, 1], 
-               Part[#, 2]]& , QMRITools`GradientTools`Private`parti]; 
-           QMRITools`GradientTools`Private`ni2 = 
-            If[QMRITools`GradientTools`Private`half$ == 0, 
-              QMRITools`GradientTools`Private`ni, 2 
-              QMRITools`GradientTools`Private`ni]; 
-           QMRITools`GradientTools`Private`velocity0 = 
+               Part[#, 2]]& , $CellContext`parti]; $CellContext`ni2 = 
+            If[$CellContext`half$ == 0, $CellContext`ni, 
+              2 $CellContext`ni]; $CellContext`velocity0 = 
             ConstantArray[
-             0, {QMRITools`GradientTools`Private`ni2, 
-               QMRITools`GradientTools`Private`ni2, 3}]; 
-           QMRITools`GradientTools`Private`velocity1 = 
-            ConstantArray[
-             1, {QMRITools`GradientTools`Private`ni2, 
-               QMRITools`GradientTools`Private`ni2, 3}]; 
-           If[QMRITools`GradientTools`Private`half$ == 1, 
+             0, {$CellContext`ni2, $CellContext`ni2, 
+               3}]; $CellContext`velocity1 = 
+            ConstantArray[1, {$CellContext`ni2, $CellContext`ni2, 3}]; 
+           If[$CellContext`half$ == 1, 
              Map[Table[
-               Part[QMRITools`GradientTools`Private`velocity0, 
-                   QMRITools`GradientTools`Private`i, 
-                   QMRITools`GradientTools`Private`j] = {1, 1, 1}; 
-                Part[QMRITools`GradientTools`Private`velocity0, 
-                   QMRITools`GradientTools`Private`i, 
-                   QMRITools`GradientTools`Private`j + 
-                   QMRITools`GradientTools`Private`ni] = {1, 1, 1}; 
-                Part[QMRITools`GradientTools`Private`velocity0, 
-                   QMRITools`GradientTools`Private`i + 
-                   QMRITools`GradientTools`Private`ni, 
-                   QMRITools`GradientTools`Private`j] = {1, 1, 1}; 
-                Part[QMRITools`GradientTools`Private`velocity0, 
-                   QMRITools`GradientTools`Private`i + 
-                   QMRITools`GradientTools`Private`ni, 
-                   QMRITools`GradientTools`Private`j + 
-                   QMRITools`GradientTools`Private`ni] = {1, 1, 1}; Null, {
-                QMRITools`GradientTools`Private`i, 
+               Part[$CellContext`velocity0, $CellContext`i, $CellContext`j] = \
+{1, 1, 1}; 
+                Part[$CellContext`velocity0, $CellContext`i, $CellContext`j + \
+$CellContext`ni] = {1, 1, 1}; 
+                Part[$CellContext`velocity0, $CellContext`i + \
+$CellContext`ni, $CellContext`j] = {1, 1, 1}; 
+                Part[$CellContext`velocity0, $CellContext`i + \
+$CellContext`ni, $CellContext`j + $CellContext`ni] = {1, 1, 1}; 
+                Null, {$CellContext`i, 
                  Part[#, 1], 
-                 Part[#, 2]}, {QMRITools`GradientTools`Private`j, 
+                 Part[#, 2]}, {$CellContext`j, 
                  Part[#, 1], 
-                 Part[#, 2]}]& , QMRITools`GradientTools`Private`parti]; Null,
-              Map[Table[
-               Part[QMRITools`GradientTools`Private`velocity0, 
-                   QMRITools`GradientTools`Private`i, 
-                   QMRITools`GradientTools`Private`j] = {1, 1, 1}; Null, {
-                QMRITools`GradientTools`Private`i, 
+                 Part[#, 2]}]& , $CellContext`parti]; Null, 
+             Map[Table[
+               Part[$CellContext`velocity0, $CellContext`i, $CellContext`j] = \
+{1, 1, 1}; Null, {$CellContext`i, 
                  Part[#, 1], 
-                 Part[#, 2]}, {QMRITools`GradientTools`Private`j, 
+                 Part[#, 2]}, {$CellContext`j, 
                  Part[#, 1], 
-                 Part[#, 2]}]& , QMRITools`GradientTools`Private`parti]; 
-             Null]; QMRITools`GradientTools`Private`vel$$ = (1 - 
-               QMRITools`GradientTools`Private`alph$) 
-              QMRITools`GradientTools`Private`velocity0 + 
-             QMRITools`GradientTools`Private`alph$ 
-              QMRITools`GradientTools`Private`velocity1; {
-             QMRITools`GradientTools`Private`RandInit[
-             QMRITools`GradientTools`Private`ni, 
-              QMRITools`GradientTools`Private`half$], 
-             QMRITools`GradientTools`Private`vel$$, 
-             QMRITools`GradientTools`Private`part$$}, 
-           If[QMRITools`GradientTools`Private`fixed$ === {}, 
-            QMRITools`GradientTools`Private`RandInit[
-            QMRITools`GradientTools`Private`ni, 
-             QMRITools`GradientTools`Private`half$], 
-            Join[QMRITools`GradientTools`Private`fixed$, 
-             QMRITools`GradientTools`Private`RandInit[
-             QMRITools`GradientTools`Private`ni, 
-              QMRITools`GradientTools`Private`half$]]]]], 
-       QMRITools`GradientTools`Private`RandInit[
-         Pattern[QMRITools`GradientTools`Private`ni, 
+                 Part[#, 2]}]& , $CellContext`parti]; 
+             Null]; $CellContext`vel$$ = (
+               1 - $CellContext`alph$) $CellContext`velocity0 + \
+$CellContext`alph$ $CellContext`velocity1; {
+             $CellContext`RandInit[$CellContext`ni, $CellContext`half$], \
+$CellContext`vel$$, $CellContext`part$$}, 
+           If[$CellContext`fixed$ === {}, 
+            $CellContext`RandInit[$CellContext`ni, $CellContext`half$], 
+            Join[$CellContext`fixed$, 
+             $CellContext`RandInit[$CellContext`ni, $CellContext`half$]]]]], \
+$CellContext`RandInit[
+         Pattern[$CellContext`ni, 
           Blank[]], 
-         Pattern[QMRITools`GradientTools`Private`half, 
-          Blank[]]] := If[QMRITools`GradientTools`Private`half == 1, 
+         Pattern[$CellContext`half, 
+          Blank[]]] := If[$CellContext`half == 1, 
          Map[Sign[Part[#, 3] + 10.^(-16)] Normalize[#]& , 
           RandomReal[
-           NormalDistribution[], {QMRITools`GradientTools`Private`ni, 3}]], 
+           NormalDistribution[], {$CellContext`ni, 3}]], 
          Map[Normalize[#]& , 
           RandomReal[
-           NormalDistribution[], {QMRITools`GradientTools`Private`ni, 3}]]], 
-       QMRITools`GradientTools`Private`GradOptimize4C = 
-       CompiledFunction[{11, 13.1, 5468}, {{
+           
+           NormalDistribution[], {$CellContext`ni, 
+            3}]]], $CellContext`GradOptimize4C = 
+       CompiledFunction[{11, 15., 5470}, {{
            Blank[Real], 2}, {
            Blank[Real], 3}, 
           Blank[Integer]}, {{3, 2, 0}, {3, 3, 1}, {2, 0, 0}, {3, 2, 
-         3}}, {{0, {2, 0, 14}}, {4, {2, 0, 6}}, {1.*^16, {3, 0, 0}}, {{2, 3, 
-          1}, {2, 1, 7}}, {2, {2, 0, 3}}, {-1, {2, 0, 12}}, {1, {2, 0, 2}}, {
-          3, {2, 0, 5}}, {1.*^-16, {3, 0, 1}}}, {1, 15, 2, 0, 
+         3}}, {{1.*^-16, {3, 0, 2}}, {10., {3, 0, 0}}, {
+          0, {2, 0, 15}}, {-1, {2, 0, 13}}, {16, {2, 0, 5}}, {{2, 3, 1}, {2, 
+          1, 7}}, {2, {2, 0, 3}}, {1, {2, 0, 2}}, {6, {2, 0, 7}}, {
+          3, {2, 0, 6}}}, {1, 16, 3, 0, 
          14}, {{33, 0, 4}, {24, 0, 2, 0}, {2, 0, 5}, {40, 43, 3, 2, 0, 3, 2, 
           9}, {42, "Join", 3, 2, 0, 3, 2, 9, 3, 2, 5}, {15, 3, 4, 1}, {3, 
           3}, {42, "CopyTensor", 3, 2, 0, 3, 2, 5}, {6, 4, 1}, {
           47, ConstantArray, 3, 2, 5, 2, 0, 1, 3, 3, 9}, {
           42, "Transpose", 3, 3, 9, 3, 3, 6}, {40, 43, 3, 3, 6, 3, 3, 4}, {44,
-           9, 4, 6}, {47, ConstantArray, 3, 0, 0, 2, 0, 1, 3, 1, 4}, {
+           9, 4, 6}, {41, 263, 3, 0, 0, 2, 0, 5, 3, 0, 1}, {
+          47, ConstantArray, 3, 0, 1, 2, 0, 1, 3, 1, 4}, {
           47, DiagonalMatrix, 3, 1, 4, 3, 2, 2}, {
-          42, "Transpose", 3, 3, 6, 2, 1, 7, 2, 0, 5, 3, 3, 4}, {40, 56, 3, 3,
-           4, 3, 3, 3}, {42, "Total", 3, 3, 3, 2, 0, 6, 3, 2, 4}, {44, 4, 2, 
+          42, "Transpose", 3, 3, 6, 2, 1, 7, 2, 0, 6, 3, 3, 4}, {40, 56, 3, 3,
+           4, 3, 3, 3}, {42, "Total", 3, 3, 3, 2, 0, 7, 3, 2, 4}, {44, 4, 2, 
           4}, {40, 60, 3, 2, 4, 3, 2, 3}, {41, 259, 3, 3, 6, 3, 2, 3, 3, 3, 
-          8}, {45, 1, 8, 3}, {42, "Total", 3, 3, 3, 2, 0, 6, 3, 2, 8}, {44, 5,
-           8, 3}, {33, 3, 8}, {6, 12, 13}, {35, 8, 13, 3, 10}, {6, 14, 11}, {
-          3, 4}, {37, 3, 11, 0, 12}, {47, Normalize, 3, 1, 12, 3, 1, 13}, {36,
-           13, 13, 0, 10}, {4, 11, 8, -3}, {24, 0, 2, 0}, {2, 0, 7}, {38, 10, 
-          2, -1, 0, 5, 1, 3}, {41, 257, 3, 0, 1, 3, 1, 3, 3, 1, 11}, {40, 44, 
+          8}, {45, 1, 8, 3}, {42, "Total", 3, 3, 3, 2, 0, 7, 3, 2, 8}, {44, 5,
+           8, 3}, {33, 3, 9}, {6, 13, 14}, {35, 9, 14, 3, 10}, {6, 15, 12}, {
+          3, 4}, {37, 3, 12, 0, 12}, {47, Normalize, 3, 1, 12, 3, 1, 13}, {36,
+           14, 13, 0, 10}, {4, 12, 9, -3}, {24, 0, 2, 0}, {2, 0, 7}, {38, 10, 
+          2, -1, 0, 6, 1, 3}, {41, 257, 3, 0, 2, 3, 1, 3, 3, 1, 11}, {40, 44, 
           3, 1, 11, 2, 1, 3}, {41, 259, 2, 1, 3, 3, 2, 10, 3, 2, 11}, {
           42, "CopyTensor", 3, 2, 11, 3, 2, 10}, {3, 1}, {34, 1, 4, 2, 4, 2, 
-          14, 2, 11}, {38, 10, 3, 11, 2, 3}, {1}}, 
-         Function[{
-          QMRITools`GradientTools`Private`points, 
-           QMRITools`GradientTools`Private`vel, 
-           QMRITools`GradientTools`Private`half}, 
+          15, 2, 11}, {38, 10, 3, 11, 2, 3}, {1}}, 
+         Function[{$CellContext`points, $CellContext`vel, $CellContext`half}, 
           
-          Block[{QMRITools`GradientTools`Private`n, 
-            QMRITools`GradientTools`Private`n2, 
-            QMRITools`GradientTools`Private`pointsi, 
-            QMRITools`GradientTools`Private`pointsmat, 
-            QMRITools`GradientTools`Private`distmatxyz, 
-            QMRITools`GradientTools`Private`diag, 
-            QMRITools`GradientTools`Private`distmat, 
-            QMRITools`GradientTools`Private`velocity, 
-            QMRITools`GradientTools`Private`pointsnew}, 
-           QMRITools`GradientTools`Private`n = 
-            Length[QMRITools`GradientTools`Private`points]; 
-           If[QMRITools`GradientTools`Private`half == 1, 
-             QMRITools`GradientTools`Private`pointsi = 
-              Join[QMRITools`GradientTools`Private`points, -
-                QMRITools`GradientTools`Private`points]; 
-             QMRITools`GradientTools`Private`n2 = 
-              2 QMRITools`GradientTools`Private`n; Null, 
-             QMRITools`GradientTools`Private`pointsi = 
-              QMRITools`GradientTools`Private`points; 
-             QMRITools`GradientTools`Private`n2 = 
-              QMRITools`GradientTools`Private`n; Null]; 
-           QMRITools`GradientTools`Private`pointsmat = 
-            ConstantArray[
-             QMRITools`GradientTools`Private`pointsi, 
-              QMRITools`GradientTools`Private`n2]; 
-           QMRITools`GradientTools`Private`distmatxyz = 
-            QMRITools`GradientTools`Private`pointsmat - Transpose[
-             QMRITools`GradientTools`Private`pointsmat]; 
-           QMRITools`GradientTools`Private`diag = DiagonalMatrix[
-              ConstantArray[1.*^16, QMRITools`GradientTools`Private`n2]]; 
-           QMRITools`GradientTools`Private`distmat = 
-            Total[Transpose[
-                QMRITools`GradientTools`Private`distmatxyz, {2, 3, 1}]^2] + 
-             QMRITools`GradientTools`Private`diag; 
-           QMRITools`GradientTools`Private`velocity = 
-            Total[QMRITools`GradientTools`Private`vel (
-               QMRITools`GradientTools`Private`distmatxyz/
-               QMRITools`GradientTools`Private`distmat)]; 
-           QMRITools`GradientTools`Private`pointsnew = 
-            Map[Normalize[#]& , QMRITools`GradientTools`Private`pointsi + 
-              QMRITools`GradientTools`Private`velocity]; 
-           If[QMRITools`GradientTools`Private`half == 1, 
-             QMRITools`GradientTools`Private`pointsnew = 
-              Sign[Part[QMRITools`GradientTools`Private`pointsnew, All, 3] + 
-                 1.*^-16] QMRITools`GradientTools`Private`pointsnew; Null]; 
-           Part[QMRITools`GradientTools`Private`pointsnew, 
-             Span[1, QMRITools`GradientTools`Private`n]]]], Evaluate], 
-       QMRITools`GradientTools`Private`GradOptimize1C = 
-       CompiledFunction[{11, 13.1, 5468}, {{
+          Block[{$CellContext`n, $CellContext`n2, $CellContext`pointsi, \
+$CellContext`pointsmat, $CellContext`distmatxyz, $CellContext`diag, \
+$CellContext`distmat, $CellContext`velocity, $CellContext`pointsnew}, \
+$CellContext`n = Length[$CellContext`points]; 
+           If[$CellContext`half == 
+             1, $CellContext`pointsi = 
+              Join[$CellContext`points, -$CellContext`points]; \
+$CellContext`n2 = 2 $CellContext`n; 
+             Null, $CellContext`pointsi = $CellContext`points; \
+$CellContext`n2 = $CellContext`n; Null]; $CellContext`pointsmat = 
+            ConstantArray[$CellContext`pointsi, $CellContext`n2]; \
+$CellContext`distmatxyz = $CellContext`pointsmat - 
+             Transpose[$CellContext`pointsmat]; $CellContext`diag = 
+            DiagonalMatrix[
+              ConstantArray[10.^16, $CellContext`n2]]; $CellContext`distmat = 
+            Total[Transpose[$CellContext`distmatxyz, {2, 3, 
+                 1}]^2] + $CellContext`diag; $CellContext`velocity = 
+            Total[$CellContext`vel \
+($CellContext`distmatxyz/$CellContext`distmat)]; $CellContext`pointsnew = 
+            Map[Normalize[#]& , $CellContext`pointsi + $CellContext`velocity]; 
+           If[$CellContext`half == 
+             1, $CellContext`pointsnew = 
+              Sign[Part[$CellContext`pointsnew, All, 3] + 
+                 1.*^-16] $CellContext`pointsnew; Null]; 
+           Part[$CellContext`pointsnew, 
+             Span[1, $CellContext`n]]]], 
+         Evaluate], $CellContext`GradOptimize1C = 
+       CompiledFunction[{11, 15., 5470}, {{
            Blank[Real], 2}, 
           Blank[Integer]}, {{3, 2, 0}, {2, 0, 0}, {3, 2, 
-         8}}, {{0, {2, 0, 14}}, {4, {2, 0, 6}}, {{2, 3, 1}, {2, 1, 6}}, {
-          2, {2, 0, 3}}, {-1, {2, 0, 12}}, {1, {2, 0, 2}}, {
-          1.*^32, {3, 0, 0}}, {3, {2, 0, 5}}, {1.*^-16, {3, 0, 1}}}, {1, 15, 
-         2, 0, 13}, {{33, 0, 4}, {24, 0, 2, 0}, {2, 0, 5}, {40, 43, 3, 2, 0, 
-          3, 2, 7}, {42, "Join", 3, 2, 0, 3, 2, 7, 3, 2, 4}, {15, 3, 4, 1}, {
-          3, 3}, {42, "CopyTensor", 3, 2, 0, 3, 2, 4}, {6, 4, 1}, {
+         8}}, {{1.*^-16, {3, 0, 2}}, {10., {3, 0, 0}}, {
+          0, {2, 0, 15}}, {-1, {2, 0, 13}}, {{2, 3, 1}, {2, 1, 6}}, {
+          2, {2, 0, 3}}, {1, {2, 0, 2}}, {6, {2, 0, 7}}, {3, {2, 0, 6}}, {
+          32, {2, 0, 5}}}, {1, 16, 3, 0, 
+         13}, {{33, 0, 4}, {24, 0, 2, 0}, {2, 0, 5}, {40, 43, 3, 2, 0, 3, 2, 
+          7}, {42, "Join", 3, 2, 0, 3, 2, 7, 3, 2, 4}, {15, 3, 4, 1}, {3, 
+          3}, {42, "CopyTensor", 3, 2, 0, 3, 2, 4}, {6, 4, 1}, {
           47, ConstantArray, 3, 2, 4, 2, 0, 1, 3, 3, 7}, {
           42, "Transpose", 3, 3, 7, 3, 3, 5}, {40, 43, 3, 3, 5, 3, 3, 3}, {44,
-           7, 3, 5}, {47, ConstantArray, 3, 0, 0, 2, 0, 1, 3, 1, 3}, {
+           7, 3, 5}, {41, 263, 3, 0, 0, 2, 0, 5, 3, 0, 1}, {
+          47, ConstantArray, 3, 0, 1, 2, 0, 1, 3, 1, 3}, {
           47, DiagonalMatrix, 3, 1, 3, 3, 2, 1}, {
-          42, "Transpose", 3, 3, 5, 2, 1, 6, 2, 0, 5, 3, 3, 3}, {40, 56, 3, 3,
-           3, 3, 3, 2}, {42, "Total", 3, 3, 2, 2, 0, 6, 3, 2, 3}, {44, 3, 1, 
+          42, "Transpose", 3, 3, 5, 2, 1, 6, 2, 0, 6, 3, 3, 3}, {40, 56, 3, 3,
+           3, 3, 3, 2}, {42, "Total", 3, 3, 2, 2, 0, 7, 3, 2, 3}, {44, 3, 1, 
           3}, {40, 60, 3, 2, 3, 3, 2, 2}, {41, 259, 3, 3, 5, 3, 2, 2, 3, 3, 
-          8}, {42, "Total", 3, 3, 8, 2, 0, 6, 3, 2, 2}, {44, 4, 2, 8}, {33, 8,
-           8}, {6, 12, 13}, {35, 8, 13, 3, 9}, {6, 14, 11}, {3, 4}, {37, 8, 
-          11, 0, 11}, {47, Normalize, 3, 1, 11, 3, 1, 12}, {36, 13, 12, 0, 
-          9}, {4, 11, 8, -3}, {24, 0, 2, 0}, {2, 0, 7}, {38, 9, 2, -1, 0, 5, 
-          1, 8}, {41, 257, 3, 0, 1, 3, 1, 8, 3, 1, 10}, {40, 44, 3, 1, 10, 2, 
+          8}, {42, "Total", 3, 3, 8, 2, 0, 7, 3, 2, 2}, {44, 4, 2, 8}, {33, 8,
+           9}, {6, 13, 14}, {35, 9, 14, 3, 9}, {6, 15, 12}, {3, 4}, {37, 8, 
+          12, 0, 11}, {47, Normalize, 3, 1, 11, 3, 1, 12}, {36, 14, 12, 0, 
+          9}, {4, 12, 9, -3}, {24, 0, 2, 0}, {2, 0, 7}, {38, 9, 2, -1, 0, 6, 
+          1, 8}, {41, 257, 3, 0, 2, 3, 1, 8, 3, 1, 10}, {40, 44, 3, 1, 10, 2, 
           1, 8}, {41, 259, 2, 1, 8, 3, 2, 9, 3, 2, 10}, {
           42, "CopyTensor", 3, 2, 10, 3, 2, 9}, {3, 1}, {34, 1, 4, 2, 4, 2, 
-          14, 2, 10}, {38, 9, 3, 10, 2, 8}, {1}}, 
-         Function[{
-          QMRITools`GradientTools`Private`points, 
-           QMRITools`GradientTools`Private`half}, 
+          15, 2, 10}, {38, 9, 3, 10, 2, 8}, {1}}, 
+         Function[{$CellContext`points, $CellContext`half}, 
           
-          Block[{QMRITools`GradientTools`Private`n, 
-            QMRITools`GradientTools`Private`n2, 
-            QMRITools`GradientTools`Private`pointsi, 
-            QMRITools`GradientTools`Private`pointsmat, 
-            QMRITools`GradientTools`Private`distmatxyz, 
-            QMRITools`GradientTools`Private`diag, 
-            QMRITools`GradientTools`Private`distmat, 
-            QMRITools`GradientTools`Private`velocity, 
-            QMRITools`GradientTools`Private`pointsnew, 
-            QMRITools`GradientTools`Private`sign}, 
-           QMRITools`GradientTools`Private`n = 
-            Length[QMRITools`GradientTools`Private`points]; 
-           If[QMRITools`GradientTools`Private`half == 1, 
-             QMRITools`GradientTools`Private`pointsi = 
-              Join[QMRITools`GradientTools`Private`points, -
-                QMRITools`GradientTools`Private`points]; 
-             QMRITools`GradientTools`Private`n2 = 
-              2 QMRITools`GradientTools`Private`n; Null, 
-             QMRITools`GradientTools`Private`pointsi = 
-              QMRITools`GradientTools`Private`points; 
-             QMRITools`GradientTools`Private`n2 = 
-              QMRITools`GradientTools`Private`n]; 
-           QMRITools`GradientTools`Private`pointsmat = 
-            ConstantArray[
-             QMRITools`GradientTools`Private`pointsi, 
-              QMRITools`GradientTools`Private`n2]; 
-           QMRITools`GradientTools`Private`distmatxyz = 
-            QMRITools`GradientTools`Private`pointsmat - Transpose[
-             QMRITools`GradientTools`Private`pointsmat]; 
-           QMRITools`GradientTools`Private`diag = DiagonalMatrix[
-              ConstantArray[1.*^32, QMRITools`GradientTools`Private`n2]]; 
-           QMRITools`GradientTools`Private`distmat = 
-            Total[Transpose[
-                QMRITools`GradientTools`Private`distmatxyz, {2, 3, 1}]^2] + 
-             QMRITools`GradientTools`Private`diag; 
-           QMRITools`GradientTools`Private`velocity = 
-            Total[QMRITools`GradientTools`Private`distmatxyz/
-              QMRITools`GradientTools`Private`distmat]; 
-           QMRITools`GradientTools`Private`pointsnew = 
-            Map[Normalize[#]& , QMRITools`GradientTools`Private`pointsi + 
-              QMRITools`GradientTools`Private`velocity]; 
-           If[QMRITools`GradientTools`Private`half == 1, 
-             QMRITools`GradientTools`Private`pointsnew = 
-              Sign[Part[QMRITools`GradientTools`Private`pointsnew, All, 3] + 
-                 1.*^-16] QMRITools`GradientTools`Private`pointsnew; Null]; 
-           Part[QMRITools`GradientTools`Private`pointsnew, 
-             Span[1, QMRITools`GradientTools`Private`n]]]], Evaluate], 
-       QMRITools`GradientTools`Private`GradOptimize2C = 
-       CompiledFunction[{11, 13.1, 5468}, {{
+          Block[{$CellContext`n, $CellContext`n2, $CellContext`pointsi, \
+$CellContext`pointsmat, $CellContext`distmatxyz, $CellContext`diag, \
+$CellContext`distmat, $CellContext`velocity, $CellContext`pointsnew, \
+$CellContext`sign}, $CellContext`n = Length[$CellContext`points]; 
+           If[$CellContext`half == 
+             1, $CellContext`pointsi = 
+              Join[$CellContext`points, -$CellContext`points]; \
+$CellContext`n2 = 2 $CellContext`n; 
+             Null, $CellContext`pointsi = $CellContext`points; \
+$CellContext`n2 = $CellContext`n]; $CellContext`pointsmat = 
+            ConstantArray[$CellContext`pointsi, $CellContext`n2]; \
+$CellContext`distmatxyz = $CellContext`pointsmat - 
+             Transpose[$CellContext`pointsmat]; $CellContext`diag = 
+            DiagonalMatrix[
+              ConstantArray[10.^32, $CellContext`n2]]; $CellContext`distmat = 
+            Total[
+              Transpose[$CellContext`distmatxyz, {2, 3, 
+                 1}]^2] + $CellContext`diag; $CellContext`velocity = 
+            Total[$CellContext`distmatxyz/$CellContext`distmat]; \
+$CellContext`pointsnew = 
+            Map[Normalize[#]& , $CellContext`pointsi + $CellContext`velocity]; 
+           If[$CellContext`half == 
+             1, $CellContext`pointsnew = 
+              Sign[Part[$CellContext`pointsnew, All, 3] + 
+                 1.*^-16] $CellContext`pointsnew; Null]; 
+           Part[$CellContext`pointsnew, 
+             Span[1, $CellContext`n]]]], 
+         Evaluate], $CellContext`GradOptimize2C = 
+       CompiledFunction[{11, 15., 5470}, {{
            Blank[Real], 2}, 
           Blank[Real], 
           Blank[Integer]}, {{3, 2, 0}, {3, 0, 0}, {2, 0, 0}, {3, 2, 
-         9}}, {{0, {2, 0, 9}}, {{0., 0., 0.}, {3, 1, 11}}, {4, {2, 0, 6}}, {
-          1.*^16, {3, 0, 1}}, {{2, 3, 1}, {2, 1, 6}}, {
-          2, {2, 0, 3}}, {-1, {2, 0, 12}}, {1, {2, 0, 2}}, {3, {2, 0, 5}}, {
-          1.*^-16, {3, 0, 5}}}, {1, 17, 6, 0, 
+         9}}, {{1.*^-16, {3, 0, 5}}, {10., {3, 0, 1}}, {
+          0, {2, 0, 10}}, {{0., 0., 0.}, {3, 1, 11}}, {-1, {2, 0, 13}}, {
+          16, {2, 0, 5}}, {{2, 3, 1}, {2, 1, 6}}, {2, {2, 0, 3}}, {
+          1, {2, 0, 2}}, {6, {2, 0, 7}}, {3, {2, 0, 6}}}, {1, 18, 6, 0, 
          16}, {{33, 0, 4}, {40, 43, 3, 2, 0, 3, 2, 10}, {
           42, "Join", 3, 2, 0, 3, 2, 10, 3, 2, 7}, {24, 0, 2, 0}, {2, 0, 6}, {
           40, 43, 3, 2, 0, 3, 2, 10}, {
@@ -2783,374 +2394,400 @@ H1U9kvug8g5o+h1Q1De4wflQ++F8qPvgfKj74Xyo/+B8qP/RzA9zAACLwFHZ
           42, "CopyTensor", 3, 2, 0, 3, 2, 7}, {6, 4, 1}, {
           47, ConstantArray, 3, 2, 7, 2, 0, 1, 3, 3, 4}, {
           42, "Transpose", 3, 3, 4, 3, 3, 10}, {40, 43, 3, 3, 10, 3, 3, 5}, {
-          44, 4, 5, 10}, {47, ConstantArray, 3, 0, 1, 2, 0, 1, 3, 1, 5}, {
+          44, 4, 5, 10}, {41, 263, 3, 0, 1, 2, 0, 5, 3, 0, 2}, {
+          47, ConstantArray, 3, 0, 2, 2, 0, 1, 3, 1, 5}, {
           47, DiagonalMatrix, 3, 1, 5, 3, 2, 1}, {
-          42, "Transpose", 3, 3, 10, 2, 1, 6, 2, 0, 5, 3, 3, 5}, {40, 56, 3, 
-          3, 5, 3, 3, 3}, {42, "Total", 3, 3, 3, 2, 0, 6, 3, 2, 5}, {44, 5, 1,
+          42, "Transpose", 3, 3, 10, 2, 1, 6, 2, 0, 6, 3, 3, 5}, {40, 56, 3, 
+          3, 5, 3, 3, 3}, {42, "Total", 3, 3, 3, 2, 0, 7, 3, 2, 5}, {44, 5, 1,
            5}, {40, 60, 3, 2, 5, 3, 2, 3}, {41, 259, 3, 3, 10, 3, 2, 3, 3, 3, 
-          2}, {42, "Total", 3, 3, 2, 2, 0, 6, 3, 2, 3}, {24, 0, 2, 0}, {2, 0, 
-          23}, {40, 50, 3, 0, 0, 2, 0, 10}, {6, 9, 7}, {35, 10, 2, 2}, {6, 9, 
-          11}, {3, 2}, {36, 7, 11, 2, 2}, {4, 11, 10, -1}, {12, 2, 4, 10}, {
-          10, 4, 3}, {13, 3, 0, 3}, {10, 10, 4}, {
-          42, "IteratorCountR", 3, 0, 4, 3, 0, 3, 2, 0, 11}, {6, 9, 13}, {41, 
-          258, 2, 0, 11, 2, 0, 12, 2, 0, 14}, {35, 14, 2, 9}, {6, 12, 15}, {3,
-           3}, {12, 10, 15, 16}, {36, 13, 16, 2, 9}, {4, 15, 11, -2}, {
+          2}, {42, "Total", 3, 3, 2, 2, 0, 7, 3, 2, 3}, {24, 0, 2, 0}, {2, 0, 
+          23}, {40, 50, 3, 0, 0, 2, 0, 11}, {6, 10, 8}, {35, 11, 2, 2}, {6, 
+          10, 12}, {3, 2}, {36, 8, 12, 2, 2}, {4, 12, 11, -1}, {12, 2, 4, 
+          11}, {10, 4, 3}, {13, 3, 0, 3}, {10, 11, 4}, {
+          42, "IteratorCountR", 3, 0, 4, 3, 0, 3, 2, 0, 12}, {6, 10, 14}, {41,
+           258, 2, 0, 12, 2, 0, 13, 2, 0, 15}, {35, 15, 2, 9}, {6, 13, 16}, {
+          3, 3}, {12, 11, 16, 17}, {36, 14, 17, 2, 9}, {4, 16, 12, -2}, {
           42, "Join", 2, 1, 2, 2, 1, 9, 2, 1, 8}, {3, 9}, {40, 50, 3, 0, 0, 2,
-           0, 7}, {6, 9, 13}, {35, 7, 2, 2}, {6, 9, 14}, {3, 2}, {36, 13, 14, 
-          2, 2}, {4, 14, 7, -1}, {42, "CopyTensor", 2, 1, 2, 2, 1, 8}, {33, 8,
-           14}, {6, 12, 11}, {35, 14, 11, 3, 2}, {6, 9, 10}, {3, 4}, {37, 8, 
-          10, 2, 15}, {39, 3, 0, 15, 1, 11}, {36, 11, 11, 0, 2}, {4, 10, 
-          14, -3}, {44, 7, 3, 9}, {33, 9, 7}, {6, 12, 14}, {35, 7, 14, 3, 
-          12}, {6, 9, 11}, {3, 4}, {37, 9, 11, 0, 14}, {
-          47, Normalize, 3, 1, 14, 3, 1, 15}, {36, 14, 15, 0, 12}, {4, 11, 
-          7, -3}, {24, 0, 2, 0}, {2, 0, 7}, {38, 12, 2, -1, 0, 5, 1, 9}, {41, 
+           0, 8}, {6, 10, 14}, {35, 8, 2, 2}, {6, 10, 15}, {3, 2}, {36, 14, 
+          15, 2, 2}, {4, 15, 8, -1}, {42, "CopyTensor", 2, 1, 2, 2, 1, 8}, {
+          33, 8, 15}, {6, 13, 12}, {35, 15, 12, 3, 2}, {6, 10, 11}, {3, 4}, {
+          37, 8, 11, 2, 16}, {39, 3, 0, 16, 1, 11}, {36, 12, 11, 0, 2}, {4, 
+          11, 15, -3}, {44, 7, 3, 9}, {33, 9, 8}, {6, 13, 15}, {35, 8, 15, 3, 
+          12}, {6, 10, 12}, {3, 4}, {37, 9, 12, 0, 14}, {
+          47, Normalize, 3, 1, 14, 3, 1, 15}, {36, 15, 15, 0, 12}, {4, 12, 
+          8, -3}, {24, 0, 2, 0}, {2, 0, 7}, {38, 12, 2, -1, 0, 6, 1, 9}, {41, 
           257, 3, 0, 5, 3, 1, 9, 3, 1, 13}, {40, 44, 3, 1, 13, 2, 1, 9}, {41, 
           259, 2, 1, 9, 3, 2, 12, 3, 2, 13}, {
           42, "CopyTensor", 3, 2, 13, 3, 2, 12}, {3, 1}, {34, 1, 4, 2, 4, 2, 
-          9, 2, 13}, {38, 12, 3, 13, 2, 9}, {1}}, 
-         Function[{
-          QMRITools`GradientTools`Private`points, 
-           QMRITools`GradientTools`Private`nf, 
-           QMRITools`GradientTools`Private`half}, 
+          10, 2, 13}, {38, 12, 3, 13, 2, 9}, {1}}, 
+         Function[{$CellContext`points, $CellContext`nf, $CellContext`half}, 
           
-          Block[{QMRITools`GradientTools`Private`n, 
-            QMRITools`GradientTools`Private`n2, 
-            QMRITools`GradientTools`Private`pointsi, 
-            QMRITools`GradientTools`Private`pointsmat, 
-            QMRITools`GradientTools`Private`distmatxyz, 
-            QMRITools`GradientTools`Private`diag, 
-            QMRITools`GradientTools`Private`distmat, 
-            QMRITools`GradientTools`Private`velocity, 
-            QMRITools`GradientTools`Private`pointsnew, 
-            QMRITools`GradientTools`Private`rang}, 
-           QMRITools`GradientTools`Private`n = 
-            Length[QMRITools`GradientTools`Private`points]; 
-           QMRITools`GradientTools`Private`pointsi = 
-            Join[QMRITools`GradientTools`Private`points, -
-              QMRITools`GradientTools`Private`points]; 
-           If[QMRITools`GradientTools`Private`half == 1, 
-             QMRITools`GradientTools`Private`pointsi = 
-              Join[QMRITools`GradientTools`Private`points, -
-                QMRITools`GradientTools`Private`points]; 
-             QMRITools`GradientTools`Private`n2 = 
-              2 QMRITools`GradientTools`Private`n; Null, 
-             QMRITools`GradientTools`Private`pointsi = 
-              QMRITools`GradientTools`Private`points; 
-             QMRITools`GradientTools`Private`n2 = 
-              QMRITools`GradientTools`Private`n]; 
-           QMRITools`GradientTools`Private`pointsmat = 
-            ConstantArray[
-             QMRITools`GradientTools`Private`pointsi, 
-              QMRITools`GradientTools`Private`n2]; 
-           QMRITools`GradientTools`Private`distmatxyz = 
-            QMRITools`GradientTools`Private`pointsmat - Transpose[
-             QMRITools`GradientTools`Private`pointsmat]; 
-           QMRITools`GradientTools`Private`diag = DiagonalMatrix[
-              ConstantArray[1.*^16, QMRITools`GradientTools`Private`n2]]; 
-           QMRITools`GradientTools`Private`distmat = 
-            Total[Transpose[
-                QMRITools`GradientTools`Private`distmatxyz, {2, 3, 1}]^2] + 
-             QMRITools`GradientTools`Private`diag; 
-           QMRITools`GradientTools`Private`velocity = 
-            Total[QMRITools`GradientTools`Private`distmatxyz/
-              QMRITools`GradientTools`Private`distmat]; 
-           If[QMRITools`GradientTools`Private`half == 1, 
-             QMRITools`GradientTools`Private`rang = Round[
+          Block[{$CellContext`n, $CellContext`n2, $CellContext`pointsi, \
+$CellContext`pointsmat, $CellContext`distmatxyz, $CellContext`diag, \
+$CellContext`distmat, $CellContext`velocity, $CellContext`pointsnew, \
+$CellContext`rang}, $CellContext`n = 
+            Length[$CellContext`points]; $CellContext`pointsi = 
+            Join[$CellContext`points, -$CellContext`points]; 
+           If[$CellContext`half == 
+             1, $CellContext`pointsi = 
+              Join[$CellContext`points, -$CellContext`points]; \
+$CellContext`n2 = 2 $CellContext`n; 
+             Null, $CellContext`pointsi = $CellContext`points; \
+$CellContext`n2 = $CellContext`n]; $CellContext`pointsmat = 
+            ConstantArray[$CellContext`pointsi, $CellContext`n2]; \
+$CellContext`distmatxyz = $CellContext`pointsmat - 
+             Transpose[$CellContext`pointsmat]; $CellContext`diag = 
+            DiagonalMatrix[
+              ConstantArray[10.^16, $CellContext`n2]]; $CellContext`distmat = 
+            Total[Transpose[$CellContext`distmatxyz, {2, 3, 
+                 1}]^2] + $CellContext`diag; $CellContext`velocity = 
+            Total[$CellContext`distmatxyz/$CellContext`distmat]; 
+           If[$CellContext`half == 1, $CellContext`rang = Round[
                 Join[
-                 Range[1, QMRITools`GradientTools`Private`nf], 
+                 Range[1, $CellContext`nf], 
                  Range[
-                 1 + QMRITools`GradientTools`Private`n, 
-                  QMRITools`GradientTools`Private`n + 
-                  QMRITools`GradientTools`Private`nf]]]; Null, 
-             QMRITools`GradientTools`Private`rang = Round[
-                Range[1, QMRITools`GradientTools`Private`nf]]; Null]; 
-           Map[(Part[QMRITools`GradientTools`Private`velocity, #] = {0., 0., 
-              0.})& , QMRITools`GradientTools`Private`rang]; 
-           QMRITools`GradientTools`Private`pointsnew = 
-            Map[Normalize[#]& , QMRITools`GradientTools`Private`pointsi + 
-              QMRITools`GradientTools`Private`velocity]; 
-           If[QMRITools`GradientTools`Private`half == 1, 
-             QMRITools`GradientTools`Private`pointsnew = 
-              Sign[Part[QMRITools`GradientTools`Private`pointsnew, All, 3] + 
-                 1.*^-16] QMRITools`GradientTools`Private`pointsnew; Null]; 
-           Part[QMRITools`GradientTools`Private`pointsnew, 
-             Span[1, QMRITools`GradientTools`Private`n]]]], Evaluate], 
-       QMRITools`GradientTools`Private`GradOptimize3C = 
-       CompiledFunction[{11, 13.1, 5468}, {{
+                 1 + $CellContext`n, $CellContext`n + $CellContext`nf]]]; 
+             Null, $CellContext`rang = Round[
+                Range[1, $CellContext`nf]]; Null]; 
+           Map[(Part[$CellContext`velocity, #] = {0., 0., 
+              0.})& , $CellContext`rang]; $CellContext`pointsnew = 
+            Map[Normalize[#]& , $CellContext`pointsi + $CellContext`velocity]; 
+           If[$CellContext`half == 
+             1, $CellContext`pointsnew = 
+              Sign[Part[$CellContext`pointsnew, All, 3] + 
+                 1.*^-16] $CellContext`pointsnew; Null]; 
+           Part[$CellContext`pointsnew, 
+             Span[1, $CellContext`n]]]], 
+         Evaluate], $CellContext`GradOptimize3C = 
+       CompiledFunction[{11, 15., 5470}, {{
            Blank[Real], 2}, {
            Blank[Real], 1}, 
           Blank[Real]}, {{3, 2, 0}, {3, 1, 1}, {3, 0, 0}, {3, 2, 
-         13}}, {{0, {2, 0, 7}}, {{0., 0., 0.}, {3, 1, 15}}, {4, {2, 0, 4}}, {
-          10., {3, 0, 5}}, {{2, 3, 1}, {2, 1, 10}}, {16, {2, 0, 14}}, {
-          2, {2, 0, 1}}, {-1, {2, 0, 10}}, {1.*^32, {3, 0, 1}}, {
-          1, {2, 0, 5}}, {3, {2, 0, 3}}}, {0, 15, 6, 0, 
+         13}}, {{1.*^-16, {3, 0, 5}}, {10., {3, 0, 1}}, {
+          0, {2, 0, 8}}, {{0., 0., 0.}, {3, 1, 15}}, {-1, {2, 0, 11}}, {{2, 3,
+           1}, {2, 1, 10}}, {2, {2, 0, 1}}, {1, {2, 0, 6}}, {6, {2, 0, 5}}, {
+          3, {2, 0, 4}}, {32, {2, 0, 3}}}, {0, 15, 6, 0, 
          19}, {{33, 0, 0}, {40, 43, 3, 2, 0, 3, 2, 14}, {
           42, "Join", 3, 2, 0, 3, 2, 14, 3, 2, 8}, {
-          42, "Join", 3, 1, 1, 3, 1, 1, 3, 1, 14}, {15, 1, 0, 6}, {
-          47, ConstantArray, 3, 2, 8, 2, 0, 6, 3, 3, 5}, {15, 1, 0, 6}, {
-          47, ConstantArray, 3, 1, 14, 2, 0, 6, 3, 2, 2}, {
+          42, "Join", 3, 1, 1, 3, 1, 1, 3, 1, 14}, {15, 1, 0, 7}, {
+          47, ConstantArray, 3, 2, 8, 2, 0, 7, 3, 3, 5}, {15, 1, 0, 7}, {
+          47, ConstantArray, 3, 1, 14, 2, 0, 7, 3, 2, 2}, {
           42, "Transpose", 3, 3, 5, 3, 3, 12}, {40, 43, 3, 3, 12, 3, 3, 7}, {
           44, 5, 7, 12}, {42, "Transpose", 3, 2, 2, 3, 2, 7}, {45, 2, 7, 9}, {
-          15, 1, 0, 6}, {47, ConstantArray, 3, 0, 1, 2, 0, 6, 3, 1, 7}, {
+          41, 263, 3, 0, 1, 2, 0, 3, 3, 0, 2}, {15, 1, 0, 7}, {
+          47, ConstantArray, 3, 0, 2, 2, 0, 7, 3, 1, 7}, {
           47, DiagonalMatrix, 3, 1, 7, 3, 2, 6}, {
-          42, "Transpose", 3, 3, 12, 2, 1, 10, 2, 0, 3, 3, 3, 7}, {40, 56, 3, 
-          3, 7, 3, 3, 4}, {42, "Total", 3, 3, 4, 2, 0, 4, 3, 2, 7}, {44, 7, 6,
+          42, "Transpose", 3, 3, 12, 2, 1, 10, 2, 0, 4, 3, 3, 7}, {40, 56, 3, 
+          3, 7, 3, 3, 4}, {42, "Total", 3, 3, 4, 2, 0, 5, 3, 2, 7}, {44, 7, 6,
            7}, {40, 60, 3, 2, 7, 3, 2, 4}, {41, 259, 3, 3, 12, 3, 2, 4, 3, 3, 
           3}, {41, 259, 3, 2, 9, 3, 3, 3, 3, 3, 4}, {
-          42, "Total", 3, 3, 4, 2, 0, 4, 3, 2, 3}, {40, 50, 3, 0, 0, 2, 0, 
-          6}, {6, 7, 9}, {35, 6, 2, 4}, {6, 7, 11}, {3, 2}, {36, 9, 11, 2, 
-          4}, {4, 11, 6, -1}, {12, 5, 0, 6}, {10, 0, 3}, {13, 3, 0, 3}, {10, 
-          6, 4}, {42, "IteratorCountR", 3, 0, 4, 3, 0, 3, 2, 0, 11}, {6, 7, 
-          2}, {41, 258, 2, 0, 11, 2, 0, 10, 2, 0, 8}, {35, 8, 2, 13}, {6, 10, 
-          12}, {3, 3}, {12, 6, 12, 13}, {36, 2, 13, 2, 13}, {4, 12, 11, -2}, {
+          42, "Total", 3, 3, 4, 2, 0, 5, 3, 2, 3}, {40, 50, 3, 0, 0, 2, 0, 
+          7}, {6, 8, 10}, {35, 7, 2, 4}, {6, 8, 12}, {3, 2}, {36, 10, 12, 2, 
+          4}, {4, 12, 7, -1}, {12, 6, 0, 7}, {10, 0, 3}, {13, 3, 0, 3}, {10, 
+          7, 4}, {42, "IteratorCountR", 3, 0, 4, 3, 0, 3, 2, 0, 12}, {6, 8, 
+          2}, {41, 258, 2, 0, 12, 2, 0, 11, 2, 0, 9}, {35, 9, 2, 13}, {6, 11, 
+          13}, {3, 3}, {12, 7, 13, 14}, {36, 2, 14, 2, 13}, {4, 13, 12, -2}, {
           42, "Join", 2, 1, 4, 2, 1, 13, 2, 1, 11}, {46, 
            
-           Function[{
-            QMRITools`GradientTools`Private`points, 
-             QMRITools`GradientTools`Private`char, 
-             QMRITools`GradientTools`Private`nf}, 
-            Part[QMRITools`GradientTools`Private`velocity, 
-              QMRITools`GradientTools`Private`rang] = {0., 0., 0.}], {
-           QMRITools`GradientTools`Private`chari, 3, 1, 14, Block}, {
-           QMRITools`GradientTools`Private`distmatxyz, 3, 3, 12, Block}, {
-           QMRITools`GradientTools`Private`n, 2, 0, 0, Block}, {
-           QMRITools`GradientTools`Private`pointsi, 3, 2, 8, Block}, {
-           QMRITools`GradientTools`Private`chars, 3, 2, 9, Block}, {
-           QMRITools`GradientTools`Private`charmat, 3, 2, 2, Block}, {
-           QMRITools`GradientTools`Private`diag, 3, 2, 6, Block}, {
-           QMRITools`GradientTools`Private`rang, 2, 1, 11, Block}, {
-           QMRITools`GradientTools`Private`velocity, 3, 2, 3, Block}, {
-           QMRITools`GradientTools`Private`pointsmat, 3, 3, 5, Block}, {
-           QMRITools`GradientTools`Private`distmat, 3, 2, 7, Block}, 3, 2, 0, 
-           3, 1, 1, 3, 0, 0, 6, 0, 17}, {44, 8, 3, 4}, {33, 4, 8}, {6, 10, 
-          12}, {35, 8, 12, 3, 16}, {6, 7, 6}, {3, 11}, {37, 4, 6, 0, 17}, {38,
-           17, 0, 3, 0, 2}, {41, 263, 3, 0, 5, 2, 0, 14, 3, 0, 3}, {40, 60, 3,
-           0, 3, 3, 0, 4}, {13, 2, 4, 2}, {40, 44, 3, 0, 2, 2, 0, 13}, {37, 4,
-           6, 0, 17}, {47, Normalize, 3, 1, 17, 3, 1, 18}, {41, 259, 2, 0, 13,
-           3, 1, 18, 3, 1, 17}, {36, 12, 17, 0, 16}, {4, 6, 8, -10}, {34, 1, 
-          4, 5, 0, 5, 7, 2, 4}, {38, 16, 3, 4, 2, 13}, {1}}, 
-         Function[{
-          QMRITools`GradientTools`Private`points, 
-           QMRITools`GradientTools`Private`char, 
-           QMRITools`GradientTools`Private`nf}, 
+           Function[{$CellContext`points, $CellContext`char, $CellContext`nf},
+             Part[$CellContext`velocity, $CellContext`rang] = {0., 0., 
+             0.}], {$CellContext`charmat, 3, 2, 2, Block}, {$CellContext`n, 2,
+             0, 0, Block}, {$CellContext`rang, 2, 1, 11, 
+            Block}, {$CellContext`diag, 3, 2, 6, 
+            Block}, {$CellContext`pointsi, 3, 2, 8, 
+            Block}, {$CellContext`pointsmat, 3, 3, 5, 
+            Block}, {$CellContext`chars, 3, 2, 9, 
+            Block}, {$CellContext`distmat, 3, 2, 7, 
+            Block}, {$CellContext`velocity, 3, 2, 3, 
+            Block}, {$CellContext`distmatxyz, 3, 3, 12, 
+            Block}, {$CellContext`chari, 3, 1, 14, Block}, 3, 2, 0, 3, 1, 1, 
+           3, 0, 0, 6, 0, 17}, {44, 8, 3, 4}, {33, 4, 9}, {6, 11, 12}, {35, 9,
+           12, 3, 16}, {6, 8, 7}, {3, 9}, {37, 4, 7, 0, 17}, {38, 17, 0, 4, 0,
+           2}, {13, 2, 5, 2}, {40, 44, 3, 0, 2, 2, 0, 13}, {37, 4, 7, 0, 
+          17}, {47, Normalize, 3, 1, 17, 3, 1, 18}, {41, 259, 2, 0, 13, 3, 1, 
+          18, 3, 1, 17}, {36, 12, 17, 0, 16}, {4, 7, 9, -8}, {34, 1, 4, 6, 0, 
+          6, 8, 2, 4}, {38, 16, 3, 4, 2, 13}, {1}}, 
+         Function[{$CellContext`points, $CellContext`char, $CellContext`nf}, 
           
-          Block[{QMRITools`GradientTools`Private`n, 
-            QMRITools`GradientTools`Private`pointsi, 
-            QMRITools`GradientTools`Private`pointsmat, 
-            QMRITools`GradientTools`Private`distmatxyz, 
-            QMRITools`GradientTools`Private`diag, 
-            QMRITools`GradientTools`Private`distmat, 
-            QMRITools`GradientTools`Private`velocity, 
-            QMRITools`GradientTools`Private`pointsnew, 
-            QMRITools`GradientTools`Private`chari, 
-            QMRITools`GradientTools`Private`charmat, 
-            QMRITools`GradientTools`Private`chars, 
-            QMRITools`GradientTools`Private`rang}, 
-           QMRITools`GradientTools`Private`n = 
-            Length[QMRITools`GradientTools`Private`points]; 
-           QMRITools`GradientTools`Private`pointsi = 
-            Join[QMRITools`GradientTools`Private`points, -
-              QMRITools`GradientTools`Private`points]; 
-           QMRITools`GradientTools`Private`chari = 
-            Join[QMRITools`GradientTools`Private`char, 
-              QMRITools`GradientTools`Private`char]; 
-           QMRITools`GradientTools`Private`pointsmat = 
-            ConstantArray[
-             QMRITools`GradientTools`Private`pointsi, 2 
-              QMRITools`GradientTools`Private`n]; 
-           QMRITools`GradientTools`Private`charmat = 
-            ConstantArray[
-             QMRITools`GradientTools`Private`chari, 2 
-              QMRITools`GradientTools`Private`n]; 
-           QMRITools`GradientTools`Private`distmatxyz = 
-            QMRITools`GradientTools`Private`pointsmat - Transpose[
-             QMRITools`GradientTools`Private`pointsmat]; 
-           QMRITools`GradientTools`Private`chars = 
-            QMRITools`GradientTools`Private`charmat 
-             Transpose[QMRITools`GradientTools`Private`charmat]; 
-           QMRITools`GradientTools`Private`diag = DiagonalMatrix[
-              ConstantArray[1.*^32, 2 QMRITools`GradientTools`Private`n]]; 
-           QMRITools`GradientTools`Private`distmat = 
-            Total[Transpose[
-                QMRITools`GradientTools`Private`distmatxyz, {2, 3, 1}]^2] + 
-             QMRITools`GradientTools`Private`diag; 
-           QMRITools`GradientTools`Private`velocity = 
-            Total[QMRITools`GradientTools`Private`chars (
-               QMRITools`GradientTools`Private`distmatxyz/
-               QMRITools`GradientTools`Private`distmat)]; 
-           QMRITools`GradientTools`Private`rang = Round[
+          Block[{$CellContext`n, $CellContext`pointsi, \
+$CellContext`pointsmat, $CellContext`distmatxyz, $CellContext`diag, \
+$CellContext`distmat, $CellContext`velocity, $CellContext`pointsnew, \
+$CellContext`chari, $CellContext`charmat, $CellContext`chars, \
+$CellContext`rang}, $CellContext`n = 
+            Length[$CellContext`points]; $CellContext`pointsi = 
+            
+            Join[$CellContext`points, -$CellContext`points]; \
+$CellContext`chari = 
+            Join[$CellContext`char, $CellContext`char]; \
+$CellContext`pointsmat = 
+            ConstantArray[$CellContext`pointsi, 
+              2 $CellContext`n]; $CellContext`charmat = 
+            ConstantArray[$CellContext`chari, 
+              2 $CellContext`n]; $CellContext`distmatxyz = \
+$CellContext`pointsmat - 
+             Transpose[$CellContext`pointsmat]; $CellContext`chars = \
+$CellContext`charmat Transpose[$CellContext`charmat]; $CellContext`diag = 
+            DiagonalMatrix[
+              ConstantArray[10.^32, 2 $CellContext`n]]; $CellContext`distmat = 
+            Total[Transpose[$CellContext`distmatxyz, {2, 3, 
+                 1}]^2] + $CellContext`diag; $CellContext`velocity = 
+            Total[$CellContext`chars \
+($CellContext`distmatxyz/$CellContext`distmat)]; $CellContext`rang = Round[
               Join[
-               Range[1, QMRITools`GradientTools`Private`nf], 
-               Range[
-               1 + QMRITools`GradientTools`Private`n, 
-                QMRITools`GradientTools`Private`n + 
-                QMRITools`GradientTools`Private`nf]]]; 
-           Part[QMRITools`GradientTools`Private`velocity, 
-              QMRITools`GradientTools`Private`rang] = {0., 0., 0.}; 
-           QMRITools`GradientTools`Private`pointsnew = 
-            Map[Sign[Part[#, 3] + 10.^(-16)] Normalize[#]& , 
-              QMRITools`GradientTools`Private`pointsi + 
-              QMRITools`GradientTools`Private`velocity]; 
-           Part[QMRITools`GradientTools`Private`pointsnew, 
-             Span[1, QMRITools`GradientTools`Private`n]]]], Evaluate], {
-       QMRITools`GradientTools`Private`bvall$$ = {1000}, 
-        QMRITools`GradientTools`Private`inter$$ = True, 
-        QMRITools`GradientTools`Private`MakeChart[
-          Pattern[QMRITools`GradientTools`Private`type, 
+               Range[1, $CellContext`nf], 
+               Range[1 + $CellContext`n, $CellContext`n + $CellContext`nf]]]; 
+           Part[$CellContext`velocity, $CellContext`rang] = {0., 0., 
+             0.}; $CellContext`pointsnew = 
+            Map[Sign[Part[#, 3] + 1.*^-16] 
+              Normalize[#]& , $CellContext`pointsi + $CellContext`velocity]; 
+           Part[$CellContext`pointsnew, 
+             Span[1, $CellContext`n]]]], Evaluate], $CellContext`ConvertGrads[
+         Pattern[$CellContext`gradi, 
+          Blank[]], 
+         Pattern[$CellContext`bv, 
+          
+          Blank[]]] := $CellContext`ConvertGrads[$CellContext`gradi, \
+$CellContext`bv, 0], $CellContext`ConvertGrads[
+         Pattern[$CellContext`gradi$, 
+          Blank[]], 
+         Pattern[$CellContext`bv$, 
+          Blank[]], 
+         Pattern[$CellContext`bi$, 
+          Blank[]]] := 
+       Block[{$CellContext`depth, $CellContext`norm, $CellContext`gradu, \
+$CellContext`grad, $CellContext`bval, $CellContext`bvalstr, \
+$CellContext`gradstr, $CellContext`grad0str, $CellContext`list, \
+$CellContext`list0, $CellContext`part$$, $CellContext`listout, \
+$CellContext`bvs, $CellContext`gr, $CellContext`name, $CellContext`nb}, \
+$CellContext`depth = ReplaceAll[
+            ArrayDepth[$CellContext`gradi$], 1 -> 3]; $CellContext`norm = 
+          Map[Norm, $CellContext`gradi$, {$CellContext`depth - 
+             1}]; $CellContext`gradu = DeleteDuplicates[
+            Map[Normalize, 
+             
+             Flatten[$CellContext`gradi$, $CellContext`depth - 
+              2]]]; $CellContext`grad = 
+          Map[Normalize, $CellContext`gradi$, {$CellContext`depth - 
+             1}]; $CellContext`bval = 
+          If[Length[$CellContext`bv$] == 1, 
+            Part[$CellContext`bv$, 1] ($CellContext`norm/
+              Max[$CellContext`norm])^2, ($CellContext`norm/
+              Max[$CellContext`norm])^2 $CellContext`bv$]; \
+$CellContext`bvalstr = Flatten[
+            Map[($CellContext`bvs = ToString[
+                NumberForm[
+                 Round[
+                  Clip[#, {0, 35000}], 0.1], {7, 1}]]; StringJoin[
+                ConstantArray[
+                " ", 10 - 
+                 StringLength[$CellContext`bvs]]] <> $CellContext`bvs)& , \
+$CellContext`bval, {$CellContext`depth - 1}]]; $CellContext`gradstr = Flatten[
+            Map[($CellContext`gr = ToString[
+                NumberForm[
+                 Round[#, 0.00001], {6, 5}]]; 
+             If[StringTake[$CellContext`gr, 1] == "-", $CellContext`gr, 
+               " " <> $CellContext`gr])& , $CellContext`grad, \
+{$CellContext`depth}], $CellContext`depth - 2]; $CellContext`grad0str = 
+          Map[($CellContext`gr = ToString[
+               NumberForm[
+                Round[#, 0.00001], {6, 5}]]; 
+            If[StringTake[$CellContext`gr, 1] == "-", $CellContext`gr, 
+              " " <> $CellContext`gr])& , $CellContext`gradu, {
+            2}]; $CellContext`list = MapThread[StringJoin[
+              
+              Riffle[#, 
+               "   "]] <> #2& , {$CellContext`gradstr, $CellContext`bvalstr}]; \
+$CellContext`list0 = Map[StringJoin[
+              Riffle[#, "   "]] <> "       " <> ToString[
+              
+              Round[$CellContext`bi$, 
+               0.1]]& , $CellContext`grad0str]; $CellContext`nb = ToString[
+            Round[
+             Max[
+              
+              Flatten[$CellContext`bval]]]]; {$CellContext`list, \
+$CellContext`list0, $CellContext`nb}], 
+       SyntaxInformation[$CellContext`ConvertGrads] = {"ArgumentsPattern" -> {
+           Blank[], 
+           Blank[], 
+           Optional[
+            Blank[]]}}, $CellContext`FindOrder[
+         Pattern[$CellContext`grad, 
+          Blank[]], 
+         Pattern[$CellContext`bval, 
+          Blank[]], 
+         OptionsPattern[]] := 
+       Block[{$CellContext`local, $CellContext`minval, $CellContext`orderout, \
+$CellContext`n, $CellContext`m, $CellContext`ord, $CellContext`val, \
+$CellContext`temp, $CellContext`order, $CellContext`span}, $CellContext`temp = \
+$CellContext`MakeAbsVec[$CellContext`grad, $CellContext`bval]; \
+$CellContext`orderout = ($CellContext`order = Range[
+             Length[$CellContext`temp]]); $CellContext`span = 
+          OptionValue[$CellContext`OrderSpan]; $CellContext`local = Clip[
+            If[$CellContext`span === "Auto", 7, $CellContext`span], {
+            5, Infinity}]; $CellContext`minval = 
+          Infinity; $CellContext`n = ($CellContext`m = 0); While[
+           And[$CellContext`n < 50000, $CellContext`m < 150000], 
+           Increment[$CellContext`m]; $CellContext`order = 
+            RandomSample[$CellContext`order]; $CellContext`val = \
+$CellContext`ValCalc[
+              
+              Part[$CellContext`temp, $CellContext`order], \
+$CellContext`local]; 
+           If[$CellContext`val < $CellContext`minval, $CellContext`n = 
+              0; $CellContext`minval = $CellContext`val; \
+$CellContext`orderout = $CellContext`order; Null, Increment[$CellContext`n]; 
+             Null]]; $CellContext`orderout], 
+       Options[$CellContext`FindOrder] = {$CellContext`OrderSpan -> "Auto"}, 
+       SyntaxInformation[$CellContext`FindOrder] = {"ArgumentsPattern" -> {
+           Blank[], 
+           Blank[], 
+           OptionsPattern[]}}, $CellContext`MakeAbsVec[
+         Pattern[$CellContext`grad, 
+          Blank[]], 
+         Pattern[$CellContext`bval, 
+          Blank[]]] := Partition[
+         Flatten[
+          Abs[$CellContext`grad Sqrt[$CellContext`bval]]], 
+         3], $CellContext`ValCalc = CompiledFunction[{11, 15., 5470}, {{
+           Blank[Real], 2}, 
+          Blank[Integer]}, {{3, 2, 0}, {2, 0, 0}, {3, 0, 
+         1}}, {{1, {2, 0, 1}}, {6, {2, 0, 2}}}, {0, 4, 2, 0, 
+         5}, {{34, 1, 1, 0, 2, 3}, {34, 1, 1, 1, 2, 2}, {
+          42, "Partition", 3, 2, 0, 2, 1, 3, 2, 1, 2, 3, 3, 4}, {
+          42, "Transpose", 3, 3, 4, 3, 3, 3}, {
+          42, "Total", 3, 3, 3, 2, 0, 2, 3, 2, 4}, {33, 3, 3}, {10, 3, 0}, {
+          40, 60, 3, 0, 0, 3, 0, 1}, {41, 259, 3, 0, 1, 3, 2, 4, 3, 2, 2}, {
+          42, "MaxRT", 3, 2, 2, 3, 0, 1}, {1}}, 
+         Function[{$CellContext`vec, $CellContext`local}, 
+          Max[
+           Mean[
+            Transpose[
+             Partition[$CellContext`vec, $CellContext`local, 1]]]]], 
+         Evaluate], {$CellContext`bvall$$ = {1000}, $CellContext`inter$$ = 
+        True, $CellContext`int$$ = 10, $CellContext`MakeChart[
+          Pattern[$CellContext`type, 
            Blank[]]] := 
-        Module[{QMRITools`GradientTools`Private`ranX, 
-           QMRITools`GradientTools`Private`ranY, 
-           QMRITools`GradientTools`Private`coors, 
-           QMRITools`GradientTools`Private`lab}, 
-          QMRITools`GradientTools`Private`ranX = Range[-180, 180, 30]; 
-          QMRITools`GradientTools`Private`ranY = Range[-90, 90, 10]; 
-          QMRITools`GradientTools`Private`coors = Part[{
+        Module[{$CellContext`ranX, $CellContext`ranY, $CellContext`coors, \
+$CellContext`lab}, $CellContext`ranX = 
+           Range[-180, 180, 30]; $CellContext`ranY = 
+           Range[-90, 90, 10]; $CellContext`coors = Part[{
               N[
                
-               Table[{QMRITools`GradientTools`Private`j 
-                 Cos[QMRITools`GradientTools`Private`i Degree], 90 
-                 Sin[QMRITools`GradientTools`Private`i Degree]}, {
-                QMRITools`GradientTools`Private`j, 
-                 QMRITools`GradientTools`Private`ranX}, {
-                QMRITools`GradientTools`Private`i, 
-                 QMRITools`GradientTools`Private`ranY}]], 
+               Table[{$CellContext`j Cos[$CellContext`i Degree], 90 
+                 Sin[$CellContext`i 
+                   Degree]}, {$CellContext`j, $CellContext`ranX}, \
+{$CellContext`i, $CellContext`ranY}]], 
               N[
                
-               Table[{QMRITools`GradientTools`Private`j, 
-                 QMRITools`GradientTools`Private`i}, {
-                QMRITools`GradientTools`Private`j, 
-                 QMRITools`GradientTools`Private`ranX}, {
-                QMRITools`GradientTools`Private`i, 
-                 QMRITools`GradientTools`Private`ranY}]], 
+               Table[{$CellContext`j, $CellContext`i}, {$CellContext`j, \
+$CellContext`ranX}, {$CellContext`i, $CellContext`ranY}]], 
               N[
                
-               Table[{QMRITools`GradientTools`Private`j, 90 
-                 Sin[QMRITools`GradientTools`Private`i Degree]}, {
-                QMRITools`GradientTools`Private`j, 
-                 QMRITools`GradientTools`Private`ranX}, {
-                QMRITools`GradientTools`Private`i, 
-                 QMRITools`GradientTools`Private`ranY}]]}, 
-             QMRITools`GradientTools`Private`type]; 
-          QMRITools`GradientTools`Private`lab = 
+               Table[{$CellContext`j, 90 
+                 Sin[$CellContext`i 
+                   Degree]}, {$CellContext`j, $CellContext`ranX}, \
+{$CellContext`i, $CellContext`ranY}]]}, $CellContext`type]; $CellContext`lab = 
            Part[{{"\[Phi] Cos[\[Theta]] (\[Degree])", 
                "\[Theta] Sin[\[Theta]] (\[Degree])"}, {
               "\[Phi] \(\[Degree])", "\[Theta] (\[Degree])"}, {
-              "\[Phi] (\[Degree])", "\[Theta] Sin[\[Theta]] (\[Degree])"}}, 
-             QMRITools`GradientTools`Private`type]; Graphics[{{
+              "\[Phi] (\[Degree])", 
+               "\[Theta] Sin[\[Theta]] (\[Degree])"}}, $CellContext`type]; 
+          Graphics[{{
               Lighter[
                Lighter[
                 Lighter[Gray]]], 
               Polygon[
                Join[
-                First[QMRITools`GradientTools`Private`coors], 
+                First[$CellContext`coors], 
                 Reverse[
-                 Last[QMRITools`GradientTools`Private`coors]]]]}, 
+                 Last[$CellContext`coors]]]]}, 
              Map[{
                Lighter[Gray], 
-               Line[#]}& , QMRITools`GradientTools`Private`coors], 
+               Line[#]}& , $CellContext`coors], 
              Map[{
                Lighter[Gray], 
                Line[#]}& , 
-              Transpose[QMRITools`GradientTools`Private`coors]]}, AspectRatio -> 
-            0.8, ImageSize -> 400, PlotRange -> {{-185, 185}, {-95, 95}}, 
-            LabelStyle -> 
+              Transpose[$CellContext`coors]]}, AspectRatio -> 0.8, ImageSize -> 
+            400, PlotRange -> {{-185, 185}, {-95, 95}}, LabelStyle -> 
             Directive[{Bold, Black, Medium, FontFamily -> "Helvetica"}], 
             Frame -> True, FrameStyle -> Thick, Axes -> True, AxesStyle -> 
             Thick, FrameTicks -> {{
                Part[
                 Thread[{
                   Round[
-                   Part[QMRITools`GradientTools`Private`coors, 1, All, 2]], 
-                  QMRITools`GradientTools`Private`ranY}], 
-                Span[1, All, 3]], None}, {
-              QMRITools`GradientTools`Private`ranX, None}}, FrameLabel -> 
-            QMRITools`GradientTools`Private`lab]], 
-        QMRITools`GradientTools`Private`charts$$ = 
-        Map[QMRITools`GradientTools`Private`MakeChart, {1, 2, 3}], 
-        QMRITools`GradientTools`Private`SpherePlot[
-          Pattern[QMRITools`GradientTools`Private`size$, 
+                   Part[$CellContext`coors, 1, All, 2]], $CellContext`ranY}], 
+                Span[1, All, 3]], None}, {$CellContext`ranX, None}}, 
+            FrameLabel -> $CellContext`lab]], $CellContext`charts$$ = 
+        Map[$CellContext`MakeChart, {1, 2, 3}], $CellContext`SpherePlot[
+          Pattern[$CellContext`size$, 
            Blank[]], 
-          Pattern[QMRITools`GradientTools`Private`op$, 
+          Pattern[$CellContext`op$, 
            Blank[]]] := If[
-          Or[
-          QMRITools`GradientTools`Private`size$ == 0, 
-           QMRITools`GradientTools`Private`size$ == 0.], 
+          Or[$CellContext`size$ == 0, $CellContext`size$ == 0.], 
           
           Graphics3D[{}, Lighting -> "Neutral", 
            PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> 
-           Dynamic[QMRITools`GradientTools`Private`vp$$], ViewVertical -> 
-           Dynamic[QMRITools`GradientTools`Private`vv$$], ViewAngle -> 
-           Dynamic[QMRITools`GradientTools`Private`va$$], SphericalRegion -> 
-           True], 
+           Dynamic[$CellContext`vp$$], ViewVertical -> 
+           Dynamic[$CellContext`vv$$], ViewAngle -> 
+           Dynamic[$CellContext`va$$], SphericalRegion -> True], 
           Graphics3D[{White, 
-            Opacity[QMRITools`GradientTools`Private`op$], 
-            Sphere[{0, 0, 0}, 0.95 QMRITools`GradientTools`Private`size$]}, 
-           Lighting -> "Neutral", 
-           PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, ViewPoint -> 
-           Dynamic[QMRITools`GradientTools`Private`vp$$], ViewVertical -> 
-           Dynamic[QMRITools`GradientTools`Private`vv$$], ViewAngle -> 
-           Dynamic[QMRITools`GradientTools`Private`va$$], SphericalRegion -> 
-           True]], QMRITools`GradientTools`Private`PlotChartPoints[
-          Pattern[QMRITools`GradientTools`Private`grad$, 
+            Opacity[$CellContext`op$], 
+            Sphere[{0, 0, 0}, 0.95 $CellContext`size$]}, Lighting -> 
+           "Neutral", PlotRange -> {{-1.1, 1.1}, {-1.1, 1.1}, {-1.1, 1.1}}, 
+           ViewPoint -> Dynamic[$CellContext`vp$$], ViewVertical -> 
+           Dynamic[$CellContext`vv$$], ViewAngle -> 
+           Dynamic[$CellContext`va$$], SphericalRegion -> 
+           True]], $CellContext`PlotChartPoints[
+          Pattern[$CellContext`grad$, 
            Blank[]], {
-           Pattern[QMRITools`GradientTools`Private`mirr$, 
+           Pattern[$CellContext`mirr$, 
             Blank[]], 
-           Pattern[QMRITools`GradientTools`Private`col$, 
-            Blank[]]}] := 
-        Block[{QMRITools`GradientTools`Private`style}, 
-          QMRITools`GradientTools`Private`style = If[
-             ListQ[QMRITools`GradientTools`Private`col$], 
+           Pattern[$CellContext`col$, 
+            Blank[]]}] := Block[{$CellContext`style}, $CellContext`style = If[
+             ListQ[$CellContext`col$], 
              Map[Directive[#, 
-               PointSize[Large]]& , QMRITools`GradientTools`Private`col$], 
-             Directive[QMRITools`GradientTools`Private`col$, 
+               PointSize[Large]]& , $CellContext`col$], 
+             Directive[$CellContext`col$, 
               PointSize[Large]]]; Show[
-            If[QMRITools`GradientTools`Private`grad$ === {}, 
+            If[$CellContext`grad$ === {}, 
              Graphics[], 
              Show[
               ListPlot[
-               If[ArrayDepth[QMRITools`GradientTools`Private`grad$] == 2, 
-                QMRITools`GradientTools`Private`CalcPolarPts[
-                QMRITools`GradientTools`Private`grad$, 
-                 QMRITools`GradientTools`Private`ctype$$, 
-                 QMRITools`GradientTools`Private`viewvec$$], 
-                Map[
-                QMRITools`GradientTools`Private`CalcPolarPts[#, 
-                  QMRITools`GradientTools`Private`ctype$$, 
-                  QMRITools`GradientTools`Private`viewvec$$]& , 
-                 QMRITools`GradientTools`Private`grad$]], PlotStyle -> 
-               QMRITools`GradientTools`Private`style], 
+               If[ArrayDepth[$CellContext`grad$] == 2, 
+                $CellContext`CalcPolarPts[$CellContext`grad$, \
+$CellContext`ctype$$, $CellContext`viewvec$$], 
+                
+                Map[$CellContext`CalcPolarPts[#, $CellContext`ctype$$, \
+$CellContext`viewvec$$]& , $CellContext`grad$]], 
+               PlotStyle -> $CellContext`style], 
               If[
-               Not[QMRITools`GradientTools`Private`mirr$], 
+               Not[$CellContext`mirr$], 
                Graphics[], 
                ListPlot[
-                If[ArrayDepth[QMRITools`GradientTools`Private`grad$] == 2, 
-                 
-                 QMRITools`GradientTools`Private`CalcPolarPts[-
-                  QMRITools`GradientTools`Private`grad$, 
-                  QMRITools`GradientTools`Private`ctype$$, 
-                  QMRITools`GradientTools`Private`viewvec$$], 
-                 
-                 QMRITools`GradientTools`Private`CalcPolarPts[-
-                  Flatten[QMRITools`GradientTools`Private`grad$, 1], 
-                  QMRITools`GradientTools`Private`ctype$$, 
-                  QMRITools`GradientTools`Private`viewvec$$]], PlotStyle -> {
+                If[ArrayDepth[$CellContext`grad$] == 2, 
+                 $CellContext`CalcPolarPts[-$CellContext`grad$, \
+$CellContext`ctype$$, $CellContext`viewvec$$], 
+                 $CellContext`CalcPolarPts[-
+                  Flatten[$CellContext`grad$, 
+                    1], $CellContext`ctype$$, $CellContext`viewvec$$]], 
+                PlotStyle -> {
                   Darker[Gray], 
                   PointSize[Large]}]]]]]]}}; Typeset`initDone$$ = True),
-    SynchronousInitialization->True,
+    SynchronousInitialization->False,
     UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
     UnsavedVariables:>{Typeset`initDone$$},
     UntrackedVariables:>{Typeset`size$$}], "Manipulate",
    Deployed->True,
    StripOnInput->False],
   Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{3.879243788896448*^9},
- CellLabel->"Out[2]=",ExpressionUUID->"2f19b3a0-59dc-42d7-b449-41aca9cb7e92"]
+ CellLabel->"Out[87]=",ExpressionUUID->"b197e6c2-1f5d-7749-9c8c-1c6cc315984e"]
 },
-WindowSize->{1920, 1117},
-WindowMargins->{{-8, Automatic}, {Automatic, -8}},
-FrontEndVersion->"13.1 for Microsoft Windows (64-bit) (June 16, 2022)",
+WindowSize->{945.75, 687.75},
+WindowMargins->{{Automatic, 194.25}, {Automatic, 55.5}},
+FrontEndVersion->"15.0 for Microsoft Windows (64-bit) (July 2, 2026)",
 StyleDefinitions->"Default.nb",
-ExpressionUUID->"755920b6-112f-4155-bc94-b6081b4c7708"
+ExpressionUUID->"326db3bf-2ee9-3f41-8573-087cacbdaa5c"
 ]
 (* End of Notebook Content *)
 
@@ -3163,11 +2800,11 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[1488, 33, 176593, 3113, 596, "Output",ExpressionUUID->"2f19b3a0-59dc-42d7-b449-41aca9cb7e92"]
+Cell[1484, 33, 148869, 2750, 439, "Output",ExpressionUUID->"b197e6c2-1f5d-7749-9c8c-1c6cc315984e"]
 }
 ]
 *)
 
 (* End of internal cache information *)
 
-(* NotebookSignature YwTE9C15#oIRuDwEXTV1Y8lu *)
+(* NotebookSignature Mu0npj5XrwFe3Dgcdae6VbkL *)

@@ -1473,14 +1473,20 @@ ExportBvalvec[{bv_, grad_}, fil_String, opts:OptionsPattern[]] := Block[{},
 (*ExtractNiiFiles*)
 
 
-SyntaxInformation[ExtractNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
+Options[ExtractNiiFiles] = {MonitorCalc -> False}
 
-ExtractNiiFiles[lim_:Infinity] := ExtractNiiFiles[FileSelect["Directory", WindowTitle -> "Select directory containing the nii files"],lim]
+SyntaxInformation[ExtractNiiFiles] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
-ExtractNiiFiles[folder_,lim_:Infinity] := Block[{files},
-	files = FileNames["*.nii.gz", folder,lim];
-	PrintTemporary[Dynamic[file]];
-	(file=#;ExtractNiiFile[#])&/@files;
+ExtractNiiFiles[opt:OptionsPattern[]] := ExtractNiiFiles[Infinity, opt]
+
+ExtractNiiFiles[folder_?StringQ, opt:OptionsPattern[]] := ExtractNiiFiles[folder, Infinity, opt]
+
+ExtractNiiFiles[lim_?(!OptionQ[#]&), opt:OptionsPattern[]] := ExtractNiiFiles[FileSelect["Directory", WindowTitle -> "Select directory containing the nii files"], lim, opt]
+
+ExtractNiiFiles[folder_?StringQ, lim_?(!OptionQ[#]&), OptionsPattern[]] := Block[{files, file},
+	files = FileNames["*.nii.gz", folder, lim];
+	If[OptionValue[MonitorCalc], PrintTemporary[Dynamic[file]]];
+	(file = #; ExtractNiiFile[#])& /@ files;
 ]
 
 
@@ -1491,18 +1497,20 @@ ExtractNiiFile[file_] := Quiet[ExtractArchive[file, StringDrop[DirectoryName[fil
 (*CompressNiiFiles*)
 
 
-SyntaxInformation[CompressNiiFiles] = {"ArgumentsPattern" -> {_.,_.}};
+Options[CompressNiiFiles] = {MonitorCalc -> False}
 
-CompressNiiFiles[]:=CompressNiiFiles[Infinity]
+SyntaxInformation[CompressNiiFiles] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
 
-CompressNiiFiles[folder_?StringQ]:=CompressNiiFiles[folder, Infinity]
+CompressNiiFiles[opt:OptionsPattern[]] := CompressNiiFiles[Infinity, opt]
 
-CompressNiiFiles[lim_] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select directory containing the nii files"],lim]
+CompressNiiFiles[folder_?StringQ, opt:OptionsPattern[]] := CompressNiiFiles[folder, Infinity, opt]
 
-CompressNiiFiles[folder_?StringQ,lim_] := Block[{files,file},
-	files = FileNames["*.nii", folder,lim];
-	PrintTemporary[Dynamic[file]];
-	(file=#;CompressNiiFile[#])&/@files;
+CompressNiiFiles[lim_?(!OptionQ[#]&), opt:OptionsPattern[]] := CompressNiiFiles[FileSelect["Directory", WindowTitle -> "Select directory containing the nii files"], lim, opt]
+
+CompressNiiFiles[folder_?StringQ, lim_?(!OptionQ[#]&), OptionsPattern[]] := Block[{files, file},
+	files = FileNames["*.nii", folder, lim];
+	If[OptionValue[MonitorCalc], PrintTemporary[Dynamic[file]]];
+	(file = #; CompressNiiFile[#])& /@ files;
 ]
 
 

@@ -184,7 +184,7 @@ Reading the graph:
   - direct: MaskingTools ↔ ElastixTools, TensorTools ↔ ProcessingTools, GradientTools ↔ TensorTools;
   - longer: NiftiTools → ProcessingTools → ElastixTools → NiftiTools, and
     TractographyTools → TensorTools → ProcessingTools → TractographyTools;
-  - SegmentationTools ↔ NeuralNetworkTools, via the fully qualified private `FindPatchDim` call in
+  - SegmentationTools ↔ NeuralNetworkTools, via the public `FindPatchDim` call in
     `AnalyzeNetworkFeatures`.
 
   `agents/callgraph.wls` recomputes these as strongly connected groups.

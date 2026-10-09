@@ -230,7 +230,7 @@ associations merge.
 | Key | Used by | Notes |
 | --- | --- | --- |
 | `folders.{dicomData,rawData,derivedData,mergeData,analysis}` | all | defaults `01_sourcedata` … `05_analysis` |
-| `conversion.Version` | BidsDcmToNii → `DcmToNii[UseVersion->]` | `1` (default) → asset `DcmToNii`; anything else → asset `"DcmToNii-"<>ToString[v]` (for example `"Own"`, `"17"`) |
+| `conversion.Version` | BidsDcmToNii → `DcmToNii[UseVersion->]` | `1` (default on macOS; the default on other systems is `"Own"`) → asset `DcmToNii`; anything else → asset `"DcmToNii-"<>ToString[v]` (for example `"Own"`, `"17"`) |
 | `datasets` | steps 2–6 | one entry per dataset; the entry name becomes `Key` |
 | `analysis` | step 7 | **flat** (contains `Analysis`, so it is wrapped as `{"Default"->...}` with no key) or **nested** (one block per name, where the name becomes the key used in file names) |
 

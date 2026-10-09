@@ -143,7 +143,12 @@ DataToPatches[data, patchSize, pts] extracts patches at the given pre-computed r
 DataToPatches[data, pts] extracts patches at ranges pts without resizing.
 Output is {patches, ranges} where ranges can be passed to PatchesToData."
 
-PatchesToData::usage = 
+FindPatchDim::usage =
+"FindPatchDim[net, dim] finds the largest patch size for the network net that fits within 8 GB for data of dimensions dim {z, y, x}.
+FindPatchDim[net, dim, lim] uses a maximum memory of lim GB.
+Output is {memory in GB, patch size}."
+
+PatchesToData::usage =
 "PatchesToData[patches, ranges] reconstructs data from patches at the given ranges.
 PatchesToData[patches, ranges, dim] reconstructs into an array of dimensions dim. Overlapping patches are averaged.
 PatchesToData[patches, ranges, dim, labels] reconstructs segmentation patches. For each label only the largest connected component is kept 
@@ -411,10 +416,10 @@ $BodyPositionClasses = {"LowerLegs", "Knee", "UpperLegs", "Hip", "Torso", "Shoul
 $SegmentationLocations = <|
 	"LowerLegs" -> <|"Net2D" -> "SegLegMuscle2D", "Net3D" -> "SegLegMuscle3D",
 		"TrainLabels" -> "LegLowerTrainLabels", "PositionClasses" -> {"LowerLegs", "Knee"}, 
-		"Offset" -> {0, 0}|>,
+		"Offset" -> {0, 5}|>,
 	"UpperLegs" -> <|"Net2D" -> "SegThighMuscle2D", "Net3D" -> "SegThighMuscle3D",
 		"TrainLabels" -> "LegUpperTrainLabels", "PositionClasses" -> {"Knee", "UpperLegs", "Hip"}, 
-		"Offset" -> {0, 0}|>,
+		"Offset" -> {-5, 0}|>,
 	"Hip" -> <|"Net2D" -> "SegHipMuscle2D", "Net3D" -> "SegHipMuscle3D",
 		"TrainLabels" -> "HipTrainLabels", "PositionClasses" -> {"Hip", "Torso"}, 
 		"Offset" -> {-25, 5}|>,
@@ -450,7 +455,7 @@ $SegmentationGroups = <|
 		"Classify" -> "Side",  "OutputLabels" -> "MuscleLabels"|>,
 
 	(*Output to legacy leg labels*)
-	"Legs" -> <|"Locations" -> {"LowerLegs","UpperLegs"}, "Split" -> "Find",
+	"Legs" -> <|"Locations" -> {"LowerLegs", "UpperLegs"}, "Split" -> "Find",
 		"Classify" -> "Position", "OutputLabels" -> "MuscleLegLabels"|>,
 	"LegsHip" -> <|"Locations" -> {"LowerLegs", "UpperLegs", "Hip"}, "Split" -> "Find",
 		"Classify" -> "Position", "OutputLabels" -> "MuscleLegLabels"|>,
@@ -647,7 +652,9 @@ FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, le
 
 	(*create a smoothed and padded list of label numbers*)
 	classI = Round@MedianFilter[classIn /. locationsR, 1];
+	(*classI = Round[classIn /. locationsR];*)
 	classN = Round@MedianFilter[ArrayPad[ArrayPad[classI, {pad, 0}, Min[classI]], {0, pad}, Max[classI]], 1];
+	(*classN = Round@ArrayPad[ArrayPad[classI, {pad, 0}, Min[classI]], {0, pad}, Max[classI]];*)
 	n = Length[classN];
 
 	(*define the model parameters*)
@@ -656,18 +663,19 @@ FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, le
 	eVars = Table[e[i], {i, n}]; (*error between data and solution*)
 
 	(*largest gap-free run of observed labels; the fit is confined to it*)
-	best = MaximalBy[Split[Sort@DeleteDuplicates[classN], #2 - #1 == 1 &], Length][[1]];
+	(*best = MaximalBy[Split[Sort@DeleteDuplicates[classN], #2 - #1 == 1 &], Length][[1]];*)
 
 	(*define the fit constrains*)
 	cons = Join[
 		(*define start and end and keep all x within the trusted run*)
-		{x[1] == Min[best], x[n] == Max[best]},
-		Table[Min[best] <= x[i] <= Max[best], {i, n - 1}],
+		Table[Min[classN] <= x[i] <= Max[classN], {i, n}],
+		(*{x[1] == Min[best], x[n] == Max[best]},
+		Table[Min[best] <= x[i] <= Max[best], {i, n - 1}],*)
 		
 		(*define jumps and force them between 0 and 1, and at most one jump within 4 slices*)
 		Table[x[i + 1] - x[i] == d[i], {i, n - 1}],
 		Table[0 <= d[i] <= 1, {i, n - 1}],
-		Table[Total[dVars[[i ;; i + 3]]] <= 1, {i, n - 1 - 3}],
+		Table[Total[dVars[[i ;; i + 2]]] <= 1, {i, n - 1 - 2}],
 
 		(*define the minimization error (L1) at each point*)
 		Table[x[i] - classN[[i]] <= e[i], {i, n}],
@@ -1249,6 +1257,8 @@ ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 (* ::Subsubsection::Closed:: *)
 (*FindPatchDim*)
 
+
+SyntaxInformation[FindPatchDim] = {"ArgumentsPattern" -> {_, _, _.}};
 
 FindPatchDim[net_, dim_] := FindPatchDim[net, dim, 8]
 
