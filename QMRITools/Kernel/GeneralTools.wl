@@ -1093,22 +1093,21 @@ Options[FindCrop] = {CropPadding->5}
 
 SyntaxInformation[FindCrop] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-FindCrop[dat_, OptionsPattern[]] := Block[{add, data, dim, d1, d2, unit, crp},
+FindCrop[dat_, OptionsPattern[]] := Block[{add, data, dim, pos},
 	add = {-1, 1} OptionValue[CropPadding];
 
-	data = Unitize@Switch[ArrayDepth[dat],
+	data = Switch[ArrayDepth[dat],
 		3, dat,
 		4, dat[[All, 1]],
 		_, Return[$Failed]
 	];
 	dim = Dimensions[data];
 
-	d1 = Total[data];
-	d2 = Total[data, {2}];
-	unit = Unitize[{Total[d2, {2}], Total[d1, {2}], Total[d1]}];
+	(*positions of all non zero voxels*)
+	pos = SparseArray[Unitize[data]]["ExplicitPositions"];
+	If[pos === {}, Return[$Failed]];
 
-	crp = MinMax[DeleteCases[# Range[Length[#]], 0]] + add & /@ unit;
-	Flatten[MapThread[Clip[#1, {1, #2}] &, {crp, dim}]]
+	Flatten[MapThread[Clip[MinMax[#1] + add, {1, #2}] &, {Transpose[pos], dim}]]
 ]
 
 

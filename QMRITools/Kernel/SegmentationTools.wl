@@ -57,6 +57,16 @@ SurfaceDistance[ref, pred, {class, ..}, vox] does the same for a list of classes
 The Method option controls the distance metric: \"Mean\", \"Median\", \"RMS\", \"HD\", \"HD95\" (default), or \"Std\". A list of 
 methods can be given to return multiple metrics at once."
 
+CompareSegmentations::usage =
+"CompareSegmentations[ref, pred, vox] compares the segmentations ref and pred for all labels that are present in both, using the voxel size vox.
+CompareSegmentations[ref, pred, labs, vox] compares only the labels labs.
+CompareSegmentations[segs, vox] with segs an association of named segmentations compares every pair of segmentations for the labels present in all of them.
+The output is a Dataset with a row per label and a column per measure, for the association input it is an association with an entry \"name1 vs name2\" per pair.
+The measures are set with the Method option, which can be \"Dice\", \"Jaccard\" or any method of SurfaceDistance (\"Mean\", \"Median\", \"RMS\", \"HD\", \"HD95\", \"Std\"), or a list of these."
+
+CommonLabels::usage =
+"CommonLabels[{seg1, seg2, ..}] gives the labels, without background 0, that are present in all of the segmentations."
+
 MakeDistanceMap::usage = 
 "MakeDistanceMap[mask] makes a distance map of the given mask in voxels. The distance map is positive inside the mask and negative outside the mask.
 MakeDistanceMap[mask, vox] makes a distance map of the given mask in the same unit as vox. The distance map is positive
@@ -229,7 +239,7 @@ It prompts the user to enter the paths for the input and output files, and allow
 
 RunMuscleMap::usage = 
 "RunMuscleMap[file] will run MuscleMap segmentation on the selected nii file. 
-RunMuscleMap[{data, vox}] will run MuscleMap segmentation of the data."
+RunMuscleMap[{data, vox}] will run MuscleMap segmentation of the data. Using TargetDevice \"GPU\" (default) or \"CPU\" the device is selected. Using Monitor -> True reports the steps while running."
 
 
 (* ::Subsection::Closed:: *)
@@ -356,6 +366,9 @@ MuscleMapPythonEnvironment::usage =
 MuscleMapPath::usage = 
 "MuscleMapPath is the path to the MuscleMap code that is cloned from github and installed according to the muscle map readme."
 
+MuscleMapLabels::usage =
+"MuscleMapLabels is an option for RunMuscleMap. If False the MuscleMap labels are converted to the QMRITools \"MuscleLabels\" numbering. If True the original MuscleMap labels are returned."
+
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)
@@ -377,6 +390,9 @@ TrainSegmentationNetwork::nullbatch = "A producer link returned Null instead of 
 
 
 SurfaceDistance::met = "Method `1` not recognized";
+
+
+CompareSegmentations::met = "Method `1` not recognized, it should be one of `2`.";
 
 
 ApplySegmentationNetwork::node = "The node ``` is not part of the network"
@@ -2720,10 +2736,9 @@ MakeTrainData[datI : {{_?ArrayQ, _?ArrayQ, _?IntegerQ} ..}] := Block[{d1, d2, i,
 
 SyntaxInformation[DiceSimilarity] = {"ArgumentsPattern" -> {_, _, _.}};
 
-DiceSimilarity[ref_, pred_, nClasses_?ListQ] := Block[{refF, predF},
-	refF = flatRound@ref;
-	predF = flatRound@pred;
-	Table[DiceSimilarityC[refF, predF, class], {class, nClasses}]
+DiceSimilarity[ref_, pred_, nClasses_?ListQ] := Block[{inter, nRef, nPred},
+	{inter, nRef, nPred} = ClassOverlap[ref, pred, nClasses];
+	(2 inter + 1.) / (nRef + nPred + 1)
 ]
 
 DiceSimilarity[ref_, pred_] := DiceSimilarityC[flatRound@ref, flatRound@pred, 1]
@@ -2739,7 +2754,25 @@ DiceSimilarityC = Compile[{{ref, _Integer, 1}, {pred, _Integer, 1}, {class, _Int
 , RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
 
-flatRound=Flatten@Round@ToPackedArray@#&
+flatRound = Flatten@Round@ToPackedArray@# &
+
+
+ClassOverlap[ref_, pred_, classes_] := Block[{rf, pf, off, k, cr, rc, pc},
+	rf = flatRound@ref;
+	pf = flatRound@pred;
+	
+	(*shift labels to be non-negative and encode each voxel pair as one integer*)
+	off = Min[rf, pf, 0];
+	k = Max[rf, pf, classes] - off + 1;
+	rf = rf - off;
+	pf = pf - off;
+	{cr, rc, pc} = Counts /@ {rf k + pf, rf, pf};
+	{
+		Lookup[cr, (classes - off) (k + 1), 0], 
+		Lookup[rc, classes - off, 0], 
+		Lookup[pc, classes - off, 0]
+	}
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2748,10 +2781,9 @@ flatRound=Flatten@Round@ToPackedArray@#&
 
 SyntaxInformation[JaccardSimilarity] = {"ArgumentsPattern" -> {_, _, _.}};
 
-JaccardSimilarity[ref_, pred_, nClasses_?ListQ] := Block[{refF, predF},
-	refF = flatRound@ref;
-	predF = flatRound@pred;
-	Table[JaccardSimilarityC[refF, predF, class], {class, nClasses}]
+JaccardSimilarity[ref_, pred_, nClasses_?ListQ] := Block[{inter, nRef, nPred},
+	{inter, nRef, nPred} = ClassOverlap[ref, pred, nClasses];
+	(inter + 1.) / (nRef + nPred - inter + 1)
 ]
 
 JaccardSimilarity[ref_, pred_] := JaccardSimilarityC[flatRound@ref, flatRound@pred, 1]
@@ -2784,34 +2816,82 @@ SurfaceDistance[ref_, pred_, class_?IntegerQ, opts : OptionsPattern[]] := Surfac
 
 SurfaceDistance[ref_, pred_, nClasses_?ListQ, opts : OptionsPattern[]] := SurfaceDistance[ref, pred, nClasses, {1, 1, 1}, opts]
 
-SurfaceDistance[ref_, pred_, nClasses_?ListQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsPattern[]] := Block[{refF, predF},
+SurfaceDistance[ref_, pred_, nClasses_?ListQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, opts : OptionsPattern[]] := Block[{
+		refF, predF, dim, boxRef, boxPred, met, box, sl
+	},
 	refF = Round@ToPackedArray@ref;
 	predF = Round@ToPackedArray@pred;
-	Table[SurfaceDistance[refF, predF, class, vox, opts], {class, nClasses}]
+	dim = Dimensions[refF];
+	met = OptionValue[Method];
+
+	(*gets the bounding box for each label*)
+	{boxRef, boxPred} = LabelBoxes /@ {refF, predF};
+
+	Table[If[! KeyExistsQ[boxRef, class] || ! KeyExistsQ[boxPred, class], "noSeg",
+		(*union of the label boxes with one voxel padding*)
+		box = MapThread[Clip[{Min[#1], Max[#2]} + {-1, 1}, {1, #3}] &, {
+			Transpose[{boxRef[class][[All, 1]], boxPred[class][[All, 1]]}],
+			Transpose[{boxRef[class][[All, 2]], boxPred[class][[All, 2]]}], 
+			dim
+		}];
+		
+		(*define the range {x;;x, y;;y, z;;z}*)
+		sl = Apply[Span, box, {1}];
+		(*perform the evaluation only on the cropped part*)
+		SurfaceDistanceI[
+			1 - Unitize[refF[[Sequence @@ sl]] - class],
+			1 - Unitize[predF[[Sequence @@ sl]] - class], vox, met]
+	], {class, nClasses}]
 ]
 
-SurfaceDistance[ref_, pred_, class_?IntegerQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, opts :OptionsPattern[]] := Block[{
-		coorRef, coorPred, funRef, funPred, met, dist
-	},
+SurfaceDistance[ref_, pred_, class_?IntegerQ, vox : {_?NumberQ, _?NumberQ, _?NumberQ}, opts :OptionsPattern[]] := Block[{refI, predI, crp},
+	refI = 1 - Unitize[ref - class];
+	predI = 1 - Unitize[pred - class];
+	If[Max[refI] == 0 || Max[predI] == 0, Return["noSeg", Block]];
+	crp = FindCrop[Unitize[refI + predI]];
 
-	coorRef = GetEdge[ref, class, vox];
-	coorPred = GetEdge[pred, class, vox];
-	If[coorRef==={}||coorPred==={},
+	SurfaceDistanceI[ApplyCrop[refI, crp], ApplyCrop[predI, crp], vox, OptionValue[Method]]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SurfaceDistanceI*)
+
+
+SurfaceDistanceI[maskRef_, maskPred_, vox_, met_] := Block[{coorRef, coorPred, funRef, funPred, dist},
+	coorRef = GetEdge[maskRef, vox];
+	coorPred = GetEdge[maskPred, vox];
+
+	If[coorRef === {} || coorPred === {},
 		"noSeg",
-		met = OptionValue[Method];
-
 		funRef = Nearest[coorRef, DistanceFunction -> EuclideanDistance];
 		funPred = Nearest[coorPred, DistanceFunction -> EuclideanDistance];
 		dist = Sqrt@Total[Join[
-			funRef[coorPred, 1][[All,1]] - coorPred,
-			funPred[coorRef, 1][[All,1]] - coorRef
+			funRef[coorPred, 1][[All, 1]] - coorPred,
+			funPred[coorRef, 1][[All, 1]] - coorRef
 		]^2, {2}];
 
 		If[ListQ[met],
-			SufDistFunc[dist, #]&/@met,
+			SufDistFunc[dist, #] & /@ met,
 			SufDistFunc[dist, met]
 		]
 	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*LabelBoxes*)
+
+
+LabelBoxes[seg_] := Block[{sparse, vals, pos, cnt, chunks},
+	sparse = SparseArray[seg];
+	vals = sparse["ExplicitValues"];
+	pos = sparse["ExplicitPositions"];
+	cnt = KeySort@Counts[vals];
+	(*positions sorted by label and cut in one chunk per label*)
+	chunks = TakeList[pos[[Ordering[vals]]], Values[cnt]];
+	(*find the minmax x,y,z for each chunk which is the bounding box*)
+	AssociationThread[Keys[cnt], MinMax /@ Transpose[#] & /@ chunks]
 ]
 
 
@@ -2842,8 +2922,101 @@ GetEdge[lab_, class_?IntegerQ] := GetEdge[lab, class, {1, 1, 1}]
 
 GetEdge[lab_, class_?IntegerQ, vox_?VectorQ] := Block[{edge, im},
 	im = Image3D[If[class === -1, lab, 1 - Unitize[lab - class]], "Bit"];
-	edge = SparseArray[ImageData[MorphologicalPerimeter[im, CornerNeighbors -> False, Padding -> 0], "Bit"]]["ExplicitPositions"];
+	im = MorphologicalPerimeter[im, CornerNeighbors -> False, Padding -> 0];
+	im = SparseArray[ImageData[im, "Bit"]];
+	edge = im["ExplicitPositions"];
 	If[edge =!= {}, Transpose[vox Transpose[edge]], edge]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CompareSegmentations*)
+
+
+Options[CompareSegmentations] = {
+	Method -> {"Dice", "HD95"}
+};
+
+SyntaxInformation[CompareSegmentations] = {"ArgumentsPattern" -> {_, _, _., _., OptionsPattern[]}};
+
+CompareSegmentations[ref_?ArrayQ, pred_?ArrayQ, vox_?VectorQ, opts : OptionsPattern[]] := Block[{labs},
+	(*all labels present in both segmentations*)
+	labs = CommonLabels[{ref, pred}];
+	CompareSegmentations[ref, pred, labs, vox, opts]
+]
+
+CompareSegmentations[segs_?AssociationQ, vox_?VectorQ, opts : OptionsPattern[]] := Block[{names, labs, pairs},
+	names = Keys[segs];
+
+	(*all labels present in all segmentations*)
+	labs = CommonLabels[Values[segs]];
+
+	(*every combination of two segmentations*)
+	pairs = Subsets[names, {2}];
+
+	Association[
+		(ToString[First[#]] <> " vs " <> ToString[Last[#]]) ->
+			CompareSegmentations[segs[First[#]], segs[Last[#]], labs, vox, opts] & /@ pairs
+	]
+]
+
+CompareSegmentations[ref_?ArrayQ, pred_?ArrayQ, labs_?VectorQ, vox_?VectorQ, OptionsPattern[]] := Block[{
+		met, metSurf, overlap, surf, cols
+	},
+
+	met = OptionValue[Method];
+	If[! ListQ[met], met = {met}];
+
+	(*check that all methods are known*)
+	If[! SubsetQ[$CompareMethods, met],
+		Message[CompareSegmentations::met, Complement[met, $CompareMethods], $CompareMethods];
+		Return[$Failed]
+	];
+
+	(*methods that are not overlap measures are surface distance measures*)
+	metSurf = Complement[met, {"Dice", "Jaccard"}];
+
+	(*one list of values, a value for each label, per measure*)
+	cols = <||>;
+
+	If[MemberQ[met, "Dice"],
+		cols["Dice"] = N[DiceSimilarity[ref, pred, labs]]
+	];
+
+	If[MemberQ[met, "Jaccard"],
+		cols["Jaccard"] = N[JaccardSimilarity[ref, pred, labs]]
+	];
+
+	If[metSurf =!= {},
+		surf = SurfaceDistance[ref, pred, labs, vox, Method -> metSurf];
+		(*a label that is missing in one of the segmentations gives noSeg for all methods*)
+		surf = If[ListQ[#], #, ConstantArray[#, Length[metSurf]]] & /@ surf;
+		(*the values per method, a value for each label*)
+		surf = N[Transpose[surf]];
+		cols = Join[cols, AssociationThread[metSurf, surf]]
+	];
+
+	(*rows are labels and columns are the measures in the order of the Method option*)
+	overlap = Transpose[Lookup[cols, met]];
+	Dataset[AssociationThread[labs, AssociationThread[met, #] & /@ overlap]]
+]
+
+
+$CompareMethods = {"Dice", "Jaccard", "Mean", "Median", "RMS", "RootMeanSquare", "HD", "Max", "Hausdorff", "HD95", "Hausdorff95", "Std", "StandardDeviation"};
+
+
+(* ::Subsubsection::Closed:: *)
+(*CommonLabels*)
+
+
+SyntaxInformation[CommonLabels] = {"ArgumentsPattern" -> {_}};
+
+CommonLabels[segs_List] := Block[{labs},
+	(*labels of each segmentation*)
+	labs = GetSegmentationLabels /@ segs;
+
+	(*only labels in all segmentations and without background*)
+	DeleteCases[Intersection @@ labs, 0]
 ]
 
 
@@ -3098,7 +3271,9 @@ SegmentDataGUI[] := DynamicModule[{inputFile, outputFile}, Block[{dat, vox, seg,
 Options[RunMuscleMap] = {
 	MuscleMapPythonEnvironment -> Automatic,
 	MuscleMapPath -> Automatic,
-	MuscleMapLabels -> False
+	MuscleMapLabels -> False,
+	TargetDevice -> "GPU",
+	Monitor -> False
 };
 
 SyntaxInformation[RunMuscleMap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
@@ -3107,8 +3282,10 @@ SyntaxInformation[RunMuscleMap] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 RunMuscleMap[input_, OptionsPattern[]] := Block[{
 		pyEnvironment, scriptMuscleMap, inFile, outFolder, logFile,
 		args, result, out, outMM, suffix, version, gpu, json,
-		namMM, numMM, nam, num, lab
+		namMM, numMM, nam, num, lab, mon
 	},
+
+	mon = If[OptionValue[Monitor], MonitorFunction, List];
 
 	(*resolve python environment*)
 	pyEnvironment = OptionValue[MuscleMapPythonEnvironment];
@@ -3132,7 +3309,7 @@ RunMuscleMap[input_, OptionsPattern[]] := Block[{
 	(*fixed settings for this first version*)
 	suffix = "MMap";
 	version = "1.4";
-	gpu = "Y";
+	gpu = If[OptionValue[TargetDevice] === "CPU", "N", "Y"];
 
 	(*output folder+log file setup*)
 	outFolder = FileNameJoin[{$TemporaryDirectory, "QMRIToolsMM"}];
@@ -3140,6 +3317,7 @@ RunMuscleMap[input_, OptionsPattern[]] := Block[{
 	If[! DirectoryQ[outFolder], Message[RunMuscleMap::noOutFol, outFolder]; 
 	Return[$Failed]];
 	logFile = FileNameJoin[{outFolder, "MuscleMap.log"}];
+	mon[outFolder, "MuscleMap output folder:"];
 
 	(*prepare input file:
 	either use path directly or export from Mathematica data*)
@@ -3154,8 +3332,10 @@ RunMuscleMap[input_, OptionsPattern[]] := Block[{
 	(*build and run the command*)
 	args = {pyEnvironment, scriptMuscleMap, "-i", inFile, "-o", outFolder, 
 		"-g", gpu, "-v", version, "-x", suffix};
+	mon["Running MuscleMap python script"];
 	result = RunProcess[args, All];
-	
+	mon[result["ExitCode"], "MuscleMap finished, exit code:"];
+
 	(*always write the log,regardless of success/failure*)
 	Export[logFile,
 	StringJoin["=== ", DateString[], " ===\n",
@@ -3174,15 +3354,23 @@ RunMuscleMap[input_, OptionsPattern[]] := Block[{
 	Return[$Failed]];
 
 	(*import the nii and json give the output*)
+	mon[outMM, "Importing segmentation:"];
 	out = First@ImportNii[outMM];
+	mon[Dimensions[out], "Segmentation imported with dimensions:"];
 
 	If[!OptionValue[MuscleMapLabels],
+		mon["Importing MuscleMap labels"];
 		{namMM, numMM} = ImportMMLabels[ Last@FileNames["*contrast_agnostic_wholebody_model.json", DirectoryName[scriptMuscleMap], Infinity]];
+		mon["Importing QMRITools labels"];
 		{nam, num} = ImportITKLabels["MuscleLabels"];
+		mon["Getting segmentation labels"];
 		lab = GetSegmentationLabels[out];
+		mon["Replacing segmentation labels"];
 		out = ReplaceSegmentations[out, lab, (lab /. Thread[numMM -> namMM]) /. Thread[nam -> num]];
 	];
+	mon["Importing json"];
 	json = Import[StringReplace[outMM, ".nii.gz" -> ".json"], "RawJSON"];
+	mon["MuscleMap done"];
 	{out, json}
 ]
 

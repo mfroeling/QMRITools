@@ -224,29 +224,17 @@ Reading the graph:
 - Helpers: `BuildHTMLDoc` (writes `build/QMRITools-html`), `CheckDocumentation`, `FuncTable`, `ShowStatus`.
 - Release notes live in `build/note_<version>.md`.
 
-**Documentation gaps measured 2026-09-22** (fixing them is doc work for the user, not code):
+**Documentation gaps measured 2026-10-16** (fixing them is doc work for the user, not code):
 
-- The main guide links to `LecacyTools` (a misspelling, and there is no such guide). It **doesn't link** the
-  `AmaresTools` or `NeuralNetworkTools` guides.
+- Every package guide matches its toolbox: no missing functions, stale or duplicate links, and no options listed
+  (`wolframscript -file agents/guidecheck.wls`, run it after changing public functions).
+- The main guide **doesn't link** the `AmaresTools` or `NeuralNetworkTools` guides.
 - Stale reference pages for symbols that no longer exist: `AugmentMask` (renamed `MaskedPretraining`),
   `MaxPatchSize`, `SegmentationResolution`, `ZeropadData`, `tempDir`, and a page named
-  ``QMRITools`NeuralNetworkTools`$debugUnet``.
-- Public symbols without a reference page: `MakeTrainData`, `TractMethod`, `TaggingParPlot` (new), plus Legacy
-  `PlotRespiract`, `ReadBrukerDiff`, `ROIMask`, `ShiftPar`, `SpectraFitResult`. `PlotDefGrid` moved from PlottingTools
-  to Legacy, so its page is now under Legacy.
-- Functions missing from their package guide:
-  - AmaresTools guide lists **none** of its 9 functions.
-  - SegmentationTools: `CopyTrainedNetwork`, `FreezeEncoderLayers`, `MakeChannelGrid`, `MakeTrainData`,
-    `RunMuscleMap`, `SplitDataForSegmentation`.
-  - NeuralNetworkTools: `ActivationLayer`, `AnalyzeNetworkFeatures`, `CELossFunction`, `CELossLayer`,
-    `ClassConfidence`.
-  - PlottingTools: `GenerateRotationFrames`, `LegendImage`, `LoessPlot`, `ShowLink`.
-  - GeneralTools: `FindMiddle`, `FitGradientMap`, `LightDarkV`, `MonitorFunction`, `ParseCommandLine`.
-  - 1–4 each in Nifti, Elastix, Denoise (`PCADeNoise`), Gradient, Spectro, Reconstruction, Tractography, Simulation,
-    Masking, Logging, Cardiac, Relaxometry, Fasciculation, Coil, Tagging, Shape, MuscleBids.
-
-  The script's option detection is approximate: a few "missing" names such as `DeNoiseKernel`, `MuscleMapPath`,
-  `MeshesPerRow`, `UseMask` and `SphereColor` are really options.
+  ``QMRITools`NeuralNetworkTools`$debugUnet`` (next to the valid `$debugUnet`). Legacy symbols such as `PlotDefGrid`
+  and `CSIInterface` keep their pages.
+- Public Legacy symbols without a reference page: `PlotRespiract`, `ReadBrukerDiff`, `ROIMask`, `ShiftPar`,
+  `SpectraFitResult`.
 
 ---
 

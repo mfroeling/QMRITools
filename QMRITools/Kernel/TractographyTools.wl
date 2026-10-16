@@ -939,21 +939,24 @@ FindTensorPermutation[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : Optio
 FindTensorPermutation[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {{par, {min, max}}}, opts]
 
 FindTensorPermutation[tens_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, stop_, opts : OptionsPattern[]] := Block[{
-		step, tracts, perms, flips, lengths, i, j, pl, ind
+		step, tracts, perms, flips, lengths, i, j, pl
 	},
-
 	perms = {{"x", "y", "z"}, {"x", "z", "y"}, {"y", "x", "z"}, {"y","z", "x"}, {"z", "x", "y"}, {"z", "y", "x"}};
 	flips = {{1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}};
-	ind = {1, 1};
 
-	PrintTemporary[Dynamic[{ind, flips[[ind[[1]]]], perms[[ind[[2]]]]}]];
+	Module[{ind = {1, 1}},
+	PrintTemporary[Dynamic[{ind, flips[[ ind[[1]] ]], perms[[ ind[[2]] ]] } ]];
 	lengths = Table[
 		ind = {i, j};
-		tracts = First@FiberTractography[tens, vox, stop, TractMonitor -> False, TensorFlips -> flips[[i]], TensorPermutations -> perms[[j]], Parallelization -> False,
-			(Sequence[# -> OptionValue[#] & /@ FilterRules[Options[FiberTractography], Options[FindTensorPermutation]][[All, 1]]])
+		tracts = First@FiberTractography[tens, vox, stop, 
+			TractMonitor -> False, TensorFlips -> flips[[i]], TensorPermutations -> perms[[j]], 
+			Parallelization -> False,
+			(Sequence[# -> OptionValue[#] & /@ FilterRules[Options[FiberTractography], 
+				Options[FindTensorPermutation]][[All, 1]]])
 		];
 		N@Mean[Length /@ tracts]
-	, {i, 1, 4}, {j, 1, 6}];
+	, {i, 1, 4}, {j, 1, 6}]
+	];
 
 	pl = ArrayPlot[lengths, ColorFunction -> "Rainbow", ImageSize -> 150, Frame -> True, 
 		FrameTicks -> {{Thread[{Range[4], flips}], None},{None, Thread[{Range[6], Rotate[#, 90 Degree] & /@ perms}]}}];

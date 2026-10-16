@@ -323,11 +323,23 @@ Gaussian smoothing, browse/reload, and export to `TrainLogPlot.png`.
 
 ## 9. Metrics, labels, external tools
 
-- `DiceSimilarity` / `JaccardSimilarity` (compiled): per class, with **+1 smoothing** in numerator and denominator,
-  so two empty segmentations score 1.
+- `DiceSimilarity` / `JaccardSimilarity`: per class, with **+1 smoothing** in numerator and denominator, so two empty
+  segmentations score 1. A single class uses a compiled function. A list of classes uses `ClassOverlap`, which gets the
+  intersections and sizes of all classes from three `Counts` calls (each voxel pair encoded as one integer), about
+  100x faster than a pass per class.
 - `SurfaceDistance` gives symmetric surface distances between `GetEdge` perimeters (scaled by vox). `Method` is
   `Mean | Median | RMS | HD | HD95` (default) `| Std`, or a list of them. It returns `"noSeg"` if either
-  segmentation is empty.
+  segmentation is empty. The list-of-classes form gets every label's bounding box once with `LabelBoxes` (positions
+  sorted by label), crops both volumes to the union box per class and calls `SurfaceDistanceI` (edges, `Nearest`,
+  distances). The single-class form crops with `FindCrop` and calls the same `SurfaceDistanceI`.
+- `CompareSegmentations[ref, pred, (labs,) vox]` gives a Dataset (row per label, column per measure). The `Method` option
+  takes `"Dice"`, `"Jaccard"` or any `SurfaceDistance` method, or a list (default `{"Dice", "HD95"}`). With an
+  association of named segmentations, `CompareSegmentations[segs, vox]` compares every pair on the labels common to all
+  (`CommonLabels`) and returns `"a vs b" -> Dataset`. A label missing in one segmentation gives `"noSeg"` for the
+  surface measures.
+- `ReplaceSegmentations` / `SelectSegmentations` (MaskingTools) relabel a dense label volume with a lookup table and
+  only split into masks when `join` is False. Split `{masks, labels}` input still takes the select-and-rename path.
+  Labels must be non-negative integers for the lookup.
 - `MakeDistanceMap[mask, vox, DistanceRange->Automatic|All|0|n]` returns a signed distance to the mask edge:
   positive inside the mask, negative outside.
 - `ImportITKLabels[file|asset, "Labels"|"Names"|"List"]` parses ITK-SNAP label files. Names become
@@ -342,7 +354,8 @@ Gaussian smoothing, browse/reload, and export to `TrainLogPlot.png`.
 - `RunMuscleMap[file | {data, vox}]` shells out to an external MuscleMap conda environment (auto-detected in
   `~/.conda|miniconda3|anaconda3/envs/MuscleMap`; the script is found through `pip show scripts`). It works in
   `$TemporaryDirectory/QMRIToolsMM` and writes a log. Labels are converted to the QMRITools `MuscleLabels` through
-  name matching (`ImportMMLabels` alias table) unless `MuscleMapLabels->True`. It returns `{seg, json}`.
+  name matching (`ImportMMLabels` alias table) unless `MuscleMapLabels->True`. `TargetDevice` (`"GPU"` default, `"CPU"`) sets the `-g` flag of `mm_segment.py` and
+  `Monitor->True` reports the steps through `MonitorFunction`. It returns `{seg, json}`.
 - `SegmentDataGUI[]` is a simple dialog (Legs/UpperLegs/LowerLegs/Shoulder, CPU only). See Q2.
 
 ---
@@ -429,7 +442,7 @@ producer-status grid (Produced/Used per link), and check `ReadLinkL` timeouts (1
 | `PrepareTrainingData`, `SelectTrainData`, `PrepTrainData`, `CheckSegmentation` | L2376–2533 | data prep and QC |
 | `GridLayout`, `MakeChannelClassGrid`, `MakeChannelGrid`, `MakeChannelClassImage`, `MakeClassImage`, `MakeChannelImage` | L2547–2660 | images |
 | `MakeTrainData`, `NormDat` | L2672 | contrast-blended multi-channel training data (WIP), input for `PrepareTrainingData` |
-| `DiceSimilarity(C)`, `JaccardSimilarity(C)`, `SurfaceDistance`, `SufDistFunc`, `GetEdge` | L2695–2819 | metrics |
+| `DiceSimilarity(C)`, `JaccardSimilarity(C)`, `ClassOverlap`, `CompareSegmentations`, `CommonLabels`, `SurfaceDistance`, `SurfaceDistanceI`, `LabelBoxes`, `SufDistFunc`, `GetEdge` | L2695–2819 | metrics |
 | `MakeDistanceMap`, `DistFun` | L2833, L2868 | signed distance |
 | `ShowTrainLog`, `LoadLog` | L2881, L2982 | training log viewer |
 | `SegmentDataGUI` | L3007 | dialog |

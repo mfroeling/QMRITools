@@ -55,6 +55,10 @@ Each guide's header links to the related guides. The shared topics are:
   - Misses runtime-built calls (`ToExpression`, `Symbol[...]`, `LinkWrite`) and callers in notebooks outside the repo.
   For humans: ``Needs["CodeGraph`"]; cg = ImportCodeGraph["<repo>/agents/callgraph"]``, then `PackageGraph[cg]` or
   `SymbolGraph[cg, "name", depth, "In"|"Out"|"Both"]` in a notebook.
+- **Guide pages** (`QMRITools/Documentation/English/Guides/*.nb`) list the functions of one toolbox each, never
+  options. `wolframscript -file agents/guidecheck.wls [Toolbox ..]` (fresh kernel, ~1 min) reports per guide the
+  public functions that are missing, the links that are stale or renamed, duplicates, and functions without a
+  reference page. Run it after adding, renaming or removing a public function, and fix the guide to match.
 - **Public symbols** need a `::usage` in the front "Usage Notes" section, and `Options`/`SyntaxInformation`.
   Otherwise the function stays private.
 - **Research notebooks** that call the package live outside the repo on the author's machine. A function with no

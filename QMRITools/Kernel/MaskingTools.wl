@@ -572,20 +572,38 @@ ReplaceSegmentations[seg_, labSel_, labNew_] := SelectReplaceSegmentations[seg, 
 (*SelectReplaceSegmentations*)
 
 
-SelectReplaceSegmentations[segI_, labSel_, labNew_, join_] := Block[{split, seg, lab, sel, or},
+SelectReplaceSegmentations[segI_, labSel_, labNew_, join_] := Block[{split, seg, lab, sel, or, map},
+	(*dense label volume or split {masks, labels}*)
 	split = If[Length[segI] == 2, If[VectorQ[segI[[2]]], False, True], True];
-	{seg, lab} = If[split, SplitSegmentations[segI], segI];
 
-	sel = MemberQ[labSel, #] & /@ lab;
-
-	If[AllTrue[sel, # === False &],
-		If[split, 0 MergeSegmentations[seg, lab], {0 seg[[All,1]], {}}]
+	If[split,
+		(*dense volume: replace labels with a lookup table and only split when needed*)
+		(*labels present in the volume*)
+		lab = GetSegmentationLabels[segI];
+		(*lookup table, label l is stored at position l+1*)
+		map = ConstantArray[0, Max[lab, 0] + 1];
+		(*new label for selected labels, 0 for the others*)
+		map[[lab + 1]] = If[MemberQ[labSel, #], # /. Thread[labSel -> labNew], 0] & /@ lab;
+		(*look up every voxel and restore the volume shape*)
+		seg = ToPackedArray@ArrayReshape[map[[Flatten[Round[segI]] + 1]], Dimensions[segI]];
+		(*joined volume or split masks and labels*)
+		If[join, seg, SplitSegmentations[seg]]
 		,
-		seg = Transpose[Pick[Transpose[seg], sel, True]];
-		lab = Pick[lab /. Thread[labSel->labNew], sel, True];
-		or = Ordering[lab];
+		(*already split: select and rename the masks*)
+		{seg, lab} = segI;
+		(*masks that are selected*)
+		sel = MemberQ[labSel, #] & /@ lab;
 
-		If[split && join, MergeSegmentations[seg, lab], {seg[[All, or]], lab[[or]]}]
+		If[AllTrue[sel, # === False &],
+			{0 seg[[All, 1]], {}}
+			,
+			(*keep selected masks with their new labels*)
+			seg = Transpose[Pick[Transpose[seg], sel, True]];
+			lab = Pick[lab /. Thread[labSel -> labNew], sel, True];
+			(*sort by new label*)
+			or = Ordering[lab];
+			{seg[[All, or]], lab[[or]]}
+		]
 	]
 ]
 
