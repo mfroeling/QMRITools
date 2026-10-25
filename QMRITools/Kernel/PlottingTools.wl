@@ -58,15 +58,20 @@ PlotContour::usage =
 "PlotContour[data, vox] creates a contour of the data. 
 The data can be 3D or 4D, when its 4D each contour is given a random color."
 
-PlotSegmentations::usage = 
+$debugPlot::usage = "$debugPlot is a debug flag for the functions in PlottingTools, when True the progress and memory use are printed."
+
+PlotSegmentations::usage =
 "PlotSegmentations[seg, vox] crates a contour of each of the segmentations in seg. Uses PlotContour.
 PlotSegmentations[seg, bone, vox] same but also generates an extra contour with the bones in gray."
 
 Link3DGraphic::usage =
 "Link3DGraphic[3Dgraphics] creates a 3D graphic with a linked view options between all 3D graphics that have been linked."
 
-ShowLink::usage =
-"ShowLink[] shows the linked view options between all 3D graphics that have been linked."
+ResetLink3DGraphic::usage =
+"ResetLink3DGraphic[] resets the linked view options of all 3D graphics that have been linked with Link3DGraphic to their defaults."
+
+ShowLink3DGraphic::usage =
+"ShowLink3DGraphic[] shows the linked view options between all 3D graphics that have been linked."
 
 GenerateRotationFrames::usage =
 "GenerateRotationFrames[3Dgraphics, nFrames] generates nFrames of the 3D graphics rotating around the z-axis."
@@ -128,7 +133,10 @@ ContourSmoothRadius::usage =
 ContourResolution::usage = 
 "ContourResolution is an option for PlotContour. It defines the mesh resolution used, can be a single number or a list of 3 numbers."
 
-RandomizeColor::usage = 
+ColorLabels::usage =
+"ColorLabels is an option for PlotSegmentations. If a list of labels is given only these labels are plotted and each label gets a fixed color based on its position in the list. Default is Automatic, which uses the labels in the segmentation."
+
+RandomizeColor::usage =
 "RandomizeColor is an option for PlotSegmentations. If True the colors are randomly assigned to each segmentation."
 
 
@@ -210,6 +218,16 @@ Begin["`Private`"]
 
 (* ::Subsection:: *)
 (*General Plot Functions and definitions*)
+
+
+(* ::Subsubsection::Closed:: *)
+(*Debug*)
+
+
+debugPlot[x___] := If[$debugPlot, Print[x, "  | memory MB: ", Round[MemoryInUse[]/10^6]]];
+
+
+$debugPlot = False;
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1692,8 +1710,10 @@ PlotContour[dati_, opts:OptionsPattern[]]:=PlotContour[dati, {1,1,1}, opts]
 
 PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 		data, smooth, color, opac, dim , pad, col, style, crp, spec,
-		ran, coldat, colfunc, scale, range, reso, cdim, cfunc
+		ran, coldat, colfunc, scale, range, reso, cdim, cfunc, out
 	},
+
+	debugPlot["PlotContour start: dims ", Dimensions[dati], " vox ", vox];
 
 	If[ArrayDepth[dati]===4,
 		SeedRandom[12345];
@@ -1714,7 +1734,7 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 			data = ArrayPad[data, pad];
 
 			If[IntegerQ[smooth], If[smooth>0, data = GaussianFilter[data, smooth]]];
-			data = SparseArray[data];
+			data = Normal[data];
 
 			col = If[ColorQ[color], color, If[color==="Random", RandomColor[], GrayLevel[1.]]];
 			style = Directive[{Opacity[opac], col, Specularity[Lighter@col, spec]}];
@@ -1746,7 +1766,9 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 			range = Reverse[Partition[crp, 2]] + {{-pad-1, pad}, {-pad-1, pad}, {-pad-1, pad}};
 			dim = Reverse[dim];
 
-			ListContourPlot3D[data,
+			debugPlot["PlotContour before ListContourPlot3D: MaxPlotPoints ", reso, " range ", range];
+
+			out = ListContourPlot3D[data,
 				Contours -> {0.5}, Lighting -> "ThreePoint",
 				Mesh -> False, BoundaryStyle -> None, Axes -> True, 
 				SphericalRegion -> True,ColorFunctionScaling -> False, 
@@ -1759,7 +1781,10 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 				DataRange -> scale range,
 				BoxRatios -> scale dim,
 				PlotRange -> Thread[{0, scale dim}]
-			]
+			];
+
+			debugPlot["PlotContour done"];
+			out
 		]
 	]
 ]
@@ -1769,11 +1794,19 @@ PlotContour[dati_, vox_, opts:OptionsPattern[]] := Block[{
 (*Link3DGraphic*)
 
 
-viewPoint = {1.3, -2.4, 2.0};
-viewVertical = {0., 0., 1.};
-viewAngle = 20. Degree;
-viewCenter = {0.5, 0.5, 0.5};
+SyntaxInformation[ResetLink3DGraphic] = {"ArgumentsPattern" -> {}};
 
+ResetLink3DGraphic[] := (
+	viewPoint = {1.3, -2.4, 2.0};
+	viewVertical = {0., 0., 1.};
+	viewAngle = 20. Degree;
+	viewCenter = {0.5, 0.5, 0.5};
+);
+
+
+SyntaxInformation[Link3DGraphic] = {"ArgumentsPattern" -> {_}};
+
+ResetLink3DGraphic[];
 Link3DGraphic[graphics_]:=Show[graphics, SphericalRegion -> True, 
 	ViewPoint -> Dynamic[viewPoint],
 	ViewVertical -> Dynamic[viewVertical],
@@ -1782,11 +1815,14 @@ Link3DGraphic[graphics_]:=Show[graphics, SphericalRegion -> True,
 ]
 
 
-ShowLink[]:=Dynamic[Grid[{
+SyntaxInformation[ShowLink3DGraphic] = {"ArgumentsPattern" -> {}};
+
+ShowLink3DGraphic[]:=Dynamic[Grid[{
 	{"ViewPoint: ", Round[viewPoint,.01]}, 
 	{"ViewVertical: ", Round[viewVertical,.01]}, 
 	{"ViewAngle: ", Round[viewAngle/Degree,.01]}, 
 	{"ViewCenter: ", Round[viewCenter,.01]}}, Alignment -> Left]]
+
 
 (* ::Subsection::Closed:: *)
 (*GenerateRotationFrames*)
@@ -1822,6 +1858,7 @@ Options[PlotSegmentations] = {
 	ColorFunction -> "RomaO", 
 	ContourSmoothRadius -> 2,
 	RandomizeColor -> True,
+	ColorLabels -> Automatic,
 	ContourResolution -> Automatic
 };
 
@@ -1832,15 +1869,18 @@ PlotSegmentations[seg_, vox_, opts : OptionsPattern[]] := PlotSegmentations[seg,
 
 PlotSegmentations[segI_, boneI_, vox_, opts : OptionsPattern[]] := Block[{
 		seg, bone,
-		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op, res, spec
+		smooth, size, plotb, segM, nSeg, rSeg, cols, plotm, ranCol, op, res, spec,
+		colLabs, labs, ref, keep
 	},
-	{smooth, cols, size, ranCol, op, res, spec} = OptionValue[{ContourSmoothRadius, ColorFunction, ImageSize, 
-		RandomizeColor, ContourOpacity, ContourResolution, ContourSpecularity}];
+	{smooth, cols, size, ranCol, op, res, spec, colLabs} = OptionValue[{ContourSmoothRadius, ColorFunction, ImageSize,
+		RandomizeColor, ContourOpacity, ContourResolution, ContourSpecularity, ColorLabels}];
 
 	{seg, bone} = If[IntegerQ[boneI],
 		{SelectSegmentations[segI, Range[1, boneI]], SelectSegmentations[segI, Range[boneI+1, Max[segI]]]},
 		{segI, boneI}
 	];
+
+	debugPlot["PlotSegmentations start: dims ", Dimensions[seg], " bone ", If[ArrayQ[bone], Dimensions[bone], bone]];
 
 	plotb = Which[
 		ArrayQ[bone],
@@ -1851,24 +1891,32 @@ PlotSegmentations[segI_, boneI_, vox_, opts : OptionsPattern[]] := Block[{
 		True, Graphics3D[]
 	];
 
-	plotm = If[N[Max[seg]] === 0., 
+	plotm = If[N[Max[seg]] === 0.,
 		Graphics3D[],
 
-		segM = If[ArrayDepth[seg]===3, First@SplitSegmentations[seg], seg];
-		nSeg = Length@First@segM;
-		rSeg = Range[nSeg];
+		{segM, labs} = If[ArrayDepth[seg]===3, SplitSegmentations[seg], {seg, Range[Length@First@seg]}];
+		ref = If[colLabs === Automatic, labs, colLabs];
+		keep = Select[Range[Length@labs], MemberQ[ref, labs[[#]]] &];
+		segM = segM[[All, keep]];
+		labs = labs[[keep]];
+		nSeg = Length@keep;
+		rSeg = Range[Length@ref];
 
 		If[ColorQ[cols],
 			cols = ConstantArray[cols, nSeg];,
 			cols = Reverse[ColorData[OptionValue[ColorFunction]] /@ Rescale[rSeg]];
 			If[ranCol, SeedRandom[1234]; cols = cols[[RandomSample[rSeg]]]];
+			cols = cols[[Flatten[FirstPosition[ref, #] & /@ labs]]];
 		];
 
-		Show[Table[PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op, 
-			ContourSpecularity -> spec, ContourSmoothRadius -> smooth, 
+		Show[Table[
+			debugPlot["PlotSegmentations label ", i, "/", nSeg, ": ", labs[[i]]];
+			PlotContour[segM[[All, i]], vox, ContourColor -> cols[[i]], ContourOpacity -> op,
+			ContourSpecularity -> spec, ContourSmoothRadius -> smooth,
 			ContourResolution -> res], {i, 1, nSeg}]]
 	];
 
+	debugPlot["PlotSegmentations final Show"];
 	Show[plotm, plotb, ViewPoint -> Front, ImageSize -> size, Boxed -> False, Axes -> False, SphericalRegion -> True]
 ]
 

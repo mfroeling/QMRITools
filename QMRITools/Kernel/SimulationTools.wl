@@ -97,10 +97,11 @@ PlotSimulationVec::usage =
 
 GESignal::usage = 
 "GESignal[ang, {tr, t1}] calculates the gradient echo signal for flip angles ang using tr and t1. 
-GESignal[ang, {{tr1, tr2}, t1}] calculates the dual tr gradient echo signal for flip angles ang using tr1, tr2 and t1."
+GESignal[ang, {{tr1, tr2}, t1}] calculates the dual tr gradient echo signal for flip angles ang using tr1, tr2 and t1.
+GESignal[ang, {{tr1, tr2}, t1}, f] does the same but the flip angle of the second tr is f ang."
 
 SimulateDualTR::usage =
-"SimulateDualTR[] simulates the signal of a Dual tr t1 map."
+"SimulateDualTR[] simulates the signal of a Dual tr t1 map, with an adjustable flip angle ratio between the second and first tr."
 
 ErnstAngle::usage = 
 "ErnstAngle[] shows Ernst angle plot for t1 = 1400ms and tr = 15 ms.
@@ -634,7 +635,7 @@ GetPulseProfileI[{name, flipAngleI, {gradStrengthI, durationI, bandwidthI}}, ops
 			ListLinePlot[out[[All, {1, 3}]], PlotRange -> {-1.1, 1.1}, GridLines -> {{-slice, slice}, {-1, 0, 1}}, PlotLabel -> "Mz", opts],
 			ListLinePlot[{out[[All, {1, 4}]], out[[All, {1, 5}]]}, PlotRange -> {-1.1, 1.1}, GridLines -> {{-slice, slice}, {-1, 1}}, PlotLabel -> "Mx / My", opts]
 		}
-	}, ImageSize -> 800, PlotLabel -> info, LabelStyle -> Black];
+	}, ImageSize -> 800, PlotLabel -> info, LabelStyle -> LightDarkV[]];
 	
 	(*give full output and plot*)
 	{Transpose@output, plot, 2 slice}
@@ -705,7 +706,7 @@ SimulateSliceEPG[excitation_, refocus_, {{t1_, t2_}, {nEcho_, echoSp_}, b1_}, Op
 	, {m, 2, len, 1}];
 	
 	PrependTo[plots, ParametricPlot3D[sigInd[[1, Round[#]]] &[n], {n, 1, nEcho}, PlotStyle -> Directive[{Dashed, Darker@Gray}, PlotRange -> Full]]];
-	text = Graphics3D[Text[Style["Mean signal (colored line)\nMid slice signal (gray line)", Bold, Black], {0, 0.5 nEcho, 1.3 max}]];
+	text = Graphics3D[Text[Style["Mean signal (colored line)\nMid slice signal (gray line)", Bold, LightDarkV[]], {0, 0.5 nEcho, 1.3 max}]];
 	vv = {0.24, 0.19, 0.95};
 	vp = {2.57, 1.90, 1.08};
 	va = 35 Degree;
@@ -713,11 +714,11 @@ SimulateSliceEPG[excitation_, refocus_, {{t1_, t2_}, {nEcho_, echoSp_}, b1_}, Op
 	(*Column[Flatten@{
 	"  ", info, fit,*)
 	Show[plots, lines, prof, (*text,*) BoxRatios -> 1, PlotRange -> {{0, len}, {0, nEcho}, {-0., 1.1 max}}, 
-		BoxStyle -> Directive[{Thick, Black}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
+		BoxStyle -> Directive[{Thick, LightDarkV[]}], SphericalRegion -> True, ViewVertical -> vv, ViewPoint -> vp, 
 		ViewAngle -> va, ImageSize -> 400,FrameLabel->{}, 
 		Axes -> True, (*AxesLabel -> {"Slice Profile", "Nr. echos", "Normalized\nSignal"},*) 
 		AxesEdge -> {{1, -1}, {1, -1}, {1, -1}},
-		Ticks -> False, LabelStyle -> Directive[{Bold, Black}]
+		Ticks -> False, LabelStyle -> Directive[{Bold, LightDarkV[]}]
 	]
 	(*}, Alignment -> Center, Spacings -> 0]*)
 ]
@@ -915,7 +916,7 @@ Module[{bins,surface,wBins,fit,par,vec,ang,x,theta},
 sizes={200,300,400,500,750,1000,1500,2000,2500,3000};
 files={".pdf",".jpg",".gif",".tif",".png"};
 
-labStyle = Directive[Bold,FontFamily->"Helvetica",14,Black];
+labStyle = Directive[Bold,FontFamily->"Helvetica",14,LightDarkV[]];
 unit = " [\!\(\*SuperscriptBox[\(10\), \(-3\)]\) \!\(\*SuperscriptBox[\(mm\), \(2\)]\)/s]";
 
 lambda[x_] :="\!\(\*SubscriptBox[\"\[Lambda]\", \"" <> ToString[x] <> "\"]\)";
@@ -947,9 +948,9 @@ PlotSimulationHist[pars_,label_,xData_,tr_]:=DynamicModule[{yRange,xLabel,exp},
 				Histogram[Flatten[pars[[y,1,#]]],{yRange[[#,2]]/50},"ProbabilityDensity",PlotRange->{yRange[[#]],{0,1.1Max[pars[[y,2,#,All,2]]]}},
 				PerformanceGoal->"Speed",AxesOrigin->{0,0},LabelStyle->labStyle,
 				FrameLabel->{xLabel[[#]],"Probability density"},Axes->False,FrameStyle->Thick,Frame->{True,True,False,False},ChartBaseStyle->EdgeForm[{Thin,White}],ChartStyle->Gray],
-				ListPlot[pars[[y,2,#]],Joined->True,PlotStyle->{Thick,Black},PlotRange->{yRange[[#]],{0,1.1Max[pars[[y,2,#,All,2]]]}}],
+				ListPlot[pars[[y,2,#]],Joined->True,PlotStyle->{Thick,LightDarkV[]},PlotRange->{yRange[[#]],{0,1.1Max[pars[[y,2,#,All,2]]]}}],
 				Plot[pars[[y,3,#]][x],{x,yRange[[#,1]],yRange[[#,2]]},PlotStyle->{Thick,Red},PlotRange->{yRange[[#]],{0,1.1Max[pars[[y,2,#,All,2]]]}}],
-				ListLinePlot[{{tr[[#]],0},{tr[[#]],1.1Max[pars[[y,2,#,All,2]]]}},PlotStyle->Directive[Thick,Black,Dashed]]
+				ListLinePlot[{{tr[[#]],0},{tr[[#]],1.1Max[pars[[y,2,#,All,2]]]}},PlotStyle->Directive[Thick,LightDarkV[],Dashed]]
 				]&/@{1,2,3,4,5})[[xx]],ImageSize->Length[xx]*400,PlotLabel->Style[label<>"  -  "<>ToString[xData[[y]]],16],LabelStyle->labStyle]
 			]
 		,
@@ -1010,7 +1011,7 @@ Module[{exp},
 					FrameLabel->{"Error "<>epsilon[#]<>" [\[Degree]]","Probability density"},
 					Axes->False,FrameStyle->Thick,Frame->{True,True,False,False},ChartBaseStyle->EdgeForm[{Thin,White}],ChartStyle->Gray],
 					ListPlot[pars[[y,2,#,1]],Joined->True,PlotStyle->{Thick,Darker[Gray]},PlotRange->{{0,90},{0,1.1Max[pars[[y,2,#]]]}}],
-					ListPlot[pars[[y,2,#,2]],Joined->True,PlotStyle->{Thick,Black},PlotRange->{{0,90},{0,1.1Max[pars[[y,2,#]]]}}],
+					ListPlot[pars[[y,2,#,2]],Joined->True,PlotStyle->{Thick,LightDarkV[]},PlotRange->{{0,90},{0,1.1Max[pars[[y,2,#]]]}}],
 					Plot[pars[[y,3,#]][x],{x,1,90},PlotStyle->{Thick,Red},PlotRange->{{0,90},{0,1.1Max[pars[[y,2,#]]]}}]
 					]&/@{1,2,3}
 				,ImageSize->1200,LabelStyle->labStyle,PlotLabel->Style[label<>" - "<>ToString[xData[[y]]],16]]
@@ -1176,14 +1177,18 @@ GESignal[ang_?NumberQ, {tr_, t1_}] := Block[{e1, a},
 ];
 
 
-GESignal[ang_?ListQ, {{tr1_, tr2_}, t1_}] := Transpose[GESignal[#, {{tr1, tr2}, t1}] & /@ ang]
+GESignal[ang_, {{tr1_, tr2_}, t1_}] := GESignal[ang, {{tr1, tr2}, t1}, 1]
 
-GESignal[ang_?NumberQ, {{tr1_, tr2_}, t1_}] := Block[{a, e1, e2, s1, s2},
-	a = N[ang Degree];
+GESignal[ang_?ListQ, {{tr1_, tr2_}, t1_}, f_] := Transpose[GESignal[#, {{tr1, tr2}, t1}, f] & /@ ang]
+
+GESignal[ang_?NumberQ, {{tr1_, tr2_}, t1_}, f_] := Block[{a1, a2, e1, e2, den, s1, s2},
+	a1 = N[ang Degree];
+	a2 = N[f ang Degree];
 	e1 = Exp[-tr1/t1];
 	e2 = Exp[-tr2/t1];
-	s1 = Sin[a] (1 - e2 + (1 - e1) e2 Cos[a])/(1 - e1 e2 (Cos[a])^2);
-	s2 = Sin[a] (1 - e1 + (1 - e2) e1 Cos[a])/(1 - e1 e2 (Cos[a])^2);
+	den = 1 - e1 e2 Cos[a1] Cos[a2];
+	s1 = Sin[a1] (1 - e2 + (1 - e1) e2 Cos[a2])/den;
+	s2 = Sin[a2] (1 - e1 + (1 - e2) e1 Cos[a1])/den;
 	{s1, s2}
 ]
 
@@ -1195,36 +1200,55 @@ GESignal[ang_?NumberQ, {{tr1_, tr2_}, t1_}] := Block[{a, e1, e2, s1, s2},
 SyntaxInformation[SimulateDualTR] = {"ArgumentsPattern" -> {_.}};
 
 SimulateDualTR[t1_ : 6000] := Manipulate[
-	{s1, s2} = GESignal[ang, {{tr1, n tr1}, t1}]/0.35;
+	{s1, s2} = GESignal[ang, {{tr1, n tr1}, t1}, fr]/0.35;
 	s2a = Abs[s2];
+	(* reference: 50 - 950 ms, 60 degree, ratio 1 *)
+	sRef = First[GESignal[60, {{50, 950}, t1}, 1]]/0.35;
 	p1=s1[[Round[fa]]];
 	p2=s2a[[Round[fa]]];
 	Column[{
 		Row[{
-			ListLinePlot[{s1, s2a}, PlotRange -> If[! r, Full, {-0, 1}], ImageSize -> 350, PlotStyle -> (Directive[{Thick, #}] & /@ {Black, Red}),
-				AxesStyle -> Directive[{Thick, Black}], LabelStyle -> Directive[Bold, 14, Black], PlotLabel -> "Signal as function of flip angle",
+			ListLinePlot[{s1, s2a}, PlotRange -> If[! r, Full, {0, 1.05 Max[s1, s2a]}], ImageSize -> 350, PlotStyle -> (Directive[{Thick, #}] & /@ {LightDarkV[], Red}),
+				AxesStyle -> Directive[{Thick, LightDarkV[]}], LabelStyle -> Directive[Bold, 14, LightDarkV[]], PlotLabel -> "Signal as function of flip angle",
 				GridLines -> {{fa}, {p1, p2}},
-				Epilog -> {PointSize[Large], Black, Point[{fa, p1}], Red, Point[{fa, p2}]}],
-			ListLinePlot[s2a/s1, PlotRange -> {0, 1.1}, ImageSize -> 350, PlotStyle -> Directive[{Black, Thick}], 
-				AxesStyle -> Directive[{Thick, Black}], LabelStyle -> Directive[Bold, 14, Black], PlotLabel -> "Signal ratio as function of flip angle",
+				Epilog -> {PointSize[Large], LightDarkV[], Point[{fa, p1}], Red, Point[{fa, p2}]}],
+			ListLinePlot[s2a/s1, PlotRange -> {0, Max[1.1, 1.05 First[s2a/s1]]}, ImageSize -> 350, PlotStyle -> Directive[{LightDarkV[], Thick}], 
+				AxesStyle -> Directive[{Thick, LightDarkV[]}], LabelStyle -> Directive[Bold, 14, LightDarkV[]], PlotLabel -> "Signal ratio as function of flip angle",
 				GridLines -> {{fa}, {p2/p1}},
-				Epilog -> {PointSize[Large], Black, Point[{fa, p2/p1}]}]
+				Epilog -> {PointSize[Large], LightDarkV[], Point[{fa, p2/p1}]}]
 			}, "         "],"",
-		Style["TR1: " <> ToString[tr1] <> " ms  -  TR2: " <> ToString[n tr1] <>" ms  -  Total time: " <> ToString[tr1 + n tr1] <> " ms", Bold, 14, Black, FontFamily -> "Helvetica"], "",
-		Style["max. sig: " <> ToString[Round[Max[s1], .01]] <> "  -  sig per unit time: " <> ToString[Round[1000 Max[s1]/(tr1 + n tr1), .01]], Bold, 14, Black, FontFamily -> "Helvetica"], "",
-		Style["sig per unit time at fa  - s1: " <> ToString[Round[1000 p1/(tr1 + n tr1), .01]]<>"  -  s2: "<>ToString[Round[1000 p2/(tr1 + n tr1), .01]], Bold, 14, Black, FontFamily -> "Helvetica"]
+		Grid[{{
+		Grid[{
+			{"", "Pulse 1", Style["Pulse 2", Red]},
+			{"TR [ms]", tr1, Style[n tr1, Red]},
+			{"FA [\[Degree]]", fa, Style[Round[fr fa], Red]},
+			{"signal", Round[p1, .01], Style[Round[p2, .01], Red]},
+			{"signal per unit time", Round[1000 p1/(tr1 + n tr1), .01], Style[Round[1000 p2/(tr1 + n tr1), .01], Red]}
+		}, Alignment -> {{Left, Right, Right}}, Spacings -> {2, 0.8}, Dividers -> {None, {2 -> True}},
+			BaseStyle -> {Bold, 14, FontFamily -> "Helvetica", FontColor -> LightDarkV[]}],
+			Grid[{
+			{"total time [ms]", tr1 + n tr1},
+			{"max. signal (pulse 1)", Round[Max[s1], .01]},
+			{"max. signal per unit time", Round[1000 Max[s1]/(tr1 + n tr1), .01]},
+			{"relative signal per unit time [%]", Round[100 (p1/(tr1 + n tr1))/(sRef/1000), 1]},
+			{"relative power per unit time [%]", Round[100 ((fa^2 + (fr fa)^2)/(tr1 + n tr1))/((2 60^2)/1000), 1]}
+		}, Alignment -> {{Left, Right}}, Spacings -> {2, 0.8},
+			BaseStyle -> {Bold, 14, FontFamily -> "Helvetica", FontColor -> LightDarkV[]}]
+		}}, Alignment -> {Left, Top}, Spacings -> {4, 0}]
 	}, Alignment -> Center]
 	, {{tr1, 50, "first tr"}, 10, 100, 10, ControlType -> Manipulator}
 	, {{n, 19, "tr ratio"}, 2, 20, 1, ControlType -> Manipulator}
 	, {{fa, 60, "flip angle"}, ang, ControlType -> Manipulator}
+	, {{fr, 1, "flip angle ratio"}, 1, Dynamic[180/fa], 0.1, ControlType -> Manipulator}
 	, {{r, True, "fix scale"}, {True, False}}
 	, {ang, ControlType -> None}
 	, {s1, ControlType -> None}
 	, {s2, ControlType -> None}
 	, {s2a, ControlType -> None}
+	, {sRef, ControlType -> None}
 	, {p1, ControlType -> None}
 	, {p2, ControlType -> None}
-	, Initialization :> (ang = Range[1, 180])
+	, Initialization :> (ang = Range[1, 179])
 ]
 
 

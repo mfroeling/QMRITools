@@ -882,7 +882,7 @@ SetMXenvironment[what_]:=SetEnvironment[Switch[what,
 		"MXNET_GPU_MEM_POOL_TYPE" -> "Unpooled",
 		"MXNET_CUDA_ALLOW_TENSOR_CORE" -> "1",
 		"MXNET_CUDA_TENSOR_OP_MATH_ALLOW_CONVERSION" -> "0",
-		"MXNET_CPU_WORKER_NTHREADS" -> ToString[$ProcessorCount],
+		"MXNET_CPU_WORKER_NTHREADS" -> ToString[Round[$ProcessorCount/4]],
 		"OMP_NUM_THREADS" -> ToString[$ProcessorCount]
 	},
 	"StartTrain",

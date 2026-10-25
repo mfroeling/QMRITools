@@ -41,11 +41,13 @@ QMRITools`$InstalledVersion::usage = "The version number of the installed packag
 (* ::Section:: *)
 (*Package Variables*)
 
+
 (*See what and how to load*)
 QMRITools`$Verbose = If[QMRITools`$Verbose===True, True, False];
 QMRITools`$Legacy = If[QMRITools`$Legacy===True, True, False];
 QMRITools`$LoadedColor = If[QMRITools`$LoadedColor===True, True, False];
 QMRITools`$Loaded = If[QMRITools`$Loaded===True, True, False];
+
 
 (*sub packages names*)
 QMRITools`$SubPackages = {
@@ -65,13 +67,16 @@ QMRITools`$SubPackages = {
 	If[QMRITools`$Legacy, "Legacy`", Nothing]
 };
 
+
 (*define context*)
 QMRITools`$Contexts = (Context[] <> # & /@ QMRITools`$SubPackages);
 QMRITools`$InstalledVersion = First[PacletFind[StringDrop[Context[],-1]]]["Version"];
 
+
 Begin["`Private`"];
 
 End[];
+
 
 EndPackage[];
 
@@ -117,13 +122,14 @@ If[QMRITools`$Loaded,
 	) &/@ QMRITools`$Contexts;
 ];
 
+
 (*Load and protect all the sub packages with error reporting*)
 If[QMRITools`$Verbose,
 	Echo["--------------------------------------"];
 	Echo["Loading and protecting all definitions of:"];
 ];
 
-(
+QMRITools`$ContextsFunctions = (
 	If[QMRITools`$Verbose, Echo["", #]];
 	Get[#];
 
@@ -141,12 +147,8 @@ If[QMRITools`$Verbose,
 		QMRITools`$LoadedColor = True;
 	];
 
+	{#, Names[# <> "*"]}
 )& /@ QMRITools`$Contexts;
-
-QMRITools`$Loaded = True;
-
-QMRITools`$ContextsFunctions = {#, Names[# <> "*"]}& /@ QMRITools`$Contexts;
-(SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#])& /@ QMRITools`$ContextsFunctions;
 
 If[QMRITools`$Verbose,
 	Echo["--------------------------------------"];
@@ -159,20 +161,26 @@ If[QMRITools`$Verbose,
 
 
 (*Protect all definitions, then release those that can be edited*)
+(SetAttributes[#, {Protected, ReadProtected}]& /@ Last[#])& /@ QMRITools`$ContextsFunctions;
 Protect/@{QMRITools`$InstalledVersion, QMRITools`$SubPackages, QMRITools`$Contexts, QMRITools`$ContextsFunctions};
 Unprotect/@{
+	(*global folder definition*)
 	"QMRITools`ElastixTools`$lastElastixTemp",
+
+	(*debug flags*)
 	"QMRITools`ElastixTools`$debugElastix", 
-
 	"QMRITools`NeuralNetworkTools`$debugUnet", 
-
 	"QMRITools`MuscleBidsTools`$debugBids",
-
+	"QMRITools`PlottingTools`$debugPlot",
 	"QMRITools`DenoiseTools`$debugDenoise",
-	
+
+	(*user system settings for amares*)	
 	"QMRITools`AmaresTools`$AmaresB1Regularization",
 	"QMRITools`AmaresTools`$AmaresT1Values",
 
+	(*logs for muscle bids*)
 	"QMRITools`$Log",
 	"QMRITools`$LogFile"
 };
+
+QMRITools`$Loaded = True;

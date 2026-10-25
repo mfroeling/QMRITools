@@ -905,30 +905,11 @@ NormalizeSpectra[spec_] := 1000. Sign[Re@Mean[Flatten[spec]]] (spec/Max[Abs[spec
 
 SyntaxInformation[MakeHammingFilter]={"ArgumentsPattern"->{_}}
 
-MakeHammingFilter[size_] := MakeHammingFilterI[size]
+MakeHammingFilter[size_?IntegerQ] := MakeHammingFilter[{size}]
 
-MakeHammingFilterI[{zi_?IntegerQ, yi_?IntegerQ, xi_?IntegerQ}] := MakeHammingFilterI[{zi, yi, xi}] = MakeHammingFilterI[Transpose[{-Floor[{xi, yi, zi}/2], Ceiling[{xi, yi, zi}/2] - 1}]];
+MakeHammingFilter[dim : {__?IntegerQ}] := Outer[Times, Sequence @@ (HammingAxis /@ dim)]
 
-MakeHammingFilterI[{yi_?IntegerQ, xi_?IntegerQ}] := MakeHammingFilterI[{yi, xi}] = MakeHammingFilterI[Transpose[{-Floor[{xi, yi}/2], Ceiling[{xi, yi}/2] - 1}]];
-
-MakeHammingFilterI[{xi_?IntegerQ}] := MakeHammingFilterI[{xi}] = MakeHammingFilterI[xi];
-
-MakeHammingFilterI[xi_?IntegerQ] := MakeHammingFilterI[xi] = MakeHammingFilterI[{-Floor[xi/2], Ceiling[xi/2] - 1}];
-
-MakeHammingFilterI[{{xs_?IntegerQ, xe_?IntegerQ}, {ys_?IntegerQ, ye_?IntegerQ}, {zs_?IntegerQ, ze_?IntegerQ}}] := MakeHammingFilterI[{{xs,xe},{ys,ye},{zs,zs}}] = Block[{xm, ym, zm},
-	{xm, ym, zm} = Max /@ Abs[{{xs, xe}, {ys, ye}, {zs, ze}}];
-	Table[Ham[x, xm] Ham[y, ym] Ham[z, zm], {z, zs, ze}, {y, ys, ye}, {x, xs, xe}]
-]
-
-MakeHammingFilterI[{{xs_?IntegerQ, xe_?IntegerQ}, {ys_?IntegerQ, ye_?IntegerQ}}] := MakeHammingFilterI[{{xs,xe},{ys,ye}}] = Block[{xm, ym},
-	{xm, ym} = Max /@ Abs[{{xs, xe}, {ys, ye}}];
-	Table[Ham[x, xm] Ham[y, ym], {y, ys, ye}, {x, xs, xe}]
-]
-
-MakeHammingFilterI[{xs_?IntegerQ, xe_?IntegerQ}] := MakeHammingFilterI[{xs,xe}] = Block[{xm},
-	xm = Max[Abs[{xs, xe}]];
-	Table[Ham[x, xm], {x, xs, xe}]
-]
+HammingAxis[n_] := HammingAxis[n] = With[{m = Floor[n/2]}, Table[Ham[x, m], {x, -m, Ceiling[n/2] - 1}]]
 
 
 Ham[x_, xm_] := (0.54 + 0.46 Cos[(Pi x)/xm])
