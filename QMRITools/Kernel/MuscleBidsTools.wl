@@ -37,23 +37,44 @@ MergeJSON::usage =
 
 
 SelectSubjects::usage = 
-"SelectSubjects[dir] selects the subjects in the given data directory which has a config file."
+"SelectSubjects[dir] selects the subjects in the given data directory which has a config file.
+SelectSubjects[dir, Dynamic[sel]] does the same but stores the selected subjects in the variable sel."
 
 ViewConfig::usage =
 "ViewConfig[config] shows a config file for Muscle Bids processing.
 ViewConfig[folder] same but imports the config file from the given folder.
 ViewConfig[\"default\"] shows the default config."
 
-ViewProtocolNames::usage = 
-"ViewProtocolNames[folder] shows the protocol names in the radData folder specified by the config file with 
-the series number and protocol name from the json files in the raw folders for each subject and session."
+ViewProtocolNames::usage =
+"ViewProtocolNames[folder] shows the protocol names in the radData folder specified by the config file with
+the series number and protocol name from the json files in the raw folders for each subject and session.
+Duplicate protocol names are shown in red and can be shown only using the checkbox. The config file only needs to define the folders."
 
 GetProtocolNames::usage =
 "GetProtocolNames[config, subs] gets the list of protocol names in the specified subject folder."
 
-CheckConfigLabels::usage = 
-"CheckConfigLabels[dir, subs] checks for each sub in subs if the protocol names that are defined in the config 
-file in dir are present."
+CheckConfigLabels::usage =
+"CheckConfigLabels[dir] checks for each subject and session if the protocol names that are defined as Label in the config
+file in dir are present. Missing labels are shown in red and can be shown only using the checkbox.
+Only subjects in the rawData folder are shown, so run it after BidsDcmToNii.
+CheckConfigLabels[dir, subs] does the same for the subjects subs."
+
+CheckBidsOutput::usage =
+"CheckBidsOutput[dir, step] checks for each subject if the output expected from the config file in dir is present after the given step.
+Currently step can be \"Convert\", which checks for each Label if the json and nii files are present in the rawData folder.
+Missing files are shown in red and can be shown only using the checkbox."
+
+MuscleBidsCheck::usage =
+"MuscleBidsCheck[dir] shows ViewProtocolNames, CheckConfigLabels, CheckBidsOutput and ManageCheckFiles for the config file in dir as tabs."
+
+ManageCheckFiles::usage =
+"ManageCheckFiles[dir] shows per processing step the check files expected from the config file in dir and their status.
+Selected check files can be deleted such that the next run of that step processes the data again."
+
+MuscleBidsGUI::usage =
+"MuscleBidsGUI[dir] shows a GUI to run the Muscle Bids processing steps for the config file in dir, with the options of each step and the subjects to process.
+Each step runs in a separate kernel, nothing is printed in the notebook and the progress is shown from the log files.
+The tabs Check and Config show MuscleBidsCheck and ViewConfig."
 
 
 GetConfig::usage =
@@ -440,6 +461,17 @@ SelectBids[folder_?StringQ, entity_?StringQ] := Block[{
 
 
 (* ::Subsubsection::Closed:: *)
+(*FilterBidsSubjects*)
+
+
+FilterBidsSubjects[fols_, subs_] := FilterBidsSubjects[fols, subs, ""]
+
+FilterBidsSubjects[fols_, subs_, met_] := If[subs === All || subs === "All", fols,
+	Select[fols, MemberQ[SubNameToBids[Flatten[{subs}], "Sub"], SubNameToBids[#, met]]&]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*SelectBidsFolders*)
 
 
@@ -544,15 +576,19 @@ ConfigLookup[config_?AssociationQ, key_?StringQ, def_?StringQ] := Lookup[ConfigL
 (*CheckConfig*)
 
 
-CheckConfig[inFol_?StringQ, outFol_?StringQ] := Block[{conf, nam, path},
+CheckConfig[fol_?StringQ] := CheckConfig[fol, fol, False]
+
+CheckConfig[inFol_?StringQ, outFol_?StringQ] := CheckConfig[inFol, outFol, True]
+
+CheckConfig[inFol_?StringQ, outFol_?StringQ, export_?BooleanQ] := Block[{conf, nam, path},
 	nam = GenerateBidsName[Last@PartitionBidsFolderName[outFol]];
 	path = FileNameJoin[{outFol, nam<>"_config.json"}];
 	conf = Quiet@GetConfig[inFol, nam];
-	
+
 	debugBids[path];
 
 	If[conf =!= $Failed,
-		Export[path, conf];	{True, conf}, 
+		If[export, Export[path, conf]]; {True, conf},
 		{False, <||>}
 	]
 ]
@@ -764,27 +800,8 @@ Options[ViewProtocolNames] = {
 
 SyntaxInformation[ViewProtocolNames] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
-ViewProtocolNames[folder_?StringQ, opts:OptionsPattern[]] := ViewProtocolNames[GetConfig[folder], opts]
-
-ViewProtocolNames[config_?AssociationQ, OptionsPattern[]] := Block[{
-		subs, dataFolders, fold, list, duplicates, json
-	},
-
-	subs = OptionValue[ProcessSubjects];
-	dataFolders = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
-
-	subs = If[subs===All||subs==="All", dataFolders, 
-		Select[dataFolders, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#]]&]
-	];
-
-	MenuView[(
-		list = GetProtocolNames[fold = #];
-		duplicates = Keys[Select[Counts[list[[All, 2]]], # > 1 &]];
-		list = If[MemberQ[duplicates, #[[2]]], {#[[1]], Style[#[[2]], Bold, Red]}, #] & /@ list;
-		(*make output*)
-		fold -> Grid[list, Alignment -> Left, Frame -> All, Spacings -> {1, 1.2}]
-	) & /@ subs, ControlPlacement -> Top]
-]
+ViewProtocolNames[dir:(_?StringQ | _?AssociationQ), OptionsPattern[]] :=
+	BidsCheckView[dir, OptionValue[ProcessSubjects], "Protocol", {"Series", "Protocol name", "Duplicate"}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -803,19 +820,16 @@ GetProtocolNames[fold_?StringQ] := Block[{list, json, name},
 		}
 	) & /@ FileNames["*.json", fold, 2]]; 
 	
-	Select[list, 
-		Head[#[[1]]] =!= Missing && Head[#[[1]]] =!= $Failed && 
+	Select[list,
+		Head[#[[1]]] =!= Missing && Head[#[[1]]] =!= $Failed && StringQ[#[[2]]] &&
 		!StringContainsQ[#[[2]], RegularExpression["_\\d{6}\\.\\d{3}"]] &
 	]
 ]
 
 
-GetProtocolNames[dir_, sub_] := Block[{config, dataFolders, subs},
+GetProtocolNames[dir_, sub_] := Block[{config},
 	config = If[AssociationQ[dir], dir, GetConfig[dir]];
-	dataFolders = SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"];
-	subs = If[sub === All || sub === "All",	dataFolders,
-		Select[dataFolders, MemberQ[SubNameToBids[Flatten[{sub}], "Sub"], SubNameToBids[#]] &]];
-	GetProtocolNames[subs][[If[StringQ[sub], 1, All]]]
+	GetProtocolNames[FilterBidsSubjects[SelectBids[ConfigLookup[config, "folders", "rawData"], "ses"], sub]][[If[StringQ[sub], 1, All]]]
 ]
 
 
@@ -823,18 +837,19 @@ GetProtocolNames[dir_, sub_] := Block[{config, dataFolders, subs},
 (*SelectSubjects*)
 
 
-SyntaxInformation[SelectSubjects] = {"ArgumentsPattern" -> {_}};
+SyntaxInformation[SelectSubjects] = {"ArgumentsPattern" -> {_, _.}};
 
-SelectSubjects[dir_?StringQ] := DynamicModule[{fol, selectedSubjects, list},
+SelectSubjects[dir_?StringQ] := DynamicModule[{sel = {}}, SelectSubjects[dir, Dynamic[sel]]]
+
+SelectSubjects[dir_?StringQ, Dynamic[sel_]] := DynamicModule[{fol, list},
 	fol = FileNameJoin[{dir, ConfigLookup[dir, "folders", "dicomData"]}];
 	list = Sort[FileBaseName/@ Select[FileNames["*", fol], DirectoryQ]];
-	selectedSubjects = {};
 	Column[{
-		CheckboxBar[Dynamic[selectedSubjects], list, Appearance -> "Vertical" -> {Min[{15, Length@list}], Automatic}, Method -> "Active"],
+		CheckboxBar[Dynamic[sel], list, Appearance -> "Vertical" -> {Min[{15, Length@list}], Automatic}, Method -> "Active"],
 		Row[{
-			Button["Select All", selectedSubjects = list],
-			Button["Deselect All", selectedSubjects = {}],
-			Button["Copy selected list to clipboard", CopyToClipboard[selectedSubjects]]
+			Button["Select All", sel = list],
+			Button["Deselect All", sel = {}],
+			Button["Copy selected list to clipboard", CopyToClipboard[sel]]
 		}]
 	}]
 ];
@@ -844,21 +859,337 @@ SelectSubjects[dir_?StringQ] := DynamicModule[{fol, selectedSubjects, list},
 (*CheckConfigLabels*)
 
 
-CheckConfigLabels[dir_, All] := Block[{fol},
-	fol = FileNameJoin[{dir, ConfigLookup[dir, "folders", "dicomData"]}];
-	CheckConfigLabels[dir, Sort[FileBaseName/@ Select[FileNames["*", fol], DirectoryQ]]] 
+SyntaxInformation[CheckConfigLabels] = {"ArgumentsPattern" -> {_, _.}};
+
+CheckConfigLabels[dir_?StringQ] := CheckConfigLabels[dir, All]
+
+CheckConfigLabels[dir_?StringQ, subs_] := BidsCheckView[dir, subs, "Labels", {"Dataset", "Label", "Present"}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*BidsSubjectList*)
+
+
+BidsSubjectList[dir_, subs_] := Block[{config, root, dis},
+	(*config from association or folder, default if invalid*)
+	{config, root} = If[AssociationQ[dir], {dir, Directory[]}, {Quiet@GetConfig[dir], dir}];
+	config = If[AssociationQ[config], config, <||>];
+	(*per subject folder the merged datasets*)
+	{config, {#, Last@PartitionBidsFolderName[#],
+		dis = Quiet@CheckDataDescription[MergeConfig[Lookup[config, "datasets", <||>], Last@CheckConfig[#]], "MuscleBidsProcess"];
+		If[ListQ[dis], Select[dis, !KeyExistsQ[#, $Failed]&], {}]
+	}& /@ FilterBidsSubjects[SelectBids[FileNameJoin[{root, ConfigLookup[config, "folders", "rawData"]}], "ses"], subs]}
 ]
 
-CheckConfigLabels[dir_, sub_?ListQ] := Column[CheckConfigLabels[dir, #] & /@ sub]
+
+(* ::Subsubsection::Closed:: *)
+(*BidsCheckView*)
 
 
-CheckConfigLabels[dir_, sub_?StringQ] := Block[{names, config, labels, custom, lab},
-	names = GetProtocolNames[dir, sub][[All, 2]];
-	config = GetConfig[dir];
-	custom = Quiet@GetConfig[FileNameJoin[{dir, ConfigLookup[dir, "folders", "dicomData"], sub}]];
-	config = If[custom =!= $Failed, MergeConfig[config["datasets"], custom], config["datasets"]];
-	labels = Flatten[#["Label"] & /@ Values[config]];
-	sub -> Select[labels, ! MemberQ[names, #] &]
+BidsCheckView[dir_, subs_, what_, head_] := DynamicModule[{rows, time, load, only = False, show, cur = None, bad},
+	(*load the rows and the scan time*)
+	load = (rows = BidsCheckRows[dir, subs, what]; time = DateString["Time"])&;
+	load[];
+	Column[{
+		Row[{Button["Reload", load[], Method -> "Queued"], "  ", Checkbox[Dynamic[only]], " only problems  ", Dynamic["scanned at "<>time]}],
+		Dynamic[
+			(*only the bad rows and their subjects*)
+			show = If[only, Select[(First[#] -> Select[Last[#], Last])& /@ rows, Last[#] =!= {}&], rows];
+			If[show === {}, If[only, "No problems found", "No subjects found"], MenuView[Function[{sub, list},
+				(*menu entry with number of problems*)
+				bad = Count[list[[All, 2]], True];
+				If[bad > 0, Style[sub<>" ("<>ToString[bad]<>")", Red], sub] ->
+				Grid[Prepend[If[Last[#], Style[#, Red]& /@ First[#], First[#]]& /@ list, Style[#, Bold]& /@ head],
+					Alignment -> Left, Frame -> All, Spacings -> {1, 0.5}]
+			] @@@ show,
+			(*keep selected subject*)
+			Dynamic[Replace[FirstPosition[show[[All, 1]], cur], {{i_} :> i, _ -> 1}], (cur = show[[#, 1]])&],
+			ControlPlacement -> Top]]
+		]
+	}]
+]
+
+
+BidsCheckRows[dir_, subs_, what_] := (GenerateBidsName[#[[2]]] -> BidsCheckRows[#, what])& /@ Last@BidsSubjectList[dir, subs]
+
+BidsCheckRows[{fol_, parts_, datDis_}, "Protocol"] := Block[{list, dup},
+	list = GetProtocolNames[fol];
+	(*duplicate protocol names are bad*)
+	dup = Keys[Select[Counts[list[[All, 2]]], # > 1 &]];
+	{Append[#, If[MemberQ[dup, #[[2]]], "yes", ""]], MemberQ[dup, #[[2]]]}& /@ list
+]
+
+BidsCheckRows[{fol_, parts_, datDis_}, "Labels"] := Block[{names},
+	names = GetProtocolNames[fol][[All, 2]];
+	(*per Label if it is in the protocol names*)
+	PresentRows@DeleteDuplicates@Flatten[Function[dat, {dat["Key"], #, MemberQ[names, #]}& /@ Flatten[{Lookup[dat, "Label", {}]}]] /@ datDis, 1]
+]
+
+BidsCheckRows[{fol_, parts_, datDis_}, "Convert"] := Block[{files},
+	PresentRows@Flatten[Table[
+		(*per Label the converted json and if its nii exists*)
+		files = FileNames["*"<>StringStrip[lab]<>"*.json", FileNameJoin[{fol, dat["OutFolder"]}]];
+		If[files === {}, {{dat["Key"], lab, "no json found", False}}, {dat["Key"], lab, FileBaseName[#], NiiFileExistQ[#]}& /@ files]
+	(*Volumes are joined into one file named after the first Label*)
+	, {dat, datDis}, {lab, If[dat["Class"] === "Volumes", Take[#, UpTo[1]], #]&@Flatten[{Lookup[dat, "Label", {}]}]}], 2]
+]
+
+PresentRows[rows_] := {Append[Most[#], If[Last[#], "yes", "missing"]], !Last[#]}& /@ rows
+
+
+(* ::Subsubsection::Closed:: *)
+(*CheckBidsOutput*)
+
+
+Options[CheckBidsOutput] = {ProcessSubjects -> All}
+
+SyntaxInformation[CheckBidsOutput] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+CheckBidsOutput[dir_?StringQ, step:"Convert", OptionsPattern[]] :=
+	BidsCheckView[dir, OptionValue[ProcessSubjects], step, {"Dataset", "Label", "File", "Present"}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleBidsCheck*)
+
+
+Options[MuscleBidsCheck] = {ProcessSubjects -> All, BidsOutputImages -> "All"}
+
+SyntaxInformation[MuscleBidsCheck] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+MuscleBidsCheck[dir_?StringQ, OptionsPattern[]] := With[{subs = OptionValue[ProcessSubjects]}, TabView[{
+	"Protocol names" -> ViewProtocolNames[dir, ProcessSubjects -> subs],
+	"Config labels" -> CheckConfigLabels[dir, subs],
+	"Convert output" -> CheckBidsOutput[dir, "Convert", ProcessSubjects -> subs],
+	"Check files" -> ManageCheckFiles[dir, ProcessSubjects -> subs, BidsOutputImages -> OptionValue[BidsOutputImages]]
+}, ControlPlacement -> Top]]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ManageCheckFiles*)
+
+
+Options[ManageCheckFiles] = {ProcessSubjects -> All, BidsOutputImages -> "All"}
+
+SyntaxInformation[ManageCheckFiles] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+ManageCheckFiles[dir_?StringQ, OptionsPattern[]] := With[{subs = OptionValue[ProcessSubjects], imOut = OptionValue[BidsOutputImages]},
+DynamicModule[{checks, time, sel = {}, upd = 0, ind = 1, sub = <||>, exist, status, row, tab},
+	checks = BidsCheckFiles[dir, subs, imOut];
+	time = DateString["Time"];
+	(*check file present and content*)
+	exist = FileExistsQ[#<>"_check.json"]&;
+	status = Quiet@Import[#<>"_check.json", "RawJSON"]&;
+
+	(*one row per expected check file*)
+	row = Function[{nam, base}, Join[{
+		If[exist[base], Checkbox[Dynamic[MemberQ[sel, base], (sel = If[#, Union[sel, {base}], DeleteCases[sel, base]])&]], ""],
+		nam, FileNameTake[base]
+	}, Which[
+		!exist[base], {Style["missing", Red], "", ""},
+		AssociationQ[status[base]], Lookup[status[base], {"Check", "Version", "Date"}, ""],
+		True, {Style["unreadable", Red], "", ""}
+	]]];
+
+	(*buttons act on this tab only*)
+	tab = Function[{step, list}, Column[{
+		Row[{
+			Button["Select all", sel = Union[sel, Select[list[[All, 2]], exist]]],
+			Button["Deselect all", sel = Complement[sel, list[[All, 2]]]],
+			(*confirm with the file list and delete*)
+			Button["Delete selected", With[{del = Intersection[sel, list[[All, 2]]]},
+				If[del =!= {} && ChoiceDialog[Column[{
+						"Delete "<>ToString[Length[del]]<>" check files? The next run of "<>step<>" processes them again.",
+						Pane[Column[FileNameTake /@ del], ImageSize -> {UpTo[600], UpTo[300]}, Scrollbars -> Automatic]
+					}]],
+					DeleteFile[#<>"_check.json"]& /@ del; sel = Complement[sel, del]; upd++
+			]], Method -> "Queued"],
+			Button["Refresh", checks = BidsCheckFiles[dir, subs, imOut]; time = DateString["Time"]; upd++, Method -> "Queued"],
+			Dynamic["  "<>ToString[Length[Intersection[sel, list[[All, 2]]]]]<>" selected, scanned at "<>time]
+		}],
+		Dynamic[upd; Grid[Prepend[row @@@ list, Style[#, Bold]& /@ {"", "Subject", "Check file", "Status", "Version", "Date"}],
+			Alignment -> Left, Frame -> All, Spacings -> {1, 0.5}]]
+	}]];
+
+	(*per step a subtab per data type, ind and sub keep the selected tabs*)
+	Dynamic[TabView[KeyValueMap[Function[{step, list}, step -> If[list === {}, "No check files expected",
+		TabView[KeyValueMap[#1 -> tab[step, #2]&, GroupBy[list, First -> Rest]],
+			Dynamic[Lookup[sub, step, 1], (sub = Append[sub, step -> #])&], ControlPlacement -> Top]
+	]], checks], Dynamic[ind], ControlPlacement -> Top]]
+]]
+
+
+BidsCheckFiles[dir_, subs_, imOut_] := Block[{config, sets, der, mer, ana, anDis, steps},
+	{config, sets} = BidsSubjectList[dir, subs];
+	(*output folders and analysis datasets*)
+	{der, mer, ana} = FileNameJoin[{dir, ConfigLookup[config, "folders", #]}]& /@ {"derivedData", "mergeData", "analysis"};
+	anDis = If[KeyExistsQ[config, "analysis"], CheckDataDescription[config["analysis"], "MuscleBidsAnalysis"], {}];
+
+	(*expected check files of all subjects grouped per step*)
+	steps = {"Process", "Merge", "Segment", "Tractography", "Analysis"};
+	AssociationThread[steps, Lookup[GroupBy[Flatten[BidsCheckFiles[{der, mer, ana}, #, anDis, imOut]& /@ sets, 1], First -> Rest], steps, {}]]
+]
+
+
+BidsCheckFiles[{der_, mer_, ana_}, {fol_, parts_, datDis_}, anDis_, imOut_] := Block[{nam, typ, files, sets, base, partsO, dixMet},
+	nam = GenerateBidsName[parts];
+	dixMet = {"Dixon-S", "Dixon-P", "Dixon", "Dixon-B", "Dixon-A"};
+	Join[
+		Flatten[Table[
+			typ = dat["Type"];
+			(*raw input files of the dataset as sets*)
+			files =Flatten[FileNames["*"<>StringStrip[#]<>"*.json", FileNameJoin[{fol, dat["InFolder"]}]]& /@ Flatten[{Lookup[dat, "Label", {}]}]];
+			sets = If[files === {}, {}, PartitionBidsName[FileBaseName /@ files]];
+			sets = DeleteDuplicates@If[MemberQ[{"megre", "tse"}, dat["Type"]], Append[#, "suf" -> {First[#["suf"]]}]& /@ sets, sets];
+			base = GenerateBidsFileName[der, #]& /@ sets;
+			Join[
+				(*process, dwi prep and fit if the method is processed*)
+				If[typ === "dwi", {"Process", typ, nam, #<>"_prep"}& /@ base, {}],
+				If[MemberQ[Lookup[<|"megre" -> dixMet, "tse" -> dixMet, "dwi" -> {"DTI"}, "mese" -> {"EPGT2", "Exp"}|>, typ, {}],
+					dat["Process", "Method"]], {"Process", typ, nam, #}& /@ base, {}],
+				(*merge, segment and tractography output*)
+				If[KeyExistsQ[dat, "Merging"], {{"Merge", typ, nam, BuildBidsNameFromConfig[{mer, parts}, dat]}}, {}],
+				If[KeyExistsQ[dat, "Segment"], {{"Segment", typ, nam, ConvertExtension@BuildBidsNameFromConfig[{mer, parts},
+					{dat, datDis}, {dat["Key"], "seg", "auto", typ}]}}, {}],
+				If[KeyExistsQ[dat, "Tractography"], {{"Tractography", typ, nam, ConvertExtension@BuildBidsNameFromConfig[{mer, parts},
+					{dat, datDis}, Join[dat["Tractography", "Target"][[;;-2]], {"trk"}]]}}, {}]
+			]
+		, {dat, datDis}], 1](*close dataset loop*),
+		(*analysis xls and images per analysis dataset*)
+		Flatten[(
+			typ = #["Key"];
+			partsO = If[typ === "Default", parts, Join[<|If[#["Analysis", "Class"] === "Stacks", "stk", "chunk"] -> StringStrip@typ|>, parts]];
+			{"Analysis", typ, nam, FileNameJoin[{GenerateBidsFolderName[ana, partsO], GenerateBidsName[<|partsO, "suf" -> {#}|>]}]}& /@ If[imOut === "None", {"xls"}, {"xls", "img"}]
+		)& /@ anDis, 1]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleBidsGUI*)
+
+
+SyntaxInformation[MuscleBidsGUI] = {"ArgumentsPattern" -> {_}};
+
+MuscleBidsGUI[dir_?StringQ] := DynamicModule[{
+		link = None, t0 = 0, tick = 0, state = "Idle", step = "", root = "", now = "", total = 0, touched = 0, tail = {}, msgs = {},
+		all = True, sel = {}, opt, steps, optVals, msgFile, ctrl, run, poll
+	},
+
+	(*step, folder of its logs and the options in the GUI*)
+	steps = {
+		{BidsDcmToNii, "rawData", {}},
+		{MuscleBidsConvert, "rawData", {DeleteAfterConversion}},
+		{MuscleBidsProcess, "derivedData", {VersionCheck}},
+		{MuscleBidsMerge, "mergeData", {VersionCheck}},
+		{MuscleBidsSegment, "mergeData", {VersionCheck}},
+		{MuscleBidsTractography, "mergeData", {VersionCheck, BidsTractographyMethod}},
+		{MuscleBidsAnalysis, "analysis", {VersionCheck, BidsOutputImages}}
+	};
+	optVals = <|
+		BidsTractographyMethod -> {"Full", "Tractography", "Segmentation"},
+		BidsOutputImages -> {"All", "Quantitative", "Segmentation", "Tractography", "None"}
+	|>;
+	msgFile = FileNameJoin[{$TemporaryDirectory, "MuscleBidsGUI_"<>#<>".txt"}]&;
+
+	(*option values per step start at the defaults of the step*)
+	opt = Association[Flatten[Function[row, ({SymbolName[row[[1]]], #} -> (# /. Options[row[[1]]]))& /@ row[[3]]] /@ steps, 1]];
+
+	(*checkbox for True/False options, popup for the others*)
+	ctrl = Function[{st, o}, Row[{ToString[o], ": ",
+		If[KeyExistsQ[optVals, o], PopupMenu[Dynamic[opt[{st, o}]], optVals[o]], Checkbox[Dynamic[opt[{st, o}]]]], "   "}]];
+
+	(*start a step in a separate kernel*)
+	run = Function[row, If[!all && sel === {}, now = "Select subjects or tick All subjects",
+		step = SymbolName[row[[1]]]; t0 = AbsoluteTime[]; tail = {}; now = ""; touched = 0; msgs = {};
+		root = FileNameJoin[{dir, ConfigLookup[dir, "folders", row[[2]]]}];
+		total = If[row[[1]] === BidsDcmToNii, 0,
+			Length@FilterBidsSubjects[SelectBids[FileNameJoin[{dir, ConfigLookup[dir, "folders", "rawData"]}], "ses"], If[all, All, sel]]];
+		link = BidsStartStep[dir, row[[1]], Join[{ProcessSubjects -> If[all, All, sel]}, (# -> opt[{step, #}])& /@ row[[3]]], msgFile[step]];
+		state = "Running"
+	]];
+
+	(*read the state of the running step, the link is closed when it is done*)
+	poll = Function[If[link =!= None,
+		{state, now, touched, tail, msgs} = Lookup[BidsStepStatus[link, root, step, t0, msgFile[step]], {"State", "Now", "Touched", "Tail", "Messages"}];
+		tick++;
+		If[state =!= "Running", Quiet@LinkClose[link]; link = None]
+	]];
+
+	Column[{
+		TabView[{
+			"Run" -> Column[{
+				Row[{Checkbox[Dynamic[all]], " All subjects"}],
+				Dynamic[If[all, "", SelectSubjects[dir, Dynamic[sel]]]],
+				Grid[Function[row, {
+					Button[SymbolName[row[[1]]], run[row], ImageSize -> 200, Enabled -> Dynamic[link === None]],
+					Row[ctrl[SymbolName[row[[1]]], #]& /@ row[[3]]]
+				}] /@ steps, Alignment -> Left],
+				Row[{Button["Stop",
+					If[link =!= None && ChoiceDialog["Stop "<>step<>"? The subjects that are not finished are processed again the next time."],
+						LinkClose[link]; link = None; state = "Stopped"],
+					Enabled -> Dynamic[link =!= None], Method -> "Queued"]}],
+				Dynamic[tick; Column[{
+					Style[If[step === "", "", step<>": "]<>state<>If[state === "Running", " ("<>ToString[Round[AbsoluteTime[] - t0]]<>" s)", ""], Bold,
+						Which[state === "Crashed", Red, state === "Done with messages", Orange, True, Automatic]],
+					If[total > 0, "subjects started "<>ToString[touched]<>" of "<>ToString[total], Nothing],
+					Style[now, Italic]
+				}]],
+				OpenerView[{"Log", Dynamic[Pane[Style[StringRiffle[tail, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 200}, Scrollbars -> Automatic]]}],
+				OpenerView[{"Messages", Dynamic[Pane[Style[StringRiffle[msgs, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 100}, Scrollbars -> Automatic]]}]
+			}],
+			"Check" -> Dynamic[MuscleBidsCheck[dir]],
+			"Config" -> ViewConfig[dir]
+		}, ControlPlacement -> Top],
+		(*poll outside the tabs such that it runs on every tab*)
+		Dynamic[poll[]; "", UpdateInterval -> 2, TrackedSymbols :> {}, SynchronousUpdating -> False]
+	}],
+
+	Initialization :> (link = None; If[state === "Running", state = "Interrupted"]),
+	UnsavedVariables :> {link},
+	Deinitialization :> If[link =!= None, Quiet@LinkClose[link]]
+]
+
+
+BidsStartStep[dir_, st_, opts_, msg_] := Block[{link, load},
+	If[FileExistsQ[msg], DeleteFile[msg]];
+	link = LinkLaunch[First[$CommandLine] <> " -wstp"];
+	(*dev or release paclet as in LaunchTrainingKernels*)
+	load = If[StringContainsQ[First[PacletFind["QMRITools"]]["Location"], "workspace"], "QMRIToolsDev`", "QMRITools`"];
+	(*run the step with output and messages redirected to a file, symbols as full names since the package is not loaded yet*)
+	With[{l = load, f = Context[st] <> SymbolName[st], d = ExpandFileName[dir], o = Replace[opts, (k_ -> v_) :> {Context[k] <> SymbolName[k], v}, {1}], m = msg},
+		LinkWrite[link, Unevaluated[Get[l]; Block[{s}, s = OpenWrite[m];
+			Block[{$Output = {}, $Messages = {s}}, Quiet[ToExpression[f][d, Sequence @@ (ToExpression[First[#]] -> Last[#]& /@ o)], FrontEndObject::notavail]]; Close[s]]]]];
+	link
+]
+
+
+BidsStepStatus[link_, root_, st_, t0_, msg_] := Block[{pkt, state, pat, logs, lines, msgs},
+	(*drain the link, a return packet means the step is finished*)
+	state = "Running";
+	While[state === "Running" && LinkReadyQ[link],
+		pkt = LinkRead[link];
+		state = Which[pkt === $Failed, "Crashed", MatchQ[pkt, _ReturnPacket | _ReturnExpressionPacket], "Done", True, "Running"]
+	];
+	If[state === "Running" && !LinkConnectedQ[link], state = "Crashed"];
+
+	(*the logs of this run, newest last*)
+	pat = If[st === "BidsDcmToNii", "DcmToNii_*.log", "*_BIDS"<>StringDrop[st, 10]<>".log"];
+	logs = SortBy[Select[Quiet@FileNames[pat, root, 3], AbsoluteTime[FileDate[#]] > t0 - 2&], AbsoluteTime[FileDate[#]]&];
+	lines = If[logs === {}, {}, Quiet@Import[Last[logs], "Lines"]];
+	lines = If[ListQ[lines], Select[lines, StringTrim[#] =!= ""&], {}];
+
+	(*messages of the step*)
+	msgs = If[FileExistsQ[msg], Quiet@Import[msg, "Lines"], {}];
+	msgs = If[ListQ[msgs], msgs, {}];
+
+	<|
+		"State" -> If[state === "Done" && msgs =!= {}, "Done with messages", state],
+		"Now" -> If[lines === {}, "", StringTrim[Last[lines]]],
+		"Touched" -> Length[logs],
+		"Tail" -> Take[lines, -Min[30, Length[lines]]],
+		"Messages" -> msgs
+	|>
 ]
 
 
@@ -997,9 +1328,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 		_, SelectBids[inFol, "ses"]
 	];
 
-	subs = If[subs===All||subs==="All", folders, 
-		Select[folders, MemberQ[SubNameToBids[subs, "Sub"], SubNameToBids[#, met]]&]
-	];
+	subs = FilterBidsSubjects[folders, subs, met];
 
 	debugBids[Column@subs];
 
@@ -3309,7 +3638,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxSeg, segPl, imTrk, trkfile, reffile,
 		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF, typeSuf,
-		whatName, whatNr
+		whatName, whatNr, segF
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
@@ -3409,6 +3738,14 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			what === "Arm", 
 				(*-----*)AddToLog[{"Using the Arms for muscle labeling"}, 4];
 				whatName = GetAssetLocation["MuscleArmLabels"];
+				whatNr = GetAssetLocation["MusclesAllLabels"],
+			what === "Body", 
+				(*-----*)AddToLog[{"Using the Body for muscle labeling"}, 4];
+				whatName = GetAssetLocation["MuscleLabels"];
+				whatNr = GetAssetLocation["MusclesAllLabels"],
+			what === "Shoulder", 
+				(*-----*)AddToLog[{"Using the Shoulder for muscle labeling"}, 4];
+				whatName = GetAssetLocation["MuscleShoulderLabels"];
 				whatNr = GetAssetLocation["MusclesAllLabels"],
 			FileExistsQ[what], 
 				(*-----*)AddToLog[{"Using custom file for muscle labeling"}, 4];

@@ -1,0 +1,155 @@
+/* Style of the user manual PDF (built by agents/build_pdf.py).
+   Looks like a modern Markdown preview: calm type, soft tables, tinted code, accent headings. */
+
+:root {
+  --text: #1f2933;
+  --muted: #5f6c7b;
+  --accent: #0b5cad;
+  --line: #dde3ea;
+  --soft: #f4f6f9;
+  --warn: #fff6e5;
+  --warn-line: #f0b429;
+}
+
+@page {
+  size: A4;
+  margin: 22mm 20mm 22mm 20mm;
+  @bottom-left { content: "Muscle Stimulator Software: User Manual"; font: 8.5pt "Segoe UI", sans-serif; color: #8a96a3; }
+  @bottom-right { content: counter(page) " / " counter(pages); font: 8.5pt "Segoe UI", sans-serif; color: #8a96a3; }
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 10.5pt; }
+
+body {
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+  line-height: 1.55;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  line-height: 1.25;
+  color: #102a43;
+  break-after: avoid;
+}
+
+h1 {
+  font-size: 24pt;
+  font-weight: 700;
+  margin: 0 0 6mm 0;
+  padding-bottom: 4mm;
+  border-bottom: 3px solid var(--accent);
+}
+
+h2 {
+  font-size: 15pt;
+  margin: 9mm 0 3mm 0;
+  padding-bottom: 1.5mm;
+  border-bottom: 1px solid var(--line);
+}
+
+h3 { font-size: 12pt; margin: 6mm 0 2mm 0; color: var(--accent); }
+h4 { font-size: 10.5pt; margin: 4mm 0 1.5mm 0; color: var(--accent); }
+
+p { margin: 0 0 3mm 0; }
+
+a { color: var(--accent); text-decoration: none; }
+
+ul, ol { margin: 0 0 3mm 0; padding-left: 6mm; }
+li { margin-bottom: 1.2mm; }
+li > p { margin-bottom: 1.2mm; }
+
+strong { font-weight: 600; color: #102a43; }
+
+code {
+  font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+  font-size: 0.88em;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.05em 0.35em;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  background: #14212f;
+  color: #e6edf5;
+  border-radius: 6px;
+  padding: 3mm 4mm;
+  margin: 0 0 4mm 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  break-inside: avoid;
+}
+
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: 9pt;
+  line-height: 1.45;
+}
+
+/* Tables */
+colgroup { display: none; }   /* pandoc sets column widths from the Markdown dashes; let the browser decide */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 0 5mm 0;
+  font-size: 9.5pt;
+  break-inside: auto;
+}
+
+thead th {
+  text-align: left !important;
+  background: #eaf1f9;
+  color: #102a43;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding: 2mm 3mm;
+}
+
+td, th {
+  text-align: left !important;
+  vertical-align: top;
+  padding: 1.8mm 3mm;
+  border-bottom: 1px solid var(--line);
+}
+
+tbody tr:nth-child(even) td { background: #fafbfc; }
+tr { break-inside: avoid; }
+td code, th code { white-space: nowrap; }
+
+blockquote {
+  margin: 0 0 4mm 0;
+  padding: 2mm 4mm;
+  background: var(--warn);
+  border-left: 4px solid var(--warn-line);
+  border-radius: 0 4px 4px 0;
+}
+
+hr { border: none; border-top: 1px solid var(--line); margin: 6mm 0; }
+
+/* Table of contents (the generated list under "Contents", build_manual.py) */
+#TOC {
+  margin: 0 0 8mm 0;
+  padding: 4mm 6mm;
+  background: var(--tint, #f5f7fa);
+  border-radius: 2mm;
+}
+#TOC .toc-title { margin: 0 0 2mm 0; border: none; font-size: 12pt; }
+#TOC ul { list-style: none; padding-left: 0; margin: 0; }
+#TOC > ul { columns: 2; column-gap: 8mm; font-size: 9pt; }
+#TOC ul ul { padding-left: 4mm; font-size: 8.5pt; }
+#TOC li { break-inside: avoid; margin-bottom: 0.5mm; }
+#TOC a { color: var(--text); text-decoration: none; }
+
+/* Header block: the manual starts with a title, a status line and the revision table */
+header#title-block-header { display: none; }

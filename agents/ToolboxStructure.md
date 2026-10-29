@@ -22,14 +22,14 @@ QMRITools/                         repo root
     Resources/                     demo notebooks, All-Functions.nb/.pdf, DemoData.zip, SCMv8txt.zip (colour maps), GradientGUI
     NeuralNetworks/                segmentation/classifier nets + label .txt files   (*.wlnet git-ignored)
     Applications/<SystemID>/       elastix, transformix, dcm2niix, pigz binaries      (git-ignored)
-    BIDS Example/                  example config.json + notebook for the Muscle-BIDS pipeline
+    BIDS Example/                  example configs + notebook + user manual (BIDS-config.md/.pdf) for the Muscle-BIDS pipeline
     AGENTS.md, CLAUDE.md           agent entry point
   agents/                          agent guides (this folder)
   docs/                            qmritools.com Jekyll site (index.md + images), not the paclet docs
   scripts/                         Install_QMRITools.wls, Segment_Nii.wls (CLI segmentation), segmentGUI.nb
   buildscripts.nb                  build/release notebook (§6)
   build/, build_tools/             build output and release notes (git-ignored)
-  BIDS-config.docx                 Muscle-BIDS user manual (outdated, see MuscleBidsTools.md §9)
+  BIDS-config.docx                 old Muscle-BIDS manual (v1.1), replaced by `BIDS Example/BIDS-config.md` (+ .pdf)
 ```
 
 A fresh git clone does **not** contain the network weights or the external binaries (both git-ignored). They come

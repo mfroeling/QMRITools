@@ -29,6 +29,13 @@ EditAmaresMatrix::usage =
 ToFullAmaresMatrix or FromFullAmaresMatrix. 
 The default properties are \"amp\": -1, \"sigma\": 0, \"gamma\": -1, \"shift\": -1, \"phase\": 0, \"B1\": False, \"init\": False.
 
+The matrix has one row per metabolite and one column per fit property. For \"amp\", \"sigma\", \"gamma\", \"shift\" and \"phase\" the value sets how the parameter is shared between metabolites:
+-1 (unique): the metabolite has its own free parameter.
+0 (same): all metabolites with 0 share one common parameter.
+1, 2, ... (group-01, group-02, ...): all metabolites with the same number share one parameter, different numbers are different parameters.
+\"B1\" is True or False and switches the B1 (Ernst-angle) amplitude correction on or off for that metabolite.
+\"init\" is True or False and selects the metabolites that are summed to the base spectrum used by AmaresInitialValues for the initial shift and linewidth calibration.
+
 EditAmaresMatrix[matrix, names] will do the same but will only do it for the values in the list names. If values are not in matrix
 they will be added, if values are names but not in matrix they will be removed from matrix."
 

@@ -8,8 +8,11 @@ anything in that file.
 - Line numbers (`L123`) drift over time. Grep for the function name if a number no longer matches.
 - Index of all agent docs: [AGENTS.md](../QMRITools/AGENTS.md). Code style for this repo: [CodeStyle.md](CodeStyle.md).
   The segmentation step (§6.5) calls `SegmentData`: [SegmentationTools.md](SegmentationTools.md).
-- `BIDS-config.docx` in the repo root is the user manual (v1.1, 2025-07). It is **outdated**. Section 9 lists how it
-  differs from the code. When they disagree, the code wins.
+- The user manual is [QMRITools/BIDS Example/BIDS-config.md](../QMRITools/BIDS%20Example/BIDS-config.md) (v2.0, 2026-10-29, for analysts new to Mathematica),
+  built to `BIDS-config.pdf` in the same folder with `python agents/build_pdf.py` (pandoc + headless Chrome, style in
+  `agents/manual.css`). It replaces `BIDS-config.docx` (v1.1). **Update the manual when a config key, default or check/view
+  function changes, and rebuild the PDF.** Section 9 lists how the old docx differed from the code (history). When
+  manual and code disagree, the code wins.
 
 ---
 
@@ -26,7 +29,8 @@ SelectSubjects[dir]              (* checkbox UI over dicom folders -> copy list 
 subs = All;
 
 BidsDcmToNii[dir, ProcessSubjects -> subs]                          (* 1 dicom -> raw nii (dcm2niix) *)
-ViewProtocolNames[dir, ProcessSubjects -> subs]                     (* check Labels vs ProtocolName *)
+ViewProtocolNames[dir, ProcessSubjects -> subs]                     (* protocol names for the config *)
+CheckConfigLabels[dir, subs]                                        (* check Labels vs ProtocolName *)
 MuscleBidsConvert[dir, ProcessSubjects -> subs]                     (* 2 raw nii -> BIDS named nii *)
 MuscleBidsProcess[dir, ProcessSubjects -> subs, VersionCheck -> False]      (* 3 fitting *)
 MuscleBidsMerge[dir, ProcessSubjects -> subs, VersionCheck -> False]        (* 4 join stacks + register *)
@@ -276,7 +280,7 @@ associations merge.
 | `Padding` | 0 | pad the overlap |
 | `Motion` | True | `JoinSets[MotionCorrectSets->]`, and whether to register when target is same dataset |
 | `Reverse` | False | stack order reversed (Body Chunks in the motor/twitch configs) |
-| `SplitRegistration` | **True** | `RegisterDataSplit` for stacks ≠ first. **Configs write `"Split"`, which is never read** (Q3) |
+| `SplitRegistration` | **True** | `RegisterDataSplit` for stacks ≠ first. Example configs used `"Split"` (never read); fixed 2026-10-29 (Q3) |
 
 ### `Segment`
 
@@ -304,7 +308,7 @@ associations merge.
 | Key | Meaning |
 | --- | --- |
 | `Segmentation.Type` | seg name list (with key when nested) |
-| `Segmentation.Labels` | `[nMax, what]`. `what` = `"Legs"`, `"Arm"`, or a path to a custom label file |
+| `Segmentation.Labels` | `[nMax, what]`. `what` = `"Body"` (S1 + T1 label files; muscles 101-748, bones 800+, so `[799, "Body"]`), `"Legs"`, `"Shoulder"`, `"Arm"` (older sets), or a path to a custom label file. `"Body"` and `"Shoulder"` were added 2026-10-29 |
 | `Analysis.Types` | `[[ (key,) type, suf.., [params..]] ..]`. The last element is threaded (`Thread`) |
 | `Analysis.TractBased` | subset analysed only inside the tract density mask (`dwi_dti_trk_dens`, unitized) |
 | `Analysis.MaskErosion` | default True. **Must sit directly in `Analysis`; the documented `Analysis.Options.MaskErosion` is ignored** (Q4) |
@@ -319,8 +323,8 @@ associations merge.
 Put `config.json` (or `<sub-x_ses-y>_config.json`) in a subject folder. Its content is a **patch on the `datasets`
 section** (not a full config). `CheckConfig` finds it in the stage input folder, merges it, and **copies it to the
 stage output folder**, so it propagates dicom → raw → derivatives → merged. The log then shows
-`***** Using custom config *****`. `CheckConfigLabels[dir, subs]` lists Labels missing per subject, including the
-custom patches. Analysis does not use custom configs.
+`***** Using custom config *****`. `CheckConfigLabels[dir, subs]` shows per subject and session which Labels are
+missing, including the custom patches. Analysis does not use custom configs.
 
 ---
 
@@ -457,7 +461,7 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   (`$InstalledVersion`) and `Date`. It lives in LoggingTools.wl.
 - `CheckFile[base, status, verCheck]` is True when the file exists, `Check === status`, and (if `verCheck`) the
   stored version is not older than the installed one.
-- **To force a redo, delete the relevant `*_check.json`** (or run with `VersionCheck->True` after a version bump). The
+- **To force a redo, delete the relevant `*_check.json`** (`ManageCheckFiles[dir]` lists and deletes them), or run with `VersionCheck->True` after a version bump. The
   exceptions are DcmToNii (empty the `raw` folder) and Convert (it has no check file: it reruns while raw files exist,
   and `DeleteAfterConversion` removes them).
 
@@ -477,14 +481,41 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 - The log is written continuously: `AddToLog` exports the whole `$Log` on every call. `ShowLog[]` opens a live
   window. Levels 0–5 are indentation, and `True` adds a timestamp.
 - `Echo[DateString[], folIn <> " - " <> Key]` prints once per input folder per dataset.
-- Helpers: `ViewConfig[dir]`, `ViewProtocolNames[dir]` (duplicate protocol names shown in red), `CheckConfigLabels[dir, All]`,
-  `GetProtocolNames[dir, sub]`.
+- Helpers: `ViewConfig[dir]`, `GetProtocolNames[dir, sub]`, and `MuscleBidsCheck[dir]`, a TabView of the four tools
+  below. `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput` share `BidsCheckView`: a MenuView per
+  `sub-x_ses-y` (from `BidsSubjectList`, same names and order as `ManageCheckFiles`), bad rows in red, the number
+  of problems in red in the menu entry, a Reload button with the scan time and an "only problems" checkbox. The
+  selected subject is kept when filtering or reloading. Rows come from `BidsCheckRows[{fol, parts, datDis}, what]` as
+  `{cells, bad}`. `BidsSubjectList` joins `dir` (no `SetDirectory` needed) and falls back to the default folders and no
+  datasets when the config is missing or invalid.
+- `ViewProtocolNames[dir]`: series number and protocol name per session, duplicates bad (Duplicate column "yes"). Needs only the folders from
+  the config, so it works while the config is being written.
+- `CheckConfigLabels[dir, subs]`: per dataset Label, present among the protocol names (exact match, custom config
+  included); missing is bad. Subjects come from rawData (not dicomData as before), so it runs after `BidsDcmToNii`.
+  `GetProtocolNames` skips jsons without a string ProtocolName. Datasets without a Label give no rows in any view.
+- `CheckBidsOutput[dir, "Convert"]`: per subject and Label, are the converted json and nii files in the BIDS type folder.
+  It uses the same `*<StringStrip[label]>*.json` glob that Process uses to find its input. It checks that a Label was
+  converted, not that every contrast is complete. A Volumes dataset is checked by its first Label only, because the
+  converter joins all its Labels into one file named after the first. Only `"Convert"` is accepted so far (the
+  pattern is the literal); a later step is a new `BidsCheckRows[{fol, parts, datDis}, step]` overload plus widening
+  that pattern.
+- `ManageCheckFiles[dir]`: TabView per step (Process, Merge, Segment, Tractography, Analysis) of the **expected** check
+  files with their status; existing ones can be selected and deleted per tab to force a rerun. Each step has a subtab
+  per data type (`Type`, for Analysis the analysis key); the buttons act on one subtab. Refresh rescans the
+  expected check files (new subjects or datasets appear), shows the scan time and keeps the selected tabs. The delete
+  confirmation lists the files. The expected names
+  and the conditions under which a worker writes them (Process: method per type, Analysis `img`: not with
+  `BidsOutputImages -> "None"`) are rebuilt in `BidsCheckFiles` with the same calls the workers use (section 7).
+  **If a worker's check-file name or condition changes, update `BidsCheckFiles` too.** Process expectations come from the raw files on disk, so a missing raw file shows up
+  in `CheckBidsOutput`, not here. Check files from old naming (for example no dataset key) are not listed.
 - Most "nothing happened" cases are a **name mismatch**: a Target list that does not resolve to an existing file.
   Turn on `$debugBids` and compare the printed expected path with the files on disk.
 
 ---
 
-## 9. Differences from BIDS-config.docx (v1.1)
+## 9. Differences from BIDS-config.docx (v1.1, history)
+
+Fixed in the v2.0 manual ([BIDS-config.md](../QMRITools/BIDS%20Example/BIDS-config.md)); kept here as a record.
 
 | Manual says | Code does |
 | --- | --- |
@@ -493,7 +524,7 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 | `megre` → dix | `tse` → dix as well |
 | Dixon method `Dixon` only | `Dixon`, `Dixon-B`, `Dixon-P`, `Dixon-S`, `Dixon-A`. mese: `EPGT2`, `Exp` |
 | `Analysis.Options.{MaskErosion,TractWeighting}` | `Options` is not read. `MaskErosion` must sit directly under `Analysis`. Tract weighting is hard-coded False |
-| Merging key `SplitRegistration` (defaults) | correct. The example configs use `Split`, which is ignored |
+| Merging key `SplitRegistration` (defaults) | correct. The example configs used `Split` (ignored); fixed 2026-10-29 |
 | `ViewConfigFile` | the function is `ViewConfig` |
 | not documented | Segment `Dimensions`/`Method`/`VoxSize`; Tractography `TractLength`/`TractAngle`/`TractSeed`/`TractStep`/`SegmentLength`/`BoneLabel`/`HarmonicDenoise`; Analysis `UseFilter`; nested analysis blocks; per-subject configs; `conversion.Version` strings |
 
@@ -508,14 +539,14 @@ These were verified by reading the code. The ones marked ✔ were also confirmed
 | --- | --- | --- |
 | Q1 ✔ | `BuildBidsNameFromConfig` L641 vs `CheckDataDescription` L895 | `Key` is `StringStrip`ped (`DIX_OS`→`DIXOS`), but `isKey` compares the **unstripped** `First[target]`. Dataset names containing `_ - . space` are therefore never recognised as keys in Merge/Segment/Tractography targets (the boch config). Analysis strips correctly. Both lines come from the same refactor commit (509747d6). |
 | Q2 | `BuildBidsNameFromConfig` L661 | Non-keyed targets resolve the target dataset through `InFolder === First[suf]`, which only works when Suffix == BIDS folder (`dix`). |
-| Q3 | Merge L2606 | Reads `Merging.SplitRegistration` (default True). All example configs write `"Split"`, so split registration is always on. |
-| Q4 | Analysis L3308 | `MaskErosion` is read from `Analysis`, not `Analysis.Options`, so the configs' `Options` block does nothing. `tractWeighting` is hard-coded False (L3309), and the config key is spelled `TractWeigthing`. |
+| Q3 ✔ fixed | Merge L2606 | Reads `Merging.SplitRegistration` (default True). The example configs wrote `"Split"`, so split registration was always on. Example configs renamed to `SplitRegistration` on 2026-10-29, so the `false` values there now take effect. |
+| Q4 ✔ fixed (configs) | Analysis L3308 | `MaskErosion` is read from `Analysis`, not `Analysis.Options`. The example configs now write `MaskErosion` directly under `Analysis` (2026-10-29); their dead `TractWeigthing` key was dropped. `tractWeighting` is still hard-coded False (L3309). |
 | Q5 | Analysis L3319 | Key entity is `stk` only if `Analysis.Class == "Stacks"`. Merge uses the **dataset** Class. With Stacks + duplicates (boch config) and no `Analysis.Class`, the analysis looks for `chunk-KEY` while the files are named `stk-KEY`. |
 | Q6 | `BidsDcmToNii` options | `BidsIncludeSession` is declared but never forwarded (`BidsFolderLoop` does not know it, and `SubNameToBids` always uses the default True). |
 | Q7 | Merge L2566 | The "moving files" existence check tests `tarStack` again instead of `movStack`. |
 | Q8 ✔ | `CheckDataDescription` L940–944 | Class `Chunks` is missing from the label/class `Switch`, so the result is unevaluated, `If[!cls,…]` does not fire, and it passes by accident. `ListQ[ass["Label"] && Length[ass]>1]` has a misplaced bracket and works only because `And[list, True]` reduces to `list`. |
 | Q9 | Segment "Registration" L2960 | `Table[..., {i,1,3}]` over `tar[[{i}]]` looks like debug/experimental code. The same function logs `datType["key"]` (lowercase) at L2891, which shows `Missing`. If `Segment.Method` is given as the string `"Automatic"`, no branch matches but the check file is still written as `done`. |
-| Q10 | Analysis L3373 | `segF` is not in the `Block` locals, so it leaks as a global. |
+| Q10 ✔ fixed | Analysis L3373 | `segF` was not in the `Block` locals (added 2026-10-29). |
 | Q11 | Convert dwi | A missing bval/bvec only logs a warning, but the export then runs with an undefined `data`/`vox`. |
 | Q12 | Convert megre/tse | An unknown `Process.Method` has no default `Switch` branch, so conversion silently does nothing. Anat types are not converted at all ("Unknown datatype"). |
 | Q13 | Process/Convert globbing | `*<StringStrip[label]>*` also matches longer labels (`DIXON1` matches `DIXON10`). |
@@ -559,11 +590,13 @@ on the current names.
 | `PartitionBidsName`, `PartitionBidsFolderName` | L340, L366 | name → parts |
 | `GenerateBidsName/FolderName/FileName` | L380–419 | parts → name/path |
 | `SelectBids`, `SelectBidsFolders/Subjects/Sessions` | L430–469 | find `sub-*/ses-*/<folder>` dirs |
-| `defaultConfig`, `ConfigLookup`, `CheckConfig`, `GetConfig`, `MergeConfig` | L480–600 | config |
+| `FilterBidsSubjects[fols, subs, met]` | after `SelectBids` | the `ProcessSubjects` filter, shared by `BidsFolderLoop`, `GetProtocolNames`, `BidsSubjectList` (and so all check views) |
+| `defaultConfig`, `ConfigLookup`, `CheckConfig`, `GetConfig`, `MergeConfig` | L480–600 | config. `CheckConfig[fol]` reads the custom config without the copy to the output folder |
 | `BuildBidsNameFromConfig` | L607–668 | config target lists → file names |
 | `ImportJSON`, `GetJSONPosition`, `MergeJSON` | L679–709 | json selection/merge |
 | `ViewConfig`, `MakeTable`, `ProcessImage` | L720–757 | config viewer UI |
 | `ViewProtocolNames`, `GetProtocolNames`, `SelectSubjects`, `CheckConfigLabels` | L764–865 | inspection UI |
+| `BidsSubjectList`, `BidsCheckView` / `BidsCheckRows` / `PresentRows`, `CheckBidsOutput`, `MuscleBidsCheck`, `ManageCheckFiles` / `BidsCheckFiles` | after `CheckConfigLabels` | check views, output check and check-file manager (section 8) |
 | `CheckDataDescription` | L874, L904 | validate and complete dataset descriptions |
 | `BidsFolderLoop` | L986 | the shared driver |
 | `BidsDcmToNii` / `I` | L1100 / L1126 | step 1 |

@@ -115,7 +115,7 @@ SegmentationVolume[seg, vox] calculates the volume of each label in the segmenta
 
 SegmentationCrossSection::usage = 
 "SegmentationCrossSection[seg] calculates the maximum cross section of each label in the segmentation in voxels.
-SegmentationCrossSection[seg, vox] calculates the maximum cross section of each label in the segmentation in cm^3 where vox is in mm."
+SegmentationCrossSection[seg, vox] calculates the maximum cross section of each label in the segmentation in cm^2 where vox is in mm."
 
 
 MaskVolume::usage = 
