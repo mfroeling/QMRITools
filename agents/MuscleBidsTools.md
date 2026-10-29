@@ -42,6 +42,12 @@ MuscleBidsAnalysis[dir, ProcessSubjects -> subs, BidsOutputImages -> "None"](* 7
 Every step is **idempotent**: it skips work that a `*_check.json` file marks as done (section 7). The user reruns
 the whole chain repeatedly as new subjects arrive.
 
+`MuscleBidsGUI[dir]` wraps this chain: tab **Run** has a button per step with a control per option (checkboxes for
+`VersionCheck` and `DeleteAfterConversion`, menus for `BidsTractographyMethod` and `BidsOutputImages`), an "All
+subjects" toggle with the `SelectSubjects` list, a Stop button and a live status; tab **Check** is `MuscleBidsCheck[dir]`
+and tab **Config** is `ViewConfig[dir]`. Each step runs in a separate kernel (section 8), so nothing is echoed into the
+notebook.
+
 Example configs from real studies are in [`QMRITools/BIDS Example/`](../QMRITools/BIDS%20Example/), next to the
 basic `config.json`:
 
@@ -447,7 +453,11 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   from `GetAssetLocation["MuscleLegLabels"]` and similar → per `Analysis.Types` file: `GetMaskData` with the median+IQR
   (mean+SD for `trk_seed`/`trk_dens`). Scaling: `fatfr`×100 (dix, t2), `dix t2star`×1000. TractBased types use
   `seg ∩ Unitize[dens]`. `MaskErosion` → `DilateMask[seg,-1]`. Output `analysis/sub/ses/<sub_ses[_chunk-KEY]>.xlsx`
-  + `.wxf`.
+  + `.wxf`. The `_xls` check file is only made when both exports return a file name; otherwise the log says
+  "Export failed, no check file made", so a rerun tries again. A label with an empty mask (not in the segmentation,
+  or removed by erosion or tract weighting) gives zeros for that label: `GetMaskData` falls back to the uncropped
+  data and mask (`CropToMask`) when `AutoCropData` cannot crop an empty mask. Before this, that entry stayed
+  unevaluated with the whole image inside, `Transpose` failed, and the xlsx export ran out of Java memory.
 - **image part** (check `…_img`): `BidsOutputImages` = `All | Quantitative | Segmentation | Tractography | None`.
   Slice positions come from `Images.Reference`. Output: 2D quant jpgs with optional `LegendImage`, seg 2D / 3D
   (`_vol`) / `_grid` jpgs, tract 3D jpg.
@@ -501,13 +511,31 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   that pattern.
 - `ManageCheckFiles[dir]`: TabView per step (Process, Merge, Segment, Tractography, Analysis) of the **expected** check
   files with their status; existing ones can be selected and deleted per tab to force a rerun. Each step has a subtab
-  per data type (`Type`, for Analysis the analysis key); the buttons act on one subtab. Refresh rescans the
+  per data type (`Type`); Analysis has `xls` and `img` subtabs (`<key> xls` when there are several analysis keys, so
+  images can be redone without redoing the tables); the buttons act on one subtab. Refresh rescans the
   expected check files (new subjects or datasets appear), shows the scan time and keeps the selected tabs. The delete
   confirmation lists the files. The expected names
   and the conditions under which a worker writes them (Process: method per type, Analysis `img`: not with
   `BidsOutputImages -> "None"`) are rebuilt in `BidsCheckFiles` with the same calls the workers use (section 7).
   **If a worker's check-file name or condition changes, update `BidsCheckFiles` too.** Process expectations come from the raw files on disk, so a missing raw file shows up
   in `CheckBidsOutput`, not here. Check files from old naming (for example no dataset key) are not listed.
+- `MuscleBidsGUI[dir]` runs one step at a time in a **child kernel** (`BidsStartStep`: `LinkLaunch[First[$CommandLine] <> " -wstp"]`,
+  then loads the QMRIToolsDev or QMRITools context with the same test as `LaunchTrainingKernels`, which is duplicated here). In
+  the child `$Output` is empty and `$Messages` goes to a file in `$TemporaryDirectory`, so nothing reaches the notebook
+  and the messages are shown in the Messages pane ("Done with messages"). `FrontEndObject::notavail` is silenced
+  because `BidsFolderLoop` calls `ShowLog[]` in every subject and the child has no front end.
+  **Step and option names go over the link as full-name strings** and are resolved with `ToExpression` after the load:
+  symbols sent as symbols arrive before the package is loaded in the child, and a short name like `MuscleBidsProcess`
+  becomes an empty `Global`` symbol, so the step silently does nothing.
+- `BidsStepStatus` is polled every 2 s (`Dynamic[..., UpdateInterval -> 2]`, outside the tabs). It drains the link (a
+  return packet = finished, a dead link = crashed) and reads the newest `*_BIDS<Step>.log` under the step's output folder
+  that is newer than the start time (`DcmToNii_*.log` for step 1): last line = "now", number of logs = subjects started
+  (against the sessions in rawData, approximate for Analysis). Stop asks for confirmation and closes the link; that
+  also ends the child and its parallel subkernels. Unfinished subjects have no check file and are redone. Only one
+  step runs at a time because steps depend on each other's output and each child starts its own parallel pool.
+  A `config.json` edited during a run is picked up per subject, and the child loads the package from disk, so it can be
+  newer than the code in the notebook kernel. If the front end is set to "Launch parallel kernels: At startup", every
+  child starts a full pool of its own, so use "When needed" or "Manual".
 - Most "nothing happened" cases are a **name mismatch**: a Target list that does not resolve to an existing file.
   Turn on `$debugBids` and compare the printed expected path with the files on disk.
 
@@ -595,8 +623,9 @@ on the current names.
 | `BuildBidsNameFromConfig` | L607–668 | config target lists → file names |
 | `ImportJSON`, `GetJSONPosition`, `MergeJSON` | L679–709 | json selection/merge |
 | `ViewConfig`, `MakeTable`, `ProcessImage` | L720–757 | config viewer UI |
-| `ViewProtocolNames`, `GetProtocolNames`, `SelectSubjects`, `CheckConfigLabels` | L764–865 | inspection UI |
+| `ViewProtocolNames`, `GetProtocolNames`, `SelectSubjects`, `CheckConfigLabels` | L764–865 | inspection UI. `SelectSubjects[dir, Dynamic[sel]]` stores the selection in the caller's variable |
 | `BidsSubjectList`, `BidsCheckView` / `BidsCheckRows` / `PresentRows`, `CheckBidsOutput`, `MuscleBidsCheck`, `ManageCheckFiles` / `BidsCheckFiles` | after `CheckConfigLabels` | check views, output check and check-file manager (section 8) |
+| `MuscleBidsGUI`, `BidsStartStep`, `BidsStepStatus` | after `BidsCheckFiles` | pipeline GUI, child-kernel start of a step, status poll (section 8) |
 | `CheckDataDescription` | L874, L904 | validate and complete dataset descriptions |
 | `BidsFolderLoop` | L986 | the shared driver |
 | `BidsDcmToNii` / `I` | L1100 / L1126 | step 1 |

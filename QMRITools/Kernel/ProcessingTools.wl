@@ -582,19 +582,19 @@ Options[GetMaskData] = Options[GetMaskDatai] = {GetMaskOutput -> "All", GetMaskO
 SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 GetMaskData[data_?ArrayQ, mask_, opts : OptionsPattern[]] := Block[{
-		out, msk, cr, lout
+		out, msk, dat, lout
 	},
 	Which[
 		(*Apply same masks to multiple datasets with cropping*)
 		ArrayDepth[data] === 4 && ArrayDepth[mask] === 3,
-		{msk, cr} = AutoCropData[mask];
-		GetMaskData[#, msk, opts] & /@ Transpose[ApplyCrop[data, cr]]
+		{dat, msk} = CropToMask[data, mask];
+		GetMaskData[#, msk, opts] & /@ Transpose[dat]
 		,
 		(*Apply multiple masks to one or multiple datasets with cropping *)
 		(ArrayDepth[data] === 3 || ArrayDepth[data] === 4) && ArrayDepth[mask] === 4,
 		(
-			{msk, cr} = AutoCropData[#];
-			GetMaskData[ApplyCrop[data, cr], msk, opts]
+			{dat, msk} = CropToMask[data, #];
+			GetMaskData[dat, msk, opts]
 		) & /@ Transpose[mask]
 		,
 		True,
@@ -621,6 +621,13 @@ GetMaskData[data_?ArrayQ, mask_, {n_?NumberQ, o_?NumberQ}, opts : OptionsPattern
 		True,
 		$Failed
 	]
+]
+
+
+CropToMask[data_, mask_] := Block[{msk, cr},
+	{msk, cr} = AutoCropData[mask];
+	(*an empty mask cannot be cropped, use the uncropped data and mask*)
+	If[cr === $Failed, {data, mask}, {ApplyCrop[data, cr], msk}]
 ]
 
 

@@ -1059,7 +1059,7 @@ BidsCheckFiles[{der_, mer_, ana_}, {fol_, parts_, datDis_}, anDis_, imOut_] := B
 		Flatten[(
 			typ = #["Key"];
 			partsO = If[typ === "Default", parts, Join[<|If[#["Analysis", "Class"] === "Stacks", "stk", "chunk"] -> StringStrip@typ|>, parts]];
-			{"Analysis", typ, nam, FileNameJoin[{GenerateBidsFolderName[ana, partsO], GenerateBidsName[<|partsO, "suf" -> {#}|>]}]}& /@ If[imOut === "None", {"xls"}, {"xls", "img"}]
+			{"Analysis", If[typ === "Default", #, typ<>" "<>#], nam, FileNameJoin[{GenerateBidsFolderName[ana, partsO], GenerateBidsName[<|partsO, "suf" -> {#}|>]}]}& /@ If[imOut === "None", {"xls"}, {"xls", "img"}]
 		)& /@ anDis, 1]
 	]
 ]
@@ -1109,7 +1109,7 @@ MuscleBidsGUI[dir_?StringQ] := DynamicModule[{
 		state = "Running"
 	]];
 
-	(*read the state of the running step, the link is closed when it is done*)
+	(*read the state of the running step*)
 	poll = Function[If[link =!= None,
 		{state, now, touched, tail, msgs} = Lookup[BidsStepStatus[link, root, step, t0, msgFile[step]], {"State", "Now", "Touched", "Tail", "Messages"}];
 		tick++;
@@ -1141,7 +1141,7 @@ MuscleBidsGUI[dir_?StringQ] := DynamicModule[{
 			"Check" -> Dynamic[MuscleBidsCheck[dir]],
 			"Config" -> ViewConfig[dir]
 		}, ControlPlacement -> Top],
-		(*poll outside the tabs such that it runs on every tab*)
+		(*poll the running step*)
 		Dynamic[poll[]; "", UpdateInterval -> 2, TrackedSymbols :> {}, SynchronousUpdating -> False]
 	}],
 
@@ -1156,7 +1156,7 @@ BidsStartStep[dir_, st_, opts_, msg_] := Block[{link, load},
 	link = LinkLaunch[First[$CommandLine] <> " -wstp"];
 	(*dev or release paclet as in LaunchTrainingKernels*)
 	load = If[StringContainsQ[First[PacletFind["QMRITools"]]["Location"], "workspace"], "QMRIToolsDev`", "QMRITools`"];
-	(*run the step with output and messages redirected to a file, symbols as full names since the package is not loaded yet*)
+	(*run the step with the messages in a file*)
 	With[{l = load, f = Context[st] <> SymbolName[st], d = ExpandFileName[dir], o = Replace[opts, (k_ -> v_) :> {Context[k] <> SymbolName[k], v}, {1}], m = msg},
 		LinkWrite[link, Unevaluated[Get[l]; Block[{s}, s = OpenWrite[m];
 			Block[{$Output = {}, $Messages = {s}}, Quiet[ToExpression[f][d, Sequence @@ (ToExpression[First[#]] -> Last[#]& /@ o)], FrontEndObject::notavail]]; Close[s]]]]];
@@ -3862,10 +3862,11 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		debugBids[{"exporting", outFile}];
 		(*-----*)AddToLog[{"Data will be exported to:", DirectoryName@outFile}, 3, True];
 		data = Dataset[Association /@ Transpose[Thread[#] & /@ Join[dataLabs, data]]];
-		Export[outFile<>".xlsx", data];
-		Export[outFile<>".wxf", data];
-
-		MakeCheckFile[checkFileX, Sort@Join[{"Check"->"done"}, Normal@datDis]];
+		(*the check file is only made when both files are exported*)
+		If[AllTrue[{Export[outFile<>".xlsx", data], Export[outFile<>".wxf", data]}, StringQ],
+			MakeCheckFile[checkFileX, Sort@Join[{"Check"->"done"}, Normal@datDis]],
+			(*-----*)AddToLog[{"Export failed, no check file made for:", outFile}, 3]
+		];
 
 		(*compress the nii files if compression during ExportNii -> False*)
 		If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
