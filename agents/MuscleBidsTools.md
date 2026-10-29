@@ -527,7 +527,8 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   **Step and option names go over the link as full-name strings** and are resolved with `ToExpression` after the load:
   symbols sent as symbols arrive before the package is loaded in the child, and a short name like `MuscleBidsProcess`
   becomes an empty `Global`` symbol, so the step silently does nothing.
-- `BidsStepStatus` is polled every 2 s (`Dynamic[..., UpdateInterval -> 2]`, outside the tabs). It drains the link (a
+- `BidsStepStatus` is polled every 2 s, only while a step runs (a `Refresh[..., UpdateInterval -> 2]` inside a
+  `Dynamic` that tracks `link`, outside the tabs; polling when idle made the cell bracket flash). It drains the link (a
   return packet = finished, a dead link = crashed) and reads the newest `*_BIDS<Step>.log` under the step's output folder
   that is newer than the start time (`DcmToNii_*.log` for step 1): last line = "now", number of logs = subjects started
   (against the sessions in rawData, approximate for Analysis). Stop asks for confirmation and closes the link; that

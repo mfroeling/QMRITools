@@ -886,7 +886,7 @@ BidsSubjectList[dir_, subs_] := Block[{config, root, dis},
 (*BidsCheckView*)
 
 
-BidsCheckView[dir_, subs_, what_, head_] := DynamicModule[{rows, time, load, only = False, show, cur = None, bad},
+BidsCheckView[dir_, subs_, what_, head_] := DynamicModule[{rows, time, load, only = what =!= "Protocol", show, cur = None, bad},
 	(*load the rows and the scan time*)
 	load = (rows = BidsCheckRows[dir, subs, what]; time = DateString["Time"])&;
 	load[];
@@ -1007,8 +1007,10 @@ DynamicModule[{checks, time, sel = {}, upd = 0, ind = 1, sub = <||>, exist, stat
 			Button["Refresh", checks = BidsCheckFiles[dir, subs, imOut]; time = DateString["Time"]; upd++, Method -> "Queued"],
 			Dynamic["  "<>ToString[Length[Intersection[sel, list[[All, 2]]]]]<>" selected, scanned at "<>time]
 		}],
-		Dynamic[upd; Grid[Prepend[row @@@ list, Style[#, Bold]& /@ {"", "Subject", "Check file", "Status", "Version", "Date"}],
-			Alignment -> Left, Frame -> All, Spacings -> {1, 0.5}]]
+		Dynamic[upd; Pane[Grid[Prepend[row @@@ list, Style[#, Bold]& /@ {"", "Subject", "Check file", "Status", "Version", "Date"}],
+			Alignment -> Left, Frame -> All, Spacings -> {1, 0.5}],
+			(*scroll when more than 15 rows*)
+			If[Length[list] > 15, {Automatic, 430}, Automatic], Scrollbars -> Automatic, ImageSizeAction -> "Scrollable"]]
 	}]];
 
 	(*per step a subtab per data type, ind and sub keep the selected tabs*)
@@ -1119,30 +1121,37 @@ MuscleBidsGUI[dir_?StringQ] := DynamicModule[{
 	Column[{
 		TabView[{
 			"Run" -> Column[{
+				Style["Subjects", Bold],
 				Row[{Checkbox[Dynamic[all]], " All subjects"}],
 				Dynamic[If[all, "", SelectSubjects[dir, Dynamic[sel]]]],
+				Style["Steps", Bold],
 				Grid[Function[row, {
 					Button[SymbolName[row[[1]]], run[row], ImageSize -> 200, Enabled -> Dynamic[link === None]],
 					Row[ctrl[SymbolName[row[[1]]], #]& /@ row[[3]]]
 				}] /@ steps, Alignment -> Left],
-				Row[{Button["Stop",
+				Button["Stop",
 					If[link =!= None && ChoiceDialog["Stop "<>step<>"? The subjects that are not finished are processed again the next time."],
 						LinkClose[link]; link = None; state = "Stopped"],
-					Enabled -> Dynamic[link =!= None], Method -> "Queued"]}],
+					ImageSize -> 200, Enabled -> Dynamic[link =!= None], Method -> "Queued"],
+				Style["Status", Bold],
+				Row[{
+					(*moving bar while a step runs*)
+					Dynamic[If[state === "Running", ProgressIndicator[Appearance -> "Percolate", ImageSize -> {120, 12}], ""], TrackedSymbols :> {state}],
+					Dynamic[tick; Style[If[step === "", "", step<>": "]<>state<>If[state === "Running", " ("<>ToString[Round[AbsoluteTime[] - t0]]<>" s)", ""], Bold,
+						Sequence @@ Which[state === "Crashed", {Red}, state === "Done with messages", {Orange}, True, {}]]]
+				}, "  "],
 				Dynamic[tick; Column[{
-					Style[If[step === "", "", step<>": "]<>state<>If[state === "Running", " ("<>ToString[Round[AbsoluteTime[] - t0]]<>" s)", ""], Bold,
-						Which[state === "Crashed", Red, state === "Done with messages", Orange, True, Automatic]],
 					If[total > 0, "subjects started "<>ToString[touched]<>" of "<>ToString[total], Nothing],
 					Style[now, Italic]
 				}]],
 				OpenerView[{"Log", Dynamic[Pane[Style[StringRiffle[tail, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 200}, Scrollbars -> Automatic]]}],
 				OpenerView[{"Messages", Dynamic[Pane[Style[StringRiffle[msgs, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 100}, Scrollbars -> Automatic]]}]
-			}],
+			}, Spacings -> 1],
 			"Check" -> Dynamic[MuscleBidsCheck[dir]],
 			"Config" -> ViewConfig[dir]
 		}, ControlPlacement -> Top],
-		(*poll the running step*)
-		Dynamic[poll[]; "", UpdateInterval -> 2, TrackedSymbols :> {}, SynchronousUpdating -> False]
+		(*poll the running step, only while a link is open*)
+		Dynamic[If[link =!= None, Refresh[poll[]; "", UpdateInterval -> 2, TrackedSymbols :> {}], ""], TrackedSymbols :> {link}, SynchronousUpdating -> False]
 	}],
 
 	Initialization :> (link = None; If[state === "Running", state = "Interrupted"]),
@@ -1992,6 +2001,10 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 				(*-------------------------------------------*)
 				"mese",
 
+				(*skip when no json has exactly this protocol name*)
+				If[GetJSONPosition[json, {{"ProtocolName", nameIn}}] === {},
+				(*-----*)AddToLog[{"No json with protocol name ", nameIn, " found, skipping conversion"}, 4],
+
 				Which[
 (*TODO
 I have to properly implement the logic that figures out if its siemens of Philips and if its individual files of 4D and if the correct 
@@ -2070,6 +2083,7 @@ echo time is in the json. and then spit out warnings and skip when things are go
 
 				(*Delete used files*)
 				DelFiles[files[[posIn]], del];
+				]
 
 				,
 
