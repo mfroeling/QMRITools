@@ -210,12 +210,12 @@ QMRITools includes the latest version of `https://github.com/rordenlab/dcm2niix`
 
 ------------------------------------------------------------------------
 
-Number of Functions: 568
+Number of Functions: 576
 
-- Total lines: 44910
-- Total non-empty lines: 33848
-- Total lines of help text: 3281
-- Total lines of comments: 6346
-- Total lines of code: 24221
-- Total characters: 1525860
+- Total lines: 45563
+- Total non-empty lines: 34363
+- Total lines of help text: 3325
+- Total lines of comments: 6449
+- Total lines of code: 24589
+- Total characters: 1554613
 - Average characters per line: 45
