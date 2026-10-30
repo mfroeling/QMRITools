@@ -493,11 +493,40 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 - `Echo[DateString[], folIn <> " - " <> Key]` prints once per input folder per dataset.
 - Helpers: `ViewConfig[dir]`, `GetProtocolNames[dir, sub]`, and `MuscleBidsCheck[dir]`, a TabView of the four tools
   below. `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput` share `BidsCheckView`: a MenuView per
-  `sub-x_ses-y` (from `BidsSubjectList`, same names and order as `ManageCheckFiles`), bad rows in red, the number
+  `sub-x_ses-y` (from `BidsSubjectList`, same names and order as `ManageCheckFiles`), bad rows with a light red background, the number
   of problems in red in the menu entry, a Reload button with the scan time and an "only problems" checkbox. The
-  selected subject is kept when filtering or reloading. Rows come from `BidsCheckRows[{fol, parts, datDis}, what]` as
-  `{cells, bad}`. `BidsSubjectList` joins `dir` (no `SetDirectory` needed) and falls back to the default folders and no
-  datasets when the config is missing or invalid.
+  selected subject is kept when filtering or reloading. Rows come from `BidsCheckRows[{fol, parts, datDis}, what]`
+  (one `Switch` on `what`: Protocol, Labels, Convert) as `{cells, bad}`. `BidsSubjectList` joins `dir` (no `SetDirectory` needed) and falls back to the default folders and no
+  datasets when the config is missing or invalid. "Only problems" starts checked for Config labels and Convert output,
+  not for Protocol names. Every table (these views and `ManageCheckFiles`) is built by `BidsTable[rows, head]` with rows
+  `{cells, bad}`, which sets the styling (grey header, alternating row shading with explicit colours, light red row background for bad rows (missing, unreadable and `error` in Check files), the words missing/unreadable/error in bold red, row dividers, fixed row
+  height so checkbox rows match, `LightDarkV` colours) and scrolls (Pane, about 15 rows high) when there are more than
+  15 rows; change the look there.
+  `ManageCheckFiles` shows the check file name without its `sub-x_ses-y_` prefix, the Subject column has it.
+- Scanning: `BidsJsonFiles[folder, labels]` is the `*<StringStrip[label]>*.json` glob used by the Convert view,
+  `BidsCheckFiles` and `MuscleBidsProcessI`. `MuscleBidsConvertI` keeps its own glob (spaces become `_`, no strip).
+  `BidsProtocolNames[folder]` caches `GetProtocolNames` in `$BidsScan`, so Protocol names and Config labels read
+  the raw json once. The cache has no expiry: a new Protocol names scan (`BidsCheckRows[.., "Protocol"]`) and every Reload clear it, so `MuscleBidsCheck` shares it between its tabs, while a stand-alone `CheckConfigLabels` after a change in the raw data shows the old names until Reload.
+  Measured on a 29 subject study: Protocol names 9.5 s to 0.7 s, Config labels 9.7 s to 0.06 s, Convert output and
+  Check files about 2 s (about 65 ms per subject, 1 ms per glob, no single hotspot).
+- `ImportJSON` uses ``Developer`ReadRawJSONFile`` (about 30 times faster than `Import[.., "RawJSON"]`, same result) and
+  falls back to `Import` when its result is not an association or list (unreadable file). The function is undocumented;
+  if a Wolfram version drops it the call stays unevaluated, which also is not an association or list, so the fallback
+  covers that case too.
+- The views (`BidsCheckView`, `BidsCheckFilesView`, `MuscleBidsGUI`) expand a relative `dir` first, so a later `SetDirectory` cannot break Reload or Run. When no subjects are found and the config is missing or invalid (`BidsConfigQ`) the view says so; the GUI Config tab shows a text instead of `ViewConfig` in that case. `steps`, `optVals` and `msgFile` of the GUI are constants in the `With`, not `DynamicModule` variables.
+- `ManageCheckFiles` reads the status of every check file during the scan (`BidsCheckStatus`: base -> `None` missing,
+  `$Failed` unreadable, else the json), so the `Dynamic` only draws; Reload rescans both, Delete updates the stored
+  statuses. Rows with missing, unreadable or `error` status are bad (red row).
+- Scan first, then draw: `BidsCheckView` and `BidsCheckFilesView` (the view behind `ManageCheckFiles`) scan in a `With`
+  before the `DynamicModule` is made (`BidsScanChecks` returns the expected files and their statuses), so the data is
+  loaded while the cell evaluates (the cell is busy, about 2 s per view) and the view only draws it. The variable list
+  of the `DynamicModule` has bare names only and the body assigns the scan result and the state (CodeStyle.md §1).
+  `MuscleBidsGUI` builds its Check tab the same way, once at the call (about 5 s). Do not scan inside a `Dynamic` or
+  `Initialization`: the 5 s Dynamic limit gives `$Aborted`, and a long `Initialization` gives "Unresolved Dynamic
+  Content" and the "Disable Dynamic Evaluation" dialog. Reload rescans (queued button) per view; the GUI
+  Check tab does not rescan by itself after a step ran, press Reload there.
+- `MuscleBidsConvertI` mese branch: when no json has exactly the protocol name (the glob matches by substring), it logs
+  and skips; before it crashed on `Last[{}]` in `CheckPos`.
 - `ViewProtocolNames[dir]`: series number and protocol name per session, duplicates bad (Duplicate column "yes"). Needs only the folders from
   the config, so it works while the config is being written.
 - `CheckConfigLabels[dir, subs]`: per dataset Label, present among the protocol names (exact match, custom config
@@ -507,12 +536,12 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   It uses the same `*<StringStrip[label]>*.json` glob that Process uses to find its input. It checks that a Label was
   converted, not that every contrast is complete. A Volumes dataset is checked by its first Label only, because the
   converter joins all its Labels into one file named after the first. Only `"Convert"` is accepted so far (the
-  pattern is the literal); a later step is a new `BidsCheckRows[{fol, parts, datDis}, step]` overload plus widening
+  pattern is the literal); a later step is a new case in the `Switch` of `BidsCheckRows[{fol, parts, datDis}, what]` plus widening
   that pattern.
 - `ManageCheckFiles[dir]`: TabView per step (Process, Merge, Segment, Tractography, Analysis) of the **expected** check
   files with their status; existing ones can be selected and deleted per tab to force a rerun. Each step has a subtab
   per data type (`Type`); Analysis has `xls` and `img` subtabs (`<key> xls` when there are several analysis keys, so
-  images can be redone without redoing the tables); the buttons act on one subtab. Refresh rescans the
+  images can be redone without redoing the tables); the buttons act on one subtab. Reload rescans the
   expected check files (new subjects or datasets appear), shows the scan time and keeps the selected tabs. The delete
   confirmation lists the files. The expected names
   and the conditions under which a worker writes them (Process: method per type, Analysis `img`: not with
@@ -526,12 +555,17 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   because `BidsFolderLoop` calls `ShowLog[]` in every subject and the child has no front end.
   **Step and option names go over the link as full-name strings** and are resolved with `ToExpression` after the load:
   symbols sent as symbols arrive before the package is loaded in the child, and a short name like `MuscleBidsProcess`
-  becomes an empty `Global`` symbol, so the step silently does nothing.
+  becomes an empty `Global`` symbol, so the step silently does nothing. The step buttons are queued and ignore a click
+  while a link is open; a failed launch shows "Crashed: Could not start the kernel". `BidsFolder[dir, key]` gives a
+  config folder as a full path (default when the config is missing); `BidsFolder[config, dir, key]` only does the join
+  and is also used by `BidsSubjectList` and `BidsCheckFiles`. The pipeline entry points keep passing the relative folder
+  names to `BidsFolderLoop`. The message file name contains a hash of the study path
+  (two GUIs do not overwrite each other) and is deleted when the step ends.
 - `BidsStepStatus` is polled every 2 s, only while a step runs (a `Refresh[..., UpdateInterval -> 2]` inside a
   `Dynamic` that tracks `link`, outside the tabs; polling when idle made the cell bracket flash). It drains the link (a
   return packet = finished, a dead link = crashed) and reads the newest `*_BIDS<Step>.log` under the step's output folder
   that is newer than the start time (`DcmToNii_*.log` for step 1): last line = "now", number of logs = subjects started
-  (against the sessions in rawData, approximate for Analysis). Stop asks for confirmation and closes the link; that
+  (against the sessions in rawData, approximate for Analysis). Stop asks for confirmation and closes the link (unless the step ended meanwhile); that
   also ends the child and its parallel subkernels. Unfinished subjects have no check file and are redone. Only one
   step runs at a time because steps depend on each other's output and each child starts its own parallel pool.
   A `config.json` edited during a run is picked up per subject, and the child loads the package from disk, so it can be
@@ -625,7 +659,10 @@ on the current names.
 | `ImportJSON`, `GetJSONPosition`, `MergeJSON` | L679–709 | json selection/merge |
 | `ViewConfig`, `MakeTable`, `ProcessImage` | L720–757 | config viewer UI |
 | `ViewProtocolNames`, `GetProtocolNames`, `SelectSubjects`, `CheckConfigLabels` | L764–865 | inspection UI. `SelectSubjects[dir, Dynamic[sel]]` stores the selection in the caller's variable |
-| `BidsSubjectList`, `BidsCheckView` / `BidsCheckRows` / `PresentRows`, `CheckBidsOutput`, `MuscleBidsCheck`, `ManageCheckFiles` / `BidsCheckFiles` | after `CheckConfigLabels` | check views, output check and check-file manager (section 8) |
+| `BidsFolder` (two forms) | after `GetConfig` | full path of a config folder |
+| `BidsJsonFiles`, `$BidsScan` / `BidsProtocolNames` | after `GetProtocolNames` | json label glob, protocol-name cache (section 8) |
+| `BidsSubjectList`, `BidsTable`, `BidsCheckView` / `BidsCheckRows` / `BidsPresentRows`, `CheckBidsOutput`, `MuscleBidsCheck` | after `CheckConfigLabels` | check views and the shared table (section 8) |
+| `ManageCheckFiles` / `BidsCheckFilesView`, `BidsScanChecks` / `BidsCheckStatus` / `BidsReadCheck`, `BidsCheckFiles` | after `MuscleBidsCheck` | check-file manager, scan of the expected check files and their status (section 8) |
 | `MuscleBidsGUI`, `BidsStartStep`, `BidsStepStatus` | after `BidsCheckFiles` | pipeline GUI, child-kernel start of a step, status poll (section 8) |
 | `CheckDataDescription` | L874, L904 | validate and complete dataset descriptions |
 | `BidsFolderLoop` | L986 | the shared driver |

@@ -165,8 +165,13 @@ UseVersion::usage =
 Set to 1 for the default bundled version, an integer matching a dated \"DcmToNii-<version>\" asset (e.g. 25 for dcm2niix-20250506.exe),
 or \"Own\" for a custom dcm2niix-own.exe build registered as the \"DcmToNii-Own\" asset in PacletInfo.wl."
 
-DeleteOutputFolder::usage = 
+DeleteOutputFolder::usage =
 "DeleteOutputFolder is an option of DcmToNii. If the output folder already exists it will be deleted."
+
+DecompressDcm::usage =
+"DecompressDcm is an option for DcmToNii. If set True, all dcm files in the input folder are decompressed with dcmdjpeg.exe (DCMTK) before the conversion.
+This is needed for JPEG2000 or JPEG-LS compressed dicom that dcm2niix cannot read. Only for Windows.
+Note that the input files are overwritten, so use a copy of the data."
 
 
 (* ::Subsection::Closed:: *)
@@ -214,7 +219,8 @@ Options[DcmToNii] = {
 	UseSubFolders -> False, 
 	DeleteOutputFolder -> False, 
 	MonitorCalc -> True,
-	MergeEchos -> True
+	MergeEchos -> True,
+	DecompressDcm -> False
 }
 
 SyntaxInformation[DcmToNii] = {"ArgumentsPattern" -> {_.,_.,OptionsPattern[]}};
@@ -225,7 +231,7 @@ DcmToNii[inFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]] := DcmToNii[{inF
 
 DcmToNii[{inFol_?StringQ, outFol_?StringQ}, opt:OptionsPattern[]] := Block[{
 		fileFolIn, folOut, log, command, compress, dcm2niiExe, dcm2niiFol, delete,
-		foldersIn, folders, foldersOut, dcm2nii, merge, mon
+		foldersIn, folders, foldersOut, dcm2nii, merge, mon, decExe
 	},
 
 	mon = OptionValue[MonitorCalc];
@@ -260,6 +266,14 @@ DcmToNii[{inFol_?StringQ, outFol_?StringQ}, opt:OptionsPattern[]] := Block[{
 		];
 
 		If[mon, Echo["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
+
+		(*decompress the dcm files in place*)
+		If[OptionValue[DecompressDcm],
+			decExe = GetAssetLocation["DcmDJpeg"];
+			If[decExe === $Failed, Return[$Failed, Block]];
+			If[mon, Echo["Decompressing dcm files with dcmdjpeg.exe (DCMTK)"]];
+			RunProcess[{decExe, #, #}]& /@ FileNames["*.dcm", fileFolIn, Infinity];
+		];
 
 		If[DirectoryQ[folOut],
 			delete = If[OptionValue[DeleteOutputFolder], 

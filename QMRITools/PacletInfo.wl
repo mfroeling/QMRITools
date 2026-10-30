@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "5.1.0",
+	"Version" -> "5.1.1",
 	"WolframVersion" -> "15.0+",
 	"SystemID" -> All,
 	"Description" -> "Toolbox for Quantitative MRI.",
@@ -63,6 +63,19 @@ PacletObject[<|
 			{"DcmToNii", "dcm2niix-20260416.exe"},
 			{"DcmToNii-Own", "dcm2niix-own.exe"},
 			{"pigz", "pigz.exe"},
+			{"DcmDJpeg", "dcmtk/dcmdjpeg.exe"},
+			{"DcmDJpegLib", "dcmtk/dcmdata.dll"},
+			{"DcmDJpegLib", "dcmtk/dcmimage.dll"},
+			{"DcmDJpegLib", "dcmtk/dcmimgle.dll"},
+			{"DcmDJpegLib", "dcmtk/dcmjpeg.dll"},
+			{"DcmDJpegLib", "dcmtk/ijg8.dll"},
+			{"DcmDJpegLib", "dcmtk/ijg12.dll"},
+			{"DcmDJpegLib", "dcmtk/ijg16.dll"},
+			{"DcmDJpegLib", "dcmtk/oficonv.dll"},
+			{"DcmDJpegLib", "dcmtk/oflog.dll"},
+			{"DcmDJpegLib", "dcmtk/ofstd.dll"},
+			{"DcmDJpegLicense", "dcmtk/COPYRIGHT.txt"},
+			{"DcmDJpegLicense", "dcmtk/README.txt"},
 			(*windows old dcm2nii versions*)
 			{"DcmToNii-25", "dcm2niix-20250506.exe"},
 			{"DcmToNii-24", "dcm2niix-20240202.exe"},

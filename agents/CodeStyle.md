@@ -13,13 +13,19 @@ Index of all agent docs: [AGENTS.md](../QMRITools/AGENTS.md). Related: [MuscleBi
 
 ## 1. The five rules that get corrected most often
 
-1. **Comments: at most one short line, stating *what* the code does, never *why*.** No comment blocks above a
-   function, no multi-line comments, and no rationale in an edit unless the user asks for it. The default number of
-   new comments is zero.
-2. **`Block[{a, b, c}, ...]` with bare symbols only.** No initialisers in the header. Write
-   `Block[{t0}, t0 = AbsoluteTime[]; ...]`, not `Block[{t0 = AbsoluteTime[]}, ...]`.
+1. **Comments: a short line at each step inside a function body, stating *what* the code does, never *why*.** Code
+   without any comments is not wanted either. No comment blocks above a function or definition, no multi-line
+   comments, and no rationale in an edit unless the user asks for it. Short inline `(*what*)` labels at each distinct
+   step of the body are the norm.
+2. **Variable lists hold bare symbols only**, for `Block`, `Module` and `DynamicModule` alike. No initialisers in the
+   header, all initialisation and logic is in the body, so the list never has to be scanned for logic. Write
+   `Block[{t0}, t0 = AbsoluteTime[]; ...]`, not `Block[{t0 = AbsoluteTime[]}, ...]`, and
+   `DynamicModule[{sel, upd}, sel = {}; upd = 0; ...]`, not `DynamicModule[{sel = {}, upd = 0}, ...]`.
 3. **`Block` is the default scoping construct. Use `With` only when a value must survive scope exit** (a returned
    closure, a value embedded in a data structure, code sent to another kernel). Avoid `Module` in new code.
+   A `DynamicModule` view that needs a slow scan computes it in an enclosing `With` and assigns it in the body
+   (`With[{scan = ...}, DynamicModule[{rows}, rows = scan; ...]]`): assignments in the body run when the window is
+   drawn, so a scan there ends in "Unresolved Dynamic Content" (MuscleBidsTools.md §8).
 4. **No duplicated logic.** Before adding a case that resembles existing ones, restructure the dispatch: a `Switch`
    becomes gated `If`s, a pattern alternation gets broader, a helper gets extracted. Never copy a body and tweak it.
 5. **Compact code.** Pull setup or teardown shared by both `If` branches out so it runs once. Test a condition once
@@ -93,6 +99,8 @@ EndPackage[]
 - A private helper has no `::usage` and lives after `Begin["`Private`"]`.
 - Every subpackage sees every other subpackage's public symbols through `QMRITools`$Contexts`.
 - Leave two blank lines between cells and one blank line between overloads of the same function.
+- One statement per line. Do not chain several `a; b; c` assignments or calls on one line, also inside `If` branches and
+  button actions: write each on its own line, so the body reads top to bottom.
 
 ## 3. Formatting
 
@@ -124,6 +132,9 @@ EndPackage[]
     Lists usually map onto the scalar form: `GenerateBidsName[list:{_?AssociationQ..}] := GenerateBidsName /@ list`.
   - Pipeline entry points use a 3-tier chain: `f[dir]` → `f[dir, config]` → `f[in, out, desc]`
     (see MuscleBidsTools.md §3).
+- **Overload on the shape of an argument, `Switch` on its value.** An argument that is one of a few literal strings
+  (`"Protocol"`, `"Labels"`, `"Convert"` in `BidsCheckRows`) is a value, not a shape: use one definition with a `Switch`
+  so the cases sit together and share their setup. Do not write one overload per literal string.
 - **`Switch` on string option values** for mutually exclusive dispatch. Use `Which` for condition chains. When a new
   variant shares behaviour with several existing cases, **convert to independent `MemberQ`-gated `If`s** so the
   bodies are reused. The precedent is `Dixon-A` in `MuscleBidsProcessI`:
@@ -276,10 +287,10 @@ F[x_] := ...
 
 - [ ] New public symbol? Usage string in the front section, and `Options`/`SyntaxInformation` present.
 - [ ] New message? Declared in the front Error Messages block.
-- [ ] `Block` header has bare symbols only, and every new local is declared (no leaked globals).
+- [ ] `Block`, `Module` and `DynamicModule` headers have bare symbols only, and every new local is declared (no leaked globals).
 - [ ] `With` only where a value must escape the scope.
 - [ ] No copied branch bodies. Dispatch restructured instead.
-- [ ] Comments: zero or one short line each, no rationale, nearby comments still accurate.
+- [ ] Comments: a short what-label at each step of the body, none above definitions, no rationale, nearby comments still accurate.
 - [ ] Debug scaffolding and `(*close ...*)` markers preserved.
 - [ ] Semantics you relied on were verified with wolframscript when not obvious.
 - [ ] MuscleBids: output names unchanged, or every downstream stage updated (see MuscleBidsTools.md §4, §11).

@@ -133,6 +133,8 @@ their website.
 
 - [dcm2niix](https://github.com/rordenlab/dcm2niix/)
 - [Elastix](https://elastix.lumc.nl/)
+- [DCMTK](https://dicom.offis.de/dcmtk) (`dcmdjpeg`, Windows only, used by the `DecompressDcm` option of `DcmToNii`)
+- [pigz](https://github.com/madler/pigz) (Windows only, used by dcm2niix for fast parallel compression)
 
 Optional, not included in the release:
 
@@ -207,6 +209,8 @@ terms of copyright, but also in terms of patent law.
 Some code in the NiftiTools package was based on `https://github.com/tomdelahaije/nifti-converter`
 QMRITools includes the latest version of `https://github.com/SuperElastix/elastix`
 QMRITools includes the latest version of `https://github.com/rordenlab/dcm2niix`
+QMRITools includes `dcmdjpeg` and its libraries from DCMTK (`https://dicom.offis.de/dcmtk`, Copyright OFFIS e.V., licence in `QMRITools/Applications/Windows-x86-64/dcmtk/COPYRIGHT.txt`). This software is based in part on the work of the Independent JPEG Group.
+QMRITools includes `pigz` 2.8 (`https://github.com/madler/pigz`, Copyright Mark Adler, zlib licence), built with zlib (Copyright Jean-loup Gailly and Mark Adler, zlib licence) and including Zopfli (Copyright Google Inc., Apache License 2.0).
 
 ------------------------------------------------------------------------
 
