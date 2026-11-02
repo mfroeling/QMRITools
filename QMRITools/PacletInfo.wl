@@ -60,7 +60,7 @@ PacletObject[<|
 			{"Elastix", "elastix.exe"},
 			{"Transformix", "transformix.exe"},
 			{"ElastixLib", "elxANNlib.dll"},
-			{"DcmToNii", "dcm2niix-20260416.exe"},
+			{"DcmToNii", "dcm2niix-20261029.exe"},
 			{"DcmToNii-Own", "dcm2niix-own.exe"},
 			{"pigz", "pigz.exe"},
 			{"DcmDJpeg", "dcmtk/dcmdjpeg.exe"},
@@ -77,6 +77,7 @@ PacletObject[<|
 			{"DcmDJpegLicense", "dcmtk/COPYRIGHT.txt"},
 			{"DcmDJpegLicense", "dcmtk/README.txt"},
 			(*windows old dcm2nii versions*)
+			{"DcmToNii-26", "dcm2niix-20260416.exe"},
 			{"DcmToNii-25", "dcm2niix-20250506.exe"},
 			{"DcmToNii-24", "dcm2niix-20240202.exe"},
 			{"DcmToNii-23", "dcm2niix-20230411.exe"},

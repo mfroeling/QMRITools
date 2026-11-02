@@ -335,9 +335,6 @@ FitLineShape::usage =
 SpectraOutputPlots::usage = 
 "SpectraOutputPlots is an option for FitSpectra. If True the automatic calibration plot for the initial fit are generated."
 
-ReadoutType::usage = 
-"ReadoutType is an option for FitSpectra and padding and apodization functions. Value can be \"Fid\" or \"Echo\"."
-
 
 (* ::Subsection::Closed:: *)
 (*Error Messages*)

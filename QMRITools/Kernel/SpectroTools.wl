@@ -162,7 +162,10 @@ ApodizationFunction::usage =
 PaddingFactor::usage = 
 "PaddingFactor is an option for PadFid, PadSpectra, ApodizePadFid, ApodizePadSpectra. It Specifies with which factor to lengthen the fid."
 
-BasisSequence::usage = 
+ReadoutType::usage =
+"ReadoutType is an option for PadSpectra, ApodizeSpectra, ApodizePadSpectra, ShiftSpectra and FitSpectra. Value can be \"Fid\" or \"Echo\"."
+
+BasisSequence::usage =
 "BasisSequence is an option for GetSpectraBasisFunctions and specifies which sequence to use."
 
 SpectraSamples::usage =
