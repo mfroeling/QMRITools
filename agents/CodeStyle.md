@@ -105,16 +105,38 @@ EndPackage[]
 ## 3. Formatting
 
 - **Tabs** for indentation.
-- A long `Block` locals list wraps like this:
+- A long `Block` locals list (`Module`, `DynamicModule` alike) wraps with the locals at two tabs and `},` at one tab.
+  Keep them on one line when they fit, and only group them over several lines when they run long:
 
   ```wolfram
   F[x_] := Block[{
-  		a, b, c, d,
-  		e, f
+  		a, b, c, d, e, f
   	},
   	body
   ]
   ```
+
+- **Break dense expressions at the main conditions**, so the structure reads top to bottom. Short inner expressions
+  stay inline.
+  - `If` gets condition, then-branch and else-branch on separate lines, also for `{}` or `""` fallbacks.
+  - `Which` and `Switch` get one condition/result pair per line.
+  - A returned association gets one key per line.
+  - A call with several arguments or options (`Cell`, `StyleBox`, `Button`, a long `Join`) gets one argument or option
+    per line, or the constants on one line and the long call on the next.
+  - A long right-hand side breaks after the operator (`/@`, `<>`) with the continuation indented.
+
+  ```wolfram
+  checks = If[checkSteps === {},
+  	<||>,
+  	KeyTake[BidsCheckFiles[dir, subs, imOut], checkSteps]
+  ];
+  ```
+
+- **`Table[body, {x, list}]` instead of `Function[x, body] /@ list`** when the per-item body needs a name. The inner
+  map stays a pure function: `f[x, #]& /@ g[x]`. Use `KeyValueMap` instead of `Keys` plus repeated `assoc[#]` lookups.
+- **A long `Button` or `Dynamic` action becomes a named helper** defined in the `DynamicModule` body (like `row`,
+  `exist`), with its own `Block` for locals, so the control stays one line:
+  `Button["Delete selected", delFiles[step, list], Method -> "Queued"]`.
 
 - Closing brackets of long `Table`/`Switch`/`If` bodies get a trailing comment:
   `, {set, sets}](*close loop over sets*)`, `];(*close method switch*)`.
@@ -291,6 +313,7 @@ F[x_] := ...
 - [ ] `With` only where a value must escape the scope.
 - [ ] No copied branch bodies. Dispatch restructured instead.
 - [ ] Comments: a short what-label at each step of the body, none above definitions, no rationale, nearby comments still accurate.
+- [ ] No dense one-liners: `If` branches, `Which` pairs, association keys and multi-argument calls broken over lines (§3).
 - [ ] Debug scaffolding and `(*close ...*)` markers preserved.
 - [ ] Semantics you relied on were verified with wolframscript when not obvious.
 - [ ] MuscleBids: output names unchanged, or every downstream stage updated (see MuscleBidsTools.md §4, §11).

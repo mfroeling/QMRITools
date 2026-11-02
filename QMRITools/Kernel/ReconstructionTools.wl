@@ -198,6 +198,8 @@ ReconFilter::usage =
 
 ReadListData::file = "files not found: `1`"
 
+ReadListData::part = "the data is incomplete, `1` has `2` values but the header expects `3`"
+
 OrderKspace::mis = "the types `1` are missing"
 
 
@@ -219,7 +221,7 @@ ReadListData[file_]:=ReadListData[file, True]
 ReadListData[file_,print_]:=Block[{
 		fl,head,list,data,lab,dataIndex,dataVals,dataValsN,ruleKx,ruleKy,ruleKz,ruleCoil,
 		typ,pos,dataSplit,indexSplit, echo, scale, locs,cp,cn,cd,p,
-		sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead
+		sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead,std
 	},
 
 	fl = StringReplace[file,{".list"->"",".data"->""}];
@@ -250,8 +252,13 @@ ReadListData[file_,print_]:=Block[{
 	If[cn =!= cd, dataIndex[[cp]] = dataIndex[[cp]] /. Thread[cn -> cd]];
 
 	(*create header values*)
-	dataVals = Thread[lab->(Sort[DeleteDuplicates[#]]&/@dataIndex)];
+	std = Pick[#, dataIndex[[1]], "STD"] & /@ dataIndex;
+	dataVals = Thread[lab -> Prepend[Sort[DeleteDuplicates[#]] & /@ std[[2 ;;]], Sort[DeleteDuplicates[dataIndex[[1]]]]]];
 	dataValsN = Thread["N_"<>#&/@dataVals[[All,1]]->Length/@dataVals[[All,2]] ];
+
+	(*check the data against the k-space ranges in the header*)
+	MapThread[If[ListQ[#3] && #2 =!= #3[[2]] - #3[[1]] + 1, Message[ReadListData::part, #1, #2, #3[[2]] - #3[[1]] + 1]] &,
+		{{"ky", "kz"}, {"N_ky", "N_kz"} /. dataValsN, Lookup[head, {"ky_range", "kz_range"}, None]}];
 	dataVals[[All, 2]] = If[Length[#] == 1, If[StringQ[#[[1]]], #, #[[1]]], #] & /@ dataVals[[All, 2]];
 
 	(*Create rules for values that are not a normal range. eg kspace index or coil numbers*)

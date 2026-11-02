@@ -491,12 +491,13 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 - The log is written continuously: `AddToLog` exports the whole `$Log` on every call. `ShowLog[]` opens a live
   window. Levels 0–5 are indentation, and `True` adds a timestamp.
 - `Echo[DateString[], folIn <> " - " <> Key]` prints once per input folder per dataset.
-- Helpers: `ViewConfig[dir]`, `GetProtocolNames[dir, sub]`, and `MuscleBidsCheck[dir]`, a TabView of the four tools
+- Helpers: `ViewConfig[dir]`, `GetProtocolNames[dir, sub]`, and `MuscleBidsCheck[dir]`, a TabView of the four tools plus the Report tab
   below. `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput` share `BidsCheckView`: a MenuView per
   `sub-x_ses-y` (from `BidsSubjectList`, same names and order as `ManageCheckFiles`), bad rows with a light red background, the number
   of problems in red in the menu entry, a Reload button with the scan time and an "only problems" checkbox. The
   selected subject is kept when filtering or reloading. Rows come from `BidsCheckRows[{fol, parts, datDis}, what]`
-  (one `Switch` on `what`: Protocol, Labels, Convert) as `{cells, bad}`. `BidsSubjectList` joins `dir` (no `SetDirectory` needed) and falls back to the default folders and no
+  (one `Switch` on `what`: Protocol, Labels, Convert) as `{cells, bad}`. In Convert a json with 0 bytes (a conversion that
+  crashed while writing) is bad and shows "json empty" in the Present column, next to "missing" for a missing nii. `BidsSubjectList` joins `dir` (no `SetDirectory` needed) and falls back to the default folders and no
   datasets when the config is missing or invalid. "Only problems" starts checked for Config labels and Convert output,
   not for Protocol names. Every table (these views and `ManageCheckFiles`) is built by `BidsTable[rows, head]` with rows
   `{cells, bad}`, which sets the styling (grey header, alternating row shading with explicit colours, light red row background for bad rows (missing, unreadable and `error` in Check files), the words missing/unreadable/error in bold red, row dividers, fixed row
@@ -548,6 +549,23 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   `BidsOutputImages -> "None"`) are rebuilt in `BidsCheckFiles` with the same calls the workers use (section 7).
   **If a worker's check-file name or condition changes, update `BidsCheckFiles` too.** Process expectations come from the raw files on disk, so a missing raw file shows up
   in `CheckBidsOutput`, not here. Check files from old naming (for example no dataset key) are not listed.
+- **Problem report** (`MuscleBidsReport[dir, step, file]`, tab **Report** of `MuscleBidsCheck`): exports the wrong files
+  of the check tools as md or pdf, for `"All"` (one total report) or one of the eight steps (Protocol names, Config
+  labels, Convert, Process, Merge, Segment, Tractography, Analysis). Problems are grouped by class in the order error,
+  unreadable, missing, duplicate; a single-step report is step then class, the total report is class then step. Layers:
+  `BidsReportData[dir, subs, imOut, step]` (only the scans the step needs; table steps from `BidsCheckRows` bad rows,
+  check steps from `BidsCheckFiles` + `BidsCheckStatus` classified by the same `BidsCheckClass` as the Check tab, so the
+  report and the tab cannot differ) -> `BidsReportLayout` (format-neutral: Title, Fields, Notes, Summary, Sections with
+  their `BidsReportColumns`) -> `BidsReportMarkdown` or `BidsReportPdf` (renderers only). Rows are
+  `<|Subject, Type, Name, Detail, Log|>` (`BidsReportItem`); Log is the per-subject log relative to the study
+  (`BidsLogFile`, session folder from `BidsSessionFolder`). Without a valid config only Protocol names is checked and the
+  other steps say "Not checked"; no subjects or no datasets also give "Not checked", never "No problems found". The
+  report starts with the study, date, version, subject and dataset counts. The pdf uses the built-in `Export` of a
+  notebook (A4, 8 pt tables of 30 rows per cell, text built as boxes so it is not math-spaced); its look is still to be
+  refined after user feedback. The Report tab (`BidsReportView`) scans only when a button is pressed (`BidsReportExport`,
+  file name `<study>_report_<step>_<date>.<ext>` from `BidsReportFile`). An `error` check file holds no message; the
+  reason is in the log (for Segment the line `The segmentation file does not exist: <path>` of the last run, usually a
+  Merge that was skipped), the report links the log and does not parse it.
 - `MuscleBidsGUI[dir]` runs one step at a time in a **child kernel** (`BidsStartStep`: `LinkLaunch[First[$CommandLine] <> " -wstp"]`,
   then loads the QMRIToolsDev or QMRITools context with the same test as `LaunchTrainingKernels`, which is duplicated here). In
   the child `$Output` is empty and `$Messages` goes to a file in `$TemporaryDirectory`, so nothing reaches the notebook
@@ -663,6 +681,7 @@ on the current names.
 | `BidsJsonFiles`, `$BidsScan` / `BidsProtocolNames` | after `GetProtocolNames` | json label glob, protocol-name cache (section 8) |
 | `BidsSubjectList`, `BidsTable`, `BidsCheckView` / `BidsCheckRows` / `BidsPresentRows`, `CheckBidsOutput`, `MuscleBidsCheck` | after `CheckConfigLabels` | check views and the shared table (section 8) |
 | `ManageCheckFiles` / `BidsCheckFilesView`, `BidsScanChecks` / `BidsCheckStatus` / `BidsReadCheck`, `BidsCheckFiles` | after `MuscleBidsCheck` | check-file manager, scan of the expected check files and their status (section 8) |
+| `BidsReportData` / `BidsReportLayout` / `BidsReportMarkdown` / `BidsReportPdf`, `BidsCheckClass`, `BidsSessionFolder` / `BidsLogFile`, `MuscleBidsReport`, `BidsReportView` / `BidsReportExport` | after `BidsCheckFiles` | problem report export and its tab (section 8) |
 | `MuscleBidsGUI`, `BidsStartStep`, `BidsStepStatus` | after `BidsCheckFiles` | pipeline GUI, child-kernel start of a step, status poll (section 8) |
 | `CheckDataDescription` | L874, L904 | validate and complete dataset descriptions |
 | `BidsFolderLoop` | L986 | the shared driver |
