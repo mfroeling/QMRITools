@@ -8,7 +8,7 @@ anything in that file.
 - Line numbers (`L123`) drift over time. Grep for the function name if a number no longer matches.
 - Index of all agent docs: [AGENTS.md](../QMRITools/AGENTS.md). Code style for this repo: [CodeStyle.md](CodeStyle.md).
   The segmentation step (§6.5) calls `SegmentData`: [SegmentationTools.md](SegmentationTools.md).
-- The user manual is [QMRITools/BIDS Example/BIDS-config.md](../QMRITools/BIDS%20Example/BIDS-config.md) (v2.0, 2026-10-29, for analysts new to Mathematica),
+- The user manual is [QMRITools/BIDS Example/BIDS-config.md](../QMRITools/BIDS%20Example/BIDS-config.md) (v2.1, 2026-11-02, for analysts new to Mathematica; has sections for `MuscleBidsReport` and `MuscleBidsGUI`),
   built to `BIDS-config.pdf` in the same folder with `python agents/build_pdf.py` (pandoc + headless Chrome, style in
   `agents/manual.css`). It replaces `BIDS-config.docx` (v1.1). **Update the manual when a config key, default or check/view
   function changes, and rebuild the PDF.** Section 9 lists how the old docx differed from the code (history). When
@@ -491,8 +491,8 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 - The log is written continuously: `AddToLog` exports the whole `$Log` on every call. `ShowLog[]` opens a live
   window. Levels 0–5 are indentation, and `True` adds a timestamp.
 - `Echo[DateString[], folIn <> " - " <> Key]` prints once per input folder per dataset.
-- Helpers: `ViewConfig[dir]`, `GetProtocolNames[dir, sub]`, and `MuscleBidsCheck[dir]`, a TabView of the four tools plus the Report tab
-  below. `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput` share `BidsCheckView`: a MenuView per
+- Helpers: `ViewConfig[dir]`, `GetProtocolNames[dir, sub]`, and `MuscleBidsCheck[dir]`, a TabView of the four tools plus the
+  Custom configs and Report tabs below. `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput` share `BidsCheckView`: a MenuView per
   `sub-x_ses-y` (from `BidsSubjectList`, same names and order as `ManageCheckFiles`), bad rows with a light red background, the number
   of problems in red in the menu entry, a Reload button with the scan time and an "only problems" checkbox. The
   selected subject is kept when filtering or reloading. Rows come from `BidsCheckRows[{fol, parts, datDis}, what]`
@@ -549,10 +549,22 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   `BidsOutputImages -> "None"`) are rebuilt in `BidsCheckFiles` with the same calls the workers use (section 7).
   **If a worker's check-file name or condition changes, update `BidsCheckFiles` too.** Process expectations come from the raw files on disk, so a missing raw file shows up
   in `CheckBidsOutput`, not here. Check files from old naming (for example no dataset key) are not listed.
+- **Custom configs** (tab **Custom configs** of `MuscleBidsCheck`, report step `"Custom configs"`): a per-subject config
+  (patch on `datasets`, source `<dicomData>/<sub>_<ses>/config.json`, copied by every step as `<sub-x_ses-y>_config.json`
+  to rawData, derivedData and mergeData; analysis does not use it) is listed per subject with one row per leaf setting
+  `Dataset | Setting | Normal config value | Custom config value` (two header rows: the group labels "Normal config" and "Custom config" above the "Value" columns, so `BidsTable`, `BidsReportGrid` and `BidsReportGridCells` accept a matrix `head`; problem text goes in the last column; `BidsCustomRows[config, dir, entry]` as `{cells, bad}`, dispatched
+  from the dir-level `BidsCheckRows[dir, subs, "Custom"]`, subjects without a custom config are dropped). The first
+  stage (source, raw, derived, merged) that has a config file is the reference, read with `BidsCustomRead` (Missing,
+  `$Failed` when unreadable, or the Association; `BidsConfigFile` is the shared file search of `GetConfig`). Every later
+  stage whose subject folder exists is a bad row when its copy is missing ("not copied"), unreadable, or has other
+  parsed content ("differs from <stage>", compared with sorted keys because the copies are re-exported). Setting rows
+  are information in the report, the bad rows are the classes `outdated` (not copied, differs) and `unreadable`. A
+  dataset name that is not in the study config is marked "(not in config)", not a problem. Source-only subjects (no
+  `02_rawdata` folder yet) are not listed, like in the other tabs.
 - **Problem report** (`MuscleBidsReport[dir, step, file]`, tab **Report** of `MuscleBidsCheck`): exports the wrong files
-  of the check tools as md or pdf, for `"All"` (one total report) or one of the eight steps (Protocol names, Config
-  labels, Convert, Process, Merge, Segment, Tractography, Analysis). Problems are grouped by class in the order error,
-  unreadable, missing, duplicate; a single-step report is step then class, the total report is class then step. Layers:
+  of the check tools as md or pdf, for `"All"` (one total report) or one of the nine steps (Protocol names, Config
+  labels, Convert, Custom configs, Process, Merge, Segment, Tractography, Analysis). Problems are grouped by class in the order error,
+  unreadable, missing, duplicate, outdated; a single-step report is step then class, the total report is class then step. Layers:
   `BidsReportData[dir, subs, imOut, step]` (only the scans the step needs; table steps from `BidsCheckRows` bad rows,
   check steps from `BidsCheckFiles` + `BidsCheckStatus` classified by the same `BidsCheckClass` as the Check tab, so the
   report and the tab cannot differ) -> `BidsReportLayout` (format-neutral: Title, Fields, Notes, Summary, Sections with
@@ -681,6 +693,7 @@ on the current names.
 | `BidsJsonFiles`, `$BidsScan` / `BidsProtocolNames` | after `GetProtocolNames` | json label glob, protocol-name cache (section 8) |
 | `BidsSubjectList`, `BidsTable`, `BidsCheckView` / `BidsCheckRows` / `BidsPresentRows`, `CheckBidsOutput`, `MuscleBidsCheck` | after `CheckConfigLabels` | check views and the shared table (section 8) |
 | `ManageCheckFiles` / `BidsCheckFilesView`, `BidsScanChecks` / `BidsCheckStatus` / `BidsReadCheck`, `BidsCheckFiles` | after `MuscleBidsCheck` | check-file manager, scan of the expected check files and their status (section 8) |
+| `BidsCustomRows`, `BidsCustomStages` / `BidsCustomRead` / `BidsCustomSettings` / `BidsCustomProblem`, `BidsCustomItems` / `BidsCustomInfo` (report side), `BidsConfigFile` | after `BidsPresentRows` | custom config list, stage comparison and its report rows (section 8) |
 | `BidsReportData` / `BidsReportLayout` / `BidsReportMarkdown` / `BidsReportPdf`, `BidsCheckClass`, `BidsSessionFolder` / `BidsLogFile`, `MuscleBidsReport`, `BidsReportView` / `BidsReportExport` | after `BidsCheckFiles` | problem report export and its tab (section 8) |
 | `MuscleBidsGUI`, `BidsStartStep`, `BidsStepStatus` | after `BidsCheckFiles` | pipeline GUI, child-kernel start of a step, status poll (section 8) |
 | `CheckDataDescription` | L874, L904 | validate and complete dataset descriptions |

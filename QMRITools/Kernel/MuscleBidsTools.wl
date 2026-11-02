@@ -66,13 +66,14 @@ Missing files are highlighted and can be shown only using the checkbox."
 
 MuscleBidsCheck::usage =
 "MuscleBidsCheck[dir] shows ViewProtocolNames, CheckConfigLabels, CheckBidsOutput and ManageCheckFiles for the config file in dir as tabs.
+The Custom configs tab compares the custom config of each subject with its copies in the other stages.
 The Report tab exports the problems of a step, or of all steps, as md or pdf report.
 The data is scanned when the function is called, the Reload buttons scan again. The options ProcessSubjects and BidsOutputImages are passed on."
 
 MuscleBidsReport::usage =
 "MuscleBidsReport[dir, step, file] writes the problem report of the config file in dir to file, for the step or for all steps when step is \"All\".
-The steps are \"Protocol names\", \"Config labels\", \"Convert\", \"Process\", \"Merge\", \"Segment\", \"Tractography\" and \"Analysis\".
-Problems are grouped by class: error, unreadable, missing and duplicate. The extension of file selects the format, \".md\" or \".pdf\".
+The steps are \"Protocol names\", \"Config labels\", \"Convert\", \"Custom configs\", \"Process\", \"Merge\", \"Segment\", \"Tractography\" and \"Analysis\".
+Problems are grouped by class: error, unreadable, missing, duplicate and outdated. The extension of file selects the format, \".md\" or \".pdf\".
 The options are ProcessSubjects to limit the subjects and BidsOutputImages to define the expected Analysis images. Returns the full path of file."
 
 ManageCheckFiles::usage =
@@ -617,18 +618,25 @@ CheckConfig[inFol_?StringQ, outFol_?StringQ, export_?BooleanQ] := Block[{conf, n
 
 
 (* ::Subsubsection::Closed:: *)
+(*BidsConfigFile*)
+
+
+BidsConfigFile[folder_, name_] := SelectFirst[{
+	folder,
+	FileNameJoin[{folder, "config.json"}],
+	FileNameJoin[{folder, name <> "_config.json"}]
+}, FileExistsQ[#] && ! DirectoryQ[#] &, Missing[]]
+
+
+(* ::Subsubsection::Closed:: *)
 (*GetConfig*)
 
 
 GetConfig[folder_?StringQ] := GetConfig[folder, ""]
 
 GetConfig[folder_?StringQ, name_?StringQ] := Block[{file},
-	(*first existing file: the path itself, config.json or <name>_config.json in the folder*)
-	file = SelectFirst[{
-		folder,
-		FileNameJoin[{folder, "config.json"}],
-		FileNameJoin[{folder, name <> "_config.json"}]
-    }, FileExistsQ[#] && ! DirectoryQ[#] &];
+	(*find the config file in the folder*)
+	file = BidsConfigFile[folder, name];
 	(*import it or give a message*)
 	If[!MissingQ[file],
 		Import[file, "RawJSON"],
@@ -876,13 +884,13 @@ GetProtocolNames[dir_, sub_] := Block[{config},
 (*BidsScan*)
 
 
-bidsTableSteps = {"Protocol names", "Config labels", "Convert"};
+bidsTableSteps = {"Protocol names", "Config labels", "Convert", "Custom configs"};
 
 bidsCheckSteps = {"Process", "Merge", "Segment", "Tractography", "Analysis"};
 
 bidsReportSteps = Join[bidsTableSteps, bidsCheckSteps];
 
-bidsReportClasses = {"error", "unreadable", "missing", "duplicate"};
+bidsReportClasses = {"error", "unreadable", "missing", "duplicate", "outdated"};
 
 
 $BidsScan = <||>;
@@ -955,15 +963,15 @@ BidsSubjectList[dir_, subs_] := Block[{config, root, dis},
 (*BidsTable*)
 
 
-BidsTable[rows_, head_] := Pane[
-	Grid[Prepend[First /@ rows, Style[#, Bold]& /@ head], 
+BidsTable[rows_, head_] := With[{hrows = If[MatrixQ[head], head, {head}]}, Pane[
+	Grid[Join[Map[Style[#, Bold]&, hrows, {2}], First /@ rows],
 		Alignment -> Left, Spacings -> {1.5, 0.6}, ItemSize -> {Automatic, 1.6},
 		(*bad rows get a light red row, the header a grey one*)
-		Background -> {None, Prepend[MapIndexed[Which[
+		Background -> {None, Join[ConstantArray[LightDarkV[GrayLevel[.9], GrayLevel[.26]], Length[hrows]], MapIndexed[Which[
 					Last[#1], LightDarkV[RGBColor[1, .9, .9], RGBColor[.38, .15, .15]],
 					EvenQ[First[#2]], LightDarkV[GrayLevel[.96], GrayLevel[.19]],
 					True, LightDarkV[White, GrayLevel[.13]]
-				]&, rows], LightDarkV[GrayLevel[.9], GrayLevel[.26]]]
+				]&, rows]]
 			},
 		Dividers -> {None, All}, FrameStyle -> LightDarkV[GrayLevel[.8], GrayLevel[.32]]
 	],
@@ -972,7 +980,7 @@ BidsTable[rows_, head_] := Pane[
 	If[Length[rows] > 15, {Automatic, 430}, Automatic], 
 	Scrollbars -> Automatic, ImageSizeAction -> "Scrollable", 
 	Background -> LightDarkV[White, GrayLevel[.13]]
-]
+]]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -991,7 +999,7 @@ BidsCheckView[dir_, subs_, what_, head_] := With[{
 		rows = data;
 		valid = valid0;
 		time = t0;
-		only = what =!= "Protocol";
+		only = !MemberQ[{"Protocol", "Custom"}, what];
 		cur = None;
 
 		Column[{
@@ -1013,6 +1021,7 @@ BidsCheckView[dir_, subs_, what_, head_] := With[{
 					Which[
 						only, "No problems found",
 						!valid, "No subjects found, the config file is missing or invalid",
+						what === "Custom", "No custom configs found",
 						True, "No subjects found"
 					],
 					MenuView[
@@ -1036,10 +1045,20 @@ BidsCheckView[dir_, subs_, what_, head_] := With[{
 ]
 
 
-BidsCheckRows[dir_, subs_, what_] := Block[{},
+BidsCheckRows[dir_, subs_, what_] := Block[{config, sets, rows},
 	(*a new protocol names scan starts with an empty cache*)
 	If[what === "Protocol", $BidsScan = <||>];
-	(GenerateBidsName[#[[2]]] -> BidsCheckRows[#, what])& /@ Last@BidsSubjectList[dir, subs]
+	(*config and the subjects with their datasets*)
+	{config, sets} = BidsSubjectList[dir, subs];
+	(*rows per subject, the custom configs need the whole config*)
+	rows = (
+		GenerateBidsName[#[[2]]] -> If[what === "Custom",
+			BidsCustomRows[config, dir, #],
+			BidsCheckRows[#, what]
+		]
+	)& /@ sets;
+	(*custom configs only keep the subjects with a row*)
+	If[what === "Custom", DeleteCases[rows, _ -> {}], rows]
 ]
 
 BidsCheckRows[{fol_, _, datDis_}, what_] := Block[{list, dup, names, labs, files},
@@ -1101,6 +1120,85 @@ BidsPresentRows[rows_] := {
 
 
 (* ::Subsubsection::Closed:: *)
+(*BidsCustomConfig*)
+
+
+BidsCustomStages[config_, dir_, parts_] := Block[{dicDir, srcNames, stages},
+	(*dicom data folder, the plain subject folder is also tried for session 001*)
+	dicDir = BidsFolder[config, dir, "dicomData"];
+	srcNames = Join[{parts["sub"]<>"_"<>parts["ses"]}, If[parts["ses"] === "001", {parts["sub"]}, {}]];
+	(*source stage first, then the raw, derived and merged stages*)
+	stages = Join[
+		{{ConfigLookup[config, "folders", "dicomData"], SelectFirst[FileNameJoin[{dicDir, #}]& /@ srcNames, DirectoryQ, Missing[]]}},
+		({ConfigLookup[config, "folders", #], GenerateBidsFolderName[BidsFolder[config, dir, #], parts]})& /@ {"rawData", "derivedData", "mergeData"}
+	];
+	(*keep the stages whose subject folder exists*)
+	Select[stages, DirectoryQ[#[[2]]]&]
+]
+
+BidsCustomRead[folder_, name_] := Block[{file, conf},
+	(*config file of the stage, Missing when there is none*)
+	file = BidsConfigFile[folder, name];
+	(*parse quietly, $Failed unless it is an association*)
+	conf = If[MissingQ[file], Missing[], Quiet@Import[file, "RawJSON"]];
+	If[MissingQ[conf] || AssociationQ[conf], conf, $Failed]
+]
+
+BidsCustomLeaves[assoc_?AssociationQ, path_] := Join @@ KeyValueMap[BidsCustomLeaves[#2, Append[path, #1]]&, assoc]
+
+BidsCustomLeaves[val_, path_] := {{path, val}}
+
+BidsCustomText[val_] := Block[{str},
+	str = TextString[val];
+	If[StringLength[str] > 80, StringTake[str, 77]<>"...", str]
+]
+
+BidsCustomRow[datasets_, path_, val_] := Block[{dat, study},
+	(*dataset name and the value at the same path in the study config*)
+	dat = First[path];
+	study = Fold[If[AssociationQ[#1] && KeyExistsQ[#1, #2], #1[#2], Missing[]]&, datasets, path];
+	{
+		If[KeyExistsQ[datasets, dat], dat, dat<>" (not in config)"],
+		StringRiffle[Rest[path], "."],
+		If[MissingQ[study], "", BidsCustomText[study]],
+		BidsCustomText[val]
+	}
+]
+
+BidsCustomSettings[custom_?AssociationQ, datasets_?AssociationQ] :=
+	(*one row per leaf of the custom patch (the first key of its path is the dataset), sorted by dataset and setting*)
+	Sort[BidsCustomRow[datasets, #1, #2]& @@@ BidsCustomLeaves[custom, {}]]
+
+BidsCustomProblem[stage_, text_] := {{stage, "custom config", "", Style[text, Red, Bold]}, True}
+
+BidsCustomNorm[assoc_?AssociationQ] := KeySort[BidsCustomNorm /@ assoc]
+
+BidsCustomNorm[val_] := val
+
+BidsCustomRows[config_, dir_, {_, parts_, _}] := Block[{name, stages, reads, k, ref, refName},
+	(*config file name of the subject and the config read of each stage*)
+	name = GenerateBidsName[parts];
+	stages = BidsCustomStages[config, dir, parts];
+	reads = BidsCustomRead[#[[2]], name]& /@ stages;
+	(*the first stage with a config is the reference*)
+	k = Length[TakeWhile[reads, MissingQ]] + 1;
+	If[k > Length[stages], Return[{}, Block]];
+	ref = reads[[k]];
+	refName = stages[[k, 1]];
+	If[ref === $Failed, Return[{BidsCustomProblem[refName, "unreadable"]}, Block]];
+	(*settings of the reference, then the later stages without the config, unreadable or with other content*)
+	Join[
+		{#, False}& /@ BidsCustomSettings[ref, Replace[Lookup[config, "datasets", <||>], Except[_?AssociationQ] -> <||>]],
+		BidsCustomProblem[#1, Which[
+			MissingQ[#2], "not copied",
+			#2 === $Failed, "unreadable",
+			True, "differs from "<>refName
+		]]& @@@ Select[Drop[Thread[{stages[[All, 1]], reads}], k], BidsCustomNorm[#[[2]]] =!= BidsCustomNorm[ref]&]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*CheckBidsOutput*)
 
 
@@ -1126,6 +1224,8 @@ MuscleBidsCheck[dir_?StringQ, OptionsPattern[]] := Block[{subs, imOut},
 	TabView[{
 		"Protocol names" -> ViewProtocolNames[dir, ProcessSubjects -> subs],
 		"Config labels" -> CheckConfigLabels[dir, subs],
+		"Custom configs" -> BidsCheckView[dir, subs, "Custom", 
+			{{"", "", "Normal config", "Custom config"}, {"Dataset", "Setting", "Value", "Value"}}],
 		"Convert output" -> CheckBidsOutput[dir, "Convert", ProcessSubjects -> subs],
 		"Check files" -> ManageCheckFiles[dir, ProcessSubjects -> subs, BidsOutputImages -> imOut],
 		"Report" -> BidsReportView[dir, subs, imOut]
@@ -1357,11 +1457,11 @@ BidsReportScope[step_] := If[step === "All", bidsReportSteps, {step}]
 
 
 BidsReportData[dir_, subs_, imOut_, step_] := Block[{
-		sets, configOK, datasets, names, scope, checked,
-		tables, checkSteps, tabRows, checks, stat, checkRows, rows
+		config, sets, configOK, datasets, names, scope, checked,
+		tables, checkSteps, custom, tabRows, checks, stat, checkRows, rows
 	},
-	(*subject folders of the study*)
-	sets = Last@BidsSubjectList[dir, subs];
+	(*config and subject folders of the study*)
+	{config, sets} = BidsSubjectList[dir, subs];
 	(*config validity and the largest number of datasets of a subject*)
 	configOK = BidsConfigQ[dir];
 	datasets = Max[Prepend[Length[Last[#]] & /@ sets, 0]];
@@ -1378,8 +1478,13 @@ BidsReportData[dir_, subs_, imOut_, step_] := Block[{
 	checkSteps = Select[checked, MemberQ[bidsCheckSteps, #] &];
 	(*reset the protocol names cache*)
 	$BidsScan = <||>;
+	(*custom config scan of the subjects, once for the step*)
+	custom = If[MemberQ[tables, "Custom configs"],
+		(GenerateBidsName[#[[2]]] -> BidsCustomRows[config, dir, #])& /@ sets,
+		{}
+	];
 	(*problem rows of the table steps*)
-	tabRows = Association[(# -> BidsReportRows[#, sets, dir])& /@ tables];
+	tabRows = Association[(# -> BidsReportRows[#, sets, dir, custom])& /@ tables];
 	(*expected check files of the check steps and their status*)
 	checks = If[checkSteps === {},
 		<||>,
@@ -1401,12 +1506,18 @@ BidsReportData[dir_, subs_, imOut_, step_] := Block[{
 		"DatasetNames" -> names,
 		"ConfigOK" -> configOK,
 		"Checked" -> checked,
+		"Info" -> <|"Custom configs" -> BidsCustomInfo[custom]|>,
+		"CustomSubjects" -> Length[Select[custom, Length[Last[#]] > 0 &]],
 		"Rows" -> rows
 	|>
 ]
 
 
-BidsReportRows[step_, sets_, dir_] := Block[{what},
+BidsReportRows[step_, sets_, dir_, custom_] := Block[{what},
+	(*custom configs come from the scan of the subjects*)
+	If[step === "Custom configs",
+		Return[BidsCustomItems[custom], Block]
+	];
 	(*code of the table step in BidsCheckRows*)
 	what = Switch[step, "Protocol names", "Protocol", "Config labels", "Labels", "Convert", "Convert"];
 
@@ -1416,6 +1527,36 @@ BidsReportRows[step_, sets_, dir_] := Block[{what},
 			Select[BidsCheckRows[entry, what], Last]
 	, {entry, sets}]
 ]
+
+
+BidsCustomItems[custom_] := Catenate@Table[
+	BidsCustomItem[pair[[1]], #]& /@ Select[pair[[2]], Last]
+, {pair, custom}]
+
+
+BidsCustomInfo[custom_] := Catenate@Table[
+	BidsCustomInfoRow[pair[[1]], #[[1]]]& /@ Select[pair[[2]], !Last[#] &]
+, {pair, custom}]
+
+
+BidsCustomItem[subj_, {cells_, True}] := Block[{plain, text, cls},
+	(*plain text cells, without Style*)
+	plain = cells /. Style[x_, ___] :> x;
+	text = plain[[4]];
+
+	(*unreadable stage or a stage that differs from the reference*)
+	cls = If[text === "unreadable", "unreadable", "outdated"];
+	BidsReportItem[cls, subj, plain[[1]], "custom config", "", <|"Detail" -> text|>]
+]
+
+
+BidsCustomInfoRow[subj_, cells_] := <|
+	"Subject" -> subj,
+	"Dataset" -> cells[[1]],
+	"Setting" -> cells[[2]],
+	"Study value" -> cells[[3]],
+	"Custom value" -> cells[[4]]
+|>
 
 
 BidsReportItem[cls_, subj_, type_, name_, log_, extra_] := {
@@ -1513,7 +1654,7 @@ BidsReportStepSections[step_, rowsByClass_, classes_] :=
 
 
 BidsReportLayout[data_, step_] := Block[{
-		head, scope, checked, unchecked, byStep, classes, summary, sections, notes
+		head, scope, checked, unchecked, byStep, classes, summary, sections, infoRows, infoSections, fields, notes
 	},
 	head = data["Head"];
 	(*steps in the report, the one step or all of them*)
@@ -1552,6 +1693,28 @@ BidsReportLayout[data_, step_] := Block[{
 		]
 	];
 
+	(*info section of the custom config settings, not a problem*)
+	infoRows = Lookup[data["Info"], "Custom configs", {}];
+	infoSections = If[infoRows === {},
+		{},
+		{BidsReportSection[2, "Custom configs ("<>ToString[Length[infoRows]]<>" settings)", "Custom configs", "info", infoRows]}
+	];
+
+	(*header fields, the custom configs only when they are checked*)
+	fields = Join[
+		{
+			"Study" -> head["Study"],
+			"Date" -> head["Date"],
+			"QMRITools version" -> head["Version"],
+			"Subjects" -> head["Subjects"],
+			"Datasets" -> If[head["DatasetNames"] === {}, "none", StringRiffle[head["DatasetNames"], ", "]]
+		},
+		If[MemberQ[checked, "Custom configs"],
+			{"Custom configs" -> ToString[data["CustomSubjects"]]<>" of "<>ToString[head["Subjects"]]<>" subjects"},
+			{}
+		]
+	];
+
 	(*notes: config problem, unchecked steps, and the reason when nothing is listed*)
 	notes = Join[
 		If[head["ConfigOK"] === False,
@@ -1572,16 +1735,10 @@ BidsReportLayout[data_, step_] := Block[{
 
 	<|
 		"Title" -> "Muscle-BIDS problem report",
-		"Fields" -> {
-			"Study" -> head["Study"],
-			"Date" -> head["Date"],
-			"QMRITools version" -> head["Version"],
-			"Subjects" -> head["Subjects"],
-			"Datasets" -> If[head["DatasetNames"] === {}, "none", StringRiffle[head["DatasetNames"], ", "]]
-		},
+		"Fields" -> fields,
 		"Notes" -> notes,
 		"Summary" -> summary,
-		"Sections" -> sections
+		"Sections" -> Join[sections, infoSections]
 	|>
 ]
 
@@ -1658,6 +1815,19 @@ BidsReportColumns[step_, cls_] := Block[{spec, head, keys, codes},
 			{"Subject", "Type", "Name", "Detail", "Log"},
 			{"Log"}
 		},
+		(*-------------- custom configs, problems and settings --------------*)
+		"Custom configs", If[cls === "info",
+			{
+				{{"", "", "", "Normal config", "Custom config"}, {"Subject", "Dataset", "Setting", "Value", "Value"}},
+				{"Subject", "Dataset", "Setting", "Study value", "Custom value"},
+				{"Setting"}
+			},
+			{
+				{"Subject", "Stage", "Problem"},
+				{"Subject", "Type", "Detail"},
+				{}
+			}
+		],
 		(*-------------- check files, error with its date --------------*)
 		_, If[cls === "error",
 			{
@@ -1698,6 +1868,11 @@ BidsReportCell[val_, isCode_] := Block[{txt},
 	Which[txt === "", "", isCode, "`"<>txt<>"`", True, txt]
 ]
 
+
+BidsReportGrid[head_?MatrixQ, rows_] := BidsReportGrid[
+	(*markdown has one header row, the group label goes in front of the column name*)
+	MapThread[If[#1 === "", #2, #1<>" "<>ToLowerCase[#2]]&, head], rows
+]
 
 BidsReportGrid[head_, rows_] := StringRiffle[Join[
 	{"| "<>StringRiffle[head, " | "]<>" |", "|"<>StringRepeat["---|", Length[head]]},
@@ -1792,12 +1967,14 @@ BidsReportWrap[txt_String, n_] := Block[{tokens, lines},
 
 
 BidsReportGridCells[head_, rows_, codes_] := Block[{
-		all, body, adv, lens, fracs, chars, cellOf, rowOf, headBoxes, bgs, groups
+		hrows, all, body, adv, lens, fracs, chars, cellOf, rowOf, headBoxes, bgs, groups
 	},
+	(*header rows, none, one or a group row above the column names*)
+	hrows = Which[head === {}, {}, MatrixQ[head], head, True, {head}];
 	(*cell texts of the head and the rows on one line*)
-	all = Map[StringReplace[ToString[#], "\n" -> " "]&, Join[If[head === {}, {}, {head}], rows], {2}];
+	all = Map[StringReplace[ToString[#], "\n" -> " "]&, Join[hrows, rows], {2}];
 	(*body rows without the head*)
-	body = Drop[all, If[head === {}, 0, 1]];
+	body = Drop[all, Length[hrows]];
 	(*width of a character per column, wider for the monospace code columns*)
 	adv = If[#, 5.6, 5.0]& /@ codes;
 	(*longest text of each column in characters, at least 10 and at most 20 for code and 24 for text columns*)
@@ -1833,7 +2010,7 @@ BidsReportGridCells[head_, rows_, codes_] := Block[{
 	rowOf = Function[{cells, weight}, MapThread[cellOf[#1, #2, #3, weight]&, {cells, chars, codes}]];
 
 	(*header row in bold*)
-	headBoxes = If[head === {}, {}, {rowOf[First[all], "Bold"]}];
+	headBoxes = rowOf[#, "Bold"]& /@ Take[all, Length[hrows]];
 	(*background of the whole rows: grey header, then white and light grey alternating*)
 	bgs = Table[If[EvenQ[i], GrayLevel[0.95], White], {i, Length[body]}];
 
@@ -1844,7 +2021,7 @@ BidsReportGridCells[head_, rows_, codes_] := Block[{
 			Join[headBoxes, (rowOf[#[[1]], "Plain"]&) /@ group],
 			GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}},
 			GridBoxSpacings -> {"Columns" -> {{1}}, "Rows" -> {{0.2}}},
-			GridBoxBackground -> {"Rows" -> {Join[If[head === {}, {}, {GrayLevel[0.85]}], group[[All, 2]]]}},
+			GridBoxBackground -> {"Rows" -> {Join[ConstantArray[GrayLevel[0.85], Length[hrows]], group[[All, 2]]]}},
 			GridBoxItemSize -> {"Columns" -> {Scaled /@ fracs}}
 		]], "Text"]
 	] /@ groups
@@ -1968,7 +2145,7 @@ BidsReportView[dir_, subs_, imOut_] := DynamicModule[{
 		export["Export all steps", "All"],
 		Row[{
 			Column[Prepend[
-				export[#, #]& /@ {"Protocol names", "Config labels", "Convert"},
+				export[#, #]& /@ {"Protocol names", "Config labels", "Convert", "Custom configs"},
 				Style["Set-up checks", Bold]
 			], Spacings -> 1],
 			"    ",

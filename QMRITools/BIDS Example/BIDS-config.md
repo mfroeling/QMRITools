@@ -2,7 +2,7 @@
 
 **QMRITools**
 
-Manual version: 2.0 · QMRITools version: 5.1 · Date: 2026-10-29 · Author: Martijn Froeling
+Manual version: 2.1 · QMRITools version: 5.1 · Date: 2026-11-02 · Author: Martijn Froeling
 
 This manual explains how to process a muscle MRI study with the Muscle BIDS pipeline of QMRITools: how to set up a study,
 how to write the `config.json` file that drives the pipeline, how to run each step, and how to check the results. You do
@@ -13,6 +13,7 @@ not need to know Mathematica; every command is a line you copy into a notebook. 
 
 <!-- TOC -->
 - [Muscle BIDS in QMRITools](#muscle-bids-in-qmritools)
+  - [How it works, and why](#how-it-works-and-why)
 - [Before you start](#before-you-start)
 - [Glossary](#glossary)
 - [Setting up a study](#setting-up-a-study)
@@ -64,6 +65,8 @@ not need to know Mathematica; every command is a line you copy into a notebook. 
   - [CheckBidsOutput](#checkbidsoutput)
   - [MuscleBidsCheck](#musclebidscheck)
   - [ManageCheckFiles](#managecheckfiles)
+  - [MuscleBidsReport](#musclebidsreport)
+  - [MuscleBidsGUI](#musclebidsgui)
   - [How the pipeline skips finished work](#how-the-pipeline-skips-finished-work)
   - [How to force a redo](#how-to-force-a-redo)
   - [Log](#log)
@@ -102,6 +105,22 @@ How QMRITools names files and folders is described at <https://www.qmritools.com
 > `MuscleBidsProcess[dir, ProcessSubjects -> {"001", "002_2"}]`
 >
 > A subject name without a session, such as `"001"`, always means session `001`.
+
+### How it works, and why
+
+The pipeline is built around one idea: every file has one fixed place and one fixed name, which is made from the subject, the session and the kind of scan. Because of this, no step needs a list of files from you. A step looks at the subject and the session, works out the name of the file it needs, and goes to get it. This is what makes it possible to run the same commands on a study of five subjects or of five hundred. It is also the reason for the rules on names: subject and session names may not contain hyphens, underscores, periods or spaces, because these characters are used to build the file names and to split them again.
+
+You describe your study once, in the config file, and the same program is used for every study. The config says which scans you acquired, what they are called on the scanner, and what should be done with them. The link between your scans and the config is the protocol name that the scanner wrote into the data. A dataset in the config lists the protocol names that belong to it, and that is how the pipeline knows which files to pick up. For this reason the names in the config must match the names on the scanner exactly.
+
+The steps form a chain. Each step reads the folder that the step before it wrote and writes into its own folder. Nothing is kept in memory in between: the folders on disk are the only thing the steps share. This has practical consequences. You can stop after any step and look at what it made, you can fix a problem and run only that step again, and you can run the next step a week later without anything from before still being open. The price is that a step relies on the names that the earlier steps gave to the files, so the folders and files should not be renamed by hand.
+
+Every subject and session is handled on its own. If one subject fails, for example because a scan is missing, the step reports it and goes on with the next subject. New subjects can be added at any time and processed alone, and the subjects that are already done are not touched.
+
+Processing takes time, so finished work is skipped. When a step has finished a subject, it writes a small check file next to the result. The next time the step runs, it finds that file and moves on. Running the whole chain again is therefore safe, and it only does the new work. The other side of this is that a step does not notice by itself that you changed the config. To redo a step, you delete its check files, and those of the later steps, because they depend on its results. The windows described in [Checking and viewing your study](#checking-and-viewing-your-study) show these files and can delete them.
+
+A study design can have exceptions. A subject can have its own small config file that changes the datasets for that subject only, for example when one participant was scanned with a different protocol (see [Per-subject settings](#per-subject-settings)). Use this for real exceptions. Every exception is something you have to keep track of, and the pipeline is at its best when there are few of them.
+
+Automation only works when the data is consistent. The config holds one set of rules for the whole study, and the pipeline can only apply those rules to data that follows them. Think about the design before the first scan is acquired: choose the protocol names and the subject and session names, and keep them the same for all subjects and visits. This costs some time at the start. It saves much more later, because with inconsistent data you spend the time on exceptions and on repairing the data by hand instead. Most of the cases where "nothing happened" come from a mismatch between the config and the data, such as a label that does not match the protocol name, or a file that is not where the step expects it. Every subject has a log file for each step that says what was done. The check windows and the problem report exist to find these mismatches quickly.
 
 ## Before you start
 
@@ -195,6 +214,8 @@ The steps below use the same two options, where a step has them:
 
 - `ProcessSubjects`: `All` for every subject, or a list of subject names.
 - `VersionCheck`: `False` (default) skips finished work. `True` also redoes work made with an older version of QMRITools.
+
+You can also run the steps from a window, with `MuscleBidsGUI[dir]` (see [MuscleBidsGUI](#musclebidsgui)).
 
 ### 1. BidsDcmToNii
 
@@ -1022,6 +1043,8 @@ The file is copied with the data to the later folders as `sub-<subject>_ses-<ses
 
 To check for each subject and session that the `Label`s of the datasets are present in the scan (including the per-subject settings), use `CheckConfigLabels[dir, subs]`, where `dir` is your study folder and `subs` is `All` or a list of subjects.
 
+To see which subjects have a per-subject config, and what each one changes, open the **Custom configs** tab of `MuscleBidsCheck` (see [MuscleBidsCheck](#musclebidscheck)). It shows one row for each changed setting, with the value of the subject next to the value of the study. It also finds custom configs that were not carried through the pipeline, for example because you added or edited the file after a step had already run. The same list is part of the report from `MuscleBidsReport`.
+
 Rarely needed settings for this part: see [Per-subject file names](#per-subject-file-names) in the appendix.
 
 ## Analysis: the `analysis` section
@@ -1187,7 +1210,8 @@ Rarely needed settings for this part: see [Analysis options](#analysis-options) 
 
 Before and during processing, you can look at your study in a few windows. They show you what the pipeline sees, which
 protocols are in your data, and which files have already been made. Nothing in these windows changes your data, except
-`ManageCheckFiles`, which can delete the check files described below.
+`ManageCheckFiles`, which can delete the check files described below, and `MuscleBidsGUI`, which runs the pipeline steps.
+`MuscleBidsReport` only writes a report file.
 
 Several windows below show **check files**. A check file ends in `_check.json`. A step writes one next to its output when it has finished a subject, with the status `done`. `error` means an input was missing. For tractography, `track` and `seg` mean it is part of the way. A step skips what has a `done` check file ([more below](#how-the-pipeline-skips-finished-work)).
 
@@ -1281,7 +1305,8 @@ the subject after the conversion step.
 **When:** after `MuscleBidsConvert`.
 
 **What you see:** one menu entry per subject and session. Each row is a dataset, its label, the converted file, and `yes` or
-`missing`. Red rows have no `.json` file (`no json found`) or no matching `.nii` file, so that label was not converted.
+`missing`. Red rows have no `.json` file (`no json found`), no matching `.nii` file (`missing`), or a `.json` file with
+0 bytes (`json empty`, a conversion that stopped while writing), so that label was not converted correctly.
 It only checks that the label was converted, not that every contrast of the dataset is complete. For a dataset of class
 `Volumes`, which joins several labels into one file, only the first label is checked.
 
@@ -1297,8 +1322,23 @@ Only `"Convert"` is available as a step.
 
 **When:** whenever you want an overview of your study, for example before you start a run.
 
-**What you see:** four tabs: **Protocol names**, **Config labels**, **Convert output** and **Check files**. The tabs
-are the same as the functions above. The **Check files** tab is described below.
+**What you see:** six tabs: **Protocol names**, **Config labels**, **Convert output**, **Custom configs**, **Check files**
+and **Report**. The first three tabs are the same as `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput`,
+**Check files** is `ManageCheckFiles` and **Report** is described under [MuscleBidsReport](#musclebidsreport).
+
+The **Custom configs** tab lists the subjects that have a [per-subject config](#per-subject-settings). Each menu entry is a
+subject, and each row is one setting that the subject changes: the dataset, the setting (nested keys are joined with a
+dot, for example `Merging.Overlap`), the value of the subject and the value in your study config. A dataset that is not
+in your study config is marked `(not in config)`. A subject without a custom config is not listed.
+
+A custom config starts in the source folder and every step copies it along with the data, so the pipeline keeps using the
+same settings. The tab compares these copies for each subject, from the source folder to `02_rawdata`, `03_derivatives`
+and `04_merged`. A red row means that a later copy is `not copied` (the folder of that step exists but has no copy),
+`unreadable`, or `differs from` the first copy. This normally means that the custom config was added or changed after
+that step ran. Run the steps again for that subject (delete their check files first, see
+[How to force a redo](#how-to-force-a-redo)) so the new settings are used. Only subjects that already have a folder in
+`02_rawdata` are listed.
+Every table scrolls when it has more than 15 rows. The scan time is shown, and **Reload** scans again.
 
 ```wolfram
 MuscleBidsCheck[dir]
@@ -1328,13 +1368,101 @@ that cannot be read as `unreadable` in red.
 - Tick a file to select it (only existing files have a tick box), or use **Select all** and **Deselect all**.
 - **Delete selected** removes the selected check files of that tab after you confirm. The next run of that step then
   processes that data again.
-- **Refresh** rescans the study. Use it after you add subjects or datasets.
+- **Reload** rescans the study. Use it after you add subjects or datasets.
 
 If you ran the analysis with `BidsOutputImages -> "None"`, give the same option here (see `MuscleBidsCheck`).
 
 ```wolfram
 ManageCheckFiles[dir]
 ```
+
+### MuscleBidsReport
+
+**Why:** to get a list of everything that is wrong in your study, as a file you can read, print or send to a colleague,
+without opening the windows above.
+
+**When:** after a run, or before you hand over the study. It works from a script, so you can also call it without
+opening any window. The **Report** tab of `MuscleBidsCheck` and `MuscleBidsGUI` does the same with buttons.
+
+**What you get:** one file with the problems of one step or of all steps. The file starts with the study folder, the
+date, the QMRITools version, the number of subjects and the datasets. Then comes a summary table with the number of
+problems per step, and the problems themselves in tables. They are grouped by kind of problem:
+
+| Kind | Meaning | Steps |
+| --- | --- | --- |
+| `error` | The step ran and wrote a check file with the status `error`, with its date | Process, Merge, Segment, Tractography, Analysis |
+| `unreadable` | The check file exists but cannot be read | Process, Merge, Segment, Tractography, Analysis |
+| `missing` | A label, a converted file or a check file that should exist is not there | Config labels, Convert, Process, Merge, Segment, Tractography, Analysis |
+| `duplicate` | Two series have the same protocol name | Protocol names |
+| `outdated` | A custom config of a subject was not copied to a later step, or differs from the first copy | Custom configs |
+
+The `unreadable` kind also covers a custom config file that cannot be read. The report of **Custom configs** (and the
+report of all steps) also has an information section, **Custom configs (n settings)**, that lists every setting that a
+subject changes. This section is not counted as problems, and the header of the report shows how many subjects have a
+custom config.
+
+For a report of all steps the tables are grouped by kind first and then by step. For one step they are grouped by kind.
+Each problem of a processing step and of Convert has the path of the log file of that subject (relative to the study
+folder, when the file exists), because a check file with the status `error` does not say what went wrong. The reason is in that log.
+A step that is not checked, for example because `config.json` cannot be read, is mentioned in the report and is never
+reported as "No problems found".
+
+```wolfram
+(* All steps, as a pdf *)
+MuscleBidsReport[dir, "All", FileNameJoin[{dir, "report.pdf"}]]
+
+(* One step, as markdown *)
+MuscleBidsReport[dir, "Merge", FileNameJoin[{dir, "report_merge.md"}]]
+```
+
+The steps are `"Protocol names"`, `"Config labels"`, `"Convert"`, `"Custom configs"`, `"Process"`, `"Merge"`, `"Segment"`,
+`"Tractography"` and `"Analysis"`, or `"All"`. The extension of the file name selects the format, `.md` (markdown) or
+`.pdf`. The folder of the file is made when it does not exist, and the function returns the path of the file, or `$Failed`
+with a message (for example for a wrong step name or file extension).
+
+The options are the same as for `MuscleBidsCheck`: `ProcessSubjects` for some subjects only, and `BidsOutputImages ->
+"None"` when you ran the analysis without images.
+
+```wolfram
+MuscleBidsReport[dir, "All", FileNameJoin[{dir, "report.md"}], ProcessSubjects -> {"001_1", "002_1"}]
+```
+
+**The Report tab.** In `MuscleBidsCheck` and `MuscleBidsGUI` the **Report** tab has a choice of the format (`md` or
+`pdf`), the output folder (with a **Browse** button; the study folder is the default), a button **Export all steps** and
+one button per step. Each button scans the study again, so the report is current, and writes
+`<study>_report_<step or all>_<date>.<md or pdf>` to the folder. The status line shows the file, and **Open** opens it.
+
+### MuscleBidsGUI
+
+**Why:** to run the pipeline steps from one window, without typing the commands, and to follow the progress.
+
+**When:** when you want to run steps with the settings of your `config.json` and look at the checks in the same place.
+
+**What you see:** three tabs.
+
+- **Run**: choose the subjects (**All subjects**, or untick it and pick subjects as in `SelectSubjects`). Each step of the
+  pipeline has a button, with its own options beside it: `DeleteAfterConversion` for `MuscleBidsConvert`, `VersionCheck`
+  for the processing steps, `BidsTractographyMethod` for `MuscleBidsTractography` and `BidsOutputImages` for
+  `MuscleBidsAnalysis`. The options start at the default of the step. Below are the status (a moving bar, the state, the
+  time the step is running, and how many subjects have started), a **Log** with the last lines of the log files, and the
+  **Messages** of the step.
+- **Check**: the same as `MuscleBidsCheck[dir]`, with the **Report** tab.
+- **Config**: the same as `ViewConfig[dir]`.
+
+```wolfram
+MuscleBidsGUI[dir]
+```
+
+Each step runs in a separate Mathematica kernel. The notebook stays free and nothing is printed in it. Only one step runs
+at a time, and the step buttons are disabled while a step runs. The state is `Running`, then `Done`, `Done with messages`
+(the step ended, but wrote warnings; read the **Messages**), `Crashed` (the kernel could not be started or stopped),
+or `Stopped`. A window that is shown again while a step was running shows `Interrupted`. **Stop** ends the step after
+you confirm. For the steps that use check files, the subjects that were not finished are processed again the next time
+you run the step, because a step only writes its check file when a subject is finished. Keep the notebook with the
+window open while a step runs.
+
+The window always runs the steps on the folder you gave it, with the subject choice made in the **Run** tab. To use the
+other options of a step, for example the `ProcessSubjects` of a script, call the step in a notebook instead.
 
 ### How the pipeline skips finished work
 
@@ -1384,8 +1512,15 @@ Use this list when a step did nothing, or skipped a subject you expected to be p
 - **Two series have the same protocol name.** Duplicates are red in `ViewProtocolNames`. Check the series numbers.
 - **The raw files are missing.** Open `CheckBidsOutput`. A label with `missing` or `no json found` was not converted. Check
   that the subject is in `02_rawdata` and that `BidsDcmToNii` ran.
+- **A converted `.json` file is empty.** `CheckBidsOutput` shows `json empty` when the `.json` of a label has 0 bytes. This
+  happens when `MuscleBidsConvert` stopped while it wrote the file (the end of the `BIDSConvert.log` of the subject shows
+  where). Delete the empty `.json` and its `.nii` file, and convert the subject again. This needs the raw files, so
+  check that they are still in the `raw` folder (`DeleteAfterConversion -> True` removes them after a conversion).
 - **The subject name in `ProcessSubjects` does not match.** If no subject matches, nothing is processed and no error is
   shown (the views show "No subjects found"). Use the folder names from `SelectSubjects`.
+- **A custom config is not used.** A subject with its own `config.json` that you added or changed after a step ran keeps the old
+  settings in that step. Open the **Custom configs** tab of `MuscleBidsCheck`: a red row (`not copied` or `differs from`)
+  shows where the copy of the config is wrong. Delete the check files of that subject and run the steps again.
 - **An old check file is still there.** Open `ManageCheckFiles`. A `done` file makes the step skip that subject. Delete it
   to run the step again.
 - **The config has an error.** If `config.json` cannot be found or read, the views use the default folder names and show
