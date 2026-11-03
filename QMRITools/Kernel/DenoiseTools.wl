@@ -572,9 +572,11 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	datao = datao[[pad;;-pad, All, pad;;-pad, pad;;-pad]];
 	sigmat = sigmat[[pad;;-pad, pad;;-pad, pad;;-pad]];
 	output = output[[All, pad;;-pad, pad;;-pad, pad;;-pad]];
-
+	
+	Echo[Dimensions@datao,DateString[]];
 	(*correct the Rician noise bias*)
 	If[bias && !comp, datao = RicianBiasCorrect[datao, sigmat]];
+	Echo[Dimensions@datao,DateString[]];
 
 	(*define output, split it if data is complex*)
 	datao = Which[
@@ -685,51 +687,67 @@ Options[RicianBiasCorrect] = {Method -> "Exact"};
 
 SyntaxInformation[RicianBiasCorrect] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-RicianBiasCorrect[data_, sigma_, OptionsPattern[]] := Block[{dat, sig, ex},
+RicianBiasCorrect[data_, sigma_, OptionsPattern[]] := Block[{dataN, sigmaN, exact, table, floorRatio, tableStep},
 
 	(*make data and sigma numerical*)
-	dat = ToPackedArray@N@data;
-	sig = ToPackedArray@N@sigma;
+	dataN = ToPackedArray@N@data;
+	sigmaN = ToPackedArray@N@sigma;
 
 	(*broadcast the sigma map over the fourth dimension*)
-	sig = If[ArrayDepth[sig] === 3 && ArrayDepth[dat] === 4,
-		Transpose[ConstantArray[sig, Dimensions[dat][[2]]], {2, 1, 3, 4}],
-		sig
+	sigmaN = If[ArrayDepth[sigmaN] === 3 && ArrayDepth[dataN] === 4,
+		Transpose[ConstantArray[sigmaN, Dimensions[dataN][[2]]], {2, 1, 3, 4}],
+		sigmaN
 	];
 
+	(*grid to invert the mean and std of the Rice distribution*)
+	{table, floorRatio, tableStep} = CalcRiceGrid[];
+
 	(*correct each value*)
-	ex = Boole[OptionValue[Method] === "Exact"];
-	ToPackedArray@N@RicianBiasC[dat, sig, ex]
+	exact = Boole[OptionValue[Method] === "Exact"];
+	ToPackedArray@N@RicianBiasC[dataN, sigmaN, exact, table, floorRatio, tableStep]
 ]
 
 
-RicianBiasC = Compile[{{m, _Real, 0}, {sig, _Real, 0}, {ex, _Integer, 0}}, Block[
-	{r, th, tn, t2, xi, d, i},
+(*internal function*)
+CalcRiceGrid[] := Block[{theta, theta2, varRatio, meanOverStd, signalOverStd, floorRatio, tableStep, table},
 
-	r = m / Max[sig, 10.^-12];
+	(*grid of the Rice parameter, theta is the snr of the gaussian noise*)
+	theta = Range[0., 25., 25./1000];
+	theta2 = theta^2;
+	varRatio = 2. + theta2 - (Pi/8.) Exp[-theta2/2.] ((2. + theta2) BesselI[0, theta2/4.] + theta2 BesselI[1, theta2/4.])^2;
+
+	(*mean over std of the magnitude and the signal over std for each theta*)
+	meanOverStd = Sqrt[(2. + theta2)/varRatio - 1.];
+	signalOverStd = theta/Sqrt[varRatio];
+
+	(*lowest mean over std, this is the Rayleigh distribution of pure noise*)
+	floorRatio = Sqrt[2./(2. - Pi/2.) - 1.];
+
+	(*table of the signal over std, uniform in the fourth root of the distance to the Rayleigh value, covers mean over std up to 20*)
+	tableStep = 2.1/1024;
+	table = Interpolation[Transpose[{Abs[meanOverStd - floorRatio]^0.25, signalOverStd}]][tableStep Range[0, 1024]];
+
+	{ToPackedArray@N@table, floorRatio, tableStep}
+]
+
+
+RicianBiasC = Compile[{{mag, _Real, 0}, {sigma, _Real, 0}, {exact, _Integer, 0}, {table, _Real, 1}, {floorRatio, _Real, 0}, {tableStep, _Real, 0}}, Block[
+	{ratio, pos, index, frac},
+
+	ratio = mag / Max[sigma, 10.^-12];
 	Which[
 		(*no noise, nothing to correct*)
-		sig <= 0., m,
+		sigma <= 0., mag,
 		(*approximate, also exact for high snr*)
-		ex === 0 || r > 20., Sqrt[Max[0., m^2 - sig^2]],
+		exact === 0 || ratio > 20., Sqrt[Max[0., mag^2 - sigma^2]],
 		(*below the noise floor, mean over std of a Rayleigh distribution*)
-		r <= 1.9131, 0.,
-		(*fixed point iteration to invert the mean and std of the Rice distribution*)
+		ratio <= floorRatio, 0.,
+		(*interpolate the table with the inverted mean and std of the Rice distribution*)
 		True,
-		th = r;
-		xi = 1.;
-		d = 1.;
-		i = 0;
-		While[d > 10.^-6 && i < 500,
-			t2 = th^2;
-			xi = 2. + t2 - (Pi/8.) Exp[-t2/2.] ((2. + t2) BesselI[0, t2/4.] + t2 BesselI[1, t2/4.])^2;
-			tn = Sqrt[Max[0., xi (1. + r^2) - 2.]];
-			d = Abs[tn - th];
-			th = tn;
-			i++
-		];
-		(*gaussian sigma is the magnitude std over sqrt xi*)
-		sig th / Sqrt[xi]
+		pos = (ratio - floorRatio)^0.25 / tableStep;
+		index = Min[Floor[pos], Length[table] - 2];
+		frac = pos - index;
+		sigma ((1. - frac) table[[index + 1]] + frac table[[index + 2]])
 	]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
