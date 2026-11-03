@@ -44,8 +44,8 @@ the whole chain repeatedly as new subjects arrive.
 
 `MuscleBidsGUI[dir]` wraps this chain: tab **Run** has a button per step with a control per option (checkboxes for
 `VersionCheck` and `DeleteAfterConversion`, menus for `BidsTractographyMethod` and `BidsOutputImages`), an "All
-subjects" toggle with the `SelectSubjects` list, a Stop button and a live status; tab **Check** is `MuscleBidsCheck[dir]`
-and tab **Config** is `ViewConfig[dir]`. Each step runs in a separate kernel (section 8), so nothing is echoed into the
+subjects" toggle with the `SelectSubjects` list, a Stop button and a live status; tab **Config** is `MuscleBidsConfig[dir]`
+and tab **Check** is `MuscleBidsCheck[dir]`. Each step runs in a separate kernel (section 8), so nothing is echoed into the
 notebook.
 
 Example configs from real studies are in [`QMRITools/BIDS Example/`](../QMRITools/BIDS%20Example/), next to the
@@ -269,6 +269,7 @@ associations merge.
 | `RegistrationDimension` | `"3D"` | DTI prep | `"2D"` → `RegisterCardiacData` (and disables split) |
 | `RegistrationMethod` | `"bspline"` | DTI prep | `MethodReg` |
 | `SplitRegistration` | False | DTI prep | `RegisterDiffusionDataSplit` (left/right separate) |
+| `RicianCorrection` | True | DTI prep | `PCARicianCorrect` of the `PCADeNoise` call (Rician noise-bias correction of `den`, so `snr`, `reg`, `filt` and the tensor fit see the corrected data). Written to the prep json settings |
 | `GradientCorrection` | False | DTI | coil name string (for example `"WA1"`), needs `Offset` in json (written by Convert) |
 | `IVIMCorrection` | True | DTI | IVIM fit then `IVIMCorrectData` before the tensor fit |
 | `FasciculationDetection` | False | DTI | `FindActivations` on the normalised `reg` data |
@@ -396,7 +397,7 @@ is intentional (see CodeStyle.md, "avoid duplication"). Export and the check fil
 Branch 2 also skips the fit (logs `!!!!! Dimensions echos not match !!!!!`) when the JSON `EchoTime` count differs
 from the number of volumes, so branch 1 output and the remaining sets are still processed.
 
-DTI prep pipeline: `SortDiffusionData` → `FlipGradientOrientation` → `Mask` → `PCADeNoise` → `SNRCalc` →
+DTI prep pipeline: `SortDiffusionData` → `FlipGradientOrientation` → `Mask` → `PCADeNoise` (with `RicianCorrection`) → `SNRCalc` →
 register (2D `RegisterCardiacData` / 3D `RegisterDiffusionData(Split)`) → `P2SDenoise` (`filt`).
 DTI pipeline: `filt` → mask → optional gradient-nonlinearity correction (`MakeGradientDerivatives`) → optional IVIM
 correction → `TensorCalc[iWLLS, RobustFit]` → `ParameterCalc` → optional fasciculation analysis.
@@ -491,8 +492,8 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 - The log is written continuously: `AddToLog` exports the whole `$Log` on every call. `ShowLog[]` opens a live
   window. Levels 0–5 are indentation, and `True` adds a timestamp.
 - `Echo[DateString[], folIn <> " - " <> Key]` prints once per input folder per dataset.
-- Helpers: `ViewConfig[dir]`, `GetProtocolNames[dir, sub]`, and `MuscleBidsCheck[dir]`, a TabView of the four tools plus the
-  Custom configs and Report tabs below. `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput` share `BidsCheckView`: a MenuView per
+- Helpers: `ViewConfig[dir]`, `GetProtocolNames[dir, sub]`, and `MuscleBidsConfig[dir]`, a TabView of the config tools (Full config = `ViewConfig`, Custom config = `CheckCustomConfigs`, Config labels, Protocol names),
+  and `MuscleBidsCheck[dir]`, a TabView of the processing checks (Convert output, Check files, Report). `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput` share `BidsCheckView`: a MenuView per
   `sub-x_ses-y` (from `BidsSubjectList`, same names and order as `ManageCheckFiles`), bad rows with a light red background, the number
   of problems in red in the menu entry, a Reload button with the scan time and an "only problems" checkbox. The
   selected subject is kept when filtering or reloading. Rows come from `BidsCheckRows[{fol, parts, datDis}, what]`
@@ -549,7 +550,7 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   `BidsOutputImages -> "None"`) are rebuilt in `BidsCheckFiles` with the same calls the workers use (section 7).
   **If a worker's check-file name or condition changes, update `BidsCheckFiles` too.** Process expectations come from the raw files on disk, so a missing raw file shows up
   in `CheckBidsOutput`, not here. Check files from old naming (for example no dataset key) are not listed.
-- **Custom configs** (tab **Custom configs** of `MuscleBidsCheck`, report step `"Custom configs"`): a per-subject config
+- **Custom configs** (`CheckCustomConfigs[dir]`, also tab **Custom config** of `MuscleBidsConfig`, report step `"Custom configs"`): a per-subject config
   (patch on `datasets`, source `<dicomData>/<sub>_<ses>/config.json`, copied by every step as `<sub-x_ses-y>_config.json`
   to rawData, derivedData and mergeData; analysis does not use it) is listed per subject with one row per leaf setting
   `Dataset | Setting | Normal config value | Custom config value` (two header rows: the group labels "Normal config" and "Custom config" above the "Value" columns, so `BidsTable`, `BidsReportGrid` and `BidsReportGridCells` accept a matrix `head`; problem text goes in the last column; `BidsCustomRows[config, dir, entry]` as `{cells, bad}`, dispatched
@@ -691,7 +692,7 @@ on the current names.
 | `ViewProtocolNames`, `GetProtocolNames`, `SelectSubjects`, `CheckConfigLabels` | L764–865 | inspection UI. `SelectSubjects[dir, Dynamic[sel]]` stores the selection in the caller's variable |
 | `BidsFolder` (two forms) | after `GetConfig` | full path of a config folder |
 | `BidsJsonFiles`, `$BidsScan` / `BidsProtocolNames` | after `GetProtocolNames` | json label glob, protocol-name cache (section 8) |
-| `BidsSubjectList`, `BidsTable`, `BidsCheckView` / `BidsCheckRows` / `BidsPresentRows`, `CheckBidsOutput`, `MuscleBidsCheck` | after `CheckConfigLabels` | check views and the shared table (section 8) |
+| `BidsSubjectList`, `BidsTable`, `BidsCheckView` / `BidsCheckRows` / `BidsPresentRows`, `CheckBidsOutput`, `CheckCustomConfigs`, `MuscleBidsConfig`, `MuscleBidsCheck` | after `CheckConfigLabels` | check views and the shared table (section 8) |
 | `ManageCheckFiles` / `BidsCheckFilesView`, `BidsScanChecks` / `BidsCheckStatus` / `BidsReadCheck`, `BidsCheckFiles` | after `MuscleBidsCheck` | check-file manager, scan of the expected check files and their status (section 8) |
 | `BidsCustomRows`, `BidsCustomStages` / `BidsCustomRead` / `BidsCustomSettings` / `BidsCustomProblem`, `BidsCustomItems` / `BidsCustomInfo` (report side), `BidsConfigFile` | after `BidsPresentRows` | custom config list, stage comparison and its report rows (section 8) |
 | `BidsReportData` / `BidsReportLayout` / `BidsReportMarkdown` / `BidsReportPdf`, `BidsCheckClass`, `BidsSessionFolder` / `BidsLogFile`, `MuscleBidsReport`, `BidsReportView` / `BidsReportExport` | after `BidsCheckFiles` | problem report export and its tab (section 8) |

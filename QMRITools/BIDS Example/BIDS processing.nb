@@ -3,208 +3,475 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Mathematica 14.0' *)
+(* CreatedBy='Wolfram 15.0' *)
 
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
-NotebookDataPosition[       158,          7]
-NotebookDataLength[      9169,        229]
-NotebookOptionsPosition[      7298,        195]
-NotebookOutlinePosition[      8073,        218]
-CellTagsIndexPosition[      8030,        215]
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     22640,        546]
+NotebookOptionsPosition[     17463,        468]
+NotebookOutlinePosition[     17901,        485]
+CellTagsIndexPosition[     17858,        482]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
-Cell[BoxData[
- RowBox[{"<<", "QMRITools`"}]], "Input",
- InitializationCell->True,
- CellChangeTimes->{
-  3.950147204363537*^9, 3.9501480190399494`*^9, {3.986460296357975*^9, 
-   3.9864603005457*^9}},
- CellLabel->"In[3]:=",ExpressionUUID->"994ebbd5-6a91-467a-84d2-a4eb20c59798"],
+
+Cell[CellGroupData[{
+Cell["Muscle BIDS processing", "Title",ExpressionUUID->"a81357c3-7351-e949-88e4-dccf3a0c69f4"],
+
+Cell[TextData[{
+ "This notebook shows every function of the Muscle BIDS pipeline of QMRITools \
+and how to use it, in the order in which you normally use them. \nRun a cell \
+with Shift+Enter. The full explanation is in the manual ",
+ Cell[BoxData[Cell["BIDS-config.pdf",
+   Background->None,ExpressionUUID->"612299d4-ab87-f445-af57-8b8b7c7a87b5"]], 
+  "InlineCode",ExpressionUUID->"a0a33233-d6a8-f242-8c93-4a9917d53164"],
+ "."
+}], "Text",ExpressionUUID->"71fddbf3-a58c-994e-8fcb-29a37670b045"],
+
+Cell["\<\
+Everything that the GUI can do can also be done with the functions below, and \
+every function can be used on its own, without the GUI. \
+\>", "Text",ExpressionUUID->"3852a63d-c55a-ce42-9c48-c2d0e17eb7be"],
+
+Cell[CellGroupData[{
+
+Cell["Setup", "Section",ExpressionUUID->"3e459c90-eaf6-ab4c-80b6-9ab5b3a2fabe"],
+
+Cell[TextData[{
+ "Load QMRITools, set the study folder (the folder with your ",
+ Cell[BoxData[Cell["config.json",
+   Background->None,ExpressionUUID->"e7851c28-cbdb-6a45-9afe-c996f4ca3647"]], 
+  "InlineCode",ExpressionUUID->"69667bdd-82bc-cc4e-a555-c0e25011c1df"],
+ ", here the folder of this notebook) and choose the subjects. \nUse ",
+ Cell[BoxData[
+  TemplateBox[{
+   "All", "paclet:ref/All", 
+    "https://reference.wolfram.com/language/ref/All.html"},
+   "TextRefLink",
+   DisplayFunction->(TagBox[
+     ButtonBox[
+      StyleBox[#, ShowStringCharacters -> True, FontFamily -> 
+       "Source Sans Pro"], 
+      BaseStyle -> {"Link", FontColor -> LightDarkSwitched[
+          RGBColor[0.02, 0.286, 0.651], 
+          RGBColor[0.2823, 0.6666, 0.949]]}, ButtonData -> #2, ContentPadding -> 
+      False], 
+     MouseAppearanceTag["LinkHand"]]& )]],ExpressionUUID->
+  "d61472ce-13dd-f641-89be-9406ab7b2d8b"],
+ ", or a list of subject names from your source data, for example ",
+ Cell[BoxData[Cell["{\"001\", \"002_2\"}",
+   Background->None,ExpressionUUID->"d8100721-6d5f-5f49-8112-5e72a572adf0"]], 
+  "InlineCode",ExpressionUUID->"e3c5a7da-0acc-3e48-be9f-0d4f27841e1e"],
+ ". A name without a session, such as ",
+ Cell[BoxData["\"\<001\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "8aacb3d2-95eb-8249-8f5e-f0fc4a8a1216"],
+ ", means session 001. "
+}], "Text",ExpressionUUID->"9300033c-4698-8245-87bc-1e60f3613fb6"],
 
 Cell[BoxData[{
+ RowBox[{"Needs", "[", "\"\<QMRITools`\>\"", "]"}], "\[IndentingNewLine]", 
  RowBox[{
-  RowBox[{"dir", "=", "\"\<Z:\\\\Motion\>\""}], ";"}], "\[IndentingNewLine]", 
+  RowBox[{"dir", "=", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
-  RowBox[{"subs", "=", "All"}], ";"}]}], "Input",
- CellChangeTimes->{{3.9864605441457367`*^9, 3.98646056278656*^9}},
- CellLabel->"In[6]:=",ExpressionUUID->"9b9bf3a4-6775-1a4b-a816-7eb1333ff7fe"],
+  RowBox[{"subs", "=", "All"}], ";"}]}], "Input",ExpressionUUID->"4bc5220a-\
+4df5-094c-b336-ac128faf074a"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Everything in one window", "Section",ExpressionUUID->"6051f05f-ad74-1241-b4f2-423ee23a13b8"],
+
+Cell["\<\
+A window to run the steps and to look at the config and the checks. It uses \
+the functions below. \
+\>", "Text",ExpressionUUID->"4d39d507-4908-cd47-a9b3-971c79ae2eaa"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{"check", " ", "the", " ", "configuration"}], "*)"}], 
-  "\[IndentingNewLine]", 
-  RowBox[{"ViewConfig", "[", "dir", "]"}]}]], "Input",
- CellLabel->"In[11]:=",ExpressionUUID->"b03c7878-8ead-6046-b84f-d3fb8ecf0201"],
+ RowBox[{"MuscleBidsGUI", "[", "dir", "]"}]], "Input",ExpressionUUID->"b7073abf-ee47-0340-8805-7875692f648d"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Set up and check the config", "Section",ExpressionUUID->"664aea02-05ac-f84f-bf91-efe6e9eb8e9c"],
+
+Cell["\<\
+All tools on the config as tabs in one window: the full config, the custom \
+configs, the config labels and the protocol names. \
+\>", "Text",ExpressionUUID->"96e8e98c-6d7d-4440-a5be-f63eb73163f1"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-   "generate", " ", "a", " ", "list", " ", "of", " ", "subjects", " ", "that",
-     " ", "can", " ", "be", " ", "processed"}], "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"SelectSubjects", "[", "dir", "]"}]}]], "Input",
- CellChangeTimes->{{3.9614946580907784`*^9, 3.961494663324236*^9}, {
-  3.9864603090918636`*^9, 
-  3.986460322146408*^9}},ExpressionUUID->"59582eb2-4913-5d4c-9741-\
-0396e6d74fa8"],
+ RowBox[{"MuscleBidsConfig", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}]}], "]"}]], "Input",Expressio\
+nUUID->"34ec3acb-c3ef-4647-82de-844b7da2a47d"],
+
+Cell["Or one at a time. Show the full config: ", "Text",ExpressionUUID->"473565be-4b55-e045-a9f3-736e6fbadd49"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-    RowBox[{
-    "1.", " ", "convert", " ", "the", " ", "dcm", " ", "to", " ", "nii"}], 
-    " ", "-", " ", 
-    RowBox[{
-    "Skips", " ", "the", " ", "folders", " ", "already", " ", "done"}]}], 
-   "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"BidsDcmToNii", "[", 
-   RowBox[{"dir", ",", 
-    RowBox[{"ProcessSubjects", "->", "subs"}]}], "]"}]}]], "Input",
- CellChangeTimes->{{3.9521724067353783`*^9, 3.9521724154241695`*^9}},
- CellLabel->"In[12]:=",ExpressionUUID->"c4660cdd-2f6c-6546-b4fd-8f8622546e48"],
+ RowBox[{"ViewConfig", "[", "dir", "]"}]], "Input",ExpressionUUID->"4aacdad4-3e14-2549-9ea6-7a49094c22f9"],
+
+Cell["\<\
+Make a list of the subjects that can be processed, to choose from: \
+\>", "Text",ExpressionUUID->"ed54b2e8-3e5d-914e-87fb-8aff157f5b60"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-   "Scan", " ", "the", " ", "data", " ", "protocol", " ", "names", " ", 
-    "that", " ", "are", " ", "used", " ", "in", " ", "the", " ", 
-    "conversion"}], "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"ViewProtocolNames", "[", 
-   RowBox[{"dir", ",", 
-    RowBox[{"ProcessSubjects", "->", "subs"}]}], "]"}]}]], "Input",
- CellChangeTimes->{{3.9614935408728733`*^9, 3.9614935451354694`*^9}, 
-   3.9614945369892063`*^9, {3.9864603272066803`*^9, 
-   3.986460353940447*^9}},ExpressionUUID->"f58eda00-955a-484e-a431-\
-f1d89cfab25f"],
+ RowBox[{"SelectSubjects", "[", "dir", "]"}]], "Input",ExpressionUUID->"4c9fe179-9a52-a742-a10c-53f33fa414d9"],
+
+Cell["\<\
+Show the protocol names that the scanner wrote into the raw data, to write \
+the Labels of the datasets in the config. Run it after step 1. \
+\>", "Text",ExpressionUUID->"bd7259bb-cb52-6c48-92c1-f413e0cb4b1b"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-   "Check", " ", "the", " ", "config", " ", "file", " ", "agains", " ", "the",
-     " ", "data", " ", "labels"}], "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"CheckConfigLabels", "[", 
-   RowBox[{"dir", ",", "subs"}], "]"}]}]], "Input",
- CellChangeTimes->{{3.9864603764114647`*^9, 3.986460377128784*^9}, {
-  3.986460431881075*^9, 3.9864604342013283`*^9}, {3.9864604660726604`*^9, 
-  3.986460485003519*^9}},ExpressionUUID->"b4f43a28-25ba-2944-9ad9-\
-15993b324349"],
+ RowBox[{"ViewProtocolNames", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}]}], "]"}]], "Input",Expressio\
+nUUID->"5228eb40-3455-334d-a468-c976923a8a89"],
+
+Cell["\<\
+Check for each subject that the Labels in the config are present in the data. \
+Run it after step 1. \
+\>", "Text",ExpressionUUID->"c6feafe7-0c9f-1a4b-aad8-76cf77e8a2c0"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-    RowBox[{
-    "2.", " ", "convert", " ", "the", " ", "raw", " ", "nii", " ", "to", " ", 
-     "bids", " ", "nii"}], ",", " ", 
-    RowBox[{
-    "deletes", " ", "raw", " ", "files", " ", "after", " ", "conversion"}]}], 
-   "*)"}], "\n", 
-  RowBox[{"MuscleBidsConvert", "[", 
-   RowBox[{"dir", ",", 
-    RowBox[{"ProcessSubjects", "->", "subs"}]}], "]"}]}]], "Input",
- CellChangeTimes->{
-  3.9469635592642937`*^9, {3.9521724078251667`*^9, 3.9521724131663857`*^9}},
- CellLabel->"In[13]:=",ExpressionUUID->"66c2a782-3006-2f4d-8471-8f97cc16a1a4"],
+ RowBox[{"CheckConfigLabels", "[", 
+  RowBox[{"dir", ",", "subs"}], "]"}]], "Input",ExpressionUUID->"4fd21ba7-\
+8fff-6745-9623-c4c33103cf69"],
+
+Cell["\<\
+Show the subjects that have a per-subject config, what it changes, and \
+whether the steps carried it along. Red rows are problems. \
+\>", "Text",ExpressionUUID->"3329e66f-149f-5541-b385-a6e411b45cb4"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-    RowBox[{
-    "3.", " ", "process", " ", "all", " ", "bids", " ", "files", " ", "that", 
-     " ", "are", " ", "found"}], ",", " ", 
-    RowBox[{"processing", " ", "is", " ", "in", " ", "config"}]}], "*)"}], 
-  "\[IndentingNewLine]", 
-  RowBox[{"MuscleBidsProcess", "[", 
-   RowBox[{"dir", ",", 
-    RowBox[{"ProcessSubjects", "->", "subs"}], ",", 
-    RowBox[{"VersionCheck", "->", "False"}]}], "]"}]}]], "Input",
- CellChangeTimes->{
-  3.952172408589493*^9, {3.95276144261553*^9, 3.952761443060665*^9}, {
-   3.952766036062599*^9, 3.9527660364615116`*^9}, {3.95438058741267*^9, 
-   3.954380587925377*^9}},
- CellLabel->"In[14]:=",ExpressionUUID->"0a50004c-5b8c-42f2-abf3-696a4155b1f8"],
+ RowBox[{"CheckCustomConfigs", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}]}], "]"}]], "Input",Expressio\
+nUUID->"cc008f5a-47c5-4f49-9a45-402ea0cb4dc5"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Run the pipeline", "Section",ExpressionUUID->"4a0cdb90-b7c0-e740-9e54-5a563a60095a"],
+
+Cell["\<\
+Run the steps in this order. Each step reads the output of the step before it \
+and skips the work that is already finished.\
+\>", "Text",ExpressionUUID->"05ebc784-bfb7-0b45-92af-d64b53882d91"],
+
+Cell["\<\
+1. Convert the dcm to nii. Skips the subjects that are already done. \
+\>", "Text",ExpressionUUID->"4438970c-5253-8848-a690-c6eed99ff42e"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-   "4.", " ", "merge", " ", "multiple", " ", "stacks", " ", "of", " ", "the", 
-    " ", "same", " ", "data", " ", "into", " ", "one", " ", "dataset"}], 
-   "*)"}], "\n", 
-  RowBox[{"MuscleBidsMerge", "[", 
-   RowBox[{"dir", ",", 
-    RowBox[{"ProcessSubjects", "->", "subs"}], ",", 
-    RowBox[{"VersionCheck", "->", "False"}]}], "]"}]}]], "Input",
- CellChangeTimes->{3.9521724093898296`*^9, 3.954380592195076*^9},
- CellLabel->"In[15]:=",ExpressionUUID->"e657614a-0f98-4df3-b36b-ca3bf336c25f"],
+ RowBox[{"BidsDcmToNii", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}]}], "]"}]], "Input",Expressio\
+nUUID->"eb822676-0290-7d4a-8c2b-9baa93056b6e"],
+
+Cell[TextData[{
+ "2. Sort and name the raw nii files in the BIDS way. ",
+ Cell[BoxData[Cell["DeleteAfterConversion -> True",
+   Background->None,ExpressionUUID->"889f4ef5-518a-464c-88c1-17657c6ef6ba"]], 
+  "InlineCode",ExpressionUUID->"efd2b965-2fb2-9644-b939-82c6f945d5f4"],
+ " deletes the raw files after the conversion. "
+}], "Text",ExpressionUUID->"ffc4577a-d50b-144f-aa59-3155c43d95e9"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-   "5.", " ", "perform", " ", "the", " ", "segmentation", " ", "using", " ", 
-    "CNN"}], "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"MuscleBidsSegment", "[", 
-   RowBox[{"dir", ",", 
-    RowBox[{"ProcessSubjects", "->", "subs"}], ",", 
-    RowBox[{"VersionCheck", "->", "False"}]}], "]"}]}]], "Input",
- CellChangeTimes->{
-  3.9543805928985806`*^9, {3.9754861322381496`*^9, 3.975486132287985*^9}},
- CellLabel->"In[16]:=",ExpressionUUID->"89ac19e5-45fa-1749-8fb1-239ca4e05c5c"],
+ RowBox[{"MuscleBidsConvert", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}], ",", 
+   RowBox[{"DeleteAfterConversion", "\[Rule]", "True"}]}], "]"}]], "Input",Exp\
+ressionUUID->"16c17f24-9faf-c143-a442-b62b77dbe526"],
+
+Cell[TextData[{
+ "3. Process all BIDS files that are found, what is calculated is set in the \
+config. ",
+ Cell[BoxData[Cell["VersionCheck -> True",
+   Background->None,ExpressionUUID->"d66a4165-bee5-9c42-a200-11b766141d5d"]], 
+  "InlineCode",ExpressionUUID->"257dfdb9-c1fd-bb47-ac45-0156e13035b0"],
+ " also redoes the work that was made with an older version of QMRITools. "
+}], "Text",ExpressionUUID->"5fcc83ae-e4ee-364e-aa53-3d0134178ec6"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-    RowBox[{"6.", " ", "Perform", " ", "tractography"}], ",", " ", 
-    RowBox[{"generates", " ", "tracts"}]}], "*)"}], "\[IndentingNewLine]", 
-  RowBox[{"MuscleBidsTractography", "[", 
-   RowBox[{"dir", ",", 
-    RowBox[{"ProcessSubjects", "->", "subs"}], ",", 
-    RowBox[{"VersionCheck", "->", "False"}]}], "]"}]}]], "Input",
- CellChangeTimes->{3.9543805940701485`*^9},
- CellLabel->"In[17]:=",ExpressionUUID->"ed8a9149-a99e-1945-b6f4-14eff3dc6740"],
+ RowBox[{"MuscleBidsProcess", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}], ",", 
+   RowBox[{"VersionCheck", "\[Rule]", "False"}]}], "]"}]], "Input",ExpressionU\
+UID->"7e13589c-ddb7-8b49-842c-692577876573"],
+
+Cell["\<\
+4. Merge the stacks of the same data into one dataset and register them to \
+one space. \
+\>", "Text",ExpressionUUID->"fa5d31da-1310-d940-878f-a2c28bb39ce8"],
 
 Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", 
-   RowBox[{
-    RowBox[{"7.", " ", "Perform", " ", "data", " ", "analsyis"}], ",", " ", 
-    RowBox[{"generates", " ", "xls", " ", "and", " ", "images"}]}], "*)"}], 
-  "\[IndentingNewLine]", 
-  RowBox[{"MuscleBidsAnalysis", "[", 
-   RowBox[{"dir", ",", 
-    RowBox[{"ProcessSubjects", "->", "subs"}]}], "]"}]}]], "Input",
- CellChangeTimes->{{3.9501484190922985`*^9, 3.950148422388973*^9}, {
-   3.950148453007492*^9, 3.9501484533246536`*^9}, {3.954379523815613*^9, 
-   3.954379524294195*^9}, {3.9549254649940815`*^9, 3.9549254653135204`*^9}, {
-   3.9554222472474384`*^9, 3.955422259950964*^9}, 3.959593439877289*^9, {
-   3.975406332682604*^9, 3.975406354571373*^9}, {3.9855997692016335`*^9, 
-   3.985599773567814*^9}},
- CellLabel->"In[9]:=",ExpressionUUID->"94f51cfe-f503-9c44-b4dd-63131d4b3b73"]
+ RowBox[{"MuscleBidsMerge", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}], ",", 
+   RowBox[{"VersionCheck", "\[Rule]", "False"}]}], "]"}]], "Input",ExpressionU\
+UID->"95c7ca30-cc13-ec46-a76f-11c7fe00e7a7"],
+
+Cell["5. Segment the muscles using a neural network. ", "Text",ExpressionUUID->"e835f71f-6b43-c046-b8a6-f91a5cd47795"],
+
+Cell[BoxData[
+ RowBox[{"MuscleBidsSegment", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}], ",", 
+   RowBox[{"VersionCheck", "\[Rule]", "False"}]}], "]"}]], "Input",ExpressionU\
+UID->"5acd422c-7bda-9f48-96ac-113a871478f7"],
+
+Cell[TextData[{
+ "6. Calculate the muscle fibre tracts from the diffusion data. ",
+ Cell[BoxData[Cell["BidsTractographyMethod",
+   Background->None,ExpressionUUID->"fdfbdbc4-bf6a-f748-a414-0a5762beaf50"]], 
+  "InlineCode",ExpressionUUID->"4c00d059-91f0-154d-85b9-6086117dd6a5"],
+ " can be ",
+ Cell[BoxData["\"\<Full\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "40486700-1412-214f-b24c-7f7d05c9e035"],
+ " (default), ",
+ Cell[BoxData["\"\<Tractography\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "dae4c754-7e7b-c344-8ff1-ea2a28fa14a1"],
+ " or ",
+ Cell[BoxData["\"\<Segmentation\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "50537dee-bed4-d147-ae91-1fabeebb7f52"],
+ ". "
+}], "Text",ExpressionUUID->"f49c06af-7106-324c-826c-f2f3b5ff6c01"],
+
+Cell[BoxData[
+ RowBox[{"MuscleBidsTractography", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}], ",", 
+   RowBox[{"VersionCheck", "\[Rule]", "False"}], ",", 
+   RowBox[{"BidsTractographyMethod", "\[Rule]", "\"\<Full\>\""}]}], 
+  "]"}]], "Input",ExpressionUUID->"abb113b2-001c-b546-b378-0788b0a83d25"],
+
+Cell[TextData[{
+ "7. Analyse the data, which makes the Excel sheets and images. ",
+ Cell[BoxData[Cell["BidsOutputImages",
+   Background->None,ExpressionUUID->"c2b43b4b-8b5e-c044-8c32-3d5fb566f636"]], 
+  "InlineCode",ExpressionUUID->"44dc4cd8-6827-b44f-837e-39807c087494"],
+ " sets which images are made: \n\t",
+ Cell[BoxData["\"\<All\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "f30e3528-2007-934b-b7c9-88fe34abd586"],
+ " (default), ",
+ Cell[BoxData["\"\<Quantitative\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "c6a6ede2-2bc2-f44a-9654-d7581a845491"],
+ ", ",
+ Cell[BoxData["\"\<Segmentation\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "324d48bd-013b-8e42-80b1-fadd1008bf62"],
+ ", ",
+ Cell[BoxData["\"\<Tractography\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "38ef12ab-671d-3641-9422-95fd6e63bfe1"],
+ " or ",
+ Cell[BoxData["\"\<None\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "979829a5-d1bd-2845-a408-9f231f6decce"],
+ ". "
+}], "Text",ExpressionUUID->"df78bd75-3559-5840-b275-8a4c4629f890"],
+
+Cell[BoxData[
+ RowBox[{"MuscleBidsAnalysis", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}], ",", 
+   RowBox[{"BidsOutputImages", "\[Rule]", "\"\<All\>\""}]}], "]"}]], "Input",E\
+xpressionUUID->"57da4f16-4021-404b-b32a-647702a0276c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Check the processing", "Section",ExpressionUUID->"7864487d-704f-944d-975b-5fb1982f0741"],
+
+Cell[TextData[{
+ "All checks of the processing steps as tabs in one window: the convert \
+output, the check files and the report. Give the same ",
+ Cell[BoxData[Cell["BidsOutputImages",
+   Background->None,ExpressionUUID->"446dd0ef-3146-9c46-8d81-d11cadead5ed"]], 
+  "InlineCode",ExpressionUUID->"bd98c5a2-c6a5-a64f-a520-a5603ea77d9e"],
+ " as in step 7. "
+}], "Text",ExpressionUUID->"8850c38b-2b1b-bf43-ab0f-efd8ab845f80"],
+
+Cell[BoxData[
+ RowBox[{"MuscleBidsCheck", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}], ",", 
+   RowBox[{"BidsOutputImages", "\[Rule]", "\"\<All\>\""}]}], "]"}]], "Input",E\
+xpressionUUID->"50b6e224-74db-7a4d-8c5e-d43989509682"],
+
+Cell["\<\
+Or one at a time. Check for each subject that the converted json and nii \
+files are present after step 2: \
+\>", "Text",ExpressionUUID->"19910586-5302-a242-98ad-9e9e3d9c530a"],
+
+Cell[BoxData[
+ RowBox[{"CheckBidsOutput", "[", 
+  RowBox[{"dir", ",", "\"\<Convert\>\"", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}]}], "]"}]], "Input",Expressio\
+nUUID->"1977413e-ae9e-4a42-a20c-d3e42ab70957"],
+
+Cell["\<\
+Show which steps are finished for each subject. Selected check files can be \
+deleted, so that the next run of that step processes the data again: \
+\>", "Text",ExpressionUUID->"17bd570f-770d-1849-9690-db6089dd20e6"],
+
+Cell[BoxData[
+ RowBox[{"ManageCheckFiles", "[", 
+  RowBox[{"dir", ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}], ",", 
+   RowBox[{"BidsOutputImages", "\[Rule]", "\"\<All\>\""}]}], "]"}]], "Input",E\
+xpressionUUID->"b52863bd-958e-0f46-8b4a-fdd144a1de5b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Report", "Section",ExpressionUUID->"c2f78033-c809-c543-92e9-6405573a1726"],
+
+Cell[TextData[{
+ "Write the problems of all steps to a report file. The extension selects the \
+format, ",
+ Cell[BoxData[Cell[".pdf",
+   Background->None,ExpressionUUID->"d655bf22-a765-c941-adb1-a0813a40b91a"]], 
+  "InlineCode",ExpressionUUID->"8c25d64b-2b91-f64d-a980-45658d8261e3"],
+ " or ",
+ Cell[BoxData[Cell[".md",
+   Background->None,ExpressionUUID->"a4985146-7166-7743-b549-86da1f8441b2"]], 
+  "InlineCode",ExpressionUUID->"435b0181-8fa8-e14f-a7ae-e1de3a4779de"],
+ ". The function returns the path of the file. "
+}], "Text",ExpressionUUID->"fb44c225-5f2f-fc4d-8278-250ad6f15d98"],
+
+Cell[BoxData[
+ RowBox[{"MuscleBidsReport", "[", 
+  RowBox[{"dir", ",", "\"\<All\>\"", ",", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{"dir", ",", "\"\<report.pdf\>\""}], "}"}], "]"}], ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}]}], "]"}]], "Input",Expressio\
+nUUID->"c933e747-91f8-dd4e-bdd7-e48b505e2c3a"],
+
+Cell[TextData[{
+ "A report of one step. The steps are ",
+ Cell[BoxData["\"\<Protocol names\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "bd5cadc5-3728-1f45-8673-62896b3b7f72"],
+ ", ",
+ Cell[BoxData["\"\<Config labels\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "eb4e6092-a48a-ed4a-a171-a1ae43329d5a"],
+ ", ",
+ Cell[BoxData["\"\<Convert\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "77e16a8e-b12c-7e4c-b88d-e4098a0b220a"],
+ ", ",
+ Cell[BoxData["\"\<Custom configs\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "40143e13-ce86-9e4f-82b6-dee4dc860b0b"],
+ ", ",
+ Cell[BoxData["\"\<Process\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "d16d7648-0c8b-e644-94bf-9ef9177bc850"],
+ ", ",
+ Cell[BoxData["\"\<Merge\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "9b740a42-89ab-604e-ab67-3fabbb90a1fc"],
+ ", ",
+ Cell[BoxData["\"\<Segment\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "672c4024-548b-6649-ba49-d1741f04133c"],
+ ", ",
+ Cell[BoxData["\"\<Tractography\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "30e366a6-5d83-fa46-8a41-837acd69d628"],
+ " and ",
+ Cell[BoxData["\"\<Analysis\>\""], "InlineWL", "Input",
+  ShowAutoStyles->True,
+  ShowSyntaxStyles->True,
+  LanguageCategory->"Input",
+  ShowStringCharacters->True,ExpressionUUID->
+  "1b34d238-cce8-5047-a585-d18eb82c04b0"],
+ ". "
+}], "Text",ExpressionUUID->"d4053975-253b-2541-8178-4fb660a21f8e"],
+
+Cell[BoxData[
+ RowBox[{"MuscleBidsReport", "[", 
+  RowBox[{"dir", ",", "\"\<Merge\>\"", ",", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{"dir", ",", "\"\<report_merge.md\>\""}], "}"}], "]"}], ",", 
+   RowBox[{"ProcessSubjects", "\[Rule]", "subs"}]}], "]"}]], "Input",Expressio\
+nUUID->"3f028f59-ef56-8b4c-9533-b7e3dfb0d5d9"]
+}, Open  ]]
+}, Open  ]]
 },
-WindowSize->{1428, 825.75},
-WindowMargins->{{0, Automatic}, {Automatic, 0}},
-TaggingRules->{
- "DocuToolsSettings" -> {
-   "$ApplicationName" -> "QMRITools", "$LinkBase" -> "QMRITools", 
-    "$DocumentationDirectory" -> 
-    "D:\\werk\\workspace\\QMRITools\\QMRITools\\Documentation\\English\\", 
-    "$ApplicationDirectory" -> "D:\\werk\\workspace\\QMRITools\\QMRITools"}, 
-  "WelcomeScreenSettings" -> {"FEStarting" -> False}, "TryRealOnly" -> False},
-FrontEndVersion->"14.3 for Microsoft Windows (64-bit) (July 8, 2025)",
+WindowSize->{888, 1395.75},
+WindowMargins->{{-900, Automatic}, {Automatic, -287.25}},
+Magnification:>0.9 Inherited,
+FrontEndVersion->"15.0 for Microsoft Windows (64-bit) (July 2, 2026)",
 StyleDefinitions->"Default.nb",
-ExpressionUUID->"e83429d2-ccb8-254a-8bdd-6c69ddd9ff0c"
+ExpressionUUID->"9219e706-520b-ad47-83f0-e4888f4ecd78"
 ]
 (* End of Notebook Content *)
 
@@ -217,21 +484,73 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[558, 20, 276, 6, 33, "Input",ExpressionUUID->"994ebbd5-6a91-467a-84d2-a4eb20c59798",
- InitializationCell->True],
-Cell[837, 28, 308, 6, 35, "Input",ExpressionUUID->"9b9bf3a4-6775-1a4b-a816-7eb1333ff7fe"],
-Cell[1148, 36, 265, 6, 35, "Input",ExpressionUUID->"b03c7878-8ead-6046-b84f-d3fb8ecf0201"],
-Cell[1416, 44, 449, 10, 35, "Input",ExpressionUUID->"59582eb2-4913-5d4c-9741-0396e6d74fa8"],
-Cell[1868, 56, 557, 14, 35, "Input",ExpressionUUID->"c4660cdd-2f6c-6546-b4fd-8f8622546e48"],
-Cell[2428, 72, 579, 13, 35, "Input",ExpressionUUID->"f58eda00-955a-484e-a431-f1d89cfab25f"],
-Cell[3010, 87, 514, 11, 35, "Input",ExpressionUUID->"b4f43a28-25ba-2944-9ad9-15993b324349"],
-Cell[3527, 100, 597, 15, 35, "Input",ExpressionUUID->"66c2a782-3006-2f4d-8471-8f97cc16a1a4"],
-Cell[4127, 117, 740, 17, 35, "Input",ExpressionUUID->"0a50004c-5b8c-42f2-abf3-696a4155b1f8"],
-Cell[4870, 136, 546, 12, 35, "Input",ExpressionUUID->"e657614a-0f98-4df3-b36b-ca3bf336c25f"],
-Cell[5419, 150, 529, 12, 35, "Input",ExpressionUUID->"89ac19e5-45fa-1749-8fb1-239ca4e05c5c"],
-Cell[5951, 164, 504, 11, 35, "Input",ExpressionUUID->"ed8a9149-a99e-1945-b6f4-14eff3dc6740"],
-Cell[6458, 177, 836, 16, 35, "Input",ExpressionUUID->"94f51cfe-f503-9c44-b4dd-63131d4b3b73"]
+Cell[CellGroupData[{
+Cell[576, 22, 94, 0, 65, "Title",ExpressionUUID->"a81357c3-7351-e949-88e4-dccf3a0c69f4"],
+Cell[673, 24, 494, 8, 37, "Text",ExpressionUUID->"71fddbf3-a58c-994e-8fcb-29a37670b045"],
+Cell[1170, 34, 215, 3, 22, "Text",ExpressionUUID->"3852a63d-c55a-ce42-9c48-c2d0e17eb7be"],
+Cell[CellGroupData[{
+Cell[1410, 41, 79, 0, 44, "Section",ExpressionUUID->"3e459c90-eaf6-ab4c-80b6-9ab5b3a2fabe"],
+Cell[1492, 43, 1525, 33, 37, "Text",ExpressionUUID->"9300033c-4698-8245-87bc-1e60f3613fb6"],
+Cell[3020, 78, 317, 7, 44, "Input",ExpressionUUID->"4bc5220a-4df5-094c-b336-ac128faf074a"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3374, 90, 98, 0, 44, "Section",ExpressionUUID->"6051f05f-ad74-1241-b4f2-423ee23a13b8"],
+Cell[3475, 92, 178, 3, 22, "Text",ExpressionUUID->"4d39d507-4908-cd47-a9b3-971c79ae2eaa"],
+Cell[3656, 97, 123, 1, 20, "Input",ExpressionUUID->"b7073abf-ee47-0340-8805-7875692f648d"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3816, 103, 101, 0, 44, "Section",ExpressionUUID->"664aea02-05ac-f84f-bf91-efe6e9eb8e9c"],
+Cell[3920, 105, 207, 3, 22, "Text",ExpressionUUID->"96e8e98c-6d7d-4440-a5be-f63eb73163f1"],
+Cell[4130, 110, 198, 4, 20, "Input",ExpressionUUID->"34ec3acb-c3ef-4647-82de-844b7da2a47d"],
+Cell[4331, 116, 111, 0, 22, "Text",ExpressionUUID->"473565be-4b55-e045-a9f3-736e6fbadd49"],
+Cell[4445, 118, 120, 1, 20, "Input",ExpressionUUID->"4aacdad4-3e14-2549-9ea6-7a49094c22f9"],
+Cell[4568, 121, 146, 2, 22, "Text",ExpressionUUID->"ed54b2e8-3e5d-914e-87fb-8aff157f5b60"],
+Cell[4717, 125, 124, 1, 20, "Input",ExpressionUUID->"4c9fe179-9a52-a742-a10c-53f33fa414d9"],
+Cell[4844, 128, 219, 3, 22, "Text",ExpressionUUID->"bd7259bb-cb52-6c48-92c1-f413e0cb4b1b"],
+Cell[5066, 133, 199, 4, 20, "Input",ExpressionUUID->"5228eb40-3455-334d-a468-c976923a8a89"],
+Cell[5268, 139, 180, 3, 22, "Text",ExpressionUUID->"c6feafe7-0c9f-1a4b-aad8-76cf77e8a2c0"],
+Cell[5451, 144, 155, 3, 20, "Input",ExpressionUUID->"4fd21ba7-8fff-6745-9623-c4c33103cf69"],
+Cell[5609, 149, 211, 3, 22, "Text",ExpressionUUID->"3329e66f-149f-5541-b385-a6e411b45cb4"],
+Cell[5823, 154, 200, 4, 20, "Input",ExpressionUUID->"cc008f5a-47c5-4f49-9a45-402ea0cb4dc5"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6060, 163, 90, 0, 44, "Section",ExpressionUUID->"4a0cdb90-b7c0-e740-9e54-5a563a60095a"],
+Cell[6153, 165, 203, 3, 22, "Text",ExpressionUUID->"05ebc784-bfb7-0b45-92af-d64b53882d91"],
+Cell[6359, 170, 148, 2, 22, "Text",ExpressionUUID->"4438970c-5253-8848-a690-c6eed99ff42e"],
+Cell[6510, 174, 194, 4, 20, "Input",ExpressionUUID->"eb822676-0290-7d4a-8c2b-9baa93056b6e"],
+Cell[6707, 180, 391, 6, 22, "Text",ExpressionUUID->"ffc4577a-d50b-144f-aa59-3155c43d95e9"],
+Cell[7101, 188, 262, 5, 20, "Input",ExpressionUUID->"16c17f24-9faf-c143-a442-b62b77dbe526"],
+Cell[7366, 195, 442, 7, 22, "Text",ExpressionUUID->"5fcc83ae-e4ee-364e-aa53-3d0134178ec6"],
+Cell[7811, 204, 254, 5, 20, "Input",ExpressionUUID->"7e13589c-ddb7-8b49-842c-692577876573"],
+Cell[8068, 211, 167, 3, 22, "Text",ExpressionUUID->"fa5d31da-1310-d940-878f-a2c28bb39ce8"],
+Cell[8238, 216, 252, 5, 20, "Input",ExpressionUUID->"95c7ca30-cc13-ec46-a76f-11c7fe00e7a7"],
+Cell[8493, 223, 118, 0, 22, "Text",ExpressionUUID->"e835f71f-6b43-c046-b8a6-f91a5cd47795"],
+Cell[8614, 225, 254, 5, 20, "Input",ExpressionUUID->"5acd422c-7bda-9f48-96ac-113a871478f7"],
+Cell[8871, 232, 1066, 27, 22, "Text",ExpressionUUID->"f49c06af-7106-324c-826c-f2f3b5ff6c01"],
+Cell[9940, 261, 332, 6, 20, "Input",ExpressionUUID->"abb113b2-001c-b546-b378-0788b0a83d25"],
+Cell[10275, 269, 1546, 41, 37, "Text",ExpressionUUID->"df78bd75-3559-5840-b275-8a4c4629f890"],
+Cell[11824, 312, 265, 5, 20, "Input",ExpressionUUID->"57da4f16-4021-404b-b32a-647702a0276c"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[12126, 322, 94, 0, 44, "Section",ExpressionUUID->"7864487d-704f-944d-975b-5fb1982f0741"],
+Cell[12223, 324, 422, 7, 22, "Text",ExpressionUUID->"8850c38b-2b1b-bf43-ab0f-efd8ab845f80"],
+Cell[12648, 333, 262, 5, 20, "Input",ExpressionUUID->"50b6e224-74db-7a4d-8c5e-d43989509682"],
+Cell[12913, 340, 186, 3, 22, "Text",ExpressionUUID->"19910586-5302-a242-98ad-9e9e3d9c530a"],
+Cell[13102, 345, 221, 4, 20, "Input",ExpressionUUID->"1977413e-ae9e-4a42-a20c-d3e42ab70957"],
+Cell[13326, 351, 226, 3, 22, "Text",ExpressionUUID->"17bd570f-770d-1849-9690-db6089dd20e6"],
+Cell[13555, 356, 263, 5, 20, "Input",ExpressionUUID->"b52863bd-958e-0f46-8b4a-fdd144a1de5b"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[13855, 366, 80, 0, 44, "Section",ExpressionUUID->"c2f78033-c809-c543-92e9-6405573a1726"],
+Cell[13938, 368, 586, 11, 22, "Text",ExpressionUUID->"fb44c225-5f2f-fc4d-8278-250ad6f15d98"],
+Cell[14527, 381, 338, 7, 20, "Input",ExpressionUUID->"c933e747-91f8-dd4e-bdd7-e48b505e2c3a"],
+Cell[14868, 390, 2219, 65, 22, "Text",ExpressionUUID->"d4053975-253b-2541-8178-4fb660a21f8e"],
+Cell[17090, 457, 345, 7, 20, "Input",ExpressionUUID->"3f028f59-ef56-8b4c-9533-b7e3dfb0d5d9"]
+}, Open  ]]
+}, Open  ]]
 }
 ]
 *)
+
+(* End of internal cache information *)
 

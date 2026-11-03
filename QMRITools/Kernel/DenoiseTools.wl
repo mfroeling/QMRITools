@@ -37,8 +37,21 @@ PCADeNoise[data, mask] removes Rician noise from the data with PCA only withing 
 PCADeNoise[data, mask, sig] removes Rician noise from the data with PCA only withing the mask using sig as prior knowledge or fixed value.
 
 Output is de {data denoise, sigma map} by default if PCAOutput is Full then fitted {data denoise , {sigma fit, average sigma}, {number components, number of fitted voxesl, number of max fits}, total fit -time per 500 ittt}.
+If PCARicianCorrect is True the denoised data is corrected for the Rician noise bias using RicianBiasCorrect with the fitted sigma map.
+Kernel voxels that are exactly zero (e.g. outside the image or already masked) are not used for the fit. If less than a quarter of the kernel contains data the voxel is not denoised and its sigma is the given sigma (0 if not given).
 
 PCADeNoise[] is based on DOI: 10.1016/j.neuroimage.2016.08.016 and 10.1002/mrm.26059."
+
+RicianBiasCorrect::usage =
+"RicianBiasCorrect[data, sigma] corrects the Rician noise bias of magnitude data (the expected magnitude is larger than the noise free signal at low SNR).
+The data can be {z, y, x} or {z, t, y, x}. The sigma is the standard deviation of the noise in the magnitude data (as given by PCADeNoise), and can be a single value or a map {z, y, x}.
+Voxels with sigma 0 are not changed.
+
+Output is the data corrected for the noise bias.
+
+The option Method can be \"Exact\" (default, the mean and std of the Rice distribution are inverted, which also gives the Gaussian sigma) or \"Approximate\" (sqrt[data^2 - sigma^2], valid for SNR > 3).
+
+RicianBiasCorrect[] is based on DOI: 10.1016/j.jmr.2005.09.018 and 10.1016/j.neuroimage.2018.07.066."
 
 P2SDenoise::usage = 
 "P2SDenoise[data] removes noise from the data using self-supervised linear regression, where each volume is predicted from all other volumes.
@@ -115,15 +128,18 @@ PCAOutput::usage =
 Else the output is {datao, sigmat}."
 
 PCATolerance::usage = 
-"PCATolerance is an option of PCADeNoise and should be an integer > 0. Default value is 0. When increased the denoise method removes less noise."
+"PCATolerance is an option of PCADeNoise and should be an integer >= 0. Default value is 0, which removes exactly the noise components that are found. Each increase of 1 keeps one more component, i.e. the method removes less noise."
 
 PCAWeighting::usage = 
-"PCAWeighting is an option of PCADeNoise and can be True of False. Default value is False. When True the weights of the per voxel result are calculated based on the number of non noise components."
+"PCAWeighting is an option of PCADeNoise and can be True of False. Default value is False. When True the weights of the per voxel result are calculated based on the number of non noise components. Weighting is not possible with Parallelize True, which is the default, in that case PCAWeighting is ignored."
 
 PCAClipping::usage = 
-"PCAClipping is an option of PCADeNoise and can be True of False. If True the output is clipped between 0 and the max absolute value of the input data."
+"PCAClipping is an option of PCADeNoise and can be True of False. If True the output is clipped between 0.9 times the minimum and 1.1 times the maximum absolute value of the input data."
 
-PCANoiseSigma::usage = 
+PCARicianCorrect::usage =
+"PCARicianCorrect is an option of PCADeNoise and can be True of False. Default value is False. If True the denoised data is corrected for the Rician noise bias with RicianBiasCorrect, using the fitted sigma. Not used if PCAComplex is True."
+
+PCANoiseSigma::usage =
 "PCANoiseSigma is an option of DenoiseCSIdata and can be \"Corners\" or \"Automatic\"."
 
 PCAComplex::usage = 
@@ -190,6 +206,9 @@ DeNoise::kern =
 
 DeNoise::sig =
 "Data and sigma are of unequal dimensions. Data: `1`, Sigma: `2`."
+
+PCADeNoise::rician =
+"Rician bias correction is not performed because the data is complex and has no Rician noise bias."
 
 
 (* ::Section:: *)
@@ -333,6 +352,7 @@ Options[PCADeNoise] = {
 	PCAWeighting -> False, 
 	PCAClipping -> True,
 	PCAComplex->False,
+	PCARicianCorrect -> False,
 	Method -> "Similarity",
 	MonitorCalc -> False,
 	Parallelize -> True
@@ -346,16 +366,17 @@ PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., 
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		weight, ker, tol, mon, data, min, max, maskd, mask, sigma, dim, zdim, ydim, xdim, dDim, 
-		k, m, n, off, datao, weights, sigmat, start, sigmati, nmati, clip, comp, len,
+		k, m, off, datao, weights, sigmat, start, sigmati, nmati, clip, comp, len,
 		output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
-		weightFun, posV, length, nearPos, p, pi, pos, np, met, trans, comps,
-		mid, pad, fun, par, dimv, coors
+		weightFun, posV, length, nearPos, p, pi, pos, np, met, comps,
+		mid, pad, fun, par, dimv, coors, bias
 	},
 
 	(*tollerane if>0 more noise components are kept*)
-	{met, mon, weight, tol, ker, clip, comp, par} = OptionValue[{Method, MonitorCalc, PCAWeighting, 
-		PCATolerance, PCAKernel, PCAClipping, PCAComplex, Parallelize}];
+	{met, mon, weight, tol, ker, clip, comp, par, bias} = OptionValue[{Method, MonitorCalc, PCAWeighting,
+		PCATolerance, PCAKernel, PCAClipping, PCAComplex, Parallelize, PCARicianCorrect}];
 	If[par, weight = False];
+	If[bias && comp, Message[PCADeNoise::rician]];
 
 	(*concatenate complex data and make everything numerical to speed up*)
 	comps = False;
@@ -367,7 +388,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	];
 
 	(*prep data and masks*)
-	{min, max} = 1.1 MinMax[Abs[data]];
+	{min, max} = {0.9, 1.1} MinMax[Abs[data]];
 	maskd = Unitize@Total@Transpose[data];
 	mask = ToPackedArray[N@(maski maskd)];
 	sigma = ToPackedArray[N@sigmai];
@@ -376,7 +397,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	dim = {zdim, dDim, ydim, xdim} = Dimensions[data];
 	ker = If[EvenQ[ker] && met =!= "Similarity", ker - 1, ker];
 	k = Round[ker^3];
-	{trans, m, n} = If[dDim < k, {False, dDim, k}, {True, k, dDim}];
+	m = Min[dDim, k];
 	mid = Ceiling[ker^3/2];
 
 	(*define sigma*)
@@ -405,20 +426,22 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		pos = Range@length;
 
 		(*get positions of similar signals but in random batches such that nearest has speed*)
-		SeedRandom[1234];
 		np = 50000;
-		pos = If[length <= np, {pos}, 
-			np = Ceiling[length/Ceiling[length/np]];
-			Partition[RandomSample[pos], np, np, {1, 1}, {}]
-		];
+		BlockRandom[
+			SeedRandom[1234];
+			pos = If[length <= np, {pos},
+				np = Ceiling[length/Ceiling[length/np]];
+				Partition[RandomSample[pos], np, np, {1, 1}, {}]
+			];
 
-		(*for each random batch find the nearest voxels and make pos array*)
-		If[mon, PrintTemporary["Preparing data similarity"]];
-		nearPos = Flatten[Nearest[data[[#]] -> #, data[[#]], 2 k, 
-			DistanceFunction -> EuclideanDistance, Method -> "Scan", 
-			WorkingPrecision -> MachinePrecision] & /@ pos, 1];
-		nearPos[[All, 1]] = Flatten[pos];
-		nearPos = Prepend[RandomSample[Rest@#, k - 1], First@#] & /@ Sort[nearPos];
+			(*for each random batch find the nearest voxels and make pos array*)
+			If[mon, PrintTemporary["Preparing data similarity"]];
+			nearPos = Flatten[Nearest[data[[#]] -> #, data[[#]], 2 k,
+				DistanceFunction -> EuclideanDistance, Method -> "Scan",
+				WorkingPrecision -> MachinePrecision] & /@ pos, 1];
+			nearPos[[All, 1]] = Flatten[pos];
+			nearPos = Prepend[RandomSample[Rest@#, k - 1], First@#] & /@ Sort[nearPos];
+		];
 
 		(*perform denoising*)
 		j = 0;
@@ -438,7 +461,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 				pi = First@p;
 
 				(*perform the fit and reconstruct the noise free data*)
-				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigma[[pi]], {trans, m, n},  tol];
+				{sigo, Nes, datn} = PCADeNoiseRows[data[[p]], sigma[[pi]], tol];
 				weight = weightFun[Nes];
 
 				(*sum data and sigma and weight for number of components*)
@@ -460,11 +483,11 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 			
 			(*--------------no weighting allows parallel ---------------*)
 
-			fun = If[par, DistributeDefinitions[data, sigma, trans, m, n, tol, par, PCADeNoiseFit]; ParallelMap, Map];
+			fun = If[par, DistributeDefinitions[data, sigma, tol, par, PCADeNoiseRows]; ParallelMap, Map];
 			{datao, sigmat, sigmati, nmati} = Transpose@fun[(If[!par, j++];
 				p = #;
 				pi = First@p;
-				{sigo, Nes, datn} = PCADeNoiseFit[data[[p]], sigma[[pi]], {trans, m, n}, tol];
+				{sigo, Nes, datn} = PCADeNoiseRows[data[[p]], sigma[[pi]], tol];
 				{First@datn, sigo, sigo, Nes}
 			) &, nearPos];
 
@@ -508,7 +531,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 					sigi = sigma[[z, y, x]];
 
 					(*perform the fit and reconstruct the noise free data*)
-					{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigi, {trans, m, n}, tol];
+					{sigo, Nes, datn} = PCADeNoiseRows[fitdata, sigi, tol];
 
 					(*reshape the vector into kernel box and get the weightes*)
 					datn = Fold[Partition, datn, {ker, ker}];
@@ -530,12 +553,12 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 			,
 
-			fun = If[par, DistributeDefinitions[data, sigma, trans, m, n, tol, par, k, dDim, mid, off, pad, PCADeNoiseFit];ParallelMap, Map];
+			fun = If[par, DistributeDefinitions[data, sigma, tol, par, k, dDim, mid, off, pad, PCADeNoiseRows];ParallelMap, Map];
 			{datao, sigmat, sigmati, nmati} = Transpose@fun[(If[!par, j++];
 				{z, y, x} = #;
 				{{zm, ym, xm}, {zp, yp, xp}} = {{z, y, x} - off, {z, y, x} + off};
 				fitdata = ArrayReshape[data[[zm ;; zp, ym ;; yp, xm ;; xp]], {k, dDim}];
-				{sigo, Nes, datn} = PCADeNoiseFit[fitdata, sigma[[z, y, x]], {trans, m, n}, tol];
+				{sigo, Nes, datn} = PCADeNoiseRows[fitdata, sigma[[z, y, x]], tol];
 				{datn[[mid]], sigo, sigo, Nes}
 			)&, coors];
 			
@@ -549,6 +572,9 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	datao = datao[[pad;;-pad, All, pad;;-pad, pad;;-pad]];
 	sigmat = sigmat[[pad;;-pad, pad;;-pad, pad;;-pad]];
 	output = output[[All, pad;;-pad, pad;;-pad, pad;;-pad]];
+
+	(*correct the Rician noise bias*)
+	If[bias && !comp, datao = RicianBiasCorrect[datao, sigmat]];
 
 	(*define output, split it if data is complex*)
 	datao = Which[
@@ -568,6 +594,42 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 
 (* ::Subsubsection::Closed:: *)
+(*PCADeNoiseRows*)
+
+
+(*internal function*)
+PCADeNoiseRows[data_, sigi_?NumberQ, toli_] := Block[{
+		keep, nk, k, dd, sig, tol, out, outk
+	},
+
+	(*rows without data carry no noise, only these are used for the fit*)
+	{k, dd} = Dimensions[data];
+	keep = Flatten@Position[Unitize@Total[Abs[data], {2}], 1];
+	nk = Length[keep];
+
+	Which[
+		(*all rows have data*)
+		nk === k,
+		PCADeNoiseFit[data, sigi, PCADeNoiseDims[k, dd], toli],
+
+		(*too few rows with data to denoise, give the data back*)
+		nk < k/4,
+		{sigi, 0, data},
+
+		(*fit the rows with data and fill the others with zeros*)
+		True,
+		{sig, tol, outk} = PCADeNoiseFit[data[[keep]], sigi, PCADeNoiseDims[nk, dd], toli];
+		out = 0. data;
+		out[[keep]] = outk;
+		(*the number of removed components is relative to the full size*)
+		{sig, tol + Min[k, dd] - Min[nk, dd], out}
+	]
+]
+
+PCADeNoiseDims[k_, dd_] := If[dd < k, {False, dd, k}, {True, k, dd}]
+
+
+(* ::Subsubsection::Closed:: *)
 (*PCADeNoiseFit*)
 
 
@@ -583,11 +645,11 @@ PCADeNoiseFit[data_, sigi_?NumberQ, {trans_, m_, n_}, toli_] := Block[{
 	(*if sigma is given perform with fixed sigma,else fit both*)
 	{pi, sig} = GridSearch[Re[val], m, n, sigi];
 
-	(*constartin pi plus tol*)
-	tol = Round[Clip[pi - toli, {1, m}]];
+	(*number of noise components that are removed, pi minus tol*)
+	tol = Round[Clip[pi - toli, {0, m - 1}]];
 
-	(*give output,simga,number of noise comp,and denoised matrix*)
-	out = Transpose[mat[[tol ;;]]] . (mat[[tol ;;]] . xmat);
+	(*give output,simga,number of removed noise comp,and denoised matrix*)
+	out = Transpose[mat[[tol + 1 ;;]]] . (mat[[tol + 1 ;;]] . xmat);
 	out = If[trans, out, Transpose@out];
 	
 	{sig, tol, out}
@@ -608,11 +670,68 @@ GridSearch = Compile[{{val, _Real, 1}, {m, _Integer, 0}, {n, _Integer, 0}, {sig,
 		sigq2 - sigq1,
 		Mean[{sigq1, sigq2}] - sig^2
 	]]]];
-	si = Sqrt[Max[0, (sigq1[[pi]] + sigq2[[pi]])/2]];
+	si = Sqrt[Max[0, sigq1[[pi]]]];
 
 	(*give output*)
 	{pi, si}
 ], RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
+
+
+(* ::Subsubsection::Closed:: *)
+(*RicianBiasCorrect*)
+
+
+Options[RicianBiasCorrect] = {Method -> "Exact"};
+
+SyntaxInformation[RicianBiasCorrect] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
+
+RicianBiasCorrect[data_, sigma_, OptionsPattern[]] := Block[{dat, sig, ex},
+
+	(*make data and sigma numerical*)
+	dat = ToPackedArray@N@data;
+	sig = ToPackedArray@N@sigma;
+
+	(*broadcast the sigma map over the fourth dimension*)
+	sig = If[ArrayDepth[sig] === 3 && ArrayDepth[dat] === 4,
+		Transpose[ConstantArray[sig, Dimensions[dat][[2]]], {2, 1, 3, 4}],
+		sig
+	];
+
+	(*correct each value*)
+	ex = Boole[OptionValue[Method] === "Exact"];
+	ToPackedArray@N@RicianBiasC[dat, sig, ex]
+]
+
+
+RicianBiasC = Compile[{{m, _Real, 0}, {sig, _Real, 0}, {ex, _Integer, 0}}, Block[
+	{r, th, tn, t2, xi, d, i},
+
+	r = m / Max[sig, 10.^-12];
+	Which[
+		(*no noise, nothing to correct*)
+		sig <= 0., m,
+		(*approximate, also exact for high snr*)
+		ex === 0 || r > 20., Sqrt[Max[0., m^2 - sig^2]],
+		(*below the noise floor, mean over std of a Rayleigh distribution*)
+		r <= 1.9131, 0.,
+		(*fixed point iteration to invert the mean and std of the Rice distribution*)
+		True,
+		th = r;
+		xi = 1.;
+		d = 1.;
+		i = 0;
+		While[d > 10.^-6 && i < 500,
+			t2 = th^2;
+			xi = 2. + t2 - (Pi/8.) Exp[-t2/2.] ((2. + t2) BesselI[0, t2/4.] + t2 BesselI[1, t2/4.])^2;
+			tn = Sqrt[Max[0., xi (1. + r^2) - 2.]];
+			d = Abs[tn - th];
+			th = tn;
+			i++
+		];
+		(*gaussian sigma is the magnitude std over sqrt xi*)
+		sig th / Sqrt[xi]
+	]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
 
 (* ::Subsubsection::Closed:: *)

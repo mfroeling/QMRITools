@@ -59,14 +59,23 @@ file in dir are present. Missing labels are highlighted and can be shown only us
 Only subjects in the rawData folder are shown, so run it after BidsDcmToNii.
 CheckConfigLabels[dir, subs] does the same for the subjects subs."
 
+CheckCustomConfigs::usage =
+"CheckCustomConfigs[dir] lists for each subject that has a custom config, the settings that differ from the config file in dir, one row per setting.
+It also checks that the custom config was carried along by the steps: the copy in a later stage that is missing, unreadable or different from the first copy is highlighted.
+The stages are checked from the source folder via rawData and derivedData to mergeData. Subjects without a custom config are not shown.
+The option ProcessSubjects limits the subjects."
+
 CheckBidsOutput::usage =
 "CheckBidsOutput[dir, step] checks for each subject if the output expected from the config file in dir is present after the given step.
 Currently step can be \"Convert\", which checks for each Label if the json and nii files are present in the rawData folder.
 Missing files are highlighted and can be shown only using the checkbox."
 
+MuscleBidsConfig::usage =
+"MuscleBidsConfig[dir] shows the config of the config file in dir and its checks as tabs: ViewConfig, CheckCustomConfigs, CheckConfigLabels and ViewProtocolNames.
+The data is scanned when the function is called, the Reload buttons scan again. The option ProcessSubjects is passed on."
+
 MuscleBidsCheck::usage =
-"MuscleBidsCheck[dir] shows ViewProtocolNames, CheckConfigLabels, CheckBidsOutput and ManageCheckFiles for the config file in dir as tabs.
-The Custom configs tab compares the custom config of each subject with its copies in the other stages.
+"MuscleBidsCheck[dir] shows CheckBidsOutput and ManageCheckFiles for the config file in dir as tabs, the checks of the processing steps.
 The Report tab exports the problems of a step, or of all steps, as md or pdf report.
 The data is scanned when the function is called, the Reload buttons scan again. The options ProcessSubjects and BidsOutputImages are passed on."
 
@@ -84,7 +93,7 @@ The options are ProcessSubjects to limit the subjects and BidsOutputImages to de
 MuscleBidsGUI::usage =
 "MuscleBidsGUI[dir] shows a GUI to run the Muscle Bids processing steps for the config file in dir, with the options of each step and the subjects to process.
 Each step runs in a separate kernel, nothing is printed in the notebook and the progress is shown from the log files.
-The tabs Check and Config show MuscleBidsCheck and ViewConfig."
+The tabs Config and Check show MuscleBidsConfig and MuscleBidsCheck."
 
 
 GetConfig::usage =
@@ -543,6 +552,7 @@ defaultConfig = <|
 		"SplitRegistration" -> False,
 		"RegistrationDimension" -> "3D",
 		"RegistrationMethod" -> "bspline",
+		"RicianCorrection" -> True,
 		"IVIMCorrection" -> True,
 		"GradientCorrection" -> False,
 		"FasciculationDetection" -> False
@@ -1211,6 +1221,39 @@ CheckBidsOutput[dir_?StringQ, step:"Convert", OptionsPattern[]] :=
 
 
 (* ::Subsubsection::Closed:: *)
+(*CheckCustomConfigs*)
+
+
+Options[CheckCustomConfigs] = {ProcessSubjects -> All}
+
+SyntaxInformation[CheckCustomConfigs] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+CheckCustomConfigs[dir_?StringQ, OptionsPattern[]] :=
+	BidsCheckView[dir, OptionValue[ProcessSubjects], "Custom", 
+		{{"", "", "Normal config", "Custom config"}, {"Dataset", "Setting", "Value", "Value"}}]
+
+
+(* ::Subsubsection::Closed:: *)
+(*MuscleBidsConfig*)
+
+
+Options[MuscleBidsConfig] = {ProcessSubjects -> All}
+
+SyntaxInformation[MuscleBidsConfig] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
+
+MuscleBidsConfig[dir_?StringQ, OptionsPattern[]] := Block[{subs},
+	subs = OptionValue[ProcessSubjects];
+	(*one tab per config tool, each scans its data now*)
+	TabView[{
+		"Full config" -> If[BidsConfigQ[dir], ViewConfig[dir], "No valid config file found in the folder"],
+		"Custom config" -> CheckCustomConfigs[dir, ProcessSubjects -> subs],
+		"Config labels" -> CheckConfigLabels[dir, subs],
+		"Protocol names" -> ViewProtocolNames[dir, ProcessSubjects -> subs]
+	}, ControlPlacement -> Top]
+]
+
+
+(* ::Subsubsection::Closed:: *)
 (*MuscleBidsCheck*)
 
 
@@ -1222,10 +1265,6 @@ MuscleBidsCheck[dir_?StringQ, OptionsPattern[]] := Block[{subs, imOut},
 	{subs, imOut} = OptionValue[{ProcessSubjects, BidsOutputImages}];
 	(*one tab per check tool, each scans its data now, the report scans on export*)
 	TabView[{
-		"Protocol names" -> ViewProtocolNames[dir, ProcessSubjects -> subs],
-		"Config labels" -> CheckConfigLabels[dir, subs],
-		"Custom configs" -> BidsCheckView[dir, subs, "Custom", 
-			{{"", "", "Normal config", "Custom config"}, {"Dataset", "Setting", "Value", "Value"}}],
 		"Convert output" -> CheckBidsOutput[dir, "Convert", ProcessSubjects -> subs],
 		"Check files" -> ManageCheckFiles[dir, ProcessSubjects -> subs, BidsOutputImages -> imOut],
 		"Report" -> BidsReportView[dir, subs, imOut]
@@ -2171,8 +2210,8 @@ SyntaxInformation[MuscleBidsGUI] = {"ArgumentsPattern" -> {_}};
 MuscleBidsGUI[dir_?StringQ] /; ExpandFileName[dir] =!= dir := MuscleBidsGUI[ExpandFileName[dir]]
 
 MuscleBidsGUI[dir_?StringQ] := With[{
+		config = MuscleBidsConfig[dir],
 		check = MuscleBidsCheck[dir],
-		configView = If[BidsConfigQ[dir], ViewConfig[dir], "No valid config file found in the folder"],
 		(*step, folder of its logs and the options in the GUI*)
 		steps = {
 			{BidsDcmToNii, "rawData", {}},
@@ -2287,8 +2326,8 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 				OpenerView[{"Log", Dynamic[Pane[Style[StringRiffle[tail, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 200}, Scrollbars -> Automatic]]}],
 				OpenerView[{"Messages", Dynamic[Pane[Style[StringRiffle[msgs, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 100}, Scrollbars -> Automatic]]}]
 			}, Spacings -> 1],
-			"Check" -> check,
-			"Config" -> configView
+			"Config" -> config,
+			"Check" -> check
 		}, ControlPlacement -> Top],
 		(*poll the running step, only while a link is open*)
 		Dynamic[If[link =!= None, Refresh[poll[]; "", UpdateInterval -> 2, TrackedSymbols :> {}], ""], TrackedSymbols :> {link}, SynchronousUpdating -> False]
@@ -3316,7 +3355,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
 		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
 		int, dint, suffix, types, flip, per, bmat, magph, split, ivim, shift, t2, gradField,
-		meanV, coor, valV, fasc, fascm, sel, norm, rdim, raw, rmet, sigI, bv, init, exist
+		meanV, coor, valV, fasc, fascm, sel, norm, rdim, raw, rmet, rician, sigI, bv, init, exist
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -3657,7 +3696,10 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						(*-----*)AddToLog["Starting dwi denoising", 4];
 						mask = Mask[NormalizeMeanData[raw], ConfigLookup[datType, "Process", "Masking"], 
 							MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
-						{den, sig} = PCADeNoise[raw, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5];
+						rician = ConfigLookup[datType, "Process", "RicianCorrection"];
+						settingPre = MergeConfig[settingPre, <| "RicianCorrection" -> rician |>];
+						{den, sig} = PCADeNoise[raw, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5,
+							PCARicianCorrect -> rician];
 						snr = SNRCalc[den, sig];
 						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, Max[{2, Min[val]}]}];
 						debugBids[{"de-noised data dimensions", Dimensions[den]}];

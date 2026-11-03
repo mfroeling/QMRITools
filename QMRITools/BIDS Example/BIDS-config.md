@@ -7,13 +7,14 @@ Manual version: 2.1 · QMRITools version: 5.1 · Date: 2026-11-02 · Author: Mar
 This manual explains how to process a muscle MRI study with the Muscle BIDS pipeline of QMRITools: how to set up a study,
 how to write the `config.json` file that drives the pipeline, how to run each step, and how to check the results. You do
 not need to know Mathematica; every command is a line you copy into a notebook. If you are new, read
-[Muscle BIDS in QMRITools](#muscle-bids-in-qmritools) first and then follow [A complete run, step by step](#a-complete-run-step-by-step).
+[Muscle BIDS in QMRITools](#muscle-bids-in-qmritools) first, with the [overview of the functions](#overview-of-the-functions), and then follow [A complete run, step by step](#a-complete-run-step-by-step).
 
 ## Contents
 
 <!-- TOC -->
 - [Muscle BIDS in QMRITools](#muscle-bids-in-qmritools)
   - [How it works, and why](#how-it-works-and-why)
+  - [Overview of the functions](#overview-of-the-functions)
 - [Before you start](#before-you-start)
 - [Glossary](#glossary)
 - [Setting up a study](#setting-up-a-study)
@@ -63,6 +64,8 @@ not need to know Mathematica; every command is a line you copy into a notebook. 
   - [ViewProtocolNames](#viewprotocolnames)
   - [CheckConfigLabels](#checkconfiglabels)
   - [CheckBidsOutput](#checkbidsoutput)
+  - [CheckCustomConfigs](#checkcustomconfigs)
+  - [MuscleBidsConfig](#musclebidsconfig)
   - [MuscleBidsCheck](#musclebidscheck)
   - [ManageCheckFiles](#managecheckfiles)
   - [MuscleBidsReport](#musclebidsreport)
@@ -121,6 +124,34 @@ Processing takes time, so finished work is skipped. When a step has finished a s
 A study design can have exceptions. A subject can have its own small config file that changes the datasets for that subject only, for example when one participant was scanned with a different protocol (see [Per-subject settings](#per-subject-settings)). Use this for real exceptions. Every exception is something you have to keep track of, and the pipeline is at its best when there are few of them.
 
 Automation only works when the data is consistent. The config holds one set of rules for the whole study, and the pipeline can only apply those rules to data that follows them. Think about the design before the first scan is acquired: choose the protocol names and the subject and session names, and keep them the same for all subjects and visits. This costs some time at the start. It saves much more later, because with inconsistent data you spend the time on exceptions and on repairing the data by hand instead. Most of the cases where "nothing happened" come from a mismatch between the config and the data, such as a label that does not match the protocol name, or a file that is not where the step expects it. Every subject has a log file for each step that says what was done. The check windows and the problem report exist to find these mismatches quickly.
+
+### Overview of the functions
+
+Everything in Muscle BIDS is a function that you can call from a notebook. The table lists them in the order in which you normally use them, from the whole study down to the single steps. Each name links to its section.
+
+| Stage | Function | What it is for |
+| --- | --- | --- |
+| **Everything in one window** | [`MuscleBidsGUI`](#musclebidsgui) | A window to run the steps and to look at the config and the checks. It uses the functions below. |
+| **Set up and check the config** (before processing) | [`MuscleBidsConfig`](#musclebidsconfig) | The four tools below as tabs in one window. |
+| | [`ViewConfig`](#viewconfig) | Shows the full config. |
+| | [`CheckCustomConfigs`](#checkcustomconfigs) | Shows the subjects that have a [per-subject config](#per-subject-settings), what it changes, and whether the steps used it. |
+| | [`CheckConfigLabels`](#checkconfiglabels) | Checks that the labels in the config are present in the data. |
+| | [`ViewProtocolNames`](#viewprotocolnames) | Shows the protocol names that the scanner wrote into the data, to write the labels. |
+| **Run the pipeline** (in this order) | [`BidsDcmToNii`](#1-bidsdcmtonii) | Converts the DICOM data to NIfTI. |
+| | [`MuscleBidsConvert`](#2-musclebidsconvert) | Sorts and names the files in the BIDS way. |
+| | [`MuscleBidsProcess`](#3-musclebidsprocess) | Calculates the parameter maps. |
+| | [`MuscleBidsMerge`](#4-musclebidsmerge) | Joins the stacks and registers them to one space. |
+| | [`MuscleBidsSegment`](#5-musclebidssegment) | Segments the muscles. |
+| | [`MuscleBidsTractography`](#6-musclebidstractography) | Calculates the muscle fibre tracts. |
+| | [`MuscleBidsAnalysis`](#7-musclebidsanalysis) | Makes the Excel sheets and images. |
+| **Check the processing** (after or between steps) | [`MuscleBidsCheck`](#musclebidscheck) | The tools below as tabs in one window, with the report. |
+| | [`CheckBidsOutput`](#checkbidsoutput) | Checks that the converted files are present. |
+| | [`ManageCheckFiles`](#managecheckfiles) | Shows which steps are finished for each subject, and removes finished marks to redo a step. |
+| **Report** | [`MuscleBidsReport`](#musclebidsreport) | Writes the problems of one step, or of all steps, as a file. |
+
+The normal order is the order of the table. You write the config and check it, you run the steps, you check what they made, and when you want an overview you make the report.
+
+**The GUI is a convenience, not a requirement.** Everything that the GUI can do can also be done with the normal functions, and every function can be used without the GUI. The buttons of the **Run** tab start the same steps that you can type, and the **Config** and **Check** tabs are the functions `MuscleBidsConfig` and `MuscleBidsCheck`. The options that the GUI shows as checkboxes and menus are the same options that you give to the functions. This means that you can run a study from a script, on a computer without a screen, or in a notebook that you keep next to your data as a record of what you did. Use the GUI when you want the buttons, and the functions when you want to repeat or automate the work.
 
 ## Before you start
 
@@ -778,6 +809,7 @@ The full list of suffixes is at <https://www.qmritools.com/bids/ents_suffs/>.
 | --- | --- | --- |
 | `Method` | Chooses the processing. | see the table above. Required |
 | `Types` | For `Dixon-P`, `Dixon-S` and `Dixon-A`. Lists the scanner maps you want. Use a plain list when all maps are in one 4D file (`Dixon-P`), in the order of the volumes. Use a list of pairs `[map name, tag]` when each map is in its own file (`Dixon-P`, `Dixon-S`). The tag is the text that marks the map in the file name (`Dixon-P`) or in the series name (`Dixon-S`). | Required for `Dixon-P` and `Dixon-S`. Leave it out for `Dixon-A` (it uses `["wat","fat","inph","outph"]`). Example `["wat","fat","inph","outph"]` |
+| `RicianCorrection` | For `DTI`. Magnitude images have a noise bias that raises low signals (high b-values), which is corrected after the denoising. Set it to `false` to skip this. | `true` |
 | `GradientCorrection` | For `DTI`. Corrects the diffusion for the non-linear gradients of the scanner. Set it to the coil name. The scan needs an offset in its json file (written when the data is converted), otherwise no correction is done. | `false` (no correction). Example `"WA1"` |
 | `IVIMCorrection` | For `DTI`. Removes the fast perfusion part of the signal before the tensor is fitted. | `true` |
 | `Settings` | For `EPGT2`. The two RF pulses (excitation and refocusing) of your scan, each as `[name, flip angle in degrees, [gradient strength, duration, bandwidth]]`. Copy the values from your sequence protocol. You can also give just the two flip angles, `[90, 180]`; then the slice profile and `Shift` are not used. | Required for `EPGT2` |
@@ -1043,7 +1075,7 @@ The file is copied with the data to the later folders as `sub-<subject>_ses-<ses
 
 To check for each subject and session that the `Label`s of the datasets are present in the scan (including the per-subject settings), use `CheckConfigLabels[dir, subs]`, where `dir` is your study folder and `subs` is `All` or a list of subjects.
 
-To see which subjects have a per-subject config, and what each one changes, open the **Custom configs** tab of `MuscleBidsCheck` (see [MuscleBidsCheck](#musclebidscheck)). It shows one row for each changed setting, with the value of the subject next to the value of the study. It also finds custom configs that were not carried through the pipeline, for example because you added or edited the file after a step had already run. The same list is part of the report from `MuscleBidsReport`.
+To see which subjects have a per-subject config, and what each one changes, use `CheckCustomConfigs` or the **Custom config** tab of `MuscleBidsConfig` (see [CheckCustomConfigs](#checkcustomconfigs)). It shows one row for each changed setting, with the value of the subject next to the value of the study. It also finds custom configs that were not carried through the pipeline, for example because you added or edited the file after a step had already run. The same list is part of the report from `MuscleBidsReport`.
 
 Rarely needed settings for this part: see [Per-subject file names](#per-subject-file-names) in the appendix.
 
@@ -1316,29 +1348,57 @@ CheckBidsOutput[dir, "Convert"]
 
 Only `"Convert"` is available as a step.
 
-### MuscleBidsCheck
+### CheckCustomConfigs
 
-**Why:** to open all of the checks above in one window, so you do not have to call each function.
+**Why:** to see which subjects have a [per-subject config](#per-subject-settings), what it changes, and whether the
+pipeline picked it up.
 
-**When:** whenever you want an overview of your study, for example before you start a run.
+**When:** after you add or edit a custom config, and before you run a step.
 
-**What you see:** six tabs: **Protocol names**, **Config labels**, **Convert output**, **Custom configs**, **Check files**
-and **Report**. The first three tabs are the same as `ViewProtocolNames`, `CheckConfigLabels` and `CheckBidsOutput`,
-**Check files** is `ManageCheckFiles` and **Report** is described under [MuscleBidsReport](#musclebidsreport).
-
-The **Custom configs** tab lists the subjects that have a [per-subject config](#per-subject-settings). Each menu entry is a
+**What you see:** a menu of the subjects that have a [per-subject config](#per-subject-settings). Each entry is a
 subject, and each row is one setting that the subject changes: the dataset, the setting (nested keys are joined with a
 dot, for example `Merging.Overlap`), the value of the subject and the value in your study config. A dataset that is not
 in your study config is marked `(not in config)`. A subject without a custom config is not listed.
 
 A custom config starts in the source folder and every step copies it along with the data, so the pipeline keeps using the
-same settings. The tab compares these copies for each subject, from the source folder to `02_rawdata`, `03_derivatives`
+same settings. The check compares these copies for each subject, from the source folder to `02_rawdata`, `03_derivatives`
 and `04_merged`. A red row means that a later copy is `not copied` (the folder of that step exists but has no copy),
 `unreadable`, or `differs from` the first copy. This normally means that the custom config was added or changed after
 that step ran. Run the steps again for that subject (delete their check files first, see
 [How to force a redo](#how-to-force-a-redo)) so the new settings are used. Only subjects that already have a folder in
 `02_rawdata` are listed.
 Every table scrolls when it has more than 15 rows. The scan time is shown, and **Reload** scans again.
+
+```wolfram
+CheckCustomConfigs[dir]
+```
+
+The option `ProcessSubjects` limits the subjects, as for the other checks.
+
+### MuscleBidsConfig
+
+**Why:** to open the config and all checks on the config in one window, so you do not have to call each function.
+
+**When:** whenever you write or change the config, or want to know which subjects have a custom config.
+
+**What you see:** four tabs: **Full config**, **Custom config**, **Config labels** and **Protocol names**. **Full config**
+is `ViewConfig`, **Custom config** is `CheckCustomConfigs`, **Config labels** is `CheckConfigLabels` and **Protocol names** is `ViewProtocolNames`.
+
+```wolfram
+MuscleBidsConfig[dir]
+```
+
+The option `ProcessSubjects` limits the subjects, as for the other checks.
+
+### MuscleBidsCheck
+
+**Why:** to open the checks of the processing steps in one window.
+
+**When:** whenever you want an overview of what has been processed, for example before you start a run.
+
+**What you see:** three tabs: **Convert output**, **Check files** and **Report**. **Convert output** is `CheckBidsOutput`,
+**Check files** is `ManageCheckFiles` and **Report** is described under [MuscleBidsReport](#musclebidsreport). The checks
+of the config are in [MuscleBidsConfig](#musclebidsconfig).
 
 ```wolfram
 MuscleBidsCheck[dir]
@@ -1446,8 +1506,9 @@ one button per step. Each button scans the study again, so the report is current
   `MuscleBidsAnalysis`. The options start at the default of the step. Below are the status (a moving bar, the state, the
   time the step is running, and how many subjects have started), a **Log** with the last lines of the log files, and the
   **Messages** of the step.
-- **Check**: the same as `MuscleBidsCheck[dir]`, with the **Report** tab.
-- **Config**: the same as `ViewConfig[dir]`.
+- **Config**: the same as `MuscleBidsConfig[dir]`: the full config, the custom configs, the config labels and the protocol
+  names.
+- **Check**: the same as `MuscleBidsCheck[dir]`: the convert output, the check files and the **Report** tab.
 
 ```wolfram
 MuscleBidsGUI[dir]
@@ -1519,7 +1580,7 @@ Use this list when a step did nothing, or skipped a subject you expected to be p
 - **The subject name in `ProcessSubjects` does not match.** If no subject matches, nothing is processed and no error is
   shown (the views show "No subjects found"). Use the folder names from `SelectSubjects`.
 - **A custom config is not used.** A subject with its own `config.json` that you added or changed after a step ran keeps the old
-  settings in that step. Open the **Custom configs** tab of `MuscleBidsCheck`: a red row (`not copied` or `differs from`)
+  settings in that step. Run `CheckCustomConfigs`: a red row (`not copied` or `differs from`)
   shows where the copy of the config is wrong. Delete the check files of that subject and run the steps again.
 - **An old check file is still there.** Open `ManageCheckFiles`. A `done` file makes the step skip that subject. Delete it
   to run the step again.
@@ -1556,6 +1617,7 @@ Every key you leave out of `config.json` gets the value below. The blocks `Proce
     "SplitRegistration": false,
     "RegistrationDimension": "3D",
     "RegistrationMethod": "bspline",
+    "RicianCorrection": true,
     "IVIMCorrection": true,
     "GradientCorrection": false,
     "FasciculationDetection": false
