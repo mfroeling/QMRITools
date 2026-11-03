@@ -573,10 +573,8 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 	sigmat = sigmat[[pad;;-pad, pad;;-pad, pad;;-pad]];
 	output = output[[All, pad;;-pad, pad;;-pad, pad;;-pad]];
 	
-	Echo[Dimensions@datao,DateString[]];
 	(*correct the Rician noise bias*)
 	If[bias && !comp, datao = RicianBiasCorrect[datao, sigmat]];
-	Echo[Dimensions@datao,DateString[]];
 
 	(*define output, split it if data is complex*)
 	datao = Which[
