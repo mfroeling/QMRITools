@@ -1134,7 +1134,7 @@ You can use the section in two layouts:
 | Key | What it is for | Default / allowed values |
 | --- | --- | --- |
 | `Segmentation.Type` | The name parts of the segmentation file to measure in, for example `["seg", "auto", "megre", "dix", "outph"]`. | Required. No default. |
-| `Segmentation.Labels` | `[n, what]`. The muscles are the labels up to `n`. Higher labels (bones and other structures) are not measured. `what` tells QMRITools which muscle names to use. | Required. For the default `Body` location use `[799, "Body"]`. `what` is `"Body"`, `"Legs"`, `"Shoulder"`, `"Arm"`, or the path to your own label file. With any other text the muscles are named `Unknown`. |
+| `Segmentation.Labels` | A number `n`, a word `what`, or both as `[n, what]`. The muscles are the labels up to `n`. Higher labels (bones and other structures) are not measured. `what` tells QMRITools which muscle names to use. | Required. For the default `Body` location use `799`, `"Body"` or `[799, "Body"]`. `what` is `"Body"`, `"Legs"`, `"Shoulder"`, `"Arm"`, or the path to your own label file. With any other text the muscles are named `Unknown`. A number alone uses `"Body"`. A word alone uses the number of the table below (`"Body"` 799, `"Legs"` 90, `"Shoulder"` 30, `"Arm"` 12), and a label file uses all labels of the segmentation. |
 
 Which `Labels` fits which `Segment.Location`:
 
@@ -1144,6 +1144,11 @@ Which `Labels` fits which `Segment.Location`:
 | `"Legs"`, `"LegsHip"`, `"UpperLegs"`, `"LowerLegs"`, `"Hip"` (older) | `[90, "Legs"]` | labels 1 to 90 | 101 and up: bones |
 | `"Shoulder"` (older) | `[30, "Shoulder"]` | labels 1 to 30 | 101 and up: bones, vertebrae, ribs |
 | `"Arm"` (older) | `[12, "Arm"]` | labels 1 to 12 | 21 and up: humerus |
+
+If `Labels` does not fit the segmentation, for example `[90, "Legs"]` or `"Legs"` for a `Body` segmentation, or is not
+a number, a word or both (for example `[1, 2]`), the analysis finds no muscle labels. It then skips that subject, writes a line in the log that tells which labels
+the segmentation has, and writes a check file with status `error`. The other subjects go on. Correct the `Labels` and run
+the analysis again; the subject is processed again because its check file is not `done`.
 
 ### Analysis
 
@@ -1429,6 +1434,8 @@ that cannot be read as `unreadable` in red.
 - **Delete selected** removes the selected check files of that tab after you confirm. The next run of that step then
   processes that data again.
 - **Reload** rescans the study. Use it after you add subjects or datasets.
+- **Refresh status** reads the known check files again, without searching for new subjects or datasets. It is
+  much faster than **Reload** on a large study. Use it after a step has run.
 
 If you ran the analysis with `BidsOutputImages -> "None"`, give the same option here (see `MuscleBidsCheck`).
 
@@ -1510,6 +1517,11 @@ one button per step. Each button scans the study again, so the report is current
   names.
 - **Check**: the same as `MuscleBidsCheck[dir]`: the convert output, the check files and the **Report** tab.
 
+The **Config** and **Check** tabs do not scan the study when the window opens, so on a large study the window appears at
+once. Open a subtab and press **Reload** to scan it the first time. Until then it says `Not scanned yet, press Reload`.
+On the **Check files** subtab, **Refresh status** only reads the check files that are already known, which is much
+faster than **Reload**. Use it after a step has run. Use **Reload** after you add subjects or datasets.
+
 ```wolfram
 MuscleBidsGUI[dir]
 ```
@@ -1588,7 +1600,7 @@ Use this list when a step did nothing, or skipped a subject you expected to be p
   no datasets. Datasets that fail the config check are left out. Open `ViewConfig` to check the file.
 - **A dataset has no `Label`.** Such a dataset gives no rows in `CheckConfigLabels` and `CheckBidsOutput`.
 - **A file name does not match.** Most "nothing happened" cases are this: the step looks for a file with a specific name,
-  and that file is not on disk. Set ``QMRITools`MuscleBidsTools`$debugBids = True`` to print the expected path, compare it with the
+  and that file is not on disk. Set ``QMRITools`$Debug = "Bids"`` to print the expected path, compare it with the
   files in the folder, then set it back to `False`.
 
 ## Appendix: advanced settings
@@ -1684,7 +1696,7 @@ Change these only when the defaults do not fit your data.
 
 | Key | What it is for | Default / allowed values |
 | --- | --- | --- |
-| `EchoTime` | Echo times in ms. `Dixon-B` needs `[first echo, echo spacing]`. For `mese` scans (`EPGT2`, `Exp`) a single number is the echo spacing (the first echo equals the spacing). Giving it for a `mese` scan means the data is read as one 4D file, so use it only when the echo times are not stored correctly in the scan. | none |
+| `EchoTime` | Echo times in ms. `Dixon-B` needs `[first echo, echo spacing]`. For `mese` scans (`EPGT2`, `Exp`) a single number is the echo spacing (the first echo equals the spacing). Giving it for a `mese` scan means the data is read as one 4D file, so use it only when the echo times are not stored correctly in the scan. This only applies to data converted with an older `dcm2niix`. The `dcm2niix` that comes with QMRITools writes one file per echo with the echo times in the json files, so the setting is then ignored (and the log says so). | none |
 | `Masking` | Threshold for the mask that removes the background. Used by `DTI`, `EPGT2` and `Exp`. | `5` |
 | `FlipPermute` | For `DTI`. Flips or swaps the axes of the gradient directions to match your scanner. Format `[[flipX, flipY, flipZ], [axis1, axis2, axis3]]`, with flips `1` or `-1`. | `[[1,1,1],["x","y","z"]]` |
 | `RegistrationDimension` | For `DTI`. `"2D"` registers each slice on its own (for example for cardiac data) and turns off `SplitRegistration`. | `"3D"` |

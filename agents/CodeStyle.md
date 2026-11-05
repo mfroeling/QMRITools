@@ -194,7 +194,7 @@ EndPackage[]
 - Compiled variants: suffix `C` (`DotC`, `SaltAndRiceC`). Vectorised or interpreted siblings: `V` or `I`.
 - Locals are short lowercase abbreviations, reused consistently: `dat`/`data`, `vox`, `dim`, `mask`, `seg`, `grad`,
   `val` (bvals), `mon`, `fol`, `out`, `met`, `opts`, `pos`, `n`.
-- Package flags get a `$` prefix: `$debugBids`. Message tags are short fragments: `Mask::tresh`,
+- Package flags get a `$` prefix: `$AmaresT1Values`. Message tags are short fragments: `Mask::tresh`,
   `CheckDataDescription::man`.
 - MuscleBids outputs: **the local variable name equals the output file suffix**. Files are exported with
   `ToExpression[Context[con] <> name]`, so renaming a variable renames a file.
@@ -229,8 +229,14 @@ F[x_] := ...
 
 - BIDS code: `(*-----*)AddToLog[{"msg", value}, level, True]`. The `(*-----*)` prefix marks log lines visually.
   `level` is indentation (0–5). `True` adds a timestamp (it can go before or after the level).
-- `debugBids[...]` prints only when `$debugBids` is True. Sprinkle these generously in pipeline code (paths,
-  dimensions). They are cheap and the user relies on them.
+- `debugBids[...]` prints only when `"Bids"` is in `QMRITools`$Debug` (a tag, a list of tags, or `All`). Sprinkle
+  these generously in pipeline code (paths, dimensions). They are cheap and the user relies on them.
+- Every toolbox keeps a one-line local wrapper over the shared `DebugPrint` (GeneralTools), e.g.
+  `debugBids[x___] := DebugPrint["Bids", x];`. A new toolbox adds a wrapper with a new tag, no new global and no
+  Unprotect entry. Parallel kernels do not share `$Debug`.
+- `DebugPrint` shows its arguments through `MonitorFunction` (`Echo` in a notebook, `>> ` text elsewhere), labeled
+  `[Tag]`, so debug and monitor output look the same. Multiple arguments are joined into one line. The `Monitor`
+  options of the public functions are separate and do not switch debug output.
 - Other files: a `MonitorCalc`/`Monitor` option controls `PrintTemporary`/progress output. Pass `MonitorCalc->False`
   when calling from a pipeline.
 

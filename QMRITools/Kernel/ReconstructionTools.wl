@@ -329,8 +329,8 @@ ReadListData[file_,print_]:=Block[{
 
 	(*print output*)
 	If[print,
-		Print["Data types in data: ", ("typ"/.dataVals[[1]])];
-		Print[Column[Prepend[StringJoin/@Thread[{"  - ",types,": ",ToString/@size}], "The data contains: "]]];
+		MonitorFunction[("typ"/.dataVals[[1]]), "Data types in data:"];
+		MonitorFunction[Column[Prepend[StringJoin/@Thread[{"  - ",types,": ",ToString/@size}], "The data contains: "]]];
 	];
 
 	Clear[data, indData];

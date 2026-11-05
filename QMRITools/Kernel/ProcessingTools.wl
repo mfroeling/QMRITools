@@ -301,9 +301,13 @@ ParameterFit::func = "Unknown fit function: `1`. options are SkewNormal or Norma
 
 ParameterFit::outp = "Unknown output format: `1`. options are Parameters or Function."
 
+ParameterFit::data = "Not enough data in the ROI to perform the fit, at least 11 non-zero values are needed."
+
 GetMaskData::tresh = "The dimensions of the data and the mask must be the same, dataset: `1`, mask: `2`."
 
 JoinSets::over = "Error: The overlap must be a number or a list which gives the overlap and how many slice must be dropped. Not: `1`."
+
+JoinSets::motion = "Motion correction is only possible for 3D volumes, MotionCorrectSets is ignored."
 
 Hist::size = "Length of data (`1`)must be the same as the length of the range (`2`) and labels (`3`)."
 
@@ -349,7 +353,7 @@ ParameterFit[dat_List, OptionsPattern[]] := Module[{
 	Off[NonlinearModelFit::"cvmit"]; Off[NonlinearModelFit::"sszero"];
 	(*perform the fit for one compartment*)
 	If[nodat,
-		Print["Not Enough data in the ROI"];
+		Message[ParameterFit::data];
 		,
 		(*initialization for mean and std*)
 		mdat = Mean[data];
@@ -626,8 +630,7 @@ GetMaskData[data_?ArrayQ, mask_, {n_?NumberQ, o_?NumberQ}, opts : OptionsPattern
 
 CropToMask[data_, mask_] := Block[{msk, cr},
 	{msk, cr} = AutoCropData[mask];
-	(*an empty mask cannot be cropped, use the uncropped data and mask*)
-	If[cr === $Failed, {data, mask}, {ApplyCrop[data, cr], msk}]
+	{ApplyCrop[data, cr], msk}
 ]
 
 
@@ -1136,7 +1139,7 @@ JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]] := Block[{
 		If[motion, Switch[depth,
 			5,
 			motion = False;
-			If[mon, Print["Motion correct is only for 3D volumes"]],
+			Message[JoinSets::motion],
 			4,
 			If[mon, PrintTemporary["Motion correcting data"]];
 			dat = CorrectJoinSetMotion[dat, vox, over, PadOverlap->pad, JoinSetSplit->split, MonitorCalc->mon];

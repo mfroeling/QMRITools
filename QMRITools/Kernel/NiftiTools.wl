@@ -205,7 +205,14 @@ ExportNii::type = "NiiDataType should be \"Integer\", \"Real\", \"Complex\", or 
 (*Functions*)
 
 
-Begin["`Private`"] 
+Begin["`Private`"]
+
+
+(* ::Subsection::Closed:: *)
+(*Debug*)
+
+
+debugNifti[x___] := DebugPrint["Nifti", x];
 
 
 (* ::Subsection::Closed:: *)
@@ -213,9 +220,8 @@ Begin["`Private`"]
 
 
 Options[DcmToNii] = {
-	CompressNii -> True, 
-	Method -> Automatic, 
-	UseVersion -> 1, 
+	CompressNii -> True,
+	UseVersion -> 1,
 	UseSubFolders -> False, 
 	DeleteOutputFolder -> False, 
 	MonitorCalc -> True,
@@ -265,13 +271,13 @@ DcmToNii[{inFol_?StringQ, outFol_?StringQ}, opt:OptionsPattern[]] := Block[{
 			dcm2niiFol = DirectoryName[dcm2nii];
 		];
 
-		If[mon, Echo["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
+		If[mon, MonitorFunction["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
 
 		(*decompress the dcm files in place*)
 		If[OptionValue[DecompressDcm],
 			decExe = GetAssetLocation["DcmDJpeg"];
 			If[decExe === $Failed, Return[$Failed, Block]];
-			If[mon, Echo["Decompressing dcm files with dcmdjpeg.exe (DCMTK)"]];
+			If[mon, MonitorFunction["Decompressing dcm files with dcmdjpeg.exe (DCMTK)"]];
 			RunProcess[{decExe, #, #}]& /@ FileNames["*.dcm", fileFolIn, Infinity];
 		];
 
@@ -286,7 +292,7 @@ DcmToNii[{inFol_?StringQ, outFol_?StringQ}, opt:OptionsPattern[]] := Block[{
 
 		Quiet[CreateDirectory[folOut]];
 
-		If[mon, Echo[Column@{fileFolIn,folOut}, "Input and output folder: "]];
+		If[mon, MonitorFunction[Column@{fileFolIn,folOut}, "Input and output folder: "]];
 
 		merge = If[OptionValue[MergeEchos], "y", "n"];
 
@@ -307,7 +313,7 @@ DcmToNii[{inFol_?StringQ, outFol_?StringQ}, opt:OptionsPattern[]] := Block[{
 			compress<>" -m "<>merge<>" -d 9 -o '"<>folOut<>"' '"<>fileFolIn<>"' > '"<>log<>"'\nexit\n"
 		];
 
-		If[OptionValue[Method]=!=Automatic, Print[command]];
+		debugNifti[command];
 
 		(*perform the conversion*)
 		Monitor[RunProcess[$SystemShell,"StandardOutput",command],ProgressIndicator[Dynamic[Clock[Infinity]], Indeterminate]];
@@ -1473,10 +1479,10 @@ Options[ExportBvalvec] = Options[ExportBvec]
 
 ExportBvalvec[{bv_, grad_}, opts:OptionsPattern[]] := ExportBvec[{bv, grad}, "", opts]
 
-ExportBvalvec[{bv_, grad_}, fil_String, opts:OptionsPattern[]] := Block[{},
+ExportBvalvec[{bv_, grad_}, fil_String, opts:OptionsPattern[]] := (
 	ExportBval[bv, fil];
 	ExportBvec[grad, fil, opts];
-]
+)
 
 
 (* ::Subsection:: *)

@@ -167,12 +167,8 @@ Unprotect/@{
 	(*global folder definition*)
 	"QMRITools`ElastixTools`$lastElastixTemp",
 
-	(*debug flags*)
-	"QMRITools`ElastixTools`$debugElastix", 
-	"QMRITools`NeuralNetworkTools`$debugUnet", 
-	"QMRITools`MuscleBidsTools`$debugBids",
-	"QMRITools`PlottingTools`$debugPlot",
-	"QMRITools`DenoiseTools`$debugDenoise",
+	(*debug selection*)
+	"QMRITools`$Debug",
 
 	(*user system settings for amares*)	
 	"QMRITools`AmaresTools`$AmaresB1Regularization",

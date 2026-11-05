@@ -286,6 +286,9 @@ OutputCheckImage::usage =
 (*Error Messages*)
 
 
+GetMaskSegmentPoints::mask = "The mask is not valid, it should contain label 1 for the heart and labels 2 and 3 for the attachment points."
+
+
 (* ::Section:: *)
 (*Functions*)
 
@@ -972,7 +975,7 @@ GetMaskSegmentPoints[maski_]:=Block[{mask, lab, m1, m2, points},
 	If[Round[lab]=!={1,2,3},
 		
 		(*not valid mask*)
-		Print["not valid input mask"];
+		Message[GetMaskSegmentPoints::mask];
 		{maski,$Failed},
 		
 		(*valid mask*)
@@ -2138,7 +2141,7 @@ ShowOutlierDistribution[measure_, selmask_, cutoff_] := Block[{mn, fmeas, minmax
 	minmax = MinMax[fmeas];
 	
 	(*Plot Outlier distributions*)
-	Print[GraphicsRow[{
+	MonitorFunction[GraphicsRow[{
 		ListPlot[fmeas, GridLines -> {None, Flatten[{mn, cutoff}]}, GridLinesStyle -> Directive@{Thick, Red}, PlotStyle -> Directive@{PointSize[0.03], Black}, PlotRange -> {All, minmax}],
 		Histogram[fmeas, {(minmax[[2]] - minmax[[1]])/20}, ChartStyle -> Black, PerformanceGoal -> "Speed", GridLines -> {{mn, cutoff}, None}, GridLinesStyle -> Directive@{Thick, Red}, PlotRange -> {minmax, Full}]
 	}, PlotLabel -> {mn, StandardDeviation[fmeas], cutoff}]];

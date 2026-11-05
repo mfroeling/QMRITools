@@ -70,8 +70,8 @@ with the released `.paclet`, or have to be copied in.
    `ColorData` asset and registered once per kernel (`$LoadedColor`).
 7. `$Loaded = True`. `$ContextsFunctions = {context, names}`. **Every public symbol gets `Protected` +
    `ReadProtected`.**
-8. Then some globals are unprotected again so users can set them: `$lastElastixTemp`, `$debugElastix`, `$debugUnet`,
-   `$debugBids`, `$debugDenoise`, `$AmaresB1Regularization`, `$AmaresT1Values`, `$Log`, `$LogFile`. **A new
+8. Then some globals are unprotected again so users can set them: `$lastElastixTemp`, `$Debug`,
+   `$AmaresB1Regularization`, `$AmaresT1Values`, `$Log`, `$LogFile`. **A new
    user-settable `$` variable must be added to this list**, or assigning it fails with `Protected` errors.
 
 Every subpackage starts with
@@ -231,7 +231,7 @@ Reading the graph:
 - The main guide **doesn't link** the `AmaresTools` or `NeuralNetworkTools` guides.
 - Stale reference pages for symbols that no longer exist: `AugmentMask` (renamed `MaskedPretraining`),
   `MaxPatchSize`, `SegmentationResolution`, `ZeropadData`, `tempDir`, and a page named
-  ``QMRITools`NeuralNetworkTools`$debugUnet`` (next to the valid `$debugUnet`). Legacy symbols such as `PlotDefGrid`
+  ``QMRITools`NeuralNetworkTools`$debugUnet`` and the pages of the removed `$debugX` flags (replaced by `$Debug`). Legacy symbols such as `PlotDefGrid`
   and `CSIInterface` keep their pages.
 - Public Legacy symbols without a reference page: `PlotRespiract`, `ReadBrukerDiff`, `ROIMask`, `ShiftPar`,
   `SpectraFitResult`.
@@ -249,7 +249,7 @@ Reading the graph:
    hand-edit notebooks unasked.
 5. Reload with `<< QMRIToolsDev``. After changing private helper patterns, restart the kernel.
 
-**Add a user-settable global** (`$debugX`, a tuning constant): define it in the package, then **add it to the
+**Add a user-settable global** (a tuning constant; debug output needs no new global, see `$Debug` in CodeStyle.md §8): define it in the package, then **add it to the
 Unprotect list at the end of `QMRITools.wl`**.
 
 **Add a new subpackage:**

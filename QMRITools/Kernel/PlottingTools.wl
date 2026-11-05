@@ -58,8 +58,6 @@ PlotContour::usage =
 "PlotContour[data, vox] creates a contour of the data. 
 The data can be 3D or 4D, when its 4D each contour is given a random color."
 
-$debugPlot::usage = "$debugPlot is a debug flag for the functions in PlottingTools, when True the progress and memory use are printed."
-
 PlotSegmentations::usage =
 "PlotSegmentations[seg, vox] crates a contour of each of the segmentations in seg. Uses PlotContour.
 PlotSegmentations[seg, bone, vox] same but also generates an extra contour with the bones in gray."
@@ -194,6 +192,8 @@ PositiveZ::usage =
 
 PlotData::data = "Error: Data must be a 2D, 3D or 4D numeric array."
 
+PlotData::can = "`1` was canceled."
+
 PlotData::size = "Datasets must have the same number of slices. dataset1: `1` slices, dataset2: `2` slices. (Image dimensions may vary)."
 
 PlotData::set = 
@@ -224,10 +224,7 @@ Begin["`Private`"]
 (*Debug*)
 
 
-debugPlot[x___] := If[$debugPlot, Print[x, "  | memory MB: ", Round[MemoryInUse[]/10^6]]];
-
-
-$debugPlot = False;
+debugPlot[x___] := DebugPrint["Plot", x, "  | memory MB: ", Round[MemoryInUse[]/10^6]];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -531,7 +528,7 @@ DataString[dim_]:=ReleaseHold[{
 MultiFileSave[plot_,label_,range_,type_,size_]:=
 Module[{input,lab},
 	input=SystemDialogInput["Directory", Directory[]];
-	If[input===$Canceled,Return[Print["Export multiple files was canceled!"]]];
+	If[input===$Canceled,Return[Message[PlotData::can, "Export multiple files"]]];
 
 	Switch[Length[range],
 		2,(* one 3D datasets *)
@@ -548,7 +545,7 @@ Module[{input,lab},
 			,{xs,range[[1]],range[[2]]},{ys,range[[3]],range[[4]]}];
 		];
 
-	Print["Multiple fiels were saved to: "<>input<>" as "<>type<>" files."];
+	MonitorFunction["Multiple files were saved to: "<>input<>" as "<>type<>" files."];
 ]
 
 
@@ -559,7 +556,7 @@ Module[{input,lab},
 MovieSave[plot_,dur_,loop_,size_,range_]:=
 Module[{input,movie},
 	input=SystemDialogInput["FileSave", Directory[] <> $PathnameSeparator<>"*.gif"];
-	If[input===$Canceled,Return[Print["Export movie was canceled!"]]];
+	If[input===$Canceled,Return[Message[PlotData::can, "Export movie"]]];
 
 	movie=Flatten[Switch[Length[range],
 		2,(* one 3D datasets *)
@@ -568,7 +565,7 @@ Module[{input,movie},
 		Table[Rasterize[ReleaseHold[plot],RasterSize->size],{xs,range[[1]],range[[2]]},{ys,range[[3]],range[[4]]}]
 		]];
 	Export[input,movie,"DisplayDurations"->dur,"AnimationRepetitions"->loop,RasterSize->size, ImageResolution->150];
-	Print["Movie was saved to: "<>input];
+	MonitorFunction["Movie was saved to: "<>input];
 	]
 
 
@@ -1229,8 +1226,7 @@ PlotData[dat1_?ArrayQ, dat2_?ArrayQ,vox:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1
 
 SyntaxInformation[PlotData3D] = {"ArgumentsPattern" -> {_, _.}};
 
-PlotData3D[dat_?ArrayQ, v:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1}] := Module[{},
-DynamicModule[{data, vox, dep},
+PlotData3D[dat_?ArrayQ, v:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1}] := DynamicModule[{data, vox, dep},
 	NotebookClose[plotwindow];
 
 	(*get data to dynamic*)
@@ -1497,7 +1493,7 @@ DynamicModule[{data, vox, dep},
 	NotebookClose[plotwindow];
 	plotwindow = CreateWindow[DialogNotebook[{CancelButton["Close", Clear[data]; DialogReturn[]], pan}, 
 		WindowSize -> All, WindowTitle -> "Plot data window"]];
-]];
+];
 
 
 (* ::Subsection:: *)
@@ -1677,7 +1673,7 @@ GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
 	)&/@{1,2,3};
 
 	(*make chekc plot if needed*)
-	If[OptionValue[MakeCheckPlot],Print[Row[Show[
+	If[OptionValue[MakeCheckPlot],MonitorFunction[Row[Show[
 		ListLinePlot[#[[1]],PlotStyle->Black],ListPlot[#[[2]],PlotStyle->Directive[{PointSize[Large],Red}]],
 		ListPlot[#[[4]],PlotStyle->Directive[{PointSize[Large],Green}]],
 		ListPlot[{#[[3]]},PlotStyle->Directive[{PointSize[Large],Blue}]]

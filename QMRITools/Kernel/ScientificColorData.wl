@@ -39,6 +39,9 @@ ExtractColorData::usage =
 (*Error Messages*)
 
 
+ExtractColorData::arch = "The ColorData archive does not exist."
+
+
 (* ::Section:: *)
 (*Functions*)
 
@@ -158,7 +161,7 @@ ExtractColorData[dir_] := Block[{file},
 	file = dir<>".zip";
 	If[! DirectoryQ[dir],
 		If[FileExistsQ[file], Quiet@ExtractArchive[file, DirectoryName[file]],
-		Print["ColorData archive does not exist"]]
+		Message[ExtractColorData::arch]]
 	];
 ]
 

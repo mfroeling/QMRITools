@@ -263,7 +263,7 @@ associations merge.
 | --- | --- | --- | --- |
 | `Method` | – | Convert (megre/tse), Process | Dixon: `Dixon`, `Dixon-B`, `Dixon-P`, `Dixon-S`, `Dixon-A`. dwi: `DTI`. mese: `EPGT2`, `Exp` |
 | `Types` | `{wat,fat,inph,outph}` (Process only) | Convert Dixon-P/S, Process branch 1 | vector = order of volumes in a 4D nii (Dixon-P); matrix `[[suffix, fileTag]..]` = separate files (Dixon-P: tag is the last `_` token of the file name; Dixon-S: `SeriesDescription == label_tag`) |
-| `EchoTime` | – | Convert | Dixon-B: `[TE1, dTE]` ms. mese: echo spacing ms (switches mese conversion to "single 4D file" mode) |
+| `EchoTime` | – | Convert | Dixon-B: `[TE1, dTE]` ms. mese: echo spacing ms (switches mese conversion to "single 4D file" mode, only for data from a dcm2niix that is not consistent (`BidsDcmConsistentQ`), otherwise ignored and logged) |
 | `Masking` | 5 | Process dwi/mese | `Mask` threshold |
 | `FlipPermute` | `{{1,1,1},{x,y,z}}` | DTI prep | `FlipGradientOrientation` |
 | `RegistrationDimension` | `"3D"` | DTI prep | `"2D"` → `RegisterCardiacData` (and disables split) |
@@ -308,14 +308,14 @@ associations merge.
 | `Stopping` | – | `[[targetList, [min,max]], ...]`. Rescaled to the tensor voxel size if needed |
 | `Segmentation` | – | seg target list (for example `["seg","auto","megre","dix","outph"]`). Needed for segmenting tracts and for HarmonicDenoise |
 | `FlipPermute` | `{{1,1,1},{x,y,z}}` | `TensorFlips` / `TensorPermutations` |
-| `TractLength` `{15,500}`, `TractAngle` 25, `TractSeed` 0.66 (<1 → `Scaled`), `TractStep` `"Automatic"` (non-number → auto), `SegmentLength` `{15,500}`, `BoneLabel` 100 (muscles = 1..BoneLabel, bones = BoneLabel+1..+30), `HarmonicDenoise` False |
+| `TractLength` `{15,500}`, `TractAngle` 25, `TractSeed` 0.66 (<1 → `Scaled`), `TractStep` `"Automatic"` (non-number → auto), `SegmentLength` `{15,500}`, `BoneLabel` 100 (muscles = 1..BoneLabel, bones = BoneLabel+1..+30; a `"Body"` segmentation needs `799`, with 100 no muscle label is found and harmonic denoise returns the tensor unchanged), `HarmonicDenoise` False |
 
 ### `analysis` block (per analysis entry)
 
 | Key | Meaning |
 | --- | --- |
 | `Segmentation.Type` | seg name list (with key when nested) |
-| `Segmentation.Labels` | `[nMax, what]`. `what` = `"Body"` (S1 + T1 label files; muscles 101-748, bones 800+, so `[799, "Body"]`), `"Legs"`, `"Shoulder"`, `"Arm"` (older sets), or a path to a custom label file. `"Body"` and `"Shoulder"` were added 2026-10-29 |
+| `Segmentation.Labels` | `[nMax, what]`, or a number or a word alone (`BidsAnalysisLabels`: a number alone means `"Body"`, a word alone takes `bidsLabelRange`: Body 799, Legs 90, Shoulder 30, Arm 12, a label file all labels). `what` = `"Body"` (S1 + T1 label files; muscles 101-748, bones 800+, so `[799, "Body"]`), `"Legs"`, `"Shoulder"`, `"Arm"` (older sets), or a path to a custom label file. `"Body"` and `"Shoulder"` were added 2026-10-29 |
 | `Analysis.Types` | `[[ (key,) type, suf.., [params..]] ..]`. The last element is threaded (`Thread`) |
 | `Analysis.TractBased` | subset analysed only inside the tract density mask (`dwi_dti_trk_dens`, unitized) |
 | `Analysis.MaskErosion` | default True. **Must sit directly in `Analysis`; the documented `Analysis.Options.MaskErosion` is ignored** (Q4) |
@@ -365,9 +365,27 @@ files match, `CheckPos` takes the **last** one and logs a warning. Output goes t
 | | other Method | **no default branch, silently nothing** | – |
 | dwi | Class `Volumes` | several labels joined (`ConcatenateDiffusionData`) into one file named after the first label | Suffix |
 | | other | Siemens → match `SeriesDescription`, else `ProtocolName` | Suffix (+ `.bval/.bvec`, `Offset` in json) |
-| mese | `Process.EchoTime` present | single 4D nii (`ImportNiiT2` unless json has EchoTime+EchoTrainLength or Siemens). TE = `EchoTime·(1..n)` | Suffix |
-| | otherwise | single-echo files sorted by `EchoNumber`, cut to `AcquisitionNumber`/`EchoTrainLength`. R12 reorder | Suffix |
+| mese | `Process.EchoTime` present **and** dcm2niix that is not consistent (`BidsDcmConsistentQ`) | single 4D nii (`ImportNiiT2` unless json has EchoTime+EchoTrainLength or Siemens). TE = `EchoTime·(1..n)` | Suffix |
+| | otherwise | single-echo files sorted by `EchoNumber`, cut to `AcquisitionNumber`/`EchoTrainLength`. consistent dcm2niix: plain `Transpose` for every release, with a sanity check; older dcm2niix and `SoftwareVersions >= 12`: the R12 reorder | Suffix |
 | anat / other | – | "Unknown datatype for conversion" | – |
+
+**mese and the dcm2niix version** (`bidsDcmOwn`, `bidsDcmConsistent`, `BidsDcmConsistentQ`, next to `MergeJSON`). The
+layout of the per-echo files used to depend on the Philips release because older dcm2niix wrote release 12 data in
+another order, so the mese conversion switched on `SoftwareVersions >= 12`. The dcm2niix builds shipped with
+QMRITools (`dcm2niix-own.exe`, json stamp `v1.0.20260915`, and the official `dcm2niix-20261029.exe`, which contains
+the change) write one file per echo in the same layout for every release and never a 4D nii. The conversion therefore
+decides on the json `ConversionSoftwareVersion` (build date, `"v1.0.20260915"` -> 20260915; a missing or unparsable
+key counts as 0 = older). Consistent means the date is `bidsDcmOwn` (20260915) or at least `bidsDcmConsistent`
+(20261029, so every later build too): official builds in between do not have the change. Checked: the official
+20261029 build gives voxel data and header identical to the own build on the ses-006 dicoms (its json only differs in
+the stamp and an extra `NumberOfKSpaceTrajectories`). Consistent data always takes the plain `Transpose`
+path, older data keeps exactly the old paths (4D mode when `Process.EchoTime` is given, R12 reorder). There is no
+new `Process.Method`. For consistent data a sanity check (file count equals `EchoTrainLength`, equal dimensions,
+increasing `EchoTime`) skips the stack with a log line and keeps the source files instead of failing. Tested on
+7_motion_long ses-005 (Philips 5.7.1) and ses-006 (12.3.0): both give the same layout and a clean echo decay, ses-005
+is byte-identical to the file the old code made; Bochum Siemens (dcm2niix 2024) and Philips 5.6.1 (dcm2niix 2017)
+data stay on the old paths. The legacy `Dixon` method still has its own R12 branch (use `Dixon-A` with the new
+dcm2niix).
 
 On non-Windows systems files are written uncompressed and `CompressNiiFiles` runs at the end (`compress` flag, L208).
 This applies to every stage.
@@ -456,9 +474,16 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   `seg ∩ Unitize[dens]`. `MaskErosion` → `DilateMask[seg,-1]`. Output `analysis/sub/ses/<sub_ses[_chunk-KEY]>.xlsx`
   + `.wxf`. The `_xls` check file is only made when both exports return a file name; otherwise the log says
   "Export failed, no check file made", so a rerun tries again. A label with an empty mask (not in the segmentation,
-  or removed by erosion or tract weighting) gives zeros for that label: `GetMaskData` falls back to the uncropped
-  data and mask (`CropToMask`) when `AutoCropData` cannot crop an empty mask. Before this, that entry stayed
-  unevaluated with the whole image inside, `Transpose` failed, and the xlsx export ran out of Java memory.
+  or removed by erosion or tract weighting) gives zeros for that label: `FindCrop` returns the full range for an
+  empty array, so `AutoCropData`, `CropToMask` and `MaskSegmentation` return an empty mask and `GetMaskData` zeros.
+  Before this, `FindCrop` returned `$Failed`, the `ApplyCrop` stayed unevaluated, `Transpose` failed, and the xlsx
+  export ran out of Java memory.
+- **Controlled failures** (log at level 3, `Check -> "error"` in the `_xls` check file, the subject is skipped and the
+  step goes on; the check file is not `done`, so a rerun after fixing the config tries again): `Segmentation.Labels`
+  is not a number, a word or both (`BidsAnalysisLabels` gives `$Failed`), or `SelectSegmentations[seg, Range[n]]` finds no label (a Legs `[90, "Legs"]` setting on a
+  Body segmentation with labels 101-910, or the other way round). The log names the labels the segmentation has. The
+  image part is skipped as well. A missing `dens` file for `TractBased` types is not caught yet (`ImportNii` gives
+  `$Failed`, `ApplyCrop::dim` follows).
 - **image part** (check `…_img`): `BidsOutputImages` = `All | Quantitative | Segmentation | Tractography | None`.
   Slice positions come from `Images.Reference`. Output: 2D quant jpgs with optional `LegendImage`, seg 2D / 3D
   (`_vol`) / `_grid` jpgs, tract 3D jpg.
@@ -488,7 +513,7 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 
 ## 8. Debugging
 
-- `QMRITools`MuscleBidsTools`$debugBids = True` makes every `debugBids[...]` print (paths, dimensions, positions).
+- `QMRITools`$Debug = "Bids"` (or a list like `{"Bids", "Unet"}`, or `All`) makes every `debugBids[...]` print (paths, dimensions, positions).
 - The log is written continuously: `AddToLog` exports the whole `$Log` on every call. `ShowLog[]` opens a live
   window. Levels 0–5 are indentation, and `True` adds a timestamp.
 - `Echo[DateString[], folIn <> " - " <> Key]` prints once per input folder per dataset.
@@ -523,10 +548,24 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   before the `DynamicModule` is made (`BidsScanChecks` returns the expected files and their statuses), so the data is
   loaded while the cell evaluates (the cell is busy, about 2 s per view) and the view only draws it. The variable list
   of the `DynamicModule` has bare names only and the body assigns the scan result and the state (CodeStyle.md §1).
-  `MuscleBidsGUI` builds its Check tab the same way, once at the call (about 5 s). Do not scan inside a `Dynamic` or
-  `Initialization`: the 5 s Dynamic limit gives `$Aborted`, and a long `Initialization` gives "Unresolved Dynamic
-  Content" and the "Disable Dynamic Evaluation" dialog. Reload rescans (queued button) per view; the GUI
-  Check tab does not rescan by itself after a step ran, press Reload there.
+  Do not scan inside a `Dynamic` or `Initialization`: the 5 s Dynamic limit gives `$Aborted`, and a long
+  `Initialization` gives "Unresolved Dynamic Content" and the "Disable Dynamic Evaluation" dialog. Reload rescans
+  (queued button) per view.
+- Lazy views in the GUI: `MuscleBidsGUI` builds its Config and Check tabs inside `Block[{$BidsLazy = True}, ..]`, so the
+  views skip the scan in their `With` (scan result `None`, time "not scanned yet") and the GUI opens at once (about
+  0.05 s instead of the sum of six scans, 6 s on a 166 subject study, much more on large ones). A lazy view says "Not
+  scanned yet, press Reload", and the first scan is that queued Reload button: there is no automatic scan when a tab
+  is first shown, because that would run inside a `Dynamic` (see above). The stand-alone functions (`MuscleBidsConfig`,
+  `MuscleBidsCheck`, `CheckBidsOutput`, `ManageCheckFiles`, ...) keep `$BidsLazy = False` and scan when called. The
+  GUI Check tab does not rescan by itself after a step ran: press Refresh status (below) or Reload.
+- Refresh status (`BidsCheckFilesView`): rebuilding the expected check files (`BidsCheckFiles`, name building from
+  the config and a glob per dataset) is the larger part of a scan, reading the status files (`BidsCheckStatus`) the
+  smaller. After a step has run only the statuses change, so **Refresh status** re-reads the known files (0.3 s against
+  1.9 s on a 166 subject study) and **Reload** also rebuilds the expected list (new subjects or datasets). Both use
+  the shared `scan`/`stat` state and the `upd` counter.
+- Parallelizing the scan was measured and rejected: reading 2485 check files took 0.5 s serial and 0.49 to 0.57 s with
+  8 subkernels (3.6 s to launch them), and the name building would need the package in every subkernel. The reads are
+  limited by the file system, not the kernel. Measure again if a study lives on a network drive.
 - `MuscleBidsConvertI` mese branch: when no json has exactly the protocol name (the glob matches by substring), it logs
   and skips; before it crashed on `Last[{}]` in `CheckPos`.
 - `ViewProtocolNames[dir]`: series number and protocol name per session, duplicates bad (Duplicate column "yes"). Needs only the folders from
@@ -603,7 +642,7 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   newer than the code in the notebook kernel. If the front end is set to "Launch parallel kernels: At startup", every
   child starts a full pool of its own, so use "When needed" or "Manual".
 - Most "nothing happened" cases are a **name mismatch**: a Target list that does not resolve to an existing file.
-  Turn on `$debugBids` and compare the printed expected path with the files on disk.
+  Set `$Debug = "Bids"` and compare the printed expected path with the files on disk.
 
 ---
 
@@ -677,7 +716,7 @@ on the current names.
 
 | Function | Line | Role |
 | --- | --- | --- |
-| `debugBids`, `$debugBids`, `dataToLog`, `compress` | L195–208 | debug/log helpers, compression flag |
+| `debugBids`, `dataToLog`, `compress` | L195–208 | debug/log helpers, compression flag |
 | `WipStrip`, `StringStrip` | L240–243 | remove `WIP`, remove `-_. ` |
 | `BidsType`, `BidsValue`, `BidsString`, `GetClassName` | L250–289 | entity helpers |
 | `SubNameToBids` | L296 | sub/ses from a name or folder (subject matching) |

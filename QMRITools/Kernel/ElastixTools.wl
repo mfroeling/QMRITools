@@ -111,8 +111,6 @@ Output is the registered data."
 
 $lastElastixTemp::usage = "$lastElastixTemp is the last temporary directory used by Elastix.";
 
-$debugElastix::usage = "$debugElastix is a debug flag for Elastix functionality.";
-
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -272,7 +270,7 @@ RegisterData::fatal="Fatal error encountered."
 Begin["`Private`"]
 
 
-debugElastix[x___] := If[$debugElastix, Print[x]];
+debugElastix[x___] := DebugPrint["Elastix", x];
 
 
 (* ::Subsection::Closed:: *)
@@ -280,7 +278,6 @@ debugElastix[x___] := If[$debugElastix, Print[x]];
 
 
 $lastElastixTemp = "";
-$debugElastix = False;
 
 
 operatingSystem = $OperatingSystem;
@@ -693,7 +690,7 @@ CreateTempDirectory[tempDirI_, print_, make_] := Block[{tempDir, add, str},
 	tempDir = AbsoluteFileName[tempDir];
 
 	(*print if needed*)
-	If[print, Print["using as temp directory: ", Hyperlink[tempDir, "file:///" <> StringReplace[tempDir, "\\" -> "/"]]]];
+	If[print, MonitorFunction[If[$Notebooks, Hyperlink[tempDir, "file:///" <> StringReplace[tempDir, "\\" -> "/"]], tempDir], "using as temp directory:"]];
 
 	$lastElastixTemp = If[add =!= "" || Last[FileNameSplit[tempDir]] === "anat", DirectoryName[tempDir], tempDir];
 
@@ -1151,7 +1148,7 @@ RegisterDataI[
 	];
 
 	(*do some cleanup*)
-	If[OptionValue[ShowMetric], Print[ListLinePlot[Flatten[Import[#, "Data"][[2 ;;, 2]]& /@ FileNames["IterationInfo*", tempdir]]]]];
+	If[OptionValue[ShowMetric], MonitorFunction[ListLinePlot[Flatten[Import[#, "Data"][[2 ;;, 2]]& /@ FileNames["IterationInfo*", tempdir]]], "Registration metric:"]];
 	If[OptionValue[DeleteTempDirectory], DeleteDirectory[tempdir, DeleteContents->True]];
 
 	(*output results*)

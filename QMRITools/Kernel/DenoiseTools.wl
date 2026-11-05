@@ -103,8 +103,6 @@ HarmonicDenoiseTensor[tens, seg, vox, labs] will do the same for each segmentati
 HarmonicDenoiseTensor[] is based on 10.1016/j.media.2011.01.005."
 
 
-$debugDenoise::usage = "$debugDenoise is a debug flag for Denoise functionality within DenoiseTools currently only for HarmonicDenoiseTensor.";
-
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -216,9 +214,6 @@ PCADeNoise::rician =
 
 
 Begin["`Private`"]
-
-
-$debugDenoise = False;
 
 
 (* ::Subsection:: *)
@@ -1132,6 +1127,9 @@ Options[HarmonicDenoiseTensor] = {
 
 SyntaxInformation[HarmonicDenoiseTensor] = {"ArgumentsPattern" -> {_, _, _, _., OptionsPattern[]}};
 
+HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, {}, opts:OptionsPattern[]]:=
+	HarmonicDenoiseTensor[tensI, 0 seg, vox, 0, opts]
+
 HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=
 	HarmonicDenoiseTensor[tensI, seg, vox, 0, opts]
 
@@ -1157,8 +1155,14 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 		Transpose[segI][[labs]]
 	];
 
+	(*remove the masks without voxels*)
+	seg = Select[seg, Max[#]>0&];
+
 	If[mon, MonitorFunction["Preparing tensor and masks"]];
 	tensF = Transpose[FlipTensorOrientation[tensI, per, flip]];
+
+	(*nothing to denoise, return the oriented tensor with empty maps*)
+	If[seg==={}, Return[{Transpose[tensF], Transpose[0. tensI[[1;;3]]], 0. First[tensI]}]];
 	(*make cropped data for each muscle*)
 	tm = First@AbsoluteTiming[{tensC, val, vec, mask, crop} = Transpose@Table[
 		(*crop to maks to speed up*)
@@ -1191,7 +1195,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 			, Thread[{tensC, vec[[All, All, All, All, 1]], mask}][[or]]
 			, ProgressReporting -> True, Method -> "FinestGrained"][[Ordering[or]]]
 		,
-		debugDenoise[x___] := If[$debugDenoise, MonitorFunction[x]];
+		debugDenoise[x___] := DebugPrint["Denoise", x];
 		Map[HarmonicDenoiseTensorI[{#[[1]], #[[2]]}, #[[3]], vox, {sigma, itt, step, tol}]&
 			, Thread[{tensC, vec[[All, All, All, All, 1]], mask}]]
 	]];

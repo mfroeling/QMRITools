@@ -201,8 +201,8 @@ AddToLog[logAdd_?ListQ, lev_?IntegerQ, opt:OptionsPattern[]] := AddToLog[logAdd,
 
 AddToLog[logAdd_?ListQ, date_?BooleanQ, lev_?IntegerQ, opt:OptionsPattern[]] := AddToLog[logAdd, lev, date, opt]
 
-AddToLog[logAdd_?ListQ, lev_?IntegerQ, date_?BooleanQ, OptionsPattern[]] := Block[{},
-	AppendTo[QMRITools`$Log, 
+AddToLog[logAdd_?ListQ, lev_?IntegerQ, date_?BooleanQ, OptionsPattern[]] := (
+	AppendTo[QMRITools`$Log,
 		StringJoin[
 			If[date, DateString[{"Day", "-", "Month", "-", "YearShort", " ","Time"}] <> " / ", "                  / "],
 			If[lev == 0, "", StringJoin[ConstantArray[" ", 2 lev]] <> "- "],
@@ -210,7 +210,7 @@ AddToLog[logAdd_?ListQ, lev_?IntegerQ, date_?BooleanQ, OptionsPattern[]] := Bloc
 		]
 	];
 	If[OptionValue[SaveLogFile], ExportLog[]];
-]
+)
 
 AddToLog[logAdd_, a___] := AddToLog[{logAdd}, a]
 

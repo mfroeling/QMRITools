@@ -162,6 +162,9 @@ EPGRefocussingPhase::usage =
 (*Error Messages*)
 
 
+CalibrateEPGT2Fit::data = "Not enough data points for calibration, the default values are returned."
+
+
 (* ::Section:: *)
 (*Functions*)
 
@@ -384,8 +387,8 @@ TriExponentialT2Fit[datan_, times_, OptionsPattern[]] := Block[{
 	{Afi, Ami} = {Afi, Ami}/sci;
 	cal = Round[{sci, {100 Ami, T2mi}, {100 csi, T2si, T2fi}}, .1];
 
-	(*Print the callibration results*)
-	Print[Row[{
+	(*show the callibration results*)
+	MonitorFunction[Row[{
 		Column[Row /@ {
 			{"signal: ", Round[sci, .1]},
 			{"f mus: ", Round[100 Ami, .1] , " - t2 mus: ", 
@@ -890,7 +893,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 
 	(*clibrate the fat signal from the real data*)
 	If[OptionValue[EPGCalibrate]&&!VectorQ[datan],
-		If[mon, Print["Callibrating EPG fat t2 using: ", OptionValue[EPGMethodCal]]];
+		If[mon, MonitorFunction[OptionValue[EPGMethodCal], "Callibrating EPG fat t2 using:"]];
 		cal = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, clipf, {T1m, T1f}}, 
 		EPGFitPoints -> OptionValue[EPGFitPoints], EPGFatShift->OptionValue[EPGFatShift], 
 		EPGMethodCal -> OptionValue[EPGMethodCal]];
@@ -903,7 +906,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 
 		(*make whole 5 ms such that it is more likely for same values, needs less libraries, round up higher is better then lower*)
 		t2fval = N@Ceiling[t2fval,5];
-		If[mon, Print["EPG fat callibration:  ", cal, " ms"]];
+		If[mon, MonitorFunction[cal, "EPG fat callibration [ms]:"]];
 	];
 
 	(*find the correct method*)
@@ -1160,7 +1163,8 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	fitData = fitData[[ ;; ;; step]];
 	{{T2mmin, T2mmax}, {T2fmin, T2fmax}, {T1m, T1f}} = OptionValue[EPGRelaxPars];
 
-	err = If[Length[fitData]<5, True; Print["error: not enough data points for calibration!"], False];
+	err = Length[fitData] < 5;
+	If[err, Message[CalibrateEPGT2Fit::data]];
 
 	(*shift the slice profile*)	
 	shift = OptionValue[EPGFatShift];
@@ -1311,7 +1315,7 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 			vals = Table[{t2m, b1}, {t2m, t2Mvals}, {b1, b1vals}];
 		][[1]];
 
-		If[mon, Print["The dictionary contains "<>ToString[Times @@ Dimensions[dict][[;; -3]]]<>" values, with T2fat = "<>
+		If[mon, MonitorFunction["The dictionary contains "<>ToString[Times @@ Dimensions[dict][[;; -3]]]<>" values, with T2fat = "<>
 			ToString[Round[t2val]]<>" ms, and took "<>ToString[Round[time, .1]]<>" seconds to generate."]];
 
 		,
@@ -1333,7 +1337,7 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 			vals = Table[{t2m, t2f, b1}, {t2m, t2Mvals}, {t2f, t2Fvals}, {b1, b1vals}];
 		][[1]];
 
-		If[mon, Print["The dictionary contains "<>ToString[Times @@ Dimensions[dict][[;; -3]]]<>
+		If[mon, MonitorFunction["The dictionary contains "<>ToString[Times @@ Dimensions[dict][[;; -3]]]<>
 			" values, and took "<> ToString[Round[time, .1]]<>" seconds to generate."]];
 	];
 

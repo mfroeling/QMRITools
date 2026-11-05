@@ -167,8 +167,6 @@ CheckDataDescription::usage =
 MuscleBidsConvert, MuscleBidsProcess, and MuscleBidsMerge."
 
 
-$debugBids::usage = "$debugBids is a debug flag for Bids functionality within MuscleBidsTools.";
-
 
 (* ::Subsection::Closed:: *)
 (*Options*)
@@ -239,10 +237,7 @@ Begin["`Private`"]
 (*Debug and logging*)
 
 
-debugBids[x___] := If[$debugBids, Print[x]];
-
-
-$debugBids = False;
+debugBids[x___] := DebugPrint["Bids", x];
 
 
 dataToLog[data_] := If[KeyExistsQ[data, $Failed], 
@@ -797,6 +792,25 @@ MergeJSON[json:{_?AssociationQ..}] := Block[{keys},
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*BidsDcmConsistentQ*)
+
+
+(*dcm2niix builds that write one file per echo in the same layout for every Philips release: the own build (dcm2niix-own.exe)
+and the official release that contains it (dcm2niix-20261029.exe) and later ones, not the official builds in between*)
+bidsDcmOwn = 20260915;
+
+bidsDcmConsistent = 20261029;
+
+BidsDcmDate[json_] := Block[{date},
+	(*build date in the dcm2niix version of the json, 0 when there is none*)
+	date = StringCases[ToString[Lookup[json, "ConversionSoftwareVersion", ""]], "v1.0." ~~ d:Repeated[DigitCharacter, {8}] :> ToExpression[d]];
+	If[date === {}, 0, First[date]]
+]
+
+BidsDcmConsistentQ[json_List] := AllTrue[json, (BidsDcmDate[#] === bidsDcmOwn || BidsDcmDate[#] >= bidsDcmConsistent)&]
+
+
 (* ::Subsection:: *)
 (*Bids Support Functions*)
 
@@ -905,6 +919,9 @@ bidsReportClasses = {"error", "unreadable", "missing", "duplicate", "outdated"};
 
 $BidsScan = <||>;
 
+(*a lazy view has no scan result until Reload, set by the GUI for its tabs*)
+$BidsLazy = False;
+
 BidsJsonFiles[fol_, labels_] := Flatten[FileNames["*"<>StringStrip[#]<>"*.json", fol]& /@ Flatten[{labels}]]
 
 BidsProtocolNames[fol_] := Block[{names},
@@ -1000,15 +1017,16 @@ BidsTable[rows_, head_] := With[{hrows = If[MatrixQ[head], head, {head}]}, Pane[
 BidsCheckView[dir_?StringQ, subs_, what_, head_] /; ExpandFileName[dir] =!= dir := BidsCheckView[ExpandFileName[dir], subs, what, head]
 
 BidsCheckView[dir_, subs_, what_, head_] := With[{
-		data = BidsCheckRows[dir, subs, what],
+		data = If[$BidsLazy, None, BidsCheckRows[dir, subs, what]],
 		valid0 = BidsConfigQ[dir],
-		t0 = DateString["Time"]
+		t0 = If[$BidsLazy, "not scanned yet", DateString["Time"]]
 	},
 	DynamicModule[{rows, valid, time, only, show, cur, bad},
-		(*scan result, scan time, the filter (on for all but the protocol names) and the selected subject*)
+		(*scan result and time, a lazy view (GUI tab) has no scan result until Reload*)
 		rows = data;
 		valid = valid0;
 		time = t0;
+		(*the filter (on for all but the protocol names) and the selected subject*)
 		only = !MemberQ[{"Protocol", "Custom"}, what];
 		cur = None;
 
@@ -1026,9 +1044,10 @@ BidsCheckView[dir_, subs_, what_, head_] := With[{
 			}],
 			Dynamic[
 				(*only the bad rows and their subjects*)
-				show = If[only, Select[(First[#] -> Select[Last[#], Last])& /@ rows, Last[#] =!= {}&], rows];
-				If[show === {}, 
+				show = If[rows === None, None, If[only, Select[(First[#] -> Select[Last[#], Last])& /@ rows, Last[#] =!= {}&], rows]];
+				If[show === {} || show === None, 
 					Which[
+						show === None, "Not scanned yet, press Reload",
 						only, "No problems found",
 						!valid, "No subjects found, the config file is missing or invalid",
 						what === "Custom", "No custom configs found",
@@ -1243,7 +1262,7 @@ SyntaxInformation[MuscleBidsConfig] = {"ArgumentsPattern" -> {_, OptionsPattern[
 
 MuscleBidsConfig[dir_?StringQ, OptionsPattern[]] := Block[{subs},
 	subs = OptionValue[ProcessSubjects];
-	(*one tab per config tool, each scans its data now*)
+	(*one tab per config tool, each scans its data now unless the views are lazy*)
 	TabView[{
 		"Full config" -> If[BidsConfigQ[dir], ViewConfig[dir], "No valid config file found in the folder"],
 		"Custom config" -> CheckCustomConfigs[dir, ProcessSubjects -> subs],
@@ -1263,7 +1282,7 @@ SyntaxInformation[MuscleBidsCheck] = {"ArgumentsPattern" -> {_, OptionsPattern[]
 
 MuscleBidsCheck[dir_?StringQ, OptionsPattern[]] := Block[{subs, imOut},
 	{subs, imOut} = OptionValue[{ProcessSubjects, BidsOutputImages}];
-	(*one tab per check tool, each scans its data now, the report scans on export*)
+	(*one tab per check tool, each scans its data now unless the views are lazy, the report scans on export*)
 	TabView[{
 		"Convert output" -> CheckBidsOutput[dir, "Convert", ProcessSubjects -> subs],
 		"Check files" -> ManageCheckFiles[dir, ProcessSubjects -> subs, BidsOutputImages -> imOut],
@@ -1286,17 +1305,25 @@ ManageCheckFiles[dir_?StringQ, OptionsPattern[]] := BidsCheckFilesView[dir, Opti
 BidsCheckFilesView[dir_?StringQ, subs_, imOut_] /; ExpandFileName[dir] =!= dir := BidsCheckFilesView[ExpandFileName[dir], subs, imOut]
 
 BidsCheckFilesView[dir_, subs_, imOut_] := With[{
-		scan = BidsScanChecks[dir, subs, imOut], 
-		t0 = DateString["Time"]
+		scan0 = If[$BidsLazy, {None, <||>}, BidsScanChecks[dir, subs, imOut]],
+		t0 = If[$BidsLazy, "not scanned yet", DateString["Time"]]
 	},
-	DynamicModule[{checks, stat, time, sel, upd, ind, sub, exist, row, delFiles, buttons, tab},
-		(*scan result, scan time and the state of the tabs and the selection*)
-		{checks, stat} = scan;
+	DynamicModule[{checks, stat, time, sel, upd, ind, sub, scan, exist, row, delFiles, buttons, tab},
+		(*scan result and time, a lazy view (GUI tab) has no scan result until Reload*)
+		{checks, stat} = scan0;
 		time = t0;
+		(*the state of the tabs and the selection*)
 		sel = {};
 		upd = 0;
 		ind = 1;
 		sub = <||>;
+
+		(*scan the expected check files and read the status of each*)
+		scan = (
+			{checks, stat} = BidsScanChecks[dir, subs, imOut];
+			time = DateString["Time"];
+			upd++
+		)&;
 
 		(*check file exists, its status was read during the scan*)
 		exist = (Lookup[stat, #, None] =!= None)&;
@@ -1340,8 +1367,10 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 			Button["Select all", sel = Union[sel, Select[list[[All, 2]], exist]]],
 			Button["Deselect all", sel = Complement[sel, list[[All, 2]]]],
 			Button["Delete selected", delFiles[step, list], Method -> "Queued"],
-			Button["Reload",
-				{checks, stat} = BidsScanChecks[dir, subs, imOut];
+			(*Reload scans the expected check files again, Refresh status only reads the known ones*)
+			Button["Reload", scan[], Method -> "Queued"],
+			Button["Refresh status",
+				stat = BidsCheckStatus[checks];
 				time = DateString["Time"];
 				upd++
 			, Method -> "Queued"],
@@ -1355,10 +1384,15 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 		}]&;
 
 		(*tabs per step and data type*)
-		Dynamic[TabView[KeyValueMap[Function[{step, list}, step -> If[list === {}, "No check files expected",
-			TabView[KeyValueMap[#1 -> tab[step, #2]&, GroupBy[list, First -> Rest]],
-				Dynamic[Lookup[sub, step, 1], (sub = Append[sub, step -> #])&], ControlPlacement -> Top]
-		]], checks], Dynamic[ind], ControlPlacement -> Top]]
+		Dynamic[
+			If[checks === None,
+				Row[{Button["Reload", scan[], Method -> "Queued"], "  Not scanned yet, press Reload"}],
+				TabView[KeyValueMap[Function[{step, list}, step -> If[list === {}, "No check files expected",
+					TabView[KeyValueMap[#1 -> tab[step, #2]&, GroupBy[list, First -> Rest]],
+						Dynamic[Lookup[sub, step, 1], (sub = Append[sub, step -> #])&], ControlPlacement -> Top]
+				]], checks], Dynamic[ind], ControlPlacement -> Top]
+			]
+		]
 	]
 ]
 
@@ -1386,19 +1420,17 @@ BidsReadCheck[base_] := Block[{file, json},
 ]
 
 
-BidsCheckClass[st_] := Block[{},
+BidsCheckClass[st_] := Which[
 	(*problem class of a check file status: missing, unreadable or error, "" when ok*)
-	Which[
-		st === None, "missing",
-		!AssociationQ[st], "unreadable",
-		Lookup[st, "Check", ""] === "error", "error",
-		True, ""
-	]
+	st === None, "missing",
+	!AssociationQ[st], "unreadable",
+	Lookup[st, "Check", ""] === "error", "error",
+	True, ""
 ]
 
-BidsCheckName[subj_, base_] := Block[{},
+BidsCheckName[subj_, base_] := StringReplace[
 	(*check file name without the subject prefix*)
-	StringReplace[FileNameTake[base], StartOfString ~~ subj ~~ "_" -> ""]
+	FileNameTake[base], StartOfString ~~ subj ~~ "_" -> ""
 ]
 
 
@@ -2210,8 +2242,8 @@ SyntaxInformation[MuscleBidsGUI] = {"ArgumentsPattern" -> {_}};
 MuscleBidsGUI[dir_?StringQ] /; ExpandFileName[dir] =!= dir := MuscleBidsGUI[ExpandFileName[dir]]
 
 MuscleBidsGUI[dir_?StringQ] := With[{
-		config = MuscleBidsConfig[dir],
-		check = MuscleBidsCheck[dir],
+		config = Block[{$BidsLazy = True}, MuscleBidsConfig[dir]],
+		check = Block[{$BidsLazy = True}, MuscleBidsCheck[dir]],
 		(*step, folder of its logs and the options in the GUI*)
 		steps = {
 			{BidsDcmToNii, "rawData", {}},
@@ -2306,10 +2338,13 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 					Row[ctrl[SymbolName[row[[1]]], #]& /@ row[[3]]]
 				}] /@ steps, Alignment -> Left],
 				Button["Stop",
-					If[link =!= None && ChoiceDialog["Stop "<>step<>"? The subjects that are not finished are processed again the next time."] && link =!= None,
-						LinkClose[link];
-						link = None;
-						state = "Stopped"
+					If[link =!= None && ChoiceDialog["Stop "<>step<>"? The subjects that are not finished are processed again the next time."],
+						(*the step can finish while the dialog is open, then there is nothing to stop*)
+						If[link =!= None,
+							LinkClose[link];
+							link = None;
+							state = "Stopped"
+						]
 					],
 					ImageSize -> 200, Enabled -> Dynamic[link =!= None], Method -> "Queued"],
 				Style["Status", Bold],
@@ -2597,7 +2632,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 					(*method specific scripts: loop over all folders in subject/session folder*)
 					Table[
 						(*loop needs feedback to show where bugs are.*)
-						Echo[DateString[], folIn<>" - "<>type["Key"]<>":"];
+						MonitorFunction[DateString[], folIn<>" - "<>type["Key"]<>":"];
 						Switch[met,
 							"MuscleBidsConvert", MuscleBidsConvertI[folIn, type, delete],
 							"MuscleBidsProcess", MuscleBidsProcessI[{folIn, outFol}, type, versCheck],
@@ -2707,7 +2742,7 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox,
 		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types,
 		vx, vy, vz, dx, dy, dz, sx, sy, sz, off, diffFile, hasBval, hdr, nSl, len,
-		labs, noFiles, sel, imgTags, recTags
+		labs, noFiles, sel, imgTags, recTags, consistent
 	},
 
 	debugBids["Starting MuscleBidsConvertI"];
@@ -3198,13 +3233,18 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 				If[GetJSONPosition[json, {{"ProtocolName", nameIn}}] === {},
 				(*-----*)AddToLog[{"No json with protocol name ", nameIn, " found, skipping conversion"}, 4],
 
+				(*newer dcm2niix writes one file per echo in the same layout for every release, older ones need the old handling*)
+				noFiles = False;
+				consistent = BidsDcmConsistentQ[json[[GetJSONPosition[json, {{"ProtocolName", nameIn}}]]]];
+				debugBids["dcm2niix with consistent output: ", consistent];
+
 				Which[
 (*TODO
 I have to properly implement the logic that figures out if its siemens of Philips and if its individual files of 4D and if the correct 
 echo time is in the json. and then spit out warnings and skip when things are going wrong
 *)
-					(*if echo time exists assume 4D nii without correct echo times*)
-					KeyExistsQ[Lookup[datType, "Process", <||>], "EchoTime"],
+					(*if echo time exists assume 4D nii without correct echo times, only older dcm2niix writes 4D nii*)
+					KeyExistsQ[Lookup[datType, "Process", <||>], "EchoTime"] && !consistent,
 
 					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
 					debugBids["Converting MESE data, json position: ", pos];
@@ -3235,6 +3275,10 @@ echo time is in the json. and then spit out warnings and skip when things are go
 					(*Else its a list of single echo nii files*)
 					True,
 
+					If[consistent && KeyExistsQ[Lookup[datType, "Process", <||>], "EchoTime"],
+						(*-----*)AddToLog[{"The EchoTime of the config is ignored, the echo times are in the json files"}, 4]
+					];
+
 					(*get the position of the files needed*)
 					pos = posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}, "EchoNumber"];
 					debugBids["Converting MESE data ", nameIn, ", json position: ", pos];
@@ -3243,7 +3287,7 @@ echo time is in the json. and then spit out warnings and skip when things are go
 					(*select only echos*)
 					len = info["AcquisitionNumber"];
 					len = If[ListQ[len], Max[len], Lookup[info, "EchoTrainLength", Length[pos]]];
-					pos = pos[[;; len]];
+					pos = pos[[;; Min[len, Length[pos]]]];
 					info = MergeJSON[json[[pos]]];
 
 					(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
@@ -3251,15 +3295,30 @@ echo time is in the json. and then spit out warnings and skip when things are go
 					(*get the json and data*)
 					{data, vox} = Transpose[ImportNii /@ ConvertExtension[files[[pos]],".nii"]];
 
-					data = If[ToExpression[First@StringSplit[info["SoftwareVersions"], "\\" | "."]] >= 12,
-						AssociateTo[info, "EchoTime" -> Sort[info["EchoTime"]]];
-						Partition[Flatten[data, 1], Length@data],(*philips release 12*)
-						Transpose[data](*philips older release*)];
-					vox = First@vox;
-					(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+					(*files of the newer dcm2niix have to be complete and in order: all echos, equal sizes and increasing echo times*)
+					noFiles = consistent && !And[
+						Length[pos] === Lookup[info, "EchoTrainLength", Length[pos]],
+						Length[DeleteDuplicates[Dimensions /@ data]] === 1,
+						OrderedQ[Flatten[{Lookup[info, "EchoTime", {}]}], Less]
+					];
+
+					If[noFiles,
+						(*-----*)AddToLog[{"!!!!!!!!!!!!!!! SKIPPING - INCOMPLETE OR UNORDERED ECHO FILES, convert the dicom data again !!!!!!!!!!!!!!!!!!!"}, 4];
+						debugBids["!!!!!!!!!!!!! Echo files: ", Length[pos], Dimensions /@ data, info["EchoTime"]];
+						,
+						(*older dcm2niix writes release 12 data in another order, newer always one file per echo*)
+						data = If[!consistent && ToExpression[First@StringSplit[info["SoftwareVersions"], "\\" | "."]] >= 12,
+							AssociateTo[info, "EchoTime" -> Sort[info["EchoTime"]]];
+							Partition[Flatten[data, 1], Length@data],(*philips release 12*)
+							Transpose[data](*philips older release*)];
+						vox = First@vox;
+						(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
+					];
 
 					echo = <||>;
 				];
+
+				If[!noFiles,
 
 				(*make the additional mandatory bids json values*)
 				infoExtra = Join[infoExtra, echo, <|
@@ -3276,6 +3335,7 @@ echo time is in the json. and then spit out warnings and skip when things are go
 
 				(*Delete used files*)
 				DelFiles[files[[posIn]], del];
+				];
 				]
 
 				,
@@ -4841,6 +4901,22 @@ MuscleBidsAnalysis[datFol_?StringQ, anFol_?StringQ, datDis_?AssociationQ, opts:O
 (*MuscleBidsAnalysisI*)
 
 
+bidsLabelRange = <|"Body" -> 799, "Legs" -> 90, "Shoulder" -> 30, "Arm" -> 12|>;
+
+BidsAnalysisLabels[lab_] := Block[{items, nr, wh},
+	(*the labels setting is a number, a word or both, in any order*)
+	items = Flatten[{lab}];
+	nr = Cases[items, _Integer];
+	wh = Cases[items, _String];
+	If[items === {} || Length[nr] > 1 || Length[wh] > 1 || Length[nr] + Length[wh] =!= Length[items],
+		Return[$Failed, Block]
+	];
+	(*the word defaults to Body, the number to the range of the word or to all labels*)
+	wh = If[wh === {}, "Body", First[wh]];
+	{If[nr === {}, Lookup[bidsLabelRange, wh, Automatic], First[nr]], wh}
+]
+
+
 MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		maskErosion, tractWeighting, anaSeg, fol, parts, segFile, fileName, partsO, fileNameO, checkFileX, checkFileI,
 		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, str,
@@ -4848,7 +4924,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxSeg, segPl, imTrk, trkfile, reffile,
 		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF, typeSuf,
-		whatName, whatNr, segF
+		whatName, whatNr, segF, labAll, labCfg, nMax
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
@@ -4889,7 +4965,15 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 	checkFileI = fileNameO[partsO];
 
 	anaSeg = datDis["Segmentation", "Type"];
-	{n, what} = datDis["Segmentation", "Labels"];
+	(*the labels setting is a number, a word or both, anything else is a config error*)
+	labCfg = BidsAnalysisLabels[datDis["Segmentation", "Labels"]];
+	If[labCfg === $Failed,
+		(*-----*)AddToLog[{"Segmentation Labels in the analysis config should be a number, a word or both, for example 799, \"Body\" or [799, \"Body\"], it is:", 
+			ToString[datDis["Segmentation", "Labels"], InputForm], ". Skipping the analysis."}, 3, True];
+		MakeCheckFile[checkFileX, Sort@Join[{"Check" -> "error"}, Normal@datDis]];
+		Return[Null, Block]
+	];
+	{n, what} = labCfg;
 	debugBids[{anaSeg, n, what}];
 	(*-----*)AddToLog[{"Segmentation file used for analysis is:", StringRiffle[StringStrip/@anaSeg, "_"]}, 3];
 
@@ -4911,7 +4995,20 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		(*-----*)AddToLog[{"Importing and processing the needed segmentation"}, 4];
 		{seg, vox} = ImportNii[segFile];
 		seg = If[ArrayDepth[seg]===4, seg[[All, 1]], seg];
-		{seg, musNr} = SelectSegmentations[seg, Range[n], False];
+		labAll = GetSegmentationLabels[seg];
+		(*without a number all labels of the segmentation are used*)
+		nMax = If[n === Automatic, Max[Append[labAll, 0]], n];
+		{seg, musNr} = SelectSegmentations[seg, Range[nMax], False];
+
+		(*no label in the range of the config, for example Legs labels 1-90 for a Body segmentation (101-910)*)
+		If[musNr === {},
+			(*-----*)AddToLog[{"No labels from 1 to", nMax, "found in the segmentation:",
+				If[labAll === {}, "it is empty",
+					"it has "<>ToString[Length[labAll]]<>" labels from "<>ToString[Min[labAll]]<>" to "<>ToString[Max[labAll]]
+				]<>". Check Segmentation Labels in the analysis config and the Segment Location. Skipping the analysis."}, 3, True];
+			MakeCheckFile[checkFileX, Sort@Join[{"Check" -> "error"}, Normal@datDis]];
+			Return[Null, Block]
+		];
 
 		debugBids["Use Filter"];
 		filt = ConfigLookup[datDis, "Analysis", "UseFilter"];
