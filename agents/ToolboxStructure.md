@@ -228,11 +228,10 @@ Reading the graph:
 
 - Every package guide matches its toolbox: no missing functions, stale or duplicate links, and no options listed
   (`wolframscript -file agents/guidecheck.wls`, run it after changing public functions).
-- The main guide **doesn't link** the `AmaresTools` or `NeuralNetworkTools` guides.
-- Stale reference pages for symbols that no longer exist: `AugmentMask` (renamed `MaskedPretraining`),
-  `MaxPatchSize`, `SegmentationResolution`, `ZeropadData`, `tempDir`, and a page named
-  ``QMRITools`NeuralNetworkTools`$debugUnet`` and the pages of the removed `$debugX` flags (replaced by `$Debug`). Legacy symbols such as `PlotDefGrid`
-  and `CSIInterface` keep their pages.
+- The main guide links every package guide (`CoilTools` was added to the list before 5.2.0).
+- Stale reference pages (`AugmentMask`, `MaxPatchSize`, `SegmentationResolution`, `ZeropadData`, `tempDir`,
+  `ShowLink` and the `$debugX` flags, replaced by `$Debug`) were removed before 5.2.0, with their guide links.
+  Legacy symbols such as `PlotDefGrid` and `CSIInterface` keep their pages.
 - Public Legacy symbols without a reference page: `PlotRespiract`, `ReadBrukerDiff`, `ROIMask`, `ShiftPar`,
   `SpectraFitResult`.
 
