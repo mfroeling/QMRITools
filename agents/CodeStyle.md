@@ -255,6 +255,11 @@ F[x_] := ...
 
 - Numeric inner loops use typed `Compile[..., RuntimeAttributes -> {Listable}, RuntimeOptions -> "Speed"]`
   (sometimes `{"Speed", "WarningMessages" -> False}`). Copy the options of the neighbouring compiled functions.
+- A compiled function must not call another `CompiledFunction`: that compiles to `CompiledFunctionCall`, and the
+  subkernels crash as soon as it is sent there with `DistributeDefinitions` (they relaunch in a loop, visible as a memory
+  sawtooth). Write a shared numeric helper as a plain `Function` with unique local names, e.g. `CholeskySolve` in
+  GeneralTools, and compile the callers with `CompilationOptions -> {"InlineExternalDefinitions" -> True}`. Check that
+  `CompilePrint` shows no `MainEvaluate` and no `CompiledFunctionCall`, and test the parallel path with a few kernels.
 - Keep arrays packed: `ToPackedArray@N@...`, and avoid mixing Integer and Real.
 - Some functions return unpacked arrays without warning. `Chop` always unpacks, real or complex, even when nothing is
   chopped, and `N`, `Clip`, `Abs` and arithmetic after it do not repack. Repack right after it:

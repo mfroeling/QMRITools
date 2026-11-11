@@ -174,6 +174,10 @@ FindMiddle::usage=
 "FindMiddle[data] find the center of a two leg data, assuming leg data.
 FindMiddle[data, \"Legs\"] same as FindMiddle[data], the only anatomy currently supported."
 
+CholeskySolve::usage =
+"CholeskySolve[y, mat, w] solves the weighted linear least squares problem mat.x = y with weights w via the normal equations and a Cholesky decomposition. \
+It is meant to be used inside Compile with CompilationOptions -> {\"InlineExternalDefinitions\" -> True}, where it is inlined in the compiled code."
+
 DivideNoZero::usage =
 "DivideNoZero[a, b] divides a/b but when b=0 the result is 0. a can be a number or vector."
 
@@ -1487,6 +1491,44 @@ CompilableFunctions[] := Block[{list1, list2, grids},
 		"",
 		grids[[2]]
 	}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*CholeskySolve*)
+
+
+SyntaxInformation[CholeskySolve] = {"ArgumentsPattern" -> {_, _, _}};
+
+(*Solve (mat^T.(w mat)).x = mat^T.(w y) via Cholesky decomposition instead of LinearSolve*)
+(*a plain Function so Compile inlines it, a compiled call would not survive DistributeDefinitions to subkernels*)
+(*the local names are unique since after inlining they share the scope of the calling compiled function*)
+CholeskySolve = Function[{y, mat, w},
+	Block[{cholT, cholA, cholB, cholN, cholL, cholZ, cholX, cholP},
+		cholT = Transpose[mat];
+		(*weighted normal equations:a.x=b*)
+		cholA = cholT . (w mat);
+		cholB = cholT . (w y);
+		cholN = Length[cholB];
+		cholL = 0. cholA;
+		(*Cholesky-Banachiewicz decomposition:a==l.Transpose[l], l lower triangular*)
+		Do[Do[
+			cholP = cholA[[ci, cj]] - Sum[cholL[[ci, ck]] cholL[[cj, ck]], {ck, 1, cj - 1}];
+			(*clamp a non-positive pivot instead of letting Sqrt produce a complex*)
+			If[ci == cj,
+				cholL[[ci, ci]] = Sqrt[Max[cholP, 10^-12]],
+				cholL[[ci, cj]] = cholP / cholL[[cj, cj]]
+			]
+			, {cj, 1, ci}], {ci, 1, cholN}];
+		(*forward substitution:solve l.z==b*)
+		cholZ = 0. cholB;
+		Do[cholZ[[ci]] = (cholB[[ci]] - Sum[cholL[[ci, ck]] cholZ[[ck]], {ck, 1, ci - 1}]) / cholL[[ci, ci]], {ci, 1, cholN}];
+		(*back substitution:solve Transpose[l].x==z*)
+		cholX = 0. cholB;
+		Do[cholX[[ci]] = (cholZ[[ci]] - Sum[cholL[[ck, ci]] cholX[[ck]], {ck, ci + 1, cholN}]) / cholL[[ci, ci]], {ci, cholN, 1, -1}];
+		(*give output*)
+		cholX
+	]
 ]
 
 

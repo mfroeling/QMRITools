@@ -151,10 +151,10 @@ compared:
 
 | Input | Result |
 | --- | --- |
-| `"001_2"` (dicom folder style) | `<|sub->001, ses->2|>` |
-| `"001"` (no session) | `<|sub->001, ses->001|>`, **forced session `001`** |
-| `"sub-001_ses-2"` | `<|sub->001, ses->2|>` |
-| folder `02_rawdata\sub-001\ses-2` | `<|sub->001, ses->2|>` |
+| `"001_2"` (dicom folder style) | `<\|sub->001, ses->2\|>` |
+| `"001"` (no session) | `<\|sub->001, ses->001\|>`, **forced session `001`** |
+| `"sub-001_ses-2"` | `<\|sub->001, ses->2\|>` |
+| folder `02_rawdata\sub-001\ses-2` | `<\|sub->001, ses->2\|>` |
 
 So `"001"` will **not** match `ses-2`. Pass what `SelectSubjects` copies (the dicom folder names). Subject and session
 names must not contain `-`, `_`, `.` or spaces.
@@ -308,13 +308,20 @@ associations merge.
 | `Stopping` | – | `[[targetList, [min,max]], ...]`. Rescaled to the tensor voxel size if needed |
 | `Segmentation` | – | seg target list (for example `["seg","auto","megre","dix","outph"]`). Needed for segmenting tracts and for HarmonicDenoise |
 | `FlipPermute` | `{{1,1,1},{x,y,z}}` | `TensorFlips` / `TensorPermutations` |
-| `TractLength` `{15,500}`, `TractAngle` 25, `TractSeed` 0.66 (<1 → `Scaled`), `TractStep` `"Automatic"` (non-number → auto), `SegmentLength` `{15,500}`, `BoneLabel` 100 (muscles = 1..BoneLabel, bones = BoneLabel+1..+30; a `"Body"` segmentation needs `799`, with 100 no muscle label is found and harmonic denoise returns the tensor unchanged), `HarmonicDenoise` False |
+| `TractLength` | `{15,500}` | fiber length range |
+| `TractAngle` | 25 | maximum fiber angle |
+| `TractSeed` | 0.66 | < 1 → `Scaled` |
+| `TractStep` | `"Automatic"` | non-number → auto |
+| `SegmentLength` | `{15,500}` | fiber length range for tract segmentation |
+| `BoneLabel` | 100 | muscles = 1..BoneLabel, bones = BoneLabel+1..+30. A `"Body"` segmentation needs `799`; with 100 no muscle label is found and harmonic denoise returns the tensor unchanged |
+| `HarmonicDenoise` | False | |
 
 ### `analysis` block (per analysis entry)
 
 | Key | Meaning |
 | --- | --- |
 | `Segmentation.Type` | seg name list (with key when nested) |
+| `Segmentation.TypeSegmentation` | optional `{typeName: segNameList ..}` (for example `{"dwi": ["seg","auto","dwi","dti","s0"]}`). An `Analysis.Types` entry that contains `typeName` is measured in that segmentation instead of `Type`. Volume, cross-section, label columns and images always come from `Type`. The labels of `Type` are looked up in the other segmentation; a missing label gives zeros plus a level-3 log line, extra labels are ignored. A missing file or a different grid logs level 3 and writes `Check -> "error"` (subject skipped). Helpers `BidsImportSeg`, `BidsMaskSeg` (added 2026-11-05) |
 | `Segmentation.Labels` | `[nMax, what]`, or a number or a word alone (`BidsAnalysisLabels`: a number alone means `"Body"`, a word alone takes `bidsLabelRange`: Body 799, Legs 90, Shoulder 30, Arm 12, a label file all labels). `what` = `"Body"` (S1 + T1 label files; muscles 101-748, bones 800+, so `[799, "Body"]`), `"Legs"`, `"Shoulder"`, `"Arm"` (older sets), or a path to a custom label file. `"Body"` and `"Shoulder"` were added 2026-10-29 |
 | `Analysis.Types` | `[[ (key,) type, suf.., [params..]] ..]`. The last element is threaded (`Thread`) |
 | `Analysis.TractBased` | subset analysed only inside the tract density mask (`dwi_dti_trk_dens`, unitized) |
@@ -409,6 +416,41 @@ output: declare the variable in the `Block` list, give it exactly the suffix nam
 | mese | `EPGT2` | `outFile` "done" | `data t2w t2f b1 wat fat fatfr res` |
 | | `Exp` | same | `data t2 s0` |
 
+**Output json = source json + what was run.** Every output json is `MergeJSON[{json, procInfo, setting}]`. That is
+the source json, then `procInfo` (built once per call: the config `Process` block as `"ProcessSettings"` plus
+`"ProcessVersion"` = `QMRITools`$InstalledVersion`), then the method's own settings:
+
+- Dixon: `"DixonSource"` (`ScannerRecon` or `QMRITools`), plus for the fit `"Denoise"`, `"DixonPhaseEchos"`,
+  `"DixonSettings"` and `"DixonPrecessionCheck"` (`{Ratio, Result}` of `DixonPrecessionCheck`, also in the log).
+- EPGT2: `"EPGSettings"`.
+- dwi: `settingPre` / `settingPro`.
+
+Hard-coded fit options are kept in one options list (`denOpts`, `dixOpts`, `epgOpts`), which is used both for the call
+and, via `OptionsToJSON`, for the json, so the two cannot drift apart. Add a new fit option to that list, not to the
+call. `JSONSafe` (used by `OptionsToJSON` and `procInfo`) turns values json cannot hold (`Automatic`, `Missing`, other
+symbols) into strings; without it the whole export fails.
+
+**Segmentation json** (`MuscleBidsSegmentI`): every segmentation gets a json next to it. It holds `procInfo` (config
+`Segment` block as `"SegmentSettings"`, plus `"ProcessVersion"`), plus:
+
+- automatic (CNN): the source json of the segmented image, `"SegmentationSource"` (file name), `"SegmentData"` (the
+  `segOpts` used) and `"SegmentationNetworks"`. The networks come from `SegmentationInfo[what, dim]` in
+  SegmentationTools: group, locations, split, classify, the classifier and per location the network asset with its
+  file name (the file name carries the network version).
+- `"Registration"`: the target, moving and segmentation file names and the registration options (`regOpts`).
+
+**Tractography json** (`MuscleBidsTractographyI`): every `.nii` and `.trk` output gets a json with the same base name. It
+holds `procInfo` (config `Tractography` block as `"TractographySettings"`, plus `"ProcessVersion"`), plus per stage:
+
+- tracking (`.trk`): the source json of the tensor, `"TractSource"`, `"StopFiles"`/`"StopValues"` and `"Tractography"`
+  (`trackOpts` plus flips and permutations).
+- harmonic denoise (`_con`, `_amp`, `_tensH`, `_har.trk`): `"SegmentationSource"`, `"HarmonicDenoise"` (`harmOpts`),
+  `"StopMask"` and the tracking options.
+- tract segmentation (`_dens`, `_leng`, `_ang`, `_seed`, `_curv`, `_seg.trk`): the source json of the segmentation,
+  `"TractSource"`, `"SegmentationSource"`, `"BoneLabel"` and `"SegmentTracts"` (`tsegOpts`).
+
+`SourceJSON[file]` reads the json that belongs to a data file (empty if there is none).
+
 The Dixon branches are **gated `If`s, not a `Switch`**. `Dixon-A` runs both. Branch 2 overwrites branch 1's values
 when raw data exists, and each branch's "files not found" guard makes it a no-op when its data is absent. This design
 is intentional (see CodeStyle.md, "avoid duplication"). Export and the check file run once after both branches.
@@ -478,6 +520,10 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   empty array, so `AutoCropData`, `CropToMask` and `MaskSegmentation` return an empty mask and `GetMaskData` zeros.
   Before this, `FindCrop` returned `$Failed`, the `ApplyCrop` stayed unevaluated, `Transpose` failed, and the xlsx
   export ran out of Java memory.
+- **TypeSegmentation**: the segmentations named there are imported once (`BidsImportSeg`), selected for the labels of the
+  default `musNr`, eroded and tract-masked like the default (`BidsMaskSeg`), and picked per `Types` entry by
+  `MemberQ[datType, key]`. The `UseFilter` masks use the matching segmentation as well. A finished `_xls` check file
+  skips the step, so a changed config needs the `_xls` check file deleted.
 - **Controlled failures** (log at level 3, `Check -> "error"` in the `_xls` check file, the subject is skipped and the
   step goes on; the check file is not `done`, so a rerun after fixing the config tries again): `Segmentation.Labels`
   is not a number, a word or both (`BidsAnalysisLabels` gives `$Failed`), or `SelectSegmentations[seg, Range[n]]` finds no label (a Legs `[90, "Legs"]` setting on a

@@ -145,7 +145,7 @@ symbols); and **used by** (how many packages reference it).
 
 | Package | Lines | f / o | Description (main guide) | Uses | Used by |
 | --- | --- | --- | --- | --- | --- |
-| GeneralTools | 1508 | 72/14 | shared helpers (assets, crop, cut, rescale, monitor, conversions) | none | **25** |
+| GeneralTools | 1508 | 72/14 | shared helpers (assets, crop, cut, rescale, monitor, conversions, `CholeskySolve` for compiled fits) | none | **25** |
 | ScientificColorData | 118 | 2 | registers Crameri scientific colour maps at load | none | 0 (via `ColorData` names) |
 | LoggingTools | 239 | 11/1 | `$Log`, `AddToLog`, check files | General | 1 |
 | MaskingTools | 520 | 23/8 | masks and segmentations | Elastix, General | **18** |

@@ -83,6 +83,10 @@ $SegmentationGroups    = <| what -> <|"Locations"->{loc..}, "Split"->"Find"|"Aut
 Assets are declared in [PacletInfo.wl](../QMRITools/PacletInfo.wl) (`"Body"` = `Body_Pos_Side.wlnet`, the
 position/side classifier). They are resolved by `GetAssetLocation`. The label files are ITK-SNAP label text files.
 
+`SegmentationInfo[what, dim]` (private, right after the tables) reports what `SegmentData` uses for a group: locations,
+split, classify, the classifier and per location the network asset with its file name. `MuscleBidsSegmentI` writes it
+into the segmentation json (MuscleBidsTools.md §6). Keep it in sync when the tables change shape.
+
 `GetNeuralNet[name]` (L495) loads a net from a file path or an asset name and **caches it per session** through the
 memoised helper `GetNeuralNetI`. `GetNeuralNet["Clear"]` resets the cache. NetGraph and NetChain inputs pass through
 unchanged. A failed load is cached as `$Failed` too, so clear the cache after fixing a missing asset.

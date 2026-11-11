@@ -333,7 +333,7 @@ SyntaxInformation[GetTractValues] = {"ArgumentsPattern" -> {_, _, _., OptionsPat
 
 GetTractValues[tracts_, val_, opts : OptionsPattern[]] := GetTractValues[tracts, val, {1., 1., 1.}, opts]
 
-GetTractValues[tracts_, val_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, OptionsPattern[]]:=Block[{fun, tractsSc, int, dim},
+GetTractValues[tracts_, val_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, OptionsPattern[]]:=Block[{fun, tractsSc, int},
 	int = OptionValue[InterpolationOrder];
 
 	Which[IntegerQ[int] && int >= 1,
@@ -442,12 +442,10 @@ TractDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPatt
 
 SyntaxInformation[EndpointDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-EndpointDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPattern[]] := Block[{dens},
-	Normal@SparseArray[Select[
-		Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTractsC[tracts[[All,{1, -1}]], vox], 1]],
-		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
-		dim,-1.
-	]
+EndpointDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPattern[]] := Normal@SparseArray[Select[
+	Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTractsC[tracts[[All,{1, -1}]], vox], 1]],
+	(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
+	dim,-1.
 ]
 
 
@@ -631,9 +629,9 @@ FiberTractography[tensor_, voxI_, opts : OptionsPattern[]] := FiberTractography[
 FiberTractography[tensor_, voxI_, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FiberTractography[tensor, voxI, {{par, {min, max}}}, opts]
 
 FiberTractography[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, inp : {{_, {_, _}} ...}, OptionsPattern[]] := Block[{
-		minLength, maxLength, maxAng, maxSeed, flip, per, int, stopT, step, tractF, vecF, trFunc, ran,
-		tens, tensMask, inpTr, stop, coors, vecInt, stopInt, ones, dim, crp, t2, vecIntI,
-		seedN, seedI, seeds, t1, tracts, iii, drop, maxStep, len, sel, mon, tp, met, ind
+		minLength, maxLength, maxAng, maxSeed, flip, per, int, stopT, step, tractF, vecF, trFunc,
+		tens, stop, vecInt, stopInt, crp, vecIntI,
+		seedN, seeds, t1, tracts, maxStep, sel, mon, tp, met, ind
 	},
 
 	(*get the options*)
@@ -789,7 +787,7 @@ TractFuncI[{loci_, stepI_, h_}, {maxAng_, maxStep_, stop_}, {vecInt_, stopInt_, 
 (*VecAng*)
 
 
-VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{v, n1 = Norm[v1], n2 = Norm[v2]},
+VecAng = Compile[{{v1, _Real, 1}, {v2, _Real, 1}}, Block[{n1 = Norm[v1], n2 = Norm[v2]},
 	If[n1 === 0. || n2 === 0.,90., 180./Pi ArcCos[Min[1., Max[-1., Dot[v1, v2] / (n1 n2)]]]]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}];
 
@@ -867,7 +865,7 @@ RK4[y_, v_, h_, int_, vec_] := Block[{k1, k2, k3, k4},
 (*other possible methods could have been power iterations or newtons methods, both are iterative and are not faster than the analytical*)
 EigVec = Compile[{{tens, _Real, 1}, {vDir, _Real, 1}}, Block[{
 		dxx, dyy, dzz, dxy, dxz, dyz, dxy2, dxz2, dyz2, 
-		i1, i2, i3, i, v, s, v2, vv2, l1, m11, 
+		i1, i2, i3, i, v, s, v2, l1, m11,
 		m22, m33, c12, c13, c23, n12, n13, n23, 
 		norm, vec
 	},
@@ -939,7 +937,7 @@ FindTensorPermutation[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : Optio
 FindTensorPermutation[tensor_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, {par_?ArrayQ, {min_?NumberQ, max_?NumberQ}}, opts : OptionsPattern[]] := FindTensorPermutation[tensor, vox, {{par, {min, max}}}, opts]
 
 FindTensorPermutation[tens_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, stop_, opts : OptionsPattern[]] := Block[{
-		step, tracts, perms, flips, lengths, i, j, pl
+		tracts, perms, flips, lengths, i, j, pl
 	},
 	perms = {{"x", "y", "z"}, {"x", "z", "y"}, {"y", "x", "z"}, {"y","z", "x"}, {"z", "x", "y"}, {"z", "y", "x"}};
 	flips = {{1, 1, 1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1}};
@@ -1019,7 +1017,7 @@ PartTracts[tracts_] := Block[{tmp, sts, st},
 (*CombineROIs*)
 
 
-CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not, test},
+CombineROIs[rois : {{_?StringQ, _?ListQ} ..}] := Block[{or, and, not},
 	or = Select[rois, (ToLowerCase[#[[1]]]==="or") &][[All, 2]];
 	or = If[or === {}, 1, Clip[Total[or], {0, 1}]];
 
@@ -1146,8 +1144,8 @@ PlotTracts[file_String, opts : OptionsPattern[]] := PlotTracts[##, opts] & @@ Im
 PlotTracts[tracts_, voxI_, opts : OptionsPattern[]] := PlotTracts[tracts, voxI, 0, opts]
 
 PlotTracts[tracts_, voxI_, dimI_, OptionsPattern[]] := Block[{
-		range, vox, size, select, opts, col, tube, line, plot, colOpt, 
-		met, plotRange, max, colFunction, colArray, sc, n, scale, red, qual, scaleF
+		range, vox, size, select, opts, col, plot, colOpt,
+		met, plotRange, max, colFunction, colArray, scale, red, qual, scaleF
 	},
 
 	(*Graphics`RenderTiming*)
@@ -1267,7 +1265,7 @@ MakeArrayColor[tract_, {plotRange_, colFunction_}, {dat_, vox:{_?NumberQ,_?Numbe
 
 MakeConstantColor[tract_, plotRange_] := MakeConstantColor[tract, plotRange, True]
 
-MakeConstantColor[tract_, plotRange_, rand_] := Block[{vals, col},
+MakeConstantColor[tract_, plotRange_, rand_] := Block[{col},
 	ToPackedArray[If[rand,
 		col = Table[Blend[{Darker[plotRange,.2], plotRange, Lighter[plotRange,.2]}, x], {x, 0., 1., 1./10}] /. RGBColor -> List;
 		ToPackedArray[ConstantArray[RandomChoice[col], Length@#1]] & /@ tract
@@ -1301,7 +1299,7 @@ SyntaxInformation[PlotSegmentedTracts] = {"ArgumentsPattern" -> {_, _, _, _, _.,
 PlotSegmentedTracts[tracts_, segments_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := PlotSegmentedTracts[tracts, segments, None, dim, vox, opts]
 
 PlotSegmentedTracts[tracts_, segmentIn_, bonesN_, dim_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, opts : OptionsPattern[]] := Block[{
-		ntr, fran, type, segments, tractsF, tractsFI, ran, rand, colListT, colListC, showF,
+		ntr, fran, type, segments, tractsF, tractsFI, ran, colListT, colListC, showF,
 		ref, bone, muscle, tract, tracksSel, lengths, nTracts, sel, mon, size, output, colFunc,
 		sizeT, qual, opa, ord
 	},
@@ -1524,7 +1522,7 @@ ExportTractsDefault[file_, rule_, ___] := Block[{
 
 SyntaxInformation[ExportTCK] = {"ArgumentsPattern" -> {_, _, _, _.}};
 
-ExportTCK[file_, tractsI_, vox_, dim_] := Block[{wlType, bo, count, hdr, off, header, offI, tractsOut, stream},
+ExportTCK[file_, tractsI_, vox_, dim_] := Block[{wlType, bo, count, hdr, off, header, offI},
 	{wlType, bo} = {"Real32", -1};
 
 	count = Length@tractsI;

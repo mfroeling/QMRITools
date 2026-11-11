@@ -247,7 +247,7 @@ AngleCalc::dist =
 "Unknown option (`1`), options can be. \"0-180\", \"0-90\" or \"-90-90\"."
 
 ConcatenateDiffusionData::dim = 
-"data, grad and bval should be the same length: data `1` / grad `2` / bval `2`."
+"data, grad and bval should be the same length: data `1` / grad `2` / bval `3`."
 
 
 (* ::Section:: *)
@@ -282,7 +282,7 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, opts:OptionsPattern[]] := TensorC
 
 TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block[{
 		output, robust, con, kappa, parallel, mon, method, func, outliers, outFit, dataFit, residual, cTens,
-		bmat, bmatV, data, dataL, depthD, dirD, dirB, mask, coor, dim, vox, start, dint, fitFun, fitResult, 
+		bmat, bmatV, data, dataL, depthD, dirD, dirB, mask, coor, vox, start, dint, fitFun, fitResult, 
 		s0, tensor, gradField
 	},
 
@@ -389,40 +389,6 @@ TensorCalc[dat_, grad_?MatrixQ, bvec_?VectorQ, coil_, OptionsPattern[]] := Block
 
 
 (* ::Subsubsection::Closed:: *)
-(*TensCholeskySolve*)
-
-
-(*Solve for the tensor fit:(bmat^T.(w bmat)).x=bmat^T.(w ls).w via Cholesky decomposition instead of LinearSolve*)
-TensCholeskySolve = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {w, _Real, 1}}, 
-	Block[{bmatT, a, b, n, l, y, x, piv},
-		bmatT = Transpose[bmat];
-		(*weighted normal equations:a.x=b*)
-		a = bmatT . (w bmat);
-		b = bmatT . (w ls);
-		n = Length[b];
-		l = 0. a;
-		(*Cholesky-Banachiewicz decomposition:a==l.Transpose[l], l lower triangular*)
-		Do[Do[
-			piv = a[[i, j]] - Sum[l[[i, k]] l[[j, k]], {k, 1, j - 1}];
-			(*clamp a non-positive pivot instead of letting Sqrt produce a complex*)
-			If[i == j,
-				l[[i, i]] = Sqrt[Max[piv, 10^-12]],
-				l[[i, j]] = piv /l[[j, j]]
-			]
-			, {j, 1, i}], {i, 1, n}];
-		(*forward substitution:solve l.y==b*)
-		y = 0. b;
-		Do[y[[i]] = (b[[i]] - Sum[l[[i, k]] y[[k]], {k, 1, i - 1}]) / l[[i, i]], {i, 1, n}];
-		(*back substitution:solve Transpose[l].x==y*)
-		x = 0. b;
-		Do[x[[i]] = (y[[i]] - Sum[l[[k, i]] x[[k]], {k, i + 1, n}]) / l[[i, i]], {i, n, 1, -1}];
-		(*give output*)
-		x
-	]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
-
-
-(* ::Subsubsection::Closed:: *)
 (*FindOutliers*)
 
 
@@ -440,7 +406,7 @@ FindTensOutliers = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {
 	If[Total[ls] >1 ,
 
 		(*Step1: initial LLS fit*)
-		sol = TensCholeskySolve[ls, bmat, 0. ls +1];
+		sol = CholeskySolve[ls, bmat, 0. ls +1];
 
 		(*check if LLS fit is plausible, i.e. s0 > 0*)
 		If[Last[sol] > eps,
@@ -461,7 +427,7 @@ FindTensOutliers = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {
 						(*c. Recompute the weights according to Eq. [13].*)
 						wts = 1 / (1 + (res / mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
-						sol = TensCholeskySolve[ls, bmat,  wts];
+						sol = CholeskySolve[ls, bmat,  wts];
 						(*e. Check convergence*)
 						If[Max[Abs[sol - soli]/(Abs[soli] + eps)] <= con , Break[]];
 					];
@@ -473,7 +439,7 @@ FindTensOutliers = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {
 				bmat2 = bmat / fitE;
 
 				(*Step 4: Initial LLS fit in * domain*)
-				sol = TensCholeskySolve[ls2, bmat2, 0. ls2 +1];
+				sol = CholeskySolve[ls2, bmat2, 0. ls2 +1];
 				
 				(*Step 5: Compute a robust estimate for homoscedastic regression using IRLS.*)
 				Do[
@@ -488,7 +454,7 @@ FindTensOutliers = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {
 						(*c. Recompute the weights according to Eq. [13].*)
 						wts = 1 / (1 + (res / mad)^2)^2;
 						(*d. Perform WLLS fit with new weights*)
-						sol = TensCholeskySolve[ls2, bmat2, wts];
+						sol = CholeskySolve[ls2, bmat2, wts];
 						(*e. Check convergence*)
 						If[Max[Abs[sol - soli]/(Abs[soli] + eps)] <= con , Break[]];
 					];
@@ -508,15 +474,15 @@ FindTensOutliers = Compile[{{ls, _Real, 1}, {bmat, _Real, 2}, {con, _Real, 0}, {
 
 		out
 	]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, CompilationOptions -> {"InlineExternalDefinitions" -> True}]
 
 
 (* ::Subsubsection::Closed:: *)
 (*LLS*)
 
 TensMinLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}}, 
-	TensCholeskySolve[dat[[2]], bmat, 1. + 0. dat[[2]]]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+	CholeskySolve[dat[[2]], bmat, 1. + 0. dat[[2]]]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, CompilationOptions -> {"InlineExternalDefinitions" -> True}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -530,10 +496,10 @@ TensMinWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 		mVec = UnitStep[s] Unitize[s];
 		sol = First[bmat];
 		If[Norm[ls] > eps && Total[mVec] > 7,
-			sol = TensCholeskySolve[ls, bmat, mVec s^2];
+			sol = CholeskySolve[ls, bmat, mVec s^2];
 		];
 	sol]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, CompilationOptions -> {"InlineExternalDefinitions" -> True}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -541,7 +507,7 @@ TensMinWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 
 
 TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}}, 
-	Block[{s, ls, eps, mat, cont, itt, mVec, soli, sol0, max, sol, w
+	Block[{s, ls, eps, cont, itt, mVec, soli, sol0, max, sol
 	},
 		eps = 10^-12;
 		{s, ls} = dat;
@@ -558,7 +524,7 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 			itt = 0;
 			cont = 1.;
 			(*initialize using WLLS*)
-			sol = TensCholeskySolve[ls, bmat, 0 s + 1.];
+			sol = CholeskySolve[ls, bmat, 0 s + 1.];
 			(*check for implausible solution (negative s0 or high s0)*)
 			If[!(0 <= Last[sol] <= max), sol = sol0,
 				(*iterative reweighing*)
@@ -566,7 +532,7 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 					(*init iteration values*)
 					soli = sol;
 					(*perform WLLS*)
-					sol = TensCholeskySolve[ls, bmat, mVec Exp[2 (bmat . sol)]];
+					sol = CholeskySolve[ls, bmat, mVec Exp[2 (bmat . sol)]];
 					(*update weight*)
 					(*see if to quit loop*)
 					If[(Last[sol] >= max || Last[sol] <= 0), cont = 0.;	sol = sol0];
@@ -577,7 +543,7 @@ TensMiniWLLS = Compile[{{dat, _Real, 2}, {bmat, _Real, 2}},
 		(*Print[Column@{aa, sol}];*)
 		sol
 	]
-, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages"->False}]
+, RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, CompilationOptions -> {"InlineExternalDefinitions" -> True}]
 
 
 (* ::Subsection:: *)
@@ -1060,7 +1026,7 @@ ConcatenateDiffusionData[data_, grad_, val_, vox_] := Module[{dataout, gradOut, 
 		{dataout, gradOut, valOut} = RemoveIsoImages[dataout, gradOut, valOut];
 		{dataout, gradOut, valOut} = SortDiffusionData[dataout, gradOut, valOut];
 		,
-		Return[Message[ConcatenateDiffusionData::dim, Length[data],Length[grad], Length[val]]];
+		Return[Message[ConcatenateDiffusionData::dim, Length[data],Length[grad], Length[val]]; $Failed];
 	];
 
 	voxOut = If[ListQ[vox] && ! ListQ[vox[[1]]], vox, vox[[1]]];
@@ -1144,7 +1110,7 @@ ResidualCalc[data_?ArrayQ, tensor_?ArrayQ, outlier_?ArrayQ, bmat_, OptionsPatter
 	dimD = Dimensions[If[ArrayDepth[dat] == 4, dat[[All,1]], dat[[1]]]];
 	dimT = Dimensions[tensor[[1]]];
 
-	If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datDim, Dimensions[data], Dimensions[tensor]]]];
+	If[dimD != dimT || Length[tensor]!=7, Return[Message[ResidualCalc::datDim, Dimensions[data], Dimensions[tensor]]; $Failed]];
 
 	(*remove outliers*)
 	fit = If[MatrixQ[bmat], bmat . tensor, Transpose@MapThread[Dot, {bmat, Transpose@tensor}]];
@@ -1219,7 +1185,7 @@ RPBMFunctionI[tm_, pars_?MatrixQ] := Transpose[RPBMFunctionI[tm, #] & /@ pars]
 RPBMFunctionI[tm_, {tau_?NumberQ, zeta_?NumberQ}] := RPBMFunctionI[tm, {1., tau, zeta}]
 
 RPBMFunctionI[tm_, {d0_?NumberQ, tau_?NumberQ, zeta_?NumberQ}] := Block[{
-		z, x, a, b, c, fun, y, sy, int, const, nt, out
+		z, x, a, b, c, y, int, const
 	},
 	(*Fieremans E, Lemberskiy, et al. NMR in Biomedicine 2017; doi.wiley.com/10.1002/nbm.3612*)
 
@@ -1294,7 +1260,7 @@ GetRPBMValues[sol_, inf_?BooleanQ] := GetRPBMValues[sol, {"none", 0}, inf]
 GetRPBMValues[sol_, par_] := GetRPBMValues[sol, par, True]
 
 GetRPBMValues[sol_, par_, inf_?BooleanQ] := Block[{
-		con, d0, zeta, tau, dInf, td, tr, i, sv, a, kappa
+		d0, zeta, tau, vec
 	},
 
 	(*get the values from the solution*)

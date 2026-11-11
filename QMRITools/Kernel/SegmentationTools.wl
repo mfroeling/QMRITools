@@ -398,6 +398,9 @@ CompareSegmentations::met = "Method `1` not recognized, it should be one of `2`.
 ApplySegmentationNetwork::node = "The node ``` is not part of the network"
 
 
+ImportITKLabels::file = "`1` is not a file or a known asset."
+
+
 ShowTrainLog::nolog = "No log file in `1` has at least `2` progress entries."
 
 
@@ -494,14 +497,33 @@ $SegmentationGroups = <|
 $SegmentationLabels = Association[# -> $SegmentationGroups[#, "OutputLabels"]& /@ Keys[$SegmentationGroups]];
 
 
+(*the networks, classifier and labels SegmentData uses for a group, for reporting in the output json*)
+SegmentationInfo[what_, dim_] := Block[{grp, asset},
+	grp = $SegmentationGroups[what];
+
+	(*asset name with the file it resolves to, the file name holds the network version*)
+	asset = If[StringQ[#], <|"Asset" -> #, "File" -> If[StringQ[#], FileNameTake[#], "missing"]&@GetAssetLocation[#]|>, "NotImplemented"]&;
+
+	If[!AssociationQ[grp], <|"Group" -> what, "Error" -> "unknown segmentation group"|>,
+		<|
+			"Group" -> what, "Dimension" -> dim, "Locations" -> grp["Locations"], "Split" -> grp["Split"],
+			"Classify" -> grp["Classify"], "Classifier" -> If[grp["Classify"] === "None", "None", asset["Body"]],
+			"Networks" -> AssociationMap[asset[$SegmentationLocations[#, "Net" <> dim]]&, grp["Locations"]],
+			"OutputLabels" -> grp["OutputLabels"]
+		|>
+	]
+]
+
+
 (* ::Subsection::Closed:: *)
 (*CopyTrainedNetwork*)
 
 
 CopyTrainedNetwork[file_, loc_] := CopyTrainedNetwork[file, loc, ""]
 
-CopyTrainedNetwork[file_, loc_, dim_] := Block[{fileIn, fileOut},
-	fileOut = FileNameJoin[{First[PacletFind["QMRITools"]]["Location"], "NeuralNetworks", Switch[loc,
+CopyTrainedNetwork[file_, loc_, dim_] := Block[{fileIn, fileOut, name},
+	(*network file name for the location*)
+	name = Switch[loc,
 		"HeadNeck", "N1_HeadNeck_",
 		"Shoulder", "N2_Shoulder_",
 		"Torso", "N3_Torso_",
@@ -511,9 +533,16 @@ CopyTrainedNetwork[file_, loc_, dim_] := Block[{fileIn, fileOut},
 		"Arm", "N7_Arm_",
 		"PosSide", "Body_Pos_Side",
 		_, Return[$Failed]
-	] <> dim <> ".wlnet"}];
-	fileIn = If[DirectoryQ[file], Last[SortBy[FileNames["*.wlnet",file], FileDate]], If[
-		FileExtension[file]==="wlnet", file, Return[$Failed]]];
+	];
+	fileOut = FileNameJoin[{First[PacletFind["QMRITools"]]["Location"], "NeuralNetworks", name <> dim <> ".wlnet"}];
+
+	(*newest network in a folder or the given network file*)
+	fileIn = Which[
+		DirectoryQ[file], Last[SortBy[FileNames["*.wlnet", file], FileDate], $Failed],
+		FileExtension[file] === "wlnet", file,
+		True, $Failed
+	];
+	If[fileIn === $Failed, Return[$Failed]];
 	CopyFile[fileIn, fileOut, OverwriteTarget -> True]
 ]
 
@@ -561,7 +590,7 @@ ImportITKLabelsI[file_]:=ImportITKLabelsI[file, "List"]
 
 ImportITKLabelsI[file_, outType_] := Block[{fileL, lines, muscleNames, muscleLabels},
 	fileL = If[FileExistsQ[file], file, GetAssetLocation[file]]; 
-	If[fileL === $Failed, Return["specified name is not file or asset"]];
+	If[fileL === $Failed, Return[Message[ImportITKLabels::file, file]; $Failed]];
 	lines = Select[Import[fileL, "Lines"], StringTake[#, 1] =!= "#" &];
 
 	(*extract names and numbers*)
@@ -654,7 +683,7 @@ FindBodyPos[class_] := FindBodyPos[class, False, False]
 FindBodyPos[class_, mon_]:=FindBodyPos[class, mon, False]
 
 FindBodyPos[class_, mon_, debug_] := Block[{selection, locations, locationsR, len, classI, classN, n, xVars, eVars, dVars,
-	pad, x, e, d, cons, sol, classF, offset, what, lab, pos, found, classIn, best, plot},
+	pad, x, e, d, cons, sol, classF, offset, what, lab, pos, found, classIn, plot},
 
 	(*pull per-location classifier ranges and offsets from the central location table*)
 	locations = Thread[Range[Length[$BodyPositionClasses]] -> $BodyPositionClasses];
@@ -742,8 +771,7 @@ PatchesToData[patches_, location_] := PatchesToData[patches, location, Max /@ Tr
 PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}] := PatchesToData[patches, location, dim, {}]
 
 PatchesToData[patches_, location_, dim : {_?IntegerQ, _?IntegerQ, _?IntegerQ}, labs_?ListQ] := Block[{
-		sel, zero, a1, a2, b1, b2, c1, c2, dat, wt,
-		seg, lab, pos, si, pi, over
+		zero, seg, lab, pos, si, pi
 	},
 
 	If[labs === {},
@@ -933,7 +961,7 @@ SegmentData[datI_, vox_?VectorQ, what_?StringQ, opts:OptionsPattern[]] := Segmen
 
 SegmentData[{datI_, vox_?VectorQ}, what_?StringQ, OptionsPattern[]] := Block[{
 		dev, max, mon, patch, pts, dim ,loc, net, seg, all, data, mask, conf, dimR, crop,
-		time, timeAll, netFile, monO, sDim, dimI, rescale, labs, netOut, bothOut, GetNetwork
+		time, timeAll, monO, sDim, dimI, rescale, labs, netOut, bothOut, GetNetwork
 	},
 
 	SetMXenvironment["StartSegment"];
@@ -1078,21 +1106,23 @@ SplitDataForSegmentation[data_?ArrayQ, seg_?ArrayQ, what_?StringQ, opt:OptionsPa
 SplitDataForSegmentation[data_?ArrayQ, opt:OptionsPattern[]] := SplitDataForSegmentation[data, "Legs", opt]
 
 SplitDataForSegmentation[data_?ArrayQ, what_?StringQ, opt:OptionsPattern[]] := Block[{
-		dim, whatSide, side, whatPos, pos, dat, right, left, cut, pts, loc, 
-		time, monO, mon, overP, dev, over, locs
+		dim, whatSide, side, whatPos, dat, right, left, cut, pts, loc,
+		monO, mon, overP, dev, over, locs, class
 	},
 	dim = Dimensions[data];
 	{monO, dev, overP} = OptionValue[{Monitor, TargetDevice, SplitOverlap}];
 	mon = If[monO, MonitorFunction, List];
 
 	(*Based on the body location tag decide what to do with the classification*)
-	{whatSide, whatPos} = Switch[$SegmentationGroups[what, "Classify"],
+	class = Switch[$SegmentationGroups[what, "Classify"],
 		"Position", ClassifyData[data, "Body", TargetDevice -> "CPU", Monitor -> monO],
 		"Side", {ClassifyData[data, "Side", TargetDevice -> "CPU", Monitor -> monO], 
 			{#, {1, dim[[1]]}}& /@ $SegmentationGroups[what, "Locations"]},
 		"None", {"Both", {#, {1, dim[[1]]}}& /@ $SegmentationGroups[what, "Locations"]},
-		_, Return[$Failed];
+		_, $Failed
 	];
+	If[class === $Failed, Return[$Failed]];
+	{whatSide, whatPos} = class;
 	mon[whatSide, "Data contains sides: "];
 
 	(*based on side cut data or propagate*)
@@ -1155,19 +1185,21 @@ SyntaxInformation[ApplySegmentationNetwork] = {"ArgumentsPattern" -> {_, _, _., 
 
 (*Apply segmentation network on folder of datasets*)
 ApplySegmentationNetwork[inp_?(!(TensorQ[#, NumericQ] || StringQ[#])&), rest___] := Block[{
-		dat, datFol, outFol, inLab, outLab, i, rule, files, netI, node, seg, vox, im
+		dat, datFol, outFol, inLab, outLab, i, rule, files, seg, vox, im, in
 	},
 	(*Figure out what the input is *)
-	{{datFol, outFol}, {inLab, outLab}, i} = Which[
+	in = Which[
 		Length[inp] == 2, Which[
 			VectorQ[inp, StringQ], {inp, {"data", "label_NN"}, 1},
 			VectorQ[First@inp, StringQ] && VectorQ[Last@inp, StringQ], Append[inp, 1],
 			VectorQ[First@inp, StringQ] && IntegerQ[Last@inp], {First@inp, {"data", "label_NN"}, Last@inp},
-			True, Return[$Failed]
+			True, $Failed
 		],
 		Length[inp] === 3, inp,
-		True, Return[$Failed]
+		True, $Failed
 	];
+	If[in === $Failed, Return[$Failed]];
+	{{datFol, outFol}, {inLab, outLab}, i} = in;
 
 	(*get the files from the input folder and define rule for output folder*)
 	rule = {"_" <> inLab -> "_" <> outLab, datFol -> outFol};
@@ -1189,7 +1221,7 @@ ApplySegmentationNetwork[dat_, netI_, opt:OptionsPattern[]] := ApplySegmentation
 
 ApplySegmentationNetwork[dat_, netI_, node_, OptionsPattern[]] := Block[{
 		dev, pad , lim, data, crp, net, dim, time, nodes, mem, dimO, size,
-		patch, pts, seg, mon, lab, nClass, precision, normF, 
+		patch, pts, seg, mon, nClass, precision, normF,
 		is2D, netOut, segRaw, conf, merge
 	},
 
@@ -1279,7 +1311,7 @@ SyntaxInformation[FindPatchDim] = {"ArgumentsPattern" -> {_, _, _.}};
 FindPatchDim[net_, dim_] := FindPatchDim[net, dim, 8]
 
 FindPatchDim[net_, dim_, lim_] := Block[{
-		dz, dy, dx, inp, sz, sy, sx, base, max, out, rat, netMem, x, y, z,
+		dz, dy, dx, inp, sz, sy, sx, base, out, rat, netMem, x, y, z,
 		budget, zMin, zC, yMin, yC, xC, zMax, yMax, xMax
 	},
 
@@ -2011,7 +2043,7 @@ GetKernels[nProducers_, batch_, batchFunction_, trainFunc_] := Append[
 	(*the trainer kernel, sourcing batches by round-robin polling the queue slots*)
 	ParallelSubmit[CheckAbort[First@{trainFunc[
 		(*the batch function*)
-		Block[{startTime, chunk},
+		Block[{startTime},
 			startTime = AbsoluteTime[];
 			Catch[While[True, Do[
 				index = Mod[index, nProducers] + 1;
@@ -2070,7 +2102,7 @@ AugmentTrainingData[dat_?ArrayQ, vox_, aug_?AssociationQ, opts:OptionsPattern[]]
 
 
 AugmentTrainingDataI[{dat_?ArrayQ, seg_}, vox_, aug_?AssociationQ, OptionsPattern[]] := Block[{
-		datT, segT, cr, w, r, t, s, dim, flip, rot, trans, scale, noise, blur, bias, isNot2D, datOnly, datC
+		datT, segT, cr, w, s, dim, flip, rot, scale, noise, blur, bias, isNot2D, datOnly, datC
 	},
 
 	(*prep data*)
@@ -2197,7 +2229,7 @@ MakeBlockMask[dim_, n_:1] := Table[SparseArray[DeleteDuplicates[makeBoxC[dim]] -
 
 makeBoxC = Compile[{{dim, _Integer, 1}}, Block[{
 		out, len, rand, size, mc, center, raw, coor, ax, ay, az, theta, 
-		mat, rot, box, noise, noiseN, diff
+		mat, rot, box, noise, noiseN
 	},
 	
 	len = Times @@ dim;
@@ -2268,7 +2300,7 @@ GetTrainData[dataSets_, nBatch_, patch_, opts:OptionsPattern[]] := GetTrainData[
 GetTrainData[dataSets_, nBatch_, patch_, nClass_, opts:OptionsPattern[]]:= GetTrainData[dataSets, nBatch, {patch, nClass}, opts]
 
 GetTrainData[dataSets_, nBatch_, {patch:{__Integer}, nClass_}, OptionsPattern[]] := Block[{
-		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad, sel, is2D, pretrain, nP, mask, fill
+		itt, datO, segO, dat, seg, vox, augI, aug, nSet, pad, sel, is2D, pretrain, nP, mask
 	},
 
 	itt = 0;
@@ -2416,7 +2448,7 @@ PrepareTrainingData[labFol_?StringQ, outFol_?StringQ, opt:OptionsPattern[]] := P
 
 PrepareTrainingData[{labFol_?StringQ, datFol_?StringQ}, outFol_?StringQ, OptionsPattern[]] := Block[{
 		labT, datT, inLab, outLab, test, segFiles, datFiles, name, i, df, voxOut, dimSeg, dimDat,
-		seg, err, vox, voxD, dat, im, nl, outFile, gr, clean, legend, head, out, segSl, outT
+		seg, err, vox, voxD, dat, im, outFile, clean, legend, head, out, segSl, outT
 	},
 
 	{labT, datT, outT, inLab, outLab, test, clean, voxOut, segSl} = OptionValue[{LabelTag, DataTag, OutputTag, 

@@ -15,6 +15,7 @@ This file is the index for all agent documentation. The guides live in the `agen
 | [ToolboxStructure.md](../agents/ToolboxStructure.md) | changing the loader (`Kernel/QMRITools.wl`), `PacletInfo.wl`, the package list, assets or docs; adding a package or public function; "works only on second load" problems | paclet layout, assets per OS, the loader step by step, the depth-first cascade and required second `Get` pass (shadow symbols), dev reload caveats, package map with measured dependencies and cycles, documentation and build, doc gaps, checklists |
 | [MuscleBidsTools.md](../agents/MuscleBidsTools.md) | changing `MuscleBidsTools.wl`, or reading or editing a study `config.json` | the 7-step Muscle-BIDS pipeline: call chain, folder layout, file naming, every config key the code reads, check files, history of the old `BIDS-config.docx`, quirk list, recipes, the user manual `QMRITools/BIDS Example/BIDS-config.md` and how to rebuild its PDF |
 | [SegmentationTools.md](../agents/SegmentationTools.md) | changing `SegmentationTools.wl`, or working on segmentation inference or network training | anatomy tables, the `SegmentData` pipeline, patching, `TrainSegmentationNetwork` and producer kernels, augmentation and masked pretraining, data prep, metrics, quirk list, recipes |
+| [DixonTools.md](../agents/DixonTools.md) | changing `DixonTools.wl`, Dixon processing in the BIDS pipeline, or investigating water-fat swaps or fat fraction bias | the BIDS Dixon chain, signal model and units, `DixonPhase` (unwrap, alias selection), the IDEAL fit and its degeneracies, why swaps happen, quirk list (fixed and open, incl. precession and left-right gradient), real-data validation, phantom and light-test recipes |
 
 ### Cross-references between the guides
 
@@ -28,7 +29,7 @@ Each guide's header links to the related guides. The shared topics are:
   §2–3). A BIDS config's `Segment.Location` is a `what` group from `$SegmentationGroups`. `MuscleBidsAnalysis` uses the
   label files and `MuscleLabelToName` (SegmentationTools.md §9).
 - **Quirk lists.** Each code map ends with a numbered quirk table (MuscleBidsTools.md §10: Q1–Q14,
-  SegmentationTools.md §10: Q1–Q13). Each entry is marked fixed, intentional, or open. **Ask the user before fixing an
+  SegmentationTools.md §10: Q1–Q13, DixonTools.md §7: Q1–Q23). Each entry is marked fixed, intentional, or open. **Ask the user before fixing an
   open one.**
 
 ## Essentials

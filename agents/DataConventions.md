@@ -78,17 +78,25 @@ options.
 - **Dixon** (`DixonReconstruct`, `DixonPhase`, `SimulateDixonSignal`):
   - fractions (`watfr`, `fatfr`) are 0–1;
   - B0 is in Hz;
-  - phases are in radians (−π…π);
+  - the input phase data are in radians (−π…π), the fitted phase maps (`phi0`, bipolar) are in cycles;
   - field strength is in tesla (`DixonFieldStrength`).
-- **Echo times for Dixon: the code works in seconds, but the usage strings say ms.**
+- **Echo times for Dixon are in seconds** (the usage strings were corrected to say so in 2026-11).
   - The model multiplies `2π · echo` by fat frequencies in Hz (field × γ × ppm).
   - The initial T2\* is clipped to `{0, 0.25}`, i.e. 250 ms in seconds.
   - The BIDS pipeline passes the json `EchoTime` (seconds) directly and later multiplies `t2star` by 1000 for
     display.
 
-  So T2\* and R2\* come out in s and 1/s. The `DixonReconstruct` usage ("T2star map is in ms") and the
-  `SimulateDixonSignal` usage ("echo in ms … T2 in ms") disagree with this. This is code evidence, not a verified
-  round-trip. Confirm with the user before relying on it or changing either.
+  So T2\* and R2\* come out in s and 1/s, confirmed by the user and a synthetic round-trip. Dixon phases
+  (`phi0`, bipolar) are in cycles. `SimulateDixonSignal[echo, fr, ...]` takes the *water* fraction `fr`.
+- With complex amplitudes (`DixonConstrainPhase -> False`, the default and the BIDS setting) `phi0` is not fitted, because
+  the amplitude phases already carry it. The `phi0` output is the phase of W+F at TE = 0. With real amplitudes
+  (`DixonConstrainPhase -> True`) `DixonReconstruct` first fits complex amplitudes and uses that fit as the start.
+- `DixonPhase` measures B0 from a pair of in-phase echoes, so B0 is only known modulo 1/dt (500 Hz for the motion
+  protocol, echoes 2 and 4). Per connected object it picks the alias whose water-fat model residual is lowest; a wrong
+  alias is a water-fat swap. Local swaps inside one object (e.g. the end slices of a calf stack) are not resolved.
+- `DixonToPercent` uses magnitude discrimination (Liu, 10.1002/mrm.21301) in both modes: the minor component is
+  `1 - major/|W+F|`, so noise can make it slightly negative. `clip` only sets the range (`{0,1}` or `{-0.1,1.1}`).
+  For ROI means keep the negatives (`DixonClipFraction -> False`); clipping at 0 biases low fractions upward.
 - Philips raw Dixon scaling used in conversion: magnitude `1000 x / 2047`, real/imag `1000 (x − 2047) / 2047`, phase
   `π (x − 2047) / 2047`.
 - In the BIDS analysis output (xlsx), `fatfr` is shown ×100 (percent) and Dixon `t2star` ×1000 (ms). The stored maps
