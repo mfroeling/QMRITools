@@ -635,7 +635,8 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 - `ManageCheckFiles[dir]`: TabView per step (Process, Merge, Segment, Tractography, Analysis) of the **expected** check
   files with their status; existing ones can be selected and deleted per tab to force a rerun. Each step has a subtab
   per data type (`Type`); Analysis has `xls` and `img` subtabs (`<key> xls` when there are several analysis keys, so
-  images can be redone without redoing the tables); the buttons act on one subtab. Reload rescans the
+  images can be redone without redoing the tables); with more than one data type a last **All** subtab lists all check
+  files of the step; the buttons act on one subtab. Reload rescans the
   expected check files (new subjects or datasets appear), shows the scan time and keeps the selected tabs. The delete
   confirmation lists the files. The expected names
   and the conditions under which a worker writes them (Process: method per type, Analysis `img`: not with

@@ -3445,10 +3445,10 @@ ImportMMLabels[file_] := Block[{alt, labMM, anatMM, sideMM, numMM, nameMM},
 		"semispinalis cervicis and multifidus" -> "semispinalis cervicis"
 		};
 
-	labMM = Tabular[Import[file, "RawJSON"]["labels"]];
-	anatMM = Normal[labMM[[All, "anatomy"]]] /. alt;
-	sideMM = Normal[labMM[[All, "side"]]];
-	numMM = Normal[labMM[[All, "value"]]];
+	labMM = Import[file, "RawJSON"]["labels"];
+	anatMM = labMM[[All, "anatomy"]] /. alt;
+	sideMM = labMM[[All, "side"]];
+	numMM = labMM[[All, "value"]];
 	nameMM = (StringReplace[
 		StringReplace[StringRiffle[#, " "], " " -> "_"], 
 		"_No_side" -> ""] & /@ 

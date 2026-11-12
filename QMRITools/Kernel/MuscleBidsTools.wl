@@ -1389,12 +1389,15 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 			Dynamic[upd; BidsTable[row @@@ #2, {"", "Subject", "Check file", "Status", "Version", "Date"}]]
 		}]&;
 
-		(*tabs per step and data type*)
+		(*tabs per step and data type, with an All tab when there is more than one data type*)
 		Dynamic[
 			If[checks === None || StringQ[checks],
 				Row[{Button["Reload", scan[], Method -> "Queued"], "  "<>If[StringQ[checks], checks, "Not scanned yet, press Reload"]}],
 				TabView[KeyValueMap[Function[{step, list}, step -> If[list === {}, "No check files expected",
-					TabView[KeyValueMap[#1 -> tab[step, #2]&, GroupBy[list, First -> Rest]],
+					TabView[Join[
+						KeyValueMap[#1 -> tab[step, #2]&, GroupBy[list, First -> Rest]],
+						If[Length[Union[list[[All, 1]]]] > 1, {"All" -> tab[step, list[[All, 2;;]]]}, {}]
+					],
 						Dynamic[Lookup[sub, step, 1], (sub = Append[sub, step -> #])&], ControlPlacement -> Top]
 				]], checks], Dynamic[ind], ControlPlacement -> Top]
 			]

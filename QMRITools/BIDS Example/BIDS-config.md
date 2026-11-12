@@ -1429,7 +1429,8 @@ them run again.
 **What you see:** one tab per processing step: **Process**, **Merge**, **Segment**, **Tractography** and **Analysis**. Each
 tab lists the check files that the step expects for each subject, with a status (`done`, `track`, `seg` or `error`), the
 version of QMRITools that made it, and the date. A file that does not exist yet is shown as `missing` in red, and a file
-that cannot be read as `unreadable` in red.
+that cannot be read as `unreadable` in red. Within a step there is a subtab per data type, and when there is more than
+one data type, a last **All** subtab that lists all check files of that step together.
 
 - Tick a file to select it (only existing files have a tick box), or use **Select all** and **Deselect all**.
 - **Delete selected** removes the selected check files of that tab after you confirm. The next run of that step then
