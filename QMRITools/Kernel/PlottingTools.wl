@@ -526,7 +526,7 @@ DataString[dim_]:=ReleaseHold[{
 
 
 MultiFileSave[plot_,label_,range_,type_,size_]:=
-Module[{input,lab},
+Module[{input,lab, pl},
 	input=SystemDialogInput["Directory", Directory[]];
 	If[input===$Canceled,Return[Message[PlotData::can, "Export multiple files"]]];
 
@@ -661,7 +661,7 @@ CheckBoard[dim_, check_] := Image[Table[If[
 
 
 OpacityPlot[data_, ran_, label_, ps_, color_, legend_, frame_, flip_, op_, ccolor_, aspect_, leg_]:=Block[
-	{a, b, pdata, pdatb, psize, ratio, ima, imb, im, lc, lr, tks},
+	{a, b, pdata, pdatb, psize, ratio, ima, imb, im, lc, lr, tks, rana, ranb},
 
 	{a,b}=If[flip,{2,1},{1,2}];
 	{pdata,pdatb} = JoinResc[data[[a]],data[[b]]];
@@ -1507,7 +1507,8 @@ PlotData3D[dat_?ArrayQ, v:{_?NumberQ, _?NumberQ, _?NumberQ}:{1,1,1}] := DynamicM
 SyntaxInformation[LegendImage] = {"ArgumentsPattern" -> {_, _, _}};
 
 LegendImage[colf_, w_, lab_] := Block[{rast, lc, mc, rc},
-	rast = Raster[{Range[256]/256.}, {{0, 0}, {1, 1}}, ColorFunction -> colf];
+	(*colors computed in the kernel, the front end does not know the scientific color schemes*)
+	rast = Raster[{List @@ ColorConvert[ColorData[colf][#], "RGB"] & /@ (Range[256]/256.)}, {{0, 0}, {1, 1}}];
 	{lc, mc, rc} = If[ColorDistance[ColorData[colf][#], White] > ColorDistance[ColorData[colf][#], Black], 
 		White, Black] & /@ {0, 0.5, 1};
 
@@ -1545,7 +1546,7 @@ MakeSliceImages[selData_, vox:{_, _, _}, opts:OptionsPattern[]]:=MakeSliceImages
 
 MakeSliceImages[selData_, {selMask_, vals_?ListQ}, vox:{_,_,_}, OptionsPattern[]]:=Block[{
 	colo, pdat, ran, ratio, datf, size, colF, mdat, rule, bar, pl1, pl2, 
-	dim, dim1, dim2, d1, d2, pl ,ml, sz, n, imSize, clip
+	dim, dim1, dim2, d1, d2, pl ,ml, sz, imSize, clip, cols
 	},
 
 	colo = OptionValue[ColorFunction];
@@ -1625,7 +1626,7 @@ SyntaxInformation[GetSlicePositions]={"ArgumentsPattern"->{_,_.,OptionsPattern[]
 GetSlicePositions[data_, opts:OptionsPattern[]]:=GetSlicePositions[data, {1,1,1},opts]
 
 GetSlicePositions[data_,vox_,OptionsPattern[]]:=Block[{
-	dat,peaks,len,fil,ran,pers,min,max,result,num,s1,s2,s3,mid,mn,tot},
+	dat,peaks,len,fil,ran,pers,result,num,s1,s2,s3,mid,mn,tot},
 	(*get the max intensity slice*)
 	pers={{2,3},{1,3},{1,2}};
 	{s1,s2,s3}=OptionValue[DropSlices];
@@ -1828,7 +1829,7 @@ Options[GenerateRotationFrames] = {
 	ImageSize -> 500
 };
 
-GenerateRotationFrames[gr3D_, nFrames_, OptionsPattern[]] := Module[{initVp},
+GenerateRotationFrames[gr3D_, nFrames_, OptionsPattern[]] := Module[{opt, gr, pt, cent},
 	If[ListQ[gr3D],
 		opt = Thread[{ViewPoint, ViewVertical, ViewAngle, ViewCenter} -> ({ViewPoint, ViewVertical, ViewAngle, ViewCenter} /. AbsoluteOptions@First@gr3D)];
 		ImageAssemble/@Thread[GenerateRotationFrames[Show[#, opt],nFrames]&/@gr3D]
@@ -2260,7 +2261,7 @@ Column[(Show[plots[[x, clip, #]], PlotRange -> ({{start, stop}, {{-Gx, Gx}, {-Gy
 
 SyntaxInformation[ColorFAPlot] = {"ArgumentsPattern" -> {_}}; 
 
-ColorFAPlot[tens_] := DynamicModule[{FA, eig, eigv, mid, eigFA, mask},
+ColorFAPlot[tens_] := DynamicModule[{FA, eig, eigv, mask},
 	mask = Mask[Mean@tens[[1;;3]], 0.00001, MaskSmoothing->False];
 
 	{eig, eigv} = EigensysCalc[tens, PerformanceGoal -> "Quality"];
@@ -2306,7 +2307,7 @@ Options[LoessPlot] = {
 };
 
 LoessPlot[data_, opts : OptionsPattern[]] := Block[{
-		bw, deg, ker, confLevel, pred, pPoints, perf, xMin, xMax, yMin, yMax,
+		bw, deg, ker, pred, pPoints, perf, xMin, xMax, yMin, yMax,
 		xGrid, n, max, yFit, error, predError, boot , sel, z, met
 	},
 

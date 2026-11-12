@@ -159,7 +159,7 @@ FindActivations[data_, ops : OptionsPattern[]] := FindActivationsI[NormalizeData
 FindActivations[data_, mask_, ops : OptionsPattern[]] := FindActivationsI[
 		NormalizeData[data, DilateMask[mask, OptionValue[MaskDilation]], NormalizeMethod -> "Volumes"], ops]
 
-FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, dat, act, mn ,tr, itt, back},
+FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, dat, act, mn ,tr, itt, back, output},
 
 	(*Get the options*)
 	{met, {sc, fr}, {start, stop}, itt, back, output} = OptionValue[{ThresholdMethod, ActivationThreshold, 
@@ -246,7 +246,7 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 
 
 MeanThresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {back, _Real, 0}}, Block[
-	{ti, mn, sd, tr, mask},
+	{ti, mn, sd, tr},
 	mn = Mean[t];
 	If[mn <= back,
 		{0., 0., 0., 0.},

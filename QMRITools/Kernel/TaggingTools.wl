@@ -188,7 +188,7 @@ MakeImage[im_] := Image[Rescale@N@im, ImageSize -> 200]
 ImageToMotion[im0_, im1_, waveVecs_] := Block[{
 		imRef, imDefi, imDef, dim, row, col, band, uxi, uyi, x, y, dGrid, ker, pad, iwRef, iwDef, win,
 		mask, bf, wrg, xmin, xmax, ymin, ymax, iwAux, jm1, jm2, jmD1, jmD2, f1, f2, g1, g2, fmap, gmap, wmap, thrW, bf2, dUr,
-		weightL, weightH, phase, tmap, phaseEst, nmap, dU, dUx, dUy
+		weightL, weightH, phase, tmap, phaseEst, nmap, dU
 	},
 
 	(*initialize parameters and band filters*)
@@ -297,7 +297,7 @@ ImageToWave[data_, waveVecs_] := Block[{
 (*MotionToImage*)
 
 
-MotionToImage[data_, ux_, uy_] := Block[{dim, xcor, ycor, intdata, intFun, zx, zy},
+MotionToImage[data_, ux_, uy_] := Block[{dim, xcor, ycor, intFun, zx, zy},
 	(*get the cordinate system*)
 	dim = Dimensions[data];
 	xcor = Transpose@ConstantArray[Range[1, dim[[1]]], dim[[2]]];
@@ -318,7 +318,7 @@ MotionToImage[data_, ux_, uy_] := Block[{dim, xcor, ycor, intdata, intFun, zx, z
 (*MaskToCoordinates*)
 
 
-MaskToCoordinates[mask_]:=Block[{x,y,z2,z1,p,xm,ym,r,phi,rad, dim, xcor,ycor},
+MaskToCoordinates[mask_]:=Block[{x,y,z2,z1,p,xm,ym,phi,rad, dim, xcor,ycor},
 	(*get coordinates*)
 	{x,y}=Transpose@Position[mask,1];
 	
@@ -362,7 +362,7 @@ WExtend[ux_, uy_, back_, waveVecs_] := Block[{ker, pad, backF},
 (*GetKernel*)
 
 
-GetKernel[waveVecs_,sc_]:=GetKernel[waveVecs,sc]=Block[{dGrid,v,pad,ker,win},
+GetKernel[waveVecs_,sc_]:=GetKernel[waveVecs,sc]=Block[{v,pad,ker},
 	(*define the kernel width*)
 	v=Round[sc Norm[waveVecs]]-1;
 	pad={v+1,-v-1};

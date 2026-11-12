@@ -265,7 +265,7 @@ GenerateGradients[grds : {{_, _, _} ..}, opts : OptionsPattern[]] := If[OptionVa
 Options[GenerateGradientsi] = {Steps -> 1000, Runs -> 1, VisualOpt -> False, GradType -> "Normal", ConditionCalc -> False, FullSphere -> False, Method -> "Default"};
 
 GenerateGradientsi[numbs_, fixed_, alph_, initp_, OptionsPattern[]] :=Block[{
-	steps, runs, method, vis, cond, condtot, nf, ni, condnr, velocity0, velocity1, parti, part, ns, plot, tempplot, vel, charge, tempc, sph, cols, output, half
+	steps, runs, method, vis, cond, condtot, nf, ni, condnr, part, ns, plot, tempplot, vel, charge, tempc, sph, cols, output, half, cc
 	},
 	DynamicModule[{vp, vv, va, tempp, points},
 		(*Initialisation *)
@@ -498,7 +498,7 @@ GradGrid[n_, full_] := Block[{points},
 
 (*optimize singel shell no fixed gradients*)
 GradOptimize1C = Compile[{{points, _Real, 2}, {half, _Integer, 0}},	Block[{
-		n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, velocity, pointsnew, sign
+		n, n2, pointsi, pointsmat, distmatxyz, diag, distmat, velocity, pointsnew
 	},
 	n = Length[points];
 	If[half == 1,
@@ -1131,7 +1131,7 @@ GenerateGradientsGUI[popup_] := Block[{pan},
 
 (*calculate polar coordinates from gradients*)
 CalcPolarPts[grad_, type_] := CalcPolarPts[grad, type, {0., 0.}]
-CalcPolarPts[grad_, type_, vec_] := Block[{sig, phi, gradp, rot},
+CalcPolarPts[grad_, type_, vec_] := Block[{sig, phi, rot},
 	(*rotate viewpoint*)
 	rot = (RotationMatrix[vec[[1]] 180 Degree, {0, 0, -1}].RotationMatrix[vec[[2]] 90 Degree, {0, 1, 0}]);
 	(*calculate spherical coordinates*)
@@ -1155,7 +1155,7 @@ SyntaxInformation[ConvertGrads] = {"ArgumentsPattern" -> {_, _ , _.}};
 
 ConvertGrads[gradi_, bv_] := ConvertGrads[gradi, bv, 0]
 
-ConvertGrads[gradi_, bv_, bi_] := Block[{depth, norm, gradu, grad, bval, bvalstr, gradstr, grad0str, list, list0, part, listout, bvs, gr, name, nb},
+ConvertGrads[gradi_, bv_, bi_] := Block[{depth, norm, gradu, grad, bval, bvalstr, gradstr, grad0str, list, list0, bvs, gr, nb},
 	depth = ArrayDepth[gradi] /. 1 -> 3;
 	norm = Map[Norm, gradi, {depth - 1}];
 
@@ -1218,7 +1218,7 @@ Options[FindOrder]={OrderSpan->"Auto"};
 
 SyntaxInformation[FindOrder] = {"ArgumentsPattern" -> {_,_,OptionsPattern[]}};
 
-FindOrder[grad_, bval_,OptionsPattern[]] := Block[{local, minval, orderout, n, m, ord, val, temp, order,span},
+FindOrder[grad_, bval_,OptionsPattern[]] := Block[{local, minval, orderout, n, m, val, temp, order,span},
 	(*define the absvec and initial order*)
 	temp = MakeAbsVec[grad, bval];
 	orderout = order = Range[Length[temp]];
@@ -1623,7 +1623,7 @@ SyntaxInformation[GradSeq] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 GradSeq[pars_, t_, grad : {_, _, _}, OptionsPattern[]] := Block[{
 	seq, rule, G, slope, leng, start, repn, repf, repi, dur, ori, flip,
 	grepi1, grepi2, gr180, grdiff, grex, unit, func, name, str, seqt,
-	startRep, orVec, t180, te, hw, i, usegrad, grflow, g1, g2, g3, t1,
+	startRep, orVec, t180, te, hw, usegrad, grflow, g1, g2, g3, t1,
 	t2, t3, t4, t901, t902, t1801, t1802, flipg, AP, Gd},
 
 	unit = OptionValue[UnitMulti];
@@ -1801,7 +1801,7 @@ GetSliceNormal[folder_String,part_Integer] := Module[{or,files,grads,norm,gradRo
 
 SyntaxInformation[GetSliceNormalDir] = {"ArgumentsPattern" -> {_}};
 
-GetSliceNormalDir[dFile_String] := Module[{meta, directions, slice, groups, orientation,grads,norm,gradRotmat},
+GetSliceNormalDir[dFile_String] := Module[{meta, directions, slice, groups, orientation,grads,norm,gradRotmat, v1, v2},
 	meta = Import[dFile, "MetaInformation"];
 	directions = "(2005,1415)" /. meta;
 	slice = "(2001,1018)" /. meta;
@@ -1976,7 +1976,7 @@ ToSphericalCoordinatesC = Compile[{{coor, _Real, 1}, {range, _Real, 1}}, Block[{
 
 
 CoordinatesToLegendreP[{met_, vals_}, coor : {{_?NumberQ, _?NumberQ, _?NumberQ} ..}] := Block[{
-		r, t, p, c, cos, val, fun, amp, lm
+		r, t, p, cos, fun
 	},
 
 	{r, t, p} = Transpose[coor];
@@ -2057,7 +2057,7 @@ Options[CorrectGradients] = {MethodReg -> "Rotation"}
 
 SyntaxInformation[CorrectGradients] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
-CorrectGradients[grad_, w_, OptionsPattern[]] := Block[{gr,grnew,trans,rot}, MapThread[(ParametersToTransform[#1, OptionValue[MethodReg]].#2) &, {w, grad}]]
+CorrectGradients[grad_, w_, OptionsPattern[]] := MapThread[(ParametersToTransform[#1, OptionValue[MethodReg]].#2) &, {w, grad}]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -2066,7 +2066,7 @@ CorrectGradients[grad_, w_, OptionsPattern[]] := Block[{gr,grnew,trans,rot}, Map
 
 ParametersToTransform[w_, opt_] := Block[{
 		tx, ty, tz, rx, ry, rz, sx, sy, sz, gx, gy, gz, T, R, G, S, 
-		Rx, Ry, Rz, Gx, Gy, Gz, mat, mats, matL
+		Rx, Ry, Rz, Gx, Gy, Gz, mat, mats
 	},
 	{rx, ry, rz, tx, ty, tz, sx, sy, sz, gx, gy, gz} = w;
 	{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};

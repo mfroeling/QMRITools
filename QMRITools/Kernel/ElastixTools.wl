@@ -1167,7 +1167,7 @@ Options[RegisterDataSplit] = Join[Options[RegisterData],{SplitMethod->"Mean"}];
 SyntaxInformation[RegisterDataSplit] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 RegisterDataSplit[targetI_, movingI_, opts : OptionsPattern[]] := Block[{
-	reg, mov, target ,maskT, voxT, moving, maskM, voxM,
+	target ,maskT, voxT, moving, maskM, voxM,
 	targetLeft, targetRight, maskTl, maskTr, cut1, movingLeft, movingRight, maskMl, maskMr, cut2,
 	regLeft, regRight
 	},
@@ -1417,10 +1417,10 @@ Options[RegisterDataTransformSplit] = Join[Options[RegisterData],{SplitMethod->"
 
 SyntaxInformation[RegisterDataTransformSplit] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-RegisterDataTransformSplit[targetI_, movingI_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{reg, mov,
+RegisterDataTransformSplit[targetI_, movingI_, {moving2_, vox_}, opts : OptionsPattern[]] := Block[{
 	target ,maskT, voxT, moving, maskM, voxM,
 	targetLeft, targetRight, maskTl, maskTr, cut1, movingLeft, movingRight, maskMl, maskMr, cut2,
-	moving2l, moving2r, tempDir, regLeft, regRight
+	moving2l, moving2r, regLeft, regRight
 	},
 
 	(*prepare the input*)

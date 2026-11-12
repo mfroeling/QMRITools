@@ -128,7 +128,7 @@ SyntaxInformation[LoadCoilTarget] = {"ArgumentsPattern" -> {_}};
 
 (*load a series of body coil images*)
 LoadCoilTarget[file_?StringQ] := Block[{
-	dataR, vox, noiseR, mn, mask, snr, sigma
+	dataR, vox, noiseR, mn, snr, sigma
 	},
 	(*import target1*)
 	{dataR, vox} = ImportNii[file];
@@ -205,7 +205,7 @@ SyntaxInformation[FindCoilPosition]={"ArgumentsPattern" -> {_, _., OptionsPatter
 FindCoilPosition[weights_, opts:OptionsPattern[]] := FindCoilPosition[weights, 1, opts]
 
 FindCoilPosition[weights_, mask_, OptionsPattern[]] := Block[{
-	dim, ss, max, mm, pdat, comp, pl, pts, maski, weightsM, maska, ncoils
+	dim, max, pdat, comp, pl, pts, maski, weightsM, maska, ncoils
 	},
 	
 	(*mask the noise in the weights*)

@@ -165,12 +165,10 @@ SyntaxInformation[MaskToDistanceMap] = {"ArgumentsPattern" -> {_, _.}};
 
 MaskToDistanceMap[mask_] := MaskToDistanceMap[mask, "both"]
 
-MaskToDistanceMap[mask_, met_] := Block[{im},
-	If[ArrayDepth[mask] === 3,
-		MaskToDistanceMapI[mask, met],
-		DistributeDefinitions[MaskToDistanceMapI, met];
-		Transpose[ParallelMap[MaskToDistanceMapI[#, met]&, Normal@Transpose[mask]]]
-	]
+MaskToDistanceMap[mask_, met_] := If[ArrayDepth[mask] === 3,
+	MaskToDistanceMapI[mask, met],
+	DistributeDefinitions[MaskToDistanceMapI, met];
+	Transpose[ParallelMap[MaskToDistanceMapI[#, met]&, Normal@Transpose[mask]]]
 ];
 
 
@@ -230,7 +228,7 @@ MakeRegionMesh[data_, vox_?VectorQ, opts : OptionsPattern[]]:=MakeRegionMesh[dat
 
 
 MakeRegionMeshI[data_, vox_?VectorQ, n_?IntegerQ, opts : OptionsPattern[]]:=Block[{
-		dim, size, mesh, meshS, length, lengthMax, meshOut
+		dim, size, mesh, length, lengthMax, meshOut
 	},
 	(*create initial mesh and smooth out the pixilation*)
 	dim = Dimensions@data;
@@ -449,9 +447,9 @@ SyntaxInformation[TemplateToVolume] = {"ArgumentsPattern" -> {{_, _}, {_, _}, Op
 
 TemplateToVolume[{masks_, voxM_}, {tempI_, voxT_}, OptionsPattern[]] :=Block[{
 		nLow, nHigh, padData, padReg, volRescale, space, output, volume, mon, 
-		dim, template, vol, templateMesh, templatePoints, templateCells,
+		dim, template, templateMesh, templatePoints, templateCells,
 		moving, templateDist, movingDist, movingRigid, templateReg, deformation,
-		movingMesh, pointsTemp, pointsLocal, meshes, points, 
+		pointsTemp, pointsLocal, 
 		meshTemplate, meshTemplateReg, meshMoving, meshMovingRigid
 	},
 
@@ -656,7 +654,7 @@ SyntaxInformation[FitShapeModel] = {"ArgumentsPattern" -> {_, _, _.}};
 
 FitShapeModel[{mean_, mat_}, points_] := FitShapeModel[{mean, mat}, points, All]
 
-FitShapeModel[{mean_, mat_}, points_, ni_] := Block[{n, var, fit, fitPoints},
+FitShapeModel[{mean_, mat_}, points_, ni_] := Block[{n, fit, fitPoints},
 	n = If[ni===All, Length@mat, Min[{ni, Length@mat}]];
 
 	If[MatrixQ[points],
@@ -750,7 +748,7 @@ EvaluateModel[{mean_, mat_, pc_}, points_, cells_] := Manipulate[
 
 
 MakeEvalPlot[nVec_, row_, {{mean_,mat_}, std_, cells_}, range_, part_, {col_, temp_}] := Block[{
-		pts, pcol, step
+		pcol, step
 	},
 	step = Rescale[Map[Norm, mat[[;;nVec]], {-2}]];
 	Grid[{

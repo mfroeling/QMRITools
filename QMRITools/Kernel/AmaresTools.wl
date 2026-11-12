@@ -219,7 +219,7 @@ EditAmaresMatrix[names_List] := EditAmaresMatrix[<||>, names];
 
 EditAmaresMatrix[matrix_Association] := EditAmaresMatrix[matrix, Keys[matrix]];
 
-EditAmaresMatrix[matrix_Association, names_List] := Block[{start, return, list, nn, np, cellVars, cellStart, fitPar},
+EditAmaresMatrix[matrix_Association, names_List] := Block[{start, return, list, nn, np, cellStart, fitPar},
 	fitPar = Keys[$AmaresMatrixDefaults];
 	list = Join[{-1 -> "unique", 0 -> "same"}, # -> "group-" <> IntegerString[#, 10, 2] & /@ Range[1, Length[names]]];
 	start = ToFullAmaresMatrix[matrix, names];
@@ -370,9 +370,9 @@ GetSpinResonance[nn_?StringQ] := Block[{res, tags},
 AmaresInitialValues[dat_, time_, {gyro_, dw_}, basis_, matrix_] := AmaresInitialValues[dat, time, {gyro, dw}, basis, matrix, False]
 
 AmaresInitialValues[dat_, time_, {gyro_, dw_}, basis_, matrix_, pl_] := Block[{
-		sc, datf, model, rf, a, p, e, g, s, am, gm, sm, eps, ph, epi, ami, gmi,
-		fids, base, sig, corr, ppm, wght, fit, datA, obj,
-		decay, amp, opts, pEps, pGam, pPh, pAmp, plots, init
+		sc, datf, model, rf, a, p, e, g, am, gm, sm, eps, ph, epi, ami, gmi,
+		fids, base, sig, corr, ppm, wght, fit, obj,
+		decay, amp, opts, pEps, pGam, pPh, pAmp, init
 	},
 	
 	(*Normalize the signal*)
@@ -473,7 +473,7 @@ AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, b1Par_, cons_?Ma
 
 AmaresFitFidI[dat_, time_, gyro_, basis_, matrix_?AssociationQ, b1Par_, {cons_?MatrixQ, init_}, opts:OptionsPattern[]] := Block[{
 		fids, names, nb, sc, datF, groups, parsV, parsM, con, int, parsFit,
-		jacobian, residual, sigma, cov, se, t1Model, atp, conA, b1Val
+		jacobian, residual, sigma, cov, se, t1Model, b1Val
 	},
 
 	(*define fit parameters and constrains*)

@@ -78,7 +78,7 @@ Outputs the fat t2 value."
 
 CreateT2Dictionary::usage = 
 "CreateT2Dictionary[{T1m, T1f}, {nEcho, detlaTE}, angle] Creates a EPG signal dictionary used for EPGT2fit.
-Every dictionary that is defined is cached.
+The water signals of every dictionary are cached, the fat signals are recalculated each call.
 
 The output is in units as defined by the detlaTE, e.g. if detlaTE is in ms the output is in ms.
 The TR and TE should be in the same units as Dela.
@@ -125,11 +125,13 @@ WaterFatShiftDirection::usage =
 "WaterFatShiftDirection is an options for EPGT2Fit. It specifies the water fat shift direction: \"left\", \"right\", \"up\" and \"down\"."
 
 EPGFatShift::usage = 
-"EPGFatShift is an options for EPGT2Fit. Specifies the amount of shift of the fat refocusing pulse relative to the fat exitation pulse.
-Can be obtained form GetPulseProfile."
+"EPGFatShift is an options for EPGT2Fit. Specifies the amount of shift of the fat refocusing pulse relative to the fat exitation pulse in slice profile samples, the sign does not matter.
+Can be obtained form GetPulseProfile with FatFieldStrength."
 
 DictT2IncludeWater::usage =
-"DictT2IncludeWater is an options for EPGT2Fit."
+"DictT2IncludeWater is an options for EPGT2Fit and CreateT2Dictionary. If True the fat signal is modeled as adipose tissue with 90% lipid and 10% water with a t2 of 20 ms.
+The water and fat outputs of EPGT2Fit are then the water and lipid signals and the fat fraction is the lipid fraction, as reported by Dixon.
+Based on Keene KR et.al. DOI: 10.1002/mrm.28290."
 
 
 OutputCalibration::usage = 
@@ -149,7 +151,9 @@ EPGFitPoints::usage =
 "EPGFitPoints is a option for CalibrateEPGT2Fit and EPGT2Fit. Number of points is 200 by default."
 
 EPGMethodCal::usage = 
-"EPGMethodCal is an option for CalibrateEPGT2Fit and EPGT2Fit. The calibration can be done using \"1comp\", \"2comp\", \"2compF\"."
+"EPGMethodCal is an option for CalibrateEPGT2Fit and EPGT2Fit. The calibration can be done using \"1comp\", \"2comp\", \"2compF\".
+\"1comp\" assumes pure fat, \"2comp\" assumes 90% fat and 10% water and fits both t2 values, \"2compF\" assumes 90% fat and 10% water with a water t2 of 20 ms.
+These are method A, B and C of Keene KR et.al. DOI: 10.1002/mrm.28290."
 
 EPGOutput::usage = 
 "EPGOutput is an option for EPGSignal. It specifies how to format the output, as magnitude or complex."
@@ -289,7 +293,7 @@ T1Fit[datan_, timei_,met_] := Block[{ad, datal, dim, times, dat, time, result, t
 ]
 
 
-T1LinFit[fdat_?VectorQ, time_?VectorQ, met_] := Block[{min, max, sol, aparf, bparf, tt, t1sf, t1s, apar, bpar, cor},
+T1LinFit[fdat_?VectorQ, time_?VectorQ, met_] := Block[{min, max, sol, aparf, bparf, tt, t1sf, t1s, apar, bpar, cor, ti},
 	{min, max} = MinMax[fdat];
 
 	If[Total[fdat] == 0.,
@@ -342,7 +346,7 @@ Options[TriExponentialT2Fit]={OutputCalibration->False}
 SyntaxInformation[TriExponentialT2Fit]= {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 
 TriExponentialT2Fit[datan_, times_, OptionsPattern[]] := Block[{
-		result, fdat, offset, T1r, off, t1rho, t, ad, datal, model, cs, cf, 
+		result, fdat, T1r, ad, datal, model, cs, 
 		T2s, t2f, Af, Am, t2m, x, Aff, Amm, T2mf, s0, ffr, mfr, t2, model2,cal,
 		maskT2, dataT2, fmask, fitData, Afi, Ami, csi, T2mi, T2fi, T2si, sci
 	},
@@ -463,7 +467,7 @@ EPGSignali[{nEchoi_, echoSpace_}, {t1_, t2_}, {ex_?ListQ, ref_?ListQ}, b1_, fp_,
 ]
 
 EPGSignali[{nEcho_, echoSpace_}, {t1_, t2_}, {exi_, refi_}, b1_, fp_, OptionsPattern[]] := Block[{
-		tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t2r, t1r, t2r1, t2r2, states, w, funRot, funMove,
+		tau, T0, R0, ex, ref, Smat, Tmat, Rmat, Rvec, svec, t1r, t2r1, t2r2, states, w, funRot, funMove,
 		freq, phase, pex, pref, sig
 	},
 
@@ -532,7 +536,7 @@ MakeDiagMat[mat_, nEcho_] := ArrayFlatten[IdentityMatrix[nEcho] ConstantArray[ma
 
 
 (*if run once with nEcho definition is stored*)
-MixMatrix[nEcho_] := MixMatrix[nEcho] = Block[{len, Smat, vec, off1, off2},
+MixMatrix[nEcho_] := MixMatrix[nEcho] = Block[{len, Smat},
 	(*mixing matirx*)
 	len = 3*(nEcho);
 	Smat = ConstantArray[0, {len, len}];
@@ -611,27 +615,18 @@ ShiftPulseProfile[angs_, shift_] := Block[{exi, refi, cors, func, refo},
 
 
 (*one compartment fat only*)
-ErrorFunc1F[y_, t2f_Real, b1_Real, s0_, vals_] :=  Quiet@Block[{sig, T1m, T1f, echo, angle},   
+ErrorFunc1F[y_, t2f_Real, b1_Real, s0_, vals_] :=  Quiet@Block[{T1m, T1f, echo, angle},   
 	{echo, T1f, angle} = vals;
 	Total[(y - s0 EPGSignali[echo, {T1f, t2f}, angle, b1])^2]]
 
-(*Two compartment, fit fat, fix muscle*)
-ErrorFunc2F[y_, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, t2m, T1f, echo, angle},
-	{echo, {T1m, t2m, T1f}, angle} = vals;
-	sig = Transpose[{
-		EPGSignali[echo, {T1m, t2m}, angle, b1],
-		EPGSignali[echo, {T1f, t2f}, angle, b1]
-		}];
-	LeastSquaresErrorC[sig, y]]
-
-(*Two compartment, fit fat, fix muscle, shifted fat frofile*)
-ErrorFunc2FS[y_, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, t2m, T1f, echo, angle, angleS},
-	{echo, {T1m, t2m, T1f}, angle, angleS} = vals;
-	sig = Transpose[{
-		EPGSignali[echo, {T1m, t2m}, angle, b1],
-		EPGSignali[echo, {T1f, t2f}, angleS, b1]
-		}];
-	LeastSquaresErrorC[sig, y]]
+(*fat tissue, fixed water fraction, fit fat and water t2, shifted fat profile*)
+ErrorFuncFT[y_, t2f_Real, t2w_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle, angleS},
+	{echo, {T1m, T1f}, angle, angleS} = vals;
+	sig = MixFatWater[
+		EPGSignali[echo, {T1f, t2f}, angleS, b1],
+		EPGSignali[echo, {T1m, t2w}, angle, b1]
+	];
+	LeastSquaresErrorC[Transpose[{sig}], y]]
 
 (*Two compartment, fit muscle, fix fat*)
 ErrorFunc2M[y_, t2m_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, t2f, echo, angle},
@@ -642,23 +637,17 @@ ErrorFunc2M[y_, t2m_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, t2f, ec
 		}];
 	LeastSquaresErrorC[sig, y]]
 
-(*Two compartment, fit muscle and fat*)
-ErrorFunc2MF[y_, t2m_Real, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle},
-	{echo, {T1m, T1f}, angle} = vals;
-	sig = Transpose[{
-		EPGSignali[echo, {T1m, t2m}, angle, b1],
-		EPGSignali[echo, {T1f, t2f}, angle, b1]
-		}];
-	LeastSquaresErrorC[sig, y]]
 
-(*Two compartment, fit muscle and fat, shifted fat profile*)
-ErrorFunc2MFS[y_, t2m_Real, t2f_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle, angleS},
-	{echo, {T1m, T1f}, angle, angleS} = vals;
-	sig = Transpose[{
-		EPGSignali[echo, {T1m, t2m}, angle, b1],
-		EPGSignali[echo, {T1f, t2f}, angleS, b1]
-		}];
-	LeastSquaresErrorC[sig, y]]
+(* ::Subsubsection::Closed:: *)
+(*MixFatWater*)
+
+
+(*water fraction and water t2 of adipose tissue*)
+fatWatFr = 0.1;
+fatWatT2 = 20.;
+
+(*fat tissue signal from lipid and water signal*)
+MixFatWater[fat_, wat_] := (1. - fatWatFr) fat + fatWatFr wat
 
 
 (* ::Subsubsection::Closed:: *)
@@ -866,13 +855,13 @@ Options[EPGT2Fit]= {
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 
 EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
-		mon, echo, T1m, T1f, t2f, ad, datal, sol, wat, fat, fatMap, T2map, B1Map, clip, fatc,
-		B1i, T2i, T2s, B1s, soli, error, dictf, valsf, ydat, fwf, residualError, T2mc, B1c, cal,
-		ran,dict,vals,cons,start, b1ran, b1step, t2ran, t2step, points, dim, size,
-		b1rule, B1Int, dataf, b1, b1vals, b1len, t2rule, t2Int, t2, t2vals, t2len,
-		sig, dictMat, dictfMat, t2fran, S0c, met, val, out, T2fmap, wMat, fval, t2fval,
+		mon, echo, T1m, T1f, ad, datal, sol, wat, fat, fatMap, T2map, B1Map, clip, 
+		B1i, T2i, T2s, B1s, error, valsf, T2mc, B1c, cal,
+		dict,vals,cons,b1ran, t2ran, dim, size,
+		b1rule, B1Int, dataf, b1, b1vals, b1len, 
+		sig, dictMat, t2fran, S0c, met, val, out, T2fmap, wMat, t2fval,
 		clipf, t2fdic, t2fpos, dictMatW, inp, consi, vals2, inpf, inp2, smoothing, optDic,
-		shift, B1mask
+		B1mask
 	},
 
 	mon = OptionValue[MonitorCalc];
@@ -904,8 +893,8 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			"2compF", {t2fval, B1c} = cal[[1]]
 		];
 
-		(*make whole 5 ms such that it is more likely for same values, needs less libraries, round up higher is better then lower*)
-		t2fval = N@Ceiling[t2fval,5];
+		(*round to whole ms*)
+		t2fval = N@Round[t2fval, 1];
 		If[mon, MonitorFunction[cal, "EPG fat callibration [ms]:"]];
 	];
 
@@ -1095,7 +1084,11 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		];
 		fat = Clip[DataTransformation[fat, {1,1,1}, w, InterpolationOrder -> 2],MinMax[fat]];
 	];*)
-	(*If[OptionValue[DictT2IncludeWater], wat = wat + .1 fat; fat = .9 fat;];*)
+	(*split the adipose tissue in lipid and water*)
+	If[OptionValue[DictT2IncludeWater],
+		wat = wat + fatWatFr fat;
+		fat = (1. - fatWatFr) fat;
+	];
 
 	fatMap = Clip[ToPackedArray@DivideNoZero[fat, (wat + fat)], {-0.1, 1.1}];
 	{wat, fat} = Clip[{wat, fat}, {-0.1, 1.5} Max[datal]];
@@ -1124,8 +1117,9 @@ Options[CalibrateEPGT2Fit] = {
 SyntaxInformation[CalibrateEPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
-		ad, nEcho, echoSpace, maskT2, dataT2, fmask, fitData, step, T2mmin, T2mmax, T2fmin, T2fmax, 
-		T1m, T1f, fat, wat, cons, valsf, wcons, soli, fits, residualError, echo, shift, ang, angS
+		ad, maskT2, dataT2, fmask, fitData, step, T2mmin, T2mmax, T2fmin, T2fmax, 
+		T1m, T1f, valsf, soli, fits, residualError, echo, shift, ang, angS, err, out, s0,
+		t2w, vars
 	},
 
 	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
@@ -1159,26 +1153,26 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 	];
 
 	(*select random fit points to calibrate fat signal and get the boundries*)
-	step = Ceiling[Length[fitData]/OptionValue[EPGFitPoints]];
+	step = Max[1, Ceiling[Length[fitData]/OptionValue[EPGFitPoints]]];
 	fitData = fitData[[ ;; ;; step]];
 	{{T2mmin, T2mmax}, {T2fmin, T2fmax}, {T1m, T1f}} = OptionValue[EPGRelaxPars];
 
 	err = Length[fitData] < 5;
 	If[err, Message[CalibrateEPGT2Fit::data]];
 
-	(*shift the slice profile*)	
+	(*shift the slice profile*)
 	shift = OptionValue[EPGFatShift];
-	If[shift > 0,
+	If[shift != 0,
 		{ang, angS} = ShiftPulseProfile[angle,shift],
 		ang = angS = angle
 		];
 
 	(*Distribute for the parallel evaluation*)
-	DistributeDefinitions[ErrorFunc1F, ErrorFunc2MF, ErrorFunc2F, ErrorFunc2MFS, ErrorFunc2FS, 
+	DistributeDefinitions[ErrorFunc1F, ErrorFuncFT, MixFatWater, fatWatFr, fatWatT2,
 		LeastSquaresErrorC, EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, RotMatrixTI, MoveStates, MoveStatesI];
 
-	(*perform the fitting*)
-	Switch[OptionValue[EPGMethodCal],
+	(*perform the fitting, skip if not enough fat voxels*)
+	If[!err, Switch[OptionValue[EPGMethodCal],
 		"1comp", (*only fit single fat compartment*)
 		valsf = {echo, T1f, angS};
 		DistributeDefinitions[valsf];
@@ -1193,38 +1187,29 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 			out
 			) &, fitData];
 
-		,"2comp", (*fit both water and fat compartment*)
+		,"2comp"|"2compF", (*fat tissue with fixed water fraction, 2comp also fits the water t2*)
 		valsf = {echo, {T1m, T1f}, ang, angS};
-		DistributeDefinitions[valsf];
-
-		fits = ParallelMap[(
-			{residualError, soli} = Quiet@FindMinimum[{
-				ErrorFunc2MFS[#, T2mi, T2fi, B1i, valsf],
-				{0.5 <= B1i <= 1.5, 10 <= T2mi <= 50., 100 <= T2fi <= 300.}
-				}, {{T2mi, 20.}, {T2fi, 150.}, {B1i, 1}}, MaxIterations -> 25];
-			out = {T2mif, T2fif, B1if} = soli[[All, 2]];
-			out
-			) &, fitData];
-
-		,"2compF", (*fit only fat compartment but include water with fixed t2*)
-		valsf = {echo, {T1m, 20, T1f}, ang, angS};
-		DistributeDefinitions[valsf, fun];
-
-		fits = ParallelMap[(
-			{residualError, soli} = Quiet@FindMinimum[{
-				ErrorFunc2FS[#, T2fi, B1i, valsf],
-				{0.5 <= B1i <= 1.5, 100 <= T2fi <= 300.}
-				}, {{T2fi, 150.}, {B1i, 1}}, MaxIterations -> 25];
-			out = {T2fif, B1if} = soli[[All, 2]];
-			out
-			) &, fitData];
+		{t2w, vars} = If[OptionValue[EPGMethodCal] === "2comp",
+			{T2wi, {{T2wi, fatWatT2}, {T2fi, 150.}, {B1i, 1}}},
+			{fatWatT2, {{T2fi, 150.}, {B1i, 1}}}
 		];
+		DistributeDefinitions[valsf, t2w, vars];
+
+		fits = ParallelMap[(
+			{residualError, soli} = Quiet@FindMinimum[{
+				ErrorFuncFT[#, T2fi, t2w, B1i, valsf],
+				0.5 <= B1i <= 1.5 && 10 <= t2w <= 50. && 100 <= T2fi <= 300.
+				}, Evaluate[vars], MaxIterations -> 25];
+			out = soli[[All, 2]];
+			out
+			) &, fitData];
+	]];
 
 	(*iff error return default*)
 	out = If[err,
 		Switch[OptionValue[EPGMethodCal],
 			"1comp", {{150, 1, 1}, {0, 0, 0}},
-			"2comp", {{20, 150, 1}, {0, 0, 0}},
+			"2comp", {{fatWatT2, 150, 1}, {0, 0, 0}},
 			"2compF", {{150, 1}, {0, 0}}
 		]
 		,
@@ -1259,9 +1244,7 @@ CreateT2Dictionary[relax_, echo_, ang_, OptionsPattern[]] := CreateT2Dictionaryi
 	OptionValue[MonitorCalc]
 ]
 
-(*save each unique dictionary*)
-CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shift_, incW_, phase_}, mon_] := 
-CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, incW, phase}, mon] = Block[{
+CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shift_, incW_, phase_}, mon_] := Block[{
 		T1m, T1f, t2Mvals, t2Mlen, b1vals, b1len, t2val, t2Fvals, t2Flen, time, fatSig, watSig, 
 		dict, vals, fatSigW, ang, angS
 	},
@@ -1283,17 +1266,23 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 	];
 
 	(*shift the slice profile of fat*)
-	If[shift > 0,
+	If[shift != 0,
 		{ang, angS} = ShiftPulseProfile[angle,shift],
 		ang = angS = angle
 	];
 
 	(*distribute the needed functions for parrallel evaluation*)
 	DistributeDefinitions[
-		EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, 
+		EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT,
 		RotMatrixTI, MoveStates, MoveStatesI,
-		echo, T1m, ang, angS, T1f, b1vals, t2Mvals, t2Fvals, t2val
+		echo, T1m, ang, angS, T1f, b1vals, t2Mvals, t2Fvals, t2val, fatWatT2
 	];
+
+	(*water signal of the adipose tissue*)
+	If[incW, fatSigW = ParallelTable[EPGSignali[echo, {T1m, fatWatT2}, ang, b1, {0, phase}], {b1, b1vals}]];
+
+	(*water signals of the muscle, cached*)
+	time = First@AbsoluteTiming[watSig = WaterDictionary[echo, T1m, ang, t2Mvals, b1vals, phase]];
 
 	(*create the dictionary signals*)
 	If[NumberQ[t2frange],
@@ -1302,14 +1291,9 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 		If[mon, PrintTemporary["Creating new dictionary with fixed t2 fat value"]];
 
 		(*fixed t2 value*)
-		time = AbsoluteTiming[
-			watSig = ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1, {0, phase}], {b1, b1vals}, {t2m, t2Mvals}];
+		time = time + AbsoluteTiming[
 			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2val}, angS, b1, {0, phase}], {b1, b1vals}];
-
-			If[incW,
-				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, b1, {0, phase}], {b1, b1vals}];
-				fatSig = 0.1 fatSigW + 0.9 fatSig
-			];
+			If[incW, fatSig = MixFatWater[fatSig, fatSigW]];
 
 			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i]]}, {t2mi, 1, t2Mlen}, {b1i, 1, b1len}];
 			vals = Table[{t2m, b1}, {t2m, t2Mvals}, {b1, b1vals}];
@@ -1322,15 +1306,9 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 		(*3D dictionary*)
 		If[mon, PrintTemporary["Creating new dictionary with range of t2 fat values"]];
 		(*range of t2 values*)
-		time = AbsoluteTiming[
-			watSig = ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1, {0, phase}], {b1, b1vals}, {t2m, t2Mvals}];
+		time = time + AbsoluteTiming[
 			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2f}, angS, b1, {0, phase}], {b1, b1vals}, {t2f, t2Fvals}];
-
-			If[incW,
-				fatSigW = ParallelTable[EPGSignali[echo, {T1f, 20}, ang, b1, {0, phase}], {b1, b1vals}];
-				fatSigW = Transpose@ConstantArray[fatSigW, Length[t2Fvals]];
-				fatSig = 0.1 fatSigW + 0.9 fatSig
-			];
+			If[incW, fatSig = MixFatWater[fatSig, Transpose@ConstantArray[fatSigW, t2Flen]]];
 
 			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i, t2fi]]}, 
 				{t2mi, 1, t2Mlen}, {t2fi, 1, t2Flen}, {b1i, 1, b1len}];
@@ -1344,6 +1322,15 @@ CreateT2Dictionaryi[relax, echo, angle, {t2range, b1range, t2frange}, {shift, in
 	(*output*)
 	{ToPackedArray[N@dict], ToPackedArray[N@vals]}
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*WaterDictionary*)
+
+
+(*save each unique water dictionary*)
+WaterDictionary[echo_, T1m_, ang_, t2Mvals_, b1vals_, phase_] := WaterDictionary[echo, T1m, ang, t2Mvals, b1vals, phase] =
+	ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1, {0, phase}], {b1, b1vals}, {t2m, t2Mvals}]
 
 
 (* ::Section:: *)

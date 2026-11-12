@@ -59,7 +59,7 @@ Begin["`Private`"]
 
 AddScientificColors[dir_]:=Block[{
 		grads,gradDiv,gradMulti,cyclic,all,swatches,colName,groupName,getCol,colRange,allDef,
-		nameDef,groupDef,newGroupsPattern,newSchemeNames,newSchemes,scientificColorMapsGroups,gr,cacheFile
+		nameDef,groupDef,newGroupsPattern,newSchemeNames,newSchemes,scientificColorMapsGroups,cacheFile
 	},
 
 	(*activated ColorDataDump*)

@@ -376,7 +376,7 @@ SyntaxInformation[PartitionBidsName] = {"ArgumentsPattern" -> {_}};
 
 PartitionBidsName[list:{_?StringQ ..}] := PartitionBidsName/@list
 
-PartitionBidsName[string_?StringQ] := Block[{parts, entity, suffix, suf},
+PartitionBidsName[string_?StringQ] := Block[{parts, entity, suf},
 	(*split entities and suffixes*)
 	parts = StringSplit[string, "_"];
 	entity = StringCases[#, k__ ~~ "-" ~~ v__ :> k -> v] & /@ parts;
@@ -489,6 +489,9 @@ SelectBids[folder_?StringQ, entity_?StringQ] := Block[{
 
 
 FilterBidsSubjects[fols_, subs_] := FilterBidsSubjects[fols, subs, ""]
+
+(*a Dynamic selection (GUI) is read when the scan runs*)
+FilterBidsSubjects[fols_, subs_Dynamic, met_] := FilterBidsSubjects[fols, Setting[subs], met]
 
 FilterBidsSubjects[fols_, subs_, met_] := If[subs === All || subs === "All", fols,
 	Select[fols, MemberQ[SubNameToBids[Flatten[{subs}], "Sub"], SubNameToBids[#, met]]&]
@@ -713,7 +716,7 @@ BuildBidsNameFromConfig[{fol_, parts_}, datType_, con_] := Block[{key, movStacks
 BuildBidsNameFromConfig[{folOut_, parts_}, {datType_, all_}, target_?ListQ] := BuildBidsNameFromConfig[{folOut, "", parts}, {datType, all}, target]
 
 BuildBidsNameFromConfig[{folOut_, folIn_, parts_}, {datType_, all_}, tar_?ListQ] := Block[{
-		target, isKey, key, type, suf, datTar, needKey, keyOut, tarType
+		target, isKey, key, type, suf, keyOut, tarType
 	},
 	(*Filename for remote target specified as list*)
 	target = DeleteDuplicates[tar];
@@ -1035,7 +1038,8 @@ BidsCheckView[dir_, subs_, what_, head_] := With[{
 				(*rescan with an empty protocol names cache*)
 				Button["Reload",
 					$BidsScan = <||>;
-					rows = BidsCheckRows[dir, subs, what];
+					(*an empty selection gives the message instead of rows*)
+					rows = If[Setting[subs] === {}, "Select subjects or tick All subjects", BidsCheckRows[dir, subs, what]];
 					valid = BidsConfigQ[dir];
 					time = DateString["Time"]
 				, Method -> "Queued"], "  ",
@@ -1044,10 +1048,11 @@ BidsCheckView[dir_, subs_, what_, head_] := With[{
 			}],
 			Dynamic[
 				(*only the bad rows and their subjects*)
-				show = If[rows === None, None, If[only, Select[(First[#] -> Select[Last[#], Last])& /@ rows, Last[#] =!= {}&], rows]];
-				If[show === {} || show === None, 
+				show = If[rows === None || StringQ[rows] || !only, rows, Select[(First[#] -> Select[Last[#], Last])& /@ rows, Last[#] =!= {}&]];
+				If[show === {} || show === None || StringQ[show],
 					Which[
 						show === None, "Not scanned yet, press Reload",
+						StringQ[show], show,
 						only, "No problems found",
 						!valid, "No subjects found, the config file is missing or invalid",
 						what === "Custom", "No custom configs found",
@@ -1319,8 +1324,9 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 		sub = <||>;
 
 		(*scan the expected check files and read the status of each*)
+		(*an empty selection gives the message instead of check files*)
 		scan = (
-			{checks, stat} = BidsScanChecks[dir, subs, imOut];
+			{checks, stat} = If[Setting[subs] === {}, {"Select subjects or tick All subjects", <||>}, BidsScanChecks[dir, subs, imOut]];
 			time = DateString["Time"];
 			upd++
 		)&;
@@ -1385,8 +1391,8 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 
 		(*tabs per step and data type*)
 		Dynamic[
-			If[checks === None,
-				Row[{Button["Reload", scan[], Method -> "Queued"], "  Not scanned yet, press Reload"}],
+			If[checks === None || StringQ[checks],
+				Row[{Button["Reload", scan[], Method -> "Queued"], "  "<>If[StringQ[checks], checks, "Not scanned yet, press Reload"]}],
 				TabView[KeyValueMap[Function[{step, list}, step -> If[list === {}, "No check files expected",
 					TabView[KeyValueMap[#1 -> tab[step, #2]&, GroupBy[list, First -> Rest]],
 						Dynamic[Lookup[sub, step, 1], (sub = Append[sub, step -> #])&], ControlPlacement -> Top]
@@ -2192,14 +2198,18 @@ BidsReportView[dir_, subs_, imOut_] := DynamicModule[{
 
 	(*export button of one step, disabled while an export runs*)
 	export = Function[{label, step}, Button[label,
-		status = busy;
-		file = CheckAbort[BidsReportExport[dir, subs, imOut, folder, step, format], $Failed];
-		(*status and last file of the export*)
-		If[StringQ[file],
-			status = "Exported: "<>file;
-			last = file
+		If[Setting[subs] === {},
+			status = "Select subjects or tick All subjects"
 			,
-			status = "Failed, see the messages"
+			status = busy;
+			file = CheckAbort[BidsReportExport[dir, subs, imOut, folder, step, format], $Failed];
+			(*status and last file of the export*)
+			If[StringQ[file],
+				status = "Exported: "<>file;
+				last = file
+				,
+				status = "Failed, see the messages"
+			]
 		]
 		, Method -> "Queued", ImageSize -> 200, Enabled -> Dynamic[status =!= busy]]];
 
@@ -2242,8 +2252,6 @@ SyntaxInformation[MuscleBidsGUI] = {"ArgumentsPattern" -> {_}};
 MuscleBidsGUI[dir_?StringQ] /; ExpandFileName[dir] =!= dir := MuscleBidsGUI[ExpandFileName[dir]]
 
 MuscleBidsGUI[dir_?StringQ] := With[{
-		config = Block[{$BidsLazy = True}, MuscleBidsConfig[dir]],
-		check = Block[{$BidsLazy = True}, MuscleBidsCheck[dir]],
 		(*step, folder of its logs and the options in the GUI*)
 		steps = {
 			{BidsDcmToNii, "rawData", {}},
@@ -2262,7 +2270,7 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 	},
 	DynamicModule[{
 		link, t0, tick, state, step, root, now, total, touched, tail, msgs,
-		all, sel, opt, ctrl, run, poll
+		allSubs, selSubs, subjects, opt, ctrl, run, poll
 	},
 
 	(*no step running, empty status and all subjects selected*)
@@ -2277,8 +2285,15 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 	touched = 0;
 	tail = {};
 	msgs = {};
-	all = True;
-	sel = {};
+	allSubs = True;
+	selSubs = {};
+
+	(*subject selection, shared by the Run, Config and Check tabs*)
+	subjects = Column[{
+		Style["Subjects", Bold],
+		Row[{Checkbox[Dynamic[allSubs]], " All subjects"}],
+		Dynamic[If[allSubs, "", SelectSubjects[dir, Dynamic[selSubs]]]]
+	}];
 
 	(*option values per step start at the defaults of the step*)
 	opt = Association[Flatten[Function[row, ({SymbolName[row[[1]]], #} -> (# /. Options[row[[1]]]))& /@ row[[3]]] /@ steps, 1]];
@@ -2293,7 +2308,7 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 	(*start a step in a separate kernel*)
 	run = Function[row, Which[
 		link =!= None, Null,
-		!all && sel === {}, now = "Select subjects or tick All subjects",
+		!allSubs && selSubs === {}, now = "Select subjects or tick All subjects",
 		True,
 		step = SymbolName[row[[1]]];
 		t0 = AbsoluteTime[];
@@ -2303,8 +2318,8 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 		msgs = {};
 		root = BidsFolder[dir, row[[2]]];
 		total = If[row[[1]] === BidsDcmToNii, 0,
-			Length@FilterBidsSubjects[SelectBids[BidsFolder[dir, "rawData"], "ses"], If[all, All, sel]]];
-		link = BidsStartStep[dir, row[[1]], Join[{ProcessSubjects -> If[all, All, sel]}, (# -> opt[{step, #}])& /@ row[[3]]], msgFile[step]];
+			Length@FilterBidsSubjects[SelectBids[BidsFolder[dir, "rawData"], "ses"], If[allSubs, All, selSubs]]];
+		link = BidsStartStep[dir, row[[1]], Join[{ProcessSubjects -> If[allSubs, All, selSubs]}, (# -> opt[{step, #}])& /@ row[[3]]], msgFile[step]];
 		(*no link means the kernel did not start*)
 		If[Head[link] === LinkObject,
 			state = "Running",
@@ -2329,9 +2344,7 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 	Column[{
 		TabView[{
 			"Run" -> Column[{
-				Style["Subjects", Bold],
-				Row[{Checkbox[Dynamic[all]], " All subjects"}],
-				Dynamic[If[all, "", SelectSubjects[dir, Dynamic[sel]]]],
+				subjects,
 				Style["Steps", Bold],
 				Grid[Function[row, {
 					Button[SymbolName[row[[1]]], run[row], ImageSize -> 200, Enabled -> Dynamic[link === None], Method -> "Queued"],
@@ -2361,8 +2374,9 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 				OpenerView[{"Log", Dynamic[Pane[Style[StringRiffle[tail, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 200}, Scrollbars -> Automatic]]}],
 				OpenerView[{"Messages", Dynamic[Pane[Style[StringRiffle[msgs, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 100}, Scrollbars -> Automatic]]}]
 			}, Spacings -> 1],
-			"Config" -> config,
-			"Check" -> check
+			(*lazy views, Reload scans the subjects selected at that moment*)
+			"Config" -> Column[{subjects, Block[{$BidsLazy = True}, MuscleBidsConfig[dir, ProcessSubjects -> Dynamic[If[allSubs, All, selSubs]]]]}, Spacings -> 1],
+			"Check" -> Column[{subjects, Block[{$BidsLazy = True}, MuscleBidsCheck[dir, ProcessSubjects -> Dynamic[If[allSubs, All, selSubs]]]]}, Spacings -> 1]
 		}, ControlPlacement -> Top],
 		(*poll the running step, only while a link is open*)
 		Dynamic[If[link =!= None, Refresh[poll[]; "", UpdateInterval -> 2, TrackedSymbols :> {}], ""], TrackedSymbols :> {link}, SynchronousUpdating -> False]
@@ -2437,7 +2451,7 @@ BidsStepStatus[link_, root_, st_, t0_, msg_] := Block[{pkt, state, pat, logs, li
 SyntaxInformation[CheckDataDescription] = {"ArgumentsPattern" -> {_, _}};
 
 CheckDataDescription[disIn_Association, met_] := Block[{
-		dis, val, vals, keys, duplicate, disOut
+		dis, vals, keys, duplicate, disOut
 	},
 
 	(*all data names should be unique*)
@@ -2467,7 +2481,7 @@ CheckDataDescription[disIn_Association, met_] := Block[{
 ]
 
 CheckDataDescription[dis:{_Rule..}, met_] := Block[{
-		manLab, ass, key, man, cls, typ, fail
+		manLab, ass, key, man, cls, fail
 	},
 
 	(*Get the data Description keys*)
@@ -2549,8 +2563,8 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, opts:OptionsPattern[]] := BidsFo
 BidsFolderLoop[inFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := BidsFolderLoop[inFol, inFol, datDis, opts]
 
 BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsPattern[]] := Block[{
-		met, datType, folders, subs, logFile, ass, nam, filesSl, versCheck, delete, tractMet,
-		files, nTyp, pat, inputFolders, customConfig, out, datDis, imOut
+		met, folders, subs, ass, nam, versCheck, delete, tractMet,
+		inputFolders, customConfig, out, datDis, imOut
 	},
 
 	{met, subs, versCheck, delete, tractMet, imOut} = OptionValue[{
@@ -2742,7 +2756,7 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox,
 		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types,
 		vx, vy, vz, dx, dy, dz, sx, sy, sz, off, diffFile, hasBval, hdr, nSl, len,
-		labs, noFiles, sel, imgTags, recTags, consistent
+		labs, noFiles, sel, imgTags, recTags, consistent, e, s, phase1, phase2
 	},
 
 	debugBids["Starting MuscleBidsConvertI"];
@@ -3431,13 +3445,13 @@ SourceJSON[file_] := If[FileExistsQ[#], ImportJSON[#], <||>]&@ConvertExtension[f
 
 MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		con, fol, parts, type, files, sets, diffFile, nfile, keys, dixFiles, jsonFile, nFiles, phbpt, dbond,
-		outFile, json, echos, mag, ph, real, imag, dixVox, magM, B0mask, ph0i, pos, e1, e2, hz, b0i,
+		outFile, json, echos, mag, ph, real, imag, dixVox, magM, B0mask, pos, e1, e2, b0i,
 		t2stari, watfr, fatfr, wat, fat, inph, outph, b0, t2star, r2star, phi, itt, res, outTypes, preProc, 
-		niiFileP, jsonFileP, resi, data, grad, val, diffVox, mask, den, sig, snr, snr0, reg, valU, mean, 
-		fiti, s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
+		niiFileP, jsonFileP, data, grad, val, diffVox, mask, den, sig, snr, snr0, reg, mean, 
+		s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
 		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
-		int, dint, suffix, types, flip, per, bmat, magph, split, ivim, shift, t2, gradField,
-		meanV, coor, valV, fasc, fascm, sel, norm, rdim, raw, rmet, rician, sigI, bv, init, exist,
+		int, dint, suffix, types, flip, per, magph, split, ivim, shift, t2, pulse, cal,
+		fasc, fascm, sel, norm, rdim, raw, rmet, rician, sigI, bv, init, exist,
 		denOpts, dixOpts, epgOpts, phaseEchoes, procInfo, precRatio, precResult
 	},
 
@@ -4056,14 +4070,16 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 										shift = 0.;
 										{ex, ref},
 										thk = json["SliceThickness"];
-										angle = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk][[1;;2]];
-										shift = ConfigLookup[datType, "Process", "Shift"];
-										shift = If[shift=!=True, 0.,
-											shift = (1/ref[[3, 1]] - 1/ex[[3, 1]]) (3(*filed times ppm*) 3.4);
-											(*-----*)AddToLog[{"Shifting fat profile with: ", shift}, 4];
-											Round[shift/((3 thk/2)/(6 thk))]
+										(*field strength for the fat shift, zero if no shift*)
+										shift = ConfigLookup[datType, "Process", "Shift"] === True;
+										field = If[shift, Lookup[json, "MagneticFieldStrength", 3.], 0.];
+										pulse = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk, FatFieldStrength -> field];
+										(*fat shift in profile samples*)
+										shift = If[shift, pulse[[3]], 0.];
+										If[shift != 0,
+											(*-----*)AddToLog[{"Shifting fat profile with: ", shift, " samples at ", field, " T"}, 4]
 										];
-										angle
+										pulse[[1;;2]]
 									];
 
 									debugBids[Dimensions/@{data, t2vox}];
@@ -4071,12 +4087,13 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									(*calculate the water t2 map, the fit settings are exported with the data*)
 									(*-----*)AddToLog["Starting EPG T2 calculation", 4];
 									epgOpts = {
-										DictT2IncludeWater -> True, EPGFitFat -> False, EPGCalibrate -> True, EPGFatShift -> shift,
+										DictT2IncludeWater -> True, EPGFitFat -> False, EPGCalibrate -> True, EPGFitPoints -> 100, EPGFatShift -> shift,
 										DictT2fValue -> 150, DictT2fRange -> {150, 250, 5},
-										DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {15, 45, 0.2}
+										DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {10, 60, 0.2}
 									};
-									{{t2w, t2f, b1}, {wat, fat, fatfr}, res} = EPGT2Fit[data, 1000 echos, angle, MonitorCalc -> False, Sequence @@ epgOpts];
-									settingPro = <|"EPGSettings" -> OptionsToJSON[epgOpts]|>;
+									{{{t2w, t2f, b1}, {wat, fat, fatfr}, res}, cal} = EPGT2Fit[data, 1000 echos, angle, MonitorCalc -> False, OutputCalibration -> True, Sequence @@ epgOpts];
+									(*-----*)AddToLog[{"Calibrated fat T2 and B1: ", cal}, 4];
+									settingPro = <|"EPGSettings" -> OptionsToJSON[epgOpts], "EPGCalibration" -> cal|>;
 
 									outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
 
@@ -4512,9 +4529,9 @@ MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 
 
 MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
-		segType, segTypeLab, checkFile, fol, device, location, segment,
+		segType, checkFile, fol, location, segment,
 		parts, outFile, segFile, out, vox, seg, status, segDim,
-		voxS, tarI, movI, segI, tar, mov, dim, voxTar, voxMov, voxSeg, mask,
+		voxS, tar, mov, voxTar, voxMov, voxSeg, mask,
 		procInfo, segOpts, regOpts, srcFiles
 	},
 
@@ -4678,7 +4695,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 		tracto, tractType, tractSeg, tractStopLab, tractStopVal, outFile,
 		tractTypeLab, fol, parts, checkFile, seed, lenS, segBone, tractSegLab,
 		datfile, stopFile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
-		segFile, muscles, muscLabs, mus, bones, context, leng, dens, flip, per, 
+		segFile, muscles, muscLabs, bones, context, leng, dens, flip, per, 
 		voxSeg, dims, harm, tensH, con, amp, trkFileF,
 		procInfo, trackOpts, harmOpts, tsegOpts, trackInfo, harmInfo, tsegInfo
 	},
@@ -5017,8 +5034,8 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		n, what, seg, vox, vol, musNr, musName, sideName, sideNr, dataLabs, anaType, densLab, str,
 		densFile, trType, trMask, segT,	datfile, data, scale, tract, outFile, meanType, hasKey,
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
-		cols, cFun, ran, clip, type, imFile, imDat, voxi, voxSeg, segPl, imTrk, trkfile, reffile,
-		addLabel, img, lab, label, opts, filt, filtMask, cross, volF, crossF, typeSuf,
+		cols, cFun, ran, clip, type, imFile, imDat, voxi, segPl, imTrk, trkfile, reffile,
+		addLabel, img, lab, label, filt, filtMask, cross, volF, crossF, typeSuf,
 		whatName, whatNr, segF, labAll, labCfg, nMax, typeSeg, segFileO, segMiss, segO, segDim, segKey, sg, sgT, sgF
 	},
 

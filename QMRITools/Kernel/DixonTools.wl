@@ -376,26 +376,28 @@ normNor[norm_] := 100 (Last[norm]/(Max /@ Transpose[norm]))
 RestoreDC[psi_, unw_, msk_] := msk (unw + Arg[Total[Flatten[msk Exp[I (psi - unw)]]]])
 
 
-(*per connected object the alias k of b0 + k/dt with the lowest water fat model residual, b0 is given in units of 1/dt*)
-SelectAlias[comp_, b0_, amat_, echos_, dt_, msk_] := Block[{proj, res, lab, objs, kObj, mb},
+(*the alias k of b0 + k/dt per connected object, b0 is given in units of 1/dt*)
+SelectAlias[comp_, b0_, amat_, echos_, dt_, msk_] := Block[{proj, lab, objs, mb, ref, kRel, res, g},
 	(*projection on the residual space of the water fat model*)
 	proj = IdentityMatrix[Length[echos]] - amat . PseudoInverse[amat];
 
-	(*model residual per voxel for the aliases k = -1, 0, 1*)
-	res = Table[Total[Abs[proj . (Exp[-2 Pi I k echos / dt] comp)]^2], {k, -1, 1}];
-
-	(*one mask per connected object, e.g. the two legs*)
+	(*one mask per connected object, e.g. the two legs, with its mean field*)
 	lab = MorphologicalComponents[msk];
 	objs = Table[1 - Unitize[lab - c], {c, Max[lab]}];
+	mb = Total[b0 #, -1] / Total[#, -1]& /@ objs;
 
-	(*per object the alias with the lowest total residual, a small penalty prefers the smallest field and breaks exact ties*)
-	kObj = Table[
-		mb = Total[b0 obj, -1] / Total[obj, -1];
-		First[Ordering[Table[(1 + 0.001 Abs[mb + k]) Total[res[[k + 2]] obj, -1], {k, -1, 1}]]] - 2
-	, {obj, objs}];
+	(*the field is continuous over the body, align each object to the largest one*)
+	ref = mb[[First@Ordering[Total[#, -1]& /@ objs, -1]]];
+	kRel = Round[ref - mb];
+
+	(*one alias for all objects with the lowest total water fat model residual, a small penalty prefers the smallest field and breaks exact ties*)
+	res = Table[
+		(1 + 0.001 Abs[ref + g]) Total[MapThread[Total[Total[Abs[proj . (Exp[-2 Pi I (#2 + g) echos / dt] comp)]^2] #1, -1]&, {objs, kRel}]]
+	, {g, -1, 1}];
+	g = First[Ordering[res]] - 2;
 
 	(*each voxel gets the alias of its object*)
-	Total[kObj objs]
+	Total[(kRel + g) objs]
 ]
 
 

@@ -274,7 +274,7 @@ associations merge.
 | `IVIMCorrection` | True | DTI | IVIM fit then `IVIMCorrectData` before the tensor fit |
 | `FasciculationDetection` | False | DTI | `FindActivations` on the normalised `reg` data |
 | `Settings` | – | EPGT2 | `[[exName, exAngle, {..}], [refName, refAngle, {..}]]` → `GetPulseProfile`, or plain numbers `[ex, ref]` |
-| `Shift` | – | EPGT2 | `true` → fat profile shift computed from the pulse settings |
+| `Shift` | – | EPGT2 | `true` → fat profile shift from `GetPulseProfile[..., FatFieldStrength -> json MagneticFieldStrength]` (3 T if missing), in profile samples. EPGT2 always runs with `DictT2IncludeWater -> True` and `"2compF"` calibration (Keene 2020 method C, 90/10 adipose tissue), so `fatfr` is a lipid fraction like Dixon; the calibrated `{T2fat, B1}` is logged and written as `EPGCalibration` in the output json. Details: [EPGT2.md](EPGT2.md) |
 
 ### `Merging`
 
@@ -597,6 +597,13 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   Do not scan inside a `Dynamic` or `Initialization`: the 5 s Dynamic limit gives `$Aborted`, and a long
   `Initialization` gives "Unresolved Dynamic Content" and the "Disable Dynamic Evaluation" dialog. Reload rescans
   (queued button) per view.
+- Subject selection in the GUI: the Run, Config and Check tabs show the same selector (`all`, `sel`). Config and Check get
+  `ProcessSubjects -> Dynamic[If[all, All, sel]]`; `FilterBidsSubjects` resolves a `Dynamic` with `Setting` when a scan
+  runs, so Reload (and a report export) scans the subjects selected at that moment. With an empty selection Reload and
+  export do not scan but show "Select subjects or tick All subjects", the same text as Run. The GUI variables are
+  named `allSubs` and `selSubs` on purpose: a view's own `DynamicModule` variable with the same name (`sel` in
+  `BidsCheckFilesView`) becomes the same `sel$$` in the boxes and captures the reference, so Reload saw the empty
+  check-file selection.
 - Lazy views in the GUI: `MuscleBidsGUI` builds its Config and Check tabs inside `Block[{$BidsLazy = True}, ..]`, so the
   views skip the scan in their `With` (scan result `None`, time "not scanned yet") and the GUI opens at once (about
   0.05 s instead of the sum of six scans, 6 s on a 166 subject study, much more on large ones). A lazy view says "Not

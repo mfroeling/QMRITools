@@ -798,7 +798,7 @@ Each dataset in `datasets` can have one block for every pipeline step after the 
 | `Dixon-S` | Dixon data that the scanner already reconstructed, as separate series. | the maps listed in `Types` |
 | `Dixon-A` | Dixon data where you do not know (or it differs per scan) if the scanner reconstructed it. The type is detected automatically. | the scanner maps, or the QMRITools maps when only the raw echoes are there |
 | `DTI` | Diffusion-weighted images (`Type` `dwi`). Fits a diffusion tensor. | `s0`, `md`, `fa`, `rd`, `l1`, `l2`, `l3`, `tens`, `snr0` |
-| `EPGT2` | Multi-echo spin echo T2 mapping (`Type` `mese`). Needs the RF pulse settings. | `t2w`, `t2f`, `wat`, `fat`, `fatfr`, `b1` |
+| `EPGT2` | Multi-echo spin echo T2 mapping (`Type` `mese`). Needs the RF pulse settings. The fat T2 is calibrated on the subcutaneous fat, which is assumed to be 90% fat and 10% water. `fatfr` is the lipid fraction, the same quantity Dixon gives. | `t2w`, `t2f`, `wat`, `fat`, `fatfr`, `b1` |
 | `Exp` | Simple T2 mapping (`Type` `mese`) with a single exponential fit. | `t2`, `s0` |
 
 The full list of suffixes is at <https://www.qmritools.com/bids/ents_suffs/>.
@@ -813,7 +813,7 @@ The full list of suffixes is at <https://www.qmritools.com/bids/ents_suffs/>.
 | `GradientCorrection` | For `DTI`. Corrects the diffusion for the non-linear gradients of the scanner. Set it to the coil name. The scan needs an offset in its json file (written when the data is converted), otherwise no correction is done. | `false` (no correction). Example `"WA1"` |
 | `IVIMCorrection` | For `DTI`. Removes the fast perfusion part of the signal before the tensor is fitted. | `true` |
 | `Settings` | For `EPGT2`. The two RF pulses (excitation and refocusing) of your scan, each as `[name, flip angle in degrees, [gradient strength, duration, bandwidth]]`. Copy the values from your sequence protocol. You can also give just the two flip angles, `[90, 180]`; then the slice profile and `Shift` are not used. | Required for `EPGT2` |
-| `Shift` | For `EPGT2` with pulse settings. Set to `true` to correct the fat signal for the chemical shift. | `false` |
+| `Shift` | For `EPGT2` with pulse settings. Set to `true` to correct the fat signal for the chemical shift. The field strength is read from the scan (`MagneticFieldStrength` in the JSON file), 3 T if it is missing. | `false` |
 
 **Example (Dixon):**
 

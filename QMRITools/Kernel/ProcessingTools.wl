@@ -586,7 +586,7 @@ Options[GetMaskData] = Options[GetMaskDatai] = {GetMaskOutput -> "All", GetMaskO
 SyntaxInformation[GetMaskData] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 
 GetMaskData[data_?ArrayQ, mask_, opts : OptionsPattern[]] := Block[{
-		out, msk, dat, lout
+		msk, dat
 	},
 	Which[
 		(*Apply same masks to multiple datasets with cropping*)
@@ -833,7 +833,7 @@ SyntaxInformation[NumberTableForm] = {"ArgumentsPattern" -> {_, _., OptionsPatte
 
 NumberTableForm[dat_, opts : OptionsPattern[]] := NumberTableForm[dat, 3, opts];
 
-NumberTableForm[dat_, depth_, opts : OptionsPattern[]] := Block[{opt, met},
+NumberTableForm[dat_, depth_, opts : OptionsPattern[]] := Block[{met},
 	met = OptionValue[TableMethod];
 	met = If[MemberQ[{NumberForm, ScientificForm, EngineeringForm}, met], met, NumberForm];
 	TableForm[
@@ -1108,7 +1108,7 @@ SyntaxInformation[JoinSets] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
 JoinSets[data: {_?ArrayQ ..}, over_, opts:OptionsPattern[]] := JoinSets[data, over, {1,1,1}, opts]
 
 JoinSets[data: {_?ArrayQ ..}, over_, vox_, OptionsPattern[]] := Block[{
-		dat, mon, overlap, motion, pad, normalize, depth, meth, target, normover, ran,
+		dat, mon, overlap, motion, pad, normalize, depth, normover, ran,
 		reverseS, reverseD, split
 	},
 
@@ -1208,7 +1208,7 @@ JoinSetsi[data: {_?ArrayQ ..}, overlap_?IntegerQ, norm_:False] := Block[{
 
 
 Joini[sets_, setover_, step_] := Block[{
-		over, dato, unit, noZero, tot
+		over, noZero, tot
 	},
 	(*define the overlapping voxels*)
 	noZero = Times @@ Unitize[setover];
@@ -1268,7 +1268,7 @@ Options[CorrectJoinSetMotion] = {JoinSetSplit -> True, PadOverlap -> 2, MonitorC
 SyntaxInformation[CorrectJoinSetMotion] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 CorrectJoinSetMotion[input_, vox_, over_, OptionsPattern[]] := Module[
-	{sets, mon, nmax, dim, d1, d2, maskd1, maskd2, samp, overp, pad, regFunc, depth},
+	{sets, mon, nmax, dim, d1, d2, maskd1, maskd2, samp, overp, pad, regFunc, depth, i},
 
 	(*get the input*)
 	pad = OptionValue[PadOverlap];
@@ -1429,7 +1429,7 @@ SyntaxInformation[Hist] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
 Hist[dat_, ops : OptionsPattern[]] := Hist[dat, 0, ops]
 
-Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, x, colbar, coledge, color2, color3, color4, data, r1, r2, sdr, m, s, title, label,mn,std ,fdat},
+Hist[dat_, range_, OptionsPattern[]] := Module[{sol, line, hist, colbar, coledge, color2, color3, color4, data, r1, r2, sdr, m, s, title, label,mn,std ,fdat},
 
 	{{colbar, coledge}, color2, color3, color4} = OptionValue[ColorValue];
 
@@ -1505,7 +1505,7 @@ Options[Hist2]={Scaling->False}
 SyntaxInformation[Hist2] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 Hist2[dat_?ArrayQ,range:{{_,_}..},label:{_String..},OptionsPattern[]] := 
-Module[{data,line,line1,line2,hist,x,f,omega1,omega2,xi1,xi2,alpha1,alpha2,r1,r2,sol},
+Module[{data,line,line1,line2,hist,f,omega1,omega2,xi1,xi2,alpha1,alpha2,r1,r2,sol},
 
 	If[!(Length[range]==Length[dat]==Length[label]==5),Return[Message[Hist2::size,Length[dat],Length[range],Length[label]]]];
 	data=DeleteCases[Flatten[#]//N,0.]&/@dat;
@@ -1655,7 +1655,7 @@ Options[B1MapCalc] = {B1Output -> "Map", B1Masking -> False, B1FilterData -> Tru
 
 SyntaxInformation[B1MapCalc] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
-B1MapCalc[dat_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{r, n, mask, b1, b1c, b1m, b1p, sc, data, refB1},
+B1MapCalc[dat_, {tr1_, tr2_}, a_, opts : OptionsPattern[]] := Block[{r, n, mask, b1m, b1p, data, refB1},
 	refB1 = OptionValue[ReferenceB1];
 	data = If[OptionValue[B1FilterData], HammingFilterData /@ dat, dat];
 

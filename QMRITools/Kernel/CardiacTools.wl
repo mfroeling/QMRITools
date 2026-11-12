@@ -342,7 +342,7 @@ RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -
 
 Options[PlotMaskVolume] = {Filter->True}
 
-PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Block[{pmask,dim ,xi,yi,zi,pmask2},
+PlotMaskVolume[mask_,vox_,color_:Darker[Gray],OptionsPattern[]] := Block[{pmask,dim },
 	pmask = ArrayPad[Reverse[If[OptionValue[Filter], GaussianFilter[Clip[mask], 1],	Clip[mask]], 2], 1];
 	dim=Dimensions[pmask];
 		
@@ -367,7 +367,7 @@ SyntaxInformation[HelixAngleCalc]={"ArgumentsPattern"->{_,_,_,_.,OptionsPattern[
 HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=HelixAngleCalc[data,mask,0,vox,opts]
 
 HelixAngleCalc[data_?ArrayQ, mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:=Block[
-	{out, evec, projection, inp, helix, sign, norvec,radvec, cirvec, coors, plots, i, j},
+	{out, evec, projection, inp, helix, norvec,radvec, cirvec, coors, plots},
 
 	coors = CardiacCoordinateSystem[mask, maskp, vox, 
 		ShowPlot->OptionValue[ShowPlot], 
@@ -410,8 +410,8 @@ SyntaxInformation[CardiacCoordinateSystem] = {"ArgumentsPattern" -> {_,_, Option
 CardiacCoordinateSystem[mask_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, opts:OptionsPattern[]]:= CardiacCoordinateSystem[mask, 0, vox, opts]
 
 CardiacCoordinateSystem[mask_?ArrayQ, maskp_, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, OptionsPattern[]] := Block[{
-		dim, axesout, off, vec, inout, pla, met, radvec, norvec, cirvec,norvecc, radvecn, wall, der,
-		sp, spz, spxy, maskCont, vectorField,n, z, y, x, coo, rav, nov, rov, vec1 ,vec2, vec3, plot, plw 
+		dim, axesout, off, vec, inout, pla, radvec, norvec, cirvec,norvecc, radvecn, wall, der,
+		sp, spz, spxy, maskCont, vectorField,n, coo, rav, nov, rov, vec1 ,vec2, vec3, plot, plw 
 	},
 	
 	dim = Dimensions[mask];
@@ -667,7 +667,7 @@ GetRadius[mask_] := Block[{comps, in, out, fout, fin, seg, min ,mout},
 (*FitEllipse*)
 
 
-FitEllipse[pts_, i_] := Block[{lsMat, a, b, c, d, e, f, s, val ,vec,  den, num ,fac, r0, r1,r2,ang},
+FitEllipse[pts_, i_] := Block[{lsMat, a, b, c, d, e, f, val ,vec,  den, num ,fac, r0, r1,r2,ang},
 	(*transform coordinates*)
 	lsMat = N[Function[{x, y}, {x^2, 2 x y, y^2, 2 x, 2 y, 1}] @@@ pts];
 	(*solve eclipse equation*)
@@ -1089,9 +1089,9 @@ MaskToLines[mask_, vox_] := Block[{wall, off},
 ]
 
 MaskToLines[mask_?ArrayQ, wall_?ArrayQ, cent_?ListQ] := Block[{
-	mid, offi, maski, midi, walli, dim, dimx, dimy, ptsmi, ptsm, angles,
+	mid, offi, maski, midi, walli, dim, dimx, dimy, ptsmi, ptsm, 
 	lines, tresh, seg, min, mout, mmid, int, int1, int2, intDer, step, centVal,
-	ord, vec, ptsol, ptso, ptsil, ptsi, ptsml, x, y, val, vali, k, dis, 
+	vec, ptsol, ptso, ptsil, ptsi, ptsml, x, y, val, vali, k, dis, 
 	ii, pp},
 	
 	mid = Mask[wall, {0, .5}];
@@ -1229,7 +1229,7 @@ PerimiterPoints[im_, {x_, _}, deg_] := Block[
 
 
 FindPoint[pmid_, step_, fun_] := Block[
-	{ptar, pnear, ni, nd, n, fnear, v, u, p, j}
+	{ptar, pnear, ni, nd, n, v, u, p, j}
 	,
 	(*define line perpendicular to wall and find nearest wall point*)
 	ptar = pmid + step;
@@ -1300,7 +1300,7 @@ FindLine[line_,lines_,pt:{_,_}]:=Block[{ind,dist},
 (*DistanceToLine*)
 
 
-DistanceToLine[{a1_,a2_},p_]:=Block[{v,u,pp},
+DistanceToLine[{a1_,a2_},p_]:=Block[{v,u},
 	If[a1===a2,
 		Nothing,
 		(*vectors to project point on line*)
@@ -1746,7 +1746,7 @@ RadCalc[pnt_, cent_]:=Mean[Norm[#-cent]&/@pnt];
 
 
 VecAngleC=Compile[{{pnt,_Real,2},{cent,_Real,1},{num,_Integer,0},{rev,_Real,0}},Block[{
-		x1,x2,y1,y2,ang1,ang2,angs,angs2,angsout,diff,dsep,dwall
+		x1,x2,y1,y2,ang1,ang2,angs,angs2,diff,dsep,dwall
 	},
 	{{x1,y1},{x2,y2}}=(#-cent&/@pnt);
 	ang1=ArcTan[y1,x1];
@@ -2112,7 +2112,7 @@ Options[ExcludeSlices] = {CutOffMethod -> "Auto",DistanceMeasure->5, ShowOutlier
 
 SyntaxInformation[ExcludeSlices] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-ExcludeSlices[data_, OptionsPattern[]] := Block[{measure, selmask, cutoff, std, mn, bin, type,q1,q2,q3},
+ExcludeSlices[data_, OptionsPattern[]] := Block[{measure, selmask, cutoff, type,q1,q2,q3},
 	type = OptionValue[DistanceMeasure];
 	cutoff = OptionValue[CutOffMethod];
 	(*get similarity measure*)
@@ -2234,7 +2234,7 @@ MakeECVBloodMask[pre_, post_, OptionsPattern[]] := Block[{
 (*MakeECVBloodMask*)
 
 
-ECVCalc[mappre_, mappost_, hema_?NumberQ] := Block[{z, x, y, mask},
+ECVCalc[mappre_, mappost_, hema_?NumberQ] := Block[{mask},
 	mask = MakeECVBloodMask[mappre, mappost, OutputCheckImage -> False];
 	ECVCalc[mappre, mappost, mask, hema]
 ]

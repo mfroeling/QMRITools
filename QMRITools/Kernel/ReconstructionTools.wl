@@ -221,7 +221,7 @@ ReadListData[file_]:=ReadListData[file, True]
 ReadListData[file_,print_]:=Block[{
 		fl,head,list,data,lab,dataIndex,dataVals,dataValsN,ruleKx,ruleKy,ruleKz,ruleCoil,
 		typ,pos,dataSplit,indexSplit, echo, scale, locs,cp,cn,cd,p,
-		sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,outData,outHead,std
+		sizeInd,size,ind,off,noise,indData,nSamp,kspace,line,types,std
 	},
 
 	fl = StringReplace[file,{".list"->"",".data"->""}];
@@ -564,7 +564,7 @@ ShiftRow = Exp[-2. Pi I Range[-Ceiling[#2/2], Floor[#2/2] - 1] (#1/#2)] &;
 
 SyntaxInformation[FourierKspace2D] = {"ArgumentsPattern" -> {_, _, _.}};
 
-FourierKspace2D[kspace_, head_, filt_:False] := Block[{kSize, data, kspaceF, dim, over, kFull, ksPad, shift, clip, ham},
+FourierKspace2D[kspace_, head_, filt_:False] := Block[{kSize, data, kspaceF, dim, over, kFull, ksPad, shift, clip},
 	(*the acquired k-space size*)
 	kSize = {"N_ky", "N_samp"} /. head;
 	(*get the final target data dimensions*)
@@ -657,7 +657,7 @@ FourierKspaceCSI[kspace_, 4, "3D"]:= (ShiftedInverseFourier /@ kspace)
 
 FourierKspaceCSI[kspace_, head_]:= FourierKspaceCSI[kspace, head, "3D"]
 
-FourierKspaceCSI[kspace_, head_, "3D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
+FourierKspaceCSI[kspace_, head_, "3D"]:=Block[{ksPad,dim,shift,kspaceP,imData},
 	(*get the oversampling padding*)
 	ksPad = Round[({"Z-resolution","Y-resolution","X-resolution"}{"kz_oversample_factor","ky_oversample_factor","kx_oversample_factor"}-{"N_kz","N_ky","N_kx"})/2/.head];
 	(*get the final data dimensions*)
@@ -670,7 +670,7 @@ FourierKspaceCSI[kspace_, head_, "3D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imD
 	imData = RotateRight[FourierShift[InverseFourier[FourierShift[#], FourierParameters->{0, 1}]], shift]&/@kspaceP
 ]
 
-FourierKspaceCSI[kspace_, head_, "2D"]:=Block[{ksPad,dim,imPad,shift,kspaceP,imData},
+FourierKspaceCSI[kspace_, head_, "2D"]:=Block[{ksPad,dim,shift,kspaceP,imData},
 	(*get the oversampling padding*)
 	ksPad = Round[({"Y-resolution","X-resolution"}{"ky_oversample_factor","kx_oversample_factor"}-{"N_ky","N_kx"})/2/.head];
 	(*get the final data dimensions*)
@@ -736,7 +736,7 @@ CovToWeightPCA[cov_] := Block[{vals, vecs},
 ];
 
 
-CovToWeightZCA[cov_, eps_ : 1.*^-6] := Module[{vals, vecs, invSqrt},
+CovToWeightZCA[cov_, eps_ : 1.*^-6] := Module[{vals, vecs},
 	{vals, vecs} = Eigensystem[cov];
 	Transpose[vecs] . DiagonalMatrix[1./Sqrt[vals + eps]] . Conjugate[vecs]
 ];
@@ -766,7 +766,7 @@ CoilCombine[sigI_, covI_?MatrixQ, opts : OptionsPattern[]] := CoilCombine[sigI, 
 
 CoilCombine[sigI_, sen_, opts : OptionsPattern[]] := CoilCombine[sigI, IdentityMatrix[Length@sen], sen, opts]
 
-CoilCombine[sigI_, covI_, sen_, opts : OptionsPattern[]] := Block[{met, weight, sig, sent, cov, white},
+CoilCombine[sigI_, covI_, sen_, opts : OptionsPattern[]] := Block[{met, sig, sent, cov, white},
 
 	met = OptionValue[Method];
 	white = OptionValue[NoisePrewhiten];
@@ -876,9 +876,7 @@ RoemerSCombine = Compile[{{sig, _Complex, 1}, {sen, _Complex, 1}, {cov, _Complex
 (*WSVD*)
 
 
-WSVDCombine[sig_] := Block[{weight},
-	Map[WSVDCombineT, sig, {-3}]
-];
+WSVDCombine[sig_] := Map[WSVDCombineT, sig, {-3}];
 
 
 WSVDCombineT[sig_?MatrixQ] := Block[{u, s, v, i, phi, spec},
@@ -1108,7 +1106,7 @@ SyntaxInformation[CoilWeightedReconCSI]={"ArgumentsPattern"->{_, _, _, _., Optio
 CoilWeightedReconCSI[kspace_, noise_, head_, ops:OptionsPattern[]]:=CoilWeightedReconCSI[kspace, noise, head, 0, ops]
 
 CoilWeightedReconCSI[kspace_, noise_, head_, sense_, ops:OptionsPattern[]] := Block[{
-		fids, spectra, cov, coils, sosCoils, sens, readout, dim, 
+		fids, spectra, cov, sens, readout, dim, 
 		nEnc, met, noCoils, white, denoise, nCoil, normalize, filter
 	},
 	{readout, white, denoise, nCoil, normalize, filter, met} = OptionValue[{AcquisitionMethod, NoisePrewhiten, 

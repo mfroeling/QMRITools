@@ -81,10 +81,14 @@ Then, after the loop:
 
 - **`RestoreDC`** (inside the unwrap function, every iteration): the DCT solution has zero mean, which loses the global
   phase. The constant is restored as the circular mean of (wrapped − unwrapped) inside the mask.
-- **`SelectAlias`** (L370): B0 from a pair 2 ms apart is only known modulo 1/dt = 500 Hz. Per connected object of the
-  mask (the two legs; the BIDS mask has at most 2 components) it compares B0 + k/dt, k = −1, 0, 1, by the residual of a
-  water-fat model with free complex amplitudes and keeps the lowest. A 0.1% penalty per unit of |mean field| prefers the
-  smallest field and breaks exact ties (with even echo spacing ±1/ΔTE aliases are identical).
+- **`SelectAlias`** (L370): B0 from a pair 2 ms apart is only known modulo 1/dt = 500 Hz. Two steps:
+  1. The field is continuous over the body, so each connected object of the mask (the two legs; the BIDS mask has at
+     most 2 components) is first aligned to the largest object: `kRel = Round[mean B0 largest − mean B0 object]`.
+  2. One global alias g ∈ {−1, 0, 1} for all objects: the one with the lowest water-fat model residual (free complex
+     amplitudes) summed over all objects. A 0.1% penalty per unit of |mean field| prefers the smallest field and breaks
+     exact ties (with even echo spacing ±1/ΔTE aliases are identical).
+  A per-object choice (the first version) failed in the motion study ses-005 calf: for one leg the residual preferred
+  the wrong alias (1.00 vs 1.28), so that leg was swapped. Summed over both legs the right alias wins (3.30 vs 4.40).
 - φ0 gets one global sign correction (phase of the summed W+F), not a per-voxel one: per voxel it soaks up the B0 fat
   bias and noise.
 - T2* from a log fit of the magnitude from the first echo after 0.75 · in-phase period.
@@ -150,7 +154,7 @@ Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fa
 | Q2 ✔ | MuscleBids `Dixon-B` start B0 | **Fixed.** Divided by n·ΔTE instead of the first-to-last span (17% low with 6 echoes). Now `Last − First` echo time. |
 | Q3 ✔ | usage strings | **Fixed.** Units (s, cycles), defaults (`DixonPrecessions` 1, `DixonTolerance` 1, absolute `DixonMaskThreshold` 0.1), `DixonFixT2` values, output structure, `UnwrapThresh` range, `OptimizeDixonEcho` forms. |
 | Q4 ✔ | `DixonPhase` unwrap | **Fixed.** The zero-mean DCT solution lost the global phase; `RestoreDC` restores it. |
-| Q5 ✔ | `DixonPhase` B0 alias | **Fixed.** B0 is known modulo 1/dt; `SelectAlias` picks the alias per object. This was the main cause of whole-leg swaps (motion study, ses-006 calf). |
+| Q5 ✔ | `DixonPhase` B0 alias | **Fixed.** B0 is known modulo 1/dt. `SelectAlias` aligns the objects by mean B0 and picks one global alias by the summed residual. The DC loss (Q4) and the alias were the cause of whole-leg swaps (motion study ses-006 calf: fixed by `RestoreDC`; ses-005 calf, one leg: fixed by the global alias, a per-object choice picked the wrong one). |
 | Q6 ✔ | `DixonPhase` φ0 | **Fixed.** The final sign step added Arg to the variable that holds 2φ0 (half correction), and the DC loss removed a constant φ0. Now a global sign on the restored map. |
 | Q7 ✔ | `DixonReconstruct` φ0 with complex amplitudes | **Fixed.** Fitting φ0 next to complex amplitudes was singular (PseudoInverse hid it, the φ0 map was arbitrary). φ0 is no longer fitted there; output = Arg(W+F). |
 | Q8 ✔ | constrained mode | **Fixed.** Diverged in fat voxels (18% swaps) from the fat-biased start; now starts from the complex-amplitude fit. Relevant for the constrained rows of Froeling 2024 Fig. 7. |
@@ -160,7 +164,7 @@ Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fa
 | Q12 ✔ | `res` | **Fixed.** Scaled only when the output filter was on. |
 | Q13 | output median filter | **Intentional, keep.** The median pulls B0 toward 0 at the mask edge. A background fill (`FillBackground`) was tried and **removed on request**: with the extended BIDS masks the effect is negligible and the fill complicates consistency. Do not re-add. |
 | Q14 ✔ | MuscleBids `Dixon-B` | **Fixed.** Did not pass `DixonFieldStrength`, so it always assumed 3 T. Now in `dixOpts`. |
-| Q15 | local swaps | **Open (next research step).** Inside one leg where B0 is steep (calf end slices, B0 +200…+300 Hz) swaps remain, in old and new code. Needs a spatial method (region growing / graph cut). Motion study, full rerun: ses-005 left calf still has fibularis brevis/tertius and FHL at ~96% FF and EHL at 50% (old and new alike), while the whole-leg swap of the ses-006 right calf (same four muscles, 57–85%) is gone. |
+| Q15 | local swaps | **Open (next research step).** Inside one leg where B0 is steep (calf end slices, B0 +200…+300 Hz) swaps remain, in old and new code. Needs a spatial method (region growing / graph cut). The ses-005 left calf (fibularis brevis/tertius and FHL ~96% FF) turned out to be a whole-leg alias swap, not a local one; fixed in Q5. Swapped legs also show unrealistic T2*; a post-fit check per object (T2* or FF far off from the other objects) is an option if swaps remain. |
 | Q16 | `DixonPhase` B0 in fat | **Open.** Echoes {2, 4} are not exactly in-phase for fat: B0 starts ≈ 70 Hz off in fat. Causes the 0.2–0.4% isolated swaps. |
 | Q17 | input shapes | **Open, existing.** `DixonReconstruct` needs 2D/3D images (mask uses `Closing`); single voxels or `{echo, n}` fail. `DixonPhase` hangs on a single 2D image. |
 | Q18 | `SimulateDixonSignal` | **Kept.** `fr` is the water fraction; usage documents it, behaviour kept for existing notebooks. |
@@ -204,7 +208,7 @@ error and voxels with |FF − true| > 0.4 (swaps).
 | Function | Line | Role |
 | --- | --- | --- |
 | `DixonPhase` | L242 | start maps (B0, T2*, φ0, θ0) |
-| `RestoreDC`, `SelectAlias` | L366, L370 | constant after unwrap; B0 alias per object |
+| `RestoreDC`, `SelectAlias` | L366, L370 | constant after unwrap; objects aligned, one global B0 alias |
 | `ApplyPhase`, `DotAc` | L396, L405 | compiled helpers of `DixonPhase` |
 | `FixDixonFlips`, `FindComplexFlips` | L418 | 180° volume flips (commented out in the BIDS pipeline) |
 | `DixonReconstruct` | L480 | IDEAL reconstruction and outputs |

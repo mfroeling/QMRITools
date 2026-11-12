@@ -555,7 +555,7 @@ GetPulseProfile[ex_?ListQ, ref_?ListQ, opts : OptionsPattern[]] := Module[{
 
 	If[OptionValue[FatFieldStrength] > 0,
 		(*calculate the fat slice shift in mm*)
-		shift = 3.4 OptionValue[FatFieldStrength] 42.5775 (sl1/ex[[3,3]] - sl2/ex[[3,3]]);
+		shift = 3.4 OptionValue[FatFieldStrength] 42.5775 (sl1/ex[[3,3]] - sl2/ref[[3,3]]);
 		step = OptionValue[SliceRange]/OptionValue[SliceRangeSamples]/2.;
 		fatShift = Abs[shift/step];
 		{exOut[[6, samples + 1 ;;]], refOut[[6, samples + 1 ;;]], fatShift, {pl1, pl2}}
@@ -652,7 +652,7 @@ SyntaxInformation[SimulateSliceEPG] = {"ArgumentsPattern" -> {_, _,_, OptionsPat
 
 SimulateSliceEPG[excitation_, refocus_, {{t1_, t2_}, {nEcho_, echoSp_}, b1_}, OptionsPattern[]] := Module[{
 		sig, sigTrue, sigT, sigAll, sigInd, len, max, vv, vp, va, sigO, prof,
-		info, fit, fitT2, fitT2T, epgT2, epgT2T, lines, plots, te, t2f, maxSig
+		info, fit, fitT2, fitT2T, epgT2, epgT2T, lines, plots, te, t2f, maxSig, text
 	},
 
 	(*define the signals for plotting*)
@@ -739,7 +739,7 @@ GFactorSimulation[sensitivity_, w_, {dir1_, senseA_?ListQ}, {dir2_, senseB_?List
 GFactorSimulation[sensitivity_, w_, mask_, {dir1_, senseA_?ListQ}, opts : OptionsPattern[]] := GFactorSimulation[sensitivity, w, mask, {dir1, senseA}, {"", {0}}, opts]
 
 GFactorSimulation[sensitivity_, w_, mask_, {dir1_, senseA_?ListQ}, {dir2_, senseB_?ListQ}, OptionsPattern[]] := Block[{
-		dir, dim, factors, gFactorsAX, gFactorsCOR, gFactorsSAG, lambda, sense1, sense2, sense3, nn, gFactors, reg
+		dir, factors, sense1, sense2, gFactors, reg
 	},
 	
 	(*get the sense factor and directions*)
@@ -1304,7 +1304,7 @@ PlotSincProfile[f0_ ] := Manipulate[
 ]
 
 
-PlotSincProfileI[tau_ , f0_ , {fa_, b1_, {tr_, t1_}}, pr_] := Block[{e1, s0, s02},
+PlotSincProfileI[tau_ , f0_ , {fa_, b1_, {tr_, t1_}}, pr_] := Block[{e1, s0},
 	e1 = Exp[-tr / t1];
 	s0 = (1 - e1) Sin[fa Degree]/ (1 - e1 Cos[fa Degree]);
 

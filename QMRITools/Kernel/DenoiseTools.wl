@@ -361,10 +361,10 @@ PCADeNoise[data_, mask_, opts : OptionsPattern[]] := PCADeNoise[data, mask, 0., 
 
 PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		weight, ker, tol, mon, data, min, max, maskd, mask, sigma, dim, zdim, ydim, xdim, dDim, 
-		k, m, off, datao, weights, sigmat, start, sigmati, nmati, clip, comp, len,
+		k, m, off, datao, weights, sigmat, sigmati, nmati, clip, comp, len,
 		output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
 		weightFun, posV, length, nearPos, p, pi, pos, np, met, comps,
-		mid, pad, fun, par, dimv, coors, bias
+		mid, pad, fun, par, dimv, coors, bias, x, y, z
 	},
 
 	(*tollerane if>0 more noise components are kept*)
@@ -630,7 +630,7 @@ PCADeNoiseDims[k_, dd_] := If[dd < k, {False, dd, k}, {True, k, dd}]
 
 (*internal function*)
 PCADeNoiseFit[data_, sigi_?NumberQ, {trans_, m_, n_}, toli_] := Block[{
-		xmat, xmatT, val, mat, pi, sig, xmatN, tol, out
+		xmat, xmatT, val, mat, pi, sig, tol, out
 	},
 
 	(*perform decomp*)
@@ -760,7 +760,7 @@ SyntaxInformation[	P2SDenoise] = {"ArgumentsPattern" -> {_, _., _., OptionsPatte
 P2SDenoise[data_, opts : OptionsPattern[]] := P2SDenoise[data, 1, opts];
 
 P2SDenoise[data_, mask_, opts : OptionsPattern[]] := Block[{
-		back, dat, coor, msk, ran, n, d, di, s, matS
+		back, dat, coor, msk, ran, n, d, di, matS
 	},
 	(*make selection mask and vectorize data*)
 	back = Round[mask Mask[NormalizeMeanData[data], OptionValue[Threshold]]];
@@ -805,7 +805,7 @@ CountSketch[mat_?MatrixQ, s_Integer, ns_Integer] := Block[{n, d, S},
 LeverageSketch[mat_?MatrixQ, s_Integer] := LeverageSketch[mat, s, 1]
 
 LeverageSketch[mat_?MatrixQ, s_Integer, ns_Integer] := Block[{
-		n, d, S, u, probs, index
+		n, d, S, probs, index
 	},
 	{n, d} = Dimensions@mat;
 
@@ -831,7 +831,7 @@ Options[DenoiseCSIdata] = {PCAKernel -> 5, PCANoiseSigma->"Corners", PCAWeightin
 
 SyntaxInformation[DenoiseCSIdata]={"ArgumentsPattern"->{_, OptionsPattern[]}}
 
-DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, out, hist, len, spectraDen, nn ,sel},
+DenoiseCSIdata[spectra_, OptionsPattern[]] := Block[{sig, len, spectraDen, nn ,sel},
 	(* assusmes data is (x,y,z,spectra)*)
 	len = Dimensions[spectra][[-1]];
 
@@ -899,8 +899,8 @@ SyntaxInformation[AnisoFilterTensor] = {"ArgumentsPattern" -> {_, _, OptionsPatt
 AnisoFilterTensor[tensi_,opts:OptionsPattern[]]:=AnisoFilterTensor[tensi, 1, opts]
 
 AnisoFilterTensor[tensi_,dat_,OptionsPattern[]]:=Block[{
-	weights,kernels,mn,j,datf,kers,wts,lambda,finDiff,wtsI,
-	itt,time,kappa,type, data, tens
+	weights,mn,j,datf,kers,wts,lambda,finDiff,wtsI,
+	itt,time,kappa,type, tens
 	},
 	(*get the options*)
 	itt=OptionValue[AnisoFilterSteps];
@@ -951,7 +951,7 @@ Options[WeightMapCalc]={AnisoWeightType->2, AnisoKappa->10.};
 SyntaxInformation[WeightMapCalc] = {"ArgumentsPattern" -> {_, OptionsPattern[]}};
 
 WeightMapCalc[data_,OptionsPattern[]]:=Block[{
-	kers,wts,weights,finDiff,dat,dim,len, kappa, type
+	kers,wts,weights,dat,dim,len, kappa, type, i
 	},
 	(*get the options*)
 	kappa=N@OptionValue[AnisoKappa];
@@ -1029,7 +1029,7 @@ SyntaxInformation[AnisoFilterData] = {"ArgumentsPattern" -> {_, OptionsPattern[]
 AnisoFilterData[data_, opts:OptionsPattern[]] := AnisoFilterData[data, {1, 1, 1}, opts]
 
 AnisoFilterData[data_, vox_, opts:OptionsPattern[]] := Block[{
-	dd, grads, k, jacTot, tMat, div, dati,
+	dd, grads, jacTot, tMat, div, dati,
 	sig, rho , step, itt, sc, max, tr, cr, ind
 	},
 	(*for implementation see 10.1002/mrm.20339*)
@@ -1134,8 +1134,8 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, seg_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?
 	HarmonicDenoiseTensor[tensI, seg, vox, 0, opts]
 
 HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, labs_, OptionsPattern[]]:=Block[{
-		sigma, flip, per, itt, step, tol, rFA, rMD, seg, lab, mon, tensC, denoise,
-		tensO, dimT, conO, dimC, ampO, dimA, mus, crop, tens, con, amp, 
+		sigma, flip, per, itt, step, tol, rFA, rMD, seg, mon, tensC, denoise,
+		tensO, dimT, conO, dimC, ampO, dimA, crop, tens, con, amp, 
 		mask, vecN, sel, coor, val, vec, tm, n, or, tensF
 	},
 
@@ -1181,6 +1181,7 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 	(*paralell map over all muscles and denoise*)
 	If[mon, MonitorFunction["Starting denoising"]];
 	tm = First@AbsoluteTiming[denoise = If[OptionValue[Parallelize],
+		(*no debug output from subkernels*)
 		debugDenoise[x___] := 1;
 		DistributeDefinitions[HarmonicDenoiseTensorI, MakeGradientLaplacian, debugDenoise,
 			MakeRBF, IndexSwitch, gaussianRBFGradientC, ToPackedArray,
@@ -1229,8 +1230,8 @@ HarmonicDenoiseTensor[tensI__?ArrayQ, segI_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _
 
 
 HarmonicDenoiseTensorI[{tens_, vec_}, mask_, vox_, {sigma_, itt_, step_, tol_}]:=Block[{
-		mon, G, L, R, coor, sel, map, vecN, 
-		vecH, tensN, maps, tgl, tr, tt
+		G, L, R, coor, sel, map, vecN, 
+		vecH, maps, tgl, tr, tt
 	},
 
 	(*make gradien,laplace and RBF matrix functions*)
@@ -1429,7 +1430,7 @@ IndexSwitch = Compile[{{i, _Integer, 1}, {dm, _Integer, 0}},
 
 FitHarmonicBasis[tv_, sel_, {matG_ ,matL_, matR_}, {itt_, step_, tolI_}]:=Block[{
 		tol, matGt, h0, vec0, v0, solver, dvh, dvg, i, j, thp, th, tgp, tg, vsh, vsg,
-		h1, vec1, v1, vh, a0, a1, vha, d, dim, tens, vec, val, sth, stg, diff, mon
+		h1, vec1, v1, vh, a0, a1, d, dim, tens, vec, sth, stg, diff
 	},
 
 	(*vectorize the data*)
@@ -1607,7 +1608,7 @@ MakeSolutionMaps[{con_, amp_}, {coorCent_, coorGrad_, dim_}]:=Block[{
 
 
 ReconstrucTensor[vecN1_, {valI_, vecI_}, sel_, coor_] := Block[{
-		cors, dim, vec, vecN2, vecN3, vecN, tensN, val
+		cors, dim, vec, tensN, val
 	},
 
 	vec = SelectVector[vecI, sel][[All, 2]];

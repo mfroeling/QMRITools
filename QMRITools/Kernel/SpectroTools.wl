@@ -738,9 +738,9 @@ SyntaxInformation[GetSpectraBasisFunctions] = {"ArgumentsPattern" -> {_, _, Opti
 GetSpectraBasisFunctions[inp_, opts:OptionsPattern[]] := GetSpectraBasisFunctions[inp, {""}, opts]
 
 GetSpectraBasisFunctions[inp_, split_, OptionsPattern[]] := Block[{
-		cf, bw, nSamp, lw, lws, read, sys, din, struct, dr, te, tm, sVals, seq, readout, 
+		cf, bw, nSamp, read, sys, din, struct, dr, te, tm, sVals, seq, readout, 
 		t1, t2, nEcho, sysAll, spinTab, field, nuc, nam, labs, names, 
-		times, fids, specs
+		fids, specs
 	},
 
 	(*get the option values*)
@@ -838,7 +838,7 @@ PlotSpectra[spec_, {dwell_?NumberQ, gyro_?NumberQ}, opts : OptionsPattern[]] := 
 PlotSpectra[spec_, {dwell_?NumberQ, field_?NumberQ, nuc_?StringQ}, opts : OptionsPattern[]] := PlotSpectra[GetPpmRange[If[MatrixQ[spec],spec[[1]],spec], dwell, field, nuc], spec, opts]
 
 PlotSpectra[ppm_?VectorQ, spec_, OptionsPattern[]] := Block[{
-		fun, plot, plot2, grid, gridS, or, rr, col, space, cols, cols2, pl1, pl2, labels, min, max, shift
+		fun, plot, plot2, grid, gridS, rr, col, space, cols, cols2, pl1, pl2, labels, min, max, shift
 	},
 
 	(*get the plot range*)
@@ -1503,7 +1503,7 @@ ExportSparSdat[file_, specs_, {bw_, te_}, {gyro_, nuc_}, vox_, opts:OptionsPatte
 (*ToVaxD*)
 
 
-ToVaxD=Compile[{{num,_Real,0}},Block[{signBin,numA,exp,expBin,frac,fracBin},
+ToVaxD=Compile[{{num,_Real,0}},Block[{signBin,numA,exp,expBin,fracBin},
 	If[num===0.,
 		FromDigits[ConstantArray[0,32],2],
 		(*get the sign bit ans remove sign*)

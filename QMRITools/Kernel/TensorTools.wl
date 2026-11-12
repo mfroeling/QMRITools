@@ -962,7 +962,7 @@ Module[{angles},
 SyntaxInformation[AngleMap] = {"ArgumentsPattern" -> {_}};
 
 AngleMap[vec_] := 
-Module[{az,zen},
+Module[{az,zen, v},
 	Transpose[Map[If[#=={0,0,1},
 		{0,0},
 		If[Negative[#[[3]]],v=-#,v=#];

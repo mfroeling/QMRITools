@@ -198,7 +198,7 @@ NormalizeData[data_, opts : OptionsPattern[]] := Block[{dataM, mask},
 	]
 ]
 
-NormalizeData[data_, msk_, opts : OptionsPattern[]] := Block[{dat, mn, min, dato, mask},
+NormalizeData[data_, msk_, opts : OptionsPattern[]] := Block[{mn, dato, mask},
 	mask = Normal@msk;
 	dato = data - Min[data];
 	mn = Switch[ArrayDepth[data],
@@ -295,7 +295,7 @@ Mask[{dat_?ArrayQ, tr_?NumberQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
 
 Mask[{dat_?ArrayQ, tr_?VectorQ}, opts : OptionsPattern[]] := Mask[dat, tr, opts]
 
-Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, tresh, dataD, datN, data, dil},
+Mask[dat_?ArrayQ, tr_?VectorQ, opts:OptionsPattern[]]:= Block[{mask, dataD, data},
 
 	(*perform data checks*)
 	data = ToPackedArray@N@Normal@dat;
@@ -508,7 +508,7 @@ SyntaxInformation[MergeSegmentations] = {"ArgumentsPattern" -> {_, _.}};
 
 MergeSegmentations[seg_]:= MergeSegmentations[seg, Range[Length[First@seg]]]
 
-MergeSegmentations[seg_, lab_] := Block[{mt, nv},
+MergeSegmentations[seg_, lab_] := Block[{mt},
 	mt = Transpose[If[!SparseArrayQ@seg, SparseArray@Round@seg, seg]];
 	(*mapping over sparse is quicker than direct multiplication and total*)
 	Normal[Total[mt[[#]] lab[[#]] & /@ Range[Length@lab]] (1 - UnitStep[Total[# & /@ mt] - 2])]
@@ -618,7 +618,7 @@ SyntaxInformation[SmoothSegmentation] = {"ArgumentsPattern" -> {_, _., OptionsPa
 
 SmoothSegmentation[maskIn_, opts:OptionsPattern[]] :=SmoothSegmentation[maskIn, All, opts]
 
-SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := Block[{smooth, obj, md, masks, labs},
+SmoothSegmentation[maskIn_, what_, opts:OptionsPattern[]] := Block[{md, masks, labs},
 	md = ArrayDepth[maskIn];
 	(*split segmentations and make sparse if needed*)
 	If[md===3, {masks, labs} = SplitSegmentations[maskIn], masks = maskIn];

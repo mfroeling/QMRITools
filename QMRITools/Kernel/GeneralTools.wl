@@ -469,7 +469,7 @@ SetDemoDirectory[] := SetDirectory[FileNameJoin[{DirectoryName[GetAssetLocation[
 (*ParseCommandLine*)
 
 
-ParseCommandLine[args_] := Block[{flagPos, n, assoc, i, key, valList, val}, 
+ParseCommandLine[args_] := Block[{flagPos, n, assoc, key, valList, val}, 
 	assoc = <||>;
 	(*Skip script name*)
 	n = Length[args];
@@ -743,7 +743,7 @@ RescaleData[data_?ArrayQ, dim_?VectorQ, opts : OptionsPattern[]] := RescaleDataI
 
 Options[RescaleDataI] = {InterpolationOrder -> 3};
 
-RescaleDataI[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[{type, dim, int, dataOut},
+RescaleDataI[data_?ArrayQ, sc_?VectorQ, met_, opts : OptionsPattern[]] := Block[{dim, int, dataOut},
 	dim = Dimensions[data];
 	int = Round[OptionValue[InterpolationOrder]];
 
@@ -1470,7 +1470,7 @@ PrintAll[{name_, functions_, options_}] := Print@FuncListColumn[name,
 
 SyntaxInformation[CompilableFunctions] = {"ArgumentsPattern" -> {}};
 
-CompilableFunctions[] := Block[{list1, list2, grids},
+CompilableFunctions[] := Block[{list1, list2, grids, i},
 	(*based on https://mathematica.stackexchange.com/questions/1096/list-of-compilable-functions*)
 	Internal`CompileValues[]; (*to trigger auto-load*)
 	ClearAttributes[Internal`CompileValues, ReadProtected];
@@ -1968,7 +1968,7 @@ Options[BSplineCurveFit] = {SplineDegree -> 2, SplineKnotsNumber -> 50, SplineRe
 
 SyntaxInformation[BSplineCurveFit] = {"ArgumentsPattern" -> {_, OptionsPattern[]}}
 
-BSplineCurveFit[pts_, opts : OptionsPattern[]] := Block[{paras, knots, coefficientMat, controlPoints, cpn, sd, reg, len, Amat, ptsP},
+BSplineCurveFit[pts_, opts : OptionsPattern[]] := Block[{coefficientMat, controlPoints, cpn, len, Amat, ptsP},
 	len = Length[pts];
 	cpn = Min[{len - 2, OptionValue[SplineKnotsNumber]}];
 
@@ -1986,7 +1986,7 @@ BSplineCurveFit[pts_, opts : OptionsPattern[]] := Block[{paras, knots, coefficie
 Options[BSplineBasisFunctions] = {SplineDegree -> 2, SplineKnotsNumber -> 50, SplineRegularization -> 0};
 
 BSplineBasisFunctions[nPts_, opts : OptionsPattern[]] := BSplineBasisFunctions[nPts, opts] = Block[{
-	cpn, sd, reg, len, paras, knots, coefficientMat, coefficientMatR, coefficientMatDD, smooth
+	cpn, sd, reg, paras, knots, coefficientMat, coefficientMatR, coefficientMatDD, smooth
 	},
 	(*Get the options*)
 	cpn = OptionValue[SplineKnotsNumber];
@@ -2016,7 +2016,7 @@ BSplineBasisFunctions[nPts_, opts : OptionsPattern[]] := BSplineBasisFunctions[n
 
 
 (*generate b-spline basis functions with order p and knots, for x points*)
-Basis[p_, knots_, x_] := Basis[p, knots, x] = Block[{kn, ui, ui1, uip, uip1, bi, bi1, d1, d2},
+Basis[p_, knots_, x_] := Basis[p, knots, x] = Block[{kn, ui, ui1, uip, uip1, bi, bi1},
 	(*function cashes the basis function already calculated*)
 	If[p == 0,
 		(*first order splines*)
@@ -2184,7 +2184,7 @@ SyntaxInformation[MakeFunctionGraph] = {"ArgumentsPattern" -> {_, OptionsPattern
 MakeFunctionGraph[func_, opts:OptionsPattern[]] := Block[{
 		fName, lab, self, in, cont, fList, names, types, contexts, edges, legend, filter,
 		vertCol, vertFunc, vertLab, colorLab, typeLab, legendColor, ims, legendShape,
-		fCont, filt
+		fCont, filt, f
 	},
 
 	{lab, self, filter} = OptionValue[{LabelPlacement, AllowSelfDependencies, FilterInternal}];

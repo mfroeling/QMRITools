@@ -831,7 +831,7 @@ SyntaxInformation[ChangeNetDimensions] = {"ArgumentsPattern" -> {_, OptionsPatte
 
 ChangeNetDimensions[netIn_, OptionsPattern[]] := Block[{
 		dimIn, nChanIn, nClassIn,
-		dimOut, nChanOut, nClassOut, filt, netOut, start
+		dimOut, nChanOut, nClassOut, netOut
 	},
 
 	{dimOut, nChanOut, nClassOut} = OptionValue[{"Dimensions", "Channels", "Classes"}];
@@ -1147,7 +1147,7 @@ NetSummary[net_] := NetSummary[net, ""]
 NetSummary[net_?ListQ, rep_?StringQ] := NetSummary[#, rep]&/@net
 
 NetSummary[net_, rep_?StringQ] := Block[{
-		toK, st, quantStr, quantStrG, lays, convLayers, kerns, count, nKern, kernWeights, makeNetIm, im, 
+		toK, st, quantStr, quantStrG, lays, convLayers, kerns, count, nKern, kernWeights, makeNetIm, 
 		norm, normWeights, nElements, elements, elemSize, arrSize, netSize, table, nodes, netIm, nodeIm
 	},
 

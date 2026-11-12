@@ -957,7 +957,7 @@ ImportNiiT1[file_] := Block[{t1, t1Vox, t1Cor, fit},
 (*CorrectMapData*)
 
 
-CorrectMapData[dataI_, maps_: 1] := Block[{slices, echos, data, map, mask},
+CorrectMapData[dataI_, maps_: 1] := Block[{slices, echos, data, map},
 	{slices, echos} = Dimensions[dataI][[1 ;; 2]] - {0, maps};
 	(*Flatten the data and remove the T2map*)
 	data = Flatten[Transpose[dataI], 1];
@@ -1165,7 +1165,7 @@ ExportNiiDefault[file_, rule_, opts : OptionsPattern[]] := Block[{ver, data, hea
 
 MakeNiiHeader[rule_, ver_, OptionsPattern[ExportNiiDefault]] := Block[{
 		vox, dim, nDim, type, range, data, header, headerInp, voxInp, headerDef, off, sl, 
-		offInp, rotS, rot, rotQ, code, sCode, qCode, qb, qc, qd, sx, sy, sz, offs, xOffQ, yOffQ, zOffQ
+		rotS, rot, rotQ, code, sCode, qCode, qb, qc, qd, sx, sy, sz, offs, xOffQ, yOffQ, zOffQ
 	},
 
 	type = OptionValue[NiiDataType];

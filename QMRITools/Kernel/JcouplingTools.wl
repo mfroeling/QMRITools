@@ -290,7 +290,7 @@ SimEvolveM[matU_,valD_,t_]:=Chop[Transpose[matU] . SparseArray[DiagonalMatrix[Ex
 
 SyntaxInformation[SimRotate]={"ArgumentsPattern" -> {_, _, _, _.}};
 
-SimRotate[din_,ham_,angle_,phase_:90]:=Block[{alpha,ph,dinS,Fx,Fy,Fz,Rz,rotate, pMat,rMat, tMat},
+SimRotate[din_,ham_,angle_,phase_:90]:=Block[{alpha,ph,Fx,Fy,Fz,Rz,pMat,rMat, tMat},
 	{alpha,ph}={angle, phase}Degree;(*to rad*)
 	rMat=MatrixExp[I alpha ("Fx"/.ham)];(*rotation around x*)
 	pMat=MatrixExp[-I ph ("Fz"/.ham)];(*phase - rotation around z*)
