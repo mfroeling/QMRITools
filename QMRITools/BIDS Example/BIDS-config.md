@@ -798,7 +798,7 @@ Each dataset in `datasets` can have one block for every pipeline step after the 
 | `Dixon-S` | Dixon data that the scanner already reconstructed, as separate series. | the maps listed in `Types` |
 | `Dixon-A` | Dixon data where you do not know (or it differs per scan) if the scanner reconstructed it. The type is detected automatically. | the scanner maps, or the QMRITools maps when only the raw echoes are there |
 | `DTI` | Diffusion-weighted images (`Type` `dwi`). Fits a diffusion tensor. | `s0`, `md`, `fa`, `rd`, `l1`, `l2`, `l3`, `tens`, `snr0` |
-| `EPGT2` | Multi-echo spin echo T2 mapping (`Type` `mese`). Needs the RF pulse settings. The fat T2 is calibrated on the subcutaneous fat, which is assumed to be 90% fat and 10% water. `fatfr` is the lipid fraction, the same quantity Dixon gives. | `t2w`, `t2f`, `wat`, `fat`, `fatfr`, `b1` |
+| `EPGT2` | Multi-echo spin echo T2 mapping (`Type` `mese`). Needs the RF pulse settings. The fat T2 is calibrated on the subcutaneous fat, which is assumed to be 90% fat and 10% water. `fatfr` is the lipid fraction, the same quantity Dixon gives, corrected for the slower T1 recovery of water at the scan's repetition time. | `t2w`, `t2f`, `wat`, `fat`, `fatfr`, `b1` |
 | `Exp` | Simple T2 mapping (`Type` `mese`) with a single exponential fit. | `t2`, `s0` |
 
 The full list of suffixes is at <https://www.qmritools.com/bids/ents_suffs/>.

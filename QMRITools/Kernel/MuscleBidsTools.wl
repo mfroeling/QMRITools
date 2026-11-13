@@ -2374,8 +2374,9 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 					If[total > 0, "subjects started "<>ToString[touched]<>" of "<>ToString[total], Nothing],
 					Style[now, Italic]
 				}]],
-				OpenerView[{"Log", Dynamic[Pane[Style[StringRiffle[tail, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 200}, Scrollbars -> Automatic]]}],
-				OpenerView[{"Messages", Dynamic[Pane[Style[StringRiffle[msgs, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 100}, Scrollbars -> Automatic]]}]
+				(*both panes scrolled to the end, the newest line stays in view*)
+				OpenerView[{"Log", Dynamic[Pane[Style[StringRiffle[tail, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 200}, Scrollbars -> Automatic, ScrollPosition -> {0, 10^6}]]}],
+				OpenerView[{"Messages", Dynamic[Pane[Style[StringRiffle[msgs, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 100}, Scrollbars -> Automatic, ScrollPosition -> {0, 10^6}]]}]
 			}, Spacings -> 1],
 			(*lazy views, Reload scans the subjects selected at that moment*)
 			"Config" -> Column[{subjects, Block[{$BidsLazy = True}, MuscleBidsConfig[dir, ProcessSubjects -> Dynamic[If[allSubs, All, selSubs]]]]}, Spacings -> 1],
@@ -3455,7 +3456,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
 		int, dint, suffix, types, flip, per, magph, split, ivim, shift, t2, pulse, cal,
 		fasc, fascm, sel, norm, rdim, raw, rmet, rician, sigI, bv, init, exist,
-		denOpts, dixOpts, epgOpts, phaseEchoes, procInfo, precRatio, precResult
+		denOpts, dixOpts, epgOpts, phaseEchoes, phaseOpts, procInfo, precRatio, precResult
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -3518,6 +3519,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					(*-----*)AddToLog["Starting processing for data:", 3, True];
 					outTypes = {};
 					echos = {};
+					phaseOpts = {};
 					settingPro = <||>;
 
 					(*----------------------------------------------*)
@@ -3651,7 +3653,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 										(*calculated field maps*)
 										(*-----*)AddToLog[{"Starting field map calculation"}, 4];
-										{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos];
+										phaseOpts = {DixonFieldStrength -> field, DixonGraphCut -> 3};
+										{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos, Sequence @@ phaseOpts];
 										phaseEchoes = {e1, e2};
 										(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000 echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
 
@@ -3707,7 +3710,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									(*settings used for the fit, exported with the data*)
 									settingPro = <|
 										"DixonSource" -> "QMRITools", "Denoise" -> OptionsToJSON[denOpts],
-										"DixonPhaseEchos" -> phaseEchoes, "DixonSettings" -> OptionsToJSON[dixOpts],
+										"DixonPhaseEchos" -> phaseEchoes, "DixonPhaseSettings" -> OptionsToJSON[phaseOpts],
+										"DixonSettings" -> OptionsToJSON[dixOpts],
 										"DixonPrecessionCheck" -> <|"Ratio" -> Round[precRatio, 0.001], "Result" -> precResult|>
 									|>;
 
@@ -4074,11 +4078,15 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 										{ex, ref},
 										thk = json["SliceThickness"];
 										(*field strength for the fat shift, zero if no shift*)
-										shift = ConfigLookup[datType, "Process", "Shift"] === True;
-										field = If[shift, Lookup[json, "MagneticFieldStrength", 3.], 0.];
-										pulse = GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk, FatFieldStrength -> field];
-										(*fat shift in profile samples*)
-										shift = If[shift, pulse[[3]], 0.];
+										field = If[ConfigLookup[datType, "Process", "Shift"] === True,
+											Lookup[json, "MagneticFieldStrength", 3.],
+											0.
+										];
+										pulse = GetPulseProfile[ex, ref,
+											SliceRange -> 3 thk, SliceRangeSamples -> 6 thk, FatFieldStrength -> field
+										];
+										(*fat shift in profile samples, only given with a field strength*)
+										shift = If[field > 0, pulse[[3]], 0.];
 										If[shift != 0,
 											(*-----*)AddToLog[{"Shifting fat profile with: ", shift, " samples at ", field, " T"}, 4]
 										];
@@ -4090,11 +4098,14 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									(*calculate the water t2 map, the fit settings are exported with the data*)
 									(*-----*)AddToLog["Starting EPG T2 calculation", 4];
 									epgOpts = {
-										DictT2IncludeWater -> True, EPGFitFat -> False, EPGCalibrate -> True, EPGFitPoints -> 100, EPGFatShift -> shift,
+										DictT2IncludeWater -> True, EPGFitFat -> False, EPGCalibrate -> True, 
+										EPGFitPoints -> 100, EPGFatShift -> shift,
 										DictT2fValue -> 150, DictT2fRange -> {150, 250, 5},
-										DictB1Range -> {0.5, 1.4, 0.02}, DictT2Range -> {10, 60, 0.2}
+										DictB1Range -> {0.3, 1.4, 0.02}, DictT2Range -> {10, 60, 0.2},
+										EPGRepetitionTime -> 1000 Lookup[json, "RepetitionTime", 0.]
 									};
-									{{{t2w, t2f, b1}, {wat, fat, fatfr}, res}, cal} = EPGT2Fit[data, 1000 echos, angle, MonitorCalc -> False, OutputCalibration -> True, Sequence @@ epgOpts];
+									{{{t2w, t2f, b1}, {wat, fat, fatfr}, res}, cal} = EPGT2Fit[data, 1000 echos, angle, 
+										MonitorCalc -> False, OutputCalibration -> True, Sequence @@ epgOpts];
 									(*-----*)AddToLog[{"Calibrated fat T2 and B1: ", cal}, 4];
 									settingPro = <|"EPGSettings" -> OptionsToJSON[epgOpts], "EPGCalibration" -> cal|>;
 

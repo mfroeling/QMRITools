@@ -27,8 +27,8 @@ BeginPackage["QMRITools`DixonTools`", Join[{"Developer`"}, Complement[QMRITools`
 DixonPhase::usage = 
 "DixonPhase[{real, imag}, echos] calculates the initial field maps for DixonReconstruct. Echo times echos are in s.
 
-Output is {{b0, t2star, phi0, phib}, {e1, e2, n}}, with b0 in Hz, t2star in s, the initial phase phi0 and bipolar phase phib in cycles, \
-e1 and e2 the echos used for b0 and n the first echo used for t2star."
+Output is {{b0, t2star, phi0, phib}, {e1, e2, n}}, with b0 in Hz, t2star in s, the initial phase phi0 and bipolar 
+phase phib in cycles, e1 and e2 the echos used for b0 and n the first echo used for t2star."
 
 DixonReconstruct::usage = 
 "DixonReconstruct[{real, imag}, echo] reconstructs Dixon data with initial guess b0 = 0 and T2star = 0.
@@ -40,10 +40,11 @@ DixonReconstruct[{real, imag}, echo, {b0, t2, ph0, phb}] reconstructs Dixon data
 Echo times echo are in s, the initial b0 in Hz, t2 in s and the phases ph0 and phb in cycles.
 
 Output is {{watFr, fatFr}, {watSig, fatSig, ...}, {inphase, outphase}, {{b0, phb, ph0, phbt}, {t2, r2}}, iterations, residuals}.
-The phase maps are only those selected with DixonPhases, if R2 is fitted the T2 and R2 maps are given separately. \
+The phase maps are only those selected with DixonPhases, if R2 is fitted the T2 and R2 maps are given separately. 
 If a fat model is used the signals are followed by the fitted fat model parameters (e.g. double bonds).
 
-The fractions are between 0 and 1 (see DixonClipFraction), the B0 field map is in Hz, the T2star map in s and R2star in 1/s.
+The fractions are between 0 and 1 (see DixonClipFraction), the B0 field map is in Hz, the T2star 
+map in s and R2star in 1/s.
 
 DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737 (10.1002/nbm.3766)."
 
@@ -52,23 +53,26 @@ GenerateAmps::usage =
 
 DixonToPercent::usage = 
 "DixonToPercent[water, fat] converts the dixon water and fat data to fraction maps clipped between 0 and 1.
-DixonToPercent[water, fat, clip] does the same, but if clip is False the fractions are clipped between -0.1 and 1.1, \
-keeping small negative values caused by noise.
+DixonToPercent[water, fat, clip] does the same, but if clip is False the fractions are clipped between 
+-0.1 and 1.1, keeping small negative values caused by noise.
 
 Output is {waterFraction, fatFraction}.
-The values of water and fat are arbitrary units and can be complex. The smallest component is derived from the dominant one \
-(magnitude discrimination) to avoid a noise bias.
+The values of water and fat are arbitrary units and can be complex. The smallest component is derived 
+from the dominant one (magnitude discrimination) to avoid a noise bias.
 
 DixonToPercent[] is based on DOI: 10.1002/mrm.21301."
 
 
 DixonPrecessionCheck::usage =
-"DixonPrecessionCheck[{real, imag}, echos, fatFraction, phib] checks if the fitted data matches the precession sense of the fat model (DixonPrecessions). \
-real and imag are {z, echo, y, x}, echos in s, fatFraction the fitted fat fraction and phib the fitted bipolar phase in cycles, or 0.
+"DixonPrecessionCheck[{real, imag}, echos, fatFraction, phib] checks if the fitted data matches the 
+precession sense of the fat model (DixonPrecessions). 
+real and imag are {z, echo, y, x}, echos in s, fatFraction the fitted fat fraction and phib the fitted 
+bipolar phase in cycles, or 0.
 
-A fixed random sample of the voxels with the highest fat fraction (above the 0.9 quantile) is fitted with a water fat model for both precession senses.
-Output is {ratio, result}, where ratio is the residual of the current sense divided by that of the opposite sense and result is \"ok\" (ratio < 0.9), \
-\"undecided\" or \"opposite precession fits better\" (ratio > 1.1)."
+A fixed random sample of the voxels with the highest fat fraction (above the 0.9 quantile) is fitted 
+with a water fat model for both precession senses.
+Output is {ratio, result}, where ratio is the residual of the current sense divided by that of the 
+opposite sense and result is \"ok\" (ratio < 0.9), \"undecided\" or \"opposite precession fits better\" (ratio > 1.1)."
 
 FixDixonFlips::usage =
 "FixDixonFlips[{mag, phase, real, imag}] checks if any volumes are 180 degrees out of phase and corrects them."
@@ -76,17 +80,19 @@ FixDixonFlips::usage =
 
 SimulateDixonSignal::usage = 
 "SimulateDixonSignal[echo, fr, B0, T2] simulates an Dixon gradient echo sequence with echotimes.
-Echotimes echo in s, water fraction fr between 0 and 1 (fat fraction is 1 - fr), field of resonance B0 in Hz and relaxation T2 in s. \
-T2 can be a single value or {T2water, T2fat}.
+Echotimes echo in s, water fraction fr between 0 and 1 (fat fraction is 1 - fr), field of resonance 
+B0 in Hz and relaxation T2 in s. T2 can be a single value or {T2water, T2fat}.
 
 Output is {real, imag}."
 
 OptimizeDixonEcho::usage = 
-"OptimizeDixonEcho[] shows a manipulate panel which allows to optimize the dixon echos using the condition number of the water fat model."
+"OptimizeDixonEcho[] shows a manipulate panel which allows to optimize the dixon echos 
+using the condition number of the water fat model."
 
 
 FindInPhaseEchos::usage = 
-"FindInPhaseEchos[echos, iop] finds the two nearest echos to inphase which are best used for unwrapping using the iop time."
+"FindInPhaseEchos[echos, iop] finds the two nearest echos to inphase which are best 
+used for unwrapping using the iop time."
 
 Wrap::usage = 
 "Wrap[data] wraps phase values between -Pi and Pi."
@@ -96,7 +102,8 @@ Unwrap::usage =
 Unwrap[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 
 UnwrapSplit::usage = 
-"UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData based in the data and performs the unwrapping separately. The data should be between -Pi and Pi.
+"UnwrapSplit[phase, data] unwarps the give phase dataset but splits the data into left and right using SplitData 
+based in the data and performs the unwrapping separately. The data should be between -Pi and Pi.
 UnwrapSplit[] is based on DOI: 10.1364/AO.46.006623 and 10.1364/AO.41.007437."
 
 UnwrapList::usage = 
@@ -105,7 +112,8 @@ UnwrapList::usage =
 
 UnwrapDCT::usage = 
 "UnwrapDCT[data] unwraps the given dataset using DCT transform . The data should be between -Pi and Pi.
-UnwrapDCT[data, weights] unwraps using weighted least squares, weights can be Automatic or an array with the dimensions of data.
+UnwrapDCT[data, weights] unwraps using weighted least squares, weights can be Automatic or an array 
+with the dimensions of data.
 
 UnwrapDCT[] is based on DOI: 10.1364/JOSAA.11.000107."
 
@@ -124,31 +132,38 @@ DixonFrequencies::usage =
 "DixonFrequencies is an option for DixonReconstruct. Defines the frequencies in ppm of the fat peaks being used."
 
 DixonAmplitudes::usage = 
-"DixonAmplitudes is an option for DixonReconstruct. Defines the relative amplitudes of the fat peaks being used. \
-Can also be a fat model string, \"Fixed\", \"Full\", \"FitCL\", \"FitDB\", \"FitIDB\", \"CallCL\", \"CallDB\" or \"CallIDB\", see GenerateAmps."
+"DixonAmplitudes is an option for DixonReconstruct. Defines the relative amplitudes of the fat peaks being used. 
+Can also be a fat model string, \"Fixed\", \"Full\", \"FitCL\", \"FitDB\", \"FitIDB\", 
+\"CallCL\", \"CallDB\" or \"CallIDB\", see GenerateAmps."
 
 DixonRelaxivity::usage = 
-"DixonRelaxivity is an option for DixonReconstruct. Defines the T2 relaxation times in ms of water and the fat peaks being used. Is only used if DixonFixT2 is set to True."
+"DixonRelaxivity is an option for DixonReconstruct. Defines the T2 relaxation times in ms of water and the fat peaks 
+being used. Is only used if DixonFixT2 is set to True."
 
 DixonNucleus::usage = 
 "DixonNucleus is an option for DixonReconstruct. Defines the nucleus for which the reconstruction is performed."
 
 DixonTolerance::usage = 
-"DixonTolerance is an option for DixonReconstruct. Defines at which change per iteration the iterative method stops. \
-The change is the sum of R2star (1/s) and b0 (Hz) plus 100 times the phases (cycles) and bipolar phase drift (Hz). Default value is 1."
+"DixonTolerance is an option for DixonReconstruct. Defines at which change per iteration the iterative method stops. 
+The change is the sum of R2star (1/s) and b0 (Hz) plus 100 times the phases (cycles) 
+and bipolar phase drift (Hz). Default value is 1."
 
 DixonMaskThreshold::usage = 
-"DixonMaskThreshold is an option for DixonReconstruct. Defines at which Threshold the dixon reconstruction considers a voxel to be background noise. \
+"DixonMaskThreshold is an option for DixonReconstruct. Defines at which Threshold the dixon reconstruction 
+considers a voxel to be background noise. 
 It is an absolute value of the first echo magnitude, default values is 0.1."
 
 DixonFilterInput::usage = 
-"DixonFilterInput is an option for DixonReconstruct. If True the input b0 and T2star values are smoothed using the DixonFilterType filter."
+"DixonFilterInput is an option for DixonReconstruct. If True the input b0 and T2star values are smoothed 
+using the DixonFilterType filter."
 
 DixonFilterOutput::usage = 
-"DixonFilterOutput is an option for DixonReconstruct. If True the output field maps are smoothed using the DixonFilterType filter after which the water and fat maps are recomputed."
+"DixonFilterOutput is an option for DixonReconstruct. If True the output field maps are 
+smoothed using the DixonFilterType filter after which the water and fat maps are recomputed."
 
 DixonFilterSize::usage = 
-"DixonFilterSize is an option for DixonReconstruct. Defines the filter size in voxels with which the input and output field maps are smoothed."
+"DixonFilterSize is an option for DixonReconstruct. Defines the filter size in voxels with which the 
+input and output field maps are smoothed."
 
 DixonIterations::usage = 
 "DixonIterations is an option for DixonReconstruct. Defines the maximum iterations the fit can use."
@@ -164,7 +179,8 @@ PhaseEchos::usage =
 "PhaseEchos is an option for DixonPhase. Can be Automatic or a list of two integers."
 
 DixonClipFraction::usage =
-"DixonClipFraction is an option for DixonReconstruct. If set True the fractions are clipped between 0 and 1, otherwise between -0.1 and 1.1."
+"DixonClipFraction is an option for DixonReconstruct. If set True the fractions are clipped between 0 and 1, 
+otherwise between -0.1 and 1.1."
 
 DixonConstrainPhase::usage = 
 "DixonConstrainPhase is an option for DixonReconstruct. If set True everything is fitted as real values."
@@ -173,23 +189,32 @@ DixonFilterType::usage =
 "DixonFilterType is an option for DixonReconstruct. FilterType can me \"Median\" or \"Laplacian\"."
 
 DixonCorrectT1::usage = 
-"DixonCorrectT1 is an option for DixonReconstruct. To perform T1 correction provide the TR and FA as a list, {TR, FA}. TR is in ms and FA in degrees."
+"DixonCorrectT1 is an option for DixonReconstruct. To perform T1 correction provide the TR and FA as 
+a list, {TR, FA}. TR is in ms and FA in degrees."
 
 DixonFixT2::usage = 
-"DixonFixT2 is an option for DixonReconstruct. If set to true the R2' is fitted rather then the R2*. This is done by fixing the T2 of water and each fat peak to the DixonRelaxivity values."
+"DixonFixT2 is an option for DixonReconstruct. If set to true the R2' is fitted rather then the R2*. 
+This is done by fixing the T2 of water and each fat peak to the DixonRelaxivity values."
 
 MonitorUnwrap::usage = 
 "MonitorUnwrap is an option for Unwrap. Monitor the unwrapping progress."
 
 UnwrapDimension::usage = 
-"UnwrapDimension is an option for Unwrap. Can be \"2D\" or \"3D\". 2D is for unwarpping 2D images or unwrapping the individual images from a 3D dataset \
-(does not unwrap in the slice direction). 3D unwraps a 3D dataset in all dimensions."
+"UnwrapDimension is an option for Unwrap. Can be \"2D\" or \"3D\". 2D is for unwarpping 2D images or unwrapping 
+the individual images from a 3D dataset (does not unwrap in the slice direction). 
+3D unwraps a 3D dataset in all dimensions."
+
+DixonGraphCut::usage =
+"DixonGraphCut is an option for DixonPhase. False or the in-plane block size in voxels (default 3) of the 3D graph cut
+that chooses between the water and fat solution of the initial b0 map."
 
 UnwrapMask::usage =
-"UnwrapMask is an option for DixonPhase. If True the mask is used as weights in UnwrapDCT, which removes artefacts at the mask edges but is slower."
+"UnwrapMask is an option for DixonPhase. If True the mask is used as weights in UnwrapDCT, which removes 
+artefacts at the mask edges but is slower."
 
 UnwrapThresh::usage =
-"UnwrapThresh is an option for Unwrap. Is a value between 0.3 and 0.9 (default 0.5), and defines when to unwrap, the higher the value the less unwrapping will be done."
+"UnwrapThresh is an option for Unwrap. Is a value between 0.3 and 0.9 (default 0.5), and defines when 
+to unwrap, the higher the value the less unwrapping will be done."
 
 DixonBipolar::usage = 
 "DixonBipolar is an option for FindInPhaseEchos. If set True the found echos will always be of the same polaritiy."
@@ -206,7 +231,8 @@ Unwrap::dim = "Unwrapping Dimensions can be \"2D\" or \"3D\", current value is `
 
 UnwrapDCT::dim = "The weights dimensions `2` do not match the data dimensions `1`."
 
-DixonPrecessionCheck::sign = "The opposite precession sense fits the data better than DixonPrecessions -> `1` (residual ratio `2`), check the DixonPrecessions setting."
+DixonPrecessionCheck::sign = "The opposite precession sense fits the data better than 
+DixonPrecessions -> `1` (residual ratio `2`), check the DixonPrecessions setting."
 
 
 (* ::Section:: *)
@@ -244,7 +270,8 @@ Options[DixonPhase] = {
 	UnwrapDimension->"3D",
 	UnwrapMask->True,
 	MaxIterations->15,
-	PhaseEchos -> Automatic
+	PhaseEchos -> Automatic,
+	DixonGraphCut -> 3
 };
 
 SyntaxInformation[DixonPhase] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}};
@@ -252,7 +279,7 @@ SyntaxInformation[DixonPhase] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	freqs, amps, iop, A, Ah, Ai, e1, e2, de, dt, hz, bip, mat, msk, comp, compi, ph, ph1, ph0, phi, 
 	ph1i, ph0i, norm, i, itt, l, hl, sw, sw1, sw0, f0, f1, normN, UF, n, t2s, r2s, Ac,
-	unwrapF, um, cr, dm, t1 ,t2, t3, sl, bp
+	unwrapF, um, cr, dm, t1 ,t2, t3, sl, bp, gc
 	},
 
 	(*initial phase 10.1016/J.MRI.2010.08.011*)
@@ -260,8 +287,8 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 
 	(*define the water and fat frequencies and amplitudes*)
 	freqs = OptionValue[DixonPrecessions] OptionValue[DixonFieldStrength] OptionValue[DixonFrequencies] GyromagneticRatio[OptionValue[DixonNucleus]];
-	amps = #/Total[#] & /@ OptionValue[DixonAmplitudes];
-	iop = 1/Abs[Total[(amps[[2]]^2) (freqs[[2]]-freqs[[1,1]])]/Total[amps[[2]]^2]];
+	amps = # / Total[#] & /@ OptionValue[DixonAmplitudes];
+	iop = 1 / Abs[Total[(amps[[2]]^2) (freqs[[2]] - freqs[[1,1]])] / Total[amps[[2]]^2]];
 
 	(*define the solution matrix*)
 	A = (Total /@ (amps Exp[(2 Pi freqs #) I ])) & /@ echos;
@@ -303,8 +330,10 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	(*unwrapping function, optionally with the mask as weights, the constant lost by the DCT is restored*)
 	um = OptionValue[UnwrapMask];
 	unwrapF = Switch[OptionValue[UnwrapDimension],
-		"2D", With[{w = If[um, MaskWeights /@ msk, 1. & /@ msk]}, Function[psi, MapThread[RestoreDC[#1, UnwrapDCTi[#2 #1, #3], #2]&, {psi, msk, w}]]],
-		"3D", With[{w = If[um, MaskWeights[msk], 1.]}, RestoreDC[#, UnwrapDCTi[msk #, w], msk]&]
+		"2D", With[{w = If[um, MaskWeights /@ msk, 1. & /@ msk]}, 
+			Function[psi, MapThread[RestoreDC[#1, UnwrapDCTi[#2 #1, #3], #2]&, {psi, msk, w}]]],
+		"3D", With[{w = If[um, MaskWeights[msk], 1.]}, 
+			RestoreDC[#, UnwrapDCTi[msk #, w], msk]&]
 	];
 
 	(*start optimization*)
@@ -354,9 +383,21 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	n = First@FirstPosition[echos, First[Select[echos, # > 0.75 iop &]]];
 	t2s = Last@T2Fit[Abs[Transpose[comp[[n ;;]]]], echos[[n ;;]]];
 	r2s = DivideNoZero[1, t2s];
+	mat = Transpose[Join[{echos}, -I {echos, Abs[bip], bip}]];
+
+	(*graph cut chooses the water or fat solution of b0 per block, on data without bipolar phase and decay*)
+	gc = OptionValue[DixonGraphCut];
+	If[IntegerQ[gc],
+		compi = ApplyPhase[comp, Prepend[hz, 1] {Clip[r2s, {0., 200.}], 0. ph, 0. ph1, ph0}, mat];
+		ph = 2 Pi GraphCutField[compi, hz[[1]] ph / (2 Pi), msk, A, echos, 1 / iop, gc] / hz[[1]];
+
+		(*update the initial phase to the new b0*)
+		compi = ApplyPhase[comp, Prepend[hz, 1] {0. r2s, ph, ph1, ph0}, mat];
+		Ac = Ah . compi;
+		ph1 += unwrapF[Arg[DotAc[RotateDimensionsLeft[Ac], RotateDimensionsLeft[Ai . Ac]]]];
+	];
 
 	(*make initial phase take up the global sign of the signal, ph1 holds twice the initial phase*)
-	mat = Transpose[Join[{echos}, -I {echos, Abs[bip], bip}]];
 	compi = ApplyPhase[comp, Prepend[hz, 1] {r2s, ph, ph1, ph0}, mat];
 	ph1 += msk 2 Arg[Total[Flatten[Total[PseudoInverse[A] . compi]]]];
 
@@ -369,36 +410,263 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 ]
 
 
-normNor[norm_] := 100 (Last[norm]/(Max /@ Transpose[norm]))
+normNor[norm_] := 100 (Last[norm] / (Max /@ Transpose[norm]))
 
 
-(*add the constant that makes the unwrapped phase congruent with the wrapped phase within the mask*)
 RestoreDC[psi_, unw_, msk_] := msk (unw + Arg[Total[Flatten[msk Exp[I (psi - unw)]]]])
 
 
-(*the alias k of b0 + k/dt per connected object, b0 is given in units of 1/dt*)
-SelectAlias[comp_, b0_, amat_, echos_, dt_, msk_] := Block[{proj, lab, objs, mb, ref, kRel, res, g},
+SelectAlias[comp_, b0_, amat_, echos_, dt_, msk_] := Block[{proj, lab, objs, objB0, refB0, kObj, res, kAll},
 	(*projection on the residual space of the water fat model*)
 	proj = IdentityMatrix[Length[echos]] - amat . PseudoInverse[amat];
 
 	(*one mask per connected object, e.g. the two legs, with its mean field*)
 	lab = MorphologicalComponents[msk];
 	objs = Table[1 - Unitize[lab - c], {c, Max[lab]}];
-	mb = Total[b0 #, -1] / Total[#, -1]& /@ objs;
+	objB0 = Total[b0 #, -1] / Total[#, -1]& /@ objs;
 
-	(*the field is continuous over the body, align each object to the largest one*)
-	ref = mb[[First@Ordering[Total[#, -1]& /@ objs, -1]]];
-	kRel = Round[ref - mb];
+	(*align each object to the field of the largest one*)
+	refB0 = objB0[[First@Ordering[Total[#, -1]& /@ objs, -1]]];
+	kObj = Round[refB0 - objB0];
 
-	(*one alias for all objects with the lowest total water fat model residual, a small penalty prefers the smallest field and breaks exact ties*)
+	(*one global alias with the lowest model residual, a small penalty on the field breaks ties*)
 	res = Table[
-		(1 + 0.001 Abs[ref + g]) Total[MapThread[Total[Total[Abs[proj . (Exp[-2 Pi I (#2 + g) echos / dt] comp)]^2] #1, -1]&, {objs, kRel}]]
-	, {g, -1, 1}];
-	g = First[Ordering[res]] - 2;
+		(1 + 0.001 Abs[refB0 + kAll]) Total[MapThread[Total[Total[
+			Abs[proj . (Exp[-2 Pi I (#2 + kAll) echos / dt] comp)]^2] #1, -1]&, {objs, kObj}]]
+	, {kAll, -1, 1}];
+	kAll = First[Ordering[res]] - 2;
 
-	(*each voxel gets the alias of its object*)
-	Total[(kRel + g) objs]
+	(*each voxel gets the alias k of its object, b0 + k/dt with b0 in units of 1/dt*)
+	Total[(kObj + kAll) objs]
 ]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GraphCutField*)
+
+
+GraphCutField[comp_, b0_, msk_, amat_, echos_, fs_, ds_] := Block[{
+		nz, ny, nx, proj, pairs, tau, taus, qmat, terms, energy, c0, bmask, bfield,
+		dims, sel, nBlock, toGrid, eNorm, width, grid, res, swap,
+		fLow, fHigh, rLow, rHigh, gLow, gHigh, gEnergy, ids, unary, edges,
+		lowP, lowQ, highP, highQ, enP, enQ, weight, cLL, cLH, cHL, cHH, pair,
+		src, snk, dirEdges, caps, flow, srcSide, useHigh
+	},
+	(*b0 in Hz from a graph cut on blocks of ds x ds voxels, fs is the fat shift in Hz*)
+	{nz, ny, nx} = Dimensions[b0];
+
+	(*projection on the residual space of the water fat model*)
+	proj = IdentityMatrix[Length[echos]] - amat . PseudoInverse[amat];
+
+	(*echo pairs and their unique time differences*)
+	pairs = Select[Tuples[Range[Length[echos]], 2], #[[1]] >= #[[2]] &];
+	tau = Round[echos[[#[[1]]]] - echos[[#[[2]]]], 10.^-7] & /@ pairs;
+	taus = DeleteCases[Union[tau], 0.];
+
+	(*pair weights for the energy, c0 and each c_tau of the residual r(f) = c0 + 2 Re Sum c_tau Exp[2 Pi I f tau]*)
+	qmat = ToPackedArray[N@Join[
+		{Boole[Equal @@ #] & /@ pairs, Boole[Equal @@ #] proj[[Sequence @@ #]] & /@ pairs},
+		Table[Boole[tau[[i]] == tk] proj[[Sequence @@ pairs[[i]]]], {tk, taus}, {i, Length[pairs]}]
+	], Complex];
+
+	(*all pair terms per slice, summed per block*)
+	terms = Transpose[Table[PairTerms[Flatten /@ comp[[All, z]], qmat, pairs], {z, nz}]];
+	terms = BlockSum[ArrayReshape[#, {nz, ny, nx}], ds] & /@ terms;
+
+	(*block mask and mean start field per block*)
+	bmask = BlockSum[msk, ds];
+	bfield = DivideNoZero[BlockSum[b0 msk, ds], bmask];
+	bmask = Unitize[bmask];
+	dims = Dimensions[bmask];
+	sel = Flatten@Position[Flatten[bmask], 1];
+	nBlock = Length[sel];
+	toGrid = ToBlockGrid[#, sel, dims] &;
+
+	(*masked block values*)
+	{energy, c0} = Re[(Flatten /@ terms[[;; 2]])[[All, sel]]];
+	terms = (Flatten /@ terms[[3 ;;]])[[All, sel]];
+	bfield = Flatten[bfield][[sel]];
+
+	(*residual per block on a grid around its mean start field, relative to the median energy*)
+	eNorm = Median[energy];
+	width = Min[1.25 fs, 0.5 / Min[Differences[echos]]];
+	grid = Range[-width, width, 5.];
+	res = Transpose[terms] Exp[2. Pi I Outer[Times, bfield, taus]];
+	res = (c0 + 2 Re[res . Exp[2. Pi I Outer[Times, taus, grid]]]) / eNorm;
+
+	(*two candidate fields per block, sorted in a low and high field which makes the problem submodular*)
+	{fLow, rLow, fHigh, rHigh} = Transpose[GraphCutCandidatesC[res, grid, 0.5 fs]];
+	{fLow, fHigh} = {fLow + bfield, fHigh + bfield};
+	swap = UnitStep[fLow - fHigh];
+	{fLow, fHigh, rLow, rHigh} = {
+		fLow + swap (fHigh - fLow), fHigh - swap (fHigh - fLow),
+		rLow + swap (rHigh - rLow), rHigh - swap (rHigh - rLow)
+	};
+
+	(*candidates, energy, unary costs and block ids on the block grid*)
+	{gLow, gHigh, gEnergy, unary} = toGrid /@ {fLow, fHigh, energy / eNorm, rHigh - rLow};
+	ids = Round@toGrid[N@Range[nBlock]];
+	edges = {};
+
+	(*smoothness costs between neighbouring blocks p and q in z, y and x*)
+	Do[
+		{lowP, lowQ} = EdgeParts[gLow, ax];
+		{highP, highQ} = EdgeParts[gHigh, ax];
+		{enP, enQ} = EdgeParts[gEnergy, ax];
+
+		(*cost min(E) (df/fs)^2 for the four label combinations, zero if a block is outside the mask*)
+		weight = (Times @@ EdgeParts[bmask, ax]) (enP + enQ - Abs[enP - enQ]) / (2 fs^2);
+		{cLL, cLH, cHL, cHH} = weight # & /@ {
+			(lowP - lowQ)^2, (lowP - highQ)^2, (highP - lowQ)^2, (highP - highQ)^2
+		};
+
+		(*pairwise edge weight and the rest moved to the unary costs*)
+		pair = Ramp[(cLH + cHL - cLL - cHH) / 2];
+		unary = AddEdgeParts[unary, {cHL - cLL - pair, cLH - cLL - pair}, ax];
+		edges = Join[edges, Pick[
+			Transpose[Append[Flatten /@ EdgeParts[ids, ax], Flatten[pair]]],
+			Unitize[Flatten[pair]], 1
+		]];
+	, {ax, 3}];
+
+	(*terminal edges, from the source for a positive and to the sink for a negative unary cost*)
+	src = nBlock + 1;
+	snk = nBlock + 2;
+	unary = Flatten[unary][[sel]];
+	edges = Join[edges,
+		Pick[Transpose[{ConstantArray[src, nBlock], Range[nBlock], unary}], UnitStep[-unary], 0],
+		Pick[Transpose[{Range[nBlock], ConstantArray[snk, nBlock], -unary}], UnitStep[unary], 0]
+	];
+
+	(*maximum flow over the edges in both directions*)
+	dirEdges = Join[edges[[All, ;; 2]], Reverse /@ edges[[All, ;; 2]]];
+	caps = Join[edges[[All, 3]], edges[[All, 3]]];
+	flow = FindMaximumFlow[
+		Graph[Range[nBlock + 2], DirectedEdge @@@ dirEdges, EdgeCapacity -> caps],
+		src, snk, "OptimumFlowData"
+	]["FlowMatrix"];
+
+	(*minimum cut, the source side is what the source still reaches in the residual graph*)
+	flow = SparseArray[dirEdges -> caps, {nBlock + 2, nBlock + 2}] - flow + Transpose[flow];
+	flow = AdjacencyGraph[Range[nBlock + 2], UnitStep[flow - 10.^-9], DirectedEdges -> True];
+	srcSide = VertexOutComponent[flow, src];
+
+	(*blocks on the source side take the low field candidate*)
+	useHigh = ConstantArray[1, nBlock];
+	useHigh[[Select[srcSide, # <= nBlock &]]] = 0;
+
+	(*block field upsampled to the voxels*)
+	msk toGrid[fLow + useHigh (fHigh - fLow)][[All, Ceiling[Range[ny] / ds], Ceiling[Range[nx] / ds]]]
+]
+
+
+PairTerms[sig_, qmat_, pairs_] := qmat . (Conjugate[sig[[pairs[[All, 1]]]]] sig[[pairs[[All, 2]]]])
+
+
+BlockSum[dat_, ds_] := Block[{sumY, sumX},
+	(*summation matrices for blocks of ds voxels in y and x, the last block can be partial*)
+	{sumY, sumX} = Table[
+		ToPackedArray[N@Table[Boole[Ceiling[j / ds] == i], {i, Ceiling[len / ds]}, {j, len}]]
+	, {len, Rest[Dimensions[dat]]}];
+
+	(*block sums per slice*)
+	sumY . # . Transpose[sumX] & /@ dat
+]
+
+
+EdgeParts[arr_, 1] := {arr[[;; -2]], arr[[2 ;;]]}
+
+EdgeParts[arr_, 2] := {arr[[All, ;; -2]], arr[[All, 2 ;;]]}
+
+EdgeParts[arr_, 3] := {arr[[All, All, ;; -2]], arr[[All, All, 2 ;;]]}
+
+
+ToBlockGrid[vals_, sel_, dims_] := Block[{out},
+	(*values on the block grid, zero outside the masked blocks*)
+	out = ConstantArray[0., Times @@ dims];
+	out[[sel]] = vals;
+	ArrayReshape[out, dims]
+]
+
+
+AddEdgeParts[vals_, {valP_, valQ_}, ax_] := Block[{out},
+	(*add the edge terms to both blocks of each neighbour pair along axis ax*)
+	out = vals;
+	Switch[ax,
+		1,
+		out[[;; -2]] += valP;
+		out[[2 ;;]] += valQ,
+		2,
+		out[[All, ;; -2]] += valP;
+		out[[All, 2 ;;]] += valQ,
+		3,
+		out[[All, All, ;; -2]] += valP;
+		out[[All, All, 2 ;;]] += valQ
+	];
+	out
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*GraphCutCandidatesC*)
+
+
+GraphCutCandidatesC = Compile[{{res, _Real, 1}, {grid, _Real, 1}, {sep, _Real, 0}},
+	Block[{n, step, pos1, pos2, min1, min2, fr1, fr2, curv},
+		n = Length[res];
+		step = grid[[2]] - grid[[1]];
+
+		(*lowest local minimum, or the global minimum if there is none*)
+		pos1 = 1;
+		min1 = 1.*^300;
+		Do[
+			If[res[[k]] < res[[k - 1]] && res[[k]] <= res[[k + 1]] && res[[k]] < min1,
+				pos1 = k;
+				min1 = res[[k]]
+			]
+		, {k, 2, n - 1}];
+		If[min1 == 1.*^300,
+			Do[
+				If[res[[k]] < min1,
+					pos1 = k;
+					min1 = res[[k]]
+				]
+			, {k, 1, n}]
+		];
+
+		(*lowest other local minimum at least sep away, or the first again*)
+		pos2 = pos1;
+		min2 = 1.*^300;
+		Do[
+			If[res[[k]] < res[[k - 1]] && res[[k]] <= res[[k + 1]] && Abs[grid[[k]] - grid[[pos1]]] >= sep && res[[k]] < min2,
+				pos2 = k;
+				min2 = res[[k]]
+			]
+		, {k, 2, n - 1}];
+		If[min2 == 1.*^300,
+			min2 = min1
+		];
+
+		(*parabolic refinement of the minima*)
+		fr1 = grid[[pos1]];
+		If[1 < pos1 && pos1 < n,
+			curv = res[[pos1 - 1]] - 2 res[[pos1]] + res[[pos1 + 1]];
+			If[curv > 0,
+				fr1 += 0.5 step (res[[pos1 - 1]] - res[[pos1 + 1]]) / curv
+			]
+		];
+		fr2 = grid[[pos2]];
+		If[1 < pos2 && pos2 < n,
+			curv = res[[pos2 - 1]] - 2 res[[pos2]] + res[[pos2 + 1]];
+			If[curv > 0,
+				fr2 += 0.5 step (res[[pos2 - 1]] - res[[pos2 + 1]]) / curv
+			]
+		];
+
+		(*field and residual of both candidates*)
+		{fr1, min1, fr2, min2}
+	],
+RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -518,7 +786,8 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 
 	(*define filter for input and output*)
 	{filti, filto, fitphase} = OptionValue[{DixonFilterInput, DixonFilterOutput, DixonFitPhase}];
-	filtFunc = Switch[OptionValue[DixonFilterType],"Median", MedFilter, "Laplacian",LapFilter][#, OptionValue[DixonFilterSize]]&;
+	filtFunc = Switch[OptionValue[DixonFilterType], "Median", MedFilter, "Laplacian",LapFilter
+		][#, OptionValue[DixonFilterSize]]&;
 
 	(*Get the T1 correction Factor*)
 	t1c = If[OptionValue[DixonCorrectT1]===False, 1,
@@ -526,13 +795,13 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 		{t1f, t1m} = {400, 1400};
 		sw = (1. - Exp[-tr/t1m] Cos[fa Degree])/((1. - Exp[-tr/t1m]) Sin[fa Degree]);
 		sf = (1. - Exp[-tr/t1f] Cos[fa Degree])/((1. - Exp[-tr/t1f]) Sin[fa Degree]);
-		sw/sf
+		sw / sf
 	];
 
 	(*metabolite frequencies and amplitudes*)
 	freqs = GyromagneticRatio[OptionValue[DixonNucleus]] Times@@OptionValue[{DixonPrecessions, DixonFieldStrength, DixonFrequencies}];
 	{amps, mout} = GenerateAmps[OptionValue[DixonAmplitudes]];
-	sig = If[OptionValue[DixonFixT2], -1000./OptionValue[DixonRelaxivity], 0.] + 2 Pi freqs I;
+	sig = If[OptionValue[DixonFixT2], -1000. / OptionValue[DixonRelaxivity], 0.] + 2 Pi freqs I;
 
 	If[Length[amps]=!=Length[freqs],
 		sig = Join[{sig[[1]]}, ConstantArray[sig[[2]], Length[amps] - 1]];
@@ -571,7 +840,7 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	If[ArrayDepth[complex] === 4, complex = Transpose[complex]];
 	mask = Closing[UnitStep[Abs[First@complex] - thresh], 1] Unitize[Total[Abs[complex]]];
 	max = 2 Max[Abs[complex]];
-	scale = 1000./max;
+	scale = 1000. / max;
 	zero = 0. Re[First@complex];
 
 	(*define data and complex field map and background phase for fitting*)
@@ -693,13 +962,13 @@ DixonFit[complex_, phi_, mask_, vec_, matA_, s_, {eta_, maxItt_}, par_] := Block
 
 	RotateDimensionsRight@ToPackedArray@N@Chop@If[par,
 		DistributeDefinitions[DixonFitC, matC, mat, matAi];
-		ParallelMap[DixonFitC[#[[1]], #[[2]], #[[3]], matC, matA, matAi, mat, eta, maxItt, s]&, Transpose[{complex, phi, mask}]],
+		ParallelMap[DixonFitC[#[[1]], #[[2]], #[[3]], matC, matA, matAi, mat, eta, maxItt, s]&, 
+			Transpose[{complex, phi, mask}]],
 		DixonFitC[complex, phi, mask, matC, matA, matAi, mat, eta, maxItt, s]
 	]
 ]
 
 
-(*phase of the total signal W+F in cycles from a fit with complex amplitudes, n is the number of real amplitude parameters*)
 TotalPhase[result_, n_] := Arg[Total[result[[1 ;; 2]] + I result[[n/2 + 1 ;; n/2 + 2]]]] / (2 Pi)
 
 
@@ -762,7 +1031,8 @@ DixonFitC = Compile[{
 	(*output*)
 	Re[Join[rho, {rms, i}, phiEst]]
 
-], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, CompilationOptions -> {"InlineExternalDefinitions" -> True}]
+], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, 
+	CompilationOptions -> {"InlineExternalDefinitions" -> True}]
 
 
 (* ::Subsubsection::Closed:: *)

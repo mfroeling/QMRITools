@@ -421,7 +421,7 @@ the source json, then `procInfo` (built once per call: the config `Process` bloc
 `"ProcessVersion"` = `QMRITools`$InstalledVersion`), then the method's own settings:
 
 - Dixon: `"DixonSource"` (`ScannerRecon` or `QMRITools`), plus for the fit `"Denoise"`, `"DixonPhaseEchos"`,
-  `"DixonSettings"` and `"DixonPrecessionCheck"` (`{Ratio, Result}` of `DixonPrecessionCheck`, also in the log).
+  `"DixonPhaseSettings"` (`DixonPhase` options: field strength and `DixonGraphCut`, Dixon-A only), `"DixonSettings"` and `"DixonPrecessionCheck"` (`{Ratio, Result}` of `DixonPrecessionCheck`, also in the log).
 - EPGT2: `"EPGSettings"`.
 - dwi: `settingPre` / `settingPro`.
 

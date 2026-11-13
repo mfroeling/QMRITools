@@ -2,7 +2,7 @@
 
 PacletObject[<|
 	"Name" -> "QMRITools",
-	"Version" -> "5.2.0",
+	"Version" -> "5.3.0",
 	"WolframVersion" -> "15.0+",
 	"SystemID" -> All,
 	"Description" -> "Toolbox for Quantitative MRI.",

@@ -22,7 +22,7 @@ optimisation and phase unwrapping. Read this before changing that file.
 ```
 real, imag {z, echo, y, x}
   → background mask (Mask 15, MaskComponents -> 2, dilation 1) → PCADeNoise (complex, patch, kernel 5)
-  → DixonPhase       : start maps {b0, t2star, phi0, phib} + echoes used           (§3)
+  → DixonPhase       : start maps {b0, t2star, phi0, phib} + echoes used, graph cut (§3)
   → DixonReconstruct : IDEAL per voxel, "CallDB" (>6 echoes) or "Fixed", all phases (§4)
        → DixonFit/DixonFitC (complex amplitudes; constrained mode: two stages)
        → R2 clip, φ0 = Arg(W+F), median filter field maps, DixonFitFC refit
@@ -89,9 +89,24 @@ Then, after the loop:
      exact ties (with even echo spacing ±1/ΔTE aliases are identical).
   A per-object choice (the first version) failed in the motion study ses-005 calf: for one leg the residual preferred
   the wrong alias (1.00 vs 1.28), so that leg was swapped. Summed over both legs the right alias wins (3.30 vs 4.40).
+- T2* from a log fit of the magnitude from the first echo after 0.75 · in-phase period.
+- **`GraphCutField`** (`DixonGraphCut`, default 3 = block size in voxels, `False` = off; Q15): chooses per block between
+  the water and fat solution of B0, on data with θ0 and decay (R2* clipped to [0, 200]) removed.
+  1. Data term: the VARPRO residual `r(f) = c0 + 2 Re Σ c_τ e^(2πi f τ)` (amplitudes projected out with the
+     `DixonAmplitudes` matrix, φ0 absorbed). The c_τ are linear in the data, so they are summed exactly over in-plane
+     blocks of ds × ds voxels (`PairTerms`, `BlockSum`), one matrix product per slice.
+  2. Per block the residual on a 5 Hz grid of ±min(1.25 fs, 1/(2 ΔTE)) around the block mean B0; two candidates =
+     the two deepest local minima at least fs/2 apart (`GraphCutCandidatesC`, parabolic refinement).
+  3. Energy: block residual (relative to the median signal energy) plus `min(E_p, E_q) (Δf/fs)²` between 6-connected
+     blocks (3D, equal weights; at ds = 3 the blocks are 4.5 mm in-plane vs 6 mm slices). The candidates are sorted on
+     field, so with a convex penalty the binary problem is submodular and one minimum cut solves it globally.
+  4. Cut with `FindMaximumFlow` + residual-graph reachability. `FindEdgeCut` silently returned an empty cut on
+     ~120k nodes, do not use it.
+  5. The block field (nearest-neighbour upsampled) replaces B0, then one Bydder step re-estimates φ0 per voxel.
+  Cost on 320 × 320 × 31: ds 2 ≈ 33 s (264k blocks), ds 3 ≈ 11 s, ds 4 ≈ 8 s (≈ 5 s fixed data term). ds 2, 3 and 4
+  differ in 0.2% of voxels; λ (smoothness weight) 0.1–10 changed little, so it is fixed at 1.
 - φ0 gets one global sign correction (phase of the summed W+F), not a per-voxel one: per voxel it soaks up the B0 fat
   bias and noise.
-- T2* from a log fit of the magnitude from the first echo after 0.75 · in-phase period.
 
 Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fat starts ≈ 70 Hz off (Q16).
 
@@ -164,7 +179,7 @@ Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fa
 | Q12 ✔ | `res` | **Fixed.** Scaled only when the output filter was on. |
 | Q13 | output median filter | **Intentional, keep.** The median pulls B0 toward 0 at the mask edge. A background fill (`FillBackground`) was tried and **removed on request**: with the extended BIDS masks the effect is negligible and the fill complicates consistency. Do not re-add. |
 | Q14 ✔ | MuscleBids `Dixon-B` | **Fixed.** Did not pass `DixonFieldStrength`, so it always assumed 3 T. Now in `dixOpts`. |
-| Q15 | local swaps | **Open (next research step).** Inside one leg where B0 is steep (calf end slices, B0 +200…+300 Hz) swaps remain, in old and new code. Needs a spatial method (region growing / graph cut). The ses-005 left calf (fibularis brevis/tertius and FHL ~96% FF) turned out to be a whole-leg alias swap, not a local one; fixed in Q5. Swapped legs also show unrealistic T2*; a post-fit check per object (T2* or FF far off from the other objects) is an option if swaps remain. |
+| Q15 ◐ | local swaps | **Partly fixed (2026-11-13).** `GraphCutField` in `DixonPhase` (§3, default on). Motion ses-002 DIXON1: 3% of voxels change FF by > 0.3, mostly in the end slices; the user judged it an improvement, especially in the subcutaneous fat at the edges. Voxel-to-voxel striping finer than a block remains: there the two residual minima are almost equally deep. Original note: inside one leg where B0 is steep (calf end slices, B0 +200…+300 Hz) swaps remain, in old and new code. Needs a spatial method (region growing / graph cut). The ses-005 left calf (fibularis brevis/tertius and FHL ~96% FF) turned out to be a whole-leg alias swap, not a local one; fixed in Q5. Swapped legs also show unrealistic T2*; a post-fit check per object (T2* or FF far off from the other objects) is an option if swaps remain. |
 | Q16 | `DixonPhase` B0 in fat | **Open.** Echoes {2, 4} are not exactly in-phase for fat: B0 starts ≈ 70 Hz off in fat. Causes the 0.2–0.4% isolated swaps. |
 | Q17 | input shapes | **Open, existing.** `DixonReconstruct` needs 2D/3D images (mask uses `Closing`); single voxels or `{echo, n}` fail. `DixonPhase` hangs on a single 2D image. |
 | Q18 | `SimulateDixonSignal` | **Kept.** `fr` is the water fraction; usage documents it, behaviour kept for existing notebooks. |
@@ -173,6 +188,7 @@ Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fa
 | Q21 | `DixonPrecessions` | **Checked, not auto-set.** `DixonPrecessionCheck` (after the fit) compares the current and the opposite precession sense on a fixed random sample of 20000 voxels above the 0.9 FF quantile: B0 × R2 grid, water-fat model with complex amplitudes, bipolar phase removed. Ratio < 0.9 "ok", > 1.1 warning (`Message`), else "undecided". The BIDS pipeline logs it and writes it to the json (`DixonPrecessionCheck`). Voxel selection was tested on 4 real stacks (original and conjugated): high-FF voxels separate best (worst 0.59 vs 1.70), water voxels carry nothing (≈ 1.0), "brightest" was marginal in the calf (0.93 vs 1.07). Phantom: 0.08 vs 12.3. Final function on the 4 stacks: hip 0.28/0.33 ok, calf 0.52/0.63 ok; conjugated 1.59–3.59, all warned; ~6 s per stack. |
 | Q22 | left-right FF gradient | **Open (research).** The residual left-right FF differences (paper: 0.5–0.64% unconstrained) form a smooth gradient along the readout (left-right). Candidates: odd/even **amplitude** alternation of the bipolar readout (not modelled; Yu 2010 corrects it), coupling of the fitted θ0 with FF. B1 in the T1 correction gives only ±0.16% FF. Chemical-shift displacement (0.31 px per echo, alternating) is an edge effect and does not explain a smooth gradient. Not affected by the Q1–Q12 fixes: motion study ses-005/006, 32 swap-free muscles each, mean Dixon R−L FF −0.54% / −1.00% new vs −0.53% / −0.99% old (left higher in 20/32 and 26/32), while T2-mapping FF of the same muscles gives R−L +0.03% / +0.02% (15/32) and correlates weakly with the Dixon difference. So it is a Dixon bias, not anatomy. Next test: odd/even amplitude map. |
 | Q23 ✔ | `Unwrap` family | **Fixed.** Unused Block variables removed. `UnWrapC` merges groups with full-array operations; a union-find version gave identical output but only 7.2 → 6.8 s on two calf stacks (`UnwrapSplit`, 3D), so it was not kept. Used only by `Dixon-B`. |
+| Q24 ✔ | BIDS `Dixon-A` | **Fixed (2026-11-12).** `DixonPhase` was called without `DixonFieldStrength`, so the start maps always used 3 T fat frequencies. On 1.5 T data this gave a global water-fat swap (and looked like a precession −1 problem). Now gets `field` from the json. |
 
 ## 8. Real-data validation
 
@@ -209,6 +225,7 @@ error and voxels with |FF − true| > 0.4 (swaps).
 | --- | --- | --- |
 | `DixonPhase` | L242 | start maps (B0, T2*, φ0, θ0) |
 | `RestoreDC`, `SelectAlias` | L366, L370 | constant after unwrap; objects aligned, one global B0 alias |
+| `GraphCutField` | L450 | graph cut start B0 (Q15), helpers `PairTerms`, `BlockSum`, `EdgeParts`, `AddEdgeParts`, `GraphCutCandidatesC` |
 | `ApplyPhase`, `DotAc` | L396, L405 | compiled helpers of `DixonPhase` |
 | `FixDixonFlips`, `FindComplexFlips` | L418 | 180° volume flips (commented out in the BIDS pipeline) |
 | `DixonReconstruct` | L480 | IDEAL reconstruction and outputs |

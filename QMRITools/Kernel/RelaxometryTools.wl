@@ -116,7 +116,7 @@ EPGCalibrate::usage =
 "EPGCalibrate is an option for EPGT2Fit. If set to True it does autmatic callibration of the t2 fat relaxation time."
 
 EPGSmoothB1::usage = 
-"EPGSmoothB1 is an options for EPGT2Fit. If set to True the b1 map of the fit will be smoothed after which the minimization if perfomed again but with a fixed b1."
+"EPGSmoothB1 is an options for EPGT2Fit. If set to True or a radius the b1 is fitted on the dictionary cost pooled over the neighbouring voxels (radius 2 for True), after which the minimization is performed again with this fixed b1."
 
 WaterFatShift::usage = 
 "WaterFatShift is an options for EPGT2Fit. It specifies the amount of water fat shift in voxels."
@@ -161,6 +161,10 @@ EPGOutput::usage =
 EPGRefocussingPhase::usage = 
 "EPGRefocussingPhase is an option for EPGT2Fit and CreateT2Dictionary. It specifies the phase of the refocussing pulse."
 
+EPGRepetitionTime::usage =
+"EPGRepetitionTime is an option for EPGT2Fit and CalibrateEPGT2Fit. If larger than 0 it is the repetition time in ms and the water and fat signals are corrected for incomplete T1 recovery between repetitions, using the T1 values of EPGRelaxPars.
+The water signal fraction of adipose tissue in the fat model is then also reduced such that it is 10% water after the correction."
+
 
 (* ::Subsection:: *)
 (*Error Messages*)
@@ -174,6 +178,9 @@ CalibrateEPGT2Fit::data = "Not enough data points for calibration, the default v
 
 
 Begin["`Private`"]
+
+
+debugEPG[x___] := DebugPrint["EPG", x, "  | ", DateString[{"Hour", ":", "Minute", ":", "Second"}], " | memory MB: ", Round[MemoryInUse[]/10^6]];
 
 
 (* ::Subsection:: *)
@@ -614,20 +621,6 @@ ShiftPulseProfile[angs_, shift_] := Block[{exi, refi, cors, func, refo},
 (*ErrorFunctions*)
 
 
-(*one compartment fat only*)
-ErrorFunc1F[y_, t2f_Real, b1_Real, s0_, vals_] :=  Quiet@Block[{T1m, T1f, echo, angle},   
-	{echo, T1f, angle} = vals;
-	Total[(y - s0 EPGSignali[echo, {T1f, t2f}, angle, b1])^2]]
-
-(*fat tissue, fixed water fraction, fit fat and water t2, shifted fat profile*)
-ErrorFuncFT[y_, t2f_Real, t2w_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, echo, angle, angleS},
-	{echo, {T1m, T1f}, angle, angleS} = vals;
-	sig = MixFatWater[
-		EPGSignali[echo, {T1f, t2f}, angleS, b1],
-		EPGSignali[echo, {T1m, t2w}, angle, b1]
-	];
-	LeastSquaresErrorC[Transpose[{sig}], y]]
-
 (*Two compartment, fit muscle, fix fat*)
 ErrorFunc2M[y_, t2m_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, t2f, echo, angle},
 	{echo, {T1m, T1f, t2f}, angle} = vals;
@@ -646,8 +639,18 @@ ErrorFunc2M[y_, t2m_Real, b1_Real, vals_] := Quiet@Block[{sig, T1m, T1f, t2f, ec
 fatWatFr = 0.1;
 fatWatT2 = 20.;
 
-(*fat tissue signal from lipid and water signal*)
-MixFatWater[fat_, wat_] := (1. - fatWatFr) fat + fatWatFr wat
+(*fat tissue signal from lipid and water signal, g is the water signal fraction*)
+MixFatWater[fat_, wat_, g_] := (1. - g) fat + g wat
+
+(*water signal fraction of adipose tissue after incomplete T1 recovery, trec is the recovery time*)
+FatWaterSignalFraction[{T1m_, T1f_}, trec_] := If[trec > 0,
+	Block[{rw, rf},
+		rw = 1. - Exp[-trec/T1m];
+		rf = 1. - Exp[-trec/T1f];
+		fatWatFr rw/((1. - fatWatFr) rf + fatWatFr rw)
+	],
+	fatWatFr
+]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -750,6 +753,29 @@ DictionaryMinSearchi[{dictf_, dictfMat_, valsf_}, ydat_] := Block[{fwf, residual
 ]
 
 
+(*b1 cost curve, minimal error over t2 for each b1*)
+DictionaryB1Cost[{_, _}, nb1_, {0. ..}] := ConstantArray[0., nb1]
+
+DictionaryB1Cost[{dictf_, dictfMat_}, nb1_, ydat_] := Block[{err},
+	(*error of every dictionary entry, ordered as {t2, b1}*)
+	err = ErrorC[ydat, LeastSquares2C[dictfMat, ydat], dictf];
+	(*minimum over t2 for each b1*)
+	Min /@ Transpose[Partition[err, nb1]]
+]
+
+
+(*sum over a box of radius r in all but the last dimension, as separable 1D sums*)
+BoxSum[dat_, r_] := Block[{dep, kers},
+	dep = ArrayDepth[dat];
+	(*1D kernel of ones along each summed dimension*)
+	kers = Table[
+		ArrayReshape[ConstantArray[1., 2 r + 1], ReplacePart[ConstantArray[1, dep], d -> 2 r + 1]]
+	, {d, dep - 1}];
+	(*centred convolution with each kernel, zero padded*)
+	Fold[ListConvolve[#2, #1, Ceiling[Dimensions[#2]/2], 0.] &, dat, kers]
+]
+
+
 (*minimization dictionary min search*)
 (*Fit without the predefined pseudo inverse*)
 DictionaryMinSearch[{dict_, vals_}, ydat_, cons_] := DictionaryMinSearchi[{dict, vals}, ydat, cons]
@@ -848,8 +874,9 @@ Options[EPGT2Fit]= {
 
 	EPGFatShift -> 0.,
 	DictT2IncludeWater -> False,
-	EPGMethodCal -> "2compF", 
-	EPGRefocussingPhase -> 0.
+	EPGMethodCal -> "2compF",
+	EPGRefocussingPhase -> 0.,
+	EPGRepetitionTime -> 0.
 }
 
 SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
@@ -857,11 +884,11 @@ SyntaxInformation[EPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}}
 EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		mon, echo, T1m, T1f, ad, datal, sol, wat, fat, fatMap, T2map, B1Map, clip, 
 		B1i, T2i, T2s, B1s, error, valsf, T2mc, B1c, cal,
-		dict,vals,cons,b1ran, t2ran, dim, size,
-		b1rule, B1Int, dataf, b1, b1vals, b1len, 
-		sig, dictMat, t2fran, S0c, met, val, out, T2fmap, wMat, t2fval,
+		dict,vals,cons,b1ran, t2ran,
+		b1rule, B1Int, dataf, b1, b1vals, b1len,
+		dictMat, t2fran, S0c, met, val, out, T2fmap, wMat, t2fval,
 		clipf, t2fdic, t2fpos, dictMatW, inp, consi, vals2, inpf, inp2, smoothing, optDic,
-		B1mask
+		cost, rad, mask, rmin, rmed, trec, dictC, valsC, inpC, gS, t2ranC
 	},
 
 	mon = OptionValue[MonitorCalc];
@@ -880,12 +907,22 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 	clipf = t2fran[[1 ;; 2]];
 	t2fval = N[OptionValue[DictT2fValue]];
 
+	(*recovery time and water signal fraction of adipose tissue*)
+	trec = OptionValue[EPGRepetitionTime] - Times @@ echo;
+	gS = FatWaterSignalFraction[{T1m, T1f}, trec];
+	debugEPG["start EPGT2Fit, data ", Dimensions[datal], ", echo ", echo,
+		", kernels ", $KernelCount, ", water signal fraction fat ", gS];
+
 	(*clibrate the fat signal from the real data*)
 	If[OptionValue[EPGCalibrate]&&!VectorQ[datan],
 		If[mon, MonitorFunction[OptionValue[EPGMethodCal], "Callibrating EPG fat t2 using:"]];
-		cal = CalibrateEPGT2Fit[datan, echo, angle, EPGRelaxPars -> {clip, clipf, {T1m, T1f}}, 
-		EPGFitPoints -> OptionValue[EPGFitPoints], EPGFatShift->OptionValue[EPGFatShift], 
-		EPGMethodCal -> OptionValue[EPGMethodCal]];
+		cal = CalibrateEPGT2Fit[datan, echo, angle,
+			EPGRelaxPars -> {clip, clipf, {T1m, T1f}},
+			EPGFitPoints -> OptionValue[EPGFitPoints],
+			EPGFatShift -> OptionValue[EPGFatShift],
+			EPGMethodCal -> OptionValue[EPGMethodCal],
+			EPGRepetitionTime -> OptionValue[EPGRepetitionTime]
+		];
 
 		Switch[OptionValue[EPGMethodCal],
 			"1comp", {t2fval, B1c, S0c} = cal[[1]];,
@@ -893,8 +930,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			"2compF", {t2fval, B1c} = cal[[1]]
 		];
 
-		(*round to whole ms*)
-		t2fval = N@Round[t2fval, 1];
+		debugEPG["calibration done ", cal];
 		If[mon, MonitorFunction[cal, "EPG fat callibration [ms]:"]];
 	];
 
@@ -924,10 +960,14 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 
 	(*create the dictionary*)
 	If[OptionValue[EPGMethod]=!="NLLS",
-		optDic = {OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater], OptionValue[EPGRefocussingPhase]};
+		optDic = {
+			OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater],
+			OptionValue[EPGRefocussingPhase], gS
+		};
 		{dict, vals} = CreateT2Dictionaryi[{T1m, T1f}, echo, angle, {t2ran, b1ran, t2fdic}, optDic ,mon];
 		cons = Dimensions[vals][[;; -2]];
 		dictMat = PseudoInverseC[dict];
+		debugEPG["dictionary ", Dimensions[dict]];
 
 		(*extra weight on first two echos to get correct b1*)
 		wMat = ConstantArray[1., echo[[1]]]; 
@@ -952,90 +992,112 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		inpf = Flatten[#,1]&/@ inp;
 	];
 
-	(*monitor calculation*)
-	i=j=0; SetSharedVariable[i]; ParallelEvaluate[j = 0];
-	If[mon &&! VectorQ[datan], 
-		dim = Times@@Dimensions[datal][[;;-2]];
-		size = Round[dim/100];
-		PrintTemporary[ProgressIndicator[Dynamic[i], {0, dim-size}]]];
+	(*b1 smoothing only for dictionary methods and volumes, True is radius 2*)
+	rad = OptionValue[EPGSmoothB1];
+	smoothing = (rad =!= False) && (OptionValue[EPGMethod]=!="NLLS") && !VectorQ[datal];
+	rad = If[NumberQ[rad], Round[rad], 2];
 
 	(*Perform t2 water and b1 fitting*)
 	If[mon, PrintTemporary["Fitting t2 water and b1: ", DateString[]]];
-	sol = Switch[met,
-
-		(*non linear least squares not possible with fat fitting. very slow*)
-		"NLLS", 
-		(*define fit values*)
-		valsf = {echo, {T1m, T1f, t2fdic}, angle};
-
-		If[VectorQ[datal],
-			(*single voxel*)
-			NonLinearEPGFiti[{valsf, clip}, datal],
-			(*monitor calculation*)
-			If[mon, PrintTemporary["Starting NLLS fitting: ", DateString[]]];
-			(*perform the fit using parallel kernels*)
-			Map[(j++; If[j > size, i += j; j = 1;];
-				NonLinearEPGFiti[{valsf, clip}, #])&, datal, {ad - 1}]
-		]
-
-		(*NealderMead  - fast for large dictionarys but unstable*)   
-		,"dictionaryM", 
-
-		If[VectorQ[datal],
-			(*single voxel*)
-			DictionaryMinSearchi[inp, datal, consi],
-			(*monitor calculation*)
-			If[mon, PrintTemporary["Starting dictionary min search (Nmin): ", DateString[]]];
-			DistributeDefinitions[inp, consi, size, LeastSquaresC, LeastSquaresError2C, DictionaryMinSearchi, dicmet];
-			(*perform the fit using parallel kernels*)
-			ParallelMap[(j++; If[j > size, i += j; j = 1;]; 
-				DictionaryMinSearchi[inp, #, consi])&, datal, {ad - 1}]
-		]
-
-		(*Brute force min search becomes slower with large dictionary*)
-		,"dictionary", 
-
-		If[VectorQ[datal],
-			(*single voxel*)
-			DictionaryMinSearchi[inpf, datal],
-			(*monitor calculation*)
-			If[mon, PrintTemporary["Starting dictionary min search (Brute): ", DateString[]]];
-			DistributeDefinitions[inpf, size, LeastSquaresC, LeastSquaresErrorC, ErrorC, DictionaryMinSearchi, dicmet];
-			(*perform the fit using parallel kernels*)
-			ParallelMap[(j++; If[j > size, i += j; j = 1;]; 
-				DictionaryMinSearchi[inpf, #])&, datal, {ad - 1}]
-		]
-	];
-
-	(*restructure fit solution*)
-	sol = ToPackedArray/@If[VectorQ[datal], sol, RotateDimensionsRight[sol]];
-
-	(*Get the B1map*)
-	B1Map = sol[[2]];	
-	(*perform b1/T2fat smoothing if needed*)
-	smoothing = (OptionValue[EPGSmoothB1] && (OptionValue[EPGMethod]=!="NLLS") && !VectorQ[datal]);
-	(* check if B1map needs to be smoothed, only works for dictionary methods *)
 	If[smoothing,
-		If[mon, PrintTemporary["Smoothing b1 to refit with smooth b1: ", DateString[]]];
-		(*smooth the b1 map*)
-		B1mask = Unitize[B1Map];
-		B1Map = N@Round[MedFilter[B1Map - B1mask + 1, 2] - b1ran[[1]], b1ran[[3]]] + b1ran[[1]];
-		B1Map = B1mask Clip[B1Map, b1ran[[1;;2]], b1ran[[1;;2]]];
+		If[mon, PrintTemporary["Calculating b1 cost for smooth b1: ", DateString[]]];
+		b1len = cons[[val]];
+
+		(*coarse t2 dictionary for the b1 cost, the fine dictionary is used in the refit*)
+		t2ranC = {t2ran[[1]], t2ran[[2]], Max[1., t2ran[[3]]]};
+		{dictC, valsC} = CreateT2Dictionaryi[{T1m, T1f}, echo, angle, {t2ranC, b1ran, t2fdic}, optDic, mon];
+		If[val == 3, dictC = dictC[[All, t2fpos]]];
+		inpC = Flatten[#, 1] & /@ {dictC, PseudoInverseC[dictC]};
+		debugEPG["coarse dictionary ", Dimensions[dictC]];
+
+		(*b1 cost curve of every voxel, minimum over t2*)
+		DistributeDefinitions[inpC, b1len, LeastSquares2C, ErrorC, DictionaryB1Cost];
+		cost = ParallelMap[DictionaryB1Cost[inpC, b1len, #] &, datal, {ad - 1}];
+		cost = ToPackedArray[N@cost];
+		debugEPG["b1 cost done ", Dimensions[cost], " packed ", Developer`PackedArrayQ[cost]];
+
+		(*weight the cost by the fit quality, relative to the median best residual*)
+		rmin = Map[Min, cost, {ad - 1}];
+		rmed = Median[Select[Flatten[rmin], # > 0. &]];
+		cost = cost/(1. + (rmin/rmed)^2);
+
+		(*pool the cost over neighbouring voxels*)
+		cost = BoxSum[cost, rad];
+
+		(*b1 with the lowest pooled cost, zero in the background*)
+		B1Int = Map[First@Ordering[#, 1] &, cost, {ad - 1}];
+		b1vals = N@Range @@ b1ran;
+		mask = Unitize[Total[datal, {ad}]];
+		B1Map = mask Map[b1vals[[#]] &, B1Int, {ad - 1}];
+		debugEPG["pooled b1 done, radius ", rad];
+		,
+		sol = Switch[met,
+
+			(*non linear least squares not possible with fat fitting. very slow*)
+			"NLLS", 
+			(*define fit values*)
+			valsf = {echo, {T1m, T1f, t2fdic}, angle};
+
+			If[VectorQ[datal],
+				(*single voxel*)
+				NonLinearEPGFiti[{valsf, clip}, datal],
+				(*monitor calculation*)
+				If[mon, PrintTemporary["Starting NLLS fitting: ", DateString[]]];
+				(*perform the fit voxel by voxel*)
+				Map[NonLinearEPGFiti[{valsf, clip}, #] &, datal, {ad - 1}]
+			]
+
+			(*NealderMead  - fast for large dictionarys but unstable*)   
+			,"dictionaryM", 
+
+			If[VectorQ[datal],
+				(*single voxel*)
+				DictionaryMinSearchi[inp, datal, consi],
+				(*monitor calculation*)
+				If[mon, PrintTemporary["Starting dictionary min search (Nmin): ", DateString[]]];
+				DistributeDefinitions[inp, consi, LeastSquaresC, LeastSquaresError2C,
+					DictionaryMinSearchi, dicmet];
+				(*perform the fit using parallel kernels*)
+				ParallelMap[DictionaryMinSearchi[inp, #, consi] &, datal, {ad - 1}]
+			]
+
+			(*Brute force min search becomes slower with large dictionary*)
+			,"dictionary", 
+
+			If[VectorQ[datal],
+				(*single voxel*)
+				DictionaryMinSearchi[inpf, datal],
+				(*monitor calculation*)
+				If[mon, PrintTemporary["Starting dictionary min search (Brute): ", DateString[]]];
+				DistributeDefinitions[inpf, LeastSquaresC, LeastSquaresErrorC, ErrorC,
+					DictionaryMinSearchi, dicmet];
+				(*perform the fit using parallel kernels*)
+				ParallelMap[DictionaryMinSearchi[inpf, #] &, datal, {ad - 1}]
+			]
+		];
+
+		(*restructure fit solution*)
+		sol = ToPackedArray/@If[VectorQ[datal], sol, RotateDimensionsRight[sol]];
+		(*Get the B1map*)
+		B1Map = sol[[2]];
 	];
 
 	(*refit data with either smoothed b1 and/of T2fat fit*)
 	If[smoothing || val==3,
-		(*convert b1 values to dictionaly integers*)
-		b1vals = N@Range @@ b1ran; 
+		(*b1 values of the dictionary*)
+		b1vals = N@Range @@ b1ran;
 		b1len = Length[b1vals];
-		b1rule = Thread[b1vals -> Range[b1len]];
-		B1Int = Clip[Round[B1Map /. b1rule ],{1,cons[[val]]}];
+		(*voxelwise b1 to dictionary index, the pooled b1 is already an index*)
+		If[!smoothing,
+			b1rule = Thread[b1vals -> Range[b1len]];
+			B1Int = Clip[Round[B1Map /. b1rule ],{1,cons[[val]]}];
+		];
 
-		(*monitor calculation*)
-		i = 0; SetSharedVariable[i]; ParallelEvaluate[j = 0];
-
-		(*definet fit data*)
+		(*fit data, signal and b1 index per voxel*)
 		dataf = RotateDimensionsLeft[{datal, B1Int}];
+		(*fit functions for the parallel kernels*)
+		DistributeDefinitions[DictionaryMinSearchi, LeastSquaresC, LeastSquares2C, ErrorC];
+		debugEPG["start refit at fixed b1"];
 
 		(*Recalculate solution*)
 		sol = Switch[val,
@@ -1043,9 +1105,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 			If[mon, PrintTemporary["Refitting with smooth b1: ", DateString[]]];
 			DistributeDefinitions[inp];
 			(*only fit t2 water*)
-			ParallelMap[(j++; If[j > size, i += j; j = 1;];
-				{sig, b1} = #;
-				DictionaryMinSearchi[inp[[All,All,b1]], sig]) &, dataf, {ad - 1}]
+			ParallelMap[DictionaryMinSearchi[inp[[All, All, #[[2]]]], #[[1]]] &, dataf, {ad - 1}]
 			,
 			3,(*perfomr refit with know b1 also fitting T2fat*)
 			If[mon, If[smoothing,
@@ -1059,15 +1119,12 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 
 			(*only fit t2 fat and water*)
 			DistributeDefinitions[inp2, consi];
-			ParallelMap[(j++; If[j > size, i += j; j = 1;];
-				{sig, b1} = #;
-				(*only update when needed*)
-				(*If[Total[sig]=!=0.,inpfi = inp2[[b1]]];*)
-				DictionaryMinSearchi[inp2[[b1]], sig]) &, dataf, {ad - 1}]
+			ParallelMap[DictionaryMinSearchi[inp2[[#[[2]]]], #[[1]]] &, dataf, {ad - 1}]
 		];
 
 		(*update the solution*)
 		sol = RotateDimensionsRight[sol];
+		debugEPG["refit done"];
 	];
 
 	(*get the outputs*)
@@ -1084,12 +1141,20 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 		];
 		fat = Clip[DataTransformation[fat, {1,1,1}, w, InterpolationOrder -> 2],MinMax[fat]];
 	];*)
+
 	(*split the adipose tissue in lipid and water*)
 	If[OptionValue[DictT2IncludeWater],
-		wat = wat + fatWatFr fat;
-		fat = (1. - fatWatFr) fat;
+		wat = wat + gS fat;
+		fat = (1. - gS) fat;
 	];
 
+	(*correct for incomplete T1 recovery between the echo trains*)
+	If[trec > 0,
+		wat = wat/(1. - Exp[-trec/T1m]);
+		fat = fat/(1. - Exp[-trec/T1f]);
+	];
+
+	(*fat fraction and clipped amplitudes*)
 	fatMap = Clip[ToPackedArray@DivideNoZero[fat, (wat + fat)], {-0.1, 1.1}];
 	{wat, fat} = Clip[{wat, fat}, {-0.1, 1.5} Max[datal]];
 
@@ -1098,6 +1163,7 @@ EPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]]:=Block[{
 
 	(*if needed also output callibaration*)
 	out = {{T2map, T2fmap, B1Map}, {wat, fat, fatMap}, error};
+	debugEPG["EPGT2Fit done"];
 
 	If[OptionValue[OutputCalibration]&&OptionValue[EPGCalibrate], {out, cal[[1]]}, out]
 ]
@@ -1111,15 +1177,16 @@ Options[CalibrateEPGT2Fit] = {
 	EPGRelaxPars -> {{0, 100}, {20, 300}, {1400., 365.}}, 
 	EPGFitPoints -> 50,
 	EPGMethodCal -> "2compF",
-	EPGFatShift -> 0.
+	EPGFatShift -> 0.,
+	EPGRepetitionTime -> 0.
 };
 
 SyntaxInformation[CalibrateEPGT2Fit]= {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 		ad, maskT2, dataT2, fmask, fitData, step, T2mmin, T2mmax, T2fmin, T2fmax, 
-		T1m, T1f, valsf, soli, fits, residualError, echo, shift, ang, angS, err, out, s0,
-		t2w, vars
+		T1m, T1f, fits, echo, shift, ang, angS, err, out, met, b1vals, t2fvals, t2wvals, g,
+		lip, wif, dic, idx, dicf, nrm, prj, res, best, ib1, it2f, it2w, b1s, t2fs, t2ws
 	},
 
 	echo = If[Length[echoi]===2, echoi, {Length[echoi],First[echoi]}];
@@ -1159,6 +1226,7 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 
 	err = Length[fitData] < 5;
 	If[err, Message[CalibrateEPGT2Fit::data]];
+	debugEPG["calibration on ", Length[fitData], " fat voxels, method ", OptionValue[EPGMethodCal]];
 
 	(*shift the slice profile*)
 	shift = OptionValue[EPGFatShift];
@@ -1167,43 +1235,50 @@ CalibrateEPGT2Fit[datan_, echoi_, angle_, OptionsPattern[]] := Block[{
 		ang = angS = angle
 		];
 
-	(*Distribute for the parallel evaluation*)
-	DistributeDefinitions[ErrorFunc1F, ErrorFuncFT, MixFatWater, fatWatFr, fatWatT2,
-		LeastSquaresErrorC, EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, RotMatrixTI, MoveStates, MoveStatesI];
+	(*grids of the calibration dictionary, 1comp: pure lipid, 2comp: also fit the water t2, 2compF: fixed water t2*)
+	met = OptionValue[EPGMethodCal];
+	b1vals = N@Range[0.5, 1.1, 0.02];
+	t2fvals = N@Range[If[met === "1comp", 20., 100.], 300., 1.];
+	t2wvals = N@If[met === "2comp", Range[10., 50., 1.], {fatWatT2}];
+	g = FatWaterSignalFraction[{T1m, T1f}, OptionValue[EPGRepetitionTime] - Times @@ echo];
 
 	(*perform the fitting, skip if not enough fat voxels*)
-	If[!err, Switch[OptionValue[EPGMethodCal],
-		"1comp", (*only fit single fat compartment*)
-		valsf = {echo, T1f, angS};
-		DistributeDefinitions[valsf];
+	If[!err,
+		(*lipid signals, cached per protocol*)
+		lip = EPGDictionary[echo, T1f, angS, t2fvals, b1vals, 0.];
 
-		fits = ParallelMap[(
-			s0 = #[[1]];
-			{residualError, soli} = Quiet@FindMinimum[{
-				ErrorFunc1F[#, T2fi, B1i, S0i, valsf],
-				{0.5 <= B1i <= 1.5, 20. <= T2fi <= 300., 0 < S0i}
-				}, {{T2fi, 50.}, {B1i, 1}, {S0i, 5 s0}}, MaxIterations -> 25];
-			out = {T2fif, B1if, S0if} = soli[[All, 2]];
-			out
-			) &, fitData];
-
-		,"2comp"|"2compF", (*fat tissue with fixed water fraction, 2comp also fits the water t2*)
-		valsf = {echo, {T1m, T1f}, ang, angS};
-		{t2w, vars} = If[OptionValue[EPGMethodCal] === "2comp",
-			{T2wi, {{T2wi, fatWatT2}, {T2fi, 150.}, {B1i, 1}}},
-			{fatWatT2, {{T2fi, 150.}, {B1i, 1}}}
+		(*fat tissue dictionary {b1, t2f, t2w, echo}, lipid only for 1comp*)
+		dic = If[met === "1comp",
+			Map[List, lip, {2}]
+			,
+			wif = EPGDictionary[echo, T1m, ang, t2wvals, b1vals, 0.];
+			Table[
+				MixFatWater[lip[[b, f]], wif[[b, w]], g]
+			, {b, Length[b1vals]}, {f, Length[t2fvals]}, {w, Length[t2wvals]}]
 		];
-		DistributeDefinitions[valsf, t2w, vars];
+		debugEPG["calibration dictionary ", Dimensions[dic]];
 
-		fits = ParallelMap[(
-			{residualError, soli} = Quiet@FindMinimum[{
-				ErrorFuncFT[#, T2fi, t2w, B1i, valsf],
-				0.5 <= B1i <= 1.5 && 10 <= t2w <= 50. && 100 <= T2fi <= 300.
-				}, Evaluate[vars], MaxIterations -> 25];
-			out = soli[[All, 2]];
-			out
-			) &, fitData];
-	]];
+		(*flatten the dictionary and keep the {b1, t2f, t2w} index of each entry*)
+		idx = Flatten[Array[List, Dimensions[dic][[1 ;; 3]]], 2];
+		dicf = Flatten[dic, 2];
+
+		(*residual with the best amplitude of every entry for every fat voxel*)
+		nrm = Total[dicf^2, {2}];
+		prj = dicf.Transpose[fitData];
+		res = Total[fitData^2, {2}] - Transpose[prj^2/nrm];
+
+		(*best entry per voxel and its b1, t2 fat and t2 water*)
+		best = First@Ordering[#, 1] & /@ res;
+		{ib1, it2f, it2w} = Transpose[idx[[best]]];
+		{b1s, t2fs, t2ws} = {b1vals[[ib1]], t2fvals[[it2f]], t2wvals[[it2w]]};
+
+		(*fitted values per voxel in the output order of the method*)
+		fits = Transpose@Switch[met,
+			"1comp", {t2fs, b1s, MapThread[prj[[#1, #2]]/nrm[[#1]] &, {best, Range[Length[best]]}]},
+			"2comp", {t2ws, t2fs, b1s},
+			_, {t2fs, b1s}
+		];
+	];
 
 	(*iff error return default*)
 	out = If[err,
@@ -1240,11 +1315,11 @@ SyntaxInformation[CreateT2Dictionary]= {"ArgumentsPattern" -> {_, _, _, OptionsP
 
 CreateT2Dictionary[relax_, echo_, ang_, OptionsPattern[]] := CreateT2Dictionaryi[relax, echo, ang, 
 	{OptionValue[DictT2Range], OptionValue[DictB1Range], OptionValue[DictT2fRange]}, 
-	{OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater], OptionValue[EPGRefocussingPhase]}, 
+	{OptionValue[EPGFatShift], OptionValue[DictT2IncludeWater], OptionValue[EPGRefocussingPhase], fatWatFr},
 	OptionValue[MonitorCalc]
 ]
 
-CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shift_, incW_, phase_}, mon_] := Block[{
+CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shift_, incW_, phase_, g_}, mon_] := Block[{
 		T1m, T1f, t2Mvals, t2Mlen, b1vals, b1len, t2val, t2Fvals, t2Flen, time, fatSig, watSig, 
 		dict, vals, fatSigW, ang, angS
 	},
@@ -1278,11 +1353,13 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 		echo, T1m, ang, angS, T1f, b1vals, t2Mvals, t2Fvals, t2val, fatWatT2
 	];
 
-	(*water signal of the adipose tissue*)
-	If[incW, fatSigW = ParallelTable[EPGSignali[echo, {T1m, fatWatT2}, ang, b1, {0, phase}], {b1, b1vals}]];
+	(*water signal of the adipose tissue, cached*)
+	If[incW,
+		fatSigW = EPGDictionary[echo, T1m, ang, {fatWatT2}, b1vals, phase][[All, 1]]
+	];
 
 	(*water signals of the muscle, cached*)
-	time = First@AbsoluteTiming[watSig = WaterDictionary[echo, T1m, ang, t2Mvals, b1vals, phase]];
+	time = First@AbsoluteTiming[watSig = EPGDictionary[echo, T1m, ang, t2Mvals, b1vals, phase]];
 
 	(*create the dictionary signals*)
 	If[NumberQ[t2frange],
@@ -1293,7 +1370,7 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 		(*fixed t2 value*)
 		time = time + AbsoluteTiming[
 			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2val}, angS, b1, {0, phase}], {b1, b1vals}];
-			If[incW, fatSig = MixFatWater[fatSig, fatSigW]];
+			If[incW, fatSig = MixFatWater[fatSig, fatSigW, g]];
 
 			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i]]}, {t2mi, 1, t2Mlen}, {b1i, 1, b1len}];
 			vals = Table[{t2m, b1}, {t2m, t2Mvals}, {b1, b1vals}];
@@ -1308,7 +1385,7 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 		(*range of t2 values*)
 		time = time + AbsoluteTiming[
 			fatSig = ParallelTable[EPGSignali[echo, {T1f, t2f}, angS, b1, {0, phase}], {b1, b1vals}, {t2f, t2Fvals}];
-			If[incW, fatSig = MixFatWater[fatSig, Transpose@ConstantArray[fatSigW, t2Flen]]];
+			If[incW, fatSig = MixFatWater[fatSig, Transpose@ConstantArray[fatSigW, t2Flen], g]];
 
 			dict = Table[Transpose@{watSig[[b1i, t2mi]], fatSig[[b1i, t2fi]]}, 
 				{t2mi, 1, t2Mlen}, {t2fi, 1, t2Flen}, {b1i, 1, b1len}];
@@ -1325,12 +1402,17 @@ CreateT2Dictionaryi[relax_, echo_, angle_, {t2range_, b1range_, t2frange_}, {shi
 
 
 (* ::Subsubsection::Closed:: *)
-(*WaterDictionary*)
+(*EPGDictionary*)
 
 
-(*save each unique water dictionary*)
-WaterDictionary[echo_, T1m_, ang_, t2Mvals_, b1vals_, phase_] := WaterDictionary[echo, T1m, ang, t2Mvals, b1vals, phase] =
-	ParallelTable[EPGSignali[echo, {T1m, t2m}, ang, b1, {0, phase}], {b1, b1vals}, {t2m, t2Mvals}]
+(*save each unique table of epg signals {b1, t2, echo}*)
+EPGDictionary[echo_, t1_, ang_, t2vals_, b1vals_, phase_] := EPGDictionary[echo, t1, ang, t2vals, b1vals, phase] = (
+	debugEPG["building epg dictionary ", Length[t2vals], " x ", Length[b1vals], ", T1 ", t1];
+	(*epg functions for the parallel kernels*)
+	DistributeDefinitions[EPGSignali, MixMatrix, MakeDiagMat, RotMatrixT, RotMatrixTI, MoveStates, MoveStatesI];
+	(*signal of every b1 and t2 combination*)
+	ParallelTable[EPGSignali[echo, {t1, t2}, ang, b1, {0, phase}], {b1, b1vals}, {t2, t2vals}]
+)
 
 
 (* ::Section:: *)
