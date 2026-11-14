@@ -23,14 +23,16 @@ about L440–L1340) and the slice profile functions in [SimulationTools.wl](../Q
 
 ```
 mese data {z, echo, y, x}, json (EchoTime s, SliceThickness, MagneticFieldStrength)
-  → background mask, NormalizeData
+  → background mask, PCADeNoise (Method "Patch", kernel 5, PCARicianCorrect) → NormalizeData   (2026-11-14; sig/snr exported,
+        settings in the json "Denoise"; real stack T22 at SNR ≈ 190: no change in FF/T2w/spread; simulation: unbiased at SNR ≥ 50,
+        Exact correction over-corrects near FF 0 below SNR ≈ 30)
   → GetPulseProfile[ex, ref, SliceRange -> 3 thk, SliceRangeSamples -> 6 thk, FatFieldStrength -> B0]
         half slice profiles of excitation and refocusing angles (0.25 mm steps) + fat shift in samples   (§3)
   → EPGT2Fit[data, 1000 echos, angle, DictT2IncludeWater -> True, EPGFitFat -> False, EPGCalibrate -> True, EPGFitPoints -> 100,
              EPGFatShift -> shift, DictB1Range -> {0.3, 1.4, 0.02}, DictT2Range -> {10, 60, 0.2}, ...]
         CalibrateEPGT2Fit ("2compF" = Keene method C) on subcutaneous fat → T2fat (dictionary search) (§6)
         CreateT2Dictionaryi (water part cached) → brute force dictionary fit → B1 median smoothing → refit (§4, §5)
-  → t2w, t2f, b1, wat, fat, fatfr (lipid fraction), res; json gets EPGSettings and EPGCalibration {T2fat, B1}
+  → t2w, t2f, b1, wat, fat, fatfr (lipid fraction), res, sig, snr; json gets EPGSettings and EPGCalibration {T2fat, B1}
 ```
 
 `Settings` may also be two plain numbers (`[90, 180]`). Then no profile and no shift are used, and B1 is ill-posed

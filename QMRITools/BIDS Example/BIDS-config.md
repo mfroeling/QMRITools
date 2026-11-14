@@ -210,7 +210,7 @@ The study folder `dir` contains these folders (the default names). QMRITools cre
 | `02_rawdata` | Converted NIfTI files with BIDS names, sorted by subject and session |
 | `03_derivatives` | Processed maps (for example fat fraction and diffusion maps), in the native space of the scan |
 | `04_merged` | Joined and registered data, segmentations and tractography results |
-| `05_analysis` | Excel sheets with the results per subject and one combined file for all subjects (plus `.wxf` files, Wolfram data files you can ignore) |
+| `05_analysis` | Excel sheets with the results per subject and one combined file for all subjects, plus per subject a `.json` that lists the settings, the QMRITools version and every file used (and `.wxf` files, Wolfram data files you can ignore) |
 
 The file `config.json` goes in the root of the study folder, next to these folders.
 
@@ -465,7 +465,7 @@ after conversion unless you use `DeleteAfterConversion -> False`.
     dix/                            merged maps: sub-001_ses-1_megre_dix_wat.nii
     seg/                            segmentation: sub-001_ses-1_seg_auto_megre_dix_outph.nii
   05_analysis/
-    sub-001/ses-1/                  sub-001_ses-1.xlsx and .wxf
+    sub-001/ses-1/                  sub-001_ses-1.xlsx, .json and .wxf
     All_<date>.xlsx                 all subjects in one table
 ```
 
@@ -792,14 +792,14 @@ Each dataset in `datasets` can have one block for every pipeline step after the 
 
 | `Method` | Use it for | Output (examples of the suffixes you get) |
 | --- | --- | --- |
-| `Dixon` | Multi-echo gradient echo (Dixon) scans (`Type` `megre` or `tse`) stored as magnitude and phase, or real and imaginary, images per echo. QMRITools calculates the water and fat maps itself. | `wat`, `fat`, `watfr`, `fatfr`, `t2star`, `r2star`, `inph`, `outph`, `snr` |
+| `Dixon` | Multi-echo gradient echo (Dixon) scans (`Type` `megre` or `tse`) stored as magnitude and phase, or real and imaginary, images per echo. QMRITools calculates the water and fat maps itself. With `Dixon` and `Dixon-A` the T2 of water and of each fat peak is fixed and only the extra decay T2' is fitted; `t2star` is then calculated from `t2prime` and the fat fraction. | `wat`, `fat`, `watfr`, `fatfr`, `t2star`, `r2star`, `t2prime`, `r2prime` (`Dixon`, `Dixon-A`), `inph`, `outph`, `snr` |
 | `Dixon-B` | Like `Dixon`, but for data stored as one 4D file with all echoes. You give the echo times with `EchoTime`. | same as `Dixon` |
 | `Dixon-P` | Dixon data that the scanner already reconstructed, as one 4D file or as separate files. | the maps listed in `Types` |
 | `Dixon-S` | Dixon data that the scanner already reconstructed, as separate series. | the maps listed in `Types` |
 | `Dixon-A` | Dixon data where you do not know (or it differs per scan) if the scanner reconstructed it. The type is detected automatically. | the scanner maps, or the QMRITools maps when only the raw echoes are there |
 | `DTI` | Diffusion-weighted images (`Type` `dwi`). Fits a diffusion tensor. | `s0`, `md`, `fa`, `rd`, `l1`, `l2`, `l3`, `tens`, `snr0` |
-| `EPGT2` | Multi-echo spin echo T2 mapping (`Type` `mese`). Needs the RF pulse settings. The fat T2 is calibrated on the subcutaneous fat, which is assumed to be 90% fat and 10% water. `fatfr` is the lipid fraction, the same quantity Dixon gives, corrected for the slower T1 recovery of water at the scan's repetition time. | `t2w`, `t2f`, `wat`, `fat`, `fatfr`, `b1` |
-| `Exp` | Simple T2 mapping (`Type` `mese`) with a single exponential fit. | `t2`, `s0` |
+| `EPGT2` | Multi-echo spin echo T2 mapping (`Type` `mese`). Needs the RF pulse settings. The fat T2 is calibrated on the subcutaneous fat, which is assumed to be 90% fat and 10% water. `fatfr` is the lipid fraction, the same quantity Dixon gives, corrected for the slower T1 recovery of water at the scan's repetition time. The data are denoised and corrected for the noise floor first, which also gives a noise map and an SNR map. | `t2w`, `t2f`, `wat`, `fat`, `fatfr`, `b1`, `sig`, `snr` |
+| `Exp` | Simple T2 mapping (`Type` `mese`) with a single exponential fit, after the same denoising as `EPGT2`. | `t2`, `s0`, `sig`, `snr` |
 
 The full list of suffixes is at <https://www.qmritools.com/bids/ents_suffs/>.
 
@@ -1161,7 +1161,7 @@ the analysis again; the subject is processed again because its check file is not
 
 Each map gives two columns in the Excel file: the value and a spread value. The name is made from the last two parts of the entry. For example, `dix` and `fatfr` give `dix_fatfr` and `dix_fatfr_IQR`. The value is the median inside the muscle and the spread value is the interquartile range (IQR). For the tract maps `trk_seed` and `trk_dens`, the value is the mean and the spread value is the standard deviation, but the column is still named `..._IQR`.
 
-Two maps are scaled to friendlier units in the Excel file. Fat fraction (`dix_fatfr` and `t2_fatfr`) is shown in percent (stored `0` to `1`, shown `0` to `100`). T2* from Dixon (`dix_t2star`) is shown in ms. All other maps keep the units they have in the files.
+Two maps are scaled to friendlier units in the Excel file. Fat fraction (`dix_fatfr` and `t2_fatfr`) is shown in percent (stored `0` to `1`, shown `0` to `100`). T2* and T2' from Dixon (`dix_t2star`, `dix_t2prime`) are shown in ms. All other maps keep the units they have in the files.
 
 Tract-based maps always count each voxel once. There is no option to weight voxels by tract density.
 
@@ -1634,7 +1634,8 @@ Every key you leave out of `config.json` gets the value below. The blocks `Proce
     "RicianCorrection": true,
     "IVIMCorrection": true,
     "GradientCorrection": false,
-    "FasciculationDetection": false
+    "FasciculationDetection": false,
+    "FasciculationBvalue": 0
   },
   "Merging": {
     "Overlap": 0,
@@ -1705,6 +1706,7 @@ Change these only when the defaults do not fit your data.
 | `RegistrationMethod` | For `DTI`. The method used to correct motion and distortions between the diffusion volumes. | `"bspline"`. Also `"translation"`, `"rigid"`, `"affine"` |
 | `SplitRegistration` | For `DTI`. Registers the left and right side of the muscle separately. | `false` |
 | `FasciculationDetection` | For `DTI`. Also detects fasciculations (spontaneous muscle twitches) in the diffusion data and adds the `fasc`, `fascm` and `norm` maps. | `false` |
+| `FasciculationBvalue` | For `DTI` with `FasciculationDetection`. Only diffusion volumes with at least this b-value are used for the detection, so the `fasc`, `fascm` and `norm` maps have that many volumes. | `0` (all volumes) |
 
 ### Merging options
 

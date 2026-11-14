@@ -364,7 +364,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 		k, m, off, datao, weights, sigmat, sigmati, nmati, clip, comp, len,
 		output, j, sigi, zm, ym, xm, zp, yp, xp, fitdata, sigo, Nes, datn, 
 		weightFun, posV, length, nearPos, p, pi, pos, np, met, comps,
-		mid, pad, fun, par, dimv, coors, bias, x, y, z
+		mid, pad, fun, par, dimv, coors, bias, x, y, z, mf, sel
 	},
 
 	(*tollerane if>0 more noise components are kept*)
@@ -412,6 +412,11 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 		(*--------------use similar signals--------------*)
 		"Similarity",
+		(*select similar voxels on a masked smoothed copy, selection on the noisy data correlates the noise and biases sigma low*)
+		(*box ListConvolve, the builtin MeanFilter is about 15x slower on 3D arrays*)
+		mf = ListConvolve[ConstantArray[1., {3, 3, 3}], mask, {2, 2, 2}, 0.];
+		sel = First@DataToVector[Transpose[DivideNoZero[ListConvolve[ConstantArray[1., {3, 3, 3}], mask #, {2, 2, 2}, 0.], mf] & /@ Transpose[data]], mask];
+
 		(*vectorize data*)
 		{data, posV} = DataToVector[data, mask];
 		sigma = First@DataToVector[sigma, mask];
@@ -431,7 +436,7 @@ PCADeNoise[datai_, maski_, sigmai_, OptionsPattern[]] := Block[{
 
 			(*for each random batch find the nearest voxels and make pos array*)
 			If[mon, PrintTemporary["Preparing data similarity"]];
-			nearPos = Flatten[Nearest[data[[#]] -> #, data[[#]], 2 k,
+			nearPos = Flatten[Nearest[sel[[#]] -> #, sel[[#]], 2 k,
 				DistanceFunction -> EuclideanDistance, Method -> "Scan",
 				WorkingPrecision -> MachinePrecision] & /@ pos, 1];
 			nearPos[[All, 1]] = Flatten[pos];

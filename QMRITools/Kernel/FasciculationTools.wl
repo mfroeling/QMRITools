@@ -200,13 +200,15 @@ FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, da
 
 
 FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0}, {back, _Real, 0}}, Block[{
-		ti, mn, sd, tr, i, len, mask, cont
+		ti, mn, sd, tr, i, len, mask, cont, nz
 	},
 	mn = Mean[t];
 	(*Check background threshold*)
 	If[mn <= back, Return[0.0*t]];
 
-	ti = t;
+	(*zero samples have no data, never use them*)
+	nz = Unitize[t];
+	ti = Pick[t, nz, 1];
 	i = 0;
 	cont = True;
 
@@ -235,8 +237,8 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 	If[Length[ti] <= 5,
 		0.0 t,
 		mn = Mean[ti];
-		tr = Min[1.0 - (sc/mn)*StandardDeviation[ti], fr];
-		UnitStep[tr*mn - t]
+		tr = Min[Ramp[1.0 - (sc/mn)*StandardDeviation[ti]], fr];
+		nz UnitStep[tr*mn - t]
 	]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
@@ -250,7 +252,8 @@ MeanThresh = Compile[{{t, _Real, 1},{s, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0
 	mn = Mean[t];
 	If[mn <= back,
 		{0., 0., 0., 0.},
-		ti = Pick[t, s, 0.0];
+		(*non activated samples without zeros*)
+		ti = Pick[t, s + UnitStep[-t], 0.0];
 		If[Length[ti] < 5,
 			{0., 0., 0., 0.},
 			mn = Mean[ti];
@@ -339,8 +342,9 @@ SelectActivationI[act_?ArrayQ, masks_?ArrayQ, size_]:=Block[{msk, dat},
 	SparseArray[(
 	(*loop over masks for analysis*)
 		msk = #;
-		dat=SparseArray[Transpose[msk #&/@Transpose[act]]];
-		SparseArray[Round[Map[SelectActivationI[#, size]&, dat, {2}]]]
+		(*normal arrays, per slice work on sparse arrays and images is about 3x slower*)
+		dat = Round@Transpose[msk # & /@ Transpose[Normal@act]];
+		SparseArray[Map[SelectActivationI[#, size]&, dat, {2}]]
 	)& /@ masks]
 ];
 
@@ -348,8 +352,13 @@ SelectActivationI[act_?ArrayQ, masks_?ArrayQ, size_]:=Block[{msk, dat},
 (*actual selection function*)
 SelectActivationI[im_?MatrixQ, size_?IntegerQ] := SelectActivationI[im , {size, Infinity}]
 
-SelectActivationI[im_?MatrixQ, size_?VectorQ] := If[Total[Flatten[im]] < First[size], 0 im,
-	ImageData[SelectComponents[Image[im,"Bit"], Last[size] >= #Count >= First[size]&]]
+SelectActivationI[im_?MatrixQ, {min_, max_}] := Block[{lab, cnt},
+	If[Total[im, 2] < min, 0 im,
+		(*label the components and keep those with a voxel count in range*)
+		lab = MorphologicalComponents[im];
+		cnt = BinCounts[Flatten@lab, {1, Max[lab] + 1, 1}];
+		ArrayReshape[Prepend[Boole[min <= # <= max] & /@ cnt, 0][[Flatten[lab] + 1]], Dimensions[im]]
+	]
 ];
 
 

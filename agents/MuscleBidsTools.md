@@ -273,6 +273,7 @@ associations merge.
 | `GradientCorrection` | False | DTI | coil name string (for example `"WA1"`), needs `Offset` in json (written by Convert) |
 | `IVIMCorrection` | True | DTI | IVIM fit then `IVIMCorrectData` before the tensor fit |
 | `FasciculationDetection` | False | DTI | `FindActivations` on the normalised `reg` data |
+| `FasciculationBvalue` | 0 | DTI | minimum b-value of the volumes used for the detection (`SelectBvalueData[{reg, val, grad}, b]`); written to the output json |
 | `Settings` | – | EPGT2 | `[[exName, exAngle, {..}], [refName, refAngle, {..}]]` → `GetPulseProfile`, or plain numbers `[ex, ref]` |
 | `Shift` | – | EPGT2 | `true` → fat profile shift from `GetPulseProfile[..., FatFieldStrength -> json MagneticFieldStrength]` (3 T if missing), in profile samples. EPGT2 always runs with `DictT2IncludeWater -> True` and `"2compF"` calibration (Keene 2020 method C, 90/10 adipose tissue), so `fatfr` is a lipid fraction like Dixon; the calibrated `{T2fat, B1}` is logged and written as `EPGCalibration` in the output json. Details: [EPGT2.md](EPGT2.md) |
 
@@ -410,28 +411,39 @@ output: declare the variable in the `Block` list, give it exactly the suffix nam
 | Type | Method | Check file | Outputs |
 | --- | --- | --- | --- |
 | megre/tse | branch 1: `Dixon-S`, `Dixon-P`, `Dixon-A` (recon files present) | `outFile` "done" | the found `Types`, plus `r2star` (if t2star), `watfr`/`fatfr` (from fatfr file or `DixonToPercent`) |
-| | branch 2: `Dixon`, `Dixon-B`, `Dixon-A` (real/imag or mag/ph files present) | same | `real imag mag ph b0i t2stari b0 t2star r2star inph outph wat fat watfr fatfr itt res snr sig`, plus for Dixon/Dixon-A: `phbp phi phbpt phii phbpi` (and `dbond` if >6 echoes, CallDB fat model) |
+| | branch 2: `Dixon`, `Dixon-B`, `Dixon-A` (real/imag or mag/ph files present) | same | `real imag mag ph b0i t2stari b0 t2star r2star inph outph wat fat watfr fatfr itt res snr sig`, plus for Dixon/Dixon-A: `phbp phi phbpt phii phbpi t2prime r2prime` (Dixon-A fits with `DixonFixT2 -> True`: `r2prime` is the fit, `r2star` = R2' + FF-weighted intrinsic R2, DixonTools.md Q20) (and `dbond` if >6 echoes, CallDB fat model) |
 | dwi | *prep* (always, even without Method) | `outFile_prep` "done" | `raw den reg filt sig snr0 snr` (`reg`/`filt` with bval/bvec) |
 | | `DTI` (reruns when prep ran this call) | `outFile` "done" | `data tens res out s0 l1 l2 l3 md fa rd` + IVIM `mean adci fri s0i` + `field` (grad corr) + `fasc fascm norm` |
 | mese | `EPGT2` | `outFile` "done" | `data t2w t2f b1 wat fat fatfr res` |
 | | `Exp` | same | `data t2 s0` |
 
 **Output json = source json + what was run.** Every output json is `MergeJSON[{json, procInfo, setting}]`. That is
-the source json, then `procInfo` (built once per call: the config `Process` block as `"ProcessSettings"` plus
-`"ProcessVersion"` = `QMRITools`$InstalledVersion`), then the method's own settings:
+the source json, then `procInfo` (built once per call: the config `Process` block resolved against `defaultConfig`, so
+defaults are listed too, as `"ProcessSettings"`, plus `"ProcessVersion"` = `QMRITools`$InstalledVersion`), then the
+method's own settings:
 
 - Dixon: `"DixonSource"` (`ScannerRecon` or `QMRITools`), plus for the fit `"Denoise"`, `"DixonPhaseEchos"`,
-  `"DixonPhaseSettings"` (`DixonPhase` options: field strength and `DixonGraphCut`, Dixon-A only), `"DixonSettings"` and `"DixonPrecessionCheck"` (`{Ratio, Result}` of `DixonPrecessionCheck`, also in the log).
-- EPGT2: `"EPGSettings"`.
-- dwi: `settingPre` / `settingPro`.
+  `"DixonPhaseSettings"` (`DixonPhase` options: field strength and `DixonGraphCut`, Dixon-A only), `"DixonSettings"`,
+  `"DixonT2Star"` (Dixon/Dixon-A: the first echo of the initial T2*, the fixed `R2Water`/`R2Fat` in 1/s and the
+  definition `R2* = R2' + (1 - FF) R2Water + FF R2Fat`) and `"DixonPrecessionCheck"` (`{Ratio, Result}` of
+  `DixonPrecessionCheck`, also in the log).
+- EPGT2: `"Denoise"`, `"SliceProfile"` (slice range and samples, field strength of the fat shift, or fixed angles),
+  `"EPGSettings"`, `"EPGCalibration"`. Exp: `"Denoise"`, `"T2FitSettings"`.
+- dwi prep (`settingPre`): `"FlipPermute"`, `"RicianCorrection"`, `"Denoise"` (`denOpts`), `"Registration"` (function
+  and `regOpts`), `"AnisotropicFilter"`, the registration config keys. dwi DTI (`settingPro`): `"GradientCorrection"`,
+  `"IVIMCorrection"` + `"IVIMSettings"` (`ivimOpts` and the data-derived `init`), `"TensorSettings"` (`tensOpts`),
+  `"FasciculationDetection"` + `"FasciculationBvalue"` + `"FasciculationSettings"` (`fascOpts`, cluster size).
+- Merge (`MuscleBidsMergeI`): `"MergeVersion"`, `"Merge Target"`, `"Merge Moving"`, overlap, padding, motion,
+  reverse, split, method and, when registered, `"Merge Registration"` (`regTar`, `regMov`).
 
-Hard-coded fit options are kept in one options list (`denOpts`, `dixOpts`, `epgOpts`), which is used both for the call
+Hard-coded fit options are kept in one options list (`denOpts`, `dixOpts`, `epgOpts`, `regOpts`, `ivimOpts`,
+`tensOpts`, `fascOpts`, `regTar`, `regMov`), which is used both for the call
 and, via `OptionsToJSON`, for the json, so the two cannot drift apart. Add a new fit option to that list, not to the
 call. `JSONSafe` (used by `OptionsToJSON` and `procInfo`) turns values json cannot hold (`Automatic`, `Missing`, other
 symbols) into strings; without it the whole export fails.
 
 **Segmentation json** (`MuscleBidsSegmentI`): every segmentation gets a json next to it. It holds `procInfo` (config
-`Segment` block as `"SegmentSettings"`, plus `"ProcessVersion"`), plus:
+`Segment` block with defaults as `"SegmentSettings"`, plus `"ProcessVersion"`), plus:
 
 - automatic (CNN): the source json of the segmented image, `"SegmentationSource"` (file name), `"SegmentData"` (the
   `segOpts` used) and `"SegmentationNetworks"`. The networks come from `SegmentationInfo[what, dim]` in
@@ -440,7 +452,7 @@ symbols) into strings; without it the whole export fails.
 - `"Registration"`: the target, moving and segmentation file names and the registration options (`regOpts`).
 
 **Tractography json** (`MuscleBidsTractographyI`): every `.nii` and `.trk` output gets a json with the same base name. It
-holds `procInfo` (config `Tractography` block as `"TractographySettings"`, plus `"ProcessVersion"`), plus per stage:
+holds `procInfo` (config `Tractography` block with defaults as `"TractographySettings"`, plus `"ProcessVersion"`), plus per stage:
 
 - tracking (`.trk`): the source json of the tensor, `"TractSource"`, `"StopFiles"`/`"StopValues"` and `"Tractography"`
   (`trackOpts` plus flips and permutations).
@@ -512,9 +524,12 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 
 - **xlsx part** (check `…_xls`): segmentation → `SelectSegmentations[1..n]` → volume and cross-section → label names
   from `GetAssetLocation["MuscleLegLabels"]` and similar → per `Analysis.Types` file: `GetMaskData` with the median+IQR
-  (mean+SD for `trk_seed`/`trk_dens`). Scaling: `fatfr`×100 (dix, t2), `dix t2star`×1000. TractBased types use
+  (mean+SD for `trk_seed`/`trk_dens`). Scaling: `fatfr`×100 (dix, t2), `dix t2star`/`dix t2prime`×1000. TractBased types use
   `seg ∩ Unitize[dens]`. `MaskErosion` → `DilateMask[seg,-1]`. Output `analysis/sub/ses/<sub_ses[_chunk-KEY]>.xlsx`
-  + `.wxf`. The `_xls` check file is only made when both exports return a file name; otherwise the log says
+  + `.wxf` + `.json`. The json holds `"AnalysisVersion"`, date, the `Analysis` config with defaults, the segmentation
+  (file, labels, erosion, `TypeSegmentation` files), filter and tract mask, per data type the file, segmentation,
+  statistic, scale, tract weighting and the `ProcessVersion`/`MergeVersion` of its source json, and the missing data
+  types. The `_xls` check file is only made when all three exports return a file name; otherwise the log says
   "Export failed, no check file made", so a rerun tries again. A label with an empty mask (not in the segmentation,
   or removed by erosion or tract weighting) gives zeros for that label: `FindCrop` returns the full range for an
   empty array, so `AutoCropData`, `CropToMask` and `MaskSegmentation` return an empty mask and `GetMaskData` zeros.

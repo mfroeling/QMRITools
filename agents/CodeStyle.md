@@ -270,6 +270,10 @@ F[x_] := ...
 - When optimizing, time each step first. A slow elementwise step (arithmetic, `Abs`, `Arg`) usually means unpacked
   input, so check `Developer`PackedArrayQ` on its inputs. Test data needs to be packed too: `N@Array[Boole[...]&, d]`
   is not packed, and timings on it are misleading.
+- Built-in `MeanFilter` and `MedianFilter` on raw 3D arrays are 20–100x slower than on an `Image3D`. Use a box
+  `ListConvolve` for the mean and `MedFilter` (GeneralTools) for the median. The image `MedianFilter` is only correct
+  for values in 0–1, which is why `MedFilter` rescales. `GaussianFilter`, `TotalVariationFilter` and the
+  morphological functions are fine on arrays.
 - The standard parallel idiom is `fun = If[par, DistributeDefinitions[...]; ParallelMap, Map]`. The link-based
   producer/consumer pool in `TrainSegmentationNetwork` is a bespoke exception, not a template.
 
@@ -284,6 +288,10 @@ F[x_] := ...
 - Pretraining (`AugmentMask`): `input = data(1-mask) + fill·mask`, `target = data·mask` (not dilated, which was
   tried and reverted); the `MakeBlockMask` `2*RandomReal[{0.1,0.5}]` factor; `FreezeEncoderDepth` is a contiguous
   cutoff.
+- `FindActC` / `MeanThresh` (FasciculationTools.wl): zero samples (no data, e.g. out of FOV after registration) are
+  excluded from the statistics and never flagged. Before this, a zero always fell below the threshold and counted as
+  an activation (279 of 2137 fasciculation voxels on one stack). `Ramp` on the final threshold is only safe because
+  of that exclusion.
 - MuscleBids: the Dixon gated-`If` branches (§4). Also see the quirk list in MuscleBidsTools.md §10: ask before
   changing any of it.
 

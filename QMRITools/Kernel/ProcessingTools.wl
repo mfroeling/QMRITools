@@ -892,7 +892,7 @@ toNumString[dat_, n_, func_] := Block[{data, num},
 SyntaxInformation[SNRCalc] = {"ArgumentsPattern" -> {_, _}};
 
 SNRCalc[data_?ArrayQ, sig_?ArrayQ] := Block[{sigma, snr},
-	sigma = MedianFilter[ToPackedArray@N@Chop[sig, 10^-3], 2];
+	sigma = MedFilter[ToPackedArray@N@Chop[sig, 10^-3], 2];
 	Which[
 		ArrayDepth[data] === 4 && ArrayDepth[sigma] === 3,
 		snr = Map[DivideNoZero[#, sigma] &, Transpose[data]];

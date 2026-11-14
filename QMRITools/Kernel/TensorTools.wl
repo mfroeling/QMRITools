@@ -60,8 +60,8 @@ FlipGradientOrientation[grad, flip, perm] flips and permutes the internal orient
 FlipGradientOrientation[grad, perm, flip]flips and permutes the internal orientation of the gradients."
 
 TransformTensor::usage = 
-"TransformTensor[tensor, disp, vox] corrects the tensor with voxel size vox based on the displacement field disp. The displacement field is te displacement in mm
-for each voxel location in x, y and z.
+"TransformTensor[tensor, disp, vox] corrects the tensor with voxel size vox based on the displacement field disp. The displacement field is the displacement in mm
+for each voxel location, in the array order {z, y, x} of the data and vox.
 
 TransformTensor[] is based on DOI: 10.1109/42.963816."
 
@@ -1400,7 +1400,7 @@ SyntaxInformation[TransformTensor] = {"ArgumentsPattern" -> {_, _, _}};
 
 TransformTensor[tens_, disp_, vox_] := Block[{iMat, jac},
 	iMat=IdentityMatrix[3];
-	jac=ToPackedArray@N@Chop[iMat+Table[GaussianFilter[disp[[i]],1,iMat[[j]]]/vox[[i]],{i,1,3},{j,1,3}]];
+	jac=ToPackedArray@N@Chop[iMat+Table[GaussianFilter[disp[[i]],1,iMat[[j]]]/vox[[j]],{i,1,3},{j,1,3}]];
 
 	ToPackedArray@N@TensVec[Apply[TensorRotate,RotateDimensionsLeft[{RotateDimensionsRight[TensMat[tens],2],jac},3],{-4}]]
 ]

@@ -553,7 +553,8 @@ defaultConfig = <|
 		"RicianCorrection" -> True,
 		"IVIMCorrection" -> True,
 		"GradientCorrection" -> False,
-		"FasciculationDetection" -> False
+		"FasciculationDetection" -> False,
+		"FasciculationBvalue" -> 0
 	|>,
 	"Merging" -> <|
 		"Overlap" -> 0,
@@ -3455,8 +3456,9 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		s0i, fri, adci, pD, tens, s0, out, l1, l2, l3, md, fa, rd, t2vox, t2w, t2f, b1, n, 
 		angle, ex, ref, thk, phii, phbpi, phbp, ta, filt, field, settingPre, settingPro, regF, coil, off, 
 		int, dint, suffix, types, flip, per, magph, split, ivim, shift, t2, pulse, cal,
-		fasc, fascm, sel, norm, rdim, raw, rmet, rician, sigI, bv, init, exist,
-		denOpts, dixOpts, epgOpts, phaseEchoes, phaseOpts, procInfo, precRatio, precResult
+		fasc, fascm, fbval, sel, norm, rdim, raw, rmet, rician, sigI, bv, init, exist,
+		denOpts, dixOpts, epgOpts, phaseEchoes, phaseOpts, procInfo, precRatio, precResult,
+		t2prime, r2prime, rel, amp, r2w, r2f, ffc, t2sInfo, regOpts, ivimOpts, tensOpts, fascOpts
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -3473,7 +3475,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		"OverLap", "SliceThickness", "SpacingBetweenSlices"};
 
 	(*config settings and version that are added to every output json*)
-	procInfo = JSONSafe@<|"ProcessSettings" -> datType["Process"], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
+	procInfo = JSONSafe@<|"ProcessSettings" -> Join[defaultConfig["Process"], Lookup[datType, "Process", <||>]], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
 
 	(*see what needs to be processed*)
 	files = BidsJsonFiles[folIn, datType["Label"]];
@@ -3662,7 +3664,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 										(*-----*)AddToLog["Starting Dixon reconstruction", 4];
 										dixOpts = {
 											DixonPrecessions -> 1, DixonPhases -> {True, True, True, True, True},
-											DixonFixT2 -> False, DixonFieldStrength -> field,
+											DixonFixT2 -> True, DixonFieldStrength -> field,
 											DixonAmplitudes -> If[Length[echos] > 6, "CallDB", "Fixed"], DixonTolerance -> 1
 										};
 
@@ -3678,6 +3680,17 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 											outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
 										];
 
+										(*with fixed T2 the fit gives R2', R2* adds the intrinsic water and fat R2 weighted by the fat fraction*)
+										{t2prime, r2prime} = {t2star, r2star};
+										{rel, amp} = {DixonRelaxivity, DixonAmplitudes} /. Options[DixonReconstruct];
+										{r2w, r2f} = {1000. / rel[[1, 1]], 1000. Total[amp[[2]] / rel[[2]]] / Total[amp[[2]]]};
+										ffc = Clip[fatfr, {0, 1}];
+										r2star = Unitize[r2prime] (r2prime + (1 - ffc) r2w + ffc r2f);
+										t2star = DivideNoZero[1., r2star];
+										outTypes = Join[{"t2prime", "r2prime"}, outTypes];
+										t2sInfo = <|"InitEcho" -> n, "R2Water [1/s]" -> r2w, "R2Fat [1/s]" -> r2f,
+											"Definition" -> "R2* = R2' + (1 - FF) R2Water + FF R2Fat, with R2' the fitted relaxation at fixed T2"|>;
+
 										,
 										(*Dixon processing scrip for multi echo gradient echo complex data as used in Bochum cohort*)
 										"Dixon-B",
@@ -3687,6 +3700,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 										b0i = UnwrapSplit[ph[[All, -1]] - ph[[All, 1]], mag, UnwrapDimension -> "3D", MonitorUnwrap -> False];
 										b0i = b0i/(2 Pi (Last[echos] - First[echos]));
 										phaseEchoes = {1, Length[echos]};
+										t2sInfo = <|"Init" -> "T2Fit of the magnitude", "Definition" -> "fitted R2*"|>;
 										(*calculate the t2 star from the two in phase images*)
 										t2stari = T2Fit[mag, echos][[2]];
 
@@ -3711,7 +3725,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									settingPro = <|
 										"DixonSource" -> "QMRITools", "Denoise" -> OptionsToJSON[denOpts],
 										"DixonPhaseEchos" -> phaseEchoes, "DixonPhaseSettings" -> OptionsToJSON[phaseOpts],
-										"DixonSettings" -> OptionsToJSON[dixOpts],
+										"DixonSettings" -> OptionsToJSON[dixOpts], "DixonT2Star" -> JSONSafe[t2sInfo],
 										"DixonPrecessionCheck" -> <|"Ratio" -> Round[precRatio, 0.001], "Result" -> precResult|>
 									|>;
 
@@ -3815,8 +3829,9 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
 						rician = ConfigLookup[datType, "Process", "RicianCorrection"];
 						settingPre = MergeConfig[settingPre, <| "RicianCorrection" -> rician |>];
-						{den, sig} = PCADeNoise[raw, mask, PCAOutput->False, PCATolerance->0, PCAKernel->5,
-							PCARicianCorrect -> rician];
+						denOpts = {Method -> "Similarity", PCAKernel -> 5, PCATolerance -> 0, PCARicianCorrect -> rician};
+						settingPre = MergeConfig[settingPre, <| "Denoise" -> OptionsToJSON[denOpts] |>];
+						{den, sig} = PCADeNoise[raw, mask, PCAOutput -> False, Sequence @@ denOpts];
 						snr = SNRCalc[den, sig];
 						snr0 = Mean@Transpose@First@SelectBvalueData[{snr, val}, {0, Max[{2, Min[val]}]}];
 						debugBids[{"de-noised data dimensions", Dimensions[den]}];
@@ -3838,14 +3853,15 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						
 
 						debugBids[{"Registration function", regF}];
-						reg = regF[{den, mask, diffVox}, Iterations->300, NumberSamples->5000, 
-							PrintTempDirectory->False, MethodReg -> rmet, InterpolationOrderReg ->1, 
-							BsplineSpacing -> {30, 30, 30}, BsplineDirections -> {0, 1, 1}
-						];
+						regOpts = {Iterations -> 300, NumberSamples -> 5000, MethodReg -> rmet, InterpolationOrderReg -> 1,
+							BsplineSpacing -> {30, 30, 30}, BsplineDirections -> {0, 1, 1}};
+						settingPre = MergeConfig[settingPre, <| "Registration" -> <|"Function" -> SymbolName[regF], "Settings" -> OptionsToJSON[regOpts]|> |>];
+						reg = regF[{den, mask, diffVox}, PrintTempDirectory -> False, Sequence @@ regOpts];
 
 						(*anisotropic filtering*)
 						(*-----*)AddToLog["Starting anisotropic data smoothing", 4];
 						filt = Unitize[reg] P2SDenoise[reg, mask];
+						settingPre = MergeConfig[settingPre, <| "AnisotropicFilter" -> "P2SDenoise" |>];
 
 						(*export all the calculated data*)
 						(*-----*)AddToLog["Exporting the calculated data to:", 4];
@@ -3935,11 +3951,13 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								init = IVIMCalc[sigI, bv, {1, .05, .0015, .015}, IVIMFixed -> False, IVIMConstrained -> False];
 								debugBids[{"IVIM Init", init}];
 								(*actual ivim fitting*)
+								ivimOpts = {IVIMConstrained -> True, IVIMFixed -> True};
+								settingPro = Join[settingPro, <|"IVIMSettings" -> Join[OptionsToJSON[ivimOpts], <|"Init {S0, f, D, D*}" -> init|>]|>];
 								{s0i, fri, adci, pD} = If[coil === False,
 									(*use normal b-value*)
-									IVIMCalc[data, val, init, IVIMConstrained -> True, Parallelize -> True, IVIMFixed -> True],
+									IVIMCalc[data, val, init, Parallelize -> True, Sequence @@ ivimOpts],
 									(*use gradient field corrected b-value*)
-									IVIMCalc[data, {val, grad}, init, coil, IVIMConstrained -> True, Parallelize -> True, IVIMFixed -> True]
+									IVIMCalc[data, {val, grad}, init, coil, Parallelize -> True, Sequence @@ ivimOpts]
 								];
 								debugBids[{"IVIM fit results", MinMax/@{s0i, fri, adci, pD}}];
 								data = First@IVIMCorrectData[data, {s0i, fri, pD}, val, FilterMaps->False];
@@ -3949,8 +3967,10 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 							(*perform the actual tensor calculation*)
 							(*-----*)AddToLog["Starting tensor calculation", 4];
-							{tens, s0, out} = Quiet@TensorCalc[data, grad, val, coil, FullOutput->True, 
-								Method->"iWLLS", RobustFit->True, Parallelize->True, MonitorCalc->False];
+							tensOpts = {Method -> "iWLLS", RobustFit -> True};
+							settingPro = Join[settingPro, <|"TensorSettings" -> OptionsToJSON[tensOpts]|>];
+							{tens, s0, out} = Quiet@TensorCalc[data, grad, val, coil, FullOutput -> True,
+								Parallelize -> True, MonitorCalc -> False, Sequence @@ tensOpts];
 							If[coil === False, {out, res} = out, {out, res, field} = out];
 							out = Total@Transpose@out;
 							(*calculate tensor parameters*)
@@ -3962,15 +3982,17 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							settingPro = Join[settingPro, <|"FasciculationDetection"->fasc|>];
 							If[fasc,
 								(*-----*)AddToLog["Starting fasciculation analysis", 4];
-								(*normalize the diffusion data based on the tensor and select b>200*)
+								(*normalize the diffusion data based on the tensor, only volumes with b >= FasciculationBvalue {data, val, grad}*)
+								fbval = ConfigLookup[datType, "Process", "FasciculationBvalue"];
+								settingPro = Join[settingPro, <|"FasciculationBvalue"->fbval|>];
 								reg = First@ImportNii[StringReplace[niiFileP, "filt" -> "reg"]];
-								sel = First@SelectBvalueData[reg, val, 1];
-								norm = NormalizeFasciculationData[sel, mask, {tens, grad, val}];
+								sel = SelectBvalueData[{reg, val, grad}, fbval];
+								norm = NormalizeFasciculationData[sel[[1]], mask, {tens, sel[[3]], sel[[2]]}];
 								(*perform activation analysis*)
-								fasc = First@FindActivations[norm, IgnoreSlices -> {0, 0}, 
-									ActivationThreshold -> {3., .65}, ActivationOutput -> All, MaskDilation -> 2, 
-									ActivationIterations -> 10, ActivationBackground -> 10];
-								{fasc, fascm} = SelectActivations[fasc];
+								fascOpts = {IgnoreSlices -> {0, 0}, ActivationThreshold -> {3., .65}, ActivationIterations -> 10, ActivationBackground -> 10};
+								settingPro = Join[settingPro, <|"FasciculationSettings" -> Join[OptionsToJSON[fascOpts], <|"ActivationSize" -> 4, "SizeMethod" -> "Voxels"|>]|>];
+								fasc = First@FindActivations[norm, Sequence @@ fascOpts];
+								{fasc, fascm} = SelectActivations[fasc, ActivationSize -> 4, SizeMethod -> "Voxels"];
 								outTypes = Join[{"fasc", "fascm", "norm"}, outTypes];
 							];
 
@@ -4061,8 +4083,15 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 								(*mask the background*)
 								mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
-								data = NormalizeData@MaskData[data, mask];
-								settingPro = <||>;
+
+								(*denoise and correct the Rician noise bias before the fit, the patch method gives an unbiased sigma*)
+								(*-----*)AddToLog["Starting denoising and Rician bias correction", 4];
+								denOpts = {PCAKernel -> 5, Method -> "Patch", PCARicianCorrect -> True};
+								{data, sig} = PCADeNoise[MaskData[data, mask], mask, Sequence @@ denOpts];
+								snr = SNRCalc[data[[All, 1]], sig];
+								(*-----*)AddToLog[{"Median sigma and first echo SNR: ", Round[Median[Select[Flatten[sig], # > 0 &]], 0.01], Round[Median[Select[Flatten[snr], # > 0 &]], 0.1]}, 5];
+								data = NormalizeData@data;
+								settingPro = <|"Denoise" -> OptionsToJSON[denOpts]|>;
 
 								Switch[datType["Process", "Method"],
 
@@ -4075,6 +4104,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									(*check if the profiles are given as numbers or as files*)
 									angle = If[NumberQ[ex] && NumberQ[ref],
 										shift = 0.;
+										settingPro = Join[settingPro, <|"SliceProfile" -> "none, fixed flip angles"|>];
 										{ex, ref},
 										thk = json["SliceThickness"];
 										(*field strength for the fat shift, zero if no shift*)
@@ -4087,6 +4117,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 										];
 										(*fat shift in profile samples, only given with a field strength*)
 										shift = If[field > 0, pulse[[3]], 0.];
+										settingPro = Join[settingPro, <|"SliceProfile" -> <|"SliceRange [mm]" -> 3 thk, "SliceRangeSamples" -> 6 thk, "FatFieldStrength [T]" -> field|>|>];
 										If[shift != 0,
 											(*-----*)AddToLog[{"Shifting fat profile with: ", shift, " samples at ", field, " T"}, 4]
 										];
@@ -4107,17 +4138,18 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									{{{t2w, t2f, b1}, {wat, fat, fatfr}, res}, cal} = EPGT2Fit[data, 1000 echos, angle, 
 										MonitorCalc -> False, OutputCalibration -> True, Sequence @@ epgOpts];
 									(*-----*)AddToLog[{"Calibrated fat T2 and B1: ", cal}, 4];
-									settingPro = <|"EPGSettings" -> OptionsToJSON[epgOpts], "EPGCalibration" -> cal|>;
+									settingPro = Join[settingPro, <|"EPGSettings" -> OptionsToJSON[epgOpts], "EPGCalibration" -> cal|>];
 
-									outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res"};
+									outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res", "sig", "snr"};
 
 									,
 									"Exp",
 
 									(*-----*)AddToLog["Starting exponential T2 fitting", 4];
 									{s0, t2} = T2Fit[data, 1000 echos];
+									settingPro = Join[settingPro, <|"T2FitSettings" -> OptionsToJSON[Options[T2Fit]]|>];
 
-									outTypes = {"data", "t2", "s0"};
+									outTypes = {"data", "t2", "s0", "sig", "snr"};
 								];
 
 								(*export all the calculated data*)
@@ -4206,7 +4238,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 		overT, overM, pad, motion, reverse, split, metReg, settings,
 		target, vox, voxTar, moving, movingMD, length, lengthMD, voxMov, names,
 		posAll, posNat, posScale, voxTarR, voxF, json, 
-		im, targetR, mskm, mskt, msktR, func, reg, movp
+		im, targetR, mskm, mskt, msktR, func, reg, movp, regTar, regMov
 	},
 
 	(*get the input settings*)
@@ -4242,7 +4274,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 
 	(*moving input stack*)
 	movStack = BuildBidsNameFromConfig[{fol, parts}, datType, merge["Moving"]];
-	fileCheck = AllTrue[NiiFileExistQ /@ tarStack, # &];
+	fileCheck = AllTrue[NiiFileExistQ /@ movStack, # &];
 	nStack = Length @ movStack;
 	debugBids["moving stack: ", Column@movStack];
 
@@ -4298,6 +4330,9 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	];
 
 	settings = <|
+		"MergeVersion" -> QMRITools`$InstalledVersion,
+		"Merge Target" -> merge["Target"],
+		"Merge Moving" -> merge["Moving"],
 		"Merge Overlap" -> {overT, overM},
 		"Merge Padding" -> pad,
 		"Merge Motion" -> motion,
@@ -4392,6 +4427,11 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 
 	If[!(!motion && sameType), 
 		(*-----*)AddToLog[{"Performing the registration for the all the datasets"}, 4];
+		regTar = {Iterations -> 300, BsplineSpacing -> 20 voxTar, InterpolationOrderReg -> 1, NumberSamples -> 20000,
+			MethodReg -> metReg, HistogramBins -> 128};
+		regMov = {Iterations -> 300, BsplineSpacing -> 30 voxTar, InterpolationOrderReg -> 1, NumberSamples -> 20000,
+			MethodReg -> metReg, BsplineDirections -> {1, 1, 0}, HistogramBins -> 128};
+		settings = Join[settings, <|"Merge Registration" -> <|"MovingToTarget" -> OptionsToJSON[regTar], "TargetToStacks" -> OptionsToJSON[regMov]|>|>];
 		im = First@FirstPosition[names, merge["Moving"]];
 		debugBids["location moving contrast: ", im];
 
@@ -4420,10 +4460,8 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 				func = If[i===If[reverse, nStack, 1] || split===False, 
 					RegisterData, RegisterDataSplit];
 				reg = ToPackedArray@N@Chop@func[
-					{moving[[im, i]], mskm, voxMov[[i]]}, {target[[i]], voxTar}, 
-					Iterations->300, BsplineSpacing->20 voxTar, InterpolationOrderReg->1, 
-					NumberSamples -> 20000, PrintTempDirectory->False, 
-					MethodReg->metReg, HistogramBins -> 128];
+					{moving[[im, i]], mskm, voxMov[[i]]}, {target[[i]], voxTar},
+					PrintTempDirectory -> False, Sequence @@ regTar];
 
 				(*if padding enlarge the moving files*)
 				If[pad > 0,					
@@ -4441,9 +4479,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 					If[#[[1]]==={}, {},
 						Transpose@ToPackedArray@N@Chop@Last@func[
 							#[[2]], {reg, voxMov[[i]]}, {movp[[All, #[[1]]]], voxMov[[i]]},
-							Iterations->300, BsplineSpacing->30 voxTar, InterpolationOrderReg->1, 
-							NumberSamples -> 20000, PrintTempDirectory->False, DeleteTempDirectory->True, 
-							MethodReg->metReg, BsplineDirections -> {1, 1, 0}, HistogramBins -> 128
+							PrintTempDirectory -> False, DeleteTempDirectory -> True, Sequence @@ regMov
 						]
 					])& /@ {{posScale, {target[[i]], mskt, voxTar}}, {posNat, {targetR, msktR, voxTarR}}}
 				, 1][[Ordering[Join[posScale, posNat]]]];
@@ -4495,7 +4531,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	(
 		debugBids["Exporting: ", {processAll[[#]], voxF[#]}];
 		ExportNii[moving[[#]], voxF[#], outFile<>"_"<>processAll[[#]]<>".nii", CompressNii -> compress];
-		Export[outFile<>"_"<>processAll[[#]]<>".json", MergeJSON[{json[[#]], settings}]];
+		Export[outFile<>"_"<>processAll[[#]]<>".json", MergeJSON[{json[[#]], JSONSafe@settings}]];
 	)&/@ Range[nSet];
 
 	(*make the check file*)
@@ -4552,7 +4588,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 	status = "done";
 
 	(*config settings and version that are added to every output json*)
-	procInfo = JSONSafe@<|"SegmentSettings" -> datType["Segment"], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
+	procInfo = JSONSafe@<|"SegmentSettings" -> Join[defaultConfig["Segment"], datType["Segment"]], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
 
 	debugBids["Starting MuscleBidsSegmentI"];
 	debugBids[datType];
@@ -4728,7 +4764,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 	];
 
 	(*config settings and version that are added to every output json*)
-	procInfo = JSONSafe@<|"TractographySettings" -> tracto, "ProcessVersion" -> QMRITools`$InstalledVersion|>;
+	procInfo = JSONSafe@<|"TractographySettings" -> Join[defaultConfig["Tractography"], tracto], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
 
 	(* Extract tractography settings*)
 	{flip, per} = ConfigLookup[datType, "Tractography", "FlipPermute"];
@@ -5050,7 +5086,8 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		quantIm, segIm, tractIm, imRef, ref, crp, refC, size, pos, sliceData, make3DImage, make2DImage,
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, segPl, imTrk, trkfile, reffile,
 		addLabel, img, lab, label, filt, filtMask, cross, volF, crossF, typeSuf,
-		whatName, whatNr, segF, labAll, labCfg, nMax, typeSeg, segFileO, segMiss, segO, segDim, segKey, sg, sgT, sgF
+		whatName, whatNr, segF, labAll, labCfg, nMax, typeSeg, segFileO, segMiss, segO, segDim, segKey, sg, sgT, sgF,
+		filtInfo, trInfo, anaFiles, anaMiss, src
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
@@ -5165,6 +5202,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		If[filt =!= "None",
 			(*-----*)AddToLog[{"Using filtering for parameter calculation"}, 4];
 			{ran, filt} = filt;
+			filtInfo = <|"File" -> FileNameTake[fileName[filt]<>".nii"], "Range" -> ran|>;
 			{filt, vox} = ImportNii[fileName[filt]<>".nii"];
 			filtMask = Mask[filt, ran];
 			segF = MaskSegmentation[seg, filtMask];
@@ -5172,6 +5210,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			,
 			filtMask = 1;
 			filt = False;
+			filtInfo = "None";
 		];
 
 		debugBids["Volumes and cross"];
@@ -5263,9 +5302,11 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			(*-----*)AddToLog[{"Import tract mask:", StringRiffle[densLab, "_"]}, 4];
 			trMask = ImportNii[densFile][[1]];
 			trMask = If[tractWeighting, trMask, Unitize@trMask];
+			trInfo = <|"File" -> FileNameTake[densFile], "Types" -> (StringRiffle[StringStrip /@ #, "_"] & /@ trType), "Weighting" -> tractWeighting|>;
 			,
 			(*-----*)AddToLog[{"No tract bases analysis given"}, 4];
 			trMask = 1;
+			trInfo = "None";
 		];
 
 		(*perform the actual data analysis *)
@@ -5277,7 +5318,8 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			#1 -> Join[BidsMaskSeg[#2[[1]], maskErosion, trMask], {If[filt, MaskSegmentation[#2[[1]], filtMask], 0]}] &
 		, segO];
 
-		(*loop over all datatypes and perform the mask analysis*)
+		(*loop over all datatypes and perform the mask analysis, the used files go in the analysis json*)
+		anaFiles = anaMiss = {};
 		data = Flatten[Table[
 			datfile = fileName[datType]<>".nii";
 			debugBids["data file: ",datfile];
@@ -5285,6 +5327,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 				(*data does not exist so skip*)
 				!NiiFileExistQ[datfile],
 				(*-----*)AddToLog[{"The data does not exist: ", StringRiffle[datType, "_"]}, 4];
+				AppendTo[anaMiss, StringRiffle[StringStrip /@ datType, "_"]];
 				Nothing,
 
 				(*data exists so perform the analysis*)
@@ -5293,7 +5336,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 				{data, vox} = ImportNii[datfile];
 				(*figure out how to handle this type *)
 				tract = MemberQ[trType, datType];
-				scale = Switch[datType[[-2;;]], {"dix", "fatfr"} | {"t2", "fatfr"}, 100, {"dix", "t2star"}, 1000, _, 1];
+				scale = Switch[datType[[-2;;]], {"dix", "fatfr"} | {"t2", "fatfr"}, 100, {"dix", "t2star"} | {"dix", "t2prime"}, 1000, _, 1];
 				meanType = (datType[[-2;;]] === {"trk", "seed"} || datType[[-2;;]] === {"trk", "dens"});
 				(*-----*)AddToLog[{"Processing file "<>If[tract, "with", "without"]<>" tract weighting:", StringRiffle[StringStrip@datType, "_"]}, 4];
 
@@ -5302,6 +5345,11 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 				{sg, sgT, sgF} = If[segKey === None, {seg, segT, segF}, segO[segKey]];
 				(*-----*)AddToLog[{"Segmentation used for", StringRiffle[StringStrip@datType, "_"], "is:",
 					StringRiffle[StringStrip /@ If[segKey === None, anaSeg, typeSeg[segKey]], "_"]}, 4];
+				src = SourceJSON[datfile];
+				AppendTo[anaFiles, <|"Type" -> StringRiffle[StringStrip /@ datType, "_"], "File" -> FileNameTake[datfile],
+					"Segmentation" -> StringRiffle[StringStrip /@ If[segKey === None, anaSeg, typeSeg[segKey]], "_"],
+					"Statistic" -> If[meanType, "MeanSTD", "MedianIQR"], "Scale" -> scale, "TractWeighted" -> tract,
+					"ProcessVersion" -> Lookup[src, "ProcessVersion", "unknown"], "MergeVersion" -> Lookup[src, "MergeVersion", "unknown"]|>];
 
 				(*mask based analysis*)
 				label = StringRiffle[datType[[-2;;]], "_"];
@@ -5329,7 +5377,13 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		(*-----*)AddToLog[{"Data will be exported to:", DirectoryName@outFile}, 3, True];
 		data = Dataset[Association /@ Transpose[Thread[#] & /@ Join[dataLabs, data]]];
 		(*the check file is only made when both files are exported*)
-		If[AllTrue[{Export[outFile<>".xlsx", data], Export[outFile<>".wxf", data]}, StringQ],
+		(*one json with the settings and all files used for the analysis*)
+		src = JSONSafe@<|"AnalysisVersion" -> QMRITools`$InstalledVersion, "Date" -> DateString["ISODateTime"], "BidsParts" -> partsO,
+			"AnalysisSettings" -> Join[defaultConfig["Analysis"], datDis["Analysis"]],
+			"Segmentation" -> <|"File" -> FileNameTake[segFile], "Labels" -> {n, what}, "MaskErosion" -> maskErosion,
+				"TypeSegmentation" -> (FileNameTake /@ segFileO)|>,
+			"Filter" -> filtInfo, "TractMask" -> trInfo, "Data" -> anaFiles, "MissingData" -> anaMiss|>;
+		If[AllTrue[{Export[outFile<>".xlsx", data], Export[outFile<>".wxf", data], Export[outFile<>".json", src, "JSON"]}, StringQ],
 			MakeCheckFile[checkFileX, Sort@Join[{"Check"->"done"}, Normal@datDis]],
 			(*-----*)AddToLog[{"Export failed, no check file made for:", outFile}, 3]
 		];

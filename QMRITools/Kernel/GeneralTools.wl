@@ -1894,9 +1894,15 @@ LapFilter[data_, fil_:0.5] := ToPackedArray@N@Clip[Chop[ImageData[TotalVariation
 (*MedFilter*)
 
 
-MedFilter[data_, fil_:1] := ToPackedArray@N@Clip[Chop[ImageData[MedianFilter[
-	If[ArrayDepth[data]===3, Image3D[N@data, "Real"], Image[N@data, "Real"]],
-	Round[fil]]]], MinMax[data]
+MedFilter[data_, fil_:1] /; !MemberQ[{2, 3}, ArrayDepth[data]] := ToPackedArray@N@MedianFilter[data, Round[fil]]
+
+MedFilter[data_, fil_:1] := Block[{min, max, sc},
+	{min, max} = MinMax[data];
+	sc = If[max > min, max - min, 1.];
+	(*the image median is only correct for values in 0-1, so scale and scale back*)
+	ToPackedArray@N@Clip[min + sc Chop[ImageData[MedianFilter[
+		If[ArrayDepth[data]===3, Image3D[N[(data - min)/sc], "Real"], Image[N[(data - min)/sc], "Real"]],
+		Round[fil]]]], {min, max}]
 ]
 
 
