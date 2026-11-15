@@ -1,7 +1,8 @@
 # QMRITools major versions
 
-This page summarises what each major version of QMRITools brought. Individual releases and their paclet files are on
-the [releases page](https://github.com/mfroeling/QMRITools/releases).
+This page summarises what each major version of QMRITools brought, with a short entry for each minor release since
+5.0. The full release notes and the paclet files are on the
+[releases page](https://github.com/mfroeling/QMRITools/releases).
 
 | Version | Released | Requires | Public functions and options |
 | --- | --- | --- | --- |
@@ -10,6 +11,19 @@ the [releases page](https://github.com/mfroeling/QMRITools/releases).
 | 3.0 | December 2022 | Wolfram Language 13.0+ | ~750 |
 | 2.0 | January 2019 | Mathematica 11.0+ | ~480 |
 | 1.x | 2016–2018 (as DTITools) | Mathematica 11.3 | ~440 |
+
+------------------------------------------------------------------------
+
+## QMRITools 5.x updates
+
+- **5.3** (November 2026): Dixon water-fat swaps fixed (alias selection, graph cut start field) and a precession
+  check. EPG T2 models fat as 90% lipid and 10% water, pools B1 over a 3D box and corrects for short TR. Every
+  Muscle-BIDS output json records the settings it was made with, and the analysis can weight tract-based values
+  by tract density. **The EPG fat fraction is now the lipid fraction, about 10% lower than before.**
+- **5.2** (November 2026): one debug switch for all toolboxes (`$Debug`, `DebugPrint`), messages instead of prints,
+  safer conversion of multi-echo spin echo DICOM in Muscle-BIDS, and a faster config and check GUI.
+- **5.1** (October–November 2026): `MuscleBidsGUI` and check tools that follow the config file, Rician bias
+  correction for denoising and DTI, decompression of compressed DICOM, and segmentation comparison tools.
 
 ------------------------------------------------------------------------
 
