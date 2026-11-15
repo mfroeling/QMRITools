@@ -76,7 +76,7 @@ TractDensityMap::usage =
 "TractDensityMap[tracts, vox, dim] makes a tract density map based on the tracts vertices."
 
 TractLengthMap::usage = 
-"TractLengthMap[tracts, vox, dim] makes a tract length map based on the tracts lengths."
+"TractLengthMap[tracts, vox, dim] makes a tract length map based on the tracts lengths, the median per voxel. Voxels without tracts are -1."
 
 TractLength::usage = 
 "TractLength[tracts] calculates the length of each tract."
@@ -84,15 +84,16 @@ TractLength::usage =
 TractAngleMap::usage = 
 "TractAngleMap[tracts, vox, dim] makes a tract angle map based on the tracts angles with the z-plane.
 TractAngleMap[tracts, v1, vox, dim] makes a tract angle map based on the tracts angles with the plane normal to v1.
-TractAngleMap[tracts, {v1, v2}, vox, dim] makes a tract angle map based on the tracts elevation angles with the plane normal to v1 and the azimuth angle in that plane relative to v2."
+TractAngleMap[tracts, {v1, v2}, vox, dim] makes a tract angle map based on the tracts elevation angles with the plane normal to v1 and the azimuth angle in that plane relative to v2.
+The map is the median per voxel and voxels without tracts are -1."
 
-TractAngle ::usage = 
+TractAngle ::usage =
 "TractAngle[tracts] calculates the angle of each tract segment with the z-plane.
 TractAngle[tracts, v1] calculates the angle of each tract segment with the plane normal to v1.
 TractAngle[tracts, {v1, v2}] calculates the elevation and azimuth angle of each tract segment with the plane normal to v1 and the azimuth angle in that plane relative to v2."
 
 TractCurvatureMap::usage =
-"TractCurvatureMap[tracts, vox, dim] makes a tract curvature map based on the tracts curvature."
+"TractCurvatureMap[tracts, vox, dim] makes a tract curvature map based on the tracts curvature, the median per voxel in 1/m. Voxels without tracts are -1."
 
 TractCurvature::usage =
 "TractCurvature[tracts] calculates the curvature of each tract segment."
@@ -414,7 +415,7 @@ SegmentTracts[tracts_, segments_, vox_, dim_, OptionsPattern[]] := Block[{tracts
 
 SyntaxInformation[SeedDensityMap] = {"ArgumentsPattern" -> {_, _, _}};
 
-SeedDensityMap[seeds_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := Normal@SparseArray[Normal@Counts@RescaleTractsC[seeds, vox], dim];
+SeedDensityMap[seeds_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := CountMap[First@VoxelIndex[RescaleTractsC[seeds, vox], dim], dim];
 
 
 (* ::Subsubsection::Closed:: *)
@@ -426,27 +427,39 @@ Options[TractDensityMap] = {NormalizeDensity -> True}
 SyntaxInformation[TractDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
 
 TractDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPattern[]] := Block[{dens},
-	dens = Normal@SparseArray[Select[
-		Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTractsC[tracts, vox], 1]],
-		(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
-		dim];
+	(*each tract counts once per voxel*)
+	dens = CountMap[Flatten[DeleteDuplicates[First@VoxelIndex[#, dim]] & /@ RescaleTractsC[tracts, vox]], dim];
 
-	ToPackedArray@N@If[OptionValue[NormalizeDensity], dens/MedianNoZero[Flatten[dens]], dens]
+	ToPackedArray@If[OptionValue[NormalizeDensity], dens/MedianNoZero[Flatten[dens]], dens]
 ]
-
 
 
 (* ::Subsubsection::Closed:: *)
-(*TractDensityMap*)
+(*EndpointDensityMap*)
 
 
-SyntaxInformation[EndpointDensityMap] = {"ArgumentsPattern" -> {_, _, _, OptionsPattern[]}};
+SyntaxInformation[EndpointDensityMap] = {"ArgumentsPattern" -> {_, _, _}};
 
-EndpointDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_,  OptionsPattern[]] := Normal@SparseArray[Select[
-	Normal@Counts[Flatten[DeleteDuplicates /@ RescaleTractsC[tracts[[All,{1, -1}]], vox], 1]],
-	(1 <= #[[1, 1]] <= dim[[1]] && 1 <= #[[1, 2]] <= dim[[2]] && 1 <= #[[1, 3]] <= dim[[3]]) &],
-	dim,-1.
+EndpointDensityMap[tracts_, vox:{_?NumberQ,_?NumberQ,_?NumberQ}, dim_] := CountMap[
+	Flatten[DeleteDuplicates[First@VoxelIndex[#, dim]] & /@ RescaleTractsC[tracts[[All, {1, -1}]], vox]], dim]
+
+
+(* ::Subsubsection::Closed:: *)
+(*VoxelIndex*)
+
+
+(*linear voxel index of voxel coordinates, points outside the volume are dropped for all maps*)
+VoxelIndex[{}, dim_] := {{}, {}}
+
+VoxelIndex[pts_, dim_] := Block[{sel, pt},
+	sel = SelectValidCoorC[N@pts, dim];
+	pt = Pick[pts, sel, 1];
+	{If[pt === {}, {}, pt . {dim[[2]] dim[[3]], dim[[3]], 1} - dim[[2]] dim[[3]] - dim[[3]]], sel}
 ]
+
+
+(*number of indices per voxel*)
+CountMap[li_, dim_] := ToPackedArray@N@ArrayReshape[Normal@BinCounts[li, {1, Times @@ dim + 1, 1}], dim]
 
 
 (* ::Subsubsection::Closed:: *)
@@ -567,36 +580,21 @@ CurvatureC = Compile[{{tract, _Real, 2}}, Block[{diff, ds, d1, d2},
 (*GatherThread*)
 
 
-GatherThread[coor_?ListQ, val_?ListQ, dim_?VectorQ] := Block[{len, ran, list, out},
-	(*Split in sub lists to prevent memory crash for large tracts sets*)
-	len = Length@coor;
-	out = If[len <= 50000,
-		GatherThread[coor, val],
-		ran = DeleteDuplicates[Append[Range[0, len, 50000], len]];
-		list = Thread[{ran[[;; -2]] + 1, ran[[2 ;;]]}];
-		GatherThread[
-			Table[GatherThread[coor[[i[[1]] ;; i[[2]]]], val[[i[[1]] ;; i[[2]]]]], {i, list}]
-		]
+GatherThread[coor_?ListQ, val_?ListQ, dim_?VectorQ] := Block[{vals, li, sel, ord, lens, out},
+	(*one value per tract is given to all its points*)
+	vals = If[VectorQ[val, NumericQ], Join @@ MapThread[ConstantArray, {val, Length /@ coor}], Flatten[val]];
+	{li, sel} = VoxelIndex[Flatten[coor, 1], dim];
+	vals = Pick[vals, sel, 1];
+
+	(*median per voxel after sorting on the voxel index, voxels without tracts are -1*)
+	out = ConstantArray[-1., Times @@ dim];
+	If[Length[li] > 0,
+		ord = Ordering[li];
+		li = li[[ord]];
+		lens = Length /@ Split[li];
+		out[[li[[Accumulate[lens]]]]] = N[Median /@ DynamicPartition[vals[[ord]], lens]]
 	];
-
-	(*clip coordinates and calculate median*)
-	out[[All, 1]] = Transpose[{
-		Clip[out[[All, 1, 1]], {1, dim[[1]]}], 
-		Clip[out[[All, 1, 2]], {1, dim[[2]]}], 
-		Clip[out[[All, 1, 3]], {1, dim[[3]]}]
-	}];
-	out[[All, 2]] = N[Median /@ out[[All, 2]]];
-
-	(*matrix from coordinate rule*)
-	ToPackedArray@Normal@SparseArray[out, dim, -1.]
-]
-
-
-GatherThread[coor_, val_] := GatherThread[Thread /@ Thread[coor -> val]]
-
-GatherThread[rule_] := Block[{out},
-	out = GatherBy[Flatten[rule, 1], First];
-	Thread[out[[All, 1, 1]] -> (Flatten /@ out[[All, All, 2]])]
+	ToPackedArray@N@ArrayReshape[out, dim]
 ]
 
 

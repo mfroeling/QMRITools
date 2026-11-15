@@ -400,6 +400,8 @@ ApplySegmentationNetwork::node = "The node ``` is not part of the network"
 
 ImportITKLabels::file = "`1` is not a file or a known asset."
 
+ImportITKLabels::nolab = "`1` has no ITK-SNAP label lines."
+
 
 ShowTrainLog::nolog = "No log file in `1` has at least `2` progress entries."
 
@@ -591,13 +593,14 @@ ImportITKLabelsI[file_]:=ImportITKLabelsI[file, "List"]
 ImportITKLabelsI[file_, outType_] := Block[{fileL, lines, muscleNames, muscleLabels},
 	fileL = If[FileExistsQ[file], file, GetAssetLocation[file]]; 
 	If[fileL === $Failed, Return[Message[ImportITKLabels::file, file]; $Failed]];
-	lines = Select[Import[fileL, "Lines"], StringTake[#, 1] =!= "#" &];
+	(*only lines that start with a label number and have a quoted name, the text is never evaluated*)
+	lines = Select[Import[fileL, "Lines"], StringMatchQ[#, Whitespace ... ~~ DigitCharacter .. ~~ Whitespace ~~ ___ ~~ "\"" ~~ ___ ~~ "\"" ~~ ___] &];
+	If[lines === {}, Return[Message[ImportITKLabels::nolab, fileL]; $Failed]];
 
-	(*extract names and numbers*)
-	muscleNames = StringRiffle[Capitalize[ToLowerCase[Select[#, ! IntegerQ[ToExpression[#]] &]]], "_"] & /@ 
-		StringSplit[(Select[StringTrim[#], (# =!= "\t" && # =!= "") &] & /@ 
-		StringSplit[lines, "\""])[[All, -1]]];
-	muscleLabels = ToExpression[StringSplit[#, " "][[1]]] & /@ lines;
+	(*extract names, the last quoted text without numbers, and the label numbers*)
+	muscleNames = StringRiffle[Capitalize[ToLowerCase[Select[StringSplit[Last[StringCases[#, "\"" ~~ n : Except["\""] ... ~~ "\"" :> n]]],
+		! StringMatchQ[#, DigitCharacter ..] &]]], "_"] & /@ lines;
+	muscleLabels = FromDigits[First[StringSplit[#]]] & /@ lines;
 
 	(*output*)
 	Switch[outType,

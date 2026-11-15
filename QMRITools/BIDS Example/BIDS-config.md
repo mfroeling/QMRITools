@@ -1157,6 +1157,7 @@ the analysis again; the subject is processed again because its check file is not
 | --- | --- | --- |
 | `Analysis.Types` | The values to measure. Each entry is a list: dataset, suffix, then one or more maps. The last item is a list, so one entry can give several maps. `["dwi", "dti", ["md", "rd", "fa"]]` gives `md`, `rd` and `fa`. | Required. |
 | `Analysis.TractBased` | Maps that are measured only inside the tracts, not in the whole muscle. Use it for diffusion values along the fibres. A map must also be listed in `Types` to be used. | Optional. Needs the tract density map (`dwi_dti_trk_dens`) from the tractography step. |
+| `Analysis.TractWeighting` | If `true`, the `TractBased` maps are averaged with the tract density as weight, so voxels with many tracts count more. | Default `false`. Put this key directly under `Analysis`. |
 | `Analysis.MaskErosion` | If `true`, each muscle mask is made one voxel smaller at its edge. This leaves out edge voxels that mix muscle and fat or water. | Default `true`. Put this key directly under `Analysis`. An `Options` block inside `Analysis` is not read. |
 
 Each map gives two columns in the Excel file: the value and a spread value. The name is made from the last two parts of the entry. For example, `dix` and `fatfr` give `dix_fatfr` and `dix_fatfr_IQR`. The value is the median inside the muscle and the spread value is the interquartile range (IQR). For the tract maps `trk_seed` and `trk_dens`, the value is the mean and the spread value is the standard deviation, but the column is still named `..._IQR`.

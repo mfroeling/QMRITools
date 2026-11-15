@@ -5063,6 +5063,23 @@ BidsMaskSeg[seg_, erosion_, trMask_] := Block[{segE},
 ]
 
 
+(*mask statistics per label, with weights the tract density weighted statistics*)
+BidsMaskStats[data_, seg_, 1, mean_] := GetMaskData[data, seg, GetMaskOutput -> If[mean, "MeanSTD", "MedianIQR"], GetMaskOnly -> mean]
+
+BidsMaskStats[data_, seg_, wt_, mean_] := Block[{dat, w, sel, val},
+	dat = Flatten[data];
+	w = Flatten[wt];
+	Table[
+		(*as in GetMaskData zeros are only kept for the mean types*)
+		sel = Unitize[Flatten[Normal[msk]]] Unitize[w] If[mean, 1, Unitize[dat]];
+		If[Total[sel] < 2, {0., 0.},
+			val = WeightedData[Pick[dat, sel, 1], Pick[w, sel, 1]];
+			If[mean, {Mean[val], StandardDeviation[val]}, {Median[val], InterquartileRange[val]}]
+		]
+	, {msk, Transpose[seg]}]
+]
+
+
 BidsImportSeg[file_, musNr_, dim_] := Block[{seg, vox, masks, labs, zero, mat, pos},
 	(*import the segmentation*)
 	{seg, vox} = ImportNii[file];
@@ -5087,7 +5104,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, segPl, imTrk, trkfile, reffile,
 		addLabel, img, lab, label, filt, filtMask, cross, volF, crossF, typeSuf,
 		whatName, whatNr, segF, labAll, labCfg, nMax, typeSeg, segFileO, segMiss, segO, segDim, segKey, sg, sgT, sgF,
-		filtInfo, trInfo, anaFiles, anaMiss, src
+		filtInfo, trInfo, anaFiles, anaMiss, src, trW, segTF, sgTF, wt
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
@@ -5095,7 +5112,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 	(*Options*)
 	maskErosion = ConfigLookup[datDis, "Analysis", "MaskErosion"];
-	tractWeighting = False;
+	tractWeighting = ConfigLookup[datDis, "Analysis", "TractWeighting"];
 
 	(*----------- make the xls files -------------*)
 
@@ -5300,22 +5317,25 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 			trType = Select[trType, MemberQ[anaType, #] &];
 			(*-----*)AddToLog[{"The types with tract weighting will be:", StringRiffle[StringStrip/@#, "_"]&/@trType}, 3];
 			(*-----*)AddToLog[{"Import tract mask:", StringRiffle[densLab, "_"]}, 4];
-			trMask = ImportNii[densFile][[1]];
-			trMask = If[tractWeighting, trMask, Unitize@trMask];
+			(*the mask is the voxels with tracts, the density is only used as weights*)
+			trW = ImportNii[densFile][[1]];
+			trMask = Unitize@trW;
 			trInfo = <|"File" -> FileNameTake[densFile], "Types" -> (StringRiffle[StringStrip /@ #, "_"] & /@ trType), "Weighting" -> tractWeighting|>;
 			,
 			(*-----*)AddToLog[{"No tract bases analysis given"}, 4];
-			trMask = 1;
+			trMask = trW = 1;
 			trInfo = "None";
 		];
 
 		(*perform the actual data analysis *)
 		(*-----*)AddToLog[{"Starting the data analysis:"}, 3, True];
-		(*make the correcet masks*)
+		(*make the correcet masks, the filtered masks also restricted to the tracts*)
 		{seg, segT} = BidsMaskSeg[seg, maskErosion, trMask];
+		segTF = If[filt && trMask =!= 1, MaskSegmentation[segF, trMask], 0];
 		(*the same for the segmentations of the data types, with the filter on the uneroded masks*)
 		segO = Association@KeyValueMap[
-			#1 -> Join[BidsMaskSeg[#2[[1]], maskErosion, trMask], {If[filt, MaskSegmentation[#2[[1]], filtMask], 0]}] &
+			#1 -> Join[BidsMaskSeg[#2[[1]], maskErosion, trMask],
+				With[{sF = If[filt, MaskSegmentation[#2[[1]], filtMask], 0]}, {sF, If[filt && trMask =!= 1, MaskSegmentation[sF, trMask], 0]}]] &
 		, segO];
 
 		(*loop over all datatypes and perform the mask analysis, the used files go in the analysis json*)
@@ -5334,36 +5354,32 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 				True,
 				debugBids[datType];
 				{data, vox} = ImportNii[datfile];
+				(*tract maps are -1 without tracts, set to 0 so they are excluded as all other data*)
+				If[MemberQ[datType, "trk"], data = Ramp[data]];
 				(*figure out how to handle this type *)
 				tract = MemberQ[trType, datType];
+				wt = If[tract && tractWeighting, trW, 1];
 				scale = Switch[datType[[-2;;]], {"dix", "fatfr"} | {"t2", "fatfr"}, 100, {"dix", "t2star"} | {"dix", "t2prime"}, 1000, _, 1];
 				meanType = (datType[[-2;;]] === {"trk", "seed"} || datType[[-2;;]] === {"trk", "dens"});
 				(*-----*)AddToLog[{"Processing file "<>If[tract, "with", "without"]<>" tract weighting:", StringRiffle[StringStrip@datType, "_"]}, 4];
 
 				(*the segmentation of this data type or the default*)
 				segKey = SelectFirst[Keys[segO], MemberQ[datType, #] &, None];
-				{sg, sgT, sgF} = If[segKey === None, {seg, segT, segF}, segO[segKey]];
+				{sg, sgT, sgF, sgTF} = If[segKey === None, {seg, segT, segF, segTF}, segO[segKey]];
 				(*-----*)AddToLog[{"Segmentation used for", StringRiffle[StringStrip@datType, "_"], "is:",
 					StringRiffle[StringStrip /@ If[segKey === None, anaSeg, typeSeg[segKey]], "_"]}, 4];
 				src = SourceJSON[datfile];
 				AppendTo[anaFiles, <|"Type" -> StringRiffle[StringStrip /@ datType, "_"], "File" -> FileNameTake[datfile],
 					"Segmentation" -> StringRiffle[StringStrip /@ If[segKey === None, anaSeg, typeSeg[segKey]], "_"],
-					"Statistic" -> If[meanType, "MeanSTD", "MedianIQR"], "Scale" -> scale, "TractWeighted" -> tract,
+					"Statistic" -> If[meanType, "MeanSTD", "MedianIQR"], "Scale" -> scale, "TractMasked" -> tract, "TractWeighted" -> wt =!= 1,
 					"ProcessVersion" -> Lookup[src, "ProcessVersion", "unknown"], "MergeVersion" -> Lookup[src, "MergeVersion", "unknown"]|>];
 
 				(*mask based analysis*)
 				label = StringRiffle[datType[[-2;;]], "_"];
 				Join[
-					Thread[{label, label<>"_IQR"} -> Transpose[scale GetMaskData[data, If[tract, sgT, sg],
-						GetMaskOutput -> If[meanType, "MeanSTD", "MedianIQR"],
-						GetMaskOnly -> If[meanType, True, False]
-					]]]
-					,
+					Thread[{label, label<>"_IQR"} -> Transpose[scale BidsMaskStats[data, If[tract, sgT, sg], wt, meanType]]],
 					If[filtMask===1, {},
-						Thread[{label<>"_F", label<>"_F_IQR"} -> Transpose[scale GetMaskData[data, If[tract, sgT, sgF],
-							GetMaskOutput -> If[meanType, "MeanSTD", "MedianIQR"],
-							GetMaskOnly -> If[meanType, True, False]
-						]]]
+						Thread[{label<>"_F", label<>"_F_IQR"} -> Transpose[scale BidsMaskStats[data, If[tract, sgTF, sgF], wt, meanType]]]
 					]
 				]
 

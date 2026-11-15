@@ -327,6 +327,7 @@ associations merge.
 | `Analysis.Types` | `[[ (key,) type, suf.., [params..]] ..]`. The last element is threaded (`Thread`) |
 | `Analysis.TractBased` | subset analysed only inside the tract density mask (`dwi_dti_trk_dens`, unitized) |
 | `Analysis.MaskErosion` | default True. **Must sit directly in `Analysis`; the documented `Analysis.Options.MaskErosion` is ignored** (Q4) |
+| `Analysis.TractWeighting` | default False. True weights the TractBased statistics by the tract density (`BidsMaskStats`) |
 | `Analysis.UseFilter` | `[range, typeList]` → extra `_F` columns with the seg masked by `Mask[filterMap, range]` |
 | `Analysis.Class` | `"Stacks"` → key entity `stk`, otherwise `chunk` (Q5) |
 | `Images.Reference` | map used for slice positions and seg background |
@@ -524,11 +525,15 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 
 - **xlsx part** (check `…_xls`): segmentation → `SelectSegmentations[1..n]` → volume and cross-section → label names
   from `GetAssetLocation["MuscleLegLabels"]` and similar → per `Analysis.Types` file: `GetMaskData` with the median+IQR
-  (mean+SD for `trk_seed`/`trk_dens`). Scaling: `fatfr`×100 (dix, t2), `dix t2star`/`dix t2prime`×1000. TractBased types use
-  `seg ∩ Unitize[dens]`. `MaskErosion` → `DilateMask[seg,-1]`. Output `analysis/sub/ses/<sub_ses[_chunk-KEY]>.xlsx`
+  (mean+SD for `trk_seed`/`trk_dens`), via `BidsMaskStats`. Scaling: `fatfr`×100 (dix, t2), `dix t2star`/`dix t2prime`×1000.
+  `trk` maps get `Ramp` first: length, angle and curvature are −1 where there are no tracts, and this way they are
+  dropped like the zeros of all other maps. TractBased types use `seg ∩ Unitize[dens]`, and with `UseFilter` the
+  filtered mask ∩ `Unitize[dens]` (before 2026-11-14 the `_F` columns of TractBased types ignored the filter).
+  `TractWeighting` True weights the TractBased statistics by the density (`WeightedData`; its median/IQR quantile and
+  the SD over n differ slightly from the unweighted statistics, even with equal weights). `MaskErosion` → `DilateMask[seg,-1]`. Output `analysis/sub/ses/<sub_ses[_chunk-KEY]>.xlsx`
   + `.wxf` + `.json`. The json holds `"AnalysisVersion"`, date, the `Analysis` config with defaults, the segmentation
   (file, labels, erosion, `TypeSegmentation` files), filter and tract mask, per data type the file, segmentation,
-  statistic, scale, tract weighting and the `ProcessVersion`/`MergeVersion` of its source json, and the missing data
+  statistic, scale, tract mask and weighting and the `ProcessVersion`/`MergeVersion` of its source json, and the missing data
   types. The `_xls` check file is only made when all three exports return a file name; otherwise the log says
   "Export failed, no check file made", so a rerun tries again. A label with an empty mask (not in the segmentation,
   or removed by erosion or tract weighting) gives zeros for that label: `FindCrop` returns the full range for an
@@ -725,7 +730,7 @@ Fixed in the v2.0 manual ([BIDS-config.md](../QMRITools/BIDS%20Example/BIDS-conf
 | After merging the key becomes `acq-<KEY>` | the key is `stk-<KEY>` (Stacks) or `chunk-<KEY>` (everything else), and only when `HasDuplicate` |
 | `megre` → dix | `tse` → dix as well |
 | Dixon method `Dixon` only | `Dixon`, `Dixon-B`, `Dixon-P`, `Dixon-S`, `Dixon-A`. mese: `EPGT2`, `Exp` |
-| `Analysis.Options.{MaskErosion,TractWeighting}` | `Options` is not read. `MaskErosion` must sit directly under `Analysis`. Tract weighting is hard-coded False |
+| `Analysis.Options.{MaskErosion,TractWeighting}` | `Options` is not read. `MaskErosion` and `TractWeighting` must sit directly under `Analysis` |
 | Merging key `SplitRegistration` (defaults) | correct. The example configs used `Split` (ignored); fixed 2026-10-29 |
 | `ViewConfigFile` | the function is `ViewConfig` |
 | not documented | Segment `Dimensions`/`Method`/`VoxSize`; Tractography `TractLength`/`TractAngle`/`TractSeed`/`TractStep`/`SegmentLength`/`BoneLabel`/`HarmonicDenoise`; Analysis `UseFilter`; nested analysis blocks; per-subject configs; `conversion.Version` strings |
@@ -742,7 +747,7 @@ These were verified by reading the code. The ones marked ✔ were also confirmed
 | Q1 ✔ | `BuildBidsNameFromConfig` L641 vs `CheckDataDescription` L895 | `Key` is `StringStrip`ped (`DIX_OS`→`DIXOS`), but `isKey` compares the **unstripped** `First[target]`. Dataset names containing `_ - . space` are therefore never recognised as keys in Merge/Segment/Tractography targets (the boch config). Analysis strips correctly. Both lines come from the same refactor commit (509747d6). |
 | Q2 | `BuildBidsNameFromConfig` L661 | Non-keyed targets resolve the target dataset through `InFolder === First[suf]`, which only works when Suffix == BIDS folder (`dix`). |
 | Q3 ✔ fixed | Merge L2606 | Reads `Merging.SplitRegistration` (default True). The example configs wrote `"Split"`, so split registration was always on. Example configs renamed to `SplitRegistration` on 2026-10-29, so the `false` values there now take effect. |
-| Q4 ✔ fixed (configs) | Analysis L3308 | `MaskErosion` is read from `Analysis`, not `Analysis.Options`. The example configs now write `MaskErosion` directly under `Analysis` (2026-10-29); their dead `TractWeigthing` key was dropped. `tractWeighting` is still hard-coded False (L3309). |
+| Q4 ✔ fixed (configs) | Analysis L3308 | `MaskErosion` is read from `Analysis`, not `Analysis.Options`. The example configs now write `MaskErosion` directly under `Analysis` (2026-10-29); their dead `TractWeigthing` key was dropped. `TractWeighting` is read from `Analysis` since 2026-11-14 (before it was hard-coded False, and its rounded density mask was a cut-off at 0.5× the median, not a weighting). |
 | Q5 | Analysis L3319 | Key entity is `stk` only if `Analysis.Class == "Stacks"`. Merge uses the **dataset** Class. With Stacks + duplicates (boch config) and no `Analysis.Class`, the analysis looks for `chunk-KEY` while the files are named `stk-KEY`. |
 | Q6 | `BidsDcmToNii` options | `BidsIncludeSession` is declared but never forwarded (`BidsFolderLoop` does not know it, and `SubNameToBids` always uses the default True). |
 | Q7 | Merge L2566 | The "moving files" existence check tests `tarStack` again instead of `movStack`. |
