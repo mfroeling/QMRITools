@@ -279,7 +279,7 @@ SyntaxInformation[DixonPhase] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}}
 DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 	freqs, amps, iop, A, Ah, Ai, e1, e2, de, dt, hz, bip, mat, msk, comp, compi, ph, ph1, ph0, phi, 
 	ph1i, ph0i, norm, i, itt, l, hl, sw, sw1, sw0, f0, f1, normN, UF, n, t2s, r2s, Ac,
-	unwrapF, um, cr, dm, t1 ,t2, t3, sl, bp, gc
+	unwrapF, um, cr, dm, t1 ,t2, t3, sl, bp, gc, kb, kp
 	},
 
 	(*initial phase 10.1016/J.MRI.2010.08.011*)
@@ -376,14 +376,17 @@ DixonPhase[{real_, imag_}, echos_, OptionsPattern[]] := Block[{
 		If[AllTrue[normN, # < 10 &], Break[]]
 	, {itt}];
 
-	(*b0 is only known modulo 1/dt, select per object the alias that best fits the water fat model*)
-	ph += 2 Pi SelectAlias[compi, ph / (2 Pi), A, echos, dt, msk];
-
 	(*get R2 star*)
 	n = First@FirstPosition[echos, First[Select[echos, # > 0.75 iop &]]];
 	t2s = Last@T2Fit[Abs[Transpose[comp[[n ;;]]]], echos[[n ;;]]];
 	r2s = DivideNoZero[1, t2s];
 	mat = Transpose[Join[{echos}, -I {echos, Abs[bip], bip}]];
+
+	(*b0 and the bipolar phase are only known up to an alias per object, select it on data without decay*)
+	compi = ApplyPhase[comp, Prepend[hz, 1] {Clip[r2s, {0., 200.}], ph, ph1, ph0}, mat];
+	{kb, kp} = SelectAlias[compi, ph / (2 Pi), ph0 / (2 Pi), A, echos, dt, msk];
+	ph += 2 Pi kb;
+	ph0 += 2 Pi kp;
 
 	(*graph cut chooses the water or fat solution of b0 per block, on data without bipolar phase and decay*)
 	gc = OptionValue[DixonGraphCut];
@@ -416,28 +419,69 @@ normNor[norm_] := 100 (Last[norm] / (Max /@ Transpose[norm]))
 RestoreDC[psi_, unw_, msk_] := msk (unw + Arg[Total[Flatten[msk Exp[I (psi - unw)]]]])
 
 
-SelectAlias[comp_, b0_, amat_, echos_, dt_, msk_] := Block[{proj, lab, objs, objB0, refB0, kObj, res, kAll},
-	(*projection on the residual space of the water fat model*)
-	proj = IdentityMatrix[Length[echos]] - amat . PseudoInverse[amat];
+SelectAlias[comp_, b0_, th0_, amat_, echos_, dt_, msk_] := Block[{
+		proj, bip, lab, objs, cen, ref, mid, kp, par, kb, cand
+	},
+	(*field map ambiguity 10.1002/mrm.20654, offsets between disconnected regions 10.1002/mrm.10354*)
+	(*b0 in units of 1/dt and the bipolar phase in units of a quarter cycle, comp without decay and phases*)
+	(*projection on the residual space of the water fat model, transposed for voxel rows*)
+	proj = Transpose[IdentityMatrix[Length[echos]] - amat . PseudoInverse[amat]];
+	bip = (-1)^Range[Length[echos]];
 
-	(*one mask per connected object, e.g. the two legs, with its mean field*)
+	(*one mask per connected object, e.g. the two legs, the largest is the reference*)
 	lab = MorphologicalComponents[msk];
 	objs = Table[1 - Unitize[lab - c], {c, Max[lab]}];
-	objB0 = Total[b0 #, -1] / Total[#, -1]& /@ objs;
+	cen = Mean[N@Position[#, 1]] & /@ objs;
+	ref = First@Ordering[Total[#, -1] & /@ objs, -1];
+	mid = Mean[{#, cen[[ref]]}] & /@ cen;
 
-	(*align each object to the field of the largest one*)
-	refB0 = objB0[[First@Ordering[Total[#, -1]& /@ objs, -1]]];
-	kObj = Round[refB0 - objB0];
+	(*the bipolar phase is small in the reference and smooth over the gap between objects, align the others at the midpoint*)
+	(*linear bipolar phase along the readout 10.1002/mrm.21747 and 10.1002/jmri.22111*)
+	kp = ConstantArray[0, Length[objs]];
+	kp[[ref]] = Round[-Total[objs[[ref]] th0, -1] / Total[objs[[ref]], -1]];
+	Do[If[o =!= ref,
+		kp[[o]] = Round[PlaneAt[objs[[ref]], th0, mid[[o]]] + kp[[ref]] - PlaneAt[objs[[o]], th0, mid[[o]]]]
+	], {o, Length[objs]}];
 
-	(*one global alias with the lowest model residual, a small penalty on the field breaks ties*)
-	res = Table[
-		(1 + 0.001 Abs[refB0 + kAll]) Total[MapThread[Total[Total[
-			Abs[proj . (Exp[-2 Pi I (#2 + kAll) echos / dt] comp)]^2] #1, -1]&, {objs, kObj}]]
-	, {kAll, -1, 1}];
-	kAll = First[Ordering[res]] - 2;
+	(*even or odd b0 alias per object from the model residual, a quarter cycle bipolar alias flips every other echo*)
+	par = MapThread[AliasParity[comp, #1, Exp[-I Pi / 2 #2 bip], proj, echos, dt] &, {objs, kp}];
 
-	(*each voxel gets the alias k of its object, b0 + k/dt with b0 in units of 1/dt*)
-	Total[(kObj + kAll) objs]
+	(*within its parity the reference takes the smallest field, the other objects the field closest to the reference at the midpoint*)
+	kb = ConstantArray[0, Length[objs]];
+	cand = Select[Range[-2, 2], EvenQ[# - par[[ref]]] &];
+	kb[[ref]] = First@MinimalBy[cand, Abs[Total[objs[[ref]] b0, -1] / Total[objs[[ref]], -1] + #] &];
+	Do[If[o =!= ref,
+		cand = Select[Range[-2, 2], EvenQ[# - par[[o]]] &];
+		kb[[o]] = First@MinimalBy[cand, Abs[
+			PlaneAt[objs[[ref]], b0, mid[[o]]] + kb[[ref]] - PlaneAt[objs[[o]], b0, mid[[o]]] - #] &]
+	], {o, Length[objs]}];
+
+	(*each voxel gets the b0 and bipolar alias of its object*)
+	{Total[kb objs], Total[kp objs]}
+]
+
+
+AliasParity[comp_, obj_, flip_, proj_, echos_, dt_] := Block[{pos, sig, res},
+	(*signals of the object as voxel rows, with the bipolar alias applied*)
+	pos = Position[obj, 1];
+	sig = Transpose[Extract[#, pos] & /@ comp] . DiagonalMatrix[flip];
+
+	(*per voxel the lowest residual within 80 Hz of the even and odd alias, the field bias in fat is close to the alias minus the fat shift*)
+	(*variable projection residual 10.1002/mrm.21522*)
+	res = Table[Total[Min /@ Transpose@Table[
+		Total[Abs[sig . (Exp[-2 Pi I (k / dt + df) echos] proj)]^2, {2}]
+	, {df, -80., 80., 10.}]], {k, 0, 1}];
+
+	(*0 for even, 1 for odd*)
+	First[Ordering[res]] - 1
+]
+
+
+PlaneAt[obj_, map_, pt_] := Block[{pos},
+	(*plane fit of the map inside the object on at most about 5000 voxels, evaluated at point pt*)
+	pos = Position[obj, 1];
+	pos = pos[[;; ;; Max[1, Floor[Length[pos] / 5000]]]];
+	Prepend[pt, 1] . LeastSquares[N[Prepend[#, 1] & /@ pos], Extract[map, pos]]
 ]
 
 
@@ -452,7 +496,7 @@ GraphCutField[comp_, b0_, msk_, amat_, echos_, fs_, ds_] := Block[{
 		lowP, lowQ, highP, highQ, enP, enQ, weight, cLL, cLH, cHL, cHH, pair,
 		src, snk, dirEdges, caps, flow, srcSide, useHigh
 	},
-	(*b0 in Hz from a graph cut on blocks of ds x ds voxels, fs is the fat shift in Hz*)
+	(*b0 in Hz from a graph cut on blocks of ds x ds voxels, fs is the fat shift in Hz, graph cut 10.1002/mrm.22177*)
 	{nz, ny, nx} = Dimensions[b0];
 
 	(*projection on the residual space of the water fat model*)

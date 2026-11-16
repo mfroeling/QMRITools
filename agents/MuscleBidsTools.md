@@ -264,6 +264,7 @@ associations merge.
 | `Method` | – | Convert (megre/tse), Process | Dixon: `Dixon`, `Dixon-B`, `Dixon-P`, `Dixon-S`, `Dixon-A`. dwi: `DTI`. mese: `EPGT2`, `Exp` |
 | `Types` | `{wat,fat,inph,outph}` (Process only) | Convert Dixon-P/S, Process branch 1 | vector = order of volumes in a 4D nii (Dixon-P); matrix `[[suffix, fileTag]..]` = separate files (Dixon-P: tag is the last `_` token of the file name; Dixon-S: `SeriesDescription == label_tag`) |
 | `EchoTime` | – | Convert | Dixon-B: `[TE1, dTE]` ms. mese: echo spacing ms (switches mese conversion to "single 4D file" mode, only for data from a dcm2niix that is not consistent (`BidsDcmConsistentQ`), otherwise ignored and logged) |
+| `MaskComponents` | 2 | Process (all `Mask` calls of `MuscleBidsProcessI`: Dixon-P/S, Dixon B0 mask, DTI, EPGT2/Exp) | `MaskComponents`; 2 = two legs |
 | `Masking` | 5 | Process dwi/mese | `Mask` threshold |
 | `FlipPermute` | `{{1,1,1},{x,y,z}}` | DTI prep | `FlipGradientOrientation` |
 | `RegistrationDimension` | `"3D"` | DTI prep | `"2D"` → `RegisterCardiacData` (and disables split) |
@@ -274,6 +275,12 @@ associations merge.
 | `IVIMCorrection` | True | DTI | IVIM fit then `IVIMCorrectData` before the tensor fit |
 | `FasciculationDetection` | False | DTI | `FindActivations` on the normalised `reg` data |
 | `FasciculationBvalue` | 0 | DTI | minimum b-value of the volumes used for the detection (`SelectBvalueData[{reg, val, grad}, b]`); written to the output json |
+| `AnisotropicFilter` | True | DTI prep | `P2SDenoise` → `filt`. False → `filt` is a copy of `reg`; json `"AnisotropicFilter"` is `"None"` |
+| `DixonFixT2` | True | Dixon-A | `DixonFixT2` of `DixonReconstruct`. True → fitted R2′, R2\* rebuilt from R2′ + FF-weighted water and fat R2, extra outputs `t2prime`/`r2prime`. False → fitted R2\*, no `t2prime`/`r2prime` files |
+| `DixonGraphCut` | 3 | Dixon-A | `DixonGraphCut` of `DixonPhase`: block size in voxels, `false` turns the graph cut off |
+| `DixonPrecessions` | 1 | Dixon-A, Dixon-B | `DixonPrecessions` (1 or −1) for `DixonPhase`, `DixonReconstruct` and `DixonPrecessionCheck` |
+| `EPGCalibrate` | True | EPGT2 | `EPGCalibrate` of `EPGT2Fit`. False → no calibration, the fat T2 is `EPGFatT2` and B1 is fitted per voxel; json `"EPGCalibration"` is `"None, fixed fat T2"` |
+| `EPGFatT2` | 150 | EPGT2 | `DictT2fValue` in ms, only used with `EPGCalibrate` false (the calibration replaces it) |
 | `Settings` | – | EPGT2 | `[[exName, exAngle, {..}], [refName, refAngle, {..}]]` → `GetPulseProfile`, or plain numbers `[ex, ref]` |
 | `Shift` | – | EPGT2 | `true` → fat profile shift from `GetPulseProfile[..., FatFieldStrength -> json MagneticFieldStrength]` (3 T if missing), in profile samples. EPGT2 always runs with `DictT2IncludeWater -> True` and `"2compF"` calibration (Keene 2020 method C, 90/10 adipose tissue), so `fatfr` is a lipid fraction like Dixon; the calibrated `{T2fat, B1}` is logged and written as `EPGCalibration` in the output json. Details: [EPGT2.md](EPGT2.md) |
 
@@ -313,8 +320,10 @@ associations merge.
 | `TractAngle` | 25 | maximum fiber angle |
 | `TractSeed` | 0.66 | < 1 → `Scaled` |
 | `TractStep` | `"Automatic"` | non-number → auto |
+| `TractMethod` | `"RK4"` | `TractMethod` of `FiberTractography` (also the harmonic run) |
+| `TractInterpolation` | 0 | `InterpolationOrder` of `FiberTractography` (also the harmonic run) |
 | `SegmentLength` | `{15,500}` | fiber length range for tract segmentation |
-| `BoneLabel` | 100 | muscles = 1..BoneLabel, bones = BoneLabel+1..+30. A `"Body"` segmentation needs `799`; with 100 no muscle label is found and harmonic denoise returns the tensor unchanged |
+| `BoneLabel` | `"Body"` | highest muscle label, parsed by `BidsAnalysisLabels` like the analysis `Segmentation.Labels` (number, word from `bidsLabelRange`, or both; invalid → log line and the tractography step is skipped). Muscles = 1..n, bones = n+1..n+33 (Body 799 → bones 800–832; `"Legs"` 90 → 91–123, so the back muscles 91–96 count as bone, picture only). The example leg configs set `"Legs"`. Before 2026-11-16 the default was 100, which found no muscle in a `"Body"` segmentation, so harmonic denoise returned the tensor unchanged, and the range was +30 |
 | `HarmonicDenoise` | False | |
 
 ### `analysis` block (per analysis entry)

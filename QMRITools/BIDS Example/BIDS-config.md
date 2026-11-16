@@ -1628,15 +1628,22 @@ Every key you leave out of `config.json` gets the value below. The blocks `Proce
   },
   "Process": {
     "Masking": 5,
+    "MaskComponents": 2,
     "FlipPermute": [[1, 1, 1], ["x", "y", "z"]],
-    "SplitRegistration": false,
+    "RicianCorrection": true,
     "RegistrationDimension": "3D",
     "RegistrationMethod": "bspline",
-    "RicianCorrection": true,
+    "SplitRegistration": false,
+    "AnisotropicFilter": true,
     "IVIMCorrection": true,
     "GradientCorrection": false,
     "FasciculationDetection": false,
-    "FasciculationBvalue": 0
+    "FasciculationBvalue": 0,
+    "DixonFixT2": true,
+    "DixonGraphCut": 3,
+    "DixonPrecessions": 1,
+    "EPGCalibrate": true,
+    "EPGFatT2": 150
   },
   "Merging": {
     "Overlap": 0,
@@ -1656,8 +1663,10 @@ Every key you leave out of `config.json` gets the value below. The blocks `Proce
     "TractAngle": 25,
     "TractSeed": 0.66,
     "TractStep": "Automatic",
+    "TractMethod": "RK4",
+    "TractInterpolation": 0,
     "SegmentLength": [15, 500],
-    "BoneLabel": 100,
+    "BoneLabel": "Body",
     "HarmonicDenoise": false
   },
   "Analysis": {
@@ -1702,12 +1711,19 @@ Change these only when the defaults do not fit your data.
 | --- | --- | --- |
 | `EchoTime` | Echo times in ms. `Dixon-B` needs `[first echo, echo spacing]`. For `mese` scans (`EPGT2`, `Exp`) a single number is the echo spacing (the first echo equals the spacing). Giving it for a `mese` scan means the data is read as one 4D file, so use it only when the echo times are not stored correctly in the scan. This only applies to data converted with an older `dcm2niix`. The `dcm2niix` that comes with QMRITools writes one file per echo with the echo times in the json files, so the setting is then ignored (and the log says so). | none |
 | `Masking` | Threshold for the mask that removes the background. Used by `DTI`, `EPGT2` and `Exp`. | `5` |
+| `MaskComponents` | The number of separate objects the mask keeps; smaller pieces are removed. `2` keeps both legs. Use `1` for a single leg, an arm or a shoulder. Used by all methods that make a mask. | `2` |
 | `FlipPermute` | For `DTI`. Flips or swaps the axes of the gradient directions to match your scanner. Format `[[flipX, flipY, flipZ], [axis1, axis2, axis3]]`, with flips `1` or `-1`. | `[[1,1,1],["x","y","z"]]` |
 | `RegistrationDimension` | For `DTI`. `"2D"` registers each slice on its own (for example for cardiac data) and turns off `SplitRegistration`. | `"3D"` |
 | `RegistrationMethod` | For `DTI`. The method used to correct motion and distortions between the diffusion volumes. | `"bspline"`. Also `"translation"`, `"rigid"`, `"affine"` |
 | `SplitRegistration` | For `DTI`. Registers the left and right side of the muscle separately. | `false` |
 | `FasciculationDetection` | For `DTI`. Also detects fasciculations (spontaneous muscle twitches) in the diffusion data and adds the `fasc`, `fascm` and `norm` maps. | `false` |
 | `FasciculationBvalue` | For `DTI` with `FasciculationDetection`. Only diffusion volumes with at least this b-value are used for the detection, so the `fasc`, `fascm` and `norm` maps have that many volumes. | `0` (all volumes) |
+| `AnisotropicFilter` | For `DTI`. Smooths the registered diffusion data along the muscle fibres before the tensor is fitted. Set to `false` to fit the tensor on the unsmoothed data. | `true` |
+| `DixonFixT2` | For `Dixon-A`. With `true` the water and fat T2 are fixed and the fit gives R2′, the part of R2\* that comes from field differences. The maps `t2prime` and `r2prime` are added, and `t2star` and `r2star` include the water and fat T2 again. With `false` the fit gives R2\* directly and there are no `t2prime` and `r2prime` maps. | `true` |
+| `DixonGraphCut` | For `Dixon-A`. Corrects local water-fat swaps in the starting field map, in blocks of this many voxels. Set to `false` to turn it off, for example when a subject shows swaps that were not there without it. | `3` |
+| `DixonPrecessions` | For `Dixon-A` and `Dixon-B`. The direction in which the fat signal rotates, which depends on the scanner. Use `-1` when the log or the output JSON says the precession check fits better with the opposite direction. | `1`; `1` or `-1` |
+| `EPGCalibrate` | For `EPGT2`. Measures the fat T2 in the subcutaneous fat of each scan. Set to `false` to use a fixed fat T2 (`EPGFatT2`) instead, for example when there is too little subcutaneous fat. | `true` |
+| `EPGFatT2` | For `EPGT2` with `EPGCalibrate` set to `false`. The fixed fat T2 in ms. | `150` |
 
 ### Merging options
 
@@ -1735,8 +1751,10 @@ Change these only when the defaults do not fit your data.
 | `TractAngle` | Largest angle change allowed per step of a tract, in degrees. | `25` |
 | `TractSeed` | How many starting points (seeds) are used. A value below 1 is a fraction of the possible starting points. A value of 1 or more is the number of seeds. | `0.66` |
 | `TractStep` | Length of each tracking step in mm. Any text, such as `"Automatic"`, lets the code choose. A number sets the step length. | `"Automatic"` |
+| `TractMethod` | How each tracking step is calculated. The higher methods are more accurate on curved tracts and slower. | `"RK4"`; `"Euler"`, `"RK2"`, `"Heun"`, `"RK3"`, `"Heun3"` or `"RK4"` |
+| `TractInterpolation` | How the tensor is read between voxels during tracking. `0` uses the nearest voxel, `1` interpolates linearly (smoother tracts, slower). | `0`; `0` or `1` |
 | `SegmentLength` | Shortest and longest tract (mm) that is kept when the tracts are split per muscle. | `[15, 500]` |
-| `BoneLabel` | Label number that separates muscles from bones in the segmentation. Labels `1` up to this number are muscles. The next 30 labels are bones (only used to draw the 3D picture of the tracts). | `100` |
+| `BoneLabel` | Highest muscle label of the segmentation, written the same way as the analysis `Segmentation.Labels`: a number, a word, or both. The word gives the number for that model: `"Body"` 799, `"Legs"` 90, `"Shoulder"` 30, `"Arm"` 12. Labels `1` up to this number are muscles; the next 33 labels are bones (only used to draw the 3D picture of the tracts). Use `"Legs"` with the older leg models (`"Legs"`, `"LegsHip"`, `"LowerLegs"`). | `"Body"` |
 | `HarmonicDenoise` | Set to `true` to denoise the tensor with a harmonic filter before the tracts are split per muscle. Needs `Segmentation`. It creates extra files. | `false` |
 | `FlipPermute` | Flips or swaps the axes of the tensor when the orientation of your scanner differs from the standard. Format `[[flipX, flipY, flipZ], [axis1, axis2, axis3]]`. It is a separate setting from `FlipPermute` in `Process`, which corrects the gradient directions before the tensor is fitted. | `[[1,1,1],["x","y","z"]]` |
 

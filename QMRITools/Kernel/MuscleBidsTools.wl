@@ -545,16 +545,28 @@ defaultConfig = <|
 		"Version"-> If[$OperatingSystem === "MacOSX", 1, "Own"]
 	|>,
 	"Process" -> <|
+		(*masking, all data types*)
 		"Masking" -> 5,
+		"MaskComponents" -> 2,
+		(*DTI preparation*)
 		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}},
-		"SplitRegistration" -> False,
+		"RicianCorrection" -> True,
 		"RegistrationDimension" -> "3D",
 		"RegistrationMethod" -> "bspline",
-		"RicianCorrection" -> True,
+		"SplitRegistration" -> False,
+		"AnisotropicFilter" -> True,
+		(*DTI fit*)
 		"IVIMCorrection" -> True,
 		"GradientCorrection" -> False,
 		"FasciculationDetection" -> False,
-		"FasciculationBvalue" -> 0
+		"FasciculationBvalue" -> 0,
+		(*Dixon*)
+		"DixonFixT2" -> True,
+		"DixonGraphCut" -> 3,
+		"DixonPrecessions" -> 1,
+		(*EPG T2*)
+		"EPGCalibrate" -> True,
+		"EPGFatT2" -> 150
 	|>,
 	"Merging" -> <|
 		"Overlap" -> 0,
@@ -576,8 +588,10 @@ defaultConfig = <|
 		"TractAngle" -> 25,
 		"TractSeed" -> 0.66,
 		"TractStep" -> "Automatic",
+		"TractMethod" -> "RK4",
+		"TractInterpolation" -> 0,
 		"SegmentLength" -> {15, 500},
-		"BoneLabel" -> 100,
+		"BoneLabel" -> "Body",
 		"HarmonicDenoise" -> False
 	|>,
 	"Analysis" -> <|
@@ -3458,7 +3472,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		int, dint, suffix, types, flip, per, magph, split, ivim, shift, t2, pulse, cal,
 		fasc, fascm, fbval, sel, norm, rdim, raw, rmet, rician, sigI, bv, init, exist,
 		denOpts, dixOpts, epgOpts, phaseEchoes, phaseOpts, procInfo, precRatio, precResult,
-		t2prime, r2prime, rel, amp, r2w, r2f, ffc, t2sInfo, regOpts, ivimOpts, tensOpts, fascOpts
+		t2prime, r2prime, rel, amp, r2w, r2f, ffc, t2sInfo, regOpts, ivimOpts, tensOpts, fascOpts,
+		prec, fixT2, aniso, calib, epgOut, mcomp
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -3476,6 +3491,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 	(*config settings and version that are added to every output json*)
 	procInfo = JSONSafe@<|"ProcessSettings" -> Join[defaultConfig["Process"], Lookup[datType, "Process", <||>]], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
+	(*number of separate objects kept by the masks, 2 for two legs*)
+	mcomp = ConfigLookup[datType, "Process", "MaskComponents"];
 
 	(*see what needs to be processed*)
 	files = BidsJsonFiles[folIn, datType["Label"]];
@@ -3553,7 +3570,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							debugBids[pos];
 							mask = If[pos==={}, 1,
 								Mask[NormalizeMeanData[Transpose[NormalizeData /@ data[[pos]]]], 15,
-									MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2, MaskDilation -> 1]
+									MaskSmoothing -> True, MaskComponents -> mcomp, MaskClosing -> 2, MaskDilation -> 1]
 							];
 							debugBids[{Dimensions@mask, Dimensions@data}];
 
@@ -3636,7 +3653,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 									(*Apply background mask*)
 									magM = NormalizeMeanData@mag;
-									B0mask = Mask[magM, 15, MaskSmoothing->True, MaskComponents->2, MaskClosing->2, MaskDilation->1];
+									B0mask = Mask[magM, 15, MaskSmoothing->True, MaskComponents -> mcomp, MaskClosing->2, MaskDilation->1];
 									{real, imag} = MaskData[#, B0mask] &/@ {real, imag};
 
 									(*-----*)AddToLog["Starting denoising and SNR calculation", 4];
@@ -3644,6 +3661,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									{{real, imag}, sig} = PCADeNoise[{real, imag}, Sequence @@ denOpts];
 									{mag, ph} = Through[{Abs, Arg}[real + I imag]];
 									snr = SNRCalc[Mean@Transpose@mag, sig];
+									prec = ConfigLookup[datType, "Process", "DixonPrecessions"];
 
 									Switch[datType["Process", "Method"],
 										(*Dixon processing scrip for multi echo gradient echo complex data as used in motion study*)
@@ -3655,16 +3673,18 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 										(*calculated field maps*)
 										(*-----*)AddToLog[{"Starting field map calculation"}, 4];
-										phaseOpts = {DixonFieldStrength -> field, DixonGraphCut -> 3};
+										phaseOpts = {DixonFieldStrength -> field, DixonPrecessions -> prec,
+											DixonGraphCut -> ConfigLookup[datType, "Process", "DixonGraphCut"]};
 										{{b0i, t2stari, phii, phbpi}, {e1, e2, n}} = DixonPhase[{real, imag}, echos, Sequence @@ phaseOpts];
 										phaseEchoes = {e1, e2};
 										(*-----*)AddToLog[{"used echo ", ToString[e1], "(", 1000 echos[[e1]],"ms ) and", ToString[e2], "(", 1000 echos[[e2]], "ms )"}, 5];
 
 										(*perform the IDEAL dixon fit, with double bond fat model if enough echos*)
 										(*-----*)AddToLog["Starting Dixon reconstruction", 4];
+										fixT2 = ConfigLookup[datType, "Process", "DixonFixT2"];
 										dixOpts = {
-											DixonPrecessions -> 1, DixonPhases -> {True, True, True, True, True},
-											DixonFixT2 -> True, DixonFieldStrength -> field,
+											DixonPrecessions -> prec, DixonPhases -> {True, True, True, True, True},
+											DixonFixT2 -> fixT2, DixonFieldStrength -> field,
 											DixonAmplitudes -> If[Length[echos] > 6, "CallDB", "Fixed"], DixonTolerance -> 1
 										};
 
@@ -3681,15 +3701,19 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 										];
 
 										(*with fixed T2 the fit gives R2', R2* adds the intrinsic water and fat R2 weighted by the fat fraction*)
-										{t2prime, r2prime} = {t2star, r2star};
-										{rel, amp} = {DixonRelaxivity, DixonAmplitudes} /. Options[DixonReconstruct];
-										{r2w, r2f} = {1000. / rel[[1, 1]], 1000. Total[amp[[2]] / rel[[2]]] / Total[amp[[2]]]};
-										ffc = Clip[fatfr, {0, 1}];
-										r2star = Unitize[r2prime] (r2prime + (1 - ffc) r2w + ffc r2f);
-										t2star = DivideNoZero[1., r2star];
-										outTypes = Join[{"t2prime", "r2prime"}, outTypes];
-										t2sInfo = <|"InitEcho" -> n, "R2Water [1/s]" -> r2w, "R2Fat [1/s]" -> r2f,
-											"Definition" -> "R2* = R2' + (1 - FF) R2Water + FF R2Fat, with R2' the fitted relaxation at fixed T2"|>;
+										t2sInfo = If[fixT2,
+											{t2prime, r2prime} = {t2star, r2star};
+											{rel, amp} = {DixonRelaxivity, DixonAmplitudes} /. Options[DixonReconstruct];
+											{r2w, r2f} = {1000. / rel[[1, 1]], 1000. Total[amp[[2]] / rel[[2]]] / Total[amp[[2]]]};
+											ffc = Clip[fatfr, {0, 1}];
+											r2star = Unitize[r2prime] (r2prime + (1 - ffc) r2w + ffc r2f);
+											t2star = DivideNoZero[1., r2star];
+											outTypes = Join[{"t2prime", "r2prime"}, outTypes];
+											<|"InitEcho" -> n, "R2Water [1/s]" -> r2w, "R2Fat [1/s]" -> r2f,
+												"Definition" -> "R2* = R2' + (1 - FF) R2Water + FF R2Fat, with R2' the fitted relaxation at fixed T2"|>
+											,
+											<|"InitEcho" -> n, "Definition" -> "fitted R2*"|>
+										];
 
 										,
 										(*Dixon processing scrip for multi echo gradient echo complex data as used in Bochum cohort*)
@@ -3709,7 +3733,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 										(*perform the IDEAL dixon fit*)
 										(*-----*)AddToLog["Starting Dixon reconstruction", 4];
-										dixOpts = {DixonClipFraction -> True, DixonFieldStrength -> field};
+										dixOpts = {DixonClipFraction -> True, DixonFieldStrength -> field, DixonPrecessions -> prec};
 										{{watfr, fatfr}, {wat, fat}, {inph, outph},
 											{{b0}, {t2star, r2star}}, itt, res} = DixonReconstruct[
 												{real, imag}, echos, {b0i, t2stari}, Sequence @@ dixOpts];
@@ -3718,7 +3742,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 									(*check the precession sense of the fat model on the fitted data*)
 									{precRatio, precResult} = DixonPrecessionCheck[{real, imag}, echos, fatfr,
 										If[datType["Process", "Method"] === "Dixon-B", 0., phbp],
-										DixonFieldStrength -> field, DixonPrecessions -> Lookup[dixOpts, DixonPrecessions, 1]];
+										DixonFieldStrength -> field, DixonPrecessions -> prec];
 									(*-----*)AddToLog[{"Precession check:", precResult, "- residual ratio", Round[precRatio, 0.01]}, 5];
 
 									(*settings used for the fit, exported with the data*)
@@ -3826,7 +3850,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						(*Denoise and SNR*)
 						(*-----*)AddToLog["Starting dwi denoising", 4];
 						mask = Mask[NormalizeMeanData[raw], ConfigLookup[datType, "Process", "Masking"], 
-							MaskSmoothing->True, MaskComponents->2, MaskDilation->1];
+							MaskSmoothing->True, MaskComponents -> mcomp, MaskDilation->1];
 						rician = ConfigLookup[datType, "Process", "RicianCorrection"];
 						settingPre = MergeConfig[settingPre, <| "RicianCorrection" -> rician |>];
 						denOpts = {Method -> "Similarity", PCAKernel -> 5, PCATolerance -> 0, PCARicianCorrect -> rician};
@@ -3859,9 +3883,10 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						reg = regF[{den, mask, diffVox}, PrintTempDirectory -> False, Sequence @@ regOpts];
 
 						(*anisotropic filtering*)
-						(*-----*)AddToLog["Starting anisotropic data smoothing", 4];
-						filt = Unitize[reg] P2SDenoise[reg, mask];
-						settingPre = MergeConfig[settingPre, <| "AnisotropicFilter" -> "P2SDenoise" |>];
+						aniso = ConfigLookup[datType, "Process", "AnisotropicFilter"];
+						(*-----*)AddToLog[If[aniso, "Starting anisotropic data smoothing", "No anisotropic data smoothing"], 4];
+						filt = If[aniso, Unitize[reg] P2SDenoise[reg, mask], reg];
+						settingPre = MergeConfig[settingPre, <| "AnisotropicFilter" -> If[aniso, "P2SDenoise", "None"] |>];
 
 						(*export all the calculated data*)
 						(*-----*)AddToLog["Exporting the calculated data to:", 4];
@@ -3924,7 +3949,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							json = ImportJSON[jsonFileP];
 							{data, grad, val, diffVox} = ImportNiiDiff[niiFileP, FlipBvec->False];
 							mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], 
-								MaskSmoothing->True, MaskComponents->2, MaskClosing->2];
+								MaskSmoothing->True, MaskComponents -> mcomp, MaskClosing->2];
 							data = MaskData[data, mask];
 
 							(*perform gradient nonlinearity correction*)
@@ -4082,7 +4107,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								,
 
 								(*mask the background*)
-								mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], MaskSmoothing -> True, MaskComponents -> 2, MaskClosing -> 2];
+								mask = Mask[NormalizeMeanData[data], ConfigLookup[datType, "Process", "Masking"], MaskSmoothing -> True, MaskComponents -> mcomp, MaskClosing -> 2];
 
 								(*denoise and correct the Rician noise bias before the fit, the patch method gives an unbiased sigma*)
 								(*-----*)AddToLog["Starting denoising and Rician bias correction", 4];
@@ -4128,16 +4153,18 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 									(*calculate the water t2 map, the fit settings are exported with the data*)
 									(*-----*)AddToLog["Starting EPG T2 calculation", 4];
+									calib = ConfigLookup[datType, "Process", "EPGCalibrate"];
 									epgOpts = {
-										DictT2IncludeWater -> True, EPGFitFat -> False, EPGCalibrate -> True, 
+										DictT2IncludeWater -> True, EPGFitFat -> False, EPGCalibrate -> calib,
 										EPGFitPoints -> 100, EPGFatShift -> shift,
-										DictT2fValue -> 150, DictT2fRange -> {150, 250, 5},
+										DictT2fValue -> ConfigLookup[datType, "Process", "EPGFatT2"], DictT2fRange -> {150, 250, 5},
 										DictB1Range -> {0.3, 1.4, 0.02}, DictT2Range -> {10, 60, 0.2},
 										EPGRepetitionTime -> 1000 Lookup[json, "RepetitionTime", 0.]
 									};
-									{{{t2w, t2f, b1}, {wat, fat, fatfr}, res}, cal} = EPGT2Fit[data, 1000 echos, angle, 
-										MonitorCalc -> False, OutputCalibration -> True, Sequence @@ epgOpts];
-									(*-----*)AddToLog[{"Calibrated fat T2 and B1: ", cal}, 4];
+									(*without calibration the fit uses the fixed fat T2 and gives no calibration output*)
+									epgOut = EPGT2Fit[data, 1000 echos, angle, MonitorCalc -> False, OutputCalibration -> True, Sequence @@ epgOpts];
+									{{{t2w, t2f, b1}, {wat, fat, fatfr}, res}, cal} = If[calib, epgOut, {epgOut, "None, fixed fat T2"}];
+									(*-----*)AddToLog[If[calib, {"Calibrated fat T2 and B1: ", cal}, {"Fixed fat T2: ", DictT2fValue /. epgOpts}], 4];
 									settingPro = Join[settingPro, <|"EPGSettings" -> OptionsToJSON[epgOpts], "EPGCalibration" -> cal|>];
 
 									outTypes = {"data", "t2w", "t2f", "b1", "wat", "fat", "fatfr", "res", "sig", "snr"};
@@ -4773,8 +4800,14 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 	step = ConfigLookup[datType, "Tractography", "TractStep"];
 	seed = ConfigLookup[datType, "Tractography", "TractSeed"];
 	lenS = ConfigLookup[datType, "Tractography", "SegmentLength"];
-	segBone = ConfigLookup[datType, "Tractography", "BoneLabel"];
 	harm = ConfigLookup[datType, "Tractography", "HarmonicDenoise"];
+	(*highest muscle label, a number, a word or both as for the analysis labels*)
+	segBone = BidsAnalysisLabels[ConfigLookup[datType, "Tractography", "BoneLabel"]];
+	If[! ListQ[segBone] || ! IntegerQ[First[segBone]],
+		(*-----*)AddToLog[{"!!!!!!!!!!!!!!! SKIPPING - BoneLabel must be a number, a word of", Keys[bidsLabelRange], "or both !!!!!!!!!!!!!!!!!!!"}, 3];
+		Return[]
+	];
+	segBone = First[segBone];
 
 	(*tract files and nii*)
 	tractType = tracto["Target"];
@@ -4844,7 +4877,8 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 			(* Perform tractography, the settings are exported with the tracts *)
 			(*-----*)AddToLog[{"Starting the whole volume tractography"}, 4];
 			trackOpts = {
-				InterpolationOrder -> 0, StepSize -> step, TractMethod -> "RK4",
+				InterpolationOrder -> ConfigLookup[datType, "Tractography", "TractInterpolation"], StepSize -> step,
+				TractMethod -> ConfigLookup[datType, "Tractography", "TractMethod"],
 				MaxSeedPoints -> If[seed<1, Scaled[seed], seed], FiberLengthRange -> len, FiberAngle -> ang
 			};
 			{tracts, seeds} = FiberTractography[tens, vox, stop, Sequence @@ trackOpts,
@@ -4936,7 +4970,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 			(* get the segmentation data *)			
 			{seg, voxSeg} = ImportNii[segFile];
 			{muscles, muscLabs} = SelectSegmentations[seg, Range[segBone], False];
-			bones = Unitize[SelectSegmentations[seg, Range[segBone + 1, segBone + 30]]];
+			bones = Unitize[SelectSegmentations[seg, Range[segBone + 1, segBone + 33]]];
 			dims = Dimensions@seg;
 
 			debugBids[{{dims,voxSeg, dims voxSeg}, {dim, vox, dim vox}}];

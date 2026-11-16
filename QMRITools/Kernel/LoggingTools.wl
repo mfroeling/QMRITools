@@ -142,7 +142,10 @@ SyntaxInformation[ShowLog] = {"ArgumentsPattern" -> {_.}};
 ShowLog[] := ShowLog[True]
 
 ShowLog[win_] := Block[{pane},
-	pane = Dynamic@Pane[Style[StringRiffle[QMRITools`$Log, "\n"], Bold, White]];
+	(*fixed size and scrolled to the end, the newest line stays in view, dark background also in the notebook*)
+	pane = Framed[Dynamic@Pane[Style[StringRiffle[QMRITools`$Log, "\n"], Bold, White],
+		ImageSize -> {800, 500}, Scrollbars -> Automatic, ScrollPosition -> {0, 10^6}],
+		Background -> Darker@Darker@Gray, FrameStyle -> None];
 	If[! win, pane,
 		NotebookClose[logWindow];
 		logWindow = CreateWindow@DialogNotebook[pane, Background ->Darker@Darker@Gray,
@@ -150,7 +153,7 @@ ShowLog[win_] := Block[{pane},
 			WindowFrameElements -> {"CloseBox", "ZoomBox", "MinimizeBox", "ResizeArea"},
 			WindowElements -> {"VerticalScrollBar", "HorizontalScrollBar"}
 		];
-	];
+	]
 ];
 
 

@@ -81,14 +81,25 @@ Then, after the loop:
 
 - **`RestoreDC`** (inside the unwrap function, every iteration): the DCT solution has zero mean, which loses the global
   phase. The constant is restored as the circular mean of (wrapped − unwrapped) inside the mask.
-- **`SelectAlias`** (L370): B0 from a pair 2 ms apart is only known modulo 1/dt = 500 Hz. Two steps:
-  1. The field is continuous over the body, so each connected object of the mask (the two legs; the BIDS mask has at
-     most 2 components) is first aligned to the largest object: `kRel = Round[mean B0 largest − mean B0 object]`.
-  2. One global alias g ∈ {−1, 0, 1} for all objects: the one with the lowest water-fat model residual (free complex
-     amplitudes) summed over all objects. A 0.1% penalty per unit of |mean field| prefers the smallest field and breaks
-     exact ties (with even echo spacing ±1/ΔTE aliases are identical).
-  A per-object choice (the first version) failed in the motion study ses-005 calf: for one leg the residual preferred
-  the wrong alias (1.00 vs 1.28), so that leg was swapped. Summed over both legs the right alias wins (3.30 vs 4.40).
+- **`SelectAlias`** (after the loop and the R2* fit): B0 from a pair 2 ms apart is only known modulo 1/dt = 500 Hz, and
+  θ0 from the triplets modulo 0.25 cycles. With ΔTE = 1 ms the two are the same degree of freedom: (B0 − 500 Hz,
+  θ0 − 0.25) gives the same signal. The unwraps do not fix either between disconnected objects (the legs), so per object
+  (the largest is the reference), on data with phases and decay (R2* clipped to [0, 200]) removed:
+  1. **θ0**: the reference gets the quarter cycle that brings its mean closest to 0 (θ0 is small, |θ0| < 0.1 in all
+     clean legs). Every other object is aligned to it with a plane fit of θ0 in each object, evaluated at the midpoint
+     between the two object centres (θ0 is smooth over the gap; left-right gradient ≈ 0.07–0.1 cycles between the leg
+     centres, so object means are not enough). A quarter-cycle shift flips every other echo (`Exp[-I π/2 k bip]`).
+  2. **B0 parity** per object (`AliasParity`): the water-fat residual (free complex amplitudes) of the even and the odd
+     alias, **each minimised per voxel over ±80 Hz**. Without that refinement the test is wrong when the start B0 is
+     biased: at 3 T the alias (500 Hz) and the fat shift (434 Hz) are only 66 Hz apart, so with a 44 Hz bias "swapped fat
+     22 Hz off" fits better than "water 44 Hz off" (K:\MOTION 013 calf: 66% of voxels voted for the wrong alias, refined
+     92% right; margins on 4 stacks 2.5–3.8×).
+  3. **B0 alias** within that parity (k ∈ −2…2): the reference takes the smallest mean field, the others the field
+     closest to the reference at the midpoint (plane fits again).
+  History: a per-object residual choice at the start field (first version) failed in the motion study ses-005 calf
+  (1.00 vs 1.28). The next version (5.3.0) aligned the objects by mean B0 and chose one global alias from the summed
+  residual. That swapped a whole calf in 4 of 15 K:\MOTION subjects (Q25): one leg carried a θ0 alias (needs the odd
+  B0 alias, the global choice forced even), or the residual at the biased start field picked the wrong alias.
 - T2* from a log fit of the magnitude from the first echo after 0.75 · in-phase period.
 - **`GraphCutField`** (`DixonGraphCut`, default 3 = block size in voxels, `False` = off; Q15): chooses per block between
   the water and fat solution of B0, on data with θ0 and decay (R2* clipped to [0, 200]) removed.
@@ -188,6 +199,7 @@ Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fa
 | Q21 | `DixonPrecessions` | **Checked, not auto-set.** `DixonPrecessionCheck` (after the fit) compares the current and the opposite precession sense on a fixed random sample of 20000 voxels above the 0.9 FF quantile: B0 × R2 grid, water-fat model with complex amplitudes, bipolar phase removed. Ratio < 0.9 "ok", > 1.1 warning (`Message`), else "undecided". The BIDS pipeline logs it and writes it to the json (`DixonPrecessionCheck`). Voxel selection was tested on 4 real stacks (original and conjugated): high-FF voxels separate best (worst 0.59 vs 1.70), water voxels carry nothing (≈ 1.0), "brightest" was marginal in the calf (0.93 vs 1.07). Phantom: 0.08 vs 12.3. Final function on the 4 stacks: hip 0.28/0.33 ok, calf 0.52/0.63 ok; conjugated 1.59–3.59, all warned; ~6 s per stack. |
 | Q22 | left-right FF gradient | **Open (research).** The residual left-right FF differences (paper: 0.5–0.64% unconstrained) form a smooth gradient along the readout (left-right). Candidates: odd/even **amplitude** alternation of the bipolar readout (not modelled; Yu 2010 corrects it), coupling of the fitted θ0 with FF. B1 in the T1 correction gives only ±0.16% FF. Chemical-shift displacement (0.31 px per echo, alternating) is an edge effect and does not explain a smooth gradient. Not affected by the Q1–Q12 fixes: motion study ses-005/006, 32 swap-free muscles each, mean Dixon R−L FF −0.54% / −1.00% new vs −0.53% / −0.99% old (left higher in 20/32 and 26/32), while T2-mapping FF of the same muscles gives R−L +0.03% / +0.02% (15/32) and correlates weakly with the Dixon difference. So it is a Dixon bias, not anatomy. Next test: odd/even amplitude map. |
 | Q23 ✔ | `Unwrap` family | **Fixed.** Unused Block variables removed. `UnWrapC` merges groups with full-array operations; a union-find version gave identical output but only 7.2 → 6.8 s on two calf stacks (`UnwrapSplit`, 3D), so it was not kept. Used only by `Dixon-B`. |
+| Q25 ✔ | `SelectAlias` regression (5.3.0) | **Fixed (2026-11-16).** K:\MOTION, 15 subjects, 5.3.0 vs the July run: a whole calf swapped in MOTION003, 009, 013 and 014 (FF 2–4% → 15–98%, T2* 35–100 ms; EPG FF normal). Not caused by `DixonGraphCut` or `DixonFixT2` (swap identical with both off). Two mechanisms, both from the global alias with mean-B0 alignment (§3): a θ0 quarter-cycle alias in one leg (014, 009, 003; θ0 jump 0.15–0.21 cycles at the gap midpoint), and the residual at the fat-biased start field picking the wrong alias (013). Now per object: θ0 and B0 aligned by plane fits at the midpoint, parity from the field-refined residual. All four stacks fixed. Validation in §8. |
 | Q24 ✔ | BIDS `Dixon-A` | **Fixed (2026-11-12).** `DixonPhase` was called without `DixonFieldStrength`, so the start maps always used 3 T fat frequencies. On 1.5 T data this gave a global water-fat swap (and looked like a precession −1 problem). Now gets `field` from the json. |
 
 ## 8. Real-data validation
@@ -200,6 +212,12 @@ Dixon-A settings, new code against the existing derivatives:
 - Hips and ses-001 calf: practically identical to old (median B0 difference 0 Hz, 85–96% of voxels within 10 Hz); the
   rest is the noise rim of the extended mask.
 - B0 spans about −100 … +300 Hz across each stack (shim), which is the range where the old code failed.
+
+Q25 validation (2026-11-16, K:\MOTION ses-001, BIDS settings, scripts were in the session scratchpad): new `DixonPhase`
+against the saved 5.3.0 start maps on DIXON3/5/6 of subjects 001–015 (42 stacks): 37 identical, the 4 swapped calves
+fixed (both legs FF 11–27%, θ0 with the normal left-right sign), 008 DIXON6 one leg B0 +818 → −178 Hz (a 1000 Hz alias,
+same FF). 7_motion_long sub-MOTION001 ses-001/005/006 calf identical (the Q5 cases stay fixed). MOTION140 hip (full
+swap in the old code) and MOTION021 knee (DIXON4, mess in the April 2025 output) are correct in 5.3.0 and unchanged.
 
 ## 9. Recipes
 
@@ -224,7 +242,7 @@ error and voxels with |FF − true| > 0.4 (swaps).
 | Function | Line | Role |
 | --- | --- | --- |
 | `DixonPhase` | L242 | start maps (B0, T2*, φ0, θ0) |
-| `RestoreDC`, `SelectAlias` | L366, L370 | constant after unwrap; objects aligned, one global B0 alias |
+| `RestoreDC`, `SelectAlias`, `AliasParity`, `PlaneAt` | L416– | constant after unwrap; per-object θ0 and B0 alias (continuity at the midpoint, field-refined residual parity) |
 | `GraphCutField` | L450 | graph cut start B0 (Q15), helpers `PairTerms`, `BlockSum`, `EdgeParts`, `AddEdgeParts`, `GraphCutCandidatesC` |
 | `ApplyPhase`, `DotAc` | L396, L405 | compiled helpers of `DixonPhase` |
 | `FixDixonFlips`, `FindComplexFlips` | L418 | 180° volume flips (commented out in the BIDS pipeline) |
