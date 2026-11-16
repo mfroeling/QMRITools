@@ -19,7 +19,9 @@ This page summarises what each major version of QMRITools brought, with a short 
 - **5.3** (November 2026): Dixon water-fat swaps fixed (alias selection, graph cut start field) and a precession
   check. EPG T2 models fat as 90% lipid and 10% water, pools B1 over a 3D box and corrects for short TR. Every
   Muscle-BIDS output json records the settings it was made with, and the analysis can weight tract-based values
-  by tract density. **The EPG fat fraction is now the lipid fraction, about 10% lower than before.**
+  by tract density. Settings that were hard-coded are now config keys. **The EPG fat fraction is now the lipid
+  fraction, about 10% lower than before. `Tractography.BoneLabel` defaults to `"Body"`; configs for older leg models
+  need `"Legs"`.**
 - **5.2** (November 2026): one debug switch for all toolboxes (`$Debug`, `DebugPrint`), messages instead of prints,
   safer conversion of multi-echo spin echo DICOM in Muscle-BIDS, and a faster config and check GUI.
 - **5.1** (October–November 2026): `MuscleBidsGUI` and check tools that follow the config file, Rician bias
