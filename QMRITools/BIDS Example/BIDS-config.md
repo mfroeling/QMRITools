@@ -2,12 +2,15 @@
 
 **QMRITools**
 
-Manual version: 2.1 · QMRITools version: 5.1 · Date: 2026-11-02 · Author: Martijn Froeling
+Manual version: 2.2 · QMRITools version: 5.1 · Date: 2026-11-18 · Author: Martijn Froeling
 
 This manual explains how to process a muscle MRI study with the Muscle BIDS pipeline of QMRITools: how to set up a study,
 how to write the `config.json` file that drives the pipeline, how to run each step, and how to check the results. You do
 not need to know Mathematica; every command is a line you copy into a notebook. If you are new, read
 [Muscle BIDS in QMRITools](#muscle-bids-in-qmritools) first, with the [overview of the functions](#overview-of-the-functions), and then follow [A complete run, step by step](#a-complete-run-step-by-step).
+
+The manual starts simple and becomes more detailed toward the end. The first chapters are enough for a first run. The
+chapters on the config file explain every setting, and the appendix lists the settings that most studies never change.
 
 ## Contents
 
@@ -35,7 +38,6 @@ not need to know Mathematica; every command is a line you copy into a notebook. 
 - [The config file](#the-config-file)
   - [Writing the file (JSON)](#writing-the-file-json)
   - [The four sections](#the-four-sections)
-  - [What happens when a key is missing](#what-happens-when-a-key-is-missing)
   - [folders](#folders)
   - [conversion](#conversion)
 - [Datasets: describing your scans](#datasets-describing-your-scans)
@@ -65,24 +67,21 @@ not need to know Mathematica; every command is a line you copy into a notebook. 
   - [CheckConfigLabels](#checkconfiglabels)
   - [CheckBidsOutput](#checkbidsoutput)
   - [CheckCustomConfigs](#checkcustomconfigs)
-  - [MuscleBidsConfig](#musclebidsconfig)
-  - [MuscleBidsCheck](#musclebidscheck)
+  - [MuscleBidsConfig and MuscleBidsCheck](#musclebidsconfig-and-musclebidscheck)
   - [ManageCheckFiles](#managecheckfiles)
   - [MuscleBidsReport](#musclebidsreport)
   - [MuscleBidsGUI](#musclebidsgui)
-  - [How the pipeline skips finished work](#how-the-pipeline-skips-finished-work)
-  - [How to force a redo](#how-to-force-a-redo)
+- [When something goes wrong](#when-something-goes-wrong)
+  - [Rerunning a step](#rerunning-a-step)
   - [Log](#log)
   - [Nothing happened: what to check](#nothing-happened-what-to-check)
 - [Appendix: advanced settings](#appendix-advanced-settings)
   - [Default config](#default-config)
   - [Pipeline step options](#pipeline-step-options)
-  - [Dataset options](#dataset-options)
   - [Process options](#process-options)
   - [Merging options](#merging-options)
   - [Segment options](#segment-options)
   - [Tractography options](#tractography-options)
-  - [Per-subject file names](#per-subject-file-names)
   - [Analysis options](#analysis-options)
 <!-- /TOC -->
 
@@ -107,7 +106,7 @@ How QMRITools names files and folders is described at <https://www.qmritools.com
 >
 > `MuscleBidsProcess[dir, ProcessSubjects -> {"001", "002_2"}]`
 >
-> A subject name without a session, such as `"001"`, always means session `001`.
+> How subject names are written is explained in [The source data](#the-source-data).
 
 ### How it works, and why
 
@@ -119,7 +118,9 @@ The steps form a chain. Each step reads the folder that the step before it wrote
 
 Every subject and session is handled on its own. If one subject fails, for example because a scan is missing, the step reports it and goes on with the next subject. New subjects can be added at any time and processed alone, and the subjects that are already done are not touched.
 
-Processing takes time, so finished work is skipped. When a step has finished a subject, it writes a small check file next to the result. The next time the step runs, it finds that file and moves on. Running the whole chain again is therefore safe, and it only does the new work. The other side of this is that a step does not notice by itself that you changed the config. To redo a step, you delete its check files, and those of the later steps, because they depend on its results. The windows described in [Checking and viewing your study](#checking-and-viewing-your-study) show these files and can delete them.
+Processing takes time, so finished work is skipped. When a step has finished a subject, it writes a small check file next to the result. The next time the step runs, it finds that file and moves on. Running the whole chain again is therefore safe, and it only does the new work. The other side of this is that a step does not notice by itself that you changed the config. To redo a step, you delete its check files, and those of the later steps, because they depend on its results (see [Rerunning a step](#rerunning-a-step)).
+
+![What every step does: it goes over the subjects and the datasets, skips what is done, and writes a check file and a log.](figures/step_loop.svg)
 
 A study design can have exceptions. A subject can have its own small config file that changes the datasets for that subject only, for example when one participant was scanned with a different protocol (see [Per-subject settings](#per-subject-settings)). Use this for real exceptions. Every exception is something you have to keep track of, and the pipeline is at its best when there are few of them.
 
@@ -129,10 +130,12 @@ Automation only works when the data is consistent. The config holds one set of r
 
 Everything in Muscle BIDS is a function that you can call from a notebook. The table lists them in the order in which you normally use them, from the whole study down to the single steps. Each name links to its section.
 
+![The functions, grouped as in the tabs of MuscleBidsGUI.](figures/tools.svg)
+
 | Stage | Function | What it is for |
 | --- | --- | --- |
 | **Everything in one window** | [`MuscleBidsGUI`](#musclebidsgui) | A window to run the steps and to look at the config and the checks. It uses the functions below. |
-| **Set up and check the config** (before processing) | [`MuscleBidsConfig`](#musclebidsconfig) | The four tools below as tabs in one window. |
+| **Set up and check the config** (before processing) | [`MuscleBidsConfig`](#musclebidsconfig-and-musclebidscheck) | The four tools below as tabs in one window. |
 | | [`ViewConfig`](#viewconfig) | Shows the full config. |
 | | [`CheckCustomConfigs`](#checkcustomconfigs) | Shows the subjects that have a [per-subject config](#per-subject-settings), what it changes, and whether the steps used it. |
 | | [`CheckConfigLabels`](#checkconfiglabels) | Checks that the labels in the config are present in the data. |
@@ -144,7 +147,7 @@ Everything in Muscle BIDS is a function that you can call from a notebook. The t
 | | [`MuscleBidsSegment`](#5-musclebidssegment) | Segments the muscles. |
 | | [`MuscleBidsTractography`](#6-musclebidstractography) | Calculates the muscle fibre tracts. |
 | | [`MuscleBidsAnalysis`](#7-musclebidsanalysis) | Makes the Excel sheets and images. |
-| **Check the processing** (after or between steps) | [`MuscleBidsCheck`](#musclebidscheck) | The tools below as tabs in one window, with the report. |
+| **Check the processing** (after or between steps) | [`MuscleBidsCheck`](#musclebidsconfig-and-musclebidscheck) | The tools below as tabs in one window, with the report. |
 | | [`CheckBidsOutput`](#checkbidsoutput) | Checks that the converted files are present. |
 | | [`ManageCheckFiles`](#managecheckfiles) | Shows which steps are finished for each subject, and removes finished marks to redo a step. |
 | **Report** | [`MuscleBidsReport`](#musclebidsreport) | Writes the problems of one step, or of all steps, as a file. |
@@ -212,133 +215,67 @@ The study folder `dir` contains these folders (the default names). QMRITools cre
 | `04_merged` | Joined and registered data, segmentations and tractography results |
 | `05_analysis` | Excel sheets with the results per subject and one combined file for all subjects, plus per subject a `.json` that lists the settings, the QMRITools version and every file used (and `.wxf` files, Wolfram data files you can ignore) |
 
-The file `config.json` goes in the root of the study folder, next to these folders.
+The file `config.json` goes in the root of the study folder, next to these folders. The folder names can be changed in
+the config (see [folders](#folders)).
 
 ### Your config file
 
-The file `config.json` describes your study. It has these parts:
-
-- `folders` (optional): the names of the folders in the table above. Leave it out to use the default names.
-- `conversion` (optional): settings for the DICOM conversion. Leave it out to use the defaults.
-- `datasets`: the list of data types you acquired, such as Dixon, diffusion (DTI) or T2 mapping. For each one you give the protocol name(s) from the scanner (`Label`), the kind of data (`Type`), and how to process, merge, segment and track it.
-- `analysis`: the parameters and images you want from the analysis.
-
-To look at the file in a readable form, run `ViewConfig[dir]`. All settings are explained in [The config file](#the-config-file) and the chapters after it.
+The file `config.json` describes your study: which scans you acquired (the `datasets`), and which results you want (the `analysis`). For a first study, start from the [minimal config](#minimal-config) or one of the [example configs](#starting-from-an-example-config). Every setting is explained in [The config file](#the-config-file) and the chapters after it. To look at the file in a readable form, run `ViewConfig[dir]`.
 
 ## Running the pipeline
 
-The pipeline has seven steps. Run them in this order. Each step reads the output of the step before it.
+The pipeline has seven steps. Run them in this order. Each step reads the folder that the step before it wrote.
 
-| Step | Group | What it does |
-| --- | --- | --- |
-| `BidsDcmToNii` | Conversion | Converts DICOM to NIfTI |
-| `MuscleBidsConvert` | Conversion | Sorts and names the NIfTI files in BIDS format |
-| `MuscleBidsProcess` | Processing | Calculates the parameter maps for each data type |
-| `MuscleBidsMerge` | Post-processing | Joins the stacks of each muscle group and registers them to one common space |
-| `MuscleBidsSegment` | Post-processing | Segments the muscles automatically |
-| `MuscleBidsTractography` | Post-processing | Calculates the muscle fibre tracts from diffusion data |
-| `MuscleBidsAnalysis` | Analysis | Summarises the results in Excel sheets and makes images |
+![The seven steps and the folders they read and write. Segmentation and tractography are optional.](figures/pipeline.svg)
 
-Steps 3 to 7 skip work that is already finished (see [How the pipeline skips finished work](#how-the-pipeline-skips-finished-work)). `BidsDcmToNii` skips a subject whose `raw` folder is not empty. When new subjects arrive, set `ProcessSubjects` to the new subjects only.
-
-The steps below use the same two options, where a step has them:
-
-- `ProcessSubjects`: `All` for every subject, or a list of subject names.
-- `VersionCheck`: `False` (default) skips finished work. `True` also redoes work made with an older version of QMRITools.
-
-You can also run the steps from a window, with `MuscleBidsGUI[dir]` (see [MuscleBidsGUI](#musclebidsgui)).
+Every step is called the same way, with the study folder and the subjects to run on, for example
+`MuscleBidsProcess[dir, ProcessSubjects -> All]`. All seven commands, in order and with the checks in between, are in
+[A complete run, step by step](#a-complete-run-step-by-step). A finished subject is skipped the next time; see
+[Rerunning a step](#rerunning-a-step). You can also run the steps from a window, with `MuscleBidsGUI[dir]` (see
+[MuscleBidsGUI](#musclebidsgui)).
 
 ### 1. BidsDcmToNii
 
-**Why:** Your scanner data is in DICOM format. The later steps need NIfTI files, which this step makes.
-
-**Goes in:** the DICOM folders in `01_sourcedata`.
-
-**Comes out:** raw NIfTI files in `02_rawdata/sub-<subject>/ses-<session>/raw`, and a log file for the run.
-
-```wolfram
-BidsDcmToNii[dir, ProcessSubjects -> All]
-```
-
-This step has no `VersionCheck` option. If a `raw` folder already has files, this step skips that subject. To convert a subject again, empty its `raw` folder first.
+**Why:** your scanner data is in DICOM format. The later steps need NIfTI files, which this step makes with dcm2niix.
+It writes them to the `raw` folder of each subject and session in `02_rawdata`. A subject whose `raw` folder already
+has files is skipped.
 
 ### 2. MuscleBidsConvert
 
-**Why:** The raw files do not yet say what they contain. This step uses the `Label` (protocol name) of each data type in your config to sort the files into the data types, such as `dix` (Dixon) and `dwi` (diffusion), and gives them BIDS names.
-
-**Goes in:** the raw NIfTI files in `raw`.
-
-**Comes out:** BIDS-named NIfTI and JSON files in the type folders next to `raw`, such as `dix` and `dwi`. By default, the raw files are deleted after conversion.
-
-```wolfram
-MuscleBidsConvert[dir, ProcessSubjects -> All]
-```
-
-This step has no `VersionCheck` option.
-
-Tip: the `Label` in your config must match the protocol name on the scanner exactly. After `BidsDcmToNii`, run `ViewProtocolNames[dir]` to see the protocol names per subject, and `CheckConfigLabels[dir]` to see which of your labels are missing (see [Checking and viewing your study](#checking-and-viewing-your-study)).
+**Why:** the raw files do not yet say what they contain. This step uses the `Label` (protocol name) of each dataset in
+your config to pick the files, gives them BIDS names, and sorts them into type folders such as `dix` (Dixon) and `dwi`
+(diffusion). The `Label` must match the protocol name on the scanner exactly; `ViewProtocolNames` and
+`CheckConfigLabels` show whether it does. By default the raw files are deleted after conversion.
 
 ### 3. MuscleBidsProcess
 
-**Why:** This step fits the physical models to your images. For example, it calculates fat fractions from Dixon data, T2 values from multi-echo data, and diffusion tensors from DTI data. These maps are the numbers you analyse later.
-
-**Goes in:** the BIDS-named files in `02_rawdata`.
-
-**Comes out:** the parameter maps in `03_derivatives`, in the native space of the scan.
-
-```wolfram
-MuscleBidsProcess[dir, ProcessSubjects -> All, VersionCheck -> False]
-```
+**Why:** this step fits the physical models to your images. It calculates, for example, fat fractions from Dixon data,
+T2 values from multi-echo data and diffusion tensors from DTI data. These maps are the numbers you analyse later. They
+are written to `03_derivatives`, still in the space of each scan.
 
 ### 4. MuscleBidsMerge
 
-**Why:** A muscle group often does not fit in one field of view, so it is scanned in several parts. This step joins the parts. It then moves all data types into one common space, so that the same muscle lines up across all images.
-
-**Goes in:** the parameter maps in `03_derivatives`.
-
-**Comes out:** the joined and registered maps in `04_merged`. Only data types that have a `Merging` section in the config are merged.
-
-```wolfram
-MuscleBidsMerge[dir, ProcessSubjects -> All, VersionCheck -> False]
-```
+**Why:** a muscle group often does not fit in one field of view, so it is scanned in several parts (stacks). This step
+joins the parts and moves all scans into one common space, so that the same muscle lines up in all images. Only
+datasets with a `Merging` block in the config are merged.
 
 ### 5. MuscleBidsSegment
 
-**Why:** Analysis needs to know which pixels belong to which muscle. This step draws the muscle outlines automatically with a neural network. Without segmentations, you cannot run the analysis. If you already have manual segmentations, you can skip this step and put your files in the `seg` folder instead.
-
-**Goes in:** the merged data in `04_merged`. Only data types that have a `Segment` section in the config are segmented.
-
-**Comes out:** the segmentation files in the `seg` folder of each subject and session in `04_merged`.
-
-```wolfram
-MuscleBidsSegment[dir, ProcessSubjects -> All, VersionCheck -> False]
-```
+**Why:** the analysis needs to know which voxels belong to which muscle. This step draws the muscles with a neural
+network, for datasets with a `Segment` block. If you have your own segmentations, skip this step and put your files in
+the `seg` folder instead (see [Segment](#segment)).
 
 ### 6. MuscleBidsTractography
 
-**Why:** Diffusion data shows the direction of the muscle fibres. This step follows the fibres through the muscle (tractography) and makes maps of them. If you have segmentations, it also splits the fibres per muscle. Without a segmentation, you get tracts for the whole volume only.
-
-**Goes in:** the diffusion tensors in `04_merged`, and the segmentations if you have them. Only data types that have a `Tractography` section in the config are tracked.
-
-**Comes out:** in the `dwi` folder in `04_merged`, a tract file (`.trk`) for the whole volume. With a segmentation, also the tracts per muscle and maps of the tracts (density, length, angle, seed density and curvature).
-
-```wolfram
-MuscleBidsTractography[dir, ProcessSubjects -> All, VersionCheck -> False]
-```
+**Why:** diffusion data shows the direction of the muscle fibres. This step follows the fibres (tractography), for
+datasets with a `Tractography` block. With a segmentation, it also splits the tracts per muscle and makes maps of them
+(density, length, angle, seed density and curvature).
 
 ### 7. MuscleBidsAnalysis
 
-**Why:** This is the final result. For each subject, it measures the volume of every muscle and summary values (usually the median) of every muscle in the parameter maps you choose in the config. It also makes images of your data. The results are written to Excel, so you can open them in any spreadsheet program.
-
-**Goes in:** the merged data and segmentations in `04_merged`, and the analysis settings in your config file.
-
-**Comes out:** one Excel file per subject and session, and images, in `05_analysis`. All subjects are also combined into one file, named `All_<date>.xlsx`, in the same folder.
-
-```wolfram
-MuscleBidsAnalysis[dir, ProcessSubjects -> All, VersionCheck -> False]
-```
-
-Rarely needed settings for this part: see [Pipeline step options](#pipeline-step-options) in the appendix.
+**Why:** this is the final result. For each subject it measures the volume of every muscle and a summary value (usually
+the median) in every map you choose in the config, and makes images. The results go to one Excel file per subject and
+session in `05_analysis`, and to one file for all subjects, `All_<date>.xlsx`.
 
 ## A complete run, step by step
 
@@ -457,8 +394,9 @@ after conversion unless you use `DeleteAfterConversion -> False`.
   02_rawdata/
     DcmToNii_<date>.log             one log per BidsDcmToNii run
     sub-001/ses-1/
-      raw/                          dcm2niix output
-      dix/                          converted files: sub-001_ses-1_stk-DIXON1_megre_dix_*.nii and .json
+      raw/                          dcm2niix output, one file per echo (removed after conversion)
+      dix/                          converted files, one 4D file (all echoes) per image type:
+                                    sub-001_ses-1_stk-DIXON1_megre_dix.nii, _ph, _real, _imag, each with a .json
       sub-001_ses-1_BIDSConvert.log
   03_derivatives/sub-001/ses-1/dix/ fitted maps: sub-001_ses-1_stk-DIXON1_megre_dix_wat.nii, *_check.json
   04_merged/sub-001/ses-1/
@@ -564,49 +502,28 @@ JSON is a simple text format. The rules are few:
 
 ### The four sections
 
-The config file has four sections. You only write the sections you need. The others get default values.
+The config file has four sections. You only write the sections you need. A key that you leave out gets its default
+value, so a config file only has to contain what differs from the defaults.
 
-| Section | What it is for |
-| --- | --- |
-| `folders` | The names of the folders that QMRITools creates and uses during processing. |
-| `conversion` | How DICOM files are converted to NIfTI files. |
-| `datasets` | The data you want to process and how each type of data is handled. |
-| `analysis` | Which results are analyzed and which images are made. |
-
-The processing steps write their results to separate folders, one folder per step. This way you can always see what each step produced, and you can check a step before you go on to the next one.
-
-### What happens when a key is missing
-
-If you leave out a key, QMRITools uses a default value for it. This means you can start with a config file that only contains the keys you want to change. For `folders`, each folder name has its own default. For `conversion`, the default applies when you leave out the whole section.
-
-Two sections have no default. You must write them when you use the steps that need them:
-
-- `datasets`, which lists the data to process. Every step except the DICOM to NIfTI conversion needs it.
-- `analysis`, which is only needed for the analysis step.
+| Section | What it is for | When you leave it out |
+| --- | --- | --- |
+| `folders` | The names of the folders that QMRITools creates and uses during processing. | Each folder that is left out gets its default name. |
+| `conversion` | How DICOM files are converted to NIfTI files. | The default converter is used. |
+| `datasets` | The data you want to process and how each type of data is handled. | No default. Every step except `BidsDcmToNii` needs it. |
+| `analysis` | Which results are analysed and which images are made. | No default. Only `MuscleBidsAnalysis` needs it. |
 
 ### folders
 
-The `folders` section sets the names of the five folders. You do not have to write this section. If you leave out a folder, its default name is used.
+The `folders` section sets the names of the five folders described in [The study folder](#the-study-folder). You do not
+have to write this section.
 
-| Key | What it is for | Default | Used by |
-| --- | --- | --- | --- |
-| `dicomData` | Holds the DICOM files that come from the scanner. You put them here before you start. | `01_sourcedata` | `BidsDcmToNii` |
-| `rawData` | Holds the converted NIfTI files. After conversion, this folder contains your BIDS dataset. | `02_rawdata` | `BidsDcmToNii`, `MuscleBidsConvert`, `MuscleBidsProcess` |
-| `derivedData` | Holds the processed data, still in the space of each scan. | `03_derivatives` | `MuscleBidsProcess`, `MuscleBidsMerge` |
-| `mergeData` | Holds the merged data, all in one common space. Segmentation and tractography also read and write here. | `04_merged` | `MuscleBidsMerge`, `MuscleBidsSegment`, `MuscleBidsTractography`, `MuscleBidsAnalysis` |
-| `analysis` | Holds the results of the analysis: `.xlsx` sheets, `.wxf` files and images. | `05_analysis` | `MuscleBidsAnalysis` |
-
-Example, with the default names:
-
-```json
-"folders": {
-  "dicomData": "01_sourcedata",
-  "rawData": "02_rawdata",
-  "derivedData": "03_derivatives",
-  "mergeData": "04_merged",
-  "analysis": "05_analysis"
-}
-```
+| Key | Default | Used by |
+| --- | --- | --- |
+| `dicomData` | `01_sourcedata` | `BidsDcmToNii` |
+| `rawData` | `02_rawdata` | `BidsDcmToNii`, `MuscleBidsConvert`, `MuscleBidsProcess` |
+| `derivedData` | `03_derivatives` | `MuscleBidsProcess`, `MuscleBidsMerge` |
+| `mergeData` | `04_merged` | `MuscleBidsMerge`, `MuscleBidsSegment`, `MuscleBidsTractography`, `MuscleBidsAnalysis` |
+| `analysis` | `05_analysis` | `MuscleBidsAnalysis` |
 
 Example, with a different name for the raw data folder only:
 
@@ -620,11 +537,12 @@ All other folders keep their default names.
 
 ### conversion
 
-The `conversion` section chooses the version of dcm2niix that converts your DICOM files to NIfTI. dcm2niix is the free converter that QMRITools uses. Leave this section out unless the conversion fails.
+The `conversion` section chooses the version of dcm2niix that converts your DICOM files to NIfTI, and how it groups images into files. dcm2niix is the free converter that QMRITools uses. Leave this section out unless the conversion fails.
 
 | Key | What it is for | Default |
 | --- | --- | --- |
 | `Version` | Which dcm2niix version to use. See the list below. | `"Own"` on Windows, `1` on macOS |
+| `MergeEchos` | `true` puts all images of one series into one file. Use `false` when Philips Dixon data is stored as one DICOM file per image (for example after a PACS or XNAT export): with `true` the real and imaginary echoes end up mixed in one file. With `false` every echo and image type gets its own file. | `true` |
 
 Example:
 
@@ -673,7 +591,7 @@ This reads three Dixon scans with the protocol names `DIXON-1`, `DIXON-2` and `D
 
 | Key | What it is for | Default / allowed values |
 | --- | --- | --- |
-| `Label` | The protocol name(s) of the scan(s), as they appear in the converted `.json` files. After the DICOM conversion, `ViewProtocolNames` shows the names that exist and `CheckConfigLabels` checks that your labels are present. A leading `WIP ` is ignored. | A text (one scan) or a list of text (several scans). Required. |
+| `Label` | The protocol name(s) of the scan(s), as they appear in the converted `.json` files. After the DICOM conversion, `ViewProtocolNames` shows the names that exist and `CheckConfigLabels` checks that your labels are present. A leading `WIP ` is ignored. When several stacks share one protocol name, write the name once per stack, for example `["GRE Dixon", "GRE Dixon", "GRE Dixon"]`: the first is the series with the lowest series number, and so on. The stacks are then named `GREDixon1`, `GREDixon2`, ... If a subject has a different number of series with that name (for example a repeated scan), that dataset is not converted for that subject and the log says so. | A text (one scan) or a list of text (several scans). Required. |
 | `Class` | How the scans in `Label` belong together. See the next section. | `"Volume"` (default). Also `"Volumes"`, `"Stacks"`, `"Chunks"`, `"Repetitions"`, `"Acquisitions"`. |
 | `Type` | The kind of scan. It decides the folder the data is stored in and which methods you can use. | See the table below. Required. |
 | `Suffix` | A short word that is added to the file name, so you can recognise the data. | Empty text by default. Use `"dix"` for Dixon data, `"t2"` for T2 mapping, `"dti"` for diffusion. |
@@ -735,6 +653,9 @@ If all `Type` and `Suffix` combinations are different, the file names have no ke
 
 There is one exception: two datasets that store their data in the same folder must still be told apart. `megre` and `tse` datasets both use the folder `dix`, so a target for the `tse` dataset starts with its dataset name, for example `["TSE", "tse", "dix", "outph"]`. The file names still have no key.
 
+A target without a key finds its dataset through the `Suffix`. Keep the `Suffix` of a Dixon dataset equal to its folder
+name, `dix`.
+
 Example of two datasets that need keys, because both are `megre` with the suffix `dix`:
 
 ```json
@@ -776,7 +697,9 @@ sub-1_ses-1_stk-DIXOS_megre_dix_wat.nii
 
 Without duplicates the merged name has no key: `sub-1_ses-1_megre_dix_wat.nii`. The class word (`vol`, `stk`, `chunk`, `rep`, `acq`) is the one listed under Class.
 
-Rarely needed settings for this part: see [Dataset options](#dataset-options) in the appendix.
+dcm2niix writes one file per echo into `raw`. These files are only the input of the conversion. The converted data in
+the type folders has one 4D file per image type, with all echoes in the fourth dimension: the magnitude, phase (`ph`),
+real (`real`) and imaginary (`imag`) images each in their own file, and the echo times in its `.json`.
 
 ## Processing, merging, segmentation and tractography
 
@@ -796,7 +719,7 @@ Each dataset in `datasets` can have one block for every pipeline step after the 
 | `Dixon-B` | Like `Dixon`, but for data stored as one 4D file with all echoes. You give the echo times with `EchoTime`. | same as `Dixon` |
 | `Dixon-P` | Dixon data that the scanner already reconstructed, as one 4D file or as separate files. | the maps listed in `Types` |
 | `Dixon-S` | Dixon data that the scanner already reconstructed, as separate series. | the maps listed in `Types` |
-| `Dixon-A` | Dixon data where you do not know (or it differs per scan) if the scanner reconstructed it. The type is detected automatically. | the scanner maps, or the QMRITools maps when only the raw echoes are there |
+| `Dixon-A` | Dixon data where you do not know (or it differs per scan) if the scanner reconstructed it. The type is detected automatically. When one scan holds both the raw echoes and the scanner maps, both are converted and QMRITools calculates its own maps from the echoes. | the scanner maps, or the QMRITools maps when the raw echoes are there. When a scan has both, the scanner maps are kept next to them with `scan` added to the name (`watscan`, `fatscan`, `inphscan`, `outphscan`, `watfrscan`, `fatfrscan`) for comparison. The `DixonSource` field in the JSON says which is which (`QMRITools` or `ScannerRecon`). |
 | `DTI` | Diffusion-weighted images (`Type` `dwi`). Fits a diffusion tensor. | `s0`, `md`, `fa`, `rd`, `l1`, `l2`, `l3`, `tens`, `snr0` |
 | `EPGT2` | Multi-echo spin echo T2 mapping (`Type` `mese`). Needs the RF pulse settings. The fat T2 is calibrated on the subcutaneous fat, which is assumed to be 90% fat and 10% water. `fatfr` is the lipid fraction, the same quantity Dixon gives, corrected for the slower T1 recovery of water at the scan's repetition time. The data are denoised and corrected for the noise floor first, which also gives a noise map and an SNR map. | `t2w`, `t2f`, `wat`, `fat`, `fatfr`, `b1`, `sig`, `snr` |
 | `Exp` | Simple T2 mapping (`Type` `mese`) with a single exponential fit, after the same denoising as `EPGT2`. | `t2`, `s0`, `sig`, `snr` |
@@ -815,23 +738,8 @@ The full list of suffixes is at <https://www.qmritools.com/bids/ents_suffs/>.
 | `Settings` | For `EPGT2`. The two RF pulses (excitation and refocusing) of your scan, each as `[name, flip angle in degrees, [gradient strength, duration, bandwidth]]`. Copy the values from your sequence protocol. You can also give just the two flip angles, `[90, 180]`; then the slice profile and `Shift` are not used. | Required for `EPGT2` |
 | `Shift` | For `EPGT2` with pulse settings. Set to `true` to correct the fat signal for the chemical shift. The field strength is read from the scan (`MagneticFieldStrength` in the JSON file), 3 T if it is missing. | `false` |
 
-**Example (Dixon):**
-
-```json
-{
-  "datasets": {
-    "Dixon": {
-      "Label": ["DIXON-1", "DIXON-2", "DIXON-3"],
-      "Class": "Stacks",
-      "Type": "megre",
-      "Suffix": "dix",
-      "Process": {
-        "Method": "Dixon"
-      }
-    }
-  }
-}
-```
+A Dixon dataset only needs `"Process": {"Method": "Dixon"}`, as in [A first dataset](#a-first-dataset). The other
+methods need a few more keys:
 
 **Example (scanner reconstructed Dixon in one 4D file):**
 
@@ -913,27 +821,14 @@ Rarely needed settings for this part: see [Process options](#process-options) in
 | `Process` | The maps that you want to keep after merging. Only these maps are used in the later steps. Use the suffixes that the processing created, for example `["fat","watfr","snr"]`. | none. Required |
 | `Overlap` | Number of slices that two chunks overlap. Set this to the real overlap of the acquisition. When it is above `0`, the overlapping slices are blended into one volume and the chunks are first aligned to each other. When it is `0`, the chunks are simply put after each other. | `0`. Also `[overTarget, overNative]` |
 
-**Example:**
+**Example** (the `Merging` block of a Dixon dataset; the whole dataset is in the [minimal config](#minimal-config)):
 
 ```json
-{
-  "datasets": {
-    "Dixon": {
-      "Label": ["DIXON-1", "DIXON-2", "DIXON-3"],
-      "Class": "Stacks",
-      "Type": "megre",
-      "Suffix": "dix",
-      "Process": {
-        "Method": "Dixon"
-      },
-      "Merging": {
-        "Overlap": 5,
-        "Target": ["megre", "dix", "outph"],
-        "Moving": "wat",
-        "Process": ["t2star", "r2star", "inph", "outph", "wat", "fat", "watfr", "fatfr", "snr"]
-      }
-    }
-  }
+"Merging": {
+  "Overlap": 5,
+  "Target": ["megre", "dix", "outph"],
+  "Moving": "wat",
+  "Process": ["t2star", "r2star", "inph", "outph", "wat", "fat", "watfr", "fatfr", "snr"]
 }
 ```
 
@@ -941,7 +836,7 @@ If the `Target` comes from another dataset, all maps are moved to the space of t
 
 If the `Target` is the same map as `Moving` (the same dataset), the chunks are aligned to each other, with the first chunk as the reference. Set `Motion` to `false` to skip this.
 
-If two datasets have the same `Type` and `Suffix`, every `Target` must start with the name of the dataset that it comes from, for example `["Dixon","megre","dix","outph"]`, and the merged file names then contain that dataset name. Use dataset names with only letters and digits for this.
+If two datasets have the same `Type` and `Suffix`, every `Target` starts with a dataset name; see [Dataset names and the `Key`](#dataset-names-and-the-key).
 
 Rarely needed settings for this part: see [Merging options](#merging-options) in the appendix.
 
@@ -958,31 +853,12 @@ Rarely needed settings for this part: see [Merging options](#merging-options) in
 | `Target` | The map the muscles are found on, written like a file name. The example uses the out-of-phase Dixon image. Give a list of lists to make one segmentation per map. It must be a map you kept in `Merging.Process`. | none. Required. Example `["megre","dix","outph"]` |
 | `Location` | The part of the body to segment. Keep the default `"Body"`, the full-body muscle model. | `"Body"`. The other values are for rare cases, see [Segment options](#segment-options). |
 
-**Example:**
+**Example** (the `Segment` block of the Dixon dataset; `outph` must be in its `Merging.Process`):
 
 ```json
-{
-  "datasets": {
-    "Dixon": {
-      "Label": ["DIXON-1", "DIXON-2", "DIXON-3"],
-      "Class": "Stacks",
-      "Type": "megre",
-      "Suffix": "dix",
-      "Process": {
-        "Method": "Dixon"
-      },
-      "Merging": {
-        "Overlap": 5,
-        "Target": ["megre", "dix", "outph"],
-        "Moving": "wat",
-        "Process": ["wat", "watfr", "fatfr", "outph"]
-      },
-      "Segment": {
-        "Target": ["megre", "dix", "outph"],
-        "Location": "Body"
-      }
-    }
-  }
+"Segment": {
+  "Target": ["megre", "dix", "outph"],
+  "Location": "Body"
 }
 ```
 
@@ -1071,13 +947,10 @@ Rarely needed settings for this part: see [Tractography options](#tractography-o
 
 The settings are merged with the main config for this subject only. The keys in your file replace the main settings; a list (such as `Stopping` or `Label`) is replaced as a whole. Other keys of the same dataset keep their main values.
 
-The file is copied with the data to the later folders as `sub-<subject>_ses-<session>_config.json`, so it applies to all the steps from the conversion to the tractography. The analysis step does not use per-subject files. The log shows `Using custom config` when a subject has one.
+The file is copied with the data to the later folders as `sub-<subject>_ses-<session>_config.json`, so it applies to all the steps from the conversion to the tractography. The analysis step does not use per-subject files. The log shows `Using custom config` when a subject has one. You can also name the file in the source folder this way, for example `sub-001_ses-2_config.json`; when both exist, `config.json` is used.
 
-To check for each subject and session that the `Label`s of the datasets are present in the scan (including the per-subject settings), use `CheckConfigLabels[dir, subs]`, where `dir` is your study folder and `subs` is `All` or a list of subjects.
-
-To see which subjects have a per-subject config, and what each one changes, use `CheckCustomConfigs` or the **Custom config** tab of `MuscleBidsConfig` (see [CheckCustomConfigs](#checkcustomconfigs)). It shows one row for each changed setting, with the value of the subject next to the value of the study. It also finds custom configs that were not carried through the pipeline, for example because you added or edited the file after a step had already run. The same list is part of the report from `MuscleBidsReport`.
-
-Rarely needed settings for this part: see [Per-subject file names](#per-subject-file-names) in the appendix.
+[CheckCustomConfigs](#checkcustomconfigs) shows which subjects have a per-subject config, what each one changes, and
+whether every step used it.
 
 ## Analysis: the `analysis` section
 
@@ -1135,9 +1008,11 @@ You can use the section in two layouts:
 | --- | --- | --- |
 | `Segmentation.Type` | The name parts of the segmentation file to measure in, for example `["seg", "auto", "megre", "dix", "outph"]`. | Required. No default. |
 | `Segmentation.TypeSegmentation` | Optional. Measure some image types in their own segmentation, for example `{"dwi": ["seg", "auto", "dwi", "dti", "s0"], "mese": ["seg", "auto", "mese", "t2", "wat"]}`. Every entry of `Analysis.Types` whose name contains the image type (`dwi`, `megre`, `mese`) is measured in that segmentation, all others in `Type`. The muscle list, volume, cross-section and pictures always come from `Type`. | Not set: everything is measured in `Type`. If a muscle is missing in the other segmentation its values are 0 and the log tells which. If the file is missing or has another image size, the subject is skipped and the check file gets status `error`. |
-| `Segmentation.Labels` | A number `n`, a word `what`, or both as `[n, what]`. The muscles are the labels up to `n`. Higher labels (bones and other structures) are not measured. `what` tells QMRITools which muscle names to use. | Required. For the default `Body` location use `799`, `"Body"` or `[799, "Body"]`. `what` is `"Body"`, `"Legs"`, `"Shoulder"`, `"Arm"`, or the path to your own label file. With any other text the muscles are named `Unknown`. A number alone uses `"Body"`. A word alone uses the number of the table below (`"Body"` 799, `"Legs"` 90, `"Shoulder"` 30, `"Arm"` 12), and a label file uses all labels of the segmentation. |
+| `Segmentation.Labels` | A number `n`, a word `what`, or both as `[n, what]`. The muscles are the labels up to `n`. Higher labels (bones and other structures) are not measured. `what` gives the muscle names. | Required. For the default `Body` location use `[799, "Body"]`. Other values: see the table below. |
 
-Which `Labels` fits which `Segment.Location`:
+Which `Labels` fits which `Segment.Location`. A number alone uses the names of `"Body"`. A word alone uses the number in
+this table. Instead of a word you can give the path to your own label file (see [Analysis options](#analysis-options)),
+which uses all labels of the segmentation. With any other word the muscles are named `Unknown`.
 
 | `Segment.Location` | `Segmentation.Labels` | Muscles | Not analysed |
 | --- | --- | --- | --- |
@@ -1163,8 +1038,6 @@ the analysis again; the subject is processed again because its check file is not
 Each map gives two columns in the Excel file: the value and a spread value. The name is made from the last two parts of the entry. For example, `dix` and `fatfr` give `dix_fatfr` and `dix_fatfr_IQR`. The value is the median inside the muscle and the spread value is the interquartile range (IQR). For the tract maps `trk_seed` and `trk_dens`, the value is the mean and the spread value is the standard deviation, but the column is still named `..._IQR`.
 
 Two maps are scaled to friendlier units in the Excel file. Fat fraction (`dix_fatfr` and `t2_fatfr`) is shown in percent (stored `0` to `1`, shown `0` to `100`). T2* and T2' from Dixon (`dix_t2star`, `dix_t2prime`) are shown in ms. All other maps keep the units they have in the files.
-
-Tract-based maps always count each voxel once. There is no option to weight voxels by tract density.
 
 ### Images
 
@@ -1211,7 +1084,8 @@ There is one `.xlsx` file for each subject and session. It is saved in a folder 
 
 The combined file `All_<date>.xlsx` is in the same folder and holds the rows of all subjects.
 
-Results for a file that already exists are not calculated again. To recalculate after you change the section, delete the `*_check.json` files in the analysis folder. Use `VersionCheck -> True` only after you update QMRITools. It redoes the results made with an older version.
+Results that already exist are not calculated again. After you change the `analysis` section, delete the analysis
+check files of the subjects (see [Rerunning a step](#rerunning-a-step)).
 
 ### Nested analysis blocks
 
@@ -1249,18 +1123,22 @@ Rarely needed settings for this part: see [Analysis options](#analysis-options) 
 
 Before and during processing, you can look at your study in a few windows. They show you what the pipeline sees, which
 protocols are in your data, and which files have already been made. Nothing in these windows changes your data, except
-`ManageCheckFiles`, which can delete the check files described below, and `MuscleBidsGUI`, which runs the pipeline steps.
+`ManageCheckFiles`, which can delete check files, and `MuscleBidsGUI`, which runs the pipeline steps.
 `MuscleBidsReport` only writes a report file.
 
-Several windows below show **check files**. A check file ends in `_check.json`. A step writes one next to its output when it has finished a subject, with the status `done`. `error` means an input was missing. For tractography, `track` and `seg` mean it is part of the way. A step skips what has a `done` check file ([more below](#how-the-pipeline-skips-finished-work)).
+What all the windows have in common:
 
-All functions take the folder that holds your `config.json` (your study folder, `dir` below). Run them in a notebook after loading the
-package and setting `dir`:
+- They take the study folder `dir`, set as in the box at the start of this manual.
+- The option `ProcessSubjects` limits them to some subjects, as for the pipeline steps.
+- They scan the study when they open. **Reload** scans again, for example after you changed the config or the data,
+  and the time of the last scan is shown.
+- Rows with a problem are red. **Only problems** hides the other rows. A table with more than 15 rows scrolls.
+- If you ran the analysis with `BidsOutputImages -> "None"`, give the same option to the windows that show check files
+  (`MuscleBidsCheck`, `ManageCheckFiles`, `MuscleBidsReport`). Otherwise they expect image check files that were never
+  made.
 
-```wolfram
-Needs["QMRITools`"]
-dir = NotebookDirectory[];
-```
+Check files are explained in [Rerunning a step](#rerunning-a-step). Their status is `done`, `error` (an input was
+missing), or for tractography `track` and `seg` (part of the way).
 
 ### ViewConfig
 
@@ -1292,8 +1170,7 @@ subject lists below expect.
 **Deselect All**, or **Copy selected list to clipboard** to paste the list into your code, for example
 `{"001_1", "002_1"}`.
 
-Use these folder names, not the `sub-...` names of the BIDS folders. A folder name without a session part (like `001`)
-is treated as session `001`.
+Use these folder names, not the `sub-...` names of the BIDS folders (see [The source data](#the-source-data)).
 
 ```wolfram
 SelectSubjects[dir]
@@ -1307,8 +1184,7 @@ exactly.
 **When:** after `BidsDcmToNii` has put the raw files in `02_rawdata`, and before you write or change labels.
 
 **What you see:** one menu entry per subject and session. Each entry is a table with the series number and protocol name.
-Rows in red are duplicate protocol names: two series have the same name. Tick **only problems** to show only the red rows.
-Press **Reload** after you change the data.
+Red rows are duplicate protocol names: two series have the same name.
 
 ```wolfram
 ViewProtocolNames[dir]
@@ -1324,7 +1200,8 @@ data will not be converted.
 **When:** after `BidsDcmToNii`, because it reads the subjects from `02_rawdata`.
 
 **What you see:** one menu entry per subject and session. Each row is a dataset, its label, and `yes` or `missing`. Red rows
-are labels that were not found. Use **only problems** to show only those, and **Reload** after you change anything.
+are labels that were not found. A subject with a [per-subject config](#per-subject-settings) is checked with its own
+labels.
 
 ```wolfram
 CheckConfigLabels[dir]
@@ -1372,53 +1249,27 @@ same settings. The check compares these copies for each subject, from the source
 and `04_merged`. A red row means that a later copy is `not copied` (the folder of that step exists but has no copy),
 `unreadable`, or `differs from` the first copy. This normally means that the custom config was added or changed after
 that step ran. Run the steps again for that subject (delete their check files first, see
-[How to force a redo](#how-to-force-a-redo)) so the new settings are used. Only subjects that already have a folder in
-`02_rawdata` are listed.
-Every table scrolls when it has more than 15 rows. The scan time is shown, and **Reload** scans again.
+[Rerunning a step](#rerunning-a-step)) so the new settings are used. Only subjects that already have a folder in
+`02_rawdata` are listed. The same list is part of the report of `MuscleBidsReport`.
 
 ```wolfram
 CheckCustomConfigs[dir]
 ```
 
-The option `ProcessSubjects` limits the subjects, as for the other checks.
+### MuscleBidsConfig and MuscleBidsCheck
 
-### MuscleBidsConfig
+These two open several of the windows above as tabs, so you do not have to call each function (see the
+[overview figure](#overview-of-the-functions)).
 
-**Why:** to open the config and all checks on the config in one window, so you do not have to call each function.
-
-**When:** whenever you write or change the config, or want to know which subjects have a custom config.
-
-**What you see:** four tabs: **Full config**, **Custom config**, **Config labels** and **Protocol names**. **Full config**
-is `ViewConfig`, **Custom config** is `CheckCustomConfigs`, **Config labels** is `CheckConfigLabels` and **Protocol names** is `ViewProtocolNames`.
+- `MuscleBidsConfig[dir]`, for writing and changing the config: **Full config** (`ViewConfig`), **Custom config**
+  (`CheckCustomConfigs`), **Config labels** (`CheckConfigLabels`) and **Protocol names** (`ViewProtocolNames`).
+- `MuscleBidsCheck[dir]`, for what has been processed: **Convert output** (`CheckBidsOutput`), **Check files**
+  (`ManageCheckFiles`) and **Report** (see [MuscleBidsReport](#musclebidsreport)).
 
 ```wolfram
 MuscleBidsConfig[dir]
-```
-
-The option `ProcessSubjects` limits the subjects, as for the other checks.
-
-### MuscleBidsCheck
-
-**Why:** to open the checks of the processing steps in one window.
-
-**When:** whenever you want an overview of what has been processed, for example before you start a run.
-
-**What you see:** three tabs: **Convert output**, **Check files** and **Report**. **Convert output** is `CheckBidsOutput`,
-**Check files** is `ManageCheckFiles` and **Report** is described under [MuscleBidsReport](#musclebidsreport). The checks
-of the config are in [MuscleBidsConfig](#musclebidsconfig).
-
-```wolfram
-MuscleBidsCheck[dir]
-```
-
-To look at some subjects only:
-
-```wolfram
 MuscleBidsCheck[dir, ProcessSubjects -> {"001_1"}]
 ```
-
-If you ran the analysis without images (`BidsOutputImages -> "None"`), give the same option here, otherwise the
-**Check files** tab expects image check files that were never made.
 
 ### ManageCheckFiles
 
@@ -1439,8 +1290,6 @@ one data type, a last **All** subtab that lists all check files of that step tog
 - **Reload** rescans the study. Use it after you add subjects or datasets.
 - **Refresh status** reads the known check files again, without searching for new subjects or datasets. It is
   much faster than **Reload** on a large study. Use it after a step has run.
-
-If you ran the analysis with `BidsOutputImages -> "None"`, give the same option here (see `MuscleBidsCheck`).
 
 ```wolfram
 ManageCheckFiles[dir]
@@ -1490,8 +1339,7 @@ The steps are `"Protocol names"`, `"Config labels"`, `"Convert"`, `"Custom confi
 `.pdf`. The folder of the file is made when it does not exist, and the function returns the path of the file, or `$Failed`
 with a message (for example for a wrong step name or file extension).
 
-The options are the same as for `MuscleBidsCheck`: `ProcessSubjects` for some subjects only, and `BidsOutputImages ->
-"None"` when you ran the analysis without images.
+The options are the same as for the windows: `ProcessSubjects` and `BidsOutputImages`.
 
 ```wolfram
 MuscleBidsReport[dir, "All", FileNameJoin[{dir, "report.md"}], ProcessSubjects -> {"001_1", "002_1"}]
@@ -1522,8 +1370,7 @@ one button per step. Each button scans the study again, so the report is current
 
 The **Config** and **Check** tabs do not scan the study when the window opens, so on a large study the window appears at
 once. Open a subtab and press **Reload** to scan it the first time. Until then it says `Not scanned yet, press Reload`.
-On the **Check files** subtab, **Refresh status** only reads the check files that are already known, which is much
-faster than **Reload**. Use it after a step has run. Use **Reload** after you add subjects or datasets.
+After a step has run, use **Refresh status** on the **Check files** subtab (see [ManageCheckFiles](#managecheckfiles)).
 
 ```wolfram
 MuscleBidsGUI[dir]
@@ -1540,34 +1387,34 @@ window open while a step runs.
 The window always runs the steps on the folder you gave it, with the subject choice made in the **Run** tab. To use the
 other options of a step, for example the `ProcessSubjects` of a script, call the step in a notebook instead.
 
-### How the pipeline skips finished work
+## When something goes wrong
 
-Each finished step writes a small file that ends in `_check.json` next to its output. Before a step starts on a subject,
-it looks for this file. If the file exists and says the step is done, the subject is skipped. This is why running a
-pipeline twice does not repeat the work.
+### Rerunning a step
 
-The conversion step (`MuscleBidsConvert`) does not use check files. It converts every raw file it finds. By default
-(`DeleteAfterConversion -> True`) it deletes the raw files after converting them, so a second run finds nothing to do.
+When a step has finished a subject, it writes a small file that ends in `_check.json` next to its output. Before a step
+starts on a subject, it looks for this file, and if it says `done`, the subject is skipped. This is why running the
+pipeline twice does not repeat the work, and also why a changed `config.json` is not used by itself.
 
-The version check works like this:
+To run a step again for a subject, use one of these:
 
-- `VersionCheck -> False` (the default) skips finished data, whichever version of QMRITools made it.
-- `VersionCheck -> True` processes finished data again if it was made with an older version of QMRITools.
-
-### How to force a redo
-
-Changing `config.json` does not start a redo by itself. Delete the check files of the changed step **and of all later steps**, then run those steps again. There are two ways to make a step run again:
-
-1. **Delete the check files.** Open `ManageCheckFiles`, select the files of that step, and click **Delete selected**. Or
-   delete the `*_check.json` files in your file browser.
-2. **Use `VersionCheck -> True`** after you update QMRITools. Only data made with an older version is processed again.
+1. **Delete the check files** of the step **and of all later steps**, because they depend on its results. Open
+   `ManageCheckFiles`, select the files and click **Delete selected**, or delete the `*_check.json` files in your file
+   browser. Then run those steps again.
+2. **Use `VersionCheck -> True`** after you update QMRITools. Finished data is then processed again if it was made with
+   an older version. The default, `False`, skips finished data whichever version made it.
 
 ```wolfram
 MuscleBidsProcess[dir, VersionCheck -> True]
 ```
 
-`BidsDcmToNii` skips a subject when its `raw` folder is not empty. To redo that conversion, empty the `raw` folder of
-the subject and session (`02_rawdata/sub-.../ses-.../raw`) and run `BidsDcmToNii` again.
+The two conversion steps have no check files and no `VersionCheck`:
+
+- `BidsDcmToNii` skips a subject when its `raw` folder is not empty. To convert again, empty the `raw` folder of the
+  subject and session (`02_rawdata/sub-.../ses-.../raw`).
+- `MuscleBidsConvert` converts every raw file it finds. By default (`DeleteAfterConversion -> True`) it deletes the raw
+  files after converting them, so a second run finds nothing to do.
+
+When new subjects arrive, run the steps with `ProcessSubjects` set to the new subjects only.
 
 ### Log
 
@@ -1671,6 +1518,7 @@ Every key you leave out of `config.json` gets the value below. The blocks `Proce
   },
   "Analysis": {
     "MaskErosion": true,
+    "TractWeighting": false,
     "UseFilter": "None"
   }
 }
@@ -1688,20 +1536,13 @@ Notes:
 | --- | --- | --- | --- |
 | `DeleteAfterConversion` | `MuscleBidsConvert` | Delete the raw files after they are converted. Use `False` to keep them. | `True`; `True` or `False` |
 | `BidsTractographyMethod` | `MuscleBidsTractography` | Run only the tracking, or only the splitting of the tracts per muscle (needs an existing tract file). | `"Full"`; `"Full"`, `"Tractography"` or `"Segmentation"` |
-| `BidsOutputImages` | `MuscleBidsAnalysis` | Which images to make. `"None"` makes only the Excel files. | `"All"`; `"All"`, `"Quantitative"`, `"Segmentation"`, `"Tractography"` or `"None"` |
+| `BidsOutputImages` | `MuscleBidsAnalysis` | Which images to make; see [Choosing the pictures](#choosing-the-pictures-bidsoutputimages). | `"All"` |
 
 For example, to keep the raw files:
 
 ```wolfram
 MuscleBidsConvert[dir, ProcessSubjects -> All, DeleteAfterConversion -> False]
 ```
-
-### Dataset options
-
-| Key | What it is for |
-| --- | --- |
-| `Label` as a list with `Class` `"Volumes"` | Only the first label is used in the file name, all labels are joined. |
-| `Suffix` of a merge target | A `Merging` `Target` without a key finds its dataset through the suffix. Keep the `Suffix` of a Dixon dataset equal to the folder name `dix`. |
 
 ### Process options
 
@@ -1754,15 +1595,9 @@ Change these only when the defaults do not fit your data.
 | `TractMethod` | How each tracking step is calculated. The higher methods are more accurate on curved tracts and slower. | `"RK4"`; `"Euler"`, `"RK2"`, `"Heun"`, `"RK3"`, `"Heun3"` or `"RK4"` |
 | `TractInterpolation` | How the tensor is read between voxels during tracking. `0` uses the nearest voxel, `1` interpolates linearly (smoother tracts, slower). | `0`; `0` or `1` |
 | `SegmentLength` | Shortest and longest tract (mm) that is kept when the tracts are split per muscle. | `[15, 500]` |
-| `BoneLabel` | Highest muscle label of the segmentation, written the same way as the analysis `Segmentation.Labels`: a number, a word, or both. The word gives the number for that model: `"Body"` 799, `"Legs"` 90, `"Shoulder"` 30, `"Arm"` 12. Labels `1` up to this number are muscles; the next 33 labels are bones (only used to draw the 3D picture of the tracts). Use `"Legs"` with the older leg models (`"Legs"`, `"LegsHip"`, `"LowerLegs"`). | `"Body"` |
+| `BoneLabel` | Highest muscle label of the segmentation, written the same way as the analysis `Segmentation.Labels`: a number, a word, or both (the numbers per word are in the table under [Segmentation](#segmentation)). Labels `1` up to this number are muscles; the next 33 labels are bones (only used to draw the 3D picture of the tracts). Use `"Legs"` with the older leg models (`"Legs"`, `"LegsHip"`, `"LowerLegs"`). | `"Body"` |
 | `HarmonicDenoise` | Set to `true` to denoise the tensor with a harmonic filter before the tracts are split per muscle. Needs `Segmentation`. It creates extra files. | `false` |
 | `FlipPermute` | Flips or swaps the axes of the tensor when the orientation of your scanner differs from the standard. Format `[[flipX, flipY, flipZ], [axis1, axis2, axis3]]`. It is a separate setting from `FlipPermute` in `Process`, which corrects the gradient directions before the tensor is fitted. | `[[1,1,1],["x","y","z"]]` |
-
-### Per-subject file names
-
-| Key | What it is for | Default / allowed values |
-| --- | --- | --- |
-| `sub-<subject>_ses-<session>_config.json` | Same as `config.json`, but with the subject and session in the name, for example `sub-001_ses-2_config.json`. `config.json` is used first if both exist. | none |
 
 ### Analysis options
 

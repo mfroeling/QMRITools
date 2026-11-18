@@ -6,9 +6,10 @@ anything in that file.
 
 - Code state: as of 2026-09-22, including the `Dixon-A` work.
 - Line numbers (`L123`) drift over time. Grep for the function name if a number no longer matches.
+- Diagrams of the call graph (who calls what, and why): [MuscleBidsCodeMap.md](MuscleBidsCodeMap.md).
 - Index of all agent docs: [AGENTS.md](../QMRITools/AGENTS.md). Code style for this repo: [CodeStyle.md](CodeStyle.md).
   The segmentation step (§6.5) calls `SegmentData`: [SegmentationTools.md](SegmentationTools.md).
-- The user manual is [QMRITools/BIDS Example/BIDS-config.md](../QMRITools/BIDS%20Example/BIDS-config.md) (v2.1, 2026-11-02, for analysts new to Mathematica; has sections for `MuscleBidsReport` and `MuscleBidsGUI`),
+- The user manual is [QMRITools/BIDS Example/BIDS-config.md](../QMRITools/BIDS%20Example/BIDS-config.md) (v2.2, 2026-11-18, for analysts new to Mathematica, ordered from beginner to expert: each topic is explained once and linked elsewhere, figures in `figures/`, troubleshooting in "When something goes wrong"),
   built to `BIDS-config.pdf` in the same folder with `python agents/build_pdf.py` (pandoc + headless Chrome, style in
   `agents/manual.css`). It replaces `BIDS-config.docx` (v1.1). **Update the manual when a config key, default or check/view
   function changes, and rebuild the PDF.** Section 9 lists how the old docx differed from the code (history). When
@@ -225,7 +226,12 @@ It has three forms:
    - Without `inRoot` it returns one merged name `.nii`. With `inRoot` it returns the per-stack derived names of the
      target dataset, used for `tarStack` in Merge.
    - Non-keyed targets pick the target dataset via `#["InFolder"] === First[suf]`. That only works when the dataset's
-     `Suffix` equals its BIDS folder (in practice `dix`). See Q2.
+     `Suffix` equals its BIDS folder (in practice `dix`). It now matches `Type` too, see Q2 (fixed).
+
+### Relation to BIDS and ORMIR-MIDS
+
+Where these names and the sidecar fields deviate from BIDS and ORMIR-MIDS, and the possible fixes, is in
+[BidsCompliance.md](BidsCompliance.md).
 
 ---
 
@@ -241,6 +247,7 @@ associations merge.
 | --- | --- | --- |
 | `folders.{dicomData,rawData,derivedData,mergeData,analysis}` | all | defaults `01_sourcedata` … `05_analysis` |
 | `conversion.Version` | BidsDcmToNii → `DcmToNii[UseVersion->]` | `1` (default on macOS; the default on other systems is `"Own"`) → asset `DcmToNii`; anything else → asset `"DcmToNii-"<>ToString[v]` (for example `"Own"`, `"17"`) |
+| `conversion.MergeEchos` | BidsDcmToNii → `DcmToNii[MergeEchos->]` (dcm2niix `-m y`/`-m n`) | `True`; read with `Lookup` so a `conversion` block with only `Version` still works. Set `false` for classic (one file per slice) Philips Dixon, e.g. after a PACS/XNAT export: `-m y` stacks all files of a series before dcm2niix checks real/imaginary, so the 12 R/I echo volumes end up in one file with an unreliable order. Enhanced MR (one multiframe file) splits within the file either way |
 | `datasets` | steps 2–6 | one entry per dataset; the entry name becomes `Key` |
 | `analysis` | step 7 | **flat** (contains `Analysis`, so it is wrapped as `{"Default"->...}` with no key) or **nested** (one block per name, where the name becomes the key used in file names) |
 
@@ -248,7 +255,7 @@ associations merge.
 
 | Key | Required for | Default / derived |
 | --- | --- | --- |
-| `Label` | Convert (mandatory) | string or list of ProtocolNames (without `WIP `). Also used to glob files in Process/Merge (`*<StringStrip[label]>*.json`) |
+| `Label` | Convert (mandatory) | string or list of ProtocolNames (without `WIP `). Also used to glob files in Process/Merge (`*<stack name>*.json`). A name repeated in one dataset's list (not `Volumes`) is the n-th series with that ProtocolName by `SeriesNumber`, stack name `StringStrip[label]<>n` (`BidsStackNames`/`BidsStackIndex`); a name used once keeps the old behaviour (all matches, `CheckPos` takes the last). If the series count differs from the repeat count the dataset is skipped for that subject with a log line |
 | `Type` | all | must be a `bidsTypes` key, else message and folder `miss` |
 | `Class` | – | default `"Volume"`. Volume needs a string Label; list classes need a list |
 | `Suffix` | – | default `""` |
@@ -359,18 +366,27 @@ missing, including the custom patches. Analysis does not use custom configs.
 
 - Loops over **all directories** in dicomData, not `sub-` folders. `ResetLog[]` runs once per run.
 - Output `rawData/sub-x/ses-y/raw`. **Skips if that folder is not empty.** To redo a subject, empty `raw`.
-- `DcmToNii[{in, out}, MonitorCalc->False, UseVersion->conversion.Version]`. On Windows the naming is
+- `DcmToNii[{in, out}, MonitorCalc->False, UseVersion->conversion.Version, MergeEchos->conversion.MergeEchos]`. On Windows the naming is
   `%s_%t_%p` (series_time_protocol). `GetProtocolNames` hides files whose name contains the `_hhmmss.fff` time
   pattern.
 
 ### 6.2 MuscleBidsConvert → `MuscleBidsConvertI` (L1178)
 
-For each Label (`nameIn`), it globs `*<label with spaces→_>*.json` in the `raw` folder, imports all json files, and
+For each Label (`nameIn`), it globs `*<label with spaces→_>*.json` in the `raw` folder (a repeated Label takes the files of its n-th series from `BidsSeriesFiles`, checked against the repeat count before the loop), imports all json files, and
 selects files with `GetJSONPosition[json, {{key, value}..}, sortKey]` (case-insensitive, `WIP` stripped). If several
 files match, `CheckPos` takes the **last** one and logs a warning. Output goes to the BIDS type folder with
 `MergeJSON[{info, infoExtra}]`, where `infoExtra` holds the conversion software/version plus
-`Volume/Stack/Repetition/OverLap...` and `ForthDimension`/`DataClass`. Used raw files are removed with
+`Volume/Stack/Repetition/OverLap...` and `FourthDimension`/`DataClass`. Used raw files are removed with
 `DelFiles[..., del]` (nii, nii.gz, json, bval, bvec).
+
+**Input vs stored output.** The *input* is the dcm2niix output in `raw`, which (as BIDS requires) is one 3D file per
+echo and per image type. Everything below that says "per-echo files" or "single-echo files" describes this input. The
+*stored output* in the type folders is always **one 4D NIfTI per image type with the echoes in the 4th dimension**
+(`{z, t, y, x}` in the code): magnitude, phase, real and imaginary each in their own file (suffix none, `ph`, `real`,
+`imag`), and the json gets the `EchoTime` list (seconds), `EchoNumber`, and `FourthDimension: "EchoTime"` (`"Diffusion"`
+for dwi). Scanner-reconstructed Dixon maps (`wat`, `fat`, `inph`, `outph`) are stored one map per file. After
+conversion the per-echo input files are deleted (`DeleteAfterConversion`). This matches the ORMIR-MIDS multi-echo
+layout; see [BidsCompliance.md](BidsCompliance.md).
 
 | Type | Method / condition | What it does | Output suffixes |
 | --- | --- | --- | --- |
@@ -378,20 +394,21 @@ files match, `CheckPos` takes the **last** one and logs a warning. Output goes t
 | | `Dixon-P` + `Types` matrix | separate files matched by last `_` token | `Types[[All,1]]` |
 | | `Dixon-S` | Siemens, `SeriesDescription == label_tag` | `Types[[All,1]]` |
 | | `Dixon-B` | Philips single 4D (mag/real/imag/phase interleaved). Needs `EchoTime`. Special case when `ImageType` ends in `FFE` (B0-only) | `""`, `ph`, `real`, `imag` |
-| | `Dixon-A` | **auto**: if any json `ImageType` ends in WATER/FAT/IN_PHASE/OUT_OF_PHASE → recon path; otherwise raw MIXED/PHASE/REAL/IMAGINARY per echo, sorted by `EchoNumber`, scaled `1000/2047`, phase `π(x-2047)/2047` | `wat fat inph outph`, or `"" ph real imag` |
-| | `Dixon` | per-echo files per ImageType (Mixed/Phase/Real/Imaginary). Philips R12+: `ORIGINAL` (GE-like reorder) vs `DERIVED` (motor/twitch data reorder with RotateRight). Older: Transpose | `""`, `ph`, `real`, `imag` |
+| | `Dixon-A` | **auto**, two gated paths: recon path if any json `ImageType` ends in WATER/FAT/IN_PHASE/OUT_OF_PHASE; raw path if any ends in MIXED/PHASE/REAL/IMAGINARY or there are no recon tags (old fallback). A series with both (classic 5.7 GRE Dixon after `-m n`) gets both; before 2026-11-18 it got the recon only, so Process now fits it (branch 2 overwrites branch 1). Raw: MIXED/PHASE/REAL/IMAGINARY per echo, sorted by `EchoNumber`, scaled `1000/2047`, phase `π(x-2047)/2047` | `wat fat inph outph`, or `"" ph real imag` |
+| | `Dixon` | reads the per-echo input files per ImageType (Mixed/Phase/Real/Imaginary), writes one 4D file per ImageType. Philips R12+: `ORIGINAL` (GE-like reorder) vs `DERIVED` (motor/twitch data reorder with RotateRight). Older: Transpose | `""`, `ph`, `real`, `imag` |
 | | other Method | **no default branch, silently nothing** | – |
 | dwi | Class `Volumes` | several labels joined (`ConcatenateDiffusionData`) into one file named after the first label | Suffix |
 | | other | Siemens → match `SeriesDescription`, else `ProtocolName` | Suffix (+ `.bval/.bvec`, `Offset` in json) |
 | mese | `Process.EchoTime` present **and** dcm2niix that is not consistent (`BidsDcmConsistentQ`) | single 4D nii (`ImportNiiT2` unless json has EchoTime+EchoTrainLength or Siemens). TE = `EchoTime·(1..n)` | Suffix |
-| | otherwise | single-echo files sorted by `EchoNumber`, cut to `AcquisitionNumber`/`EchoTrainLength`. consistent dcm2niix: plain `Transpose` for every release, with a sanity check; older dcm2niix and `SoftwareVersions >= 12`: the R12 reorder | Suffix |
+| | otherwise | reads the single-echo input files sorted by `EchoNumber` and writes one 4D file, cut to `AcquisitionNumber`/`EchoTrainLength`. consistent dcm2niix: plain `Transpose` for every release, with a sanity check; older dcm2niix and `SoftwareVersions >= 12`: the R12 reorder | Suffix |
 | anat / other | – | "Unknown datatype for conversion" | – |
 
 **mese and the dcm2niix version** (`bidsDcmOwn`, `bidsDcmConsistent`, `BidsDcmConsistentQ`, next to `MergeJSON`). The
 layout of the per-echo files used to depend on the Philips release because older dcm2niix wrote release 12 data in
 another order, so the mese conversion switched on `SoftwareVersions >= 12`. The dcm2niix builds shipped with
 QMRITools (`dcm2niix-own.exe`, json stamp `v1.0.20260915`, and the official `dcm2niix-20261029.exe`, which contains
-the change) write one file per echo in the same layout for every release and never a 4D nii. The conversion therefore
+the change) write their output (the conversion's input) as one file per echo in the same layout for every release,
+never as a 4D nii; the conversion stacks these into the stored 4D file. The conversion therefore
 decides on the json `ConversionSoftwareVersion` (build date, `"v1.0.20260915"` -> 20260915; a missing or unparsable
 key counts as 0 = older). Consistent means the date is `bidsDcmOwn` (20260915) or at least `bidsDcmConsistent`
 (20261029, so every later build too): official builds in between do not have the change. Checked: the official
@@ -421,7 +438,7 @@ output: declare the variable in the `Block` list, give it exactly the suffix nam
 | Type | Method | Check file | Outputs |
 | --- | --- | --- | --- |
 | megre/tse | branch 1: `Dixon-S`, `Dixon-P`, `Dixon-A` (recon files present) | `outFile` "done" | the found `Types`, plus `r2star` (if t2star), `watfr`/`fatfr` (from fatfr file or `DixonToPercent`) |
-| | branch 2: `Dixon`, `Dixon-B`, `Dixon-A` (real/imag or mag/ph files present) | same | `real imag mag ph b0i t2stari b0 t2star r2star inph outph wat fat watfr fatfr itt res snr sig`, plus for Dixon/Dixon-A: `phbp phi phbpt phii phbpi t2prime r2prime` (Dixon-A fits with `DixonFixT2 -> True`: `r2prime` is the fit, `r2star` = R2' + FF-weighted intrinsic R2, DixonTools.md Q20) (and `dbond` if >6 echoes, CallDB fat model) |
+| | branch 2: `Dixon`, `Dixon-B`, `Dixon-A` (real/imag or mag/ph files present). When branch 1 also found recon files, its maps are kept (`recOut`, copied before branch 2 overwrites the variables) and exported after a successful fit as `<type>scan` with their own json (`DixonSource: ScannerRecon`), listed in the check file `Outputs` | same | `real imag mag ph b0i t2stari b0 t2star r2star inph outph wat fat watfr fatfr itt res snr sig`, plus for Dixon/Dixon-A: `phbp phi phbpt phii phbpi t2prime r2prime` (Dixon-A fits with `DixonFixT2 -> True`: `r2prime` is the fit, `r2star` = R2' + FF-weighted intrinsic R2, DixonTools.md Q20) (and `dbond` if >6 echoes, CallDB fat model) |
 | dwi | *prep* (always, even without Method) | `outFile_prep` "done" | `raw den reg filt sig snr0 snr` (`reg`/`filt` with bval/bvec) |
 | | `DTI` (reruns when prep ran this call) | `outFile` "done" | `data tens res out s0 l1 l2 l3 md fa rd` + IVIM `mean adci fri s0i` + `field` (grad corr) + `fasc fascm norm` |
 | mese | `EPGT2` | `outFile` "done" | `data t2w t2f b1 wat fat fatfr res` |
@@ -671,7 +688,9 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   and the conditions under which a worker writes them (Process: method per type, Analysis `img`: not with
   `BidsOutputImages -> "None"`) are rebuilt in `BidsCheckFiles` with the same calls the workers use (section 7).
   **If a worker's check-file name or condition changes, update `BidsCheckFiles` too.** Process expectations come from the raw files on disk, so a missing raw file shows up
-  in `CheckBidsOutput`, not here. Check files from old naming (for example no dataset key) are not listed.
+  in `CheckBidsOutput`, not here. Merge, Segment and Tractography are only expected for a dataset that has raw input
+  files for that subject (since 2026-11-18; before, a subject without for example a DTI scan always showed missing
+  Merge and error Segment rows). Analysis is still expected per analysis entry. Check files from old naming (for example no dataset key) are not listed.
 - **Custom configs** (`CheckCustomConfigs[dir]`, also tab **Custom config** of `MuscleBidsConfig`, report step `"Custom configs"`): a per-subject config
   (patch on `datasets`, source `<dicomData>/<sub>_<ses>/config.json`, copied by every step as `<sub-x_ses-y>_config.json`
   to rawData, derivedData and mergeData; analysis does not use it) is listed per subject with one row per leaf setting
@@ -724,6 +743,20 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
   A `config.json` edited during a run is picked up per subject, and the child loads the package from disk, so it can be
   newer than the code in the notebook kernel. If the front end is set to "Launch parallel kernels: At startup", every
   child starts a full pool of its own, so use "When needed" or "Manual".
+- **Command line** (`scripts/MuscleBids.wls`, user help in `scripts/Readme.md`): runs the steps like `BidsStartStep`
+  but in the script kernel, one after the other, each wrapped in `CheckAbort[Check[Quiet[step[dir, opts],
+  FrontEndObject::notavail], msgs = True], $Aborted]` (the `Quiet` is needed for the same `ShowLog[]` reason; `Check`
+  ignores quieted messages). Stdout only gets the `MonitorFunction` lines, `AddToLog` writes the log file only. Each
+  step gets `FilterRules[opts, Options[step]]`. It uses two public wrappers: `CheckBidsSubjects[dir, subs]` (per name the
+  `sub-x_ses-y` sessions it selects in the dicom folder names, with method `"Sub"`, and in rawData, with
+  `FilterBidsSubjects`/`SubNameToBids`, so a new subject that is only in dicomData is valid) for the input check, and
+  `MuscleBidsSummary[dir, step]` (`BidsReportData` counted per step and class, `"Checked"` as in the report) for the
+  summary and the exit code. `MuscleBidsReport` and `MuscleBidsSummary` share `BidsReportArgsQ[fun, dir, step]` for the
+  folder and step check (`fun::dir`, `fun::step`). Exit codes: 0 ok, 1 invalid input, 2 a step aborted (chain stops),
+  3 messages, or error/unreadable/missing (outdated with `--versioncheck`) in a check step that ran; Convert and the
+  config steps never set 3 because a missing label is often normal. The script checks that the two wrappers exist, since
+  it lives in the repo and can meet an older release paclet. The step and value lists (`steps`, `methods`, `images`)
+  repeat the GUI's `steps` and `optVals`: update both when a step or option value is added.
 - Most "nothing happened" cases are a **name mismatch**: a Target list that does not resolve to an existing file.
   Set `$Debug = "Bids"` and compare the printed expected path with the files on disk.
 
@@ -754,7 +787,7 @@ These were verified by reading the code. The ones marked ✔ were also confirmed
 | # | Where | Issue |
 | --- | --- | --- |
 | Q1 ✔ | `BuildBidsNameFromConfig` L641 vs `CheckDataDescription` L895 | `Key` is `StringStrip`ped (`DIX_OS`→`DIXOS`), but `isKey` compares the **unstripped** `First[target]`. Dataset names containing `_ - . space` are therefore never recognised as keys in Merge/Segment/Tractography targets (the boch config). Analysis strips correctly. Both lines come from the same refactor commit (509747d6). |
-| Q2 | `BuildBidsNameFromConfig` L661 | Non-keyed targets resolve the target dataset through `InFolder === First[suf]`, which only works when Suffix == BIDS folder (`dix`). |
+| Q2 ✔ | `BuildBidsNameFromConfig` | Non-keyed targets resolve the target dataset through `InFolder === First[suf]`, which only works when Suffix == BIDS folder (`dix`). Fixed 2026-11-18: match `InFolder` **and** `Type` first (GRE `megre` and TSE `tse` both in `dix` used to resolve to the first dataset), falling back to the old folder-only match when that finds nothing, so targets that worked before resolve the same. |
 | Q3 ✔ fixed | Merge L2606 | Reads `Merging.SplitRegistration` (default True). The example configs wrote `"Split"`, so split registration was always on. Example configs renamed to `SplitRegistration` on 2026-10-29, so the `false` values there now take effect. |
 | Q4 ✔ fixed (configs) | Analysis L3308 | `MaskErosion` is read from `Analysis`, not `Analysis.Options`. The example configs now write `MaskErosion` directly under `Analysis` (2026-10-29); their dead `TractWeigthing` key was dropped. `TractWeighting` is read from `Analysis` since 2026-11-14 (before it was hard-coded False, and its rounded density mask was a cut-off at 0.5× the median, not a weighting). |
 | Q5 | Analysis L3319 | Key entity is `stk` only if `Analysis.Class == "Stacks"`. Merge uses the **dataset** Class. With Stacks + duplicates (boch config) and no `Analysis.Class`, the analysis looks for `chunk-KEY` while the files are named `stk-KEY`. |
@@ -801,7 +834,7 @@ on the current names.
 | --- | --- | --- |
 | `debugBids`, `dataToLog`, `compress` | L195–208 | debug/log helpers, compression flag |
 | `WipStrip`, `StringStrip` | L240–243 | remove `WIP`, remove `-_. ` |
-| `BidsType`, `BidsValue`, `BidsString`, `GetClassName` | L250–289 | entity helpers |
+| `BidsType`, `BidsValue`, `BidsString`, `GetClassName`, `BidsStackIndex`, `BidsStackNames`, `BidsSeriesFiles` | L250–380 | entity helpers; the last three map repeated Labels to numbered stacks and series |
 | `SubNameToBids` | L296 | sub/ses from a name or folder (subject matching) |
 | `PartitionBidsName`, `PartitionBidsFolderName` | L340, L366 | name → parts |
 | `GenerateBidsName/FolderName/FileName` | L380–419 | parts → name/path |
@@ -818,6 +851,7 @@ on the current names.
 | `ManageCheckFiles` / `BidsCheckFilesView`, `BidsScanChecks` / `BidsCheckStatus` / `BidsReadCheck`, `BidsCheckFiles` | after `MuscleBidsCheck` | check-file manager, scan of the expected check files and their status (section 8) |
 | `BidsCustomRows`, `BidsCustomStages` / `BidsCustomRead` / `BidsCustomSettings` / `BidsCustomProblem`, `BidsCustomItems` / `BidsCustomInfo` (report side), `BidsConfigFile` | after `BidsPresentRows` | custom config list, stage comparison and its report rows (section 8) |
 | `BidsReportData` / `BidsReportLayout` / `BidsReportMarkdown` / `BidsReportPdf`, `BidsCheckClass`, `BidsSessionFolder` / `BidsLogFile`, `MuscleBidsReport`, `BidsReportView` / `BidsReportExport` | after `BidsCheckFiles` | problem report export and its tab (section 8) |
+| `BidsReportArgsQ`, `MuscleBidsSummary`, `CheckBidsSubjects` | after `MuscleBidsReport` | shared dir/step check, problem counts and subject check for `scripts/MuscleBids.wls` (section 8) |
 | `MuscleBidsGUI`, `BidsStartStep`, `BidsStepStatus` | after `BidsCheckFiles` | pipeline GUI, child-kernel start of a step, status poll (section 8) |
 | `CheckDataDescription` | L874, L904 | validate and complete dataset descriptions |
 | `BidsFolderLoop` | L986 | the shared driver |

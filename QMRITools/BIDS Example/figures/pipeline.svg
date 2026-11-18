@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 552" width="680" height="552" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b5cad"/></marker>
+  </defs>
+  <rect width="680" height="552" rx="8" fill="#ffffff"/>
+  <g font-size="12.5" fill="#1f2933">
+    <!-- config, read by every step -->
+    <rect x="20" y="246" width="140" height="60" rx="6" fill="#fff6e5" stroke="#f0b429"/>
+    <text x="90" y="271" text-anchor="middle" font-weight="600">config.json</text>
+    <text x="90" y="289" text-anchor="middle" font-size="11.5" fill="#5f6c7b">read by every step</text>
+    <path d="M160,276 H180 M180,42 V510" stroke="#f0b429" stroke-dasharray="4 3" fill="none"/>
+    <path d="M180,42 H200 M180,120 H200 M180,198 H200 M180,276 H200 M180,354 H200 M180,432 H200 M180,510 H200" stroke="#f0b429" stroke-dasharray="4 3"/>
+
+    <!-- folder states -->
+    <g fill="#f4f6f9" stroke="#c9d2dc">
+      <rect x="200" y="20" width="420" height="44" rx="6"/>
+      <rect x="200" y="98" width="420" height="44" rx="6"/>
+      <rect x="200" y="176" width="420" height="44" rx="6"/>
+      <rect x="200" y="254" width="420" height="44" rx="6"/>
+      <rect x="200" y="332" width="420" height="44" rx="6"/>
+      <rect x="200" y="410" width="420" height="44" rx="6"/>
+      <rect x="200" y="488" width="420" height="44" rx="6"/>
+    </g>
+    <g font-weight="600">
+      <text x="216" y="38">01_sourcedata</text>
+      <text x="216" y="116">02_rawdata / raw</text>
+      <text x="216" y="194">02_rawdata / dix, dwi, quant, anat</text>
+      <text x="216" y="272">03_derivatives</text>
+      <text x="216" y="350">04_merged</text>
+      <text x="216" y="428">04_merged / seg</text>
+      <text x="216" y="506">05_analysis</text>
+    </g>
+    <g font-size="11.5" fill="#5f6c7b">
+      <text x="216" y="55">DICOM, one folder per subject and session</text>
+      <text x="216" y="133">NIfTI and json files, named as on the scanner</text>
+      <text x="216" y="211">the scans named in the config, with BIDS names</text>
+      <text x="216" y="289">parameter maps per stack (Dixon, DTI, T2), in scan space</text>
+      <text x="216" y="367">stacks joined, all scans in one common space</text>
+      <text x="216" y="445">+ muscle segmentation and fibre tracts</text>
+      <text x="216" y="523">Excel sheet and images per subject, All_&lt;date&gt;.xlsx</text>
+    </g>
+
+    <!-- steps -->
+    <g stroke="#0b5cad" stroke-width="1.6" marker-end="url(#a)">
+      <path d="M232,64 V96"/>
+      <path d="M232,142 V174"/>
+      <path d="M232,220 V252"/>
+      <path d="M232,298 V330"/>
+      <path d="M232,376 V408"/>
+      <path d="M232,454 V486"/>
+    </g>
+    <g font-family="Consolas, Menlo, monospace" font-size="12" fill="#0b5cad">
+      <text x="246" y="85">1  BidsDcmToNii</text>
+      <text x="246" y="163">2  MuscleBidsConvert</text>
+      <text x="246" y="241">3  MuscleBidsProcess</text>
+      <text x="246" y="319">4  MuscleBidsMerge</text>
+      <text x="246" y="397">5  MuscleBidsSegment, 6  MuscleBidsTractography</text>
+      <text x="246" y="475">7  MuscleBidsAnalysis</text>
+    </g>
+  </g>
+</svg>
