@@ -85,21 +85,23 @@ Then, after the loop:
   θ0 from the triplets modulo 0.25 cycles. With ΔTE = 1 ms the two are the same degree of freedom: (B0 − 500 Hz,
   θ0 − 0.25) gives the same signal. The unwraps do not fix either between disconnected objects (the legs), so per object
   (the largest is the reference), on data with phases and decay (R2* clipped to [0, 200]) removed:
-  1. **θ0**: the reference gets the quarter cycle that brings its mean closest to 0 (θ0 is small, |θ0| < 0.1 in all
-     clean legs). Every other object is aligned to it with a plane fit of θ0 in each object, evaluated at the midpoint
-     between the two object centres (θ0 is smooth over the gap; left-right gradient ≈ 0.07–0.1 cycles between the leg
-     centres, so object means are not enough). A quarter-cycle shift flips every other echo (`Exp[-I π/2 k bip]`).
-  2. **B0 parity** per object (`AliasParity`): the water-fat residual (free complex amplitudes) of the even and the odd
-     alias, **each minimised per voxel over ±80 Hz**. Without that refinement the test is wrong when the start B0 is
-     biased: at 3 T the alias (500 Hz) and the fat shift (434 Hz) are only 66 Hz apart, so with a 44 Hz bias "swapped fat
-     22 Hz off" fits better than "water 44 Hz off" (K:\MOTION 013 calf: 66% of voxels voted for the wrong alias, refined
-     92% right; margins on 4 stacks 2.5–3.8×).
-  3. **B0 alias** within that parity (k ∈ −2…2): the reference takes the smallest mean field, the others the field
-     closest to the reference at the midpoint (plane fits again).
-  History: a per-object residual choice at the start field (first version) failed in the motion study ses-005 calf
-  (1.00 vs 1.28). The next version (5.3.0) aligned the objects by mean B0 and chose one global alias from the summed
-  residual. That swapped a whole calf in 4 of 15 K:\MOTION subjects (Q25): one leg carried a θ0 alias (needs the odd
-  B0 alias, the global choice forced even), or the residual at the biased start field picked the wrong alias.
+  1. **θ0** (`AlignBipolar`, `BipolarPlane`, before `SelectAlias`): θ0 is never unwrapped over the gap. Per object a
+     linear phase is fitted to the echo triplets `S_n² / (S_{n−1} S_{n+1})` (slopes from neighbour products, which do not
+     wrap; offset from the triplets around the object centroid), and the θ0 map is wrapped to within half a cycle of
+     it. The triplets hold no B0 and no φ0, so this is the absolute θ0 per object (matches the raw triplet θ0 within
+     0.01–0.02 on 30 stacks). Why: the true θ0 differs between the legs (right ≈ −0.05, left ≈ +0.07 cycles on this
+     scanner), half the 0.25 ambiguity, so unwrapping or aligning across the gap is ill-posed. Anchoring the plane at the
+     grid corner instead of the centroid gave the equivalent pair (θ0 + 0.25, B0 − 500 Hz) on one wide object.
+  2. **B0 parity** (`AliasResidual`): the water-fat residual (free complex amplitudes) of the even and the odd alias,
+     **each minimised per voxel over ±min(0.18 fs, 0.2/dt)** (78 Hz at 3 T; the windows must not overlap). Without that
+     refinement the test is wrong when the start B0 is biased: at 3 T the alias (500 Hz) and the fat shift (434 Hz) are
+     only 66 Hz apart, so with a 44 Hz bias "swapped fat 22 Hz off" fits better than "water 44 Hz off". One global
+     parity from the residual summed over the objects, after aligning the objects to the reference by mean B0 (B0
+     differs much less than 500 Hz between the legs).
+  3. **B0 alias** within that parity (k ∈ −2…2): the reference takes the smallest mean field.
+  History: per-object residual at the start field (ses-005 calf failed); 5.3.0 global alias with mean alignment and a
+  common θ0 (Q25: 4 of 15 calves swapped); 11-16 per-object θ0/B0 with plane fits at the midpoint (patchy swaps and
+  0.5 pp left-right FF bias in K:\MOTION, Q27).
 - T2* from a log fit of the magnitude from the first echo after 0.75 · in-phase period.
 - **`GraphCutField`** (`DixonGraphCut`, default 3 = block size in voxels, `False` = off; Q15): chooses per block between
   the water and fat solution of B0, on data with θ0 and decay (R2* clipped to [0, 200]) removed.
@@ -113,7 +115,12 @@ Then, after the loop:
      field, so with a convex penalty the binary problem is submodular and one minimum cut solves it globally.
   4. Cut with `FindMaximumFlow` + residual-graph reachability. `FindEdgeCut` silently returned an empty cut on
      ~120k nodes, do not use it.
-  5. The block field (nearest-neighbour upsampled) replaces B0, then one Bydder step re-estimates φ0 per voxel.
+  5. Output per voxel (Q27): the start field moved by the step to the chosen candidate (`b0s`), blended with the block
+     field (`cand`) by the fat fraction at the block field, and fully the block field where the two differ by more
+     than fs/4 (ramp from fs/8). Reason: the block minimum is biased in lean muscle (≈ −35 Hz in K:\MOTION 069, enough
+     for the CallDB IDEAL fit to slide into the glycerol peak and give FF 0.97 patches), while the start field is biased
+     in fat (marrow 142: +55…80 Hz, marrow swapped without the cut) and can be far off in steep fields (107 ankle leg:
+     +93 Hz, whole leg swapped). Then one Bydder step re-estimates φ0 per voxel.
   Cost on 320 × 320 × 31: ds 2 ≈ 33 s (264k blocks), ds 3 ≈ 11 s, ds 4 ≈ 8 s (≈ 5 s fixed data term). ds 2, 3 and 4
   differ in 0.2% of voxels; λ (smoothness weight) 0.1–10 changed little, so it is fixed at 1.
 - φ0 gets one global sign correction (phase of the summed W+F), not a per-voxel one: per voxel it soaks up the B0 fat
@@ -200,6 +207,8 @@ Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fa
 | Q22 | left-right FF gradient | **Open (research).** The residual left-right FF differences (paper: 0.5–0.64% unconstrained) form a smooth gradient along the readout (left-right). Candidates: odd/even **amplitude** alternation of the bipolar readout (not modelled; Yu 2010 corrects it), coupling of the fitted θ0 with FF. B1 in the T1 correction gives only ±0.16% FF. Chemical-shift displacement (0.31 px per echo, alternating) is an edge effect and does not explain a smooth gradient. Not affected by the Q1–Q12 fixes: motion study ses-005/006, 32 swap-free muscles each, mean Dixon R−L FF −0.54% / −1.00% new vs −0.53% / −0.99% old (left higher in 20/32 and 26/32), while T2-mapping FF of the same muscles gives R−L +0.03% / +0.02% (15/32) and correlates weakly with the Dixon difference. So it is a Dixon bias, not anatomy. Next test: odd/even amplitude map. |
 | Q23 ✔ | `Unwrap` family | **Fixed.** Unused Block variables removed. `UnWrapC` merges groups with full-array operations; a union-find version gave identical output but only 7.2 → 6.8 s on two calf stacks (`UnwrapSplit`, 3D), so it was not kept. Used only by `Dixon-B`. |
 | Q25 ✔ | `SelectAlias` regression (5.3.0) | **Fixed (2026-11-16).** K:\MOTION, 15 subjects, 5.3.0 vs the July run: a whole calf swapped in MOTION003, 009, 013 and 014 (FF 2–4% → 15–98%, T2* 35–100 ms; EPG FF normal). Not caused by `DixonGraphCut` or `DixonFixT2` (swap identical with both off). Two mechanisms, both from the global alias with mean-B0 alignment (§3): a θ0 quarter-cycle alias in one leg (014, 009, 003; θ0 jump 0.15–0.21 cycles at the gap midpoint), and the residual at the fat-biased start field picking the wrong alias (013). Now per object: θ0 and B0 aligned by plane fits at the midpoint, parity from the field-refined residual. All four stacks fixed. Validation in §8. |
+| Q27 ✔ | θ0 per leg, graph cut bias | **Fixed (2026-11-23).** K:\MOTION 161 subjects after the Q25 fix: patchy or whole-leg calf swaps in 019, 023, 026, 029, 063, 064, 084, 106, 128, 129, 137, 142, and a +0.5 pp left-right calf FF bias in the 20–22 Nov runs (EPG FF symmetric). Cause 1: θ0 aligned over the gap, but the legs' true θ0 differ by ≈ 0.13 cycles (half the ambiguity), so one leg ended 0.10–0.21 off; now absolute per object from the triplets (`AlignBipolar`, §3). Cause 2: the graph cut replaced B0 by its block minimum, biased in lean muscle (069, 064 patches); now blended with the start field (§3 `GraphCutField` step 5). 31 stacks all symmetric and clean (§8). |
+| Q26 ✔ | BIDS `Dixon-B` single limb | **Fixed (2026-11-23).** `Dixon-B` always used `UnwrapSplit`, which assumes two legs (`FindMiddle`). On arm data (SMA AMC) it warned `FindMiddle::mid` and cut at the middle column, so the two halves of the arm were unwrapped separately (possible 2π step in the start B0). New `Process` key `DixonUnwrapSplit` (default `true`); `false` runs `Unwrap` 3D on the whole volume. |
 | Q24 ✔ | BIDS `Dixon-A` | **Fixed (2026-11-12).** `DixonPhase` was called without `DixonFieldStrength`, so the start maps always used 3 T fat frequencies. On 1.5 T data this gave a global water-fat swap (and looked like a precession −1 problem). Now gets `field` from the json. |
 
 ## 8. Real-data validation
@@ -218,6 +227,14 @@ against the saved 5.3.0 start maps on DIXON3/5/6 of subjects 001–015 (42 stack
 fixed (both legs FF 11–27%, θ0 with the normal left-right sign), 008 DIXON6 one leg B0 +818 → −178 Hz (a 1000 Hz alias,
 same FF). 7_motion_long sub-MOTION001 ses-001/005/006 calf identical (the Q5 cases stay fixed). MOTION140 hip (full
 swap in the old code) and MOTION021 knee (DIXON4, mess in the April 2025 output) are correct in 5.3.0 and unchanged.
+
+Q27 validation (2026-11-23, one stack at a time, `DixonGraphCut` 3, `DixonFixT2` True, CallDB): per leg median FF,
+share FF > 0.5, mean B0 and θ0 against the raw triplet θ0. All 31 stacks left-right symmetric and visually clean:
+K:\MOTION 003, 009, 013, 014 (Q25 cases), 019 D5/D6, 023 D4/D5, 026 D6, 029 D5, 050 D6, 063 D5/D6, 064 D5/D6, 069 D5,
+084 D5/D6, 100 D2 (one object, thighs touching), 103 D5, 104 D6, 106 D5/D6, 107 D6, 116 D6, 128 D5/D6, 129 D5/D6,
+130 D6, 137 D5/D6, 142 D5/D6, and 7_motion_long sub-001 ses-005/006 DIXON6. θ0 within 0.01–0.03 of raw (except the
+single-object 100 D2, where the raw mean is not a fair reference). Graph cut on vs off before the blend: off swaps the
+142 tibia marrow, on gave patches in 069/064 muscle; the blend fixes both and 107.
 
 ## 9. Recipes
 
@@ -242,7 +259,7 @@ error and voxels with |FF − true| > 0.4 (swaps).
 | Function | Line | Role |
 | --- | --- | --- |
 | `DixonPhase` | L242 | start maps (B0, T2*, φ0, θ0) |
-| `RestoreDC`, `SelectAlias`, `AliasParity`, `PlaneAt` | L416– | constant after unwrap; per-object θ0 and B0 alias (continuity at the midpoint, field-refined residual parity) |
+| `RestoreDC`, `AlignBipolar`, `BipolarPlane`, `SelectAlias`, `AliasResidual` | L416– | constant after unwrap; absolute θ0 per object from the triplets; one global B0 alias (objects aligned by mean B0, field-refined residual parity) |
 | `GraphCutField` | L450 | graph cut start B0 (Q15), helpers `PairTerms`, `BlockSum`, `EdgeParts`, `AddEdgeParts`, `GraphCutCandidatesC` |
 | `ApplyPhase`, `DotAc` | L396, L405 | compiled helpers of `DixonPhase` |
 | `FixDixonFlips`, `FindComplexFlips` | L418 | 180° volume flips (commented out in the BIDS pipeline) |

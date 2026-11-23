@@ -199,7 +199,10 @@ BidsOutputImages::usage =
 "BidsOutputImages is an option for MuscleBidsAnalysis and ManageCheckFiles. It sets which images are saved in the output folder,
 one of \"All\", \"Quantitative\", \"Segmentation\", \"Tractography\" or \"None\"."
 
-ProcessSubjects::usage = 
+BidsShowLog::usage =
+"BidsShowLog is an option for all Bids processing functions. If set True the log window pops up during processing."
+
+ProcessSubjects::usage =
 "ProcessSubjects is an option for Bids functions. Can be a list of bids subject names else it is All."
 
 VersionCheck::usage = 
@@ -622,6 +625,7 @@ defaultConfig = <|
 		"DixonFixT2" -> True,
 		"DixonGraphCut" -> 3,
 		"DixonPrecessions" -> 1,
+		"DixonUnwrapSplit" -> True,
 		(*EPG T2*)
 		"EPGCalibrate" -> True,
 		"EPGFatT2" -> 150
@@ -1387,7 +1391,7 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 		scan0 = If[$BidsLazy, {None, <||>}, BidsScanChecks[dir, subs, imOut]],
 		t0 = If[$BidsLazy, "not scanned yet", DateString["Time"]]
 	},
-	DynamicModule[{checks, stat, time, sel, upd, ind, sub, scan, exist, row, delFiles, buttons, tab},
+	DynamicModule[{checks, stat, time, sel, upd, ind, sub, verRef, verExact, scan, exist, row, delFiles, buttons, tab},
 		(*scan result and time, a lazy view (GUI tab) has no scan result until Reload*)
 		{checks, stat} = scan0;
 		time = t0;
@@ -1396,6 +1400,9 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 		upd = 0;
 		ind = 1;
 		sub = <||>;
+		(*the version to highlight, exact or this version and newer*)
+		verRef = QMRITools`$InstalledVersion;
+		verExact = True;
 
 		(*scan the expected check files and read the status of each*)
 		(*an empty selection gives the message instead of check files*)
@@ -1415,6 +1422,8 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 			vals = If[AssociationQ[st], Lookup[st, {"Check", "Version", "Date"}, ""], {"", "", ""}];
 			(*bad status in red*)
 			If[cls =!= "", vals[[1]] = Style[cls, Red, Bold]];
+			(*matching version in dark green*)
+			If[BidsVersionMatchQ[vals[[2]], verRef, verExact], vals[[2]] = Style[vals[[2]], Darker[Green], Bold]];
 			{Join[{
 				If[exist[base],
 					Checkbox[Dynamic[
@@ -1454,13 +1463,19 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 				time = DateString["Time"];
 				upd++
 			, Method -> "Queued"],
+			(*the version to highlight, shared by all tabs*)
+			"  Version ",
+			InputField[Dynamic[verRef], String, FieldSize -> 6],
+			" ",
+			Checkbox[Dynamic[verExact]],
+			" exact (else this and newer)",
 			Dynamic["  "<>ToString[Length[Intersection[sel, list[[All, 2]]]]]<>" selected, scanned at "<>time]
 		}]];
 
 		(*buttons above the table of one tab*)
 		tab = Column[{
 			buttons[#1, #2],
-			Dynamic[upd; BidsTable[row @@@ #2, {"", "Subject", "Check file", "Status", "Version", "Date"}]]
+			Dynamic[upd; verRef; verExact; BidsTable[row @@@ #2, {"", "Subject", "Check file", "Status", "Version", "Date"}]]
 		}]&;
 
 		(*tabs per step and data type, with an All tab when there is more than one data type*)
@@ -1478,6 +1493,16 @@ BidsCheckFilesView[dir_, subs_, imOut_] := With[{
 		]
 	]
 ]
+
+
+(*a check file version equal to ref, or when not exact equal or newer, non numeric versions never match*)
+BidsVersionMatchQ[ver_?StringQ, ref_?StringQ, exact_] /; AllTrue[{ver, ref}, StringMatchQ[#, DigitCharacter.. ~~ ("." ~~ DigitCharacter..)...]&] := Block[{v, r},
+	v = PadRight[ToExpression[StringSplit[ver, "."]], 4];
+	r = PadRight[ToExpression[StringSplit[ref, "."]], 4];
+	If[TrueQ[exact], v === r, Order[v, r] <= 0]
+]
+
+BidsVersionMatchQ[___] := False
 
 
 BidsScanChecks[dir_, subs_, imOut_] := Block[{checks},
@@ -2691,6 +2716,78 @@ CheckDataDescription[dis:{_Rule..}, met_] := Block[{
 ]
 
 
+(* ::Subsubsection::Closed:: *)
+(*BidsCheckInputs*)
+
+
+bidsDerivedFolder = None;
+
+
+BidsCheckDate[nam_?StringQ] := Block[{check, time},
+	(*the date in the check file as absolute time*)
+	check = If[FileExistsQ[nam<>"_check.json"], Quiet@Import[nam<>"_check.json", "RawJSON"], <||>];
+	time = If[AssociationQ[check] && StringQ[check["Date"]],
+		Quiet@AbsoluteTime[{check["Date"], {"DayNameShort", " ", "Day", " ", "MonthNameShort", " ", "Year", " ", "Hour", ":", "Minute", ":", "Second"}}],
+		Missing[]
+	];
+	If[NumberQ[time], time, Missing[]]
+]
+
+
+(*the input checks and their dates, stored in the check file*)
+BidsCheckInputs[inputs_List] := Association[(# -> Import[#<>"_check.json", "RawJSON"]["Date"])& /@ Select[inputs, FileExistsQ[#<>"_check.json"]&]]
+
+
+(*true if one of the inputs was redone after the check*)
+BidsCheckOutdatedQ[nam_?StringQ, inputs_List] := Block[{own, in},
+	own = BidsCheckDate[nam];
+	in = DeleteMissing[BidsCheckDate /@ inputs];
+	If[MissingQ[own] || in === {}, False, own < Max[in]]
+]
+
+
+(*done with the right status and no input redone after it*)
+BidsDoneQ[nam_?StringQ, stat_, ver_, inputs_List] := CheckFile[nam, stat, ver] && !BidsCheckOutdatedQ[nam, inputs]
+
+
+(*the check name of a file, the file name without its contrast*)
+BidsCheckBase[file_?StringQ] := StringReplace[ConvertExtension[file], RegularExpression["_[^_\\\\/]+$"] -> ""]
+
+
+(*the per stack check files in a folder that belong to a merged check name*)
+BidsStackChecks[nam_?StringQ, fol_?StringQ] := StringDrop[#, -11]& /@
+	FileNames["*_"<>StringRiffle[Take[StringSplit[FileNameTake[nam], "_"], -2], "_"]<>"_check.json", fol]
+
+
+(*the inputs of a check, as recorded or for an old merged check the derived stacks*)
+BidsCheckInputList[nam_?StringQ] := Block[{check},
+	check = If[FileExistsQ[nam<>"_check.json"], Quiet@Import[nam<>"_check.json", "RawJSON"], <||>];
+	Which[
+		AssociationQ[check] && KeyExistsQ[check, "Inputs"], Keys[check["Inputs"]],
+		StringQ[bidsDerivedFolder] && !StringStartsQ[nam, bidsDerivedFolder],
+		BidsStackChecks[nam, FileNameJoin[{bidsDerivedFolder, FileNameDrop[DirectoryName[nam], 1]}]],
+		True, {}
+	]
+]
+
+
+BidsInputsOkQ[nam_?StringQ, inputs_List, datType_] := Block[{old},
+	(*inputs that were redone after their own inputs can not be used*)
+	old = Select[inputs, BidsCheckOutdatedQ[#, BidsCheckInputList[#]]&];
+	If[old =!= {},
+		(*-----*)AddToLog[{"Skipping, the input is outdated since its own input was redone after it. First rerun the step that makes:",
+			StringRiffle[FileNameTake /@ old, ", "]}, 3, True];
+		MakeCheckFile[nam, Sort@Join[{"Check" -> "error"}, Normal@datType]];
+		Return[False, Block]
+	];
+	(*the result is redone if an input is newer*)
+	If[BidsCheckOutdatedQ[nam, inputs],
+		(*-----*)AddToLog[{"The input is newer than the previous result, it will be redone"}, 3]
+	];
+	True
+]
+
+
 (* ::Subsection::Closed:: *)
 (*0. BidsFolderLoop*)
 
@@ -2700,8 +2797,9 @@ Options[BidsFolderLoop] = {
 	Method->"MuscleBidsConvert", 
 	(*general options*)
 	ProcessSubjects->All, 
-	VersionCheck->False, 
-	(*method specific options*)	
+	VersionCheck->False,
+	BidsShowLog->False,
+	(*method specific options*)
 	DeleteAfterConversion->True, 
 	BidsTractographyMethod->"Full",
 	BidsOutputImages->"All"
@@ -2715,11 +2813,11 @@ BidsFolderLoop[inFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := B
 
 BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsPattern[]] := Block[{
 		met, folders, subs, ass, nam, versCheck, delete, tractMet,
-		inputFolders, customConfig, out, datDis, imOut
+		inputFolders, customConfig, out, datDis, imOut, showLog
 	},
 
-	{met, subs, versCheck, delete, tractMet, imOut} = OptionValue[{
-		Method, ProcessSubjects, VersionCheck, DeleteAfterConversion, BidsTractographyMethod, BidsOutputImages}];
+	{met, subs, versCheck, delete, tractMet, imOut, showLog} = OptionValue[{
+		Method, ProcessSubjects, VersionCheck, DeleteAfterConversion, BidsTractographyMethod, BidsOutputImages, BidsShowLog}];
 
 	debugBids["Enter BidsFolderLoop for method: "<>met];
 	debugBids[inFol];
@@ -2770,8 +2868,8 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 			"MuscleBidsAnalysis", FileNameJoin[{out, nam<>"_BIDSAnalysis.log"}]
 		];
 		If[met=!= "BidsDcmToNii", ImportLog[]]; 
-		ShowLog[];
-		
+		If[showLog, ShowLog[]];
+
 		(*-----*)AddToLog[{"Starting "<>met<>" for directory: ", fol}, True, 0];
 		(*-----*)If[customConfig, AddToLog["********** ----- Using custom config ----- **********", 0]];
 		If[met === "BidsDcmToNii",
@@ -2825,7 +2923,7 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 (*BidsDcmToNii*)
 
 
-Options[BidsDcmToNii]={BidsIncludeSession->True, ProcessSubjects->All}
+Options[BidsDcmToNii]={BidsIncludeSession->True, ProcessSubjects->All, BidsShowLog->False}
 
 SyntaxInformation[BidsDcmToNii] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -2878,7 +2976,7 @@ BidsDcmToNiiI[fol_, outI_, settings_] := Block[{out},
 (*MuscleBidsConvert*)
 
 
-Options[MuscleBidsConvert] = {DeleteAfterConversion->True, ProcessSubjects->All};
+Options[MuscleBidsConvert] = {DeleteAfterConversion->True, ProcessSubjects->All, BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsConvert] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]}};
 
@@ -3572,7 +3670,7 @@ DelFiles[files_, del_]:=Quiet@If[del,
 (*MuscleBidsProcess*)
 
 
-Options[MuscleBidsProcess] = {ProcessSubjects->All, VersionCheck->False};
+Options[MuscleBidsProcess] = {ProcessSubjects->All, VersionCheck->False, BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsProcess] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -3885,7 +3983,12 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 
 										(*uwrap and convert B0 to hz*)
 										(*-----*)AddToLog[{"Starting field map calculation"}, 4];
-										b0i = UnwrapSplit[ph[[All, -1]] - ph[[All, 1]], mag, UnwrapDimension -> "3D", MonitorUnwrap -> False];
+										(*split unwrap assumes two legs, switch off for single limb data*)
+										b0i = ph[[All, -1]] - ph[[All, 1]];
+										b0i = If[ConfigLookup[datType, "Process", "DixonUnwrapSplit"] =!= False,
+											UnwrapSplit[b0i, mag, UnwrapDimension -> "3D", MonitorUnwrap -> False],
+											Unwrap[b0i, UnwrapDimension -> "3D", MonitorUnwrap -> False]
+										];
 										b0i = b0i/(2 Pi (Last[echos] - First[echos]));
 										phaseEchoes = {1, Length[echos]};
 										t2sInfo = <|"Init" -> "T2Fit of the magnitude", "Definition" -> "fitted R2*"|>;
@@ -4185,7 +4288,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 								sel = SelectBvalueData[{reg, val, grad}, fbval];
 								norm = NormalizeFasciculationData[sel[[1]], mask, {tens, sel[[3]], sel[[2]]}];
 								(*perform activation analysis*)
-								fascOpts = {IgnoreSlices -> {0, 0}, ActivationThreshold -> {3., .65}, ActivationIterations -> 10, ActivationBackground -> 10};
+								fascOpts = {IgnoreSlices -> {0, 0}, ActivationThreshold -> {3., .6}, ActivationIterations -> 10, ActivationBackground -> 10};
 								settingPro = Join[settingPro, <|"FasciculationSettings" -> Join[OptionsToJSON[fascOpts], <|"ActivationSize" -> 4, "SizeMethod" -> "Voxels"|>]|>];
 								fasc = First@FindActivations[norm, Sequence @@ fascOpts];
 								{fasc, fascm} = SelectActivations[fasc, ActivationSize -> 4, SizeMethod -> "Voxels"];
@@ -4403,7 +4506,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 (*MuscleBidsMerge*)
 
 
-Options[MuscleBidsMerge] = {ProcessSubjects->All, VersionCheck->False};
+Options[MuscleBidsMerge] = {ProcessSubjects->All, VersionCheck->False, BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsMerge] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -4431,7 +4534,7 @@ MuscleBidsMerge[datFol_?StringQ, merFol_?StringQ, datDis_?AssociationQ, opts:Opt
 
 MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 		nonQuant, multDim, native, fol, parts, merge, fileCheck, 
-		outFile, tarFile, tarStack, movStack, nStack, files, sameType,
+		outFile, tarFile, tarStack, movStack, nStack, files, sameType, inputs,
 		process, processMD, processAll, nSet, processStacks,
 		overT, overM, pad, motion, reverse, split, metReg, settings,
 		target, vox, voxTar, moving, movingMD, length, lengthMD, voxMov, names,
@@ -4501,7 +4604,12 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	(*-----*)AddToLog[{"Start joining ", nStack, "stacs for", nSet, "dataypes"}, 3];
 	(*-----*)AddToLog[{"The types that will be merged are: "}, 3];
 	(*-----*)AddToLog[{StringJoin@Riffle[processAll,", "]}, 4];
-	If[CheckFile[outFile, "done", verCheck],
+
+	(*the check files of the input stacks*)
+	inputs = BidsStackChecks[outFile, DirectoryName[First@movStack]];
+	debugBids["input checks: ", Column@inputs];
+	If[!BidsInputsOkQ[outFile, inputs, datType], Return[]];
+	If[BidsDoneQ[outFile, "done", verCheck, inputs],
 		(*-----*)AddToLog[{"Processing already done."}, 3];
 		Return[]];
 
@@ -4733,7 +4841,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 	)&/@ Range[nSet];
 
 	(*make the check file*)
-	MakeCheckFile[outFile, Sort@Join[{"Check"->"done"}, Normal@datType]];
+	MakeCheckFile[outFile, Sort@Join[{"Check"->"done", "Inputs"->BidsCheckInputs[inputs]}, Normal@datType]];
 
 	(*compress the nii files if compression during ExportNii -> False*)
 	If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
@@ -4750,16 +4858,18 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 (*MuscleBidsSegment*)
 
 
-Options[MuscleBidsSegment] = {ProcessSubjects->All, VersionCheck->False};
+Options[MuscleBidsSegment] = {ProcessSubjects->All, VersionCheck->False, BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsSegment] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
 MuscleBidsSegment[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsSegment[folder, GetConfig[folder], opts];
 
 
-MuscleBidsSegment[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
+MuscleBidsSegment[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir, bidsDerivedFolder},
 	debugBids["starting MuscleBidsSegment"]; 
 	dir = Directory[]; SetDirectory[folder];
+	(*derived folder for the inputs of old merged check files*)
+	bidsDerivedFolder = ConfigLookup[config, "folders", "derivedData"];
 	MuscleBidsSegment[
 		ConfigLookup[config, "folders", "mergeData"],(*the input folder for the data, output is in same folder*)
 		ConfigLookup[config, "folders", "mergeData"],
@@ -4780,13 +4890,10 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 		segType, checkFile, fol, location, segment,
 		parts, outFile, segFile, out, vox, seg, status, segDim,
 		voxS, tar, mov, voxTar, voxMov, voxSeg, mask,
-		procInfo, segOpts, regOpts, srcFiles
+		procInfo, segOpts, regOpts, srcFiles, inputs
 	},
 
 	status = "done";
-
-	(*config settings and version that are added to every output json*)
-	procInfo = JSONSafe@<|"SegmentSettings" -> Join[defaultConfig["Segment"], datType["Segment"]], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
 
 	debugBids["Starting MuscleBidsSegmentI"];
 	debugBids[datType];
@@ -4801,20 +4908,28 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 		Return[]
 	];
 
+	(*config settings and version that are added to every output json*)
+	procInfo = JSONSafe@<|"SegmentSettings" -> Join[defaultConfig["Segment"], datType["Segment"]], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
+
 	(*Check if segmentation needs to be performed*)
 	checkFile = ConvertExtension@BuildBidsNameFromConfig[{folOut, parts}, {datType, allType}, 
 		{datType["Key"], "seg", "auto", datType["Type"]}];
 	debugBids[checkFile];
-	If[CheckFile[checkFile, "done", verCheck],
-		(*-----*)AddToLog[{"Segmentation already done for:", datType["key"]}, 3];
-		Return[]
-	];
 
 	(*Get the segmentation targets and its names*)
 	segType = ConfigLookup[datType, "Segment", "Target"];
 	debugBids[segType];
-
 	If[ArrayDepth[segType]===1, segType = {segType}];
+
+	(*the check files of the merged targets*)
+	inputs = BidsCheckBase[BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, #]]& /@ segType;
+	debugBids["input checks: ", Column@inputs];
+	If[!BidsInputsOkQ[checkFile, inputs, datType], Return[]];
+	If[BidsDoneQ[checkFile, "done", verCheck, inputs],
+		(*-----*)AddToLog[{"Segmentation already done for:", datType["key"]}, 3];
+		Return[]
+	];
+
 	Switch[ConfigLookup[datType, "Segment", "Method"],
 
 		(*Automatic segmentations using NN*)
@@ -4845,13 +4960,19 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 				segOpts = {SegmentationDimension -> segDim, TargetDevice -> ConfigLookup[datType, "Segment", "Device"]};
 				seg = SegmentData[{out, vox}, location, Monitor -> False, Sequence @@ segOpts];
 
-				(*export the segmentation with a json of its source, settings and networks*)
-				ExportNii[seg, vox, outFile, CompressNii -> compress];
-				Export[ConvertExtension[outFile, ".json"], MergeJSON[{SourceJSON[segFile], procInfo, <|
-						"SegmentationMethod" -> "Automatic", "SegmentationSource" -> FileNameTake[ConvertExtension[segFile, ".nii"]],
-						"SegmentData" -> OptionsToJSON[segOpts],
-						"SegmentationNetworks" -> JSONSafe@QMRITools`SegmentationTools`Private`SegmentationInfo[location, segDim]
-				|>}]];
+				(*skip when the network could not be loaded or applied*)
+				If[!ArrayQ[seg, _, NumericQ],
+					(*-----*)AddToLog[{"!!!!! Segmentation failed, the network could not be loaded or applied for: ", location, " - ", segDim, " - skipping"}, 4];
+					status = "error"
+					,
+					(*export the segmentation with a json of its source, settings and networks*)
+					ExportNii[seg, vox, outFile, CompressNii -> compress];
+					Export[ConvertExtension[outFile, ".json"], MergeJSON[{SourceJSON[segFile], procInfo, <|
+							"SegmentationMethod" -> "Automatic", "SegmentationSource" -> FileNameTake[ConvertExtension[segFile, ".nii"]],
+							"SegmentData" -> OptionsToJSON[segOpts],
+							"SegmentationNetworks" -> JSONSafe@QMRITools`SegmentationTools`Private`SegmentationInfo[location, segDim]
+					|>}]];
+				];
 			];
 			, {segI, segType}			
 		],
@@ -4896,7 +5017,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 	];
 
 	(*make the check file*)
-	MakeCheckFile[checkFile, Sort@Join[{"Check" -> status}, Normal@datType]];
+	MakeCheckFile[checkFile, Sort@Join[{"Check" -> status, "Inputs" -> BidsCheckInputs[inputs]}, Normal@datType]];
 
 	(*compress the nii files if compression during ExportNii -> False*)
 	If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
@@ -4913,16 +5034,18 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 (*MuscleBidsTractography*)
 
 
-Options[MuscleBidsTractography] = {ProcessSubjects->All, VersionCheck->False, BidsTractographyMethod->"Full"};
+Options[MuscleBidsTractography] = {ProcessSubjects->All, VersionCheck->False, BidsTractographyMethod->"Full", BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsTractography] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
 MuscleBidsTractography[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsTractography[folder, GetConfig[folder], opts];
 
 
-MuscleBidsTractography[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir},
+MuscleBidsTractography[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir, bidsDerivedFolder},
 	debugBids["starting MuscleBidsTractography"];
 	dir = Directory[]; SetDirectory[folder];
+	(*derived folder for the inputs of old merged check files*)
+	bidsDerivedFolder = ConfigLookup[config, "folders", "derivedData"];
 	MuscleBidsTractography[
 		ConfigLookup[config, "folders", "mergeData"],(*the input folder for the data, output is in same folder*)
 		ConfigLookup[config, "folders", "mergeData"],
@@ -4945,7 +5068,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 		datfile, stopFile, tens, vox, dim, stop, ang, step, tracts, seeds, len, seg, curv,
 		segFile, muscles, muscLabs, bones, context, leng, dens, flip, per, 
 		voxSeg, dims, harm, tensH, con, amp, trkFileF,
-		procInfo, trackOpts, harmOpts, tsegOpts, trackInfo, harmInfo, tsegInfo
+		procInfo, trackOpts, harmOpts, tsegOpts, trackInfo, harmInfo, tsegInfo, inputs
 	},
 
 	debugBids["Starting MuscleBidsTractographyI"];
@@ -5000,15 +5123,20 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 		tractSegLab = StringRiffle[tractSeg, "_"];
 		BuildBidsNameFromConfig[{folOut, parts}, {datType, allType}, tractSeg]];
 
+	(*the check files of the merged tensor and the segmentation*)
+	inputs = Join[{BidsCheckBase[datfile]}, If[ListQ[tractSeg], {BidsCheckBase[BidsCheckBase[segFile]]}, {}]];
+	debugBids["input checks: ", Column@inputs];
+	If[!BidsInputsOkQ[checkFile, inputs, datType], Return[]];
+
 	(* If tractography and segmentation is already done, log the event *)
 	debugBids[Column@{outFile, datfile, Column@stopFile, segFile}];
-	If[CheckFile[checkFile, "done", verCheck],
+	If[BidsDoneQ[checkFile, "done", verCheck, inputs],
 		(*-----*)AddToLog[{"Tractography and segmentation already done for:", tractTypeLab}, 3];
 		Return[]];
 
 	(* Check if tractography needs to be performed *)
 	Which[
-		CheckFile[checkFile, "track", verCheck],
+		BidsDoneQ[checkFile, "track", verCheck, inputs],
 		(* If tractography is already done, log the event *)
 		(*-----*)AddToLog[{"Tractography already done for:", tractTypeLab}, 3];
 		,
@@ -5102,7 +5230,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 				Export[outFile<>"_har.json", MergeJSON[{SourceJSON[datfile], procInfo, harmInfo}]];
 			];
 
-			MakeCheckFile[checkFile, Sort@Join[{"Check" -> "track"}, Normal@datType]];
+			MakeCheckFile[checkFile, Sort@Join[{"Check" -> "track", "Inputs" -> BidsCheckInputs[inputs]}, Normal@datType]];
 
 			(*compress the nii files if compression during ExportNii -> False*)
 			If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
@@ -5114,7 +5242,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 	(* Check if segmentation needs to be performed *)
 	trkFileF = If[harm, outFile<>"_har.trk", outFile<>".trk"];
 	Which[
-		CheckFile[checkFile, "seg", verCheck],
+		BidsDoneQ[checkFile, "seg", verCheck, inputs],
 		(* If segmentation or tractography is already done, log the event *)
 		(*-----*)AddToLog[{"Segmentation of tractography already done for:", tractSegLab}, 3];
 		,
@@ -5180,7 +5308,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 					OutputForm -> "All", Method -> "tube", MaxTracts -> 10000]
 			];
 
-			MakeCheckFile[checkFile, Sort@Join[{"Check"->"seg"}, Normal@datType]];
+			MakeCheckFile[checkFile, Sort@Join[{"Check"->"seg", "Inputs" -> BidsCheckInputs[inputs]}, Normal@datType]];
 
 			(*compress the nii files if compression during ExportNii -> False*)
 			If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
@@ -5190,7 +5318,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 	];
 
 	If[CheckFile[checkFile, "seg", verCheck],
-		MakeCheckFile[checkFile, Sort@Join[{"Check"->"done"}, Normal@datType]];
+		MakeCheckFile[checkFile, Sort@Join[{"Check"->"done", "Inputs" -> BidsCheckInputs[inputs]}, Normal@datType]];
 
 		(*compress the nii files if compression during ExportNii -> False*)
 		If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
@@ -5206,16 +5334,18 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 (*MuscleBidsAnalysis*)
 
 
-Options[MuscleBidsAnalysis] = {ProcessSubjects->All, VersionCheck->False, BidsOutputImages->"All"};
+Options[MuscleBidsAnalysis] = {ProcessSubjects->All, VersionCheck->False, BidsOutputImages->"All", BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsAnalysis] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
 MuscleBidsAnalysis[folder_?StringQ, opts:OptionsPattern[]] := MuscleBidsAnalysis[folder, GetConfig[folder], opts];
 
 
-MuscleBidsAnalysis[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir}, 
+MuscleBidsAnalysis[folder_?StringQ, config_?AssociationQ, opts:OptionsPattern[]] := Block[{dir, bidsDerivedFolder},
 	debugBids["starting MuscleBidsAnalysis"];
 	dir = Directory[]; SetDirectory[folder];
+	(*derived folder for the inputs of old merged check files*)
+	bidsDerivedFolder = ConfigLookup[config, "folders", "derivedData"];
 	MuscleBidsAnalysis[
 		ConfigLookup[config, "folders", "mergeData"],(*the input folder for the data*)
 		ConfigLookup[config, "folders", "analysis"],(*the output folder for analysis*)
@@ -5309,7 +5439,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 		cols, cFun, ran, clip, type, imFile, imDat, voxi, segPl, imTrk, trkfile, reffile,
 		addLabel, img, lab, label, filt, filtMask, cross, volF, crossF, typeSuf,
 		whatName, whatNr, segF, labAll, labCfg, nMax, typeSeg, segFileO, segMiss, segO, segDim, segKey, sg, sgT, sgF,
-		filtInfo, trInfo, anaFiles, anaMiss, src, trW, segTF, sgTF, wt
+		filtInfo, trInfo, anaFiles, anaMiss, src, trW, segTF, sgTF, wt, inputs
 	},
 
 	debugBids["Starting MuscleBidsAnalysisI"];
@@ -5346,8 +5476,13 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 	(*checkfiles image and xls*)
 	partsO["suf"] = {"xls"}; 
 	checkFileX = fileNameO[partsO];
-	partsO["suf"] = {"img"}; 
+	partsO["suf"] = {"img"};
 	checkFileI = fileNameO[partsO];
+
+	(*the check files of all merged, segmentation and tractography data*)
+	inputs = StringDrop[#, -11]& /@ FileNames["*_check.json", folIn, Infinity];
+	debugBids["input checks: ", Column@inputs];
+	If[!BidsInputsOkQ[checkFileX, inputs, datDis], Return[Null, Block]];
 
 	anaSeg = datDis["Segmentation", "Type"];
 	(*the labels setting is a number, a word or both, anything else is a config error*)
@@ -5368,7 +5503,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 	Which[
 		(*segmentation is already done*)
-		CheckFile[checkFileX, "done", verCheck],
+		BidsDoneQ[checkFileX, "done", verCheck, inputs],
 		(*-----*)AddToLog[{"Skipping: the segmentation to xls analysis is already done "}, 4],
 
 		(*no segmentation file exists*)
@@ -5605,7 +5740,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 				"TypeSegmentation" -> (FileNameTake /@ segFileO)|>,
 			"Filter" -> filtInfo, "TractMask" -> trInfo, "Data" -> anaFiles, "MissingData" -> anaMiss|>;
 		If[AllTrue[{Export[outFile<>".xlsx", data], Export[outFile<>".wxf", data], Export[outFile<>".json", src, "JSON"]}, StringQ],
-			MakeCheckFile[checkFileX, Sort@Join[{"Check"->"done"}, Normal@datDis]],
+			MakeCheckFile[checkFileX, Sort@Join[{"Check"->"done", "Inputs"->BidsCheckInputs[inputs]}, Normal@datDis]],
 			(*-----*)AddToLog[{"Export failed, no check file made for:", outFile}, 3]
 		];
 
@@ -5628,7 +5763,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 	(*make images if needed*)
 	Which[
 		(*segmentation is already done*)
-		CheckFile[checkFileI, "done", verCheck],
+		BidsDoneQ[checkFileI, "done", verCheck, inputs],
 		(*-----*)AddToLog[{"Skipping: the iamges are already done"}, 4],
 
 		(*No images need to be made*)
@@ -5804,7 +5939,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 
 		(*finalize image making*)
 		(*-----*)AddToLog[{"Finished making the images"}, 3, True];
-		MakeCheckFile[checkFileI, Sort@Join[{"Check"->"done"}, Normal@datDis]];
+		MakeCheckFile[checkFileI, Sort@Join[{"Check"->"done", "Inputs"->BidsCheckInputs[inputs]}, Normal@datDis]];
 
 		(*compress the nii files if compression during ExportNii -> False*)
 		If[!compress, CompressNiiFiles[DirectoryName[outFile]]];

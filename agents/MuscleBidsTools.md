@@ -143,7 +143,8 @@ Important consequences:
 - `outFol` passed to workers is the **stage root** (for example `04_merged`), not the subject folder. Workers rebuild
   sub/ses paths themselves through `PartitionBidsFolderName[folIn]` → `{root, parts}`.
 - `BidsFolderLoop` options: `Method`, `ProcessSubjects`, `VersionCheck`, `DeleteAfterConversion`,
-  `BidsTractographyMethod`, `BidsOutputImages`. **`BidsIncludeSession` is not among them** (see Q6).
+  `BidsTractographyMethod`, `BidsOutputImages`, `BidsShowLog` (default `False`; gates the `ShowLog[]` popup per
+  subject). **`BidsIncludeSession` is not among them** (see Q6).
 
 ### Subject selection (`ProcessSubjects`)
 
@@ -286,6 +287,7 @@ associations merge.
 | `DixonFixT2` | True | Dixon-A | `DixonFixT2` of `DixonReconstruct`. True → fitted R2′, R2\* rebuilt from R2′ + FF-weighted water and fat R2, extra outputs `t2prime`/`r2prime`. False → fitted R2\*, no `t2prime`/`r2prime` files |
 | `DixonGraphCut` | 3 | Dixon-A | `DixonGraphCut` of `DixonPhase`: block size in voxels, `false` turns the graph cut off |
 | `DixonPrecessions` | 1 | Dixon-A, Dixon-B | `DixonPrecessions` (1 or −1) for `DixonPhase`, `DixonReconstruct` and `DixonPrecessionCheck` |
+| `DixonUnwrapSplit` | true | Dixon-B | `true`: `UnwrapSplit` (left and right leg unwrapped separately, `FindMiddle`). `false`: `Unwrap` 3D on the whole volume, for a single limb (arm, one leg) |
 | `EPGCalibrate` | True | EPGT2 | `EPGCalibrate` of `EPGT2Fit`. False → no calibration, the fat T2 is `EPGFatT2` and B1 is fitted per voxel; json `"EPGCalibration"` is `"None, fixed fat T2"` |
 | `EPGFatT2` | 150 | EPGT2 | `DictT2fValue` in ms, only used with `EPGCalibrate` false (the calibration replaces it) |
 | `Settings` | – | EPGT2 | `[[exName, exAngle, {..}], [refName, refAngle, {..}]]` → `GetPulseProfile`, or plain numbers `[ex, ref]` |
@@ -499,7 +501,9 @@ from the number of volumes, so branch 1 output and the remaining sets are still 
 DTI prep pipeline: `SortDiffusionData` → `FlipGradientOrientation` → `Mask` → `PCADeNoise` (with `RicianCorrection`) → `SNRCalc` →
 register (2D `RegisterCardiacData` / 3D `RegisterDiffusionData(Split)`) → `P2SDenoise` (`filt`).
 DTI pipeline: `filt` → mask → optional gradient-nonlinearity correction (`MakeGradientDerivatives`) → optional IVIM
-correction → `TensorCalc[iWLLS, RobustFit]` → `ParameterCalc` → optional fasciculation analysis.
+correction → `TensorCalc[iWLLS, RobustFit]` → `ParameterCalc` → optional fasciculation analysis (`FindActivations` +
+`SelectActivations`, see [FasciculationTools.md](FasciculationTools.md); `fasc` maps made with 4.5.3-5.3 change on a
+rerun with 5.4).
 
 ### 6.4 MuscleBidsMerge → `MuscleBidsMergeI` (L2523)
 
@@ -523,8 +527,8 @@ correction → `TensorCalc[iWLLS, RobustFit]` → `ParameterCalc` → optional f
 
 - Check file: `..._[key]_seg_auto_<Type>`, **one per dataset, not per target**.
 - `Method` Automatic: for each target, `SegmentData[{data, vox}, Location, SegmentationDimension, TargetDevice]` →
-  `seg/…_[key]_seg_auto_<target...>.nii`. A missing input sets the check status to `"error"`, so the dataset reruns
-  next time.
+  `seg/…_[key]_seg_auto_<target...>.nii`. A missing input, or a `SegmentData` that returns `$Failed` (network not
+  loaded), is logged, skipped and sets the check status to `"error"`, so the dataset reruns next time.
 - `Method "Registration"`: registers an existing `Segmentation` using `Target`/`Moving` into target space →
   `seg_reg_…`. This branch looks experimental (Q9).
 - Manual segmentations follow the pattern `seg_man_…` in the `seg` folder. Analysis and Tractography use whatever the
@@ -600,6 +604,26 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 | Segment | `seg/..._seg_auto_<Type>` | `done` / `error` |
 | Tractography | `..._trk` | `track` → `seg` → `done` |
 | Analysis | `analysis/.../<name>_xls`, `_img` | `done` |
+
+**Outdated inputs (5.4).** The order of the `Date` fields in the check files decides whether a result is still in date.
+Version plays no part in this. The helpers are in the `BidsCheckInputs` cell (Bids Support Functions):
+
+- Each step knows its direct input checks:
+  - Merge: the derived stack checks, `BidsStackChecks[outFile, derivedFolder]`.
+  - Segment: the merged check of each `Segment.Target`, `BidsCheckBase` of the target file.
+  - Tractography: the merged tensor check plus the seg check.
+  - Analysis: every `*_check.json` under the merged session folder.
+- `BidsDoneQ[base, status, ver, inputs]` is `CheckFile` and "no input check newer than this one". A step whose own
+  result is older than one of its inputs is redone, which gives make-like reruns: rerun merge, and the next tracto run
+  redoes that subject.
+- `BidsInputsOkQ[base, inputs, datType]` runs before the done test. When an input check is older than *its own* inputs,
+  the step logs "input is outdated", writes `Check -> "error"`, and skips the subject. Example: processing was redone
+  but merge crashed or was skipped, so seg, tracto and analysis must not run on the old merged data.
+- An input's own inputs are the `"Inputs"` key (`<|check base -> Date|>`, written by `BidsCheckInputs` into every merge,
+  seg, tracto and analysis check). For an old merged check without `"Inputs"` they are the derived stack checks.
+  This fallback is found through `bidsDerivedFolder`, which only the `MuscleBidsSegment`/`Tractography`/`Analysis`
+  `[dir, config]` wrappers set (`Block`). With direct low-level calls, old checks are trusted.
+- Missing checks or unreadable dates count as "no date": they never block and never force a redo.
 
 ---
 

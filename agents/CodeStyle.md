@@ -290,8 +290,13 @@ F[x_] := ...
   cutoff.
 - `FindActC` / `MeanThresh` (FasciculationTools.wl): zero samples (no data, e.g. out of FOV after registration) are
   excluded from the statistics and never flagged. Before this, a zero always fell below the threshold and counted as
-  an activation (279 of 2137 fasciculation voxels on one stack). `Ramp` on the final threshold is only safe because
-  of that exclusion.
+  an activation (279 of 2137 fasciculation voxels on one stack). A negative final threshold (and `Ramp` in
+  `MeanThresh`) is only safe because of that exclusion.
+- `FindActC` is the published algorithm (Heskamp et al., Physiol Rep 2025, QMRITools <= 4.3.6): inside the loop the
+  SD comes from the samples above `fr` x mean only, with a 0.1 floor, and the final threshold uses the SD of the
+  non-active samples without a floor. Computing the SD on the non-active samples inside the loop (4.5.3-5.3.0) looks
+  equivalent but lets undetected drops inflate the SD, and detection collapses at fasciculation rates of 10-25%.
+  Do not merge the two selections.
 - MuscleBids: the Dixon gated-`If` branches (§4). Also see the quirk list in MuscleBidsTools.md §10: ask before
   changing any of it.
 

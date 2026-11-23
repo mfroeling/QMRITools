@@ -43,6 +43,17 @@ AnalyzeActivations[actMap, mask, lab, vox] the same with the name lab and the vo
 
 \"Amount\" is the number of activations and \"Amount Obs\" the number of observations (a slice in one volume) that contain at least one activation."
 
+ListActivations::usage =
+"ListActivations[act, vox] lists every activation in the activation map act, one association per activation, with the voxel size vox = {z, y, x} in mm. An activation is one connected component within one slice of one volume, counted the same way as in AnalyzeActivations.
+ListActivations[act, vox, seg] the same with the label of the label map seg that covers most of the activation, and the percentage of the voxels within seg in that slice that are active in that volume.
+ListActivations[act, vox, seg, {norm, mn}] the same with the mean of the normalized data norm and of the mean mn within the activation, as given by FindActivations with ActivationOutput set to All. seg can be None.
+
+The keys \"slice\", \"volume\" and \"component\" identify each activation. The centroid and bounding box are voxel coordinates {y, x} of the array (1-based), a viewer such as ITK-SNAP shows the y axis flipped."
+
+RemoveActivations::usage =
+"RemoveActivations[act, keys] removes the activations given by keys from the activation map act, where keys is a list of {slice, volume, component} as given by ListActivations.
+act must be the same map that was given to ListActivations, otherwise the component numbers do not match. The output is the activation map without those activations."
+
 SelectActivations::usage = 
 "SelectActivations[act] selects the activations above the given ActivationSize.
 SelectActivations[act, vox] selects the activations above the given ActivationSize, the voxel size vox = {z, y, x} in mm is needed when SizeMethod is \"Area\".
@@ -100,8 +111,14 @@ SelectActivations::size =
 SelectActivations::vox =
 "SizeMethod \"Area\" needs the voxel size. Give the voxel size {z, y, x} in mm or set SizeMethod to \"Voxels\".";
 
-AnalyzeActivations::size = 
+AnalyzeActivations::size =
 "The mask and activation map must have the same Dimensions.";
+
+ListActivations::dim =
+"The activation map should be 4D and the label map and data should match it. Current dimensions are `1` and `2`.";
+
+RemoveActivations::key =
+"The activation map should be 4D and all keys {slice, volume, component} within its dimensions `1`. Keys out of range: `2`.";
 
 
 (* ::Section:: *)
@@ -141,7 +158,7 @@ NormalizeFasciculationData[data_, mask_, {tens_, grad_, val_}] := Block[{
 
 
 Options[FindActivations] = Options[FindActivationsI] = {
-	ActivationThreshold -> {3.0, 0.75}, 
+	ActivationThreshold -> {3.0, 0.6},
 	ThresholdMethod -> "Both", 
 	ActivationOutput -> "Activation",
 	MaskDilation -> 0, 
@@ -200,7 +217,7 @@ FindActivationsI[data_, OptionsPattern[]] := Block[{met, sc, fr, start, stop, da
 
 
 FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0}, {back, _Real, 0}}, Block[{
-		ti, mn, sd, tr, i, len, mask, cont, nz
+		tz, ti, ts, mn, tr, i, len, cont, err, nz
 	},
 	mn = Mean[t];
 	(*Check background threshold*)
@@ -208,37 +225,45 @@ FindActC = Compile[{{t, _Real, 1}, {sc, _Real, 0}, {fr, _Real, 0}, {it, _Real, 0
 
 	(*zero samples have no data, never use them*)
 	nz = Unitize[t];
-	ti = Pick[t, nz, 1];
+	tz = Pick[t, nz, 1];
+	ti = tz;
 	i = 0;
 	cont = True;
+	err = False;
 
-	While[cont && i < it,
+	While[cont && i <= it,
 		i++;
 		len = Length[ti];
-
-		If[len <= 5,
-		(*Trigger error state*)
-		cont = False;
-		ti = {}; 
-		,
-		(*Calculate threshold factor*)
 		mn = Mean[ti];
-		sd = Ramp[1.0 - (sc / mn) StandardDeviation[ti]];
-		tr = Min[{sd, fr}];
-		(*Vectorized selection*)
-		mask = UnitStep[tr mn - t];
-		ti = Pick[t, mask, 0];
-		(*Convergence check:compare lengths or use a small tolerance*)
-		If[Length[ti] == len, cont = False];
+		(*samples above the fraction threshold for the sd*)
+		ts = Pick[tz, UnitStep[fr mn - tz], 0];
+		If[Length[ts] <= 5,
+			(*Trigger error state*)
+			err = True;
+			cont = False;
+			,
+			(*threshold from the sd and the fraction*)
+			tr = Max[{0.1, Min[{1.0 - (sc/mn) StandardDeviation[ts], fr}]}];
+			(*new non-active samples*)
+			ts = Pick[tz, UnitStep[tr mn - tz], 0];
+			If[Length[ts] <= 5,
+				(*Trigger error state*)
+				err = True;
+				cont = False;
+				,
+				(*converged when the number of non-active samples no longer changes*)
+				cont = Length[ts] != len;
+				ti = ts;
+			];
 		];
 	];
 
-	(*Final threshold*)
-	If[Length[ti] <= 5,
+	(*Final threshold from the sd of the non-active samples*)
+	If[err,
 		0.0 t,
 		mn = Mean[ti];
-		tr = Min[Ramp[1.0 - (sc/mn)*StandardDeviation[ti]], fr];
-		nz UnitStep[tr*mn - t]
+		tr = Min[1.0 - (sc/mn) StandardDeviation[ti], fr];
+		nz UnitStep[tr mn - t]
 	]
 ], RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}]
 
@@ -401,7 +426,7 @@ AnalyzeActivations[act_, msk_, lab_, vox_]:=Block[{aDepth, aDim, mDepth, mDim, l
 AnalyzeActivationsI[act_, msk_, lab_, vox_]:=Block[{sizes,sizesO,nActs,nActsO,mSize,mSizeT,nSlices,nVols,nObs,mSd,quants,chance,chanceO,chanceV,vals,out,vol,area},
 	
 	(*sizes of the activations per observation (slice in one volume)*)
-	sizesO = Map[If[Total[Flatten[#]]<=1,{},ComponentMeasurements[Image[#,"Bit"],"Count"][[All,2]]]&,act,{2}];
+	sizesO = Map[If[Total[Flatten[#]] == 0, {}, ComponentMeasurements[Image[#, "Bit"], "Count"][[All, 2]]]&, act, {2}];
 	sizes = N@Flatten[sizesO];
 
 	nActs = Length@sizes;
@@ -447,6 +472,121 @@ AnalyzeActivationsI[act_, msk_, lab_, vox_]:=Block[{sizes,sizesO,nActs,nActsO,mS
 	];
 
 	If[lab==="",out, Association[lab->out]]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*ListActivations*)
+
+
+SyntaxInformation[ListActivations] = {"ArgumentsPattern" -> {_, _, _., _.}};
+
+ListActivations[act_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}] := ListActivations[act, vox, None, None]
+
+ListActivations[act_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, seg_?ArrayQ] := ListActivations[act, vox, seg, None]
+
+ListActivations[act_?ArrayQ, vox:{_?NumberQ, _?NumberQ, _?NumberQ}, seg:(None|_?ArrayQ), sig:(None|{_?ArrayQ, _?ArrayQ})] := Block[{
+		dim, segD, obs, evs, z, vol, pos, lab, nObs, nSl, nMsk, ev, p, row, lv, com, sv, bv
+	},
+	(*check dimensions*)
+	dim = Dimensions[act];
+	If[Length[dim] =!= 4 || (seg =!= None && Dimensions[seg] =!= dim[[{1, 3, 4}]]) || (sig =!= None && Dimensions[sig[[1]]] =!= dim),
+		Return[Message[ListActivations::dim, dim, If[seg === None, None, Dimensions[seg]]]; $Failed]
+	];
+	segD = If[seg === None, None, Round@Normal[seg]];
+
+	(*active voxels grouped per observation {slice, volume}*)
+	obs = SortBy[GatherBy[SparseArray[act]["NonzeroPositions"], Take[#, 2] &], Take[First[#], 2] &];
+
+	(*components per observation: {slice, volume, component, positions, active voxels in seg}*)
+	evs = Flatten[Table[
+		{z, vol} = Take[First[o], 2];
+		pos = o[[All, 3 ;; 4]];
+		lab = Extract[MorphologicalComponents[Normal[act[[z, vol]]]], pos];
+		{z, vol, #[[1, 1]], #[[All, 2]], If[segD === None, Length[pos], Total[Unitize[Extract[segD[[z]], pos]]]]} & /@
+			SortBy[GatherBy[Transpose[{lab, pos}], First], #[[1, 1]] &]
+	, {o, obs}], 1];
+
+	(*events per observation, slices with events per volume and seg voxels per slice*)
+	nObs = Counts[evs[[All, {1, 2}]]];
+	nSl = Counts[Keys[nObs][[All, 2]]];
+	nMsk = If[segD === None, None, Total[Unitize[segD], {2, 3}]];
+
+	(*one association per event*)
+	Table[
+		ev = evs[[i]];
+		{z, vol, p} = ev[[{1, 2, 4}]];
+		row = <|
+			"event" -> i,
+			"slice" -> z,
+			"volume" -> vol,
+			"component" -> ev[[3]],
+			"size [vox]" -> Length[p],
+			"area [mm2]" -> Length[p] vox[[2]] vox[[3]],
+			"centroid y" -> Round[N@Mean[p[[All, 1]]], 0.1],
+			"centroid x" -> Round[N@Mean[p[[All, 2]]], 0.1],
+			"bbox ymin" -> Min[p[[All, 1]]],
+			"bbox ymax" -> Max[p[[All, 1]]],
+			"bbox xmin" -> Min[p[[All, 2]]],
+			"bbox xmax" -> Max[p[[All, 2]]]
+		|>;
+
+		(*majority label of the event*)
+		If[segD =!= None,
+			lv = Extract[segD[[z]], p];
+			com = First[Commonest[lv]];
+			row = Join[row, <|"label" -> com, "label fraction" -> Round[N[Count[lv, com]/Length[p]], 0.01]|>]
+		];
+
+		(*signal and baseline in the event*)
+		If[sig =!= None,
+			sv = N@Mean[Extract[Normal[sig[[1, z, vol]]], p]];
+			bv = N@Mean[Extract[Normal[sig[[2, z]]], p]];
+			row = Join[row, <|
+				"signal" -> Round[sv, 0.1],
+				"baseline" -> Round[bv, 0.1],
+				"drop [%]" -> If[bv > 0, Round[100 (1 - sv/bv), 0.1], 0.]
+			|>]
+		];
+
+		(*context of the observation and volume*)
+		row = Join[row, <|"events in obs" -> nObs[{z, vol}], "slices in vol" -> nSl[vol]|>];
+		If[segD =!= None,
+			row = Join[row, <|"obs active [%]" -> If[nMsk[[z]] > 0, Round[100. ev[[5]]/nMsk[[z]], 0.01], 0.]|>]
+		];
+		row
+	, {i, Length[evs]}]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*RemoveActivations*)
+
+
+SyntaxInformation[RemoveActivations] = {"ArgumentsPattern" -> {_, _}};
+
+RemoveActivations[act_?ArrayQ, {}] := SparseArray[act]
+
+RemoveActivations[act_?ArrayQ, keys:{{_Integer, _Integer, _Integer}..}] := Block[{
+		dim, bad, out, z, vol, im, lab, tab
+	},
+	(*check the map and the keys*)
+	dim = Dimensions[act];
+	bad = If[Length[dim] =!= 4, keys, Select[keys, !(1 <= #[[1]] <= dim[[1]] && 1 <= #[[2]] <= dim[[2]] && #[[3]] >= 1) &]];
+	If[bad =!= {}, Return[Message[RemoveActivations::key, dim, bad]; $Failed]];
+
+	out = SparseArray[act];
+	(*per observation relabel the components as in ListActivations and remove the given ones*)
+	Do[
+		{z, vol} = Take[First[k], 2];
+		im = Normal[out[[z, vol]]];
+		lab = MorphologicalComponents[im];
+		tab = ConstantArray[1, Max[lab] + 1];
+		tab[[Select[k[[All, 3]], # <= Max[lab] &] + 1]] = 0;
+		out[[z, vol]] = im ArrayReshape[tab[[Flatten[lab] + 1]], Dimensions[im]];
+	, {k, GatherBy[keys, Take[#, 2] &]}];
+
+	out
 ]
 
 

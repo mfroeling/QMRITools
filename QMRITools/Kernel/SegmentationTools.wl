@@ -398,6 +398,9 @@ CompareSegmentations::met = "Method `1` not recognized, it should be one of `2`.
 ApplySegmentationNetwork::node = "The node ``` is not part of the network"
 
 
+SegmentData::net = "Could not load the `2` segmentation network for `1`."
+
+
 ImportITKLabels::file = "`1` is not a file or a known asset."
 
 ImportITKLabels::nolab = "`1` has no ITK-SNAP label lines."
@@ -558,19 +561,23 @@ SyntaxInformation[GetNeuralNet] = {"ArgumentsPattern" -> {_}};
 (*allows for caching and clearing while GetNeuralNet remains protected*)
 GetNeuralNet["Clear"] := (
 	ClearAll[GetNeuralNetI];
-	GetNeuralNetI[name_] := GetNeuralNetI[name] = NeuralNetFunc[name]
+	GetNeuralNetI[name_] := NeuralNetFunc[name]
 )
 
 GetNeuralNet[net : (_NetChain | _NetGraph)] := net
 
 GetNeuralNet[name_?StringQ] := GetNeuralNetI[name]
 
-GetNeuralNetI[name_] := GetNeuralNetI[name] = NeuralNetFunc[name]
+GetNeuralNetI[name_] := NeuralNetFunc[name]
 
-NeuralNetFunc[name_] := GetNeuralNetI[name] = Which[
-	FileExistsQ[name], Import[name],
-	FileExistsQ[GetAssetLocation[name]], Import[GetAssetLocation[name]],
-	True, $Failed
+(*only a loaded network is cached, so a fixed network file is found without a restart*)
+NeuralNetFunc[name_] := Block[{net},
+	net = Which[
+		FileExistsQ[name], Import[name],
+		FileExistsQ[GetAssetLocation[name]], Import[GetAssetLocation[name]],
+		True, $Failed
+	];
+	If[MatchQ[net, _NetGraph | _NetChain], GetNeuralNetI[name] = net, $Failed]
 ]
 
 
@@ -1009,7 +1016,13 @@ SegmentData[{datI_, vox_?VectorQ}, what_?StringQ, OptionsPattern[]] := Block[{
 
 		(*check if the network is correct*)
 		GetNetwork[loc_, sDim_] := Lookup[$SegmentationLocations[loc], "Net"<>sDim, $Failed];
-		If[MemberQ[GetNetwork[#[[1]], sDim]& /@ loc, $Failed], Return[$Failed]];
+		(*check if the networks of the found locations can be loaded*)
+		net = Select[DeleteDuplicates[loc[[All, 1]]], !MatchQ[GetNeuralNet[GetNetwork[#, sDim]], _NetGraph | _NetChain]&];
+		If[net =!= {},
+			Message[SegmentData::net, StringRiffle[net, ", "], sDim];
+			SetMXenvironment["Reset"];
+			Return[$Failed, Block]
+		];
 
 		(*Perform the segmentation*)
 		time = First@AbsoluteTiming[

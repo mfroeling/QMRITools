@@ -18,6 +18,7 @@ This file is the index for all agent documentation. The guides live in the `agen
 | [BidsCompliance.md](../agents/BidsCompliance.md) | changing file names, folders or sidecar json fields of Muscle-BIDS, or writing about its relation to BIDS and ORMIR-MIDS | where Muscle-BIDS agrees with and deviates from BIDS and ORMIR-MIDS (naming, folders, echo layout, units, json fields, dataset files, derivatives), possible fixes ranked by effort and risk, migration notes |
 | [SegmentationTools.md](../agents/SegmentationTools.md) | changing `SegmentationTools.wl`, or working on segmentation inference or network training | anatomy tables, the `SegmentData` pipeline, patching, `TrainSegmentationNetwork` and producer kernels, augmentation and masked pretraining, data prep, metrics, quirk list, recipes |
 | [EPGT2.md](../agents/EPGT2.md) | changing the EPG code in `RelaxometryTools.wl` (`EPGSignal`, `EPGT2Fit`, `CalibrateEPGT2Fit`, dictionaries) or `GetPulseProfile`, EPG T2 in the BIDS pipeline, or investigating T2water or EPG fat fraction bias | the BIDS `EPGT2` chain, EPG conventions (CPMG, profiles, B1 symmetry), the 90/10 adipose model and lipid fraction, fat chemical shift in the slice direction, dictionary caching, calibration methods (Keene A/B/C), quirk list, phantom validation and recipes |
+| [FasciculationTools.md](../agents/FasciculationTools.md) | changing `FasciculationTools.wl`, fasciculation detection in the BIDS pipeline, or investigating missed or false fasciculations | the detection pipeline, the published algorithm in `FindActC` and the 4.6.0-5.3 regression, the event table and curation (`ListActivations`, `RemoveActivations`), quirk list, simulation and diagnosis recipes |
 | [DixonTools.md](../agents/DixonTools.md) | changing `DixonTools.wl`, Dixon processing in the BIDS pipeline, or investigating water-fat swaps or fat fraction bias | the BIDS Dixon chain, signal model and units, `DixonPhase` (unwrap, alias selection), the IDEAL fit and its degeneracies, why swaps happen, quirk list (fixed and open, incl. precession and left-right gradient), real-data validation, phantom and light-test recipes |
 
 ### Cross-references between the guides
@@ -32,7 +33,7 @@ Each guide's header links to the related guides. The shared topics are:
   §2–3). A BIDS config's `Segment.Location` is a `what` group from `$SegmentationGroups`. `MuscleBidsAnalysis` uses the
   label files and `MuscleLabelToName` (SegmentationTools.md §9).
 - **Quirk lists.** Each code map ends with a numbered quirk table (MuscleBidsTools.md §10: Q1–Q14,
-  SegmentationTools.md §10: Q1–Q13, DixonTools.md §7: Q1–Q25, EPGT2.md §7: Q1–Q17). Each entry is marked fixed, intentional, or open. **Ask the user before fixing an
+  SegmentationTools.md §10: Q1–Q13, DixonTools.md §7: Q1–Q27, EPGT2.md §7: Q1–Q17, FasciculationTools.md §5: Q1–Q8). Each entry is marked fixed, intentional, or open. **Ask the user before fixing an
   open one.**
 
 ## Essentials

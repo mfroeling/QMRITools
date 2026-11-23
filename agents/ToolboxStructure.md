@@ -166,7 +166,7 @@ symbols); and **used by** (how many packages reference it).
 | ReconstructionTools | 810 | 30/14 | basic recon, coil combination | Denoise, General | 3 |
 | TractographyTools | 1126 | 25/16 | fibre tractography | General, Masking, Plotting, Tensor | 3 |
 | ProcessingTools | 1261 | 33/37 | general processing (`JoinSets`, `SplitSets`, …) | Elastix, General, Masking, Reconstruction, Tensor, Tractography | **10** |
-| FasciculationTools | 388 | 5/7 | fasciculation detection | General, Gradient, Masking, Plotting | 1 |
+| FasciculationTools | 541 | 7/8 | fasciculation detection | General, Gradient, Masking, Plotting | 1 |
 | SimulationTools | 1033 | 21/11 | DWI/DTI/Dixon/EPG simulation | General, Gradient, Masking, Processing, Relaxometry, Spectro, Tensor | 1 |
 | CoilTools | 251 | 7/3 | coil/SNR analysis | General, Masking, Nifti, Plotting, Processing | 0 |
 | TaggingTools | 428 | 2/2 | tagging MRI | General, Masking | 0 |

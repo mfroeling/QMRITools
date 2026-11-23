@@ -16,6 +16,21 @@ This page summarises what each major version of QMRITools brought, with a short 
 
 ## QMRITools 5.x updates
 
+- **5.4** (unreleased): `FindActivations` uses the published fasciculation detection again (Heskamp et al. 2025,
+  QMRITools 4.3.6). Since 4.5.3 the standard deviation also included undetected drops, so fewer fasciculations were
+  found, most of all in muscles with many. **Fasciculation counts from 4.5.3-5.3.0 change on a rerun.** New
+  `ListActivations` lists every fasciculation with its slice, volume, size, position, label and signal drop, so
+  events can be checked, for example for motion, and `RemoveActivations` removes the rejected ones from the map.
+  `AnalyzeActivations` now also counts a slice with a single active voxel (only maps without `SelectActivations`).
+  The default `ActivationThreshold` of `FindActivations` and of the Muscle-BIDS fasciculation detection is now the
+  published `{3.0, 0.6}` (was `{3.0, 0.75}` and `{3., .65}`). Muscle-BIDS merge, segmentation, tractography and
+  analysis compare the dates in the check files. They redo a subject when an input was finished after their own
+  result, and skip it (with a log line and an error check) when the input itself is out of date, for example after a
+  failed merge. Before, they could run on old merged data. Dixon: the bipolar phase is now set per leg from the
+  echoes themselves, and the graph cut keeps the start field in water. This fixes the remaining calf water-fat
+  swaps (patches or a whole leg) and a +0.5 pp left-right calf fat fraction bias of 5.3.0. **Dixon fat fractions
+  from 5.3.0 change on a rerun, mostly in the calf.** `SegmentData` checks that the networks load before it starts,
+  and a failed network load is no longer cached. New `Process` key `DixonUnwrapSplit` for `Dixon-B` on a single limb.
 - **5.3** (November 2026): Dixon water-fat swaps fixed (alias selection, graph cut start field) and a precession
   check. EPG T2 models fat as 90% lipid and 10% water, pools B1 over a 3D box and corrects for short TR. Every
   Muscle-BIDS output json records the settings it was made with, and the analysis can weight tract-based values

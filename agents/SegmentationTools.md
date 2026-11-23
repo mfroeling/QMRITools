@@ -89,7 +89,8 @@ into the segmentation json (MuscleBidsTools.md §6). Keep it in sync when the ta
 
 `GetNeuralNet[name]` (L495) loads a net from a file path or an asset name and **caches it per session** through the
 memoised helper `GetNeuralNetI`. `GetNeuralNet["Clear"]` resets the cache. NetGraph and NetChain inputs pass through
-unchanged. A failed load is cached as `$Failed` too, so clear the cache after fixing a missing asset.
+unchanged. Only a loaded net is cached, so a fixed asset is found again without a restart. `SegmentData` loads the
+nets of the found locations before segmenting and returns `$Failed` with `SegmentData::net` when one does not load.
 
 ---
 
@@ -378,11 +379,11 @@ Gaussian smoothing, browse/reload, and export to `TrainLogPlot.png`.
 | Q6 | `SegmentData` / `SplitDataForSegmentation` usage | **Fixed 2026-09-22.** Both now list all 14 `what` groups. The defaults are `"Body"` (SegmentData) and `"Legs"` (SplitDataForSegmentation), as in the code. The non-existent `{what, netFile}` form was removed. Keep both lists in sync with `$SegmentationGroups`. |
 | Q7 | `FindBodyPos` L655 comment | **Fixed 2026-09-22.** The comment said "within 6 slices"; it now says "at most one jump within 4 slices", matching `Total[dVars[[i ;; i + 3]]] <= 1`. |
 | Q8 | leaked private globals | **Fixed 2026-09-22:** `GetNetwork`, `makeTest`, `datC`, `plot` are now Block locals. `ti` is gone: `OneCycleSchedule` now returns `OneCycleValue[#1 + it, n]&` (checked identical on every batch). **Intentional globals (keep):** `segmentWindow` (lets the GUI close its previous window), `GetNeuralNetI` (session cache), `data`/`batchFunctionL` on producer link kernels, `data` and `queue1..n` on Parallel kernels (must persist between calls). |
-| Q9 | `SegmentData` L945 | `Return[$Failed]` for a missing net happens before `SetMXenvironment["Reset"]`, so the MXNet environment variables stay on the "StartSegment" settings. |
+| Q9 ✔ | `SegmentData` L945 | **Fixed 2026-11-23.** The net check only tested the asset name (a misnamed `.wlnet` file passed it, `$Failed` then reached `ReplaceLabels`) and its `Return` sat inside `AbsoluteTiming` before `SetMXenvironment["Reset"]`. Now it loads the nets of the found locations, issues `SegmentData::net`, resets MX and returns `$Failed` from the Block. `MuscleBidsSegment` logs it and writes check `"error"`. |
 | Q10 | `SplitDataForSegmentation` L1054 | `TargetDevice` is ignored for the classifier (hard-coded CPU). This may be intentional (a small net). |
 | Q11 | `MakeTrainData` / `NormDat` | **Resolved 2026-09-22: needed, work in progress.** It came from a `MakeTrainDat` helper in the author's shoulder-segmentation research notebook (outside the repo) and makes contrast-blended multi-channel **segmentation** training data (`{{outph,inph,6},{wat,fat,5}}` → 11 channels; checked identical to the notebook). It is now public with a usage string. `SyntaxInformation` was added, and the `NormDat` Block initialisers were moved into the body (checked identical). Remaining: `NormDat` shares its name with an unrelated private `NormDat` in MaskingTools.wl (no clash). |
 | Q12 | `CopyTrainedNetwork` without `dim` | Produces `N5_UpperLeg_.wlnet` (trailing underscore), which matches no asset. |
-| Q13 | `GetNeuralNet` | A failed load is memoised as `$Failed` until `GetNeuralNet["Clear"]`. |
+| Q13 ✔ | `GetNeuralNet` | **Fixed 2026-11-23.** A failed load was memoised as `$Failed` until `GetNeuralNet["Clear"]`; now only loaded nets are cached. |
 
 ---
 

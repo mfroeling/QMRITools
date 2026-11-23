@@ -1416,6 +1416,16 @@ The two conversion steps have no check files and no `VersionCheck`:
 
 When new subjects arrive, run the steps with `ProcessSubjects` set to the new subjects only.
 
+The steps also compare the dates in the check files, so a later step does not build on results that are out of date:
+
+- **A step redoes a subject by itself** when one of its inputs was finished after its own result. If you rerun the
+  merge, the next segmentation, tractography and analysis runs redo that subject without deleting anything.
+- **A step skips a subject** when its input is itself out of date, for example when processing was redone but the
+  merge failed. The log then says "the input is outdated", and the check file of the step says `error`. Run the
+  earlier step again (here the merge), and the later steps then run normally.
+- Older results are fine as long as nothing before them was redone, so you can keep earlier steps and redo only the
+  later ones.
+
 ### Log
 
 The pipeline writes what it does to a log while it runs, and opens the log window when a step starts. Each subject and
@@ -1489,6 +1499,7 @@ Every key you leave out of `config.json` gets the value below. The blocks `Proce
     "DixonFixT2": true,
     "DixonGraphCut": 3,
     "DixonPrecessions": 1,
+    "DixonUnwrapSplit": true,
     "EPGCalibrate": true,
     "EPGFatT2": 150
   },
@@ -1537,6 +1548,7 @@ Notes:
 | `DeleteAfterConversion` | `MuscleBidsConvert` | Delete the raw files after they are converted. Use `False` to keep them. | `True`; `True` or `False` |
 | `BidsTractographyMethod` | `MuscleBidsTractography` | Run only the tracking, or only the splitting of the tracts per muscle (needs an existing tract file). | `"Full"`; `"Full"`, `"Tractography"` or `"Segmentation"` |
 | `BidsOutputImages` | `MuscleBidsAnalysis` | Which images to make; see [Choosing the pictures](#choosing-the-pictures-bidsoutputimages). | `"All"` |
+| `BidsShowLog` | all seven steps | Open the log window while the step runs. | `False`; `True` or `False` |
 
 For example, to keep the raw files:
 
@@ -1563,6 +1575,7 @@ Change these only when the defaults do not fit your data.
 | `DixonFixT2` | For `Dixon-A`. With `true` the water and fat T2 are fixed and the fit gives R2′, the part of R2\* that comes from field differences. The maps `t2prime` and `r2prime` are added, and `t2star` and `r2star` include the water and fat T2 again. With `false` the fit gives R2\* directly and there are no `t2prime` and `r2prime` maps. | `true` |
 | `DixonGraphCut` | For `Dixon-A`. Corrects local water-fat swaps in the starting field map, in blocks of this many voxels. Set to `false` to turn it off, for example when a subject shows swaps that were not there without it. | `3` |
 | `DixonPrecessions` | For `Dixon-A` and `Dixon-B`. The direction in which the fat signal rotates, which depends on the scanner. Use `-1` when the log or the output JSON says the precession check fits better with the opposite direction. | `1`; `1` or `-1` |
+| `DixonUnwrapSplit` | For `Dixon-B`. With `true` the left and right leg are unwrapped separately, which needs two legs in the image. Set to `false` for a single limb (an arm or one leg); otherwise the log shows `FindMiddle: could not find the center` and the limb is cut in two. | `true` |
 | `EPGCalibrate` | For `EPGT2`. Measures the fat T2 in the subcutaneous fat of each scan. Set to `false` to use a fixed fat T2 (`EPGFatT2`) instead, for example when there is too little subcutaneous fat. | `true` |
 | `EPGFatT2` | For `EPGT2` with `EPGCalibrate` set to `false`. The fixed fat T2 in ms. | `150` |
 
