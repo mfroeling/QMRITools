@@ -199,6 +199,10 @@ BidsOutputImages::usage =
 "BidsOutputImages is an option for MuscleBidsAnalysis and ManageCheckFiles. It sets which images are saved in the output folder,
 one of \"All\", \"Quantitative\", \"Segmentation\", \"Tractography\" or \"None\"."
 
+BidsDateCheck::usage =
+"BidsDateCheck is an option for MuscleBidsMerge, MuscleBidsSegment, MuscleBidsTractography and MuscleBidsAnalysis. If True (default) a result is redone when one of its inputs was redone after it,
+and a step is skipped when its input is older than the input's own inputs. If False only the check status and version are used, as before version 5.4."
+
 BidsShowLog::usage =
 "BidsShowLog is an option for all Bids processing functions. If set True the log window pops up during processing."
 
@@ -2432,10 +2436,10 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 			{BidsDcmToNii, "rawData", {}},
 			{MuscleBidsConvert, "rawData", {DeleteAfterConversion}},
 			{MuscleBidsProcess, "derivedData", {VersionCheck}},
-			{MuscleBidsMerge, "mergeData", {VersionCheck}},
-			{MuscleBidsSegment, "mergeData", {VersionCheck}},
-			{MuscleBidsTractography, "mergeData", {VersionCheck, BidsTractographyMethod}},
-			{MuscleBidsAnalysis, "analysis", {VersionCheck, BidsOutputImages}}
+			{MuscleBidsMerge, "mergeData", {VersionCheck, BidsDateCheck}},
+			{MuscleBidsSegment, "mergeData", {VersionCheck, BidsDateCheck}},
+			{MuscleBidsTractography, "mergeData", {VersionCheck, BidsDateCheck, BidsTractographyMethod}},
+			{MuscleBidsAnalysis, "analysis", {VersionCheck, BidsDateCheck, BidsOutputImages}}
 		},
 		optVals = <|
 			BidsTractographyMethod -> {"Full", "Tractography", "Segmentation"},
@@ -2721,6 +2725,7 @@ CheckDataDescription[dis:{_Rule..}, met_] := Block[{
 
 
 bidsDerivedFolder = None;
+bidsDateCheck = True;
 
 
 BidsCheckDate[nam_?StringQ] := Block[{check, time},
@@ -2742,7 +2747,7 @@ BidsCheckInputs[inputs_List] := Association[(# -> Import[#<>"_check.json", "RawJ
 BidsCheckOutdatedQ[nam_?StringQ, inputs_List] := Block[{own, in},
 	own = BidsCheckDate[nam];
 	in = DeleteMissing[BidsCheckDate /@ inputs];
-	If[MissingQ[own] || in === {}, False, own < Max[in]]
+	If[!bidsDateCheck || MissingQ[own] || in === {}, False, own < Max[in]]
 ]
 
 
@@ -2771,10 +2776,16 @@ BidsCheckInputList[nam_?StringQ] := Block[{check},
 ]
 
 
-BidsInputsOkQ[nam_?StringQ, inputs_List, datType_] := Block[{old},
-	(*inputs that were redone after their own inputs can not be used*)
+BidsInputsOkQ[nam_?StringQ, inputs_List, datType_] := BidsInputsOkQ[nam, inputs, datType, True]
+
+BidsInputsOkQ[nam_?StringQ, inputs_List, datType_, strict_] := Block[{old},
+	(*inputs that were redone after their own inputs can not be used, if not strict only warn*)
 	old = Select[inputs, BidsCheckOutdatedQ[#, BidsCheckInputList[#]]&];
-	If[old =!= {},
+	If[old =!= {} && !strict,
+		(*-----*)AddToLog[{"Warning, the input is outdated since its own input was redone after it, using it anyway:",
+			StringRiffle[FileNameTake /@ old, ", "]}, 3, True]
+	];
+	If[old =!= {} && strict,
 		(*-----*)AddToLog[{"Skipping, the input is outdated since its own input was redone after it. First rerun the step that makes:",
 			StringRiffle[FileNameTake /@ old, ", "]}, 3, True];
 		MakeCheckFile[nam, Sort@Join[{"Check" -> "error"}, Normal@datType]];
@@ -2798,6 +2809,7 @@ Options[BidsFolderLoop] = {
 	(*general options*)
 	ProcessSubjects->All, 
 	VersionCheck->False,
+	BidsDateCheck->True,
 	BidsShowLog->False,
 	(*method specific options*)
 	DeleteAfterConversion->True, 
@@ -2813,11 +2825,11 @@ BidsFolderLoop[inFol_?StringQ, datDis_?AssociationQ, opts:OptionsPattern[]] := B
 
 BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsPattern[]] := Block[{
 		met, folders, subs, ass, nam, versCheck, delete, tractMet,
-		inputFolders, customConfig, out, datDis, imOut, showLog
+		inputFolders, customConfig, out, datDis, imOut, showLog, bidsDateCheck
 	},
 
-	{met, subs, versCheck, delete, tractMet, imOut, showLog} = OptionValue[{
-		Method, ProcessSubjects, VersionCheck, DeleteAfterConversion, BidsTractographyMethod, BidsOutputImages, BidsShowLog}];
+	{met, subs, versCheck, delete, tractMet, imOut, showLog, bidsDateCheck} = OptionValue[{
+		Method, ProcessSubjects, VersionCheck, DeleteAfterConversion, BidsTractographyMethod, BidsOutputImages, BidsShowLog, BidsDateCheck}];
 
 	debugBids["Enter BidsFolderLoop for method: "<>met];
 	debugBids[inFol];
@@ -4506,7 +4518,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 (*MuscleBidsMerge*)
 
 
-Options[MuscleBidsMerge] = {ProcessSubjects->All, VersionCheck->False, BidsShowLog->False};
+Options[MuscleBidsMerge] = {ProcessSubjects->All, VersionCheck->False, BidsDateCheck->True, BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsMerge] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -4858,7 +4870,7 @@ MuscleBidsMergeI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
 (*MuscleBidsSegment*)
 
 
-Options[MuscleBidsSegment] = {ProcessSubjects->All, VersionCheck->False, BidsShowLog->False};
+Options[MuscleBidsSegment] = {ProcessSubjects->All, VersionCheck->False, BidsDateCheck->True, BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsSegment] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -5034,7 +5046,7 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 (*MuscleBidsTractography*)
 
 
-Options[MuscleBidsTractography] = {ProcessSubjects->All, VersionCheck->False, BidsTractographyMethod->"Full", BidsShowLog->False};
+Options[MuscleBidsTractography] = {ProcessSubjects->All, VersionCheck->False, BidsDateCheck->True, BidsTractographyMethod->"Full", BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsTractography] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -5334,7 +5346,7 @@ MuscleBidsTractographyI[{folIn_, folOut_}, {datType_, allType_}, verCheck_, met_
 (*MuscleBidsAnalysis*)
 
 
-Options[MuscleBidsAnalysis] = {ProcessSubjects->All, VersionCheck->False, BidsOutputImages->"All", BidsShowLog->False};
+Options[MuscleBidsAnalysis] = {ProcessSubjects->All, VersionCheck->False, BidsDateCheck->True, BidsOutputImages->"All", BidsShowLog->False};
 
 SyntaxInformation[MuscleBidsAnalysis] = {"ArgumentsPattern" -> {_, _., _., OptionsPattern[]}};
 
@@ -5482,7 +5494,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 	(*the check files of all merged, segmentation and tractography data*)
 	inputs = StringDrop[#, -11]& /@ FileNames["*_check.json", folIn, Infinity];
 	debugBids["input checks: ", Column@inputs];
-	If[!BidsInputsOkQ[checkFileX, inputs, datDis], Return[Null, Block]];
+	If[!BidsInputsOkQ[checkFileX, inputs, datDis, False], Return[Null, Block]];
 
 	anaSeg = datDis["Segmentation", "Type"];
 	(*the labels setting is a number, a word or both, anything else is a config error*)

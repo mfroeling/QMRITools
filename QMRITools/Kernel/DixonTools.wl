@@ -435,7 +435,8 @@ AlignBipolar[comp_, ph0_, msk_, bip_, bp_] := Block[{trip, lab},
 
 BipolarPlane[trip_] := Block[{sl, cen, pl},
 	(*phase step per voxel along z, y and x from the products of neighbouring triplets, which do not wrap*)
-	sl = Table[Arg[Total[Flatten[Conjugate[#1] #2 & @@ EdgeParts[trip, ax]]]], {ax, 3}];
+	(*unit weight per voxel, the triplet amplitude goes with signal^4 and lets a few bright voxels set the slope*)
+	sl = Table[Arg[Total[Flatten[Conjugate[#1] #2 & @@ EdgeParts[Sign[trip], ax]]]], {ax, 3}];
 
 	(*linear phase around the centre of the object, the offset from the triplets, which is small at the centre*)
 	cen = Mean[N@Position[Unitize[Abs[trip]], 1]];

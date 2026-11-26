@@ -33,7 +33,7 @@ Each guide's header links to the related guides. The shared topics are:
   §2–3). A BIDS config's `Segment.Location` is a `what` group from `$SegmentationGroups`. `MuscleBidsAnalysis` uses the
   label files and `MuscleLabelToName` (SegmentationTools.md §9).
 - **Quirk lists.** Each code map ends with a numbered quirk table (MuscleBidsTools.md §10: Q1–Q14,
-  SegmentationTools.md §10: Q1–Q13, DixonTools.md §7: Q1–Q27, EPGT2.md §7: Q1–Q17, FasciculationTools.md §5: Q1–Q8). Each entry is marked fixed, intentional, or open. **Ask the user before fixing an
+  SegmentationTools.md §10: Q1–Q13, DixonTools.md §7: Q1–Q28, EPGT2.md §7: Q1–Q17, FasciculationTools.md §5: Q1–Q8). Each entry is marked fixed, intentional, or open. **Ask the user before fixing an
   open one.**
 
 ## Essentials

@@ -618,7 +618,13 @@ Version plays no part in this. The helpers are in the `BidsCheckInputs` cell (Bi
   redoes that subject.
 - `BidsInputsOkQ[base, inputs, datType]` runs before the done test. When an input check is older than *its own* inputs,
   the step logs "input is outdated", writes `Check -> "error"`, and skips the subject. Example: processing was redone
-  but merge crashed or was skipped, so seg, tracto and analysis must not run on the old merged data.
+  but merge crashed or was skipped, so seg and tracto must not run on the old merged data. The analysis calls it with
+  a 4th argument `False` (not strict): it only logs a warning and goes on, because it reads the finished results. Example:
+  a segmentation rerun makes every tract "outdated", but the tracts are still valid for the analysis.
+- Option `BidsDateCheck` (default True) on `MuscleBidsMerge`, `Segment`, `Tractography`, `Analysis` and their GUI rows.
+  `BidsFolderLoop` blocks the private flag `bidsDateCheck` with it, and `BidsCheckOutdatedQ` returns False when it is
+  off: no redo on newer inputs and no skip on outdated inputs, only status and version count (pre-5.4 behaviour).
+  The `"Inputs"` key is still written, so turning it back on later works.
 - An input's own inputs are the `"Inputs"` key (`<|check base -> Date|>`, written by `BidsCheckInputs` into every merge,
   seg, tracto and analysis check). For an old merged check without `"Inputs"` they are the derived stack checks.
   This fallback is found through `bidsDerivedFolder`, which only the `MuscleBidsSegment`/`Tractography`/`Analysis`
