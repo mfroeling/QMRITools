@@ -2884,9 +2884,6 @@ BidsFolderLoop[inFol_?StringQ, outFol_?StringQ, datDisIn_?AssociationQ, OptionsP
 
 		(*-----*)AddToLog[{"Starting "<>met<>" for directory: ", fol}, True, 0];
 		(*-----*)If[customConfig, AddToLog["********** ----- Using custom config ----- **********", 0]];
-		If[met === "BidsDcmToNii",
-			(*-----*)AddToLog["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)", 1];
-		];
 
 		(* -------------- The actual processing loops -------------- *)
 		debugBids[{"starting method: ", met}];
@@ -2961,7 +2958,7 @@ BidsDcmToNii[inFol_?StringQ, outFol_?StringQ, settings_, opts:OptionsPattern[]] 
 (*BidsDcmToNiiI*)
 
 
-BidsDcmToNiiI[fol_, outI_, settings_] := Block[{out},
+BidsDcmToNiiI[fol_, outI_, settings_] := Block[{out, ver},
 	(*define the out folder*)
 	out = FileNameJoin[{outI, "raw"}];
 	(*-----*)AddToLog[{"Output folder: ", out}, 1];
@@ -2974,6 +2971,9 @@ BidsDcmToNiiI[fol_, outI_, settings_] := Block[{out},
 		DcmToNii[FileNameJoin[{Directory[],#}]&/@{fol,out},
 			MonitorCalc->False, UseVersion->settings["Version"],
 			MergeEchos->Lookup[settings, "MergeEchos", defaultConfig["conversion"]["MergeEchos"]]];
+		(*the dcm2niix version banner from its own log*)
+		ver = Quiet@First[ReadList[FileNameJoin[{out, "DcmToNiiLog.txt"}], String, 1], ""];
+		(*-----*)AddToLog[{"UseVersion:", settings["Version"], "; ", If[StringQ[ver] && ver =!= "", ver, "unknown dcm2niix version"]}, 1];
 		(*-----*)AddToLog["Folder was converted", 1],
 		(*-----*)AddToLog["Folder was skipped since output folder already exists", 1];
 	];

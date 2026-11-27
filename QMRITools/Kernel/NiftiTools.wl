@@ -271,7 +271,7 @@ DcmToNii[{inFol_?StringQ, outFol_?StringQ}, opt:OptionsPattern[]] := Block[{
 			dcm2niiFol = DirectoryName[dcm2nii];
 		];
 
-		If[mon, MonitorFunction["Using Chris Rorden's dcm2niix.exe (https://github.com/rordenlab/dcm2niix)"]];
+		If[mon, MonitorFunction["Using "<>dcm2niiExe<>", Chris Rorden's dcm2niix (https://github.com/rordenlab/dcm2niix)"]];
 
 		(*decompress the dcm files in place*)
 		If[OptionValue[DecompressDcm],
