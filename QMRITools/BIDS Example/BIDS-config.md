@@ -542,7 +542,7 @@ The `conversion` section chooses the version of dcm2niix that converts your DICO
 | Key | What it is for | Default |
 | --- | --- | --- |
 | `Version` | Which dcm2niix version to use. See the list below. | `"Own"` on Windows, `1` on macOS |
-| `MergeEchos` | `true` puts all images of one series into one file. Use `false` when Philips Dixon data is stored as one DICOM file per image (for example after a PACS or XNAT export): with `true` the real and imaginary echoes end up mixed in one file. With `false` every echo and image type gets its own file. | `true` |
+| `MergeEchos` | `true` puts all images of one series into one file. Use `false` when Philips Dixon data is stored as one DICOM file per image (for example after a PACS or XNAT export): with `true` the real and imaginary echoes end up mixed in one file. With `false` every echo and image type gets its own file. If magnitude and phase end up in one file (its name ends in `_phMag`), the conversion of that scan is skipped and the log tells you to set `false`, empty the `raw` folder of that subject and run `BidsDcmToNii` again. | `true` |
 
 Example:
 

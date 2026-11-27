@@ -21,7 +21,9 @@ This page summarises what each major version of QMRITools brought, with a short 
   `seg_musclemap_…` with the labels in QMRITools numbering. New `Segment` key `MuscleMapEnvironment`. `"Automatic"`
   may now be written as text in the config, and an unknown method is reported instead of skipped. The
   `"Registration"` method registers the whole target once (it registered three single slices before) and has its own
-  check file `seg_reg_…`. **Existing Registration segmentations are redone once.**
+  check file `seg_reg_…`. **Existing Registration segmentations are redone once.** Convert skips a scan whose
+  magnitude and phase were put in one file (`_phMag`, classic DICOM with `MergeEchos` true) and says how to fix it;
+  before, that file was converted as phase only.
 - **5.4** (unreleased): `FindActivations` uses the published fasciculation detection again (Heskamp et al. 2025,
   QMRITools 4.3.6). Since 4.5.3 the standard deviation also included undetected drops, so fewer fasciculations were
   found, most of all in muscles with many. **Fasciculation counts from 4.5.3-5.3.0 change on a rerun.** New

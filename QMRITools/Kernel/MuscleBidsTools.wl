@@ -3083,12 +3083,19 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 		|>;
 
 		(*check if there are files to do something with*)
-		If[Length@Flatten[files]===0,
+		Which[
+			Length@Flatten[files]===0,
 			(*no json files found*)
 			debugBids["!!!!!!!!! No json files found !!!!!!!!!!"];
 			(*-----*)AddToLog[{"No json files found with label ", nameIn , " skipping conversion"}, 4],
 
+			(*magnitude and phase in one file, dcm2niix stacked a classic (one file per slice) series with -m y*)
+			AnyTrue[Flatten[files], StringContainsQ[FileBaseName[#], "_phMag"]&],
+			(*-----*)AddToLog[{"!!!!! Magnitude and phase of", nameIn, "are in one file (_phMag). Set conversion.MergeEchos to false,",
+				"empty the raw folder of this subject and run BidsDcmToNii again. Skipping conversion"}, 4],
+
 			(*if json files found import them*)
+			True,
 			debugBids[files];
 			json = ImportJSON/@files;
 
