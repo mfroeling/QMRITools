@@ -899,6 +899,76 @@ BidsDcmDate[json_] := Block[{date},
 BidsDcmConsistentQ[json_List] := AllTrue[json, (BidsDcmDate[#] === bidsDcmOwn || BidsDcmDate[#] >= bidsDcmConsistent)&]
 
 
+(* ::Subsubsection::Closed:: *)
+(*DixonImageRole*)
+
+
+(*scanner maps by the end of the ImageType, longer endings first*)
+dixonMapTags = {
+	{"FAT", "FRAC"} -> "fatfr",
+	{"T2", "STAR", "MAP"} -> "t2star",
+	{"GOF"} -> "gof",
+	{"WATER"} -> "wat",
+	{"FAT"} -> "fat",
+	{"IN_PHASE"} -> "inph",
+	{"OUT_OF_PHASE"} -> "outph",
+	{"OPP_PHASE"} -> "outph"
+};
+
+dixonMapRoles = DeleteDuplicates[Values[dixonMapTags]];
+
+(*source echoes by the last ImageType tag, or for Siemens by the ImageType value 3*)
+dixonSourceTags = {
+	"MIXED" | "MAGNITUDE" | "M" -> "",
+	"PHASE" | "P" -> "ph",
+	"REAL" | "R" -> "real",
+	"IMAGINARY" | "I" -> "imag"
+};
+
+dixonSourceRoles = DeleteDuplicates[Values[dixonSourceTags]];
+
+DixonImageRole[json_?AssociationQ] := Block[{tags, end, src, map},
+	(*the ImageType tags, for the maps without the MAGNITUDE that dcm2niix 2026+ adds*)
+	tags = ToUpperCase[Flatten[{Lookup[json, "ImageType", {}]}]];
+	end = If[MatchQ[tags, {___, "MAGNITUDE"}], Most[tags], tags];
+	src = If[SiemensQ[json] && Length[tags] > 2, tags[[3]], Last[tags, ""]];
+
+	(*the first map whose tags end the ImageType, else the source echo type, an unknown DIXON map has no role*)
+	map = SelectFirst[dixonMapTags, MatchQ[end, {___, Sequence @@ First[#]}]&];
+	Which[
+		!MissingQ[map], Last[map],
+		MemberQ[tags, "DIXON"], Missing["NoDixon"],
+		True, Replace[src, Append[dixonSourceTags, _ -> Missing["NoDixon"]]]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*SiemensQ*)
+
+
+SiemensQ[json_?AssociationQ] := StringContainsQ[ToString@Lookup[json, "Manufacturer", ""], "Siemens", IgnoreCase -> True]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DixonSourceScale*)
+
+
+DixonSourceScale[data_, role_, siemens_] := If[siemens,
+	(*Siemens: magnitude as stored, phase stored from -4096 to 4095*)
+	Switch[role,
+		"ph", Pi data / 4096.,
+		_, N@data
+	],
+	(*Philips: stored from 0 to 4094 with the zero at 2047*)
+	Switch[role,
+		"", 1000. data / 2047.,
+		"ph", Pi (data - 2047.) / 2047.,
+		_, 1000. (data - 2047.) / 2047.
+	]
+]
+
+
 (* ::Subsection:: *)
 (*Bids Support Functions*)
 
@@ -3021,8 +3091,8 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 		type, fol, parts, files, json, infoExtra, pos, posIn, info, data, vox,
 		grad, val, suffix, outFile, echo, nEch, fit, labels, class, types,
 		vx, vy, vz, dx, dy, dz, sx, sy, sz, off, diffFile, hasBval, hdr, nSl, len,
-		labs, noFiles, sel, imgTags, recTags, consistent, e, s, phase1, phase2,
-		nameIn, stkName, stacks, nths, series, bad, srcTags
+		labs, noFiles, sel, roles, found, siemens, consistent, e, s, phase1, phase2,
+		nameIn, stkName, stacks, nths, series, bad
 	},
 
 	debugBids["Starting MuscleBidsConvertI"];
@@ -3110,7 +3180,7 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 
 				(*warn when data from a consistent dcm2niix is not converted with Dixon-A*)
 				pos = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
-				If[MemberQ[{"Dixon", "Dixon-B", "Dixon-P"}, datType["Process", "Method"]] && pos =!= {} && BidsDcmConsistentQ[json[[pos]]],
+				If[MemberQ[{"Dixon", "Dixon-B", "Dixon-P", "Dixon-S"}, datType["Process", "Method"]] && pos =!= {} && BidsDcmConsistentQ[json[[pos]]],
 					(*-----*)AddToLog[{"!!!!!!!!!!!!!!! Data from dcm2niix own or 20261029+ with Method",
 						datType["Process", "Method"], ", Dixon-A is advised !!!!!!!!!!!!!!!!!!!"}, 4]
 				];
@@ -3275,91 +3345,62 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 					DelFiles[files[[posIn]], del];
 					,
 					"Dixon-A",
-					(*philips data, auto detect online recon/tse and raw source data from the ImageType tag, a series can hold both*)
-					imgTags = ToLowerCase[Last[#["ImageType"]]]& /@ json;
-					recTags = Select[{"WATER", "FAT", "IN_PHASE", "OUT_OF_PHASE"}, MemberQ[imgTags, ToLowerCase[#]]&];
-					srcTags = Select[{"MIXED", "PHASE", "REAL", "IMAGINARY"}, MemberQ[imgTags, ToLowerCase[#]]&];
-					debugBids[{recTags, srcTags}];
+					(*scanner maps and source echoes of any vendor, each file of the protocol gets its role from the ImageType*)
+					posIn = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
+					roles = DixonImageRole /@ json[[posIn]];
+					found = Select[Join[dixonMapRoles, dixonSourceRoles], MemberQ[roles, #]&];
+					debugBids[{"Dixon-A roles: ", roles}];
 
-					(*online recon data*)
-					If[recTags=!={},
-						(*online recon/tse data: one file per dixon type*)
-						types = {"WATER", "FAT", "IN_PHASE", "OUT_OF_PHASE"};
-						suffix = {"wat", "fat", "inph", "outph"};
-						posIn = {};
-
-						(*loop over types and export them*)
-						Table[(*get the position of the files needed*)
-							pos = GetJSONPosition[json, {{"ProtocolName", nameIn}, {"ImageType", types[[i]]}}];
-
-							If[pos==={},
-								(*-----*)AddToLog[{"No json files found with label ", nameIn , " and type ", suffix[[i]], " skipping conversion"}, 4],
-
-								pos = CheckPos[pos];
-								posIn = Join[posIn, Flatten[{pos}]];
-
-								(*get the json and data*)
-								(*-----*)AddToLog[{"Importing dataset with properties: ", nameIn, suffix[[i]]}, 4];
-								info = json[[pos]];
-								{data, vox} = ImportNii[ConvertExtension[files[[pos]], ".nii"], NiiScaling -> False];
-								(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
-
-								(*export to the correct folder*)
-								outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, stkName],
-									"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
-								(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
-								ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
-								Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
-							]
-						, {i, 1, Length[suffix]}];
-
-						(*export used files*)
-						If[posIn=!={}, DelFiles[files[[posIn]], del]];
+					(*report the files that are not used*)
+					If[found === {},
+						(*-----*)AddToLog[{"No Dixon images found with label ", nameIn, " skipping conversion"}, 4]
+					];
+					If[MemberQ[roles, _Missing],
+						(*-----*)AddToLog[{"Not used, no Dixon ImageType:", FileBaseName /@ files[[Pick[posIn, roles, _Missing]]]}, 4]
 					];
 
-					(*raw source data, also when there are no recon tags so the old fallback stays*)
-					If[srcTags=!={} || recTags==={},
-						(*raw source data: magnitude, phase, real and imaginary per echo*)
-						types = {"MIXED", "PHASE", "REAL", "IMAGINARY"};
-						suffix = {"", "ph", "real", "imag"};
+					(*loop over the roles and export them*)
+					Table[
+						pos = Pick[posIn, roles, role];
 
-						(*loop over types and export them*)
-						Table[(*get the position of the files needed*)
-							pos = GetJSONPosition[json, {{"ProtocolName", nameIn}, {"ImageType", types[[i]]}}, "EchoNumber"];
+						If[MemberQ[dixonMapRoles, role],
+							(*scanner map, the last file if the map is repeated*)
+							pos = CheckPos[pos];
+							(*-----*)AddToLog[{"Importing dataset with properties: ", nameIn, role}, 4];
+							info = json[[pos]];
+							{data, vox} = ImportNii[ConvertExtension[files[[pos]], ".nii"], NiiScaling -> False]
+							,
+							(*source echoes sorted by echo time, the last series if an echo time is repeated*)
+							echo = GroupBy[pos, Lookup[json[[#]], "EchoTime", #]&, Last];
+							If[Length[echo] < Length[pos],
+								(*-----*)AddToLog[{"!!!!!!!!!!!!!!! Repeated echo times, using the last series, not used:",
+									FileBaseName /@ files[[Complement[pos, Values[echo]]]], "!!!!!!!!!!!!!!!!!!!"}, 4]
+							];
+							pos = Values@KeySort@echo;
+							(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {nameIn, Replace[role, "" -> "mag"]}}, 4];
+							info = Join[MergeJSON[json[[pos]]], <|"FourthDimension"->"EchoTime", "DataClass"->class|>];
+							{data, vox} = Transpose[ImportNii[#, NiiScaling -> False]& /@ ConvertExtension[files[[pos]], ".nii"]];
+							vox = First@vox;
 
-							If[pos==={},
-								(*-----*)AddToLog[{"No json files found with label ", nameIn , " and type ", suffix[[i]], " skipping conversion"}, 4],
+							(*scale to magnitude, radians, real and imaginary*)
+							siemens = SiemensQ[info];
+							If[siemens && role =!= "",
+								(*-----*)AddToLog[{"!!!!!!!!!!!!!!! Siemens", role, "scaling is not tested !!!!!!!!!!!!!!!!!!!"}, 4]
+							];
+							data = DixonSourceScale[Transpose[data], role, siemens]
+						];
+						(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
 
-								(*get the json and data*)
-								(*-----*)AddToLog[{"Importing", Length[pos], "datasets with properties: ", {nameIn, suffix[[i]]}}, 4];
-								info = MergeJSON[json[[pos]]];
-								{data, vox} = Transpose[ImportNii[#, NiiScaling -> False]& /@ ConvertExtension[files[[pos]], ".nii"]];
-								vox = First@vox;
-								data = Transpose[data];
+						(*export to the correct folder*)
+						outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, stkName],
+							"suf"->Flatten@{datType["Suffix"], role}|>];
+						(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
+						ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
+						Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
 
-								(*correct data for different types*)
-								data = Switch[suffix[[i]],
-									"", 1000. data / 2047.,
-									"ph", Pi (data - 2047.) / 2047.,
-									"real" | "imag", 1000. (data - 2047.) / 2047.
-								];
-								(*-----*)AddToLog[{"Dimensions:", Dimensions@data, "; Voxel size:", vox}, 4];
-
-								(*make the additional mandatory bids json values*)
-								infoExtra = Join[infoExtra, <|"FourthDimension"->"EchoTime", "DataClass"->class|>];
-
-								(*export to the correct folder*)
-								outFile = GenerateBidsFileName[fol, <|parts, "type"->type, GetClassName[class, stkName],
-									"suf"->Flatten@{datType["Suffix"], suffix[[i]]}|>];
-								(*-----*)AddToLog[{"Exporting to file:", outFile}, 4];
-								ExportNii[data, vox, ConvertExtension[outFile, ".nii"], CompressNii -> compress];
-								Export[ConvertExtension[outFile, ".json"], MergeJSON[{info, infoExtra}]];
-
-								(*Delete used files*)
-								DelFiles[files[[pos]], del];
-							]
-						, {i, 1, Length[suffix]}]
-					];
+						(*delete used files*)
+						DelFiles[files[[pos]], del];
+					, {role, found}];(*close loop over roles*)
 					,
 					"Dixon",
 					(*default script with bids standard of each echo in one file*)
@@ -3760,7 +3801,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		denOpts, dixOpts, epgOpts, phaseEchoes, phaseOpts, procInfo, precRatio, precResult,
 		t2prime, r2prime, rel, amp, r2w, r2f, ffc, t2sInfo, regOpts, ivimOpts, tensOpts, fascOpts,
 		prec, fixT2, aniso, calib, epgOut, mcomp, recOut, scanOut, recSet, recJson, recVox,
-		dixOut, sigs, corr, dbondw, phcal
+		dixOut, sigs, corr, dbondw, phcal, auto, gof
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -3838,7 +3879,12 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					(*branch 1: data with online reconstruction, default to the standard dixon types if not configured*)
 					(*results get overwritten by branch 2 if dixon processing is feasible.*)
 					If[MemberQ[{"Dixon-S", "Dixon-P", "Dixon-A"}, datType["Process", "Method"]],
-						suffix = Lookup[datType["Process"], "Types", {"wat", "fat", "inph", "outph"}];
+						(*Dixon-A without Types takes the scanner maps that are there*)
+						auto = datType["Process", "Method"] === "Dixon-A" && !KeyExistsQ[datType["Process"], "Types"];
+						suffix = If[auto,
+							dixonMapRoles,
+							Lookup[datType["Process"], "Types", {"wat", "fat", "inph", "outph"}]
+						];
 						If[MatrixQ[suffix], {suffix, types} = Transpose@suffix];
 
 						dixFiles = GenerateBidsFileName[fol, <|set, "suf"->{datType["Suffix"], #}|>]&/@suffix;
@@ -3848,7 +3894,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 						exist = NiiFileExistQ /@ nFiles;
 						If[!Or@@exist,
 							(*-----*)AddToLog[{"Could not find any of the ", First@dixFiles}, 4],
-							If[!AllTrue[exist, TrueQ], (*-----*)AddToLog[{"Missing types for ", set, ": ", Pick[suffix, exist, False]}, 4]];
+							If[!auto && !AllTrue[exist, TrueQ], (*-----*)AddToLog[{"Missing types for ", set, ": ", Pick[suffix, exist, False]}, 4]];
 							{suffix, nFiles} = {Pick[suffix, exist], Pick[nFiles, exist]};
 
 							(*-----*)AddToLog["Importing the data", 4];
@@ -3868,6 +3914,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 							If[MemberQ[suffix, "fat"], fat = mask data[[Position[suffix, "fat"][[1,1]]]]];
 							If[MemberQ[suffix, "inph"], inph = mask data[[Position[suffix, "inph"][[1,1]]]]];
 							If[MemberQ[suffix, "outph"], outph = mask data[[Position[suffix, "outph"][[1,1]]]]];
+							If[MemberQ[suffix, "gof"], gof = mask data[[Position[suffix, "gof"][[1,1]]]] / 1000.];
 
 							If[MemberQ[suffix, "t2star"],
 								t2star = mask data[[Position[suffix, "t2star"][[1,1]]]] / 10000.;
@@ -5797,7 +5844,7 @@ MuscleBidsAnalysisI[{folIn_, folOut_}, datDis_, verCheck_, imOut_] := Block[{
 				(*figure out how to handle this type *)
 				tract = MemberQ[trType, datType];
 				wt = If[tract && tractWeighting, trW, 1];
-				scale = Switch[datType[[-2;;]], {"dix", "fatfr"} | {"t2", "fatfr"}, 100, {"dix", "t2star"} | {"dix", "t2prime"}, 1000, _, 1];
+				scale = Switch[datType[[-2;;]], {"dix", "fatfr"} | {"dix", "gof"} | {"t2", "fatfr"}, 100, {"dix", "t2star"} | {"dix", "t2prime"}, 1000, _, 1];
 				meanType = (datType[[-2;;]] === {"trk", "seed"} || datType[[-2;;]] === {"trk", "dens"});
 				(*-----*)AddToLog[{"Processing file "<>If[tract, "with", "without"]<>" tract weighting:", StringRiffle[StringStrip@datType, "_"]}, 4];
 

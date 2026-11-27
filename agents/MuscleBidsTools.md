@@ -248,7 +248,7 @@ associations merge.
 | --- | --- | --- |
 | `folders.{dicomData,rawData,derivedData,mergeData,analysis}` | all | defaults `01_sourcedata` … `05_analysis` |
 | `conversion.Version` | BidsDcmToNii → `DcmToNii[UseVersion->]` | `1` (default on macOS; the default on other systems is `"Own"`) → asset `DcmToNii`; anything else → asset `"DcmToNii-"<>ToString[v]` (for example `"Own"`, `"17"`) |
-| `conversion.MergeEchos` | BidsDcmToNii → `DcmToNii[MergeEchos->]` (dcm2niix `-m y`/`-m n`) | `True`; read with `Lookup` so a `conversion` block with only `Version` still works. Set `false` for classic (one file per slice) Philips Dixon, e.g. after a PACS/XNAT export: `-m y` stacks all files of a series before dcm2niix checks real/imaginary, so the 12 R/I echo volumes end up in one file with an unreliable order. Magnitude/phase series become one `_phMag` file (all echoes, both types); since 5.5 `MuscleBidsConvertI` skips any label with a `_phMag` file and logs the fix (before, the `ImageType` ending in `PHASE` made it the `_ph` file and Process found no magnitude). Enhanced MR (one multiframe file) splits within the file either way. |
+| `conversion.MergeEchos` | BidsDcmToNii → `DcmToNii[MergeEchos->]` (dcm2niix `-m y`/`-m n`) | `True`; read with `Lookup` so a `conversion` block with only `Version` still works. Set `false` for classic (one file per slice) Philips Dixon, e.g. after a PACS/XNAT export: `-m y` stacks all files of a series before dcm2niix checks real/imaginary, so the 12 R/I echo volumes end up in one file with an unreliable order. Magnitude/phase series become one `_phMag` file (all echoes, both types); since 5.5 `MuscleBidsConvertI` skips any label with a `_phMag` file and logs the fix (before, the `ImageType` ending in `PHASE` made it the `_ph` file and Process found no magnitude). Enhanced MR (one multiframe file) splits within the file either way. After `-m n` a classic magnitude has `ImageType` ending in `MAGNITUDE`, not `MIXED`; Dixon-A reads both (`dixonSourceTags`) |
 | `datasets` | steps 2–6 | one entry per dataset; the entry name becomes `Key` |
 | `analysis` | step 7 | **flat** (contains `Analysis`, so it is wrapped as `{"Default"->...}` with no key) or **nested** (one block per name, where the name becomes the key used in file names) |
 
@@ -399,7 +399,7 @@ layout; see [BidsCompliance.md](BidsCompliance.md).
 | | `Dixon-P` + `Types` matrix | separate files matched by last `_` token, only among files whose `ProtocolName` equals the label (the file glob `*label*` also catches e.g. `SRC-<label>`; fixed 2026-11-26). Current dcm2niix tags: `water`, `fat`, `inphase`, `outphase` (old builds: `e1`, `e1a`, `e2`, `e3`) | `Types[[All,1]]` |
 | | `Dixon-S` | Siemens, `SeriesDescription == label_tag` | `Types[[All,1]]` |
 | | `Dixon-B` | Philips single 4D (mag/real/imag/phase interleaved). Needs `EchoTime`. Special case when `ImageType` ends in `FFE` (B0-only) | `""`, `ph`, `real`, `imag` |
-| | `Dixon-A` | **auto**, two gated paths: recon path if any json `ImageType` ends in WATER/FAT/IN_PHASE/OUT_OF_PHASE; raw path if any ends in MIXED/PHASE/REAL/IMAGINARY or there are no recon tags (old fallback). A series with both (classic 5.7 GRE Dixon after `-m n`) gets both; before 2026-11-18 it got the recon only, so Process now fits it (branch 2 overwrites branch 1). Raw: MIXED/PHASE/REAL/IMAGINARY per echo, sorted by `EchoNumber`, scaled `1000/2047`, phase `π(x-2047)/2047` | `wat fat inph outph`, or `"" ph real imag` |
+| | `Dixon-A` | **auto, any vendor** (Philips and Siemens, old and new dcm2niix). Every file with the exact `ProtocolName` gets a role from `DixonImageRole` (next to `BidsDcmConsistentQ`): first the scanner maps by the end of the `ImageType` without a trailing `MAGNITUDE` (`dixonMapTags`: `FAT FRAC`, `T2 STAR MAP`, `GOF`, `WATER`, `FAT`, `IN_PHASE`, `OUT_OF_PHASE`/`OPP_PHASE`), else, when there is no `DIXON` tag (an unknown map gets no role), the source type from the last tag (`MIXED`/`MAGNITUDE`, `PHASE`, `REAL`, `IMAGINARY`) or for Siemens from value 3 (`M`/`P`/`R`/`I`). Files without a role are logged as not used. A scanner map uses one file (the last if repeated). Source echoes are sorted by `EchoTime` (Siemens Eco0 and old dcm2niix have no `EchoNumber`), one series per echo time (the last; before 2026-11-27 repeat scans were stacked, e.g. 18 "echoes") and scaled by `DixonSourceScale`: Philips `1000/2047`, phase `π(x-2047)/2047`; Siemens magnitude as stored, phase `π x/4096` (**untested**, logged, see Q15). A series with both (classic 5.7 GRE Dixon after `-m n`) gets both | the maps found (`wat fat inph outph fatfr t2star gof`), and `"" ph real imag` |
 | | `Dixon` | reads the per-echo input files per ImageType (Mixed/Phase/Real/Imaginary), writes one 4D file per ImageType. Philips R12+: `ORIGINAL` (GE-like reorder) vs `DERIVED` (motor/twitch data reorder with RotateRight). Older: Transpose | `""`, `ph`, `real`, `imag` |
 | | other Method | **no default branch, silently nothing** | – |
 | dwi | Class `Volumes` | several labels joined (`ConcatenateDiffusionData`) into one file named after the first label | Suffix |
@@ -408,10 +408,9 @@ layout; see [BidsCompliance.md](BidsCompliance.md).
 | | otherwise | reads the single-echo input files sorted by `EchoNumber` and writes one 4D file, cut to `AcquisitionNumber`/`EchoTrainLength`. consistent dcm2niix: plain `Transpose` for every release, with a sanity check; older dcm2niix and `SoftwareVersions >= 12`: the R12 reorder | Suffix |
 | anat / other | – | "Unknown datatype for conversion" | – |
 
-**Dixon-A advice.** For megre/tse with Method `Dixon`, `Dixon-B` or `Dixon-P`, the convert step logs
+**Dixon-A advice.** For megre/tse with Method `Dixon`, `Dixon-B`, `Dixon-P` or `Dixon-S`, the convert step logs
 "Dixon-A is advised" when the label's files come from a consistent dcm2niix (`BidsDcmConsistentQ`: own build or
-20261029+). With those builds Dixon-A is the right method; the others are for older dcm2niix output. `Dixon-S`
-(Siemens) is not checked.
+20261029+). With those builds Dixon-A is the right method; the others are legacy methods for older dcm2niix output.
 
 **mese and the dcm2niix version** (`bidsDcmOwn`, `bidsDcmConsistent`, `BidsDcmConsistentQ`, next to `MergeJSON`). The
 layout of the per-echo files used to depend on the Philips release because older dcm2niix wrote release 12 data in
@@ -447,7 +446,7 @@ output: declare the variable in the `Block` list, give it exactly the suffix nam
 
 | Type | Method | Check file | Outputs |
 | --- | --- | --- | --- |
-| megre/tse | branch 1: `Dixon-S`, `Dixon-P`, `Dixon-A` (recon files present) | `outFile` "done" | the found `Types`, plus `r2star` (if t2star), `watfr`/`fatfr` (from fatfr file or `DixonToPercent`) |
+| megre/tse | branch 1: `Dixon-S`, `Dixon-P`, `Dixon-A` (recon files present). Dixon-A without `Types` takes the maps that exist from `dixonMapRoles` and does not log the others as missing | `outFile` "done" | the found `Types`, plus `r2star` (if t2star), `watfr`/`fatfr` (from fatfr file or `DixonToPercent`). Scanner map units for all vendors as Siemens stores them (1 = 0.1 %, 1 = 0.1 ms): `fatfr` and `gof` /1000 (fraction), `t2star` /10000 (s). No Philips scanner FF/T2\* maps seen yet; if they come, check their units |
 | | branch 2: `Dixon`, `Dixon-B`, `Dixon-A` (real/imag or mag/ph files present). When branch 1 also found recon files, its maps are kept (`recOut`, copied before branch 2 overwrites the variables) and exported after a successful fit as `<type>scan` with their own json (`DixonSource: ScannerRecon`), listed in the check file `Outputs` | same | `real imag mag ph b0i t2stari b0 t2star r2star inph outph wat fat watfr fatfr itt res snr sig`, plus for Dixon/Dixon-A: `phbp phi phbpt phii phbpi t2prime r2prime` (Dixon-A fits with `DixonFixT2 -> True`: `r2prime` is the fit, `r2star` = R2' + FF-weighted intrinsic R2, DixonTools.md Q20) (and `dbond` if >6 echoes, CallDB fat model; with `DixonFixBonds` also `dbondw`, with `DixonPhaseCorrection` also `phcal`) |
 | dwi | *prep* (always, even without Method) | `outFile_prep` "done" | `raw den reg filt sig snr0 snr` (`reg`/`filt` with bval/bvec) |
 | | `DTI` (reruns when prep ran this call) | `outFile` "done" | `data tens res out s0 l1 l2 l3 md fa rd` + IVIM `mean adci fri s0i` + `field` (grad corr) + `fasc fascm norm` |
@@ -850,6 +849,7 @@ These were verified by reading the code. The ones marked ✔ were also confirmed
 | Q12 | Convert megre/tse | An unknown `Process.Method` has no default `Switch` branch, so conversion silently does nothing. Anat types are not converted at all ("Unknown datatype"). |
 | Q13 | Process/Convert globbing | `*<StringStrip[label]>*` also matches longer labels (`DIXON1` matches `DIXON10`). |
 | Q14 | `BidsFolderLoop` for BidsDcmToNii | `CheckDataDescription` runs on the `conversion` block, which is not a dataset description. The result is unused. |
+| Q15 | Convert Dixon-A, Siemens source | Siemens phase, real and imaginary scaling in `DixonSourceScale` (phase `π x/4096`, real/imag as stored) follows the dcm2niix range but is not tested: no Siemens phase data yet. The convert log flags it. Siemens magnitude echoes are tested (Bochum, 2026-11-27). |
 
 ---
 

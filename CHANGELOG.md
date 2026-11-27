@@ -23,7 +23,11 @@ This page summarises what each major version of QMRITools brought, with a short 
   `"Registration"` method registers the whole target once (it registered three single slices before) and has its own
   check file `seg_reg_…`. **Existing Registration segmentations are redone once.** Convert skips a scan whose
   magnitude and phase were put in one file (`_phMag`, classic DICOM with `MergeEchos` true) and says how to fix it;
-  before, that file was converted as phase only.
+  before, that file was converted as phase only. The Dixon method `Dixon-A` now also reads Siemens data (scanner
+  water, fat, fat fraction, T2\* and goodness of fit maps, and the magnitude echoes) from old and new dcm2niix, and is
+  the advised method for all Dixon data; the other Dixon methods stay for older data. Repeated Dixon source scans are
+  no longer stacked into one series: the last series per echo time is used. **Dixon-A source data with repeated scans
+  (more echoes than acquired) changes on a rerun.**
 - **5.4** (unreleased): `FindActivations` uses the published fasciculation detection again (Heskamp et al. 2025,
   QMRITools 4.3.6). Since 4.5.3 the standard deviation also included undetected drops, so fewer fasciculations were
   found, most of all in muscles with many. **Fasciculation counts from 4.5.3-5.3.0 change on a rerun.** New
