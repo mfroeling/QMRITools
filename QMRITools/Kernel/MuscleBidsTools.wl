@@ -3098,6 +3098,13 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 				(*-------------------------------------------------*)
 				"megre"|"tse",
 
+				(*warn when data from a consistent dcm2niix is not converted with Dixon-A*)
+				pos = GetJSONPosition[json, {{"ProtocolName", nameIn}}];
+				If[MemberQ[{"Dixon", "Dixon-B", "Dixon-P"}, datType["Process", "Method"]] && pos =!= {} && BidsDcmConsistentQ[json[[pos]]],
+					(*-----*)AddToLog[{"!!!!!!!!!!!!!!! Data from dcm2niix own or 20261029+ with Method",
+						datType["Process", "Method"], ", Dixon-A is advised !!!!!!!!!!!!!!!!!!!"}, 4]
+				];
+
 				Switch[datType["Process", "Method"],
 					"Dixon-P",
 					(*philips data with online recon*)
