@@ -3149,12 +3149,13 @@ MuscleBidsConvertI[folIn_, datType_, del_] := Block[{
 						(*get the json and data*)
 						(*-----*)AddToLog[{"Importing ", Length[pos], "dataset with properties: ", nameIn}, 4];
 
-						labs = Last[StringSplit[FileBaseName[#], "_"]] & /@files;
+						(*file tags only of the files with the exact protocol name*)
+						labs = Last[StringSplit[FileBaseName[#], "_"]] & /@ files[[posIn]];
 						debugBids["File labels: ", labs];
 
 						(*loop over types and export them*)
 						Table[(*export to the correct folder*)
-							pos = Flatten[Position[labs, types[[i]]]];
+							pos = posIn[[Flatten[Position[labs, types[[i]]]]]];
 
 							If[pos=!={},
 								pos = CheckPos[pos];
