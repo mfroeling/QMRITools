@@ -2,7 +2,7 @@
 
 **QMRITools**
 
-Manual version: 2.2 · QMRITools version: 5.1 · Date: 2026-11-18 · Author: Martijn Froeling
+Manual version: 2.3 · QMRITools version: 5.5 · Date: 2026-11-27 · Author: Martijn Froeling
 
 This manual explains how to process a muscle MRI study with the Muscle BIDS pipeline of QMRITools: how to set up a study,
 how to write the `config.json` file that drives the pipeline, how to run each step, and how to check the results. You do
@@ -1371,11 +1371,12 @@ one button per step. Each button scans the study again, so the report is current
 **What you see:** three tabs.
 
 - **Run**: choose the subjects (**All subjects**, or untick it and pick subjects as in `SelectSubjects`). Each step of the
-  pipeline has a button, with its own options beside it: `DeleteAfterConversion` for `MuscleBidsConvert`, `VersionCheck`
+  pipeline has a checkbox, with its own options beside it: `DeleteAfterConversion` for `MuscleBidsConvert`, `VersionCheck`
   for the processing steps, `BidsTractographyMethod` for `MuscleBidsTractography` and `BidsOutputImages` for
-  `MuscleBidsAnalysis`. The options start at the default of the step. Below are the status (a moving bar, the state, the
-  time the step is running, and how many subjects have started), a **Log** with the last lines of the log files, and the
-  **Messages** of the step.
+  `MuscleBidsAnalysis`. The options start at the default of the step. Tick the steps you want (or use **All steps**) and
+  press **Run selected steps**. Below are the status (a line for each step that has finished, then a moving bar, the
+  running step and its time, the steps still waiting, and how many subjects have started), a **Log** with the last lines
+  of the log files, and the **Messages** of all steps of the run.
 - **Config**: the same as `MuscleBidsConfig[dir]`: the full config, the custom configs, the config labels and the protocol
   names.
 - **Check**: the same as `MuscleBidsCheck[dir]`: the convert output, the check files and the **Report** tab.
@@ -1388,11 +1389,20 @@ After a step has run, use **Refresh status** on the **Check files** subtab (see 
 MuscleBidsGUI[dir]
 ```
 
+The ticked steps always run in the order of the pipeline, also when you ticked them in a different order, and one after
+the other: the next step starts by itself when the step before it is done. Before anything starts, a dialog shows the
+steps, the subjects and the things to be careful about: a step between the first and the last ticked step that is not
+ticked (the later steps then use the output of that step that is already on disk), `DeleteAfterConversion` (the raw nii
+files of dcm2niix are deleted) and `VersionCheck` (data of an older QMRITools version is processed again). Press
+**Cancel** if this is not what you want.
+
 Each step runs in a separate Mathematica kernel. The notebook stays free and nothing is printed in it. Only one step runs
-at a time, and the step buttons are disabled while a step runs. The state is `Running`, then `Done`, `Done with messages`
-(the step ended, but wrote warnings; read the **Messages**), `Crashed` (the kernel could not be started or stopped),
-or `Stopped`. A window that is shown again while a step was running shows `Interrupted`. **Stop** ends the step after
-you confirm. For the steps that use check files, the subjects that were not finished are processed again the next time
+at a time, and the checkboxes and the run button are disabled while steps run. The state of a step is `Running`, then
+`Done`, `Done with messages` (the step ended, but wrote warnings; read the **Messages**), `Failed` (the step could not
+run, for example because the config could not be read), `Crashed` (the kernel could not be started or stopped), or
+`Stopped`. After `Done` or `Done with messages` the next step starts; after `Failed`, `Crashed` or `Stopped` the steps
+still waiting are not run. A window that is shown again while a step was running shows `Interrupted` and does not
+continue. **Stop** ends the running step and the steps still waiting, after you confirm. For the steps that use check files, the subjects that were not finished are processed again the next time
 you run the step, because a step only writes its check file when a subject is finished. Keep the notebook with the
 window open while a step runs.
 

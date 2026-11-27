@@ -16,39 +16,18 @@ This page summarises what each major version of QMRITools brought, with a short 
 
 ## QMRITools 5.x updates
 
-- **5.5** (unreleased): Muscle-BIDS `Segment.Method` takes a list, so several segmentations of one map are made next
-  to each other, each with its own name and check file. New method `"MuscleMap"` runs `RunMuscleMap` and saves
-  `seg_musclemap_…` with the labels in QMRITools numbering. New `Segment` key `MuscleMapEnvironment`. `"Automatic"`
-  may now be written as text in the config, and an unknown method is reported instead of skipped. The
-  `"Registration"` method registers the whole target once (it registered three single slices before) and has its own
-  check file `seg_reg_…`. **Existing Registration segmentations are redone once.** Convert skips a scan whose
-  magnitude and phase were put in one file (`_phMag`, classic DICOM with `MergeEchos` true) and says how to fix it;
-  before, that file was converted as phase only. The Dixon method `Dixon-A` now also reads Siemens data (scanner
-  water, fat, fat fraction, T2\* and goodness of fit maps, and the magnitude echoes) from old and new dcm2niix, and is
-  the advised method for all Dixon data; the other Dixon methods stay for older data. Repeated Dixon source scans are
-  no longer stacked into one series: the last series per echo time is used. **Dixon-A source data with repeated scans
-  (more echoes than acquired) changes on a rerun.**
-- **5.4** (unreleased): `FindActivations` uses the published fasciculation detection again (Heskamp et al. 2025,
-  QMRITools 4.3.6). Since 4.5.3 the standard deviation also included undetected drops, so fewer fasciculations were
-  found, most of all in muscles with many. **Fasciculation counts from 4.5.3-5.3.0 change on a rerun.** New
-  `ListActivations` lists every fasciculation with its slice, volume, size, position, label and signal drop, so
-  events can be checked, for example for motion, and `RemoveActivations` removes the rejected ones from the map.
-  `AnalyzeActivations` now also counts a slice with a single active voxel (only maps without `SelectActivations`).
-  The default `ActivationThreshold` of `FindActivations` and of the Muscle-BIDS fasciculation detection is now the
-  published `{3.0, 0.6}` (was `{3.0, 0.75}` and `{3., .65}`). Muscle-BIDS merge, segmentation, tractography and
-  analysis compare the dates in the check files. They redo a subject when an input was finished after their own
-  result, and skip it (with a log line and an error check) when the input itself is out of date, for example after a
-  failed merge. Before, they could run on old merged data. Dixon: the bipolar phase is now set per leg from the
-  echoes themselves, and the graph cut keeps the start field in water. This fixes the remaining calf water-fat
-  swaps (patches or a whole leg) and a +0.5 pp left-right calf fat fraction bias of 5.3.0. **Dixon fat fractions
-  from 5.3.0 change on a rerun, mostly in the calf.** `SegmentData` checks that the networks load before it starts,
-  and a failed network load is no longer cached. New `Process` key `DixonUnwrapSplit` for `Dixon-B` on a single limb.
-- **5.3** (November 2026): Dixon water-fat swaps fixed (alias selection, graph cut start field) and a precession
-  check. EPG T2 models fat as 90% lipid and 10% water, pools B1 over a 3D box and corrects for short TR. Every
-  Muscle-BIDS output json records the settings it was made with, and the analysis can weight tract-based values
-  by tract density. Settings that were hard-coded are now config keys. **The EPG fat fraction is now the lipid
-  fraction, about 10% lower than before. `Tractography.BoneLabel` defaults to `"Body"`; configs for older leg models
-  need `"Legs"`.**
+- **5.5** (unreleased): Muscle-BIDS segmentation can run several methods side by side, including the new
+  `"MuscleMap"` method, and the `"Registration"` method registers the whole target. `Dixon-A` also reads Siemens data
+  and is the advised Dixon method. Convert skips combined magnitude-phase files (`_phMag`). `MuscleBidsGUI` can run
+  several steps in one go. Muscle BIDS manual version 2.3. **Registration segmentations are redone once, and Dixon-A
+  data with repeated scans changes on a rerun.**
+- **5.4** (unreleased): the published fasciculation detection is back, with `ListActivations` and
+  `RemoveActivations` to check and remove events. Muscle-BIDS steps check that their inputs are up to date. Dixon
+  phase is set per leg, which fixes the remaining calf water-fat swaps and a left-right fat fraction bias.
+  **Fasciculation counts from 4.5.3-5.3.0 and Dixon fat fractions from 5.3.0 change on a rerun.**
+- **5.3** (November 2026): Dixon water-fat swap fixes, EPG T2 with a 90% lipid fat model, Muscle-BIDS output jsons
+  that record their settings, and more config keys. **The EPG fat fraction is about 10% lower than before, and
+  configs for older leg models need `Tractography.BoneLabel` set to `"Legs"`.**
 - **5.2** (November 2026): one debug switch for all toolboxes (`$Debug`, `DebugPrint`), messages instead of prints,
   safer conversion of multi-echo spin echo DICOM in Muscle-BIDS, and a faster config and check GUI.
 - **5.1** (October–November 2026): `MuscleBidsGUI` and check tools that follow the config file, Rician bias

@@ -102,6 +102,7 @@ The options are ProcessSubjects to limit the subjects and BidsOutputImages to de
 
 MuscleBidsGUI::usage =
 "MuscleBidsGUI[dir] shows a GUI to run the Muscle Bids processing steps for the config file in dir, with the options of each step and the subjects to process.
+The ticked steps run one after the other in pipeline order, after a confirm dialog. A crash, a failed step or Stop ends the queue.
 Each step runs in a separate kernel, nothing is printed in the notebook and the progress is shown from the log files.
 The tabs Config and Check show MuscleBidsConfig and MuscleBidsCheck."
 
@@ -2522,10 +2523,14 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 	},
 	DynamicModule[{
 		link, t0, tick, state, step, root, now, total, touched, tail, msgs,
-		allSubs, selSubs, subjects, opt, ctrl, run, poll
+		allSubs, selSubs, subjects, opt, ctrl, run, poll,
+		qTick, qRows, qHist, qNext, qStart, qLine, qMsgs
 	},
 
-	(*no step running, empty status and all subjects selected*)
+	(*no step running, no step ticked, empty queue, empty status and all subjects selected*)
+	qTick = AssociationMap[False&, SymbolName[#[[1]]]& /@ steps];
+	qRows = {};
+	qHist = {};
 	link = None;
 	t0 = 0;
 	tick = 0;
@@ -2558,10 +2563,7 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 		], "   "}]&;
 
 	(*start a step in a separate kernel*)
-	run = Function[row, Which[
-		link =!= None, Null,
-		!allSubs && selSubs === {}, now = "Select subjects or tick All subjects",
-		True,
+	run = Function[row,
 		step = SymbolName[row[[1]]];
 		t0 = AbsoluteTime[];
 		tail = {};
@@ -2572,52 +2574,112 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 		total = If[row[[1]] === BidsDcmToNii, 0,
 			Length@FilterBidsSubjects[SelectBids[BidsFolder[dir, "rawData"], "ses"], If[allSubs, All, selSubs]]];
 		link = BidsStartStep[dir, row[[1]], Join[{ProcessSubjects -> If[allSubs, All, selSubs]}, (# -> opt[{step, #}])& /@ row[[3]]], msgFile[step]];
-		(*no link means the kernel did not start*)
+		(*no link means the kernel did not start, that ends the queue*)
 		If[Head[link] === LinkObject,
-			state = "Running",
+			state = "Running"
+			,
 			link = None;
 			state = "Crashed";
-			now = "Could not start the kernel"
+			now = "Could not start the kernel";
+			AppendTo[qHist, {step, state, 0, {}}];
+			qRows = {}
 		]
-	]];
+	];
+
+	(*start the ticked steps in pipeline order after the confirm dialog*)
+	qStart = (Which[
+		link =!= None,
+			Null,
+		!MemberQ[Values[qTick], True],
+			now = "Tick the steps to run",
+		!allSubs && selSubs === {},
+			now = "Select subjects or tick All subjects",
+		True,
+			qNext = Select[steps, qTick[SymbolName[#[[1]]]]&];
+			If[ChoiceDialog[Column[Prepend[
+					BidsQueueText[SymbolName[#[[1]]]& /@ steps, Keys@Select[qTick, TrueQ], opt, If[allSubs, All, selSubs]],
+					Style["Run these steps?", Bold]], Spacings -> 1]],
+				qHist = {};
+				qRows = Rest[qNext];
+				run[First[qNext]]
+			]
+	])&;
 
 	(*read the state of the running step*)
 	poll = (If[link =!= None,
-		{state, now, touched, tail, msgs} = Lookup[BidsStepStatus[link, root, step, t0, msgFile[step]], 
+		{state, now, touched, tail, msgs} = Lookup[BidsStepStatus[link, root, step, t0, msgFile[step]],
 			{"State", "Now", "Touched", "Tail", "Messages"}];
 		tick++;
 		If[state =!= "Running",
 			Quiet@LinkClose[link];
 			link = None;
-			Quiet@DeleteFile[msgFile[step]]
+			Quiet@DeleteFile[msgFile[step]];
+			(*finished step in the history*)
+			AppendTo[qHist, {step, state, Round[AbsoluteTime[] - t0], msgs}];
+			(*next step of the queue, a crash or a failed step ends the queue*)
+			If[MemberQ[{"Done", "Done with messages"}, state] && qRows =!= {},
+				qNext = First[qRows];
+				qRows = Rest[qRows];
+				run[qNext]
+				,
+				qRows = {}
+			]
 		]
 	])&;
+
+	(*status line of a step, red for a crash or failure and orange for messages*)
+	qLine = Style[#1<>": "<>#2<>If[NumberQ[#3], " ("<>ToString[#3]<>" s)", ""], Bold,
+		Sequence @@ Which[MemberQ[{"Crashed", "Failed"}, #2], {Red}, #2 === "Done with messages", {Orange}, True, {}]]&;
+
+	(*messages of the finished steps and of the running step*)
+	qMsgs = Flatten[{
+		If[Last[#] === {}, {}, Prepend[Last[#], First[#]<>":"]]& /@ qHist,
+		If[state === "Running", msgs, {}]
+	}]&;
 
 	Column[{
 		TabView[{
 			"Run" -> Column[{
 				subjects,
 				Style["Steps", Bold],
-				Grid[Function[row, {
-					Button[SymbolName[row[[1]]], run[row], ImageSize -> 200, Enabled -> Dynamic[link === None], Method -> "Queued"],
-					Row[ctrl[SymbolName[row[[1]]], #]& /@ row[[3]]]
-				}] /@ steps, Alignment -> Left],
-				Button["Stop",
-					If[link =!= None && ChoiceDialog["Stop "<>step<>"? The subjects that are not finished are processed again the next time."],
-						(*the step can finish while the dialog is open, then there is nothing to stop*)
-						If[link =!= None,
-							LinkClose[link];
-							link = None;
-							state = "Stopped"
-						]
-					],
-					ImageSize -> 200, Enabled -> Dynamic[link =!= None], Method -> "Queued"],
+				Row[{
+					Button["All steps", qTick = AssociationMap[True&, Keys[qTick]], Enabled -> Dynamic[link === None]],
+					Button["No steps", qTick = AssociationMap[False&, Keys[qTick]], Enabled -> Dynamic[link === None]]
+				}],
+				(*a checkbox per step, the ticked steps always run in pipeline order*)
+				Grid[Table[With[{name = SymbolName[row[[1]]]}, {
+					Checkbox[Dynamic[qTick[name]], Enabled -> Dynamic[link === None]],
+					name,
+					Row[ctrl[name, #]& /@ row[[3]]]
+				}], {row, steps}], Alignment -> Left],
+				Row[{
+					Button["Run selected steps", qStart[], ImageSize -> 200, Enabled -> Dynamic[link === None], Method -> "Queued"],
+					Button["Stop",
+						If[link =!= None && ChoiceDialog["Stop "<>step<>"?"<>
+								If[qRows === {}, "", " The queued steps "<>StringRiffle[SymbolName[#[[1]]]& /@ qRows, ", "]<>" are not run."]<>
+								" The subjects that are not finished are processed again the next time."],
+							(*the step can finish while the dialog is open, then there is nothing to stop*)
+							If[link =!= None,
+								LinkClose[link];
+								link = None;
+								state = "Stopped";
+								AppendTo[qHist, {step, state, Round[AbsoluteTime[] - t0], msgs}];
+								qRows = {}
+							]
+						],
+						ImageSize -> 200, Enabled -> Dynamic[link =!= None], Method -> "Queued"]
+				}, "  "],
 				Style["Status", Bold],
 				Row[{
 					(*moving bar while a step runs*)
 					Dynamic[If[state === "Running", ProgressIndicator[Appearance -> "Percolate", ImageSize -> {120, 12}], ""], TrackedSymbols :> {state}],
-					Dynamic[tick; Style[If[step === "", "", step<>": "]<>state<>If[state === "Running", " ("<>ToString[Round[AbsoluteTime[] - t0]]<>" s)", ""], Bold,
-						Sequence @@ Which[state === "Crashed", {Red}, state === "Done with messages", {Orange}, True, {}]]]
+					(*finished steps, the running step and the queued steps*)
+					Dynamic[tick; Column[Join[
+						qLine @@@ qHist[[All, ;; 3]],
+						If[state === "Running", {qLine[step, state, Round[AbsoluteTime[] - t0]]}, {}],
+						If[qRows === {}, {}, {"queued: "<>StringRiffle[SymbolName[#[[1]]]& /@ qRows, ", "]}],
+						If[qHist === {} && state =!= "Running", {Style[state, Bold]}, {}]
+					]]]
 				}, "  "],
 				Dynamic[tick; Column[{
 					If[total > 0, "subjects started "<>ToString[touched]<>" of "<>ToString[total], Nothing],
@@ -2625,7 +2687,7 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 				}]],
 				(*both panes scrolled to the end, the newest line stays in view*)
 				OpenerView[{"Log", Dynamic[Pane[Style[StringRiffle[tail, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 200}, Scrollbars -> Automatic, ScrollPosition -> {0, 10^6}]]}],
-				OpenerView[{"Messages", Dynamic[Pane[Style[StringRiffle[msgs, "\n"], FontFamily -> "Courier"], ImageSize -> {600, 100}, Scrollbars -> Automatic, ScrollPosition -> {0, 10^6}]]}]
+				OpenerView[{"Messages", Dynamic[Pane[Style[StringRiffle[qMsgs[], "\n"], FontFamily -> "Courier"], ImageSize -> {600, 100}, Scrollbars -> Automatic, ScrollPosition -> {0, 10^6}]]}]
 			}, Spacings -> 1],
 			(*lazy views, Reload scans the subjects selected at that moment*)
 			"Config" -> Column[{subjects, Block[{$BidsLazy = True}, MuscleBidsConfig[dir, ProcessSubjects -> Dynamic[If[allSubs, All, selSubs]]]]}, Spacings -> 1],
@@ -2635,7 +2697,15 @@ MuscleBidsGUI[dir_?StringQ] := With[{
 		Dynamic[If[link =!= None, Refresh[poll[]; "", UpdateInterval -> 2, TrackedSymbols :> {}], ""], TrackedSymbols :> {link}, SynchronousUpdating -> False]
 	}],
 
-	Initialization :> (link = None; If[state === "Running", state = "Interrupted"]),
+	(*a reopened notebook never resumes the queue*)
+	Initialization :> (
+		link = None;
+		qRows = {};
+		If[state === "Running",
+			state = "Interrupted";
+			AppendTo[qHist, {step, state, None, {}}]
+		]
+	),
 	UnsavedVariables :> {link},
 	Deinitialization :> If[link =!= None, Quiet@LinkClose[link]]
 ]]
@@ -2655,14 +2725,41 @@ BidsStartStep[dir_, st_, opts_, msg_] := Block[{link, load},
 			stepOptions = Replace[opts, (k_ -> v_) :> {Context[k] <> SymbolName[k], v}, {1}],
 			messageFile = msg
 		},
-		LinkWrite[link, Unevaluated[Get[loadContext]; Block[{stream, $Output, $Messages},
+		LinkWrite[link, Unevaluated[Get[loadContext]; Block[{stream, $Output, $Messages, res},
 			stream = OpenWrite[messageFile];
 			$Output = {};
 			$Messages = {stream};
-			Quiet[ToExpression[stepName][folder, 
+			Quiet[res = ToExpression[stepName][folder,
 				Sequence @@ (ToExpression[First[#]] -> Last[#]& /@ stepOptions)], FrontEndObject::notavail];
-			Close[stream]]]]];
+			Close[stream];
+			(*a failed or unevaluated step, e.g. without a config, is a failed step*)
+			If[res === $Failed || res === $Aborted || Head[res] === ToExpression[stepName], "Failed", "Done"]]]]];
 	link
+]
+
+
+BidsQueueText[names_, run_, opt_, subs_] := Block[{pos, gaps, risk},
+	(*positions of the ticked steps in pipeline order*)
+	pos = Sort@Flatten[Position[names, Alternatives @@ run, {1}]];
+	(*steps between the first and the last ticked step that are not run*)
+	gaps = Select[names[[Min[pos] ;; Max[pos]]], !MemberQ[run, #]&];
+	(*options that delete data or process it again*)
+	risk = Join[
+		If[MemberQ[run, "MuscleBidsConvert"] && TrueQ[opt[{"MuscleBidsConvert", DeleteAfterConversion}]],
+			{"MuscleBidsConvert deletes the raw nii files of dcm2niix after the conversion"},
+			{}
+		],
+		(#<>" processes the data of older QMRITools versions again")& /@ Select[names[[pos]], TrueQ[opt[{#, VersionCheck}]]&]
+	];
+	(*steps, subjects, gaps and risky options*)
+	Join[
+		{
+			"Steps: "<>StringRiffle[names[[pos]], ", "],
+			"Subjects: "<>If[subs === All, "all", ToString[Length[subs]]<>" selected"]
+		},
+		(#<>" is not run, the later steps use its output on disk")& /@ gaps,
+		risk
+	]
 ]
 
 
@@ -2671,7 +2768,12 @@ BidsStepStatus[link_, root_, st_, t0_, msg_] := Block[{pkt, state, pat, logs, li
 	state = "Running";
 	While[state === "Running" && Quiet@LinkReadyQ[link],
 		pkt = Quiet@LinkRead[link];
-		state = Which[pkt === $Failed, "Crashed", MatchQ[pkt, _ReturnPacket | _ReturnExpressionPacket], "Done", True, "Running"]
+		state = Which[
+			pkt === $Failed, "Crashed",
+			MatchQ[pkt, (ReturnPacket | ReturnExpressionPacket)["Failed"]], "Failed",
+			MatchQ[pkt, _ReturnPacket | _ReturnExpressionPacket], "Done",
+			True, "Running"
+		]
 	];
 	If[state === "Running" && !Quiet@LinkConnectedQ[link], state = "Crashed"];
 

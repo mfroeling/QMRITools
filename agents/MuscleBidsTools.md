@@ -776,8 +776,17 @@ Version plays no part in this. The helpers are in the `BidsCheckInputs` cell (Bi
   because `BidsFolderLoop` calls `ShowLog[]` in every subject and the child has no front end.
   **Step and option names go over the link as full-name strings** and are resolved with `ToExpression` after the load:
   symbols sent as symbols arrive before the package is loaded in the child, and a short name like `MuscleBidsProcess`
-  becomes an empty `Global`` symbol, so the step silently does nothing. The step buttons are queued and ignore a click
-  while a link is open; a failed launch shows "Crashed: Could not start the kernel". `BidsFolder[dir, key]` gives a
+  becomes an empty `Global`` symbol, so the step silently does nothing. The child returns `"Failed"` when the step gives
+  `$Failed`, `$Aborted` or stays unevaluated (e.g. `GetConfig` failed), else `"Done"`; `BidsStepStatus` maps
+  `ReturnPacket["Failed"]` to state `Failed`.
+  **Queue:** the Run tab has a checkbox per step (`qTick`) and one queued **Run selected steps** button (`qStart`), which
+  takes the ticked rows from `steps` (so always pipeline order) and asks `ChoiceDialog` with the lines of
+  `BidsQueueText[names, ticked, opt, subs]` (steps, subjects, gaps between the first and last ticked step,
+  `DeleteAfterConversion` for Convert, `VersionCheck` per step; list logic only, no scan). The rest waits in `qRows`.
+  The poll starts the next row when a step ends `Done` or `Done with messages` (same rule as the script); `Failed`,
+  `Crashed`, Stop or a failed launch empty `qRows`. Each finished step goes into `qHist` `{step, state, s, msgs}`, so the
+  messages of earlier steps survive the deletion of their message file. `Initialization` empties the queue, so a reopened
+  notebook never resumes. The controls are disabled while a link is open; a failed launch shows "Crashed: Could not start the kernel". `BidsFolder[dir, key]` gives a
   config folder as a full path (default when the config is missing); `BidsFolder[config, dir, key]` only does the join
   and is also used by `BidsSubjectList` and `BidsCheckFiles`. The pipeline entry points keep passing the relative folder
   names to `BidsFolderLoop`. The message file name contains a hash of the study path
@@ -788,7 +797,8 @@ Version plays no part in this. The helpers are in the `BidsCheckInputs` cell (Bi
   that is newer than the start time (`DcmToNii_*.log` for step 1): last line = "now", number of logs = subjects started
   (against the sessions in rawData, approximate for Analysis). Stop asks for confirmation and closes the link (unless the step ended meanwhile); that
   also ends the child and its parallel subkernels. Unfinished subjects have no check file and are redone. Only one
-  step runs at a time because steps depend on each other's output and each child starts its own parallel pool.
+  step runs at a time (a queue runs its steps one after the other, a new child per step) because steps depend on each
+  other's output and each child starts its own parallel pool.
   A `config.json` edited during a run is picked up per subject, and the child loads the package from disk, so it can be
   newer than the code in the notebook kernel. If the front end is set to "Launch parallel kernels: At startup", every
   child starts a full pool of its own, so use "When needed" or "Manual".
