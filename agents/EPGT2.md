@@ -16,6 +16,9 @@ about L440–L1340) and the slice profile functions in [SimulationTools.wl](../Q
   - Marty et al., NMR Biomed 2016, 10.1002/nbm.3459 (dictionary fit of water T2, B1 and fat).
   - Keene et al., MRM 2020, 10.1002/mrm.28290 (slice profile with fat chemical shift, 90/10 adipose tissue model,
     calibration methods A, B, C). The current code follows this paper (§3, §6).
+  - Lebel & Wilman, MRM 2010, 10.1002/mrm.22487 and Prasloski et al., MRM 2012, 10.1002/mrm.23157 (stimulated
+    echo compensation with slice profiles, from brain relaxometry).
+  - Azzabou et al., JMRI 2015, 10.1002/jmri.24613 (tri-exponential fit, `TriExponentialT2Fit`).
 
 ---
 

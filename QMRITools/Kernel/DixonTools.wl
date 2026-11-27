@@ -28,7 +28,10 @@ DixonPhase::usage =
 "DixonPhase[{real, imag}, echos] calculates the initial field maps for DixonReconstruct. Echo times echos are in s.
 
 Output is {{b0, t2star, phi0, phib}, {e1, e2, n}}, with b0 in Hz, t2star in s, the initial phase phi0 and bipolar 
-phase phib in cycles, e1 and e2 the echos used for b0 and n the first echo used for t2star."
+phase phib in cycles, e1 and e2 the echos used for b0 and n the first echo used for t2star.
+
+DixonPhase[] is based on DOI: 10.1016/j.mri.2010.08.011, 10.1002/mrm.24657, 10.1002/mrm.21747, 10.1002/jmri.22111,
+10.1002/mrm.20654, 10.1002/mrm.21522, 10.1002/mrm.22177 and 10.1002/mrm.26479."
 
 DixonReconstruct::usage = 
 "DixonReconstruct[{real, imag}, echo] reconstructs Dixon data with initial guess b0 = 0 and T2star = 0.
@@ -48,7 +51,9 @@ With DixonPhaseCorrection or DixonFixBonds a seventh element is added, an associ
 The fractions are between 0 and 1 (see DixonClipFraction), the B0 field map is in Hz, the T2star 
 map in s and R2star in 1/s.
 
-DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737 (10.1002/nbm.3766)."
+DixonReconstruct[] is based on DOI: 10.1002/mrm.20624 and 10.1002/mrm.21737 (10.1002/nbm.3766).
+DixonPhaseCorrection is based on DOI: 10.1002/mrm.23044, 10.1002/mrm.26485 and 10.1002/jmri.22111.
+DixonFixBonds is based on DOI: 10.1016/j.mri.2011.07.004, 10.1002/mrm.24196 and 10.1002/nbm.5217."
 
 GenerateAmps::usage = 
 "GenerateAmps[amp] generates the fat based chemical species amplitudes needed for DixonReconstruct."
@@ -529,7 +534,7 @@ GraphCutField[comp_, b0_, msk_, amat_, echos_, fs_, ds_] := Block[{
 		lowP, lowQ, highP, highQ, enP, enQ, weight, cLL, cLH, cHL, cHH, pair,
 		src, snk, dirEdges, caps, flow, srcSide, useHigh, cand, b0s, amp, ffc
 	},
-	(*b0 in Hz from a graph cut on blocks of ds x ds voxels, fs is the fat shift in Hz, graph cut 10.1002/mrm.22177*)
+	(*b0 in Hz from a graph cut on blocks of ds x ds voxels, fs is the fat shift in Hz, graph cut 10.1002/mrm.22177, on blocks 10.1002/mrm.26479*)
 	{nz, ny, nx} = Dimensions[b0];
 
 	(*projection on the residual space of the water fat model*)
@@ -699,59 +704,23 @@ AddEdgeParts[vals_, {valP_, valQ_}, ax_] := Block[{out},
 
 
 GraphCutCandidatesC = Compile[{{res, _Real, 1}, {grid, _Real, 1}, {sep, _Real, 0}},
-	Block[{n, step, pos1, pos2, min1, min2, fr1, fr2, curv},
+	Block[{n, step, loc, far, pos1, pos2, curv},
 		n = Length[res];
 		step = grid[[2]] - grid[[1]];
 
-		(*lowest local minimum, or the global minimum if there is none*)
-		pos1 = 1;
-		min1 = 1.*^300;
-		Do[
-			If[res[[k]] < res[[k - 1]] && res[[k]] <= res[[k + 1]] && res[[k]] < min1,
-				pos1 = k;
-				min1 = res[[k]]
-			]
-		, {k, 2, n - 1}];
-		If[min1 == 1.*^300,
-			Do[
-				If[res[[k]] < min1,
-					pos1 = k;
-					min1 = res[[k]]
-				]
-			, {k, 1, n}]
-		];
+		(*local minima*)
+		loc = Select[Range[2, n - 1], res[[#]] < res[[# - 1]] && res[[#]] <= res[[# + 1]] &];
 
-		(*lowest other local minimum at least sep away, or the first again*)
-		pos2 = pos1;
-		min2 = 1.*^300;
-		Do[
-			If[res[[k]] < res[[k - 1]] && res[[k]] <= res[[k + 1]] && Abs[grid[[k]] - grid[[pos1]]] >= sep && res[[k]] < min2,
-				pos2 = k;
-				min2 = res[[k]]
-			]
-		, {k, 2, n - 1}];
-		If[min2 == 1.*^300,
-			min2 = min1
-		];
+		(*lowest local minimum (or the global minimum), and the lowest other one at least sep away (or the first again)*)
+		pos1 = If[Length[loc] > 0, loc[[First[Ordering[res[[loc]], 1]]]], First[Ordering[res, 1]]];
+		far = Select[loc, Abs[grid[[#]] - grid[[pos1]]] >= sep &];
+		pos2 = If[Length[far] > 0, far[[First[Ordering[res[[far]], 1]]]], pos1];
 
-		(*parabolic refinement of the minima*)
-		fr1 = grid[[pos1]];
-		If[1 < pos1 && pos1 < n,
-			curv = res[[pos1 - 1]] - 2 res[[pos1]] + res[[pos1 + 1]];
-			If[curv > 0,
-				fr1 += 0.5 step (res[[pos1 - 1]] - res[[pos1 + 1]]) / curv
-			]
-		];
-		fr2 = grid[[pos2]];
-		If[1 < pos2 && pos2 < n,
-			curv = res[[pos2 - 1]] - 2 res[[pos2]] + res[[pos2 + 1]];
-			If[curv > 0,
-				fr2 += 0.5 step (res[[pos2 - 1]] - res[[pos2 + 1]]) / curv
-			]
-		];
-
-		(*field and residual of both candidates*)
-		{fr1, min1, fr2, min2}
+		(*parabolic refinement, field and residual of both candidates*)
+		Flatten[Table[
+			curv = If[1 < p < n, res[[p - 1]] - 2 res[[p]] + res[[p + 1]], 0.];
+			{grid[[p]] + If[curv > 0, 0.5 step (res[[p - 1]] - res[[p + 1]]) / curv, 0.], res[[p]]}
+		, {p, {pos1, pos2}}]]
 	],
 RuntimeAttributes -> {Listable}, RuntimeOptions -> {"Speed", "WarningMessages" -> False}, Parallelization -> True];
 
@@ -856,13 +825,13 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 
 	(*---- algorithm is base on: ----*)	
 
-	(*Triplett WT et.al. 10.1002/mrm.23917 - fat peaks*)
+	(*Triplett WT et.al. 10.1002/mrm.24917 - fat peaks*)
 	(*Reeder et.al. 10.1002/mrm.20624 - iDEAL*)
 	(*Huanzhou Yu et.al. 10.1002/jmri.21090 - iDEAL algorithm and T2* correction*)
 	(*Bydder et.al. 10.1016/j.mri.2010.08.011 - initial phase*)
 	(*Peterson et.al.10.1002/mrm.24657 - bipolar*)
 	(*Chebrolu et.al. 10.1002/mrm.22300 - two t2* species*)
-	(*Peterson et. al. 10.1002/MRM.24297 - T2 relaxation times*)
+	(*Peterson et. al. 10.1002/MRM.24297 - fatty acid composition*)
 	(*Byder et.al. 10.1016/j.mri.2011.07.004 - a matrix with bonds*)
 	(*Hamilton et al. 10.1002/nbm.1622 - model cl db idb*)
 
@@ -1104,6 +1073,7 @@ DixonPhaseMap[complex_, {echo_, vec_, sel_}, {fat_, sig_}, {ff_, b0_, mask_}, or
 		ne, xm, proj, pos, fp, mod, dat, res, nb, lab, obj, cnt, dim, all, labs, pmap, coef, nfat, fcor,
 		p, cen, sd, des, c, v
 	},
+	(*unmodelled echo phase errors 10.1002/mrm.23044, 10.1002/mrm.26485 and 10.1002/jmri.22111*)
 	(*echo time model of the fitted phases and the offset*)
 	ne = Length[echo];
 	xm = Transpose[vec[[Union[{4}, Intersection[sel, {2, 3, 5}]]]]];
@@ -1208,6 +1178,7 @@ DixonFixBond[{signal_, res_}, {complex_, phi_, mask_}, {echo_, sig_, amps_, mout
 	{refFF_, {lo_, hi_}}] := Block[{
 		pd, ff, dbFit, v, nRef, dbRef, matF, fixd, nF, sigF, resF, wgt
 	},
+	(*double bond mapping 10.1016/j.mri.2011.07.004 and 10.1002/mrm.24196, fat model variation 10.1002/nbm.5217*)
 	(*fat fraction and free double bond of the fit*)
 	pd = DixonSignalPD[signal, amps, mout];
 	ff = DixonFatFraction[pd];

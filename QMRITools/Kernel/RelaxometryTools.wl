@@ -44,7 +44,9 @@ The fat t2 parameters are automatically estimated from the high signal voxels fr
 The output is in units as defined by the EchoTimes, e.g. if EchoTimes is in ms the output is in ms.
 The output fraction is between 0 an 1.
 
-Output is {{S(0), fatFraction, muscleFraction, T2map},callibration} or {S(0), fatFraction, muscleFranction, T2map}."
+Output is {{S(0), fatFraction, muscleFraction, T2map},callibration} or {S(0), fatFraction, muscleFranction, T2map}.
+
+TriExponentialT2Fit[] is based on DOI: 10.1002/jmri.24613."
 
 
 EPGSignal::usage = 
@@ -69,12 +71,14 @@ The exitation and refocus are defined in Degrees.
 Output is {{{T2map, T2fatMap, B1Map}, {wat, fat, fatMap}, residual}, callibration} or {{T2map, T2fatMap, B1Map}, {wat, fat, fatMap}, residual}.
 The residual is the root mean square error of the fit over the echoes, in signal units.
 
-EPGT2Fit[] is based on DOI: 10.1002/nbm.3459."
+EPGT2Fit[] is based on DOI: 10.1002/nbm.3459 and 10.1002/mrm.28290, with stimulated echo compensation from 10.1002/mrm.22487 and 10.1002/mrm.23157."
 
 CalibrateEPGT2Fit::usage = 
 "CalibrateEPGT2Fit[datan, times, angle] calculates the Fat t2 ralaxation that will be used in the EPGT2fit.
 
-Outputs the fat t2 value."
+Outputs the fat t2 value.
+
+CalibrateEPGT2Fit[] is based on DOI: 10.1002/nbm.3459 and 10.1002/mrm.28290."
 
 CreateT2Dictionary::usage = 
 "CreateT2Dictionary[{T1m, T1f}, {nEcho, detlaTE}, angle] Creates a EPG signal dictionary used for EPGT2fit.
@@ -83,7 +87,9 @@ The water signals of every dictionary are cached, the fat signals are recalculat
 The output is in units as defined by the detlaTE, e.g. if detlaTE is in ms the output is in ms.
 The TR and TE should be in the same units as Dela.
 
-Output is {dictionary, vals}."
+Output is {dictionary, vals}.
+
+CreateT2Dictionary[] is based on DOI: 10.1002/nbm.3459, 10.1002/mrm.28290 and 10.1002/mrm.23157."
 
 NonLinearEPGFit::usage = 
 "NonLinearEPGFit[{vals, T2cons}, y] performs dictionary minimization of data y. vals = {{T1muscle, T1fat, T2fat}, {nEcho, echoSpace, angle}}.

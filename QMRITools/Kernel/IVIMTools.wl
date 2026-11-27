@@ -33,7 +33,9 @@ init should are the initialization parameters for 2 comp this is {s0, f, D, Dp} 
 
 The fraction is defined between 0 and 1, the D, Dp, Dp1 and Dp2 is in mm^2/s.
 
-output is {s0, f1, D, pD1} or {s0, f1, f2, D, pD1, pD2}."
+output is {s0, f1, D, pD1} or {s0, f1, f2, D, pD1, pD2}.
+
+IVIMCalc[] is based on DOI: 10.1148/radiology.168.2.3393671, with the recommendations of 10.1002/jmri.70278 and for muscle 10.1002/jmri.27875."
 
 IVIMFunction::usage =
 "IVIMFunction[] gives the IVIM function with 2 comps.
@@ -55,7 +57,9 @@ bval are the bvalues.
 
 The fraction is defined between 0 and 1, the pdc is in mm^2/s.
 
-output is the corrected data."
+output is the corrected data.
+
+IVIMCorrectData[] is based on DOI: 10.1002/mrm.26373."
 
 
 IVIMResiduals::usage = 
@@ -74,10 +78,10 @@ IVIMConstrained::usage =
 "IVIMConstrained is an option for IVIMCalc. When set True the fit wil be constrained to the values given in IVIMConstrains."
 
 IVIMTensFit::usage =
-"IVIMTensFit is an option for IVIMCalc. When set True the tissue diffusion component wil be calculated as a tensor."
+"IVIMTensFit is an option for IVIMCalc. When set True the tissue diffusion component wil be calculated as a tensor, see DOI: 10.1002/mrm.26373."
 
 IVIMComponents::usage =
-"IVIMComponents is an option for IVIMCalc. Default value is 2, the tissue and the blood component. can also be set to 3."
+"IVIMComponents is an option for IVIMCalc. Default value is 2, the tissue and the blood component. can also be set to 3, see DOI: 10.1002/jmri.25519 and 10.1016/j.ejrad.2017.03.008."
 
 IVIMConstrains::usage = 
 "IVIMConstrains is an option for IVIMCalc.

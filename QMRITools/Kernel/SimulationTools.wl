@@ -57,7 +57,9 @@ a pulse is defined as {\"name\", flip angle, {G_strength, Dur, BW}}.
 GetPulseProfile[{\"name\", flip angle, {G_strength, Dur, BW}}] gives detailed slice profile information of one pulse.
 
 output is {ex_angle_profile, ref_angel_profile, {plots}}.
-output for single pulse is {{distance, Mt, Mz, Mx, My, ang, phase}, plots}."
+output for single pulse is {{distance, Mt, Mz, Mx, My, ang, phase}, plots}.
+
+The slice profiles for EPG are based on DOI: 10.1002/mrm.22487 and 10.1002/mrm.28290."
 
 SimulateSliceEPG::usage = 
 "SimulateSliceEPG[excitation, refocus, {{t1, t2}, {nEcho, echoSp}, b1}] gives a simulated slice profile and EPG signal plot.
