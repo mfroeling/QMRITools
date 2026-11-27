@@ -316,7 +316,8 @@ associations merge.
 | `Location` | `"Body"` | `SegmentData` location (`Legs`, `LegsHip`, `LowerLegs`, `Shoulder`, …) |
 | `Device` | `"CPU"` | `TargetDevice` |
 | `Dimensions` | `"3D"` | `"2D"` or `"3D"` → `SegmentationDimension` |
-| `Method` | `Automatic` (symbol) | omit it for CNN. `"Registration"` registers an existing segmentation (`Target`, `Moving`, `Segmentation`, `VoxSize`). See Q9 |
+| `Method` | `Automatic` | one method or a list, each written next to the others with its own tag and check file (`bidsSegTags`): `"Automatic"` (CNN, `auto`), `"MuscleMap"` (`RunMuscleMap`, `musclemap`), `"Registration"` (`reg`, registers an existing segmentation with `Target`, `Moving`, `Segmentation`, `VoxSize`). Symbol and string both work (5.5). An unknown method logs and writes check `error` under its lower-case name |
+| `MuscleMapEnvironment` | Automatic | conda environment folder of MuscleMap (`MuscleMapPythonEnvironment`). Automatic searches the usual conda locations |
 | `VoxSize` | Automatic | **only used by the Registration method** (the twitch config sets it for Automatic, where it has no effect) |
 
 ### `Tractography`
@@ -485,7 +486,13 @@ symbols) into strings; without it the whole export fails.
   `segOpts` used) and `"SegmentationNetworks"`. The networks come from `SegmentationInfo[what, dim]` in
   SegmentationTools: group, locations, split, classify, the classifier and per location the network asset with its
   file name (the file name carries the network version).
+- `"MuscleMap"`: the source json, `"SegmentationSource"`, `"RunMuscleMap"` (device and the conda environment path
+  that was used, also when found automatically) and, merged at the top level, the keys of the json MuscleMap writes
+  itself with a `MuscleMap` prefix in CamelCase (`MuscleMapRegion`, `MuscleMapModel`, `MuscleMapModelVersion`,
+  `MuscleMapDevice`, `MuscleMapInferer`, …), without `input_image`/`output_image` (temporary names).
 - `"Registration"`: the target, moving and segmentation file names and the registration options (`regOpts`).
+
+`"SegmentationMethod"` holds the method name in all three.
 
 **Tractography json** (`MuscleBidsTractographyI`): every `.nii` and `.trk` output gets a json with the same base name. It
 holds `procInfo` (config `Tractography` block with defaults as `"TractographySettings"`, plus `"ProcessVersion"`), plus per stage:
@@ -532,12 +539,18 @@ rerun with 5.4).
 
 ### 6.5 MuscleBidsSegment → `MuscleBidsSegmentI` (L2865)
 
-- Check file: `..._[key]_seg_auto_<Type>`, **one per dataset, not per target**.
-- `Method` Automatic: for each target, `SegmentData[{data, vox}, Location, SegmentationDimension, TargetDevice]` →
-  `seg/…_[key]_seg_auto_<target...>.nii`. A missing input, or a `SegmentData` that returns `$Failed` (network not
-  loaded), is logged, skipped and sets the check status to `"error"`, so the dataset reruns next time.
-- `Method "Registration"`: registers an existing `Segmentation` using `Target`/`Moving` into target space →
-  `seg_reg_…`. This branch looks experimental (Q9).
+- Loops over `BidsSegMethods` (one method or a list). Each method has tag `BidsSegTag` and its own check file
+  `..._[key]_seg_<tag>_<Type>`, **one per dataset and method, not per target**. `BidsCheckFiles` lists the same files.
+- Network methods (`Automatic`, `MuscleMap`): for each target, `BidsSegmentRun[method, {data, vox}, datType]` gives
+  `{seg, json info}` → `seg/…_[key]_seg_<tag>_<target...>.nii`. Automatic calls
+  `SegmentData[{data, vox}, Location, SegmentationDimension, TargetDevice]`, MuscleMap calls
+  `RunMuscleMap[{data, vox}, TargetDevice, MuscleMapPythonEnvironment]` (labels converted to `MuscleLabels`). A
+  missing input, a failed run, or a segmentation that is not numeric (a MuscleMap label without a QMRITools name stays
+  a string) is logged, skipped and sets the check status to `"error"`, so the dataset reruns next time. A new
+  segmentation method is one `BidsSegmentRun` definition plus a `bidsSegTags` entry.
+- `Method "Registration"`: one `RegisterDataTransform` of `Moving` to `Target`, applied to `Segmentation` →
+  `seg_reg_…`. Missing files log and give `"error"`. Before 5.5 its check file was `seg_auto_<Type>`, so existing
+  Registration data reruns once.
 - Manual segmentations follow the pattern `seg_man_…` in the `seg` folder. Analysis and Tractography use whatever the
   config names.
 
@@ -608,7 +621,7 @@ This step runs per analysis entry: `"Default"` (flat) or each nested key.
 | --- | --- | --- |
 | Process | `derived/.../<set>` and `<set>_prep` (dwi) | `done` |
 | Merge | merged `outFile` | `done` |
-| Segment | `seg/..._seg_auto_<Type>` | `done` / `error` |
+| Segment | `seg/..._seg_<tag>_<Type>`, one per method | `done` / `error` |
 | Tractography | `..._trk` | `track` → `seg` → `done` |
 | Analysis | `analysis/.../<name>_xls`, `_img` | `done` |
 
@@ -831,7 +844,7 @@ These were verified by reading the code. The ones marked ✔ were also confirmed
 | Q6 | `BidsDcmToNii` options | `BidsIncludeSession` is declared but never forwarded (`BidsFolderLoop` does not know it, and `SubNameToBids` always uses the default True). |
 | Q7 | Merge L2566 | The "moving files" existence check tests `tarStack` again instead of `movStack`. |
 | Q8 ✔ | `CheckDataDescription` L940–944 | Class `Chunks` is missing from the label/class `Switch`, so the result is unevaluated, `If[!cls,…]` does not fire, and it passes by accident. `ListQ[ass["Label"] && Length[ass]>1]` has a misplaced bracket and works only because `And[list, True]` reduces to `list`. |
-| Q9 | Segment "Registration" L2960 | `Table[..., {i,1,3}]` over `tar[[{i}]]` looks like debug/experimental code. The same function logs `datType["key"]` (lowercase) at L2891, which shows `Missing`. If `Segment.Method` is given as the string `"Automatic"`, no branch matches but the check file is still written as `done`. |
+| Q9 ✔ fixed | Segment "Registration" | **Fixed 2026-11-27 (5.5).** `Table[..., {i,1,3}]` over `tar[[{i}]]` registered three single slices and wrote a 4D stack; now one registration of the whole target. The "already done" log read `datType["key"]` (`Missing`), now `"Key"`. The string `"Automatic"` matched no branch but wrote `done`; methods are now strings (`ToString`) and an unknown method gives `error`. Missing registration files are logged instead of crashing `ImportNii`. |
 | Q10 ✔ fixed | Analysis L3373 | `segF` was not in the `Block` locals (added 2026-10-29). |
 | Q11 | Convert dwi | A missing bval/bvec only logs a warning, but the export then runs with an undefined `data`/`vox`. |
 | Q12 | Convert megre/tse | An unknown `Process.Method` has no default `Switch` branch, so conversion silently does nothing. Anat types are not converted at all ("Unknown datatype"). |

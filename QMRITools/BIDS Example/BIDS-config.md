@@ -864,6 +864,18 @@ Rarely needed settings for this part: see [Merging options](#merging-options) in
 
 The segmentation is made with a neural network and is saved with the name `seg_auto_<target>`, for example `seg_auto_megre_dix_outph`.
 
+**MuscleMap next to the QMRITools networks:** set `Method` to a list to make more than one segmentation of the same map. Each is saved under its own name, so they do not replace each other:
+
+```json
+"Segment": {
+  "Target": ["megre", "dix", "outph"],
+  "Location": "Body",
+  "Method": ["Automatic", "MuscleMap"]
+}
+```
+
+This gives `seg_auto_megre_dix_outph` and `seg_musclemap_megre_dix_outph`. MuscleMap is a separate program that you install yourself (see <https://github.com/MuscleMap/MuscleMap>), in a conda environment named `MuscleMap`. Its muscle labels are converted to the QMRITools numbering, so the same `Segmentation.Labels` work in the analysis. To analyse the MuscleMap segmentation, use `["seg","musclemap","megre","dix","outph"]` where a later step asks for a segmentation. To analyse both, add the analysis entry twice with different keys, one for each segmentation.
+
 **Your own segmentation:** leave out the `Segment` block and add your own file:
 
 - A NIfTI file in the `seg` folder of the subject and session in the merged data (for example `04_merged/sub-001/ses-1/seg/`), named like the automatic one but with `man` instead of `auto`: `sub-001_ses-1_seg_man_megre_dix_outph.nii`.
@@ -1599,7 +1611,8 @@ Change these only when the defaults do not fit your data.
 | `Location` (other values) | Region-specific sets of the older models. Names ending in `Body` (`"LegsBody"`, `"LegsHipBody"`, `"HipBody"`, `"UpperLegsBody"`, `"LowerLegsBody"`, `"ShoulderBody"`) are parts of the full-body model. The older sets are `"Legs"`, `"LegsHip"`, `"UpperLegs"`, `"LowerLegs"`, `"Hip"`, `"Shoulder"` and `"Arm"`. The `Labels` to use in the analysis are in [Segmentation](#segmentation). | `"Body"` |
 | `Dimensions` | `"2D"` segments each slice on its own. `"3D"` uses the whole volume at once. Any other value is read as `"3D"`. | `"3D"` |
 | `Device` | Where the neural network runs. Use `"GPU"` only when your computer has a suitable graphics card. | `"CPU"` |
-| `Method` | Leave it out (do not write `"Automatic"`). The experimental value `"Registration"` aligns an existing segmentation to your data instead of using the network. It uses the keys `Target`, `Moving`, `Segmentation` and `VoxSize` (voxel size to resample to). | not set |
+| `Method` | How the segmentation is made: `"Automatic"` (the QMRITools networks, saved as `seg_auto_…`), `"MuscleMap"` (saved as `seg_musclemap_…`) or `"Registration"` (saved as `seg_reg_…`). Give a list, for example `["Automatic", "MuscleMap"]`, to make several. `"Registration"` aligns an existing segmentation to your data instead of using a network. It uses the keys `Target`, `Moving`, `Segmentation` and `VoxSize` (voxel size to resample to). | `"Automatic"` |
+| `MuscleMapEnvironment` | The folder of the MuscleMap conda environment (the folder with `python.exe`). Only needed when it is not found in the usual conda places. | found automatically |
 
 ### Tractography options
 

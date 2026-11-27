@@ -648,7 +648,8 @@ defaultConfig = <|
 		"VoxSize" -> Automatic,
 		"Dimensions" -> "3D",
 		"Location" -> "Body",
-		"Method" -> Automatic
+		"Method" -> Automatic,
+		"MuscleMapEnvironment" -> Automatic
 	|>,
 	"Tractography" -><|
 		"FlipPermute" -> {{1, 1, 1}, {"x", "y", "z"}},
@@ -1606,10 +1607,10 @@ BidsCheckFiles[{der_, mer_, ana_}, {fol_, parts_, datDis_}, anDis_, imOut_] := B
 							{}
 						],
 						If[KeyExistsQ[dat, "Segment"],
-							{{"Segment", typ, nam,
+							{"Segment", typ, nam,
 								ConvertExtension@BuildBidsNameFromConfig[{mer, parts}, {dat, datDis},
-									{dat["Key"], "seg", "auto", typ}]
-							}},
+									{dat["Key"], "seg", BidsSegTag[#], typ}]
+							}& /@ BidsSegMethods[dat],
 							{}
 						],
 						If[KeyExistsQ[dat, "Tractography"],
@@ -4933,14 +4934,55 @@ MuscleBidsSegment[datFol_?StringQ, outFol_?StringQ, datDis_?AssociationQ, opts:O
 (*MuscleBidsSegmentI*)
 
 
-MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
-		segType, checkFile, fol, location, segment,
-		parts, outFile, segFile, out, vox, seg, status, segDim,
-		voxS, tar, mov, voxTar, voxMov, voxSeg, mask,
-		procInfo, segOpts, regOpts, srcFiles, inputs
-	},
+(*file tag of each segmentation method, an unknown method gets its own name as tag*)
+bidsSegTags = <|"Automatic" -> "auto", "MuscleMap" -> "musclemap", "Registration" -> "reg"|>;
 
-	status = "done";
+BidsSegTag[met_] := Lookup[bidsSegTags, met, ToLowerCase[met]]
+
+
+(*the segmentation methods of a dataset as strings, one method or a list*)
+BidsSegMethods[datType_] := ToString /@ Flatten[{ConfigLookup[datType, "Segment", "Method"]}]
+
+
+(*run one network segmentation method, gives {seg, json info}, seg is not numeric on failure*)
+BidsSegmentRun["Automatic", {out_, vox_}, datType_] := Block[{segDim, location, segOpts, seg},
+	segDim = ConfigLookup[datType, "Segment", "Dimensions"];
+	If[segDim=!="2D" && segDim=!="3D", segDim="3D";];
+	location = ConfigLookup[datType, "Segment", "Location"];
+	(*-----*)AddToLog[{"Segmenting location using dimensions: ", location, " - ", segDim}, 4];
+	debugBids[{segDim, location, vox}];
+
+	segOpts = {SegmentationDimension -> segDim, TargetDevice -> ConfigLookup[datType, "Segment", "Device"]};
+	seg = SegmentData[{out, vox}, location, Monitor -> False, Sequence @@ segOpts];
+	{seg, <|
+		"SegmentData" -> OptionsToJSON[segOpts],
+		"SegmentationNetworks" -> JSONSafe@QMRITools`SegmentationTools`Private`SegmentationInfo[location, segDim]
+	|>}
+]
+
+BidsSegmentRun["MuscleMap", {out_, vox_}, datType_] := Block[{env, segOpts, res},
+	(*-----*)AddToLog[{"Segmenting with MuscleMap"}, 4];
+	(*the environment that is used, so the json holds the real path*)
+	env = ConfigLookup[datType, "Segment", "MuscleMapEnvironment"];
+	If[env === Automatic, env = QMRITools`SegmentationTools`Private`FindMuscleMapEnv[] /. $Failed -> Automatic];
+	segOpts = {TargetDevice -> ConfigLookup[datType, "Segment", "Device"], MuscleMapPythonEnvironment -> env};
+	res = RunMuscleMap[{out, vox}, Sequence @@ segOpts];
+	(*the MuscleMap json is merged in with prefixed keys, without its temporary file names*)
+	If[res === $Failed, {$Failed, <||>},
+		{First@res, Join[<|"RunMuscleMap" -> OptionsToJSON[segOpts]|>, KeyMap[
+			"MuscleMap" <> StringJoin[Capitalize /@ StringSplit[#, "_"]]&,
+			KeyDrop[Last@res, {"input_image", "output_image"}]
+		]]}
+	]
+]
+
+
+MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[{
+		segType, checkFile, fol, segment, met, tag, res, info,
+		parts, outFile, segFile, out, vox, seg, status,
+		voxS, tar, mov, voxTar, voxMov, voxSeg, mask,
+		procInfo, regOpts, srcFiles, inputs
+	},
 
 	debugBids["Starting MuscleBidsSegmentI"];
 	debugBids[datType];
@@ -4958,11 +5000,6 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 	(*config settings and version that are added to every output json*)
 	procInfo = JSONSafe@<|"SegmentSettings" -> Join[defaultConfig["Segment"], datType["Segment"]], "ProcessVersion" -> QMRITools`$InstalledVersion|>;
 
-	(*Check if segmentation needs to be performed*)
-	checkFile = ConvertExtension@BuildBidsNameFromConfig[{folOut, parts}, {datType, allType}, 
-		{datType["Key"], "seg", "auto", datType["Type"]}];
-	debugBids[checkFile];
-
 	(*Get the segmentation targets and its names*)
 	segType = ConfigLookup[datType, "Segment", "Target"];
 	debugBids[segType];
@@ -4971,103 +5008,110 @@ MuscleBidsSegmentI[{folIn_, folOut_}, {datType_, allType_}, verCheck_] := Block[
 	(*the check files of the merged targets*)
 	inputs = BidsCheckBase[BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, #]]& /@ segType;
 	debugBids["input checks: ", Column@inputs];
-	If[!BidsInputsOkQ[checkFile, inputs, datType], Return[]];
-	If[BidsDoneQ[checkFile, "done", verCheck, inputs],
-		(*-----*)AddToLog[{"Segmentation already done for:", datType["key"]}, 3];
-		Return[]
-	];
 
-	Switch[ConfigLookup[datType, "Segment", "Method"],
+	(*each method has its own output and check file*)
+	Do[
+		tag = BidsSegTag[met];
+		status = "done";
 
-		(*Automatic segmentations using NN*)
-		Automatic,
+		(*Check if segmentation needs to be performed*)
+		checkFile = ConvertExtension@BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
+			{datType["Key"], "seg", tag, datType["Type"]}];
+		debugBids[checkFile];
+		If[!BidsInputsOkQ[checkFile, inputs, datType], Continue[]];
+		If[BidsDoneQ[checkFile, "done", verCheck, inputs],
+			(*-----*)AddToLog[{"Segmentation already done for:", datType["Key"], "-", met}, 3];
+			Continue[]
+		];
+		(*-----*)AddToLog[{"Segmentation method:", met}, 3];
 
-		(*Loop over the segmentation types if more are specified*)
-		Table[
-			(*-----*)AddToLog[{"Performing segmentation for ", StringRiffle[segI, "_"]}, 3];
+		Which[
+			(*unknown method*)
+			!KeyExistsQ[bidsSegTags, met],
+			(*-----*)AddToLog[{"!!!!! Unknown segmentation method:", met, "- use", StringRiffle[Keys@bidsSegTags, ", "], "- skipping"}, 4];
+			status = "error",
 
-			(*get the correct filenames*)
+			(*Register existing segmentation*)
+			met === "Registration",
+			segment = datType["Segment"];
 			outFile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
-				Join[{datType["Key"], "seg", "auto"}, segI]];
-			segFile = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segI];
+				Join[{datType["Key"], "seg", tag}, segment["Target"]]];
+			tar = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Target"]];
+			mov = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Moving"]];
+			seg = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Segmentation"]];
+			srcFiles = FileNameTake[ConvertExtension[#, ".nii"]]& /@ <|"Target" -> tar, "Moving" -> mov, "Segmentation" -> seg|>;
+			debugBids[Column[{outFile, seg, tar, mov}]];
 
-			(*check if target file exists if so perform the segmentation*)
-			If[!NiiFileExistQ[segFile],
-				(*-----*)AddToLog[{"The segmentation file does not exist: ", segFile}, 4];
+			If[!AllTrue[{tar, mov, seg}, NiiFileExistQ],
+				(*-----*)AddToLog[{"The registration files do not exist:", StringRiffle[Select[{tar, mov, seg}, !NiiFileExistQ[#]&], ", "]}, 4];
 				status = "error"
 				,
-				{out, vox} = ImportNii[segFile];
+				(*Import and prepare the data*)
+				{tar, voxTar} = ImportNii[tar];
+				tar = NormalizeData[Clip[tar, {0, Infinity}]];
+				{mov, voxMov} = ImportNii[mov];
+				mov = NormalizeData[Clip[mov, {0, Infinity}]];
+				{seg, voxSeg} = ImportNii[seg];
+				mask = Mask[NormalizeData[tar], 5, MaskSmoothing -> True, MaskDilation -> 5];
+				voxS = ConfigLookup[datType, "Segment", "VoxSize"];
+				If[voxS =!= Automatic,
+					mov = RescaleData[mov, {voxMov, voxS}];
+					voxMov = voxS;
+				];
+				debugBids[Column[Dimensions/@{seg, tar, mov}]];
 
-				segDim = ConfigLookup[datType, "Segment", "Dimensions"];
-				If[segDim=!="2D" && segDim=!="3D", segDim="3D";];
-				location = ConfigLookup[datType, "Segment", "Location"];
-				(*-----*)AddToLog[{"Segmenting location using dimensions: ", location, " - ", segDim}, 4];
-				debugBids[{segDim, location, vox}];
+				(*register the moving data to the target and transform the segmentation with it*)
+				regOpts = {MethodReg -> {"rigid", "affine"}, NumberSamples -> 50000, HistogramBins -> 128, Resolutions -> 1, Iterations -> 200};
+				seg = Last@RegisterDataTransform[{tar, mask, voxTar}, {mov, voxMov}, {seg, voxSeg}, Sequence @@ regOpts,
+					PrintTempDirectory -> False, DeleteTempDirectory -> True, TransformMethod -> "Segmentation"];
 
-				segOpts = {SegmentationDimension -> segDim, TargetDevice -> ConfigLookup[datType, "Segment", "Device"]};
-				seg = SegmentData[{out, vox}, location, Monitor -> False, Sequence @@ segOpts];
+				(*export the segmentation with a json of its sources and settings*)
+				ExportNii[seg, voxTar, outFile, CompressNii -> compress];
+				Export[ConvertExtension[outFile, ".json"], MergeJSON[{procInfo, <|
+					"SegmentationMethod" -> met, "SegmentationSource" -> srcFiles,
+					"Registration" -> OptionsToJSON[regOpts], "VoxSize" -> voxMov
+				|>}]];
+			],
 
-				(*skip when the network could not be loaded or applied*)
-				If[!ArrayQ[seg, _, NumericQ],
-					(*-----*)AddToLog[{"!!!!! Segmentation failed, the network could not be loaded or applied for: ", location, " - ", segDim, " - skipping"}, 4];
+			(*network segmentations, loop over the targets if more are specified*)
+			True,
+			Do[
+				(*-----*)AddToLog[{"Performing segmentation for ", StringRiffle[segI, "_"]}, 3];
+
+				(*get the correct filenames*)
+				outFile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
+					Join[{datType["Key"], "seg", tag}, segI]];
+				segFile = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segI];
+
+				(*check if target file exists if so perform the segmentation*)
+				If[!NiiFileExistQ[segFile],
+					(*-----*)AddToLog[{"The segmentation file does not exist: ", segFile}, 4];
 					status = "error"
 					,
-					(*export the segmentation with a json of its source, settings and networks*)
-					ExportNii[seg, vox, outFile, CompressNii -> compress];
-					Export[ConvertExtension[outFile, ".json"], MergeJSON[{SourceJSON[segFile], procInfo, <|
-							"SegmentationMethod" -> "Automatic", "SegmentationSource" -> FileNameTake[ConvertExtension[segFile, ".nii"]],
-							"SegmentData" -> OptionsToJSON[segOpts],
-							"SegmentationNetworks" -> JSONSafe@QMRITools`SegmentationTools`Private`SegmentationInfo[location, segDim]
-					|>}]];
+					{out, vox} = ImportNii[segFile];
+					{seg, info} = BidsSegmentRun[met, {out, vox}, datType];
+
+					(*skip when the segmentation failed or has labels that are not numbers*)
+					If[!ArrayQ[seg, _, NumericQ],
+						(*-----*)AddToLog[{"!!!!! Segmentation failed for method", met, "on", StringRiffle[segI, "_"], "- skipping"}, 4];
+						status = "error"
+						,
+						(*export the segmentation with a json of its source, settings and method*)
+						ExportNii[seg, vox, outFile, CompressNii -> compress];
+						Export[ConvertExtension[outFile, ".json"], MergeJSON[{SourceJSON[segFile], procInfo, <|
+							"SegmentationMethod" -> met, "SegmentationSource" -> FileNameTake[ConvertExtension[segFile, ".nii"]]
+						|>, info}]];
+					];
 				];
-			];
-			, {segI, segType}			
-		],
+			, {segI, segType}]
+		];
 
-		(*Register existing segmentation*)
-		"Registration",
+		(*make the check file*)
+		MakeCheckFile[checkFile, Sort@Join[{"Check" -> status, "Inputs" -> BidsCheckInputs[inputs]}, Normal@datType]];
 
-		(*figure out if duplicate handling is needed.*)
-		segment = datType["Segment"];
-		outFile = BuildBidsNameFromConfig[{folOut, parts}, {datType, allType},
-				Join[{datType["Key"], "seg", "reg"}, segment["Target"]]];
-		tar = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Target"]];
-		mov = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Moving"]];
-		seg = BuildBidsNameFromConfig[{fol, parts}, {datType, allType}, segment["Segmentation"]];
-		srcFiles = FileNameTake[ConvertExtension[#, ".nii"]]& /@ <|"Target" -> tar, "Moving" -> mov, "Segmentation" -> seg|>;
-		debugBids[Column[{outFile, seg, tar, mov}]];
-
-		(*Import and prepare the data*)
-		{tar, voxTar} = ImportNii[tar];
-		tar = NormalizeData[Clip[tar, {0, Infinity}]];
-		{mov, voxMov} = ImportNii[mov];
-		mov = NormalizeData[Clip[mov, {0, Infinity}]];
-		{seg, voxSeg} = ImportNii[seg];
-		mask = Mask[NormalizeData[tar], 5, MaskSmoothing -> True, MaskDilation -> 5];
-		voxS = ConfigLookup[datType, "Segment", "VoxSize"];
-		If[voxS =!= Automatic, mov = RescaleData[mov, {voxMov, voxS}]; voxMov = voxS;];
-		debugBids[Column[Dimensions/@{seg, tar, mov}]];
-
-		(*perform the segmentation registration*)
-		regOpts = {MethodReg -> {"rigid", "affine"}, NumberSamples -> 50000, HistogramBins -> 128, Resolutions -> 1, Iterations -> 200};
-		seg = Table[RegisterDataTransform[
-			{tar[[{i}]], mask[[{i}]], voxTar}, {mov, voxMov}, {seg, voxSeg}, Sequence @@ regOpts,
-			PrintTempDirectory -> False, DeleteTempDirectory -> True, TransformMethod -> "Segmentation"
-		][[2]], {i, 1, 3}];
-
-		(*export the segmentation with a json of its sources and settings*)
-		ExportNii[seg, voxTar, outFile, CompressNii -> compress];
-		Export[ConvertExtension[outFile, ".json"], MergeJSON[{procInfo, <|
-			"SegmentationMethod" -> "Registration", "SegmentationSource" -> srcFiles,
-			"Registration" -> OptionsToJSON[regOpts], "VoxSize" -> voxMov
-		|>}]];
-	];
-
-	(*make the check file*)
-	MakeCheckFile[checkFile, Sort@Join[{"Check" -> status, "Inputs" -> BidsCheckInputs[inputs]}, Normal@datType]];
-
-	(*compress the nii files if compression during ExportNii -> False*)
-	If[!compress, CompressNiiFiles[DirectoryName[outFile]]];
+		(*compress the nii files if compression during ExportNii -> False*)
+		If[!compress, CompressNiiFiles[DirectoryName[checkFile]]];
+	, {met, BidsSegMethods[datType]}];
 
 	(*-----*)AddToLog["Finished the segmentation", 3, True];
 ]
