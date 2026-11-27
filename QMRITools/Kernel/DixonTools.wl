@@ -40,8 +40,10 @@ DixonReconstruct[{real, imag}, echo, {b0, t2, ph0, phb}] reconstructs Dixon data
 Echo times echo are in s, the initial b0 in Hz, t2 in s and the phases ph0 and phb in cycles.
 
 Output is {{watFr, fatFr}, {watSig, fatSig, ...}, {inphase, outphase}, {{b0, phb, ph0, phbt}, {t2, r2}}, iterations, residuals}.
-The phase maps are only those selected with DixonPhases, if R2 is fitted the T2 and R2 maps are given separately. 
+The phase maps are only those selected with DixonPhases, if R2 is fitted the T2 and R2 maps are given separately.
 If a fat model is used the signals are followed by the fitted fat model parameters (e.g. double bonds).
+With DixonPhaseCorrection or DixonFixBonds a seventh element is added, an association with the correction maps
+(\"PhaseCorrection\" in rad as {z, echo, y, x}, \"BondFit\" the double bond map with a free double bond) and their settings.
 
 The fractions are between 0 and 1 (see DixonClipFraction), the B0 field map is in Hz, the T2star 
 map in s and R2star in 1/s.
@@ -196,6 +198,22 @@ DixonFixT2::usage =
 "DixonFixT2 is an option for DixonReconstruct. If set to true the R2' is fitted rather then the R2*. 
 This is done by fixing the T2 of water and each fat peak to the DixonRelaxivity values."
 
+DixonPhaseCorrection::usage =
+"DixonPhaseCorrection is an option for DixonReconstruct. Can be False, True, \"Linear\" or \"Quadratic\".
+If not False the echo phase that the model does not describe (e.g. eddy currents) is estimated from the low fat voxels
+after a first fit, per echo and per object of the mask as a linear (True) or quadratic spatial function, removed from
+the data and the data is fitted again starting from the first fit. 
+The echo phase terms that are not fitted (DixonPhases) are part of the map. Objects with too few low fat voxels are not 
+corrected (map 0), see \"Objects\" and \"Voxels\" in the output. A fat fraction that follows the position in the image 
+(\"FatPositionCorrelation\") is partly taken up by the spatial terms. Needs at least 2 echoes more than the fitted phases."
+
+DixonFixBonds::usage =
+"DixonFixBonds is an option for DixonReconstruct. Can be False, True or {refFraction, {low, high}}.
+If not False and the fat model fits the double bonds (\"CallDB\" or \"FitDB\"), the double bond is fixed in low fat voxels
+to the median double bond of the voxels with a fat fraction above refFraction. The fixed solution is used below
+the fat fraction low, the fitted one above high and they are blended in between (low = high gives a hard switch).
+True uses {0.85, {0.2, 0.4}}. With fewer than 100 reference voxels the \"Fixed\" model value 2.62 is used."
+
 MonitorUnwrap::usage = 
 "MonitorUnwrap is an option for Unwrap. Monitor the unwrapping progress."
 
@@ -231,8 +249,12 @@ Unwrap::dim = "Unwrapping Dimensions can be \"2D\" or \"3D\", current value is `
 
 UnwrapDCT::dim = "The weights dimensions `2` do not match the data dimensions `1`."
 
-DixonPrecessionCheck::sign = "The opposite precession sense fits the data better than 
+DixonPrecessionCheck::sign = "The opposite precession sense fits the data better than
 DixonPrecessions -> `1` (residual ratio `2`), check the DixonPrecessions setting."
+
+DixonReconstruct::pcor = "The echo phase correction needs at least `2` echoes for the fitted phases, the data has `1`, it is skipped."
+
+DixonReconstruct::bond = "DixonFixBonds needs a fat model that fits only the double bond (\"CallDB\" or \"FitDB\"), it is skipped."
 
 
 (* ::Section:: *)
@@ -420,16 +442,13 @@ normNor[norm_] := 100 (Last[norm] / (Max /@ Transpose[norm]))
 RestoreDC[psi_, unw_, msk_] := msk (unw + Arg[Total[Flatten[msk Exp[I (psi - unw)]]]])
 
 
-AlignBipolar[comp_, ph0_, msk_, bip_, bp_] := Block[{trip, lab},
+AlignBipolar[comp_, ph0_, msk_, bip_, bp_] := Block[{trip},
 	(*echo triplets, without b0 and initial phase, weighted by the signal, the angle is the bipolar phase in the units of ph0*)
 	(*linear bipolar phase along the readout 10.1002/mrm.21747 and 10.1002/jmri.22111*)
 	trip = Total[bip[[bp]] Conjugate[comp[[bp - 1]] comp[[bp + 1]]] comp[[bp]]^2];
 
 	(*per object a linear bipolar phase from the triplets, and the map within half a cycle of it*)
-	lab = MorphologicalComponents[msk];
-	Total[Table[With[{o = 1 - Unitize[lab - c]},
-		With[{pl = BipolarPlane[o trip]}, o (pl + Arg[Exp[I (ph0 - pl)]])]
-	], {c, Max[lab]}]]
+	Total[Table[With[{pl = BipolarPlane[o trip]}, o (pl + Arg[Exp[I (ph0 - pl)]])], {o, ObjectMasks[msk]}]]
 ]
 
 
@@ -445,8 +464,15 @@ BipolarPlane[trip_] := Block[{sl, cen, pl},
 ]
 
 
+(*one mask per connected object of the mask*)
+ObjectMasks[msk_] := Block[{lab},
+	lab = MorphologicalComponents[msk];
+	Table[1 - Unitize[lab - c], {c, Max[lab]}]
+]
+
+
 SelectAlias[comp_, b0_, amat_, echos_, dt_, fs_, msk_] := Block[{
-		proj, lab, objs, size, mean, ref, kb, res, par, cand, kAll
+		proj, objs, size, mean, ref, kb, res, par, cand, kAll
 	},
 	(*field map ambiguity 10.1002/mrm.20654, offsets between disconnected regions 10.1002/mrm.10354*)
 	(*b0 in units of 1/dt, comp without decay and phases*)
@@ -454,8 +480,7 @@ SelectAlias[comp_, b0_, amat_, echos_, dt_, fs_, msk_] := Block[{
 	proj = Transpose[IdentityMatrix[Length[echos]] - amat . PseudoInverse[amat]];
 
 	(*one mask per connected object, e.g. the two legs, the largest is the reference*)
-	lab = MorphologicalComponents[msk];
-	objs = Table[1 - Unitize[lab - c], {c, Max[lab]}];
+	objs = ObjectMasks[msk];
 	size = Total[#, -1] & /@ objs;
 	mean = Function[map, Table[Total[o map, -1], {o, objs}] / size];
 	ref = First@Ordering[size, -1];
@@ -801,6 +826,8 @@ Options[DixonReconstruct] = {
 	DixonClipFraction -> False,
 	DixonCorrectT1-> False,
 	DixonFixT2 ->False,
+	DixonPhaseCorrection -> False,
+	DixonFixBonds -> False,
 	DixonConstrainPhase -> False,
 	MonitorCalc -> False,
 	DixonFitPhase -> False,
@@ -821,9 +848,9 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_}, opts : OptionsPatte
 
 DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPattern[]] := Block[{
 		mon, freqs, amps, eta, maxItt, thresh, filti, filto, filtFunc, n, mout, con, sig,
-		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, fitSel, r2, phi, fF, par,
-		matA, matAc, matAi, vec, matC, complex, mask, max, scale, zero, ls, ipi, masks, ph,
-		result, itt, res, fraction, signal, iop, fitphase
+		t1c, tr, fa, t1f, t1m, sf, sw, ne, vp, v1, sel, fitSel, r2, phi, par,
+		matA, matAc, matAi, vec, matC, complex, mask, max, scale, zero, ipi, masks, ph,
+		result, itt, res, fraction, signal, iop, fitphase, pcor, fixb, extra, pmap, pinfo, ff, b0, fat, dbFit, binfo
 	},
 
 
@@ -871,10 +898,9 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	];
 
 	(*define the water fat matrix, for real (constrained) or complex amplitudes*)
-	matA = (Total /@ (amps Exp[sig #])) & /@ echo;
-	matAc = Join[Join[Re@matA, Im@matA], Join[-Im@matA, Re@matA], 2];
+	matAc = DixonAmpMatrix[amps, sig, echo, False];
 	con = OptionValue[DixonConstrainPhase];
-	matA = If[con, Join[Re@matA, Im@matA], matAc];
+	matA = If[con, DixonAmpMatrix[amps, sig, echo, True], matAc];
 	matAi = PseudoInverse@matA;
 	n = Length@matAi;
 
@@ -941,6 +967,27 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*the actual fit*)
 	result = DixonFit[complex, phi, mask, vec, matA, fitSel, {eta, maxItt}, par];
 
+	(*optional echo phase correction, estimated on the first fit and refitted from its maps*)
+	{pcor, fixb} = OptionValue[{DixonPhaseCorrection, DixonFixBonds}];
+	extra = <||>;
+	If[pcor =!= False,
+		If[mon, PrintTemporary["Estimating and removing the unmodelled echo phase"]];
+		ff = DixonFatFraction[DixonSignalPD[DixonComplexSignal[result[[1 ;; n]], con], amps, mout]];
+		b0 = If[MemberQ[fitSel, 2], result[[n + 2 + Position[fitSel, 2][[1, 1]]]], zero];
+		fat = If[StringQ[OptionValue[DixonAmplitudes]], GenerateAmps["Fixed"][[1, 2]], amps[[2]]];
+		{pmap, pinfo} = DixonPhaseMap[complex, {echo, vec, sel}, {fat, sig}, {ff, b0, mask}, If[pcor === True, "Linear", pcor]];
+
+		(*correct the data and refit from the first fit*)
+		If[pinfo =!= <||>,
+			complex = complex Exp[-I pmap];
+			phi = RotateDimensionsRight[phi];
+			phi[[fitSel]] = result[[n + 3 ;;]];
+			phi = RotateDimensionsLeft[phi];
+			result = DixonFit[complex, phi, mask, vec, matA, fitSel, {eta, maxItt}, par];
+			extra = <|"PhaseCorrection" -> Transpose[RotateDimensionsRight[pmap]], "PhaseCorrectionInfo" -> pinfo|>;
+		];
+	];
+
 	(*get the residuals and iterations and phases*)
 	{res, itt} = result[[n+1 ;; n+2]];
 	itt = Round@itt;
@@ -977,8 +1024,24 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	res = scale Clip[ToPackedArray@N@Chop[res], {0., max}];
 
 	(*Fitted signals, make complex if not phase constrained*)
-	signal = scale Clip[result[[1;;n]], {-max, max}];
-	If[!con, signal = signal[[1 ;; Ceiling[n/2]]] + signal[[Ceiling[n/2] + 1 ;; n]] I];
+	signal = DixonComplexSignal[scale Clip[result[[1;;n]], {-max, max}], con];
+
+	(*optional fixed double bond in low fat voxels*)
+	If[fixb =!= False,
+		If[Length[mout[[2]]] === 1 && SymbolName[First@mout[[2]]] === "db",
+			If[mon, PrintTemporary["Fixing the double bond in low fat voxels"]];
+			{signal, res, dbFit, binfo} = DixonFixBond[
+				{signal, res},
+				{complex, RotateDimensionsLeft[phi], mask},
+				{echo, sig, amps, mout},
+				{matC, con, scale, max},
+				If[fixb === True, {0.85, {0.2, 0.4}}, fixb]
+			];
+			extra = Join[extra, <|"BondFit" -> dbFit, "BondFitInfo" -> binfo|>];
+			,
+			Message[DixonReconstruct::bond];
+		]
+	];
 
 
 	(*---- All the bookkeeping for the outputs ----*)
@@ -988,18 +1051,12 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 
 	(*in\out phase data*)
 	iop = {0, 0.5} / Abs[Total[Flatten[(amps[[2 ;;]]^2) freqs[[2 ;;]]]] / Total[Flatten[amps[[2 ;;]]]^2]];
-	matA = (Total /@ (amps Exp[sig #])) & /@ iop;
+	matA = DixonAmpComplex[amps, sig, iop];
 	iop = ToPackedArray@N@Chop@RotateDimensionsRight[InOutPhase[RotateDimensionsLeft[signal], matA]];
 	iop = Transpose[NormalizeData[Transpose[iop]]];
 
 	(*correct the signals if a fat model is used to get cl db idb*)
-	If[mout[[2]] =!= None,
-		ls = Range[3, Length@signal];
-		fF = Abs@signal[[2]];
-		signal[[ls]] = Clip[DivideNoZero[Abs@signal[[#]], fF] &/@ ls, {0, 30}, {0, 0}];
-		(*convert water and fat to proton density*)
-		signal[[1;;2]] = {amps[[1, 1]], mout[[1]] /. Thread[mout[[2]] -> signal[[ls]]]} signal[[1;;2]];
-	];
+	signal = DixonSignalPD[signal, amps, mout];
 
 	(*fraction and residuals*)
 	fraction = DixonToPercent[t1c signal[[1]], signal[[2]], OptionValue[DixonClipFraction]];
@@ -1007,8 +1064,213 @@ DixonReconstruct[{real_, imag_}, echo_, {b0i_, t2i_, ph0i_, phbi_}, OptionsPatte
 	(*convert R2 to T2 and split phase and relaxsivity*)
 	phi = If[MemberQ[sel, 1], {Rest@phi, {DivideNoZero[1, First@phi], First@phi}}, phi];
 
-	(*give the output*)
-	{fraction, signal, iop, phi, itt, res}
+	(*give the output, with the correction maps if any*)
+	If[extra === <||>,
+		{fraction, signal, iop, phi, itt, res},
+		{fraction, signal, iop, phi, itt, res, extra}
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DixonSignalPD*)
+
+
+(*complex signals from the real fit vector and proton density from the fat model, extra signals as ratio to fat*)
+DixonComplexSignal[rho_, con_] := If[con, rho, rho[[1 ;; Length[rho]/2]] + I rho[[Length[rho]/2 + 1 ;;]]]
+
+
+DixonFatFraction[pd_] := Last@DixonToPercent[pd[[1]], pd[[2]], False]
+
+
+DixonSignalPD[signal_, amps_, mout_] := Block[{sigo, ls, fF},
+	sigo = signal;
+	If[mout[[2]] =!= None,
+		ls = Range[3, Length@sigo];
+		fF = Abs@sigo[[2]];
+		sigo[[ls]] = Clip[DivideNoZero[Abs@sigo[[#]], fF] &/@ ls, {0, 30}, {0, 0}];
+		(*convert water and fat to proton density*)
+		sigo[[1;;2]] = {amps[[1, 1]], mout[[1]] /. Thread[mout[[2]] -> sigo[[ls]]]} sigo[[1;;2]];
+	];
+	sigo
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DixonPhaseMap*)
+
+
+DixonPhaseMap[complex_, {echo_, vec_, sel_}, {fat_, sig_}, {ff_, b0_, mask_}, order_] := Block[{
+		ne, xm, proj, pos, fp, mod, dat, res, nb, lab, obj, cnt, dim, all, labs, pmap, coef, nfat, fcor,
+		p, cen, sd, des, c, v
+	},
+	(*echo time model of the fitted phases and the offset*)
+	ne = Length[echo];
+	xm = Transpose[vec[[Union[{4}, Intersection[sel, {2, 3, 5}]]]]];
+	If[ne < Length[First@xm] + 2,
+		Message[DixonReconstruct::pcor, ne, Length[First@xm] + 2];
+		Return[{0., <||>}, Block]
+	];
+	proj = IdentityMatrix[ne] - xm . PseudoInverse[xm];
+
+	(*low fat voxels with enough signal*)
+	pos = Position[DixonSignalMask[Abs[complex[[All, All, All, 1]]], mask] UnitStep[0.3 - ff] UnitStep[ff + 0.1], 1];
+	If[pos === {}, Return[{0., <||>}, Block]];
+
+	(*water fat signal of the first fit fat fraction*)
+	fp = Extract[ff, pos];
+	mod = DixonAmpComplex[{{1.}, fat / Total[fat]}, sig[[1 ;; 2]], echo];
+	mod = Outer[Times, 1. - fp, mod[[All, 1]]] + Outer[Times, fp, mod[[All, 2]]];
+
+	(*unwrapped echo phase without B0 and the water fat signal, then without the echo time model*)
+	dat = Extract[complex, pos] Exp[-2 Pi I Outer[Times, Extract[b0, pos], echo]] Conjugate[mod];
+	res = Accumulate /@ (Prepend[#, 0.] & /@ Arg[Rest /@ dat Conjugate[Most /@ dat]]);
+	res = res . proj;
+
+	(*objects of the mask with enough low fat voxels*)
+	nb = If[order === "Quadratic", 10, 4];
+	lab = DixonObjects[mask];
+	obj = Extract[lab, pos];
+	cnt = Select[KeySort[Counts[obj]], # >= 20 (nb + 2) &];
+	If[Length[cnt] === 0, Return[{0., <||>}, Block]];
+
+	(*all voxels of the objects, the map is filled by linear index*)
+	dim = Dimensions[mask];
+	all = SparseArray[lab]["NonzeroPositions"];
+	labs = Extract[lab, all];
+	pmap = ConstantArray[0., {Times @@ dim, ne}];
+
+	(*per object a least squares fit per echo, a remaining fat part is regressed out if the fat fraction varies enough*)
+	nfat = fcor = {};
+	coef = Table[
+		p = Pick[Range[Length[obj]], obj, k];
+		cen = N[Mean[pos[[p]]]];
+		sd = StandardDeviation[fp[[p]]];
+		des = Join[
+			DixonSpatialBasis[pos[[p]], cen, nb],
+			Which[sd < 0.02, {}, sd < 0.05, {fp[[p]]}, True, {fp[[p]], fp[[p]]^2}]
+		];
+		AppendTo[nfat, Length[des] - nb];
+		AppendTo[fcor, If[sd > 0, Round[Max[Abs[Correlation[fp[[p]], #] & /@ Transpose[N[pos[[p]]]]]], 0.01], 0.]];
+		c = LeastSquares[Transpose[des], res[[p]]][[1 ;; nb]];
+
+		(*the map is the spatial part only, on all voxels of the object*)
+		v = Pick[all, labs, k];
+		pmap[[(v - 1) . {dim[[2]] dim[[3]], dim[[3]], 1} + 1]] = Transpose[DixonSpatialBasis[v, cen, nb]] . c;
+		c
+	, {k, Keys[cnt]}];
+
+	(*map as {z, y, x, echo} and the fit settings*)
+	{ArrayReshape[pmap, Append[dim, ne]], <|
+		"Order" -> order,
+		"Objects" -> Length[cnt],
+		"Voxels" -> Values[cnt],
+		"FatTerms" -> nfat,
+		"FatPositionCorrelation" -> fcor,
+		"Coefficients" -> coef,
+		"Units" -> "rad, coordinates in 100 voxels from the object centre"
+	|>}
+]
+
+
+(*connected objects of the mask, an object with two parts in most of its slices (e.g. touching legs) is split at the middle*)
+DixonObjects[mask_] := Block[{lab, out, ok, sl, cut},
+	lab = MorphologicalComponents[Unitize[mask]];
+	out = lab;
+	Do[
+		ok = 1 - Unitize[lab - k];
+		sl = Select[MorphologicalComponents /@ ok, Max[#] > 0 &];
+		If[Count[Max /@ sl, _?(# >= 2 &)] > Length[sl]/2,
+			cut = Quiet@FindMiddle[ok];
+			out += Max[lab] ok ConstantArray[UnitStep[Range[Last@Dimensions[ok]] - cut - 1], Most@Dimensions[ok]];
+		];
+	, {k, Max[lab]}];
+	out
+]
+
+
+(*spatial basis {nb, n}: offset, coordinates and for nb = 10 also their squares and products*)
+DixonSpatialBasis[pts_, cen_, nb_] := Block[{g},
+	g = (Transpose[N[pts]] - cen)/100.;
+	Join[
+		{1. + 0. g[[1]]},
+		g,
+		If[nb === 10, Join[g^2, {g[[1]] g[[2]], g[[1]] g[[3]], g[[2]] g[[3]]}], {}]
+	]
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DixonFixBond*)
+
+
+DixonFixBond[{signal_, res_}, {complex_, phi_, mask_}, {echo_, sig_, amps_, mout_}, {matC_, con_, scale_, max_},
+	{refFF_, {lo_, hi_}}] := Block[{
+		pd, ff, dbFit, v, nRef, dbRef, matF, fixd, nF, sigF, resF, wgt
+	},
+	(*fat fraction and free double bond of the fit*)
+	pd = DixonSignalPD[signal, amps, mout];
+	ff = DixonFatFraction[pd];
+	dbFit = pd[[3]];
+
+	(*reference double bond from the high fat voxels with enough signal, the "Fixed" model value if there are too few*)
+	v = Pick[Flatten[dbFit], Flatten[DixonSignalMask[Abs[pd[[1]] + pd[[2]]], mask] UnitStep[ff - refFF]], 1];
+	nRef = Length[v];
+	dbRef = If[nRef < 100, 2.62, Median[v]];
+
+	(*amplitude refit with the fixed double bond, in the same scaling as the fitted model*)
+	matF = DixonAmpMatrix[{amps[[1]], amps[[2]] + dbRef amps[[3]]}, sig[[1 ;; 2]], echo, con];
+	fixd = RotateDimensionsRight@ToPackedArray@N@Chop@DixonFitFC[complex, phi, mask, matC, matF, PseudoInverse[matF]];
+	nF = Length[First@matF];
+	sigF = DixonComplexSignal[scale Clip[fixd[[1 ;; nF]], {-max, max}], con];
+	sigF = Append[sigF, dbRef sigF[[2]]];
+	resF = scale Clip[Abs[fixd[[-1]]], {0., max}];
+
+	(*fixed below lo, fitted above hi and blended in between*)
+	wgt = If[hi > lo,
+		Clip[(ff - lo)/(hi - lo), {0., 1.}],
+		UnitStep[ff - lo]
+	];
+	{
+		MapThread[wgt #1 + (1 - wgt) #2 &, {signal, sigF}],
+		wgt res + (1 - wgt) resF,
+		dbFit,
+		<|
+			"ReferenceDB" -> dbRef,
+			"ReferenceVoxels" -> nRef,
+			"ReferenceSource" -> If[nRef < 100, "Fixed model", "Data"],
+			"ReferenceFraction" -> refFF,
+			"BlendFractions" -> {lo, hi}
+		|>
+	}
+]
+
+
+(* ::Subsubsection::Closed:: *)
+(*DixonAmpMatrix*)
+
+
+(*water fat matrix in real block form, complex amplitudes or real (constrained) amplitudes*)
+DixonAmpMatrix[amps_, sig_, echo_, con_] := Block[{mat},
+	mat = DixonAmpComplex[amps, sig, echo];
+	If[con,
+		Join[Re@mat, Im@mat],
+		Join[Join[Re@mat, Im@mat], Join[-Im@mat, Re@mat], 2]
+	]
+]
+
+
+(*complex water fat matrix {echo, species}*)
+DixonAmpComplex[amps_, sig_, echo_] := (Total /@ (amps Exp[sig #])) & /@ echo
+
+
+(*voxels in the mask with a signal above 10% of the 98% quantile*)
+DixonSignalMask[mag_, mask_] := Block[{msk},
+	msk = Unitize[mask];
+	If[Total[Flatten[msk]] === 0,
+		msk,
+		msk UnitStep[mag - 0.1 Quantile[Pick[Flatten[mag], Flatten[msk], 1], 0.98]]
+	]
 ]
 
 

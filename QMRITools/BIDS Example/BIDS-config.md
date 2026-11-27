@@ -1500,6 +1500,8 @@ Every key you leave out of `config.json` gets the value below. The blocks `Proce
     "DixonGraphCut": 3,
     "DixonPrecessions": 1,
     "DixonUnwrapSplit": true,
+    "DixonPhaseCorrection": false,
+    "DixonFixBonds": false,
     "EPGCalibrate": true,
     "EPGFatT2": 150
   },
@@ -1576,6 +1578,8 @@ Change these only when the defaults do not fit your data.
 | `DixonGraphCut` | For `Dixon-A`. Corrects local water-fat swaps in the starting field map, in blocks of this many voxels. Set to `false` to turn it off, for example when a subject shows swaps that were not there without it. | `3` |
 | `DixonPrecessions` | For `Dixon-A` and `Dixon-B`. The direction in which the fat signal rotates, which depends on the scanner. Use `-1` when the log or the output JSON says the precession check fits better with the opposite direction. | `1`; `1` or `-1` |
 | `DixonUnwrapSplit` | For `Dixon-B`. With `true` the left and right leg are unwrapped separately, which needs two legs in the image. Set to `false` for a single limb (an arm or one leg); otherwise the log shows `FindMiddle: could not find the center` and the limb is cut in two. | `true` |
+| `DixonPhaseCorrection` | For `Dixon-A`. Removes a small phase error of the scanner (eddy currents of the readout) that the Dixon fit cannot describe and that can give a left-right difference in fat fraction. The error is measured in each scan from the muscle and removed before a second fit. Adds the map `phcal`. Use `true` (or `"Linear"`); `"Quadratic"` allows a curved shape across the image. Needs at least 6 echoes. | `false` |
+| `DixonFixBonds` | For `Dixon-A` with more than 6 echoes. In muscle with little fat the fat composition (double bonds) cannot be fitted reliably, so there it is fixed to the value of the subject's own fat. Fat and muscle with much fat keep the fitted value. Use `true`, or `[0.85, [0.2, 0.4]]`: the fat fraction above which the subject's fat value is measured, and the range in which the fixed value changes into the fitted one. `dbond` is then the fitted map and `dbondw` the map that was used. Best used together with `DixonPhaseCorrection`. | `false` |
 | `EPGCalibrate` | For `EPGT2`. Measures the fat T2 in the subcutaneous fat of each scan. Set to `false` to use a fixed fat T2 (`EPGFatT2`) instead, for example when there is too little subcutaneous fat. | `true` |
 | `EPGFatT2` | For `EPGT2` with `EPGCalibrate` set to `false`. The fixed fat T2 in ms. | `150` |
 

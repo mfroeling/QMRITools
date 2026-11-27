@@ -948,17 +948,21 @@ FitGradientMap[data_, ord_] := FitGradientMap[data, ord, 1]
 
 FitGradientMap[data_, ord_, smp_] := FitGradientMap[{data, 1}, ord, smp]
 
-FitGradientMap[{data_, msk_}, ord_, smp_] := Block[{val, dim, coor, fit, x, y, z},
-	Clear[x, y, z];
+FitGradientMap[{data_, msk_}, ord_, smp_] := Block[{val, dim, coor, idx, bas, cof},
+	(*non zero voxels within the mask*)
 	{val, {dim, coor}} = DataToVector[msk data];
-	fit = Fit[
-		Thread[{coor[[;;;;smp, 1]], coor[[;;;;smp, 2]], coor[[;;;;smp, 3]], val[[;;;;smp]]}], 
-		DeleteDuplicates[Times @@ # & /@ Tuples[{1, x, y, z}, ord]], 
-		{x, y, z}
+
+	(*monomials of the coordinates up to order ord as voxel rows*)
+	idx = DeleteDuplicates[Sort /@ Tuples[Range[4], ord]];
+	bas[c_] := Block[{col},
+		col = Join[{ConstantArray[1., Length[c]]}, Transpose[N[c]]];
+		Transpose[(Times @@ col[[#]]) & /@ idx]
 	];
-	If[msk=!=1, coor = DataToVector[data][[2,2]]];
-	{x, y, z} = Transpose[coor];
-	VectorToData[fit, {dim, coor}]
+
+	(*least squares fit on every smp-th voxel, evaluated on all non zero voxels of the data*)
+	cof = LeastSquares[bas[coor[[;; ;; smp]]], N[val[[;; ;; smp]]]];
+	If[msk =!= 1, coor = DataToVector[data][[2, 2]]];
+	VectorToData[bas[coor] . cof, {dim, coor}]
 ]
 
 

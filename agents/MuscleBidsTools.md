@@ -288,6 +288,8 @@ associations merge.
 | `DixonGraphCut` | 3 | Dixon-A | `DixonGraphCut` of `DixonPhase`: block size in voxels, `false` turns the graph cut off |
 | `DixonPrecessions` | 1 | Dixon-A, Dixon-B | `DixonPrecessions` (1 or −1) for `DixonPhase`, `DixonReconstruct` and `DixonPrecessionCheck` |
 | `DixonUnwrapSplit` | true | Dixon-B | `true`: `UnwrapSplit` (left and right leg unwrapped separately, `FindMiddle`). `false`: `Unwrap` 3D on the whole volume, for a single limb (arm, one leg) |
+| `DixonPhaseCorrection` | False | Dixon, Dixon-A | `DixonPhaseCorrection` of `DixonReconstruct` (`False`, `True`/`"Linear"`, `"Quadratic"`): the unmodelled echo phase (eddy currents of the bipolar readout) is estimated per object and echo, removed and the data refitted (DixonTools.md §4b). Extra output `phcal` ({z, echo, y, x}, rad), json `DixonCorrection` |
+| `DixonFixBonds` | False | Dixon, Dixon-A, >6 echoes | `DixonFixBonds` of `DixonReconstruct` (`False`, `True` = `[0.85, [0.2, 0.4]]`, or `[refFF, [low, high]]`): db fixed to the median db of the voxels with FF > refFF below FF `low`, blended to the fitted db at `high`. Outputs `dbond` (fitted, free db) and `dbondw` (db used), json `DixonCorrection` |
 | `EPGCalibrate` | True | EPGT2 | `EPGCalibrate` of `EPGT2Fit`. False → no calibration, the fat T2 is `EPGFatT2` and B1 is fitted per voxel; json `"EPGCalibration"` is `"None, fixed fat T2"` |
 | `EPGFatT2` | 150 | EPGT2 | `DictT2fValue` in ms, only used with `EPGCalibrate` false (the calibration replaces it) |
 | `Settings` | – | EPGT2 | `[[exName, exAngle, {..}], [refName, refAngle, {..}]]` → `GetPulseProfile`, or plain numbers `[ex, ref]` |
@@ -393,7 +395,7 @@ layout; see [BidsCompliance.md](BidsCompliance.md).
 | Type | Method / condition | What it does | Output suffixes |
 | --- | --- | --- | --- |
 | megre, tse | `Dixon-P` + `Types` vector | one 4D nii, volume i → `Types[[i]]` | `Types` |
-| | `Dixon-P` + `Types` matrix | separate files matched by last `_` token | `Types[[All,1]]` |
+| | `Dixon-P` + `Types` matrix | separate files matched by last `_` token, only among files whose `ProtocolName` equals the label (the file glob `*label*` also catches e.g. `SRC-<label>`; fixed 2026-11-26). Current dcm2niix tags: `water`, `fat`, `inphase`, `outphase` (old builds: `e1`, `e1a`, `e2`, `e3`) | `Types[[All,1]]` |
 | | `Dixon-S` | Siemens, `SeriesDescription == label_tag` | `Types[[All,1]]` |
 | | `Dixon-B` | Philips single 4D (mag/real/imag/phase interleaved). Needs `EchoTime`. Special case when `ImageType` ends in `FFE` (B0-only) | `""`, `ph`, `real`, `imag` |
 | | `Dixon-A` | **auto**, two gated paths: recon path if any json `ImageType` ends in WATER/FAT/IN_PHASE/OUT_OF_PHASE; raw path if any ends in MIXED/PHASE/REAL/IMAGINARY or there are no recon tags (old fallback). A series with both (classic 5.7 GRE Dixon after `-m n`) gets both; before 2026-11-18 it got the recon only, so Process now fits it (branch 2 overwrites branch 1). Raw: MIXED/PHASE/REAL/IMAGINARY per echo, sorted by `EchoNumber`, scaled `1000/2047`, phase `π(x-2047)/2047` | `wat fat inph outph`, or `"" ph real imag` |
@@ -404,6 +406,11 @@ layout; see [BidsCompliance.md](BidsCompliance.md).
 | mese | `Process.EchoTime` present **and** dcm2niix that is not consistent (`BidsDcmConsistentQ`) | single 4D nii (`ImportNiiT2` unless json has EchoTime+EchoTrainLength or Siemens). TE = `EchoTime·(1..n)` | Suffix |
 | | otherwise | reads the single-echo input files sorted by `EchoNumber` and writes one 4D file, cut to `AcquisitionNumber`/`EchoTrainLength`. consistent dcm2niix: plain `Transpose` for every release, with a sanity check; older dcm2niix and `SoftwareVersions >= 12`: the R12 reorder | Suffix |
 | anat / other | – | "Unknown datatype for conversion" | – |
+
+**Dixon-A advice.** For megre/tse with Method `Dixon`, `Dixon-B` or `Dixon-P`, the convert step logs
+"Dixon-A is advised" when the label's files come from a consistent dcm2niix (`BidsDcmConsistentQ`: own build or
+20261029+). With those builds Dixon-A is the right method; the others are for older dcm2niix output. `Dixon-S`
+(Siemens) is not checked.
 
 **mese and the dcm2niix version** (`bidsDcmOwn`, `bidsDcmConsistent`, `BidsDcmConsistentQ`, next to `MergeJSON`). The
 layout of the per-echo files used to depend on the Philips release because older dcm2niix wrote release 12 data in
@@ -440,7 +447,7 @@ output: declare the variable in the `Block` list, give it exactly the suffix nam
 | Type | Method | Check file | Outputs |
 | --- | --- | --- | --- |
 | megre/tse | branch 1: `Dixon-S`, `Dixon-P`, `Dixon-A` (recon files present) | `outFile` "done" | the found `Types`, plus `r2star` (if t2star), `watfr`/`fatfr` (from fatfr file or `DixonToPercent`) |
-| | branch 2: `Dixon`, `Dixon-B`, `Dixon-A` (real/imag or mag/ph files present). When branch 1 also found recon files, its maps are kept (`recOut`, copied before branch 2 overwrites the variables) and exported after a successful fit as `<type>scan` with their own json (`DixonSource: ScannerRecon`), listed in the check file `Outputs` | same | `real imag mag ph b0i t2stari b0 t2star r2star inph outph wat fat watfr fatfr itt res snr sig`, plus for Dixon/Dixon-A: `phbp phi phbpt phii phbpi t2prime r2prime` (Dixon-A fits with `DixonFixT2 -> True`: `r2prime` is the fit, `r2star` = R2' + FF-weighted intrinsic R2, DixonTools.md Q20) (and `dbond` if >6 echoes, CallDB fat model) |
+| | branch 2: `Dixon`, `Dixon-B`, `Dixon-A` (real/imag or mag/ph files present). When branch 1 also found recon files, its maps are kept (`recOut`, copied before branch 2 overwrites the variables) and exported after a successful fit as `<type>scan` with their own json (`DixonSource: ScannerRecon`), listed in the check file `Outputs` | same | `real imag mag ph b0i t2stari b0 t2star r2star inph outph wat fat watfr fatfr itt res snr sig`, plus for Dixon/Dixon-A: `phbp phi phbpt phii phbpi t2prime r2prime` (Dixon-A fits with `DixonFixT2 -> True`: `r2prime` is the fit, `r2star` = R2' + FF-weighted intrinsic R2, DixonTools.md Q20) (and `dbond` if >6 echoes, CallDB fat model; with `DixonFixBonds` also `dbondw`, with `DixonPhaseCorrection` also `phcal`) |
 | dwi | *prep* (always, even without Method) | `outFile_prep` "done" | `raw den reg filt sig snr0 snr` (`reg`/`filt` with bval/bvec) |
 | | `DTI` (reruns when prep ran this call) | `outFile` "done" | `data tens res out s0 l1 l2 l3 md fa rd` + IVIM `mean adci fri s0i` + `field` (grad corr) + `fasc fascm norm` |
 | mese | `EPGT2` | `outFile` "done" | `data t2w t2f b1 wat fat fatfr res` |

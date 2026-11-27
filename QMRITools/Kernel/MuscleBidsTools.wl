@@ -630,6 +630,8 @@ defaultConfig = <|
 		"DixonGraphCut" -> 3,
 		"DixonPrecessions" -> 1,
 		"DixonUnwrapSplit" -> True,
+		"DixonPhaseCorrection" -> False,
+		"DixonFixBonds" -> False,
 		(*EPG T2*)
 		"EPGCalibrate" -> True,
 		"EPGFatT2" -> 150
@@ -3749,7 +3751,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 		fasc, fascm, fbval, sel, norm, rdim, raw, rmet, rician, sigI, bv, init, exist,
 		denOpts, dixOpts, epgOpts, phaseEchoes, phaseOpts, procInfo, precRatio, precResult,
 		t2prime, r2prime, rel, amp, r2w, r2f, ffc, t2sInfo, regOpts, ivimOpts, tensOpts, fascOpts,
-		prec, fixT2, aniso, calib, epgOut, mcomp, recOut, scanOut, recSet, recJson, recVox
+		prec, fixT2, aniso, calib, epgOut, mcomp, recOut, scanOut, recSet, recJson, recVox,
+		dixOut, sigs, corr, dbondw, phcal
 	},
 
 	debugBids["Starting MuscleBidsProcessI"];
@@ -3818,6 +3821,7 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 					echos = {};
 					phaseOpts = {};
 					settingPro = <||>;
+					corr = <||>;
 
 					(*----------------------------------------------*)
 					(*-------- TSE/GE online recon scripts ---------*)
@@ -3967,19 +3971,41 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 										dixOpts = {
 											DixonPrecessions -> prec, DixonPhases -> {True, True, True, True, True},
 											DixonFixT2 -> fixT2, DixonFieldStrength -> field,
-											DixonAmplitudes -> If[Length[echos] > 6, "CallDB", "Fixed"], DixonTolerance -> 1
+											DixonAmplitudes -> If[Length[echos] > 6, "CallDB", "Fixed"], DixonTolerance -> 1,
+											DixonPhaseCorrection -> ConfigLookup[datType, "Process", "DixonPhaseCorrection"],
+											DixonFixBonds -> If[Length[echos] > 6, ConfigLookup[datType, "Process", "DixonFixBonds"], False]
 										};
 
-										If[Length[echos] > 6,
-											{{watfr, fatfr}, {wat, fat, dbond}, {inph, outph},
-												{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-													{real, imag}, echos, {b0i, t2stari, phii, phbpi}, Sequence @@ dixOpts];
-											outTypes = {"dbond", "phbp", "phi", "phbpt", "phii", "phbpi"};
-											,
-											{{watfr, fatfr}, {wat, fat}, {inph, outph},
-												{{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = DixonReconstruct[
-													{real, imag}, echos, {b0i, t2stari, phii, phbpi}, Sequence @@ dixOpts];
-											outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
+										dixOut = DixonReconstruct[{real, imag}, echos, {b0i, t2stari, phii, phbpi}, Sequence @@ dixOpts];
+										{{watfr, fatfr}, sigs, {inph, outph}, {{b0, phbp, phi, phbpt}, {t2star, r2star}}, itt, res} = dixOut[[1 ;; 6]];
+										{wat, fat} = sigs[[1 ;; 2]];
+										corr = If[Length[dixOut] > 6, dixOut[[7]], <||>];
+										If[KeyExistsQ[corr, "PhaseCorrectionInfo"],
+											(*-----*)AddToLog[{"Echo phase correction:", corr["PhaseCorrectionInfo", "Objects"], "objects, low fat voxels",
+												corr["PhaseCorrectionInfo", "Voxels"]}, 5],
+											(*-----*)If[(DixonPhaseCorrection /. dixOpts) =!= False, AddToLog["Echo phase correction skipped (too few echoes or low fat voxels)", 5]]
+										];
+										If[KeyExistsQ[corr, "BondFitInfo"],
+											(*-----*)AddToLog[{"Fixed double bond:", Round[corr["BondFitInfo", "ReferenceDB"], 0.01], "from",
+												corr["BondFitInfo", "ReferenceVoxels"], "voxels (", corr["BondFitInfo", "ReferenceSource"], ")"}, 5]
+										];
+										outTypes = {"phbp", "phi", "phbpt", "phii", "phbpi"};
+
+										(*double bond map, with fixed bonds dbond is the fitted map and dbondw the one used*)
+										If[Length[sigs] > 2,
+											If[KeyExistsQ[corr, "BondFit"],
+												{dbond, dbondw} = {corr["BondFit"], sigs[[3]]};
+												outTypes = Join[{"dbond", "dbondw"}, outTypes];
+												,
+												dbond = sigs[[3]];
+												PrependTo[outTypes, "dbond"];
+											]
+										];
+
+										(*echo phase correction map*)
+										If[KeyExistsQ[corr, "PhaseCorrection"],
+											phcal = corr["PhaseCorrection"];
+											PrependTo[outTypes, "phcal"];
 										];
 
 										(*with fixed T2 the fit gives R2', R2* adds the intrinsic water and fat R2 weighted by the fat fraction*)
@@ -4037,7 +4063,8 @@ MuscleBidsProcessI[{folIn_, folOut_}, datType_, verCheck_] := Block[{
 										"DixonSource" -> "QMRITools", "Denoise" -> OptionsToJSON[denOpts],
 										"DixonPhaseEchos" -> phaseEchoes, "DixonPhaseSettings" -> OptionsToJSON[phaseOpts],
 										"DixonSettings" -> OptionsToJSON[dixOpts], "DixonT2Star" -> JSONSafe[t2sInfo],
-										"DixonPrecessionCheck" -> <|"Ratio" -> Round[precRatio, 0.001], "Result" -> precResult|>
+										"DixonPrecessionCheck" -> <|"Ratio" -> Round[precRatio, 0.001], "Result" -> precResult|>,
+										"DixonCorrection" -> JSONSafe[KeyDrop[corr, {"PhaseCorrection", "BondFit"}]]
 									|>;
 
 									(*correct water and fat*)

@@ -151,6 +151,50 @@ Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fa
 - Output: `{{watFr, fatFr}, {watSig, fatSig, model params…}, {inph, outph}, {{b0, phb, ph0, phbt}[[sel]], {t2, r2}}, itt,
   res}` (the phase list holds only the selected phases).
 
+## 4b. Echo phase correction and fixed double bond (2026-11-27)
+
+Two options of `DixonReconstruct`, both off by default (output then identical to before). Background and real-data
+results: the MOTION left-right drift study (author's research folder, `drift_report.md`).
+
+- **`DixonPhaseCorrection`** (`True`/`"Linear"`, `"Quadratic"`). After the first IDEAL fit `DixonPhaseMap` estimates the
+  echo phase the model cannot describe (eddy currents of the bipolar readout, ±50 mrad, mirrored between the legs):
+  1. low-FF voxels (FF < 0.3, signal above 10% of the 98% quantile, `DixonSignalMask`);
+  2. per voxel the echo phase without B0 and without the water-fat signal of the first-fit FF ("Fixed" composition
+     for string fat models), unwrapped along the echoes, projected on the null space of the fitted echo-time terms
+     (offset, and B0, θ0, θ1 when selected, taken from `vec`);
+  3. per object (`DixonObjects`: connected components, a component with two parts in most of its slices, e.g. thighs
+     touching in the top slices, is split at `FindMiddle`; ≥ 20 × parameters low-FF voxels) and echo a least-squares fit of offset +
+     coordinates (+ squares and products for `"Quadratic"`), with FF (sd ≥ 0.02) and FF² (sd ≥ 0.05) as nuisance
+     terms; the map is the spatial part, evaluated on the object voxels only (`DixonSpatialBasis`).
+  The data are multiplied by `Exp[-I map]` and refitted from the first-fit maps (one extra `DixonFit`). Needs at least
+  2 echoes more than the fitted phase terms (6 with all phases), otherwise `DixonReconstruct::pcor` and skipped.
+  Subtracting the water-fat signal (step 2) is needed when muscle FF hardly varies: with only an FF regressor the fat
+  phase went into the offset (phantom −0.45 pp).
+- **`DixonFixBonds`** (`True` = `{0.85, {0.2, 0.4}}`). Only for `"CallDB"`/`"FitDB"` (else `::bond`). `DixonFixBond`:
+  reference db = median free db where FF > 0.85 and signal is high (fallback 2.62, the "Fixed" value, with < 100
+  voxels); amplitudes refitted with db fixed (`DixonFitFC`, final maps); fixed below FF 0.2, free above 0.4, linear blend
+  in between (`low = high` is a hard switch).
+- Output: a 7th element, `<|"PhaseCorrection" -> {z, echo, y, x} rad, "PhaseCorrectionInfo", "BondFit" -> free db,
+  "BondFitInfo"|>`, only when a correction was done. BIDS exports `phcal`, `dbond` (free), `dbondw` (used) and the
+  info in the json key `DixonCorrection`.
+- Phantom (two legs, varying muscle FF, mirrored echo phase error, 10 echoes): FF error R/L −0.15/+0.18 pp →
+  −0.09/−0.03 pp with both options; 7 echoes −0.59/+0.53 → +0.08/−0.01; without injected error the options cost
+  −0.06 pp. Real data (16 MOTION subjects, script version): the R12 step and the pre-R12 drift disappear, a constant
+  +0.3–0.4 pp R−L remains.
+- BIDS test (sub-MOTION145 DIXON3/4, all slices, `bids_test` in the drift study folder): R−L −0.27 → +0.34 (thigh),
+  −0.74 → +0.12 (lower leg); thigh muscle FF level 0.5–1.1 pp lower, lower leg unchanged (not yet explained). Before
+  `DixonObjects` the touching thighs were one object.
+- Real stack (K:\MOTION 145 DIXON3, middle 16 slices): R−L −0.44 plain, +0.51 corrected (script A +0.50), +0.32 with
+  fixed db (script AD +0.26: db fixed everywhere, full refit); fit 11.9 → 23 s, peak memory 2.8 → 3.5 GB.
+- Info per object also holds `"FatPositionCorrelation"` (max |corr| of FF with a coordinate): an FF that follows the
+  position is partly taken up by the spatial terms. Phase terms that are not fitted end up in the map (only R2/B0
+  fitted: phantom 16 → 6 pp). BIDS logs the objects and voxels, and a skipped correction.
+- Shared helpers: `DixonAmpComplex` (complex species matrix), `DixonAmpMatrix` (real block form),
+  `DixonComplexSignal`, `DixonSignalPD` (proton density), `DixonFatFraction`, `DixonSignalMask`, and `ObjectMasks`
+  (one mask per connected object, also used by `AlignBipolar` and `SelectAlias`; `DixonPhase` output unchanged).
+  `FitGradientMap` (GeneralTools, used by `DixonFitPhase`) now solves with `LeastSquares` on a numeric monomial basis
+  instead of a symbolic `Fit` (same result within 1e-12).
+
 ## 5. Other functions
 
 - **`DixonToPercent`** (L842): magnitude discrimination (Liu 2007) in both modes: the minor component is
@@ -204,7 +248,7 @@ Known limitation: echoes 2 and 4 are 0.15 cycles apart in fat phase, so B0 in fa
 | Q19 | "CallDB" coefficients | **Intentional.** Newer than the paper (16.29 + 0.39 db vs 16.32 + 0.38 db). |
 | Q20 ◐ | BIDS settings | **T2 part done (2026-11-14).** BIDS `Dixon-A` now runs `DixonFixT2 -> True` (intrinsic T2 of water and each fat peak fixed to `DixonRelaxivity`, R2' fitted), as in Froeling 2024. Motion study prototype (ses-005/006 thigh and calf, 8 slices): L−R FF 0.84→0.55, 0.46→0.21, 0.60→0.42 pp, residual −13–15%; 1–4% of mask voxels (fat-rich, half on the rim) change FF by > 30 pp, check visually. Exports `t2prime`/`r2prime` (the fit) and an effective `r2star` = R2' + (1−FF)·R2w + FF·R2f (R2f amplitude-weighted over the default `DixonAmplitudes` peaks), `t2star` = 1/`r2star`. T1 correction still off. A bipolar **amplitude** term was tested for Q22 and rejected (wrong sign, worse fit). |
 | Q21 | `DixonPrecessions` | **Checked, not auto-set.** `DixonPrecessionCheck` (after the fit) compares the current and the opposite precession sense on a fixed random sample of 20000 voxels above the 0.9 FF quantile: B0 × R2 grid, water-fat model with complex amplitudes, bipolar phase removed. Ratio < 0.9 "ok", > 1.1 warning (`Message`), else "undecided". The BIDS pipeline logs it and writes it to the json (`DixonPrecessionCheck`). Voxel selection was tested on 4 real stacks (original and conjugated): high-FF voxels separate best (worst 0.59 vs 1.70), water voxels carry nothing (≈ 1.0), "brightest" was marginal in the calf (0.93 vs 1.07). Phantom: 0.08 vs 12.3. Final function on the 4 stacks: hip 0.28/0.33 ok, calf 0.52/0.63 ok; conjugated 1.59–3.59, all warned; ~6 s per stack. |
-| Q22 | left-right FF gradient | **Open (research).** The residual left-right FF differences (paper: 0.5–0.64% unconstrained) form a smooth gradient along the readout (left-right). Candidates: odd/even **amplitude** alternation of the bipolar readout (not modelled; Yu 2010 corrects it), coupling of the fitted θ0 with FF. B1 in the T1 correction gives only ±0.16% FF. Chemical-shift displacement (0.31 px per echo, alternating) is an edge effect and does not explain a smooth gradient. Not affected by the Q1–Q12 fixes: motion study ses-005/006, 32 swap-free muscles each, mean Dixon R−L FF −0.54% / −1.00% new vs −0.53% / −0.99% old (left higher in 20/32 and 26/32), while T2-mapping FF of the same muscles gives R−L +0.03% / +0.02% (15/32) and correlates weakly with the Dixon difference. So it is a Dixon bias, not anatomy. Next test: odd/even amplitude map. |
+| Q22 ◐ | left-right FF gradient | **Option added (2026-11-27), off by default.** Cause found: unmodelled echo phase from eddy currents of the bipolar readout, absorbed by the free db; `DixonPhaseCorrection` + `DixonFixBonds` (§4b) remove the R12 step and drift on 16 MOTION subjects, a constant +0.3–0.4 pp R−L remains. Original note: The residual left-right FF differences (paper: 0.5–0.64% unconstrained) form a smooth gradient along the readout (left-right). Candidates: odd/even **amplitude** alternation of the bipolar readout (not modelled; Yu 2010 corrects it), coupling of the fitted θ0 with FF. B1 in the T1 correction gives only ±0.16% FF. Chemical-shift displacement (0.31 px per echo, alternating) is an edge effect and does not explain a smooth gradient. Not affected by the Q1–Q12 fixes: motion study ses-005/006, 32 swap-free muscles each, mean Dixon R−L FF −0.54% / −1.00% new vs −0.53% / −0.99% old (left higher in 20/32 and 26/32), while T2-mapping FF of the same muscles gives R−L +0.03% / +0.02% (15/32) and correlates weakly with the Dixon difference. So it is a Dixon bias, not anatomy. Next test: odd/even amplitude map. |
 | Q23 ✔ | `Unwrap` family | **Fixed.** Unused Block variables removed. `UnWrapC` merges groups with full-array operations; a union-find version gave identical output but only 7.2 → 6.8 s on two calf stacks (`UnwrapSplit`, 3D), so it was not kept. Used only by `Dixon-B`. |
 | Q25 ✔ | `SelectAlias` regression (5.3.0) | **Fixed (2026-11-16).** K:\MOTION, 15 subjects, 5.3.0 vs the July run: a whole calf swapped in MOTION003, 009, 013 and 014 (FF 2–4% → 15–98%, T2* 35–100 ms; EPG FF normal). Not caused by `DixonGraphCut` or `DixonFixT2` (swap identical with both off). Two mechanisms, both from the global alias with mean-B0 alignment (§3): a θ0 quarter-cycle alias in one leg (014, 009, 003; θ0 jump 0.15–0.21 cycles at the gap midpoint), and the residual at the fat-biased start field picking the wrong alias (013). Now per object: θ0 and B0 aligned by plane fits at the midpoint, parity from the field-refined residual. All four stacks fixed. Validation in §8. |
 | Q27 ✔ | θ0 per leg, graph cut bias | **Fixed (2026-11-23).** K:\MOTION 161 subjects after the Q25 fix: patchy or whole-leg calf swaps in 019, 023, 026, 029, 063, 064, 084, 106, 128, 129, 137, 142, and a +0.5 pp left-right calf FF bias in the 20–22 Nov runs (EPG FF symmetric). Cause 1: θ0 aligned over the gap, but the legs' true θ0 differ by ≈ 0.13 cycles (half the ambiguity), so one leg ended 0.10–0.21 off; now absolute per object from the triplets (`AlignBipolar`, §3). Cause 2: the graph cut replaced B0 by its block minimum, biased in lean muscle (069, 064 patches); now blended with the start field (§3 `GraphCutField` step 5). 31 stacks all symmetric and clean (§8). |
@@ -266,6 +310,10 @@ error and voxels with |FF − true| > 0.4 (swaps).
 | `FixDixonFlips`, `FindComplexFlips` | L418 | 180° volume flips (commented out in the BIDS pipeline) |
 | `DixonReconstruct` | L480 | IDEAL reconstruction and outputs |
 | `DixonFit`, `TotalPhase` | L677, L691 | serial/parallel fit call; Arg(W+F) in cycles |
+| `DixonPhaseMap`, `DixonSpatialBasis`, `DixonFixBond` | L1095– | echo phase correction and fixed double bond (§4b) |
+| `DixonAmpComplex`, `DixonAmpMatrix`, `DixonComplexSignal`, `DixonSignalPD`, `DixonFatFraction`, `DixonSignalMask` | L1075–, L1230– | shared helpers: species matrices, complex signals, proton density, fat fraction, signal mask |
+| `ObjectMasks` | L468 | one mask per connected object (`AlignBipolar`, `SelectAlias`) |
+| `DixonObjects` | L1180 | objects for the phase map, touching legs split at `FindMiddle` |
 | `InOutPhase`, `DixonFitC`, `DixonFitFC` | L698, L707, L760 | compiled: in/out phase, IDEAL loop, amplitude refit |
 | `GenerateAmps` | L792 | fat model basis from strings or amplitudes |
 | `DixonToPercent` | L842 | fractions with magnitude discrimination |
